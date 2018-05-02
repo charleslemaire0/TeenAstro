@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+/TeenAstoMainUnit/OnStep/Debug
+/TeenAstoMainUnit/OnStep/Release
+/TeenAstoMainUnit/OnStep/__vm
+/TeenAstoMainUnit/.vs/OnStep/v14

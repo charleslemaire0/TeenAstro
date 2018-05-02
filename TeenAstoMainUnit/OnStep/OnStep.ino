@@ -1,8 +1,9 @@
 /*
  * Title       On-Step
- * by          Howard Dutton
+ * by          Howard Dutton, Charles Lemaire
  *
- * Copyright (C) 2012 to 2016 Howard Dutton 20
+ * Copyright (C) 2012 to 2016 Howard Dutton
+ * Copyright (C) 2016 to 2017 Charles Lemaire
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +23,7 @@
  * Revision History, see GitHub
  *
  *
- * Author: Howard Dutton
- * http://www.stellarjourney.com
- * hjd1964@gmail.com
+ * Author: Howard Dutton, Charles Lemaire
  *
  * Description
  *
