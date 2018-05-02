@@ -809,7 +809,10 @@ void setup()
   // get the pulse-guide rate
   currentPulseGuideRate = EEPROM.read(EE_pulseGuideRate);
   if (currentPulseGuideRate > GuideRate1x)
+  {
     currentPulseGuideRate = GuideRate1x;
+    EEPROM.write(EE_pulseGuideRate, currentPulseGuideRate);
+  }
 
   // get the Goto rate and constrain values to the limits (1/2 to 2X the MaxRate,) maxRate is in 16MHz clocks but stored in micro-seconds
   maxRate = EEPROM_readInt(EE_maxRate) * 16;
@@ -884,9 +887,7 @@ void loop()
   {
     // SIDEREAL TRACKING -------------------------------------------------------------------------------
     // only active while sidereal tracking with a guide rate that makes sense
-    if ((trackingState == TrackingON) && (!(
-      (guideDirAxis1 || guideDirAxis2) &&
-      (activeGuideRate > GuideRate1x))))
+    if (trackingState == TrackingON)
     {
       // apply the Tracking, Guiding, and PEC
       cli();
@@ -894,10 +895,9 @@ void loop()
       targetAxis2.fixed += fstepAxis2.fixed;
       sei();
     }
-
     // SIDEREAL TRACKING DURING GOTOS ------------------------------------------------------------------
     // keeps the target where it's supposed to be while doing gotos
-    if (trackingState == TrackingMoveTo)
+    else if (trackingState == TrackingMoveTo)
     {
       if (lastTrackingState == TrackingON)
       {

@@ -69,7 +69,4 @@ void Guide()
       }
     }
   }
-
-  // if the guide rate is negative and slow it's always faster to go back to the sidereal rate
-  //  if ((currentGuideRate<=GuideRate1x) && (fabs(guideTimerRateAxis1)<0.001)) { cli(); guideTimerRateAxis1=0.0; sei(); }
 }

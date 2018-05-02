@@ -144,8 +144,6 @@ ISR(TIMER1_COMPA_vect)
       }
     }
     double  timerRateAxis1A = trackingTimerRateAxis1;
-    if (guideDirAxis1 && (activeGuideRate > GuideRate1x))
-      timerRateAxis1A = 0.0;
     double  timerRateAxis1B = fabs
     (guideTimerRateAxis1A + timerRateAxis1A);
 
@@ -228,8 +226,6 @@ ISR(TIMER1_COMPA_vect)
       }
     }
     double  timerRateAxis2A = trackingTimerRateAxis2;
-    if (guideDirAxis2 && (activeGuideRate > GuideRate1x))
-      timerRateAxis2A = 0.0;
     double  timerRateAxis2B = fabs(guideTimerRateAxis2A + timerRateAxis2A);
 
     // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
