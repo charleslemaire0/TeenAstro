@@ -873,9 +873,6 @@ double angDist(double h, double d, double h1, double d1)
 }
 
 
-
-
-
 // Acceleration rate calculation
 void SetAccelerationRates(double maxRate)
 {

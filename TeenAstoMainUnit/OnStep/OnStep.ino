@@ -57,9 +57,9 @@
 #endif
 
 // firmware info, these are returned by the ":GV?#" commands
-#define FirmwareDate    "10 18 16"
-#define FirmwareNumber  "1.0a36"
-#define FirmwareName    "On-Step"
+#define FirmwareDate    "05 04 18"
+#define FirmwareNumber  "0.0a"
+#define FirmwareName    "On-Step-TeenAstro"
 #define FirmwareTime    "12:00:00"
 
 // forces initialialization of a host of settings in EEPROM. OnStep does this automatically, most likely, you will want to leave this alone
@@ -77,7 +77,6 @@ void setup()
   }
 
   // EEPROM automatic initialization
-
   long thisAutoInitKey = EEPROM_readLong(EE_autoInitKey);
   if (thisAutoInitKey != initKey)
   {
@@ -89,22 +88,7 @@ void setup()
     EEPROM.write(EE_minAlt, minAlt + 128);
     EEPROM.write(EE_maxAlt, maxAlt);
 
-    // init (clear) the backlash amounts
-    EEPROM_writeInt(EE_backlashAxis1, 0);
-    EEPROM_writeInt(EE_GearAxis1, 1800);
-    EEPROM_writeInt(EE_StepRotAxis1, 200);
-    EEPROM.write(EE_MicroAxis1, 4);
-    EEPROM.write(EE_ReverseAxis1, 0);
-    EEPROM.write(EE_HighCurrAxis1, 100);
-    EEPROM.write(EE_LowCurrAxis1, 100);
-
-    EEPROM_writeInt(EE_GearAxis2, 1800);
-    EEPROM_writeInt(EE_StepRotAxis2, 200);
-    EEPROM.write(EE_MicroAxis2, 4);
-    EEPROM.write(EE_ReverseAxis2, 0);
-    EEPROM.write(EE_HighCurrAxis2, 100);
-    EEPROM.write(EE_LowCurrAxis2, 100);
-
+    writeDefaultEEPROMmotor();
 
     // init the Park status
     EEPROM.write(EE_parkSaved, false);
@@ -681,37 +665,7 @@ time_t getTeensy3Time()
 
 void initmotor()
 {
-  backlashAxis1 = EEPROM_readInt(EE_backlashAxis1);
-  GearAxis1     = EEPROM_readInt(EE_GearAxis1);
-  StepRotAxis1  = EEPROM_readInt(EE_StepRotAxis1);
-  MicroAxis1    = EEPROM.read(EE_MicroAxis1);
-  ReverseAxis1  = EEPROM.read(EE_ReverseAxis1);
-  LowCurrAxis1  = EEPROM.read(EE_LowCurrAxis1);
-  HighCurrAxis1 = EEPROM.read(EE_HighCurrAxis1);
-
-  backlashAxis2 = EEPROM_readInt(EE_backlashAxis2);
-  GearAxis2     = EEPROM_readInt(EE_GearAxis2);
-  StepRotAxis2  = EEPROM_readInt(EE_StepRotAxis2);
-  MicroAxis2    = EEPROM.read(EE_MicroAxis2);
-  ReverseAxis2  = EEPROM.read(EE_ReverseAxis2);
-  LowCurrAxis2  = EEPROM.read(EE_LowCurrAxis2);
-  HighCurrAxis2 = EEPROM.read(EE_HighCurrAxis2);
-
-  //Serial.print(GearAxis1);
-  //Serial.println(StepRotAxis1);
-  //Serial.println(MicroAxis1);
-  //Serial.println(ReverseAxis1);
-  //Serial.println(LowCurrAxis1);
-  //Serial.println(HighCurrAxis1);
-  //Serial.println(backlashAxis2);
-  //Serial.println(GearAxis2);
-  //Serial.println(StepRotAxis2);
-  //Serial.println(MicroAxis2);
-  //Serial.println(ReverseAxis2);
-  //Serial.println(LowCurrAxis2);
-  //Serial.println(HighCurrAxis2);
-  //Serial.println(backlashAxis2);
-
+  readEEPROMmotor();
   updateRatios();
   tmc26XStepper1 = new TMC26XStepper(StepRotAxis1, Axis1CSPin, Axis1DirPin, Axis1StepPin, (unsigned int)LowCurrAxis1 * 10);
   tmc26XStepper2 = new TMC26XStepper(StepRotAxis2, Axis2CSPin, Axis2DirPin, Axis2StepPin, (unsigned int)LowCurrAxis2 * 10);
@@ -731,6 +685,44 @@ void initmotor()
   tmc26XStepper2->setCoolStepConfiguration(480, 57, 1, 3, COOL_STEP_HALF_CS_LIMIT);
   tmc26XStepper2->setCoolStepEnabled(false);
   tmc26XStepper2->start();
+}
+
+void readEEPROMmotor()
+{
+  backlashAxis1 = EEPROM_readInt(EE_backlashAxis1);
+  GearAxis1 = EEPROM_readInt(EE_GearAxis1);
+  StepRotAxis1 = EEPROM_readInt(EE_StepRotAxis1);
+  MicroAxis1 = EEPROM.read(EE_MicroAxis1);
+  ReverseAxis1 = EEPROM.read(EE_ReverseAxis1);
+  LowCurrAxis1 = EEPROM.read(EE_LowCurrAxis1);
+  HighCurrAxis1 = EEPROM.read(EE_HighCurrAxis1);
+
+  backlashAxis2 = EEPROM_readInt(EE_backlashAxis2);
+  GearAxis2 = EEPROM_readInt(EE_GearAxis2);
+  StepRotAxis2 = EEPROM_readInt(EE_StepRotAxis2);
+  MicroAxis2 = EEPROM.read(EE_MicroAxis2);
+  ReverseAxis2 = EEPROM.read(EE_ReverseAxis2);
+  LowCurrAxis2 = EEPROM.read(EE_LowCurrAxis2);
+  HighCurrAxis2 = EEPROM.read(EE_HighCurrAxis2);
+}
+
+void writeDefaultEEPROMmotor()
+{
+  // init (clear) the backlash amounts
+  EEPROM_writeInt(EE_backlashAxis1, 0);
+  EEPROM_writeInt(EE_GearAxis1, 1800);
+  EEPROM_writeInt(EE_StepRotAxis1, 200);
+  EEPROM.write(EE_MicroAxis1, 4);
+  EEPROM.write(EE_ReverseAxis1, 0);
+  EEPROM.write(EE_HighCurrAxis1, 100);
+  EEPROM.write(EE_LowCurrAxis1, 100);
+
+  EEPROM_writeInt(EE_GearAxis2, 1800);
+  EEPROM_writeInt(EE_StepRotAxis2, 200);
+  EEPROM.write(EE_MicroAxis2, 4);
+  EEPROM.write(EE_ReverseAxis2, 0);
+  EEPROM.write(EE_HighCurrAxis2, 100);
+  EEPROM.write(EE_LowCurrAxis2, 100);
 }
 
 void updateRatios()
