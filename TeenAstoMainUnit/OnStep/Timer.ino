@@ -1,5 +1,6 @@
 // -----------------------------------------------------------------------------------
 // Timers and interrupt handling
+
 #if (defined(__arm__) && defined(TEENSYDUINO))
 #define ISR(f)  void f (void)
 void                TIMER1_COMPA_vect(void);

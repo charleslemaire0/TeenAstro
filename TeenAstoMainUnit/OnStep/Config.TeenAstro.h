@@ -1,23 +1,10 @@
 // -----------------------------------------------------------------------------------
 // Configuration
+#include "Pins.TeenAstro.h"
 
-/*
- * For more information on setting OnStep up see http://www.stellarjourney.com/index.php?r=site/equipment_onstep and 
- * join the OnStep yahoo group at https://groups.yahoo.com/neo/groups/onsteptelescope/info
- * 
- * The Arduino Mega2560 and Teensy3.1/3.2 use USB for power and communication with the host computer
- * some Launchpad TM4C devices are also supported (thanks to Luka,) see OnStep.ino for pin definitions
- *
- * The RA/Az (Axis1) and Dec/Alt (Axis2) stepper driver plugs in as follows:
- * RA/Az :  Gnd,13,12,11 = Gnd,Step,N/C,Direction (Teensy3.1 Gnd,12,N/C,10)
- * Dec/Alt:   7, 6, 5, 4 = Gnd,Step,N/C,Direction (Teensy3.1 Gnd, 6,N/C, 4)
- *
- * Optionally, a bluetooth adapter (HC05 or RN42 for example) plugs into pins Tx1/Rx1 and pins +5V/Gnd. 
- * I use two 2-wire cables for 0.1" headers.  Remember Rx goes to Tx and Tx goes to Rx. If using a Mega2560
- * be sure to get a BT module designed for 5 volt operation and signaling otherwise you'll have to design
- * and implement the level conversion hardware yourself.
- * BT: Tx,Rx/+5V,Gnd = Rx1,Tx1/+5V,Gnd
-*/
+
+
+
 
 // -------------------------------------------------------------------------------------------------------------------------
 // ADJUST THE FOLLOWING TO CONFIGURE YOUR CONTROLLER FEATURES --------------------------------------------------------------
@@ -30,9 +17,6 @@
 // default IP,Gateway,subnet are in the Network.ino file
 // if ethernet is available DHCP is used to obtain the IP address (default addresses are overridden), default=OFF
 #define ETHERNET_USE_DHCP_OFF
-
-
-
 
 // turns debugging on, used during testing, default=OFF
 #define DEBUG_OFF
@@ -131,9 +115,6 @@
 #define REVERSE_AXIS1_ON          // reverse the direction of movement for the HA/RA axis, adjust as needed or reverse your wiring so things move in the right direction
 #define REVERSE_AXIS2_ON        // reverse the direction of movement for the Dec axis (both reversed for my EM10b, both normal for G11)
 #endif
-
-
-
 
 #define MinutesPastMeridianEGOTO        00 // for goto's, how far past the meridian to allow before we do a flip (if on the East side of the pier) - one hour of RA is the default = 60.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 #define MinutesPastMeridianWGOTO        00 // as above, if on the West side of the pier.  If left alone, the mount will stop tracking when it hits the this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.

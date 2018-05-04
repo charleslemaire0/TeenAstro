@@ -1,6 +1,3 @@
-
-
-
 // set Side of pier
 boolean setSide(byte side)
 {

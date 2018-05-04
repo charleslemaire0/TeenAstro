@@ -83,10 +83,12 @@
   <ItemGroup>
     <ClInclude Include="Align.h" />
     <ClInclude Include="Command.h" />
-    <ClInclude Include="Config.h" />
+    <ClInclude Include="Config.TeenAstro.h" />
+    <ClInclude Include="EEPROM_adress.h" />
     <ClInclude Include="FPoint.h" />
     <ClInclude Include="Global.h" />
     <ClInclude Include="Helper_math.h" />
+    <ClInclude Include="Pins.TeenAstro.h" />
     <ClInclude Include="Site.h" />
     <ClInclude Include="TelTimer.h" />
     <ClInclude Include="__vm\.OnStep.vsarduino.h" />
