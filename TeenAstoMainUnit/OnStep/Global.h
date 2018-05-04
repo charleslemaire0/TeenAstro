@@ -20,8 +20,6 @@ siteDefinition      localSite;
 #define PierSideFlipWE2  7
 #define PierSideFlipWE3  8
 
-
-
 #define CheckModeGOTO        0
 #define CheckModeTracking    1
 
@@ -114,7 +112,6 @@ long quaterRotAxis2;
 long celestialPoleStepAxis1;
 long celestialPoleStepAxis2;
 
-
 volatile double         timerRateRatio = (StepsPerSecondAxis1 / StepsPerSecondAxis2);
 volatile boolean        useTimerRateRatio = (StepsPerRotAxis1 != StepsPerRotAxis2);
 
@@ -129,11 +126,6 @@ void                    TIMER3_COMPA_vect(void);
 
 IntervalTimer           itimer4;
 void                    TIMER4_COMPA_vect(void);
-
-
-
-
-
 
 
 // fix UnderPoleLimit for fork mounts
@@ -186,9 +178,6 @@ bool                autoContinue = false;   // automatically do a meridian flip 
                                             // I set the pin usage to facilitate easy connection of jumper cables
                                             // for now, the #defines below are used to program the port modes using the standard Arduino library
                                             // defines for direct port control
-
-
-
 
 #if defined(AXIS1_DISABLED_HIGH)
 #define Axis1_Disabled  HIGH
@@ -327,7 +316,6 @@ unsigned long   baudRate[10] =
 // tracking and PEC, fractional steps
 fixed_t         fstepAxis1;
 fixed_t         fstepAxis2;
-fixed_t         pstep;
 
 // guide command
 #define GuideRate1x     2

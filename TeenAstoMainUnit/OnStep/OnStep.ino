@@ -65,14 +65,6 @@
 // forces initialialization of a host of settings in EEPROM. OnStep does this automatically, most likely, you will want to leave this alone
 #define initKey     915307548                       // unique identifier for the current initialization format, do not change
 
-
-
-
-
-
-
-
-
 void setup()
 {
   pinMode(LEDPin, OUTPUT);
@@ -157,7 +149,7 @@ void setup()
 
   fstepAxis1.fixed = 0;
   fstepAxis2.fixed = 0;
-  pstep.fixed = 0;
+
   origTargetAxis1.fixed = 0;
   targetAxis1.part.m = quaterRotAxis1;
   targetAxis1.part.f = 0;
@@ -210,11 +202,6 @@ void setup()
   analogWrite(ReticulePin, reticuleBrightness);
 #endif
 
-
-
-
-
-
   // ST4 interface
 #ifdef ST4_ON
   pinMode(ST4RAw, INPUT);
@@ -259,10 +246,8 @@ void setup()
 
   enable_Axis(false);
 
-
    // automatic mode switching before/after slews, initialize micro-step mode
   DecayModeTracking();
-
 
   // this sets the sidereal timer, controls the tracking speed so that the mount moves precisely with the stars
   siderealInterval = EEPROM_readLong(EE_siderealInterval);
