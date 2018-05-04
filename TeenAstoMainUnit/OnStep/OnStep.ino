@@ -346,7 +346,7 @@ fixed_t         pstep;
 #define halfSlewRate    (slewRate / 2.0)
 double          guideRates[10] =
 {
-    0.25, 0.5, 1.0, 2.0, 4.0, 16.0, 32.0, 64.0, halfSlewRate, slewRate
+    0.25*15, 0.5*15, 1.0*15, 2.0*15, 4.0*15, 16.0*15, 32.0*15, 64.0*15, halfSlewRate, slewRate
 };
 
 
@@ -815,6 +815,8 @@ void setup()
   }
 
   // get the Goto rate and constrain values to the limits (1/2 to 2X the MaxRate,) maxRate is in 16MHz clocks but stored in micro-seconds
+
+
   maxRate = EEPROM_readInt(EE_maxRate) * 16;
   if (maxRate < (MaxRate / 2L) * 16L) maxRate = (MaxRate / 2L) * 16L;
   if (maxRate > (MaxRate * 2L) * 16L) maxRate = (MaxRate * 2L) * 16L;

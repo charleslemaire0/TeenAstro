@@ -87,7 +87,6 @@
                                      // minimum* (fastest goto) is around 16 (Teensy3.1) or 32 (Mega2560), default=96 higher is ok
                                      // too low and OnStep communicates slowly and/or freezes as the motor timers use up all the MCU time
                                      // * = minimum can be lower, when both AXIS1/AXIS2_MODE_GOTO are used by AXIS1/AXIS2_STEP_GOTO times
-#define MaxRateDegree              2
 
 #define DegreesForAcceleration   3.0 // approximate number of degrees for full acceleration or deceleration: higher values=longer acceleration/deceleration
                                      // Default=5.0, too low (about <1) can cause gotos to never end if micro-step mode switching is enabled.
@@ -153,12 +152,6 @@
                                      // that can be easily worked around by doing an alignment once and saving a park position (assuming a 
                                      // fork/yolk mount with meridian flips turned off by setting the minutesPastMeridian values to cover the whole sky)
 #define MaxAzm                   180 // Alt/Az mounts only. +/- maximum allowed Azimuth, default =  180.  Allowed range is 180 to 360
-
-
-
-
-
-
 
 
 
