@@ -263,10 +263,10 @@ public:
     if (!readMicro())
       return false;
     char text[20];
-    char * string_list_micro = "16 (256 intepolated)\n32\n64\n128\n256";
+    char * string_list_micro = "16 (~256)\n32\n64\n128\n256";
     sprintf(text, "Stepper M%u", m_idx);
     uint8_t choice = m_microStep - 4 + 1;
-    uint8_t choice = onstep_UserInterfaceSelectionList(display.getU8g2(), text, choice, string_list_micro);
+    choice = onstep_UserInterfaceSelectionList(display.getU8g2(), text, choice, string_list_micro);
     if (choice)
     {
       m_microStep = choice - 1 + 4;
