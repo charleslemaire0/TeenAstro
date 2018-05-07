@@ -34,3 +34,7 @@
 /TeenAstoMainUnit/OnStep/Release
 /TeenAstoMainUnit/OnStep/__vm
 /TeenAstoMainUnit/.vs/OnStep/v14
+TeenAstroController/.vs/OnStepESPServer/v14/.suo
+TeenAstroController/__vm/.TeenAstroController.vsarduino.h
+TeenAstroController/__vm/Compile.vmps.xml
+*.xml

@@ -210,7 +210,7 @@ Again:
     {
 
       // the blAxis2 gets "reversed" when we Meridian flip, since the NORTH/SOUTH movements are reversed
-      cli(); blAxis2 = backlashAxis2 - blAxis2; sei();
+      /*cli(); blAxis2 = backlashAxis2 - blAxis2; sei();*/
       cli();
       startAxis1 = posAxis1;
       targetAxis1.fixed = origTargetAxis1.fixed;
