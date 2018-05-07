@@ -527,20 +527,26 @@ void menuSyncGoto(bool sync)
       MenuRADec(sync);
       break;
     case 4:
-      char cmd[5]= ":hX#";
+      char cmd[5];
+      sprintf(cmd, ":hX#");
       cmd[2] = sync ? 'F' : 'C';
       if (SetLX200(cmd, true))
       {
         DisplayMessage(sync ? "Reset at" : "Goto", " Home Position", -1);
       }
+
+    }
       break;
     case 5:
-      char cmd[5] = ":hX#";
+    {
+      char cmd[5];
+      sprintf(cmd, ":hX#");
       cmd[2] = sync ? 'O' : 'P';
       if (SetLX200(cmd, false))
       {
         DisplayMessage(sync ? "Reset at" : "Goto", " Park Position", -1);
       }
+    }
       break;
     default:
       break;
