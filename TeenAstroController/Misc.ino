@@ -25,7 +25,7 @@ byte readBytesUntil2(char character, char buffer[], int length, boolean* charact
 }
 
 // smart LX200 aware command and response over serial
-boolean readLX200Bytes(char* command,char* recvBuffer,unsigned long timeOutMs) {
+int readLX200Bytes(char* command,char* recvBuffer,unsigned long timeOutMs) {
   Serial.setTimeout(timeOutMs);
   
   // clear the read/write buffers
@@ -90,7 +90,7 @@ boolean readLX200Bytes(char* command,char* recvBuffer,unsigned long timeOutMs) {
   } else
   if (shortResponse) {
     recvBuffer[Serial.readBytes(recvBuffer,1)]=0;
-    return (recvBuffer[0]!=0);
+    return (recvBuffer[0]);
   } else {
     // get full response, '#' terminated
     unsigned long start=millis();
