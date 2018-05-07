@@ -186,22 +186,13 @@ byte park()
 }
 
 // returns a parked telescope to operation, you must set date and time before calling this.  it also
-
-boolean iniAtPark()
+boolean syncAtPark()
 {
-  parkStatus = EEPROM.read(EE_parkStatus);
-  if (!(parkStatus == Parked ))
-  {
-    parkStatus = NotParked;
-    EEPROM.write(EE_parkStatus, NotParked);
-    return false;
-  }
   parkSaved = EEPROM.read(EE_parkSaved);
-  if (!parkSaved  || trackingState != TrackingOFF )
+  if (!parkSaved)
   {
     return false;
   }
-
   // enable the stepper drivers
   axis1Enabled = true;
   axis2Enabled = true;
@@ -240,6 +231,20 @@ boolean iniAtPark()
   meridianFlip = MeridianFlipNever;
 #endif
   return true;
+}
+
+boolean iniAtPark()
+{
+  if (trackingState != TrackingOFF)
+    return false;
+  parkStatus = EEPROM.read(EE_parkStatus);
+  if (!(parkStatus == Parked ))
+  {
+    parkStatus = NotParked;
+    EEPROM.write(EE_parkStatus, NotParked);
+    return false;
+  }
+  return syncAtPark();
 }
 
 // depends on the latitude, longitude, and timeZone; but those are stored and recalled automatically
