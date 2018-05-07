@@ -529,8 +529,10 @@ void menuSyncGoto(bool sync)
     case 4:
       char cmd[5]= ":hX#";
       cmd[2] = sync ? 'F' : 'C';
-      SetLX200(cmd, true);
-      DisplayMessage(sync ? "Reset at" : "Goto"," Home Position", -1);
+      if (SetLX200(cmd, true))
+      {
+        DisplayMessage(sync ? "Reset at" : "Goto", " Home Position", -1);
+      }
       break;
     case 5:
       char cmd[5] = ":hX#";
@@ -539,7 +541,6 @@ void menuSyncGoto(bool sync)
       {
         DisplayMessage(sync ? "Reset at" : "Goto", " Park Position", -1);
       }
-     ;
       break;
     default:
       break;
