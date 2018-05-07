@@ -108,7 +108,7 @@ bool SetLX200(char* command, bool silent = false)
     if (ok)
       DisplayMessage("Value Set!", NULL, 500);
     else
-      DisplayMessage("Value Set!", "Failed", 500);
+      DisplayMessage("Value Set!", "Failed", -1);
   }
   return ok;
 }
