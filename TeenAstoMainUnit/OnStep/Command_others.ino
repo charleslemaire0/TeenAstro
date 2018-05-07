@@ -616,9 +616,9 @@ void Command_h()
     break;
   case 'C':
     //  :hC#   Moves telescope to the home position
-    //         Returns: Nothing
-    goHome();
-    quietReply = true;
+    //          Return: 0 on failure
+    //                  1 on success
+    if (!goHome()) commandError = true;
     break;
   case 'O':
     // : hO#   Reset telescope at the Park position if Park position is stored.

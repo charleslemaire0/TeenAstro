@@ -66,8 +66,8 @@ boolean readLX200Bytes(char* command,char* recvBuffer,unsigned long timeOutMs) {
       if (strchr("S",command[2])) noResponse=true;
     }
     if (command[1]=='h') {
-      if (strchr("FC",command[2])) noResponse=true;
-      if (strchr("QPR",command[2])) { shortResponse=true; Serial.setTimeout(timeOutMs*2); }
+      if (strchr("F",command[2])) noResponse=true;
+      if (strchr("COPQR",command[2])) { shortResponse=true; Serial.setTimeout(timeOutMs*2); }
     }
     if (command[1]=='T') {
       if (strchr("QR+-SLK",command[2])) noResponse=true;

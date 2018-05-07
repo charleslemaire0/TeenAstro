@@ -1,6 +1,5 @@
 // -----------------------------------------------------------------------------------
 // functions related to Homing the mount
-
 // moves telescope to the home position, then stops tracking
 boolean goHome()
 {
