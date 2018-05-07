@@ -24,6 +24,7 @@ void DisplayMessage(const char* txt1, const char* txt2 = NULL, int duration = 0)
   {
     for (;;)
     {
+      updateWifi();
       tickButtons();
       delay(50);
       if (buttonPressed)
@@ -74,6 +75,7 @@ void DisplayLongMessage(const char* txt1, const char* txt2 = NULL, const char* t
   {
     for (;;)
     {
+      updateWifi();
       tickButtons();
       delay(50);
       if (buttonPressed)
