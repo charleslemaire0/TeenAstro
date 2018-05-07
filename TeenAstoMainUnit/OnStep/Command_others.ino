@@ -620,6 +620,12 @@ void Command_h()
     goHome();
     quietReply = true;
     break;
+  case 'O':
+    // : hO#   Reset telescope at the Park position if Park position is stored.
+    //          Return: 0 on failure
+    //                  1 on success
+    if (!syncAtPark()) commandError = true;
+    break;
   case 'P':
     // : hP#   Goto the Park Position
       //         Returns: Nothing
