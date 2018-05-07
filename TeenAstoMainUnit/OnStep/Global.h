@@ -112,8 +112,8 @@ long quaterRotAxis2;
 long celestialPoleStepAxis1;
 long celestialPoleStepAxis2;
 
-volatile double         timerRateRatio = (StepsPerSecondAxis1 / StepsPerSecondAxis2);
-volatile boolean        useTimerRateRatio = (StepsPerRotAxis1 != StepsPerRotAxis2);
+volatile double         timerRateRatio;
+volatile boolean        useTimerRateRatio;
 
 #define BreakDistAxis1              (2L)
 #define BreakDistAxis2              (2L)
@@ -142,9 +142,9 @@ byte newTargetPierSide = 0;
 volatile long       posAxis1;    // hour angle position in steps
 long                trueAxis1;   // correction to above for motor shaft position steps
 volatile long       startAxis1;  // hour angle of goto start position in steps
-volatile fixed_t    targetAxis1;        // hour angle of goto end   position in steps
-volatile byte       dirAxis1 = 1;       // stepping direction + or -
-double              newTargetRA = 0.0;  // holds the RA for goTos
+volatile fixed_t    targetAxis1; // hour angle of goto end   position in steps
+volatile byte       dirAxis1;    // stepping direction + or -
+double              newTargetRA; // holds the RA for goTos
 fixed_t             origTargetAxis1;
 #if defined(AXIS1_MODE) && defined(AXIS1_MODE_GOTO)
 volatile long       stepAxis1 = 1;
@@ -152,13 +152,13 @@ volatile long       stepAxis1 = 1;
 #define stepAxis1   1
 #endif
 
-volatile long       posAxis2;    // declination position in steps
-long                trueAxis2;   // correction to above for motor shaft position steps
-volatile long       startAxis2;  // declination of goto start position in steps
-volatile fixed_t    targetAxis2;        // declination of goto end   position in steps
-volatile byte       dirAxis2 = 1;       // stepping direction + or -
-double              newTargetDec = 0.0; // holds the Dec for goTos
-long                origTargetAxis2 = 0;
+volatile long       posAxis2;     // declination position in steps
+long                trueAxis2;    // correction to above for motor shaft position steps
+volatile long       startAxis2;   // declination of goto start position in steps
+volatile fixed_t    targetAxis2;  // declination of goto end   position in steps
+volatile byte       dirAxis2;     // stepping direction + or -
+double              newTargetDec; // holds the Dec for goTos
+long                origTargetAxis2;
 #if defined(AXIS2_MODE) && defined(AXIS2_MODE_GOTO)
 volatile long       stepAxis2 = 1;
 #else
@@ -166,9 +166,9 @@ volatile long       stepAxis2 = 1;
 #endif
 double              newTargetAlt = 0.0, newTargetAzm = 0.0; // holds the altitude and azmiuth for slews
 double              currentAlt = 45;                        // the current altitude
-int                 minAlt;                 // the minimum altitude, in degrees, for goTo's (so we don't try to point too low)
-int                 maxAlt;                 // the maximum altitude, in degrees, for goTo's (to keep the telescope tube away from the mount/tripod)
-bool                autoContinue = false;   // automatically do a meridian flip and continue when we hit the MinutesPastMeridianW
+int                 minAlt;                                 // the minimum altitude, in degrees, for goTo's (so we don't try to point too low)
+int                 maxAlt;                                 // the maximum altitude, in degrees, for goTo's (to keep the telescope tube away from the mount/tripod)
+bool                autoContinue = false;                   // automatically do a meridian flip and continue when we hit the MinutesPastMeridianW
 
                                             // Stepper/position/rate ----------------------------------------------------------------------------------------------------
 #define CLR(x, y)   (x &= (~(1 << y)))

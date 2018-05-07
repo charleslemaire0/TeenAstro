@@ -397,7 +397,7 @@ void loop()
     // only active while sidereal tracking with a guide rate that makes sense
     if (trackingState == TrackingON)
     {
-      // apply the Tracking, Guiding, and PEC
+      // apply the Tracking, Guiding
       cli();
       targetAxis1.fixed += fstepAxis1.fixed;
       targetAxis2.fixed += fstepAxis2.fixed;
@@ -411,7 +411,6 @@ void loop()
       {
         // origTargetAxisn isn't used in Alt/Azm mode since meridian flips never happen
         origTargetAxis1.fixed += fstepAxis1.fixed;
-
         // don't advance the target during meridian flips
         if ((pierSide == PierSideEast) || (pierSide == PierSideWest))
         {
@@ -421,7 +420,6 @@ void loop()
           sei();
         }
       }
-
       moveTo();
     }
 
@@ -435,9 +433,6 @@ void loop()
     // figure out the current refraction compensated tracking rate
     if (refraction && (rtk.m_lst % 3 != 0)) do_refractionRate_calc();
 #endif
-
-
-
     // check for fault signal, stop any slew or guide and turn tracking off
 
     if ((faultAxis1 || faultAxis2) )
@@ -494,13 +489,7 @@ void loop()
     if (debugv1 > 100000) debugv1 = 100000;
     if (debugv1 < 0) debugv1 = 0;
 
-    debugv1 =
-      (
-        debugv1 *
-        19 +
-        (targetAxis1.part.m * 1000 - lasttargetAxis1)
-        ) /
-      20;
+    debugv1 = ( debugv1 * 19 + (targetAxis1.part.m * 1000 - lasttargetAxis1) ) / 20;
     lasttargetAxis1 = targetAxis1.part.m * 1000;
     // adjust tracking rate for Alt/Azm mounts
     // adjust tracking rate for refraction
