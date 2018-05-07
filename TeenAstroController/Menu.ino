@@ -414,15 +414,15 @@ void menuMain()
     }
     else if (currentstate == PRK_UNPARKED)
     {
-      const char *string_list_main_UnParkedL0 = "Sync\nGoto\nTracking\nSide of Pier\nSettings";
+      const char *string_list_main_UnParkedL0 = "Goto\nSync\nTracking\nSide of Pier\nSettings";
       current_selection_L0 = onstep_UserInterfaceSelectionList(display.getU8g2(), "Main Menu", 0, string_list_main_UnParkedL0);
       switch (current_selection_L0)
       {
       case 1:
-        menuSyncGoto(true);
+        menuSyncGoto(false);
         break;
       case 2:
-        menuSyncGoto(false);
+        menuSyncGoto(true);
         break;
       case 3:
         menuTrack();

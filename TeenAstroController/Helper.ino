@@ -118,9 +118,38 @@ void Move2TargetLX200(bool silent = false)
 {
   char out[20];
   memset(out, 0, sizeof(out));
-  bool ok = readLX200Bytes(":MS#", out, 100);
-  if (ok)
-    DisplayMessage("Slew to", "Target", 500);
+ int val = readLX200Bytes(":MS#", out, 100);
+ switch (val)
+ {
+   //         1=Object below horizon    Outside limits, below the Horizon limit
+   //         2=No object selected      Failure to resolve coordinates
+   //         4=Position unreachable    Not unparked
+   //         5=Busy                    Goto already active
+   //         6=Outside limits          Outside limits, above the Zenith limit
+ case 0:
+   DisplayMessage("Slew to", "Target", 500);
+   break;
+ case 1:
+   DisplayMessage("Object below", "Horizon", -1);
+   break;
+ case 2:
+   DisplayMessage("No Object", "Selected", -1);
+   break;
+ case 4:
+   DisplayMessage("Telescope", "is Parked", -1);
+   break;
+ case 5:
+   DisplayMessage("Telescope", "is busy", -1);
+   break;
+ case 6:
+   DisplayMessage("Outside", "Limits", -1);
+   break;
+ default:
+   char text[15];
+   sprintf(text, "Error %d", val);
+   DisplayMessage("Unknown", text, -1);
+   break;
+ }
 }
 
 bool SetTargetRaLX200(uint8_t& vr1, uint8_t& vr2, uint8_t& vr3)
