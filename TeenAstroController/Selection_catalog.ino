@@ -84,7 +84,7 @@ returns line height
 static u8g2_uint_t onstep_draw_catalog_list_line(u8g2_t *u8g2, u8g2_uint_t y, unsigned short idx, Catalog cat)
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  u8g2_uint_t x=0;
+  u8g2_uint_t x = 0;
   u8g2_uint_t yy;
   char txt1[5];
   char txt2[5];
@@ -105,7 +105,7 @@ static u8g2_uint_t onstep_draw_catalog_list_line(u8g2_t *u8g2, u8g2_uint_t y, un
   {
     uint8_t step0 = u8g2_GetUTF8Width(u8g2, "dec ");
     char line[16];
-    uint8_t vr1, vr2,vr3, vd2;
+    uint8_t vr1, vr2, vr3, vd2;
     short vd1;
     cat_elements = 291;
     cat_letter = &Star_letter[idx];
@@ -127,7 +127,7 @@ static u8g2_uint_t onstep_draw_catalog_list_line(u8g2_t *u8g2, u8g2_uint_t y, un
     y += line_height;
     x = 0;
     getcatdms(Star_dec[idx], vd1, vd2);
-    memcpy(txt1, u8x8_u8toa((uint8_t) vd1, 2), 3);
+    memcpy(txt1, u8x8_u8toa((uint8_t)vd1, 2), 3);
     memcpy(txt2, u8x8_u8toa(vd2, 2), 3);
     u8g2_DrawUTF8(u8g2, x, y, "dec ");
     x += step0;
@@ -187,10 +187,10 @@ static u8g2_uint_t onstep_draw_catalog_list_line(u8g2_t *u8g2, u8g2_uint_t y, un
     }
     x += GX_width + 5;
   }
-  
+
   u8g2_DrawUTF8(u8g2, x, y, "mag ");
   x += u8g2_GetUTF8Width(u8g2, "mag ");
-  if (v1<10)
+  if (v1 < 10)
     x += u8g2_GetUTF8Width(u8g2, "1");
   sprintf(line, "%d.%d", v1, v2);
   u8g2_DrawUTF8(u8g2, x, y, line);
@@ -232,7 +232,7 @@ unsigned short onstep_UserInterfaceCatalog(u8g2_t *u8g2, const char *title, unsi
     tot_pos = 0;
     break;
   }
-  if (start_pos >tot_pos  )
+  if (start_pos > tot_pos)
   {
     start_pos = tot_pos;
   }
@@ -249,7 +249,7 @@ unsigned short onstep_UserInterfaceCatalog(u8g2_t *u8g2, const char *title, unsi
 
   if (start_pos > 0)	/* issue 112 */
     start_pos--;		/* issue 112 */
- cur_pos = start_pos;
+  cur_pos = start_pos;
 
 
 
@@ -257,7 +257,7 @@ unsigned short onstep_UserInterfaceCatalog(u8g2_t *u8g2, const char *title, unsi
 
   for (;;)
   {
-    /*     updateWifi();*/
+
     u8g2_FirstPage(u8g2);
     do
     {
@@ -270,7 +270,7 @@ unsigned short onstep_UserInterfaceCatalog(u8g2_t *u8g2, const char *title, unsi
 
         yy += 3;
       }
-      onstep_draw_catalog_list_line(u8g2, yy, cur_pos,cat);
+      onstep_draw_catalog_list_line(u8g2, yy, cur_pos, cat);
     } while (u8g2_NextPage(u8g2));
 
 #ifdef U8G2_REF_MAN_PIC
@@ -280,7 +280,7 @@ unsigned short onstep_UserInterfaceCatalog(u8g2_t *u8g2, const char *title, unsi
 
     for (;;)
     {
-      //updateWifi();
+      updateWifi();
       event = onstep_GetMenuEvent();
       //event = U8X8_MSG_GPIO_MENU_NEXT;
       if (event == U8X8_MSG_GPIO_MENU_SELECT || event == U8X8_MSG_GPIO_MENU_NEXT)
