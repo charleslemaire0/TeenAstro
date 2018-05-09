@@ -7,11 +7,8 @@ boolean goHome()
     if (trackingState == TrackingMoveTo) return false;                      // fail, moving to home not allowed during a move
     if (guideDirAxis1 || guideDirAxis2) return false;                       // fail, moving to home not allowed while guiding
     cli();
-
-    if (pierSide == PierSideWest)
-        targetAxis1.part.m = -celestialPoleStepAxis1;
-    else
-        targetAxis1.part.m = celestialPoleStepAxis1;
+       
+    targetAxis1.part.m = celestialPoleStepAxis1;
     targetAxis1.part.f = 0;
     targetAxis2.part.m = celestialPoleStepAxis2;
     targetAxis2.part.f = 0;
