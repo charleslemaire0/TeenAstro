@@ -1,8 +1,6 @@
 ﻿
 
-
-
-void DisplayMessage(const char* txt1, const char* txt2 = NULL, int duration = 0)
+void DisplayMessage(const char* txt1, const char* txt2, int duration)
 {
   uint8_t x;
   uint8_t y = 40;
@@ -33,7 +31,7 @@ void DisplayMessage(const char* txt1, const char* txt2 = NULL, int duration = 0)
   }
 }
 
-void DisplayLongMessage(const char* txt1, const char* txt2 = NULL, const char* txt3 = NULL, const char* txt4 = NULL, int duration = 0)
+void DisplayLongMessage(const char* txt1, const char* txt2, const char* txt3, const char* txt4, int duration)
 {
   display.setFont(u8g2_font_helvR10_tr);
   uint8_t h = 15;
@@ -86,7 +84,6 @@ void DisplayLongMessage(const char* txt1, const char* txt2 = NULL, const char* t
   display.setFont(u8g2_font_helvR12_te);
 }
 
-
 bool GetLX200(char* command, char* output, bool silent)
 {
   memset(output, 0, sizeof(output));
@@ -113,7 +110,6 @@ bool SetLX200(char* command, bool silent = false)
   return ok;
 }
 
-
 void Move2TargetLX200(bool silent = false)
 {
   char out[20];
@@ -127,7 +123,7 @@ void Move2TargetLX200(bool silent = false)
    //         5=Busy                    Goto already active
    //         6=Outside limits          Outside limits, above the Zenith limit
  case 0:
-   DisplayMessage("Slew to", "Target", 500);
+   DisplayMessage("Slew to", "Target", 1000);
    break;
  case 1:
    DisplayMessage("Object below", "Horizon", -1);
@@ -252,4 +248,36 @@ bool SyncGotoCatLX200(bool sync, Catalog cat, int idx)
   return SyncGotoLX200(sync, vr1, vr2, vr3, vd1, vd2, vd3);
 }
 
+void addStar()
+{
+  if (align == ALI_RECENTER_1 || align == ALI_RECENTER_2 || align == ALI_RECENTER_3)
+  {
+    if (SetLX200(":A+#", true))
+    {
+      bool done = false;
+      if (aliMode == ALIM_ONE
+        || (aliMode == ALIM_TWO && align == ALI_RECENTER_2)
+        || (aliMode == ALIM_THREE && align == ALI_RECENTER_3))
+      {
+        DisplayMessage("Alignment", "Success!", -1);
+        align = ALI_OFF;
+      }
+      else
+      {
+        align++;
+        DisplayMessage("Add Star", "Success!", -1);
+      }
 
+    }
+    else
+    {
+      DisplayMessage("Add Star", "Failed!", -1);
+      align = ALI_OFF;
+    }
+  }
+  else
+  {
+    DisplayMessage("Failed!", "Wrong State", -1);
+    align = ALI_OFF;
+  }
+}

@@ -1,132 +1,103 @@
 ﻿#define MY_BORDER_SIZE 1
 
-#define wifi_width 16
-#define wifi_height 16
+#define icon_width 16
+#define icon_height 16
+
 static unsigned char wifi_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x80, 0x20, 0x40, 0x4e, 0x00, 0x11,
   0x00, 0x04, 0x00, 0x04, 0x00, 0x04, 0xfe, 0x7f, 0x02, 0x40, 0xda, 0x5f,
   0xda, 0x5f, 0x02, 0x40, 0xfe, 0x7f, 0x00, 0x00 };
 
-#define wifi2_width 16
-#define wifi2_height 16
-static unsigned char wifi2_bits[] U8X8_PROGMEM = {
-  0x80, 0x03, 0x60, 0x0c, 0x10, 0x10, 0xc8, 0x27, 0x24, 0x48, 0x94, 0x53,
-  0x40, 0x04, 0x00, 0x01, 0x00, 0x01, 0xff, 0xff, 0x01, 0x80, 0x5d, 0x95,
-  0x1d, 0x80, 0xdd, 0xbf, 0x01, 0x80, 0xff, 0xff };
+static unsigned char align1_bits[] U8X8_PROGMEM = {
+  0x00, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x1c, 0x00, 0x1c, 0x00, 0x00, 0x00,
+  0xc0, 0x03, 0xc0, 0x00, 0x40, 0x01, 0x50, 0x02, 0x18, 0x04, 0x10, 0x08,
+  0x10, 0x10, 0x10, 0x20, 0x00, 0x00, 0x00, 0x00 };
 
+static unsigned char align2_bits[] U8X8_PROGMEM = {
+  0x00, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x1c, 0x00, 0x1c, 0x00, 0x00, 0x00,
+  0xc0, 0x03, 0xc0, 0x00, 0x40, 0x01, 0x48, 0x02, 0x14, 0x04, 0x10, 0x08,
+  0x08, 0x10, 0x04, 0x20, 0x1c, 0x00, 0x00, 0x00 };
 
-#define home_width 16
-#define home_height 16
+static unsigned char align3_bits[] U8X8_PROGMEM = {
+  0x00, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x1c, 0x00, 0x1c, 0x00, 0x00, 0x00,
+  0xc0, 0x03, 0xc0, 0x00, 0x40, 0x01, 0x40, 0x02, 0x1c, 0x04, 0x10, 0x08,
+  0x18, 0x10, 0x10, 0x20, 0x1c, 0x00, 0x00, 0x00 };
+
 static unsigned char home_bits[] U8X8_PROGMEM = {
   0x00, 0x02, 0x00, 0x07, 0x80, 0x0f, 0xc0, 0x1f, 0x80, 0x3f, 0x00, 0x7f,
   0x00, 0x7e, 0x00, 0x7f, 0x80, 0xfb, 0xc0, 0xc1, 0xe0, 0x01, 0xbc, 0x49,
   0x9e, 0x49, 0x9e, 0x79, 0x8c, 0x49, 0x80, 0x49 };
 
-
-#define parked_width 16
-#define parked_height 16
 static unsigned char parked_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0xfe, 0x7f, 0x02, 0x40, 0x02, 0x40, 0xe2, 0x43, 0x62, 0x46,
   0x62, 0x46, 0x62, 0x46, 0xe2, 0x43, 0x62, 0x40, 0x62, 0x40, 0x62, 0x40,
   0x62, 0x40, 0x02, 0x40, 0xfe, 0x7f, 0x00, 0x00 };
 
-#define parking_width 16
-#define parking_height 16
 static unsigned char parking_bits[] U8X8_PROGMEM = {
   0xff, 0xff, 0x01, 0x80, 0x01, 0x80, 0xf9, 0x80, 0x99, 0x81, 0x99, 0x81,
   0x99, 0x81, 0xf9, 0x80, 0x19, 0x80, 0x99, 0x84, 0x99, 0x8d, 0x99, 0x9f,
   0x81, 0x8d, 0x81, 0x84, 0x01, 0x80, 0xff, 0xff };
 
-#define parkingFailed_width 16
-#define parkingFailed_height 16
 static unsigned char parkingFailed_bits[] U8X8_PROGMEM = {
   0xff, 0xff, 0x01, 0x80, 0x01, 0x80, 0xf9, 0x90, 0x99, 0x91, 0x99, 0x91,
   0x99, 0x91, 0xf9, 0x90, 0x19, 0x90, 0xd9, 0x93, 0x59, 0x90, 0xd9, 0x91,
   0x41, 0x80, 0x41, 0x90, 0x01, 0x80, 0xff, 0xff };
 
-
-#define guiding_width 16
-#define guiding_height 16
 static unsigned char guiding_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x80, 0x01, 0x80, 0x01, 0xc0, 0x03, 0x20, 0x04, 0x10, 0x08,
   0x08, 0x10, 0x8e, 0x71, 0x8e, 0x71, 0x08, 0x10, 0x10, 0x08, 0x20, 0x04,
   0xc0, 0x03, 0x80, 0x01, 0x80, 0x01, 0x00, 0x00 };
 
-
-#define no_tracking_width 16
-#define no_tracking_height 16
 static unsigned char no_tracking_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x38, 0x1c, 0x7c, 0x3e, 0x7c, 0x3e, 0x7c, 0x3e,
   0x7c, 0x3e, 0x7c, 0x3e, 0x7c, 0x3e, 0x7c, 0x3e, 0x7c, 0x3e, 0x7c, 0x3e,
   0x7c, 0x3e, 0x7c, 0x3e, 0x38, 0x1c, 0x00, 0x00 };
 
-#define tracking_width 16
-#define tracking_height 16
 static unsigned char tracking_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x02, 0x00, 0x06, 0x00, 0x0e, 0x00, 0x1e, 0x00, 0x3e, 0x00,
   0x7e, 0x00, 0xfe, 0x38, 0xfe, 0x44, 0x7e, 0x44, 0x3e, 0x20, 0x1e, 0x10,
   0x0e, 0x10, 0x06, 0x00, 0x02, 0x10, 0x00, 0x00 };
 
-#define tracking_S_width 16
-#define tracking_S_height 16
 static unsigned char tracking_S_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x06, 0x00, 0x0e, 0x00, 0x1e, 0x00,
   0x3e, 0x00, 0x7e, 0x00, 0xfe, 0x38, 0x7e, 0x04, 0x3e, 0x04, 0x1e, 0x18,
   0x0e, 0x20, 0x06, 0x20, 0x02, 0x1c, 0x00, 0x00 };
 
-#define sleewing_width 16
-#define sleewing_height 16
 static unsigned char sleewing_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x02, 0x01, 0x06, 0x03, 0x0e, 0x07, 0x1e, 0x0f,
   0x3e, 0x1f, 0x7e, 0x3f, 0xfe, 0x7f, 0x7e, 0x3f, 0x3e, 0x1f, 0x1e, 0x0f,
   0x0e, 0x07, 0x06, 0x03, 0x02, 0x01, 0x00, 0x00 };
 
-
-#define W_width 16
-#define W_height 16
 static unsigned char W_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0xe0, 0x03, 0x10, 0x04, 0x08, 0x08, 0x24, 0x12,
   0x22, 0x22, 0x22, 0x22, 0xa2, 0x22, 0xa2, 0x22, 0x42, 0x21, 0x44, 0x11,
   0x08, 0x08, 0x10, 0x04, 0xe0, 0x03, 0x00, 0x00 };
 
-
-#define E_width 16
-#define E_height 16
 static unsigned char E_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0xe0, 0x03, 0x10, 0x04, 0x08, 0x08, 0xe4, 0x13,
   0x22, 0x20, 0x22, 0x20, 0xe2, 0x21, 0x22, 0x20, 0x22, 0x20, 0xe4, 0x13,
   0x08, 0x08, 0x10, 0x04, 0xe0, 0x03, 0x00, 0x00 };
 
-#define ErrDe_width 16
-#define ErrDe_height 16
 static unsigned char ErrDe_bits[] U8X8_PROGMEM = {
   0xff, 0xff, 0x00, 0x80, 0x0e, 0xb0, 0x02, 0xb0, 0x66, 0xb3, 0x22, 0xb1,
   0x2e, 0xb1, 0x00, 0xb0, 0x1e, 0xb0, 0x22, 0xb0, 0xa2, 0xb3, 0xa2, 0xb2,
   0xa2, 0x83, 0xa2, 0xb0, 0x9e, 0xb3, 0x00, 0x80 };
 
-#define ErrHo_width 16
-#define ErrHo_height 16
 static unsigned char ErrHo_bits[] U8X8_PROGMEM = {
   0xff, 0xff, 0x00, 0x80, 0x0e, 0xb0, 0x02, 0xb0, 0x66, 0xb3, 0x22, 0xb1,
   0x2e, 0xb1, 0x00, 0xb0, 0x22, 0xb0, 0x22, 0xb0, 0x22, 0xb3, 0xbe, 0xb4,
   0xa2, 0x84, 0xa2, 0xb4, 0x22, 0xb3, 0x00, 0x80 };
 
-#define ErrMe_width 16
-#define ErrMe_height 16
 static unsigned char ErrMe_bits[] U8X8_PROGMEM = {
   0xff, 0xff, 0x00, 0x80, 0x0e, 0xb0, 0x02, 0xb0, 0x66, 0xb3, 0x22, 0xb1,
   0x2e, 0xb1, 0x00, 0xb0, 0x22, 0xb0, 0x36, 0xb0, 0xaa, 0xb3, 0xa2, 0xb2,
   0xa2, 0x83, 0xa2, 0xb0, 0xa2, 0xb3, 0x00, 0x80 };
 
-#define ErrMf_width 16
-#define ErrMf_height 16
 static unsigned char ErrMf_bits[] U8X8_PROGMEM = {
   0xff, 0xff, 0x00, 0x80, 0x0e, 0xb0, 0x02, 0xb0, 0x66, 0xb3, 0x22, 0xb1,
   0x2e, 0xb1, 0x00, 0xb0, 0x22, 0xb0, 0x36, 0xb0, 0xaa, 0xb3, 0xa2, 0xb0,
   0xa2, 0x81, 0xa2, 0xb0, 0xa2, 0xb0, 0x00, 0x80 };
 
-#define ErrUp_width 16
-#define ErrUp_height 16
 static unsigned char ErrUp_bits[] U8X8_PROGMEM = {
   0xff, 0xff, 0x00, 0x80, 0x0e, 0xb0, 0x02, 0xb0, 0x66, 0xb3, 0x22, 0xb1,
   0x2e, 0xb1, 0x00, 0xb0, 0x22, 0xb0, 0x22, 0xb0, 0xa2, 0xb3, 0xa2, 0xb2,
@@ -145,8 +116,16 @@ void update_main(u8g2_t *u8g2, u8g2_uint_t page)
   {
     return;
   }
-
-  if (page == 0)
+  if (telInfo.hasTelStatus && align != ALI_OFF)
+  {
+    TrackState curT = telInfo.getTrackingState();
+    if (curT != TRK_SLEWING && (align == ALI_SLEW_STAR_1 || align == ALI_SLEW_STAR_2 || align == ALI_SLEW_STAR_3))
+    {
+      align += 1;
+    }
+    page = 3;
+  }
+  else if (page == 0)
   {
     telInfo.updateRaDec();
   }
@@ -165,97 +144,109 @@ void update_main(u8g2_t *u8g2, u8g2_uint_t page)
     u8g2_uint_t x = u8g2_GetDisplayWidth(u8g2);
     int k = 0;
     if (wifiOn)
-      display.drawXBMP(0, 0, wifi_width, wifi_height, wifi_bits);
-    
+      display.drawXBMP(0, 0, icon_width, icon_height, wifi_bits);
+
     if (telInfo.hasTelStatus)
     {
       ParkState curP = telInfo.getParkState();
       TrackState curT = telInfo.getTrackingState();
       if (curP == PRK_PARKED)
       {
-        display.drawXBMP(x - parked_width, 0, parked_width, parked_height, parked_bits);
-        x -= parked_width + 1;
+        display.drawXBMP(x - icon_width, 0, icon_width, icon_height, parked_bits);
+        x -= icon_width + 1;
       }
       else if (curP == PRK_PARKING)
       {
-        display.drawXBMP(x - parking_width, 0, parking_width, parking_height, parking_bits);
-        x -= parking_width + 1;
+        display.drawXBMP(x - icon_width, 0, icon_width, icon_height, parking_bits);
+        x -= icon_width + 1;
       }
       else if (telInfo.atHome())
       {
-        display.drawXBMP(x - home_width, 0, home_width, home_width, home_bits);
-        x -= parked_width + 1;
+        display.drawXBMP(x - icon_width, 0, icon_width, icon_height, home_bits);
+        x -= icon_width + 1;
       }
       else
       {
         if (curT == TRK_SLEWING)
         {
-          display.drawXBMP(x - sleewing_width, 0, sleewing_width, sleewing_width, sleewing_bits);
-          x -= sleewing_width + 1;
+          display.drawXBMP(x - icon_width, 0, icon_width, icon_height, sleewing_bits);
+          x -= icon_width + 1;
         }
         else if (curT == TRK_ON)
         {
-          display.drawXBMP(x - tracking_S_width, 0, tracking_S_width, tracking_S_width, tracking_S_bits);
-          x -= tracking_S_width + 1;
+          display.drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_S_bits);
+          x -= icon_width + 1;
         }
         else if (curT == TRK_OFF)
         {
-          display.drawXBMP(x - no_tracking_width, 0, no_tracking_width, no_tracking_width, no_tracking_bits);
-          x -= no_tracking_width + 1;
+          display.drawXBMP(x - icon_width, 0, icon_width, icon_height, no_tracking_bits);
+          x -= icon_width + 1;
         }
 
         if (curP == PRK_FAILED)
         {
-          display.drawXBMP(x - parkingFailed_width, 0, parkingFailed_width, parkingFailed_height, parkingFailed_bits);
-          x -= parkingFailed_width + 1;
+          display.drawXBMP(x - icon_width, 0, icon_width, icon_height, parkingFailed_bits);
+          x -= icon_width + 1;
         }
         if (telInfo.hasPierInfo)
         {
           PierState CurP = telInfo.getPierState();
           if (CurP == PIER_E)
           {
-            display.drawXBMP(x - E_width, 0, E_width, E_height, E_bits);
-            x -= E_width + 1;
+            display.drawXBMP(x - icon_width, 0, icon_width, icon_height, E_bits);
+            x -= icon_width + 1;
           }
           else if (CurP == PIER_W)
           {
-            display.drawXBMP(x - W_width, 0, W_width, W_height, W_bits);
-            x -= W_width + 1;
+            display.drawXBMP(x - icon_width, 0, icon_width, icon_height, W_bits);
+            x -= icon_width + 1;
           }
+ 
+        }
+        if (align != ALI_OFF)
+        {
+          if (aliMode == ALIM_ONE)
+            display.drawXBMP(x - icon_width, 0, icon_width, icon_height, align1_bits);
+          else if (aliMode == ALIM_TWO)
+            display.drawXBMP(x - icon_width, 0, icon_width, icon_height, align2_bits);
+          else if (aliMode == ALIM_THREE)
+            display.drawXBMP(x - icon_width, 0, icon_width, icon_height, align3_bits);
+          x -= icon_width + 1;
+        }
+
         if (telInfo.isGuiding())
         {
-          display.drawXBMP(x - guiding_width, 0, guiding_width, guiding_height, guiding_bits);
-          x -= guiding_width + 1;
+          display.drawXBMP(x - icon_width, 0, icon_width, icon_height, guiding_bits);
+          x -= icon_width + 1;
         }
-      }
- 
+
       }
 
       lastError = telInfo.getError();
       if (lastError == ERR_MOTOR_FAULT)
       {
-        display.drawXBMP(x - ErrMf_width, 0, ErrMf_width, ErrMf_height, ErrMf_bits);
-        x -= ErrMf_width + 1;
+        display.drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrMf_bits);
+        x -= icon_width + 1;
       }
       else if (lastError == ERR_ALT)
       {
-        display.drawXBMP(x - ErrHo_width, 0, ErrHo_width, ErrHo_height, ErrHo_bits);
-        x -= ErrHo_width + 1;
+        display.drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrHo_bits);
+        x -= icon_width + 1;
       }
       else if (lastError == ERR_DEC)
       {
-        display.drawXBMP(x - ErrDe_width, 0, ErrDe_width, ErrDe_height, ErrDe_bits);
-        x -= ErrDe_width + 1;
+        display.drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrDe_bits);
+        x -= icon_width + 1;
       }
       else if (lastError == ERR_UNDER_POLE)
       {
-        display.drawXBMP(x - ErrUp_width, 0, ErrUp_width, ErrUp_height, ErrUp_bits);
-        x -= ErrUp_width + 1;
+        display.drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrUp_bits);
+        x -= icon_width + 1;
       }
       else if (lastError == ERR_MERIDIAN)
       {
-        display.drawXBMP(x - ErrMe_width, 0, ErrMe_width, ErrMe_height, ErrMe_bits);
-        x -= ErrMe_width + 1;
+        display.drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrMe_bits);
+        x -= icon_width + 1;
       }
     }
 
@@ -344,7 +335,7 @@ void update_main(u8g2_t *u8g2, u8g2_uint_t page)
     }
     else if (page == 2)
     {
- 
+
       if (telInfo.hasInfoUTC && telInfo.hasInfoSideral)
       {
         char Rah[3];
@@ -372,6 +363,32 @@ void update_main(u8g2_t *u8g2, u8g2_uint_t page)
         u8g2_DrawUTF8(u8g2, 0, y, "Sideral");
         drawRA(u8g2, x, y, Rah, Ram, Ras);
       }
+    }
+    else if (page == 3)
+    {
+      int idx = alignSelectedStar - 1;
+      const byte* cat_letter = NULL;
+      const byte*  cat_const = NULL;
+      cat_letter = &Star_letter[idx];
+      cat_const = &Star_constellation[idx];
+      u8g2_uint_t y = 36;
+      char txt[20];
+      
+      if ((align-1)%3 == 1)
+      {
+        sprintf(txt, "Slew to Star %u", (align -1) / 3 + 1);
+      }
+      else if ((align - 1) % 3 == 2)
+      {
+        sprintf(txt, "Recenter Star %u", (align - 1) / 3 + 1);
+      }
+      u8g2_DrawUTF8(u8g2, 0, y, txt);
+      y += line_height + 4;
+      const uint8_t* myfont = u8g2->font;
+      u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
+      u8g2_DrawGlyph(u8g2, 0, y, 944 + *cat_letter);
+      u8g2_SetFont(u8g2, myfont);
+      u8g2_DrawUTF8(u8g2, 16, y, constellation_txt[*cat_const - 1]);
     }
 
   } while (u8g2_NextPage(u8g2));

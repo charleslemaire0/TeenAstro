@@ -71,9 +71,6 @@ static unsigned char GX_bits[] U8X8_PROGMEM = {
   0x18, 0x70, 0x00, 0xf0, 0x3f, 0x00 };
 
 
-
-
-
 #include "Selection_catalog.h"
 
 #define MY_BORDER_SIZE 1

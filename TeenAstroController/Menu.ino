@@ -518,15 +518,16 @@ void menuSyncGoto(bool sync)
     switch (current_selection_L1)
     {
     case 1:
-      MenuHerschel(sync);
+      menuHerschel(sync);
       break;
     case 2:
-      MenuStar(sync);
+      menuStar(sync);
       break;
     case 3:
-      MenuRADec(sync);
+      menuRADec(sync);
       break;
     case 4:
+    {
       char cmd[5];
       sprintf(cmd, ":hX#");
       cmd[2] = sync ? 'F' : 'C';
@@ -534,7 +535,9 @@ void menuSyncGoto(bool sync)
       {
         DisplayMessage(sync ? "Reset at" : "Goto", " Home Position", -1);
       }
-
+      // Quit Menu
+      current_selection_L1 = 0;
+      current_selection_L0 = 0;
     }
       break;
     case 5:
@@ -546,6 +549,9 @@ void menuSyncGoto(bool sync)
       {
         DisplayMessage(sync ? "Reset at" : "Goto", " Park Position", -1);
       }
+      // Quit Menu
+      current_selection_L1 = 0;
+      current_selection_L0 = 0;
     }
       break;
     default:
@@ -554,7 +560,7 @@ void menuSyncGoto(bool sync)
   }
 }
 
-void MenuHerschel(bool sync)
+void menuHerschel(bool sync)
 {
   current_selection_Herschel = onstep_UserInterfaceCatalog(display.getU8g2(), sync ? "Sync Herschel" : "Goto Herschel", current_selection_Herschel, HERSCHEL);
   if (current_selection_Herschel != 0)
@@ -567,6 +573,109 @@ void MenuHerschel(bool sync)
       current_selection_L0 = 0;
     }
   }
+}
+
+void menuAlignment()
+{
+  current_selection_L1 = 1;
+  while (current_selection_L1 != 0)
+  {
+    const char *string_list_AlignmentL1 = "1-Star Align.\n""2-Star Align.\n""3-Star Align.\n""Show Corr.\n""Clear Corr.";
+    current_selection_L1 = onstep_UserInterfaceSelectionList(display.getU8g2(), "Alignment", current_selection_L1, string_list_AlignmentL1);
+    switch (current_selection_L1)
+    {
+    case 1:
+      if (SetLX200(":A1#", true))
+      {
+      aliMode = ALIM_ONE;
+      align = ALI_SELECT_STAR_1;
+      }
+      else
+      {
+        DisplayMessage("Alignment", "Failed!");
+      }
+      break;
+    case 2:
+      if (SetLX200(":A2#", true))
+      {
+        aliMode = ALIM_TWO;
+        align = ALI_SELECT_STAR_1;
+      }
+      else
+      {
+        DisplayMessage("Alignment", "Failed!");
+      }
+      break;
+    case 3:
+      if (SetLX200(":A3#", true))
+      {
+        aliMode = ALIM_THREE;
+        align = ALI_SELECT_STAR_1;
+      }
+      else
+      {
+        DisplayMessage("Alignment", "Failed!");
+      }
+      break;
+    case 4:
+      double val1;
+      double val2;
+      double val3;
+      double val4;
+
+      //DisplaylongMessage("", "", "", "",0);
+
+      break;
+    case 5:
+      break;
+    default:
+      break;
+    }
+    // Quit Menu
+    current_selection_L1 = 0;
+    current_selection_L0 = 0;
+  }
+}
+
+void starAlign1()
+{
+
+  //DisplayLongMessage("Choose 1st", "Star", "the Telescope will", "then Slew", -1);
+  //if (!SelectStarAlign())
+  //{
+  //  DisplayMessage("Alignment", "Aborted", -1);
+  //  return;
+  //}
+  //for (;;)
+  //{
+    
+  //  updateWifi();
+  //  DisplayMessage("Telescope", "Slew to Star", 500);
+  //  tickButtons();
+  //  telInfo.updateTel();
+  //  while (telInfo.getTrackingState() == TRK_SLEWING)
+  //  {
+  //    DisplayMessage("Telescope", "Slew to Star", 500);
+  //    tickButtons();
+  //    telInfo.updateTel();
+  //    if (AbortSlewbyUser())
+  //    {
+  //      DisplayLongMessage("Goto Aborted", "by User", "Select an", "Other Star",-1);
+  //      continue;
+  //    }
+  //  }
+  //  char out[20];
+  //  if (readLX200Bytes(":Te#", out, 100))
+  //  {
+  //    DisplayMessage("Tracking", "ON", 500);
+  //  }
+  //}
+
+  //DisplayMessage("Please", "Wait", 1000);
+ 
+
+  //DisplayLongMessage("Choose 1st", "Star", "the Telescope will", "Swe", -1);
+
 }
 
 void menuPier()
@@ -591,7 +700,7 @@ void menuPier()
   }
 }
 
-void MenuStar(bool sync)
+void menuStar(bool sync)
 {
   current_selection_Star = onstep_UserInterfaceCatalog(display.getU8g2(), sync ? "Sync Star" : "Goto Star", current_selection_Star, STAR);
   if (current_selection_Star != 0)
@@ -606,7 +715,19 @@ void MenuStar(bool sync)
   }
 }
 
-void MenuRADec(bool sync)
+bool SelectStarAlign()
+{
+  alignSelectedStar = onstep_UserInterfaceCatalog(display.getU8g2(), "select Star", alignSelectedStar, STAR);
+  if (alignSelectedStar != 0)
+  {
+    ok = SyncGotoCatLX200(false, STAR, alignSelectedStar - 1);
+    return ok;
+  }
+  return false;
+}
+
+
+void menuRADec(bool sync)
 {
   if (onstep_UserInterfaceInputValueRA(display.getU8g2(), &angleRA))
   {
@@ -632,7 +753,7 @@ void menuSettings()
   current_selection_L1 = 1;
   while (current_selection_L1 != 0)
   {
-    const char *string_list_SettingsL1 = "Display\n""Date\n""Time\n""Mount\n""Site\n""Limits\n""Wifi";
+    const char *string_list_SettingsL1 = "Display\n""Alignment\n""Date\n""Time\n""Mount\n""Site\n""Limits\n""Wifi";
     current_selection_L1 = onstep_UserInterfaceSelectionList(display.getU8g2(), "Settings", current_selection_L1, string_list_SettingsL1);
     switch (current_selection_L1)
     {
@@ -640,21 +761,24 @@ void menuSettings()
       menuDisplay();
       break;
     case 2:
-      menuDate();
+      menuAlignment();
       break;
     case 3:
-      menuUTCTime();
+      menuDate();
       break;
     case 4:
-      menuMount();
+      menuUTCTime();
       break;
     case 5:
-      menuSite();
+      menuMount();
       break;
     case 6:
-      menuLimits();
+      menuSite();
       break;
     case 7:
+      menuLimits();
+      break;
+    case 8:
       menuWifi();
     default:
       break;

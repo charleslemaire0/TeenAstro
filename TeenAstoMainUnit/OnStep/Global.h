@@ -140,6 +140,7 @@ void                    TIMER4_COMPA_vect(void);
 byte newTargetPierSide = 0;
 
 volatile long       posAxis1;    // hour angle position in steps
+double              deltaSyncAxis1;
 long                trueAxis1;   // correction to above for motor shaft position steps
 volatile long       startAxis1;  // hour angle of goto start position in steps
 volatile fixed_t    targetAxis1; // hour angle of goto end   position in steps
@@ -153,6 +154,7 @@ volatile long       stepAxis1 = 1;
 #endif
 
 volatile long       posAxis2;     // declination position in steps
+double              deltaSyncAxis2;
 long                trueAxis2;    // correction to above for motor shaft position steps
 volatile long       startAxis2;   // declination of goto start position in steps
 volatile fixed_t    targetAxis2;  // declination of goto end   position in steps

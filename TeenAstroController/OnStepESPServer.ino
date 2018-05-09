@@ -47,7 +47,7 @@
 #include <ESP8266WiFiAP.h>
 #include <EEPROM.h>
 #include <OneButton.h>
-
+#include "Helper.h"
 #include "Selection_catalog.h"
 
 U8G2_SH1106_128X64_NONAME_1_HW_I2C display(U8G2_R0);
@@ -68,12 +68,22 @@ byte eventbuttons[7] = { E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE 
 enum Menu { M_NONE, M_ALL, M_REF, M_GOTO, M_DISPlAY, M_SPIRAL, M_SPEED, M_MOT1, M_MOT2, M_DIVERSE };
 enum Errors {ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT, ERR_LIMIT_SENSE, ERR_DEC, ERR_AZM, ERR_UNDER_POLE, ERR_MERIDIAN, ERR_SYNC};
 Errors lastError = ERR_NONE;
+enum AlignMode  {ALIM_ONE, ALIM_TWO, ALIM_THREE};
+enum AlignState {
+  ALI_OFF,
+  ALI_SELECT_STAR_1, ALI_SLEW_STAR_1, ALI_RECENTER_1,
+  ALI_SELECT_STAR_2, ALI_SLEW_STAR_2, ALI_RECENTER_2,
+  ALI_SELECT_STAR_3, ALI_SLEW_STAR_3, ALI_RECENTER_3
+};
 
 enum TrackState {TRK_OFF, TRK_ON, TRK_SLEWING, TRK_UNKNOW};
 enum ParkState {PRK_UNPARKED, PRK_PARKED, PRK_FAILED, PRK_PARKING, PRK_UNKNOW};
 enum PierState {PIER_E, PIER_W, PIER_UNKNOW};
 enum Mount {GEM,FEM};
 Mount mountType = GEM;
+uint8_t align = ALI_OFF;
+uint8_t aliMode = 0;
+unsigned short alignSelectedStar = 1;
 
 bool buttonCommand = false;
 class TelState
@@ -720,25 +730,6 @@ void tickButtons()
   }
 }
 
-void DisplayMessage2(const char* txt1, const char* txt2 = NULL, int duration = 0)
-{
- 
-  uint8_t x;
-  uint8_t y = 40;
-  display.firstPage();
-  do {
-    if (txt2 != NULL)
-    {
-      y = 50;
-      x = (display.getDisplayWidth() - display.getStrWidth(txt2)) / 2;
-      display.drawStr(x, y, txt2);
-      y = 25;
-    }
-    x = (display.getDisplayWidth() - display.getStrWidth(txt1)) / 2;
-    display.drawStr(x, y, txt1);
-  } while (display.nextPage());
-  delay(duration);
-}
 
 void loop() {
   buttonPressed = false;
@@ -784,24 +775,43 @@ void loop() {
   if (powerCylceRequired)
   {
     display.setFont(u8g2_font_helvR12_tr);
-    DisplayMessage2("REBOOT", "DEVICE", 1000);
+    DisplayMessage("REBOOT", "DEVICE", 1000);
     return;
   }
-  if (top - lastpageupdate > 100)
+
+  if (align == ALI_SELECT_STAR_1 || align == ALI_SELECT_STAR_2 || align == ALI_SELECT_STAR_3)
+  {
+    if (align == ALI_SELECT_STAR_1 && aliMode == ALIM_ONE)
+       DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Western Sky", -1);
+    else if (align == ALI_SELECT_STAR_1 && aliMode == ALIM_TWO)
+      DisplayLongMessage("Select Star", "at Celest. Equ.", "Meridan, in ", "in Eastern Sky", -1);
+    else if(align == ALI_SELECT_STAR_2)
+      DisplayLongMessage("Select Star", "Above the Celest. ", "Equator, at, ", "At HA 9", -1);
+    else if (align == ALI_SELECT_STAR_3)
+      DisplayLongMessage("Select Star", "Above the Celest. ", "Equator, in ", "Eastern Sky", -1);
+    if (!SelectStarAlign())
+    {
+      DisplayMessage("Alignment", "Aborted", -1);
+      align = ALI_OFF;
+      return;
+    }
+    align += 1;
+  }
+  else if (top - lastpageupdate > 100)
   {
     update_main(display.getU8g2(), page);
   }
   if (telInfo.connected == false)
   {
-    DisplayMessage2("Hand controler", "not connected");
+    DisplayMessage("Hand controler", "not connected");
   }
   if (telInfo.connected && (telInfo.getTrackingState() == TRK_SLEWING || telInfo.getParkState() == PRK_PARKING))
   {
     bool stop = (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART || eventbuttons[0] == E_DOUBLECLICK) ? true : false;
-    byte it = 1;
+    int it = 1;
     while (!stop && it<5)
     {
-      stop =  (eventbuttons[it] == E_LONGPRESS || eventbuttons[it] == E_CLICK || eventbuttons[it] == E_LONGPRESSTART);
+      stop = (eventbuttons[it] == E_LONGPRESS || eventbuttons[it] == E_CLICK || eventbuttons[it] == E_LONGPRESSTART);
       it++;
     }
     if (stop)
@@ -810,8 +820,13 @@ void loop() {
       Serial.flush();
       time_last_action = millis();
       display.sleepOff();
+      if (align != ALI_OFF)
+      {
+        align -= 1;
+      }
       return;
     }
+
   }
   else
   {
@@ -847,18 +862,21 @@ void loop() {
   {
     menuSpeedRate();
     time_last_action = millis();
-    
   }
-  else if (eventbuttons[0] == E_CLICK)
+  else if (eventbuttons[0] == E_CLICK && align == ALI_OFF)
   {
     page++;
     if (page > 2) page = 0;
     time_last_action = millis(); 
   }
-  else if (eventbuttons[0] == E_LONGPRESS)
+  else if (eventbuttons[0] == E_LONGPRESS && align == ALI_OFF)
   {
     menuMain();
     time_last_action = millis();
+  }
+  else if (eventbuttons[0] == E_CLICK && (align == ALI_RECENTER_1 || align == ALI_RECENTER_2 || align == ALI_RECENTER_3))
+  {
+    addStar();
   }
 
 

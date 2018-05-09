@@ -121,6 +121,7 @@
     <ClInclude Include="Config.h">
       <FileType>CppCode</FileType>
     </ClInclude>
+    <ClInclude Include="Helper.h" />
     <ClInclude Include="__vm\.OnStepESPServer.vsarduino.h" />
     <ClInclude Include="__vm\.TeenAstroController.vsarduino.h" />
   </ItemGroup>
