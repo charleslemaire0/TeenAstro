@@ -90,7 +90,7 @@ int readLX200Bytes(char* command,char* recvBuffer,unsigned long timeOutMs) {
   } else
   if (shortResponse) {
     recvBuffer[Serial.readBytes(recvBuffer,1)]=0;
-    return (recvBuffer[0]);
+    return (recvBuffer[0]-'0');
   } else {
     // get full response, '#' terminated
     unsigned long start=millis();
