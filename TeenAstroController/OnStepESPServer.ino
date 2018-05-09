@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * 
+ *
  *
  * Revision History, see GitHub
  *
@@ -61,14 +61,14 @@ bool Move[4] = { false,false,false,false };
 char* BreakRC[4] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#" };
 char* RC[4] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#" };
 
-enum Button {B_SHIFT,B_NORTH, B_SOUTH, B_EAST, B_WEST, B_F, B_f};
+enum Button { B_SHIFT, B_NORTH, B_SOUTH, B_EAST, B_WEST, B_F, B_f };
 enum ButtonEvent { E_NONE, E_CLICK, E_DOUBLECLICK, E_LONGPRESSTART, E_LONGPRESS, E_LONGPRESSSTOP };
 byte eventbuttons[7] = { E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE };
 
 enum Menu { M_NONE, M_ALL, M_REF, M_GOTO, M_DISPlAY, M_SPIRAL, M_SPEED, M_MOT1, M_MOT2, M_DIVERSE };
-enum Errors {ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT, ERR_LIMIT_SENSE, ERR_DEC, ERR_AZM, ERR_UNDER_POLE, ERR_MERIDIAN, ERR_SYNC};
+enum Errors { ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT, ERR_LIMIT_SENSE, ERR_DEC, ERR_AZM, ERR_UNDER_POLE, ERR_MERIDIAN, ERR_SYNC };
 Errors lastError = ERR_NONE;
-enum AlignMode  {ALIM_ONE, ALIM_TWO, ALIM_THREE};
+enum AlignMode { ALIM_ONE, ALIM_TWO, ALIM_THREE };
 enum AlignState {
   ALI_OFF,
   ALI_SELECT_STAR_1, ALI_SLEW_STAR_1, ALI_RECENTER_1,
@@ -76,10 +76,10 @@ enum AlignState {
   ALI_SELECT_STAR_3, ALI_SLEW_STAR_3, ALI_RECENTER_3
 };
 
-enum TrackState {TRK_OFF, TRK_ON, TRK_SLEWING, TRK_UNKNOW};
-enum ParkState {PRK_UNPARKED, PRK_PARKED, PRK_FAILED, PRK_PARKING, PRK_UNKNOW};
-enum PierState {PIER_E, PIER_W, PIER_UNKNOW};
-enum Mount {GEM,FEM};
+enum TrackState { TRK_OFF, TRK_ON, TRK_SLEWING, TRK_UNKNOW };
+enum ParkState { PRK_UNPARKED, PRK_PARKED, PRK_FAILED, PRK_PARKING, PRK_UNKNOW };
+enum PierState { PIER_E, PIER_W, PIER_UNKNOW };
+enum Mount { GEM, FEM };
 Mount mountType = GEM;
 uint8_t align = ALI_OFF;
 uint8_t aliMode = 0;
@@ -355,7 +355,7 @@ void handleNotFound() {
   message += "\nArguments: ";
   message += server.args();
   message += "\n";
-  for (uint8_t i = 0; i<server.args(); i++) {
+  for (uint8_t i = 0; i < server.args(); i++) {
     message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
   }
   server.send(404, "text/plain", message);
@@ -363,7 +363,7 @@ void handleNotFound() {
 
 
 
-void setup(void){
+void setup(void) {
   initMotor();
   telInfo.lastState = millis();
   setupButton();
@@ -404,7 +404,7 @@ void setupWifi()
   EEPROM.begin(1024);
 
   // EEPROM Init
-  if ((EEPROM_readInt(0) != 8266) || (EEPROM_readInt(2) != 0 )) {
+  if ((EEPROM_readInt(0) != 8266) || (EEPROM_readInt(2) != 0)) {
     EEPROM_writeInt(0, 8266);
     EEPROM_writeInt(2, 0);
 
@@ -471,7 +471,7 @@ Again:
   char c = 0;
 
   // clear the buffers and any noise on the serial lines
-  for (int i = 0; i<3; i++) {
+  for (int i = 0; i < 3; i++) {
     Serial.print(":#");
 #ifdef LED_PIN
     digitalWrite(LED_PIN, HIGH);
@@ -499,7 +499,7 @@ Again:
   Serial.print(SERIAL_BAUD);
   delay(100);
   c = 0;
-  if (Serial.available()>0) { c = Serial.read(); }
+  if (Serial.available() > 0) { c = Serial.read(); }
   if (c == '1') {
     if (!strcmp(SERIAL_BAUD, ":SB0#")) Serial.begin(115200); else
       if (!strcmp(SERIAL_BAUD, ":SB1#")) Serial.begin(57600); else
@@ -781,14 +781,12 @@ void loop() {
 
   if (align == ALI_SELECT_STAR_1 || align == ALI_SELECT_STAR_2 || align == ALI_SELECT_STAR_3)
   {
-    if (align == ALI_SELECT_STAR_1 && aliMode == ALIM_ONE)
-       DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Western Sky", -1);
-    else if (align == ALI_SELECT_STAR_1 && aliMode == ALIM_TWO)
-      DisplayLongMessage("Select Star", "at Celest. Equ.", "Meridan, in ", "in Eastern Sky", -1);
-    else if(align == ALI_SELECT_STAR_2)
-      DisplayLongMessage("Select Star", "Above the Celest. ", "Equator, at, ", "At HA 9", -1);
+    if (align == ALI_SELECT_STAR_1)
+      DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Western Sky", -1);
+    else if (align == ALI_SELECT_STAR_2)
+      DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Eastern Sky", -1);
     else if (align == ALI_SELECT_STAR_3)
-      DisplayLongMessage("Select Star", "Above the Celest. ", "Equator, in ", "Eastern Sky", -1);
+      DisplayLongMessage("Select a Star", "HA = -3 hour", "Dec = +- 45 degree", "in the Eastern Sky", -1);
     if (!SelectStarAlign())
     {
       DisplayMessage("Alignment", "Aborted", -1);
@@ -809,7 +807,7 @@ void loop() {
   {
     bool stop = (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART || eventbuttons[0] == E_DOUBLECLICK) ? true : false;
     int it = 1;
-    while (!stop && it<5)
+    while (!stop && it < 5)
     {
       stop = (eventbuttons[it] == E_LONGPRESS || eventbuttons[it] == E_CLICK || eventbuttons[it] == E_LONGPRESSTART);
       it++;
@@ -867,7 +865,7 @@ void loop() {
   {
     page++;
     if (page > 2) page = 0;
-    time_last_action = millis(); 
+    time_last_action = millis();
   }
   else if (eventbuttons[0] == E_LONGPRESS && align == ALI_OFF)
   {
