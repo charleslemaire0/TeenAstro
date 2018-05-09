@@ -732,28 +732,33 @@ void tickButtons()
 
 
 void loop() {
+  updateWifi();
   buttonPressed = false;
   tickButtons();
-  if (!buttonPressed)
-  {
-    updateWifi();
-  }
-
   //if (Serial1.available())
   //{//-- Affichage sur la console des données  
   //  Serial1.write(Serial1.read());
   unsigned long top = millis();
-  if (sleepDisplay && !buttonPressed)
+  if (buttonPressed)
+  {
+    if (sleepDisplay)
+    {
+      display.setContrast(maxContrast);
+      display.sleepOff();
+      sleepDisplay = false;
+      lowContrast = false;
+      time_last_action = millis();
+    }
+    if (lowContrast)
+    {
+      display.setContrast(maxContrast);
+      lowContrast = false;
+      time_last_action = top;
+    }
+  }
+  else if (sleepDisplay)
   {
     return;
-  }
-  else if (sleepDisplay && buttonPressed)
-  {
-    display.setContrast(maxContrast);
-    display.sleepOff();
-    sleepDisplay = false;
-    lowContrast = false;
-    time_last_action = millis();
   }
   else if (top - time_last_action > 120000)
   {
@@ -761,17 +766,13 @@ void loop() {
     sleepDisplay = true;
     return;
   }
-  if (lowContrast && buttonPressed)
-  {
-    display.setContrast(maxContrast);
-    lowContrast = false;
-    time_last_action = top;
-  }
   else if (top - time_last_action > 30000 && !lowContrast)
   {
     display.setContrast(0);
     lowContrast = true;
   }
+
+
   if (powerCylceRequired)
   {
     display.setFont(u8g2_font_helvR12_tr);
