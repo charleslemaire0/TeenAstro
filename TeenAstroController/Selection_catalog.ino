@@ -250,14 +250,10 @@ unsigned short onstep_UserInterfaceCatalog(u8g2_t *u8g2, const char *title, unsi
   if (start_pos > 0)	/* issue 112 */
     start_pos--;		/* issue 112 */
   cur_pos = start_pos;
-
-
-
   u8g2_SetFontPosBaseline(u8g2);
 
   for (;;)
   {
-
     u8g2_FirstPage(u8g2);
     do
     {
@@ -309,8 +305,6 @@ unsigned short onstep_UserInterfaceCatalog(u8g2_t *u8g2, const char *title, unsi
         {
           cur_pos = 0;
         }
-        Serial.println(cur_pos);
-
         break;
       }
       else if (event == U8X8_MSG_GPIO_MENU_UP)
@@ -329,8 +323,6 @@ unsigned short onstep_UserInterfaceCatalog(u8g2_t *u8g2, const char *title, unsi
         {
           cur_pos = tot_pos - 1;
         }
-
-        Serial.println(cur_pos);
         break;
       }
       else
