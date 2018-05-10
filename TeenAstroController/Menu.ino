@@ -692,47 +692,6 @@ void menuAlignment()
   }
 }
 
-void starAlign1()
-{
-
-  //DisplayLongMessage("Choose 1st", "Star", "the Telescope will", "then Slew", -1);
-  //if (!SelectStarAlign())
-  //{
-  //  DisplayMessage("Alignment", "Aborted", -1);
-  //  return;
-  //}
-  //for (;;)
-  //{
-    
-  //  updateWifi();
-  //  DisplayMessage("Telescope", "Slew to Star", 500);
-  //  tickButtons();
-  //  telInfo.updateTel();
-  //  while (telInfo.getTrackingState() == TRK_SLEWING)
-  //  {
-  //    DisplayMessage("Telescope", "Slew to Star", 500);
-  //    tickButtons();
-  //    telInfo.updateTel();
-  //    if (AbortSlewbyUser())
-  //    {
-  //      DisplayLongMessage("Goto Aborted", "by User", "Select an", "Other Star",-1);
-  //      continue;
-  //    }
-  //  }
-  //  char out[20];
-  //  if (readLX200Bytes(":Te#", out, 100))
-  //  {
-  //    DisplayMessage("Tracking", "ON", 500);
-  //  }
-  //}
-
-  //DisplayMessage("Please", "Wait", 1000);
- 
-
-  //DisplayLongMessage("Choose 1st", "Star", "the Telescope will", "Swe", -1);
-
-}
-
 void menuPier()
 {
   telInfo.updateTel();
