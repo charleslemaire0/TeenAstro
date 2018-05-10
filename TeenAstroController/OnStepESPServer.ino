@@ -32,7 +32,6 @@
  *
  */
 
-
 #include <U8x8lib.h>
 #include <U8g2lib.h>
 #define Product "OnEsp"
@@ -40,6 +39,7 @@
 
 
 #include <ESP8266WiFi.h>
+
 #include <WiFiClient.h>
 #include "Config.h"
 
@@ -49,6 +49,7 @@
 #include <OneButton.h>
 #include "Helper.h"
 #include "Selection_catalog.h"
+
 
 U8G2_SH1106_128X64_NONAME_1_HW_I2C display(U8G2_R0);
 

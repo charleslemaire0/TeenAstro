@@ -1,5 +1,6 @@
 ﻿
 #include "Selection_catalog.h"
+#include "Ephemeris.h"
 
 uint8_t current_selection_L0 = 1;
 uint8_t current_selection_L1 = 1;
@@ -452,7 +453,6 @@ void menuSpeedRate()
   }
 }
 
-
 void menuTrack()
 {
   telInfo.updateTel();
@@ -726,7 +726,6 @@ bool SelectStarAlign()
   return false;
 }
 
-
 void menuRADec(bool sync)
 {
   if (onstep_UserInterfaceInputValueRA(display.getU8g2(), &angleRA))
@@ -833,7 +832,6 @@ void menuMountType()
   }
 
 }
-
 
 void menuPredefinedMount()
 {
@@ -956,7 +954,6 @@ void menuMotor(uint8_t idx)
   }
 
 }
-
 
 void menuSite()
 {
@@ -1171,7 +1168,6 @@ void menuWifi()
   }
 }
 
-
 void menuHorizon()
 {
   char out[20];
@@ -1185,8 +1181,6 @@ void menuHorizon()
     }
   }
 }
-
-
 
 void menuOverhead()
 {
@@ -1210,13 +1204,6 @@ void menuMeridian()
 
   }
 }
-
-
-
-
-
-
-
 
 void char2RA(char* txt, int& hour, int& minute, int& second)
 {
