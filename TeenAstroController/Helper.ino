@@ -159,7 +159,7 @@ bool SetTargetRaLX200(uint8_t& vr1, uint8_t& vr2, uint8_t& vr3)
     {
       if (GetLX200(":Gr#", out, true))
       {
-        int hour, minute, second;
+        unsigned int hour, minute, second;
         char2RA(out, hour, minute, second);
         if (hour == vr1 && minute == vr2 && second == vr3)
         {
@@ -183,7 +183,8 @@ bool SetTargetDecLX200(short& vd1, uint8_t& vd2, uint8_t& vd3)
     {
       if (GetLX200(":Gd#", out, true))
       {
-        int deg, min, sec;
+        int deg;
+        unsigned int min, sec;
         char2DEC(out, deg, min, sec);
         if (deg == vd1 && min == vd2 && sec== vd3)
         {

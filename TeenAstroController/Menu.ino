@@ -6,10 +6,15 @@ uint8_t current_selection_L0 = 1;
 uint8_t current_selection_L1 = 1;
 uint8_t current_selection_L2 = 1;
 unsigned short current_selection_Herschel = 1;
+unsigned short current_selection_SolarSys = 1;
 unsigned short current_selection_Star = 1;
 uint8_t current_selection_L3 = 1;
 uint8_t current_selection_L4 = 1;
 uint8_t current_selection_speed = 5;
+long angleRA = 0;
+long angleDEC = 0;
+bool ok = false;
+Ephemeris Eph;
 
 class motor
 {
@@ -337,18 +342,12 @@ public:
     readHighCurr();
   }
 };
-
 motor mountMotor[2];
-
 void initMotor()
 {
   mountMotor[0].setIdx(1);
   mountMotor[1].setIdx(2);
 }
-
-long angleRA = 0;
-long angleDEC = 0;
-bool ok = false;
 
 uint8_t onstep_GetMenuEvent()
 {
@@ -513,7 +512,7 @@ void menuSyncGoto(bool sync)
   current_selection_L1 = 1;
   while (current_selection_L1 != 0)
   {
-    const char *string_list_gotoL1 = "Herschel\nStar\nCoordinates\nHome\nPark";
+    const char *string_list_gotoL1 = "Herschel\nStar\nSolar System\nCoordinates\nHome\nPark";
     current_selection_L1 = onstep_UserInterfaceSelectionList(display.getU8g2(), sync ? "Sync" : "Goto", current_selection_L1, string_list_gotoL1);
     switch (current_selection_L1)
     {
@@ -524,9 +523,12 @@ void menuSyncGoto(bool sync)
       menuStar(sync);
       break;
     case 3:
-      menuRADec(sync);
+      menuSolarSys(sync);
       break;
     case 4:
+      menuRADec(sync);
+      break;
+    case 5:
     {
       char cmd[5];
       sprintf(cmd, ":hX#");
@@ -539,8 +541,8 @@ void menuSyncGoto(bool sync)
       current_selection_L1 = 0;
       current_selection_L0 = 0;
     }
-      break;
-    case 5:
+    break;
+    case 6:
     {
       char cmd[5];
       sprintf(cmd, ":hX#");
@@ -553,17 +555,70 @@ void menuSyncGoto(bool sync)
       current_selection_L1 = 0;
       current_selection_L0 = 0;
     }
-      break;
+    break;
     default:
       break;
     }
   }
 }
 
+void menuSolarSys(bool sync)
+{
+  char out[20];
+  unsigned int day, month, year, hour, minute, second;
+  if (GetLX200(":GC#", out, true))
+  {
+    char* pEnd;
+    month = strtol(&out[0], &pEnd, 10);
+    day = strtol(&out[3], &pEnd, 10);
+    year = strtol(&out[6], &pEnd, 10)+ 2000L;
+  }
+  else
+  {
+    DisplayMessage(" Telescope is", "not Responding", -1);
+    return;
+  }
+  if (GetLX200(":GL#", out, false))
+  {
+    char2RA(out, hour, minute, second);
+  }
+  else
+  {
+    DisplayMessage(" Telescope is", "not Responding", -1);
+    return;
+  }
+  current_selection_SolarSys = 1;
+  const char *string_list_SolarSyst = "Sun\nMercure\nVenus\nMars\nJupiter\nSaturn\nUranus\nNeptun\nMoon\n";
+  current_selection_SolarSys = onstep_UserInterfaceSelectionList(display.getU8g2(), sync ? "Sync" : "Goto", current_selection_SolarSys, string_list_SolarSyst);
+  if (current_selection_SolarSys == 0)
+  {
+    return;
+  }
+  current_selection_SolarSys > 3 ? current_selection_SolarSys : current_selection_SolarSys--;
+  SolarSystemObjectIndex objI = static_cast<SolarSystemObjectIndex>(current_selection_SolarSys);
+  SolarSystemObject obj = Eph.solarSystemObjectAtDateAndTime(objI, day, month, year, hour, minute, second);
+  float Ra = obj.equaCoordinates.ra;
+  float Dec = obj.equaCoordinates.dec;
+  uint8_t vr1, vr2, vr3, vd2, vd3;
+  short vd1;
+  gethms(obj.equaCoordinates.ra, vr1, vr2, vr3);
+  getdms(obj.equaCoordinates.dec, vd1, vd2, vd3);
+
+  ok = SyncGotoLX200(sync, vr1, vr2, vr3, vd1, vd2, vd3);
+  
+  if (current_selection_SolarSys != 0 && ok)
+  {
+    // Quit Menu
+    current_selection_L1 = 0;
+    current_selection_L0 = 0;
+  }
+ 
+}
+
 void menuHerschel(bool sync)
 {
-  current_selection_Herschel = onstep_UserInterfaceCatalog(display.getU8g2(), sync ? "Sync Herschel" : "Goto Herschel", current_selection_Herschel, HERSCHEL);
-  if (current_selection_Herschel != 0)
+  current_selection_SolarSys = onstep_UserInterfaceCatalog(display.getU8g2(), sync ? "Sync Herschel" : "Goto Herschel", current_selection_Herschel, HERSCHEL);
+  if (current_selection_SolarSys != 0)
   {
     ok = SyncGotoCatLX200(sync, HERSCHEL, current_selection_Herschel - 1);
     if (ok)
@@ -998,7 +1053,7 @@ void menuUTCTime()
   char out[20];
   if (GetLX200(":GL#", out, false))
   {
-    int hour, minute, second;
+    unsigned int hour, minute, second;
     char2RA(out, hour, minute, second);
     long value = hour * 60 + minute;
     value *= 60;
@@ -1205,7 +1260,7 @@ void menuMeridian()
   }
 }
 
-void char2RA(char* txt, int& hour, int& minute, int& second)
+void char2RA(char* txt, unsigned int& hour, unsigned int& minute, unsigned int& second)
 {
   char* pEnd;
   hour = (int)strtol(&txt[0], &pEnd, 10);
@@ -1213,7 +1268,7 @@ void char2RA(char* txt, int& hour, int& minute, int& second)
   second = (int)strtol(&txt[6], &pEnd, 10);
 }
 
-void char2DEC(char* txt, int& deg, int& min, int& sec)
+void char2DEC(char* txt, int& deg, unsigned int& min, unsigned int& sec)
 {
   char* pEnd;
   deg = (int)strtol(&txt[0], &pEnd, 10);

@@ -677,11 +677,23 @@ void gethms(const long& v, uint8_t& v1, uint8_t& v2, uint8_t& v3)
   v1 = v / 3600;
 }
 
+void gethms(const float& vf, uint8_t& v1, uint8_t& v2, uint8_t& v3)
+{
+  long v = (double)vf * 3600L;
+  gethms(v, v1, v2, v3);
+}
+
 void getdms(const long& v, short& v1, uint8_t& v2, uint8_t& v3)
 {
   v3 = abs(v) % 60;
   v2 = (abs(v) / 60) % 60;
   v1 = v / 3600;
+}
+
+void getdms(const float& vf, short& v1, uint8_t& v2, uint8_t& v3)
+{
+  long v = (double)vf * 3600L;
+  getdms(v, v1, v2, v3);
 }
 
 void getcatdms(const short& v, short& v1, uint8_t& v2)
