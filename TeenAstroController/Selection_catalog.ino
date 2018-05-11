@@ -128,7 +128,7 @@ static u8g2_uint_t onstep_draw_catalog_list_line(u8g2_t *u8g2, u8g2_uint_t y, un
     y += line_height;
     x = 0;
     getcatdms(Star_dec[idx], vd1, vd2);
-    memcpy(txt1, u8x8_u8toa((uint8_t)vd1, 2), 3);
+    memcpy(txt1, u8x8_u8toa((uint8_t)abs(vd1), 2), 3);
     memcpy(txt2, u8x8_u8toa(vd2, 2), 3);
     u8g2_DrawUTF8(u8g2, x, y, "dec ");
     x += step0;
