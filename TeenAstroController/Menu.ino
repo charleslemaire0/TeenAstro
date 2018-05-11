@@ -618,8 +618,8 @@ void menuSolarSys(bool sync)
 
 void menuHerschel(bool sync)
 {
-  current_selection_SolarSys = onstep_UserInterfaceCatalog(display.getU8g2(), sync ? "Sync Herschel" : "Goto Herschel", current_selection_Herschel, HERSCHEL);
-  if (current_selection_SolarSys != 0)
+  current_selection_Herschel = onstep_UserInterfaceCatalog(display.getU8g2(), sync ? "Sync Herschel" : "Goto Herschel", current_selection_Herschel, HERSCHEL);
+  if (current_selection_Herschel != 0)
   {
     ok = SyncGotoCatLX200(sync, HERSCHEL, current_selection_Herschel - 1);
     if (ok)
