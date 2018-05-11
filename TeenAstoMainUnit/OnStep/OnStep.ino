@@ -57,10 +57,11 @@
 #endif
 
 // firmware info, these are returned by the ":GV?#" commands
-#define FirmwareDate    "05 04 18"
-#define FirmwareNumber  "0.0a"
-#define FirmwareName    "On-Step-TeenAstro"
+#define FirmwareDate    "10 18 16"
+#define FirmwareNumber  "1.0a36"
+#define FirmwareName    "On-Step"
 #define FirmwareTime    "12:00:00"
+
 
 // forces initialialization of a host of settings in EEPROM. OnStep does this automatically, most likely, you will want to leave this alone
 #define initKey     915307548                       // unique identifier for the current initialization format, do not change
