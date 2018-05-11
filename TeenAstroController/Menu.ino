@@ -1160,7 +1160,7 @@ void menuLimits()
 
 void menuWifi()
 {
-  const char *string_list = (wifiOn) ? "Wifi off\nShow Password" : "wifi on\nShow Password";
+  const char *string_list = (wifiOn) ? "Wifi off\nShow Password\nReset to factory" : "wifi on\nShow Password\nReset to factory";
   current_selection_L2 = 1;
   while (current_selection_L2 != 0)
   {
@@ -1173,10 +1173,20 @@ void menuWifi()
       EEPROM.commit();
       DisplayMessage("Please", "Reboot!", 3000);
       current_selection_L2 = 0;
+      current_selection_L1 = 0;
+      current_selection_L0 = 0;
       powerCylceRequired = true;
       break;
     case 2:
       DisplayMessage("masterPassword is", masterPassword, 1000);
+    case 3:
+      EEPROM_writeInt(0, 0);
+      EEPROM.commit();
+      DisplayMessage("Please", "Reboot!", 3000);
+      current_selection_L2 = 0;
+      current_selection_L1 = 0;
+      current_selection_L0 = 0;
+      powerCylceRequired = true;
     default:
       break;
     }
