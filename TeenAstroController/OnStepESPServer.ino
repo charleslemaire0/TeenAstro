@@ -284,7 +284,8 @@ IPAddress wifi_sta_ip = IPAddress(192, 168, 0, 1);
 IPAddress wifi_sta_gw = IPAddress(192, 168, 0, 1);
 IPAddress wifi_sta_sn = IPAddress(255, 255, 255, 0);
 
-char wifi_ap_ssid[40] = "TeenAstro";
+char wifi_ap_ssid[40] = "";
+
 char wifi_ap_pwd[40] = "password";
 byte wifi_ap_ch = 7;
 
@@ -417,7 +418,7 @@ void setupWifi()
     EEPROM_writeInt(12, (int)CmdTimeout);
     EEPROM.write(14, maxContrast);
     EEPROM.write(15, wifiOn);
-    sprintf(wifi_sta_ssid, "TEENASTRO%u", random(1000));
+ 
     EEPROM_writeString(100, wifi_sta_ssid);
     EEPROM_writeString(150, wifi_sta_pwd);
     EEPROM_writeString(200, masterPassword);
@@ -425,7 +426,7 @@ void setupWifi()
     EEPROM.write(24, wifi_sta_gw[0]); EEPROM.write(25, wifi_sta_gw[1]); EEPROM.write(26, wifi_sta_gw[2]); EEPROM.write(27, wifi_sta_gw[3]);
     EEPROM.write(28, wifi_sta_sn[0]); EEPROM.write(29, wifi_sta_sn[1]); EEPROM.write(30, wifi_sta_sn[2]); EEPROM.write(31, wifi_sta_sn[3]);
 
-
+    sprintf(wifi_ap_ssid, "TeenAstro_%u", random(1000));
     EEPROM_writeString(500, wifi_ap_ssid);
     EEPROM_writeString(550, wifi_ap_pwd);
     EEPROM_writeInt(50, (int)wifi_ap_ch);
