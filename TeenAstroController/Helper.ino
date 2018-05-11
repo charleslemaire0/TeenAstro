@@ -1,5 +1,7 @@
-﻿#include "Helper.h"
+﻿#include <Ephemeris.h>
+#include "Helper.h"
 #include "Selection_catalog.h"
+
 
 void DisplayMessage(const char* txt1, const char* txt2, int duration)
 {
@@ -224,8 +226,32 @@ bool SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, short& v
   return false;
 }
 
+bool GetDateLX200(unsigned int &day, unsigned int &month, unsigned int &year)
+{
+  char out[20];
+  if (GetLX200(":GC#", out, true))
+  {
+    char* pEnd;
+    month = strtol(&out[0], &pEnd, 10);
+    day = strtol(&out[3], &pEnd, 10);
+    year = strtol(&out[6], &pEnd, 10) + 2000L;
+  }
+  else
+  {
+    DisplayMessage(" Telescope is", "not Responding", -1);
+    return false;
+  }
+  return true;
+}
+
 bool SyncGotoCatLX200(bool sync, Catalog cat, int idx)
 {
+  int epoch;
+  unsigned int day, month, year, hour, minute, second;
+  if (!GetDateLX200(day, month, year))
+  {
+    return false;
+  }
   uint8_t vr1, vr2, vr3, vd2,vd3;
   vd3 = 0;
   short vd1;
@@ -234,19 +260,27 @@ bool SyncGotoCatLX200(bool sync, Catalog cat, int idx)
   case STAR:
     getcathms(Star_ra[idx], vr1, vr2, vr3);
     getcatdms(Star_dec[idx], vd1, vd2);
-    break;
+    epoch = 2000;
+       break;
   case MESSIER:
     return false;
     break;
   case HERSCHEL:
     getcathms(Herschel_ra[idx], vr1, vr2, vr3);
     getcatdms(Herschel_dec[idx], vd1, vd2);
+    epoch = 1950;
     break;
   default:
     return false;
     break;
   }
-
+  EquatorialCoordinates coo;
+  coo.ra = (float)vr1 + (float)vr2 / 60.0 + (float)vr3 / 3600.0;
+  coo.dec = vd1 < 0 ? (float)vd1 - (float)vd2 / 60.0 : (float)vd1 + (float)vd2 / 60.0;
+  EquatorialCoordinates cooNow;
+  cooNow = Ephemeris::equatorialEquinoxToEquatorialJNowAtDateAndTime(coo, epoch, day, month, year, 0, 0, 0);
+  getdms(cooNow.dec, vd1, vd2, vd3);
+  gethms(cooNow.ra, vr1, vr2, vr3);
   return SyncGotoLX200(sync, vr1, vr2, vr3, vd1, vd2, vd3);
 }
 
