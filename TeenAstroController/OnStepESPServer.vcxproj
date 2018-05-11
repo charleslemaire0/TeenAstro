@@ -80,47 +80,28 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Button.ino" />
-    <None Include="Config.ino">
-      <FileType>CppCode</FileType>
-    </None>
-    <None Include="Control.ino">
-      <FileType>CppCode</FileType>
-    </None>
+    <None Include="Config.ino" />
+    <None Include="Control.ino" />
     <None Include="display\Images.ino" />
     <None Include="display\Input_value.ino" />
     <None Include="display\Message.ino" />
     <None Include="display\Selection_list.ino" />
-    <None Include="EEProm.ino">
-      <FileType>CppCode</FileType>
-    </None>
-    <None Include="Guide.ino">
-      <FileType>CppCode</FileType>
-    </None>
+    <None Include="EEProm.ino" />
+    <None Include="Guide.ino" />
     <None Include="Helper.ino" />
     <None Include="MainDisplay.ino" />
-    <None Include="Selection_catalog.h" />
-    <None Include="Index.ino">
-      <FileType>CppCode</FileType>
-    </None>
+    <ClInclude Include="Selection_catalog.h" />
+    <None Include="Index.ino" />
     <None Include="Menu.ino" />
-    <None Include="Misc.ino">
-      <FileType>CppCode</FileType>
-    </None>
-    <None Include="OnStepESPServer.ino">
-      <FileType>CppCode</FileType>
-    </None>
+    <None Include="Misc.ino" />
+    <None Include="OnStepESPServer.ino" />
     <None Include="Selection_catalog.ino" />
-    <None Include="Settings.ino">
-      <FileType>CppCode</FileType>
-    </None>
-    <None Include="Wifi.ino">
-      <FileType>CppCode</FileType>
-    </None>
+    <None Include="Settings.ino" />
+    <None Include="Wifi.ino" />
+
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Config.h">
-      <FileType>CppCode</FileType>
-    </ClInclude>
+    <ClInclude Include="Config.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="__vm\.OnStepESPServer.vsarduino.h" />
     <ClInclude Include="__vm\.TeenAstroController.vsarduino.h" />

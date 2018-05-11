@@ -42,13 +42,14 @@
 
 #include <WiFiClient.h>
 #include "Config.h"
+#include "Selection_catalog.h"
 
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFiAP.h>
 #include <EEPROM.h>
 #include <OneButton.h>
-#include "Helper.h"
-#include "Selection_catalog.h"
+
+
 
 
 U8G2_SH1106_128X64_NONAME_1_HW_I2C display(U8G2_R0);
@@ -85,7 +86,6 @@ Mount mountType = GEM;
 uint8_t align = ALI_OFF;
 uint8_t aliMode = 0;
 unsigned short alignSelectedStar = 1;
-
 bool buttonCommand = false;
 class TelState
 {
@@ -734,7 +734,6 @@ void tickButtons()
 
 void loop() {
   updateWifi();
-  buttonPressed = false;
   tickButtons();
   //if (Serial1.available())
   //{//-- Affichage sur la console des données  
@@ -771,8 +770,8 @@ void loop() {
   {
     display.setContrast(0);
     lowContrast = true;
+    return;
   }
-
 
   if (powerCylceRequired)
   {
@@ -803,7 +802,7 @@ void loop() {
   }
   if (telInfo.connected == false)
   {
-    DisplayMessage("Hand controler", "not connected");
+    DisplayMessage("Hand controler", "not connected", -1);
   }
   if (telInfo.connected && (telInfo.getTrackingState() == TRK_SLEWING || telInfo.getParkState() == PRK_PARKING))
   {

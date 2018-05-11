@@ -2,6 +2,7 @@
 #include "Selection_catalog.h"
 #include "Ephemeris.h"
 
+
 uint8_t current_selection_L0 = 1;
 uint8_t current_selection_L1 = 1;
 uint8_t current_selection_L2 = 1;
@@ -647,7 +648,7 @@ void menuAlignment()
       }
       else
       {
-        DisplayMessage("Alignment", "Failed!");
+        DisplayMessage("Alignment", "Failed!", -1);
       }
       break;
     case 2:
@@ -658,7 +659,7 @@ void menuAlignment()
       }
       else
       {
-        DisplayMessage("Alignment", "Failed!");
+        DisplayMessage("Alignment", "Failed!", -1);
       }
       break;
     case 3:
@@ -669,7 +670,7 @@ void menuAlignment()
       }
       else
       {
-        DisplayMessage("Alignment", "Failed!");
+        DisplayMessage("Alignment", "Failed!", -1);
       }
       break;
     case 4:

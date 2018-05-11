@@ -1,4 +1,5 @@
-﻿
+﻿#include "Helper.h"
+#include "Selection_catalog.h"
 
 void DisplayMessage(const char* txt1, const char* txt2, int duration)
 {

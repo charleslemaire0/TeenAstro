@@ -34,6 +34,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
+#include "Selection_catalog.h"
 
 #define OC_width 18
 #define OC_height 10
