@@ -49,9 +49,6 @@
 #include <EEPROM.h>
 #include <OneButton.h>
 
-
-
-
 U8G2_SH1106_128X64_NONAME_1_HW_I2C display(U8G2_R0);
 
 OneButton buttons[7] = { OneButton(D8, false),
@@ -67,7 +64,6 @@ enum Button { B_SHIFT, B_NORTH, B_SOUTH, B_EAST, B_WEST, B_F, B_f };
 enum ButtonEvent { E_NONE, E_CLICK, E_DOUBLECLICK, E_LONGPRESSTART, E_LONGPRESS, E_LONGPRESSSTOP };
 byte eventbuttons[7] = { E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE };
 
-enum Menu { M_NONE, M_ALL, M_REF, M_GOTO, M_DISPlAY, M_SPIRAL, M_SPEED, M_MOT1, M_MOT2, M_DIVERSE };
 enum Errors { ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT, ERR_LIMIT_SENSE, ERR_DEC, ERR_AZM, ERR_UNDER_POLE, ERR_MERIDIAN, ERR_SYNC };
 Errors lastError = ERR_NONE;
 enum AlignMode { ALIM_ONE, ALIM_TWO, ALIM_THREE };
@@ -82,6 +78,7 @@ enum TrackState { TRK_OFF, TRK_ON, TRK_SLEWING, TRK_UNKNOW };
 enum ParkState { PRK_UNPARKED, PRK_PARKED, PRK_FAILED, PRK_PARKING, PRK_UNKNOW };
 enum PierState { PIER_E, PIER_W, PIER_UNKNOW };
 enum Mount { GEM, FEM };
+
 Mount mountType = GEM;
 uint8_t align = ALI_OFF;
 uint8_t aliMode = 0;
@@ -284,7 +281,7 @@ IPAddress wifi_sta_ip = IPAddress(192, 168, 0, 1);
 IPAddress wifi_sta_gw = IPAddress(192, 168, 0, 1);
 IPAddress wifi_sta_sn = IPAddress(255, 255, 255, 0);
 
-char wifi_ap_ssid[40] = "";
+char wifi_ap_ssid[40] = "TeenAstro";
 
 char wifi_ap_pwd[40] = "password";
 byte wifi_ap_ch = 7;
@@ -407,6 +404,7 @@ void setupWifi()
 
   // EEPROM Init
   if ((EEPROM_readInt(0) != 8266) || (EEPROM_readInt(2) != 0)) {
+
     EEPROM_writeInt(0, 8266);
     EEPROM_writeInt(2, 0);
 
@@ -426,7 +424,7 @@ void setupWifi()
     EEPROM.write(24, wifi_sta_gw[0]); EEPROM.write(25, wifi_sta_gw[1]); EEPROM.write(26, wifi_sta_gw[2]); EEPROM.write(27, wifi_sta_gw[3]);
     EEPROM.write(28, wifi_sta_sn[0]); EEPROM.write(29, wifi_sta_sn[1]); EEPROM.write(30, wifi_sta_sn[2]); EEPROM.write(31, wifi_sta_sn[3]);
 
-    sprintf(wifi_ap_ssid, "TeenAstro_%u", random(1000));
+    //sprintf(wifi_ap_ssid, "TeenAstro%u", random(1000));
     EEPROM_writeString(500, wifi_ap_ssid);
     EEPROM_writeString(550, wifi_ap_pwd);
     EEPROM_writeInt(50, (int)wifi_ap_ch);
@@ -773,14 +771,12 @@ void loop() {
     lowContrast = true;
     return;
   }
-
   if (powerCylceRequired)
   {
     display.setFont(u8g2_font_helvR12_tr);
     DisplayMessage("REBOOT", "DEVICE", 1000);
     return;
   }
-
   if (align == ALI_SELECT_STAR_1 || align == ALI_SELECT_STAR_2 || align == ALI_SELECT_STAR_3)
   {
     if (align == ALI_SELECT_STAR_1)
@@ -857,7 +853,6 @@ void loop() {
     }
 
   }
-
   if (eventbuttons[0] == E_DOUBLECLICK /*|| eventbuttons[0] == E_CLICK)  && eventbuttons[1] != E_NONE*/)
   {
     menuSpeedRate();
@@ -878,8 +873,6 @@ void loop() {
   {
     addStar();
   }
-
-
 }
 
 
