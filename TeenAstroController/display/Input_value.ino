@@ -119,7 +119,7 @@ uint8_t onstep_UserInterfaceInputValueInteger(u8g2_t *u8g2, const char *title, c
 
     for (;;)
     {
-      updateWifi();
+      //updateWifi();
       event = onstep_GetMenuEvent();
       if (event == U8X8_MSG_GPIO_MENU_SELECT || event == U8X8_MSG_GPIO_MENU_NEXT)
       {
@@ -219,7 +219,7 @@ uint8_t onstep_UserInterfaceInputValueFloat(u8g2_t *u8g2, const char *title, con
   /* event loop */
   for (;;)
   {
-    updateWifi();
+    //updateWifi();
     u8g2_FirstPage(u8g2);
     do
     {
@@ -386,7 +386,7 @@ uint8_t onstep_UserInterfaceInputValueDMS(u8g2_t *u8g2, const char *title, long 
   /* event loop */
   for (;;)
   {
-    updateWifi();
+    //updateWifi();
     u8g2_FirstPage(u8g2);
     do
     {
@@ -560,7 +560,7 @@ uint8_t onstep_UserInterfaceInputValueDate(u8g2_t *u8g2, const char *title, uint
   /* event loop */
   for (;;)
   {
-    updateWifi();
+    //updateWifi();
     u8g2_FirstPage(u8g2);
     do
     {
@@ -677,12 +677,6 @@ void gethms(const long& v, uint8_t& v1, uint8_t& v2, uint8_t& v3)
   v1 = v / 3600;
 }
 
-void gethms(const float& vf, uint8_t& v1, uint8_t& v2, uint8_t& v3)
-{
-  long v = (double)vf * 3600L;
-  gethms(v, v1, v2, v3);
-}
-
 void getdms(const long& v, short& v1, uint8_t& v2, uint8_t& v3)
 {
   v3 = abs(v) % 60;
@@ -690,25 +684,7 @@ void getdms(const long& v, short& v1, uint8_t& v2, uint8_t& v3)
   v1 = v / 3600;
 }
 
-void getdms(const float& vf, short& v1, uint8_t& v2, uint8_t& v3)
-{
-  long v = (double)vf * 3600L;
-  getdms(v, v1, v2, v3);
-}
 
-void getcatdms(const short& v, short& v1, uint8_t& v2)
-{
-  v2 = abs(v) % 60;
-  v1 = v / 60;
-}
-
-void getcathms(const unsigned short& v, uint8_t& v1, uint8_t& v2, uint8_t& v3)
-{
-  unsigned long vd = (long)v * 2;
-  v3 = vd % 60;
-  v2 = (vd / 60) % 60;
-  v1 = vd / 3600;
-}
 
 
 void add_days(uint8_t& year, uint8_t& month, uint8_t& day, int days2add)

@@ -263,7 +263,7 @@ uint8_t onstep_UserInterfaceSelectionList(u8g2_t *u8g2, const char *title, uint8
 #endif
     for (;;)
     {
-      updateWifi();
+      //updateWifi();
       event = onstep_GetMenuEvent();
       //event = U8X8_MSG_GPIO_MENU_NEXT;
       if (event == U8X8_MSG_GPIO_MENU_NEXT)

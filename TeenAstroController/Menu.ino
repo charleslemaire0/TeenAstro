@@ -1,8 +1,4 @@
 ﻿
-#include "Selection_catalog.h"
-#include "Ephemeris.h"
-
-
 uint8_t current_selection_L0 = 1;
 uint8_t current_selection_L1 = 1;
 uint8_t current_selection_L2 = 1;
@@ -15,7 +11,7 @@ uint8_t current_selection_speed = 5;
 long angleRA = 0;
 long angleDEC = 0;
 bool ok = false;
-Ephemeris Eph;
+
 
 class motor
 {
@@ -33,7 +29,7 @@ private:
   bool readReverse()
   {
     char out[20];
-    bool ok = m_idx == 1 ? GetLX200(":%RR#", out, false) : GetLX200(":%RD#", out, false);
+    bool ok = m_idx == 1 ? telInfo.GetLX200(":%RR#", out, false) : telInfo.GetLX200(":%RD#", out, false);
     if (ok)
     {
       m_reverse = out[0] == '1' ? true : false;
@@ -45,12 +41,12 @@ private:
     char text[20];
     sprintf(text, ":$RX%u#", (unsigned int)m_reverse);
     text[3] = m_idx == 1 ? 'R' : 'D';
-    return SetLX200(text);
+    return telInfo.SetLX200(text);
   }
   bool readBacklash()
   {
     char out[20];
-    bool ok = m_idx == 1 ? GetLX200(":%BR#", out, false) : GetLX200(":%BD#", out, false);
+    bool ok = m_idx == 1 ? telInfo.GetLX200(":%BR#", out, false) : telInfo.GetLX200(":%BD#", out, false);
     if (ok)
     {
       m_backlash = (float)strtol(&out[0], NULL, 10);
@@ -62,12 +58,12 @@ private:
     char text[20];
     sprintf(text, ":$BX%u#", (unsigned int)m_backlash);
     text[3] = m_idx == 1 ? 'R' : 'D';
-    return SetLX200(text);
+    return telInfo.SetLX200(text);
   }
   bool readTotGear()
   {
     char out[20];
-    bool ok = m_idx == 1 ? GetLX200(":%GR#", out, false) : GetLX200(":%GD#", out, false);
+    bool ok = m_idx == 1 ? telInfo.GetLX200(":%GR#", out, false) : telInfo.GetLX200(":%GD#", out, false);
     if (ok)
     {
       m_totGear = (float)strtol(&out[0], NULL, 10);
@@ -79,12 +75,12 @@ private:
     char text[20];
     sprintf(text, ":$GX%u#", (unsigned int)m_totGear);
     text[3] = m_idx == 1 ? 'R' : 'D';
-    return SetLX200(text);
+    return telInfo.SetLX200(text);
   }
   bool readStepPerRot()
   {
     char out[20];
-    bool ok = m_idx == 1 ? GetLX200(":%SR#", out, false) : GetLX200(":%SD#", out, false);
+    bool ok = m_idx == 1 ? telInfo.GetLX200(":%SR#", out, false) : telInfo.GetLX200(":%SD#", out, false);
     if (ok)
     {
       m_stepPerRot = (float)strtol(&out[0], NULL, 10);
@@ -96,12 +92,12 @@ private:
     char text[20];
     sprintf(text, ":$SX%u#", (unsigned int)m_stepPerRot);
     text[3] = m_idx == 1 ? 'R' : 'D';
-    return SetLX200(text);
+    return telInfo.SetLX200(text);
   }
   bool readMicro()
   {
     char out[20];
-    bool ok = m_idx == 1 ? GetLX200(":%MR#", out, false) : GetLX200(":%MD#", out, false);
+    bool ok = m_idx == 1 ? telInfo.GetLX200(":%MR#", out, false) : telInfo.GetLX200(":%MD#", out, false);
     if (ok)
     {
       long value = strtol(&out[0], NULL, 10);
@@ -116,12 +112,12 @@ private:
     char text[20];
     sprintf(text, ":$MX%u#", m_microStep);
     text[3] = m_idx == 1 ? 'R' : 'D';
-    return SetLX200(text);
+    return telInfo.SetLX200(text);
   }
   bool readLowCurr()
   {
     char out[20];
-    bool ok = m_idx == 1 ? GetLX200(":%cR#", out, false) : GetLX200(":%cD#", out, false);
+    bool ok = m_idx == 1 ? telInfo.GetLX200(":%cR#", out, false) : telInfo.GetLX200(":%cD#", out, false);
     if (ok)
     {
       long value = strtol(&out[0], NULL, 10);
@@ -136,12 +132,12 @@ private:
     char text[20];
     sprintf(text, ":$cX%u#", m_lowCurr);
     text[3] = m_idx == 1 ? 'R' : 'D';
-    return SetLX200(text);
+    return telInfo.SetLX200(text);
   }
   bool readHighCurr()
   {
     char out[20];
-    bool ok = m_idx == 1 ? GetLX200(":%CR#", out, false) : GetLX200(":%CD#", out, false);
+    bool ok = m_idx == 1 ? telInfo.GetLX200(":%CR#", out, false) : telInfo.GetLX200(":%CD#", out, false);
     if (ok)
     {
       long value = strtol(&out[0], NULL, 10);
@@ -156,7 +152,7 @@ private:
     char text[20];
     sprintf(text, ":$CX%u#", m_highCurr);
     text[3] = m_idx == 1 ? 'R' : 'D';
-    return SetLX200(text);
+    return telInfo.SetLX200(text);
   }
 
 public:
@@ -313,6 +309,8 @@ public:
     m_totGear = (unsigned long)((double)m_wormGear*m_stepperGearBox);
     writeTotGear();
   }
+
+
   void DisplayMotorSettings()
   {
     readAll();
@@ -332,6 +330,8 @@ public:
     sprintf(line4, "High Curr. %u0 mA", (unsigned int)m_highCurr);
     DisplayLongMessage(line1, NULL, line3, line4, -1);
   }
+
+
   void readAll()
   {
     readReverse();
@@ -352,7 +352,7 @@ void initMotor()
 
 uint8_t onstep_GetMenuEvent()
 {
-  tickButtons();
+  HdCrtlr.tickButtons();
   int k = 0;
   for (k = 0; k < 7; k++)
   {
@@ -396,9 +396,9 @@ void menuMain()
   while (current_selection_L0 != 0)
   {
     telInfo.updateTel();
-    ParkState currentstate = telInfo.getParkState();
+    Telescope::ParkState currentstate = telInfo.getParkState();
 
-    if (currentstate == PRK_PARKED)
+    if (currentstate == Telescope::PRK_PARKED)
     {
       const char *string_list_main_ParkedL0 = "Unpark\n""Settings";
       current_selection_L0 = onstep_UserInterfaceSelectionList(display.getU8g2(), "Main Menu", 0, string_list_main_ParkedL0);
@@ -413,7 +413,7 @@ void menuMain()
         break;
       }
     }
-    else if (currentstate == PRK_UNPARKED)
+    else if (currentstate == Telescope::PRK_UNPARKED)
     {
       const char *string_list_main_UnParkedL0 = "Goto\nSync\nTracking\nSide of Pier\nSettings";
       current_selection_L0 = onstep_UserInterfaceSelectionList(display.getU8g2(), "Main Menu", 0, string_list_main_UnParkedL0);
@@ -449,16 +449,16 @@ void menuSpeedRate()
   {
     char cmd[5] = ":Rn#";
     cmd[2] = '0' + current_selection_speed - 1;
-    SetLX200(cmd, true);
+    telInfo.SetLX200(cmd, true);
   }
 }
 
 void menuTrack()
 {
   telInfo.updateTel();
-  TrackState currentstate = telInfo.getTrackingState();
+  Telescope::TrackState currentstate = telInfo.getTrackingState();
   uint8_t choice;
-  if (currentstate == TRK_ON)
+  if (currentstate == Telescope::TRK_ON)
   {
     const char *string_list_main_ParkedL0 = "Stop Tracking\n";
     choice = onstep_UserInterfaceSelectionList(display.getU8g2(), "Tracking State", 0, string_list_main_ParkedL0);
@@ -467,7 +467,7 @@ void menuTrack()
     case 1:
       char out[20];
       memset(out, 0, sizeof(out));
-      if (readLX200Bytes(":Td#", out, 100))
+      if (telInfo.readLX200Bytes(":Td#", out, 100))
       {
         DisplayMessage("Tracking", "OFF", 500);
       }
@@ -480,7 +480,7 @@ void menuTrack()
       break;
     }
   }
-  else if (currentstate == TRK_OFF)
+  else if (currentstate == Telescope::TRK_OFF)
   {
     const char *string_list_main_UnParkedL0 = "Start Tracking\n";
     current_selection_L0 = onstep_UserInterfaceSelectionList(display.getU8g2(), "Tracking State", 0, string_list_main_UnParkedL0);
@@ -489,7 +489,7 @@ void menuTrack()
     case 1:
       char out[20];
       memset(out, 0, sizeof(out));
-      if (readLX200Bytes(":Te#", out, 100))
+      if (telInfo.readLX200Bytes(":Te#", out, 100))
       {
         DisplayMessage("Tracking", "ON", 500);
       }
@@ -534,7 +534,7 @@ void menuSyncGoto(bool sync)
       char cmd[5];
       sprintf(cmd, ":hX#");
       cmd[2] = sync ? 'F' : 'C';
-      if (SetLX200(cmd, true))
+      if (telInfo.SetLX200(cmd, true))
       {
         DisplayMessage(sync ? "Reset at" : "Goto", " Home Position", -1);
       }
@@ -548,7 +548,7 @@ void menuSyncGoto(bool sync)
       char cmd[5];
       sprintf(cmd, ":hX#");
       cmd[2] = sync ? 'O' : 'P';
-      if (SetLX200(cmd, false))
+      if (telInfo.SetLX200(cmd, false))
       {
         DisplayMessage(sync ? "Reset at" : "Goto", " Park Position", -1);
       }
@@ -565,30 +565,7 @@ void menuSyncGoto(bool sync)
 
 void menuSolarSys(bool sync)
 {
-  char out[20];
-  unsigned int day, month, year, hour, minute, second;
-  if (GetLX200(":GC#", out, true))
-  {
-    char* pEnd;
-    month = strtol(&out[0], &pEnd, 10);
-    day = strtol(&out[3], &pEnd, 10);
-    year = strtol(&out[6], &pEnd, 10)+ 2000L;
-  }
-  else
-  {
-    DisplayMessage(" Telescope is", "not Responding", -1);
-    return;
-  }
-  if (GetLX200(":GL#", out, false))
-  {
-    char2RA(out, hour, minute, second);
-  }
-  else
-  {
-    DisplayMessage(" Telescope is", "not Responding", -1);
-    return;
-  }
-  current_selection_SolarSys = 1;
+  current_selection_SolarSys = max(current_selection_SolarSys,1);
   const char *string_list_SolarSyst = "Sun\nMercure\nVenus\nMars\nJupiter\nSaturn\nUranus\nNeptun\nMoon\n";
   current_selection_SolarSys = onstep_UserInterfaceSelectionList(display.getU8g2(), sync ? "Sync" : "Goto", current_selection_SolarSys, string_list_SolarSyst);
   if (current_selection_SolarSys == 0)
@@ -596,24 +573,13 @@ void menuSolarSys(bool sync)
     return;
   }
   current_selection_SolarSys > 3 ? current_selection_SolarSys : current_selection_SolarSys--;
-  SolarSystemObjectIndex objI = static_cast<SolarSystemObjectIndex>(current_selection_SolarSys);
-  SolarSystemObject obj = Eph.solarSystemObjectAtDateAndTime(objI, day, month, year, hour, minute, second);
-  float Ra = obj.equaCoordinates.ra;
-  float Dec = obj.equaCoordinates.dec;
-  uint8_t vr1, vr2, vr3, vd2, vd3;
-  short vd1;
-  gethms(obj.equaCoordinates.ra, vr1, vr2, vr3);
-  getdms(obj.equaCoordinates.dec, vd1, vd2, vd3);
-
-  ok = SyncGotoLX200(sync, vr1, vr2, vr3, vd1, vd2, vd3);
-  
+  ok = telInfo.SyncGotoPlanetLX200(sync, current_selection_SolarSys);
   if (current_selection_SolarSys != 0 && ok)
   {
     // Quit Menu
     current_selection_L1 = 0;
     current_selection_L0 = 0;
   }
- 
 }
 
 void menuHerschel(bool sync)
@@ -621,7 +587,7 @@ void menuHerschel(bool sync)
   current_selection_Herschel = onstep_UserInterfaceCatalog(display.getU8g2(), sync ? "Sync Herschel" : "Goto Herschel", current_selection_Herschel, HERSCHEL);
   if (current_selection_Herschel != 0)
   {
-    ok = SyncGotoCatLX200(sync, HERSCHEL, current_selection_Herschel - 1);
+    ok = telInfo.SyncGotoCatLX200(sync, HERSCHEL, current_selection_Herschel - 1);
     if (ok)
     {
       // Quit Menu
@@ -641,10 +607,10 @@ void menuAlignment()
     switch (current_selection_L1)
     {
     case 1:
-      if (SetLX200(":A1#", true))
+      if (telInfo.SetLX200(":A1#", true))
       {
-      aliMode = ALIM_ONE;
-      align = ALI_SELECT_STAR_1;
+        telInfo.aliMode = Telescope::ALIM_ONE;
+        telInfo.align = Telescope::ALI_SELECT_STAR_1;
       }
       else
       {
@@ -652,10 +618,10 @@ void menuAlignment()
       }
       break;
     case 2:
-      if (SetLX200(":A2#", true))
+      if (telInfo.SetLX200(":A2#", true))
       {
-        aliMode = ALIM_TWO;
-        align = ALI_SELECT_STAR_1;
+        telInfo.aliMode = Telescope::ALIM_TWO;
+        telInfo.align = Telescope::ALI_SELECT_STAR_1;
       }
       else
       {
@@ -663,10 +629,10 @@ void menuAlignment()
       }
       break;
     case 3:
-      if (SetLX200(":A3#", true))
+      if (telInfo.SetLX200(":A3#", true))
       {
-        aliMode = ALIM_THREE;
-        align = ALI_SELECT_STAR_1;
+        telInfo.aliMode = Telescope::ALIM_THREE;
+        telInfo.align = Telescope::ALI_SELECT_STAR_1;
       }
       else
       {
@@ -701,16 +667,16 @@ void menuPier()
   if (choice)
   {
     if (choice == 1)
-      ok = SetLX200(":SmE#");
+      ok = telInfo.SetLX200(":SmE#");
     else
-      ok = SetLX200(":SmW#");
+      ok = telInfo.SetLX200(":SmW#");
     if (ok)
     {
       DisplayMessage("Please Sync", "with a Target", 1000);
       menuSyncGoto(true);
       current_selection_L1 = 0;
       current_selection_L0 = 0;
-      ok = SetLX200(":SmN#");
+      ok = telInfo.SetLX200(":SmN#");
     }
   }
 }
@@ -720,7 +686,7 @@ void menuStar(bool sync)
   current_selection_Star = onstep_UserInterfaceCatalog(display.getU8g2(), sync ? "Sync Star" : "Goto Star", current_selection_Star, STAR);
   if (current_selection_Star != 0)
   {
-    ok = SyncGotoCatLX200(sync, STAR, current_selection_Star - 1);
+    ok = telInfo.SyncGotoCatLX200(sync, STAR, current_selection_Star - 1);
     if (ok)
     {
       // Quit Menu
@@ -732,10 +698,10 @@ void menuStar(bool sync)
 
 bool SelectStarAlign()
 {
-  alignSelectedStar = onstep_UserInterfaceCatalog(display.getU8g2(), "select Star", alignSelectedStar, STAR);
-  if (alignSelectedStar != 0)
+  telInfo.alignSelectedStar = onstep_UserInterfaceCatalog(display.getU8g2(), "select Star", telInfo.alignSelectedStar, STAR);
+  if (telInfo.alignSelectedStar != 0)
   {
-    ok = SyncGotoCatLX200(false, STAR, alignSelectedStar - 1);
+    ok = telInfo.SyncSelectedStarLX200();
     return ok;
   }
   return false;
@@ -751,7 +717,7 @@ void menuRADec(bool sync)
     if (onstep_UserInterfaceInputValueDec(display.getU8g2(), &angleDEC))
     {
       getdms(angleDEC, vd1, vd2, vd3);
-      ok = SyncGotoLX200(sync, vr1, vr2, vr3, vd1, vd2, vd3);
+      ok = telInfo.SyncGotoLX200(sync, vr1, vr2, vr3, vd1, vd2, vd3);
       if (ok)
       {
         // Quit Menu
@@ -883,7 +849,7 @@ void menuPredefinedMount()
 
 void menuAltMount()
 {
-  mountType = GEM;
+  telInfo.mountType = Telescope::GEM;
   current_selection_L4 = 1;
   while (current_selection_L4 != 0)
   {
@@ -921,6 +887,7 @@ void menuAltMount()
     }
   }
 }
+
 void menuAP() {}
 void menuFornax() {}
 void menuLosmandy() {}
@@ -997,37 +964,29 @@ void menuSite()
 void menuSites()
 {
   char out[20];
-  if (GetLX200(":W?#", out, false))
+  int val;
+
+  if (telInfo.GetSiteLX200(val))
   {
-    current_selection_L3 = (int)strtol(&out[0], NULL, 10) + 1;
+    current_selection_L3 = val;
     const char *string_list_SiteL3 = "Site 0\n""Site 1\n""Site 2\n""Site 3";
     current_selection_L3 = onstep_UserInterfaceSelectionList(display.getU8g2(), "Menu Sites", current_selection_L3, string_list_SiteL3);
-    sprintf(out, ":W%d#", current_selection_L3 - 1);
-    Serial.print(out);
-    Serial.flush();
+    if (current_selection_L3 != 0)
+    {
+      val = current_selection_L3 - 1;
+      telInfo.SetSiteLX200(val);
+    }
   }
 }
 
 void menuUTCTime()
 {
-  char out[20];
-  if (GetLX200(":GL#", out, false))
+  long value;
+  if (telInfo.GetTimeLX200(value))
   {
-    unsigned int hour, minute, second;
-    char2RA(out, hour, minute, second);
-    long value = hour * 60 + minute;
-    value *= 60;
-    value += second;
     if (onstep_UserInterfaceInputValueUTCTime(display.getU8g2(), &value))
     {
-      second = value % 60;
-      value /= 60;
-      minute = value % 60;
-      value /= 60;
-      hour = value;
-      sprintf(out, ":SL%02d:%02d:%02d#", hour, minute, second);
-      SetLX200(out);
-      SetLX200(":SG+00#", true);
+      telInfo.SetTimeLX200(value);
     }
   }
 }
@@ -1076,7 +1035,7 @@ void menuContrast()
 void menuDate()
 {
   char out[20];
-  if (GetLX200(":GC#", out, false))
+  if (telInfo.GetLX200(":GC#", out, false))
   {
     char* pEnd;
     uint8_t month = strtol(&out[0], &pEnd, 10);
@@ -1085,7 +1044,7 @@ void menuDate()
     if (onstep_UserInterfaceInputValueDate(display.getU8g2(), "Date", year, month, day))
     {
       sprintf(out, ":SC%02d/%02d/%02d#", month, day, year);
-      SetLX200(out);
+      telInfo.SetLX200(out);
     }
   }
 }
@@ -1093,7 +1052,7 @@ void menuDate()
 void menuLatitude()
 {
   char out[20];
-  if (GetLX200(":Gt#", out, false))
+  if (telInfo.GetLX200(":Gt#", out, false))
   {
     char* pEnd;
     int degree = (int)strtol(&out[0], &pEnd, 10);
@@ -1107,7 +1066,7 @@ void menuLatitude()
       minute = abs(angle % 60);
       degree = angle / 60;
       sprintf(out, ":St%+03d*%02d#", degree, minute);
-      SetLX200(out);
+      telInfo.SetLX200(out);
     }
   }
 }
@@ -1115,7 +1074,7 @@ void menuLatitude()
 void menuLongitude()
 {
   char out[20];
-  if (GetLX200(":Gg#", out, false))
+  if (telInfo.GetLX200(":Gg#", out, false))
   {
     char* pEnd;
     int degree = (int)strtol(&out[0], &pEnd, 10);
@@ -1129,7 +1088,7 @@ void menuLongitude()
       minute = abs(angle) % 60;
       degree = angle / 60;
       sprintf(out, ":Sg%+04d*%02d#", degree, minute);
-      SetLX200(out);
+      telInfo.SetLX200(out);
     }
   }
 }
@@ -1178,7 +1137,7 @@ void menuWifi()
       powerCylceRequired = true;
       break;
     case 2:
-      DisplayMessage("masterPassword is", masterPassword, 1000);
+      DisplayMessage("masterPassword is", "password", 1000);
     case 3:
       EEPROM_writeInt(0, 0);
       EEPROM.commit();
@@ -1196,13 +1155,13 @@ void menuWifi()
 void menuHorizon()
 {
   char out[20];
-  if (GetLX200(":Gh#", out, false))
+  if (telInfo.GetLX200(":Gh#", out, false))
   {
     float angle = (float)strtol(&out[0], NULL, 10);
     if (onstep_UserInterfaceInputValueFloat(display.getU8g2(), "Horizon Limit", "", &angle, -10, 20, 2, 0, " degree"))
     {
       sprintf(out, ":Sh%+03d#", (int)angle);
-      SetLX200(out);
+      telInfo.SetLX200(out);
     }
   }
 }
@@ -1210,13 +1169,13 @@ void menuHorizon()
 void menuOverhead()
 {
   char out[20];
-  if (GetLX200(":Go#", out, false))
+  if (telInfo.GetLX200(":Go#", out, false))
   {
     float angle = (float)strtol(&out[0], NULL, 10);
     if (onstep_UserInterfaceInputValueFloat(display.getU8g2(), "Overhead Limit", "", &angle, 60, 91, 2, 0, " degree"))
     {
       sprintf(out, ":S0%02d#", (int)angle);
-      SetLX200(out);
+      telInfo.SetLX200(out);
     }
   }
 }

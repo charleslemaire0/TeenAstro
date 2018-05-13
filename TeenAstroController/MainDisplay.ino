@@ -116,12 +116,12 @@ void update_main(u8g2_t *u8g2, u8g2_uint_t page)
   {
     return;
   }
-  if (telInfo.hasTelStatus && align != ALI_OFF)
+  if (telInfo.hasTelStatus && telInfo.align != Telescope::ALI_OFF)
   {
-    TrackState curT = telInfo.getTrackingState();
-    if (curT != TRK_SLEWING && (align == ALI_SLEW_STAR_1 || align == ALI_SLEW_STAR_2 || align == ALI_SLEW_STAR_3))
+    Telescope::TrackState curT = telInfo.getTrackingState();
+    if (curT != Telescope::TRK_SLEWING && (telInfo.align == Telescope::ALI_SLEW_STAR_1 || telInfo.align == Telescope::ALI_SLEW_STAR_2 || telInfo.align == Telescope::ALI_SLEW_STAR_3))
     {
-      align += 1;
+      telInfo.align = static_cast<Telescope::AlignState>(telInfo.align + 1);
     }
     page = 3;
   }
@@ -148,14 +148,14 @@ void update_main(u8g2_t *u8g2, u8g2_uint_t page)
 
     if (telInfo.hasTelStatus)
     {
-      ParkState curP = telInfo.getParkState();
-      TrackState curT = telInfo.getTrackingState();
-      if (curP == PRK_PARKED)
+      Telescope::ParkState curP = telInfo.getParkState();
+      Telescope::TrackState curT = telInfo.getTrackingState();
+      if (curP == Telescope::PRK_PARKED)
       {
         display.drawXBMP(x - icon_width, 0, icon_width, icon_height, parked_bits);
         x -= icon_width + 1;
       }
-      else if (curP == PRK_PARKING)
+      else if (curP == Telescope::PRK_PARKING)
       {
         display.drawXBMP(x - icon_width, 0, icon_width, icon_height, parking_bits);
         x -= icon_width + 1;
@@ -167,49 +167,49 @@ void update_main(u8g2_t *u8g2, u8g2_uint_t page)
       }
       else
       {
-        if (curT == TRK_SLEWING)
+        if (curT == Telescope::TRK_SLEWING)
         {
           display.drawXBMP(x - icon_width, 0, icon_width, icon_height, sleewing_bits);
           x -= icon_width + 1;
         }
-        else if (curT == TRK_ON)
+        else if (curT == Telescope::TRK_ON)
         {
           display.drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_S_bits);
           x -= icon_width + 1;
         }
-        else if (curT == TRK_OFF)
+        else if (curT == Telescope::TRK_OFF)
         {
           display.drawXBMP(x - icon_width, 0, icon_width, icon_height, no_tracking_bits);
           x -= icon_width + 1;
         }
 
-        if (curP == PRK_FAILED)
+        if (curP == Telescope::PRK_FAILED)
         {
           display.drawXBMP(x - icon_width, 0, icon_width, icon_height, parkingFailed_bits);
           x -= icon_width + 1;
         }
         if (telInfo.hasPierInfo)
         {
-          PierState CurP = telInfo.getPierState();
-          if (CurP == PIER_E)
+          Telescope::PierState CurP = telInfo.getPierState();
+          if (CurP == Telescope::PIER_E)
           {
             display.drawXBMP(x - icon_width, 0, icon_width, icon_height, E_bits);
             x -= icon_width + 1;
           }
-          else if (CurP == PIER_W)
+          else if (CurP == Telescope::PIER_W)
           {
             display.drawXBMP(x - icon_width, 0, icon_width, icon_height, W_bits);
             x -= icon_width + 1;
           }
  
         }
-        if (align != ALI_OFF)
+        if (telInfo.align != Telescope::ALI_OFF)
         {
-          if (aliMode == ALIM_ONE)
+          if (telInfo.aliMode == Telescope::ALIM_ONE)
             display.drawXBMP(x - icon_width, 0, icon_width, icon_height, align1_bits);
-          else if (aliMode == ALIM_TWO)
+          else if (telInfo.aliMode == Telescope::ALIM_TWO)
             display.drawXBMP(x - icon_width, 0, icon_width, icon_height, align2_bits);
-          else if (aliMode == ALIM_THREE)
+          else if (telInfo.aliMode == Telescope::ALIM_THREE)
             display.drawXBMP(x - icon_width, 0, icon_width, icon_height, align3_bits);
           x -= icon_width + 1;
         }
@@ -221,33 +221,32 @@ void update_main(u8g2_t *u8g2, u8g2_uint_t page)
         }
 
       }
-
-      lastError = telInfo.getError();
-      if (lastError == ERR_MOTOR_FAULT)
+      switch (telInfo.getError())
       {
+      case Telescope::ERR_MOTOR_FAULT:
         display.drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrMf_bits);
         x -= icon_width + 1;
-      }
-      else if (lastError == ERR_ALT)
-      {
+        break;
+      case  Telescope::ERR_ALT:
         display.drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrHo_bits);
         x -= icon_width + 1;
-      }
-      else if (lastError == ERR_DEC)
-      {
+        break;
+      case Telescope::ERR_DEC:
         display.drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrDe_bits);
         x -= icon_width + 1;
-      }
-      else if (lastError == ERR_UNDER_POLE)
-      {
+        break;
+      case Telescope::ERR_UNDER_POLE:
         display.drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrUp_bits);
         x -= icon_width + 1;
-      }
-      else if (lastError == ERR_MERIDIAN)
-      {
+        break;
+      case Telescope::ERR_MERIDIAN:
         display.drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrMe_bits);
         x -= icon_width + 1;
+        break;
+      default:
+        break;
       }
+   
     }
 
     if (page == 0)
@@ -366,7 +365,7 @@ void update_main(u8g2_t *u8g2, u8g2_uint_t page)
     }
     else if (page == 3)
     {
-      int idx = alignSelectedStar - 1;
+      int idx = telInfo.alignSelectedStar - 1;
       const byte* cat_letter = NULL;
       const byte*  cat_const = NULL;
       cat_letter = &Star_letter[idx];
@@ -374,13 +373,13 @@ void update_main(u8g2_t *u8g2, u8g2_uint_t page)
       u8g2_uint_t y = 36;
       char txt[20];
       
-      if ((align-1)%3 == 1)
+      if ((telInfo.align-1)%3 == 1)
       {
-        sprintf(txt, "Slew to Star %u", (align -1) / 3 + 1);
+        sprintf(txt, "Slew to Star %u", (telInfo.align -1) / 3 + 1);
       }
-      else if ((align - 1) % 3 == 2)
+      else if ((telInfo.align - 1) % 3 == 2)
       {
-        sprintf(txt, "Recenter Star %u", (align - 1) / 3 + 1);
+        sprintf(txt, "Recenter Star %u", (telInfo.align - 1) / 3 + 1);
       }
       u8g2_DrawUTF8(u8g2, 0, y, txt);
       y += line_height + 4;

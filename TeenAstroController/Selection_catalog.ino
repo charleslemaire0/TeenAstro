@@ -34,7 +34,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
-#include "Selection_catalog.h"
 
 #define OC_width 18
 #define OC_height 10
@@ -72,7 +71,6 @@ static unsigned char GX_bits[] U8X8_PROGMEM = {
   0x18, 0x70, 0x00, 0xf0, 0x3f, 0x00 };
 
 
-#include "Selection_catalog.h"
 
 #define MY_BORDER_SIZE 1
 
@@ -277,7 +275,7 @@ unsigned short onstep_UserInterfaceCatalog(u8g2_t *u8g2, const char *title, unsi
 
     for (;;)
     {
-      updateWifi();
+      //updateWifi();
       event = onstep_GetMenuEvent();
       //event = U8X8_MSG_GPIO_MENU_NEXT;
       if (event == U8X8_MSG_GPIO_MENU_SELECT || event == U8X8_MSG_GPIO_MENU_NEXT)

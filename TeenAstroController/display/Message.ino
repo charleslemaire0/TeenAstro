@@ -145,7 +145,7 @@ uint8_t onstep_UserInterfaceMessage(u8g2_t *u8g2, const char *title1, const char
 
   for (;;)
   {
-    updateWifi();
+    //updateWifi();
     u8g2_FirstPage(u8g2);
     do
     {
@@ -171,7 +171,7 @@ uint8_t onstep_UserInterfaceMessage(u8g2_t *u8g2, const char *title1, const char
 
     for (;;)
     {
-      updateWifi();
+      //updateWifi();
       event = u8x8_GetMenuEvent(u8g2_GetU8x8(u8g2));
       if (event == U8X8_MSG_GPIO_MENU_SELECT)
         return cursor + 1;
