@@ -1,51 +1,46 @@
+
+#include "u8g2_ext_input.h"
+#include "u8g2_ext_event.h"
 /*
+Copyright (c) 2018, 
+All rights reserved.
 
-  u8g2_input_value.c
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
 
-  Universal 8bit Graphics Library (https://github.com/olikraus/u8g2/)
+* Redistributions of source code must retain the above copyright notice, this list
+of conditions and the following disclaimer.
 
-  Copyright (c) 2016, olikraus@gmail.com
-  All rights reserved.
+* Redistributions in binary form must reproduce the above copyright notice, this
+list of conditions and the following disclaimer in the documentation and/or other
+materials provided with the distribution.
 
-  Redistribution and use in source and binary forms, with or without modification,
-  are permitted provided that the following conditions are met:
-
-  * Redistributions of source code must retain the above copyright notice, this list
-    of conditions and the following disclaimer.
-
-  * Redistributions in binary form must reproduce the above copyright notice, this
-    list of conditions and the following disclaimer in the documentation and/or other
-    materials provided with the distribution.
-
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
-  CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
-  INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
-  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-  STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
 
-
-
-
 /*
-  return:
-    0: value is not changed (HOME/Break Button pressed)
-    1: value has been updated
+return:
+0: value is not changed (HOME/Break Button pressed)
+1: value has been updated
 */
 
-uint8_t onstep_UserInterfaceInputValueInteger(u8g2_t *u8g2, const char *title, const char *pre, uint8_t *value, uint8_t lo, uint8_t hi, uint8_t digits, const char *post)
+uint8_t ext_UserInterfaceInputValueInteger(u8g2_t *u8g2, Pad* extPad, const char *title, const char *pre, uint8_t *value, uint8_t lo, uint8_t hi, uint8_t digits, const char *post)
 {
-  display.setFont(u8g2_font_helvR12_te);
+  u8g2_SetFont(u8g2, u8g2_font_helvR12_te);
   uint8_t line_height;
   uint8_t height;
   u8g2_uint_t pixel_height;
@@ -119,8 +114,7 @@ uint8_t onstep_UserInterfaceInputValueInteger(u8g2_t *u8g2, const char *title, c
 
     for (;;)
     {
-      //updateWifi();
-      event = onstep_GetMenuEvent();
+      event = ext_GetMenuEvent(extPad);
       if (event == U8X8_MSG_GPIO_MENU_SELECT || event == U8X8_MSG_GPIO_MENU_NEXT)
       {
         *value = local_value;
@@ -159,9 +153,9 @@ return:
 1: value has been updated
 */
 
-uint8_t onstep_UserInterfaceInputValueFloat(u8g2_t *u8g2, const char *title, const char *pre, float *value, float lo, float hi, uint8_t len, uint8_t dec, const char *post)
+uint8_t ext_UserInterfaceInputValueFloat(u8g2_t *u8g2, Pad* extPad, const char *title, const char *pre, float *value, float lo, float hi, uint8_t len, uint8_t dec, const char *post)
 {
-  display.setFont(u8g2_font_helvR12_te);
+  u8g2_SetFont(u8g2, u8g2_font_helvR12_te);
   static char outstr[15];
   uint8_t line_height;
   uint8_t height;
@@ -219,7 +213,6 @@ uint8_t onstep_UserInterfaceInputValueFloat(u8g2_t *u8g2, const char *title, con
   /* event loop */
   for (;;)
   {
-    //updateWifi();
     u8g2_FirstPage(u8g2);
     do
     {
@@ -245,7 +238,7 @@ uint8_t onstep_UserInterfaceInputValueFloat(u8g2_t *u8g2, const char *title, con
 
     for (;;)
     {
-      event = onstep_GetMenuEvent();
+      event = ext_GetMenuEvent(extPad);
       if (event == U8X8_MSG_GPIO_MENU_SELECT || event == U8X8_MSG_GPIO_MENU_NEXT)
       {
         *value = local_value;
@@ -302,7 +295,7 @@ return:
 
 
 
-uint8_t onstep_UserInterfaceInputValueDMS(u8g2_t *u8g2, const char *title, long *value, long lo, long hi,
+uint8_t ext_UserInterfaceInputValueDMS(u8g2_t *u8g2, Pad* extPad, const char *title, long *value, long lo, long hi,
   uint8_t digits1,
 
   char* symb1, char* symb2, char* symb3,
@@ -310,8 +303,8 @@ uint8_t onstep_UserInterfaceInputValueDMS(u8g2_t *u8g2, const char *title, long 
   bool display_seconds)
 {
 
-  display.setFont(u8g2_font_helvR12_te);
-  display.enableUTF8Print();
+  u8g2_SetFont(u8g2, u8g2_font_helvR12_te);
+  //display.enableUTF8Print();
   uint8_t line_height;
   uint8_t height;
   u8g2_uint_t pixel_height;
@@ -386,7 +379,6 @@ uint8_t onstep_UserInterfaceInputValueDMS(u8g2_t *u8g2, const char *title, long 
   /* event loop */
   for (;;)
   {
-    //updateWifi();
     u8g2_FirstPage(u8g2);
     do
     {
@@ -414,7 +406,7 @@ uint8_t onstep_UserInterfaceInputValueDMS(u8g2_t *u8g2, const char *title, long 
 
     for (;;)
     {
-      event = onstep_GetMenuEvent();
+      event = ext_GetMenuEvent(extPad);
       if (event == U8X8_MSG_GPIO_MENU_SELECT || event == U8X8_MSG_GPIO_MENU_NEXT)
       {
         *value = (long)v1 * 3600 + (long)v2 * 60;
@@ -490,14 +482,11 @@ uint8_t onstep_UserInterfaceInputValueDMS(u8g2_t *u8g2, const char *title, long 
 }
 
 
-uint8_t onstep_UserInterfaceInputValueDate(u8g2_t *u8g2, const char *title, uint8_t& year, uint8_t& month, uint8_t& day)
+uint8_t ext_UserInterfaceInputValueDate(u8g2_t *u8g2, Pad* extPad, const char *title, uint8_t& year, uint8_t& month, uint8_t& day)
 {
   char* symb = "/";
-
-
-
-  display.setFont(u8g2_font_helvR12_te);
-  display.enableUTF8Print();
+  u8g2_SetFont(u8g2, u8g2_font_helvR12_te);
+  //display.enableUTF8Print();
   uint8_t line_height;
   uint8_t height;
   u8g2_uint_t pixel_height;
@@ -560,7 +549,6 @@ uint8_t onstep_UserInterfaceInputValueDate(u8g2_t *u8g2, const char *title, uint
   /* event loop */
   for (;;)
   {
-    //updateWifi();
     u8g2_FirstPage(u8g2);
     do
     {
@@ -584,7 +572,7 @@ uint8_t onstep_UserInterfaceInputValueDate(u8g2_t *u8g2, const char *title, uint
 
     for (;;)
     {
-      event = onstep_GetMenuEvent();
+      event = ext_GetMenuEvent(extPad);
       if (event == U8X8_MSG_GPIO_MENU_SELECT || event == U8X8_MSG_GPIO_MENU_NEXT)
       {
         year = local_year;
@@ -639,53 +627,47 @@ uint8_t onstep_UserInterfaceInputValueDate(u8g2_t *u8g2, const char *title, uint
   //return r;  
 }
 
-uint8_t onstep_UserInterfaceInputValueRA(u8g2_t *u8g2, long *value)
+uint8_t ext_UserInterfaceInputValueRA(u8g2_t *u8g2, Pad *extPad, long *value)
 {
-  return onstep_UserInterfaceInputValueDMS(display.getU8g2(), "Right Asc.", value, 0, 86399, 2, "h", "m", "s", "", "", true);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Right Asc.", value, 0, 86399, 2, "h", "m", "s", "", "", true);
 }
 
-uint8_t onstep_UserInterfaceInputValueDec(u8g2_t *u8g2, long *value)
-{
-  char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  return onstep_UserInterfaceInputValueDMS(display.getU8g2(), "Declination", value, -324000, 324000, 2, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
-}
-
-uint8_t onstep_UserInterfaceInputValueUTCTime(u8g2_t *u8g2, long *value)
-{
-  return onstep_UserInterfaceInputValueDMS(display.getU8g2(), "UTC Time", value, 0, 86399, 2, ":", ":", "", "", "", true);
-}
-
-uint8_t onstep_UserInterfaceInputValueLatitude(u8g2_t *u8g2, long *value)
+uint8_t ext_UserInterfaceInputValueDec(u8g2_t *u8g2, Pad *extPad, long *value)
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  return onstep_UserInterfaceInputValueDMS(display.getU8g2(), "Latitude", value, -324000, 324000, 2, DEGREE_SYMBOL, "'", "\"", "N ", "S ", false);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Declination", value, -324000, 324000, 2, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
 }
 
-uint8_t onstep_UserInterfaceInputValueLongitude(u8g2_t *u8g2, long *value)
+uint8_t ext_UserInterfaceInputValueUTCTime(u8g2_t *u8g2, Pad *extPad, long *value)
+{
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "UTC Time", value, 0, 86399, 2, ":", ":", "", "", "", true);
+}
+
+uint8_t ext_UserInterfaceInputValueLatitude(u8g2_t *u8g2, Pad *extPad, long *value)
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  return onstep_UserInterfaceInputValueDMS(display.getU8g2(), "Longitude", value, -648000, 648000, 3, DEGREE_SYMBOL, "'", "\"", "W ", "E ", false);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Latitude", value, -324000, 324000, 2, DEGREE_SYMBOL, "'", "\"", "N ", "S ", false);
 }
 
+uint8_t ext_UserInterfaceInputValueLongitude(u8g2_t *u8g2, Pad *extPad, long *value)
+{
+  char DEGREE_SYMBOL[] = { 0xB0, '\0' };
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Longitude", value, -648000, 648000, 3, DEGREE_SYMBOL, "'", "\"", "W ", "E ", false);
+}
 
-
-
-void gethms(const long& v, uint8_t& v1, uint8_t& v2, uint8_t& v3)
+void _gethms(const long& v, uint8_t& v1, uint8_t& v2, uint8_t& v3)
 {
   v3 = v % 60;
   v2 = (v / 60) % 60;
   v1 = v / 3600;
 }
 
-void getdms(const long& v, short& v1, uint8_t& v2, uint8_t& v3)
+void _getdms(const long& v, short& v1, uint8_t& v2, uint8_t& v3)
 {
   v3 = abs(v) % 60;
   v2 = (abs(v) / 60) % 60;
   v1 = v / 3600;
 }
-
-
-
 
 void add_days(uint8_t& year, uint8_t& month, uint8_t& day, int days2add)
 {

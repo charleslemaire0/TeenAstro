@@ -19,15 +19,13 @@ public:
   enum ParkState { PRK_UNPARKED, PRK_PARKED, PRK_FAILED, PRK_PARKING, PRK_UNKNOW };
   enum PierState { PIER_E, PIER_W, PIER_UNKNOW };
 
-  Mount           mountType = GEM;
-
+public: 
   AlignState      align = ALI_OFF;
   AlignMode       aliMode = ALIM_ONE;
   unsigned short  alignSelectedStar = 1;
   int             alignMaxNumStars = -1;
 
   Errors lastError = Telescope::ERR_NONE;
-
 
   char TempRa[20];
   char TempDec[20];
@@ -54,44 +52,17 @@ public:
   unsigned long lastState;
   void updateRaDec();
   void updateAzAlt();
-
   void updateTime();
-
   void updateTel();
-
   ParkState getParkState();
-
   TrackState getTrackingState();
- 
   bool atHome();
-
   bool isGuiding();
-
   PierState getPierState();
- 
   Errors getError();
-
-  bool GetLX200(char* command, char* output, bool silent);
-  bool GetTimeLX200(unsigned int &hour, unsigned int &minute, unsigned int &second);
-  bool GetTimeLX200(long &value);
-  bool SetLX200(char* command, bool silent = false);
-  bool SetTimeLX200(long &value);
-  bool GetSiteLX200(int &value);
-  void SetSiteLX200(int &value);
-  void Move2TargetLX200(bool silent = false);
-  bool SetTargetRaLX200(uint8_t& vr1, uint8_t& vr2, uint8_t& vr3);
-  bool SetTargetDecLX200(short& vd1, uint8_t& vd2, uint8_t& vd3);
-  bool SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, short& vd1, uint8_t& vd2, uint8_t& vd3);
-  bool SyncGotoLX200(bool, float& Ra, float& Dec);
-  bool SyncSelectedStarLX200();
-  bool GetDateLX200(unsigned int &day, unsigned int &month, unsigned int &year);
-  bool SyncGotoCatLX200(bool sync, Catalog cat, int idx);
-  bool SyncGotoPlanetLX200(bool sync, unsigned short obj);
   void addStar();
-  int readLX200Bytes(char* command, char* recvBuffer, unsigned long timeOutMs);
+
 private:
-  void serialRecvFlush();
-  void char2RA(char* txt, unsigned int& hour, unsigned int& minute, unsigned int& second);
-  void char2DEC(char* txt, int& deg, unsigned int& min, unsigned int& sec);
+
 };
 

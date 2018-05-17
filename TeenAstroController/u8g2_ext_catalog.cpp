@@ -34,6 +34,11 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
+#include <U8g2lib.h>
+#include "u8g2_ext_catalog.h"
+#include "u8g2_ext_value.h"
+#include "Catalog.h"
+#include "u8g2_ext_event.h"
 
 #define OC_width 18
 #define OC_height 10
@@ -80,7 +85,7 @@ selection list with string line
 returns line height
 */
 
-static u8g2_uint_t onstep_draw_catalog_list_line(u8g2_t *u8g2, u8g2_uint_t y, unsigned short idx, Catalog cat)
+static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, unsigned short idx, Catalog cat)
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
   u8g2_uint_t x = 0;
@@ -122,7 +127,7 @@ static u8g2_uint_t onstep_draw_catalog_list_line(u8g2_t *u8g2, u8g2_uint_t y, un
     memcpy(txt3, u8x8_u8toa(vr3, 2), 3);
     u8g2_DrawUTF8(u8g2, x, y, "ra");
     x += step0;
-    drawRA(u8g2, x, y, txt1, txt2, txt3);
+    ext_drawRA(u8g2, x, y, txt1, txt2, txt3);
     y += line_height;
     x = 0;
     getcatdms(Star_dec[idx], vd1, vd2);
@@ -130,7 +135,7 @@ static u8g2_uint_t onstep_draw_catalog_list_line(u8g2_t *u8g2, u8g2_uint_t y, un
     memcpy(txt2, u8x8_u8toa(vd2, 2), 3);
     u8g2_DrawUTF8(u8g2, x, y, "dec ");
     x += step0;
-    drawDec(u8g2, x, y, vd1 < 0 ? "-" : "+", txt1, txt2, "00");
+    ext_drawDec(u8g2, x, y, vd1 < 0 ? "-" : "+", txt1, txt2, "00");
     return line_height;
   }
 
@@ -167,19 +172,19 @@ static u8g2_uint_t onstep_draw_catalog_list_line(u8g2_t *u8g2, u8g2_uint_t y, un
     switch (*cat_obj)
     {
     case 0:
-      display.drawXBMP(x - 3, y - EN_height, EN_width, EN_height, EN_bits);
+      u8g2_DrawXBMP(u8g2, x - 3, y - EN_height, EN_width, EN_height, EN_bits);
       break;
     case 1:
-      display.drawXBMP(x - 3, y - GC_height, GC_width, GC_height, GC_bits);
+      u8g2_DrawXBMP(u8g2, x - 3, y - GC_height, GC_width, GC_height, GC_bits);
       break;
     case 2:
-      display.drawXBMP(x - 3, y - GX_height, GX_width, GX_height, GX_bits);
+      u8g2_DrawXBMP(u8g2, x - 3, y - GX_height, GX_width, GX_height, GX_bits);
       break;
     case 3:
-      display.drawXBMP(x - 3, y - OC_height, OC_width, OC_height, OC_bits);
+      u8g2_DrawXBMP(u8g2, x - 3, y - OC_height, OC_width, OC_height, OC_bits);
       break;
     case 4:
-      display.drawXBMP(x - 3, y - PN_height, PN_width, PN_height, PN_bits);
+      u8g2_DrawXBMP(u8g2, x - 3, y - PN_height, PN_width, PN_height, PN_bits);
       break;
     default:
       break;
@@ -213,9 +218,9 @@ u8g2_SetFontDirection(u8g2, 0);
 u8g2_SetFontPosBaseline(u8g2);
 
 */
-unsigned short onstep_UserInterfaceCatalog(u8g2_t *u8g2, const char *title, unsigned short start_pos, Catalog cat)
+unsigned short ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *title, unsigned short start_pos, Catalog cat)
 {
-  display.setFont(u8g2_font_helvR10_te);
+  u8g2_SetFont(u8g2, u8g2_font_helvR10_te);
   unsigned short cur_pos;
   unsigned short tot_pos;
   unsigned short incr = 1;
@@ -265,7 +270,7 @@ unsigned short onstep_UserInterfaceCatalog(u8g2_t *u8g2, const char *title, unsi
 
         yy += 3;
       }
-      onstep_draw_catalog_list_line(u8g2, yy, cur_pos, cat);
+      ext_draw_catalog_list_line(u8g2, yy, cur_pos, cat);
     } while (u8g2_NextPage(u8g2));
 
 #ifdef U8G2_REF_MAN_PIC
@@ -275,12 +280,9 @@ unsigned short onstep_UserInterfaceCatalog(u8g2_t *u8g2, const char *title, unsi
 
     for (;;)
     {
-      //updateWifi();
-      event = onstep_GetMenuEvent();
-      //event = U8X8_MSG_GPIO_MENU_NEXT;
+      event = ext_GetMenuEvent(extPad);
       if (event == U8X8_MSG_GPIO_MENU_SELECT || event == U8X8_MSG_GPIO_MENU_NEXT)
       {
-
         return cur_pos + 1;		/* +1, issue 112 */
       }
 
