@@ -740,14 +740,14 @@ bool SmartHandController::menuSetStepperGearBox(uint8_t &axis, unsigned short &w
   sprintf(text, "Gear box M%u", axis);
   if (display->UserInterfaceInputValueFloat(&buttonPad,text, "Ratio", &stepperGearBox, 1, 100, 5, 0, ""))
   {
-    return writeTotGearLX200(axis, stepperGearBox * worm);
+    return DisplayMessageLX200(writeTotGearLX200(axis, stepperGearBox * worm),false);
   }
 }
 
 bool SmartHandController::menuSetReverse(uint8_t &axis)
 {
   bool reverse;
-  if (!readReverseLX200(axis, reverse))
+  if (!DisplayMessageLX200(readReverseLX200(axis, reverse)))
     return false;
   char text[20];
   char * string_list_micro = "Direct\nReversed";
@@ -756,53 +756,53 @@ bool SmartHandController::menuSetReverse(uint8_t &axis)
   if (choice)
   {
     reverse = (bool)(choice - 1);
-    return writeReverseLX200(axis, reverse);
+    return DisplayMessageLX200(writeReverseLX200(axis, reverse),false);
   }
   return true;
 }
 bool SmartHandController::menuSetBacklash(uint8_t &axis)
 {
   float backlash;
-  if (!readBacklashLX200(axis, backlash))
+  if (!DisplayMessageLX200(readBacklashLX200(axis, backlash)))
     return false;
   char text[20];
   sprintf(text, "Backlash M%u", axis);
   if (display->UserInterfaceInputValueFloat(&buttonPad, text, "", &backlash, 0, 1000, 4, 0, " in seconds"))
   {
-    return writeBacklashLX200(axis, backlash);
+    return DisplayMessageLX200(writeBacklashLX200(axis, backlash),false);
   }
   return true;
 }
 bool SmartHandController::menuSetTotGear(uint8_t &axis)
 {
   float totGear;
-  if (!readTotGearLX200(axis, totGear))
+  if (!DisplayMessageLX200(readTotGearLX200(axis, totGear)))
     return false;
   char text[20];
   sprintf(text, "Gear M%u", axis);
   if (display->UserInterfaceInputValueFloat(&buttonPad, text, "Ratio", &totGear, 1, 10000, 5, 0, ""))
   {
-    return writeTotGearLX200(axis, totGear);
+    return DisplayMessageLX200(writeTotGearLX200(axis, totGear), false);
   }
   return true;
 }
 bool SmartHandController::menuSetStepPerRot(uint8_t &axis)
 {
   float stepPerRot;
-  if (!readStepPerRotLX200(axis, stepPerRot))
+  if (!DisplayMessageLX200(readStepPerRotLX200(axis, stepPerRot)))
     return false;
   char text[20];
   sprintf(text, "Stepper M%u", axis);
   if (display->UserInterfaceInputValueFloat(&buttonPad, text, "", &stepPerRot, 1, 400, 3, 0, " Steps"))
   {
-    return writeStepPerRotLX200(axis, stepPerRot);
+    return DisplayMessageLX200(writeStepPerRotLX200(axis, stepPerRot),false);
   }
   return true;
 }
 bool SmartHandController::menuSetMicro(uint8_t &axis)
 {
   uint8_t microStep;
-    if (!readMicroLX200(axis, microStep))
+    if (!DisplayMessageLX200(readMicroLX200(axis, microStep)))
       return false;
   char text[20];
   char * string_list_micro = "16 (~256)\n32\n64\n128\n256";
@@ -812,14 +812,14 @@ bool SmartHandController::menuSetMicro(uint8_t &axis)
   if (choice)
   {
     microStep = choice - 1 + 4;
-    return writeMicroLX200(axis, microStep);
+    return DisplayMessageLX200(writeMicroLX200(axis, microStep),false);
   }
   return true;
 }
 bool SmartHandController::menuSetLowCurrent(uint8_t &axis)
 {
   uint8_t lowCurr;
-  if (!readLowCurrLX200(axis, lowCurr))
+  if (!DisplayMessageLX200(readLowCurrLX200(axis, lowCurr)))
   {
     return false;
   }
@@ -827,13 +827,15 @@ bool SmartHandController::menuSetLowCurrent(uint8_t &axis)
   sprintf(text, "Low Curr. M%u", axis);
   if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &lowCurr, 10, 200, 3, "0 mA"))
   {
-    writeLowCurrLX200(axis, lowCurr);
+    return DisplayMessageLX200(writeLowCurrLX200(axis, lowCurr),false);
   }
+  return true;
 }
+
 bool SmartHandController::menuSetHighCurrent(uint8_t &axis)
 {
   uint8_t highCurr;
-  if (!readHighCurrLX200(axis, highCurr))
+  if (!DisplayMessageLX200(readHighCurrLX200(axis, highCurr)))
   {
     return false;
   }
@@ -841,8 +843,9 @@ bool SmartHandController::menuSetHighCurrent(uint8_t &axis)
   sprintf(text, "High Curr. M%u", axis);
   if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &highCurr, 10, 200, 3, "0 mA"))
   {
-    writeHighCurrLX200(axis, highCurr);
+    return DisplayMessageLX200(writeHighCurrLX200(axis, highCurr));
   }
+  return true;
 }
 
 void SmartHandController::DisplayMotorSettings(uint8_t &axis)
@@ -855,11 +858,11 @@ void SmartHandController::DisplayMotorSettings(uint8_t &axis)
   float backlash,totGear,stepPerRot;
   uint8_t microStep,lowCurr,highCurr;
   sprintf(line1, "Motor %u Settings", axis);
-  if (readReverseLX200(axis, reverse))
+  if (DisplayMessageLX200(readReverseLX200(axis, reverse)))
   {
     reverse ? sprintf(line3, "Reversed Rotation") : sprintf(line3, "Direct Rotation");
   }
-  if (readTotGearLX200(axis, totGear))
+  if (DisplayMessageLX200(readTotGearLX200(axis, totGear)))
   {
     sprintf(line4, "Ratio: %u", (unsigned int)totGear);
   }
@@ -868,15 +871,15 @@ void SmartHandController::DisplayMotorSettings(uint8_t &axis)
   line2[0] = 0;
   line3[0] = 0;
   line4[0] = 0;
-  if (readStepPerRotLX200(axis, stepPerRot))
+  if (DisplayMessageLX200(readStepPerRotLX200(axis, stepPerRot)))
   {
     sprintf(line2, "%u Steps per Rot.", (unsigned int)stepPerRot);
   }
-  if (readMicroLX200(axis, microStep))
+  if (DisplayMessageLX200(readMicroLX200(axis, microStep)))
   {
     sprintf(line3, "MicroStep: %u", (unsigned int)pow(2, microStep));
   }
-  if (readBacklashLX200(axis, backlash))
+  if (DisplayMessageLX200(readBacklashLX200(axis, backlash)))
   {
     sprintf(line4, "Backlash: %u sec.", (unsigned int)backlash);
   }
@@ -884,22 +887,17 @@ void SmartHandController::DisplayMotorSettings(uint8_t &axis)
   line2[0] = 0;
   line3[0] = 0;
   line4[0] = 0;
-  if (readLowCurrLX200(axis, lowCurr))
+  if (DisplayMessageLX200(readLowCurrLX200(axis, lowCurr)))
   {
     sprintf(line3, "Low Curr. %u0 mA", (unsigned int)lowCurr);
   }
-  if (readHighCurrLX200(axis, highCurr))
+  if (DisplayMessageLX200(readHighCurrLX200(axis, highCurr)))
   {
     sprintf(line4, "High Curr. %u0 mA", (unsigned int)highCurr);
   }
 
   DisplayLongMessage(line1, NULL, line3, line4, -1);
 }
-
-
-
-
-
 
 
 void SmartHandController::menuMain()
@@ -961,7 +959,7 @@ void SmartHandController::menuSpeedRate()
   {
     char cmd[5]= ":Rn#";
     cmd[2] = '0' + current_selection_speed - 1;
-    SetLX200(cmd, true);
+    DisplayMessageLX200(SetLX200(cmd));
   }
 }
 
@@ -979,7 +977,7 @@ void SmartHandController::menuTrack()
     case 1:
       char out[20];
       memset(out, 0, sizeof(out));
-      if (SetLX200(":Td#"),true)
+      if (SetLX200(":Td#")== LX200VALUESET)
       {
         DisplayMessage("Tracking", "OFF", 500);
       }
@@ -999,7 +997,7 @@ void SmartHandController::menuTrack()
     switch (current_selection_L0)
     {
     case 1:
-      if (SetLX200(":Te#"))
+      if (SetLX200(":Te#") == LX200VALUESET)
       {
         DisplayMessage("Tracking", "ON", 500);
       }
@@ -1044,7 +1042,7 @@ void SmartHandController::menuSyncGoto(bool sync)
       char cmd[5];
       sprintf(cmd, ":hX#");
       cmd[2] = sync ? 'F' : 'C';
-      if (SetLX200(cmd, true))
+      if (SetLX200(cmd) == LX200VALUESET)
       {
         DisplayMessage(sync ? "Reset at" : "Goto", " Home Position", -1);
       }
@@ -1058,9 +1056,13 @@ void SmartHandController::menuSyncGoto(bool sync)
       char cmd[5];
       sprintf(cmd, ":hX#");
       cmd[2] = sync ? 'O' : 'P';
-      if (SetLX200(cmd, false))
+      if (SetLX200(cmd) == LX200VALUESET)
       {
         DisplayMessage(sync ? "Reset at" : "Goto", " Park Position", -1);
+      }
+      else
+      {
+        DisplayMessageLX200(LX200NOTOK);
       }
       // Quit Menu
       current_selection_L1 = 0;
@@ -1083,7 +1085,7 @@ void SmartHandController::menuSolarSys(bool sync)
     return;
   }
   current_selection_SolarSys > 3 ? current_selection_SolarSys : current_selection_SolarSys--;
-  ok = SyncGotoPlanetLX200(sync, current_selection_SolarSys);
+  bool ok = DisplayMessageLX200(SyncGotoPlanetLX200(sync, current_selection_SolarSys),false);
   if (current_selection_SolarSys != 0 && ok)
   {
     // Quit Menu
@@ -1097,7 +1099,7 @@ void SmartHandController::menuHerschel(bool sync)
   current_selection_Herschel = display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Herschel" : "Goto Herschel", current_selection_Herschel, HERSCHEL);
   if (current_selection_Herschel != 0)
   {
-    ok = SyncGotoCatLX200(sync, HERSCHEL, current_selection_Herschel - 1);
+    bool ok = DisplayMessageLX200(SyncGotoCatLX200(sync, HERSCHEL, current_selection_Herschel - 1),false);
     if (ok)
     {
       // Quit Menu
@@ -1117,7 +1119,7 @@ void SmartHandController::menuAlignment()
     switch (current_selection_L1)
     {
     case 1:
-      if (SetLX200(":A1#", true))
+      if (SetLX200(":A1#") == LX200VALUESET)
       {
         telInfo.aliMode = Telescope::ALIM_ONE;
         telInfo.align = Telescope::ALI_SELECT_STAR_1;
@@ -1128,7 +1130,7 @@ void SmartHandController::menuAlignment()
       }
       break;
     case 2:
-      if (SetLX200(":A2#", true))
+      if (SetLX200(":A2#") == LX200VALUESET)
       {
         telInfo.aliMode = Telescope::ALIM_TWO;
         telInfo.align = Telescope::ALI_SELECT_STAR_1;
@@ -1139,7 +1141,7 @@ void SmartHandController::menuAlignment()
       }
       break;
     case 3:
-      if (SetLX200(":A3#", true))
+      if (SetLX200(":A3#") == LX200VALUESET)
       {
         telInfo.aliMode = Telescope::ALIM_THREE;
         telInfo.align = Telescope::ALI_SELECT_STAR_1;
@@ -1174,19 +1176,20 @@ void SmartHandController::menuPier()
   telInfo.updateTel();
   uint8_t choice = ((uint8_t)telInfo.getPierState());
   choice = display->UserInterfaceSelectionList(&buttonPad, "Set Side of Pier", choice, "East\nWest");
+  bool ok = false;
   if (choice)
   {
     if (choice == 1)
-      ok = SetLX200(":SmE#");
+      ok = DisplayMessageLX200(SetLX200(":SmE#"),false);
     else
-      ok = SetLX200(":SmW#");
+      ok = DisplayMessageLX200(SetLX200(":SmW#"),false);
     if (ok)
     {
       DisplayMessage("Please Sync", "with a Target", 1000);
       menuSyncGoto(true);
       current_selection_L1 = 0;
       current_selection_L0 = 0;
-      ok = SetLX200(":SmN#");
+      DisplayMessageLX200(SetLX200(":SmN#"),false);
     }
   }
 }
@@ -1196,7 +1199,7 @@ void SmartHandController::menuStar(bool sync)
   current_selection_Star = display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Star" : "Goto Star", current_selection_Star, STAR);
   if (current_selection_Star != 0)
   {
-    ok = SyncGotoCatLX200(sync, STAR, current_selection_Star - 1);
+    bool  ok = DisplayMessageLX200(SyncGotoCatLX200(sync, STAR, current_selection_Star - 1),false);
     if (ok)
     {
       // Quit Menu
@@ -1211,7 +1214,7 @@ bool SmartHandController::SelectStarAlign()
   telInfo.alignSelectedStar = display->UserInterfaceCatalog(&buttonPad, "select Star", telInfo.alignSelectedStar, STAR);
   if (telInfo.alignSelectedStar != 0)
   {
-    ok = SyncSelectedStarLX200(telInfo.alignSelectedStar);
+    bool ok = DisplayMessageLX200(SyncSelectedStarLX200(telInfo.alignSelectedStar),false);
     return ok;
   }
   return false;
@@ -1227,7 +1230,7 @@ void SmartHandController::menuRADec(bool sync)
     if (display->UserInterfaceInputValueDec(&buttonPad, &angleDEC))
     {
       getdms(angleDEC, vd1, vd2, vd3);
-      ok = SyncGotoLX200(sync, vr1, vr2, vr3, vd1, vd2, vd3);
+      bool ok = DisplayMessageLX200(SyncGotoLX200(sync, vr1, vr2, vr3, vd1, vd2, vd3));
       if (ok)
       {
         // Quit Menu
@@ -1469,7 +1472,7 @@ void SmartHandController::menuSites()
   char out[20];
   int val;
 
-  if (GetSiteLX200(val))
+  if (DisplayMessageLX200(GetSiteLX200(val)))
   {
     current_selection_L3 = val;
     const char *string_list_SiteL3 = "Site 0\n""Site 1\n""Site 2\n""Site 3";
@@ -1485,11 +1488,11 @@ void SmartHandController::menuSites()
 void SmartHandController::menuUTCTime()
 {
   long value;
-  if (GetTimeLX200(value))
+  if (DisplayMessageLX200(GetTimeLX200(value)))
   {
     if (display->UserInterfaceInputValueUTCTime(&buttonPad, &value))
     {
-      SetTimeLX200(value);
+      DisplayMessageLX200(SetTimeLX200(value),false);
     }
   }
 }
@@ -1538,7 +1541,7 @@ void SmartHandController::menuContrast()
 void SmartHandController::menuDate()
 {
   char out[20];
-  if (GetLX200(":GC#", out, false))
+  if (DisplayMessageLX200(GetLX200(":GC#", out)))
   {
     char* pEnd;
     uint8_t month = strtol(&out[0], &pEnd, 10);
@@ -1547,7 +1550,7 @@ void SmartHandController::menuDate()
     if (display->UserInterfaceInputValueDate(&buttonPad, "Date", year, month, day))
     {
       sprintf(out, ":SC%02d/%02d/%02d#", month, day, year);
-      SetLX200(out);
+      DisplayMessageLX200(SetLX200(out),false);
     }
   }
 }
@@ -1555,7 +1558,7 @@ void SmartHandController::menuDate()
 void SmartHandController::menuLatitude()
 {
   char out[20];
-  if (GetLX200(":Gt#", out, false))
+  if (DisplayMessageLX200(GetLX200(":Gt#", out)))
   {
     char* pEnd;
     int degree = (int)strtol(&out[0], &pEnd, 10);
@@ -1569,7 +1572,7 @@ void SmartHandController::menuLatitude()
       minute = abs(angle % 60);
       degree = angle / 60;
       sprintf(out, ":St%+03d*%02d#", degree, minute);
-      SetLX200(out);
+      DisplayMessageLX200(SetLX200(out),false);
     }
   }
 }
@@ -1577,7 +1580,7 @@ void SmartHandController::menuLatitude()
 void SmartHandController::menuLongitude()
 {
   char out[20];
-  if (GetLX200(":Gg#", out, false))
+  if (DisplayMessageLX200(GetLX200(":Gg#", out)))
   {
     char* pEnd;
     int degree = (int)strtol(&out[0], &pEnd, 10);
@@ -1591,7 +1594,7 @@ void SmartHandController::menuLongitude()
       minute = abs(angle) % 60;
       degree = angle / 60;
       sprintf(out, ":Sg%+04d*%02d#", degree, minute);
-      SetLX200(out);
+      DisplayMessageLX200(SetLX200(out),false);
     }
   }
 }
@@ -1658,13 +1661,13 @@ void SmartHandController::menuWifi()
 void SmartHandController::menuHorizon()
 {
   char out[20];
-  if (GetLX200(":Gh#", out, false))
+  if (DisplayMessageLX200(GetLX200(":Gh#", out)))
   {
     float angle = (float)strtol(&out[0], NULL, 10);
     if (display->UserInterfaceInputValueFloat(&buttonPad, "Horizon Limit", "", &angle, -10, 20, 2, 0, " degree"))
     {
       sprintf(out, ":Sh%+03d#", (int)angle);
-      SetLX200(out);
+      DisplayMessageLX200(SetLX200(out),false);
     }
   }
 }
@@ -1672,13 +1675,13 @@ void SmartHandController::menuHorizon()
 void SmartHandController::menuOverhead()
 {
   char out[20];
-  if (GetLX200(":Go#", out, false))
+  if (DisplayMessageLX200(GetLX200(":Go#", out)))
   {
     float angle = (float)strtol(&out[0], NULL, 10);
     if (display->UserInterfaceInputValueFloat(&buttonPad, "Overhead Limit", "", &angle, 60, 91, 2, 0, " degree"))
     {
       sprintf(out, ":S0%02d#", (int)angle);
-      SetLX200(out);
+      DisplayMessageLX200(SetLX200(out));
     }
   }
 }
@@ -1691,6 +1694,8 @@ void SmartHandController::menuMeridian()
 
   }
 }
+
+
 
 void SmartHandController::DisplayMessage(const char* txt1, const char* txt2, int duration)
 {
@@ -1772,4 +1777,104 @@ void SmartHandController::DisplayLongMessage(const char* txt1, const char* txt2,
   }
 
   display->setFont(u8g2_font_helvR12_te);
+}
+
+bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
+{
+  char text1[20] = "";
+  char text2[20] = "";
+  if (val < OK)
+  {
+    if (val == LX200NOTOK)
+    {
+      sprintf(text1, "LX200 Command");
+      sprintf(text2, "has failed!");
+    }
+    else if (val == LX200SETVALUEFAILED)
+    {
+      sprintf(text1, "Set Value");
+      sprintf(text2, "has failed!");
+    }
+    else if (val == LX200GETVALUEFAILED)
+    {
+      sprintf(text1, "Get Value");
+      sprintf(text2, "has failed!");
+    }
+    else if (val == LX200SYNCFAILED)
+    {
+      sprintf(text1, "Sync");
+      sprintf(text2, "has failed!");
+    }
+    else if (val == LX200SETTARGETFAILED)
+    {
+      sprintf(text1, "Set Target");
+      sprintf(text2, "has failed!");
+    }
+    else if (val == LX200BELOWHORIZON)
+    {
+      sprintf(text1, "Target is");
+      sprintf(text2, "Below Horizon!");
+    }
+    else if (val == LX200NOOBJECTSELECTED)
+    {
+      sprintf(text1, "No Object");
+      sprintf(text2, "Selected!");
+    }
+    else if (val == LX200PARKED)
+    {
+      sprintf(text1, "Telescope");
+      sprintf(text2, "is Parked!");
+    }
+    else if (val == LX200BUSY)
+    {
+      sprintf(text1, "Telescope");
+      sprintf(text2, "is busy!");
+    }
+    else if (val == LX200LIMITS)
+    {
+      sprintf(text1, "Target");
+      sprintf(text2, "outside limits");
+    }
+    else if (val == LX200UNKOWN)
+    {
+      sprintf(text1, "Unkown");
+      sprintf(text2, "Error");
+    }
+    else
+    {
+      sprintf(text1, "Error");
+      sprintf(text2, "-1");
+    }
+    DisplayMessage(text1, text2, -1);
+  }
+  else if (!silentOk)
+  {
+    if (val == OK)
+    {
+      sprintf(text1, "LX200 Command");
+      sprintf(text2, "Done!");
+    }
+    else if (val == LX200VALUESET)
+    {
+      sprintf(text1, "Value");
+      sprintf(text2, "Set!");
+    }
+    else if (val == LX200GETVALUEFAILED)
+    {
+      sprintf(text1, "Value");
+      sprintf(text2, "Get!");
+    }
+    else if (val == LX200SYNCED)
+    {
+      sprintf(text1, "Telescope");
+      sprintf(text2, "Synced!");
+    }
+    else if (LX200GOINGTO)
+    {
+      sprintf(text1, "Slew to");
+      sprintf(text2, "Target");
+    }
+    DisplayMessage(text1, text2, -1);
+  }
+  return isOk(val);
 }

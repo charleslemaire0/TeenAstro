@@ -41,3 +41,9 @@ TeenAstroController/__vm/Compile.vmps.xml
 *.elf
 *.bin
 TeenAstroController/Release/board.buildinfo
+SmartHandController/SmartHandController.vcxproj.filters
+SmartHandController/SmartHandController.sln
+SmartHandController/SmartHandController.vcxproj
+SmartHandController/__vm/.SmartHandController.vsarduino.h
+SmartHandController/.vs/SmartHandController/v14/.suo
+SmartHandController/Debug/board.buildinfo

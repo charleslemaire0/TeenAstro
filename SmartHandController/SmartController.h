@@ -3,6 +3,7 @@
 #include "Pad.h"
 #include "u8g2_ext.h"
 #include "Telescope.h"
+#include "LX200.h"
 
 class SmartHandController
 {
@@ -41,9 +42,6 @@ private:
   unsigned short current_selection_Star = 1;
   long angleRA = 0;
   long angleDEC = 0;
-  bool ok = false;
-
-
   void tickButtons();
   bool buttonPressed();
   void menuMain();
@@ -88,5 +86,5 @@ private:
   void DisplayMotorSettings(uint8_t &axis);
   void DisplayMessage(const char* txt1, const char* txt2 = NULL, int duration = 0);
   void DisplayLongMessage(const char* txt1, const char* txt2 = NULL, const char* txt3 = NULL, const char* txt4 = NULL, int duration = 0);
-
+  bool DisplayMessageLX200(LX200RETURN val, bool silentOk = true);
 };

@@ -5,8 +5,8 @@ void Telescope::updateRaDec()
 {
   if (millis() - lastStateRaDec > 100 && connected)
   {
-    hasInfoRa = GetLX200(":GR#", TempRa, true);
-    hasInfoDec = GetLX200(":GD#", TempDec, true);
+    hasInfoRa = GetLX200(":GR#", TempRa) == LX200VALUEGET;
+    hasInfoDec = GetLX200(":GD#", TempDec) == LX200VALUEGET;
     lastStateRaDec = millis();
     if (!hasInfoRa && !hasInfoDec)
     {
@@ -18,8 +18,8 @@ void Telescope::updateAzAlt()
 {
   if (millis() - lastStateAzAlt > 100 && connected)
   {
-    hasInfoAz = GetLX200(":GZ#", TempAz, true);
-    hasInfoAlt = GetLX200(":GA#", TempAlt, true);
+    hasInfoAz = GetLX200(":GZ#", TempAz) == LX200VALUEGET;
+    hasInfoAlt = GetLX200(":GA#", TempAlt) == LX200VALUEGET;
     lastStateAzAlt = millis();
     if (!hasInfoAz && !hasInfoAlt)
     {
@@ -31,8 +31,8 @@ void Telescope::updateTime()
 {
   if (millis() - lastStateTime > 100 && connected)
   {
-    hasInfoUTC = GetLX200(":GL#", TempUTC, true);
-    hasInfoSideral = GetLX200(":GS#", TempSideral, true);
+    hasInfoUTC = GetLX200(":GL#", TempUTC) == LX200VALUEGET;
+    hasInfoSideral = GetLX200(":GS#", TempSideral) == LX200VALUEGET;
     lastStateTime = millis();
     if (!hasInfoUTC && !hasInfoSideral)
     {
@@ -44,8 +44,8 @@ void Telescope::updateTel()
 {
   if (millis() - lastStateTel > 100 && connected)
   {
-    hasPierInfo = GetLX200(":Gm#", sideofpier, true);
-    hasTelStatus = GetLX200(":GU#", TelStatus, true);
+    hasPierInfo = GetLX200(":Gm#", sideofpier) == LX200VALUEGET;
+    hasTelStatus = GetLX200(":GU#", TelStatus) == LX200VALUEGET;
     lastStateTel = millis();
   }
   if (!hasPierInfo && !hasTelStatus)
@@ -135,7 +135,7 @@ void Telescope::addStar()
 {
   if (align == ALI_RECENTER_1 || align == ALI_RECENTER_2 || align == ALI_RECENTER_3)
   {
-    if (SetLX200(":A+#", true))
+    if (SetLX200(":A+#")==LX200VALUESET)
     {
       bool done = false;
       if (aliMode == ALIM_ONE
