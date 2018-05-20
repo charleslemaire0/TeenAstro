@@ -51,7 +51,7 @@ byte readBytesUntil2(char character, char buffer[], int length, boolean* charact
 }
 
 // smart LX200 aware command and response over serial
-int readLX200Bytes(char* command, char* recvBuffer, unsigned long timeOutMs) {
+bool readLX200Bytes(char* command, char* recvBuffer, unsigned long timeOutMs) {
   Ser.setTimeout(timeOutMs);
 
   // clear the read/write buffers
@@ -117,16 +117,7 @@ int readLX200Bytes(char* command, char* recvBuffer, unsigned long timeOutMs) {
   else
     if (shortResponse) {
       recvBuffer[Ser.readBytes(recvBuffer, 1)] = 0;
-      if (command[1] == 'M' && strchr("SA", command[2]))
-      {
-        if (recvBuffer[0] != 0)
-        {
-          return recvBuffer[0];
-        }
-        else return -1;
-      }
-      else
-        return (recvBuffer[0]!=0);
+      return (recvBuffer[0] != 0);
     }
     else {
       // get full response, '#' terminated
@@ -231,16 +222,13 @@ LX200RETURN Move2TargetLX200()
   memset(out, 0, sizeof(out));
   int val = readLX200Bytes(":MS#", out, 100);
   LX200RETURN response;
-  switch (val)
+  switch (out[0])
   {
     //         1=Object below horizon    Outside limits, below the Horizon limit
     //         2=No object selected      Failure to resolve coordinates
     //         4=Position unreachable    Not unparked
     //         5=Busy                    Goto already active
     //         6=Outside limits          Outside limits, above the Zenith limit
-  case -1:
-    response = LX200NOTOK;
-    break;
   case 0:
     response = LX200GOINGTO;
     break;
@@ -324,7 +312,6 @@ LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, s
       Ser.print(":CS#");
       Ser.flush();
       return LX200SYNCED;
-      //TODO DisplayMessage("Synced with", "Target", 500);
     }
     else
     {
@@ -334,7 +321,6 @@ LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, s
   else
   {
     return LX200SETTARGETFAILED;
-    //TODO DisplayMessage("Set Target", "Failed!", 500);
   }
 }
 
