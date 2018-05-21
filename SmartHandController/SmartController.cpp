@@ -238,13 +238,14 @@ void longDec2Dec(long Dec, int& deg, int& min)
 }
 
 
-void SmartHandController::setup(const int pin[7],const bool active[7], const int SerialBaud)
+void SmartHandController::setup(const int pin[7],const bool active[7], const int SerialBaud, const OLED model)
 {
   telInfo.lastState = 0;
   buttonPad.setup( pin, active);
-
-  display = new U8G2_EXT_SH1106_128X64_NONAME_1_HW_I2C(U8G2_R0);
-
+  if (model == OLED_SH1106)
+    display = new U8G2_EXT_SH1106_128X64_NONAME_1_HW_I2C(U8G2_R0);
+  else if (model == OLED_SSD1306)
+    display = new U8G2_EXT_SSD1306_128X64_NONAME_F_HW_I2C(U8G2_R0);
   display->begin();
   drawIntro();
   tickButtons();

@@ -8,13 +8,14 @@
 class SmartHandController
 {
 public:
+  enum OLED { OLED_SH1106, OLED_SSD1306};
   void update();
   void drawIntro();
   void drawLoad();
   void drawReady();
-  void setup(const int pin[7], const bool active[7], const int SerialBaud);
+  void setup(const int pin[7], const bool active[7], const int SerialBaud, const OLED model);
 private:
-  U8G2_EXT_SH1106_128X64_NONAME_1_HW_I2C *display;
+  U8G2_EXT *display = NULL;
   Pad buttonPad;
   Telescope telInfo;
 
@@ -25,7 +26,7 @@ private:
   bool wifiOn = false;
   bool powerCylceRequired = false;
   bool buttonCommand = false;
-  bool Move[4] = { false,false,false,false };
+  bool Move[4] = { false, false, false, false };
 
   unsigned long lastpageupdate = millis();
   unsigned long time_last_action = millis();

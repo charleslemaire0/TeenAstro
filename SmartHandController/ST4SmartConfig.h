@@ -14,6 +14,22 @@
 #include "St4SerialSlave.h"
 // the hand controller buttons
 
+#define OLED_DISPLAY 1
+#define B_PIN0 D8
+#define B_PIN1 D7
+#define B_PIN2 D6
+#define B_PIN3 D0
+#define B_PIN4 D5
+#define B_PIN5 D3
+#define B_PIN6 D4
+
+#define B_PIN_UP_0 false
+#define B_PIN_UP_1 false
+#define B_PIN_UP_2 false
+#define B_PIN_UP_3 false
+#define B_PIN_UP_4 false
+#define B_PIN_UP_5 true
+#define B_PIN_UP_6 true
 
 #define SERIAL_BAUD_DEFAULT 57200 // Default=57200, only used for async comms (not SerialST4)
 #define TIMEOUT_CMD 5000          // Default=3000 (3 seconds)

@@ -4,6 +4,7 @@
 #define Ser Serial
 #ifdef ARDUINO_ESP8266_WEMOS_D1MINI
 
+#define OLED_DISPLAY 0
 #define B_PIN0 D8
 #define B_PIN1 D7
 #define B_PIN2 D6
@@ -11,7 +12,6 @@
 #define B_PIN4 D5
 #define B_PIN5 D3
 #define B_PIN6 D4
-
 
 #define B_PIN_UP_0 false
 #define B_PIN_UP_1 false
