@@ -149,6 +149,13 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, unsigned shor
     cat_dMag = &Hershel_dMag[idx];
     cat_obj = &Herschel_obj[idx];
     break;
+  case MESSIER:
+    cat_elements = 110;
+    cat_num = NULL;
+    cat_info = NULL;
+    cat_const = &Messier_constellation[idx];
+    cat_dMag = &Messier_dMag[idx];
+    cat_obj = &Messier_obj[idx];
   default:
     break;
   }
@@ -157,7 +164,14 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, unsigned shor
 
   /* check whether this is the current cursor line */
   char line[16];
-  sprintf(line, "%s%u", catalog_txt[cat], *cat_num);
+  if (cat_num != NULL)
+  {
+    sprintf(line, "%s%u", catalog_txt[cat], *cat_num);
+  }
+  else
+  {
+    sprintf(line, "%s%u", catalog_txt[cat], idx +1);
+  }
   /* draw the line */
   if (line == NULL)
     strcpy(line, "");
@@ -199,7 +213,10 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, unsigned shor
   sprintf(line, "%d.%d", v1, v2);
   u8g2_DrawUTF8(u8g2, x, y, line);
   y += line_height;
-  u8g2_DrawUTF8(u8g2, 0, y, Herschel_info_txt[*cat_info - 1]);
+  if (cat_info != NULL)
+  {
+    u8g2_DrawUTF8(u8g2, 0, y, Herschel_info_txt[*cat_info - 1]);
+  }
   y += line_height;
   return line_height;
 }
@@ -231,6 +248,9 @@ unsigned short ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *t
     break;
   case STAR:
     tot_pos = 292;
+    break;
+  case MESSIER:
+    tot_pos = 110;
     break;
   default:
     tot_pos = 0;

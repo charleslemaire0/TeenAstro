@@ -377,7 +377,9 @@ LX200RETURN SyncGotoCatLX200(bool sync, Catalog cat, int idx)
     epoch = 2000;
     break;
   case MESSIER:
-    return LX200UNKOWN;
+    getcathf(Messier_ra[idx], ra);
+    getcatdf(Messier_dec[idx], dec);
+    epoch = 2000;
     break;
   case HERSCHEL:
     getcathf(Herschel_ra[idx], ra);
@@ -393,7 +395,7 @@ LX200RETURN SyncGotoCatLX200(bool sync, Catalog cat, int idx)
   coo.dec = dec;
   EquatorialCoordinates cooNow;
   cooNow = Ephemeris::equatorialEquinoxToEquatorialJNowAtDateAndTime(coo, epoch, day, month, year, 0, 0, 0);
-  return SyncGotoLX200(sync, coo.ra, coo.dec);
+  return SyncGotoLX200(sync, cooNow.ra, cooNow.dec);
 }
 LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short objSys)
 {
@@ -433,8 +435,8 @@ LX200RETURN readReverseLX200(const uint8_t &axis, bool &reverse)
     reverse = out[0] == '1' ? true : false;
   }
   return ok;
-
 }
+
 LX200RETURN writeReverseLX200(const uint8_t &axis, const bool &reverse)
 {
   char text[20];

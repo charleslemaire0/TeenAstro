@@ -1021,12 +1021,12 @@ void SmartHandController::menuSyncGoto(bool sync)
   current_selection_L1 = 1;
   while (current_selection_L1 != 0)
   {
-    const char *string_list_gotoL1 = "Herschel\nStar\nSolar System\nCoordinates\nHome\nPark";
+    const char *string_list_gotoL1 = "Messier\nStar\nSolar System\nHerschel\nCoordinates\nHome\nPark";
     current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync" : "Goto", current_selection_L1, string_list_gotoL1);
     switch (current_selection_L1)
     {
     case 1:
-      menuHerschel(sync);
+      menuMessier(sync);
       break;
     case 2:
       menuStar(sync);
@@ -1035,9 +1035,12 @@ void SmartHandController::menuSyncGoto(bool sync)
       menuSolarSys(sync);
       break;
     case 4:
-      menuRADec(sync);
+      menuHerschel(sync);
       break;
     case 5:
+      menuRADec(sync);
+      break;
+    case 6:
     {
       char cmd[5];
       sprintf(cmd, ":hX#");
@@ -1051,7 +1054,7 @@ void SmartHandController::menuSyncGoto(bool sync)
       current_selection_L0 = 0;
     }
     break;
-    case 6:
+    case 7:
     {
       char cmd[5];
       sprintf(cmd, ":hX#");
@@ -1100,6 +1103,21 @@ void SmartHandController::menuHerschel(bool sync)
   if (current_selection_Herschel != 0)
   {
     bool ok = DisplayMessageLX200(SyncGotoCatLX200(sync, HERSCHEL, current_selection_Herschel - 1),false);
+    if (ok)
+    {
+      // Quit Menu
+      current_selection_L1 = 0;
+      current_selection_L0 = 0;
+    }
+  }
+}
+
+void SmartHandController::menuMessier(bool sync)
+{
+  current_selection_Messier = display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Messier" : "Goto Messier", current_selection_Messier, MESSIER);
+  if (current_selection_Messier != 0)
+  {
+    bool ok = DisplayMessageLX200(SyncGotoCatLX200(sync, MESSIER, current_selection_Messier - 1), false);
     if (ok)
     {
       // Quit Menu
@@ -1783,6 +1801,7 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
 {
   char text1[20] = "";
   char text2[20] = "";
+  int time = -1;
   if (val < OK)
   {
     if (val == LX200NOTOK)
@@ -1849,6 +1868,7 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
   }
   else if (!silentOk)
   {
+    time = 1000;
     if (val == OK)
     {
       sprintf(text1, "LX200 Command");
@@ -1874,7 +1894,7 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
       sprintf(text1, "Slew to");
       sprintf(text2, "Target");
     }
-    DisplayMessage(text1, text2, -1);
+    DisplayMessage(text1, text2, time);
   }
   return isOk(val);
 }

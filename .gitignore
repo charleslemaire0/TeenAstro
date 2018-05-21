@@ -47,3 +47,8 @@ SmartHandController/SmartHandController.vcxproj
 SmartHandController/__vm/.SmartHandController.vsarduino.h
 SmartHandController/.vs/SmartHandController/v14/.suo
 SmartHandController/Debug/board.buildinfo
+SmartHandController/Release/board.buildinfo
+*.buildinfo
+*.buildinfo
+SmartHandController/Release/board.buildinfo
+SmartHandController/Release/board.buildinfo

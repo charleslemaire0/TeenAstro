@@ -38,6 +38,7 @@ private:
   uint8_t current_selection_L4 = 1;
   uint8_t current_selection_speed = 5;
   unsigned short current_selection_Herschel = 1;
+  unsigned short current_selection_Messier = 1;
   unsigned short current_selection_SolarSys = 1;
   unsigned short current_selection_Star = 1;
   long angleRA = 0;
@@ -50,6 +51,7 @@ private:
   void menuSyncGoto(bool sync);
   void menuSolarSys(bool sync);
   void menuHerschel(bool sync);
+  void menuMessier(bool sync);
   void menuAlignment();
   void menuPier();
   void menuStar(bool sync);
