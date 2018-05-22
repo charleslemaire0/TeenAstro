@@ -3,7 +3,6 @@
 #include "Catalog.h"
 #include "LX200.h"
 
-
 // integer numeric conversion with error checking
 boolean atoi2(char *a, int *i) {
   char *conv_end;
@@ -136,7 +135,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, unsigned long timeOutMs) {
 
 bool isOk(LX200RETURN val)
 {
-  return val >= OK;
+  return val >= LX200OK;
 }
 
 LX200RETURN SetLX200(char* command)

@@ -1,4 +1,5 @@
 #pragma once
+
 #ifdef SERIALSMARTCONTROLLER
 #define SERIAL_BAUD_DEFAULT 9600
 #define Ser Serial
