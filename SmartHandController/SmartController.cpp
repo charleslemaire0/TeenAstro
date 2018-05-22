@@ -1,7 +1,7 @@
-﻿#include "_EEPROM_ext.h"
+
+#include "_EEPROM_ext.h"
 #include "SmartController.h"
 #include "LX200.h"
-
 
 static char* BreakRC[4] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#" };
 static char* RC[4] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#" };
@@ -1803,7 +1803,7 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
   char text1[20] = "";
   char text2[20] = "";
   int time = -1;
-  if (val < OK)
+  if (val < LX200OK)
   {
     if (val == LX200NOTOK)
     {
@@ -1870,7 +1870,7 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
   else if (!silentOk)
   {
     time = 1000;
-    if (val == OK)
+    if (val == LX200OK)
     {
       sprintf(text1, "LX200 Command");
       sprintf(text2, "Done!");

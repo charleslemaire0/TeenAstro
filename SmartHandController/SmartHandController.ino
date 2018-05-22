@@ -36,6 +36,7 @@
 #define Version "0.1b 05 16 18"
 
 #include "Config.h"
+
 #include "SmartController.h"
 
 const int pin[7] = { B_PIN0,B_PIN1,B_PIN2,B_PIN3,B_PIN4,B_PIN5,B_PIN6 };
@@ -45,7 +46,7 @@ SmartHandController HdCrtlr;
 
 void setup(void)
 {
-  HdCrtlr.setup(pin,active, SERIAL_BAUD_DEFAULT, static_cast<SmartHandController::OLED>(OLED_DISPLAY));
+  HdCrtlr.setup(pin, active, SERIAL_BAUD_DEFAULT, static_cast<SmartHandController::OLED>(OLED_DISPLAY));
 }
 
 void loop()
