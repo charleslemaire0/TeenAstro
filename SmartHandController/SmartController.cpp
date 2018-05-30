@@ -260,6 +260,7 @@ void SmartHandController::setup(const char version[], const int pin[7],const boo
   DebugSer.begin(9600);
   delay(1000);
 #endif
+#ifndef WIFI_ON
   Ser.begin(SerialBaud);
   for (int i = 0; i < 3; i++)
   {
@@ -268,6 +269,7 @@ void SmartHandController::setup(const char version[], const int pin[7],const boo
     Ser.flush();
     delay(500);
   }
+#endif // !WIFI_ON
 }
 void SmartHandController::tickButtons()
 {
@@ -683,10 +685,8 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
     else if (page == 3)
     {
       int idx = telInfo.alignSelectedStar - 1;
-      const byte* cat_letter = NULL;
-      const byte*  cat_const = NULL;
-      cat_letter = &Star_letter[idx];
-      cat_const = &Star_constellation[idx];
+      byte cat_letter = Star_letter[idx];
+      byte cat_const = Star_constellation[idx];
       u8g2_uint_t y = 36;
       char txt[20];
 
@@ -702,9 +702,9 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
       y += line_height + 4;
       const uint8_t* myfont = u8g2->font;
       u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
-      u8g2_DrawGlyph(u8g2, 0, y, 944 + *cat_letter);
+      u8g2_DrawGlyph(u8g2, 0, y, 944 + cat_letter);
       u8g2_SetFont(u8g2, myfont);
-      u8g2_DrawUTF8(u8g2, 16, y, constellation_txt[*cat_const - 1]);
+      u8g2_DrawUTF8(u8g2, 16, y, constellation_txt[cat_const - 1]);
     }
 
   } while (u8g2_NextPage(u8g2));

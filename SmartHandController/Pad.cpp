@@ -245,6 +245,9 @@ void Pad::setup(const int pin[7], const bool active[7])
     m_buttons[k]->setPressTicks(300);
   }
   attachEvent();
+#ifdef WIFI_ON
+  m_wbt.setup();
+#endif
 }
 void Pad::tickButtons()
 {
@@ -272,6 +275,9 @@ void Pad::tickButtons()
       eventbuttons[k + 1] = E_NONE;
     }
   }
+#ifdef WIFI_ON
+  m_wbt.update();
+#endif
 }
 
 bool Pad::buttonPressed()

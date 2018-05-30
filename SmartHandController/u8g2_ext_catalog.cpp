@@ -97,12 +97,12 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, unsigned shor
   u8g2_uint_t  pixel_width;
   u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
   unsigned int cat_elements = 0;
-  const unsigned short* cat_num = NULL;
-  const byte* cat_letter = NULL;
-  const byte* cat_info = NULL;
-  const byte*  cat_const = NULL;
-  const byte*  cat_dMag = NULL;
-  const byte*  cat_obj = NULL;
+  unsigned short cat_num =0;
+   byte cat_letter = 0;
+   byte cat_info = 0;
+   byte  cat_const = 0;
+   byte  cat_dMag = 0;
+   byte  cat_obj = 0;
 
   //Display for Star Catalog
   if (cat == STAR)
@@ -112,14 +112,14 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, unsigned shor
     uint8_t vr1, vr2, vr3, vd2;
     short vd1;
     cat_elements = 291;
-    cat_letter = &Star_letter[idx];
-    cat_const = &Star_constellation[idx];
+    cat_letter = Star_letter[idx];
+    cat_const = Star_constellation[idx];
     const uint8_t* myfont = u8g2->font;
     u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
-    u8g2_DrawGlyph(u8g2, 0, y, 944 + *cat_letter);
+    u8g2_DrawGlyph(u8g2, 0, y, 944 + cat_letter);
     u8g2_SetFont(u8g2, myfont);
 
-    u8g2_DrawUTF8(u8g2, 16, y, constellation_txt[*cat_const - 1]);
+    u8g2_DrawUTF8(u8g2, 16, y, constellation_txt[cat_const - 1]);
     y += line_height;
     getcathms(Star_ra[idx], vr1, vr2, vr3);
     memcpy(txt1, u8x8_u8toa(vr1, 2), 3);
@@ -143,30 +143,28 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, unsigned shor
   {
   case HERSCHEL:
     cat_elements = 400;
-    cat_num = &Herschel_NGC[idx];
-    cat_info = &Herschel_info[idx];
-    cat_const = &Hershel_constellation[idx];
-    cat_dMag = &Hershel_dMag[idx];
-    cat_obj = &Herschel_obj[idx];
+    cat_num = Herschel_NGC[idx];
+    cat_info = Herschel_info[idx];
+    cat_const = Hershel_constellation[idx];
+    cat_dMag = Hershel_dMag[idx];
+    cat_obj = Herschel_obj[idx];
     break;
   case MESSIER:
     cat_elements = 110;
-    cat_num = NULL;
-    cat_info = NULL;
-    cat_const = &Messier_constellation[idx];
-    cat_dMag = &Messier_dMag[idx];
-    cat_obj = &Messier_obj[idx];
+    cat_num = 0;
+    cat_info = 0;
+    cat_const = Messier_constellation[idx];
+    cat_dMag = Messier_dMag[idx];
+    cat_obj = Messier_obj[idx];
   default:
     break;
   }
-
-
 
   /* check whether this is the current cursor line */
   char line[16];
   if (cat_num != NULL)
   {
-    sprintf(line, "%s%u", catalog_txt[cat], *cat_num);
+    sprintf(line, "%s%u", catalog_txt[cat], cat_num);
   }
   else
   {
@@ -177,13 +175,13 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, unsigned shor
     strcpy(line, "");
   u8g2_DrawUTF8(u8g2, 0, y, line);
   y += line_height;
-  int v1 = *cat_dMag / 10;
-  int v2 = *cat_dMag % 10;
-  u8g2_DrawUTF8(u8g2, 0, y, constellation_txt[*cat_const - 1]);
+  int v1 = cat_dMag / 10;
+  int v2 = cat_dMag % 10;
+  u8g2_DrawUTF8(u8g2, 0, y, constellation_txt[cat_const - 1]);
   x += u8g2_GetUTF8Width(u8g2, "WWW");
   if (cat_obj)
   {
-    switch (*cat_obj)
+    switch (cat_obj)
     {
     case 0:
       u8g2_DrawXBMP(u8g2, x - 3, y - EN_height, EN_width, EN_height, EN_bits);
@@ -215,7 +213,7 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, unsigned shor
   y += line_height;
   if (cat_info != NULL)
   {
-    u8g2_DrawUTF8(u8g2, 0, y, Herschel_info_txt[*cat_info - 1]);
+    u8g2_DrawUTF8(u8g2, 0, y, Herschel_info_txt[cat_info - 1]);
   }
   y += line_height;
   return line_height;
@@ -237,10 +235,9 @@ u8g2_SetFontPosBaseline(u8g2);
 */
 unsigned short ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *title, unsigned short start_pos, Catalog cat)
 {
-  u8g2_SetFont(u8g2, u8g2_font_helvR10_te);
+  u8g2_SetFont(u8g2, u8g2_font_helvR10_tf);
   unsigned short cur_pos;
   unsigned short tot_pos;
-  unsigned short incr = 1;
   switch (cat)
   {
   case HERSCHEL:
@@ -315,10 +312,7 @@ unsigned short ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *t
       {
         if (cur_pos < tot_pos - 1)
         {
-          incr += 1;
-          if (incr > 3)
-            incr = 3;
-          cur_pos += incr;
+          cur_pos += 1;
           if (cur_pos > tot_pos - 1)
             cur_pos = 0;
         }
@@ -332,13 +326,10 @@ unsigned short ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *t
       {
         if (cur_pos > 0)
         {
-          incr += 1;
-          if (incr > 3)
-            incr = 3;
-          if (cur_pos < incr)
+          if (cur_pos < 1)
             cur_pos = tot_pos - 1;
           else
-            cur_pos -= incr;
+            cur_pos -= 1;
         }
         else
         {
@@ -346,11 +337,6 @@ unsigned short ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *t
         }
         break;
       }
-      else
-      {
-        incr = 0;
-      }
-
     }
   }
 }

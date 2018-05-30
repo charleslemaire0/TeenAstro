@@ -254,7 +254,7 @@ byte meridianFlip = MeridianFlipNever;
 
 
 // Command processing -------------------------------------------------------------------------------------------------------
-#define BAUD    9600
+#define BAUD    57600
 
 boolean commandError = false;
 boolean quietReply = false;
