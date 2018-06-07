@@ -230,7 +230,7 @@ boolean highPrecision = true;
 #define TrackingLunar 0.96236513150
 
 volatile byte trackingState = TrackingOFF;
-int lastSetTrakingEnable = 0;
+unsigned long lastSetTrakingEnable = millis();
 unsigned long lastSecurityCheck = millis();
 byte abortTrackingState = TrackingOFF;
 volatile byte lastTrackingState = TrackingOFF;
