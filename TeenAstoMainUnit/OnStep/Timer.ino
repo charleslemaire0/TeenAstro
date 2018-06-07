@@ -102,6 +102,7 @@ ISR(TIMER1_COMPA_vect)
     // guide rate acceleration/deceleration and control
     cli();
     double  x = ((long)targetAxis1.part.m) - posAxis1;
+    bool other_axis_done = fabs(((long)targetAxis2.part.m) - posAxis2) < BreakDistAxis2;
     sei();
     if ((!inbacklashAxis1) && (guideDirAxis1))
     {
@@ -140,7 +141,8 @@ ISR(TIMER1_COMPA_vect)
           guideDirAxis1 = 0;
           guideTimerRateAxis1 = 0;
           guideTimerRateAxis1A = 0;
-          DecayModeTracking();
+          if (other_axis_done)
+            DecayModeTracking();
         }
       }
     }
@@ -179,6 +181,7 @@ ISR(TIMER1_COMPA_vect)
     // guide rate acceleration/deceleration
     cli();
     x = fabs((long)targetAxis2.part.m - posAxis2);
+    other_axis_done = fabs(((long)targetAxis1.part.m) - posAxis1) < BreakDistAxis1;
     sei();
     if (!inbacklashAxis2 && guideDirAxis2)
     {
@@ -222,7 +225,8 @@ ISR(TIMER1_COMPA_vect)
           guideDirAxis2 = 0;
           guideTimerRateAxis2 = 0;
           guideTimerRateAxis2A = 0;
-          DecayModeTracking();
+          if (other_axis_done)
+            DecayModeTracking();
         }
       }
     }
