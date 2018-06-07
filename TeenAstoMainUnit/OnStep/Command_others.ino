@@ -126,7 +126,7 @@ void Command_dollar()
     {
       if (parameter[0] == 'D')
       {
-        ReverseAxis2 = parameter[2] == '1' ? true : false;
+        ReverseAxis2 = parameter[1] == '1' ? true : false;
         EEPROM.write(EE_ReverseAxis2, ReverseAxis2);
       }
       else
@@ -455,7 +455,7 @@ void Command_A()
 
           // start tracking
           trackingState = TrackingON;
-
+          lastSetTrakingEnable = millis();
           // start align...
           alignNumStars = command[1] - '0';
           alignThisStar = 1;
