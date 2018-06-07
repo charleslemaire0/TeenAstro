@@ -31,10 +31,12 @@
  * with LX200 derived command set.
  *
  */
-#include "math.h"
+
+#include <Time.h>
+#include <math.h>
 #include "Helper_math.h"
-#include "errno.h"
-#include "Time\TimeLib.h"
+#include <errno.h>
+#include <TimeLib.h>
 #include "Global.h"
  // Use Config.h to configure OnStep to your requirements
  // help stepper driver configuration
@@ -707,6 +709,7 @@ void writeDefaultEEPROMmotor()
   EEPROM.write(EE_HighCurrAxis1, 100);
   EEPROM.write(EE_LowCurrAxis1, 100);
 
+  EEPROM_writeInt(EE_backlashAxis2, 0);
   EEPROM_writeInt(EE_GearAxis2, 1800);
   EEPROM_writeInt(EE_StepRotAxis2, 200);
   EEPROM.write(EE_MicroAxis2, 4);
