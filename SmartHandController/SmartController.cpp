@@ -926,6 +926,8 @@ void SmartHandController::menuMain()
       switch (current_selection_L0)
       {
       case 1:
+        SetLX200(":hR#");
+        current_selection_L0 = 0;
         break;
       case 2:
         menuSettings();
@@ -970,7 +972,7 @@ void SmartHandController::menuSpeedRate()
   {
     char cmd[5]= ":Rn#";
     cmd[2] = '0' + current_selection_speed - 1;
-    DisplayMessageLX200(SetLX200(cmd));
+    SetLX200(cmd);
   }
 }
 
@@ -1060,9 +1062,6 @@ void SmartHandController::menuSyncGoto(bool sync)
       {
         DisplayMessage(sync ? "Reset at" : "Goto", " Home Position", -1);
       }
-      // Quit Menu
-      current_selection_L1 = 0;
-      current_selection_L0 = 0;
     }
     break;
     case 7:
@@ -1078,14 +1077,13 @@ void SmartHandController::menuSyncGoto(bool sync)
       {
         DisplayMessageLX200(LX200NOTOK);
       }
-      // Quit Menu
-      current_selection_L1 = 0;
-      current_selection_L0 = 0;
     }
     break;
     default:
       break;
     }
+    current_selection_L0 = 0;
+    current_selection_L1 = 0;
   }
 }
 
