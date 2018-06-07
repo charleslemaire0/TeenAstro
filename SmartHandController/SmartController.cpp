@@ -854,7 +854,7 @@ bool SmartHandController::menuSetHighCurrent(uint8_t &axis)
   sprintf(text, "High Curr. M%u", axis);
   if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &highCurr, 10, 200, 3, "0 mA"))
   {
-    return DisplayMessageLX200(writeHighCurrLX200(axis, highCurr));
+    return DisplayMessageLX200(writeHighCurrLX200(axis, highCurr),false);
   }
   return true;
 }
@@ -1889,7 +1889,7 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
       sprintf(text1, "Value");
       sprintf(text2, "Set!");
     }
-    else if (val == LX200GETVALUEFAILED)
+    else if (val == LX200VALUEGET)
     {
       sprintf(text1, "Value");
       sprintf(text2, "Get!");
