@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SPI\SPI.h>
+
 #include <TMC26XStepper.h>
 TMC26XStepper *tmc26XStepper1;
 TMC26XStepper *tmc26XStepper2;
