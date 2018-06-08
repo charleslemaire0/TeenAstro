@@ -36,6 +36,7 @@ private:
   unsigned long time_last_action = millis();
 
   byte page = 0;
+  bool exitMenu = false;
   uint8_t current_selection_L0 = 1;
   uint8_t current_selection_L1 = 1;
   uint8_t current_selection_L2 = 1;
