@@ -330,7 +330,7 @@ fixed_t         fstepAxis2;
 #define halfSlewRate    (slewRate / 2.0)
 double          guideRates[10] =
 {
-  0.25 * 15, 0.5 * 15, 1.0 * 15, 2.0 * 15, 4.0 * 15, 16.0 * 15, 32.0 * 15, 64.0 * 15, halfSlewRate, slewRate
+  0.25 , 0.5 , 1.0 , 2.0 , 4.0 , 16.0, 32.0 , 64.0, halfSlewRate, slewRate
 };
 
 
