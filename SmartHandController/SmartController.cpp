@@ -988,7 +988,7 @@ void SmartHandController::menuTrack()
   Telescope::TrackState currentstate = telInfo.getTrackingState();
   if (currentstate == Telescope::TRK_ON)
   {
-    const char *string_list_tracking = "Stop Tracking\n";
+    const char *string_list_tracking = "Stop Tracking";
     current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, "Tracking State", 0, string_list_tracking);
     switch (current_selection_L1)
     {
@@ -1011,7 +1011,7 @@ void SmartHandController::menuTrack()
   }
   else if (currentstate == Telescope::TRK_OFF)
   {
-    const char *string_list_tracking = "Start Tracking\n";
+    const char *string_list_tracking = "Start Tracking";
     current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, "Tracking State", 0, string_list_tracking);
     switch (current_selection_L1)
     {
