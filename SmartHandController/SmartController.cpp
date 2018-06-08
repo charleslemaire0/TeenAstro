@@ -1147,10 +1147,12 @@ void SmartHandController::menuMessier(bool sync)
 
 void SmartHandController::menuAlignment()
 {
-  const char *string_list_AlignmentL1 = "1-Star Align.\n""2-Star Align.\n""3-Star Align.\n""Show Corr.\n""Clear Corr.";
-  uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, "Alignment", 0, string_list_AlignmentL1);
-  switch (current_selection_L1)
+  const char *string_list_AlignmentL2 = "1-Star Align.\n""2-Star Align.\n""3-Star Align.\n""Show Corr.\n""Clear Corr.";
+  current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Alignment", 0, string_list_AlignmentL2);
+  switch (current_selection_L2)
   {
+  case 0:
+    return;
   case 1:
     if (SetLX200(":A1#") == LX200VALUESET)
     {
