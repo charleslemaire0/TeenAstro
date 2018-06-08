@@ -1265,12 +1265,14 @@ void SmartHandController::menuRADec(bool sync)
 void SmartHandController::menuSettings()
 {
   current_selection_L1 = 1;
-  while (current_selection_L1 != 0)
+  while (!exitMenu)
   {
     const char *string_list_SettingsL1 = "Display\n""Alignment\n""Date\n""Time\n""Mount\n""Site\n""Limits\n""Wifi";
     current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, "Settings", current_selection_L1, string_list_SettingsL1);
     switch (current_selection_L1)
     {
+    case 0:
+      return;
     case 1:
       menuDisplay();
       break;
@@ -1522,11 +1524,13 @@ void SmartHandController::menuDisplay()
 {
   const char *string_list_Display = "Turn Off\nContrast";
   current_selection_L2 = 1;
-  while (current_selection_L2 != 0)
+  while (!exitMenu)
   {
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Display", current_selection_L2, string_list_Display);
     switch (current_selection_L2)
     {
+    case 0:
+      return;
     case 1:
       DisplayMessage("Press any Key", "to turn on", 1500);
       sleepDisplay = true;
