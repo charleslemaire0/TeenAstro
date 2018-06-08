@@ -7,7 +7,7 @@ void Guide()
 
   if (rtk.updateguideSiderealTimer())
   {
-    if (guideDirAxis1)
+    if (guideDirAxis1 == 'w' || guideDirAxis1 == 'e')
     {
       if (!inbacklashAxis1)
       {
