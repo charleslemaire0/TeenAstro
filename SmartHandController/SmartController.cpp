@@ -242,7 +242,7 @@ void SmartHandController::setup(const char version[], const int pin[7],const boo
   if (strlen(version)<=19) strcpy(_version,version);
   
   telInfo.lastState = 0;
-  buttonPad.setup( pin, active);
+
   
   //choose a 128x64 display supported by U8G2lib (if not listed below there are many many others in u8g2 library example Sketches)
   //U8G2_SH1106_128X64_NONAME_1_HW_I2C display(U8G2_R0);
@@ -254,6 +254,7 @@ void SmartHandController::setup(const char version[], const int pin[7],const boo
     display = new U8G2_EXT_SSD1306_128X64_NONAME_F_HW_I2C(U8G2_R0);
   display->begin();
   drawIntro();
+  buttonPad.setup( pin, active);
   tickButtons();
 
 #ifdef DEBUG_ON
