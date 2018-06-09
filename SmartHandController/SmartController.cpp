@@ -1891,11 +1891,6 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
       sprintf(text1, "Telecope");
       sprintf(text2, "Can't Park");
     }
-    else if (val == LX200NOPARKSAVED)
-    {
-      sprintf(text1, "No Park");
-      sprintf(text2, "Position Saved");
-    }
     else if (val == LX200GOHOME_FAILED)
     {
       sprintf(text1, "Telecope");
