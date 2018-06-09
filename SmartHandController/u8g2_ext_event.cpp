@@ -8,7 +8,7 @@ uint8_t ext_GetMenuEvent(Pad* extPad)
   for (k = 0; k < 7; k++)
   {
     // no long Press for Next & Prev
-    if (eventbuttons[k] == E_CLICK || ( (eventbuttons[k] == E_LONGPRESSTART || eventbuttons[k] == E_LONGPRESS) && k !=3 && k!=4))
+    if (eventbuttons[k] == E_CLICK || ((eventbuttons[k] == E_LONGPRESSTART || eventbuttons[k] == E_LONGPRESS) && k != 3 && k != 4))
     {
       break;
     }
