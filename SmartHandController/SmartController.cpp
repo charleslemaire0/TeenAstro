@@ -1064,32 +1064,11 @@ void SmartHandController::menuSyncGoto(bool sync)
       menuRADec(sync);
       break;
     case 6:
-    {
-      char cmd[5];
-      sprintf(cmd, ":hX#");
-      cmd[2] = sync ? 'F' : 'C';
-      if (SetLX200(cmd) == LX200VALUESET)
-      {
-        DisplayMessage(sync ? "Reset at" : "Goto", " Home Position", -1);
-        exitMenu = true;
-      }
-    }
-    break;
+      exitMenu = DisplayMessageLX200(SyncGoHomeLX200(sync), false);
+      break;
     case 7:
-    {
-      char cmd[5];
-      sprintf(cmd, ":hX#");
-      cmd[2] = sync ? 'O' : 'P';
-      if (SetLX200(cmd) == LX200VALUESET)
-      {
-        DisplayMessage(sync ? "Reset at" : "Goto", " Park Position", -1);
-        exitMenu = true;
-      }
-      else
-      {
-        DisplayMessageLX200(LX200NOTOK);
-      }
-    }
+      exitMenu = DisplayMessageLX200(SyncGoParkLX200(sync), false);
+      break;
     break;
     default:
       break;
@@ -1842,6 +1821,46 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
       sprintf(text1, "Target is");
       sprintf(text2, "Below Horizon!");
     }
+    else if (val == LX200_ERR_MOTOR_FAULT)
+    {
+      sprintf(text1, "Telescope Motor");
+      sprintf(text2, "Fault!");
+    }
+    else if (val == LX200_ERR_ALT)
+    {
+      sprintf(text1, "Telescope is");
+      sprintf(text2, "Below Horizon!");
+    }
+    else if (val == LX200_ERR_LIMIT_SENSE)
+    {
+      sprintf(text1, "Telescope exceed");
+      sprintf(text2, "Sensor limits");
+    }
+    else if (val == LX200_ERR_DEC)
+    {
+      sprintf(text1, "Telescope exceed");
+      sprintf(text2, "DEC limits");
+    }
+    else if (val == LX200_ERR_AZM)
+    {
+      sprintf(text1, "Telescope exceed");
+      sprintf(text2, "AZM limits");
+    }
+    else if (val == LX200_ERR_UNDER_POLE)
+    {
+      sprintf(text1, "Telescope exceed");
+      sprintf(text2, "Under pole limits");
+    }
+    else if (val == LX200_ERR_MERIDIAN)
+    {
+      sprintf(text1, "Telescope exceed");
+      sprintf(text2, "Meridian limits");
+    }
+    else if (val == LX200_ERR_SYNC)
+    {
+      sprintf(text1, "Telescope is");
+      sprintf(text2, "Outside Limits");
+    }
     else if (val == LX200NOOBJECTSELECTED)
     {
       sprintf(text1, "No Object");
@@ -1866,6 +1885,21 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
     {
       sprintf(text1, "Unkown");
       sprintf(text2, "Error");
+    }
+    else if (val == LX200GOPARK_FAILED)
+    {
+      sprintf(text1, "Telecope");
+      sprintf(text2, "Can't Park");
+    }
+    else if (val == LX200NOPARKSAVED)
+    {
+      sprintf(text1, "No Park");
+      sprintf(text2, "Position Saved");
+    }
+    else if (val == LX200GOHOME_FAILED)
+    {
+      sprintf(text1, "Telecope");
+      sprintf(text2, "Can't go Home");
     }
     else
     {
@@ -1897,11 +1931,22 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
       sprintf(text1, "Telescope");
       sprintf(text2, "Synced!");
     }
-    else if (LX200GOINGTO)
+    else if (val == LX200GOINGTO)
     {
       sprintf(text1, "Slew to");
       sprintf(text2, "Target");
     }
+    else if (val == LX200GOPARK)
+    {
+      sprintf(text1, "Slew to");
+      sprintf(text2, "Park");
+    }
+    else if (val == LX200GOHOME)
+    {
+      sprintf(text1, "Slew to");
+      sprintf(text2, "Home");
+    }
+
     DisplayMessage(text1, text2, time);
   }
   return isOk(val);

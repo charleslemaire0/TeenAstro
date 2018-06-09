@@ -132,6 +132,10 @@ boolean parkClearBacklash()
 byte park()
 {
   // Gets park position and moves the mount there
+  if (lastError != ERR_NONE)
+  {
+    return 4;
+  }
   if (trackingState != TrackingMoveTo)
   {
     parkSaved = EEPROM.read(EE_parkSaved);

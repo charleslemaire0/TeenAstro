@@ -4,6 +4,7 @@
 boolean goHome()
 {
     if ((parkStatus != NotParked) && (parkStatus != Parking)) return false; // fail, moving to home not allowed if Parked
+    if (lastError != ERR_NONE) return false;                                // fail, cannot move if there are errors
     if (trackingState == TrackingMoveTo) return false;                      // fail, moving to home not allowed during a move
     if (guideDirAxis1 || guideDirAxis2) return false;                       // fail, moving to home not allowed while guiding
     cli();

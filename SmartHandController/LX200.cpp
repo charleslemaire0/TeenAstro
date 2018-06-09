@@ -147,6 +147,63 @@ LX200RETURN SetLX200(char* command)
     return LX200SETVALUEFAILED;
 }
 
+LX200RETURN SyncGoHomeLX200(bool sync)
+{
+  char cmd[5];
+  sprintf(cmd, ":hX#");
+  cmd[2] = sync ? 'F' : 'C';
+
+  char out[20];
+  memset(out, 0, sizeof(out));
+  bool ok = readLX200Bytes(cmd, out, TIMEOUT_CMD);
+  if (!ok)
+  {
+    return LX200SETVALUEFAILED;
+  }
+  if (sync)
+  {
+    return  LX200SYNCED;
+  }
+  else
+  {
+    if (out[0] == '0')
+    {
+      return LX200GOHOME_FAILED;
+    }
+    else
+      return LX200GOHOME;
+  }
+}
+
+LX200RETURN SyncGoParkLX200(bool sync)
+{
+  char cmd[5];
+  sprintf(cmd, ":hX#");
+  cmd[2] = sync ? 'O' : 'P';
+
+  char out[20];
+  memset(out, 0, sizeof(out));
+  bool ok = readLX200Bytes(cmd, out, TIMEOUT_CMD);
+  if (!ok)
+  {
+    return LX200SETVALUEFAILED;
+  }
+  if (sync)
+  {
+    return LX200SYNCED;
+  }
+  else
+  {
+    if (out[0] == '0')
+    {
+      return LX200GOPARK_FAILED;
+    }
+    else
+      return LX200GOPARK;
+  }
+}
+
+
 LX200RETURN GetLX200(char* command, char* output)
 {
   memset(output, 0, sizeof(output));
@@ -220,6 +277,7 @@ LX200RETURN Move2TargetLX200()
   memset(out, 0, sizeof(out));
   int val = readLX200Bytes(":MS#", out, TIMEOUT_CMD);
   LX200RETURN response;
+
   switch (out[0]-'0')
   {
     //         1=Object below horizon    Outside limits, below the Horizon limit
@@ -244,6 +302,33 @@ LX200RETURN Move2TargetLX200()
     break;
   case 6:
     response = LX200LIMITS;
+    break;
+  case 7:
+    response = LX200BUSY;
+    break;
+  case 11:
+    response = LX200_ERR_MOTOR_FAULT;
+    break;
+  case 12:
+    response = LX200_ERR_ALT;
+    break;
+  case 13:
+    response = LX200_ERR_LIMIT_SENSE;
+    break;
+  case 14:
+    response = LX200_ERR_DEC;
+    break;
+  case 15:
+    response = LX200_ERR_AZM;
+    break;
+  case 16:
+    response = LX200_ERR_UNDER_POLE;
+    break;
+  case 17:
+    response = LX200_ERR_MERIDIAN;
+    break;
+  case 18:
+    response = LX200_ERR_SYNC;
     break;
   default:
     response = LX200UNKOWN;
