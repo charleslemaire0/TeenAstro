@@ -68,6 +68,7 @@ private:
   void menuMountType();
   void menuPredefinedMount();
   void menuAltMount();
+  void menuSideres();
   void menuTakahashi();
   void menuMotor(uint8_t idx);
   void menuSite();

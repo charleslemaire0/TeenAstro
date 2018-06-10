@@ -1354,7 +1354,7 @@ void SmartHandController::menuPredefinedMount()
 
       break;
     case 5:
-
+      menuSideres();
       break;
     case 6:
 
@@ -1407,7 +1407,57 @@ void SmartHandController::menuAltMount()
 //void SmartHandController::menuAP() {}
 //void SmartHandController::menuFornax() {}
 //void SmartHandController::menuLosmandy() {}
-//void SmartHandController::menuSideres() {}
+void SmartHandController::menuSideres()
+{
+  current_selection_L4 = 1;
+  while (current_selection_L4 != 0)
+  {
+    const char *string_list_Mount = "Sideres 85\n""Sideres 85 isel";
+    current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Sideres Mount", current_selection_L4, string_list_Mount);
+    if (current_selection_L4 > 0)
+    {
+      bool reverse1, reverse2;
+      int gear1, steprot1, gear2, steprot2;
+
+      switch (current_selection_L4)
+      {
+      case 1:
+        reverse1 = true;
+        reverse2 = true;
+        gear1 = 4608;
+        gear2 = 4608;
+        break;
+      case 2:
+        reverse1 = true;
+        reverse2 = true;
+        gear1 = 14400;
+        gear2 = 14400;
+        break;
+      }
+      writeReverseLX200(1, reverse1);
+      writeTotGearLX200(1, gear1);
+      writeStepPerRotLX200(1, 200);
+      writeBacklashLX200(1, 0);
+      writeMicroLX200(1, 4);
+      writeLowCurrLX200(1, 80);
+      writeHighCurrLX200(1, 120);
+      DisplayMotorSettings(1);
+
+      writeReverseLX200(2, reverse2);
+      writeTotGearLX200(2, gear2);
+      writeStepPerRotLX200(2, 200);
+      writeBacklashLX200(2, 0);
+      writeMicroLX200(2, 4);
+      writeLowCurrLX200(2, 80);
+      writeHighCurrLX200(2, 120);
+      DisplayMotorSettings(2);
+      SyncGoHomeLX200(true);
+      exitMenu = true;
+    }
+
+
+  }
+}
 //void SmartHandController::menuSkyWatcher() {}
 void SmartHandController::menuTakahashi()
 {
