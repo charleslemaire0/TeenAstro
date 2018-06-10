@@ -70,6 +70,8 @@ private:
   void menuAltMount();
   void menuSideres();
   void menuTakahashi();
+  void menuVixen();
+  bool menuMotorKit(int& gearBox,int& stepRot);
   void menuMotor(uint8_t idx);
   void menuSite();
   void menuSites();

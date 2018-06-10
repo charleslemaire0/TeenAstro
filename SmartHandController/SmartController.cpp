@@ -1359,9 +1359,11 @@ void SmartHandController::menuPredefinedMount()
     case 6:
 
       break;
-
     case 7:
       menuTakahashi();
+      break;
+    case 8:
+      menuVixen();
       break;
     default:
       break;
@@ -1513,7 +1515,66 @@ void SmartHandController::menuTakahashi()
   }
 
 }
-//void SmartHandController::menuVixen() {}
+
+
+void SmartHandController::menuVixen()
+{
+  current_selection_L4 = 1;
+  while (current_selection_L4 != 0)
+  {
+    const char *string_list_Mount = "SP\n""SP-DX\n""GP-E\n""GP-2\n""GP-DX\n""GP-D2";
+    current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Vixen Mount", current_selection_L4, string_list_Mount);
+    if (current_selection_L4 > 0)
+    {
+      int geabox, steprot;
+      int teeth = 144;
+      if (menuMotorKit(geabox, steprot))
+      {
+        writeReverseLX200(1, false);
+        writeTotGearLX200(1, teeth*geabox);
+        writeStepPerRotLX200(1, steprot);
+        writeBacklashLX200(1, 0);
+        writeMicroLX200(1, 4);
+        writeLowCurrLX200(1, 50);
+        writeHighCurrLX200(1, 100);
+        DisplayMotorSettings(1);
+
+        writeReverseLX200(2, false);
+        writeTotGearLX200(2, teeth*geabox);
+        writeStepPerRotLX200(2, steprot);
+        writeBacklashLX200(2, 0);
+        writeMicroLX200(2, 4);
+        writeLowCurrLX200(2, 50);
+        writeHighCurrLX200(2, 100);
+        DisplayMotorSettings(2);
+        SyncGoHomeLX200(true);
+        exitMenu = true;
+
+      }
+    }
+  }
+
+}
+
+bool SmartHandController::menuMotorKit(int& gearBox,int& stepRot)
+{
+  const char *string_list_Mount = "SECM3\n""ESCAP P530";
+  uint choice = display->UserInterfaceSelectionList(&buttonPad, "Motor Kit", 0, string_list_Mount);
+  switch (choice)
+  {
+  case 0:
+    return false;
+  case 1:
+    gearBox = 10;
+    stepRot = 200;
+    break;
+  case 2:
+    gearBox = 16;
+    stepRot = 100;
+    break;
+  }
+  return true;
+}
 
 void SmartHandController::menuMotor(const uint8_t axis)
 {
