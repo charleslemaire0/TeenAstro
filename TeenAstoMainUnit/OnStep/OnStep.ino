@@ -122,7 +122,8 @@ void setup()
     saveAlignModel();
   }
 
-  initmotor();
+  initmotor(); 
+
   // init the date and time January 1, 2013. 0 hours LMT
   setSyncProvider(getTeensy3Time);
   setSyncInterval(1);
@@ -530,12 +531,12 @@ void CheckPierSide()
   bool isEast = -quaterRotAxis2 < pos && pos < quaterRotAxis2;
   if (isEast && pierSide >= PierSideWest)
   {
-    cli(); blAxis2 = backlashAxis2 - blAxis2; sei();
+   // cli(); blAxis2 = backlashAxis2 - blAxis2; sei();
     pierSide = PierSideEast;
   }
   else if (!isEast && pierSide < PierSideWest)
   {
-    cli(); blAxis2 = backlashAxis2 - blAxis2; sei();
+    //cli(); blAxis2 = backlashAxis2 - blAxis2; sei();
     pierSide = PierSideWest;
   }
 }
@@ -694,17 +695,23 @@ void initmotor()
 void readEEPROMmotor()
 {
   backlashAxis1 = EEPROM_readInt(EE_backlashAxis1);
+  if (backlashAxis1 < 0) backlashAxis1 = 0; else if (backlashAxis1>999) backlashAxis1 = 999;
+  blAxis1 = backlashAxis1;
   GearAxis1 = EEPROM_readInt(EE_GearAxis1);
   StepRotAxis1 = EEPROM_readInt(EE_StepRotAxis1);
   MicroAxis1 = EEPROM.read(EE_MicroAxis1);
+  if (MicroAxis1 < 4) MicroAxis1 = 4; else if (MicroAxis1>8) MicroAxis1 = 8;
   ReverseAxis1 = EEPROM.read(EE_ReverseAxis1);
   LowCurrAxis1 = EEPROM.read(EE_LowCurrAxis1);
   HighCurrAxis1 = EEPROM.read(EE_HighCurrAxis1);
 
   backlashAxis2 = EEPROM_readInt(EE_backlashAxis2);
+  if (backlashAxis2 < 0) backlashAxis2 = 0; else if (backlashAxis2>999) backlashAxis2 = 999;
+  blAxis2 = backlashAxis2;
   GearAxis2 = EEPROM_readInt(EE_GearAxis2);
   StepRotAxis2 = EEPROM_readInt(EE_StepRotAxis2);
   MicroAxis2 = EEPROM.read(EE_MicroAxis2);
+  if (MicroAxis2 < 4) MicroAxis2 = 4; else if (MicroAxis2>8) MicroAxis2 = 8;
   ReverseAxis2 = EEPROM.read(EE_ReverseAxis2);
   LowCurrAxis2 = EEPROM.read(EE_LowCurrAxis2);
   HighCurrAxis2 = EEPROM.read(EE_HighCurrAxis2);
