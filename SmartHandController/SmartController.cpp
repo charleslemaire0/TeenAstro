@@ -1381,28 +1381,32 @@ void SmartHandController::menuAltMount()
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Alt Mount", current_selection_L4, string_list_Mount);
     if (current_selection_L4 > 0)
     {
-      int gear1, steprot, gear2,  currentH, currentL;
+      int gear1, steprot1, steprot2, gear2,  currentH, currentL;
       if (current_selection_L4>3)
       {
         currentH = 70;
         currentL = 70;
-        steprot = 48;
+        steprot1 = 48;
+        steprot2 = steprot1;
       }
       else
       {
         currentH = 120;
         currentL = 70;
-        steprot = 100;
+        steprot1 = 100;
+        steprot2 = steprot1;
       }
       switch (current_selection_L4)
       {
       case 1:
         gear1 = 15625;
-        gear2 = 16667;
+        gear2 = 14881;  //Tricky
+        steprot2 = 112; //Tricky
         break;
       case 2:
         gear1 = 13750;
-        gear2 = 16667;
+        gear2 = 14881;  //Tricky
+        steprot2 = 112; //Tricky
         break;
       case 3:
         gear1 = 16875;
@@ -1417,19 +1421,42 @@ void SmartHandController::menuAltMount()
         gear2 = 18750;
         break;
       case 6:
-        gear1 = 20250;
-        gear2 = 19688;
+        gear1 = 20250; 
+        gear2 = 39375; //Tricky
+        steprot2 = 24; //Tricky
         break;
       default:
         return;
       }
-      writeDefaultMount(true, gear1, true, gear2, steprot, currentL, currentH);
+      writeDefaultMount(true, gear1, steprot1, true, gear2, steprot2, currentL, currentH);
     }
   }
 }
 
 //void SmartHandController::menuAP() {}
-//void SmartHandController::menuFornax() {}
+void SmartHandController::menuFornax()
+{
+  current_selection_L4 = 1;
+  while (current_selection_L4 != 0)
+  {
+    const char *string_list_Mount = "Fornax 52\n""Fornax 102\n""Fornax 52 Photo\n""Fornax 102 Photo\n";
+    current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Fornax Mount", current_selection_L4, string_list_Mount);
+    if (current_selection_L4 > 0)
+    {
+      switch (current_selection_L4)
+      {
+      case 1:
+      case 2:
+        writeDefaultMount(true, 864, 200, true, 864, 200, 80, 120);
+        break;
+      case 3:
+      case 4:
+        writeDefaultMount(true, 10368, 80, true, 10368, 80, 80, 120);
+        break;
+      }
+    }
+  }
+}
 //void SmartHandController::menuLosmandy() {}
 void SmartHandController::menuSideres()
 {
@@ -1452,7 +1479,7 @@ void SmartHandController::menuSideres()
         gear2 = 14400;
         break;
       }
-      writeDefaultMount(true, gear1, true, gear2, 200, 80, 120);
+      writeDefaultMount(true, gear1, 200, true, gear2, 200, 80, 120);
     }
   }
 }
@@ -1487,7 +1514,7 @@ void SmartHandController::menuTakahashi()
       default:
         break;
       }
-      writeDefaultMount(reverse1, gear1, reverse2, gear2, 200, 75, 100);
+      writeDefaultMount(reverse1, gear1, 200, reverse2, gear2, 200, 75, 100);
     }
   }
 
@@ -1544,25 +1571,25 @@ void SmartHandController::menuVixen()
     }
     if (valid)
     {
-      writeDefaultMount(false, totgear1, false, totgear2, steprot, currentL, currentH);
+      writeDefaultMount(false, totgear1, steprot, false, totgear2, steprot, currentL, currentH);
     }
   }
 }
 
-void SmartHandController::writeDefaultMount(const bool& r1, const int& ttgr1, const bool& r2, const int& ttgr2, const int& stprot, const int& cL, const int& cH)
+void SmartHandController::writeDefaultMount(const bool& r1, const int& ttgr1, const int& stprot1, const bool& r2, const int& ttgr2, const int& stprot2, const int& cL, const int& cH)
 {
   writeReverseLX200(1, r1);
   writeTotGearLX200(1, ttgr1);
-  writeStepPerRotLX200(1, stprot);
+  writeStepPerRotLX200(1, stprot1);
   writeBacklashLX200(1, 0);
   writeMicroLX200(1, 4);
   writeLowCurrLX200(1, cL);
   writeHighCurrLX200(1, cH);
   DisplayMotorSettings(1);
 
-  writeReverseLX200(2, r1);
+  writeReverseLX200(2, r2);
   writeTotGearLX200(2, ttgr2);
-  writeStepPerRotLX200(2, stprot);
+  writeStepPerRotLX200(2, stprot2);
   writeBacklashLX200(2, 0);
   writeMicroLX200(2, 4);
   writeLowCurrLX200(2, cL);
