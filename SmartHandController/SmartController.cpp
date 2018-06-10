@@ -1377,32 +1377,54 @@ void SmartHandController::menuAltMount()
   current_selection_L4 = 1;
   while (current_selection_L4 != 0)
   {
-    const char *string_list_Mount = "Alt 5-ADN\n""Alt 6-ADN\n""Alt 7-ADN\n";
+    const char *string_list_Mount = "Alt 5 Escap\n""Alt 6 Escap\n""Alt 7 Escap P520\n""Alt 5 Berger\n""Alt 6 Berger\n""Alt 7 Berger\n";
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Alt Mount", current_selection_L4, string_list_Mount);
-    //if (current_selection_L4 > 0)
-    //{
-    //  switch (current_selection_L4)
-    //  {
-    //  case 1:
-    //    mountMotor[0].setWorm(250);
-    //    mountMotor[1].setWorm(200);
-    //    break;
-    //  case 2:
-    //    mountMotor[0].setWorm(220);
-    //    mountMotor[1].setWorm(200);
-    //    break;
-    //  case 3:
-    //    mountMotor[0].setWorm(270);
-    //    mountMotor[1].setWorm(210);
-    //    break;
-    //  default:
-    //    break;
-    //  }
-    //  DisplayMessage("Set Parameters", "for Motor 1", -1);
-
-    //  DisplayMessage("Set Parameters", "for Motor 2", -1);
-
-    //}
+    if (current_selection_L4 > 0)
+    {
+      int gear1, steprot, gear2,  currentH, currentL;
+      if (current_selection_L4>3)
+      {
+        currentH = 70;
+        currentL = 70;
+        steprot = 48;
+      }
+      else
+      {
+        currentH = 120;
+        currentL = 70;
+        steprot = 100;
+      }
+      switch (current_selection_L4)
+      {
+      case 1:
+        gear1 = 15625;
+        gear2 = 16667;
+        break;
+      case 2:
+        gear1 = 13750;
+        gear2 = 16667;
+        break;
+      case 3:
+        gear1 = 16875;
+        gear2 = 17500;
+        break;
+      case 4:
+        gear1 = 18750;
+        gear2 = 18750;
+        break;
+      case 5:
+        gear1 = 20625;
+        gear2 = 18750;
+        break;
+      case 6:
+        gear1 = 20250;
+        gear2 = 19688;
+        break;
+      default:
+        return;
+      }
+      writeDefaultMount(true, gear1, true, gear2, steprot, currentL, currentH);
+    }
   }
 }
 
@@ -1418,46 +1440,20 @@ void SmartHandController::menuSideres()
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Sideres Mount", current_selection_L4, string_list_Mount);
     if (current_selection_L4 > 0)
     {
-      bool reverse1, reverse2;
       int gear1, steprot1, gear2, steprot2;
-
       switch (current_selection_L4)
       {
       case 1:
-        reverse1 = true;
-        reverse2 = true;
         gear1 = 4608;
         gear2 = 4608;
         break;
       case 2:
-        reverse1 = true;
-        reverse2 = true;
         gear1 = 14400;
         gear2 = 14400;
         break;
       }
-      writeReverseLX200(1, reverse1);
-      writeTotGearLX200(1, gear1);
-      writeStepPerRotLX200(1, 200);
-      writeBacklashLX200(1, 0);
-      writeMicroLX200(1, 4);
-      writeLowCurrLX200(1, 80);
-      writeHighCurrLX200(1, 120);
-      DisplayMotorSettings(1);
-
-      writeReverseLX200(2, reverse2);
-      writeTotGearLX200(2, gear2);
-      writeStepPerRotLX200(2, 200);
-      writeBacklashLX200(2, 0);
-      writeMicroLX200(2, 4);
-      writeLowCurrLX200(2, 80);
-      writeHighCurrLX200(2, 120);
-      DisplayMotorSettings(2);
-      SyncGoHomeLX200(true);
-      exitMenu = true;
+      writeDefaultMount(true, gear1, true, gear2, 200, 80, 120);
     }
-
-
   }
 }
 //void SmartHandController::menuSkyWatcher() {}
@@ -1491,26 +1487,7 @@ void SmartHandController::menuTakahashi()
       default:
         break;
       }
-
-      writeReverseLX200(1, reverse1);
-      writeTotGearLX200(1, gear1);
-      writeStepPerRotLX200(1, 200);
-      writeBacklashLX200(1, 0);
-      writeMicroLX200(1, 4);
-      writeLowCurrLX200(1, 50);
-      writeHighCurrLX200(1, 100);
-      DisplayMotorSettings(1);
-
-      writeReverseLX200(2, reverse2);
-      writeTotGearLX200(2, gear2);
-      writeStepPerRotLX200(2, 200);
-      writeBacklashLX200(2, 0);
-      writeMicroLX200(2, 4);
-      writeLowCurrLX200(2, 50);
-      writeHighCurrLX200(2, 100);
-      DisplayMotorSettings(2);
-      SyncGoHomeLX200(true);
-      exitMenu = true;
+      writeDefaultMount(reverse1, gear1, reverse2, gear2, 200, 75, 100);
     }
   }
 
@@ -1522,41 +1499,80 @@ void SmartHandController::menuVixen()
   current_selection_L4 = 1;
   while (current_selection_L4 != 0)
   {
-    const char *string_list_Mount = "SP\n""SP-DX\n""GP-E\n""GP-2\n""GP-DX\n""GP-D2";
+    const char *string_list_Mount = "SHINX SECM3\n""old ALTLUX\n""ATLUX ESCAP\n""SP-DX\n""GP-E\n""GP-2\n""GP-DX\n""GP-D2";
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Vixen Mount", current_selection_L4, string_list_Mount);
-    if (current_selection_L4 > 0)
+    int gearbox, steprot, teeth, currentL, currentH;
+    int totgear1, totgear2;
+    bool valid = false;
+    switch (current_selection_L4)
     {
-      int geabox, steprot;
+    case 0:
+      return;
+    case 1:
+      gearbox = 10;
+      teeth = 180;
+      totgear1 = gearbox* teeth;
+      totgear2 = totgear1;
+      steprot = 200;
+      currentH = 100;
+      currentH = 50;
+      valid = true;
+      break;
+    case 2:
+      totgear1 = 9600;
+      totgear2 = 7200;
+      steprot = 200;
+      currentH = 40;
+      currentL = 40;
+      valid = true;
+      break;
+    case 3:
+      totgear1 = 9600;
+      totgear2 = 7200;
+      steprot = 200;
+      currentH = 180;
+      currentL = 100;
+      valid = true;
+      break;
+    default:
       int teeth = 144;
-      if (menuMotorKit(geabox, steprot))
-      {
-        writeReverseLX200(1, false);
-        writeTotGearLX200(1, teeth*geabox);
-        writeStepPerRotLX200(1, steprot);
-        writeBacklashLX200(1, 0);
-        writeMicroLX200(1, 4);
-        writeLowCurrLX200(1, 50);
-        writeHighCurrLX200(1, 100);
-        DisplayMotorSettings(1);
-
-        writeReverseLX200(2, false);
-        writeTotGearLX200(2, teeth*geabox);
-        writeStepPerRotLX200(2, steprot);
-        writeBacklashLX200(2, 0);
-        writeMicroLX200(2, 4);
-        writeLowCurrLX200(2, 50);
-        writeHighCurrLX200(2, 100);
-        DisplayMotorSettings(2);
-        SyncGoHomeLX200(true);
-        exitMenu = true;
-
-      }
+      valid = menuMotorKit(gearbox, steprot, currentH);
+      currentL = 0.5 * currentH;
+      totgear1 = gearbox* teeth;
+      totgear2 = totgear1;
+      break;
+    }
+    if (valid)
+    {
+      writeDefaultMount(false, totgear1, false, totgear2, steprot, currentL, currentH);
     }
   }
-
 }
 
-bool SmartHandController::menuMotorKit(int& gearBox,int& stepRot)
+void SmartHandController::writeDefaultMount(const bool& r1, const int& ttgr1, const bool& r2, const int& ttgr2, const int& stprot, const int& cL, const int& cH)
+{
+  writeReverseLX200(1, r1);
+  writeTotGearLX200(1, ttgr1);
+  writeStepPerRotLX200(1, stprot);
+  writeBacklashLX200(1, 0);
+  writeMicroLX200(1, 4);
+  writeLowCurrLX200(1, cL);
+  writeHighCurrLX200(1, cH);
+  DisplayMotorSettings(1);
+
+  writeReverseLX200(2, r1);
+  writeTotGearLX200(2, ttgr2);
+  writeStepPerRotLX200(2, stprot);
+  writeBacklashLX200(2, 0);
+  writeMicroLX200(2, 4);
+  writeLowCurrLX200(2, cL);
+  writeHighCurrLX200(2, cH);
+  DisplayMotorSettings(2);
+  SyncGoHomeLX200(true);
+  exitMenu = true;
+}
+
+bool SmartHandController::menuMotorKit(int& gearBox,int& stepRot, int& current)
 {
   const char *string_list_Mount = "SECM3\n""ESCAP P530";
   uint choice = display->UserInterfaceSelectionList(&buttonPad, "Motor Kit", 0, string_list_Mount);
@@ -1567,10 +1583,12 @@ bool SmartHandController::menuMotorKit(int& gearBox,int& stepRot)
   case 1:
     gearBox = 10;
     stepRot = 200;
+    current = 100;
     break;
   case 2:
     gearBox = 16;
     stepRot = 100;
+    current = 100;
     break;
   }
   return true;
