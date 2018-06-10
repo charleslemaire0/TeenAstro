@@ -2127,7 +2127,7 @@ void config_html_page()
   if (html_page_step == ++stp)
   {
     strcpy_P(temp1, html_configUPL);
-    sprintf(temp, temp1, (long)round(UnderPoleLimit));
+    sprintf(temp, temp1, (long)round(underPoleLimit));
   }
 
   if (html_page_step == ++stp)

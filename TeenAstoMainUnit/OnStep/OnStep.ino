@@ -90,6 +90,9 @@ void setup()
     maxAlt = 91;
     EEPROM.write(EE_minAlt, minAlt + 128);
     EEPROM.write(EE_maxAlt, maxAlt);
+    EEPROM.write(EE_dpmE, 0);
+    EEPROM.write(EE_dpmW, 0);
+    EEPROM.write(EE_dup, (12-9)*15);
 
     writeDefaultEEPROMmotor();
 
@@ -310,6 +313,15 @@ void setup()
   // get the min. and max altitude
   minAlt = EEPROM.read(EE_minAlt) - 128;
   maxAlt = EEPROM.read(EE_maxAlt);
+  minutesPastMeridianGOTOE = round(((EEPROM.read(EE_dpmE) - 128)*60.0) / 15.0);
+  if (abs(minutesPastMeridianGOTOE)>180)
+    minutesPastMeridianGOTOE = 60;
+  minutesPastMeridianGOTOW = round(((EEPROM.read(EE_dpmW) - 128)*60.0) / 15.0);
+  if (abs(minutesPastMeridianGOTOW)>180)
+    minutesPastMeridianGOTOW = 60;
+  underPoleLimitGOTO = (double)EEPROM.read(EE_dup)/10;
+  if (underPoleLimitGOTO < 9 || underPoleLimitGOTO>12)
+    underPoleLimitGOTO = 12;
 #ifdef MOUNT_TYPE_ALTAZM
   if (maxAlt > 87) maxAlt = 87;
 #endif
@@ -529,7 +541,7 @@ void CheckPierSide()
 }
 
 // safety checks,
-// keeps mount from tracking past the meridian limit, past the UnderPoleLimit,
+// keeps mount from tracking past the meridian limit, past the underPoleLimit,
 // below horizon limit, above the overhead limit, or past the Dec limits
 void SafetyCheck(const bool forceTracking)
 {
@@ -583,10 +595,10 @@ void SafetyCheck(const bool forceTracking)
   else
   {
 #ifndef MOUNT_TYPE_ALTAZM
-    // when Fork mounted, ignore pierSide and just stop the mount if it passes the UnderPoleLimit
+    // when Fork mounted, ignore pierSide and just stop the mount if it passes the underPoleLimit
     double HA, Dec;
     GeoAlign.GetInstr(&HA, &Dec);
-    if (HA > UnderPoleLimitTracking )
+    if (HA > underPoleLimitGOTO + 5./60.0 )
     {
       lastError = ERR_UNDER_POLE;
       if (trackingState == TrackingMoveTo)

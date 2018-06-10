@@ -265,17 +265,15 @@ void Command_GX()
       quietReply = true;
       break;
     case '9':
-      sprintf(reply, "%ld",
-        (long)round(MinutesPastMeridianEGOTO));
+      sprintf(reply, "%ld", (long)round(minutesPastMeridianGOTOE));
       quietReply = true;
       break;
     case 'A':
-      sprintf(reply, "%ld",
-        (long)round(MinutesPastMeridianWGOTO));
+      sprintf(reply, "%ld", (long)round(minutesPastMeridianGOTOW));
       quietReply = true;
       break;
     case 'B':
-      sprintf(reply, "%ld", (long)round(UnderPoleLimitGOTO));
+      sprintf(reply, "%ld", (long)round(underPoleLimitGOTO*10));
       quietReply = true;
       break;
     case 'C':

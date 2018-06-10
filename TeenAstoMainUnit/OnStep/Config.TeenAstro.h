@@ -116,16 +116,6 @@
 #define REVERSE_AXIS2_ON        // reverse the direction of movement for the Dec axis (both reversed for my EM10b, both normal for G11)
 #endif
 
-#define MinutesPastMeridianEGOTO        00 // for goto's, how far past the meridian to allow before we do a flip (if on the East side of the pier) - one hour of RA is the default = 60.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
-#define MinutesPastMeridianWGOTO        00 // as above, if on the West side of the pier.  If left alone, the mount will stop tracking when it hits the this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
-#define MinutesPastMeridianETracking    MinutesPastMeridianEGOTO + 05 // for Tracking's 
-#define MinutesPastMeridianWTracking    MinutesPastMeridianWGOTO + 05 
-
-#define UnderPoleLimitGOTO           12 // maximum allowed hour angle (+/-) under the celestial pole. OnStep will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
-                                        // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
-
-#define UnderPoleLimitTracking      UnderPoleLimitGOTO + 1.0/60.
-
 #define MinDec                   -91 // minimum allowed declination, default = -91 (off)  Ignored on Alt/Azm mounts.
 #define MaxDec                   +91 // maximum allowed declination, default =  91 (off)  Ignored on Alt/Azm mounts.
                                      // For example, a value of +80 would stop gotos/tracking near the north celestial pole.

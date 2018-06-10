@@ -128,12 +128,6 @@ IntervalTimer           itimer4;
 void                    TIMER4_COMPA_vect(void);
 
 
-// fix UnderPoleLimit for fork mounts
-#if defined(MOUNT_TYPE_FORK) || defined(MOUNT_TYPE_FORK_ALT)
-#undef UnderPoleLimit
-#define UnderPoleLimit  12
-#endif
-
 // either 0 or (fabs(latitude))
 #define AltAzmDecStartPos   (fabs(latitude))
 
@@ -170,6 +164,10 @@ double              newTargetAlt = 0.0, newTargetAzm = 0.0; // holds the altitud
 double              currentAlt = 45;                        // the current altitude
 int                 minAlt;                                 // the minimum altitude, in degrees, for goTo's (so we don't try to point too low)
 int                 maxAlt;                                 // the maximum altitude, in degrees, for goTo's (to keep the telescope tube away from the mount/tripod)
+long                minutesPastMeridianGOTOE;               // for goto's, how far past the meridian to allow before we do a flip (if on the East side of the pier)- one hour of RA is the default = 60.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
+long                minutesPastMeridianGOTOW;               // as above, if on the West side of the pier.  If left alone, the mount will stop tracking when it hits the this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
+double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. OnStep will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
+//                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
 bool                autoContinue = false;                   // automatically do a meridian flip and continue when we hit the MinutesPastMeridianW
 
                                             // Stepper/position/rate ----------------------------------------------------------------------------------------------------

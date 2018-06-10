@@ -11,14 +11,17 @@
 
 #define EE_pulseGuideRate   22
 #define EE_maxRate          23
-
 #define EE_autoContinue     25
 
-#define EE_trueAxis1        30
-#define EE_trueAxis2        34
+#define EE_minAlt           26
+#define EE_maxAlt           27
 
-#define EE_minAlt           40
-#define EE_maxAlt           41
+#define EE_dpmE             28
+#define EE_dpmW             29
+#define EE_dup              30
+
+#define EE_trueAxis1        32
+#define EE_trueAxis2        36
 
 #define EE_doCor            42
 #define EE_pdCor            46

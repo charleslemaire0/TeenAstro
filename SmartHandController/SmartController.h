@@ -81,8 +81,8 @@ private:
   void menuWifi();
   void menuHorizon();
   void menuOverhead();
-  void menuMeridian();
-
+  void menuMeridian(bool east);
+  void menuUnderPole();
   bool menuSetStepperGearBox(uint8_t &axis, unsigned short &worm);
   bool menuSetReverse(uint8_t &axis);
   bool menuSetBacklash(uint8_t &axis);

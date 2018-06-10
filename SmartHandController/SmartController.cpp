@@ -1606,7 +1606,7 @@ void SmartHandController::menuLongitude()
 
 void SmartHandController::menuLimits()
 {
-  const char *string_list_LimitsL2 = "Horizon\n""Overhead\n""Meridian";
+  const char *string_list_LimitsL2 = "Horizon\n""Overhead\n""Meridian E\n""Meridian W\n""Under Pole";
   current_selection_L3 = 1;
   while (current_selection_L3 != 0)
   {
@@ -1620,9 +1620,16 @@ void SmartHandController::menuLimits()
       menuOverhead();
       break;
     case 3:
-      menuMeridian();
+      menuMeridian(true);
+      break;
+    case 4:
+      menuMeridian(false);
+      break;
+    case 5:
+      menuUnderPole();
       break;
     default:
+    
       break;
     }
   }
@@ -1683,20 +1690,48 @@ void SmartHandController::menuOverhead()
   if (DisplayMessageLX200(GetLX200(":Go#", out)))
   {
     float angle = (float)strtol(&out[0], NULL, 10);
-    if (display->UserInterfaceInputValueFloat(&buttonPad, "Overhead Limit", "", &angle, 60, 91, 2, 0, " degree"))
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "Overhead Limit", "", &angle, 60, 90, 2, 0, " degree"))
     {
-      sprintf(out, ":S0%02d#", (int)angle);
-      DisplayMessageLX200(SetLX200(out));
+      sprintf(out, ":So%02d#", (int)angle);
+      DisplayMessageLX200(SetLX200(out),false);
     }
   }
 }
 
-void SmartHandController::menuMeridian()
+void SmartHandController::menuUnderPole()
 {
-  uint8_t angle = 0;
-  if (display->UserInterfaceInputValueInteger(&buttonPad, "Meridian Limit", "", &angle, 0, 20, 2, " degree"))
-  {
+  char out[20];
+  char cmd[15];
+  if (DisplayMessageLX200(GetLX200(":GXEB#", out)))
+  { 
+    float angle = (float)strtol(&out[0], NULL, 10)/10;
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Hour Angle", "+-", &angle, 9, 12, 2, 1, " Hour"))
+    {
+      sprintf(cmd, ":SXEB_%03d#", (int)(angle*10));
+      DisplayMessageLX200(SetLX200(cmd), false);
+    }
+  }
+}
 
+void SmartHandController::menuMeridian(bool east)
+{
+  char out[20];
+  char cmd[15];
+  sprintf(cmd, ":GXEX#");
+  cmd[4] = east ? '9' : 'A';
+  char text[20];
+  sprintf(text, "Meridian Limit X");
+  text[15] = east ? 'E' : 'W';
+
+  if (DisplayMessageLX200(GetLX200(cmd, out)))
+  {
+    float angle = (float)strtol(&out[0], NULL, 10) / 4.0;
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "Meridian Limit", "", &angle, -45, 45, 2, 0, " degree"))
+    {
+      sprintf(cmd, ":SXEX_%03d#", (int)angle*4.0);
+      cmd[4] = east ? '9' : 'A';
+      DisplayMessageLX200(SetLX200(cmd), false);
+    }
   }
 }
 
@@ -1780,7 +1815,6 @@ void SmartHandController::DisplayLongMessage(const char* txt1, const char* txt2,
         break;
     }
   }
-
   display->setFont(u8g2_font_helvR12_te);
 }
 
@@ -1941,7 +1975,6 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
       sprintf(text1, "Slew to");
       sprintf(text2, "Home");
     }
-
     DisplayMessage(text1, text2, time);
   }
   return isOk(val);

@@ -231,6 +231,7 @@ void Command_S(Command& process_command)
   break;
 
 
+
   case 'r':
     //  :SrHH:MM.T#
     //  :SrHH:MM:SS#
@@ -428,6 +429,32 @@ void Command_S(Command& process_command)
       default:
         commandError = true;
         break;
+      }
+    }
+    else if (parameter[0] == 'E')
+    {
+      switch (parameter[1])
+      {
+      case '9': // minutesPastMeridianE 
+        minutesPastMeridianGOTOE = (double)strtol(&parameter[3], NULL, 10);
+        if (minutesPastMeridianGOTOE > 180) minutesPastMeridianGOTOE = 180;
+        if (minutesPastMeridianGOTOE < -180) minutesPastMeridianGOTOE = -180;
+        EEPROM.update(EE_dpmE, round((minutesPastMeridianGOTOE*15.0) / 60.0) + 128);
+        break;
+      case 'A': // minutesPastMeridianW
+        minutesPastMeridianGOTOW = (double)strtol(&parameter[3], NULL, 10);
+        if (minutesPastMeridianGOTOW > 180) minutesPastMeridianGOTOW = 180;
+        if (minutesPastMeridianGOTOW < -180) minutesPastMeridianGOTOW = -180;
+        EEPROM.update(EE_dpmW, round((minutesPastMeridianGOTOW*15.0) / 60.0) + 128);
+        break;
+      case 'B': // minutesPastMeridianW
+        underPoleLimitGOTO = (double)strtol(&parameter[3], NULL, 10)/10;
+        if (underPoleLimitGOTO > 12) underPoleLimitGOTO = 12;
+        if (underPoleLimitGOTO < 9) underPoleLimitGOTO = 9;
+        EEPROM.update(EE_dup, round(underPoleLimitGOTO*10.0));
+        break;
+
+      default: commandError = true;
       }
     }
     else

@@ -27,14 +27,14 @@ boolean setSide(byte side)
   bool checkPole(const double& HA, const byte& inputSide, byte mode)
 {
   bool ok = true;
-  double UnderPoleLimit = (mode == CheckModeGOTO) ? UnderPoleLimitGOTO : UnderPoleLimitTracking;
+  double underPoleLimit = (mode == CheckModeGOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0/60;
   switch (inputSide)
   {
   case PierSideWest:
-    if (HA < -UnderPoleLimit * 15.) ok = false;
+    if (HA < -underPoleLimit * 15.) ok = false;
     break;
   case PierSideEast:
-    if (HA > UnderPoleLimit * 15.) ok = false;
+    if (HA > underPoleLimit * 15.) ok = false;
     break;
   default:
     ok = false;
@@ -46,8 +46,8 @@ boolean setSide(byte side)
 bool checkMeridian(const double& HA, const byte& inputSide, byte mode)
 {
   bool ok = true;
-  double MinutesPastMeridianW = (mode == CheckModeGOTO) ? MinutesPastMeridianWGOTO : MinutesPastMeridianWTracking;
-  double MinutesPastMeridianE = (mode == CheckModeGOTO) ? MinutesPastMeridianEGOTO : MinutesPastMeridianETracking;
+  double MinutesPastMeridianW = (mode == CheckModeGOTO) ? minutesPastMeridianGOTOW : minutesPastMeridianGOTOW + 5;
+  double MinutesPastMeridianE = (mode == CheckModeGOTO) ? minutesPastMeridianGOTOE : minutesPastMeridianGOTOE + 5;
   switch (inputSide)
   {
   case PierSideWest:
