@@ -747,7 +747,7 @@ void SmartHandController::drawReady()
   delay(500);
 }
 
-bool SmartHandController::menuSetStepperGearBox(uint8_t &axis, unsigned short &worm)
+bool SmartHandController::menuSetStepperGearBox(const uint8_t &axis, unsigned short &worm)
 {
   char text[20];
   float stepperGearBox = 10;
@@ -758,7 +758,7 @@ bool SmartHandController::menuSetStepperGearBox(uint8_t &axis, unsigned short &w
   }
 }
 
-bool SmartHandController::menuSetReverse(uint8_t &axis)
+bool SmartHandController::menuSetReverse(const uint8_t &axis)
 {
   bool reverse;
   if (!DisplayMessageLX200(readReverseLX200(axis, reverse)))
@@ -774,7 +774,7 @@ bool SmartHandController::menuSetReverse(uint8_t &axis)
   }
   return true;
 }
-bool SmartHandController::menuSetBacklash(uint8_t &axis)
+bool SmartHandController::menuSetBacklash(const uint8_t &axis)
 {
   float backlash;
   if (!DisplayMessageLX200(readBacklashLX200(axis, backlash)))
@@ -787,7 +787,7 @@ bool SmartHandController::menuSetBacklash(uint8_t &axis)
   }
   return true;
 }
-bool SmartHandController::menuSetTotGear(uint8_t &axis)
+bool SmartHandController::menuSetTotGear(const uint8_t &axis)
 {
   float totGear;
   if (!DisplayMessageLX200(readTotGearLX200(axis, totGear)))
@@ -800,7 +800,7 @@ bool SmartHandController::menuSetTotGear(uint8_t &axis)
   }
   return true;
 }
-bool SmartHandController::menuSetStepPerRot(uint8_t &axis)
+bool SmartHandController::menuSetStepPerRot(const uint8_t &axis)
 {
   float stepPerRot;
   if (!DisplayMessageLX200(readStepPerRotLX200(axis, stepPerRot)))
@@ -813,7 +813,7 @@ bool SmartHandController::menuSetStepPerRot(uint8_t &axis)
   }
   return true;
 }
-bool SmartHandController::menuSetMicro(uint8_t &axis)
+bool SmartHandController::menuSetMicro(const uint8_t &axis)
 {
   uint8_t microStep;
     if (!DisplayMessageLX200(readMicroLX200(axis, microStep)))
@@ -830,7 +830,7 @@ bool SmartHandController::menuSetMicro(uint8_t &axis)
   }
   return true;
 }
-bool SmartHandController::menuSetLowCurrent(uint8_t &axis)
+bool SmartHandController::menuSetLowCurrent(const uint8_t &axis)
 {
   uint8_t lowCurr;
   if (!DisplayMessageLX200(readLowCurrLX200(axis, lowCurr)))
@@ -846,7 +846,7 @@ bool SmartHandController::menuSetLowCurrent(uint8_t &axis)
   return true;
 }
 
-bool SmartHandController::menuSetHighCurrent(uint8_t &axis)
+bool SmartHandController::menuSetHighCurrent(const uint8_t &axis)
 {
   uint8_t highCurr;
   if (!DisplayMessageLX200(readHighCurrLX200(axis, highCurr)))
@@ -862,7 +862,7 @@ bool SmartHandController::menuSetHighCurrent(uint8_t &axis)
   return true;
 }
 
-void SmartHandController::DisplayMotorSettings(uint8_t &axis)
+void SmartHandController::DisplayMotorSettings(const uint8_t &axis)
 {
   char line1[32]="";
   char line2[32]="";
@@ -1358,6 +1358,11 @@ void SmartHandController::menuPredefinedMount()
       break;
     case 6:
 
+      break;
+
+    case 7:
+      menuTakahashi();
+      break;
     default:
       break;
     }
@@ -1404,10 +1409,63 @@ void SmartHandController::menuAltMount()
 //void SmartHandController::menuLosmandy() {}
 //void SmartHandController::menuSideres() {}
 //void SmartHandController::menuSkyWatcher() {}
-//void SmartHandController::menuTakahashi() {}
+void SmartHandController::menuTakahashi()
+{
+  current_selection_L4 = 1;
+  while (current_selection_L4 != 0)
+  {
+    const char *string_list_Mount = "EM11b kit FS2\n""EM200b kit FS2\n""EM200 kit FS2";
+    current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Takahashi Mount", current_selection_L4, string_list_Mount);
+    if (current_selection_L4 > 0)
+    {
+      bool reverse1,reverse2;
+      int gear1, steprot1,gear2,steprot2;
+
+      switch (current_selection_L4)
+      {
+      case 1:
+      case 2:
+        reverse1 = true;
+        reverse2 = false;
+        gear1 = 1800;
+        gear2 = 1800;
+        break;
+      case 3:
+        reverse1 = true;
+        reverse2 = false;
+        gear1 = 2000;
+        gear2 = 1800;
+        break;
+      default:
+        break;
+      }
+
+      writeReverseLX200(1, reverse1);
+      writeTotGearLX200(1, gear1);
+      writeStepPerRotLX200(1, 200);
+      writeBacklashLX200(1, 0);
+      writeMicroLX200(1, 4);
+      writeLowCurrLX200(1, 50);
+      writeHighCurrLX200(1, 100);
+      DisplayMotorSettings(1);
+
+      writeReverseLX200(2, reverse2);
+      writeTotGearLX200(2, gear2);
+      writeStepPerRotLX200(2, 200);
+      writeBacklashLX200(2, 0);
+      writeMicroLX200(2, 4);
+      writeLowCurrLX200(2, 50);
+      writeHighCurrLX200(2, 100);
+      DisplayMotorSettings(2);
+      SyncGoHomeLX200(true);
+      exitMenu = true;
+    }
+  }
+
+}
 //void SmartHandController::menuVixen() {}
 
-void SmartHandController::menuMotor(uint8_t axis)
+void SmartHandController::menuMotor(const uint8_t axis)
 {
   current_selection_L3 = 1;
 
