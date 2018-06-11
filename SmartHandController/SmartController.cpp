@@ -1337,7 +1337,7 @@ void SmartHandController::menuPredefinedMount()
   current_selection_L3 = 1;
   while (current_selection_L3 != 0)
   {
-    const char *string_list_Mount = "Alt Mount\n""ASTRO-PHYSICS\n""Fornax\n""Losmandy\n""Sideres85\n""Sky-Watcher\n""Takahashi\n""Vixen";
+    const char *string_list_Mount = "Alt Mount\n""Fornax\n""Losmandy\n""Sideres85\n""Sky-Watcher\n""Takahashi\n""Vixen";
     current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, "Mount", current_selection_L3, string_list_Mount);
     switch (current_selection_L3)
     {
@@ -1345,15 +1345,12 @@ void SmartHandController::menuPredefinedMount()
       menuAltMount();
       break;
     case 2:
-
-      break;
-    case 3:
       menuFornax();
       break;
-    case 4:
+    case 3:
       menuLosmandy();
       break;
-    case 5:
+    case 4:
       menuSideres();
       break;
     case 6:

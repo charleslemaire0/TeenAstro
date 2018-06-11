@@ -69,6 +69,8 @@ private:
   void menuPredefinedMount();
   void menuAltMount();
   void menuSideres();
+  void menuFornax();
+  void menuLosmandy();
   void menuTakahashi();
   void menuVixen();
   bool menuMotorKit(int& gearBox,int& stepRot, int& current);
