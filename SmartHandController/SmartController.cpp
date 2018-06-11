@@ -1348,7 +1348,7 @@ void SmartHandController::menuPredefinedMount()
 
       break;
     case 3:
-      menuFornax();
+
       break;
     case 4:
 
