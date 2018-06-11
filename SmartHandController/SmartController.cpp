@@ -1348,10 +1348,10 @@ void SmartHandController::menuPredefinedMount()
 
       break;
     case 3:
-
+      menuFornax();
       break;
     case 4:
-
+      menuLosmandy();
       break;
     case 5:
       menuSideres();
@@ -1429,8 +1429,46 @@ void SmartHandController::menuAltMount()
 }
 
 //void SmartHandController::menuAP() {}
-//void SmartHandController::menuFornax() {}
-//void SmartHandController::menuLosmandy() {}
+void SmartHandController::menuFornax()
+{
+  current_selection_L4 = 1;
+  while (current_selection_L4 != 0)
+  {
+    const char *string_list_Mount = "Fornax 52\n""Fornax 102";
+    current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Fornax Mount", current_selection_L4, string_list_Mount);
+    if (current_selection_L4 > 0)
+    {
+      switch (current_selection_L4)
+      {
+      case 1:
+      case 2:
+        writeDefaultMount(true, 864, true, 864, 200, 80, 120);
+        break;
+      }
+    }
+  }
+}
+void SmartHandController::menuLosmandy()
+{
+  current_selection_L4 = 1;
+  while (current_selection_L4 != 0)
+  {
+    const char *string_list_Mount = "G8 ESCAP P530\n""G11 ESCAP P530";
+    current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Fornax Mount", current_selection_L4, string_list_Mount);
+    if (current_selection_L4 > 0)
+    {
+      switch (current_selection_L4)
+      {
+      case 1:
+        writeDefaultMount(false, 2160, false, 2160, 100, 80, 120);
+        break;
+      case 2:
+        writeDefaultMount(false, 4320, false, 4320, 100, 80, 120);
+        break;
+      }
+    }
+  }
+}
 void SmartHandController::menuSideres()
 {
   current_selection_L4 = 1;
