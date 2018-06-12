@@ -25,8 +25,7 @@ void Command_M(bool &supress_frame)
         //          Returns: Nothing
 
     if ((atoi2((char *)&parameter[1], &i)) &&
-      ((i >= 0) && (i <= 16399)) && (parkStatus == NotParked) &&
-      (trackingState != TrackingMoveTo))
+      ((i >= 0) && (i <= 16399)) && trackingState == TrackingON  )
     {
 
       if ((parameter[0] == 'e') || (parameter[0] == 'w'))
