@@ -223,11 +223,15 @@ boolean highPrecision = true;
 #define TrackingOFF                0
 #define TrackingON                 1
 #define TrackingMoveTo             2
+#define GuidingOFF                 0
+#define GuidingPulse               1
+#define GuidingRecenter            2
 
 #define TrackingSolar 0.99726956632
 #define TrackingLunar 0.96236513150
 
 volatile byte trackingState = TrackingOFF;
+volatile byte GuidingState  = GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
 unsigned long lastSecurityCheck = millis();
 byte abortTrackingState = TrackingOFF;

@@ -258,6 +258,10 @@ ISR(TIMER1_COMPA_vect)
       timerRateAxis2 = calculatedTimerRateAxis2 * x;  // up to 0.01% faster (or as little as 0.001%)
       runTimerRateAxis2 = timerRateAxis2;
     }
+    if (!guideDirAxis1 && !guideDirAxis2)
+    {
+      GuidingState = GuidingOFF;
+    }
   }
   long    thisTimerRateAxis1 = timerRateAxis1;
   long    thisTimerRateAxis2;

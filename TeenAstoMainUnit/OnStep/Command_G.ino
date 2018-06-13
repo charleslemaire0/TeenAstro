@@ -615,37 +615,49 @@ void  Command_G()
   case 'U':
   {
     //  :GU#   Get telescope Status
+    for ( i = 0; i<50; i++)
+        reply[i] = ' ';
     i = 0;
-    if (trackingState != TrackingON) reply[i++] = 'n';
-    if (trackingState != TrackingMoveTo) reply[i++] = 'N';
+    if (trackingState != TrackingON) reply[0] = 'n';
+    if (trackingState != TrackingMoveTo) reply[1] = 'N';
 
     const char  *parkStatusCh = "pIPF";
-    reply[i++] = parkStatusCh[parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
-    if (atHome) reply[i++] = 'H';
-    if (pps.m_synced) reply[i++] = 'S';
-    if ((guideDirAxis1) || (guideDirAxis2)) reply[i++] = 'G';
-    if (faultAxis1 || faultAxis2) reply[i++] = 'f';
+    reply[2] = parkStatusCh[parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
+    if (atHome) reply[3] = 'H';
+    if (pps.m_synced) reply[4] = 'S';
+    if (GuidingState != GuidingOFF)
+    {
+      reply[5] = 'G';
+      if (GuidingState == GuidingPulse) reply[6] = '*';
+      else if (GuidingState == GuidingRecenter) reply[6] = '+';
+      if (guideDirAxis1 == 'e') reply[7] = '>';
+      else if(guideDirAxis1 == 'w') reply[7] = '<';
+      if (guideDirAxis2 == 'n') reply[8] = '^';
+      else if (guideDirAxis2 == 's') reply[8] = '_';
+    }
+    if (faultAxis1 || faultAxis2) reply[9] = 'f';
     if (refraction)
-      reply[i++] = 'r';
+      reply[10] = 'r';
     else
-      reply[i++] = 's';
-    if (onTrack) reply[i++] = 't';
+      reply[10] = 's';
+    if (onTrack) reply[11] = 't';
 
     // provide mount type
 #ifdef MOUNT_TYPE_GEM
-    reply[i++] = 'E';
+    reply[12] = 'E';
 #endif
 #ifdef MOUNT_TYPE_FORK
-    reply[i++] = 'K';
+    reply[12] = 'K';
 #endif
 #ifdef MOUNT_TYPE_FORK_ALT
-    reply[i++] = 'k';
+    reply[12] = 'k';
 #endif
 #ifdef MOUNT_TYPE_ALTAZM
-    reply[i++] = 'A';
+    reply[12] = 'A';
 #endif
-    reply[i++] = '0' + lastError;
-    reply[i++] = 0;
+    reply[13] = '0' + lastError;
+    reply[14] = 0;
+    i = 15;
     quietReply = true;                                   //         Returns: SS#
   }
   break;

@@ -2,28 +2,32 @@
 
 void MoveAxis1(const byte newguideDirAxis)
 {
-  if (parkStatus == NotParked && trackingState != TrackingMoveTo)
+  if (parkStatus == NotParked && trackingState != TrackingMoveTo && GuidingState != GuidingPulse)
   {
     // block user from changing direction at high rates, just stop the guide instead
     // estimate new guideTimerBaseRate
     if (guideTimerBaseRate ==0)
     {
+      cli();
       guideDirAxis1 = 'b';
+      sei();
       return;
     }
-
+    enableGuideRate(currentGuideRate);
     double newGuideTimerBaseRate = newguideDirAxis == 'e' ? -guideTimerBaseRate : guideTimerBaseRate;
 
     bool samedirection = newGuideTimerBaseRate > 0 ? (guideTimerRateAxis1 > 0 ? true : false) : (guideTimerRateAxis1 > 0 ? false : true);
 
     if (guideDirAxis1 && !samedirection && fabs(guideTimerRateAxis1) > 2)
     {
+      cli();
       guideDirAxis1 = 'b';
+      sei();
     }
     else
     {
+      GuidingState = GuidingRecenter;
       guideDirAxis1 = newguideDirAxis;
-      enableGuideRate(currentGuideRate);
       atHome = false;
       guideDurationHA = -1;
       cli();
@@ -35,11 +39,14 @@ void MoveAxis1(const byte newguideDirAxis)
 
 void MoveAxis2(const byte newguideDirAxis)
 {
-  if (parkStatus == NotParked && trackingState != TrackingMoveTo)
+
+  if (parkStatus == NotParked && trackingState != TrackingMoveTo && GuidingState != GuidingPulse)
   {
     if (guideTimerBaseRate == 0)
     {
+      cli();
       guideDirAxis2 = 'b';
+      sei();
       return;
     }
     // block user from changing direction at high rates, just stop the guide instead
@@ -48,21 +55,21 @@ void MoveAxis2(const byte newguideDirAxis)
       rev = true;
     if (pierSide >= PierSideWest)
       rev = !rev;
-
+    enableGuideRate(currentGuideRate);
     double newGuideTimerBaseRate = rev ? -guideTimerBaseRate : guideTimerBaseRate;
-
     bool samedirection = newGuideTimerBaseRate > 0 ? (guideTimerRateAxis2 > 0 ? true : false) : (guideTimerRateAxis2 > 0 ? false : true);
-
-    if ((guideDirAxis2) && (!samedirection) && fabs(guideTimerRateAxis2) > 2)
+    if (guideDirAxis2 && !samedirection && fabs(guideTimerRateAxis2) > 2)
     {
+      cli();
       guideDirAxis2 = 'b';
+      sei();
     }
     else
     {
+      GuidingState = GuidingRecenter;
       guideDirAxis2 = newguideDirAxis;
-      enableGuideRate(currentGuideRate);
-      atHome = false;
       guideDurationDec = -1;
+      atHome = false;
       cli();
       guideTimerRateAxis2 = newGuideTimerBaseRate;
       sei();

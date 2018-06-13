@@ -57,7 +57,11 @@ public:
   ParkState getParkState();
   TrackState getTrackingState();
   bool atHome();
-  bool isGuiding();
+  bool isPulseGuiding();
+  bool isGuidingN();
+  bool isGuidingS();
+  bool isGuidingE();
+  bool isGuidingW();
   PierState getPierState();
   Errors getError();
   void addStar();

@@ -93,10 +93,27 @@ bool Telescope::atHome()
 {
   return strchr(&TelStatus[0], 'H') != NULL;
 }
-bool Telescope::isGuiding()
+bool Telescope::isPulseGuiding()
 {
-  return  strchr(&TelStatus[0], 'G') != NULL;
+  return  TelStatus[6] == '*';
 }
+bool Telescope::isGuidingE()
+{
+  return  TelStatus[7] == '>';
+}
+bool Telescope::isGuidingW()
+{
+  return  TelStatus[7] == '<';
+}
+bool Telescope::isGuidingN()
+{
+  return  TelStatus[8] == '^';
+}
+bool Telescope::isGuidingS()
+{
+  return  TelStatus[8] == '_';
+}
+
 Telescope::PierState Telescope::getPierState()
 {
   if (strchr(&sideofpier[0], 'E') != NULL)
