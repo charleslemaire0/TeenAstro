@@ -1401,13 +1401,12 @@ void SmartHandController::menuPredefinedMount()
     case 4:
       menuSideres();
       break;
-    case 6:
-
+    case 5:
       break;
-    case 7:
+    case 6:
       menuTakahashi();
       break;
-    case 8:
+    case 7:
       menuVixen();
       break;
     default:
