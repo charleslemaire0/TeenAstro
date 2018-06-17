@@ -20,6 +20,18 @@ siteDefinition      localSite;
 #define PierSideFlipWE2  7
 #define PierSideFlipWE3  8
 
+#define MOUNT_UNDEFINED 0
+#define MOUNT_TYPE_GEM 1
+#define MOUNT_TYPE_FORK 2
+#define MOUNT_TYPE_ALTAZM 3
+#define MOUNT_TYPE_FORK_ALT 4
+
+
+#define MeridianFlipNever   0
+#define MeridianFlipAlign   1
+#define MeridianFlipAlways  2
+
+
 #define CheckModeGOTO        0
 #define CheckModeTracking    1
 
@@ -32,8 +44,12 @@ boolean parkSaved = false;
 boolean atHome = true;
 boolean homeMount = false;
 byte pierSide = PierSideEast;
+byte meridianFlip = MeridianFlipNever;
+byte mountType = MOUNT_TYPE_GEM;
+byte maxAlignNumStar = 0;
 
-
+boolean refraction_enable = false;
+boolean onTrack = false;
 
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
 long                    siderealInterval = 15956313L;
@@ -46,18 +62,6 @@ double                  HzCf = 16000000.0 / 60.0;   // conversion factor to go t
 volatile long           SiderealRate;               // based on the siderealInterval, this is the time between steps for sidereal tracking
 volatile long           TakeupRate;                 // this is the takeup rate for synchronizing the target and actual positions when needed
 
-// Tracking and rate control
-#ifdef MOUNT_TYPE_ALTAZM
-#define refraction_enable   false                   // refraction isn't allowed in Alt/Azm mode
-#else
-#define refraction_enable   true                    // refraction allowed
-#endif
-#ifdef TRACK_REFRACTION_RATE_DEFAULT_ON
-boolean                 refraction = refraction_enable;
-#else
-boolean                 refraction = false;
-#endif
-boolean                 onTrack = false;
 
 long                    maxRate = MaxRate * 16L;
 volatile long           timerRateAxis1 = 0;
@@ -69,6 +73,12 @@ volatile long           timerRateBacklashAxis2 = 0;
 volatile boolean        inbacklashAxis2 = false;
 boolean                 faultAxis2 = false;
 
+
+#ifdef TRACK_REFRACTION_RATE_DEFAULT_ON
+boolean                 refraction = refraction_enable;
+#else
+boolean                 refraction = false;
+#endif
 
 unsigned int GearAxis1; //2000
 unsigned int StepRotAxis1;
@@ -127,9 +137,6 @@ void                    TIMER3_COMPA_vect(void);
 IntervalTimer           itimer4;
 void                    TIMER4_COMPA_vect(void);
 
-
-// either 0 or (fabs(latitude))
-#define AltAzmDecStartPos   (fabs(latitude))
 
 byte newTargetPierSide = 0;
 
@@ -230,6 +237,9 @@ boolean highPrecision = true;
 #define TrackingSolar 0.99726956632
 #define TrackingLunar 0.96236513150
 
+
+
+
 volatile byte trackingState = TrackingOFF;
 volatile byte GuidingState  = GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
@@ -238,21 +248,9 @@ byte abortTrackingState = TrackingOFF;
 volatile byte lastTrackingState = TrackingOFF;
 boolean abortSlew = false;
 
-#define MeridianFlipNever   0
-#define MeridianFlipAlign   1
-#define MeridianFlipAlways  2
-#ifdef MOUNT_TYPE_GEM
-byte meridianFlip = MeridianFlipAlways;
-#endif
-#ifdef MOUNT_TYPE_FORK
-byte meridianFlip = MeridianFlipAlign;
-#endif
-#ifdef MOUNT_TYPE_FORK_ALT
-byte meridianFlip = MeridianFlipNever;
-#endif
-#ifdef MOUNT_TYPE_ALTAZM
-byte meridianFlip = MeridianFlipNever;
-#endif
+
+
+
 
 
 // Command processing -------------------------------------------------------------------------------------------------------
@@ -297,17 +295,7 @@ byte bufferPtr_ethernet = 0;
 // Misc ---------------------------------------------------------------------------------------------------------------------
 #define Rad 57.29577951
 
-// align
-#if defined(MOUNT_TYPE_GEM)
-#define MAX_NUM_ALIGN_STARS '3'
-#elif defined(MOUNT_TYPE_FORK)
-#define MAX_NUM_ALIGN_STARS '3'
-#elif defined(MOUNT_TYPE_FORK_ALT)
-#define MAX_NUM_ALIGN_STARS '1'
-#elif defined(MOUNT_TYPE_ALTAZM)
-#define MAX_NUM_ALIGN_STARS '3'
-#else
-#endif
+
 
 // serial speed
 unsigned long   baudRate[10] =

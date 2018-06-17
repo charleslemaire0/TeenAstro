@@ -229,11 +229,8 @@ boolean syncAtPark()
     DecDir = DecDirEInit;
 
   // set Meridian Flip behaviour to match mount type
-#ifdef MOUNT_TYPE_GEM
-  meridianFlip = MeridianFlipAlways;
-#else
-  meridianFlip = MeridianFlipNever;
-#endif
+  meridianFlip = mountType == MOUNT_TYPE_GEM ? MeridianFlipAlways : MeridianFlipNever;
+
   return true;
 }
 

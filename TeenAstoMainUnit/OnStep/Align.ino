@@ -461,12 +461,17 @@ bool TGeoAlign::addStar(int I, int N, double RA, double Dec)
           if (deltaSyncEqu(RA, Dec))
           {
             // only apply Dec axis flexture term on GEMs
-#ifdef MOUNT_TYPE_GEM
-            pdCor = deltaSyncAxis1;                     // the Dec axis to RA axis perp. error should be the only major source of error left affecting the HA
-            pdCor = pdCor / tan(newTargetDec / Rad);    // correct for Dec of measurement location
-#else
-            pdCor = 0.0;
-#endif
+            if (mountType == MOUNT_TYPE_GEM)
+            {
+              pdCor = deltaSyncAxis1;                     // the Dec axis to RA axis perp. error should be the only major source of error left affecting the HA
+              pdCor = pdCor / tan(newTargetDec / Rad);    // correct for Dec of measurement location
+            }
+            else
+            {
+              pdCor = 0.0;
+            }
+
+
             syncEqu(RA, Dec);
           }
           else

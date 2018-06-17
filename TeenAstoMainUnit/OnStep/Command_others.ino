@@ -414,7 +414,7 @@ void Command_A()
           //               o is the last required alignment star when an alignment is in progress (0 otherwise)
     if (command[1] == '?')
     {
-      reply[0] = MAX_NUM_ALIGN_STARS;
+      reply[0] = maxAlignNumStar;
       reply[1] = '0' + alignThisStar;
       reply[2] = '0' + alignNumStars;
       reply[3] = 0;
@@ -440,10 +440,17 @@ void Command_A()
       {
         // set current time and date before calling this routine
         // Two star and three star align not supported with Fork mounts in alternate mode
-#ifdef MOUNT_TYPE_FORK_ALT
-        if (n == 1)
+        
+        if (mountType == MOUNT_TYPE_FORK_ALT && alignThisStar != 1)
         {
-#endif
+          commandError = true;
+          alignNumStars = 0;
+          alignThisStar = 1;
+          return;
+        }
+
+      
+
 
           // telescope should be set in the polar home (CWD) for a starting point
           // this command sets indexAxis1, indexAxis2, azmCor=0; altCor=0;
@@ -460,11 +467,7 @@ void Command_A()
           alignNumStars = command[1] - '0';
           alignThisStar = 1;
 
-#if defined(MOUNT_TYPE_FORK_ALT)
-        }
-        else
-          commandError = true;
-#endif
+
         if (commandError)
         {
           alignNumStars = 0;
@@ -478,32 +481,24 @@ void Command_A()
         if (command[1] == '+')
         {
           // after last star turn meridian flips off when align is done
-          if ((alignNumStars == alignThisStar) &&
-            (meridianFlip == MeridianFlipAlign))
+          if ((alignNumStars == alignThisStar) && (meridianFlip == MeridianFlipAlign))
             meridianFlip = MeridianFlipNever;
 
-#ifdef MOUNT_TYPE_ALTAZM
           // AltAz Taki method
-          if ((alignNumStars > 1) && (alignThisStar <= alignNumStars))
+          if (mountType == MOUNT_TYPE_ALTAZM && (alignNumStars > 1) && (alignThisStar <= alignNumStars))
           {
             cli();
 
             // get the Azm/Alt
-            double  F = (double)(posAxis1 + indexAxis1Steps) /
-              (double)StepsPerDegreeAxis1;
-            double  H = (double)(posAxis2 + indexAxis2Steps) /
-              (double)StepsPerDegreeAxis2;
+            double  F = (double)(posAxis1 /*+ indexAxis1Steps*/) / (double)StepsPerDegreeAxis1;
+            double  H = (double)(posAxis2 /*+ indexAxis2Steps*/) / (double)StepsPerDegreeAxis2;
             sei();
 
             // B=RA, D=Dec, H=Elevation (instr), F=Azimuth (instr), all in degrees
-            Align.addStar(alignThisStar, alignNumStars,
-              haRange(LST() * 15.0 - newTargetRA),
-              newTargetDec, H, F);
+            Align.addStar(alignThisStar, alignNumStars, haRange(rtk.LST() * 15.0 - newTargetRA), newTargetDec, H, F);
             alignThisStar++;
           }
-          else
-#endif
-            if (alignThisStar <= alignNumStars)
+          else if (alignThisStar <= alignNumStars)
             {
               // RA, Dec (in degrees)
               if (GeoAlign.addStar(alignThisStar, alignNumStars,

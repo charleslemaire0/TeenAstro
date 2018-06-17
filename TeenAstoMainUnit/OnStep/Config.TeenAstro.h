@@ -23,7 +23,6 @@
 
 // Mount type, default is _GEM (German Equatorial) other options are _FORK, _FORK_ALT.  _FORK switches off Meridian Flips after (1, 2 or 3 star) alignment is done.  _FORK_ALT disables Meridian Flips (1 star align.)
 // _ALTAZM is for Alt/Azm mounted 'scopes (1 star align only.)
-#define MOUNT_TYPE_GEM
 
 // ST4 interface on pins 47, 49, 51, 53.  Pin 47 is RA- (West), Pin 49 is Dec- (South), Pin 51 is Dec+ (North), Pin 53 is RA+ (East.)  Teensy3.1 pins 24, 25, 26, 27.
 // ST4_ON enables the interface.  ST4_PULLUP enables the interface and any internal pullup resistors.

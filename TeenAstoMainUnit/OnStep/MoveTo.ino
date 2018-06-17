@@ -50,34 +50,33 @@ Again:
   sei();
 
   // adjust rates near the horizon to help keep from exceeding the minAlt limit
-#ifndef MOUNT_TYPE_ALTAZM
-  if (distDestAxis1 > (DegreesForAcceleration*StepsPerDegreeAxis1) / 16.0 && tempPosAxis2 != lastPosAxis2) {
-  
- 
-    bool decreasing = tempPosAxis2 < lastPosAxis2 ;
-    if (pierSide >= PierSideWest)
-      decreasing = !decreasing;
-  // if Dec is decreasing, slow down Dec
-    if (decreasing)
-    {
-      cli();
-      long a = max((currentAlt - minAlt - DegreesForRapidStop)*StepsPerDegreeAxis2/4, 1);
-      if (a < distDestAxis2)
-        distDestAxis2 = a;
-      sei();
+  if (mountType != MOUNT_TYPE_ALTAZM)
+  {
+    if (distDestAxis1 > (DegreesForAcceleration*StepsPerDegreeAxis1) / 16.0 && tempPosAxis2 != lastPosAxis2) {
+      bool decreasing = tempPosAxis2 < lastPosAxis2;
+      if (pierSide >= PierSideWest)
+        decreasing = !decreasing;
+      // if Dec is decreasing, slow down Dec
+      if (decreasing)
+      {
+        cli();
+        long a = max((currentAlt - minAlt - DegreesForRapidStop)*StepsPerDegreeAxis2 / 4, 1);
+        if (a < distDestAxis2)
+          distDestAxis2 = a;
+        sei();
+      }
+      else
+        // if Dec is increasing, slow down HA
+      {
+        cli();
+        long a = max((currentAlt - minAlt - DegreesForRapidStop)*StepsPerDegreeAxis1 / 4, 1);
+        if (a < distDestAxis1)
+          distDestAxis1 = a;
+        sei();
+      }
     }
-    else
-      // if Dec is increasing, slow down HA
-    {
-      cli();
-      long a = max((currentAlt - minAlt- DegreesForRapidStop)*StepsPerDegreeAxis1/4, 1);
-      if (a < distDestAxis1)
-        distDestAxis1 = a;
-      sei();
-    }
+    lastPosAxis2 = tempPosAxis2;
   }
-  lastPosAxis2 = tempPosAxis2;
-#endif
 
   if (distDestAxis1 < 1) distDestAxis1 = 1;
   if (distDestAxis2 < 1) distDestAxis2 = 1;
@@ -154,23 +153,26 @@ Again:
   if (temp > TakeupRate) temp = TakeupRate;                      // slowest rate
   cli(); timerRateAxis2 = temp; sei();
 
-#ifdef MOUNT_TYPE_ALTAZM
-  // In AltAz mode & at the end of slew & near the Zenith, disable tracking for a moment if we're getting close to the target
-  if ((distDestAxis1 <= (long)StepsPerDegreeAxis1 * 2L) && (distDestAxis2 <= (long)StepsPerDegreeAxis2 * 2L)) {
-    if ((long)targetAxis2.part.m > 80L * (long)StepsPerDegreeAxis2 - indexAxis1Steps) {
-      if (lastTrackingState == TrackingON) {
-        lastTrackingState = TrackingONDisabled;
+  if (mountType == MOUNT_TYPE_ALTAZM)
+  {
+    // In AltAz mode & at the end of slew & near the Zenith, disable tracking for a moment if we're getting close to the target
+    if ((distDestAxis1 <= (long)StepsPerDegreeAxis1 * 2L) && (distDestAxis2 <= (long)StepsPerDegreeAxis2 * 2L)) {
+      if ((long)targetAxis2.part.m > 80L * (long)StepsPerDegreeAxis2 ) {
+        if (lastTrackingState == TrackingON) {
+          lastTrackingState = TrackingOFF;
+        }
       }
     }
   }
-#endif
 
   if ((distDestAxis1 <= 2) && (distDestAxis2 <= 2))
   {
-#ifdef MOUNT_TYPE_ALTAZM
-    // Near the Zenith disable tracking in AltAz mode for a moment if we're getting close to the target
-    if (lastTrackingState == TrackingONDisabled) lastTrackingState = TrackingON;
-#endif
+    if (mountType == MOUNT_TYPE_ALTAZM)
+    {
+      // Near the Zenith disable tracking in AltAz mode for a moment if we're getting close to the target
+      if (lastTrackingState == TrackingOFF)
+        lastTrackingState = TrackingON;
+    }
 
     if ((pierSide == PierSideFlipEW2) || (pierSide == PierSideFlipWE2))
     {

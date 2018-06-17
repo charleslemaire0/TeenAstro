@@ -223,11 +223,7 @@ boolean buildCommand_serial_zero(char c)
   // (chr)6 is a special status command for the LX200 protocol
   if ((c == (char)6) && (bufferPtr_serial_zero == 0))
   {
-#ifdef MOUNT_TYPE_ALTAZM
-    Serial_print("A");
-#else
-    Serial_print("P");
-#endif
+    mountType == MOUNT_TYPE_ALTAZM ? Serial_print("A") : Serial_print("P");
   }
 
   // ignore spaces/lf/cr, dropping spaces is another tweek to allow compatibility with LX200 protocol
@@ -309,11 +305,7 @@ boolean buildCommand_serial_one(char c)
   // (chr)6 is a special status command for the LX200 protocol
   if ((c == (char)6) && (bufferPtr_serial_one == 0))
   {
-#ifdef MOUNT_TYPE_ALTAZM
-    Serial1_print("A");
-#else
-    Serial1_print("P");
-#endif
+    mountType == MOUNT_TYPE_ALTAZM ? Serial1_print("A") : Serial1_print("P");
   }
 
   // ignore spaces/lf/cr, dropping spaces is another tweek to allow compatibility with LX200 protocol
@@ -389,98 +381,7 @@ boolean clearCommand_serial_one()
   return true;
 }
 
-#if defined(W5100_ON)
 
-// Build up a command
-boolean buildCommand_ethernet(char c)
-{
-  // return if -1 is received (no data)
-  if (c == 0xFF) return false;
-
-  // (chr)6 is a special status command for the LX200 protocol
-  if ((c == (char)6) && (bufferPtr_ethernet == 0))
-  {
-    //    Ethernet_print("G#");
-#ifdef MOUNT_TYPE_ALTAZM
-    Ethernet_print("A");
-#else
-    Ethernet_print("P");
-#endif
-  }
-
-  // ignore spaces/lf/cr, dropping spaces is another tweek to allow compatibility with LX200 protocol
-  if ((c != (char)32) && (c != (char)10) && (c != (char)13) && (c != (char)6))
-  {
-    command_ethernet[bufferPtr_ethernet] = c;
-    bufferPtr_ethernet++;
-    command_ethernet[bufferPtr_ethernet] = (char)0;
-    if (bufferPtr_ethernet > 22)
-    {
-      bufferPtr_ethernet = 22;
-    }   // limit maximum command length to avoid overflow, c2+p16+cc2+eol2+eos1=23 bytes max ranging from 0..22
-  }
-
-  if (c == '#')
-  {
-    // validate the command frame, normal command
-    if ((bufferPtr_ethernet > 1) && (command_ethernet[0] == ':') &&
-      (command_ethernet[bufferPtr_ethernet - 1] == '#'))
-    {
-      command_ethernet[bufferPtr_ethernet - 1] = 0;
-    }
-    else
-    {
-      clearCommand_ethernet();
-      return false;
-    }
-
-#ifdef CHKSUM1_ON
-    // checksum the data, as above.
-    byte    len = strlen(command_ethernet);
-    byte    cks = 0;
-    for (int cksCount0 = 1; cksCount0 < len - 2; cksCount0++)
-    {
-      cks = cks + command_ethernet[cksCount0];
-    }
-
-    char    chkSum[3];
-    sprintf(chkSum, "%02X", cks);
-    if (!((chkSum[0] == command_ethernet[len - 2]) &&
-      (chkSum[1] == command_ethernet[len - 1])))
-    {
-      clearCommand_ethernet();
-      Ethernet_print("00#");
-      return false;
-    }
-
-    --len;
-    command_ethernet[--len] = 0;
-#endif
-
-    // break up the command into a two char command and the remaining parameter
-    // the parameter can be up to 16 chars in length
-    memmove(parameter_ethernet, (char *)&command_ethernet[3], 17);
-
-    // the command is either one or two chars in length
-    command_ethernet[3] = 0;
-    memmove(command_ethernet, (char *)&command_ethernet[1], 3);
-
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
-// clear commands
-boolean clearCommand_ethernet()
-{
-  bufferPtr_ethernet = 0;
-  command_ethernet[bufferPtr_ethernet] = (char)0;
-  return true;
-}
-#endif
 
 // calculates the tracking speed for move commands
 void setGuideRate(int g)

@@ -16,17 +16,17 @@ void Command_GXE0()
 #else
   c += "0";
 #endif
-#if defined(MOUNT_TYPE_GEM)
+if (mountType == MOUNT_TYPE_GEM)
   c += "0";
-#elif defined(MOUNT_TYPE_FORK)
+else if (mountType == MOUNT_TYPE_FORK)
   c += "1";
-#elif defined(MOUNT_TYPE_FORK_ALT)
+else if (mountType == MOUNT_TYPE_FORK_ALT)
   c += "2";
-#elif defined(MOUNT_TYPE_ALTAZM)
+else if (mountType == MOUNT_TYPE_ALTAZM)
   c += "3";
-#else
+else
   c += "9";
-#endif
+
 #if defined(ST4_OFF)
   c += "0";
 #elif defined(ST4_ON)
@@ -586,11 +586,8 @@ void  Command_G()
     //         Returns the tracking rate if siderealTracking, 0.0 otherwise
     if (trackingState == TrackingON)
     {
-#ifdef MOUNT_TYPE_ALTAZM
-      f = GetTrackingRate() * 1.00273790935 * 60.0;
-#else
-      f = (trackingTimerRateAxis1 * 1.00273790935) * 60.0;
-#endif
+      f = mountType == MOUNT_TYPE_ALTAZM ? GetTrackingRate() : trackingTimerRateAxis1 ;
+      f *= 60* 1.00273790935;
     }
     else
       f = 0.0;
@@ -643,18 +640,17 @@ void  Command_G()
     if (onTrack) reply[11] = 't';
 
     // provide mount type
-#ifdef MOUNT_TYPE_GEM
-    reply[12] = 'E';
-#endif
-#ifdef MOUNT_TYPE_FORK
-    reply[12] = 'K';
-#endif
-#ifdef MOUNT_TYPE_FORK_ALT
-    reply[12] = 'k';
-#endif
-#ifdef MOUNT_TYPE_ALTAZM
-    reply[12] = 'A';
-#endif
+    if (mountType == MOUNT_TYPE_GEM)
+      reply[12] = 'E';
+    else if (mountType == MOUNT_TYPE_FORK)
+      reply[12] = 'K';
+    else if (mountType == MOUNT_TYPE_FORK_ALT)
+      reply[12] = 'k';
+    else if (mountType == MOUNT_TYPE_ALTAZM)
+      reply[12] = 'A';
+    else
+      reply[12] = 'U';
+
     reply[13] = '0' + lastError;
     reply[14] = 0;
     i = 15;

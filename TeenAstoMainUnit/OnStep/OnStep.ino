@@ -79,6 +79,28 @@ void setup()
     delay(100);
   }
 
+  if (mountType == MOUNT_TYPE_GEM)
+    meridianFlip = MeridianFlipAlways;
+  else if (mountType == MOUNT_TYPE_FORK)
+    meridianFlip = MeridianFlipAlign;
+  else if (mountType == MOUNT_TYPE_FORK_ALT)
+    meridianFlip = MeridianFlipNever;
+  else if (mountType == MOUNT_TYPE_ALTAZM)
+    meridianFlip = MeridianFlipNever;
+
+
+
+  // align
+  if (mountType == MOUNT_TYPE_GEM)
+    maxAlignNumStar = 3;
+  else if (mountType == MOUNT_TYPE_FORK)
+    maxAlignNumStar = 3;
+  else if (mountType == MOUNT_TYPE_FORK_ALT)
+    maxAlignNumStar = 1;
+  else if (mountType == MOUNT_TYPE_ALTAZM)
+    maxAlignNumStar = 3;
+
+
   // EEPROM automatic initialization
   long thisAutoInitKey = EEPROM_readLong(EE_autoInitKey);
   if (thisAutoInitKey != initKey)
@@ -92,7 +114,7 @@ void setup()
     EEPROM.write(EE_maxAlt, maxAlt);
     EEPROM.write(EE_dpmE, 0);
     EEPROM.write(EE_dpmW, 0);
-    EEPROM.write(EE_dup, (12-9)*15);
+    EEPROM.write(EE_dup, (12 - 9) * 15);
 
     writeDefaultEEPROMmotor();
 
@@ -122,7 +144,7 @@ void setup()
     saveAlignModel();
   }
 
-  initmotor(); 
+  initmotor();
 
   // init the date and time January 1, 2013. 0 hours LMT
   setSyncProvider(getTeensy3Time);
@@ -131,7 +153,7 @@ void setup()
 
   pinMode(PinFocusA, OUTPUT);
   pinMode(PinFocusB, OUTPUT);
-  
+
   // initialize some fixed-point values
   amountGuideHA.fixed = 0;
   amountGuideDec.fixed = 0;
@@ -149,10 +171,20 @@ void setup()
   fstepAxis1.fixed = doubleToFixed(StepsPerSecondAxis1 / 100.0);
 
   // initialize alignment
-#ifdef MOUNT_TYPE_ALTAZM
-  Align.init();
-#endif
+  if (mountType == MOUNT_TYPE_ALTAZM)
+  {
+    Align.init();
+  }
+
   GeoAlign.init();
+
+  // Tracking and rate control
+
+  refraction_enable = mountType == MOUNT_TYPE_ALTAZM ? false : true;
+
+
+  onTrack = false;
+
 
   // initialize the stepper control pins Axis1 and Axis2
   pinMode(Axis1StepPin, OUTPUT);
@@ -237,7 +269,7 @@ void setup()
 
   enable_Axis(false);
 
-   // automatic mode switching before/after slews, initialize micro-step mode
+  // automatic mode switching before/after slews, initialize micro-step mode
   DecayModeTracking();
 
   // this sets the sidereal timer, controls the tracking speed so that the mount moves precisely with the stars
@@ -286,18 +318,21 @@ void setup()
   localSite.ReadCurrentSiteDefinition();
   rtk.resetLongitude(*localSite.longitude());
 
-#ifdef MOUNT_TYPE_ALTAZM
-  celestialPoleStepAxis2 = AltAzmDecStartPos *StepsPerDegreeAxis2;
-  if (*localSite.latitude() < 0)
-    celestialPoleStepAxis1 = halfRotAxis1;
+  if (mountType == MOUNT_TYPE_ALTAZM)
+  {
+    celestialPoleStepAxis2 = fabs(*localSite.latitude()) *StepsPerDegreeAxis2;
+    if (*localSite.latitude() < 0)
+      celestialPoleStepAxis1 = halfRotAxis1;
+    else
+      celestialPoleStepAxis1 = 0L;
+  }
   else
-    celestialPoleStepAxis1 = 0L;
-#else
-  if (*localSite.latitude() < 0)
-    celestialPoleStepAxis2 = -quaterRotAxis2;
-  else
-    celestialPoleStepAxis2 = quaterRotAxis2;
-#endif
+  {
+    if (*localSite.latitude() < 0)
+      celestialPoleStepAxis2 = -quaterRotAxis2;
+    else
+      celestialPoleStepAxis2 = quaterRotAxis2;
+  }
 
   if (*localSite.latitude() > 0)
     HADir = HADirNCPInit;
@@ -315,17 +350,17 @@ void setup()
   minAlt = EEPROM.read(EE_minAlt) - 128;
   maxAlt = EEPROM.read(EE_maxAlt);
   minutesPastMeridianGOTOE = round(((EEPROM.read(EE_dpmE) - 128)*60.0) / 15.0);
-  if (abs(minutesPastMeridianGOTOE)>180)
+  if (abs(minutesPastMeridianGOTOE) > 180)
     minutesPastMeridianGOTOE = 60;
   minutesPastMeridianGOTOW = round(((EEPROM.read(EE_dpmW) - 128)*60.0) / 15.0);
-  if (abs(minutesPastMeridianGOTOW)>180)
+  if (abs(minutesPastMeridianGOTOW) > 180)
     minutesPastMeridianGOTOW = 60;
-  underPoleLimitGOTO = (double)EEPROM.read(EE_dup)/10;
+  underPoleLimitGOTO = (double)EEPROM.read(EE_dup) / 10;
   if (underPoleLimitGOTO < 9 || underPoleLimitGOTO>12)
     underPoleLimitGOTO = 12;
-#ifdef MOUNT_TYPE_ALTAZM
-  if (maxAlt > 87) maxAlt = 87;
-#endif
+  if (mountType == MOUNT_TYPE_ALTAZM && maxAlt > 87)
+    maxAlt = 87;
+
 
 
   // get the pulse-guide rate
@@ -364,29 +399,6 @@ void setup()
 
   // prep timers
   rtk.updateTimers();
-
-  // autostart tracking
-#if defined(AUTOSTART_TRACKING_ON) && \
-        ( \
-            defined(MOUNT_TYPE_GEM) || \
-            defined(MOUNT_TYPE_FORK) || \
-            defined(MOUNT_TYPE_FORKALT) \
-        )
-
-    // telescope should be set in the polar home (CWD) for a starting point
-    // this command sets indexAxis1, indexAxis2, azmCor=0; altCor=0;
-  setHome();
-
-  // enable the stepper drivers
-  digitalWrite(Axis1_EN, Axis1_Enabled);
-  axis1Enabled = true;
-  digitalWrite(Axis2_EN, Axis2_Enabled);
-  axis2Enabled = true;
-  delay(10);
-
-  // start tracking
-  trackingState = TrackingON;
-#endif
   analogWrite(LEDPin, 128);
 }
 
@@ -442,16 +454,21 @@ void loop()
     // figure out the current Altitude
     if (rtk.m_lst % 3 == 0) do_fastalt_calc();
 
-#ifdef MOUNT_TYPE_ALTAZM
-    // figure out the current Alt/Azm tracking rates
-    if (lst % 3 != 0) do_altAzmRate_calc();
-#else
-    // figure out the current refraction compensated tracking rate
-    if (refraction && (rtk.m_lst % 3 != 0)) do_refractionRate_calc();
-#endif
+    if (mountType == MOUNT_TYPE_ALTAZM)
+    {
+      // figure out the current Alt/Azm tracking rates
+      if (rtk.m_lst % 3 != 0)
+        do_altAzmRate_calc();
+    }
+    else
+    {
+      // figure out the current refraction compensated tracking rate
+      if (refraction && (rtk.m_lst % 3 != 0))
+        do_refractionRate_calc();
+    }
     // check for fault signal, stop any slew or guide and turn tracking off
 
-    if ((faultAxis1 || faultAxis2) )
+    if ((faultAxis1 || faultAxis2))
     {
       lastError = ERR_MOTOR_FAULT;
       if (!forceTracking)
@@ -472,7 +489,7 @@ void loop()
     }
 
     // check altitude overhead limit and horizon limit
-    if (currentAlt < minAlt  || currentAlt > maxAlt)
+    if (currentAlt < minAlt || currentAlt > maxAlt)
     {
       if (!forceTracking)
       {
@@ -505,7 +522,7 @@ void loop()
     if (debugv1 > 100000) debugv1 = 100000;
     if (debugv1 < 0) debugv1 = 0;
 
-    debugv1 = ( debugv1 * 19 + (targetAxis1.part.m * 1000 - lasttargetAxis1) ) / 20;
+    debugv1 = (debugv1 * 19 + (targetAxis1.part.m * 1000 - lasttargetAxis1)) / 20;
     lasttargetAxis1 = targetAxis1.part.m * 1000;
     // adjust tracking rate for Alt/Azm mounts
     // adjust tracking rate for refraction
@@ -523,7 +540,7 @@ void loop()
 
 void CheckPierSide()
 {
-  cli();long pos = posAxis2;sei();
+  cli(); long pos = posAxis2; sei();
   if (pos == -quaterRotAxis2 || pos == quaterRotAxis2)
   {
     return;
@@ -531,7 +548,7 @@ void CheckPierSide()
   bool isEast = -quaterRotAxis2 < pos && pos < quaterRotAxis2;
   if (isEast && pierSide >= PierSideWest)
   {
-   // cli(); blAxis2 = backlashAxis2 - blAxis2; sei();
+    // cli(); blAxis2 = backlashAxis2 - blAxis2; sei();
     pierSide = PierSideEast;
   }
   else if (!isEast && pierSide < PierSideWest)
@@ -595,55 +612,59 @@ void SafetyCheck(const bool forceTracking)
   }
   else
   {
-#ifndef MOUNT_TYPE_ALTAZM
-    // when Fork mounted, ignore pierSide and just stop the mount if it passes the underPoleLimit
-    double HA, Dec;
-    GeoAlign.GetInstr(&HA, &Dec);
-    if (HA > underPoleLimitGOTO + 5./60.0 )
+    if (mountType != MOUNT_TYPE_ALTAZM)
     {
-      lastError = ERR_UNDER_POLE;
-      if (trackingState == TrackingMoveTo)
-        abortSlew = true;
-      else
-        trackingState = TrackingOFF;
-    }
-    else if (lastError == ERR_UNDER_POLE)
-    {
-      lastError = ERR_NONE;
-    }
 
-#else
-    // when Alt/Azm mounted, just stop the mount if it passes MaxAzm
-    cli();
-    if (posAxis1 + indexAxis1Steps >
-      ((long)MaxAzm * (long)StepsPerDegreeAxis1))
-    {
-      lastError = ERR_AZM;
-      if (trackingState == TrackingMoveTo)
-        abortSlew = true;
-      else
-        trackingState = TrackingOFF;
+      // when Fork mounted, ignore pierSide and just stop the mount if it passes the underPoleLimit
+      double HA, Dec;
+      GeoAlign.GetInstr(&HA, &Dec);
+      if (HA > underPoleLimitGOTO + 5. / 60.0)
+      {
+        lastError = ERR_UNDER_POLE;
+        if (trackingState == TrackingMoveTo)
+          abortSlew = true;
+        else
+          trackingState = TrackingOFF;
+      }
+      else if (lastError == ERR_UNDER_POLE)
+      {
+        lastError = ERR_NONE;
+      }
     }
+    else
+    {
+      // when Alt/Azm mounted, just stop the mount if it passes MaxAzm
+      cli();
+      if (posAxis1 >
+        ((long)MaxAzm * (long)StepsPerDegreeAxis1))
+      {
+        lastError = ERR_AZM;
+        if (trackingState == TrackingMoveTo)
+          abortSlew = true;
+        else
+          trackingState = TrackingOFF;
+      }
 
-    sei();
-#endif
+      sei();
+    }
   }
 
   // check for exceeding MinDec or MaxDec
-#ifndef MOUNT_TYPE_ALTAZM
-  if ((getApproxDec() < MinDec) || (getApproxDec() > MaxDec))
+  if (mountType != MOUNT_TYPE_ALTAZM)
   {
-    lastError = ERR_DEC;
-    if (trackingState == TrackingMoveTo)
-      abortSlew = true;
-    else
-      trackingState = TrackingOFF;
+    if ((getApproxDec() < MinDec) || (getApproxDec() > MaxDec))
+    {
+      lastError = ERR_DEC;
+      if (trackingState == TrackingMoveTo)
+        abortSlew = true;
+      else
+        trackingState = TrackingOFF;
+    }
+    else if (lastError == ERR_DEC)
+    {
+      lastError = ERR_NONE;
+    }
   }
-  else if (lastError == ERR_DEC)
-  {
-    lastError = ERR_NONE;
-  }
-#endif
   // basic check to see if we're not at home
   if (trackingState != TrackingOFF) atHome = false;
 }
@@ -678,14 +699,14 @@ void initmotor()
 
   tmc26XStepper1->setSpreadCycleChopper(2, 24, 8, 6, 0);
   tmc26XStepper1->setRandomOffTime(0);
-  tmc26XStepper1->setMicrosteps((int)pow(2,MicroAxis1));
+  tmc26XStepper1->setMicrosteps((int)pow(2, MicroAxis1));
   tmc26XStepper1->setStallGuardThreshold(12, 0);
   tmc26XStepper1->setCoolStepConfiguration(480, 480, 1, 3, COOL_STEP_HALF_CS_LIMIT);
   tmc26XStepper1->setCoolStepEnabled(false);
   tmc26XStepper1->start();
   tmc26XStepper2->setSpreadCycleChopper(2, 24, 8, 6, 0);
   tmc26XStepper2->setRandomOffTime(0);
-  tmc26XStepper2->setMicrosteps((int)pow(2,MicroAxis2));
+  tmc26XStepper2->setMicrosteps((int)pow(2, MicroAxis2));
   tmc26XStepper2->setStallGuardThreshold(12, 0);
   tmc26XStepper2->setCoolStepConfiguration(480, 57, 1, 3, COOL_STEP_HALF_CS_LIMIT);
   tmc26XStepper2->setCoolStepEnabled(false);
@@ -695,23 +716,23 @@ void initmotor()
 void readEEPROMmotor()
 {
   backlashAxis1 = EEPROM_readInt(EE_backlashAxis1);
-  if (backlashAxis1 < 0) backlashAxis1 = 0; else if (backlashAxis1>999) backlashAxis1 = 999;
+  if (backlashAxis1 < 0) backlashAxis1 = 0; else if (backlashAxis1 > 999) backlashAxis1 = 999;
   blAxis1 = backlashAxis1;
   GearAxis1 = EEPROM_readInt(EE_GearAxis1);
   StepRotAxis1 = EEPROM_readInt(EE_StepRotAxis1);
   MicroAxis1 = EEPROM.read(EE_MicroAxis1);
-  if (MicroAxis1 < 4) MicroAxis1 = 4; else if (MicroAxis1>8) MicroAxis1 = 8;
+  if (MicroAxis1 < 4) MicroAxis1 = 4; else if (MicroAxis1 > 8) MicroAxis1 = 8;
   ReverseAxis1 = EEPROM.read(EE_ReverseAxis1);
   LowCurrAxis1 = EEPROM.read(EE_LowCurrAxis1);
   HighCurrAxis1 = EEPROM.read(EE_HighCurrAxis1);
 
   backlashAxis2 = EEPROM_readInt(EE_backlashAxis2);
-  if (backlashAxis2 < 0) backlashAxis2 = 0; else if (backlashAxis2>999) backlashAxis2 = 999;
+  if (backlashAxis2 < 0) backlashAxis2 = 0; else if (backlashAxis2 > 999) backlashAxis2 = 999;
   blAxis2 = backlashAxis2;
   GearAxis2 = EEPROM_readInt(EE_GearAxis2);
   StepRotAxis2 = EEPROM_readInt(EE_StepRotAxis2);
   MicroAxis2 = EEPROM.read(EE_MicroAxis2);
-  if (MicroAxis2 < 4) MicroAxis2 = 4; else if (MicroAxis2>8) MicroAxis2 = 8;
+  if (MicroAxis2 < 4) MicroAxis2 = 4; else if (MicroAxis2 > 8) MicroAxis2 = 8;
   ReverseAxis2 = EEPROM.read(EE_ReverseAxis2);
   LowCurrAxis2 = EEPROM.read(EE_LowCurrAxis2);
   HighCurrAxis2 = EEPROM.read(EE_HighCurrAxis2);
@@ -740,8 +761,8 @@ void writeDefaultEEPROMmotor()
 void updateRatios()
 {
   cli()
-  StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2,MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-  StepsPerRotAxis2 = (long)GearAxis2 * StepRotAxis2 * (int)pow(2,MicroAxis2); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+    StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+  StepsPerRotAxis2 = (long)GearAxis2 * StepRotAxis2 * (int)pow(2, MicroAxis2); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerDegreeAxis1 = (double)StepsPerRotAxis1 / 360.0;
   StepsPerDegreeAxis2 = (double)StepsPerRotAxis2 / 360.0;
   StepsPerSecondAxis1 = StepsPerDegreeAxis1 / 240.0;
@@ -757,15 +778,8 @@ void updateRatios()
   halfRotAxis2 = StepsPerRotAxis2 / 2L;
   quaterRotAxis2 = StepsPerRotAxis2 / 4L;
 
-
-#ifdef MOUNT_TYPE_GEM
-    celestialPoleStepAxis1 = quaterRotAxis1;
-#endif
-#if defined(MOUNT_TYPE_FORK) || defined(MOUNT_TYPE_FORK_ALT) || defined \
-        (MOUNT_TYPE_ALTAZM)
-   celestialPoleStepAxis1 = 0L;
-#endif
-   celestialPoleStepAxis2 = quaterRotAxis2;
+  celestialPoleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
+  celestialPoleStepAxis2 = quaterRotAxis2;
 }
 
 void updateSideral()
