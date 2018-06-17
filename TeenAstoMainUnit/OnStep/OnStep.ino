@@ -46,17 +46,7 @@
 #include "eeprom.h"
 #include "EEPROM_adress.h"
 
-// There is a bug in Arduino/Energia which ignores #ifdef preprocessor directives when generating a list of files
-// Until this is fixed YOU MUST MANUALLY UN-COMMENT the #include line below if using the Launchpad Connected device.
-#if defined(W5100_ON)
-#include "SPI.h"
 
-// OnStep uses the EthernetPlus.h library for the W5100 on the Mega2560 and Launchpad TM4C:
-// this is available at: https://github.com/hjd1964/EthernetPlus and should be installed in your "~\Documents\Arduino\libraries" folder
-//#include "EthernetPlus.h"
-// OnStep uses the Ethernet.h library for the W5100 on the Teensy3.2:
-//#include "Ethernet.h"
-#endif
 
 // firmware info, these are returned by the ":GV?#" commands
 #define FirmwareDate    "10 18 16"
@@ -79,34 +69,13 @@ void setup()
     delay(100);
   }
 
-  if (mountType == MOUNT_TYPE_GEM)
-    meridianFlip = MeridianFlipAlways;
-  else if (mountType == MOUNT_TYPE_FORK)
-    meridianFlip = MeridianFlipAlign;
-  else if (mountType == MOUNT_TYPE_FORK_ALT)
-    meridianFlip = MeridianFlipNever;
-  else if (mountType == MOUNT_TYPE_ALTAZM)
-    meridianFlip = MeridianFlipNever;
-
-
-
-  // align
-  if (mountType == MOUNT_TYPE_GEM)
-    maxAlignNumStar = 3;
-  else if (mountType == MOUNT_TYPE_FORK)
-    maxAlignNumStar = 3;
-  else if (mountType == MOUNT_TYPE_FORK_ALT)
-    maxAlignNumStar = 1;
-  else if (mountType == MOUNT_TYPE_ALTAZM)
-    maxAlignNumStar = 3;
-
-
   // EEPROM automatic initialization
   long thisAutoInitKey = EEPROM_readLong(EE_autoInitKey);
   if (thisAutoInitKey != initKey)
   {
     // init the site information, lat/long/tz/name
     localSite.initdefault();
+    EEPROM.write(EE_mountType, MOUNT_TYPE_GEM);
     // init the min and max altitude
     minAlt = -10;
     maxAlt = 91;
@@ -144,6 +113,7 @@ void setup()
     saveAlignModel();
   }
 
+  initmount();
   initmotor();
 
   // init the date and time January 1, 2013. 0 hours LMT
@@ -154,36 +124,7 @@ void setup()
   pinMode(PinFocusA, OUTPUT);
   pinMode(PinFocusB, OUTPUT);
 
-  // initialize some fixed-point values
-  amountGuideHA.fixed = 0;
-  amountGuideDec.fixed = 0;
-  guideHA.fixed = 0;
-  guideDec.fixed = 0;
 
-  fstepAxis1.fixed = 0;
-  fstepAxis2.fixed = 0;
-
-  origTargetAxis1.fixed = 0;
-  targetAxis1.part.m = quaterRotAxis1;
-  targetAxis1.part.f = 0;
-  targetAxis2.part.m = quaterRotAxis2;
-  targetAxis2.part.f = 0;
-  fstepAxis1.fixed = doubleToFixed(StepsPerSecondAxis1 / 100.0);
-
-  // initialize alignment
-  if (mountType == MOUNT_TYPE_ALTAZM)
-  {
-    Align.init();
-  }
-
-  GeoAlign.init();
-
-  // Tracking and rate control
-
-  refraction_enable = mountType == MOUNT_TYPE_ALTAZM ? false : true;
-
-
-  onTrack = false;
 
 
   // initialize the stepper control pins Axis1 and Axis2
@@ -196,19 +137,7 @@ void setup()
   pinMode(Axis2StepPin, OUTPUT);
   pinMode(Axis2DirPin, OUTPUT);
 
-  // override any status LED and set the reset pin HIGH
-#if defined(W5100_ON) && defined(__arm__) && defined(TEENSYDUINO)
-#ifdef STATUS_LED_PINS_ON
-#undef STATUS_LED_PINS_ON
-#endif
-#ifdef STATUS_LED_PINS
-#undef STATUS_LED_PINS
-#endif
-  pinMode(RstPin, OUTPUT);
-  digitalWrite(RstPin, LOW);
-  delay(500);
-  digitalWrite(RstPin, HIGH);
-#endif
+
 
 
   // light reticule LED
@@ -344,25 +273,6 @@ void setup()
   {
     syncPolarHome();
   }
-
-
-  // get the min. and max altitude
-  minAlt = EEPROM.read(EE_minAlt) - 128;
-  maxAlt = EEPROM.read(EE_maxAlt);
-  minutesPastMeridianGOTOE = round(((EEPROM.read(EE_dpmE) - 128)*60.0) / 15.0);
-  if (abs(minutesPastMeridianGOTOE) > 180)
-    minutesPastMeridianGOTOE = 60;
-  minutesPastMeridianGOTOW = round(((EEPROM.read(EE_dpmW) - 128)*60.0) / 15.0);
-  if (abs(minutesPastMeridianGOTOW) > 180)
-    minutesPastMeridianGOTOW = 60;
-  underPoleLimitGOTO = (double)EEPROM.read(EE_dup) / 10;
-  if (underPoleLimitGOTO < 9 || underPoleLimitGOTO>12)
-    underPoleLimitGOTO = 12;
-  if (mountType == MOUNT_TYPE_ALTAZM && maxAlt > 87)
-    maxAlt = 87;
-
-
-
   // get the pulse-guide rate
   currentPulseGuideRate = EEPROM.read(EE_pulseGuideRate);
   if (currentPulseGuideRate > GuideRate1x)
@@ -687,6 +597,75 @@ void enable_Axis(bool enable)
 time_t getTeensy3Time()
 {
   return Teensy3Clock.get();
+}
+
+void initmount()
+{
+  mountType = EEPROM.read(EE_mountType);
+  mountType = mountType < 1 || mountType >  4 ? MOUNT_TYPE_GEM : mountType;
+
+  if (mountType == MOUNT_TYPE_GEM)
+    meridianFlip = MeridianFlipAlways;
+  else if (mountType == MOUNT_TYPE_FORK)
+    meridianFlip = MeridianFlipAlign;
+  else if (mountType == MOUNT_TYPE_FORK_ALT)
+    meridianFlip = MeridianFlipNever;
+  else if (mountType == MOUNT_TYPE_ALTAZM)
+    meridianFlip = MeridianFlipNever;
+  // align
+  if (mountType == MOUNT_TYPE_GEM)
+    maxAlignNumStar = 3;
+  else if (mountType == MOUNT_TYPE_FORK)
+    maxAlignNumStar = 3;
+  else if (mountType == MOUNT_TYPE_FORK_ALT)
+    maxAlignNumStar = 1;
+  else if (mountType == MOUNT_TYPE_ALTAZM)
+    maxAlignNumStar = 3;
+
+  // get the min. and max altitude
+  minAlt = EEPROM.read(EE_minAlt) - 128;
+  maxAlt = EEPROM.read(EE_maxAlt);
+  minutesPastMeridianGOTOE = round(((EEPROM.read(EE_dpmE) - 128)*60.0) / 15.0);
+  if (abs(minutesPastMeridianGOTOE) > 180)
+    minutesPastMeridianGOTOE = 60;
+  minutesPastMeridianGOTOW = round(((EEPROM.read(EE_dpmW) - 128)*60.0) / 15.0);
+  if (abs(minutesPastMeridianGOTOW) > 180)
+    minutesPastMeridianGOTOW = 60;
+  underPoleLimitGOTO = (double)EEPROM.read(EE_dup) / 10;
+  if (underPoleLimitGOTO < 9 || underPoleLimitGOTO>12)
+    underPoleLimitGOTO = 12;
+  if (mountType == MOUNT_TYPE_ALTAZM && maxAlt > 87)
+    maxAlt = 87;
+
+
+  // initialize some fixed-point values
+  amountGuideHA.fixed = 0;
+  amountGuideDec.fixed = 0;
+  guideHA.fixed = 0;
+  guideDec.fixed = 0;
+
+  fstepAxis1.fixed = 0;
+  fstepAxis2.fixed = 0;
+
+  origTargetAxis1.fixed = 0;
+  targetAxis1.part.m = quaterRotAxis1;
+  targetAxis1.part.f = 0;
+  targetAxis2.part.m = quaterRotAxis2;
+  targetAxis2.part.f = 0;
+  fstepAxis1.fixed = doubleToFixed(StepsPerSecondAxis1 / 100.0);
+
+  // initialize alignment
+  if (mountType == MOUNT_TYPE_ALTAZM)
+  {
+    Align.init();
+  }
+
+  GeoAlign.init();
+
+  // Tracking and rate control
+  refraction_enable = mountType == MOUNT_TYPE_ALTAZM ? false : true;
+  onTrack = false;
+
 }
 
 void initmotor()

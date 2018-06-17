@@ -14,7 +14,7 @@ public:
     ALI_SELECT_STAR_2, ALI_SLEW_STAR_2, ALI_RECENTER_2,
     ALI_SELECT_STAR_3, ALI_SLEW_STAR_3, ALI_RECENTER_3
   };
-  enum Mount { GEM, FEM };
+  enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
   enum TrackState { TRK_OFF, TRK_ON, TRK_SLEWING, TRK_UNKNOW };
   enum ParkState { PRK_UNPARKED, PRK_PARKED, PRK_FAILED, PRK_PARKING, PRK_UNKNOW };
   enum PierState { PIER_E, PIER_W, PIER_UNKNOW };
@@ -54,6 +54,7 @@ public:
   void updateAzAlt();
   void updateTime();
   void updateTel();
+  Mount getMount();
   ParkState getParkState();
   TrackState getTrackingState();
   bool atHome();

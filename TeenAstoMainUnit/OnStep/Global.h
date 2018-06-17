@@ -20,12 +20,8 @@ siteDefinition      localSite;
 #define PierSideFlipWE2  7
 #define PierSideFlipWE3  8
 
-#define MOUNT_UNDEFINED 0
-#define MOUNT_TYPE_GEM 1
-#define MOUNT_TYPE_FORK 2
-#define MOUNT_TYPE_ALTAZM 3
-#define MOUNT_TYPE_FORK_ALT 4
 
+enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT};
 
 #define MeridianFlipNever   0
 #define MeridianFlipAlign   1
@@ -237,9 +233,6 @@ boolean highPrecision = true;
 #define TrackingSolar 0.99726956632
 #define TrackingLunar 0.96236513150
 
-
-
-
 volatile byte trackingState = TrackingOFF;
 volatile byte GuidingState  = GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
@@ -247,11 +240,6 @@ unsigned long lastSecurityCheck = millis();
 byte abortTrackingState = TrackingOFF;
 volatile byte lastTrackingState = TrackingOFF;
 boolean abortSlew = false;
-
-
-
-
-
 
 // Command processing -------------------------------------------------------------------------------------------------------
 #define BAUD    57600

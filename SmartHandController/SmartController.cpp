@@ -313,7 +313,7 @@ void SmartHandController::update()
 {
   tickButtons();
   unsigned long top = millis();
-  if (buttonPressed())
+  if (buttonPressed() || telInfo.connected == false)
   {
     if (sleepDisplay)
     {
@@ -351,7 +351,13 @@ void SmartHandController::update()
   {
     display->setFont(u8g2_font_helvR12_tr);
     DisplayMessage("REBOOT", "DEVICE", 1000);
+    ESP.reset();
     return;
+  }
+  if (telInfo.connected == false)
+  {
+    DisplayMessage("!! Error !!", "Not Connected", -1);
+    ESP.reset();
   }
   if (telInfo.align == Telescope::ALI_SELECT_STAR_1 || telInfo.align == Telescope::ALI_SELECT_STAR_2 || telInfo.align == Telescope::ALI_SELECT_STAR_3)
   {
@@ -372,10 +378,6 @@ void SmartHandController::update()
   else if (top - lastpageupdate > 100)
   {
     updateMainDisplay( page);
-  }
-  if (telInfo.connected == false)
-  {
-    DisplayMessage("Hand controler", "not connected", -1);
   }
   if (telInfo.connected && (telInfo.getTrackingState() == Telescope::TRK_SLEWING || telInfo.getParkState() == Telescope::PRK_PARKING))
   {
@@ -460,12 +462,7 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
   u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
   u8g2_uint_t step1 = u8g2_GetUTF8Width(u8g2, "44");
   u8g2_uint_t step2 = u8g2_GetUTF8Width(u8g2, "4") + 1;
-  telInfo.connected = true;
   telInfo.updateTel();
-  if (telInfo.connected == false)
-  {
-    return;
-  }
   if (telInfo.hasTelStatus && telInfo.align != Telescope::ALI_OFF)
   {
     Telescope::TrackState curT = telInfo.getTrackingState();
@@ -1335,12 +1332,14 @@ void SmartHandController::menuSettings()
 void SmartHandController::menuMount()
 {
   current_selection_L2 = 1;
-  while (current_selection_L2 != 0)
+  while (!exitMenu)
   {
     const char *string_list_Mount = "Predefined\n""Mount type\n""Motor 1\n""Motor 2";
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Mount", current_selection_L2, string_list_Mount);
     switch (current_selection_L2)
     {
+    case 0:
+      return;
     case 1:
       menuPredefinedMount();
       break;
@@ -1362,22 +1361,24 @@ void SmartHandController::menuMount()
 
 void SmartHandController::menuMountType()
 {
-  current_selection_L3 = 1;
-  while (current_selection_L3 != 0)
+ 
+  current_selection_L3 = telInfo.getMount();
+  if (current_selection_L3 == 0)
   {
-    const char *string_list_Mount = "Equatorial Fork\n""German Equatorial";
-    current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, "Mount Type", current_selection_L3, string_list_Mount);
-    switch (current_selection_L3)
-    {
-    case 1:
-      break;
-    case 2:
-      break;
-    default:
-      break;
-    }
+    DisplayLongMessage("Warning!", NULL, "No mount type", "was defined!", -1);
+    current_selection_L3 = 1;
   }
-
+  const char *string_list_Mount = "German Equatorial\n""Equatorial Fork\n""Altazimutal\n""Altazimutal Fork";
+  current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, "Mount Type", current_selection_L3, string_list_Mount);
+  if (current_selection_L3)
+  {
+    char out[10];
+    sprintf(out, ":S!%d#", current_selection_L3);
+    Serial.end();
+    exitMenu = true;
+    powerCylceRequired = true;
+    Serial.println(out);
+  }
 }
 
 void SmartHandController::menuPredefinedMount()

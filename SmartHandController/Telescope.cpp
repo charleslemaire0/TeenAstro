@@ -10,7 +10,7 @@ void Telescope::updateRaDec()
     lastStateRaDec = millis();
     if (!hasInfoRa && !hasInfoDec)
     {
-      connected = true;
+      connected = false;
     }
   }
 };
@@ -23,7 +23,7 @@ void Telescope::updateAzAlt()
     lastStateAzAlt = millis();
     if (!hasInfoAz && !hasInfoAlt)
     {
-      connected = true;
+      connected = false;
     }
   }
 }
@@ -36,22 +36,19 @@ void Telescope::updateTime()
     lastStateTime = millis();
     if (!hasInfoUTC && !hasInfoSideral)
     {
-      connected = true;
+      connected = false;
     }
   }
 };
 void Telescope::updateTel()
 {
-  if (millis() - lastStateTel > 100 && connected)
+  if (millis() - lastStateTel > 100 )
   {
     hasPierInfo = GetLX200(":Gm#", sideofpier) == LX200VALUEGET;
     hasTelStatus = GetLX200(":GU#", TelStatus) == LX200VALUEGET;
     lastStateTel = millis();
   }
-  if (!hasPierInfo && !hasTelStatus)
-  {
-    connected = true;
-  }
+  connected = hasPierInfo || hasTelStatus;
 };
 Telescope::ParkState Telescope::getParkState()
 {
@@ -72,6 +69,24 @@ Telescope::ParkState Telescope::getParkState()
     return PRK_FAILED;
   }
   return PRK_UNKNOW;
+}
+Telescope::Mount Telescope::getMount()
+{
+  switch (TelStatus[12])
+  {
+  case 'E':
+    return MOUNT_TYPE_GEM;
+  case 'K':
+    return MOUNT_TYPE_FORK;
+  case 'A':
+    return MOUNT_TYPE_ALTAZM;
+  case 'k':
+    return MOUNT_TYPE_FORK_ALT;
+  case 'U':
+    return MOUNT_UNDEFINED;
+    break;
+  }
+  return MOUNT_UNDEFINED;
 }
 Telescope::TrackState Telescope::getTrackingState()
 {

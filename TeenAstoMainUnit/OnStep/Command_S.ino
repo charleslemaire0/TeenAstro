@@ -6,6 +6,19 @@ void Command_S(Command& process_command)
   char* conv_end;
   switch (command[1])
   {
+  case '!':
+    i = (int)(parameter[0] - '0');
+    if (i > 0 && i < 5)
+    {
+      EEPROM.write(EE_mountType, i);
+      Serial.end();
+      delay(1000);
+      _reboot_Teensyduino_();
+    }
+    else
+      commandError = true;
+    break;
+
   case 'a':
     //  :SasDD*MM#
     //         Set target object altitude to sDD*MM# or sDD*MM'SS# (based on precision setting)
@@ -472,8 +485,6 @@ void Command_S(Command& process_command)
     if (!dmsToDouble(&newTargetAzm, parameter, false))
       commandError = true;
     break;
-
-
   default:
     commandError = true;
     break;
