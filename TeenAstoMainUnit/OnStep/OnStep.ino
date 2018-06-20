@@ -99,6 +99,7 @@ void setup()
     if (maxRate > 10000L * 16L) maxRate = 10000L * 16L;
     EEPROM_writeInt(EE_maxRate, (int)(maxRate / 16L));
 
+
     // init autoContinue
     EEPROM.write(EE_autoContinue, autoContinue);
 
@@ -247,9 +248,10 @@ void setup()
   localSite.ReadCurrentSiteDefinition();
   rtk.resetLongitude(*localSite.longitude());
 
-  if (mountType == MOUNT_TYPE_ALTAZM)
+  if (mountType == MOUNT_TYPE_ALTAZM || mountType == MOUNT_TYPE_FORK_ALT)
   {
-    celestialPoleStepAxis2 = fabs(*localSite.latitude()) *StepsPerDegreeAxis2;
+    double lat = *localSite.latitude();
+    celestialPoleStepAxis2 = fabs(lat) *StepsPerDegreeAxis2;
     if (*localSite.latitude() < 0)
       celestialPoleStepAxis1 = halfRotAxis1;
     else
@@ -285,16 +287,10 @@ void setup()
 
 
   maxRate = EEPROM_readInt(EE_maxRate) * 16;
-  if (maxRate < (MaxRate / 2L) * 16L) maxRate = (MaxRate / 2L) * 16L;
-  if (maxRate > (MaxRate * 2L) * 16L) maxRate = (MaxRate * 2L) * 16L;
-#ifndef RememberMaxRate_ON
-  if (maxRate != MaxRate * 16L)
-  {
-    maxRate = MaxRate * 16L;
-    EEPROM_writeInt(EE_maxRate, (int)(maxRate / 16L));
-  }
-#endif
-  SetAccelerationRates(maxRate);          // set the new acceleration rate
+
+  maxRate = (maxRate < (MaxRate / 2L) * 16L) ? MaxRate * 16 : maxRate;
+
+  SetAccelerationRates();          // set the new acceleration rate
 
   // get autoContinue
   autoContinue = EEPROM.read(EE_autoContinue);

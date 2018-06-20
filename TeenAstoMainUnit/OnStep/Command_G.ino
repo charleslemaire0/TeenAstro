@@ -118,7 +118,7 @@ else
 #else
   c += "0";
 #endif
-#ifdef RememberMaxRate_ON
+#if true
   c += "1";
 #else
   c += "0";

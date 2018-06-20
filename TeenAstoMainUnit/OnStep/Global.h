@@ -311,7 +311,6 @@ double          guideRates[10] =
   0.25 , 0.5 , 1.0 , 2.0 , 4.0 , 16.0, 32.0 , 64.0, halfSlewRate, slewRate
 };
 
-
 //                      .25X .5x 1x 2x 4x  8x 24x 48x half-MaxRate MaxRate
 byte            currentGuideRate = GuideRate16x;
 byte            currentPulseGuideRate = GuideRate1x;

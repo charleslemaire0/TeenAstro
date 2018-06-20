@@ -77,8 +77,7 @@ void MoveAxis2(const byte newguideDirAxis)
   }
 }
 
-#define ST4_OFF
-#define ST4_HAND_CONTROL_OFF
+
 void checkST4()
 {
 
@@ -131,11 +130,6 @@ void checkST4()
       if (ST4RA_state)
       {
 #ifdef SEPERATE_PULSE_GUIDE_RATE_ON
-#ifdef ST4_HAND_CONTROL_ON
-        enableGuideRate(9);
-#else
-        enableGuideRate(currentPulseGuideRate);
-#endif
 #else
         enableGuideRate(currentGuideRate);
 #endif

@@ -875,9 +875,12 @@ double angDist(double h, double d, double h1, double d1)
 
 
 // Acceleration rate calculation
-void SetAccelerationRates(double maxRate)
+void SetAccelerationRates()
 {
     // set the new acceleration rate
+  double slewrate = (1.0 / (((double)StepsPerDegreeAxis1 * ((maxRate / 16L) / 1000000.0))) * 3600.0) / 15.0;
+  guideRates[8] = slewrate / 2.0;
+  guideRates[9] = slewrate;
   cli();
     StepsForRateChangeAxis1 = ((double) DegreesForAcceleration / sqrt( StepsPerDegreeAxis1)) * 0.3333333 * StepsPerDegreeAxis1 * maxRate;
     StepsForRateChangeAxis2 = ((double) DegreesForAcceleration / sqrt( StepsPerDegreeAxis2)) * 0.3333333 * StepsPerDegreeAxis2 * maxRate;

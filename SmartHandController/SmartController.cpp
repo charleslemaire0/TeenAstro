@@ -1334,7 +1334,7 @@ void SmartHandController::menuMount()
   current_selection_L2 = 1;
   while (!exitMenu)
   {
-    const char *string_list_Mount = "Predefined\n""Mount type\n""Motor 1\n""Motor 2";
+    const char *string_list_Mount = "Predefined\n""Mount type\n""Motor 1\n""Motor 2\n""Set Max Rate";
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Mount", current_selection_L2, string_list_Mount);
     switch (current_selection_L2)
     {
@@ -1351,6 +1351,9 @@ void SmartHandController::menuMount()
       break;
     case 4:
       menuMotor(2);
+      break;
+    case 5:
+      menuMaxRate();
       break;
     default:
       break;
@@ -1716,6 +1719,36 @@ void SmartHandController::menuMotor(const uint8_t axis)
     }
   }
 
+}
+
+void SmartHandController::menuMaxRate()
+{
+  char outRate[20];
+  char outStepsPerDegree[20];
+  char cmd[20];
+  if (DisplayMessageLX200(GetLX200(":GX92#", outRate)))
+  {
+    float maxrate = (float)strtol(&outRate[0], NULL, 10) ;
+    if (DisplayMessageLX200(GetLX200(":GXE4#", outStepsPerDegree)))
+    {
+      float stepsPerDegree = (float)strtol(&outStepsPerDegree[0], NULL, 10);
+      float slewrate = (1.0 / ((stepsPerDegree * (maxrate / 1000000.0))) * 3600.0) / 15.0;
+      float slewrate2 = slewrate> 512 ? 512 : slewrate< 64 ? 64 : slewrate;
+      if (slewrate2 != slewrate)
+      {
+        maxrate = (1.0 / ((stepsPerDegree * (100 / 1000000.0))) * 3600.0) / 15.0;
+        sprintf(cmd, ":SX92:%04d#", (int)maxrate);
+        DisplayMessageLX200(SetLX200(cmd));
+      }
+
+      if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Rate", "", &slewrate2, 64, 512, 4, 0, ""))
+      {
+        maxrate = (1.0 / ((stepsPerDegree * (slewrate2 / 1000000.0))) * 3600.0) / 15.0 ;
+        sprintf(cmd, ":SX92:%04d#", (int)maxrate);
+        DisplayMessageLX200(SetLX200(cmd));
+      }
+    }
+  }
 }
 
 void SmartHandController::menuSite()

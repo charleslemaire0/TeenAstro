@@ -395,16 +395,17 @@ void Command_S(Command& process_command)
         maxRate = strtol(&parameter[3], NULL, 10) * 16L;
         if (maxRate < (MaxRate / 2L) * 16L)
           maxRate = (MaxRate / 2L) * 16L;
-        if (maxRate > (MaxRate * 2L) * 16L)
-          maxRate = (MaxRate * 2L) * 16L;
         EEPROM_writeInt(EE_maxRate, (int)(maxRate / 16L));
-        SetAccelerationRates(maxRate);
+        SetAccelerationRates();
         break;
 
       case '3':   // acceleration rate preset
         quietReply = true;
         switch (parameter[3])
         {
+        case '6':
+          maxRate = MaxRate * 32L;
+          break;  // 50%
         case '5':
           maxRate = MaxRate * 32L;
           break;  // 50%
@@ -427,7 +428,7 @@ void Command_S(Command& process_command)
           break;
         }
 
-        SetAccelerationRates(maxRate);
+        SetAccelerationRates();
         break;
 
       case '5':           // autoContinue
