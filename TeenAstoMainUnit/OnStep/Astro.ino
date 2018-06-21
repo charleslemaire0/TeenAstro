@@ -881,16 +881,59 @@ void SetAccelerationRates()
   double slewrate = (1.0 / (((double)StepsPerDegreeAxis1 * ((maxRate / 16L) / 1000000.0))) * 3600.0) / 15.0;
   DegreesForAcceleration = slewrate / 100;
   DegreesForRapidStop = 0.5 *DegreesForAcceleration;
-  guideRates[8] = slewrate / 2.0;
   guideRates[9] = slewrate;
-  byte i = currentGuideRate;
-  i > 3 ? enableGuideRate(2) : enableGuideRate(4);
-  enableGuideRate(i);
+  guideRates[8] = slewrate/2.;
+  if (activeGuideRate > 7)
+  {
+    resetGuideRate();
+  }
   cli();
     StepsForRateChangeAxis1 = ((double) DegreesForAcceleration / sqrt( StepsPerDegreeAxis1)) * 0.3333333 * StepsPerDegreeAxis1 * maxRate;
     StepsForRateChangeAxis2 = ((double) DegreesForAcceleration / sqrt( StepsPerDegreeAxis2)) * 0.3333333 * StepsPerDegreeAxis2 * maxRate;
   sei();
 }
+
+// calculates the tracking speed for move commands
+void enableGuideRate(int g, bool force)
+{
+  // don't do these lengthy calculations unless we have to
+
+  if (g < 0) g = 0;
+  if (g > 9) g = 9;
+  if (activeGuideRate == g && !force) return;
+
+  activeGuideRate = g;
+
+  // this enables the guide rate
+  guideTimerBaseRate = guideRates[g];
+
+  cli();
+  amountGuideHA.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis1) / 100.0);
+  amountGuideDec.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis2) / 100.0);
+  sei();
+}
+void resetGuideRate()
+{
+  enableGuideRate(activeGuideRate, true);
+}
+
+void enableRateAxis1(double vRate)
+{
+  cli();
+  amountGuideHA.fixed = doubleToFixed((abs(vRate) * StepsPerSecondAxis1) / 100.0);
+  guideTimerRateAxis1 = vRate;
+  sei();
+}
+
+void enableRateAxis2(double vRate)
+{
+  cli();
+  amountGuideDec.fixed = doubleToFixed((abs(vRate) * StepsPerSecondAxis2) / 100.0);
+  guideTimerRateAxis2 = vRate;
+  sei();
+}
+
+
 
 // Remap HA DEC value between -180 +180 and -90 +90
 void CorrectHADec(double *HA, double *Dec)

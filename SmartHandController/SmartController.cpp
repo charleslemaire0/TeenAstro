@@ -1018,7 +1018,7 @@ void SmartHandController::menuMain()
 
 void SmartHandController::menuSpeedRate()
 {
-  char * string_list_Speed = "0.25x\n0.5x\n1.0x\n2.0x\n4.0x\n16.0x\n32.0x\n64.0x\n0.5 Max\nMax";
+  char * string_list_Speed = "Guide\n0.5x\n1.0x\n2.0x\n4.0x\n16.0x\n32.0x\n64.0x\n0.5 Max\nMax";
   current_selection_speed = display->UserInterfaceSelectionList(&buttonPad, "Set Speed", current_selection_speed, string_list_Speed);
   if (current_selection_speed > 0)
   {
@@ -1334,7 +1334,7 @@ void SmartHandController::menuMount()
   current_selection_L2 = 1;
   while (!exitMenu)
   {
-    const char *string_list_Mount = "Predefined\n""Mount type\n""Motor 1\n""Motor 2\n""Set Max Rate";
+    const char *string_list_Mount = "Predefined\n""Mount type\n""Motor 1\n""Motor 2\n""Set Guide Rate\n""Set Max Rate";
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Mount", current_selection_L2, string_list_Mount);
     switch (current_selection_L2)
     {
@@ -1353,6 +1353,9 @@ void SmartHandController::menuMount()
       menuMotor(2);
       break;
     case 5:
+      menuGuideRate();
+      break;
+    case 6:
       menuMaxRate();
       break;
     default:
@@ -1646,7 +1649,7 @@ void SmartHandController::writeDefaultMount(const bool& r1, const int& ttgr1, co
   writeHighCurrLX200(1, cH);
   DisplayMotorSettings(1);
 
-  writeReverseLX200(2, r1);
+  writeReverseLX200(2, r2);
   writeTotGearLX200(2, ttgr2);
   writeStepPerRotLX200(2, stprot);
   writeBacklashLX200(2, 0);
@@ -1747,6 +1750,21 @@ void SmartHandController::menuMaxRate()
         sprintf(cmd, ":SX92:%04d#", (int)maxrate);
         DisplayMessageLX200(SetLX200(cmd));
       }
+    }
+  }
+}
+
+void SmartHandController::menuGuideRate()
+{
+  char outRate[20];
+  char cmd[20];
+  if (DisplayMessageLX200(GetLX200(":GX90#", outRate)))
+  {
+    float guiderate = atof(&outRate[0]);
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "Guide Rate", "", &guiderate, 0.1, 2.55, 4, 2, "x"))
+    {
+      sprintf(cmd, ":SX90:%03d#", (int)(guiderate*100));
+      DisplayMessageLX200(SetLX200(cmd));
     }
   }
 }

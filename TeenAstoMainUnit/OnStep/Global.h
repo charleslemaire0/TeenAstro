@@ -60,6 +60,7 @@ volatile long           TakeupRate;                 // this is the takeup rate f
 
 
 long                    maxRate = MaxRate * 16L;
+float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
 double                  DegreesForRapidStop = 0.5 *DegreesForAcceleration;
 
@@ -307,16 +308,12 @@ fixed_t         fstepAxis2;
 #define GuideRateNone   255
 
 
-#define slewRate        (1.0 / (((double) StepsPerDegreeAxis1 * (MaxRate / 1000000.0))) * 3600.0)/15.0
-#define halfSlewRate    (slewRate / 2.0)
 double          guideRates[10] =
 {
-  0.25 , 0.5 , 1.0 , 2.0 , 4.0 , 16.0, 32.0 , 64.0, halfSlewRate, slewRate
+  0.25 , 0.5 , 1.0 , 2.0 , 4.0 , 16.0, 32.0 , 64.0, 64.0, 64.0
 };
 
 //                      .25X .5x 1x 2x 4x  8x 24x 48x half-MaxRate MaxRate
-byte            currentGuideRate = GuideRate16x;
-byte            currentPulseGuideRate = GuideRate1x;
 volatile byte   activeGuideRate = GuideRateNone;
 
 volatile byte   guideDirAxis1 = 0;

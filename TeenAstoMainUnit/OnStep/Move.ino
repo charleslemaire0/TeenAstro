@@ -13,7 +13,7 @@ void MoveAxis1(const byte newguideDirAxis)
       sei();
       return;
     }
-    enableGuideRate(currentGuideRate);
+    //enableGuideRate(activeGuideRate,true);
     double newGuideTimerBaseRate = newguideDirAxis == 'e' ? -guideTimerBaseRate : guideTimerBaseRate;
 
     bool samedirection = newGuideTimerBaseRate > 0 ? (guideTimerRateAxis1 > 0 ? true : false) : (guideTimerRateAxis1 > 0 ? false : true);
@@ -55,7 +55,7 @@ void MoveAxis2(const byte newguideDirAxis)
       rev = true;
     if (pierSide >= PierSideWest)
       rev = !rev;
-    enableGuideRate(currentGuideRate);
+    //enableGuideRate(activeGuideRate, true);
     double newGuideTimerBaseRate = rev ? -guideTimerBaseRate : guideTimerBaseRate;
     bool samedirection = newGuideTimerBaseRate > 0 ? (guideTimerRateAxis2 > 0 ? true : false) : (guideTimerRateAxis2 > 0 ? false : true);
     if (guideDirAxis2 && !samedirection && fabs(guideTimerRateAxis2) > 2)

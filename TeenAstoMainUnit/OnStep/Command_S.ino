@@ -391,6 +391,17 @@ void Command_S(Command& process_command)
     {                   // 9n: Misc.
       switch (parameter[1])
       {
+      case '0':
+      {
+        int val = strtol(&parameter[3], NULL, 10);
+        val = val > 255 || val < 0 ? 100 : val;
+        EEPROM.write(EE_pulseGuideRate, val);
+        guideRates[0] = (double)val / 100.;
+        if (activeGuideRate == 0)
+          enableGuideRate(0, true);
+        break;
+      }
+
       case '2':   // set new acceleration rate
         maxRate = strtol(&parameter[3], NULL, 10) * 16L;
         if (maxRate < (MaxRate / 2L) * 16L)

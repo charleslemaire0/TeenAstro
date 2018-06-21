@@ -191,7 +191,7 @@ void Command_GX()
     switch (parameter[1])
     {
     case '0':
-      dtostrf(guideRates[currentPulseGuideRate], 2,
+      dtostrf(guideRates[0], 2,
         2, reply);
       quietReply = true;
       break;  // pulse-guide rate

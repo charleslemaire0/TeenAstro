@@ -43,6 +43,7 @@ private:
   uint8_t current_selection_L3 = 1;
   uint8_t current_selection_L4 = 1;
   uint8_t current_selection_speed = 5;
+  uint8_t current_selection_guide = 3;
   unsigned short current_selection_Herschel = 1;
   unsigned short current_selection_Messier = 1;
   unsigned short current_selection_SolarSys = 1;
@@ -77,6 +78,7 @@ private:
   void writeDefaultMount(const bool& r1, const int& ttgr1, const bool& r2, const int& ttgr2, const int& stprot, const int& cL, const int& cH);
   void menuMotor(uint8_t idx);
   void menuMaxRate();
+  void menuGuideRate();
   void menuSite();
   void menuSites();
   void menuUTCTime();

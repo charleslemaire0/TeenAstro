@@ -276,12 +276,8 @@ void setup()
     syncPolarHome();
   }
   // get the pulse-guide rate
-  currentPulseGuideRate = EEPROM.read(EE_pulseGuideRate);
-  if (currentPulseGuideRate > GuideRate1x)
-  {
-    currentPulseGuideRate = GuideRate1x;
-    EEPROM.write(EE_pulseGuideRate, currentPulseGuideRate);
-  }
+  guideRates[0] = (float)EEPROM.read(EE_pulseGuideRate)/100.;
+  
 
   // get the Goto rate and constrain values to the limits (1/2 to 2X the MaxRate,) maxRate is in 16MHz clocks but stored in micro-seconds
 
@@ -300,7 +296,7 @@ void setup()
   // combined with a hack in the goto syncEqu() function and you can quickly recover from
   // a reset without loosing much accuracy in the sky.  PEC is toast though.
   // set the default guide rate, 16x sidereal
-  setGuideRate(GuideRateMax);
+  enableGuideRate(GuideRateMax,true);
   delay(110);
 
   // prep timers

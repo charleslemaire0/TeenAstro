@@ -31,9 +31,9 @@ void Command_M(bool &supress_frame)
       if ((parameter[0] == 'e') || (parameter[0] == 'w'))
       {
 #ifdef SEPERATE_PULSE_GUIDE_RATE_ON
-        enableGuideRate(currentPulseGuideRate);
+        enableGuideRate(0,false);
 #else
-        enableGuideRate(currentGuideRate);
+        enableGuideRate(0);
 #endif
         guideDirAxis1 = parameter[0];
         guideDurationLastHA = micros();
@@ -50,7 +50,7 @@ void Command_M(bool &supress_frame)
       else if ((parameter[0] == 'n') || (parameter[0] == 's'))
       {
 #ifdef SEPERATE_PULSE_GUIDE_RATE_ON
-        enableGuideRate(currentPulseGuideRate);
+        enableGuideRate(0,false);
 #else
         enableGuideRate(currentGuideRate);
 #endif

@@ -739,7 +739,7 @@ void Command_R()
     commandError = true;
     return;
   }
-  setGuideRate(i);
+  enableGuideRate(i,false);
   quietReply = true;
 }
 
