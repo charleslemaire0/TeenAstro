@@ -398,6 +398,8 @@ void setGuideRate(int g)
 void enableGuideRate(int g)
 {
   // don't do these lengthy calculations unless we have to
+  if (i < 0) i = 0;
+  if (i > 9) i = 9;
   if (activeGuideRate == g) return;
 
   activeGuideRate = g;

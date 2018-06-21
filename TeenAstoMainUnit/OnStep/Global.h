@@ -60,6 +60,9 @@ volatile long           TakeupRate;                 // this is the takeup rate f
 
 
 long                    maxRate = MaxRate * 16L;
+double                  DegreesForAcceleration = 3;
+double                  DegreesForRapidStop = 0.5 *DegreesForAcceleration;
+
 volatile long           timerRateAxis1 = 0;
 volatile long           timerRateBacklashAxis1 = 0;
 volatile boolean        inbacklashAxis1 = false;
