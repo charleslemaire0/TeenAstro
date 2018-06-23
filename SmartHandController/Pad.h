@@ -22,4 +22,8 @@ public:
   void attachEvent();
   void tickButtons();
   bool buttonPressed();
+#ifdef WIFI_ON
+  bool isWifiOn();
+  bool turnWifiOn(bool turnOn);
+#endif
 };

@@ -271,7 +271,7 @@ void SmartHandController::setup(const char version[], const int pin[7],const boo
   
   telInfo.lastState = 0;
 
-  
+
   //choose a 128x64 display supported by U8G2lib (if not listed below there are many many others in u8g2 library example Sketches)
   //U8G2_SH1106_128X64_NONAME_1_HW_I2C display(U8G2_R0);
   //U8G2_SSD1306_128X64_NONAME_F_SW_I2C display(U8G2_R0, /* clock=*/ SCL, /* data=*/ SDA, /* reset=*/ U8X8_PIN_NONE);   // All Boards without Reset of the Display
@@ -350,13 +350,14 @@ void SmartHandController::update()
   if (powerCylceRequired)
   {
     display->setFont(u8g2_font_helvR12_tr);
-    DisplayMessage("REBOOT", "DEVICE", 1000);
+    DisplayMessage("Device", "will reboot...", 1000);
     ESP.reset();
     return;
   }
   if (telInfo.connected == false)
   {
     DisplayMessage("!! Error !!", "Not Connected", -1);
+    DisplayMessage("Device", "will reboot...", 1000);
     ESP.reset();
   }
   if (telInfo.align == Telescope::ALI_SELECT_STAR_1 || telInfo.align == Telescope::ALI_SELECT_STAR_2 || telInfo.align == Telescope::ALI_SELECT_STAR_3)
@@ -490,9 +491,10 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
   {
     u8g2_uint_t x = u8g2_GetDisplayWidth(u8g2);
     int k = 0;
-    if (wifiOn)
+#ifdef WIFI_ON
+    if (buttonPad.isWifiOn())
       display->drawXBMP(0, 0, icon_width, icon_height, wifi_bits);
-
+#endif
     if (telInfo.hasTelStatus)
     {
       Telescope::ParkState curP = telInfo.getParkState();
@@ -905,6 +907,12 @@ bool SmartHandController::menuSetHighCurrent(const uint8_t &axis)
     return DisplayMessageLX200(writeHighCurrLX200(axis, highCurr),false);
   }
   return true;
+}
+
+void SmartHandController::DisplayMountSettings()
+{
+  DisplayMotorSettings(1);
+  DisplayMotorSettings(2);
 }
 
 void SmartHandController::DisplayMotorSettings(const uint8_t &axis)
@@ -1334,28 +1342,30 @@ void SmartHandController::menuMount()
   current_selection_L2 = 1;
   while (!exitMenu)
   {
-    const char *string_list_Mount = "Predefined\n""Mount type\n""Motor 1\n""Motor 2\n""Set Guide Rate\n""Set Max Rate";
+    const char *string_list_Mount = "Mount Settings\n""Predefined\n""Mount type\n""Motor 1\n""Motor 2\n""Set Guide Rate\n""Set Max Rate";
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Mount", current_selection_L2, string_list_Mount);
     switch (current_selection_L2)
     {
     case 0:
       return;
     case 1:
+      DisplayMountSettings();
+    case 2:
       menuPredefinedMount();
       break;
-    case 2:
+    case 3:
       menuMountType();
       break;
-    case 3:
+    case 4:
       menuMotor(1);
       break;
-    case 4:
+    case 5:
       menuMotor(2);
       break;
-    case 5:
+    case 6:
       menuGuideRate();
       break;
-    case 6:
+    case 7:
       menuMaxRate();
       break;
     default:
@@ -1814,6 +1824,8 @@ void SmartHandController::menuSite()
       menuLongitude();
       break;
     case 3:
+
+    case 4:
       menuSites();
       break;
     default:
@@ -1954,6 +1966,20 @@ void SmartHandController::menuLongitude()
   }
 }
 
+//void SmartHandController::menuAltitude()
+//{
+//  char out[20];
+//  if (DisplayMessageLX200(GetLX200(":Gh#", out)))
+//  {
+//    float alt = (float)strtol(&out[0], NULL, 10);
+//    if (display->UserInterfaceInputValueFloat(&buttonPad, "Site Altitude", "", &alt, -150, 5000, 2, 0, " meters"))
+//    {
+//      sprintf(out, ":Sh%+03d#", (int)alt);
+//      DisplayMessageLX200(SetLX200(out), false);
+//    }
+//  }
+//}
+
 void SmartHandController::menuLimits()
 {
   const char *string_list_LimitsL2 = "Horizon\n""Overhead\n""Meridian E\n""Meridian W\n""Under Pole";
@@ -1987,37 +2013,31 @@ void SmartHandController::menuLimits()
 
 void SmartHandController::menuWifi()
 {
-  const char *string_list = (wifiOn) ? "Wifi off\nShow Password\nReset to factory" : "wifi on\nShow Password\nReset to factory";
+  const char *string_list = buttonPad.isWifiOn() ? "Wifi off\nShow Password\nReset to factory" : "Wifi on\nShow Password\nReset to factory";
   current_selection_L2 = 1;
-  while (current_selection_L2 != 0)
+
+  current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Wifi", 1, string_list);
+  switch (current_selection_L2)
   {
-    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Wifi", 1, string_list);
-    switch (current_selection_L2)
-    {
-    case 1:
-      wifiOn = !wifiOn;
-      //EEPROM.write(15, wifiOn);
-      //EEPROM.commit();
-      DisplayMessage("Please", "Reboot!", 3000);
-      current_selection_L2 = 0;
-      current_selection_L1 = 0;
-      current_selection_L0 = 0;
-      powerCylceRequired = true;
-      break;
-    case 2:
-      DisplayMessage("masterPassword is", "password", 1000);
-    case 3:
-      //EEPROM_writeInt(0, 0);
-      //EEPROM.commit();
-      DisplayMessage("Please", "Reboot!", 3000);
-      current_selection_L2 = 0;
-      current_selection_L1 = 0;
-      current_selection_L0 = 0;
-      powerCylceRequired = true;
-    default:
-      break;
-    }
+  case 0:
+    return;
+  case 1:
+    buttonPad.turnWifiOn(!buttonPad.isWifiOn());
+    exitMenu = true;
+    powerCylceRequired = true;
+    break;
+  case 2:
+    DisplayMessage("masterPassword is", "password", 1000);
+    break;
+  case 3:
+    EEPROM_writeInt(0, 0);
+    EEPROM.commit();
+    powerCylceRequired = true;
+    exitMenu = true;
+  default:
+    break;
   }
+  
 }
 
 void SmartHandController::menuHorizon()

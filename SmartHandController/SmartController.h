@@ -27,7 +27,6 @@ private:
   bool sleepDisplay = false;
   bool lowContrast = false;
   uint8_t maxContrast = 255;
-  bool wifiOn = false;
   bool powerCylceRequired = false;
   bool buttonCommand = false;
   bool Move[4] = { false, false, false, false };
@@ -88,6 +87,7 @@ private:
   void menuDate();
   void menuLatitude();
   void menuLongitude();
+  //void menuAltitude();
   void menuLimits();
   void menuWifi();
   void menuHorizon();
@@ -102,6 +102,7 @@ private:
   bool menuSetMicro(const uint8_t &axis);
   bool menuSetLowCurrent(const uint8_t &axis);
   bool menuSetHighCurrent(const uint8_t &axis);
+  void DisplayMountSettings();
   void DisplayMotorSettings(const uint8_t &axis);
   void DisplayMessage(const char* txt1, const char* txt2 = NULL, int duration = 0);
   void DisplayLongMessage(const char* txt1, const char* txt2 = NULL, const char* txt3 = NULL, const char* txt4 = NULL, int duration = 0);
