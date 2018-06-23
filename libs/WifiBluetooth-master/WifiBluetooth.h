@@ -83,7 +83,7 @@ extern const char* html_ajax_active;
 class wifibluetooth
 {
   enum Responding { R_NONE, R_ONE, R_BOOL, R_STRING };
-
+  static bool wifiOn;
   static MountStatus mountStatus;
   //Encoders encoders;
   static int WebTimeout; 
@@ -113,7 +113,7 @@ class wifibluetooth
 
   static ESP8266WebServer server;
 
-  static WiFiServer* cmdSvr;
+  static WiFiServer cmdSvr;
   static WiFiClient cmdSvrClient;
   static const char* HighSpeedCommsStr(long baud);
   static void processConfigurationGet();
@@ -133,6 +133,7 @@ class wifibluetooth
   static void handleWifi();
   static void handleNotFound();
   static void processWifiGet();
+
 
   static bool sendCommand(const char command[], char response[], Responding responding = R_STRING);
   static char serialRecvFlush();
@@ -164,6 +165,8 @@ class wifibluetooth
   // read 4 byte long from EEPROM at position i (4 bytes)
   static long EEPROM_readLong(int i);
 public:
+  static bool isWifiOn();
+  static void turnWifiOn(bool turnOn);
   static void setup();
   static void update();
 };

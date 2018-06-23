@@ -61,3 +61,5 @@ TeenAstoMainUnit/OnStep/OnStep.vcxproj.filters
 TeenAstoMainUnit/OnStep/OnStep.vcxproj
 TeenAstoMainUnit/OnStep/OnStep.vcxproj
 TeenAstoMainUnit/OnStep/OnStep.vcxproj
+libs/WifiBluetooth-master/WifiBluetooth-master.vcxitems
+libs/WifiBluetooth-master/vs-readme.txt

@@ -78,7 +78,7 @@ const char* html_ajax_active =
 "}"
 "}\n"
 "</script>\n";
-
+bool wifibluetooth::wifiOn = true;
 
 int wifibluetooth::WebTimeout = TIMEOUT_WEB;
 int wifibluetooth::CmdTimeout = TIMEOUT_CMD;
@@ -106,7 +106,7 @@ IPAddress wifibluetooth::wifi_ap_sn = IPAddress(255, 255, 255, 0);
 
 MountStatus wifibluetooth::mountStatus;
 ESP8266WebServer wifibluetooth::server;
-WiFiServer* wifibluetooth::cmdSvr = NULL;
+WiFiServer wifibluetooth::cmdSvr = WiFiServer(9999);
 WiFiClient wifibluetooth::cmdSvrClient;
 
 // -----------------------------------------------------------------------------------
@@ -211,8 +211,6 @@ void wifibluetooth::handleNotFound()
 
 void wifibluetooth::setup()
 {
-  cmdSvr = new WiFiServer(9999);
-
 
 #ifdef LED_PIN
   pinMode(LED_PIN, OUTPUT);
@@ -220,7 +218,7 @@ void wifibluetooth::setup()
   EEPROM.begin(1024);
 
   // EEPROM Init
-  if ((EEPROM_readInt(0) != 8265) || (EEPROM_readInt(2) != 0)) {
+  if ((EEPROM_readInt(0) != 8266) || (EEPROM_readInt(2) != 0)) {
     EEPROM_writeInt(0, 8266);
     EEPROM_writeInt(2, 0);
 
@@ -230,6 +228,7 @@ void wifibluetooth::setup()
 
     EEPROM_writeInt(10, (int)WebTimeout);
     EEPROM_writeInt(12, (int)CmdTimeout);
+    EEPROM.write(14, wifiOn);
 
     EEPROM_writeString(100, wifi_sta_ssid);
     EEPROM_writeString(150, wifi_sta_pwd);
@@ -253,6 +252,7 @@ void wifibluetooth::setup()
 
     WebTimeout = EEPROM_readInt(10);
     CmdTimeout = EEPROM_readInt(12);
+    wifiOn = EEPROM.read(14);
 
     EEPROM_readString(100, wifi_sta_ssid);
     EEPROM_readString(150, wifi_sta_pwd);
@@ -411,8 +411,8 @@ Again:
 
   server.onNotFound(handleNotFound);
 
-  cmdSvr->begin();
-  cmdSvr->setNoDelay(true);
+  cmdSvr.begin();
+  cmdSvr.setNoDelay(true);
   server.begin();
 
 #ifdef DEBUG_ON
@@ -432,9 +432,9 @@ void wifibluetooth::update()
   if (cmdSvrClient && ((long)(clientTime - millis()) < 0)) cmdSvrClient.stop();
 
   // new client
-  if (!cmdSvrClient && (cmdSvr->hasClient())) {
+  if (!cmdSvrClient && (cmdSvr.hasClient())) {
     // find free/disconnected spot
-    cmdSvrClient = cmdSvr->available();
+    cmdSvrClient = cmdSvr.available();
     clientTime = millis() + 2000UL;
   }
 
@@ -467,3 +467,13 @@ void wifibluetooth::update()
 
 }
 
+bool wifibluetooth::isWifiOn()
+{
+  return wifiOn;
+}
+void wifibluetooth::turnWifiOn(bool turnOn)
+{
+  wifiOn = turnOn;
+  EEPROM.write(14, turnOn);
+  EEPROM.commit();
+}
