@@ -1392,7 +1392,7 @@ void SmartHandController::menuPredefinedMount()
   current_selection_L3 = 1;
   while (current_selection_L3 != 0)
   {
-    const char *string_list_Mount = "Alt Mount\n""Fornax\n""Losmandy\n""Sideres85\n""Sky-Watcher\n""Takahashi\n""Vixen";
+    const char *string_list_Mount = "Alt Mount\n""Fornax\n""Knopf\n""Losmandy\n""Sideres85\n""Sky-Watcher\n""Takahashi\n""Vixen";
     current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, "Mount", current_selection_L3, string_list_Mount);
     switch (current_selection_L3)
     {
@@ -1403,17 +1403,19 @@ void SmartHandController::menuPredefinedMount()
       menuFornax();
       break;
     case 3:
+      menuKnopf();
+    case 4:
       menuLosmandy();
       break;
-    case 4:
+    case 5:
       menuSideres();
       break;
-    case 5:
-      break;
     case 6:
-      menuTakahashi();
       break;
     case 7:
+      menuTakahashi();
+      break;
+    case 8:
       menuVixen();
       break;
     default:
@@ -1494,6 +1496,33 @@ void SmartHandController::menuFornax()
       case 1:
       case 2:
         writeDefaultMount(true, 864, true, 864, 200, 80, 120);
+        break;
+      }
+    }
+  }
+}
+void SmartHandController::menuKnopf()
+{
+  current_selection_L4 = 1;
+  while (current_selection_L4 != 0)
+  {
+    const char *string_list_Mount = "MK70\n""MK70S\n""MK100S\n""MK140S";
+    current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Knopf Mount", current_selection_L4, string_list_Mount);
+    if (current_selection_L4 > 0)
+    {
+      switch (current_selection_L4)
+      {
+      case 1:
+        writeDefaultMount(true, 192 * 16, true, 192 * 16, 200, 100, 150);
+        break;
+      case 2:
+        writeDefaultMount(true, 192 * 8, true, 192 * 8, 200, 100, 150);
+        break;
+      case 3:
+        writeDefaultMount(true, 280 * 16, true, 280 * 16, 200, 100, 160);
+        break;
+      case 4:
+        writeDefaultMount(true, 350 * 16, true, 350 * 16, 200, 120, 160);
         break;
       }
     }

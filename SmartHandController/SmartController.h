@@ -71,6 +71,7 @@ private:
   void menuAltMount();
   void menuSideres();
   void menuFornax();
+  void menuKnopf();
   void menuLosmandy();
   void menuTakahashi();
   void menuVixen();
