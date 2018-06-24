@@ -3,6 +3,12 @@
 #include "SmartController.h"
 #include "LX200.h"
 
+#ifdef WIFI_ON
+#define FIRST_ADRESS 15
+#else
+#define FIRST_ADRESS 15
+#endif
+
 static char* BreakRC[4] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#" };
 static char* RC[4] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#" };
 
@@ -284,7 +290,19 @@ void SmartHandController::setup(const char version[], const int pin[7],const boo
   drawIntro();
   buttonPad.setup( pin, active);
   tickButtons();
-
+  displayT1 = EEPROM.read(FIRST_ADRESS);
+  if (displayT1 < 3)
+  {
+    displayT1 = 3;
+    EEPROM.write(FIRST_ADRESS, displayT1);
+    EEPROM.commit();
+  }
+  if (displayT2 < displayT1)
+  {
+    displayT2 = displayT1;
+    EEPROM.write(FIRST_ADRESS+1, displayT2);
+    EEPROM.commit();
+  }
 #ifdef DEBUG_ON
   DebugSer.begin(9600);
   delay(1000);
@@ -335,13 +353,13 @@ void SmartHandController::update()
   {
     return;
   }
-  else if (top - time_last_action > 120000)
+  else if ((top - time_last_action)/10000 > displayT2)
   {
     display->sleepOn();
     sleepDisplay = true;
     return;
   }
-  else if (top - time_last_action > 30000 && !lowContrast)
+  else if ((top - time_last_action)/10000 > displayT1 && !lowContrast)
   {
     display->setContrast(0);
     lowContrast = true;
@@ -1866,7 +1884,7 @@ void SmartHandController::menuUTCTime()
 
 void SmartHandController::menuDisplay()
 {
-  const char *string_list_Display = "Turn Off\nContrast";
+  const char *string_list_Display = "Turn Off\nContrast\nSleep\nDeepSleep\n";
   current_selection_L2 = 1;
   while (!exitMenu)
   {
@@ -1884,6 +1902,25 @@ void SmartHandController::menuDisplay()
     case 2:
       menuContrast();
       break;
+    case 3:
+    {
+      if (display->UserInterfaceInputValueInteger(&buttonPad, "Low Contrast", "after ", &displayT1, 3, 255, 3, "0 sec"))
+      {
+        EEPROM.write(FIRST_ADRESS, displayT1);
+        EEPROM.commit();
+      }
+      break;
+    }
+    case 4:
+    {
+      if (display->UserInterfaceInputValueInteger(&buttonPad, "Turn display off", "after ", &displayT2, displayT1, 255, 3, "0 sec"))
+      {
+        EEPROM.write(FIRST_ADRESS+1, displayT2);
+        EEPROM.commit();
+      }
+      break;
+    }
+      
     default:
       break;
     }

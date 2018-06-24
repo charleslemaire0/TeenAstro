@@ -30,7 +30,8 @@ private:
   bool powerCylceRequired = false;
   bool buttonCommand = false;
   bool Move[4] = { false, false, false, false };
-
+  uint8_t displayT1;
+  uint8_t displayT2;
   unsigned long lastpageupdate = millis();
   unsigned long time_last_action = millis();
 
