@@ -739,7 +739,15 @@ void Command_R()
     commandError = true;
     return;
   }
-  enableGuideRate(i,false);
+  if (trackingState != TrackingMoveTo && GuidingState == GuidingOFF)
+  {
+    enableGuideRate(i, false);
+  }
+  else
+  {
+    commandError = true;
+  }
+
   quietReply = true;
 }
 
