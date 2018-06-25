@@ -297,6 +297,7 @@ void SmartHandController::setup(const char version[], const int pin[7],const boo
     EEPROM.write(FIRST_ADRESS, displayT1);
     EEPROM.commit();
   }
+  displayT2 = EEPROM.read(FIRST_ADRESS+1);
   if (displayT2 < displayT1)
   {
     displayT2 = displayT1;
@@ -1962,11 +1963,9 @@ void SmartHandController::menuDate()
 void SmartHandController::menuLatitude()
 {
   char out[20];
-  if (DisplayMessageLX200(GetLX200(":Gt#", out)))
+  int degree, minute;
+  if (DisplayMessageLX200(GetLatitudeLX200(degree, minute)))
   {
-    char* pEnd;
-    int degree = (int)strtol(&out[0], &pEnd, 10);
-    int minute = (int)strtol(&out[4], &pEnd, 10);
     long angle = degree * 60;
     degree > 0 ? angle += minute : angle -= minute;
     angle *= 60;
@@ -1984,11 +1983,9 @@ void SmartHandController::menuLatitude()
 void SmartHandController::menuLongitude()
 {
   char out[20];
-  if (DisplayMessageLX200(GetLX200(":Gg#", out)))
+  int degree, minute;
+  if (DisplayMessageLX200(GetLongitudeLX200(degree, minute)))
   {
-    char* pEnd;
-    int degree = (int)strtol(&out[0], &pEnd, 10);
-    int minute = (int)strtol(&out[5], &pEnd, 10);
     long angle = degree * 60;
     degree > 0 ? angle += minute : angle -= minute;
     angle *= 60;

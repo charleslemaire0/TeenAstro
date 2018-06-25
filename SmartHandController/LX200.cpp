@@ -263,6 +263,32 @@ LX200RETURN GetSiteLX200(int& value)
   return LX200GETVALUEFAILED;
 }
 
+LX200RETURN GetLatitudeLX200(int& degree, int& minute)
+{
+  char out[20];
+  if (GetLX200(":Gt#", out) == LX200VALUEGET)
+  {
+    char* pEnd;
+     degree = (int)strtol(&out[0], &pEnd, 10);
+     minute = (int)strtol(&out[4], &pEnd, 10);
+    return LX200VALUEGET;
+  }
+  return LX200GETVALUEFAILED;
+}
+
+LX200RETURN GetLongitudeLX200(int& degree, int& minute)
+{
+  char out[20];
+  if (GetLX200(":Gg#", out) == LX200VALUEGET)
+  {
+    char* pEnd;
+    degree = (int)strtol(&out[0], &pEnd, 10);
+    minute = (int)strtol(&out[5], &pEnd, 10);
+    return LX200VALUEGET;
+  }
+  return LX200GETVALUEFAILED;
+}
+
 void SetSiteLX200(int& value)
 {
   char out[20];
@@ -484,7 +510,7 @@ LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short objSys)
 {
   char out[20];
   unsigned int day, month, year, hour, minute, second;
-
+  int degreeLat, minuteLat, degreeLong, minuteLong;
   if (GetDateLX200(day, month, year) == LX200GETVALUEFAILED)
   {
     return LX200GETVALUEFAILED;
@@ -493,7 +519,20 @@ LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short objSys)
   {
     return LX200GETVALUEFAILED;
   }
+  if (GetLongitudeLX200(degreeLong, minuteLong) == LX200GETVALUEFAILED)
+  {
+    return LX200GETVALUEFAILED;
+  }
+  if (GetLatitudeLX200(degreeLat, minuteLat) == LX200GETVALUEFAILED)
+  {
+    return LX200GETVALUEFAILED;
+  }
+
+
+
   Ephemeris Eph;
+  Eph.flipLongitude(true);
+  Eph.setLocationOnEarth(degreeLat, minuteLat, 0, degreeLong, minuteLong, 0);
   SolarSystemObjectIndex objI = static_cast<SolarSystemObjectIndex>(objSys);
   SolarSystemObject obj = Eph.solarSystemObjectAtDateAndTime(objI, day, month, year, hour, minute, second);
   return SyncGotoLX200(sync, obj.equaCoordinates.ra, obj.equaCoordinates.dec);

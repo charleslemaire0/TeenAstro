@@ -16,6 +16,8 @@ LX200RETURN GetTimeLX200(long &value);
 LX200RETURN SetLX200(char* command);
 LX200RETURN SetTimeLX200(long &value);
 LX200RETURN GetSiteLX200(int &value);
+LX200RETURN GetLatitudeLX200(int& degree, int& minute);
+LX200RETURN GetLongitudeLX200(int& degree, int& minute);
 void SetSiteLX200(int &value);
 LX200RETURN Move2TargetLX200();
 LX200RETURN SetTargetRaLX200(uint8_t& vr1, uint8_t& vr2, uint8_t& vr3);
