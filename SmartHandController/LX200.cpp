@@ -219,10 +219,6 @@ LX200RETURN GetTimeLX200(unsigned int &hour, unsigned int &minute, unsigned int 
   if (GetLX200(":GL#", out) == LX200GETVALUEFAILED)
     return LX200GETVALUEFAILED;
   char2RA(out, hour, minute, second);
-  long value = hour * 60 + minute;
-  value *= 60;
-  value += second;
-  char2RA(out, hour, minute, second);
   return LX200VALUEGET;
 }
 
@@ -527,7 +523,7 @@ LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short objSys)
   {
     return LX200GETVALUEFAILED;
   }
-
+  
 
 
   Ephemeris Eph;
