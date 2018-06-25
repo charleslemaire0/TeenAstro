@@ -1162,10 +1162,7 @@ void SmartHandController::menuSolarSys(bool sync)
       return;
     }
     current_selection_SolarSys > 3 ? current_selection_SolarSys : current_selection_SolarSys--;
-    if (current_selection_SolarSys != 0)
-      exitMenu = DisplayMessageLX200(SyncGotoPlanetLX200(sync, current_selection_SolarSys), false);
-    else
-      return;
+    exitMenu = DisplayMessageLX200(SyncGotoPlanetLX200(sync, current_selection_SolarSys), false);
   }
 }
 
