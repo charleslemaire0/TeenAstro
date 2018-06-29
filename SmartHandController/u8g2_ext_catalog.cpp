@@ -109,8 +109,8 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, unsigned shor
   {
     uint8_t step0 = u8g2_GetUTF8Width(u8g2, "dec ");
     char line[16];
-    uint8_t vr1, vr2, vr3, vd2;
-    short vd1;
+    uint8_t vr1, vr2, vr3, vd1, vd2;
+    bool pd;
     cat_elements = 291;
     cat_letter = Star_letter[idx];
     cat_const = Star_constellation[idx];
@@ -130,12 +130,12 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, unsigned shor
     ext_drawRA(u8g2, x, y, txt1, txt2, txt3);
     y += line_height;
     x = 0;
-    getcatdms(Star_dec[idx], vd1, vd2);
-    memcpy(txt1, u8x8_u8toa((uint8_t)abs(vd1), 2), 3);
+    getcatdms(Star_dec[idx], vd1, vd2, pd);
+    memcpy(txt1, u8x8_u8toa(vd1, 2), 3);
     memcpy(txt2, u8x8_u8toa(vd2, 2), 3);
     u8g2_DrawUTF8(u8g2, x, y, "dec ");
     x += step0;
-    ext_drawDec(u8g2, x, y, vd1 < 0 ? "-" : "+", txt1, txt2, "00");
+    ext_drawDec(u8g2, x, y, pd ? "+" : "-", txt1, txt2, "00");
     return line_height;
   }
 

@@ -30,7 +30,7 @@ extern const uint8_p Star_constellation[292] PROGMEM;
 extern const uint16_p Star_ra[292] PROGMEM;
 extern const int16_p Star_dec[292] PROGMEM;
 
-void getcatdms(const short& v, short& v1, uint8_t& v2);
+void getcatdms(const short& v, uint8_t& v1, uint8_t& v2, bool& pv);
 void getcatdf(const short& v, float& v1);
 void getcathms(const unsigned short& v, uint8_t& v1, uint8_t& v2, uint8_t& v3);
 void getcathf(const unsigned short& v, float& v1);
