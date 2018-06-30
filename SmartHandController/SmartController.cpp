@@ -276,7 +276,7 @@ void SmartHandController::setup(const char version[], const int pin[7],const boo
   if (strlen(version)<=19) strcpy(_version,version);
   
   telInfo.lastState = 0;
-
+  maxContrast = EEPROM.read(FIRST_ADRESS + 2);
 
   //choose a 128x64 display supported by U8G2lib (if not listed below there are many many others in u8g2 library example Sketches)
   //U8G2_SH1106_128X64_NONAME_1_HW_I2C display(U8G2_R0);
@@ -1318,7 +1318,7 @@ void SmartHandController::menuSettings()
   current_selection_L1 = 1;
   while (!exitMenu)
   {
-    const char *string_list_SettingsL1 = "Display\n""Alignment\n""Date\n""Time\n""Mount\n""Site\n""Limits\n""Wifi";
+    const char *string_list_SettingsL1 = "Display\n""Alignment\n""Date\n""Time\n""Set Park\n""Mount\n""Site\n""Limits\n""Wifi";
     current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, "Settings", current_selection_L1, string_list_SettingsL1);
     switch (current_selection_L1)
     {
@@ -1337,15 +1337,18 @@ void SmartHandController::menuSettings()
       menuUTCTime();
       break;
     case 5:
-      menuMount();
+      DisplayMessageLX200(SetLX200(":hQ#"),false);
       break;
     case 6:
-      menuSite();
+      menuMount();
       break;
     case 7:
-      menuLimits();
+      menuSite();
       break;
     case 8:
+      menuLimits();
+      break;
+    case 9:
       menuWifi();
     default:
       break;
@@ -1643,7 +1646,7 @@ void SmartHandController::menuVixen()
   current_selection_L4 = 1;
   while (current_selection_L4 != 0)
   {
-    const char *string_list_Mount = "SHINX SECM3\n""old ALTLUX\n""ATLUX ESCAP\n""SP-DX\n""GP-E\n""GP-2\n""GP-DX\n""GP-D2";
+    const char *string_list_Mount = "SPHINX SECM3\n""old ALTLUX\n""ATLUX ESCAP\n""SP-DX\n""GP-E\n""GP-2\n""GP-DX\n""GP-D2";
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Vixen Mount", current_selection_L4, string_list_Mount);
     int gearbox, steprot, teeth, currentL, currentH;
     int totgear1, totgear2;
@@ -1824,6 +1827,7 @@ void SmartHandController::menuGuideRate()
   }
 }
 
+
 void SmartHandController::menuSite()
 {
   current_selection_L2 = 1;
@@ -1934,8 +1938,8 @@ void SmartHandController::menuContrast()
   if (current_selection_L3 > 0)
   {
     maxContrast = (uint)63 * (current_selection_L3 - 1);
-    //EEPROM.write(14, maxContrast);
-    //EEPROM.commit();
+    EEPROM.write(FIRST_ADRESS + 2, maxContrast);
+    EEPROM.commit();
     display->setContrast(maxContrast);
   }
 }
