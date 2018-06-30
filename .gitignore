@@ -63,3 +63,10 @@ TeenAstoMainUnit/OnStep/OnStep.vcxproj
 TeenAstoMainUnit/OnStep/OnStep.vcxproj
 libs/WifiBluetooth-master/WifiBluetooth-master.vcxitems
 libs/WifiBluetooth-master/vs-readme.txt
+TeenAstroFocuser/.vs/TeenAstroFocuser/v14/.suo
+TeenAstroFocuser/TeenAstroFocuser.vcxproj
+TeenAstroFocuser/TeenAstroFocuser.vcxproj.filters
+TeenAstroFocuser/__vm/.TeenAstroFocuser.vsarduino.h
+TeenAstroFocuser/TeenAstroFocuser.sln
+TeenAstroFocuser/Release/TeenAstroFocuser.ino.hex
+TeenAstroFocuser/Release/TeenAstroFocuser.hex

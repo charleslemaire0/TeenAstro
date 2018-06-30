@@ -5,6 +5,7 @@
 #include "ConfigStepper.h"
 #include "global.h"
 #include <BasicStepperDriver.h>
+#include "DS1302.h"
 
 const int stepsPerMotorRevolution = 200;  // change this to fit the number of steps per revolution
 BasicStepperDriver myStepper(stepsPerMotorRevolution, DirPin, StepPin);
