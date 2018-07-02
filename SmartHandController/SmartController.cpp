@@ -334,20 +334,14 @@ void SmartHandController::update()
   unsigned long top = millis();
   if (buttonPressed() || telInfo.connected == false)
   {
+    display->setContrast(maxContrast);
+    lowContrast = false;
+    time_last_action = millis();
     if (sleepDisplay)
     {
-      display->setContrast(maxContrast);
       display->sleepOff();
       sleepDisplay = false;
-      lowContrast = false;
-      time_last_action = millis();
       return;
-    }
-    if (lowContrast)
-    {
-      display->setContrast(maxContrast);
-      lowContrast = false;
-      time_last_action = top;
     }
   }
   else if (sleepDisplay)
