@@ -291,7 +291,7 @@ bool Pad::buttonPressed()
 {
   return m_buttonPressed;
 }
-
+#ifdef WIFI_ON
 bool Pad::isWifiOn()
 {
   return m_wbt.isWifiOn();
@@ -301,3 +301,4 @@ bool Pad::turnWifiOn(bool turnOn)
 {
   m_wbt.turnWifiOn(turnOn);
 }
+#endif

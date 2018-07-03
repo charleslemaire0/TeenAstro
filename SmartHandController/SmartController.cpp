@@ -4,9 +4,13 @@
 #include "LX200.h"
 
 #ifdef WIFI_ON
-#define FIRST_ADRESS 15
+#define ADRESS_T1 15
+#define ADRESS_T2 16
+#define ADRESS_Contrast 17
 #else
-#define FIRST_ADRESS 15
+#define ADRESS_T1 15
+#define ADRESS_T2 16
+#define ADRESS_Contrast 17
 #endif
 
 static char* BreakRC[4] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#" };
@@ -276,7 +280,6 @@ void SmartHandController::setup(const char version[], const int pin[7],const boo
   if (strlen(version)<=19) strcpy(_version,version);
   
   telInfo.lastState = 0;
-  maxContrast = EEPROM.read(FIRST_ADRESS + 2);
 
   //choose a 128x64 display supported by U8G2lib (if not listed below there are many many others in u8g2 library example Sketches)
   //U8G2_SH1106_128X64_NONAME_1_HW_I2C display(U8G2_R0);
@@ -290,20 +293,26 @@ void SmartHandController::setup(const char version[], const int pin[7],const boo
   drawIntro();
   buttonPad.setup( pin, active);
   tickButtons();
-  displayT1 = EEPROM.read(FIRST_ADRESS);
+  if (EEPROM.length() == 0)
+    EEPROM.begin(1024);
+
+  maxContrast = EEPROM.read(ADRESS_Contrast);
+  display->setContrast(maxContrast);
+  displayT1 = EEPROM.read(ADRESS_T1);
   if (displayT1 < 3)
   {
     displayT1 = 3;
-    EEPROM.write(FIRST_ADRESS, displayT1);
+    EEPROM.write(ADRESS_T1, displayT1);
     EEPROM.commit();
   }
-  displayT2 = EEPROM.read(FIRST_ADRESS+1);
+  displayT2 = EEPROM.read(ADRESS_T2);
   if (displayT2 < displayT1)
   {
     displayT2 = displayT1;
-    EEPROM.write(FIRST_ADRESS+1, displayT2);
+    EEPROM.write(ADRESS_T2, displayT2);
     EEPROM.commit();
   }
+
 #ifdef DEBUG_ON
   DebugSer.begin(9600);
   delay(1000);
@@ -332,17 +341,18 @@ void SmartHandController::update()
 {
   tickButtons();
   unsigned long top = millis();
+
   if (buttonPressed() || telInfo.connected == false)
-  {
-    display->setContrast(maxContrast);
-    lowContrast = false;
-    time_last_action = millis();
+  { 
     if (sleepDisplay)
     {
       display->sleepOff();
       sleepDisplay = false;
       return;
     }
+    display->setContrast(maxContrast);
+    lowContrast = false;
+    time_last_action = millis();
   }
   else if (sleepDisplay)
   {
@@ -1312,7 +1322,11 @@ void SmartHandController::menuSettings()
   current_selection_L1 = 1;
   while (!exitMenu)
   {
-    const char *string_list_SettingsL1 = "Display\n""Alignment\n""Date\n""Time\n""Set Park\n""Mount\n""Site\n""Limits\n""Wifi";
+    const char *string_list_SettingsL1 = "Display\n""Alignment\n""Date\n""Time\n""Set Park\n""Mount\n""Site\n""Limits\n"
+#ifdef WIFI_ON
+      "Wifi"
+#endif
+    ;
     current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, "Settings", current_selection_L1, string_list_SettingsL1);
     switch (current_selection_L1)
     {
@@ -1342,8 +1356,12 @@ void SmartHandController::menuSettings()
     case 8:
       menuLimits();
       break;
+#ifdef WIFI_ON
     case 9:
       menuWifi();
+      break;
+#endif
+
     default:
       break;
     }
@@ -1902,7 +1920,7 @@ void SmartHandController::menuDisplay()
     {
       if (display->UserInterfaceInputValueInteger(&buttonPad, "Low Contrast", "after ", &displayT1, 3, 255, 3, "0 sec"))
       {
-        EEPROM.write(FIRST_ADRESS, displayT1);
+        EEPROM.write(ADRESS_T1, displayT1);
         EEPROM.commit();
       }
       break;
@@ -1911,7 +1929,7 @@ void SmartHandController::menuDisplay()
     {
       if (display->UserInterfaceInputValueInteger(&buttonPad, "Turn display off", "after ", &displayT2, displayT1, 255, 3, "0 sec"))
       {
-        EEPROM.write(FIRST_ADRESS+1, displayT2);
+        EEPROM.write(ADRESS_T2, displayT2);
         EEPROM.commit();
       }
       break;
@@ -1927,15 +1945,30 @@ void SmartHandController::menuContrast()
 {
   const char *string_list_Display = "Min\nLow\nHigh\nMax";
   current_selection_L3 = 1;
-
+ 
   current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, "Set Contrast", current_selection_L3, string_list_Display);
-  if (current_selection_L3 > 0)
+  switch (current_selection_L3)
   {
-    maxContrast = (uint)63 * (current_selection_L3 - 1);
-    EEPROM.write(FIRST_ADRESS + 2, maxContrast);
-    EEPROM.commit();
-    display->setContrast(maxContrast);
+  case 0:
+    return;
+  case 1:
+    maxContrast = 0;
+    break;
+  case 2:
+    maxContrast = 63;
+    break;
+  case 3: 
+    maxContrast = 127;
+    break;
+  case 4:
+    maxContrast = 255;
+    break;
+  default:
+    maxContrast = 255;
   }
+  EEPROM.write(ADRESS_Contrast, maxContrast);
+  EEPROM.commit();
+  display->setContrast(maxContrast);
 }
 
 void SmartHandController::menuDate()
@@ -2034,12 +2067,12 @@ void SmartHandController::menuLimits()
       menuUnderPole();
       break;
     default:
-    
       break;
     }
   }
 }
 
+#ifdef WIFI_ON
 void SmartHandController::menuWifi()
 {
   const char *string_list = buttonPad.isWifiOn() ? "Wifi off\nShow Password\nReset to factory" : "Wifi on\nShow Password\nReset to factory";
@@ -2068,6 +2101,7 @@ void SmartHandController::menuWifi()
   }
   
 }
+#endif
 
 void SmartHandController::menuHorizon()
 {

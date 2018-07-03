@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include <EEPROM.h>
 #include "Pad.h"
 #include "u8g2_ext.h"
 #include "Telescope.h"
@@ -26,12 +27,13 @@ private:
   void updateMainDisplay( u8g2_uint_t page);
   bool sleepDisplay = false;
   bool lowContrast = false;
-  uint8_t maxContrast = 255;
+
   bool powerCylceRequired = false;
   bool buttonCommand = false;
   bool Move[4] = { false, false, false, false };
   uint8_t displayT1;
   uint8_t displayT2;
+  uint8_t maxContrast;
   unsigned long lastpageupdate = millis();
   unsigned long time_last_action = millis();
 

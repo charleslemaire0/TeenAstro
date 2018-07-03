@@ -10,7 +10,7 @@
   #ifdef ARDUINO_ESP8266_WEMOS_D1MINI
     // the serial interface to/from OnStep
     #define Ser Serial
-    #define SERIAL_BAUD_DEFAULT 9600
+    #define SERIAL_BAUD_DEFAULT 57600
     #define TIMEOUT_CMD 100         // Default=100 (0.1 seconds)
   
     // the display, SSD1306 or SH1106
