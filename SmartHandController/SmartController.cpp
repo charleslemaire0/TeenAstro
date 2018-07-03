@@ -992,6 +992,7 @@ void SmartHandController::DisplayMotorSettings(const uint8_t &axis)
 
 void SmartHandController::menuMain()
 {
+  buttonPad.setMenuMode();
   current_selection_L0 = 1;
   while (!exitMenu)
   {
@@ -1045,10 +1046,12 @@ void SmartHandController::menuMain()
       }
     }
   }
+  buttonPad.setControlerMode();
 }
 
 void SmartHandController::menuSpeedRate()
 {
+  buttonPad.setMenuMode();
   char * string_list_Speed = "Guide\n0.5x\n1.0x\n2.0x\n4.0x\n16.0x\n32.0x\n64.0x\n0.5 Max\nMax";
   current_selection_speed = display->UserInterfaceSelectionList(&buttonPad, "Set Speed", current_selection_speed, string_list_Speed);
   if (current_selection_speed > 0)
@@ -1057,6 +1060,7 @@ void SmartHandController::menuSpeedRate()
     cmd[2] = '0' + current_selection_speed - 1;
     SetLX200(cmd);
   }
+  buttonPad.setControlerMode();
 }
 
 void SmartHandController::menuTrack()

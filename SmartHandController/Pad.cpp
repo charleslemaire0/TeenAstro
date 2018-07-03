@@ -238,24 +238,23 @@ void Pad::attachEvent()
 void Pad::setup(const int pin[7], const bool active[7])
 {
   //For Shift button
-  m_buttons[0] = new OneButton(pin[0], active[0]);
+
+  for (int k = 0; k < 7; k++)
+  {
+    m_buttons[k] = new OneButton(pin[k], active[k]);
+  }
   m_buttons[0]->setClickTicks(300);
   m_buttons[0]->setDebounceTicks(50);
   m_buttons[0]->setPressTicks(300);
   //For other buttons
-  for (int k = 1; k < 7; k++)
-  {
-    m_buttons[k] = new OneButton(pin[k], active[k]);
-    m_buttons[k]->setClickTicks(50);
-    m_buttons[k]->setDebounceTicks(5);
-    m_buttons[k]->setPressTicks(300);
-  }
+  setControlerMode();
   attachEvent();
 
 #ifdef WIFI_ON
   m_wbt.setup();
 #endif
 }
+
 void Pad::tickButtons()
 {
   delay(1);
@@ -285,6 +284,26 @@ void Pad::tickButtons()
 #ifdef WIFI_ON
   m_wbt.update();
 #endif
+}
+
+void Pad::setMenuMode()
+{
+  for (int k = 1; k < 7; k++)
+  {
+    m_buttons[k]->setClickTicks(50);
+    m_buttons[k]->setDebounceTicks(5);
+    m_buttons[k]->setPressTicks(300);
+  }
+}
+
+void Pad::setControlerMode()
+{
+  for (int k = 1; k < 7; k++)
+  {
+    m_buttons[k]->setClickTicks(0);
+    m_buttons[k]->setDebounceTicks(0);
+    m_buttons[k]->setPressTicks(5);
+  }
 }
 
 bool Pad::buttonPressed()
