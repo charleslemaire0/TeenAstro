@@ -989,7 +989,6 @@ void SmartHandController::DisplayMotorSettings(const uint8_t &axis)
   DisplayLongMessage(line1, NULL, line3, line4, -1);
 }
 
-
 void SmartHandController::menuMain()
 {
   buttonPad.setMenuMode();
@@ -1006,10 +1005,11 @@ void SmartHandController::menuMain()
       switch (current_selection_L0)
       {
       case 0:
-        return;
+        exitMenu = true;
+        break;
       case 1:
         SetLX200(":hR#");
-        return;
+        exitMenu = true;
         break;
       case 2:
         menuSettings();
@@ -1025,7 +1025,8 @@ void SmartHandController::menuMain()
       switch (current_selection_L0)
       {
       case 0:
-        return;
+        exitMenu = true;
+        break;
       case 1:
         menuSyncGoto(false);
         break;
@@ -1297,13 +1298,15 @@ void SmartHandController::menuStar(bool sync)
 
 bool SmartHandController::SelectStarAlign()
 {
+  buttonPad.setMenuMode();
+  bool ok = false;
   telInfo.alignSelectedStar = display->UserInterfaceCatalog(&buttonPad, "select Star", telInfo.alignSelectedStar, STAR);
   if (telInfo.alignSelectedStar != 0)
   {
-    bool ok = DisplayMessageLX200(SyncSelectedStarLX200(telInfo.alignSelectedStar),false);
-    return ok;
+    ok = DisplayMessageLX200(SyncSelectedStarLX200(telInfo.alignSelectedStar),false);
   }
-  return false;
+  buttonPad.setControlerMode();
+  return ok;
 }
 
 void SmartHandController::menuRADec(bool sync)

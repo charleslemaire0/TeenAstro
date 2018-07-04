@@ -300,8 +300,8 @@ void Pad::setControlerMode()
 {
   for (int k = 1; k < 7; k++)
   {
-    m_buttons[k]->setClickTicks(0);
-    m_buttons[k]->setDebounceTicks(0);
+    m_buttons[k]->setClickTicks(5);
+    m_buttons[k]->setDebounceTicks(5);
     m_buttons[k]->setPressTicks(5);
   }
 }
