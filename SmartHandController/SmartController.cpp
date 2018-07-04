@@ -344,15 +344,23 @@ void SmartHandController::update()
 
   if (buttonPressed() || telInfo.connected == false)
   { 
+    time_last_action = millis();
     if (sleepDisplay)
     {
+      display->setContrast(maxContrast);
       display->sleepOff();
       sleepDisplay = false;
+      lowContrast = false;
+      buttonPad.setControlerMode();
       return;
     }
-    display->setContrast(maxContrast);
-    lowContrast = false;
-    time_last_action = millis();
+    if (lowContrast)
+    {
+      lowContrast = false;
+      display->setContrast(maxContrast);
+      buttonPad.setControlerMode();
+      return;
+    }
   }
   else if (sleepDisplay)
   {
@@ -362,12 +370,14 @@ void SmartHandController::update()
   {
     display->sleepOn();
     sleepDisplay = true;
+    buttonPad.setMenuMode();
     return;
   }
   else if ((top - time_last_action)/10000 > displayT1 && !lowContrast)
   {
     display->setContrast(0);
     lowContrast = true;
+    buttonPad.setMenuMode();
     return;
   }
   if (powerCylceRequired)
@@ -1047,7 +1057,10 @@ void SmartHandController::menuMain()
       }
     }
   }
-  buttonPad.setControlerMode();
+  if (!sleepDisplay)
+  {
+    buttonPad.setControlerMode();
+  }
 }
 
 void SmartHandController::menuSpeedRate()
