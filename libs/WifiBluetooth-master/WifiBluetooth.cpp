@@ -270,7 +270,7 @@ void wifibluetooth::setup()
   }
 
 #ifndef DEBUG_ON
-  Ser.begin(SERIAL_BAUD_DEFAULT);
+  Ser.begin(SERIAL_BAUD);
 #ifdef SERIAL_SWAP_ON
   Ser.swap();
 #endif
@@ -288,13 +288,13 @@ Again:
 #ifdef LED_PIN
     digitalWrite(LED_PIN, HIGH);
 #endif
-    delay(500);
+    delay(100);
     Ser.flush();
     c = serialRecvFlush();
 #ifdef LED_PIN
     digitalWrite(LED_PIN, LOW);
 #endif
-    delay(500);
+    delay(100);
   }
 
   // safety net
@@ -334,7 +334,7 @@ Again:
 #ifdef SERIAL_SWAP_ON
       Ser.swap();
 #endif
-      delay(1000);
+      delay(100);
       goto Again;
     }
   }
