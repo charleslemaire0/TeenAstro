@@ -70,3 +70,7 @@ TeenAstroFocuser/__vm/.TeenAstroFocuser.vsarduino.h
 TeenAstroFocuser/TeenAstroFocuser.sln
 TeenAstroFocuser/Release/TeenAstroFocuser.ino.hex
 TeenAstroFocuser/Release/TeenAstroFocuser.hex
+TeenAstoMainUnit/OnStep/OnStep.vcxproj
+TeenAstoMainUnit/OnStep/OnStep.vcxproj
+TeenAstoMainUnit/OnStep/OnStep.vcxproj.filters
+*.sln
