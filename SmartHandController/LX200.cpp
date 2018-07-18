@@ -33,7 +33,6 @@ void char2DEC(char* txt, int& deg, unsigned int& min, unsigned int& sec)
   sec = (int)strtol(&txt[7], &pEnd, 10);
 }
 
-
 // this readBytesUntil() lets you know if the "character" was found
 byte readBytesUntil2(char character, char buffer[], int length, boolean* characterFound, long timeout) {
   unsigned long startTime = millis() + timeout;
@@ -54,12 +53,12 @@ bool readLX200Bytes(char* command, char* recvBuffer, unsigned long timeOutMs) {
   Ser.setTimeout(timeOutMs);
 
   // clear the read/write buffers
-  Ser.flush();
-  serialRecvFlush();
+  //Ser.flush();
+  //serialRecvFlush();
 
   // send the command
   Ser.print(command);
-
+  Ser.flush();
   boolean noResponse = false;
   boolean shortResponse = false;
   if ((command[0] == (char)6) && (command[1] == 0)) shortResponse = true;
@@ -89,6 +88,12 @@ bool readLX200Bytes(char* command, char* recvBuffer, unsigned long timeOutMs) {
     }
     if (command[1] == 'C') {
       if (strchr("S", command[2])) noResponse = true;
+    }
+    if (command[1] == 'F')
+    {
+      timeOutMs = 400;
+      if (strchr("+-*:GPS", command[2])) { noResponse = true; }
+      if (strchr("01234567W", command[2])) { shortResponse = true; Ser.setTimeout(timeOutMs); }
     }
     if (command[1] == 'h') {
       if (strchr("F", command[2])) noResponse = true;
@@ -125,9 +130,10 @@ bool readLX200Bytes(char* command, char* recvBuffer, unsigned long timeOutMs) {
       while (millis() - start < timeOutMs && (b != '#')) {
         if (Ser.available()) {
           b = Ser.read();
-          recvBuffer[recvBufferPos] = b; recvBufferPos++; if (recvBufferPos > 19) recvBufferPos = 19; recvBuffer[recvBufferPos] = 0;
+          recvBuffer[recvBufferPos] = b; recvBufferPos++; if (recvBufferPos > 50) recvBufferPos = 50; recvBuffer[recvBufferPos] = 0;
         }
       }
+      Ser.print(recvBuffer);
       return (recvBuffer[0] != 0);
     }
 }
@@ -202,7 +208,6 @@ LX200RETURN SyncGoParkLX200(bool sync)
       return LX200GOPARK;
   }
 }
-
 
 LX200RETURN GetLX200(char* command, char* output)
 {
@@ -446,8 +451,6 @@ LX200RETURN SyncGotoLX200(bool sync, float &Ra, float &Dec)
   return SyncGotoLX200(sync, vr1, vr2, vr3, vd1, vd2, vd3);
 }
 
-
-
 LX200RETURN GetDateLX200(unsigned int &day, unsigned int &month, unsigned int &year)
 {
   char out[20];
@@ -524,8 +527,6 @@ LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short objSys)
     return LX200GETVALUEFAILED;
   }
   
-
-
   Ephemeris Eph;
   Eph.flipLongitude(true);
   Eph.setLocationOnEarth(degreeLat, minuteLat, 0, degreeLong, minuteLong, 0);
@@ -682,4 +683,33 @@ LX200RETURN writeHighCurrLX200(const uint8_t &axis, const uint8_t &highCurr)
   sprintf(text, ":$CX%u#", highCurr);
   text[3] = axis == 1 ? 'R' : 'D';
   return SetLX200(text);
+}
+
+LX200RETURN readFocuser(unsigned int& startPosition,unsigned int& maxPosition,
+                        unsigned int& minSpeed, unsigned int& maxSpeed,
+                        unsigned int& cmdAcc, unsigned int& manAcc, unsigned int& manDec, bool& reverse )
+{
+  char out[50];
+  if (GetLX200(":F~#", out) == LX200VALUEGET)
+  {
+    Serial.println(strlen(out));
+    Serial.println(out);
+    if ( strlen(out)!=41)
+      return LX200GETVALUEFAILED;
+    char* pEnd;
+    startPosition = strtol(&out[1], &pEnd, 10);
+    maxPosition = strtol(&out[7], &pEnd, 10);
+    minSpeed = strtol(&out[13], &pEnd, 10);
+    maxSpeed = strtol(&out[17], &pEnd, 10);
+    cmdAcc = strtol(&out[21], &pEnd, 10);
+    manAcc = strtol(&out[27], &pEnd, 10);
+    manDec = strtol(&out[33], &pEnd, 10);
+    reverse = out[39] == '1';
+    return LX200VALUEGET;
+  }
+  else
+  {
+    return LX200GETVALUEFAILED;
+  }
+ 
 }

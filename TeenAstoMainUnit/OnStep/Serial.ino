@@ -215,6 +215,15 @@ char Serial1_read()
 {
     return Serial1.read();
 }
+
+void Serial2_Init(unsigned long baud)
+{
+  Serial2.setRX(26);
+  Serial2.setTX(31);
+  Serial2.begin(baud);
+  Serial2.setTimeout(5);
+}
+
 #endif
 
 // -----------------------------------------------------------------------------------

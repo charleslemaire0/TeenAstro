@@ -34,6 +34,7 @@ private:
   uint8_t displayT1;
   uint8_t displayT2;
   uint8_t maxContrast;
+  float  FocuserPos;
   unsigned long lastpageupdate = millis();
   unsigned long time_last_action = millis();
 
@@ -85,6 +86,8 @@ private:
   void menuSite();
   void menuSites();
   void menuUTCTime();
+  void menuFocuser();
+  void menuFocuserSettings();
   void menuDisplay();
   void menuContrast();
   void menuDate();

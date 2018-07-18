@@ -13,8 +13,8 @@
 #define ADRESS_Contrast 17
 #endif
 
-static char* BreakRC[4] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#" };
-static char* RC[4] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#" };
+static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":F*#", ":F:#"};
+static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":F+#", ":F-#"};
 
 
 #define MY_BORDER_SIZE 1
@@ -411,7 +411,7 @@ void SmartHandController::update()
   }
   else if (top - lastpageupdate > 100)
   {
-    updateMainDisplay( page);
+    updateMainDisplay(page);
   }
   if (telInfo.connected && (telInfo.getTrackingState() == Telescope::TRK_SLEWING || telInfo.getParkState() == Telescope::PRK_PARKING))
   {
@@ -439,7 +439,7 @@ void SmartHandController::update()
   else
   {
     buttonCommand = false;
-    for (int k = 1; k < 5; k++)
+    for (int k = 1; k < 7; k++)
     {
       if (Move[k - 1] && (eventbuttons[k] == E_LONGPRESSSTOP || eventbuttons[k] == E_NONE))
       {
@@ -473,15 +473,25 @@ void SmartHandController::update()
   else if (eventbuttons[0] == E_CLICK && telInfo.align == Telescope::ALI_OFF)
   {
     page++;
-    if (page > 2) page = 0;
+    if (page > 3) page = 0;
     time_last_action = millis();
   }
   else if (eventbuttons[0] == E_LONGPRESS && telInfo.align == Telescope::ALI_OFF)
   {
-    menuMain();
+    if (page == 0 || page == 1 || page == 2)
+    {
+      menuMain();
+    }
+    if (page == 3)
+    {
+      menuFocuser();
+    }
+
+
     exitMenu = false;
     time_last_action = millis();
   }
+
   else if (eventbuttons[0] == E_CLICK && (telInfo.align == Telescope::ALI_RECENTER_1 || telInfo.align == Telescope::ALI_RECENTER_2 || telInfo.align == Telescope::ALI_RECENTER_3))
   {
     telInfo.addStar();
@@ -504,7 +514,7 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
     {
       telInfo.align = static_cast<Telescope::AlignState>(telInfo.align + 1);
     }
-    page = 3;
+    page = 4;
   }
   else if (page == 0)
   {
@@ -514,9 +524,13 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
   {
     telInfo.updateAzAlt();
   }
-  else
+  else if (page == 2)
   {
     telInfo.updateTime();
+  }
+  else if (page == 3)
+  {
+    telInfo.updateFocuser();
   }
   u8g2_FirstPage(u8g2);
 
@@ -598,7 +612,6 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
 
         if (telInfo.isPulseGuiding())
         {
-
           display->drawXBMP(x - icon_width, 0, icon_width, icon_height, guiding__bits);
           display->setBitmapMode(1);
           if (telInfo.isGuidingN())
@@ -730,13 +743,10 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
 
         display->drawDec( x, y, Altsign, Altdeg, Altmin, Altsec);
         u8g2_DrawUTF8(u8g2, 0, y, "Alt.");
-
-
       }
     }
     else if (page == 2)
     {
-
       if (telInfo.hasInfoUTC && telInfo.hasInfoSideral)
       {
         char Rah[3];
@@ -766,6 +776,27 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
       }
     }
     else if (page == 3)
+    {
+      if (telInfo.hasInfoFocuser)
+      {
+        char pos[6];
+        char spd[4];
+        u8g2_uint_t y = 36;
+        x = u8g2_GetDisplayWidth(u8g2) - u8g2_GetUTF8Width(u8g2, "00000");
+        u8g2_DrawUTF8(u8g2, 0, y, "F Position");
+           memcpy(pos, &telInfo.TempFocuserStatus[1], 5);
+        pos[5] = 0;
+        u8g2_DrawUTF8(u8g2, x, y, pos);
+
+        y += line_height + 4;
+        x = u8g2_GetDisplayWidth(u8g2) - u8g2_GetUTF8Width(u8g2, "000");
+        u8g2_DrawUTF8(u8g2, 0, y, "F Speed");
+        memcpy(spd, &telInfo.TempFocuserStatus[7], 3);
+        spd[3] = 0;
+        u8g2_DrawUTF8(u8g2, x, y, spd);
+      }
+    }
+    else if (page == 4)
     {
       int idx = telInfo.alignSelectedStar - 1;
       byte cat_letter = Star_letter[idx];
@@ -966,11 +997,13 @@ void SmartHandController::DisplayMotorSettings(const uint8_t &axis)
   {
     sprintf(line4, "Ratio: %u", (unsigned int)totGear);
   }
+
   DisplayLongMessage(line1, NULL, line3, line4, -1);
 
   line2[0] = 0;
   line3[0] = 0;
   line4[0] = 0;
+
   if (DisplayMessageLX200(readStepPerRotLX200(axis, stepPerRot)))
   {
     sprintf(line2, "%u Steps per Rot.", (unsigned int)stepPerRot);
@@ -1342,9 +1375,9 @@ void SmartHandController::menuSettings()
   current_selection_L1 = 1;
   while (!exitMenu)
   {
-    const char *string_list_SettingsL1 = "Display\n""Alignment\n""Date\n""Time\n""Set Park\n""Mount\n""Site\n""Limits\n"
+    const char *string_list_SettingsL1 = "Display\n""Alignment\n""Date\n""Time\n""Set Park\n""Mount\n""Site\n""Limits"
 #ifdef WIFI_ON
-      "Wifi"
+      "\nWifi"
 #endif
     ;
     current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, "Settings", current_selection_L1, string_list_SettingsL1);
@@ -1381,7 +1414,6 @@ void SmartHandController::menuSettings()
       menuWifi();
       break;
 #endif
-
     default:
       break;
     }
@@ -1913,6 +1945,177 @@ void SmartHandController::menuUTCTime()
     {
       DisplayMessageLX200(SetTimeLX200(value),false);
     }
+  }
+}
+
+void SmartHandController::menuFocuser()
+{
+  buttonPad.setMenuMode();
+  const char *string_list_Focuser = "Goto\nSync\nPark\nSettings";
+  current_selection_L2 = 1;
+  while (!exitMenu)
+  {
+    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Focuser", current_selection_L2, string_list_Focuser);
+    switch (current_selection_L2)
+    {
+    case 0:
+      return;
+    case 1:
+    {
+      if (display->UserInterfaceInputValueFloat(&buttonPad, "Goto Position", "", &FocuserPos, 0, 65535, 5, 0, ""))
+      {
+        char cmd[15];
+        sprintf(cmd, ":FG %05d#", (int)(FocuserPos));
+        DisplayMessage("Goto", "Position", 1000);
+        SetLX200(cmd);
+        exitMenu = true;
+      }
+      break;
+    }
+    case 2:
+    {
+      if (display->UserInterfaceInputValueFloat(&buttonPad, "Sync Position", "", &FocuserPos, 0, 65535, 5, 0, ""))
+      {
+        char cmd[15];
+        sprintf(cmd, ":FS %05d#", (int)(FocuserPos));
+        DisplayMessage("Synced", "at Position", 1000);
+        SetLX200(cmd);
+        exitMenu = true;
+      }
+      break;
+    }
+    case 3:
+    {
+      SetLX200(":FP#");
+      exitMenu = true;
+      break;
+    }
+    case 4:
+    {
+      menuFocuserSettings();
+      break;
+    }
+    default:
+      break;
+    }
+  }
+  exitMenu = false;
+  buttonPad.setControlerMode();
+}
+void SmartHandController::menuFocuserSettings()
+{
+  char cmd[50];
+  const char *string_list_Focuser = "Display Settings\nPark Position\nMax Position\nMin Speed\nMax Speed\nGoto Acc\nMan. Acc\nDeceleration\n""Rotation";
+  current_selection_L3 = 1;
+  unsigned int sP, maxP, minS, maxS, cmdAcc, manAcc, manDec;
+  bool rev;
+  float value;
+  while (!exitMenu)
+  {
+    if (DisplayMessageLX200(readFocuser(sP, maxP, minS, maxS, cmdAcc, manAcc, manDec, rev)))
+    {
+      current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Focuser Settings", current_selection_L2, string_list_Focuser);
+      bool ValueSetRequested = false;
+      switch (current_selection_L2)
+      {
+      case 0:
+        return;
+      case 1:
+      {
+        char line1[32] = "";
+        char line2[32] = "";
+        char line3[32] = "";
+        char line4[32] = "";
+        sprintf(line1, "Focuser Settings");
+        rev ? sprintf(line2, "Reversed Rotation") : sprintf(line2, "Direct Rotation");
+        sprintf(line3, "Start Pos.: %05u", sP);
+        sprintf(line4, "Max  Pos.: %05u", maxP);
+        DisplayLongMessage(line1, line2, line3, line4, -1);
+        line2[0] = 0;
+        sprintf(line3, "min Speed: %03u", minS);
+        sprintf(line4, "max Speed: %03u", maxS);
+        DisplayLongMessage(line1, line2, line3, line4, -1);
+        sprintf(line2, "Acc. cmd.: %05u", cmdAcc);
+        sprintf(line3, "Acc. man.: %05u", manAcc);
+        sprintf(line4, "Dec. man.: %05u", manDec);
+        DisplayLongMessage(line1, line2, line3, line4, -1);
+        break;
+      }
+      case 2:
+      {
+        value = sP;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Start Position", "", &value, 0, 65535, 5, 0, "");
+        sprintf(cmd, ":F0 %05d#", (int)(value));
+        break;
+      }
+      case 3:
+      {
+        value = maxP;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Max Position", "", &value, 0, 65535, 5, 0, "");
+        sprintf(cmd, ":F1 %05d#", (int)(value));
+        break;
+      }
+      case 4:
+      {
+        value = minS;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Min Speed", "", &value, 1, 100, 5, 0, "");
+        sprintf(cmd, ":F2 %03d#", (int)(value));
+        break;
+      }
+      case 5:
+      {
+        value = maxS;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Max Speed", "", &value, 1, 100, 5, 0, "");
+        sprintf(cmd, ":F3 %03d#", (int)(value));
+        break;
+      }
+      case 6:
+      {
+        value = cmdAcc;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Acc. for Cmd.", "", &value, 1, 10000, 5, 0, "");
+        sprintf(cmd, ":F4 %05d#", (int)(value));
+        break;
+      }
+      case 7:
+      {
+        value = manAcc;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Acc. for Man.", "", &value, 1, 10000, 5, 0, "");
+        sprintf(cmd, ":F5 %05d#", (int)(value));
+        break;
+      }
+      case 8:
+      {
+        value = manDec;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Dec. for Man.", "", &value, 1, 10000, 5, 0, "");
+        sprintf(cmd, ":F6 %05d#", (int)(value));
+        break;
+      }
+      case 9:
+      {
+        char * string_list = "Direct\nReversed";
+        uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, "Rotation", (uint8_t)rev + 1, string_list);
+        if (choice)
+        {
+          rev = (bool)(choice - 1);
+          sprintf(cmd, ":F7 %01d#", (int)(value));
+          ValueSetRequested = true;
+        }
+        break;
+      }
+      default:
+        break;
+
+      }
+      if (ValueSetRequested)
+      {
+        if (DisplayMessageLX200(SetLX200(cmd),false))
+        {
+          DisplayMessageLX200(SetLX200(":FW#"));
+        }
+      }
+    }
+    else
+      break;
   }
 }
 

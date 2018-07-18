@@ -6,6 +6,7 @@
 #define CHKSUM1_OFF // default _OFF: as required for OnStep Controller2 Android App (and others)
 boolean         serial_zero_ready = false;
 boolean         serial_one_ready = false;
+
 #if defined(W5100_ON)
 boolean         ethernet_ready = false;
 #endif
@@ -36,6 +37,7 @@ void processCommands()
   {
     serial_one_ready = buildCommand_serial_one(Serial1_read());
   }
+
 
 #if defined(W5100_ON)
   if ((Ethernet_available() > 0) && (!ethernet_ready))
@@ -116,6 +118,9 @@ void processCommands()
     case 'D':
       Command_D();
       break;
+    case 'F':
+      Command_F();
+      break;
     case 'G':
       Command_G();
       break;
@@ -151,6 +156,7 @@ void processCommands()
       reply[1] = 0;
       supress_frame = true;
     }
+
 
     if (strlen(reply) > 0)
     {

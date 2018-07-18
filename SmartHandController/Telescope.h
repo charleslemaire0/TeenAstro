@@ -38,6 +38,9 @@ public:
   unsigned long lastStateTime;
   char TelStatus[20];
   char sideofpier[20];
+  unsigned long lastStateFocuser;
+  char TempFocuserStatus[20];
+
   unsigned long lastStateTel;
 public:
   bool connected = true;
@@ -49,10 +52,12 @@ public:
   bool hasInfoSideral = false;
   bool hasPierInfo = false;
   bool hasTelStatus = false;
+  bool hasInfoFocuser = false;
   unsigned long lastState;
   void updateRaDec();
   void updateAzAlt();
   void updateTime();
+  void updateFocuser();
   void updateTel();
   Mount getMount();
   ParkState getParkState();

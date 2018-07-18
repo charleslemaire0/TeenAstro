@@ -3,78 +3,78 @@
 #include "ConfigStepper.h"
 #include "Command.h"
 
-bool printinfo = true;
-
+uint8_t mdirIN = LOW;
+uint8_t mdirOUT = LOW;
 void setup()
 {
 	// set the PWM and brake pins so that the direction pins  // can be used to control the motor:
-  delay(1000);
-  pinMode(ButtonAPin, INPUT);
-  pinMode(ButtonBPin, INPUT);
+  delay(500);
+
 	pinMode(StepPin, OUTPUT);
 	pinMode(DirPin, OUTPUT);
   digitalWrite(DirPin, LOW);
   digitalWrite(StepPin, LOW);
 
-	Serial.begin(19200);
+	Serial.begin(115200);
+  Serial.setTimeout(100);
+  Serial2.setRX(26);
+  Serial2.setTX(31);
+  Serial2.begin(115200);
+  Serial2.setTimeout(5);
+
   loadConfig();
 	iniPos();
   iniStepper();
-  sayHello();
-
 }
 
 
 void loop()
 {
-	auto mdirA = digitalRead(ButtonAPin);
-	auto mdirB = digitalRead(ButtonBPin);
-	update();
-	if (mdirA == HIGH && mdirB == HIGH)
+
+  serCom0.Get_Command();
+  serCom2.Get_Command();
+
+  serCom0.MoveRequest();
+  serCom2.MoveRequest();
+
+  
+	if (mdirOUT == HIGH && mdirIN == HIGH)
 	{
 		time_acc = 0;
 		return;
 	}
 	// first stop the motor if the direction has changed
-	if (mdirA != mdirAOld && mdirAOld == HIGH)
+	else if (mdirOUT != mdirOUTOld && mdirOUTOld == HIGH)
 	{
 		Command_stop(1);
 		time_acc = 0;
-		mdirAOld = mdirA;
+    mdirOUTOld = mdirOUT;
 		return;
 	}
-	if (mdirB != mdirBOld && mdirBOld == HIGH)
+	else if (mdirIN != mdirINOld && mdirINOld == HIGH)
 	{
 		Command_stop(-1);
 		time_acc = 0;
-		mdirBOld = mdirB;
+    mdirINOld = mdirIN;
 		return;
 	}
-	if (mdirA == HIGH)
+	else if (mdirOUT == HIGH)
 	{
 		Command_move(1, time_acc);
-		mdirAOld = mdirA;
+    mdirOUTOld = mdirOUT;
 		return;
 	}
-	if (mdirB == HIGH)
+	else if (mdirIN == HIGH)
 	{
 		Command_move(-1, time_acc);
-		mdirBOld = mdirB;
+    mdirINOld = mdirIN;
 		return;
 	}
-	Command_Check();
+
+  serCom0.Command_Check();
+  serCom2.Command_Check();
 	time_acc = 0;
-	mdirAOld = mdirA;
-	mdirBOld = mdirB;
+	mdirOUTOld = mdirOUT;
+	mdirINOld = mdirIN;
 }
 
-void sayHello(void)
-{
-	Serial.print("$ ");
-	Serial.print(PROJECT);
-	Serial.print(" ");
-	Serial.print(BOARDINFO);
-	Serial.print(" ");
-	Serial.println(Version);
-  lastEvent = millis() / updaterate + 2;
-}

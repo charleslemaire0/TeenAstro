@@ -1,5 +1,5 @@
 // ConfigStepper.h
-
+#include "Command.h"
 #ifndef _CONFIGSTEPPER_h
 #define _CONFIGSTEPPER_h
 
@@ -15,27 +15,25 @@
 #define DirPin 6
 
 // Button
-#define ButtonAPin 8
-#define ButtonBPin 7
+//#define ButtonAPin 8
+//#define ButtonBPin 7
 // RTC
 #define kCePin 4  // Chip Enable
 #define kIoPin 3 // Input/Output
 #define kSclkPin 2  // Serial Clock
 #define micro 16
-#define updaterate 100
+#define updaterate 1
 
-int mdirAOld = 0;
-int mdirBOld = 0;
+int mdirOUTOld = 0;
+int mdirINOld = 0;
 
-int currSpeed;
-int lastCurrSpeed;
+unsigned int currSpeed;
 unsigned int position;
 bool halt = false;
-unsigned int lastposition;
 double time_acc = 0;
-long lastEvent = millis() / updaterate;
-long event = millis() / updaterate;
 DS1302 *rtc = NULL;
+SerCom serCom0(Serial);
+SerCom serCom2(Serial2);
 void iniStepper();
 #endif
 

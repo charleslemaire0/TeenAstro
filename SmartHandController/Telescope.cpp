@@ -7,10 +7,13 @@ void Telescope::updateRaDec()
   {
     hasInfoRa = GetLX200(":GR#", TempRa) == LX200VALUEGET;
     hasInfoDec = GetLX200(":GD#", TempDec) == LX200VALUEGET;
-    lastStateRaDec = millis();
-    if (!hasInfoRa && !hasInfoDec)
+    if (hasInfoRa && hasInfoDec)
     {
-      connected = false;
+      lastStateRaDec = millis();
+    }
+    else
+    {
+      //connected = false;
     }
   }
 };
@@ -20,10 +23,13 @@ void Telescope::updateAzAlt()
   {
     hasInfoAz = GetLX200(":GZ#", TempAz) == LX200VALUEGET;
     hasInfoAlt = GetLX200(":GA#", TempAlt) == LX200VALUEGET;
-    lastStateAzAlt = millis();
-    if (!hasInfoAz && !hasInfoAlt)
+    if (hasInfoAz && hasInfoAlt)
     {
-      connected = false;
+      lastStateAzAlt = millis();
+    }
+    else
+    {
+    //connected = false;
     }
   }
 }
@@ -33,10 +39,27 @@ void Telescope::updateTime()
   {
     hasInfoUTC = GetLX200(":GL#", TempUTC) == LX200VALUEGET;
     hasInfoSideral = GetLX200(":GS#", TempSideral) == LX200VALUEGET;
-    lastStateTime = millis();
-    if (!hasInfoUTC && !hasInfoSideral)
+    if (hasInfoUTC && hasInfoSideral)
     {
-      connected = false;
+      lastStateTime = millis();
+    }
+    else
+    {
+      //connected = false;
+    }
+  }
+};
+void Telescope::updateFocuser()
+{
+
+  if (millis() - lastStateFocuser > 100 && connected)
+  {
+    hasInfoFocuser = GetLX200(":F?#", TempFocuserStatus) == LX200VALUEGET;
+    if (hasInfoFocuser)
+      lastStateFocuser = millis();
+    else
+    {
+      //connected = false;
     }
   }
 };
@@ -46,9 +69,15 @@ void Telescope::updateTel()
   {
     hasPierInfo = GetLX200(":Gm#", sideofpier) == LX200VALUEGET;
     hasTelStatus = GetLX200(":GU#", TelStatus) == LX200VALUEGET;
-    lastStateTel = millis();
+    if (hasPierInfo && hasTelStatus)
+    {
+      lastStateTel = millis();
+    }
+    else
+    {
+      //connected = false;
+    }
   }
-  connected = hasPierInfo || hasTelStatus;
 };
 Telescope::ParkState Telescope::getParkState()
 {

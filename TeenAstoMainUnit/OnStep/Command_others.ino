@@ -597,6 +597,119 @@ void Command_D()
 }
 
 //----------------------------------------------------------------------------------
+//   F - Focuser
+void Command_F()
+{
+  //Serial2.flush();
+  //while (Serial2.available() > 0) Serial2.read();
+  quietReply = true; // the focuser is responding
+  boolean focuserNoResponse = false;
+  boolean focuserShortResponse = false;
+  char command_out[20];
+
+  command_out[0] = ':';
+  command_out[1] = 'F';
+  command_out[2] = command[1];
+  int k = strlen(parameter);
+  int p = 3;
+  if (k > 0)
+  {
+    command_out[p] = ' ';
+    p++;
+    memcpy(&command_out[p], &parameter[0], k * sizeof(char));
+  }
+  command_out[p + k] = '#';
+  command_out[p + k + 1] = 0;
+  Serial2.print(command_out);
+  Serial2.flush();
+  switch (command[1])
+  {
+  case '+':
+    focuserNoResponse = true;
+    break;
+  case '-':
+    focuserNoResponse = true;
+    break;
+  case '*':
+    focuserNoResponse = true;
+    break;
+  case ':':
+    focuserNoResponse = true;
+    break;
+  case 'Q':
+    focuserNoResponse = true;
+    break;
+  case 'G':
+    focuserNoResponse = true;
+    break;
+  case 'S':
+    focuserNoResponse = true;
+    break;
+  case 'P':
+    focuserNoResponse = true;
+    break;
+  case '?':
+    focuserNoResponse = false;
+    focuserShortResponse = false;
+    break;
+  case '~':
+    focuserNoResponse = false;
+    focuserShortResponse = false;
+    break;
+  case 'W':
+    focuserNoResponse = false;
+    focuserShortResponse = true;
+  case '0':
+  case '1':
+  case '2':
+  case '3':
+  case '4':
+  case '5':
+  case '6':
+    focuserNoResponse = false;
+    focuserShortResponse = true;
+    break;
+  default:
+  {
+    commandError = true;
+    return;
+    break;
+  }
+  }
+
+  if (!focuserNoResponse)
+  {
+    unsigned long start = millis();
+    int pos = 0;
+    char b = 0;
+    while ( millis() - start < 100)
+    {
+      if (Serial2.available()>0)
+      {
+        b = Serial2.read();
+
+        if (b == '#' && !focuserShortResponse)
+        {
+          quietReply = true;
+          break;
+        }
+        reply[pos] = b;
+        pos++;
+        if (pos > 50)
+          pos = 50;
+        reply[pos] = 0;
+        if (focuserShortResponse)
+        {
+          quietReply = false;
+          if (b != '1')
+            commandError = true;
+          return;
+        }
+      }
+    }
+  }
+}
+//----------------------------------------------------------------------------------
 //  h - Home Position Commands
 void Command_h()
 {

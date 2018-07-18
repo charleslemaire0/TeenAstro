@@ -16,7 +16,7 @@ void iniStepper()
 }
 
 
-void MoveTo(int pos)
+void MoveTo(unsigned int pos)
 {
 	if (inlimit (pos))
 	{
@@ -39,13 +39,14 @@ void StartMove( int&n)
 	}
 	int sign = (n<0) ? -1 : 1;
 	int sumsteps = 0;
-	int stepperspeedini = currSpeed;
+	unsigned int stepperspeedini = currSpeed;
 	double t = 0;
 	int status = 0;
 
 	while (status == 0)
 	{
-		updateGoto();
+		serCom0.updateGoto();
+    serCom2.updateGoto();
 		if (halt)
 		{
 			status = 1;
@@ -63,7 +64,7 @@ void StartMove( int&n)
 		}
 
 		t += 1. / (currSpeed*stepsPerMotorRevolution);
-		int stepperspeednew = stepperspeedini + storage.cmdAcc * t;
+		unsigned int stepperspeednew = stepperspeedini + storage.cmdAcc * t;
 		if (stepperspeednew > storage.maxSpeed)
 		{
 			status = 2;
@@ -97,7 +98,8 @@ void FinishMove( int n)
 	double t = 0;
 	while (sumsteps != n)
 	{
-		updateGoto();
+    serCom0.updateGoto();
+    serCom2.updateGoto();
 		if (halt)
 			return;
 		myStepper.move(sign*micro);
@@ -105,7 +107,7 @@ void FinishMove( int n)
 		position += storage.reverse ? -sign : sign;
 		writePos();
 		t += 1. / (currSpeed*stepsPerMotorRevolution);
-		int stepperspeednew = stepperspeedini - storage.cmdAcc * t;
+		unsigned int stepperspeednew = stepperspeedini - storage.cmdAcc * t;
 		if (stepperspeednew < storage.minSpeed)
 		{
 			currSpeed = storage.minSpeed;
@@ -123,7 +125,8 @@ void niter(int m, int sign)
 {
 	while (m != 0)
 	{
-		updateGoto();
+    serCom0.updateGoto();
+    serCom2.updateGoto();
 		if (halt)
 		{
 			return;
@@ -146,7 +149,7 @@ void Go(int stepperspeedini, int sign, double& t)
 	{
 		double tnew = t + 1. / (currSpeed*stepsPerMotorRevolution);
 		double  a = storage.manAcc * tnew;
-		int stepperspeednew = stepperspeedini + a + 0.5*a*a;
+		unsigned int stepperspeednew = stepperspeedini + a + 0.5*a*a;
 		if (stepperspeednew < storage.maxSpeed)
 		{
 			t = tnew;
@@ -168,8 +171,8 @@ void Go(int stepperspeedini, int sign, double& t)
 void Stop(int sign)
 {
 	double t = 0;
-	int stepperspeed = currSpeed;
-	int stepperspeedini = currSpeed;
+	unsigned int stepperspeed = currSpeed;
+	unsigned int stepperspeedini = currSpeed;
 	while (currSpeed != storage.minSpeed)
 	{
 		t += 1. / (currSpeed*stepsPerMotorRevolution);
@@ -183,7 +186,7 @@ void Stop(int sign)
 		}
 		currSpeed = stepperspeed;
 		myStepper.setRPM(currSpeed);
-		int nextposition = position;
+		long nextposition = position;
 		nextposition += storage.reverse ? -sign : sign;
 		if (!inlimit(nextposition))
 		{
@@ -197,9 +200,9 @@ void Stop(int sign)
 	myStepper.setRPM(currSpeed);
 }
 
-bool inlimit(int pos)
+bool inlimit(long pos)
 {
-	return 0 <= pos && pos <= storage.maxPosition;
+	return 0L <= pos && pos <= (long)storage.maxPosition;
 }
 
 void writePos()

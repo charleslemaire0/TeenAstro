@@ -10,14 +10,18 @@
 #endif
 
 // single key commands
-#define AzCmd_Help 'h'
-#define AzCmd_Version 'v'
-#define FocCmd_Goto 'g'
-#define FocCmd_Park 'p'
-#define FocCmd_Sync 's'
-#define FocCmd_Halt 'x'
+#define AzCmd_Help 'H'
+#define AzCmd_Version 'V'
+#define FocCmd_out '+'
+#define FocCmd_out_stop '*'
+#define FocCmd_in '-'
+#define FocCmd_in_stop ':'
+#define FocCmd_Goto 'G'
+#define FocCmd_Park 'P'
+#define FocCmd_Sync 'S'
+#define FocCmd_Halt 'Q'
 
-#define FocCmd_Write 'w'
+#define FocCmd_Write 'W'
 
 #define CmdDumpState '?'
 #define CmdDumpConfig '~'
@@ -35,7 +39,34 @@
 #define Char_Spc 32
 #define Char_254 254
 
-void Command_Check();
+
+
+class SerCom
+{
+public:
+  SerCom(Stream& s) :ser(s) {}
+
+private:
+  Stream& ser;
+  char m_command;
+  unsigned int m_value = 0;
+  bool m_valuedefined = false;
+  bool m_hasReceivedCommand = false;
+public:
+  void updateGoto();
+  void Command_Check();
+  void Get_Command();
+  void MoveRequest(void);
+private:
+  void dumpState();
+  void dumpConfig();
+
+  void sayHello();
+  void setbool(bool valuedefined, unsigned int value, bool  &adress);
+  void setvalue(bool valuedefined, unsigned int value, unsigned int min, unsigned int max, unsigned int &adress);
+  void HaltRequest();
+};
+
 
 #endif
 
