@@ -1433,6 +1433,7 @@ void SmartHandController::menuMount()
       return;
     case 1:
       DisplayMountSettings();
+      break;
     case 2:
       menuPredefinedMount();
       break;
