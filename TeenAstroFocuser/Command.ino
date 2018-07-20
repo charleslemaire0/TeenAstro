@@ -28,27 +28,39 @@ void Command_stop(int sign)
 void SerCom::Get_Command()
 {
   m_hasReceivedCommand = false;
-  if (ser.available() > 0)
+  if (ser.available() > 3)
   {
-    char input[INPUT_SIZE + 1];
-    int size = ser.readBytes(input, INPUT_SIZE);
-    char* separator = strchr(input, '#');
-    if (separator == NULL)
+    unsigned long start = millis();
+    int pos = 0;
+    char b = 0;
+    char input[INPUT_SIZE];
+    while (millis() - start < 50 && !m_hasReceivedCommand)
     {
-      ser.print(0);
-      return;
+      if (ser.available() > 0)
+      {
+        b = ser.read();
+        input[pos] = b;
+        pos++;
+        if (pos == INPUT_SIZE)
+          pos = INPUT_SIZE - 1;
+        input[pos] = 0;
+        if (b == '#')
+        {
+          m_hasReceivedCommand = true;
+          while (ser.available() > 0)
+            b = ser.read();
+          break;
+        }
+      }
     }
-    *separator = 0;
-    size = strlen(input);
-    if (size < 3 || input[0] != ':' || input[1] != 'F')
+    int size = strlen(input);
+    if (size < 4 || input[0] != ':' || input[1] != 'F')
     {
-      ser.print(0);
-      return;
+      m_hasReceivedCommand = false;
     }
     // Read each command pair
-    m_hasReceivedCommand = true;
     m_command = input[2];
-    separator = strchr(input, ' ');
+    char* separator = strchr(input, ' ');
     m_valuedefined = false;
     if (separator != 0)
     {
@@ -56,6 +68,7 @@ void SerCom::Get_Command()
       m_valuedefined = true;
       m_value = atoi(separator);
     }
+
   }
 }
 
@@ -73,6 +86,7 @@ void SerCom::Command_Check(void)
     ser.println("$ H Help, + start Focus in, - Start Focus out, * Stop Focus in, : Stop Focus in, Q stop, G Goto, P Park, S Sync, W Write, ?");
     ser.println("$ Settings");
     ser.println("$ 0 startP, 1 maxP, 2 minS , 3 maxS, 4 cmdAcc, 5 mAcc, 6 mDec");
+    ser.flush();
     break;
   case AzCmd_Version:
     sayHello();
@@ -85,13 +99,13 @@ void SerCom::Command_Check(void)
   case FocCmd_Goto:
     if (m_valuedefined)
     {
-      MoveTo(m_value);
       halt = false;
+      MoveTo(m_value);
     }
     break;
   case FocCmd_Park:
-    MoveTo(storage.startPosition);
     halt = false;
+    MoveTo(storage.startPosition);
     break;
   case FocCmd_Sync:      // "reset" position
     setvalue(m_valuedefined, m_value, 0, storage.maxPosition, position);
@@ -100,6 +114,7 @@ void SerCom::Command_Check(void)
   case FocCmd_Write:
     saveConfig();
     ser.print("1");
+    ser.flush();
     break;
   case FocCmd_startPosition:
     setvalue(m_valuedefined, m_value, 0, 65535, storage.startPosition);
@@ -136,7 +151,7 @@ void SerCom::Command_Check(void)
   case Char_254:
     break;
   default:
-    ser.print(0);
+    break;
   }
 }
 
@@ -240,7 +255,7 @@ void SerCom::dumpConfig()
 void SerCom::dumpState()
 {
   char buf[20];
-  sprintf(buf, "?%05u %03d#", position, currSpeed);
+  sprintf(buf, "?%05u %03u#", position, currSpeed);
   ser.print(buf);
   ser.flush();
 }

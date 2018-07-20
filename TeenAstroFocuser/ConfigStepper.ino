@@ -175,6 +175,8 @@ void Stop(int sign)
 	unsigned int stepperspeedini = currSpeed;
 	while (currSpeed != storage.minSpeed)
 	{
+    serCom0.updateGoto();
+    serCom2.updateGoto();
 		t += 1. / (currSpeed*stepsPerMotorRevolution);
 		stepperspeed = stepperspeedini - storage.manDec * t;
 
