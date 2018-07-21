@@ -600,8 +600,6 @@ void Command_D()
 //   F - Focuser
 void Command_F()
 {
-  //Serial2.flush();
-  //while (Serial2.available() > 0) Serial2.read();
   quietReply = true; // the focuser is responding
   boolean focuserNoResponse = false;
   boolean focuserShortResponse = false;
@@ -687,7 +685,6 @@ void Command_F()
       if (Serial2.available()>0)
       {
         b = Serial2.read();
-
         if (b == '#' && !focuserShortResponse)
         {
           quietReply = true;
