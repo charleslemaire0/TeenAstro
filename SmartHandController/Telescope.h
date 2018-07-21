@@ -27,19 +27,19 @@ public:
 
   Errors lastError = Telescope::ERR_NONE;
 
-  char TempRa[20];
-  char TempDec[20];
+  char TempRa[15];
+  char TempDec[15];
   unsigned long lastStateRaDec;
-  char TempAz[20];
-  char TempAlt[20];
+  char TempAz[15];
+  char TempAlt[15];
   unsigned long lastStateAzAlt;
-  char TempUTC[20];
-  char TempSideral[20];
+  char TempUTC[15];
+  char TempSideral[15];
   unsigned long lastStateTime;
-  char TelStatus[20];
-  char sideofpier[20];
+  char TelStatus[15];
+  char sideofpier[5];
   unsigned long lastStateFocuser;
-  char TempFocuserStatus[20];
+  char TempFocuserStatus[45];
 
   unsigned long lastStateTel;
 public:

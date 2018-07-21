@@ -21,11 +21,11 @@ struct StoreStruct
 	bool reverse;
 	unsigned int startPosition;
 	unsigned int maxPosition;
-	unsigned int minSpeed;
-	unsigned int maxSpeed;
-	unsigned int cmdAcc;
-	unsigned int manAcc;
-	unsigned int manDec;
+  uint8_t minSpeed;
+  uint8_t maxSpeed;
+  uint8_t cmdAcc;
+  uint8_t manAcc;
+  uint8_t manDec;
 }
 storage = {
 	CONFIG_VERSION,
@@ -34,9 +34,9 @@ storage = {
 	32000,
 	10,
 	60,
-	1000,
-	1000,
-	1000
+	10,
+	10,
+	10
 };
 
 void loadConfig();

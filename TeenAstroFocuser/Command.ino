@@ -117,25 +117,25 @@ void SerCom::Command_Check(void)
     ser.flush();
     break;
   case FocCmd_startPosition:
-    setvalue(m_valuedefined, m_value, 0, 65535, storage.startPosition);
+    setvalue(m_valuedefined, m_value, 0u, 65535u, storage.startPosition);
     break;
   case FocCmd_maxPosition:
-    setvalue(m_valuedefined, m_value, 0, 65535, storage.maxPosition);
+    setvalue(m_valuedefined, m_value, 0u, 65535u, storage.maxPosition);
     break;
   case FocCmd_maxSpeed:
-    setvalue(m_valuedefined, m_value, 1, 100, storage.maxSpeed);
+    setvalue(m_valuedefined, (uint8_t)m_value, 1u, 100u, storage.maxSpeed);
     break;
   case FocCmd_minSpeed:
-    setvalue(m_valuedefined, m_value, 1, 100, storage.minSpeed);
+    setvalue(m_valuedefined, (uint8_t)m_value, 1u, 100u, storage.minSpeed);
     break;
   case FocCmd_cmdAcc:
-    setvalue(m_valuedefined, m_value, 1, 10000, storage.cmdAcc);
+    setvalue(m_valuedefined, (uint8_t)m_value, 1u, 100u, storage.cmdAcc);
     break;
   case FocCmd_manualAcc:
-    setvalue(m_valuedefined, m_value, 1, 10000, storage.manAcc);
+    setvalue(m_valuedefined, (uint8_t)m_value, 1u, 100u, storage.manAcc);
     break;
   case FocCmd_manualDec:
-    setvalue(m_valuedefined, m_value, 1, 10000, storage.manDec);
+    setvalue(m_valuedefined, (uint8_t)m_value, 1u, 100u, storage.manDec);
     break;
   case FocCmd_Inv:
     setbool(m_valuedefined, m_value, storage.reverse);
@@ -212,6 +212,18 @@ void SerCom::HaltRequest(void)
   }
 }
 
+void SerCom::setvalue(bool valuedefined, unsigned int value, uint8_t min, uint8_t max, uint8_t &adress)
+{
+  if (valuedefined && value >= min && value <= max)
+  {
+    adress = value;
+    ser.print("1");
+  }
+  else
+    ser.print("0");
+  ser.flush();
+}
+
 void SerCom::setvalue(bool valuedefined, unsigned int value, unsigned int min, unsigned int max, unsigned int &adress)
 {
   if (valuedefined && value >= min && value <= max)
@@ -239,7 +251,7 @@ void SerCom::setbool(bool valuedefined, unsigned int value, bool  &adress)
 void SerCom::dumpConfig()
 {
   char buf[50];
-  sprintf(buf, "~%05u %05u %03u %03u %05u %05u %05u %1u#",
+  sprintf(buf, "~%05u %05u %03u %03u %03u %03u %03u %1u#",
     storage.startPosition,
     storage.maxPosition,
     storage.minSpeed,

@@ -30,7 +30,7 @@ private:
 
   bool powerCylceRequired = false;
   bool buttonCommand = false;
-  bool Move[4] = { false, false, false, false };
+  bool Move[6] = { false, false, false, false, false, false };
   uint8_t displayT1;
   uint8_t displayT2;
   uint8_t maxContrast;

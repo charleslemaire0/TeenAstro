@@ -64,6 +64,7 @@ private:
   void sayHello();
   void setbool(bool valuedefined, unsigned int value, bool  &adress);
   void setvalue(bool valuedefined, unsigned int value, unsigned int min, unsigned int max, unsigned int &adress);
+  void setvalue(bool valuedefined, unsigned int value, uint8_t min, uint8_t max, uint8_t &adress);
   void HaltRequest();
 };
 

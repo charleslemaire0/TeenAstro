@@ -64,7 +64,7 @@ void StartMove( int&n)
 		}
 
 		t += 1. / (currSpeed*stepsPerMotorRevolution);
-		unsigned int stepperspeednew = stepperspeedini + storage.cmdAcc * t;
+		unsigned int stepperspeednew = stepperspeedini + (unsigned int)storage.cmdAcc * t * 100;
 		if (stepperspeednew > storage.maxSpeed)
 		{
 			status = 2;
@@ -107,7 +107,7 @@ void FinishMove( int n)
 		position += storage.reverse ? -sign : sign;
 		writePos();
 		t += 1. / (currSpeed*stepsPerMotorRevolution);
-		unsigned int stepperspeednew = stepperspeedini - storage.cmdAcc * t;
+		unsigned int stepperspeednew = stepperspeedini - (unsigned int)storage.cmdAcc * t * 100;
 		if (stepperspeednew < storage.minSpeed)
 		{
 			currSpeed = storage.minSpeed;
@@ -148,7 +148,7 @@ void Go(int stepperspeedini, int sign, double& t)
 	if (currSpeed != storage.maxSpeed)
 	{
 		double tnew = t + 1. / (currSpeed*stepsPerMotorRevolution);
-		double  a = storage.manAcc * tnew;
+		double  a = (unsigned int) storage.manAcc * tnew * 100;
 		unsigned int stepperspeednew = stepperspeedini + a + 0.5*a*a;
 		if (stepperspeednew < storage.maxSpeed)
 		{
@@ -178,7 +178,7 @@ void Stop(int sign)
     serCom0.updateGoto();
     serCom2.updateGoto();
 		t += 1. / (currSpeed*stepsPerMotorRevolution);
-		stepperspeed = stepperspeedini - storage.manDec * t;
+		stepperspeed = stepperspeedini - (unsigned int) storage.manDec * t * 100;
 
 		if (stepperspeed < storage.minSpeed )
 		{

@@ -409,7 +409,7 @@ void SmartHandController::update()
     }
     telInfo.align = static_cast<Telescope::AlignState>(telInfo.align + 1);
   }
-  else if (top - lastpageupdate > 100)
+  else if (top - lastpageupdate > 50)
   {
     updateMainDisplay(page);
   }
@@ -1852,10 +1852,10 @@ void SmartHandController::menuMaxRate()
   char outRate[20];
   char outStepsPerDegree[20];
   char cmd[20];
-  if (DisplayMessageLX200(GetLX200(":GX92#", outRate)))
+  if (DisplayMessageLX200(GetLX200(":GX92#", outRate, sizeof(outRate))))
   {
     float maxrate = (float)strtol(&outRate[0], NULL, 10) ;
-    if (DisplayMessageLX200(GetLX200(":GXE4#", outStepsPerDegree)))
+    if (DisplayMessageLX200(GetLX200(":GXE4#", outStepsPerDegree, sizeof(outStepsPerDegree))))
     {
       float stepsPerDegree = (float)strtol(&outStepsPerDegree[0], NULL, 10);
       float slewrate = (1.0 / ((stepsPerDegree * (maxrate / 1000000.0))) * 3600.0) / 15.0;
@@ -1881,7 +1881,7 @@ void SmartHandController::menuGuideRate()
 {
   char outRate[20];
   char cmd[20];
-  if (DisplayMessageLX200(GetLX200(":GX90#", outRate)))
+  if (DisplayMessageLX200(GetLX200(":GX90#", outRate, sizeof(outRate))))
   {
     float guiderate = atof(&outRate[0]);
     if (display->UserInterfaceInputValueFloat(&buttonPad, "Guide Rate", "", &guiderate, 0.1, 2.55, 4, 2, "x"))
@@ -2036,16 +2036,16 @@ void SmartHandController::menuFocuserSettings()
         sprintf(line3, "min Speed: %03u", minS);
         sprintf(line4, "max Speed: %03u", maxS);
         DisplayLongMessage(line1, line2, line3, line4, -1);
-        sprintf(line2, "Acc. cmd.: %05u", cmdAcc);
-        sprintf(line3, "Acc. man.: %05u", manAcc);
-        sprintf(line4, "Dec. man.: %05u", manDec);
+        sprintf(line2, "Acc. cmd.: %03u", cmdAcc);
+        sprintf(line3, "Acc. man.: %03u", manAcc);
+        sprintf(line4, "Dec. man.: %03u", manDec);
         DisplayLongMessage(line1, line2, line3, line4, -1);
         break;
       }
       case 2:
       {
         value = sP;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Start Position", "", &value, 0, 65535, 5, 0, "");
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Park Position", "", &value, 0, 65535, 5, 0, "");
         sprintf(cmd, ":F0 %05d#", (int)(value));
         break;
       }
@@ -2073,22 +2073,22 @@ void SmartHandController::menuFocuserSettings()
       case 6:
       {
         value = cmdAcc;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Acc. for Cmd.", "", &value, 1, 10000, 5, 0, "");
-        sprintf(cmd, ":F4 %05d#", (int)(value));
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Acc. for Goto", "", &value, 1, 100, 5, 0, "");
+        sprintf(cmd, ":F4 %03d#", (int)(value));
         break;
       }
       case 7:
       {
         value = manAcc;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Acc. for Man.", "", &value, 1, 10000, 5, 0, "");
-        sprintf(cmd, ":F5 %05d#", (int)(value));
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Acc. for Man.", "", &value, 1, 100, 5, 0, "");
+        sprintf(cmd, ":F5 %03d#", (int)(value));
         break;
       }
       case 8:
       {
         value = manDec;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Dec. for Man.", "", &value, 1, 10000, 5, 0, "");
-        sprintf(cmd, ":F6 %05d#", (int)(value));
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Dec. for Man.", "", &value, 1, 100, 5, 0, "");
+        sprintf(cmd, ":F6 %03d#", (int)(value));
         break;
       }
       case 9:
@@ -2158,7 +2158,6 @@ void SmartHandController::menuDisplay()
       }
       break;
     }
-      
     default:
       break;
     }
@@ -2198,7 +2197,7 @@ void SmartHandController::menuContrast()
 void SmartHandController::menuDate()
 {
   char out[20];
-  if (DisplayMessageLX200(GetLX200(":GC#", out)))
+  if (DisplayMessageLX200(GetLX200(":GC#", out, sizeof(out))))
   {
     char* pEnd;
     uint8_t month = strtol(&out[0], &pEnd, 10);
@@ -2214,7 +2213,6 @@ void SmartHandController::menuDate()
 
 void SmartHandController::menuLatitude()
 {
-  char out[20];
   int degree, minute;
   if (DisplayMessageLX200(GetLatitudeLX200(degree, minute)))
   {
@@ -2222,19 +2220,19 @@ void SmartHandController::menuLatitude()
     degree > 0 ? angle += minute : angle -= minute;
     angle *= 60;
     if (display->UserInterfaceInputValueLatitude(&buttonPad, &angle))
-    {
+    { 
+      char cmd[20];
       angle /= 60;
       minute = abs(angle % 60);
       degree = angle / 60;
-      sprintf(out, ":St%+03d*%02d#", degree, minute);
-      DisplayMessageLX200(SetLX200(out),false);
+      sprintf(cmd, ":St%+03d*%02d#", degree, minute);
+      DisplayMessageLX200(SetLX200(cmd),false);
     }
   }
 }
 
 void SmartHandController::menuLongitude()
 {
-  char out[20];
   int degree, minute;
   if (DisplayMessageLX200(GetLongitudeLX200(degree, minute)))
   {
@@ -2243,11 +2241,12 @@ void SmartHandController::menuLongitude()
     angle *= 60;
     if (display->UserInterfaceInputValueLongitude(&buttonPad, &angle))
     {
+      char cmd[20];
       angle /= 60;
       minute = abs(angle) % 60;
       degree = angle / 60;
-      sprintf(out, ":Sg%+04d*%02d#", degree, minute);
-      DisplayMessageLX200(SetLX200(out),false);
+      sprintf(cmd, ":Sg%+04d*%02d#", degree, minute);
+      DisplayMessageLX200(SetLX200(cmd),false);
     }
   }
 }
@@ -2323,14 +2322,13 @@ void SmartHandController::menuWifi()
   default:
     break;
   }
-  
 }
 #endif
 
 void SmartHandController::menuHorizon()
 {
   char out[20];
-  if (DisplayMessageLX200(GetLX200(":Gh#", out)))
+  if (DisplayMessageLX200(GetLX200(":Gh#", out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10);
     if (display->UserInterfaceInputValueFloat(&buttonPad, "Horizon Limit", "", &angle, -10, 20, 2, 0, " degree"))
@@ -2344,7 +2342,7 @@ void SmartHandController::menuHorizon()
 void SmartHandController::menuOverhead()
 {
   char out[20];
-  if (DisplayMessageLX200(GetLX200(":Go#", out)))
+  if (DisplayMessageLX200(GetLX200(":Go#", out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10);
     if (display->UserInterfaceInputValueFloat(&buttonPad, "Overhead Limit", "", &angle, 60, 90, 2, 0, " degree"))
@@ -2359,7 +2357,7 @@ void SmartHandController::menuUnderPole()
 {
   char out[20];
   char cmd[15];
-  if (DisplayMessageLX200(GetLX200(":GXEB#", out)))
+  if (DisplayMessageLX200(GetLX200(":GXEB#", out, sizeof(out))))
   { 
     float angle = (float)strtol(&out[0], NULL, 10)/10;
     if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Hour Angle", "+-", &angle, 9, 12, 2, 1, " Hour"))
@@ -2380,7 +2378,7 @@ void SmartHandController::menuMeridian(bool east)
   sprintf(text, "Meridian Limit X");
   text[15] = east ? 'E' : 'W';
 
-  if (DisplayMessageLX200(GetLX200(cmd, out)))
+  if (DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10) / 4.0;
     if (display->UserInterfaceInputValueFloat(&buttonPad, "Meridian Limit", "", &angle, -45, 45, 2, 0, " degree"))
@@ -2432,7 +2430,6 @@ void SmartHandController::DisplayLongMessage(const char* txt1, const char* txt2,
   uint8_t y = h;
   display->firstPage();
   do {
-
     y = h;
     x = (display->getDisplayWidth() - display->getStrWidth(txt1)) / 2;
     display->drawStr(x, y, txt1);
