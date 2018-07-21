@@ -43,7 +43,7 @@ public:
 
   unsigned long lastStateTel;
 public:
-  bool connected = true;
+  int connectionFailure = 0;
   bool hasInfoRa = false;
   bool hasInfoDec = false;
   bool hasInfoAz = false;
@@ -68,6 +68,8 @@ public:
   bool isGuidingS();
   bool isGuidingE();
   bool isGuidingW();
+  bool connected();
+  bool notResponding();
   PierState getPierState();
   Errors getError();
   void addStar();

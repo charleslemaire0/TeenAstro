@@ -1,41 +1,49 @@
 #include "Telescope.h"
 #include "LX200.h"
 
-#define updaterate 100
+#define updaterate 200
 void Telescope::updateRaDec()
 {
-  if (millis() - lastStateRaDec > updaterate && connected)
+  if (millis() - lastStateRaDec > updaterate)
   {
     hasInfoRa = GetLX200(":GR#", TempRa, sizeof(TempRa)) == LX200VALUEGET;
     hasInfoDec = GetLX200(":GD#", TempDec, sizeof(TempDec)) == LX200VALUEGET;
-    hasInfoRa && hasInfoDec ? lastStateRaDec = millis() : connected = false;
+    hasInfoRa && hasInfoDec ? lastStateRaDec = millis() : connectionFailure++;
   }
 };
 void Telescope::updateAzAlt()
 {
-  if (millis() - lastStateAzAlt > updaterate && connected)
+  if (millis() - lastStateAzAlt > updaterate)
   {
     hasInfoAz = GetLX200(":GZ#", TempAz, sizeof(TempAz)) == LX200VALUEGET;
     hasInfoAlt = GetLX200(":GA#", TempAlt, sizeof(TempAlt)) == LX200VALUEGET;
-    hasInfoAz && hasInfoAlt ? lastStateAzAlt = millis() : connected = false;
+    hasInfoAz && hasInfoAlt ? lastStateAzAlt = millis() : connectionFailure++;
   }
 }
 void Telescope::updateTime()
 {
-  if (millis() - lastStateTime > updaterate && connected)
+  if (millis() - lastStateTime > updaterate)
   {
     hasInfoUTC = GetLX200(":GL#", TempUTC, sizeof(TempUTC)) == LX200VALUEGET;
     hasInfoSideral = GetLX200(":GS#", TempSideral, sizeof(TempSideral)) == LX200VALUEGET;
-    hasInfoUTC && hasInfoSideral ? lastStateTime = millis() : connected = false;
+    hasInfoUTC && hasInfoSideral ? lastStateTime = millis() : connectionFailure++;
   }
 };
 void Telescope::updateFocuser()
 {
-
-  if (millis() - lastStateFocuser > updaterate && connected)
+  if (millis() - lastStateFocuser > updaterate)
   {
-    hasInfoFocuser = GetLX200(":F?#", TempFocuserStatus, sizeof(TempFocuserStatus)) == LX200VALUEGET;
-    hasInfoFocuser ? lastStateFocuser = millis() : connected = false;
+    char fc[45];
+    hasInfoFocuser = GetLX200(":F?#", fc, sizeof(TempFocuserStatus)) == LX200VALUEGET;
+    if (hasInfoFocuser)
+    {
+      lastStateFocuser = millis();
+      sprintf(TempFocuserStatus, fc);
+    }
+    else
+    {
+      connectionFailure++;
+    }
   }
 };
 void Telescope::updateTel()
@@ -44,9 +52,20 @@ void Telescope::updateTel()
   {
     hasPierInfo = GetLX200(":Gm#", sideofpier, sizeof(sideofpier)) == LX200VALUEGET;
     hasTelStatus = GetLX200(":GU#", TelStatus, sizeof(TelStatus)) == LX200VALUEGET;
-    hasPierInfo && hasTelStatus ? lastStateTel = millis() : connected = false;
+    hasPierInfo && hasTelStatus ? lastStateTel = millis() : connectionFailure++;
   }
 };
+
+bool Telescope::connected()
+{
+  return connectionFailure == 0;
+}
+
+bool Telescope::notResponding()
+{
+  return connectionFailure > 10;
+}
+
 Telescope::ParkState Telescope::getParkState()
 {
   if (strchr(&TelStatus[0], 'P') != NULL)

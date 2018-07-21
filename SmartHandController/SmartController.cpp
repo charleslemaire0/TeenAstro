@@ -341,8 +341,7 @@ void SmartHandController::update()
 {
   tickButtons();
   unsigned long top = millis();
-
-  if (buttonPressed() || telInfo.connected == false)
+  if (buttonPressed())
   { 
     time_last_action = millis();
     if (sleepDisplay)
@@ -382,13 +381,14 @@ void SmartHandController::update()
   }
   if (powerCylceRequired)
   {
-    display->setFont(u8g2_font_helvR12_tr);
+    display->sleepOff();
     DisplayMessage("Device", "will reboot...", 1000);
     ESP.reset();
     return;
   }
-  if (telInfo.connected == false)
+  if (telInfo.notResponding())
   {
+    display->sleepOff();
     DisplayMessage("!! Error !!", "Not Connected", -1);
     DisplayMessage("Device", "will reboot...", 1000);
     ESP.reset();
@@ -413,7 +413,7 @@ void SmartHandController::update()
   {
     updateMainDisplay(page);
   }
-  if (telInfo.connected && (telInfo.getTrackingState() == Telescope::TRK_SLEWING || telInfo.getParkState() == Telescope::PRK_PARKING))
+  if (telInfo.connected() && (telInfo.getTrackingState() == Telescope::TRK_SLEWING || telInfo.getParkState() == Telescope::PRK_PARKING))
   {
     bool stop = (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART || eventbuttons[0] == E_DOUBLECLICK) ? true : false;
     int it = 1;
@@ -486,8 +486,6 @@ void SmartHandController::update()
     {
       menuFocuser();
     }
-
-
     exitMenu = false;
     time_last_action = millis();
   }
@@ -506,6 +504,7 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
   u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
   u8g2_uint_t step1 = u8g2_GetUTF8Width(u8g2, "44");
   u8g2_uint_t step2 = u8g2_GetUTF8Width(u8g2, "4") + 1;
+  telInfo.connectionFailure = max(telInfo.connectionFailure - 2, 0);
   telInfo.updateTel();
   if (telInfo.hasTelStatus && telInfo.align != Telescope::ALI_OFF)
   {
@@ -777,7 +776,7 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
     }
     else if (page == 3)
     {
-      if (telInfo.hasInfoFocuser)
+      if (true)
       {
         char pos[6];
         char spd[4];

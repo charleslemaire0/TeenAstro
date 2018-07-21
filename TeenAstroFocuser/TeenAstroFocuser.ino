@@ -16,7 +16,7 @@ void setup()
   digitalWrite(StepPin, LOW);
 
 	Serial.begin(115200);
-  Serial.setTimeout(100);
+  Serial.setTimeout(5);
   Serial2.setRX(26);
   Serial2.setTX(31);
   Serial2.begin(115200);

@@ -55,8 +55,8 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
   Ser.setTimeout(timeOutMs);
   memset(recvBuffer, 0, bufferSize);
   // clear the read/write buffers
-  //Ser.flush();
-  //serialRecvFlush();
+  Ser.flush();
+  serialRecvFlush();
 
   // send the command
   Ser.print(command);
@@ -93,9 +93,9 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     }
     if (command[1] == 'F')
     {
-      timeOutMs = 400;
+      Ser.setTimeout(timeOutMs*4);
       if (strchr("+-*:GPS", command[2])) { noResponse = true; }
-      if (strchr("01234567W", command[2])) { shortResponse = true; Ser.setTimeout(timeOutMs); }
+      if (strchr("01234567W", command[2])) { shortResponse = true;}
     }
     if (command[1] == 'h') {
       if (strchr("F", command[2])) noResponse = true;

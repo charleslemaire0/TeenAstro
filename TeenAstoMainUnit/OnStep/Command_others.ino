@@ -623,40 +623,21 @@ void Command_F()
   switch (command[1])
   {
   case '+':
-    focuserNoResponse = true;
-    break;
   case '-':
-    focuserNoResponse = true;
-    break;
   case '*':
-    focuserNoResponse = true;
-    break;
   case ':':
-    focuserNoResponse = true;
-    break;
   case 'Q':
-    focuserNoResponse = true;
-    break;
   case 'G':
-    focuserNoResponse = true;
-    break;
   case 'S':
-    focuserNoResponse = true;
-    break;
   case 'P':
     focuserNoResponse = true;
     break;
   case '?':
-    focuserNoResponse = false;
-    focuserShortResponse = false;
-    break;
   case '~':
     focuserNoResponse = false;
     focuserShortResponse = false;
     break;
   case 'W':
-    focuserNoResponse = false;
-    focuserShortResponse = true;
   case '0':
   case '1':
   case '2':
@@ -680,7 +661,7 @@ void Command_F()
     unsigned long start = millis();
     int pos = 0;
     char b = 0;
-    while ( millis() - start < 100)
+    while ( millis() - start < 50)
     {
       if (Serial2.available()>0)
       {
