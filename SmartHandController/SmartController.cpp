@@ -1959,7 +1959,8 @@ void SmartHandController::menuFocuser()
     switch (current_selection_L2)
     {
     case 0:
-      return;
+      exitMenu = true;
+      break;
     case 1:
     {
       if (display->UserInterfaceInputValueFloat(&buttonPad, "Goto Position", "", &FocuserPos, 0, 65535, 5, 0, ""))
