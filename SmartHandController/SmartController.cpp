@@ -504,7 +504,7 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
   u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
   u8g2_uint_t step1 = u8g2_GetUTF8Width(u8g2, "44");
   u8g2_uint_t step2 = u8g2_GetUTF8Width(u8g2, "4") + 1;
-  telInfo.connectionFailure = max(telInfo.connectionFailure - 2, 0);
+  telInfo.connectionFailure = max(telInfo.connectionFailure - 1, 0);
   telInfo.updateTel();
   if (telInfo.hasTelStatus && telInfo.align != Telescope::ALI_OFF)
   {
@@ -1483,12 +1483,15 @@ void SmartHandController::menuMountType()
 void SmartHandController::menuPredefinedMount()
 {
   current_selection_L3 = 1;
-  while (current_selection_L3 != 0)
+  while (!exitMenu)
   {
     const char *string_list_Mount = "Alt Mount\n""Fornax\n""Knopf\n""Losmandy\n""Sideres85\n""Sky-Watcher\n""Takahashi\n""Vixen";
     current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, "Mount", current_selection_L3, string_list_Mount);
     switch (current_selection_L3)
     {
+    case 0:
+      return;
+      break;
     case 1:
       menuAltMount();
       break;
@@ -1521,56 +1524,57 @@ void SmartHandController::menuPredefinedMount()
 void SmartHandController::menuAltMount()
 {
   current_selection_L4 = 1;
-  while (current_selection_L4 != 0)
+  while (!exitMenu)
   {
     const char *string_list_Mount = "Alt 5 Escap\n""Alt 6 Escap\n""Alt 7 Escap P520\n""Alt 5 Berger\n""Alt 6 Berger\n""Alt 7 Berger\n";
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Alt Mount", current_selection_L4, string_list_Mount);
-    if (current_selection_L4 > 0)
+
+    int gear1, steprot, gear2, currentH, currentL;
+    if (current_selection_L4 > 3)
     {
-      int gear1, steprot, gear2,  currentH, currentL;
-      if (current_selection_L4>3)
-      {
-        currentH = 70;
-        currentL = 70;
-        steprot = 48;
-      }
-      else
-      {
-        currentH = 120;
-        currentL = 70;
-        steprot = 100;
-      }
-      switch (current_selection_L4)
-      {
-      case 1:
-        gear1 = 15625;
-        gear2 = 16667;
-        break;
-      case 2:
-        gear1 = 13750;
-        gear2 = 16667;
-        break;
-      case 3:
-        gear1 = 16875;
-        gear2 = 17500;
-        break;
-      case 4:
-        gear1 = 18750;
-        gear2 = 18750;
-        break;
-      case 5:
-        gear1 = 20625;
-        gear2 = 18750;
-        break;
-      case 6:
-        gear1 = 20250;
-        gear2 = 19688;
-        break;
-      default:
-        return;
-      }
-      writeDefaultMount(true, gear1, true, gear2, steprot, currentL, currentH);
+      currentH = 70;
+      currentL = 70;
+      steprot = 48;
     }
+    else
+    {
+      currentH = 120;
+      currentL = 70;
+      steprot = 100;
+    }
+    switch (current_selection_L4)
+    {
+    case 0:
+      return;
+    case 1:
+      gear1 = 15625;
+      gear2 = 16667;
+      break;
+    case 2:
+      gear1 = 13750;
+      gear2 = 16667;
+      break;
+    case 3:
+      gear1 = 16875;
+      gear2 = 17500;
+      break;
+    case 4:
+      gear1 = 18750;
+      gear2 = 18750;
+      break;
+    case 5:
+      gear1 = 20625;
+      gear2 = 18750;
+      break;
+    case 6:
+      gear1 = 20250;
+      gear2 = 19688;
+      break;
+    default:
+      return;
+    }
+    writeDefaultMount(true, gear1, true, gear2, steprot, currentL, currentH);
+    
   }
 }
 
@@ -1578,53 +1582,54 @@ void SmartHandController::menuAltMount()
 void SmartHandController::menuFornax()
 {
   current_selection_L4 = 1;
-  while (current_selection_L4 != 0)
+  while (!exitMenu)
   {
     const char *string_list_Mount = "Fornax 52\n""Fornax 102";
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Fornax Mount", current_selection_L4, string_list_Mount);
-    if (current_selection_L4 > 0)
+
+    switch (current_selection_L4)
     {
-      switch (current_selection_L4)
-      {
-      case 1:
-      case 2:
-        writeDefaultMount(true, 864, true, 864, 200, 80, 120);
-        break;
-      }
+    case 0:
+      return;
+    case 1:
+    case 2:
+      writeDefaultMount(true, 864, true, 864, 200, 80, 120);
+      break;
     }
+    
   }
 }
 void SmartHandController::menuKnopf()
 {
   current_selection_L4 = 1;
-  while (current_selection_L4 != 0)
+  while (!exitMenu)
   {
     const char *string_list_Mount = "MK70\n""MK70S\n""MK100S\n""MK140S";
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Knopf Mount", current_selection_L4, string_list_Mount);
-    if (current_selection_L4 > 0)
+    switch (current_selection_L4)
     {
-      switch (current_selection_L4)
-      {
-      case 1:
-        writeDefaultMount(true, 192 * 16, true, 192 * 16, 200, 100, 150);
-        break;
-      case 2:
-        writeDefaultMount(true, 192 * 8, true, 192 * 8, 200, 100, 150);
-        break;
-      case 3:
-        writeDefaultMount(true, 280 * 16, true, 280 * 16, 200, 100, 160);
-        break;
-      case 4:
-        writeDefaultMount(true, 350 * 16, true, 350 * 16, 200, 120, 160);
-        break;
-      }
+    case 0:
+      return;
+    case 1:
+      writeDefaultMount(true, 192 * 16, true, 192 * 16, 200, 100, 150);
+      break;
+    case 2:
+      writeDefaultMount(true, 192 * 8, true, 192 * 8, 200, 100, 150);
+      break;
+    case 3:
+      writeDefaultMount(true, 280 * 16, true, 280 * 16, 200, 100, 160);
+      break;
+    case 4:
+      writeDefaultMount(true, 350 * 16, true, 350 * 16, 200, 120, 160);
+      break;
+      
     }
   }
 }
 void SmartHandController::menuLosmandy()
 {
   current_selection_L4 = 1;
-  while (current_selection_L4 != 0)
+  while (!exitMenu)
   {
     const char *string_list_Mount = "G8 ESCAP P530\n""G11 ESCAP P530";
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Fornax Mount", current_selection_L4, string_list_Mount);
@@ -1645,7 +1650,7 @@ void SmartHandController::menuLosmandy()
 void SmartHandController::menuSideres()
 {
   current_selection_L4 = 1;
-  while (current_selection_L4 != 0)
+  while (!exitMenu)
   {
     const char *string_list_Mount = "Sideres 85\n""Sideres 85 isel";
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Sideres Mount", current_selection_L4, string_list_Mount);
@@ -1671,7 +1676,7 @@ void SmartHandController::menuSideres()
 void SmartHandController::menuTakahashi()
 {
   current_selection_L4 = 1;
-  while (current_selection_L4 != 0)
+  while (!exitMenu)
   {
     const char *string_list_Mount = "EM11b kit FS2\n""EM200b kit FS2\n""EM200 kit FS2";
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Takahashi Mount", current_selection_L4, string_list_Mount);
@@ -1708,7 +1713,7 @@ void SmartHandController::menuTakahashi()
 void SmartHandController::menuVixen()
 {
   current_selection_L4 = 1;
-  while (current_selection_L4 != 0)
+  while (!exitMenu)
   {
     const char *string_list_Mount = "SPHINX SECM3\n""old ALTLUX\n""ATLUX ESCAP\n""SP-DX\n""GP-E\n""GP-2\n""GP-DX\n""GP-D2";
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Vixen Mount", current_selection_L4, string_list_Mount);
@@ -1762,6 +1767,8 @@ void SmartHandController::menuVixen()
 
 void SmartHandController::writeDefaultMount(const bool& r1, const int& ttgr1, const bool& r2, const int& ttgr2, const int& stprot, const int& cL, const int& cH)
 {
+  menuMaxRate();
+
   writeReverseLX200(1, r1);
   writeTotGearLX200(1, ttgr1);
   writeStepPerRotLX200(1, stprot);

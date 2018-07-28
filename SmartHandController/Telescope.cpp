@@ -63,7 +63,7 @@ bool Telescope::connected()
 
 bool Telescope::notResponding()
 {
-  return connectionFailure > 10;
+  return connectionFailure > 4;
 }
 
 Telescope::ParkState Telescope::getParkState()
