@@ -18,6 +18,13 @@ void Command_dollar()
       EEPROM.write(i, 0);
     }
     break;
+  case '!':
+    Serial.end();
+    Serial1.end();
+    Serial2.end();
+    delay(1000);
+    _reboot_Teensyduino_();
+    break;
   case 'B':
   {
     int i;

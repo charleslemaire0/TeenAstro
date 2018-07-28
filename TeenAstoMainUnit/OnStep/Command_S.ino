@@ -12,6 +12,8 @@ void Command_S(Command& process_command)
     {
       EEPROM.write(EE_mountType, i);
       Serial.end();
+      Serial1.end();
+      Serial2.end();
       delay(1000);
       _reboot_Teensyduino_();
     }
