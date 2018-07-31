@@ -977,3 +977,25 @@ void Command_U()
   else
     commandError = true;
 }
+
+//   W - Site Select/Site get
+//  :Wn#
+//         Sets current site to n, 0..3 or queries site with ?
+//         Returns: Nothing or current site ?#
+void Command_W()
+{
+  if ((command[1] >= '0') && (command[1] <= '3'))
+  {
+    uint8_t currentSite = command[1] - '0';
+    EEPROM.write(EE_currentSite, currentSite);
+    localSite.ReadSiteDefinition(currentSite);
+    quietReply = true;
+  }
+  else
+    if (command[1] == '?') {
+      quietReply = true;
+      sprintf(reply, "%i", localSite.siteIndex());
+    }
+    else
+      commandError = true;
+}

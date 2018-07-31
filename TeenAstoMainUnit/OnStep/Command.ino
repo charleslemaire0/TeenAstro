@@ -142,6 +142,9 @@ void processCommands()
     case 'T':
       Command_T();
       break;
+    case 'W':
+      Command_W();
+      break;
     default:
       commandError = true;
       break;

@@ -21,8 +21,8 @@ class siteDefinition
   // 179..182 longitude 4
   // 183      timeZone  4
   // 184..199 site name 4
-#define EE_currentSite   11
-#define EE_sites        100
+#define EE_currentSite  100
+#define EE_sites        101
 
   struct ssite
   {
@@ -31,13 +31,13 @@ class siteDefinition
     char siteName[16];
   };
 private:
-  byte   m_siteIndex;
+  uint8_t  m_siteIndex;
   ssite  m_site;
   double m_cosLat;
   double m_sinLat;
 
 public:
-  const byte siteIndex()
+  const uint8_t siteIndex()
   {
     return m_siteIndex;
   }
@@ -89,7 +89,7 @@ public:
   {
     return m_cosLat;
   }
-  void ReadSiteDefinition( byte siteIndex)
+  void ReadSiteDefinition(uint8_t siteIndex)
   {
     m_siteIndex = siteIndex;
     int adress = EE_sites + m_siteIndex * 25;
@@ -107,10 +107,7 @@ public:
       m_site.longitude = 0;
       EEPROM_writeFloat(EE_sites + m_siteIndex * 25 + 4, (float)m_site.longitude);
     }
-
     adress += 4;
- 
-
     adress += 1;
     EEPROM_readString(adress, m_site.siteName);
     m_cosLat = cos(m_site.latitude / Rad);
@@ -118,14 +115,19 @@ public:
   }
   void ReadCurrentSiteDefinition()
   {
-    byte index = EEPROM.read(EE_currentSite);
-    if (index > 3) index = 0;   // site index is valid?
-    ReadSiteDefinition(index);
+    m_siteIndex = EEPROM.read(EE_currentSite);
+    if (m_siteIndex > 3)
+    {
+      initdefault();
+    }
+    else
+      ReadSiteDefinition(m_siteIndex);
   }
   void initdefault()
   {
     // init the site information, lat/long/tz/name
     m_siteIndex = 0;
+    EEPROM.write(EE_currentSite, m_siteIndex);
     setLat(0);
     setLong(0);
     setSiteName("INIT");
