@@ -13,7 +13,7 @@
   #define Axis2 "DEC"
 #endif
 
-const char html_settingsBrowserTime[] =
+const char* html_settingsBrowserTime PROGMEM =
 "&nbsp;&nbsp;<span id=\"datetime\"></span> UT (web browser)"
 "<script> "
 "function pad(num, size) { var s = '000000000' + num; return s.substr(s.length-size); }"
@@ -22,32 +22,32 @@ const char html_settingsBrowserTime[] =
 "' '+pad(now.getUTCHours().toString(),2)+':'+pad(now.getUTCMinutes().toString(),2)+':'+pad(now.getUTCSeconds().toString(),2); "
 "</script><br />\r\n";
 
-const char* html_indexDate = "&nbsp;&nbsp;<font class='c'>%s</font>";
-const char* html_indexTime = "&nbsp;<font class='c'>%s</font>&nbsp;UT";
-const char* html_indexSidereal = "&nbsp;(<font class='c'>%s</font>&nbsp; LST)<br />";
-const char* html_indexSite = "&nbsp;&nbsp;Long. = <font class='c'>%s</font>, Lat. = <font class='c'>%s</font><br />";
+const char* html_indexDate PROGMEM = "&nbsp;&nbsp;<font class='c'>%s</font>";
+const char* html_indexTime PROGMEM = "&nbsp;<font class='c'>%s</font>&nbsp;UT";
+const char* html_indexSidereal PROGMEM = "&nbsp;(<font class='c'>%s</font>&nbsp; LST)<br />";
+const char* html_indexSite PROGMEM = "&nbsp;&nbsp;Long. = <font class='c'>%s</font>, Lat. = <font class='c'>%s</font><br />";
 
-const char* html_indexPosition = "&nbsp;&nbsp;Current: " Axis1 "=<font class='c'>%s</font>, " Axis2 "=<font class='c'>%s</font><br />";
-const char* html_indexTarget = "&nbsp;&nbsp;Target:&nbsp;&nbsp; " Axis1 "=<font class='c'>%s</font>, " Axis2 "=<font class='c'>%s</font><br />";
+const char* html_indexPosition PROGMEM = "&nbsp;&nbsp;Current: " Axis1 "=<font class='c'>%s</font>, " Axis2 "=<font class='c'>%s</font><br />";
+const char* html_indexTarget PROGMEM = "&nbsp;&nbsp;Target:&nbsp;&nbsp; " Axis1 "=<font class='c'>%s</font>, " Axis2 "=<font class='c'>%s</font><br />";
 #ifdef ENCODERS_ON
 const char* html_indexEncoder1 = "&nbsp;&nbsp;OnStep: Ax1=<font class='c'>%s</font>, Ax2=<font class='c'>%s</font><br />";
 const char* html_indexEncoder2 = "&nbsp;&nbsp;Encodr: Ax1=<font class='c'>%s</font>, Ax2=<font class='c'>%s</font><br />";
 #endif
-const char* html_indexPier = "&nbsp;&nbsp;Pier Side=<font class='c'>%s</font> (meridian flips <font class='c'>%s</font>)<br />";
+const char* html_indexPier PROGMEM = "&nbsp;&nbsp;Pier Side=<font class='c'>%s</font> (meridian flips <font class='c'>%s</font>)<br />";
 
-const char* html_indexCorPolar = "&nbsp;&nbsp;Polar Offset: &Delta; Alt=<font class='c'>%ld</font>\", &Delta; Azm=<font class='c'>%ld</font>\"<br />";
+const char* html_indexCorPolar PROGMEM = "&nbsp;&nbsp;Polar Offset: &Delta; Alt=<font class='c'>%ld</font>\", &Delta; Azm=<font class='c'>%ld</font>\"<br />";
 
-const char* html_indexPark = "&nbsp;&nbsp;Parking: <font class='c'>%s</font><br />";
-const char* html_indexTracking = "&nbsp;&nbsp;Tracking: <font class='c'>%s %s</font><br />";
-const char* html_indexMaxRate = "&nbsp;&nbsp;Current MaxRate: <font class='c'>%ld</font> (Default MaxRate: <font class='c'>%ld</font>)<br />";
-const char* html_indexMaxSpeed = "&nbsp;&nbsp;Maximum slew speed: <font class='c'>%s</font>&deg;/s<br />";
+const char* html_indexPark PROGMEM = "&nbsp;&nbsp;Parking: <font class='c'>%s</font><br />";
+const char* html_indexTracking PROGMEM = "&nbsp;&nbsp;Tracking: <font class='c'>%s %s</font><br />";
+const char* html_indexMaxRate PROGMEM = "&nbsp;&nbsp;Current MaxRate: <font class='c'>%ld</font> (Default MaxRate: <font class='c'>%ld</font>)<br />";
+const char* html_indexMaxSpeed PROGMEM = "&nbsp;&nbsp;Maximum slew speed: <font class='c'>%s</font>&deg;/s<br />";
 
 #ifdef AMBIENT_CONDITIONS_ON
 const char* html_indexTPHD = "&nbsp;&nbsp;%s <font class='c'>%s</font>%s<br />";
 #endif
 
-const char* html_indexLastError = "&nbsp;&nbsp;Last Error: <font class='c'>%s</font><br />";
-const char* html_indexWorkload = "&nbsp;&nbsp;Workload: <font class='c'>%s</font><br />";
+const char* html_indexLastError PROGMEM = "&nbsp;&nbsp;Last Error: <font class='c'>%s</font><br />";
+const char* html_indexWorkload PROGMEM = "&nbsp;&nbsp;Workload: <font class='c'>%s</font><br />";
 
 #ifdef OETHS
 void wifibluetooth::handleRoot(EthernetClient *client) {
@@ -94,7 +94,9 @@ void wifibluetooth::handleRoot() {
   data += html_onstep_header3;
   data += html_links1S;
   data += html_links2N;
+#if PEC_ON
   data += html_links3N;
+#endif
   data += html_links4N;
   data += html_links5N;
 #ifndef OETHS

@@ -1,3 +1,4 @@
+#if PEC_ON
 #include "config.h"
 #include "WifiBluetooth.h"
 // -----------------------------------------------------------------------------------
@@ -157,3 +158,4 @@ void wifibluetooth::processPecGet() {
   }
 }
 
+#endif

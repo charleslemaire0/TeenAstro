@@ -101,7 +101,9 @@ void wifibluetooth::handleSettings() {
   data += html_onstep_header3;
   data += html_links1N;
   data += html_links2N;
+#if PEC_ON
   data += html_links3N;
+#endif
   data += html_links4S;
   data += html_links5N;
 #ifndef OETHS

@@ -29,7 +29,7 @@ class MountStatus {
         Ser.print(":GVN#");
         s[Ser.readBytesUntil('#',s,20)]=0;
         if (s[0]==0) { _valid=false; return false; }
-        strcpy(_id,"OnStep");
+        strcpy(_id,"TeenAstro");
         strcpy(_ver,s);
       }
 
