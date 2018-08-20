@@ -330,8 +330,14 @@ void loop()
     {
       // apply the Tracking, Guiding
       cli();
-      targetAxis1.fixed += fstepAxis1.fixed;
-      targetAxis2.fixed += fstepAxis2.fixed;
+      if (!inbacklashAxis1)
+      {
+        targetAxis1.fixed += fstepAxis1.fixed;
+      }
+      if (!inbacklashAxis2)
+      {
+        targetAxis2.fixed += fstepAxis2.fixed;
+      }
       sei();
     }
     // SIDEREAL TRACKING DURING GOTOS ------------------------------------------------------------------
