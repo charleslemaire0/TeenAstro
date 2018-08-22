@@ -694,8 +694,7 @@ void initmotor()
 void readEEPROMmotor()
 {
   backlashAxis1 = EEPROM_readInt(EE_backlashAxis1);
-  if (backlashAxis1 < 0) backlashAxis1 = 0; else if (backlashAxis1 > 999) backlashAxis1 = 999;
-  blAxis1 = backlashAxis1;
+  blAxis1 = 0;
   GearAxis1 = EEPROM_readInt(EE_GearAxis1);
   StepRotAxis1 = EEPROM_readInt(EE_StepRotAxis1);
   MicroAxis1 = EEPROM.read(EE_MicroAxis1);
@@ -705,8 +704,7 @@ void readEEPROMmotor()
   HighCurrAxis1 = EEPROM.read(EE_HighCurrAxis1);
 
   backlashAxis2 = EEPROM_readInt(EE_backlashAxis2);
-  if (backlashAxis2 < 0) backlashAxis2 = 0; else if (backlashAxis2 > 999) backlashAxis2 = 999;
-  blAxis2 = backlashAxis2;
+  blAxis2 = 0;
   GearAxis2 = EEPROM_readInt(EE_GearAxis2);
   StepRotAxis2 = EEPROM_readInt(EE_StepRotAxis2);
   MicroAxis2 = EEPROM.read(EE_MicroAxis2);
