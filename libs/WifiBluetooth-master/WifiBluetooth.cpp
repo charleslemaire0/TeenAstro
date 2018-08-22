@@ -397,11 +397,11 @@ Again:
   }
 
   // Wait for connection
-  if (stationEnabled) {
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-    }
-  }
+  //if (stationEnabled) {
+  //  while (WiFi.status() != WL_CONNECTED) {
+  //    delay(500);
+  //  }
+  //}
   server.on("/", handleRoot);
   server.on("/index.htm", handleRoot);
   server.on("/configuration.htm", handleConfiguration);
@@ -431,6 +431,10 @@ Again:
 
 void wifibluetooth::update()
 {
+  if (stationEnabled && WiFi.status() != WL_CONNECTED && !accessPointEnabled)
+  {
+    return;
+  }
   server.handleClient();
 
   // disconnect client
@@ -478,6 +482,16 @@ bool wifibluetooth::isWifiOn()
 {
   return wifiOn;
 }
+
+bool wifibluetooth::isWifiRunning()
+{
+  if (!wifiOn)
+    return false;
+  if (stationEnabled)
+    return WiFi.status() == WL_CONNECTED;
+  return true;
+}
+
 void wifibluetooth::turnWifiOn(bool turnOn)
 {
   wifiOn = turnOn;

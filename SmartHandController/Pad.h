@@ -26,6 +26,7 @@ public:
   bool buttonPressed();
 #ifdef WIFI_ON
   bool isWifiOn();
+  bool isWifiRunning();
   bool turnWifiOn(bool turnOn);
 #endif
 };

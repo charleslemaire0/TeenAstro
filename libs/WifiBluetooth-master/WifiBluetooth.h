@@ -166,6 +166,7 @@ class wifibluetooth
   static long EEPROM_readLong(int i);
 public:
   static bool isWifiOn();
+  static bool isWifiRunning();
   static void turnWifiOn(bool turnOn);
   static void setup();
   static void update();

@@ -316,6 +316,11 @@ bool Pad::isWifiOn()
   return m_wbt.isWifiOn();
 }
 
+bool Pad::isWifiRunning()
+{
+  return m_wbt.isWifiRunning();
+}
+
 bool Pad::turnWifiOn(bool turnOn)
 {
   m_wbt.turnWifiOn(turnOn);
