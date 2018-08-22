@@ -13,8 +13,8 @@
 #define ADRESS_Contrast 17
 #endif
 
-static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":F*#", ":F:#"};
-static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":F+#", ":F-#"};
+static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":F*#", ":F:#" };
+static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":F+#", ":F-#" };
 
 
 #define MY_BORDER_SIZE 1
@@ -275,10 +275,10 @@ void longDec2Dec(long Dec, int& deg, int& min)
   min = Dec % 60;
 }
 
-void SmartHandController::setup(const char version[], const int pin[7],const bool active[7], const int SerialBaud, const OLED model)
+void SmartHandController::setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model)
 {
-  if (strlen(version)<=19) strcpy(_version,version);
-  
+  if (strlen(version) <= 19) strcpy(_version, version);
+
   telInfo.lastState = 0;
 
   //choose a 128x64 display supported by U8G2lib (if not listed below there are many many others in u8g2 library example Sketches)
@@ -291,7 +291,7 @@ void SmartHandController::setup(const char version[], const int pin[7],const boo
     display = new U8G2_EXT_SSD1306_128X64_NONAME_F_HW_I2C(U8G2_R0);
   display->begin();
   drawIntro();
-  buttonPad.setup( pin, active);
+  buttonPad.setup(pin, active);
   tickButtons();
   if (EEPROM.length() == 0)
     EEPROM.begin(1024);
@@ -342,7 +342,7 @@ void SmartHandController::update()
   tickButtons();
   unsigned long top = millis();
   if (buttonPressed())
-  { 
+  {
     time_last_action = millis();
     if (sleepDisplay)
     {
@@ -365,14 +365,14 @@ void SmartHandController::update()
   {
     return;
   }
-  else if ((top - time_last_action)/10000 > displayT2)
+  else if ((top - time_last_action) / 10000 > displayT2)
   {
     display->sleepOn();
     sleepDisplay = true;
     buttonPad.setMenuMode();
     return;
   }
-  else if ((top - time_last_action)/10000 > displayT1 && !lowContrast)
+  else if ((top - time_last_action) / 10000 > displayT1 && !lowContrast)
   {
     display->setContrast(0);
     lowContrast = true;
@@ -382,6 +382,7 @@ void SmartHandController::update()
   if (powerCylceRequired)
   {
     display->sleepOff();
+    DisplayMessage("Press key", "to reboot...", -1);
     DisplayMessage("Device", "will reboot...", 1000);
     ESP.reset();
     return;
@@ -497,7 +498,7 @@ void SmartHandController::update()
 
 }
 
-void SmartHandController::updateMainDisplay( u8g2_uint_t page)
+void SmartHandController::updateMainDisplay(u8g2_uint_t page)
 {
   u8g2_t *u8g2 = display->getU8g2();
   display->setFont(u8g2_font_helvR12_te);
@@ -693,12 +694,12 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
         u8g2_uint_t y = 36;
         x = u8g2_GetDisplayWidth(u8g2);
 
-        display->drawRA( x, y, Rah, Ram, Ras);
+        display->drawRA(x, y, Rah, Ram, Ras);
         u8g2_DrawUTF8(u8g2, 0, y, "RA");
 
         y += line_height + 4;
         u8g2_DrawUTF8(u8g2, 0, y, "Dec");
-        display->drawDec( x, y, decsign, decdeg, decmin, decsec);
+        display->drawDec(x, y, decsign, decdeg, decmin, decsec);
 
       }
     }
@@ -740,7 +741,7 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
         x = startpos;
         x = u8g2_GetDisplayWidth(u8g2);
 
-        display->drawDec( x, y, Altsign, Altdeg, Altmin, Altsec);
+        display->drawDec(x, y, Altsign, Altdeg, Altmin, Altsec);
         u8g2_DrawUTF8(u8g2, 0, y, "Alt.");
       }
     }
@@ -761,7 +762,7 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
         memcpy(Ras, &telInfo.TempUTC[6], 2);
         Ras[2] = '\0';
         u8g2_DrawUTF8(u8g2, 0, y, "UTC");
-        display->drawRA( x, y, Rah, Ram, Ras);
+        display->drawRA(x, y, Rah, Ram, Ras);
 
         y += line_height + 4;
         memcpy(Rah, telInfo.TempSideral, 2);
@@ -783,7 +784,7 @@ void SmartHandController::updateMainDisplay( u8g2_uint_t page)
         u8g2_uint_t y = 36;
         x = u8g2_GetDisplayWidth(u8g2) - u8g2_GetUTF8Width(u8g2, "00000");
         u8g2_DrawUTF8(u8g2, 0, y, "F Position");
-           memcpy(pos, &telInfo.TempFocuserStatus[1], 5);
+        memcpy(pos, &telInfo.TempFocuserStatus[1], 5);
         pos[5] = 0;
         u8g2_DrawUTF8(u8g2, x, y, pos);
 
@@ -840,7 +841,7 @@ void SmartHandController::drawLoad()
   do {
     display->setFont(u8g2_font_helvR14_tr);
     x = (display->getDisplayWidth() - display->getStrWidth("Loading")) / 2;
-    display->drawStr(x, display->getDisplayHeight()/2. - 14, "Loading");
+    display->drawStr(x, display->getDisplayHeight() / 2. - 14, "Loading");
     x = (display->getDisplayWidth() - display->getStrWidth(_version)) / 2;
     display->drawStr(x, display->getDisplayHeight() / 2. + 14, _version);
   } while (display->nextPage());
@@ -862,9 +863,9 @@ bool SmartHandController::menuSetStepperGearBox(const uint8_t &axis, unsigned sh
   char text[20];
   float stepperGearBox = 10;
   sprintf(text, "Gear box M%u", axis);
-  if (display->UserInterfaceInputValueFloat(&buttonPad,text, "Ratio", &stepperGearBox, 1, 100, 5, 0, ""))
+  if (display->UserInterfaceInputValueFloat(&buttonPad, text, "Ratio", &stepperGearBox, 1, 100, 5, 0, ""))
   {
-    return DisplayMessageLX200(writeTotGearLX200(axis, stepperGearBox * worm),false);
+    return DisplayMessageLX200(writeTotGearLX200(axis, stepperGearBox * worm), false);
   }
 }
 
@@ -880,7 +881,7 @@ bool SmartHandController::menuSetReverse(const uint8_t &axis)
   if (choice)
   {
     reverse = (bool)(choice - 1);
-    return DisplayMessageLX200(writeReverseLX200(axis, reverse),false);
+    return DisplayMessageLX200(writeReverseLX200(axis, reverse), false);
   }
   return true;
 }
@@ -893,7 +894,7 @@ bool SmartHandController::menuSetBacklash(const uint8_t &axis)
   sprintf(text, "Backlash M%u", axis);
   if (display->UserInterfaceInputValueFloat(&buttonPad, text, "", &backlash, 0, 1000, 4, 0, " in seconds"))
   {
-    return DisplayMessageLX200(writeBacklashLX200(axis, backlash),false);
+    return DisplayMessageLX200(writeBacklashLX200(axis, backlash), false);
   }
   return true;
 }
@@ -904,7 +905,7 @@ bool SmartHandController::menuSetTotGear(const uint8_t &axis)
     return false;
   char text[20];
   sprintf(text, "Gear M%u", axis);
-  if (display->UserInterfaceInputValueFloat(&buttonPad, text, "Ratio", &totGear, 1, 10000, 5, 0, ""))
+  if (display->UserInterfaceInputValueFloat(&buttonPad, text, "Ratio", &totGear, 1, 60000, 5, 0, ""))
   {
     return DisplayMessageLX200(writeTotGearLX200(axis, totGear), false);
   }
@@ -919,15 +920,15 @@ bool SmartHandController::menuSetStepPerRot(const uint8_t &axis)
   sprintf(text, "Stepper M%u", axis);
   if (display->UserInterfaceInputValueFloat(&buttonPad, text, "", &stepPerRot, 1, 400, 3, 0, " Steps"))
   {
-    return DisplayMessageLX200(writeStepPerRotLX200(axis, stepPerRot),false);
+    return DisplayMessageLX200(writeStepPerRotLX200(axis, stepPerRot), false);
   }
   return true;
 }
 bool SmartHandController::menuSetMicro(const uint8_t &axis)
 {
   uint8_t microStep;
-    if (!DisplayMessageLX200(readMicroLX200(axis, microStep)))
-      return false;
+  if (!DisplayMessageLX200(readMicroLX200(axis, microStep)))
+    return false;
   char text[20];
   char * string_list_micro = "16 (~256)\n32\n64\n128\n256";
   sprintf(text, "Stepper M%u", axis);
@@ -936,7 +937,7 @@ bool SmartHandController::menuSetMicro(const uint8_t &axis)
   if (choice)
   {
     microStep = choice - 1 + 4;
-    return DisplayMessageLX200(writeMicroLX200(axis, microStep),false);
+    return DisplayMessageLX200(writeMicroLX200(axis, microStep), false);
   }
   return true;
 }
@@ -951,7 +952,7 @@ bool SmartHandController::menuSetLowCurrent(const uint8_t &axis)
   sprintf(text, "Low Curr. M%u", axis);
   if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &lowCurr, 10, 200, 3, "0 mA"))
   {
-    return DisplayMessageLX200(writeLowCurrLX200(axis, lowCurr),false);
+    return DisplayMessageLX200(writeLowCurrLX200(axis, lowCurr), false);
   }
   return true;
 }
@@ -967,7 +968,7 @@ bool SmartHandController::menuSetHighCurrent(const uint8_t &axis)
   sprintf(text, "High Curr. M%u", axis);
   if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &highCurr, 10, 200, 3, "0 mA"))
   {
-    return DisplayMessageLX200(writeHighCurrLX200(axis, highCurr),false);
+    return DisplayMessageLX200(writeHighCurrLX200(axis, highCurr), false);
   }
   return true;
 }
@@ -980,13 +981,13 @@ void SmartHandController::DisplayMountSettings()
 
 void SmartHandController::DisplayMotorSettings(const uint8_t &axis)
 {
-  char line1[32]="";
-  char line2[32]="";
-  char line3[32]="";
-  char line4[32]="";
+  char line1[32] = "";
+  char line2[32] = "";
+  char line3[32] = "";
+  char line4[32] = "";
   bool reverse;
-  float backlash,totGear,stepPerRot;
-  uint8_t microStep,lowCurr,highCurr;
+  float backlash, totGear, stepPerRot;
+  uint8_t microStep, lowCurr, highCurr;
   sprintf(line1, "Motor %u Settings", axis);
   if (DisplayMessageLX200(readReverseLX200(axis, reverse)))
   {
@@ -1102,7 +1103,7 @@ void SmartHandController::menuSpeedRate()
   current_selection_speed = display->UserInterfaceSelectionList(&buttonPad, "Set Speed", current_selection_speed, string_list_Speed);
   if (current_selection_speed > 0)
   {
-    char cmd[5]= ":Rn#";
+    char cmd[5] = ":Rn#";
     cmd[2] = '0' + current_selection_speed - 1;
     SetLX200(cmd);
   }
@@ -1122,7 +1123,7 @@ void SmartHandController::menuTrack()
     case 1:
       char out[20];
       memset(out, 0, sizeof(out));
-      if (SetLX200(":Td#")== LX200VALUESET)
+      if (SetLX200(":Td#") == LX200VALUESET)
       {
         DisplayMessage("Tracking", "OFF", 500);
         exitMenu = true;
@@ -1169,7 +1170,7 @@ void SmartHandController::menuSyncGoto(bool sync)
   while (!exitMenu)
   {
     const char *string_list_gotoL1 = "Messier\nStar\nSolar System\nHerschel\nCoordinates\nHome\nPark";
-    current_selection_L1  = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync" : "Goto", current_selection_L1, string_list_gotoL1);
+    current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync" : "Goto", current_selection_L1, string_list_gotoL1);
     switch (current_selection_L1)
     {
     case 0:
@@ -1195,7 +1196,7 @@ void SmartHandController::menuSyncGoto(bool sync)
     case 7:
       exitMenu = DisplayMessageLX200(SyncGoParkLX200(sync), false);
       break;
-    break;
+      break;
     default:
       break;
     }
@@ -1303,7 +1304,7 @@ void SmartHandController::menuAlignment()
   }
   // Quit Menu
   exitMenu = true;
-  
+
 }
 
 void SmartHandController::menuPier()
@@ -1348,7 +1349,7 @@ bool SmartHandController::SelectStarAlign()
   telInfo.alignSelectedStar = display->UserInterfaceCatalog(&buttonPad, "select Star", telInfo.alignSelectedStar, STAR);
   if (telInfo.alignSelectedStar != 0)
   {
-    ok = DisplayMessageLX200(SyncSelectedStarLX200(telInfo.alignSelectedStar),false);
+    ok = DisplayMessageLX200(SyncSelectedStarLX200(telInfo.alignSelectedStar), false);
   }
   buttonPad.setControlerMode();
   return ok;
@@ -1378,7 +1379,7 @@ void SmartHandController::menuSettings()
 #ifdef WIFI_ON
       "\nWifi"
 #endif
-    ;
+      ;
     current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, "Settings", current_selection_L1, string_list_SettingsL1);
     switch (current_selection_L1)
     {
@@ -1397,7 +1398,7 @@ void SmartHandController::menuSettings()
       menuUTCTime();
       break;
     case 5:
-      DisplayMessageLX200(SetLX200(":hQ#"),false);
+      DisplayMessageLX200(SetLX200(":hQ#"), false);
       break;
     case 6:
       menuMount();
@@ -1424,7 +1425,7 @@ void SmartHandController::menuMount()
   current_selection_L2 = 1;
   while (!exitMenu)
   {
-    const char *string_list_Mount = "Mount Settings\n""Predefined\n""Mount type\n""Motor 1\n""Motor 2\n""Set Guide Rate\n""Set Max Rate";
+    const char *string_list_Mount = "Show Settings\n""Predefined\n""Mount type\n""Motor 1\n""Motor 2\n""Set Guide Rate\n""Set Max Rate";
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Mount", current_selection_L2, string_list_Mount);
     switch (current_selection_L2)
     {
@@ -1460,14 +1461,14 @@ void SmartHandController::menuMount()
 
 void SmartHandController::menuMountType()
 {
- 
+
   current_selection_L3 = telInfo.getMount();
   if (current_selection_L3 == 0)
   {
     DisplayLongMessage("Warning!", NULL, "No mount type", "was defined!", -1);
     current_selection_L3 = 1;
   }
-  const char *string_list_Mount = "German Equatorial\n""Equatorial Fork\n""Altazimutal\n""Altazimutal Fork";
+  const char *string_list_Mount = "German Equatorial\n""Equatorial Fork"/*\n""Altazimutal\n""Altazimutal Fork"*/;
   current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, "Mount Type", current_selection_L3, string_list_Mount);
   if (current_selection_L3)
   {
@@ -1500,6 +1501,7 @@ void SmartHandController::menuPredefinedMount()
       break;
     case 3:
       menuKnopf();
+      break;
     case 4:
       menuLosmandy();
       break;
@@ -1526,7 +1528,7 @@ void SmartHandController::menuAltMount()
   current_selection_L4 = 1;
   while (!exitMenu)
   {
-    const char *string_list_Mount = "Alt 5 Escap\n""Alt 6 Escap\n""Alt 7 Escap P520\n""Alt 5 Berger\n""Alt 6 Berger\n""Alt 7 Berger\n";
+    const char *string_list_Mount = "Alt 5 Escap\n""Alt 6 Escap\n""Alt 7 Escap P520\n""Alt 5 Berger\n""Alt 6 Berger\n""Alt 7 Berger";
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Alt Mount", current_selection_L4, string_list_Mount);
 
     int gear1, steprot, gear2, currentH, currentL;
@@ -1574,7 +1576,7 @@ void SmartHandController::menuAltMount()
       return;
     }
     writeDefaultMount(true, gear1, true, gear2, steprot, currentL, currentH);
-    
+
   }
 }
 
@@ -1596,7 +1598,7 @@ void SmartHandController::menuFornax()
       writeDefaultMount(true, 864, true, 864, 200, 80, 120);
       break;
     }
-    
+
   }
 }
 void SmartHandController::menuKnopf()
@@ -1622,7 +1624,7 @@ void SmartHandController::menuKnopf()
     case 4:
       writeDefaultMount(true, 350 * 16, true, 350 * 16, 200, 120, 160);
       break;
-      
+
     }
   }
 }
@@ -1633,18 +1635,19 @@ void SmartHandController::menuLosmandy()
   {
     const char *string_list_Mount = "G8 ESCAP P530\n""G11 ESCAP P530";
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Fornax Mount", current_selection_L4, string_list_Mount);
-    if (current_selection_L4 > 0)
+
+    switch (current_selection_L4)
     {
-      switch (current_selection_L4)
-      {
-      case 1:
-        writeDefaultMount(false, 2160, false, 2160, 100, 80, 120);
-        break;
-      case 2:
-        writeDefaultMount(false, 4320, false, 4320, 100, 80, 120);
-        break;
-      }
+    case 0:
+      return;
+    case 1:
+      writeDefaultMount(false, 2160, false, 2160, 100, 80, 120);
+      break;
+    case 2:
+      writeDefaultMount(false, 4320, false, 4320, 100, 80, 120);
+      break;
     }
+
   }
 }
 void SmartHandController::menuSideres()
@@ -1654,22 +1657,22 @@ void SmartHandController::menuSideres()
   {
     const char *string_list_Mount = "Sideres 85\n""Sideres 85 isel";
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Sideres Mount", current_selection_L4, string_list_Mount);
-    if (current_selection_L4 > 0)
+
+    int gear1, steprot1, gear2, steprot2;
+    switch (current_selection_L4)
     {
-      int gear1, steprot1, gear2, steprot2;
-      switch (current_selection_L4)
-      {
-      case 1:
-        gear1 = 4608;
-        gear2 = 4608;
-        break;
-      case 2:
-        gear1 = 14400;
-        gear2 = 14400;
-        break;
-      }
-      writeDefaultMount(true, gear1, true, gear2, 200, 80, 120);
+    case 0:
+      return;
+    case 1:
+      gear1 = 4608;
+      gear2 = 4608;
+      break;
+    case 2:
+      gear1 = 14400;
+      gear2 = 14400;
+      break;
     }
+    writeDefaultMount(true, gear1, true, gear2, 200, 80, 120);
   }
 }
 //void SmartHandController::menuSkyWatcher() {}
@@ -1680,31 +1683,32 @@ void SmartHandController::menuTakahashi()
   {
     const char *string_list_Mount = "EM11b kit FS2\n""EM200b kit FS2\n""EM200 kit FS2";
     current_selection_L4 = display->UserInterfaceSelectionList(&buttonPad, "Takahashi Mount", current_selection_L4, string_list_Mount);
-    if (current_selection_L4 > 0)
-    {
-      bool reverse1,reverse2;
-      int gear1, steprot1,gear2,steprot2;
 
-      switch (current_selection_L4)
-      {
-      case 1:
-      case 2:
-        reverse1 = true;
-        reverse2 = false;
-        gear1 = 1800;
-        gear2 = 1800;
-        break;
-      case 3:
-        reverse1 = true;
-        reverse2 = false;
-        gear1 = 2000;
-        gear2 = 1800;
-        break;
-      default:
-        break;
-      }
-      writeDefaultMount(reverse1, gear1, reverse2, gear2, 200, 75, 100);
+    bool reverse1, reverse2;
+    int gear1, steprot1, gear2, steprot2;
+
+    switch (current_selection_L4)
+    {
+    case 0:
+      return;
+    case 1:
+    case 2:
+      reverse1 = true;
+      reverse2 = false;
+      gear1 = 1800;
+      gear2 = 1800;
+      break;
+    case 3:
+      reverse1 = true;
+      reverse2 = false;
+      gear1 = 2000;
+      gear2 = 1800;
+      break;
+    default:
+      break;
     }
+    writeDefaultMount(reverse1, gear1, reverse2, gear2, 200, 75, 100);
+
   }
 
 }
@@ -1790,7 +1794,7 @@ void SmartHandController::writeDefaultMount(const bool& r1, const int& ttgr1, co
   exitMenu = true;
 }
 
-bool SmartHandController::menuMotorKit(int& gearBox,int& stepRot, int& current)
+bool SmartHandController::menuMotorKit(int& gearBox, int& stepRot, int& current)
 {
   const char *string_list_Mount = "SECM3\n""ESCAP P530";
   uint choice = display->UserInterfaceSelectionList(&buttonPad, "Motor Kit", 0, string_list_Mount);
@@ -1860,12 +1864,12 @@ void SmartHandController::menuMaxRate()
   char cmd[20];
   if (DisplayMessageLX200(GetLX200(":GX92#", outRate, sizeof(outRate))))
   {
-    float maxrate = (float)strtol(&outRate[0], NULL, 10) ;
+    float maxrate = (float)strtol(&outRate[0], NULL, 10);
     if (DisplayMessageLX200(GetLX200(":GXE4#", outStepsPerDegree, sizeof(outStepsPerDegree))))
     {
       float stepsPerDegree = (float)strtol(&outStepsPerDegree[0], NULL, 10);
       float slewrate = (1.0 / ((stepsPerDegree * (maxrate / 1000000.0))) * 3600.0) / 15.0;
-      float slewrate2 = slewrate> 512 ? 512 : slewrate< 64 ? 64 : slewrate;
+      float slewrate2 = slewrate > 512 ? 512 : slewrate < 64 ? 64 : slewrate;
       if (slewrate2 != slewrate)
       {
         maxrate = (1.0 / ((stepsPerDegree * (100 / 1000000.0))) * 3600.0) / 15.0;
@@ -1875,7 +1879,7 @@ void SmartHandController::menuMaxRate()
 
       if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Rate", "", &slewrate2, 64, 512, 4, 0, ""))
       {
-        maxrate = (1.0 / ((stepsPerDegree * (slewrate2 / 1000000.0))) * 3600.0) / 15.0 ;
+        maxrate = (1.0 / ((stepsPerDegree * (slewrate2 / 1000000.0))) * 3600.0) / 15.0;
         sprintf(cmd, ":SX92:%04d#", (int)maxrate);
         DisplayMessageLX200(SetLX200(cmd));
       }
@@ -1892,7 +1896,7 @@ void SmartHandController::menuGuideRate()
     float guiderate = atof(&outRate[0]);
     if (display->UserInterfaceInputValueFloat(&buttonPad, "Guide Rate", "", &guiderate, 0.1, 2.55, 4, 2, "x"))
     {
-      sprintf(cmd, ":SX90:%03d#", (int)(guiderate*100));
+      sprintf(cmd, ":SX90:%03d#", (int)(guiderate * 100));
       DisplayMessageLX200(SetLX200(cmd));
     }
   }
@@ -1950,7 +1954,7 @@ void SmartHandController::menuUTCTime()
   {
     if (display->UserInterfaceInputValueUTCTime(&buttonPad, &value))
     {
-      DisplayMessageLX200(SetTimeLX200(value),false);
+      DisplayMessageLX200(SetTimeLX200(value), false);
     }
   }
 }
@@ -2116,7 +2120,7 @@ void SmartHandController::menuFocuserSettings()
       }
       if (ValueSetRequested)
       {
-        if (DisplayMessageLX200(SetLX200(cmd),false))
+        if (DisplayMessageLX200(SetLX200(cmd), false))
         {
           DisplayMessageLX200(SetLX200(":FW#"));
         }
@@ -2129,7 +2133,7 @@ void SmartHandController::menuFocuserSettings()
 
 void SmartHandController::menuDisplay()
 {
-  const char *string_list_Display = "Turn Off\nContrast\nSleep\nDeepSleep\n";
+  const char *string_list_Display = "Turn Off\nContrast\nSleep\nDeepSleep";
   current_selection_L2 = 1;
   while (!exitMenu)
   {
@@ -2175,7 +2179,7 @@ void SmartHandController::menuContrast()
 {
   const char *string_list_Display = "Min\nLow\nHigh\nMax";
   current_selection_L3 = 1;
- 
+
   current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, "Set Contrast", current_selection_L3, string_list_Display);
   switch (current_selection_L3)
   {
@@ -2187,7 +2191,7 @@ void SmartHandController::menuContrast()
   case 2:
     maxContrast = 63;
     break;
-  case 3: 
+  case 3:
     maxContrast = 127;
     break;
   case 4:
@@ -2213,7 +2217,7 @@ void SmartHandController::menuDate()
     if (display->UserInterfaceInputValueDate(&buttonPad, "Date", year, month, day))
     {
       sprintf(out, ":SC%02d/%02d/%02d#", month, day, year);
-      DisplayMessageLX200(SetLX200(out),false);
+      DisplayMessageLX200(SetLX200(out), false);
     }
   }
 }
@@ -2227,13 +2231,13 @@ void SmartHandController::menuLatitude()
     degree > 0 ? angle += minute : angle -= minute;
     angle *= 60;
     if (display->UserInterfaceInputValueLatitude(&buttonPad, &angle))
-    { 
+    {
       char cmd[20];
       angle /= 60;
       minute = abs(angle % 60);
       degree = angle / 60;
       sprintf(cmd, ":St%+03d*%02d#", degree, minute);
-      DisplayMessageLX200(SetLX200(cmd),false);
+      DisplayMessageLX200(SetLX200(cmd), false);
     }
   }
 }
@@ -2253,7 +2257,7 @@ void SmartHandController::menuLongitude()
       minute = abs(angle) % 60;
       degree = angle / 60;
       sprintf(cmd, ":Sg%+04d*%02d#", degree, minute);
-      DisplayMessageLX200(SetLX200(cmd),false);
+      DisplayMessageLX200(SetLX200(cmd), false);
     }
   }
 }
@@ -2305,29 +2309,31 @@ void SmartHandController::menuLimits()
 #ifdef WIFI_ON
 void SmartHandController::menuWifi()
 {
-  const char *string_list = buttonPad.isWifiOn() ? "Wifi off\nShow Password\nReset to factory" : "Wifi on\nShow Password\nReset to factory";
+  const char *string_list = buttonPad.isWifiOn() ? "Turn Wifi off\nShow Password\nReset to factory" : "Turn Wifi on\nShow Password\nReset to factory";
   current_selection_L2 = 1;
-
-  current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Wifi", 1, string_list);
-  switch (current_selection_L2)
+  while (current_selection_L2 != 0)
   {
-  case 0:
-    return;
-  case 1:
-    buttonPad.turnWifiOn(!buttonPad.isWifiOn());
-    exitMenu = true;
-    powerCylceRequired = true;
-    break;
-  case 2:
-    DisplayMessage("masterPassword is", "password", 1000);
-    break;
-  case 3:
-    EEPROM_writeInt(0, 0);
-    EEPROM.commit();
-    powerCylceRequired = true;
-    exitMenu = true;
-  default:
-    break;
+    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Wifi", 1, string_list);
+    switch (current_selection_L2)
+    {
+    case 0:
+      return;
+    case 1:
+      buttonPad.turnWifiOn(!buttonPad.isWifiOn());
+      exitMenu = true;
+      powerCylceRequired = true;
+      return;
+    case 2:
+      DisplayMessage("masterPassword is", "password", 1000);
+      break;
+    case 3:
+      EEPROM_writeInt(0, 0);
+      EEPROM.commit();
+      powerCylceRequired = true;
+      exitMenu = true;
+    default:
+      break;
+    }
   }
 }
 #endif
@@ -2341,7 +2347,7 @@ void SmartHandController::menuHorizon()
     if (display->UserInterfaceInputValueFloat(&buttonPad, "Horizon Limit", "", &angle, -10, 20, 2, 0, " degree"))
     {
       sprintf(out, ":Sh%+03d#", (int)angle);
-      DisplayMessageLX200(SetLX200(out),false);
+      DisplayMessageLX200(SetLX200(out), false);
     }
   }
 }
@@ -2352,10 +2358,10 @@ void SmartHandController::menuOverhead()
   if (DisplayMessageLX200(GetLX200(":Go#", out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10);
-    if (display->UserInterfaceInputValueFloat(&buttonPad, "Overhead Limit", "", &angle, 60, 90, 2, 0, " degree"))
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "Overhead Limit", "", &angle, 60, 91, 2, 0, " degree"))
     {
       sprintf(out, ":So%02d#", (int)angle);
-      DisplayMessageLX200(SetLX200(out),false);
+      DisplayMessageLX200(SetLX200(out), false);
     }
   }
 }
@@ -2365,11 +2371,11 @@ void SmartHandController::menuUnderPole()
   char out[20];
   char cmd[15];
   if (DisplayMessageLX200(GetLX200(":GXEB#", out, sizeof(out))))
-  { 
-    float angle = (float)strtol(&out[0], NULL, 10)/10;
+  {
+    float angle = (float)strtol(&out[0], NULL, 10) / 10;
     if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Hour Angle", "+-", &angle, 9, 12, 2, 1, " Hour"))
     {
-      sprintf(cmd, ":SXEB_%03d#", (int)(angle*10));
+      sprintf(cmd, ":SXEB_%03d#", (int)(angle * 10));
       DisplayMessageLX200(SetLX200(cmd), false);
     }
   }
@@ -2390,7 +2396,7 @@ void SmartHandController::menuMeridian(bool east)
     float angle = (float)strtol(&out[0], NULL, 10) / 4.0;
     if (display->UserInterfaceInputValueFloat(&buttonPad, "Meridian Limit", "", &angle, -45, 45, 2, 0, " degree"))
     {
-      sprintf(cmd, ":SXEX_%03d#", (int)angle*4.0);
+      sprintf(cmd, ":SXEX:%+03d#", (int)(angle*4.0));
       cmd[4] = east ? '9' : 'A';
       DisplayMessageLX200(SetLX200(cmd), false);
     }
