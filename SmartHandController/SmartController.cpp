@@ -1901,7 +1901,7 @@ void SmartHandController::menuGuideRate()
   if (DisplayMessageLX200(GetLX200(":GX90#", outRate, sizeof(outRate))))
   {
     float guiderate = atof(&outRate[0]);
-    if (display->UserInterfaceInputValueFloat(&buttonPad, "Guide Rate", "", &guiderate, 0.1, 2.55, 4, 2, "x"))
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "Guide Rate", "", &guiderate, 0.1f, 1.f, 4u, 2u, "x"))
     {
       sprintf(cmd, ":SX90:%03d#", (int)(guiderate * 100));
       DisplayMessageLX200(SetLX200(cmd));
