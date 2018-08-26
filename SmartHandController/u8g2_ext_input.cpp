@@ -227,7 +227,7 @@ uint8_t ext_UserInterfaceInputValueFloat(u8g2_t *u8g2, Pad* extPad, const char *
         local_value < 0 ? u8g2_DrawUTF8(u8g2, xx, yy, "-") : u8g2_DrawUTF8(u8g2, xx, yy, "+");
         xx += u8g2_GetUTF8Width(u8g2, "+");
       }
-      dtostrf(abs(local_value), len, dec, outstr);
+      dtostrf(fabs(local_value), len, dec, outstr);
       xx += u8g2_DrawUTF8(u8g2, xx, yy, outstr);
       u8g2_DrawUTF8(u8g2, xx, yy, post);
     } while (u8g2_NextPage(u8g2));
