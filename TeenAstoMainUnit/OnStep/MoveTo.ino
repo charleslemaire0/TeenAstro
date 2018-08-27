@@ -9,30 +9,7 @@ long lastPosAxis2 = 0;
 void moveTo() {
   // HA goes from +90...0..-90
   //                W   .   E
-  // meridian flip, first phase.  only happens for GEM mounts
-  if ((pierSide == PierSideFlipEW1) || (pierSide == PierSideFlipWE1))
-  {
 
-    // save destination
-    cli();
-    origTargetAxis1.fixed = targetAxis1.fixed;
-    origTargetAxis2 = (long)targetAxis2.part.m;
-
-    timerRateAxis1 = SiderealRate;
-    timerRateAxis2 = SiderealRate;
-    sei();
-
-    // first phase, decide if we should move to 60 deg. HA (4 hours) to get away from the horizon limits or just go straight to the home position
-    cli();
-
-    targetAxis1.part.m = celestialPoleStepAxis1;
-    targetAxis1.part.f = 0;
-    targetAxis2.part.m = celestialPoleStepAxis2;
-    targetAxis2.part.f = 0;
-
-    sei();
-    pierSide++;
-  }
 
   long distStartAxis1, distStartAxis2, distDestAxis1, distDestAxis2;
 
@@ -84,10 +61,6 @@ Again:
   // quickly slow the motors and stop in 1 degree
   if (abortSlew)
   {
-    // aborts any meridian flip
-    if ((pierSide == PierSideFlipWE1) || (pierSide == PierSideFlipWE2) || (pierSide == PierSideFlipWE3)) pierSide = PierSideWest;
-    if ((pierSide == PierSideFlipEW1) || (pierSide == PierSideFlipEW2) || (pierSide == PierSideFlipEW3)) pierSide = PierSideEast;
-
     // set the destination near where we are now
     cli();
 
@@ -173,104 +146,53 @@ Again:
       if (lastTrackingState == TrackingOFF)
         lastTrackingState = TrackingON;
     }
+    // restore last tracking state
+    trackingState = lastTrackingState;
+    SetSiderealClockRate(siderealInterval);
 
-    if ((pierSide == PierSideFlipEW2) || (pierSide == PierSideFlipWE2))
+    cli();
+    timerRateAxis1 = SiderealRate;
+    timerRateAxis2 = SiderealRate;
+    sei();
+
+    DecayModeTracking();
+
+    // other special gotos: for parking the mount and homeing the mount
+    if (parkStatus == Parking)
     {
-      // make sure we're at the home position just before flipping sides of the mount
-      startAxis1 = posAxis1;
-      startAxis2 = posAxis2;
+      parkStatus = ParkFailed;
       cli();
-      if (celestialPoleStepAxis1 == 0)
-      {
-        // for fork mounts
-        if (pierSide == PierSideFlipEW2)
-          targetAxis1.part.m = halfRotAxis1;
-        else
-          targetAxis1.part.m = -halfRotAxis1;
-        targetAxis1.part.f = 0;
-      }
-      else
-      {
-        // for eq mounts
-        if (pierSide == PierSideFlipWE2)
-          targetAxis1.part.m = -celestialPoleStepAxis1;
-        else
-          targetAxis1.part.m = celestialPoleStepAxis1;
-
-        targetAxis1.part.f = 0;
-      }
-
-      targetAxis1.part.m = celestialPoleStepAxis1;
-      targetAxis1.part.f = 0;
-      targetAxis2.part.m = celestialPoleStepAxis2;
-      targetAxis2.part.f = 0;
-     
-      pierSide++;
+      int axis1 = posAxis1;
+      int axis2 = posAxis2;
       sei();
-    }
-    else if ((pierSide == PierSideFlipEW3) || (pierSide == PierSideFlipWE3))
-    {
-
-      // the blAxis2 gets "reversed" when we Meridian flip, since the NORTH/SOUTH movements are reversed
-      /*cli(); blAxis2 = backlashAxis2 - blAxis2; sei();*/
-      cli();
-      startAxis1 = posAxis1;
-      targetAxis1.fixed = origTargetAxis1.fixed;
-      startAxis2 = posAxis2;
-      targetAxis2.part.m = origTargetAxis2;
-      targetAxis2.part.f = 0;
-      sei();
-    }
-    else
-    {
-      // restore last tracking state
-      trackingState = lastTrackingState;
-      SetSiderealClockRate(siderealInterval);
-
-      cli();
-      timerRateAxis1 = SiderealRate;
-      timerRateAxis2 = SiderealRate;
-      sei();
-
-      DecayModeTracking();
-
-      // other special gotos: for parking the mount and homeing the mount
-      if (parkStatus == Parking)
+      for (int i = 0; i < 12; i++)  // give the drives a moment to settle in
       {
-        parkStatus = ParkFailed;
-        cli();
-        int axis1 = posAxis1;
-        int axis2 = posAxis2;
-        sei();
-        for (int i = 0; i < 12; i++)  // give the drives a moment to settle in
+        if ((axis1 == (long)targetAxis1.part.m) && (axis2 == (long)targetAxis2.part.m))
         {
-          if ((axis1 == (long)targetAxis1.part.m) && (axis2 == (long)targetAxis2.part.m))
+          if (parkClearBacklash())
           {
-            if (parkClearBacklash())
-            {
-              parkStatus = Parked;// success, we're parked 
-              enable_Axis(false);// disable the stepper drivers
-            }
-            break;
+            parkStatus = Parked;// success, we're parked 
+            enable_Axis(false);// disable the stepper drivers
           }
-          delay(250);
-          cli();
-          axis1 = posAxis1;
-          axis2 = posAxis2;
-          sei();     
+          break;
         }
-        EEPROM.write(EE_parkStatus, parkStatus);
-        
+        delay(250);
+        cli();
+        axis1 = posAxis1;
+        axis2 = posAxis2;
+        sei();
       }
-      else if (homeMount) {
-        parkClearBacklash();
-        setHome();
-        homeMount = false;
-        atHome = true;
+      EEPROM.write(EE_parkStatus, parkStatus);
 
-        // disable the stepper drivers
-        enable_Axis(false);
-      }
+    }
+    else if (homeMount) {
+      parkClearBacklash();
+      setHome();
+      homeMount = false;
+      atHome = true;
+
+      // disable the stepper drivers
+      enable_Axis(false);
     }
   }
 }

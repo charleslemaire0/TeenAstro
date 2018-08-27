@@ -42,9 +42,6 @@ boolean setPark()
 
     // and the align
     saveAlignModel();
-
-    // and remember what side of the pier we're on
-    EEPROM.write(EE_pierSide, pierSide);
     parkSaved = true;
     EEPROM.write(EE_parkSaved, parkSaved);
 
@@ -146,47 +143,24 @@ byte park()
         // get the position we're supposed to park at
         long    h = EEPROM_readLong(EE_posAxis1);
         long    d = EEPROM_readLong(EE_posAxis2);
-        double HaP = (double)h / StepsPerDegreeAxis1;
-
-        byte    gotoPierSide = EEPROM.read(EE_pierSide);
-
-        byte side = predictSideOfPier(HaP, gotoPierSide);
-        if (side == 0)
-        {
-          parkStatus = ParkFailed;
-          EEPROM.write(EE_parkStatus, parkStatus);
-          return -1; //fail, outside limit
-        }
         // stop tracking
         abortTrackingState = trackingState;
         lastTrackingState = TrackingOFF;
         trackingState = TrackingOFF;
-
         // record our status
         parkStatus = Parking;
         EEPROM.write(EE_parkStatus, parkStatus);
-
-        bool doflip = !(pierSide == gotoPierSide);
-        if (doflip)
-        {
-          if (pierSide == PierSideEast)
-            pierSide = PierSideFlipEW1;
-          else
-            pierSide = PierSideFlipWE1;
-        }
-        // now, slew to this target HA,Dec
         goTo(h, d);
-
         return 0;
       }
       else
         return 1;   // no park position saved
     }
     else
-      return 2;       // not parked
+      return 2;    // not parked
   }
   else
-    return 3;           // already moving
+    return 3;     // already moving
 }
 
 // returns a parked telescope to operation, you must set date and time before calling this.  it also
@@ -222,7 +196,7 @@ boolean syncAtPark()
   sei();
 
   // see what side of the pier we're on
-  pierSide = EEPROM.read(EE_pierSide);
+  CheckPierSide();
   if (pierSide == PierSideWest)
     DecDir = DecDirWInit;
   else

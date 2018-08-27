@@ -12,14 +12,7 @@ siteDefinition      localSite;
 
 
 #define PierSideEast     1
-#define PierSideFlipEW1  2
-#define PierSideFlipEW2  3
-#define PierSideFlipEW3  4
-#define PierSideWest     5
-#define PierSideFlipWE1  6
-#define PierSideFlipWE2  7
-#define PierSideFlipWE3  8
-
+#define PierSideWest     2
 
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT};
 

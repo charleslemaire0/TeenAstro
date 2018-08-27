@@ -6,7 +6,7 @@
 #define EE_mountType        0
 #define EE_posAxis1         1
 #define EE_posAxis2         5
-#define EE_pierSide         9
+//#define EE_pierSide         9
 #define EE_parkStatus       10
 #define EE_parkSaved        11
 

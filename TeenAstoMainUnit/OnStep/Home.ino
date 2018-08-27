@@ -65,7 +65,7 @@ boolean setHome()
 if (mountType==MOUNT_TYPE_GEM)
     meridianFlip = MeridianFlipAlways;
 else if (mountType==MOUNT_TYPE_FORK)
-    meridianFlip = MeridianFlipAlign;
+    meridianFlip = MeridianFlipNever;
 else if (mountType == MOUNT_TYPE_FORK_ALT)
     meridianFlip = MeridianFlipNever;
 else if (mountType == MOUNT_TYPE_ALTAZM)

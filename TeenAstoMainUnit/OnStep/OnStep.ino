@@ -472,6 +472,8 @@ void CheckPierSide()
 // below horizon limit, above the overhead limit, or past the Dec limits
 void SafetyCheck(const bool forceTracking)
 {
+  // basic check to see if we're not at home
+  if (trackingState != TrackingOFF) atHome = false;
 
   if (meridianFlip != MeridianFlipNever)
   {
@@ -521,6 +523,7 @@ void SafetyCheck(const bool forceTracking)
   }
   else
   {
+    return;
     if (mountType != MOUNT_TYPE_ALTAZM)
     {
 
@@ -574,8 +577,7 @@ void SafetyCheck(const bool forceTracking)
       lastError = ERR_NONE;
     }
   }
-  // basic check to see if we're not at home
-  if (trackingState != TrackingOFF) atHome = false;
+
 }
 
 //enable Axis 
@@ -606,7 +608,7 @@ void initmount()
   if (mountType == MOUNT_TYPE_GEM)
     meridianFlip = MeridianFlipAlways;
   else if (mountType == MOUNT_TYPE_FORK)
-    meridianFlip = MeridianFlipAlign;
+    meridianFlip = MeridianFlipNever;
   else if (mountType == MOUNT_TYPE_FORK_ALT)
     meridianFlip = MeridianFlipNever;
   else if (mountType == MOUNT_TYPE_ALTAZM)

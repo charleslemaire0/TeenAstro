@@ -308,10 +308,7 @@ byte goToEqu(double RA, double Dec)
       //Serial.println(reply);
       //sprintf(reply, "axis 2 %ld", Axis2);
       //Serial.println(reply);
-      if (oldPierSide == PierSideEast)
-        pierSide = PierSideFlipEW1;
-      else
-        pierSide = PierSideFlipWE1;
+      pierSide = oldPierSide;
     }
     else
     {
