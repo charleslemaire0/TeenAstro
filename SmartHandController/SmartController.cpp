@@ -1479,8 +1479,11 @@ void SmartHandController::menuMountType()
   current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, "Mount Type", current_selection_L3, string_list_Mount);
   if (current_selection_L3)
   {
+
     char out[10];
-    sprintf(out, ":S!%d#", current_selection_L3);
+    sprintf(out, ":S!%u#", current_selection_L3);
+    DisplayMessageLX200(SetLX200(out), false);
+    delay(1000);
     Serial.end();
     exitMenu = true;
     powerCylceRequired = true;

@@ -79,7 +79,8 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       if (strchr("#ewns", command[2])) noResponse = true;
     }
     if (command[1] == 'S') {
-      if (strchr("CLSGtgMNOPrdhoTB", command[2])) shortResponse = true;
+      if (strchr("!", command[2])) noResponse = true;
+      else if (strchr("CLSGtgMNOPrdhoTB", command[2])) shortResponse = true;
     }
     if (command[1] == 'L') {
       if (strchr("BNCDL!", command[2])) noResponse = true;
