@@ -122,12 +122,6 @@ void setup()
   setSyncInterval(1);
   setTime(Teensy3Clock.get());
 
-  pinMode(PinFocusA, OUTPUT);
-  pinMode(PinFocusB, OUTPUT);
-
-
-
-
   // initialize the stepper control pins Axis1 and Axis2
   pinMode(Axis1StepPin, OUTPUT);
   pinMode(Axis1DirPin, OUTPUT);
@@ -137,9 +131,6 @@ void setup()
 #endif
   pinMode(Axis2StepPin, OUTPUT);
   pinMode(Axis2DirPin, OUTPUT);
-
-
-
 
   // light reticule LED
 #ifdef RETICULE_LED_PINS
@@ -276,15 +267,12 @@ void setup()
   {
     syncPolarHome();
   }
+
   // get the pulse-guide rate
   guideRates[0] = (float)EEPROM.read(EE_pulseGuideRate)/100.;
-  
 
   // get the Goto rate and constrain values to the limits (1/2 to 2X the MaxRate,) maxRate is in 16MHz clocks but stored in micro-seconds
-
-
   maxRate = EEPROM_readInt(EE_maxRate) * 16;
-
   maxRate = (maxRate < (MaxRate / 2L) * 16L) ? MaxRate * 16 : maxRate;
 
   SetAccelerationRates();          // set the new acceleration rate

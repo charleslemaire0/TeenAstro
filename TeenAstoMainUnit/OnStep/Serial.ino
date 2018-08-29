@@ -218,8 +218,8 @@ char Serial1_read()
 
 void Serial2_Init(unsigned long baud)
 {
-  Serial2.setRX(26);
-  Serial2.setTX(31);
+  Serial2.setRX(FocuserRX);
+  Serial2.setTX(FocuserTX);
   Serial2.begin(baud);
   Serial2.setTimeout(5);
 }
