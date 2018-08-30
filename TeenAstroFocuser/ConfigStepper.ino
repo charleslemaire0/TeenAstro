@@ -46,7 +46,7 @@ void StartMove( int&n)
 	while (status == 0)
 	{
 		serCom0.updateGoto();
-    serCom2.updateGoto();
+    serComSHC.updateGoto();
 		if (halt)
 		{
 			status = 1;
@@ -99,7 +99,7 @@ void FinishMove( int n)
 	while (sumsteps != n)
 	{
     serCom0.updateGoto();
-    serCom2.updateGoto();
+    serComSHC.updateGoto();
 		if (halt)
 			return;
 		myStepper.move(sign*micro);
@@ -126,7 +126,7 @@ void niter(int m, int sign)
 	while (m != 0)
 	{
     serCom0.updateGoto();
-    serCom2.updateGoto();
+    serComSHC.updateGoto();
 		if (halt)
 		{
 			return;
@@ -176,7 +176,7 @@ void Stop(int sign)
 	while (currSpeed != storage.minSpeed)
 	{
     serCom0.updateGoto();
-    serCom2.updateGoto();
+    serComSHC.updateGoto();
 		t += 1. / (currSpeed*stepsPerMotorRevolution);
 		stepperspeed = stepperspeedini - (unsigned int) storage.manDec * t * 100;
 

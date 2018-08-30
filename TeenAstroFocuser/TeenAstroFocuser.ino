@@ -17,10 +17,19 @@ void setup()
 
 	Serial.begin(115200);
   Serial.setTimeout(5);
-  Serial2.setRX(26);
-  Serial2.setTX(31);
+#ifdef VERSION22
+  Serial2.setRX(FocuserRX);
+  Serial2.setTX(FocuserTX);
   Serial2.begin(115200);
   Serial2.setTimeout(5);
+#endif
+#ifdef VERSION23
+  Serial1.setRX(FocuserRX);
+  Serial1.setTX(FocuserTX);
+  Serial1.begin(115200);
+  Serial1.setTimeout(5);
+#endif
+
 
   loadConfig();
 	iniPos();
@@ -32,10 +41,10 @@ void loop()
 {
 
   serCom0.Get_Command();
-  serCom2.Get_Command();
+  serComSHC.Get_Command();
 
   serCom0.MoveRequest();
-  serCom2.MoveRequest();
+  serComSHC.MoveRequest();
 
   
 	if (mdirOUT == HIGH && mdirIN == HIGH)
@@ -72,7 +81,7 @@ void loop()
 	}
 
   serCom0.Command_Check();
-  serCom2.Command_Check();
+  serComSHC.Command_Check();
 	time_acc = 0;
 	mdirOUTOld = mdirOUT;
 	mdirINOld = mdirIN;

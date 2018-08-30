@@ -33,7 +33,12 @@ bool halt = false;
 double time_acc = 0;
 DS1302 *rtc = NULL;
 SerCom serCom0(Serial);
-SerCom serCom2(Serial2);
+#ifdef VERSION22
+SerCom serComSHC(Serial2);
+#endif
+#ifdef VERSION23
+SerCom serComSHC(Serial1);
+#endif
 void iniStepper();
 #endif
 
