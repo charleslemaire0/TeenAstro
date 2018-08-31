@@ -19,7 +19,7 @@ TMC26XStepper *tmc26XStepper2;
 #define Axis2CSPin      9                   // Pin 9 (CS)
 // Pin 11 12 13 are used!! for SPI
 //Focuser Interface
-#define FocuserRX       32
+#define FocuserRX       26
 #define FocuserTX       31
 
 // ST4 interface
