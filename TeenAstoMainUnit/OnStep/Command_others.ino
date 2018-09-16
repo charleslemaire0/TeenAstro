@@ -17,7 +17,6 @@ void Command_dollar()
     {
       EEPROM.write(i, 0);
     }
-    break;
   case '!':
     Serial.end();
     Serial1.end();
@@ -455,10 +454,6 @@ void Command_A()
           alignThisStar = 1;
           return;
         }
-
-      
-
-
           // telescope should be set in the polar home (CWD) for a starting point
           // this command sets indexAxis1, indexAxis2, azmCor=0; altCor=0;
           setHome();
