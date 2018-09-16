@@ -171,6 +171,7 @@ boolean syncAtPark()
   {
     return false;
   }
+  atHome = false;
   // enable the stepper drivers
   axis1Enabled = true;
   axis2Enabled = true;
@@ -253,4 +254,5 @@ void syncPolarHome()
   posAxis2 = startAxis2;
   trueAxis2 = startAxis2;
   sei();
+  atHome = true;
 }
