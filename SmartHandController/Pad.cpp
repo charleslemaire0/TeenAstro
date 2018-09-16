@@ -325,4 +325,18 @@ bool Pad::turnWifiOn(bool turnOn)
 {
   m_wbt.turnWifiOn(turnOn);
 }
+
+void Pad::getIP(uint8_t* ip)
+{
+  m_wbt.getIP(ip);
+}
+bool Pad::isStationEnabled()
+{
+  return m_wbt.isStationEnabled();
+}
+bool Pad::isAccessPointEnabled()
+{
+  return m_wbt.isAccessPointEnabled();
+}
+
 #endif

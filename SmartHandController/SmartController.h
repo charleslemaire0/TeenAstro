@@ -94,6 +94,8 @@ private:
   void menuLatitude();
   void menuLongitude();
   //void menuAltitude();
+  void menuMainUnitInfo();
+ /* void menuHCInfo();*/
   void menuLimits();
   void menuWifi();
   void menuHorizon();

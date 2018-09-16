@@ -498,3 +498,30 @@ void wifibluetooth::turnWifiOn(bool turnOn)
   EEPROM.write(14, turnOn);
   EEPROM.commit();
 }
+
+void wifibluetooth::getIP(uint8_t* ip)
+{
+  IPAddress local;
+  if (isStationEnabled())
+  {
+     local = WiFi.localIP();
+  }
+  else if (isAccessPointEnabled())
+  {
+    local = WiFi.softAPIP();
+  }
+  ip[0] = local[0];
+  ip[1] = local[1];
+  ip[2] = local[2];
+  ip[3] = local[3];
+}
+
+bool wifibluetooth::isStationEnabled( )
+{
+  return stationEnabled;
+}
+
+bool wifibluetooth::isAccessPointEnabled()
+{
+  return accessPointEnabled;
+}

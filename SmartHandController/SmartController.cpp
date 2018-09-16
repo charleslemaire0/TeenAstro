@@ -1306,6 +1306,12 @@ void SmartHandController::menuAlignment()
     //DisplaylongMessage("", "", "", "",0);
 
     break;
+  case 5:
+    if (SetLX200(":SX0x#") == LX200VALUESET)
+    {
+      DisplayMessage("Alignment", "Reset!", -1);
+    }
+    break;
   default:
     break;
   }
@@ -1382,7 +1388,7 @@ void SmartHandController::menuSettings()
   current_selection_L1 = 1;
   while (!exitMenu)
   {
-    const char *string_list_SettingsL1 = "Display\n""Alignment\n""Date\n""Time\n""Set Park\n""Mount\n""Site\n""Limits"
+    const char *string_list_SettingsL1 = "Display\n""Alignment\n""Date\n""Time\n""Set Park\n""Mount\n""Site\n""Limits\n""Main Unit Info"
 #ifdef WIFI_ON
       "\nWifi"
 #endif
@@ -1416,8 +1422,11 @@ void SmartHandController::menuSettings()
     case 8:
       menuLimits();
       break;
-#ifdef WIFI_ON
     case 9:
+      menuMainUnitInfo();
+      break;
+#ifdef WIFI_ON
+    case 10:
       menuWifi();
       break;
 #endif
@@ -2315,11 +2324,52 @@ void SmartHandController::menuLimits()
     }
   }
 }
+void SmartHandController::menuMainUnitInfo()
+{
+  const char *string_list = "Show Version\nReboot\nReset to factory";
+  current_selection_L2 = 1;
+  while (current_selection_L2 != 0)
+  {
+    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Main Unit Info", 1, string_list);
+    switch (current_selection_L2)
+    {
+    case 0:
+      return;
+    case 1:
+      char out1[20];
+      char out2[20];
+      if (DisplayMessageLX200(GetLX200(":GVN#", out1, 20)) && DisplayMessageLX200(GetLX200(":GVD#", out2, 20)) )
+      { 
+        out1[strlen(out1) - 1] = 0;
+        out2[strlen(out2) - 1] = 0;
+        DisplayMessage(out1, out2 , -1);
+      }
+      break;
+    case 2:
+      DisplayMessageLX200(SetLX200(":$!#"), false);
+      delay(500);
+      powerCylceRequired = true;
+      return;
+    case 3:
+      if (display->UserInterfaceMessage(&buttonPad, "Reset", "To", "Factory?", "NO\nYES") == 2)
+      {
+        DisplayMessageLX200(SetLX200(":$$#"), false);
+        delay(500);
+        powerCylceRequired = true;
+        return;
+      }
+      break;
+    default:
+      break;
+    }
+  }
+}
+
 
 #ifdef WIFI_ON
 void SmartHandController::menuWifi()
 {
-  const char *string_list = buttonPad.isWifiOn() ? "Turn Wifi off\nShow Password\nReset to factory" : "Turn Wifi on\nShow Password\nReset to factory";
+  const char *string_list = buttonPad.isWifiOn() ? "Turn Wifi off\nShow Password\nShow Mode\nShow IP\nReset to factory" : "Turn Wifi on\nShow Password\nReset to factory";
   current_selection_L2 = 1;
   while (current_selection_L2 != 0)
   {
@@ -2334,13 +2384,33 @@ void SmartHandController::menuWifi()
       powerCylceRequired = true;
       return;
     case 2:
-      DisplayMessage("masterPassword is", "password", 1000);
+      DisplayMessage("masterPassword is", "password", -1);
       break;
     case 3:
-      EEPROM_writeInt(0, 0);
-      EEPROM.commit();
-      powerCylceRequired = true;
-      exitMenu = true;
+    {
+      const char* stationtxt = buttonPad.isStationEnabled() ? "Station Mode on" : "Station Mode off";
+      const char* accesstxt = buttonPad.isAccessPointEnabled() ? "Access Mode on" : "Access Mode off";
+      DisplayMessage(accesstxt, stationtxt, -1);
+      break;
+    }
+    case 4:
+    {
+      uint8_t ip[4] = { 0,0,0,0 };
+      buttonPad.getIP(&ip[0]);
+      char iptxt[16];
+      sprintf(iptxt, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+      DisplayMessage("IP Adress is", iptxt, -1);
+      break;
+    }
+    case 5:
+      if (display->UserInterfaceMessage(&buttonPad, "Reset", "To", "Factory?", "NO\nYES")==2)
+      {
+        EEPROM_writeInt(0, 0);
+        EEPROM.commit();
+        powerCylceRequired = true;
+        exitMenu = true;
+        return;
+      }
     default:
       break;
     }

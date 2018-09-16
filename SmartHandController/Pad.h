@@ -28,5 +28,8 @@ public:
   bool isWifiOn();
   bool isWifiRunning();
   bool turnWifiOn(bool turnOn);
+  void getIP(uint8_t* ip);
+  bool isStationEnabled();
+  bool isAccessPointEnabled();
 #endif
 };

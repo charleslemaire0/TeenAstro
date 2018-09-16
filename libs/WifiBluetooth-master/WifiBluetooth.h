@@ -170,5 +170,8 @@ public:
   static void turnWifiOn(bool turnOn);
   static void setup();
   static void update();
+  static void getIP(uint8_t* ip);
+  static bool isStationEnabled();
+  static bool isAccessPointEnabled();
 };
 #endif
