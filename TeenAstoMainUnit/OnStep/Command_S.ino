@@ -387,6 +387,11 @@ void Command_S(Command& process_command)
       case '5':
         GeoAlign.pdCor = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
         break;  // pdCor
+
+      case 'x':
+        GeoAlign.init();
+        GeoAlign.writeCoe();
+        break;
       }
     }
     else if (parameter[0] == '9')
