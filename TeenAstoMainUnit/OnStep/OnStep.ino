@@ -511,7 +511,6 @@ void SafetyCheck(const bool forceTracking)
   }
   else
   {
-    return;
     if (mountType != MOUNT_TYPE_ALTAZM)
     {
 
