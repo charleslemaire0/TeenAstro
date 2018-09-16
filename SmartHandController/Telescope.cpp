@@ -159,24 +159,20 @@ Telescope::PierState Telescope::getPierState()
 }
 Telescope::Errors Telescope::getError()
 {
-  if (strlen(TelStatus) > 2)
+  switch (TelStatus[13])
   {
-    int l = strlen(TelStatus) - 2;
-    switch (TelStatus[l])
-    {
-    case '1':
-      return ERR_MOTOR_FAULT;
-    case '2':
-      return ERR_ALT;
-    case '4':
-      return ERR_DEC;
-    case '6':
-      return ERR_UNDER_POLE;
-    case '7':
-      return ERR_MERIDIAN;
-    default:
-      return ERR_NONE;
-    }
+  case '1':
+    return ERR_MOTOR_FAULT;
+  case '2':
+    return ERR_ALT;
+  case '4':
+    return ERR_DEC;
+  case '6':
+    return ERR_UNDER_POLE;
+  case '7':
+    return ERR_MERIDIAN;
+  default:
+    return ERR_NONE;
   }
 }
 void Telescope::addStar()
