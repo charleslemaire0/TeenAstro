@@ -54,6 +54,7 @@ boolean syncEqu(double RA, double Dec)
   targetAxis2.part.m = axis2;
   targetAxis2.part.f = 0;
   sei();
+  atHome = false;
   return true;
 }
 
