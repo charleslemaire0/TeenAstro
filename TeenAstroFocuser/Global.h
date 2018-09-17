@@ -18,10 +18,12 @@
 #ifdef VERSION23
 #define FocuserRX 0
 #define FocuserTX 1
+#define LEDPin 23 
 #endif // VERSION23
 #ifdef VERSION22
 #define FocuserRX 26
 #define FocuserTX 31
+#define LEDPin 33 
 #endif
 
 #endif

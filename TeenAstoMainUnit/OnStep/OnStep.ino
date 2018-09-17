@@ -290,7 +290,7 @@ void setup()
 
   // prep timers
   rtk.updateTimers();
-  analogWrite(LEDPin, 128);
+  analogWrite(LEDPin, 16);
 }
 
 void loop()

@@ -5,18 +5,26 @@
 
 uint8_t mdirIN = LOW;
 uint8_t mdirOUT = LOW;
+
+
 void setup()
 {
 	// set the PWM and brake pins so that the direction pins  // can be used to control the motor:
-  delay(500);
+  pinMode(LEDPin, OUTPUT);
+  for (int k = 0; k < 10; k++)
+  {
+    analogWrite(LEDPin, 255);
+    delay(100);
+    analogWrite(LEDPin, 0);
+    delay(100);
+  }
 
 	pinMode(StepPin, OUTPUT);
 	pinMode(DirPin, OUTPUT);
   digitalWrite(DirPin, LOW);
   digitalWrite(StepPin, LOW);
+	Serial.begin(9600);
 
-	Serial.begin(115200);
-  Serial.setTimeout(5);
 #ifdef VERSION22
   Serial2.setRX(FocuserRX);
   Serial2.setTX(FocuserTX);
@@ -34,6 +42,7 @@ void setup()
   loadConfig();
 	iniPos();
   iniStepper();
+  analogWrite(LEDPin,16);
 }
 
 
@@ -45,7 +54,6 @@ void loop()
 
   serCom0.MoveRequest();
   serComSHC.MoveRequest();
-
   
 	if (mdirOUT == HIGH && mdirIN == HIGH)
 	{

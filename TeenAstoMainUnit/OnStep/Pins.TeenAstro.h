@@ -1,7 +1,7 @@
 #pragma once
 //uncomment the version you are using
 //#define VERSION22
-//#define VERSION23
+#define VERSION23
 
 
 #include <TMC26XStepper.h>
@@ -53,3 +53,4 @@ TMC26XStepper *tmc26XStepper2;
 //#define ST4RAe  27                          // Pin 27 ST4 RA+ East
 #define LEDPin 23 
 #endif
+
