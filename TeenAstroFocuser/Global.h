@@ -8,7 +8,7 @@
 #else
 	#include "WProgram.h"
 #endif
-#define PROJECT "Simple Arduino Focuser"
+#define PROJECT "TeenAstro Focuser"
 #define Version 001
 #define BOARDINFO "Teensy 3.2"
 //uncomment the version you are using

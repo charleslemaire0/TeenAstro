@@ -745,6 +745,7 @@ void updateRatios()
 
   celestialPoleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
   celestialPoleStepAxis2 = quaterRotAxis2;
+  updateSideral();
 }
 
 void updateSideral()

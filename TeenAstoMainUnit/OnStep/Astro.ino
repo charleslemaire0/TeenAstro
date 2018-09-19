@@ -879,14 +879,11 @@ void SetAccelerationRates()
 {
     // set the new acceleration rate
   double slewrate = (1.0 / (((double)StepsPerDegreeAxis1 * ((maxRate / 16L) / 1000000.0))) * 3600.0) / 15.0;
-  DegreesForAcceleration = slewrate / 100;
+  DegreesForAcceleration = slewrate / 100.;
   DegreesForRapidStop = 0.5 *DegreesForAcceleration;
   guideRates[9] = slewrate;
   guideRates[8] = slewrate/2.;
-  if (activeGuideRate > 7)
-  {
-    resetGuideRate();
-  }
+  resetGuideRate();
   cli();
     StepsForRateChangeAxis1 = ((double) DegreesForAcceleration / sqrt( StepsPerDegreeAxis1)) * 0.3333333 * StepsPerDegreeAxis1 * maxRate;
     StepsForRateChangeAxis2 = ((double) DegreesForAcceleration / sqrt( StepsPerDegreeAxis2)) * 0.3333333 * StepsPerDegreeAxis2 * maxRate;
