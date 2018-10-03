@@ -39,7 +39,6 @@ void Guide()
             // for pulse guiding, count down the mS and stop when timed out
             guideDurationHA -= (long)(micros() - guideDurationLastHA);
             guideDurationLastHA = micros();
-            Serial.println(guideDurationHA);
           }
         }
         else
