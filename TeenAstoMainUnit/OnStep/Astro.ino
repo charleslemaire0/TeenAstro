@@ -955,26 +955,18 @@ void CorrectHADec(double *HA, double *Dec)
 
 void InsrtHADec2HADec(double *HA, double *Dec, byte *Side)
 {
-
-  if (*Side >= PierSideWest)
+  if (*Dec >= 90.0)
   {
-    if (*Dec >= 90.0)
-    {
-      *Dec = (90.0 - *Dec) + 90;
-      *HA = *HA - 180.0;
-    }
-    else if (*Dec <= -90.0)
-    {
-      *Dec = (-90.0 - *Dec) - 90.0;
-      *HA = *HA - 180.0;
-    }
-    while (*HA > 180.0) *HA -= 360.0;
-    while (*HA < -180.0) *HA += 360.0;
+    *Dec = (90.0 - *Dec) + 90;
+    *HA = *HA + 180.0;
   }
-  else
+  else if (*Dec <= -90.0)
   {
-    CorrectHADec(HA,Dec);
+    *Dec = (-90.0 - *Dec) - 90.0;
+    *HA = *HA + 180.0;
   }
+  while (*HA > 180.0) *HA -= 360.0;
+  while (*HA < -180.0) *HA += 360.0;
 }
 
 void HADec2InsrtHADec(double *HA, double *Dec, byte *Side )

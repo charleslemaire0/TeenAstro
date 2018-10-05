@@ -381,15 +381,16 @@ ISR(TIMER3_COMPA_vect)
 
 
     // Guessing about 4+4+1+ 4+4+1+ 1+ 2+1+2+ 13=37 clocks between here and the step signal which is 2.3uS
-    if (posAxis1 != (long)targetAxis1.part.m)
+    long deltaAxis1 = ((long)targetAxis1.part.m - posAxis1) % StepsPerRotAxis1;
+    if (deltaAxis1 !=0)
     {                       // Move the RA stepper to the target
 
-      if (posAxis1 < (long)targetAxis1.part.m)
+      if ( 0 < deltaAxis1)
       {
         //dirAxis1 = 1;
         //else
         //dirAxis1 = 0;   // Direction control
-        if ((long)targetAxis1.part.m - posAxis1 <= halfRotAxis1)
+        if (deltaAxis1 <= halfRotAxis1)
         {
           dirAxis1 = 1;
         }
@@ -400,7 +401,7 @@ ISR(TIMER3_COMPA_vect)
       }
       else
       {
-        if (posAxis1 - (long)targetAxis1.part.m <= halfRotAxis1)
+        if (-deltaAxis1 <= halfRotAxis1)
         {
           dirAxis1 = 0;
         }
