@@ -1,13 +1,13 @@
 #pragma once
 //uncomment the version you are using
-//#define VERSION22
-#define VERSION23
+#define VERSION 220
+//#define VERSION  230
 
 
 #include <TMC26XStepper.h>
 TMC26XStepper *tmc26XStepper1;
 TMC26XStepper *tmc26XStepper2;
-#ifdef VERSION22
+#if VERSION == 220
 #define Axis1StepPin    2                   // Pin 2 (Step)
 #define Axis1DirPin     3                   // Pin 3 (Dir)
 #define Axis1SGPin      4                   // Pin 4 (SG)
@@ -27,9 +27,10 @@ TMC26XStepper *tmc26XStepper2;
 //#define ST4DEs  25                          // Pin 25 ST4 DE- South
 //#define ST4DEn  26                          // Pin 26 ST4 DE+ North
 //#define ST4RAe  27                          // Pin 27 ST4 RA+ East
-#define LEDPin 33 
+#define LEDPin 33
+#define MaxLED 255
 #endif
-#ifdef VERSION23
+#if VERSION == 230
 #define Axis1StepPin    21                   // Pin 22 (Step)
 #define Axis1DirPin     3                   // Pin 3 (Dir)
 #define Axis1SGPin      22                   // Pin 22 (SG)
@@ -52,5 +53,5 @@ TMC26XStepper *tmc26XStepper2;
 //#define ST4DEn  26                          // Pin 26 ST4 DE+ North
 //#define ST4RAe  27                          // Pin 27 ST4 RA+ East
 #define LEDPin 23 
+#define MaxLED 16
 #endif
-
