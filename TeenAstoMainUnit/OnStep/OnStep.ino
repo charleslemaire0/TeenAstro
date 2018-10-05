@@ -290,7 +290,7 @@ void setup()
 
   // prep timers
   rtk.updateTimers();
-  analogWrite(LEDPin, 16);
+  analogWrite(LEDPin, MaxLED);
 }
 
 void loop()
@@ -746,6 +746,7 @@ void updateRatios()
   celestialPoleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
   celestialPoleStepAxis2 = quaterRotAxis2;
   updateSideral();
+  SetAccelerationRates();
 }
 
 void updateSideral()

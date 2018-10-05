@@ -208,7 +208,7 @@ boolean getHor(double *Alt, double *Azm)
 }
 
 // moves the mount to a new Right Ascension and Declination (RA,Dec) in degrees
-byte goToEqu(double RA, double Dec)
+byte goToEqu(double RA, double Dec, byte preferedPierSide)
 {
   double  a, z;
   long Axis1, Axis2;
@@ -297,7 +297,7 @@ byte goToEqu(double RA, double Dec)
 
     GeoAlign.EquToInstr(localSite.latitude(), HA, Dec, &h, &d);
 
-    byte side = predictSideOfPier(h, pierSide);
+    byte side = predictSideOfPier(h, preferedPierSide);
     if (side == 0)  return 6; //fail, outside limit
     if (side != pierSide)
     {
@@ -320,14 +320,14 @@ byte goToEqu(double RA, double Dec)
   return goTo(Axis1, Axis2);
 }
 
+
 // moves the mount to a new Altitude and Azmiuth (Alt,Azm) in degrees
 byte goToHor(double *Alt, double *Azm)
 {
   double  HA, Dec;
   HorToEqu(*Alt, *Azm, &HA, &Dec);
   double  RA = degRange(rtk.LST() * 15.0 - HA);
-
-  return goToEqu(RA, Dec);
+  return goToEqu(RA, Dec,pierSide);
 }
 
 

@@ -18,6 +18,25 @@ void Command_M(bool &supress_frame)
     quietReply = true;
     supress_frame = true;
     break;
+  case 'F':
+  {
+    // Flip Mount
+    if (mountType == MOUNT_TYPE_GEM)
+    {
+      getEqu(&f, &f1, false);
+      newTargetRA = f;
+      newTargetDec = f1;
+      byte preferedPierSide = (pierSide == PierSideEast) ? PierSideWest : PierSideEast;
+      i = goToEqu(newTargetRA, newTargetDec, preferedPierSide);
+      reply[0] = i + '0';
+      reply[1] = 0;
+      quietReply = true;
+      supress_frame = true;
+    }
+    break;
+  }
+
+
 
   case 'g':
   {
@@ -45,7 +64,8 @@ void Command_M(bool &supress_frame)
         else
           guideTimerRateAxis1 = guideTimerBaseRate;
         sei();
-        quietReply = true;
+        //reply[0] = '1';
+        //reply[1] = 0;
       }
       else if ((parameter[0] == 'n') || (parameter[0] == 's'))
       {
@@ -69,7 +89,8 @@ void Command_M(bool &supress_frame)
           guideTimerRateAxis2 = rev ? -guideTimerBaseRate : guideTimerBaseRate;
           sei();
         }
-        quietReply = true;
+        //reply[0] = '1';
+        //reply[1] = 0;
       }
       else
         commandError = true;
@@ -116,7 +137,7 @@ void Command_M(bool &supress_frame)
     getEqu(&r, &d, false);
     GeoAlign.altCor = 0.0;
     GeoAlign.azmCor = 0.0;
-    i = goToEqu(r, d);
+    i = goToEqu(r, d, pierSide);
     reply[0] = i + '0';
     reply[1] = 0;
     quietReply = true;
@@ -135,15 +156,23 @@ void Command_M(bool &supress_frame)
         //         5=Busy                    Goto already active
         //         6=Outside limits          Outside limits, above the Zenith limit
 
-    i = goToEqu(newTargetRA, newTargetDec);
+    i = goToEqu(newTargetRA, newTargetDec, pierSide);
     reply[0] = i + '0';
     reply[1] = 0;
     quietReply = true;
     supress_frame = true;
     break;
+  }
+  case '?':
+  {
+    byte side = predictTargetSideOfPier();
+    reply[0] = side + '0';
+    reply[1] = 0;
+    quietReply = true;
+    break;
+  }
   default:
     commandError = true;
     break;
-  }
   }
 }
