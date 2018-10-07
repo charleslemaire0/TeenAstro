@@ -294,14 +294,15 @@ byte goToEqu(double RA, double Dec, byte preferedPierSide)
   {
     // correct for polar offset, refraction, coordinate systems, operation past pole, etc. as required
     double h, d;
-
+    byte oldPierSide = pierSide;
+    pierSide = preferedPierSide;
     GeoAlign.EquToInstr(localSite.latitude(), HA, Dec, &h, &d);
-
+    pierSide = oldPierSide;
     byte side = predictSideOfPier(h, preferedPierSide);
     if (side == 0)  return 6; //fail, outside limit
     if (side != pierSide)
     {
-      byte oldPierSide = pierSide;
+      oldPierSide = pierSide;
       pierSide = side;
       GeoAlign.EquToStep(localSite.latitude(), HA, Dec, &Axis1, &Axis2);
       //Serial.println("-doGoto at-");

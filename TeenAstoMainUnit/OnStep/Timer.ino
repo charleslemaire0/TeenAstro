@@ -405,33 +405,36 @@ ISR(TIMER3_COMPA_vect)
     updateDeltaTarget();
     if (deltaTargetAxis1 !=0)
     {                       // Move the RA stepper to the target
-
-      if ( 0 < deltaTargetAxis1)
-      {
-        //dirAxis1 = 1;
-        //else
-        //dirAxis1 = 0;   // Direction control
-        if (deltaTargetAxis1 <= halfRotAxis1)
-        {
-          dirAxis1 = 1;
-        }
-        else
-        {
-          dirAxis1 = 0;
-        }
-      }
+      if (0 < deltaTargetAxis1)
+        dirAxis1 = 1;
       else
-      {
-        if (-deltaTargetAxis1 <= halfRotAxis1)
-        {
-          dirAxis1 = 0;
-        }
-        else
-        {
-          dirAxis1 = 1;
-        }
+        dirAxis1 = 0;   // Direction control
+      //if ( 0 < deltaTargetAxis1)
+      //{
+      //  //dirAxis1 = 1;
+      //  //else
+      //  //dirAxis1 = 0;   // Direction control
+      //  if (deltaTargetAxis1 <= halfRotAxis1)
+      //  {
+      //    dirAxis1 = 1;
+      //  }
+      //  else
+      //  {
+      //    dirAxis1 = 0;
+      //  }
+      //}
+      //else
+      //{
+      //  if (-deltaTargetAxis1 <= halfRotAxis1)
+      //  {
+      //    dirAxis1 = 0;
+      //  }
+      //  else
+      //  {
+      //    dirAxis1 = 1;
+      //  }
 
-      }
+      //}
       
 
     // Guessing about 1+2+1+4+4+1=13 clocks between here and the step signal which is 0.81uS

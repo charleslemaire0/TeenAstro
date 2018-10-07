@@ -960,15 +960,13 @@ void InsrtHADec2HADec(double *HA, double *Dec, byte *Side)
   if (*Dec > 90.0)
   {
     *Dec = (90.0 - *Dec) + 90;
-    *HA = *HA + 180.0;
+    *HA = *HA - 180.0;
   }
   else if (*Dec < -90.0)
   {
     *Dec = (-90.0 - *Dec) - 90.0;
-    *HA = *HA + 180.0;
+    *HA = *HA - 180.0;
   }
-  while (*HA > 180.0) *HA -= 360.0;
-  while (*HA < -180.0) *HA += 360.0;
 }
 
 void HADec2InsrtHADec(double *HA, double *Dec, byte *Side )
@@ -979,24 +977,13 @@ void HADec2InsrtHADec(double *HA, double *Dec, byte *Side )
       *Dec = (90.0 - *Dec) + 90;
     else
       *Dec = (-90.0 - *Dec) - 90;
-    *HA = *HA - 180.0;
-    while (*HA > 180.0) *HA -= 360.0;
-    while (*HA < -180.0) *HA += 360.0;
+    *HA = *HA + 180.0;
   }
 }
-long distStepAxis(const long& start,const long& end, const long& stepsPerRotAxis)
-{
-  long v = (end - start) % stepsPerRotAxis;
-  if (v > stepsPerRotAxis / 2)
-    v -= stepsPerRotAxis;
-  else if (v < -stepsPerRotAxis / 2)
-    v += stepsPerRotAxis;
-  return v;
-}
 
-long distStepAxis1( long start,  long end)
+long distStepAxis1( long start, long end)
 {
-  return distStepAxis(start, end, StepsPerRotAxis1);
+  return end - start;
 }
 
 long distStepAxis2(long start, long end)
