@@ -349,7 +349,7 @@ void loop()
     }
 
     // figure out the current Altitude
-    if (rtk.m_lst % 3 == 0) do_fastalt_calc();
+    do_fastalt_calc();
 
     if (mountType == MOUNT_TYPE_ALTAZM)
     {

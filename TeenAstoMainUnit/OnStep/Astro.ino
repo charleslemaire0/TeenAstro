@@ -889,8 +889,6 @@ void SetAccelerationRates()
   cli();
     AccAxis1 = Vmax / (2. * DegreesForAcceleration * StepsPerDegreeAxis1)*Vmax;
     AccAxis2 = Vmax / (2. * DegreesForAcceleration * StepsPerDegreeAxis2)*Vmax;
-    DccAxis1 = AccAxis1 * 1.4;
-    DccAxis2 = AccAxis2 * 1.4;
   sei();
 }
 
@@ -1003,6 +1001,5 @@ long distStepAxis1( long start,  long end)
 
 long distStepAxis2(long start, long end)
 {
-  
-  return distStepAxis(start, end, StepsPerRotAxis2);
+ return end - start;
 }

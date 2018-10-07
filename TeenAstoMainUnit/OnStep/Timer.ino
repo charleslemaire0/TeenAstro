@@ -153,7 +153,7 @@ ISR(TIMER1_COMPA_vect)
       {
         // use acceleration
         DecayModeGoto();
-        double z = guideDirAxis1 == 'b' ? getRate(sqrt(fabs(x) * 2 * DccAxis1)) : getRate(sqrt(fabs(x) * 2 * AccAxis1));
+        double z = getRate(sqrt(fabs(x) * 2 * AccAxis1));
         guideTimerRateAxis1A = (1.0 / ((StepsPerDegreeAxis1 * (z / 1000000.0))) * 3600.0);
         if (guideTimerRateAxis1A < maxguideTimerRate) guideTimerRateAxis1A = maxguideTimerRate;
       }
@@ -233,7 +233,7 @@ ISR(TIMER1_COMPA_vect)
         {
           // use acceleration
           DecayModeGoto();
-          double  z = guideDirAxis1 == 'b' ? getRate(sqrt(fabs(x) * 2 * DccAxis2)) : getRate(sqrt(fabs(x) * 2 * AccAxis2));
+          double z = getRate(sqrt(fabs(x) * 2 * AccAxis2));
           guideTimerRateAxis2A = (1.0 / (((double)StepsPerDegreeAxis2 * (z / 1000000.0))) * 3600.0);
           if (guideTimerRateAxis2A < maxguideTimerRate) guideTimerRateAxis2A = maxguideTimerRate;
         }

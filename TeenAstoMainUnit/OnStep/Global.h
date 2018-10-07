@@ -121,12 +121,8 @@ volatile boolean        useTimerRateRatio;
 #define BreakDistAxis1              (2L)
 #define BreakDistAxis2              (2L)
 
-
 volatile double         AccAxis1 = 0;
-volatile double         DccAxis1 = 0;
 volatile double         AccAxis2 = 0;
-volatile double         DccAxis2 = 0;
-
 
 IntervalTimer           itimer3;
 void                    TIMER3_COMPA_vect(void);

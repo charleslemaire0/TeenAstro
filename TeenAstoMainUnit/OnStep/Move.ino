@@ -41,7 +41,7 @@ void StopAxis1()
     return;
   cli();
   guideDirAxis1 = 'b';
-  long a = getV(timerRateAxis1)*getV(timerRateAxis1) / (2 * DccAxis1);
+  long a = getV(timerRateAxis1)*getV(timerRateAxis1) / (2 * AccAxis1);
   updateDeltaTarget();
   if (fabs(deltaTargetAxis1) > a)
   {
@@ -97,7 +97,7 @@ void StopAxis2()
     return;
   cli();
   guideDirAxis2 = 'b';
-  long a = getV(timerRateAxis2)*getV(timerRateAxis2) / (2 * DccAxis2);
+  long a = getV(timerRateAxis2)*getV(timerRateAxis2) / (2 * AccAxis2);
   updateDeltaTarget();
   if (fabs(deltaTargetAxis2) > a)
   {

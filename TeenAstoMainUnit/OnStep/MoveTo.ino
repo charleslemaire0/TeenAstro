@@ -30,9 +30,7 @@ Again:
   // adjust rates near the horizon to help keep from exceeding the minAlt limit
   if (mountType != MOUNT_TYPE_ALTAZM)
   {
-    //if (distDestAxis1 > (DegreesForAcceleration*StepsPerDegreeAxis1) / 16.0 && distStepAxis2(lastPosAxis2, tempPosAxis2) != 0) {
-    //  bool decreasing = 0 < distStepAxis2(lastPosAxis2, tempPosAxis2);
-    if (distDestAxis1 > (DegreesForAcceleration*StepsPerDegreeAxis1) / 16.0 && tempPosAxis2 != lastPosAxis2) {
+    if ( tempPosAxis2 != lastPosAxis2) {
       bool decreasing = tempPosAxis2 < lastPosAxis2;
       if (pierSide >= PierSideWest)
         decreasing = !decreasing;
@@ -40,7 +38,7 @@ Again:
       if (decreasing)
       {
         cli();
-        long a = max((currentAlt - minAlt - DegreesForRapidStop)*StepsPerDegreeAxis2 / 4, 1);
+        long a = max((currentAlt - minAlt)*StepsPerDegreeAxis2, 1);
         if (a < distDestAxis2)
           distDestAxis2 = a;
         sei();
@@ -49,12 +47,13 @@ Again:
         // if Dec is increasing, slow down HA
       {
         cli();
-        long a = max((currentAlt - minAlt - DegreesForRapidStop)*StepsPerDegreeAxis1 / 4, 1);
+        long a = max((currentAlt - minAlt)*StepsPerDegreeAxis1, 1);
         if (a < distDestAxis1)
           distDestAxis1 = a;
         sei();
       }
     }
+
     lastPosAxis2 = tempPosAxis2;
   }
 
@@ -70,7 +69,7 @@ Again:
     distDestAxis1 = abs(distStepAxis1(posAxis1, (long)targetAxis1.part.m));  // distance from dest HA
     distDestAxis2 = abs(distStepAxis2(posAxis2, (long)targetAxis2.part.m));
 
-    long a = getV(timerRateAxis1)*getV(timerRateAxis1) / (2 * DccAxis1);
+    long a = getV(timerRateAxis1)*getV(timerRateAxis1) / (2 * AccAxis1);
     if (distDestAxis1 > a)
     {
       if (0 > distStepAxis1(posAxis1, targetAxis1.part.m))
@@ -80,7 +79,7 @@ Again:
     }
     guideDirAxis1 = 'b';
 
-    a = getV(timerRateAxis2)*getV(timerRateAxis2) / (2 * DccAxis2);
+    a = getV(timerRateAxis2)*getV(timerRateAxis2) / (2 * AccAxis2);
     if (distDestAxis2 > a)
     {
       if (0 > distStepAxis2(posAxis2, targetAxis2.part.m)) // overshoot
@@ -111,7 +110,7 @@ Again:
   long temp;
   if (distStartAxis1 >= distDestAxis1)
   {
-    temp = getRate(sqrt(distDestAxis1 * 2 * DccAxis1)); // slow down (temp gets bigger)
+    temp = getRate(sqrt(distDestAxis1 * 2 * AccAxis1)); // slow down (temp gets bigger)
   }
   else
   { 
@@ -122,9 +121,10 @@ Again:
   cli(); timerRateAxis1 = temp; sei();
 
   // Now, for Declination
+  
   if (distStartAxis2 >= distDestAxis2)
   {
-    temp = getRate(sqrt(distDestAxis2 * 2 * DccAxis2)); // slow down
+    temp = getRate(sqrt(distDestAxis2 * 2 * AccAxis1)); // slow down
   }
   else
   {
@@ -145,7 +145,10 @@ Again:
       }
     }
   }
-
+  cli();
+  distDestAxis1 = abs(distStepAxis1(posAxis1, (long)targetAxis1.part.m));  // distance from dest HA
+  distDestAxis2 = abs(distStepAxis2(posAxis2, (long)targetAxis2.part.m));  // distance from dest Dec
+  sei();
   if ((distDestAxis1 <= 2) && (distDestAxis2 <= 2))
   {
     if (mountType == MOUNT_TYPE_ALTAZM)
