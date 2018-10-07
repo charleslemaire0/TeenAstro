@@ -51,10 +51,10 @@ bool checkMeridian(const double& HA, const byte& inputSide, byte mode)
   switch (inputSide)
   {
   case PierSideWest:
-    if (HA * 60 > MinutesPastMeridianW * 15.) ok = false;
+    if (HA * 60. > MinutesPastMeridianW * 15.) ok = false;
     break;
   case PierSideEast:
-    if (HA * 60 < -MinutesPastMeridianE *15.) ok = false;
+    if (HA * 60. < -MinutesPastMeridianE *15.) ok = false;
     break;
   default:
     ok = false;
