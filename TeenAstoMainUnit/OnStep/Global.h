@@ -120,8 +120,12 @@ volatile boolean        useTimerRateRatio;
 
 #define BreakDistAxis1              (2L)
 #define BreakDistAxis2              (2L)
-volatile double         StepsForRateChangeAxis1 = 0;
-volatile double         StepsForRateChangeAxis2 = 0;
+
+
+volatile double         AccAxis1 = 0;
+volatile double         DccAxis1 = 0;
+volatile double         AccAxis2 = 0;
+volatile double         DccAxis2 = 0;
 
 
 IntervalTimer           itimer3;
@@ -135,6 +139,7 @@ byte newTargetPierSide = 0;
 
 volatile long       posAxis1;    // hour angle position in steps
 double              deltaSyncAxis1;
+volatile long       deltaTargetAxis1;
 long                trueAxis1;   // correction to above for motor shaft position steps
 volatile long       startAxis1;  // hour angle of goto start position in steps
 volatile fixed_t    targetAxis1; // hour angle of goto end   position in steps
@@ -149,6 +154,7 @@ volatile long       stepAxis1 = 1;
 
 volatile long       posAxis2;     // declination position in steps
 double              deltaSyncAxis2;
+volatile long       deltaTargetAxis2;
 long                trueAxis2;    // correction to above for motor shaft position steps
 volatile long       startAxis2;   // declination of goto start position in steps
 volatile fixed_t    targetAxis2;  // declination of goto end   position in steps

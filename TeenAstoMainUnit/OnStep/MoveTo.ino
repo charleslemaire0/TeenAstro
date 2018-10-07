@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------------------
 // functions to move the mount to the a new position
 
-long lastPosAxis2 = 0;
+static long lastPosAxis2 = 0;
 
 
 
@@ -14,21 +14,24 @@ void moveTo() {
   long distStartAxis1, distStartAxis2, distDestAxis1, distDestAxis2;
 
   cli();
-  distStartAxis1 = abs(posAxis1 - startAxis1);  // distance from start HA
-  distStartAxis2 = abs(posAxis2 - startAxis2);  // distance from start Dec
+  distStartAxis1 = abs(distStepAxis1(startAxis1, posAxis1));  // distance from start HA
+  distStartAxis2 = abs(distStepAxis2(startAxis2, posAxis2));  // distance from start Dec
   sei();
   if (distStartAxis1 < 1) distStartAxis1 = 1;
   if (distStartAxis2 < 1) distStartAxis2 = 1;
 Again:
   cli();
   long tempPosAxis2 = posAxis2;
-  distDestAxis1 = abs(posAxis1 - (long)targetAxis1.part.m);  // distance from dest HA
-  distDestAxis2 = abs(tempPosAxis2 - (long)targetAxis2.part.m);  // distance from dest Dec
+  
+  distDestAxis1 = abs(distStepAxis1(posAxis1,(long)targetAxis1.part.m));  // distance from dest HA
+  distDestAxis2 = abs(distStepAxis2(posAxis2,(long)targetAxis2.part.m));  // distance from dest Dec
   sei();
 
   // adjust rates near the horizon to help keep from exceeding the minAlt limit
   if (mountType != MOUNT_TYPE_ALTAZM)
   {
+    //if (distDestAxis1 > (DegreesForAcceleration*StepsPerDegreeAxis1) / 16.0 && distStepAxis2(lastPosAxis2, tempPosAxis2) != 0) {
+    //  bool decreasing = 0 < distStepAxis2(lastPosAxis2, tempPosAxis2);
     if (distDestAxis1 > (DegreesForAcceleration*StepsPerDegreeAxis1) / 16.0 && tempPosAxis2 != lastPosAxis2) {
       bool decreasing = tempPosAxis2 < lastPosAxis2;
       if (pierSide >= PierSideWest)
@@ -63,24 +66,29 @@ Again:
   {
     // set the destination near where we are now
     cli();
+    // recompute distances
+    distDestAxis1 = abs(distStepAxis1(posAxis1, (long)targetAxis1.part.m));  // distance from dest HA
+    distDestAxis2 = abs(distStepAxis2(posAxis2, (long)targetAxis2.part.m));
 
-    long a = (long)(StepsPerDegreeAxis1*DegreesForRapidStop);
+    long a = getV(timerRateAxis1)*getV(timerRateAxis1) / (2 * DccAxis1);
     if (distDestAxis1 > a)
     {
-      if (posAxis1 > (long)targetAxis1.part.m)
+      if (0 > distStepAxis1(posAxis1, targetAxis1.part.m))
         a = -a;
       targetAxis1.part.m = posAxis1 + a;
       targetAxis1.part.f = 0;
     }
+    guideDirAxis1 = 'b';
 
-    a = (long)(StepsPerDegreeAxis2*DegreesForRapidStop);
+    a = getV(timerRateAxis2)*getV(timerRateAxis2) / (2 * DccAxis2);
     if (distDestAxis2 > a)
     {
-      if (posAxis2 > (long)targetAxis2.part.m) // overshoot
+      if (0 > distStepAxis2(posAxis2, targetAxis2.part.m)) // overshoot
         a = -a;
       targetAxis2.part.m = posAxis2 + a;
       targetAxis2.part.f = 0;
     }
+    guideDirAxis2 = 'b';
     sei();
 
     if (parkStatus == Parking)
@@ -101,26 +109,26 @@ Again:
 
   // First, for Right Ascension
   long temp;
-  if (distStartAxis1 > distDestAxis1)
+  if (distStartAxis1 >= distDestAxis1)
   {
-    temp = (StepsForRateChangeAxis1 / isqrt32(distDestAxis1));   // slow down (temp gets bigger)
+    temp = getRate(sqrt(distDestAxis1 * 2 * DccAxis1)); // slow down (temp gets bigger)
   }
   else
-  {
-    temp = (StepsForRateChangeAxis1 / isqrt32(distStartAxis1));  // speed up (temp gets smaller)
+  { 
+    temp = getRate(sqrt(distStartAxis1 * 2 * AccAxis1));// speed up (temp gets smaller)
   }
   if (temp < maxRate) temp = maxRate;                            // fastest rate
   if (temp > TakeupRate) temp = TakeupRate;                      // slowest rate
   cli(); timerRateAxis1 = temp; sei();
 
   // Now, for Declination
-  if (distStartAxis2 > distDestAxis2)
+  if (distStartAxis2 >= distDestAxis2)
   {
-    temp = (StepsForRateChangeAxis2 / isqrt32(distDestAxis2));   // slow down
+    temp = getRate(sqrt(distDestAxis2 * 2 * DccAxis2)); // slow down
   }
   else
   {
-    temp = (StepsForRateChangeAxis2 / isqrt32(distStartAxis2));  // speed up
+    temp = getRate(sqrt(distStartAxis2 * 2 * AccAxis2));// speed up
   }
   if (temp < maxRate) temp = maxRate;                            // fastest rate
   if (temp > TakeupRate) temp = TakeupRate;                      // slowest rate
@@ -161,13 +169,11 @@ Again:
     if (parkStatus == Parking)
     {
       parkStatus = ParkFailed;
-      cli();
-      int axis1 = posAxis1;
-      int axis2 = posAxis2;
-      sei();
+
       for (int i = 0; i < 12; i++)  // give the drives a moment to settle in
       {
-        if ((axis1 == (long)targetAxis1.part.m) && (axis2 == (long)targetAxis2.part.m))
+        updateDeltaTarget();
+        if (deltaTargetAxis1 == 0 && deltaTargetAxis2 == 0)
         {
           if (parkClearBacklash())
           {
@@ -177,10 +183,6 @@ Again:
           break;
         }
         delay(250);
-        cli();
-        axis1 = posAxis1;
-        axis2 = posAxis2;
-        sei();
       }
       EEPROM.write(EE_parkStatus, parkStatus);
 

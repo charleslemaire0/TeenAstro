@@ -1,7 +1,7 @@
 #pragma once
 //uncomment the version you are using
-#define VERSION 220
-//#define VERSION  230
+//#define VERSION 220
+#define VERSION  230
 
 
 #include <TMC26XStepper.h>

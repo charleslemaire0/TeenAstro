@@ -575,6 +575,8 @@ boolean do_fastalt_calc()
     return done;
 }
 
+
+
 // -----------------------------------------------------------------------------------------------------------------------------
 // Refraction adjusted tracking
 
@@ -877,16 +879,18 @@ double angDist(double h, double d, double h1, double d1)
 // Acceleration rate calculation
 void SetAccelerationRates()
 {
-    // set the new acceleration rate
-  double slewrate = (1.0 / (((double)StepsPerDegreeAxis1 * ((maxRate / 16L) / 1000000.0))) * 3600.0) / 15.0;
-  DegreesForAcceleration = slewrate / 100.;
-  DegreesForRapidStop = 0.5 *DegreesForAcceleration;
-  guideRates[9] = slewrate;
-  guideRates[8] = slewrate/2.;
+   // set the new acceleration rate
+  double maxslewrate = (1.0 / (((double)StepsPerDegreeAxis1 * ((maxRate / 16L) / 1000000.0))) * 3600.0) / 15.0;
+  DegreesForAcceleration = maxslewrate / 100.;
+  guideRates[9] = maxslewrate;
+  guideRates[8] = maxslewrate /2.;
   resetGuideRate();
+  double Vmax = getV(maxRate);
   cli();
-    StepsForRateChangeAxis1 = ((double) DegreesForAcceleration / sqrt( StepsPerDegreeAxis1)) * 0.3333333 * StepsPerDegreeAxis1 * maxRate;
-    StepsForRateChangeAxis2 = ((double) DegreesForAcceleration / sqrt( StepsPerDegreeAxis2)) * 0.3333333 * StepsPerDegreeAxis2 * maxRate;
+    AccAxis1 = Vmax / (2. * DegreesForAcceleration * StepsPerDegreeAxis1)*Vmax;
+    AccAxis2 = Vmax / (2. * DegreesForAcceleration * StepsPerDegreeAxis2)*Vmax;
+    DccAxis1 = AccAxis1 * 1.4;
+    DccAxis2 = AccAxis2 * 1.4;
   sei();
 }
 
@@ -955,12 +959,12 @@ void CorrectHADec(double *HA, double *Dec)
 
 void InsrtHADec2HADec(double *HA, double *Dec, byte *Side)
 {
-  if (*Dec >= 90.0)
+  if (*Dec > 90.0)
   {
     *Dec = (90.0 - *Dec) + 90;
     *HA = *HA + 180.0;
   }
-  else if (*Dec <= -90.0)
+  else if (*Dec < -90.0)
   {
     *Dec = (-90.0 - *Dec) - 90.0;
     *HA = *HA + 180.0;
@@ -981,4 +985,24 @@ void HADec2InsrtHADec(double *HA, double *Dec, byte *Side )
     while (*HA > 180.0) *HA -= 360.0;
     while (*HA < -180.0) *HA += 360.0;
   }
+}
+long distStepAxis(const long& start,const long& end, const long& stepsPerRotAxis)
+{
+  long v = (end - start) % stepsPerRotAxis;
+  if (v > stepsPerRotAxis / 2)
+    v -= stepsPerRotAxis;
+  else if (v < -stepsPerRotAxis / 2)
+    v += stepsPerRotAxis;
+  return v;
+}
+
+long distStepAxis1( long start,  long end)
+{
+  return distStepAxis(start, end, StepsPerRotAxis1);
+}
+
+long distStepAxis2(long start, long end)
+{
+  
+  return distStepAxis(start, end, StepsPerRotAxis2);
 }

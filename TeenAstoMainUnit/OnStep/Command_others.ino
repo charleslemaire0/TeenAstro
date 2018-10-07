@@ -748,13 +748,26 @@ void Command_Q()
     //         Returns: Nothing
     if ((parkStatus == NotParked) || (parkStatus == Parking))
     {
-      if (guideDirAxis1) guideDirAxis1 = 'b'; // break
-      if (guideDirAxis2) guideDirAxis2 = 'b'; // break
       if (trackingState == TrackingMoveTo)
       {
         abortSlew = true;
       }
+      else if (GuidingState == GuidingRecenter)
+      {
+        if (guideDirAxis1)
+          StopAxis1();
+        if (guideDirAxis2)
+          StopAxis2();
+      }
+      else
+      {
+        if (guideDirAxis1)
+          guideDirAxis1 = 'b';
+        if (guideDirAxis2)
+          guideDirAxis2 = 'b';
+      }
     }
+
     quietReply = true;
     break;
 
@@ -766,7 +779,8 @@ void Command_Q()
   {
     if ((parkStatus == NotParked) && (trackingState != TrackingMoveTo))
     {
-      if (guideDirAxis1) guideDirAxis1 = 'b'; // break
+      if (guideDirAxis1)
+        StopAxis1();
     }
     quietReply = true;
   }
@@ -779,7 +793,8 @@ void Command_Q()
   {
     if ((parkStatus == NotParked) && (trackingState != TrackingMoveTo))
     {
-      if (guideDirAxis2) guideDirAxis2 = 'b'; // break
+      if (guideDirAxis2)
+        StopAxis2();
     }
     quietReply = true;
   }

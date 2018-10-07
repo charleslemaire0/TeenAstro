@@ -103,11 +103,13 @@ boolean parkClearBacklash()
   targetAxis2.part.m -= backlashAxis2;
   sei();
 
+
   // wait until done or timed out, plus a safety margin
   for (int i = 0; i < 24; i++)
   {
-    if ((blAxis1 != 0) || (posAxis1 != (long)targetAxis1.part.m) ||
-      (blAxis2 != 0) || (posAxis2 != (long)targetAxis2.part.m))
+    updateDeltaTarget();
+    if ((blAxis1 != 0) || (deltaTargetAxis1 != 0) ||
+      (blAxis2 != 0) || (deltaTargetAxis2 != 0))
       delay(t);
   }
 

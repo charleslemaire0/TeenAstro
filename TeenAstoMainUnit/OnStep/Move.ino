@@ -20,9 +20,7 @@ void MoveAxis1(const byte newguideDirAxis)
 
     if (guideDirAxis1 && !samedirection && fabs(guideTimerRateAxis1) > 2)
     {
-      cli();
-      guideDirAxis1 = 'b';
-      sei();
+      StopAxis1();
     }
     else
     {
@@ -35,6 +33,24 @@ void MoveAxis1(const byte newguideDirAxis)
       sei();
     }
   }
+}
+
+void StopAxis1()
+{
+  if (guideDirAxis1 == 'b')
+    return;
+  cli();
+  guideDirAxis1 = 'b';
+  long a = getV(timerRateAxis1)*getV(timerRateAxis1) / (2 * DccAxis1);
+  updateDeltaTarget();
+  if (fabs(deltaTargetAxis1) > a)
+  {
+    if (0 > distStepAxis1(posAxis1, targetAxis1.part.m))
+      a = -a;
+    targetAxis1.part.m = posAxis1 + a;
+    targetAxis1.part.f = 0;
+  }
+  sei();
 }
 
 void MoveAxis2(const byte newguideDirAxis)
@@ -60,9 +76,7 @@ void MoveAxis2(const byte newguideDirAxis)
     bool samedirection = newGuideTimerBaseRate > 0 ? (guideTimerRateAxis2 > 0 ? true : false) : (guideTimerRateAxis2 > 0 ? false : true);
     if (guideDirAxis2 && !samedirection && fabs(guideTimerRateAxis2) > 2)
     {
-      cli();
-      guideDirAxis2 = 'b';
-      sei();
+      StopAxis2();
     }
     else
     {
@@ -77,6 +91,23 @@ void MoveAxis2(const byte newguideDirAxis)
   }
 }
 
+void StopAxis2()
+{
+  if (guideDirAxis2 == 'b')
+    return;
+  cli();
+  guideDirAxis2 = 'b';
+  long a = getV(timerRateAxis2)*getV(timerRateAxis2) / (2 * DccAxis2);
+  updateDeltaTarget();
+  if (fabs(deltaTargetAxis2) > a)
+  {
+    if (0 > distStepAxis2(posAxis2, targetAxis2.part.m))
+      a = -a;
+    targetAxis2.part.m = posAxis2 + a;
+    targetAxis2.part.f = 0;
+  }
+  sei();
+}
 
 void checkST4()
 {
