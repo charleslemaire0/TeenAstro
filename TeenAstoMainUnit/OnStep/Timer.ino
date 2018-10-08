@@ -409,33 +409,7 @@ ISR(TIMER3_COMPA_vect)
         dirAxis1 = 1;
       else
         dirAxis1 = 0;   // Direction control
-      //if ( 0 < deltaTargetAxis1)
-      //{
-      //  //dirAxis1 = 1;
-      //  //else
-      //  //dirAxis1 = 0;   // Direction control
-      //  if (deltaTargetAxis1 <= halfRotAxis1)
-      //  {
-      //    dirAxis1 = 1;
-      //  }
-      //  else
-      //  {
-      //    dirAxis1 = 0;
-      //  }
-      //}
-      //else
-      //{
-      //  if (-deltaTargetAxis1 <= halfRotAxis1)
-      //  {
-      //    dirAxis1 = 0;
-      //  }
-      //  else
-      //  {
-      //    dirAxis1 = 1;
-      //  }
-
-      //}
-      
+    
 
     // Guessing about 1+2+1+4+4+1=13 clocks between here and the step signal which is 0.81uS
     // Set direction.  Needs >=0.65uS before/after rising step signal (DRV8825 or A4988).
@@ -450,7 +424,6 @@ ISR(TIMER3_COMPA_vect)
       else
       {
         if (HADir == dirAxis1)
-
           digitalWriteFast(Axis1DirPin, HIGH);
         else
           digitalWriteFast(Axis1DirPin, LOW);
