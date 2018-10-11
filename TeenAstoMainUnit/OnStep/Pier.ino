@@ -86,10 +86,10 @@ byte predictSideOfPier(const double& HA, const byte& inputSide)
   return 0;
 }
 
-byte predictTargetSideOfPier()
+byte predictTargetSideOfPier(double RaObject, double DecObject)
 {
-  double  HA = haRange(rtk.LST() * 15.0 - newTargetRA);
+  double  HA = haRange(rtk.LST() * 15.0 - RaObject);
   double h, d;
-  GeoAlign.EquToInstr(localSite.latitude(), HA, newTargetDec, &h, &d);
+  GeoAlign.EquToInstr(localSite.latitude(), HA, DecObject, &h, &d);
   return predictSideOfPier(h, pierSide);
 }

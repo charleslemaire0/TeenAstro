@@ -524,8 +524,8 @@ void  Command_G()
     //         A # terminated string with the pier side.
     reply[0] = '?';
     reply[1] = 0;
-    if (pierSide < PierSideWest) reply[0] = 'E';
-    if (pierSide >= PierSideWest) reply[0] = 'W';
+    if (pierSide == PierSideEast) reply[0] = 'E';
+    if (pierSide == PierSideWest) reply[0] = 'W';
     quietReply = true;
     break;
   case 'o':
@@ -617,6 +617,7 @@ void  Command_G()
     i = 0;
     if (trackingState != TrackingON) reply[0] = 'n';
     if (trackingState != TrackingMoveTo) reply[1] = 'N';
+    else if (lastTrackingState == TrackingON) reply[0] = ' ';
 
     const char  *parkStatusCh = "pIPF";
     reply[2] = parkStatusCh[parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed

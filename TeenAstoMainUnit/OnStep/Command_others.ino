@@ -574,7 +574,12 @@ void Command_C()
     }
     syncEqu(newTargetRA, newTargetDec);
     if (command[1] == 'M') strcpy(reply, "N/A");
+    else strcpy(reply, "1");
     quietReply = true;
+  }
+  else
+  {
+    commandError = true;
   }
 }
 
@@ -877,7 +882,7 @@ void Command_R()
 void Command_T()
 {
 
-  switch(command[1])
+  switch (command[1])
 
   {
   case '+':
@@ -918,16 +923,39 @@ void Command_T()
     quietReply = true;
     break;
   case 'e':
-    if ((trackingState == TrackingON || trackingState == TrackingOFF) && parkStatus == NotParked)
+    if (parkStatus == NotParked)
     {
-      trackingState = TrackingON;
-      lastSetTrakingEnable = millis();
-      atHome = false;
+      if ((trackingState == TrackingON || trackingState == TrackingOFF))
+      {
+        trackingState = TrackingON;
+        lastSetTrakingEnable = millis();
+        atHome = false;
+      }
+      if (trackingState == TrackingMoveTo)
+      {
+        lastTrackingState = TrackingON;
+      }
     }
     else
       commandError = true;
     break;
   case 'd':
+    if (parkStatus == NotParked)
+    {
+      if ((trackingState == TrackingON || trackingState == TrackingOFF))
+      {
+        trackingState = TrackingOFF;
+        lastSetTrakingEnable = millis();
+        atHome = false;
+      }
+      if (trackingState == TrackingMoveTo)
+      {
+        lastTrackingState = TrackingOFF;
+      }
+    }
+    else
+      commandError = true;
+    break;
     if (trackingState == TrackingON || trackingState == TrackingOFF)
     {
       trackingState = TrackingOFF;
