@@ -131,6 +131,10 @@ boolean parkClearBacklash()
 byte park()
 {
   // Gets park position and moves the mount there
+  if (parkStatus == Parked)
+  {
+    return 0;
+  }
   if (lastError != ERR_NONE)
   {
     return 4;
@@ -228,6 +232,8 @@ boolean iniAtPark()
 // depends on the latitude, longitude, and timeZone; but those are stored and recalled automatically
 boolean unpark()
 {
+  if (parkStatus == NotParked)
+    return true;
   bool ok = iniAtPark();
   if (!ok)
   {
