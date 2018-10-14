@@ -73,7 +73,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     }
     if (command[1] == 'M') {
       if (strchr("ewnsg", command[2])) noResponse = true;
-      if (strchr("SA", command[2])) shortResponse = true;
+      if (strchr("SAF?", command[2])) shortResponse = true;
     }
     if (command[1] == 'Q') {
       if (strchr("#ewns", command[2])) noResponse = true;
@@ -416,9 +416,16 @@ LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, s
   {
     if (sync)
     {
-      Ser.print(":CS#");
-      Ser.flush();
-      return LX200SYNCED;
+      char out[LX200sbuff];
+      if (GetLX200(":CM#",out, LX200sbuff))
+      {
+        if (strcmp(out, "N/A#") == 0)
+          return LX200SYNCED;
+        else
+          return LX200_ERR_SYNC;
+      }
+      else
+        return LX200_ERR_SYNC;
     }
     else
     {
