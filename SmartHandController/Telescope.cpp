@@ -50,9 +50,9 @@ void Telescope::updateTel()
 {
   if (millis() - lastStateTel > updaterate)
   {
-    hasPierInfo = GetLX200(":Gm#", sideofpier, sizeof(sideofpier)) == LX200VALUEGET;
+    //hasPierInfo = GetLX200(":Gm#", sideofpier, sizeof(sideofpier)) == LX200VALUEGET;
     hasTelStatus = GetLX200(":GU#", TelStatus, sizeof(TelStatus)) == LX200VALUEGET;
-    hasPierInfo && hasTelStatus ? lastStateTel = millis() : connectionFailure++;
+    hasTelStatus ? lastStateTel = millis() : connectionFailure++;
   }
 };
 
@@ -147,19 +147,20 @@ bool Telescope::isGuidingS()
 
 Telescope::PierState Telescope::getPierState()
 {
-  if (strchr(&sideofpier[0], 'E') != NULL)
+  switch (TelStatus[13])
   {
+  case ' ':
+    return PIER_UNKNOW;
+  case 'E':
     return PIER_E;
-  }
-  else if (strchr(&sideofpier[0], 'W') != NULL)
-  {
+  case 'W':
     return PIER_W;
   }
   return PIER_UNKNOW;
 }
 Telescope::Errors Telescope::getError()
 {
-  switch (TelStatus[13])
+  switch (TelStatus[14])
   {
   case '1':
     return ERR_MOTOR_FAULT;

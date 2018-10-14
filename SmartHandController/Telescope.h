@@ -50,7 +50,6 @@ public:
   bool hasInfoAlt = false;
   bool hasInfoUTC = false;
   bool hasInfoSideral = false;
-  bool hasPierInfo = false;
   bool hasTelStatus = false;
   bool hasInfoFocuser = false;
   unsigned long lastState;

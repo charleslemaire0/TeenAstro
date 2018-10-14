@@ -439,7 +439,6 @@ void SmartHandController::update()
       }
       return;
     }
-
   }
   else
   {
@@ -553,6 +552,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     {
       Telescope::ParkState curP = telInfo.getParkState();
       Telescope::TrackState curT = telInfo.getTrackingState();
+      Telescope::PierState curPi = telInfo.getPierState();
       if (curP == Telescope::PRK_PARKED)
       {
         display->drawXBMP(x - icon_width, 0, icon_width, icon_height, parked_bits);
@@ -591,21 +591,19 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
           display->drawXBMP(x - icon_width, 0, icon_width, icon_height, parkingFailed_bits);
           x -= icon_width + 1;
         }
-        if (telInfo.hasPierInfo)
-        {
-          Telescope::PierState CurP = telInfo.getPierState();
-          if (CurP == Telescope::PIER_E)
-          {
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, E_bits);
-            x -= icon_width + 1;
-          }
-          else if (CurP == Telescope::PIER_W)
-          {
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, W_bits);
-            x -= icon_width + 1;
-          }
 
+        if (curPi == Telescope::PIER_E)
+        {
+          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, E_bits);
+          x -= icon_width + 1;
         }
+        else if (curPi == Telescope::PIER_W)
+        {
+          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, W_bits);
+          x -= icon_width + 1;
+        }
+
+        
         if (telInfo.align != Telescope::ALI_OFF)
         {
           if (telInfo.aliMode == Telescope::ALIM_ONE)

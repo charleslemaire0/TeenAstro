@@ -648,7 +648,11 @@ void  Command_G()
 
     // provide mount type
     if (mountType == MOUNT_TYPE_GEM)
+    {
       reply[12] = 'E';
+      if (pierSide == PierSideEast) reply[13] = 'E';
+      if (pierSide == PierSideWest) reply[13] = 'W';
+    }
     else if (mountType == MOUNT_TYPE_FORK)
       reply[12] = 'K';
     else if (mountType == MOUNT_TYPE_FORK_ALT)
@@ -658,9 +662,9 @@ void  Command_G()
     else
       reply[12] = 'U';
 
-    reply[13] = '0' + lastError;
-    reply[14] = 0;
-    i = 15;
+    reply[14] = '0' + lastError;
+    reply[15] = 0;
+    i = 16;
     quietReply = true;                                   //         Returns: SS#
   }
   break;
