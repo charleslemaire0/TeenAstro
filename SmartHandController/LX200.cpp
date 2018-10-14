@@ -112,7 +112,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       if (strchr("+-Z/!", command[4])) noResponse = true;
     }
     if (command[1] == 'G') {
-      if (strchr("RD", command[2])) { timeOutMs *= 2; }
+      if (strchr("AZRD", command[2])) { timeOutMs *= 2; }
     }
   }
 

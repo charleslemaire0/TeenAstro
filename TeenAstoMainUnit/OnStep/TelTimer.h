@@ -168,12 +168,15 @@ public:
     m_JD = julian(year(m_RTClock), month(m_RTClock), day(m_RTClock));
     return &m_JD;
   }
-  void getUTDate(int& y, int& m, int& d)
+  void getUTDate(int& y, int& m, int& d, int&h, int&mi, int&s)
   {
     m_RTClock = Teensy3Clock.get();
     y = year(m_RTClock);
     m = month(m_RTClock);
     d = day(m_RTClock);
+    h = hour(m_RTClock);
+    mi = minute(m_RTClock);
+    s = second(m_RTClock);
   }
   // Set RTC with give input
   void setClock(int y1, int m1, int d1, int h1, int mi1, int s1, double Sitelongitude)

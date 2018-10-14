@@ -180,10 +180,16 @@ void Command_GX()
       break;  // UTC time
 
     case '1':
-      rtk.getUTDate(i, i1, i2);
+      rtk.getUTDate(i, i1, i2, i3, i4, i5);
       sprintf(reply, "%d/%d/%d", i1, i2, i);
       quietReply = true;
       break;  // UTC date
+    
+    case '2':
+      rtk.getUTDate(i, i1, i2, i3, i4, i5);
+      sprintf(reply, "%d/%d/%d/%d/%d/%d", i, i1, i2,i3,i4,i5);
+      quietReply = true;
+      break;
     }
     break;
   case '9':
@@ -418,7 +424,7 @@ void  Command_G()
     //  :GC#   Get the current date
     //         Returns: MM/DD/YY#
     //         The current local calendar date
-    rtk.getUTDate(i2, i, i1);
+    rtk.getUTDate(i2, i, i1, i3, i4, i5);
     i2 = i2 % 100;
     sprintf(reply, "%02d/%02d/%02d", i, i1, i2);
     quietReply = true;

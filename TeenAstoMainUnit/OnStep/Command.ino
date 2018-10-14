@@ -13,7 +13,7 @@ boolean         ethernet_ready = false;
 
 // scratch-pad variables
 double          f, f1, f2, f3;
-int             i, i1, i2;
+int             i, i1, i2, i3, i4, i5;
 byte            b;
 unsigned long   _coord_t = 0;
 double          _dec, _ra;
