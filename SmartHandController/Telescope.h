@@ -36,8 +36,7 @@ public:
   char TempUTC[15];
   char TempSideral[15];
   unsigned long lastStateTime;
-  char TelStatus[15];
-  char sideofpier[5];
+  char TelStatus[16];
   unsigned long lastStateFocuser;
   char TempFocuserStatus[45];
 
