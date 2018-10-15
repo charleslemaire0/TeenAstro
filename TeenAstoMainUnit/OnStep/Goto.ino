@@ -219,7 +219,7 @@ byte goToEqu(double RA, double Dec, byte preferedPierSide)
 
   // Check to see if this goto is valid
   if ((parkStatus != NotParked) && (parkStatus != Parking)) return 4; // fail, Parked
-  if (lastError != ERR_NONE) return (10 + lastError);   // fail, telescop has Errors State
+  if (lastError != ERR_NONE) return 8;   // fail, telescop has Errors State
   if (a < minAlt) return 1;   // fail, below horizon
   if (a > maxAlt) return 6;   // fail, outside limits
   if (Dec > MaxDec) return 6; // fail, outside limits

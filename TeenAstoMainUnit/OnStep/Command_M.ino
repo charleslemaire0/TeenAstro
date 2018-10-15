@@ -155,6 +155,8 @@ void Command_M(bool &supress_frame)
         //         4=Position unreachable    Not unparked
         //         5=Busy                    Goto already active
         //         6=Outside limits          Outside limits, above the Zenith limit
+        //         7=Guiding
+        //         8=has a an Error
 
     i = goToEqu(newTargetRA, newTargetDec, pierSide);
     reply[0] = i + '0';
