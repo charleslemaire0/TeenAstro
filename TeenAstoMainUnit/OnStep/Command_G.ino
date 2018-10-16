@@ -223,11 +223,6 @@ void Command_GX()
 
       quietReply = true;
       break;  // pierSide (N if never)
-
-    case '5':
-      sprintf(reply, "%i", (int)autoContinue);
-      quietReply = true;
-      break;  // autoContinue
     }
     break;
   case 'E':

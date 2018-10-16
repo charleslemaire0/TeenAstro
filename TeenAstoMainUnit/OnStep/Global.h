@@ -55,7 +55,6 @@ volatile long           TakeupRate;                 // this is the takeup rate f
 long                    maxRate = MaxRate * 16L;
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
-double                  DegreesForRapidStop = 0.5 *DegreesForAcceleration;
 
 volatile long           timerRateAxis1 = 0;
 volatile long           timerRateBacklashAxis1 = 0;
@@ -170,7 +169,6 @@ long                minutesPastMeridianGOTOE;               // for goto's, how f
 long                minutesPastMeridianGOTOW;               // as above, if on the West side of the pier.  If left alone, the mount will stop tracking when it hits the this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. OnStep will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 //                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
-bool                autoContinue = false;                   // automatically do a meridian flip and continue when we hit the MinutesPastMeridianW
 
                                             // Stepper/position/rate ----------------------------------------------------------------------------------------------------
 #define CLR(x, y)   (x &= (~(1 << y)))

@@ -100,8 +100,8 @@ void setup()
     EEPROM_writeInt(EE_maxRate, (int)(maxRate / 16L));
 
 
-    // init autoContinue
-    EEPROM.write(EE_autoContinue, autoContinue);
+    // init degree for acceleration
+    EEPROM.write(EE_degAcc, (uint8_t)(DegreesForAcceleration*10));
 
     // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
     // 1/16uS resolution timer, ticks per sidereal second
@@ -275,11 +275,17 @@ void setup()
   maxRate = EEPROM_readInt(EE_maxRate) * 16;
   maxRate = (maxRate < (MaxRate / 2L) * 16L) ? MaxRate * 16 : maxRate;
 
-  SetAccelerationRates();          // set the new acceleration rate
+  SetRates();          // set the new acceleration rate
 
   // get autoContinue
-  autoContinue = EEPROM.read(EE_autoContinue);
-  if (!autoContinue) autoContinue = true;
+  DegreesForAcceleration = (double)EEPROM.read(EE_degAcc)/10.;
+  if (DegreesForAcceleration == 0 || DegreesForAcceleration > 25)
+  {
+    DegreesForAcceleration = 3.0;
+    EEPROM.write(EE_degAcc, (uint8_t)(DegreesForAcceleration*10));
+  }
+
+ 
 
   // makes onstep think that you parked the 'scope
   // combined with a hack in the goto syncEqu() function and you can quickly recover from
@@ -746,7 +752,7 @@ void updateRatios()
   celestialPoleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
   celestialPoleStepAxis2 = quaterRotAxis2;
   updateSideral();
-  SetAccelerationRates();
+  SetRates();
 }
 
 void updateSideral()

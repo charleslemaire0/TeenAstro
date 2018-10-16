@@ -14,7 +14,7 @@
 
 #define EE_pulseGuideRate   22
 #define EE_maxRate          23
-#define EE_autoContinue     25
+#define EE_degAcc           25
 
 #define EE_minAlt           26
 #define EE_maxAlt           27

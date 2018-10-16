@@ -50,7 +50,6 @@ void Telescope::updateTel()
 {
   if (millis() - lastStateTel > updaterate)
   {
-    //hasPierInfo = GetLX200(":Gm#", sideofpier, sizeof(sideofpier)) == LX200VALUEGET;
     hasTelStatus = GetLX200(":GU#", TelStatus, sizeof(TelStatus)) == LX200VALUEGET;
     hasTelStatus ? lastStateTel = millis() : connectionFailure++;
   }

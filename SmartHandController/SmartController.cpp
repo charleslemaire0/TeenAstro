@@ -1439,7 +1439,7 @@ void SmartHandController::menuMount()
   current_selection_L2 = 1;
   while (!exitMenu)
   {
-    const char *string_list_Mount = "Show Settings\n""Predefined\n""Mount type\n""Motor 1\n""Motor 2\n""Set Guide Rate\n""Set Max Rate";
+    const char *string_list_Mount = "Show Settings\n""Predefined\n""Mount type\n""Motor 1\n""Motor 2\n""Set Guide Rate\n""Set Max Rate\nAcceleration";
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Mount", current_selection_L2, string_list_Mount);
     switch (current_selection_L2)
     {
@@ -1466,6 +1466,9 @@ void SmartHandController::menuMount()
     case 7:
       menuMaxRate();
       break;
+    case 8:
+      menuAcceleration();
+        break;
     default:
       break;
     }
@@ -1788,6 +1791,7 @@ void SmartHandController::menuVixen()
 
 void SmartHandController::writeDefaultMount(const bool& r1, const int& ttgr1, const bool& r2, const int& ttgr2, const int& stprot, const int& cL, const int& cH)
 {
+  menuAcceleration();
   menuMaxRate();
 
   writeReverseLX200(1, r1);
@@ -1872,6 +1876,22 @@ void SmartHandController::menuMotor(const uint8_t axis)
     }
   }
 
+}
+
+void SmartHandController::menuAcceleration()
+{
+  char outAcc[20];
+  char outStepsPerDegree[20];
+  char cmd[20];
+  if (DisplayMessageLX200(GetLX200(":GXE2#", outAcc, sizeof(outAcc))))
+  {
+    float acc =atof(&outAcc[0]);
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "Acceleration", "", &acc, 0.1, 25, 4, 1, " deg."))
+    {
+      sprintf(cmd, ":SXE2:%04d#", (int)(acc*10.));
+      DisplayMessageLX200(SetLX200(cmd));
+    }
+  }
 }
 
 void SmartHandController::menuMaxRate()

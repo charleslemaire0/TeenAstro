@@ -417,7 +417,7 @@ void Command_S(Command& process_command)
         if (maxRate < (MaxRate / 2L) * 16L)
           maxRate = (MaxRate / 2L) * 16L;
         EEPROM_writeInt(EE_maxRate, (int)(maxRate / 16L));
-        SetAccelerationRates();
+        SetRates();
         break;
 
       case '3':   // acceleration rate preset
@@ -449,19 +449,7 @@ void Command_S(Command& process_command)
           break;
         }
 
-        SetAccelerationRates();
-        break;
-
-      case '5':           // autoContinue
-        if ((parameter[3] == '0') || (parameter[3] == '1'))
-        {
-          i = parameter[3] - '0';
-          if ((i == 0) || (i == 1))
-          {
-            autoContinue = i;
-            EEPROM.write(EE_autoContinue, autoContinue);
-          }
-        }
+        SetRates();
         break;
       default:
         commandError = true;
@@ -472,6 +460,11 @@ void Command_S(Command& process_command)
     {
       switch (parameter[1])
       {
+      case '2': // Set degree for acceleration
+        DegreesForAcceleration = min(max(0.1*(double)strtol(&parameter[3], NULL, 10),0.1), 25.0);
+        EEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
+        SetAcceleration();
+        break;
       case '9': // minutesPastMeridianE 
         minutesPastMeridianGOTOE = (double)strtol(&parameter[3], NULL, 10);
         if (minutesPastMeridianGOTOE > 180) minutesPastMeridianGOTOE = 180;

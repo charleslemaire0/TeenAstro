@@ -877,14 +877,18 @@ double angDist(double h, double d, double h1, double d1)
 
 
 // Acceleration rate calculation
-void SetAccelerationRates()
+void SetRates()
 {
    // set the new acceleration rate
   double maxslewrate = (1.0 / (((double)StepsPerDegreeAxis1 * ((maxRate / 16L) / 1000000.0))) * 3600.0) / 15.0;
-  DegreesForAcceleration = maxslewrate / 100.;
   guideRates[9] = maxslewrate;
   guideRates[8] = maxslewrate /2.;
   resetGuideRate();
+  SetAcceleration();
+}
+
+void SetAcceleration()
+{
   double Vmax = getV(maxRate);
   cli();
     AccAxis1 = Vmax / (2. * DegreesForAcceleration * StepsPerDegreeAxis1)*Vmax;
