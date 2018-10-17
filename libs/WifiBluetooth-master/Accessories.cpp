@@ -46,23 +46,22 @@ boolean wifibluetooth::readLX200Bytes(char* command,char* recvBuffer,long timeOu
     if (command[1]=='A') {
       if (strchr("W123456789+",command[2])) { shortResponse=true; Ser.setTimeout(timeOutMs*4); }
     }
-    if ((command[1]=='F') || (command[1]=='f')) {
-      if (strchr("+-QGZHFS1234",command[2])) noResponse=true;
-      if (strchr("A",command[2])) shortResponse=true;
-    }
-    if (command[1]=='r') {
-      if (strchr("+-PRFC<>Q1234",command[2])) noResponse=true;
-      if (strchr("~S",command[2])) shortResponse=true;
+    if (command[1] == 'F')
+    {
+      Ser.setTimeout(timeOutMs * 4);
+      if (strchr("+-*:GPS", command[2])) { noResponse = true; }
+      if (strchr("01234567W", command[2])) { shortResponse = true; }
     }
     if (command[1]=='M') {
       if (strchr("ewnsg",command[2])) noResponse=true;
-      if (strchr("SA",command[2])) shortResponse=true;
+      if (strchr("SAF?",command[2])) shortResponse=true;
     }
     if (command[1]=='Q') {
       if (strchr("#ewns",command[2])) noResponse=true;
     }
     if (command[1]=='S') {
-      if (strchr("CLSGtgMNOPrdhoTBX",command[2])) shortResponse=true;
+      if (strchr("!", command[2])) noResponse = true;
+      else if (strchr("CLSGtgMNOPrdhoTBX", command[2])) shortResponse = true;
     }
     if (command[1]=='L') {
       if (strchr("BNCDL!",command[2])) noResponse=true;
@@ -75,8 +74,8 @@ boolean wifibluetooth::readLX200Bytes(char* command,char* recvBuffer,long timeOu
       if (strchr("S",command[2])) noResponse=true;
     }
     if (command[1]=='h') {
-      if (strchr("FC",command[2])) noResponse=true;
-      if (strchr("QPR",command[2])) { shortResponse=true; Ser.setTimeout(timeOutMs*2); }
+      if (strchr("F",command[2])) noResponse=true;
+      if (strchr("COPQR",command[2])) { shortResponse=true; Ser.setTimeout(timeOutMs*2); }
     }
     if (command[1]=='T') {
       if (strchr("QR+-SLK",command[2])) noResponse=true;
@@ -88,7 +87,7 @@ boolean wifibluetooth::readLX200Bytes(char* command,char* recvBuffer,long timeOu
       if (strchr("+-Z/!",command[4])) noResponse=true;
     }
     if (command[1]=='G') {
-      if (strchr("RD",command[2])) { timeOutMs*=2; }
+      if (strchr("AZRD",command[2])) { timeOutMs*=2; }
     }
   }
 
