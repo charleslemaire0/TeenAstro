@@ -185,9 +185,9 @@ void Command_GX()
       quietReply = true;
       break;  // UTC date
     
-    case '2':
-      rtk.getUTDate(i, i1, i2, i3, i4, i5);
-      sprintf(reply, "%d/%d/%d/%d/%d/%d", i, i1, i2,i3,i4,i5);
+    case '2'://return seconds since 01/01/1970/00:00:00
+      long t = rtk.getTimeStamp();
+      sprintf(reply, "%lu", t);
       quietReply = true;
       break;
     }

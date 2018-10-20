@@ -614,6 +614,8 @@ void Command_F()
   boolean focuserNoResponse = false;
   boolean focuserShortResponse = false;
   char command_out[20];
+  Serial2.flush();
+  while (Serial2.available() > 0) Serial2.read();
 
   command_out[0] = ':';
   command_out[1] = 'F';
@@ -644,6 +646,7 @@ void Command_F()
     break;
   case '?':
   case '~':
+  case 'V':
     focuserNoResponse = false;
     focuserShortResponse = false;
     break;

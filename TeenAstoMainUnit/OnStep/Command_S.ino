@@ -258,27 +258,6 @@ void Command_S(Command& process_command)
       newTargetRA *= 15.0;
     break;
 
-
-  case 'S':
-    //  :SSHH:MM:SS#
-    //          Sets the local (apparent) sideral time to HH:MM:SS
-    //          Return: 0 on failure
-    //                  1 on success                                                                   
-    i = highPrecision;
-    highPrecision = true;
-    commandError = true;
-    //if (!hmsToDouble(&f, parameter))
-    //  commandError = true;  
-    //else
-    //{
-    //  update_lst(f);
-    //}
-
-    //highPrecision = i;
-
-    break;
-
-
   case 't':
     //  :StsDD*MM#
     //          Sets the current site latitude to sDD*MM#
@@ -393,6 +372,20 @@ void Command_S(Command& process_command)
         GeoAlign.writeCoe();
         break;
       }
+    }
+    else if (parameter[0] == '8')
+    {
+      switch (parameter[1])
+      {
+      case '2':
+      {
+        char *pEnd;
+        unsigned long t = strtoul(&parameter[3], &pEnd, 10);
+        rtk.SetFromTimeStamp(t);
+        break;
+      }
+      }
+      break;
     }
     else if (parameter[0] == '9')
     {                   // 9n: Misc.
