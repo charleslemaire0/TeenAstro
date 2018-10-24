@@ -1791,9 +1791,6 @@ void SmartHandController::menuVixen()
 
 void SmartHandController::writeDefaultMount(const bool& r1, const int& ttgr1, const bool& r2, const int& ttgr2, const int& stprot, const int& cL, const int& cH)
 {
-  menuAcceleration();
-  menuMaxRate();
-
   writeReverseLX200(1, r1);
   writeTotGearLX200(1, ttgr1);
   writeStepPerRotLX200(1, stprot);
@@ -1801,7 +1798,7 @@ void SmartHandController::writeDefaultMount(const bool& r1, const int& ttgr1, co
   writeMicroLX200(1, 4);
   writeLowCurrLX200(1, cL);
   writeHighCurrLX200(1, cH);
-  DisplayMotorSettings(1);
+
 
   writeReverseLX200(2, r2);
   writeTotGearLX200(2, ttgr2);
@@ -1810,6 +1807,10 @@ void SmartHandController::writeDefaultMount(const bool& r1, const int& ttgr1, co
   writeMicroLX200(2, 4);
   writeLowCurrLX200(2, cL);
   writeHighCurrLX200(2, cH);
+  
+  menuMaxRate();
+  menuAcceleration();
+  DisplayMotorSettings(1);
   DisplayMotorSettings(2);
   SyncGoHomeLX200(true);
   exitMenu = true;
