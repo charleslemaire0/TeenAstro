@@ -192,7 +192,7 @@ void longPressStop_f() {
 void Pad::attachEvent()
 {
   m_buttons[B_SHIFT]->attachClick(click_s);
-  m_buttons[B_SHIFT]->attachDoubleClick(doubleclick_s);
+  //m_buttons[B_SHIFT]->attachDoubleClick(doubleclick_s);
   m_buttons[B_SHIFT]->attachLongPressStart(longPressStart_s);
   m_buttons[B_SHIFT]->attachLongPressStop(longPressStop_s);
   m_buttons[B_SHIFT]->attachDuringLongPress(longPress_s);
@@ -243,7 +243,7 @@ void Pad::setup(const int pin[7], const bool active[7])
   {
     m_buttons[k] = new OneButton(pin[k], active[k]);
   }
-  m_buttons[0]->setClickTicks(300);
+  m_buttons[0]->setClickTicks(100);
   m_buttons[0]->setDebounceTicks(50);
   m_buttons[0]->setPressTicks(300);
   //For other buttons

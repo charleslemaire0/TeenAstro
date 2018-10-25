@@ -55,7 +55,7 @@ private:
   long angleDEC = 0;
   void tickButtons();
   bool buttonPressed();
-  void menuMain();
+  void menuTelAction();
   void menuSpeedRate();
   void menuTrack();
   void menuSyncGoto(bool sync);
@@ -67,7 +67,7 @@ private:
   void menuStar(bool sync);
   bool SelectStarAlign();
   void menuRADec(bool sync);
-  void menuSettings();
+  void menuTelSettings();
   void menuMount();
   void menuMountType();
   void menuPredefinedMount();
@@ -87,7 +87,7 @@ private:
   void menuSite();
   void menuSites();
   void menuUTCTime();
-  void menuFocuser();
+  void menuFocuserAction();
   void menuFocuserSettings();
   void menuDisplay();
   void menuContrast();
