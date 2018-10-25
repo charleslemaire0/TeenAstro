@@ -875,17 +875,33 @@ double angDist(double h, double d, double h1, double d1)
     return acos(sin(d / Rad) * sin(d1 / Rad) + cos(d / Rad) * cos(d1 / Rad) * cos((h1 - h) / Rad)) * Rad;
 }
 
+void initMaxRate()
+{
+  double maxslewEEPROM = EEPROM_readInt(EE_maxRate);
+  double maxslewCorrected = SetRates(maxslewEEPROM);          // set the new acceleration rate
+  if (abs(maxslewEEPROM - maxslewCorrected) > 2)
+  {
+    EEPROM_writeInt(EE_maxRate, (int)maxslewCorrected);
+  }
+}
+
 
 // Acceleration rate calculation
-void SetRates()
+double SetRates(double maxslewrate)
 {
    // set the new acceleration rate
-  double maxslewrate = (1.0 / (((double)StepsPerDegreeAxis1 * ((maxRate / 16L) / 1000000.0))) * 3600.0) / 15.0;
+  double fact = 3600 / 15 * 1 / ((double)StepsPerDegreeAxis1 * 1 / 16 / 1000000.0);
+  maxRate = max(fact / maxslewrate, (MaxRate / 2L) * 16L);
+  maxslewrate = fact / maxRate;
   guideRates[9] = maxslewrate;
   guideRates[8] = maxslewrate /2.;
   resetGuideRate();
   SetAcceleration();
+  return maxslewrate;
 }
+
+
+
 
 void SetAcceleration()
 {

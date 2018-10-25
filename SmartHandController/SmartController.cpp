@@ -1903,24 +1903,10 @@ void SmartHandController::menuMaxRate()
   if (DisplayMessageLX200(GetLX200(":GX92#", outRate, sizeof(outRate))))
   {
     float maxrate = (float)strtol(&outRate[0], NULL, 10);
-    if (DisplayMessageLX200(GetLX200(":GXE4#", outStepsPerDegree, sizeof(outStepsPerDegree))))
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Rate", "", &maxrate, 32, 1000, 4, 0, ""))
     {
-      float stepsPerDegree = (float)strtol(&outStepsPerDegree[0], NULL, 10);
-      float slewrate = (1.0 / ((stepsPerDegree * (maxrate / 1000000.0))) * 3600.0) / 15.0;
-      float slewrate2 = slewrate > 512 ? 512 : slewrate < 64 ? 64 : slewrate;
-      if (slewrate2 != slewrate)
-      {
-        maxrate = (1.0 / ((stepsPerDegree * (100 / 1000000.0))) * 3600.0) / 15.0;
-        sprintf(cmd, ":SX92:%04d#", (int)maxrate);
-        DisplayMessageLX200(SetLX200(cmd));
-      }
-
-      if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Rate", "", &slewrate2, 64, 512, 4, 0, ""))
-      {
-        maxrate = (1.0 / ((stepsPerDegree * (slewrate2 / 1000000.0))) * 3600.0) / 15.0;
-        sprintf(cmd, ":SX92:%04d#", (int)maxrate);
-        DisplayMessageLX200(SetLX200(cmd));
-      }
+      sprintf(cmd, ":SX92:%04d#", (int)maxrate);
+      DisplayMessageLX200(SetLX200(cmd));
     }
   }
 }

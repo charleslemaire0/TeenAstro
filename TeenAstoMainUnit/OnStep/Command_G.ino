@@ -178,13 +178,11 @@ void Command_GX()
       highPrecision = i;
       quietReply = true;
       break;  // UTC time
-
     case '1':
       rtk.getUTDate(i, i1, i2, i3, i4, i5);
       sprintf(reply, "%d/%d/%d", i1, i2, i);
       quietReply = true;
-      break;  // UTC date
-    
+      break;  // UTC date    
     case '2'://return seconds since 01/01/1970/00:00:00
       long t = rtk.getTimeStamp();
       sprintf(reply, "%lu", t);
@@ -202,15 +200,13 @@ void Command_GX()
       quietReply = true;
       break;  // pulse-guide rate
     case '2':
-      sprintf(reply, "%ld", (long)(maxRate / 16L));
+      sprintf(reply, "%d", EEPROM_readInt(EE_maxRate));
       quietReply = true;
-      break;  // MaxRate
-
+      break;  // Max Slew rate
     case '3':
       sprintf(reply, "%ld", (long)(MaxRate));
       quietReply = true;
       break;  // MaxRate (default)
-
     case '4':
       if (meridianFlip == MeridianFlipNever)
       {

@@ -13,6 +13,16 @@ boolean wifibluetooth::atoi2(char *a, int *i) {
   return true;
 };
 
+boolean wifibluetooth::atof2(char *a, float *f) {
+  char *conv_end;
+  double l = strtof(a, &conv_end);
+
+  if (&a[0] == conv_end) return false;
+  *f = l;
+  return true;
+};
+
+
 // this readBytesUntil() lets you know if the "character" was found
 byte wifibluetooth::readBytesUntil2(char character, char buffer[], int length, boolean* characterFound, long timeout) {
   unsigned long endTime=millis()+timeout;

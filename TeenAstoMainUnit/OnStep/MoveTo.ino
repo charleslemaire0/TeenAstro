@@ -107,14 +107,14 @@ Again:
   }
 
   // First, for Right Ascension
-  long temp;
+  double temp;
   if (distStartAxis1 >= distDestAxis1)
   {
     temp = getRate(sqrt(distDestAxis1 * 2 * AccAxis1)); // slow down (temp gets bigger)
   }
   else
   { 
-    temp = getRate(sqrt(distStartAxis1 * 2 * AccAxis1));// speed up (temp gets smaller)
+    temp = getRate(sqrt(distStartAxis1 * 2 * AccAxis1)); // speed up (temp gets smaller)
   }
   if (temp < maxRate) temp = maxRate;                            // fastest rate
   if (temp > TakeupRate) temp = TakeupRate;                      // slowest rate

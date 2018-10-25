@@ -139,6 +139,7 @@ class wifibluetooth
   static char serialRecvFlush();
   static boolean doubleToDms(char *reply, double *f, boolean fullRange, boolean signPresent);
   static boolean atoi2(char *a, int *i);
+  static boolean atof2(char *a, float *f);
   static byte readBytesUntil2(char character, char buffer[], int length, boolean* characterFound, long timeout);
   static boolean readLX200Bytes(char* command, char* recvBuffer, long timeOutMs);
   static void cl();

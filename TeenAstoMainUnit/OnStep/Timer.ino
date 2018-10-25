@@ -31,32 +31,32 @@ volatile bool       axis2Powered = false;
 #endif
 
 
-double getV(long rate)
+double getV(double rate)
 {
-  return 1000000.0 / (rate / 16L);
+  return 1000000.0 / (rate / 16.);
 }
 
-long getRate(double V)
+double getRate(double V)
 {
   return max(16. * 1000000.0 / V, maxRate);
-
 }
 
 
 //--------------------------------------------------------------------------------------------------
 
 // set timer1 to rate (in microseconds*16)
-void Timer1SetRate(long rate)
+void Timer1SetRate(double rate)
 {
-  itimer1.begin(TIMER1_COMPA_vect, (float)rate * 0.0625);
+  itimer1.begin(TIMER1_COMPA_vect, rate * 0.0625);
 }
 
 // set the master sidereal clock rate, also forces rate update for RA/Dec timer rates so that PPS adjustments take hold immediately
-volatile long   isrTimerRateAxis1 = 0;
-volatile long   isrTimerRateAxis2 = 0;
-volatile long   runtimerRateAxis1 = 0;
-volatile long   runTimerRateAxis2 = 0;
-void SetSiderealClockRate(long Interval)
+volatile double isrTimerRateAxis1 = 0;
+volatile double isrTimerRateAxis2 = 0;
+volatile double runtimerRateAxis1 = 0;
+volatile double runTimerRateAxis2 = 0;
+
+void SetSiderealClockRate(double Interval)
 {
   if (trackingState == TrackingMoveTo)
     Timer1SetRate(Interval / 100);
@@ -68,7 +68,7 @@ void SetSiderealClockRate(long Interval)
 
 // set timer3 to rate (in microseconds*16)
 volatile uint32_t   nextAxis1Rate = 100000UL;
-void Timer3SetRate(long rate)
+void Timer3SetRate(double rate)
 {
   cli();
   nextAxis1Rate = (F_BUS / 1000000) * (rate * 0.0625) * 0.5 - 1;
@@ -77,7 +77,7 @@ void Timer3SetRate(long rate)
 
 // set timer4 to rate (in microseconds*16)
 volatile uint32_t   nextAxis2Rate = 100000UL;
-void Timer4SetRate(long rate)
+void Timer4SetRate(double rate)
 {
   cli();
   nextAxis2Rate = (F_BUS / 1000000) * (rate * 0.0625) * 0.5 - 1;
@@ -96,7 +96,6 @@ volatile byte       cnt = 0;
 volatile double     guideTimerRateAxis1A = 0;
 volatile double     guideTimerRateAxis2A = 0;
 
-
 void updateDeltaTarget()
 {
   cli();
@@ -106,7 +105,6 @@ void updateDeltaTarget()
 }
 
 ISR(TIMER1_COMPA_vect)
-
 {
   // run 1/3 of the time at 3x the rate, unless a goto is happening
   if (trackingState != TrackingMoveTo)
@@ -123,7 +121,7 @@ ISR(TIMER1_COMPA_vect)
     // automatic rate calculation HA
     {
 
-    long    calculatedTimerRateAxis1;
+    double calculatedTimerRateAxis1;
 
     // guide rate acceleration/deceleration and control
     updateDeltaTarget();
@@ -176,11 +174,10 @@ ISR(TIMER1_COMPA_vect)
 
     // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
     if (timerRateAxis1B > 0.5)
-      calculatedTimerRateAxis1 =
-      ceil((double)SiderealRate / timerRateAxis1B)
-      + 5;
+      calculatedTimerRateAxis1 = SiderealRate / timerRateAxis1B;
     else
-      calculatedTimerRateAxis1 = ceil((double)SiderealRate * 2.0);
+      calculatedTimerRateAxis1 = (double)SiderealRate * 2.0;
+
 
     // remember our "running" rate and only update the actual rate when it changes
     if (runtimerRateAxis1 != calculatedTimerRateAxis1)
@@ -196,13 +193,13 @@ ISR(TIMER1_COMPA_vect)
     if (x < -10.0) x = -10.0;
     x = 10000.00 - x;
     x = x / 10000.0;
-    timerRateAxis1 = max((long)(calculatedTimerRateAxis1 * x), maxRate);      // up to 0.01% faster or slower (or as little as 0.001%)
+    timerRateAxis1 = max(calculatedTimerRateAxis1 * x, maxRate);      // up to 0.01% faster or slower (or as little as 0.001%)
     runtimerRateAxis1 = timerRateAxis1;
 
   }
     // automatic rate calculation Dec
     {
-      long    calculatedTimerRateAxis2;
+      double calculatedTimerRateAxis2;
 
       // guide rate acceleration/deceleration
 
@@ -255,12 +252,11 @@ ISR(TIMER1_COMPA_vect)
       double  timerRateAxis2B = fabs(guideTimerRateAxis2A + timerRateAxis2A);
 
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
+     // calculatedTimerRateAxis2 = (double)SiderealRate / timerRateAxis2B;
       if (timerRateAxis2B > 0.5)
-        calculatedTimerRateAxis2 =
-        ceil((double)SiderealRate / timerRateAxis2B)
-        + 5;
+        calculatedTimerRateAxis2 = (double)SiderealRate / timerRateAxis2B;
       else
-        calculatedTimerRateAxis2 = ceil((double)SiderealRate * 2.0);
+        calculatedTimerRateAxis2 = (double)SiderealRate * 2.0;
 
       // remember our "running" rate and only update the actual rate when it changes
       if (runTimerRateAxis2 != calculatedTimerRateAxis2)
@@ -286,8 +282,8 @@ ISR(TIMER1_COMPA_vect)
       GuidingState = GuidingOFF;
     }
   }
-  long    thisTimerRateAxis1 = timerRateAxis1;
-  long    thisTimerRateAxis2 = useTimerRateRatio ? timerRateAxis2 * timerRateRatio : timerRateAxis2;
+  double    thisTimerRateAxis1 = timerRateAxis1;
+  double    thisTimerRateAxis2 = useTimerRateRatio ? timerRateAxis2 * timerRateRatio : timerRateAxis2;
 
 
   timerRateAxis2 = max(timerRateAxis2, maxRate);     

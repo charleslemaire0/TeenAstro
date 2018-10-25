@@ -918,7 +918,7 @@ void Command_T()
     break;
   case 'R':
     // reset master sidereal clock interval
-    siderealInterval = 15956313L;
+    siderealInterval = masterSiderealInterval;
     quietReply = true;
     break;
   case 'K':

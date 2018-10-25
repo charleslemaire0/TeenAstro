@@ -101,7 +101,7 @@ void setup()
 
 
     // init degree for acceleration
-    EEPROM.write(EE_degAcc, (uint8_t)(DegreesForAcceleration*10));
+    EEPROM.write(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
 
     // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
     // 1/16uS resolution timer, ticks per sidereal second
@@ -232,7 +232,7 @@ void setup()
   Serial_Init(BAUD);                      // for Tiva TM4C the serial is redirected to serial5 in serial.ino file
   Serial2_Init(115200);
 #if defined(W5100_ON)
-    // get ready for Ethernet communications
+  // get ready for Ethernet communications
   Ethernet_Init();
 #endif
 
@@ -269,29 +269,25 @@ void setup()
   }
 
   // get the pulse-guide rate
-  guideRates[0] = (float)EEPROM.read(EE_pulseGuideRate)/100.;
+  guideRates[0] = (float)EEPROM.read(EE_pulseGuideRate) / 100.;
 
-  // get the Goto rate and constrain values to the limits (1/2 to 2X the MaxRate,) maxRate is in 16MHz clocks but stored in micro-seconds
-  maxRate = EEPROM_readInt(EE_maxRate) * 16;
-  maxRate = (maxRate < (MaxRate / 2L) * 16L) ? MaxRate * 16 : maxRate;
 
-  SetRates();          // set the new acceleration rate
 
   // get autoContinue
-  DegreesForAcceleration = (double)EEPROM.read(EE_degAcc)/10.;
+  DegreesForAcceleration = (double)EEPROM.read(EE_degAcc) / 10.;
   if (DegreesForAcceleration == 0 || DegreesForAcceleration > 25)
   {
     DegreesForAcceleration = 3.0;
-    EEPROM.write(EE_degAcc, (uint8_t)(DegreesForAcceleration*10));
+    EEPROM.write(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
   }
 
- 
+
 
   // makes onstep think that you parked the 'scope
   // combined with a hack in the goto syncEqu() function and you can quickly recover from
   // a reset without loosing much accuracy in the sky.  PEC is toast though.
   // set the default guide rate, 16x sidereal
-  enableGuideRate(GuideRateMax,true);
+  enableGuideRate(GuideRateMax, true);
   delay(110);
 
   // prep timers
@@ -732,7 +728,7 @@ void writeDefaultEEPROMmotor()
 void updateRatios()
 {
   cli()
-    StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+  StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerRotAxis2 = (long)GearAxis2 * StepRotAxis2 * (int)pow(2, MicroAxis2); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerDegreeAxis1 = (double)StepsPerRotAxis1 / 360.0;
   StepsPerDegreeAxis2 = (double)StepsPerRotAxis2 / 360.0;
@@ -752,7 +748,8 @@ void updateRatios()
   celestialPoleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
   celestialPoleStepAxis2 = quaterRotAxis2;
   updateSideral();
-  SetRates();
+
+  initMaxRate();
 }
 
 void updateSideral()

@@ -42,26 +42,26 @@ boolean onTrack = false;
 
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
 long                    siderealInterval = 15956313L;
-long                    masterSiderealInterval = siderealInterval;
+const long              masterSiderealInterval = 15956313L;
 
 // default = 15956313 ticks per sidereal hundredth second, where a tick is 1/16 uS
 // this is stored in EEPROM which is updated/adjusted with the ":T+#" and ":T-#" commands
 // a higher number here means a longer count which slows down the sidereal clock
-double                  HzCf = 16000000.0 / 60.0;   // conversion factor to go to/from Hz for sidereal interval
-volatile long           SiderealRate;               // based on the siderealInterval, this is the time between steps for sidereal tracking
-volatile long           TakeupRate;                 // this is the takeup rate for synchronizing the target and actual positions when needed
+const double            HzCf = 16000000.0 / 60.0;   // conversion factor to go to/from Hz for sidereal interval
+volatile double         SiderealRate;               // based on the siderealInterval, this is the time between steps for sidereal tracking
+volatile double         TakeupRate;                 // this is the takeup rate for synchronizing the target and actual positions when needed
 
 
-long                    maxRate = MaxRate * 16L;
+double                  maxRate = MaxRate * 16L;
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
 
-volatile long           timerRateAxis1 = 0;
-volatile long           timerRateBacklashAxis1 = 0;
+volatile double         timerRateAxis1 = 0;
+volatile double         timerRateBacklashAxis1 = 0;
 volatile boolean        inbacklashAxis1 = false;
 boolean                 faultAxis1 = false;
-volatile long           timerRateAxis2 = 0;
-volatile long           timerRateBacklashAxis2 = 0;
+volatile double         timerRateAxis2 = 0;
+volatile double         timerRateBacklashAxis2 = 0;
 volatile boolean        inbacklashAxis2 = false;
 boolean                 faultAxis2 = false;
 
@@ -72,7 +72,7 @@ boolean                 refraction = refraction_enable;
 boolean                 refraction = false;
 #endif
 
-unsigned int GearAxis1; //2000
+unsigned int GearAxis1;//2000
 unsigned int StepRotAxis1;
 byte MicroAxis1;
 bool ReverseAxis1;

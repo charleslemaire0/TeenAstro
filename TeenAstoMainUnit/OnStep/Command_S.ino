@@ -406,44 +406,11 @@ void Command_S(Command& process_command)
       }
 
       case '2':   // set new acceleration rate
-        maxRate = strtol(&parameter[3], NULL, 10) * 16L;
-        if (maxRate < (MaxRate / 2L) * 16L)
-          maxRate = (MaxRate / 2L) * 16L;
-        EEPROM_writeInt(EE_maxRate, (int)(maxRate / 16L));
-        SetRates();
+      {
+        EEPROM_writeInt(EE_maxRate, (int)strtol(&parameter[3], NULL, 10));
+        initMaxRate();
         break;
-
-      case '3':   // acceleration rate preset
-        quietReply = true;
-        switch (parameter[3])
-        {
-        case '6':
-          maxRate = MaxRate * 32L;
-          break;  // 50%
-        case '5':
-          maxRate = MaxRate * 32L;
-          break;  // 50%
-
-        case '4':
-          maxRate = MaxRate * 24L;
-          break;  // 75%
-
-        case '3':
-          maxRate = MaxRate * 16L;
-          break;  // 100%
-
-        case '2':
-          maxRate = MaxRate * 12L;
-          break;  // 150%
-
-        case '1':
-          maxRate = MaxRate * 8L;
-          break;  // 200%
-          break;
-        }
-
-        SetRates();
-        break;
+      }
       default:
         commandError = true;
         break;
@@ -453,6 +420,9 @@ void Command_S(Command& process_command)
     {
       switch (parameter[1])
       {
+      case '1': // Set the MaxRate in sideral Speed
+        
+        break;
       case '2': // Set degree for acceleration
         DegreesForAcceleration = min(max(0.1*(double)strtol(&parameter[3], NULL, 10),0.1), 25.0);
         EEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
