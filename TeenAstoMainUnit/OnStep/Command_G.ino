@@ -627,8 +627,10 @@ void  Command_G()
       else if (GuidingState == GuidingRecenter) reply[6] = '+';
       if (guideDirAxis1 == 'e') reply[7] = '>';
       else if(guideDirAxis1 == 'w') reply[7] = '<';
+      else if (guideDirAxis1 == 'b') reply[7] = 'b';
       if (guideDirAxis2 == 'n') reply[8] = '^';
       else if (guideDirAxis2 == 's') reply[8] = '_';
+      else if (guideDirAxis2 == 'b') reply[8] = 'b';
     }
     if (faultAxis1 || faultAxis2) reply[9] = 'f';
     if (refraction)
