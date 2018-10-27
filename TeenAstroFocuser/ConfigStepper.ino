@@ -21,10 +21,6 @@ void MoveTo(unsigned int pos)
 	if (inlimit (pos))
 	{
 		int delta = pos - position;
-		if (storage.reverse)
-		{
-			delta = -delta;
-		}
 		currSpeed = storage.minSpeed;
 		StartMove( delta);
 		currSpeed = 0;
@@ -54,7 +50,7 @@ void StartMove( int&n)
 		}
     myStepper.move(sign*micro);
 		sumsteps += sign;
-		position += storage.reverse ? -sign : sign;
+		position += sign;
 		writePos();
 		if (abs(2 * (sumsteps + sign)) > abs(n))
 		{
@@ -102,9 +98,9 @@ void FinishMove( int n)
     serComSHC.updateGoto();
 		if (halt)
 			return;
-		myStepper.move(sign*micro);
+    storage.reverse ? myStepper.move(-sign*micro) : myStepper.move(sign*micro);
 		sumsteps += sign;
-		position += storage.reverse ? -sign : sign;
+		position += sign;
 		writePos();
 		t += 1. / (currSpeed*stepsPerMotorRevolution);
 		unsigned int stepperspeednew = stepperspeedini - (unsigned int)storage.cmdAcc * t * 100;
@@ -131,8 +127,8 @@ void niter(int m, int sign)
 		{
 			return;
 		}
-		myStepper.move(sign*micro);
-		position += storage.reverse ? -sign : sign;
+    storage.reverse ? myStepper.move(-sign*micro) : myStepper.move(sign*micro);
+		position += sign;
 		writePos();
 		m -= sign;
 	}
@@ -161,9 +157,8 @@ void Go(int stepperspeedini, int sign, double& t)
 		}
 		myStepper.setRPM(currSpeed);
 	}
-
-	myStepper.move(sign*micro);
-	position += storage.reverse ? -sign : sign;
+  storage.reverse ? myStepper.move(-sign*micro) : myStepper.move(sign*micro);
+	position += sign;
 	writePos();
 
 }
@@ -189,12 +184,12 @@ void Stop(int sign)
 		currSpeed = stepperspeed;
 		myStepper.setRPM(currSpeed);
 		long nextposition = position;
-		nextposition += storage.reverse ? -sign : sign;
+		nextposition += sign;
 		if (!inlimit(nextposition))
 		{
 			break;
 		}
-		myStepper.move(sign*micro);
+    storage.reverse ? myStepper.move(-sign*micro) : myStepper.move(sign*micro);
 		position = nextposition;
 		writePos();
 	}

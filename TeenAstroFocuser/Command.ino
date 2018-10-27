@@ -9,7 +9,7 @@
 
 void Command_move(int sign, double& t)
 {
-  unsigned int nextposition = storage.reverse ? position - sign : position + sign;
+  unsigned int nextposition = position + sign;
   if (inlimit(nextposition))
   {
     Go(storage.minSpeed, sign, t);
