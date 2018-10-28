@@ -20,7 +20,7 @@ void MoveTo(unsigned int pos)
 {
 	if (inlimit (pos))
 	{
-		int delta = pos - position;
+		int delta = (long)pos - (long)position;
 		currSpeed = storage.minSpeed;
 		StartMove( delta);
 		currSpeed = 0;
@@ -48,7 +48,7 @@ void StartMove( int&n)
 			status = 1;
 			break;
 		}
-    myStepper.move(sign*micro);
+    storage.reverse ? myStepper.move(-sign*micro) : myStepper.move(sign*micro);
 		sumsteps += sign;
 		position += sign;
 		writePos();
