@@ -167,6 +167,34 @@ void Command_GX()
       break;  // pdCor
     }
     break;
+  case '7':
+    // for debug only
+    switch (parameter[1])
+    {
+    case '0':
+      //sprintf(reply, "%d", (int)inbacklashAxis1);
+      //quietReply = true;
+      break;
+    case '1':
+      //sprintf(reply, "%d", (int)inbacklashAxis1);
+      //quietReply = true;
+      break;
+    case '2':
+      //sprintf(reply, "%d", (int)blAxis1);
+      //quietReply = true;
+      break;
+    case '3':
+      //sprintf(reply, "%d", (int)blAxis1);
+      //quietReply = true;
+      break;
+    case '4':
+      //sprintf(reply, "%d", (int)blAxis1);
+      //quietReply = true;
+      break;
+
+
+    }
+    break;
   case '8':
     // 8n: Date/Time
     switch (parameter[1])
