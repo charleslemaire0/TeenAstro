@@ -463,7 +463,7 @@ void SmartHandController::update()
         if (k < 5)
           SetBoolLX200(RC[k - 1]);
         else
-          Move[k - 1] = !(SetBoolLX200(RC[k - 1]) == LX200VALUESET);
+          Move[k - 1] = (SetBoolLX200(RC[k - 1]) == LX200VALUESET);
         continue;
       }
     }
