@@ -14,6 +14,7 @@ LX200RETURN GetLX200(char* command, char* output, int buffersize);
 LX200RETURN GetTimeLX200(unsigned int &hour, unsigned int &minute, unsigned int &second);
 LX200RETURN GetTimeLX200(long &value);
 LX200RETURN SetLX200(char* command);
+LX200RETURN SetBoolLX200(char* command);
 LX200RETURN SetTimeLX200(long &value);
 LX200RETURN GetSiteLX200(int &value);
 LX200RETURN GetLatitudeLX200(int& degree, int& minute);
@@ -46,4 +47,4 @@ LX200RETURN readHighCurrLX200(const uint8_t &axis, uint8_t &highCurr);
 LX200RETURN writeHighCurrLX200(const uint8_t &axis, const uint8_t &highCurr);
 LX200RETURN readFocuser(unsigned int& startPosition, unsigned int& maxPosition,
   unsigned int& minSpeed, unsigned int& maxSpeed,
-  unsigned int& cmdAcc, unsigned int& manAcc, unsigned int& manDec, bool& reverse);
+  unsigned int& cmdAcc, unsigned int& manAcc, unsigned int& manDec, bool& reverse, unsigned int& incr);

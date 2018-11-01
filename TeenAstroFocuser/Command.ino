@@ -9,7 +9,8 @@
 
 void Command_move(int sign, double& t)
 {
-  unsigned int nextposition = position + sign;
+
+  unsigned long nextposition = position + sign;
   if (inlimit(nextposition))
   {
     Go(storage.minSpeed, sign, t);
@@ -83,9 +84,12 @@ void SerCom::Command_Check(void)
   case AzCmd_Help:
     sayHello();
     ser.println("$ Commands");
-    ser.println("$ H Help, + start Focus in, - Start Focus out, * Stop Focus in, : Stop Focus in, Q stop, G Goto, P Park, S Sync, W Write, ?");
+    ser.println("$ H Help");
+    ser.println("$ + start Focus in, - Start Focus out,  all without reply");
+    ser.println("$ O start Focus in, I Start Focus out, o Stop Focus in, i Stop Focus in,  all with reply");
+    ser.println("Q stop, G Goto, P Park, S Sync, W Write, ?");
     ser.println("$ Settings");
-    ser.println("$ 0 startP, 1 maxP, 2 minS , 3 maxS, 4 cmdAcc, 5 mAcc, 6 mDec");
+    ser.println("$ 0 startP, 1 maxP, 2 minS , 3 maxS, 4 cmdAcc, 5 mAcc, 6 mDec, 7 mRev, 8 mInp");
     ser.flush();
     break;
   case AzCmd_Version:
@@ -100,7 +104,7 @@ void SerCom::Command_Check(void)
     if (m_valuedefined)
     {
       halt = false;
-      MoveTo(m_value);
+      MoveTo((unsigned long)m_value * storage.inpulse);
     }
     break;
   case FocCmd_Park:
@@ -108,7 +112,7 @@ void SerCom::Command_Check(void)
     MoveTo(storage.startPosition);
     break;
   case FocCmd_Sync:      // "reset" position
-    setvalue(m_valuedefined, m_value, 0, storage.maxPosition, position);
+    setvalue(m_valuedefined, (unsigned long)m_value * storage.inpulse, 0, storage.maxPosition, position);
     writePos();
     break;
   case FocCmd_Write:
@@ -117,19 +121,19 @@ void SerCom::Command_Check(void)
     ser.flush();
     break;
   case FocCmd_startPosition:
-    setvalue(m_valuedefined, m_value, 0u, 65535u, storage.startPosition);
+    setvalue(m_valuedefined, (unsigned long)m_value * storage.inpulse, 0UL, 2000000000UL, storage.startPosition);
     break;
   case FocCmd_maxPosition:
-    setvalue(m_valuedefined, m_value, 0u, 65535u, storage.maxPosition);
+    setvalue(m_valuedefined, (unsigned long)m_value * storage.inpulse, 0UL, 2000000000UL, storage.maxPosition);
     break;
   case FocCmd_maxSpeed:
-    setvalue(m_valuedefined, (uint8_t)m_value, 1u, 100u, storage.maxSpeed);
+    setvalue(m_valuedefined, m_value, 1u, 999u, storage.maxSpeed);
     break;
   case FocCmd_minSpeed:
-    setvalue(m_valuedefined, (uint8_t)m_value, 1u, 100u, storage.minSpeed);
+    setvalue(m_valuedefined, m_value, 1u, 999u, storage.minSpeed);
     break;
   case FocCmd_cmdAcc:
-    setvalue(m_valuedefined, (uint8_t)m_value, 1u, 100u, storage.cmdAcc);
+    setvalue(m_valuedefined, (uint8_t)m_value, 1u, 200u, storage.cmdAcc);
     break;
   case FocCmd_manualAcc:
     setvalue(m_valuedefined, (uint8_t)m_value, 1u, 100u, storage.manAcc);
@@ -139,6 +143,11 @@ void SerCom::Command_Check(void)
     break;
   case FocCmd_Inv:
     setbool(m_valuedefined, m_value, storage.reverse);
+    iniMot();
+    break;
+  case FocCmd_inpulse:
+    setvalue(m_valuedefined, m_value, 1u, 512u, storage.inpulse);
+    checkvalue();
     break;
   case CmdDumpState: // "?" dump state including details
     dumpState();
@@ -165,21 +174,41 @@ void SerCom::MoveRequest(void)
     dumpState();
     m_hasReceivedCommand = false;
     break;
+  case FocCmd_in_wor:
+    mdirIN = HIGH;
+    m_hasReceivedCommand = false;
+    break;
+  case FocCmd_out_wor:
+    mdirOUT = HIGH;
+    m_hasReceivedCommand = false;
+    break;
   case FocCmd_in:
     mdirIN = HIGH;
     m_hasReceivedCommand = false;
+    ser.print("1");
+    ser.flush();
     break;
   case FocCmd_in_stop:
     mdirIN = LOW;
     m_hasReceivedCommand = false;
+    ser.print("1");
+    ser.flush();
     break;
   case FocCmd_out:
     mdirOUT = HIGH;
     m_hasReceivedCommand = false;
+    ser.print("1");
+    ser.flush();
     break;
   case FocCmd_out_stop:
     mdirOUT = LOW;
     m_hasReceivedCommand = false;
+    ser.print("1");
+    ser.flush();
+    break;
+  case FocCmd_Halt:
+    mdirOUT = LOW;
+    mdirIN = LOW;
     break;
   default:
     break;
@@ -202,6 +231,8 @@ void SerCom::HaltRequest(void)
   case FocCmd_out:
   case FocCmd_out_stop:
   case FocCmd_Halt:
+  case FocCmd_in_wor:
+  case FocCmd_out_wor:
     mdirOUT = LOW;
     mdirIN = LOW;
     halt = true;
@@ -213,6 +244,18 @@ void SerCom::HaltRequest(void)
 }
 
 void SerCom::setvalue(bool valuedefined, unsigned int value, uint8_t min, uint8_t max, uint8_t &adress)
+{
+  if (valuedefined && value >= min && value <= max)
+  {
+    adress = value;
+    ser.print("1");
+  }
+  else
+    ser.print("0");
+  ser.flush();
+}
+
+void SerCom::setvalue(bool valuedefined, unsigned long value, unsigned long min, unsigned long max, unsigned long &adress)
 {
   if (valuedefined && value >= min && value <= max)
   {
@@ -251,15 +294,16 @@ void SerCom::setbool(bool valuedefined, unsigned int value, bool  &adress)
 void SerCom::dumpConfig()
 {
   char buf[50];
-  sprintf(buf, "~%05u %05u %03u %03u %03u %03u %03u %1u#",
-    storage.startPosition,
-    storage.maxPosition,
+  sprintf(buf, "~%05u %05u %03u %03u %03u %03u %03u %1u %03u#",
+    (unsigned int)(storage.startPosition / storage.inpulse),
+    (unsigned int)(storage.maxPosition / storage.inpulse),
     storage.minSpeed,
     storage.maxSpeed,
     storage.cmdAcc,
     storage.manAcc,
     storage.manDec,
-    storage.reverse);
+    storage.reverse,
+    storage.inpulse);
   ser.print(buf);
   ser.flush();
 }
@@ -267,7 +311,12 @@ void SerCom::dumpConfig()
 void SerCom::dumpState()
 {
   char buf[20];
-  sprintf(buf, "?%05u %03u#", position, currSpeed);
+  unsigned int pos = (unsigned int)(position / storage.inpulse);
+  if (pos > 65535)
+  {
+    position = 65535 * storage.inpulse;
+  }
+  sprintf(buf, "?%05u %03u#", (unsigned int)(position/storage.inpulse), currSpeed);
   ser.print(buf);
   ser.flush();
 }

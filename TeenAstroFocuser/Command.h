@@ -12,10 +12,12 @@
 // single key commands
 #define AzCmd_Help 'H'
 #define AzCmd_Version 'V'
-#define FocCmd_out '+'
-#define FocCmd_out_stop '*'
-#define FocCmd_in '-'
-#define FocCmd_in_stop ':'
+#define FocCmd_out_wor '+'
+#define FocCmd_in_wor '-'
+#define FocCmd_out 'O'
+#define FocCmd_out_stop 'o'
+#define FocCmd_in 'I'
+#define FocCmd_in_stop 'i'
 #define FocCmd_Goto 'G'
 #define FocCmd_Park 'P'
 #define FocCmd_Sync 'S'
@@ -34,6 +36,7 @@
 #define FocCmd_manualAcc '5'
 #define FocCmd_manualDec '6' 
 #define FocCmd_Inv '7'
+#define FocCmd_inpulse '8'
 
 #define Char_CR 13
 #define Char_Spc 32
@@ -64,6 +67,7 @@ private:
   void sayHello();
   void setbool(bool valuedefined, unsigned int value, bool  &adress);
   void setvalue(bool valuedefined, unsigned int value, unsigned int min, unsigned int max, unsigned int &adress);
+  void setvalue(bool valuedefined, unsigned long value, unsigned long min, unsigned long max, unsigned long &adress);
   void setvalue(bool valuedefined, unsigned int value, uint8_t min, uint8_t max, uint8_t &adress);
   void HaltRequest();
 };

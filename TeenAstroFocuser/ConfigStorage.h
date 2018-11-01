@@ -19,13 +19,14 @@ struct StoreStruct
 {
 	char version[4];
 	bool reverse;
-	unsigned int startPosition;
-	unsigned int maxPosition;
-  uint8_t minSpeed;
-  uint8_t maxSpeed;
+	unsigned long startPosition;
+	unsigned long maxPosition;
+  unsigned int minSpeed;
+  unsigned int maxSpeed;
   uint8_t cmdAcc;
   uint8_t manAcc;
   uint8_t manDec;
+  unsigned int inpulse;
 }
 storage = {
 	CONFIG_VERSION,
@@ -36,8 +37,10 @@ storage = {
 	60,
 	10,
 	10,
-	10
+	10,
+  16
 };
+
 
 void loadConfig();
 void saveConfig();

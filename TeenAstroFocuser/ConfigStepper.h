@@ -28,7 +28,7 @@ int mdirOUTOld = 0;
 int mdirINOld = 0;
 
 unsigned int currSpeed;
-unsigned int position;
+unsigned long position;
 bool halt = false;
 double time_acc = 0;
 DS1302 *rtc = NULL;
@@ -39,6 +39,5 @@ SerCom serComSHC(Serial2);
 #ifdef VERSION23
 SerCom serComSHC(Serial1);
 #endif
-void iniStepper();
 #endif
 

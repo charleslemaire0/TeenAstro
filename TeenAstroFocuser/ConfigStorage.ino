@@ -13,6 +13,41 @@ void loadConfig() {
 		EEPROM.read(CONFIG_START + 2) == CONFIG_VERSION[2])
 		for (unsigned int t = 0; t<sizeof(storage); t++)
 			*((char*)&storage + t) = EEPROM.read(CONFIG_START + t);
+  checkvalue();
+}
+
+void checkvalue()
+{
+  unsigned int vali;
+  unsigned long vall;
+  uint8_t vals;
+  bool dosave = false;
+  vali = max(min(storage.inpulse, 512), 1);
+  dosave = vali != storage.inpulse;
+  storage.inpulse = vali;
+  vall = max(min(storage.startPosition, 65535 * storage.inpulse), 1);
+  dosave = vall != storage.startPosition;
+  storage.startPosition = vall;
+  vall = max(min(storage.maxPosition, 65535 * storage.inpulse), 1);
+  dosave = vall != storage.maxPosition;
+  storage.maxPosition = vall;
+  vali = max(min(storage.maxSpeed, 999), 1);
+  dosave = vali != storage.maxSpeed;
+  storage.maxSpeed = vali;
+  vali = max(min(storage.minSpeed, storage.maxSpeed), 1);
+  dosave = vali != storage.minSpeed;
+  storage.minSpeed = vali;
+  vals = max(min(storage.cmdAcc, 99), 1);
+  dosave = vals != storage.cmdAcc;
+  storage.cmdAcc = vals;
+  vals = max(min(storage.manDec, 99), 1);
+  dosave = vals != storage.manDec;
+  storage.manDec = vals;
+  vals = max(min(storage.manAcc, 99), 1);
+  dosave = vals != storage.manAcc;
+  storage.manAcc = vals;
+  if (dosave)
+    saveConfig();
 }
 
 void saveConfig() {

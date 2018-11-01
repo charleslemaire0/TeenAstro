@@ -1,3 +1,4 @@
+#include "BasicStepperDriver.h"
 #include "ConfigStorage.h"
 #include "Global.h"
 #include "ConfigStepper.h"
@@ -5,7 +6,6 @@
 
 uint8_t mdirIN = LOW;
 uint8_t mdirOUT = LOW;
-
 
 void setup()
 {
@@ -38,10 +38,9 @@ void setup()
   Serial1.setTimeout(5);
 #endif
 
-
   loadConfig();
+  iniMot();
 	iniPos();
-  iniStepper();
   analogWrite(LEDPin,16);
 }
 

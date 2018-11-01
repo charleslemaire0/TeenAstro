@@ -35,7 +35,7 @@ void Telescope::updateFocuser()
   {
     char fc[45];
     hasInfoFocuser = GetLX200(":F?#", fc, sizeof(TempFocuserStatus)) == LX200VALUEGET;
-    if (hasInfoFocuser)
+    if (hasInfoFocuser && fc[0] == '?')
     {
       lastStateFocuser = millis();
       sprintf(TempFocuserStatus, fc);

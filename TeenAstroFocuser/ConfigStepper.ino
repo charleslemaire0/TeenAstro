@@ -4,37 +4,36 @@
 
 #include "ConfigStepper.h"
 #include "global.h"
-#include <BasicStepperDriver.h>
+#include "BasicStepperDriver.h"
 #include "DS1302.h"
 
-const int stepsPerMotorRevolution = 200;  // change this to fit the number of steps per revolution
-BasicStepperDriver myStepper(stepsPerMotorRevolution, DirPin, StepPin);
+BasicStepperDriver myStepper(200, DirPin, StepPin);
 
-void iniStepper()
+void iniMot()
 {
-  myStepper.setMicrostep(micro);
+  myStepper.setReverse(storage.reverse);
+  myStepper.setSpeed(storage.minSpeed);
 }
 
-
-void MoveTo(unsigned int pos)
+void MoveTo(unsigned long pos)
 {
 	if (inlimit (pos))
 	{
-		int delta = (long)pos - (long)position;
+		long delta = (long)pos - (long)position;
 		currSpeed = storage.minSpeed;
 		StartMove( delta);
 		currSpeed = 0;
 	}
 }
 
-void StartMove( int&n)
+void StartMove( long&n)
 {
 	if (n == 0)
 	{
 		return;
 	}
 	int sign = (n<0) ? -1 : 1;
-	int sumsteps = 0;
+	long sumsteps = 0;
 	unsigned int stepperspeedini = currSpeed;
 	double t = 0;
 	int status = 0;
@@ -48,7 +47,7 @@ void StartMove( int&n)
 			status = 1;
 			break;
 		}
-    storage.reverse ? myStepper.move(-sign*micro) : myStepper.move(sign*micro);
+    myStepper.move(sign);
 		sumsteps += sign;
 		position += sign;
 		writePos();
@@ -59,7 +58,7 @@ void StartMove( int&n)
 			break;
 		}
 
-		t += 1. / (currSpeed*stepsPerMotorRevolution);
+		t += 1. / currSpeed;
 		unsigned int stepperspeednew = stepperspeedini + (unsigned int)storage.cmdAcc * t * 100;
 		if (stepperspeednew > storage.maxSpeed)
 		{
@@ -69,10 +68,10 @@ void StartMove( int&n)
 		else
 		{
 			currSpeed = stepperspeednew;
-			myStepper.setRPM(currSpeed);
+			myStepper.setSpeed(currSpeed);
 		}
 	}
-	int rest = n - sumsteps;
+	long rest = n - sumsteps;
 	if (status == 2)
 	{
 		niter(rest - sumsteps, sign);
@@ -82,14 +81,14 @@ void StartMove( int&n)
 }
 
 
-void FinishMove( int n)
+void FinishMove( long n)
 {
 	if (n == 0)
 	{
 		return;
 	}
 	int sign = (n<0) ? -1 : 1;
-	int sumsteps = 0;
+	long sumsteps = 0;
 	int stepperspeedini = currSpeed;
 	double t = 0;
 	while (sumsteps != n)
@@ -98,26 +97,26 @@ void FinishMove( int n)
     serComSHC.updateGoto();
 		if (halt)
 			return;
-    storage.reverse ? myStepper.move(-sign*micro) : myStepper.move(sign*micro);
+    myStepper.move(sign);
 		sumsteps += sign;
 		position += sign;
 		writePos();
-		t += 1. / (currSpeed*stepsPerMotorRevolution);
+		t += 1. / currSpeed;
 		unsigned int stepperspeednew = stepperspeedini - (unsigned int)storage.cmdAcc * t * 100;
 		if (stepperspeednew < storage.minSpeed)
 		{
 			currSpeed = storage.minSpeed;
-			myStepper.setRPM(currSpeed);
+			myStepper.setSpeed(currSpeed);
 			break;
 		}
 		currSpeed = stepperspeednew;
-		myStepper.setRPM(stepperspeednew);
+		myStepper.setSpeed(stepperspeednew);
 	}
 	
 	niter(n - sumsteps,sign);
 }
 
-void niter(int m, int sign)
+void niter(long m, int sign)
 {
 	while (m != 0)
 	{
@@ -127,7 +126,7 @@ void niter(int m, int sign)
 		{
 			return;
 		}
-    storage.reverse ? myStepper.move(-sign*micro) : myStepper.move(sign*micro);
+    myStepper.move(sign);
 		position += sign;
 		writePos();
 		m -= sign;
@@ -136,28 +135,23 @@ void niter(int m, int sign)
 
 void Go(int stepperspeedini, int sign, double& t)
 {
-	if (currSpeed == 0)
-	{
-		currSpeed = storage.minSpeed;
-	}
-
 	if (currSpeed != storage.maxSpeed)
 	{
-		double tnew = t + 1. / (currSpeed*stepsPerMotorRevolution);
-		double  a = (unsigned int) storage.manAcc * tnew * 100;
-		unsigned int stepperspeednew = stepperspeedini + a + 0.5*a*a;
+    if (currSpeed == 0)
+      currSpeed = FocCmd_minSpeed;
+		double tnew = t + 1. / currSpeed;
+    double  a = storage.manAcc * tnew / 10.;
+    unsigned int stepperspeednew = min(max(stepperspeedini + a + 0.5*a*a, storage.minSpeed), storage.maxSpeed);
 		if (stepperspeednew < storage.maxSpeed)
 		{
 			t = tnew;
 			currSpeed = stepperspeednew;
 		}
-		else
-		{
-			currSpeed = storage.maxSpeed;
-		}
-		myStepper.setRPM(currSpeed);
+
+    myStepper.setSpeed(currSpeed);
 	}
-  storage.reverse ? myStepper.move(-sign*micro) : myStepper.move(sign*micro);
+
+  myStepper.move(sign);
 	position += sign;
 	writePos();
 
@@ -166,45 +160,41 @@ void Go(int stepperspeedini, int sign, double& t)
 void Stop(int sign)
 {
 	double t = 0;
-	unsigned int stepperspeed = currSpeed;
+
 	unsigned int stepperspeedini = currSpeed;
-	while (currSpeed != storage.minSpeed)
+	while (currSpeed > storage.minSpeed)
 	{
     serCom0.updateGoto();
     serComSHC.updateGoto();
-		t += 1. / (currSpeed*stepsPerMotorRevolution);
-		stepperspeed = stepperspeedini - (unsigned int) storage.manDec * t * 100;
-
-		if (stepperspeed < storage.minSpeed )
+		t += 1. / currSpeed;
+		if (stepperspeedini < (long)storage.manDec * t * 100)
 		{
-			currSpeed = storage.minSpeed;
-			myStepper.setRPM(currSpeed);
 			break;
 		}
-		currSpeed = stepperspeed;
-		myStepper.setRPM(currSpeed);
-		long nextposition = position;
+    currSpeed = stepperspeedini - storage.manDec * t * 100;
+		myStepper.setSpeed(currSpeed);
+		unsigned long nextposition = position;
 		nextposition += sign;
 		if (!inlimit(nextposition))
 		{
 			break;
 		}
-    storage.reverse ? myStepper.move(-sign*micro) : myStepper.move(sign*micro);
+    myStepper.move(sign);
 		position = nextposition;
 		writePos();
 	}
 	currSpeed = 0;
-	myStepper.setRPM(currSpeed);
+	myStepper.setSpeed(storage.minSpeed);
 }
 
-bool inlimit(long pos)
+bool inlimit(unsigned long pos)
 {
-	return 0L <= pos && pos <= (long)storage.maxPosition;
+	return 0UL <= pos && pos <= (unsigned long)storage.maxPosition;
 }
 
 void writePos()
 {
-	unsigned int pos[3] = { position,position, position };
+	unsigned long pos[3] = { position,position, position };
 	rtc->writeRamBulk((uint8_t*)pos, sizeof(pos));
 }
 
@@ -219,7 +209,7 @@ void iniPos()
 	rtc->writeProtect(false);
 	uint8_t ram[DS1302::kRamSize];
 	rtc->readRamBulk(ram, DS1302::kRamSize);
-	unsigned int* posini = (unsigned int*)ram;
+	unsigned long* posini = (unsigned long*)ram;
 	//char buf[10];
 	//for (int k = 0; k < 3, k++;)
 	//{

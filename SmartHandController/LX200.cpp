@@ -95,8 +95,8 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     if (command[1] == 'F')
     {
       Ser.setTimeout(timeOutMs*4);
-      if (strchr("+-*:GPS", command[2])) { noResponse = true; }
-      if (strchr("01234567W", command[2])) { shortResponse = true;}
+      if (strchr("+-GPS", command[2])) { noResponse = true; }
+      if (strchr("OoIi:012345678W", command[2])) { shortResponse = true;}
     }
     if (command[1] == 'h') {
       if (strchr("F", command[2])) noResponse = true;
@@ -120,24 +120,39 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     recvBuffer[0] = 0;
     return true;
   }
-  else
-    if (shortResponse) {
-      recvBuffer[Ser.readBytes(recvBuffer, 1)] = 0;
-      return (recvBuffer[0] != 0);
-    }
-    else {
-      // get full response, '#' terminated
-      unsigned long start = millis();
-      int recvBufferPos = 0;
-      char b = 0;
-      while (millis() - start < timeOutMs && (b != '#')) {
-        if (Ser.available()) {
-          b = Ser.read();
-          recvBuffer[recvBufferPos] = b; recvBufferPos++; if (recvBufferPos > bufferSize -1) recvBufferPos = bufferSize - 1; recvBuffer[recvBufferPos] = 0;
-        }
+  else if (shortResponse)
+  {
+    unsigned long start = millis();
+    while (millis() - start < timeOutMs)
+    {
+      if (Ser.available())
+      {
+        recvBuffer[Ser.readBytes(recvBuffer, 1)] = 0;
+        break;
       }
-      return (recvBuffer[0] != 0);
     }
+    return (recvBuffer[0] != 0);
+  }
+  else 
+  {
+    // get full response, '#' terminated
+    unsigned long start = millis();
+    int recvBufferPos = 0;
+    char b = 0;
+    while (millis() - start < timeOutMs && (b != '#'))
+    {
+      if (Ser.available())
+      {
+        b = Ser.read();
+        start = millis();
+        recvBuffer[recvBufferPos] = b;
+        recvBufferPos++;
+        if (recvBufferPos > bufferSize - 1) recvBufferPos = bufferSize - 1;
+        recvBuffer[recvBufferPos] = 0;
+      }
+    }
+    return (recvBuffer[0] != 0);
+  }
 }
 
 bool isOk(LX200RETURN val)
@@ -152,6 +167,15 @@ LX200RETURN SetLX200(char* command)
     return  LX200VALUESET;
   else
     return LX200SETVALUEFAILED;
+}
+
+LX200RETURN SetBoolLX200(char* command)
+{
+  char out[LX200sbuff];
+  if (readLX200Bytes(command, out, sizeof(out), TIMEOUT_CMD))
+    if (out[0] == '1')
+      return  LX200VALUESET;
+  return LX200SETVALUEFAILED;
 }
 
 LX200RETURN SyncGoHomeLX200(bool sync)
@@ -690,12 +714,12 @@ LX200RETURN writeHighCurrLX200(const uint8_t &axis, const uint8_t &highCurr)
 
 LX200RETURN readFocuser(unsigned int& startPosition,unsigned int& maxPosition,
                         unsigned int& minSpeed, unsigned int& maxSpeed,
-                        unsigned int& cmdAcc, unsigned int& manAcc, unsigned int& manDec, bool& reverse )
+                        unsigned int& cmdAcc, unsigned int& manAcc, unsigned int& manDec, bool& reverse, unsigned int& incr )
 {
   char out[LX200lbuff];
   if (GetLX200(":F~#", out, sizeof(out)) == LX200VALUEGET)
   {
-    if ( strlen(out)!=35)
+    if ( strlen(out)!=39)
       return LX200GETVALUEFAILED;
     char* pEnd;
     startPosition = strtol(&out[1], &pEnd, 10);
@@ -706,6 +730,7 @@ LX200RETURN readFocuser(unsigned int& startPosition,unsigned int& maxPosition,
     manAcc = strtol(&out[25], &pEnd, 10);
     manDec = strtol(&out[29], &pEnd, 10);
     reverse = out[33] == '1';
+    incr = strtol(&out[35], &pEnd, 10);
     return LX200VALUEGET;
   }
   else

@@ -13,8 +13,8 @@
 #define ADRESS_Contrast 17
 #endif
 
-static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":F*#", ":F:#" };
-static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":F+#", ":F-#" };
+static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":Fo#", ":Fi#" };
+static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":FO#", ":FI#" };
 
 
 #define MY_BORDER_SIZE 1
@@ -442,6 +442,7 @@ void SmartHandController::update()
   }
   else
   {
+
     buttonCommand = false;
     for (int k = 1; k < 7; k++)
     {
@@ -449,16 +450,20 @@ void SmartHandController::update()
       {
         buttonCommand = true;
         Move[k - 1] = false;
-        Ser.print(BreakRC[k - 1]);
-        Ser.flush();
+        if (k == 5 || k == 6)
+        {
+          Move[k - 1] = !(SetBoolLX200(BreakRC[k - 1]) == LX200VALUESET);
+        }
         continue;
       }
       else if (eventbuttons[0] == E_NONE && !Move[k - 1] && (eventbuttons[k] == E_LONGPRESS || eventbuttons[k] == E_CLICK || eventbuttons[k] == E_LONGPRESSTART))
       {
         buttonCommand = true;
         Move[k - 1] = true;
-        Ser.print(RC[k - 1]);
-        Ser.flush();
+        if (k == 5 || k == 6)
+        {
+          Move[k - 1] = SetBoolLX200(RC[k - 1]) == LX200VALUESET;
+        }
         continue;
       }
     }
@@ -2094,14 +2099,14 @@ void SmartHandController::menuFocuserSettings()
 {
   buttonPad.setMenuMode();
   char cmd[50];
-  const char *string_list_Focuser = "Display Settings\nPark Position\nMax Position\nMin Speed\nMax Speed\nGoto Acc\nMan. Acc\nDeceleration\n""Rotation";
+  const char *string_list_Focuser = "Display Settings\nPark Position\nMax Position\nMin Speed\nMax Speed\nGoto Acc\nMan. Acc\nDeceleration\nRotation\nIncrement";
   current_selection_L3 = 1;
-  unsigned int sP, maxP, minS, maxS, cmdAcc, manAcc, manDec;
+  unsigned int sP, maxP, minS, maxS, cmdAcc, manAcc, manDec, incr;
   bool rev;
   float value;
   while (!exitMenu)
   {
-    if (DisplayMessageLX200(readFocuser(sP, maxP, minS, maxS, cmdAcc, manAcc, manDec, rev)))
+    if (DisplayMessageLX200(readFocuser(sP, maxP, minS, maxS, cmdAcc, manAcc, manDec, rev, incr)))
     {
       current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Focuser Settings", current_selection_L2, string_list_Focuser);
       bool ValueSetRequested = false;
@@ -2148,14 +2153,14 @@ void SmartHandController::menuFocuserSettings()
       case 4:
       {
         value = minS;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Min Speed", "", &value, 1, 100, 5, 0, "");
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Min Speed", "", &value, 1, 999, 5, 0, "");
         sprintf(cmd, ":F2 %03d#", (int)(value));
         break;
       }
       case 5:
       {
         value = maxS;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Max Speed", "", &value, 1, 100, 5, 0, "");
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Max Speed", "", &value, 1, 999, 5, 0, "");
         sprintf(cmd, ":F3 %03d#", (int)(value));
         break;
       }
@@ -2192,6 +2197,15 @@ void SmartHandController::menuFocuserSettings()
         }
         break;
       }
+      case 10:
+      {
+        value = incr;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Incrementation", "", &value, 1, 512, 5, 0, " micro steps");
+        sprintf(cmd, ":F8 %03d#", (int)(value));
+        break;
+        break;
+      }
+
       default:
         break;
 

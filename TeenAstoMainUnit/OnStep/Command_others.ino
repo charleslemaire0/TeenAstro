@@ -636,8 +636,6 @@ void Command_F()
   {
   case '+':
   case '-':
-  case '*':
-  case ':':
   case 'Q':
   case 'G':
   case 'S':
@@ -650,6 +648,10 @@ void Command_F()
     focuserNoResponse = false;
     focuserShortResponse = false;
     break;
+  case 'O':
+  case 'o':
+  case 'I':
+  case 'i':
   case 'W':
   case '0':
   case '1':
@@ -658,6 +660,8 @@ void Command_F()
   case '4':
   case '5':
   case '6':
+  case '7':
+  case '8':
     focuserNoResponse = false;
     focuserShortResponse = true;
     break;
@@ -682,12 +686,15 @@ void Command_F()
         if (b == '#' && !focuserShortResponse)
         {
           quietReply = true;
-          break;
+          return;
         }
         reply[pos] = b;
         pos++;
-        if (pos > 50)
-          pos = 50;
+        if (pos > 49)
+        {
+          commandError = true;
+          return;
+        }
         reply[pos] = 0;
         if (focuserShortResponse)
         {
@@ -697,7 +704,9 @@ void Command_F()
           return;
         }
       }
+
     }
+    commandError = true;
   }
 }
 //----------------------------------------------------------------------------------
