@@ -7,7 +7,7 @@
 #include "BasicStepperDriver.h"
 #include "DS1302.h"
 
-BasicStepperDriver myStepper(200, DirPin, StepPin);
+BasicStepperDriver myStepper(DirPin, StepPin);
 
 void iniMot()
 {
@@ -145,9 +145,8 @@ void Go(int stepperspeedini, int sign, double& t)
 		if (stepperspeednew < storage.maxSpeed)
 		{
 			t = tnew;
-			currSpeed = stepperspeednew;
 		}
-
+    currSpeed = stepperspeednew;
     myStepper.setSpeed(currSpeed);
 	}
 
