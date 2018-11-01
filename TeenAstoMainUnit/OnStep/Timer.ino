@@ -399,7 +399,7 @@ ISR(TIMER3_COMPA_vect)
 
     // Guessing about 4+4+1+ 4+4+1+ 1+ 2+1+2+ 13=37 clocks between here and the step signal which is 2.3uS
     updateDeltaTarget();
-    if (deltaTargetAxis1 !=0)
+    if (deltaTargetAxis1 !=0 || inbacklashAxis1)
     {                       // Move the RA stepper to the target
       if (0 < deltaTargetAxis1)
         dirAxis1 = 1;
@@ -527,7 +527,7 @@ ISR(TIMER3_COMPA_vect)
       OCR4A = nextAxis2Rate * stepAxis2;
 #endif
       updateDeltaTarget();
-      if (deltaTargetAxis2 !=0 )
+      if (deltaTargetAxis2 !=0 || inbacklashAxis2)
       {                       // move the Dec stepper to the target
           // telescope normally starts on the EAST side of the pier looking at the WEST sky
         if (0 < deltaTargetAxis2)
