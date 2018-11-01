@@ -450,14 +450,20 @@ void SmartHandController::update()
       {
         buttonCommand = true;
         Move[k - 1] = false;
-        k < 5 ? SetBoolLX200(BreakRC[k - 1]) : Move[k - 1] = !(SetBoolLX200(BreakRC[k - 1]) == LX200VALUESET);
+        if (k < 5)
+          SetBoolLX200(BreakRC[k - 1]);
+        else
+          Move[k - 1] = !(SetBoolLX200(BreakRC[k - 1]) == LX200VALUESET);
         continue;
       }
       else if (eventbuttons[0] == E_NONE && !Move[k - 1] && (eventbuttons[k] == E_LONGPRESS || eventbuttons[k] == E_CLICK || eventbuttons[k] == E_LONGPRESSTART))
       {
         buttonCommand = true;
         Move[k - 1] = true;
-        k < 5 ? SetBoolLX200(RC[k - 1]) : Move[k - 1] = (SetBoolLX200(BreakRC[k - 1]) == LX200VALUESET);
+        if (k < 5)
+          SetBoolLX200(RC[k - 1]);
+        else
+          Move[k - 1] = !(SetBoolLX200(RC[k - 1]) == LX200VALUESET);
         continue;
       }
     }
@@ -499,12 +505,12 @@ void SmartHandController::update()
     {
       menuTelAction();
     }
-    else if (eventbuttons[4] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    else if (eventbuttons[1] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
     {
       menuSpeedRate();
       time_last_action = millis();
     }
-    else if (eventbuttons[1] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    else if (eventbuttons[4] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
     {
       menuTelSettings();
     }
