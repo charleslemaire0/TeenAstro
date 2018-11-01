@@ -450,20 +450,14 @@ void SmartHandController::update()
       {
         buttonCommand = true;
         Move[k - 1] = false;
-        if (k == 5 || k == 6)
-        {
-          Move[k - 1] = !(SetBoolLX200(BreakRC[k - 1]) == LX200VALUESET);
-        }
+        k < 5 ? SetBoolLX200(BreakRC[k - 1]) : Move[k - 1] = !(SetBoolLX200(BreakRC[k - 1]) == LX200VALUESET);
         continue;
       }
       else if (eventbuttons[0] == E_NONE && !Move[k - 1] && (eventbuttons[k] == E_LONGPRESS || eventbuttons[k] == E_CLICK || eventbuttons[k] == E_LONGPRESSTART))
       {
         buttonCommand = true;
         Move[k - 1] = true;
-        if (k == 5 || k == 6)
-        {
-          Move[k - 1] = SetBoolLX200(RC[k - 1]) == LX200VALUESET;
-        }
+        k < 5 ? SetBoolLX200(RC[k - 1]) : Move[k - 1] = (SetBoolLX200(BreakRC[k - 1]) == LX200VALUESET);
         continue;
       }
     }
