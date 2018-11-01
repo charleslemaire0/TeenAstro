@@ -40,7 +40,7 @@ void checkvalue()
   vals = max(min(storage.cmdAcc, 99u), 1u);
   dosave = dosave || vals != storage.cmdAcc;
   storage.cmdAcc = vals;
-  vals = dosave || max(min(storage.manDec, 99u), 1u);
+  vals = max(min(storage.manDec, 99u), 1u);
   dosave = dosave || vals != storage.manDec;
   storage.manDec = vals;
   vals = max(min(storage.manAcc, 99u), 1u);
