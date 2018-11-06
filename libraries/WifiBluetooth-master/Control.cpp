@@ -289,7 +289,7 @@ void wifibluetooth::handleControl() {
   Ser.setTimeout(WebTimeout);
   serialRecvFlush();
 
-  char temp1[24]="";
+  char temp1[80]="";
 
   processControlGet();
 
