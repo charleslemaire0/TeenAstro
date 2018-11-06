@@ -100,8 +100,7 @@ const char html_login[] PROGMEM=
 "Setup:<br/><br/>"
 "Enable either station <b>OR</b> AP mode, both enabled can cause performance issues.&nbsp;&nbsp;"
 "However, if just setting up or testing it can be desirable to enable both modes temporarily to guard against being locked out.<br/>"
-"If locked out of the ESP8266, a Sketch uploaded to the MCU (Teensy3.2, Launchpad, etc.) which sends an 'R' at 9600 baud on the serial interface "
-"in reply to any '#' received will cause a reset to AP only enabled and the default SSID/Password.<br/><br/>"
+"<br/><br/>"
 "\r\n";
 
 bool restartRequired=false;
@@ -149,10 +148,12 @@ void wifibluetooth::handleWifi() {
   data += html_main_css8;
   data += html_main_cssE;
   data += html_headE;
-
+#ifdef OETHS
+  client->print(data); data = "";
+#endif
   data += html_bodyB;
 
-  mountStatus.update(true);
+  mountStatus.update();
 
   // finish the standard http response header
   data += html_onstep_header1;
@@ -173,22 +174,18 @@ void wifibluetooth::handleWifi() {
   data+="<div style='width: 40em;'>";
 
   if (restartRequired) {
-    data+=html_reboot;
+    data+= FPSTR(html_reboot);
     data+="</div></div></body></html>";
     server.send(200, "text/html",data);
     restartRequired=false;
     delay(1000);
-//    ESP.restart();
     return;
   }
 
   if (loginRequired) {
-    data+=html_login;
+    data+= FPSTR(html_login);
     data+="</div></div></body></html>";
     server.send(200, "text/html",data);
-    restartRequired=false;
-    delay(1000);
-  //  ESP.restart();
     return;
   }
 
@@ -218,7 +215,7 @@ void wifibluetooth::handleWifi() {
   sprintf_P(temp,html_wifiSSID5,wifi_ap_gw[0],wifi_ap_gw[1],wifi_ap_gw[2],wifi_ap_gw[3]); data += temp;
   sprintf_P(temp,html_wifiSSID6,wifi_ap_sn[0],wifi_ap_sn[1],wifi_ap_sn[2],wifi_ap_sn[3]); data += temp;
   sprintf_P(temp,html_wifiSSID7,accessPointEnabled?"checked":""); data += temp;
-  data += html_logout;
+  data += FPSTR(html_logout);
 
   strcpy(temp,"</div></div></body></html>");
   data += temp;
