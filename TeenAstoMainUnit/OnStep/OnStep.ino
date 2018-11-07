@@ -3,7 +3,7 @@
  * by          Howard Dutton, Charles Lemaire
  *
  * Copyright (C) 2012 to 2016 Howard Dutton
- * Copyright (C) 2016 to 2017 Charles Lemaire
+ * Copyright (C) 2016 to 2018 Charles Lemaire
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
  *
  * Description
  *
- * Arduino Stepper motor controller for Losmandy G11 mounts (and others)
+ * Arduino Stepper motor controller for Telescop mounts
  * with LX200 derived command set.
  *
  */
@@ -49,9 +49,9 @@
 
 
 // firmware info, these are returned by the ":GV?#" commands
-#define FirmwareDate    "10 18 16"
-#define FirmwareNumber  "1.0a36"
-#define FirmwareName    "On-Step"
+#define FirmwareDate    "10 18 18"
+#define FirmwareNumber  "1.0"
+#define FirmwareName    "TeenAstro"
 #define FirmwareTime    "12:00:00"
 
 
@@ -273,13 +273,6 @@ void setup()
 
 
 
-  // get autoContinue
-  DegreesForAcceleration = (double)EEPROM.read(EE_degAcc) / 10.;
-  if (DegreesForAcceleration == 0 || DegreesForAcceleration > 25)
-  {
-    DegreesForAcceleration = 3.0;
-    EEPROM.write(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
-  }
 
 
 
@@ -612,6 +605,12 @@ void initmount()
   else if (mountType == MOUNT_TYPE_ALTAZM)
     maxAlignNumStar = 3;
 
+  DegreesForAcceleration = 0.1*EEPROM.read(EE_degAcc);
+  if (DegreesForAcceleration == 0 || DegreesForAcceleration > 25)
+  {
+    DegreesForAcceleration = 3.0;
+    EEPROM.write(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
+  }
   // get the min. and max altitude
   minAlt = EEPROM.read(EE_minAlt) - 128;
   maxAlt = EEPROM.read(EE_maxAlt);
