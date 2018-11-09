@@ -56,8 +56,7 @@ void StopAxis1()
 
 void MoveAxis2(const byte newguideDirAxis)
 {
-  if (guideDirAxis2 == 'b')
-    return;
+
 
   if (parkStatus == NotParked && trackingState != TrackingMoveTo && GuidingState != GuidingPulse)
   {
