@@ -131,7 +131,7 @@ bool wifibluetooth::sendCommand(const char command[], char response[], Respondin
   if (responding==R_NONE) return true;
   if (responding==R_ONE) response[Ser.readBytes(response,1)]=0;
   if (responding==R_BOOL) { response[Ser.readBytes(response,1)]=0; if (strlen(response)>0) { if (response[0]=='0') return false; else return true; } }
-  if (responding==R_STRING) { boolean found=true; response[readBytesUntil2('#',response,20,&found,WebTimeout)]=0; if (!found) return false; }
+  if (responding==R_STRING) { boolean found=true; response[readBytesUntil2('#',response,50,&found,WebTimeout)]=0; if (!found) return false; }
   return response[0];
 };
 

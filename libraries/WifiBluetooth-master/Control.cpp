@@ -4,13 +4,15 @@
 // Telescope control related functions
 
 #ifdef SPECIAL_CHARS_ON
-  #define RESET_CH "@"
-  #define HOME_CH "&#x1F3E0;"
+
+
   #define ARROW_DR "&#x27A5;"
   #define ARROW_UR "&#x27A6;"
   #define ARROW_R2 "&#x27A4;"
   #define CAUTION_CH "&#9888;"
   #define CLOCK_CH "&#x1F565;"
+  #define PLUS_CH "+"
+  #define MINUS_CH "-"
   #define ARROW_LL "&lt;&lt;"
   #define ARROW_L "&lt;"
   #define ARROW_R "&gt;"
@@ -47,6 +49,7 @@
 #define BUTTON_S "S"
 #define BUTTON_E "E"
 #define BUTTON_W "W"
+#define BUTTON_Stop "stop"
 #define BUTTON_SYNC "@"
 
 const char html_controlScript1[] PROGMEM=
@@ -90,39 +93,40 @@ const char html_controlScript4[] PROGMEM =
 "}\r\n"
 "</script>\r\n";
 
-const char html_controlQuick1[] PROGMEM =
+const char html_controlQuick0[] PROGMEM =
 "<div style='text-align: center; width: 30em'>"
-"<form style='display: inline;' method='get' action='/control.htm'>"
+"<form style='display: inline;' method='get' action='/control.htm'>";
+const char html_controlQuick1[] PROGMEM =
 "<button name='qb' class='bb' value='st' type='submit' onpointerdown='SetDateTime();'>" CLOCK_CH "</button>"
 "&nbsp;&nbsp;";
 const char html_controlQuick1a[] PROGMEM =
 "<input id='dm' type='hidden' name='dm'><input id='dd' type='hidden' name='dd'><input id='dy' type='hidden' name='dy'>"
 "<input id='th' type='hidden' name='th'><input id='tm' type='hidden' name='tm'><input id='ts' type='hidden' name='ts'>";
+
 const char html_controlQuick2[] PROGMEM =
-"</form>"
-"<button type='button' class='bb' onpointerdown=\"g('qc')\">" ARROW_R2 HOME_CH ARROW_R2 "</button>";
-const char html_controlQuick3[] PROGMEM =
 "&nbsp;&nbsp;"
-"<button type='button' class='bb' onpointerdown=\"g('qh')\">" ARROW_DR HOME_CH "</button>"
-"<button type='button' class='bb' onpointerdown=\"g('qr')\">" CAUTION_CH HOME_CH "</button>";
-const char html_controlQuick4[] PROGMEM =
-"&nbsp;&nbsp;"
-"<button type='button' class='bb' onpointerdown=\"g('pu')\">P" ARROW_UR "</button>"
-"<button type='button' class='bb' onpointerdown=\"g('pk')\">" ARROW_DR "P</button>";
-const char html_controlQuick5[]  PROGMEM =
-"&nbsp;&nbsp;"
-"<button type='button' class='bb' style=\"height: 2.2em; color: White;\" onpointerdown=\"g('qq')\">Stop!</button>"
+"<button type='button' class='bb' onpointerdown=\"g('pu')\">Unpark</button>";
+
+const char html_controlQuick3[]  PROGMEM =
 "</div><br class='clear' />\r\n";
 
 const char html_controlTrack1[]  PROGMEM =
-"<div class='b1' style='width: 8em'>"
+"<div class='b1' style='width: 27em'>"
 "<div align='left'>Tracking:</div>"
-"<button type='button' class='bbh' style='width: 2em' onpointerdown=\"g('Ts')\" type='submit'>" SIDEREAL_CH "</button>";
+"<button type='button' class='bbh' onpointerdown=\"g('Ts')\" type='submit'>" SIDEREAL_CH "</button>";
 const char html_controlTrack2[]  PROGMEM =
-"<button type='button' class='bbh' style='width: 2em' onpointerdown=\"g('Tl')\" type='submit'>" LUNAR_CH "</button>";
+"<button type='button' class='bbh' onpointerdown=\"g('Tl')\" type='submit'>" LUNAR_CH "</button>";
 const char html_controlTrack3[]  PROGMEM =
-"<button type='button' class='bbh' style='width: 2em' onpointerdown=\"g('Th')\" type='submit'>" SOLAR_CH "</button>"
-"</div>";
+"<button type='button' class='bbh' onpointerdown=\"g('Th')\" type='submit'>" SOLAR_CH "</button>";
+const char html_controlTrack4[] PROGMEM =
+"<button type='button' class='bbh' onpointerdown=\"g('on')\" type='submit'>On</button>"
+"<button type='button' class='bbh' onpointerdown=\"g('off')\" type='submit'>Off</button><br/></div>";
+//const char html_controlTrack5[] PROGMEM =
+//"<button type='button' class='bbh' style='width: 2.6em' onpointerdown=\"g('-')\" type='submit'>" MINUS_CH "</button>"
+//"<button type='button' class='bbh' style='width: 2.6em' onpointerdown=\"g('f')\" type='submit'>" PLUS_CH " </button>"
+//"<button type='button' class='bbh' onpointerdown=\"g('r')\" type='submit'>Reset</button>""</div>";
+
+#ifdef ALIGN_ON
 const char html_controlAlign1[]  PROGMEM =
 "<div class='b1' style='width: 16.2em'>"
 "<div align='left'>Align:</div>"
@@ -133,22 +137,30 @@ const char html_controlAlign3[]  PROGMEM =
 "&nbsp;&nbsp;&nbsp;<button class='bbh' type='submit' name=\"al\" value=\"n\">Accept</button></form>";
 const char html_controlTrack4[]  PROGMEM =
 "</div><br class='clear' />\r\n";
+#else 
+const char html_controlTrack10[]  PROGMEM = "<br class='clear' />\r\n";
+#endif
+const char html_controlParkHome[] PROGMEM =
+"<div class='b1' style='width: 27em'>"
+"<div align='left'>Park & Home:</div>"
+"<button type = 'button' class = 'bb' onpointerdown = \"g('pk')\">Park</button>"
+"<button type = 'button' class = 'bb' onpointerdown = \"g('pr')\">Sync@Park</button>"
+"<button type = 'button' class = 'bb' onpointerdown = \"g('ps')\">Set Park</button><br / >"
+"<button type = 'button' class = 'bb' onpointerdown = \"g('qh')\">Go Home</button>"
+"<button type = 'button' class = 'bb' onpointerdown = \"g('qr')\">Sync@home</button>"
+"</div><br class='clear' />\r\n";
 
 const char html_controlGuide1[] PROGMEM =
 "<div class='b1' style='width: 27em'>"
-"<div align='left'>Guide:</div>"
+"<div align='left'>Recenter:</div>"
 "<button class='gb' type='button' onpointerdown=\"g('n1')\" onpointerup=\"g('n0')\">" BUTTON_N "</button><br />";
 const char html_controlGuide2[] PROGMEM =
 "<button class='gb' type='button' onpointerdown=\"g('e1')\" onpointerup=\"g('e0')\">" BUTTON_E "</button>";
 const char html_controlGuide3[] PROGMEM =
-"<button class='gb' type='button' onpointerdown=\"g('sy')\">" BUTTON_SYNC "</button>"
+"<button class='gb' type='button' onpointerdown=\"g('q1')\">" BUTTON_Stop "</button>"
 "<button class='gb' type='button' onpointerdown=\"g('w1')\" onpointerup=\"g('w0')\">" BUTTON_W "</button><br />";
 const char html_controlGuide4[] PROGMEM =
 "<button class='gb' type='button' onpointerdown=\"g('s1')\" onpointerup=\"g('s0')\">" BUTTON_S "</button><br /><br />";
-const char html_controlGuide5[] PROGMEM =
-"<form method='get' action=\"/control.htm\">"
-"<button class='bbh' type='button' onpointerdown=\"g('R0')\">0.25x</button>"
-"<button class='bbh' type='button' onpointerdown=\"g('R1')\">0.5x</button>";
 const char html_controlGuide6[] PROGMEM =
 "<button class='bbh' type='button' onpointerdown=\"g('R2')\">1x</button>"
 "<button class='bbh' type='button' onpointerdown=\"g('R4')\">Mid</button>";
@@ -163,22 +175,23 @@ const char html_controlFocus2[] PROGMEM =
 "<button class='bbh' type='button' onpointerdown=\"gf('F1')\" >1</button>"
 "<button class='bbh' type='button' onpointerdown=\"gf('F2')\" >2</button>&nbsp;&nbsp;&nbsp;&nbsp;";
 const char html_controlFocus3[] PROGMEM =
-"<button class='bbh' type='button' onpointerdown=\"gf('Fz')\" >" RESET_CH "</button>"
-"<button class='bbh' type='button' onpointerdown=\"gf('Fh')\" >" ARROW_DR HOME_CH "</button>&nbsp;&nbsp;&nbsp;&nbsp;";
+"<button class='bb' type='button' onpointerdown=\"gf('Fz')\" >Park</button>"
+"<button class='bb' type='button' onpointerdown=\"gf('Fh')\" >Set 0</button>&nbsp;&nbsp;&nbsp;&nbsp;";
 const char html_controlFocus4[] PROGMEM =
-"<button class='bbh' type='button' onpointerdown=\"gf('FI')\" onpointerup=\"g('Fq');\" >" ARROW_DD "</button>"
-"<button class='bbh' type='button' style='width: 2em' onpointerdown=\"gf('Fi')\" onpointerup=\"g('Fq')\" >" ARROW_D "</button>";
+//"<button class='bbh' type='button' onpointerdown=\"gf('FI')\" onpointerup=\"g('Fq');\" >" ARROW_DD "</button>"
+"<button class='bbh' type='button' onpointerdown=\"gf('Fi')\" onpointerup=\"g('Fq')\" >" MINUS_CH "</button>";
 const char html_controlFocus5[] PROGMEM =
-"<button class='bbh' type='button' style='width: 2em' onpointerdown=\"gf('Fo')\" onpointerup=\"g('Fq')\" >" ARROW_U "</button>"
-"<button class='bbh' type='button' onpointerdown=\"gf('FO')\" onpointerup=\"g('Fq')\" >" ARROW_UU "</button>";
+"<button class='bbh' type='button' onpointerdown=\"gf('Fo')\" onpointerup=\"g('Fq')\" >" PLUS_CH "</button>";
+/*"<button class='bbh' type='button' onpointerdown=\"gf('FO')\" onpointerup=\"g('Fq')\" >" ARROW_UU "</button>"*/
+
 const char html_controlFocus6[] PROGMEM =
 "</div><br class='clear' />\r\n";
 
 const char html_controlRotate0[] PROGMEM =
 "<div class='b1' style='width: 27em'>";
 const char html_controlRotate1[] PROGMEM =
-"<button class='bbh' type='button' style='height: 2.1em' onpointerdown=\"gf('re')\" >" RESET_CH "</button>"
-"<button class='bbh' type='button' style='height: 2.1em' onpointerdown=\"gf('ho')\" >" ARROW_DR HOME_CH "</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+"<button class='bbh' type='button' style='height: 2.1em' onpointerdown=\"gf('re')\" >Reset</button>"
+"<button class='bbh' type='button' style='height: 2.1em' onpointerdown=\"gf('ho')\" >Go Home</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 const char html_controlRotate2[] PROGMEM =
 "<button class='bbh' type='button' style='height: 2.1em' onpointerdown=\"gf('b2')\" >" ARROW_LL "</button>"
 "<button class='bbh' type='button' style='width: 2em' onpointerdown=\"gf('b1')\" >" ARROW_L "</button>";
@@ -328,7 +341,6 @@ void wifibluetooth::handleControl() {
 #if PEC_ON
   data += html_links3N;
 #endif
-  data += html_links4N;
   data += html_links5N;
 #ifndef OETHS
   data += html_links6N;
@@ -352,25 +364,70 @@ void wifibluetooth::handleControl() {
   client->print(data); data="";
 #endif
 
+  data += FPSTR(html_controlQuick0);
+
   // Quick controls ------------------------------------------
-  data += FPSTR(html_controlQuick1);
-  data += FPSTR(html_controlQuick1a);
-  if (mountStatus.mountType()== MountStatus::MT_GEM) data += FPSTR(html_controlQuick2);
+  if (!mountStatus.parking())
+  {
+    if (mountStatus.parked() || mountStatus.atHome())
+    {
+      data += FPSTR(html_controlQuick1);
+      data += FPSTR(html_controlQuick1a);
+      data += "</form>";
+      if (mountStatus.parked())
+      {
+        data += FPSTR(html_controlQuick2);
+        data += FPSTR(html_controlQuick3);
+        return;
+      }
+    }
+  }
   data += FPSTR(html_controlQuick3);
-  data += FPSTR(html_controlQuick4);
-  data += FPSTR(html_controlQuick5);
 #ifdef OETHS
   client->print(data); data="";
 #endif
+
+
+  // Guiding -------------------------------------------------
+  data += FPSTR(html_controlGuide1);
+  data += FPSTR(html_controlGuide2);
+  data += FPSTR(html_controlGuide3);
+  data += FPSTR(html_controlGuide4);
+  //data += FPSTR(html_controlGuide5);
+  data += FPSTR(html_controlGuide6);
+  data += FPSTR(html_controlGuide7);
+#ifdef OETHS
+  client->print(data); data = "";
+#endif
+
+  // Focusing ------------------------------------------------
+  boolean Focuser1; if (sendCommand(":FV#", temp1, R_STRING)) Focuser1 = true; else Focuser1 = false;
+  //Focuser1 = true;
+  boolean Focuser2 = false;
+  /* boolean Focuser2; if (sendCommand(":fA#",temp1,R_BOOL)) Focuser2=true; else Focuser2=false;*/
+  if (Focuser1) {
+    data += FPSTR(html_controlFocus1);
+    data += "<div style='float: left;'>Focuser:</div><div style='float: right; text-align: right;' id='focuserpos'>?</div><br />";
+    if (Focuser2) data += FPSTR(html_controlFocus2);
+    data += FPSTR(html_controlFocus3);
+    data += FPSTR(html_controlFocus4);
+    data += FPSTR(html_controlFocus5);
+    data += FPSTR(html_controlFocus6);
+#ifdef OETHS
+    client->print(data); data = "";
+#endif
+  }
 
   // Tracking control ----------------------------------------
   data += FPSTR(html_controlTrack1);
   data += FPSTR(html_controlTrack2);
   data += FPSTR(html_controlTrack3);
+  data += FPSTR(html_controlTrack4);
 #ifdef OETHS
   client->print(data); data="";
 #endif
 
+#ifdef ALIGN_ON
   // Get the align mode --------------------------------------
   data += FPSTR(html_controlAlign1);
   if (mountStatus.alignMaxStars()<=3) {
@@ -382,42 +439,19 @@ void wifibluetooth::handleControl() {
     sprintf_P(temp2,html_controlAlign2,6,6,SIDEREAL_CH); data+=temp2;
   }
   data += FPSTR(html_controlAlign3);
+#endif
 #ifdef OETHS
   client->print(data); data="";
 #endif
 
   // Tracking ------------------------------------------------
-  data += FPSTR(html_controlTrack4);
+  data += FPSTR(html_controlTrack10);
 
-  // Guiding -------------------------------------------------
-  data += FPSTR(html_controlGuide1);
-  data += FPSTR(html_controlGuide2);
-  data += FPSTR(html_controlGuide3);
-  data += FPSTR(html_controlGuide4);
-  data += FPSTR(html_controlGuide5);
-  data += FPSTR(html_controlGuide6);
-  data += FPSTR(html_controlGuide7);
-#ifdef OETHS
-  client->print(data); data="";
-#endif
-
-  // Focusing ------------------------------------------------
-  boolean Focuser1; if (sendCommand(":FA#",temp1,R_BOOL)) Focuser1=true; else Focuser1=false;
-  boolean Focuser2; if (sendCommand(":fA#",temp1,R_BOOL)) Focuser2=true; else Focuser2=false;
-  if (Focuser1) {
-    data += FPSTR(html_controlFocus1);
-    data += "<div style='float: left;'>Focuser:</div><div style='float: right; text-align: right;' id='focuserpos'>?</div><br />";
-    if (Focuser2) data += FPSTR(html_controlFocus2);
-    data += FPSTR(html_controlFocus3);
-    data += FPSTR(html_controlFocus4);
-    data += FPSTR(html_controlFocus5);
-    data += FPSTR(html_controlFocus6);
-#ifdef OETHS
-    client->print(data); data="";
-#endif
-  }
+  //Goto Sync
+  data += FPSTR(html_controlParkHome);
 
   // Rotate/De-Rotate ----------------------------------------
+#ifdef ROTATOR_ON
   boolean Rotate=false;
   boolean DeRotate=false;
   if (sendCommand(":GX98#",temp1)) {
@@ -437,11 +471,12 @@ void wifibluetooth::handleControl() {
   }
   if (Rotate) {
     data += FPSTR(html_controlRotate4);
+
 #ifdef OETHS
     client->print(data); data="";
 #endif
   }
-
+#endif
   // Aux -----------------------------------------------------
   #if defined(SW0) || defined(SW1) || defined(SW2) || defined(SW3) || defined(SW4) || defined(SW5) || defined(SW6) || defined(SW7) || defined(SW8) || defined(SW9) || defined(SW10) || defined(SW11) || defined(SW12) || defined(SW13) || defined(SW14) || defined(SW15) || defined(AN3) || defined(AN4) || defined(AN5) || defined(AN6) || defined(AN7) || defined(AN8)
     data += html_controlAuxB;
@@ -557,10 +592,19 @@ void wifibluetooth::controlAjax() {
   char temp[40]="";
 
   data += "focuserpos|";
-  if (sendCommand(":FG#",temp)) { data += temp; data += " microns\n"; } else { data += "?\n"; }
+  if (sendCommand(":F?#",temp)){
+    temp[6] = 0;
+    data += &temp[1];
+    data += " steps";
+  }
+  else{
+    data += "?\n";
+  }
 
+#ifdef ROTATOR_ON
   data += "rotatorpos|";
   if (sendCommand(":rG#",temp)) { temp[9]=temp[5]; temp[10]=temp[6]; temp[11]=0; temp[4]='&'; temp[5]='d'; temp[6]='e'; temp[7]='g'; temp[8]=';'; data += temp; data += "&#39;\n"; } else { data += "?\n"; }
+#endif
 
   #ifdef AN3
     data += "an3v|"; if (sendCommand(":GXG3#",temp)) { data += temp; data += "\n"; } else { data += "?\n"; }
@@ -600,22 +644,9 @@ void wifibluetooth::processControlGet() {
   int i;
   char temp[20]="";
 
-  // Quick bar
-  v=server.arg("qb");
-  if (v!="") {
-    if (v=="q") Ser.print(":Q#");       // stop goto/guide
-    if (v=="co") Ser.print(":SX99,1#"); // meridian flip, pause->continue
-    if (v=="hf") Ser.print(":hF#");     // home, reset
-    if (v=="hc") Ser.print(":hC#");     // home, find
-    if (v=="pk") Ser.print(":hP#");     // park
-    if (v=="pu") Ser.print(":hR#");     // un-park
-    Ser.setTimeout(WebTimeout*8);
-
-    // clear any possible response
-    temp[Ser.readBytesUntil('#',temp,20)]=0;
-  }
 
   // Align
+#ifdef ALIGN_ON
   v=server.arg("al");
   if (v!="") {
     if (v=="1") Ser.print(":A1#");
@@ -634,6 +665,7 @@ void wifibluetooth::processControlGet() {
     // clear any possible response
     temp[Ser.readBytesUntil('#',temp,20)]=0;
   }
+#endif
 
   // Set DATE/TIME
   v=server.arg("dm");
@@ -674,30 +706,39 @@ void wifibluetooth::processControlGet() {
   v=server.arg("dr");
   if (v!="") {
     // Tracking control
+
+
+    if (v == "on") Ser.print(":Te#");
+    if (v == "off") Ser.print(":Td#");
+    if (v == "f") Ser.print(":T+#"); // 0.02hz faster
+    if (v == "-") Ser.print(":T-#"); // 0.02hz slower
+    if (v == "r") Ser.print(":TR#"); // reset
+    
+    // Tracking control
     if (v=="Ts") Ser.print(":TQ#"); // sidereal
     if (v=="Tl") Ser.print(":TL#"); // lunar
     if (v=="Th") Ser.print(":TS#"); // solar
 
     // quick
-    if (v=="qq") { Ser.print(":Q#");  cl(); }     // stop goto/guide
     if (v=="qc") { Ser.print(":SX99,1#"); cl(); } // meridian flip, pause->continue
     if (v=="qr") { Ser.print(":hF#"); cl(); }     // home, reset
-    if (v=="qh") { Ser.print(":hC#"); cl(); }     // home, find
+    if (v=="qh") { Ser.print(":hC#"); cl(); }     // home, goto
+    if (v=="pr") { Ser.print(":hO#"); cl(); }     // park, reset
     if (v=="pk") { Ser.print(":hP#"); cl(); }     // park
     if (v=="pu") { Ser.print(":hR#"); cl(); }     // un-park
+
 
     // GUIDE control direction
     if (v=="n1") Ser.print(":Mn#");
     if (v=="s1") Ser.print(":Ms#");
     if (v=="e1") Ser.print(":Me#");
     if (v=="w1") Ser.print(":Mw#");
+    if (v=="q1") Ser.print(":Q#");
 
     if (v=="n0") Ser.print(":Qn#");
     if (v=="s0") Ser.print(":Qs#");
     if (v=="e0") Ser.print(":Qe#");
     if (v=="w0") Ser.print(":Qw#");
-
-    if (v=="sy") Ser.print(":CS#");
 
     // GUIDE control rate
     if (v=="R0") Ser.print(":R0#");
@@ -714,7 +755,7 @@ void wifibluetooth::processControlGet() {
     // Focuser
     if (v=="F1") { Ser.print(":FA1#"); temp[Ser.readBytesUntil('#',temp,20)]=0; }
     if (v=="F2") { Ser.print(":FA2#"); temp[Ser.readBytesUntil('#',temp,20)]=0; }
-    if (v=="Fz") Ser.print(":FZ#");
+    if (v=="Fz") Ser.print(":FP#");
     if (v=="Fh") Ser.print(":FS0#");
     if (v=="FI") Ser.print(":FF#:F-#");
     if (v=="Fi") Ser.print(":FS#:F-#");

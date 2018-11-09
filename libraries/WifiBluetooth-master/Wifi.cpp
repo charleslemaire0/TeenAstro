@@ -166,7 +166,6 @@ void wifibluetooth::handleWifi() {
 #if PEC_ON
   data += html_links3N;
 #endif
-  data += html_links4N;
   data += html_links5N;
   data += html_links6S;
   data += html_onstep_header4;

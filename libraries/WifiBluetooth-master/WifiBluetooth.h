@@ -11,12 +11,12 @@
 #include <ESP8266WiFiAP.h>
 //#include "Encoders.h"
 #include "MountStatus.h"
-#define Product "OnEsp"
+#define Product "TeenAstro Server"
 #define FirmwareDate          __DATE__
 #define FirmwareTime          __TIME__
 #define FirmwareVersionMajor  "1"
-#define FirmwareVersionMinor  "4"
-#define FirmwareVersionPatch  "d"
+#define FirmwareVersionMinor  "0"
+#define FirmwareVersionPatch  "0"
 #define Version FirmwareVersionMajor "." FirmwareVersionMinor FirmwareVersionPatch
 
 

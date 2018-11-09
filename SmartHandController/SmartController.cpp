@@ -418,7 +418,11 @@ void SmartHandController::update()
   {
     updateMainDisplay(page);
   }
-  if (telInfo.connected() && (telInfo.getTrackingState() == Telescope::TRK_SLEWING || telInfo.getParkState() == Telescope::PRK_PARKING))
+  if (!telInfo.connected())
+    return;
+
+  bool moving = telInfo.getTrackingState() == Telescope::TRK_SLEWING || telInfo.getParkState() == Telescope::PRK_PARKING;
+  if ( moving )
   {
     bool stop = (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART || eventbuttons[0] == E_DOUBLECLICK) ? true : false;
     int it = 1;
@@ -442,7 +446,6 @@ void SmartHandController::update()
   }
   else
   {
-
     buttonCommand = false;
     for (int k = 1; k < 7; k++)
     {
@@ -466,17 +469,15 @@ void SmartHandController::update()
           Move[k - 1] = (SetBoolLX200(RC[k - 1]) == LX200VALUESET);
         continue;
       }
+      moving = moving || Move[k - 1];
     }
     if (buttonCommand)
     {
       time_last_action = millis();
       return;
     }
-
   }
-  bool moving= false;
-  for (int k = 1; k < 7; k++)
-    moving = moving || Move[k - 1];
+  
 
   if (eventbuttons[0] == E_CLICK && telInfo.align == Telescope::ALI_OFF)
   {
@@ -488,12 +489,6 @@ void SmartHandController::update()
   {
     return;
   }
-  else if (eventbuttons[0] == E_DOUBLECLICK /*|| eventbuttons[0] == E_CLICK)  && eventbuttons[1] != E_NONE*/)
-  {
-    menuSpeedRate();
-    time_last_action = millis();
-  }
-
   else if (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART && telInfo.align == Telescope::ALI_OFF )
   {
 

@@ -18,18 +18,17 @@ class MountStatus {
     enum MountTypes { MT_UNKNOWN, MT_GEM, MT_FORK, MT_FORKALT, MT_ALTAZM };
     enum Errors { ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT, ERR_LIMIT_SENSE, ERR_DEC, ERR_AZM, ERR_UNDER_POLE, ERR_MERIDIAN, ERR_SYNC };
 
-    bool update(bool all=false) {
+    bool update() {
 
       char s[20] = "";
       if (!_valid) {
         Ser.print(":GVP#");
         s[Ser.readBytesUntil('#',s,20)]=0;
-        if ((s[0]==0) || (!strstr(s,"On-Step"))) { _valid=false; return false; }
-
+        if ((s[0]==0) || (!strstr(s,"TeenAstro"))) { _valid=false; return false; }
+        strcpy(_id,s);
         Ser.print(":GVN#");
         s[Ser.readBytesUntil('#',s,20)]=0;
         if (s[0]==0) { _valid=false; return false; }
-        strcpy(_id,"TeenAstro");
         strcpy(_ver,s);
       }
 
@@ -38,37 +37,63 @@ class MountStatus {
       if (s[0]==0) { _valid=false; return false; }
 
       _tracking=false; _slewing=false;
-      if (!strstr(s,"N")) _slewing=true; else _tracking=(!strstr(s,"n"));
+      _slewing = (s[0] == 'N');
+      _tracking = (s[1] == 'n');
+      _atHome = (s[3] == 'H');
+      _parked = false;
+      _parking = false;
+      _parkFail = false;
+      switch (s[2])
+      {
+      case 'p':
+        _parked = false;
+        break;
+      case 'P':
+        _parked = true;
+        break;
+      case'I':
+        _parking = true;
+        break;
+      case 'F':
+        _parkFail = true;
+        break;
+      default:
+        break;
+      }
+      _ppsSync = (s[4] == 'S');
+      _guiding = (s[6] == '*');
+      _recenter = (s[6] == '+');
+      _axisFault = (s[9] == 'f');
+      //if (strstr(s,"r")) { if (strstr(s,"s")) _rateCompensation=RC_REFR_RA; else _rateCompensation=RC_REFR_BOTH; } else
+      //if (strstr(s,"t")) { if (strstr(s,"s")) _rateCompensation=RC_FULL_RA; else _rateCompensation=RC_FULL_BOTH; } else _rateCompensation=RC_NONE;
+      _rateCompensation = RC_NONE;
+      _waitingHome   = false;
+      _pauseAtHome   = false;
+      _buzzerEnabled = false;
+      switch (s[3])
+      {
+      case 'E':
+        _mountType = MT_GEM;
+        break;
+      case 'K':
+        _mountType = MT_FORK;
+        break;
+      case'k':
+        _mountType = MT_FORKALT;
+        break;
+      case 'A':
+        _mountType = MT_ALTAZM;
+        break;
+      default:
+        _mountType = MT_UNKNOWN;
+        break;
+      }
+      _autoMeridianFlips = false;
+      _pierSide = 1;
+      if (s[13] == 'W') _pierSide = 2;
+      _lastError=(Errors)(s[14]-'0');
 
-      _parked      = strstr(s,"P");
-      if (strstr(s,"p")) _parked=false;
-      _parking     = strstr(s,"I");
-      _parkFail    = strstr(s,"F");
-      _pecRecorded = strstr(s,"R");
-      _pecRecording= strstr(s,"W");
-    
-      _atHome      = strstr(s,"H");
-      _ppsSync     = strstr(s,"S");
-      _guiding     = strstr(s,"G");
-      _axisFault   = strstr(s,"f");
-      
-      if (strstr(s,"r")) { if (strstr(s,"s")) _rateCompensation=RC_REFR_RA; else _rateCompensation=RC_REFR_BOTH; } else
-      if (strstr(s,"t")) { if (strstr(s,"s")) _rateCompensation=RC_FULL_RA; else _rateCompensation=RC_FULL_BOTH; } else _rateCompensation=RC_NONE;
-
-      _waitingHome   = strstr(s,"w");
-      _pauseAtHome   = strstr(s,"u");
-      _buzzerEnabled = strstr(s,"z");
-
-      if (strstr(s,"E")) _mountType=MT_GEM; else
-      if (strstr(s,"K")) _mountType=MT_FORK; else
-      if (strstr(s,"k")) _mountType=MT_FORKALT; else
-      if (strstr(s,"A")) _mountType=MT_ALTAZM; else _mountType=MT_UNKNOWN;
-
-      if (_mountType==MT_GEM) _autoMeridianFlips = strstr(s,"a"); else _autoMeridianFlips=false;
-
-      _lastError=(Errors)(s[strlen(s)-1]-'0');
-
-      if (all) {
+   /*   if (all) {
         Ser.print(":GX94#"); s[Ser.readBytesUntil('#',s,20)]=0; if (s[0]==0) { _valid=false; return false; }
         _meridianFlips=!strstr(s, "N");
         _pierSide=strtol(&s[0],NULL,10);
@@ -79,7 +104,7 @@ class MountStatus {
           _alignMaxStars=3;
           if (s[0]!=0) { if ((s[0]>'0') && (s[0]<='9')) _alignMaxStars=s[0]-'0'; }
         }
-      }
+      }*/
       
       _valid=true;
       return true;
@@ -122,8 +147,8 @@ class MountStatus {
       return message[0];
     }
   private:
-    char _id[10]="";
-    char _ver[10]="";
+    char _id[20]="";
+    char _ver[20]="";
     bool _valid=false;
     bool _tracking=false;
     bool _slewing=false;
@@ -135,6 +160,7 @@ class MountStatus {
     bool _atHome=false;
     bool _ppsSync=false;
     bool _guiding=false;
+    bool _recenter = false;
     bool _axisFault=false;
     bool _waitingHome=false;
     bool _pauseAtHome=false;

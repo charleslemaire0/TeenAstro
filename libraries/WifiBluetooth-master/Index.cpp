@@ -36,7 +36,6 @@ const char* html_indexEncoder2 = "&nbsp;&nbsp;Encodr: Ax1=<font class='c'>%s</fo
 const char* html_indexPier PROGMEM = "&nbsp;&nbsp;Pier Side=<font class='c'>%s</font> (meridian flips <font class='c'>%s</font>)<br />";
 
 const char* html_indexCorPolar PROGMEM = "&nbsp;&nbsp;Polar Offset: &Delta; Alt=<font class='c'>%ld</font>\", &Delta; Azm=<font class='c'>%ld</font>\"<br />";
-
 const char* html_indexPark PROGMEM = "&nbsp;&nbsp;Parking: <font class='c'>%s</font><br />";
 const char* html_indexTracking PROGMEM = "&nbsp;&nbsp;Tracking: <font class='c'>%s %s</font><br />";
 const char* html_indexMaxRate PROGMEM = "&nbsp;&nbsp;Current MaxRate: <font class='c'>%ld</font> (Default MaxRate: <font class='c'>%ld</font>)<br />";
@@ -57,7 +56,7 @@ void wifibluetooth::handleRoot() {
   Ser.setTimeout(WebTimeout);
   serialRecvFlush();
 
-  char temp[320]="";
+  char temp[300]="";
   char temp1[80]="";
   char temp2[80]="";
 
@@ -83,8 +82,7 @@ void wifibluetooth::handleRoot() {
 
   data += html_bodyB;
 
-  // get status (all)
-  mountStatus.update(true);
+  mountStatus.update();
 
   // finish the standard http response header
   data += html_onstep_header1;
@@ -97,7 +95,6 @@ void wifibluetooth::handleRoot() {
 #if PEC_ON
   data += html_links3N;
 #endif
-  data += html_links4N;
   data += html_links5N;
 #ifndef OETHS
   data += html_links6N;

@@ -1,6 +1,7 @@
 #pragma once
 // Add activate wifi function // default is ON
 #define WIFI_ON
+#define ALIGN_OFF
 #include <Arduino.h>
 #include <OneButton.h>
 #ifdef WIFI_ON

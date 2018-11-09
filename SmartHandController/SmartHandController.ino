@@ -34,12 +34,12 @@
 
 
 
-#define Product "SHC"
+#define Product "Teenastro SHC"
 #define SHCFirmwareDate          __DATE__
 #define SHCFirmwareTime          __TIME__
-#define SHCFirmwareVersionMajor  "0"
-#define SHCFirmwareVersionMinor  "2"
-#define SHCFirmwareVersionPatch  "a"
+#define SHCFirmwareVersionMajor  "1"
+#define SHCFirmwareVersionMinor  "0"
+#define SHCFirmwareVersionPatch  "0"
 
 #include "Config.h"
 #include "SmartController.h"
