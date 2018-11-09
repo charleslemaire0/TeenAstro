@@ -17,7 +17,7 @@ const char html_configMount_2[] =
 "<br/>\r\n";
 
 const char html_configMaxRate[] =
-"Rate & Acceleration: <br />"
+"Speed & Acceleration: <br />"
 "<form method='get' action='/configuration.htm'>"
 " <input value='%d' type='number' name='MaxR' min='32' max='1000'>"
 "<button type='submit'>Upload</button>"
@@ -35,7 +35,7 @@ const char html_configAcceleration[] =
 "<form method='get' action='/configuration.htm'>"
 " <input value='%.1f' type='number' name='Acc' min='0.1' max='25' step='.1'>"
 "<button type='submit'>Upload</button>"
-" (Acceleration, number of degrees to reach the Max Rate from 0.1° to 25°)"
+" (Acceleration, number of degrees to reach the Max Speed from 0.1° to 25°)"
 "</form>"
 "<br />\r\n";
 const char html_configRotAxis_1[] =
