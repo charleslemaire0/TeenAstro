@@ -56,8 +56,6 @@ void StopAxis1()
 
 void MoveAxis2(const byte newguideDirAxis)
 {
-
-
   if (parkStatus == NotParked && trackingState != TrackingMoveTo && GuidingState != GuidingPulse)
   {
     if (guideTimerBaseRate == 0)
@@ -95,7 +93,6 @@ void MoveAxis2(const byte newguideDirAxis)
 
 void StopAxis2()
 {
-
   long a = getV(timerRateAxis2)*getV(timerRateAxis2) / (2 * AccAxis2);
   updateDeltaTarget();
   if (fabs(deltaTargetAxis2) > a)
