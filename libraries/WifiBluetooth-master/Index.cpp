@@ -38,8 +38,7 @@ const char* html_indexPier PROGMEM = "&nbsp;&nbsp;Pier Side=<font class='c'>%s</
 const char* html_indexCorPolar PROGMEM = "&nbsp;&nbsp;Polar Offset: &Delta; Alt=<font class='c'>%ld</font>\", &Delta; Azm=<font class='c'>%ld</font>\"<br />";
 const char* html_indexPark PROGMEM = "&nbsp;&nbsp;Parking: <font class='c'>%s</font><br />";
 const char* html_indexTracking PROGMEM = "&nbsp;&nbsp;Tracking: <font class='c'>%s %s</font><br />";
-const char* html_indexMaxRate PROGMEM = "&nbsp;&nbsp;Current MaxRate: <font class='c'>%ld</font> (Default MaxRate: <font class='c'>%ld</font>)<br />";
-const char* html_indexMaxSpeed PROGMEM = "&nbsp;&nbsp;Maximum slew speed: <font class='c'>%s</font>&deg;/s<br />";
+const char* html_indexMaxRate PROGMEM = "&nbsp;&nbsp;Current Maximum slew speed: <font class='c'>%ldx</font><br />";
 
 #ifdef AMBIENT_CONDITIONS_ON
 const char* html_indexTPHD = "&nbsp;&nbsp;%s <font class='c'>%s</font>%s<br />";
@@ -235,19 +234,14 @@ void wifibluetooth::handleRoot() {
     data += temp;
   }
 
-  // Slew speed
-  if ((sendCommand(":GX97#",temp1)) && (strlen(temp1)>2)) {
-    sprintf(temp,html_indexMaxSpeed,temp1);
-    data += temp;
-  } else {
-    // fall back to MaxRate display if not supported
-    if ((sendCommand(":GX92#",temp1)) && (sendCommand(":GX93#",temp2))) { 
-      long maxRate=strtol(&temp1[0],NULL,10);
-      long MaxRate=strtol(&temp2[0],NULL,10);
-      sprintf(temp,html_indexMaxRate,maxRate,MaxRate);
-    } else sprintf(temp,html_indexMaxSpeed,"?");
+  // fall back to MaxRate display if not supported
+  if (sendCommand(":GX92#", temp1)) {
+    long maxRate = strtol(&temp1[0], NULL, 10);
+    sprintf(temp, html_indexMaxRate, maxRate);
     data += temp;
   }
+
+  
 #ifdef OETHS
   client->print(data); data="";
 #endif

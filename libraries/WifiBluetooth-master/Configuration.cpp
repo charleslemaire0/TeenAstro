@@ -21,14 +21,14 @@ const char html_configMaxRate[] =
 "<form method='get' action='/configuration.htm'>"
 " <input value='%d' type='number' name='MaxR' min='32' max='1000'>"
 "<button type='submit'>Upload</button>"
-" (Maximum Slewing Rate from 32x to 1000x)"
+" (Maximum Slewing speed from 32x to 1000x)"
 "</form>"
 "\r\n";
 const char html_configGuideRate[] =
 "<form method='get' action='/configuration.htm'>"
 " <input value='%.2f' type='number' name='GuideR' min='0.01' max='1' step='.01'>"
 "<button type='submit'>Upload</button>"
-" (Guiding Rate from 0.01x to 1x)"
+" (Guiding speed from 0.01x to 1x)"
 "</form>"
 "\r\n";
 const char html_configAcceleration[] =
