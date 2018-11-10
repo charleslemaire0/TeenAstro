@@ -7,7 +7,7 @@
 #include "BasicStepperDriver.h"
 #include "DS1302.h"
 
-BasicStepperDriver myStepper(DirPin, StepPin);
+BasicStepperDriver myStepper(EnablePin, DirPin, StepPin,CSPin);
 
 void iniMot()
 {
@@ -40,13 +40,13 @@ void StartMove( long&n)
 
 	while (status == 0)
 	{
-		serCom0.updateGoto();
+    serCom0.updateGoto();
     serComSHC.updateGoto();
-		if (halt)
-		{
-			status = 1;
-			break;
-		}
+    if (halt)
+    {
+      status = 1;
+      break;
+    }
     myStepper.move(sign);
 		sumsteps += sign;
 		position += sign;

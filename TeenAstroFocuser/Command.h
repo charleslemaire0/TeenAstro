@@ -55,6 +55,7 @@ private:
   unsigned int m_value = 0;
   bool m_valuedefined = false;
   bool m_hasReceivedCommand = false;
+  uint32_t m_lastupdate = millis();
 public:
   void updateGoto();
   void Command_Check();

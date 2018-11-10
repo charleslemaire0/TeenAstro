@@ -16,15 +16,24 @@
 #define VERSION23
 
 #ifdef VERSION23
+#define EnablePin 5
+#define StepPin 7
+#define DirPin 6
+#define CSPin 10
 #define FocuserRX 0
 #define FocuserTX 1
 #define LEDPin 23 
 #endif // VERSION23
 #ifdef VERSION22
+#define Enablepin 7
+#define StepPin 5
+#define DirPin 6
+#define CSPin 10
 #define FocuserRX 26
 #define FocuserTX 31
 #define LEDPin 33 
 #endif
+
 
 #endif
 

@@ -11,8 +11,7 @@
 #include "DS1302.h"
 
 // give the motor control pins names:
-#define StepPin 5
-#define DirPin 6
+
 
 // Button
 //#define ButtonAPin 8
@@ -37,6 +36,7 @@ SerCom serCom0(Serial);
 SerCom serComSHC(Serial2);
 #endif
 #ifdef VERSION23
+
 SerCom serComSHC(Serial1);
 #endif
 #endif

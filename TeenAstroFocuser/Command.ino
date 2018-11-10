@@ -323,7 +323,11 @@ void SerCom::dumpState()
 
 void SerCom::updateGoto(void)
 {
-  HaltRequest();
+  if (millis() - m_lastupdate > 10)
+  {
+    HaltRequest();
+    m_lastupdate = millis();
+  }
 }
 
 void SerCom::sayHello(void)
