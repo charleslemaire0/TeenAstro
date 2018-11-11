@@ -1,6 +1,5 @@
 
-
-#include "BasicStepperDriver.h"
+#include <MsTimer2.h>
 #include "ConfigStorage.h"
 #include "Global.h"
 #include "ConfigStepper.h"
@@ -44,55 +43,55 @@ void setup()
   iniMot();
 	iniPos();
   analogWrite(LEDPin,16);
+  MsTimer2::set(10, check);
+  MsTimer2::start();
 }
 
 
 void loop()
 {
 
-  serCom0.Get_Command();
-  serComSHC.Get_Command();
-
-  serCom0.MoveRequest();
-  serComSHC.MoveRequest();
-  
 	if (mdirOUT == HIGH && mdirIN == HIGH)
 	{
-		time_acc = 0;
-		return;
-	}
-	// first stop the motor if the direction has changed
-	else if (mdirOUT != mdirOUTOld && mdirOUTOld == HIGH)
-	{
-		Command_stop(1);
-		time_acc = 0;
-    mdirOUTOld = mdirOUT;
-		return;
-	}
-	else if (mdirIN != mdirINOld && mdirINOld == HIGH)
-	{
-		Command_stop(-1);
-		time_acc = 0;
-    mdirINOld = mdirIN;
-		return;
-	}
-	else if (mdirOUT == HIGH)
-	{
-		Command_move(1, time_acc);
-    mdirOUTOld = mdirOUT;
-		return;
-	}
-	else if (mdirIN == HIGH)
-	{
-		Command_move(-1, time_acc);
-    mdirINOld = mdirIN;
-		return;
-	}
 
-  serCom0.Command_Check();
-  serComSHC.Command_Check();
-	time_acc = 0;
+		return;
+	}
+	else if (mdirOUT == HIGH && mdirOUTOld != mdirOUT)
+	{
+    stepper.setAcceleration(storage.manAcc*100);
+		stepper.moveTo(storage.maxPosition);
+    mdirOUTOld = mdirOUT;
+		return;
+	}
+	else if (mdirIN == HIGH && mdirINOld != mdirIN)
+	{
+    stepper.setAcceleration(storage.manAcc*100);
+    stepper.moveTo(0);
+    mdirINOld = mdirIN;
+		return;
+	}
+  else if ((mdirIN == LOW && mdirINOld != mdirIN) || (mdirOUT == LOW && mdirOUTOld != mdirOUT))
+  {
+    stepper.setAcceleration(storage.manDec*100);
+    stepper.stop();
+    mdirINOld = mdirIN;
+    mdirOUTOld = mdirOUT;
+
+    return;
+  }
+
 	mdirOUTOld = mdirOUT;
 	mdirINOld = mdirIN;
+
+  Command_Run();
 }
 
+void check()
+{
+  serComSHC.Get_Command();
+  serComSHC.MoveRequest();
+  serCom0.Get_Command();
+  serCom0.MoveRequest();
+  serComSHC.Command_Check();
+  serCom0.Command_Check();
+}

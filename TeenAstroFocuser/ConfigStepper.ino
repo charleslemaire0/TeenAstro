@@ -4,186 +4,42 @@
 
 #include "ConfigStepper.h"
 #include "global.h"
-#include "BasicStepperDriver.h"
-#include "DS1302.h"
 
-BasicStepperDriver myStepper(EnablePin, DirPin, StepPin,CSPin);
+
 
 void iniMot()
 {
-  myStepper.setReverse(storage.reverse);
-  myStepper.setSpeed(storage.minSpeed);
+  pinMode(CSPin, OUTPUT);
+  digitalWrite(CSPin, HIGH);
+  driver.begin();             // Initiate pins and registeries
+  driver.rms_current(storage.curr*10);    // Set stepper current to 600mA. The command is the same as command TMC2130.setCurrent(600, 0.11, 0.5);
+  driver.stealthChop(1);      // Enable extremely quiet stepping
+  driver.stealth_autoscale(1);
+  driver.microsteps(pow(2, storage.micro));
+  driver.interpolate(1);
+  stepper.setMaxSpeed(storage.highSpeed*pow(2,storage.micro)); // 100mm/s @ 80 steps/mm
+  stepper.setAcceleration(storage.manAcc*100); // 2000mm/s^2
+  stepper.setEnablePin(EnablePin);
+  stepper.setPinsInverted(storage.reverse, false, true);
+  stepper.enableOutputs();
+}
+void Run()
+{
+  stepper.run();
 }
 
-void MoveTo(unsigned long pos)
+void MoveTo(long pos)
 {
 	if (inlimit (pos))
 	{
-		long delta = (long)pos - (long)position;
-		currSpeed = storage.minSpeed;
-		StartMove( delta);
-		currSpeed = 0;
+    stepper.moveTo(pos);
+    stepper.enableOutputs();
 	}
 }
 
-void StartMove( long&n)
+void Stop()
 {
-	if (n == 0)
-	{
-		return;
-	}
-	int sign = (n<0) ? -1 : 1;
-	long sumsteps = 0;
-	unsigned int stepperspeedini = currSpeed;
-	double t = 0;
-	int status = 0;
-
-	while (status == 0)
-	{
-    serCom0.updateGoto();
-    serComSHC.updateGoto();
-    if (halt)
-    {
-      status = 1;
-      break;
-    }
-    myStepper.move(sign);
-		sumsteps += sign;
-		position += sign;
-		writePos();
-		if (abs(2 * (sumsteps + sign)) > abs(n))
-		{
-			stepperspeedini = currSpeed;
-			status = 1;
-			break;
-		}
-
-		t += 1. / currSpeed;
-		unsigned int stepperspeednew = stepperspeedini + (unsigned int)storage.cmdAcc * t;
-		if (stepperspeednew > storage.maxSpeed)
-		{
-			status = 2;
-			break;
-		}
-		else
-		{
-			currSpeed = stepperspeednew;
-			myStepper.setSpeed(currSpeed);
-		}
-	}
-	long rest = n - sumsteps;
-	if (status == 2)
-	{
-		niter(rest - sumsteps, sign);
-		rest = sumsteps;
-	}
-	FinishMove( rest);
-}
-
-
-void FinishMove( long n)
-{
-	if (n == 0)
-	{
-		return;
-	}
-	int sign = (n<0) ? -1 : 1;
-	long sumsteps = 0;
-	int stepperspeedini = currSpeed;
-	double t = 0;
-	while (sumsteps != n)
-	{
-    serCom0.updateGoto();
-    serComSHC.updateGoto();
-		if (halt)
-			return;
-    myStepper.move(sign);
-		sumsteps += sign;
-		position += sign;
-		writePos();
-		t += 1. / currSpeed;
-		unsigned int stepperspeednew = stepperspeedini - (unsigned int)storage.cmdAcc * t;
-		if (stepperspeednew < storage.minSpeed)
-		{
-			currSpeed = storage.minSpeed;
-			myStepper.setSpeed(currSpeed);
-			break;
-		}
-		currSpeed = stepperspeednew;
-		myStepper.setSpeed(stepperspeednew);
-	}
-	
-	niter(n - sumsteps,sign);
-}
-
-void niter(long m, int sign)
-{
-	while (m != 0)
-	{
-    serCom0.updateGoto();
-    serComSHC.updateGoto();
-		if (halt)
-		{
-			return;
-		}
-    myStepper.move(sign);
-		position += sign;
-		writePos();
-		m -= sign;
-	}
-}
-
-void Go(int stepperspeedini, int sign, double& t)
-{
-	if (currSpeed != storage.maxSpeed)
-	{
-    if (currSpeed == 0)
-      currSpeed = FocCmd_minSpeed;
-		double tnew = t + 1. / currSpeed;
-    double  a = storage.manAcc * tnew;
-    unsigned int stepperspeednew = min(max(stepperspeedini + a, storage.minSpeed), storage.maxSpeed);
-		if (stepperspeednew < storage.maxSpeed)
-		{
-			t = tnew;
-		}
-    currSpeed = stepperspeednew;
-    myStepper.setSpeed(currSpeed);
-	}
-
-  myStepper.move(sign);
-	position += sign;
-	writePos();
-
-}
-
-void Stop(int sign)
-{
-	double t = 0;
-
-	unsigned int stepperspeedini = currSpeed;
-	while (currSpeed > storage.minSpeed)
-	{
-    serCom0.updateGoto();
-    serComSHC.updateGoto();
-		t += 1. / currSpeed;
-    if (stepperspeedini < (long)storage.manDec * t)
-		{
-			break;
-		}
-    currSpeed = stepperspeedini - storage.manDec * t;
-		myStepper.setSpeed(currSpeed);
-		unsigned long nextposition = position;
-		nextposition += sign;
-		if (!inlimit(nextposition))
-		{
-			break;
-		}
-    myStepper.move(sign);
-		position = nextposition;
-		writePos();
-	}
-	currSpeed = 0;
-	myStepper.setSpeed(storage.minSpeed);
+  stepper.stop();
 }
 
 bool inlimit(unsigned long pos)
@@ -193,7 +49,8 @@ bool inlimit(unsigned long pos)
 
 void writePos()
 {
-	unsigned long pos[3] = { position,position, position };
+  long posi = stepper.currentPosition();
+	long pos[3] = { posi,posi, posi };
 	rtc->writeRamBulk((uint8_t*)pos, sizeof(pos));
 }
 
@@ -201,7 +58,6 @@ void iniPos()
 {
 	if (rtc == NULL)
 	{
-    
 		rtc = new DS1302(kCePin, kIoPin, kSclkPin);
 	}
 
@@ -217,10 +73,10 @@ void iniPos()
 	//}
 	if (posini[0] == posini[1] && inlimit(posini[0]))
 	{
-		position = posini[1];
+    stepper.setCurrentPosition(posini[1]);
 	}
 	else
 	{
-		position = storage.startPosition;
+    stepper.setCurrentPosition((long)storage.startPosition);
 	}
 }

@@ -8,28 +8,22 @@
 #else
 	#include "WProgram.h"
 #endif
+#include <AccelStepper.h>
+#include <TMC2130Stepper.h>
+#include "Command.h"
+
 #include "DS1302.h"
 
-// give the motor control pins names:
 
+TMC2130Stepper driver = TMC2130Stepper(EnablePin, DirPin, StepPin, CSPin);
+AccelStepper stepper = AccelStepper(stepper.DRIVER, StepPin, DirPin);
 
-// Button
-//#define ButtonAPin 8
-//#define ButtonBPin 7
-// RTC
-#define kCePin 4  // Chip Enable
-#define kIoPin 3 // Input/Output
-#define kSclkPin 2  // Serial Clock
-#define micro 16
-#define updaterate 1
 
 int mdirOUTOld = 0;
 int mdirINOld = 0;
 
-unsigned int currSpeed;
-unsigned long position;
 bool halt = false;
-double time_acc = 0;
+
 DS1302 *rtc = NULL;
 SerCom serCom0(Serial);
 #ifdef VERSION22

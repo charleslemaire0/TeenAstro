@@ -16,6 +16,12 @@
 #define VERSION23
 
 #ifdef VERSION23
+
+// RTC
+#define kCePin 4  // Chip Enable
+#define kIoPin 3 // Input/Output
+#define kSclkPin 2  // Serial Clock
+//TMC2130
 #define EnablePin 5
 #define StepPin 7
 #define DirPin 6
@@ -25,6 +31,11 @@
 #define LEDPin 23 
 #endif // VERSION23
 #ifdef VERSION22
+// RTC
+#define kCePin 4  // Chip Enable
+#define kIoPin 3 // Input/Output
+#define kSclkPin 2  // Serial Clock
+//TMC2130
 #define Enablepin 7
 #define StepPin 5
 #define DirPin 6

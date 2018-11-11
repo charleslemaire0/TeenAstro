@@ -22,21 +22,21 @@ void checkvalue()
   unsigned long vall;
   uint8_t vals;
   bool dosave = false;
-  vali = max(min(storage.inpulse, 512u), 1u);
-  dosave = dosave || vali != storage.inpulse;
-  storage.inpulse = vali;
-  vall = max(min(storage.startPosition, 65535uL * storage.inpulse), 1uL);
+  vali = max(min(storage.resolution, 512u), 1u);
+  dosave = dosave || vali != storage.resolution;
+  storage.resolution = vali;
+  vall = max(min(storage.startPosition, 65535uL * storage.resolution), 1uL);
   dosave = dosave || vall != storage.startPosition;
   storage.startPosition = vall;
-  vall = max(min(storage.maxPosition, 65535uL * storage.inpulse), 1uL);
+  vall = max(min(storage.maxPosition, 65535uL * storage.resolution), 1uL);
   dosave = dosave || vall != storage.maxPosition;
   storage.maxPosition = vall;
-  vali = max(min(storage.maxSpeed, 999u), 1u);
-  dosave = dosave || vali != storage.maxSpeed;
-  storage.maxSpeed = vali;
-  vali = max(min(storage.minSpeed, storage.maxSpeed), 1u);
-  dosave = dosave || vali != storage.minSpeed;
-  storage.minSpeed = vali;
+  vali = max(min(storage.highSpeed, 999u), 1u);
+  dosave = dosave || vali != storage.highSpeed;
+  storage.highSpeed = vali;
+  vali = max(min(storage.lowSpeed, storage.highSpeed), 1u);
+  dosave = dosave || vali != storage.lowSpeed;
+  storage.lowSpeed = vali;
   vals = max(min(storage.cmdAcc, 99u), 1u);
   dosave = dosave || vals != storage.cmdAcc;
   storage.cmdAcc = vals;
@@ -46,6 +46,12 @@ void checkvalue()
   vals = max(min(storage.manAcc, 99u), 1u);
   dosave = dosave || vals != storage.manAcc;
   storage.manAcc = vals;
+  vals = max(min(storage.micro, 7u), 2u);
+  dosave = dosave || vals != storage.micro;
+  storage.micro = vals;
+  vals = max(min(storage.curr, 10u), 1u);
+  dosave = dosave || vals != storage.curr;
+  storage.curr = vals;
   if (dosave)
     saveConfig();
 }

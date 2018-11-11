@@ -1,32 +1,28 @@
 // 
 // 
 // 
-#include "Global.h"
-#include "ConfigStepper.h"
+
 #include "Command.h"
 
 #define INPUT_SIZE 30
-
-void Command_move(int sign, double& t)
+void update_stepper()
 {
-
-  unsigned long nextposition = position + sign;
-  if (inlimit(nextposition))
-  {
-    Go(storage.minSpeed, sign, t);
-  }
-  else
-  {
-    currSpeed = 0;
-    t = 0;
-  }
-}
-void Command_stop(int sign)
-{
-  Stop(sign);
+  stepper.run();
 }
 
-void SerCom::Get_Command()
+
+
+void Command_stop()
+{
+  Stop();
+}
+
+void Command_Run()
+{
+  Run();
+}
+
+bool SerCom::Get_Command()
 {
   m_hasReceivedCommand = false;
   if (ser.available() > 3)
@@ -71,6 +67,7 @@ void SerCom::Get_Command()
     }
 
   }
+  return m_hasReceivedCommand;
 }
 
 void SerCom::Command_Check(void)
@@ -78,7 +75,7 @@ void SerCom::Command_Check(void)
   if (!m_hasReceivedCommand)
     return;
   // Get next command from ser (add 1 for final 0)
-
+  m_hasReceivedCommand = false;
   switch (m_command)
   {
   case AzCmd_Help:
@@ -97,6 +94,8 @@ void SerCom::Command_Check(void)
     break;
   case FocCmd_Halt:
     halt = true;
+    stepper.setAcceleration(storage.manDec*100);
+    stepper.stop();
     mdirOUT = LOW;
     mdirIN = LOW;
     break;
@@ -104,15 +103,19 @@ void SerCom::Command_Check(void)
     if (m_valuedefined)
     {
       halt = false;
-      MoveTo((unsigned long)m_value * storage.inpulse);
+      stepper.setAcceleration(storage.cmdAcc*100);
+      MoveTo((unsigned long)m_value * storage.resolution);
     }
     break;
   case FocCmd_Park:
     halt = false;
+    stepper.setAcceleration(storage.cmdAcc*100);
     MoveTo(storage.startPosition);
     break;
   case FocCmd_Sync:      // "reset" position
-    setvalue(m_valuedefined, (unsigned long)m_value * storage.inpulse, 0, storage.maxPosition, position);
+    unsigned long position;
+    setvalue(m_valuedefined, (unsigned long)m_value * storage.resolution, 0, storage.maxPosition, position);
+    stepper.setCurrentPosition((long)position);
     writePos();
     break;
   case FocCmd_Write:
@@ -121,16 +124,17 @@ void SerCom::Command_Check(void)
     ser.flush();
     break;
   case FocCmd_startPosition:
-    setvalue(m_valuedefined, (unsigned long)m_value * storage.inpulse, 0UL, 2000000000UL, storage.startPosition);
+    setvalue(m_valuedefined, (unsigned long)m_value * storage.resolution, 0UL, 2000000000UL, storage.startPosition);
     break;
   case FocCmd_maxPosition:
-    setvalue(m_valuedefined, (unsigned long)m_value * storage.inpulse, 0UL, 2000000000UL, storage.maxPosition);
+    setvalue(m_valuedefined, (unsigned long)m_value * storage.resolution, 0UL, 2000000000UL, storage.maxPosition);
     break;
-  case FocCmd_maxSpeed:
-    setvalue(m_valuedefined, m_value, 1u, 999u, storage.maxSpeed);
+  case FocCmd_highSpeed:
+    setvalue(m_valuedefined, m_value, 1u, 999u, storage.highSpeed);
+    stepper.setMaxSpeed(storage.highSpeed*pow(2,storage.micro));
     break;
-  case FocCmd_minSpeed:
-    setvalue(m_valuedefined, m_value, 1u, 999u, storage.minSpeed);
+  case FocCmd_lowSpeed:
+    setvalue(m_valuedefined, m_value, 1u, 999u, storage.lowSpeed);
     break;
   case FocCmd_cmdAcc:
     setvalue(m_valuedefined, (uint8_t)m_value, 1u, 200u, storage.cmdAcc);
@@ -143,17 +147,28 @@ void SerCom::Command_Check(void)
     break;
   case FocCmd_Inv:
     setbool(m_valuedefined, m_value, storage.reverse);
-    iniMot();
+    stepper.setPinsInverted(storage.reverse, false, false);
     break;
   case FocCmd_inpulse:
-    setvalue(m_valuedefined, m_value, 1u, 512u, storage.inpulse);
+    setvalue(m_valuedefined, m_value, 1u, 512u, storage.resolution);
     checkvalue();
+    break;
+  case FocCmd_current:
+    setvalue(m_valuedefined, m_value, 10u, 100u, storage.curr);
+    driver.rms_current(storage.curr);
+    break;
+  case FocCmd_micro:
+    setvalue(m_valuedefined, m_value, 2u, 7, storage.micro);
+    driver.microsteps(pow(2,storage.curr));
     break;
   case CmdDumpState: // "?" dump state including details
     dumpState();
     break;
   case CmdDumpConfig:
     dumpConfig();
+    break;
+  case CmdDumpConfigMotor:
+    dumpConfigMotor();
     break;
   case Char_CR:  // ignore cr
   case Char_Spc:
@@ -294,16 +309,27 @@ void SerCom::setbool(bool valuedefined, unsigned int value, bool  &adress)
 void SerCom::dumpConfig()
 {
   char buf[50];
-  sprintf(buf, "~%05u %05u %03u %03u %03u %03u %03u %1u %03u#",
-    (unsigned int)(storage.startPosition / storage.inpulse),
-    (unsigned int)(storage.maxPosition / storage.inpulse),
-    storage.minSpeed,
-    storage.maxSpeed,
+  sprintf(buf, "~%05u %05u %03u %03u %03u %03u %03u#",
+    (unsigned int)(storage.startPosition / storage.resolution),
+    (unsigned int)(storage.maxPosition / storage.resolution),
+    storage.lowSpeed,
+    storage.highSpeed,
     storage.cmdAcc,
     storage.manAcc,
-    storage.manDec,
-    storage.reverse,
-    storage.inpulse);
+    storage.manDec
+   );
+  ser.print(buf);
+  ser.flush();
+}
+
+void SerCom::dumpConfigMotor()
+{
+  char buf[50];
+  sprintf(buf, "~%1u %1u  %03u %03u#",
+    (unsigned int)(storage.reverse),
+    (unsigned int)(storage.micro),
+    (unsigned int)(storage.resolution),
+    (unsigned int)(storage.curr));
   ser.print(buf);
   ser.flush();
 }
@@ -311,21 +337,22 @@ void SerCom::dumpConfig()
 void SerCom::dumpState()
 {
   char buf[20];
-  unsigned int pos = (unsigned int)(position / storage.inpulse);
+
+  unsigned int pos = (unsigned int)(stepper.currentPosition() / storage.resolution);
   if (pos > 65535)
   {
-    position = 65535 * storage.inpulse;
+    stepper.setCurrentPosition( 65535 * storage.resolution);
   }
-  sprintf(buf, "?%05u %03u#", (unsigned int)(position/storage.inpulse), currSpeed);
+  sprintf(buf, "?%05u %03u#", (unsigned int)(stepper.currentPosition() /storage.resolution), (unsigned int)abs(stepper.speed() / pow(2, storage.micro)));
   ser.print(buf);
-  ser.flush();
 }
 
 void SerCom::updateGoto(void)
 {
+  return;
   if (millis() - m_lastupdate > 10)
   {
-    HaltRequest();
+    //HaltRequest();
     m_lastupdate = millis();
   }
 }

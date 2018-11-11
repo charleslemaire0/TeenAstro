@@ -3,11 +3,13 @@
 #ifndef _COMMAND_h
 #define _COMMAND_h
 
+
 #if defined(ARDUINO) && ARDUINO >= 100
 	#include "arduino.h"
 #else
 	#include "WProgram.h"
 #endif
+
 
 // single key commands
 #define AzCmd_Help 'H'
@@ -27,16 +29,20 @@
 
 #define CmdDumpState '?'
 #define CmdDumpConfig '~'
+#define CmdDumpConfigMotor '*'
 
 #define FocCmd_startPosition '0'
 #define FocCmd_maxPosition '1'
-#define FocCmd_minSpeed '2'
-#define FocCmd_maxSpeed '3'
+#define FocCmd_lowSpeed '2'
+#define FocCmd_highSpeed '3'
 #define FocCmd_cmdAcc '4'
 #define FocCmd_manualAcc '5'
 #define FocCmd_manualDec '6' 
 #define FocCmd_Inv '7'
 #define FocCmd_inpulse '8'
+#define FocCmd_current 'c'
+#define FocCmd_micro 'm'
+
 
 #define Char_CR 13
 #define Char_Spc 32
@@ -59,12 +65,12 @@ private:
 public:
   void updateGoto();
   void Command_Check();
-  void Get_Command();
+  bool Get_Command();
   void MoveRequest(void);
 private:
   void dumpState();
   void dumpConfig();
-
+  void dumpConfigMotor();
   void sayHello();
   void setbool(bool valuedefined, unsigned int value, bool  &adress);
   void setvalue(bool valuedefined, unsigned int value, unsigned int min, unsigned int max, unsigned int &adress);

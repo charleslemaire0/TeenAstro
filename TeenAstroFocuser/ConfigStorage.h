@@ -18,20 +18,23 @@
 struct StoreStruct
 {
 	char version[4];
+  uint8_t curr;
+  uint8_t micro;
 	bool reverse;
 	unsigned long startPosition;
 	unsigned long maxPosition;
-  unsigned int minSpeed;
-  unsigned int maxSpeed;
+  unsigned int lowSpeed;
+  unsigned int highSpeed;
   uint8_t cmdAcc;
   uint8_t manAcc;
   uint8_t manDec;
-  unsigned int inpulse;
+  unsigned int resolution;
 }
 storage = {
 	CONFIG_VERSION,
 	false,
-	0,
+	50,
+  4,
 	32000,
 	10,
 	60,
