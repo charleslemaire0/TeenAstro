@@ -94,6 +94,7 @@ void wifibluetooth::handleRoot() {
 #if PEC_ON
   data += html_links3N;
 #endif
+  data += html_links4N;
   data += html_links5N;
 #ifndef OETHS
   data += html_links6N;

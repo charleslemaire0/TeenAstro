@@ -77,7 +77,7 @@ const char html_wifiSSID7[] PROGMEM=
 "<button type='submit'>Upload</button></form><br />\r\n";
 
 const char html_logout[]= 
-"<br/><b>WiFi Configuration Security:</b><br/>"
+"<br/><b>WiFi configuration_telescope Security:</b><br/>"
 "<form method='post' action='/wifi.htm'>"
 "Password: <input style='width:8em' name='webpwd' type='password' maxlength='39'> "
 "<button type='submit'>Upload</button></form>"
@@ -93,7 +93,7 @@ const char html_reboot[]=
 
 const char html_login[] PROGMEM= 
 "<br/><form method='post' action='/wifi.htm'>"
-"<br/>Enter password to change WiFi configuration:<br />"
+"<br/>Enter password to change WiFi configuration_telescope:<br />"
 "<input style='width:8em' name='login' type='password' maxlength='39'>"
 "<button type='submit'>Ok</button>"
 "</form><br/><br/><br/>"
@@ -166,6 +166,7 @@ void wifibluetooth::handleWifi() {
 #if PEC_ON
   data += html_links3N;
 #endif
+  data += html_links4N;
   data += html_links5N;
   data += html_links6S;
   data += html_onstep_header4;

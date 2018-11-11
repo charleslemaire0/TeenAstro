@@ -109,6 +109,10 @@ class MountStatus {
       _valid=true;
       return true;
     }
+    bool updateFocuserSettings()
+    {
+
+    }
     bool getId(char id[]) { if (!_valid) return false; else { strcpy(id,_id); return true; } }
     bool getVer(char ver[]) { if (!_valid) return false; else { strcpy(ver,_ver); return true; } }
     bool valid() { return _valid; }

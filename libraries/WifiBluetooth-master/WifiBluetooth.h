@@ -17,7 +17,6 @@
 #define FirmwareVersionMajor  "1"
 #define FirmwareVersionMinor  "0"
 #define FirmwareVersionPatch  "0"
-#define Version FirmwareVersionMajor "." FirmwareVersionMinor FirmwareVersionPatch
 
 
 // -----------------------------------------------------------------------------------
@@ -116,8 +115,10 @@ class wifibluetooth
   static WiFiServer cmdSvr;
   static WiFiClient cmdSvrClient;
   static const char* HighSpeedCommsStr(long baud);
-  static void processConfigurationGet();
-  static void handleConfiguration();
+  static void processConfigurationTelescopeGet();
+  static void handleConfigurationTelescope();
+  static void processConfigurationFocuserGet();
+  static void handleConfigurationFocuser();
   static void handleRoot();
   static void handleSettings();
 

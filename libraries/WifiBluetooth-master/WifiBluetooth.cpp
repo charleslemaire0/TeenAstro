@@ -25,7 +25,7 @@ const char* html_main_css_control3 PROGMEM = ".bb { height: 2.5em; width: 8em;} 
 const char* html_main_cssE PROGMEM = "</STYLE>";
 
 const char* html_onstep_header1 PROGMEM = "<div class='t'><table width='100%%'><tr><td><b><font size='5'>";
-const char* html_onstep_header2 PROGMEM = "</font></b></td><td align='right'><b>" Product " " Version " (TeenAstro ";
+const char* html_onstep_header2 PROGMEM = "</font></b></td><td align='right'><b>" Product " " FirmwareVersionMajor"."FirmwareVersionMinor " (TeenAstro ";
 const char* html_onstep_header3 PROGMEM = ")</b></td></tr></table>";
 const char* html_onstep_header4 PROGMEM = "</div><div class='b'>\r\n";
 
@@ -38,8 +38,10 @@ const char* html_links3S PROGMEM = "<a href='/pec.htm' style='background-color: 
 const char* html_links3N PROGMEM = "<a href='/pec.htm'>PEC</a>";
 #endif
 
-const char* html_links5S PROGMEM = "<a href='/configuration.htm' style='background-color: #552222;'>Configuration</a>";
-const char* html_links5N PROGMEM = "<a href='/configuration.htm'>Configuration</a>";
+const char* html_links4S PROGMEM = "<a href='/configuration_telescope.htm' style='background-color: #552222;'>Telescope</a>";
+const char* html_links4N PROGMEM = "<a href='/configuration_telescope.htm'>Telescope</a>";
+const char* html_links5S PROGMEM = "<a href='/configuration_focuser.htm' style='background-color: #552222;'>Focuser</a>";
+const char* html_links5N PROGMEM = "<a href='/configuration_focuser.htm'>Focuser</a>";
 const char* html_links6S PROGMEM = "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />";
 const char* html_links6N PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />";
 
@@ -402,7 +404,8 @@ Again:
   //}
   server.on("/", handleRoot);
   server.on("/index.htm", handleRoot);
-  server.on("/configuration.htm", handleConfiguration);
+  server.on("/configuration_telescope.htm", handleConfigurationTelescope);
+  server.on("/configuration_focuser.htm", handleConfigurationFocuser);
   server.on("/control.htm", handleControl);
   server.on("/control.txt", controlAjax);
   server.on("/guide.txt", guideAjax);

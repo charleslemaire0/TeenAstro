@@ -1,12 +1,12 @@
 #include "config.h"
 #include "WifiBluetooth.h"
 // -----------------------------------------------------------------------------------
-// Configuration
+// configuration_telescope
 
 
 const char html_configMount_1[] =
 "Equatorial Mount Type: <br />"
-"<form action='/configuration.htm'>"
+"<form action='/configuration_telescope.htm'>"
 "<select name='mount'>";
 //"<option value = "1">German< / option>"
 //"<option value = "2">Fork< / option>"
@@ -18,28 +18,28 @@ const char html_configMount_2[] =
 
 const char html_configMaxRate[] =
 "Speed & Acceleration: <br />"
-"<form method='get' action='/configuration.htm'>"
+"<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%d' type='number' name='MaxR' min='32' max='1000'>"
 "<button type='submit'>Upload</button>"
 " (Maximum Slewing speed from 32x to 1000x)"
 "</form>"
 "\r\n";
 const char html_configGuideRate[] =
-"<form method='get' action='/configuration.htm'>"
+"<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%.2f' type='number' name='GuideR' min='0.01' max='1' step='.01'>"
 "<button type='submit'>Upload</button>"
 " (Guiding speed from 0.01x to 1x)"
 "</form>"
 "\r\n";
 const char html_configAcceleration[] =
-"<form method='get' action='/configuration.htm'>"
+"<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%.1f' type='number' name='Acc' min='0.1' max='25' step='.1'>"
 "<button type='submit'>Upload</button>"
 " (Acceleration, number of degrees to reach the Max Speed from 0.1° to 25°)"
 "</form>"
 "<br />\r\n";
 const char html_configRotAxis_1[] =
-"<form action='/configuration.htm'>"
+"<form action='/configuration_telescope.htm'>"
 "<select name='mrot%d'>";
 //"<option value = "0">Direct< / option>"
 //"<option value = "1">Reverse< / option>"
@@ -59,42 +59,42 @@ const char html_configRotAxis_2[] =
 "\r\n";
 
 const char html_configBlAxis[] =
-"<form method='get' action='/configuration.htm'>"
+"<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%d' type='number' name='mbl%d' min='0' max='999'>"
 "<button type='submit'>Upload</button>"
 " (Backlash Axis%d, in arc-seconds from 0 to 999)"
 "</form>"
 "\r\n";
 const char html_configGeAxis[] =
-"<form method='get' action='/configuration.htm'>"
+"<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%d' type='number' name='mge%d' min='1' max='60000'>"
 "<button type='submit'>Upload</button>"
 " (Gear Axis%d, from 1 to 60000)"
 "</form>"
 "\r\n";
 const char html_configStAxis[] =
-"<form method='get' action='/configuration.htm'>"
+"<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%d' type='number' name='mst%d' min='1' max='400'>"
 "<button type='submit'>Upload</button>"
 " (Steps per Rotation Axis%d, from 1 to 400)"
 "</form>"
 "\r\n";
 const char html_configMuAxis[] =
-"<form method='get' action='/configuration.htm'>"
+"<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%d' type='number' name='mmu%d' min='16' max='256'>"
 "<button type='submit'>Upload</button>"
 " (Microsteps Axis%d, valid value are 16, 32, 64, 128, 256)"
 "</form>"
 "\r\n";
 const char html_configLCAxis[] =
-"<form method='get' action='/configuration.htm'>"
+"<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%d' type='number' name='mlc%d' min='100' max='2000' step='10'>"
 "<button type='submit'>Upload</button>"
 " (Low Current Axis%d, from 100mA to 2000mA)"
 "</form>"
 "\r\n";
 const char html_configHCAxis[] =
-"<form method='get' action='/configuration.htm'>"
+"<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%d' type='number' name='mhc%d' min='100' max='2000' step='10'>"
 "<button type='submit'>Upload</button>"
 " (High Current Axis%d, from 100mA to 2000mA)"
@@ -104,28 +104,28 @@ const char html_configHCAxis[] =
 
 const char html_configMinAlt[] = 
 "Limits: <br />"
-"<form method='get' action='/configuration.htm'>"
+"<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%d' type='number' name='hl' min='-30' max='30'>"
 "<button type='submit'>Upload</button>"
 " (Horizon, in degrees +/- 30)"
 "</form>"
 "\r\n";
 const char html_configMaxAlt[] = 
-"<form method='get' action='/configuration.htm'>"
+"<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%d' type='number' name='ol' min='60' max='90'>"
 "<button type='submit'>Upload</button>"
 " (Overhead, in degrees 60 to 90)"
 "</form>"
 "\r\n";
 const char html_configPastMerE[] = 
-"<form method='get' action='/configuration.htm'>"
+"<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%d' type='number' name='el' min='-45' max='45'>"
 "<button type='submit'>Upload</button>"
 " (Past Meridian when East of the pier, in degrees +/-45)"
 "</form>"
 "\r\n";
 const char html_configPastMerW[] = 
-"<form method='get' action='/configuration.htm'>"
+"<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%d' type='number' name='wl' min='-45' max='45'>"
 "<button type='submit'>Upload</button>"
 " (Past Meridian when West of the pier, in degrees +/-45)"
@@ -133,7 +133,7 @@ const char html_configPastMerW[] =
 "<br />\r\n";
 const char html_configLongDeg[] = 
 "Location: <br />"
-"<form method='get' action='/configuration.htm'>"
+"<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%s' type='number' name='g1' min='-180' max='180'>&nbsp;&deg;&nbsp;";
 const char html_configLongMin[] = 
 " <input value='%s' type='number' name='g2' min='0' max='60'>&nbsp;'&nbsp;&nbsp;"
@@ -142,7 +142,7 @@ const char html_configLongMin[] =
 "</form>"
 "\r\n";
 const char html_configLatDeg[] = 
-"<form method='get' action='/configuration.htm'>"
+"<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%s' type='number' name='t1' min='-90' max='90'>&nbsp;&deg;&nbsp;";
 const char html_configLatMin[] =
 " <input value='%s' type='number' name='t2' min='0' max='60'>&nbsp;'&nbsp;&nbsp;"
@@ -152,9 +152,9 @@ const char html_configLatMin[] =
 "<br />\r\n";
 
 #ifdef OETHS
-void wifibluetooth::handleConfiguration(EthernetClient *client) {
+void wifibluetooth::handleConfigurationTelescope(EthernetClient *client) {
 #else
-void wifibluetooth::handleConfiguration() {
+void wifibluetooth::handleConfigurationTelescope() {
 #endif
   Ser.setTimeout(WebTimeout);
   serialRecvFlush();
@@ -163,7 +163,7 @@ void wifibluetooth::handleConfiguration() {
   char temp1[80]="";
   char temp2[80]="";
   
-  processConfigurationGet();
+  processConfigurationTelescopeGet();
 
   // send a standard http response header
   String data=html_headB;
@@ -198,7 +198,8 @@ void wifibluetooth::handleConfiguration() {
 #if PEC_ON
   data += html_links3N;
 #endif
-  data += html_links5S;
+  data += html_links4S;
+  data += html_links5N;
 #ifndef OETHS
   data += html_links6N;
 #endif
@@ -234,7 +235,7 @@ void wifibluetooth::handleConfiguration() {
 #endif
   //Axis1
 
-  data += "Motor Configuration: <br />";
+  data += "Motor configuration_telescope: <br />";
   if (!sendCommand(":%RR#", temp1)) strcpy(temp1, "0"); int reverse = (int)strtol(&temp1[0], NULL, 10);
   sprintf(temp, html_configRotAxis_1, 1);
   data += temp;
@@ -351,7 +352,7 @@ void wifibluetooth::handleConfiguration() {
 #endif
 }
 
-void wifibluetooth::processConfigurationGet() {
+void wifibluetooth::processConfigurationTelescopeGet() {
   String v;
   int i;
   float f;
