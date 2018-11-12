@@ -41,9 +41,6 @@ const char html_configAcceleration[] =
 const char html_configRotAxis_1[] =
 "<form action='/configuration_telescope.htm'>"
 "<select name='mrot%d'>";
-//"<option value = "0">Direct< / option>"
-//"<option value = "1">Reverse< / option>"
-
 const char html_configRotAxis_r[] =
 "<option value ='0'>Direct</option>"
 "<option selected value='1'>Reverse</option>";
@@ -235,7 +232,7 @@ void wifibluetooth::handleConfigurationTelescope() {
 #endif
   //Axis1
 
-  data += "Motor configuration_telescope: <br />";
+  data += "Motor: <br />";
   if (!sendCommand(":%RR#", temp1)) strcpy(temp1, "0"); int reverse = (int)strtol(&temp1[0], NULL, 10);
   sprintf(temp, html_configRotAxis_1, 1);
   data += temp;

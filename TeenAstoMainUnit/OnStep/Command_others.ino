@@ -644,6 +644,7 @@ void Command_F()
     break;
   case '?':
   case '~':
+  case 'M':
   case 'V':
     focuserNoResponse = false;
     focuserShortResponse = false;
@@ -662,6 +663,9 @@ void Command_F()
   case '6':
   case '7':
   case '8':
+  case 'c':
+  case 'C':
+  case 'm':
     focuserNoResponse = false;
     focuserShortResponse = true;
     break;

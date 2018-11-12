@@ -96,7 +96,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     {
       Ser.setTimeout(timeOutMs*4);
       if (strchr("+-GPS", command[2])) { noResponse = true; }
-      if (strchr("OoIi:012345678W", command[2])) { shortResponse = true;}
+      if (strchr("OoIi:012345678cCmW", command[2])) { shortResponse = true;}
     }
     if (command[1] == 'h') {
       if (strchr("F", command[2])) noResponse = true;
@@ -712,14 +712,14 @@ LX200RETURN writeHighCurrLX200(const uint8_t &axis, const uint8_t &highCurr)
   return SetLX200(cmd);
 }
 
-LX200RETURN readFocuser(unsigned int& startPosition,unsigned int& maxPosition,
-                        unsigned int& minSpeed, unsigned int& maxSpeed,
-                        unsigned int& cmdAcc, unsigned int& manAcc, unsigned int& manDec, bool& reverse, unsigned int& incr )
+LX200RETURN readFocuserConfig(unsigned int& startPosition, unsigned int& maxPosition,
+                              unsigned int& minSpeed, unsigned int& maxSpeed,
+                              unsigned int& cmdAcc, unsigned int& manAcc, unsigned int& manDec)
 {
   char out[LX200lbuff];
   if (GetLX200(":F~#", out, sizeof(out)) == LX200VALUEGET)
   {
-    if ( strlen(out)!=39)
+    if (strlen(out) != 33)
       return LX200GETVALUEFAILED;
     char* pEnd;
     startPosition = strtol(&out[1], &pEnd, 10);
@@ -729,8 +729,27 @@ LX200RETURN readFocuser(unsigned int& startPosition,unsigned int& maxPosition,
     cmdAcc = strtol(&out[21], &pEnd, 10);
     manAcc = strtol(&out[25], &pEnd, 10);
     manDec = strtol(&out[29], &pEnd, 10);
-    reverse = out[33] == '1';
-    incr = strtol(&out[35], &pEnd, 10);
+    return LX200VALUEGET;
+  }
+  else
+  {
+    return LX200GETVALUEFAILED;
+  }
+
+}
+
+LX200RETURN readFocuserMotor(bool& reverse, unsigned int& micro, unsigned int& incr,  unsigned int& curr)
+{
+  char out[LX200lbuff];
+  if (GetLX200(":FM#", out, sizeof(out)) == LX200VALUEGET)
+  {
+    if ( strlen(out)!=13)
+      return LX200GETVALUEFAILED;
+    char* pEnd;
+    reverse = out[1] == '1';
+    micro = out[3] - '0';
+    incr = strtol(&out[5], &pEnd, 10);
+    curr = strtol(&out[9], &pEnd, 10);
     return LX200VALUEGET;
   }
   else
@@ -739,3 +758,4 @@ LX200RETURN readFocuser(unsigned int& startPosition,unsigned int& maxPosition,
   }
  
 }
+

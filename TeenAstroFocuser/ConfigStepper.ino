@@ -12,15 +12,15 @@ void iniMot()
   pinMode(CSPin, OUTPUT);
   digitalWrite(CSPin, HIGH);
   driver.begin();             // Initiate pins and registeries
-  driver.rms_current(storage.curr*10);    // Set stepper current to 600mA. The command is the same as command TMC2130.setCurrent(600, 0.11, 0.5);
+  driver.rms_current(10.*curr->get());    // Set stepper current to 600mA. The command is the same as command TMC2130.setCurrent(600, 0.11, 0.5);
   driver.stealthChop(1);      // Enable extremely quiet stepping
   driver.stealth_autoscale(1);
-  driver.microsteps(pow(2, storage.micro));
+  driver.microsteps(pow(2, micro->get()));
   driver.interpolate(1);
-  stepper.setMaxSpeed(storage.highSpeed*pow(2,storage.micro)); // 100mm/s @ 80 steps/mm
-  stepper.setAcceleration(storage.manAcc*100); // 2000mm/s^2
+  stepper.setMaxSpeed(highSpeed->get()*pow(2,micro->get())); // 100mm/s @ 80 steps/mm
+  stepper.setAcceleration(manAcc->get()*100); // 2000mm/s^2
   stepper.setEnablePin(EnablePin);
-  stepper.setPinsInverted(storage.reverse, false, true);
+  stepper.setPinsInverted(reverse->get(), false, true);
   stepper.enableOutputs();
 }
 void Run()
@@ -44,7 +44,7 @@ void Stop()
 
 bool inlimit(unsigned long pos)
 {
-	return 0UL <= pos && pos <= (unsigned long)storage.maxPosition;
+	return 0UL <= pos && pos <= (unsigned long)maxPosition->get();
 }
 
 void writePos()
@@ -77,6 +77,6 @@ void iniPos()
 	}
 	else
 	{
-    stepper.setCurrentPosition((long)storage.startPosition);
+    stepper.setCurrentPosition((long)startPosition->get());
 	}
 }

@@ -47,6 +47,8 @@ private:
   uint8_t current_selection_L4 = 1;
   uint8_t current_selection_speed = 5;
   uint8_t current_selection_guide = 3;
+  uint8_t current_selection_FocuserConfig = 1;
+  uint8_t current_selection_FocuserMotor = 1;
   unsigned short current_selection_Herschel = 1;
   unsigned short current_selection_Messier = 1;
   unsigned short current_selection_SolarSys = 1;
@@ -89,6 +91,8 @@ private:
   void menuUTCTime();
   void menuFocuserAction();
   void menuFocuserSettings();
+  void menuFocuserConfig();
+  void menuFocuserMotor();
   void menuDisplay();
   void menuContrast();
   void menuDate();

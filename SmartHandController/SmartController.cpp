@@ -1439,7 +1439,7 @@ void SmartHandController::menuTelSettings()
   current_selection_L1 = 1;
   while (!exitMenu)
   {
-    const char *string_list_SettingsL1 = "Display\n""Alignment\n""Date\n""Time\n""Set Park\n""Mount\n""Site\n""Limits\n""Main Unit Info"
+    const char *string_list_SettingsL1 = "Display\n"/*"Alignment\n"*/"Date\n""Time\n""Set Park\n""Mount\n""Site\n""Limits\n""Main Unit Info"
 #ifdef WIFI_ON
       "\nWifi"
 #endif
@@ -1452,32 +1452,32 @@ void SmartHandController::menuTelSettings()
     case 1:
       menuDisplay();
       break;
+    //case 2:
+    //  menuAlignment();
+    //  break;
     case 2:
-      menuAlignment();
-      break;
-    case 3:
       menuDate();
       break;
-    case 4:
+    case 3:
       menuUTCTime();
       break;
-    case 5:
+    case 4:
       DisplayMessageLX200(SetLX200(":hQ#"), false);
       break;
-    case 6:
+    case 5:
       menuMount();
       break;
-    case 7:
+    case 6:
       menuSite();
       break;
-    case 8:
+    case 7:
       menuLimits();
       break;
-    case 9:
+    case 8:
       menuMainUnitInfo();
       break;
 #ifdef WIFI_ON
-    case 10:
+    case 9:
       menuWifi();
       break;
 #endif
@@ -2090,22 +2090,19 @@ void SmartHandController::menuFocuserAction()
   buttonPad.setControlerMode();
 }
 
-void SmartHandController::menuFocuserSettings()
+void SmartHandController::menuFocuserConfig()
 {
-  buttonPad.setMenuMode();
   char cmd[50];
-  const char *string_list_Focuser = "Display Settings\nPark Position\nMax Position\nMin Speed\nMax Speed\nGoto Acc\nMan. Acc\nDeceleration\nRotation\nIncrement";
-  current_selection_L3 = 1;
-  unsigned int sP, maxP, minS, maxS, cmdAcc, manAcc, manDec, incr;
-  bool rev;
+  const char *string_list_Focuser = "Display Settings\nPark Position\nMax Position\nMin Speed\nMax Speed\nGoto Acc\nMan. Acc\nDeceleration\nResolution\nRotation\nIncrement";
+  unsigned int sP, maxP, minS, maxS, cmdAcc, manAcc, manDec;
   float value;
   while (!exitMenu)
   {
-    if (DisplayMessageLX200(readFocuser(sP, maxP, minS, maxS, cmdAcc, manAcc, manDec, rev, incr)))
+    if (DisplayMessageLX200(readFocuserConfig(sP, maxP, minS, maxS, cmdAcc, manAcc, manDec)))
     {
-      current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Focuser Settings", current_selection_L2, string_list_Focuser);
+      current_selection_FocuserConfig = display->UserInterfaceSelectionList(&buttonPad, "Focuser Settings", current_selection_FocuserConfig, string_list_Focuser);
       bool ValueSetRequested = false;
-      switch (current_selection_L2)
+      switch (current_selection_FocuserConfig)
       {
       case 0:
         exitMenu = true;
@@ -2117,7 +2114,6 @@ void SmartHandController::menuFocuserSettings()
         char line3[32] = "";
         char line4[32] = "";
         sprintf(line1, "Focuser Settings");
-        rev ? sprintf(line2, "Reversed Rotation") : sprintf(line2, "Direct Rotation");
         sprintf(line3, "Start Pos.: %05u", sP);
         sprintf(line4, "Max  Pos.: %05u", maxP);
         DisplayLongMessage(line1, line2, line3, line4, -1);
@@ -2180,7 +2176,62 @@ void SmartHandController::menuFocuserSettings()
         sprintf(cmd, ":F6 %03d#", (int)(value));
         break;
       }
-      case 9:
+      default:
+        break;
+      }
+      if (ValueSetRequested)
+      {
+        DisplayMessageLX200(SetLX200(cmd), false);
+      }
+    }
+    else
+      break;
+  }
+}
+
+
+void SmartHandController::menuFocuserMotor()
+{
+  char cmd[50];
+  const char *string_list_Focuser = "Display Settings\nResolution\nRotation\nMicroStep\nCurrent";
+  unsigned int res, mu, curr;
+  bool rev;
+  float value;
+  while (!exitMenu)
+  {
+    if (DisplayMessageLX200(readFocuserMotor(rev, mu, res, curr)))
+    {
+      current_selection_FocuserMotor = display->UserInterfaceSelectionList(&buttonPad, "Focuser Settings", current_selection_FocuserMotor, string_list_Focuser);
+      bool ValueSetRequested = false;
+      switch (current_selection_FocuserMotor)
+      {
+      case 0:
+        return;
+        break;
+      case 1:
+      {
+        char line1[32] = "";
+        char line2[32] = "";
+        char line3[32] = "";
+        char line4[32] = "";
+        sprintf(line1, "Motor Settings");
+        sprintf(line3, "Resolution  : %03u", res);
+        rev ? sprintf(line4, "Reversed Rotation") : sprintf(line2, "Direct Rotation");
+        DisplayLongMessage(line1, line2, line3, line4, -1);
+        sprintf(line3, "Micro.      : %03u", pow(1, mu));
+        sprintf(line4, "Current   : %05umA", curr * 10);
+        DisplayLongMessage(line1, line2, line3, line4, -1);
+        break;
+      }
+      case 2:
+      {
+        value = res;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Incrementation", "", &value, 1, 512, 5, 0, " micro steps");
+        sprintf(cmd, ":F8 %03d#", (int)(value));
+        break;
+        break;
+      }
+      case 3:
       {
         char * string_list = "Direct\nReversed";
         uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, "Rotation", (uint8_t)rev + 1, string_list);
@@ -2192,29 +2243,66 @@ void SmartHandController::menuFocuserSettings()
         }
         break;
       }
-      case 10:
+      case 4:
       {
-        value = incr;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Incrementation", "", &value, 1, 512, 5, 0, " micro steps");
-        sprintf(cmd, ":F8 %03d#", (int)(value));
-        break;
+        uint8_t microStep = mu;
+        char * string_list_micro = "4\n8\n16\n32\n64\n128";
+        uint8_t choice = microStep - 2 + 1;
+        choice = display->UserInterfaceSelectionList(&buttonPad, "MicroStep", choice, string_list_micro);
+        if (choice)
+        {
+          microStep = choice - 1 + 2;
+          sprintf(cmd, ":Fm %d#", (int)log2(microStep));
+          ValueSetRequested = true;
+        }
         break;
       }
-
+      case 5:
+      {
+        value = curr;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Current", "", &value, 1, 160, 10, 0, "0 mA");
+        sprintf(cmd, ":Fc %03d#", (int)(value));
+        break;
+      }
       default:
         break;
-
       }
       if (ValueSetRequested)
       {
-        if (DisplayMessageLX200(SetLX200(cmd), false))
-        {
-          DisplayMessageLX200(SetLX200(":FW#"));
-        }
+        DisplayMessageLX200(SetLX200(cmd), false);
       }
     }
     else
       break;
+  }
+}
+
+void SmartHandController::menuFocuserSettings()
+{
+  buttonPad.setMenuMode();
+  const char *string_list_Focuser = "Config\nMotor";
+  while (!exitMenu)
+  {
+    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Focuser Settings", current_selection_L2, string_list_Focuser);
+    bool ValueSetRequested = false;
+    switch (current_selection_L2)
+    {
+    case 0:
+      exitMenu = true;
+      break;
+    case 1:
+    {
+      menuFocuserConfig();
+      break;
+    }
+    case 2:
+    {
+      menuFocuserMotor();
+      break;
+    }
+    default:
+      break;
+    }
   }
   buttonPad.setControlerMode();
 }

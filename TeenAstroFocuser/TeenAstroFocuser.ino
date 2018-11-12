@@ -1,5 +1,3 @@
-
-#include <MsTimer2.h>
 #include "ConfigStorage.h"
 #include "Global.h"
 #include "ConfigStepper.h"
@@ -43,55 +41,50 @@ void setup()
   iniMot();
 	iniPos();
   analogWrite(LEDPin,16);
-  MsTimer2::set(10, check);
-  MsTimer2::start();
 }
 
 
 void loop()
 {
-
+  if (serComSHC.Get_Command())
+  {
+    serComSHC.MoveRequest();
+  }
+  else if (serCom0.Get_Command())
+  {
+    serCom0.MoveRequest();
+  }
 	if (mdirOUT == HIGH && mdirIN == HIGH)
 	{
-
 		return;
 	}
 	else if (mdirOUT == HIGH && mdirOUTOld != mdirOUT)
 	{
-    stepper.setAcceleration(storage.manAcc*100);
-		stepper.moveTo(storage.maxPosition);
+    modeMan();
+		stepper.moveTo(maxPosition->get());
     mdirOUTOld = mdirOUT;
 		return;
 	}
 	else if (mdirIN == HIGH && mdirINOld != mdirIN)
 	{
-    stepper.setAcceleration(storage.manAcc*100);
+    modeMan();
     stepper.moveTo(0);
     mdirINOld = mdirIN;
 		return;
 	}
   else if ((mdirIN == LOW && mdirINOld != mdirIN) || (mdirOUT == LOW && mdirOUTOld != mdirOUT))
   {
-    stepper.setAcceleration(storage.manDec*100);
+    stepper.setAcceleration(100.*manDec->get());
     stepper.stop();
     mdirINOld = mdirIN;
     mdirOUTOld = mdirOUT;
-
     return;
   }
-
 	mdirOUTOld = mdirOUT;
 	mdirINOld = mdirIN;
-
-  Command_Run();
-}
-
-void check()
-{
-  serComSHC.Get_Command();
-  serComSHC.MoveRequest();
-  serCom0.Get_Command();
-  serCom0.MoveRequest();
   serComSHC.Command_Check();
   serCom0.Command_Check();
+  Command_Run();
+
 }
+

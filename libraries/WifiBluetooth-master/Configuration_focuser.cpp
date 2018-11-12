@@ -3,11 +3,11 @@
 // -----------------------------------------------------------------------------------
 // configuration_focuser
 const char html_configParkFocuser[] PROGMEM =
-"Speed & Acceleration: <br />"
+"Position: <br />"
 "<form method='get' action='/configuration_focuser.htm'>"
 " <input value='%d' type='number' name='Park' min='0' max='65535'>"
 "<button type='submit'>Upload</button>"
-" (Park position in inpulse unit)"
+" (Park position in resolution unit)"
 "</form>"
 "\r\n";
 
@@ -15,56 +15,100 @@ const char html_configMaxPositionFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
 " <input value='%d' type='number' name='MaxPos' min='0' max='65535'>"
 "<button type='submit'>Upload</button>"
-" (Max position in inpulse unit)"
+" (Max position in resolution unit)"
 "</form>"
-"\r\n";
+"<br />\r\n";
 
-const char html_configMinSpeedFocuser[] PROGMEM =
+
+
+const char html_configRotFocuser_1[] PROGMEM =
+"<form action='/configuration_focuser.htm'>"
+"<select name='Rot'>";
+
+
+const char html_configRotFocuser_r[] PROGMEM =
+"<option value ='0'>Direct</option>"
+"<option selected value='1'>Reverse</option>";
+const char html_configRotFocuser_d[] PROGMEM =
+"<option selected value ='0'>Direct</option>"
+"<option value='1'>Reverse</option>";
+
+const char html_configRotFocuser_2[] PROGMEM =
+"</select>"
+"<button type='submit'>Upload</button>"
+"(change this value if the focuser moves in the wrong direction)"
+"</form>"
+"<br />\r\n";
+
+const char html_configLowSpeedFocuser[] PROGMEM =
 "Speed & Acceleration: <br />"
 "<form method='get' action='/configuration_focuser.htm'>"
-" <input value='%d' type='number' name='MinSpeed' min='1' max='999'>"
+" <input value='%d' type='number' name='LowSpeed' min='1' max='999'>"
 "<button type='submit'>Upload</button>"
-" (Minimum Slewing speed from 1 to 999 in inpulse per 0.1sec)"
+" (Minimum Slewing speed from 1 to 999)"
 "</form>"
 "\r\n";
 
-const char html_configMaxSpeedFocuser[] PROGMEM =
+const char html_configHighSpeedFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
-" <input value='%d' type='number' name='MaxSpeed' min='1' max='999'>"
+" <input value='%d' type='number' name='HighSpeed' min='1' max='999'>"
 "<button type='submit'>Upload</button>"
-" (Maximum Slewing speed from 1 to 999 in inpulse per 0.1sec)"
+" (Maximum Slewing speed from 1 to 999)"
 "</form>"
 "\r\n";
 
 const char html_configGotoAccFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
-" <input value='%d' type='number' name='GotoAcc' min='1' max='999'>"
+" <input value='%d' type='number' name='GotoAcc' min='1' max='99'>"
 "<button type='submit'>Upload</button>"
-" (Acceleration for goto command from 1 to 100 in inpulse per 0.1sec*0.1sec)"
+" (Acceleration for goto command from 1 to 99)"
 "</form>"
 "\r\n";
 
 const char html_configManAccFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
-" <input value='%d' type='number' name='ManAcc' min='1' max='999'>"
+" <input value='%d' type='number' name='ManAcc' min='1' max='99'>"
 "<button type='submit'>Upload</button>"
-" (Acceleration for manual movement from 1 to 100 in inpulse per 0.1sec*0.1sec)"
+" (Acceleration for manual movement from 1 to 99)"
 "</form>"
 "\r\n";
 
 const char html_configManDecFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
-" <input value='%d' type='number' name='Dcc' min='1' max='999'>"
+" <input value='%d' type='number' name='Dcc' min='1' max='99'>"
 "<button type='submit'>Upload</button>"
-" (Deceleration for both manual and goto from 1 to 100 in inpulse per 0.1sec*0.1sec)"
+" (Deceleration for both manual and goto from 1 to 99)"
+"</form>"
+"\r\n<br/>";
+
+const char html_configResolutionFocuser[] PROGMEM =
+"<form method='get' action='/configuration_focuser.htm'>"
+" <input value='%d' type='number' name='Res' min='1' max='512'>"
+"<button type='submit'>Upload</button>"
+" (Sampling in steps from 1(high resolution) to 512(low resolution))"
+"</form>"
+"<br/>\r\n";
+
+const char html_configMuFocuser[] PROGMEM =
+"<form method='get' action='/configuration_focuser.htm'>"
+" <input value='%d' type='number' name='MuF' min='4' max='128'>"
+"<button type='submit'>Upload</button>"
+" (Microsteps Focuser, valid value are 4, 8, 16, 32, 64, 128)"
 "</form>"
 "\r\n";
 
-const char html_configInpulseFocuser[] PROGMEM =
+const char html_configLCFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
-" <input value='%d' type='number' name='Inpulse' min='1' max='999'>"
+" <input value='%d' type='number' name='LcF' min='100' max='1600' step='10'>"
 "<button type='submit'>Upload</button>"
-" (inpulse size)"
+" (Low Current Focuser, from 100mA to 1600mA)"
+"</form>"
+"\r\n";
+const char html_configHCFocuser[] PROGMEM =
+"<form method='get' action='/configuration_focuser.htm'>"
+" <input value='%d' type='number' name='HcF' min='100' max='1600' step='10'>"
+"<button type='submit'>Upload</button>"
+" (High Current Focuser, from 100mA to 1600mA)"
 "</form>"
 "\r\n";
 
@@ -104,7 +148,7 @@ void wifibluetooth::handleConfigurationFocuser() {
 
   // get status
   mountStatus.update();
-
+  serialRecvFlush();
   // finish the standard http response header
   data += html_onstep_header1;
   if (mountStatus.getId(temp1)) data += temp1; else data += "?";
@@ -124,36 +168,53 @@ void wifibluetooth::handleConfigurationFocuser() {
   data += html_onstep_header4;
   
   sendCommand(":F~#", temp1);
-  if (temp1[0] = '~')
+  bool getdata = (temp1[0] == '~');
+  if (getdata)
   {
-
     int park = (int)strtol(&temp1[1], NULL, 10);
     int maxPos = (int)strtol(&temp1[7], NULL, 10);
-    int minSpeed = (int)strtol(&temp1[13], NULL, 10);
-    int maxspeed = (int)strtol(&temp1[17], NULL, 10);
+    int lowSpeed = (int)strtol(&temp1[13], NULL, 10);
+    int highSpeed = (int)strtol(&temp1[17], NULL, 10);
     int gotoAcc = (int)strtol(&temp1[21], NULL, 10);
-    int manAcc= (int)strtol(&temp1[25], NULL, 10);
+    int manAcc = (int)strtol(&temp1[25], NULL, 10);
     int dec = (int)strtol(&temp1[29], NULL, 10);
-    int reverse = temp1[33] == '1';
-    int inpulse = (int)strtol(&temp1[35], NULL, 10);
-
     sprintf_P(temp, html_configParkFocuser, park);
     data += temp;
     sprintf_P(temp, html_configMaxPositionFocuser, maxPos);
     data += temp;
-    sprintf_P(temp, html_configMinSpeedFocuser, minSpeed);
+    sprintf_P(temp, html_configLowSpeedFocuser, lowSpeed);
     data += temp;
-    sprintf_P(temp, html_configMaxSpeedFocuser, maxspeed);
+    sprintf_P(temp, html_configHighSpeedFocuser, highSpeed);
     data += temp;
-    sprintf_P(temp, html_configManAccFocuser, gotoAcc);
+    sprintf_P(temp, html_configGotoAccFocuser, gotoAcc);
     data += temp;
     sprintf_P(temp, html_configManAccFocuser, manAcc);
     data += temp;
     sprintf_P(temp, html_configManDecFocuser, dec);
     data += temp;
-    sprintf_P(temp, html_configInpulseFocuser, inpulse);
+  }
+  sendCommand(":FM#", temp2);
+  bool getdatamotor = (temp2[0] == 'M');
+  if (getdatamotor)
+  {
+    int reverse = temp2[1] == '1';
+    int micro = (int)strtol(&temp2[3], NULL, 10);
+    int resolution = (int)strtol(&temp2[5], NULL, 10);
+    int curr = 10 * (int)strtol(&temp2[9], NULL, 10);
+    data += "Resolution: <br />";
+    sprintf_P(temp, html_configResolutionFocuser, resolution);
+    data += temp;
+    data += "Rotation: <br />";
+    data += FPSTR(html_configRotFocuser_1);
+    data += reverse ? FPSTR(html_configRotFocuser_r) : FPSTR(html_configRotFocuser_d);
+    data += FPSTR(html_configRotFocuser_2);
+    data += "Motor: <br />";
+    sprintf_P(temp, html_configMuFocuser, (int)pow(2., micro));
+    data += temp;
+    sprintf_P(temp, html_configHCFocuser, curr);
     data += temp;
   }
+  
 
 
 #ifdef OETHS
@@ -178,66 +239,87 @@ void wifibluetooth::processConfigurationFocuserGet() {
 
   v = server.arg("Park");
   if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1000))) {
-      sprintf(temp, ":SX92:%04d#", i);
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535))) {
+      sprintf(temp, ":F0 %05d#", (int)f);
       Ser.print(temp);
     }
   }
 
-  v = server.arg("Maxpos");
+  v = server.arg("MaxPos");
   if (v != "") {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.1) && (f <= 25))) {
-      sprintf(temp, ":SXE2:%04d#", (int)(f*10));
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535))) {
+      sprintf(temp, ":F1 %05d#", (int)f);
       Ser.print(temp);
     }
   }
 
-  v = server.arg("MinSpeed");
+  v = server.arg("LowSpeed");
   if (v != "") {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.01) && (f <= 100))) {
-      sprintf(temp, ":SX90:%03d#", (int)(f * 100));
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 999))) {
+      sprintf(temp, ":F2 %d#", i);
       Ser.print(temp);
     }
   }
 
-  v = server.arg("MaxSpeed");
+  v = server.arg("HighSpeed");
   if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) {
-      sprintf(temp, ":$RR%d#", i);
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 999))) {
+      sprintf(temp, ":F3 %d#", i);
       Ser.print(temp);
     }
   }
 
   v = server.arg("GotoAcc");
   if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) {
-      sprintf(temp, ":$RD%d#", i);
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99))) {
+      sprintf(temp, ":F4 %d#", i);
       Ser.print(temp);
     }
   }
   v = server.arg("ManAcc");
   if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 60000))) {
-      sprintf(temp, ":$GR%d#", i);
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99))) {
+      sprintf(temp, ":F5 %d#", i);
       Ser.print(temp);
     }
   }
   v = server.arg("Dcc");
   if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 60000))) {
-      sprintf(temp, ":$GD%d#", i);
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99))) {
+      sprintf(temp, ":F6 %d#", i);
       Ser.print(temp);
     }
   }
-  v = server.arg("Inpulse");
+  v = server.arg("Rot");
   if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400))) {
-      sprintf(temp, ":$SR%d#", i);
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) {
+      sprintf(temp, ":F7 %d#", i);
+      Ser.print(temp);
+    }
+  }
+  v = server.arg("Res");
+  if (v != "") {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 512))) {
+      sprintf(temp, ":F8 %d#", i);
+      Ser.print(temp);
+    }
+  }
+  v = server.arg("MuF");
+  if (v != "") {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 4) && (i <= 128))) {
+      sprintf(temp, ":Fm %d#", (int)log2(i));
       Ser.print(temp);
     }
   }
 
-  // clear any possible response
-  temp[Ser.readBytesUntil('#',temp,20)]=0;
+  v = server.arg("HcF");
+  if (v != "") {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 1600))) {
+      sprintf(temp, ":Fc %d#", i / 10);
+      Ser.print(temp);
+    }
+  }
+  Ser.flush();
+  serialRecvFlush();
 }
 

@@ -29,7 +29,7 @@
 
 #define CmdDumpState '?'
 #define CmdDumpConfig '~'
-#define CmdDumpConfigMotor '*'
+#define CmdDumpConfigMotor 'M'
 
 #define FocCmd_startPosition '0'
 #define FocCmd_maxPosition '1'
@@ -58,24 +58,27 @@ public:
 private:
   Stream& ser;
   char m_command;
+  char m_parameter;
+  char m_input[30];
   unsigned int m_value = 0;
   bool m_valuedefined = false;
   bool m_hasReceivedCommand = false;
   uint32_t m_lastupdate = millis();
 public:
-  void updateGoto();
   void Command_Check();
   bool Get_Command();
   void MoveRequest(void);
 private:
   void dumpState();
+  void dumpParameterPosition(ParameterPosition* Pos);
   void dumpConfig();
   void dumpConfigMotor();
   void sayHello();
-  void setbool(bool valuedefined, unsigned int value, bool  &adress);
-  void setvalue(bool valuedefined, unsigned int value, unsigned int min, unsigned int max, unsigned int &adress);
-  void setvalue(bool valuedefined, unsigned long value, unsigned long min, unsigned long max, unsigned long &adress);
-  void setvalue(bool valuedefined, unsigned int value, uint8_t min, uint8_t max, uint8_t &adress);
+
+  bool setvalue(bool valuedefined, unsigned int value, Parameteruint *adress);
+  bool setvalue(bool valuedefined, unsigned long value, unsigned long min, unsigned long max, unsigned long &adress);
+  bool setvalue(bool valuedefined, unsigned long value, Parameterulong *adress);
+  bool setvalue(bool valuedefined, unsigned int value, Parameteruint8_t *adress);
   void HaltRequest();
 };
 
