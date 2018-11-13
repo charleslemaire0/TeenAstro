@@ -36,7 +36,7 @@
 #define kIoPin 3 // Input/Output
 #define kSclkPin 2  // Serial Clock
 //TMC2130
-#define Enablepin 7
+#define EnablePin 7
 #define StepPin 5
 #define DirPin 6
 #define CSPin 10
