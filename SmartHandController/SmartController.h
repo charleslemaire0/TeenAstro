@@ -39,7 +39,7 @@ private:
   unsigned long time_last_action = millis();
   bool forceDisplayoff = false;
   bool focuserlocked = false;
-
+  bool telescoplocked = false;
   byte page = 0;
   bool exitMenu = false;
   uint8_t current_selection_L0 = 1;
