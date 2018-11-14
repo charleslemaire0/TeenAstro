@@ -17,6 +17,7 @@ class Pad
   wifibluetooth m_wbt;
 #endif
   bool m_buttonPressed;
+  bool m_shiftPressed;
   OneButton *m_buttons[7];
 public:
   void setup(const int pin[7], const bool active[7]);
@@ -25,6 +26,7 @@ public:
   void attachEvent();
   void tickButtons();
   bool buttonPressed();
+  bool shiftPressed();
 #ifdef WIFI_ON
   bool isWifiOn();
   bool isWifiRunning();

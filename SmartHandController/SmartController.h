@@ -37,6 +37,7 @@ private:
   float  FocuserPos;
   unsigned long lastpageupdate = millis();
   unsigned long time_last_action = millis();
+  bool forceDisplayoff = false;
 
   byte page = 0;
   bool exitMenu = false;
@@ -57,6 +58,7 @@ private:
   long angleDEC = 0;
   void tickButtons();
   bool buttonPressed();
+  bool isSleeping();
   void menuTelAction();
   void menuSpeedRate();
   void menuTrack();

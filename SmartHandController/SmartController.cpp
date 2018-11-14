@@ -341,10 +341,17 @@ bool SmartHandController::buttonPressed()
 {
   return buttonPad.buttonPressed();
 }
-void SmartHandController::update()
+
+bool SmartHandController::isSleeping()
 {
-  tickButtons();
   unsigned long top = millis();
+  if (forceDisplayoff)
+  {
+    if (!buttonPad.shiftPressed())
+      return true;
+    else
+      forceDisplayoff = false;
+  }
   if (buttonPressed())
   {
     time_last_action = millis();
@@ -355,34 +362,43 @@ void SmartHandController::update()
       sleepDisplay = false;
       lowContrast = false;
       buttonPad.setControlerMode();
-      return;
+      return true;
     }
     if (lowContrast)
     {
       lowContrast = false;
       display->setContrast(maxContrast);
       buttonPad.setControlerMode();
-      return;
+      return true;
     }
   }
   else if (sleepDisplay)
   {
-    return;
+    return true;
   }
   else if ((top - time_last_action) / 10000 > displayT2)
   {
     display->sleepOn();
     sleepDisplay = true;
     buttonPad.setMenuMode();
-    return;
+    return false;
   }
   else if ((top - time_last_action) / 10000 > displayT1 && !lowContrast)
   {
     display->setContrast(0);
     lowContrast = true;
     buttonPad.setMenuMode();
-    return;
+    return true;
   }
+  return false;
+}
+
+void SmartHandController::update()
+{
+  tickButtons();
+  if (isSleeping())
+    return;
+  unsigned long top = millis();
   if (powerCylceRequired)
   {
     display->sleepOff();
@@ -2319,7 +2335,8 @@ void SmartHandController::menuDisplay()
     case 0:
       return;
     case 1:
-      DisplayMessage("Press any Key", "to turn on", 1500);
+      DisplayMessage("Press Shift Key", "to turn on", 1500);
+      forceDisplayoff = true;
       sleepDisplay = true;
       display->sleepOn();
       exitMenu = true;

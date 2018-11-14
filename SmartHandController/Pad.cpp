@@ -259,17 +259,23 @@ void Pad::tickButtons()
 {
   delay(1);
   m_buttonPressed = false;
+  m_shiftPressed = false;
   for (int k = 0; k < 7; k++)
   {
     delay(1);
     eventbuttons[k] = E_NONE;
     m_buttons[k]->tick();
   }
+
   for (int k = 0; k < 7; k++)
   {
     if (eventbuttons[k] != 0)
     {
       m_buttonPressed = true;
+      if (k == 0)
+      {
+        m_shiftPressed= true;
+      }
       break;
     }
   }
@@ -291,7 +297,7 @@ void Pad::setMenuMode()
   for (int k = 1; k < 7; k++)
   {
     m_buttons[k]->setClickTicks(50);
-    m_buttons[k]->setDebounceTicks(5);
+    m_buttons[k]->setDebounceTicks(10);
     m_buttons[k]->setPressTicks(300);
   }
 }
@@ -301,7 +307,7 @@ void Pad::setControlerMode()
   for (int k = 1; k < 7; k++)
   {
     m_buttons[k]->setClickTicks(5);
-    m_buttons[k]->setDebounceTicks(5);
+    m_buttons[k]->setDebounceTicks(10);
     m_buttons[k]->setPressTicks(5);
   }
 }
@@ -309,6 +315,11 @@ void Pad::setControlerMode()
 bool Pad::buttonPressed()
 {
   return m_buttonPressed;
+}
+
+bool Pad::shiftPressed()
+{
+  return m_shiftPressed;
 }
 #ifdef WIFI_ON
 bool Pad::isWifiOn()
