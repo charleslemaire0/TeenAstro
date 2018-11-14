@@ -38,6 +38,7 @@ private:
   unsigned long lastpageupdate = millis();
   unsigned long time_last_action = millis();
   bool forceDisplayoff = false;
+  bool focuserlocked = false;
 
   byte page = 0;
   bool exitMenu = false;

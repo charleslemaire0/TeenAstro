@@ -481,7 +481,7 @@ void SmartHandController::update()
         Move[k - 1] = true;
         if (k < 5)
           SetBoolLX200(RC[k - 1]);
-        else
+        else if (!focuserlocked)
           Move[k - 1] = (SetBoolLX200(RC[k - 1]) == LX200VALUESET);
         continue;
       }
@@ -2059,7 +2059,7 @@ void SmartHandController::menuUTCTime()
 void SmartHandController::menuFocuserAction()
 {
   buttonPad.setMenuMode();
-  const char *string_list_Focuser = "Goto\nSync\nPark";
+  const char *string_list_Focuser = focuserlocked ? "Goto\nSync\nPark\nUnlock" : "Goto\nSync\nPark\nLock" ;
   current_selection_L2 = 1;
   while (!exitMenu)
   {
@@ -2099,6 +2099,10 @@ void SmartHandController::menuFocuserAction()
       exitMenu = true;
       break;
     }
+    case 4:
+      focuserlocked = !focuserlocked;
+      exitMenu = true;
+      break;
     default:
       break;
     }
