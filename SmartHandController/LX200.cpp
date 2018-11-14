@@ -95,7 +95,6 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     if (command[1] == 'F')
     {
       Ser.setTimeout(timeOutMs*4);
-      timeOutMs *= 4;
       if (strchr("+-GPS", command[2])) { noResponse = true; }
       if (strchr("OoIi:012345678cCmW", command[2])) { shortResponse = true;}
     }
