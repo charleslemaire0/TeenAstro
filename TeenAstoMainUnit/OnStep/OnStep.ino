@@ -3,7 +3,7 @@
  * by          Howard Dutton, Charles Lemaire
  *
  * Copyright (C) 2012 to 2016 Howard Dutton
- * Copyright (C) 2016 to 2017 Charles Lemaire
+ * Copyright (C) 2016 to 2018 Charles Lemaire
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
  *
  * Description
  *
- * Arduino Stepper motor controller for Losmandy G11 mounts (and others)
+ * Arduino Stepper motor controller for Telescop mounts
  * with LX200 derived command set.
  *
  */
@@ -49,9 +49,9 @@
 
 
 // firmware info, these are returned by the ":GV?#" commands
-#define FirmwareDate    "10 18 16"
-#define FirmwareNumber  "1.0a36"
-#define FirmwareName    "On-Step"
+#define FirmwareDate    "10 18 18"
+#define FirmwareNumber  "1.0"
+#define FirmwareName    "TeenAstro"
 #define FirmwareTime    "12:00:00"
 
 
@@ -100,8 +100,8 @@ void setup()
     EEPROM_writeInt(EE_maxRate, (int)(maxRate / 16L));
 
 
-    // init autoContinue
-    EEPROM.write(EE_autoContinue, autoContinue);
+    // init degree for acceleration
+    EEPROM.write(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
 
     // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
     // 1/16uS resolution timer, ticks per sidereal second
@@ -232,7 +232,7 @@ void setup()
   Serial_Init(BAUD);                      // for Tiva TM4C the serial is redirected to serial5 in serial.ino file
   Serial2_Init(115200);
 #if defined(W5100_ON)
-    // get ready for Ethernet communications
+  // get ready for Ethernet communications
   Ethernet_Init();
 #endif
 
@@ -269,23 +269,18 @@ void setup()
   }
 
   // get the pulse-guide rate
-  guideRates[0] = (float)EEPROM.read(EE_pulseGuideRate)/100.;
+  guideRates[0] = (float)EEPROM.read(EE_pulseGuideRate) / 100.;
 
-  // get the Goto rate and constrain values to the limits (1/2 to 2X the MaxRate,) maxRate is in 16MHz clocks but stored in micro-seconds
-  maxRate = EEPROM_readInt(EE_maxRate) * 16;
-  maxRate = (maxRate < (MaxRate / 2L) * 16L) ? MaxRate * 16 : maxRate;
 
-  SetAccelerationRates();          // set the new acceleration rate
 
-  // get autoContinue
-  autoContinue = EEPROM.read(EE_autoContinue);
-  if (!autoContinue) autoContinue = true;
+
+
 
   // makes onstep think that you parked the 'scope
   // combined with a hack in the goto syncEqu() function and you can quickly recover from
   // a reset without loosing much accuracy in the sky.  PEC is toast though.
   // set the default guide rate, 16x sidereal
-  enableGuideRate(GuideRateMax,true);
+  enableGuideRate(GuideRateMax, true);
   delay(110);
 
   // prep timers
@@ -610,6 +605,12 @@ void initmount()
   else if (mountType == MOUNT_TYPE_ALTAZM)
     maxAlignNumStar = 3;
 
+  DegreesForAcceleration = 0.1*EEPROM.read(EE_degAcc);
+  if (DegreesForAcceleration == 0 || DegreesForAcceleration > 25)
+  {
+    DegreesForAcceleration = 3.0;
+    EEPROM.write(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
+  }
   // get the min. and max altitude
   minAlt = EEPROM.read(EE_minAlt) - 128;
   maxAlt = EEPROM.read(EE_maxAlt);
@@ -726,7 +727,7 @@ void writeDefaultEEPROMmotor()
 void updateRatios()
 {
   cli()
-    StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+  StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerRotAxis2 = (long)GearAxis2 * StepRotAxis2 * (int)pow(2, MicroAxis2); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerDegreeAxis1 = (double)StepsPerRotAxis1 / 360.0;
   StepsPerDegreeAxis2 = (double)StepsPerRotAxis2 / 360.0;
@@ -746,7 +747,8 @@ void updateRatios()
   celestialPoleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
   celestialPoleStepAxis2 = quaterRotAxis2;
   updateSideral();
-  SetAccelerationRates();
+
+  initMaxRate();
 }
 
 void updateSideral()

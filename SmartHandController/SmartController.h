@@ -37,6 +37,8 @@ private:
   float  FocuserPos;
   unsigned long lastpageupdate = millis();
   unsigned long time_last_action = millis();
+  bool forceDisplayoff = false;
+  bool focuserlocked = false;
 
   byte page = 0;
   bool exitMenu = false;
@@ -47,6 +49,8 @@ private:
   uint8_t current_selection_L4 = 1;
   uint8_t current_selection_speed = 5;
   uint8_t current_selection_guide = 3;
+  uint8_t current_selection_FocuserConfig = 1;
+  uint8_t current_selection_FocuserMotor = 1;
   unsigned short current_selection_Herschel = 1;
   unsigned short current_selection_Messier = 1;
   unsigned short current_selection_SolarSys = 1;
@@ -55,7 +59,8 @@ private:
   long angleDEC = 0;
   void tickButtons();
   bool buttonPressed();
-  void menuMain();
+  bool isSleeping();
+  void menuTelAction();
   void menuSpeedRate();
   void menuTrack();
   void menuSyncGoto(bool sync);
@@ -67,7 +72,7 @@ private:
   void menuStar(bool sync);
   bool SelectStarAlign();
   void menuRADec(bool sync);
-  void menuSettings();
+  void menuTelSettings();
   void menuMount();
   void menuMountType();
   void menuPredefinedMount();
@@ -81,13 +86,16 @@ private:
   bool menuMotorKit(int& gearBox,int& stepRot, int& current);
   void writeDefaultMount(const bool& r1, const int& ttgr1, const bool& r2, const int& ttgr2, const int& stprot, const int& cL, const int& cH);
   void menuMotor(uint8_t idx);
+  void menuAcceleration();
   void menuMaxRate();
   void menuGuideRate();
   void menuSite();
   void menuSites();
   void menuUTCTime();
-  void menuFocuser();
+  void menuFocuserAction();
   void menuFocuserSettings();
+  void menuFocuserConfig();
+  void menuFocuserMotor();
   void menuDisplay();
   void menuContrast();
   void menuDate();

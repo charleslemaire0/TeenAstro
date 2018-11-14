@@ -36,8 +36,7 @@ public:
   char TempUTC[15];
   char TempSideral[15];
   unsigned long lastStateTime;
-  char TelStatus[15];
-  char sideofpier[5];
+  char TelStatus[16];
   unsigned long lastStateFocuser;
   char TempFocuserStatus[45];
 
@@ -50,7 +49,6 @@ public:
   bool hasInfoAlt = false;
   bool hasInfoUTC = false;
   bool hasInfoSideral = false;
-  bool hasPierInfo = false;
   bool hasTelStatus = false;
   bool hasInfoFocuser = false;
   unsigned long lastState;

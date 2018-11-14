@@ -13,8 +13,8 @@
 #define ADRESS_Contrast 17
 #endif
 
-static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":F*#", ":F:#" };
-static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":F+#", ":F-#" };
+static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":Fo#", ":Fi#" };
+static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":FO#", ":FI#" };
 
 
 #define MY_BORDER_SIZE 1
@@ -341,10 +341,17 @@ bool SmartHandController::buttonPressed()
 {
   return buttonPad.buttonPressed();
 }
-void SmartHandController::update()
+
+bool SmartHandController::isSleeping()
 {
-  tickButtons();
   unsigned long top = millis();
+  if (forceDisplayoff)
+  {
+    if (!buttonPad.shiftPressed())
+      return true;
+    else
+      forceDisplayoff = false;
+  }
   if (buttonPressed())
   {
     time_last_action = millis();
@@ -355,34 +362,43 @@ void SmartHandController::update()
       sleepDisplay = false;
       lowContrast = false;
       buttonPad.setControlerMode();
-      return;
+      return true;
     }
     if (lowContrast)
     {
       lowContrast = false;
       display->setContrast(maxContrast);
       buttonPad.setControlerMode();
-      return;
+      return true;
     }
   }
   else if (sleepDisplay)
   {
-    return;
+    return true;
   }
   else if ((top - time_last_action) / 10000 > displayT2)
   {
     display->sleepOn();
     sleepDisplay = true;
     buttonPad.setMenuMode();
-    return;
+    return false;
   }
   else if ((top - time_last_action) / 10000 > displayT1 && !lowContrast)
   {
     display->setContrast(0);
     lowContrast = true;
     buttonPad.setMenuMode();
-    return;
+    return true;
   }
+  return false;
+}
+
+void SmartHandController::update()
+{
+  tickButtons();
+  if (isSleeping())
+    return;
+  unsigned long top = millis();
   if (powerCylceRequired)
   {
     display->sleepOff();
@@ -414,11 +430,15 @@ void SmartHandController::update()
     }
     telInfo.align = static_cast<Telescope::AlignState>(telInfo.align + 1);
   }
-  else if (top - lastpageupdate > 50)
+  else if (top - lastpageupdate > 100)
   {
     updateMainDisplay(page);
   }
-  if (telInfo.connected() && (telInfo.getTrackingState() == Telescope::TRK_SLEWING || telInfo.getParkState() == Telescope::PRK_PARKING))
+  if (!telInfo.connected())
+    return;
+
+  bool moving = telInfo.getTrackingState() == Telescope::TRK_SLEWING || telInfo.getParkState() == Telescope::PRK_PARKING;
+  if ( moving )
   {
     bool stop = (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART || eventbuttons[0] == E_DOUBLECLICK) ? true : false;
     int it = 1;
@@ -439,7 +459,6 @@ void SmartHandController::update()
       }
       return;
     }
-
   }
   else
   {
@@ -450,47 +469,71 @@ void SmartHandController::update()
       {
         buttonCommand = true;
         Move[k - 1] = false;
-        Ser.print(BreakRC[k - 1]);
-        Ser.flush();
+        if (k < 5)
+          SetBoolLX200(BreakRC[k - 1]);
+        else
+          Move[k - 1] = !(SetBoolLX200(BreakRC[k - 1]) == LX200VALUESET);
         continue;
       }
-      else if (!Move[k - 1] && (eventbuttons[k] == E_LONGPRESS || eventbuttons[k] == E_CLICK || eventbuttons[k] == E_LONGPRESSTART))
+      else if (eventbuttons[0] == E_NONE && !Move[k - 1] && (eventbuttons[k] == E_LONGPRESS || eventbuttons[k] == E_CLICK || eventbuttons[k] == E_LONGPRESSTART))
       {
         buttonCommand = true;
         Move[k - 1] = true;
-        Ser.print(RC[k - 1]);
-        Ser.flush();
+        if (k < 5)
+          SetBoolLX200(RC[k - 1]);
+        else if (!focuserlocked)
+          Move[k - 1] = (SetBoolLX200(RC[k - 1]) == LX200VALUESET);
         continue;
       }
+      moving = moving || Move[k - 1];
     }
     if (buttonCommand)
     {
       time_last_action = millis();
       return;
     }
+  }
+  
 
-  }
-  if (eventbuttons[0] == E_DOUBLECLICK /*|| eventbuttons[0] == E_CLICK)  && eventbuttons[1] != E_NONE*/)
-  {
-    menuSpeedRate();
-    time_last_action = millis();
-  }
-  else if (eventbuttons[0] == E_CLICK && telInfo.align == Telescope::ALI_OFF)
+  if (eventbuttons[0] == E_CLICK && telInfo.align == Telescope::ALI_OFF)
   {
     page++;
     if (page > 3) page = 0;
     time_last_action = millis();
   }
-  else if (eventbuttons[0] == E_LONGPRESS && telInfo.align == Telescope::ALI_OFF)
+  else if (moving)
   {
-    if (page == 0 || page == 1 || page == 2)
+    return;
+  }
+  else if (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART && telInfo.align == Telescope::ALI_OFF )
+  {
+
+    //if (page == 0 || page == 1 || page == 2)
+    //{
+    //  menuMain();
+    //}
+    if (eventbuttons[3] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
     {
-      menuMain();
+      menuTelAction();
     }
-    if (page == 3)
+    else if (eventbuttons[1] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
     {
-      menuFocuser();
+      menuSpeedRate();
+      time_last_action = millis();
     }
+    else if (eventbuttons[4] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    {
+      menuTelSettings();
+    }
+    else if (eventbuttons[6] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    {
+      menuFocuserAction();
+    }
+    else if (eventbuttons[5] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    {
+      menuFocuserSettings();
+    }
+
     exitMenu = false;
     time_last_action = millis();
   }
@@ -553,6 +596,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     {
       Telescope::ParkState curP = telInfo.getParkState();
       Telescope::TrackState curT = telInfo.getTrackingState();
+      Telescope::PierState curPi = telInfo.getPierState();
       if (curP == Telescope::PRK_PARKED)
       {
         display->drawXBMP(x - icon_width, 0, icon_width, icon_height, parked_bits);
@@ -591,21 +635,19 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
           display->drawXBMP(x - icon_width, 0, icon_width, icon_height, parkingFailed_bits);
           x -= icon_width + 1;
         }
-        if (telInfo.hasPierInfo)
-        {
-          Telescope::PierState CurP = telInfo.getPierState();
-          if (CurP == Telescope::PIER_E)
-          {
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, E_bits);
-            x -= icon_width + 1;
-          }
-          else if (CurP == Telescope::PIER_W)
-          {
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, W_bits);
-            x -= icon_width + 1;
-          }
 
+        if (curPi == Telescope::PIER_E)
+        {
+          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, E_bits);
+          x -= icon_width + 1;
         }
+        else if (curPi == Telescope::PIER_W)
+        {
+          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, W_bits);
+          x -= icon_width + 1;
+        }
+
+        
         if (telInfo.align != Telescope::ALI_OFF)
         {
           if (telInfo.aliMode == Telescope::ALIM_ONE)
@@ -1039,7 +1081,7 @@ void SmartHandController::DisplayMotorSettings(const uint8_t &axis)
   DisplayLongMessage(line1, NULL, line3, line4, -1);
 }
 
-void SmartHandController::menuMain()
+void SmartHandController::menuTelAction()
 {
   buttonPad.setMenuMode();
   current_selection_L0 = 1;
@@ -1050,8 +1092,8 @@ void SmartHandController::menuMain()
 
     if (currentstate == Telescope::PRK_PARKED)
     {
-      const char *string_list_main_ParkedL0 = "Unpark\n""Settings";
-      current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, "Main Menu", current_selection_L0, string_list_main_ParkedL0);
+      const char *string_list_main_ParkedL0 = "Unpark";
+      current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, "Telescope Action", current_selection_L0, string_list_main_ParkedL0);
       switch (current_selection_L0)
       {
       case 0:
@@ -1061,17 +1103,14 @@ void SmartHandController::menuMain()
         SetLX200(":hR#");
         exitMenu = true;
         break;
-      case 2:
-        menuSettings();
-        break;
       default:
         break;
       }
     }
     else if (currentstate == Telescope::PRK_UNPARKED)
     {
-      const char *string_list_main_UnParkedL0 = "Goto\nSync\nTracking\nSide of Pier\nSettings";
-      current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, "Main Menu", current_selection_L0, string_list_main_UnParkedL0);
+      const char *string_list_main_UnParkedL0 = "Goto\nSync\nTracking\nSide of Pier";
+      current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, "Telescope Action", current_selection_L0, string_list_main_UnParkedL0);
       switch (current_selection_L0)
       {
       case 0:
@@ -1089,9 +1128,6 @@ void SmartHandController::menuMain()
       case 4:
         menuPier();
         break;
-      case 5:
-        menuSettings();
-        break;
       default:
         break;
       }
@@ -1106,13 +1142,43 @@ void SmartHandController::menuMain()
 void SmartHandController::menuSpeedRate()
 {
   buttonPad.setMenuMode();
-  char * string_list_Speed = "Guide\n0.5x\n1.0x\n2.0x\n4.0x\n16.0x\n32.0x\n64.0x\n0.5 Max\nMax";
-  current_selection_speed = display->UserInterfaceSelectionList(&buttonPad, "Set Speed", current_selection_speed, string_list_Speed);
-  if (current_selection_speed > 0)
+  char * string_list_Speed = "Guide\n1.0x\n4.0x\n16.0x\n64.0x\n0.5 Max\nMax";
+  uint8_t selected_speed = display->UserInterfaceSelectionList(&buttonPad, "Set Speed", current_selection_speed, string_list_Speed);
+  int speed;
+  switch (selected_speed)
+  {
+  case 0:
+    break;
+  case 1:
+    speed = 0;
+    break;
+  case 2:
+    speed = 2;
+    break;
+  case 3:
+    speed = 4;
+    break;
+  case 4:
+    speed = 5;
+    break;
+  case 5:
+    speed = 7;
+    break;
+  case 6:
+    speed = 8;
+    break;
+  case 7:
+    speed = 9;
+    break;
+  default:
+    break;
+  }
+  if (selected_speed > 0)
   {
     char cmd[5] = ":Rn#";
-    cmd[2] = '0' + current_selection_speed - 1;
+    cmd[2] = '0' + speed;
     SetLX200(cmd);
+    current_selection_speed = selected_speed;
   }
   buttonPad.setControlerMode();
 }
@@ -1383,12 +1449,13 @@ void SmartHandController::menuRADec(bool sync)
   }
 }
 
-void SmartHandController::menuSettings()
+void SmartHandController::menuTelSettings()
 {
+  buttonPad.setMenuMode();
   current_selection_L1 = 1;
   while (!exitMenu)
   {
-    const char *string_list_SettingsL1 = "Display\n""Alignment\n""Date\n""Time\n""Set Park\n""Mount\n""Site\n""Limits\n""Main Unit Info"
+    const char *string_list_SettingsL1 = "Display\n"/*"Alignment\n"*/"Date\n""Time\n""Set Park\n""Mount\n""Site\n""Limits\n""Main Unit Info"
 #ifdef WIFI_ON
       "\nWifi"
 #endif
@@ -1397,42 +1464,46 @@ void SmartHandController::menuSettings()
     switch (current_selection_L1)
     {
     case 0:
-      return;
+      exitMenu = true;
     case 1:
       menuDisplay();
       break;
+    //case 2:
+    //  menuAlignment();
+    //  break;
     case 2:
-      menuAlignment();
-      break;
-    case 3:
       menuDate();
       break;
-    case 4:
+    case 3:
       menuUTCTime();
       break;
-    case 5:
+    case 4:
       DisplayMessageLX200(SetLX200(":hQ#"), false);
       break;
-    case 6:
+    case 5:
       menuMount();
       break;
-    case 7:
+    case 6:
       menuSite();
       break;
-    case 8:
+    case 7:
       menuLimits();
       break;
-    case 9:
+    case 8:
       menuMainUnitInfo();
       break;
 #ifdef WIFI_ON
-    case 10:
+    case 9:
       menuWifi();
       break;
 #endif
     default:
       break;
     }
+  }
+  if (!sleepDisplay)
+  {
+    buttonPad.setControlerMode();
   }
 }
 
@@ -1441,7 +1512,7 @@ void SmartHandController::menuMount()
   current_selection_L2 = 1;
   while (!exitMenu)
   {
-    const char *string_list_Mount = "Show Settings\n""Predefined\n""Mount type\n""Motor 1\n""Motor 2\n""Set Guide Rate\n""Set Max Rate";
+    const char *string_list_Mount = "Show Settings\n""Predefined\n""Mount type\n""Motor 1\n""Motor 2\n""Set Guide Rate\n""Set Max Rate\nAcceleration";
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Mount", current_selection_L2, string_list_Mount);
     switch (current_selection_L2)
     {
@@ -1468,6 +1539,9 @@ void SmartHandController::menuMount()
     case 7:
       menuMaxRate();
       break;
+    case 8:
+      menuAcceleration();
+        break;
     default:
       break;
     }
@@ -1790,8 +1864,6 @@ void SmartHandController::menuVixen()
 
 void SmartHandController::writeDefaultMount(const bool& r1, const int& ttgr1, const bool& r2, const int& ttgr2, const int& stprot, const int& cL, const int& cH)
 {
-  menuMaxRate();
-
   writeReverseLX200(1, r1);
   writeTotGearLX200(1, ttgr1);
   writeStepPerRotLX200(1, stprot);
@@ -1799,7 +1871,7 @@ void SmartHandController::writeDefaultMount(const bool& r1, const int& ttgr1, co
   writeMicroLX200(1, 4);
   writeLowCurrLX200(1, cL);
   writeHighCurrLX200(1, cH);
-  DisplayMotorSettings(1);
+
 
   writeReverseLX200(2, r2);
   writeTotGearLX200(2, ttgr2);
@@ -1808,6 +1880,10 @@ void SmartHandController::writeDefaultMount(const bool& r1, const int& ttgr1, co
   writeMicroLX200(2, 4);
   writeLowCurrLX200(2, cL);
   writeHighCurrLX200(2, cH);
+  
+  menuMaxRate();
+  menuAcceleration();
+  DisplayMotorSettings(1);
   DisplayMotorSettings(2);
   SyncGoHomeLX200(true);
   exitMenu = true;
@@ -1876,6 +1952,22 @@ void SmartHandController::menuMotor(const uint8_t axis)
 
 }
 
+void SmartHandController::menuAcceleration()
+{
+  char outAcc[20];
+  char outStepsPerDegree[20];
+  char cmd[20];
+  if (DisplayMessageLX200(GetLX200(":GXE2#", outAcc, sizeof(outAcc))))
+  {
+    float acc =atof(&outAcc[0]);
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "Acceleration", "", &acc, 0.1, 25, 4, 1, " deg."))
+    {
+      sprintf(cmd, ":SXE2:%04d#", (int)(acc*10.));
+      DisplayMessageLX200(SetLX200(cmd));
+    }
+  }
+}
+
 void SmartHandController::menuMaxRate()
 {
   char outRate[20];
@@ -1884,24 +1976,10 @@ void SmartHandController::menuMaxRate()
   if (DisplayMessageLX200(GetLX200(":GX92#", outRate, sizeof(outRate))))
   {
     float maxrate = (float)strtol(&outRate[0], NULL, 10);
-    if (DisplayMessageLX200(GetLX200(":GXE4#", outStepsPerDegree, sizeof(outStepsPerDegree))))
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Rate", "", &maxrate, 32, 1000, 4, 0, ""))
     {
-      float stepsPerDegree = (float)strtol(&outStepsPerDegree[0], NULL, 10);
-      float slewrate = (1.0 / ((stepsPerDegree * (maxrate / 1000000.0))) * 3600.0) / 15.0;
-      float slewrate2 = slewrate > 512 ? 512 : slewrate < 64 ? 64 : slewrate;
-      if (slewrate2 != slewrate)
-      {
-        maxrate = (1.0 / ((stepsPerDegree * (100 / 1000000.0))) * 3600.0) / 15.0;
-        sprintf(cmd, ":SX92:%04d#", (int)maxrate);
-        DisplayMessageLX200(SetLX200(cmd));
-      }
-
-      if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Rate", "", &slewrate2, 64, 512, 4, 0, ""))
-      {
-        maxrate = (1.0 / ((stepsPerDegree * (slewrate2 / 1000000.0))) * 3600.0) / 15.0;
-        sprintf(cmd, ":SX92:%04d#", (int)maxrate);
-        DisplayMessageLX200(SetLX200(cmd));
-      }
+      sprintf(cmd, ":SX92:%04d#", (int)maxrate);
+      DisplayMessageLX200(SetLX200(cmd));
     }
   }
 }
@@ -1978,14 +2056,14 @@ void SmartHandController::menuUTCTime()
   }
 }
 
-void SmartHandController::menuFocuser()
+void SmartHandController::menuFocuserAction()
 {
   buttonPad.setMenuMode();
-  const char *string_list_Focuser = "Goto\nSync\nPark\nSettings";
+  const char *string_list_Focuser = focuserlocked ? "Goto\nSync\nPark\nUnlock" : "Goto\nSync\nPark\nLock" ;
   current_selection_L2 = 1;
   while (!exitMenu)
   {
-    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Focuser", current_selection_L2, string_list_Focuser);
+    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Focuser Action", current_selection_L2, string_list_Focuser);
     switch (current_selection_L2)
     {
     case 0:
@@ -2022,35 +2100,33 @@ void SmartHandController::menuFocuser()
       break;
     }
     case 4:
-    {
-      menuFocuserSettings();
+      focuserlocked = !focuserlocked;
+      exitMenu = true;
       break;
-    }
     default:
       break;
     }
   }
-  exitMenu = false;
   buttonPad.setControlerMode();
 }
-void SmartHandController::menuFocuserSettings()
+
+void SmartHandController::menuFocuserConfig()
 {
   char cmd[50];
-  const char *string_list_Focuser = "Display Settings\nPark Position\nMax Position\nMin Speed\nMax Speed\nGoto Acc\nMan. Acc\nDeceleration\n""Rotation";
-  current_selection_L3 = 1;
+  const char *string_list_Focuser = "Display Settings\nPark Position\nMax Position\nMin Speed\nMax Speed\nGoto Acc\nMan. Acc\nDeceleration\nResolution\nRotation\nIncrement";
   unsigned int sP, maxP, minS, maxS, cmdAcc, manAcc, manDec;
-  bool rev;
   float value;
   while (!exitMenu)
   {
-    if (DisplayMessageLX200(readFocuser(sP, maxP, minS, maxS, cmdAcc, manAcc, manDec, rev)))
+    if (DisplayMessageLX200(readFocuserConfig(sP, maxP, minS, maxS, cmdAcc, manAcc, manDec)))
     {
-      current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Focuser Settings", current_selection_L2, string_list_Focuser);
+      current_selection_FocuserConfig = display->UserInterfaceSelectionList(&buttonPad, "Focuser Settings", current_selection_FocuserConfig, string_list_Focuser);
       bool ValueSetRequested = false;
-      switch (current_selection_L2)
+      switch (current_selection_FocuserConfig)
       {
       case 0:
-        return;
+        exitMenu = true;
+        break;
       case 1:
       {
         char line1[32] = "";
@@ -2058,7 +2134,6 @@ void SmartHandController::menuFocuserSettings()
         char line3[32] = "";
         char line4[32] = "";
         sprintf(line1, "Focuser Settings");
-        rev ? sprintf(line2, "Reversed Rotation") : sprintf(line2, "Direct Rotation");
         sprintf(line3, "Start Pos.: %05u", sP);
         sprintf(line4, "Max  Pos.: %05u", maxP);
         DisplayLongMessage(line1, line2, line3, line4, -1);
@@ -2089,14 +2164,14 @@ void SmartHandController::menuFocuserSettings()
       case 4:
       {
         value = minS;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Min Speed", "", &value, 1, 100, 5, 0, "");
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Min Speed", "", &value, 1, 999, 5, 0, "");
         sprintf(cmd, ":F2 %03d#", (int)(value));
         break;
       }
       case 5:
       {
         value = maxS;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Max Speed", "", &value, 1, 100, 5, 0, "");
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Max Speed", "", &value, 1, 999, 5, 0, "");
         sprintf(cmd, ":F3 %03d#", (int)(value));
         break;
       }
@@ -2121,7 +2196,62 @@ void SmartHandController::menuFocuserSettings()
         sprintf(cmd, ":F6 %03d#", (int)(value));
         break;
       }
-      case 9:
+      default:
+        break;
+      }
+      if (ValueSetRequested)
+      {
+        DisplayMessageLX200(SetLX200(cmd), false);
+      }
+    }
+    else
+      break;
+  }
+}
+
+
+void SmartHandController::menuFocuserMotor()
+{
+  char cmd[50];
+  const char *string_list_Focuser = "Display Settings\nResolution\nRotation\nMicroStep\nCurrent";
+  unsigned int res, mu, curr;
+  bool rev;
+  float value;
+  while (!exitMenu)
+  {
+    if (DisplayMessageLX200(readFocuserMotor(rev, mu, res, curr)))
+    {
+      current_selection_FocuserMotor = display->UserInterfaceSelectionList(&buttonPad, "Focuser Settings", current_selection_FocuserMotor, string_list_Focuser);
+      bool ValueSetRequested = false;
+      switch (current_selection_FocuserMotor)
+      {
+      case 0:
+        return;
+        break;
+      case 1:
+      {
+        char line1[32] = "";
+        char line2[32] = "";
+        char line3[32] = "";
+        char line4[32] = "";
+        sprintf(line1, "Motor Settings");
+        sprintf(line3, "Resolution  : %03u", res);
+        rev ? sprintf(line4, "Reversed Rotation") : sprintf(line2, "Direct Rotation");
+        DisplayLongMessage(line1, line2, line3, line4, -1);
+        sprintf(line3, "Micro.      : %03u", pow(1, mu));
+        sprintf(line4, "Current   : %05umA", curr * 10);
+        DisplayLongMessage(line1, line2, line3, line4, -1);
+        break;
+      }
+      case 2:
+      {
+        value = res;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Incrementation", "", &value, 1, 512, 5, 0, " micro steps");
+        sprintf(cmd, ":F8 %03d#", (int)(value));
+        break;
+        break;
+      }
+      case 3:
       {
         char * string_list = "Direct\nReversed";
         uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, "Rotation", (uint8_t)rev + 1, string_list);
@@ -2133,21 +2263,68 @@ void SmartHandController::menuFocuserSettings()
         }
         break;
       }
+      case 4:
+      {
+        uint8_t microStep = mu;
+        char * string_list_micro = "4\n8\n16\n32\n64\n128";
+        uint8_t choice = microStep - 2 + 1;
+        choice = display->UserInterfaceSelectionList(&buttonPad, "MicroStep", choice, string_list_micro);
+        if (choice)
+        {
+          microStep = choice - 1 + 2;
+          sprintf(cmd, ":Fm %d#", (int)log2(microStep));
+          ValueSetRequested = true;
+        }
+        break;
+      }
+      case 5:
+      {
+        value = curr;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Current", "", &value, 1, 160, 10, 0, "0 mA");
+        sprintf(cmd, ":Fc %03d#", (int)(value));
+        break;
+      }
       default:
         break;
-
       }
       if (ValueSetRequested)
       {
-        if (DisplayMessageLX200(SetLX200(cmd), false))
-        {
-          DisplayMessageLX200(SetLX200(":FW#"));
-        }
+        DisplayMessageLX200(SetLX200(cmd), false);
       }
     }
     else
       break;
   }
+}
+
+void SmartHandController::menuFocuserSettings()
+{
+  buttonPad.setMenuMode();
+  const char *string_list_Focuser = "Config\nMotor";
+  while (!exitMenu)
+  {
+    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Focuser Settings", current_selection_L2, string_list_Focuser);
+    bool ValueSetRequested = false;
+    switch (current_selection_L2)
+    {
+    case 0:
+      exitMenu = true;
+      break;
+    case 1:
+    {
+      menuFocuserConfig();
+      break;
+    }
+    case 2:
+    {
+      menuFocuserMotor();
+      break;
+    }
+    default:
+      break;
+    }
+  }
+  buttonPad.setControlerMode();
 }
 
 void SmartHandController::menuDisplay()
@@ -2162,7 +2339,8 @@ void SmartHandController::menuDisplay()
     case 0:
       return;
     case 1:
-      DisplayMessage("Press any Key", "to turn on", 1500);
+      DisplayMessage("Press Shift Key", "to turn on", 1500);
+      forceDisplayoff = true;
       sleepDisplay = true;
       display->sleepOn();
       exitMenu = true;

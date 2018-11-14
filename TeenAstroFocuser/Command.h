@@ -3,19 +3,23 @@
 #ifndef _COMMAND_h
 #define _COMMAND_h
 
+
 #if defined(ARDUINO) && ARDUINO >= 100
 	#include "arduino.h"
 #else
 	#include "WProgram.h"
 #endif
 
+
 // single key commands
 #define AzCmd_Help 'H'
 #define AzCmd_Version 'V'
-#define FocCmd_out '+'
-#define FocCmd_out_stop '*'
-#define FocCmd_in '-'
-#define FocCmd_in_stop ':'
+#define FocCmd_out_wor '+'
+#define FocCmd_in_wor '-'
+#define FocCmd_out 'O'
+#define FocCmd_out_stop 'o'
+#define FocCmd_in 'I'
+#define FocCmd_in_stop 'i'
 #define FocCmd_Goto 'G'
 #define FocCmd_Park 'P'
 #define FocCmd_Sync 'S'
@@ -25,15 +29,20 @@
 
 #define CmdDumpState '?'
 #define CmdDumpConfig '~'
+#define CmdDumpConfigMotor 'M'
 
 #define FocCmd_startPosition '0'
 #define FocCmd_maxPosition '1'
-#define FocCmd_minSpeed '2'
-#define FocCmd_maxSpeed '3'
+#define FocCmd_lowSpeed '2'
+#define FocCmd_highSpeed '3'
 #define FocCmd_cmdAcc '4'
 #define FocCmd_manualAcc '5'
 #define FocCmd_manualDec '6' 
 #define FocCmd_Inv '7'
+#define FocCmd_inpulse '8'
+#define FocCmd_current 'c'
+#define FocCmd_micro 'm'
+
 
 #define Char_CR 13
 #define Char_Spc 32
@@ -49,22 +58,27 @@ public:
 private:
   Stream& ser;
   char m_command;
+  char m_parameter;
+  char m_input[30];
   unsigned int m_value = 0;
   bool m_valuedefined = false;
   bool m_hasReceivedCommand = false;
+  uint32_t m_lastupdate = millis();
 public:
-  void updateGoto();
   void Command_Check();
-  void Get_Command();
+  bool Get_Command();
   void MoveRequest(void);
 private:
   void dumpState();
+  void dumpParameterPosition(ParameterPosition* Pos);
   void dumpConfig();
-
+  void dumpConfigMotor();
   void sayHello();
-  void setbool(bool valuedefined, unsigned int value, bool  &adress);
-  void setvalue(bool valuedefined, unsigned int value, unsigned int min, unsigned int max, unsigned int &adress);
-  void setvalue(bool valuedefined, unsigned int value, uint8_t min, uint8_t max, uint8_t &adress);
+
+  bool setvalue(bool valuedefined, unsigned int value, Parameteruint *adress);
+  bool setvalue(bool valuedefined, unsigned long value, unsigned long min, unsigned long max, unsigned long &adress);
+  bool setvalue(bool valuedefined, unsigned long value, Parameterulong *adress);
+  bool setvalue(bool valuedefined, unsigned int value, Parameteruint8_t *adress);
   void HaltRequest();
 };
 

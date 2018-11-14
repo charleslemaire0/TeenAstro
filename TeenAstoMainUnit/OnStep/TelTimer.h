@@ -162,19 +162,37 @@ public:
     m_UT = hour(m_RTClock) + minute(m_RTClock) / 60.0 + second(m_RTClock) / 3600.0;
     return &m_UT;
   }
+
   double* getJD()
   {
     m_RTClock = Teensy3Clock.get();
     m_JD = julian(year(m_RTClock), month(m_RTClock), day(m_RTClock));
     return &m_JD;
   }
-  void getUTDate(int& y, int& m, int& d)
+
+  void getUTDate(int& y, int& m, int& d, int&h, int&mi, int&s)
   {
     m_RTClock = Teensy3Clock.get();
     y = year(m_RTClock);
     m = month(m_RTClock);
     d = day(m_RTClock);
+    h = hour(m_RTClock);
+    mi = minute(m_RTClock);
+    s = second(m_RTClock);
   }
+
+  long getTimeStamp()
+  {
+    return Teensy3Clock.get();
+  }
+
+  void SetFromTimeStamp(unsigned long t)
+  {
+    Teensy3Clock.set(t);
+    setTime(t);
+    syncClock();
+  }
+
   // Set RTC with give input
   void setClock(int y1, int m1, int d1, int h1, int mi1, int s1, double Sitelongitude)
   {

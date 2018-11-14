@@ -167,6 +167,34 @@ void Command_GX()
       break;  // pdCor
     }
     break;
+  case '7':
+    // for debug only
+    switch (parameter[1])
+    {
+    case '0':
+      //sprintf(reply, "%d", (int)inbacklashAxis1);
+      //quietReply = true;
+      break;
+    case '1':
+      //sprintf(reply, "%d", (int)inbacklashAxis1);
+      //quietReply = true;
+      break;
+    case '2':
+      //sprintf(reply, "%d", (int)blAxis1);
+      //quietReply = true;
+      break;
+    case '3':
+      //sprintf(reply, "%d", (int)blAxis1);
+      //quietReply = true;
+      break;
+    case '4':
+      //sprintf(reply, "%d", (int)blAxis1);
+      //quietReply = true;
+      break;
+
+
+    }
+    break;
   case '8':
     // 8n: Date/Time
     switch (parameter[1])
@@ -178,12 +206,16 @@ void Command_GX()
       highPrecision = i;
       quietReply = true;
       break;  // UTC time
-
     case '1':
-      rtk.getUTDate(i, i1, i2);
+      rtk.getUTDate(i, i1, i2, i3, i4, i5);
       sprintf(reply, "%d/%d/%d", i1, i2, i);
       quietReply = true;
-      break;  // UTC date
+      break;  // UTC date    
+    case '2'://return seconds since 01/01/1970/00:00:00
+      long t = rtk.getTimeStamp();
+      sprintf(reply, "%lu", t);
+      quietReply = true;
+      break;
     }
     break;
   case '9':
@@ -196,15 +228,13 @@ void Command_GX()
       quietReply = true;
       break;  // pulse-guide rate
     case '2':
-      sprintf(reply, "%ld", (long)(maxRate / 16L));
+      sprintf(reply, "%d", EEPROM_readInt(EE_maxRate));
       quietReply = true;
-      break;  // MaxRate
-
+      break;  // Max Slew rate
     case '3':
       sprintf(reply, "%ld", (long)(MaxRate));
       quietReply = true;
       break;  // MaxRate (default)
-
     case '4':
       if (meridianFlip == MeridianFlipNever)
       {
@@ -217,11 +247,6 @@ void Command_GX()
 
       quietReply = true;
       break;  // pierSide (N if never)
-
-    case '5':
-      sprintf(reply, "%i", (int)autoContinue);
-      quietReply = true;
-      break;  // autoContinue
     }
     break;
   case 'E':
@@ -418,7 +443,7 @@ void  Command_G()
     //  :GC#   Get the current date
     //         Returns: MM/DD/YY#
     //         The current local calendar date
-    rtk.getUTDate(i2, i, i1);
+    rtk.getUTDate(i2, i, i1, i3, i4, i5);
     i2 = i2 % 100;
     sprintf(reply, "%02d/%02d/%02d", i, i1, i2);
     quietReply = true;
@@ -524,8 +549,8 @@ void  Command_G()
     //         A # terminated string with the pier side.
     reply[0] = '?';
     reply[1] = 0;
-    if (pierSide < PierSideWest) reply[0] = 'E';
-    if (pierSide >= PierSideWest) reply[0] = 'W';
+    if (pierSide == PierSideEast) reply[0] = 'E';
+    if (pierSide == PierSideWest) reply[0] = 'W';
     quietReply = true;
     break;
   case 'o':
@@ -617,6 +642,7 @@ void  Command_G()
     i = 0;
     if (trackingState != TrackingON) reply[0] = 'n';
     if (trackingState != TrackingMoveTo) reply[1] = 'N';
+    else if (lastTrackingState == TrackingON) reply[0] = ' ';
 
     const char  *parkStatusCh = "pIPF";
     reply[2] = parkStatusCh[parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
@@ -629,8 +655,10 @@ void  Command_G()
       else if (GuidingState == GuidingRecenter) reply[6] = '+';
       if (guideDirAxis1 == 'e') reply[7] = '>';
       else if(guideDirAxis1 == 'w') reply[7] = '<';
+      else if (guideDirAxis1 == 'b') reply[7] = 'b';
       if (guideDirAxis2 == 'n') reply[8] = '^';
       else if (guideDirAxis2 == 's') reply[8] = '_';
+      else if (guideDirAxis2 == 'b') reply[8] = 'b';
     }
     if (faultAxis1 || faultAxis2) reply[9] = 'f';
     if (refraction)
@@ -641,7 +669,11 @@ void  Command_G()
 
     // provide mount type
     if (mountType == MOUNT_TYPE_GEM)
+    {
       reply[12] = 'E';
+      if (pierSide == PierSideEast) reply[13] = 'E';
+      if (pierSide == PierSideWest) reply[13] = 'W';
+    }
     else if (mountType == MOUNT_TYPE_FORK)
       reply[12] = 'K';
     else if (mountType == MOUNT_TYPE_FORK_ALT)
@@ -651,9 +683,9 @@ void  Command_G()
     else
       reply[12] = 'U';
 
-    reply[13] = '0' + lastError;
-    reply[14] = 0;
-    i = 15;
+    reply[14] = '0' + lastError;
+    reply[15] = 0;
+    i = 16;
     quietReply = true;                                   //         Returns: SS#
   }
   break;

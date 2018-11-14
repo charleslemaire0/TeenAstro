@@ -258,27 +258,6 @@ void Command_S(Command& process_command)
       newTargetRA *= 15.0;
     break;
 
-
-  case 'S':
-    //  :SSHH:MM:SS#
-    //          Sets the local (apparent) sideral time to HH:MM:SS
-    //          Return: 0 on failure
-    //                  1 on success                                                                   
-    i = highPrecision;
-    highPrecision = true;
-    commandError = true;
-    //if (!hmsToDouble(&f, parameter))
-    //  commandError = true;  
-    //else
-    //{
-    //  update_lst(f);
-    //}
-
-    //highPrecision = i;
-
-    break;
-
-
   case 't':
     //  :StsDD*MM#
     //          Sets the current site latitude to sDD*MM#
@@ -394,6 +373,20 @@ void Command_S(Command& process_command)
         break;
       }
     }
+    else if (parameter[0] == '8')
+    {
+      switch (parameter[1])
+      {
+      case '2':
+      {
+        char *pEnd;
+        unsigned long t = strtoul(&parameter[3], &pEnd, 10);
+        rtk.SetFromTimeStamp(t);
+        break;
+      }
+      }
+      break;
+    }
     else if (parameter[0] == '9')
     {                   // 9n: Misc.
       switch (parameter[1])
@@ -413,56 +406,11 @@ void Command_S(Command& process_command)
       }
 
       case '2':   // set new acceleration rate
-        maxRate = strtol(&parameter[3], NULL, 10) * 16L;
-        if (maxRate < (MaxRate / 2L) * 16L)
-          maxRate = (MaxRate / 2L) * 16L;
-        EEPROM_writeInt(EE_maxRate, (int)(maxRate / 16L));
-        SetAccelerationRates();
+      {
+        EEPROM_writeInt(EE_maxRate, (int)strtol(&parameter[3], NULL, 10));
+        initMaxRate();
         break;
-
-      case '3':   // acceleration rate preset
-        quietReply = true;
-        switch (parameter[3])
-        {
-        case '6':
-          maxRate = MaxRate * 32L;
-          break;  // 50%
-        case '5':
-          maxRate = MaxRate * 32L;
-          break;  // 50%
-
-        case '4':
-          maxRate = MaxRate * 24L;
-          break;  // 75%
-
-        case '3':
-          maxRate = MaxRate * 16L;
-          break;  // 100%
-
-        case '2':
-          maxRate = MaxRate * 12L;
-          break;  // 150%
-
-        case '1':
-          maxRate = MaxRate * 8L;
-          break;  // 200%
-          break;
-        }
-
-        SetAccelerationRates();
-        break;
-
-      case '5':           // autoContinue
-        if ((parameter[3] == '0') || (parameter[3] == '1'))
-        {
-          i = parameter[3] - '0';
-          if ((i == 0) || (i == 1))
-          {
-            autoContinue = i;
-            EEPROM.write(EE_autoContinue, autoContinue);
-          }
-        }
-        break;
+      }
       default:
         commandError = true;
         break;
@@ -472,6 +420,14 @@ void Command_S(Command& process_command)
     {
       switch (parameter[1])
       {
+      case '1': // Set the MaxRate in sideral Speed
+        
+        break;
+      case '2': // Set degree for acceleration
+        DegreesForAcceleration = min(max(0.1*(double)strtol(&parameter[3], NULL, 10),0.1), 25.0);
+        EEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
+        SetAcceleration();
+        break;
       case '9': // minutesPastMeridianE 
         minutesPastMeridianGOTOE = (double)strtol(&parameter[3], NULL, 10);
         if (minutesPastMeridianGOTOE > 180) minutesPastMeridianGOTOE = 180;

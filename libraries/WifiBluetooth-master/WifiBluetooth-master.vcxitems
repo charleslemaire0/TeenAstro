@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding ="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" >
+  <PropertyGroup Label="Globals" >
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{3c44dab1-da3c-4f5c-9616-30552d981e62}</ItemsProjectGuid>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Accessories.cpp" />
+<ClCompile Include="$(MSBuildThisFileDirectory)Configuration.cpp" />
+<ClCompile Include="$(MSBuildThisFileDirectory)Control.cpp" />
+<ClCompile Include="$(MSBuildThisFileDirectory)Index.cpp" />
+<ClCompile Include="$(MSBuildThisFileDirectory)PEC.cpp" />
+<ClCompile Include="$(MSBuildThisFileDirectory)Settings.cpp" />
+<ClCompile Include="$(MSBuildThisFileDirectory)Wifi.cpp" />
+<ClCompile Include="$(MSBuildThisFileDirectory)WifiBluetooth.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Config.h" />
+<ClInclude Include="$(MSBuildThisFileDirectory)Encoders.h" />
+<ClInclude Include="$(MSBuildThisFileDirectory)MountStatus.h" />
+<ClInclude Include="$(MSBuildThisFileDirectory)WifiBluetooth.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="$(MSBuildThisFileDirectory)license.txt" />
+<Text Include="$(MSBuildThisFileDirectory)vs-readme.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)LICENSE" />
+<None Include="$(MSBuildThisFileDirectory)README.md" />
+  </ItemGroup>
+</Project>

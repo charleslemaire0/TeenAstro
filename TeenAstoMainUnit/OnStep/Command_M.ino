@@ -155,6 +155,8 @@ void Command_M(bool &supress_frame)
         //         4=Position unreachable    Not unparked
         //         5=Busy                    Goto already active
         //         6=Outside limits          Outside limits, above the Zenith limit
+        //         7=Guiding
+        //         8=has a an Error
 
     i = goToEqu(newTargetRA, newTargetDec, pierSide);
     reply[0] = i + '0';
@@ -165,8 +167,30 @@ void Command_M(bool &supress_frame)
   }
   case '?':
   {
-    byte side = predictTargetSideOfPier();
-    reply[0] = side + '0';
+    //  :M?#   Predict side of Pier for the Target Object
+    double objectRa, objectDec;
+    char rastr[12];
+    char decstr[12];
+    strncpy(rastr, parameter, 8*sizeof(char));
+    rastr[8] = 0;
+    strncpy(decstr, &parameter[8], 9*sizeof(char));
+    decstr[9] = 0;
+    if (!hmsToDouble(&objectRa, rastr))
+    {
+      commandError = true;
+      return;
+    }
+    else
+      objectRa *= 15.0;
+    if (!dmsToDouble(&objectDec, decstr, true))
+    {
+      commandError = true;
+      return;
+    }
+    byte side = predictTargetSideOfPier(objectRa,objectDec);
+    if (side == 0) reply[0] = '?';
+    else if (side == PierSideEast) reply[0] = 'E';
+    else if (side == PierSideWest) reply[0] = 'W';
     reply[1] = 0;
     quietReply = true;
     break;

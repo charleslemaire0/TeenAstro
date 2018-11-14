@@ -6,7 +6,6 @@
 uint8_t mdirIN = LOW;
 uint8_t mdirOUT = LOW;
 
-
 void setup()
 {
 	// set the PWM and brake pins so that the direction pins  // can be used to control the motor:
@@ -38,60 +37,54 @@ void setup()
   Serial1.setTimeout(5);
 #endif
 
-
   loadConfig();
+  iniMot();
 	iniPos();
-  iniStepper();
   analogWrite(LEDPin,16);
 }
 
 
 void loop()
 {
-
-  serCom0.Get_Command();
-  serComSHC.Get_Command();
-
-  serCom0.MoveRequest();
-  serComSHC.MoveRequest();
-  
+  if (serComSHC.Get_Command())
+  {
+    serComSHC.MoveRequest();
+  }
+  else if (serCom0.Get_Command())
+  {
+    serCom0.MoveRequest();
+  }
 	if (mdirOUT == HIGH && mdirIN == HIGH)
 	{
-		time_acc = 0;
 		return;
 	}
-	// first stop the motor if the direction has changed
-	else if (mdirOUT != mdirOUTOld && mdirOUTOld == HIGH)
+	else if (mdirOUT == HIGH && mdirOUTOld != mdirOUT)
 	{
-		Command_stop(1);
-		time_acc = 0;
+    modeMan();
+		stepper.moveTo(maxPosition->get());
     mdirOUTOld = mdirOUT;
 		return;
 	}
-	else if (mdirIN != mdirINOld && mdirINOld == HIGH)
+	else if (mdirIN == HIGH && mdirINOld != mdirIN)
 	{
-		Command_stop(-1);
-		time_acc = 0;
+    modeMan();
+    stepper.moveTo(0);
     mdirINOld = mdirIN;
 		return;
 	}
-	else if (mdirOUT == HIGH)
-	{
-		Command_move(1, time_acc);
+  else if ((mdirIN == LOW && mdirINOld != mdirIN) || (mdirOUT == LOW && mdirOUTOld != mdirOUT))
+  {
+    stepper.setAcceleration(100.*manDec->get());
+    stepper.stop();
+    mdirINOld = mdirIN;
     mdirOUTOld = mdirOUT;
-		return;
-	}
-	else if (mdirIN == HIGH)
-	{
-		Command_move(-1, time_acc);
-    mdirINOld = mdirIN;
-		return;
-	}
-
-  serCom0.Command_Check();
-  serComSHC.Command_Check();
-	time_acc = 0;
+    return;
+  }
 	mdirOUTOld = mdirOUT;
 	mdirINOld = mdirIN;
+  serComSHC.Command_Check();
+  serCom0.Command_Check();
+  Command_Run();
+
 }
 

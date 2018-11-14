@@ -1,6 +1,7 @@
 #pragma once
 // Add activate wifi function // default is ON
 #define WIFI_ON
+#define ALIGN_OFF
 #include <Arduino.h>
 #include <OneButton.h>
 #ifdef WIFI_ON
@@ -16,6 +17,7 @@ class Pad
   wifibluetooth m_wbt;
 #endif
   bool m_buttonPressed;
+  bool m_shiftPressed;
   OneButton *m_buttons[7];
 public:
   void setup(const int pin[7], const bool active[7]);
@@ -24,6 +26,7 @@ public:
   void attachEvent();
   void tickButtons();
   bool buttonPressed();
+  bool shiftPressed();
 #ifdef WIFI_ON
   bool isWifiOn();
   bool isWifiRunning();

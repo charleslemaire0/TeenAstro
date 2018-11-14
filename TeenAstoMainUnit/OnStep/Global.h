@@ -42,27 +42,26 @@ boolean onTrack = false;
 
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
 long                    siderealInterval = 15956313L;
-long                    masterSiderealInterval = siderealInterval;
+const long              masterSiderealInterval = 15956313L;
 
 // default = 15956313 ticks per sidereal hundredth second, where a tick is 1/16 uS
 // this is stored in EEPROM which is updated/adjusted with the ":T+#" and ":T-#" commands
 // a higher number here means a longer count which slows down the sidereal clock
-double                  HzCf = 16000000.0 / 60.0;   // conversion factor to go to/from Hz for sidereal interval
-volatile long           SiderealRate;               // based on the siderealInterval, this is the time between steps for sidereal tracking
-volatile long           TakeupRate;                 // this is the takeup rate for synchronizing the target and actual positions when needed
+const double            HzCf = 16000000.0 / 60.0;   // conversion factor to go to/from Hz for sidereal interval
+volatile double         SiderealRate;               // based on the siderealInterval, this is the time between steps for sidereal tracking
+volatile double         TakeupRate;                 // this is the takeup rate for synchronizing the target and actual positions when needed
 
 
-long                    maxRate = MaxRate * 16L;
+double                  maxRate = MaxRate * 16L;
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
-double                  DegreesForRapidStop = 0.5 *DegreesForAcceleration;
 
-volatile long           timerRateAxis1 = 0;
-volatile long           timerRateBacklashAxis1 = 0;
+volatile double         timerRateAxis1 = 0;
+volatile double         timerRateBacklashAxis1 = 0;
 volatile boolean        inbacklashAxis1 = false;
 boolean                 faultAxis1 = false;
-volatile long           timerRateAxis2 = 0;
-volatile long           timerRateBacklashAxis2 = 0;
+volatile double         timerRateAxis2 = 0;
+volatile double         timerRateBacklashAxis2 = 0;
 volatile boolean        inbacklashAxis2 = false;
 boolean                 faultAxis2 = false;
 
@@ -73,7 +72,7 @@ boolean                 refraction = refraction_enable;
 boolean                 refraction = false;
 #endif
 
-unsigned int GearAxis1; //2000
+unsigned int GearAxis1;//2000
 unsigned int StepRotAxis1;
 byte MicroAxis1;
 bool ReverseAxis1;
@@ -170,7 +169,6 @@ long                minutesPastMeridianGOTOE;               // for goto's, how f
 long                minutesPastMeridianGOTOW;               // as above, if on the West side of the pier.  If left alone, the mount will stop tracking when it hits the this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. OnStep will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 //                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
-bool                autoContinue = false;                   // automatically do a meridian flip and continue when we hit the MinutesPastMeridianW
 
                                             // Stepper/position/rate ----------------------------------------------------------------------------------------------------
 #define CLR(x, y)   (x &= (~(1 << y)))

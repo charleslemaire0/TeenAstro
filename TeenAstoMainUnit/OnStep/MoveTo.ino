@@ -20,12 +20,13 @@ void moveTo() {
   if (distStartAxis1 < 1) distStartAxis1 = 1;
   if (distStartAxis2 < 1) distStartAxis2 = 1;
 Again:
+  updateDeltaTarget();
   cli();
   long tempPosAxis2 = posAxis2;
-  
-  distDestAxis1 = abs(distStepAxis1(posAxis1,(long)targetAxis1.part.m));  // distance from dest HA
-  distDestAxis2 = abs(distStepAxis2(posAxis2,(long)targetAxis2.part.m));  // distance from dest Dec
   sei();
+  distDestAxis1 = abs(deltaTargetAxis1);  // distance from dest HA
+  distDestAxis2 = abs(deltaTargetAxis2);  // distance from dest Dec
+
 
   // adjust rates near the horizon to help keep from exceeding the minAlt limit
   if (mountType != MOUNT_TYPE_ALTAZM)
@@ -66,29 +67,31 @@ Again:
     // set the destination near where we are now
     cli();
     // recompute distances
-    distDestAxis1 = abs(distStepAxis1(posAxis1, (long)targetAxis1.part.m));  // distance from dest HA
-    distDestAxis2 = abs(distStepAxis2(posAxis2, (long)targetAxis2.part.m));
+    updateDeltaTarget();
 
-    long a = getV(timerRateAxis1)*getV(timerRateAxis1) / (2 * AccAxis1);
-    if (distDestAxis1 > a)
+    long a = getV(timerRateAxis1)*getV(timerRateAxis1) / (2. * AccAxis1);
+    if (abs(deltaTargetAxis1) > a)
     {
-      if (0 > distStepAxis1(posAxis1, targetAxis1.part.m))
+      if (0 > deltaTargetAxis1)
         a = -a;
+      cli()
       targetAxis1.part.m = posAxis1 + a;
       targetAxis1.part.f = 0;
+      sei();
     }
     guideDirAxis1 = 'b';
 
-    a = getV(timerRateAxis2)*getV(timerRateAxis2) / (2 * AccAxis2);
-    if (distDestAxis2 > a)
+    a = getV(timerRateAxis2)*getV(timerRateAxis2) / (2. * AccAxis2);
+    if (abs(deltaTargetAxis2) > a)
     {
-      if (0 > distStepAxis2(posAxis2, targetAxis2.part.m)) // overshoot
+      if (0 > deltaTargetAxis2) // overshoot
         a = -a;
+      cli();
       targetAxis2.part.m = posAxis2 + a;
       targetAxis2.part.f = 0;
+      sei();
     }
     guideDirAxis2 = 'b';
-    sei();
 
     if (parkStatus == Parking)
     {
@@ -107,14 +110,14 @@ Again:
   }
 
   // First, for Right Ascension
-  long temp;
+  double temp;
   if (distStartAxis1 >= distDestAxis1)
   {
     temp = getRate(sqrt(distDestAxis1 * 2 * AccAxis1)); // slow down (temp gets bigger)
   }
   else
   { 
-    temp = getRate(sqrt(distStartAxis1 * 2 * AccAxis1));// speed up (temp gets smaller)
+    temp = getRate(sqrt(distStartAxis1 * 2 * AccAxis1)); // speed up (temp gets smaller)
   }
   if (temp < maxRate) temp = maxRate;                            // fastest rate
   if (temp > TakeupRate) temp = TakeupRate;                      // slowest rate
@@ -124,7 +127,7 @@ Again:
   
   if (distStartAxis2 >= distDestAxis2)
   {
-    temp = getRate(sqrt(distDestAxis2 * 2 * AccAxis1)); // slow down
+    temp = getRate(sqrt(distDestAxis2 * 2 * AccAxis2)); // slow down
   }
   else
   {
@@ -145,10 +148,11 @@ Again:
       }
     }
   }
-  cli();
-  distDestAxis1 = abs(distStepAxis1(posAxis1, (long)targetAxis1.part.m));  // distance from dest HA
-  distDestAxis2 = abs(distStepAxis2(posAxis2, (long)targetAxis2.part.m));  // distance from dest Dec
-  sei();
+  updateDeltaTarget();
+
+  distDestAxis1 = abs(deltaTargetAxis1);  // distance from dest HA
+  distDestAxis2 = abs(deltaTargetAxis2);  // distance from dest Dec
+
   if ((distDestAxis1 <= 2) && (distDestAxis2 <= 2))
   {
     if (mountType == MOUNT_TYPE_ALTAZM)

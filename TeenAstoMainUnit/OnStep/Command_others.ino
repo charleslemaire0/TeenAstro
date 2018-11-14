@@ -554,27 +554,35 @@ void Command_B()
   quietReply = true;
 }
 
-
-//----------------------------------------------------------------------------------
 //   C - Sync Control
 //  :CS#   Synchonize the telescope with the current right ascension and declination coordinates
-//         Returns: Nothing
+//         Returns: Nothing (Sync's fail silently)
 //  :CM#   Synchonize the telescope with the current database object (as above)
-//         Returns: "N/A#"
+//         Returns: "N/A#" on success, "En#" on failure where n is the error code per the :MS# command
+
 void Command_C()
 {
-  if (command[1] != 'M' && command[1] != 'S')
-    return;
-  if ((parkStatus == NotParked) && (trackingState != TrackingMoveTo))
+  if ((parkStatus == NotParked) &&
+      (trackingState != TrackingMoveTo) &&
+      ( command[1] == 'M' || command[1] == 'S'))
   {
     if (newTargetPierSide == PierSideEast || newTargetPierSide == PierSideWest)
     {
       pierSide = newTargetPierSide;
       newTargetPierSide = 0;
     }
-    syncEqu(newTargetRA, newTargetDec);
-    if (command[1] == 'M') strcpy(reply, "N/A");
+    i = syncEqu(newTargetRA, newTargetDec);
+    i = 0;
+    if (command[1] == 'M')
+    {
+      if (i == 0) strcpy(reply, "N/A");
+      if (i>0) { reply[0] = 'E'; reply[1] = '0' + i; reply[2] = 0; }
+    }
     quietReply = true;
+  }
+  else
+  {
+    commandError = true;
   }
 }
 
@@ -606,6 +614,8 @@ void Command_F()
   boolean focuserNoResponse = false;
   boolean focuserShortResponse = false;
   char command_out[20];
+  Serial2.flush();
+  while (Serial2.available() > 0) Serial2.read();
 
   command_out[0] = ':';
   command_out[1] = 'F';
@@ -626,8 +636,6 @@ void Command_F()
   {
   case '+':
   case '-':
-  case '*':
-  case ':':
   case 'Q':
   case 'G':
   case 'S':
@@ -636,9 +644,15 @@ void Command_F()
     break;
   case '?':
   case '~':
+  case 'M':
+  case 'V':
     focuserNoResponse = false;
     focuserShortResponse = false;
     break;
+  case 'O':
+  case 'o':
+  case 'I':
+  case 'i':
   case 'W':
   case '0':
   case '1':
@@ -647,6 +661,11 @@ void Command_F()
   case '4':
   case '5':
   case '6':
+  case '7':
+  case '8':
+  case 'c':
+  case 'C':
+  case 'm':
     focuserNoResponse = false;
     focuserShortResponse = true;
     break;
@@ -671,12 +690,15 @@ void Command_F()
         if (b == '#' && !focuserShortResponse)
         {
           quietReply = true;
-          break;
+          return;
         }
         reply[pos] = b;
         pos++;
-        if (pos > 50)
-          pos = 50;
+        if (pos > 49)
+        {
+          commandError = true;
+          return;
+        }
         reply[pos] = 0;
         if (focuserShortResponse)
         {
@@ -686,7 +708,9 @@ void Command_F()
           return;
         }
       }
+
     }
+    commandError = true;
   }
 }
 //----------------------------------------------------------------------------------
@@ -877,7 +901,7 @@ void Command_R()
 void Command_T()
 {
 
-  switch(command[1])
+  switch (command[1])
 
   {
   case '+':
@@ -907,7 +931,7 @@ void Command_T()
     break;
   case 'R':
     // reset master sidereal clock interval
-    siderealInterval = 15956313L;
+    siderealInterval = masterSiderealInterval;
     quietReply = true;
     break;
   case 'K':
@@ -918,16 +942,39 @@ void Command_T()
     quietReply = true;
     break;
   case 'e':
-    if ((trackingState == TrackingON || trackingState == TrackingOFF) && parkStatus == NotParked)
+    if (parkStatus == NotParked)
     {
-      trackingState = TrackingON;
-      lastSetTrakingEnable = millis();
-      atHome = false;
+      if ((trackingState == TrackingON || trackingState == TrackingOFF))
+      {
+        trackingState = TrackingON;
+        lastSetTrakingEnable = millis();
+        atHome = false;
+      }
+      if (trackingState == TrackingMoveTo)
+      {
+        lastTrackingState = TrackingON;
+      }
     }
     else
       commandError = true;
     break;
   case 'd':
+    if (parkStatus == NotParked)
+    {
+      if ((trackingState == TrackingON || trackingState == TrackingOFF))
+      {
+        trackingState = TrackingOFF;
+        lastSetTrakingEnable = millis();
+        atHome = false;
+      }
+      if (trackingState == TrackingMoveTo)
+      {
+        lastTrackingState = TrackingOFF;
+      }
+    }
+    else
+      commandError = true;
+    break;
     if (trackingState == TrackingON || trackingState == TrackingOFF)
     {
       trackingState = TrackingOFF;
