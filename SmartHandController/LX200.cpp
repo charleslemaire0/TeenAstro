@@ -95,6 +95,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     if (command[1] == 'F')
     {
       Ser.setTimeout(timeOutMs*4);
+      timeOutMs *= 4;
       if (strchr("+-GPS", command[2])) { noResponse = true; }
       if (strchr("OoIi:012345678cCmW", command[2])) { shortResponse = true;}
     }
@@ -717,45 +718,38 @@ LX200RETURN readFocuserConfig(unsigned int& startPosition, unsigned int& maxPosi
                               unsigned int& cmdAcc, unsigned int& manAcc, unsigned int& manDec)
 {
   char out[LX200lbuff];
-  if (GetLX200(":F~#", out, sizeof(out)) == LX200VALUEGET)
-  {
-    if (strlen(out) != 33)
-      return LX200GETVALUEFAILED;
-    char* pEnd;
-    startPosition = strtol(&out[1], &pEnd, 10);
-    maxPosition = strtol(&out[7], &pEnd, 10);
-    minSpeed = strtol(&out[13], &pEnd, 10);
-    maxSpeed = strtol(&out[17], &pEnd, 10);
-    cmdAcc = strtol(&out[21], &pEnd, 10);
-    manAcc = strtol(&out[25], &pEnd, 10);
-    manDec = strtol(&out[29], &pEnd, 10);
-    return LX200VALUEGET;
-  }
-  else
-  {
+  if (GetLX200(":F~#", out, sizeof(out)) == LX200GETVALUEFAILED)
+    if (GetLX200(":F~#", out, sizeof(out)) == LX200GETVALUEFAILED)
+      if (GetLX200(":F~#", out, sizeof(out)) == LX200GETVALUEFAILED)
+        return LX200GETVALUEFAILED;
+  if (strlen(out) != 33)
     return LX200GETVALUEFAILED;
-  }
-
+  char* pEnd;
+  startPosition = strtol(&out[1], &pEnd, 10);
+  maxPosition = strtol(&out[7], &pEnd, 10);
+  minSpeed = strtol(&out[13], &pEnd, 10);
+  maxSpeed = strtol(&out[17], &pEnd, 10);
+  cmdAcc = strtol(&out[21], &pEnd, 10);
+  manAcc = strtol(&out[25], &pEnd, 10);
+  manDec = strtol(&out[29], &pEnd, 10);
+  return LX200VALUEGET;
 }
 
 LX200RETURN readFocuserMotor(bool& reverse, unsigned int& micro, unsigned int& incr,  unsigned int& curr)
 {
   char out[LX200lbuff];
-  if (GetLX200(":FM#", out, sizeof(out)) == LX200VALUEGET)
-  {
-    if ( strlen(out)!=13)
-      return LX200GETVALUEFAILED;
-    char* pEnd;
-    reverse = out[1] == '1';
-    micro = out[3] - '0';
-    incr = strtol(&out[5], &pEnd, 10);
-    curr = strtol(&out[9], &pEnd, 10);
-    return LX200VALUEGET;
-  }
-  else
-  {
+  if (GetLX200(":FM#", out, sizeof(out)) == LX200GETVALUEFAILED)
+    if (GetLX200(":FM#", out, sizeof(out)) == LX200GETVALUEFAILED)
+      if (GetLX200(":FM#", out, sizeof(out)) == LX200GETVALUEFAILED)
+        return LX200GETVALUEFAILED;
+  if (strlen(out) != 13)
     return LX200GETVALUEFAILED;
-  }
- 
+  char* pEnd;
+  reverse = out[1] == '1';
+  micro = out[3] - '0';
+  incr = strtol(&out[5], &pEnd, 10);
+  curr = strtol(&out[9], &pEnd, 10);
+  return LX200VALUEGET;
 }
 
+ 
