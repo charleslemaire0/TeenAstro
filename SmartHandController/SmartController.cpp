@@ -159,6 +159,21 @@ static unsigned char ErrUp_bits[] U8X8_PROGMEM = {
   0x2e, 0xb1, 0x00, 0xb0, 0x22, 0xb0, 0x22, 0xb0, 0xa2, 0xb3, 0xa2, 0xb2,
   0xa2, 0x83, 0xa2, 0xb0, 0x9c, 0xb0, 0x00, 0x80 };
 
+static unsigned char Lock___bits[] U8X8_PROGMEM = {
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1e, 0x00, 0x21,
+  0x00, 0x21, 0x80, 0x7f, 0x80, 0x7f, 0x80, 0x7f, 0x80, 0x7f, 0x80, 0x7f,
+  0x80, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+static unsigned char Lock_F_bits[] U8X8_PROGMEM = {
+  0x00, 0x00, 0x3e, 0x00, 0x02, 0x00, 0x02, 0x00, 0x1e, 0x00, 0x02, 0x00,
+  0x02, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+static unsigned char Lock_T_bits[] = {
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3e, 0x00, 0x08, 0x00, 0x08, 0x00,
+  0x08, 0x00, 0x08, 0x00, 0x08, 0x00, 0x00, 0x00 };
+
 static const unsigned char teenastro_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -478,9 +493,15 @@ void SmartHandController::update()
       else if (eventbuttons[0] == E_NONE && !Move[k - 1] && (eventbuttons[k] == E_LONGPRESS || eventbuttons[k] == E_CLICK || eventbuttons[k] == E_LONGPRESSTART))
       {
         buttonCommand = true;
-        Move[k - 1] = true;
+
         if (k < 5)
-          SetBoolLX200(RC[k - 1]);
+        {
+          if (!telescoplocked)
+          {
+            Move[k - 1] = true;
+            SetBoolLX200(RC[k - 1]);
+          }
+        }
         else if (!focuserlocked)
           Move[k - 1] = (SetBoolLX200(RC[k - 1]) == LX200VALUESET);
         continue;
@@ -711,6 +732,18 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
         break;
       }
 
+    }
+
+    if (focuserlocked|| telescoplocked)
+    {
+      display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Lock___bits);
+      display->setBitmapMode(1);
+      if (focuserlocked)
+        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Lock_F_bits);
+      if (telescoplocked)
+        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Lock_T_bits);
+      display->setBitmapMode(0);
+      x -= icon_width + 1;
     }
 
     if (page == 0)
@@ -1109,7 +1142,7 @@ void SmartHandController::menuTelAction()
     }
     else if (currentstate == Telescope::PRK_UNPARKED)
     {
-      const char *string_list_main_UnParkedL0 = "Goto\nSync\nTracking\nSide of Pier";
+      const char *string_list_main_UnParkedL0 = telescoplocked ? "Goto\nSync\nTracking\nSide of Pier\nUnlock" : "Goto\nSync\nTracking\nSide of Pier\nLock";
       current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, "Telescope Action", current_selection_L0, string_list_main_UnParkedL0);
       switch (current_selection_L0)
       {
@@ -1127,6 +1160,10 @@ void SmartHandController::menuTelAction()
         break;
       case 4:
         menuPier();
+        break;
+      case 5:
+        telescoplocked = !telescoplocked;
+        exitMenu = true;
         break;
       default:
         break;
@@ -2059,10 +2096,11 @@ void SmartHandController::menuUTCTime()
 void SmartHandController::menuFocuserAction()
 {
   buttonPad.setMenuMode();
-  const char *string_list_Focuser = focuserlocked ? "Goto\nSync\nPark\nUnlock" : "Goto\nSync\nPark\nLock" ;
+
   current_selection_L2 = 1;
   while (!exitMenu)
   {
+    const char *string_list_Focuser = focuserlocked ? "Goto\nSync\nPark\nUnlock" : "Goto\nSync\nPark\nLock";
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Focuser Action", current_selection_L2, string_list_Focuser);
     switch (current_selection_L2)
     {
@@ -2238,7 +2276,7 @@ void SmartHandController::menuFocuserMotor()
         sprintf(line3, "Resolution  : %03u", res);
         rev ? sprintf(line4, "Reversed Rotation") : sprintf(line2, "Direct Rotation");
         DisplayLongMessage(line1, line2, line3, line4, -1);
-        sprintf(line3, "Micro.      : %03u", pow(1, mu));
+        sprintf(line3, "Micro.      : %03u", (unsigned int)pow(2, mu));
         sprintf(line4, "Current   : %05umA", curr * 10);
         DisplayLongMessage(line1, line2, line3, line4, -1);
         break;
@@ -2272,7 +2310,7 @@ void SmartHandController::menuFocuserMotor()
         if (choice)
         {
           microStep = choice - 1 + 2;
-          sprintf(cmd, ":Fm %d#", (int)log2(microStep));
+          sprintf(cmd, ":Fm %d#", microStep);
           ValueSetRequested = true;
         }
         break;
@@ -2290,6 +2328,7 @@ void SmartHandController::menuFocuserMotor()
       if (ValueSetRequested)
       {
         DisplayMessageLX200(SetLX200(cmd), false);
+        delay(250);
       }
     }
     else
