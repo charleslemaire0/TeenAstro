@@ -35,62 +35,62 @@ void Command_Run()
 
 bool SerCom::Get_Command()
 {
+ /* m_hasReceivedCommand = ser.findUntil(':','#');
+  if (!m_hasReceivedCommand)
+    return false;*/
   m_hasReceivedCommand = false;
-  if (ser.peek() == ':' && ser.available() > 3)
+
+  while (ser.available() > 0)
   {
-    unsigned long start = millis();
-    int pos = 0;
-    char b = 0;
-    char input[INPUT_SIZE];
-    while (!m_hasReceivedCommand)
+    char b = ser.read();
+    if (!m_hasreceivedstart)
     {
-      if (ser.available() > 0)
+      if (b == ':')
       {
-        
-        b = ser.read();
-        input[pos] = b;
-        if (input[pos] == '#')
-        {
-          m_hasReceivedCommand = true;         
-          while (ser.available() > 0)
-            b = ser.read();
-          break;
-        }
-        if (pos == INPUT_SIZE-1)
-        {
-          m_hasReceivedCommand = false;
-          while (ser.available() > 0)
-            b = ser.read();
-          break;
-        }
-        pos++;
-        input[pos] = 0;
+        m_hasreceivedstart = true;
+        m_input[message_pos] = b;
+        message_pos++;
       }
-    }
-    int size = strlen(input);
-    if (size < 4 || input[1] != 'F')
-    {
-      m_hasReceivedCommand = false;
-    }
-    // Read each command pair
-    m_command = input[2];
-    m_parameter = input[3];
-    m_valuedefined = false;
-    if (m_parameter == ' ')
-    {
-      m_valuedefined = true;
-      m_value = atoi(&input[4]);
+      continue;
     }
     else
     {
-      memcpy(m_input, input, sizeof(m_input));
+      m_input[message_pos] = b;
+      if (b == '#')
+      {
+        m_hasReceivedCommand = true;
+        m_hasreceivedstart = false;
+        message_pos = 0;
+        break;
+      }
+      message_pos++;
     }
-  }
-  else 
+    if (message_pos == INPUT_SIZE)
+    {
+      m_hasreceivedstart = false;
+      message_pos = 0;
+    }
+  }  
+  if (!m_hasReceivedCommand)
+    return m_hasReceivedCommand;
+
+
+  unsigned int size = strlen(m_input);
+  if (size < 2 || m_input[1] != 'F' || m_input[0] != ':' )
   {
-    while (ser.available() > 0)
-      ser.read();
+    m_hasReceivedCommand = false;
+    return m_hasReceivedCommand;
   }
+  // Read each command pair
+  m_command = m_input[2];
+  m_parameter = size < 4 ? 0 : m_input[3];
+  m_valuedefined = false;
+  if (m_parameter == ' ')
+  {
+    m_valuedefined = true;
+    m_value = atoi(&m_input[4]);
+  }
+  m_hasReceivedCommand = true;
   return m_hasReceivedCommand;
 }
 
@@ -124,10 +124,6 @@ void SerCom::Command_Check(void)
     mdirIN = LOW;
     break;
   case FocCmd_Goto:
-    switch (m_parameter)
-    {
-    case ' ':
-    {
       if (m_valuedefined)
       {
         halt = false;
@@ -135,7 +131,9 @@ void SerCom::Command_Check(void)
         MoveTo((unsigned long)m_value * resolution->get());
       }
       break;
-    }
+  case FocCmd_goto:
+    switch (m_parameter)
+    {
     case '0':
     case '1':
     case '2':
@@ -166,18 +164,18 @@ void SerCom::Command_Check(void)
     MoveTo(startPosition->get());
     break;
   case FocCmd_Sync:      // "reset" position
+  {
+    unsigned long position;
+    if (setvalue(m_valuedefined, (unsigned long)m_value * resolution->get(), 0, maxPosition->get(), position))
+    {
+      stepper.setCurrentPosition((long)position);
+      writePos();
+    }
+    break;
+  }
+  case FocCmd_set:    
     switch (m_parameter)
     {
-    case ' ':
-    {
-      unsigned long position;
-      if (setvalue(m_valuedefined, (unsigned long)m_value * resolution->get(), 0, maxPosition->get(), position))
-      {
-        stepper.setCurrentPosition((long)position);
-        writePos();
-      }
-      break;
-    }
     case '0':
     case '1':
     case '2':
@@ -189,8 +187,8 @@ void SerCom::Command_Check(void)
     case '9':
     {
       int val = m_parameter - '0';
-      m_value = atoi(&m_input[4]);
-      PositionList[val]->set(&m_input[10], (unsigned long)m_value* resolution->get());
+      m_value = atoi(&m_input[5]);
+      PositionList[val]->set(&m_input[11], (unsigned long)m_value* resolution->get());
       break;
     }
     default:
@@ -208,7 +206,6 @@ void SerCom::Command_Check(void)
     {
       stepper.setMaxSpeed(highSpeed->get()*pow(2, micro->get()));
     }
- 
     break;
   case FocCmd_lowSpeed:
     setvalue(m_valuedefined, m_value, lowSpeed);
@@ -245,11 +242,11 @@ void SerCom::Command_Check(void)
     dumpState();
     break;
   case CmdDumpConfig:
+    dumpConfig();
+    break;
+  case CmdDumpConfigPos:
     switch (m_parameter)
     {
-    case '#':
-      dumpConfig();
-      break;
     case '0':
     case '1':
     case '2':
@@ -270,10 +267,6 @@ void SerCom::Command_Check(void)
     break;
   case CmdDumpConfigMotor:
     dumpConfigMotor();
-    break;
-  case Char_CR:  // ignore cr
-  case Char_Spc:
-  case Char_254:
     break;
   default:
     break;
@@ -331,33 +324,7 @@ void SerCom::MoveRequest(void)
   }
 }
 
-void SerCom::HaltRequest(void)
-{
-  Get_Command();
-  if (!m_hasReceivedCommand)
-    return;
-  switch (m_command)
-  {
-  case CmdDumpState: // "?" dump state including details
-    dumpState();
-    m_hasReceivedCommand = false;
-    break;
-  case FocCmd_in:
-  case FocCmd_in_stop:
-  case FocCmd_out:
-  case FocCmd_out_stop:
-  case FocCmd_Halt:
-  case FocCmd_in_wor:
-  case FocCmd_out_wor:
-    mdirOUT = LOW;
-    mdirIN = LOW;
-    halt = true;
-    m_hasReceivedCommand = false;
-    break;
-  default:
-    return;
-  }
-}
+
 
 bool SerCom::setvalue(bool valuedefined, unsigned long value, unsigned long min, unsigned long max, unsigned long &adress)
 {
@@ -466,8 +433,8 @@ void SerCom::dumpState()
 
 void SerCom::dumpParameterPosition(ParameterPosition* Pos)
 {
-  char buf[20];
-  char id[11];
+  char buf[20] = {0};
+  char id[11] = {0};
   unsigned long val;
   if (!Pos->isvalid())
   {
@@ -483,7 +450,7 @@ void SerCom::dumpParameterPosition(ParameterPosition* Pos)
     ser.flush();
     return;
   }
-  sprintf(buf, "%05u %s#", pos, id);
+  sprintf(buf, "P%05u %s#", pos, id);
   ser.print(buf);
   ser.flush();
 }

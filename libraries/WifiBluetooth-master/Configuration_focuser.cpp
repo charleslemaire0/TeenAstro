@@ -111,6 +111,14 @@ const char html_configHCFocuser[] PROGMEM =
 " (High Current Focuser, from 100mA to 1600mA)"
 "</form>"
 "\r\n";
+const char html_configPosFocuser[] PROGMEM =
+"<form method='get' action='/configuration_focuser.htm'>"
+" <input value='%s' type='text' name='Fn%d' maxlength='10'>"
+" <input value='%d' type='number' name='Fp%d' min='0' max='65535' step='1'>"
+"<button type='submit'>Upload</button>"
+" (to remove a position set an empty name)"
+"</form>"
+"\r\n";
 
 
 #ifdef OETHS
@@ -213,7 +221,29 @@ void wifibluetooth::handleConfigurationFocuser() {
     data += temp;
     sprintf_P(temp, html_configHCFocuser, curr);
     data += temp;
+
   }
+  sendCommand(":Fx0#", temp1);
+  Serial.println(temp1);
+  if (temp1[0] != 0)
+  {
+    if (temp1[0] == '0')
+    {
+      sprintf_P(temp, html_configPosFocuser, "undefined", 0, 0, 0);
+      data += temp;
+    }
+    else if (temp1[0] == 'P')
+    {
+      char id[11];
+      memcpy(id, &temp1[7], sizeof(id));
+      int pos = (int)strtol(&temp1[1], NULL, 10);
+      data += "User defined Position: <br />";
+      sprintf_P(temp, html_configPosFocuser, id, 0, pos, 0);
+      data += temp;
+    }
+  }
+
+
   
 
 

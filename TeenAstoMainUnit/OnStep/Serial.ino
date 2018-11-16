@@ -221,7 +221,7 @@ void Serial2_Init(unsigned long baud)
   Serial2.setRX(FocuserRX);
   Serial2.setTX(FocuserTX);
   Serial2.begin(baud);
-  Serial2.setTimeout(5);
+  Serial2.setTimeout(10);
 }
 
 #endif

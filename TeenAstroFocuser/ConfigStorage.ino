@@ -153,20 +153,25 @@ ParameterPosition::ParameterPosition(const int &adress)
     m_id[k] = EEPROM.read(m_adress +k);
   }
 }
-void ParameterPosition::get(char id[11], unsigned long &pos )
+void ParameterPosition::get(char* id, unsigned long &pos )
 {
-  memcpy(id, m_id, sizeof (id));
+  memcpy(id, m_id, sizeof (m_id));
   pos = m_pos->get();
 }
 unsigned long ParameterPosition::getPosition() { return m_pos->get(); }
 bool ParameterPosition::isvalid() { return m_id[0] != 0; }
-bool ParameterPosition::set(char id[11], const unsigned long &pos)
+bool ParameterPosition::set(char* id, const unsigned long &pos)
 {
-  memcpy(m_id, id, sizeof(m_id));
-  for (int k = 0; k < 11; k++)
+  bool endreached = false;
+  for (int k = 0; k < 10; k++)
   {
-    EEPROM.write(m_adress +k, m_id[k]);
+    if (id[k] == '#' || id[k] == 0)
+      endreached = true;
+    m_id[k] = endreached ? 0 : id[k];
+    EEPROM.write(m_adress + k, (uint8_t)m_id[k]);
   }
+  m_id[10] = 0;
+  EEPROM.write(m_adress + 10, 0);
   m_pos->set(pos);
 }
 
@@ -197,12 +202,9 @@ void loadConfig() {
   k += sizeof(uint8_t);
   manDec = new Parameteruint8_t(k, TAF_acc_default, TAF_acc_min, TAF_acc_max);
   k += sizeof(uint8_t);
-  
-
-
   for (int i = 0; i < 10; i++)
   {
-    PositionList[0] = new ParameterPosition(k);
+    PositionList[i] = new ParameterPosition(k);
     k += sizeof(unsigned long) + sizeof(char[11]);
   }
 }

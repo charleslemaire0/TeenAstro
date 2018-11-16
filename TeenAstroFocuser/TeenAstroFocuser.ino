@@ -33,8 +33,8 @@ void setup()
 #ifdef VERSION23
   Serial1.setRX(FocuserRX);
   Serial1.setTX(FocuserTX);
-  Serial1.begin(115200);
-  Serial1.setTimeout(5);
+  Serial1.begin(56000);
+  Serial1.setTimeout(10);
 #endif
 
   loadConfig();
@@ -50,7 +50,7 @@ void loop()
   {
     serComSHC.MoveRequest();
   }
-  else if (serCom0.Get_Command())
+  if (serCom0.Get_Command())
   {
     serCom0.MoveRequest();
   }
