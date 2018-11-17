@@ -110,13 +110,13 @@ const char html_configHCFocuser[] PROGMEM =
 "<button type='submit'>Upload</button>"
 " (High Current Focuser, from 100mA to 1600mA)"
 "</form>"
-"\r\n";
+"<br/>\r\n";
 const char html_configPosFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
 " <input value='%s' type='text' name='Fn%d' maxlength='10'>"
 " <input value='%d' type='number' name='Fp%d' min='0' max='65535' step='1'>"
 "<button type='submit'>Upload</button>"
-" (to remove a position set an empty name)"
+" "
 "</form>"
 "\r\n";
 
@@ -128,15 +128,15 @@ void wifibluetooth::handleConfigurationFocuser() {
 #endif
   Ser.setTimeout(WebTimeout);
   serialRecvFlush();
-  
-  char temp[320]="";
-  char temp1[80]="";
-  char temp2[80]="";
-  
+
+  char temp[320] = "";
+  char temp1[80] = "";
+  char temp2[80] = "";
+
   processConfigurationFocuserGet();
 
   // send a standard http response header
-  String data=html_headB;
+  String data = html_headB;
   data += html_main_cssB;
   data += html_main_css1;
   data += html_main_css2;
@@ -149,7 +149,7 @@ void wifibluetooth::handleConfigurationFocuser() {
   data += html_main_cssE;
   data += html_headE;
 #ifdef OETHS
-  client->print(data); data="";
+  client->print(data); data = "";
 #endif
 
   data += html_bodyB;
@@ -174,7 +174,7 @@ void wifibluetooth::handleConfigurationFocuser() {
   data += html_links6N;
 #endif
   data += html_onstep_header4;
-  
+
   sendCommand(":F~#", temp1);
   bool getdata = (temp1[0] == '~');
   if (getdata)
@@ -223,25 +223,31 @@ void wifibluetooth::handleConfigurationFocuser() {
     data += temp;
 
   }
-  sendCommand(":Fx0#", temp1);
-  Serial.println(temp1);
-  if (temp1[0] != 0)
+  data += "Userdefined Position: <br />";
+  data += "to remove a position set an empty name <br />";
+  for (int k = 0; k < 10; k++)
   {
-    if (temp1[0] == '0')
+    sprintf(temp, ":Fx%d#", k);
+    sendCommand(temp, temp1);
+    if (temp1[0] != 0)
     {
-      sprintf_P(temp, html_configPosFocuser, "undefined", 0, 0, 0);
-      data += temp;
-    }
-    else if (temp1[0] == 'P')
-    {
-      char id[11];
-      memcpy(id, &temp1[7], sizeof(id));
-      int pos = (int)strtol(&temp1[1], NULL, 10);
-      data += "User defined Position: <br />";
-      sprintf_P(temp, html_configPosFocuser, id, 0, pos, 0);
-      data += temp;
+      if (temp1[0] == '0')
+      {
+        sprintf_P(temp, html_configPosFocuser, "undefined", k, 0, k);
+        data += temp;
+      }
+      else if (temp1[0] == 'P')
+      {
+        char id[11];
+        memcpy(id, &temp1[7], sizeof(id));
+        int pos = (int)strtol(&temp1[1], NULL, 10);
+        sprintf_P(temp, html_configPosFocuser, id, k, pos, k);
+        data += temp;
+      }
     }
   }
+
+
 
 
   
@@ -347,6 +353,19 @@ void wifibluetooth::processConfigurationFocuserGet() {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 1600))) {
       sprintf(temp, ":Fc %d#", i / 10);
       Ser.print(temp);
+    }
+  }
+  for (int k = 0; k < 10; k++)
+  {
+    sprintf(temp, "Fp%d", k);
+    v = server.arg(temp);
+    if (v != "") {
+      if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535))) {
+        sprintf(temp, "Fn%d", k);
+        v = server.arg(temp);
+        sprintf(temp, ":Fs%d %05d_%s#", k, (int)f, (char*)v.c_str());
+        Ser.print(temp);
+      }
     }
   }
   Ser.flush();

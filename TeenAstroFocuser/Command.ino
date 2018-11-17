@@ -324,8 +324,6 @@ void SerCom::MoveRequest(void)
   }
 }
 
-
-
 bool SerCom::setvalue(bool valuedefined, unsigned long value, unsigned long min, unsigned long max, unsigned long &adress)
 {
   bool ok = false;

@@ -635,7 +635,6 @@ void Command_F()
     command_out[2] = command[1];
     break;
   case 'g':
-  case 's':
   case 'x':
     command_out[0] = ':';
     command_out[1] = 'F';
@@ -643,6 +642,23 @@ void Command_F()
     command_out[3] = parameter[0];
     command_out[4] = '#';
     command_out[5] = 0;
+    break;
+  case 's':
+  {
+    command_out[0] = ':';
+    command_out[1] = 'F';
+    command_out[2] = command[1];
+    command_out[3] = parameter[0];
+    command_out[4] = ' ';
+    int pos = 5;
+    for (int k = 0; k < strlen(parameter)-1; k++)
+    {
+      command_out[pos] = parameter[k + 1];
+      pos++;
+    }
+    command_out[pos] = '#';
+    command_out[pos + 1] = 0;
+  }
     break;
   case 'S':
   case 'G':
@@ -672,6 +688,8 @@ void Command_F()
     }
     command_out[p + k] = '#';
     command_out[p + k + 1] = 0;
+
+    break;
   }
 
   break;
@@ -687,8 +705,6 @@ void Command_F()
   case '-':
   case 'P':
   case 'Q':
-    focuserNoResponse = true;
-    break;
   case 'G':
   case 'g':
   case 's':
