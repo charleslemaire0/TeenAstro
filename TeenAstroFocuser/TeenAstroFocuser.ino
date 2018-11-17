@@ -27,8 +27,8 @@ void setup()
 #ifdef VERSION22
   Serial2.setRX(FocuserRX);
   Serial2.setTX(FocuserTX);
-  Serial2.begin(115200);
-  Serial2.setTimeout(5);
+  Serial2.begin(56000);
+  Serial2.setTimeout(10);
 #endif
 #ifdef VERSION23
   Serial1.setRX(FocuserRX);
