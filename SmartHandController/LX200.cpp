@@ -723,7 +723,7 @@ LX200RETURN readFocuserConfig(unsigned int& startPosition, unsigned int& maxPosi
     if (GetLX200(":F~#", out, sizeof(out)) == LX200GETVALUEFAILED)
       if (GetLX200(":F~#", out, sizeof(out)) == LX200GETVALUEFAILED)
         return LX200GETVALUEFAILED;
-  if (strlen(out) != 33)
+  if (strlen(out) != 32)
     return LX200GETVALUEFAILED;
   char* pEnd;
   startPosition = strtol(&out[1], &pEnd, 10);
@@ -743,7 +743,7 @@ LX200RETURN readFocuserMotor(bool& reverse, unsigned int& micro, unsigned int& i
     if (GetLX200(":FM#", out, sizeof(out)) == LX200GETVALUEFAILED)
       if (GetLX200(":FM#", out, sizeof(out)) == LX200GETVALUEFAILED)
         return LX200GETVALUEFAILED;
-  if (strlen(out) != 13)
+  if (strlen(out) != 12)
     return LX200GETVALUEFAILED;
   char* pEnd;
   reverse = out[1] == '1';
