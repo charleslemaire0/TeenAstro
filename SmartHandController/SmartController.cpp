@@ -2096,53 +2096,88 @@ void SmartHandController::menuUTCTime()
 void SmartHandController::menuFocuserAction()
 {
   buttonPad.setMenuMode();
-
+  int pos[10];
+  int idx = 0;
+  int idxs[10] = { -1,-1,-1,-1,-1,-1,-1,-1,-1,-1 };
+  char temp[20] = { 0 };
+  char txt[150] = { 0 };
+  char out[20];
+  for (int k = 0; k < 10; k++)
+  {
+    sprintf(temp, ":Fx%d#", k);
+    GetLX200(temp, out, 20);
+    if (out[0] == 'P')
+    {
+      strcat(txt, &out[7]);
+      strcat(txt, "\n");
+      idxs[idx] = k;
+      idx++;
+    }
+    else
+      continue;
+  }
   current_selection_L2 = 1;
   while (!exitMenu)
   {
-    const char *string_list_Focuser = focuserlocked ? "Goto\nSync\nPark\nUnlock" : "Goto\nSync\nPark\nLock";
+    char menustxt[200] = {};
+    strcat(menustxt, txt);
+    focuserlocked ? strcat(menustxt, "Goto\nSync\nPark\nUnlock") : strcat(menustxt, "Goto\nSync\nPark\nLock");
+    const char *string_list_Focuser = &menustxt[0];
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Focuser Action", current_selection_L2, string_list_Focuser);
-    switch (current_selection_L2)
+    if (current_selection_L2 == 0)
     {
-    case 0:
       exitMenu = true;
       break;
-    case 1:
+    }
+    else if (current_selection_L2 - 1 < idx)
     {
-      if (display->UserInterfaceInputValueFloat(&buttonPad, "Goto Position", "", &FocuserPos, 0, 65535, 5, 0, ""))
+      char cmd[15];
+      sprintf(cmd, ":Fg%d#", idxs[current_selection_L2-1]);
+      DisplayMessage("Goto", "Position", 1000);
+      SetLX200(cmd);
+      exitMenu = true;
+    }
+    else
+    {
+      switch (current_selection_L2 - idx)
+      { 
+      case 1:
       {
-        char cmd[15];
-        sprintf(cmd, ":FG %05d#", (int)(FocuserPos));
-        DisplayMessage("Goto", "Position", 1000);
-        SetLX200(cmd);
-        exitMenu = true;
+        if (display->UserInterfaceInputValueFloat(&buttonPad, "Goto Position", "", &FocuserPos, 0, 65535, 5, 0, ""))
+        {
+          char cmd[15];
+          sprintf(cmd, ":FG %05d#", (int)(FocuserPos));
+          DisplayMessage("Goto", "Position", 1000);
+          SetLX200(cmd);
+          exitMenu = true;
+        }
+        break;
       }
-      break;
-    }
-    case 2:
-    {
-      if (display->UserInterfaceInputValueFloat(&buttonPad, "Sync Position", "", &FocuserPos, 0, 65535, 5, 0, ""))
+      case 2:
       {
-        char cmd[15];
-        sprintf(cmd, ":FS %05d#", (int)(FocuserPos));
-        DisplayMessage("Synced", "at Position", 1000);
-        SetLX200(cmd);
-        exitMenu = true;
+        if (display->UserInterfaceInputValueFloat(&buttonPad, "Sync Position", "", &FocuserPos, 0, 65535, 5, 0, ""))
+        {
+          char cmd[15];
+          sprintf(cmd, ":FS %05d#", (int)(FocuserPos));
+          DisplayMessage("Synced", "at Position", 1000);
+          SetLX200(cmd);
+          exitMenu = true;
+        }
+        break;
       }
-      break;
-    }
-    case 3:
-    {
-      SetLX200(":FP#");
-      exitMenu = true;
-      break;
-    }
-    case 4:
-      focuserlocked = !focuserlocked;
-      exitMenu = true;
-      break;
-    default:
-      break;
+      case 3:
+      {
+        SetLX200(":FP#");
+        exitMenu = true;
+        break;
+      }
+      case 4:
+        focuserlocked = !focuserlocked;
+        exitMenu = true;
+        break;
+      default:
+        break;
+      }
     }
   }
   buttonPad.setControlerMode();

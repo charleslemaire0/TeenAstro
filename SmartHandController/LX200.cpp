@@ -139,16 +139,18 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     unsigned long start = millis();
     int recvBufferPos = 0;
     char b = 0;
-    while (millis() - start < timeOutMs && (b != '#'))
+    while (millis() - start < timeOutMs)
     {
+      recvBuffer[recvBufferPos] = 0;
       if (Ser.available())
       {
         b = Ser.read();
+        if (b == '#')
+          break;
         start = millis();
         recvBuffer[recvBufferPos] = b;
         recvBufferPos++;
         if (recvBufferPos > bufferSize - 1) recvBufferPos = bufferSize - 1;
-        recvBuffer[recvBufferPos] = 0;
       }
     }
     return (recvBuffer[0] != 0);
