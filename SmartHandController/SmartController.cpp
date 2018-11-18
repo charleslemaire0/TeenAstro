@@ -2186,7 +2186,7 @@ void SmartHandController::menuFocuserAction()
 void SmartHandController::menuFocuserConfig()
 {
   char cmd[50];
-  const char *string_list_Focuser = "Display Settings\nPark Position\nMax Position\nMin Speed\nMax Speed\nGoto Acc\nMan. Acc\nDeceleration\nResolution\nRotation\nIncrement";
+  const char *string_list_Focuser = "Display Settings\nPark Position\nMax Position\nMin Speed\nMax Speed\nGoto Acc\nMan. Acc\nDeceleration";
   unsigned int sP, maxP, minS, maxS, cmdAcc, manAcc, manDec;
   float value;
   while (!exitMenu)
