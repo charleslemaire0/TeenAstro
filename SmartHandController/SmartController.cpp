@@ -359,11 +359,14 @@ bool SmartHandController::buttonPressed()
 
 bool SmartHandController::isSleeping()
 {
-  unsigned long top = millis();
   if (forceDisplayoff)
   {
     if (!buttonPad.shiftPressed())
+    {
+      bool moving = false;
+      manualMove(moving);
       return true;
+    }
     else
       forceDisplayoff = false;
   }
@@ -408,52 +411,10 @@ bool SmartHandController::isSleeping()
   return false;
 }
 
-void SmartHandController::update()
+void SmartHandController::manualMove(bool &moving)
 {
-  tickButtons();
-  if (isSleeping())
-    return;
-  unsigned long top = millis();
-  if (powerCylceRequired)
-  {
-    display->sleepOff();
-    DisplayMessage("Press key", "to reboot...", -1);
-    DisplayMessage("Device", "will reboot...", 1000);
-    ESP.reset();
-    return;
-  }
-  if (telInfo.notResponding())
-  {
-    display->sleepOff();
-    DisplayMessage("!! Error !!", "Not Connected", -1);
-    DisplayMessage("Device", "will reboot...", 1000);
-    ESP.reset();
-  }
-  if (telInfo.align == Telescope::ALI_SELECT_STAR_1 || telInfo.align == Telescope::ALI_SELECT_STAR_2 || telInfo.align == Telescope::ALI_SELECT_STAR_3)
-  {
-    if (telInfo.align == Telescope::ALI_SELECT_STAR_1)
-      DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Western Sky", -1);
-    else if (telInfo.align == Telescope::ALI_SELECT_STAR_2)
-      DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Eastern Sky", -1);
-    else if (telInfo.align == Telescope::ALI_SELECT_STAR_3)
-      DisplayLongMessage("Select a Star", "HA = -3 hour", "Dec = +- 45 degree", "in the Eastern Sky", -1);
-    if (!SelectStarAlign())
-    {
-      DisplayMessage("Alignment", "Aborted", -1);
-      telInfo.align = Telescope::ALI_OFF;
-      return;
-    }
-    telInfo.align = static_cast<Telescope::AlignState>(telInfo.align + 1);
-  }
-  else if (top - lastpageupdate > 100)
-  {
-    updateMainDisplay(page);
-  }
-  if (!telInfo.connected())
-    return;
-
-  bool moving = telInfo.getTrackingState() == Telescope::TRK_SLEWING || telInfo.getParkState() == Telescope::PRK_PARKING;
-  if ( moving )
+  moving = telInfo.getTrackingState() == Telescope::TRK_SLEWING || telInfo.getParkState() == Telescope::PRK_PARKING;
+  if (moving)
   {
     bool stop = (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART || eventbuttons[0] == E_DOUBLECLICK) ? true : false;
     int it = 1;
@@ -514,8 +475,53 @@ void SmartHandController::update()
       return;
     }
   }
-  
+}
 
+void SmartHandController::update()
+{
+  tickButtons();
+  top = millis();
+  if (isSleeping())
+    return;
+  if (powerCylceRequired)
+  {
+    display->sleepOff();
+    DisplayMessage("Press key", "to reboot...", -1);
+    DisplayMessage("Device", "will reboot...", 1000);
+    ESP.reset();
+    return;
+  }
+  if (telInfo.notResponding())
+  {
+    display->sleepOff();
+    DisplayMessage("!! Error !!", "Not Connected", -1);
+    DisplayMessage("Device", "will reboot...", 1000);
+    ESP.reset();
+  }
+  if (telInfo.align == Telescope::ALI_SELECT_STAR_1 || telInfo.align == Telescope::ALI_SELECT_STAR_2 || telInfo.align == Telescope::ALI_SELECT_STAR_3)
+  {
+    if (telInfo.align == Telescope::ALI_SELECT_STAR_1)
+      DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Western Sky", -1);
+    else if (telInfo.align == Telescope::ALI_SELECT_STAR_2)
+      DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Eastern Sky", -1);
+    else if (telInfo.align == Telescope::ALI_SELECT_STAR_3)
+      DisplayLongMessage("Select a Star", "HA = -3 hour", "Dec = +- 45 degree", "in the Eastern Sky", -1);
+    if (!SelectStarAlign())
+    {
+      DisplayMessage("Alignment", "Aborted", -1);
+      telInfo.align = Telescope::ALI_OFF;
+      return;
+    }
+    telInfo.align = static_cast<Telescope::AlignState>(telInfo.align + 1);
+  }
+  else if (top - lastpageupdate > 100)
+  {
+    updateMainDisplay(page);
+  }
+  if (!telInfo.connected())
+    return;
+  bool moving = false;
+  manualMove(moving);
   if (eventbuttons[0] == E_CLICK && telInfo.align == Telescope::ALI_OFF)
   {
     page++;
@@ -528,11 +534,6 @@ void SmartHandController::update()
   }
   else if (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART && telInfo.align == Telescope::ALI_OFF )
   {
-
-    //if (page == 0 || page == 1 || page == 2)
-    //{
-    //  menuMain();
-    //}
     if (eventbuttons[3] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
     {
       menuTelAction();
@@ -1310,7 +1311,6 @@ void SmartHandController::menuSyncGoto(bool sync)
     default:
       break;
     }
-
   }
 }
 
@@ -1405,9 +1405,6 @@ void SmartHandController::menuAlignment()
     double val2;
     double val3;
     double val4;
-
-    //DisplaylongMessage("", "", "", "",0);
-
     break;
   case 5:
     if (SetLX200(":SX0x#") == LX200VALUESET)
@@ -1538,10 +1535,7 @@ void SmartHandController::menuTelSettings()
       break;
     }
   }
-  if (!sleepDisplay)
-  {
-    buttonPad.setControlerMode();
-  }
+  buttonPad.setControlerMode();
 }
 
 void SmartHandController::menuMount()
