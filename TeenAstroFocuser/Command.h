@@ -21,14 +21,17 @@
 #define FocCmd_in 'I'
 #define FocCmd_in_stop 'i'
 #define FocCmd_Goto 'G'
+#define FocCmd_goto 'g'
 #define FocCmd_Park 'P'
 #define FocCmd_Sync 'S'
+#define FocCmd_set 's'
 #define FocCmd_Halt 'Q'
 
 #define FocCmd_Write 'W'
 
 #define CmdDumpState '?'
 #define CmdDumpConfig '~'
+#define CmdDumpConfigPos 'x'
 #define CmdDumpConfigMotor 'M'
 
 #define FocCmd_startPosition '0'
@@ -63,6 +66,8 @@ private:
   unsigned int m_value = 0;
   bool m_valuedefined = false;
   bool m_hasReceivedCommand = false;
+  bool m_hasreceivedstart = false;
+  unsigned int message_pos = 0;
   uint32_t m_lastupdate = millis();
 public:
   void Command_Check();
@@ -79,7 +84,6 @@ private:
   bool setvalue(bool valuedefined, unsigned long value, unsigned long min, unsigned long max, unsigned long &adress);
   bool setvalue(bool valuedefined, unsigned long value, Parameterulong *adress);
   bool setvalue(bool valuedefined, unsigned int value, Parameteruint8_t *adress);
-  void HaltRequest();
 };
 
 

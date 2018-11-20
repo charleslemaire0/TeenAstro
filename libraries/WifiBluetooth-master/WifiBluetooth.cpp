@@ -12,7 +12,7 @@ const char* html_bodyB PROGMEM = "<body bgcolor='#26262A'>\r\n";
 
 const char* html_main_cssB PROGMEM = "<STYLE>";
 const char* html_main_css1 PROGMEM = ".clear { clear: both; } .a { background-color: #111111; } .t { padding: 10px 10px 20px 10px; border: 5px solid #551111;";
-const char* html_main_css2 PROGMEM = " margin: 25px 25px 0px 25px; color: #999999; background-color: #111111; min-width: 10em; } input { font-weight: bold; width:5em; background-color: #A01010; padding: 2px 2px; }";
+const char* html_main_css2 PROGMEM = " margin: 25px 25px 0px 25px; color: #999999; background-color: #111111; min-width: 10em; } input { font-weight: bold; width:6em; background-color: #A01010; padding: 2px 2px; }";
 const char* html_main_css3 PROGMEM = ".b { padding: 10px; border-left: 5px solid #551111; border-right: 5px solid #551111; border-bottom: 5px solid #551111; margin: 0px 25px 25px 25px; color: #999999;";
 const char* html_main_css4 PROGMEM = "background-color: #111111; min-width: 10em; } select { width:7em; font-weight: bold; background-color: #A01010; padding: 2px 2px; } .c { color: #A01010; font-weight: bold; }";
 const char* html_main_css5 PROGMEM = "h1 { text-align: right; } a:hover, a:active { background-color: red; } .y { color: #FFFF00; font-weight: bold; }";

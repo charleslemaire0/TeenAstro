@@ -14,6 +14,7 @@ class SmartHandController
 public:
   enum OLED { OLED_SH1106, OLED_SSD1306 };
   void update();
+  void manualMove(bool &moving);
   void drawIntro();
   void drawLoad();
   void drawReady();
@@ -37,6 +38,7 @@ private:
   float  FocuserPos;
   unsigned long lastpageupdate = millis();
   unsigned long time_last_action = millis();
+  unsigned long top = millis();
   bool forceDisplayoff = false;
   bool focuserlocked = false;
   bool telescoplocked = false;

@@ -230,7 +230,7 @@ void setup()
   // get ready for serial communications
   Serial1_Init(BAUD);
   Serial_Init(BAUD);                      // for Tiva TM4C the serial is redirected to serial5 in serial.ino file
-  Serial2_Init(115200);
+  Serial2_Init(56000);
 #if defined(W5100_ON)
   // get ready for Ethernet communications
   Ethernet_Init();

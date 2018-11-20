@@ -229,7 +229,7 @@ void Command_S(Command& process_command)
   {
     if ((parameter[0] != 0) && (strlen(parameter) < 3))
     {
-      if ((atoi2(parameter, &i)) && ((i >= 60) && (i <= 90)))
+      if ((atoi2(parameter, &i)) && ((i >= 60) && (i <= 91)))
       {
         maxAlt = i;
         maxAlt = maxAlt > 87 && mountType == MOUNT_TYPE_ALTAZM ? 87 : maxAlt;

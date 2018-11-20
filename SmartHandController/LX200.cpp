@@ -95,7 +95,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     if (command[1] == 'F')
     {
       Ser.setTimeout(timeOutMs*4);
-      if (strchr("+-GPS", command[2])) { noResponse = true; }
+      if (strchr("+-GPSgs", command[2])) { noResponse = true; }
       if (strchr("OoIi:012345678cCmW", command[2])) { shortResponse = true;}
     }
     if (command[1] == 'h') {
@@ -139,16 +139,18 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     unsigned long start = millis();
     int recvBufferPos = 0;
     char b = 0;
-    while (millis() - start < timeOutMs && (b != '#'))
+    while (millis() - start < timeOutMs)
     {
+      recvBuffer[recvBufferPos] = 0;
       if (Ser.available())
       {
         b = Ser.read();
+        if (b == '#')
+          break;
         start = millis();
         recvBuffer[recvBufferPos] = b;
         recvBufferPos++;
         if (recvBufferPos > bufferSize - 1) recvBufferPos = bufferSize - 1;
-        recvBuffer[recvBufferPos] = 0;
       }
     }
     return (recvBuffer[0] != 0);
@@ -721,7 +723,7 @@ LX200RETURN readFocuserConfig(unsigned int& startPosition, unsigned int& maxPosi
     if (GetLX200(":F~#", out, sizeof(out)) == LX200GETVALUEFAILED)
       if (GetLX200(":F~#", out, sizeof(out)) == LX200GETVALUEFAILED)
         return LX200GETVALUEFAILED;
-  if (strlen(out) != 33)
+  if (strlen(out) != 32)
     return LX200GETVALUEFAILED;
   char* pEnd;
   startPosition = strtol(&out[1], &pEnd, 10);
@@ -741,7 +743,7 @@ LX200RETURN readFocuserMotor(bool& reverse, unsigned int& micro, unsigned int& i
     if (GetLX200(":FM#", out, sizeof(out)) == LX200GETVALUEFAILED)
       if (GetLX200(":FM#", out, sizeof(out)) == LX200GETVALUEFAILED)
         return LX200GETVALUEFAILED;
-  if (strlen(out) != 13)
+  if (strlen(out) != 12)
     return LX200GETVALUEFAILED;
   char* pEnd;
   reverse = out[1] == '1';

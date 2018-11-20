@@ -56,12 +56,12 @@ class ParameterPosition
 private:
   int m_adress;
   Parameterulong *m_pos;
-  char m_id[11];
+  char m_id[11]= { 0 };
 public:
   bool isvalid();
   unsigned long getPosition();
-  void get(char id[11], unsigned long& val);
-  bool set(char id[11], const unsigned long& val);
+  void get(char* id, unsigned long& val);
+  bool set(char* id, const unsigned long& val);
   ParameterPosition(const int &adress);
 };
 

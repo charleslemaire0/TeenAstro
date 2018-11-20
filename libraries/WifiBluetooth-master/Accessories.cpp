@@ -59,7 +59,7 @@ boolean wifibluetooth::readLX200Bytes(char* command,char* recvBuffer,long timeOu
     if (command[1] == 'F')
     {
       Ser.setTimeout(timeOutMs * 5);
-      if (strchr("+-GPS", command[2])) { noResponse = true; }
+      if (strchr("+-GPSsg", command[2])) { noResponse = true; }
       if (strchr("OoIi012345678cCmW", command[2])) { shortResponse = true; }
     }
     if (command[1]=='M') {
