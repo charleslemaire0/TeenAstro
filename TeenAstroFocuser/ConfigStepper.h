@@ -18,7 +18,7 @@
 TMC2130Stepper driver = TMC2130Stepper(EnablePin, DirPin, StepPin, CSPin);
 AccelStepper stepper = AccelStepper(stepper.DRIVER, StepPin, DirPin);
 
-
+long oldposition = 0;
 int mdirOUTOld = 0;
 int mdirINOld = 0;
 
