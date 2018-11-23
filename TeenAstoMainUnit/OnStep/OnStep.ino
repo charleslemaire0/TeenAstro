@@ -663,19 +663,17 @@ void initmotor()
   updateRatios();
   tmc26XStepper1 = new TMC26XStepper(StepRotAxis1, Axis1CSPin, Axis1DirPin, Axis1StepPin, (unsigned int)LowCurrAxis1 * 10);
   tmc26XStepper2 = new TMC26XStepper(StepRotAxis2, Axis2CSPin, Axis2DirPin, Axis2StepPin, (unsigned int)LowCurrAxis2 * 10);
-
-
-  tmc26XStepper1->setSpreadCycleChopper(2, 24, 8, 6, 0);
+  tmc26XStepper1->setSpreadCycleChopper(2, 24, 10, 7, 0);
   tmc26XStepper1->setRandomOffTime(0);
   tmc26XStepper1->setMicrosteps((int)pow(2, MicroAxis1));
-  tmc26XStepper1->setStallGuardThreshold(12, 0);
+  tmc26XStepper1->setStallGuardThreshold(63, -1);  //turn off SG
   tmc26XStepper1->setCoolStepConfiguration(480, 480, 1, 3, COOL_STEP_HALF_CS_LIMIT);
   tmc26XStepper1->setCoolStepEnabled(false);
   tmc26XStepper1->start();
-  tmc26XStepper2->setSpreadCycleChopper(2, 24, 8, 6, 0);
+  tmc26XStepper2->setSpreadCycleChopper(2, 24, 10, 7, 0);
   tmc26XStepper2->setRandomOffTime(0);
   tmc26XStepper2->setMicrosteps((int)pow(2, MicroAxis2));
-  tmc26XStepper2->setStallGuardThreshold(12, 0);
+  tmc26XStepper2->setStallGuardThreshold(63, -1);  //turn off SG
   tmc26XStepper2->setCoolStepConfiguration(480, 57, 1, 3, COOL_STEP_HALF_CS_LIMIT);
   tmc26XStepper2->setCoolStepEnabled(false);
   tmc26XStepper2->start();
