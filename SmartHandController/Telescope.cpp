@@ -105,15 +105,15 @@ Telescope::Mount Telescope::getMount()
 }
 Telescope::TrackState Telescope::getTrackingState()
 {
-  if (strchr(&TelStatus[0], 'N') == NULL)
+  if (TelStatus[1] != 'N')
   {
     return TRK_SLEWING;
   }
-  else if (strchr(&TelStatus[0], 'n') == NULL)
+  else if (TelStatus[0] != 'n')
   {
     return TRK_ON;
   }
-  if (strchr(&TelStatus[0], 'n') != NULL && strchr(&TelStatus[0], 'N') != NULL)
+  else if (TelStatus[0] == 'n' && TelStatus[1] == 'N')
   {
     return TRK_OFF;
   }
@@ -121,7 +121,7 @@ Telescope::TrackState Telescope::getTrackingState()
 }
 bool Telescope::atHome()
 {
-  return strchr(&TelStatus[0], 'H') != NULL;
+  return TelStatus[3] == 'H';
 }
 bool Telescope::isPulseGuiding()
 {
