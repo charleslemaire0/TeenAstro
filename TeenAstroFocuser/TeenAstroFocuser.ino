@@ -46,6 +46,7 @@ void setup()
 
 void loop()
 {
+  writePos();
   if (serComSHC.Get_Command())
   {
     serComSHC.MoveRequest();
@@ -85,6 +86,5 @@ void loop()
   serComSHC.Command_Check();
   serCom0.Command_Check();
   Command_Run();
-
 }
 
