@@ -35,10 +35,9 @@ class MountStatus {
       Ser.print(":GU#");
       s[Ser.readBytesUntil('#',s,20)]=0;
       if (s[0]==0) { _valid=false; return false; }
-
-      _tracking=false; _slewing=false;
-      _slewing = (s[0] == 'N');
-      _tracking = (s[1] == 'n');
+      _tracking=false;
+      _slewing=false;
+      if (s[1] != 'N'){ _slewing = true; } else if (s[0] != 'n') { _tracking = true; }
       _atHome = (s[3] == 'H');
       _parked = false;
       _parking = false;

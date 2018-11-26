@@ -225,7 +225,7 @@ void wifibluetooth::handleRoot() {
   if (mountStatus.rateCompensation()== MountStatus::RC_FULL_BOTH) strcat(temp2,"Full Comp Both Axis, ");
   if (!mountStatus.valid()) strcpy(temp2,"?");
   if (temp2[strlen(temp2)-2]==',') { temp2[strlen(temp2)-2]=0; strcat(temp2,"</font>)<font class=\"c\">"); } else strcpy(temp2,"");
-  sprintf(temp,html_indexTracking,temp1,temp2);
+  sprintf_P(temp,html_indexTracking,temp1,temp2);
   data += temp;
 
   // Tracking rate
