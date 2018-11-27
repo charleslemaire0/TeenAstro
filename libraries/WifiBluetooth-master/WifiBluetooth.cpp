@@ -90,16 +90,15 @@ int wifibluetooth::CmdTimeout = TIMEOUT_CMD;
 
 char wifibluetooth::masterPassword[40] = Default_Password;
 
-bool wifibluetooth::accessPointEnabled = true;
-bool wifibluetooth::stationEnabled = false;
-bool wifibluetooth::stationDhcpEnabled = true;
+wifibluetooth::WifiMode wifibluetooth::activeWifiMode = WifiMode::M_AcessPoint;
+bool wifibluetooth::stationDhcpEnabled[3] = { true, true, true };
 
-char wifibluetooth::wifi_sta_ssid[40] = "";
-char wifibluetooth::wifi_sta_pwd[40] = "";
+char wifibluetooth::wifi_sta_ssid[3][40] = { "", "", "" };
+char wifibluetooth::wifi_sta_pwd[3][40] = { "", "", "" };
 
-IPAddress wifibluetooth::wifi_sta_ip = IPAddress(192, 168, 0, 1);
-IPAddress wifibluetooth::wifi_sta_gw = IPAddress(192, 168, 0, 1);
-IPAddress wifibluetooth::wifi_sta_sn = IPAddress(255, 255, 255, 0);
+IPAddress wifibluetooth::wifi_sta_ip[3] = { IPAddress(192, 168, 0, 1), IPAddress(192, 168, 0, 1), IPAddress(192, 168, 0, 1) };
+IPAddress wifibluetooth::wifi_sta_gw[3] = { IPAddress(192, 168, 0, 1), IPAddress(192, 168, 0, 1), IPAddress(192, 168, 0, 1) };
+IPAddress wifibluetooth::wifi_sta_sn[3] = { IPAddress(255, 255, 255, 0), IPAddress(255, 255, 255, 0), IPAddress(255, 255, 255, 0) };
 
 char wifibluetooth::wifi_ap_ssid[40] = "TeenAstro";
 char wifibluetooth::wifi_ap_pwd[40] = "password";
@@ -214,65 +213,97 @@ void wifibluetooth::handleNotFound()
   server.send(404, "text/plain", message);
 }
 
+void wifibluetooth::writeStation2EEPROM(const int& k)
+{
+  unsigned int adress = EEPROM_start_wifi_sta + k * 100;
+  EEPROM.write(adress, stationDhcpEnabled[k]); adress++;
+  for (int i = 0; i < 4; i++, adress++)
+    EEPROM.write(adress, wifi_sta_ip[k][i]);
+  for (int i = 0; i < 4; i++, adress++)
+    EEPROM.write(adress, wifi_sta_gw[k][i]);
+  for (int i = 0; i < 4; i++, adress++)
+    EEPROM.write(adress, wifi_sta_sn[k][i]);
+  EEPROM_writeString(adress, wifi_sta_ssid[k]); adress += sizeof(wifi_sta_ssid[k]);
+  EEPROM_writeString(adress, wifi_sta_pwd[k]);
+}
+void wifibluetooth::writeAccess2EEPROM()
+{
+  unsigned int adress = EEPROM_start_wifi_ap;
+  for (int i = 0; i < 4; i++, adress++)
+    EEPROM.write(adress, wifi_ap_ip[i]);
+  for (int i = 0; i < 4; i++, adress++)
+    EEPROM.write(adress, wifi_ap_gw[i]);
+  for (int i = 0; i < 4; i++, adress++)
+    EEPROM.write(adress, wifi_ap_sn[i]);
+  EEPROM.write(adress, wifi_ap_ch); adress++;
+  EEPROM_writeString(adress, wifi_ap_ssid); adress += sizeof(wifi_ap_ssid);
+  EEPROM_writeString(adress, wifi_ap_pwd);
+}
+
+void wifibluetooth::initFromEEPROM()
+{
+  EEPROM.begin(1024);
+  unsigned int adress = EEPROM_start;
+  // EEPROM Init
+  if (EEPROM.read(adress) != 82 || EEPROM.read(adress + 1) != 66 ||
+      EEPROM.read(adress + 2) != 0 || EEPROM.read(adress + 3) != 0)
+  {
+    EEPROM.write(adress, 82); adress++;
+    EEPROM.write(adress, 66); adress++;
+    EEPROM.write(adress, 0); adress++;
+    EEPROM.write(adress, 0); adress++;
+    EEPROM.write(EEPROM_WifiOn, wifiOn);
+    EEPROM.write(EEPROM_WifiMode, activeWifiMode);
+    EEPROM.write(EEPROM_WebTimeout, (uint8_t)WebTimeout);
+    EEPROM.write(EEPROM_CmdTimeout, (uint8_t)CmdTimeout); 
+    EEPROM_writeString(EPPROM_password, masterPassword);
+    for (int k = 0; k < 3; k++)
+    {
+      writeStation2EEPROM(k);
+    }
+    writeAccess2EEPROM();
+    EEPROM.commit();
+  }
+  else {
+    wifiOn = EEPROM.read(EEPROM_WifiOn);
+    activeWifiMode = static_cast<WifiMode>(EEPROM.read(EEPROM_WifiMode)); 
+    WebTimeout = EEPROM.read(EEPROM_WebTimeout);
+    CmdTimeout = EEPROM.read(EEPROM_CmdTimeout);
+    EEPROM_readString(EPPROM_password, masterPassword);
+    for (int k = 0; k < 3; k++)
+    {
+      adress = EEPROM_start_wifi_sta + k * 100;
+      stationDhcpEnabled[k] = EEPROM.read(adress); adress++;
+      for (int i = 0; i < 4; i++, adress++)
+         wifi_sta_ip[k][i] = EEPROM.read(adress);
+      for (int i = 0; i < 4; i++, adress++)
+        wifi_sta_gw[k][i] = EEPROM.read(adress);
+      for (int i = 0; i < 4; i++, adress++)
+        wifi_sta_sn[k][i] = EEPROM.read(adress);
+      EEPROM_readString(adress, wifi_sta_ssid[k]); adress += sizeof(wifi_sta_ssid[k]);
+      EEPROM_readString(adress, wifi_sta_pwd[k]);
+    }
+    adress = EEPROM_start_wifi_ap;
+    for (int i = 0; i < 4; i++, adress++)
+      wifi_ap_ip[i] = EEPROM.read(adress);
+    for (int i = 0; i < 4; i++, adress++)
+      wifi_ap_gw[i] = EEPROM.read(adress);
+    for (int i = 0; i < 4; i++, adress++)
+      wifi_ap_sn[i] = EEPROM.read(adress);
+    wifi_ap_ch = EEPROM.read(adress); adress++;
+    EEPROM_readString(adress, wifi_ap_ssid); adress += sizeof(wifi_ap_ssid);
+    EEPROM_readString(adress, wifi_ap_pwd);
+  }
+}
+
 void wifibluetooth::setup()
 {
 
 #ifdef LED_PIN
   pinMode(LED_PIN, OUTPUT);
 #endif
-  EEPROM.begin(1024);
 
-  // EEPROM Init
-  if ((EEPROM_readInt(0) != 8266) || (EEPROM_readInt(2) != 0)) {
-    EEPROM_writeInt(0, 8266);
-    EEPROM_writeInt(2, 0);
-
-    EEPROM_writeInt(4, (int)accessPointEnabled);
-    EEPROM_writeInt(6, (int)stationEnabled);
-    EEPROM_writeInt(8, (int)stationDhcpEnabled);
-
-    EEPROM_writeInt(10, (int)WebTimeout);
-    EEPROM_writeInt(12, (int)CmdTimeout);
-    EEPROM.write(14, wifiOn);
-
-    EEPROM_writeString(100, wifi_sta_ssid);
-    EEPROM_writeString(150, wifi_sta_pwd);
-    EEPROM_writeString(200, masterPassword);
-    EEPROM.write(20, wifi_sta_ip[0]); EEPROM.write(21, wifi_sta_ip[1]); EEPROM.write(22, wifi_sta_ip[2]); EEPROM.write(23, wifi_sta_ip[3]);
-    EEPROM.write(24, wifi_sta_gw[0]); EEPROM.write(25, wifi_sta_gw[1]); EEPROM.write(26, wifi_sta_gw[2]); EEPROM.write(27, wifi_sta_gw[3]);
-    EEPROM.write(28, wifi_sta_sn[0]); EEPROM.write(29, wifi_sta_sn[1]); EEPROM.write(30, wifi_sta_sn[2]); EEPROM.write(31, wifi_sta_sn[3]);
-
-    EEPROM_writeString(500, wifi_ap_ssid);
-    EEPROM_writeString(550, wifi_ap_pwd);
-    EEPROM_writeInt(50, (int)wifi_ap_ch);
-    EEPROM.write(60, wifi_ap_ip[0]); EEPROM.write(61, wifi_ap_ip[1]); EEPROM.write(62, wifi_ap_ip[2]); EEPROM.write(63, wifi_ap_ip[3]);
-    EEPROM.write(70, wifi_ap_gw[0]); EEPROM.write(71, wifi_ap_gw[1]); EEPROM.write(72, wifi_ap_gw[2]); EEPROM.write(73, wifi_ap_gw[3]);
-    EEPROM.write(80, wifi_ap_sn[0]); EEPROM.write(81, wifi_ap_sn[1]); EEPROM.write(82, wifi_ap_sn[2]); EEPROM.write(83, wifi_ap_sn[3]);
-    EEPROM.commit();
-  }
-  else {
-    accessPointEnabled = EEPROM_readInt(4);
-    stationEnabled = EEPROM_readInt(6);
-    stationDhcpEnabled = EEPROM_readInt(8);
-
-    WebTimeout = EEPROM_readInt(10);
-    CmdTimeout = EEPROM_readInt(12);
-    wifiOn = EEPROM.read(14);
-
-    EEPROM_readString(100, wifi_sta_ssid);
-    EEPROM_readString(150, wifi_sta_pwd);
-    EEPROM_readString(200, masterPassword);
-    wifi_sta_ip[0] = EEPROM.read(20); wifi_sta_ip[1] = EEPROM.read(21); wifi_sta_ip[2] = EEPROM.read(22); wifi_sta_ip[3] = EEPROM.read(23);
-    wifi_sta_gw[0] = EEPROM.read(24); wifi_sta_gw[1] = EEPROM.read(25); wifi_sta_gw[2] = EEPROM.read(26); wifi_sta_gw[3] = EEPROM.read(27);
-    wifi_sta_sn[0] = EEPROM.read(28); wifi_sta_sn[1] = EEPROM.read(29); wifi_sta_sn[2] = EEPROM.read(30); wifi_sta_sn[3] = EEPROM.read(31);
-
-    EEPROM_readString(500, wifi_ap_ssid);
-    EEPROM_readString(550, wifi_ap_pwd);
-    wifi_ap_ch = EEPROM_readInt(50);
-    wifi_ap_ip[0] = EEPROM.read(60); wifi_ap_ip[1] = EEPROM.read(61); wifi_ap_ip[2] = EEPROM.read(62); wifi_ap_ip[3] = EEPROM.read(63);
-    wifi_ap_gw[0] = EEPROM.read(70); wifi_ap_gw[1] = EEPROM.read(71); wifi_ap_gw[2] = EEPROM.read(72); wifi_ap_gw[3] = EEPROM.read(73);
-    wifi_ap_sn[0] = EEPROM.read(80); wifi_ap_sn[1] = EEPROM.read(81); wifi_ap_sn[2] = EEPROM.read(82); wifi_ap_sn[3] = EEPROM.read(83);
-  }
+  initFromEEPROM();
 
 #ifndef DEBUG_ON
   Ser.begin(SERIAL_BAUD);
@@ -303,10 +334,10 @@ Again:
   }
 
   // safety net
-  if ((c == 'R') || (!accessPointEnabled && !stationEnabled)) {
+  if ((c == 'R') || activeWifiMode == WifiMode::OFF) {
     // reset EEPROM values, triggers an init
     EEPROM_writeInt(0, 0); EEPROM_writeInt(2, 0);
-    accessPointEnabled = true;
+    activeWifiMode = WifiMode::M_AcessPoint;
     EEPROM.commit();
     Ser.println();
     Ser.println("Cycle power for reset to defaults.");
@@ -368,26 +399,27 @@ Again:
   Ser.println(wifi_ap_sn.toString());
 
 #endif
-
-  if ((stationEnabled) && (!stationDhcpEnabled)) WiFi.config(wifi_sta_ip, wifi_sta_gw, wifi_sta_sn);
-  if (accessPointEnabled) WiFi.softAPConfig(wifi_ap_ip, wifi_ap_gw, wifi_ap_sn);
-
-  if (accessPointEnabled && !stationEnabled) {
+  switch (activeWifiMode)
+  {
+  case wifibluetooth::M_AcessPoint:
+    WiFi.softAPConfig(wifi_ap_ip, wifi_ap_gw, wifi_ap_sn);
     WiFi.softAP(wifi_ap_ssid, wifi_ap_pwd, wifi_ap_ch);
     WiFi.mode(WIFI_AP);
-  }
-  else
-    if (!accessPointEnabled && stationEnabled) {
-      WiFi.softAPdisconnect(true);
-      WiFi.begin(wifi_sta_ssid, wifi_sta_pwd);
-      WiFi.mode(WIFI_STA);
+    break;
+  case wifibluetooth::M_Station1:
+  case wifibluetooth::M_Station2:
+  case wifibluetooth::M_Station3:
+    if (!stationDhcpEnabled[activeWifiMode])
+    {
+      WiFi.config(wifi_sta_ip[activeWifiMode], wifi_sta_gw[activeWifiMode], wifi_sta_sn[activeWifiMode]);
     }
-    else
-      if (accessPointEnabled && stationEnabled) {
-        WiFi.softAP(wifi_ap_ssid, wifi_ap_pwd, wifi_ap_ch);
-        WiFi.begin(wifi_sta_ssid, wifi_sta_pwd);
-        WiFi.mode(WIFI_AP_STA);
-      }
+    WiFi.softAPdisconnect(true);
+    WiFi.begin(wifi_sta_ssid[activeWifiMode], wifi_sta_pwd[activeWifiMode]);
+    WiFi.mode(WIFI_STA);
+  default:
+    break;
+  }
+
 
   // clear the buffers and any noise on the serial lines
   for (int i = 0; i < 3; i++) {
@@ -396,12 +428,6 @@ Again:
     serialRecvFlush();
   }
 
-  // Wait for connection
-  //if (stationEnabled) {
-  //  while (WiFi.status() != WL_CONNECTED) {
-  //    delay(500);
-  //  }
-  //}
   server.on("/", handleRoot);
   server.on("/index.htm", handleRoot);
   server.on("/configuration_telescope.htm", handleConfigurationTelescope);
@@ -430,7 +456,10 @@ Again:
 
 void wifibluetooth::update()
 {
-  if (stationEnabled && WiFi.status() != WL_CONNECTED && !accessPointEnabled)
+  if ((activeWifiMode == WifiMode::M_Station1 ||
+       activeWifiMode == WifiMode::M_Station2 ||
+       activeWifiMode == WifiMode::M_Station3)
+        && WiFi.status() != WL_CONNECTED)
   {
     return;
   }
@@ -486,7 +515,9 @@ bool wifibluetooth::isWifiRunning()
 {
   if (!wifiOn)
     return false;
-  if (stationEnabled)
+  if (activeWifiMode == WifiMode::M_Station1 ||
+      activeWifiMode == WifiMode::M_Station2 ||
+      activeWifiMode == WifiMode::M_Station3)
     return WiFi.status() == WL_CONNECTED;
   return true;
 }
@@ -501,13 +532,13 @@ void wifibluetooth::turnWifiOn(bool turnOn)
 void wifibluetooth::getIP(uint8_t* ip)
 {
   IPAddress local;
-  if (isStationEnabled())
-  {
-     local = WiFi.localIP();
-  }
-  else if (isAccessPointEnabled())
+  if (activeWifiMode == WifiMode::M_AcessPoint)
   {
     local = WiFi.softAPIP();
+  }
+  else
+  {
+    local = WiFi.localIP();
   }
   ip[0] = local[0];
   ip[1] = local[1];
@@ -515,12 +546,26 @@ void wifibluetooth::getIP(uint8_t* ip)
   ip[3] = local[3];
 }
 
-bool wifibluetooth::isStationEnabled( )
+int wifibluetooth::getWifiMode()
 {
-  return stationEnabled;
+  return activeWifiMode;
 }
 
-bool wifibluetooth::isAccessPointEnabled()
+bool wifibluetooth::setWifiMode(int k)
 {
-  return accessPointEnabled;
+  if (k < 0 || k>3)
+    return false;
+  activeWifiMode = static_cast<WifiMode>(k);
+  EEPROM.write(EEPROM_WifiMode, k);
+  EEPROM.commit();
+  return true;
 }
+
+void wifibluetooth::getStationName(int k, char* SSID )
+{
+  //if (k < 0 || k>2)
+  //  return;
+  memcpy(SSID, wifi_sta_ssid[k], 40U);
+  return;
+}
+

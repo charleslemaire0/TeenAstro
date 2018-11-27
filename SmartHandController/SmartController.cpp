@@ -3,15 +3,6 @@
 #include "SmartController.h"
 #include "LX200.h"
 
-#ifdef WIFI_ON
-#define ADRESS_T1 15
-#define ADRESS_T2 16
-#define ADRESS_Contrast 17
-#else
-#define ADRESS_T1 15
-#define ADRESS_T2 16
-#define ADRESS_Contrast 17
-#endif
 
 static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":Fo#", ":Fi#" };
 static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":FO#", ":FI#" };
@@ -315,20 +306,20 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
   if (EEPROM.length() == 0)
     EEPROM.begin(1024);
 
-  maxContrast = EEPROM.read(ADRESS_Contrast);
+  maxContrast = EEPROM.read(EEPROM_Contrast);
   display->setContrast(maxContrast);
-  displayT1 = EEPROM.read(ADRESS_T1);
+  displayT1 = EEPROM.read(EEPROM_T1);
   if (displayT1 < 3)
   {
     displayT1 = 3;
-    EEPROM.write(ADRESS_T1, displayT1);
+    EEPROM.write(EEPROM_T1, displayT1);
     EEPROM.commit();
   }
-  displayT2 = EEPROM.read(ADRESS_T2);
+  displayT2 = EEPROM.read(EEPROM_T2);
   if (displayT2 < displayT1)
   {
     displayT2 = displayT1;
-    EEPROM.write(ADRESS_T2, displayT2);
+    EEPROM.write(EEPROM_T2, displayT2);
     EEPROM.commit();
   }
 
@@ -2420,7 +2411,7 @@ void SmartHandController::menuDisplay()
     {
       if (display->UserInterfaceInputValueInteger(&buttonPad, "Low Contrast", "after ", &displayT1, 3, 255, 3, "0 sec"))
       {
-        EEPROM.write(ADRESS_T1, displayT1);
+        EEPROM.write(EEPROM_T1, displayT1);
         EEPROM.commit();
       }
       break;
@@ -2429,7 +2420,7 @@ void SmartHandController::menuDisplay()
     {
       if (display->UserInterfaceInputValueInteger(&buttonPad, "Turn display off", "after ", &displayT2, displayT1, 255, 3, "0 sec"))
       {
-        EEPROM.write(ADRESS_T2, displayT2);
+        EEPROM.write(EEPROM_T2, displayT2);
         EEPROM.commit();
       }
       break;
@@ -2465,7 +2456,7 @@ void SmartHandController::menuContrast()
   default:
     maxContrast = 255;
   }
-  EEPROM.write(ADRESS_Contrast, maxContrast);
+  EEPROM.write(EEPROM_Contrast, maxContrast);
   EEPROM.commit();
   display->setContrast(maxContrast);
 }
@@ -2615,9 +2606,9 @@ void SmartHandController::menuMainUnitInfo()
 #ifdef WIFI_ON
 void SmartHandController::menuWifi()
 {
-  const char *string_list = buttonPad.isWifiOn() ? "Turn Wifi off\nShow Password\nShow Mode\nShow IP\nReset to factory" : "Turn Wifi on\nShow Password\nReset to factory";
+  const char *string_list = buttonPad.isWifiOn() ? "Turn Wifi off\nShow Password\nSelect Mode\nShow IP\nReset to factory" : "Turn Wifi on\nShow Password\nReset to factory";
   current_selection_L2 = 1;
-  while (current_selection_L2 != 0)
+  while (!exitMenu)
   {
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Wifi", 1, string_list);
     switch (current_selection_L2)
@@ -2628,15 +2619,13 @@ void SmartHandController::menuWifi()
       buttonPad.turnWifiOn(!buttonPad.isWifiOn());
       exitMenu = true;
       powerCylceRequired = true;
-      return;
+      break;
     case 2:
       DisplayMessage("masterPassword is", "password", -1);
       break;
     case 3:
     {
-      const char* stationtxt = buttonPad.isStationEnabled() ? "Station Mode on" : "Station Mode off";
-      const char* accesstxt = buttonPad.isAccessPointEnabled() ? "Access Mode on" : "Access Mode off";
-      DisplayMessage(accesstxt, stationtxt, -1);
+      menuWifiMode();
       break;
     }
     case 4:
@@ -2648,7 +2637,7 @@ void SmartHandController::menuWifi()
       DisplayMessage("IP Adress is", iptxt, -1);
       break;
     }
-    case 5:
+    case 6:
       if (display->UserInterfaceMessage(&buttonPad, "Reset", "To", "Factory?", "NO\nYES")==2)
       {
         EEPROM_writeInt(0, 0);
@@ -2659,6 +2648,54 @@ void SmartHandController::menuWifi()
       }
     default:
       break;
+    }
+  }
+}
+
+void SmartHandController::menuWifiMode()
+{
+  uint8_t idx = 0;
+  uint8_t idxs[4] = { 3,3,3,3};
+  char temp[20] = { 0 };
+  char txt[150] = { 0 };
+  char out[40] = { 0 };
+  uint8_t selected_item=10;
+  for (uint8_t k = 0; k < 3; k++)
+  {
+    buttonPad.getStationName((int)k, out);
+    if (out != NULL && out[0] != 0)
+    {
+      strcat(txt, out);
+      strcat(txt, "\n");
+      idxs[idx] = k;
+      if (buttonPad.getWifiMode() == (int)k)
+      {
+        selected_item = idx;
+      }
+      idx++;
+    }
+  }
+  if (buttonPad.getWifiMode() == 3)
+  {
+    selected_item = idx;
+  }
+  selected_item++;
+  while (!exitMenu)
+  {
+    char menustxt[200] = {};
+    strcat(menustxt, txt);
+    strcat(menustxt, "AccesPoint");
+    const char *string_list_WifiMode = &menustxt[0];
+    selected_item = display->UserInterfaceSelectionList(&buttonPad, "Wifi Interface", selected_item, string_list_WifiMode);
+    if (selected_item == 0)
+    {
+      return;
+    }
+    else
+    {
+      buttonPad.setWifiMode(idxs[selected_item - 1]);
+      powerCylceRequired = true;
+      exitMenu = true;
     }
   }
 }

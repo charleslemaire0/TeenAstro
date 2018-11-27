@@ -36,6 +36,19 @@
 #define DEFAULT_FAST_AJAX_RATE "1"   // fast update is 1 second/update
 #define DEFAULT_AJAX_SHED_TIME "15"  // time before return to normal update rate
 
+#define EEPROM_start 0
+#define EEPROM_WifiOn EEPROM_start + 4
+#define EEPROM_WifiMode EEPROM_WifiOn + 1
+#define EEPROM_WebTimeout EEPROM_WifiMode + 1
+#define EEPROM_CmdTimeout EEPROM_WebTimeout + 1
+#define EEPROM_Contrast 20
+#define EEPROM_T1 21
+#define EEPROM_T2 22
+#define EEPROM_start_wifi_sta 100
+#define EEPROM_start_wifi_ap 400
+#define EPPROM_password 50
+
+
 extern const char* html_headB;
 extern const char* html_headerPec;
 extern const char* html_headerIdx;
@@ -82,30 +95,27 @@ extern const char* html_ajax_active;
 class wifibluetooth
 {
   enum Responding { R_NONE, R_ONE, R_BOOL, R_STRING };
+  enum WifiMode {M_Station1, M_Station2, M_Station3, M_AcessPoint, OFF};
   static bool wifiOn;
   static MountStatus mountStatus;
   //Encoders encoders;
-  static int WebTimeout; 
-  static int CmdTimeout; 
+  static int WebTimeout;
+  static int CmdTimeout;
 
 #define Default_Password "password"
   static char masterPassword[40];
+  static WifiMode activeWifiMode;
 
-  static bool accessPointEnabled;
-  static bool stationEnabled;
-  static bool stationDhcpEnabled;
-
-  static char wifi_sta_ssid[40];
-  static char wifi_sta_pwd[40];
-
-  static IPAddress wifi_sta_ip;
-  static IPAddress wifi_sta_gw;
-  static IPAddress wifi_sta_sn;
+  static bool stationDhcpEnabled[3];
+  static char wifi_sta_ssid[3][40];
+  static char wifi_sta_pwd[3][40];
+  static IPAddress wifi_sta_ip[3];
+  static IPAddress wifi_sta_gw[3];
+  static IPAddress wifi_sta_sn[3];
 
   static char wifi_ap_ssid[40];
   static char wifi_ap_pwd[40];
   static byte wifi_ap_ch;
-
   static IPAddress wifi_ap_ip;
   static IPAddress wifi_ap_gw;
   static IPAddress wifi_ap_sn;
@@ -133,6 +143,9 @@ class wifibluetooth
   static void processPecGet();
   static void handleWifi();
   static void handleNotFound();
+  static void initFromEEPROM();
+  static void writeStation2EEPROM(const int& k);
+  static void writeAccess2EEPROM();
   static void processWifiGet();
 
 
@@ -173,7 +186,8 @@ public:
   static void setup();
   static void update();
   static void getIP(uint8_t* ip);
-  static bool isStationEnabled();
-  static bool isAccessPointEnabled();
+  static int getWifiMode();
+  static bool setWifiMode(int k);
+  static void getStationName(int k, char* SSID);
 };
 #endif
