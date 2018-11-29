@@ -11,37 +11,48 @@ const char html_wifiSerial[] PROGMEM=
 "Command channel serial read time-out: <input style='width:4em' name='ccto' value='%d' type='number' min='5' max='100'> ms<br/>"
 "Web channel serial read time-out: <input style='width:4em' name='wcto' value='%d' type='number' min='5' max='100'> ms<br/>"
 "<button type='submit'>Upload</button></form><br />\r\n";
-const char html_wifiSSID1[] PROGMEM= 
-"<br/><b>Station mode (connect to an Access-Point):</b><br/>"
+const char html_wifiMode1[] PROGMEM =
+"<br/><b>Wifi Mode:</b><br/>"
 "<form method='post' action='/wifi.htm'>"
-"SSID: <input style='width:6em' name='stssid' type='text' value='%s' maxlength='32'>&nbsp;&nbsp;&nbsp;"
-"Password: <input style='width:8em' name='stpwd' type='password' value='%s' maxlength='39'><br/>";
+"<select style='width:10em' name='wifimode'>";
+const char html_wifiMode2[] PROGMEM =
+"</select>"
+"<button type='submit'>Upload</button>"
+"</form>"
+"<br/>\r\n";
+
+const char html_wifiSSID1A[] PROGMEM =
+"<br/><b>Station mode %d (connect to an Access-Point):</b><br/>"
+"<form method='post' action='/wifi.htm'>";
+const char html_wifiSSID1B[] PROGMEM =
+"SSID: <input style='width:10em' name='stssid%d' type='text' value='%s' maxlength='32'>&nbsp;&nbsp;&nbsp;";
+const char html_wifiSSID1C[] PROGMEM =
+"Password: <input style='width:10em' name='stpwd%d' type='password' value='%s' maxlength='39'><br/>";
 const char html_wifiSSID2[] PROGMEM=
-"Enable DHCP: <input type='checkbox' name='stadhcp' value='1' %s> (Note: above addresses are ignored if DHCP is enabled)<br/>"
-"Enable Station Mode: <input type='checkbox' name='staen' value='1' %s><br/>"
+"Enable DHCP: <input type='checkbox' name='stadhcp%d' value='1' %s> (Note: above addresses are ignored if DHCP is enabled)<br/>"
 "<button type='submit'>Upload</button></form><br />\r\n";
 
 const char html_wifiMAC[] PROGMEM= 
-"MAC: <input style='width:10em' name='stmac' type='text' value='%s' maxlength='17' disabled><br/>";
+"MAC: <input style='width:10em' name='stmac%d' type='text' value='%s' maxlength='17' disabled><br/>";
 
 const char html_wifiSTAIP[] PROGMEM=
 "<table><tr><td>IP Address: </td><td>"
-"<input name='staip1' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
-"<input name='staip2' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
-"<input name='staip3' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
-"<input name='staip4' value='%d' type='number' min='0' max='255'></td>";
+"<input name='staip0%d' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
+"<input name='staip1%d' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
+"<input name='staip2%d' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
+"<input name='staip3%d' value='%d' type='number' min='0' max='255'></td>";
 const char html_wifiSTAGW[] PROGMEM=
 "<tr><td>Gateway: </td><td>"
-"<input name='stagw1' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
-"<input name='stagw2' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
-"<input name='stagw3' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
-"<input name='stagw4' value='%d' type='number' min='0' max='255'></td>";
+"<input name='stagw0%d' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
+"<input name='stagw1%d' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
+"<input name='stagw2%d' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
+"<input name='stagw3%d' value='%d' type='number' min='0' max='255'></td>";
 const char html_wifiSTASN[] PROGMEM=
 "<tr><td>Subnet: </td><td>"
-"<input name='stasn1' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
-"<input name='stasn2' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
-"<input name='stasn3' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
-"<input name='stasn4' value='%d' type='number' min='0' max='255'></td></tr></table>";
+"<input name='stasn0%d' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
+"<input name='stasn1%d' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
+"<input name='stasn2%d' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
+"<input name='stasn3%d' value='%d' type='number' min='0' max='255'></td></tr></table>";
 
 const char html_wifiSSID3[] PROGMEM= 
 "<br/><b>Access-Point mode:</b><br/>"
@@ -55,25 +66,24 @@ const char html_wifiApMAC[] PROGMEM=
 
 const char html_wifiSSID4[] PROGMEM=
 "<table><tr><td>IP Address: </td><td>"
+"<input name='apip0' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
 "<input name='apip1' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
 "<input name='apip2' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
-"<input name='apip3' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
-"<input name='apip4' value='%d' type='number' min='0' max='255'></td>";
+"<input name='apip3' value='%d' type='number' min='0' max='255'></td>";
 const char html_wifiSSID5[] PROGMEM=
 "<tr><td>Gateway: </td><td>"
+"<input name='apgw0' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
 "<input name='apgw1' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
 "<input name='apgw2' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
-"<input name='apgw3' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
-"<input name='apgw4' value='%d' type='number' min='0' max='255'></td>";
+"<input name='apgw3' value='%d' type='number' min='0' max='255'></td>";
 const char html_wifiSSID6[] PROGMEM=
 "<tr><td>Subnet: </td><td>"
+"<input name='apsn0' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
 "<input name='apsn1' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
 "<input name='apsn2' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
-"<input name='apsn3' value='%d' type='number' min='0' max='255'>&nbsp;.&nbsp;"
-"<input name='apsn4' value='%d' type='number' min='0' max='255'></td></tr></table>";
+"<input name='apsn3' value='%d' type='number' min='0' max='255'></td></tr></table>";
 
 const char html_wifiSSID7[] PROGMEM=
-"Enable Access-Point Mode: <input type='checkbox' name='apen' value='1' %s><br/>"
 "<button type='submit'>Upload</button></form><br />\r\n";
 
 const char html_logout[]= 
@@ -129,14 +139,14 @@ int wifibluetooth::hexToInt(String s) {
 
 void wifibluetooth::handleWifi() {
   Ser.setTimeout(WebTimeout);
-  
-  char temp[500]="";
-  char temp1[80]="";
-  
+
+  char temp[500] = "";
+  char temp1[80] = "";
+
   processWifiGet();
 
   // send a standard http response header
-  String data=html_headB;
+  String data = html_headB;
   data += html_main_cssB;
   data += html_main_css1;
   data += html_main_css2;
@@ -171,41 +181,49 @@ void wifibluetooth::handleWifi() {
   data += html_links6S;
   data += html_onstep_header4;
 
-  data+="<div style='width: 40em;'>";
+  data += "<div style='width: 40em;'>";
 
   if (restartRequired) {
-    data+= FPSTR(html_reboot);
-    data+="</div></div></body></html>";
-    server.send(200, "text/html",data);
-    restartRequired=false;
+    data += FPSTR(html_reboot);
+    data += "</div></div></body></html>";
+    server.send(200, "text/html", data);
+    restartRequired = false;
     delay(1000);
     return;
   }
 
   if (loginRequired) {
-    data+= FPSTR(html_login);
-    data+="</div></div></body></html>";
-    server.send(200, "text/html",data);
+    data += FPSTR(html_login);
+    data += "</div></div></body></html>";
+    server.send(200, "text/html", data);
     return;
   }
 
-  EEPROM_readString(100,wifi_sta_ssid);
-  EEPROM_readString(150,wifi_sta_pwd);
-    
-  sprintf_P(temp,html_wifiSerial,CmdTimeout,WebTimeout); data += temp;
-  sprintf_P(temp,html_wifiSSID1,wifi_sta_ssid,""); data += temp;
-  
-  uint8_t mac[6] = {0,0,0,0,0,0}; WiFi.macAddress(mac);
-  char wifi_sta_mac[80]="";
-  for (int i=0; i<6; i++) { sprintf(wifi_sta_mac,"%s%02x:",wifi_sta_mac,mac[i]); } wifi_sta_mac[strlen(wifi_sta_mac)-1]=0;
-  sprintf_P(temp,html_wifiMAC,wifi_sta_mac); data += temp;
+  data += FPSTR(html_wifiMode1);
+  activeWifiMode == WifiMode::M_Station1 ? data += "<option selected value='0'>StationMode0</option>" : data += "<option value='0'>StationMode1</option>";
+  activeWifiMode == WifiMode::M_Station2 ? data += "<option selected value='1'>StationMode1</option>" : data += "<option value='1'>StationMode2</option>";
+  activeWifiMode == WifiMode::M_Station3 ? data += "<option selected value='2'>StationMode2</option>" : data += "<option value='2'>StationMode3</option>";
+  activeWifiMode == WifiMode::M_AcessPoint ? data += "<option selected value='3'>AccessPoint</option>" : data += "<option value='3'>AccessPoint</option>";
+  data += FPSTR(html_wifiMode2);
 
-  sprintf_P(temp,html_wifiSTAIP,wifi_sta_ip[0],wifi_sta_ip[1],wifi_sta_ip[2],wifi_sta_ip[3]); data += temp;
-  sprintf_P(temp,html_wifiSTAGW,wifi_sta_gw[0],wifi_sta_gw[1],wifi_sta_gw[2],wifi_sta_gw[3]); data += temp;
-  sprintf_P(temp,html_wifiSTASN,wifi_sta_sn[0],wifi_sta_sn[1],wifi_sta_sn[2],wifi_sta_sn[3]); data += temp;
-  sprintf_P(temp,html_wifiSSID2,stationDhcpEnabled?"checked":"",stationEnabled?"checked":""); data += temp;
-  sprintf_P(temp,html_wifiSSID3,wifi_ap_ssid,"",wifi_ap_ch); data += temp;
+  sprintf_P(temp, html_wifiSerial, CmdTimeout, WebTimeout); data += temp;
 
+  for (int k = 0; k < 3; k++)
+  {
+    sprintf_P(temp, html_wifiSSID1A, k); data += temp;
+    sprintf_P(temp, html_wifiSSID1B, k, wifi_sta_ssid[k]); data += temp;
+    sprintf_P(temp, html_wifiSSID1C, k, ""); data += temp;
+    uint8_t mac[6] = { 0,0,0,0,0,0 }; WiFi.macAddress(mac);
+    char wifi_sta_mac[80] = "";
+    for (int i = 0; i < 6; i++) { sprintf(wifi_sta_mac, "%s%02x:", wifi_sta_mac, mac[i]); } wifi_sta_mac[strlen(wifi_sta_mac) - 1] = 0;
+    sprintf_P(temp, html_wifiMAC, k, wifi_sta_mac); data += temp;
+    IPAddress tempIP = wifi_sta_ip[k];
+    sprintf_P(temp, html_wifiSTAIP, k, wifi_sta_ip[k][0], k, wifi_sta_ip[k][1], k, wifi_sta_ip[k][2], k, wifi_sta_ip[k][3]); data += temp;
+    sprintf_P(temp, html_wifiSTAGW, k, wifi_sta_gw[k][0], k, wifi_sta_gw[k][1], k, wifi_sta_gw[k][2], k, wifi_sta_gw[k][3]); data += temp;
+    sprintf_P(temp, html_wifiSTASN, k, wifi_sta_sn[k][0], k, wifi_sta_sn[k][1], k, wifi_sta_sn[k][2], k, wifi_sta_sn[k][3]); data += temp;
+    sprintf_P(temp, html_wifiSSID2, k, stationDhcpEnabled[k] ? "checked" : ""); data += temp;
+  }
+  sprintf_P(temp, html_wifiSSID3, wifi_ap_ssid, "", wifi_ap_ch); data += temp;
   uint8_t macap[6] = {0,0,0,0,0,0}; WiFi.softAPmacAddress(macap);
   char wifi_ap_mac[80]="";
   for (int i=0; i<6; i++) { sprintf(wifi_ap_mac,"%s%02x:",wifi_ap_mac,macap[i]); } wifi_ap_mac[strlen(wifi_ap_mac)-1]=0;
@@ -214,7 +232,7 @@ void wifibluetooth::handleWifi() {
   sprintf_P(temp,html_wifiSSID4,wifi_ap_ip[0],wifi_ap_ip[1],wifi_ap_ip[2],wifi_ap_ip[3]); data += temp;
   sprintf_P(temp,html_wifiSSID5,wifi_ap_gw[0],wifi_ap_gw[1],wifi_ap_gw[2],wifi_ap_gw[3]); data += temp;
   sprintf_P(temp,html_wifiSSID6,wifi_ap_sn[0],wifi_ap_sn[1],wifi_ap_sn[2],wifi_ap_sn[3]); data += temp;
-  sprintf_P(temp,html_wifiSSID7,accessPointEnabled?"checked":""); data += temp;
+  sprintf_P(temp,html_wifiSSID7,activeWifiMode == WifiMode:: M_AcessPoint ?"checked":""); data += temp;
   data += FPSTR(html_logout);
 
   strcpy(temp,"</div></div></body></html>");
@@ -239,8 +257,17 @@ void wifibluetooth::processWifiGet() {
   v=server.arg("webpwd");
   if (v!="") {
     strcpy(masterPassword,(char*)v.c_str());
-    wifibluetooth::EEPROM_writeString(200, wifibluetooth::masterPassword);
+    wifibluetooth::EEPROM_writeString(EPPROM_password, masterPassword);
     EEwrite=true;
+  }
+  //wifi Mode
+
+    v = server.arg("wifimode");
+  if (v != "") {
+    activeWifiMode = static_cast<WifiMode>(v.toInt());
+    EEPROM.write(EEPROM_WifiMode, v.toInt());
+    EEwrite = true;
+    restartRequired = true;
   }
 
   // Timeouts -----------------------------------------------------------------
@@ -248,7 +275,7 @@ void wifibluetooth::processWifiGet() {
   v=server.arg("ccto");
   if (v!="") {
     CmdTimeout=v.toInt();
-    EEPROM_writeInt(12,(int)CmdTimeout);
+    EEPROM.write(EEPROM_CmdTimeout,CmdTimeout);
     EEwrite=true;
   }
 
@@ -256,91 +283,82 @@ void wifibluetooth::processWifiGet() {
   v=server.arg("wcto");
   if (v!="") {
     WebTimeout=v.toInt();
-    EEPROM_writeInt(10,(int)WebTimeout);
+    EEPROM.write(EEPROM_WebTimeout,WebTimeout);
     EEwrite=true;
   }
 
   // --------------------------------------------------------------------------------------------------------
-
-  // Station MAC
-  v=server.arg("stmac");
-  if (v!="") {
-    // 5c:cf:7f:0f:ad:85
-    // first the length should be 17
-    if (v.length()==17) {
-      // seperators all in place
-      if ((v.charAt(2)==':') && (v.charAt(5)==':') && (v.charAt(8)==':') && (v.charAt(11)==':') && (v.charAt(14)==':')) {
-        // digits all in 0..9,A..F and validate
-        v.toUpperCase();
-        uint8_t mac[6];
-        mac[0]=hexToInt(v.substring(0,2)); mac[1]=hexToInt(v.substring(3,2)); mac[2]=hexToInt(v.substring(6,2));
-        mac[3]=hexToInt(v.substring(9,2)); mac[4]=hexToInt(v.substring(12,2)); mac[5]=hexToInt(v.substring(15,2));
-        if ((mac[0]>=0) && (mac[1]>=0) && (mac[2]>=0) && (mac[3]>=0) && (mac[4]>=0) && (mac[5]>=0)) { WiFi.macAddress(mac); restartRequired=true; }
+  for (int k = 0; k < 3; k++)
+  {
+    char cmd[20];
+    // Station MAC
+    sprintf(cmd, "stmac%d", k);
+    v = server.arg(cmd);
+    if (v != "") {
+      // 5c:cf:7f:0f:ad:85
+      // first the length should be 17
+      if (v.length() == 17) {
+        // seperators all in place
+        if ((v.charAt(2) == ':') && (v.charAt(5) == ':') && (v.charAt(8) == ':') && (v.charAt(11) == ':') && (v.charAt(14) == ':')) {
+          // digits all in 0..9,A..F and validate
+          v.toUpperCase();
+          uint8_t mac[6];
+          mac[0] = hexToInt(v.substring(0, 2)); mac[1] = hexToInt(v.substring(3, 2)); mac[2] = hexToInt(v.substring(6, 2));
+          mac[3] = hexToInt(v.substring(9, 2)); mac[4] = hexToInt(v.substring(12, 2)); mac[5] = hexToInt(v.substring(15, 2));
+          if ((mac[0] >= 0) && (mac[1] >= 0) && (mac[2] >= 0) && (mac[3] >= 0) && (mac[4] >= 0) && (mac[5] >= 0)) { WiFi.macAddress(mac); restartRequired = true; }
+        }
       }
     }
-  }
 
-  // Station SSID
-  v=server.arg("stssid"); v1=v;
-  if (v!="") {
-    if (!strcmp(wifi_sta_ssid,(char*)v.c_str())) restartRequired=true;
-    strcpy(wifi_sta_ssid,(char*)v.c_str());
+    // Station SSID
+    sprintf(cmd, "stssid%d", k);
+    v = server.arg(cmd); v1 = v;
+    if (v != "") {
+      if (!strcmp(wifi_sta_ssid[k], (char*)v.c_str())) restartRequired = true;
+      strcpy(wifi_sta_ssid[k], (char*)v.c_str());
+      // if this section was submitted set the stationEnabled default to false
+      stationDhcpEnabled[k] = false;
+    }
 
-    // if this section was submitted set the stationEnabled default to false
-    stationDhcpEnabled=false;
-    stationEnabled=false;
-  }
+    // Station password
+    sprintf(cmd, "stpwd%d", k);
+    v = server.arg(cmd);
+    if (v != "") {
+      if (!strcmp(wifi_sta_pwd[k], (char*)v.c_str())) restartRequired = true;
+      strcpy(wifi_sta_pwd[k], (char*)v.c_str());
+    }
 
-  // Station password
-  v=server.arg("stpwd");
-  if (v!="") {
-    if (!strcmp(wifi_sta_pwd,(char*)v.c_str())) restartRequired=true;
-    strcpy(wifi_sta_pwd,(char*)v.c_str());
-  }
+    // Station dhcp enabled
+    sprintf(cmd, "stadhcp%d", k);
+    v = server.arg(cmd);
+    if (v != "") {
+      stationDhcpEnabled[k] = v.toInt();
+    }
 
-  // Station dhcp enabled
-  v=server.arg("stadhcp");
-  if (v!="") {
-    stationDhcpEnabled=v.toInt();
-  }
 
-  // Station enabled
-  v=server.arg("staen");
-  if (v!="") {
-    stationEnabled=v.toInt();
-  }
+  // Station Access-Point ip
 
-  // Access-Point ip
-  IPAddress old_ip=wifi_sta_ip;
-  v=server.arg("staip1"); if (v!="") wifi_sta_ip[0]=v.toInt();
-  v=server.arg("staip2"); if (v!="") wifi_sta_ip[1]=v.toInt();
-  v=server.arg("staip3"); if (v!="") wifi_sta_ip[2]=v.toInt();
-  v=server.arg("staip4"); if (v!="") wifi_sta_ip[3]=v.toInt();
-
-  // Access-Point SubNet
-  old_ip=wifi_sta_sn;
-  v=server.arg("stasn1"); if (v!="") wifi_sta_sn[0]=v.toInt();
-  v=server.arg("stasn2"); if (v!="") wifi_sta_sn[1]=v.toInt();
-  v=server.arg("stasn3"); if (v!="") wifi_sta_sn[2]=v.toInt();
-  v=server.arg("stasn4"); if (v!="") wifi_sta_sn[3]=v.toInt();
-
-  // Access-Point Gateway
-  old_ip=wifi_sta_gw;
-  v=server.arg("stagw1"); if (v!="") wifi_sta_gw[0]=v.toInt();
-  v=server.arg("stagw2"); if (v!="") wifi_sta_gw[1]=v.toInt();
-  v=server.arg("stagw3"); if (v!="") wifi_sta_gw[2]=v.toInt();
-  v=server.arg("stagw4"); if (v!="") wifi_sta_gw[3]=v.toInt();
-    
-  if (v1!="") {
-    EEPROM_writeString(100,wifi_sta_ssid);
-    EEPROM_writeString(150,wifi_sta_pwd);
-    EEPROM_writeInt(8,(int)stationDhcpEnabled);
-    EEPROM_writeInt(6,(int)stationEnabled);
-    EEPROM.write(20,wifi_sta_ip[0]); EEPROM.write(21,wifi_sta_ip[1]); EEPROM.write(22,wifi_sta_ip[2]); EEPROM.write(23,wifi_sta_ip[3]);
-    EEPROM.write(24,wifi_sta_gw[0]); EEPROM.write(25,wifi_sta_gw[1]); EEPROM.write(26,wifi_sta_gw[2]); EEPROM.write(27,wifi_sta_gw[3]);
-    EEPROM.write(28,wifi_sta_sn[0]); EEPROM.write(29,wifi_sta_sn[1]); EEPROM.write(30,wifi_sta_sn[2]); EEPROM.write(31,wifi_sta_sn[3]);
-    EEwrite=true;
-    restartRequired=true;
+    for (int i = 0; i < 4; i++)
+    {
+      sprintf(cmd, "staip%d%d", i, k);
+      v = server.arg(cmd); if (v != "") wifi_sta_ip[k][i] = v.toInt();
+    }
+    for (int i = 0; i < 4; i++)
+    {
+      sprintf(cmd, "stasn%d%d", i, k);
+      v = server.arg(cmd); if (v != "") wifi_sta_sn[k][i] = v.toInt();
+    }
+    for (int i = 0; i < 4; i++)
+    {
+      sprintf(cmd, "stagw%d%d", i, k);
+      v = server.arg(cmd); if (v != "") wifi_sta_gw[k][i] = v.toInt();
+    }
+    if (v1 != "")
+    {
+      writeStation2EEPROM(k);
+      EEwrite = true;
+      restartRequired = true;
+    }
   }
 
   // -------------------------------------------------------------------------------------------
@@ -370,7 +388,7 @@ void wifibluetooth::processWifiGet() {
     strcpy(wifi_ap_ssid,(char*)v.c_str());
 
     // if this section was submitted set the accessPointEnabled default to false
-    accessPointEnabled=false;
+    //accessPointEnabled[k]=false;
   }
 
   // Access-Point password
@@ -387,46 +405,29 @@ void wifibluetooth::processWifiGet() {
     wifi_ap_ch=v.toInt();
   }
 
-  // Access-Point enabled
-  v=server.arg("apen");
-  if (v!="") {
-    accessPointEnabled=v.toInt();
-    EEwrite=true;
-  }
-
   // Access-Point ip
-  old_ip=wifi_ap_ip;
-  v=server.arg("apip1"); if (v!="") wifi_ap_ip[0]=v.toInt();
-  v=server.arg("apip2"); if (v!="") wifi_ap_ip[1]=v.toInt();
-  v=server.arg("apip3"); if (v!="") wifi_ap_ip[2]=v.toInt();
-  v=server.arg("apip4"); if (v!="") wifi_ap_ip[3]=v.toInt();
+  v=server.arg("apip0"); if (v!="") wifi_ap_ip[0]=v.toInt();
+  v=server.arg("apip1"); if (v!="") wifi_ap_ip[1]=v.toInt();
+  v=server.arg("apip2"); if (v!="") wifi_ap_ip[2]=v.toInt();
+  v=server.arg("apip3"); if (v!="") wifi_ap_ip[3]=v.toInt();
 
   // Access-Point SubNet
-  old_ip=wifi_ap_sn;
-  v=server.arg("apsn1"); if (v!="") wifi_ap_sn[0]=v.toInt();
-  v=server.arg("apsn2"); if (v!="") wifi_ap_sn[1]=v.toInt();
-  v=server.arg("apsn3"); if (v!="") wifi_ap_sn[2]=v.toInt();
-  v=server.arg("apsn4"); if (v!="") wifi_ap_sn[3]=v.toInt();
+  v=server.arg("apsn0"); if (v!="") wifi_ap_sn[0]=v.toInt();
+  v=server.arg("apsn1"); if (v!="") wifi_ap_sn[1]=v.toInt();
+  v=server.arg("apsn2"); if (v!="") wifi_ap_sn[2]=v.toInt();
+  v=server.arg("apsn3"); if (v!="") wifi_ap_sn[3]=v.toInt();
 
   // Access-Point Gateway
-  old_ip=wifi_ap_gw;
-  v=server.arg("apgw1"); if (v!="") wifi_ap_gw[0]=v.toInt();
-  v=server.arg("apgw2"); if (v!="") wifi_ap_gw[1]=v.toInt();
-  v=server.arg("apgw3"); if (v!="") wifi_ap_gw[2]=v.toInt();
-  v=server.arg("apgw4"); if (v!="") wifi_ap_gw[3]=v.toInt();
+  v=server.arg("apgw0"); if (v!="") wifi_ap_gw[0]=v.toInt();
+  v=server.arg("apgw1"); if (v!="") wifi_ap_gw[1]=v.toInt();
+  v=server.arg("apgw2"); if (v!="") wifi_ap_gw[2]=v.toInt();
+  v=server.arg("apgw3"); if (v!="") wifi_ap_gw[3]=v.toInt();
 
   if (v!="") {
-    EEPROM_writeString(500,wifi_ap_ssid);
-    EEPROM_writeString(550,wifi_ap_pwd);
-    EEPROM_writeInt(50,(int)wifi_ap_ch);
-    EEPROM_writeInt(4,(int)accessPointEnabled);
-    EEPROM.write(60,wifi_ap_ip[0]); EEPROM.write(61,wifi_ap_ip[1]); EEPROM.write(62,wifi_ap_ip[2]); EEPROM.write(63,wifi_ap_ip[3]);
-    EEPROM.write(70,wifi_ap_gw[0]); EEPROM.write(71,wifi_ap_gw[1]); EEPROM.write(72,wifi_ap_gw[2]); EEPROM.write(73,wifi_ap_gw[3]);
-    EEPROM.write(80,wifi_ap_sn[0]); EEPROM.write(81,wifi_ap_sn[1]); EEPROM.write(82,wifi_ap_sn[2]); EEPROM.write(83,wifi_ap_sn[3]);
+    writeAccess2EEPROM();
     EEwrite=true;
     restartRequired=true;
   }
-
   if (EEwrite) EEPROM.commit();
 }
 

@@ -108,6 +108,7 @@ private:
  /* void menuHCInfo();*/
   void menuLimits();
   void menuWifi();
+  void menuWifiMode();
   void menuHorizon();
   void menuOverhead();
   void menuMeridian(bool east);

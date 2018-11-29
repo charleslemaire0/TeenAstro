@@ -32,7 +32,8 @@ public:
   bool isWifiRunning();
   bool turnWifiOn(bool turnOn);
   void getIP(uint8_t* ip);
-  bool isStationEnabled();
-  bool isAccessPointEnabled();
+  bool setWifiMode(int k);
+  int getWifiMode();
+  void getStationName(int k, char* SSID);
 #endif
 };

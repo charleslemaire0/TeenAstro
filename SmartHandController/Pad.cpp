@@ -341,13 +341,18 @@ void Pad::getIP(uint8_t* ip)
 {
   m_wbt.getIP(ip);
 }
-bool Pad::isStationEnabled()
+int Pad::getWifiMode()
 {
-  return m_wbt.isStationEnabled();
+  return m_wbt.getWifiMode();
 }
-bool Pad::isAccessPointEnabled()
+bool Pad::setWifiMode(int k)
 {
-  return m_wbt.isAccessPointEnabled();
+  return m_wbt.setWifiMode(k);
+}
+void Pad::getStationName(int k, char* SSID)
+{
+   m_wbt.getStationName(k, SSID);
+   return;
 }
 
 #endif
