@@ -374,13 +374,21 @@ void wifibluetooth::handleControl() {
     {
       data += FPSTR(html_controlQuick1);
       data += FPSTR(html_controlQuick1a);
-      data += "</form>";
       if (mountStatus.parked())
       {
         data += FPSTR(html_controlQuick2);
+        data += "</form>";
         data += FPSTR(html_controlQuick3);
+        data += html_controlEnd;
+        data += "</div></body></html>";
+#ifdef OETHS
+        client->print(data);
+#else
+        server.send(200, "text/html", data);
+#endif
         return;
       }
+      data += "</form>";
     }
   }
   data += FPSTR(html_controlQuick3);
