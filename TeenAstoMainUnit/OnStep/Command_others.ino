@@ -108,14 +108,14 @@ void Command_dollar()
     {
       if (parameter[0] == 'D')
       {
-        MicroAxis2 = (byte)i;
-        tmc26XStepper2->setMicrosteps((int)pow(2,MicroAxis2));
+        MicroAxis2 = i;       
+        motorAxis2.setMicrostep(MicroAxis2);
         EEPROM.write(EE_MicroAxis2, MicroAxis2);
       }
       else
       {
-        MicroAxis1 = (byte)i;
-        tmc26XStepper1->setMicrosteps((int)pow(2, MicroAxis1));
+        MicroAxis1 = i;
+        motorAxis1.setMicrostep(MicroAxis1);
         EEPROM.write(EE_MicroAxis1, MicroAxis1);
       }
       updateRatios();
@@ -164,7 +164,7 @@ void Command_dollar()
         {
           LowCurrAxis2 = (u_int8_t)i;
           EEPROM.write(EE_LowCurrAxis2, LowCurrAxis2);
-          tmc26XStepper2->setCurrent((unsigned int)LowCurrAxis2 * 10);
+          motorAxis2.setCurrent((unsigned int)LowCurrAxis2 * 10);
         }
       }
       else if (parameter[0] == 'R')
@@ -178,7 +178,7 @@ void Command_dollar()
         {
           LowCurrAxis1 = (u_int8_t)i;
           EEPROM.write(EE_LowCurrAxis1, LowCurrAxis1);
-          tmc26XStepper1->setCurrent((unsigned int)LowCurrAxis1 * 10);
+          motorAxis1.setCurrent((unsigned int)LowCurrAxis1 * 10);
         }
       }
     }
@@ -198,11 +198,11 @@ void Command_dollar()
       
       if (parameter[0] == 'D')
       {
-        tmc26XStepper2->setStallGuardThreshold((char)i, 0);
+        motorAxis2.setSG(i);
       }
       else
       {
-        tmc26XStepper1->setStallGuardThreshold(i, 0);
+        motorAxis1.setSG(i);
       }
     }
     else
@@ -359,12 +359,12 @@ void Command_pct()
     {
       if (parameter[0] == 'D')
       {
-        sprintf(reply, "%d", tmc26XStepper2->getCurrentStallGuardReading());
+        sprintf(reply, "%d", motorAxis2.getSG());
         quietReply = true;
       }
       else if (parameter[0] == 'R')
       {
-        sprintf(reply, "%d", tmc26XStepper1->getCurrentStallGuardReading());
+        sprintf(reply, "%d", motorAxis1.getSG());
         quietReply = true;
       }
       else
@@ -380,12 +380,12 @@ void Command_pct()
     {
       if (parameter[0] == 'D')
       {
-        sprintf(reply, "%u", tmc26XStepper2->getCurrentCurrent());
+        sprintf(reply, "%u", motorAxis1.getCurrent());
         quietReply = true;
       }
       else if (parameter[0] == 'R')
       {
-        sprintf(reply, "%u", tmc26XStepper1->getCurrentCurrent());
+        sprintf(reply, "%u", motorAxis2.getCurrent());
         quietReply = true;
       }
       else
@@ -651,7 +651,7 @@ void Command_F()
     command_out[3] = parameter[0];
     command_out[4] = ' ';
     int pos = 5;
-    for (int k = 0; k < strlen(parameter)-1; k++)
+    for (unsigned int k = 0; k+1 < strlen(parameter); k++)
     {
       command_out[pos] = parameter[k + 1];
       pos++;
