@@ -1024,7 +1024,7 @@ bool SmartHandController::menuSetLowCurrent(const uint8_t &axis)
   }
   char text[20];
   sprintf(text, "Low Curr. M%u", axis);
-  if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &lowCurr, 10, 200, 3, "0 mA"))
+  if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &lowCurr, 10, 200, 3, "0 mA peak"))
   {
     return DisplayMessageLX200(writeLowCurrLX200(axis, lowCurr), false);
   }
@@ -1040,7 +1040,7 @@ bool SmartHandController::menuSetHighCurrent(const uint8_t &axis)
   }
   char text[20];
   sprintf(text, "High Curr. M%u", axis);
-  if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &highCurr, 10, 200, 3, "0 mA"))
+  if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &highCurr, 10, 200, 3, "0 mA peak"))
   {
     return DisplayMessageLX200(writeHighCurrLX200(axis, highCurr), false);
   }
@@ -1051,6 +1051,26 @@ void SmartHandController::DisplayMountSettings()
 {
   DisplayMotorSettings(1);
   DisplayMotorSettings(2);
+  DisplayAccMaxRateSettings();
+}
+
+void SmartHandController::DisplayAccMaxRateSettings()
+{
+  char out[20];
+  char line1[32] = "Slew Settings";
+  char line3[32] = "";
+  char line4[32] = "";
+  if (DisplayMessageLX200(GetLX200(":GXE2#", out, sizeof(out))))
+  {
+    float acc = atof(&out[0]);
+    sprintf(line3, "Acceleration: %.1f", acc);
+  }
+  if (DisplayMessageLX200(GetLX200(":GX92#", out, sizeof(out))))
+  {
+    int maxrate = (float)strtol(&out[0], NULL, 10);
+    sprintf(line4, "Max Slew: %dx", maxrate);
+  }
+  DisplayLongMessage(line1, NULL, line3, line4, -1);
 }
 
 void SmartHandController::DisplayMotorSettings(const uint8_t &axis)
@@ -1485,7 +1505,7 @@ void SmartHandController::menuTelSettings()
       "\nWifi"
 #endif
       ;
-    current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, "Settings", current_selection_L1, string_list_SettingsL1);
+    current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, "Telescope Settings", current_selection_L1, string_list_SettingsL1);
     switch (current_selection_L1)
     {
     case 0:

@@ -122,6 +122,7 @@ private:
   bool menuSetLowCurrent(const uint8_t &axis);
   bool menuSetHighCurrent(const uint8_t &axis);
   void DisplayMountSettings();
+  void DisplayAccMaxRateSettings();
   void DisplayMotorSettings(const uint8_t &axis);
   void DisplayMessage(const char* txt1, const char* txt2 = NULL, int duration = 0);
   void DisplayLongMessage(const char* txt1, const char* txt2 = NULL, const char* txt3 = NULL, const char* txt4 = NULL, int duration = 0);
