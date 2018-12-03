@@ -733,6 +733,7 @@ void wifibluetooth::processControlGet() {
     if (v=="qr") { Ser.print(":hF#"); cl(); }     // home, reset
     if (v=="qh") { Ser.print(":hC#"); cl(); }     // home, goto
     if (v=="pr") { Ser.print(":hO#"); cl(); }     // park, reset
+    if (v=="ps") { Ser.print(":hQ#"); cl(); }     // set park
     if (v=="pk") { Ser.print(":hP#"); cl(); }     // park
     if (v=="pu") { Ser.print(":hR#"); cl(); }     // un-park
 
