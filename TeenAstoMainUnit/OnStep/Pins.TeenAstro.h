@@ -55,10 +55,10 @@
 #define FocuserTX       31
 
 // ST4 interface
-//#define ST4RAw  24                          // Pin 24 ST4 RA- West
-//#define ST4DEs  25                          // Pin 25 ST4 DE- South
-//#define ST4DEn  26                          // Pin 26 ST4 DE+ North
-//#define ST4RAe  27                          // Pin 27 ST4 RA+ East
+#define ST4RAe  14                      // ST4 REast
+#define ST4DEs  15                      // ST4 South
+#define ST4DEn  16                      // ST4 North
+#define ST4RAw  17                      // ST4 West
 #define LEDPin 33
 #define MaxLED 255
 #endif
@@ -85,10 +85,10 @@
 #define FocuserTX       10
 
 // ST4 interface
-//#define ST4RAw  24                      // Pin 24 ST4 RA- West
-//#define ST4DEs  25                      // Pin 25 ST4 DE- South
-//#define ST4DEn  26                      // Pin 26 ST4 DE+ North
-//#define ST4RAe  27                      // Pin 27 ST4 RA+ East
+#define ST4RAe  14                      // ST4 REast
+#define ST4DEs  15                      // ST4 South
+#define ST4DEn  16                      // ST4 North
+#define ST4RAw  17                      // ST4 West
 #define LEDPin 23 
 #define MaxLED 16
 #endif
@@ -99,24 +99,23 @@
 #define Axis1DirPin     2                 // Pin 3 (Dir)
 #define Axis1CSPin      21                // Pin 5 (CS)
 #define Axis1EnablePin  3                 // Pin 5 (enable)
-
 #define Axis2StepPin    20                // Pin 6 (Step)
 #define Axis2DirPin     4                 // Pin 19 (Dir)
 #define Axis2CSPin      19                // Pin 20 (CS)
 #define Axis2EnablePin  5                 // Pin 18 (enable)
-
-#define Axis1Reverse   1
-#define Axis2Reverse   1
+#define Axis1Reverse    1
+#define Axis2Reverse    1
 // Pin 11 12 13 are used!! for SPI
 //Focuser Interface
 #define FocuserRX       9
 #define FocuserTX       10
-
 // ST4 interface
-//#define ST4RAw  24                      // Pin 24 ST4 RA- West
-//#define ST4DEs  25                      // Pin 25 ST4 DE- South
-//#define ST4DEn  26                      // Pin 26 ST4 DE+ North
-//#define ST4RAe  27                      // Pin 27 ST4 RA+ East
+#define ST4RAe  14                      // ST4 REast
+#define ST4DEs  15                      // ST4 South
+#define ST4DEn  16                      // ST4 North
+#define ST4RAw  17                      // ST4 West
+
+// LED interface
 #define LEDPin 23 
 #define MaxLED 16
 #endif

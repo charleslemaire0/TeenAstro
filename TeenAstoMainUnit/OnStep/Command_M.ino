@@ -44,7 +44,8 @@ void Command_M(bool &supress_frame)
         //          Returns: Nothing
 
     if ((atoi2((char *)&parameter[1], &i)) &&
-      ((i > 0) && (i <= 16399)) && trackingState == TrackingON && GuidingState != GuidingRecenter )
+      ((i > 0) && (i <= 16399)) && trackingState == TrackingON &&
+       (GuidingState != GuidingRecenter || GuidingState != GuidingST4))
     {
      
       if ((parameter[0] == 'e') || (parameter[0] == 'w'))
@@ -105,7 +106,7 @@ void Command_M(bool &supress_frame)
     //  :Me# & :Mw#      Move Telescope East or West at current slew rate
     //         Returns: Nothing
   {
-    MoveAxis1(command[1]);
+    MoveAxis1(command[1], GuidingRecenter);
     quietReply = true;
   }
   break;
@@ -116,7 +117,7 @@ void Command_M(bool &supress_frame)
     //  :Mn# & :Ms#      Move Telescope North or South at current slew rate
     //         Returns: Nothing
   {
-    MoveAxis2(command[1]);
+    MoveAxis2(command[1], GuidingRecenter);
     quietReply = true;
   }
   break;

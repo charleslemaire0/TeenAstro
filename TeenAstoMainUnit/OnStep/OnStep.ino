@@ -298,7 +298,7 @@ void loop()
   }
   else
   {
-    //checkST4();
+    checkST4();
     guideHA.fixed = 0;
     Guide();
   }

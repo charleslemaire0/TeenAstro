@@ -849,7 +849,7 @@ void Command_Q()
       {
         abortSlew = true;
       }
-      else if (GuidingState == GuidingRecenter)
+      else if (GuidingState == GuidingRecenter || GuidingState == GuidingST4)
       {
         if (guideDirAxis1)
           StopAxis1();
