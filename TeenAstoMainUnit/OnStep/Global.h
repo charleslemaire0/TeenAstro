@@ -3,6 +3,7 @@
 #include "TelTimer.h"
 #include "Site.h"
 #include "FPoint.h"
+#include "Motor.h"
 
 timerLoop tlp;
 GNSSPPS         pps;
@@ -79,7 +80,7 @@ bool ReverseAxis1;
 bool CoolStep1;
 unsigned int GearAxis2;//1800
 unsigned int StepRotAxis2;
-byte MicroAxis2;
+uint8_t MicroAxis2;
 bool ReverseAxis2;
 bool CoolStep2;
 u_int8_t HighCurrAxis1;
@@ -225,7 +226,8 @@ boolean highPrecision = true;
 #define TrackingMoveTo             2
 #define GuidingOFF                 0
 #define GuidingPulse               1
-#define GuidingRecenter            2
+#define GuidingST4                 2
+#define GuidingRecenter            3
 
 #define TrackingSolar 0.99726956632
 #define TrackingLunar 0.96236513150
@@ -288,7 +290,9 @@ unsigned long   baudRate[10] =
   115200, 56700, 38400, 28800, 19200, 14400, 9600, 4800, 2400, 1200
 };
 
-
+//
+Motor motorAxis1;
+Motor motorAxis2;
 
 // tracking and PEC, fractional steps
 fixed_t         fstepAxis1;

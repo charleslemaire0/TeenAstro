@@ -29,8 +29,7 @@
 // It is up to you to create an interface that meets the electrical specifications of any connected device, use at your own risk.
 // ST4_ALTERNATE_PINS_ON moves the interface (Mega2560 only) to pins 43, 45, 47, 49.  Pin 43 is Dec- (South), Pin 45 is Dec+ (North), Pin 47 is RA- (West), Pin 49 is RA+ (East.)
 // ST4_ALTERNATE_PINS_ON is required for Steve's ST4 board and is also required if the ST4 interface is to be used alongside the Arduino Ethernet Shield
-#define ST4_OFF
-#define ST4_ALTERNATE_PINS_OFF
+#define ST4_ON
 // PPS sense rising edge on pin 21 for optional precision clock source (GPS, for example), default=OFF (Teensy3.1 Pin 23)
 #define PPS_SENSE_OFF
 #define LIMIT_SENSE_OFF

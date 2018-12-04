@@ -21,7 +21,7 @@ void Guide()
     }
     if (guideDirAxis1 == 'w' || guideDirAxis1 == 'e')
     {
-      if (guideDurationHA > 0 || GuidingState == GuidingRecenter)
+      if (guideDurationHA > 0 || GuidingState == GuidingRecenter ||GuidingState == GuidingST4)
       {
         if (!inbacklashAxis1)
         {
@@ -60,7 +60,7 @@ void Guide()
     }
     if (guideDirAxis2 == 's' || guideDirAxis2 == 'n')
     {
-      if (guideDurationDec > 0 || GuidingState == GuidingRecenter)
+      if (guideDurationDec > 0 || GuidingState == GuidingRecenter || GuidingState == GuidingST4)
       {
         if (!inbacklashAxis2)
         {

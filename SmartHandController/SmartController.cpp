@@ -851,11 +851,11 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     }
     else if (page == 3)
     {
-      if (true)
+      u8g2_uint_t y = 36;
+      if (telInfo.hasInfoFocuser)
       {
         char pos[6];
         char spd[4];
-        u8g2_uint_t y = 36;
         x = u8g2_GetDisplayWidth(u8g2) - u8g2_GetUTF8Width(u8g2, "00000");
         u8g2_DrawUTF8(u8g2, 0, y, "F Position");
         memcpy(pos, &telInfo.TempFocuserStatus[1], 5);
@@ -868,6 +868,12 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
         memcpy(spd, &telInfo.TempFocuserStatus[7], 3);
         spd[3] = 0;
         u8g2_DrawUTF8(u8g2, x, y, spd);
+      }
+      else
+      {
+        u8g2_DrawUTF8(u8g2, 0, y, "Focuser not");
+        y += line_height + 4;
+        u8g2_DrawUTF8(u8g2, 0, y, "Connected");
       }
     }
     else if (page == 4)
@@ -1024,7 +1030,7 @@ bool SmartHandController::menuSetLowCurrent(const uint8_t &axis)
   }
   char text[20];
   sprintf(text, "Low Curr. M%u", axis);
-  if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &lowCurr, 10, 200, 3, "0 mA"))
+  if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &lowCurr, 10, 200, 3, "0 mA peak"))
   {
     return DisplayMessageLX200(writeLowCurrLX200(axis, lowCurr), false);
   }
@@ -1040,7 +1046,7 @@ bool SmartHandController::menuSetHighCurrent(const uint8_t &axis)
   }
   char text[20];
   sprintf(text, "High Curr. M%u", axis);
-  if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &highCurr, 10, 200, 3, "0 mA"))
+  if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &highCurr, 10, 200, 3, "0 mA peak"))
   {
     return DisplayMessageLX200(writeHighCurrLX200(axis, highCurr), false);
   }
@@ -1051,6 +1057,26 @@ void SmartHandController::DisplayMountSettings()
 {
   DisplayMotorSettings(1);
   DisplayMotorSettings(2);
+  DisplayAccMaxRateSettings();
+}
+
+void SmartHandController::DisplayAccMaxRateSettings()
+{
+  char out[20];
+  char line1[32] = "Slew Settings";
+  char line3[32] = "";
+  char line4[32] = "";
+  if (DisplayMessageLX200(GetLX200(":GXE2#", out, sizeof(out))))
+  {
+    float acc = atof(&out[0]);
+    sprintf(line3, "Acceleration: %.1f", acc);
+  }
+  if (DisplayMessageLX200(GetLX200(":GX92#", out, sizeof(out))))
+  {
+    int maxrate = (float)strtol(&out[0], NULL, 10);
+    sprintf(line4, "Max Slew: %dx", maxrate);
+  }
+  DisplayLongMessage(line1, NULL, line3, line4, -1);
 }
 
 void SmartHandController::DisplayMotorSettings(const uint8_t &axis)
@@ -1485,7 +1511,7 @@ void SmartHandController::menuTelSettings()
       "\nWifi"
 #endif
       ;
-    current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, "Settings", current_selection_L1, string_list_SettingsL1);
+    current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, "Telescope Settings", current_selection_L1, string_list_SettingsL1);
     switch (current_selection_L1)
     {
     case 0:

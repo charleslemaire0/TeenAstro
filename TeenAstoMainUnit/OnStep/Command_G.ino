@@ -651,7 +651,7 @@ void  Command_G()
     if (GuidingState != GuidingOFF)
     {
       reply[5] = 'G';
-      if (GuidingState == GuidingPulse) reply[6] = '*';
+      if (GuidingState == GuidingPulse || GuidingState == GuidingST4) reply[6] = '*';
       else if (GuidingState == GuidingRecenter) reply[6] = '+';
       if (guideDirAxis1 == 'e') reply[7] = '>';
       else if(guideDirAxis1 == 'w') reply[7] = '<';

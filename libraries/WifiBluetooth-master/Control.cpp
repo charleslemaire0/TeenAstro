@@ -374,13 +374,21 @@ void wifibluetooth::handleControl() {
     {
       data += FPSTR(html_controlQuick1);
       data += FPSTR(html_controlQuick1a);
-      data += "</form>";
       if (mountStatus.parked())
       {
         data += FPSTR(html_controlQuick2);
+        data += "</form>";
         data += FPSTR(html_controlQuick3);
+        data += html_controlEnd;
+        data += "</div></body></html>";
+#ifdef OETHS
+        client->print(data);
+#else
+        server.send(200, "text/html", data);
+#endif
         return;
       }
+      data += "</form>";
     }
   }
   data += FPSTR(html_controlQuick3);
@@ -725,6 +733,7 @@ void wifibluetooth::processControlGet() {
     if (v=="qr") { Ser.print(":hF#"); cl(); }     // home, reset
     if (v=="qh") { Ser.print(":hC#"); cl(); }     // home, goto
     if (v=="pr") { Ser.print(":hO#"); cl(); }     // park, reset
+    if (v=="ps") { Ser.print(":hQ#"); cl(); }     // set park
     if (v=="pk") { Ser.print(":hP#"); cl(); }     // park
     if (v=="pu") { Ser.print(":hR#"); cl(); }     // un-park
 

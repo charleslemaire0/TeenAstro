@@ -919,7 +919,7 @@ void enableGuideRate(int g, bool force)
 
   if (g < 0) g = 0;
   if (g > 9) g = 9;
-  if (activeGuideRate == g && !force) return;
+  if (!force && guideTimerBaseRate == guideRates[g]) return;
 
   activeGuideRate = g;
 
@@ -931,6 +931,20 @@ void enableGuideRate(int g, bool force)
   amountGuideDec.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis2) / 100.0);
   sei();
 }
+
+void enableST4GuideRate()
+{
+  if (guideTimerBaseRate != guideRates[0])
+  {
+    guideTimerBaseRate = guideRates[0];
+    cli();
+    amountGuideHA.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis1) / 100.0);
+    amountGuideDec.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis2) / 100.0);
+    sei();
+  }
+}
+
+
 void resetGuideRate()
 {
   enableGuideRate(activeGuideRate, true);

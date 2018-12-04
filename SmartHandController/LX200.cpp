@@ -445,7 +445,7 @@ LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, s
       char out[LX200sbuff];
       if (GetLX200(":CM#",out, LX200sbuff))
       {
-        if (strcmp(out, "N/A#") == 0)
+        if (strcmp(out, "N/A") == 0)
           return LX200SYNCED;
         else
           return LX200_ERR_SYNC;

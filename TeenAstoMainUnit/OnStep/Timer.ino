@@ -410,7 +410,7 @@ ISR(TIMER3_COMPA_vect)
     // Guessing about 1+2+1+4+4+1=13 clocks between here and the step signal which is 0.81uS
     // Set direction.  Needs >=0.65uS before/after rising step signal (DRV8825 or A4988).
 
-      if (ReverseAxis1)
+      if (ReverseAxis1^Axis1Reverse)
       {
         if (HADir == dirAxis1)
           digitalWriteFast(Axis1DirPin, LOW);
@@ -537,7 +537,7 @@ ISR(TIMER3_COMPA_vect)
 
       // Set direction.  Needs >=0.65uS before/after rising step signal (DRV8825 or A4988).
 
-        if (ReverseAxis2)
+        if (ReverseAxis2^Axis2Reverse)
         {
           if (DecDir == dirAxis2)
             digitalWriteFast(Axis2DirPin, LOW);

@@ -42,7 +42,7 @@ void Telescope::updateFocuser()
     }
     else
     {
-      connectionFailure++;
+      hasInfoFocuser = false;
     }
   }
 };
