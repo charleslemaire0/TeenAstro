@@ -108,7 +108,7 @@ public:
       if (EnPin > 0)
         digitalWrite(EnPin, LOW);
       m_tmc26x = new TMC26XStepper(StepRot, CSPin, DirPin, StepPin, Curr);
-      m_tmc26x->setSpreadCycleChopper(2, 10, 15, 12, 3);
+      m_tmc26x->setSpreadCycleChopper(2, 24, 8, 6, 0);
       m_tmc26x->setRandomOffTime(0);
       setMicrostep(Micros);
       m_tmc26x->setStallGuardThreshold(63, -1);  //turn off SG

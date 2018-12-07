@@ -1,37 +1,11 @@
 #pragma once
 //uncomment the version PCB you are using
 
-//#define VERSION  200
+
 //#define VERSION  220
 #define VERSION  230
 //#define VERSION  240
 
-
-#if VERSION == 200
-#define AxisDriver      1                   //only with TOS100
-
-#define Axis1StepPin    2                   // Pin 2 (Step)
-#define Axis1DirPin     3                   // Pin 3 (Dir)
-#define Axis1SGPin      4                   // Pin 4 (SG)
-#define Axis1CSPin      5                   // Pin 5 (CS)
-#define Axis1EnablePin  -1                  //alway enable
-
-#define Axis2StepPin    6                   // Pin 6 (Step)
-#define Axis2DirPin     7                   // Pin 7 (Dir)
-#define Axis2SGPin      8                   // Pin 8 (SG)
-#define Axis2CSPin      9                   // Pin 9 (CS)
-#define Axis2EnablePin  -1                  //alway enable
-
-//Focuser Interface
-#define FocuserRX       26
-#define FocuserTX       31
-#define Axis1Reverse   0
-#define Axis2Reverse   0
-
-#define LEDPin 33
-#define MaxLED 255
-
-#endif
 #if VERSION == 220
 #define AxisDriver      1                    //only with TOS100
 
