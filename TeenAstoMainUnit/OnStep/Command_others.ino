@@ -70,6 +70,7 @@ void Command_dollar()
         GearAxis1 = (unsigned int)i;
         EEPROM_writeInt(EE_GearAxis1, i);
       }
+      unsetPark();
       updateRatios();
     }
     else
@@ -93,6 +94,7 @@ void Command_dollar()
         StepRotAxis1 = (unsigned int)i;
         EEPROM_writeInt(EE_StepRotAxis1, i);
       }
+      unsetPark();
       updateRatios();
     }
     else
@@ -128,6 +130,7 @@ void Command_dollar()
         motorAxis1.setMicrostep(MicroAxis1);
         EEPROM.write(EE_MicroAxis1, MicroAxis1);
       }
+      unsetPark();
       updateRatios();
     }
     else
