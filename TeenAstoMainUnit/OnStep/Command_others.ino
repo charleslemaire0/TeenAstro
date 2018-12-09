@@ -62,11 +62,21 @@ void Command_dollar()
     {
       if (parameter[0] == 'D')
       {
+        double fact = (double)i / GearAxis2;
+        cli();
+        posAxis2 = fact *posAxis2;
+        sei();
+        StopAxis2();
         GearAxis2 = (unsigned int)i;
         EEPROM_writeInt(EE_GearAxis2, i);
       }
       else
       {
+        double fact = (double) i/GearAxis1;
+        cli();
+        posAxis1 = fact *posAxis1;
+        sei();
+        StopAxis1();
         GearAxis1 = (unsigned int)i;
         EEPROM_writeInt(EE_GearAxis1, i);
       }
@@ -86,11 +96,21 @@ void Command_dollar()
     {
       if (parameter[0] == 'D')
       {
+        double fact = (double)i / StepRotAxis2;
+        cli();
+        posAxis2 = fact *posAxis2;
+        sei();
+        StopAxis2();
         StepRotAxis2 = (unsigned int)i;
         EEPROM_writeInt(EE_StepRotAxis2, i);
       }
       else 
       {
+        double fact = (double)i / StepRotAxis1;
+        cli();
+        posAxis1 = fact *posAxis1;
+        sei();
+        StopAxis1();
         StepRotAxis1 = (unsigned int)i;
         EEPROM_writeInt(EE_StepRotAxis1, i);
       }
