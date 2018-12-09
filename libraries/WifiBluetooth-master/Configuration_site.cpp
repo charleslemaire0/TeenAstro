@@ -21,29 +21,37 @@ const char html_configSiteName[] =
 " (Edit the name of the selected site)"
 "</form>"
 "\r\n";
-const char html_configLongDeg[] =
+const char html_configLongWE1[] =
 "<form method='get' action='/configuration_site.htm'>"
-" <input value='%s' type='number' name='site_g1' min='-180' max='180'>&nbsp;&deg;&nbsp;";
+"<select style='width:5em' name='site_g0'>";
+const char html_configLongWE2[] =
+"</select>";
+const char html_configLongDeg[] =
+" <input value='%s' type='number' name='site_g1' min='0' max='179'>&nbsp;&deg;&nbsp;";
 const char html_configLongMin[] =
-" <input value='%s' type='number' name='site_g2' min='0' max='60'>&nbsp;'&nbsp;&nbsp;"
+" <input value='%s' type='number' name='site_g2' min='0' max='59'>&nbsp;'&nbsp;&nbsp;"
 "<button type='submit'>Upload</button>"
-" (Longitude, in deg. and min. +/- 180)"
+" (Longitude, in degree and minute)"
 "</form>"
 "\r\n";
-const char html_configLatDeg[] =
+const char html_configLatNS1[] =
 "<form method='get' action='/configuration_site.htm'>"
-" <input value='%s' type='number' name='site_t1' min='-90' max='90'>&nbsp;&deg;&nbsp;";
+"<select style='width:5em' name='site_t0'>";
+const char html_configLatNS2[] =
+"</select>";
+const char html_configLatDeg[] =
+" <input value='%s' type='number' name='site_t1' min='0' max='90'>&nbsp;&deg;&nbsp;";
 const char html_configLatMin[] =
-" <input value='%s' type='number' name='site_t2' min='0' max='60'>&nbsp;'&nbsp;&nbsp;"
+" <input value='%s' type='number' name='site_t2' min='0' max='59'>&nbsp;'&nbsp;&nbsp;"
 "<button type='submit'>Upload</button>"
-" (Latitude, in deg. and min. +/- 90)"
+" (Latitude, in degree and minute)"
 "</form>"
 "\r\n";
 const char html_configElev[] =
 "<form method='get' action='/configuration_site.htm'>"
 " <input value='%s' type='number' name='site_e' min='-200' max='8000'>"
 "<button type='submit'>Upload</button>"
-" (Elevation, in meter min 200m max 8000m)"
+" (Elevation, in meter min -200m max 8000m)"
 "</form>"
 "<br />\r\n";
 
@@ -95,7 +103,11 @@ void wifibluetooth::handleConfigurationSite() {
       // Longitude
       if (!sendCommand(":Gg#", temp1)) strcpy(temp1, "+000*00");
       temp1[4] = 0; // deg. part only
-      if (temp1[0] == '+') temp1[0] = '0'; // remove +
+      data += html_configLongWE1;
+      temp1[0] == '+' ? data += "<option selected value='0'>West</option>" : data += "<option value='0'>West</option>";
+      temp1[0] == '-' ? data += "<option selected value='1'>East</option>" : data += "<option value='1'>East</option>";
+      data += html_configLongWE2;
+      temp1[0] = '0'; // sign
       sprintf(temp, html_configLongDeg, temp1);
       data += temp;
       sprintf(temp, html_configLongMin, (char*)&temp1[5]);
@@ -107,7 +119,11 @@ void wifibluetooth::handleConfigurationSite() {
       // Latitude
       if (!sendCommand(":Gt#", temp1)) strcpy(temp1, "+00*00");
       temp1[3] = 0; // deg. part only
-      if (temp1[0] == '+') temp1[0] = '0'; // remove +
+      data += html_configLatNS1;
+      temp1[0] == '+' ? data += "<option selected value='0'>North</option>" : data += "<option value='0'>North</option>";
+      temp1[0] == '-' ? data += "<option selected value='1'>Sud</option>" : data += "<option value='1'>Sud</option>";
+      data += html_configLatNS2;
+      temp1[0] = '0'; // remove +
       sprintf(temp, html_configLatDeg, temp1);
       data += temp;
       sprintf(temp, html_configLatMin, (char*)&temp1[4]);
@@ -158,9 +174,17 @@ void wifibluetooth::processConfigurationSiteGet() {
   }
   // Location
   int long_deg = -999;
+  int sign = -1;
+  v = server.arg("site_g0");
+  if (v != "") {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) { sign = i; }
+  }
   v = server.arg("site_g1");
   if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -180) && (i <= 180))) { long_deg = i; }
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -180) && (i <= 180)))
+    {
+      long_deg = sign ? -i: i;
+    }
   }
   v = server.arg("site_g2");
   if (v != "") {
@@ -172,14 +196,22 @@ void wifibluetooth::processConfigurationSiteGet() {
     }
   }
   int lat_deg = -999;
+  v = server.arg("site_t0");
+  if (v != "") {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) { sign = i; }
+  }
   v = server.arg("site_t1");
   if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -90) && (i <= 90))) { lat_deg = i; }
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 90))) {
+      lat_deg = sign ? -i : i; 
+    }
   }
   v = server.arg("site_t2");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 60))) {
       if ((lat_deg >= -90) && (lat_deg <= 90)) {
+        v = server.arg("site_t0");
+
         sprintf(temp, ":St%+03d*%02d#", lat_deg, i);
         Ser.print(temp);
       }
