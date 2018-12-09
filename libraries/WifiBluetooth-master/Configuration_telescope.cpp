@@ -107,9 +107,9 @@ const char html_configMinAlt[] =
 "\r\n";
 const char html_configMaxAlt[] = 
 "<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%d' type='number' name='ol' min='60' max='90'>"
+" <input value='%d' type='number' name='ol' min='60' max='91'>"
 "<button type='submit'>Upload</button>"
-" (Overhead, in degrees 60 to 90)"
+" (Overhead, in degrees 60 to 90, set 91 to deactivate)"
 "</form>"
 "\r\n";
 const char html_configPastMerE[] = 
