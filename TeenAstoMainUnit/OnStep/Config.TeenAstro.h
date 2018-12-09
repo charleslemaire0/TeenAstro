@@ -31,19 +31,7 @@
 // ST4_ALTERNATE_PINS_ON is required for Steve's ST4 board and is also required if the ST4 interface is to be used alongside the Arduino Ethernet Shield
 #define ST4_ON
 // PPS sense rising edge on pin 21 for optional precision clock source (GPS, for example), default=OFF (Teensy3.1 Pin 23)
-#define PPS_SENSE_OFF
-#define LIMIT_SENSE_OFF
-// light status LED by sink to ground (pin 9) and source +5V (pin 8), default=ON
-// _ON and OnStep keeps this illuminated to indicate that the controller is active.  When sidereal tracking this LED will rapidly flash
-#define STATUS_LED_PINS_OFF
-// lights 2nd status LED by sink to ground (pin 10), default=OFF, must be off for Teensy3.1 (pin 7)
-// _ON sets this to blink at 1 sec intervals when PPS is synced
-// n sets this to dimly light a polar finder reticle, for example I use STATUS_LED2_PINS 250
-// The W5100 Ethernet adapter uses pin 10 for CS, so if W5100_ON is used this must be _OFF
-#define STATUS_LED2_PINS_OFF
-// lights reticule LED by sink to ground (pin 44), default=OFF.  Defaults to pin 9 on the Teensy3.1 (STATUS_LED_PINS must be _ON)
-// RETICULE_LED_PINS n, where n=0 to 255 activates this feature and sets default brightness
-#define RETICULE_LED_PINS_OFF
+
 
 // optional stepper driver Fault detection, just wire driver Fault signal to Pins 26 (Axis1) and 31 (Axis2), default=OFF (Teensy3.1 Pins 17,22)
 // other settings are LOW and HIGH
@@ -70,41 +58,6 @@
 #define BacklashTakeupRate        60 // backlash takeup rate (in multipules of the sidereal rate): too fast and your motors will stall,
                                      // too slow and the mount will be sluggish while it moves through the backlash
                                      // for the most part this doesn't need to be changed, but adjust when needed.  Default=25
-
-
-
-
-// Tak EM10         : (14400*360)/144 = 36000
-
-
-#ifdef EM200b
-#define GearAxis1 1800.
-#define StepRotAxis1 200
-#define MicroAxis1 16
-#define GearAxis2 1800.
-#define StepRotAxis2 200
-#define MicroAxis2 16
-
-// Tak EM10         : (14400*360)/144 = 36000
-#define REVERSE_AXIS1_ON          // reverse the direction of movement for the HA/RA axis, adjust as needed or reverse your wiring so things move in the right direction
-#define REVERSE_AXIS2_OFF        // reverse the direction of movement for the Dec axis (both reversed for my EM10b, both normal for G11)
-#endif
-
-#ifdef T400
-#define GearAxis1 4608.
-#define StepRotAxis1 200
-#define MicroAxis1 16
-
-#define GearAxis2 4608.
-#define StepRotAxis2 200
-#define MicroAxis2 16
-
-#define StepsPerWormRotationAxis1 32000
-#define PECBufferSize           824  // PEC, buffer size, max should be no more than 3384, your required buffer size >= StepsPerAxis1WormRotation/(StepsPerDegeeAxis1/240)
-// for the most part this doesn't need to be changed, but adjust when needed.  824 seconds is the default.  Ignored on Alt/Azm mounts.
-#define REVERSE_AXIS1_ON          // reverse the direction of movement for the HA/RA axis, adjust as needed or reverse your wiring so things move in the right direction
-#define REVERSE_AXIS2_ON        // reverse the direction of movement for the Dec axis (both reversed for my EM10b, both normal for G11)
-#endif
 
 #define MinDec                   -91 // minimum allowed declination, default = -91 (off)  Ignored on Alt/Azm mounts.
 #define MaxDec                   +91 // maximum allowed declination, default =  91 (off)  Ignored on Alt/Azm mounts.

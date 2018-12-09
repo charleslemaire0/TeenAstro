@@ -142,44 +142,10 @@ void wifibluetooth::handleWifi() {
 
   char temp[500] = "";
   char temp1[80] = "";
+  String data;
 
   processWifiGet();
-
-  // send a standard http response header
-  String data = html_headB;
-  data += html_main_cssB;
-  data += html_main_css1;
-  data += html_main_css2;
-  data += html_main_css3;
-  data += html_main_css4;
-  data += html_main_css5;
-  data += html_main_css6;
-  data += html_main_css7;
-  data += html_main_css8;
-  data += html_main_cssE;
-  data += html_headE;
-#ifdef OETHS
-  client->print(data); data = "";
-#endif
-  data += html_bodyB;
-
-  mountStatus.update();
-
-  // finish the standard http response header
-  data += html_onstep_header1;
-  if (mountStatus.getId(temp1)) data += temp1; else data += "?";
-  data += html_onstep_header2;
-  if (mountStatus.getVer(temp1)) data += temp1; else data += "?";
-  data += html_onstep_header3;
-  data += html_links1N;
-  data += html_links2N;
-#if PEC_ON
-  data += html_links3N;
-#endif
-  data += html_links4N;
-  data += html_links5N;
-  data += html_links6S;
-  data += html_onstep_header4;
+  preparePage(data, 6);
 
   data += "<div style='width: 40em;'>";
 

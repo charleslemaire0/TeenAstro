@@ -3,9 +3,6 @@
 
 
 const char* html_headB PROGMEM = "<!DOCTYPE HTML>\r\n<html>\r\n<head>\r\n";
-#if PEC_ON
-const char* html_headerPec PROGMEM = "<meta http-equiv=\"refresh\" content=\"5; URL=/pec.htm\">\r\n";
-#endif
 const char* html_headerIdx PROGMEM = "<meta http-equiv=\"refresh\" content=\"5; URL=/index.htm\">\r\n";
 const char* html_headE PROGMEM = "</head>\r\n";
 const char* html_bodyB PROGMEM = "<body bgcolor='#26262A'>\r\n";
@@ -33,11 +30,8 @@ const char* html_links1S PROGMEM = "<a href='/index.htm' style='background-color
 const char* html_links1N PROGMEM = "<a href='/index.htm'>Status</a>";
 const char* html_links2S PROGMEM = "<a href='/control.htm' style='background-color: #552222;'>Control</a>";
 const char* html_links2N PROGMEM = "<a href='/control.htm'>Control</a>";
-#if PEC_ON
-const char* html_links3S PROGMEM = "<a href='/pec.htm' style='background-color: #552222;'>PEC</a>";
-const char* html_links3N PROGMEM = "<a href='/pec.htm'>PEC</a>";
-#endif
-
+const char* html_links3S PROGMEM = "<a href='/configuration_site.htm' style='background-color: #552222;'>Site</a>";
+const char* html_links3N PROGMEM = "<a href='/configuration_site.htm'>Site</a>";
 const char* html_links4S PROGMEM = "<a href='/configuration_telescope.htm' style='background-color: #552222;'>Telescope</a>";
 const char* html_links4N PROGMEM = "<a href='/configuration_telescope.htm'>Telescope</a>";
 const char* html_links5S PROGMEM = "<a href='/configuration_focuser.htm' style='background-color: #552222;'>Focuser</a>";
@@ -211,6 +205,52 @@ void wifibluetooth::handleNotFound()
     message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
   }
   server.send(404, "text/plain", message);
+}
+
+void wifibluetooth::preparePage(String &data, int page)
+{
+  char temp1[80] = "";
+  data = html_headB;
+  data += html_main_cssB;
+  data += html_main_css1;
+  data += html_main_css2;
+  data += html_main_css3;
+  data += html_main_css4;
+  data += html_main_css5;
+  data += html_main_css6;
+  data += html_main_css7;
+  data += html_main_css8;
+  if (page == 2)
+  {
+    data += html_main_css_control1;
+    data += html_main_css_control2;
+    data += html_main_css_control3;
+  }
+  data += html_main_cssE;
+  data += html_headE;
+#ifdef OETHS
+  client->print(data); data = "";
+#endif
+
+  data += html_bodyB;
+  // get status
+  mountStatus.update();
+  serialRecvFlush();
+  // finish the standard http response header
+  data += html_onstep_header1;
+  if (mountStatus.getId(temp1)) data += temp1; else data += "?";
+  data += html_onstep_header2;
+  if (mountStatus.getVer(temp1)) data += temp1; else data += "?";
+  data += html_onstep_header3;
+  data += page == 1 ? html_links1S : html_links1N;
+  data += page == 2 ? html_links2S : html_links2N;
+  data += page == 3 ? html_links3S : html_links3N;
+  data += page == 4 ? html_links4S : html_links4N;
+  data += page == 5 ? html_links5S : html_links5N;
+#ifndef OETHS
+  data += page == 6 ? html_links6S : html_links6N;
+#endif
+  data += html_onstep_header4;
 }
 
 void wifibluetooth::writeStation2EEPROM(const int& k)
@@ -430,15 +470,12 @@ Again:
 
   server.on("/", handleRoot);
   server.on("/index.htm", handleRoot);
+  server.on("/configuration_site.htm", handleConfigurationSite);
   server.on("/configuration_telescope.htm", handleConfigurationTelescope);
   server.on("/configuration_focuser.htm", handleConfigurationFocuser);
   server.on("/control.htm", handleControl);
   server.on("/control.txt", controlAjax);
   server.on("/guide.txt", guideAjax);
-#if false
-  server.on("/pec.htm", handlePec);
-  server.on("/pec.txt", pecAjax);
-#endif
   server.on("/wifi.htm", handleWifi);
 
   server.onNotFound(handleNotFound);

@@ -4,31 +4,16 @@
 #include "Helper_EEProm.h"
 class siteDefinition
 {
-  // site index: 100-199
-  // 100..103 latitude  1  ((index 1-1)*25+100)
-  // 104..107 longitude 1
-  // 108      timeZone  1
-  // 109..124 site name 1
-  // 125..128 latitude  2  ((index 2-1)*25+100)
-  // 129..132 longitude 2
-  // 133      timeZone  2
-  // 134..149 site name 2
-  // 150..103 latitude  3  ((index 3-1)*25+100)
-  // 154..157 longitude 3
-  // 158      timeZone  3
-  // 159..174 site name 3
-  // 175..178 latitude  4  ((index 4-1)*25+100)
-  // 179..182 longitude 4
-  // 183      timeZone  4
-  // 184..199 site name 4
 #define EE_currentSite  100
 #define EE_sites        101
-
+#define siteNameLen     15
+#define SiteSize        25
   struct ssite
   {
     double latitude;
     double longitude;
-    char siteName[16];
+    int16_t elevation;
+    char siteName[siteNameLen];
   };
 private:
   uint8_t  m_siteIndex;
@@ -49,6 +34,10 @@ public:
   {
     return &m_site.longitude;
   }
+  const int16_t* elevation()
+  {
+    return &m_site.elevation;
+  }
   const char* siteName()
   {
     return &m_site.siteName[0];
@@ -60,7 +49,7 @@ public:
       return false;
     }
     m_site.latitude = l;
-    EEPROM_writeFloat(EE_sites + m_siteIndex * 25, (float)m_site.latitude);
+    EEPROM_writeFloat(EE_sites + m_siteIndex * SiteSize, (float)m_site.latitude);
     m_cosLat = cos(m_site.latitude / Rad);
     m_sinLat = sin(m_site.latitude / Rad);
     return true;
@@ -72,13 +61,23 @@ public:
       return false;
     }
     m_site.longitude = l;
-    EEPROM_writeFloat(EE_sites + m_siteIndex * 25 + 4, (float)m_site.longitude);
+    EEPROM_writeFloat(EE_sites + m_siteIndex * SiteSize + 4, (float)m_site.longitude);
+    return true;
+  }
+  bool setElev(const int16_t l)
+  {
+    if (-200 > l || l > 8000)
+    {
+      return false;
+    }
+    m_site.elevation = l;
+    EEPROM_writeInt(EE_sites + m_siteIndex * SiteSize + 8, l);
     return true;
   }
   bool setSiteName(const char* s)
   {
-    strncpy(m_site.siteName, s, 16);
-    EEPROM_writeString(EE_sites + m_siteIndex * 25 + 9, &m_site.siteName[0]);
+    strncpy(m_site.siteName, s, siteNameLen);
+    EEPROM_writeString(EE_sites + m_siteIndex * SiteSize + 10, m_site.siteName);
     return true;
   }
   const double sinLat()
@@ -92,23 +91,25 @@ public:
   void ReadSiteDefinition(uint8_t siteIndex)
   {
     m_siteIndex = siteIndex;
-    int adress = EE_sites + m_siteIndex * 25;
+    int adress = EE_sites + m_siteIndex * SiteSize;
     m_site.latitude = EEPROM_readFloat(adress);
     if (-90 > m_site.latitude || m_site.latitude > 90)
     {
-      m_site.latitude = 0;
-      EEPROM_writeFloat(EE_sites + m_siteIndex * 25, (float)m_site.latitude);
+      setLat(0);
     }
-
     adress += 4;
     m_site.longitude = EEPROM_readFloat(adress);
     if (-180 > m_site.longitude || m_site.longitude > 180)
     {
-      m_site.longitude = 0;
-      EEPROM_writeFloat(EE_sites + m_siteIndex * 25 + 4, (float)m_site.longitude);
+      setLong(0);
     }
     adress += 4;
-    adress += 1;
+    m_site.elevation = EEPROM_readInt(adress);
+    if (-200 > m_site.elevation || m_site.elevation > 8000)
+    {
+      setElev(0);
+    }
+    adress += 2;
     EEPROM_readString(adress, m_site.siteName);
     m_cosLat = cos(m_site.latitude / Rad);
     m_sinLat = sin(m_site.latitude / Rad);
@@ -130,7 +131,8 @@ public:
     EEPROM.write(EE_currentSite, m_siteIndex);
     setLat(0);
     setLong(0);
-    setSiteName("INIT");
+    setElev(0);
+    setSiteName("Site 0");
   }
 };
 

@@ -1124,7 +1124,7 @@ void Command_W()
   else
     if (command[1] == '?') {
       quietReply = true;
-      sprintf(reply, "%i", localSite.siteIndex());
+      sprintf(reply, "%d", localSite.siteIndex());
     }
     else
       commandError = true;

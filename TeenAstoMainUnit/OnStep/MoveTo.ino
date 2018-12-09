@@ -9,10 +9,7 @@ static long lastPosAxis2 = 0;
 void moveTo() {
   // HA goes from +90...0..-90
   //                W   .   E
-
-
   long distStartAxis1, distStartAxis2, distDestAxis1, distDestAxis2;
-
   cli();
   distStartAxis1 = abs(distStepAxis1(startAxis1, posAxis1));  // distance from start HA
   distStartAxis2 = abs(distStepAxis2(startAxis2, posAxis2));  // distance from start Dec

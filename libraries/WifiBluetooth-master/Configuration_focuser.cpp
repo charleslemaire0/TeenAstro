@@ -10,7 +10,6 @@ const char html_configParkFocuser[] PROGMEM =
 " (Park position in resolution unit)"
 "</form>"
 "\r\n";
-
 const char html_configMaxPositionFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
 " <input value='%d' type='number' name='MaxPos' min='0' max='65535'>"
@@ -18,28 +17,21 @@ const char html_configMaxPositionFocuser[] PROGMEM =
 " (Max position in resolution unit)"
 "</form>"
 "<br />\r\n";
-
-
-
 const char html_configRotFocuser_1[] PROGMEM =
 "<form action='/configuration_focuser.htm'>"
 "<select name='Rot'>";
-
-
 const char html_configRotFocuser_r[] PROGMEM =
 "<option value ='0'>Direct</option>"
 "<option selected value='1'>Reverse</option>";
 const char html_configRotFocuser_d[] PROGMEM =
 "<option selected value ='0'>Direct</option>"
 "<option value='1'>Reverse</option>";
-
 const char html_configRotFocuser_2[] PROGMEM =
 "</select>"
 "<button type='submit'>Upload</button>"
 "(change this value if the focuser moves in the wrong direction)"
 "</form>"
 "<br />\r\n";
-
 const char html_configLowSpeedFocuser[] PROGMEM =
 "Speed & Acceleration: <br />"
 "<form method='get' action='/configuration_focuser.htm'>"
@@ -48,7 +40,6 @@ const char html_configLowSpeedFocuser[] PROGMEM =
 " (Minimum Slewing speed from 1 to 999)"
 "</form>"
 "\r\n";
-
 const char html_configHighSpeedFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
 " <input value='%d' type='number' name='HighSpeed' min='1' max='999'>"
@@ -56,7 +47,6 @@ const char html_configHighSpeedFocuser[] PROGMEM =
 " (Maximum Slewing speed from 1 to 999)"
 "</form>"
 "\r\n";
-
 const char html_configGotoAccFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
 " <input value='%d' type='number' name='GotoAcc' min='1' max='99'>"
@@ -64,7 +54,6 @@ const char html_configGotoAccFocuser[] PROGMEM =
 " (Acceleration for goto command from 1 to 99)"
 "</form>"
 "\r\n";
-
 const char html_configManAccFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
 " <input value='%d' type='number' name='ManAcc' min='1' max='99'>"
@@ -72,7 +61,6 @@ const char html_configManAccFocuser[] PROGMEM =
 " (Acceleration for manual movement from 1 to 99)"
 "</form>"
 "\r\n";
-
 const char html_configManDecFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
 " <input value='%d' type='number' name='Dcc' min='1' max='99'>"
@@ -80,7 +68,6 @@ const char html_configManDecFocuser[] PROGMEM =
 " (Deceleration for both manual and goto from 1 to 99)"
 "</form>"
 "\r\n<br/>";
-
 const char html_configResolutionFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
 " <input value='%d' type='number' name='Res' min='1' max='512'>"
@@ -88,7 +75,6 @@ const char html_configResolutionFocuser[] PROGMEM =
 " (Sampling in steps from 1(high resolution) to 512(low resolution))"
 "</form>"
 "<br/>\r\n";
-
 const char html_configMuFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
 " <input value='%d' type='number' name='MuF' min='4' max='128'>"
@@ -96,7 +82,6 @@ const char html_configMuFocuser[] PROGMEM =
 " (Microsteps Focuser, valid value are 4, 8, 16, 32, 64, 128)"
 "</form>"
 "\r\n";
-
 const char html_configLCFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
 " <input value='%d' type='number' name='LcF' min='100' max='1600' step='10'>"
@@ -132,48 +117,10 @@ void wifibluetooth::handleConfigurationFocuser() {
   char temp[320] = "";
   char temp1[80] = "";
   char temp2[80] = "";
+  String data;
 
   processConfigurationFocuserGet();
-
-  // send a standard http response header
-  String data = html_headB;
-  data += html_main_cssB;
-  data += html_main_css1;
-  data += html_main_css2;
-  data += html_main_css3;
-  data += html_main_css4;
-  data += html_main_css5;
-  data += html_main_css6;
-  data += html_main_css7;
-  data += html_main_css8;
-  data += html_main_cssE;
-  data += html_headE;
-#ifdef OETHS
-  client->print(data); data = "";
-#endif
-
-  data += html_bodyB;
-
-  // get status
-  mountStatus.update();
-  serialRecvFlush();
-  // finish the standard http response header
-  data += html_onstep_header1;
-  if (mountStatus.getId(temp1)) data += temp1; else data += "?";
-  data += html_onstep_header2;
-  if (mountStatus.getVer(temp1)) data += temp1; else data += "?";
-  data += html_onstep_header3;
-  data += html_links1N;
-  data += html_links2N;
-#if PEC_ON
-  data += html_links3N;
-#endif
-  data += html_links4N;
-  data += html_links5S;
-#ifndef OETHS
-  data += html_links6N;
-#endif
-  data += html_onstep_header4;
+  preparePage(data, 5);
 
   sendCommand(":F~#", temp1);
   bool getdata = (temp1[0] == '~');

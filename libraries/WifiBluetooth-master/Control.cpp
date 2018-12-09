@@ -303,53 +303,10 @@ void wifibluetooth::handleControl() {
   serialRecvFlush();
 
   char temp1[80]="";
+  String data;
 
   processControlGet();
-
-  String data=html_headB;
-  data += html_main_cssB;
-  data += html_main_css1;
-  data += html_main_css2;
-  data += html_main_css3;
-  data += html_main_css4;
-  data += html_main_css5;
-  data += html_main_css6;
-  data += html_main_css7;
-  data += html_main_css8;
-  data += html_main_css_control1;
-  data += html_main_css_control2;
-  data += html_main_css_control3;
-  data += html_main_cssE;
-  data += html_headE;
-#ifdef OETHS
-  client->print(data); data="";
-#endif
-
-  data += html_bodyB;
-
-  // get status
-  mountStatus.update();
-
-  // finish the standard http response header
-  data += html_onstep_header1;
-  if (mountStatus.getId(temp1)) data += temp1; else data += "?";
-  data += html_onstep_header2;
-  if (mountStatus.getVer(temp1)) data += temp1; else data += "?";
-  data += html_onstep_header3;
-  data += html_links1N;
-  data += html_links2S;
-#if PEC_ON
-  data += html_links3N;
-#endif
-  data += html_links4N;
-  data += html_links5N;
-#ifndef OETHS
-  data += html_links6N;
-#endif
-  data += html_onstep_header4;
-#ifdef OETHS
-  client->print(data); data="";
-#endif
+  preparePage(data, 2);
 
   // guide (etc) script
   data += FPSTR(html_controlScript1);

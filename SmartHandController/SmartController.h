@@ -103,7 +103,7 @@ private:
   void menuDate();
   void menuLatitude();
   void menuLongitude();
-  //void menuAltitude();
+  void menuElevation();
   void menuMainUnitInfo();
  /* void menuHCInfo();*/
   void menuLimits();

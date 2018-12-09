@@ -17,28 +17,26 @@ const char* html_settingsBrowserTime PROGMEM =
 "&nbsp;&nbsp;<span id=\"datetime\"></span> UT (web browser)"
 "<script> "
 "function pad(num, size) { var s = '000000000' + num; return s.substr(s.length-size); }"
-"var now = new Date(); document.getElementById('datetime').innerHTML = (now.getUTCMonth()+1)+'/'+"
-"pad(now.getUTCDate().toString(),2)+'/'+pad(now.getUTCFullYear().toString().substr(-2),2)+"
+"var now = new Date(); document.getElementById('datetime').innerHTML = (now.getUTCMonth()+1).toString()+'/'+"
+"pad(now.getUTCDate().toString(),2)+'/'+pad(now.getUTCFullYear().toString(),4)+"
 "' '+pad(now.getUTCHours().toString(),2)+':'+pad(now.getUTCMinutes().toString(),2)+':'+pad(now.getUTCSeconds().toString(),2); "
 "</script><br />\r\n";
 
 const char* html_indexDate PROGMEM = "&nbsp;&nbsp;<font class='c'>%s</font>";
 const char* html_indexTime PROGMEM = "&nbsp;<font class='c'>%s</font>&nbsp;UT";
 const char* html_indexSidereal PROGMEM = "&nbsp;(<font class='c'>%s</font>&nbsp; LST)<br />";
-const char* html_indexSite PROGMEM = "&nbsp;&nbsp;Long. = <font class='c'>%s</font>, Lat. = <font class='c'>%s</font><br />";
 
-const char* html_indexPosition PROGMEM = "&nbsp;&nbsp;Current: " Axis1 "=<font class='c'>%s</font>, " Axis2 "=<font class='c'>%s</font><br />";
+const char* html_indexPosition PROGMEM = "&nbsp;&nbsp;" Axis1 "=<font class='c'>%s</font>, " Axis2 "=<font class='c'>%s</font><br />";
 const char* html_indexTarget PROGMEM = "&nbsp;&nbsp;Target:&nbsp;&nbsp; " Axis1 "=<font class='c'>%s</font>, " Axis2 "=<font class='c'>%s</font><br />";
 #ifdef ENCODERS_ON
 const char* html_indexEncoder1 = "&nbsp;&nbsp;OnStep: Ax1=<font class='c'>%s</font>, Ax2=<font class='c'>%s</font><br />";
 const char* html_indexEncoder2 = "&nbsp;&nbsp;Encodr: Ax1=<font class='c'>%s</font>, Ax2=<font class='c'>%s</font><br />";
 #endif
-const char* html_indexPier PROGMEM = "&nbsp;&nbsp;Pier Side=<font class='c'>%s</font> (meridian flips <font class='c'>%s</font>)<br />";
+const char* html_indexPier PROGMEM = "&nbsp;&nbsp;<font class='c'>%s</font> Pier Side (meridian flips <font class='c'>%s</font>)<br />";
 
 const char* html_indexCorPolar PROGMEM = "&nbsp;&nbsp;Polar Offset: &Delta; Alt=<font class='c'>%ld</font>\", &Delta; Azm=<font class='c'>%ld</font>\"<br />";
 const char* html_indexPark PROGMEM = "&nbsp;&nbsp;Parking: <font class='c'>%s</font><br />";
 const char* html_indexTracking PROGMEM = "&nbsp;&nbsp;Tracking: <font class='c'>%s %s</font><br />";
-const char* html_indexMaxRate PROGMEM = "&nbsp;&nbsp;Current Maximum slew speed: <font class='c'>%ldx</font><br />";
 
 #ifdef AMBIENT_CONDITIONS_ON
 const char* html_indexTPHD = "&nbsp;&nbsp;%s <font class='c'>%s</font>%s<br />";
@@ -59,54 +57,12 @@ void wifibluetooth::handleRoot() {
   char temp1[80]="";
   char temp2[80]="";
 
-  String data=html_headB;
-  data += html_headerIdx; // page refresh
-  data += html_main_cssB;
-  data += html_main_css1;
-  data += html_main_css2;
-  data += html_main_css3;
-  data += html_main_css4;
-  data += html_main_css5;
-  data += html_main_css6;
-  data += html_main_css7;
-  data += html_main_css8;
-  data += html_main_css_control1;
-  data += html_main_css_control2;
-  data += html_main_css_control3;
-  data += html_main_cssE;
-  data += html_headE;
-#ifdef OETHS
-  client->print(data); data="";
-#endif
-
-  data += html_bodyB;
-
-  mountStatus.update();
-
-  // finish the standard http response header
-  data += html_onstep_header1;
-  if (mountStatus.getId(temp1)) data += temp1; else data += "?";
-  data += html_onstep_header2;
-  if (mountStatus.getVer(temp1)) data += temp1; else data += "?";
-  data += html_onstep_header3;
-  data += html_links1S;
-  data += html_links2N;
-#if PEC_ON
-  data += html_links3N;
-#endif
-  data += html_links4N;
-  data += html_links5N;
-#ifndef OETHS
-  data += html_links6N;
-#endif
-  data += html_onstep_header4;
-#ifdef OETHS
-  client->print(data); data="";
-#endif
+  String data;
+  preparePage(data, 1);
 
   data+="<div style='width: 27em;'>";
 
-  data+="<b>Site:</b><br />";
+  data+="<b>Time and Date:</b><br />";
   // Browser time
   data += html_settingsBrowserTime;
 
@@ -125,11 +81,6 @@ void wifibluetooth::handleRoot() {
   sprintf(temp,html_indexSidereal,temp1);
   data += temp;
 
-  // Longitude and Latitude
-  if (!sendCommand(":Gg#",temp1)) strcpy(temp1,"?");
-  if (!sendCommand(":Gt#",temp2)) strcpy(temp2,"?");
-  sprintf(temp,html_indexSite,temp1,temp2);
-  data += temp;
 #ifdef OETHS
   client->print(data); data="";
 #endif
@@ -141,15 +92,31 @@ void wifibluetooth::handleRoot() {
   if (!sendCommand(":GX9E#",temp1)) strcpy(temp1,"?"); sprintf(temp,html_indexTPHD,"Dew Point Temperature:",temp1,"&deg;C"); data+=temp;
 #endif
 
-  data+="<br /><b>Coordinates:</b><br />";
+  data+="<br /><b>Current Jnow Coordinates:</b><br />";
 
   // RA,Dec current
   if (!sendCommand(":GR#",temp1)) strcpy(temp1,"?");
   if (!sendCommand(":GD#",temp2)) strcpy(temp2,"?");
   sprintf(temp,html_indexPosition,temp1,temp2); 
   data += temp;
+  // pier side and meridian flips
+  if ((mountStatus.pierSide() == PierSideFlipWE1) || (mountStatus.pierSide() == PierSideFlipWE2) || (mountStatus.pierSide() == PierSideFlipWE3)) strcpy(temp1, "Meridian Flip, West to East"); else
+    if ((mountStatus.pierSide() == PierSideFlipEW1) || (mountStatus.pierSide() == PierSideFlipEW2) || (mountStatus.pierSide() == PierSideFlipEW3)) strcpy(temp1, "Meridian Flip, East to West"); else
+      if (mountStatus.pierSide() == PierSideWest) strcpy(temp1, "West"); else
+        if (mountStatus.pierSide() == PierSideEast) strcpy(temp1, "East"); else
+          if (mountStatus.pierSide() == PierSideNone) strcpy(temp1, "None"); else strcpy(temp1, "Unknown");
+  if (!mountStatus.valid()) strcpy(temp1, "?");
+  if (mountStatus.meridianFlips()) {
+    strcpy(temp2, "On");
+    if (mountStatus.autoMeridianFlips()) strcat(temp2, "</font>, <font class=\"c\">Auto");
+  }
+  else strcpy(temp2, "Off");
+  if (!mountStatus.valid()) strcpy(temp2, "?");
+  sprintf(temp, html_indexPier, temp1, temp2);
+  data += temp;
 
   // RA,Dec target
+  data += "<br /><b>Last Jnow Target Coordinates:</b><br />";
   if (!sendCommand(":Gr#",temp1)) strcpy(temp1,"?");
   if (!sendCommand(":Gd#",temp2)) strcpy(temp2,"?");
   sprintf(temp,html_indexPosition,temp1,temp2); 
@@ -170,33 +137,20 @@ void wifibluetooth::handleRoot() {
   data += temp;
 #endif
 
-  // pier side and meridian flips
-  if ((mountStatus.pierSide()==PierSideFlipWE1) || (mountStatus.pierSide()==PierSideFlipWE2) || (mountStatus.pierSide()==PierSideFlipWE3)) strcpy(temp1,"Meridian Flip, West to East"); else
-  if ((mountStatus.pierSide()==PierSideFlipEW1) || (mountStatus.pierSide()==PierSideFlipEW2) || (mountStatus.pierSide()==PierSideFlipEW3)) strcpy(temp1,"Meridian Flip, East to West"); else
-  if (mountStatus.pierSide()==PierSideWest) strcpy(temp1,"West"); else
-  if (mountStatus.pierSide()==PierSideEast) strcpy(temp1,"East"); else
-  if (mountStatus.pierSide()==PierSideNone) strcpy(temp1,"None"); else strcpy(temp1,"Unknown");
-  if (!mountStatus.valid()) strcpy(temp1,"?");
-  if (mountStatus.meridianFlips()) {
-    strcpy(temp2,"On");
-    if (mountStatus.autoMeridianFlips()) strcat(temp2,"</font>, <font class=\"c\">Auto");
-  } else strcpy(temp2,"Off");
-  if (!mountStatus.valid()) strcpy(temp2,"?");
-  sprintf(temp,html_indexPier,temp1,temp2);
-  data += temp;
+
 
 #ifdef OETHS
   client->print(data); data="";
 #endif
 
-  data+="<br /><b>Alignment:</b><br />";
+  //data+="<br /><b>Alignment:</b><br />";
 
-  if ((mountStatus.mountType()== MountStatus::MT_GEM) || (mountStatus.mountType()== MountStatus::MT_FORK)) {
-    long altCor=0; if (sendCommand(":GX02#",temp1)) { altCor=strtol(&temp1[0],NULL,10); }
-    long azmCor=0; if (sendCommand(":GX03#",temp1)) { azmCor=strtol(&temp1[0],NULL,10); }
-    sprintf(temp,html_indexCorPolar,(long)(altCor),(long)(azmCor));
-    data += temp;
-  }
+  //if ((mountStatus.mountType()== MountStatus::MT_GEM) || (mountStatus.mountType()== MountStatus::MT_FORK)) {
+  //  long altCor=0; if (sendCommand(":GX02#",temp1)) { altCor=strtol(&temp1[0],NULL,10); }
+  //  long azmCor=0; if (sendCommand(":GX03#",temp1)) { azmCor=strtol(&temp1[0],NULL,10); }
+  //  sprintf(temp,html_indexCorPolar,(long)(altCor),(long)(azmCor));
+  //  data += temp;
+  //}
 #ifdef OETHS
   client->print(data); data="";
 #endif
@@ -232,13 +186,6 @@ void wifibluetooth::handleRoot() {
   if ((sendCommand(":GT#",temp1)) && (strlen(temp1)>6)) {
     double tr=atof(temp1);
     sprintf(temp,"&nbsp;&nbsp;Tracking Rate: <font class=\"c\">%5.3f</font>Hz<br />",tr);
-    data += temp;
-  }
-
-  // fall back to MaxRate display if not supported
-  if (sendCommand(":GX92#", temp1)) {
-    long maxRate = strtol(&temp1[0], NULL, 10);
-    sprintf(temp, html_indexMaxRate, maxRate);
     data += temp;
   }
 

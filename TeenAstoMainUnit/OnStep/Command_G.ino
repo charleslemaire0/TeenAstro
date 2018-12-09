@@ -199,18 +199,18 @@ void Command_GX()
     // 8n: Date/Time
     switch (parameter[1])
     {
-    case '0':
+    case '0':// UTC time
       i = highPrecision;
       highPrecision = true;
       doubleToHms(reply, rtk.getUT());
       highPrecision = i;
       quietReply = true;
-      break;  // UTC time
-    case '1':
+      break;  
+    case '1':// UTC date 
       rtk.getUTDate(i, i1, i2, i3, i4, i5);
-      sprintf(reply, "%d/%d/%d", i1, i2, i);
+      sprintf(reply, "%02d/%02d/%02d", i1, i2, i);
       quietReply = true;
-      break;  // UTC date    
+      break;     
     case '2'://return seconds since 01/01/1970/00:00:00
       long t = rtk.getTimeStamp();
       sprintf(reply, "%lu", t);
@@ -488,6 +488,12 @@ void  Command_G()
     else
       quietReply = true;
     break;
+  case 'e':
+    //  :Ge#   Get Current Site Elevation above see level in meter
+    //         Returns: sDDDD#
+    sprintf(reply, "%+04d", *localSite.elevation());
+    quietReply = true;
+    break;
   case 'G':
     //  :GG#   Get UTC offset time
     //         Returns: sHH#
@@ -518,6 +524,7 @@ void  Command_G()
     quietReply = true;
   }
   break;
+
   case 'L':
   {
     i = highPrecision;
@@ -529,20 +536,27 @@ void  Command_G()
     highPrecision = i;
   }
   break;
+  //  :GM#   Get Site 1 Name
+  //  :GN#   Get Site 2 Name
+  //  :GO#   Get Site 3 Name
+  //  :GP#   Get Site 4 Name
+  //         Returns: <string>#
+  //         A # terminated string with the name of the requested site.
+  case 'M':
+  case 'N':
   case 'O':
+  case 'P':
   {
-    if (!(0 < parameter[0] && parameter[0] < 4))
-      return;
-
-    i = parameter[0];
-    EEPROM_readString(EE_sites + i * 25 + 9, reply);
+    i = command[1] - 'M';
+    EEPROM_readString(EE_sites + i * 25 + 10, reply);
     if (reply[0] == 0)
     {
-      strcat(reply, "None");
+      sprintf(reply, "Site %d", i);
+      EEPROM_writeString(EE_sites + i * 25 + 10, reply);
     }
     quietReply = true;
+    break;
   }
-  break;
   case 'm':
     //  :Gm#   Gets the meridian pier-side
     //         Returns: E#, W#, N# (none/parked), ?# (Meridian flip in progress)
@@ -551,6 +565,12 @@ void  Command_G()
     reply[1] = 0;
     if (pierSide == PierSideEast) reply[0] = 'E';
     if (pierSide == PierSideWest) reply[0] = 'W';
+    quietReply = true;
+    break;
+  case 'n':
+    //  :Gn#   Get Current Site name
+    //         Returns: <string>#
+    sprintf(reply, "%s", localSite.siteName());
     quietReply = true;
     break;
   case 'o':
