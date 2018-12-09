@@ -126,41 +126,6 @@ const char html_configPastMerW[] =
 " (Past Meridian when West of the pier, in degrees +/-45)"
 "</form>"
 "<br />\r\n";
-const char html_configSiteSelect1[] =
-"<br/>Selected Site:<br/>"
-"<form method='post' action='/configuration_telescope.htm'>"
-"<select style='width:10em' name='site_select'>";
-const char html_configSiteSelect2[] =
-"</select>"
-"<button type='submit'>Upload</button>"
-"</form>"
-"\r\n";
-const char html_configSiteName[] =
-"Selected Site definition: <br />"
-"<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%s' type='text' name='site_n' maxlength='16'>"
-"<button type='submit'>Upload</button>"
-"</form>"
-"\r\n";
-const char html_configLongDeg[] = 
-"<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%s' type='number' name='site_g1' min='-180' max='180'>&nbsp;&deg;&nbsp;";
-const char html_configLongMin[] = 
-" <input value='%s' type='number' name='site_g2' min='0' max='60'>&nbsp;'&nbsp;&nbsp;"
-"<button type='submit'>Upload</button>"
-" (Longitude, in deg. and min. +/- 180)"
-"</form>"
-"\r\n";
-const char html_configLatDeg[] = 
-"<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%s' type='number' name='site_t1' min='-90' max='90'>&nbsp;&deg;&nbsp;";
-const char html_configLatMin[] =
-" <input value='%s' type='number' name='site_t2' min='0' max='60'>&nbsp;'&nbsp;&nbsp;"
-"<button type='submit'>Upload</button>"
-" (Latitude, in deg. and min. +/- 90)"
-"</form>"
-"\r\n";
-
 
 #ifdef OETHS
 void wifibluetooth::handleConfigurationTelescope(EthernetClient *client) {
