@@ -108,12 +108,22 @@ void Command_dollar()
     {
       if (parameter[0] == 'D')
       {
+        double fact = pow(2., i - MicroAxis2);
+        cli();
+        posAxis2 = fact *posAxis2;
+        sei();
+        StopAxis2();
         MicroAxis2 = i;       
         motorAxis2.setMicrostep(MicroAxis2);
         EEPROM.write(EE_MicroAxis2, MicroAxis2);
       }
       else
       {
+        double fact = pow(2., i - MicroAxis1);
+        cli();
+        posAxis1 = fact *posAxis1;
+        sei();
+        StopAxis1();
         MicroAxis1 = i;
         motorAxis1.setMicrostep(MicroAxis1);
         EEPROM.write(EE_MicroAxis1, MicroAxis1);
