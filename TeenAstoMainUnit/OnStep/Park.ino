@@ -52,6 +52,16 @@ boolean setPark()
   return false;
 }
 
+// unset parkposition flag
+void unsetPark()
+{
+  if (parkSaved)
+  {
+    parkSaved = false;
+    EEPROM.write(EE_parkSaved, parkSaved);
+  }
+}
+
 boolean saveAlignModel()
 {
   // and store our corrections

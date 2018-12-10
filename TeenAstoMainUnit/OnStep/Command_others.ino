@@ -62,14 +62,25 @@ void Command_dollar()
     {
       if (parameter[0] == 'D')
       {
+        double fact = (double)i / GearAxis2;
+        cli();
+        posAxis2 = fact *posAxis2;
+        sei();
+        StopAxis2();
         GearAxis2 = (unsigned int)i;
         EEPROM_writeInt(EE_GearAxis2, i);
       }
       else
       {
+        double fact = (double) i/GearAxis1;
+        cli();
+        posAxis1 = fact *posAxis1;
+        sei();
+        StopAxis1();
         GearAxis1 = (unsigned int)i;
         EEPROM_writeInt(EE_GearAxis1, i);
       }
+      unsetPark();
       updateRatios();
     }
     else
@@ -85,14 +96,25 @@ void Command_dollar()
     {
       if (parameter[0] == 'D')
       {
+        double fact = (double)i / StepRotAxis2;
+        cli();
+        posAxis2 = fact *posAxis2;
+        sei();
+        StopAxis2();
         StepRotAxis2 = (unsigned int)i;
         EEPROM_writeInt(EE_StepRotAxis2, i);
       }
       else 
       {
+        double fact = (double)i / StepRotAxis1;
+        cli();
+        posAxis1 = fact *posAxis1;
+        sei();
+        StopAxis1();
         StepRotAxis1 = (unsigned int)i;
         EEPROM_writeInt(EE_StepRotAxis1, i);
       }
+      unsetPark();
       updateRatios();
     }
     else
@@ -108,16 +130,27 @@ void Command_dollar()
     {
       if (parameter[0] == 'D')
       {
+        double fact = pow(2., i - MicroAxis2);
+        cli();
+        posAxis2 = fact *posAxis2;
+        sei();
+        StopAxis2();
         MicroAxis2 = i;       
         motorAxis2.setMicrostep(MicroAxis2);
         EEPROM.write(EE_MicroAxis2, MicroAxis2);
       }
       else
       {
+        double fact = pow(2., i - MicroAxis1);
+        cli();
+        posAxis1 = fact *posAxis1;
+        sei();
+        StopAxis1();
         MicroAxis1 = i;
         motorAxis1.setMicrostep(MicroAxis1);
         EEPROM.write(EE_MicroAxis1, MicroAxis1);
       }
+      unsetPark();
       updateRatios();
     }
     else
@@ -1124,7 +1157,7 @@ void Command_W()
   else
     if (command[1] == '?') {
       quietReply = true;
-      sprintf(reply, "%i", localSite.siteIndex());
+      sprintf(reply, "%d", localSite.siteIndex());
     }
     else
       commandError = true;

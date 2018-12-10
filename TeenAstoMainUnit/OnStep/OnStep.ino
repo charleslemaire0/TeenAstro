@@ -271,11 +271,6 @@ void setup()
   // get the pulse-guide rate
   guideRates[0] = (float)EEPROM.read(EE_pulseGuideRate) / 100.;
 
-
-
-
-
-
   // makes onstep think that you parked the 'scope
   // combined with a hack in the goto syncEqu() function and you can quickly recover from
   // a reset without loosing much accuracy in the sky.  PEC is toast though.

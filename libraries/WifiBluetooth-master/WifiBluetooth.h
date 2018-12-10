@@ -125,6 +125,9 @@ class wifibluetooth
   static WiFiServer cmdSvr;
   static WiFiClient cmdSvrClient;
   static const char* HighSpeedCommsStr(long baud);
+  static void preparePage(String &data, int page);
+  static void processConfigurationSiteGet();
+  static void handleConfigurationSite();
   static void processConfigurationTelescopeGet();
   static void handleConfigurationTelescope();
   static void processConfigurationFocuserGet();

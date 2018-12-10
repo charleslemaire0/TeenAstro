@@ -7,15 +7,12 @@
 static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":Fo#", ":Fi#" };
 static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":FO#", ":FI#" };
 
-
 #define MY_BORDER_SIZE 1
 #define icon_width 16
 #define icon_height 16
 
 #define teenastro_width 128
 #define teenastro_height 68
-
-
 
 static unsigned char wifi_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x80, 0x20, 0x40, 0x4e, 0x00, 0x11,
@@ -91,9 +88,6 @@ static unsigned char guiding__bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0xf0, 0x0f, 0x10, 0x08, 0x20, 0x04, 0x46, 0x62, 0x8a, 0x51,
   0x12, 0x48, 0x22, 0x44, 0x22, 0x44, 0x12, 0x48, 0x8a, 0x51, 0x46, 0x62,
   0x20, 0x04, 0x10, 0x08, 0xf0, 0x0f, 0x00, 0x00 };
-
-
-
 
 static unsigned char no_tracking_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x38, 0x1c, 0x7c, 0x3e, 0x7c, 0x3e, 0x7c, 0x3e,
@@ -2053,7 +2047,7 @@ void SmartHandController::menuSite()
   current_selection_L2 = 1;
   while (current_selection_L2 != 0)
   {
-    const char *string_list_SiteL2 = "Latitude\n""Longitude\n""Select Site";
+    const char *string_list_SiteL2 = "Latitude\n""Longitude\n""Elevation\n""Select Site";
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Menu Site", current_selection_L2, string_list_SiteL2);
     switch (current_selection_L2)
     {
@@ -2064,7 +2058,8 @@ void SmartHandController::menuSite()
       menuLongitude();
       break;
     case 3:
-
+      menuElevation();
+      break;
     case 4:
       menuSites();
       break;
@@ -2076,14 +2071,28 @@ void SmartHandController::menuSite()
 
 void SmartHandController::menuSites()
 {
-  char out[20];
   int val;
+  char m[15];
+  char n[15];
+  char o[15];
+  char p[15];
+  char txt[70]="";
+  GetLX200(":GM#", m, sizeof(m));
+  GetLX200(":GN#", n, sizeof(n));
+  GetLX200(":GO#", o, sizeof(o));
+  GetLX200(":GP#", p, sizeof(p));
+  strcat(txt, m);
+  strcat(txt, "\n");
+  strcat(txt, n);
+  strcat(txt, "\n");
+  strcat(txt, o);
+  strcat(txt, "\n");
+  strcat(txt, p);
 
   if (DisplayMessageLX200(GetSiteLX200(val)))
   {
     current_selection_L3 = val;
-    const char *string_list_SiteL3 = "Site 0\n""Site 1\n""Site 2\n""Site 3";
-    current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, "Menu Sites", current_selection_L3, string_list_SiteL3);
+    current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, "Menu Sites", current_selection_L3, txt);
     if (current_selection_L3 != 0)
     {
       val = current_selection_L3 - 1;
@@ -2544,19 +2553,19 @@ void SmartHandController::menuLongitude()
   }
 }
 
-//void SmartHandController::menuAltitude()
-//{
-//  char out[20];
-//  if (DisplayMessageLX200(GetLX200(":Gh#", out)))
-//  {
-//    float alt = (float)strtol(&out[0], NULL, 10);
-//    if (display->UserInterfaceInputValueFloat(&buttonPad, "Site Altitude", "", &alt, -150, 5000, 2, 0, " meters"))
-//    {
-//      sprintf(out, ":Sh%+03d#", (int)alt);
-//      DisplayMessageLX200(SetLX200(out), false);
-//    }
-//  }
-//}
+void SmartHandController::menuElevation()
+{
+  char out[20];
+  if (DisplayMessageLX200(GetLX200(":Ge#", out, sizeof(out))))
+  {
+    float alt = (float)strtol(&out[0], NULL, 10);
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "Site Elevation", "", &alt, -200, 8000, 2, 0, " meters"))
+    {
+      sprintf(out, ":Se%+04d#", (int)alt);
+      DisplayMessageLX200(SetLX200(out), false);
+    }
+  }
+}
 
 void SmartHandController::menuLimits()
 {

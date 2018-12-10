@@ -6,11 +6,9 @@
 #define EE_mountType        0
 #define EE_posAxis1         1
 #define EE_posAxis2         5
-//#define EE_pierSide         9
+
 #define EE_parkStatus       10
 #define EE_parkSaved        11
-
-
 
 #define EE_pulseGuideRate   22
 #define EE_maxRate          23
@@ -47,17 +45,6 @@
 #define EE_HighCurrAxis2    81
 #define EE_backlashAxis2    82
 
-
 #define EE_siderealInterval 88
 
 #define EE_autoInitKey      96
-
-
-// PEC index: 200...1023
-// PECBufferSize byte sized integers -128..+127, units are steps
-//#define EE_indexWorm    200
-
-// it takes 3.3ms to record a value to EEPROM, this can effect tracking performance since interrupts are disabled during the operation.
-// so we store PEC data in RAM while recording.  When done, sidereal tracking is turned off and the data is written to EEPROM.
-// writing the data can take up to 3 seconds.
-//byte    pecBuffer[PECBufferSize];

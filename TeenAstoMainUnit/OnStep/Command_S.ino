@@ -82,8 +82,18 @@ void Command_S(Command& process_command)
       rtk.setClock(y, m, d, hour(), minute(), second(),*localSite.longitude());
     }
     break;
-
-
+  case 'e':
+    //  :SesDDDDD#
+    //          Set current sites elevation above see level
+    //          Return: 0 on failure
+    //                  1 on success
+    if (atoi2(parameter, &i))
+    {
+      commandError = !localSite.setElev(i);
+    }
+    else
+      commandError = true;
+    break;
   case 'd':
     //  :SdsDD*MM#
     //          Set target object declination to sDD*MM or sDD*MM:SS depending on the current precision setting
@@ -118,20 +128,6 @@ void Command_S(Command& process_command)
     highPrecision = i;
   }
   break;
-
-
-  case 'G':
-    //  :SGsHH#
-    //  :SGsHH:MM# (where MM is 30 or 45)
-    //          Set the number of hours added to local time to yield UTC
-    //          Return: 0 on failure
-    //                  1 on success
-  {
-    commandError = true;
-  }
-  break;
-
-
   case 'h':
     //  :Sh+DD#
     //          Set the lowest elevation to which the telescope will goTo
@@ -188,7 +184,7 @@ void Command_S(Command& process_command)
     if (strlen(parameter) > 15)
       commandError = true;
     else
-      EEPROM_writeString(EE_sites + i * 25 + 9, parameter);
+      EEPROM_writeString(EE_sites + i * SiteSize + 10, parameter);
   }
   break;
   case 'm':
@@ -220,6 +216,10 @@ void Command_S(Command& process_command)
       commandError = true;
     break;
   }
+  case 'n':
+
+    localSite.setSiteName(parameter);
+    break;
   case 'o':
     //  :SoDD#
     //          Set the overhead elevation limit to DD#

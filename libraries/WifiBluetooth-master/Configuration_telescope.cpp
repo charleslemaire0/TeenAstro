@@ -97,8 +97,6 @@ const char html_configHCAxis[] =
 " (High Current Axis%d, from 100mA to 2000mA)"
 "</form>"
 "\r\n";
-
-
 const char html_configMinAlt[] = 
 "Limits: <br />"
 "<form method='get' action='/configuration_telescope.htm'>"
@@ -109,9 +107,9 @@ const char html_configMinAlt[] =
 "\r\n";
 const char html_configMaxAlt[] = 
 "<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%d' type='number' name='ol' min='60' max='90'>"
+" <input value='%d' type='number' name='ol' min='60' max='91'>"
 "<button type='submit'>Upload</button>"
-" (Overhead, in degrees 60 to 90)"
+" (Overhead, in degrees 60 to 90, set 91 to deactivate)"
 "</form>"
 "\r\n";
 const char html_configPastMerE[] = 
@@ -128,25 +126,6 @@ const char html_configPastMerW[] =
 " (Past Meridian when West of the pier, in degrees +/-45)"
 "</form>"
 "<br />\r\n";
-const char html_configLongDeg[] = 
-"Location: <br />"
-"<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%s' type='number' name='g1' min='-180' max='180'>&nbsp;&deg;&nbsp;";
-const char html_configLongMin[] = 
-" <input value='%s' type='number' name='g2' min='0' max='60'>&nbsp;'&nbsp;&nbsp;"
-"<button type='submit'>Upload</button>"
-" (Longitude, in deg. and min. +/- 180)"
-"</form>"
-"\r\n";
-const char html_configLatDeg[] = 
-"<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%s' type='number' name='t1' min='-90' max='90'>&nbsp;&deg;&nbsp;";
-const char html_configLatMin[] =
-" <input value='%s' type='number' name='t2' min='0' max='60'>&nbsp;'&nbsp;&nbsp;"
-"<button type='submit'>Upload</button>"
-" (Latitude, in deg. and min. +/- 90)"
-"</form>"
-"<br />\r\n";
 
 #ifdef OETHS
 void wifibluetooth::handleConfigurationTelescope(EthernetClient *client) {
@@ -159,48 +138,10 @@ void wifibluetooth::handleConfigurationTelescope() {
   char temp[320]="";
   char temp1[80]="";
   char temp2[80]="";
-  
+  String data;
+
   processConfigurationTelescopeGet();
-
-  // send a standard http response header
-  String data=html_headB;
-  data += html_main_cssB;
-  data += html_main_css1;
-  data += html_main_css2;
-  data += html_main_css3;
-  data += html_main_css4;
-  data += html_main_css5;
-  data += html_main_css6;
-  data += html_main_css7;
-  data += html_main_css8;
-  data += html_main_cssE;
-  data += html_headE;
-#ifdef OETHS
-  client->print(data); data="";
-#endif
-
-  data += html_bodyB;
-
-  // get status
-  mountStatus.update();
-
-  // finish the standard http response header
-  data += html_onstep_header1;
-  if (mountStatus.getId(temp1)) data += temp1; else data += "?";
-  data += html_onstep_header2;
-  if (mountStatus.getVer(temp1)) data += temp1; else data += "?";
-  data += html_onstep_header3;
-  data += html_links1N;
-  data += html_links2N;
-#if PEC_ON
-  data += html_links3N;
-#endif
-  data += html_links4S;
-  data += html_links5N;
-#ifndef OETHS
-  data += html_links6N;
-#endif
-  data += html_onstep_header4;
+  preparePage(data, 4);
 
   if (sendCommand(":GU#", temp1))
   {
@@ -309,39 +250,8 @@ void wifibluetooth::handleConfigurationTelescope() {
 #ifdef OETHS
   client->print(data); data="";
 #endif
-
-  // Longitude
-  if (!sendCommand(":Gg#",temp1)) strcpy(temp1,"+000*00");
-  temp1[4]=0; // deg. part only
-  if (temp1[0]=='+') temp1[0]='0'; // remove +
-  sprintf(temp,html_configLongDeg,temp1);
-  data += temp;
-  sprintf(temp,html_configLongMin,(char*)&temp1[5]);
-  data += temp;
-#ifdef OETHS
-  client->print(data); data="";
-#endif
-
-  // Latitude
-  if (!sendCommand(":Gt#",temp1)) strcpy(temp1,"+00*00");
-  temp1[3]=0; // deg. part only
-  if (temp1[0]=='+') temp1[0]='0'; // remove +
-  sprintf(temp,html_configLatDeg,temp1);
-  data += temp;
-  sprintf(temp,html_configLatMin,(char*)&temp1[4]);
-  data += temp;
-#ifdef OETHS
-  client->print(data); data="";
-#endif
-
-
-#ifdef OETHS
-  client->print(data); data="";
-#endif
-
   strcpy(temp,"</div></div></body></html>");
   data += temp;
-
 #ifdef OETHS
   client->print(data); data="";
 #else
@@ -528,35 +438,6 @@ void wifibluetooth::processConfigurationTelescopeGet() {
     }
   }
 
-  // Location
-  int long_deg=-999;
-  v=server.arg("g1");
-  if (v!="") {
-    if ( (atoi2((char*)v.c_str(),&i)) && ((i>=-180) && (i<=180))) { long_deg=i; }
-  }
-  v=server.arg("g2");
-  if (v!="") {
-    if ( (atoi2((char*)v.c_str(),&i)) && ((i>=0) && (i<=60))) { 
-      if ((long_deg>=-180) && (long_deg<=180)) {
-        sprintf(temp,":Sg%+04d*%02d#",long_deg,i);
-        Ser.print(temp);
-      }
-    }
-  }
-  int lat_deg=-999;
-  v=server.arg("t1");
-  if (v!="") {
-    if ( (atoi2((char*)v.c_str(),&i)) && ((i>=-90) && (i<=90))) { lat_deg=i; }
-  }
-  v=server.arg("t2");
-  if (v!="") {
-    if ( (atoi2((char*)v.c_str(),&i)) && ((i>=0) && (i<=60))) {
-      if ((lat_deg>=-90) && (lat_deg<=90)) {
-        sprintf(temp,":St%+03d*%02d#",lat_deg,i);
-        Ser.print(temp);
-      }
-    }
-  }
   int ut_hrs=-999;
   v=server.arg("u1");
   if (v!="") {
