@@ -435,12 +435,12 @@ void CheckPierSide()
   bool isEast = -quaterRotAxis2 < pos && pos < quaterRotAxis2;
   if (isEast && pierSide >= PierSideWest)
   {
-    // cli(); blAxis2 = backlashAxis2 - blAxis2; sei();
+    // cli(); blAxis2 = StepsBacklashAxis2 - blAxis2; sei();
     pierSide = PierSideEast;
   }
   else if (!isEast && pierSide < PierSideWest)
   {
-    //cli(); blAxis2 = backlashAxis2 - blAxis2; sei();
+    //cli(); blAxis2 = StepsBacklashAxis2 - blAxis2; sei();
     pierSide = PierSideWest;
   }
 }
@@ -703,13 +703,17 @@ void writeDefaultEEPROMmotor()
   EEPROM.write(EE_LowCurrAxis2, 100);
 }
 
+
 void updateRatios()
 {
   cli()
   StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerRotAxis2 = (long)GearAxis2 * StepRotAxis2 * (int)pow(2, MicroAxis2); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerDegreeAxis1 = (double)StepsPerRotAxis1 / 360.0;
+  StepsBacklashAxis1 = (int)round(((double)backlashAxis1 * 3600.0) / (double)StepsPerDegreeAxis1);
   StepsPerDegreeAxis2 = (double)StepsPerRotAxis2 / 360.0;
+  StepsBacklashAxis2 = (int)round(((double)backlashAxis2 * 3600.0) / (double)StepsPerDegreeAxis2);
+
   StepsPerSecondAxis1 = StepsPerDegreeAxis1 / 240.0;
   StepsPerSecondAxis2 = StepsPerDegreeAxis2 / 240.0;
 

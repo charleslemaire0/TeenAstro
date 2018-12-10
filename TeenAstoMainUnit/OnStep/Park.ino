@@ -73,12 +73,11 @@ boolean saveAlignModel()
 boolean parkClearBacklash()
 {
   // backlash takeup rate
-  if (backlashAxis1 == 0 && backlashAxis2 == 0)
+  if (StepsBacklashAxis1 == 0 && StepsBacklashAxis2 == 0)
   {
     return true;
   }
   cli();
-
   long    LastTimerRateAxis1 = timerRateAxis1;
   long    LastTimerRateAxis2 = timerRateAxis2;
   timerRateAxis1 = timerRateBacklashAxis1;
@@ -87,30 +86,30 @@ boolean parkClearBacklash()
 
   // figure out how long we'll have to wait for the backlash to clear (+50%)
   long    t;
-  if (backlashAxis1 > backlashAxis2)
-    t = ((long)backlashAxis1 * 1500) / (long)StepsPerSecondAxis1;
+  if (StepsBacklashAxis1 > StepsBacklashAxis2)
+    t = ((long)StepsBacklashAxis1 * 1500) / (long)StepsPerSecondAxis1;
   else
-    t = ((long)backlashAxis2 * 1500) / (long)StepsPerSecondAxis1;
+    t = ((long)StepsBacklashAxis2 * 1500) / (long)StepsPerSecondAxis2;
   t = (t / BacklashTakeupRate + 250) / 12;
 
   // start by moving fully into the backlash
   cli();
-  targetAxis1.part.m += backlashAxis1;
-  targetAxis2.part.m += backlashAxis2;
+  targetAxis1.part.m += StepsBacklashAxis1;
+  targetAxis2.part.m += StepsBacklashAxis2;
   sei();
 
   // wait until done or timed out
   for (int i = 0; i < 12; i++)
   {
-    if ((blAxis1 != backlashAxis1) || (posAxis1 != (long)targetAxis1.part.m) ||
-      (blAxis2 != backlashAxis2) || (posAxis2 != (long)targetAxis2.part.m))
+    if ((blAxis1 != StepsBacklashAxis1) || (posAxis1 != (long)targetAxis1.part.m) ||
+      (blAxis2 != StepsBacklashAxis2) || (posAxis2 != (long)targetAxis2.part.m))
       delay(t);
   }
 
   // then reverse direction and take it all up
   cli();
-  targetAxis1.part.m -= backlashAxis1;
-  targetAxis2.part.m -= backlashAxis2;
+  targetAxis1.part.m -= StepsBacklashAxis1;
+  targetAxis2.part.m -= StepsBacklashAxis2;
   sei();
 
 

@@ -95,8 +95,11 @@ volatile double         guideTimerRateAxis1 = 0.0;
 volatile double         guideTimerRateAxis2 = 0.0;
 
 // backlash control
-volatile int    backlashAxis1 = 0;
-volatile int    backlashAxis2 = 0;
+int backlashAxis1 = 0;
+int backlashAxis2 = 0;
+
+volatile int    StepsBacklashAxis1 = 0;
+volatile int    StepsBacklashAxis2 = 0;
 volatile int    blAxis1 = 0;
 volatile int    blAxis2 = 0;
 
