@@ -12,39 +12,19 @@ boolean setPark()
     // don't worry about moving around: during parking pec is turned off and backlash is cleared (0) so that targetAxis1/targetAxis2=posAxis1/posAxis2
     // this should handle getting us back to the home position for micro-step modes up to 256X
     // if sync anywhere is enabled use the corrected location
-    long    ax1md =
-      (
-      (((long)targetAxis1.part.m) - trueAxis1) %
-        1024L -
-        ((long)targetAxis1.part.m) %
-        1024L
-        );
-    long    ax2md =
-      (
-      (((long)targetAxis2.part.m) - trueAxis2) %
-        1024L -
-        ((long)targetAxis2.part.m) %
-        1024L
-        );
-    long    h = (((long)targetAxis1.part.m) / 1024L) *
-      1024L -
-      ax1md;
-    long    d = (((long)targetAxis2.part.m) / 1024L) *
-      1024L -
-      ax2md;
 
-
+    long    h = (((long)targetAxis1.part.m) / 1024L) * 1024L;
+    long    d = (((long)targetAxis2.part.m) / 1024L) * 1024L;
+    h /= pow(2, MicroAxis1);
+    d /= pow(2, MicroAxis2);
     // store our position
     EEPROM_writeLong(EE_posAxis1, h);
     EEPROM_writeLong(EE_posAxis2, d);
-    EEPROM_writeLong(EE_trueAxis1, trueAxis1);
-    EEPROM_writeLong(EE_trueAxis2, trueAxis2);
 
     // and the align
     saveAlignModel();
     parkSaved = true;
     EEPROM.write(EE_parkSaved, parkSaved);
-
     trackingState = lastTrackingState;
     return true;
   }
@@ -158,6 +138,8 @@ byte park()
         // get the position we're supposed to park at
         long    h = EEPROM_readLong(EE_posAxis1);
         long    d = EEPROM_readLong(EE_posAxis2);
+        h *= pow(2, MicroAxis1);
+        d *= pow(2, MicroAxis2);
         // stop tracking
         abortTrackingState = trackingState;
         lastTrackingState = TrackingOFF;
@@ -195,11 +177,11 @@ boolean syncAtPark()
   GeoAlign.readCoe();
 
   // get our position
-  int axis1, axis2, taxis1, taxis2;
+  int axis1, axis2;
   axis1 = EEPROM_readLong(EE_posAxis1);
   axis2 = EEPROM_readLong(EE_posAxis2);
-  taxis1 = EEPROM_readLong(EE_trueAxis1);
-  taxis2 = EEPROM_readLong(EE_trueAxis2);
+  axis1 *= pow(2, MicroAxis1);
+  axis1 *= pow(2, MicroAxis2);
   cli();
   posAxis1 = axis1;
   targetAxis1.part.m = axis1;
@@ -207,8 +189,6 @@ boolean syncAtPark()
   posAxis2 = axis2;
   targetAxis2.part.m = axis2;
   targetAxis2.part.f = 0;
-  trueAxis1 = taxis1;
-  trueAxis2 = taxis2;
   sei();
 
   // see what side of the pier we're on
@@ -265,11 +245,9 @@ void syncPolarHome()
   targetAxis1.part.m = startAxis1;
   targetAxis1.part.f = 0;
   posAxis1 = startAxis1;
-  trueAxis1 = startAxis1;
   targetAxis2.part.m = startAxis2;
   targetAxis2.part.f = 0;
   posAxis2 = startAxis2;
-  trueAxis2 = startAxis2;
   sei();
   atHome = true;
 }

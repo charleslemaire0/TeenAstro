@@ -148,7 +148,6 @@ void Command_dollar()
         motorAxis1.setMicrostep(MicroAxis1);
         EEPROM.write(EE_MicroAxis1, MicroAxis1);
       }
-      unsetPark();
       updateRatios();
     }
     else

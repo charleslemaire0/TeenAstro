@@ -103,11 +103,9 @@ else if (mountType == MOUNT_TYPE_ALTAZM)
     targetAxis1.part.m = startAxis1;
     targetAxis1.part.f = 0;
     posAxis1 = startAxis1;
-    trueAxis1 = startAxis1;
     targetAxis2.part.m = startAxis2;
     targetAxis2.part.f = 0;
     posAxis2 = startAxis2;
-    trueAxis2 = startAxis2;
     blAxis1 = 0;
     blAxis2 = 0;
     sei();
