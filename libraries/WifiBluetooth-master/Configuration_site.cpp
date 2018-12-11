@@ -6,10 +6,9 @@
 const char html_configSiteSelect1[] =
 "Selected Site:<br/>"
 "<form method='post' action='/configuration_site.htm'>"
-"<select style='width:11em' name='site_select'>";
+"<select onchange='this.form.submit()' style='width:11em' name='site_select'>";
 const char html_configSiteSelect2[] =
 "</select>"
-"<button type='submit'>Upload</button>"
 " (Select your predefined site)"
 "</form>"
 "\r\n";
