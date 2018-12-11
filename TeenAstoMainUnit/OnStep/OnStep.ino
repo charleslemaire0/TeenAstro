@@ -239,28 +239,8 @@ void setup()
   // get the site information, if a GPS were attached we would use that here instead
   localSite.ReadCurrentSiteDefinition();
   rtk.resetLongitude(*localSite.longitude());
-
-  if (mountType == MOUNT_TYPE_ALTAZM || mountType == MOUNT_TYPE_FORK_ALT)
-  {
-    double lat = *localSite.latitude();
-    celestialPoleStepAxis2 = fabs(lat) *StepsPerDegreeAxis2;
-    if (*localSite.latitude() < 0)
-      celestialPoleStepAxis1 = halfRotAxis1;
-    else
-      celestialPoleStepAxis1 = 0L;
-  }
-  else
-  {
-    if (*localSite.latitude() < 0)
-      celestialPoleStepAxis2 = -quaterRotAxis2;
-    else
-      celestialPoleStepAxis2 = quaterRotAxis2;
-  }
-
-  if (*localSite.latitude() > 0)
-    HADir = HADirNCPInit;
-  else
-    HADir = HADirSCPInit;
+  initCelestialPole();
+  initLat();
 
   // get the Park status
   if (!iniAtPark())
@@ -652,6 +632,25 @@ void initmount()
 
 }
 
+void initCelestialPole()
+{
+  if (mountType == MOUNT_TYPE_ALTAZM || mountType == MOUNT_TYPE_FORK_ALT)
+  {
+    double lat = *localSite.latitude();
+    celestialPoleStepAxis2 = fabs(lat) *StepsPerDegreeAxis2;
+    celestialPoleStepAxis1 = (*localSite.latitude() < 0) ? halfRotAxis1 : 0L;
+  }
+  else
+  {
+    celestialPoleStepAxis2 = (*localSite.latitude() < 0) ? -quaterRotAxis2 : quaterRotAxis2;
+  }
+}
+
+void initLat()
+{
+  HADir = *localSite.latitude() > 0 ? HADirNCPInit : HADirSCPInit;
+}
+
 void initmotor()
 {
   readEEPROMmotor();
@@ -727,8 +726,7 @@ void updateRatios()
   halfRotAxis2 = StepsPerRotAxis2 / 2L;
   quaterRotAxis2 = StepsPerRotAxis2 / 4L;
 
-  celestialPoleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
-  celestialPoleStepAxis2 = quaterRotAxis2;
+  initCelestialPole();
   updateSideral();
 
   initMaxRate();

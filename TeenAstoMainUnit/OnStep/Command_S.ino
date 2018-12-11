@@ -274,28 +274,9 @@ void Command_S(Command& process_command)
     else
     {
       localSite.setLat(lat);
-      if (mountType == MOUNT_TYPE_ALTAZM)
-      {
-        celestialPoleStepAxis2 = fabs(*localSite.latitude()) * StepsPerDegreeAxis2;
-        if (*localSite.latitude() < 0)
-          celestialPoleStepAxis1 = halfRotAxis1;
-        else
-          celestialPoleStepAxis1 = 0L;
-      }
-      else
-      {
-        if (*localSite.latitude() < 0)
-          celestialPoleStepAxis2 = -halfRotAxis2;
-        else
-          celestialPoleStepAxis2 = halfRotAxis2;
-      }
-
-      if (*localSite.latitude() > 0.0)
-        HADir = HADirNCPInit;
-      else
-        HADir = HADirSCPInit;
+      initCelestialPole();
+      initLat();
     }
-
     highPrecision = i;
   }
   break;

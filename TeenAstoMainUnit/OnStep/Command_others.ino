@@ -1140,6 +1140,9 @@ void Command_W()
     uint8_t currentSite = command[1] - '0';
     EEPROM.write(EE_currentSite, currentSite);
     localSite.ReadSiteDefinition(currentSite);
+    rtk.resetLongitude(*localSite.longitude());
+    initCelestialPole();
+    initLat();
     quietReply = true;
   }
   else

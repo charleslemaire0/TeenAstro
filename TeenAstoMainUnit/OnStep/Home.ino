@@ -41,10 +41,7 @@ boolean setHome()
     pierSide = PierSideEast;
     dirAxis2 = 1;
     DecDir = DecDirEInit;
-    if (*localSite.latitude() > 0)
-        HADir = HADirNCPInit;
-    else
-        HADir = HADirSCPInit;
+    initLat();
     dirAxis1 = 1;
     newTargetRA = 0;
     newTargetDec = 0;
