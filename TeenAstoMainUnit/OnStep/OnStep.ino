@@ -49,7 +49,7 @@
 
 
 // firmware info, these are returned by the ":GV?#" commands
-#define FirmwareDate    "10 18 18"
+#define FirmwareDate    "12 12 18"
 #define FirmwareNumber  "1.0"
 #define FirmwareName    "TeenAstro"
 #define FirmwareTime    "12:00:00"
