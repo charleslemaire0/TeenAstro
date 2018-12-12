@@ -8,8 +8,6 @@ const char html_configMount_1[] =
 "Equatorial Mount Type: <br />"
 "<form action='/configuration_telescope.htm'>"
 "<select name='mount'>";
-//"<option value = "1">German< / option>"
-//"<option value = "2">Fork< / option>"
 const char html_configMount_2[] =
 "</select>"
 "<button type='submit'>Upload</button>"
@@ -265,9 +263,20 @@ void wifibluetooth::processConfigurationTelescopeGet() {
   float f;
   char temp[20]="";
 
+  v = server.arg("mount");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
+    {
+      sprintf(temp, ":S!X#");
+      temp[3] = '0' + i;
+      Ser.print(temp);
+    }
+  }
+
   v = server.arg("MaxR");
   if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1000))) {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1000))){
       sprintf(temp, ":SX92:%04d#", i);
       Ser.print(temp);
     }
