@@ -181,7 +181,7 @@ boolean syncAtPark()
   axis1 = EEPROM_readLong(EE_posAxis1);
   axis2 = EEPROM_readLong(EE_posAxis2);
   axis1 *= pow(2, MicroAxis1);
-  axis1 *= pow(2, MicroAxis2);
+  axis2 *= pow(2, MicroAxis2);
   cli();
   posAxis1 = axis1;
   targetAxis1.part.m = axis1;
