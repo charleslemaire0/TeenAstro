@@ -7,10 +7,9 @@
 const char html_configMount_1[] =
 "Equatorial Mount Type: <br />"
 "<form action='/configuration_telescope.htm'>"
-"<select name='mount'>";
+"<select name='mount' onchange='this.form.submit()' >";
 const char html_configMount_2[] =
 "</select>"
-"<button type='submit'>Upload</button>"
 "</form>"
 "<br/>\r\n";
 
@@ -125,6 +124,14 @@ const char html_configPastMerW[] =
 "</form>"
 "<br />\r\n";
 
+const char html_reboot_t[] =
+"<br/><form method='get' action='/configuration_telescope.htm'>"
+"<b>The main unit will now restart please wait some seconds and then press continue.</b><br/><br/>"
+"<button type='submit'>Continue</button>"
+"</form><br/><br/><br/><br/>"
+"\r\n";
+bool restartRequired_t = false;
+
 #ifdef OETHS
 void wifibluetooth::handleConfigurationTelescope(EthernetClient *client) {
 #else
@@ -140,6 +147,14 @@ void wifibluetooth::handleConfigurationTelescope() {
 
   processConfigurationTelescopeGet();
   preparePage(data, 4);
+  if (restartRequired_t) {
+    data += html_reboot_t;
+    data += "</div></div></body></html>";
+    server.send(200, "text/html", data);
+    restartRequired_t = false;
+    delay(1000);
+    return;
+  }
 
   if (sendCommand(":GU#", temp1))
   {
@@ -271,6 +286,7 @@ void wifibluetooth::processConfigurationTelescopeGet() {
       sprintf(temp, ":S!X#");
       temp[3] = '0' + i;
       Ser.print(temp);
+      restartRequired_t = true;
     }
   }
 
