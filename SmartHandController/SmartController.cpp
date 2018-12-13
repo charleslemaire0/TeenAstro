@@ -2672,7 +2672,7 @@ void SmartHandController::menuWifi()
       DisplayMessage("IP Adress is", iptxt, -1);
       break;
     }
-    case 6:
+    case 5:
       if (display->UserInterfaceMessage(&buttonPad, "Reset", "To", "Factory?", "NO\nYES")==2)
       {
         EEPROM_writeInt(0, 0);
