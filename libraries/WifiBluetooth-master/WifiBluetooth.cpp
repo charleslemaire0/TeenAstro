@@ -562,7 +562,7 @@ bool wifibluetooth::isWifiRunning()
 void wifibluetooth::turnWifiOn(bool turnOn)
 {
   wifiOn = turnOn;
-  EEPROM.write(14, turnOn);
+  EEPROM.write(EEPROM_WifiOn, turnOn);
   EEPROM.commit();
 }
 
