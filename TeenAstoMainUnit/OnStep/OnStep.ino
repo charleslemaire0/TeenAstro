@@ -642,6 +642,7 @@ void initCelestialPole()
   }
   else
   {
+    celestialPoleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
     celestialPoleStepAxis2 = (*localSite.latitude() < 0) ? -quaterRotAxis2 : quaterRotAxis2;
   }
 }
