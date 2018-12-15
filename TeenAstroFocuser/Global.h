@@ -9,15 +9,15 @@
 	#include "WProgram.h"
 #endif
 #define PROJECT "TeenAstro Focuser"
-#define Version 001
-#define BOARDINFO "Teensy 3.2"
+#define Version "1.0.0"
+
 //uncomment the version you are using
-//#define VERSION22
-#define VERSION23
+//#define VERSION220
+#define VERSION230
 
-#ifdef VERSION23
-
+#ifdef VERSION230
 // RTC
+#define BOARDINFO "2.3.0"
 #define kCePin 4  // Chip Enable
 #define kIoPin 3 // Input/Output
 #define kSclkPin 2  // Serial Clock
@@ -30,8 +30,10 @@
 #define FocuserTX 1
 #define LEDPin 23 
 #endif // VERSION23
-#ifdef VERSION22
+
+#ifdef VERSION220
 // RTC
+#define BOARDINFO "2.2.0"
 #define kCePin 4  // Chip Enable
 #define kIoPin 3 // Input/Output
 #define kSclkPin 2  // Serial Clock
