@@ -13,7 +13,7 @@
 
 //uncomment the version you are using
 //#define VERSION220
-#define VERSION230
+#define VERSION220
 
 #ifdef VERSION230
 // RTC
