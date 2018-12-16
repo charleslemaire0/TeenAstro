@@ -37,7 +37,6 @@ TeenAstroController/.vs/OnStepESPServer/v14/.suo
 TeenAstroController/__vm/.TeenAstroController.vsarduino.h
 TeenAstroController/__vm/Compile.vmps.xml
 *.xml
-*.elf
 *.bin
 TeenAstroController/Release/board.buildinfo
 SmartHandController/SmartHandController.vcxproj.filters
