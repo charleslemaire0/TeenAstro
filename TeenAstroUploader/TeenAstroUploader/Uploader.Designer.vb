@@ -26,6 +26,16 @@ Partial Class Uploader
     Me.ComboBoxPCBMainUnitT = New System.Windows.Forms.ComboBox()
     Me.Label4 = New System.Windows.Forms.Label()
     Me.TabPage3 = New System.Windows.Forms.TabPage()
+    Me.ButtonWIFISHC = New System.Windows.Forms.Button()
+    Me.TextBoxPort = New System.Windows.Forms.TextBox()
+    Me.Label6 = New System.Windows.Forms.Label()
+    Me.TextBoxIP = New System.Windows.Forms.TextBox()
+    Me.Label5 = New System.Windows.Forms.Label()
+    Me.ComboBoxCOMSHC = New System.Windows.Forms.ComboBox()
+    Me.Label3 = New System.Windows.Forms.Label()
+    Me.ButtonUploadSHC = New System.Windows.Forms.Button()
+    Me.ComboBoxPCBSHC = New System.Windows.Forms.ComboBox()
+    Me.Label1 = New System.Windows.Forms.Label()
     Me.TabPage2 = New System.Windows.Forms.TabPage()
     Me.ButtonUploadF = New System.Windows.Forms.Button()
     Me.ComboBoxPCBMainUnitF = New System.Windows.Forms.ComboBox()
@@ -33,6 +43,7 @@ Partial Class Uploader
     Me.TabPage1 = New System.Windows.Forms.TabPage()
     Me.ButtonUploadT = New System.Windows.Forms.Button()
     Me.TabControlFirmware = New System.Windows.Forms.TabControl()
+    Me.TabPage3.SuspendLayout()
     Me.TabPage2.SuspendLayout()
     Me.TabPage1.SuspendLayout()
     Me.TabControlFirmware.SuspendLayout()
@@ -58,12 +69,107 @@ Partial Class Uploader
     '
     'TabPage3
     '
+    Me.TabPage3.Controls.Add(Me.ButtonWIFISHC)
+    Me.TabPage3.Controls.Add(Me.TextBoxPort)
+    Me.TabPage3.Controls.Add(Me.Label6)
+    Me.TabPage3.Controls.Add(Me.TextBoxIP)
+    Me.TabPage3.Controls.Add(Me.Label5)
+    Me.TabPage3.Controls.Add(Me.ComboBoxCOMSHC)
+    Me.TabPage3.Controls.Add(Me.Label3)
+    Me.TabPage3.Controls.Add(Me.ButtonUploadSHC)
+    Me.TabPage3.Controls.Add(Me.ComboBoxPCBSHC)
+    Me.TabPage3.Controls.Add(Me.Label1)
     Me.TabPage3.Location = New System.Drawing.Point(4, 22)
     Me.TabPage3.Name = "TabPage3"
-    Me.TabPage3.Size = New System.Drawing.Size(312, 52)
+    Me.TabPage3.Size = New System.Drawing.Size(312, 155)
     Me.TabPage3.TabIndex = 2
     Me.TabPage3.Text = "Hand controler"
     Me.TabPage3.UseVisualStyleBackColor = True
+    '
+    'ButtonWIFISHC
+    '
+    Me.ButtonWIFISHC.Location = New System.Drawing.Point(187, 76)
+    Me.ButtonWIFISHC.Name = "ButtonWIFISHC"
+    Me.ButtonWIFISHC.Size = New System.Drawing.Size(119, 23)
+    Me.ButtonWIFISHC.TabIndex = 28
+    Me.ButtonWIFISHC.Text = "Upload over WIFI!"
+    Me.ButtonWIFISHC.UseVisualStyleBackColor = True
+    '
+    'TextBoxPort
+    '
+    Me.TextBoxPort.Location = New System.Drawing.Point(71, 109)
+    Me.TextBoxPort.Name = "TextBoxPort"
+    Me.TextBoxPort.Size = New System.Drawing.Size(110, 20)
+    Me.TextBoxPort.TabIndex = 27
+    '
+    'Label6
+    '
+    Me.Label6.AutoSize = True
+    Me.Label6.Location = New System.Drawing.Point(6, 112)
+    Me.Label6.Name = "Label6"
+    Me.Label6.Size = New System.Drawing.Size(26, 13)
+    Me.Label6.TabIndex = 26
+    Me.Label6.Text = "Port"
+    '
+    'TextBoxIP
+    '
+    Me.TextBoxIP.Location = New System.Drawing.Point(71, 78)
+    Me.TextBoxIP.Name = "TextBoxIP"
+    Me.TextBoxIP.Size = New System.Drawing.Size(110, 20)
+    Me.TextBoxIP.TabIndex = 25
+    '
+    'Label5
+    '
+    Me.Label5.AutoSize = True
+    Me.Label5.Location = New System.Drawing.Point(6, 81)
+    Me.Label5.Name = "Label5"
+    Me.Label5.Size = New System.Drawing.Size(52, 13)
+    Me.Label5.TabIndex = 24
+    Me.Label5.Text = "IP Adress"
+    '
+    'ComboBoxCOMSHC
+    '
+    Me.ComboBoxCOMSHC.FormattingEnabled = True
+    Me.ComboBoxCOMSHC.Location = New System.Drawing.Point(71, 49)
+    Me.ComboBoxCOMSHC.Name = "ComboBoxCOMSHC"
+    Me.ComboBoxCOMSHC.Size = New System.Drawing.Size(110, 21)
+    Me.ComboBoxCOMSHC.TabIndex = 23
+    '
+    'Label3
+    '
+    Me.Label3.AutoSize = True
+    Me.Label3.Location = New System.Drawing.Point(6, 52)
+    Me.Label3.Name = "Label3"
+    Me.Label3.Size = New System.Drawing.Size(47, 13)
+    Me.Label3.TabIndex = 22
+    Me.Label3.Text = "ComPort"
+    '
+    'ButtonUploadSHC
+    '
+    Me.ButtonUploadSHC.Location = New System.Drawing.Point(187, 47)
+    Me.ButtonUploadSHC.Name = "ButtonUploadSHC"
+    Me.ButtonUploadSHC.Size = New System.Drawing.Size(119, 23)
+    Me.ButtonUploadSHC.TabIndex = 21
+    Me.ButtonUploadSHC.Text = "Upload over COM!"
+    Me.ButtonUploadSHC.UseVisualStyleBackColor = True
+    '
+    'ComboBoxPCBSHC
+    '
+    Me.ComboBoxPCBSHC.FormattingEnabled = True
+    Me.ComboBoxPCBSHC.Items.AddRange(New Object() {"0.x"})
+    Me.ComboBoxPCBSHC.Location = New System.Drawing.Point(71, 17)
+    Me.ComboBoxPCBSHC.Name = "ComboBoxPCBSHC"
+    Me.ComboBoxPCBSHC.Size = New System.Drawing.Size(110, 21)
+    Me.ComboBoxPCBSHC.TabIndex = 19
+    '
+    'Label1
+    '
+    Me.Label1.AutoSize = True
+    Me.Label1.Location = New System.Drawing.Point(6, 20)
+    Me.Label1.Name = "Label1"
+    Me.Label1.Size = New System.Drawing.Size(59, 13)
+    Me.Label1.TabIndex = 20
+    Me.Label1.Text = "PCB Board"
     '
     'TabPage2
     '
@@ -73,7 +179,7 @@ Partial Class Uploader
     Me.TabPage2.Location = New System.Drawing.Point(4, 22)
     Me.TabPage2.Name = "TabPage2"
     Me.TabPage2.Padding = New System.Windows.Forms.Padding(3)
-    Me.TabPage2.Size = New System.Drawing.Size(312, 52)
+    Me.TabPage2.Size = New System.Drawing.Size(312, 155)
     Me.TabPage2.TabIndex = 1
     Me.TabPage2.Text = "Focuser"
     Me.TabPage2.UseVisualStyleBackColor = True
@@ -113,7 +219,7 @@ Partial Class Uploader
     Me.TabPage1.Location = New System.Drawing.Point(4, 22)
     Me.TabPage1.Name = "TabPage1"
     Me.TabPage1.Padding = New System.Windows.Forms.Padding(3)
-    Me.TabPage1.Size = New System.Drawing.Size(312, 52)
+    Me.TabPage1.Size = New System.Drawing.Size(312, 155)
     Me.TabPage1.TabIndex = 0
     Me.TabPage1.Text = "Telescope"
     Me.TabPage1.UseVisualStyleBackColor = True
@@ -135,20 +241,22 @@ Partial Class Uploader
     Me.TabControlFirmware.Location = New System.Drawing.Point(12, 12)
     Me.TabControlFirmware.Name = "TabControlFirmware"
     Me.TabControlFirmware.SelectedIndex = 0
-    Me.TabControlFirmware.Size = New System.Drawing.Size(320, 78)
+    Me.TabControlFirmware.Size = New System.Drawing.Size(320, 181)
     Me.TabControlFirmware.TabIndex = 14
     '
     'Uploader
     '
     Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
     Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-    Me.ClientSize = New System.Drawing.Size(344, 103)
+    Me.ClientSize = New System.Drawing.Size(344, 205)
     Me.Controls.Add(Me.TabControlFirmware)
     Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
     Me.MaximizeBox = False
     Me.Name = "Uploader"
     Me.Text = "TeenAstro Firmware Uploader"
     Me.TopMost = True
+    Me.TabPage3.ResumeLayout(False)
+    Me.TabPage3.PerformLayout()
     Me.TabPage2.ResumeLayout(False)
     Me.TabPage2.PerformLayout()
     Me.TabPage1.ResumeLayout(False)
@@ -168,4 +276,14 @@ Partial Class Uploader
   Friend WithEvents ButtonUploadF As Button
   Friend WithEvents ComboBoxPCBMainUnitF As ComboBox
   Friend WithEvents Label2 As Label
+  Friend WithEvents ButtonWIFISHC As Button
+  Friend WithEvents TextBoxPort As TextBox
+  Friend WithEvents Label6 As Label
+  Friend WithEvents TextBoxIP As TextBox
+  Friend WithEvents Label5 As Label
+  Friend WithEvents ComboBoxCOMSHC As ComboBox
+  Friend WithEvents Label3 As Label
+  Friend WithEvents ButtonUploadSHC As Button
+  Friend WithEvents ComboBoxPCBSHC As ComboBox
+  Friend WithEvents Label1 As Label
 End Class

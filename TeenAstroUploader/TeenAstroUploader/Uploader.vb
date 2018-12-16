@@ -32,6 +32,10 @@
   Private Sub Uploader_Load(sender As Object, e As EventArgs) Handles MyBase.Load
     ComboBoxPCBMainUnitT.SelectedIndex = 0
     ComboBoxPCBMainUnitF.SelectedIndex = 0
+    ComboBoxPCBSHC.SelectedIndex = 0
+    For Each sp As String In My.Computer.Ports.SerialPortNames
+      ComboBoxCOMSHC.Items.Add(sp)
+    Next
   End Sub
 
   Private Sub ButtonUploadF_Click(sender As Object, e As EventArgs) Handles ButtonUploadF.Click
@@ -55,6 +59,24 @@
       cmd = cmd & " -reboot"
       pHelp.Arguments = cmd
       Dim proc2 As Process = Process.Start(pHelp)
+    Catch ex As Exception
+      MsgBox(ex.Message)
+    End Try
+  End Sub
+
+  Private Sub ButtonUploadSHC_Click(sender As Object, e As EventArgs) Handles ButtonUploadSHC.Click
+    Try
+      Dim pHelp As New ProcessStartInfo
+      Dim exepath As String = System.IO.Path.GetDirectoryName(Application.ExecutablePath)
+      pHelp.FileName = "esptool.exe"
+      Dim pcb As String = ComboBoxPCBSHC.SelectedItem()
+      Dim Binfile As String = "TeenAstroSHC_1.0.bin"
+      Dim comport As String = ComboBoxCOMSHC.SelectedItem
+      '"-vv -cd nodemcu -cb 921600 -cp "COM8" -ca 0x00000 -cf C:\Users\Charles\AppData\Local\Temp\VMBuilds\SMARTH~1\ESP826~1\Release/SMARTH~1.BIN
+      Dim cmd As String = "-vv -cd nodemcu -cb 921600 -cp " & comport & " -ca 0x00000 -cf " & Binfile
+      pHelp.Arguments = cmd
+      pHelp.WindowStyle = ProcessWindowStyle.Normal
+      Dim proc1 As Process = Process.Start(pHelp)
     Catch ex As Exception
       MsgBox(ex.Message)
     End Try

@@ -146,6 +146,9 @@
     <None Include="TeenAstroFocuser_1.0_230.hex">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="TeenAstroSHC_1.0.bin">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Teenastro_1.0_220.elf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -172,6 +175,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="esptool.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="teensy.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
