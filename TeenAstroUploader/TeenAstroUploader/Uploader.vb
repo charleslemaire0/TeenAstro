@@ -81,4 +81,9 @@
       MsgBox(ex.Message)
     End Try
   End Sub
+
+  Private Sub ButtonWIFISHC_Click(sender As Object, e As EventArgs) Handles ButtonWIFISHC.Click
+    Dim webAddress As String = "http://" & TextBoxIP.Text & "/update"
+    Process.Start(webAddress)
+  End Sub
 End Class

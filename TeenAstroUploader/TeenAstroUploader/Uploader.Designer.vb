@@ -27,8 +27,6 @@ Partial Class Uploader
     Me.Label4 = New System.Windows.Forms.Label()
     Me.TabPage3 = New System.Windows.Forms.TabPage()
     Me.ButtonWIFISHC = New System.Windows.Forms.Button()
-    Me.TextBoxPort = New System.Windows.Forms.TextBox()
-    Me.Label6 = New System.Windows.Forms.Label()
     Me.TextBoxIP = New System.Windows.Forms.TextBox()
     Me.Label5 = New System.Windows.Forms.Label()
     Me.ComboBoxCOMSHC = New System.Windows.Forms.ComboBox()
@@ -70,8 +68,6 @@ Partial Class Uploader
     'TabPage3
     '
     Me.TabPage3.Controls.Add(Me.ButtonWIFISHC)
-    Me.TabPage3.Controls.Add(Me.TextBoxPort)
-    Me.TabPage3.Controls.Add(Me.Label6)
     Me.TabPage3.Controls.Add(Me.TextBoxIP)
     Me.TabPage3.Controls.Add(Me.Label5)
     Me.TabPage3.Controls.Add(Me.ComboBoxCOMSHC)
@@ -94,22 +90,6 @@ Partial Class Uploader
     Me.ButtonWIFISHC.TabIndex = 28
     Me.ButtonWIFISHC.Text = "Upload over WIFI!"
     Me.ButtonWIFISHC.UseVisualStyleBackColor = True
-    '
-    'TextBoxPort
-    '
-    Me.TextBoxPort.Location = New System.Drawing.Point(71, 109)
-    Me.TextBoxPort.Name = "TextBoxPort"
-    Me.TextBoxPort.Size = New System.Drawing.Size(110, 20)
-    Me.TextBoxPort.TabIndex = 27
-    '
-    'Label6
-    '
-    Me.Label6.AutoSize = True
-    Me.Label6.Location = New System.Drawing.Point(6, 112)
-    Me.Label6.Name = "Label6"
-    Me.Label6.Size = New System.Drawing.Size(26, 13)
-    Me.Label6.TabIndex = 26
-    Me.Label6.Text = "Port"
     '
     'TextBoxIP
     '
@@ -277,8 +257,6 @@ Partial Class Uploader
   Friend WithEvents ComboBoxPCBMainUnitF As ComboBox
   Friend WithEvents Label2 As Label
   Friend WithEvents ButtonWIFISHC As Button
-  Friend WithEvents TextBoxPort As TextBox
-  Friend WithEvents Label6 As Label
   Friend WithEvents TextBoxIP As TextBox
   Friend WithEvents Label5 As Label
   Friend WithEvents ComboBoxCOMSHC As ComboBox
