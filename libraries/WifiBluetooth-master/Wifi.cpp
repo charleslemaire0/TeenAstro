@@ -109,6 +109,14 @@ const char html_login[] PROGMEM=
 "</form><br/><br/><br/>"
 "\r\n";
 
+const char html_update[] PROGMEM =
+
+"<br/><form>"
+"<br/><b>Smart Hand Controller Firmware Update:</b><br />"
+"<input type='button' style='width:12em' value='Update Firmware' onclick = ""Javascript:location.href='/update'"" ></form>"
+"Firmware extention is *.bin and can be found in the TeenAstroLoader.exe directory<br/><br/>"
+"\r\n";
+
 bool restartRequired=false;
 bool loginRequired=true;
 
@@ -196,6 +204,9 @@ void wifibluetooth::handleWifi() {
   sprintf_P(temp,html_wifiSSID6,wifi_ap_sn[0],wifi_ap_sn[1],wifi_ap_sn[2],wifi_ap_sn[3]); data += temp;
   sprintf_P(temp,html_wifiSSID7,activeWifiMode == WifiMode:: M_AcessPoint ?"checked":""); data += temp;
   data += FPSTR(html_logout);
+
+  data += FPSTR(html_update);
+  
 
   strcpy(temp,"</div></div></body></html>");
   data += temp;

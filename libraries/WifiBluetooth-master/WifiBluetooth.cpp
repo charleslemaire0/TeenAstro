@@ -107,6 +107,9 @@ ESP8266WebServer wifibluetooth::server;
 WiFiServer wifibluetooth::cmdSvr = WiFiServer(9999);
 WiFiClient wifibluetooth::cmdSvrClient;
 
+ESP8266WebServer httpServer(80);
+ESP8266HTTPUpdateServer httpUpdater;
+
 // -----------------------------------------------------------------------------------
 // EEPROM related functions
 
@@ -487,7 +490,10 @@ Again:
 #ifdef DEBUG_ON
   Ser.println("HTTP server started");
 #endif
+  //MDNS.begin(host);
 
+  httpUpdater.setup(&server);
+  httpServer.begin();
   //encoders.init();
 };
 
