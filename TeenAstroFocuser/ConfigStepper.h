@@ -26,11 +26,10 @@ bool halt = false;
 
 DS1302 *rtc = NULL;
 SerCom serCom0(Serial);
-#ifdef VERSION22
+#ifdef VERSION220
 SerCom serComSHC(Serial2);
 #endif
-#ifdef VERSION23
-
+#ifdef VERSION230
 SerCom serComSHC(Serial1);
 #endif
 #endif

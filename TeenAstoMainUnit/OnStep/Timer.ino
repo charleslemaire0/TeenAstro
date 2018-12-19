@@ -428,7 +428,7 @@ ISR(TIMER3_COMPA_vect)
       // telescope moves WEST with the sky, blAxis1 is the amount of EAST backlash
       if (dirAxis1 == 1)
       {
-        if (blAxis1 < backlashAxis1)
+        if (blAxis1 < StepsBacklashAxis1)
         {
           blAxis1 += stepAxis1;
           inbacklashAxis1 = true;
@@ -555,7 +555,7 @@ ISR(TIMER3_COMPA_vect)
         // telescope moving toward celestial pole in the sky, blAxis2 is the amount of opposite backlash
         if (dirAxis2 == 1)
         {
-          if (blAxis2 < backlashAxis2)
+          if (blAxis2 < StepsBacklashAxis2)
           {
             blAxis2 += stepAxis2;
             inbacklashAxis2 = true;

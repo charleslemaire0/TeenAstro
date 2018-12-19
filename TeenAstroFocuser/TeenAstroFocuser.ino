@@ -24,13 +24,13 @@ void setup()
   digitalWrite(StepPin, LOW);
 	Serial.begin(9600);
 
-#ifdef VERSION22
+#ifdef VERSION220
   Serial2.setRX(FocuserRX);
   Serial2.setTX(FocuserTX);
   Serial2.begin(56000);
   Serial2.setTimeout(10);
 #endif
-#ifdef VERSION23
+#ifdef VERSION230
   Serial1.setRX(FocuserRX);
   Serial1.setTX(FocuserTX);
   Serial1.begin(56000);

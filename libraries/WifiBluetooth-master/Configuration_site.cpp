@@ -6,10 +6,9 @@
 const char html_configSiteSelect1[] =
 "Selected Site:<br/>"
 "<form method='post' action='/configuration_site.htm'>"
-"<select style='width:11em' name='site_select'>";
+"<select onchange='this.form.submit()' style='width:11em' name='site_select'>";
 const char html_configSiteSelect2[] =
 "</select>"
-"<button type='submit'>Upload</button>"
 " (Select your predefined site)"
 "</form>"
 "\r\n";
@@ -100,22 +99,6 @@ void wifibluetooth::handleConfigurationSite() {
 #ifdef OETHS
       client->print(data); data = "";
 #endif
-      // Longitude
-      if (!sendCommand(":Gg#", temp1)) strcpy(temp1, "+000*00");
-      temp1[4] = 0; // deg. part only
-      data += html_configLongWE1;
-      temp1[0] == '+' ? data += "<option selected value='0'>West</option>" : data += "<option value='0'>West</option>";
-      temp1[0] == '-' ? data += "<option selected value='1'>East</option>" : data += "<option value='1'>East</option>";
-      data += html_configLongWE2;
-      temp1[0] = '0'; // sign
-      sprintf(temp, html_configLongDeg, temp1);
-      data += temp;
-      sprintf(temp, html_configLongMin, (char*)&temp1[5]);
-      data += temp;
-#ifdef OETHS
-      client->print(data); data = "";
-#endif
-
       // Latitude
       if (!sendCommand(":Gt#", temp1)) strcpy(temp1, "+00*00");
       temp1[3] = 0; // deg. part only
@@ -127,6 +110,21 @@ void wifibluetooth::handleConfigurationSite() {
       sprintf(temp, html_configLatDeg, temp1);
       data += temp;
       sprintf(temp, html_configLatMin, (char*)&temp1[4]);
+      data += temp;
+#ifdef OETHS
+      client->print(data); data = "";
+#endif
+      // Longitude
+      if (!sendCommand(":Gg#", temp1)) strcpy(temp1, "+000*00");
+      temp1[4] = 0; // deg. part only
+      data += html_configLongWE1;
+      temp1[0] == '+' ? data += "<option selected value='0'>West</option>" : data += "<option value='0'>West</option>";
+      temp1[0] == '-' ? data += "<option selected value='1'>East</option>" : data += "<option value='1'>East</option>";
+      data += html_configLongWE2;
+      temp1[0] = '0'; // sign
+      sprintf(temp, html_configLongDeg, temp1);
+      data += temp;
+      sprintf(temp, html_configLongMin, (char*)&temp1[5]);
       data += temp;
 #ifdef OETHS
       client->print(data); data = "";

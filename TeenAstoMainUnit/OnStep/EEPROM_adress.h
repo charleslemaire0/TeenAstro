@@ -21,9 +21,6 @@
 #define EE_dpmW             29
 #define EE_dup              30
 
-#define EE_trueAxis1        32
-#define EE_trueAxis2        36
-
 #define EE_doCor            42
 #define EE_pdCor            46
 #define EE_altCor           50

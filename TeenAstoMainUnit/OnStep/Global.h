@@ -95,8 +95,11 @@ volatile double         guideTimerRateAxis1 = 0.0;
 volatile double         guideTimerRateAxis2 = 0.0;
 
 // backlash control
-volatile int    backlashAxis1 = 0;
-volatile int    backlashAxis2 = 0;
+int backlashAxis1 = 0;
+int backlashAxis2 = 0;
+
+volatile int    StepsBacklashAxis1 = 0;
+volatile int    StepsBacklashAxis2 = 0;
 volatile int    blAxis1 = 0;
 volatile int    blAxis2 = 0;
 
@@ -136,7 +139,6 @@ byte newTargetPierSide = 0;
 volatile long       posAxis1;    // hour angle position in steps
 double              deltaSyncAxis1;
 volatile long       deltaTargetAxis1;
-long                trueAxis1;   // correction to above for motor shaft position steps
 volatile long       startAxis1;  // hour angle of goto start position in steps
 volatile fixed_t    targetAxis1; // hour angle of goto end   position in steps
 volatile byte       dirAxis1;    // stepping direction + or -
@@ -151,7 +153,6 @@ volatile long       stepAxis1 = 1;
 volatile long       posAxis2;     // declination position in steps
 double              deltaSyncAxis2;
 volatile long       deltaTargetAxis2;
-long                trueAxis2;    // correction to above for motor shaft position steps
 volatile long       startAxis2;   // declination of goto start position in steps
 volatile fixed_t    targetAxis2;  // declination of goto end   position in steps
 volatile byte       dirAxis2;     // stepping direction + or -

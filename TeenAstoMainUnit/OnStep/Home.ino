@@ -41,10 +41,7 @@ boolean setHome()
     pierSide = PierSideEast;
     dirAxis2 = 1;
     DecDir = DecDirEInit;
-    if (*localSite.latitude() > 0)
-        HADir = HADirNCPInit;
-    else
-        HADir = HADirSCPInit;
+    initLat();
     dirAxis1 = 1;
     newTargetRA = 0;
     newTargetDec = 0;
@@ -103,11 +100,9 @@ else if (mountType == MOUNT_TYPE_ALTAZM)
     targetAxis1.part.m = startAxis1;
     targetAxis1.part.f = 0;
     posAxis1 = startAxis1;
-    trueAxis1 = startAxis1;
     targetAxis2.part.m = startAxis2;
     targetAxis2.part.f = 0;
     posAxis2 = startAxis2;
-    trueAxis2 = startAxis2;
     blAxis1 = 0;
     blAxis2 = 0;
     sei();

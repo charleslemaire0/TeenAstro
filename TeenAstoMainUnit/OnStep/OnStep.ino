@@ -49,7 +49,7 @@
 
 
 // firmware info, these are returned by the ":GV?#" commands
-#define FirmwareDate    "10 18 18"
+#define FirmwareDate    "12 12 18"
 #define FirmwareNumber  "1.0"
 #define FirmwareName    "TeenAstro"
 #define FirmwareTime    "12:00:00"
@@ -239,28 +239,8 @@ void setup()
   // get the site information, if a GPS were attached we would use that here instead
   localSite.ReadCurrentSiteDefinition();
   rtk.resetLongitude(*localSite.longitude());
-
-  if (mountType == MOUNT_TYPE_ALTAZM || mountType == MOUNT_TYPE_FORK_ALT)
-  {
-    double lat = *localSite.latitude();
-    celestialPoleStepAxis2 = fabs(lat) *StepsPerDegreeAxis2;
-    if (*localSite.latitude() < 0)
-      celestialPoleStepAxis1 = halfRotAxis1;
-    else
-      celestialPoleStepAxis1 = 0L;
-  }
-  else
-  {
-    if (*localSite.latitude() < 0)
-      celestialPoleStepAxis2 = -quaterRotAxis2;
-    else
-      celestialPoleStepAxis2 = quaterRotAxis2;
-  }
-
-  if (*localSite.latitude() > 0)
-    HADir = HADirNCPInit;
-  else
-    HADir = HADirSCPInit;
+  initCelestialPole();
+  initLat();
 
   // get the Park status
   if (!iniAtPark())
@@ -435,12 +415,12 @@ void CheckPierSide()
   bool isEast = -quaterRotAxis2 < pos && pos < quaterRotAxis2;
   if (isEast && pierSide >= PierSideWest)
   {
-    // cli(); blAxis2 = backlashAxis2 - blAxis2; sei();
+    // cli(); blAxis2 = StepsBacklashAxis2 - blAxis2; sei();
     pierSide = PierSideEast;
   }
   else if (!isEast && pierSide < PierSideWest)
   {
-    //cli(); blAxis2 = backlashAxis2 - blAxis2; sei();
+    //cli(); blAxis2 = StepsBacklashAxis2 - blAxis2; sei();
     pierSide = PierSideWest;
   }
 }
@@ -652,6 +632,26 @@ void initmount()
 
 }
 
+void initCelestialPole()
+{
+  if (mountType == MOUNT_TYPE_ALTAZM || mountType == MOUNT_TYPE_FORK_ALT)
+  {
+    double lat = *localSite.latitude();
+    celestialPoleStepAxis2 = fabs(lat) *StepsPerDegreeAxis2;
+    celestialPoleStepAxis1 = (*localSite.latitude() < 0) ? halfRotAxis1 : 0L;
+  }
+  else
+  {
+    celestialPoleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
+    celestialPoleStepAxis2 = (*localSite.latitude() < 0) ? -quaterRotAxis2 : quaterRotAxis2;
+  }
+}
+
+void initLat()
+{
+  HADir = *localSite.latitude() > 0 ? HADirNCPInit : HADirSCPInit;
+}
+
 void initmotor()
 {
   readEEPROMmotor();
@@ -703,13 +703,17 @@ void writeDefaultEEPROMmotor()
   EEPROM.write(EE_LowCurrAxis2, 100);
 }
 
+
 void updateRatios()
 {
   cli()
   StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerRotAxis2 = (long)GearAxis2 * StepRotAxis2 * (int)pow(2, MicroAxis2); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerDegreeAxis1 = (double)StepsPerRotAxis1 / 360.0;
+  StepsBacklashAxis1 = (int)round(((double)backlashAxis1 * 3600.0) / (double)StepsPerDegreeAxis1);
   StepsPerDegreeAxis2 = (double)StepsPerRotAxis2 / 360.0;
+  StepsBacklashAxis2 = (int)round(((double)backlashAxis2 * 3600.0) / (double)StepsPerDegreeAxis2);
+
   StepsPerSecondAxis1 = StepsPerDegreeAxis1 / 240.0;
   StepsPerSecondAxis2 = StepsPerDegreeAxis2 / 240.0;
 
@@ -723,8 +727,7 @@ void updateRatios()
   halfRotAxis2 = StepsPerRotAxis2 / 2L;
   quaterRotAxis2 = StepsPerRotAxis2 / 4L;
 
-  celestialPoleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
-  celestialPoleStepAxis2 = quaterRotAxis2;
+  initCelestialPole();
   updateSideral();
 
   initMaxRate();

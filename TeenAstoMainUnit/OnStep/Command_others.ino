@@ -33,17 +33,15 @@ void Command_dollar()
       {
         if (parameter[0] == 'D')
         {
-          backlashAxis2 = (int)round(((double)i *
-            (double)StepsPerDegreeAxis2
-            ) / 3600.0);
+          backlashAxis2 = i;
           EEPROM_writeInt(EE_backlashAxis2, backlashAxis2);
+          StepsBacklashAxis2 = (int)round(((double)backlashAxis2 * 3600.0) / (double)StepsPerDegreeAxis2);
         }
         else if (parameter[0] == 'R')
         {
-          backlashAxis1 = (int)round(((double)i *
-            (double)StepsPerDegreeAxis1
-            ) / 3600.0);
+          backlashAxis1 = i;
           EEPROM_writeInt(EE_backlashAxis1, backlashAxis1);
+          StepsBacklashAxis1 = (int)round(((double)backlashAxis1 * 3600.0) / (double)StepsPerDegreeAxis1);
         }
         else
           commandError = true;
@@ -150,7 +148,6 @@ void Command_dollar()
         motorAxis1.setMicrostep(MicroAxis1);
         EEPROM.write(EE_MicroAxis1, MicroAxis1);
       }
-      unsetPark();
       updateRatios();
     }
     else
@@ -266,23 +263,14 @@ void Command_pct()
     break;
   case 'B':
   {
-    int i;
     if (parameter[0] == 'D')
     {
-      i = (int)round(((double)backlashAxis2 * 3600.0) /
-        (double)StepsPerDegreeAxis2);
-      if (i < 0) i = 0;
-      if (i > 999) i = 999;
-      sprintf(reply, "%d", i);
+      sprintf(reply, "%d", backlashAxis2);
       quietReply = true;
     }
     else if (parameter[0] == 'R')
     {
-      i = (int)round(((double)backlashAxis1 * 3600.0) /
-        (double)StepsPerDegreeAxis1);
-      if (i < 0) i = 0;
-      if (i > 999) i = 999;
-      sprintf(reply, "%d", i);
+      sprintf(reply, "%d", backlashAxis1);
       quietReply = true;
     }
     else
@@ -1152,6 +1140,9 @@ void Command_W()
     uint8_t currentSite = command[1] - '0';
     EEPROM.write(EE_currentSite, currentSite);
     localSite.ReadSiteDefinition(currentSite);
+    rtk.resetLongitude(*localSite.longitude());
+    initCelestialPole();
+    initLat();
     quietReply = true;
   }
   else

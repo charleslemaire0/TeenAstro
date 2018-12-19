@@ -107,6 +107,9 @@ ESP8266WebServer wifibluetooth::server;
 WiFiServer wifibluetooth::cmdSvr = WiFiServer(9999);
 WiFiClient wifibluetooth::cmdSvrClient;
 
+ESP8266WebServer httpServer(80);
+ESP8266HTTPUpdateServer httpUpdater;
+
 // -----------------------------------------------------------------------------------
 // EEPROM related functions
 
@@ -238,7 +241,7 @@ void wifibluetooth::preparePage(String &data, int page)
   serialRecvFlush();
   // finish the standard http response header
   data += html_onstep_header1;
-  if (mountStatus.getId(temp1)) data += temp1; else data += "?";
+  if (mountStatus.getId(temp1)) data += temp1; else data += "Connection to TeenAstro Main unit is lost";
   data += html_onstep_header2;
   if (mountStatus.getVer(temp1)) data += temp1; else data += "?";
   data += html_onstep_header3;
@@ -487,7 +490,10 @@ Again:
 #ifdef DEBUG_ON
   Ser.println("HTTP server started");
 #endif
+  //MDNS.begin(host);
 
+  httpUpdater.setup(&server);
+  httpServer.begin();
   //encoders.init();
 };
 
@@ -562,7 +568,7 @@ bool wifibluetooth::isWifiRunning()
 void wifibluetooth::turnWifiOn(bool turnOn)
 {
   wifiOn = turnOn;
-  EEPROM.write(14, turnOn);
+  EEPROM.write(EEPROM_WifiOn, turnOn);
   EEPROM.commit();
 }
 

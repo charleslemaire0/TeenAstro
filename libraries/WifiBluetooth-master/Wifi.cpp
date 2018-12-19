@@ -94,7 +94,7 @@ const char html_logout[]=
 "<form method='post' action='/wifi.htm'>"
 "<button type='submit' name='logout' value='1'>Logout</button></form><br />\r\n";
 
-const char html_reboot[]= 
+const char html_reboot[] PROGMEM =
 "<br/><br/><br/><br/><br/><form method='get' action='/wifi.htm'>"
 "<b>You must <u>manually</u> restart for changes to take effect.</b><br/><br/>"
 "<button type='submit'>Continue</button>"
@@ -107,10 +107,14 @@ const char html_login[] PROGMEM=
 "<input style='width:8em' name='login' type='password' maxlength='39'>"
 "<button type='submit'>Ok</button>"
 "</form><br/><br/><br/>"
-"Setup:<br/><br/>"
-"Enable either station <b>OR</b> AP mode, both enabled can cause performance issues.&nbsp;&nbsp;"
-"However, if just setting up or testing it can be desirable to enable both modes temporarily to guard against being locked out.<br/>"
-"<br/><br/>"
+"\r\n";
+
+const char html_update[] PROGMEM =
+
+"<br/><form>"
+"<br/><b>Smart Hand Controller Firmware Update:</b><br />"
+"<input type='button' style='width:12em' value='Update Firmware' onclick = ""Javascript:location.href='/update'"" ></form>"
+"Firmware extention is *.bin and can be found in the TeenAstroLoader.exe directory<br/><br/>"
 "\r\n";
 
 bool restartRequired=false;
@@ -200,6 +204,9 @@ void wifibluetooth::handleWifi() {
   sprintf_P(temp,html_wifiSSID6,wifi_ap_sn[0],wifi_ap_sn[1],wifi_ap_sn[2],wifi_ap_sn[3]); data += temp;
   sprintf_P(temp,html_wifiSSID7,activeWifiMode == WifiMode:: M_AcessPoint ?"checked":""); data += temp;
   data += FPSTR(html_logout);
+
+  data += FPSTR(html_update);
+  
 
   strcpy(temp,"</div></div></body></html>");
   data += temp;
