@@ -177,7 +177,7 @@ void TMC26XStepper::start() {
 	
 	//configure the SPI interface
     SPI.setBitOrder(MSBFIRST);
-	SPI.setClockDivider(SPI_CLOCK_DIV8);
+	SPI.setClockDivider(SPI_CLOCK_DIV16);
 	//todo this does not work reliably - find a way to foolprof set it (e.g. while communicating
 	//SPI.setDataMode(SPI_MODE3);
 	SPI.begin();
