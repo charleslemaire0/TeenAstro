@@ -3,7 +3,7 @@
 #include "TelTimer.h"
 #include "Site.h"
 #include "FPoint.h"
-#include "Motor.h"
+
 
 timerLoop tlp;
 GNSSPPS         pps;
@@ -242,7 +242,7 @@ volatile byte lastTrackingState = TrackingOFF;
 boolean abortSlew = false;
 
 // Command processing -------------------------------------------------------------------------------------------------------
-#define BAUD    57600
+#define BAUD    56000
 
 boolean commandError = false;
 boolean quietReply = false;
