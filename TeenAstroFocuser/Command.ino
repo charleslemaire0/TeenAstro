@@ -278,10 +278,6 @@ bool SerCom::MoveRequest(void)
     return false;
   switch (m_command)
   {
-  //case CmdDumpState: // "?" dump state including details
-  //  dumpState();
-  //  m_hasReceivedCommand = false;
-  //  break;
   case FocCmd_in_wor:
     modeMan();
     stepper.moveTo(0);
@@ -434,8 +430,6 @@ void SerCom::dumpState()
   {
     stepper.setCurrentPosition( 65535 *resolution->get());
   }
-  //sprintf(buf, "?%05u %03u#", (unsigned int)(stepper.currentPosition() /resolution->get()), (unsigned int)abs(stepper.speed() / pow(2, micro->get())));
-  //ser.print(buf);
   if (!stepper.isRunning())
   {
     tempSensors.requestTemperaturesByIndex(0);
@@ -445,37 +439,57 @@ void SerCom::dumpState()
   ser.print("?");
   stepper.run();
   unsigned int p = (unsigned int)(stepper.currentPosition() / resolution->get());
-  if (p < 10000)
-    ser.print("0");
-  if (p < 1000)
-     ser.print("0");
-  if (p < 100)
-    ser.print("0");
-  if (p < 10)
-    ser.print("0");
-  ser.print(p);
-  stepper.run();
+  printvalue(p, 5, 0, false);
   ser.print(" ");
-  stepper.run();
   p = (unsigned int)abs(stepper.speed() / pow(2, micro->get()));
-  if (p < 100)
-    ser.print("0");
-  if (p < 10)
-    ser.print("0");
-  stepper.run();
-  ser.print(p);
-  stepper.run();
+  printvalue(p, 3, 0, false);
   ser.print("#");
-  //sprintf(buf, "?%05u %03u#", 0,0)
-  //sprintf(buf, "?%05u %03u %+02.1f#", (unsigned int)(stepper.currentPosition() / resolution->get()),
-  //  (unsigned int)abs(stepper.speed() / pow(2, micro->get())),
-  //  lastTemp);
+}
 
+void SerCom::printvalue(double val, int n, int d, bool plus)
+{
+  if (plus)
+    val > 0 ? ser.print("+") : ser.print("-");
+  stepper.run();
+  int valint = val;
+  int valit = pow10(n - 1);
+  for (int k = n; k > 0; k--)
+  {
+    if (val < valit)
+    {
+      ser.print("0");
+      stepper.run();
+    }
+    else
+      break;
+    valit /= 10;
+  }
+  ser.print(valint);
+  stepper.run();
+  if (d > 0)
+  {
+    ser.print(".");
+    stepper.run();
+    valint = (val - valint)*pow10(d);
+    valit = pow10(d - 1);
+    for (int k = d; k > 0; k--)
+    {
+      if (val < valit)
+      {
+        ser.print("0");
+        stepper.run();
+      }
+      else
+        break;
+      valit /= 10;
+    }
+    ser.print(valint);
+    stepper.run();
+  }
 }
 
 void SerCom::dumpParameterPosition(ParameterPosition* Pos)
 {
-  char buf[20] = {0};
   char id[11] = {0};
   unsigned long val;
   if (!Pos->isvalid())
@@ -492,8 +506,11 @@ void SerCom::dumpParameterPosition(ParameterPosition* Pos)
     ser.flush();
     return;
   }
-  sprintf(buf, "P%05u %s#", pos, id);
-  ser.print(buf);
+  printvalue(pos, 5, 0, false);
+  ser.print(" ");
+  ser.print(id);
+  stepper.run();
+  ser.print("#");
   ser.flush();
 }
 
