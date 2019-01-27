@@ -1,10 +1,15 @@
+
+#include <TMCStepper_UTILITY.h>
+#include <TMCStepper.h>
+#include <TMC26XStepper.h>
+#include <TeenAstroStepper.h>
 #include "ConfigStorage.h"
 #include "Global.h"
 #include "ConfigStepper.h"
 #include "Command.h"
 
-uint8_t mdirIN = LOW;
-uint8_t mdirOUT = LOW;
+
+float temperature = 0;
 
 void setup()
 {
@@ -30,7 +35,7 @@ void setup()
   Serial2.begin(56000);
   Serial2.setTimeout(10);
 #endif
-#ifdef VERSION230
+#if defined(VERSION230) || defined (VERSION240)
   Serial1.setRX(FocuserRX);
   Serial1.setTX(FocuserTX);
   Serial1.begin(56000);
@@ -38,53 +43,36 @@ void setup()
 #endif
 
   loadConfig();
+  tempSensors.begin();
+  tempSensors.setResolution(12);
+  tempSensors.requestTemperaturesByIndex(0);
+  lastTemp = tempSensors.getTempCByIndex(0);
+  tempSensors.setWaitForConversion(false);
   iniMot();
-	iniPos();
+  iniPos();
   analogWrite(LEDPin,16);
 }
 
 
 void loop()
 {
+  Command_Run();
   writePos();
+
   if (serComSHC.Get_Command())
   {
-    serComSHC.MoveRequest();
+    if (serComSHC.MoveRequest())
+      return;
+    serComSHC.Command_Check();
   }
   if (serCom0.Get_Command())
   {
-    serCom0.MoveRequest();
+    if (serCom0.MoveRequest())
+      return;
+    serCom0.Command_Check();
   }
-	if (mdirOUT == HIGH && mdirIN == HIGH)
-	{
-		return;
-	}
-	else if (mdirOUT == HIGH && mdirOUTOld != mdirOUT)
-	{
-    modeMan();
-		stepper.moveTo(maxPosition->get());
-    mdirOUTOld = mdirOUT;
-		return;
-	}
-	else if (mdirIN == HIGH && mdirINOld != mdirIN)
-	{
-    modeMan();
-    stepper.moveTo(0);
-    mdirINOld = mdirIN;
-		return;
-	}
-  else if ((mdirIN == LOW && mdirINOld != mdirIN) || (mdirOUT == LOW && mdirOUTOld != mdirOUT))
-  {
-    stepper.setAcceleration(100.*manDec->get());
-    stepper.stop();
-    mdirINOld = mdirIN;
-    mdirOUTOld = mdirOUT;
-    return;
-  }
-	mdirOUTOld = mdirOUT;
-	mdirINOld = mdirIN;
-  serComSHC.Command_Check();
-  serCom0.Command_Check();
-  Command_Run();
+
+
+  //Command_Run();
 }
 

@@ -43,6 +43,7 @@ bool SerCom::Get_Command()
   while (ser.available() > 0)
   {
     char b = ser.read();
+
     if (!m_hasreceivedstart)
     {
       if (b == ':')
@@ -120,8 +121,6 @@ void SerCom::Command_Check(void)
     halt = true;
     stepper.setAcceleration(100.*manDec->get());
     stepper.stop();
-    mdirOUT = LOW;
-    mdirIN = LOW;
     break;
   case FocCmd_Goto:
       if (m_valuedefined)
@@ -229,13 +228,13 @@ void SerCom::Command_Check(void)
   case FocCmd_current:
     if (setvalue(m_valuedefined, m_value, curr))
     {
-      driver.rms_current(curr->get());
+      teenAstroStepper.setCurrent(10*curr->get());
     }
     break;
   case FocCmd_micro:
     if (setvalue(m_valuedefined, m_value, micro))
     {
-      driver.microsteps(pow(2, micro->get()));
+      teenAstroStepper.setMicrostep( micro->get());
     }
     break;
   case CmdDumpState: // "?" dump state including details
@@ -273,55 +272,65 @@ void SerCom::Command_Check(void)
   }
 }
 
-void SerCom::MoveRequest(void)
+bool SerCom::MoveRequest(void)
 {
   if (!m_hasReceivedCommand)
-    return ;
+    return false;
   switch (m_command)
   {
-  case CmdDumpState: // "?" dump state including details
-    dumpState();
-    m_hasReceivedCommand = false;
-    break;
+  //case CmdDumpState: // "?" dump state including details
+  //  dumpState();
+  //  m_hasReceivedCommand = false;
+  //  break;
   case FocCmd_in_wor:
-    mdirIN = HIGH;
+    modeMan();
+    stepper.moveTo(0);
     m_hasReceivedCommand = false;
     break;
   case FocCmd_out_wor:
-    mdirOUT = HIGH;
+    modeMan();
+    stepper.moveTo(0);
     m_hasReceivedCommand = false;
     break;
   case FocCmd_in:
-    mdirIN = HIGH;
+    modeMan();
+    stepper.moveTo(0);
     m_hasReceivedCommand = false;
     ser.print("1");
     ser.flush();
     break;
   case FocCmd_in_stop:
-    mdirIN = LOW;
+    stepper.setAcceleration(100.*manDec->get());
+    stepper.stop();
     m_hasReceivedCommand = false;
     ser.print("1");
     ser.flush();
     break;
   case FocCmd_out:
-    mdirOUT = HIGH;
+    modeMan();
+    stepper.moveTo(maxPosition->get());
     m_hasReceivedCommand = false;
     ser.print("1");
     ser.flush();
     break;
   case FocCmd_out_stop:
-    mdirOUT = LOW;
+    stepper.setAcceleration(100.*manDec->get());
+    stepper.stop();
     m_hasReceivedCommand = false;
     ser.print("1");
     ser.flush();
     break;
   case FocCmd_Halt:
-    mdirOUT = LOW;
-    mdirIN = LOW;
+    stepper.setAcceleration(100.*manDec->get());
+    stepper.stop();
+    m_hasReceivedCommand = false;
     break;
   default:
     break;
   }
+  if (!m_hasReceivedCommand)
+    return true;
+  return false;
 }
 
 bool SerCom::setvalue(bool valuedefined, unsigned long value, unsigned long min, unsigned long max, unsigned long &adress)
@@ -425,8 +434,43 @@ void SerCom::dumpState()
   {
     stepper.setCurrentPosition( 65535 *resolution->get());
   }
-  sprintf(buf, "?%05u %03u#", (unsigned int)(stepper.currentPosition() /resolution->get()), (unsigned int)abs(stepper.speed() / pow(2, micro->get())));
-  ser.print(buf);
+  //sprintf(buf, "?%05u %03u#", (unsigned int)(stepper.currentPosition() /resolution->get()), (unsigned int)abs(stepper.speed() / pow(2, micro->get())));
+  //ser.print(buf);
+  if (!stepper.isRunning())
+  {
+    tempSensors.requestTemperaturesByIndex(0);
+    lastTemp = tempSensors.getTempCByIndex(0);
+  }
+  stepper.run();
+  ser.print("?");
+  stepper.run();
+  unsigned int p = (unsigned int)(stepper.currentPosition() / resolution->get());
+  if (p < 10000)
+    ser.print("0");
+  if (p < 1000)
+     ser.print("0");
+  if (p < 100)
+    ser.print("0");
+  if (p < 10)
+    ser.print("0");
+  ser.print(p);
+  stepper.run();
+  ser.print(" ");
+  stepper.run();
+  p = (unsigned int)abs(stepper.speed() / pow(2, micro->get()));
+  if (p < 100)
+    ser.print("0");
+  if (p < 10)
+    ser.print("0");
+  stepper.run();
+  ser.print(p);
+  stepper.run();
+  ser.print("#");
+  //sprintf(buf, "?%05u %03u#", 0,0)
+  //sprintf(buf, "?%05u %03u %+02.1f#", (unsigned int)(stepper.currentPosition() / resolution->get()),
+  //  (unsigned int)abs(stepper.speed() / pow(2, micro->get())),
+  //  lastTemp);
+
 }
 
 void SerCom::dumpParameterPosition(ParameterPosition* Pos)

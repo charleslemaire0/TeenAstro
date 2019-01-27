@@ -9,14 +9,21 @@
 	#include "WProgram.h"
 #endif
 #include <AccelStepper.h>
-#include <TMC2130Stepper.h>
+#include <TeenAstroStepper.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #include "Command.h"
-
 #include "DS1302.h"
 
-
-TMC2130Stepper driver = TMC2130Stepper(EnablePin, DirPin, StepPin, CSPin);
-AccelStepper stepper = AccelStepper(stepper.DRIVER, StepPin, DirPin);
+Motor teenAstroStepper;
+AccelStepper stepper = AccelStepper(1, StepPin, DirPin);
+// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+float lastTemp = -999;
+OneWire oneWire(TempPin);
+// Pass our oneWire reference to Dallas Temperature. 
+DallasTemperature tempSensors(&oneWire);
+// arrays to hold device address
+DeviceAddress insideThermometer;
 
 long oldposition = 0;
 int mdirOUTOld = 0;
@@ -29,8 +36,7 @@ SerCom serCom0(Serial);
 #ifdef VERSION220
 SerCom serComSHC(Serial2);
 #endif
-#ifdef VERSION230
+#if defined(VERSION230) || defined(VERSION240)
 SerCom serComSHC(Serial1);
 #endif
 #endif
-

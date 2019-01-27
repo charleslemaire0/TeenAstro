@@ -173,6 +173,7 @@ bool ParameterPosition::set(char* id, const unsigned long &pos)
   m_id[10] = 0;
   EEPROM.write(m_adress + 10, 0);
   m_pos->set(pos);
+  return true;
 }
 
 

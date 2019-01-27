@@ -72,7 +72,7 @@ private:
 public:
   void Command_Check();
   bool Get_Command();
-  void MoveRequest(void);
+  bool MoveRequest(void);
 private:
   void dumpState();
   void dumpParameterPosition(ParameterPosition* Pos);
