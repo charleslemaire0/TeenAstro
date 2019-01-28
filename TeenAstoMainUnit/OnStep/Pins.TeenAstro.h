@@ -3,8 +3,8 @@
 
 
 //#define VERSION  220
-#define VERSION  230
-//#define VERSION  240
+//#define VERSION  230
+#define VERSION  240
 
 #if VERSION == 220
 #define AxisDriver      1                    //only with TOS100

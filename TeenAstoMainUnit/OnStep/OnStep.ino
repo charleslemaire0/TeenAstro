@@ -32,6 +32,7 @@
  *
  */
 
+#include <TeenAstroStepper.h>
 #include <Time.h>
 #include <math.h>
 #include "Helper_math.h"
