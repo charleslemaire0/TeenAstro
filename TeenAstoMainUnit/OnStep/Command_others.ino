@@ -775,12 +775,11 @@ void Command_F()
     unsigned long start = millis();
     int pos = 0;
     char b = 0;
-    while ( millis() - start < 10)
+    while ( millis() - start < 100)
     {
       if (Serial2.available()>0)
       {        
         b = Serial2.read();
-
         if (b == '#' && !focuserShortResponse)
         {
           quietReply = true;
