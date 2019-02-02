@@ -27,6 +27,9 @@
 #define FocCmd_set 's'
 #define FocCmd_Halt 'Q'
 
+#define FocCmd_Reset '$'
+#define FocCmd_Reboot '!'
+
 #define FocCmd_Write 'W'
 
 #define CmdDumpState '?'

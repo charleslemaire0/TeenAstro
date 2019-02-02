@@ -3,6 +3,7 @@
 // 
 
 #include "Command.h"
+#include <EEPROM.h>
 
 void modeGoto()
 {
@@ -117,6 +118,19 @@ void SerCom::Command_Check(void)
   case AzCmd_Version:
     sayHello();
     break;
+
+  case FocCmd_Reset:
+    for (int i = 0; i < EEPROM.length(); i++)
+    {
+      EEPROM.write(i, 0);
+    }
+  case FocCmd_Reboot:
+    Serial.end();
+    Serial1.end();
+    Serial2.end();
+    delay(1000);
+    _reboot_Teensyduino_();
+    break;
   case FocCmd_Halt:
     halt = true;
     stepper.setAcceleration(100.*manDec->get());
@@ -179,6 +193,7 @@ void SerCom::Command_Check(void)
     case '1':
     case '2':
     case '3':
+    case '4':
     case '5':
     case '6':
     case '7':
@@ -250,6 +265,7 @@ void SerCom::Command_Check(void)
     case '1':
     case '2':
     case '3':
+    case '4':
     case '5':
     case '6':
     case '7':
@@ -506,6 +522,7 @@ void SerCom::dumpParameterPosition(ParameterPosition* Pos)
     ser.flush();
     return;
   }
+  ser.print("P");
   printvalue(pos, 5, 0, false);
   ser.print(" ");
   ser.print(id);

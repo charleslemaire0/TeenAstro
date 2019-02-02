@@ -156,6 +156,7 @@ ParameterPosition::ParameterPosition(const int &adress)
 void ParameterPosition::get(char* id, unsigned long &pos )
 {
   memcpy(id, m_id, sizeof (m_id));
+  m_id[10] = 0;
   pos = m_pos->get();
 }
 unsigned long ParameterPosition::getPosition() { return m_pos->get(); }
