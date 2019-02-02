@@ -18,7 +18,7 @@
 Motor teenAstroStepper;
 AccelStepper stepper = AccelStepper(1, StepPin, DirPin);
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
-float lastTemp = -999;
+float lastTemp = -99.9999;
 OneWire oneWire(TempPin);
 // Pass our oneWire reference to Dallas Temperature. 
 DallasTemperature tempSensors(&oneWire);

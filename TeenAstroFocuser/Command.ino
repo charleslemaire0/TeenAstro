@@ -449,7 +449,8 @@ void SerCom::dumpState()
   if (!stepper.isRunning())
   {
     tempSensors.requestTemperaturesByIndex(0);
-    lastTemp = tempSensors.getTempCByIndex(0);
+    lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999), -99.9999);
+    lastTemp = 0.00;
   }
   stepper.run();
   ser.print("?");
@@ -459,17 +460,21 @@ void SerCom::dumpState()
   ser.print(" ");
   p = (unsigned int)abs(stepper.speed() / pow(2, micro->get()));
   printvalue(p, 3, 0, false);
+  ser.print(" ");
+  printvalue(lastTemp, 2, 2, true);
   ser.print("#");
 }
 
 void SerCom::printvalue(double val, int n, int d, bool plus)
 {
   if (plus)
-    val > 0 ? ser.print("+") : ser.print("-");
+    val >= 0 ? ser.print("+") : ser.print("-");
   stepper.run();
+
+  val = abs(val);
   int valint = val;
   int valit = pow10(n - 1);
-  for (int k = n; k > 0; k--)
+  for (int k = n; k > 1; k--)
   {
     if (val < valit)
     {
@@ -488,7 +493,7 @@ void SerCom::printvalue(double val, int n, int d, bool plus)
     stepper.run();
     valint = (val - valint)*pow10(d);
     valit = pow10(d - 1);
-    for (int k = d; k > 0; k--)
+    for (int k = d; k > 1; k--)
     {
       if (val < valit)
       {
