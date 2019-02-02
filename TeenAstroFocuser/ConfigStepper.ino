@@ -44,13 +44,17 @@ bool inlimit(unsigned long pos)
 
 void writePos()
 {
-  long posi = stepper.currentPosition();
-  if (posi == oldposition)
-    return;
-  oldposition = posi;
-	long pos[3] = { posi,posi, posi };
-	rtc->writeRamBulk((uint8_t*)pos, sizeof(pos));
+  if (stepper.speed() == 0)
+  {
+    long posi = stepper.currentPosition();
+    if (posi == oldposition)
+      return;
+    oldposition = posi;
+    long pos[3] = { posi,posi, posi };
+    rtc->writeRamBulk((uint8_t*)pos, sizeof(pos));
+  }
 }
+
 
 void iniPos()
 {
