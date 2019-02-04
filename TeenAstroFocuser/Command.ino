@@ -450,7 +450,6 @@ void SerCom::dumpState()
   {
     tempSensors.requestTemperaturesByIndex(0);
     lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999), -99.9999);
-    lastTemp = 0.00;
   }
   stepper.run();
   ser.print("?");
