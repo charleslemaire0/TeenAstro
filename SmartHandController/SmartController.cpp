@@ -2350,8 +2350,7 @@ void SmartHandController::menuFocuserMotor()
         uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, "Rotation", (uint8_t)rev + 1, string_list);
         if (choice)
         {
-          rev = (bool)(choice - 1);
-          sprintf(cmd, ":F7 %01d#", (int)(value));
+          sprintf(cmd, ":F7 %d#", (int)(choice -1));
           ValueSetRequested = true;
         }
         break;
