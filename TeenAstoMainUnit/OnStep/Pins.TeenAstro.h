@@ -21,20 +21,20 @@
 #define Axis2CSPin      9                   // Pin 9 (CS)
 #define Axis2EnablePin  -1                  //alway enable
 // Pin 11 12 13 are used!! for SPI
-#define Axis1Reverse   0
-#define Axis2Reverse   0
+#define Axis1Reverse    0
+#define Axis2Reverse    0
 
 //Focuser Interface
 #define FocuserRX       26
 #define FocuserTX       31
 
 // ST4 interface
-#define ST4RAe  14                      // ST4 REast
-#define ST4DEs  15                      // ST4 South
-#define ST4DEn  16                      // ST4 North
-#define ST4RAw  17                      // ST4 West
-#define LEDPin 33
-#define MaxLED 255
+#define ST4RAe          14                // ST4 REast
+#define ST4DEs          15                // ST4 South
+#define ST4DEn          16                // ST4 North
+#define ST4RAw          17                // ST4 West
+#define LEDPin          33
+#define MaxLED          255
 #endif
 
 #if VERSION == 230
@@ -59,12 +59,12 @@
 #define FocuserTX       10
 
 // ST4 interface
-#define ST4RAe  14                      // ST4 REast
-#define ST4DEs  15                      // ST4 South
-#define ST4DEn  16                      // ST4 North
-#define ST4RAw  17                      // ST4 West
-#define LEDPin 23 
-#define MaxLED 16
+#define ST4RAe          14                // ST4 REast
+#define ST4DEs          15                // ST4 South
+#define ST4DEn          16                // ST4 North
+#define ST4RAw          17                // ST4 West
+#define LEDPin          23 
+#define MaxLED          16
 #endif
 
 #if VERSION == 240
@@ -84,12 +84,12 @@
 #define FocuserRX       9
 #define FocuserTX       10
 // ST4 interface
-#define ST4RAe  14                      // ST4 REast
-#define ST4DEs  15                      // ST4 South
-#define ST4DEn  16                      // ST4 North
-#define ST4RAw  17                      // ST4 West
+#define ST4RAe          14                // ST4 REast
+#define ST4DEs          15                // ST4 South
+#define ST4DEn          16                // ST4 North
+#define ST4RAw          17                // ST4 West
 
 // LED interface
-#define LEDPin 23 
-#define MaxLED 16
+#define LEDPin          23 
+#define MaxLED          16
 #endif

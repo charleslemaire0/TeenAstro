@@ -31,10 +31,11 @@ volatile bool       axis2Powered = false;
 #endif
 
 
-double getV(double rate)
+double getV(double rate) //Speed in step per second
 {
   return 1000000.0 / (rate / 16.);
 }
+
 
 double getRate(double V)
 {
@@ -58,10 +59,7 @@ volatile double runTimerRateAxis2 = 0;
 
 void SetSiderealClockRate(double Interval)
 {
-  if (trackingState == TrackingMoveTo)
-    Timer1SetRate(Interval / 100);
-  else
-    Timer1SetRate(Interval / 300);
+  Timer1SetRate(Interval / 100);
   isrTimerRateAxis1 = 0;
   isrTimerRateAxis2 = 0;
 }
@@ -107,12 +105,6 @@ void updateDeltaTarget()
 ISR(TIMER1_COMPA_vect)
 {
   // run 1/3 of the time at 3x the rate, unless a goto is happening
-  if (trackingState != TrackingMoveTo)
-  {
-    cnt++;
-    if (cnt % 3 != 0) return;
-    cnt = 0;
-  }
   rtk.m_lst++;
 
   if (trackingState != TrackingMoveTo)
@@ -185,17 +177,6 @@ ISR(TIMER1_COMPA_vect)
       timerRateAxis1 = calculatedTimerRateAxis1;
       runtimerRateAxis1 = calculatedTimerRateAxis1;
     }
-
-    // dynamic rate adjust
-    // in pre-scaler /64 mode the motor timers might be slow (relative to the sidereal timer) by as much as 0.000004 seconds/second (16000000/64)
-    // so a 0.01% (0.0001x) increase is always enough to correct for this, it happens very slowly - about a single step worth of movement over an hours time
-    if (x > 10.0) x = 10.0;
-    if (x < -10.0) x = -10.0;
-    x = 10000.00 - x;
-    x = x / 10000.0;
-    timerRateAxis1 = max(calculatedTimerRateAxis1 * x, maxRate);      // up to 0.01% faster or slower (or as little as 0.001%)
-    runtimerRateAxis1 = timerRateAxis1;
-
   }
     // automatic rate calculation Dec
     {
@@ -263,17 +244,6 @@ ISR(TIMER1_COMPA_vect)
       {
         timerRateAxis2 = calculatedTimerRateAxis2;
         runTimerRateAxis2 = calculatedTimerRateAxis2;
-      }
-
-      // dynamic rate adjust
-      if (x > 1.0)
-      {
-        x = x - 1.0;
-        if (x > 10.0) x = 10.0;
-        x = 10000.00 - x;
-        x = x / 10000.0;
-        timerRateAxis2 = calculatedTimerRateAxis2 * x;  // up to 0.01% faster (or as little as 0.001%)
-        runTimerRateAxis2 = timerRateAxis2;
       }
     }
 

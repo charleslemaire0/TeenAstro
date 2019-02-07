@@ -18,19 +18,19 @@ typedef union {
 
 
 
-// floating point range of +/-511.999999x
+// floating point range of +/-8191.999999x
 uint64_t doubleToFixed(double d)
 {
   fixed_t x;
-  x.fixed = (long)(d * 4194304.0);   // shift 22 bits
-  x.fixed = x.fixed << 10;
+  x.fixed = (long)(d * 262144.0);   // shift 18 bits
+  x.fixed = x.fixed << 14;
   return x.fixed;
 }
 
-// floating point range of +/-511.999999x
+// floating point range of +/-8191.999999x
 double fixedToDouble(fixed_t a)
 {
-  long    l = a.fixed >> 10;           // shift 10 bits
-  return ((double)l / (4194304.0));    // and 22 more, for 32 bits total
+  long    l = a.fixed >> 14;           // shift 14 bits
+  return ((double)l / (262144.0));    // and 18 more, for 32 bits total
 }
 #endif

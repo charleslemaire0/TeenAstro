@@ -46,8 +46,9 @@ void setup()
   tempSensors.begin();
   tempSensors.setResolution(12);
   tempSensors.requestTemperaturesByIndex(0);
-  lastTemp = tempSensors.getTempCByIndex(0);
+  lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999), -99.9999);
   tempSensors.setWaitForConversion(false);
+
   iniMot();
   iniPos();
   analogWrite(LEDPin,16);
