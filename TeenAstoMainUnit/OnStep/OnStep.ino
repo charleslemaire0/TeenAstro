@@ -414,16 +414,7 @@ void CheckPierSide()
     return;
   }
   bool isEast = -quaterRotAxis2 < pos && pos < quaterRotAxis2;
-  if (isEast && pierSide >= PierSideWest)
-  {
-    // cli(); blAxis2 = StepsBacklashAxis2 - blAxis2; sei();
-    pierSide = PierSideEast;
-  }
-  else if (!isEast && pierSide < PierSideWest)
-  {
-    //cli(); blAxis2 = StepsBacklashAxis2 - blAxis2; sei();
-    pierSide = PierSideWest;
-  }
+  pierSide = isEast ? PierSideEast : PierSideWest;
 }
 
 // safety checks,
