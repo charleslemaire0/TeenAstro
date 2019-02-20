@@ -197,9 +197,7 @@ double              underPoleLimitGOTO;                     // maximum allowed h
 #define Axis2_Disabled  LOW
 #define Axis2_Enabled   HIGH
 #endif
-#define DecDirEInit 1
-#define DecDirWInit 0
-volatile byte   DecDir = DecDirEInit;
+
 #define HADirNCPInit    0
 #define HADirSCPInit    1
 volatile byte   HADir = HADirNCPInit;
