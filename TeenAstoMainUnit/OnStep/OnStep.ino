@@ -3,7 +3,7 @@
  * by          Howard Dutton, Charles Lemaire
  *
  * Copyright (C) 2012 to 2016 Howard Dutton
- * Copyright (C) 2016 to 2018 Charles Lemaire
+ * Copyright (C) 2016 to 2019 Charles Lemaire
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,8 +50,8 @@
 
 
 // firmware info, these are returned by the ":GV?#" commands
-#define FirmwareDate    "12 12 18"
-#define FirmwareNumber  "1.0"
+#define FirmwareDate    "02 20 19"
+#define FirmwareNumber  "1.1"
 #define FirmwareName    "TeenAstro"
 #define FirmwareTime    "12:00:00"
 
@@ -414,16 +414,7 @@ void CheckPierSide()
     return;
   }
   bool isEast = -quaterRotAxis2 < pos && pos < quaterRotAxis2;
-  if (isEast && pierSide >= PierSideWest)
-  {
-    // cli(); blAxis2 = StepsBacklashAxis2 - blAxis2; sei();
-    pierSide = PierSideEast;
-  }
-  else if (!isEast && pierSide < PierSideWest)
-  {
-    //cli(); blAxis2 = StepsBacklashAxis2 - blAxis2; sei();
-    pierSide = PierSideWest;
-  }
+  pierSide = isEast ? PierSideEast : PierSideWest;
 }
 
 // safety checks,

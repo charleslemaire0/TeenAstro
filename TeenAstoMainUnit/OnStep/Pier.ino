@@ -4,15 +4,14 @@ boolean setSide(byte side)
   double  HA, Dec;
   GeoAlign.GetEqu(localSite.latitude(), &HA, &Dec);
   double  axis1, axis2;
+
   if (side == PierSideEast)
   {
     pierSide = PierSideEast;
-    DecDir = DecDirEInit;
   }
   else if (side == PierSideWest)
   {
     pierSide = PierSideWest;
-    DecDir = DecDirWInit;
   }
   else
     return false;

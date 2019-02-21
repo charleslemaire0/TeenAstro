@@ -509,14 +509,14 @@ ISR(TIMER3_COMPA_vect)
 
         if (ReverseAxis2^Axis2Reverse)
         {
-          if (DecDir == dirAxis2)
+          if (dirAxis2)
             digitalWriteFast(Axis2DirPin, LOW);
           else
             digitalWriteFast(Axis2DirPin, HIGH);
         }
         else
         {
-          if (DecDir == dirAxis2)
+          if (dirAxis2)
             digitalWriteFast(Axis2DirPin, HIGH);
           else
             digitalWriteFast(Axis2DirPin, LOW);

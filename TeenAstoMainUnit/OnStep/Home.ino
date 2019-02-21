@@ -40,7 +40,6 @@ boolean setHome()
     // default values for state variables
     pierSide = PierSideEast;
     dirAxis2 = 1;
-    DecDir = DecDirEInit;
     initLat();
     dirAxis1 = 1;
     newTargetRA = 0;
