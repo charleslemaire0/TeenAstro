@@ -1,4 +1,3 @@
-
 #include <TMCStepper_UTILITY.h>
 #include <TMCStepper.h>
 #include <TMC26XStepper.h>
@@ -7,7 +6,6 @@
 #include "Global.h"
 #include "ConfigStepper.h"
 #include "Command.h"
-
 
 float temperature = 0;
 
@@ -23,10 +21,10 @@ void setup()
     delay(100);
   }
 
-	pinMode(StepPin, OUTPUT);
-	pinMode(DirPin, OUTPUT);
-  digitalWrite(DirPin, LOW);
-  digitalWrite(StepPin, LOW);
+	pinMode(_StepPin, OUTPUT);
+	pinMode(_DirPin, OUTPUT);
+  digitalWrite(_DirPin, LOW);
+  digitalWrite(_StepPin, LOW);
 	Serial.begin(9600);
 
 #ifdef VERSION220
@@ -57,23 +55,10 @@ void setup()
 
 void loop()
 {
-  Command_Run();
   writePos();
-
-  if (serComSHC.Get_Command())
-  {
-    if (serComSHC.MoveRequest())
-      return;
-    serComSHC.Command_Check();
-  }
-  if (serCom0.Get_Command())
-  {
-    if (serCom0.MoveRequest())
-      return;
-    serCom0.Command_Check();
-  }
-
-
-  //Command_Run();
+  if (serComSHC.Do())
+    return;
+  if (serCom0.Do())
+    return;
 }
 

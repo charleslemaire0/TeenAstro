@@ -15,8 +15,6 @@
 // Tell it where to store your config data in EEPROM
 #define CONFIG_START 0
 
-
-
 class Parameteruint8_t
 {
 private:
@@ -81,9 +79,6 @@ public:
   unsigned int getmin();
   Parameteruint(const int &adress, const  unsigned int &valuedefault, const unsigned int &value_min, const unsigned int &value_max);
 };
-
-
-
   Parameteruint8_t *curr;
   Parameteruint8_t *micro;
   Parameteruint8_t *reverse;
@@ -96,10 +91,6 @@ public:
   Parameteruint8_t *manDec;
   Parameteruint *resolution;
   ParameterPosition *PositionList[10];
-  
   void loadConfig();
-
-
-
 #endif
 

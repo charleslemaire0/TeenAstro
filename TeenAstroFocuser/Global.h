@@ -13,8 +13,8 @@
 
 //uncomment the version you are using
 //#define VERSION220
-//#define VERSION230
-#define VERSION240
+#define VERSION230
+//#define VERSION240
 #ifdef VERSION240
 // Temperature Sensor
 #define TempPin 9
@@ -40,20 +40,21 @@
 #define TempPin 9
 // RTC
 #define BOARDINFO "2.3.0"
-//TMC260=1  TMC2130=2 or TMC5160=3
+// TMC260=1, TMC2130=2 or TMC5160=3
 #define TMC 2
 #define kCePin 4  // Chip Enable
 #define kIoPin 3 // Input/Output
 #define kSclkPin 2  // Serial Clock
-//TMC2130
+// TMC2130
 #define EnablePin 5
-#define StepPin 7
-#define DirPin 6
+#define _StepPin 7
+#define _DirPin 6
 #define CSPin 10
 #define FocuserRX 0
 #define FocuserTX 1
 #define LEDPin 23 
-#endif // VERSION23
+#endif
+// VERSION23
 
 #ifdef VERSION220
 // RTC
