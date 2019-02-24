@@ -28,7 +28,7 @@ namespace TeensyStepFTM
 #define TIMER_DEFAULT -1
 
 // If you need a special timer, please replace "TIMER_DEFAULT" by a timer from the list above
-#define USE_TIMER TIMER_FTM1
+#define USE_TIMER TIMER_DEFAULT
 
 
 //==========================================================================

@@ -73,7 +73,7 @@ void Stepper::setTargetAbs(int32_t target)
 
 void Stepper::setTargetRel(int32_t delta)
 {
-  setDir(delta < 0 ? -1 : 1);
-  target = current + delta;
-  A = abs(delta);
+    setDir(delta < 0 ? -1 : 1);
+    target = current + delta;
+    A = std::abs(delta);
 }
