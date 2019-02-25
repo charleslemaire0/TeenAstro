@@ -1,35 +1,30 @@
-// 
-// 
-// 
-
 #include "Command.h"
 #include <EEPROM.h>
 #define INPUT_SIZE 30
 
 //target
 bool breakgoto = false;
+long target = 0;
 long deltaTarget = 0;
-long oldDeltaTarget = 0;
-constexpr unsigned targetSpeed = 350;     //stp/sec
-//accuracy
-IntervalTimer tickTimer;
-constexpr unsigned recalcPeriod = 25'000; //µs  period for calculation of new target points. Straight lines between those points.
-constexpr float dt = recalcPeriod / 1E6;  // seconds
 
-                                          //------------------------------------------------------------------------------------
-                                          // tick()
-                                          //
-                                          // This function is called periodically with period recalcPeriod. 
-                                          // It calculates 
-                                          //  1) a new target value for the slide depending on the spindle angle
-                                          //  2) the new speed for the spindle so that it will reach the target until it is called again
+constexpr unsigned PID_Interval = 10; // ms  
+constexpr float P = 10;             // (P)roportional constant of the regulator needs to be adjusted (depends on speed and acceleration setting)
 
-void tick()
+void pid()
 {
-  if (oldDeltaTarget != deltaTarget)
+  static unsigned lastTick = 0;
+  if (deltaTarget == 0)
   {
-    rotateController.overrideSpeed(deltaTarget);
-    oldDeltaTarget = deltaTarget;
+    rotateController.stopAsync();
+    lastTick =0;
+    return;
+  }
+  if (millis() - lastTick > PID_Interval)
+  {
+    float delta = (target - stepper.getPosition()) * (P / (PID_Interval*lowSpeed->get()*pow(2, micro->get())));  // This implements a simple P regulator (can be extended to a PID if necessary)
+    float factor = std::max(-1.0f, std::min(1.0f, delta)); // limit to -1.0..1.0
+    rotateController.overrideSpeed(factor);                // set new speed
+    lastTick = 0;
   }
 }
 
@@ -43,6 +38,7 @@ void modeMan()
 {
   stepper.setAcceleration(AccFact*manAcc->get());
   stepper.setMaxSpeed(lowSpeed->get()*pow(2, micro->get()));
+  rotateController.rotateAsync(stepper);
 }
 
 bool SerCom::Do()
@@ -226,7 +222,6 @@ bool SerCom::SetRequest(void)
   case FocCmd_Goto:
     if (m_valuedefined)
     {
-      modeGoto();
       MoveTo((unsigned long)m_value * resolution->get());
     }
     m_hasReceivedCommand = false;
@@ -247,7 +242,6 @@ bool SerCom::SetRequest(void)
       int val = m_parameter - '0';
       if (PositionList[val]->isvalid())
       {
-        modeGoto();
         MoveTo(PositionList[val]->getPosition());
       }
       m_hasReceivedCommand = false;
@@ -260,7 +254,6 @@ bool SerCom::SetRequest(void)
     m_hasReceivedCommand = false;
     break;
   case FocCmd_Park:
-    modeGoto();
     MoveTo(startPosition->get());
     m_hasReceivedCommand = false;
     break;
@@ -409,16 +402,19 @@ bool SerCom::MoveRequest(void)
     m_hasReceivedCommand = false;
     modeMan();
     deltaTarget = -1;
+    target = 0;
     break;
   case FocCmd_out_wor:
     m_hasReceivedCommand = false;
     modeMan();
     deltaTarget = 1;
+    target = maxPosition->get();
     break;
   case FocCmd_in:
     m_hasReceivedCommand = false;
     modeMan();
     deltaTarget = -1;
+    target = 0;
     ser.print("1");
     ser.flush();
     break;
@@ -426,6 +422,7 @@ bool SerCom::MoveRequest(void)
     m_hasReceivedCommand = false;
     modeMan();
     deltaTarget = 1;
+    target = maxPosition->get();
     ser.print("1");
     ser.flush();
     break;
@@ -543,14 +540,14 @@ void SerCom::dumpConfigMotor()
 void SerCom::dumpState()
 {
   unsigned int pos = (unsigned int)(stepper.getPosition() / resolution->get());
-  if (pos > 65535)
+  if (pos > 65535U)
   {
-    stepper.setPosition(65535 * resolution->get());
+    stepper.setPosition(65535U * resolution->get());
   }
   if (!controller.isRunning())
   {
     tempSensors.requestTemperaturesByIndex(0);
-    lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999), -99.9999);
+    lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999F), -99.9999F);
   }
   ser.print("?");
   unsigned int p = (unsigned int)(stepper.getPosition() / resolution->get());
@@ -558,6 +555,7 @@ void SerCom::dumpState()
   ser.print(" ");
   //p = (unsigned int)abs(stepper.speed() / pow(2, micro->get()));
   p = controller.isRunning() + 10 * rotateController.isRunning();
+  // p = (unsigned int)abs(rotateController.getCurrentSpeed() / pow(2, micro->get()));
   printvalue(p, 3, 0, false);
   ser.print(" ");
   printvalue(lastTemp, 2, 2, true);

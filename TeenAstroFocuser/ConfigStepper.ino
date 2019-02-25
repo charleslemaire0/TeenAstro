@@ -18,12 +18,6 @@ void iniMot()
   stepper.setInverseRotation(reverse->get());
   rotateController.rotateAsync(stepper);
   rotateController.overrideSpeed(0);
-
-  tick();
-  // use a timer to periodically calculate new targets for the slide
-  tickTimer.priority(255); // lowest priority, potentially long caclulations need to be interruptable by TeensyStep
-  tickTimer.begin(tick, recalcPeriod);
-  deltaTarget = 0;
 }
 
 
@@ -31,6 +25,7 @@ void MoveTo(long pos)
 {
   if (inlimit(pos))
   {
+    modeGoto();
     breakgoto = false;
     stepper.setTargetAbs(pos);
     controller.moveAsync(stepper);
@@ -75,4 +70,5 @@ void iniPos()
   {
     stepper.setPosition((long)startPosition->get());;
   }
+  target = stepper.getPosition();
 }
