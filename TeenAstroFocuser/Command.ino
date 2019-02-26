@@ -544,7 +544,7 @@ void SerCom::dumpState()
   {
     stepper.setPosition(65535U * resolution->get());
   }
-  if (!controller.isRunning())
+  if (!controller.isRunning() && !rotateController.isRunning())
   {
     tempSensors.requestTemperaturesByIndex(0);
     lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999F), -99.9999F);
