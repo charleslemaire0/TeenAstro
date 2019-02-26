@@ -4,19 +4,26 @@
 #define _CONFIGSTEPPER_h
 
 #if defined(ARDUINO) && ARDUINO >= 100
-	#include "arduino.h"
+#include "arduino.h"
 #else
-	#include "WProgram.h"
+#include "WProgram.h"
 #endif
-#include <AccelStepper.h>
+
 #include <TeenAstroStepper.h>
+#include <TeensyStep.h>
+
+
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include "Command.h"
 #include "DS1302.h"
+#define AccFact 1000
 
 Motor teenAstroStepper;
-AccelStepper stepper = AccelStepper(1, StepPin, DirPin);
+Stepper stepper(_StepPin, _DirPin);
+
+StepControl controller;
+RotateControl rotateController;
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 float lastTemp = -99.9999;
 OneWire oneWire(TempPin);
@@ -26,10 +33,6 @@ DallasTemperature tempSensors(&oneWire);
 DeviceAddress insideThermometer;
 
 long oldposition = 0;
-int mdirOUTOld = 0;
-int mdirINOld = 0;
-
-bool halt = false;
 
 DS1302 *rtc = NULL;
 SerCom serCom0(Serial);

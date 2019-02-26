@@ -73,9 +73,12 @@ private:
   unsigned int message_pos = 0;
   uint32_t m_lastupdate = millis();
 public:
-  void Command_Check();
+  bool Do();
   bool Get_Command();
+  bool SetRequest(void);
   bool MoveRequest(void);
+  bool GetRequest(void);
+  bool HaltRequest(void);
 private:
   void dumpState();
   void dumpParameterPosition(ParameterPosition* Pos);

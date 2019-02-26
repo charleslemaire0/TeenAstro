@@ -1,44 +1,82 @@
-// 
-// 
-// 
-
 #include "Command.h"
 #include <EEPROM.h>
+#define INPUT_SIZE 30
+
+//target
+bool breakgoto = false;
+long target = 0;
+long deltaTarget = 0;
+
+constexpr unsigned PID_Interval = 10; // ms  
+constexpr float P = 10;             // (P)roportional constant of the regulator needs to be adjusted (depends on speed and acceleration setting)
+
+void pid()
+{
+  static unsigned lastTick = 0;
+  if (deltaTarget == 0)
+  {
+    rotateController.stopAsync();
+    lastTick =0;
+    return;
+  }
+  if (millis() - lastTick > PID_Interval)
+  {
+    float delta = (target - stepper.getPosition()) * (P / (PID_Interval*lowSpeed->get()*pow(2, micro->get())));  // This implements a simple P regulator (can be extended to a PID if necessary)
+    float factor = std::max(-1.0f, std::min(1.0f, delta)); // limit to -1.0..1.0
+    rotateController.overrideSpeed(factor);                // set new speed
+    lastTick = 0;
+  }
+}
 
 void modeGoto()
 {
-  stepper.setAcceleration(100.*cmdAcc->get());
+  stepper.setAcceleration(AccFact*cmdAcc->get());
   stepper.setMaxSpeed(highSpeed->get()*pow(2, micro->get()));
 }
 
 void modeMan()
 {
-  stepper.setAcceleration(100.*manAcc->get());
+  stepper.setAcceleration(AccFact*manAcc->get());
   stepper.setMaxSpeed(lowSpeed->get()*pow(2, micro->get()));
+  rotateController.rotateAsync(stepper);
 }
 
-
-#define INPUT_SIZE 30
-void update_stepper()
+bool SerCom::Do()
 {
-  stepper.run();
-}
-
-void Command_stop()
-{
-  Stop();
-}
-
-void Command_Run()
-{
-  Run();
+  if (Get_Command())
+  {
+    if (HaltRequest())
+    {
+      //Serial.println("Stop");
+      return true;
+    }
+    if (GetRequest())
+      return true;
+    if (!controller.isRunning())
+    {
+      if (MoveRequest())
+      {
+        //Serial.println("Manual Move");
+        return true;
+      }
+    }
+    if (!controller.isRunning() && !rotateController.isRunning())
+    {
+      if (SetRequest())
+      {
+        //Serial.println("Command Set");
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 bool SerCom::Get_Command()
 {
- /* m_hasReceivedCommand = ser.findUntil(':','#');
-  if (!m_hasReceivedCommand)
-    return false;*/
+  /* m_hasReceivedCommand = ser.findUntil(':','#');
+   if (!m_hasReceivedCommand)
+     return false;*/
   m_hasReceivedCommand = false;
 
   while (ser.available() > 0)
@@ -72,13 +110,13 @@ bool SerCom::Get_Command()
       m_hasreceivedstart = false;
       message_pos = 0;
     }
-  }  
+  }
   if (!m_hasReceivedCommand)
     return m_hasReceivedCommand;
 
 
   unsigned int size = strlen(m_input);
-  if (size < 2 || m_input[1] != 'F' || m_input[0] != ':' )
+  if (size < 2 || m_input[1] != 'F' || m_input[0] != ':')
   {
     m_hasReceivedCommand = false;
     return m_hasReceivedCommand;
@@ -96,12 +134,10 @@ bool SerCom::Get_Command()
   return m_hasReceivedCommand;
 }
 
-void SerCom::Command_Check(void)
+bool SerCom::GetRequest(void)
 {
   if (!m_hasReceivedCommand)
-    return;
-  // Get next command from ser (add 1 for final 0)
-  m_hasReceivedCommand = false;
+    return false;
   switch (m_command)
   {
   case AzCmd_Help:
@@ -114,149 +150,19 @@ void SerCom::Command_Check(void)
     ser.println("$ Settings");
     ser.println("$ 0 startP, 1 maxP, 2 lowS , 3 highS, 4 cmdAcc, 5 mAcc, 6 mDec, 7 mRev, 8 mInp");
     ser.flush();
+    m_hasReceivedCommand = false;
     break;
   case AzCmd_Version:
     sayHello();
-    break;
-
-  case FocCmd_Reset:
-    for (int i = 0; i < EEPROM.length(); i++)
-    {
-      EEPROM.write(i, 0);
-    }
-  case FocCmd_Reboot:
-    Serial.end();
-    Serial1.end();
-    Serial2.end();
-    delay(1000);
-    _reboot_Teensyduino_();
-    break;
-  case FocCmd_Halt:
-    halt = true;
-    stepper.setAcceleration(100.*manDec->get());
-    stepper.stop();
-    break;
-  case FocCmd_Goto:
-      if (m_valuedefined)
-      {
-        halt = false;
-        modeGoto();
-        MoveTo((unsigned long)m_value * resolution->get());
-      }
-      break;
-  case FocCmd_goto:
-    switch (m_parameter)
-    {
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-    {
-      int val = m_parameter - '0';
-      if (PositionList[val]->isvalid())
-      {
-        halt = false;
-        modeGoto();
-        MoveTo(PositionList[val]->getPosition());
-      }
-      break;
-    }
-    default:
-      break;
-    }
-
-    break;
-  case FocCmd_Park:
-    halt = false;
-    modeGoto();
-    MoveTo(startPosition->get());
-    break;
-  case FocCmd_Sync:      // "reset" position
-  {
-    unsigned long position;
-    if (setvalue(m_valuedefined, (unsigned long)m_value * resolution->get(), 0, maxPosition->get(), position))
-    {
-      stepper.setCurrentPosition((long)position);
-      writePos();
-    }
-    break;
-  }
-  case FocCmd_set:    
-    switch (m_parameter)
-    {
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-    {
-      int val = m_parameter - '0';
-      m_value = atoi(&m_input[5]);
-      PositionList[val]->set(&m_input[11], (unsigned long)m_value* resolution->get());
-      break;
-    }
-    default:
-      break;
-    }
-    break;
-  case FocCmd_startPosition:
-    setvalue(m_valuedefined, (unsigned long)m_value * resolution->get(), startPosition);
-    break;
-  case FocCmd_maxPosition:
-    setvalue(m_valuedefined, (unsigned long)m_value * resolution->get(), maxPosition);
-    break;
-  case FocCmd_highSpeed:
-    if (setvalue(m_valuedefined, m_value, highSpeed))
-    {
-      stepper.setMaxSpeed(highSpeed->get()*pow(2, micro->get()));
-    }
-    break;
-  case FocCmd_lowSpeed:
-    setvalue(m_valuedefined, m_value, lowSpeed);
-    break;
-  case FocCmd_cmdAcc:
-    setvalue(m_valuedefined, (uint8_t)m_value, cmdAcc);
-    break;
-  case FocCmd_manualAcc:
-    setvalue(m_valuedefined, (uint8_t)m_value, manAcc);
-    break;
-  case FocCmd_manualDec:
-    setvalue(m_valuedefined, (uint8_t)m_value, manDec);
-    break;
-  case FocCmd_Inv:
-    setvalue(m_valuedefined, m_value, reverse);
-    stepper.setPinsInverted(reverse->get(), false, false);
-    break;
-  case FocCmd_inpulse:
-    setvalue(m_valuedefined, m_value, resolution);
-    break;
-  case FocCmd_current:
-    if (setvalue(m_valuedefined, m_value, curr))
-    {
-      teenAstroStepper.setCurrent(10*curr->get());
-    }
-    break;
-  case FocCmd_micro:
-    if (setvalue(m_valuedefined, m_value, micro))
-    {
-      teenAstroStepper.setMicrostep( micro->get());
-    }
+    m_hasReceivedCommand = false;
     break;
   case CmdDumpState: // "?" dump state including details
     dumpState();
+    m_hasReceivedCommand = false;
     break;
   case CmdDumpConfig:
     dumpConfig();
+    m_hasReceivedCommand = false;
     break;
   case CmdDumpConfigPos:
     switch (m_parameter)
@@ -274,18 +180,216 @@ void SerCom::Command_Check(void)
     {
       int val = m_parameter - '0';
       dumpParameterPosition(PositionList[val]);
+      m_hasReceivedCommand = false;
       break;
     }
     default:
+      m_hasReceivedCommand = false;
       break;
     }
+    m_hasReceivedCommand = false;
     break;
   case CmdDumpConfigMotor:
     dumpConfigMotor();
+    m_hasReceivedCommand = false;
     break;
   default:
     break;
   }
+  if (!m_hasReceivedCommand)
+    return true;
+  return false;
+}
+
+bool SerCom::SetRequest(void)
+{
+  if (!m_hasReceivedCommand)
+    return false;
+  switch (m_command)
+  {
+  case FocCmd_Reset:
+    for (int i = 0; i < EEPROM.length(); i++)
+    {
+      EEPROM.write(i, 0);
+    }
+  case FocCmd_Reboot:
+    Serial.end();
+    Serial1.end();
+    Serial2.end();
+    delay(1000);
+    _reboot_Teensyduino_();
+    break;
+  case FocCmd_Goto:
+    if (m_valuedefined)
+    {
+      MoveTo((unsigned long)m_value * resolution->get());
+    }
+    m_hasReceivedCommand = false;
+    break;
+  case FocCmd_goto:
+    switch (m_parameter)
+    {
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+    {
+      int val = m_parameter - '0';
+      if (PositionList[val]->isvalid())
+      {
+        MoveTo(PositionList[val]->getPosition());
+      }
+      m_hasReceivedCommand = false;
+      break;
+    }
+    default:
+      m_hasReceivedCommand = false;
+      break;
+    }
+    m_hasReceivedCommand = false;
+    break;
+  case FocCmd_Park:
+    MoveTo(startPosition->get());
+    m_hasReceivedCommand = false;
+    break;
+  case FocCmd_Sync:      // "reset" position
+  {
+    unsigned long position;
+    if (setvalue(m_valuedefined, (unsigned long)m_value * resolution->get(), 0, maxPosition->get(), position))
+    {
+      stepper.setPosition((long)position);
+      writePos();
+    }
+    m_hasReceivedCommand = false;
+    break;
+  }
+  case FocCmd_set:
+    switch (m_parameter)
+    {
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+    {
+      int val = m_parameter - '0';
+      m_value = atoi(&m_input[5]);
+      PositionList[val]->set(&m_input[11], (unsigned long)m_value* resolution->get());
+      m_hasReceivedCommand = false;
+      break;
+    }
+    default:
+      m_hasReceivedCommand = false;
+      break;
+    }
+    m_hasReceivedCommand = false;
+    break;
+  case FocCmd_startPosition:
+    setvalue(m_valuedefined, (unsigned long)m_value * resolution->get(), startPosition);
+    m_hasReceivedCommand = false;
+    break;
+  case FocCmd_maxPosition:
+    setvalue(m_valuedefined, (unsigned long)m_value * resolution->get(), maxPosition);
+    m_hasReceivedCommand = false;
+    break;
+  case FocCmd_highSpeed:
+    setvalue(m_valuedefined, m_value, highSpeed);
+    m_hasReceivedCommand = false;
+    break;
+  case FocCmd_lowSpeed:
+    setvalue(m_valuedefined, m_value, lowSpeed);
+    m_hasReceivedCommand = false;
+    break;
+  case FocCmd_cmdAcc:
+    setvalue(m_valuedefined, (uint8_t)m_value, cmdAcc);
+    m_hasReceivedCommand = false;
+    break;
+  case FocCmd_manualAcc:
+    setvalue(m_valuedefined, (uint8_t)m_value, manAcc);
+    m_hasReceivedCommand = false;
+    break;
+  case FocCmd_manualDec:
+    setvalue(m_valuedefined, (uint8_t)m_value, manDec);
+    m_hasReceivedCommand = false;
+    break;
+  case FocCmd_Inv:
+    setvalue(m_valuedefined, m_value, reverse);
+    stepper.setInverseRotation(reverse->get());
+    m_hasReceivedCommand = false;
+    break;
+  case FocCmd_inpulse:
+    setvalue(m_valuedefined, m_value, resolution);
+    m_hasReceivedCommand = false;
+    break;
+  case FocCmd_current:
+    if (setvalue(m_valuedefined, m_value, curr))
+    {
+      teenAstroStepper.setCurrent(10 * curr->get());
+    }
+    m_hasReceivedCommand = false;
+    break;
+  case FocCmd_micro:
+    if (setvalue(m_valuedefined, m_value, micro))
+    {
+      teenAstroStepper.setMicrostep(micro->get());
+    }
+    m_hasReceivedCommand = false;
+    break;
+  default:
+    break;
+  }
+  if (!m_hasReceivedCommand)
+    return true;
+  return false;
+}
+
+bool SerCom::HaltRequest(void)
+{
+  if (!m_hasReceivedCommand)
+    return false;
+  switch (m_command)
+  {
+  case FocCmd_Halt:
+    if (rotateController.isRunning())
+    {
+      deltaTarget = 0;
+    }
+    if (controller.isRunning() && !breakgoto)
+    {
+      breakgoto = true;
+      controller.stopAsync();
+    }
+    m_hasReceivedCommand = false;
+    break;
+    //break Goto if goto is running and a Manual move is request
+  case FocCmd_in_wor:
+  case FocCmd_out_wor:
+  case FocCmd_in:
+  case FocCmd_in_stop:
+  case FocCmd_out:
+  case FocCmd_out_stop:
+    if (controller.isRunning() && !breakgoto)
+    {
+      breakgoto = true;
+      controller.stopAsync();
+      m_hasReceivedCommand = false;
+    }
+  default:
+    break;
+  }
+  if (!m_hasReceivedCommand)
+    return true;
+  return false;
 }
 
 bool SerCom::MoveRequest(void)
@@ -295,47 +399,44 @@ bool SerCom::MoveRequest(void)
   switch (m_command)
   {
   case FocCmd_in_wor:
-    modeMan();
-    stepper.moveTo(0);
     m_hasReceivedCommand = false;
+    modeMan();
+    deltaTarget = -1;
+    target = 0;
     break;
   case FocCmd_out_wor:
-    modeMan();
-    stepper.moveTo(0);
     m_hasReceivedCommand = false;
+    modeMan();
+    deltaTarget = 1;
+    target = maxPosition->get();
     break;
   case FocCmd_in:
+    m_hasReceivedCommand = false;
     modeMan();
-    stepper.moveTo(0);
-    m_hasReceivedCommand = false;
-    ser.print("1");
-    ser.flush();
-    break;
-  case FocCmd_in_stop:
-    stepper.setAcceleration(100.*manDec->get());
-    stepper.stop();
-    m_hasReceivedCommand = false;
+    deltaTarget = -1;
+    target = 0;
     ser.print("1");
     ser.flush();
     break;
   case FocCmd_out:
-    modeMan();
-    stepper.moveTo(maxPosition->get());
     m_hasReceivedCommand = false;
+    modeMan();
+    deltaTarget = 1;
+    target = maxPosition->get();
+    ser.print("1");
+    ser.flush();
+    break;
+  case FocCmd_in_stop:
+    m_hasReceivedCommand = false;
+    deltaTarget = 0;
     ser.print("1");
     ser.flush();
     break;
   case FocCmd_out_stop:
-    stepper.setAcceleration(100.*manDec->get());
-    stepper.stop();
     m_hasReceivedCommand = false;
+    deltaTarget = 0;
     ser.print("1");
     ser.flush();
-    break;
-  case FocCmd_Halt:
-    stepper.setAcceleration(100.*manDec->get());
-    stepper.stop();
-    m_hasReceivedCommand = false;
     break;
   default:
     break;
@@ -408,7 +509,6 @@ bool SerCom::setvalue(bool valuedefined, unsigned int value, Parameteruint *adre
   return ok;
 }
 
-
 void SerCom::dumpConfig()
 {
   char buf[50];
@@ -420,7 +520,7 @@ void SerCom::dumpConfig()
     cmdAcc->get(),
     manAcc->get(),
     manDec->get()
-   );
+  );
   ser.print(buf);
   ser.flush();
 }
@@ -439,25 +539,23 @@ void SerCom::dumpConfigMotor()
 
 void SerCom::dumpState()
 {
-  char buf[20];
-
-  unsigned int pos = (unsigned int)(stepper.currentPosition() /resolution->get());
-  if (pos > 65535)
+  unsigned int pos = (unsigned int)(stepper.getPosition() / resolution->get());
+  if (pos > 65535U)
   {
-    stepper.setCurrentPosition( 65535 *resolution->get());
+    stepper.setPosition(65535U * resolution->get());
   }
-  if (!stepper.isRunning())
+  if (!controller.isRunning())
   {
     tempSensors.requestTemperaturesByIndex(0);
-    lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999), -99.9999);
+    lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999F), -99.9999F);
   }
-  stepper.run();
   ser.print("?");
-  stepper.run();
-  unsigned int p = (unsigned int)(stepper.currentPosition() / resolution->get());
+  unsigned int p = (unsigned int)(stepper.getPosition() / resolution->get());
   printvalue(p, 5, 0, false);
   ser.print(" ");
-  p = (unsigned int)abs(stepper.speed() / pow(2, micro->get()));
+  //p = (unsigned int)abs(stepper.speed() / pow(2, micro->get()));
+  p = controller.isRunning() + 10 * rotateController.isRunning();
+  // p = (unsigned int)abs(rotateController.getCurrentSpeed() / pow(2, micro->get()));
   printvalue(p, 3, 0, false);
   ser.print(" ");
   printvalue(lastTemp, 2, 2, true);
@@ -468,7 +566,6 @@ void SerCom::printvalue(double val, int n, int d, bool plus)
 {
   if (plus)
     val >= 0 ? ser.print("+") : ser.print("-");
-  stepper.run();
 
   val = abs(val);
   int valint = val;
@@ -478,18 +575,15 @@ void SerCom::printvalue(double val, int n, int d, bool plus)
     if (val < valit)
     {
       ser.print("0");
-      stepper.run();
     }
     else
       break;
     valit /= 10;
   }
   ser.print(valint);
-  stepper.run();
   if (d > 0)
   {
     ser.print(".");
-    stepper.run();
     valint = (val - valint)*pow10(d);
     valit = pow10(d - 1);
     for (int k = d; k > 1; k--)
@@ -497,20 +591,18 @@ void SerCom::printvalue(double val, int n, int d, bool plus)
       if (val < valit)
       {
         ser.print("0");
-        stepper.run();
       }
       else
         break;
       valit /= 10;
     }
     ser.print(valint);
-    stepper.run();
   }
 }
 
 void SerCom::dumpParameterPosition(ParameterPosition* Pos)
 {
-  char id[11] = {0};
+  char id[11] = { 0 };
   unsigned long val;
   if (!Pos->isvalid())
   {
@@ -530,7 +622,6 @@ void SerCom::dumpParameterPosition(ParameterPosition* Pos)
   printvalue(pos, 5, 0, false);
   ser.print(" ");
   ser.print(id);
-  stepper.run();
   ser.print("#");
   ser.flush();
 }

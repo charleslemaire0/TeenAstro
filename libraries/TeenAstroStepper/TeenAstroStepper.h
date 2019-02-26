@@ -133,18 +133,18 @@ public:
       pinMode(MISO, INPUT_PULLUP);
       m_tmc2130->push();
       m_tmc2130->tbl(1);
-      //m_tmc2130.TPOWERDOWN(255);
+      m_tmc2130->TPOWERDOWN(255);
       m_tmc2130->toff(4);
 
       // Effective hysteresis = 0
       m_tmc2130->hstrt(0);
       m_tmc2130->hend(2);
 
-      //m_tmc2130.en_pwm_mode(true);
-      //m_tmc2130.pwm_freq(1);
-      //m_tmc2130.pwm_autoscale(true);
-      //m_tmc2130.pwm_ampl(180);
-      //m_tmc2130.pwm_grad(1);
+      m_tmc2130->en_pwm_mode(true);
+      m_tmc2130->pwm_freq(1);
+      m_tmc2130->pwm_autoscale(true);
+      m_tmc2130->pwm_ampl(180);
+      m_tmc2130->pwm_grad(1);
 
       setCurrent(Curr); // mA
       setMicrostep(Micros);
