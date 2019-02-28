@@ -26,6 +26,7 @@ StepControl controller;
 RotateControl rotateController;
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 float lastTemp = -99.9999;
+int lastTempTick = millis();
 OneWire oneWire(TempPin);
 // Pass our oneWire reference to Dallas Temperature. 
 DallasTemperature tempSensors(&oneWire);

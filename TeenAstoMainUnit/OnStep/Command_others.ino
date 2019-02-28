@@ -769,13 +769,14 @@ void Command_F()
   }
 
   Serial2.print(command_out);
+  Serial2.flush();
 
   if (!focuserNoResponse)
   {
     unsigned long start = millis();
     int pos = 0;
     char b = 0;
-    while ( millis() - start < 100)
+    while ( millis() - start < 40)
     {
       if (Serial2.available()>0)
       {        

@@ -7,8 +7,8 @@
 #include "ConfigStepper.h"
 #include "Command.h"
 
-float temperature = 0;
-
+IntervalTimer tickTimer;
+bool isMoving = false;
 void setup()
 {
 	// set the PWM and brake pins so that the direction pins  // can be used to control the motor:
@@ -46,7 +46,8 @@ void setup()
   tempSensors.requestTemperaturesByIndex(0);
   lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999), -99.9999);
   tempSensors.setWaitForConversion(false);
-
+  tickTimer.priority(255); // lowest priority, potentially long caclulations need to be interruptable by TeensyStep
+  tickTimer.begin(updateTemperature, 5000000);
   iniMot();
   iniPos();
   digitalWrite(LEDPin, HIGH);
@@ -55,6 +56,7 @@ void setup()
 
 void loop()
 {
+  isMoving = controller.isRunning() || rotateController.isRunning();
   writePos();
   pid();
   if (serComSHC.Do())
@@ -63,3 +65,12 @@ void loop()
     return;
 }
 
+void updateTemperature()
+{
+  if (!isMoving)
+  {
+    tempSensors.requestTemperaturesByIndex(0);
+    lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999F), -99.9999F);
+    lastTempTick = millis();
+  }
+}

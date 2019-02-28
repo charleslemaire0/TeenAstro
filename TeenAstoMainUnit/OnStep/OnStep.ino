@@ -64,9 +64,9 @@ void setup()
   pinMode(LEDPin, OUTPUT);
   for (int k = 0; k < 10; k++)
   {
-    analogWrite(LEDPin, 255);
+    digitalWrite(LEDPin, HIGH);
     delay(100);
-    analogWrite(LEDPin, 0);
+    digitalWrite(LEDPin, LOW);
     delay(100);
   }
 
@@ -261,7 +261,7 @@ void setup()
 
   // prep timers
   rtk.updateTimers();
-  analogWrite(LEDPin, MaxLED);
+  digitalWrite(LEDPin, HIGH);
 }
 
 void loop()

@@ -39,7 +39,7 @@ bool inlimit(unsigned long pos)
 
 void writePos()
 {
-  if (!controller.isRunning() && !rotateController.isRunning())
+  if (!isMoving)
   {
     long posi = stepper.getPosition();
     if (posi == oldposition)
