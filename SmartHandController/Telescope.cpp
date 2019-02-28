@@ -31,14 +31,14 @@ void Telescope::updateTime()
 };
 void Telescope::updateFocuser()
 {
-  if (millis() - lastStateFocuser > updaterate)
+  if (millis() - lastStateFocuser > updaterate*2)
   {
     char fc[45];
     hasInfoFocuser = GetLX200(":F?#", fc, sizeof(TempFocuserStatus)) == LX200VALUEGET;
     if (hasInfoFocuser && fc[0] == '?')
     {
       lastStateFocuser = millis();
-      sprintf(TempFocuserStatus, fc);
+      strncpy(TempFocuserStatus, fc, 45);
     }
     else
     {

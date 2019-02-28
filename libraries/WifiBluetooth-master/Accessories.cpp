@@ -127,6 +127,7 @@ boolean wifibluetooth::readLX200Bytes(char* command,char* recvBuffer,long timeOu
 
 bool wifibluetooth::sendCommand(const char command[], char response[], Responding responding) {
   Ser.print(command);
+  Ser.flush();
   strcpy(response,"");
   if (responding==R_NONE) return true;
   if (responding==R_ONE) response[Ser.readBytes(response,1)]=0;

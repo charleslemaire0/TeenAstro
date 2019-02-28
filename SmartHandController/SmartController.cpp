@@ -499,7 +499,7 @@ void SmartHandController::update()
     }
     telInfo.align = static_cast<Telescope::AlignState>(telInfo.align + 1);
   }
-  else if (top - lastpageupdate > 100)
+  else if (top - lastpageupdate > 200)
   {
     updateMainDisplay(page);
   }

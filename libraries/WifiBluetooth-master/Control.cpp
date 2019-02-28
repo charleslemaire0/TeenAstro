@@ -558,14 +558,16 @@ void wifibluetooth::controlAjax() {
   char temp[40]="";
 
   data += "focuserpos|";
-  if (sendCommand(":F?#",temp)){
-    temp[6] = 0;
-    data += &temp[1];
-    data += " steps";
-  }
-  else{
-    data += "?\n";
-  }
+  char cmd[5] = ":F?#";
+  readLX200Bytes(cmd, temp, 4*TIMEOUT_CMD);
+  temp[6] = 0;
+  data += &temp[1];
+  data += " steps, ";
+  temp[10] = 0;
+  temp[16] = 0;
+  data += &temp[11];
+  data += "&deg C";
+
 
 #ifdef ROTATOR_ON
   data += "rotatorpos|";
@@ -609,6 +611,7 @@ void wifibluetooth::processControlGet() {
   String v;
   int i;
   char temp[20]="";
+  serialRecvFlush();
 
 
   // Align
@@ -741,6 +744,7 @@ void wifibluetooth::processControlGet() {
     if (v=="d1") Ser.print(":r+#");
     if (v=="dr") Ser.print(":rR#");
     if (v=="dp") Ser.print(":rP#");
+    Ser.flush();
   }
 
   // General purpose switches
