@@ -18,8 +18,10 @@ class MountStatus {
     enum MountTypes { MT_UNKNOWN, MT_GEM, MT_FORK, MT_FORKALT, MT_ALTAZM };
     enum Errors { ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT, ERR_LIMIT_SENSE, ERR_DEC, ERR_AZM, ERR_UNDER_POLE, ERR_MERIDIAN, ERR_SYNC };
 
-    bool update() {
-
+    bool update()
+    {
+      if ( millis() - lastupdate< 500)
+        return false;
       char s[20] = "";
       if (!_valid) {
         Ser.print(":GVP#");
@@ -152,6 +154,7 @@ class MountStatus {
   private:
     char _id[20]="";
     char _ver[20]="";
+    int lastupdate = millis();
     bool _valid=false;
     bool _tracking=false;
     bool _slewing=false;

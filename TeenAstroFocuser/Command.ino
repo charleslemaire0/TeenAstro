@@ -544,11 +544,7 @@ void SerCom::dumpState()
   {
     stepper.setPosition(65535U * resolution->get());
   }
-  if (!controller.isRunning() && !rotateController.isRunning())
-  {
-    tempSensors.requestTemperaturesByIndex(0);
-    lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999F), -99.9999F);
-  }
+
   ser.print("?");
   unsigned int p = (unsigned int)(stepper.getPosition() / resolution->get());
   printvalue(p, 5, 0, false);
@@ -560,6 +556,7 @@ void SerCom::dumpState()
   ser.print(" ");
   printvalue(lastTemp, 2, 2, true);
   ser.print("#");
+  ser.flush();
 }
 
 void SerCom::printvalue(double val, int n, int d, bool plus)
