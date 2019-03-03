@@ -32,6 +32,7 @@
  *
  */
 
+#include <TinyGPS++.h>
 #include <TeenAstroStepper.h>
 #include <Time.h>
 #include <math.h>
@@ -58,7 +59,9 @@
 
 // forces initialialization of a host of settings in EEPROM. OnStep does this automatically, most likely, you will want to leave this alone
 #define initKey     915307548                       // unique identifier for the current initialization format, do not change
-
+TinyGPSPlus gps;
+int pps_off_tick = millis();
+byte LED_pps_on = true;
 void setup()
 {
   pinMode(LEDPin, OUTPUT);
@@ -232,6 +235,10 @@ void setup()
   Serial1_Init(BAUD);
   Serial_Init(BAUD);                      // for Tiva TM4C the serial is redirected to serial5 in serial.ino file
   Serial2_Init(56000);
+  //GNSS connection
+#if VERSION == 230 || VERSION == 240
+  Serial3.begin(9600);
+#endif
 #if defined(W5100_ON)
   // get ready for Ethernet communications
   Ethernet_Init();
@@ -262,6 +269,7 @@ void setup()
   // prep timers
   rtk.updateTimers();
   digitalWrite(LEDPin, HIGH);
+
 }
 
 void loop()
@@ -402,6 +410,7 @@ void loop()
   {
     // COMMAND PROCESSING --------------------------------------------------------------------------------
     // acts on commands recieved across Serial0 and Serial1 interfaces
+    smartDelay(0);
     processCommands();
   }
 }

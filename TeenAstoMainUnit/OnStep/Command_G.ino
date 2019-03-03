@@ -703,6 +703,7 @@ void  Command_G()
     else
       reply[12] = 'U';
 
+    reply[13] = iSGNSSValid() ? '1': '0';
     reply[14] = '0' + lastError;
     reply[15] = 0;
     i = 16;

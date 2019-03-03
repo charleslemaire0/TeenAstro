@@ -66,6 +66,7 @@ public:
   bool isGuidingS();
   bool isGuidingE();
   bool isGuidingW();
+  bool isGNSSValid();
   bool connected();
   bool notResponding();
   PierState getPierState();
