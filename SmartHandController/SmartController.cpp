@@ -1509,23 +1509,26 @@ void SmartHandController::menuDateAndTime()
 {
   const char *string_list_SettingsL2 = "Clock\nDate\nGNSS Time";
   current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Time Settings", current_selection_L2, string_list_SettingsL2);
-  switch (current_selection_L2)
+  while (!exitMenu)
   {
-  case 0:
-    return;
-  case 1:
-    menuUTCTime();
-    break;
-  case 2:
-    menuDate();
-    break; 
-  case 3:
-    if (telInfo.isGNSSValid())
-      DisplayMessageLX200(SetLX200(":gt#"), false);
-    else
-      DisplayMessage("NO GNSS", "Signal");
-    break;
-    break;
+    switch (current_selection_L2)
+    {
+    case 0:
+      return;
+    case 1:
+      menuUTCTime();
+      break;
+    case 2:
+      menuDate();
+      break;
+    case 3:
+      if (telInfo.isGNSSValid())
+        DisplayMessageLX200(SetLX200(":gt#"), false);
+      else
+        DisplayMessage("NO GNSS", "Signal");
+      break;
+      break;
+    }
   }
 }
 
