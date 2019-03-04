@@ -3,6 +3,9 @@
 // is being "fed".
 static void smartDelay(unsigned long ms)
 {
+#if VERSION == 220
+  return;
+#endif
   unsigned long start = millis();
   do
   {
