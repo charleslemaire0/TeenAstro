@@ -488,12 +488,13 @@ void SafetyCheck(const bool forceTracking)
       // when Fork mounted, ignore pierSide and just stop the mount if it passes the underPoleLimit
       double HA, Dec;
       GeoAlign.GetInstr(&HA, &Dec);
-      if (HA > underPoleLimitGOTO + 5. / 60.0)
+      double underPoleLimit = trackingState == TrackingMoveTo ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;  
+      if (HA > underPoleLimit * 15.)
       {
         lastError = ERR_UNDER_POLE;
         if (trackingState == TrackingMoveTo)
           abortSlew = true;
-        else
+        else if (!forceTracking)
           trackingState = TrackingOFF;
       }
       else if (lastError == ERR_UNDER_POLE)
@@ -505,16 +506,14 @@ void SafetyCheck(const bool forceTracking)
     {
       // when Alt/Azm mounted, just stop the mount if it passes MaxAzm
       cli();
-      if (posAxis1 >
-        ((long)MaxAzm * (long)StepsPerDegreeAxis1))
+      if (posAxis1 >(long)MaxAzm * (long)StepsPerDegreeAxis1)
       {
         lastError = ERR_AZM;
         if (trackingState == TrackingMoveTo)
           abortSlew = true;
-        else
+        else if(!forceTracking)
           trackingState = TrackingOFF;
       }
-
       sei();
     }
   }
@@ -522,12 +521,14 @@ void SafetyCheck(const bool forceTracking)
   // check for exceeding MinDec or MaxDec
   if (mountType != MOUNT_TYPE_ALTAZM)
   {
-    if ((getApproxDec() < MinDec) || (getApproxDec() > MaxDec))
+    if ((getApproxDec() < MinDec) ||
+        (getApproxDec() > MaxDec) ||
+        (pierSide == PierSideWest && mountType == MOUNT_TYPE_FORK))
     {
       lastError = ERR_DEC;
       if (trackingState == TrackingMoveTo)
         abortSlew = true;
-      else
+      else if (!forceTracking)
         trackingState = TrackingOFF;
     }
     else if (lastError == ERR_DEC)
