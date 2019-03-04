@@ -1508,9 +1508,9 @@ void SmartHandController::menuRADec(bool sync)
 void SmartHandController::menuDateAndTime()
 {
   const char *string_list_SettingsL2 = "Clock\nDate\nGNSS Time";
-  current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Time Settings", current_selection_L2, string_list_SettingsL2);
   while (!exitMenu)
   {
+    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Time Settings", current_selection_L2, string_list_SettingsL2);
     switch (current_selection_L2)
     {
     case 0:
@@ -1535,9 +1535,9 @@ void SmartHandController::menuDateAndTime()
 void SmartHandController::menuTimeAndSite()
 {
   current_timelocation = 1;
+  const char *string_list_SettingsL2 = "Time\nSite\nSync GNSS";
   while (!exitMenu)
   {
-    const char *string_list_SettingsL2 = "Time\nSite\nSync GNSS";
     current_timelocation = display->UserInterfaceSelectionList(&buttonPad, "Time & Site", current_timelocation, string_list_SettingsL2);
     switch (current_timelocation)
     {
