@@ -24,12 +24,6 @@
 * Author: Charles Lemaire, https://pixelstelescopes.wordpress.com/teenastro/
 * Author: Howard Dutton, http://www.stellarjourney.com, hjd1964@gmail.com
 *
-*
-* Description
-*
-* Smart Hand controller addon for OnStep
-* for the actual hardware see: https://easyeda.com/hdutton/HC-20e242d665db4c85bb565a0cd0b52233
-*
 */
 
 
@@ -39,7 +33,7 @@
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "0"
-#define SHCFirmwareVersionPatch  "0"
+#define SHCFirmwareVersionPatch  "1"
 
 #include "Config.h"
 #include "SmartController.h"

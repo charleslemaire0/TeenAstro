@@ -691,8 +691,6 @@ void  Command_G()
     if (mountType == MOUNT_TYPE_GEM)
     {
       reply[12] = 'E';
-      if (pierSide == PierSideEast) reply[13] = 'E';
-      if (pierSide == PierSideWest) reply[13] = 'W';
     }
     else if (mountType == MOUNT_TYPE_FORK)
       reply[12] = 'K';
@@ -702,11 +700,12 @@ void  Command_G()
       reply[12] = 'A';
     else
       reply[12] = 'U';
-
-    reply[13] = iSGNSSValid() ? '1': '0';
-    reply[14] = '0' + lastError;
-    reply[15] = 0;
-    i = 16;
+    if (pierSide == PierSideEast) reply[13] = 'E';
+    if (pierSide == PierSideWest) reply[13] = 'W';
+    reply[14] = iSGNSSValid() ? '1': '0';
+    reply[15] = '0' + lastError;
+    reply[16] = 0;
+    i = 17;
     quietReply = true;                                   //         Returns: SS#
   }
   break;
