@@ -2259,7 +2259,7 @@ void SmartHandController::menuFocuserAction()
 void SmartHandController::menuFocuserConfig()
 {
   char cmd[50];
-  const char *string_list_Focuser = "Display Settings\nPark Position\nMax Position\nMin Speed\nMax Speed\nGoto Acc\nMan. Acc\nDeceleration";
+  const char *string_list_Focuser = "Display Settings\nPark Position\nMax Position\nMan. Speed\nGoto Speed\nMan. Acc\nGoto Acc";
   unsigned int sP, maxP, minS, maxS, cmdAcc, manAcc, manDec;
   float value;
   while (!exitMenu)
@@ -2284,8 +2284,8 @@ void SmartHandController::menuFocuserConfig()
         sprintf(line4, "Max  Pos.: %05u", maxP);
         DisplayLongMessage(line1, line2, line3, line4, -1);
         line2[0] = 0;
-        sprintf(line3, "min Speed: %03u", minS);
-        sprintf(line4, "max Speed: %03u", maxS);
+        sprintf(line3, "Man. Speed: %03u", minS);
+        sprintf(line4, "Goto Speed: %03u", maxS);
         DisplayLongMessage(line1, line2, line3, line4, -1);
         sprintf(line2, "Acc. cmd.: %03u", cmdAcc);
         sprintf(line3, "Acc. man.: %03u", manAcc);
@@ -2310,29 +2310,29 @@ void SmartHandController::menuFocuserConfig()
       case 4:
       {
         value = minS;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Min Speed", "", &value, 1, 999, 5, 0, "");
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Manual Speed", "", &value, 1, 999, 5, 0, "");
         sprintf(cmd, ":F2 %03d#", (int)(value));
         break;
       }
       case 5:
       {
         value = maxS;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Max Speed", "", &value, 1, 999, 5, 0, "");
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Goto Speed", "", &value, 1, 999, 5, 0, "");
         sprintf(cmd, ":F3 %03d#", (int)(value));
         break;
       }
       case 6:
       {
-        value = cmdAcc;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Acc. for Goto", "", &value, 1, 100, 5, 0, "");
-        sprintf(cmd, ":F4 %03d#", (int)(value));
+        value = manAcc;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Acc. for Man.", "", &value, 1, 100, 5, 0, "");
+        sprintf(cmd, ":F5 %03d#", (int)(value));
         break;
       }
       case 7:
       {
-        value = manAcc;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Acc. for Man.", "", &value, 1, 100, 5, 0, "");
-        sprintf(cmd, ":F5 %03d#", (int)(value));
+        value = cmdAcc;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Acc. for Goto", "", &value, 1, 100, 5, 0, "");
+        sprintf(cmd, ":F4 %03d#", (int)(value));
         break;
       }
       case 8:

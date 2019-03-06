@@ -37,14 +37,14 @@ const char html_configLowSpeedFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
 " <input value='%d' type='number' name='LowSpeed' min='1' max='999'>"
 "<button type='submit'>Upload</button>"
-" (Minimum Slewing speed from 1 to 999)"
+" (Manual Slewing speed from 1 to 999)"
 "</form>"
 "\r\n";
 const char html_configHighSpeedFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
 " <input value='%d' type='number' name='HighSpeed' min='1' max='999'>"
 "<button type='submit'>Upload</button>"
-" (Maximum Slewing speed from 1 to 999)"
+" (Goto Slewing speed from 1 to 999)"
 "</form>"
 "\r\n";
 const char html_configGotoAccFocuser[] PROGMEM =
@@ -145,8 +145,8 @@ void wifibluetooth::handleConfigurationFocuser() {
     data += temp;
     sprintf_P(temp, html_configManAccFocuser, manAcc);
     data += temp;
-    sprintf_P(temp, html_configManDecFocuser, dec);
-    data += temp;
+    //sprintf_P(temp, html_configManDecFocuser, dec);
+    //data += temp;
   }
   sendCommand(":FM#", temp2);
   bool getdatamotor = (temp2[0] == 'M');
