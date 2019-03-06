@@ -74,5 +74,5 @@ void Command_GNSS()
     commandError = true;
     break;
   }
- 
+
 }
