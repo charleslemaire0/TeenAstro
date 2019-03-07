@@ -143,7 +143,10 @@ bool Telescope::isGuidingS()
 {
   return  TelStatus[8] == '_';
 }
-
+bool Telescope::isGNSSValid()
+{
+  return  TelStatus[14] == '1';
+}
 Telescope::PierState Telescope::getPierState()
 {
   switch (TelStatus[13])
@@ -159,7 +162,7 @@ Telescope::PierState Telescope::getPierState()
 }
 Telescope::Errors Telescope::getError()
 {
-  switch (TelStatus[14])
+  switch (TelStatus[15])
   {
   case '1':
     return ERR_MOTOR_FAULT;

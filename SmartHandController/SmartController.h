@@ -49,6 +49,7 @@ private:
   uint8_t current_selection_L2 = 1;
   uint8_t current_selection_L3 = 1;
   uint8_t current_selection_L4 = 1;
+  uint8_t current_timelocation = 1;
   uint8_t current_selection_speed = 5;
   uint8_t current_selection_guide = 3;
   uint8_t current_selection_FocuserConfig = 1;
@@ -75,6 +76,8 @@ private:
   bool SelectStarAlign();
   void menuRADec(bool sync);
   void menuTelSettings();
+  void menuTimeAndSite();
+  void menuDateAndTime();
   void menuMount();
   void menuMountType();
   void menuPredefinedMount();

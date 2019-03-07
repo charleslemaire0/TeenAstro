@@ -124,6 +124,9 @@ void processCommands()
     case 'G':
       Command_G();
       break;
+    case 'g':
+      Command_GNSS();
+      break;
     case 'h':
       Command_h();
       break;

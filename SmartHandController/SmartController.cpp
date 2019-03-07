@@ -159,6 +159,11 @@ static unsigned char Lock_T_bits[] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3e, 0x00, 0x08, 0x00, 0x08, 0x00,
   0x08, 0x00, 0x08, 0x00, 0x08, 0x00, 0x00, 0x00 };
 
+static unsigned char GNSS_bits[] = {
+  0x00, 0x00, 0x40, 0x00, 0xa0, 0x00, 0x10, 0x01, 0x08, 0x01, 0x10, 0x07,
+  0xe0, 0x07, 0x80, 0x1f, 0x80, 0x23, 0x2a, 0x42, 0x4a, 0x22, 0x12, 0x14,
+  0x64, 0x08, 0x08, 0x00, 0x70, 0x00, 0x00, 0x00 };
+
 static const unsigned char teenastro_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -591,11 +596,13 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
   do
   {
     u8g2_uint_t x = u8g2_GetDisplayWidth(u8g2);
+    u8g2_uint_t xl = 0;
     int k = 0;
 #ifdef WIFI_ON
     if (buttonPad.isWifiOn())
     {
       buttonPad.isWifiRunning() ? display->drawXBMP(0, 0, icon_width, icon_height, wifi_bits) : display->drawXBMP(0, 0, icon_width, icon_height, wifi_not_connected_bits);
+      xl =icon_width + 1;
     }
     
 #endif
@@ -604,6 +611,10 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
       Telescope::ParkState curP = telInfo.getParkState();
       Telescope::TrackState curT = telInfo.getTrackingState();
       Telescope::PierState curPi = telInfo.getPierState();
+      if (telInfo.isGNSSValid())
+      {
+        display->drawXBMP(xl, 0, icon_width, icon_height, GNSS_bits);
+      }
       if (curP == Telescope::PRK_PARKED)
       {
         display->drawXBMP(x - icon_width, 0, icon_width, icon_height, parked_bits);
@@ -1494,17 +1505,67 @@ void SmartHandController::menuRADec(bool sync)
   }
 }
 
+void SmartHandController::menuDateAndTime()
+{
+  const char *string_list_SettingsL2 = "Clock\nDate\nGNSS Time";
+  while (!exitMenu)
+  {
+    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Time Settings", current_selection_L2, string_list_SettingsL2);
+    switch (current_selection_L2)
+    {
+    case 0:
+      return;
+    case 1:
+      menuUTCTime();
+      break;
+    case 2:
+      menuDate();
+      break;
+    case 3:
+      if (telInfo.isGNSSValid())
+        DisplayMessageLX200(SetLX200(":gt#"), false);
+      else
+        DisplayMessage("NO GNSS", "Signal");
+      break;
+      break;
+    }
+  }
+}
+
+void SmartHandController::menuTimeAndSite()
+{
+  current_timelocation = 1;
+  const char *string_list_SettingsL2 = "Time\nSite\nSync GNSS";
+  while (!exitMenu)
+  {
+    current_timelocation = display->UserInterfaceSelectionList(&buttonPad, "Time & Site", current_timelocation, string_list_SettingsL2);
+    switch (current_timelocation)
+    {
+    case 0:
+      return;
+    case 1:
+      menuDateAndTime();
+      break;
+    case 2:
+      menuSite();
+      break;
+    case 3:
+      if (telInfo.isGNSSValid())
+        DisplayMessageLX200(SetLX200(":gs#"), false);
+      else
+        DisplayMessage("NO GNSS", "Signal");
+      break;
+    }
+  }
+}
+
 void SmartHandController::menuTelSettings()
 {
   buttonPad.setMenuMode();
   current_selection_L1 = 1;
   while (!exitMenu)
   {
-    const char *string_list_SettingsL1 = "Display\n"/*"Alignment\n"*/"Date\n""Time\n""Set Park\n""Mount\n""Site\n""Limits\n""Main Unit Info"
-#ifdef WIFI_ON
-      "\nWifi"
-#endif
-      ;
+    const char *string_list_SettingsL1 = "Display\n"/*"Alignment\n"*/"Time & Site\n""Set Park\n""Mount\n""Limits\n""Main Unit Info\nWifi";
     current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, "Telescope Settings", current_selection_L1, string_list_SettingsL1);
     switch (current_selection_L1)
     {
@@ -1517,31 +1578,27 @@ void SmartHandController::menuTelSettings()
     //  menuAlignment();
     //  break;
     case 2:
-      menuDate();
+      menuTimeAndSite();
       break;
     case 3:
-      menuUTCTime();
-      break;
-    case 4:
       DisplayMessageLX200(SetLX200(":hQ#"), false);
       break;
-    case 5:
+    case 4:
       menuMount();
       break;
-    case 6:
-      menuSite();
-      break;
-    case 7:
+    case 5:
       menuLimits();
       break;
-    case 8:
+    case 6:
       menuMainUnitInfo();
       break;
+    case 7:
 #ifdef WIFI_ON
-    case 9:
       menuWifi();
-      break;
+#else
+      DisplayMessage("Device has", "No WIFI", -1);
 #endif
+      break;
     default:
       break;
     }
@@ -1583,17 +1640,15 @@ void SmartHandController::menuMount()
       break;
     case 8:
       menuAcceleration();
-        break;
+      break;
     default:
       break;
     }
   }
-
 }
 
 void SmartHandController::menuMountType()
 {
-
   current_selection_L3 = telInfo.getMount();
   if (current_selection_L3 == 0)
   {
@@ -1604,7 +1659,6 @@ void SmartHandController::menuMountType()
   current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, "Mount Type", current_selection_L3, string_list_Mount);
   if (current_selection_L3)
   {
-
     char out[10];
     sprintf(out, ":S!%u#", current_selection_L3);
     DisplayMessageLX200(SetLX200(out), false);
@@ -1655,7 +1709,6 @@ void SmartHandController::menuPredefinedMount()
       break;
     }
   }
-
 }
 
 void SmartHandController::menuAltMount()
@@ -2206,7 +2259,7 @@ void SmartHandController::menuFocuserAction()
 void SmartHandController::menuFocuserConfig()
 {
   char cmd[50];
-  const char *string_list_Focuser = "Display Settings\nPark Position\nMax Position\nMin Speed\nMax Speed\nGoto Acc\nMan. Acc\nDeceleration";
+  const char *string_list_Focuser = "Display Settings\nPark Position\nMax Position\nMan. Speed\nGoto Speed\nMan. Acc\nGoto Acc";
   unsigned int sP, maxP, minS, maxS, cmdAcc, manAcc, manDec;
   float value;
   while (!exitMenu)
@@ -2231,8 +2284,8 @@ void SmartHandController::menuFocuserConfig()
         sprintf(line4, "Max  Pos.: %05u", maxP);
         DisplayLongMessage(line1, line2, line3, line4, -1);
         line2[0] = 0;
-        sprintf(line3, "min Speed: %03u", minS);
-        sprintf(line4, "max Speed: %03u", maxS);
+        sprintf(line3, "Man. Speed: %03u", minS);
+        sprintf(line4, "Goto Speed: %03u", maxS);
         DisplayLongMessage(line1, line2, line3, line4, -1);
         sprintf(line2, "Acc. cmd.: %03u", cmdAcc);
         sprintf(line3, "Acc. man.: %03u", manAcc);
@@ -2257,29 +2310,29 @@ void SmartHandController::menuFocuserConfig()
       case 4:
       {
         value = minS;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Min Speed", "", &value, 1, 999, 5, 0, "");
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Manual Speed", "", &value, 1, 999, 5, 0, "");
         sprintf(cmd, ":F2 %03d#", (int)(value));
         break;
       }
       case 5:
       {
         value = maxS;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Max Speed", "", &value, 1, 999, 5, 0, "");
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Goto Speed", "", &value, 1, 999, 5, 0, "");
         sprintf(cmd, ":F3 %03d#", (int)(value));
         break;
       }
       case 6:
       {
-        value = cmdAcc;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Acc. for Goto", "", &value, 1, 100, 5, 0, "");
-        sprintf(cmd, ":F4 %03d#", (int)(value));
+        value = manAcc;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Acc. for Man.", "", &value, 1, 100, 5, 0, "");
+        sprintf(cmd, ":F5 %03d#", (int)(value));
         break;
       }
       case 7:
       {
-        value = manAcc;
-        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Acc. for Man.", "", &value, 1, 100, 5, 0, "");
-        sprintf(cmd, ":F5 %03d#", (int)(value));
+        value = cmdAcc;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, "Acc. for Goto", "", &value, 1, 100, 5, 0, "");
+        sprintf(cmd, ":F4 %03d#", (int)(value));
         break;
       }
       case 8:

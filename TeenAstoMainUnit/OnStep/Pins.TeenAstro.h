@@ -3,8 +3,8 @@
 
 
 //#define VERSION  220
-//#define VERSION  230
 #define VERSION  240
+//#define VERSION  240
 
 #if VERSION == 220
 #define AxisDriver      1                    //only with TOS100
@@ -77,6 +77,7 @@
 #define Axis2DirPin     4                 // Pin 19 (Dir)
 #define Axis2CSPin      19                // Pin 20 (CS)
 #define Axis2EnablePin  5                 // Pin 18 (enable)
+#define PPS             18
 #define Axis1Reverse    1
 #define Axis2Reverse    1
 // Pin 11 12 13 are used!! for SPI

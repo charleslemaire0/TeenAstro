@@ -22,7 +22,7 @@ const char* html_main_css_control3 PROGMEM = ".bb { height: 2.5em; width: 8em;} 
 const char* html_main_cssE PROGMEM = "</STYLE>";
 
 const char* html_onstep_header1 PROGMEM = "<div class='t'><table width='100%%'><tr><td><b><font size='5'>";
-const char* html_onstep_header2 PROGMEM = "</font></b></td><td align='right'><b>" Product " " FirmwareVersionMajor"."FirmwareVersionMinor " (TeenAstro ";
+const char* html_onstep_header2 PROGMEM = "</font></b></td><td align='right'><b>" Product " " FirmwareVersionMajor"."FirmwareVersionMinor "."FirmwareVersionPatch" (TeenAstro ";
 const char* html_onstep_header3 PROGMEM = ")</b></td></tr></table>";
 const char* html_onstep_header4 PROGMEM = "</div><div class='b'>\r\n";
 

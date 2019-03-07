@@ -544,14 +544,12 @@ void SerCom::dumpState()
   {
     stepper.setPosition(65535U * resolution->get());
   }
-
   ser.print("?");
   unsigned int p = (unsigned int)(stepper.getPosition() / resolution->get());
   printvalue(p, 5, 0, false);
   ser.print(" ");
-  //p = (unsigned int)abs(stepper.speed() / pow(2, micro->get()));
-  p = controller.isRunning() + 10 * rotateController.isRunning();
-  // p = (unsigned int)abs(rotateController.getCurrentSpeed() / pow(2, micro->get()));
+  p = (controller.isRunning()|| rotateController.isRunning()) ?
+      (unsigned int)abs(rotateController.getCurrentSpeed() / pow(2, micro->get())) : 0;
   printvalue(p, 3, 0, false);
   ser.print(" ");
   printvalue(lastTemp, 2, 2, true);

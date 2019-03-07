@@ -67,7 +67,7 @@ bool checkMeridian(const double& HA, const byte& inputSide, byte mode)
 byte predictSideOfPier(const double& HA, const byte& inputSide)
 {
   if (meridianFlip == MeridianFlipNever)
-    return inputSide;
+    return PierSideEast;
   if (checkPole(HA, inputSide, CheckModeGOTO) && checkMeridian(HA, inputSide, CheckModeGOTO))
   {
     //Serial.println(inputSide);

@@ -92,7 +92,8 @@ class MountStatus {
       _autoMeridianFlips = false;
       _pierSide = 1;
       if (s[13] == 'W') _pierSide = 2;
-      _lastError=(Errors)(s[14]-'0');
+      _validGNSS = s[14] - '0';
+      _lastError = (Errors)(s[15]-'0');
 
    /*   if (all) {
         Ser.print(":GX94#"); s[Ser.readBytesUntil('#',s,20)]=0; if (s[0]==0) { _valid=false; return false; }
@@ -177,6 +178,7 @@ class MountStatus {
     bool _autoMeridianFlips=false;
     byte _pierSide=PierSideNone;
     int _alignMaxStars = -1;
+    bool _validGNSS = false;
     Errors _lastError=ERR_NONE;
 };
 
