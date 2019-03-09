@@ -617,7 +617,7 @@ boolean do_refractionRate_calc()
     boolean done = false;
 
     // turn off if not tracking at sidereal rate
-    if (trackingState != TrackingON)
+    if (!sideralTracking || movingTo)
     {
         az_deltaAxis1 = 15.0;
         az_deltaAxis2 = 0.0;
@@ -728,8 +728,7 @@ boolean do_altAzmRate_calc()
     boolean done = false;
 
     // turn off if not tracking at sidereal rate
-    if (((trackingState != TrackingON) && (trackingState != TrackingMoveTo)
-        ))
+    if (!sideralTracking || movingTo)
     {
         az_deltaAxis1 = 0.0;
         az_deltaAxis2 = 0.0;
@@ -741,7 +740,7 @@ boolean do_altAzmRate_calc()
     // convert units, get ahead of and behind current position
     if (az_step == 1)
     {
-        if (trackingState == TrackingMoveTo)
+        if (movingTo)
         {
             cli();
             az_Axis1 = targetAxis1.part.m;

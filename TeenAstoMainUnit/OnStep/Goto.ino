@@ -224,7 +224,7 @@ byte goToEqu(double RA, double Dec, byte preferedPierSide)
   if (a > maxAlt) return 6;   // fail, outside limits
   if (Dec > MaxDec) return 6; // fail, outside limits
   if (Dec < MinDec) return 6; // fail, outside limits
-  if (trackingState == TrackingMoveTo)
+  if (movingTo)
   {
     abortSlew = true;
     return 5;
@@ -353,10 +353,8 @@ if (mountType== MOUNT_TYPE_ALTAZM)
           180L)))
     return 7;   // fail, unspecified error
 }
-  lastTrackingState = trackingState;
-
   cli();
-  trackingState = TrackingMoveTo;
+  movingTo = true;
   SetSiderealClockRate(siderealInterval);
 
   startAxis1 = posAxis1;

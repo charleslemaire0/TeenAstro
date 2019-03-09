@@ -44,7 +44,7 @@ void Command_M(bool &supress_frame)
         //          Returns: Nothing
 
     if ((atoi2((char *)&parameter[1], &i)) &&
-      ((i > 0) && (i <= 16399)) && trackingState == TrackingON &&
+      ((i > 0) && (i <= 16399)) && sideralTracking && !movingTo &&
        (GuidingState != GuidingRecenter || GuidingState != GuidingST4))
     {
      

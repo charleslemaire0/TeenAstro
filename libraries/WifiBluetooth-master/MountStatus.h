@@ -39,7 +39,20 @@ class MountStatus {
       if (s[0]==0) { _valid=false; return false; }
       _tracking=false;
       _slewing=false;
-      if (s[1] != 'N'){ _slewing = true; } else if (s[0] != 'n') { _tracking = true; }
+      switch (s[0])
+      {
+      case '3':
+        _tracking = true;
+        _slewing = true;
+        break;
+      case '2':
+        _slewing = true;
+        break;
+      case '1':
+        _tracking = true;
+        break;
+      }
+      _sideralMode = s[1] - '0';      
       _atHome = (s[3] == 'H');
       _parked = false;
       _parking = false;
@@ -158,6 +171,7 @@ class MountStatus {
     int lastupdate = millis();
     bool _valid=false;
     bool _tracking=false;
+    byte  _sideralMode = 0;
     bool _slewing=false;
     bool _parked=false;
     bool _parking=false;

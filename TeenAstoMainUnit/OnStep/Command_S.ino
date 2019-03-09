@@ -287,8 +287,7 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
   {
-    if ((trackingState == TrackingON) ||
-      (trackingState == TrackingOFF))
+    if (!movingTo)
     {
       f = strtod(parameter, &conv_end);
       if ((&parameter[0] != conv_end) &&
@@ -296,7 +295,7 @@ void Command_S(Command& process_command)
       {
         if (abs(f) < 0.1)
         {
-          trackingState = TrackingOFF;
+          sideralTracking = false;
         }
         else
         {

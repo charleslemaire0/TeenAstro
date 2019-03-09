@@ -5,7 +5,7 @@ boolean goHome()
 {
     if ((parkStatus != NotParked) && (parkStatus != Parking)) return false; // fail, moving to home not allowed if Parked
     if (lastError != ERR_NONE) return false;                                // fail, cannot move if there are errors
-    if (trackingState == TrackingMoveTo) return false;                      // fail, moving to home not allowed during a move
+    if (movingTo) return false;                      // fail, moving to home not allowed during a move
     if (guideDirAxis1 || guideDirAxis2) return false;                       // fail, moving to home not allowed while guiding
     cli();
        
@@ -13,20 +13,16 @@ boolean goHome()
     targetAxis1.part.f = 0;
     targetAxis2.part.m = celestialPoleStepAxis2;
     targetAxis2.part.f = 0;
-
     startAxis1 = posAxis1;
     startAxis2 = posAxis2;
-
-    abortTrackingState = trackingState;
-    lastTrackingState = TrackingOFF;
-    trackingState = TrackingMoveTo;
     SetSiderealClockRate(siderealInterval);
     sei();
-
+    // stop tracking
+    lastSideralTracking = sideralTracking;
+    sideralTracking = false;
+    movingTo = true;
     homeMount = true;
-
     DecayModeGoto();
-
     return true;
 }
 
@@ -35,8 +31,9 @@ boolean goHome()
 // then the first gotoEqu will set the pier side and turn on tracking
 boolean setHome()
 {
-    if (trackingState == TrackingMoveTo) return false;  // fail, forcing home not allowed during a move
-
+    if (movingTo) return false;  // fail, forcing home not allowed during a move
+    bool lastSideralTracking = sideralTracking;
+    sideralTracking = false;
     // default values for state variables
     pierSide = PierSideEast;
     dirAxis2 = 1;
@@ -73,8 +70,6 @@ else if (mountType == MOUNT_TYPE_ALTAZM)
     lastError = ERR_NONE;
 
     // reset tracking and rates
-    trackingState = TrackingOFF;
-    lastTrackingState = TrackingOFF;
     timerRateAxis1 = SiderealRate;
     timerRateAxis2 = SiderealRate;
 
@@ -108,6 +103,6 @@ else if (mountType == MOUNT_TYPE_ALTAZM)
 
     // initialize/disable the stepper drivers
     DecayModeTracking();
-
+    sideralTracking = lastSideralTracking;
     return true;
 }

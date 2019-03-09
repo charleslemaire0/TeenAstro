@@ -278,10 +278,7 @@ void loop()
   static bool forceTracking = false;
   StartLoopError = lastError;
   // GUIDING -------------------------------------------------------------------------------------------
-  if (trackingState == TrackingMoveTo)
-  {
-  }
-  else
+  if (!movingTo)
   {
     checkST4();
     guideHA.fixed = 0;
@@ -294,7 +291,7 @@ void loop()
   {
     // SIDEREAL TRACKING -------------------------------------------------------------------------------
     // only active while sidereal tracking with a guide rate that makes sense
-    if (trackingState == TrackingON)
+    if (sideralTracking && !movingTo)
     {
       // apply the Tracking, Guiding
       cli();
@@ -310,9 +307,9 @@ void loop()
     }
     // SIDEREAL TRACKING DURING GOTOS ------------------------------------------------------------------
     // keeps the target where it's supposed to be while doing gotos
-    else if (trackingState == TrackingMoveTo)
+    else if (movingTo)
     {
-      if (lastTrackingState == TrackingON)
+      if (sideralTracking)
       {
         // origTargetAxisn isn't used in Alt/Azm mode since meridian flips never happen
         origTargetAxis1.fixed += fstepAxis1.fixed;
@@ -350,11 +347,11 @@ void loop()
       lastError = ERR_MOTOR_FAULT;
       if (!forceTracking)
       {
-        if (trackingState == TrackingMoveTo)
+        if (movingTo)
           abortSlew = true;
         else
         {
-          trackingState = TrackingOFF;
+          sideralTracking = false;
           if (guideDirAxis1) guideDirAxis1 = 'b';
           if (guideDirAxis2) guideDirAxis2 = 'b';
         }
@@ -371,10 +368,10 @@ void loop()
       if (!forceTracking)
       {
         lastError = ERR_ALT;
-        if (trackingState == TrackingMoveTo)
+        if (movingTo)
           abortSlew = true;
         else
-          trackingState = TrackingOFF;
+          sideralTracking = false;
       }
     }
     else if (lastError == ERR_ALT)
@@ -436,9 +433,10 @@ void CheckPierSide()
 // below horizon limit, above the overhead limit, or past the Dec limits
 void SafetyCheck(const bool forceTracking)
 {
-  Errors err1 = lastError;
   // basic check to see if we're not at home
-  if (trackingState != TrackingOFF) atHome = false;
+
+  if (atHome)
+    atHome = !sideralTracking;
 
   if (meridianFlip != MeridianFlipNever)
   {
@@ -449,10 +447,10 @@ void SafetyCheck(const bool forceTracking)
       if ((dirAxis1 == 1 && pierSide == PierSideEast) || (dirAxis1 == 0 && pierSide == PierSideWest))
       {
         lastError = ERR_UNDER_POLE;
-        if (trackingState == TrackingMoveTo)
+        if (movingTo)
           abortSlew = true;
         if (pierSide == PierSideEast && !forceTracking)
-          trackingState = TrackingOFF;
+          sideralTracking = false;
       }
       else if (lastError == ERR_UNDER_POLE)
       {
@@ -469,12 +467,12 @@ void SafetyCheck(const bool forceTracking)
       if ((dirAxis1 == 1 && pierSide == PierSideWest) || (dirAxis1 == 0 && pierSide == PierSideEast))
       {
         lastError = ERR_MERIDIAN;
-        if (trackingState == TrackingMoveTo)
+        if (movingTo)
         {
           abortSlew = true;
         }
         if (pierSide >= PierSideWest && !forceTracking)
-          trackingState = TrackingOFF;
+          sideralTracking = false;
       }
       else if (lastError == ERR_MERIDIAN)
       {
@@ -494,14 +492,14 @@ void SafetyCheck(const bool forceTracking)
       // when Fork mounted, ignore pierSide and just stop the mount if it passes the underPoleLimit
       double HA, Dec;
       GeoAlign.GetInstr(&HA, &Dec);
-      double underPoleLimit = trackingState == TrackingMoveTo ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;  
+      double underPoleLimit = movingTo ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;  
       if (HA > underPoleLimit * 15.)
       {
         lastError = ERR_UNDER_POLE;
-        if (trackingState == TrackingMoveTo)
+        if (movingTo)
           abortSlew = true;
         else if (!forceTracking)
-          trackingState = TrackingOFF;
+          sideralTracking = false;
       }
       else if (lastError == ERR_UNDER_POLE)
       {
@@ -515,10 +513,10 @@ void SafetyCheck(const bool forceTracking)
       if (posAxis1 >(long)MaxAzm * (long)StepsPerDegreeAxis1)
       {
         lastError = ERR_AZM;
-        if (trackingState == TrackingMoveTo)
+        if (movingTo)
           abortSlew = true;
         else if(!forceTracking)
-          trackingState = TrackingOFF;
+          sideralTracking = false;
       }
       sei();
     }
@@ -532,10 +530,10 @@ void SafetyCheck(const bool forceTracking)
         (pierSide == PierSideWest && mountType == MOUNT_TYPE_FORK))
     {
       lastError = ERR_DEC;
-      if (trackingState == TrackingMoveTo)
+      if (movingTo)
         abortSlew = true;
       else if (!forceTracking)
-        trackingState = TrackingOFF;
+        sideralTracking = false;
     }
     else if (lastError == ERR_DEC)
     {

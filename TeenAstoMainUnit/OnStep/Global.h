@@ -216,13 +216,21 @@ enum Errors
   ERR_SYNC
 };
 
+
+enum SID_Mode
+{
+  SIDM_STAR,
+  SIDM_SUN,
+  SIDM_MOON
+};
+
 Errors lastError = ERR_NONE;
+Errors StartLoopError = ERR_NONE;
 
 boolean highPrecision = true;
 
-#define TrackingOFF                0
-#define TrackingON                 1
-#define TrackingMoveTo             2
+
+
 #define GuidingOFF                 0
 #define GuidingPulse               1
 #define GuidingST4                 2
@@ -231,12 +239,15 @@ boolean highPrecision = true;
 #define TrackingSolar 0.99726956632
 #define TrackingLunar 0.96236513150
 
-volatile byte trackingState = TrackingOFF;
+volatile bool movingTo = false;
+bool lastSideralTracking = false;
+volatile bool sideralTracking = false;
+volatile byte sideralMode = SIDM_STAR;
+
 volatile byte GuidingState  = GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
 unsigned long lastSecurityCheck = millis();
-byte abortTrackingState = TrackingOFF;
-volatile byte lastTrackingState = TrackingOFF;
+
 boolean abortSlew = false;
 
 // Command processing -------------------------------------------------------------------------------------------------------
