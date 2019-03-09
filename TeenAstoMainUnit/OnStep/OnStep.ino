@@ -65,12 +65,12 @@ byte LED_pps_on = true;
 void setup()
 {
   pinMode(LEDPin, OUTPUT);
-  for (int k = 0; k < 10; k++)
+  for (int k = 0; k < 20; k++)
   {
     digitalWrite(LEDPin, HIGH);
-    delay(100);
+    delay(10);
     digitalWrite(LEDPin, LOW);
-    delay(100);
+    delay(50);
   }
 
   // EEPROM automatic initialization
@@ -264,18 +264,19 @@ void setup()
   // a reset without loosing much accuracy in the sky.  PEC is toast though.
   // set the default guide rate, 16x sidereal
   enableGuideRate(GuideRateMax, true);
-  delay(110);
+  delay(10);
 
   // prep timers
   rtk.updateTimers();
   digitalWrite(LEDPin, HIGH);
-
+  delay(500);
+  digitalWrite(LEDPin, LOW);
 }
 
 void loop()
 {
-
   static bool forceTracking = false;
+  StartLoopError = lastError;
   // GUIDING -------------------------------------------------------------------------------------------
   if (trackingState == TrackingMoveTo)
   {
@@ -397,7 +398,6 @@ void loop()
     // for testing, average steps per second
     if (debugv1 > 100000) debugv1 = 100000;
     if (debugv1 < 0) debugv1 = 0;
-
     debugv1 = (debugv1 * 19 + (targetAxis1.part.m * 1000 - lasttargetAxis1)) / 20;
     lasttargetAxis1 = targetAxis1.part.m * 1000;
     // adjust tracking rate for Alt/Azm mounts
@@ -412,6 +412,11 @@ void loop()
     // acts on commands recieved across Serial0 and Serial1 interfaces
     smartDelay(0);
     processCommands();
+  }
+  
+  if (StartLoopError != lastError)
+  {
+    lastError == ERR_NONE ? digitalWrite(LEDPin, LOW) : digitalWrite(LEDPin, HIGH);
   }
 }
 
@@ -431,6 +436,7 @@ void CheckPierSide()
 // below horizon limit, above the overhead limit, or past the Dec limits
 void SafetyCheck(const bool forceTracking)
 {
+  Errors err1 = lastError;
   // basic check to see if we're not at home
   if (trackingState != TrackingOFF) atHome = false;
 
@@ -536,6 +542,7 @@ void SafetyCheck(const bool forceTracking)
       lastError = ERR_NONE;
     }
   }
+
 
 }
 

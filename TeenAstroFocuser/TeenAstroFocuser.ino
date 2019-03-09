@@ -13,12 +13,12 @@ void setup()
 {
 	// set the PWM and brake pins so that the direction pins  // can be used to control the motor:
   pinMode(LEDPin, OUTPUT);
-  for (int k = 0; k < 10; k++)
+  for (int k = 0; k < 20; k++)
   {
     digitalWrite(LEDPin, HIGH);
-    delay(100);
+    delay(10);
     digitalWrite(LEDPin, LOW);
-    delay(100);
+    delay(50);
   }
 
 	pinMode(_StepPin, OUTPUT);
@@ -51,6 +51,8 @@ void setup()
   iniMot();
   iniPos();
   digitalWrite(LEDPin, HIGH);
+  delay(500);
+  digitalWrite(LEDPin, LOW);
 }
 
 
