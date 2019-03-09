@@ -119,6 +119,23 @@ Telescope::TrackState Telescope::getTrackingState()
   }
   return TRK_UNKNOW;
 }
+
+double Telescope::getLstT0()
+{
+  char temp[20] = "";
+  double f = 0;
+  if (GetLX200(":GS#", temp, 20) == LX200VALUEGET)
+  {  
+    hmsToDouble(&f, temp);
+  }
+  return f;
+};
+double Telescope::getLat()
+{
+  double f = -10000;
+  GetLatitudeLX200(f);
+  return f;
+};
 bool Telescope::atHome()
 {
   return TelStatus[3] == 'H';

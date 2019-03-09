@@ -58,8 +58,11 @@ public:
   void updateFocuser();
   void updateTel();
   Mount getMount();
+ 
   ParkState getParkState();
   TrackState getTrackingState();
+  double getLstT0();
+  double getLat();
   bool atHome();
   bool isPulseGuiding();
   bool isGuidingN();

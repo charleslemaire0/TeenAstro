@@ -883,7 +883,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     }
     else if (page == 4)
     {
-      int idx = telInfo.alignSelectedStar - 1;
+    /*  int idx = telInfo.alignSelectedStar - 1;
       byte cat_letter = Star_letter[idx];
       byte cat_const = Star_constellation[idx];
       u8g2_uint_t y = 36;
@@ -903,7 +903,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
       u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
       u8g2_DrawGlyph(u8g2, 0, y, 944 + cat_letter);
       u8g2_SetFont(u8g2, myfont);
-      u8g2_DrawUTF8(u8g2, 16, y, constellation_txt[cat_const - 1]);
+      u8g2_DrawUTF8(u8g2, 16, y, constellation_txt[cat_const - 1]);*/
     }
 
   } while (u8g2_NextPage(u8g2));
@@ -1355,29 +1355,31 @@ void SmartHandController::menuSolarSys(bool sync)
 
 void SmartHandController::menuHerschel(bool sync)
 {
-  while (!exitMenu)
-  {
-    current_selection_Herschel = display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Herschel" : "Goto Herschel", current_selection_Herschel, HERSCHEL);
-    if (current_selection_Herschel != 0)
-    {
-      exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync, HERSCHEL, current_selection_Herschel - 1), false);
+  cat_mgr.setLat(telInfo.getLat());
+  cat_mgr.setLstT0(telInfo.getLstT0());
+  cat_mgr.select(HERSCHEL);
+  cat_mgr.filter(FM_ABOVE_HORIZON);
+  if (cat_mgr.alt()<0)
+    cat_mgr.setIndex(0);
+  if (cat_mgr.canFilter()) {
+    if (display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Herschel" : "Goto Herschel")) {
+      exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync), false);
     }
-    else
-      return;
   }
 }
 
 void SmartHandController::menuMessier(bool sync)
 {
-  while (!exitMenu)
-  {
-    current_selection_Messier = display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Messier" : "Goto Messier", current_selection_Messier, MESSIER);
-    if (current_selection_Messier != 0)
-    {
-      exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync, MESSIER, current_selection_Messier - 1), false);
+  cat_mgr.setLat(telInfo.getLat());
+  cat_mgr.setLstT0(telInfo.getLstT0());
+  cat_mgr.select(MESSIER);
+  cat_mgr.filter(FM_ABOVE_HORIZON);
+  if (cat_mgr.alt()<0)
+    cat_mgr.setIndex(0);
+  if (cat_mgr.canFilter()) {
+    if (display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Messier" : "Goto Messier")) {
+      exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync), false);
     }
-    else
-      return;
   }
 }
 
@@ -1465,21 +1467,22 @@ void SmartHandController::menuPier()
 
 void SmartHandController::menuStar(bool sync)
 {
-  while (!exitMenu)
-  {
-    current_selection_Star = display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Star" : "Goto Star", current_selection_Star, STAR);
-    if (current_selection_Star != 0)
-    {
-      exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync, STAR, current_selection_Star - 1), false);
+  cat_mgr.setLat(telInfo.getLat());
+  cat_mgr.setLstT0(telInfo.getLstT0());
+  cat_mgr.select(STAR);
+  cat_mgr.filter(FM_ABOVE_HORIZON);
+  if (cat_mgr.alt()<0)
+    cat_mgr.setIndex(0);
+  if (cat_mgr.canFilter()) {
+    if (display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Star" : "Goto Star")) {
+      exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync), false);
     }
-    else
-      return;
   }
 }
 
 bool SmartHandController::SelectStarAlign()
 {
-  buttonPad.setMenuMode();
+/*  buttonPad.setMenuMode();
   bool ok = false;
   telInfo.alignSelectedStar = display->UserInterfaceCatalog(&buttonPad, "select Star", telInfo.alignSelectedStar, STAR);
   if (telInfo.alignSelectedStar != 0)
@@ -1487,7 +1490,7 @@ bool SmartHandController::SelectStarAlign()
     ok = DisplayMessageLX200(SyncSelectedStarLX200(telInfo.alignSelectedStar), false);
   }
   buttonPad.setControlerMode();
-  return ok;
+  return ok*/;
 }
 
 void SmartHandController::menuRADec(bool sync)
@@ -2567,12 +2570,11 @@ void SmartHandController::menuDate()
 
 void SmartHandController::menuLatitude()
 {
+  double degree_d;
   int degree, minute;
-  if (DisplayMessageLX200(GetLatitudeLX200(degree, minute)))
+  if (DisplayMessageLX200(GetLatitudeLX200(degree_d)))
   {
-    long angle = degree * 60;
-    degree > 0 ? angle += minute : angle -= minute;
-    angle *= 60;
+    long angle = degree_d * 3600;
     if (display->UserInterfaceInputValueLatitude(&buttonPad, &angle))
     {
       char cmd[20];
@@ -2587,12 +2589,11 @@ void SmartHandController::menuLatitude()
 
 void SmartHandController::menuLongitude()
 {
+  double degree_d;
   int degree, minute;
-  if (DisplayMessageLX200(GetLongitudeLX200(degree, minute)))
+  if (DisplayMessageLX200(GetLongitudeLX200(degree_d)))
   {
-    long angle = degree * 60;
-    degree > 0 ? angle += minute : angle -= minute;
-    angle *= 60;
+    long angle = degree_d * 3600;
     if (display->UserInterfaceInputValueLongitude(&buttonPad, &angle))
     {
       char cmd[20];
