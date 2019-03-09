@@ -1,7 +1,7 @@
 // This data is machine generated from the Open NGC database.
 // Do NOT edit it manually. Rather, fix the import programs and rerun.
 // Total for constants.h
-dso_t Cat_Herschel[NUM_HERSCHEL] = {
+static dso_t Cat_Herschel[NUM_HERSCHEL] = {
   { 18,  9,   40, 138,    592,  26403 }, // H   40, Cep,    PN,  11.89, 00:13:01, +72:31:1, NGC0040
   { 16,  1,  129,  85,   1363,  21921 }, // H  129, Cas,   OCl,   6.50, 00:29:58, +60:12:4, NGC0129
   { 16,  1,  136, 255,   1434,  22394 }, // H  136, Cas,   OCl,   99.9, 00:31:30, +61:30:3, NGC0136

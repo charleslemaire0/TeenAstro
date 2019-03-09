@@ -235,8 +235,6 @@ bool CatMgr::canFilter() {
   return ((_lat<9999) && (_lstT0!=0));
 }
 
-
-
 void CatMgr::filter(FilterMode fm) {
   _fm=fm;
 }
@@ -515,7 +513,6 @@ double CatMgr::DistFromEqu(double RA, double Dec) {
 
 // convert an HA to RA, in degrees
 double CatMgr::HAToRA(double HA) {
-
   double lstH = getLst();
   return (lstH*15.0-HA);
 }

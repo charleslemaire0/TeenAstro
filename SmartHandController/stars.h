@@ -1,7 +1,7 @@
 // This data is machine generated from the KStars Star database. 
 // Do NOT edit it manually. Rather, fix the import programs and rerun.
 // Total for constants.h
-star_t Cat_Stars[NUM_STARS] = {
+static star_t Cat_Stars[NUM_STARS] = {
   {  0,  0,  40,   381, 10591},//, "Alpheratz      "}, // alp And,   2.07, 00:08:23.26, +29:05:25.6, Alpheratz
   {  0,  1,  40,  3173, 12968},//, "Mirach         "}, // bet And,   2.07, 01:09:43.93, +35:37:14.0, Mirach
   {  0,  2,  41,  5638, 15411},//, "Almach         "}, // gam And,    2.1, 02:03:53.95, +42:19:47.1, Almach
