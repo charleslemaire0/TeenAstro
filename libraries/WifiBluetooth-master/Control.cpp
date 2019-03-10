@@ -158,9 +158,10 @@ const char html_controlParkHome[] PROGMEM =
 <button class='gb' type='button' onpointerdown=\"g('w1')\" onpointerup=\"g('w0')\">" BUTTON_W "</button><br />\
 <button class='gb' type='button' onpointerdown=\"g('s1')\" onpointerup=\"g('s0')\">" BUTTON_S "</button><br /><br />\
 <button class='bbh' type='button' onpointerdown=\"g('R2')\">1x</button>\
-<button class='bbh' type='button' onpointerdown=\"g('R4')\">Mid</button>\
-<button class='bbh' type='button' onpointerdown=\"g('R6')\">Fast</button>\
-<button class='bbh' type='button' onpointerdown=\"g('R8')\">VFast</button>\
+<button class='bbh' type='button' onpointerdown=\"g('R4')\">4x</button>\
+<button class='bbh' type='button' onpointerdown=\"g('R5')\">16x</button>\
+<button class='bbh' type='button' onpointerdown=\"g('R7')\">64x</button>\
+<button class='bbh' type='button' onpointerdown=\"g('R9')\">VMax</button>\
 </div><br class='clear' />\r\n"
 
 const char html_controlFocus1[] PROGMEM =
