@@ -19,9 +19,8 @@
 #ifdef VERSION240
 #define BOARDINFO "2.4.0"
 //TMC260=1  TMC2130=2 or TMC5160=3
-#define USEDTMC 3
+#define USEDTMC 2
 // Temperature Sensor
-#define TempPin 9
 // RTC
 #define kCePin 4  // Chip Enable
 #define kIoPin 3 // Input/Output
@@ -38,8 +37,6 @@
 
 #ifdef VERSION230
 #define BOARDINFO "2.3.0"
-// Temperature Sensor
-#define TempPin 9
 // TMC260=1, TMC2130=2 or TMC5160=3
 #define TMC 2
 // RTC
@@ -75,6 +72,8 @@
 #define LEDPin 33 
 #endif
 
+// Temperature Sensor
+#define TempPin 9
 
 #endif
 
