@@ -21,7 +21,8 @@ class MountStatus {
     bool update()
     {
       if ( millis() - lastupdate< 500)
-        return false;
+        return _valid;
+      lastupdate = millis();
       char s[20] = "";
       if (!_valid) {
         Ser.print(":GVP#");
@@ -132,6 +133,7 @@ class MountStatus {
     bool getVer(char ver[]) { if (!_valid) return false; else { strcpy(ver,_ver); return true; } }
     bool valid() { return _valid; }
     bool tracking() { return _tracking; }
+    byte sideralMode() { return _sideralMode; }
     bool slewing() { return _slewing; }
     bool parked() { return _parked; }
     bool parking() { return _parking; }

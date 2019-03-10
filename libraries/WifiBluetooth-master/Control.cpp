@@ -1,5 +1,6 @@
 #include "WifiBluetooth.h"
 #include "config.h"
+#include "Ajax.h"
 // -----------------------------------------------------------------------------------
 // Telescope control related functions
 
@@ -52,17 +53,16 @@
 #define BUTTON_Stop "stop"
 #define BUTTON_SYNC "@"
 
-const char html_controlScript1[] PROGMEM=
-"<script>\n"
-"function s(key,v1) {\n"
-  "var xhttp = new XMLHttpRequest();\n"
-  "xhttp.open('GET', 'guide.txt?'+key+'='+v1+'&x='+new Date().getTime(), true);\n"
-  "xhttp.send();\n"
-"}\n"
-"function g(v1){s('dr',v1);}\n"
-"function gf(v1){s('dr',v1);autoFastRun();}\n"
-"function sf(key,v1){s(key,v1);autoFastRun();}\n"
-"</script>\n";
+#define html_controlScript1 "<script>\n\
+function s(key,v1) {\n\
+var xhttp = new XMLHttpRequest();\n\
+xhttp.open('GET', 'guide.txt?'+key+'='+v1+'&x='+new Date().getTime(), true);\n\
+xhttp.send();\n\
+}\n\
+function g(v1){s('dr',v1);}\n\
+function gf(v1){s('dr',v1);autoFastRun();}\n\
+function sf(key,v1){s(key,v1);autoFastRun();}\n\
+</script>\n"
 
 const char html_controlScript2[] PROGMEM =
 "<script>\r\n"
@@ -150,24 +150,18 @@ const char html_controlParkHome[] PROGMEM =
 "<button type = 'button' class = 'bb' onpointerdown = \"g('qr')\">Sync@home</button>"
 "</div><br class='clear' />\r\n";
 
-const char html_controlGuide1[] PROGMEM =
-"<div class='b1' style='width: 27em'>"
-"<div align='left'>Recenter:</div>"
-"<button class='gb' type='button' onpointerdown=\"g('n1')\" onpointerup=\"g('n0')\">" BUTTON_N "</button><br />";
-const char html_controlGuide2[] PROGMEM =
-"<button class='gb' type='button' onpointerdown=\"g('e1')\" onpointerup=\"g('e0')\">" BUTTON_E "</button>";
-const char html_controlGuide3[] PROGMEM =
-"<button class='gb' type='button' onpointerdown=\"g('q1')\">" BUTTON_Stop "</button>"
-"<button class='gb' type='button' onpointerdown=\"g('w1')\" onpointerup=\"g('w0')\">" BUTTON_W "</button><br />";
-const char html_controlGuide4[] PROGMEM =
-"<button class='gb' type='button' onpointerdown=\"g('s1')\" onpointerup=\"g('s0')\">" BUTTON_S "</button><br /><br />";
-const char html_controlGuide6[] PROGMEM =
-"<button class='bbh' type='button' onpointerdown=\"g('R2')\">1x</button>"
-"<button class='bbh' type='button' onpointerdown=\"g('R4')\">Mid</button>";
-const char html_controlGuide7[] PROGMEM =
-"<button class='bbh' type='button' onpointerdown=\"g('R6')\">Fast</button>"
-"<button class='bbh' type='button' onpointerdown=\"g('R8')\">VFast</button>"
-"</div><br class='clear' />\r\n";
+#define html_controlGuide "<div class='b1' style='width: 27em'>\
+<div align='left'>Recenter:</div>\
+<button class='gb' type='button' onpointerdown=\"g('n1')\" onpointerup=\"g('n0')\">" BUTTON_N "</button><br />\
+<button class='gb' type='button' onpointerdown=\"g('e1')\" onpointerup=\"g('e0')\">" BUTTON_E "</button>\
+<button class='gb' type='button' onpointerdown=\"g('q1')\">" BUTTON_Stop "</button>\
+<button class='gb' type='button' onpointerdown=\"g('w1')\" onpointerup=\"g('w0')\">" BUTTON_W "</button><br />\
+<button class='gb' type='button' onpointerdown=\"g('s1')\" onpointerup=\"g('s0')\">" BUTTON_S "</button><br /><br />\
+<button class='bbh' type='button' onpointerdown=\"g('R2')\">1x</button>\
+<button class='bbh' type='button' onpointerdown=\"g('R4')\">Mid</button>\
+<button class='bbh' type='button' onpointerdown=\"g('R6')\">Fast</button>\
+<button class='bbh' type='button' onpointerdown=\"g('R8')\">VFast</button>\
+</div><br class='clear' />\r\n"
 
 const char html_controlFocus1[] PROGMEM =
 "<div class='b1' style='width: 27em'>";
@@ -187,6 +181,7 @@ const char html_controlFocus5[] PROGMEM =
 const char html_controlFocus6[] PROGMEM =
 "</div><br class='clear' />\r\n";
 
+#ifdef ROTATOR_ON
 const char html_controlRotate0[] PROGMEM =
 "<div class='b1' style='width: 27em'>";
 const char html_controlRotate1[] PROGMEM =
@@ -206,6 +201,7 @@ const char html_controlDeRotate2[] PROGMEM =
 "<button type='button' onpointerdown=\"gf('d0')\" >De-Rotate Off</button>";
 const char html_controlRotate4[] PROGMEM =
 "</div><br class='clear' />\r\n";
+#endif
 
 #if defined(SW0) || defined(SW1) || defined(SW2) || defined(SW3) || defined(SW4) || defined(SW5) || defined(SW6) || defined(SW7) || defined(SW8) || defined(SW9) || defined(SW10) || defined(SW11) || defined(SW12) || defined(SW13) || defined(SW14) || defined(SW15) || defined(AN3) || defined(AN4) || defined(AN5) || defined(AN6) || defined(AN7) || defined(AN8)
 const char html_controlAuxB[] = "<div class='b1' style='width: 27em'><div align='left'>Aux:</div>";
@@ -309,15 +305,15 @@ void wifibluetooth::handleControl() {
   preparePage(data, 2);
 
   // guide (etc) script
-  data += FPSTR(html_controlScript1);
+  data += html_controlScript1;
   // clock script
   data += FPSTR(html_controlScript2);
   data += FPSTR(html_controlScript3);
   data += FPSTR(html_controlScript4);
 
   // active ajax page is: controlAjax();
-  data +="<script>var ajaxPage='control.txt';</script>\n";
-  data +=html_ajax_active;
+  data += "<script>var ajaxPage='control.txt';</script>\n";
+  data += html_ajax_active;
 #ifdef OETHS
   client->print(data); data="";
 #endif
@@ -355,13 +351,7 @@ void wifibluetooth::handleControl() {
 
 
   // Guiding -------------------------------------------------
-  data += FPSTR(html_controlGuide1);
-  data += FPSTR(html_controlGuide2);
-  data += FPSTR(html_controlGuide3);
-  data += FPSTR(html_controlGuide4);
-  //data += FPSTR(html_controlGuide5);
-  data += FPSTR(html_controlGuide6);
-  data += FPSTR(html_controlGuide7);
+  data += html_controlGuide;
 #ifdef OETHS
   client->print(data); data = "";
 #endif

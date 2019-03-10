@@ -187,6 +187,23 @@ void wifibluetooth::handleRoot() {
     double tr=atof(temp1);
     sprintf(temp,"&nbsp;&nbsp;Tracking Rate: <font class=\"c\">%5.3f</font>Hz<br />",tr);
     data += temp;
+    switch (mountStatus.sideralMode())
+    {
+    case 0:
+      strcpy(temp2, "Sideral");
+      break;
+    case 1:
+      strcpy(temp2, "Solar");
+      break;
+    case 2:
+      strcpy(temp2, "Lunar");
+      break;
+    default:
+      strcpy(temp2, "Unkown");
+      break;
+    }
+    sprintf(temp, "&nbsp;&nbsp;Tracking Speed: <font class=\"c\">%s</font><br />", temp2);
+    data += temp;
   }
 
   

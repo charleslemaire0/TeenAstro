@@ -34,9 +34,7 @@
 #define TIMEOUT_CMD 30
 #endif
 
-#define DEFAULT_AJAX_RATE "5"        // normally 5 seconds between updates
-#define DEFAULT_FAST_AJAX_RATE "1"   // fast update is 1 second/update
-#define DEFAULT_AJAX_SHED_TIME "15"  // time before return to normal update rate
+
 
 #define EEPROM_start 0
 #define EEPROM_WifiOn EEPROM_start + 4
@@ -49,49 +47,6 @@
 #define EEPROM_start_wifi_sta 100
 #define EEPROM_start_wifi_ap 400
 #define EPPROM_password 50
-
-
-extern const char* html_headB;
-extern const char* html_headerPec;
-extern const char* html_headerIdx;
-extern const char* html_headE;
-extern const char* html_bodyB;
-
-extern const char* html_main_cssB;
-extern const char* html_main_css1;
-extern const char* html_main_css2;
-extern const char* html_main_css3;
-extern const char* html_main_css4;
-extern const char* html_main_css5;
-extern const char* html_main_css6;
-extern const char* html_main_css7;
-extern const char* html_main_css8;
-extern const char* html_main_css_control1;
-extern const char* html_main_css_control2;
-extern const char* html_main_css_control3;
-extern const char* html_main_cssE;
-
-extern const char* html_onstep_header1;
-extern const char* html_onstep_header2;
-extern const char* html_onstep_header3;
-extern const char* html_onstep_header4;
-
-extern const char* html_links1S;
-extern const char* html_links1N;
-extern const char* html_links2S;
-extern const char* html_links2N;
-extern const char* html_links3S;
-extern const char* html_links3N;
-extern const char* html_links4S;
-extern const char* html_links4N;
-extern const char* html_links5S;
-extern const char* html_links5N;
-extern const char* html_links6S;
-extern const char* html_links6N;
-
-// Javascript for Ajax
-// be sure to define "var ajaxPage='control.txt';" etc.
-extern const char* html_ajax_active;
 
 
 class wifibluetooth
