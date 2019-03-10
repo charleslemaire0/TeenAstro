@@ -748,26 +748,26 @@ void Command_Q()
 //   R - Slew Rate Commands
 void Command_R()
 {
-  //  :RG#   Set Slew rate to Guiding Rate (slowest) 1X
-  //  :RC#   Set Slew rate to Centering rate (2nd slowest) 8X
-  //  :RM#   Set Slew rate to Find Rate (2nd Fastest) 24X
-  //  :RS#   Set Slew rate to max (fastest) ?X (1/2 of MaxRate)
+  //  :RG#   Set Slew rate to Guiding Rate (slowest) user defined
+  //  :RC#   Set Slew rate to Centering rate (2nd slowest) 4X
+  //  :RM#   Set Slew rate to Find Rate (2nd Fastest) 32X
+  //  :RS#   Set Slew rate to max (fastest) ?X (MaxRate)
   //  :Rn#   Set Slew rate to n, where n=0..9
   //         Returns: Nothing
   int i = 5;
   switch (command[1])
   {
   case 'G':
-    i = 2;
+    i = 0;
     break;
   case 'C':
-    i = 5;
+    i = 4;
     break;
   case 'M':
     i = 6;
     break;
   case 'S':
-    i = 8;
+    i = 9;
     break;
   case '0':
   case '1':
