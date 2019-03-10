@@ -53,16 +53,16 @@
 #define BUTTON_Stop "stop"
 #define BUTTON_SYNC "@"
 
-#define html_controlScript1 "<script>\n\
-function s(key,v1) {\n\
-var xhttp = new XMLHttpRequest();\n\
-xhttp.open('GET', 'guide.txt?'+key+'='+v1+'&x='+new Date().getTime(), true);\n\
-xhttp.send();\n\
-}\n\
-function g(v1){s('dr',v1);}\n\
-function gf(v1){s('dr',v1);autoFastRun();}\n\
-function sf(key,v1){s(key,v1);autoFastRun();}\n\
-</script>\n"
+const char  html_controlScript1[] = "<script>\n"
+"function s(key,v1) {\n"
+"var xhttp = new XMLHttpRequest();\n"
+"xhttp.open('GET', 'guide.txt?'+key+'='+v1+'&x='+new Date().getTime(), true);\n"
+"xhttp.send();\n"
+"}\n"
+"function g(v1){s('dr',v1);}\n"
+"function gf(v1){s('dr',v1);autoFastRun();}\n"
+"function sf(key,v1){s(key,v1);autoFastRun();}\n"
+"</script>\n";
 
 const char html_controlScript2[] PROGMEM =
 "<script>\r\n"
@@ -150,19 +150,20 @@ const char html_controlParkHome[] PROGMEM =
 "<button type = 'button' class = 'bb' onpointerdown = \"g('qr')\">Sync@home</button>"
 "</div><br class='clear' />\r\n";
 
-#define html_controlGuide "<div class='b1' style='width: 27em'>\
-<div align='left'>Recenter:</div>\
-<button class='gb' type='button' onpointerdown=\"g('n1')\" onpointerup=\"g('n0')\">" BUTTON_N "</button><br />\
-<button class='gb' type='button' onpointerdown=\"g('e1')\" onpointerup=\"g('e0')\">" BUTTON_E "</button>\
-<button class='gb' type='button' onpointerdown=\"g('q1')\">" BUTTON_Stop "</button>\
-<button class='gb' type='button' onpointerdown=\"g('w1')\" onpointerup=\"g('w0')\">" BUTTON_W "</button><br />\
-<button class='gb' type='button' onpointerdown=\"g('s1')\" onpointerup=\"g('s0')\">" BUTTON_S "</button><br /><br />\
-<button class='bbh' type='button' onpointerdown=\"g('R2')\">1x</button>\
-<button class='bbh' type='button' onpointerdown=\"g('R4')\">4x</button>\
-<button class='bbh' type='button' onpointerdown=\"g('R5')\">16x</button>\
-<button class='bbh' type='button' onpointerdown=\"g('R7')\">64x</button>\
-<button class='bbh' type='button' onpointerdown=\"g('R9')\">VMax</button>\
-</div><br class='clear' />\r\n"
+const char html_controlGuide[] PROGMEM =
+"<div class='b1' style='width: 27em'>"
+"<div align='left'>Recenter:</div>"
+"<button class='gb' type='button' onpointerdown=\"g('n1')\" onpointerup=\"g('n0')\">" BUTTON_N "</button><br />"
+"<button class='gb' type='button' onpointerdown=\"g('e1')\" onpointerup=\"g('e0')\">" BUTTON_E "</button>"
+"<button class='gb' type='button' onpointerdown=\"g('q1')\">" BUTTON_Stop "</button>"
+"<button class='gb' type='button' onpointerdown=\"g('w1')\" onpointerup=\"g('w0')\">" BUTTON_W "</button><br />"
+"<button class='gb' type='button' onpointerdown=\"g('s1')\" onpointerup=\"g('s0')\">" BUTTON_S "</button><br /><br />"
+"<button class='bbh' type='button' onpointerdown=\"g('R2')\">1x</button>"
+"<button class='bbh' type='button' onpointerdown=\"g('R4')\">4x</button>"
+"<button class='bbh' type='button' onpointerdown=\"g('R5')\">16x</button>"
+"<button class='bbh' type='button' onpointerdown=\"g('R7')\">64x</button>"
+"<button class='bbh' type='button' onpointerdown=\"g('R9')\">VMax</button>"
+"</div><br class='clear' />\r\n";
 
 const char html_controlFocus1[] PROGMEM =
 "<div class='b1' style='width: 27em'>";
@@ -306,7 +307,7 @@ void wifibluetooth::handleControl() {
   preparePage(data, 2);
 
   // guide (etc) script
-  data += html_controlScript1;
+  data += FPSTR(html_controlScript1);
   // clock script
   data += FPSTR(html_controlScript2);
   data += FPSTR(html_controlScript3);
@@ -314,7 +315,7 @@ void wifibluetooth::handleControl() {
 
   // active ajax page is: controlAjax();
   data += "<script>var ajaxPage='control.txt';</script>\n";
-  data += html_ajax_active;
+  data += FPSTR(html_ajax_active);
 #ifdef OETHS
   client->print(data); data="";
 #endif
@@ -352,7 +353,7 @@ void wifibluetooth::handleControl() {
 
 
   // Guiding -------------------------------------------------
-  data += html_controlGuide;
+  data += FPSTR(html_controlGuide);
 #ifdef OETHS
   client->print(data); data = "";
 #endif
