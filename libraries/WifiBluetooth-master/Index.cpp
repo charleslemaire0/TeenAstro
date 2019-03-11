@@ -52,35 +52,35 @@ void wifibluetooth::handleRoot() {
 #endif
   Ser.setTimeout(WebTimeout);
   serialRecvFlush();
-
+  sendHtmlStart();
   char temp[300]="";
   char temp1[80]="";
   char temp2[80]="";
 
   String data;
   preparePage(data, 1);
-
+  sendHtml(data);
   data+="<div style='width: 27em;'>";
 
   data+="<b>Time and Date:</b><br />";
   // Browser time
   data += html_settingsBrowserTime;
-
+  sendHtml(data);
   // UTC Date
   if (!sendCommand(":GX81#",temp1)) strcpy(temp1,"?");
   sprintf(temp,html_indexDate,temp1);
   data += temp;
-
+  sendHtml(data);
   // UTC Time
   if (!sendCommand(":GX80#",temp1)) strcpy(temp1,"?");
   sprintf(temp,html_indexTime,temp1);
   data += temp;
-
+  sendHtml(data);
   // LST
   if (!sendCommand(":GS#",temp1)) strcpy(temp1,"?");
   sprintf(temp,html_indexSidereal,temp1);
   data += temp;
-
+  sendHtml(data);
 #ifdef OETHS
   client->print(data); data="";
 #endif
@@ -99,6 +99,7 @@ void wifibluetooth::handleRoot() {
   if (!sendCommand(":GD#",temp2)) strcpy(temp2,"?");
   sprintf(temp,html_indexPosition,temp1,temp2); 
   data += temp;
+  sendHtml(data);
   // pier side and meridian flips
   if ((mountStatus.pierSide() == PierSideFlipWE1) || (mountStatus.pierSide() == PierSideFlipWE2) || (mountStatus.pierSide() == PierSideFlipWE3)) strcpy(temp1, "Meridian Flip, West to East"); else
     if ((mountStatus.pierSide() == PierSideFlipEW1) || (mountStatus.pierSide() == PierSideFlipEW2) || (mountStatus.pierSide() == PierSideFlipEW3)) strcpy(temp1, "Meridian Flip, East to West"); else
@@ -114,14 +115,14 @@ void wifibluetooth::handleRoot() {
   if (!mountStatus.valid()) strcpy(temp2, "?");
   sprintf(temp, html_indexPier, temp1, temp2);
   data += temp;
-
+  sendHtml(data);
   // RA,Dec target
   data += "<br /><b>Last Jnow Target Coordinates:</b><br />";
   if (!sendCommand(":Gr#",temp1)) strcpy(temp1,"?");
   if (!sendCommand(":Gd#",temp2)) strcpy(temp2,"?");
   sprintf(temp,html_indexPosition,temp1,temp2); 
   data += temp;
-
+  sendHtml(data);
 #ifdef ENCODERS_ON
   // RA,Dec OnStep position
   double f;
@@ -129,12 +130,13 @@ void wifibluetooth::handleRoot() {
   f=encoders.getOnStepAxis2(); doubleToDms(temp2,&f,true,true);
   sprintf(temp,html_indexEncoder1,temp1,temp2);
   data += temp;
-
+  sendHtml(data);
   // RA,Dec encoder position
   f=encoders.getAxis1(); doubleToDms(temp1,&f,true,true);
   f=encoders.getAxis2(); doubleToDms(temp2,&f,true,true);
   sprintf(temp,html_indexEncoder2,temp1,temp2);
   data += temp;
+  sendHtml(data);
 #endif
 
 
@@ -165,7 +167,7 @@ void wifibluetooth::handleRoot() {
   if (!mountStatus.valid()) strcpy(temp1,"?");
   sprintf(temp,html_indexPark,temp1);
   data += temp;
-
+  sendHtml(data);
   // Tracking
   if (mountStatus.tracking()) strcpy(temp1,"On"); else strcpy(temp1,"Off");
   if (mountStatus.slewing()) strcpy(temp1,"Slewing");
@@ -181,7 +183,7 @@ void wifibluetooth::handleRoot() {
   if (temp2[strlen(temp2)-2]==',') { temp2[strlen(temp2)-2]=0; strcat(temp2,"</font>)<font class=\"c\">"); } else strcpy(temp2,"");
   sprintf_P(temp,html_indexTracking,temp1,temp2);
   data += temp;
-
+  sendHtml(data);
   // Tracking rate
   if ((sendCommand(":GT#",temp1)) && (strlen(temp1)>6)) {
     double tr=atof(temp1);
@@ -204,6 +206,7 @@ void wifibluetooth::handleRoot() {
     }
     sprintf(temp, "&nbsp;&nbsp;Tracking Speed: <font class=\"c\">%s</font><br />", temp2);
     data += temp;
+    sendHtml(data);
   }
 
   
@@ -220,19 +223,20 @@ void wifibluetooth::handleRoot() {
   if (!mountStatus.valid()) strcpy(temp1,"?");
   sprintf(temp,html_indexLastError,temp1);
   data += temp;
-
+  sendHtml(data);
   // Loop time
   if (!sendCommand(":GXFA#",temp1)) strcpy(temp1,"?%");
   sprintf(temp,html_indexWorkload,temp1);
   data += temp;
-
+  sendHtml(data);
   data += "</div><br class=\"clear\" />\r\n";
   data += "</div></body></html>";
 
 #ifdef OETHS
   client->print(data);
 #else
-  server.send(200, "text/html",data);
+  sendHtml(data);
+  sendHtmlDone(data);
 #endif
 }
 

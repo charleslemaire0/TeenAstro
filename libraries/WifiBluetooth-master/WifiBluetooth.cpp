@@ -39,6 +39,7 @@
 #define html_links6S "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />"
 #define html_links6N "<a href='/wifi.htm'>WiFi</a><br />"
 
+
 bool wifibluetooth::wifiOn = true;
 
 int wifibluetooth::WebTimeout = TIMEOUT_WEB;
@@ -187,12 +188,13 @@ void wifibluetooth::preparePage(String &data, int page)
   data += html_main_css6;
   data += html_main_css7;
   data += html_main_css8;
-
+  sendHtml(data);
   if (page == 2)
   {
     data += html_main_css_control1;
     data += html_main_css_control2;
     data += html_main_css_control3;
+    sendHtml(data);
   }
   data += html_main_cssE;
   data += html_headE;
@@ -202,7 +204,7 @@ void wifibluetooth::preparePage(String &data, int page)
 
   data += html_bodyB;
   // get status
-  if (page == 1)
+  if (!mountStatus.valid() || page == 1)
     mountStatus.update();
   serialRecvFlush();
   // finish the standard http response header

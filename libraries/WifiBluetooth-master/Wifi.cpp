@@ -144,19 +144,20 @@ int wifibluetooth::hexToInt(String s) {
 void wifibluetooth::handleWifi() {
   Ser.setTimeout(WebTimeout);
 
-  char temp[500] = "";
+  char temp[300] = "";
   char temp1[80] = "";
   String data;
-
+  sendHtmlStart();
   processWifiGet();
   preparePage(data, 6);
-
+  sendHtml(data);
   data += "<div style='width: 40em;'>";
 
   if (restartRequired) {
     data += FPSTR(html_reboot);
     data += "</div></div></body></html>";
-    server.send(200, "text/html", data);
+    sendHtml(data);
+    sendHtmlDone(data);
     restartRequired = false;
     delay(1000);
     return;
@@ -165,7 +166,8 @@ void wifibluetooth::handleWifi() {
   if (loginRequired) {
     data += FPSTR(html_login);
     data += "</div></div></body></html>";
-    server.send(200, "text/html", data);
+    sendHtml(data);
+    sendHtmlDone(data);
     return;
   }
 
@@ -175,9 +177,9 @@ void wifibluetooth::handleWifi() {
   activeWifiMode == WifiMode::M_Station3 ? data += "<option selected value='2'>StationMode2</option>" : data += "<option value='2'>StationMode3</option>";
   activeWifiMode == WifiMode::M_AcessPoint ? data += "<option selected value='3'>AccessPoint</option>" : data += "<option value='3'>AccessPoint</option>";
   data += FPSTR(html_wifiMode2);
-
+  sendHtml(data);
   sprintf_P(temp, html_wifiSerial, CmdTimeout, WebTimeout); data += temp;
-
+  sendHtml(data);
   for (int k = 0; k < 3; k++)
   {
     sprintf_P(temp, html_wifiSSID1A, k); data += temp;
@@ -192,26 +194,28 @@ void wifibluetooth::handleWifi() {
     sprintf_P(temp, html_wifiSTAGW, k, wifi_sta_gw[k][0], k, wifi_sta_gw[k][1], k, wifi_sta_gw[k][2], k, wifi_sta_gw[k][3]); data += temp;
     sprintf_P(temp, html_wifiSTASN, k, wifi_sta_sn[k][0], k, wifi_sta_sn[k][1], k, wifi_sta_sn[k][2], k, wifi_sta_sn[k][3]); data += temp;
     sprintf_P(temp, html_wifiSSID2, k, stationDhcpEnabled[k] ? "checked" : ""); data += temp;
+    sendHtml(data);
   }
   sprintf_P(temp, html_wifiSSID3, wifi_ap_ssid, "", wifi_ap_ch); data += temp;
   uint8_t macap[6] = {0,0,0,0,0,0}; WiFi.softAPmacAddress(macap);
   char wifi_ap_mac[80]="";
   for (int i=0; i<6; i++) { sprintf(wifi_ap_mac,"%s%02x:",wifi_ap_mac,macap[i]); } wifi_ap_mac[strlen(wifi_ap_mac)-1]=0;
   sprintf_P(temp,html_wifiApMAC,wifi_ap_mac); data += temp;
-  
+  sendHtml(data);
   sprintf_P(temp,html_wifiSSID4,wifi_ap_ip[0],wifi_ap_ip[1],wifi_ap_ip[2],wifi_ap_ip[3]); data += temp;
   sprintf_P(temp,html_wifiSSID5,wifi_ap_gw[0],wifi_ap_gw[1],wifi_ap_gw[2],wifi_ap_gw[3]); data += temp;
   sprintf_P(temp,html_wifiSSID6,wifi_ap_sn[0],wifi_ap_sn[1],wifi_ap_sn[2],wifi_ap_sn[3]); data += temp;
   sprintf_P(temp,html_wifiSSID7,activeWifiMode == WifiMode:: M_AcessPoint ?"checked":""); data += temp;
   data += FPSTR(html_logout);
-
+  sendHtml(data);
   data += FPSTR(html_update);
-  
+  sendHtml(data);
 
   strcpy(temp,"</div></div></body></html>");
   data += temp;
-
-  server.send(200, "text/html",data);
+  
+  sendHtml(data);
+  sendHtmlDone(data);
 }
 
 void wifibluetooth::processWifiGet() {

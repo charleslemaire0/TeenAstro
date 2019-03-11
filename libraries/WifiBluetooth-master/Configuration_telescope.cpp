@@ -139,7 +139,7 @@ void wifibluetooth::handleConfigurationTelescope() {
 #endif
   Ser.setTimeout(WebTimeout);
   serialRecvFlush();
-  
+  sendHtmlStart();
   char temp[320]="";
   char temp1[80]="";
   char temp2[80]="";
@@ -147,10 +147,12 @@ void wifibluetooth::handleConfigurationTelescope() {
 
   processConfigurationTelescopeGet();
   preparePage(data, 4);
+  sendHtml(data);
   if (restartRequired_t) {
     data += FPSTR(html_reboot_t);
     data += "</div></div></body></html>";
-    server.send(200, "text/html", data);
+    sendHtml(data);
+    sendHtmlDone(data);
     restartRequired_t = false;
     delay(1000);
     return;
@@ -163,19 +165,22 @@ void wifibluetooth::handleConfigurationTelescope() {
     temp1[12] == 'K' ? data += "<option selected value='2'>Fork</option>" : data += "<option value='2'>Fork</option>";
     data += FPSTR(html_configMount_2);
   }
-
+  sendHtml(data);
   //if (!sendCommand(":GX90#", temp1)) strcpy(temp1, "0"); int mountType = (int)strtol(&temp1[0], NULL, 10);
   //sprintf(temp, html_configMount, mountType);
   //data += temp;
   if (!sendCommand(":GX92#", temp1)) strcpy(temp1, "0"); int maxRate = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configMaxRate, maxRate);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":GX90#", temp1)) strcpy(temp1, "0"); float guideRate = (float)strtof(&temp1[0], NULL);
   sprintf_P(temp, html_configGuideRate, guideRate);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":GXE2#", temp1)) strcpy(temp1, "0"); float acc = (float)strtof(&temp1[0], NULL);
   sprintf_P(temp, html_configAcceleration, acc);
   data += temp;
+  sendHtml(data);
 
 
   data+="<div style='width: 35em;'>";
@@ -193,45 +198,58 @@ void wifibluetooth::handleConfigurationTelescope() {
   data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
   sprintf_P(temp, html_configRotAxis_2, 1);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":%RD#", temp1)) strcpy(temp1, "0"); reverse = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configRotAxis_1, 2);
   data += temp;
   data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
   sprintf_P(temp, html_configRotAxis_2, 2);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":%GR#", temp1)) strcpy(temp1, "0"); int gear = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configGeAxis, gear, 1, 1);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":%GD#", temp1)) strcpy(temp1, "0"); gear = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configGeAxis, gear, 2, 2);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":%SR#", temp1)) strcpy(temp1, "0"); int step = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configStAxis, step, 1, 1);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":%SD#", temp1)) strcpy(temp1, "0"); step = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configStAxis, step, 2, 2);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":%MR#", temp1)) strcpy(temp1, "0"); int micro = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configMuAxis, (int)pow(2.,micro), 1, 1);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":%MD#", temp1)) strcpy(temp1, "0"); micro = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configMuAxis, (int)pow(2.,micro), 2, 2);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":%BR#", temp1)) strcpy(temp1, "0"); int backlashAxis = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configBlAxis, backlashAxis, 1, 1);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":%BD#", temp1)) strcpy(temp1, "0"); backlashAxis = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configBlAxis, backlashAxis, 2, 2);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":%cR#", temp1)) strcpy(temp1, "0"); int lowC = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configLCAxis, lowC*10, 1, 1);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":%cD#", temp1)) strcpy(temp1, "0"); lowC = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configLCAxis, lowC*10, 2, 2);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":%CR#", temp1)) strcpy(temp1, "0"); int highC = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configHCAxis, highC*10, 1, 1);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":%CD#", temp1)) strcpy(temp1, "0"); highC = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configHCAxis, highC*10, 2, 2);
   data += temp;
@@ -245,10 +263,11 @@ void wifibluetooth::handleConfigurationTelescope() {
   if (!sendCommand(":Gh#",temp1)) strcpy(temp1,"0"); int minAlt=(int)strtol(&temp1[0],NULL,10);
   sprintf_P(temp,html_configMinAlt,minAlt);
   data += temp;
+  sendHtml(data);
   if (!sendCommand(":Go#",temp1)) strcpy(temp1,"0"); int maxAlt=(int)strtol(&temp1[0],NULL,10);
   sprintf_P(temp,html_configMaxAlt,maxAlt);
   data += temp;
-
+  sendHtml(data);
   // Meridian Limits
   if ((sendCommand(":GXE9#",temp1)) && (sendCommand(":GXEA#",temp2))) {
     int degPastMerE=(int)strtol(&temp1[0],NULL,10);
@@ -268,7 +287,8 @@ void wifibluetooth::handleConfigurationTelescope() {
 #ifdef OETHS
   client->print(data); data="";
 #else
-  server.send(200, "text/html",data);
+  sendHtml(data);
+  sendHtmlDone(data);
 #endif
 }
 

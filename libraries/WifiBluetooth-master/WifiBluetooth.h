@@ -22,6 +22,21 @@
 
 
 // -----------------------------------------------------------------------------------
+// Macros
+#ifndef LEGACY_TRANSMIT_ON
+// macros to help with sending webpage data, chunked
+#define sendHtmlStart() server.setContentLength(CONTENT_LENGTH_UNKNOWN); server.sendHeader("Cache-Control","no-cache"); server.send(200, "text/html", String());
+#define sendHtml(x) server.sendContent(x); x=""
+#define sendHtmlDone(x) server.sendContent("");
+#else
+// macros to help with sending webpage data, normal method
+#define sendHtmlStart()
+#define sendHtml(x)
+#define sendHtmlDone(x) server.send(200, "text/html", x)
+#endif
+
+
+// -----------------------------------------------------------------------------------
 // Constants
 
 // The settings below are for initialization only, afterward they are stored and recalled from EEPROM and must
@@ -118,6 +133,8 @@ class wifibluetooth
   static boolean readLX200Bytes(char* command, char* recvBuffer, long timeOutMs);
   static void cl();
   static int hexToInt(String s);
+
+
 
   // write int numbers into EEPROM at position i (2 bytes)
   static void EEPROM_writeInt(int i, int j);

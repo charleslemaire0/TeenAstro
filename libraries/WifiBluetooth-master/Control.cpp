@@ -299,29 +299,29 @@ void wifibluetooth::handleControl() {
 #endif
   Ser.setTimeout(WebTimeout);
   serialRecvFlush();
-
+  sendHtmlStart();
   char temp1[80]="";
   String data;
-
   processControlGet();
   preparePage(data, 2);
-
+  sendHtml(data);
   // guide (etc) script
   data += FPSTR(html_controlScript1);
   // clock script
   data += FPSTR(html_controlScript2);
   data += FPSTR(html_controlScript3);
   data += FPSTR(html_controlScript4);
-
+  sendHtml(data);
   // active ajax page is: controlAjax();
   data += "<script>var ajaxPage='control.txt';</script>\n";
   data += FPSTR(html_ajax_active);
+  sendHtml(data);
 #ifdef OETHS
   client->print(data); data="";
 #endif
 
   data += FPSTR(html_controlQuick0);
-
+  sendHtml(data);
   // Quick controls ------------------------------------------
   if (!mountStatus.parking())
   {
@@ -329,6 +329,7 @@ void wifibluetooth::handleControl() {
     {
       data += FPSTR(html_controlQuick1);
       data += FPSTR(html_controlQuick1a);
+      sendHtml(data);
       if (mountStatus.parked())
       {
         data += FPSTR(html_controlQuick2);
@@ -339,7 +340,8 @@ void wifibluetooth::handleControl() {
 #ifdef OETHS
         client->print(data);
 #else
-        server.send(200, "text/html", data);
+        sendHtml(data);
+        sendHtmlDone(data);
 #endif
         return;
       }
@@ -347,6 +349,7 @@ void wifibluetooth::handleControl() {
     }
   }
   data += FPSTR(html_controlQuick3);
+  sendHtml(data);
 #ifdef OETHS
   client->print(data); data="";
 #endif
@@ -371,6 +374,7 @@ void wifibluetooth::handleControl() {
     data += FPSTR(html_controlFocus4);
     data += FPSTR(html_controlFocus5);
     data += FPSTR(html_controlFocus6);
+    sendHtml(data);
 #ifdef OETHS
     client->print(data); data = "";
 #endif
@@ -381,6 +385,7 @@ void wifibluetooth::handleControl() {
   data += FPSTR(html_controlTrack2);
   data += FPSTR(html_controlTrack3);
   data += FPSTR(html_controlTrack4);
+  sendHtml(data);
 #ifdef OETHS
   client->print(data); data="";
 #endif
@@ -524,7 +529,9 @@ void wifibluetooth::handleControl() {
 #ifdef OETHS
   client->print(data);
 #else
-  server.send(200, "text/html",data);
+  //server.send(200, "text/html",data);
+  sendHtml(data);
+  sendHtmlDone(data);
 #endif
 }
 
@@ -589,6 +596,7 @@ void wifibluetooth::controlAjax() {
   client->print(data);
 #else
   server.send(200, "text/plain",data);
+
 #endif
 }
 

@@ -61,7 +61,7 @@ void wifibluetooth::handleConfigurationSite() {
 #endif
   Ser.setTimeout(WebTimeout);
   serialRecvFlush();
-
+  sendHtmlStart();
   char temp[320] = "";
   char temp1[80] = "";
   char temp2[80] = "";
@@ -69,7 +69,7 @@ void wifibluetooth::handleConfigurationSite() {
 
   processConfigurationSiteGet();
   preparePage(data, 3);
-  
+  sendHtml(data);
   if (sendCommand(":W?#", temp1))
   {
     int selectedsite = 0;
@@ -149,7 +149,8 @@ void wifibluetooth::handleConfigurationSite() {
 #ifdef OETHS
   client->print(data); data = "";
 #else
-  server.send(200, "text/html", data);
+  sendHtml(data);
+  sendHtmlDone(data);
 #endif
 }
 

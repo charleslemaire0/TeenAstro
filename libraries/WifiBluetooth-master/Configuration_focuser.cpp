@@ -118,10 +118,10 @@ void wifibluetooth::handleConfigurationFocuser() {
   char temp1[80] = "";
   char temp2[80] = "";
   String data;
-
+  sendHtmlStart();
   processConfigurationFocuserGet();
   preparePage(data, 5);
-
+  sendHtml(data);
   sendCommand(":F~#", temp1);
   bool getdata = (temp1[0] == '~');
   if (getdata)
@@ -135,16 +135,22 @@ void wifibluetooth::handleConfigurationFocuser() {
     int dec = (int)strtol(&temp1[29], NULL, 10);
     sprintf_P(temp, html_configParkFocuser, park);
     data += temp;
+    sendHtml(data);
     sprintf_P(temp, html_configMaxPositionFocuser, maxPos);
     data += temp;
+    sendHtml(data);
     sprintf_P(temp, html_configLowSpeedFocuser, lowSpeed);
     data += temp;
+    sendHtml(data);
     sprintf_P(temp, html_configHighSpeedFocuser, highSpeed);
     data += temp;
+    sendHtml(data);
     sprintf_P(temp, html_configGotoAccFocuser, gotoAcc);
     data += temp;
+    sendHtml(data);
     sprintf_P(temp, html_configManAccFocuser, manAcc);
     data += temp;
+    sendHtml(data);
     //sprintf_P(temp, html_configManDecFocuser, dec);
     //data += temp;
   }
@@ -159,16 +165,18 @@ void wifibluetooth::handleConfigurationFocuser() {
     data += "Resolution: <br />";
     sprintf_P(temp, html_configResolutionFocuser, resolution);
     data += temp;
+    sendHtml(data);
     data += "Rotation: <br />";
     data += FPSTR(html_configRotFocuser_1);
     data += reverse ? FPSTR(html_configRotFocuser_r) : FPSTR(html_configRotFocuser_d);
     data += FPSTR(html_configRotFocuser_2);
+    sendHtml(data);
     data += "Motor: <br />";
     sprintf_P(temp, html_configMuFocuser, (int)pow(2., micro));
     data += temp;
     sprintf_P(temp, html_configHCFocuser, curr);
     data += temp;
-
+    sendHtml(data);
   }
   data += "Userdefined Position: <br />";
   data += "to remove a position set an empty name <br />";
@@ -190,6 +198,7 @@ void wifibluetooth::handleConfigurationFocuser() {
         int pos = (int)strtol(&temp1[1], NULL, 10);
         sprintf_P(temp, html_configPosFocuser, id, k, pos, k);
         data += temp;
+        sendHtml(data);
       }
     }
   }
@@ -210,7 +219,8 @@ void wifibluetooth::handleConfigurationFocuser() {
 #ifdef OETHS
   client->print(data); data="";
 #else
-  server.send(200, "text/html",data);
+  sendHtml(data);
+  sendHtmlDone(data);
 #endif
 }
 
