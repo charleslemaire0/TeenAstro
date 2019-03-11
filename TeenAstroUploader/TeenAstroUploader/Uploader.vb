@@ -9,7 +9,7 @@
       Dim fwv As String = ComboBoxFirmwareVersion.SelectedItem
       Select Case pcb
         Case "2.2 TMC260"
-          Hexfile = fwv + "\" + "Teenastro_" + fwv + " _220"
+          Hexfile = fwv + "\" + "Teenastro_" + fwv + "_220"
         Case "2.3 TMC260"
           Hexfile = fwv + "\" + "Teenastro_" + fwv + "_230"
         Case "2.4 TMC2130"
