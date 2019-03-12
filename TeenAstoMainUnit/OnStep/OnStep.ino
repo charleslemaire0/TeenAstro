@@ -77,6 +77,10 @@ void setup()
   long thisAutoInitKey = EEPROM_readLong(EE_autoInitKey);
   if (thisAutoInitKey != initKey)
   {
+    for (int i = 0; i < EEPROM.length(); i++)
+    {
+      EEPROM.write(i, 0);
+    }
     // init the site information, lat/long/tz/name
     localSite.initdefault();
     EEPROM.write(EE_mountType, MOUNT_TYPE_GEM);
