@@ -36,18 +36,14 @@ void Command_M(bool &supress_frame)
     break;
   }
 
-
-
   case 'g':
   {
     //  :Mgdnnnn# Pulse guide command
         //          Returns: Nothing
-
     if ((atoi2((char *)&parameter[1], &i)) &&
       ((i > 0) && (i <= 16399)) && sideralTracking && !movingTo &&
        (GuidingState != GuidingRecenter || GuidingState != GuidingST4))
-    {
-     
+    {     
       if ((parameter[0] == 'e') || (parameter[0] == 'w'))
       {
 #ifdef SEPERATE_PULSE_GUIDE_RATE_ON
@@ -99,7 +95,6 @@ void Command_M(bool &supress_frame)
     else
       commandError = true;
     break;
-
   }
   case 'e':
   case 'w':
@@ -110,8 +105,6 @@ void Command_M(bool &supress_frame)
     quietReply = true;
   }
   break;
-
-
   case 'n':
   case 's':
     //  :Mn# & :Ms#      Move Telescope North or South at current slew rate
@@ -122,9 +115,7 @@ void Command_M(bool &supress_frame)
   }
   break;
 
-
   case 'P':
-
     //  :MP#   Goto the Current Position for Polar Align
         //         Returns:
         //         0=Goto is Possible
@@ -158,7 +149,6 @@ void Command_M(bool &supress_frame)
         //         6=Outside limits          Outside limits, above the Zenith limit
         //         7=Guiding
         //         8=has a an Error
-
     i = goToEqu(newTargetRA, newTargetDec, pierSide);
     reply[0] = i + '0';
     reply[1] = 0;

@@ -853,7 +853,6 @@ void Command_T()
     break;
   case 'K':
     // king tracking rate 60.136Hz
-
     SetTrackingRate(0.99953004401);
     refraction = false;
     quietReply = true;

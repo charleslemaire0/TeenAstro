@@ -662,10 +662,6 @@ void  Command_G()
     i = 0;
     reply[0] = '0' + 2 * movingTo + sideralTracking;
     reply[1] = '0' + sideralMode;
-    //if (trackingState != TrackingON) reply[0] = 'n';
-    //if (trackingState != TrackingMoveTo) reply[1] = 'N';
-    //else if (lastTrackingState == TrackingON) reply[0] = ' ';
-
     const char  *parkStatusCh = "pIPF";
     reply[2] = parkStatusCh[parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
     if (atHome) reply[3] = 'H';
