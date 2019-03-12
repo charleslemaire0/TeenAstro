@@ -16,6 +16,7 @@ public:
   };
   enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
   enum TrackState { TRK_OFF, TRK_ON, TRK_SLEWING, TRK_UNKNOW };
+  enum SideralMode { SID_STAR, SID_SUN, SID_MOON };
   enum ParkState { PRK_UNPARKED, PRK_PARKED, PRK_FAILED, PRK_PARKING, PRK_UNKNOW };
   enum PierState { PIER_E, PIER_W, PIER_UNKNOW };
 
@@ -58,8 +59,12 @@ public:
   void updateFocuser();
   void updateTel();
   Mount getMount();
+ 
   ParkState getParkState();
   TrackState getTrackingState();
+  SideralMode getSideralMode();
+  double getLstT0();
+  double getLat();
   bool atHome();
   bool isPulseGuiding();
   bool isGuidingN();

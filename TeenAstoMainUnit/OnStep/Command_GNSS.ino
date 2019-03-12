@@ -36,13 +36,6 @@ void Command_GNSS()
   switch (command[1])
   {
   case 's':
-
-    //if (!atHome && parkStatus != Parked)
-    //{
-    //  commandError = true;
-    //  return;
-    //}
-
     if (iSGNSSValid())
     {
       double lat = l.lat();

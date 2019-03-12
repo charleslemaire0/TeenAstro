@@ -105,20 +105,47 @@ Telescope::Mount Telescope::getMount()
 }
 Telescope::TrackState Telescope::getTrackingState()
 {
-  if (TelStatus[1] != 'N')
+  switch (TelStatus[0])
   {
+  case '3':
+  case '2':
     return TRK_SLEWING;
-  }
-  else if (TelStatus[0] != 'n')
-  {
+  case '1':
     return TRK_ON;
-  }
-  else if (TelStatus[0] == 'n' && TelStatus[1] == 'N')
-  {
+  case '0':
     return TRK_OFF;
+  default:
+    return TRK_UNKNOW;
   }
-  return TRK_UNKNOW;
 }
+Telescope::SideralMode Telescope::getSideralMode()
+{
+  switch (TelStatus[1])
+  {
+  case '2':
+  case '1':
+  case '0':
+    return  static_cast<SideralMode>(TelStatus[1]-'0');
+  default:
+    return SideralMode::SID_STAR;
+  }
+}
+double Telescope::getLstT0()
+{
+  char temp[20] = "";
+  double f = 0;
+  if (GetLX200(":GS#", temp, 20) == LX200VALUEGET)
+  {  
+    hmsToDouble(&f, temp);
+  }
+  return f;
+};
+double Telescope::getLat()
+{
+  double f = -10000;
+  GetLatitudeLX200(f);
+  return f;
+};
 bool Telescope::atHome()
 {
   return TelStatus[3] == 'H';

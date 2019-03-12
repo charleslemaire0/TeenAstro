@@ -484,7 +484,7 @@ void Command_A()
           delay(10);
 
           // start tracking
-          trackingState = TrackingON;
+          sideralTracking = true;
           lastSetTrakingEnable = millis();
           // start align...
           alignNumStars = command[1] - '0';
@@ -584,7 +584,7 @@ void Command_B()
 void Command_C()
 {
   if ((parkStatus == NotParked) &&
-      (trackingState != TrackingMoveTo) &&
+      !movingTo &&
       ( command[1] == 'M' || command[1] == 'S'))
   {
     if (newTargetPierSide == PierSideEast || newTargetPierSide == PierSideWest)
@@ -615,7 +615,7 @@ void Command_D()
 {
   if (command[1] != 0)
     return;
-  if (trackingState == TrackingMoveTo)
+  if (movingTo)
   {
     reply[0] = (char)127;
     reply[1] = 0;
@@ -686,7 +686,7 @@ void Command_Q()
     //         Returns: Nothing
     if ((parkStatus == NotParked) || (parkStatus == Parking))
     {
-      if (trackingState == TrackingMoveTo)
+      if (movingTo)
       {
         abortSlew = true;
       }
@@ -715,7 +715,7 @@ void Command_Q()
     //  :Qe# & Qw#   Halt east/westward Slews
     //         Returns: Nothing
   {
-    if ((parkStatus == NotParked) && (trackingState != TrackingMoveTo))
+    if ((parkStatus == NotParked) && !movingTo)
     {
       if (guideDirAxis1)
         StopAxis1();
@@ -729,7 +729,7 @@ void Command_Q()
     //  :Qn# & Qs#   Halt north/southward Slews
     //         Returns: Nothing
   {
-    if ((parkStatus == NotParked) && (trackingState != TrackingMoveTo))
+    if ((parkStatus == NotParked) && !movingTo)
     {
       if (guideDirAxis2)
         StopAxis2();
@@ -748,26 +748,26 @@ void Command_Q()
 //   R - Slew Rate Commands
 void Command_R()
 {
-  //  :RG#   Set Slew rate to Guiding Rate (slowest) 1X
-  //  :RC#   Set Slew rate to Centering rate (2nd slowest) 8X
-  //  :RM#   Set Slew rate to Find Rate (2nd Fastest) 24X
-  //  :RS#   Set Slew rate to max (fastest) ?X (1/2 of MaxRate)
+  //  :RG#   Set Slew rate to Guiding Rate (slowest) user defined
+  //  :RC#   Set Slew rate to Centering rate (2nd slowest) 4X
+  //  :RM#   Set Slew rate to Find Rate (2nd Fastest) 32X
+  //  :RS#   Set Slew rate to max (fastest) ?X (MaxRate)
   //  :Rn#   Set Slew rate to n, where n=0..9
   //         Returns: Nothing
   int i = 5;
   switch (command[1])
   {
   case 'G':
-    i = 2;
+    i = 0;
     break;
   case 'C':
-    i = 5;
+    i = 4;
     break;
   case 'M':
     i = 6;
     break;
   case 'S':
-    i = 8;
+    i = 9;
     break;
   case '0':
   case '1':
@@ -785,7 +785,7 @@ void Command_R()
     commandError = true;
     return;
   }
-  if (trackingState != TrackingMoveTo && GuidingState == GuidingOFF)
+  if (!movingTo && GuidingState == GuidingOFF)
   {
     enableGuideRate(i, false);
   }
@@ -829,18 +829,21 @@ void Command_T()
   case 'S':
     // solar tracking rate 60Hz 
     SetTrackingRate(TrackingSolar);
+    sideralMode = SIDM_SUN;
     refraction = false;
     quietReply = true;
     break;
   case 'L':
     // lunar tracking rate 57.9Hz
     SetTrackingRate(TrackingLunar);
+    sideralMode = SIDM_MOON;
     refraction = false;
     quietReply = true;
     break;
   case 'Q':
     // sidereal tracking rate
     SetTrackingRate(default_tracking_rate);
+    sideralMode = SIDM_STAR;
     quietReply = true;
     break;
   case 'R':
@@ -858,16 +861,9 @@ void Command_T()
   case 'e':
     if (parkStatus == NotParked)
     {
-      if ((trackingState == TrackingON || trackingState == TrackingOFF))
-      {
-        trackingState = TrackingON;
-        lastSetTrakingEnable = millis();
-        atHome = false;
-      }
-      if (trackingState == TrackingMoveTo)
-      {
-        lastTrackingState = TrackingON;
-      }
+      lastSetTrakingEnable = millis();
+      atHome = false;
+      sideralTracking = true;
     }
     else
       commandError = true;
@@ -875,23 +871,7 @@ void Command_T()
   case 'd':
     if (parkStatus == NotParked)
     {
-      if ((trackingState == TrackingON || trackingState == TrackingOFF))
-      {
-        trackingState = TrackingOFF;
-        lastSetTrakingEnable = millis();
-        atHome = false;
-      }
-      if (trackingState == TrackingMoveTo)
-      {
-        lastTrackingState = TrackingOFF;
-      }
-    }
-    else
-      commandError = true;
-    break;
-    if (trackingState == TrackingON || trackingState == TrackingOFF)
-    {
-      trackingState = TrackingOFF;
+      sideralTracking = false;
     }
     else
       commandError = true;

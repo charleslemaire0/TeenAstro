@@ -107,7 +107,7 @@ ISR(TIMER1_COMPA_vect)
   // run 1/3 of the time at 3x the rate, unless a goto is happening
   rtk.m_lst++;
 
-  if (trackingState != TrackingMoveTo)
+  if (!movingTo)
   {
     double maxguideTimerRate = 4;
     // automatic rate calculation HA
@@ -272,7 +272,7 @@ ISR(TIMER1_COMPA_vect)
     thisTimerRateAxis2 = timerRateBacklashAxis2;
     wasInbacklashAxis2 = true;
   }
-  if ((trackingState == TrackingON))
+  if (sideralTracking && !movingTo)
   {
     // travel through the backlash is done, but we weren't following the target while it was happening!
     // so now get us back to near where we need to be
@@ -297,7 +297,7 @@ ISR(TIMER1_COMPA_vect)
       sei();
     }
   }
-  if (trackingState == TrackingMoveTo)
+  if (movingTo)
   {
     // trigger Goto step mode, rapid acceleration (low StepsForRateChange) can leave too little time
     // until the home position arrives to actually switch to tracking micro-step mode. the larger step size

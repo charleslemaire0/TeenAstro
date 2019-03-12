@@ -92,13 +92,13 @@ Again:
 
     if (parkStatus == Parking)
     {
-      lastTrackingState = abortTrackingState;
+      sideralTracking = lastSideralTracking;
       parkStatus = NotParked;
       EEPROM.write(EE_parkStatus, parkStatus);
     }
     else if (homeMount)
     {
-      lastTrackingState = abortTrackingState;
+      sideralTracking = lastSideralTracking;
       homeMount = false;
     }
 
@@ -139,9 +139,7 @@ Again:
     // In AltAz mode & at the end of slew & near the Zenith, disable tracking for a moment if we're getting close to the target
     if ((distDestAxis1 <= (long)StepsPerDegreeAxis1 * 2L) && (distDestAxis2 <= (long)StepsPerDegreeAxis2 * 2L)) {
       if ((long)targetAxis2.part.m > 80L * (long)StepsPerDegreeAxis2 ) {
-        if (lastTrackingState == TrackingON) {
-          lastTrackingState = TrackingOFF;
-        }
+        sideralTracking = false;
       }
     }
   }
@@ -155,13 +153,11 @@ Again:
     if (mountType == MOUNT_TYPE_ALTAZM)
     {
       // Near the Zenith disable tracking in AltAz mode for a moment if we're getting close to the target
-      if (lastTrackingState == TrackingOFF)
-        lastTrackingState = TrackingON;
+      sideralTracking = true;
     }
     // restore last tracking state
-    trackingState = lastTrackingState;
+    movingTo = false;
     SetSiderealClockRate(siderealInterval);
-
     cli();
     timerRateAxis1 = SiderealRate;
     timerRateAxis2 = SiderealRate;

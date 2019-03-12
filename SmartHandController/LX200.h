@@ -17,8 +17,8 @@ LX200RETURN SetLX200(char* command);
 LX200RETURN SetBoolLX200(char* command);
 LX200RETURN SetTimeLX200(long &value);
 LX200RETURN GetSiteLX200(int &value);
-LX200RETURN GetLatitudeLX200(int& degree, int& minute);
-LX200RETURN GetLongitudeLX200(int& degree, int& minute);
+LX200RETURN GetLatitudeLX200(double& degree);
+LX200RETURN GetLongitudeLX200(double& degree);
 void SetSiteLX200(int &value);
 LX200RETURN Move2TargetLX200();
 LX200RETURN SetTargetRaLX200(uint8_t& vr1, uint8_t& vr2, uint8_t& vr3);
@@ -29,7 +29,7 @@ LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, s
 LX200RETURN SyncGotoLX200(bool, float &Ra, float &Dec);
 LX200RETURN SyncSelectedStarLX200(unsigned short alignSelectedStar);
 LX200RETURN GetDateLX200(unsigned int &day, unsigned int &month, unsigned int &year);
-LX200RETURN SyncGotoCatLX200(bool sync, Catalog cat, int idx);
+LX200RETURN SyncGotoCatLX200(bool sync);
 LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short obj);
 LX200RETURN readReverseLX200(const uint8_t &axis, bool &reverse);
 LX200RETURN writeReverseLX200(const uint8_t &axis, const bool &reverse);
@@ -49,3 +49,5 @@ LX200RETURN readFocuserConfig(unsigned int& startPosition, unsigned int& maxPosi
                               unsigned int& minSpeed, unsigned int& maxSpeed,
                               unsigned int& cmdAcc, unsigned int& manAcc, unsigned int& manDec);
 LX200RETURN readFocuserMotor(bool& reverse, unsigned int& micro, unsigned int& incr, unsigned int& curr);
+boolean hmsToDouble(double *f, char *hms);
+boolean dmsToDouble(double *f, char *dms, boolean sign_present, boolean highPrecision);

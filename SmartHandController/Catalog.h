@@ -1,37 +1,74 @@
 ﻿#pragma once
 #include <Arduino.h>
-#include "PGMWrap.h"
+#include "constants.h"
 
-enum Catalog { STAR, MESSIER, HERSCHEL };
+const double Rad=57.29577951;
 
-extern const char *constellation_txt[];
-extern const char *catalog_txt[];
+enum Catalog { STAR, MESSIER, HERSCHEL, CAT_NONE };
+enum FilterMode { FM_NONE, FM_ABOVE_HORIZON, FM_ALIGN_ALL_SKY, FM_ALIGN_3STAR_1, FM_ALIGN_3STAR_2, FM_ALIGN_3STAR_3 };
 
-//Herschel
-extern const char *Herschel_info_txt[];
-extern const uint16_p Herschel_NGC[400] PROGMEM;
-extern const uint8_p Herschel_info[400] PROGMEM;
-extern const uint16_p Herschel_ra[400] PROGMEM;
-extern const int16_p Herschel_dec[400] PROGMEM;
-extern const uint8_p Herschel_obj[400] PROGMEM;
-extern const uint8_p Hershel_constellation[400] PROGMEM;
-extern const uint8_p Hershel_dMag[400] PROGMEM;
-
-//Messier
-extern const uint16_p Messier_ra[110] PROGMEM;
-extern const int16_p Messier_dec[110] PROGMEM;
-extern const uint8_p Messier_obj[110] PROGMEM;
-extern const uint8_p Messier_constellation[110] PROGMEM;
-extern const uint8_p Messier_dMag[110] PROGMEM;
-
-//Star
-extern const uint8_p Star_letter[292] PROGMEM;
-extern const uint8_p Star_constellation[292] PROGMEM;
-extern const uint16_p Star_ra[292] PROGMEM;
-extern const int16_p Star_dec[292] PROGMEM;
-
-void getcatdms(const short& v, uint8_t& v1, uint8_t& v2, bool& pv);
+void getcatdms(const short& v, short& v1, uint8_t& v2);
 void getcatdf(const short& v, float& v1);
 void getcathms(const unsigned short& v, uint8_t& v1, uint8_t& v2, uint8_t& v3);
 void getcathf(const unsigned short& v, float& v1);
+
+class CatMgr {
+  public:
+// initialization
+    void setLat(double lat);
+    void setLstT0(double lstT0);
+    double getLst();
+    void select(Catalog cat);
+    Catalog getCat();
+    const char* catalogStr();
+
+    bool canFilter();
+    void filter(FilterMode fm);
+
+    void setIndex(int index);
+    int getIndex();
+    int getMaxIndex();
+    void incIndex();
+    void decIndex();
+    
+    double ra();
+    double ha();
+    void   raHMS(uint8_t& h, uint8_t& m, uint8_t& s);
+    double dec();
+    void   decDMS(short& d, uint8_t& m, uint8_t& s);
+    int    epoch();
+    double alt();
+    double azm();
+    double magnitude();
+    byte   constellation();
+    const char* constellationStr();
+    byte   objectType();
+    const char* objectTypeStr();
+    const char* objectName();
+    int    primaryId();
+
+    void EquToHor(double RA, double Dec, double *Alt, double *Azm);
+    void HorToEqu(double Alt, double Azm, double *RA, double *Dec);
+    double TrueRefrac(double Alt, double Pressure=1010.0, double Temperature=10.0);
+    
+
+    double _lat=-10000;
+    double _cosLat=0;
+    double _sinLat=0;
+    double _lstT0=0;
+    unsigned long _mil = 0;
+private:
+    Catalog _cat=CAT_NONE;
+    FilterMode _fm=FM_NONE;
+    int _selected=0;
+    int _idx[4]={0,0,0,0};
+    int _maxIdx[4]={NUM_STARS-1,NUM_MESSIER-1,NUM_HERSCHEL-1,0-1};
+
+    bool isFiltered();
+    double DistFromEqu(double RA, double Dec);
+    double HAToRA(double ha);
+    double cot(double n);
+};
+
+extern CatMgr cat_mgr;
 

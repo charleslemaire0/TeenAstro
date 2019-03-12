@@ -3,7 +3,7 @@ void MoveAxis1(const byte newguideDirAxis, const byte Mode)
 {
  
   bool canMove = parkStatus == NotParked;
-  canMove &= trackingState != TrackingMoveTo;
+  canMove &= !movingTo;
   canMove &= (GuidingState == GuidingOFF || GuidingState == Mode);
   if (canMove)
   {
@@ -57,7 +57,7 @@ void StopAxis1()
 void MoveAxis2(const byte newguideDirAxis,const byte Mode)
 {
   bool canMove = parkStatus == NotParked;
-  canMove &= trackingState != TrackingMoveTo;
+  canMove &= !movingTo;
   canMove &= (GuidingState == GuidingOFF || GuidingState == Mode);
 
   if (canMove)

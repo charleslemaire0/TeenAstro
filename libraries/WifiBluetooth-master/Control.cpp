@@ -1,5 +1,6 @@
 #include "WifiBluetooth.h"
 #include "config.h"
+#include "Ajax.h"
 // -----------------------------------------------------------------------------------
 // Telescope control related functions
 
@@ -52,12 +53,11 @@
 #define BUTTON_Stop "stop"
 #define BUTTON_SYNC "@"
 
-const char html_controlScript1[] PROGMEM=
-"<script>\n"
+const char  html_controlScript1[] = "<script>\n"
 "function s(key,v1) {\n"
-  "var xhttp = new XMLHttpRequest();\n"
-  "xhttp.open('GET', 'guide.txt?'+key+'='+v1+'&x='+new Date().getTime(), true);\n"
-  "xhttp.send();\n"
+"var xhttp = new XMLHttpRequest();\n"
+"xhttp.open('GET', 'guide.txt?'+key+'='+v1+'&x='+new Date().getTime(), true);\n"
+"xhttp.send();\n"
 "}\n"
 "function g(v1){s('dr',v1);}\n"
 "function gf(v1){s('dr',v1);autoFastRun();}\n"
@@ -150,23 +150,19 @@ const char html_controlParkHome[] PROGMEM =
 "<button type = 'button' class = 'bb' onpointerdown = \"g('qr')\">Sync@home</button>"
 "</div><br class='clear' />\r\n";
 
-const char html_controlGuide1[] PROGMEM =
+const char html_controlGuide[] PROGMEM =
 "<div class='b1' style='width: 27em'>"
 "<div align='left'>Recenter:</div>"
-"<button class='gb' type='button' onpointerdown=\"g('n1')\" onpointerup=\"g('n0')\">" BUTTON_N "</button><br />";
-const char html_controlGuide2[] PROGMEM =
-"<button class='gb' type='button' onpointerdown=\"g('e1')\" onpointerup=\"g('e0')\">" BUTTON_E "</button>";
-const char html_controlGuide3[] PROGMEM =
+"<button class='gb' type='button' onpointerdown=\"g('n1')\" onpointerup=\"g('n0')\">" BUTTON_N "</button><br />"
+"<button class='gb' type='button' onpointerdown=\"g('e1')\" onpointerup=\"g('e0')\">" BUTTON_E "</button>"
 "<button class='gb' type='button' onpointerdown=\"g('q1')\">" BUTTON_Stop "</button>"
-"<button class='gb' type='button' onpointerdown=\"g('w1')\" onpointerup=\"g('w0')\">" BUTTON_W "</button><br />";
-const char html_controlGuide4[] PROGMEM =
-"<button class='gb' type='button' onpointerdown=\"g('s1')\" onpointerup=\"g('s0')\">" BUTTON_S "</button><br /><br />";
-const char html_controlGuide6[] PROGMEM =
+"<button class='gb' type='button' onpointerdown=\"g('w1')\" onpointerup=\"g('w0')\">" BUTTON_W "</button><br />"
+"<button class='gb' type='button' onpointerdown=\"g('s1')\" onpointerup=\"g('s0')\">" BUTTON_S "</button><br /><br />"
 "<button class='bbh' type='button' onpointerdown=\"g('R2')\">1x</button>"
-"<button class='bbh' type='button' onpointerdown=\"g('R4')\">Mid</button>";
-const char html_controlGuide7[] PROGMEM =
-"<button class='bbh' type='button' onpointerdown=\"g('R6')\">Fast</button>"
-"<button class='bbh' type='button' onpointerdown=\"g('R8')\">VFast</button>"
+"<button class='bbh' type='button' onpointerdown=\"g('R4')\">4x</button>"
+"<button class='bbh' type='button' onpointerdown=\"g('R5')\">16x</button>"
+"<button class='bbh' type='button' onpointerdown=\"g('R7')\">64x</button>"
+"<button class='bbh' type='button' onpointerdown=\"g('R9')\">VMax</button>"
 "</div><br class='clear' />\r\n";
 
 const char html_controlFocus1[] PROGMEM =
@@ -187,6 +183,7 @@ const char html_controlFocus5[] PROGMEM =
 const char html_controlFocus6[] PROGMEM =
 "</div><br class='clear' />\r\n";
 
+#ifdef ROTATOR_ON
 const char html_controlRotate0[] PROGMEM =
 "<div class='b1' style='width: 27em'>";
 const char html_controlRotate1[] PROGMEM =
@@ -206,6 +203,7 @@ const char html_controlDeRotate2[] PROGMEM =
 "<button type='button' onpointerdown=\"gf('d0')\" >De-Rotate Off</button>";
 const char html_controlRotate4[] PROGMEM =
 "</div><br class='clear' />\r\n";
+#endif
 
 #if defined(SW0) || defined(SW1) || defined(SW2) || defined(SW3) || defined(SW4) || defined(SW5) || defined(SW6) || defined(SW7) || defined(SW8) || defined(SW9) || defined(SW10) || defined(SW11) || defined(SW12) || defined(SW13) || defined(SW14) || defined(SW15) || defined(AN3) || defined(AN4) || defined(AN5) || defined(AN6) || defined(AN7) || defined(AN8)
 const char html_controlAuxB[] = "<div class='b1' style='width: 27em'><div align='left'>Aux:</div>";
@@ -301,29 +299,29 @@ void wifibluetooth::handleControl() {
 #endif
   Ser.setTimeout(WebTimeout);
   serialRecvFlush();
-
+  sendHtmlStart();
   char temp1[80]="";
   String data;
-
   processControlGet();
   preparePage(data, 2);
-
+  sendHtml(data);
   // guide (etc) script
   data += FPSTR(html_controlScript1);
   // clock script
   data += FPSTR(html_controlScript2);
   data += FPSTR(html_controlScript3);
   data += FPSTR(html_controlScript4);
-
+  sendHtml(data);
   // active ajax page is: controlAjax();
-  data +="<script>var ajaxPage='control.txt';</script>\n";
-  data +=html_ajax_active;
+  data += "<script>var ajaxPage='control.txt';</script>\n";
+  data += FPSTR(html_ajax_active);
+  sendHtml(data);
 #ifdef OETHS
   client->print(data); data="";
 #endif
 
   data += FPSTR(html_controlQuick0);
-
+  sendHtml(data);
   // Quick controls ------------------------------------------
   if (!mountStatus.parking())
   {
@@ -331,6 +329,7 @@ void wifibluetooth::handleControl() {
     {
       data += FPSTR(html_controlQuick1);
       data += FPSTR(html_controlQuick1a);
+      sendHtml(data);
       if (mountStatus.parked())
       {
         data += FPSTR(html_controlQuick2);
@@ -341,7 +340,8 @@ void wifibluetooth::handleControl() {
 #ifdef OETHS
         client->print(data);
 #else
-        server.send(200, "text/html", data);
+        sendHtml(data);
+        sendHtmlDone(data);
 #endif
         return;
       }
@@ -349,19 +349,14 @@ void wifibluetooth::handleControl() {
     }
   }
   data += FPSTR(html_controlQuick3);
+  sendHtml(data);
 #ifdef OETHS
   client->print(data); data="";
 #endif
 
 
   // Guiding -------------------------------------------------
-  data += FPSTR(html_controlGuide1);
-  data += FPSTR(html_controlGuide2);
-  data += FPSTR(html_controlGuide3);
-  data += FPSTR(html_controlGuide4);
-  //data += FPSTR(html_controlGuide5);
-  data += FPSTR(html_controlGuide6);
-  data += FPSTR(html_controlGuide7);
+  data += FPSTR(html_controlGuide);
 #ifdef OETHS
   client->print(data); data = "";
 #endif
@@ -379,6 +374,7 @@ void wifibluetooth::handleControl() {
     data += FPSTR(html_controlFocus4);
     data += FPSTR(html_controlFocus5);
     data += FPSTR(html_controlFocus6);
+    sendHtml(data);
 #ifdef OETHS
     client->print(data); data = "";
 #endif
@@ -389,6 +385,7 @@ void wifibluetooth::handleControl() {
   data += FPSTR(html_controlTrack2);
   data += FPSTR(html_controlTrack3);
   data += FPSTR(html_controlTrack4);
+  sendHtml(data);
 #ifdef OETHS
   client->print(data); data="";
 #endif
@@ -532,7 +529,9 @@ void wifibluetooth::handleControl() {
 #ifdef OETHS
   client->print(data);
 #else
-  server.send(200, "text/html",data);
+  //server.send(200, "text/html",data);
+  sendHtml(data);
+  sendHtmlDone(data);
 #endif
 }
 
@@ -597,6 +596,7 @@ void wifibluetooth::controlAjax() {
   client->print(data);
 #else
   server.send(200, "text/plain",data);
+
 #endif
 }
 

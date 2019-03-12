@@ -4,10 +4,10 @@
 // sets the park postion as the current position
 boolean setPark()
 {
-  if ((parkStatus == NotParked) && (trackingState != TrackingMoveTo))
+  if ((parkStatus == NotParked) && !movingTo)
   {
-    lastTrackingState = trackingState;
-    trackingState = TrackingOFF;
+    lastSideralTracking = sideralTracking;
+    sideralTracking = false;
 
     // don't worry about moving around: during parking pec is turned off and backlash is cleared (0) so that targetAxis1/targetAxis2=posAxis1/posAxis2
     // this should handle getting us back to the home position for micro-step modes up to 256X
@@ -25,7 +25,7 @@ boolean setPark()
     saveAlignModel();
     parkSaved = true;
     EEPROM.write(EE_parkSaved, parkSaved);
-    trackingState = lastTrackingState;
+    sideralTracking = lastSideralTracking;
     return true;
   }
 
@@ -128,7 +128,7 @@ byte park()
   {
     return 4;
   }
-  if (trackingState != TrackingMoveTo)
+  if (!movingTo)
   {
     parkSaved = EEPROM.read(EE_parkSaved);
     if (parkStatus == NotParked)
@@ -141,9 +141,8 @@ byte park()
         h *= pow(2, MicroAxis1);
         d *= pow(2, MicroAxis2);
         // stop tracking
-        abortTrackingState = trackingState;
-        lastTrackingState = TrackingOFF;
-        trackingState = TrackingOFF;
+        lastSideralTracking = sideralTracking;
+        sideralTracking = false;
         // record our status
         parkStatus = Parking;
         EEPROM.write(EE_parkStatus, parkStatus);
@@ -199,7 +198,7 @@ boolean syncAtPark()
 
 boolean iniAtPark()
 {
-  if (trackingState != TrackingOFF)
+  if (sideralTracking || movingTo)
     return false;
   parkStatus = EEPROM.read(EE_parkStatus);
   if (!(parkStatus == Parked ))
@@ -225,7 +224,7 @@ boolean unpark()
   parkStatus = NotParked;
   EEPROM.write(EE_parkStatus, parkStatus);
   // start tracking the sky
-  trackingState = TrackingON;
+  sideralTracking = true;
   return true;
 }
 

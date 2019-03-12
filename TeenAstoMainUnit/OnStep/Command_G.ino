@@ -629,7 +629,7 @@ void  Command_G()
     //  :GT#   Get tracking rate
     //         Returns: dd.ddddd# (OnStep returns more decimal places than LX200 standard)
     //         Returns the tracking rate if siderealTracking, 0.0 otherwise
-    if (trackingState == TrackingON)
+    if (sideralTracking && !movingTo)
     {
       f = mountType == MOUNT_TYPE_ALTAZM ? GetTrackingRate() : trackingTimerRateAxis1 ;
       f *= 60* 1.00273790935;
@@ -660,9 +660,11 @@ void  Command_G()
     for ( i = 0; i<50; i++)
         reply[i] = ' ';
     i = 0;
-    if (trackingState != TrackingON) reply[0] = 'n';
-    if (trackingState != TrackingMoveTo) reply[1] = 'N';
-    else if (lastTrackingState == TrackingON) reply[0] = ' ';
+    reply[0] = '0' + 2 * movingTo + sideralTracking;
+    reply[1] = '0' + sideralMode;
+    //if (trackingState != TrackingON) reply[0] = 'n';
+    //if (trackingState != TrackingMoveTo) reply[1] = 'N';
+    //else if (lastTrackingState == TrackingON) reply[0] = ' ';
 
     const char  *parkStatusCh = "pIPF";
     reply[2] = parkStatusCh[parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed

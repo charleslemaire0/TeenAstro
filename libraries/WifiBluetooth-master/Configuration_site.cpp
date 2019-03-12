@@ -3,16 +3,16 @@
 // -----------------------------------------------------------------------------------
 // configuration_Site
 
-const char html_configSiteSelect1[] =
+const char html_configSiteSelect1[] PROGMEM =
 "Selected Site:<br/>"
 "<form method='post' action='/configuration_site.htm'>"
 "<select onchange='this.form.submit()' style='width:11em' name='site_select'>";
-const char html_configSiteSelect2[] =
+const char html_configSiteSelect2[] PROGMEM =
 "</select>"
 " (Select your predefined site)"
 "</form>"
 "\r\n";
-const char html_configSiteName[] =
+const char html_configSiteName[] PROGMEM =
 "Selected Site definition: <br />"
 "<form method='get' action='/configuration_site.htm'>"
 " <input value='%s' style='width:10.25em' type='text' name='site_n' maxlength='14'>"
@@ -20,33 +20,33 @@ const char html_configSiteName[] =
 " (Edit the name of the selected site)"
 "</form>"
 "\r\n";
-const char html_configLongWE1[] =
+const char html_configLongWE1[] PROGMEM =
 "<form method='get' action='/configuration_site.htm'>"
 "<select style='width:5em' name='site_g0'>";
-const char html_configLongWE2[] =
+const char html_configLongWE2[] PROGMEM =
 "</select>";
-const char html_configLongDeg[] =
+const char html_configLongDeg[] PROGMEM =
 " <input value='%s' type='number' name='site_g1' min='0' max='179'>&nbsp;&deg;&nbsp;";
-const char html_configLongMin[] =
+const char html_configLongMin[] PROGMEM =
 " <input value='%s' type='number' name='site_g2' min='0' max='59'>&nbsp;'&nbsp;&nbsp;"
 "<button type='submit'>Upload</button>"
 " (Longitude, in degree and minute)"
 "</form>"
 "\r\n";
-const char html_configLatNS1[] =
+const char html_configLatNS1[] PROGMEM =
 "<form method='get' action='/configuration_site.htm'>"
 "<select style='width:5em' name='site_t0'>";
-const char html_configLatNS2[] =
+const char html_configLatNS2[] PROGMEM =
 "</select>";
-const char html_configLatDeg[] =
+const char html_configLatDeg[] PROGMEM =
 " <input value='%s' type='number' name='site_t1' min='0' max='90'>&nbsp;&deg;&nbsp;";
-const char html_configLatMin[] =
+const char html_configLatMin[] PROGMEM =
 " <input value='%s' type='number' name='site_t2' min='0' max='59'>&nbsp;'&nbsp;&nbsp;"
 "<button type='submit'>Upload</button>"
 " (Latitude, in degree and minute)"
 "</form>"
 "\r\n";
-const char html_configElev[] =
+const char html_configElev[] PROGMEM =
 "<form method='get' action='/configuration_site.htm'>"
 " <input value='%s' type='number' name='site_e' min='-200' max='8000'>"
 "<button type='submit'>Upload</button>"
@@ -61,7 +61,7 @@ void wifibluetooth::handleConfigurationSite() {
 #endif
   Ser.setTimeout(WebTimeout);
   serialRecvFlush();
-
+  sendHtmlStart();
   char temp[320] = "";
   char temp1[80] = "";
   char temp2[80] = "";
@@ -69,7 +69,7 @@ void wifibluetooth::handleConfigurationSite() {
 
   processConfigurationSiteGet();
   preparePage(data, 3);
-  
+  sendHtml(data);
   if (sendCommand(":W?#", temp1))
   {
     int selectedsite = 0;
@@ -77,7 +77,7 @@ void wifibluetooth::handleConfigurationSite() {
     {
       char m[16]; char n[16]; char o[16]; char p[16];
       sendCommand(":GM#", m); sendCommand(":GN#", n); sendCommand(":GO#", o); sendCommand(":GP#", p);
-      data += html_configSiteSelect1;
+      data += FPSTR(html_configSiteSelect1);
       selectedsite == 0 ? data += "<option selected value='0'>" : data += "<option value='0'>";
       sprintf(temp, "%s</option>", m);
       data += temp;
@@ -90,11 +90,11 @@ void wifibluetooth::handleConfigurationSite() {
       selectedsite == 3 ? data += "<option selected value='3'>" : data += "<option value='3'>";
       sprintf(temp, "%s</option>", p);
       data += temp;
-      data += html_configSiteSelect2;
+      data += FPSTR(html_configSiteSelect2);
       // name
 
       if (!sendCommand(":Gn#", temp1)) strcpy(temp1, "error!");
-      sprintf(temp, html_configSiteName, temp1);
+      sprintf_P(temp, html_configSiteName, temp1);
       data += temp;
 #ifdef OETHS
       client->print(data); data = "";
@@ -102,14 +102,14 @@ void wifibluetooth::handleConfigurationSite() {
       // Latitude
       if (!sendCommand(":Gt#", temp1)) strcpy(temp1, "+00*00");
       temp1[3] = 0; // deg. part only
-      data += html_configLatNS1;
+      data += FPSTR(html_configLatNS1);
       temp1[0] == '+' ? data += "<option selected value='0'>North</option>" : data += "<option value='0'>North</option>";
       temp1[0] == '-' ? data += "<option selected value='1'>Sud</option>" : data += "<option value='1'>Sud</option>";
-      data += html_configLatNS2;
+      data += FPSTR(html_configLatNS2);
       temp1[0] = '0'; // remove +
-      sprintf(temp, html_configLatDeg, temp1);
+      sprintf_P(temp, html_configLatDeg, temp1);
       data += temp;
-      sprintf(temp, html_configLatMin, (char*)&temp1[4]);
+      sprintf_P(temp, html_configLatMin, (char*)&temp1[4]);
       data += temp;
 #ifdef OETHS
       client->print(data); data = "";
@@ -117,14 +117,14 @@ void wifibluetooth::handleConfigurationSite() {
       // Longitude
       if (!sendCommand(":Gg#", temp1)) strcpy(temp1, "+000*00");
       temp1[4] = 0; // deg. part only
-      data += html_configLongWE1;
+      data += FPSTR(html_configLongWE1);
       temp1[0] == '+' ? data += "<option selected value='0'>West</option>" : data += "<option value='0'>West</option>";
       temp1[0] == '-' ? data += "<option selected value='1'>East</option>" : data += "<option value='1'>East</option>";
-      data += html_configLongWE2;
+      data += FPSTR(html_configLongWE2);
       temp1[0] = '0'; // sign
-      sprintf(temp, html_configLongDeg, temp1);
+      sprintf_P(temp, html_configLongDeg, temp1);
       data += temp;
-      sprintf(temp, html_configLongMin, (char*)&temp1[5]);
+      sprintf_P(temp, html_configLongMin, (char*)&temp1[5]);
       data += temp;
 #ifdef OETHS
       client->print(data); data = "";
@@ -132,7 +132,7 @@ void wifibluetooth::handleConfigurationSite() {
       // Elevation
       if (!sendCommand(":Ge#", temp1)) strcpy(temp1, "+000");
       if (temp1[0] == '+') temp1[0] = '0';
-      sprintf(temp, html_configElev, temp1);
+      sprintf_P(temp, html_configElev, temp1);
       data += temp;
 #ifdef OETHS
       client->print(data); data = "";
@@ -149,7 +149,8 @@ void wifibluetooth::handleConfigurationSite() {
 #ifdef OETHS
   client->print(data); data = "";
 #else
-  server.send(200, "text/html", data);
+  sendHtml(data);
+  sendHtmlDone(data);
 #endif
 }
 

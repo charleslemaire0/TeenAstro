@@ -2,81 +2,44 @@
 #include "config.h"
 
 
-const char* html_headB PROGMEM = "<!DOCTYPE HTML>\r\n<html>\r\n<head>\r\n";
-const char* html_headerIdx PROGMEM = "<meta http-equiv=\"refresh\" content=\"5; URL=/index.htm\">\r\n";
-const char* html_headE PROGMEM = "</head>\r\n";
-const char* html_bodyB PROGMEM = "<body bgcolor='#26262A'>\r\n";
+#define html_headB  "<!DOCTYPE HTML>\r\n<html>\r\n<head>\r\n"
+#define html_headerIdx  "<meta http-equiv=\"refresh\" content=\"5; URL=/index.htm\">\r\n"
+#define html_headE "</head>\r\n"
+#define html_bodyB  "<body bgcolor='#26262A'>\r\n"
 
-const char* html_main_cssB PROGMEM = "<STYLE>";
-const char* html_main_css1 PROGMEM = ".clear { clear: both; } .a { background-color: #111111; } .t { padding: 10px 10px 20px 10px; border: 5px solid #551111;";
-const char* html_main_css2 PROGMEM = " margin: 25px 25px 0px 25px; color: #999999; background-color: #111111; min-width: 10em; } input { font-weight: bold; width:6em; background-color: #A01010; padding: 2px 2px; }";
-const char* html_main_css3 PROGMEM = ".b { padding: 10px; border-left: 5px solid #551111; border-right: 5px solid #551111; border-bottom: 5px solid #551111; margin: 0px 25px 25px 25px; color: #999999;";
-const char* html_main_css4 PROGMEM = "background-color: #111111; min-width: 10em; } select { width:7em; font-weight: bold; background-color: #A01010; padding: 2px 2px; } .c { color: #A01010; font-weight: bold; }";
-const char* html_main_css5 PROGMEM = "h1 { text-align: right; } a:hover, a:active { background-color: red; } .y { color: #FFFF00; font-weight: bold; }";
-const char* html_main_css6 PROGMEM = "a:link, a:visited { background-color: #332222; color: #a07070; border:1px solid red; padding: 5px 10px;";
-const char* html_main_css7 PROGMEM = " margin: none; text-align: center; text-decoration: none; display: inline-block; }";
-const char* html_main_css8 PROGMEM = "button { background-color: #A01010; font-weight: bold; border-radius: 5px; margin: 2px; padding: 4px 8px; }";
-const char* html_main_css_control1 PROGMEM = ".b1 { float: left; border: 2px solid #551111; background-color: #181818; text-align: center; margin: 5px; padding: 15px; padding-top: 3px; }";
-const char* html_main_css_control2 PROGMEM = ".gb { width: 60px; height: 50px; padding: 0px; }";
-const char* html_main_css_control3 PROGMEM = ".bb { height: 2.5em; width: 8em;} .bbh {   height: 2.5em; width: 4em;}";
-const char* html_main_cssE PROGMEM = "</STYLE>";
+#define html_main_cssB "<STYLE>"
+#define html_main_css1  ".clear { clear: both; } .a { background-color: #111111; } .t { padding: 10px 10px 20px 10px; border: 5px solid #551111;"
+#define html_main_css2  " margin: 25px 25px 0px 25px; color: #999999; background-color: #111111; min-width: 10em; } input { font-weight: bold; width:6em; background-color: #A01010; padding: 2px 2px; }"
+#define html_main_css3  ".b { padding: 10px; border-left: 5px solid #551111; border-right: 5px solid #551111; border-bottom: 5px solid #551111; margin: 0px 25px 25px 25px; color: #999999;"
+#define html_main_css4  "background-color: #111111; min-width: 10em; } select { width:7em; font-weight: bold; background-color: #A01010; padding: 2px 2px; } .c { color: #A01010; font-weight: bold; }"
+#define html_main_css5  "h1 { text-align: right; } a:hover, a:active { background-color: red; } .y { color: #FFFF00; font-weight: bold; }"
+#define html_main_css6  "a:link, a:visited { background-color: #332222; color: #a07070; border:1px solid red; padding: 5px 10px;"
+#define html_main_css7  " margin: none; text-align: center; text-decoration: none; display: inline-block; }"
+#define html_main_css8  "button { background-color: #A01010; font-weight: bold; border-radius: 5px; margin: 2px; padding: 4px 8px; }"
+#define html_main_css_control1 ".b1 { float: left; border: 2px solid #551111; background-color: #181818; text-align: center; margin: 5px; padding: 15px; padding-top: 3px; }"
+#define html_main_css_control2 ".gb { width: 60px; height: 50px; padding: 0px; }"
+#define html_main_css_control3 ".bb { height: 2.5em; width: 8em;} .bbh {   height: 2.5em; width: 4em;}"
+#define html_main_cssE  "</STYLE>"
 
-const char* html_onstep_header1 PROGMEM = "<div class='t'><table width='100%%'><tr><td><b><font size='5'>";
-const char* html_onstep_header2 PROGMEM = "</font></b></td><td align='right'><b>" Product " " FirmwareVersionMajor"."FirmwareVersionMinor "."FirmwareVersionPatch" (TeenAstro ";
-const char* html_onstep_header3 PROGMEM = ")</b></td></tr></table>";
-const char* html_onstep_header4 PROGMEM = "</div><div class='b'>\r\n";
+#define html_onstep_header1 "<div class='t'><table width='100%%'><tr><td><b><font size='5'>"
+#define html_onstep_header2 "</font></b></td><td align='right'><b>" Product " " FirmwareVersionMajor"."FirmwareVersionMinor "."FirmwareVersionPatch" (TeenAstro "
+#define html_onstep_header3 ")</b></td></tr></table>"
+#define html_onstep_header4 "</div><div class='b'>\r\n"
 
-const char* html_links1S PROGMEM = "<a href='/index.htm' style='background-color: #552222;'>Status</a>";
-const char* html_links1N PROGMEM = "<a href='/index.htm'>Status</a>";
-const char* html_links2S PROGMEM = "<a href='/control.htm' style='background-color: #552222;'>Control</a>";
-const char* html_links2N PROGMEM = "<a href='/control.htm'>Control</a>";
-const char* html_links3S PROGMEM = "<a href='/configuration_site.htm' style='background-color: #552222;'>Site</a>";
-const char* html_links3N PROGMEM = "<a href='/configuration_site.htm'>Site</a>";
-const char* html_links4S PROGMEM = "<a href='/configuration_telescope.htm' style='background-color: #552222;'>Telescope</a>";
-const char* html_links4N PROGMEM = "<a href='/configuration_telescope.htm'>Telescope</a>";
-const char* html_links5S PROGMEM = "<a href='/configuration_focuser.htm' style='background-color: #552222;'>Focuser</a>";
-const char* html_links5N PROGMEM = "<a href='/configuration_focuser.htm'>Focuser</a>";
-const char* html_links6S PROGMEM = "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />";
-const char* html_links6N PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />";
+#define html_links1S "<a href='/index.htm' style='background-color: #552222;'>Status</a>"
+#define html_links1N "<a href='/index.htm'>Status</a>"
+#define html_links2S "<a href='/control.htm' style='background-color: #552222;'>Control</a>"
+#define html_links2N "<a href='/control.htm'>Control</a>"
+#define html_links3S "<a href='/configuration_site.htm' style='background-color: #552222;'>Site</a>"
+#define html_links3N "<a href='/configuration_site.htm'>Site</a>"
+#define html_links4S "<a href='/configuration_telescope.htm' style='background-color: #552222;'>Telescope</a>"
+#define html_links4N "<a href='/configuration_telescope.htm'>Telescope</a>"
+#define html_links5S "<a href='/configuration_focuser.htm' style='background-color: #552222;'>Focuser</a>"
+#define html_links5N "<a href='/configuration_focuser.htm'>Focuser</a>"
+#define html_links6S "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />"
+#define html_links6N "<a href='/wifi.htm'>WiFi</a><br />"
 
-// Javascript for Ajax
-// be sure to define "var ajaxPage='control.txt';" etc.
-const char* html_ajax_active PROGMEM  =
-"<script>\n"
-"var auto1Tick=0;\n"
-"var auto2Tick=0;\n"
-"var auto2Rate=" DEFAULT_AJAX_RATE ";\n"
-"var auto1=setInterval(autoRun1s,1000);\n"
-// update once a second for 15 seconds then drop back to once every 5 seconds
-"function autoFastRun() {\n"
-"auto2Rate=" DEFAULT_FAST_AJAX_RATE "\n"
-"auto2Tick=" DEFAULT_AJAX_SHED_TIME ";\n"
-"}\n"
-"function autoRun1s() {\n"
-"auto1Tick++;\n"
-"var i;\n"
-"if (auto2Tick>=0) auto2Tick--;\n"
-"if (auto2Tick==0) auto2Rate=" DEFAULT_AJAX_RATE ";\n"
-"if (auto1Tick%auto2Rate==0) {\n"
-"nocache='?nocache='+Math.random()*1000000;\n"
-"var request = new XMLHttpRequest();\n"
-"request.onreadystatechange = pageReady(ajaxPage);\n"
-"request.open('GET',ajaxPage.toLowerCase()+nocache,true); request.send(null);\n"
-"}"
-"}\n"
-"function pageReady(aPage) {\n"
-"return function() {\n"
-"if ((this.readyState==4)&&(this.status==200)) {\n"
-"lines=this.responseText.split('\\n');\n"
-"for (var i=0; i<lines.length; i++) {\n"
-"v=lines[i].slice(lines[i].indexOf('|')+1);\n"
-"k=lines[i].slice(0,lines[i].indexOf('|'));\n"
-"if (k!='') document.getElementById(k).innerHTML=v;\n"
-"}\n"
-"}"
-"}"
-"}\n"
-"</script>\n";
+
 bool wifibluetooth::wifiOn = true;
 
 int wifibluetooth::WebTimeout = TIMEOUT_WEB;
@@ -214,6 +177,8 @@ void wifibluetooth::preparePage(String &data, int page)
 {
   char temp1[80] = "";
   data = html_headB;
+  if (page == 1)
+    data += html_headerIdx;
   data += html_main_cssB;
   data += html_main_css1;
   data += html_main_css2;
@@ -223,11 +188,13 @@ void wifibluetooth::preparePage(String &data, int page)
   data += html_main_css6;
   data += html_main_css7;
   data += html_main_css8;
+  sendHtml(data);
   if (page == 2)
   {
     data += html_main_css_control1;
     data += html_main_css_control2;
     data += html_main_css_control3;
+    sendHtml(data);
   }
   data += html_main_cssE;
   data += html_headE;
@@ -237,7 +204,8 @@ void wifibluetooth::preparePage(String &data, int page)
 
   data += html_bodyB;
   // get status
-  mountStatus.update();
+  if (!mountStatus.valid() || page == 1)
+    mountStatus.update();
   serialRecvFlush();
   // finish the standard http response header
   data += html_onstep_header1;
