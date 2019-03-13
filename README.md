@@ -1,4 +1,4 @@
-TeenAstro an OnStep device
+TeenAstro an easy to use telescope controller
 ======
 
 Computerized telescope goto control based on Arduino driven stepper motors and OnStep.  All Equatorial mount types are supported: German Equatorial, Fork (and variations)
