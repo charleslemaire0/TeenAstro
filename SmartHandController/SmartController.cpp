@@ -2700,8 +2700,6 @@ void SmartHandController::menuMainUnitInfo()
       char out2[20];
       if (DisplayMessageLX200(GetLX200(":GVN#", out1, 20)) && DisplayMessageLX200(GetLX200(":GVD#", out2, 20)) )
       { 
-        out1[strlen(out1) - 1] = 0;
-        out2[strlen(out2) - 1] = 0;
         DisplayMessage(out1, out2 , -1);
       }
       break;
