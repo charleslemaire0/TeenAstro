@@ -287,142 +287,6 @@ FLOAT Ephemeris::obliquityAndNutationForT(FLOAT T, FLOAT *deltaObliquity, FLOAT 
     return obliquity;
 }
 
-FLOAT Ephemeris::sumELP2000Coefs(const FLOAT *moonMultCoefficients, const ELP2000Coefficient *moonAngleCoefficients, int coefCount,
-                                 FLOAT E, FLOAT D, FLOAT M, FLOAT Mp, FLOAT F, bool squareMultiplicator)
-{
-    // Parse each value in coef table
-    FLOAT value = 0;
-    for(int numCoef=0; numCoef<coefCount; numCoef++)
-    {
-        // Get coef
-        FLOAT multiplicator;
-        ELP2000Coefficient moonAngle;;
-        
-#if ARDUINO
-        // We limit SRAM usage by using flash memory (PROGMEM)
-        memcpy_P(&multiplicator, &moonMultCoefficients[numCoef],  sizeof(FLOAT));
-        memcpy_P(&moonAngle,     &moonAngleCoefficients[numCoef], sizeof(ELP2000Coefficient));
-#else
-        multiplicator = moonMultCoefficients[numCoef];
-        moonAngle     = moonAngleCoefficients[numCoef];
-#endif
-        
-        FLOAT angle =  moonAngle.D*D + moonAngle.M*M + moonAngle.Mp*Mp + moonAngle.F*F;
-        
-        FLOAT res;
-        if( moonMultCoefficients != RMoonCoefficients )
-        {
-            res  = multiplicator * SIND(angle);
-        }
-        else
-        {
-            // R coef use cos and not sin.
-            res  = multiplicator * COSD(angle);
-        }
-        
-        if(squareMultiplicator)
-        {
-            // To avoid out of range issue with single precision
-            // we've stored sqrt(value) and not the value. As a result we need to square it back.
-            res *= multiplicator;
-            
-            // Now respect original sign
-            if( multiplicator < 0 )
-            {
-                res *= -1;
-            }
-        }
-        
-        if( moonAngle.Ec == 1 )
-        {
-            // E
-            res *= E;
-        }
-        else if( moonAngle.Ec == 2 )
-        {
-            // E^2
-            res *= E;
-            res *= E;
-        }
-        
-        value += res;
-    }
-    
-    return value;
-}
-
-EquatorialCoordinates  Ephemeris::equatorialCoordinatesForEarthsMoonAtJD(JulianDay jd, FLOAT *distance)
-{
-    FLOAT T        = T_WITH_JD(jd.day,jd.time);
-    FLOAT TSquared = T*T;
-    FLOAT TCubed   = TSquared*T;
-    FLOAT T4       = TCubed*T;
-    
-    // Mean Longitude of the Moon
-    FLOAT Lp = 218.31644735 + 481267.88122838*T - 0.001579944*TSquared + TCubed/538841 - T4/538841;
-    Lp = LIMIT_DEGREES_TO_360(Lp);
-    
-    // Mean anomaly of the Sun
-    FLOAT M = 357.5291092 + T*35999.0502909  - TSquared*0.0001536;
-    M = LIMIT_DEGREES_TO_360(M);
-    
-    // Mean anomaly of Moon
-    FLOAT Mp = 134.96339622 + 477198.86750067*T + 0.00872053*TSquared + TCubed/69699;
-    Mp = LIMIT_DEGREES_TO_360(Mp);
-    
-    // Mean elongation of Moon
-    FLOAT D = 297.85019172 + 445267.11139756*T - 0.00190272*TSquared + TCubed/545868;
-    D = LIMIT_DEGREES_TO_360(D);
-    
-    // Mean distance at ascending node
-    FLOAT F = 93.27209769 + 483202.01756053*T - 0.00367481*TSquared - TCubed/3525955;
-    F = LIMIT_DEGREES_TO_360(F);
-    
-    // A1, A2, A3
-    FLOAT A1 = 119.75 + 131.849*T;
-    A1 = LIMIT_DEGREES_TO_360(A1);
-    FLOAT A2 =  53.09 + 479264.290*T;
-    A2 = LIMIT_DEGREES_TO_360(A2);
-    FLOAT A3 = 313.45 + 481266.484*T;
-    A3 = LIMIT_DEGREES_TO_360(A3);
-    
-    
-    FLOAT E = 1 - 0.002516*T - 0.0000074*TCubed;
-    E = LIMIT_DEGREES_TO_360(E);
-    
-    
-    FLOAT sumL = sumELP2000Coefs( LMoonCoefficients, LMoonAngleCoefficients, sizeof(LMoonCoefficients)/sizeof(FLOAT), E, D, M, Mp, F, false);
-    sumL += 3958*SIND(A1) + 1962*SIND(Lp-F) + 318*SIND(A2);
-    
-    FLOAT sumB = sumELP2000Coefs(BMoonCoefficients, BMoonAngleCoefficients, sizeof(BMoonCoefficients)/sizeof(FLOAT), E, D, M, Mp, F, false);
-    sumB += -2235*SIND(Lp) + 382*SIND(A3) + 175*SIND(A1-F) + 175*SIND(A1+F) + 127*SIND(Lp-Mp) - 115*sin(Lp+Mp);
-    
-    FLOAT sumR = sumELP2000Coefs(RMoonCoefficients, RMoonAngleCoefficients, sizeof(RMoonCoefficients)/sizeof(FLOAT), E, D, M, Mp, F, true);
-    
-    // Geocentic longitude
-    FLOAT lambda = Lp + sumL/1000000;   // Degrees
-    
-    // Geocentric latitude
-    FLOAT beta   = sumB/1000000;        // Degrees
-    
-    // Distance
-    FLOAT delta  = 385000.56+sumR/1000; // Kilometers
-    
-    if( distance )
-    {
-        // Convert kilometers to AU
-        *distance = delta*6.68459e-9;
-    }
-    
-    // Obliquity and Nutation
-    FLOAT deltaNutation;
-    FLOAT epsilon = Ephemeris::obliquityAndNutationForT(T, NULL, &deltaNutation);
-    
-    // Intergrate nutation
-    lambda += deltaNutation/3600;
-    
-    return EclipticToEquatorial(lambda, beta, epsilon);
-}
 
 EquatorialCoordinates  Ephemeris::equatorialCoordinatesForSunAtJD(JulianDay jd, FLOAT *distance)
 {
@@ -757,10 +621,6 @@ SolarSystemObject Ephemeris::solarSystemObjectAtDateAndTime(SolarSystemObjectInd
     {
         solarSystemObject.equaCoordinates = equatorialCoordinatesForSunAtJD(jd, &solarSystemObject.distance);
     }
-    else if( solarSystemObjectIndex == EarthsMoon )
-    {
-        solarSystemObject.equaCoordinates = equatorialCoordinatesForEarthsMoonAtJD(jd, &solarSystemObject.distance);
-    }
     else
     {
         solarSystemObject.equaCoordinates = equatorialCoordinatesForPlanetAtJD(solarSystemObjectIndex, jd, &solarSystemObject.distance);
@@ -805,15 +665,7 @@ SolarSystemObject Ephemeris::solarSystemObjectAtDateAndTime(SolarSystemObjectInd
         case Sun:
             diameter = 1919.26;
             break;
-            
-        case EarthsMoon:
-            
-            // 31.4'        -> 1884";
-            // 385000.56 Km -> 385000.56*6.68459e-9 AU = 0.0025735709 AU
-            // Theoretical diameter from a distance of 1 AU = 1884*0.0025735709 = 4.8486075756";
-            diameter = 4.8486075756;
-            
-            break;
+           
     }
     
     // Approximate apparent diameter in arc minutes according to distance
@@ -899,26 +751,6 @@ SolarSystemObject Ephemeris::solarSystemObjectAtDateAndTime(SolarSystemObjectInd
                 
                 break;
                 
-            case EarthsMoon:
-                
-                //
-                // Assume Moon speed to be linear for 24 hour range
-                //
-                
-                tmpCoord0  = equatorialCoordinatesForEarthsMoonAtJD(Calendar::julianDayForDateAndTime(day, month, year, 0, 0, 0), NULL);
-                tmpCoord24 = equatorialCoordinatesForEarthsMoonAtJD(Calendar::julianDayForDateAndTime(day, month, year, 24, 0, 0), NULL);
-                
-                linearSpeedRA  = (tmpCoord24.ra  - tmpCoord0.ra);
-                linearSpeedDec = (tmpCoord24.dec - tmpCoord0.dec);
-                
-                // First approximation at midday
-                tmpCoord.ra  = tmpCoord0.ra  + linearSpeedRA*0.5;
-                tmpCoord.dec = tmpCoord0.dec + linearSpeedDec*0.5;
-                solarSystemObject.riseAndSetState = riseAndSetForEquatorialCoordinatesAndT0(tmpCoord,
-                                                                                            T0,
-                                                                                            &solarSystemObject.rise, &solarSystemObject.set,
-                                                                                            57/60.0,
-                                                                                            solarSystemObject.diameter/60.0);
                 
                 if( !isnan(solarSystemObject.rise) )
                 {
