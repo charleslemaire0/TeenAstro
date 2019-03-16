@@ -1582,7 +1582,7 @@ void SmartHandController::menuTimeAndSite()
       if (telInfo.isGNSSValid())
         DisplayMessageLX200(SetLX200(":gs#"), false);
       else
-        DisplayMessage("NO GNSS", "Signal");
+        DisplayMessage("NO GNSS", "Signal", -1);
       break;
     }
   }
