@@ -36,6 +36,10 @@
   End Sub
 
   Private Sub Uploader_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+    Dim assembly As System.Reflection.Assembly = System.Reflection.Assembly.GetExecutingAssembly()
+    Dim fvi As FileVersionInfo = FileVersionInfo.GetVersionInfo(assembly.Location)
+    Dim version As String = fvi.FileVersion
+    Me.Text = "TeenAstro Firmware Uploader " + version
     ComboBoxPCBMainUnitT.SelectedIndex = 0
     ComboBoxPCBMainUnitF.SelectedIndex = 0
     ComboBoxFirmwareVersion.SelectedIndex = 1

@@ -201,7 +201,7 @@ Partial Class Uploader
     Me.TabPage1.Location = New System.Drawing.Point(4, 22)
     Me.TabPage1.Name = "TabPage1"
     Me.TabPage1.Padding = New System.Windows.Forms.Padding(3)
-    Me.TabPage1.Size = New System.Drawing.Size(312, 155)
+    Me.TabPage1.Size = New System.Drawing.Size(364, 155)
     Me.TabPage1.TabIndex = 0
     Me.TabPage1.Text = "Telescope"
     Me.TabPage1.UseVisualStyleBackColor = True
@@ -256,7 +256,7 @@ Partial Class Uploader
     Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
     Me.MaximizeBox = False
     Me.Name = "Uploader"
-    Me.Text = "TeenAstro Firmware Uploader 1.1.0"
+    Me.Text = "TeenAstro Firmware Uploader"
     Me.TopMost = True
     Me.TabPage3.ResumeLayout(False)
     Me.TabPage3.PerformLayout()
