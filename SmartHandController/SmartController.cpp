@@ -346,6 +346,7 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
     delay(500);
   }
 #endif // !WIFI_ON
+  drawLoad();
 }
 void SmartHandController::tickButtons()
 {
@@ -942,7 +943,7 @@ void SmartHandController::drawIntro()
   do {
     display->drawXBMP(0, 0, teenastro_width, teenastro_height, teenastro_bits);
   } while (display->nextPage());
-  delay(2000);
+  delay(1500);
 }
 
 void SmartHandController::drawLoad()
@@ -950,23 +951,13 @@ void SmartHandController::drawLoad()
   display->firstPage();
   uint8_t x = 0;
   do {
-    display->setFont(u8g2_font_helvR14_tr);
-    x = (display->getDisplayWidth() - display->getStrWidth("Loading")) / 2;
-    display->drawStr(x, display->getDisplayHeight() / 2. - 14, "Loading");
+    display->setFont(u8g2_font_helvR12_tr);
+    x = (display->getDisplayWidth() - display->getStrWidth("SHC version")) / 2;
+    display->drawStr(x, display->getDisplayHeight() / 2. - 6, "SHC version");
     x = (display->getDisplayWidth() - display->getStrWidth(_version)) / 2;
-    display->drawStr(x, display->getDisplayHeight() / 2. + 14, _version);
+    display->drawStr(x, display->getDisplayHeight() / 2. + 22, _version);
   } while (display->nextPage());
-}
-
-void SmartHandController::drawReady()
-{
-  display->firstPage();
-  uint8_t x = 0;
-  do {
-    x = (display->getDisplayWidth() - display->getStrWidth("Ready!")) / 2;
-    display->drawStr(x, display->getDisplayHeight() / 2, "Ready!");
-  } while (display->nextPage());
-  delay(500);
+  delay(1500);
 }
 
 bool SmartHandController::menuSetStepperGearBox(const uint8_t &axis, unsigned short &worm)
