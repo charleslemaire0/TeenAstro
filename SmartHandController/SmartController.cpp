@@ -2300,7 +2300,7 @@ void SmartHandController::menuFocuserConfig()
       switch (current_selection_FocuserConfig)
       {
       case 0:
-        exitMenu = true;
+        return;
         break;
       case 1:
       {
