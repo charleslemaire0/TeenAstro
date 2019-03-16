@@ -2414,7 +2414,7 @@ void SmartHandController::menuFocuserMotor()
         rev ? sprintf(line4, "Reversed Rotation") : sprintf(line2, "Direct Rotation");
         DisplayLongMessage(line1, line2, line3, line4, -1);
         sprintf(line3, "Micro.      : %03u", (unsigned int)pow(2, mu));
-        sprintf(line4, "Current   : %05umA", curr * 10);
+        sprintf(line4, "Current   : %04umA", curr * 10);
         DisplayLongMessage(line1, line2, line3, line4, -1);
         break;
       }
