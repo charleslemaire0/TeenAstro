@@ -294,8 +294,8 @@ LX200RETURN GetLatitudeLX200(double& degree)
   double minute;
   if (GetLX200(":Gt#", out, sizeof(out)) == LX200VALUEGET)
   {
-    dmsToDouble(&degree, out, true, false);
-    return LX200VALUEGET;
+    if (dmsToDouble(&degree, out, true, false))
+      return LX200VALUEGET;
   }
   return LX200GETVALUEFAILED;
 }
@@ -305,8 +305,15 @@ LX200RETURN GetLongitudeLX200(double& degree)
   char out[LX200sbuff];
   if (GetLX200(":Gg#", out, sizeof(out)) == LX200VALUEGET)
   {
-    dmsToDouble(&degree, out, true, false);
-    return LX200VALUEGET;
+    double longi = 0;
+    if ((out[0] == '-') || (out[0] == '+'))
+    {
+      if (dmsToDouble(&longi, (char *)&out[1], false, false))
+      {
+        degree = out[0] == '-' ? -longi : longi;
+        return LX200VALUEGET;
+      }
+    }
   }
   return LX200GETVALUEFAILED;
 }

@@ -346,6 +346,7 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
     delay(500);
   }
 #endif // !WIFI_ON
+  drawLoad();
 }
 void SmartHandController::tickButtons()
 {
@@ -942,7 +943,7 @@ void SmartHandController::drawIntro()
   do {
     display->drawXBMP(0, 0, teenastro_width, teenastro_height, teenastro_bits);
   } while (display->nextPage());
-  delay(2000);
+  delay(1500);
 }
 
 void SmartHandController::drawLoad()
@@ -950,23 +951,13 @@ void SmartHandController::drawLoad()
   display->firstPage();
   uint8_t x = 0;
   do {
-    display->setFont(u8g2_font_helvR14_tr);
-    x = (display->getDisplayWidth() - display->getStrWidth("Loading")) / 2;
-    display->drawStr(x, display->getDisplayHeight() / 2. - 14, "Loading");
+    display->setFont(u8g2_font_helvR12_tr);
+    x = (display->getDisplayWidth() - display->getStrWidth("SHC version")) / 2;
+    display->drawStr(x, display->getDisplayHeight() / 2. - 6, "SHC version");
     x = (display->getDisplayWidth() - display->getStrWidth(_version)) / 2;
-    display->drawStr(x, display->getDisplayHeight() / 2. + 14, _version);
+    display->drawStr(x, display->getDisplayHeight() / 2. + 22, _version);
   } while (display->nextPage());
-}
-
-void SmartHandController::drawReady()
-{
-  display->firstPage();
-  uint8_t x = 0;
-  do {
-    x = (display->getDisplayWidth() - display->getStrWidth("Ready!")) / 2;
-    display->drawStr(x, display->getDisplayHeight() / 2, "Ready!");
-  } while (display->nextPage());
-  delay(500);
+  delay(1500);
 }
 
 bool SmartHandController::menuSetStepperGearBox(const uint8_t &axis, unsigned short &worm)
@@ -1377,7 +1368,7 @@ void SmartHandController::menuSolarSys(bool sync)
   {
     if (current_selection_SolarSys < 1) current_selection_SolarSys = 1;
 
-    const char *string_list_SolarSyst = "Sun\nMercure\nVenus\nMars\nJupiter\nSaturn\nUranus\nNeptun\nMoon";
+    const char *string_list_SolarSyst = "Sun\nMercure\nVenus\nMars\nJupiter\nSaturn\nUranus\nNeptun";
     current_selection_SolarSys = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync" : "Goto", current_selection_SolarSys, string_list_SolarSyst);
     if (current_selection_SolarSys == 0)
     {
@@ -1563,7 +1554,7 @@ void SmartHandController::menuDateAndTime()
       if (telInfo.isGNSSValid())
         DisplayMessageLX200(SetLX200(":gt#"), false);
       else
-        DisplayMessage("NO GNSS", "Signal");
+        DisplayMessage("NO GNSS", "Signal", -1);
       break;
       break;
     }
@@ -1591,7 +1582,7 @@ void SmartHandController::menuTimeAndSite()
       if (telInfo.isGNSSValid())
         DisplayMessageLX200(SetLX200(":gs#"), false);
       else
-        DisplayMessage("NO GNSS", "Signal");
+        DisplayMessage("NO GNSS", "Signal", -1);
       break;
     }
   }
@@ -2309,7 +2300,7 @@ void SmartHandController::menuFocuserConfig()
       switch (current_selection_FocuserConfig)
       {
       case 0:
-        exitMenu = true;
+        return;
         break;
       case 1:
       {
@@ -2422,8 +2413,8 @@ void SmartHandController::menuFocuserMotor()
         sprintf(line3, "Resolution  : %03u", res);
         rev ? sprintf(line4, "Reversed Rotation") : sprintf(line2, "Direct Rotation");
         DisplayLongMessage(line1, line2, line3, line4, -1);
-        sprintf(line3, "Micro.      : %03u", (unsigned int)pow(2, mu));
-        sprintf(line4, "Current   : %05umA", curr * 10);
+        sprintf(line3, "Micro.     : %03u", (unsigned int)pow(2, mu));
+        sprintf(line4, "Current   : %04umA", curr * 10);
         DisplayLongMessage(line1, line2, line3, line4, -1);
         break;
       }
@@ -2700,8 +2691,6 @@ void SmartHandController::menuMainUnitInfo()
       char out2[20];
       if (DisplayMessageLX200(GetLX200(":GVN#", out1, 20)) && DisplayMessageLX200(GetLX200(":GVD#", out2, 20)) )
       { 
-        out1[strlen(out1) - 1] = 0;
-        out2[strlen(out2) - 1] = 0;
         DisplayMessage(out1, out2 , -1);
       }
       break;

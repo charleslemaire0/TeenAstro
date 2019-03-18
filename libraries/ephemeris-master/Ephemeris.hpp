@@ -21,7 +21,6 @@
 
 #include "Calendar.hpp"
 #include "VSOP87.hpp"
-#include "ELP2000.hpp"
 
 /*! This structure describes equatorial coordinates. */
 struct EquatorialCoordinates
@@ -86,8 +85,6 @@ enum SolarSystemObjectIndex
     Saturn     = 6,
     Uranus     = 7,
     Neptune    = 8,
-    
-    EarthsMoon = 9
 };
 
 enum RiseAndSetState
@@ -275,12 +272,7 @@ private:
     /*! Compute planet informations for T.
      *  Reference: Chapter 21, page 77: Eléments des orbites planétaires. */
     static PlanetayOrbit planetayOrbitForPlanetAndT(SolarSystemObjectIndex planet, FLOAT T);
-    
-    /*! Compute Moon coordinates in the sky (R.A.,Dec) for a specific date and time.
-     *  Reference: Chapter 28, page 109: Position de la Lune.
-     *             Chapter 8,  page 37: Transformation de coordonnées. */
-    static EquatorialCoordinates equatorialCoordinatesForEarthsMoonAtJD(JulianDay jd, FLOAT *distance);
-    
+     
     /*! Compute Sun coordinates in the sky (R.A.,Dec) for a specific date and time.
      *  Reference: Chapter 16, page 63: Les coordonnées du soleil. */
     static EquatorialCoordinates equatorialCoordinatesForSunAtJD(JulianDay jd, FLOAT *distance);
@@ -294,10 +286,6 @@ private:
      *  Reference: Chapter 22, page 83: Position des planètes. */
     static FLOAT sumVSOP87Coefs(const VSOP87Coefficient *valuePlanetCoefficients, int coefCount, FLOAT T);
     
-    /*! Compute ELP2000 (Earth's Moon) coefficients for T.
-     *  Reference: Chapter 28, page 109: Position de la Lune. */
-    static FLOAT sumELP2000Coefs(const FLOAT *moonCoefficients, const ELP2000Coefficient *moonAngleCoefficients, int coefCount,
-                                 FLOAT E, FLOAT D, FLOAT M, FLOAT Mp, FLOAT F, bool squareMultiplicator);
     
     /*! Compute rise and set for specified equatorial coordinates, T0 (Mean sideral time at midnight), paralax, apparent diameter, and altitude.
      *  Reference: https://www.imcce.fr/langues/en/grandpublic/systeme/promenade-en/pages3/367.html */
