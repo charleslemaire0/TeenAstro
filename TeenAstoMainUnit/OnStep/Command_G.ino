@@ -531,7 +531,7 @@ void  Command_G()
     const char  *parkStatusCh = "pIPF";
     reply[2] = parkStatusCh[parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
     if (atHome) reply[3] = 'H';
-    if (pps.m_synced) reply[4] = 'S';
+    //reply 4 is free
     if (GuidingState != GuidingOFF)
     {
       reply[5] = 'G';

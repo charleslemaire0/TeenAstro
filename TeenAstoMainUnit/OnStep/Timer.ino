@@ -257,7 +257,6 @@ ISR(TIMER1_COMPA_vect)
     updateDeltaTarget();
     if ((!inbacklashAxis1) && (wasInbacklashAxis1) && (!guideDirAxis1))
     {
-
       cli();
       if (abs(deltaTargetAxis1) > 2)
         thisTimerRateAxis1 = TakeupRate;
@@ -275,17 +274,15 @@ ISR(TIMER1_COMPA_vect)
       sei();
     }
   }
-
-
   // set the rates
   if (thisTimerRateAxis1 != isrTimerRateAxis1)
   {
-    Timer3SetRate(thisTimerRateAxis1 / pps.m_rateRatio);
+    Timer3SetRate(thisTimerRateAxis1);
     isrTimerRateAxis1 = thisTimerRateAxis1;
   }
   if (thisTimerRateAxis2 != isrTimerRateAxis2)
   {
-    Timer4SetRate(thisTimerRateAxis2 / pps.m_rateRatio);
+    Timer4SetRate(thisTimerRateAxis2);
     isrTimerRateAxis2 = thisTimerRateAxis2;
   }
 }
