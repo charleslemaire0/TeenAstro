@@ -429,8 +429,8 @@ void  Command_G()
     //         A # terminated string with the pier side.
     reply[0] = '?';
     reply[1] = 0;
-    if (pierSide == PierSideEast) reply[0] = 'E';
-    if (pierSide == PierSideWest) reply[0] = 'W';
+    if (pierSide == PIER_EAST) reply[0] = 'E';
+    if (pierSide == PIER_WEST) reply[0] = 'W';
     quietReply = true;
     break;
   case 'n':
@@ -564,8 +564,8 @@ void  Command_G()
       reply[12] = 'A';
     else
       reply[12] = 'U';
-    if (pierSide == PierSideEast) reply[13] = 'E';
-    if (pierSide == PierSideWest) reply[13] = 'W';
+    if (pierSide == PIER_EAST) reply[13] = 'E';
+    if (pierSide == PIER_WEST) reply[13] = 'W';
     reply[14] = iSGNSSValid() ? '1': '0';
     reply[15] = '0' + lastError;
     reply[16] = 0;

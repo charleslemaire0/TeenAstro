@@ -500,7 +500,7 @@ void TGeoAlign::EquToInstr(const double *Lat, double HA, double Dec, double *HA1
     double  dSin = sin(d);
     double  dCos = cos(d);
     double  p = 1.0;
-    if (pierSide == PierSideWest) p = -1.0;
+    if (pierSide == PIER_WEST) p = -1.0;
 
     // ------------------------------------------------------------
     // misalignment due to tube/optics not being perp. to Dec axis
@@ -543,7 +543,7 @@ void TGeoAlign::InstrToEqu(const double *Lat, double HA, double Dec, double *HA1
     double  dSin = sin(d);
     double  dCos = cos(d);
     double  p = 1.0;
-    if (pierSide == PierSideWest) p = -1.0;
+    if (pierSide == PIER_WEST) p = -1.0;
 
     // ------------------------------------------------------------
     // misalignment due to tube/optics not being perp. to Dec axis

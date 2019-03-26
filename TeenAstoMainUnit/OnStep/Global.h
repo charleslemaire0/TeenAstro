@@ -11,11 +11,10 @@ DateTimeTimers  rtk;
 siteDefinition      localSite;
 
 
-#define PierSideEast     1
-#define PierSideWest     2
+
 
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT};
-
+enum PierSide {PIER_EAST = 1, PIER_WEST};
 #define MeridianFlipNever   0
 #define MeridianFlipAlign   1
 #define MeridianFlipAlways  2
@@ -32,7 +31,7 @@ byte parkStatus = NotParked;
 boolean parkSaved = false;
 boolean atHome = true;
 boolean homeMount = false;
-byte pierSide = PierSideEast;
+byte pierSide = PIER_EAST;
 byte meridianFlip = MeridianFlipNever;
 byte mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;

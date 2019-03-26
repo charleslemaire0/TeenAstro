@@ -30,7 +30,7 @@ Again:
   {
     if ( tempPosAxis2 != lastPosAxis2) {
       bool decreasing = tempPosAxis2 < lastPosAxis2;
-      if (pierSide >= PierSideWest)
+      if (pierSide >= PIER_WEST)
         decreasing = !decreasing;
       // if Dec is decreasing, slow down Dec
       if (decreasing)

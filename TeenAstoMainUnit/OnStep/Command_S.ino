@@ -189,16 +189,16 @@ void Command_S(Command& process_command)
       }
       else if (parameter[0] == 'E')
       {
-        if (pierSide >= PierSideWest)
+        if (pierSide >= PIER_WEST)
         {
-          newTargetPierSide = PierSideEast;
+          newTargetPierSide = PIER_EAST;
         }
       }
       else if (parameter[0] == 'W')
       {
-        if (pierSide < PierSideWest)
+        if (pierSide < PIER_WEST)
         {
-          newTargetPierSide = PierSideWest;
+          newTargetPierSide = PIER_WEST;
         }
       }
       else

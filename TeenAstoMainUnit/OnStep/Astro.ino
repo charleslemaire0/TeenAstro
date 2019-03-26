@@ -990,7 +990,7 @@ void InsrtHADec2HADec(double *HA, double *Dec, byte *Side)
 
 void HADec2InsrtHADec(double *HA, double *Dec, byte *Side )
 {
-  if (*Side >= PierSideWest)
+  if (*Side >= PIER_WEST)
   {
     if (*localSite.latitude() >= 0)
       *Dec = (90.0 - *Dec) + 90;

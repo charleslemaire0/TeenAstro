@@ -587,7 +587,7 @@ void Command_C()
       !movingTo &&
       ( command[1] == 'M' || command[1] == 'S'))
   {
-    if (newTargetPierSide == PierSideEast || newTargetPierSide == PierSideWest)
+    if (newTargetPierSide == PIER_EAST || newTargetPierSide == PIER_WEST)
     {
       pierSide = newTargetPierSide;
       newTargetPierSide = 0;

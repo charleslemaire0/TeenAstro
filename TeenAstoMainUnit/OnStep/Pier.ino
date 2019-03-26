@@ -5,13 +5,13 @@ boolean setSide(byte side)
   GeoAlign.GetEqu(localSite.latitude(), &HA, &Dec);
   double  axis1, axis2;
 
-  if (side == PierSideEast)
+  if (side == PIER_EAST)
   {
-    pierSide = PierSideEast;
+    pierSide = PIER_EAST;
   }
-  else if (side == PierSideWest)
+  else if (side == PIER_WEST)
   {
-    pierSide = PierSideWest;
+    pierSide = PIER_WEST;
   }
   else
     return false;
@@ -29,10 +29,10 @@ boolean setSide(byte side)
   double underPoleLimit = (mode == CheckModeGOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0/60;
   switch (inputSide)
   {
-  case PierSideWest:
+  case PIER_WEST:
     if (HA < -underPoleLimit * 15.) ok = false;
     break;
-  case PierSideEast:
+  case PIER_EAST:
     if (HA > underPoleLimit * 15.) ok = false;
     break;
   default:
@@ -49,10 +49,10 @@ bool checkMeridian(const double& HA, const byte& inputSide, byte mode)
   double MinutesPastMeridianE = (mode == CheckModeGOTO) ? minutesPastMeridianGOTOE : minutesPastMeridianGOTOE + 5;
   switch (inputSide)
   {
-  case PierSideWest:
+  case PIER_WEST:
     if (HA * 60. > MinutesPastMeridianW * 15.) ok = false;
     break;
-  case PierSideEast:
+  case PIER_EAST:
     if (HA * 60. < -MinutesPastMeridianE *15.) ok = false;
     break;
   default:
@@ -67,14 +67,14 @@ bool checkMeridian(const double& HA, const byte& inputSide, byte mode)
 byte predictSideOfPier(const double& HA, const byte& inputSide)
 {
   if (meridianFlip == MeridianFlipNever)
-    return PierSideEast;
+    return PIER_EAST;
   if (checkPole(HA, inputSide, CheckModeGOTO) && checkMeridian(HA, inputSide, CheckModeGOTO))
   {
     //Serial.println(inputSide);
     return inputSide;
   }
   byte otherside;
-  if (inputSide == PierSideEast) otherside = PierSideWest; else otherside = PierSideEast;
+  if (inputSide == PIER_EAST) otherside = PIER_WEST; else otherside = PIER_EAST;
 
   if (checkPole(HA, otherside, CheckModeGOTO) && checkMeridian(HA, otherside, CheckModeGOTO))
   {

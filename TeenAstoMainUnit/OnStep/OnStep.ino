@@ -289,7 +289,7 @@ void loop()
         // origTargetAxisn isn't used in Alt/Azm mode since meridian flips never happen
         origTargetAxis1.fixed += fstepAxis1.fixed;
         // don't advance the target during meridian flips
-        if ((pierSide == PierSideEast) || (pierSide == PierSideWest))
+        if ((pierSide == PIER_EAST) || (pierSide == PIER_WEST))
         {
           cli();
           targetAxis1.fixed += fstepAxis1.fixed;
@@ -400,7 +400,7 @@ void CheckPierSide()
     return;
   }
   bool isEast = -quaterRotAxis2 < pos && pos < quaterRotAxis2;
-  pierSide = isEast ? PierSideEast : PierSideWest;
+  pierSide = isEast ? PIER_EAST : PIER_WEST;
 }
 
 // safety checks,
@@ -419,12 +419,12 @@ void SafetyCheck(const bool forceTracking)
     GeoAlign.GetInstr(&HA, &Dec);
     if (!checkPole(HA, pierSide, CheckModeTracking))
     {
-      if ((dirAxis1 == 1 && pierSide == PierSideEast) || (dirAxis1 == 0 && pierSide == PierSideWest))
+      if ((dirAxis1 == 1 && pierSide == PIER_EAST) || (dirAxis1 == 0 && pierSide == PIER_WEST))
       {
         lastError = ERR_UNDER_POLE;
         if (movingTo)
           abortSlew = true;
-        if (pierSide == PierSideEast && !forceTracking)
+        if (pierSide == PIER_EAST && !forceTracking)
           sideralTracking = false;
       }
       else if (lastError == ERR_UNDER_POLE)
@@ -439,14 +439,14 @@ void SafetyCheck(const bool forceTracking)
 
     if (!checkMeridian(HA, pierSide, CheckModeTracking))
     {
-      if ((dirAxis1 == 1 && pierSide == PierSideWest) || (dirAxis1 == 0 && pierSide == PierSideEast))
+      if ((dirAxis1 == 1 && pierSide == PIER_WEST) || (dirAxis1 == 0 && pierSide == PIER_EAST))
       {
         lastError = ERR_MERIDIAN;
         if (movingTo)
         {
           abortSlew = true;
         }
-        if (pierSide >= PierSideWest && !forceTracking)
+        if (pierSide >= PIER_WEST && !forceTracking)
           sideralTracking = false;
       }
       else if (lastError == ERR_MERIDIAN)
@@ -502,7 +502,7 @@ void SafetyCheck(const bool forceTracking)
   {
     if ((getApproxDec() < MinDec) ||
         (getApproxDec() > MaxDec) ||
-        (pierSide == PierSideWest && mountType == MOUNT_TYPE_FORK))
+        (pierSide == PIER_WEST && mountType == MOUNT_TYPE_FORK))
     {
       lastError = ERR_DEC;
       if (movingTo)

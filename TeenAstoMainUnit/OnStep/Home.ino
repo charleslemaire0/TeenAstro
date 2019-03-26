@@ -35,7 +35,7 @@ boolean setHome()
     bool lastSideralTracking = sideralTracking;
     sideralTracking = false;
     // default values for state variables
-    pierSide = PierSideEast;
+    pierSide = PIER_EAST;
     dirAxis2 = 1;
     initLat();
     dirAxis1 = 1;

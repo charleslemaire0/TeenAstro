@@ -73,7 +73,7 @@ void MoveAxis2(const byte newguideDirAxis,const byte Mode)
     bool rev = false;
     if (newguideDirAxis == 's')
       rev = true;
-    if (pierSide >= PierSideWest)
+    if (pierSide >= PIER_WEST)
       rev = !rev;
     Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate, false);
     double newGuideTimerBaseRate = rev ? -guideTimerBaseRate : guideTimerBaseRate;
