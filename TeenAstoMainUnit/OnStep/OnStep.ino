@@ -541,8 +541,9 @@ time_t getTeensy3Time()
 
 void initmount()
 {
-  mountType = EEPROM.read(EE_mountType);
-  mountType = mountType < 1 || mountType >  4 ? MOUNT_TYPE_GEM : mountType;
+  byte mountTypeFromEEPROM = EEPROM.read(EE_mountType);
+
+  mountType = mountTypeFromEEPROM < 1 || mountTypeFromEEPROM >  4 ? MOUNT_TYPE_GEM : static_cast<Mount>(mountTypeFromEEPROM);
 
   if (mountType == MOUNT_TYPE_GEM)
     meridianFlip = FLIP_ALWAYS;

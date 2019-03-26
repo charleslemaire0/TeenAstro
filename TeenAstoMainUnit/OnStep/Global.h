@@ -26,7 +26,7 @@ boolean atHome = true;
 boolean homeMount = false;
 PierSide pierSide = PIER_EAST;
 MeridianFlip meridianFlip = FLIP_NEVER;
-byte mountType = MOUNT_TYPE_GEM;
+Mount mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;
 
 boolean refraction_enable = false;
