@@ -504,8 +504,8 @@ void Command_A()
         if (command[1] == '+')
         {
           // after last star turn meridian flips off when align is done
-          if ((alignNumStars == alignThisStar) && (meridianFlip == MeridianFlipAlign))
-            meridianFlip = MeridianFlipNever;
+          if ((alignNumStars == alignThisStar) && (meridianFlip == FLIP_ALIGN))
+            meridianFlip = FLIP_NEVER;
 
           // AltAz Taki method
           if (mountType == MOUNT_TYPE_ALTAZM && (alignNumStars > 1) && (alignThisStar <= alignNumStars))

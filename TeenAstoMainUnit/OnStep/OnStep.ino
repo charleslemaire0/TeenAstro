@@ -413,7 +413,7 @@ void SafetyCheck(const bool forceTracking)
   if (atHome)
     atHome = !sideralTracking;
 
-  if (meridianFlip != MeridianFlipNever)
+  if (meridianFlip != FLIP_NEVER)
   {
     double HA, Dec;
     GeoAlign.GetInstr(&HA, &Dec);
@@ -545,13 +545,13 @@ void initmount()
   mountType = mountType < 1 || mountType >  4 ? MOUNT_TYPE_GEM : mountType;
 
   if (mountType == MOUNT_TYPE_GEM)
-    meridianFlip = MeridianFlipAlways;
+    meridianFlip = FLIP_ALWAYS;
   else if (mountType == MOUNT_TYPE_FORK)
-    meridianFlip = MeridianFlipNever;
+    meridianFlip = FLIP_NEVER;
   else if (mountType == MOUNT_TYPE_FORK_ALT)
-    meridianFlip = MeridianFlipNever;
+    meridianFlip = FLIP_NEVER;
   else if (mountType == MOUNT_TYPE_ALTAZM)
-    meridianFlip = MeridianFlipNever;
+    meridianFlip = FLIP_NEVER;
   // align
   if (mountType == MOUNT_TYPE_GEM)
     maxAlignNumStar = 3;

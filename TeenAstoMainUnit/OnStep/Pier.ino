@@ -58,7 +58,7 @@ bool checkMeridian(const double& HA, const PierSide& inputSide, byte mode)
 // return 0 if no side can reach the given position
 PierSide predictSideOfPier(const double& HA, const PierSide& inputSide)
 {
-  if (meridianFlip == MeridianFlipNever)
+  if (meridianFlip == FLIP_NEVER)
     return PIER_EAST;
   if (checkPole(HA, inputSide, CheckModeGOTO) && checkMeridian(HA, inputSide, CheckModeGOTO))
   {

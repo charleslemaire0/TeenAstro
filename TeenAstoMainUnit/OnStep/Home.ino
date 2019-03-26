@@ -56,13 +56,13 @@ boolean setHome()
 
     // reset meridian flip control
 if (mountType==MOUNT_TYPE_GEM)
-    meridianFlip = MeridianFlipAlways;
+    meridianFlip = FLIP_ALWAYS;
 else if (mountType==MOUNT_TYPE_FORK)
-    meridianFlip = MeridianFlipNever;
+    meridianFlip = FLIP_NEVER;
 else if (mountType == MOUNT_TYPE_FORK_ALT)
-    meridianFlip = MeridianFlipNever;
+    meridianFlip = FLIP_NEVER;
 else if (mountType == MOUNT_TYPE_ALTAZM)
-    meridianFlip = MeridianFlipNever;
+    meridianFlip = FLIP_NEVER;
 
     // where we are
     homeMount = false;

@@ -10,15 +10,9 @@ DateTimeTimers  rtk;
 // Location ----------------------------------------------------------------------------------------------------------------
 siteDefinition      localSite;
 
-
-
-
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT};
 enum PierSide {PIER_NOTVALID, PIER_EAST, PIER_WEST};
-#define MeridianFlipNever   0
-#define MeridianFlipAlign   1
-#define MeridianFlipAlways  2
-
+enum MeridianFlip {FLIP_NEVER,FLIP_ALIGN,FLIP_ALWAYS};
 
 #define CheckModeGOTO        0
 #define CheckModeTracking    1
@@ -32,7 +26,7 @@ boolean parkSaved = false;
 boolean atHome = true;
 boolean homeMount = false;
 PierSide pierSide = PIER_EAST;
-byte meridianFlip = MeridianFlipNever;
+MeridianFlip meridianFlip = FLIP_NEVER;
 byte mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;
 

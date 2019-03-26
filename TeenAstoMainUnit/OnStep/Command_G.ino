@@ -105,7 +105,7 @@ void Command_GX()
       quietReply = true;
       break;  // MaxRate (default)
     case '4':
-      if (meridianFlip == MeridianFlipNever)
+      if (meridianFlip == FLIP_NEVER)
       {
         sprintf(reply, "%d N", (int)(pierSide));
       }
