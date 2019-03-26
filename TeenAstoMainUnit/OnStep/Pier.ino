@@ -15,10 +15,10 @@ boolean setSide(PierSide side)
   return true;
 }
 
-  bool checkPole(const double& HA, const PierSide& inputSide, byte mode)
+  bool checkPole(const double& HA, const PierSide& inputSide, CheckMode mode)
 {
   bool ok = true;
-  double underPoleLimit = (mode == CheckModeGOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0/60;
+  double underPoleLimit = (mode == CHECKMODE_GOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0/60;
   switch (inputSide)
   {
   case PIER_WEST:
@@ -34,11 +34,11 @@ boolean setSide(PierSide side)
   return ok;
 }
 
-bool checkMeridian(const double& HA, const PierSide& inputSide, byte mode)
+bool checkMeridian(const double& HA, const PierSide& inputSide, CheckMode mode)
 {
   bool ok = true;
-  double MinutesPastMeridianW = (mode == CheckModeGOTO) ? minutesPastMeridianGOTOW : minutesPastMeridianGOTOW + 5;
-  double MinutesPastMeridianE = (mode == CheckModeGOTO) ? minutesPastMeridianGOTOE : minutesPastMeridianGOTOE + 5;
+  double MinutesPastMeridianW = (mode == CHECKMODE_GOTO) ? minutesPastMeridianGOTOW : minutesPastMeridianGOTOW + 5;
+  double MinutesPastMeridianE = (mode == CHECKMODE_GOTO) ? minutesPastMeridianGOTOE : minutesPastMeridianGOTOE + 5;
   switch (inputSide)
   {
   case PIER_WEST:
@@ -60,7 +60,7 @@ PierSide predictSideOfPier(const double& HA, const PierSide& inputSide)
 {
   if (meridianFlip == FLIP_NEVER)
     return PIER_EAST;
-  if (checkPole(HA, inputSide, CheckModeGOTO) && checkMeridian(HA, inputSide, CheckModeGOTO))
+  if (checkPole(HA, inputSide, CHECKMODE_GOTO) && checkMeridian(HA, inputSide, CHECKMODE_GOTO))
   {
     //Serial.println(inputSide);
     return inputSide;
@@ -68,7 +68,7 @@ PierSide predictSideOfPier(const double& HA, const PierSide& inputSide)
   PierSide otherside;
   if (inputSide == PIER_EAST) otherside = PIER_WEST; else otherside = PIER_EAST;
 
-  if (checkPole(HA, otherside, CheckModeGOTO) && checkMeridian(HA, otherside, CheckModeGOTO))
+  if (checkPole(HA, otherside, CHECKMODE_GOTO) && checkMeridian(HA, otherside, CHECKMODE_GOTO))
   {
     //Serial.println(otherside);
     return otherside;

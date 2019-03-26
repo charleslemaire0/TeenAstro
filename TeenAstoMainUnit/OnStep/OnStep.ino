@@ -417,7 +417,7 @@ void SafetyCheck(const bool forceTracking)
   {
     double HA, Dec;
     GeoAlign.GetInstr(&HA, &Dec);
-    if (!checkPole(HA, pierSide, CheckModeTracking))
+    if (!checkPole(HA, pierSide, CHECKMODE_TRACKING))
     {
       if ((dirAxis1 == 1 && pierSide == PIER_EAST) || (dirAxis1 == 0 && pierSide == PIER_WEST))
       {
@@ -437,7 +437,7 @@ void SafetyCheck(const bool forceTracking)
       lastError = ERR_NONE;
     }
 
-    if (!checkMeridian(HA, pierSide, CheckModeTracking))
+    if (!checkMeridian(HA, pierSide, CHECKMODE_TRACKING))
     {
       if ((dirAxis1 == 1 && pierSide == PIER_WEST) || (dirAxis1 == 0 && pierSide == PIER_EAST))
       {

@@ -13,9 +13,8 @@ siteDefinition      localSite;
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT};
 enum PierSide {PIER_NOTVALID, PIER_EAST, PIER_WEST};
 enum MeridianFlip {FLIP_NEVER,FLIP_ALIGN,FLIP_ALWAYS};
+enum CheckMode {CHECKMODE_GOTO, CHECKMODE_TRACKING};
 
-#define CheckModeGOTO        0
-#define CheckModeTracking    1
 
 #define NotParked   0
 #define Parking     1
@@ -229,16 +228,15 @@ boolean commandError = false;
 boolean quietReply = false;
 
 char reply[50];
-
 char command[3];
 char parameter[25];
 byte bufferPtr = 0;
 
-// for bluetooth/serial 0
+// for serial 0
 char command_serial_zero[25];
 char parameter_serial_zero[25];
 byte bufferPtr_serial_zero = 0;
-// for bluetooth/serial 1
+// for serial 1
 char command_serial_one[25];
 char parameter_serial_one[25];
 byte bufferPtr_serial_one = 0;
