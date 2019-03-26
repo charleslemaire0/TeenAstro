@@ -215,7 +215,7 @@ enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter };
 volatile bool movingTo = false;
 bool lastSideralTracking = false;
 volatile bool sideralTracking = false;
-volatile byte sideralMode = SIDM_STAR;
+volatile SID_Mode sideralMode = SIDM_STAR;
 
 volatile Guiding GuidingState = GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
