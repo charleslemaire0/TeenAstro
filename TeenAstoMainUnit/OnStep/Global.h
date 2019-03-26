@@ -165,15 +165,6 @@ long                minutesPastMeridianGOTOW;               // as above, if on t
 double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. OnStep will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 //                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
 
-                                            // Stepper/position/rate ----------------------------------------------------------------------------------------------------
-#define CLR(x, y)   (x &= (~(1 << y)))
-#define SET(x, y)   (x |= (1 << y))
-#define TGL(x, y)   (x ^= (1 << y))
-
-                                            // I set the pin usage to facilitate easy connection of jumper cables
-                                            // for now, the #defines below are used to program the port modes using the standard Arduino library
-                                            // defines for direct port control
-
 #if defined(AXIS1_DISABLED_HIGH)
 #define Axis1_Disabled  HIGH
 #define Axis1_Enabled   LOW
