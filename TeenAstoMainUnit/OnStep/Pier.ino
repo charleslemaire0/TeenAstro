@@ -77,7 +77,7 @@ PierSide predictSideOfPier(const double& HA, const PierSide& inputSide)
   return PIER_NOTVALID;
 }
 
-byte predictTargetSideOfPier(double RaObject, double DecObject)
+PierSide predictTargetSideOfPier(double RaObject, double DecObject)
 {
   double  HA = haRange(rtk.LST() * 15.0 - RaObject);
   double h, d;
