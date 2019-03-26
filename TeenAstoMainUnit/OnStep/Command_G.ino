@@ -1,133 +1,3 @@
-
-
-//----------------------------------------------------------------------------------
-//  :GXE0
-void Command_GXE0()
-{
-  // simple values
-  String  c;
-#ifdef DEBUG_ON
-  c = "1";
-#else
-  c = "0";
-#endif
-#if 1//SYNC_ANYWHERE_ON
-  c += "1";
-#else
-  c += "0";
-#endif
-if (mountType == MOUNT_TYPE_GEM)
-  c += "0";
-else if (mountType == MOUNT_TYPE_FORK)
-  c += "1";
-else if (mountType == MOUNT_TYPE_FORK_ALT)
-  c += "2";
-else if (mountType == MOUNT_TYPE_ALTAZM)
-  c += "3";
-else
-  c += "9";
-
-#if defined(ST4_OFF)
-  c += "0";
-#elif defined(ST4_ON)
-  c += "1";
-#elif defined(ST4_PULLUP)
-  c += "2";
-#else
-  c += "0";
-#endif
-#if defined(ST4_ALTERNATE_PINS_ON)
-  c += "1";
-#else
-  c += "0";
-#endif
-#if defined(PPS_SENSE_ON)
-  c += "1";
-#else
-  c += "0";
-#endif
-#if defined(PEC_SENSE_ON)
-  c += "1";
-#elif defined(PEC_SENSE_PULLUP)
-  c += "2";
-#else
-  c += "0";
-#endif
-#ifdef LIMIT_SENSE_ON
-  c += "1";
-#else
-  c += "0";
-#endif
-#ifdef STATUS_LED_PINS_ON
-  c += "1";
-#else
-  c += "0";
-#endif
-#if defined(STATUS_LED2_PINS_ON)
-  c += "1";
-#elif defined(STATUS_LED2_PINS)
-  c += "2";
-#else
-  c += "0";
-#endif
-#ifdef RETICULE_LED_PINS
-  c += "1";
-#else
-  c += "0";
-#endif
-#if 0 //POWER_SUPPLY_PINS is always OFF
-  c += "1";
-#else
-  c += "0";
-#endif
-#if defined(AXIS1_DISABLED_HIGH)
-  c += "1";
-#elif defined(AXIS1_DISABLED_LOW)
-  c += "0";
-#else
-  c += "9";
-#endif
-#if defined(AXIS2_DISABLED_HIGH)
-  c += "1";
-#elif defined(AXIS2_DISABLED_LOW)
-  c += "0";
-#else
-  c += "9";
-#endif
-#if defined(AXIS1_FAULT_LOW)
-  c += "0";
-#elif defined(AXIS1_FAULT_HIGH)
-  c += "1";
-#elif defined(AXIS1_FAULT_OFF)
-  c += "2";
-#endif
-#if defined(AXIS2_FAULT_LOW)
-  c += "0";
-#elif defined(AXIS2_FAULT_HIGH)
-  c += "1";
-#elif defined(AXIS2_FAULT_OFF)
-  c += "2";
-#endif
-#ifdef TRACK_REFRACTION_RATE_DEFAULT_ON
-  c += "1";
-#else
-  c += "0";
-#endif
-#ifdef SEPERATE_PULSE_GUIDE_RATE_ON
-  c += "1";
-#else
-  c += "0";
-#endif
-#if true
-  c += "1";
-#else
-  c += "0";
-#endif
-  strcpy(reply, (char *)c.c_str());
-  quietReply = true;
-
-}
-
 //----------------------------------------------------------------------------------
 // :GXnn#   Get OnStep value
 //         Returns: value
@@ -145,7 +15,6 @@ void Command_GX()
     // 0n: Align Model
     switch (parameter[1])
     {
-
     case '2':
       sprintf(reply, "%ld", (long)(GeoAlign.altCor * 3600.0));
       quietReply = true;
@@ -253,9 +122,6 @@ void Command_GX()
     // En: Get config
     switch (parameter[1])
     {
-    case '0':
-      Command_GXE0();
-      break;
     case '1':
       sprintf(reply, "%ld", (long)MaxRate);
       quietReply = true;

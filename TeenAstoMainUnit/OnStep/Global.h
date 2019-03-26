@@ -6,7 +6,6 @@
 
 
 timerLoop tlp;
-GNSSPPS         pps;
 DateTimeTimers  rtk;
 // Location ----------------------------------------------------------------------------------------------------------------
 siteDefinition      localSite;
@@ -65,13 +64,7 @@ volatile double         timerRateAxis2 = 0;
 volatile double         timerRateBacklashAxis2 = 0;
 volatile boolean        inbacklashAxis2 = false;
 boolean                 faultAxis2 = false;
-
-
-#ifdef TRACK_REFRACTION_RATE_DEFAULT_ON
-boolean                 refraction = refraction_enable;
-#else
 boolean                 refraction = false;
-#endif
 
 unsigned int GearAxis1;//2000
 unsigned int StepRotAxis1;

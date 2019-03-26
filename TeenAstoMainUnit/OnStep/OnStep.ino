@@ -133,10 +133,6 @@ void setup()
   // initialize the stepper control pins Axis1 and Axis2
   pinMode(Axis1StepPin, OUTPUT);
   pinMode(Axis1DirPin, OUTPUT);
-#ifdef Axis2GndPin
-  pinMode(Axis2GndPin, OUTPUT);
-  digitalWrite(Axis2GndPin, LOW);
-#endif
   pinMode(Axis2StepPin, OUTPUT);
   pinMode(Axis2DirPin, OUTPUT);
 
@@ -155,18 +151,10 @@ void setup()
 #endif
 
   // ST4 interface
-#ifdef ST4_ON
   pinMode(ST4RAw, INPUT);
   pinMode(ST4RAe, INPUT);
   pinMode(ST4DEn, INPUT);
   pinMode(ST4DEs, INPUT);
-#endif
-#ifdef ST4_PULLUP
-  pinMode(ST4RAw, INPUT_PULLUP);
-  pinMode(ST4RAe, INPUT_PULLUP);
-  pinMode(ST4DEn, INPUT_PULLUP);
-  pinMode(ST4DEs, INPUT_PULLUP);
-#endif
 
   // inputs for stepper drivers fault signal
 #ifndef AXIS1_FAULT_OFF
@@ -206,21 +194,7 @@ void setup()
   updateSideral();
 
 
-#if defined(__AVR_ATmega2560__)
-  if (StepsPerSecondAxis1 < 31)
-    TCCR3B = (1 << WGM12) | (1 << CS10) | (1 << CS11);  // ~0 to 0.25 seconds   (4 steps per second minimum, granularity of timer is 4uS)   /64 pre-scaler
-  else
-    TCCR3B = (1 << WGM12) | (1 << CS11);                // ~0 to 0.032 seconds (31 steps per second minimum, granularity of timer is 0.5uS) /8  pre-scaler
-  TCCR3A = 0;
-  TIMSK3 = (1 << OCIE3A);
 
-  if (StepsPerSecondAxis1 < 31)
-    TCCR4B = (1 << WGM12) | (1 << CS10) | (1 << CS11);  // ~0 to 0.25 seconds   (4 steps per second minimum, granularity of timer is 4uS)   /64 pre-scaler
-  else
-    TCCR4B = (1 << WGM12) | (1 << CS11);                // ~0 to 0.032 seconds (31 steps per second minimum, granularity of timer is 0.5uS) /8  pre-scaler
-  TCCR4A = 0;
-  TIMSK4 = (1 << OCIE4A);
-#elif defined(__arm__) && defined(TEENSYDUINO)
   // set the system timer for millis() to the second highest priority
   SCB_SHPR3 = (32 << 24) | (SCB_SHPR3 & 0x00FFFFFF);
 
@@ -233,7 +207,7 @@ void setup()
   // set the motor timers to run at the highest priority
   NVIC_SET_PRIORITY(IRQ_PIT_CH1, 0);
   NVIC_SET_PRIORITY(IRQ_PIT_CH2, 0);
-#endif
+
 
   // get ready for serial communications
   Serial1_Init(BAUD);
@@ -243,10 +217,7 @@ void setup()
 #if VERSION == 230 || VERSION == 240
   Serial3.begin(9600);
 #endif
-#if defined(W5100_ON)
-  // get ready for Ethernet communications
-  Ethernet_Init();
-#endif
+
 
   // get the site information, if a GPS were attached we would use that here instead
   localSite.ReadCurrentSiteDefinition();

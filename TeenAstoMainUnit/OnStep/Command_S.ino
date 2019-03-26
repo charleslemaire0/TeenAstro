@@ -46,14 +46,6 @@ void Command_S(Command& process_command)
         delay(20);
         Serial_Init(baudRate[i]);
       }
-      else if (process_command == COMMAND_ETHERNET)
-      {
-#if defined(W5100_ON)
-        Ethernet_print("1");
-        while (Ethernet_transmit());
-        delay(20);
-#endif
-      }
       else
       {
         Serial1_print("1");

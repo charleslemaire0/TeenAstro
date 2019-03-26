@@ -237,11 +237,3 @@ void DecayModeGoto() {
   sei();
 }
 
-void pinModeOpen(int pin) {
-#if defined(__arm__) && defined(TEENSYDUINO)
-  pinMode(pin, OUTPUT_OPENDRAIN); digitalWrite(pin, HIGH);
-#else
-  pinMode(pin, INPUT);
-#endif
-}
-

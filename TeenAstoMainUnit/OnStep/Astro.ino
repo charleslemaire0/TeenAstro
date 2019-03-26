@@ -607,11 +607,9 @@ double ZenithTrackingRate()
 }
 
 // distance in arc-min ahead of and behind the current Equ position, used for rate calculation
-#if defined(__AVR_ATmega2560__)
-#define RefractionRateRange 30
-#else
+
 #define RefractionRateRange 10
-#endif
+
 boolean do_refractionRate_calc()
 {
     boolean done = false;
@@ -803,20 +801,8 @@ boolean do_altAzmRate_calc()
             if ((az_Azm2 < -90.0) && (az_Azm1 > 90.0)) az_Azm2 += 360.0;
 
             // set rates
-            az_deltaAxis1 =
-                (
-                    (az_Azm1 - az_Azm2) *
-                    (15.0 / (AltAzTrackingRange / 60.0)) /
-                    2.0
-                ) *
-                az_deltaRateScale;
-            az_deltaAxis2 =
-                (
-                    (az_Alt1 - az_Alt2) *
-                    (15.0 / (AltAzTrackingRange / 60.0)) /
-                    2.0
-                ) *
-                az_deltaRateScale;
+            az_deltaAxis1 = ((az_Azm1 - az_Azm2) * (15.0 / (AltAzTrackingRange / 60.0)) / 2.0) * az_deltaRateScale;
+            az_deltaAxis2 = ((az_Alt1 - az_Alt2) * (15.0 / (AltAzTrackingRange / 60.0)) / 2.0) * az_deltaRateScale;
 
             // override for special case of near a celestial pole
             if (90.0 - fabs(az_Dec) <= 0.5)

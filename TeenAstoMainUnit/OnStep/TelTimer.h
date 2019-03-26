@@ -69,44 +69,6 @@ double timeRange(double t)
   return t;
 }
 
-class GNSSPPS
-{
-private:
-  volatile unsigned long  m_lastMicroS = 1000000UL;
-  volatile unsigned long  m_avgMicroS = 1000000UL;
-  volatile double         m_lastRateRatio = 1.0;
-
-public:
-  // PPS (GPS)
-  volatile boolean           m_synced = false;
-  volatile double         m_rateRatio = 1.0;
-  void clockSync()
-  {
-    unsigned long   t = micros();
-    unsigned long   oneS = (t - m_lastMicroS);
-    if ((oneS > 1000000 - 1000) && (oneS < 1000000 + 1000))
-    {
-      m_avgMicroS = (m_avgMicroS * 19 + oneS) / 20;
-      m_synced = true;
-    }
-    m_lastMicroS = t;
-  }
-  void clockUpdate()
-  {
-    m_rateRatio = ((double) 1000000.0 / (double)(m_avgMicroS));
-    if ((long)(micros() - (m_lastMicroS + 2000000UL)) > 0)
-      m_synced = false;          // if more than two seconds has ellapsed without a pulse we've lost sync
-  }
-  bool hasRatioChanged()
-  {
-    return (m_lastRateRatio != m_rateRatio && m_synced);
-  }
-  void updateLastRatio()
-  {
-    m_lastRateRatio = m_rateRatio;
-  }
-};
-
 class timerLoop
 {
 private:
