@@ -1,5 +1,5 @@
 //#pragma once
-void MoveAxis1(const byte newguideDirAxis, const byte Mode)
+void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
 {
  
   bool canMove = parkStatus == NotParked;
@@ -54,7 +54,7 @@ void StopAxis1()
   guideDirAxis1 = 'b';
 }
 
-void MoveAxis2(const byte newguideDirAxis,const byte Mode)
+void MoveAxis2(const byte newguideDirAxis,const Guiding Mode)
 {
   bool canMove = parkStatus == NotParked;
   canMove &= !movingTo;

@@ -207,11 +207,7 @@ Errors StartLoopError = ERR_NONE;
 boolean highPrecision = true;
 
 
-
-#define GuidingOFF                 0
-#define GuidingPulse               1
-#define GuidingST4                 2
-#define GuidingRecenter            3
+enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter };
 
 #define TrackingSolar 0.99726956632
 #define TrackingLunar 0.96236513150
@@ -221,7 +217,7 @@ bool lastSideralTracking = false;
 volatile bool sideralTracking = false;
 volatile byte sideralMode = SIDM_STAR;
 
-volatile byte GuidingState  = GuidingOFF;
+volatile Guiding GuidingState = GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
 unsigned long lastSecurityCheck = millis();
 
