@@ -1,20 +1,12 @@
 // set Side of pier
-boolean setSide(byte side)
+boolean setSide(PierSide side)
 {
+  if (side == PIER_NOTVALID)
+    return false;
   double  HA, Dec;
   GeoAlign.GetEqu(localSite.latitude(), &HA, &Dec);
   double  axis1, axis2;
-
-  if (side == PIER_EAST)
-  {
-    pierSide = PIER_EAST;
-  }
-  else if (side == PIER_WEST)
-  {
-    pierSide = PIER_WEST;
-  }
-  else
-    return false;
+  pierSide = side;
   GeoAlign.EquToInstr(localSite.latitude(), HA, Dec, &axis1, &axis2);
   cli();
   posAxis1 = axis1;
@@ -23,7 +15,7 @@ boolean setSide(byte side)
   return true;
 }
 
-  bool checkPole(const double& HA, const byte& inputSide, byte mode)
+  bool checkPole(const double& HA, const PierSide& inputSide, byte mode)
 {
   bool ok = true;
   double underPoleLimit = (mode == CheckModeGOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0/60;
@@ -42,7 +34,7 @@ boolean setSide(byte side)
   return ok;
 }
 
-bool checkMeridian(const double& HA, const byte& inputSide, byte mode)
+bool checkMeridian(const double& HA, const PierSide& inputSide, byte mode)
 {
   bool ok = true;
   double MinutesPastMeridianW = (mode == CheckModeGOTO) ? minutesPastMeridianGOTOW : minutesPastMeridianGOTOW + 5;
@@ -64,7 +56,7 @@ bool checkMeridian(const double& HA, const byte& inputSide, byte mode)
 
 // Predict Side of Pier
 // return 0 if no side can reach the given position
-byte predictSideOfPier(const double& HA, const byte& inputSide)
+PierSide predictSideOfPier(const double& HA, const PierSide& inputSide)
 {
   if (meridianFlip == MeridianFlipNever)
     return PIER_EAST;
@@ -73,7 +65,7 @@ byte predictSideOfPier(const double& HA, const byte& inputSide)
     //Serial.println(inputSide);
     return inputSide;
   }
-  byte otherside;
+  PierSide otherside;
   if (inputSide == PIER_EAST) otherside = PIER_WEST; else otherside = PIER_EAST;
 
   if (checkPole(HA, otherside, CheckModeGOTO) && checkMeridian(HA, otherside, CheckModeGOTO))
@@ -82,7 +74,7 @@ byte predictSideOfPier(const double& HA, const byte& inputSide)
     return otherside;
   }
   //Serial.println(0);
-  return 0;
+  return PIER_NOTVALID;
 }
 
 byte predictTargetSideOfPier(double RaObject, double DecObject)

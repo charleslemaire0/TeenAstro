@@ -26,7 +26,7 @@ void Command_M(bool &supress_frame)
       getEqu(&f, &f1, false);
       newTargetRA = f;
       newTargetDec = f1;
-      byte preferedPierSide = (pierSide == PIER_EAST) ? PIER_WEST : PIER_EAST;
+      PierSide preferedPierSide = (pierSide == PIER_EAST) ? PIER_WEST : PIER_EAST;
       i = goToEqu(newTargetRA, newTargetDec, preferedPierSide);
       reply[0] = i + '0';
       reply[1] = 0;

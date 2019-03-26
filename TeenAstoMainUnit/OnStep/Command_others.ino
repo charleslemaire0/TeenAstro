@@ -587,10 +587,10 @@ void Command_C()
       !movingTo &&
       ( command[1] == 'M' || command[1] == 'S'))
   {
-    if (newTargetPierSide == PIER_EAST || newTargetPierSide == PIER_WEST)
+    if (newTargetPierSide != PIER_NOTVALID)
     {
       pierSide = newTargetPierSide;
-      newTargetPierSide = 0;
+      newTargetPierSide = PIER_NOTVALID;
     }
     i = syncEqu(newTargetRA, newTargetDec);
     i = 0;

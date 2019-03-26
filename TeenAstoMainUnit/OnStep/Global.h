@@ -14,7 +14,7 @@ siteDefinition      localSite;
 
 
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT};
-enum PierSide {PIER_EAST = 1, PIER_WEST};
+enum PierSide {PIER_NOTVALID, PIER_EAST, PIER_WEST};
 #define MeridianFlipNever   0
 #define MeridianFlipAlign   1
 #define MeridianFlipAlways  2
@@ -31,7 +31,7 @@ byte parkStatus = NotParked;
 boolean parkSaved = false;
 boolean atHome = true;
 boolean homeMount = false;
-byte pierSide = PIER_EAST;
+PierSide pierSide = PIER_EAST;
 byte meridianFlip = MeridianFlipNever;
 byte mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;
@@ -126,7 +126,7 @@ IntervalTimer           itimer4;
 void                    TIMER4_COMPA_vect(void);
 
 
-byte newTargetPierSide = 0;
+PierSide newTargetPierSide = PIER_NOTVALID;
 
 volatile long       posAxis1;    // hour angle position in steps
 double              deltaSyncAxis1;

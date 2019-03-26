@@ -974,7 +974,7 @@ void CorrectHADec(double *HA, double *Dec)
   while (*HA < -180.0) *HA += 360.0;
 }
 
-void InsrtHADec2HADec(double *HA, double *Dec, byte *Side)
+void InsrtHADec2HADec(double *HA, double *Dec, PierSide *Side)
 {
   if (*Dec > 90.0)
   {
@@ -988,7 +988,7 @@ void InsrtHADec2HADec(double *HA, double *Dec, byte *Side)
   }
 }
 
-void HADec2InsrtHADec(double *HA, double *Dec, byte *Side )
+void HADec2InsrtHADec(double *HA, double *Dec, PierSide *Side )
 {
   if (*Side >= PIER_WEST)
   {

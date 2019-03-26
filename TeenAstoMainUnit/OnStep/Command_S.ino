@@ -185,18 +185,18 @@ void Command_S(Command& process_command)
     {
       if (parameter[0] == 'N')
       {
-        newTargetPierSide = 0;
+        newTargetPierSide = PIER_NOTVALID;
       }
       else if (parameter[0] == 'E')
       {
-        if (pierSide >= PIER_WEST)
+        if (pierSide == PIER_WEST)
         {
           newTargetPierSide = PIER_EAST;
         }
       }
       else if (parameter[0] == 'W')
       {
-        if (pierSide < PIER_WEST)
+        if (pierSide == PIER_EAST)
         {
           newTargetPierSide = PIER_WEST;
         }
@@ -234,8 +234,6 @@ void Command_S(Command& process_command)
       commandError = true;
   }
   break;
-
-
 
   case 'r':
     //  :SrHH:MM.T#
