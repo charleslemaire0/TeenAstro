@@ -90,10 +90,10 @@ Again:
     }
     guideDirAxis2 = 'b';
 
-    if (parkStatus == Parking)
+    if (parkStatus == PRK_PARKING)
     {
       sideralTracking = lastSideralTracking;
-      parkStatus = NotParked;
+      parkStatus = PRK_UNPARKED;
       EEPROM.write(EE_parkStatus, parkStatus);
     }
     else if (homeMount)
@@ -166,9 +166,9 @@ Again:
     DecayModeTracking();
 
     // other special gotos: for parking the mount and homeing the mount
-    if (parkStatus == Parking)
+    if (parkStatus == PRK_PARKING)
     {
-      parkStatus = ParkFailed;
+      parkStatus = PRK_FAILED;
 
       for (int i = 0; i < 12; i++)  // give the drives a moment to settle in
       {
@@ -177,7 +177,7 @@ Again:
         {
           if (parkClearBacklash())
           {
-            parkStatus = Parked;// success, we're parked 
+            parkStatus = PRK_PARKED;// success, we're parked 
             enable_Axis(false);// disable the stepper drivers
           }
           break;

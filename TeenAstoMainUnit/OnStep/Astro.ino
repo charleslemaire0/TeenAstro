@@ -297,141 +297,6 @@ boolean doubleToDms(char *reply, const double *f, boolean fullRange,
 }
 
 
-//
-//// Set RTC with give input
-//void setClock(int y1, int m1, int d1, int h1, int mi1, int s1)
-//{
-//  tmElements_t t1;
-//  t1.Year = y1 - 1970;
-//  t1.Month = m1;
-//  t1.Day = d1;
-//  t1.Hour = h1;
-//  t1.Minute = mi1;
-//  t1.Second = s1;
-//  time_t t = makeTime(t1);
-//  Teensy3Clock.set(t);
-//  setTime(t);
-//}
-//
-//// Syn Telescope Drive with RTC
-//void syncClock()
-//{
-//  time_t RTClock = Teensy3Clock.get();
-//  JD = julian(year(RTClock), month(RTClock), day(RTClock));
-//  LMT = hour(RTClock) + minute(RTClock) / 60.0 + second(RTClock) / 3600.0;
-//  UT1 = LMT + timeZone;
-//  UT1_start = UT1;
-//  UT1mS_start = millis();
-//  update_lst(jd2last(JD, UT1));
-//}
-//// -----------------------------------------------------------------------------------------------------------------------------
-//// Date Time conversion
-//
-//// converts Gregorian date (Y,M,D) to Julian day number
-//double julian(int Year, int Month, int Day)
-//{
-//    if ((Month == 1) || (Month == 2))
-//    {
-//        Year--;
-//        Month = Month + 12;
-//    }
-//
-//    double  B = 2.0 - floor(Year / 100.0) + floor(Year / 400.0);
-//    return
-//        (
-//            B +
-//                floor(365.25 * Year) +
-//                floor(30.6001 * (Month + 1.0)) +
-//                Day +
-//                1720994.5
-//        );  //+(Time/24.0);
-//}
-//
-//// converts Julian day number to Gregorian date (Y,M,D)
-//void greg(double JulianDay, int *Year, int *Month, int *Day)
-//{
-//    double  A,
-//            B,
-//            C,
-//            D,
-//            D1,
-//            E,
-//            F,
-//            G,
-//            I;
-//
-//    JulianDay = JulianDay + 0.5;
-//    I = floor(JulianDay);
-//
-//    F = 0.0;    //  JD-I;
-//    if (I > 2299160.0)
-//    {
-//        A = int((I - 1867216.25) / 36524.25);
-//        B = I + 1.0 + A - floor(A / 4.0);
-//    }
-//    else
-//        B = I;
-//
-//    C = B + 1524.0;
-//    D = floor((C - 122.1) / 365.25);
-//    E = floor(365.25 * D);
-//    G = floor((C - E) / 30.6001);
-//
-//    D1 = C - E + F - floor(30.6001 * G);
-//    *Day = floor(D1);
-//    if (G < 13.5)
-//        *Month = floor(G - 1.0);
-//    else
-//        *Month = floor(G - 13.0);
-//    if (*Month > 2.5)
-//        *Year = floor(D - 4716.0);
-//    else
-//        *Year = floor(D - 4715.0);
-//}
-//
-//// convert date/time to Greenwich Apparent Sidereal time
-//double jd2gast(double JulianDay, double ut1)
-//{
-//    int y,
-//        m,
-//        d;
-//    greg(JulianDay, &y, &m, &d);
-//
-//    double  JulianDay0 = julian(y, m, d);
-//    double  D = (JulianDay - 2451545.0) + (ut1 / 24.0);
-//    double  D0 = (JulianDay0 - 2451545.0);
-//    double  H = ut1;
-//    double  T = D / 36525.0;
-//    double  gmst = 6.697374558 + 0.06570982441908 * D0;
-//    gmst = timeRange(gmst);
-//    gmst = gmst + 1.00273790935 * H + 0.000026 * T * T;
-//    gmst = timeRange(gmst);
-//
-//    // equation of the equinoxes
-//    double  O = 125.04 - 0.052954 * D;
-//    double  L = 280.47 + 0.98565 * D;
-//    double  E = 23.4393 - 0.0000004 * D;
-//    double  W = -0.000319 * sin(O / Rad) - 0.000024 * sin((2 * L) / Rad);
-//    double  eqeq = W * cos(E / Rad);
-//    double  gast = gmst + eqeq;
-//    return timeRange(gast);
-//}
-//
-//// convert date/time to Local Apparent Sidereal Time
-//
-//// uses longitude
-//double jd2last(double JulianDay, double ut1)
-//{
-//    // JulianDay is the Local date, jd2gast requires a universal time
-//    // this is a hack that leaves the date alone and lets the UT1 cover
-//    // the difference in time to the next (or previous) day
-//    double  gast = jd2gast(JulianDay, ut1);
-//    return timeRange(gast - (*localSite.longitude() / 15.0));
-//}
-
-
-
-
 // -----------------------------------------------------------------------------------------------------------------------------
 // Coordinate conversion
 // convert equatorial coordinates to horizon
@@ -885,9 +750,6 @@ double SetRates(double maxslewrate)
   return maxslewrate;
 }
 
-
-
-
 void SetAcceleration()
 {
   double Vmax = getV(maxRate);
@@ -929,7 +791,6 @@ void enableST4GuideRate()
   }
 }
 
-
 void resetGuideRate()
 {
   enableGuideRate(activeGuideRate, true);
@@ -950,8 +811,6 @@ void enableRateAxis2(double vRate)
   guideTimerRateAxis2 = vRate;
   sei();
 }
-
-
 
 // Remap HA DEC value between -180 +180 and -90 +90
 void CorrectHADec(double *HA, double *Dec)

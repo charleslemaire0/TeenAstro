@@ -97,7 +97,7 @@ void setup()
 
     // init the Park status
     EEPROM.write(EE_parkSaved, false);
-    EEPROM.write(EE_parkStatus, NotParked);
+    EEPROM.write(EE_parkStatus, PRK_UNPARKED);
 
     // init the pulse-guide rate
     EEPROM.write(EE_pulseGuideRate, GuideRate1x);
@@ -183,7 +183,6 @@ void setup()
 #endif
 
   // disable the stepper drivers for now, if the enable lines are connected
-
   enable_Axis(false);
 
   // automatic mode switching before/after slews, initialize micro-step mode
@@ -192,8 +191,6 @@ void setup()
   // this sets the sidereal timer, controls the tracking speed so that the mount moves precisely with the stars
   siderealInterval = EEPROM_readLong(EE_siderealInterval);
   updateSideral();
-
-
 
   // set the system timer for millis() to the second highest priority
   SCB_SHPR3 = (32 << 24) | (SCB_SHPR3 & 0x00FFFFFF);
@@ -353,7 +350,6 @@ void loop()
     {
       lastError = ERR_NONE;
     }
-
   }
 
   // WORKLOAD MONITORING -------------------------------------------------------------------------------
@@ -361,7 +357,6 @@ void loop()
 
   // HOUSEKEEPING --------------------------------------------------------------------------------------
   // timer... falls in once a second, keeps the universal time clock ticking,
-  // handles PPS GPS signal processing, watches safety limits, adjusts tracking rate for refraction
   unsigned long   m = millis();
   forceTracking = (m - lastSetTrakingEnable < 10000);
   if (!forceTracking) lastSetTrakingEnable = m + 10000;
@@ -515,8 +510,6 @@ void SafetyCheck(const bool forceTracking)
       lastError = ERR_NONE;
     }
   }
-
-
 }
 
 //enable Axis 

@@ -14,13 +14,9 @@ enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM
 enum PierSide {PIER_NOTVALID, PIER_EAST, PIER_WEST};
 enum MeridianFlip {FLIP_NEVER,FLIP_ALIGN,FLIP_ALWAYS};
 enum CheckMode {CHECKMODE_GOTO, CHECKMODE_TRACKING};
+enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED,  PRK_UNKNOW };
 
-
-#define NotParked   0
-#define Parking     1
-#define Parked      2
-#define ParkFailed  3
-byte parkStatus = NotParked;
+ParkState parkStatus = PRK_UNPARKED;
 boolean parkSaved = false;
 boolean atHome = true;
 boolean homeMount = false;

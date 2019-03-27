@@ -3,7 +3,7 @@
 // moves telescope to the home position, then stops tracking
 boolean goHome()
 {
-    if ((parkStatus != NotParked) && (parkStatus != Parking)) return false; // fail, moving to home not allowed if Parked
+    if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return false; // fail, moving to home not allowed if PRK_PARKED
     if (lastError != ERR_NONE) return false;                                // fail, cannot move if there are errors
     if (movingTo) return false;                      // fail, moving to home not allowed during a move
     if (guideDirAxis1 || guideDirAxis2) return false;                       // fail, moving to home not allowed while guiding
@@ -74,7 +74,7 @@ else if (mountType == MOUNT_TYPE_ALTAZM)
     timerRateAxis2 = SiderealRate;
 
     // not parked, but don't wipe the park position if it's saved - we can still use it
-    parkStatus = NotParked;
+    parkStatus = PRK_UNPARKED;
     EEPROM.write(EE_parkStatus, parkStatus);
 
     // the polar home position

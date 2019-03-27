@@ -218,7 +218,7 @@ byte goToEqu(double RA, double Dec, PierSide preferedPierSide)
   EquToHor(HA, Dec, &a, &z);
 
   // Check to see if this goto is valid
-  if ((parkStatus != NotParked) && (parkStatus != Parking)) return 4; // fail, Parked
+  if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return 4; // fail, PRK_PARKED
   if (lastError != ERR_NONE) return lastError + 10;   // fail, telescop has Errors State
   if (a < minAlt) return 1;   // fail, below horizon
   if (a > maxAlt) return 6;   // fail, outside limits

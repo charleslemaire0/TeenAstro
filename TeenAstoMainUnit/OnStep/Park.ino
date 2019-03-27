@@ -1,10 +1,10 @@
 // -----------------------------------------------------------------------------------
-// functions related to Parking the mount
+// functions related to PRK_PARKING the mount
 
 // sets the park postion as the current position
 boolean setPark()
 {
-  if ((parkStatus == NotParked) && !movingTo)
+  if ((parkStatus == PRK_UNPARKED) && !movingTo)
   {
     lastSideralTracking = sideralTracking;
     sideralTracking = false;
@@ -120,7 +120,7 @@ boolean parkClearBacklash()
 byte park()
 {
   // Gets park position and moves the mount there
-  if (parkStatus == Parked)
+  if (parkStatus == PRK_PARKED)
   {
     return 0;
   }
@@ -131,7 +131,7 @@ byte park()
   if (!movingTo)
   {
     parkSaved = EEPROM.read(EE_parkSaved);
-    if (parkStatus == NotParked)
+    if (parkStatus == PRK_UNPARKED)
     {
       if (parkSaved)
       {
@@ -144,7 +144,7 @@ byte park()
         lastSideralTracking = sideralTracking;
         sideralTracking = false;
         // record our status
-        parkStatus = Parking;
+        parkStatus = PRK_PARKING;
         EEPROM.write(EE_parkStatus, parkStatus);
         goTo(h, d);
         return 0;
@@ -200,20 +200,24 @@ boolean iniAtPark()
 {
   if (sideralTracking || movingTo)
     return false;
-  parkStatus = EEPROM.read(EE_parkStatus);
-  if (!(parkStatus == Parked ))
+  byte parkStatusRead = EEPROM.read(EE_parkStatus);
+  if (parkStatusRead != PRK_PARKED)
   {
-    parkStatus = NotParked;
-    EEPROM.write(EE_parkStatus, NotParked);
+    parkStatus = PRK_UNPARKED;
+    if (parkStatusRead != PRK_UNPARKED)
+    {
+      EEPROM.write(EE_parkStatus, PRK_UNPARKED);
+    }
     return false;
   }
+  parkStatus = PRK_PARKED;
   return syncAtPark();
 }
 
 // depends on the latitude, longitude, and timeZone; but those are stored and recalled automatically
 boolean unpark()
 {
-  if (parkStatus == NotParked)
+  if (parkStatus == PRK_UNPARKED)
     return true;
   bool ok = iniAtPark();
   if (!ok)
@@ -221,7 +225,7 @@ boolean unpark()
     return false;
   }
   // update our status, we're not parked anymore
-  parkStatus = NotParked;
+  parkStatus = PRK_UNPARKED;
   EEPROM.write(EE_parkStatus, parkStatus);
   // start tracking the sky
   sideralTracking = true;

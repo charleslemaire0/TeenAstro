@@ -583,7 +583,7 @@ void Command_B()
 
 void Command_C()
 {
-  if ((parkStatus == NotParked) &&
+  if ((parkStatus == PRK_UNPARKED) &&
       !movingTo &&
       ( command[1] == 'M' || command[1] == 'S'))
   {
@@ -684,7 +684,7 @@ void Command_Q()
   case 0:
     //  :Q#    Halt all slews, stops goto
     //         Returns: Nothing
-    if ((parkStatus == NotParked) || (parkStatus == Parking))
+    if ((parkStatus == PRK_UNPARKED) || (parkStatus == PRK_PARKING))
     {
       if (movingTo)
       {
@@ -715,7 +715,7 @@ void Command_Q()
     //  :Qe# & Qw#   Halt east/westward Slews
     //         Returns: Nothing
   {
-    if ((parkStatus == NotParked) && !movingTo)
+    if ((parkStatus == PRK_UNPARKED) && !movingTo)
     {
       if (guideDirAxis1)
         StopAxis1();
@@ -729,7 +729,7 @@ void Command_Q()
     //  :Qn# & Qs#   Halt north/southward Slews
     //         Returns: Nothing
   {
-    if ((parkStatus == NotParked) && !movingTo)
+    if ((parkStatus == PRK_UNPARKED) && !movingTo)
     {
       if (guideDirAxis2)
         StopAxis2();
@@ -858,7 +858,7 @@ void Command_T()
     quietReply = true;
     break;
   case 'e':
-    if (parkStatus == NotParked)
+    if (parkStatus == PRK_UNPARKED)
     {
       lastSetTrakingEnable = millis();
       atHome = false;
@@ -868,7 +868,7 @@ void Command_T()
       commandError = true;
     break;
   case 'd':
-    if (parkStatus == NotParked)
+    if (parkStatus == PRK_UNPARKED)
     {
       sideralTracking = false;
     }
