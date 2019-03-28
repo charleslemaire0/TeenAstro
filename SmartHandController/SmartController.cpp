@@ -1368,7 +1368,7 @@ void SmartHandController::menuSolarSys(bool sync)
   {
     if (current_selection_SolarSys < 1) current_selection_SolarSys = 1;
 
-    const char *string_list_SolarSyst = "Sun\nMercure\nVenus\nMars\nJupiter\nSaturn\nUranus\nNeptun";
+    const char *string_list_SolarSyst = "Sun\nMercure\nVenus\nMars\nJupiter\nSaturn\nUranus\nNeptun\nMoon";
     current_selection_SolarSys = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync" : "Goto", current_selection_SolarSys, string_list_SolarSyst);
     if (current_selection_SolarSys == 0)
     {
