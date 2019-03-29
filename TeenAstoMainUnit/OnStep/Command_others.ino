@@ -504,8 +504,8 @@ void Command_A()
         if (command[1] == '+')
         {
           // after last star turn meridian flips off when align is done
-          if ((alignNumStars == alignThisStar) && (meridianFlip == MeridianFlipAlign))
-            meridianFlip = MeridianFlipNever;
+          if ((alignNumStars == alignThisStar) && (meridianFlip == FLIP_ALIGN))
+            meridianFlip = FLIP_NEVER;
 
           // AltAz Taki method
           if (mountType == MOUNT_TYPE_ALTAZM && (alignNumStars > 1) && (alignThisStar <= alignNumStars))
@@ -583,14 +583,14 @@ void Command_B()
 
 void Command_C()
 {
-  if ((parkStatus == NotParked) &&
+  if ((parkStatus == PRK_UNPARKED) &&
       !movingTo &&
       ( command[1] == 'M' || command[1] == 'S'))
   {
-    if (newTargetPierSide == PierSideEast || newTargetPierSide == PierSideWest)
+    if (newTargetPierSide != PIER_NOTVALID)
     {
       pierSide = newTargetPierSide;
-      newTargetPierSide = 0;
+      newTargetPierSide = PIER_NOTVALID;
     }
     i = syncEqu(newTargetRA, newTargetDec);
     i = 0;
@@ -684,7 +684,7 @@ void Command_Q()
   case 0:
     //  :Q#    Halt all slews, stops goto
     //         Returns: Nothing
-    if ((parkStatus == NotParked) || (parkStatus == Parking))
+    if ((parkStatus == PRK_UNPARKED) || (parkStatus == PRK_PARKING))
     {
       if (movingTo)
       {
@@ -715,7 +715,7 @@ void Command_Q()
     //  :Qe# & Qw#   Halt east/westward Slews
     //         Returns: Nothing
   {
-    if ((parkStatus == NotParked) && !movingTo)
+    if ((parkStatus == PRK_UNPARKED) && !movingTo)
     {
       if (guideDirAxis1)
         StopAxis1();
@@ -729,7 +729,7 @@ void Command_Q()
     //  :Qn# & Qs#   Halt north/southward Slews
     //         Returns: Nothing
   {
-    if ((parkStatus == NotParked) && !movingTo)
+    if ((parkStatus == PRK_UNPARKED) && !movingTo)
     {
       if (guideDirAxis2)
         StopAxis2();
@@ -858,7 +858,7 @@ void Command_T()
     quietReply = true;
     break;
   case 'e':
-    if (parkStatus == NotParked)
+    if (parkStatus == PRK_UNPARKED)
     {
       lastSetTrakingEnable = millis();
       atHome = false;
@@ -868,7 +868,7 @@ void Command_T()
       commandError = true;
     break;
   case 'd':
-    if (parkStatus == NotParked)
+    if (parkStatus == PRK_UNPARKED)
     {
       sideralTracking = false;
     }

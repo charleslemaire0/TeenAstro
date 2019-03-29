@@ -97,7 +97,7 @@ void setup()
 
     // init the Park status
     EEPROM.write(EE_parkSaved, false);
-    EEPROM.write(EE_parkStatus, NotParked);
+    EEPROM.write(EE_parkStatus, PRK_UNPARKED);
 
     // init the pulse-guide rate
     EEPROM.write(EE_pulseGuideRate, GuideRate1x);
@@ -133,10 +133,6 @@ void setup()
   // initialize the stepper control pins Axis1 and Axis2
   pinMode(Axis1StepPin, OUTPUT);
   pinMode(Axis1DirPin, OUTPUT);
-#ifdef Axis2GndPin
-  pinMode(Axis2GndPin, OUTPUT);
-  digitalWrite(Axis2GndPin, LOW);
-#endif
   pinMode(Axis2StepPin, OUTPUT);
   pinMode(Axis2DirPin, OUTPUT);
 
@@ -155,18 +151,10 @@ void setup()
 #endif
 
   // ST4 interface
-#ifdef ST4_ON
   pinMode(ST4RAw, INPUT);
   pinMode(ST4RAe, INPUT);
   pinMode(ST4DEn, INPUT);
   pinMode(ST4DEs, INPUT);
-#endif
-#ifdef ST4_PULLUP
-  pinMode(ST4RAw, INPUT_PULLUP);
-  pinMode(ST4RAe, INPUT_PULLUP);
-  pinMode(ST4DEn, INPUT_PULLUP);
-  pinMode(ST4DEs, INPUT_PULLUP);
-#endif
 
   // inputs for stepper drivers fault signal
 #ifndef AXIS1_FAULT_OFF
@@ -195,7 +183,6 @@ void setup()
 #endif
 
   // disable the stepper drivers for now, if the enable lines are connected
-
   enable_Axis(false);
 
   // automatic mode switching before/after slews, initialize micro-step mode
@@ -205,22 +192,6 @@ void setup()
   siderealInterval = EEPROM_readLong(EE_siderealInterval);
   updateSideral();
 
-
-#if defined(__AVR_ATmega2560__)
-  if (StepsPerSecondAxis1 < 31)
-    TCCR3B = (1 << WGM12) | (1 << CS10) | (1 << CS11);  // ~0 to 0.25 seconds   (4 steps per second minimum, granularity of timer is 4uS)   /64 pre-scaler
-  else
-    TCCR3B = (1 << WGM12) | (1 << CS11);                // ~0 to 0.032 seconds (31 steps per second minimum, granularity of timer is 0.5uS) /8  pre-scaler
-  TCCR3A = 0;
-  TIMSK3 = (1 << OCIE3A);
-
-  if (StepsPerSecondAxis1 < 31)
-    TCCR4B = (1 << WGM12) | (1 << CS10) | (1 << CS11);  // ~0 to 0.25 seconds   (4 steps per second minimum, granularity of timer is 4uS)   /64 pre-scaler
-  else
-    TCCR4B = (1 << WGM12) | (1 << CS11);                // ~0 to 0.032 seconds (31 steps per second minimum, granularity of timer is 0.5uS) /8  pre-scaler
-  TCCR4A = 0;
-  TIMSK4 = (1 << OCIE4A);
-#elif defined(__arm__) && defined(TEENSYDUINO)
   // set the system timer for millis() to the second highest priority
   SCB_SHPR3 = (32 << 24) | (SCB_SHPR3 & 0x00FFFFFF);
 
@@ -233,7 +204,7 @@ void setup()
   // set the motor timers to run at the highest priority
   NVIC_SET_PRIORITY(IRQ_PIT_CH1, 0);
   NVIC_SET_PRIORITY(IRQ_PIT_CH2, 0);
-#endif
+
 
   // get ready for serial communications
   Serial1_Init(BAUD);
@@ -243,10 +214,7 @@ void setup()
 #if VERSION == 230 || VERSION == 240
   Serial3.begin(9600);
 #endif
-#if defined(W5100_ON)
-  // get ready for Ethernet communications
-  Ethernet_Init();
-#endif
+
 
   // get the site information, if a GPS were attached we would use that here instead
   localSite.ReadCurrentSiteDefinition();
@@ -318,7 +286,7 @@ void loop()
         // origTargetAxisn isn't used in Alt/Azm mode since meridian flips never happen
         origTargetAxis1.fixed += fstepAxis1.fixed;
         // don't advance the target during meridian flips
-        if ((pierSide == PierSideEast) || (pierSide == PierSideWest))
+        if ((pierSide == PIER_EAST) || (pierSide == PIER_WEST))
         {
           cli();
           targetAxis1.fixed += fstepAxis1.fixed;
@@ -382,7 +350,6 @@ void loop()
     {
       lastError = ERR_NONE;
     }
-
   }
 
   // WORKLOAD MONITORING -------------------------------------------------------------------------------
@@ -390,7 +357,6 @@ void loop()
 
   // HOUSEKEEPING --------------------------------------------------------------------------------------
   // timer... falls in once a second, keeps the universal time clock ticking,
-  // handles PPS GPS signal processing, watches safety limits, adjusts tracking rate for refraction
   unsigned long   m = millis();
   forceTracking = (m - lastSetTrakingEnable < 10000);
   if (!forceTracking) lastSetTrakingEnable = m + 10000;
@@ -429,7 +395,7 @@ void CheckPierSide()
     return;
   }
   bool isEast = -quaterRotAxis2 < pos && pos < quaterRotAxis2;
-  pierSide = isEast ? PierSideEast : PierSideWest;
+  pierSide = isEast ? PIER_EAST : PIER_WEST;
 }
 
 // safety checks,
@@ -442,18 +408,18 @@ void SafetyCheck(const bool forceTracking)
   if (atHome)
     atHome = !sideralTracking;
 
-  if (meridianFlip != MeridianFlipNever)
+  if (meridianFlip != FLIP_NEVER)
   {
     double HA, Dec;
     GeoAlign.GetInstr(&HA, &Dec);
-    if (!checkPole(HA, pierSide, CheckModeTracking))
+    if (!checkPole(HA, pierSide, CHECKMODE_TRACKING))
     {
-      if ((dirAxis1 == 1 && pierSide == PierSideEast) || (dirAxis1 == 0 && pierSide == PierSideWest))
+      if ((dirAxis1 == 1 && pierSide == PIER_EAST) || (dirAxis1 == 0 && pierSide == PIER_WEST))
       {
         lastError = ERR_UNDER_POLE;
         if (movingTo)
           abortSlew = true;
-        if (pierSide == PierSideEast && !forceTracking)
+        if (pierSide == PIER_EAST && !forceTracking)
           sideralTracking = false;
       }
       else if (lastError == ERR_UNDER_POLE)
@@ -466,16 +432,16 @@ void SafetyCheck(const bool forceTracking)
       lastError = ERR_NONE;
     }
 
-    if (!checkMeridian(HA, pierSide, CheckModeTracking))
+    if (!checkMeridian(HA, pierSide, CHECKMODE_TRACKING))
     {
-      if ((dirAxis1 == 1 && pierSide == PierSideWest) || (dirAxis1 == 0 && pierSide == PierSideEast))
+      if ((dirAxis1 == 1 && pierSide == PIER_WEST) || (dirAxis1 == 0 && pierSide == PIER_EAST))
       {
         lastError = ERR_MERIDIAN;
         if (movingTo)
         {
           abortSlew = true;
         }
-        if (pierSide >= PierSideWest && !forceTracking)
+        if (pierSide >= PIER_WEST && !forceTracking)
           sideralTracking = false;
       }
       else if (lastError == ERR_MERIDIAN)
@@ -531,7 +497,7 @@ void SafetyCheck(const bool forceTracking)
   {
     if ((getApproxDec() < MinDec) ||
         (getApproxDec() > MaxDec) ||
-        (pierSide == PierSideWest && mountType == MOUNT_TYPE_FORK))
+        (pierSide == PIER_WEST && mountType == MOUNT_TYPE_FORK))
     {
       lastError = ERR_DEC;
       if (movingTo)
@@ -544,8 +510,6 @@ void SafetyCheck(const bool forceTracking)
       lastError = ERR_NONE;
     }
   }
-
-
 }
 
 //enable Axis 
@@ -570,17 +534,18 @@ time_t getTeensy3Time()
 
 void initmount()
 {
-  mountType = EEPROM.read(EE_mountType);
-  mountType = mountType < 1 || mountType >  4 ? MOUNT_TYPE_GEM : mountType;
+  byte mountTypeFromEEPROM = EEPROM.read(EE_mountType);
+
+  mountType = mountTypeFromEEPROM < 1 || mountTypeFromEEPROM >  4 ? MOUNT_TYPE_GEM : static_cast<Mount>(mountTypeFromEEPROM);
 
   if (mountType == MOUNT_TYPE_GEM)
-    meridianFlip = MeridianFlipAlways;
+    meridianFlip = FLIP_ALWAYS;
   else if (mountType == MOUNT_TYPE_FORK)
-    meridianFlip = MeridianFlipNever;
+    meridianFlip = FLIP_NEVER;
   else if (mountType == MOUNT_TYPE_FORK_ALT)
-    meridianFlip = MeridianFlipNever;
+    meridianFlip = FLIP_NEVER;
   else if (mountType == MOUNT_TYPE_ALTAZM)
-    meridianFlip = MeridianFlipNever;
+    meridianFlip = FLIP_NEVER;
   // align
   if (mountType == MOUNT_TYPE_GEM)
     maxAlignNumStar = 3;

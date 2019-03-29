@@ -46,14 +46,6 @@ void Command_S(Command& process_command)
         delay(20);
         Serial_Init(baudRate[i]);
       }
-      else if (process_command == COMMAND_ETHERNET)
-      {
-#if defined(W5100_ON)
-        Ethernet_print("1");
-        while (Ethernet_transmit());
-        delay(20);
-#endif
-      }
       else
       {
         Serial1_print("1");
@@ -193,20 +185,20 @@ void Command_S(Command& process_command)
     {
       if (parameter[0] == 'N')
       {
-        newTargetPierSide = 0;
+        newTargetPierSide = PIER_NOTVALID;
       }
       else if (parameter[0] == 'E')
       {
-        if (pierSide >= PierSideWest)
+        if (pierSide == PIER_WEST)
         {
-          newTargetPierSide = PierSideEast;
+          newTargetPierSide = PIER_EAST;
         }
       }
       else if (parameter[0] == 'W')
       {
-        if (pierSide < PierSideWest)
+        if (pierSide == PIER_EAST)
         {
-          newTargetPierSide = PierSideWest;
+          newTargetPierSide = PIER_WEST;
         }
       }
       else
@@ -242,8 +234,6 @@ void Command_S(Command& process_command)
       commandError = true;
   }
   break;
-
-
 
   case 'r':
     //  :SrHH:MM.T#

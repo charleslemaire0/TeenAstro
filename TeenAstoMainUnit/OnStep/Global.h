@@ -6,36 +6,23 @@
 
 
 timerLoop tlp;
-GNSSPPS         pps;
 DateTimeTimers  rtk;
 // Location ----------------------------------------------------------------------------------------------------------------
 siteDefinition      localSite;
 
-
-#define PierSideEast     1
-#define PierSideWest     2
-
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT};
+enum PierSide {PIER_NOTVALID, PIER_EAST, PIER_WEST};
+enum MeridianFlip {FLIP_NEVER,FLIP_ALIGN,FLIP_ALWAYS};
+enum CheckMode {CHECKMODE_GOTO, CHECKMODE_TRACKING};
+enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED,  PRK_UNKNOW };
 
-#define MeridianFlipNever   0
-#define MeridianFlipAlign   1
-#define MeridianFlipAlways  2
-
-
-#define CheckModeGOTO        0
-#define CheckModeTracking    1
-
-#define NotParked   0
-#define Parking     1
-#define Parked      2
-#define ParkFailed  3
-byte parkStatus = NotParked;
+ParkState parkStatus = PRK_UNPARKED;
 boolean parkSaved = false;
 boolean atHome = true;
 boolean homeMount = false;
-byte pierSide = PierSideEast;
-byte meridianFlip = MeridianFlipNever;
-byte mountType = MOUNT_TYPE_GEM;
+PierSide pierSide = PIER_EAST;
+MeridianFlip meridianFlip = FLIP_NEVER;
+Mount mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;
 
 boolean refraction_enable = false;
@@ -65,13 +52,7 @@ volatile double         timerRateAxis2 = 0;
 volatile double         timerRateBacklashAxis2 = 0;
 volatile boolean        inbacklashAxis2 = false;
 boolean                 faultAxis2 = false;
-
-
-#ifdef TRACK_REFRACTION_RATE_DEFAULT_ON
-boolean                 refraction = refraction_enable;
-#else
 boolean                 refraction = false;
-#endif
 
 unsigned int GearAxis1;//2000
 unsigned int StepRotAxis1;
@@ -134,7 +115,7 @@ IntervalTimer           itimer4;
 void                    TIMER4_COMPA_vect(void);
 
 
-byte newTargetPierSide = 0;
+PierSide newTargetPierSide = PIER_NOTVALID;
 
 volatile long       posAxis1;    // hour angle position in steps
 double              deltaSyncAxis1;
@@ -171,15 +152,6 @@ long                minutesPastMeridianGOTOE;               // for goto's, how f
 long                minutesPastMeridianGOTOW;               // as above, if on the West side of the pier.  If left alone, the mount will stop tracking when it hits the this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. OnStep will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 //                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
-
-                                            // Stepper/position/rate ----------------------------------------------------------------------------------------------------
-#define CLR(x, y)   (x &= (~(1 << y)))
-#define SET(x, y)   (x |= (1 << y))
-#define TGL(x, y)   (x ^= (1 << y))
-
-                                            // I set the pin usage to facilitate easy connection of jumper cables
-                                            // for now, the #defines below are used to program the port modes using the standard Arduino library
-                                            // defines for direct port control
 
 #if defined(AXIS1_DISABLED_HIGH)
 #define Axis1_Disabled  HIGH
@@ -230,11 +202,7 @@ Errors StartLoopError = ERR_NONE;
 boolean highPrecision = true;
 
 
-
-#define GuidingOFF                 0
-#define GuidingPulse               1
-#define GuidingST4                 2
-#define GuidingRecenter            3
+enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter };
 
 #define TrackingSolar 0.99726956632
 #define TrackingLunar 0.96236513150
@@ -242,9 +210,8 @@ boolean highPrecision = true;
 volatile bool movingTo = false;
 bool lastSideralTracking = false;
 volatile bool sideralTracking = false;
-volatile byte sideralMode = SIDM_STAR;
-
-volatile byte GuidingState  = GuidingOFF;
+volatile SID_Mode sideralMode = SIDM_STAR;
+volatile Guiding GuidingState = GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
 unsigned long lastSecurityCheck = millis();
 
@@ -257,37 +224,18 @@ boolean commandError = false;
 boolean quietReply = false;
 
 char reply[50];
-
 char command[3];
 char parameter[25];
 byte bufferPtr = 0;
 
-// for bluetooth/serial 0
+// for serial 0
 char command_serial_zero[25];
 char parameter_serial_zero[25];
 byte bufferPtr_serial_zero = 0;
-
-char Serial_recv_buffer[256] = "";
-volatile byte Serial_recv_tail = 0;
-volatile byte Serial_recv_head = 0;
-char Serial_xmit_buffer[50] = "";
-byte Serial_xmit_index = 0;
-
-// for bluetooth/serial 1
+// for serial 1
 char command_serial_one[25];
 char parameter_serial_one[25];
 byte bufferPtr_serial_one = 0;
-
-char Serial1_recv_buffer[256] = "";
-volatile byte Serial1_recv_tail = 0;
-volatile byte Serial1_recv_head = 0;
-char Serial1_xmit_buffer[50] = "";
-byte Serial1_xmit_index = 0;
-
-// for ethernet
-char command_ethernet[25];
-char parameter_ethernet[25];
-byte bufferPtr_ethernet = 0;
 
 // Misc ---------------------------------------------------------------------------------------------------------------------
 #define Rad 57.29577951

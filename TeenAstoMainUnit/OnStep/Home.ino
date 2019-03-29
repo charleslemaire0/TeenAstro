@@ -3,7 +3,7 @@
 // moves telescope to the home position, then stops tracking
 boolean goHome()
 {
-    if ((parkStatus != NotParked) && (parkStatus != Parking)) return false; // fail, moving to home not allowed if Parked
+    if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return false; // fail, moving to home not allowed if PRK_PARKED
     if (lastError != ERR_NONE) return false;                                // fail, cannot move if there are errors
     if (movingTo) return false;                      // fail, moving to home not allowed during a move
     if (guideDirAxis1 || guideDirAxis2) return false;                       // fail, moving to home not allowed while guiding
@@ -35,7 +35,7 @@ boolean setHome()
     bool lastSideralTracking = sideralTracking;
     sideralTracking = false;
     // default values for state variables
-    pierSide = PierSideEast;
+    pierSide = PIER_EAST;
     dirAxis2 = 1;
     initLat();
     dirAxis1 = 1;
@@ -56,13 +56,13 @@ boolean setHome()
 
     // reset meridian flip control
 if (mountType==MOUNT_TYPE_GEM)
-    meridianFlip = MeridianFlipAlways;
+    meridianFlip = FLIP_ALWAYS;
 else if (mountType==MOUNT_TYPE_FORK)
-    meridianFlip = MeridianFlipNever;
+    meridianFlip = FLIP_NEVER;
 else if (mountType == MOUNT_TYPE_FORK_ALT)
-    meridianFlip = MeridianFlipNever;
+    meridianFlip = FLIP_NEVER;
 else if (mountType == MOUNT_TYPE_ALTAZM)
-    meridianFlip = MeridianFlipNever;
+    meridianFlip = FLIP_NEVER;
 
     // where we are
     homeMount = false;
@@ -74,7 +74,7 @@ else if (mountType == MOUNT_TYPE_ALTAZM)
     timerRateAxis2 = SiderealRate;
 
     // not parked, but don't wipe the park position if it's saved - we can still use it
-    parkStatus = NotParked;
+    parkStatus = PRK_UNPARKED;
     EEPROM.write(EE_parkStatus, parkStatus);
 
     // the polar home position

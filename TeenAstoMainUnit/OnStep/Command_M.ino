@@ -26,7 +26,7 @@ void Command_M(bool &supress_frame)
       getEqu(&f, &f1, false);
       newTargetRA = f;
       newTargetDec = f1;
-      byte preferedPierSide = (pierSide == PierSideEast) ? PierSideWest : PierSideEast;
+      PierSide preferedPierSide = (pierSide == PIER_EAST) ? PIER_WEST : PIER_EAST;
       i = goToEqu(newTargetRA, newTargetDec, preferedPierSide);
       reply[0] = i + '0';
       reply[1] = 0;
@@ -46,11 +46,7 @@ void Command_M(bool &supress_frame)
     {     
       if ((parameter[0] == 'e') || (parameter[0] == 'w'))
       {
-#ifdef SEPERATE_PULSE_GUIDE_RATE_ON
         enableGuideRate(0,false);
-#else
-        enableGuideRate(0);
-#endif
         guideDirAxis1 = parameter[0];
         guideDurationLastHA = micros();
         guideDurationHA = (long)i * 1000L;
@@ -66,11 +62,8 @@ void Command_M(bool &supress_frame)
       }
       else if ((parameter[0] == 'n') || (parameter[0] == 's'))
       {
-#ifdef SEPERATE_PULSE_GUIDE_RATE_ON
+
         enableGuideRate(0,false);
-#else
-        enableGuideRate(currentGuideRate);
-#endif
         guideDirAxis2 = parameter[0];
         guideDurationLastDec = micros();
         guideDurationDec = (long)i * 1000L;
@@ -79,7 +72,7 @@ void Command_M(bool &supress_frame)
           bool rev = false;
           if (guideDirAxis2 == 's')
             rev = true;
-          if (pierSide >= PierSideWest)
+          if (pierSide >= PIER_WEST)
             rev = !rev;
           cli();
           GuidingState = GuidingPulse;
@@ -180,8 +173,8 @@ void Command_M(bool &supress_frame)
     }
     byte side = predictTargetSideOfPier(objectRa,objectDec);
     if (side == 0) reply[0] = '?';
-    else if (side == PierSideEast) reply[0] = 'E';
-    else if (side == PierSideWest) reply[0] = 'W';
+    else if (side == PIER_EAST) reply[0] = 'E';
+    else if (side == PIER_WEST) reply[0] = 'W';
     reply[1] = 0;
     quietReply = true;
     break;

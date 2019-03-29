@@ -1,20 +1,12 @@
 // set Side of pier
-boolean setSide(byte side)
+boolean setSide(PierSide side)
 {
+  if (side == PIER_NOTVALID)
+    return false;
   double  HA, Dec;
   GeoAlign.GetEqu(localSite.latitude(), &HA, &Dec);
   double  axis1, axis2;
-
-  if (side == PierSideEast)
-  {
-    pierSide = PierSideEast;
-  }
-  else if (side == PierSideWest)
-  {
-    pierSide = PierSideWest;
-  }
-  else
-    return false;
+  pierSide = side;
   GeoAlign.EquToInstr(localSite.latitude(), HA, Dec, &axis1, &axis2);
   cli();
   posAxis1 = axis1;
@@ -23,16 +15,16 @@ boolean setSide(byte side)
   return true;
 }
 
-  bool checkPole(const double& HA, const byte& inputSide, byte mode)
+  bool checkPole(const double& HA, const PierSide& inputSide, CheckMode mode)
 {
   bool ok = true;
-  double underPoleLimit = (mode == CheckModeGOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0/60;
+  double underPoleLimit = (mode == CHECKMODE_GOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0/60;
   switch (inputSide)
   {
-  case PierSideWest:
+  case PIER_WEST:
     if (HA < -underPoleLimit * 15.) ok = false;
     break;
-  case PierSideEast:
+  case PIER_EAST:
     if (HA > underPoleLimit * 15.) ok = false;
     break;
   default:
@@ -42,17 +34,17 @@ boolean setSide(byte side)
   return ok;
 }
 
-bool checkMeridian(const double& HA, const byte& inputSide, byte mode)
+bool checkMeridian(const double& HA, const PierSide& inputSide, CheckMode mode)
 {
   bool ok = true;
-  double MinutesPastMeridianW = (mode == CheckModeGOTO) ? minutesPastMeridianGOTOW : minutesPastMeridianGOTOW + 5;
-  double MinutesPastMeridianE = (mode == CheckModeGOTO) ? minutesPastMeridianGOTOE : minutesPastMeridianGOTOE + 5;
+  double MinutesPastMeridianW = (mode == CHECKMODE_GOTO) ? minutesPastMeridianGOTOW : minutesPastMeridianGOTOW + 5;
+  double MinutesPastMeridianE = (mode == CHECKMODE_GOTO) ? minutesPastMeridianGOTOE : minutesPastMeridianGOTOE + 5;
   switch (inputSide)
   {
-  case PierSideWest:
+  case PIER_WEST:
     if (HA * 60. > MinutesPastMeridianW * 15.) ok = false;
     break;
-  case PierSideEast:
+  case PIER_EAST:
     if (HA * 60. < -MinutesPastMeridianE *15.) ok = false;
     break;
   default:
@@ -64,28 +56,28 @@ bool checkMeridian(const double& HA, const byte& inputSide, byte mode)
 
 // Predict Side of Pier
 // return 0 if no side can reach the given position
-byte predictSideOfPier(const double& HA, const byte& inputSide)
+PierSide predictSideOfPier(const double& HA, const PierSide& inputSide)
 {
-  if (meridianFlip == MeridianFlipNever)
-    return PierSideEast;
-  if (checkPole(HA, inputSide, CheckModeGOTO) && checkMeridian(HA, inputSide, CheckModeGOTO))
+  if (meridianFlip == FLIP_NEVER)
+    return PIER_EAST;
+  if (checkPole(HA, inputSide, CHECKMODE_GOTO) && checkMeridian(HA, inputSide, CHECKMODE_GOTO))
   {
     //Serial.println(inputSide);
     return inputSide;
   }
-  byte otherside;
-  if (inputSide == PierSideEast) otherside = PierSideWest; else otherside = PierSideEast;
+  PierSide otherside;
+  if (inputSide == PIER_EAST) otherside = PIER_WEST; else otherside = PIER_EAST;
 
-  if (checkPole(HA, otherside, CheckModeGOTO) && checkMeridian(HA, otherside, CheckModeGOTO))
+  if (checkPole(HA, otherside, CHECKMODE_GOTO) && checkMeridian(HA, otherside, CHECKMODE_GOTO))
   {
     //Serial.println(otherside);
     return otherside;
   }
   //Serial.println(0);
-  return 0;
+  return PIER_NOTVALID;
 }
 
-byte predictTargetSideOfPier(double RaObject, double DecObject)
+PierSide predictTargetSideOfPier(double RaObject, double DecObject)
 {
   double  HA = haRange(rtk.LST() * 15.0 - RaObject);
   double h, d;

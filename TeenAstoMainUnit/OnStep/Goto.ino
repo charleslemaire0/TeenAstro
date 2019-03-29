@@ -208,7 +208,7 @@ boolean getHor(double *Alt, double *Azm)
 }
 
 // moves the mount to a new Right Ascension and Declination (RA,Dec) in degrees
-byte goToEqu(double RA, double Dec, byte preferedPierSide)
+byte goToEqu(double RA, double Dec, PierSide preferedPierSide)
 {
   double  a, z;
   long Axis1, Axis2;
@@ -218,7 +218,7 @@ byte goToEqu(double RA, double Dec, byte preferedPierSide)
   EquToHor(HA, Dec, &a, &z);
 
   // Check to see if this goto is valid
-  if ((parkStatus != NotParked) && (parkStatus != Parking)) return 4; // fail, Parked
+  if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return 4; // fail, PRK_PARKED
   if (lastError != ERR_NONE) return lastError + 10;   // fail, telescop has Errors State
   if (a < minAlt) return 1;   // fail, below horizon
   if (a > maxAlt) return 6;   // fail, outside limits
@@ -294,11 +294,11 @@ byte goToEqu(double RA, double Dec, byte preferedPierSide)
   {
     // correct for polar offset, refraction, coordinate systems, operation past pole, etc. as required
     double h, d;
-    byte oldPierSide = pierSide;
+    PierSide oldPierSide = pierSide;
     pierSide = preferedPierSide;
     GeoAlign.EquToInstr(localSite.latitude(), HA, Dec, &h, &d);
     pierSide = oldPierSide;
-    byte side = predictSideOfPier(h, preferedPierSide);
+    PierSide side = predictSideOfPier(h, preferedPierSide);
     if (side == 0)  return 6; //fail, outside limit
     if (side != pierSide)
     {

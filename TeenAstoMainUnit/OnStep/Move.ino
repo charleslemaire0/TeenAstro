@@ -1,8 +1,8 @@
 //#pragma once
-void MoveAxis1(const byte newguideDirAxis, const byte Mode)
+void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
 {
  
-  bool canMove = parkStatus == NotParked;
+  bool canMove = parkStatus == PRK_UNPARKED;
   canMove &= !movingTo;
   canMove &= (GuidingState == GuidingOFF || GuidingState == Mode);
   if (canMove)
@@ -54,9 +54,9 @@ void StopAxis1()
   guideDirAxis1 = 'b';
 }
 
-void MoveAxis2(const byte newguideDirAxis,const byte Mode)
+void MoveAxis2(const byte newguideDirAxis,const Guiding Mode)
 {
-  bool canMove = parkStatus == NotParked;
+  bool canMove = parkStatus == PRK_UNPARKED;
   canMove &= !movingTo;
   canMove &= (GuidingState == GuidingOFF || GuidingState == Mode);
 
@@ -73,7 +73,7 @@ void MoveAxis2(const byte newguideDirAxis,const byte Mode)
     bool rev = false;
     if (newguideDirAxis == 's')
       rev = true;
-    if (pierSide >= PierSideWest)
+    if (pierSide >= PIER_WEST)
       rev = !rev;
     Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate, false);
     double newGuideTimerBaseRate = rev ? -guideTimerBaseRate : guideTimerBaseRate;
