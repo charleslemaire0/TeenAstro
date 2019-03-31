@@ -148,8 +148,6 @@ public:
 
       setCurrent(Curr); // mA
       setMicrostep(Micros);
-      //m_tmc2130.diag1_stall(1);
-      //m_tmc2130.diag1_pushpull(1);
       if (EnPin > 0)
         digitalWrite(EnPin, LOW);
       break;
@@ -163,30 +161,19 @@ public:
       pinMode(DirPin, OUTPUT);
       pinMode(StepPin, OUTPUT);
       pinMode(CSPin, OUTPUT);
-      digitalWrite(DirPin, LOW); //LOW or HIGH
+      digitalWrite(DirPin, LOW);
       digitalWrite(StepPin, LOW);
       digitalWrite(CSPin, HIGH);
       SPI.begin();
       pinMode(MISO, INPUT_PULLUP);
       m_tmc5160->push();
-      m_tmc5160->tbl(0); //blank_time(24);
-                         //m_tmc2130.TPOWERDOWN(255);
+      m_tmc5160->tbl(0);
       m_tmc5160->toff(2);
-
-      //// Effective hysteresis = 0
       m_tmc5160->hstrt(0);
       m_tmc5160->hend(2);
-     
-      //m_tmc5160->en_pwm_mode(true);
-      //m_tmc5160->pwm_freq(1);
-      //m_tmc5160->pwm_autoscale(true);
-      //m_tmc5160->pwm_ampl(180);
-      //m_tmc5160->pwm_grad(1);
       m_tmc5160->intpol(true);
       setCurrent(Curr);
       setMicrostep(Micros);
-      //m_tmc2130.diag1_stall(1);
-      //m_tmc2130.diag1_pushpull(1);
       if (EnPin > 0)
         digitalWrite(EnPin, LOW);
       break;
@@ -195,6 +182,5 @@ public:
     default:
       break;
     }
-
   };
 };
