@@ -33,7 +33,7 @@
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "1"
-#define SHCFirmwareVersionPatch  "1"
+#define SHCFirmwareVersionPatch  "2"
 
 #include "Config.h"
 #include "SmartController.h"

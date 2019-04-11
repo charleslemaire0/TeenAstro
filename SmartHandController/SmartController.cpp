@@ -304,10 +304,18 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
   //U8G2_SH1106_128X64_NONAME_1_HW_I2C display(U8G2_R0);
   //U8G2_SSD1306_128X64_NONAME_F_SW_I2C display(U8G2_R0, /* clock=*/ SCL, /* data=*/ SDA, /* reset=*/ U8X8_PIN_NONE);   // All Boards without Reset of the Display
 
-  if (model == OLED_SH1106)
+  switch (model)
+  {
+  case OLED_SH1106:
     display = new U8G2_EXT_SH1106_128X64_NONAME_1_HW_I2C(U8G2_R0);
-  else if (model == OLED_SSD1306)
+    break;
+  case OLED_SSD1306:
     display = new U8G2_EXT_SSD1306_128X64_NONAME_F_HW_I2C(U8G2_R0);
+    break;
+  case OLED_SSD1309:
+    display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0);
+    break;
+  }
   display->begin();
   drawIntro();
   buttonPad.setup(pin, active);
@@ -2475,7 +2483,7 @@ void SmartHandController::menuFocuserMotor()
 void SmartHandController::menuFocuserSettings()
 {
   buttonPad.setMenuMode();
-  const char *string_list_Focuser = "Config\nMotor";
+  const char *string_list_Focuser = "Config\nMotor\nShow Version";
   while (!exitMenu)
   {
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Focuser Settings", current_selection_L2, string_list_Focuser);
@@ -2493,6 +2501,16 @@ void SmartHandController::menuFocuserSettings()
     case 2:
     {
       menuFocuserMotor();
+      break;
+    }
+    case 3:
+    {
+      char out1[50];
+      if (DisplayMessageLX200(GetLX200(":FV#", out1, 50)))
+      {
+        out1[31] = 0;
+        DisplayMessage("Firmware Version", &out1[26], -1);
+      }
       break;
     }
     default:
