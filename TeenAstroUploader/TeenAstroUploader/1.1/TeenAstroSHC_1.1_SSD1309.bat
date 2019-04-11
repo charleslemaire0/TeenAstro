@@ -1,1 +1,0 @@
-move ..\..\..\C:\Users\Charles\Documents\GitHub\TeenAstro\SmartHandController\Release\SmartHandController.bin TeenAstroSHC_1.1_SSD1309.bin
