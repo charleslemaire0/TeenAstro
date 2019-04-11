@@ -59,7 +59,7 @@ public: U8G2_EXT_SSD1306_128X64_NONAME_F_HW_I2C(const u8g2_cb_t *rotation, uint8
 };
 class U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C : public U8G2_EXT {
 public: U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(const u8g2_cb_t *rotation, uint8_t reset = U8X8_PIN_NONE, uint8_t clock = U8X8_PIN_NONE, uint8_t data = U8X8_PIN_NONE) : U8G2_EXT() {
-  u8g2_Setup_ssd1309_128x64_noname2_f(&u8g2, rotation, u8x8_byte_arduino_hw_i2c, u8x8_gpio_and_delay_arduino);
+  u8g2_Setup_ssd1309_i2c_128x64_noname0_f(&u8g2, rotation, u8x8_byte_arduino_hw_i2c, u8x8_gpio_and_delay_arduino);
   u8x8_SetPin_HW_I2C(getU8x8(), reset, clock, data);
 }
 };
