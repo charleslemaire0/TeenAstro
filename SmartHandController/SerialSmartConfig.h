@@ -6,23 +6,13 @@
 // set to _ON to activate this configuration
 #define SERIALSMARTCONTROLLER_ON
 
-
-
 #ifdef SERIALSMARTCONTROLLER_ON
   #ifdef ARDUINO_ESP8266_WEMOS_D1MINI
     // the serial interface to/from OnStep
     #define Ser Serial
     #define SERIAL_BAUD_DEFAULT 57600
     #define TIMEOUT_CMD 100         // Default=100 (0.1 seconds)
-  
-    // the display,
-
-    //for SSH1106 set 0   1.3" OLED
-    //for SSD1306 set 1   1.3" OLED
-    //for SSD1309 set 2   2.4" OLED
-    #define OLED_DISPLAY 0
-    
-
+   
     // the hand controller buttons
     #define B_PIN0 D8               // Shift
     #define B_PIN1 D7               // N
