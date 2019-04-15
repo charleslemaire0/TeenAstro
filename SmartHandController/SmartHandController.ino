@@ -33,7 +33,7 @@
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "1"
-#define SHCFirmwareVersionPatch  "1"
+#define SHCFirmwareVersionPatch  "2"
 
 #include "Config.h"
 #include "SmartController.h"
@@ -46,7 +46,35 @@ SmartHandController HdCrtlr;
 
 void setup(void)
 {
-  HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD_DEFAULT, static_cast<SmartHandController::OLED>(OLED_DISPLAY));
+  int value = analogRead(A0);
+  
+  if (value< 191)       //0.616129032V
+    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD_DEFAULT, SmartHandController::OLED::OLED_SH1106);
+  else if (value < 319) //1.029032258V
+  {
+    //empty
+  }
+  else if (value < 447) //1.441935484V
+  {
+    //empty
+  }
+  else if (value < 575) //1.85483871V
+  {
+    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD_DEFAULT, SmartHandController::OLED::OLED_SSD1309);
+  }
+  else if (value < 703) //2.267741935V
+  {
+    //empty
+  }
+  else if (value < 831) //2.680645161V
+  {
+    //empty
+  }
+  else
+  {
+    //empty
+  }
+    
 }
 
 void loop()

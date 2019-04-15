@@ -12,10 +12,7 @@
     #define Ser Serial
     #define SERIAL_BAUD_DEFAULT 57600
     #define TIMEOUT_CMD 100         // Default=100 (0.1 seconds)
-  
-    // the display, SSD1306 or SH1106
-    #define OLED_DISPLAY SH1106
-
+   
     // the hand controller buttons
     #define B_PIN0 D8               // Shift
     #define B_PIN1 D7               // N

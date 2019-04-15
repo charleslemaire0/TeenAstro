@@ -12,7 +12,7 @@
 class SmartHandController
 {
 public:
-  enum OLED { OLED_SH1106, OLED_SSD1306 };
+  enum OLED { OLED_SH1106, OLED_SSD1306, OLED_SSD1309 };
   void update();
   void manualMove(bool &moving);
   void drawIntro();

@@ -3,7 +3,9 @@
 #define INPUT_SIZE 30
 
 //target
+enum MoveMode{RESET, GOTO, MAN};
 bool breakgoto = false;
+MoveMode mode = RESET;
 long target = 0;
 long deltaTarget = 0;
 
@@ -30,15 +32,21 @@ void pid()
 
 void modeGoto()
 {
+  if (mode == GOTO)
+    return;
   stepper.setAcceleration(AccFact*cmdAcc->get());
   stepper.setMaxSpeed(highSpeed->get()*pow(2, micro->get()));
+  mode = GOTO;
 }
 
 void modeMan()
 {
+  if (mode == MAN)
+    return;
   stepper.setAcceleration(AccFact*manAcc->get());
   stepper.setMaxSpeed(lowSpeed->get()*pow(2, micro->get()));
   rotateController.rotateAsync(stepper);
+  mode = MAN;
 }
 
 bool SerCom::Do()
@@ -304,22 +312,27 @@ bool SerCom::SetRequest(void)
     break;
   case FocCmd_highSpeed:
     setvalue(m_valuedefined, m_value, highSpeed);
+    mode = RESET;
     m_hasReceivedCommand = false;
     break;
   case FocCmd_lowSpeed:
     setvalue(m_valuedefined, m_value, lowSpeed);
+    mode = RESET;
     m_hasReceivedCommand = false;
     break;
   case FocCmd_cmdAcc:
     setvalue(m_valuedefined, (uint8_t)m_value, cmdAcc);
+    mode = RESET;
     m_hasReceivedCommand = false;
     break;
   case FocCmd_manualAcc:
     setvalue(m_valuedefined, (uint8_t)m_value, manAcc);
+    mode = RESET;
     m_hasReceivedCommand = false;
     break;
   case FocCmd_manualDec:
     setvalue(m_valuedefined, (uint8_t)m_value, manDec);
+    mode = RESET;
     m_hasReceivedCommand = false;
     break;
   case FocCmd_Inv:

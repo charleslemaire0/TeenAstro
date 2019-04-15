@@ -9,7 +9,7 @@
 	#include "WProgram.h"
 #endif
 #define PROJECT "TeenAstro Focuser"
-#define Version "1.0.0"
+#define Version "1.0.1"
 
 //uncomment the version you are using
 //#define VERSION220
