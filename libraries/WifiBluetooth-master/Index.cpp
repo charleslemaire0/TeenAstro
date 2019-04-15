@@ -3,15 +3,11 @@
 // -----------------------------------------------------------------------------------
 // The home page, status information
 
-#ifdef ADVANCED_CHARS_ON
-  #define Axis1 "&alpha;"
-  #define Axis1A "&alpha;"
-  #define Axis2 "&delta;"
-#else
-  #define Axis1 "RA"
-  #define Axis1A "RA"
-  #define Axis2 "DEC"
-#endif
+
+#define Axis1 "&alpha;"
+#define Axis1A "&alpha;"
+#define Axis2 "&delta;"
+
 
 const char* html_settingsBrowserTime PROGMEM =
 "&nbsp;&nbsp;<span id=\"datetime\"></span> UT (web browser)"
@@ -37,10 +33,6 @@ const char* html_indexPier PROGMEM = "&nbsp;&nbsp;<font class='c'>%s</font> Pier
 const char* html_indexCorPolar PROGMEM = "&nbsp;&nbsp;Polar Offset: &Delta; Alt=<font class='c'>%ld</font>\", &Delta; Azm=<font class='c'>%ld</font>\"<br />";
 const char* html_indexPark PROGMEM = "&nbsp;&nbsp;Parking: <font class='c'>%s</font><br />";
 const char* html_indexTracking PROGMEM = "&nbsp;&nbsp;Tracking: <font class='c'>%s %s</font><br />";
-
-#ifdef AMBIENT_CONDITIONS_ON
-const char* html_indexTPHD = "&nbsp;&nbsp;%s <font class='c'>%s</font>%s<br />";
-#endif
 
 const char* html_indexLastError PROGMEM = "&nbsp;&nbsp;Last Error: <font class='c'>%s</font><br />";
 const char* html_indexWorkload PROGMEM = "&nbsp;&nbsp;Workload: <font class='c'>%s</font><br />";

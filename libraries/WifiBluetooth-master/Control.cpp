@@ -4,48 +4,24 @@
 // -----------------------------------------------------------------------------------
 // Telescope control related functions
 
-#ifdef SPECIAL_CHARS_ON
-
-
-  #define ARROW_DR "&#x27A5;"
-  #define ARROW_UR "&#x27A6;"
-  #define ARROW_R2 "&#x27A4;"
-  #define CAUTION_CH "&#9888;"
-  #define CLOCK_CH "&#x1F565;"
-  #define PLUS_CH "+"
-  #define MINUS_CH "-"
-  #define ARROW_LL "&lt;&lt;"
-  #define ARROW_L "&lt;"
-  #define ARROW_R "&gt;"
-  #define ARROW_RR "&gt;&gt;"
-  #define ARROW_DD "&lt;&lt;"
-  #define ARROW_D "&lt;"
-  #define ARROW_U "&gt;"
-  #define ARROW_UU "&gt;&gt;"
-  #define SIDEREAL_CH "&#9733;"
-  #define LUNAR_CH "&#9790;"
-  #define SOLAR_CH "&#9737;"
-#else
-  #define RESET_CH "@"
-  #define HOME_CH "H"
-  #define ARROW_DR "-&gt;"
-  #define ARROW_UR "-&gt;"
-  #define ARROW_R2 "&gt;"
-  #define CAUTION_CH "/!\\"
-  #define CLOCK_CH "T";
-  #define ARROW_LL "&lt;&lt;"
-  #define ARROW_L "&lt;"
-  #define ARROW_R "&gt;"
-  #define ARROW_RR "&gt;&gt;"
-  #define ARROW_DD "&lt;&lt;"
-  #define ARROW_D "&lt;"
-  #define ARROW_U "&gt;"
-  #define ARROW_UU "&gt;&gt;"
-  #define SIDEREAL_CH "*"
-  #define LUNAR_CH "("
-  #define SOLAR_CH "O"
-#endif
-
+#define ARROW_DR "&#x27A5;"
+#define ARROW_UR "&#x27A6;"
+#define ARROW_R2 "&#x27A4;"
+#define CAUTION_CH "&#9888;"
+#define CLOCK_CH "&#x1F565;"
+#define PLUS_CH "+"
+#define MINUS_CH "-"
+#define ARROW_LL "&lt;&lt;"
+#define ARROW_L "&lt;"
+#define ARROW_R "&gt;"
+#define ARROW_RR "&gt;&gt;"
+#define ARROW_DD "&lt;&lt;"
+#define ARROW_D "&lt;"
+#define ARROW_U "&gt;"
+#define ARROW_UU "&gt;&gt;"
+#define SIDEREAL_CH "&#9733;"
+#define LUNAR_CH "&#9790;"
+#define SOLAR_CH "&#9737;"
 #define BUTTON_N "N"
 #define BUTTON_S "S"
 #define BUTTON_E "E"
@@ -203,89 +179,6 @@ const char html_controlDeRotate2[] PROGMEM =
 "<button type='button' onpointerdown=\"gf('d0')\" >De-Rotate Off</button>";
 const char html_controlRotate4[] PROGMEM =
 "</div><br class='clear' />\r\n";
-#endif
-
-#if defined(SW0) || defined(SW1) || defined(SW2) || defined(SW3) || defined(SW4) || defined(SW5) || defined(SW6) || defined(SW7) || defined(SW8) || defined(SW9) || defined(SW10) || defined(SW11) || defined(SW12) || defined(SW13) || defined(SW14) || defined(SW15) || defined(AN3) || defined(AN4) || defined(AN5) || defined(AN6) || defined(AN7) || defined(AN8)
-const char html_controlAuxB[] = "<div class='b1' style='width: 27em'><div align='left'>Aux:</div>";
-#ifdef SW0
-const char html_controlSwitch0[] = SW0 "<br /><button type='button' onpointerdown=\"s('sw0','255')\" >On</button><button type='button' onpointerdown=\"s('sw0','0')\" >Off</button><br />";
-#endif
-#ifdef SW1
-const char html_controlSwitch1[] = SW1 "<br /><button type='button' onpointerdown=\"s('sw1','255')\" >On</button><button type='button' onpointerdown=\"s('sw1','0')\" >Off</button><br />";
-#endif
-#ifdef SW2
-const char html_controlSwitch2[] = SW2 "<br /><button type='button' onpointerdown=\"s('sw2','255')\" >On</button><button type='button' onpointerdown=\"s('sw2','0')\" >Off</button><br />";
-#endif
-#ifdef SW3
-const char html_controlSwitch3[] = SW3 "<br /><button type='button' onpointerdown=\"s('sw3','255')\" >On</button><button type='button' onpointerdown=\"s('sw3','0')\" >Off</button><br />";
-#endif
-#ifdef SW4
-const char html_controlSwitch4[] = SW4 "<br /><button type='button' onpointerdown=\"s('sw4','255')\" >On</button><button type='button' onpointerdown=\"s('sw4','0')\" >Off</button><br />";
-#endif
-#ifdef SW5
-const char html_controlSwitch5[] = SW5 "<br /><button type='button' onpointerdown=\"s('sw5','255')\" >On</button><button type='button' onpointerdown=\"s('sw5','0')\" >Off</button><br />";
-#endif
-#ifdef SW6
-const char html_controlSwitch6[] = SW6 "<br /><button type='button' onpointerdown=\"s('sw6','255')\" >On</button><button type='button' onpointerdown=\"s('sw6','0')\" >Off</button><br />";
-#endif
-#ifdef SW7
-const char html_controlSwitch7[] = SW7 "<br /><button type='button' onpointerdown=\"s('sw7','255')\" >On</button><button type='button' onpointerdown=\"s('sw7','0')\" >Off</button><br />";
-#endif
-#ifdef SW8
-const char html_controlSwitch8[] = SW8 "<br /><button type='button' onpointerdown=\"s('sw8','255')\" >On</button><button type='button' onpointerdown=\"s('sw8','0')\" >Off</button><br />";
-#endif
-#ifdef SW9
-const char html_controlSwitch9[] = SW9 "<br /><button type='button' onpointerdown=\"s('sw9','255')\" >On</button><button type='button' onpointerdown=\"s('sw9','0')\" >Off</button><br />";
-#endif
-#ifdef SW10
-const char html_controlSwitch10[] = SW10 "<br /><button type='button' onpointerdown=\"s('swA','255')\" >On</button><button type='button' onpointerdown=\"s('swA','0')\" >Off</button><br />";
-#endif
-#ifdef SW11
-const char html_controlSwitch11[] = SW11 "<br /><button type='button' onpointerdown=\"s('swB','255')\" >On</button><button type='button' onpointerdown=\"s('swB','0')\" >Off</button><br />";
-#endif
-#ifdef SW12
-const char html_controlSwitch12[] = SW12 "<br /><button type='button' onpointerdown=\"s('swC','255')\" >On</button><button type='button' onpointerdown=\"s('swC','0')\" >Off</button><br />";
-#endif
-#ifdef SW13
-const char html_controlSwitch13[] = SW13 "<br /><button type='button' onpointerdown=\"s('swD','255')\" >On</button><button type='button' onpointerdown=\"s('swD','0')\" >Off</button><br />";
-#endif
-#ifdef SW14
-const char html_controlSwitch14[] = SW14 "<br /><button type='button' onpointerdown=\"s('swE','255')\" >On</button><button type='button' onpointerdown=\"s('swE','0')\" >Off</button><br />";
-#endif
-#ifdef SW15
-const char html_controlSwitch15[] = SW15 "<br /><button type='button' onpointerdown=\"s('swF','255')\" >On</button><button type='button' onpointerdown=\"s('swF','0')\" >Off</button><br />";
-#endif
-#ifdef AN3
-const char html_controlAnalog3A[] = AN3 " <span id='an3v'>";
-const char html_controlAnalog3B[] ="</span>%<br /><input style='width: 80%; background: #111' type='range' value='";
-const char html_controlAnalog3C[] = "' onchange=\"sf('an3',this.value)\"><br />";
-#endif
-#ifdef AN4
-const char html_controlAnalog4A[] = AN4 " <span id='an4v'>";
-const char html_controlAnalog4B[] ="</span>%<br /><input style='width: 80%; background: #111' type='range' value='";
-const char html_controlAnalog4C[] = "' onchange=\"sf('an4',this.value)\"><br />";
-#endif
-#ifdef AN5
-const char html_controlAnalog5A[] = AN5 " <span id='an5v'>";
-const char html_controlAnalog5B[] = "</span>%<br /><input style='width: 80%; background: #111' type='range' value='";
-const char html_controlAnalog5C[] = "' onchange=\"sf('an5',this.value)\"><br />";
-#endif
-#ifdef AN6
-const char html_controlAnalog6A[] = AN6 " <span id='an6v'>";
-const char html_controlAnalog6B[] = "</span>%<br /><input style='width: 80%; background: #111' type='range' value='";
-const char html_controlAnalog6C[] = "' onchange=\"sf('an6',this.value)\"><br />";
-#endif
-#ifdef AN7
-const char html_controlAnalog7A[] = AN7 " <span id='an7v'>";
-const char html_controlAnalog7B[] = "</span>%<br /><input style='width: 80%; background: #111' type='range' value='";
-const char html_controlAnalog7C[] = "' onchange=\"sf('an7',this.value)\"><br />";
-#endif
-#ifdef AN8
-const char html_controlAnalog8A[] = AN8 " <span id='an8v'>";
-const char html_controlAnalog8B[] = "</span>%<br /><input style='width: 80%; background: #111' type='range' value='";
-const char html_controlAnalog8C[] = "' onchange=\"sf('an8',this.value)\"><br />";
-#endif
-const char html_controlAuxE[] = "</div><br class='clear' />\r\n";
 #endif
 
 

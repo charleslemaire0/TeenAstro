@@ -318,29 +318,20 @@ void wifibluetooth::setup()
 
 #ifndef DEBUG_ON
   Ser.begin(SERIAL_BAUD);
-#ifdef SERIAL_SWAP_ON
-  Ser.swap();
-#endif
 
   byte tb = 0;
 Again:
-#ifdef LED_PIN
-  digitalWrite(LED_PIN, LOW);
-#endif
+
   char c = 0;
 
   // clear the buffers and any noise on the serial lines
   for (int i = 0; i < 3; i++) {
     Ser.print(":#");
-#ifdef LED_PIN
-    digitalWrite(LED_PIN, HIGH);
-#endif
+
     delay(100);
     Ser.flush();
     c = serialRecvFlush();
-#ifdef LED_PIN
-    digitalWrite(LED_PIN, LOW);
-#endif
+
     delay(100);
   }
 
@@ -355,35 +346,16 @@ Again:
     Ser.println();
   }
 
-  if (SERIAL_BAUD != SERIAL_BAUD_DEFAULT) {
 
-    // switch OnStep Serial1 up to ? baud
-    Ser.print(HighSpeedCommsStr(SERIAL_BAUD));
-    delay(100);
-    int count = 0; c = 0;
-    while (Ser.available() > 0) { count++; if (count == 1) c = Ser.read(); }
-    if (c == '1') {
-      Ser.begin(SERIAL_BAUD);
-#ifdef SERIAL_SWAP_ON
-      Ser.swap();
-#endif
-    }
-    else {
-#ifdef LED_PIN
-      digitalWrite(LED_PIN, HIGH);
-#endif
-      // got nothing back, toggle baud rate and try again
-      tb++;
-      if (tb == 7) tb = 1;
-      if (tb == 1) Ser.begin(SERIAL_BAUD_DEFAULT);
-      if (tb == 4) Ser.begin(SERIAL_BAUD);
+  // switch OnStep Serial1 up to ? baud
+  Ser.print(HighSpeedCommsStr(SERIAL_BAUD));
+  delay(100);
+  int count = 0; c = 0;
+  while (Ser.available() > 0) { count++; if (count == 1) c = Ser.read(); }
+  if (c == '1') {
+    Ser.begin(SERIAL_BAUD);
 
-#ifdef SERIAL_SWAP_ON
-      Ser.swap();
-#endif
-      delay(100);
-      goto Again;
-    }
+
   }
 #else
   Ser.begin(115200);
