@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "Catalog.h"
-#include "Config.h"
+
 #include "math.h"
 
 #include "constants.h"
@@ -198,13 +198,11 @@ void CatMgr::setLat(double lat) {
     _cosLat=cos(lat/Rad);
     _sinLat=sin(lat/Rad);
   }
-  DL(lat);
 }
 
 void CatMgr::setLstT0(double lstT0) {
   _lstT0=lstT0;
   _mil = millis();
-  DL(_lstT0);
 }
 
 double CatMgr::getLst()
