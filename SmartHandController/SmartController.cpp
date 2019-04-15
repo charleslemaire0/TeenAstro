@@ -344,16 +344,7 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
   DebugSer.begin(9600);
   delay(1000);
 #endif
-#ifndef WIFI_ON
-  Ser.begin(SerialBaud);
-  for (int i = 0; i < 3; i++)
-  {
-    Ser.print(":#");
-    delay(500);
-    Ser.flush();
-    delay(500);
-  }
-#endif // !WIFI_ON
+
   drawLoad();
 }
 void SmartHandController::tickButtons()
@@ -617,14 +608,11 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     u8g2_uint_t x = u8g2_GetDisplayWidth(u8g2);
     u8g2_uint_t xl = 0;
     int k = 0;
-#ifdef WIFI_ON
     if (buttonPad.isWifiOn())
     {
       buttonPad.isWifiRunning() ? display->drawXBMP(0, 0, icon_width, icon_height, wifi_bits) : display->drawXBMP(0, 0, icon_width, icon_height, wifi_not_connected_bits);
       xl =icon_width + 1;
     }
-    
-#endif
     if (telInfo.hasTelStatus)
     {
       Telescope::ParkState curP = telInfo.getParkState();
@@ -1630,11 +1618,7 @@ void SmartHandController::menuTelSettings()
       menuMainUnitInfo();
       break;
     case 7:
-#ifdef WIFI_ON
       menuWifi();
-#else
-      DisplayMessage("Device has", "No WIFI", -1);
-#endif
       break;
     default:
       break;
@@ -2732,8 +2716,6 @@ void SmartHandController::menuMainUnitInfo()
   }
 }
 
-
-#ifdef WIFI_ON
 void SmartHandController::menuWifi()
 {
   const char *string_list = buttonPad.isWifiOn() ? "Turn Wifi off\nShow Password\nSelect Mode\nShow IP\nReset to factory" : "Turn Wifi on\nShow Password\nReset to factory";
@@ -2829,7 +2811,7 @@ void SmartHandController::menuWifiMode()
     }
   }
 }
-#endif
+
 
 void SmartHandController::menuHorizon()
 {

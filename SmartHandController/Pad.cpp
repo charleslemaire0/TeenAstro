@@ -249,10 +249,7 @@ void Pad::setup(const int pin[7], const bool active[7])
   //For other buttons
   setControlerMode();
   attachEvent();
-
-#ifdef WIFI_ON
   m_wbt.setup();
-#endif
 }
 
 void Pad::tickButtons()
@@ -287,9 +284,7 @@ void Pad::tickButtons()
       eventbuttons[k + 1] = E_NONE;
     }
   }
-#ifdef WIFI_ON
   m_wbt.update();
-#endif
 }
 
 void Pad::setMenuMode()
@@ -321,7 +316,7 @@ bool Pad::shiftPressed()
 {
   return m_shiftPressed;
 }
-#ifdef WIFI_ON
+
 bool Pad::isWifiOn()
 {
   return m_wbt.isWifiOn();
@@ -354,5 +349,3 @@ void Pad::getStationName(int k, char* SSID)
    m_wbt.getStationName(k, SSID);
    return;
 }
-
-#endif

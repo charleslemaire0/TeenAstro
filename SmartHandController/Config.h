@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "ST4SmartConfig.h"
 #include "SerialSmartConfig.h"
 
 // Enable debugging messages on DebugSer
