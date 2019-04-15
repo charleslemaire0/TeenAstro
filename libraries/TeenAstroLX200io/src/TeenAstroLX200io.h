@@ -1,6 +1,5 @@
 #pragma once
-#include "Catalog.h"
-
+#include<Arduino.h>
 #define Ser Serial
 #define TIMEOUT_CMD 100         // Default=100 (0.1 seconds)
 

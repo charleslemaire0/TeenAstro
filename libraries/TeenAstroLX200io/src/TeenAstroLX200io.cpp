@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <Ephemeris.h>
+#include <TeenAstroLX200io.h>
 #include "Catalog.h"
-#include "LX200.h"
 
 #define LX200sbuff 20
 #define LX200lbuff 50

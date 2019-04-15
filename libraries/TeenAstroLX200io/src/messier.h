@@ -1,3 +1,4 @@
+#pragma once
 // This data is machine generated from the Open NGC database.
 // Do NOT edit it manually. Rather, fix the import programs and rerun.
 // Total for constants.h

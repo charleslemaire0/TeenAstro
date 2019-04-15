@@ -1,3 +1,4 @@
+#pragma once
 // This data is machine generated from the KStars Star database. 
 // Do NOT edit it manually. Rather, fix the import programs and rerun.
 // Total for constants.h

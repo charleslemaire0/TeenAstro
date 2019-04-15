@@ -4,7 +4,7 @@
 #include "Pad.h"
 #include "u8g2_ext.h"
 #include "Telescope.h"
-#include "LX200.h"
+#include <TeenAstroLX200io.h>
 
 #define SH1106 0
 #define SSD1306 1

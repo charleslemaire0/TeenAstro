@@ -1,7 +1,6 @@
 
 #include "_EEPROM_ext.h"
 #include "SmartController.h"
-#include "LX200.h"
 
 
 static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":Fo#", ":Fi#" };

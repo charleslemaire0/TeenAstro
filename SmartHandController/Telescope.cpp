@@ -1,5 +1,5 @@
+#include <TeenAstroLX200io.h>
 #include "Telescope.h"
-#include "LX200.h"
 
 #define updaterate 200
 void Telescope::updateRaDec()

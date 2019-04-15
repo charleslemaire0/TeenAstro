@@ -1,9 +1,6 @@
 #include <Arduino.h>
 #include "Catalog.h"
-
 #include "math.h"
-
-#include "constants.h"
 
 // Do not change anything in the structs or arrays below, since they
 // have to be in sync with the extractions scripts.

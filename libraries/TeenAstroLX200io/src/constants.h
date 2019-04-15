@@ -1,3 +1,4 @@
+#pragma once
 #define NUM_HERSCHEL 388
 #define NUM_MESSIER 109
 #define NUM_STARS 408
