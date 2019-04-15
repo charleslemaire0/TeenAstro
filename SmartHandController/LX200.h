@@ -1,6 +1,8 @@
 #pragma once
 #include "Catalog.h"
-#include "Config.h"
+
+#define Ser Serial
+#define TIMEOUT_CMD 100         // Default=100 (0.1 seconds)
 
 enum LX200RETURN {
   LX200NOTOK, LX200SETVALUEFAILED, LX200GETVALUEFAILED, LX200SYNCFAILED, LX200SETTARGETFAILED, LX200BELOWHORIZON,

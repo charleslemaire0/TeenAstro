@@ -49,7 +49,7 @@ void setup(void)
   int value = analogRead(A0);
   
   if (value< 191)       //0.616129032V
-    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD_DEFAULT, SmartHandController::OLED::OLED_SH1106);
+    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SH1106);
   else if (value < 319) //1.029032258V
   {
     //empty
@@ -60,7 +60,7 @@ void setup(void)
   }
   else if (value < 575) //1.85483871V
   {
-    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD_DEFAULT, SmartHandController::OLED::OLED_SSD1309);
+    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309);
   }
   else if (value < 703) //2.267741935V
   {

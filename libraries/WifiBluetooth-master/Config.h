@@ -6,7 +6,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 #define PEC_OFF
-#define SERIAL_BAUD 57600         // Default=57600, use 19200 for talking to OnStep on a Mega2560
+#define SERIAL_BAUD 57600         // Default=57600
 
 // misc. options that are usually not changed
 #define DEBUG_OFF                 // Turn _ON to allow WiFi startup without OnStep attached (Serial port for debug at 115200 baud)
