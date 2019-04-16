@@ -1,8 +1,8 @@
 #include <TeenAstroLX200io.h>
-#include "Telescope.h"
+#include <TeenAstroMountStatus.h>
 
 #define updaterate 200
-void Telescope::updateRaDec()
+void TeenAstroMountStatus::updateRaDec()
 {
   if (millis() - lastStateRaDec > updaterate)
   {
@@ -11,7 +11,7 @@ void Telescope::updateRaDec()
     hasInfoRa && hasInfoDec ? lastStateRaDec = millis() : connectionFailure++;
   }
 };
-void Telescope::updateAzAlt()
+void TeenAstroMountStatus::updateAzAlt()
 {
   if (millis() - lastStateAzAlt > updaterate)
   {
@@ -20,7 +20,7 @@ void Telescope::updateAzAlt()
     hasInfoAz && hasInfoAlt ? lastStateAzAlt = millis() : connectionFailure++;
   }
 }
-void Telescope::updateTime()
+void TeenAstroMountStatus::updateTime()
 {
   if (millis() - lastStateTime > updaterate)
   {
@@ -29,16 +29,16 @@ void Telescope::updateTime()
     hasInfoUTC && hasInfoSideral ? lastStateTime = millis() : connectionFailure++;
   }
 };
-void Telescope::updateFocuser()
+void TeenAstroMountStatus::updateFocuser()
 {
   if (millis() - lastStateFocuser > updaterate*2)
   {
     char fc[45];
-    hasInfoFocuser = GetLX200(":F?#", fc, sizeof(TempFocuserStatus)) == LX200VALUEGET;
+    hasInfoFocuser = GetLX200(":F?#", fc, sizeof(TempFocuser)) == LX200VALUEGET;
     if (hasInfoFocuser && fc[0] == '?')
     {
       lastStateFocuser = millis();
-      strncpy(TempFocuserStatus, fc, 45);
+      strncpy(TempFocuser, fc, 45);
     }
     else
     {
@@ -46,48 +46,48 @@ void Telescope::updateFocuser()
     }
   }
 };
-void Telescope::updateTel()
+void TeenAstroMountStatus::updateMount()
 {
-  if (millis() - lastStateTel > updaterate)
+  if (millis() - lastStateMount > updaterate)
   {
-    hasTelStatus = GetLX200(":GU#", TelStatus, sizeof(TelStatus)) == LX200VALUEGET;
-    hasTelStatus ? lastStateTel = millis() : connectionFailure++;
+    hasInfoMount = GetLX200(":GU#", TempMount, sizeof(TempMount)) == LX200VALUEGET;
+    hasInfoMount ? lastStateMount = millis() : connectionFailure++;
   }
 };
 
-bool Telescope::connected()
+bool TeenAstroMountStatus::connected()
 {
   return connectionFailure == 0;
 }
 
-bool Telescope::notResponding()
+bool TeenAstroMountStatus::notResponding()
 {
   return connectionFailure > 4;
 }
 
-Telescope::ParkState Telescope::getParkState()
+TeenAstroMountStatus::ParkState TeenAstroMountStatus::getParkState()
 {
-  if (strchr(&TelStatus[0], 'P') != NULL)
+  if (strchr(&TempMount[0], 'P') != NULL)
   {
     return PRK_PARKED;
   }
-  else if (strchr(&TelStatus[0], 'p') != NULL)
+  else if (strchr(&TempMount[0], 'p') != NULL)
   {
     return PRK_UNPARKED;
   }
-  else if (strchr(&TelStatus[0], 'I') != NULL)
+  else if (strchr(&TempMount[0], 'I') != NULL)
   {
     return PRK_PARKING;
   }
-  else if (strchr(&TelStatus[0], 'F') != NULL)
+  else if (strchr(&TempMount[0], 'F') != NULL)
   {
     return PRK_FAILED;
   }
   return PRK_UNKNOW;
 }
-Telescope::Mount Telescope::getMount()
+TeenAstroMountStatus::Mount TeenAstroMountStatus::getMount()
 {
-  switch (TelStatus[12])
+  switch (TempMount[12])
   {
   case 'E':
     return MOUNT_TYPE_GEM;
@@ -103,9 +103,9 @@ Telescope::Mount Telescope::getMount()
   }
   return MOUNT_UNDEFINED;
 }
-Telescope::TrackState Telescope::getTrackingState()
+TeenAstroMountStatus::TrackState TeenAstroMountStatus::getTrackingState()
 {
-  switch (TelStatus[0])
+  switch (TempMount[0])
   {
   case '3':
   case '2':
@@ -118,19 +118,19 @@ Telescope::TrackState Telescope::getTrackingState()
     return TRK_UNKNOW;
   }
 }
-Telescope::SideralMode Telescope::getSideralMode()
+TeenAstroMountStatus::SideralMode TeenAstroMountStatus::getSideralMode()
 {
-  switch (TelStatus[1])
+  switch (TempMount[1])
   {
   case '2':
   case '1':
   case '0':
-    return  static_cast<SideralMode>(TelStatus[1]-'0');
+    return  static_cast<SideralMode>(TempMount[1]-'0');
   default:
     return SideralMode::SID_STAR;
   }
 }
-double Telescope::getLstT0()
+double TeenAstroMountStatus::getLstT0()
 {
   char temp[20] = "";
   double f = 0;
@@ -140,43 +140,43 @@ double Telescope::getLstT0()
   }
   return f;
 };
-double Telescope::getLat()
+double TeenAstroMountStatus::getLat()
 {
   double f = -10000;
   GetLatitudeLX200(f);
   return f;
 };
-bool Telescope::atHome()
+bool TeenAstroMountStatus::atHome()
 {
-  return TelStatus[3] == 'H';
+  return TempMount[3] == 'H';
 }
-bool Telescope::isPulseGuiding()
+bool TeenAstroMountStatus::isPulseGuiding()
 {
-  return  TelStatus[6] == '*';
+  return  TempMount[6] == '*';
 }
-bool Telescope::isGuidingE()
+bool TeenAstroMountStatus::isGuidingE()
 {
-  return  TelStatus[7] == '>';
+  return  TempMount[7] == '>';
 }
-bool Telescope::isGuidingW()
+bool TeenAstroMountStatus::isGuidingW()
 {
-  return  TelStatus[7] == '<';
+  return  TempMount[7] == '<';
 }
-bool Telescope::isGuidingN()
+bool TeenAstroMountStatus::isGuidingN()
 {
-  return  TelStatus[8] == '^';
+  return  TempMount[8] == '^';
 }
-bool Telescope::isGuidingS()
+bool TeenAstroMountStatus::isGuidingS()
 {
-  return  TelStatus[8] == '_';
+  return  TempMount[8] == '_';
 }
-bool Telescope::isGNSSValid()
+bool TeenAstroMountStatus::isGNSSValid()
 {
-  return  TelStatus[14] == '1';
+  return  TempMount[14] == '1';
 }
-Telescope::PierState Telescope::getPierState()
+TeenAstroMountStatus::PierState TeenAstroMountStatus::getPierState()
 {
-  switch (TelStatus[13])
+  switch (TempMount[13])
   {
   case ' ':
     return PIER_UNKNOW;
@@ -187,9 +187,9 @@ Telescope::PierState Telescope::getPierState()
   }
   return PIER_UNKNOW;
 }
-Telescope::Errors Telescope::getError()
+TeenAstroMountStatus::Errors TeenAstroMountStatus::getError()
 {
-  switch (TelStatus[15])
+  switch (TempMount[15])
   {
   case '1':
     return ERR_MOTOR_FAULT;
@@ -205,7 +205,7 @@ Telescope::Errors Telescope::getError()
     return ERR_NONE;
   }
 }
-void Telescope::addStar()
+void TeenAstroMountStatus::addStar()
 {
   if (align == ALI_RECENTER_1 || align == ALI_RECENTER_2 || align == ALI_RECENTER_3)
   {

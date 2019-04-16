@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 
-class Telescope
+class TeenAstroMountStatus
 {
 public:
   enum Errors { ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT, ERR_LIMIT_SENSE, ERR_DEC, ERR_AZM, ERR_UNDER_POLE, ERR_MERIDIAN, ERR_SYNC };
@@ -25,7 +25,7 @@ public:
   unsigned short  alignSelectedStar = 1;
   int             alignMaxNumStars = -1;
 
-  Errors lastError = Telescope::ERR_NONE;
+  Errors lastError = TeenAstroMountStatus::ERR_NONE;
 
   char TempRa[15];
   char TempDec[15];
@@ -36,11 +36,10 @@ public:
   char TempUTC[15];
   char TempSideral[15];
   unsigned long lastStateTime;
-  char TelStatus[17];
+  char TempMount[17];
   unsigned long lastStateFocuser;
-  char TempFocuserStatus[45];
-
-  unsigned long lastStateTel;
+  char TempFocuser[45];
+  unsigned long lastStateMount;
 public:
   int connectionFailure = 0;
   bool hasInfoRa = false;
@@ -49,14 +48,14 @@ public:
   bool hasInfoAlt = false;
   bool hasInfoUTC = false;
   bool hasInfoSideral = false;
-  bool hasTelStatus = false;
+  bool hasInfoMount = false;
   bool hasInfoFocuser = false;
   unsigned long lastState;
   void updateRaDec();
   void updateAzAlt();
   void updateTime();
   void updateFocuser();
-  void updateTel();
+  void updateMount();
   Mount getMount();
  
   ParkState getParkState();
