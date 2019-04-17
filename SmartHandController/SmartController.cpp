@@ -428,10 +428,7 @@ void SmartHandController::manualMove(bool &moving)
       Ser.flush();
       time_last_action = millis();
       display->sleepOff();
-      if (telInfo.align != TeenAstroMountStatus::ALI_OFF)
-      {
-        telInfo.align = static_cast<TeenAstroMountStatus::AlignState>(telInfo.align - 1);
-      }
+      telInfo.backStepAlign();
       return;
     }
   }
@@ -497,23 +494,22 @@ void SmartHandController::update()
     DisplayMessage("Device", "will reboot...", 1000);
     ESP.reset();
   }
-  if (telInfo.align == TeenAstroMountStatus::ALI_SELECT_STAR_1 ||
-      telInfo.align == TeenAstroMountStatus::ALI_SELECT_STAR_2 ||
-      telInfo.align == TeenAstroMountStatus::ALI_SELECT_STAR_3)
+  if (telInfo.isAlignSelect())
   {
-    if (telInfo.align == TeenAstroMountStatus::ALI_SELECT_STAR_1)
-      DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Western Sky", -1);
-    else if (telInfo.align == TeenAstroMountStatus::ALI_SELECT_STAR_2)
-      DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Eastern Sky", -1);
-    else if (telInfo.align == TeenAstroMountStatus::ALI_SELECT_STAR_3)
-      DisplayLongMessage("Select a Star", "HA = -3 hour", "Dec = +- 45 degree", "in the Eastern Sky", -1);
-    if (!SelectStarAlign())
-    {
-      DisplayMessage("Alignment", "Aborted", -1);
-      telInfo.align = TeenAstroMountStatus::ALI_OFF;
-      return;
-    }
-    telInfo.align = static_cast<TeenAstroMountStatus::AlignState>(telInfo.align + 1);
+    //TODO
+    //if (telInfo.align == TeenAstroMountStatus::ALI_SELECT_STAR_1)
+    //  DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Western Sky", -1);
+    //else if (telInfo.align == TeenAstroMountStatus::ALI_SELECT_STAR_2)
+    //  DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Eastern Sky", -1);
+    //else if (telInfo.align == TeenAstroMountStatus::ALI_SELECT_STAR_3)
+    //  DisplayLongMessage("Select a Star", "HA = -3 hour", "Dec = +- 45 degree", "in the Eastern Sky", -1);
+    //if (!SelectStarAlign())
+    //{
+    //  DisplayMessage("Alignment", "Aborted", -1);
+    //  telInfo.align = TeenAstroMountStatus::ALI_OFF;
+    //  return;
+    //}
+    //telInfo.align = static_cast<TeenAstroMountStatus::AlignState>(telInfo.align + 1);
   }
   else if (top - lastpageupdate > 200)
   {
@@ -523,7 +519,7 @@ void SmartHandController::update()
     return;
   bool moving = false;
   manualMove(moving);
-  if (eventbuttons[0] == E_CLICK && telInfo.align == TeenAstroMountStatus::ALI_OFF)
+  if (eventbuttons[0] == E_CLICK && !telInfo.isAligning())
   {
     page++;
     if (page > 3) page = 0;
@@ -533,7 +529,7 @@ void SmartHandController::update()
   {
     return;
   }
-  else if (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART && telInfo.align == TeenAstroMountStatus::ALI_OFF )
+  else if (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART && !telInfo.isAligning())
   {
     if (eventbuttons[3] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
     {
@@ -561,7 +557,7 @@ void SmartHandController::update()
     time_last_action = millis();
   }
 
-  else if (eventbuttons[0] == E_CLICK && (telInfo.align == TeenAstroMountStatus::ALI_RECENTER_1 || telInfo.align == TeenAstroMountStatus::ALI_RECENTER_2 || telInfo.align == TeenAstroMountStatus::ALI_RECENTER_3))
+  else if (eventbuttons[0] == E_CLICK && telInfo.isAlignRecenter())
   {
     telInfo.addStar();
   }
@@ -577,12 +573,12 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
   u8g2_uint_t step2 = u8g2_GetUTF8Width(u8g2, "4") + 1;
   telInfo.connectionFailure = max(telInfo.connectionFailure - 1, 0);
   telInfo.updateMount();
-  if (telInfo.hasInfoMount && telInfo.align != TeenAstroMountStatus::ALI_OFF)
+  if (telInfo.hasInfoMount && telInfo.isAligning())
   {
-    TeenAstroMountStatus::TrackState curT = telInfo.getTrackingState();
-    if (curT != TeenAstroMountStatus::TRK_SLEWING && (telInfo.align == TeenAstroMountStatus::ALI_SLEW_STAR_1 || telInfo.align == TeenAstroMountStatus::ALI_SLEW_STAR_2 || telInfo.align == TeenAstroMountStatus::ALI_SLEW_STAR_3))
+    TeenAstroMountStatus::TrackState curT = telInfo.getTrackingState();  
+    if (curT != TeenAstroMountStatus::TRK_SLEWING && telInfo.isAlignSlew())
     {
-      telInfo.align = static_cast<TeenAstroMountStatus::AlignState>(telInfo.align + 1);
+      telInfo.nextStepAlign();
     }
     page = 4;
   }
@@ -690,13 +686,13 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
         }
 
         
-        if (telInfo.align != TeenAstroMountStatus::ALI_OFF)
+        if (telInfo.isAligning() )
         {
-          if (telInfo.aliMode == TeenAstroMountStatus::ALIM_ONE)
+          if (telInfo.getAlignMode() == TeenAstroMountStatus::ALIM_ONE)
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, align1_bits);
-          else if (telInfo.aliMode == TeenAstroMountStatus::ALIM_TWO)
+          else if (telInfo.getAlignMode() == TeenAstroMountStatus::ALIM_TWO)
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, align2_bits);
-          else if (telInfo.aliMode == TeenAstroMountStatus::ALIM_THREE)
+          else if (telInfo.getAlignMode() == TeenAstroMountStatus::ALIM_THREE)
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, align3_bits);
           x -= icon_width + 1;
         }
@@ -1417,8 +1413,7 @@ void SmartHandController::menuAlignment()
   case 1:
     if (SetLX200(":A1#") == LX200VALUESET)
     {
-      telInfo.aliMode = TeenAstroMountStatus::ALIM_ONE;
-      telInfo.align = TeenAstroMountStatus::ALI_SELECT_STAR_1;
+      telInfo.startAlign(TeenAstroMountStatus::ALIM_ONE);
     }
     else
     {
@@ -1428,8 +1423,7 @@ void SmartHandController::menuAlignment()
   case 2:
     if (SetLX200(":A2#") == LX200VALUESET)
     {
-      telInfo.aliMode = TeenAstroMountStatus::ALIM_TWO;
-      telInfo.align = TeenAstroMountStatus::ALI_SELECT_STAR_1;
+      telInfo.startAlign(TeenAstroMountStatus::ALIM_TWO);
     }
     else
     {
@@ -1439,8 +1433,7 @@ void SmartHandController::menuAlignment()
   case 3:
     if (SetLX200(":A3#") == LX200VALUESET)
     {
-      telInfo.aliMode = TeenAstroMountStatus::ALIM_THREE;
-      telInfo.align = TeenAstroMountStatus::ALI_SELECT_STAR_1;
+      telInfo.startAlign(TeenAstroMountStatus::ALIM_THREE);
     }
     else
     {
@@ -1505,15 +1498,16 @@ void SmartHandController::menuStar(bool sync)
 
 bool SmartHandController::SelectStarAlign()
 {
-/*  buttonPad.setMenuMode();
-  bool ok = false;
-  telInfo.alignSelectedStar = display->UserInterfaceCatalog(&buttonPad, "select Star", telInfo.alignSelectedStar, STAR);
-  if (telInfo.alignSelectedStar != 0)
-  {
-    ok = DisplayMessageLX200(SyncSelectedStarLX200(telInfo.alignSelectedStar), false);
-  }
-  buttonPad.setControlerMode();
-  return ok*/;
+  //TODO!!
+  //buttonPad.setMenuMode();
+  //bool ok = false;
+  //telInfo.alignSelectedStar = display->UserInterfaceCatalog(&buttonPad, "select Star", telInfo.alignSelectedStar, STAR);
+  //if (telInfo.alignSelectedStar != 0)
+  //{
+  //  ok = DisplayMessageLX200(SyncSelectedStarLX200(telInfo.alignSelectedStar), false);
+  //}
+  //buttonPad.setControlerMode();
+  //return ok;
 }
 
 void SmartHandController::menuRADec(bool sync)

@@ -2,6 +2,54 @@
 #include <TeenAstroMountStatus.h>
 
 #define updaterate 200
+ 
+void TeenAstroMountStatus::nextStepAlign()
+{
+  if (!isAligning())
+    return;
+  if (isAlignSelect())
+  {
+    m_align = ALI_SLEW; return;
+  };
+  if (isAlignSlew())
+  {
+    m_align = ALI_RECENTER; return;
+  }
+  if (isAlignRecenter())
+  {
+    m_alignStar++;
+    m_align = ALI_SELECT;
+    return;
+  }
+  return;
+};
+void TeenAstroMountStatus::backStepAlign()
+{
+  if (!isAligning())
+    return;
+  if (isAlignSelect())
+  {
+    if (m_alignStar == 1)
+    {
+      stopAlign();
+      return;
+    }
+    m_align = ALI_RECENTER;
+    m_alignStar--;
+    return;
+  };
+  if (isAlignSlew())
+  {
+    m_align = ALI_SELECT;
+    return;
+  }
+  if (isAlignRecenter())
+  {
+    m_align = ALI_SLEW;
+    return;
+  }
+  return;
+};
 void TeenAstroMountStatus::updateRaDec()
 {
   if (millis() - lastStateRaDec > updaterate)
@@ -207,34 +255,31 @@ TeenAstroMountStatus::Errors TeenAstroMountStatus::getError()
 }
 void TeenAstroMountStatus::addStar()
 {
-  if (align == ALI_RECENTER_1 || align == ALI_RECENTER_2 || align == ALI_RECENTER_3)
+  if (isAlignRecenter())
   {
     if (SetLX200(":A+#")==LX200VALUESET)
     {
       bool done = false;
-      if (aliMode == ALIM_ONE
-        || (aliMode == ALIM_TWO && align == ALI_RECENTER_2)
-        || (aliMode == ALIM_THREE && align == ALI_RECENTER_3))
+      if (isLastStarAlign())
       {
         //TODO DisplayMessage("Alignment", "Success!", -1);
-        align = ALI_OFF;
+        stopAlign();
       }
       else
       {
-        align = static_cast<AlignState>(align+1);
+        nextStepAlign();
         //TODO DisplayMessage("Add Star", "Success!", -1);
       }
-
     }
     else
     {
       //TODO DisplayMessage("Add Star", "Failed!", -1);
-      align = ALI_OFF;
+      stopAlign();
     }
   }
   else
   {
     //TODO DisplayMessage("Failed!", "Wrong State", -1);
-    align = ALI_OFF;
+    stopAlign();
   }
 }
