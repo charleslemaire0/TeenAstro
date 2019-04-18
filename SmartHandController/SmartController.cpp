@@ -683,9 +683,8 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
         {
           display->drawXBMP(x - icon_width, 0, icon_width, icon_height, W_bits);
           x -= icon_width + 1;
-        }
+        }       
 
-        
         if (telInfo.isAligning() )
         {
           if (telInfo.getAlignMode() == TeenAstroMountStatus::ALIM_ONE)
@@ -719,9 +718,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
           }
           display->setBitmapMode(0);
           x -= icon_width + 1;
-
         }
-
       }
       switch (telInfo.getError())
       {
@@ -748,9 +745,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
       default:
         break;
       }
-
     }
-
     if (focuserlocked|| telescoplocked)
     {
       display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Lock___bits);
@@ -762,85 +757,33 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
       display->setBitmapMode(0);
       x -= icon_width + 1;
     }
-
     if (page == 0)
     {
-
       if (telInfo.hasInfoRa && telInfo.hasInfoDec)
       {
-        char Rah[3];
-        char Ram[3];
-        char Ras[3];
-        char decsign[2];
-        char decdeg[3];
-        char decmin[3];
-        char decsec[3];
-        memcpy(Rah, telInfo.TempRa, 2);
-        Rah[2] = '\0';
-        memcpy(Ram, &telInfo.TempRa[3], 2);
-        Ram[2] = '\0';
-        memcpy(Ras, &telInfo.TempRa[6], 2);
-        Ras[2] = '\0';
-        memcpy(decsign, telInfo.TempDec, 1);
-        decsign[1] = '\0';
-        memcpy(decdeg, &telInfo.TempDec[1], 2);
-        decdeg[2] = '\0';
-        memcpy(decmin, &telInfo.TempDec[4], 2);
-        decmin[2] = '\0';
-        memcpy(decsec, &telInfo.TempDec[7], 2);
-        decsec[2] = '\0';
-
         u8g2_uint_t y = 36;
         x = u8g2_GetDisplayWidth(u8g2);
-
-        display->drawRA(x, y, Rah, Ram, Ras);
+        display->drawRA(x, y, telInfo.getRa());
         u8g2_DrawUTF8(u8g2, 0, y, "RA");
-
         y += line_height + 4;
         u8g2_DrawUTF8(u8g2, 0, y, "Dec");
-        display->drawDec(x, y, decsign, decdeg, decmin, decsec);
-
+        display->drawDec(x, y, telInfo.getDec());
       }
     }
     else if (page == 1)
     {
-
       if (telInfo.hasInfoAz && telInfo.hasInfoAlt)
       {
-        char Azdeg[4];
-        char Azm[3];
-        char Azs[3];
-        char Altsign[2];
-        char Altdeg[3];
-        char Altmin[3];
-        char Altsec[3];
-        memcpy(Azdeg, telInfo.TempAz, 3);
-        Azdeg[3] = '\0';
-        memcpy(Azm, &telInfo.TempAz[4], 2);
-        Azm[2] = '\0';
-        memcpy(Azs, &telInfo.TempAz[7], 2);
-        Azs[2] = '\0';
-        memcpy(Altsign, telInfo.TempAlt, 1);
-        Altsign[1] = '\0';
-        memcpy(Altdeg, &telInfo.TempAlt[1], 2);
-        Altdeg[2] = '\0';
-        memcpy(Altmin, &telInfo.TempAlt[4], 2);
-        Altmin[2] = '\0';
-        memcpy(Altsec, &telInfo.TempAlt[7], 2);
-        Altsec[2] = '\0';
-
         u8g2_uint_t y = 36;
         u8g2_uint_t startpos = u8g2_GetUTF8Width(u8g2, "123456");
         x = startpos;
         x = u8g2_GetDisplayWidth(u8g2);
         u8g2_DrawUTF8(u8g2, 0, y, "Az.");
-        display->drawAz(x, y, Azdeg, Azm, Azs);
-
+        display->drawAz(x, y, telInfo.getAz());
         y += line_height + 4;
         x = startpos;
         x = u8g2_GetDisplayWidth(u8g2);
-
-        display->drawDec(x, y, Altsign, Altdeg, Altmin, Altsec);
+        display->drawDec(x, y, telInfo.getAlt());
         u8g2_DrawUTF8(u8g2, 0, y, "Alt.");
       }
     }
@@ -848,30 +791,13 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     {
       if (telInfo.hasInfoUTC && telInfo.hasInfoSideral)
       {
-        char Rah[3];
-        char Ram[3];
-        char Ras[3];
         u8g2_uint_t y = 36;
-
         x = u8g2_GetDisplayWidth(u8g2);
-        memcpy(Rah, telInfo.TempUTC, 2);
-        Rah[2] = '\0';
-        memcpy(Ram, &telInfo.TempUTC[3], 2);
-        Ram[2] = '\0';
-        memcpy(Ras, &telInfo.TempUTC[6], 2);
-        Ras[2] = '\0';
         u8g2_DrawUTF8(u8g2, 0, y, "UTC");
-        display->drawRA(x, y, Rah, Ram, Ras);
-
+        display->drawRA(x, y,telInfo.getUTC());
         y += line_height + 4;
-        memcpy(Rah, telInfo.TempSideral, 2);
-        Rah[2] = '\0';
-        memcpy(Ram, &telInfo.TempSideral[3], 2);
-        Ram[2] = '\0';
-        memcpy(Ras, &telInfo.TempSideral[6], 2);
-        Ras[2] = '\0';
         u8g2_DrawUTF8(u8g2, 0, y, "Sideral");
-        display->drawRA(x, y, Rah, Ram, Ras);
+        display->drawRA(x, y, telInfo.getSideral());
       }
     }
     else if (page == 3)
@@ -879,20 +805,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
       u8g2_uint_t y = 36;
       if (telInfo.hasInfoFocuser)
       {
-        char pos[6];
-        char spd[4];
-        x = u8g2_GetDisplayWidth(u8g2) - u8g2_GetUTF8Width(u8g2, "00000");
-        u8g2_DrawUTF8(u8g2, 0, y, "F Position");
-        memcpy(pos, &telInfo.TempFocuser[1], 5);
-        pos[5] = 0;
-        u8g2_DrawUTF8(u8g2, x, y, pos);
-
-        y += line_height + 4;
-        x = u8g2_GetDisplayWidth(u8g2) - u8g2_GetUTF8Width(u8g2, "000");
-        u8g2_DrawUTF8(u8g2, 0, y, "F Speed");
-        memcpy(spd, &telInfo.TempFocuser[7], 3);
-        spd[3] = 0;
-        u8g2_DrawUTF8(u8g2, x, y, spd);
+        display->drawFoc(y, line_height, telInfo.getFocuser());
       }
       else
       {

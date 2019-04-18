@@ -68,18 +68,24 @@ uint8_t U8G2_EXT::UserInterfaceInputValueLongitude(Pad *extPad, long *value)
 };
 
 
-uint8_t U8G2_EXT::drawRA(uint8_t x, uint8_t y, const char* Rah, const char* Ram, const char* Ras)
+uint8_t U8G2_EXT::drawRA(uint8_t x, uint8_t y, const char* Ra)
 {
-  return ext_drawRA(U8G2_EXT::getU8g2(), x, y, Rah, Ram, Ras);
+  return ext_drawRA(U8G2_EXT::getU8g2(), x, y, Ra);
 };
 
 
-uint8_t U8G2_EXT::drawDec(uint8_t x, uint8_t y, const char* decsign, const char* decdeg, const char* decmin, const char* decsec)
+uint8_t U8G2_EXT::drawDec(uint8_t x, uint8_t y, const char* Dec)
 {
-  return ext_drawDec(U8G2_EXT::getU8g2(), x,  y, decsign, decdeg,  decmin, decsec);
+  return ext_drawDec(U8G2_EXT::getU8g2(), x,  y, Dec);
 };
 
-uint8_t U8G2_EXT::drawAz(uint8_t x, uint8_t y, const char* Azdeg, const char* Azmin, const char* Azsec)
+uint8_t U8G2_EXT::drawAz(uint8_t x, uint8_t y, const char* Az)
 {
-  return ext_drawAz(U8G2_EXT::getU8g2(), x, y, Azdeg, Azmin, Azsec);
+  return ext_drawAz(U8G2_EXT::getU8g2(), x, y, Az);
+};
+
+
+uint8_t U8G2_EXT::drawFoc(uint8_t y, uint8_t line_height, const char* Foc)
+{
+  return ext_drawFoc(U8G2_EXT::getU8g2(), y, line_height,  Foc);
 };

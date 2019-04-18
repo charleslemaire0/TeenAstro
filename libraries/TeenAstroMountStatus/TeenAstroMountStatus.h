@@ -18,8 +18,20 @@ private:
   AlignState      m_align = ALI_OFF;
   AlignMode       m_aliMode = ALIM_ONE;
   int             m_alignStar = 0;
+  char            m_TempRa[15] = "";
+  char            m_TempDec[15] = "";
+  unsigned long   m_lastStateRaDec;
+  char            m_TempAz[15] = "";
+  char            m_TempAlt[15] = "";
+  unsigned long   m_lastStateAzAlt;
+  char            m_TempUTC[15] = "";
+  char            m_TempSideral[15] = "";
+  unsigned long   m_lastStateTime;
+  char            m_TempMount[17] = "";
+  unsigned long   m_lastStateMount;
+  char            m_TempFocuser[45] = "";
+  unsigned long   m_lastStateFocuser;
 public:
-
   //Alignment Stuff
   bool      isAligning()  { return m_align != ALI_OFF; }
   bool      isAlignSlew() { return m_align == ALI_SLEW; };
@@ -35,20 +47,14 @@ public:
   unsigned short  alignSelectedStar = 1;
   int             alignMaxNumStars = -1;
   //
-  Errors lastError = TeenAstroMountStatus::ERR_NONE;
-  char TempRa[15];
-  char TempDec[15];
-  unsigned long lastStateRaDec;
-  char TempAz[15];
-  char TempAlt[15];
-  unsigned long lastStateAzAlt;
-  char TempUTC[15];
-  char TempSideral[15];
-  unsigned long lastStateTime;
-  char TempMount[17];
-  unsigned long lastStateFocuser;
-  char TempFocuser[45];
-  unsigned long lastStateMount;
+  const char* getRa() { return  m_TempRa; };
+  const char* getDec() { return  m_TempDec; };
+  const char* getAz() { return  m_TempAz; };
+  const char* getAlt() { return  m_TempAlt; };
+  const char* getUTC() { return m_TempUTC; };
+  const char* getSideral() { return m_TempSideral; };
+  const char* getFocuser() { return m_TempFocuser; };
+
   int connectionFailure = 0;
   bool hasInfoRa = false;
   bool hasInfoDec = false;

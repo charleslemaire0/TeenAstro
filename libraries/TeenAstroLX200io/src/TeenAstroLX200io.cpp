@@ -251,6 +251,15 @@ LX200RETURN GetTimeLX200(unsigned int &hour, unsigned int &minute, unsigned int 
   return LX200VALUEGET;
 }
 
+LX200RETURN GetRALX200(unsigned int &hour, unsigned int &minute, unsigned int &second)
+{
+  char out[LX200sbuff];
+  if (GetLX200(":GR#", out, sizeof(out)) == LX200GETVALUEFAILED)
+    return LX200GETVALUEFAILED;
+  char2RA(out, hour, minute, second);
+  return LX200VALUEGET;
+}
+
 LX200RETURN GetTimeLX200(long &value)
 {
   unsigned int hour, minute, second;
@@ -314,6 +323,17 @@ LX200RETURN GetLongitudeLX200(double& degree)
         return LX200VALUEGET;
       }
     }
+  }
+  return LX200GETVALUEFAILED;
+}
+
+LX200RETURN GetDeclinationLX200(double& degree)
+{
+  char out[LX200sbuff];
+  if (GetLX200(":GD#", out, sizeof(out)) == LX200VALUEGET)
+  {
+    if (dmsToDouble(&degree, out, true, false))
+      return LX200VALUEGET;
   }
   return LX200GETVALUEFAILED;
 }
