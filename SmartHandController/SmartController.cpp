@@ -297,8 +297,6 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
 {
   if (strlen(version) <= 19) strcpy(_version, version);
 
-  telInfo.lastState = 0;
-
   //choose a 128x64 display supported by U8G2lib (if not listed below there are many many others in u8g2 library example Sketches)
   //U8G2_SH1106_128X64_NONAME_1_HW_I2C display(U8G2_R0);
   //U8G2_SSD1306_128X64_NONAME_F_SW_I2C display(U8G2_R0, /* clock=*/ SCL, /* data=*/ SDA, /* reset=*/ U8X8_PIN_NONE);   // All Boards without Reset of the Display
@@ -571,9 +569,9 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
   u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
   u8g2_uint_t step1 = u8g2_GetUTF8Width(u8g2, "44");
   u8g2_uint_t step2 = u8g2_GetUTF8Width(u8g2, "4") + 1;
-  telInfo.connectionFailure = max(telInfo.connectionFailure - 1, 0);
+  telInfo.removeLastConnectionFailure();
   telInfo.updateMount();
-  if (telInfo.hasInfoMount && telInfo.isAligning())
+  if (telInfo.hasInfoMount() && telInfo.isAligning())
   {
     TeenAstroMountStatus::TrackState curT = telInfo.getTrackingState();  
     if (curT != TeenAstroMountStatus::TRK_SLEWING && telInfo.isAlignSlew())
@@ -610,7 +608,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
       buttonPad.isWifiRunning() ? display->drawXBMP(0, 0, icon_width, icon_height, wifi_bits) : display->drawXBMP(0, 0, icon_width, icon_height, wifi_not_connected_bits);
       xl =icon_width + 1;
     }
-    if (telInfo.hasInfoMount)
+    if (telInfo.hasInfoMount())
     {
       TeenAstroMountStatus::ParkState curP = telInfo.getParkState();
       TeenAstroMountStatus::TrackState curT = telInfo.getTrackingState();
@@ -759,7 +757,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     }
     if (page == 0)
     {
-      if (telInfo.hasInfoRa && telInfo.hasInfoDec)
+      if (telInfo.hasInfoRa() && telInfo.hasInfoDec())
       {
         u8g2_uint_t y = 36;
         x = u8g2_GetDisplayWidth(u8g2);
@@ -772,7 +770,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     }
     else if (page == 1)
     {
-      if (telInfo.hasInfoAz && telInfo.hasInfoAlt)
+      if (telInfo.hasInfoAz() && telInfo.hasInfoAlt())
       {
         u8g2_uint_t y = 36;
         u8g2_uint_t startpos = u8g2_GetUTF8Width(u8g2, "123456");
@@ -789,7 +787,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     }
     else if (page == 2)
     {
-      if (telInfo.hasInfoUTC && telInfo.hasInfoSideral)
+      if (telInfo.hasInfoUTC() && telInfo.hasInfoSideral())
       {
         u8g2_uint_t y = 36;
         x = u8g2_GetDisplayWidth(u8g2);
@@ -803,7 +801,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     else if (page == 3)
     {
       u8g2_uint_t y = 36;
-      if (telInfo.hasInfoFocuser)
+      if (telInfo.hasInfoFocuser())
       {
         display->drawFoc(y, line_height, telInfo.getFocuser());
       }

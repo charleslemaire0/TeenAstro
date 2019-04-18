@@ -31,22 +31,40 @@ private:
   unsigned long   m_lastStateMount;
   char            m_TempFocuser[45] = "";
   unsigned long   m_lastStateFocuser;
+  int             m_connectionFailure = 0;
+  bool            m_hasInfoRa = false;
+  bool            m_hasInfoDec = false;
+  bool            m_hasInfoAz = false;
+  bool            m_hasInfoAlt = false;
+  bool            m_hasInfoUTC = false;
+  bool            m_hasInfoSideral = false;
+  bool            m_hasInfoMount = false;
+  bool            m_hasInfoFocuser = false;
 public:
   //Alignment Stuff
-  bool      isAligning()  { return m_align != ALI_OFF; }
-  bool      isAlignSlew() { return m_align == ALI_SLEW; };
-  bool      isAlignSelect() { return m_align == ALI_SELECT; };
-  bool      isAlignRecenter() { return m_align == ALI_RECENTER; };
-  void      stopAlign() { m_align = ALI_OFF; m_alignStar = 0; return; };
-  void      startAlign(AlignMode in)
-            { m_aliMode = in;  m_align = ALI_SELECT; m_alignStar; m_alignStar = 1; return; };
-  void      nextStepAlign();
-  void      backStepAlign();
-  bool      isLastStarAlign() { return (int)m_aliMode == m_alignStar;  };
-  AlignMode getAlignMode() { return m_aliMode; };
+  bool            isAligning()  { return m_align != ALI_OFF; }
+  bool            isAlignSlew() { return m_align == ALI_SLEW; };
+  bool            isAlignSelect() { return m_align == ALI_SELECT; };
+  bool            isAlignRecenter() { return m_align == ALI_RECENTER; };
+  void            stopAlign() { m_align = ALI_OFF; m_alignStar = 0; };
+  void            startAlign(AlignMode in) { m_aliMode = in;  m_align = ALI_SELECT; m_alignStar; m_alignStar = 1; };
+  void            nextStepAlign();
+  void            backStepAlign();
+  bool            isLastStarAlign() { return (int)m_aliMode == m_alignStar;  };
+  AlignMode       getAlignMode() { return m_aliMode; };
+  void            addStar();
   unsigned short  alignSelectedStar = 1;
   int             alignMaxNumStars = -1;
-  //
+
+  bool hasInfoRa() { return m_hasInfoRa; };
+  bool hasInfoDec() { return m_hasInfoDec; };
+  bool hasInfoAz() { return m_hasInfoAz; };
+  bool hasInfoAlt() { return m_hasInfoAlt; };
+  bool hasInfoUTC() { return m_hasInfoUTC; };
+  bool hasInfoSideral() { return m_hasInfoSideral; };
+  bool hasInfoMount() { return m_hasInfoMount; };
+  bool hasInfoFocuser() { return m_hasInfoFocuser; };
+
   const char* getRa() { return  m_TempRa; };
   const char* getDec() { return  m_TempDec; };
   const char* getAz() { return  m_TempAz; };
@@ -55,31 +73,21 @@ public:
   const char* getSideral() { return m_TempSideral; };
   const char* getFocuser() { return m_TempFocuser; };
 
-  int connectionFailure = 0;
-  bool hasInfoRa = false;
-  bool hasInfoDec = false;
-  bool hasInfoAz = false;
-  bool hasInfoAlt = false;
-  bool hasInfoUTC = false;
-  bool hasInfoSideral = false;
-  bool hasInfoMount = false;
-  bool hasInfoFocuser = false;
-public: 
-
-public:
-
-  unsigned long lastState;
   void updateRaDec();
   void updateAzAlt();
   void updateTime();
   void updateFocuser();
   void updateMount();
-  Mount getMount();
-  ParkState getParkState();
-  TrackState getTrackingState();
+
+  Mount       getMount();
+  ParkState   getParkState();
+  TrackState  getTrackingState();
   SideralMode getSideralMode();
-  double getLstT0();
-  double getLat();
+  PierState   getPierState();
+  Errors      getError();
+  double      getLstT0();
+  double      getLat();
+
   bool atHome();
   bool isPulseGuiding();
   bool isGuidingN();
@@ -87,11 +95,11 @@ public:
   bool isGuidingE();
   bool isGuidingW();
   bool isGNSSValid();
+  //Connection Errors
   bool connected();
   bool notResponding();
-  PierState getPierState();
-  Errors getError();
-  void addStar();
+  void removeLastConnectionFailure() { m_connectionFailure = max(m_connectionFailure - 1, 0); };
+
 
   //***********************
 //  bool update()

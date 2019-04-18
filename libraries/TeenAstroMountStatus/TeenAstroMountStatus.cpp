@@ -54,27 +54,27 @@ void TeenAstroMountStatus::updateRaDec()
 {
   if (millis() - m_lastStateRaDec > updaterate)
   {
-    hasInfoRa = GetLX200(":GR#", m_TempRa, sizeof(m_TempRa)) == LX200VALUEGET;
-    hasInfoDec = GetLX200(":GD#", m_TempDec, sizeof(m_TempDec)) == LX200VALUEGET;
-    hasInfoRa && hasInfoDec ? m_lastStateRaDec = millis() : connectionFailure++;
+    m_hasInfoRa = GetLX200(":GR#", m_TempRa, sizeof(m_TempRa)) == LX200VALUEGET;
+    m_hasInfoDec = GetLX200(":GD#", m_TempDec, sizeof(m_TempDec)) == LX200VALUEGET;
+    m_hasInfoRa && m_hasInfoDec ? m_lastStateRaDec = millis() : m_connectionFailure++;
   }
 };
 void TeenAstroMountStatus::updateAzAlt()
 {
   if (millis() - m_lastStateAzAlt > updaterate)
   {
-    hasInfoAz = GetLX200(":GZ#", m_TempAz, sizeof(m_TempAz)) == LX200VALUEGET;
-    hasInfoAlt = GetLX200(":GA#", m_TempAlt, sizeof(m_TempAlt)) == LX200VALUEGET;
-    hasInfoAz && hasInfoAlt ? m_lastStateAzAlt = millis() : connectionFailure++;
+    m_hasInfoAz = GetLX200(":GZ#", m_TempAz, sizeof(m_TempAz)) == LX200VALUEGET;
+    m_hasInfoAlt = GetLX200(":GA#", m_TempAlt, sizeof(m_TempAlt)) == LX200VALUEGET;
+    m_hasInfoAz && m_hasInfoAlt ? m_lastStateAzAlt = millis() : m_connectionFailure++;
   }
 }
 void TeenAstroMountStatus::updateTime()
 {
   if (millis() - m_lastStateTime > updaterate)
   {
-    hasInfoUTC = GetLX200(":GL#", m_TempUTC, sizeof(m_TempUTC)) == LX200VALUEGET;
-    hasInfoSideral = GetLX200(":GS#", m_TempSideral, sizeof(m_TempSideral)) == LX200VALUEGET;
-    hasInfoUTC && hasInfoSideral ? m_lastStateTime = millis() : connectionFailure++;
+    m_hasInfoUTC = GetLX200(":GL#", m_TempUTC, sizeof(m_TempUTC)) == LX200VALUEGET;
+    m_hasInfoSideral = GetLX200(":GS#", m_TempSideral, sizeof(m_TempSideral)) == LX200VALUEGET;
+    m_hasInfoUTC && m_hasInfoSideral ? m_lastStateTime = millis() : m_connectionFailure++;
   }
 };
 void TeenAstroMountStatus::updateFocuser()
@@ -82,15 +82,15 @@ void TeenAstroMountStatus::updateFocuser()
   if (millis() - m_lastStateFocuser > updaterate*2)
   {
     char fc[45];
-    hasInfoFocuser = GetLX200(":F?#", fc, sizeof(m_TempFocuser)) == LX200VALUEGET;
-    if (hasInfoFocuser && fc[0] == '?')
+    m_hasInfoFocuser = GetLX200(":F?#", fc, sizeof(m_TempFocuser)) == LX200VALUEGET;
+    if (m_hasInfoFocuser && fc[0] == '?')
     {
       m_lastStateFocuser = millis();
       strncpy(m_TempFocuser, fc, 45);
     }
     else
     {
-      hasInfoFocuser = false;
+      m_hasInfoFocuser = false;
     }
   }
 };
@@ -98,19 +98,19 @@ void TeenAstroMountStatus::updateMount()
 {
   if (millis() - m_lastStateMount > updaterate)
   {
-    hasInfoMount = GetLX200(":GU#", m_TempMount, sizeof(m_TempMount)) == LX200VALUEGET;
-    hasInfoMount ? m_lastStateMount = millis() : connectionFailure++;
+    m_hasInfoMount = GetLX200(":GU#", m_TempMount, sizeof(m_TempMount)) == LX200VALUEGET;
+    m_hasInfoMount ? m_lastStateMount = millis() : m_connectionFailure++;
   }
 };
 
 bool TeenAstroMountStatus::connected()
 {
-  return connectionFailure == 0;
+  return m_connectionFailure == 0;
 }
 
 bool TeenAstroMountStatus::notResponding()
 {
-  return connectionFailure > 4;
+  return m_connectionFailure > 4;
 }
 
 TeenAstroMountStatus::ParkState TeenAstroMountStatus::getParkState()
