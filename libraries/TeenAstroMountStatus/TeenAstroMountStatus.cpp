@@ -50,6 +50,16 @@ void TeenAstroMountStatus::backStepAlign()
   }
   return;
 };
+void TeenAstroMountStatus::updateV()
+{
+  if (!m_hasInfoV)
+  {
+    m_hasInfoV = GetLX200(":GVP#", m_TempVP, sizeof(m_TempVP)) == LX200VALUEGET;
+    m_hasInfoV = m_hasInfoV && GetLX200(":GVN#", m_TempVN, sizeof(m_TempVN)) == LX200VALUEGET;
+    m_hasInfoV = m_hasInfoV && GetLX200(":GVD#", m_TempVD, sizeof(m_TempVD)) == LX200VALUEGET;
+    m_hasInfoV ? 0 : m_connectionFailure++;
+  }
+};
 void TeenAstroMountStatus::updateRaDec()
 {
   if (millis() - m_lastStateRaDec > updaterate)

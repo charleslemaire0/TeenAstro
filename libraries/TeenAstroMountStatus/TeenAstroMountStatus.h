@@ -15,9 +15,15 @@ public:
   enum ParkState { PRK_UNPARKED, PRK_PARKED, PRK_FAILED, PRK_PARKING, PRK_UNKNOW };
   enum PierState { PIER_E, PIER_W, PIER_UNKNOW };
 private:
+  //Align
   AlignState      m_align = ALI_OFF;
   AlignMode       m_aliMode = ALIM_ONE;
   int             m_alignStar = 0;
+
+  //Cache Answer
+  char            m_TempVP[20] = "";
+  char            m_TempVN[20] = "";
+  char            m_TempVD[20] = "";
   char            m_TempRa[15] = "";
   char            m_TempDec[15] = "";
   unsigned long   m_lastStateRaDec;
@@ -32,6 +38,7 @@ private:
   char            m_TempFocuser[45] = "";
   unsigned long   m_lastStateFocuser;
   int             m_connectionFailure = 0;
+  bool            m_hasInfoV = false;
   bool            m_hasInfoRa = false;
   bool            m_hasInfoDec = false;
   bool            m_hasInfoAz = false;
@@ -56,6 +63,7 @@ public:
   unsigned short  alignSelectedStar = 1;
   int             alignMaxNumStars = -1;
 
+  bool hasInfoV() { return m_hasInfoV; };
   bool hasInfoRa() { return m_hasInfoRa; };
   bool hasInfoDec() { return m_hasInfoDec; };
   bool hasInfoAz() { return m_hasInfoAz; };
@@ -65,6 +73,9 @@ public:
   bool hasInfoMount() { return m_hasInfoMount; };
   bool hasInfoFocuser() { return m_hasInfoFocuser; };
 
+  const char* getVP() { return  m_TempVP; };
+  const char* getVN() { return  m_TempVN; };
+  const char* getVD() { return  m_TempVD; };
   const char* getRa() { return  m_TempRa; };
   const char* getDec() { return  m_TempDec; };
   const char* getAz() { return  m_TempAz; };
@@ -73,6 +84,7 @@ public:
   const char* getSideral() { return m_TempSideral; };
   const char* getFocuser() { return m_TempFocuser; };
 
+  void updateV();
   void updateRaDec();
   void updateAzAlt();
   void updateTime();

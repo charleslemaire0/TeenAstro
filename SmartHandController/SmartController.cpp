@@ -2595,11 +2595,16 @@ void SmartHandController::menuMainUnitInfo()
     case 0:
       return;
     case 1:
+      telInfo.updateV();
+      if (telInfo.hasInfoV())
+      {
+        DisplayMessage(telInfo.getVN(), telInfo.getVD(), -1);
+      }
       char out1[20];
       char out2[20];
       if (DisplayMessageLX200(GetLX200(":GVN#", out1, 20)) && DisplayMessageLX200(GetLX200(":GVD#", out2, 20)) )
       { 
-        DisplayMessage(out1, out2 , -1);
+        
       }
       break;
     case 2:
