@@ -21,6 +21,7 @@ private:
   int             m_alignStar = 0;
 
   //Cache Answer
+
   char            m_TempVP[20] = "";
   char            m_TempVN[20] = "";
   char            m_TempVD[20] = "";
@@ -38,6 +39,7 @@ private:
   char            m_TempFocuser[45] = "";
   unsigned long   m_lastStateFocuser;
   int             m_connectionFailure = 0;
+  bool            m_isValid = false;
   bool            m_hasInfoV = false;
   bool            m_hasInfoRa = false;
   bool            m_hasInfoDec = false;
@@ -49,6 +51,7 @@ private:
   bool            m_hasInfoFocuser = false;
 public:
   //Alignment Stuff
+
   bool            isAligning()  { return m_align != ALI_OFF; }
   bool            isAlignSlew() { return m_align == ALI_SLEW; };
   bool            isAlignSelect() { return m_align == ALI_SELECT; };
@@ -97,9 +100,11 @@ public:
   SideralMode getSideralMode();
   PierState   getPierState();
   Errors      getError();
+  bool        getLastErrorMessage(char message[]);
   double      getLstT0();
   double      getLat();
 
+  bool isValid() { return m_isValid; };
   bool atHome();
   bool isPulseGuiding();
   bool isGuidingN();

@@ -58,6 +58,10 @@ void TeenAstroMountStatus::updateV()
     m_hasInfoV = m_hasInfoV && GetLX200(":GVN#", m_TempVN, sizeof(m_TempVN)) == LX200VALUEGET;
     m_hasInfoV = m_hasInfoV && GetLX200(":GVD#", m_TempVD, sizeof(m_TempVD)) == LX200VALUEGET;
     m_hasInfoV ? 0 : m_connectionFailure++;
+    if (!m_isValid && strstr(m_TempVP, "TeenAstro"))
+    {
+      m_isValid = true;
+    }
   }
 };
 void TeenAstroMountStatus::updateRaDec()
@@ -263,6 +267,44 @@ TeenAstroMountStatus::Errors TeenAstroMountStatus::getError()
     return ERR_NONE;
   }
 }
+bool TeenAstroMountStatus::getLastErrorMessage(char message[])
+{
+  strcpy(message, "");
+  switch (getError())
+  {
+  case ERR_NONE:
+    strcpy(message, "None");
+    break;
+  case ERR_MOTOR_FAULT:
+    strcpy(message, "Motor or Driver Fault");
+    break;
+  case ERR_ALT:
+    strcpy(message, "Altitude Min/Max");
+    break;
+  case ERR_LIMIT_SENSE:
+    strcpy(message, "Limit Sense");
+    break;
+  case ERR_DEC:
+    strcpy(message, "Dec Limit Exceeded");
+    break;
+  case ERR_AZM:
+    strcpy(message, "Azm Limit Exceeded");
+    break;
+  case ERR_UNDER_POLE:
+    strcpy(message, "Under Pole Limit Exceeded");
+    break;
+  case ERR_MERIDIAN:
+    strcpy(message, "Meridian Limit (W) Exceeded");
+    break;
+  case ERR_SYNC:
+    strcpy(message, "Sync. ignored >30&deg;");
+    break;
+  default:
+    break;
+  }
+  return message[0];
+}
+
 void TeenAstroMountStatus::addStar()
 {
   if (isAlignRecenter())
