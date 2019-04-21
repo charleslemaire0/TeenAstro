@@ -65,7 +65,6 @@ IPAddress wifibluetooth::wifi_ap_ip = IPAddress(192, 168, 0, 1);
 IPAddress wifibluetooth::wifi_ap_gw = IPAddress(192, 168, 0, 1);
 IPAddress wifibluetooth::wifi_ap_sn = IPAddress(255, 255, 255, 0);
 
-MountStatus wifibluetooth::mountStatus;
 ESP8266WebServer wifibluetooth::server;
 WiFiServer wifibluetooth::cmdSvr = WiFiServer(9999);
 WiFiClient wifibluetooth::cmdSvrClient;
@@ -204,14 +203,12 @@ void wifibluetooth::preparePage(String &data, int page)
 
   data += html_bodyB;
   // get status
-  if (!mountStatus.valid() || page == 1)
-    mountStatus.update();
-  serialRecvFlush();
+  if (!ta_MountStatus.validConnection()) ta_MountStatus.updateV();
   // finish the standard http response header
   data += html_onstep_header1;
-  if (mountStatus.getId(temp1)) data += temp1; else data += "Connection to TeenAstro Main unit is lost";
+  if (ta_MountStatus.validConnection()) data += ta_MountStatus.getVP(); else data += "Connection to TeenAstro Main unit is lost";
   data += html_onstep_header2;
-  if (mountStatus.getVer(temp1)) data += temp1; else data += "?";
+  if (ta_MountStatus.validConnection()) data += ta_MountStatus.getVN(); else data += "?";
   data += html_onstep_header3;
   data += page == 1 ? html_links1S : html_links1N;
   data += page == 2 ? html_links2S : html_links2N;

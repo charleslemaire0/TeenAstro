@@ -11,7 +11,7 @@
 #include <TeenAstroMountStatus.h>
 
 //#include "Encoders.h"
-#include "MountStatus.h"
+
 
 #define Product "TeenAstro Server"
 #define FirmwareDate          __DATE__
@@ -62,7 +62,6 @@ class wifibluetooth
   enum Responding { R_NONE, R_ONE, R_BOOL, R_STRING };
   enum WifiMode {M_Station1, M_Station2, M_Station3, M_AcessPoint, OFF};
   static bool wifiOn;
-  static MountStatus mountStatus;
   //Encoders encoders;
   static int WebTimeout;
   static int CmdTimeout;

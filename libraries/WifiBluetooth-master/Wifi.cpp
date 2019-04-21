@@ -142,8 +142,6 @@ int wifibluetooth::hexToInt(String s) {
 
 
 void wifibluetooth::handleWifi() {
-  Ser.setTimeout(WebTimeout);
-
   char temp[300] = "";
   char temp1[80] = "";
   String data;
