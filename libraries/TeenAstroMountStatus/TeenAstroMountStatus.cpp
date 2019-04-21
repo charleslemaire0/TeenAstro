@@ -142,7 +142,6 @@ bool TeenAstroMountStatus::notResponding()
 {
   return m_connectionFailure > 4;
 }
-
 TeenAstroMountStatus::ParkState TeenAstroMountStatus::getParkState()
 {
   if (strchr(&m_TempMount[0], 'P') != NULL)
@@ -196,7 +195,6 @@ TeenAstroMountStatus::TrackState TeenAstroMountStatus::getTrackingState()
     return TRK_UNKNOW;
   }
 }
-
 TeenAstroMountStatus::SideralMode TeenAstroMountStatus::getSideralMode()
 {
   switch (m_TempMount[1])
@@ -233,7 +231,6 @@ bool TeenAstroMountStatus::Parked()
 {
   return getParkState() == PRK_PARKED;
 }
-
 bool TeenAstroMountStatus::isPulseGuiding()
 {
   return  m_TempMount[6] == '*';

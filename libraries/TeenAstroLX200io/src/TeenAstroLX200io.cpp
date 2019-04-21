@@ -530,6 +530,7 @@ LX200RETURN GetDateLX200(unsigned int &day, unsigned int &month, unsigned int &y
     return LX200GETVALUEFAILED;
   }
 }
+
 LX200RETURN GetTrackingRateLX200(double& rate)
 {
   char out[LX200sbuff];
