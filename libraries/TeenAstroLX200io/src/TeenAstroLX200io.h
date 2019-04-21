@@ -11,6 +11,7 @@ enum LX200RETURN {
 };
 
 bool isOk(LX200RETURN val);
+bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned long timeOutMs);
 LX200RETURN GetLX200(char* command, char* output, int buffersize);
 LX200RETURN GetTimeLX200(unsigned int &hour, unsigned int &minute, unsigned int &second);
 LX200RETURN GetTimeLX200(long &value);
