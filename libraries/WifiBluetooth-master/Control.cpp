@@ -216,14 +216,14 @@ void wifibluetooth::handleControl() {
   data += FPSTR(html_controlQuick0);
   sendHtml(data);
   // Quick controls ------------------------------------------
-  if (!mountStatus.parking())
+  if (!ta_MountStatus.Parking())
   {
-    if (mountStatus.parked() || mountStatus.atHome())
+    if (ta_MountStatus.Parked() || ta_MountStatus.atHome())
     {
       data += FPSTR(html_controlQuick1);
       data += FPSTR(html_controlQuick1a);
       sendHtml(data);
-      if (mountStatus.parked())
+      if (ta_MountStatus.Parked())
       {
         data += FPSTR(html_controlQuick2);
         data += "</form>";

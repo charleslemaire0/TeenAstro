@@ -1287,8 +1287,11 @@ void SmartHandController::menuSolarSys(bool sync)
 
 void SmartHandController::menuHerschel(bool sync)
 {
-  cat_mgr.setLat(ta_MountStatus.getLat());
-  cat_mgr.setLstT0(ta_MountStatus.getLstT0());
+  double lat, T0;
+  ta_MountStatus.getLat(lat);
+  ta_MountStatus.getLstT0(T0);
+  cat_mgr.setLat(lat);
+  cat_mgr.setLstT0(T0);
   cat_mgr.select(HERSCHEL);
   cat_mgr.filter(FM_ABOVE_HORIZON);
   if (cat_mgr.alt()<0)
@@ -1302,8 +1305,11 @@ void SmartHandController::menuHerschel(bool sync)
 
 void SmartHandController::menuMessier(bool sync)
 {
-  cat_mgr.setLat(ta_MountStatus.getLat());
-  cat_mgr.setLstT0(ta_MountStatus.getLstT0());
+  double lat, T0;
+  ta_MountStatus.getLat(lat);
+  ta_MountStatus.getLstT0(T0);
+  cat_mgr.setLat(lat);
+  cat_mgr.setLstT0(T0);
   cat_mgr.select(MESSIER);
   cat_mgr.filter(FM_ABOVE_HORIZON);
   if (cat_mgr.alt()<0)
@@ -1396,8 +1402,11 @@ void SmartHandController::menuPier()
 
 void SmartHandController::menuStar(bool sync)
 {
-  cat_mgr.setLat(ta_MountStatus.getLat());
-  cat_mgr.setLstT0(ta_MountStatus.getLstT0());
+  double lat, T0;
+  ta_MountStatus.getLat(lat);
+  ta_MountStatus.getLstT0(T0);
+  cat_mgr.setLat(lat);
+  cat_mgr.setLstT0(T0);
   cat_mgr.select(STAR);
   cat_mgr.filter(FM_ABOVE_HORIZON);
   if (cat_mgr.alt()<0)

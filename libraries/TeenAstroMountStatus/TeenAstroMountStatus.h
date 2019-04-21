@@ -22,31 +22,41 @@ private:
 
   //Cache Answer
 
-  char            m_TempVP[20] = "";
-  char            m_TempVN[20] = "";
-  char            m_TempVD[20] = "";
-  char            m_TempRa[15] = "";
-  char            m_TempDec[15] = "";
+  char            m_TempVP[20] = "?";
+  char            m_TempVN[20] = "?";
+  char            m_TempVD[20] = "?";
+  char            m_TempRa[15] = "?";
+  char            m_TempDec[15] = "?";
+  char            m_TempRaT[15] = "?";
+  char            m_TempDecT[15] = "?";
   unsigned long   m_lastStateRaDec;
-  char            m_TempAz[15] = "";
-  char            m_TempAlt[15] = "";
+  unsigned long   m_lastStateRaDecT;
+  char            m_TempAz[15] = "?";
+  char            m_TempAlt[15] = "?";
   unsigned long   m_lastStateAzAlt;
-  char            m_TempUTC[15] = "";
-  char            m_TempSideral[15] = "";
+  char            m_TempUTC[15] = "?";
+  char            m_TempUTCdate[15] = "?";
+  char            m_TempSideral[15] = "?";
   unsigned long   m_lastStateTime;
-  char            m_TempMount[17] = "";
+  char            m_TempMount[17] = "?";
   unsigned long   m_lastStateMount;
-  char            m_TempFocuser[45] = "";
+  char            m_TempTrackingRate[15] = "?";
+  unsigned long   m_lastTrackingRate;
+  char            m_TempFocuser[45] = "?";
   unsigned long   m_lastStateFocuser;
   int             m_connectionFailure = 0;
   bool            m_isValid = false;
   bool            m_hasInfoV = false;
   bool            m_hasInfoRa = false;
   bool            m_hasInfoDec = false;
+  bool            m_hasInfoRaT = false;
+  bool            m_hasInfoDecT = false;
   bool            m_hasInfoAz = false;
   bool            m_hasInfoAlt = false;
   bool            m_hasInfoUTC = false;
+  bool            m_hasInfoUTCdate = false;
   bool            m_hasInfoSideral = false;
+  bool            m_hasInfoTrackingRate = false;
   bool            m_hasInfoMount = false;
   bool            m_hasInfoFocuser = false;
 public:
@@ -75,23 +85,30 @@ public:
   bool hasInfoSideral() { return m_hasInfoSideral; };
   bool hasInfoMount() { return m_hasInfoMount; };
   bool hasInfoFocuser() { return m_hasInfoFocuser; };
+  bool hasInfoTrackingRate() { return m_hasInfoTrackingRate; };
 
   const char* getVP() { return  m_TempVP; };
   const char* getVN() { return  m_TempVN; };
   const char* getVD() { return  m_TempVD; };
   const char* getRa() { return  m_TempRa; };
   const char* getDec() { return  m_TempDec; };
+  const char* getRaT() { return  m_TempRaT; };
+  const char* getDecT() { return  m_TempDecT; };
   const char* getAz() { return  m_TempAz; };
   const char* getAlt() { return  m_TempAlt; };
   const char* getUTC() { return m_TempUTC; };
+  const char* getUTCdate() { return m_TempUTCdate; };
   const char* getSideral() { return m_TempSideral; };
   const char* getFocuser() { return m_TempFocuser; };
+  const char* getTrackingRate() { return m_TempTrackingRate; };
 
   void updateV();
   void updateRaDec();
+  void updateRaDecT();
   void updateAzAlt();
   void updateTime();
   void updateFocuser();
+  void updateTrackingRate();
   void updateMount();
 
   Mount       getMount();
@@ -101,11 +118,14 @@ public:
   PierState   getPierState();
   Errors      getError();
   bool        getLastErrorMessage(char message[]);
-  double      getLstT0();
-  double      getLat();
+  bool        getLstT0(double &T0);
+  bool        getLat(double &lat);
+  bool        getTrackingRate(double &r);
 
-  bool isValid() { return m_isValid; };
+  bool validConnection() { return m_isValid; };
   bool atHome();
+  bool Parking();
+  bool Parked();
   bool isPulseGuiding();
   bool isGuidingN();
   bool isGuidingS();
@@ -300,4 +320,4 @@ public:
   //----------------------
 };
 
-static TeenAstroMountStatus ta_MountStatus;
+extern TeenAstroMountStatus ta_MountStatus;

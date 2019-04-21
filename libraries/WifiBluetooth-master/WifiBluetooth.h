@@ -8,9 +8,11 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFiAP.h>
 #include <ESP8266HTTPUpdateServer.h>
+#include <TeenAstroMountStatus.h>
 
 //#include "Encoders.h"
 #include "MountStatus.h"
+
 #define Product "TeenAstro Server"
 #define FirmwareDate          __DATE__
 #define FirmwareTime          __TIME__

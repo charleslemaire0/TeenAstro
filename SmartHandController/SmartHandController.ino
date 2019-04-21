@@ -42,6 +42,7 @@ const int pin[7] = { B_PIN0,B_PIN1,B_PIN2,B_PIN3,B_PIN4,B_PIN5,B_PIN6 };
 const bool active[7] = { B_PIN_UP_0,B_PIN_UP_1,B_PIN_UP_2,B_PIN_UP_3,B_PIN_UP_4,B_PIN_UP_5,B_PIN_UP_6 };
 
 SmartHandController HdCrtlr;
+TeenAstroMountStatus ta_MountStatus;
 
 void setup(void)
 {

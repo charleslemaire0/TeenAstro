@@ -73,6 +73,15 @@ void TeenAstroMountStatus::updateRaDec()
     m_hasInfoRa && m_hasInfoDec ? m_lastStateRaDec = millis() : m_connectionFailure++;
   }
 };
+void TeenAstroMountStatus::updateRaDecT()
+{
+  if (millis() - m_lastStateRaDecT > updaterate)
+  {
+    m_hasInfoRaT = GetLX200(":Gr#", m_TempRaT, sizeof(m_TempRaT)) == LX200VALUEGET;
+    m_hasInfoDecT = GetLX200(":Gd#", m_TempDecT, sizeof(m_TempDecT)) == LX200VALUEGET;
+    m_hasInfoRaT && m_hasInfoDecT ? m_lastStateRaDecT = millis() : m_connectionFailure++;
+  }
+};
 void TeenAstroMountStatus::updateAzAlt()
 {
   if (millis() - m_lastStateAzAlt > updaterate)
@@ -87,8 +96,9 @@ void TeenAstroMountStatus::updateTime()
   if (millis() - m_lastStateTime > updaterate)
   {
     m_hasInfoUTC = GetLX200(":GL#", m_TempUTC, sizeof(m_TempUTC)) == LX200VALUEGET;
+    m_hasInfoUTCdate =  GetLX200(":GX81#", m_TempUTCdate, sizeof(m_TempUTCdate)) == LX200VALUEGET;
     m_hasInfoSideral = GetLX200(":GS#", m_TempSideral, sizeof(m_TempSideral)) == LX200VALUEGET;
-    m_hasInfoUTC && m_hasInfoSideral ? m_lastStateTime = millis() : m_connectionFailure++;
+    m_hasInfoUTC && m_hasInfoSideral  && m_hasInfoUTCdate ? m_lastStateTime = millis() : m_connectionFailure++;
   }
 };
 void TeenAstroMountStatus::updateFocuser()
@@ -108,6 +118,14 @@ void TeenAstroMountStatus::updateFocuser()
     }
   }
 };
+void TeenAstroMountStatus::updateTrackingRate()
+{
+  if (millis() - m_lastTrackingRate > updaterate)
+  {
+    m_hasInfoTrackingRate = GetLX200(":GT#", m_TempTrackingRate, sizeof(m_TempTrackingRate)) == LX200VALUEGET;
+    m_hasInfoTrackingRate ? m_lastTrackingRate = millis() : m_connectionFailure++;
+  }
+};
 void TeenAstroMountStatus::updateMount()
 {
   if (millis() - m_lastStateMount > updaterate)
@@ -116,12 +134,10 @@ void TeenAstroMountStatus::updateMount()
     m_hasInfoMount ? m_lastStateMount = millis() : m_connectionFailure++;
   }
 };
-
 bool TeenAstroMountStatus::connected()
 {
   return m_connectionFailure == 0;
 }
-
 bool TeenAstroMountStatus::notResponding()
 {
   return m_connectionFailure > 4;
@@ -180,6 +196,7 @@ TeenAstroMountStatus::TrackState TeenAstroMountStatus::getTrackingState()
     return TRK_UNKNOW;
   }
 }
+
 TeenAstroMountStatus::SideralMode TeenAstroMountStatus::getSideralMode()
 {
   switch (m_TempMount[1])
@@ -192,26 +209,31 @@ TeenAstroMountStatus::SideralMode TeenAstroMountStatus::getSideralMode()
     return SideralMode::SID_STAR;
   }
 }
-double TeenAstroMountStatus::getLstT0()
+bool TeenAstroMountStatus::getLstT0(double &T0)
 {
-  char temp[20] = "";
-  double f = 0;
-  if (GetLX200(":GS#", temp, 20) == LX200VALUEGET)
-  {  
-    hmsToDouble(&f, temp);
-  }
-  return f;
+  return GetLstT0LX200(T0) == LX200VALUEGET;
 };
-double TeenAstroMountStatus::getLat()
+bool TeenAstroMountStatus::getLat(double &lat)
 {
-  double f = -10000;
-  GetLatitudeLX200(f);
-  return f;
+  return GetLatitudeLX200(lat) == LX200VALUEGET;
+};
+bool TeenAstroMountStatus::getTrackingRate(double &r)
+{
+  return GetTrackingRateLX200(r) == LX200VALUEGET;
 };
 bool TeenAstroMountStatus::atHome()
 {
   return m_TempMount[3] == 'H';
 }
+bool TeenAstroMountStatus::Parking()
+{
+  return getParkState() == PRK_PARKING;
+}
+bool TeenAstroMountStatus::Parked()
+{
+  return getParkState() == PRK_PARKED;
+}
+
 bool TeenAstroMountStatus::isPulseGuiding()
 {
   return  m_TempMount[6] == '*';

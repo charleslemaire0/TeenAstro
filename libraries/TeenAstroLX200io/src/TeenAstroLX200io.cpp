@@ -308,7 +308,16 @@ LX200RETURN GetLatitudeLX200(double& degree)
   }
   return LX200GETVALUEFAILED;
 }
-
+LX200RETURN GetLstT0LX200(double &T0)
+{
+  char out[LX200sbuff];
+  if (GetLX200(":GS#", out, sizeof(out)) == LX200VALUEGET)
+  {
+    if (hmsToDouble(&T0, out))
+      return LX200VALUEGET;
+  }
+  return LX200GETVALUEFAILED;
+}
 LX200RETURN GetLongitudeLX200(double& degree)
 {
   char out[LX200sbuff];
@@ -521,7 +530,16 @@ LX200RETURN GetDateLX200(unsigned int &day, unsigned int &month, unsigned int &y
     return LX200GETVALUEFAILED;
   }
 }
-
+LX200RETURN GetTrackingRateLX200(double& rate)
+{
+  char out[LX200sbuff];
+  if (GetLX200(":GT#", out, sizeof(out)) == LX200VALUEGET)
+  {
+    rate = atof(out);
+    return LX200VALUEGET;
+  }
+  return LX200GETVALUEFAILED;
+}
 
 LX200RETURN SyncGotoCatLX200(bool sync)
 {
