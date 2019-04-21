@@ -1,3 +1,4 @@
+#include <TeenAstroLX200io.h>
 #include "config.h"
 #include "WifiBluetooth.h"
 // -----------------------------------------------------------------------------------
@@ -157,27 +158,27 @@ void wifibluetooth::handleConfigurationTelescope() {
     delay(1000);
     return;
   }
+  //update
+  ta_MountStatus.updateMount();
 
-  if (sendCommand(":GU#", temp1))
-  {
-    data += FPSTR(html_configMount_1);
-    temp1[12] == 'E' ? data += "<option selected value='1'>German</option>" : data += "<option value='1'>German</option>";
-    temp1[12] == 'K' ? data += "<option selected value='2'>Fork</option>" : data += "<option value='2'>Fork</option>";
-    data += FPSTR(html_configMount_2);
-  }
+  data += FPSTR(html_configMount_1);
+  ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_GEM ? data += "<option selected value='1'>German</option>" : data += "<option value='1'>German</option>";
+  ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK ? data += "<option selected value='2'>Fork</option>" : data += "<option value='2'>Fork</option>";
+  data += FPSTR(html_configMount_2);
+  
   sendHtml(data);
-  //if (!sendCommand(":GX90#", temp1)) strcpy(temp1, "0"); int mountType = (int)strtol(&temp1[0], NULL, 10);
+  //if (!sendCommand(":GX90#", temp1, sizeof(temp1))) strcpy(temp1, "0"); int mountType = (int)strtol(&temp1[0], NULL, 10);
   //sprintf(temp, html_configMount, mountType);
   //data += temp;
-  if (!sendCommand(":GX92#", temp1)) strcpy(temp1, "0"); int maxRate = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":GX92#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int maxRate = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configMaxRate, maxRate);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":GX90#", temp1)) strcpy(temp1, "0"); float guideRate = (float)strtof(&temp1[0], NULL);
+  if (GetLX200(":GX90#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float guideRate = (float)strtof(&temp1[0], NULL);
   sprintf_P(temp, html_configGuideRate, guideRate);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":GXE2#", temp1)) strcpy(temp1, "0"); float acc = (float)strtof(&temp1[0], NULL);
+  if (GetLX200(":GXE2#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float acc = (float)strtof(&temp1[0], NULL);
   sprintf_P(temp, html_configAcceleration, acc);
   data += temp;
   sendHtml(data);
@@ -192,84 +193,80 @@ void wifibluetooth::handleConfigurationTelescope() {
   //Axis1
 
   data += "Motor: <br />";
-  if (!sendCommand(":%RR#", temp1)) strcpy(temp1, "0"); int reverse = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":%RR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int reverse = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configRotAxis_1, 1);
   data += temp;
   data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
   sprintf_P(temp, html_configRotAxis_2, 1);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":%RD#", temp1)) strcpy(temp1, "0"); reverse = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":%RD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); reverse = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configRotAxis_1, 2);
   data += temp;
   data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
   sprintf_P(temp, html_configRotAxis_2, 2);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":%GR#", temp1)) strcpy(temp1, "0"); int gear = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":%GR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int gear = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configGeAxis, gear, 1, 1);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":%GD#", temp1)) strcpy(temp1, "0"); gear = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":%GD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); gear = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configGeAxis, gear, 2, 2);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":%SR#", temp1)) strcpy(temp1, "0"); int step = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":%SR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int step = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configStAxis, step, 1, 1);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":%SD#", temp1)) strcpy(temp1, "0"); step = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":%SD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); step = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configStAxis, step, 2, 2);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":%MR#", temp1)) strcpy(temp1, "0"); int micro = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":%MR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int micro = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configMuAxis, (int)pow(2.,micro), 1, 1);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":%MD#", temp1)) strcpy(temp1, "0"); micro = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":%MD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); micro = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configMuAxis, (int)pow(2.,micro), 2, 2);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":%BR#", temp1)) strcpy(temp1, "0"); int backlashAxis = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":%BR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int backlashAxis = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configBlAxis, backlashAxis, 1, 1);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":%BD#", temp1)) strcpy(temp1, "0"); backlashAxis = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":%BD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); backlashAxis = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configBlAxis, backlashAxis, 2, 2);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":%cR#", temp1)) strcpy(temp1, "0"); int lowC = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":%cR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int lowC = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configLCAxis, lowC*10, 1, 1);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":%cD#", temp1)) strcpy(temp1, "0"); lowC = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":%cD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); lowC = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configLCAxis, lowC*10, 2, 2);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":%CR#", temp1)) strcpy(temp1, "0"); int highC = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":%CR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int highC = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configHCAxis, highC*10, 1, 1);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":%CD#", temp1)) strcpy(temp1, "0"); highC = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":%CD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); highC = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configHCAxis, highC*10, 2, 2);
   data += temp;
   data += "<br />";
 
-#ifdef OETHS
-  client->print(data); data="";
-#endif
-
   // Overhead and Horizon Limits
-  if (!sendCommand(":Gh#",temp1)) strcpy(temp1,"0"); int minAlt=(int)strtol(&temp1[0],NULL,10);
+  if (GetLX200(":Gh#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1,"0"); int minAlt=(int)strtol(&temp1[0],NULL,10);
   sprintf_P(temp,html_configMinAlt,minAlt);
   data += temp;
   sendHtml(data);
-  if (!sendCommand(":Go#",temp1)) strcpy(temp1,"0"); int maxAlt=(int)strtol(&temp1[0],NULL,10);
+  if (GetLX200(":Go#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1,"0"); int maxAlt=(int)strtol(&temp1[0],NULL,10);
   sprintf_P(temp,html_configMaxAlt,maxAlt);
   data += temp;
   sendHtml(data);
   // Meridian Limits
-  if ((sendCommand(":GXE9#",temp1)) && (sendCommand(":GXEA#",temp2))) {
+  if (GetLX200(":GXE9#", temp1, sizeof(temp1)) == LX200VALUEGET && GetLX200(":GXEA#", temp2, sizeof(temp2)) == LX200VALUEGET) {
     int degPastMerE=(int)strtol(&temp1[0],NULL,10);
     degPastMerE=round((degPastMerE*15.0)/60.0);
     sprintf_P(temp,html_configPastMerE,degPastMerE);
