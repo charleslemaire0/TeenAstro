@@ -450,8 +450,8 @@ void wifibluetooth::controlAjax() {
   char temp[40]="";
 
   data += "focuserpos|";
-  char cmd[5] = ":F?#";
-  readLX200Bytes(cmd, temp, 4*TIMEOUT_CMD);
+  ta_MountStatus.updateFocuser();
+  strcpy(temp, ta_MountStatus.getFocuser());
   temp[6] = 0;
   data += &temp[1];
   data += " steps, ";
@@ -459,8 +459,6 @@ void wifibluetooth::controlAjax() {
   temp[16] = 0;
   data += &temp[11];
   data += "&deg C";
-
-
 #ifdef ROTATOR_ON
   data += "rotatorpos|";
   if (sendCommand(":rG#",temp)) { temp[9]=temp[5]; temp[10]=temp[6]; temp[11]=0; temp[4]='&'; temp[5]='d'; temp[6]='e'; temp[7]='g'; temp[8]=';'; data += temp; data += "&#39;\n"; } else { data += "?\n"; }

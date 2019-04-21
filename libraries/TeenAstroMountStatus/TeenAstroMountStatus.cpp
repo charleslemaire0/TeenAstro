@@ -103,7 +103,7 @@ void TeenAstroMountStatus::updateTime()
 };
 void TeenAstroMountStatus::updateFocuser()
 {
-  if (millis() - m_lastStateFocuser > updaterate*2)
+  if (millis() - m_lastStateFocuser > updaterate)
   {
     char fc[45];
     m_hasInfoFocuser = GetLX200(":F?#", fc, sizeof(m_TempFocuser)) == LX200VALUEGET;
