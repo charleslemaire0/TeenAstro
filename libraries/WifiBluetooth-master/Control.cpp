@@ -567,13 +567,13 @@ void wifibluetooth::processControlGet() {
     if (v=="Th") SetLX200(":TS#"); // solar
 
     // quick
-    if (v=="qc") { SetLX200(":SX99,1#"); cl(); } // meridian flip, pause->continue
-    if (v=="qr") { SetLX200(":hF#"); cl(); }     // home, reset
-    if (v=="qh") { SetLX200(":hC#"); cl(); }     // home, goto
-    if (v=="pr") { SetLX200(":hO#"); cl(); }     // park, reset
-    if (v=="ps") { SetLX200(":hQ#"); cl(); }     // set park
-    if (v=="pk") { SetLX200(":hP#"); cl(); }     // park
-    if (v=="pu") { SetLX200(":hR#"); cl(); }     // un-park
+    if (v=="qc") { SetLX200(":SX99,1#");} // meridian flip, pause->continue
+    if (v=="qr") { SetLX200(":hF#");}     // home, reset
+    if (v=="qh") { SetLX200(":hC#");}     // home, goto
+    if (v=="pr") { SetLX200(":hO#");}     // park, reset
+    if (v=="ps") { SetLX200(":hQ#");}     // set park
+    if (v=="pk") { SetLX200(":hP#");}     // park
+    if (v=="pu") { SetLX200(":hR#");}     // un-park
 
 
     // GUIDE control direction
@@ -605,6 +605,7 @@ void wifibluetooth::processControlGet() {
     if (v=="Fh") SetLX200(":FS0#");
     if (v=="Fi") SetLX200(":F-#");
     if (v=="Fo") SetLX200(":F+#");
+    if (v=="Fq") SetLX200(":FQ#");
 
     // Rotate/De-Rotate
     if (v=="b2") SetLX200(":r3#:r<#");
@@ -622,79 +623,72 @@ void wifibluetooth::processControlGet() {
 
   // General purpose switches
   #ifdef SW0
-  v=server.arg("sw0"); if (v!="") { SetLX200(":SXG0,"+v+"#"); cl(); }
+  v=server.arg("sw0"); if (v!="") { SetLX200(":SXG0,"+v+"#");}
   #endif
   #ifdef SW1
-  v=server.arg("sw1"); if (v!="") { SetLX200(":SXG1,"+v+"#"); cl(); }
+  v=server.arg("sw1"); if (v!="") { SetLX200(":SXG1,"+v+"#");}
   #endif
   #ifdef SW2
-  v=server.arg("sw2"); if (v!="") { SetLX200(":SXG2,"+v+"#"); cl(); }
+  v=server.arg("sw2"); if (v!="") { SetLX200(":SXG2,"+v+"#");}
   #endif
   #ifdef SW3
-  v=server.arg("sw3"); if (v!="") { SetLX200(":SXG3,"+v+"#"); cl(); }
+  v=server.arg("sw3"); if (v!="") { SetLX200(":SXG3,"+v+"#");}
   #endif
   #ifdef SW4
-  v=server.arg("sw4"); if (v!="") { SetLX200(":SXG4,"+v+"#"); cl(); }
+  v=server.arg("sw4"); if (v!="") { SetLX200(":SXG4,"+v+"#");}
   #endif
   #ifdef SW5
-  v=server.arg("sw5"); if (v!="") { SetLX200(":SXG5,"+v+"#"); cl(); }
+  v=server.arg("sw5"); if (v!="") { SetLX200(":SXG5,"+v+"#");}
   #endif
   #ifdef SW6
-  v=server.arg("sw6"); if (v!="") { SetLX200(":SXG6,"+v+"#"); cl(); }
+  v=server.arg("sw6"); if (v!="") { SetLX200(":SXG6,"+v+"#");}
   #endif
   #ifdef SW7
-  v=server.arg("sw7"); if (v!="") { SetLX200(":SXG7,"+v+"#"); cl(); }
+  v=server.arg("sw7"); if (v!="") { SetLX200(":SXG7,"+v+"#");}
   #endif
   #ifdef SW8
-  v=server.arg("sw8"); if (v!="") { SetLX200(":SXG8,"+v+"#"); cl(); }
+  v=server.arg("sw8"); if (v!="") { SetLX200(":SXG8,"+v+"#");}
   #endif
   #ifdef SW9
-  v=server.arg("sw9"); if (v!="") { SetLX200(":SXG9,"+v+"#"); cl(); }
+  v=server.arg("sw9"); if (v!="") { SetLX200(":SXG9,"+v+"#");}
   #endif
   #ifdef SW10
-  v=server.arg("swA"); if (v!="") { SetLX200(":SXGA,"+v+"#"); cl(); }
+  v=server.arg("swA"); if (v!="") { SetLX200(":SXGA,"+v+"#");}
   #endif
   #ifdef SW11
-  v=server.arg("swB"); if (v!="") { SetLX200(":SXGB,"+v+"#"); cl(); }
+  v=server.arg("swB"); if (v!="") { SetLX200(":SXGB,"+v+"#");}
   #endif
   #ifdef SW12
-  v=server.arg("swC"); if (v!="") { SetLX200(":SXGC,"+v+"#"); cl(); }
+  v=server.arg("swC"); if (v!="") { SetLX200(":SXGC,"+v+"#");}
   #endif
   #ifdef SW13
-  v=server.arg("swD"); if (v!="") { SetLX200(":SXGD,"+v+"#"); cl(); }
+  v=server.arg("swD"); if (v!="") { SetLX200(":SXGD,"+v+"#");}
   #endif
   #ifdef SW14
-  v=server.arg("swE"); if (v!="") { SetLX200(":SXGE,"+v+"#"); cl(); }
+  v=server.arg("swE"); if (v!="") { SetLX200(":SXGE,"+v+"#");}
   #endif
   #ifdef SW15
-  v=server.arg("swF"); if (v!="") { SetLX200(":SXGF,"+v+"#"); cl(); }
+  v=server.arg("swF"); if (v!="") { SetLX200(":SXGF,"+v+"#");}
   #endif
 
   // General purpose analog
   #ifdef AN3
-  v=server.arg("an3"); if (v!="") { SetLX200f(":SXG3,%ld#",(v.toInt()*255L)/100L); cl(); }
+  v=server.arg("an3"); if (v!="") { SetLX200f(":SXG3,%ld#",(v.toInt()*255L)/100L);}
   #endif
   #ifdef AN4
-  v=server.arg("an4"); if (v!="") { SetLX200f(":SXG4,%ld#",(v.toInt()*255L)/100L); cl(); }
+  v=server.arg("an4"); if (v!="") { SetLX200f(":SXG4,%ld#",(v.toInt()*255L)/100L);}
   #endif
   #ifdef AN5
-  v=server.arg("an5"); if (v!="") { SetLX200f(":SXG5,%ld#",(v.toInt()*255L)/100L); cl(); }
+  v=server.arg("an5"); if (v!="") { SetLX200f(":SXG5,%ld#",(v.toInt()*255L)/100L);}
   #endif
   #ifdef AN6
-  v=server.arg("an6"); if (v!="") { SetLX200f(":SXG6,%ld#",(v.toInt()*255L)/100L); cl(); }
+  v=server.arg("an6"); if (v!="") { SetLX200f(":SXG6,%ld#",(v.toInt()*255L)/100L);}
   #endif
   #ifdef AN7
-  v=server.arg("an7"); if (v!="") { SetLX200f(":SXG7,%ld#",(v.toInt()*255L)/100L); cl(); }
+  v=server.arg("an7"); if (v!="") { SetLX200f(":SXG7,%ld#",(v.toInt()*255L)/100L);}
   #endif
   #ifdef AN8
-  v=server.arg("an8"); if (v!="") { SetLX200f(":SXG8,%ld#",(v.toInt()*255L)/100L); cl(); }
+  v=server.arg("an8"); if (v!="") { SetLX200f(":SXG8,%ld#",(v.toInt()*255L)/100L);}
   #endif
 
-}
-
-// clear any possible response
-void wifibluetooth::cl() {
-  char temp[20]="";
-  Ser.setTimeout(WebTimeout*8);
-  temp[Ser.readBytesUntil('#',temp,20)]=0;
 }
