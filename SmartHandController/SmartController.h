@@ -1,7 +1,6 @@
 #pragma once
 #include <Arduino.h>
 #include <EEPROM.h>
-#include <TeenAstroMountStatus.h>
 #include <TeenAstroLX200io.h>
 #include "Pad.h"
 #include "u8g2_ext.h"
@@ -22,7 +21,6 @@ public:
 private:
   U8G2_EXT *display = NULL;
   Pad buttonPad;
-  TeenAstroMountStatus telInfo;
   char _version[20]="Version ?";
 
   void updateMainDisplay( u8g2_uint_t page);

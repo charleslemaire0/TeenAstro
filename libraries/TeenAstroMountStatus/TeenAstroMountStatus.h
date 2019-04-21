@@ -300,3 +300,4 @@ public:
   //----------------------
 };
 
+static TeenAstroMountStatus ta_MountStatus;
