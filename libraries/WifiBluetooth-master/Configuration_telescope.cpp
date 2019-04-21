@@ -302,7 +302,7 @@ void wifibluetooth::processConfigurationTelescopeGet() {
     {
       sprintf(temp, ":S!X#");
       temp[3] = '0' + i;
-      Ser.print(temp);
+      SetLX200(temp);
       restartRequired_t = true;
     }
   }
@@ -311,7 +311,7 @@ void wifibluetooth::processConfigurationTelescopeGet() {
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1000))){
       sprintf(temp, ":SX92:%04d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
 
@@ -319,7 +319,7 @@ void wifibluetooth::processConfigurationTelescopeGet() {
   if (v != "") {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.1) && (f <= 25))) {
       sprintf(temp, ":SXE2:%04d#", (int)(f*10));
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
 
@@ -327,7 +327,7 @@ void wifibluetooth::processConfigurationTelescopeGet() {
   if (v != "") {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.01) && (f <= 100))) {
       sprintf(temp, ":SX90:%03d#", (int)(f * 100));
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
 
@@ -335,7 +335,7 @@ void wifibluetooth::processConfigurationTelescopeGet() {
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) {
       sprintf(temp, ":$RR%d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
 
@@ -343,91 +343,91 @@ void wifibluetooth::processConfigurationTelescopeGet() {
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) {
       sprintf(temp, ":$RD%d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("mge1");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 60000))) {
       sprintf(temp, ":$GR%d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("mge2");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 60000))) {
       sprintf(temp, ":$GD%d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("mst1");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400))) {
       sprintf(temp, ":$SR%d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("mst2");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400))) {
       sprintf(temp, ":$SD%d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("mmu1");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 256))) {
       sprintf(temp, ":$MR%d#", (int)log2(i));
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("mmu2");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 256))) {
       sprintf(temp, ":$MD%d#", (int)log2(i));
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("mbl1");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999))) {
       sprintf(temp, ":$BR%d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("mbl2");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999))) {
       sprintf(temp, ":$BD%d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("mlc1");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000))) {
       sprintf(temp, ":$cR%d#", i/10);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("mlc2");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000))) {
       sprintf(temp, ":$cD%d#", i/10);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("mhc1");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000))) {
       sprintf(temp, ":$CR%d#", i/10);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("mhc2");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000))) {
       sprintf(temp, ":$CD%d#", i/10);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   // Overhead and Horizon Limits
@@ -435,14 +435,14 @@ void wifibluetooth::processConfigurationTelescopeGet() {
   if (v!="") {
     if ( (atoi2((char*)v.c_str(),&i)) && ((i>=60) && (i<=90))) { 
       sprintf(temp,":So%d#",i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v=server.arg("hl");
   if (v!="") {
     if ( (atoi2((char*)v.c_str(),&i)) && ((i>=-30) && (i<=30))) { 
       sprintf(temp,":Sh%d#",i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
 
@@ -452,7 +452,7 @@ void wifibluetooth::processConfigurationTelescopeGet() {
     if ( (atoi2((char*)v.c_str(),&i)) && ((i>=-45) && (i<=45))) { 
       i=round((i*60.0)/15.0);
       sprintf(temp,":SXE9,%d#",i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v=server.arg("wl");
@@ -460,7 +460,7 @@ void wifibluetooth::processConfigurationTelescopeGet() {
     if ( (atoi2((char*)v.c_str(),&i)) && ((i>=-45) && (i<=45))) { 
       i=round((i*60.0)/15.0);
       sprintf(temp,":SXEA,%d#",i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
 
@@ -469,14 +469,14 @@ void wifibluetooth::processConfigurationTelescopeGet() {
   if (v!="") {
     if ( (atoi2((char*)v.c_str(),&i)) && ((i>=0) && (i<=999))) { 
       sprintf(temp,":$BR%d#",i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v=server.arg("b2");
   if (v!="") {
     if ( (atoi2((char*)v.c_str(),&i)) && ((i>=0) && (i<=999))) { 
       sprintf(temp,":$BD%d#",i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
 
@@ -490,12 +490,9 @@ void wifibluetooth::processConfigurationTelescopeGet() {
     if ( (atoi2((char*)v.c_str(),&i)) && ((i==00) || (i==30) || (i==45))) {
       if ((ut_hrs>=-13) && (ut_hrs<=13)) {
         sprintf(temp,":SG%+03d:%02d#",ut_hrs,i);
-        Ser.print(temp);
+        SetLX200(temp);
       }
     }
   }
-
-  // clear any possible response
-  temp[Ser.readBytesUntil('#',temp,20)]=0;
 }
 
