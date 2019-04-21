@@ -1,6 +1,4 @@
-#ifndef WIFIBLUETOOTH_H
-#define WIFIBLUETOOTH_H
-
+#pragma once
 
 #include <Arduino.h>
 
@@ -41,15 +39,8 @@
 
 // The settings below are for initialization only, afterward they are stored and recalled from EEPROM and must
 // be changed in the web interface OR with a reset (for initialization again) as described in the Config.h comments
-#if SERIAL_BAUD<=28800
-#define TIMEOUT_WEB 60
-#define TIMEOUT_CMD 60
-#else
 #define TIMEOUT_WEB 15
 #define TIMEOUT_CMD 30
-#endif
-
-
 
 #define EEPROM_start 0
 #define EEPROM_WifiOn EEPROM_start + 4
@@ -167,4 +158,3 @@ public:
   static bool setWifiMode(int k);
   static void getStationName(int k, char* SSID);
 };
-#endif
