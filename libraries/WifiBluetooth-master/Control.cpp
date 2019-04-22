@@ -181,13 +181,9 @@ const char html_controlRotate4[] PROGMEM =
 const char html_controlEnd[] =
 "<br />\r\n";
 
-#ifdef OETHS
-void wifibluetooth::handleControl(EthernetClient *client) {
-#else
+
 void wifibluetooth::handleControl() {
-#endif
   Ser.setTimeout(WebTimeout);
-  serialRecvFlush();
   sendHtmlStart();
   char temp1[80]="";
   String data;
@@ -205,9 +201,7 @@ void wifibluetooth::handleControl() {
   data += "<script>var ajaxPage='control.txt';</script>\n";
   data += FPSTR(html_ajax_active);
   sendHtml(data);
-#ifdef OETHS
-  client->print(data); data="";
-#endif
+
 
   data += FPSTR(html_controlQuick0);
   sendHtml(data);
@@ -226,12 +220,10 @@ void wifibluetooth::handleControl() {
         data += FPSTR(html_controlQuick3);
         data += html_controlEnd;
         data += "</div></body></html>";
-#ifdef OETHS
-        client->print(data);
-#else
+
         sendHtml(data);
         sendHtmlDone(data);
-#endif
+
         return;
       }
       data += "</form>";
@@ -239,19 +231,15 @@ void wifibluetooth::handleControl() {
   }
   data += FPSTR(html_controlQuick3);
   sendHtml(data);
-#ifdef OETHS
-  client->print(data); data="";
-#endif
+
 
 
   // Guiding -------------------------------------------------
   data += FPSTR(html_controlGuide);
-#ifdef OETHS
-  client->print(data); data = "";
-#endif
+
 
   // Focusing ------------------------------------------------
-  boolean Focuser1; if (sendCommand(":FV#", temp1, R_STRING)) Focuser1 = true; else Focuser1 = false;
+  boolean Focuser1; if (GetLX200(":FV#", temp1, sizeof(temp1)) == LX200VALUEGET) Focuser1 = true; else Focuser1 = false;
   //Focuser1 = true;
   boolean Focuser2 = false;
   /* boolean Focuser2; if (sendCommand(":fA#",temp1,R_BOOL)) Focuser2=true; else Focuser2=false;*/
@@ -263,9 +251,7 @@ void wifibluetooth::handleControl() {
     data += FPSTR(html_controlFocus5);
     data += FPSTR(html_controlFocus6);
     sendHtml(data);
-#ifdef OETHS
-    client->print(data); data = "";
-#endif
+
   }
 
   // Tracking control ----------------------------------------

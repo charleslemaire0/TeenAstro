@@ -306,7 +306,7 @@ void wifibluetooth::processConfigurationFocuserGet() {
       }
     }
   }
-  Ser.flush();
-  serialRecvFlush();
+  //Ser.flush();
+  //serialRecvFlush();
 }
 

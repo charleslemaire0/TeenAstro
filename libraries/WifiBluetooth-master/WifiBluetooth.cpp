@@ -1,3 +1,4 @@
+#include <TeenAstroLX200io.h>
 #include "WifiBluetooth.h"
 #include "config.h"
 
@@ -145,16 +146,23 @@ long wifibluetooth::EEPROM_readLong(int i) {
   return l;
 }
 
+bool wifibluetooth::atoi2(char *a, int *i) {
+  char *conv_end;
+  long l = strtol(a, &conv_end, 10);
 
-const char* wifibluetooth::HighSpeedCommsStr(long baud)
-{
-  if (baud == 115200) { return ":SB0#"; }
-  if (baud == 57600) { return ":SB1#"; }
-  if (baud == 38400) { return ":SB2#"; }
-  if (baud == 28800) { return ":SB3#"; }
-  if (baud == 19200) { return ":SB4#"; }
-  else { return ":SB5#"; }
-}
+  if ((l<-32767) || (l>32768) || (&a[0] == conv_end)) return false;
+  *i = l;
+  return true;
+};
+
+bool wifibluetooth::atof2(char *a, float *f) {
+  char *conv_end;
+  double l = strtof(a, &conv_end);
+
+  if (&a[0] == conv_end) return false;
+  *f = l;
+  return true;
+};
 
 void wifibluetooth::handleNotFound()
 {
@@ -314,23 +322,12 @@ void wifibluetooth::setup()
   initFromEEPROM();
 
 #ifndef DEBUG_ON
-  Ser.begin(SERIAL_BAUD);
+
 
   byte tb = 0;
 Again:
 
   char c = 0;
-
-  // clear the buffers and any noise on the serial lines
-  for (int i = 0; i < 3; i++) {
-    Ser.print(":#");
-
-    delay(100);
-    Ser.flush();
-    c = serialRecvFlush();
-
-    delay(100);
-  }
 
   // safety net
   if ((c == 'R') || activeWifiMode == WifiMode::OFF) {
@@ -338,22 +335,12 @@ Again:
     EEPROM_writeInt(0, 0); EEPROM_writeInt(2, 0);
     activeWifiMode = WifiMode::M_AcessPoint;
     EEPROM.commit();
-    Ser.println();
-    Ser.println("Cycle power for reset to defaults.");
-    Ser.println();
+    //Ser.println();
+    //Ser.println("Cycle power for reset to defaults.");
+    //Ser.println();
   }
 
 
-  // switch OnStep Serial1 up to ? baud
-  Ser.print(HighSpeedCommsStr(SERIAL_BAUD));
-  delay(100);
-  int count = 0; c = 0;
-  while (Ser.available() > 0) { count++; if (count == 1) c = Ser.read(); }
-  if (c == '1') {
-    Ser.begin(SERIAL_BAUD);
-
-
-  }
 #else
   Ser.begin(115200);
   delay(10000);
@@ -400,14 +387,6 @@ Again:
     break;
   }
 
-
-  // clear the buffers and any noise on the serial lines
-  for (int i = 0; i < 3; i++) {
-    Ser.print(":#");
-    delay(50);
-    serialRecvFlush();
-  }
-
   server.on("/", handleRoot);
   server.on("/index.htm", handleRoot);
   server.on("/configuration_site.htm", handleConfigurationSite);
@@ -417,7 +396,6 @@ Again:
   server.on("/control.txt", controlAjax);
   server.on("/guide.txt", guideAjax);
   server.on("/wifi.htm", handleWifi);
-
   server.onNotFound(handleNotFound);
 
   cmdSvr.begin();
@@ -431,7 +409,6 @@ Again:
 
   httpUpdater.setup(&server);
   httpServer.begin();
-  //encoders.init();
 };
 
 void wifibluetooth::update()
@@ -468,7 +445,7 @@ void wifibluetooth::update()
     // send cmd and pickup the response
     if ((b == '#') || ((strlen(writeBuffer) == 1) && (b == (char)6))) {
       char readBuffer[40] = "";
-      readLX200Bytes(writeBuffer, readBuffer, CmdTimeout); writeBuffer[0] = 0; writeBufferPos = 0;
+      readLX200Bytes(writeBuffer, readBuffer, sizeof(readBuffer), CmdTimeout, true); writeBuffer[0] = 0; writeBufferPos = 0;
 
       // return the response, if we have one
       if (strlen(readBuffer) > 0) {

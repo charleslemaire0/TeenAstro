@@ -61,7 +61,6 @@ void wifibluetooth::handleConfigurationSite(EthernetClient *client) {
 void wifibluetooth::handleConfigurationSite() {
 #endif
   Ser.setTimeout(WebTimeout);
-  serialRecvFlush();
   sendHtmlStart();
   char temp[320] = "";
   char temp1[80] = "";

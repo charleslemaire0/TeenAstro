@@ -1,5 +1,7 @@
+#include <TeenAstroLX200io.h>
 #include "config.h"
 #include "WifiBluetooth.h"
+
 // -----------------------------------------------------------------------------------
 // The home page, status information
 
@@ -39,7 +41,6 @@ const char* html_indexWorkload PROGMEM = "&nbsp;&nbsp;Workload: <font class='c'>
 
 void wifibluetooth::handleRoot() {
   Ser.setTimeout(WebTimeout);
-  serialRecvFlush();
   sendHtmlStart();
   char temp[300]="";
   char temp1[80]="";
@@ -124,24 +125,6 @@ void wifibluetooth::handleRoot() {
   sprintf(temp,html_indexPosition, ta_MountStatus.getRaT(), ta_MountStatus.getDecT());
   data += temp;
   sendHtml(data);
-#ifdef ENCODERS_ON
-  // RA,Dec OnStep position
-  double f;
-  f=encoders.getOnStepAxis1(); doubleToDms(temp1,&f,true,true);
-  f=encoders.getOnStepAxis2(); doubleToDms(temp2,&f,true,true);
-  sprintf(temp,html_indexEncoder1,temp1,temp2);
-  data += temp;
-  sendHtml(data);
-  // RA,Dec encoder position
-  f=encoders.getAxis1(); doubleToDms(temp1,&f,true,true);
-  f=encoders.getAxis2(); doubleToDms(temp2,&f,true,true);
-  sprintf(temp,html_indexEncoder2,temp1,temp2);
-  data += temp;
-  sendHtml(data);
-#endif
-
-
-
 
 
   //data+="<br /><b>Alignment:</b><br />";

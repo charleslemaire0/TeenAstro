@@ -10,9 +10,6 @@
 #include <ESP8266HTTPUpdateServer.h>
 #include <TeenAstroMountStatus.h>
 
-//#include "Encoders.h"
-
-
 #define Product "TeenAstro Server"
 #define FirmwareDate          __DATE__
 #define FirmwareTime          __TIME__
@@ -41,8 +38,7 @@
 
 // The settings below are for initialization only, afterward they are stored and recalled from EEPROM and must
 // be changed in the web interface OR with a reset (for initialization again) as described in the Config.h comments
-#define TIMEOUT_WEB 15
-#define TIMEOUT_CMD 30
+
 
 #define EEPROM_start 0
 #define EEPROM_WifiOn EEPROM_start + 4
@@ -62,7 +58,6 @@ class wifibluetooth
   enum Responding { R_NONE, R_ONE, R_BOOL, R_STRING };
   enum WifiMode {M_Station1, M_Station2, M_Station3, M_AcessPoint, OFF};
   static bool wifiOn;
-  //Encoders encoders;
   static int WebTimeout;
   static int CmdTimeout;
 
@@ -115,18 +110,9 @@ class wifibluetooth
   static void writeAccess2EEPROM();
   static void processWifiGet();
 
-
-  static bool sendCommand(const char command[], char response[], Responding responding = R_STRING);
-  static char serialRecvFlush();
-  static boolean doubleToDms(char *reply, double *f, boolean fullRange, boolean signPresent);
-  static boolean atoi2(char *a, int *i);
-  static boolean atof2(char *a, float *f);
-  static byte readBytesUntil2(char character, char buffer[], int length, boolean* characterFound, long timeout);
-  static boolean readLX200Bytes(char* command, char* recvBuffer, long timeOutMs);
-  static void cl();
+  static bool atoi2(char *a, int *i);
+  static bool atof2(char *a, float *f);
   static int hexToInt(String s);
-
-
 
   // write int numbers into EEPROM at position i (2 bytes)
   static void EEPROM_writeInt(int i, int j);
