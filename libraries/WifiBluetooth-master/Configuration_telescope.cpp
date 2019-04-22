@@ -133,11 +133,7 @@ const char html_reboot_t[] PROGMEM =
 "\r\n";
 bool restartRequired_t = false;
 
-#ifdef OETHS
-void wifibluetooth::handleConfigurationTelescope(EthernetClient *client) {
-#else
 void wifibluetooth::handleConfigurationTelescope() {
-#endif
   Ser.setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320]="";
@@ -163,9 +159,9 @@ void wifibluetooth::handleConfigurationTelescope() {
   data += FPSTR(html_configMount_1);
   ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_GEM ? data += "<option selected value='1'>German</option>" : data += "<option value='1'>German</option>";
   ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK ? data += "<option selected value='2'>Fork</option>" : data += "<option value='2'>Fork</option>";
-  data += FPSTR(html_configMount_2);
-  
+  data += FPSTR(html_configMount_2);  
   sendHtml(data);
+
   //if (!sendCommand(":GX90#", temp1, sizeof(temp1))) strcpy(temp1, "0"); int mountType = (int)strtol(&temp1[0], NULL, 10);
   //sprintf(temp, html_configMount, mountType);
   //data += temp;
@@ -173,24 +169,19 @@ void wifibluetooth::handleConfigurationTelescope() {
   sprintf_P(temp, html_configMaxRate, maxRate);
   data += temp;
   sendHtml(data);
+
   if (GetLX200(":GX90#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float guideRate = (float)strtof(&temp1[0], NULL);
   sprintf_P(temp, html_configGuideRate, guideRate);
   data += temp;
   sendHtml(data);
+
   if (GetLX200(":GXE2#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float acc = (float)strtof(&temp1[0], NULL);
   sprintf_P(temp, html_configAcceleration, acc);
   data += temp;
   sendHtml(data);
 
-
-  data+="<div style='width: 35em;'>";
-
-
-#ifdef OETHS
-  client->print(data); data="";
-#endif
   //Axis1
-
+  data+="<div style='width: 35em;'>";
   data += "Motor: <br />";
   if (GetLX200(":%RR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int reverse = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configRotAxis_1, 1);
@@ -275,17 +266,10 @@ void wifibluetooth::handleConfigurationTelescope() {
     sprintf_P(temp,html_configPastMerW,degPastMerW);
     data += temp;
   } else data += "<br />\r\n";
-#ifdef OETHS
-  client->print(data); data="";
-#endif
   strcpy(temp,"</div></div></body></html>");
   data += temp;
-#ifdef OETHS
-  client->print(data); data="";
-#else
   sendHtml(data);
   sendHtmlDone(data);
-#endif
 }
 
 void wifibluetooth::processConfigurationTelescopeGet() {
