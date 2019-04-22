@@ -1,7 +1,8 @@
 #pragma once
 #include<Arduino.h>
 #define Ser Serial
-#define TIMEOUT_CMD 100         // Default=100 (0.1 seconds)
+#define TIMEOUT_CMD 30         
+#define TIMEOUT_WEB 15
 
 enum LX200RETURN {
   LX200NOTOK, LX200SETVALUEFAILED, LX200GETVALUEFAILED, LX200SYNCFAILED, LX200SETTARGETFAILED, LX200BELOWHORIZON,
@@ -11,7 +12,7 @@ enum LX200RETURN {
 };
 
 bool isOk(LX200RETURN val);
-bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned long timeOutMs);
+bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned long timeOutMs, bool keepHashtag = false);
 LX200RETURN GetLX200(char* command, char* output, int buffersize);
 LX200RETURN GetTimeLX200(unsigned int &hour, unsigned int &minute, unsigned int &second);
 LX200RETURN GetTimeLX200(long &value);

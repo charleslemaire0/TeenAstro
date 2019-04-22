@@ -50,19 +50,21 @@ byte readBytesUntil2(char character, char buffer[], int length, boolean* charact
   return pos;
 }
 
+
+
 // smart LX200 aware command and response over serial
-bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned long timeOutMs) {
+bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned long timeOutMs, bool keepHashtag ) {
   Ser.setTimeout(timeOutMs);
   memset(recvBuffer, 0, bufferSize);
   // clear the read/write buffers
   Ser.flush();
   serialRecvFlush();
-
   // send the command
   Ser.print(command);
-  Ser.flush();
-  boolean noResponse = false;
-  boolean shortResponse = false;
+
+  bool noResponse = false;
+  bool shortResponse = false;
+
   if ((command[0] == (char)6) && (command[1] == 0)) shortResponse = true;
   if (command[0] == ':') {
     if (command[1] == '%') {
@@ -94,9 +96,9 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     }
     if (command[1] == 'F')
     {
-      Ser.setTimeout(timeOutMs*4);
+      Ser.setTimeout(timeOutMs * 5);
       if (strchr("+-GPSgs", command[2])) { noResponse = true; }
-      if (strchr("OoIi:012345678cCmW", command[2])) { shortResponse = true;}
+      if (strchr("OoIi:012345678cCmW", command[2])) { shortResponse = true; }
     }
     if (command[1] == 'h') {
       if (strchr("F", command[2])) noResponse = true;
@@ -115,7 +117,6 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       if (strchr("AZRD", command[2])) { timeOutMs *= 2; }
     }
   }
-
   if (noResponse) {
     recvBuffer[0] = 0;
     return true;
@@ -146,7 +147,15 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       {
         b = Ser.read();
         if (b == '#')
+        {
+          if (keepHashtag)
+          {
+            recvBuffer[recvBufferPos] = b;
+            recvBufferPos++;
+          }
           break;
+        }
+
         start = millis();
         recvBuffer[recvBufferPos] = b;
         recvBufferPos++;
