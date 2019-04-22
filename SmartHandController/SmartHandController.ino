@@ -1,5 +1,5 @@
 /*
-* Title       Smart Hand Controller (based on TeenAstro)
+* Title       TeenAstro Smart Hand Controller
 *
 * Copyright (C) 2018 Charles Lemaire, Howard Dutton
 *
@@ -32,7 +32,7 @@
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "1"
-#define SHCFirmwareVersionPatch  "2"
+#define SHCFirmwareVersionPatch  "3"
 
 #include "Config.h"
 #include "SmartController.h"

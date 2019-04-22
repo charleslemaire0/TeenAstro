@@ -1,7 +1,5 @@
 #include <TeenAstroLX200io.h>
 #include "WifiBluetooth.h"
-#include "config.h"
-
 
 #define html_headB  "<!DOCTYPE HTML>\r\n<html>\r\n<head>\r\n"
 #define html_headerIdx  "<meta http-equiv=\"refresh\" content=\"5; URL=/index.htm\">\r\n"
@@ -205,10 +203,6 @@ void wifibluetooth::preparePage(String &data, int page)
   }
   data += html_main_cssE;
   data += html_headE;
-#ifdef OETHS
-  client->print(data); data = "";
-#endif
-
   data += html_bodyB;
   // get status
   if (!ta_MountStatus.validConnection()) ta_MountStatus.updateV();
@@ -314,11 +308,6 @@ void wifibluetooth::initFromEEPROM()
 
 void wifibluetooth::setup()
 {
-
-#ifdef LED_PIN
-  pinMode(LED_PIN, OUTPUT);
-#endif
-
   initFromEEPROM();
 
 #ifndef DEBUG_ON
@@ -434,33 +423,34 @@ void wifibluetooth::update()
     clientTime = millis() + 2000UL;
   }
 
-  static char writeBuffer[40] = "";
+  static char writeBuffer[50] = "";
   static int writeBufferPos = 0;
   // check clients for data, if found get the command, send cmd and pickup the response, then return the response
   while (cmdSvrClient && cmdSvrClient.connected() && (cmdSvrClient.available() > 0)) {
     // get the data
     byte b = cmdSvrClient.read();
-    writeBuffer[writeBufferPos] = b; writeBufferPos++; if (writeBufferPos > 39) writeBufferPos = 39; writeBuffer[writeBufferPos] = 0;
+    writeBuffer[writeBufferPos] = b;
+    writeBufferPos++;
+    if (writeBufferPos > 39)
+      writeBufferPos = 39;
+    writeBuffer[writeBufferPos] = 0;
 
     // send cmd and pickup the response
     if ((b == '#') || ((strlen(writeBuffer) == 1) && (b == (char)6))) {
-      char readBuffer[40] = "";
-      readLX200Bytes(writeBuffer, readBuffer, sizeof(readBuffer), CmdTimeout, true); writeBuffer[0] = 0; writeBufferPos = 0;
-
+      char readBuffer[50] = "";
+      readLX200Bytes(writeBuffer, readBuffer, sizeof(readBuffer), CmdTimeout, true);
+      writeBuffer[0] = 0;
+      writeBufferPos = 0;
       // return the response, if we have one
       if (strlen(readBuffer) > 0) {
         if (cmdSvrClient && cmdSvrClient.connected()) {
           cmdSvrClient.print(readBuffer);
           delay(2);
         }
-      }
-
+      }      
     }
     else server.handleClient();
   }
-
-  // encoders.poll();
-
 }
 
 bool wifibluetooth::isWifiOn()
@@ -520,8 +510,6 @@ bool wifibluetooth::setWifiMode(int k)
 
 void wifibluetooth::getStationName(int k, char* SSID )
 {
-  //if (k < 0 || k>2)
-  //  return;
   memcpy(SSID, wifi_sta_ssid[k], 40U);
   return;
 }

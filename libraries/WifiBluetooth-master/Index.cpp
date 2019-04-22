@@ -210,12 +210,6 @@ void wifibluetooth::handleRoot() {
   sprintf(temp, "&nbsp;&nbsp;Tracking Speed: <font class=\"c\">%s</font><br />", temp2);
   data += temp;
   sendHtml(data);
-  
-
-  
-#ifdef OETHS
-  client->print(data); data="";
-#endif
 
   data+="<br /><b>State:</b><br />";
 
@@ -233,12 +227,7 @@ void wifibluetooth::handleRoot() {
   //sendHtml(data);
   data += "</div><br class=\"clear\" />\r\n";
   data += "</div></body></html>";
-
-#ifdef OETHS
-  client->print(data);
-#else
   sendHtml(data);
   sendHtmlDone(data);
-#endif
 }
 

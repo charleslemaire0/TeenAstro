@@ -14,8 +14,8 @@
 #define FirmwareDate          __DATE__
 #define FirmwareTime          __TIME__
 #define FirmwareVersionMajor  "1"
-#define FirmwareVersionMinor  "0"
-#define FirmwareVersionPatch  "1"
+#define FirmwareVersionMinor  "1"
+#define FirmwareVersionPatch  "0"
 
 
 // -----------------------------------------------------------------------------------
