@@ -1,8 +1,9 @@
 #pragma once
+#include "object.h"
 // This data is machine generated from the KStars Star database. 
 // Do NOT edit it manually. Rather, fix the import programs and rerun.
 // Total for constants.h
-static star_t Cat_Stars[NUM_STARS] = {
+const star_t Cat_Stars[NUM_STARS] PROGMEM = {
   {  0,  0,  40,   381, 10591},//, "Alpheratz      "}, // alp And,   2.07, 00:08:23.26, +29:05:25.6, Alpheratz
   {  0,  1,  40,  3173, 12968},//, "Mirach         "}, // bet And,   2.07, 01:09:43.93, +35:37:14.0, Mirach
   {  0,  2,  41,  5638, 15411},//, "Almach         "}, // gam And,    2.1, 02:03:53.95, +42:19:47.1, Almach
@@ -411,4 +412,4 @@ static star_t Cat_Stars[NUM_STARS] = {
   { 85,  5,  53, 37077,  -216},//, "Heze           "}, // zet Vir,   3.38, 13:34:41.59, -00:35:45.0, Heze
   { 86,  1,  57, 23016,-24078},//, "               "}, // bet Vol,   3.77, 08:25:44.20, -66:08:12.8, 
   { 86,  2,  57, 19512,-25667},//, "               "}, // gam Vol,   3.78, 07:08:44.86, -70:29:56.2, 
-}; 
+};

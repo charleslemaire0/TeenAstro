@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <Arduino.h>
 #include "constants.h"
+#include "object.h"
 
 const double Rad=57.29577951;
 
@@ -60,6 +61,8 @@ class CatMgr {
 private:
     Catalog _cat=CAT_NONE;
     FilterMode _fm=FM_NONE;
+    star_t *_active_starCat = NULL;
+    dso_t *_active_dsoCat = NULL;
     int _selected=0;
     int _idx[4]={0,0,0,0};
     int _maxIdx[4]={NUM_STARS-1,NUM_MESSIER-1,NUM_HERSCHEL-1,0-1};
