@@ -1,5 +1,4 @@
 #include <TeenAstroLX200io.h>
-#include "config.h"
 #include "WifiBluetooth.h"
 // -----------------------------------------------------------------------------------
 // configuration_Site
@@ -55,18 +54,14 @@ const char html_configElev[] PROGMEM =
 "</form>"
 "<br />\r\n";
 
-#ifdef OETHS
-void wifibluetooth::handleConfigurationSite(EthernetClient *client) {
-#else
+
 void wifibluetooth::handleConfigurationSite() {
-#endif
   Ser.setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320] = "";
   char temp1[80] = "";
   char temp2[80] = "";
   String data;
-
   processConfigurationSiteGet();
   preparePage(data, 3);
   sendHtml(data);
@@ -125,32 +120,18 @@ void wifibluetooth::handleConfigurationSite() {
       data += temp;
       sprintf_P(temp, html_configLongMin, (char*)&temp1[5]);
       data += temp;
-#ifdef OETHS
-      client->print(data); data = "";
-#endif
       // Elevation
       if (GetLX200(":Ge#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "+000");
       if (temp1[0] == '+') temp1[0] = '0';
       sprintf_P(temp, html_configElev, temp1);
       data += temp;
-#ifdef OETHS
-      client->print(data); data = "";
-#endif
+
     }
   }
-#ifdef OETHS
-  client->print(data); data = "";
-#endif
-
   strcpy(temp, "</div></div></body></html>");
   data += temp;
-
-#ifdef OETHS
-  client->print(data); data = "";
-#else
   sendHtml(data);
   sendHtmlDone(data);
-#endif
 }
 
 void wifibluetooth::processConfigurationSiteGet() {

@@ -1,5 +1,4 @@
 #include <TeenAstroLX200io.h>
-#include "config.h"
 #include "WifiBluetooth.h"
 // -----------------------------------------------------------------------------------
 // configuration_focuser
