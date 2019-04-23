@@ -5,7 +5,7 @@
 
 const double Rad=57.29577951;
 
-enum Catalog { STAR, MESSIER, HERSCHEL, CAT_NONE };
+enum Catalog { STAR, MESSIER, HERSCHEL, NGC, IC, CAT_NONE };
 enum FilterMode { FM_NONE, FM_ABOVE_HORIZON, FM_ALIGN_ALL_SKY, FM_ALIGN_3STAR_1, FM_ALIGN_3STAR_2, FM_ALIGN_3STAR_3 };
 
 void getcatdms(const short& v, short& v1, uint8_t& v2);
@@ -64,8 +64,8 @@ private:
     star_t *_active_starCat = NULL;
     dso_t *_active_dsoCat = NULL;
     int _selected=0;
-    int _idx[4]={0,0,0,0};
-    int _maxIdx[4]={NUM_STARS-1,NUM_MESSIER-1,NUM_HERSCHEL-1,0-1};
+    int _idx[6]={0,0,0,0,0,0};
+    int _maxIdx[6]={NUM_STARS-1,NUM_MESSIER-1,NUM_HERSCHEL-1,NUM_NGC - 1,NUM_IC - 1, 0-1};
 
     bool isFiltered();
     double DistFromEqu(double RA, double Dec);

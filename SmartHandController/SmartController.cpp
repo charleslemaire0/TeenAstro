@@ -3,8 +3,6 @@
 #include "_EEPROM_ext.h"
 #include "SmartController.h"
 
-
-
 static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":Fo#", ":Fi#" };
 static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":FO#", ":FI#" };
 
@@ -1232,7 +1230,7 @@ void SmartHandController::menuSyncGoto(bool sync)
   current_selection_L1 = 1;
   while (!exitMenu)
   {
-    const char *string_list_gotoL1 = "Messier\nStar\nSolar System\nHerschel\nCoordinates\nHome\nPark";
+    const char *string_list_gotoL1 = "Messier\nHerschel\nNGC\nIC\nSolar System\nBright Star\nCoordinates\nHome\nPark";
     current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync" : "Goto", current_selection_L1, string_list_gotoL1);
     switch (current_selection_L1)
     {
@@ -1242,23 +1240,28 @@ void SmartHandController::menuSyncGoto(bool sync)
       menuMessier(sync);
       break;
     case 2:
-      menuStar(sync);
-      break;
-    case 3:
-      menuSolarSys(sync);
-      break;
-    case 4:
       menuHerschel(sync);
       break;
+    case 3:
+      menuNGC(sync);
+      break;
+    case 4:
+      menuIC(sync);
+      break;
     case 5:
-      menuRADec(sync);
+      menuSolarSys(sync);
       break;
     case 6:
-      exitMenu = DisplayMessageLX200(SyncGoHomeLX200(sync), false);
+      menuStar(sync);
       break;
     case 7:
-      exitMenu = DisplayMessageLX200(SyncGoParkLX200(sync), false);
+      menuRADec(sync);
       break;
+    case 8:
+      exitMenu = DisplayMessageLX200(SyncGoHomeLX200(sync), false);
+      break;
+    case 9:
+      exitMenu = DisplayMessageLX200(SyncGoParkLX200(sync), false);
       break;
     default:
       break;
@@ -1318,6 +1321,45 @@ void SmartHandController::menuMessier(bool sync)
     }
   }
 }
+
+void SmartHandController::menuIC(bool sync)
+{
+  double lat, T0;
+  ta_MountStatus.getLat(lat);
+  ta_MountStatus.getLstT0(T0);
+  cat_mgr.setLat(lat);
+  cat_mgr.setLstT0(T0);
+  cat_mgr.select(IC);
+  cat_mgr.filter(FM_ABOVE_HORIZON);
+  if (cat_mgr.alt()<0)
+    cat_mgr.setIndex(0);
+  if (cat_mgr.canFilter()) {
+    if (display->UserInterfaceCatalog(&buttonPad, sync ? "Sync IC" : "Goto IC")) {
+      exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync), false);
+    }
+  }
+}
+
+void SmartHandController::menuNGC(bool sync)
+{
+  double lat, T0;
+  ta_MountStatus.getLat(lat);
+  ta_MountStatus.getLstT0(T0);
+  cat_mgr.setLat(lat);
+  cat_mgr.setLstT0(T0);
+  cat_mgr.select(NGC);
+  cat_mgr.filter(FM_ABOVE_HORIZON);
+  if (cat_mgr.alt()<0)
+    cat_mgr.setIndex(0);
+  if (cat_mgr.canFilter()) {
+    if (display->UserInterfaceCatalog(&buttonPad, sync ? "Sync NGC" : "Goto NGC")) {
+      exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync), false);
+    }
+  }
+}
+
+
+
 
 void SmartHandController::menuAlignment()
 {

@@ -54,6 +54,8 @@ private:
   uint8_t current_selection_FocuserMotor = 1;
   unsigned short current_selection_Herschel = 1;
   unsigned short current_selection_Messier = 1;
+  unsigned short current_selection_IC = 1;
+  unsigned short current_selection_NGC = 1;
   unsigned short current_selection_SolarSys = 1;
   unsigned short current_selection_Star = 1;
   long angleRA = 0;
@@ -67,6 +69,8 @@ private:
   void menuSyncGoto(bool sync);
   void menuSolarSys(bool sync);
   void menuHerschel(bool sync);
+  void menuNGC(bool sync);
+  void menuIC(bool sync);
   void menuMessier(bool sync);
   void menuAlignment();
   void menuPier();
