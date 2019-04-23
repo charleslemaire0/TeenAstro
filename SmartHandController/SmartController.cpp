@@ -342,6 +342,7 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
 
   drawLoad();
 }
+
 void SmartHandController::tickButtons()
 {
   buttonPad.tickButtons();
@@ -1068,7 +1069,7 @@ void SmartHandController::menuTelAction()
     if (currentstate == TeenAstroMountStatus::PRK_PARKED)
     {
       const char *string_list_main_ParkedL0 = "Unpark";
-      current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, "TeenAstroMountStatus Action", current_selection_L0, string_list_main_ParkedL0);
+      current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, "Telescope Action", current_selection_L0, string_list_main_ParkedL0);
       switch (current_selection_L0)
       {
       case 0:

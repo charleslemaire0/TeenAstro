@@ -5,10 +5,6 @@
 #include "Pad.h"
 #include "u8g2_ext.h"
 
-
-#define SH1106 0
-#define SSD1306 1
-
 class SmartHandController
 {
 public:
