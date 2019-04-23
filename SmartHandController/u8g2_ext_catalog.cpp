@@ -170,7 +170,10 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y)
   // Magnitude
   y += line_height;
   pos1 = u8g2_GetUTF8Width(u8g2, "NGC 9999 ");
-  sprintf(line, "mag %0.1f", (float)cat_mgr.magnitude());
+  if (cat_mgr.magnitude() < 18)
+  {
+    sprintf(line, "mag %0.1f", (float)cat_mgr.magnitude());
+  }
   u8g2_DrawUTF8(u8g2, 0, y, line);
   // Object icon if exist
   switch (cat_mgr.objectType())
