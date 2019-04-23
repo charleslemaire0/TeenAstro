@@ -137,8 +137,8 @@ void wifibluetooth::handleConfigurationTelescope() {
   Ser.setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320]="";
-  char temp1[80]="";
-  char temp2[80]="";
+  char temp1[50]="";
+  char temp2[50]="";
   String data;
 
   processConfigurationTelescopeGet();
