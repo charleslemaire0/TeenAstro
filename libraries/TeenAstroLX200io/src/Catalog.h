@@ -29,6 +29,7 @@ class CatMgr {
     void setIndex(int index);
     int getIndex();
     int getMaxIndex();
+    
     void incIndex();
     void decIndex();
     
@@ -59,10 +60,13 @@ class CatMgr {
     double _lstT0=0;
     unsigned long _mil = 0;
 private:
+    void read();
     Catalog _cat=CAT_NONE;
     FilterMode _fm=FM_NONE;
-    star_t *_active_starCat = NULL;
-    dso_t *_active_dsoCat = NULL;
+    const star_t _null_starCat = { 0,0,0,0,0 };
+    const dso_t _null_dsoCat = { 0,0,0,0,0,0 };
+    star_t _active_starCat = { 0,0,0,0,0 };
+    dso_t _active_dsoCat = { 0,0,0,0,0,0 };
     int _selected=0;
     int _idx[6]={0,0,0,0,0,0};
     int _maxIdx[6]={NUM_STARS-1,NUM_MESSIER-1,NUM_HERSCHEL-1,NUM_NGC - 1,NUM_IC - 1, 0-1};

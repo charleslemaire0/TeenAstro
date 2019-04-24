@@ -126,6 +126,8 @@ const char * Txt_Catalog[] = {
 #include "ngc.h"
 #include "ic.h"
 
+
+
 // ----------------------------------------------------------
 // Catalog Manager
 
@@ -164,77 +166,28 @@ double CatMgr::getLst()
 
 void CatMgr::select(Catalog cat) {
   //first free memory!!
-
-  if (_cat == cat)
+  if (_cat != cat)
   {
-    return;
+    memcpy(&_active_starCat, &_null_starCat, sizeof(star_t));
+    memcpy(&_active_dsoCat, &_null_dsoCat, sizeof(dso_t));
   }
-  switch (_cat)
-  {
-  case STAR:
-    if (_active_starCat != NULL)
-      free(_active_starCat);
-    _active_starCat = NULL;
-
-    break;
-  case IC:
-  case NGC:
-  case MESSIER:
-  case HERSCHEL:
-    if (_active_dsoCat != NULL)
-      free(_active_dsoCat);
-    _active_starCat = NULL;
-    break;
-  default:
-    break;
-  }
-
   _cat = cat;
- 
   switch (_cat)
   {
   case STAR:
     _selected = 0;
-    _active_starCat = (star_t*)malloc(NUM_STARS * sizeof(star_t));
-    for (int i = 0; i < NUM_STARS; i++)
-    {
-      PROGMEM_readAnything(&Cat_Stars[i], _active_starCat[i]);
-    }
     break;
   case MESSIER:
     _selected = 1;
-    _active_dsoCat = (dso_t*)malloc(NUM_MESSIER * sizeof(dso_t));
-    for (int i = 0; i < NUM_MESSIER; i++)
-    {
-      PROGMEM_readAnything(&Cat_Messier[i], _active_dsoCat[i]);
-    }
     break;
   case HERSCHEL:
     _selected = 2;
-    _active_dsoCat = (dso_t*)malloc(NUM_HERSCHEL * sizeof(dso_t));
-    for (int i = 0; i < NUM_HERSCHEL; i++)
-    {
-      PROGMEM_readAnything(&Cat_Herschel[i], _active_dsoCat[i]);
-    }
     break;
   case NGC:
     _selected = 3;
-    _active_dsoCat = (dso_t*)malloc(NUM_NGC * sizeof(dso_t));
-    for (int i = 0; i < NUM_NGC; i++)
-    {
-      PROGMEM_readAnything(&Cat_NGC[i], _active_dsoCat[i]);
-    }
     break;
   case IC:
     _selected = 4;
-    _active_dsoCat = (dso_t*)malloc(NUM_IC * sizeof(dso_t));
-    for (int i = 0; i < NUM_IC; i++)
-    {
-      PROGMEM_readAnything(&Cat_IC[i], _active_dsoCat[i]);
-    }
-    break;
-  default:
-    _cat = CAT_NONE;
     break;
   }
 }
@@ -319,6 +272,7 @@ bool CatMgr::isFiltered() {
 // select catalog record
 void CatMgr::setIndex(int index) {
   _idx[_selected]=index;
+  read();
   decIndex();
   incIndex();
 }
@@ -331,19 +285,48 @@ int CatMgr::getMaxIndex() {
   return _maxIdx[_selected];
 }
 
+void CatMgr::read()
+{
+  switch (_cat)
+  {
+  case STAR:
+    PROGMEM_readAnything(&Cat_Stars[_idx[_selected]], _active_starCat);
+    break;
+  case MESSIER:
+    PROGMEM_readAnything(&Cat_Messier[_idx[_selected]], _active_dsoCat);
+    break;
+  case HERSCHEL:
+    PROGMEM_readAnything(&Cat_Herschel[_idx[_selected]], _active_dsoCat);
+    break;
+  case NGC:
+    PROGMEM_readAnything(&Cat_NGC[_idx[_selected]], _active_dsoCat);
+    break;
+  case IC:
+    PROGMEM_readAnything(&Cat_IC[_idx[_selected]], _active_dsoCat);
+    break;
+  }
+}
+
 void CatMgr::incIndex() {
   int i=_maxIdx[_selected]+1;
   do {
     i--;
-    _idx[_selected]++; if (_idx[_selected]>_maxIdx[_selected]) _idx[_selected]=0;
+    _idx[_selected]++;
+    if (_idx[_selected]>_maxIdx[_selected])
+      _idx[_selected]=0;
+    read();
   } while (isFiltered() && (i>0));
 }
+
 
 void CatMgr::decIndex() {
   int i=_maxIdx[_selected]+1;
   do {
     i--;
-    _idx[_selected]--; if (_idx[_selected]<0) _idx[_selected]=_maxIdx[_selected];
+    _idx[_selected]--;
+    if (_idx[_selected]<0)
+      _idx[_selected]=_maxIdx[_selected];
+    read();
   } while (isFiltered() && (i>0));
 }
 
@@ -352,11 +335,11 @@ void CatMgr::decIndex() {
 // RA in degrees
 double CatMgr::ra() {
   double f;
-  if (_cat==STAR)     f =  _active_starCat[_idx[_selected]].RA; else
-  if (_cat==MESSIER)  f =  _active_dsoCat[_idx[_selected]].RA; else
-  if (_cat==NGC)      f = _active_dsoCat[_idx[_selected]].RA; else
-  if (_cat==IC)       f = _active_dsoCat[_idx[_selected]].RA; else
-  if (_cat==HERSCHEL) f =  _active_dsoCat[_idx[_selected]].RA; else f=0;
+  if (_cat==STAR)     f = _active_starCat.RA; else
+  if (_cat==MESSIER)  f = _active_dsoCat.RA; else
+  if (_cat==NGC)      f = _active_dsoCat.RA; else
+  if (_cat==IC)       f = _active_dsoCat.RA; else
+  if (_cat==HERSCHEL) f = _active_dsoCat.RA; else f=0;
   f /= ra_cf;
   return f;
 }
@@ -390,11 +373,11 @@ void CatMgr::raHMS(uint8_t& h, uint8_t& m, uint8_t& s) {
 // Dec in degrees
 double CatMgr::dec() {
   double f;
-  if (_cat==STAR)     f = _active_starCat[_idx[_selected]].DE; else
-  if (_cat==MESSIER)  f = _active_dsoCat[_idx[_selected]].DE; else
-  if (_cat==NGC)      f = _active_dsoCat[_idx[_selected]].DE; else
-  if (_cat==IC)       f = _active_dsoCat[_idx[_selected]].DE; else
-  if (_cat==HERSCHEL) f = _active_dsoCat[_idx[_selected]].DE; else f=0;
+  if (_cat==STAR)     f = _active_starCat.DE; else
+  if (_cat==MESSIER)  f = _active_dsoCat.DE; else
+  if (_cat==NGC)      f = _active_dsoCat.DE; else
+  if (_cat==IC)       f = _active_dsoCat.DE; else
+  if (_cat==HERSCHEL) f = _active_dsoCat.DE; else f=0;
   f /= de_cf;
   return f;
 }
@@ -439,20 +422,20 @@ double CatMgr::azm() {
 
 double CatMgr::magnitude() {
   double m=250;
-  if (_cat==STAR)     m = _active_starCat[_idx[_selected]].Mag; else
-  if (_cat==MESSIER)  m = _active_dsoCat[_idx[_selected]].Mag; else
-  if (_cat==NGC)      m = _active_dsoCat[_idx[_selected]].Mag; else
-  if (_cat==IC)       m = _active_dsoCat[_idx[_selected]].Mag; else
-  if (_cat==HERSCHEL) m = _active_dsoCat[_idx[_selected]].Mag;
+  if (_cat==STAR)     m = _active_starCat.Mag; else
+  if (_cat==MESSIER)  m = _active_dsoCat.Mag; else
+  if (_cat==NGC)      m = _active_dsoCat.Mag; else
+  if (_cat==IC)       m = _active_dsoCat.Mag; else
+  if (_cat==HERSCHEL) m = _active_dsoCat.Mag;
   return (m-20)/10.0;
 }
 
 byte CatMgr::constellation() {
-  if (_cat==STAR)     return _active_starCat[_idx[_selected]].Cons; else
-  if (_cat==MESSIER)  return _active_dsoCat[_idx[_selected]].Cons; else
-  if (_cat==NGC)      return _active_dsoCat[_idx[_selected]].Cons; else
-  if (_cat==IC)       return _active_dsoCat[_idx[_selected]].Cons; else
-  if (_cat==HERSCHEL) return _active_dsoCat[_idx[_selected]].Cons; else return 89;
+  if (_cat==STAR)     return _active_starCat.Cons; else
+  if (_cat==MESSIER)  return _active_dsoCat.Cons; else
+  if (_cat==NGC)      return _active_dsoCat.Cons; else
+  if (_cat==IC)       return _active_dsoCat.Cons; else
+  if (_cat==HERSCHEL) return _active_dsoCat.Cons; else return 89;
 }
 
 const char* CatMgr::constellationStr() {
@@ -460,10 +443,10 @@ const char* CatMgr::constellationStr() {
 }
 
 byte CatMgr::objectType() {
-  if (_cat==MESSIER)  return _active_dsoCat[_idx[_selected]].Obj_type; else
-  if (_cat==NGC)      return _active_dsoCat[_idx[_selected]].Obj_type; else
-  if (_cat==IC)       return _active_dsoCat[_idx[_selected]].Obj_type; else
-  if (_cat==HERSCHEL) return _active_dsoCat[_idx[_selected]].Obj_type; else return -1;
+  if (_cat==MESSIER)  return _active_dsoCat.Obj_type; else
+  if (_cat==NGC)      return _active_dsoCat.Obj_type; else
+  if (_cat==IC)       return _active_dsoCat.Obj_type; else
+  if (_cat==HERSCHEL) return _active_dsoCat.Obj_type; else return -1;
 }
 
 const char* CatMgr::objectTypeStr() {
@@ -482,11 +465,11 @@ const char* CatMgr::objectName() {
 }
 
 int CatMgr::primaryId() {
-  if (_cat==STAR)     return _active_starCat[_idx[_selected]].Bayer + 1; else
-  if (_cat==MESSIER)  return _active_dsoCat[_idx[_selected]].Obj_id; else
-  if (_cat==NGC)      return _active_dsoCat[_idx[_selected]].Obj_id; else
-  if (_cat==IC)       return _active_dsoCat[_idx[_selected]].Obj_id; else
-  if (_cat==HERSCHEL) return _active_dsoCat[_idx[_selected]].Obj_id; else return -1;
+  if (_cat==STAR)     return _active_starCat.Bayer + 1; else
+  if (_cat==MESSIER)  return _active_dsoCat.Obj_id; else
+  if (_cat==NGC)      return _active_dsoCat.Obj_id; else
+  if (_cat==IC)       return _active_dsoCat.Obj_id; else
+  if (_cat==HERSCHEL) return _active_dsoCat.Obj_id; else return -1;
 }
 
 // support functions
