@@ -48,12 +48,7 @@ private:
   uint8_t current_selection_guide = 3;
   uint8_t current_selection_FocuserConfig = 1;
   uint8_t current_selection_FocuserMotor = 1;
-  unsigned short current_selection_Herschel = 1;
-  unsigned short current_selection_Messier = 1;
-  unsigned short current_selection_IC = 1;
-  unsigned short current_selection_NGC = 1;
   unsigned short current_selection_SolarSys = 1;
-  unsigned short current_selection_Star = 1;
   long angleRA = 0;
   long angleDEC = 0;
   void tickButtons();
