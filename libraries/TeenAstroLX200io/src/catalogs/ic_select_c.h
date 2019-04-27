@@ -1,3 +1,4 @@
+#pragma once
 // This data is machine generated from the Open NGC database.
 // Contains all IC objects except for those designated NEDSxx and those
 // with a visual magnitude > 16.0 AND with a surface brightness >= 22.5m/arc-sec^2.

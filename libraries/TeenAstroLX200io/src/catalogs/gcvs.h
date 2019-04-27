@@ -1,3 +1,4 @@
+#pragma once
 // This data is machine generated from General Catalogue of Variable Stars Version GCVS 5.1 by Samus N.N., Kazarovets E.V., Durlevich O.V., Kireeva N.N., Pastukhova E.N., Astronomy Reports, 2017, vol. 61, No. 1, pp. 80-88 {2017ARep...61...80S}  
 // Do NOT edit this data manually. Rather, fix the import formulas.   
 // Only stars max brightness greater than 11mag and with max-min difference greater than 1.0mag are included. 

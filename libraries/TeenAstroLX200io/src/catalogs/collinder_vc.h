@@ -1,3 +1,4 @@
+#pragma once
 // This data is machine generated from the Collinder database (https://www.cloudynights.com/articles/cat/articles/the-collinder-catalog-updated-r2467#ref55).
 // Contains all Collinder objects
 // Do NOT edit this data manually. Rather, fix the import formulas.

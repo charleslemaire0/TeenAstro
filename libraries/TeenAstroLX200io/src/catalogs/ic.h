@@ -1,3 +1,4 @@
+#pragma once
 // This data is machine generated from the Open NGC database.
 // Contains all IC objects except for those designated NEDSxx.
 // Do NOT edit this data manually. Rather, fix the import programs and rerun.

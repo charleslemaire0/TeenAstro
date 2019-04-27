@@ -1,3 +1,4 @@
+#pragma once
 // This data is machine generated from the WDS database 
 // Contains STF objects 
 // Do NOT edit this data manually. Rather, fix the import formulas. 

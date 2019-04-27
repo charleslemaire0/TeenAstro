@@ -1,3 +1,4 @@
+#pragma once
 // This data is machine generated from the Open NGC database.
 // Contains all NGC objects except for those designated NEDSxx or secondary related objects (suffix of A,B,C etc.)
 // Do NOT edit this data manually. Rather, fix the import programs and rerun.
