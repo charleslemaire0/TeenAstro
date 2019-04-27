@@ -2,7 +2,8 @@
 #include <U8g2lib.h>
 #include "Catalog.h"
 #include "u8g2_ext_event.h"
-
+#define OLDCAT
+//#define NEWCAT
 class U8G2_EXT : public U8G2
 {
 public:

@@ -57,11 +57,13 @@ private:
   void menuTelAction();
   void menuSpeedRate();
   void menuTrack();
+  void menuCatalog(bool sync);
   void menuSyncGoto(bool sync);
   void menuSolarSys(bool sync);
   void menuHerschel(bool sync);
   void menuNGC(bool sync);
   void menuIC(bool sync);
+  void menuNewMessier(bool sync);
   void menuMessier(bool sync);
   void menuAlignment();
   void menuPier();

@@ -1305,6 +1305,24 @@ void SmartHandController::menuHerschel(bool sync)
   }
 }
 
+void SmartHandController::menuNewMessier(bool sync)
+{
+  double lat, T0;
+  ta_MountStatus.getLat(lat);
+  ta_MountStatus.getLstT0(T0);
+  cat_mgr.setLat(lat);
+  cat_mgr.setLstT0(T0);
+  cat_mgr.select(MESSIER);
+  cat_mgr.filter(FM_ABOVE_HORIZON);
+  if (cat_mgr.alt()<0)
+    cat_mgr.setIndex(0);
+  if (cat_mgr.canFilter()) {
+    if (display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Messier" : "Goto Messier")) {
+      exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync), false);
+    }
+  }
+}
+
 void SmartHandController::menuMessier(bool sync)
 {
   double lat, T0;
