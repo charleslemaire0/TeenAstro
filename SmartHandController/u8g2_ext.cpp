@@ -1,6 +1,8 @@
 #include "u8g2_ext.h"
 
 #include "u8g2_ext_catalog.h"
+#include "u8g2_ext_catalog2.h"
+
 #include "u8g2_ext_input.h"
 #include "u8g2_ext_selection.h"
 #include "u8g2_ext_message.h"
@@ -15,7 +17,7 @@ bool U8G2_EXT::UserInterfaceCatalog(Pad *extPad, const char *title)
 #endif
 
 #ifdef NEWCAT
-bool U8G2_EXT::UserInterfaceCatalog2(Pad *extPad, const char *title)
+bool U8G2_EXT::UserInterfaceCatalog(Pad *extPad, const char *title)
 {
   return ext_UserInterfaceCatalog2(U8G2_EXT::getU8g2(), extPad, title);
 };

@@ -1,12 +1,21 @@
 #pragma once
 #include <U8g2lib.h>
+//#define OLDCAT
+#define NEWCAT
+#ifdef OLDCAT
 #include "Catalog.h"
+#else if NEWCAT
+#include <TeenAstroCatalog.h>
+#endif
+
 #include "u8g2_ext_event.h"
-#define OLDCAT
-//#define NEWCAT
+
+
+
 class U8G2_EXT : public U8G2
 {
 public:
+
   bool UserInterfaceCatalog(Pad *extPad, const char *title);
 
   uint8_t UserInterfaceMessage(Pad *extPad, const char *title1, const char *title2, const char *title3, const char *buttons);
