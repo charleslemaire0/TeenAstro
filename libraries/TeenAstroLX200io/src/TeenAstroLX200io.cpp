@@ -1,7 +1,15 @@
 #include <Arduino.h>
 #include <Ephemeris.h>
 #include <TeenAstroLX200io.h>
-#include "Catalog.h"
+#define OLDCAT
+//#define NEWCAT
+
+#ifdef OLDCAT
+#include <TeenAstroCatalogOld.h>
+#endif
+#ifdef NEWCAT
+#include <TeenAstroCatalog.h>
+#endif
 
 #define LX200sbuff 20
 #define LX200lbuff 50
@@ -551,6 +559,7 @@ LX200RETURN GetTrackingRateLX200(double& rate)
   return LX200GETVALUEFAILED;
 }
 
+#ifdef OLDCAT
 LX200RETURN SyncGotoCatLX200(bool sync)
 {
   int epoch;
@@ -565,6 +574,23 @@ LX200RETURN SyncGotoCatLX200(bool sync)
   cooNow = Ephemeris::equatorialEquinoxToEquatorialJNowAtDateAndTime(coo, epoch, day, month, year, 0, 0, 0);
   return SyncGotoLX200(sync, cooNow.ra, cooNow.dec);
 }
+#endif
+#ifdef NEWCAT
+LX200RETURN SyncGotoCatLX200(bool sync)
+{
+  int epoch;
+  unsigned int day, month, year, hour, minute, second;
+  if (GetDateLX200(day, month, year) == LX200GETVALUEFAILED) return LX200GETVALUEFAILED;
+  //if (cat_mgr.getCat() == CAT_NONE) return LX200UNKOWN;
+  //EquatorialCoordinates coo;
+  //coo.ra = cat_mgr.ra() / 15.;
+  //coo.dec = cat_mgr.dec();
+  //epoch = cat_mgr.epoch(); if (epoch == 0) return LX200GETVALUEFAILED;
+  //EquatorialCoordinates cooNow;
+  //cooNow = Ephemeris::equatorialEquinoxToEquatorialJNowAtDateAndTime(coo, epoch, day, month, year, 0, 0, 0);
+  //return SyncGotoLX200(sync, cooNow.ra, cooNow.dec);
+}
+#endif
 
 LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short objSys)
 {
@@ -599,9 +625,9 @@ LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short objSys)
 
 LX200RETURN SyncSelectedStarLX200(unsigned short alignSelectedStar)
 {
-  if (alignSelectedStar >= 0 && alignSelectedStar < NUM_STARS)
-    return SyncGotoCatLX200(false);
-  else return LX200UNKOWN;
+  //if (alignSelectedStar >= 0 && alignSelectedStar < NUM_STARS)
+  //  return SyncGotoCatLX200(false);
+  //else return LX200UNKOWN;
 }
 
 LX200RETURN readReverseLX200(const uint8_t &axis, bool &reverse)

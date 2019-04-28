@@ -130,4 +130,4 @@ private:
     double cot(double n);
 };
 
-extern CatMgr cat_mgr;
+extern CatMgr cat_mgr2;

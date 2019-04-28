@@ -38,7 +38,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef OLDCAT
 #include <U8g2lib.h>
 #include "u8g2_ext_value.h"
-#include "Catalog.h"
+#include <TeenAstroCatalogOld.h>
 #include "u8g2_ext_event.h"
 
 #define OC_width 18

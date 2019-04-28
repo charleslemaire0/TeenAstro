@@ -1287,6 +1287,24 @@ void SmartHandController::menuSolarSys(bool sync)
   }
 }
 
+#ifdef OLDCAT
+void SmartHandController::menuStar(bool sync)
+{
+  double lat, T0;
+  ta_MountStatus.getLat(lat);
+  ta_MountStatus.getLstT0(T0);
+  cat_mgr.setLat(lat);
+  cat_mgr.setLstT0(T0);
+  cat_mgr.select(STAR);
+  cat_mgr.filter(FM_ABOVE_HORIZON);
+  if (cat_mgr.alt()<0)
+    cat_mgr.setIndex(0);
+  if (cat_mgr.canFilter()) {
+    if (display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Star" : "Goto Star")) {
+      exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync), false);
+    }
+  }
+}
 void SmartHandController::menuHerschel(bool sync)
 {
   double lat, T0;
@@ -1305,23 +1323,6 @@ void SmartHandController::menuHerschel(bool sync)
   }
 }
 
-void SmartHandController::menuNewMessier(bool sync)
-{
-  double lat, T0;
-  ta_MountStatus.getLat(lat);
-  ta_MountStatus.getLstT0(T0);
-  cat_mgr.setLat(lat);
-  cat_mgr.setLstT0(T0);
-  cat_mgr.select(MESSIER);
-  cat_mgr.filter(FM_ABOVE_HORIZON);
-  if (cat_mgr.alt()<0)
-    cat_mgr.setIndex(0);
-  if (cat_mgr.canFilter()) {
-    if (display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Messier" : "Goto Messier")) {
-      exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync), false);
-    }
-  }
-}
 
 void SmartHandController::menuMessier(bool sync)
 {
@@ -1376,7 +1377,100 @@ void SmartHandController::menuNGC(bool sync)
     }
   }
 }
+#endif
+#ifdef NEWCAT
+void SmartHandController::menuStar(bool sync)
+{
+  double lat, T0;
+  ta_MountStatus.getLat(lat);
+  ta_MountStatus.getLstT0(T0);
+  cat_mgr2.setLat(lat);
+  cat_mgr2.setLstT0(T0);
+  //cat_mgr.select(STAR);
+  //cat_mgr.filter(FM_ABOVE_HORIZON);
+  //if (cat_mgr.alt()<0)
+  //  cat_mgr.setIndex(0);
+  //if (cat_mgr.canFilter()) {
+  //  if (display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Star" : "Goto Star")) {
+  //    exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync), false);
+  //  }
+  //}
+}
 
+void SmartHandController::menuHerschel(bool sync)
+{
+  double lat, T0;
+  ta_MountStatus.getLat(lat);
+  ta_MountStatus.getLstT0(T0);
+  cat_mgr2.setLat(lat);
+  cat_mgr2.setLstT0(T0);
+  //cat_mgr.select(HERSCHEL);
+  //cat_mgr.filter(FM_ABOVE_HORIZON);
+  //if (cat_mgr.alt()<0)
+  //  cat_mgr.setIndex(0);
+  //if (cat_mgr.canFilter()) {
+  //  if (display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Herschel" : "Goto Herschel")) {
+  //    exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync), false);
+  //  }
+  //}
+}
+
+
+
+void SmartHandController::menuMessier(bool sync)
+{
+  double lat, T0;
+  ta_MountStatus.getLat(lat);
+  ta_MountStatus.getLstT0(T0);
+  cat_mgr2.setLat(lat);
+  cat_mgr2.setLstT0(T0);
+  //cat_mgr.select(MESSIER);
+  //cat_mgr.filter(FM_ABOVE_HORIZON);
+  //if (cat_mgr.alt()<0)
+  //  cat_mgr.setIndex(0);
+  //if (cat_mgr.canFilter()) {
+  //  if (display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Messier" : "Goto Messier")) {
+  //    exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync), false);
+  //  }
+  //}
+}
+
+void SmartHandController::menuIC(bool sync)
+{
+  double lat, T0;
+  ta_MountStatus.getLat(lat);
+  ta_MountStatus.getLstT0(T0);
+  cat_mgr2.setLat(lat);
+  cat_mgr2.setLstT0(T0);
+  //cat_mgr.select(IC);
+  //cat_mgr.filter(FM_ABOVE_HORIZON);
+  //if (cat_mgr.alt()<0)
+  //  cat_mgr.setIndex(0);
+  //if (cat_mgr.canFilter()) {
+  //  if (display->UserInterfaceCatalog(&buttonPad, sync ? "Sync IC" : "Goto IC")) {
+  //    exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync), false);
+  //  }
+  //}
+}
+
+void SmartHandController::menuNGC(bool sync)
+{
+  double lat, T0;
+  ta_MountStatus.getLat(lat);
+  ta_MountStatus.getLstT0(T0);
+  cat_mgr2.setLat(lat);
+  cat_mgr2.setLstT0(T0);
+  //cat_mgr.select(NGC);
+  //cat_mgr.filter(FM_ABOVE_HORIZON);
+  //if (cat_mgr.alt()<0)
+  //  cat_mgr.setIndex(0);
+  //if (cat_mgr.canFilter()) {
+  //  if (display->UserInterfaceCatalog(&buttonPad, sync ? "Sync NGC" : "Goto NGC")) {
+  //    exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync), false);
+  //  }
+  //}
+}
+#endif
 
 
 
@@ -1455,24 +1549,6 @@ void SmartHandController::menuPier()
       DisplayMessage("Please Sync", "with a Target", 1000);
       menuSyncGoto(true);
       DisplayMessageLX200(SetLX200(":SmN#"));
-    }
-  }
-}
-
-void SmartHandController::menuStar(bool sync)
-{
-  double lat, T0;
-  ta_MountStatus.getLat(lat);
-  ta_MountStatus.getLstT0(T0);
-  cat_mgr.setLat(lat);
-  cat_mgr.setLstT0(T0);
-  cat_mgr.select(STAR);
-  cat_mgr.filter(FM_ABOVE_HORIZON);
-  if (cat_mgr.alt()<0)
-    cat_mgr.setIndex(0);
-  if (cat_mgr.canFilter()) {
-    if (display->UserInterfaceCatalog(&buttonPad, sync ? "Sync Star" : "Goto Star")) {
-      exitMenu = DisplayMessageLX200(SyncGotoCatLX200(sync), false);
     }
   }
 }

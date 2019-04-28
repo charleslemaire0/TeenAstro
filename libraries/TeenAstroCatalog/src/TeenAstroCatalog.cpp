@@ -789,4 +789,4 @@ double CatMgr::cot(double n) {
   return 1.0/tan(n);
 }
 
-CatMgr cat_mgr;
+CatMgr cat_mgr2;

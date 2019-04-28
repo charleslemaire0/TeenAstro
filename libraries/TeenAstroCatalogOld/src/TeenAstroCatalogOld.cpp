@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "Catalog.h"
+#include "TeenAstroCatalogOld.h"
 #include "math.h"
 
 // Do not change anything in the structs or arrays below, since they

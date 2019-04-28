@@ -63,7 +63,6 @@ private:
   void menuHerschel(bool sync);
   void menuNGC(bool sync);
   void menuIC(bool sync);
-  void menuNewMessier(bool sync);
   void menuMessier(bool sync);
   void menuAlignment();
   void menuPier();

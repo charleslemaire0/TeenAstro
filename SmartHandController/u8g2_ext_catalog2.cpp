@@ -88,126 +88,126 @@ returns line height
 
 static uint8_t ext_draw_catalog_list_line2(u8g2_t *u8g2, uint8_t y)
 {
-  char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  u8g2_uint_t x = 0;
-  u8g2_uint_t yy;
-  uint8_t pos0;
-  uint8_t pos1;
-  uint8_t pos2;
+  //char DEGREE_SYMBOL[] = { 0xB0, '\0' };
+  //u8g2_uint_t x = 0;
+  //u8g2_uint_t yy;
+  //uint8_t pos0;
+  //uint8_t pos1;
+  //uint8_t pos2;
 
-  const uint8_t* myfont = u8g2->font;
-  u8g2_uint_t  pixel_width;
-  u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
+  //const uint8_t* myfont = u8g2->font;
+  //u8g2_uint_t  pixel_width;
+   u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
 
-  char line[16];
+  //char line[16];
 
-  // for Star Catalog
-  if (cat_mgr.getCat() == STAR)
-  {
-
-    pos1 = u8g2_GetUTF8Width(u8g2, "W ");
-    pos2 = u8g2_GetUTF8Width(u8g2, "W Www ");
-
-    // Bayer designation of the star (Greek letter)
-    u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
-    x = 0;
-    u8g2_DrawGlyph(u8g2, x, y, 944 + cat_mgr.primaryId());
-    u8g2_SetFont(u8g2, myfont);
-
-    // Constellation Abbreviation
-    u8g2_DrawUTF8(u8g2, pos1, y, cat_mgr.constellationStr());
-
-    // Common name for the star
-    // Width of constellation abbreviation
-    u8g2_DrawUTF8(u8g2, x, y, cat_mgr.objectName());
-
-    // Magnitude
-    y += line_height;
-    sprintf(line, "mag %0.1f", (float)cat_mgr.magnitude());
-    u8g2_DrawUTF8(u8g2, 0, y, line);
-
-    // Azimuth
-    y += line_height;
-    pos0 = 0;
-    pos1 = u8g2_GetUTF8Width(u8g2, "Azm ");
-    pos2 = u8g2_GetUTF8Width(u8g2, "Azm 999");
-    u8g2_DrawUTF8(u8g2, pos0, y, "Azm ");
-    sprintf(line, "%03d", (int)cat_mgr.azm());   
-    u8g2_DrawUTF8(u8g2, pos1 , y, line);
-    u8g2_DrawUTF8(u8g2, pos2, y, DEGREE_SYMBOL);
-
-    // Altitude
-    pos0 = u8g2_GetUTF8Width(u8g2, "Azm 999__");
-    pos1 = u8g2_GetUTF8Width(u8g2, "Azm 999__Alt ");
-    pos2 = u8g2_GetUTF8Width(u8g2, "Azm 999__Alt 99");
-    u8g2_DrawUTF8(u8g2, pos0, y, "Alt ");
-    sprintf(line, "%02d", (int)cat_mgr.alt());
-    u8g2_DrawUTF8(u8g2, pos1, y, line);
-    u8g2_DrawUTF8(u8g2, pos2, y, DEGREE_SYMBOL);
-
-    return line_height;
-  }
-
-  // Object Catalogs
-  //
-  // Catalog letter and Object ID
-
-  if (cat_mgr.getCat() == MESSIER)
-  {
-    pos1 = u8g2_GetUTF8Width(u8g2, "M 999 ");
-    pos2 = u8g2_GetUTF8Width(u8g2, "M 999 Www ");
-  }
-  else
-  {
-    pos1 = u8g2_GetUTF8Width(u8g2, "NGC 9999 ");
-    pos2 = u8g2_GetUTF8Width(u8g2, "NGC 9999 Www ");
-  }
-  sprintf(line, "%s%u", cat_mgr.catalogStr(), cat_mgr.primaryId());
-  x = 0;
-  u8g2_DrawUTF8(u8g2, x, y, line);
-
-  // Constellation Abbreviation
-  u8g2_DrawUTF8(u8g2, pos1, y, cat_mgr.constellationStr());
-  // Magnitude
-  y += line_height;
-  pos1 = u8g2_GetUTF8Width(u8g2, "NGC 9999 ");
-  if (cat_mgr.magnitude() < 18)
-  {
-    sprintf(line, "mag %0.1f", (float)cat_mgr.magnitude());
-  }
-  u8g2_DrawUTF8(u8g2, 0, y, line);
-  // Object icon if exist
-  //switch (cat_mgr.objectType())
+  //// for Star Catalog
+  //if (cat_mgr.getCat() == STAR)
   //{
-  //case 0:
-  //case 5:
-  //case 6:
-  //case 7:
-  //  u8g2_DrawXBMP(u8g2, pos1, y - GX_height, GX_width, GX_height, GX_bits);
-  //  break;
-  //case 8:
-  //  u8g2_DrawXBMP(u8g2, pos1, y - GC_height, GC_width, GC_height, GC_bits);
-  //  break;
-  //case 1:
-  //  u8g2_DrawXBMP(u8g2, pos1, y - OC_height, OC_width, OC_height, OC_bits);
-  //  break;
-  //case 9:
-  //  u8g2_DrawXBMP(u8g2, pos1, y - PN_height, PN_width, PN_height, PN_bits);
-  //  break;
-  //case 10:
-  //case 11:
-  //case 13:
-  //case 14:
-  //case 15:
-  //  u8g2_DrawXBMP(u8g2, pos1, y - EN_height, EN_width, EN_height, EN_bits);
-  //default:
-  //  break;
+
+  //  pos1 = u8g2_GetUTF8Width(u8g2, "W ");
+  //  pos2 = u8g2_GetUTF8Width(u8g2, "W Www ");
+
+  //  // Bayer designation of the star (Greek letter)
+  //  u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
+  //  x = 0;
+  //  u8g2_DrawGlyph(u8g2, x, y, 944 + cat_mgr.primaryId());
+  //  u8g2_SetFont(u8g2, myfont);
+
+  //  // Constellation Abbreviation
+  //  u8g2_DrawUTF8(u8g2, pos1, y, cat_mgr.constellationStr());
+
+  //  // Common name for the star
+  //  // Width of constellation abbreviation
+  //  u8g2_DrawUTF8(u8g2, x, y, cat_mgr.objectName());
+
+  //  // Magnitude
+  //  y += line_height;
+  //  sprintf(line, "mag %0.1f", (float)cat_mgr.magnitude());
+  //  u8g2_DrawUTF8(u8g2, 0, y, line);
+
+  //  // Azimuth
+  //  y += line_height;
+  //  pos0 = 0;
+  //  pos1 = u8g2_GetUTF8Width(u8g2, "Azm ");
+  //  pos2 = u8g2_GetUTF8Width(u8g2, "Azm 999");
+  //  u8g2_DrawUTF8(u8g2, pos0, y, "Azm ");
+  //  sprintf(line, "%03d", (int)cat_mgr.azm());   
+  //  u8g2_DrawUTF8(u8g2, pos1 , y, line);
+  //  u8g2_DrawUTF8(u8g2, pos2, y, DEGREE_SYMBOL);
+
+  //  // Altitude
+  //  pos0 = u8g2_GetUTF8Width(u8g2, "Azm 999__");
+  //  pos1 = u8g2_GetUTF8Width(u8g2, "Azm 999__Alt ");
+  //  pos2 = u8g2_GetUTF8Width(u8g2, "Azm 999__Alt 99");
+  //  u8g2_DrawUTF8(u8g2, pos0, y, "Alt ");
+  //  sprintf(line, "%02d", (int)cat_mgr.alt());
+  //  u8g2_DrawUTF8(u8g2, pos1, y, line);
+  //  u8g2_DrawUTF8(u8g2, pos2, y, DEGREE_SYMBOL);
+
+  //  return line_height;
   //}
 
-  // Object type text
-  y += line_height;
-  x = 0;
-  u8g2_DrawUTF8(u8g2, x, y, cat_mgr.objectTypeStr());
+  //// Object Catalogs
+  ////
+  //// Catalog letter and Object ID
+
+  //if (cat_mgr.getCat() == MESSIER)
+  //{
+  //  pos1 = u8g2_GetUTF8Width(u8g2, "M 999 ");
+  //  pos2 = u8g2_GetUTF8Width(u8g2, "M 999 Www ");
+  //}
+  //else
+  //{
+  //  pos1 = u8g2_GetUTF8Width(u8g2, "NGC 9999 ");
+  //  pos2 = u8g2_GetUTF8Width(u8g2, "NGC 9999 Www ");
+  //}
+  //sprintf(line, "%s%u", cat_mgr.catalogStr(), cat_mgr.primaryId());
+  //x = 0;
+  //u8g2_DrawUTF8(u8g2, x, y, line);
+
+  //// Constellation Abbreviation
+  //u8g2_DrawUTF8(u8g2, pos1, y, cat_mgr.constellationStr());
+  //// Magnitude
+  //y += line_height;
+  //pos1 = u8g2_GetUTF8Width(u8g2, "NGC 9999 ");
+  //if (cat_mgr.magnitude() < 18)
+  //{
+  //  sprintf(line, "mag %0.1f", (float)cat_mgr.magnitude());
+  //}
+  //u8g2_DrawUTF8(u8g2, 0, y, line);
+  //// Object icon if exist
+  ////switch (cat_mgr.objectType())
+  ////{
+  ////case 0:
+  ////case 5:
+  ////case 6:
+  ////case 7:
+  ////  u8g2_DrawXBMP(u8g2, pos1, y - GX_height, GX_width, GX_height, GX_bits);
+  ////  break;
+  ////case 8:
+  ////  u8g2_DrawXBMP(u8g2, pos1, y - GC_height, GC_width, GC_height, GC_bits);
+  ////  break;
+  ////case 1:
+  ////  u8g2_DrawXBMP(u8g2, pos1, y - OC_height, OC_width, OC_height, OC_bits);
+  ////  break;
+  ////case 9:
+  ////  u8g2_DrawXBMP(u8g2, pos1, y - PN_height, PN_width, PN_height, PN_bits);
+  ////  break;
+  ////case 10:
+  ////case 11:
+  ////case 13:
+  ////case 14:
+  ////case 15:
+  ////  u8g2_DrawXBMP(u8g2, pos1, y - EN_height, EN_width, EN_height, EN_bits);
+  ////default:
+  ////  break;
+  ////}
+
+  //// Object type text
+  //y += line_height;
+  //x = 0;
+  //u8g2_DrawUTF8(u8g2, x, y, cat_mgr.objectTypeStr());
 
   return line_height;
 }
@@ -243,16 +243,16 @@ bool ext_UserInterfaceCatalog2(u8g2_t *u8g2, Pad* extPad, const char *title)
         u8g2_DrawHLine(u8g2, 0, yy - line_height - u8g2_GetDescent(u8g2) + 1, u8g2_GetDisplayWidth(u8g2));
         yy += 3;
       }
-      ext_draw_catalog_list_line(u8g2, yy);
+      ext_draw_catalog_list_line2(u8g2, yy);
     } while (u8g2_NextPage(u8g2));
 
     for (;;) {
       event = ext_GetMenuEvent(extPad);
       if (event == U8X8_MSG_GPIO_MENU_SELECT || event == U8X8_MSG_GPIO_MENU_NEXT) return true; else
         if (event == U8X8_MSG_GPIO_MENU_HOME || event == U8X8_MSG_GPIO_MENU_PREV) return false; else
-          if (event == U8X8_MSG_GPIO_MENU_DOWN) { cat_mgr.incIndex(); break; }
+          if (event == U8X8_MSG_GPIO_MENU_DOWN) { cat_mgr2.incIndex(); break; }
           else
-            if (event == U8X8_MSG_GPIO_MENU_UP) { cat_mgr.decIndex(); break; }
+            if (event == U8X8_MSG_GPIO_MENU_UP) { cat_mgr2.decIndex(); break; }
     }
   }
 }

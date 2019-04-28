@@ -1,6 +1,6 @@
 // --------------------------------------------------------------------------------
 // Data for different catalogs, each is a collection of certain celestial objects
-// ** In this file is everything you need touch to add a new "catalog.h"         **
+// ** In this file is everything you need touch to add a new "TeenAstroCatalog.h"         **
 // ** file and use it within the SHC.                                            **
 
 // Simply include the catalog you want here and add a line for it in the section below, up to 64 catalogs are supported.

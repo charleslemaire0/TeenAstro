@@ -1,10 +1,11 @@
 #pragma once
 #include <U8g2lib.h>
-//#define OLDCAT
-#define NEWCAT
+#define OLDCAT
+//#define NEWCAT
 #ifdef OLDCAT
-#include "Catalog.h"
-#else if NEWCAT
+#include <TeenAstroCatalogOld.h>
+#endif
+#ifdef NEWCAT
 #include <TeenAstroCatalog.h>
 #endif
 
