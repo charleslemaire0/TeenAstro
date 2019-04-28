@@ -156,7 +156,7 @@ const char *Cat_Messier_SubId=
 " N205;";
 
 CAT_TYPES Cat_Messier_Type=CAT_DSO;
-const dso_t Cat_Messier[NUM_MESSIER] = {
+const dso_t Cat_Messier[NUM_MESSIER] PROGMEM = {
   { 1, 77, 15, 1,    1,   840,   5.5755,  22.0145 }, // M  001, Tau,   SNR,   8.40, 05:34:31, +22:00:5, NGC1952
   { 0,  4,  8, 1,    2,   625,  21.5575,  -0.8233 }, // M  002, Aqr,   GCl,   6.25, 21:33:27, -00:49:2, NGC7089
   { 0, 11,  8, 1,    3,   639,  13.7031,  28.3754 }, // M  003, CVn,   GCl,   6.39, 13:42:11, +28:22:3, NGC5272

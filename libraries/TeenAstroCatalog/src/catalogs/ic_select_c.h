@@ -12,7 +12,7 @@ const char *Cat_IC_Names="";
 const char *Cat_IC_SubId="A;B;A;B;A";
 
 CAT_TYPES Cat_IC_Type=CAT_DSO_COMP;
-const dso_comp_t Cat_IC[NUM_IC] = {
+const dso_comp_t Cat_IC[NUM_IC] PROGMEM = {
   { 0, 16,  0, 0,    10,   120,   923,  21591}, //  IC0010,     G, 00:20:17.34, +59:18:13.6, Cas,   9.50, (24.53)
   { 0, 66,  0, 0,    55,   255,  2353,   2810}, //  IC0055,     G, 00:51:42.39, +07:43:06.7, Psc,       , (22.14)
   { 0, 19,  0, 0,    93,   161,  3597,  -6211}, //  IC0093,     G, 01:19:02.34, -17:03:37.4, Cet,  13.57, (22.91)

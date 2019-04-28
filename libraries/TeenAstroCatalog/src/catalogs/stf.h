@@ -6826,7 +6826,7 @@ const char *Cat_STF_SubId=
 "BC;"
 ;
 CAT_TYPES Cat_STF_Type=CAT_DBL_STAR; 
-const dbl_star_t Cat_STF[NUM_STF] = {
+const dbl_star_t Cat_STF[NUM_STF] PROGMEM = {
 { 1,  0, 24, 0,    1,   99, 286, 1071,  891, 00.14764, 37.21542 },         //STF0001, 00h08m51.51s, +37o12'55.5", And
 { 1, 18, 24, 0,    2,    9,  17,  689,  668, 00.15561, 79.71456 },         //STF0002, 00h09m20.18s, +79o42'52.4", Cep
 { 1,  0, 24, 0,    3,   50,  83,  908,  784, 00.16755, 46.39031 },         //STF0003, 00h10m03.18s, +46o23'25.1", And

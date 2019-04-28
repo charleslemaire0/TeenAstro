@@ -953,7 +953,7 @@ const char *Cat_Collinder_SubId=
 " Cr444a;";
 
 CAT_TYPES Cat_Collinder_Type=CAT_DSO;
-const dso_t Cat_Collinder[NUM_COLLINDER] = {
+const dso_t Cat_Collinder[NUM_COLLINDER] PROGMEM = {
 	    { 1, 16, 1, 1,  1,   980,  0.4215, 61.32194},      //  Cr1, OC, 00h 25m 17.4s,  +61o 19' 19", 9.8v, Cas
 	    { 1, 16, 1, 1,  2,   650,  0.4984, 60.20972},      //  Cr2, OC, 00h 29m 54.1s,  +60o 12' 35", 6.5v, Cas
 	    { 1, 16, 1, 1,  3,   940,  0.5214, 63.35278},      //  Cr3, OC, 00h 31m 16.9s,  +63o 21' 10", 9.4v, Cas

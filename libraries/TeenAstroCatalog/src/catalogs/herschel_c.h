@@ -10,7 +10,7 @@ const char *Cat_Herschel_Names="";
 const char *Cat_Herschel_SubId="";
 
 CAT_TYPES Cat_Herschel_Type=CAT_DSO_COMP;
-const dso_comp_t Cat_Herschel[NUM_HERSCHEL] = {
+const dso_comp_t Cat_Herschel[NUM_HERSCHEL] PROGMEM = {
   { 0, 18,  9, 0,  40,  144,   593,  26404 },
   { 0, 16,  1, 0, 129,   90,  1364,  21922 },
   { 0, 16,  1, 0, 136,  255,  1434,  22394 },

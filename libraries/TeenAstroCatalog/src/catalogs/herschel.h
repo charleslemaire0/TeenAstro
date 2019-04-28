@@ -10,7 +10,7 @@ const char *Cat_Herschel_Names="";
 const char *Cat_Herschel_SubId="";
 
 CAT_TYPES Cat_Herschel_Type=CAT_DSO;
-const dso_t Cat_Herschel[NUM_HERSCHEL] = {
+const dso_t Cat_Herschel[NUM_HERSCHEL] PROGMEM = {
   { 0, 18,  9, 0,   40,  1189,    0.217,  72.5219 }, // H   40, Cep,    PN,  11.89, 00:13:01, +72:31:1, NGC0040
   { 0, 16,  1, 0,  129,   650,   0.4995,  60.2112 }, // H  129, Cas,   OCl,   6.50, 00:29:58, +60:12:4, NGC0129
   { 0, 16,  1, 0,  136,  9990,   0.5252,  61.5093 }, // H  136, Cas,   OCl,   99.9, 00:31:30, +61:30:3, NGC0136

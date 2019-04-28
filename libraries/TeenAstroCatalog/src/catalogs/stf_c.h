@@ -6826,7 +6826,7 @@ const char *Cat_STF_SubId=
 "BC;"
 ;
 CAT_TYPES Cat_STF_Type=CAT_DBL_STAR_COMP;
-const dbl_star_comp_t Cat_STF[NUM_STF] = {
+const dbl_star_comp_t Cat_STF[NUM_STF] PROGMEM = {
   { 1,  0,  24, 0,     1,    99,  286, 132, 114,   403,  13549 },
   { 1, 18,  24, 0,     2,     9,   17,  94,  92,   425,  29022 },
   { 1,  0,  24, 0,     3,    50,   83, 116, 103,   458,  16890 },

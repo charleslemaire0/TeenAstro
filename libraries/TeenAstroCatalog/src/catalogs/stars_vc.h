@@ -197,7 +197,7 @@ const char *Cat_Stars_Names=
 const char *Cat_Stars_SubId="";
 
 CAT_TYPES Cat_Stars_Type=CAT_GEN_STAR_VCOMP;
-const gen_star_vcomp_t Cat_Stars[NUM_STARS] = {
+const gen_star_vcomp_t Cat_Stars[NUM_STARS] PROGMEM = {
   { 1,  0,  0, 0,  46,   382,  10591 },
   { 1,  0,  1, 0,  46,  3174,  12969 },
   { 1,  0,  2, 0,  46,  5639,  15411 },

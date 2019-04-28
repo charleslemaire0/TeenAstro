@@ -165,7 +165,7 @@ const char *Cat_Caldwell_SubId=
 
 CAT_TYPES Cat_Caldwell_Type=CAT_DSO;
 
-const dso_t Cat_Caldwell[NUM_CALDWELL] = {
+const dso_t Cat_Caldwell[NUM_CALDWELL] PROGMEM = {
   { 0, 18,  1, 1,    1,   810,    0.791,  85.2696 }, // C    1, Cep,   OCl,   8.10, 00:47:27, +85:16:1, NGC0188
   { 1, 18,  9, 1,    2,  1189,    0.217,  72.5219 }, // C    2, Cep,    PN,  11.89, 00:13:01, +72:31:1, NGC0040
   { 0, 33,  0, 1,    3,  1008,  12.2784,  69.4626 }, // C    3, Dra,     G,  10.08, 12:16:42, +69:27:4, NGC4236

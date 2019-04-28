@@ -1220,7 +1220,7 @@ const char *Cat_STT_SubId=
 "AC;"
 ;
 CAT_TYPES Cat_STT_Type=CAT_DBL_STAR; 
-const dbl_star_t Cat_STT[NUM_STT] = {
+const dbl_star_t Cat_STT[NUM_STT] PROGMEM = {
 { 1, 16, 24, 0,    1,   16, 212,  947,  745, 00.19734, 66.12633 },         //STT0001, 00h11m50.44s, +66o07'34.8", Cas
 { 1,  0, 24, 1,    2,    4, 157,  767,  677, 00.22331, 26.98761 },         //STT0002AB, 00h13m23.93s, +26o59'15.4", And
 { 1,  0, 24, 1,    2,  180, 224, 1037,  630, 00.22331, 26.98761 },         //STT0002AB,C, 00h13m23.93s, +26o59'15.4", And

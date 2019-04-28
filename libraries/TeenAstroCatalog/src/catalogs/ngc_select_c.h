@@ -13,7 +13,7 @@ const char *Cat_NGC_SubId="A;A;B;A;A;B;A;B;A;A;A;A;A;B;A;A;A;A;B;C;A;A;B;A;A;B;B
                           "A;B;A;A;D;B;A;A;A;A;B;A;A;B;A;A;A;A;A;D;A;A;B;B;D;B;A;A;A;B;A;A;A;B;B;A";
 
 CAT_TYPES Cat_NGC_Type=CAT_DSO_COMP;
-const dso_comp_t Cat_NGC[NUM_NGC] = {
+const dso_comp_t Cat_NGC[NUM_NGC] PROGMEM = {
   { 0, 61,  3, 0,     8,   178,   398,   8679}, // NGC0008,    **, 00:08:45.30, +23:50:20.0, Peg,  15.32, ()
   { 0, 61,  0, 0,    14,   255,   399,   5758}, // NGC0014,     G, 00:08:46.40, +15:48:56.0, Peg,       , (22.31)
   { 0, 61,  0, 0,    16,   146,   413,  10096}, // NGC0016,     G, 00:09:04.29, +27:43:45.9, Peg,  12.06, (22.91)

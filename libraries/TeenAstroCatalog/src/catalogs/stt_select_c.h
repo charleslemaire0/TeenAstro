@@ -190,7 +190,7 @@ const char *Cat_STT_SubId=
 "AC;"
 ;
 CAT_TYPES Cat_STT_Type=CAT_DBL_STAR_COMP; 
-const dbl_star_comp_t Cat_STT[NUM_STT] = {
+const dbl_star_comp_t Cat_STT[NUM_STT] PROGMEM = {
   { 1,  0,  24, 1,     2,     4,  157, 102,  93,   610,   9826 },
   { 1,  0,  24, 0,    11,  1966,  317, 102, 101,  1396,  11700 },
   { 1, 16,  10, 0,    12,     2,  210,  81,  78,  1446,  19850 },

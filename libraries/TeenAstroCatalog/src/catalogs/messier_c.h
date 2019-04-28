@@ -156,7 +156,7 @@ const char *Cat_Messier_SubId=
 " N205;";
 
 CAT_TYPES Cat_Messier_Type=CAT_DSO_COMP;
-const dso_comp_t Cat_Messier[NUM_MESSIER] = {
+const dso_comp_t Cat_Messier[NUM_MESSIER] PROGMEM = {
   { 1, 77, 15, 1,   1,  109, 15225,   8015 },
   { 0,  4,  8, 1,   2,   88, 58866,   -300 },
   { 0, 11,  8, 1,   3,   89, 37419,  10331 },

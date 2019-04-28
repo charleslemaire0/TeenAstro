@@ -4511,7 +4511,7 @@ const char *Cat_GCVS_SubId=""
 "0989308953;"
 ;
 CAT_TYPES Cat_GCVS_Type=CAT_VAR_STAR; 
-const var_star_t Cat_GCVS[NUM_GCVS] = {
+const var_star_t Cat_GCVS[NUM_GCVS] PROGMEM = {
 { 1,  0, 24, 0,    1,  4992, 1520,  580, 00.40054, 38.57703 },         //R     And , 00h24m01.95s, +38d34m37.3s
 { 1,  0, 24, 0,    2, 32767, 1600,  580, 00.71197, 41.26806 },         //S     And , 00h42m43.1 s, +41d16m05. s
 { 1,  0, 24, 0,    3,  3710, 1450,  770, 00.37310, 26.99606 },         //T     And , 00h22m23.15s, +26d59m45.8s

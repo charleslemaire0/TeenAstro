@@ -197,7 +197,7 @@ const char *Cat_Stars_Names=
 const char *Cat_Stars_SubId="";
 
 CAT_TYPES Cat_Stars_Type=CAT_GEN_STAR;
-const gen_star_t Cat_Stars[NUM_STARS] = {
+const gen_star_t Cat_Stars[NUM_STARS] PROGMEM = {
   { 1,  0,  0, 0, 0,   206,    0.1398,   29.0904 }, // alp And,   2.07, 00:08:23.26, +29:05:25.6, Alpheratz
   { 1,  0,  1, 0, 0,   206,    1.1622,   35.6206 }, // bet And,   2.07, 01:09:43.93, +35:37:14.0, Mirach
   { 1,  0,  2, 0, 0,   210,     2.065,   42.3298 }, // gam And,    2.1, 02:03:53.95, +42:19:47.1, Almach

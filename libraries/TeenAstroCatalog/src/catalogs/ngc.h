@@ -21,7 +21,7 @@ const char *Cat_NGC_SubId=
 "C;B;A;A;A;B;A;A;A;B;A;A;B;A;B;C;A;B;A;A;A";
 
 CAT_TYPES Cat_NGC_Type=CAT_DSO;
-const dso_t Cat_NGC[NUM_NGC] = {
+const dso_t Cat_NGC[NUM_NGC] PROGMEM = {
   { 0, 61,  0, 0,     1,  9990,   0.12107,  27.70808}, // NGC0001,     G, 00:07:15.84, +27:42:29.1, Peg,       
   { 0, 61,  0, 0,     2,  9990,   0.12142,  27.67836}, // NGC0002,     G, 00:07:17.11, +27:40:42.1, Peg,       
   { 0, 66,  0, 0,     3,  9990,   0.12133,   8.30164}, // NGC0003,     G, 00:07:16.80, +08:18:05.9, Psc,       

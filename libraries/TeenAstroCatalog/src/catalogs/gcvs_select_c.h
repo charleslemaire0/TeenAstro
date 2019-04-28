@@ -649,7 +649,7 @@ const char *Cat_GCVS_SubId=
 ;
 
 CAT_TYPES Cat_GCVS_Type=CAT_VAR_STAR_COMP; 
-const var_star_comp_t Cat_GCVS[NUM_GCVS] = {
+const var_star_comp_t Cat_GCVS[NUM_GCVS] PROGMEM = {
   { 1,  0,  24, 0,    11,  2260, 119,  95, 65325,  17708 },
   { 1,  0,  24, 0,    33, 32767, 118, 105, 65120,  17297 },
   { 1,  0,  24, 0,    37,  2900, 124, 107,  6985,  16622 },

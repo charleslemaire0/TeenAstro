@@ -165,7 +165,7 @@ const char *Cat_Caldwell_SubId=
 " N3195;";
 
 CAT_TYPES Cat_Caldwell_Type=CAT_DSO_COMP;
-const dso_comp_t Cat_Caldwell[NUM_CALDWELL] = {
+const dso_comp_t Cat_Caldwell[NUM_CALDWELL] PROGMEM = {
   { 0, 18,  1, 1,   1,  106,  2160,  31045 },
   { 1, 18,  9, 1,   2,  144,   593,  26404 },
   { 0, 33,  0, 1,   3,  126, 33528,  25290 },
