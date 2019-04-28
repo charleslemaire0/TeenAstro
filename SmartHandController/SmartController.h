@@ -57,18 +57,23 @@ private:
   void menuTelAction();
   void menuSpeedRate();
   void menuTrack();
-  void menuCatalog(bool sync);
+#ifdef OLDCAT
   void menuSyncGoto(bool sync);
   void menuSolarSys(bool sync);
   void menuHerschel(bool sync);
   void menuNGC(bool sync);
   void menuIC(bool sync);
   void menuMessier(bool sync);
-  void menuAlignment();
-  void menuPier();
   void menuStar(bool sync);
-  bool SelectStarAlign();
   void menuRADec(bool sync);
+  void menuPier();
+#endif
+
+  void menuAlignment();
+
+
+  bool SelectStarAlign();
+
   void menuTelSettings();
   void menuTimeAndSite();
   void menuDateAndTime();
