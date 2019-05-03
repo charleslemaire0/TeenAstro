@@ -71,3 +71,6 @@ TeenAstoMainUnit/TeenAstro2.0/TeenAstro2.0.vcxproj.filters
 TeenAstoMainUnit/TeenAstro1.0/TeenAstro1.0.vcxproj.filters
 TeenAstoMainUnit/TeenAstro1.0/TeenAstro1.0.vcxproj
 Release
+bin
+obj
+CatalogConverter/CatConv/.vs/CatConv/v14/.suo
