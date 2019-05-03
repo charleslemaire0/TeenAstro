@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #include <Ephemeris.h>
 #include <TeenAstroLX200io.h>
-#define OLDCAT
-//#define NEWCAT
+//#define OLDCAT
+#define NEWCAT
 
 #ifdef OLDCAT
 #include <TeenAstroCatalogOld.h>

@@ -1,7 +1,8 @@
 ﻿#pragma once
 #include <Arduino.h>
-
+#define NUM_CAT 9
 const double Rad=57.29577951;
+
 
 const unsigned int FM_NONE           = 0;
 const unsigned int FM_ABOVE_HORIZON  = 1;
@@ -29,7 +30,7 @@ class CatMgr {
     double      lstHours();
 
 // catalog selection
-    int         numCatalogs();
+
     void        select(int cat);
     CAT_TYPES   catalogType();
 
@@ -112,12 +113,13 @@ private:
     int _fm_obj_type=0;
     double _fm_mag_limit=100.0;
     double _fm_nearby_dist=10000.0;
+    double _fm_horizon_limit=0;
     double _fm_dbl_min=0.0;
     double _fm_dbl_max=100000.0;
     double _fm_var_max=100000.0;
     
     int _selected=0;
-
+    void read();
     bool isFiltered();
 
     const char* getElementFromString(const char *data, long elementNum);
@@ -130,4 +132,4 @@ private:
     double cot(double n);
 };
 
-extern CatMgr cat_mgr2;
+extern CatMgr cat_mgr;

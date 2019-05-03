@@ -545,7 +545,7 @@ void SmartHandController::update()
 void SmartHandController::updateMainDisplay(u8g2_uint_t page)
 {
   u8g2_t *u8g2 = display->getU8g2();
-  display->setFont(u8g2_font_helvR12_te);
+  display->setFont(u8g2_font_helvR12_tf);
   u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
   u8g2_uint_t step1 = u8g2_GetUTF8Width(u8g2, "44");
   u8g2_uint_t step2 = u8g2_GetUTF8Width(u8g2, "4") + 1;
@@ -1083,7 +1083,7 @@ void SmartHandController::menuTelAction()
         menuTrack();
         break;
       case 4:
-        menuPier();
+        //menuPier();
         break;
       case 5:
         telescoplocked = !telescoplocked;
@@ -2718,7 +2718,7 @@ void SmartHandController::DisplayLongMessage(const char* txt1, const char* txt2,
         break;
     }
   }
-  display->setFont(u8g2_font_helvR12_te);
+  display->setFont(u8g2_font_helvR12_tf);
 }
 
 bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)

@@ -68,6 +68,33 @@ private:
   void menuRADec(bool sync);
   void menuPier();
 #endif
+#ifdef NEWCAT
+  enum MENU_RESULT { MR_OK, MR_CANCEL, MR_QUIT };
+  bool    current_selection_filter_above = true;
+  uint8_t current_selection_filter_con = 1;
+  uint8_t current_selection_filter_horizon = 1;
+  uint8_t current_selection_filter_type = 1;
+  uint8_t current_selection_filter_byMag = 1;
+  uint8_t current_selection_filter_nearby = 1;
+  uint8_t current_selection_filter_dblmin = 1;
+  uint8_t current_selection_filter_dblmax = 1;
+  uint8_t current_selection_filter_varmax = 1;
+  MENU_RESULT menuSyncGoto(bool sync);
+  MENU_RESULT subMenuSyncGoto(char sync, int subMenuNum);
+  MENU_RESULT menuCatalog(bool sync, int number);
+  MENU_RESULT menuSolarSys(bool sync);
+  MENU_RESULT menuFilters();
+  void setCatMgrFilters();
+  MENU_RESULT menuFilterCon();
+  MENU_RESULT menuFilterHorizon();
+  MENU_RESULT menuFilterType();
+  MENU_RESULT menuFilterByMag();
+  MENU_RESULT menuFilterNearby();
+  MENU_RESULT menuFilterDblMinSep();
+  MENU_RESULT menuFilterDblMaxSep();
+  MENU_RESULT menuFilterVarMaxPer();
+  MENU_RESULT menuRADec(bool sync);
+#endif
 
   void menuAlignment();
 

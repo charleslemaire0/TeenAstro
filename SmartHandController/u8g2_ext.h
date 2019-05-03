@@ -1,7 +1,7 @@
 #pragma once
 #include <U8g2lib.h>
-#define OLDCAT
-//#define NEWCAT
+//#define OLDCAT
+#define NEWCAT
 #ifdef OLDCAT
 #include <TeenAstroCatalogOld.h>
 #endif

@@ -1,18 +1,20 @@
 // SyncGoto menu
 
-MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
+
+
+SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
 {
   static int current_selection = 1;
 
   while (true) {
     // build the list of star/dso catalogs
-    char string_list_gotoL1[60+cat_mgr.numCatalogs()*10]="";
-    int  catalog_index[cat_mgr.numCatalogs()];
+    char string_list_gotoL1[60+NUM_CAT*10]="";
+    int  catalog_index[NUM_CAT];
     int  catalog_index_count=0;
     char title[16]="";
     char thisSubmenu[16]="";
     char lastSubmenu[16]="";
-    for (int i=1; i<=cat_mgr.numCatalogs(); i++) {
+    for (int i=1; i<= NUM_CAT; i++) {
       cat_mgr.select(i-1);
       strcpy(title,cat_mgr.catalogTitle());
       strcpy(lastSubmenu,thisSubmenu);
@@ -22,7 +24,7 @@ MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
       if (strlen(thisSubmenu)>0) {
         if ((strlen(thisSubmenu)==strlen(lastSubmenu)) && (strstr(thisSubmenu,lastSubmenu))) duplicate=true;
       }
-      if ((!duplicate) && (strlen(thisSubmenu)>0)) { strcpy(title,thisSubmenu); strcat(title,">"); }
+      if ((!duplicate) && (strlen(thisSubmenu)>0)) { strcpy(title,thisSubmenu); /*strcat(title,">");*/ }
 
       // add it to the list (if it isn't a duplicate)
       if (!duplicate) {
@@ -31,7 +33,7 @@ MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
       }
     }
     // add the normal filtering, solarsys, etc. items
-    strcat(string_list_gotoL1,"User>\nSolar System>\nFilters \xa5\nCoordinates\nHome");
+    strcat(string_list_gotoL1,"Solar System\nFilters\nCoordinates\nHome");
 
     int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync" : "Goto", current_selection, string_list_gotoL1);
     if (selection == 0) return MR_CANCEL;
@@ -43,49 +45,40 @@ MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
     } else
     switch (current_selection-catalog_index_count) {
       case 1:
-        if (menuUser(sync)==MR_QUIT) return MR_QUIT;
-        break;
-      case 2:
         if (menuSolarSys(sync)==MR_QUIT) return MR_QUIT;
         break;
-      case 3:
+      case 2:
         menuFilters();
         break;
-      case 4:
+      case 3:
         if (menuRADec(sync)==MR_QUIT) return MR_QUIT;
         break;
-      case 5:
+      case 4:
       {
-        boolean GotoHome=false; 
-        DisplayMessage("Goto Home will", "clear the Model", 2000);
-        if (display->UserInterfaceInputValueBoolean(&buttonPad, "Goto Home?", &GotoHome)) {
-          if (GotoHome) {
-            char cmd[5];
-            sprintf(cmd, ":hX#");
-            cmd[2] = sync ? 'F' : 'C';
-            if (SetLX200(cmd) == LX200VALUESET) DisplayMessage(sync ? "Reset at" : "Goto", " Home Position", -1);
-            return MR_QUIT;
-          }
-        }
+        char cmd[5];
+        sprintf(cmd, ":hX#");
+        cmd[2] = sync ? 'F' : 'C';
+        if (SetLX200(cmd) == LX200VALUESET) DisplayMessage(sync ? "Reset at" : "Goto", " Home Position", -1);
+        return MR_QUIT;
       }
     }
   }
 }
 
-MENU_RESULT SmartHandController::subMenuSyncGoto(char sync, int subMenuNum)
+SmartHandController::MENU_RESULT SmartHandController::subMenuSyncGoto(char sync, int subMenuNum)
 {
   static uint8_t current_selection[64] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
 
   while (true) {
     // build the list of star/dso catalogs
-    char string_list_gotoL1[60+cat_mgr.numCatalogs()*10]="";
-    int  catalog_index[cat_mgr.numCatalogs()];
+    char string_list_gotoL1[60+ NUM_CAT *10]="";
+    int  catalog_index[NUM_CAT];
     int  catalog_index_count=0;
     char title[16]="";
     char lastSubmenu[16]="";
     char thisSubmenu[16]="";
     // build the list of subMenu catalogs
-    for (int i=subMenuNum; i<cat_mgr.numCatalogs(); i++) {
+    for (int i=subMenuNum; i<NUM_CAT; i++) {
       cat_mgr.select(i);
       strcpy(title,cat_mgr.catalogTitle());
       if (i==subMenuNum) strcpy(lastSubmenu,cat_mgr.catalogSubMenu()); else strcpy(lastSubmenu,thisSubmenu);
@@ -108,18 +101,25 @@ MENU_RESULT SmartHandController::subMenuSyncGoto(char sync, int subMenuNum)
     if (selection == 0) return MR_CANCEL;
     current_selection[subMenuNum]=selection;
     
-    if (current_selection[subMenuNum]<=cat_mgr.numCatalogs()) {
+    if (current_selection[subMenuNum]<= NUM_CAT) {
       int catalogNum=catalog_index[current_selection[subMenuNum]-1];
-      if ((catalogNum>=0) && (catalogNum<cat_mgr.numCatalogs())) {
+      if ((catalogNum>=0) && (catalogNum< NUM_CAT)) {
         if (menuCatalog(sync,catalogNum)==MR_QUIT) return MR_QUIT;
       }
     }
   }
 }
 
-MENU_RESULT SmartHandController::menuCatalog(bool sync, int number)
+SmartHandController::MENU_RESULT SmartHandController::menuCatalog(bool sync, int number)
 {
-  if (!cat_mgr.isInitialized()) { cat_mgr.setLat(telInfo.getLat()); cat_mgr.setLstT0(telInfo.getLstT0()); }
+  if (!cat_mgr.isInitialized()) {
+    double lat, LT0;
+    if (ta_MountStatus.getLat(lat) && ta_MountStatus.getLstT0(LT0))
+    {
+    cat_mgr.setLat(lat);
+    cat_mgr.setLstT0(LT0); }
+    }
+
   cat_mgr.select(number);
 
   char title[20]; if (sync) strcpy(title,"Sync "); else strcpy(title,"Goto "); strcat(title,cat_mgr.catalogTitle());
@@ -135,7 +135,7 @@ MENU_RESULT SmartHandController::menuCatalog(bool sync, int number)
   return MR_CANCEL;
 }
 
-MENU_RESULT SmartHandController::menuSolarSys(bool sync)
+SmartHandController::MENU_RESULT SmartHandController::menuSolarSys(bool sync)
 {
   static int current_selection = 1;
   if (current_selection<1) current_selection=1;
@@ -145,64 +145,18 @@ MENU_RESULT SmartHandController::menuSolarSys(bool sync)
   if (current_selection == 0) return MR_CANCEL;
 
   if (current_selection>3) current_selection++;
-  if (current_selection == 1)
-  { 
-    DisplayMessage("Pointing at the Sun", "can be dangerous", 2000);
-    boolean GotoSun=false;
-    if (display->UserInterfaceInputValueBoolean(&buttonPad, "Goto Sun?", &GotoSun)) { if (!GotoSun) return MR_CANCEL; } else return MR_CANCEL;
-  }
+  //if (current_selection == 1)
+  //{ 
+  //  DisplayMessage("Pointing at the Sun", "can be dangerous", 2000);
+  //  boolean GotoSun=false;
+  //  if (display->UserInterfaceInputValueBoolean(&buttonPad, "Goto Sun?", &GotoSun)) { if (!GotoSun) return MR_CANCEL; } else return MR_CANCEL;
+  //}
 
   if (DisplayMessageLX200(SyncGotoPlanetLX200(sync, current_selection-1),false)) return MR_QUIT;
   return MR_CANCEL;
 }
 
-MENU_RESULT SmartHandController::menuUser(bool sync)
-{
-  static int current_selection_UserCatalog = 1;
-  if (current_selection_UserCatalog<1) current_selection_UserCatalog=1;
-
-  char string_list_UserCatalogs[240] = "";
-
-  // read user catalogs names into a list
-  int userCatalog[15];
-  int i=0;
-  char temp[10];
-  char temp1[500];
-  for (int l=0; l<=14; l++) {
-    strcpy(temp,":Lo0#"); temp[3]=l+'0';
-    SetLX200(temp);
-    SetLX200(":L$#");
-    GetLX200(":LI#",temp1);
-    
-    int len = strlen(temp1);
-    if (len>4) temp1[len-5]=0;
-    if (temp1[0]==0) continue;
-
-    if (l!=0) strcat(string_list_UserCatalogs,"\n");
-    strcat(string_list_UserCatalogs,(char*)(&temp1[1]));
-    userCatalog[i++]=l;
-  }
-
-  // no catalogs found, just exit
-  if (i<=0) { DisplayMessage("Select User Cat", "No Catalogs", 2000); return MR_OK; }
-
-  int last_selection_UserCatalog = current_selection_UserCatalog;
-  while (true) {
-    current_selection_UserCatalog = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync User" : "Goto User", current_selection_UserCatalog, string_list_UserCatalogs);
-    if (current_selection_UserCatalog==0) { current_selection_UserCatalog=last_selection_UserCatalog; return MR_CANCEL; }
-
-    // select this user catalog
-    strcpy(temp,":Lo0#"); temp[3]=userCatalog[current_selection_UserCatalog-1]+'0';
-    SetLX200(temp);
-
-    // show the catalog objects
-    if (display->UserInterfaceUserCatalog(&buttonPad, sync ? "Sync User Item" : "Goto User Item")) {
-      if (DisplayMessageLX200(SetLX200(":LIG#"))) return MR_QUIT;
-    }
-  }
-}
-
-MENU_RESULT SmartHandController::menuFilters()
+SmartHandController::MENU_RESULT SmartHandController::menuFilters()
 {
   static int current_selection = 1;
   current_selection = 1;
@@ -217,8 +171,8 @@ MENU_RESULT SmartHandController::menuFilters()
     strcat(string_list_Filters,"\n"); strcat(string_list_Filters,s); strcat(string_list_Filters,"Type"); strcat(string_list_Filters,s);
     if (current_selection_filter_byMag>1) strcpy(s,"\xb7"); else strcpy(s,"");
     strcat(string_list_Filters,"\n"); strcat(string_list_Filters,s); strcat(string_list_Filters,"Magnitude"); strcat(string_list_Filters,s);
-    if (current_selection_filter_nearby>1) strcpy(s,"\xb7"); else strcpy(s,"");
-    strcat(string_list_Filters,"\n"); strcat(string_list_Filters,s); strcat(string_list_Filters,"Nearby"); strcat(string_list_Filters,s);
+  /*  if (current_selection_filter_nearby>1) strcpy(s,"\xb7"); else strcpy(s,"");
+    strcat(string_list_Filters,"\n"); strcat(string_list_Filters,s); strcat(string_list_Filters,"Nearby"); strcat(string_list_Filters,s);*/
     if (cat_mgr.hasVarStarCatalog()) {
       if (current_selection_filter_varmax>1) strcpy(s,"\xb7"); else strcpy(s,"");
       strcat(string_list_Filters,"\n"); strcat(string_list_Filters,s); strcat(string_list_Filters,"Var* Max Per."); strcat(string_list_Filters,s);
@@ -240,9 +194,7 @@ MENU_RESULT SmartHandController::menuFilters()
         DisplayMessage("Filters", "Reset", 1000);
       break;
       case 2:
-        if (display->UserInterfaceInputValueBoolean(&buttonPad, "Above Only?", &current_selection_filter_above)) {
-          if (current_selection_filter_above) DisplayMessage("Filter", "On", 1000); else DisplayMessage("Filter", "Off", 1000);
-        }
+        return menuFilterHorizon();
       break;
       case 3:
         return menuFilterCon();
@@ -253,16 +205,16 @@ MENU_RESULT SmartHandController::menuFilters()
       case 5:
         return menuFilterByMag();
       break;
+      //case 6:
+      //  return menuFilterNearby();
+      //break;
       case 6:
-        return menuFilterNearby();
-      break;
-      case 7:
         if (cat_mgr.hasVarStarCatalog()) return menuFilterVarMaxPer(); else { if (cat_mgr.hasDblStarCatalog()) return menuFilterDblMinSep(); }
       break;
-      case 8:
+      case 7:
         if (cat_mgr.hasVarStarCatalog()) { if (cat_mgr.hasDblStarCatalog()) return menuFilterDblMinSep(); } else { if (cat_mgr.hasDblStarCatalog()) return menuFilterDblMaxSep(); }
       break;
-      case 9:
+      case 8:
         if (cat_mgr.hasVarStarCatalog()) { if (cat_mgr.hasDblStarCatalog()) return menuFilterDblMaxSep(); }
       break;
     }
@@ -273,23 +225,23 @@ void SmartHandController::setCatMgrFilters()
 {
   cat_mgr.filtersClear();
   
-  if (current_selection_filter_above)   cat_mgr.filterAdd(FM_ABOVE_HORIZON);
+  if (current_selection_filter_above)   cat_mgr.filterAdd(FM_ABOVE_HORIZON, current_selection_filter_horizon-2);
   if (current_selection_filter_con>1)   cat_mgr.filterAdd(FM_CONSTELLATION,current_selection_filter_con-2);
   if (current_selection_filter_type>1)  cat_mgr.filterAdd(FM_OBJ_TYPE,current_selection_filter_type-2);
   if (current_selection_filter_byMag>1) cat_mgr.filterAdd(FM_BY_MAG,current_selection_filter_byMag-2);
-  if (current_selection_filter_nearby>1) { 
-    double r,d;
-    if (telInfo.getRA(r) && telInfo.getDec(d)) {
-      cat_mgr.setLastTeleEqu(r,d);
-      cat_mgr.filterAdd(FM_NEARBY,current_selection_filter_nearby-2);
-    } else current_selection_filter_nearby=1;
-  }
+  //if (current_selection_filter_nearby>1) { 
+  //  double r,d;
+  //  if (ta_MountStatus.getRA(r) && ta_MountStatus.getDec(d)) {
+  //    cat_mgr.setLastTeleEqu(r,d);
+  //    cat_mgr.filterAdd(FM_NEARBY,current_selection_filter_nearby-2);
+  //  } else current_selection_filter_nearby=1;
+  //}
   if (current_selection_filter_dblmin>1) cat_mgr.filterAdd(FM_DBL_MIN_SEP,current_selection_filter_dblmin-2);
   if (current_selection_filter_dblmax>1) cat_mgr.filterAdd(FM_DBL_MAX_SEP,current_selection_filter_dblmax-2);
   if (current_selection_filter_varmax>1) cat_mgr.filterAdd(FM_VAR_MAX_PER,current_selection_filter_varmax-2);
 }
 
-MENU_RESULT SmartHandController::menuFilterCon()
+SmartHandController::MENU_RESULT SmartHandController::menuFilterCon()
 {
   char string_list_fCon[1000]="";
   for (int l=0; l<89; l++) {
@@ -302,7 +254,7 @@ MENU_RESULT SmartHandController::menuFilterCon()
   return MR_OK;
 }
 
-MENU_RESULT SmartHandController::menuFilterType()
+SmartHandController::MENU_RESULT SmartHandController::menuFilterType()
 {
   char string_list_fType[500]="";
   for (int l=0; l<22; l++) {
@@ -315,9 +267,18 @@ MENU_RESULT SmartHandController::menuFilterType()
   return MR_OK;
 }
 
-MENU_RESULT SmartHandController::menuFilterByMag()
+SmartHandController::MENU_RESULT SmartHandController::menuFilterHorizon()
 {
-  const char* string_list_fMag="All\n" "10th 1.6\"/40mm\n" "12th   3\"/ 80mm\n" "13th  4\"/100mm\n" "14th  7\"/180mm\n" "15th 12\"/300mm\n" "16th 17\"/430mm\n" "17th 22\"/560mm";
+  const char* string_list_fHorizon="Above Horizon\nAbove 10 deg\nAbove 20 deg\nAbove 30 deg\nAbove 40 deg\nAbove 50 deg\nAbove 60 deg\nAbove 70 deg";
+  int last_selection_filter_horizon = current_selection_filter_nearby;
+  current_selection_filter_horizon = display->UserInterfaceSelectionList(&buttonPad, "Filter Horizon", current_selection_filter_horizon, string_list_fHorizon);
+  if (current_selection_filter_nearby == 0) { current_selection_filter_nearby=last_selection_filter_horizon; return MR_CANCEL; }
+  return MR_OK;
+}
+
+SmartHandController::MENU_RESULT SmartHandController::menuFilterByMag()
+{
+  const char* string_list_fMag="All\n" "10th\n" "12th\n" "13th\n" "14th\n" "15th\n" "16th\n" "17th";
   int last_selection_filter_byMag = current_selection_filter_byMag;
 
   current_selection_filter_byMag = display->UserInterfaceSelectionList(&buttonPad, "Filter Magnitude", current_selection_filter_byMag, string_list_fMag);
@@ -325,16 +286,16 @@ MENU_RESULT SmartHandController::menuFilterByMag()
   return MR_OK;
 }
 
-MENU_RESULT SmartHandController::menuFilterNearby()
+SmartHandController::MENU_RESULT SmartHandController::menuFilterNearby()
 {
-  const char* string_list_fNearby="Off\nWithin  1°\nWithin  5°\nWithin 10°\nWithin 15°";
+  const char* string_list_fNearby="Off\nWithin  1\xb0\nWithin  5\xb0\nWithin 10\xb0\nWithin 15\xb0";
   int last_selection_filter_nearby = current_selection_filter_nearby;
   current_selection_filter_nearby = display->UserInterfaceSelectionList(&buttonPad, "Filter Nearby", current_selection_filter_nearby, string_list_fNearby);
   if (current_selection_filter_nearby == 0) { current_selection_filter_nearby=last_selection_filter_nearby; return MR_CANCEL; }
   return MR_OK;
 }
 
-MENU_RESULT SmartHandController::menuFilterDblMinSep()
+SmartHandController::MENU_RESULT SmartHandController::menuFilterDblMinSep()
 {
   const char* string_list_fDblMin="Off\nMin 0.2\"\nMin 0.5\"\nMin 1.0\"\nMin 1.5\"\nMin 2.0\"\nMin 3.0\"\nMin 5.0\"\nMin 10\"\nMin 20\"\nMin 50\"";
   int last_selection_filter_dblmin = current_selection_filter_dblmin;
@@ -352,7 +313,7 @@ MENU_RESULT SmartHandController::menuFilterDblMinSep()
   return MR_OK;
 }
 
-MENU_RESULT SmartHandController::menuFilterDblMaxSep()
+SmartHandController::MENU_RESULT SmartHandController::menuFilterDblMaxSep()
 {
   const char* string_list_fDblMax="Off\nMax 0.5\"\nMax 1.0\"\nMax 1.5\"\nMax 2.0\"\nMax 3.0\"\nMax 5.0\"\nMax 10\"\nMax 20\"\nMax 50\"\nMax 100\"";
   int last_selection_filter_dblmax = current_selection_filter_dblmax;
@@ -369,7 +330,7 @@ MENU_RESULT SmartHandController::menuFilterDblMaxSep()
   return MR_OK;
 }
 
-MENU_RESULT SmartHandController::menuFilterVarMaxPer()
+SmartHandController::MENU_RESULT SmartHandController::menuFilterVarMaxPer()
 {
   const char* string_list_fVarMax="Off\nMax 0.5 days\nMax 1.0 days\nMax 2.0 days\nMax 5.0 days\nMax 10 days\nMax 20 days\nMax 50 days\nMax 100 days";
   int last_selection_filter_varmax = current_selection_filter_varmax;
@@ -378,7 +339,7 @@ MENU_RESULT SmartHandController::menuFilterVarMaxPer()
   return MR_OK;
 }
 
-MENU_RESULT SmartHandController::menuRADec(bool sync)
+SmartHandController::MENU_RESULT SmartHandController::menuRADec(bool sync)
 {
   if (display->UserInterfaceInputValueRA(&buttonPad, &angleRA))
   {

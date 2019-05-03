@@ -11,6 +11,12 @@ void gethms(const long& v, uint8_t& v1, uint8_t& v2, uint8_t& v3)
   v1 = v / 3600;
 }
 
+void secondsToFloat(const long& v, float& f)
+{
+  f = (double)v / 3600.0;
+}
+
+
 void getdms(const long& v, short& v1, uint8_t& v2, uint8_t& v3)
 {
   v3 = abs(v) % 60;
