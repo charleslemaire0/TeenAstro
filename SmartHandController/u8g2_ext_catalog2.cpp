@@ -350,7 +350,7 @@ bool ext_UserInterfaceCatalog2(u8g2_t *u8g2, Pad* extPad, const char *title)
 {
   u8g2_SetFont(u8g2, u8g2_font_helvR10_tf);
   u8g2_uint_t yy;
-
+  int incr = 0;
   uint8_t event;
   CATALOG_DISPLAY_MODES thisDisplayMode = DM_INFO;
 
@@ -373,32 +373,44 @@ bool ext_UserInterfaceCatalog2(u8g2_t *u8g2, Pad* extPad, const char *title)
       firstPass = false;
     } while (u8g2_NextPage(u8g2));
 
-#ifdef U8G2_REF_MAN_PIC
-    return 0;
-#endif
-
-    int scrollSpeed;
-    if (cat_mgr.getMaxIndex() > 1000) scrollSpeed = 20; else scrollSpeed = 2;
-
     for (;;) {
       event = ext_GetMenuEvent(extPad);
-      if (event == U8X8_MSG_GPIO_MENU_SELECT || event == U8X8_MSG_GPIO_MENU_NEXT) return true; else
-        if (event == U8X8_MSG_GPIO_MENU_HOME) { thisDisplayMode = (CATALOG_DISPLAY_MODES)((int)thisDisplayMode + 1); if (thisDisplayMode > DM_HOR_COORDS) thisDisplayMode = DM_INFO; break; }
-      if (event == U8X8_MSG_GPIO_MENU_PREV) return false; else
-        if (event == U8X8_MSG_GPIO_MENU_DOWN) { cat_mgr.incIndex(); break; }
-        else
-          /* if (event == MSG_MENU_DOWN_FAST) { for (int i = 0; i<scrollSpeed; i++) cat_mgr.incIndex(); break; }
-           else*/
-          if (event == U8X8_MSG_GPIO_MENU_UP) { cat_mgr.decIndex(); break; }
-      /*  else
-          if (event == MSG_MENU_UP_FAST) { for (int i = 0; i<scrollSpeed; i++) cat_mgr.decIndex(); break; }
-*/
-// auto-refresh display
+      if (event == U8X8_MSG_GPIO_MENU_SELECT || event == U8X8_MSG_GPIO_MENU_NEXT) return true;
+      else if (event == U8X8_MSG_GPIO_MENU_HOME)
+      {
+        thisDisplayMode = (CATALOG_DISPLAY_MODES)((int)thisDisplayMode + 1);
+        if (thisDisplayMode > DM_HOR_COORDS) thisDisplayMode = DM_INFO; break;
+      }
+      else if (event == U8X8_MSG_GPIO_MENU_PREV) return false;
+      else if (event == U8X8_MSG_GPIO_MENU_DOWN)
+      {
+        for (int k = 0; k < incr/100 + 1; k++)
+        {
+          cat_mgr.incIndex();
+        }
+        if (cat_mgr.getMaxIndex() > 1000) incr = min(500,incr+1);
+        break;
+      }
+      else if (event == U8X8_MSG_GPIO_MENU_UP)
+      {
+        for (int k = 0; k < incr/100 + 1; k++)
+        {
+          cat_mgr.decIndex(); 
+        }
+        if (cat_mgr.getMaxIndex() > 1000) incr = min(500,incr+1);
+        break;
+      }
+      else
+      {
+        incr = 0;
+      }
+      // auto-refresh display
       static unsigned long lastRefresh = 0;
       if ((thisDisplayMode == DM_HOR_COORDS) && (millis() - lastRefresh > 2000)) { lastRefresh = millis(); break; }
     }
   }
 }
+
 
 /*
 selection list with string line
