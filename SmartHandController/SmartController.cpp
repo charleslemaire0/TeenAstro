@@ -1068,16 +1068,19 @@ void SmartHandController::menuTelAction()
     {
       const char *string_list_main_UnParkedL0 = telescoplocked ? "Goto\nSync\nTracking\nSide of Pier\nUnlock" : "Goto\nSync\nTracking\nSide of Pier\nLock";
       current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, "Telescope Action", current_selection_L0, string_list_main_UnParkedL0);
+      MENU_RESULT answer = MR_CANCEL;
       switch (current_selection_L0)
       {
       case 0:
         exitMenu = true;
         break;
       case 1:
-        menuSyncGoto(false);
+        answer = menuSyncGoto(false);
+        answer == MR_OK || answer == MR_QUIT ? exitMenu =true: exitMenu =false;
         break;
       case 2:
-        menuSyncGoto(true);
+        answer = menuSyncGoto(true);
+        answer == MR_OK || answer == MR_QUIT ? exitMenu =true: exitMenu =false;
         break;
       case 3:
         menuTrack();

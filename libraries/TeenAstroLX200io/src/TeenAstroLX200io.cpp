@@ -579,16 +579,16 @@ LX200RETURN SyncGotoCatLX200(bool sync)
 LX200RETURN SyncGotoCatLX200(bool sync)
 {
   int epoch;
-  unsigned int day, month, year, hour, minute, second;
+  unsigned int day, month, year;
   if (GetDateLX200(day, month, year) == LX200GETVALUEFAILED) return LX200GETVALUEFAILED;
-  //if (cat_mgr.getCat() == CAT_NONE) return LX200UNKOWN;
-  //EquatorialCoordinates coo;
-  //coo.ra = cat_mgr.ra() / 15.;
-  //coo.dec = cat_mgr.dec();
-  //epoch = cat_mgr.epoch(); if (epoch == 0) return LX200GETVALUEFAILED;
-  //EquatorialCoordinates cooNow;
-  //cooNow = Ephemeris::equatorialEquinoxToEquatorialJNowAtDateAndTime(coo, epoch, day, month, year, 0, 0, 0);
-  //return SyncGotoLX200(sync, cooNow.ra, cooNow.dec);
+  if (!cat_mgr.isStarCatalog() && !cat_mgr.isDsoCatalog()) return LX200UNKOWN;
+  EquatorialCoordinates coo;
+  coo.ra = cat_mgr.rah();
+  coo.dec = cat_mgr.dec();
+  epoch=cat_mgr.epoch(); if (epoch==0) return LX200GETVALUEFAILED;
+  EquatorialCoordinates cooNow;
+  cooNow = Ephemeris::equatorialEquinoxToEquatorialJNowAtDateAndTime(coo, epoch, day, month, year, 0, 0, 0);
+  return SyncGotoLX200(sync, cooNow.ra, cooNow.dec);
 }
 #endif
 
