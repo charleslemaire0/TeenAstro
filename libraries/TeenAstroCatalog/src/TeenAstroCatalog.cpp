@@ -69,15 +69,15 @@ dso_t*            _dsoCatalog          = NULL;
 dso_comp_t*       _dsoCompCatalog      = NULL;
 dso_vcomp_t*      _dsoVCompCatalog     = NULL;
 
-gen_star_t       _genStarObject = { 0,0,0,0,0,0,0,0 };
+gen_star_t       _genStarObject      = { 0,0,0,0,0,0,0,0 };
 gen_star_vcomp_t _genStarVCompObject = { 0,0,0,0,0,0,0 };
-dbl_star_t       _dblStarObject = { 0,0,0,0,0,0,0,0,0,0,0 };
-dbl_star_comp_t  _dblStarCompObject = { 0,0,0,0,0,0,0,0,0,0,0 };
-var_star_t       _varStarObject = { 0,0,0,0,0,0,0,0,0,0 };
-var_star_comp_t  _varStarCompObject = { 0,0,0,0,0,0,0,0,0,0 };
-dso_t            _dsoObject = { 0,0,0,0,0,0,0,0 };
-dso_comp_t       _dsoCompObject = { 0,0,0,0,0,0,0,0 };
-dso_vcomp_t      _dsoVCompObject = { 0,0,0,0,0,0,0 };
+dbl_star_t       _dblStarObject      = { 0,0,0,0,0,0,0,0,0,0,0 };
+dbl_star_comp_t  _dblStarCompObject  = { 0,0,0,0,0,0,0,0,0,0,0 };
+var_star_t       _varStarObject      = { 0,0,0,0,0,0,0,0,0,0 };
+var_star_comp_t  _varStarCompObject  = { 0,0,0,0,0,0,0,0,0,0 };
+dso_t            _dsoObject          = { 0,0,0,0,0,0,0,0 };
+dso_comp_t       _dsoCompObject      = { 0,0,0,0,0,0,0,0 };
+dso_vcomp_t      _dsoVCompObject     = { 0,0,0,0,0,0,0 };
 
 // handle catalog selection (0..n)
 void CatMgr::select(int number) {
@@ -537,9 +537,9 @@ void CatMgr::topocentricToObservedPlace(float *RA, float *Dec) {
 // -2 = irregular, -1 = unknown
 float CatMgr::period() {
   if (_selected<0) return -1;
-  float p;
-  if (catalogType()==CAT_VAR_STAR) p=_varStarObject.Period; else
-  if (catalogType()==CAT_VAR_STAR_COMP) p=_varStarObject.Period; else return -1;
+  float p = -1;
+  if (catalogType()==CAT_VAR_STAR) p= _varStarObject.Period; else
+  if (catalogType()==CAT_VAR_STAR_COMP) p= _varStarCompObject.Period; else return -1;
   // Period 0.00 to 9.99 days (0 to 999) period 10.0 to 3186.6 days (1000 to 32766), 32766 = Irregular, 32767 = Unknown
   if ((p>=0)  && (p<=999)) return p/100.0; else
   if ((p>999) && (p<=32765)) return (p-900)/10.0; else
