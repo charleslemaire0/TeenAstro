@@ -245,7 +245,7 @@ void Pad::setup(const int pin[7], const bool active[7])
   }
   m_buttons[0]->setClickTicks(50);
   m_buttons[0]->setDebounceTicks(20);
-  m_buttons[0]->setPressTicks(300);
+  m_buttons[0]->setPressTicks(200);
   //For other buttons
   setControlerMode();
   attachEvent();
@@ -293,7 +293,7 @@ void Pad::setMenuMode()
   {
     m_buttons[k]->setClickTicks(50);
     m_buttons[k]->setDebounceTicks(20);
-    m_buttons[k]->setPressTicks(300);
+    m_buttons[k]->setPressTicks(200);
   }
 }
 
