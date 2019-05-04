@@ -80,6 +80,7 @@ private:
   uint8_t current_selection_filter_dblmax = 1;
   uint8_t current_selection_filter_varmax = 1;
   MENU_RESULT menuSyncGoto(bool sync);
+  MENU_RESULT menuPier();
   MENU_RESULT subMenuSyncGoto(char sync, int subMenuNum);
   MENU_RESULT menuCatalog(bool sync, int number);
   MENU_RESULT menuCatalogs(bool sync);

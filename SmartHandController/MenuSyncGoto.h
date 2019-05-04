@@ -34,6 +34,29 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
   }
 }
 
+SmartHandController::MENU_RESULT SmartHandController::menuPier()
+{
+  MENU_RESULT answer = MR_CANCEL;
+  ta_MountStatus.updateMount();
+  uint8_t choice = ((uint8_t)ta_MountStatus.getPierState());
+  choice = display->UserInterfaceSelectionList(&buttonPad, "Set Side of Pier", choice, "East\nWest");
+  bool ok = false;
+  if (choice)
+  {
+    if (choice == 1)
+      ok = DisplayMessageLX200(SetLX200(":SmE#"));
+    else
+      ok = DisplayMessageLX200(SetLX200(":SmW#"));
+    if (ok)
+    {
+      DisplayMessage("Please Sync", "with a Target", 1000);
+      answer = menuSyncGoto(true);
+      DisplayMessageLX200(SetLX200(":SmN#"));
+    }
+  }
+  return answer;
+}
+
 SmartHandController::MENU_RESULT SmartHandController::subMenuSyncGoto(char sync, int subMenuNum)
 {
   static uint8_t current_selection[64] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};

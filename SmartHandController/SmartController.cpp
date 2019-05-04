@@ -1067,7 +1067,7 @@ void SmartHandController::menuTelAction()
     else if (currentstate == TeenAstroMountStatus::PRK_UNPARKED)
     {
       const char *string_list_main_UnParkedL0 = telescoplocked ? "Goto\nSync\nTracking\nSide of Pier\nUnlock" : "Goto\nSync\nTracking\nSide of Pier\nLock";
-      current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, "TeenAstroMountStatus Action", current_selection_L0, string_list_main_UnParkedL0);
+      current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, "Telescope Action", current_selection_L0, string_list_main_UnParkedL0);
       switch (current_selection_L0)
       {
       case 0:
@@ -1083,7 +1083,7 @@ void SmartHandController::menuTelAction()
         menuTrack();
         break;
       case 4:
-        //menuPier();
+        menuPier();
         break;
       case 5:
         telescoplocked = !telescoplocked;
