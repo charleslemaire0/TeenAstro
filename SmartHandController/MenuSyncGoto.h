@@ -22,14 +22,12 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
       case 3:
         if (menuRADec(sync)==MR_QUIT) return MR_QUIT;
         break;
-      case 4:
-      {
-        char cmd[5];
-        sprintf(cmd, ":hX#");
-        cmd[2] = sync ? 'F' : 'C';
-        if (SetLX200(cmd) == LX200VALUESET) DisplayMessage(sync ? "Reset at" : "Goto", " Home Position", -1);
-        return MR_QUIT;
-      }
+      case 4:      
+        if ( DisplayMessageLX200(SyncGoHomeLX200(sync), false)) return MR_QUIT;
+        break;
+      case 5:
+        if ( DisplayMessageLX200(SyncGoParkLX200(sync), false)) return MR_QUIT;
+        break;
     }
   }
 }
@@ -120,7 +118,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalog(bool sync, int
   if (cat_mgr.isInitialized()) {
     if (cat_mgr.setIndex(cat_mgr.getIndex())) {
       if (display->UserInterfaceCatalog(&buttonPad, title)) {
-        if (DisplayMessageLX200(SyncGotoCatLX200(sync))) return MR_QUIT;
+        if (DisplayMessageLX200(SyncGotoCatLX200(sync),false)) return MR_QUIT;
       }
     } else DisplayMessage(cat_mgr.catalogTitle(), "No Object", 2000);
   } else DisplayMessage(cat_mgr.catalogTitle(), "Not Init'd?", 2000);
