@@ -102,13 +102,6 @@ SmartHandController::MENU_RESULT SmartHandController::subMenuSyncGoto(char sync,
 
 SmartHandController::MENU_RESULT SmartHandController::menuCatalog(bool sync, int number)
 {
-  if (!cat_mgr.isInitialized()) {
-    double lat, LT0;
-    if (ta_MountStatus.getLat(lat) && ta_MountStatus.getLstT0(LT0))
-    {
-    cat_mgr.setLat(lat);
-    cat_mgr.setLstT0(LT0); }
-    }
 
   cat_mgr.select(number);
 
@@ -128,8 +121,17 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalog(bool sync, int
 SmartHandController::MENU_RESULT SmartHandController::menuCatalogs(bool sync)
 {
   static int current_selection = 1;
-
+  double lat, LT0;
+  while (!ta_MountStatus.getLat(lat))
+  {
+  }
+  while (!ta_MountStatus.getLstT0(LT0))
+  {
+  }
+  cat_mgr.setLat(lat);
+  cat_mgr.setLstT0(LT0);
   while (true) {
+   
     // build the list of star/dso catalogs
     char string_list_gotoL1[60+NUM_CAT*10]="";
     int  catalog_index[NUM_CAT];
