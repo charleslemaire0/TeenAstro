@@ -235,28 +235,28 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilters()
         DisplayMessage("Filters", "Reset", 1000);
       break;
       case 2:
-        return menuFilterHorizon();
+        menuFilterHorizon();
       break;
       case 3:
-        return menuFilterCon();
+        menuFilterCon();
       break;
       case 4:
-        return menuFilterType();
+        menuFilterType();
       break;
       case 5:
-        return menuFilterByMag();
+        menuFilterByMag();
       break;
       //case 6:
       //  return menuFilterNearby();
       //break;
       case 6:
-        if (cat_mgr.hasVarStarCatalog()) return menuFilterVarMaxPer(); else { if (cat_mgr.hasDblStarCatalog()) return menuFilterDblMinSep(); }
+        if (cat_mgr.hasVarStarCatalog()) menuFilterVarMaxPer(); else { if (cat_mgr.hasDblStarCatalog()) menuFilterDblMinSep(); }
       break;
       case 7:
-        if (cat_mgr.hasVarStarCatalog()) { if (cat_mgr.hasDblStarCatalog()) return menuFilterDblMinSep(); } else { if (cat_mgr.hasDblStarCatalog()) return menuFilterDblMaxSep(); }
+        if (cat_mgr.hasVarStarCatalog()) { if (cat_mgr.hasDblStarCatalog()) menuFilterDblMinSep(); } else { if (cat_mgr.hasDblStarCatalog()) menuFilterDblMaxSep(); }
       break;
       case 8:
-        if (cat_mgr.hasVarStarCatalog()) { if (cat_mgr.hasDblStarCatalog()) return menuFilterDblMaxSep(); }
+        if (cat_mgr.hasVarStarCatalog()) { if (cat_mgr.hasDblStarCatalog()) menuFilterDblMaxSep(); }
       break;
     }
   }
