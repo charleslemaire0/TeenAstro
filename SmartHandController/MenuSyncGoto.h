@@ -8,47 +8,16 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
 
   while (true) {
     // build the list of star/dso catalogs
-    char string_list_gotoL1[60+NUM_CAT*10]="";
-    int  catalog_index[NUM_CAT];
-    int  catalog_index_count=0;
-    char title[16]="";
-    char thisSubmenu[16]="";
-    char lastSubmenu[16]="";
-    for (int i=1; i<= NUM_CAT; i++) {
-      cat_mgr.select(i-1);
-      strcpy(title,cat_mgr.catalogTitle());
-      strcpy(lastSubmenu,thisSubmenu);
-      strcpy(thisSubmenu,cat_mgr.catalogSubMenu());
-
-      bool duplicate=false;
-      if (strlen(thisSubmenu)>0) {
-        if ((strlen(thisSubmenu)==strlen(lastSubmenu)) && (strstr(thisSubmenu,lastSubmenu))) duplicate=true;
-      }
-      if ((!duplicate) && (strlen(thisSubmenu)>0)) { strcpy(title,thisSubmenu); /*strcat(title,">");*/ }
-
-      // add it to the list (if it isn't a duplicate)
-      if (!duplicate) {
-        strcat(string_list_gotoL1,title); strcat(string_list_gotoL1,"\n");
-        if (strlen(thisSubmenu)==0) catalog_index[catalog_index_count++]=i; else catalog_index[catalog_index_count++]=-i;
-      }
-    }
-    // add the normal filtering, solarsys, etc. items
-    strcat(string_list_gotoL1,"Solar System\nFilters\nCoordinates\nHome");
-
+    const char* string_list_gotoL1="Catalogs\nSolar System\nCoordinates\nHome\nPark";
     int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync" : "Goto", current_selection, string_list_gotoL1);
     if (selection == 0) return MR_CANCEL;
     current_selection=selection;
-
-    if (current_selection<=catalog_index_count) {
-      int catalogNum=catalog_index[current_selection-1];
-      if (catalogNum>=0) { if (menuCatalog(sync,catalogNum-1)==MR_QUIT) return MR_QUIT; } else { if (subMenuSyncGoto(sync,(-catalogNum)-1)==MR_QUIT) return MR_QUIT; }
-    } else
-    switch (current_selection-catalog_index_count) {
+    switch (current_selection) {
       case 1:
-        if (menuSolarSys(sync)==MR_QUIT) return MR_QUIT;
+        if (menuCatalogs(sync) == MR_QUIT) return MR_QUIT;
         break;
       case 2:
-        menuFilters();
+        if (menuSolarSys(sync)==MR_QUIT) return MR_QUIT;
         break;
       case 3:
         if (menuRADec(sync)==MR_QUIT) return MR_QUIT;
@@ -133,6 +102,55 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalog(bool sync, int
     } else DisplayMessage(cat_mgr.catalogTitle(), "No Object", 2000);
   } else DisplayMessage(cat_mgr.catalogTitle(), "Not Init'd?", 2000);
   return MR_CANCEL;
+}
+
+SmartHandController::MENU_RESULT SmartHandController::menuCatalogs(bool sync)
+{
+  static int current_selection = 1;
+
+  while (true) {
+    // build the list of star/dso catalogs
+    char string_list_gotoL1[60+NUM_CAT*10]="";
+    int  catalog_index[NUM_CAT];
+    int  catalog_index_count=0;
+    char title[16]="";
+    char thisSubmenu[16]="";
+    char lastSubmenu[16]="";
+    for (int i=1; i<= NUM_CAT; i++) {
+      cat_mgr.select(i-1);
+      strcpy(title,cat_mgr.catalogTitle());
+      strcpy(lastSubmenu,thisSubmenu);
+      strcpy(thisSubmenu,cat_mgr.catalogSubMenu());
+
+      bool duplicate=false;
+      if (strlen(thisSubmenu)>0) {
+        if ((strlen(thisSubmenu)==strlen(lastSubmenu)) && (strstr(thisSubmenu,lastSubmenu))) duplicate=true;
+      }
+      if ((!duplicate) && (strlen(thisSubmenu)>0)) { strcpy(title,thisSubmenu); /*strcat(title,">");*/ }
+
+      // add it to the list (if it isn't a duplicate)
+      if (!duplicate) {
+        strcat(string_list_gotoL1,title); strcat(string_list_gotoL1,"\n");
+        if (strlen(thisSubmenu)==0) catalog_index[catalog_index_count++]=i; else catalog_index[catalog_index_count++]=-i;
+      }
+    }
+    // add the normal filtering, solarsys, etc. items
+    strcat(string_list_gotoL1,"Filters");
+
+    int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync Catalogs" : "Goto Catalogs", current_selection, string_list_gotoL1);
+    if (selection == 0) return MR_CANCEL;
+    current_selection=selection;
+
+    if (current_selection<=catalog_index_count) {
+      int catalogNum=catalog_index[current_selection-1];
+      if (catalogNum>=0) { if (menuCatalog(sync,catalogNum-1)==MR_QUIT) return MR_QUIT; } else { if (subMenuSyncGoto(sync,(-catalogNum)-1)==MR_QUIT) return MR_QUIT; }
+    } else
+    switch (current_selection-catalog_index_count) {
+      case 1:
+        menuFilters();
+        break;
+    }
+  }
 }
 
 SmartHandController::MENU_RESULT SmartHandController::menuSolarSys(bool sync)

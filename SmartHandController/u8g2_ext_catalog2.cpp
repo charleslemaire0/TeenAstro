@@ -97,157 +97,160 @@ static uint8_t ext_draw_catalog_list_line2(u8g2_t *u8g2, uint8_t y, CATALOG_DISP
 
   char line[32];
 
+
   int dx = u8g2_GetDisplayWidth(u8g2);
   if (cat_mgr.isStarCatalog())
   {
     // Normal star mode
     // |bAnd              15.2|
-    // |Alpheratz         25ly|
+    // |Alpheratz             |
     // |                      |
 
     // Double star mode
-    // |Σ0060AB ηCas 3.52,7.36|
-    // |----name----    2225ly|
+    // |Σ0060AB ηCas          |
+    // |----name---- 3.52,7.36|
     // |Sep 2.5" PA 225       |
 
     // Variable star mode
-    // |bAnd         11.2,15.2|
-    // |----name----    2225ly|
+    // |bAnd                  |
+    // |----name---- 11.2,15.2|
     // |Per 2.5d              |
 
     x = 0;
 
     // Prefix
     sprintf(line, cat_mgr.catalogPrefix());
-    if (strstr(line, "Star")) {
-      // nothing
+    if (strstr(line, "Star"))
+    {
+      int p = cat_mgr.bayerFlam();
+      if ((p >= 0) && (p < 24)) {
+        u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
+        x += u8g2_DrawGlyph(u8g2, x, y, 945 + p);
+        x += u8g2_DrawUTF8(u8g2, x, y, " ");
+        u8g2_SetFont(u8g2, myfont);
+      }
+      // Constellation Abbreviation
+      u8g2_DrawUTF8(u8g2, x, y, cat_mgr.constellationStr());
     }
     else
+    {
       if (strstr(line, "STF")) {
         u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
         x += u8g2_DrawGlyph(u8g2, x, y, 931); // sigma
-        u8g2_SetFont(u8g2, myfont);
       }
-      else
-        if (strstr(line, "STT")) {
-          u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
-          x += u8g2_DrawGlyph(u8g2, x, y, 927); // omicron
-          x += u8g2_DrawGlyph(u8g2, x, y, 931); // sigma
-          u8g2_SetFont(u8g2, myfont);
-        }
-        else {
-          x += u8g2_DrawUTF8(u8g2, x, y, line);
-        }
-
-        // Catalog number
-        if (!strstr(line, "Star") && !cat_mgr.hasPrimaryIdInPrefix()) {
-          long p = cat_mgr.primaryId(); if (p>0) sprintf(line, "%ld", p); else sprintf(line, "?");
-          x += u8g2_DrawUTF8(u8g2, x, y, line);
-        }
-
-        // Star SubId
-        sprintf(line, "%s", cat_mgr.subIdStr());
+      else if (strstr(line, "STT")) {
+        u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
+        x += u8g2_DrawGlyph(u8g2, x, y, 927); // omicron
+        x += u8g2_DrawGlyph(u8g2, x, y, 931); // sigma
+      }
+      else {
         u8g2_SetFont(u8g2, u8g2_font_6x13_tf);
         x += u8g2_DrawUTF8(u8g2, x, y, line);
-        u8g2_SetFont(u8g2, myfont);
+      }
+      u8g2_SetFont(u8g2, u8g2_font_6x13_tf);
+      // Catalog number
+      if (!cat_mgr.hasPrimaryIdInPrefix()) {
+        long p = cat_mgr.primaryId(); if (p > 0) sprintf(line, "%ld", p); else sprintf(line, "?");
+        x += u8g2_DrawUTF8(u8g2, x, y, line);
+      }
+      // Star SubId
+      sprintf(line, "%s", cat_mgr.subIdStr());
 
-        // If anything is present on this line so far, add a space
-        if (x != 0) {
-          sprintf(line, "%s", " ");
-          x += u8g2_DrawUTF8(u8g2, x, y, line);
-        }
+      x += u8g2_DrawUTF8(u8g2, x, y, line);
 
-        // Bayer designation of the star (Greek letter) or Fleemstead designation of star (number) just before Con Abv.
-        int p = cat_mgr.bayerFlam();
-        if ((p >= 0) && (p<24)) {
-          u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
-          x += u8g2_DrawGlyph(u8g2, x, y, 945 + p);
-          u8g2_SetFont(u8g2, myfont);
-        }
-        else {
-          if (p>24) {
-            sprintf(line, "%d", p - 24);
-            u8g2_SetFont(u8g2, u8g2_font_6x13_tf);
-            x += u8g2_DrawUTF8(u8g2, x, y, line);
-            u8g2_SetFont(u8g2, myfont);
-          }
-        }
+      // If anything is present on this line so far, add a space
+      if (x != 0) {
+        sprintf(line, "%s", " ");
+        x += u8g2_DrawUTF8(u8g2, x, y, line);
+      }
+      // Constellation Abbreviation
+      u8g2_DrawUTF8(u8g2, x, y, cat_mgr.constellationStr());
 
+      // Bayer designation of the star (Greek letter) or Fleemstead designation of star (number) just before Con Abv.
+      int p = cat_mgr.bayerFlam();
+      x = dx - ext_GetFwNumericWidth(u8g2, "XXXXX");
+      if ((p >= 0) && (p < 24)) {
+        u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
+        x += u8g2_DrawGlyph(u8g2, x, y, 945 + p);
+        // Constellation Abbreviation
+        u8g2_SetFont(u8g2, u8g2_font_6x13_tf);
+        u8g2_DrawUTF8(u8g2, x, y, cat_mgr.constellationStr());
+      }
+      else if (p > 24) {
+        sprintf(line, "%d", p - 24);
+        u8g2_SetFont(u8g2, u8g2_font_6x13_tf);
+        x += u8g2_DrawUTF8(u8g2, x, y, line);
         // Constellation Abbreviation
         u8g2_DrawUTF8(u8g2, x, y, cat_mgr.constellationStr());
-       
-        // Magnitudes
-        float mf = cat_mgr.magnitude();
-        float mf2 = cat_mgr.magnitude2();
-        if ((mf2>99) && (mf>99)) {
-          sprintf(line, "?.?");
-        }
-        else {
-          if (mf2>99) {
-            dtostrf(mf, 4, 1, line);
-            ext_DrawFwNumeric(u8g2, dx - ext_GetFwNumericWidth(u8g2, line), y, line);
-          }
-          else {
-            if (displayMode == DM_INFO) {
-              char mfs[8], mf2s[8];
-              dtostrf(mf, 4, 1, mfs);
-              dtostrf(mf2, 4, 1, mf2s);
-              u8g2_SetFont(u8g2, u8g2_font_6x13_tf);
-              sprintf(line, "%s", mf2s);
-              x = ext_DrawFwNumeric(u8g2, dx - ext_GetFwNumericWidth(u8g2, line), y + line_height, line);
-              sprintf(line, "%s", mfs);
-              ext_DrawFwNumeric(u8g2, dx - (ext_GetFwNumericWidth(u8g2, line) + x + 4), y + line_height, line);
-              u8g2_SetFont(u8g2, myfont);
-            }
-          }
-        }
+      }
 
-        // Display line 2 and 3
-        x = 0;
-        if (displayMode == DM_INFO) {
-          y += line_height;
-          // Name or note string
-          u8g2_DrawUTF8(u8g2, x, y, cat_mgr.objectNameStr());
+    }
 
-          // line 3
-          x = 0;
-          y += line_height;
-          if (cat_mgr.isDblStarCatalog()) {
-            // |Sep 2.5" PA 225       |
-            char seps[16];
-            float f = cat_mgr.separation();
-            if (f >= 0) dtostrf(f, 5, 1, seps); else strcpy(seps, "?.?");
-            x = u8g2_DrawUTF8(u8g2, 0, y, "Sep");
-            sprintf(line, "%s\"", seps);
-            ext_DrawFwNumeric(u8g2, x, y, line);
 
-            int p = cat_mgr.positionAngle();
-            if (p >= 0) sprintf(line, "%3d\xb0", p); else sprintf(line, "  ?\xb0");
-            x = ext_DrawFwNumeric(u8g2, dx - ext_GetFwNumericWidth(u8g2, line), y, line);
-            u8g2_DrawUTF8(u8g2, dx - (u8g2_GetUTF8Width(u8g2, "PA ") + x), y, "PA ");
-          }
-          else
-            if (cat_mgr.isVarStarCatalog()) {
-              // |Per 2.5d              |
-              char pers[16];
-              float p = cat_mgr.period();
-              // Period 0.00 to 9.99 days, period 10.0 to 3186.6 days, -1 = Unknown, -2 = Irregular
-              if (abs(p + 1.0)<0.1) { sprintf(line, "Period Unknown"); }
-              else
-                if (abs(p + 2.0)<0.1) { sprintf(line, "Period Irregular"); }
-                else
-                  if ((p >= 0.0) && (p<   10.0)) { dtostrf(p, 7, 2, pers); sprintf(line, "Period%sd", pers); }
-                  else
-                    if ((p >= 10.0) && (p <= 3186.6)) { dtostrf(p, 7, 1, pers); sprintf(line, "Period%sd", pers); }
-                    else sprintf(line, "Period ?");
-                    ext_DrawFwNumeric(u8g2, x, y, line);
-            }
-        }
+    // Magnitudes
+    float mf = cat_mgr.magnitude();
+    float mf2 = cat_mgr.magnitude2();
+    if ((mf2 > 99) && (mf > 99)) {
+      sprintf(line, "?.?");
+    }
+    else  if (mf2 > 99) {
+      dtostrf(mf, 4, 1, line);
+      ext_DrawFwNumeric(u8g2, dx - ext_GetFwNumericWidth(u8g2, line), y, line);
+    }
+    else if (displayMode == DM_INFO) {
+      char mfs[8], mf2s[8];
+      dtostrf(mf, 4, 1, mfs);
+      dtostrf(mf2, 4, 1, mf2s);
+      sprintf(line, "%s", mf2s);
+      x = ext_DrawFwNumeric(u8g2, dx - ext_GetFwNumericWidth(u8g2, line), y + line_height, line);
+      sprintf(line, "%s", mfs);
+      ext_DrawFwNumeric(u8g2, dx - (ext_GetFwNumericWidth(u8g2, line) + x + 4), y + line_height, line);
+    }
 
+
+    // Display line 2 and 3
+    x = 0;
+    if (displayMode == DM_INFO) {
+      y += line_height;
+      // Name or note string
+      u8g2_DrawUTF8(u8g2, x, y, cat_mgr.objectNameStr());
+
+      // line 3
+      x = 0;
+      y += line_height;
+      if (cat_mgr.isDblStarCatalog()) {
+        // |Sep 2.5" PA 225       |
+        char seps[16];
+        float f = cat_mgr.separation();
+        if (f >= 0) dtostrf(f, 5, 1, seps); else strcpy(seps, "?.?");
+        x = u8g2_DrawUTF8(u8g2, 0, y, "Sep");
+        sprintf(line, "%s\"", seps);
+        ext_DrawFwNumeric(u8g2, x, y, line);
+
+        int p = cat_mgr.positionAngle();
+        if (p >= 0) sprintf(line, "%3d\xb0", p); else sprintf(line, "  ?\xb0");
+        x = ext_DrawFwNumeric(u8g2, dx - ext_GetFwNumericWidth(u8g2, line), y, line);
+        u8g2_DrawUTF8(u8g2, dx - (u8g2_GetUTF8Width(u8g2, "PA ") + x), y, "PA ");
+      }
+      else if (cat_mgr.isVarStarCatalog()) {
+        // |Per 2.5d              |
+        char pers[16];
+        float p = cat_mgr.period();
+        // Period 0.00 to 9.99 days, period 10.0 to 3186.6 days, -1 = Unknown, -2 = Irregular
+        if (abs(p + 1.0) < 0.1) { sprintf(line, "Period Unknown"); }
+        else if (abs(p + 2.0) < 0.1) { sprintf(line, "Period Irregular"); }
+        else if ((p >= 0.0) && (p < 10.0)) { dtostrf(p, 7, 2, pers); sprintf(line, "Period%sd", pers); }
+        else if ((p >= 10.0) && (p <= 3186.6)) { dtostrf(p, 7, 1, pers); sprintf(line, "Period%sd", pers); }
+        else sprintf(line, "Period ?");
+        ext_DrawFwNumeric(u8g2, x, y, line);
+      }
+    }
+
+    u8g2_SetFont(u8g2, myfont);
   }
   else {
     // DSO Catalogs (current)
-    // |M44 N2632        2.2|
+    // |M44 NGC2632      2.2|
     // |Open Cluster     CnC|
     // |Beehive Cluster     |
 
@@ -266,7 +269,7 @@ static uint8_t ext_draw_catalog_list_line2(u8g2_t *u8g2, uint8_t y, CATALOG_DISP
 
     // Magnitude
     float mf = cat_mgr.magnitude();
-    if (mf>99) sprintf(line, "?.?"); else dtostrf(mf, 3, 1, line);
+    if (mf > 99) sprintf(line, "?.?"); else dtostrf(mf, 3, 1, line);
     step0 = u8g2_GetUTF8Width(u8g2, line);
     u8g2_DrawUTF8(u8g2, dx - step0, y, line);
 
@@ -375,24 +378,24 @@ bool ext_UserInterfaceCatalog2(u8g2_t *u8g2, Pad* extPad, const char *title)
 #endif
 
     int scrollSpeed;
-    if (cat_mgr.getMaxIndex()>1000) scrollSpeed = 20; else scrollSpeed = 2;
+    if (cat_mgr.getMaxIndex() > 1000) scrollSpeed = 20; else scrollSpeed = 2;
 
     for (;;) {
       event = ext_GetMenuEvent(extPad);
       if (event == U8X8_MSG_GPIO_MENU_SELECT || event == U8X8_MSG_GPIO_MENU_NEXT) return true; else
-        if (event == U8X8_MSG_GPIO_MENU_HOME) { thisDisplayMode = (CATALOG_DISPLAY_MODES)((int)thisDisplayMode + 1); if (thisDisplayMode>DM_HOR_COORDS) thisDisplayMode = DM_INFO; break; }
+        if (event == U8X8_MSG_GPIO_MENU_HOME) { thisDisplayMode = (CATALOG_DISPLAY_MODES)((int)thisDisplayMode + 1); if (thisDisplayMode > DM_HOR_COORDS) thisDisplayMode = DM_INFO; break; }
       if (event == U8X8_MSG_GPIO_MENU_PREV) return false; else
         if (event == U8X8_MSG_GPIO_MENU_DOWN) { cat_mgr.incIndex(); break; }
         else
-         /* if (event == MSG_MENU_DOWN_FAST) { for (int i = 0; i<scrollSpeed; i++) cat_mgr.incIndex(); break; }
-          else*/
-            if (event == U8X8_MSG_GPIO_MENU_UP) { cat_mgr.decIndex(); break; }
-          /*  else
-              if (event == MSG_MENU_UP_FAST) { for (int i = 0; i<scrollSpeed; i++) cat_mgr.decIndex(); break; }
+          /* if (event == MSG_MENU_DOWN_FAST) { for (int i = 0; i<scrollSpeed; i++) cat_mgr.incIndex(); break; }
+           else*/
+          if (event == U8X8_MSG_GPIO_MENU_UP) { cat_mgr.decIndex(); break; }
+      /*  else
+          if (event == MSG_MENU_UP_FAST) { for (int i = 0; i<scrollSpeed; i++) cat_mgr.decIndex(); break; }
 */
-      // auto-refresh display
+// auto-refresh display
       static unsigned long lastRefresh = 0;
-      if ((thisDisplayMode == DM_HOR_COORDS) && (millis() - lastRefresh>2000)) { lastRefresh = millis(); break; }
+      if ((thisDisplayMode == DM_HOR_COORDS) && (millis() - lastRefresh > 2000)) { lastRefresh = millis(); break; }
     }
   }
 }

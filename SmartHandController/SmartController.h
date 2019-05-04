@@ -82,6 +82,7 @@ private:
   MENU_RESULT menuSyncGoto(bool sync);
   MENU_RESULT subMenuSyncGoto(char sync, int subMenuNum);
   MENU_RESULT menuCatalog(bool sync, int number);
+  MENU_RESULT menuCatalogs(bool sync);
   MENU_RESULT menuSolarSys(bool sync);
   MENU_RESULT menuFilters();
   void setCatMgrFilters();
