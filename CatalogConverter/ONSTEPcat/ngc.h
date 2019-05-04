@@ -3,7 +3,7 @@
 // Contains all NGC objects except for those designated NEDSxx.
 // Do NOT edit this data manually. Rather, fix the import programs and rerun.
 #define Cat_NGC_Title "NGC"
-#define Cat_NGC_Prefix "N"
+#define Cat_NGC_Prefix "NGC"
 #define NUM_NGC 8154
 
 const char *Cat_NGC_Names="";

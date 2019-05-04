@@ -3,7 +3,7 @@
 // Contains all IC objects except for those designated NEDSxx.
 // Do NOT edit this data manually. Rather, fix the import programs and rerun.
 #define Cat_IC_Title "IC"
-#define Cat_IC_Prefix "I"
+#define Cat_IC_Prefix "IC"
 #define NUM_IC 5400
 
 const char *Cat_IC_Names="";
