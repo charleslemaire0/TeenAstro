@@ -2745,6 +2745,7 @@ void SmartHandController::menuMeridian(bool east)
 
 void SmartHandController::DisplayMessage(const char* txt1, const char* txt2, int duration)
 {
+   display->setFont(u8g2_font_helvR12_te);
   uint8_t x;
   uint8_t y = 40;
   display->firstPage();
@@ -2753,11 +2754,11 @@ void SmartHandController::DisplayMessage(const char* txt1, const char* txt2, int
     {
       y = 50;
       x = (display->getDisplayWidth() - display->getStrWidth(txt2)) / 2;
-      display->drawStr(x, y, txt2);
+      display->drawUTF8(x, y, txt2);
       y = 25;
     }
     x = (display->getDisplayWidth() - display->getStrWidth(txt1)) / 2;
-    display->drawStr(x, y, txt1);
+    display->drawUTF8(x, y, txt1);
   } while (display->nextPage());
   if (duration >= 0)
     delay(duration);
@@ -2783,12 +2784,12 @@ void SmartHandController::DisplayLongMessage(const char* txt1, const char* txt2,
   do {
     y = h;
     x = (display->getDisplayWidth() - display->getStrWidth(txt1)) / 2;
-    display->drawStr(x, y, txt1);
+    display->drawUTF8(x, y, txt1);
     y += h;
     if (txt2 != NULL)
     {
       x = 0;
-      display->drawStr(x, y, txt2);
+      display->drawUTF8(x, y, txt2);
     }
     else
     {
@@ -2798,14 +2799,14 @@ void SmartHandController::DisplayLongMessage(const char* txt1, const char* txt2,
     if (txt3 != NULL)
     {
       x = 0;
-      display->drawStr(x, y, txt3);
+      display->drawUTF8(x, y, txt3);
     }
 
     y += 15;
     if (txt4 != NULL)
     {
       x = 0;
-      display->drawStr(x, y, txt4);
+      display->drawUTF8(x, y, txt4);
     }
   } while (display->nextPage());
   if (duration >= 0)

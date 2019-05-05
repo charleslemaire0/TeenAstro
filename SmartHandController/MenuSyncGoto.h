@@ -122,8 +122,8 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalog(bool sync, int
       if (display->UserInterfaceCatalog(&buttonPad, title)) {
         if (DisplayMessageLX200(SyncGotoCatLX200(sync),false)) return MR_QUIT;
       }
-    } else DisplayMessage(cat_mgr.catalogTitle(), "No Object", 2000);
-  } else DisplayMessage(cat_mgr.catalogTitle(), "Not Init'd?", 2000);
+    } else DisplayMessage(cat_mgr.catalogTitle(), "No Object", -1);
+  } else DisplayMessage(cat_mgr.catalogTitle(), "Not Init'd?", -1);
   return MR_CANCEL;
 }
 
