@@ -314,7 +314,7 @@ void CatMgr::filterAdd(int fm, int param) {
 bool CatMgr::hasActiveFilter() {
   if (!isInitialized()) return false;
   if (_fm==FM_NONE) return false;
-//if (_fm & FM_ABOVE_HORIZON) return true; // doesn't apply to this indication
+  if (_fm_horizon_limit <> 0) return true; // doesn't apply to this indication
   if (_fm & FM_CONSTELLATION) return true;
   if (isDsoCatalog() && (_fm & FM_OBJ_TYPE)) return true;
   if (_fm & FM_BY_MAG) return true;
