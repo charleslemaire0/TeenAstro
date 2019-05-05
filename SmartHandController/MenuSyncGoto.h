@@ -102,7 +102,7 @@ SmartHandController::MENU_RESULT SmartHandController::subMenuSyncGoto(char sync,
 
 SmartHandController::MENU_RESULT SmartHandController::menuCatalog(bool sync, int number)
 {
-  drawFilterCat();
+  drawWait();
   cat_mgr.select(number);
   char title[20]="";
   if (cat_mgr.hasActiveFilter())

@@ -8,7 +8,7 @@
 
 enum Button { B_SHIFT, B_NORTH, B_SOUTH, B_EAST, B_WEST, B_F, B_f };
 enum ButtonEvent { E_NONE, E_CLICK, E_DOUBLECLICK, E_LONGPRESSTART, E_LONGPRESS, E_LONGPRESSSTOP };
-extern byte eventbuttons[7];
+extern volatile byte eventbuttons[7];
 class Pad
 {
   wifibluetooth m_wbt;
