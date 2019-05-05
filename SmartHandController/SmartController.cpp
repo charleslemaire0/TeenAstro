@@ -545,7 +545,7 @@ void SmartHandController::update()
 void SmartHandController::updateMainDisplay(u8g2_uint_t page)
 {
   u8g2_t *u8g2 = display->getU8g2();
-  display->setFont(u8g2_font_helvR12_tf);
+  display->setFont(u8g2_font_helvR12_te);
   u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
   u8g2_uint_t step1 = u8g2_GetUTF8Width(u8g2, "44");
   u8g2_uint_t step2 = u8g2_GetUTF8Width(u8g2, "4") + 1;
@@ -835,13 +835,27 @@ void SmartHandController::drawLoad()
   display->firstPage();
   uint8_t x = 0;
   do {
-    display->setFont(u8g2_font_helvR12_tr);
+    display->setFont(u8g2_font_helvR12_te);
     x = (display->getDisplayWidth() - display->getStrWidth("SHC version")) / 2;
     display->drawStr(x, display->getDisplayHeight() / 2. - 6, "SHC version");
     x = (display->getDisplayWidth() - display->getStrWidth(_version)) / 2;
     display->drawStr(x, display->getDisplayHeight() / 2. + 22, _version);
   } while (display->nextPage());
   delay(1500);
+}
+
+void SmartHandController::drawFilterCat()
+{
+  display->firstPage();
+  uint8_t x = 0;
+  do {
+    display->setFont(u8g2_font_helvR12_te);
+    x = (display->getDisplayWidth() - display->getStrWidth("Loading")) / 2;
+    display->drawStr(x, display->getDisplayHeight() / 2. - 6, "Loading");
+    x = (display->getDisplayWidth() - display->getStrWidth("Catalog")) / 2;
+    display->drawStr(x, display->getDisplayHeight() / 2. + 22, "Catalog");
+  } while (display->nextPage());
+  delay(400);
 }
 
 bool SmartHandController::menuSetStepperGearBox(const uint8_t &axis, unsigned short &worm)
@@ -2721,7 +2735,7 @@ void SmartHandController::DisplayLongMessage(const char* txt1, const char* txt2,
         break;
     }
   }
-  display->setFont(u8g2_font_helvR12_tf);
+  display->setFont(u8g2_font_helvR12_te);
 }
 
 bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)

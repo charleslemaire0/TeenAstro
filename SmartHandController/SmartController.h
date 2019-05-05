@@ -13,6 +13,7 @@ public:
   void manualMove(bool &moving);
   void drawIntro();
   void drawLoad();
+  void drawFilterCat();
   void setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model);
 private:
   U8G2_EXT *display = NULL;
@@ -70,7 +71,7 @@ private:
 #endif
 #ifdef NEWCAT
   enum MENU_RESULT { MR_OK, MR_CANCEL, MR_QUIT };
-  bool    current_selection_filter_above = true;
+  uint8_t current_selection_filter = 1;
   uint8_t current_selection_filter_con = 1;
   uint8_t current_selection_filter_horizon = 1;
   uint8_t current_selection_filter_type = 1;

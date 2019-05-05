@@ -102,11 +102,20 @@ SmartHandController::MENU_RESULT SmartHandController::subMenuSyncGoto(char sync,
 
 SmartHandController::MENU_RESULT SmartHandController::menuCatalog(bool sync, int number)
 {
-
+  drawFilterCat();
   cat_mgr.select(number);
-
-  char title[20]; if (sync) strcpy(title,"Sync "); else strcpy(title,"Goto "); strcat(title,cat_mgr.catalogTitle());
-  setCatMgrFilters(); if (cat_mgr.hasActiveFilter()) strcat(title," \xa5");
+  char title[20]="";
+  if (cat_mgr.hasActiveFilter())
+  {
+    if (sync) strcpy(title, "!Sync "); else strcat(title, "!Goto ");
+  }
+  else
+  {
+    if (sync) strcpy(title, "Sync "); else strcat(title, "Goto ");
+  }
+  strcat(title,cat_mgr.catalogTitle());
+  setCatMgrFilters();
+  if (cat_mgr.hasActiveFilter()) strcat(title,"!");
 
   if (cat_mgr.isInitialized()) {
     if (cat_mgr.setIndex(cat_mgr.getIndex())) {
@@ -199,39 +208,43 @@ SmartHandController::MENU_RESULT SmartHandController::menuSolarSys(bool sync)
 
 SmartHandController::MENU_RESULT SmartHandController::menuFilters()
 {
-  static int current_selection = 1;
-  current_selection = 1;
+  int current_selection = 1;
   while (true) {
     char string_list_Filters[200] = "Reset filters";
     char s[8];
-    if (current_selection_filter_above) strcpy(s,"\xb7"); else strcpy(s,"");
+    if (current_selection_filter_horizon) strcpy(s,"+"); else strcpy(s,"");
     strcat(string_list_Filters,"\n"); strcat(string_list_Filters,s); strcat(string_list_Filters,"Above Horizon"); strcat(string_list_Filters,s);
-    if (current_selection_filter_con>1) strcpy(s,"\xb7"); else strcpy(s,"");
+    if (current_selection_filter_con>1) strcpy(s,"+"); else strcpy(s,"");
     strcat(string_list_Filters,"\n"); strcat(string_list_Filters,s); strcat(string_list_Filters,"Constellation"); strcat(string_list_Filters,s);
-    if (current_selection_filter_type>1) strcpy(s,"\xb7"); else strcpy(s,"");
+    if (current_selection_filter_type>1) strcpy(s,"+"); else strcpy(s,"");
     strcat(string_list_Filters,"\n"); strcat(string_list_Filters,s); strcat(string_list_Filters,"Type"); strcat(string_list_Filters,s);
-    if (current_selection_filter_byMag>1) strcpy(s,"\xb7"); else strcpy(s,"");
+    if (current_selection_filter_byMag>1) strcpy(s,"+"); else strcpy(s,"");
     strcat(string_list_Filters,"\n"); strcat(string_list_Filters,s); strcat(string_list_Filters,"Magnitude"); strcat(string_list_Filters,s);
-  /*  if (current_selection_filter_nearby>1) strcpy(s,"\xb7"); else strcpy(s,"");
+  /*  if (current_selection_filter_nearby>1) strcpy(s,"+"); else strcpy(s,"");
     strcat(string_list_Filters,"\n"); strcat(string_list_Filters,s); strcat(string_list_Filters,"Nearby"); strcat(string_list_Filters,s);*/
     if (cat_mgr.hasVarStarCatalog()) {
-      if (current_selection_filter_varmax>1) strcpy(s,"\xb7"); else strcpy(s,"");
+      if (current_selection_filter_varmax>1) strcpy(s,"+"); else strcpy(s,"");
       strcat(string_list_Filters,"\n"); strcat(string_list_Filters,s); strcat(string_list_Filters,"Var* Max Per."); strcat(string_list_Filters,s);
     }
     if (cat_mgr.hasDblStarCatalog()) {
-      if (current_selection_filter_dblmin>1) strcpy(s,"\xb7"); else strcpy(s,"");
+      if (current_selection_filter_dblmin>1) strcpy(s,"+"); else strcpy(s,"");
       strcat(string_list_Filters,"\n"); strcat(string_list_Filters,s); strcat(string_list_Filters,"Dbl* Min Sep."); strcat(string_list_Filters,s);
-      if (current_selection_filter_dblmax>1) strcpy(s,"\xb7"); else strcpy(s,"");
+      if (current_selection_filter_dblmax>1) strcpy(s,"+"); else strcpy(s,"");
       strcat(string_list_Filters,"\n"); strcat(string_list_Filters,s); strcat(string_list_Filters,"Dbl* Max Sep."); strcat(string_list_Filters,s);
     }
-    current_selection = display->UserInterfaceSelectionList(&buttonPad, "Filters Allow", current_selection, string_list_Filters);
+    current_selection = display->UserInterfaceSelectionList(&buttonPad, "Filters Allow", current_selection_filter, string_list_Filters);
     if (current_selection == 0) return MR_CANCEL;
-    
+    current_selection_filter = current_selection;
     switch (current_selection) {
       case 1:
-        current_selection_filter_above=true;
-        current_selection_filter_con =1;
-        current_selection_filter_type=1;
+        current_selection_filter_con = 1;
+        current_selection_filter_horizon = 1;
+        current_selection_filter_type = 1;
+        current_selection_filter_byMag = 1;
+        current_selection_filter_nearby = 1;
+        current_selection_filter_dblmin = 1;
+        current_selection_filter_dblmax = 1;
+        current_selection_filter_varmax = 1;
         DisplayMessage("Filters", "Reset", 1000);
       break;
       case 2:
@@ -266,7 +279,7 @@ void SmartHandController::setCatMgrFilters()
 {
   cat_mgr.filtersClear();
   
-  if (current_selection_filter_above)   cat_mgr.filterAdd(FM_ABOVE_HORIZON, current_selection_filter_horizon-2);
+  if (current_selection_filter_horizon>1)   cat_mgr.filterAdd(FM_ABOVE_HORIZON, current_selection_filter_horizon-2);
   if (current_selection_filter_con>1)   cat_mgr.filterAdd(FM_CONSTELLATION,current_selection_filter_con-2);
   if (current_selection_filter_type>1)  cat_mgr.filterAdd(FM_OBJ_TYPE,current_selection_filter_type-2);
   if (current_selection_filter_byMag>1) cat_mgr.filterAdd(FM_BY_MAG,current_selection_filter_byMag-2);
@@ -313,7 +326,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilterHorizon()
   const char* string_list_fHorizon="Above Horizon\nAbove 10 deg\nAbove 20 deg\nAbove 30 deg\nAbove 40 deg\nAbove 50 deg\nAbove 60 deg\nAbove 70 deg";
   int last_selection_filter_horizon = current_selection_filter_horizon;
   current_selection_filter_horizon = display->UserInterfaceSelectionList(&buttonPad, "Filter Horizon", current_selection_filter_horizon, string_list_fHorizon);
-  if (current_selection_filter_nearby == 0) { current_selection_filter_nearby=last_selection_filter_horizon; return MR_CANCEL; }
+  if (current_selection_filter_horizon == 0) { current_selection_filter_horizon=last_selection_filter_horizon; return MR_CANCEL; }
   return MR_OK;
 }
 

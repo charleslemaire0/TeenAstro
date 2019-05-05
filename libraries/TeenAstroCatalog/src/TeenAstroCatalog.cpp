@@ -657,7 +657,7 @@ long CatMgr::objectName() {
   if (catalogType()==CAT_DSO)            { val = _dsoObject.It_name; } else
   if (catalogType()==CAT_DSO_COMP)       { val = _dsoCompObject.It_name; } else
   if (catalogType()==CAT_DSO_VCOMP)      { val = _dsoVCompObject.It_name; }
-  return val -1;
+  return val - 1;
 }
 
 // Object name type string
