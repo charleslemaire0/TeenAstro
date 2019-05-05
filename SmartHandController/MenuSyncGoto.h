@@ -311,7 +311,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilterType()
 SmartHandController::MENU_RESULT SmartHandController::menuFilterHorizon()
 {
   const char* string_list_fHorizon="Above Horizon\nAbove 10 deg\nAbove 20 deg\nAbove 30 deg\nAbove 40 deg\nAbove 50 deg\nAbove 60 deg\nAbove 70 deg";
-  int last_selection_filter_horizon = current_selection_filter_nearby;
+  int last_selection_filter_horizon = current_selection_filter_horizon;
   current_selection_filter_horizon = display->UserInterfaceSelectionList(&buttonPad, "Filter Horizon", current_selection_filter_horizon, string_list_fHorizon);
   if (current_selection_filter_nearby == 0) { current_selection_filter_nearby=last_selection_filter_horizon; return MR_CANCEL; }
   return MR_OK;
