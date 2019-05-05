@@ -256,15 +256,13 @@ static uint8_t ext_draw_catalog_list_line2(u8g2_t *u8g2, uint8_t y, CATALOG_DISP
 
     // Prefix and catalog number
     x = 0;
-    sprintf(line, "%s", cat_mgr.catalogPrefix());
-    x += u8g2_DrawUTF8(u8g2, x, y, line);
+    x += u8g2_DrawUTF8(u8g2, x, y, cat_mgr.catalogPrefix());
     if (!cat_mgr.hasPrimaryIdInPrefix()) sprintf(line, "%ld", cat_mgr.primaryId());
     x += u8g2_DrawUTF8(u8g2, x, y, line);
 
     // Object SubId
     u8g2_SetFont(u8g2, u8g2_font_6x13_tf);
-    sprintf(line, "%s", cat_mgr.subIdStr());
-    x += u8g2_DrawUTF8(u8g2, x, y, line);
+    x += u8g2_DrawUTF8(u8g2, x, y, cat_mgr.subIdStr());
     u8g2_SetFont(u8g2, myfont);
 
     // Magnitude
