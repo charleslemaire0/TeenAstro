@@ -327,13 +327,9 @@ bool CatMgr::hasActiveFilter() {
 
 // checks to see if the currently selected object is filtered (returns true if filtered out)
 bool CatMgr::isFiltered() {
+  double current_alt = 0;
   if (!isInitialized()) return false;
-  if (alt()<_fm_horizon_limit) return true; 
-  if (_fm==FM_NONE) return false;
-  if (_fm & FM_ALIGN_ALL_SKY) {
-    if (alt()<10.0) return true;      // minimum 10 degrees altitude
-    if (abs(dec())>85.0) return true; // minimum 5 degrees from the pole (for accuracy)
-  }
+
   if (_fm & FM_CONSTELLATION) {
     if (constellation()!=_fm_con) return true;
   }
@@ -355,6 +351,14 @@ bool CatMgr::isFiltered() {
   if (_fm & FM_VAR_MAX_PER) {
     if (isVarStarCatalog() && ((period()>_fm_var_max) || (period()<0))) return true;
   }
+  current_alt = alt();
+  if (current_alt < _fm_horizon_limit) return true;
+  if (_fm == FM_NONE) return false;
+  if (_fm & FM_ALIGN_ALL_SKY) {
+    if (current_alt < 10.0) return true;      // minimum 10 degrees altitude
+    if (abs(dec()) > 85.0) return true; // minimum 5 degrees from the pole (for accuracy)
+  }
+
   return false;
 }  
 
@@ -478,9 +482,11 @@ int CatMgr::epoch() {
 
 // Alt in degrees
 double CatMgr::alt() {
-  double a,z;
-  EquToHor(ra(),dec(),&a,&z);
-  return a;
+  double HA = lstDegs() - ra();
+  HA = HA / Rad;
+  double Dec = dec() / Rad;
+  double SinAlt = (sin(Dec) * _sinLat) + (cos(Dec) * _cosLat * cos(HA));
+  return asin(SinAlt) * Rad;
 }
 
 // Declination as degrees, minutes, seconds
@@ -791,6 +797,7 @@ void CatMgr::EquToHor(double RA, double Dec, double *Alt, double *Azm) {
   *Azm=*Azm+180.0;
   *Alt = *Alt*Rad;
 }
+
 
 // convert horizon coordinates to equatorial, in degrees
 void CatMgr::HorToEqu(double Alt, double Azm, double *RA, double *Dec) { 
