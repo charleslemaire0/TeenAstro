@@ -105,6 +105,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalog(bool sync, int
   drawWait();
   cat_mgr.select(number);
   char title[20]="";
+  setCatMgrFilters();
   if (cat_mgr.hasActiveFilter())
   {
     if (sync) strcpy(title, "!Sync "); else strcat(title, "!Goto ");
@@ -114,7 +115,6 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalog(bool sync, int
     if (sync) strcpy(title, "Sync "); else strcat(title, "Goto ");
   }
   strcat(title,cat_mgr.catalogTitle());
-  setCatMgrFilters();
   if (cat_mgr.hasActiveFilter()) strcat(title,"!");
 
   if (cat_mgr.isInitialized()) {
@@ -332,7 +332,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilterHorizon()
 
 SmartHandController::MENU_RESULT SmartHandController::menuFilterByMag()
 {
-  const char* string_list_fMag="All\n" "10th\n" "12th\n" "13th\n" "14th\n" "15th\n" "16th\n" "17th";
+  const char* string_list_fMag="All\n" "10th\n" "11th\n" "12th\n" "13th\n" "14th\n" "15th\n" "16th";
   int last_selection_filter_byMag = current_selection_filter_byMag;
 
   current_selection_filter_byMag = display->UserInterfaceSelectionList(&buttonPad, "Filter Magnitude", current_selection_filter_byMag, string_list_fMag);

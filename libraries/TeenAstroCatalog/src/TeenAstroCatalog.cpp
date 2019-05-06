@@ -252,20 +252,21 @@ void CatMgr::filterAdd(int fm, int param) {
   if (fm&FM_CONSTELLATION) _fm_con=param;
   if (fm&FM_BY_MAG) {
     if (param==0) _fm_mag_limit=10.0; else
-    if (param==1) _fm_mag_limit=12.0; else
-    if (param==2) _fm_mag_limit=13.0; else
-    if (param==3) _fm_mag_limit=14.0; else
-    if (param==4) _fm_mag_limit=15.0; else
-    if (param==5) _fm_mag_limit=16.0; else
-    if (param==6) _fm_mag_limit=17.0; else _fm_mag_limit=100.0;
+    if (param==1) _fm_mag_limit=11.0; else
+    if (param==2) _fm_mag_limit=12.0; else
+    if (param==3) _fm_mag_limit=13.0; else
+    if (param==4) _fm_mag_limit=14.0; else
+    if (param==5) _fm_mag_limit=15.0; else
+    if (param==6) _fm_mag_limit=16.0; else _fm_mag_limit=100.0;
   }
-    if (fm&FM_ABOVE_HORIZON) {
-    if (param==0) _fm_horizon_limit=10.0; else
-    if (param==1) _fm_horizon_limit=20.0; else
-    if (param==2) _fm_horizon_limit=30.0; else
-    if (param==3) _fm_horizon_limit=40.0; else
-    if (param==4) _fm_horizon_limit=50.0; else
-    if (param==5) _fm_horizon_limit=60.0; else
+  if (fm&FM_ABOVE_HORIZON) {
+    if (param==0) _fm_horizon_limit=0.0; else
+    if (param==1) _fm_horizon_limit=10.0; else
+    if (param==2) _fm_horizon_limit=20.0; else
+    if (param==3) _fm_horizon_limit=30.0; else
+    if (param==4) _fm_horizon_limit=40.0; else
+    if (param==5) _fm_horizon_limit=50.0; else
+    if (param==6) _fm_horizon_limit=60.0; else
     if (param==7) _fm_horizon_limit=70.0; else  _fm_horizon_limit=0;
   }
   if (fm&FM_NEARBY) {
