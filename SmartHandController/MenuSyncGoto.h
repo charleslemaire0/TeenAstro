@@ -279,7 +279,7 @@ void SmartHandController::setCatMgrFilters()
 {
   cat_mgr.filtersClear();
   
-  if (current_selection_filter_horizon>1)   cat_mgr.filterAdd(FM_ABOVE_HORIZON, current_selection_filter_horizon-2);
+  if (current_selection_filter_horizon>0)   cat_mgr.filterAdd(FM_ABOVE_HORIZON, current_selection_filter_horizon-1);
   if (current_selection_filter_con>1)   cat_mgr.filterAdd(FM_CONSTELLATION,current_selection_filter_con-2);
   if (current_selection_filter_type>1)  cat_mgr.filterAdd(FM_OBJ_TYPE,current_selection_filter_type-2);
   if (current_selection_filter_byMag>1) cat_mgr.filterAdd(FM_BY_MAG,current_selection_filter_byMag-2);
