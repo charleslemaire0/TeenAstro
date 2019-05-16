@@ -242,10 +242,15 @@ void Pad::setup(const int pin[7], const bool active[7])
   {
     m_buttons[k] = new OneButton(pin[k], active[k], active[k]);
   }
-
-  m_buttons[0]->setClickTicks(90);
-  m_buttons[0]->setDebounceTicks(30);
-  m_buttons[0]->setPressTicks(180);
+  uint8_t val =  EEPROM.read(EEPROM_BSPEED);
+  if (val>2)
+  {
+    m_button_speed = BS_MEDIUM;
+    EEPROM.write(EEPROM_BSPEED,static_cast<uint8_t>(m_button_speed));
+    EEPROM.commit();
+  }
+  else
+    m_button_speed = static_cast<Pad::ButtonSpeed>(val);
   //For other buttons
   setControlerMode();
   attachEvent();
@@ -287,25 +292,70 @@ void Pad::tickButtons()
   m_wbt.update();
 }
 
+Pad::ButtonSpeed Pad::getButtonSpeed()
+{
+ return m_button_speed;
+}
+
+void Pad::setButtonSpeed(ButtonSpeed bs)
+{
+  if (m_button_speed != bs)
+  {
+    m_button_speed = bs;
+    EEPROM.write(EEPROM_BSPEED, static_cast<uint8_t>(m_button_speed));
+    EEPROM.commit();
+  }
+}
+
 void Pad::setMenuMode()
 {
+  int tick_ref = 20;
+  switch (m_button_speed)
+  {
+  case BS_SLOW:
+    tick_ref*= 2;
+    break;
+  case BS_MEDIUM:
+    tick_ref*= 1.5;
+    break;
+  case  BS_FAST:
+    tick_ref*= 1.;
+    break;
+  }
+  m_buttons[0]->setClickTicks(tick_ref*4);
+  m_buttons[0]->setDebounceTicks(tick_ref);
+  m_buttons[0]->setPressTicks(tick_ref*8);
   for (int k = 1; k < 7; k++)
   {
-    m_buttons[k]->setClickTicks(90);
-    m_buttons[k]->setDebounceTicks(30);
-    m_buttons[k]->setPressTicks(180);
-    m_buttons[k]->reset();
+    m_buttons[k]->setClickTicks(tick_ref*4);
+    m_buttons[k]->setDebounceTicks(tick_ref);
+    m_buttons[k]->setPressTicks(tick_ref*8);
   }
 }
 
 void Pad::setControlerMode()
 {
+  int tick_ref = 20;
+  switch (m_button_speed)
+  {
+  case BS_SLOW:
+    tick_ref *= 2;
+    break;
+  case BS_MEDIUM:
+    tick_ref *= 1.5;
+    break;
+  case  BS_FAST:
+    tick_ref *= 1.;
+    break;
+  }
+  m_buttons[0]->setClickTicks(tick_ref * 4);
+  m_buttons[0]->setDebounceTicks(tick_ref);
+  m_buttons[0]->setPressTicks(tick_ref * 8);
   for (int k = 1; k < 7; k++)
   {
     m_buttons[k]->setClickTicks(5);
-    m_buttons[k]->setDebounceTicks(30);
+    m_buttons[k]->setDebounceTicks(tick_ref);
     m_buttons[k]->setPressTicks(5);
-    m_buttons[k]->reset();
   }
 }
 

@@ -364,6 +364,8 @@ static unsigned char wait_bits[] U8X8_PROGMEM= {
 
 void SmartHandController::setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model)
 {
+  if (EEPROM.length() == 0)
+    EEPROM.begin(1024);
   if (strlen(version) <= 19) strcpy(_version, version);
 
   //choose a 128x64 display supported by U8G2lib (if not listed below there are many many others in u8g2 library example Sketches)
@@ -384,9 +386,6 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
   drawIntro();
   buttonPad.setup(pin, active);
   tickButtons();
-  if (EEPROM.length() == 0)
-    EEPROM.begin(1024);
-
   maxContrast = EEPROM.read(EEPROM_Contrast);
   display->setContrast(maxContrast);
   displayT1 = EEPROM.read(EEPROM_T1);
@@ -941,7 +940,17 @@ void SmartHandController::drawLoad()
   display->setFont(u8g2_font_helvR12_te);
 }
 
-
+void SmartHandController::resetSHC()
+{
+  if (display->UserInterfaceMessage(&buttonPad, "Reset", "To", "Factory?", "NO\nYES") == 2)
+  {
+    EEPROM_writeInt(0, 0);
+    EEPROM.commit();
+    powerCylceRequired = true;
+    exitMenu = true;
+    return;
+  }
+}
 
 bool SmartHandController::menuSetStepperGearBox(const uint8_t &axis, unsigned short &worm)
 {
@@ -1415,6 +1424,30 @@ void SmartHandController::menuDateAndTime()
   }
 }
 
+void SmartHandController::menuSHCSettings()
+{
+
+  const char *string_list_SettingsL3 = "Display\nButton Speed\nReset to factory";
+  while (!exitMenu)
+  {
+    current_selection_SHC = display->UserInterfaceSelectionList(&buttonPad, "SHC Settings", current_selection_SHC, string_list_SettingsL3);
+    switch (current_selection_SHC)
+    {
+    case 0:
+      return;
+    case 1:
+      menuDisplay();
+      break;
+    case 2:
+      menuButtonSpeed();
+      break;
+    case 3:
+      resetSHC();
+      break;
+    }
+  }
+}
+
 void SmartHandController::menuTimeAndSite()
 {
   current_timelocation = 1;
@@ -1448,14 +1481,14 @@ void SmartHandController::menuTelSettings()
   current_selection_L1 = 1;
   while (!exitMenu)
   {
-    const char *string_list_SettingsL1 = "Display\n"/*"Alignment\n"*/"Time & Site\n""Set Park\n""Mount\n""Limits\n""Main Unit Info\nWifi";
+    const char *string_list_SettingsL1 = "Hand Controller\n"/*"Alignment\n"*/"Time & Site\n""Set Park\n""Mount\n""Limits\n""Main Unit Info\nWifi";
     current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, "Telescope Settings", current_selection_L1, string_list_SettingsL1);
     switch (current_selection_L1)
     {
     case 0:
       exitMenu = true;
     case 1:
-      menuDisplay();
+      menuSHCSettings();
       break;
     //case 2:
     //  menuAlignment();
@@ -1845,7 +1878,6 @@ void SmartHandController::writeDefaultMount(const bool& r1, const int& ttgr1, co
   writeMicroLX200(1, 4);
   writeLowCurrLX200(1, cL);
   writeHighCurrLX200(1, cH);
-
 
   writeReverseLX200(2, r2);
   writeTotGearLX200(2, ttgr2);
@@ -2407,6 +2439,25 @@ void SmartHandController::menuDisplay()
   }
 }
 
+
+void SmartHandController::menuButtonSpeed()
+{
+  const char *string_list_Display = "Slow\nMedium\nHigh";
+  current_selection_L3 = (uint8_t)buttonPad.getButtonSpeed()+1;
+  current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, "Set Button Speed", current_selection_L3, string_list_Display);
+  switch (current_selection_L3)
+  {
+  case 0:
+    return;
+  case 1:
+  case 2:
+  case 3:
+    buttonPad.setButtonSpeed(static_cast<Pad::ButtonSpeed>(current_selection_L3-1));
+    buttonPad.setMenuMode();
+    break;
+  }
+}
+
 void SmartHandController::menuContrast()
 {
   const char *string_list_Display = "Min\nLow\nHigh\nMax";
@@ -2436,6 +2487,7 @@ void SmartHandController::menuContrast()
   EEPROM.commit();
   display->setContrast(maxContrast);
 }
+
 
 void SmartHandController::menuDate()
 {
@@ -2613,14 +2665,8 @@ void SmartHandController::menuWifi()
       break;
     }
     case 5:
-      if (display->UserInterfaceMessage(&buttonPad, "Reset", "To", "Factory?", "NO\nYES")==2)
-      {
-        EEPROM_writeInt(0, 0);
-        EEPROM.commit();
-        powerCylceRequired = true;
-        exitMenu = true;
-        return;
-      }
+      resetSHC();
+      break;
     default:
       break;
     }

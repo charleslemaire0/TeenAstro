@@ -11,14 +11,20 @@ enum ButtonEvent { E_NONE, E_CLICK, E_DOUBLECLICK, E_LONGPRESSTART, E_LONGPRESS,
 extern volatile byte eventbuttons[7];
 class Pad
 {
+public:
+  enum ButtonSpeed { BS_SLOW, BS_MEDIUM, BS_FAST };
+private:
   wifibluetooth m_wbt;
   bool m_buttonPressed;
   bool m_shiftPressed;
   OneButton *m_buttons[7];
+  ButtonSpeed m_button_speed;
 public:
   void setup(const int pin[7], const bool active[7]);
   void setMenuMode();
   void setControlerMode();
+  ButtonSpeed getButtonSpeed();
+  void setButtonSpeed(ButtonSpeed bs);
   void attachEvent();
   void tickButtons();
   bool buttonPressed();

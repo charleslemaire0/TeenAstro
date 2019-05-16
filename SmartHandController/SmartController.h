@@ -45,6 +45,7 @@ private:
   uint8_t current_selection_L3 = 1;
   uint8_t current_selection_L4 = 1;
   uint8_t current_timelocation = 1;
+  uint8_t current_selection_SHC = 1;
   uint8_t current_selection_speed = 5;
   uint8_t current_selection_guide = 3;
   uint8_t current_selection_FocuserConfig = 1;
@@ -55,6 +56,7 @@ private:
   void tickButtons();
   bool buttonPressed();
   bool isSleeping();
+  void resetSHC();
   void menuTelAction();
   void menuSpeedRate();
   void menuTrack();
@@ -105,6 +107,7 @@ private:
   bool SelectStarAlign();
 
   void menuTelSettings();
+  void menuSHCSettings();
   void menuTimeAndSite();
   void menuDateAndTime();
   void menuMount();
@@ -132,6 +135,7 @@ private:
   void menuFocuserMotor();
   void menuDisplay();
   void menuContrast();
+  void menuButtonSpeed();
   void menuDate();
   void menuLatitude();
   void menuLongitude();
