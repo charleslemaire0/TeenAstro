@@ -647,19 +647,19 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     }
     page = 4;
   }
-  else if (page == 0)
+  else if (page == 0 && !ta_MountStatus.isPulseGuiding())
   {
     ta_MountStatus.updateRaDec();
   }
-  else if (page == 1)
+  else if (page == 1 && !ta_MountStatus.isPulseGuiding())
   {
     ta_MountStatus.updateAzAlt();
   }
-  else if (page == 2)
+  else if (page == 2 && !ta_MountStatus.isPulseGuiding())
   {
     ta_MountStatus.updateTime();
   }
-  else if (page == 3)
+  else if (page == 3 && !ta_MountStatus.isPulseGuiding())
   {
     ta_MountStatus.updateFocuser();
   }
