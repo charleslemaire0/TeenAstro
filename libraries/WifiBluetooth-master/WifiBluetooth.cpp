@@ -1,6 +1,7 @@
 #include <TeenAstroLX200io.h>
 #include "WifiBluetooth.h"
 
+
 const char html_headB[] PROGMEM = "<!DOCTYPE HTML>\r\n<html>\r\n<head>\r\n";
 const char html_headerIdx[] PROGMEM = "<meta http-equiv=\"refresh\" content=\"5; URL=/index.htm\">\r\n";
 const char html_headE[] PROGMEM = "</head>\r\n";
@@ -413,11 +414,11 @@ void wifibluetooth::update()
 
   // disconnect client
   static unsigned long clientTime = 0;
-  if (cmdSvrClient && (!cmdSvrClient.connected())) cmdSvrClient.stop();
-  if (cmdSvrClient && ((long)(clientTime - millis()) < 0)) cmdSvrClient.stop();
+  if (cmdSvrClient && (!cmdSvrClient.connected()||clientTime < millis()))
+    cmdSvrClient.stop();
 
   // new client
-  if (!cmdSvrClient && (cmdSvr.hasClient())) {
+  if (!cmdSvrClient && cmdSvr.hasClient()) {
     // find free/disconnected spot
     cmdSvrClient = cmdSvr.available();
     clientTime = millis() + 2000UL;
@@ -429,25 +430,33 @@ void wifibluetooth::update()
   while (cmdSvrClient && cmdSvrClient.connected() && (cmdSvrClient.available() > 0)) {
     // get the data
     byte b = cmdSvrClient.read();
+    if (writeBufferPos == 0 && b != ':')
+      continue;
     writeBuffer[writeBufferPos] = b;
     writeBufferPos++;
-    if (writeBufferPos > 39)
-      writeBufferPos = 39;
+    if (writeBufferPos > 49)
+    {
+      writeBufferPos = 0;
+      writeBuffer[writeBufferPos] = 0;
+      continue;
+    }
     writeBuffer[writeBufferPos] = 0;
-
     // send cmd and pickup the response
     if ((b == '#') || ((strlen(writeBuffer) == 1) && (b == (char)6))) {
       char readBuffer[50] = "";
-      readLX200Bytes(writeBuffer, readBuffer, sizeof(readBuffer), CmdTimeout, true);
+      if (readLX200Bytes(writeBuffer, readBuffer, sizeof(readBuffer), CmdTimeout, true))
+      {
+        // return the response, if we have one
+        if (strlen(readBuffer) > 0)
+        {
+          if (cmdSvrClient && cmdSvrClient.connected()) {
+            cmdSvrClient.print(readBuffer);
+            delay(2);
+          }
+        }
+      }
       writeBuffer[0] = 0;
       writeBufferPos = 0;
-      // return the response, if we have one
-      if (strlen(readBuffer) > 0) {
-        if (cmdSvrClient && cmdSvrClient.connected()) {
-          cmdSvrClient.print(readBuffer);
-          delay(2);
-        }
-      }      
     }
     else server.handleClient();
   }
