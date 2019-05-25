@@ -286,8 +286,14 @@ void  Command_G()
     //  :GA#   Get Telescope Altitude
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //         The current scope altitude
-
-    getHor(&f, &f1);
+    if (isAltAZ())
+    {
+      cli();
+      f = (double)(posAxis2 /*+ indexAxis2Steps*/) / StepsPerDegreeAxis2;
+      sei();   
+    }
+    else
+      getHor(&f, &f1);
     if (!doubleToDms(reply, &f, false, true))
       commandError = true;
     else
@@ -497,7 +503,7 @@ void  Command_G()
     //         Returns the tracking rate if siderealTracking, 0.0 otherwise
     if (sideralTracking && !movingTo)
     {
-      f = mountType == MOUNT_TYPE_ALTAZM ? GetTrackingRate() : trackingTimerRateAxis1 ;
+      f = isAltAZ() ? GetTrackingRate() : trackingTimerRateAxis1 ;
       f *= 60* 1.00273790935;
     }
     else
@@ -608,7 +614,17 @@ void  Command_G()
   case 'Z':
     //  :GZ#   Get telescope azimuth
     //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
-    if (command[1] == 'Z')
+    if (isAltAZ())
+    {
+      cli();
+      f1 = (double)(posAxis1 /*+ indexAxis1Steps*/) / StepsPerDegreeAxis1;
+      while(f1>360)
+        f1-=360;
+      while(f1<0)
+        f1+=360;
+      sei();
+    }
+    else
       getHor(&f, &f1);
     if (!doubleToDms(reply, &f1, true, false))
       commandError = true;

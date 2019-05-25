@@ -17,9 +17,9 @@ const char html_configMount_2[] PROGMEM =
 const char html_configMaxRate[] PROGMEM =
 "Speed & Acceleration: <br />"
 "<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%d' type='number' name='MaxR' min='32' max='1000'>"
+" <input value='%d' type='number' name='MaxR' min='32' max='4000'>"
 "<button type='submit'>Upload</button>"
-" (Maximum Slewing speed from 32x to 1000x)"
+" (Maximum Slewing speed from 32x to 4000x)"
 "</form>"
 "\r\n";
 const char html_configGuideRate[] PROGMEM =
@@ -76,9 +76,9 @@ const char html_configStAxis[] PROGMEM =
 "\r\n";
 const char html_configMuAxis[] PROGMEM =
 "<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%d' type='number' name='mmu%d' min='16' max='256'>"
+" <input value='%d' type='number' name='mmu%d' min='8' max='256'>"
 "<button type='submit'>Upload</button>"
-" (Microsteps Axis%d, valid value are 16, 32, 64, 128, 256)"
+" (Microsteps Axis%d, valid value are 8, 16, 32, 64, 128, 256)"
 "</form>"
 "\r\n";
 const char html_configLCAxis[] PROGMEM =
@@ -159,6 +159,8 @@ void wifibluetooth::handleConfigurationTelescope() {
   data += FPSTR(html_configMount_1);
   ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_GEM ? data += "<option selected value='1'>German</option>" : data += "<option value='1'>German</option>";
   ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK ? data += "<option selected value='2'>Fork</option>" : data += "<option value='2'>Fork</option>";
+	ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_ALTAZM ? data += "<option selected value='3'>Alt Az</option>" : data += "<option value='3'>Alt Az</option>";
+	ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK_ALT ? data += "<option selected value='4'>Alt Az Fork</option>" : data += "<option value='4'>Alt Az Fork</option>";
   data += FPSTR(html_configMount_2);  
   sendHtml(data);
 
@@ -281,7 +283,7 @@ void wifibluetooth::processConfigurationTelescopeGet() {
   v = server.arg("mount");
   if (v != "")
   {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 4)))
     {
       sprintf(temp, ":S!X#");
       temp[3] = '0' + i;
@@ -292,7 +294,7 @@ void wifibluetooth::processConfigurationTelescopeGet() {
 
   v = server.arg("MaxR");
   if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1000))){
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4000))){
       sprintf(temp, ":SX92:%04d#", i);
       SetLX200(temp);
     }
@@ -359,14 +361,14 @@ void wifibluetooth::processConfigurationTelescopeGet() {
   }
   v = server.arg("mmu1");
   if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 256))) {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256))) {
       sprintf(temp, ":$MR%d#", (int)log2(i));
       SetLX200(temp);
     }
   }
   v = server.arg("mmu2");
   if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 256))) {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256))) {
       sprintf(temp, ":$MD%d#", (int)log2(i));
       SetLX200(temp);
     }

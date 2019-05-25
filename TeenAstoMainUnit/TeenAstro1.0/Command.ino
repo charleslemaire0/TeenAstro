@@ -149,7 +149,7 @@ boolean buildCommand_serial_zero(char c)
   // (chr)6 is a special status command for the LX200 protocol
   if ((c == (char)6) && (bufferPtr_serial_zero == 0))
   {
-    mountType == MOUNT_TYPE_ALTAZM ? Serial_print("A") : Serial_print("P");
+    mountType == isAltAZ() ? Serial_print("A") : Serial_print("P");
   }
 
   // ignore spaces/lf/cr, dropping spaces is another tweek to allow compatibility with LX200 protocol
@@ -210,7 +210,7 @@ boolean buildCommand_serial_one(char c)
   // (chr)6 is a special status command for the LX200 protocol
   if ((c == (char)6) && (bufferPtr_serial_one == 0))
   {
-    mountType == MOUNT_TYPE_ALTAZM ? Serial1_print("A") : Serial1_print("P");
+    mountType == isAltAZ() ? Serial1_print("A") : Serial1_print("P");
   }
 
   // ignore spaces/lf/cr, dropping spaces is another tweek to allow compatibility with LX200 protocol

@@ -26,7 +26,7 @@ Again:
 
 
   // adjust rates near the horizon to help keep from exceeding the minAlt limit
-  if (mountType != MOUNT_TYPE_ALTAZM)
+  if (mountType != MOUNT_TYPE_ALTAZM && mountType != MOUNT_TYPE_FORK_ALT)
   {
     if ( tempPosAxis2 != lastPosAxis2) {
       bool decreasing = tempPosAxis2 < lastPosAxis2;
@@ -134,15 +134,15 @@ Again:
   if (temp > TakeupRate) temp = TakeupRate;                      // slowest rate
   cli(); timerRateAxis2 = temp; sei();
 
-  if (mountType == MOUNT_TYPE_ALTAZM)
-  {
-    // In AltAz mode & at the end of slew & near the Zenith, disable tracking for a moment if we're getting close to the target
-    if ((distDestAxis1 <= (long)StepsPerDegreeAxis1 * 2L) && (distDestAxis2 <= (long)StepsPerDegreeAxis2 * 2L)) {
-      if ((long)targetAxis2.part.m > 80L * (long)StepsPerDegreeAxis2 ) {
-        sideralTracking = false;
-      }
-    }
-  }
+  //if (isAltAZ())
+  //{
+  //  // In AltAz mode & at the end of slew & near the Zenith, disable tracking for a moment if we're getting close to the target
+  //  if ((distDestAxis1 <= (long)StepsPerDegreeAxis1 * 2L) && (distDestAxis2 <= (long)StepsPerDegreeAxis2 * 2L)) {
+  //    if ((long)targetAxis2.part.m > 80L * (long)StepsPerDegreeAxis2 ) {
+  //      sideralTracking = false;
+  //    }
+  //  }
+  //}
   updateDeltaTarget();
 
   distDestAxis1 = abs(deltaTargetAxis1);  // distance from dest HA
@@ -150,11 +150,11 @@ Again:
 
   if ((distDestAxis1 <= 2) && (distDestAxis2 <= 2))
   {
-    if (mountType == MOUNT_TYPE_ALTAZM)
-    {
-      // Near the Zenith disable tracking in AltAz mode for a moment if we're getting close to the target
-      sideralTracking = true;
-    }
+    //if (isAltAZ())
+    //{
+    //  // Near the Zenith disable tracking in AltAz mode for a moment if we're getting close to the target
+    //  sideralTracking = true;
+    //}
     // restore last tracking state
     movingTo = false;
     SetSiderealClockRate(siderealInterval);
@@ -222,18 +222,14 @@ bool DecayModeTrack = false;
 void DecayModeTracking() {
   if (DecayModeTrack) return;
   DecayModeTrack = true;
-  cli();
   motorAxis1.setCurrent((unsigned int)LowCurrAxis1*10);
   motorAxis2.setCurrent((unsigned int)LowCurrAxis2*10);
-  sei();
 }
 
 void DecayModeGoto() {
   if (!DecayModeTrack) return;
   DecayModeTrack = false;
-  cli();
   motorAxis1.setCurrent((unsigned int)HighCurrAxis1*10);
   motorAxis2.setCurrent((unsigned int)HighCurrAxis2*10);
-  sei();
 }
 

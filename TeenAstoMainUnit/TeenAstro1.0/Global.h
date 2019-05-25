@@ -96,8 +96,11 @@ long quaterRotAxis1;
 long halfRotAxis2;
 long quaterRotAxis2;
 
-long celestialPoleStepAxis1;
-long celestialPoleStepAxis2;
+long poleStepAxis1;
+long poleStepAxis2;
+
+long homeStepAxis1;
+long homeStepAxis2;
 
 volatile double         timerRateRatio;
 volatile boolean        useTimerRateRatio;

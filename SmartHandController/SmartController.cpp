@@ -1024,13 +1024,13 @@ bool SmartHandController::menuSetMicro(const uint8_t &axis)
   if (!DisplayMessageLX200(readMicroLX200(axis, microStep)))
     return false;
   char text[20];
-  char * string_list_micro = "16 (~256)\n32\n64\n128\n256";
+  char * string_list_micro = "(8\n16\n32\n64\n128\n256";
   sprintf(text, "Stepper M%u", axis);
-  uint8_t choice = microStep - 4 + 1;
+  uint8_t choice = microStep - 3 + 1;
   choice = display->UserInterfaceSelectionList(&buttonPad, text, choice, string_list_micro);
   if (choice)
   {
-    microStep = choice - 1 + 4;
+    microStep = choice - 1 + 3;
     return DisplayMessageLX200(writeMicroLX200(axis, microStep), false);
   }
   return true;
@@ -1567,7 +1567,7 @@ void SmartHandController::menuMountType()
     DisplayLongMessage("Warning!", NULL, "No mount type", "was defined!", -1);
     current_selection_L3 = 1;
   }
-  const char *string_list_Mount = "German Equatorial\n""Equatorial Fork"/*\n""Altazimutal\n""Altazimutal Fork"*/;
+  const char *string_list_Mount = "German Equatorial\n""Equatorial Fork\n""Altazimutal\n""Altazimutal Fork";
   current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, "Mount Type", current_selection_L3, string_list_Mount);
   if (current_selection_L3)
   {
@@ -1982,7 +1982,7 @@ void SmartHandController::menuMaxRate()
   if (DisplayMessageLX200(GetLX200(":GX92#", outRate, sizeof(outRate))))
   {
     float maxrate = (float)strtol(&outRate[0], NULL, 10);
-    if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Rate", "", &maxrate, 32, 1000, 4, 0, ""))
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Rate", "", &maxrate, 32, 4000, 4, 0, ""))
     {
       sprintf(cmd, ":SX92:%04d#", (int)maxrate);
       DisplayMessageLX200(SetLX200(cmd));

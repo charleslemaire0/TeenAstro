@@ -300,7 +300,7 @@ void loop()
     // figure out the current Altitude
     do_fastalt_calc();
 
-    if (mountType == MOUNT_TYPE_ALTAZM)
+    if (isAltAZ())
     {
       // figure out the current Alt/Azm tracking rates
       if (rtk.m_lst % 3 != 0)
@@ -456,7 +456,7 @@ void SafetyCheck(const bool forceTracking)
   }
   else
   {
-    if (mountType != MOUNT_TYPE_ALTAZM)
+    if (!isAltAZ())
     {
 
       // when Fork mounted, ignore pierSide and just stop the mount if it passes the underPoleLimit
@@ -493,7 +493,7 @@ void SafetyCheck(const bool forceTracking)
   }
 
   // check for exceeding MinDec or MaxDec
-  if (mountType != MOUNT_TYPE_ALTAZM)
+  if (!isAltAZ())
   {
     if ((getApproxDec() < MinDec) ||
         (getApproxDec() > MaxDec) ||
@@ -574,7 +574,7 @@ void initmount()
   underPoleLimitGOTO = (double)EEPROM.read(EE_dup) / 10;
   if (underPoleLimitGOTO < 9 || underPoleLimitGOTO>12)
     underPoleLimitGOTO = 12;
-  if (mountType == MOUNT_TYPE_ALTAZM && maxAlt > 87)
+  if (isAltAZ() && maxAlt > 87)
     maxAlt = 87;
 
 
@@ -603,23 +603,27 @@ void initmount()
   GeoAlign.init();
 
   // Tracking and rate control
-  refraction_enable = mountType == MOUNT_TYPE_ALTAZM ? false : true;
+  refraction_enable = isAltAZ() ? false : true;
   onTrack = false;
 
 }
 
 void initCelestialPole()
 {
-  if (mountType == MOUNT_TYPE_ALTAZM || mountType == MOUNT_TYPE_FORK_ALT)
+  if (isAltAZ())
   {
-    double lat = *localSite.latitude();
-    celestialPoleStepAxis2 = fabs(lat) *StepsPerDegreeAxis2;
-    celestialPoleStepAxis1 = (*localSite.latitude() < 0) ? halfRotAxis1 : 0L;
+    //double lat = *localSite.latitude();
+    poleStepAxis2 = quaterRotAxis2;
+    poleStepAxis1 = (*localSite.latitude() < 0) ? halfRotAxis1 : 0L;
+    homeStepAxis1 = poleStepAxis1;
+    homeStepAxis2 = 0;
   }
   else
   {
-    celestialPoleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
-    celestialPoleStepAxis2 = (*localSite.latitude() < 0) ? -quaterRotAxis2 : quaterRotAxis2;
+    poleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
+    poleStepAxis2 = (*localSite.latitude() < 0) ? -quaterRotAxis2 : quaterRotAxis2;
+    homeStepAxis1 = poleStepAxis1;
+    homeStepAxis2 = poleStepAxis2;
   }
 }
 
@@ -643,7 +647,7 @@ void readEEPROMmotor()
   GearAxis1 = EEPROM_readInt(EE_GearAxis1);
   StepRotAxis1 = EEPROM_readInt(EE_StepRotAxis1);
   MicroAxis1 = EEPROM.read(EE_MicroAxis1);
-  if (MicroAxis1 < 4) MicroAxis1 = 4; else if (MicroAxis1 > 8) MicroAxis1 = 8;
+  if (MicroAxis1 < 3) MicroAxis1 = 3; else if (MicroAxis1 > 8) MicroAxis1 = 8;
   ReverseAxis1 = EEPROM.read(EE_ReverseAxis1);
   LowCurrAxis1 = EEPROM.read(EE_LowCurrAxis1);
   HighCurrAxis1 = EEPROM.read(EE_HighCurrAxis1);
@@ -653,7 +657,7 @@ void readEEPROMmotor()
   GearAxis2 = EEPROM_readInt(EE_GearAxis2);
   StepRotAxis2 = EEPROM_readInt(EE_StepRotAxis2);
   MicroAxis2 = EEPROM.read(EE_MicroAxis2);
-  if (MicroAxis2 < 4) MicroAxis2 = 4; else if (MicroAxis2 > 8) MicroAxis2 = 8;
+  if (MicroAxis2 < 3) MicroAxis2 = 3; else if (MicroAxis2 > 8) MicroAxis2 = 8;
   ReverseAxis2 = EEPROM.read(EE_ReverseAxis2);
   LowCurrAxis2 = EEPROM.read(EE_LowCurrAxis2);
   HighCurrAxis2 = EEPROM.read(EE_HighCurrAxis2);

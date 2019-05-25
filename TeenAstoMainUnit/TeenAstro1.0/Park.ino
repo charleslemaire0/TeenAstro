@@ -141,7 +141,7 @@ byte park()
         h *= pow(2, MicroAxis1);
         d *= pow(2, MicroAxis2);
         // stop tracking
-        lastSideralTracking = sideralTracking;
+        lastSideralTracking = false;
         sideralTracking = false;
         // record our status
         parkStatus = PRK_PARKING;
@@ -235,8 +235,8 @@ boolean unpark()
 void syncPolarHome()
 {
   // update starting coordinates to reflect NCP or SCP polar home position
-  startAxis1 = celestialPoleStepAxis1;
-  startAxis2 = celestialPoleStepAxis2;
+  startAxis1 = homeStepAxis1;
+  startAxis2 = homeStepAxis2;
   cli();
   targetAxis1.part.m = startAxis1;
   targetAxis1.part.f = 0;

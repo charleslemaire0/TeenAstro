@@ -124,7 +124,7 @@ void Command_dollar()
     int i;
     if ((parameter[0] == 'D' || parameter[0] == 'R')
       && (strlen(parameter) > 1) && (strlen(parameter) < 4)
-      && atoi2( &parameter[1], &i)  && ((i >= 4) && (i < 9)))
+      && atoi2( &parameter[1], &i)  && ((i >= 3) && (i < 9)))
     {
       if (parameter[0] == 'D')
       {
@@ -508,7 +508,7 @@ void Command_A()
             meridianFlip = FLIP_NEVER;
 
           // AltAz Taki method
-          if (mountType == MOUNT_TYPE_ALTAZM && (alignNumStars > 1) && (alignThisStar <= alignNumStars))
+          if (isAltAZ() && (alignNumStars > 1) && (alignThisStar <= alignNumStars))
           {
             cli();
 

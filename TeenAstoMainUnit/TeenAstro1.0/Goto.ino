@@ -10,7 +10,7 @@ boolean syncEqu(double RA, double Dec)
   long axis1, axis2;
   // correct for polar misalignment only by clearing the index offsets
 
-  if (mountType == MOUNT_TYPE_ALTAZM)
+  if (isAltAZ())
   {
     double Axis1, Axis2;
     if (Align.isReady())
@@ -66,7 +66,7 @@ bool deltaSyncEqu(double RA, double Dec)
 
   // correct for polar misalignment only by clearing the index offsets
 
-  if (mountType == MOUNT_TYPE_ALTAZM)
+  if (isAltAZ())
   {
     double Axis1, Axis2;
     if (Align.isReady())
@@ -113,11 +113,13 @@ void getHADec(double *HA, double *Dec) {
   double Axis2 = posAxis2;
   sei();
 
-  if (mountType == MOUNT_TYPE_ALTAZM)
+  if (isAltAZ())
   {
     // get the hour angle (or Azm)
     double z = Axis1 / (double)StepsPerDegreeAxis1;
     // get the declination (or Alt)
+        //double lat = *localSite.latitude();
+    //PoleStepAxis2 = fabs(lat) *StepsPerDegreeAxis2;
     double a = Axis2 / (double)StepsPerDegreeAxis2;
 
     // instrument to corrected horizon
@@ -141,7 +143,7 @@ boolean getEqu(double *RA, double *Dec, boolean returnHA)
 {
   double  HA;
 
-  if (mountType != MOUNT_TYPE_ALTAZM)
+  if (!isAltAZ())
   {
     // get the HA and Dec
 
@@ -231,7 +233,7 @@ byte goToEqu(double RA, double Dec, PierSide preferedPierSide)
   }   // fail, prior goto cancelled
 
   if (guideDirAxis1 || guideDirAxis2) return 7;   // fail, unspecified error
-  if (mountType == MOUNT_TYPE_ALTAZM)
+  if (isAltAZ())
   {
     if (Align.isReady())
     {
@@ -343,7 +345,7 @@ byte goTo(long thisTargetAxis1, long thisTargetAxis2)
 
 
   // final validation
-if (mountType== MOUNT_TYPE_ALTAZM)
+if (isAltAZ())
 {
     // allow +/- 360 in Az
   if (((thisTargetAxis1 /*+ indexAxis1Steps*/ > (long)StepsPerDegreeAxis1 *
