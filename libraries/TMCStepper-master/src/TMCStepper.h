@@ -31,7 +31,7 @@
 #define INIT2224_REGISTER(REG) TMC2224_n::REG##_t REG##_register = TMC2224_n::REG##_t
 #define SET_ALIAS(TYPE, DRIVER, NEW, ARG, OLD) TYPE (DRIVER::*NEW)(ARG) = &DRIVER::OLD
 
-#define TMCSTEPPER_VERSION 0x000301 // v0.3.1
+#define TMCSTEPPER_VERSION 0x000305 // v0.3.5
 
 class TMCStepper {
 	public:
@@ -70,18 +70,18 @@ class TMCStepper {
 		uint8_t irun();
 		uint8_t iholddelay();
 
-		// TPOWERDOWN
+		// W: TPOWERDOWN
 		uint8_t TPOWERDOWN();
 		void TPOWERDOWN(					uint8_t input);
 
-		// TSTEP
+		// R: TSTEP
 		uint32_t TSTEP();
 
-		// TPWMTHRS
+		// W: TPWMTHRS
 		uint32_t TPWMTHRS();
 		void TPWMTHRS(						uint32_t input);
 
-		// MSCNT
+		// R: MSCNT
 		uint16_t MSCNT();
 
 		// R: MSCURACT
@@ -134,7 +134,7 @@ class TMC2130Stepper : public TMCStepper {
 		void sg_current_decrease(uint8_t value);
 		uint8_t sg_current_decrease();
 
-		// GCONF
+		// RW: GCONF
 		uint32_t GCONF();
 		void GCONF(								uint32_t value);
 		void I_scale_analog(			bool B);
@@ -172,7 +172,7 @@ class TMC2130Stepper : public TMCStepper {
 		bool stop_enable();
 		bool direct_mode();
 
-		// IOIN
+		// R: IOIN
 		uint32_t IOIN();
 		bool step();
 		bool dir();
@@ -182,15 +182,15 @@ class TMC2130Stepper : public TMCStepper {
 		bool dco();
 		uint8_t version();
 
-		// TCOOLTHRS
+		// W: TCOOLTHRS
 		uint32_t TCOOLTHRS();
 		void TCOOLTHRS(						uint32_t input);
 
-		// THIGH
+		// W: THIGH
 		uint32_t THIGH();
 		void THIGH(								uint32_t input);
 
-		// XDRIRECT
+		// RW: XDRIRECT
 		uint32_t XDIRECT();
 		void XDIRECT(							uint32_t input);
 		void coil_A(							int16_t 	B);
@@ -198,11 +198,11 @@ class TMC2130Stepper : public TMCStepper {
 		int16_t coil_A();
 		int16_t coil_B();
 
-		// VDCMIN
+		// W: VDCMIN
 		uint32_t VDCMIN();
 		void VDCMIN(							uint32_t input);
 
-		// CHOPCONF
+		// RW: CHOPCONF
 		uint32_t CHOPCONF();
 		void CHOPCONF(						uint32_t value);
 		void toff(								uint8_t B);
@@ -238,7 +238,7 @@ class TMC2130Stepper : public TMCStepper {
 		bool 	dedge();
 		bool 	diss2g();
 
-		// COOLCONF
+		// W: COOLCONF
 		void COOLCONF(uint32_t value);
 		uint32_t COOLCONF();
 		void semin(								uint8_t B);
@@ -256,7 +256,7 @@ class TMC2130Stepper : public TMCStepper {
 		int8_t sgt();
 		bool sfilt();
 
-		// DRV_STATUS
+		// R: DRV_STATUS
 		uint32_t DRV_STATUS();
 		uint16_t sg_result();
 		bool fsactive();
@@ -270,7 +270,7 @@ class TMC2130Stepper : public TMCStepper {
 		bool olb();
 		bool stst();
 
-		// PWMCONF
+		// W: PWMCONF
 		void PWMCONF(							uint32_t value);
 		uint32_t PWMCONF();
 		void pwm_ampl(						uint8_t B);
@@ -286,10 +286,10 @@ class TMC2130Stepper : public TMCStepper {
 		bool 	pwm_symmetric();
 		uint8_t freewheel();
 
-		// PWM_SCALE
+		// R: PWM_SCALE
 		uint8_t PWM_SCALE();
 
-		// ENCM_CTRL
+		// W: ENCM_CTRL
 		uint8_t ENCM_CTRL();
 		void ENCM_CTRL(						uint8_t input);
 		void inv(									bool B);
@@ -297,7 +297,7 @@ class TMC2130Stepper : public TMCStepper {
 		bool inv();
 		bool maxspeed();
 
-		// LOST_STEPS
+		// R: LOST_STEPS
 		uint32_t LOST_STEPS();
 
 		// Function aliases
@@ -415,7 +415,7 @@ class TMC5130Stepper : public TMC2160Stepper {
 		// W: SLAVECONF
 		uint16_t SLAVECONF();
 		void SLAVECONF(uint16_t input);
-		// IOIN
+		// R: IOIN
 		uint32_t 	IOIN();
 		bool 			refl_step();
 		bool 			refr_dir();
@@ -427,11 +427,11 @@ class TMC5130Stepper : public TMC2160Stepper {
 		bool 			swcomp_in();
 		uint8_t 	version();
 
-		// GCONF
+		// RW: GCONF
 		void diag1_poscomp_pushpull(bool B) { diag1_pushpull(B); }
 		bool diag1_poscomp_pushpull() { return diag1_pushpull(); }
 
-		// SW_MODE
+		// RW: SW_MODE
 		uint32_t SW_MODE();
 		void SW_MODE(uint32_t input);
 
@@ -460,7 +460,7 @@ class TMC5130Stepper : public TMC2160Stepper {
 		bool sg_stop();
 		bool en_softstop();
 
-		// RAMP_STAT
+		// R+C: RAMP_STAT
 		uint32_t RAMP_STAT();
 		bool status_stop_l();
 		bool status_stop_r();
@@ -477,7 +477,7 @@ class TMC5130Stepper : public TMC2160Stepper {
 		bool second_move();
 		bool status_sg();
 
-		// ENCMODE
+		// RW: ENCMODE
 		uint32_t ENCMODE();
 		void ENCMODE(uint32_t input);
 		void pol_a(bool B);
@@ -581,15 +581,15 @@ class TMC5130Stepper : public TMC2160Stepper {
 		INIT_REGISTER(ENCMODE){{.sr=0}};
 		INIT_REGISTER(ENC_CONST){.sr=0};
 
-		struct IFCNT_t 		{ constexpr static uint8_t address = 0x02; };
-		struct VACTUAL_t 	{ constexpr static uint8_t address = 0x22; };
-		struct XTARGET_t 	{ constexpr static uint8_t address = 0x2D; };
-		struct XLATCH_t 	{ constexpr static uint8_t address = 0x36; };
-		struct X_ENC_t 		{ constexpr static uint8_t address = 0x39; };
-		struct ENC_STATUS_t { constexpr static uint8_t address = 0x3B; };
-		struct ENC_LATCH_t 	{ constexpr static uint8_t address = 0x3C; };
-		struct MSCNT_t		{ constexpr static uint8_t address = 0x6A; };
-		struct MSCURACT_t 	{ constexpr static uint8_t address = 0x6B; };
+		struct IFCNT_t 		{ constexpr static uint8_t address = 0x02; }; // R
+		struct VACTUAL_t 	{ constexpr static uint8_t address = 0x22; }; // R
+		struct XTARGET_t 	{ constexpr static uint8_t address = 0x2D; }; // RW
+		struct XLATCH_t 	{ constexpr static uint8_t address = 0x36; }; // R
+		struct X_ENC_t 		{ constexpr static uint8_t address = 0x39; }; // RW
+		struct ENC_STATUS_t { constexpr static uint8_t address = 0x3B; }; // R+C
+		struct ENC_LATCH_t 	{ constexpr static uint8_t address = 0x3C; }; // R
+		struct MSCNT_t		{ constexpr static uint8_t address = 0x6A; }; // R
+		struct MSCURACT_t 	{ constexpr static uint8_t address = 0x6B; }; // R
 
 		/*
 		INIT_REGISTER(MSLUT0){0};
@@ -737,6 +737,7 @@ class TMC2208Stepper : public TMCStepper {
 			TMC2208Stepper(uint16_t SW_RX_pin, uint16_t SW_TX_pin, float RS, bool has_rx=true);
 		#endif
 		void push();
+		void begin();
 		void beginSerial(uint32_t baudrate);
 		bool isEnabled();
 
@@ -893,13 +894,19 @@ class TMC2208Stepper : public TMCStepper {
 		#if SW_CAPABLE_PLATFORM
 			SoftwareSerial * SWSerial = NULL;
 		#endif
+
 		void write(uint8_t, uint32_t);
 		uint32_t read(uint8_t);
 		uint8_t calcCRC(uint8_t datagram[], uint8_t len);
 		static constexpr uint8_t  TMC2208_SYNC = 0x05,
 															TMC2208_SLAVE_ADDR = 0x00;
 		const bool write_only;
-		static constexpr uint8_t replyDelay = 5;
+		static constexpr uint8_t replyDelay = 2;
+		static constexpr uint8_t abort_window = 5;
+		static constexpr uint8_t max_retries = 2;
+
+		template<typename SERIAL_TYPE>
+		friend uint64_t _sendDatagram(SERIAL_TYPE &, uint8_t [], const uint8_t, uint16_t);
 };
 
 class TMC2224Stepper : public TMC2208Stepper {

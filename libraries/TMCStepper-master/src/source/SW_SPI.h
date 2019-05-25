@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include "TMC_platforms.h"
 
 class SW_SPIClass {
 	public:
@@ -14,10 +15,13 @@ class SW_SPIClass {
 		const uint16_t	mosi_pin,
 						miso_pin,
 						sck_pin;
-		uint8_t mosi_bm,
-				miso_bm,
-				sck_bm;
-		volatile uint8_t *mosi_register,
-						 *miso_register,
-						 *sck_register;
+
+		#if defined(ARDUINO_ARCH_AVR)
+			fastio_bm mosi_bm,
+					miso_bm,
+					sck_bm;
+			fastio_reg mosi_register,
+							 miso_register,
+							 sck_register;
+		#endif
 };
