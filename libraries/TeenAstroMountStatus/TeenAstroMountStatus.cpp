@@ -128,7 +128,7 @@ void TeenAstroMountStatus::updateTrackingRate()
 };
 void TeenAstroMountStatus::updateMount()
 {
-  if (millis() - m_lastStateMount > updaterate/4)
+  if (millis() - m_lastStateMount > updaterate)
   {
     m_hasInfoMount = GetLX200(":GU#", m_TempMount, sizeof(m_TempMount)) == LX200VALUEGET;
     m_hasInfoMount ? m_lastStateMount = millis() : m_connectionFailure++;
