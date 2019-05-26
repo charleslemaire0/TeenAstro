@@ -76,24 +76,19 @@ uint8_t ext_UserInterfaceInputValueDate(u8g2_t *u8g2, Pad *extPad, const char *t
 
 uint8_t ext_UserInterfaceInputValueRA(u8g2_t *u8g2, Pad *extPad, long *value);
 
+uint8_t ext_UserInterfaceInputValueDec(u8g2_t *u8g2, Pad *extPad, long *value);
 
 uint8_t ext_UserInterfaceInputValueDec(u8g2_t *u8g2, Pad *extPad, long *value);
 
+uint8_t ext_UserInterfaceInputValueAlt(u8g2_t *u8g2, Pad *extPad, long *value);
+
+uint8_t ext_UserInterfaceInputValueAz(u8g2_t *u8g2, Pad *extPad, long *value);
 
 uint8_t ext_UserInterfaceInputValueUTCTime(u8g2_t *u8g2, Pad *extPad, long *value);
 
-
 uint8_t ext_UserInterfaceInputValueLatitude(u8g2_t *u8g2, Pad *extPad, long *value);
 
-
 uint8_t ext_UserInterfaceInputValueLongitude(u8g2_t *u8g2, Pad *extPad, long *value);
-
-
-void gethms(const long& v, uint8_t& v1, uint8_t& v2, uint8_t& v3);
-
-
-void getdms(const long& v, short& v1, uint8_t& v2, uint8_t& v3);
-
 
 void add_days(uint8_t& year, uint8_t& month, uint8_t& day, int days2add);
 

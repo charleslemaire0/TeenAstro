@@ -1,6 +1,7 @@
-
+#include <TeenAstroFunction.h>
 #include "u8g2_ext_input.h"
 #include "u8g2_ext_event.h"
+
 /*
 Copyright (c) 2018, 
 All rights reserved.
@@ -316,11 +317,12 @@ uint8_t ext_UserInterfaceInputValueDMS(u8g2_t *u8g2, Pad* extPad, const char *ti
   if (!display_seconds)
     incr_ref = 60;
   float incr = 0;
-  uint8_t v1 = 0;
+  bool ispos = false;
+  uint16_t v1 = 0;
   uint8_t v2 = 0;
   uint8_t v3 = 0;
   long local_value = *value;
-  gethms(abs(local_value), v1, v2, v3);
+  getdms(local_value, ispos, v1, v2, v3);
 
 
   //uint8_t r; /* not used ??? */
@@ -389,7 +391,7 @@ uint8_t ext_UserInterfaceInputValueDMS(u8g2_t *u8g2, Pad* extPad, const char *ti
       xx = x;
       local_value < 0 ? u8g2_DrawUTF8(u8g2, xx, yy, symb_minus) : u8g2_DrawUTF8(u8g2, xx, yy, symb_plus);
       xx += pixel_width_sign;
-      xx += u8g2_DrawUTF8(u8g2, xx, yy, u8x8_u8toa(v1, digits1));
+      xx += u8g2_DrawUTF8(u8g2, xx, yy, u8x8_u16toa(v1, digits1));
       xx += u8g2_DrawUTF8(u8g2, xx, yy, symb1);
       xx += u8g2_DrawUTF8(u8g2, xx, yy, u8x8_u8toa(v2, 2));
       xx += u8g2_DrawUTF8(u8g2, xx, yy, symb2);
@@ -426,7 +428,7 @@ uint8_t ext_UserInterfaceInputValueDMS(u8g2_t *u8g2, Pad* extPad, const char *ti
         {
           local_value = lo;
           incr = 0;
-          gethms(abs(local_value), v1, v2, v3);
+          getdms(local_value, ispos, v1, v2, v3);
         }
         else
         {
@@ -441,7 +443,7 @@ uint8_t ext_UserInterfaceInputValueDMS(u8g2_t *u8g2, Pad* extPad, const char *ti
           if (incr > 3600)
             incr = 3600;
           local_value += incr;
-          gethms(abs(local_value), v1, v2, v3);
+          getdms(local_value, ispos, v1, v2, v3);
         }
         break;
       }
@@ -451,7 +453,7 @@ uint8_t ext_UserInterfaceInputValueDMS(u8g2_t *u8g2, Pad* extPad, const char *ti
         {
           local_value = hi;
           incr = 0;
-          gethms(abs(local_value), v1, v2, v3);
+          getdms(local_value, ispos, v1, v2, v3);
         }
         else
         {
@@ -466,7 +468,7 @@ uint8_t ext_UserInterfaceInputValueDMS(u8g2_t *u8g2, Pad* extPad, const char *ti
           if (incr < -3600)
             incr = -3600;
           local_value += incr;
-          gethms(abs(local_value), v1, v2, v3);
+          getdms(local_value, ispos, v1, v2, v3);
         }
         break;
       }
@@ -638,6 +640,18 @@ uint8_t ext_UserInterfaceInputValueDec(u8g2_t *u8g2, Pad *extPad, long *value)
   return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Declination", value, -324000, 324000, 2, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
 }
 
+uint8_t ext_UserInterfaceInputValueAlt(u8g2_t *u8g2, Pad *extPad, long *value)
+{
+  char DEGREE_SYMBOL[] = { 0xB0, '\0' };
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Altitude", value, 0, 324000, 2, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
+}
+
+uint8_t ext_UserInterfaceInputValueAz(u8g2_t *u8g2, Pad *extPad, long *value)
+{
+  char DEGREE_SYMBOL[] = { 0xB0, '\0' };
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Azimuth", value, 0, 324000*4, 3, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
+}
+
 uint8_t ext_UserInterfaceInputValueUTCTime(u8g2_t *u8g2, Pad *extPad, long *value)
 {
   return ext_UserInterfaceInputValueDMS(u8g2, extPad, "UTC Time", value, 0, 86399, 2, ":", ":", "", "", "", true);
@@ -653,20 +667,6 @@ uint8_t ext_UserInterfaceInputValueLongitude(u8g2_t *u8g2, Pad *extPad, long *va
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
   return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Longitude", value, -648000, 648000, 3, DEGREE_SYMBOL, "'", "\"", "W ", "E ", false);
-}
-
-void _gethms(const long& v, uint8_t& v1, uint8_t& v2, uint8_t& v3)
-{
-  v3 = v % 60;
-  v2 = (v / 60) % 60;
-  v1 = v / 3600;
-}
-
-void _getdms(const long& v, short& v1, uint8_t& v2, uint8_t& v3)
-{
-  v3 = abs(v) % 60;
-  v2 = (abs(v) / 60) % 60;
-  v1 = v / 3600;
 }
 
 void add_days(uint8_t& year, uint8_t& month, uint8_t& day, int days2add)

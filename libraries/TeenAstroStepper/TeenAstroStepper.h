@@ -152,7 +152,7 @@ public:
         digitalWrite(EnPin, LOW);
       break;
     case TMC5160:
-      m_tmc5160 = new TMC5160Stepper(CSPin, 0.075-0.02);
+      m_tmc5160 = new TMC5160Stepper(CSPin);
       if (EnPin > 0)
       {
         pinMode(EnPin, OUTPUT);
@@ -167,20 +167,20 @@ public:
       SPI.begin();
       pinMode(MISO, INPUT_PULLUP);
       m_tmc5160->push();
-      m_tmc5160->tbl(2);
-      m_tmc5160->toff(3);
-      m_tmc5160->hstrt(4);
-      m_tmc5160->hend(1);   
+      m_tmc5160->tbl(1);
+      m_tmc5160->TPOWERDOWN(255);
+      m_tmc5160->toff(4);
+      m_tmc5160->hstrt(0);
+      m_tmc5160->hend(2);
       m_tmc5160->en_pwm_mode(true);
-      m_tmc5160->TPWMTHRS(1000);
-      setCurrent(Curr);
+      m_tmc5160->pwm_freq(150);
+      m_tmc5160->pwm_autoscale(true);
+      m_tmc5160->pwm_ampl(180);
+      m_tmc5160->pwm_grad(10);
+      setCurrent(Curr); // mA
       setMicrostep(Micros);
       if (EnPin > 0)
         digitalWrite(EnPin, LOW);
-      break;
-    case NODRIVER:
-      break;
-    default:
       break;
     }
   };

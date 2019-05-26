@@ -35,7 +35,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 #include "u8g2_ext_catalog2.h"
-#ifdef NEWCAT
 #include <U8g2lib.h>
 #include <TeenAstroCatalog.h>
 #include "u8g2_ext_value.h"
@@ -448,4 +447,3 @@ bool ext_UserInterfaceCatalog2(u8g2_t *u8g2, Pad* extPad, const char *title)
 selection list with string line
 returns line height
 */
-#endif

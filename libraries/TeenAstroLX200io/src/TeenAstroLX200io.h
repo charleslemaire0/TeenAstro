@@ -1,5 +1,6 @@
 #pragma once
 #include<Arduino.h>
+#include<TeenAstroCatalog.h>
 #define Ser Serial
 #define TIMEOUT_CMD 30         
 #define TIMEOUT_WEB 15
@@ -25,13 +26,15 @@ LX200RETURN GetLatitudeLX200(double& degree);
 LX200RETURN GetLongitudeLX200(double& degree);
 LX200RETURN GetTrackingRateLX200(double& rate);
 void SetSiteLX200(int &value);
-LX200RETURN Move2TargetLX200();
+LX200RETURN Move2TargetLX200(bool RaDec);
 LX200RETURN SetTargetRaLX200(uint8_t& vr1, uint8_t& vr2, uint8_t& vr3);
-LX200RETURN SetTargetDecLX200(short& vd1, uint8_t& vd2, uint8_t& vd3);
+LX200RETURN SetTargetDecLX200(bool& ispos, uint8_t& vd1, uint8_t& vd2, uint8_t& vd3);
 LX200RETURN SyncGoHomeLX200(bool sync);
 LX200RETURN SyncGoParkLX200(bool sync);
-LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, short& vd1, uint8_t& vd2, uint8_t& vd3);
-LX200RETURN SyncGotoLX200(bool, float &Ra, float &Dec);
+LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t& vd3);
+LX200RETURN SyncGotoLX200(bool sync, float &Ra, float &Dec);
+LX200RETURN SyncGotoLX200AltAz(bool sync, float &Az, float &Alt);
+LX200RETURN SyncGotoLX200(bool sync, float &Ra, float &Dec, double epoch);
 LX200RETURN SyncSelectedStarLX200(unsigned short alignSelectedStar);
 LX200RETURN GetDateLX200(unsigned int &day, unsigned int &month, unsigned int &year);
 LX200RETURN SyncGotoCatLX200(bool sync);

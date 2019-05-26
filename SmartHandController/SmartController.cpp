@@ -1,14 +1,9 @@
 
 #include <TeenAstroMountStatus.h>
-#include <TeenAstroFunction.hpp>
 #include "_EEPROM_ext.h"
 #include "SmartController.h"
-#ifdef OLDCAT
-#include "MenuSyncGotoOld.h"
-#endif
-#ifdef NEWCAT
 #include "MenuSyncGoto.h"
-#endif 
+
 static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":Fo#", ":Fi#" };
 static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":FO#", ":FI#" };
 
@@ -1024,13 +1019,13 @@ bool SmartHandController::menuSetMicro(const uint8_t &axis)
   if (!DisplayMessageLX200(readMicroLX200(axis, microStep)))
     return false;
   char text[20];
-  char * string_list_micro = "(8\n16\n32\n64\n128\n256";
+  char * string_list_micro = "16 (~256)\n32\n64\n128\n256";
   sprintf(text, "Stepper M%u", axis);
-  uint8_t choice = microStep - 3 + 1;
+  uint8_t choice = microStep - 4 + 1;
   choice = display->UserInterfaceSelectionList(&buttonPad, text, choice, string_list_micro);
   if (choice)
   {
-    microStep = choice - 1 + 3;
+    microStep = choice - 1 + 4;
     return DisplayMessageLX200(writeMicroLX200(axis, microStep), false);
   }
   return true;
@@ -1982,7 +1977,7 @@ void SmartHandController::menuMaxRate()
   if (DisplayMessageLX200(GetLX200(":GX92#", outRate, sizeof(outRate))))
   {
     float maxrate = (float)strtol(&outRate[0], NULL, 10);
-    if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Rate", "", &maxrate, 32, 4000, 4, 0, ""))
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Rate", "", &maxrate, 32, 2001, 4, 0, ""))
     {
       sprintf(cmd, ":SX92:%04d#", (int)maxrate);
       DisplayMessageLX200(SetLX200(cmd));
@@ -2516,10 +2511,13 @@ void SmartHandController::menuLatitude()
     if (display->UserInterfaceInputValueLatitude(&buttonPad, &angle))
     {
       char cmd[20];
+      char sign = angle < 0 ? '-' : '+';
+      angle = abs(angle);
       angle /= 60;
-      minute = abs(angle % 60);
+      minute = angle % 60;
       degree = angle / 60;
       sprintf(cmd, ":St%+03d*%02d#", degree, minute);
+      cmd[3] = sign;
       DisplayMessageLX200(SetLX200(cmd), false);
     }
   }
@@ -2535,10 +2533,13 @@ void SmartHandController::menuLongitude()
     if (display->UserInterfaceInputValueLongitude(&buttonPad, &angle))
     {
       char cmd[20];
+      char sign = angle < 0 ? '-' : '+';
+      angle = abs(angle);
       angle /= 60;
-      minute = abs(angle) % 60;
+      minute = angle % 60;
       degree = angle / 60;
       sprintf(cmd, ":Sg%+04d*%02d#", degree, minute);
+      cmd[3] = sign;
       DisplayMessageLX200(SetLX200(cmd), false);
     }
   }

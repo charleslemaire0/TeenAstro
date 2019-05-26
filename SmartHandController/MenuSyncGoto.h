@@ -1,6 +1,10 @@
 // SyncGoto menu
 
-
+void secondsToFloat(const long& v, float& f)
+{
+  f = (double)v / 3600.0;
+  return;
+}
 
 SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
 {
@@ -20,7 +24,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
         if (menuSolarSys(sync)==MR_QUIT) return MR_QUIT;
         break;
       case 3:
-        if (menuRADec(sync)==MR_QUIT) return MR_QUIT;
+        if (menuCoordinates(sync)==MR_QUIT) return MR_QUIT;
         break;
       case 4:      
         if ( DisplayMessageLX200(SyncGoHomeLX200(sync), false)) return MR_QUIT;
@@ -30,6 +34,29 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
         break;
     }
   }
+}
+
+SmartHandController::MENU_RESULT SmartHandController::menuCoordinates(bool sync)
+{
+  static int current_selection = 1;
+  while (true) {
+    const char* string_list="J2000\nJNow\nAlt Az";
+    int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync Coord." : "Goto Coord.", current_selection, string_list);
+    if (selection == 0) return MR_CANCEL;
+    current_selection=selection;
+    switch (current_selection) {
+      case 1:
+        if (menuRADecJ2000(sync) == MR_QUIT) return MR_QUIT;
+        break;
+      case 2:
+        if (menuRADecNow(sync)==MR_QUIT) return MR_QUIT;
+        break;
+      case 3:
+        if (menuAltAz(sync) == MR_QUIT) return MR_QUIT;
+        break;
+    }
+  }
+  
 }
 
 SmartHandController::MENU_RESULT SmartHandController::menuPier()
@@ -393,7 +420,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilterVarMaxPer()
   return MR_OK;
 }
 
-SmartHandController::MENU_RESULT SmartHandController::menuRADec(bool sync)
+SmartHandController::MENU_RESULT SmartHandController::menuRADecNow(bool sync)
 {
   if (display->UserInterfaceInputValueRA(&buttonPad, &angleRA))
   {
@@ -404,6 +431,38 @@ SmartHandController::MENU_RESULT SmartHandController::menuRADec(bool sync)
       float fD;
       secondsToFloat(angleDEC,fD);
       if (DisplayMessageLX200(SyncGotoLX200(sync, fR, fD))) return MR_QUIT;
+    }
+  }
+  return MR_CANCEL;
+}
+
+SmartHandController::MENU_RESULT SmartHandController::menuRADecJ2000(bool sync)
+{
+  if (display->UserInterfaceInputValueRA(&buttonPad, &angleRA))
+  {
+    float fR;
+    secondsToFloat(angleRA,fR);
+    if (display->UserInterfaceInputValueDec(&buttonPad, &angleDEC))
+    {
+      float fD;
+      secondsToFloat(angleDEC,fD);
+      if (DisplayMessageLX200(SyncGotoLX200(sync, fR, fD, 2000))) return MR_QUIT;
+    }
+  }
+  return MR_CANCEL;
+}
+
+SmartHandController::MENU_RESULT SmartHandController::menuAltAz(bool sync)
+{
+  if (display->UserInterfaceInputValueAz(&buttonPad, &angleRA))
+  {
+    float fAz;
+    secondsToFloat(angleRA,fAz);
+    if (display->UserInterfaceInputValueAlt(&buttonPad, &angleDEC))
+    {
+      float fAlt;
+      secondsToFloat(angleDEC,fAlt);
+      if (DisplayMessageLX200(SyncGotoLX200AltAz(sync, fAz, fAlt))) return MR_QUIT;
     }
   }
   return MR_CANCEL;

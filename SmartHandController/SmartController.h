@@ -60,18 +60,7 @@ private:
   void menuTelAction();
   void menuSpeedRate();
   void menuTrack();
-#ifdef OLDCAT
-  void menuSyncGoto(bool sync);
-  void menuSolarSys(bool sync);
-  void menuHerschel(bool sync);
-  void menuNGC(bool sync);
-  void menuIC(bool sync);
-  void menuMessier(bool sync);
-  void menuStar(bool sync);
-  void menuRADec(bool sync);
-  void menuPier();
-#endif
-#ifdef NEWCAT
+
   enum MENU_RESULT { MR_OK, MR_CANCEL, MR_QUIT };
   uint8_t current_selection_filter = 1;
   uint8_t current_selection_filter_con = 1;
@@ -83,6 +72,7 @@ private:
   uint8_t current_selection_filter_dblmax = 1;
   uint8_t current_selection_filter_varmax = 1;
   MENU_RESULT menuSyncGoto(bool sync);
+  MENU_RESULT menuCoordinates(bool Sync);
   MENU_RESULT menuPier();
   MENU_RESULT subMenuSyncGoto(char sync, int subMenuNum);
   MENU_RESULT menuCatalog(bool sync, int number);
@@ -98,8 +88,10 @@ private:
   MENU_RESULT menuFilterDblMinSep();
   MENU_RESULT menuFilterDblMaxSep();
   MENU_RESULT menuFilterVarMaxPer();
-  MENU_RESULT menuRADec(bool sync);
-#endif
+  MENU_RESULT menuRADecNow(bool sync);
+  MENU_RESULT menuRADecJ2000(bool sync);
+  MENU_RESULT menuAltAz(bool sync);
+
 
   void menuAlignment();
 

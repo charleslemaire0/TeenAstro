@@ -1,6 +1,4 @@
 #include "u8g2_ext.h"
-
-#include "u8g2_ext_catalog.h"
 #include "u8g2_ext_catalog2.h"
 
 #include "u8g2_ext_input.h"
@@ -9,19 +7,10 @@
 #include "u8g2_ext_value.h"
 
 
-#ifdef OLDCAT
-bool U8G2_EXT::UserInterfaceCatalog(Pad *extPad, const char *title)
-{
-  return ext_UserInterfaceCatalog(U8G2_EXT::getU8g2(), extPad, title);
-};
-#endif
-
-#ifdef NEWCAT
 bool U8G2_EXT::UserInterfaceCatalog(Pad *extPad, const char *title)
 {
   return ext_UserInterfaceCatalog2(U8G2_EXT::getU8g2(), extPad, title);
 };
-#endif
 
 uint8_t U8G2_EXT::UserInterfaceMessage(Pad *extPad, const char *title1, const char *title2, const char *title3, const char *buttons)
 {
@@ -62,6 +51,16 @@ uint8_t U8G2_EXT::UserInterfaceInputValueRA(Pad *extPad, long *value)
 uint8_t U8G2_EXT::UserInterfaceInputValueDec(Pad *extPad, long *value)
 {
   return ext_UserInterfaceInputValueDec(U8G2_EXT::getU8g2(), extPad, value);
+};
+
+uint8_t U8G2_EXT::UserInterfaceInputValueAlt(Pad *extPad, long *value)
+{
+  return ext_UserInterfaceInputValueAlt(U8G2_EXT::getU8g2(), extPad, value);
+};
+
+uint8_t U8G2_EXT::UserInterfaceInputValueAz(Pad *extPad, long *value)
+{
+  return ext_UserInterfaceInputValueAz(U8G2_EXT::getU8g2(), extPad, value);
 };
 
 uint8_t U8G2_EXT::UserInterfaceInputValueUTCTime(Pad *extPad, long *value)
