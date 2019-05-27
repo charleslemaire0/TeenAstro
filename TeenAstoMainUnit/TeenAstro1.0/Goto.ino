@@ -58,6 +58,51 @@ boolean syncEqu(double RA, double Dec)
   return true;
 }
 
+
+// syncs the telescope/mount to the sky
+boolean syncAltAz(double Az, double Alt)
+{
+  // hour angleTrackingMoveTo
+
+  long axis1, axis2;
+  // correct for polar misalignment only by clearing the index offsets
+
+  if (isAltAZ())
+  {
+    axis1 = Az*StepsPerDegreeAxis1;
+    axis2 = Alt*StepsPerDegreeAxis2;
+  }
+  else
+  {
+    double Ha, Dec;
+    HorToEqu(Alt, Az, &Ha, &Dec);
+    GeoAlign.EquToStep(localSite.latitude(), Ha, Dec, &axis1, &axis2);
+  }
+
+  // compute index offsets indexAxis1/indexAxis2, if they're within reason
+  // actual posAxis1/posAxis2 are the coords of where this really is
+  // indexAxis1/indexAxis2 are the amount to add to the actual RA/Dec to arrive at the correct position
+  // double's are really single's on the ATMega's, and we're a digit or two shy of what's required to
+  // hold the steps in some cases but it's still getting down to the arc-sec level
+  // HA goes from +180...0..-180
+  //                 W   .   E
+  // indexAxis1 and indexAxis2 values get subtracted to arrive at the correct location
+  //indexAxis1 = InstrHA - ((double)(long)targetAxis1.part.m) / (double)StepsPerDegreeAxis1;
+  //indexAxis2 = InstrDec - ((double)(long)targetAxis2.part.m) / (double)StepsPerDegreeAxis2;
+  cli();
+  deltaSyncAxis1 =  (double)(axis1 - (long)targetAxis1.part.m ) / StepsPerDegreeAxis1;
+  deltaSyncAxis2 =  (double)(axis2 - (long)targetAxis2.part.m ) / StepsPerDegreeAxis2;
+  posAxis1 = axis1;
+  posAxis2 = axis2;
+  targetAxis1.part.m = axis1;
+  targetAxis1.part.f = 0;
+  targetAxis2.part.m = axis2;
+  targetAxis2.part.f = 0;
+  sei();
+  atHome = false;
+  return true;
+}
+
 bool deltaSyncEqu(double RA, double Dec)
 {
   long axis1, axis2;

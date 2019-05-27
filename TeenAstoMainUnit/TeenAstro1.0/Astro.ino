@@ -398,6 +398,13 @@ double getApproxDec()
 
 boolean do_fastalt_calc()
 {
+  if (isAltAZ())
+  {
+    currentAlt = (double)(posAxis2) / StepsPerDegreeAxis2;
+    return true;
+  }
+  else
+  {
     boolean done = false;
     ac_step++;
 
@@ -444,8 +451,8 @@ boolean do_fastalt_calc()
         ac_step = 0;
         done = true;
     }
-
-    return done;
+        return done;
+  }
 }
 
 
@@ -591,23 +598,20 @@ boolean do_refractionRate_calc()
 // -----------------------------------------------------------------------------------------------------------------------------
 // AltAz tracking
 
-#define AltAzTrackingRange  20  // distance in arc-min (20) ahead of and behind the current Equ position, used for rate calculation
+#define AltAzTrackingRange  1  // distance in arc-min (20) ahead of and behind the current Equ position, used for rate calculation
 double  az_Alt1, az_Alt2, az_Azm1, az_Azm2;
 
 boolean do_altAzmRate_calc()
 {
     boolean done = false;
-
     // turn off if not tracking at sidereal rate
-    if (!sideralTracking || movingTo)
+    if (!sideralTracking)
     {
         az_deltaAxis1 = 0.0;
         az_deltaAxis2 = 0.0;
         return true;
     }
-
     az_step++;
-
     // convert units, get ahead of and behind current position
     if (az_step == 1)
     {
@@ -625,16 +629,14 @@ boolean do_altAzmRate_calc()
             az_Axis2 = posAxis2;
             sei();
         }
-
-        // get the Azm
-        az_Azm = (double) az_Axis1 / (double) StepsPerDegreeAxis1;
-
-        // get the Alt
-        az_Alt = (double) az_Axis2 / (double) StepsPerDegreeAxis2;
+      // get the Azm
+      az_Azm = (double)az_Axis1 / (double)StepsPerDegreeAxis1;
+      // get the Alt
+      az_Alt = (double)az_Axis2 / (double)StepsPerDegreeAxis2;
     }
     else                        // convert to Equatorial coords
-    if ((az_step == 5))
-    {
+      if ((az_step == 5))
+      {
         HorToEqu(az_Alt, az_Azm, &az_HA1, &az_Dec1);
     }
     else                        // look ahead of and behind the current position

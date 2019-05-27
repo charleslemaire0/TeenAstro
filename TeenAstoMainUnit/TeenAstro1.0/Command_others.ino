@@ -576,6 +576,8 @@ void Command_B()
 }
 
 //   C - Sync Control
+//  :CA#   Synchonize the telescope with the current Azimuth and Altitude coordinates
+//         Returns: Nothing (Sync's fail silently)
 //  :CS#   Synchonize the telescope with the current right ascension and declination coordinates
 //         Returns: Nothing (Sync's fail silently)
 //  :CM#   Synchonize the telescope with the current database object (as above)
@@ -585,7 +587,7 @@ void Command_C()
 {
   if ((parkStatus == PRK_UNPARKED) &&
       !movingTo &&
-      ( command[1] == 'M' || command[1] == 'S'))
+      ( command[1] == 'A' || command[1] == 'M' || command[1] == 'S'))
   {
     if (newTargetPierSide != PIER_NOTVALID)
     {

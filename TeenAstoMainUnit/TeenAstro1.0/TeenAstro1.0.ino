@@ -296,10 +296,8 @@ void loop()
       }
       moveTo();
     }
-
     // figure out the current Altitude
     do_fastalt_calc();
-
     if (isAltAZ())
     {
       // figure out the current Alt/Azm tracking rates
@@ -313,7 +311,6 @@ void loop()
         do_refractionRate_calc();
     }
     // check for fault signal, stop any slew or guide and turn tracking off
-
     if ((faultAxis1 || faultAxis2))
     {
       lastError = ERR_MOTOR_FAULT;
@@ -480,7 +477,7 @@ void SafetyCheck(const bool forceTracking)
     {
       // when Alt/Azm mounted, just stop the mount if it passes MaxAzm
       cli();
-      if (posAxis1 >(long)MaxAzm * (long)StepsPerDegreeAxis1)
+      if (abs(posAxis1) > (long)MaxAzm * (long)StepsPerDegreeAxis1)
       {
         lastError = ERR_AZM;
         if (movingTo)
