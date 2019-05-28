@@ -471,7 +471,7 @@ LX200RETURN SetTargetDecLX200(bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t&
         int deg;
         unsigned int min, sec;
         char2DEC(out, deg, min, sec);
-        if (deg == vd1 && min == vd2 && sec == vd3)
+        if ( ((deg>=0) == ispos) && abs(deg) == vd1 && min == vd2 && sec == vd3)
         {
           return LX200VALUESET;
         }
