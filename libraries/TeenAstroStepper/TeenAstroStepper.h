@@ -166,6 +166,7 @@ public:
       digitalWrite(CSPin, HIGH);
       SPI.begin();
       pinMode(MISO, INPUT_PULLUP);
+      m_tmc5160->reset();
       m_tmc5160->push();
       m_tmc5160->tbl(1);
       m_tmc5160->TPOWERDOWN(255);
@@ -175,8 +176,8 @@ public:
       m_tmc5160->en_pwm_mode(true);
       m_tmc5160->pwm_freq(150);
       m_tmc5160->pwm_autoscale(true);
-      m_tmc5160->pwm_ampl(180);
-      m_tmc5160->pwm_grad(10);
+      m_tmc5160->pwm_grad(15);
+      m_tmc5160->TPWMTHRS(500);
       setCurrent(Curr); // mA
       setMicrostep(Micros);
       if (EnPin > 0)
