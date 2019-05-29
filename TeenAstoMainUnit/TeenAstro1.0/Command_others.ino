@@ -594,12 +594,21 @@ void Command_C()
       pierSide = newTargetPierSide;
       newTargetPierSide = PIER_NOTVALID;
     }
-    i = syncEqu(newTargetRA, newTargetDec);
+    switch (command[1])
+    {
+    case 'M':
+    case 'S':
+      i = syncEqu(newTargetRA, newTargetDec);
+      break;
+    case 'A':
+      i = syncAltAz(newTargetAzm, newTargetAlt);
+      break;
+    }
     i = 0;
-    if (command[1] == 'M')
+    if (command[1] == 'M' || command[1] == 'A')
     {
       if (i == 0) strcpy(reply, "N/A");
-      if (i>0) { reply[0] = 'E'; reply[1] = '0' + i; reply[2] = 0; }
+      if (i > 0) { reply[0] = 'E'; reply[1] = '0' + i; reply[2] = 0; }
     }
     quietReply = true;
   }

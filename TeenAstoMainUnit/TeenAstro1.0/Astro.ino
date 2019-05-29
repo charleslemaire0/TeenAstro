@@ -138,6 +138,7 @@ boolean doubleToHms(char *reply, double *f)
 
 // convert string in format sDD:MM:SS to floating point
 // (also handles)           DDD:MM:SS
+//                          sDD*MM'SS
 //                          sDD:MM
 //                          DDD:MM
 //                          sDD*MM
@@ -218,11 +219,13 @@ boolean dmsToDouble(double *f, char *dms, boolean sign_present)
     m[1] = *dms++;
     m[2] = 0;
     if (!atoi2(m, &m1)) return false;
-
     if ((highPrecision) && (!secondsOff))
     {
         // make sure the seperator is an allowed character
-        if (*dms++ != ':') return false;
+        if ((*dms != ':') && (*dms != '\''))
+          return false;
+        else
+          dms++;
         s[0] = *dms++;
         s[1] = *dms++;
         s[2] = 0;

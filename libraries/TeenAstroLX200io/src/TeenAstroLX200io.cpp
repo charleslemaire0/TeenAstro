@@ -447,11 +447,11 @@ LX200RETURN SetTargetRaLX200(uint8_t& vr1, uint8_t& vr2, uint8_t& vr3)
   return SetLX200(cmd);
 }
 
-LX200RETURN SetTargetAzLX200(uint16_t& v1, uint8_t& v2)
+LX200RETURN SetTargetAzLX200(uint16_t& v1, uint8_t& v2, uint8_t& v3)
 {
   char cmd[LX200sbuff], out[LX200sbuff];
   int iter = 0;
-  sprintf(cmd, ":Sz%03u*%02u#", v1, v2);
+  sprintf(cmd, ":Sz%03u*%02u:%02u#", v1, v2, v3);
   return SetLX200(cmd);
 }
 
@@ -462,51 +462,17 @@ LX200RETURN SetTargetDecLX200(bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t&
   sprintf(cmd, ":Sd+%02u:%02u:%02u#", vd1, vd2, vd3);
   if (!ispos)
     cmd[3] = '-';
-  while (iter < 3)
-  {
-    if (SetLX200(cmd) ==  LX200VALUESET)
-    {
-      if (GetLX200(":Gd#", out, sizeof(out)) == LX200VALUEGET)
-      {
-        int deg;
-        unsigned int min, sec;
-        char2DEC(out, deg, min, sec);
-        if ( ((deg>=0) == ispos) && abs(deg) == vd1 && min == vd2 && sec == vd3)
-        {
-          return LX200VALUESET;
-        }
-      }
-    }
-    iter++;
-  }
-  return LX200SETVALUEFAILED;
+  return SetLX200(cmd);
 }
 
 LX200RETURN SetTargetAltLX200(bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t& vd3)
 {
   char cmd[LX200sbuff], out[LX200sbuff];
   int iter = 0;
-  sprintf(cmd, ":Sz+%02u:%02u:%02u#", vd1, vd2, vd3);
+  sprintf(cmd, ":Sa+%02u*%02u'%02u#", vd1, vd2, vd3);
   if (!ispos)
     cmd[3] = '-';
-  while (iter < 3)
-  {
-    if (SetLX200(cmd) ==  LX200VALUESET)
-    {
-      if (GetLX200(":Gz#", out, sizeof(out)) == LX200VALUEGET)
-      {
-        int deg;
-        unsigned int min, sec;
-        char2DEC(out, deg, min, sec);
-        if (deg == vd1 && min == vd2 && sec == vd3)
-        {
-          return LX200VALUESET;
-        }
-      }
-    }
-    iter++;
-  }
-  return LX200SETVALUEFAILED;
+  return SetLX200(cmd);
 }
 
 LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t& vd3)
@@ -539,12 +505,12 @@ LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, b
 
 LX200RETURN SyncGotoLX200AltAz(bool sync, uint16_t& vz1, uint8_t& vz2, uint8_t& vz3, bool& ispos, uint16_t& va1, uint8_t& va2, uint8_t& va3)
 {
-  if (SetTargetAzLX200(vz1, vz2) ==  LX200VALUESET && SetTargetAltLX200(ispos, va1, va2, va3) == LX200VALUESET)
+  if (SetTargetAzLX200(vz1, vz2, vz3) ==  LX200VALUESET && SetTargetAltLX200(ispos, va1, va2, va3) == LX200VALUESET)
   {
     if (sync)
     {
       char out[LX200sbuff];
-      if (GetLX200(":CM#",out, LX200sbuff))
+      if (GetLX200(":CA#",out, LX200sbuff))
       {
         if (strcmp(out, "N/A") == 0)
           return LX200SYNCED;
