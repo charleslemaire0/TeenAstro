@@ -394,11 +394,6 @@ double  ac_HA = 0, ac_De = 0, ac_Dec = 0;
 double  ac_sindec, ac_cosdec, ac_cosha;
 double  ac_sinalt;
 
-double getApproxDec()
-{
-    return ac_De;
-}
-
 boolean do_fastalt_calc()
 {
   if (isAltAZ())
