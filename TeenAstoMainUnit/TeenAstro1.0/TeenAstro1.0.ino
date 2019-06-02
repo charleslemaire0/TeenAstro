@@ -51,7 +51,7 @@
 
 
 // firmware info, these are returned by the ":GV?#" commands
-#define FirmwareDate    "02 20 19"
+#define FirmwareDate    "05 29 19"
 #define FirmwareNumber  "1.1"
 #define FirmwareName    "TeenAstro"
 #define FirmwareTime    "12:00:00"
@@ -374,8 +374,8 @@ void loop()
   {
     // COMMAND PROCESSING --------------------------------------------------------------------------------
     // acts on commands recieved across Serial0 and Serial1 interfaces
-    smartDelay(0);
     processCommands();
+    smartDelay(0);
   }
   
   if (StartLoopError != lastError)
@@ -489,25 +489,21 @@ void SafetyCheck(const bool forceTracking)
     }
   }
 
-  // check for exceeding MinDec or MaxDec
-  if (!isAltAZ())
+  // check for exceeding MinDec for Eq. Fork
+  if (!checkDeclinatioLimit())
   {
-    if ((getApproxDec() < MinDec) ||
-        (getApproxDec() > MaxDec) ||
-        (pierSide == PIER_WEST && mountType == MOUNT_TYPE_FORK))
-    {
-      lastError = ERR_DEC;
-      if (movingTo)
-        abortSlew = true;
-      else if (!forceTracking)
-        sideralTracking = false;
-    }
-    else if (lastError == ERR_DEC)
-    {
-      lastError = ERR_NONE;
-    }
+    lastError = ERR_DEC;
+    if (movingTo)
+      abortSlew = true;
+    else if (!forceTracking)
+      sideralTracking = false;
+  }
+  else if (lastError == ERR_DEC)
+  {
+    lastError = ERR_NONE;
   }
 }
+
 
 //enable Axis 
 void enable_Axis(bool enable)
