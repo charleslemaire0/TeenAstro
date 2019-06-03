@@ -253,7 +253,7 @@ void loop()
   if (!movingTo)
   {
     checkST4();
-    guideHA.fixed = 0;
+    guideAxis1.fixed = 0;
     Guide();
   }
 
@@ -572,10 +572,10 @@ void initmount()
 
 
   // initialize some fixed-point values
-  amountGuideHA.fixed = 0;
-  amountGuideDec.fixed = 0;
-  guideHA.fixed = 0;
-  guideDec.fixed = 0;
+  amountGuideAxis1.fixed = 0;
+  amountGuideAxis2.fixed = 0;
+  guideAxis1.fixed = 0;
+  guideAxis2.fixed = 0;
 
   fstepAxis1.fixed = 0;
   fstepAxis2.fixed = 0;

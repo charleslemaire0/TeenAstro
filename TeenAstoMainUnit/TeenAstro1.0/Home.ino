@@ -83,11 +83,11 @@ else if (mountType == MOUNT_TYPE_ALTAZM)
 
     // clear pulse-guiding state
     guideDirAxis1 = 0;
-    guideDurationHA = 0;
-    guideDurationLastHA = 0;
+    guideDurationAxis1 = 0;
+    guideDurationLastAxis1 = 0;
     guideDirAxis2 = 0;
-    guideDurationDec = 0;
-    guideDurationLastDec = 0;
+    guideDurationAxis2 = 0;
+    guideDurationLastAxis2 = 0;
     enable_Axis(false);
 
     cli();

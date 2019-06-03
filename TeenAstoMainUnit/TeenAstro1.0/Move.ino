@@ -28,7 +28,7 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
       GuidingState = Mode;
       guideDirAxis1 = newguideDirAxis;
       atHome = false;
-      guideDurationHA = -1;
+      guideDurationAxis1 = -1;
       cli();
       guideTimerRateAxis1 = newGuideTimerBaseRate;
       sei();
@@ -86,7 +86,7 @@ void MoveAxis2(const byte newguideDirAxis,const Guiding Mode)
     {
       GuidingState = Mode;
       guideDirAxis2 = newguideDirAxis;
-      guideDurationDec = -1;
+      guideDurationAxis2 = -1;
       atHome = false;
       cli();
       guideTimerRateAxis2 = newGuideTimerBaseRate;

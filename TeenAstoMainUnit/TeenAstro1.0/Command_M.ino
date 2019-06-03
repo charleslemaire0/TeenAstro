@@ -48,8 +48,8 @@ void Command_M(bool &supress_frame)
       {
         enableGuideRate(0,false);
         guideDirAxis1 = parameter[0];
-        guideDurationLastHA = micros();
-        guideDurationHA = (long)i * 1000L;
+        guideDurationLastAxis1 = micros();
+        guideDurationAxis1 = (long)i * 1000L;
         cli();
         GuidingState = GuidingPulse;
         if (guideDirAxis1 == 'e')
@@ -65,8 +65,8 @@ void Command_M(bool &supress_frame)
 
         enableGuideRate(0,false);
         guideDirAxis2 = parameter[0];
-        guideDurationLastDec = micros();
-        guideDurationDec = (long)i * 1000L;
+        guideDurationLastAxis2 = micros();
+        guideDurationAxis2 = (long)i * 1000L;
         if (guideDirAxis2 == 's' || guideDirAxis2 == 'n')
         {
           bool rev = false;

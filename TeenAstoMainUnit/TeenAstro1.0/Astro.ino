@@ -826,8 +826,8 @@ void enableGuideRate(int g, bool force)
   guideTimerBaseRate = guideRates[g];
 
   cli();
-  amountGuideHA.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis1) / 100.0);
-  amountGuideDec.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis2) / 100.0);
+  amountGuideAxis1.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis1) / 100.0);
+  amountGuideAxis2.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis2) / 100.0);
   sei();
 }
 
@@ -837,8 +837,8 @@ void enableST4GuideRate()
   {
     guideTimerBaseRate = guideRates[0];
     cli();
-    amountGuideHA.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis1) / 100.0);
-    amountGuideDec.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis2) / 100.0);
+    amountGuideAxis1.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis1) / 100.0);
+    amountGuideAxis2.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis2) / 100.0);
     sei();
   }
 }
@@ -851,7 +851,7 @@ void resetGuideRate()
 void enableRateAxis1(double vRate)
 {
   cli();
-  amountGuideHA.fixed = doubleToFixed((abs(vRate) * StepsPerSecondAxis1) / 100.0);
+  amountGuideAxis1.fixed = doubleToFixed((abs(vRate) * StepsPerSecondAxis1) / 100.0);
   guideTimerRateAxis1 = vRate;
   sei();
 }
@@ -859,7 +859,7 @@ void enableRateAxis1(double vRate)
 void enableRateAxis2(double vRate)
 {
   cli();
-  amountGuideDec.fixed = doubleToFixed((abs(vRate) * StepsPerSecondAxis2) / 100.0);
+  amountGuideAxis2.fixed = doubleToFixed((abs(vRate) * StepsPerSecondAxis2) / 100.0);
   guideTimerRateAxis2 = vRate;
   sei();
 }
