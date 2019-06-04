@@ -71,9 +71,9 @@ bool checkAzimuth()
 {
   static long azm;
   cli();
-  posAxis1 = azm;
+  azm = posAxis1;
   sei();
-  return abs(azm) < (long)MaxAzm * (long)StepsPerDegreeAxis1;
+  return abs(azm) < (long)(MaxAzm * StepsPerDegreeAxis1);
 }
 // Predict Side of Pier
 // return 0 if no side can reach the given position
