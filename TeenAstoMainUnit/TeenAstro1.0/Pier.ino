@@ -67,6 +67,14 @@ boolean checkDeclinatioLimit()
   return dd > MinDec && dd < MaxDec;
 }
 
+bool checkAzimuth()
+{
+  static long azm;
+  cli();
+  posAxis1 = azm;
+  sei();
+  return abs(azm) < (long)MaxAzm * (long)StepsPerDegreeAxis1;
+}
 // Predict Side of Pier
 // return 0 if no side can reach the given position
 PierSide predictSideOfPier(const double& HA, const PierSide& inputSide)

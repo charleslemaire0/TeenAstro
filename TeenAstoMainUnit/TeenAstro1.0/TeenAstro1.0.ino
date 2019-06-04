@@ -476,16 +476,18 @@ void SafetyCheck(const bool forceTracking)
     else
     {
       // when Alt/Azm mounted, just stop the mount if it passes MaxAzm
-      cli();
-      if (abs(posAxis1) > (long)MaxAzm * (long)StepsPerDegreeAxis1)
+      if (!checkAzimuth())
       {
         lastError = ERR_AZM;
         if (movingTo)
           abortSlew = true;
-        else if(!forceTracking)
+        else if (!forceTracking)
           sideralTracking = false;
       }
-      sei();
+      else if (lastError == ERR_AZM)
+      {
+        lastError = ERR_NONE;
+      }
     }
   }
 
