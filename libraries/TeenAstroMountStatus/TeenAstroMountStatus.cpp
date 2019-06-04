@@ -276,12 +276,18 @@ TeenAstroMountStatus::Errors TeenAstroMountStatus::getError()
     return ERR_MOTOR_FAULT;
   case '2':
     return ERR_ALT;
+  case '3':
+    return ERR_LIMIT_SENSE;
   case '4':
     return ERR_DEC;
+  case '5':
+    return ERR_AZM;
   case '6':
     return ERR_UNDER_POLE;
   case '7':
     return ERR_MERIDIAN;
+  case '8':
+    return ERR_SYNC;
   default:
     return ERR_NONE;
   }
