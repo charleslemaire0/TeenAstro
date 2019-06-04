@@ -1,7 +1,7 @@
 /*
-* Title       Smart Hand Controller (based on TeenAstro)
+* Title       TeenAstro Smart Hand Controller
 *
-* Copyright (C) 2018 Charles Lemaire, Howard Dutton
+* Copyright (C) 2019 Charles Lemaire, Howard Dutton
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -27,13 +27,12 @@
 */
 
 
-
 #define Product "Teenastro SHC"
 #define SHCFirmwareDate          __DATE__
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "1"
-#define SHCFirmwareVersionPatch  "2"
+#define SHCFirmwareVersionPatch  "5"
 
 #include "Config.h"
 #include "SmartController.h"
@@ -43,13 +42,14 @@ const int pin[7] = { B_PIN0,B_PIN1,B_PIN2,B_PIN3,B_PIN4,B_PIN5,B_PIN6 };
 const bool active[7] = { B_PIN_UP_0,B_PIN_UP_1,B_PIN_UP_2,B_PIN_UP_3,B_PIN_UP_4,B_PIN_UP_5,B_PIN_UP_6 };
 
 SmartHandController HdCrtlr;
+TeenAstroMountStatus ta_MountStatus;
 
 void setup(void)
 {
   int value = analogRead(A0);
   
   if (value< 191)       //0.616129032V
-    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD_DEFAULT, SmartHandController::OLED::OLED_SH1106);
+    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SH1106);
   else if (value < 319) //1.029032258V
   {
     //empty
@@ -60,7 +60,7 @@ void setup(void)
   }
   else if (value < 575) //1.85483871V
   {
-    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD_DEFAULT, SmartHandController::OLED::OLED_SSD1309);
+    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309);
   }
   else if (value < 703) //2.267741935V
   {

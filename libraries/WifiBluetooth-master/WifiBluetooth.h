@@ -1,6 +1,4 @@
-#ifndef WIFIBLUETOOTH_H
-#define WIFIBLUETOOTH_H
-
+#pragma once
 
 #include <Arduino.h>
 
@@ -10,15 +8,14 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFiAP.h>
 #include <ESP8266HTTPUpdateServer.h>
+#include <TeenAstroMountStatus.h>
 
-//#include "Encoders.h"
-#include "MountStatus.h"
 #define Product "TeenAstro Server"
 #define FirmwareDate          __DATE__
 #define FirmwareTime          __TIME__
 #define FirmwareVersionMajor  "1"
-#define FirmwareVersionMinor  "0"
-#define FirmwareVersionPatch  "1"
+#define FirmwareVersionMinor  "1"
+#define FirmwareVersionPatch  "0"
 
 
 // -----------------------------------------------------------------------------------
@@ -41,14 +38,6 @@
 
 // The settings below are for initialization only, afterward they are stored and recalled from EEPROM and must
 // be changed in the web interface OR with a reset (for initialization again) as described in the Config.h comments
-#if SERIAL_BAUD<=28800
-#define TIMEOUT_WEB 60
-#define TIMEOUT_CMD 60
-#else
-#define TIMEOUT_WEB 15
-#define TIMEOUT_CMD 30
-#endif
-
 
 
 #define EEPROM_start 0
@@ -59,6 +48,7 @@
 #define EEPROM_Contrast 20
 #define EEPROM_T1 21
 #define EEPROM_T2 22
+#define EEPROM_BSPEED 23
 #define EEPROM_start_wifi_sta 100
 #define EEPROM_start_wifi_ap 400
 #define EPPROM_password 50
@@ -69,8 +59,6 @@ class wifibluetooth
   enum Responding { R_NONE, R_ONE, R_BOOL, R_STRING };
   enum WifiMode {M_Station1, M_Station2, M_Station3, M_AcessPoint, OFF};
   static bool wifiOn;
-  static MountStatus mountStatus;
-  //Encoders encoders;
   static int WebTimeout;
   static int CmdTimeout;
 
@@ -123,18 +111,9 @@ class wifibluetooth
   static void writeAccess2EEPROM();
   static void processWifiGet();
 
-
-  static bool sendCommand(const char command[], char response[], Responding responding = R_STRING);
-  static char serialRecvFlush();
-  static boolean doubleToDms(char *reply, double *f, boolean fullRange, boolean signPresent);
-  static boolean atoi2(char *a, int *i);
-  static boolean atof2(char *a, float *f);
-  static byte readBytesUntil2(char character, char buffer[], int length, boolean* characterFound, long timeout);
-  static boolean readLX200Bytes(char* command, char* recvBuffer, long timeOutMs);
-  static void cl();
+  static bool atoi2(char *a, int *i);
+  static bool atof2(char *a, float *f);
   static int hexToInt(String s);
-
-
 
   // write int numbers into EEPROM at position i (2 bytes)
   static void EEPROM_writeInt(int i, int j);
@@ -167,4 +146,3 @@ public:
   static bool setWifiMode(int k);
   static void getStationName(int k, char* SSID);
 };
-#endif

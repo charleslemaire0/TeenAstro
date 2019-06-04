@@ -1,7 +1,7 @@
 #include "Pad.h"
 #include "Config.h"
 
-byte eventbuttons[7] = { E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE };
+volatile byte eventbuttons[7] = { E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE };
 
 void click_s() {
   eventbuttons[B_SHIFT] = E_CLICK;
@@ -192,7 +192,7 @@ void longPressStop_f() {
 void Pad::attachEvent()
 {
   m_buttons[B_SHIFT]->attachClick(click_s);
-  //m_buttons[B_SHIFT]->attachDoubleClick(doubleclick_s);
+  m_buttons[B_SHIFT]->attachDoubleClick(doubleclick_s);
   m_buttons[B_SHIFT]->attachLongPressStart(longPressStart_s);
   m_buttons[B_SHIFT]->attachLongPressStop(longPressStop_s);
   m_buttons[B_SHIFT]->attachDuringLongPress(longPress_s);
@@ -220,16 +220,15 @@ void Pad::attachEvent()
   m_buttons[B_WEST]->attachLongPressStart(longPressStart_W);
   m_buttons[B_WEST]->attachLongPressStop(longPressStop_W);
   m_buttons[B_WEST]->attachDuringLongPress(longPress_W);
-  m_buttons[B_WEST]->attachClick(click_W);
 
   m_buttons[B_F]->attachClick(click_F);
-  m_buttons[B_F]->attachDoubleClick(doubleclick_F);
+  //m_buttons[B_F]->attachDoubleClick(doubleclick_F);
   m_buttons[B_F]->attachLongPressStart(longPressStart_F);
   m_buttons[B_F]->attachLongPressStop(longPressStop_F);
   m_buttons[B_F]->attachDuringLongPress(longPress_F);
 
   m_buttons[B_f]->attachClick(click_f);
-  m_buttons[B_f]->attachDoubleClick(doubleclick_f);
+  //m_buttons[B_f]->attachDoubleClick(doubleclick_f);
   m_buttons[B_f]->attachLongPressStart(longPressStart_f);
   m_buttons[B_f]->attachLongPressStop(longPressStop_f);
   m_buttons[B_f]->attachDuringLongPress(longPress_f);
@@ -241,18 +240,21 @@ void Pad::setup(const int pin[7], const bool active[7])
 
   for (int k = 0; k < 7; k++)
   {
-    m_buttons[k] = new OneButton(pin[k], active[k]);
+    m_buttons[k] = new OneButton(pin[k], active[k], active[k]);
   }
-  m_buttons[0]->setClickTicks(50);
-  m_buttons[0]->setDebounceTicks(20);
-  m_buttons[0]->setPressTicks(300);
+  uint8_t val =  EEPROM.read(EEPROM_BSPEED);
+  if (val>2)
+  {
+    m_button_speed = BS_MEDIUM;
+    EEPROM.write(EEPROM_BSPEED,static_cast<uint8_t>(m_button_speed));
+    EEPROM.commit();
+  }
+  else
+    m_button_speed = static_cast<Pad::ButtonSpeed>(val);
   //For other buttons
   setControlerMode();
   attachEvent();
-
-#ifdef WIFI_ON
   m_wbt.setup();
-#endif
 }
 
 void Pad::tickButtons()
@@ -287,27 +289,72 @@ void Pad::tickButtons()
       eventbuttons[k + 1] = E_NONE;
     }
   }
-#ifdef WIFI_ON
   m_wbt.update();
-#endif
+}
+
+Pad::ButtonSpeed Pad::getButtonSpeed()
+{
+ return m_button_speed;
+}
+
+void Pad::setButtonSpeed(ButtonSpeed bs)
+{
+  if (m_button_speed != bs)
+  {
+    m_button_speed = bs;
+    EEPROM.write(EEPROM_BSPEED, static_cast<uint8_t>(m_button_speed));
+    EEPROM.commit();
+  }
 }
 
 void Pad::setMenuMode()
 {
+  int tick_ref = 20;
+  switch (m_button_speed)
+  {
+  case BS_SLOW:
+    tick_ref*= 2;
+    break;
+  case BS_MEDIUM:
+    tick_ref*= 1.5;
+    break;
+  case  BS_FAST:
+    tick_ref*= 1.;
+    break;
+  }
+  m_buttons[0]->setClickTicks(tick_ref*4);
+  m_buttons[0]->setDebounceTicks(tick_ref);
+  m_buttons[0]->setPressTicks(tick_ref*8);
   for (int k = 1; k < 7; k++)
   {
-    m_buttons[k]->setClickTicks(50);
-    m_buttons[k]->setDebounceTicks(20);
-    m_buttons[k]->setPressTicks(300);
+    m_buttons[k]->setClickTicks(tick_ref*4);
+    m_buttons[k]->setDebounceTicks(tick_ref);
+    m_buttons[k]->setPressTicks(tick_ref*8);
   }
 }
 
 void Pad::setControlerMode()
 {
+  int tick_ref = 20;
+  switch (m_button_speed)
+  {
+  case BS_SLOW:
+    tick_ref *= 2;
+    break;
+  case BS_MEDIUM:
+    tick_ref *= 1.5;
+    break;
+  case  BS_FAST:
+    tick_ref *= 1.;
+    break;
+  }
+  m_buttons[0]->setClickTicks(tick_ref * 4);
+  m_buttons[0]->setDebounceTicks(tick_ref);
+  m_buttons[0]->setPressTicks(tick_ref * 8);
   for (int k = 1; k < 7; k++)
   {
     m_buttons[k]->setClickTicks(5);
-    m_buttons[k]->setDebounceTicks(20);
+    m_buttons[k]->setDebounceTicks(tick_ref);
     m_buttons[k]->setPressTicks(5);
   }
 }
@@ -321,7 +368,7 @@ bool Pad::shiftPressed()
 {
   return m_shiftPressed;
 }
-#ifdef WIFI_ON
+
 bool Pad::isWifiOn()
 {
   return m_wbt.isWifiOn();
@@ -354,5 +401,3 @@ void Pad::getStationName(int k, char* SSID)
    m_wbt.getStationName(k, SSID);
    return;
 }
-
-#endif

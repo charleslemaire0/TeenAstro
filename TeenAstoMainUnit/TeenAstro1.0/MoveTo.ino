@@ -1,14 +1,11 @@
 // -----------------------------------------------------------------------------------
 // functions to move the mount to the a new position
 
-static long lastPosAxis2 = 0;
-
-
-
 // moves the mount
 void moveTo() {
   // HA goes from +90...0..-90
   //                W   .   E
+  static long lastPosAxis2 = 0;
   long distStartAxis1, distStartAxis2, distDestAxis1, distDestAxis2;
   cli();
   distStartAxis1 = abs(distStepAxis1(startAxis1, posAxis1));  // distance from start HA
@@ -23,10 +20,8 @@ Again:
   sei();
   distDestAxis1 = abs(deltaTargetAxis1);  // distance from dest HA
   distDestAxis2 = abs(deltaTargetAxis2);  // distance from dest Dec
-
-
   // adjust rates near the horizon to help keep from exceeding the minAlt limit
-  if (mountType != MOUNT_TYPE_ALTAZM)
+  if (!isAltAZ())
   {
     if ( tempPosAxis2 != lastPosAxis2) {
       bool decreasing = tempPosAxis2 < lastPosAxis2;
@@ -51,7 +46,6 @@ Again:
         sei();
       }
     }
-
     lastPosAxis2 = tempPosAxis2;
   }
 
@@ -65,7 +59,6 @@ Again:
     cli();
     // recompute distances
     updateDeltaTarget();
-
     long a = getV(timerRateAxis1)*getV(timerRateAxis1) / (2. * AccAxis1);
     if (abs(deltaTargetAxis1) > a)
     {
@@ -77,7 +70,6 @@ Again:
       sei();
     }
     guideDirAxis1 = 'b';
-
     a = getV(timerRateAxis2)*getV(timerRateAxis2) / (2. * AccAxis2);
     if (abs(deltaTargetAxis2) > a)
     {
@@ -89,7 +81,6 @@ Again:
       sei();
     }
     guideDirAxis2 = 'b';
-
     if (parkStatus == PRK_PARKING)
     {
       sideralTracking = lastSideralTracking;
@@ -101,7 +92,6 @@ Again:
       sideralTracking = lastSideralTracking;
       homeMount = false;
     }
-
     abortSlew = false;
     goto Again;
   }
@@ -134,27 +124,26 @@ Again:
   if (temp > TakeupRate) temp = TakeupRate;                      // slowest rate
   cli(); timerRateAxis2 = temp; sei();
 
-  if (mountType == MOUNT_TYPE_ALTAZM)
-  {
-    // In AltAz mode & at the end of slew & near the Zenith, disable tracking for a moment if we're getting close to the target
-    if ((distDestAxis1 <= (long)StepsPerDegreeAxis1 * 2L) && (distDestAxis2 <= (long)StepsPerDegreeAxis2 * 2L)) {
-      if ((long)targetAxis2.part.m > 80L * (long)StepsPerDegreeAxis2 ) {
-        sideralTracking = false;
-      }
-    }
-  }
+  //if (isAltAZ())
+  //{
+  //  // In AltAz mode & at the end of slew & near the Zenith, disable tracking for a moment if we're getting close to the target
+  //  if ((distDestAxis1 <= (long)StepsPerDegreeAxis1 * 2L) && (distDestAxis2 <= (long)StepsPerDegreeAxis2 * 2L)) {
+  //    if ((long)targetAxis2.part.m > 80L * (long)StepsPerDegreeAxis2 ) {
+  //      sideralTracking = false;
+  //    }
+  //  }
+  //}
   updateDeltaTarget();
-
   distDestAxis1 = abs(deltaTargetAxis1);  // distance from dest HA
   distDestAxis2 = abs(deltaTargetAxis2);  // distance from dest Dec
 
   if ((distDestAxis1 <= 2) && (distDestAxis2 <= 2))
   {
-    if (mountType == MOUNT_TYPE_ALTAZM)
-    {
-      // Near the Zenith disable tracking in AltAz mode for a moment if we're getting close to the target
-      sideralTracking = true;
-    }
+    //if (isAltAZ())
+    //{
+    //  // Near the Zenith disable tracking in AltAz mode for a moment if we're getting close to the target
+    //  sideralTracking = true;
+    //}
     // restore last tracking state
     movingTo = false;
     SetSiderealClockRate(siderealInterval);
@@ -162,14 +151,11 @@ Again:
     timerRateAxis1 = SiderealRate;
     timerRateAxis2 = SiderealRate;
     sei();
-
     DecayModeTracking();
-
     // other special gotos: for parking the mount and homeing the mount
     if (parkStatus == PRK_PARKING)
     {
       parkStatus = PRK_FAILED;
-
       for (int i = 0; i < 12; i++)  // give the drives a moment to settle in
       {
         updateDeltaTarget();
@@ -185,14 +171,12 @@ Again:
         delay(250);
       }
       EEPROM.write(EE_parkStatus, parkStatus);
-
     }
     else if (homeMount) {
       parkClearBacklash();
       setHome();
       homeMount = false;
       atHome = true;
-
       // disable the stepper drivers
       enable_Axis(false);
     }
@@ -222,18 +206,14 @@ bool DecayModeTrack = false;
 void DecayModeTracking() {
   if (DecayModeTrack) return;
   DecayModeTrack = true;
-  cli();
   motorAxis1.setCurrent((unsigned int)LowCurrAxis1*10);
   motorAxis2.setCurrent((unsigned int)LowCurrAxis2*10);
-  sei();
 }
 
 void DecayModeGoto() {
   if (!DecayModeTrack) return;
   DecayModeTrack = false;
-  cli();
   motorAxis1.setCurrent((unsigned int)HighCurrAxis1*10);
   motorAxis2.setCurrent((unsigned int)HighCurrAxis2*10);
-  sei();
 }
 

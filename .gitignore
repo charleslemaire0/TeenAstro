@@ -71,3 +71,10 @@ TeenAstoMainUnit/TeenAstro2.0/TeenAstro2.0.vcxproj.filters
 TeenAstoMainUnit/TeenAstro1.0/TeenAstro1.0.vcxproj.filters
 TeenAstoMainUnit/TeenAstro1.0/TeenAstro1.0.vcxproj
 Release
+bin
+obj
+CatalogConverter/CatConv/.vs/CatConv/v14/.suo
+Debug
+TeenAstoMainUnit/TeenAstro1.0/.vs/TeenAstro/v14/.suo
+TeenAstoMainUnit/TeenAstro1.0/.vs/TeenAstro1.0/v14/.suo
+TeenAstoMainUnit/TeenAstro1.0/TeenAstro1.0.sln

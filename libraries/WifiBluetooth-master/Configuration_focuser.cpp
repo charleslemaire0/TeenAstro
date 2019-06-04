@@ -1,4 +1,4 @@
-#include "config.h"
+#include <TeenAstroLX200io.h>
 #include "WifiBluetooth.h"
 // -----------------------------------------------------------------------------------
 // configuration_focuser
@@ -106,13 +106,9 @@ const char html_configPosFocuser[] PROGMEM =
 "\r\n";
 
 
-#ifdef OETHS
-void wifibluetooth::handleConfiguration(EthernetClient *client) {
-#else
-void wifibluetooth::handleConfigurationFocuser() {
-#endif
-  Ser.setTimeout(WebTimeout);
-  serialRecvFlush();
+
+void wifibluetooth::handleConfigurationFocuser()
+{
 
   char temp[320] = "";
   char temp1[80] = "";
@@ -122,9 +118,8 @@ void wifibluetooth::handleConfigurationFocuser() {
   processConfigurationFocuserGet();
   preparePage(data, 5);
   sendHtml(data);
-  sendCommand(":F~#", temp1);
-  bool getdata = (temp1[0] == '~');
-  if (getdata)
+
+  if (GetLX200(":F~#", temp1, sizeof(temp1)) == LX200VALUEGET && temp1[0] == '~')
   {
     int park = (int)strtol(&temp1[1], NULL, 10);
     int maxPos = (int)strtol(&temp1[7], NULL, 10);
@@ -154,9 +149,7 @@ void wifibluetooth::handleConfigurationFocuser() {
     //sprintf_P(temp, html_configManDecFocuser, dec);
     //data += temp;
   }
-  sendCommand(":FM#", temp2);
-  bool getdatamotor = (temp2[0] == 'M');
-  if (getdatamotor)
+  if (GetLX200(":FM#", temp2, sizeof(temp2)) == LX200VALUEGET && temp2[0] == 'M')
   {
     int reverse = temp2[1] == '1';
     int micro = (int)strtol(&temp2[3], NULL, 10);
@@ -183,7 +176,7 @@ void wifibluetooth::handleConfigurationFocuser() {
   for (int k = 0; k < 10; k++)
   {
     sprintf(temp, ":Fx%d#", k);
-    sendCommand(temp, temp1);
+    GetLX200(temp, temp1, sizeof(temp1));
     if (temp1[0] != 0)
     {
       if (temp1[0] == '0')
@@ -203,25 +196,12 @@ void wifibluetooth::handleConfigurationFocuser() {
     }
   }
 
-
-
-
-  
-
-
-#ifdef OETHS
-  client->print(data); data="";
-#endif
-
   strcpy(temp,"</div></div></body></html>");
   data += temp;
 
-#ifdef OETHS
-  client->print(data); data="";
-#else
   sendHtml(data);
   sendHtmlDone(data);
-#endif
+
 }
 
 void wifibluetooth::processConfigurationFocuserGet() {
@@ -234,7 +214,7 @@ void wifibluetooth::processConfigurationFocuserGet() {
   if (v != "") {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535))) {
       sprintf(temp, ":F0 %05d#", (int)f);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
 
@@ -242,7 +222,7 @@ void wifibluetooth::processConfigurationFocuserGet() {
   if (v != "") {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535))) {
       sprintf(temp, ":F1 %05d#", (int)f);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
 
@@ -250,7 +230,7 @@ void wifibluetooth::processConfigurationFocuserGet() {
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 999))) {
       sprintf(temp, ":F2 %d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
 
@@ -258,7 +238,7 @@ void wifibluetooth::processConfigurationFocuserGet() {
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 999))) {
       sprintf(temp, ":F3 %d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
 
@@ -266,42 +246,42 @@ void wifibluetooth::processConfigurationFocuserGet() {
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99))) {
       sprintf(temp, ":F4 %d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("ManAcc");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99))) {
       sprintf(temp, ":F5 %d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("Dcc");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99))) {
       sprintf(temp, ":F6 %d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("Rot");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) {
       sprintf(temp, ":F7 %d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("Res");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 512))) {
       sprintf(temp, ":F8 %d#", i);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   v = server.arg("MuF");
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 4) && (i <= 128))) {
       sprintf(temp, ":Fm %d#", (int)log2(i));
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
 
@@ -309,7 +289,7 @@ void wifibluetooth::processConfigurationFocuserGet() {
   if (v != "") {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 1600))) {
       sprintf(temp, ":Fc %d#", i / 10);
-      Ser.print(temp);
+      SetLX200(temp);
     }
   }
   for (int k = 0; k < 10; k++)
@@ -321,11 +301,11 @@ void wifibluetooth::processConfigurationFocuserGet() {
         sprintf(temp, "Fn%d", k);
         v = server.arg(temp);
         sprintf(temp, ":Fs%d %05d_%s#", k, (int)f, (char*)v.c_str());
-        Ser.print(temp);
+        SetLX200(temp);
       }
     }
   }
-  Ser.flush();
-  serialRecvFlush();
+  //Ser.flush();
+  //serialRecvFlush();
 }
 

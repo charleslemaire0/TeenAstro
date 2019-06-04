@@ -1,43 +1,43 @@
+#include <TeenAstroLX200io.h>
 #include "WifiBluetooth.h"
-#include "config.h"
 
 
-#define html_headB  "<!DOCTYPE HTML>\r\n<html>\r\n<head>\r\n"
-#define html_headerIdx  "<meta http-equiv=\"refresh\" content=\"5; URL=/index.htm\">\r\n"
-#define html_headE "</head>\r\n"
-#define html_bodyB  "<body bgcolor='#26262A'>\r\n"
+const char html_headB[] PROGMEM = "<!DOCTYPE HTML>\r\n<html>\r\n<head>\r\n";
+const char html_headerIdx[] PROGMEM = "<meta http-equiv=\"refresh\" content=\"5; URL=/index.htm\">\r\n";
+const char html_headE[] PROGMEM = "</head>\r\n";
+const char html_bodyB[] PROGMEM = "<body bgcolor='#26262A'>\r\n";
 
-#define html_main_cssB "<STYLE>"
-#define html_main_css1  ".clear { clear: both; } .a { background-color: #111111; } .t { padding: 10px 10px 20px 10px; border: 5px solid #551111;"
-#define html_main_css2  " margin: 25px 25px 0px 25px; color: #999999; background-color: #111111; min-width: 10em; } input { font-weight: bold; width:6em; background-color: #A01010; padding: 2px 2px; }"
-#define html_main_css3  ".b { padding: 10px; border-left: 5px solid #551111; border-right: 5px solid #551111; border-bottom: 5px solid #551111; margin: 0px 25px 25px 25px; color: #999999;"
-#define html_main_css4  "background-color: #111111; min-width: 10em; } select { width:7em; font-weight: bold; background-color: #A01010; padding: 2px 2px; } .c { color: #A01010; font-weight: bold; }"
-#define html_main_css5  "h1 { text-align: right; } a:hover, a:active { background-color: red; } .y { color: #FFFF00; font-weight: bold; }"
-#define html_main_css6  "a:link, a:visited { background-color: #332222; color: #a07070; border:1px solid red; padding: 5px 10px;"
-#define html_main_css7  " margin: none; text-align: center; text-decoration: none; display: inline-block; }"
-#define html_main_css8  "button { background-color: #A01010; font-weight: bold; border-radius: 5px; margin: 2px; padding: 4px 8px; }"
-#define html_main_css_control1 ".b1 { float: left; border: 2px solid #551111; background-color: #181818; text-align: center; margin: 5px; padding: 15px; padding-top: 3px; }"
-#define html_main_css_control2 ".gb { width: 60px; height: 50px; padding: 0px; }"
-#define html_main_css_control3 ".bb { height: 2.5em; width: 8em;} .bbh {   height: 2.5em; width: 4em;}"
-#define html_main_cssE  "</STYLE>"
+const char html_main_cssB[] PROGMEM = "<STYLE>";
+const char html_main_css1[] PROGMEM = ".clear { clear: both; } .a { background-color: #111111; } .t { padding: 10px 10px 20px 10px; border: 5px solid #551111;";
+const char html_main_css2[] PROGMEM = " margin: 25px 25px 0px 25px; color: #999999; background-color: #111111; min-width: 10em; } input { font-weight: bold; width:6em; background-color: #A01010; padding: 2px 2px; }";
+const char html_main_css3[] PROGMEM = ".b { padding: 10px; border-left: 5px solid #551111; border-right: 5px solid #551111; border-bottom: 5px solid #551111; margin: 0px 25px 25px 25px; color: #999999;";
+const char html_main_css4[] PROGMEM = "background-color: #111111; min-width: 10em; } select { width:7em; font-weight: bold; background-color: #A01010; padding: 2px 2px; } .c { color: #A01010; font-weight: bold; }";
+const char html_main_css5[] PROGMEM = "h1 { text-align: right; } a:hover, a:active { background-color: red; } .y { color: #FFFF00; font-weight: bold; }";
+const char html_main_css6[] PROGMEM = "a:link, a:visited { background-color: #332222; color: #a07070; border:1px solid red; padding: 5px 10px;";
+const char html_main_css7[] PROGMEM = " margin: none; text-align: center; text-decoration: none; display: inline-block; }";
+const char html_main_css8[] PROGMEM = "button { background-color: #A01010; font-weight: bold; border-radius: 5px; margin: 2px; padding: 4px 8px; }";
+const char html_main_css_control1[] PROGMEM = ".b1 { float: left; border: 2px solid #551111; background-color: #181818; text-align: center; margin: 5px; padding: 15px; padding-top: 3px; }";
+const char html_main_css_control2[] PROGMEM = ".gb { width: 60px; height: 50px; padding: 0px; }";
+const char html_main_css_control3[] PROGMEM = ".bb { height: 2.5em; width: 8em;} .bbh {   height: 2.5em; width: 4em;}";
+const char html_main_cssE[] PROGMEM = "</STYLE>";
 
-#define html_onstep_header1 "<div class='t'><table width='100%%'><tr><td><b><font size='5'>"
-#define html_onstep_header2 "</font></b></td><td align='right'><b>" Product " " FirmwareVersionMajor"."FirmwareVersionMinor "."FirmwareVersionPatch" (TeenAstro "
-#define html_onstep_header3 ")</b></td></tr></table>"
-#define html_onstep_header4 "</div><div class='b'>\r\n"
+const char html_onstep_header1[] PROGMEM = "<div class='t'><table width='100%%'><tr><td><b><font size='5'>";
+const char html_onstep_header2[] PROGMEM = "</font></b></td><td align='right'><b>" Product " " FirmwareVersionMajor"."FirmwareVersionMinor "."FirmwareVersionPatch" (TeenAstro ";
+const char html_onstep_header3[] PROGMEM = ")</b></td></tr></table>";
+const char html_onstep_header4[] PROGMEM = "</div><div class='b'>\r\n";
 
-#define html_links1S "<a href='/index.htm' style='background-color: #552222;'>Status</a>"
-#define html_links1N "<a href='/index.htm'>Status</a>"
-#define html_links2S "<a href='/control.htm' style='background-color: #552222;'>Control</a>"
-#define html_links2N "<a href='/control.htm'>Control</a>"
-#define html_links3S "<a href='/configuration_site.htm' style='background-color: #552222;'>Site</a>"
-#define html_links3N "<a href='/configuration_site.htm'>Site</a>"
-#define html_links4S "<a href='/configuration_telescope.htm' style='background-color: #552222;'>Telescope</a>"
-#define html_links4N "<a href='/configuration_telescope.htm'>Telescope</a>"
-#define html_links5S "<a href='/configuration_focuser.htm' style='background-color: #552222;'>Focuser</a>"
-#define html_links5N "<a href='/configuration_focuser.htm'>Focuser</a>"
-#define html_links6S "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />"
-#define html_links6N "<a href='/wifi.htm'>WiFi</a><br />"
+const char html_links1S[] PROGMEM = "<a href='/index.htm' style='background-color: #552222;'>Status</a>";
+const char html_links1N[] PROGMEM = "<a href='/index.htm'>Status</a>";
+const char html_links2S[] PROGMEM = "<a href='/control.htm' style='background-color: #552222;'>Control</a>";
+const char html_links2N[] PROGMEM = "<a href='/control.htm'>Control</a>";
+const char html_links3S[] PROGMEM = "<a href='/configuration_site.htm' style='background-color: #552222;'>Site</a>";
+const char html_links3N[] PROGMEM = "<a href='/configuration_site.htm'>Site</a>";
+const char html_links4S[] PROGMEM = "<a href='/configuration_telescope.htm' style='background-color: #552222;'>Telescope</a>";
+const char html_links4N[] PROGMEM = "<a href='/configuration_telescope.htm'>Telescope</a>";
+const char html_links5S[] PROGMEM = "<a href='/configuration_focuser.htm' style='background-color: #552222;'>Focuser</a>";
+const char html_links5N[] PROGMEM = "<a href='/configuration_focuser.htm'>Focuser</a>";
+const char html_links6S[] PROGMEM = "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />";
+const char html_links6N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />";
 
 
 bool wifibluetooth::wifiOn = true;
@@ -65,7 +65,6 @@ IPAddress wifibluetooth::wifi_ap_ip = IPAddress(192, 168, 0, 1);
 IPAddress wifibluetooth::wifi_ap_gw = IPAddress(192, 168, 0, 1);
 IPAddress wifibluetooth::wifi_ap_sn = IPAddress(255, 255, 255, 0);
 
-MountStatus wifibluetooth::mountStatus;
 ESP8266WebServer wifibluetooth::server;
 WiFiServer wifibluetooth::cmdSvr = WiFiServer(9999);
 WiFiClient wifibluetooth::cmdSvrClient;
@@ -146,16 +145,23 @@ long wifibluetooth::EEPROM_readLong(int i) {
   return l;
 }
 
+bool wifibluetooth::atoi2(char *a, int *i) {
+  char *conv_end;
+  long l = strtol(a, &conv_end, 10);
 
-const char* wifibluetooth::HighSpeedCommsStr(long baud)
-{
-  if (baud == 115200) { return ":SB0#"; }
-  if (baud == 57600) { return ":SB1#"; }
-  if (baud == 38400) { return ":SB2#"; }
-  if (baud == 28800) { return ":SB3#"; }
-  if (baud == 19200) { return ":SB4#"; }
-  else { return ":SB5#"; }
-}
+  if ((l<-32767) || (l>32768) || (&a[0] == conv_end)) return false;
+  *i = l;
+  return true;
+};
+
+bool wifibluetooth::atof2(char *a, float *f) {
+  char *conv_end;
+  double l = strtof(a, &conv_end);
+
+  if (&a[0] == conv_end) return false;
+  *f = l;
+  return true;
+};
 
 void wifibluetooth::handleNotFound()
 {
@@ -176,52 +182,46 @@ void wifibluetooth::handleNotFound()
 void wifibluetooth::preparePage(String &data, int page)
 {
   char temp1[80] = "";
-  data = html_headB;
+  data = FPSTR(html_headB);
   if (page == 1)
-    data += html_headerIdx;
-  data += html_main_cssB;
-  data += html_main_css1;
-  data += html_main_css2;
-  data += html_main_css3;
-  data += html_main_css4;
-  data += html_main_css5;
-  data += html_main_css6;
-  data += html_main_css7;
-  data += html_main_css8;
+    data += FPSTR(html_headerIdx);
+  data += FPSTR(html_main_cssB);
+  data += FPSTR(html_main_css1);
+  data += FPSTR(html_main_css2);
+  data += FPSTR(html_main_css3);
+  data += FPSTR(html_main_css4);
+  data += FPSTR(html_main_css5);
+  data += FPSTR(html_main_css6);
+  data += FPSTR(html_main_css7);
+  data += FPSTR(html_main_css8);
   sendHtml(data);
   if (page == 2)
   {
-    data += html_main_css_control1;
-    data += html_main_css_control2;
-    data += html_main_css_control3;
+    data += FPSTR(html_main_css_control1);
+    data += FPSTR(html_main_css_control2);
+    data += FPSTR(html_main_css_control3);
     sendHtml(data);
   }
-  data += html_main_cssE;
-  data += html_headE;
-#ifdef OETHS
-  client->print(data); data = "";
-#endif
-
-  data += html_bodyB;
+  data += FPSTR(html_main_cssE);
+  data += FPSTR(html_headE);
+  data += FPSTR(html_bodyB);
   // get status
-  if (!mountStatus.valid() || page == 1)
-    mountStatus.update();
-  serialRecvFlush();
+  if (!ta_MountStatus.validConnection()) ta_MountStatus.updateV();
   // finish the standard http response header
-  data += html_onstep_header1;
-  if (mountStatus.getId(temp1)) data += temp1; else data += "Connection to TeenAstro Main unit is lost";
-  data += html_onstep_header2;
-  if (mountStatus.getVer(temp1)) data += temp1; else data += "?";
-  data += html_onstep_header3;
-  data += page == 1 ? html_links1S : html_links1N;
-  data += page == 2 ? html_links2S : html_links2N;
-  data += page == 3 ? html_links3S : html_links3N;
-  data += page == 4 ? html_links4S : html_links4N;
-  data += page == 5 ? html_links5S : html_links5N;
+  data += FPSTR(html_onstep_header1);
+  if (ta_MountStatus.validConnection()) data += ta_MountStatus.getVP(); else data += "Connection to TeenAstro Main unit is lost";
+  data += FPSTR(html_onstep_header2);
+  if (ta_MountStatus.validConnection()) data += ta_MountStatus.getVN(); else data += "?";
+  data += FPSTR(html_onstep_header3);
+  data += page == 1 ? FPSTR(html_links1S) : FPSTR(html_links1N);
+  data += page == 2 ? FPSTR(html_links2S) : FPSTR(html_links2N);
+  data += page == 3 ? FPSTR(html_links3S) : FPSTR(html_links3N);
+  data += page == 4 ? FPSTR(html_links4S) : FPSTR(html_links4N);
+  data += page == 5 ? FPSTR(html_links5S) : FPSTR(html_links5N);
 #ifndef OETHS
-  data += page == 6 ? html_links6S : html_links6N;
+  data += page == 6 ? FPSTR(html_links6S) : FPSTR(html_links6N);
 #endif
-  data += html_onstep_header4;
+  data += FPSTR(html_onstep_header4);
 }
 
 void wifibluetooth::writeStation2EEPROM(const int& k)
@@ -309,40 +309,15 @@ void wifibluetooth::initFromEEPROM()
 
 void wifibluetooth::setup()
 {
-
-#ifdef LED_PIN
-  pinMode(LED_PIN, OUTPUT);
-#endif
-
   initFromEEPROM();
 
 #ifndef DEBUG_ON
-  Ser.begin(SERIAL_BAUD);
-#ifdef SERIAL_SWAP_ON
-  Ser.swap();
-#endif
+
 
   byte tb = 0;
 Again:
-#ifdef LED_PIN
-  digitalWrite(LED_PIN, LOW);
-#endif
-  char c = 0;
 
-  // clear the buffers and any noise on the serial lines
-  for (int i = 0; i < 3; i++) {
-    Ser.print(":#");
-#ifdef LED_PIN
-    digitalWrite(LED_PIN, HIGH);
-#endif
-    delay(100);
-    Ser.flush();
-    c = serialRecvFlush();
-#ifdef LED_PIN
-    digitalWrite(LED_PIN, LOW);
-#endif
-    delay(100);
-  }
+  char c = 0;
 
   // safety net
   if ((c == 'R') || activeWifiMode == WifiMode::OFF) {
@@ -350,41 +325,12 @@ Again:
     EEPROM_writeInt(0, 0); EEPROM_writeInt(2, 0);
     activeWifiMode = WifiMode::M_AcessPoint;
     EEPROM.commit();
-    Ser.println();
-    Ser.println("Cycle power for reset to defaults.");
-    Ser.println();
+    //Ser.println();
+    //Ser.println("Cycle power for reset to defaults.");
+    //Ser.println();
   }
 
-  if (SERIAL_BAUD != SERIAL_BAUD_DEFAULT) {
 
-    // switch OnStep Serial1 up to ? baud
-    Ser.print(HighSpeedCommsStr(SERIAL_BAUD));
-    delay(100);
-    int count = 0; c = 0;
-    while (Ser.available() > 0) { count++; if (count == 1) c = Ser.read(); }
-    if (c == '1') {
-      Ser.begin(SERIAL_BAUD);
-#ifdef SERIAL_SWAP_ON
-      Ser.swap();
-#endif
-    }
-    else {
-#ifdef LED_PIN
-      digitalWrite(LED_PIN, HIGH);
-#endif
-      // got nothing back, toggle baud rate and try again
-      tb++;
-      if (tb == 7) tb = 1;
-      if (tb == 1) Ser.begin(SERIAL_BAUD_DEFAULT);
-      if (tb == 4) Ser.begin(SERIAL_BAUD);
-
-#ifdef SERIAL_SWAP_ON
-      Ser.swap();
-#endif
-      delay(100);
-      goto Again;
-    }
-  }
 #else
   Ser.begin(115200);
   delay(10000);
@@ -431,14 +377,6 @@ Again:
     break;
   }
 
-
-  // clear the buffers and any noise on the serial lines
-  for (int i = 0; i < 3; i++) {
-    Ser.print(":#");
-    delay(50);
-    serialRecvFlush();
-  }
-
   server.on("/", handleRoot);
   server.on("/index.htm", handleRoot);
   server.on("/configuration_site.htm", handleConfigurationSite);
@@ -448,7 +386,6 @@ Again:
   server.on("/control.txt", controlAjax);
   server.on("/guide.txt", guideAjax);
   server.on("/wifi.htm", handleWifi);
-
   server.onNotFound(handleNotFound);
 
   cmdSvr.begin();
@@ -462,7 +399,6 @@ Again:
 
   httpUpdater.setup(&server);
   httpServer.begin();
-  //encoders.init();
 };
 
 void wifibluetooth::update()
@@ -478,43 +414,52 @@ void wifibluetooth::update()
 
   // disconnect client
   static unsigned long clientTime = 0;
-  if (cmdSvrClient && (!cmdSvrClient.connected())) cmdSvrClient.stop();
-  if (cmdSvrClient && ((long)(clientTime - millis()) < 0)) cmdSvrClient.stop();
+  if (cmdSvrClient && (!cmdSvrClient.connected()||clientTime < millis()))
+    cmdSvrClient.stop();
 
   // new client
-  if (!cmdSvrClient && (cmdSvr.hasClient())) {
+  if (!cmdSvrClient && cmdSvr.hasClient()) {
     // find free/disconnected spot
     cmdSvrClient = cmdSvr.available();
     clientTime = millis() + 2000UL;
   }
 
-  static char writeBuffer[40] = "";
+  static char writeBuffer[50] = "";
   static int writeBufferPos = 0;
   // check clients for data, if found get the command, send cmd and pickup the response, then return the response
   while (cmdSvrClient && cmdSvrClient.connected() && (cmdSvrClient.available() > 0)) {
     // get the data
     byte b = cmdSvrClient.read();
-    writeBuffer[writeBufferPos] = b; writeBufferPos++; if (writeBufferPos > 39) writeBufferPos = 39; writeBuffer[writeBufferPos] = 0;
-
+    if (writeBufferPos == 0 && b != ':')
+      continue;
+    writeBuffer[writeBufferPos] = b;
+    writeBufferPos++;
+    if (writeBufferPos > 49)
+    {
+      writeBufferPos = 0;
+      writeBuffer[writeBufferPos] = 0;
+      continue;
+    }
+    writeBuffer[writeBufferPos] = 0;
     // send cmd and pickup the response
     if ((b == '#') || ((strlen(writeBuffer) == 1) && (b == (char)6))) {
-      char readBuffer[40] = "";
-      readLX200Bytes(writeBuffer, readBuffer, CmdTimeout); writeBuffer[0] = 0; writeBufferPos = 0;
-
-      // return the response, if we have one
-      if (strlen(readBuffer) > 0) {
-        if (cmdSvrClient && cmdSvrClient.connected()) {
-          cmdSvrClient.print(readBuffer);
-          delay(2);
+      char readBuffer[50] = "";
+      if (readLX200Bytes(writeBuffer, readBuffer, sizeof(readBuffer), CmdTimeout, true))
+      {
+        // return the response, if we have one
+        if (strlen(readBuffer) > 0)
+        {
+          if (cmdSvrClient && cmdSvrClient.connected()) {
+            cmdSvrClient.print(readBuffer);
+            delay(2);
+          }
         }
       }
-
+      writeBuffer[0] = 0;
+      writeBufferPos = 0;
     }
     else server.handleClient();
   }
-
-  // encoders.poll();
-
 }
 
 bool wifibluetooth::isWifiOn()
@@ -574,8 +519,6 @@ bool wifibluetooth::setWifiMode(int k)
 
 void wifibluetooth::getStationName(int k, char* SSID )
 {
-  //if (k < 0 || k>2)
-  //  return;
   memcpy(SSID, wifi_sta_ssid[k], 40U);
   return;
 }

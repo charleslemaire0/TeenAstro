@@ -11,7 +11,7 @@ void Guide()
   if (rtk.updateguideSiderealTimer())
   {
 
-    if (guideDurationDec <= 0 && guideDurationHA <= 0 && GuidingState == GuidingPulse)
+    if (guideDurationAxis2 <= 0 && guideDurationAxis1 <= 0 && GuidingState == GuidingPulse)
     {
       cli();
       if (guideDirAxis1) guideDirAxis1 = 'b';
@@ -21,30 +21,30 @@ void Guide()
     }
     if (guideDirAxis1 == 'w' || guideDirAxis1 == 'e')
     {
-      if (guideDurationHA > 0 || GuidingState == GuidingRecenter ||GuidingState == GuidingST4)
+      if (guideDurationAxis1 > 0 || GuidingState == GuidingRecenter ||GuidingState == GuidingST4)
       {
         if (!inbacklashAxis1)
         {
-          // guideHA keeps track of how many steps we've moved for PEC recording
+          // guideAxis1 keeps track of how many steps we've moved for PEC recording
           if (guideDirAxis1 == 'e')
-            guideHA.fixed = -amountGuideHA.fixed;
+            guideAxis1.fixed = -amountGuideAxis1.fixed;
           else if (guideDirAxis1 == 'w')
-            guideHA.fixed = amountGuideHA.fixed;
+            guideAxis1.fixed = amountGuideAxis1.fixed;
           cli();
-          targetAxis1.fixed += guideHA.fixed;
+          targetAxis1.fixed += guideAxis1.fixed;
           sei();
      ;
           if (GuidingState == GuidingPulse)
           {
             // for pulse guiding, count down the mS and stop when timed out
-            guideDurationHA -= (long)(micros() - guideDurationLastHA);
-            guideDurationLastHA = micros();
+            guideDurationAxis1 -= (long)(micros() - guideDurationLastAxis1);
+            guideDurationLastAxis1 = micros();
           }
         }
         else
         {
           // don't count time if in backlash
-          guideDurationLastHA = micros();
+          guideDurationLastAxis1 = micros();
         }
       }
       else
@@ -56,11 +56,11 @@ void Guide()
     }
     else
     {
-      guideDurationHA = -1;
+      guideDurationAxis1 = -1;
     }
     if (guideDirAxis2 == 's' || guideDirAxis2 == 'n')
     {
-      if (guideDurationDec > 0 || GuidingState == GuidingRecenter || GuidingState == GuidingST4)
+      if (guideDurationAxis2 > 0 || GuidingState == GuidingRecenter || GuidingState == GuidingST4)
       {
         if (!inbacklashAxis2)
         {
@@ -70,20 +70,20 @@ void Guide()
           if (pierSide >= PIER_WEST)
             rev = !rev;
           cli();
-          rev ? targetAxis2.fixed -= amountGuideDec.fixed : targetAxis2.fixed += amountGuideDec.fixed;
+          rev ? targetAxis2.fixed -= amountGuideAxis2.fixed : targetAxis2.fixed += amountGuideAxis2.fixed;
           sei();
           if (GuidingState == GuidingPulse)
           {
             // for pulse guiding, count down the mS and stop when timed out
-            guideDurationDec -= (long)(micros() - guideDurationLastDec);
-            guideDurationLastDec = micros();
+            guideDurationAxis2 -= (long)(micros() - guideDurationLastAxis2);
+            guideDurationLastAxis2 = micros();
           }
 
         }
         else
         {
           // don't count time if in backlash
-          guideDurationLastDec = micros();
+          guideDurationLastAxis2 = micros();
         }
       }
       else
@@ -95,7 +95,7 @@ void Guide()
     }
     else
     {
-      guideDurationDec = -1;
+      guideDurationAxis2 = -1;
     }
 
   }

@@ -124,7 +124,7 @@ void Command_dollar()
     int i;
     if ((parameter[0] == 'D' || parameter[0] == 'R')
       && (strlen(parameter) > 1) && (strlen(parameter) < 4)
-      && atoi2( &parameter[1], &i)  && ((i >= 4) && (i < 9)))
+      && atoi2( &parameter[1], &i)  && ((i >= 3) && (i < 9)))
     {
       if (parameter[0] == 'D')
       {
@@ -508,7 +508,7 @@ void Command_A()
             meridianFlip = FLIP_NEVER;
 
           // AltAz Taki method
-          if (mountType == MOUNT_TYPE_ALTAZM && (alignNumStars > 1) && (alignThisStar <= alignNumStars))
+          if (isAltAZ() && (alignNumStars > 1) && (alignThisStar <= alignNumStars))
           {
             cli();
 
@@ -576,6 +576,8 @@ void Command_B()
 }
 
 //   C - Sync Control
+//  :CA#   Synchonize the telescope with the current Azimuth and Altitude coordinates
+//         Returns: Nothing (Sync's fail silently)
 //  :CS#   Synchonize the telescope with the current right ascension and declination coordinates
 //         Returns: Nothing (Sync's fail silently)
 //  :CM#   Synchonize the telescope with the current database object (as above)
@@ -585,19 +587,28 @@ void Command_C()
 {
   if ((parkStatus == PRK_UNPARKED) &&
       !movingTo &&
-      ( command[1] == 'M' || command[1] == 'S'))
+      ( command[1] == 'A' || command[1] == 'M' || command[1] == 'S'))
   {
     if (newTargetPierSide != PIER_NOTVALID)
     {
       pierSide = newTargetPierSide;
       newTargetPierSide = PIER_NOTVALID;
     }
-    i = syncEqu(newTargetRA, newTargetDec);
+    switch (command[1])
+    {
+    case 'M':
+    case 'S':
+      i = syncEqu(newTargetRA, newTargetDec);
+      break;
+    case 'A':
+      i = syncAltAz(newTargetAzm, newTargetAlt);
+      break;
+    }
     i = 0;
-    if (command[1] == 'M')
+    if (command[1] == 'M' || command[1] == 'A')
     {
       if (i == 0) strcpy(reply, "N/A");
-      if (i>0) { reply[0] = 'E'; reply[1] = '0' + i; reply[2] = 0; }
+      if (i > 0) { reply[0] = 'E'; reply[1] = '0' + i; reply[2] = 0; }
     }
     quietReply = true;
   }

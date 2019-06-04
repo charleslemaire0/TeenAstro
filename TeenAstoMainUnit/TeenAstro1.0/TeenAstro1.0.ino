@@ -51,7 +51,7 @@
 
 
 // firmware info, these are returned by the ":GV?#" commands
-#define FirmwareDate    "02 20 19"
+#define FirmwareDate    "05 29 19"
 #define FirmwareNumber  "1.1"
 #define FirmwareName    "TeenAstro"
 #define FirmwareTime    "12:00:00"
@@ -60,8 +60,8 @@
 // forces initialialization of a host of settings in EEPROM. OnStep does this automatically, most likely, you will want to leave this alone
 #define initKey     915307548                       // unique identifier for the current initialization format, do not change
 TinyGPSPlus gps;
-int pps_off_tick = millis();
-byte LED_pps_on = true;
+
+
 void setup()
 {
   pinMode(LEDPin, OUTPUT);
@@ -253,7 +253,7 @@ void loop()
   if (!movingTo)
   {
     checkST4();
-    guideHA.fixed = 0;
+    guideAxis1.fixed = 0;
     Guide();
   }
 
@@ -296,11 +296,9 @@ void loop()
       }
       moveTo();
     }
-
     // figure out the current Altitude
     do_fastalt_calc();
-
-    if (mountType == MOUNT_TYPE_ALTAZM)
+    if (isAltAZ())
     {
       // figure out the current Alt/Azm tracking rates
       if (rtk.m_lst % 3 != 0)
@@ -313,7 +311,6 @@ void loop()
         do_refractionRate_calc();
     }
     // check for fault signal, stop any slew or guide and turn tracking off
-
     if ((faultAxis1 || faultAxis2))
     {
       lastError = ERR_MOTOR_FAULT;
@@ -377,8 +374,8 @@ void loop()
   {
     // COMMAND PROCESSING --------------------------------------------------------------------------------
     // acts on commands recieved across Serial0 and Serial1 interfaces
-    smartDelay(0);
     processCommands();
+    smartDelay(0);
   }
   
   if (StartLoopError != lastError)
@@ -456,7 +453,7 @@ void SafetyCheck(const bool forceTracking)
   }
   else
   {
-    if (mountType != MOUNT_TYPE_ALTAZM)
+    if (!isAltAZ())
     {
 
       // when Fork mounted, ignore pierSide and just stop the mount if it passes the underPoleLimit
@@ -480,7 +477,7 @@ void SafetyCheck(const bool forceTracking)
     {
       // when Alt/Azm mounted, just stop the mount if it passes MaxAzm
       cli();
-      if (posAxis1 >(long)MaxAzm * (long)StepsPerDegreeAxis1)
+      if (abs(posAxis1) > (long)MaxAzm * (long)StepsPerDegreeAxis1)
       {
         lastError = ERR_AZM;
         if (movingTo)
@@ -492,25 +489,21 @@ void SafetyCheck(const bool forceTracking)
     }
   }
 
-  // check for exceeding MinDec or MaxDec
-  if (mountType != MOUNT_TYPE_ALTAZM)
+  // check for exceeding MinDec for Eq. Fork
+  if (!checkDeclinatioLimit())
   {
-    if ((getApproxDec() < MinDec) ||
-        (getApproxDec() > MaxDec) ||
-        (pierSide == PIER_WEST && mountType == MOUNT_TYPE_FORK))
-    {
-      lastError = ERR_DEC;
-      if (movingTo)
-        abortSlew = true;
-      else if (!forceTracking)
-        sideralTracking = false;
-    }
-    else if (lastError == ERR_DEC)
-    {
-      lastError = ERR_NONE;
-    }
+    lastError = ERR_DEC;
+    if (movingTo)
+      abortSlew = true;
+    else if (!forceTracking)
+      sideralTracking = false;
+  }
+  else if (lastError == ERR_DEC)
+  {
+    lastError = ERR_NONE;
   }
 }
+
 
 //enable Axis 
 void enable_Axis(bool enable)
@@ -574,15 +567,15 @@ void initmount()
   underPoleLimitGOTO = (double)EEPROM.read(EE_dup) / 10;
   if (underPoleLimitGOTO < 9 || underPoleLimitGOTO>12)
     underPoleLimitGOTO = 12;
-  if (mountType == MOUNT_TYPE_ALTAZM && maxAlt > 87)
+  if (isAltAZ() && maxAlt > 87)
     maxAlt = 87;
 
 
   // initialize some fixed-point values
-  amountGuideHA.fixed = 0;
-  amountGuideDec.fixed = 0;
-  guideHA.fixed = 0;
-  guideDec.fixed = 0;
+  amountGuideAxis1.fixed = 0;
+  amountGuideAxis2.fixed = 0;
+  guideAxis1.fixed = 0;
+  guideAxis2.fixed = 0;
 
   fstepAxis1.fixed = 0;
   fstepAxis2.fixed = 0;
@@ -603,23 +596,27 @@ void initmount()
   GeoAlign.init();
 
   // Tracking and rate control
-  refraction_enable = mountType == MOUNT_TYPE_ALTAZM ? false : true;
+  refraction_enable = isAltAZ() ? false : true;
   onTrack = false;
 
 }
 
 void initCelestialPole()
 {
-  if (mountType == MOUNT_TYPE_ALTAZM || mountType == MOUNT_TYPE_FORK_ALT)
+  if (isAltAZ())
   {
-    double lat = *localSite.latitude();
-    celestialPoleStepAxis2 = fabs(lat) *StepsPerDegreeAxis2;
-    celestialPoleStepAxis1 = (*localSite.latitude() < 0) ? halfRotAxis1 : 0L;
+    //double lat = *localSite.latitude();
+    poleStepAxis2 = quaterRotAxis2;
+    poleStepAxis1 = (*localSite.latitude() < 0) ? halfRotAxis1 : 0L;
+    homeStepAxis1 = poleStepAxis1;
+    homeStepAxis2 = 0;
   }
   else
   {
-    celestialPoleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
-    celestialPoleStepAxis2 = (*localSite.latitude() < 0) ? -quaterRotAxis2 : quaterRotAxis2;
+    poleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
+    poleStepAxis2 = (*localSite.latitude() < 0) ? -quaterRotAxis2 : quaterRotAxis2;
+    homeStepAxis1 = poleStepAxis1;
+    homeStepAxis2 = poleStepAxis2;
   }
 }
 
@@ -643,7 +640,7 @@ void readEEPROMmotor()
   GearAxis1 = EEPROM_readInt(EE_GearAxis1);
   StepRotAxis1 = EEPROM_readInt(EE_StepRotAxis1);
   MicroAxis1 = EEPROM.read(EE_MicroAxis1);
-  if (MicroAxis1 < 4) MicroAxis1 = 4; else if (MicroAxis1 > 8) MicroAxis1 = 8;
+  if (MicroAxis1 < 3) MicroAxis1 = 3; else if (MicroAxis1 > 8) MicroAxis1 = 8;
   ReverseAxis1 = EEPROM.read(EE_ReverseAxis1);
   LowCurrAxis1 = EEPROM.read(EE_LowCurrAxis1);
   HighCurrAxis1 = EEPROM.read(EE_HighCurrAxis1);
@@ -653,7 +650,7 @@ void readEEPROMmotor()
   GearAxis2 = EEPROM_readInt(EE_GearAxis2);
   StepRotAxis2 = EEPROM_readInt(EE_StepRotAxis2);
   MicroAxis2 = EEPROM.read(EE_MicroAxis2);
-  if (MicroAxis2 < 4) MicroAxis2 = 4; else if (MicroAxis2 > 8) MicroAxis2 = 8;
+  if (MicroAxis2 < 3) MicroAxis2 = 3; else if (MicroAxis2 > 8) MicroAxis2 = 8;
   ReverseAxis2 = EEPROM.read(EE_ReverseAxis2);
   LowCurrAxis2 = EEPROM.read(EE_LowCurrAxis2);
   HighCurrAxis2 = EEPROM.read(EE_HighCurrAxis2);

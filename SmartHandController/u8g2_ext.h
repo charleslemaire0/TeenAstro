@@ -1,11 +1,12 @@
 #pragma once
 #include <U8g2lib.h>
-#include "Catalog.h"
+#include <TeenAstroCatalog.h>
 #include "u8g2_ext_event.h"
 
 class U8G2_EXT : public U8G2
 {
 public:
+
   bool UserInterfaceCatalog(Pad *extPad, const char *title);
 
   uint8_t UserInterfaceMessage(Pad *extPad, const char *title1, const char *title2, const char *title3, const char *buttons);
@@ -16,32 +17,32 @@ public:
 
   uint8_t UserInterfaceInputValueFloat(Pad *extPad, const char *title, const char *pre, float *value, float lo, float hi, uint8_t len, uint8_t dec, const char *post);
 
-
   uint8_t UserInterfaceInputValueDMS(Pad *extPad, const char *title, long *value, long lo, long hi,
     uint8_t digits1, char* symb1, char* symb2, char* symb3, char* symb_plus, char* symb_minus, bool display_seconds);
-
 
   uint8_t UserInterfaceInputValueDate(Pad *extPad, const char *title, uint8_t& year, uint8_t& month, uint8_t& day);
 
   uint8_t UserInterfaceInputValueRA(Pad *extPad, long *value);
 
-
   uint8_t UserInterfaceInputValueDec(Pad *extPad, long *value);
 
+  uint8_t UserInterfaceInputValueAlt(Pad *extPad, long *value);
+
+  uint8_t UserInterfaceInputValueAz(Pad *extPad, long *value);
 
   uint8_t UserInterfaceInputValueUTCTime(Pad *extPad, long *value);
 
-
   uint8_t UserInterfaceInputValueLatitude(Pad *extPad, long *value);
-
 
   uint8_t UserInterfaceInputValueLongitude(Pad *extPad, long *value);
 
-  uint8_t drawRA(uint8_t x, uint8_t y, const char* Rah, const char* Ram, const char* Ras);
+  uint8_t drawRA(uint8_t x, uint8_t y, const char* Ra);
 
-  uint8_t drawDec(uint8_t x, uint8_t y, const char* decsign, const char* decdeg, const char* decmin, const char* decsec);
+  uint8_t drawDec(uint8_t x, uint8_t y, const char* Dec);
 
-  uint8_t drawAz(uint8_t x, uint8_t y, const char* Azdeg, const char* Azmin, const char* Azsec);
+  uint8_t drawAz(uint8_t x, uint8_t y, const char* Az);
+
+  uint8_t drawFoc(uint8_t y, uint8_t line_height, const char* Foc);
 
 };
 

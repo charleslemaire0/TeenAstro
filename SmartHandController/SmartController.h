@@ -1,13 +1,9 @@
 #pragma once
 #include <Arduino.h>
 #include <EEPROM.h>
+#include <TeenAstroLX200io.h>
 #include "Pad.h"
 #include "u8g2_ext.h"
-#include "Telescope.h"
-#include "LX200.h"
-
-#define SH1106 0
-#define SSD1306 1
 
 class SmartHandController
 {
@@ -17,11 +13,11 @@ public:
   void manualMove(bool &moving);
   void drawIntro();
   void drawLoad();
+  void drawWait();
   void setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model);
 private:
   U8G2_EXT *display = NULL;
   Pad buttonPad;
-  Telescope telInfo;
   char _version[20]="Version ?";
 
   void updateMainDisplay( u8g2_uint_t page);
@@ -49,32 +45,61 @@ private:
   uint8_t current_selection_L3 = 1;
   uint8_t current_selection_L4 = 1;
   uint8_t current_timelocation = 1;
+  uint8_t current_selection_SHC = 1;
   uint8_t current_selection_speed = 5;
   uint8_t current_selection_guide = 3;
   uint8_t current_selection_FocuserConfig = 1;
   uint8_t current_selection_FocuserMotor = 1;
-  unsigned short current_selection_Herschel = 1;
-  unsigned short current_selection_Messier = 1;
   unsigned short current_selection_SolarSys = 1;
-  unsigned short current_selection_Star = 1;
   long angleRA = 0;
   long angleDEC = 0;
   void tickButtons();
   bool buttonPressed();
   bool isSleeping();
+  void resetSHC();
   void menuTelAction();
   void menuSpeedRate();
   void menuTrack();
-  void menuSyncGoto(bool sync);
-  void menuSolarSys(bool sync);
-  void menuHerschel(bool sync);
-  void menuMessier(bool sync);
+
+  enum MENU_RESULT { MR_OK, MR_CANCEL, MR_QUIT };
+  uint8_t current_selection_filter = 1;
+  uint8_t current_selection_filter_con = 1;
+  uint8_t current_selection_filter_horizon = 1;
+  uint8_t current_selection_filter_type = 1;
+  uint8_t current_selection_filter_byMag = 1;
+  uint8_t current_selection_filter_nearby = 1;
+  uint8_t current_selection_filter_dblmin = 1;
+  uint8_t current_selection_filter_dblmax = 1;
+  uint8_t current_selection_filter_varmax = 1;
+  MENU_RESULT menuSyncGoto(bool sync);
+  MENU_RESULT menuCoordinates(bool Sync);
+  MENU_RESULT menuPier();
+  MENU_RESULT subMenuSyncGoto(char sync, int subMenuNum);
+  MENU_RESULT menuCatalog(bool sync, int number);
+  MENU_RESULT menuCatalogs(bool sync);
+  MENU_RESULT menuSolarSys(bool sync);
+  MENU_RESULT menuFilters();
+  void setCatMgrFilters();
+  MENU_RESULT menuFilterCon();
+  MENU_RESULT menuFilterHorizon();
+  MENU_RESULT menuFilterType();
+  MENU_RESULT menuFilterByMag();
+  MENU_RESULT menuFilterNearby();
+  MENU_RESULT menuFilterDblMinSep();
+  MENU_RESULT menuFilterDblMaxSep();
+  MENU_RESULT menuFilterVarMaxPer();
+  MENU_RESULT menuRADecNow(bool sync);
+  MENU_RESULT menuRADecJ2000(bool sync);
+  MENU_RESULT menuAltAz(bool sync);
+
+
   void menuAlignment();
-  void menuPier();
-  void menuStar(bool sync);
+
+
   bool SelectStarAlign();
-  void menuRADec(bool sync);
+
   void menuTelSettings();
+  void menuSHCSettings();
   void menuTimeAndSite();
   void menuDateAndTime();
   void menuMount();
@@ -102,6 +127,7 @@ private:
   void menuFocuserMotor();
   void menuDisplay();
   void menuContrast();
+  void menuButtonSpeed();
   void menuDate();
   void menuLatitude();
   void menuLongitude();

@@ -138,6 +138,7 @@ boolean doubleToHms(char *reply, double *f)
 
 // convert string in format sDD:MM:SS to floating point
 // (also handles)           DDD:MM:SS
+//                          sDD*MM'SS
 //                          sDD:MM
 //                          DDD:MM
 //                          sDD*MM
@@ -218,11 +219,13 @@ boolean dmsToDouble(double *f, char *dms, boolean sign_present)
     m[1] = *dms++;
     m[2] = 0;
     if (!atoi2(m, &m1)) return false;
-
     if ((highPrecision) && (!secondsOff))
     {
         // make sure the seperator is an allowed character
-        if (*dms++ != ':') return false;
+        if ((*dms != ':') && (*dms != '\''))
+          return false;
+        else
+          dms++;
         s[0] = *dms++;
         s[1] = *dms++;
         s[2] = 0;
@@ -301,7 +304,7 @@ boolean doubleToDms(char *reply, const double *f, boolean fullRange,
 // Coordinate conversion
 // convert equatorial coordinates to horizon
 
-// this takes approx. 1.4mS on a 16MHz Mega2560
+// this takes approx. 363muS on a teensy 3.2 @ 72 Mhz
 void EquToHor(double HA, double Dec, double *Alt, double *Azm)
 {
     while (HA < 0.0) HA = HA + 360.0;
@@ -309,11 +312,18 @@ void EquToHor(double HA, double Dec, double *Alt, double *Azm)
     HA = HA / Rad;
     Dec = Dec / Rad;
 
-    double  SinAlt = (sin(Dec) * localSite.sinLat()) + (cos(Dec) * localSite.cosLat() * cos(HA));
+    //double  SinAlt = (sin(Dec) * localSite.sinLat()) + (cos(Dec) * localSite.cosLat() * cos(HA));
+    double cosHA = cos(HA);
+    double sinHA = sin(HA);
+    double cosDec = cos(Dec);
+    double sinDec = sin(Dec);
+    double  SinAlt = (sinDec * localSite.sinLat()) + (cosDec * localSite.cosLat() * cosHA);
     *Alt = asin(SinAlt);
 
-    double  t1 = sin(HA);
-    double  t2 = cos(HA) * localSite.sinLat() - tan(Dec) * localSite.cosLat();
+    //double  t1 = sin(HA);
+    //double  t2 = cos(HA) * localSite.sinLat() - tan(Dec) * localSite.cosLat();
+    double  t1 = sinHA;
+    double  t2 = cosHA * localSite.sinLat() - sinDec/cosDec * localSite.cosLat();
     *Azm = atan2(t1, t2) * Rad;
     *Azm = *Azm + 180.0;
     *Alt = *Alt * Rad;
@@ -356,6 +366,7 @@ void SetDeltaTrackingRate()
 {
     trackingTimerRateAxis1 = az_deltaAxis1 / 15.0;
     trackingTimerRateAxis2 = az_deltaAxis2 / 15.0;
+
     fstepAxis1.fixed = doubleToFixed((StepsPerSecondAxis1 * trackingTimerRateAxis1) / 100.0);
     fstepAxis2.fixed = doubleToFixed((StepsPerSecondAxis2 * trackingTimerRateAxis2) / 100.0);
 }
@@ -363,7 +374,7 @@ void SetDeltaTrackingRate()
 void SetTrackingRate(double r)
 {
     az_deltaRateScale = r;
-    if (mountType != MOUNT_TYPE_ALTAZM)
+    if (!isAltAZ())
     {
       az_deltaAxis1 = r * 15.0;
       az_deltaAxis2 = 0.0;
@@ -383,13 +394,15 @@ double  ac_HA = 0, ac_De = 0, ac_Dec = 0;
 double  ac_sindec, ac_cosdec, ac_cosha;
 double  ac_sinalt;
 
-double getApproxDec()
-{
-    return ac_De;
-}
-
 boolean do_fastalt_calc()
 {
+  if (isAltAZ())
+  {
+    currentAlt = (double)(posAxis2) / StepsPerDegreeAxis2;
+    return true;
+  }
+  else
+  {
     boolean done = false;
     ac_step++;
 
@@ -436,8 +449,8 @@ boolean do_fastalt_calc()
         ac_step = 0;
         done = true;
     }
-
-    return done;
+        return done;
+  }
 }
 
 
@@ -583,23 +596,20 @@ boolean do_refractionRate_calc()
 // -----------------------------------------------------------------------------------------------------------------------------
 // AltAz tracking
 
-#define AltAzTrackingRange  10  // distance in arc-min (20) ahead of and behind the current Equ position, used for rate calculation
+#define AltAzTrackingRange  1  // distance in arc-min (20) ahead of and behind the current Equ position, used for rate calculation
 double  az_Alt1, az_Alt2, az_Azm1, az_Azm2;
 
 boolean do_altAzmRate_calc()
 {
     boolean done = false;
-
     // turn off if not tracking at sidereal rate
-    if (!sideralTracking || movingTo)
+    if (!sideralTracking)
     {
         az_deltaAxis1 = 0.0;
         az_deltaAxis2 = 0.0;
         return true;
     }
-
     az_step++;
-
     // convert units, get ahead of and behind current position
     if (az_step == 1)
     {
@@ -617,16 +627,14 @@ boolean do_altAzmRate_calc()
             az_Axis2 = posAxis2;
             sei();
         }
-
-        // get the Azm
-        az_Azm = (double) az_Axis1 / (double) StepsPerDegreeAxis1;
-
-        // get the Alt
-        az_Alt = (double) az_Axis2 / (double) StepsPerDegreeAxis2;
+      // get the Azm
+      az_Azm = (double)az_Axis1 / (double)StepsPerDegreeAxis1;
+      // get the Alt
+      az_Alt = (double)az_Axis2 / (double)StepsPerDegreeAxis2;
     }
     else                        // convert to Equatorial coords
-    if ((az_step == 5))
-    {
+      if ((az_step == 5))
+      {
         HorToEqu(az_Alt, az_Azm, &az_HA1, &az_Dec1);
     }
     else                        // look ahead of and behind the current position
@@ -687,7 +695,51 @@ boolean do_altAzmRate_calc()
     return done;
 }
 
+boolean do_altAzmRate_calc2()
+{
 
+
+  // turn off if not tracking at sidereal rate
+  if (!sideralTracking || movingTo)
+  {
+    az_deltaAxis1 = 0.0;
+    az_deltaAxis2 = 0.0;
+    return true;
+  }
+
+
+
+  // convert units, get ahead of and behind current position
+
+  if (movingTo)
+  {
+    cli();
+    az_Axis1 = targetAxis1.part.m;
+    az_Axis2 = targetAxis2.part.m;
+    sei();
+  }
+  else
+  {
+    cli();
+    az_Axis1 = posAxis1;
+    az_Axis2 = posAxis2;
+    sei();
+  }
+
+  // get the Azm
+  az_Azm = (double)az_Axis1 / (double)StepsPerDegreeAxis1;
+
+  // get the Alt
+  az_Alt = (double)az_Axis2 / (double)StepsPerDegreeAxis2;
+
+
+  HorToEqu(az_Alt, az_Azm, &az_HA1, &az_Dec1);
+  // look ahead of and behind the current position
+
+
+
+    return true;
+}
 // -----------------------------------------------------------------------------------------------------------------------------
 
 //// Misc. numeric conversion
@@ -774,8 +826,8 @@ void enableGuideRate(int g, bool force)
   guideTimerBaseRate = guideRates[g];
 
   cli();
-  amountGuideHA.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis1) / 100.0);
-  amountGuideDec.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis2) / 100.0);
+  amountGuideAxis1.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis1) / 100.0);
+  amountGuideAxis2.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis2) / 100.0);
   sei();
 }
 
@@ -785,8 +837,8 @@ void enableST4GuideRate()
   {
     guideTimerBaseRate = guideRates[0];
     cli();
-    amountGuideHA.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis1) / 100.0);
-    amountGuideDec.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis2) / 100.0);
+    amountGuideAxis1.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis1) / 100.0);
+    amountGuideAxis2.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis2) / 100.0);
     sei();
   }
 }
@@ -799,7 +851,7 @@ void resetGuideRate()
 void enableRateAxis1(double vRate)
 {
   cli();
-  amountGuideHA.fixed = doubleToFixed((abs(vRate) * StepsPerSecondAxis1) / 100.0);
+  amountGuideAxis1.fixed = doubleToFixed((abs(vRate) * StepsPerSecondAxis1) / 100.0);
   guideTimerRateAxis1 = vRate;
   sei();
 }
@@ -807,7 +859,7 @@ void enableRateAxis1(double vRate)
 void enableRateAxis2(double vRate)
 {
   cli();
-  amountGuideDec.fixed = doubleToFixed((abs(vRate) * StepsPerSecondAxis2) / 100.0);
+  amountGuideAxis2.fixed = doubleToFixed((abs(vRate) * StepsPerSecondAxis2) / 100.0);
   guideTimerRateAxis2 = vRate;
   sei();
 }
@@ -815,7 +867,7 @@ void enableRateAxis2(double vRate)
 // Remap HA DEC value between -180 +180 and -90 +90
 void CorrectHADec(double *HA, double *Dec)
 {
-  if (mountType != MOUNT_TYPE_ALTAZM)
+  if (!isAltAZ())
   {
     // switch from under the pole coordinates
     if (*Dec > 90.0)
@@ -867,4 +919,9 @@ long distStepAxis1( long start, long end)
 long distStepAxis2(long start, long end)
 {
  return end - start;
+}
+
+bool isAltAZ()
+{
+  return mountType == MOUNT_TYPE_ALTAZM || mountType == MOUNT_TYPE_FORK_ALT;
 }

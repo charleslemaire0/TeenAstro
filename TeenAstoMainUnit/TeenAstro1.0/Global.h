@@ -58,14 +58,13 @@ unsigned int GearAxis1;//2000
 unsigned int StepRotAxis1;
 byte MicroAxis1;
 bool ReverseAxis1;
-bool CoolStep1;
+u_int8_t HighCurrAxis1;
+u_int8_t LowCurrAxis1;
+
 unsigned int GearAxis2;//1800
 unsigned int StepRotAxis2;
 uint8_t MicroAxis2;
 bool ReverseAxis2;
-bool CoolStep2;
-u_int8_t HighCurrAxis1;
-u_int8_t LowCurrAxis1;
 u_int8_t HighCurrAxis2;
 u_int8_t LowCurrAxis2;
 
@@ -96,8 +95,11 @@ long quaterRotAxis1;
 long halfRotAxis2;
 long quaterRotAxis2;
 
-long celestialPoleStepAxis1;
-long celestialPoleStepAxis2;
+long poleStepAxis1;
+long poleStepAxis2;
+
+long homeStepAxis1;
+long homeStepAxis2;
 
 volatile double         timerRateRatio;
 volatile boolean        useTimerRateRatio;
@@ -152,23 +154,6 @@ long                minutesPastMeridianGOTOE;               // for goto's, how f
 long                minutesPastMeridianGOTOW;               // as above, if on the West side of the pier.  If left alone, the mount will stop tracking when it hits the this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. OnStep will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 //                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
-
-#if defined(AXIS1_DISABLED_HIGH)
-#define Axis1_Disabled  HIGH
-#define Axis1_Enabled   LOW
-#endif
-#if defined(AXIS1_DISABLED_LOW)
-#define Axis1_Disabled  LOW
-#define Axis1_Enabled   HIGH
-#endif
-#if defined(AXIS2_DISABLED_HIGH)
-#define Axis2_Disabled  HIGH
-#define Axis2_Enabled   LOW
-#endif
-#if defined(AXIS2_DISABLED_LOW)
-#define Axis2_Disabled  LOW
-#define Axis2_Enabled   HIGH
-#endif
 
 #define HADirNCPInit    0
 #define HADirSCPInit    1
@@ -272,11 +257,11 @@ double          guideRates[10] =
 volatile byte   activeGuideRate = GuideRateNone;
 
 volatile byte   guideDirAxis1 = 0;
-long            guideDurationHA = -1;
-unsigned long   guideDurationLastHA = 0;
+long            guideDurationAxis1 = -1;
+unsigned long   guideDurationLastAxis1 = 0;
 volatile byte   guideDirAxis2 = 0;
-long            guideDurationDec = -1;
-unsigned long   guideDurationLastDec = 0;
+long            guideDurationAxis2 = -1;
+unsigned long   guideDurationLastAxis2 = 0;
 
 long            lasttargetAxis1 = 0;
 long            debugv1 = 0;
@@ -284,10 +269,10 @@ boolean         axis1Enabled = false;
 boolean         axis2Enabled = false;
 
 double          guideTimerBaseRate = 0;
-fixed_t         amountGuideHA;
-fixed_t         guideHA;
-fixed_t         amountGuideDec;
-fixed_t         guideDec;
+fixed_t         amountGuideAxis1;
+fixed_t         guideAxis1;
+fixed_t         amountGuideAxis2;
+fixed_t         guideAxis2;
 
 // Reticule control
 #ifdef RETICULE_LED_PINS

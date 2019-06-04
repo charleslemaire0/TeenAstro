@@ -23,7 +23,7 @@ void Command_S(Command& process_command)
 
   case 'a':
     //  :SasDD*MM#
-    //         Set target object altitude to sDD*MM# or sDD*MM'SS# (based on precision setting)
+    //         Set target object altitude to sDD:MM# or sDD:MM:SS# (based on precision setting)
     //         Returns:
     //         0 if Object is within slew range, 1 otherwise
     if (!dmsToDouble(&newTargetAlt, parameter, true))
@@ -224,7 +224,7 @@ void Command_S(Command& process_command)
       if ((atoi2(parameter, &i)) && ((i >= 60) && (i <= 91)))
       {
         maxAlt = i;
-        maxAlt = maxAlt > 87 && mountType == MOUNT_TYPE_ALTAZM ? 87 : maxAlt;
+        maxAlt = maxAlt > 87 && isAltAZ() ? 87 : maxAlt;
         EEPROM.update(EE_maxAlt, maxAlt);
       }
       else
@@ -299,7 +299,6 @@ void Command_S(Command& process_command)
       commandError = true;
   }
   break;
-
 
   case 'X':
     //  :SXnn,VVVVVV...#   Set OnStep value

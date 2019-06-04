@@ -54,6 +54,19 @@ bool checkMeridian(const double& HA, const PierSide& inputSide, CheckMode mode)
   return ok;
 }
 
+//only for Equatorial Fork
+boolean checkDeclinatioLimit()
+{
+  static double hh;
+  static double dd;
+  if (mountType != MOUNT_TYPE_FORK)
+    return true;
+  if (pierSide == PIER_WEST)
+    return false;
+  getApproxEqu(&hh, &dd, true);
+  return dd > MinDec && dd < MaxDec;
+}
+
 // Predict Side of Pier
 // return 0 if no side can reach the given position
 PierSide predictSideOfPier(const double& HA, const PierSide& inputSide)

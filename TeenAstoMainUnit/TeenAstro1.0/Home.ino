@@ -9,16 +9,16 @@ boolean goHome()
     if (guideDirAxis1 || guideDirAxis2) return false;                       // fail, moving to home not allowed while guiding
     cli();
        
-    targetAxis1.part.m = celestialPoleStepAxis1;
+    targetAxis1.part.m = homeStepAxis1;
     targetAxis1.part.f = 0;
-    targetAxis2.part.m = celestialPoleStepAxis2;
+    targetAxis2.part.m = homeStepAxis2;
     targetAxis2.part.f = 0;
     startAxis1 = posAxis1;
     startAxis2 = posAxis2;
     SetSiderealClockRate(siderealInterval);
     sei();
     // stop tracking
-    lastSideralTracking = sideralTracking;
+    lastSideralTracking = false;
     sideralTracking = false;
     movingTo = true;
     homeMount = true;
@@ -49,7 +49,7 @@ boolean setHome()
     // reset pointing model
     alignNumStars = 0;
     alignThisStar = 0;
-    if (mountType == MOUNT_TYPE_ALTAZM)
+    if (isAltAZ())
       Align.init();
 
     GeoAlign.init();
@@ -78,16 +78,16 @@ else if (mountType == MOUNT_TYPE_ALTAZM)
     EEPROM.write(EE_parkStatus, parkStatus);
 
     // the polar home position
-    startAxis1 = celestialPoleStepAxis1;
-    startAxis2 = celestialPoleStepAxis2;
+    startAxis1 = homeStepAxis1;
+    startAxis2 = homeStepAxis2;
 
     // clear pulse-guiding state
     guideDirAxis1 = 0;
-    guideDurationHA = 0;
-    guideDurationLastHA = 0;
+    guideDurationAxis1 = 0;
+    guideDurationLastAxis1 = 0;
     guideDirAxis2 = 0;
-    guideDurationDec = 0;
-    guideDurationLastDec = 0;
+    guideDurationAxis2 = 0;
+    guideDurationLastAxis2 = 0;
     enable_Axis(false);
 
     cli();
