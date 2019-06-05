@@ -1986,7 +1986,7 @@ void SmartHandController::menuMaxRate()
   if (DisplayMessageLX200(GetLX200(":GX92#", outRate, sizeof(outRate))))
   {
     float maxrate = (float)strtol(&outRate[0], NULL, 10);
-    if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Rate", "", &maxrate, 32, 2001, 4, 0, ""))
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Rate", "", &maxrate, 32, 4000, 4, 0, ""))
     {
       sprintf(cmd, ":SX92:%04d#", (int)maxrate);
       DisplayMessageLX200(SetLX200(cmd));
