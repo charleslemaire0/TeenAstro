@@ -130,7 +130,6 @@ byte park()
   }
   if (!movingTo)
   {
-    parkSaved = EEPROM.read(EE_parkSaved);
     if (parkStatus == PRK_UNPARKED)
     {
       if (parkSaved)
@@ -162,7 +161,6 @@ byte park()
 // returns a parked telescope to operation, you must set date and time before calling this.  it also
 boolean syncAtPark()
 {
-  parkSaved = EEPROM.read(EE_parkSaved);
   if (!parkSaved)
   {
     return false;
@@ -196,43 +194,55 @@ boolean syncAtPark()
   return true;
 }
 
-boolean iniAtPark()
+//initialisation at park
+bool iniAtPark()
 {
-  if (sideralTracking || movingTo)
-    return false;
-  byte parkStatusRead = EEPROM.read(EE_parkStatus);
-  if (parkStatusRead != PRK_PARKED)
+  parkSaved = EEPROM.read(EE_parkSaved);
+  if (!parkSaved)
   {
+    EEPROM.write(EE_parkStatus, PRK_UNPARKED);
     parkStatus = PRK_UNPARKED;
-    if (parkStatusRead != PRK_UNPARKED)
-    {
-      EEPROM.write(EE_parkStatus, PRK_UNPARKED);
-    }
     return false;
   }
-  parkStatus = PRK_PARKED;
-  return syncAtPark();
+  byte parkStatusRead = EEPROM.read(EE_parkStatus);
+  bool ok = false;
+  switch (parkStatusRead)
+  {
+  case PRK_PARKED:
+    if (syncAtPark())
+    {
+      parkStatus = PRK_PARKED;
+      ok = true;
+    }
+    else
+    {
+      parkStatus = PRK_UNPARKED;
+      EEPROM.write(EE_parkStatus, PRK_UNPARKED);
+    }
+    break;
+  case PRK_UNPARKED:
+    parkStatus = PRK_UNPARKED;
+    return false;
+    break;
+  default:
+    parkStatus = PRK_UNPARKED;
+    EEPROM.write(EE_parkStatus, PRK_UNPARKED);
+    break;
+  }
+  return ok;
 }
 
 // depends on the latitude, longitude, and timeZone; but those are stored and recalled automatically
-boolean unpark()
+void unpark()
 {
   if (parkStatus == PRK_UNPARKED)
-    return true;
-  bool ok = iniAtPark();
-
+    return;
   // update our status, we're not parked anymore
   parkStatus = PRK_UNPARKED;
   EEPROM.write(EE_parkStatus, parkStatus);
-  if (ok)
-    // start tracking the sky
-    sideralTracking = true;
-  else
-  {
-    unsetPark();
-    syncPolarHome();
-  }
-  return ok;
+  // start tracking the sky
+  sideralTracking = true;
+  return;
 }
 
 void syncPolarHome()
