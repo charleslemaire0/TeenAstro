@@ -220,16 +220,19 @@ boolean unpark()
   if (parkStatus == PRK_UNPARKED)
     return true;
   bool ok = iniAtPark();
-  if (!ok)
-  {
-    return false;
-  }
+
   // update our status, we're not parked anymore
   parkStatus = PRK_UNPARKED;
   EEPROM.write(EE_parkStatus, parkStatus);
-  // start tracking the sky
-  sideralTracking = true;
-  return true;
+  if (ok)
+    // start tracking the sky
+    sideralTracking = true;
+  else
+  {
+    unsetPark();
+    syncPolarHome();
+  }
+  return ok;
 }
 
 void syncPolarHome()
