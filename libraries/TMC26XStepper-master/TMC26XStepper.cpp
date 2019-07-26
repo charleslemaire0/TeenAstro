@@ -397,15 +397,19 @@ void TMC26XStepper::setMicrosteps(int number_of_steps) {
   //delete the old value
   this->driver_control_register_value &= 0xFFFF0ul;
 	if (number_of_steps>=256) {
+    this->driver_control_register_value &= ~(STEP_INTERPOLATION);
 		setting_pattern=0;
 		microsteps=256;
 	} else if (number_of_steps>=128) {
+    this->driver_control_register_value &= ~(STEP_INTERPOLATION);
 		setting_pattern=1;
 		microsteps=128;
-	} else if (number_of_steps>=64) {
+  } else if (number_of_steps>=64) {
+    this->driver_control_register_value &= ~(STEP_INTERPOLATION);
 		setting_pattern=2;
 		microsteps=64;
 	} else if (number_of_steps>=32) {
+    this->driver_control_register_value &= ~(STEP_INTERPOLATION);
 		setting_pattern=3;
 		microsteps=32;
   } else if (number_of_steps>=16) {
@@ -413,16 +417,20 @@ void TMC26XStepper::setMicrosteps(int number_of_steps) {
 		setting_pattern=4;
 		microsteps=16;
 	} else if (number_of_steps>=8) {
+    this->driver_control_register_value &= ~(STEP_INTERPOLATION);
 		setting_pattern=5;
 		microsteps=8;
 	} else if (number_of_steps>=4) {
+    this->driver_control_register_value &= ~(STEP_INTERPOLATION);
 		setting_pattern=6;
 		microsteps=4;
 	} else if (number_of_steps>=2) {
+    this->driver_control_register_value &= ~(STEP_INTERPOLATION);
 		setting_pattern=7;
 		microsteps=2;
     //1 and 0 lead to full step
 	} else if (number_of_steps<=1) {
+    this->driver_control_register_value &= ~(STEP_INTERPOLATION);
 		setting_pattern=8;
 		microsteps=1;
 	}

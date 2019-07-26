@@ -134,6 +134,11 @@ static unsigned char ErrDe_bits[] U8X8_PROGMEM = {
   0x2e, 0xb1, 0x00, 0xb0, 0x1e, 0xb0, 0x22, 0xb0, 0xa2, 0xb3, 0xa2, 0xb2,
   0xa2, 0x83, 0xa2, 0xb0, 0x9e, 0xb3, 0x00, 0x80 };
 
+static unsigned char ErrAz_bits[] U8X8_PROGMEM = {
+   0xff, 0xff, 0x00, 0x80, 0x0e, 0xb0, 0x02, 0xb0, 0x66, 0xb3, 0x22, 0xb1,
+   0x2e, 0xb1, 0x00, 0xb0, 0x00, 0xb0, 0x08, 0xb0, 0x94, 0xb3, 0x22, 0xb2,
+   0x3e, 0x81, 0xa2, 0xb0, 0xa2, 0xb3, 0x00, 0x80 };
+
 static unsigned char ErrHo_bits[] U8X8_PROGMEM = {
   0xff, 0xff, 0x00, 0x80, 0x0e, 0xb0, 0x02, 0xb0, 0x66, 0xb3, 0x22, 0xb1,
   0x2e, 0xb1, 0x00, 0xb0, 0x22, 0xb0, 0x22, 0xb0, 0x22, 0xb3, 0xbe, 0xb4,
@@ -792,6 +797,10 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
         break;
       case TeenAstroMountStatus::ERR_DEC:
         display->drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrDe_bits);
+        x -= icon_width + 1;
+        break;
+      case TeenAstroMountStatus::ERR_AZM:
+        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrAz_bits);
         x -= icon_width + 1;
         break;
       case TeenAstroMountStatus::ERR_UNDER_POLE:
@@ -1977,7 +1986,7 @@ void SmartHandController::menuMaxRate()
   if (DisplayMessageLX200(GetLX200(":GX92#", outRate, sizeof(outRate))))
   {
     float maxrate = (float)strtol(&outRate[0], NULL, 10);
-    if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Rate", "", &maxrate, 32, 2001, 4, 0, ""))
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "Max Rate", "", &maxrate, 32, 4000, 4, 0, ""))
     {
       sprintf(cmd, ":SX92:%04d#", (int)maxrate);
       DisplayMessageLX200(SetLX200(cmd));

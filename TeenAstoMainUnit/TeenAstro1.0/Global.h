@@ -246,7 +246,10 @@ fixed_t         fstepAxis2;
 #define GuideRate16x    5
 #define GuideRateMax    9
 #define GuideRateNone   255
-
+#define RG 0
+#define RC 4
+#define RM 6
+#define RS 9
 
 double          guideRates[10] =
 {

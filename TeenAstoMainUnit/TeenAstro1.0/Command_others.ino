@@ -769,16 +769,16 @@ void Command_R()
   switch (command[1])
   {
   case 'G':
-    i = 0;
+    i = RG;
     break;
   case 'C':
-    i = 4;
+    i = RC;
     break;
   case 'M':
-    i = 6;
+    i = RM;
     break;
   case 'S':
-    i = 9;
+    i = RS;
     break;
   case '0':
   case '1':
