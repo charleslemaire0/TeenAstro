@@ -678,7 +678,7 @@ void Command_h()
     //  :hR#   Restore parked telescope to operation
     //          Return: 0 on failure
     //                  1 on success
-    if (!unpark()) commandError = true;
+    unpark();
     break;
   default:
     commandError = true;
