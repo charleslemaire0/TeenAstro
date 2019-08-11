@@ -67,13 +67,22 @@ boolean checkDeclinatioLimit()
   return dd > MinDec && dd < MaxDec;
 }
 
+bool Azok(long pos)
+{
+  return pos < (long)((360 + DegreePastAZ) * StepsPerDegreeAxis1) && pos >= long(-DegreePastAZ * StepsPerDegreeAxis1);
+}
+bool Altok(long pos)
+{
+  return  abs(pos) < (long)StepsPerDegreeAxis2 * 180L ;
+}
+
 bool checkAzimuth()
 {
   static long azm;
   cli();
   azm = posAxis1;
   sei();
-  return abs(azm) < (long)(MaxAzm * StepsPerDegreeAxis1);
+  return Azok(azm);
 }
 // Predict Side of Pier
 // return 0 if no side can reach the given position

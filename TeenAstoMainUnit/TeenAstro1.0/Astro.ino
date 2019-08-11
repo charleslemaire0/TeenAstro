@@ -757,6 +757,14 @@ double haRange(double d)
     return d;
 }
 
+double AzRange(double d)
+{
+    while (d >= 360.0 ) d -= 360.0;
+    while (d < 0.0 ) d += 360.0;
+    return d;
+}
+
+
 double degRange(double d)
 {
     while (d >= 360.0) d -= 360.0;

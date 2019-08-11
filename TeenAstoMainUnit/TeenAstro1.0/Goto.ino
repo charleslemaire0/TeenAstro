@@ -290,42 +290,21 @@ byte goToEqu(double RA, double Dec, PierSide preferedPierSide)
       EquToHor(HA, Dec, &a, &z);
     }
 
-    z = haRange(z);
+    z = AzRange(z);
 
-    cli();
-
-    double  a1 = (posAxis1 /*+ indexAxis1Steps*/) / StepsPerDegreeAxis1;
-    sei();
-
-
-    if ((MaxAzm > 180) && (MaxAzm <= 360))
+    if (DegreePastAZ>0)
     {
-      // adjust coordinate range to allow going past 180 deg.
-      // position a1 is 0..180
-      if (a1 >= 0)
-      {
-        // and goto z is in -0..-180
-        if (z < 0)
-        {
-          // the alternate z1 is in 180..360
-          double  z1 = z + 360.0;
-          if ((z1 < MaxAzm) && (dist(a1, z) > dist(a1, z1))) z = z1;
-        }
-      }
-
-      // position a1 -0..-180
-      if (a1 < 0)
-      {
-        // and goto z is in 0..180
-        if (z > 0)
-        {
-          // the alternate z1 is in -360..-180
-          double  z1 = z - 360.0;
-          if ((z1 > -MaxAzm) && (dist(a1, z) > dist(a1, z1))) z = z1;
-        }
-      }
+      cli();
+      double  a1 = (posAxis1 /*+ indexAxis1Steps*/) / StepsPerDegreeAxis1;
+      sei();
+      //compute alternative position
+       double z1 = z + 360;
+       double z2 = z - 360;
+       if (Azok((long)(z1 * StepsPerDegreeAxis1)) && dist(a1, z) > dist(a1, z1))
+         z = z1;
+       else if (Azok((long)(z2 * StepsPerDegreeAxis1)) && dist(a1, z) > dist(a1, z2))
+         z = z2;
     }
-
 
     // corrected to instrument horizon
     z -= 0;
@@ -392,12 +371,7 @@ byte goTo(long thisTargetAxis1, long thisTargetAxis2)
   // final validation
 if (isAltAZ())
 {
-    // allow +/- 360 in Az
-  if (((thisTargetAxis1 /*+ indexAxis1Steps*/ > (long)StepsPerDegreeAxis1 *
-    MaxAzm) || (thisTargetAxis1 /*+ indexAxis1Steps*/ < -(long)StepsPerDegreeAxis1 * MaxAzm)) || ((
-        thisTargetAxis2 /*+ indexAxis2Steps*/ > (long) StepsPerDegreeAxis2 *
-        180L) || (thisTargetAxis2 /*+ indexAxis2Steps*/ < -(long)StepsPerDegreeAxis2 *
-          180L)))
+  if (!Azok(thisTargetAxis1) || !Altok(thisTargetAxis2))
     return 7;   // fail, unspecified error
 }
   cli();
