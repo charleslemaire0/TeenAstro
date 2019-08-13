@@ -42,12 +42,12 @@ void StepToInstr(long Axis1, long Axis2, double *AngleAxis1, double *AngleAxis2)
 {
   *AngleAxis1 = ((double)Axis1) / StepsPerDegreeAxis1;
   *AngleAxis2 = ((double)Axis2) / StepsPerDegreeAxis2;
-  InsrtHADec2HADec(AngleAxis1, AngleAxis2, &pierSide);
+  InsrtAngle2Angle(AngleAxis1, AngleAxis2, &pierSide);
 }
 
 void InstrtoStep(double AngleAxis1, double AngleAxis2, long *Axis1, long *Axis2)
 {
-  HADec2InsrtHADec(&AngleAxis1, &AngleAxis2, &pierSide);
+  Angle2InsrtAngle(&AngleAxis1, &AngleAxis2, &pierSide);
   *Axis1 = (long)(AngleAxis1 * StepsPerDegreeAxis1);
   *Axis2 = (long)(AngleAxis2 * StepsPerDegreeAxis2);
 }

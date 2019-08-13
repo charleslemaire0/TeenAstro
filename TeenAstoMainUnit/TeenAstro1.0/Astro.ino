@@ -893,29 +893,30 @@ void CorrectHADec(double *HA, double *Dec)
   while (*HA < -180.0) *HA += 360.0;
 }
 
-void InsrtHADec2HADec(double *HA, double *Dec, PierSide *Side)
+void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side)
 {
-  if (*Dec > 90.0)
+  if (*AngleAxis2 > 90.0)
   {
-    *Dec = (90.0 - *Dec) + 90;
-    *HA = *HA - 180.0;
+    *AngleAxis2 = (90.0 - *AngleAxis2) + 90;
+    *AngleAxis1 = *AngleAxis1 - 180.0;
   }
-  else if (*Dec < -90.0)
+  else if (*AngleAxis2 < -90.0)
   {
-    *Dec = (-90.0 - *Dec) - 90.0;
-    *HA = *HA - 180.0;
+    *AngleAxis2 = (-90.0 - *AngleAxis2) - 90.0;
+    *AngleAxis1 = *AngleAxis1 - 180.0;
   }
 }
 
-void HADec2InsrtHADec(double *HA, double *Dec, PierSide *Side )
+void Angle2InsrtAngle(double *AngleAxis1, double *AngleAxis2, PierSide *Side )
 {
   if (*Side >= PIER_WEST)
   {
+    //TODO Verify for altaz!!
     if (*localSite.latitude() >= 0)
-      *Dec = (90.0 - *Dec) + 90;
+      *AngleAxis2 = (90.0 - *AngleAxis2) + 90;
     else
-      *Dec = (-90.0 - *Dec) - 90;
-    *HA = *HA + 180.0;
+      *AngleAxis2 = (-90.0 - *AngleAxis2) - 90;
+    *AngleAxis1 = *AngleAxis1 + 180.0;
   }
 }
 
