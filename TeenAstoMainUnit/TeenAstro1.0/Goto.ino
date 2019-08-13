@@ -36,8 +36,6 @@ boolean syncEqu(double RA, double Dec)
   //indexAxis1 = InstrHA - ((double)(long)targetAxis1.part.m) / (double)StepsPerDegreeAxis1;
   //indexAxis2 = InstrDec - ((double)(long)targetAxis2.part.m) / (double)StepsPerDegreeAxis2;
   cli();
-  deltaSyncAxis1 =  (double)(axis1 - (long)targetAxis1.part.m ) / StepsPerDegreeAxis1;
-  deltaSyncAxis2 =  (double)(axis2 - (long)targetAxis2.part.m ) / StepsPerDegreeAxis2;
   posAxis1 = axis1;
   posAxis2 = axis2;
   targetAxis1.part.m = axis1;
@@ -81,8 +79,6 @@ boolean syncAltAz(double Az, double Alt)
   //indexAxis1 = InstrHA - ((double)(long)targetAxis1.part.m) / (double)StepsPerDegreeAxis1;
   //indexAxis2 = InstrDec - ((double)(long)targetAxis2.part.m) / (double)StepsPerDegreeAxis2;
   cli();
-  deltaSyncAxis1 =  (double)(axis1 - (long)targetAxis1.part.m ) / StepsPerDegreeAxis1;
-  deltaSyncAxis2 =  (double)(axis2 - (long)targetAxis2.part.m ) / StepsPerDegreeAxis2;
   posAxis1 = axis1;
   posAxis2 = axis2;
   targetAxis1.part.m = axis1;
