@@ -38,18 +38,18 @@ void StepToEqu(const double *Lat, long Axis1, long Axis2, double *HA1, double *D
   InstrToEqu(Lat, HA, Dec, HA1, Dec1);
 }
 
-void StepToInstr(long Axis1, long Axis2, double *HA1, double *Dec1)
+void StepToInstr(long Axis1, long Axis2, double *AngleAxis1, double *AngleAxis2)
 {
-  *HA1 = ((double)Axis1) / StepsPerDegreeAxis1;
-  *Dec1 = ((double)Axis2) / StepsPerDegreeAxis2;
-  InsrtHADec2HADec(HA1, Dec1, &pierSide);
+  *AngleAxis1 = ((double)Axis1) / StepsPerDegreeAxis1;
+  *AngleAxis2 = ((double)Axis2) / StepsPerDegreeAxis2;
+  InsrtHADec2HADec(AngleAxis1, AngleAxis2, &pierSide);
 }
 
-void InstrtoStep(double HA, double Dec, long *Axis1, long *Axis2)
+void InstrtoStep(double AngleAxis1, double AngleAxis2, long *Axis1, long *Axis2)
 {
-  HADec2InsrtHADec(&HA, &Dec, &pierSide);
-  *Axis1 = (long)(HA * StepsPerDegreeAxis1);
-  *Axis2 = (long)(Dec * StepsPerDegreeAxis2);
+  HADec2InsrtHADec(&AngleAxis1, &AngleAxis2, &pierSide);
+  *Axis1 = (long)(AngleAxis1 * StepsPerDegreeAxis1);
+  *Axis2 = (long)(AngleAxis2 * StepsPerDegreeAxis2);
 }
 
 
