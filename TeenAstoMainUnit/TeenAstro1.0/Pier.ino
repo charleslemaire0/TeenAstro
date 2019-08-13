@@ -1,19 +1,19 @@
 // set Side of pier
-boolean setSide(PierSide side)
-{
-  if (side == PIER_NOTVALID)
-    return false;
-  double  HA, Dec;
-  GeoAlign.GetEqu(localSite.latitude(), &HA, &Dec);
-  double  axis1, axis2;
-  pierSide = side;
-  GeoAlign.EquToInstr(localSite.latitude(), HA, Dec, &axis1, &axis2);
-  cli();
-  posAxis1 = axis1;
-  posAxis2 = axis2;
-  sei();
-  return true;
-}
+//boolean setSide(PierSide side)
+//{
+//  if (side == PIER_NOTVALID)
+//    return false;
+//  double  HA, Dec;
+//  GetEqu(localSite.latitude(), &HA, &Dec);
+//  double  axis1, axis2;
+//  pierSide = side;
+//  EquToInstr(localSite.latitude(), HA, Dec, &axis1, &axis2);
+//  cli();
+//  posAxis1 = axis1;
+//  posAxis2 = axis2;
+//  sei();
+//  return true;
+//}
 
   bool checkPole(const double& HA, const PierSide& inputSide, CheckMode mode)
 {
@@ -111,6 +111,6 @@ PierSide predictTargetSideOfPier(double RaObject, double DecObject)
 {
   double  HA = haRange(rtk.LST() * 15.0 - RaObject);
   double h, d;
-  GeoAlign.EquToInstr(localSite.latitude(), HA, DecObject, &h, &d);
+  EquToInstr(localSite.latitude(), HA, DecObject, &h, &d);
   return predictSideOfPier(h, pierSide);
 }

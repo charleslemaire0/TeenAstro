@@ -319,26 +319,26 @@ void Command_S(Command& process_command)
       //  break;  // indexAxis2
 
       case '2':
-        GeoAlign.altCor = (double)strtol(&parameter[3], NULL,
-          10) / 3600.0;
+        /*GeoAlign.altCor = (double)strtol(&parameter[3], NULL,
+          10) / 3600.0;*/
         break;  // altCor
 
       case '3':
-        GeoAlign.azmCor = (double)strtol(&parameter[3], NULL,
-          10) / 3600.0;
+        //GeoAlign.azmCor = (double)strtol(&parameter[3], NULL,
+        //  10) / 3600.0;
         break;  // azmCor
 
       case '4':
-        GeoAlign.doCor = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
+        //GeoAlign.doCor = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
         break;  // doCor
 
       case '5':
-        GeoAlign.pdCor = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
+        //GeoAlign.pdCor = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
         break;  // pdCor
 
       case 'x':
-        GeoAlign.init();
-        GeoAlign.writeCoe();
+        //GeoAlign.init();
+        //GeoAlign.writeCoe();
         break;
       }
     }

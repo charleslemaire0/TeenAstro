@@ -13,16 +13,7 @@ boolean syncEqu(double RA, double Dec)
   if (isAltAZ())
   {
     double Axis1, Axis2;
-    if (Align.isReady())
-    {
-      // B=RA, D=Dec, H=Elevation, F=Azimuth (all in degrees)
-      Align.EquToInstr(HA, Dec, &Axis2, &Axis1);
-    }
-    else
-    {
-      EquToHor(HA, Dec, &Axis2, &Axis1);
-    }
-
+    EquToHor(HA, Dec, &Axis2, &Axis1);
     while (Axis1 > 180.0) Axis1 -= 360.0;
     while (Axis1 < -180.0) Axis1 += 360.0;
     axis1 = Axis1 * StepsPerDegreeAxis1;
@@ -31,7 +22,7 @@ boolean syncEqu(double RA, double Dec)
   else
   {
 
-    GeoAlign.EquToStep(localSite.latitude(), HA, Dec, &axis1, &axis2);
+    EquToStep(localSite.latitude(), HA, Dec, &axis1, &axis2);
   }
 
   // compute index offsets indexAxis1/indexAxis2, if they're within reason
@@ -76,7 +67,7 @@ boolean syncAltAz(double Az, double Alt)
   {
     double Ha, Dec;
     HorToEqu(Alt, Az, &Ha, &Dec);
-    GeoAlign.EquToStep(localSite.latitude(), Ha, Dec, &axis1, &axis2);
+    EquToStep(localSite.latitude(), Ha, Dec, &axis1, &axis2);
   }
 
   // compute index offsets indexAxis1/indexAxis2, if they're within reason
@@ -103,53 +94,7 @@ boolean syncAltAz(double Az, double Alt)
   return true;
 }
 
-bool deltaSyncEqu(double RA, double Dec)
-{
-  long axis1, axis2;
-  // hour angleTrackingMoveTo
-  double  HA = haRange(rtk.LST() * 15.0 - RA);
 
-  // correct for polar misalignment only by clearing the index offsets
-
-  if (isAltAZ())
-  {
-    double Axis1, Axis2;
-    if (Align.isReady())
-    {
-      // B=RA, D=Dec, H=Elevation, F=Azimuth (all in degrees)
-      Align.EquToInstr(HA, Dec, &Axis2, &Axis1);
-    }
-    else
-    {
-      EquToHor(HA, Dec, &Axis2, &Axis1);
-    }
-
-    while (Axis1 > 180.0) Axis1 -= 360.0;
-    while (Axis1 < -180.0) Axis1 += 360.0;
-    axis1 = Axis1 * StepsPerDegreeAxis1;
-    axis1 = Axis2 * StepsPerDegreeAxis1;
-  }
-  else
-  {
-    GeoAlign.EquToStep(localSite.latitude(), HA, Dec, &axis1, &axis2);
-  }
-
-  // compute index offsets indexAxis1/indexAxis2, if they're within reason
-  // actual posAxis1/posAxis2 are the coords of where this really is
-  // indexAxis1/indexAxis2 are the amount to add to the actual RA/Dec to arrive at the correct position
-  // double's are really single's on the ATMega's, and we're a digit or two shy of what's required to
-  // hold the steps in some cases but it's still getting down to the arc-sec level
-  // HA goes from +180...0..-180
-  //                 W   .   E
-  // indexAxis1 and indexAxis2 values get subtracted to arrive at the correct location
-  //indexAxis1 = InstrHA - ((double)(long)targetAxis1.part.m) / (double)StepsPerDegreeAxis1;
-  //indexAxis2 = InstrDec - ((double)(long)targetAxis2.part.m) / (double)StepsPerDegreeAxis2;
-  cli();
-  deltaSyncAxis1 = (double)(axis1 - (long)targetAxis1.part.m) / StepsPerDegreeAxis1;
-  deltaSyncAxis2 = (double)(axis2 - (long)targetAxis2.part.m) / StepsPerDegreeAxis2;
-  sei();
-  return true;
-}
 
 // this returns the telescopes HA and Dec (index corrected for Alt/Azm)
 void getHADec(double *HA, double *Dec) {
@@ -191,28 +136,12 @@ boolean getEqu(double *RA, double *Dec, boolean returnHA)
   if (!isAltAZ())
   {
     // get the HA and Dec
-
-    GeoAlign.GetEqu(localSite.latitude(), &HA, Dec);
+    GetEqu(localSite.latitude(), &HA, Dec);
   }
   else
   {
-    if (Align.isReady())
-    {
-      cli();
-
-      // get the Azm/Alt
-      double  F = (double)(posAxis1 /*+ indexAxis1Steps*/) / StepsPerDegreeAxis1;
-      double  H = (double)(posAxis2 /*+ indexAxis2Steps*/) / StepsPerDegreeAxis2;
-      sei();
-
-      // H=Elevation, F=Azimuth, B=RA, D=Dec (all in degrees)
-      Align.InstrToEqu(H, F, &HA, Dec);
-    }
-    else
-    {
-      // get the HA and Dec (already index corrected on AltAzm)
-      getHADec(&HA, Dec);
-    }
+    // get the HA and Dec (already index corrected on AltAzm)
+    getHADec(&HA, Dec);
   }
 
   // return either the RA or the HA depending on returnHA
@@ -232,7 +161,7 @@ boolean getApproxEqu(double *RA, double *Dec, boolean returnHA)
   double  HA;
 
   // get the HA and Dec (already index corrected on AltAzm)
-  GeoAlign.GetInstr(&HA, Dec);
+  GetInstr(&HA, Dec);
 
 
   // return either the RA or the HA depending on returnHA
@@ -280,16 +209,8 @@ byte goToEqu(double RA, double Dec, PierSide preferedPierSide)
   if (guideDirAxis1 || guideDirAxis2) return 7;   // fail, unspecified error
   if (isAltAZ())
   {
-    if (Align.isReady())
-    {
-      // B=RA, D=Dec, H=Elevation, F=Azimuth (all in degrees)
-      Align.EquToInstr(HA, Dec, &a, &z);
-    }
-    else
-    {
-      EquToHor(HA, Dec, &a, &z);
-    }
 
+    EquToHor(HA, Dec, &a, &z);
     z = AzRange(z);
 
     if (DegreePastAZ>0)
@@ -322,7 +243,7 @@ byte goToEqu(double RA, double Dec, PierSide preferedPierSide)
     double h, d;
     PierSide oldPierSide = pierSide;
     pierSide = preferedPierSide;
-    GeoAlign.EquToInstr(localSite.latitude(), HA, Dec, &h, &d);
+    EquToInstr(localSite.latitude(), HA, Dec, &h, &d);
     pierSide = oldPierSide;
     PierSide side = predictSideOfPier(h, preferedPierSide);
     if (side == 0)  return 6; //fail, outside limit
@@ -330,7 +251,7 @@ byte goToEqu(double RA, double Dec, PierSide preferedPierSide)
     {
       oldPierSide = pierSide;
       pierSide = side;
-      GeoAlign.EquToStep(localSite.latitude(), HA, Dec, &Axis1, &Axis2);
+      EquToStep(localSite.latitude(), HA, Dec, &Axis1, &Axis2);
       //Serial.println("-doGoto at-");
       //sprintf(reply, "axis 1 %ld", Axis1);
       //Serial.println(reply);
@@ -340,7 +261,7 @@ byte goToEqu(double RA, double Dec, PierSide preferedPierSide)
     }
     else
     {
-      GeoAlign.EquToStep(localSite.latitude(), HA, Dec, &Axis1, &Axis2);
+      EquToStep(localSite.latitude(), HA, Dec, &Axis1, &Axis2);
     }
 
   }

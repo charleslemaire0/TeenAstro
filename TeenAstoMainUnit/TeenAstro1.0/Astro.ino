@@ -522,7 +522,7 @@ boolean do_refractionRate_calc()
     if ((az_step == 10) || (az_step == 110))
     {
         if (onTrack)
-            GeoAlign.EquToInstr(localSite.latitude(), az_HA, az_Dec, &az_HA, &az_Dec);
+            EquToInstr(localSite.latitude(), az_HA, az_Dec, &az_HA, &az_Dec);
     }
 
     // get the Horizon coords

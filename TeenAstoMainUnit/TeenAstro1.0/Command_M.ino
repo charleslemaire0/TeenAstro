@@ -117,17 +117,17 @@ void Command_M(bool &supress_frame)
         //         4=Position unreachable    Not unparked
         //         5=Busy                    Goto already active
         //         6=Outside limits          Outside limits, above the Zenith limit
-  {
-    double  r, d;
-    getEqu(&r, &d, false);
-    GeoAlign.altCor = 0.0;
-    GeoAlign.azmCor = 0.0;
-    i = goToEqu(r, d, pierSide);
-    reply[0] = i + '0';
-    reply[1] = 0;
-    quietReply = true;
-    supress_frame = true;
-  }
+  //{
+  //  double  r, d;
+  //  getEqu(&r, &d, false);
+  //  GeoAlign.altCor = 0.0;
+  //  GeoAlign.azmCor = 0.0;
+  //  i = goToEqu(r, d, pierSide);
+  //  reply[0] = i + '0';
+  //  reply[1] = 0;
+  //  quietReply = true;
+  //  supress_frame = true;
+  //}
   break;
 
   case 'S':

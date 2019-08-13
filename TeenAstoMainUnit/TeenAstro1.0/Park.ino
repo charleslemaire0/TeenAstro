@@ -45,7 +45,7 @@ void unsetPark()
 boolean saveAlignModel()
 {
   // and store our corrections
-  GeoAlign.writeCoe();
+  //GeoAlign.writeCoe();
   return true;
 }
 
@@ -171,7 +171,7 @@ boolean syncAtPark()
   axis2Enabled = true;
   delay(10);
   // get corrections
-  GeoAlign.readCoe();
+  //GeoAlign.readCoe();
 
   // get our position
   int axis1, axis2;

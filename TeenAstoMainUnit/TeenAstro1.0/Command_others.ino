@@ -430,117 +430,117 @@ void Command_pct()
 //         Returns: 1 on success
 void Command_A()
 {
-  if (command[1] == 'W')
-  {
-    saveAlignModel();
-  }
-  else    //  :A?#  Align status
-          //         Returns: mno#
-          //         where m is the maximum number of alignment stars
-          //               n is the current alignment star (0 otherwise)
-          //               o is the last required alignment star when an alignment is in progress (0 otherwise)
-    if (command[1] == '?')
-    {
-      reply[0] = maxAlignNumStar;
-      reply[1] = '0' + alignThisStar;
-      reply[2] = '0' + alignNumStars;
-      reply[3] = 0;
-      quietReply = true;
-    }
-    else    //  :An#  Start Telescope Manual Alignment Sequence
-            //         This is to initiate a one or two-star alignment:
-            //         1) Before calling this function, the telescope should be in the polar-home position
-            //         2) Call this function
-            //         3) Set the target location (RA/Dec) to a bright star, etc. (near the celestial equator in the western sky)
-            //         4) Issue a goto command
-            //         5) Center the star/object using the guide commands (as needed)
-            //         6) Call :A+# command to accept the correction
-            //         ( for two-star alignment )
-            //         7) Set the target location (RA/Dec) to a bright star, etc. (near the celestial equator in the southern sky)
-            //         8) Issue a goto command
-            //         9) Center the star/object using the guide commands (as needed)
-            //         10) Call :A+# command to accept the correction
-            //         Returns:
-            //         1: When ready for your goto commands
-            //         0: If mount is busy
-      if ((command[1] >= '1') && (command[1] <= '9'))
-      {
-        // set current time and date before calling this routine
-        // Two star and three star align not supported with Fork mounts in alternate mode
-        
-        if (mountType == MOUNT_TYPE_FORK_ALT && alignThisStar != 1)
-        {
-          commandError = true;
-          alignNumStars = 0;
-          alignThisStar = 1;
-          return;
-        }
-          // telescope should be set in the polar home (CWD) for a starting point
-          // this command sets indexAxis1, indexAxis2, azmCor=0; altCor=0;
-          setHome();
+  //if (command[1] == 'W')
+  //{
+  //  saveAlignModel();
+  //}
+  //else    //  :A?#  Align status
+  //        //         Returns: mno#
+  //        //         where m is the maximum number of alignment stars
+  //        //               n is the current alignment star (0 otherwise)
+  //        //               o is the last required alignment star when an alignment is in progress (0 otherwise)
+  //  if (command[1] == '?')
+  //  {
+  //    //reply[0] = maxAlignNumStar;
+  //    //reply[1] = '0' + alignThisStar;
+  //    //reply[2] = '0' + alignNumStars;
+  //    //reply[3] = 0;
+  //    quietReply = true;
+  //  }
+  //  else    //  :An#  Start Telescope Manual Alignment Sequence
+  //          //         This is to initiate a one or two-star alignment:
+  //          //         1) Before calling this function, the telescope should be in the polar-home position
+  //          //         2) Call this function
+  //          //         3) Set the target location (RA/Dec) to a bright star, etc. (near the celestial equator in the western sky)
+  //          //         4) Issue a goto command
+  //          //         5) Center the star/object using the guide commands (as needed)
+  //          //         6) Call :A+# command to accept the correction
+  //          //         ( for two-star alignment )
+  //          //         7) Set the target location (RA/Dec) to a bright star, etc. (near the celestial equator in the southern sky)
+  //          //         8) Issue a goto command
+  //          //         9) Center the star/object using the guide commands (as needed)
+  //          //         10) Call :A+# command to accept the correction
+  //          //         Returns:
+  //          //         1: When ready for your goto commands
+  //          //         0: If mount is busy
+  //    if ((command[1] >= '1') && (command[1] <= '9'))
+  //    {
+  //      // set current time and date before calling this routine
+  //      // Two star and three star align not supported with Fork mounts in alternate mode
+  //      
+  //      if (mountType == MOUNT_TYPE_FORK_ALT && alignThisStar != 1)
+  //      {
+  //        commandError = true;
+  //        alignNumStars = 0;
+  //        alignThisStar = 1;
+  //        return;
+  //      }
+  //        // telescope should be set in the polar home (CWD) for a starting point
+  //        // this command sets indexAxis1, indexAxis2, azmCor=0; altCor=0;
+  //        setHome();
 
-          // enable the stepper drivers
-          enable_Axis(true);
-          delay(10);
+  //        // enable the stepper drivers
+  //        enable_Axis(true);
+  //        delay(10);
 
-          // start tracking
-          sideralTracking = true;
-          lastSetTrakingEnable = millis();
-          // start align...
-          alignNumStars = command[1] - '0';
-          alignThisStar = 1;
+  //        // start tracking
+  //        sideralTracking = true;
+  //        lastSetTrakingEnable = millis();
+  //        // start align...
+  //        alignNumStars = command[1] - '0';
+  //        alignThisStar = 1;
 
 
-        if (commandError)
-        {
-          alignNumStars = 0;
-          alignThisStar = 1;
-        }
-      }
-      else    //  :A+#  Manual Alignment, set target location
-              //         Returns:
-              //         1: If correction is accepted
-              //         0: Failure, Manual align mode not set or distance too far
-        if (command[1] == '+')
-        {
-          // after last star turn meridian flips off when align is done
-          if ((alignNumStars == alignThisStar) && (meridianFlip == FLIP_ALIGN))
-            meridianFlip = FLIP_NEVER;
+  //      if (commandError)
+  //      {
+  //        alignNumStars = 0;
+  //        alignThisStar = 1;
+  //      }
+  //    }
+  //    else    //  :A+#  Manual Alignment, set target location
+  //            //         Returns:
+  //            //         1: If correction is accepted
+  //            //         0: Failure, Manual align mode not set or distance too far
+  //      if (command[1] == '+')
+  //      {
+  //        // after last star turn meridian flips off when align is done
+  //        if ((alignNumStars == alignThisStar) && (meridianFlip == FLIP_ALIGN))
+  //          meridianFlip = FLIP_NEVER;
 
-          // AltAz Taki method
-          if (isAltAZ() && (alignNumStars > 1) && (alignThisStar <= alignNumStars))
-          {
-            cli();
+  //        // AltAz Taki method
+  //        if (isAltAZ() && (alignNumStars > 1) && (alignThisStar <= alignNumStars))
+  //        {
+  //          cli();
 
-            // get the Azm/Alt
-            double  F = (double)(posAxis1 /*+ indexAxis1Steps*/) / (double)StepsPerDegreeAxis1;
-            double  H = (double)(posAxis2 /*+ indexAxis2Steps*/) / (double)StepsPerDegreeAxis2;
-            sei();
+  //          // get the Azm/Alt
+  //          double  F = (double)(posAxis1 /*+ indexAxis1Steps*/) / (double)StepsPerDegreeAxis1;
+  //          double  H = (double)(posAxis2 /*+ indexAxis2Steps*/) / (double)StepsPerDegreeAxis2;
+  //          sei();
 
-            // B=RA, D=Dec, H=Elevation (instr), F=Azimuth (instr), all in degrees
-            Align.addStar(alignThisStar, alignNumStars, haRange(rtk.LST() * 15.0 - newTargetRA), newTargetDec, H, F);
-            alignThisStar++;
-          }
-          else if (alignThisStar <= alignNumStars)
-            {
-              // RA, Dec (in degrees)
-              if (GeoAlign.addStar(alignThisStar, alignNumStars,
-                newTargetRA, newTargetDec))
-                alignThisStar++;
-              else
-                commandError = true;
-            }
-            else
-              commandError = true;
+  //          // B=RA, D=Dec, H=Elevation (instr), F=Azimuth (instr), all in degrees
+  //          //Align.addStar(alignThisStar, alignNumStars, haRange(rtk.LST() * 15.0 - newTargetRA), newTargetDec, H, F);
+  //          //alignThisStar++;
+  //        }
+  //        else if (alignThisStar <= alignNumStars)
+  //          {
+  //            // RA, Dec (in degrees)
+  //            if (GeoAlign.addStar(alignThisStar, alignNumStars,
+  //              newTargetRA, newTargetDec))
+  //              alignThisStar++;
+  //            else
+  //              commandError = true;
+  //          }
+  //          else
+  //            commandError = true;
 
-          if (commandError)
-          {
-            alignNumStars = 0;
-            alignThisStar = 0;
-          }
-        }
-        else
-          commandError = true;
+  //        if (commandError)
+  //        {
+  //          alignNumStars = 0;
+  //          alignThisStar = 0;
+  //        }
+  //      }
+  //      else
+  //        commandError = true;
 }
 
 

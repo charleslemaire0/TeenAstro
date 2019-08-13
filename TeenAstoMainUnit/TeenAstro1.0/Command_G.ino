@@ -16,22 +16,22 @@ void Command_GX()
     switch (parameter[1])
     {
     case '2':
-      sprintf(reply, "%ld", (long)(GeoAlign.altCor * 3600.0));
+      /*sprintf(reply, "%ld", (long)(GeoAlign.altCor * 3600.0))*/;
       quietReply = true;
       break;  // altCor
 
     case '3':
-      sprintf(reply, "%ld", (long)(GeoAlign.azmCor * 3600.0));
+      /*sprintf(reply, "%ld", (long)(GeoAlign.azmCor * 3600.0));*/
       quietReply = true;
       break;  // azmCor
 
     case '4':
-      sprintf(reply, "%ld", (long)(GeoAlign.doCor * 3600.0));
+      /*sprintf(reply, "%ld", (long)(GeoAlign.doCor * 3600.0));*/
       quietReply = true;
       break;  // doCor
 
     case '5':
-      sprintf(reply, "%ld", (long)(GeoAlign.pdCor * 3600.0));
+      /*sprintf(reply, "%ld", (long)(GeoAlign.pdCor * 3600.0));*/
       quietReply = true;
       break;  // pdCor
     }

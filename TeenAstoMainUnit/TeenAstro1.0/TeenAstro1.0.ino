@@ -408,7 +408,7 @@ void SafetyCheck(const bool forceTracking)
   if (meridianFlip != FLIP_NEVER)
   {
     double HA, Dec;
-    GeoAlign.GetInstr(&HA, &Dec);
+    GetInstr(&HA, &Dec);
     if (!checkPole(HA, pierSide, CHECKMODE_TRACKING))
     {
       if ((dirAxis1 == 1 && pierSide == PIER_EAST) || (dirAxis1 == 0 && pierSide == PIER_WEST))
@@ -458,7 +458,7 @@ void SafetyCheck(const bool forceTracking)
 
       // when Fork mounted, ignore pierSide and just stop the mount if it passes the underPoleLimit
       double HA, Dec;
-      GeoAlign.GetInstr(&HA, &Dec);
+      GetInstr(&HA, &Dec);
       double underPoleLimit = movingTo ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;  
       if (HA > underPoleLimit * 15.)
       {
@@ -590,12 +590,8 @@ void initmount()
   fstepAxis1.fixed = doubleToFixed(StepsPerSecondAxis1 / 100.0);
 
   // initialize alignment
-  if (mountType == MOUNT_TYPE_ALTAZM)
-  {
-    Align.init();
-  }
 
-  GeoAlign.init();
+
 
   // Tracking and rate control
   refraction_enable = isAltAZ() ? false : true;

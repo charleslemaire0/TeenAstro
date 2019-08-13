@@ -47,12 +47,11 @@ boolean setHome()
     origTargetAxis2 = 0;
 
     // reset pointing model
-    alignNumStars = 0;
-    alignThisStar = 0;
-    if (isAltAZ())
-      Align.init();
+    //alignNumStars = 0;
+    //alignThisStar = 0;
 
-    GeoAlign.init();
+
+    //GeoAlign.init();
 
     // reset meridian flip control
 if (mountType==MOUNT_TYPE_GEM)
