@@ -261,39 +261,27 @@ void loop()
 
   if (rtk.updatesiderealTimer())
   {
-    // SIDEREAL TRACKING -------------------------------------------------------------------------------
-    // only active while sidereal tracking with a guide rate that makes sense
-    if (sideralTracking && !movingTo)
-    {
-      // apply the Tracking, Guiding
-      cli();
-      if (!inbacklashAxis1)
-      {
-        targetAxis1.fixed += fstepAxis1.fixed;
-      }
-      if (!inbacklashAxis2)
-      {
-        targetAxis2.fixed += fstepAxis2.fixed;
-      }
-      sei();
-    }
-    // SIDEREAL TRACKING DURING GOTOS ------------------------------------------------------------------
-    // keeps the target where it's supposed to be while doing gotos
-    else if (movingTo)
-    {
-      if (sideralTracking)
-      {
-        // don't advance the target during meridian flips
-        if ((pierSide == PIER_EAST) || (pierSide == PIER_WEST))
-        {
-          cli();
-          targetAxis1.fixed += fstepAxis1.fixed;
-          targetAxis2.fixed += fstepAxis2.fixed;
-          sei();
-        }
-      }
-      moveTo();
-    }
+     // update Target position
+     if (sideralTracking)
+     {
+       cli();
+       if (!inbacklashAxis1)
+       {
+         targetAxis1.fixed += fstepAxis1.fixed;
+       }
+       if (!inbacklashAxis2)
+       {
+         targetAxis2.fixed += fstepAxis2.fixed;
+       }
+       sei();
+     }
+     // Goto Target
+     if (movingTo)
+     {
+       moveTo();
+     }
+
+
     // figure out the current Altitude
     do_fastalt_calc();
     if (isAltAZ())
