@@ -276,12 +276,10 @@ void loop()
       sei();
     }
     // Goto Target
-    if (movingTo)
+    if (movingTo && !inbacklashAxis1 && !inbacklashAxis2)
     {
       moveTo();
     }
-
-
     // figure out the current Altitude
     do_fastalt_calc();
     if (isAltAZ())
