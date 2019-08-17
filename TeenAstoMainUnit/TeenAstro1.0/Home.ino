@@ -43,8 +43,7 @@ boolean setHome()
     newTargetDec = 0;
     newTargetAlt = 0;
     newTargetAzm = 0;
-    origTargetAxis1.fixed = 0;
-    origTargetAxis2 = 0;
+
 
     // reset pointing model
     //alignNumStars = 0;

@@ -125,7 +125,6 @@ volatile long       startAxis1;  // hour angle of goto start position in steps
 volatile fixed_t    targetAxis1; // hour angle of goto end   position in steps
 volatile byte       dirAxis1;    // stepping direction + or -
 double              newTargetRA; // holds the RA for goTos
-fixed_t             origTargetAxis1;
 #if defined(AXIS1_MODE) && defined(AXIS1_MODE_GOTO)
 volatile long       stepAxis1 = 1;
 #else
@@ -138,7 +137,6 @@ volatile long       startAxis2;   // declination of goto start position in steps
 volatile fixed_t    targetAxis2;  // declination of goto end   position in steps
 volatile byte       dirAxis2;     // stepping direction + or -
 double              newTargetDec; // holds the Dec for goTos
-long                origTargetAxis2;
 #if defined(AXIS2_MODE) && defined(AXIS2_MODE_GOTO)
 volatile long       stepAxis2 = 1;
 #else

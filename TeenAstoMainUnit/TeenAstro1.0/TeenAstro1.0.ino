@@ -283,8 +283,6 @@ void loop()
     {
       if (sideralTracking)
       {
-        // origTargetAxisn isn't used in Alt/Azm mode since meridian flips never happen
-        origTargetAxis1.fixed += fstepAxis1.fixed;
         // don't advance the target during meridian flips
         if ((pierSide == PIER_EAST) || (pierSide == PIER_WEST))
         {
@@ -583,7 +581,6 @@ void initmount()
   fstepAxis1.fixed = 0;
   fstepAxis2.fixed = 0;
 
-  origTargetAxis1.fixed = 0;
   targetAxis1.part.m = quaterRotAxis1;
   targetAxis1.part.f = 0;
   targetAxis2.part.m = quaterRotAxis2;
