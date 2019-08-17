@@ -319,9 +319,6 @@ void EquToHor(double HA, double Dec, double *Alt, double *Azm)
     double sinDec = sin(Dec);
     double  SinAlt = (sinDec * localSite.sinLat()) + (cosDec * localSite.cosLat() * cosHA);
     *Alt = asin(SinAlt);
-
-    //double  t1 = sin(HA);
-    //double  t2 = cos(HA) * localSite.sinLat() - tan(Dec) * localSite.cosLat();
     double  t1 = sinHA;
     double  t2 = cosHA * localSite.sinLat() - sinDec/cosDec * localSite.cosLat();
     *Azm = atan2(t1, t2) * Rad;
