@@ -26,7 +26,7 @@ void Command_M(bool &supress_frame)
       getEqu(&f, &f1, false);
       newTargetRA = f;
       newTargetDec = f1;
-      PierSide preferedPierSide = (pierSide == PIER_EAST) ? PIER_WEST : PIER_EAST;
+      PierSide preferedPierSide = (GetPierSide() == PIER_EAST) ? PIER_WEST : PIER_EAST;
       i = goToEqu(newTargetRA, newTargetDec, preferedPierSide);
       reply[0] = i + '0';
       reply[1] = 0;
@@ -72,7 +72,7 @@ void Command_M(bool &supress_frame)
           bool rev = false;
           if (guideDirAxis2 == 's')
             rev = true;
-          if (pierSide >= PIER_WEST)
+          if (GetPierSide() >= PIER_WEST)
             rev = !rev;
           cli();
           GuidingState = GuidingPulse;
@@ -142,7 +142,7 @@ void Command_M(bool &supress_frame)
         //         6=Outside limits          Outside limits, above the Zenith limit
         //         7=Guiding
         //         8=has a an Error
-    i = goToEqu(newTargetRA, newTargetDec, pierSide);
+    i = goToEqu(newTargetRA, newTargetDec, GetPierSide());
     reply[0] = i + '0';
     reply[1] = 0;
     quietReply = true;
@@ -170,7 +170,7 @@ void Command_M(bool &supress_frame)
       return;
     }
     objectHa = haRange(rtk.LST() * 15.0 - objectRa *15);
-    byte side = predictSideOfPier(objectHa, pierSide);
+    byte side = predictSideOfPier(objectHa, GetPierSide());
     if (side == 0) reply[0] = '?';
     else if (side == PIER_EAST) reply[0] = 'E';
     else if (side == PIER_WEST) reply[0] = 'W';

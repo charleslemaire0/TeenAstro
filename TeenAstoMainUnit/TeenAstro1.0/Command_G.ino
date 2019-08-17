@@ -107,11 +107,11 @@ void Command_GX()
     case '4':
       if (meridianFlip == FLIP_NEVER)
       {
-        sprintf(reply, "%d N", (int)(pierSide));
+        sprintf(reply, "%d N", (int)(GetPierSide()));
       }
       else
       {
-        sprintf(reply, "%d", (int)(pierSide));
+        sprintf(reply, "%d", (int)(GetPierSide()));
       }
 
       quietReply = true;
@@ -430,15 +430,18 @@ void  Command_G()
     break;
   }
   case 'm':
+  {
     //  :Gm#   Gets the meridian pier-side
     //         Returns: E#, W#, N# (none/parked), ?# (Meridian flip in progress)
     //         A # terminated string with the pier side.
+    PierSide currentSide = GetPierSide();
     reply[0] = '?';
     reply[1] = 0;
-    if (pierSide == PIER_EAST) reply[0] = 'E';
-    if (pierSide == PIER_WEST) reply[0] = 'W';
+    if (currentSide == PIER_EAST) reply[0] = 'E';
+    if (currentSide == PIER_WEST) reply[0] = 'W';
     quietReply = true;
     break;
+  }
   case 'n':
     //  :Gn#   Get Current Site name
     //         Returns: <string>#
@@ -570,8 +573,9 @@ void  Command_G()
       reply[12] = 'A';
     else
       reply[12] = 'U';
-    if (pierSide == PIER_EAST) reply[13] = 'E';
-    if (pierSide == PIER_WEST) reply[13] = 'W';
+    PierSide currentSide = GetPierSide();
+    if (currentSide == PIER_EAST) reply[13] = 'E';
+    if (currentSide == PIER_WEST) reply[13] = 'W';
     reply[14] = iSGNSSValid() ? '1': '0';
     reply[15] = '0' + lastError;
     reply[16] = 0;

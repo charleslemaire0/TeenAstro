@@ -189,14 +189,14 @@ void Command_S(Command& process_command)
       }
       else if (parameter[0] == 'E')
       {
-        if (pierSide == PIER_WEST)
+        if (GetPierSide() == PIER_WEST)
         {
           newTargetPierSide = PIER_EAST;
         }
       }
       else if (parameter[0] == 'W')
       {
-        if (pierSide == PIER_EAST)
+        if (GetPierSide() == PIER_EAST)
         {
           newTargetPierSide = PIER_WEST;
         }

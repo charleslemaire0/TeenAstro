@@ -67,7 +67,7 @@ void Guide()
           bool rev = false;
           if (guideDirAxis2 == 's')
             rev = true;
-          if (pierSide >= PIER_WEST)
+          if (GetPierSide() >= PIER_WEST)
             rev = !rev;
           cli();
           rev ? targetAxis2.fixed -= amountGuideAxis2.fixed : targetAxis2.fixed += amountGuideAxis2.fixed;

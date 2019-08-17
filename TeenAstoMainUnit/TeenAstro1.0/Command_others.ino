@@ -591,7 +591,6 @@ void Command_C()
   {
     if (newTargetPierSide != PIER_NOTVALID)
     {
-      pierSide = newTargetPierSide;
       newTargetPierSide = PIER_NOTVALID;
     }
     switch (command[1])

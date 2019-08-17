@@ -20,7 +20,6 @@ ParkState parkStatus = PRK_UNPARKED;
 boolean parkSaved = false;
 boolean atHome = true;
 boolean homeMount = false;
-PierSide pierSide = PIER_EAST;
 MeridianFlip meridianFlip = FLIP_NEVER;
 Mount mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;

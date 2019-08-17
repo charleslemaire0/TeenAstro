@@ -21,7 +21,7 @@ boolean syncEqu(double RA, double Dec)
   }
   else
   {
-    EquToStep(HA, Dec, pierSide, &axis1, &axis2);
+    EquToStep(HA, Dec, GetPierSide(), &axis1, &axis2);
   }
   cli();
   posAxis1 = axis1;
@@ -53,7 +53,7 @@ boolean syncAltAz(double Az, double Alt)
   {
     double Ha, Dec;
     HorToEqu(Alt, Az, &Ha, &Dec);
-    EquToStep(Ha, Dec, pierSide, &axis1, &axis2);
+    EquToStep(Ha, Dec, GetPierSide(), &axis1, &axis2);
   }
   cli();
   posAxis1 = axis1;
@@ -170,7 +170,7 @@ byte goToHor(double *Alt, double *Azm)
   double HA, Dec;
   HorToEqu(*Alt, *Azm, &HA, &Dec);
   double RA = degRange(rtk.LST() * 15.0 - HA);
-  return goToEqu(RA, Dec, pierSide);
+  return goToEqu(RA, Dec, GetPierSide());
 }
 
 

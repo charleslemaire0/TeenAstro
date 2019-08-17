@@ -187,8 +187,6 @@ boolean syncAtPark()
   targetAxis2.part.m = axis2;
   targetAxis2.part.f = 0;
   sei();
-  // see what side of the pier we're on
-  CheckPierSide();
   // set Meridian Flip behaviour to match mount type
   meridianFlip = mountType == MOUNT_TYPE_GEM ? FLIP_ALWAYS : FLIP_NEVER;
   return true;

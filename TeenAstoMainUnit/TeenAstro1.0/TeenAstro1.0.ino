@@ -351,7 +351,6 @@ void loop()
     // adjust tracking rate for Alt/Azm mounts
     // adjust tracking rate for refraction
     SetDeltaTrackingRate();
-    CheckPierSide();
     SafetyCheck(forceTracking);
   }
   else
@@ -368,15 +367,10 @@ void loop()
   }
 }
 
-void CheckPierSide()
+PierSide GetPierSide()
 {
   cli(); long pos = posAxis2; sei();
-  if (pos == -quaterRotAxis2 || pos == quaterRotAxis2)
-  {
-    return;
-  }
-  bool isEast = -quaterRotAxis2 < pos && pos < quaterRotAxis2;
-  pierSide = isEast ? PIER_EAST : PIER_WEST;
+  return -quaterRotAxis2 <= pos && pos <= quaterRotAxis2 ? PIER_EAST : PIER_WEST;
 }
 
 // safety checks,
@@ -385,23 +379,25 @@ void CheckPierSide()
 void SafetyCheck(const bool forceTracking)
 {
   // basic check to see if we're not at home
-
+  PierSide currentSide = GetPierSide();
   if (atHome)
     atHome = !sideralTracking;
 
   if (meridianFlip != FLIP_NEVER)
   {
     double HA, Dec;
-    PierSide side;
-    GetInstr(&HA, &Dec, &side);
-    if (!checkPole(HA, pierSide, CHECKMODE_TRACKING))
+    PierSide fakeside;
+    GetInstr(&HA, &Dec, &fakeside);
+
+    if (!checkPole(HA, currentSide, CHECKMODE_TRACKING))
     {
-      if ((dirAxis1 == 1 && pierSide == PIER_EAST) || (dirAxis1 == 0 && pierSide == PIER_WEST))
+
+      if ((dirAxis1 == 1 && currentSide == PIER_EAST) || (dirAxis1 == 0 && currentSide == PIER_WEST))
       {
         lastError = ERR_UNDER_POLE;
         if (movingTo)
           abortSlew = true;
-        if (pierSide == PIER_EAST && !forceTracking)
+        if (currentSide == PIER_EAST && !forceTracking)
           sideralTracking = false;
       }
       else if (lastError == ERR_UNDER_POLE)
@@ -414,16 +410,16 @@ void SafetyCheck(const bool forceTracking)
       lastError = ERR_NONE;
     }
 
-    if (!checkMeridian(HA, pierSide, CHECKMODE_TRACKING))
+    if (!checkMeridian(HA, currentSide, CHECKMODE_TRACKING))
     {
-      if ((dirAxis1 == 1 && pierSide == PIER_WEST) || (dirAxis1 == 0 && pierSide == PIER_EAST))
+      if ((dirAxis1 == 1 && currentSide == PIER_WEST) || (dirAxis1 == 0 && currentSide == PIER_EAST))
       {
         lastError = ERR_MERIDIAN;
         if (movingTo)
         {
           abortSlew = true;
         }
-        if (pierSide >= PIER_WEST && !forceTracking)
+        if (currentSide >= PIER_WEST && !forceTracking)
           sideralTracking = false;
       }
       else if (lastError == ERR_MERIDIAN)

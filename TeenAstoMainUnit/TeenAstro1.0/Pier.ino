@@ -64,7 +64,7 @@ boolean checkDeclinatioLimit()
   static double dd;
   if (mountType != MOUNT_TYPE_FORK)
     return true;
-  if (pierSide == PIER_WEST)
+  if (GetPierSide() == PIER_WEST)
     return false;
   getEqu(&hh, &dd, true);
   return dd > MinDec && dd < MaxDec;
