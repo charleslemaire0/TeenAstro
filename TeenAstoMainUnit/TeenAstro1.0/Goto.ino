@@ -3,7 +3,7 @@
 
 
 // syncs the telescope/mount to the sky
-boolean syncEqu(double RA, double Dec)
+boolean syncEqu(double RA, double Dec, PierSide Side)
 {
   // hour angleTrackingMoveTo
   double  HA = haRange(rtk.LST() * 15.0 - RA);
@@ -21,7 +21,7 @@ boolean syncEqu(double RA, double Dec)
   }
   else
   {
-    EquToStep(HA, Dec, GetPierSide(), &axis1, &axis2);
+    EquToStep(HA, Dec, Side, &axis1, &axis2);
   }
   cli();
   posAxis1 = axis1;
@@ -37,7 +37,7 @@ boolean syncEqu(double RA, double Dec)
 
 
 // syncs the telescope/mount to the sky
-boolean syncAltAz(double Az, double Alt)
+boolean syncAltAz(double Az, double Alt, PierSide Side)
 {
   // hour angleTrackingMoveTo
 
@@ -53,7 +53,7 @@ boolean syncAltAz(double Az, double Alt)
   {
     double Ha, Dec;
     HorToEqu(Alt, Az, &Ha, &Dec);
-    EquToStep(Ha, Dec, GetPierSide(), &axis1, &axis2);
+    EquToStep(Ha, Dec, Side, &axis1, &axis2);
   }
   cli();
   posAxis1 = axis1;

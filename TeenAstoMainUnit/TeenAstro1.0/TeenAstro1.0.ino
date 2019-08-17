@@ -367,11 +367,7 @@ void loop()
   }
 }
 
-PierSide GetPierSide()
-{
-  cli(); long pos = posAxis2; sei();
-  return -quaterRotAxis2 <= pos && pos <= quaterRotAxis2 ? PIER_EAST : PIER_WEST;
-}
+
 
 // safety checks,
 // keeps mount from tracking past the meridian limit, past the underPoleLimit,
@@ -583,9 +579,8 @@ void initCelestialPole()
 {
   if (isAltAZ())
   {
-    //double lat = *localSite.latitude();
-    poleStepAxis2 = quaterRotAxis2;
     poleStepAxis1 = (*localSite.latitude() < 0) ? halfRotAxis1 : 0L;
+    poleStepAxis2 = quaterRotAxis2;
     homeStepAxis1 = poleStepAxis1;
     homeStepAxis2 = 0;
   }

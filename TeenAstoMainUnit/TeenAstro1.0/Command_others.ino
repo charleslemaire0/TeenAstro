@@ -589,18 +589,20 @@ void Command_C()
       !movingTo &&
       ( command[1] == 'A' || command[1] == 'M' || command[1] == 'S'))
   {
+    PierSide targetPierSide = GetPierSide();
     if (newTargetPierSide != PIER_NOTVALID)
     {
+      targetPierSide = newTargetPierSide;
       newTargetPierSide = PIER_NOTVALID;
     }
     switch (command[1])
     {
     case 'M':
     case 'S':
-      i = syncEqu(newTargetRA, newTargetDec);
+      i = syncEqu(newTargetRA, newTargetDec, targetPierSide);
       break;
     case 'A':
-      i = syncAltAz(newTargetAzm, newTargetAlt);
+      i = syncAltAz(newTargetAzm, newTargetAlt, targetPierSide);
       break;
     }
     i = 0;

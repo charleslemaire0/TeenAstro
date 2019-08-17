@@ -35,4 +35,10 @@ void GetInstr(double *HA, double *Dec, PierSide* Side)
   StepToInstr(axis1, axis2, HA, Dec, Side);
 }
 
+PierSide GetPierSide()
+{
+  cli(); long pos = posAxis2; sei();
+  return -quaterRotAxis2 <= pos && pos <= quaterRotAxis2 ? PIER_EAST : PIER_WEST;
+}
+
 
