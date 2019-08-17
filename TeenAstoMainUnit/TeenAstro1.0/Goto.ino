@@ -126,8 +126,8 @@ byte goToEqu(double RA, double Dec, PierSide preferedPierSide)
   if (lastError != ERR_NONE) return lastError + 10;   // fail, telescop has Errors State
   if (a < minAlt) return 1;   // fail, below horizon
   if (a > maxAlt) return 6;   // fail, outside limits
-  if (Dec > MaxDec) return 6; // fail, outside limits
-  if (Dec < MinDec) return 6; // fail, outside limits
+  //if (Dec > MaxDec) return 6; // fail, outside limits
+  //if (Dec < MinDec) return 6; // fail, outside limits
   if (movingTo)
   {
     abortSlew = true;
@@ -156,7 +156,7 @@ byte goToEqu(double RA, double Dec, PierSide preferedPierSide)
   else
   {
     // correct for polar offset, refraction, coordinate systems, operation past pole, etc. as required
-    PierSide side = predictSideOfPier(HA, preferedPierSide);
+    PierSide side = predictSideOfPier(HA, Dec, preferedPierSide);
     if (side == 0)  return 6; //fail, outside limit
     EquToStep(HA, Dec, side, &Axis1, &Axis2);
   }

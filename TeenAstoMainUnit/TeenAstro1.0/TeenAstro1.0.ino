@@ -376,18 +376,51 @@ void SafetyCheck(const bool forceTracking)
 {
   // basic check to see if we're not at home
   PierSide currentSide = GetPierSide();
+    instrumental_stepper pos;
+    pos.setAtMount();
   if (atHome)
     atHome = !sideralTracking;
-
-  if (meridianFlip != FLIP_NEVER)
+        // check for exceeding MinDec for Eq. Fork
+  if (!isAltAZ())
   {
-    double HA, Dec;
-    PierSide fakeside;
-    GetInstr(&HA, &Dec, &fakeside);
-
-    if (!checkPole(HA, currentSide, CHECKMODE_TRACKING))
+    if (!pos.checkAxis2LimitEQ())
     {
-
+      lastError = ERR_AXIS2;
+      if (movingTo)
+        abortSlew = true;
+      else if (!forceTracking)
+        sideralTracking = false;
+    }
+    else if (lastError == ERR_AXIS2)
+    {
+      lastError = ERR_NONE;
+    }
+    if (mountType == MOUNT_TYPE_GEM)
+    {
+      if (!pos.checkMeridian(CHECKMODE_TRACKING))
+      {
+        if ((dirAxis1 == 1 && currentSide == PIER_WEST) || (dirAxis1 == 0 && currentSide == PIER_EAST))
+        {
+          lastError = ERR_MERIDIAN;
+          if (movingTo)
+          {
+            abortSlew = true;
+          }
+          if (currentSide >= PIER_WEST && !forceTracking)
+            sideralTracking = false;
+        }
+        else if (lastError == ERR_MERIDIAN)
+        {
+          lastError = ERR_NONE;
+        }
+      }
+      else if (lastError == ERR_MERIDIAN)
+      {
+        lastError = ERR_NONE;
+      }
+    }
+    if (!pos.checkPole(CHECKMODE_TRACKING))
+    {
       if ((dirAxis1 == 1 && currentSide == PIER_EAST) || (dirAxis1 == 0 && currentSide == PIER_WEST))
       {
         lastError = ERR_UNDER_POLE;
@@ -405,82 +438,36 @@ void SafetyCheck(const bool forceTracking)
     {
       lastError = ERR_NONE;
     }
-
-    if (!checkMeridian(HA, currentSide, CHECKMODE_TRACKING))
+  }
+  else
+  {
+    if (!pos.checkAxis2LimitAZALT())
     {
-      if ((dirAxis1 == 1 && currentSide == PIER_WEST) || (dirAxis1 == 0 && currentSide == PIER_EAST))
-      {
-        lastError = ERR_MERIDIAN;
-        if (movingTo)
-        {
-          abortSlew = true;
-        }
-        if (currentSide >= PIER_WEST && !forceTracking)
-          sideralTracking = false;
-      }
-      else if (lastError == ERR_MERIDIAN)
-      {
-        lastError = ERR_NONE;
-      }
+      lastError = ERR_AXIS2;
+      if (movingTo)
+        abortSlew = true;
+      else if (!forceTracking)
+        sideralTracking = false;
     }
-    else if (lastError == ERR_MERIDIAN)
+    else if (lastError == ERR_AXIS2)
+    {
+      lastError = ERR_NONE;
+    }
+    // when Alt/Azm mounted, just stop the mount if it passes MaxAzm
+    if (!checkAzimuth())
+    {
+      lastError = ERR_AZM;
+      if (movingTo)
+        abortSlew = true;
+      else if (!forceTracking)
+        sideralTracking = false;
+    }
+    else if (lastError == ERR_AZM)
     {
       lastError = ERR_NONE;
     }
   }
-  else
-  {
-    if (!isAltAZ())
-    {
-      // when Fork mounted, ignore pierSide and just stop the mount if it passes the underPoleLimit
-      double HA, Dec;
-      PierSide Side;
-      GetInstr(&HA, &Dec, &Side);
-      double underPoleLimit = movingTo ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;  
-      if (HA > underPoleLimit * 15.)
-      {
-        lastError = ERR_UNDER_POLE;
-        if (movingTo)
-          abortSlew = true;
-        else if (!forceTracking)
-          sideralTracking = false;
-      }
-      else if (lastError == ERR_UNDER_POLE)
-      {
-        lastError = ERR_NONE;
-      }
-    }
-    else
-    {
-      // when Alt/Azm mounted, just stop the mount if it passes MaxAzm
-      if (!checkAzimuth())
-      {
-        lastError = ERR_AZM;
-        if (movingTo)
-          abortSlew = true;
-        else if (!forceTracking)
-          sideralTracking = false;
-      }
-      else if (lastError == ERR_AZM)
-      {
-        lastError = ERR_NONE;
-      }
-    }
-  }
 
-  // check for exceeding MinDec for Eq. Fork
-  if (!checkDeclinatioLimit())
-  {
-    lastError = ERR_DEC;
-    if (movingTo)
-      abortSlew = true;
-    else if (!forceTracking)
-      sideralTracking = false;
-  }
-  else if (lastError == ERR_DEC)
-  {
-    lastError = ERR_NONE;
-  }
 }
 
 

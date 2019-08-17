@@ -168,11 +168,11 @@ void Command_GX()
       quietReply = true;
       break;
     case 'C':
-      sprintf(reply, "%ld", (long)round(MinDec));
+      //sprintf(reply, "%ld", (long)round(MinDec));
       quietReply = true;
       break;
     case 'D':
-      sprintf(reply, "%ld", (long)round(MaxDec));
+      //sprintf(reply, "%ld", (long)round(MaxDec));
       quietReply = true;
     default:
       commandError = true;

@@ -170,7 +170,8 @@ void Command_M(bool &supress_frame)
       return;
     }
     objectHa = haRange(rtk.LST() * 15.0 - objectRa *15);
-    byte side = predictSideOfPier(objectHa, GetPierSide());
+
+    byte side = predictSideOfPier(objectHa, objectDec, GetPierSide());
     if (side == 0) reply[0] = '?';
     else if (side == PIER_EAST) reply[0] = 'E';
     else if (side == PIER_WEST) reply[0] = 'W';
