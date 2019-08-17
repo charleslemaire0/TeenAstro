@@ -306,9 +306,9 @@ void loop()
     }
     else
     {
-      // figure out the current refraction compensated tracking rate
-      if (refraction && (rtk.m_lst % 3 != 0))
-        do_refractionRate_calc();
+      //// figure out the current refraction compensated tracking rate
+      //if (refraction && (rtk.m_lst % 3 != 0))
+      //  do_refractionRate_calc();
     }
     // check for fault signal, stop any slew or guide and turn tracking off
     if ((faultAxis1 || faultAxis2))
@@ -408,7 +408,8 @@ void SafetyCheck(const bool forceTracking)
   if (meridianFlip != FLIP_NEVER)
   {
     double HA, Dec;
-    GetInstr(&HA, &Dec);
+    PierSide side;
+    GetInstr(&HA, &Dec, &side);
     if (!checkPole(HA, pierSide, CHECKMODE_TRACKING))
     {
       if ((dirAxis1 == 1 && pierSide == PIER_EAST) || (dirAxis1 == 0 && pierSide == PIER_WEST))
@@ -455,10 +456,10 @@ void SafetyCheck(const bool forceTracking)
   {
     if (!isAltAZ())
     {
-
       // when Fork mounted, ignore pierSide and just stop the mount if it passes the underPoleLimit
       double HA, Dec;
-      GetInstr(&HA, &Dec);
+      PierSide Side;
+      GetInstr(&HA, &Dec, &Side);
       double underPoleLimit = movingTo ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;  
       if (HA > underPoleLimit * 15.)
       {

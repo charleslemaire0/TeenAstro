@@ -152,7 +152,7 @@ void Command_M(bool &supress_frame)
   case '?':
   {
     //  :M?#   Predict side of Pier for the Target Object
-    double objectRa, objectDec;
+    double objectRa, objectHa, objectDec;
     char rastr[12];
     char decstr[12];
     strncpy(rastr, parameter, 8*sizeof(char));
@@ -164,14 +164,13 @@ void Command_M(bool &supress_frame)
       commandError = true;
       return;
     }
-    else
-      objectRa *= 15.0;
     if (!dmsToDouble(&objectDec, decstr, true))
     {
       commandError = true;
       return;
     }
-    byte side = predictTargetSideOfPier(objectRa,objectDec);
+    objectHa = haRange(rtk.LST() * 15.0 - objectRa *15);
+    byte side = predictSideOfPier(objectHa, pierSide);
     if (side == 0) reply[0] = '?';
     else if (side == PIER_EAST) reply[0] = 'E';
     else if (side == PIER_WEST) reply[0] = 'W';

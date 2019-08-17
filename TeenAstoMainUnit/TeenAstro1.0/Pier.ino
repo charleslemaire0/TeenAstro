@@ -34,11 +34,14 @@
   return ok;
 }
 
+
+
 bool checkMeridian(const double& HA, const PierSide& inputSide, CheckMode mode)
 {
   bool ok = true;
   double MinutesPastMeridianW = (mode == CHECKMODE_GOTO) ? minutesPastMeridianGOTOW : minutesPastMeridianGOTOW + 5;
   double MinutesPastMeridianE = (mode == CHECKMODE_GOTO) ? minutesPastMeridianGOTOE : minutesPastMeridianGOTOE + 5;
+  
   switch (inputSide)
   {
   case PIER_WEST:
@@ -63,7 +66,7 @@ boolean checkDeclinatioLimit()
     return true;
   if (pierSide == PIER_WEST)
     return false;
-  getApproxEqu(&hh, &dd, true);
+  getEqu(&hh, &dd, true);
   return dd > MinDec && dd < MaxDec;
 }
 
@@ -105,12 +108,4 @@ PierSide predictSideOfPier(const double& HA, const PierSide& inputSide)
   }
   //Serial.println(0);
   return PIER_NOTVALID;
-}
-
-PierSide predictTargetSideOfPier(double RaObject, double DecObject)
-{
-  double  HA = haRange(rtk.LST() * 15.0 - RaObject);
-  double h, d;
-  EquToInstr(localSite.latitude(), HA, DecObject, &h, &d);
-  return predictSideOfPier(h, pierSide);
 }

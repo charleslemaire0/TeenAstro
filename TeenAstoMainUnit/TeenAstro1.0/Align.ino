@@ -1,80 +1,38 @@
 
-// -----------------------------------------------------------------------------------
-// GEOMETRIC ALIGN FOR EQUATORIAL MOUNTS
-
-//
-
-
-// takes the topocentric refracted coordinates and applies corrections to arrive at instrument equatorial coordinates
-void EquToInstr(const double *Lat, double HA, double Dec, double *HA1,
-  double *Dec1)
-{
-
-    // just ignore the the correction if right on the pole
-    *HA1 = HA;
-    *Dec1 = Dec;
-  
-  CorrectHADec(HA1, Dec1);
-}
-
-// takes the instrument equatorial coordinates and applies corrections to arrive at topocentric refracted coordinates
-void InstrToEqu(const double *Lat, double HA, double Dec, double *HA1,
-  double *Dec1)
-{
-
-
-    // just ignore the the correction if right on the pole
-    *HA1 = HA;
-    *Dec1 = Dec;
-  
-  CorrectHADec(HA1, Dec1);
-}
-
-
-void StepToEqu(const double *Lat, long Axis1, long Axis2, double *HA1, double *Dec1)
-{
-  double HA = ((double)Axis1) / StepsPerDegreeAxis1;
-  double Dec = ((double)Axis2) / StepsPerDegreeAxis2;
-  InstrToEqu(Lat, HA, Dec, HA1, Dec1);
-}
-
-void StepToInstr(long Axis1, long Axis2, double *AngleAxis1, double *AngleAxis2)
+void StepToInstr(long Axis1, long Axis2, double *AngleAxis1, double *AngleAxis2, PierSide* Side)
 {
   *AngleAxis1 = ((double)Axis1) / StepsPerDegreeAxis1;
   *AngleAxis2 = ((double)Axis2) / StepsPerDegreeAxis2;
-  InsrtAngle2Angle(AngleAxis1, AngleAxis2, &pierSide);
+  InsrtAngle2Angle(AngleAxis1, AngleAxis2, Side);
 }
 
-void InstrtoStep(double AngleAxis1, double AngleAxis2, long *Axis1, long *Axis2)
+void InstrtoStep(double AngleAxis1, double AngleAxis2, PierSide Side, long *Axis1, long *Axis2)
 {
-  Angle2InsrtAngle(&AngleAxis1, &AngleAxis2, &pierSide);
+  Angle2InsrtAngle(Side, &AngleAxis1, &AngleAxis2);
   *Axis1 = (long)(AngleAxis1 * StepsPerDegreeAxis1);
   *Axis2 = (long)(AngleAxis2 * StepsPerDegreeAxis2);
 }
 
-
-void EquToStep(const double *Lat, double HA, double Dec, long *Axis1, long *Axis2)
+void EquToStep(double HA, double Dec, PierSide Side, long *Axis1, long *Axis2)
 {
-  double HA1;
-  double Dec1;
-  EquToInstr(Lat, HA, Dec, &HA1, &Dec1);
-  InstrtoStep(HA1, Dec1, Axis1, Axis2);
+  CorrectHADec(&HA, &Dec);
+  InstrtoStep(HA, Dec, Side, Axis1, Axis2);
 }
 
-void GetInstr(double *HA, double *Dec)
+void StepToEqu(long Axis1, long Axis2, double *HA, double *Dec, PierSide *Side )
 {
-  cli();
-  long axis1 = posAxis1;
-  long axis2 = posAxis2;
-  sei();
-  StepToInstr(axis1, axis2, HA, Dec);
+  StepToInstr( Axis1,  Axis2, HA, Dec, Side);
+  CorrectHADec(HA, Dec);
 }
 
-void GetEqu(const double *Lat, double *HA, double *Dec)
+
+void GetInstr(double *HA, double *Dec, PierSide* Side)
 {
   cli();
   long axis1 = posAxis1;
   long axis2 = posAxis2;
   sei();
-  StepToEqu(Lat, axis1, axis2, HA, Dec);
+  StepToInstr(axis1, axis2, HA, Dec, Side);
 }
+
+

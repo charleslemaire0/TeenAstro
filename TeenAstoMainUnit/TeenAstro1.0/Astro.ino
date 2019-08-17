@@ -409,7 +409,7 @@ boolean do_fastalt_calc()
     // load HA/Dec
     if (ac_step == 1)
     {
-        getApproxEqu(&ac_HA, &ac_De, true);
+        getEqu(&ac_HA, &ac_De, true);
         ac_Dec = ac_De;
     }
     else    // convert units
@@ -505,10 +505,7 @@ boolean do_refractionRate_calc()
     // load HA/Dec
     if (az_step == 1)
     {
-        if (onTrack)
-            getEqu(&az_Axis1, &az_Axis2, true);
-        else
-            getApproxEqu(&az_Axis1, &az_Axis2, true);
+      getEqu(&az_Axis1, &az_Axis2, true);
     }
     else    // convert units,  get ahead of and behind current position
     if ((az_step == 5) || (az_step == 105))
@@ -521,8 +518,9 @@ boolean do_refractionRate_calc()
     else    // get the Horizon coords
     if ((az_step == 10) || (az_step == 110))
     {
-        if (onTrack)
-            EquToInstr(localSite.latitude(), az_HA, az_Dec, &az_HA, &az_Dec);
+        //this do nothing when there is no alignment
+        //if (onTrack)
+        //    EquToInstr(localSite.latitude(), az_HA, az_Dec, &az_HA, &az_Dec);
     }
 
     // get the Horizon coords
@@ -899,17 +897,21 @@ void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side)
   {
     *AngleAxis2 = (90.0 - *AngleAxis2) + 90;
     *AngleAxis1 = *AngleAxis1 - 180.0;
+    *Side = PierSide::PIER_WEST;
   }
   else if (*AngleAxis2 < -90.0)
   {
     *AngleAxis2 = (-90.0 - *AngleAxis2) - 90.0;
     *AngleAxis1 = *AngleAxis1 - 180.0;
+    *Side = PierSide::PIER_WEST;
   }
+  else
+    *Side = PierSide::PIER_EAST;
 }
 
-void Angle2InsrtAngle(double *AngleAxis1, double *AngleAxis2, PierSide *Side )
+void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2)
 {
-  if (*Side >= PIER_WEST)
+  if (Side >= PIER_WEST)
   {
     //TODO Verify for altaz!!
     if (*localSite.latitude() >= 0)
