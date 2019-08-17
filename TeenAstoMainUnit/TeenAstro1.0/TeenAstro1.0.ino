@@ -261,25 +261,25 @@ void loop()
 
   if (rtk.updatesiderealTimer())
   {
-     // update Target position
-     if (sideralTracking)
-     {
-       cli();
-       if (!inbacklashAxis1)
-       {
-         targetAxis1.fixed += fstepAxis1.fixed;
-       }
-       if (!inbacklashAxis2)
-       {
-         targetAxis2.fixed += fstepAxis2.fixed;
-       }
-       sei();
-     }
-     // Goto Target
-     if (movingTo)
-     {
-       moveTo();
-     }
+    // update Target position
+    if (sideralTracking)
+    {
+      cli();
+      if (!inbacklashAxis1)
+      {
+        targetAxis1.fixed += fstepAxis1.fixed;
+      }
+      if (!inbacklashAxis2)
+      {
+        targetAxis2.fixed += fstepAxis2.fixed;
+      }
+      sei();
+    }
+    // Goto Target
+    if (movingTo)
+    {
+      moveTo();
+    }
 
 
     // figure out the current Altitude
