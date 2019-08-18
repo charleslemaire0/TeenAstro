@@ -19,6 +19,7 @@ public:
     m_axis2 = posAxis2;
     sei();
   }
+
   PierSide getPierSide()
   {
     return -quaterRotAxis2 <= m_axis2 && m_axis2 <= quaterRotAxis2 ? PIER_EAST : PIER_WEST;
@@ -50,16 +51,47 @@ public:
     }
     return ok;
   }
-  //for Eq Fork and Alt
+
+  //for Eq Fork only
   boolean checkAxis2LimitEQ()
   {
     return m_axis2 > MinAxis2EQ * StepsPerDegreeAxis2 && m_axis2 < MaxAxis2EQ * StepsPerDegreeAxis2;
   }
-    boolean checkAxis2LimitAZALT()
+
+
+  //for az alt
+  boolean checkAxis2LimitAZALT()
   {
     return m_axis2 > MinAxis2AZALT * StepsPerDegreeAxis2 && m_axis2 < MaxAxis2AZALT * StepsPerDegreeAxis2;
   }
+  bool checkAxis1LimitAZALT()
+  {
+    return m_axis1 < (long)((360 + DegreePastAZ) * StepsPerDegreeAxis1) && m_axis1 >= long(-DegreePastAZ * StepsPerDegreeAxis1);
+  }
 
+  // check if defined position is within limit
+  bool withinLimit()
+  {
+    bool ok = false;
+    if (isAltAZ())
+    {
+      ok = checkAxis1LimitAZALT() && checkAxis2LimitAZALT();
+    }
+    else
+    {
+      ok = checkPole(CHECKMODE_GOTO) && checkAxis2LimitEQ();
+      if (!ok)
+        return ok;
+      if (meridianFlip == FLIP_ALWAYS)
+        ok = checkMeridian(CHECKMODE_GOTO);
+    }
+    return ok;
+  }
+private:
+  bool isAltAZ()
+  {
+    return mountType == MOUNT_TYPE_ALTAZM || mountType == MOUNT_TYPE_FORK_ALT;
+  }
 };
 
 

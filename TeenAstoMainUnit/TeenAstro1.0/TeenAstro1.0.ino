@@ -276,7 +276,7 @@ void loop()
       sei();
     }
     // Goto Target
-    if (movingTo && !inbacklashAxis1 && !inbacklashAxis2)
+    if (movingTo)
     {
       moveTo();
     }
@@ -454,7 +454,7 @@ void SafetyCheck(const bool forceTracking)
       lastError = ERR_NONE;
     }
     // when Alt/Azm mounted, just stop the mount if it passes MaxAzm
-    if (!checkAzimuth())
+    if (!pos.checkAxis1LimitAZALT())
     {
       lastError = ERR_AZM;
       if (movingTo)

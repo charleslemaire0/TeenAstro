@@ -139,16 +139,19 @@ byte goToEqu(double RA, double Dec, PierSide preferedPierSide)
   {
     if (DegreePastAZ>0)
     {
-      cli();
-      double  a1 = (posAxis1 /*+ indexAxis1Steps*/) / StepsPerDegreeAxis1;
-      sei();
-      //compute alternative position
-       double z1 = z + 360;
-       double z2 = z - 360;
-       if (Azok((long)(z1 * StepsPerDegreeAxis1)) && dist(a1, z) > dist(a1, z1))
-         z = z1;
-       else if (Azok((long)(z2 * StepsPerDegreeAxis1)) && dist(a1, z) > dist(a1, z2))
-         z = z2;
+      instrumental_stepper pos_t, pos, pos1, pos2;
+      pos_t.setAtMount();
+      pos.m_axis1 = z;
+      pos.m_axis1 = a;
+      pos1 = pos;
+      pos1.m_axis1 += 2 * halfRotAxis1;
+      pos2 = pos;
+      pos2.m_axis1 -= 2 * halfRotAxis1;
+      if (pos1.checkAxis1LimitAZALT() && dist(pos_t.m_axis1, pos.m_axis1) > dist(pos_t.m_axis1, pos1.m_axis1))
+        pos.m_axis1 = pos1.m_axis1;
+      else if (pos2.checkAxis1LimitAZALT() && dist(pos_t.m_axis1, pos.m_axis1) > dist(pos_t.m_axis1, pos2.m_axis1))
+        pos.m_axis1 = pos2.m_axis1;
+      z = pos.m_axis1;
     }
     Axis1 = z * StepsPerDegreeAxis1;
     Axis2 = a * StepsPerDegreeAxis2;
@@ -182,12 +185,6 @@ byte goTo(long thisTargetAxis1, long thisTargetAxis2)
   //                W   .   E
   if (faultAxis1 || faultAxis2) return 7; // fail, unspecified error
   atHome = false;
-  // final validation
-  if (isAltAZ())
-  {
-    if (!Azok(thisTargetAxis1) || !Altok(thisTargetAxis2))
-      return 7;   // fail, unspecified error
-  }
   cli();
   movingTo = true;
   SetSiderealClockRate(siderealInterval);
