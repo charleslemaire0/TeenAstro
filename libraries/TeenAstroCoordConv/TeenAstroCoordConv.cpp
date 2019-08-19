@@ -132,25 +132,25 @@ const double HourAngleConv::toSiderial=1.002737909350795*2*M_PI/(24.0*60.0*60.0)
 //
 
 // add a user-provided reference star (all values in degrees, except time in seconds)
-void CoordConv::addReferenceDeg(double ra, double decl, double az, double alt, unsigned long t) {
+void CoordConv::addReferenceDeg(double ra, double decl, double axis1, double axis2, unsigned long t) {
 	if(refs==0)
 		setT0(t);
-	addReference(toHourAngle(toRad(ra),t), toRad(decl), toRad(az), toRad(alt));
+	addReference(toHourAngle(toRad(ra),t), toRad(decl), toRad(axis1), toRad(axis2));
 }
 
 
-// Convert equatorial right ascension/dec coordinates to horizontal az/alt coordinates (all values in degrees, except time in seconds) 
-void CoordConv::toHorizontalDeg(double &az, double &alt,  double ra,  double decl, unsigned long t) const {
-	double azRad=0, altRad=0;
-	toHorizontal(azRad, altRad, toHourAngle(toRad(ra),t), toRad(decl));
-	az =toDeg(azRad);
-	alt=toDeg(altRad);
+// Convert equatorial right ascension/dec coordinates to instrumental axis1/axis2 coordinates (all values in degrees, except time in seconds) 
+void CoordConv::toInstrumentalDeg(double &axis1, double &axis2,  double ra,  double decl, unsigned long t) const {
+	double axis1Rad=0, axis2Rad=0;
+	toInstrumental(axis1Rad, axis2Rad, toHourAngle(toRad(ra),t), toRad(decl));
+	axis1 =toDeg(axis1Rad);
+	axis2=toDeg(axis2Rad);
 }
 
-// Convert horizontal az/alt coordinates to  equatorial right ascension/dec coordinates (all values in degrees, except time in seconds) 
-void CoordConv::toEquatorialDeg(double &ra,  double &decl, double az, double alt, unsigned long t) const {
+// Convert instrumental axis1/axis2 coordinates to  equatorial right ascension/dec coordinates (all values in degrees, except time in seconds) 
+void CoordConv::toEquatorialDeg(double &ra,  double &decl, double axis1, double axis2, unsigned long t) const {
 	double haRad=0, declRad=0;
-	toEquatorial(haRad, declRad, toRad(az), toRad(alt));
+	toEquatorial(haRad, declRad, toRad(axis1), toRad(axis2));
     ra=toDeg(toRightAsc(haRad, t));
     decl=toDeg(declRad);
 }
@@ -158,17 +158,17 @@ void CoordConv::toEquatorialDeg(double &ra,  double &decl, double az, double alt
 
 
 // add reference star (all values in radians). adding more than three has no effect
-void CoordConv::addReference(double ha, double decl, double az, double alt) {
+void CoordConv::addReference(double ha, double decl, double axis1, double axis2) {
 	if(refs>=3)
 		return;
 
 #ifdef DEBUG_COUT
-	cout << "adding ref star: ha " << ha << "r decl " << decl << "r az " << az << "r alt " << alt << "r" << endl;
+	cout << "adding ref star: ha " << ha << "r decl " << decl << "r axis1 " << axis1 << "r axis2 " << axis2 << "r" << endl;
 #endif
 
 	toDirCos(dcHDRef[refs], decl, ha);
 	printV("dcHD", dcHDRef[refs]);
-	toDirCos(dcAARef[refs], alt, az );
+	toDirCos(dcAARef[refs], axis2, axis1 );
 	printV("dcAA", dcAARef[refs]);
 
 	refs++;
@@ -220,8 +220,8 @@ void CoordConv::buildTransformations() {
 	printV("test", test);
 }
 
-// Convert equatorial hour angle/dec coordinates to horizontal az/alt coordinates (all values in radians) 
-void CoordConv::toHorizontal(double &az, double &alt,  double ha,  double decl) const {
+// Convert equatorial hour angle/dec coordinates to instrumental axis1/axis2 coordinates (all values in radians) 
+void CoordConv::toInstrumental(double &axis1, double &axis2,  double ha,  double decl) const {
 	#ifdef DEBUG_COUT
 	cout << "ha " << ha << "r decl " << decl << "r" << endl;
 	#endif
@@ -232,16 +232,16 @@ void CoordConv::toHorizontal(double &az, double &alt,  double ha,  double decl) 
 	printV("dcAA ", dcAA);
 	normalize(dcAA, dcAA);
 	printV("dcAAn", dcAA);
-	toAngles(alt, az, dcAA);
+	toAngles(axis2, axis1, dcAA);
 	#ifdef DEBUG_COUT
-	cout << "az " << az << "r alt " << alt << "r" << endl;
+	cout << "axis1 " << axis1 << "r axis2 " << axis2 << "r" << endl;
 	#endif
 }
 
-// Convert horizontal az/alt coordinates to equatorial hour angle/dec coordinates (all values in radians)
-void CoordConv::toEquatorial(double &ha,  double &decl, double az, double alt) const {
+// Convert instrumental axis1/axis2 coordinates to equatorial hour angle/dec coordinates (all values in radians)
+void CoordConv::toEquatorial(double &ha,  double &decl, double axis1, double axis2) const {
 	double dcAA[3], dcHD[3];
-	toDirCos(dcAA, alt, az);
+	toDirCos(dcAA, axis2, axis1);
 	printV("dcAA ", dcAA);
 	multiply(dcHD, Tinv, dcAA);
 	printV("dcHD ", dcHD);

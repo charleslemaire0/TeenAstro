@@ -117,7 +117,7 @@ protected:
 
 
 // Converts between equatorial coordinates (right ascension/declination) 
-// and horizontal coordinates (altitude and azimuth), for a given timeStamp in seconds
+// and instrumental coordinates (altitude and azimuth), for a given timeStamp in seconds
 class CoordConv : public HourAngleConv {
 public:
 	CoordConv() { reset(); }
@@ -134,10 +134,10 @@ public:
 	// Calculate third reference star from two provided ones. Returns false if more or less than two provided 
 	bool calculateThirdReference();
 
-	// Convert equatorial right ascension/dec coordinates to horizontal az/alt coordinates (all values in degrees, except time in seconds) 
+	// Convert equatorial right ascension/dec coordinates to instrumental az/alt coordinates (all values in degrees, except time in seconds) 
 	void toHorizontalDeg(double &az, double &alt,  double ra, double dec, unsigned long t) const;
 
-	// Convert horizontal az/alt coordinates to  equatorial right ascension/dec coordinates (all values in degrees, except time in seconds) 
+	// Convert instrumental az/alt coordinates to  equatorial right ascension/dec coordinates (all values in degrees, except time in seconds) 
 	void toEquatorialDeg(double &ra,  double &dec, double az, double alt, unsigned long t) const;
 
 
@@ -148,17 +148,17 @@ protected:
 	// Build coordinate system transformation matrix
 	void buildTransformations();
 
-	// Convert equatorial hour angle/dec coordinates to horizontal az/alt coordinates (all values in radians) 
+	// Convert equatorial hour angle/dec coordinates to instrumental az/alt coordinates (all values in radians) 
 	void toHorizontal(double &az, double &alt,  double ha,  double dec) const;
 
-	// Convert horizontal az/alt coordinates to  equatorial hour angle/dec coordinates (all values in radians) 
+	// Convert instrumental az/alt coordinates to  equatorial hour angle/dec coordinates (all values in radians) 
 	void toEquatorial(double &ha,  double &dec, double az, double alt) const;
 
 
-	double T   [3][3];		// Transformation matrix from equatorial ha/dec cosines to horizontal alt/az cosines 
+	double T   [3][3];		// Transformation matrix from equatorial ha/dec cosines to instrumental axis2/axis1 cosines 
   double Tinv[3][3];		// Inverse of the above 
 
-  double dcAARef[3][3];	// az/alt direction cosine vectors for the three reference stars, indexed by reference first
+  double dcAARef[3][3];	// axis1/axis2 direction cosine vectors for the three reference stars, indexed by reference first
   double dcHDRef[3][3];	// ha/decl direction cosine vectors for the three reference stars, indexed by reference first
 
   unsigned char refs=0;	// number of reference stars
