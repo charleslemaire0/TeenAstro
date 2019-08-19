@@ -122,7 +122,7 @@ public:
 	bool calculateThirdReference();
 
 	// Convert reference angle1/angle2 coordinates to instrumental axis1/axis2 coordinates (all values in degrees) 
-	void toHorizontalDeg(double &axis1, double &axis2,  double angle1, double angle2) const;
+	void toInstrumentalDeg(double &axis1, double &axis2,  double angle1, double angle2) const;
 
 	// Convert instrumental axis1/axis2 coordinates to  reference angle1/angle2 coordinates (all values in degrees) 
 	void toReferenceDeg(double &angle1,  double &angle2, double axis1, double axis2) const;
@@ -136,7 +136,7 @@ protected:
 	void buildTransformations();
 
 	// Convert reference angle1/angle2 coordinates to instrumental axis1/axis2 coordinates (all values in radians) 
-	void toHorizontal(double &axis1, double &alt,  double angle1,  double angle2) const;
+	void toInstrumental(double &axis1, double &alt,  double angle1,  double angle2) const;
 
 	// Convert instrumental axis1/axis2 coordinates to  equatorial hour angle/angle2 coordinates (all values in radians) 
 	void toReference(double &angle1,  double &angle2, double axis1, double axis2) const;

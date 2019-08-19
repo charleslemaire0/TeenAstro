@@ -8,7 +8,7 @@
 // Wikipedia, local hour angle article
 // Cosine direction vectors
 
-#include "CoordConv.hpp"
+#include "TeenAstroCoordConv.hpp"
 
 using namespace std;
 
@@ -168,16 +168,16 @@ void CoordConv::addReferenceDeg(double angle1, double angle2, double axis1, doub
 }
 
 
-// Convert reference angle1/angle2 coordinates to instrumental axis1/axis2 coordinates (all values in degrees, except time in seconds) 
-void CoordConv::toInstrumentalDeg(double &axis1, double &axis2,  double angle1,  double angle2, unsigned long t) const {
+// Convert reference angle1/angle2 coordinates to instrumental axis1/axis2 coordinates (all values in degrees) 
+void CoordConv::toInstrumentalDeg(double &axis1, double &axis2,  double angle1,  double angle2) const {
 	double axis1Rad=0, axis2Rad=0;
 	toInstrumental(axis1Rad, axis2Rad, toRad(angle1), toRad(angle2));
 	axis1=toDeg(axis1Rad);
 	axis2=toDeg(axis2Rad);
 }
 
-// Convert instrumental axis1/axis2 coordinates to reference angle1/angle2 coordinates (all values in degrees, except time in seconds) 
-void CoordConv::toReferenceDeg(double &angle1,  double &angle2, double axis1, double axis2, unsigned long t) const {
+// Convert instrumental axis1/axis2 coordinates to reference angle1/angle2 coordinates (all values in degrees) 
+void CoordConv::toReferenceDeg(double &angle1,  double &angle2, double axis1, double axis2) const {
 	double angle1Rad=0, angle2Rad=0;
 	toReference(angle1Rad, angle2Rad, toRad(axis1), toRad(axis2));
     angle1=toDeg(angle1Rad);
