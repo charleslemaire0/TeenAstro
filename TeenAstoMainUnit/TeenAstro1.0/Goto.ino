@@ -115,7 +115,7 @@ boolean getHor(double *Alt, double *Azm)
 byte goToEqu(double RA, double Dec, PierSide preferedPierSide)
 {
   double  a, z;
-  long Axis1, Axis2;
+  long axis1_target, axis2_target;
 
   // Convert RA into hour angle, get altitude
   double  HA = haRange(rtk.LST() * 15.0 - RA);
@@ -137,33 +137,18 @@ byte goToEqu(double RA, double Dec, PierSide preferedPierSide)
   if (guideDirAxis1 || guideDirAxis2) return 7;   // fail, unspecified error
   if (isAltAZ())
   {
-    if (DegreePastAZ>0)
-    {
-      instrumental_stepper pos_t, pos, pos1, pos2;
-      pos_t.setAtMount();
-      pos.m_axis1 = z;
-      pos.m_axis1 = a;
-      pos1 = pos;
-      pos1.m_axis1 += 2 * halfRotAxis1;
-      pos2 = pos;
-      pos2.m_axis1 -= 2 * halfRotAxis1;
-      if (pos1.checkAxis1LimitAZALT() && dist(pos_t.m_axis1, pos.m_axis1) > dist(pos_t.m_axis1, pos1.m_axis1))
-        pos.m_axis1 = pos1.m_axis1;
-      else if (pos2.checkAxis1LimitAZALT() && dist(pos_t.m_axis1, pos.m_axis1) > dist(pos_t.m_axis1, pos2.m_axis1))
-        pos.m_axis1 = pos2.m_axis1;
-      z = pos.m_axis1;
-    }
-    Axis1 = z * StepsPerDegreeAxis1;
-    Axis2 = a * StepsPerDegreeAxis2;
+    z = predictAzimuth(z);
+    axis1_target = z * StepsPerDegreeAxis1;
+    axis2_target = a * StepsPerDegreeAxis2;
   }
   else
   {
     // correct for polar offset, refraction, coordinate systems, operation past pole, etc. as required
     PierSide side = predictSideOfPier(HA, Dec, preferedPierSide);
     if (side == 0)  return 6; //fail, outside limit
-    EquToStep(HA, Dec, side, &Axis1, &Axis2);
+    EquToStep(HA, Dec, side, &axis1_target, &axis2_target);
   }
-  return goTo(Axis1, Axis2);
+  return goTo(axis1_target, axis2_target);
 }
 
 
@@ -207,3 +192,60 @@ byte goTo(long thisTargetAxis1, long thisTargetAxis2)
 }
 
 
+// Predict Side of Pier
+// return 0 if no side can reach the given position
+PierSide predictSideOfPier(const double& HA, const double& Dec,const PierSide& inputSide)
+{
+
+  long axis1,axis2;
+  EquToStep(HA,Dec, inputSide, &axis1, &axis2);
+  if (withinLimit(axis1, axis2))
+  {
+    return inputSide;
+  }
+  else if (meridianFlip == FLIP_ALWAYS)
+  {
+    PierSide otherside;
+    if (inputSide == PIER_EAST) otherside = PIER_WEST; else otherside = PIER_EAST;
+    EquToStep(HA, Dec, otherside, &axis1, &axis2);
+    if (withinLimit(axis1, axis2))
+    {
+      return otherside;
+    }
+  }
+ return  PIER_NOTVALID;
+}
+
+double predictAzimuth(double z)
+{
+  if (DegreePastAZ > 0)
+  {
+    long axis1_t, axis2_t;
+    setAtMount(axis1_t, axis2_t);
+    double zt = axis1_t / StepsPerDegreeAxis1;
+    //compute alternative position
+    double z1 = z + 360;
+    double z2 = z - 360;
+    if (checkAxis1LimitAZALT(z1*StepsPerDegreeAxis1) && dist(zt, z) > dist(zt, z1))
+      z = z1;
+    else if (checkAxis1LimitAZALT(z2*StepsPerDegreeAxis1) && dist(zt, z) > dist(zt, z2))
+      z = z2;
+  }
+  return z;
+}
+// set Side of pier
+//boolean setSide(PierSide side)
+//{
+//  if (side == PIER_NOTVALID)
+//    return false;
+//  double  HA, Dec;
+//  GetEqu(localSite.latitude(), &HA, &Dec);
+//  double  axis1, axis2;
+//  pierSide = side;
+//  EquToInstr(localSite.latitude(), HA, Dec, &axis1, &axis2);
+//  cli();
+//  posAxis1 = axis1;
+//  posAxis2 = axis2;
+//  sei();
+//  return true;
+//}

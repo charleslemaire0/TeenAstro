@@ -28,8 +28,8 @@ boolean refraction_enable = false;
 boolean onTrack = false;
 
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
-long                    siderealInterval = 15956313L;
-const long              masterSiderealInterval = 15956313L;
+double                  siderealInterval = 15956313.0;
+const double            masterSiderealInterval = 15956313.0;
 
 // default = 15956313 ticks per sidereal hundredth second, where a tick is 1/16 uS
 // this is stored in EEPROM which is updated/adjusted with the ":T+#" and ":T-#" commands

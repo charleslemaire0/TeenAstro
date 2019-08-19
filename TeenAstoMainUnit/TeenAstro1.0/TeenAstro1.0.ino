@@ -376,14 +376,15 @@ void SafetyCheck(const bool forceTracking)
 {
   // basic check to see if we're not at home
   PierSide currentSide = GetPierSide();
-    instrumental_stepper pos;
-    pos.setAtMount();
+  long axis1, axis2;
+  setAtMount(axis1, axis2);
+
   if (atHome)
     atHome = !sideralTracking;
         // check for exceeding MinDec for Eq. Fork
   if (!isAltAZ())
   {
-    if (!pos.checkAxis2LimitEQ())
+    if (!checkAxis2LimitEQ(axis2))
     {
       lastError = ERR_AXIS2;
       if (movingTo)
@@ -397,7 +398,7 @@ void SafetyCheck(const bool forceTracking)
     }
     if (mountType == MOUNT_TYPE_GEM)
     {
-      if (!pos.checkMeridian(CHECKMODE_TRACKING))
+      if (!checkMeridian(axis1, axis2, CHECKMODE_TRACKING))
       {
         if ((dirAxis1 == 1 && currentSide == PIER_WEST) || (dirAxis1 == 0 && currentSide == PIER_EAST))
         {
@@ -419,7 +420,7 @@ void SafetyCheck(const bool forceTracking)
         lastError = ERR_NONE;
       }
     }
-    if (!pos.checkPole(CHECKMODE_TRACKING))
+    if (!checkPole(axis1, CHECKMODE_TRACKING))
     {
       if ((dirAxis1 == 1 && currentSide == PIER_EAST) || (dirAxis1 == 0 && currentSide == PIER_WEST))
       {
@@ -441,7 +442,7 @@ void SafetyCheck(const bool forceTracking)
   }
   else
   {
-    if (!pos.checkAxis2LimitAZALT())
+    if (!checkAxis2LimitAZALT(axis2))
     {
       lastError = ERR_AXIS2;
       if (movingTo)
@@ -454,7 +455,7 @@ void SafetyCheck(const bool forceTracking)
       lastError = ERR_NONE;
     }
     // when Alt/Azm mounted, just stop the mount if it passes MaxAzm
-    if (!pos.checkAxis1LimitAZALT())
+    if (!checkAxis1LimitAZALT(axis1))
     {
       lastError = ERR_AZM;
       if (movingTo)

@@ -24,8 +24,8 @@
                                      // too slow and the mount will be sluggish while it moves through the backlash
                                      // for the most part this doesn't need to be changed, but adjust when needed.  Default=25
 
-#define MinAxis2EQ                   -180 // minimum allowed position for axis2
-#define MaxAxis2EQ                   +180 // maximum allowed position for axis2
+#define MinAxis2EQ                   -360 // minimum allowed position for axis2
+#define MaxAxis2EQ                   +360 // maximum allowed position for axis2
 #define MinAxis2AZALT                -10 // minimum allowed position for axis2
 #define MaxAxis2AZALT                 90 // maximum allowed position for axis2
 #define DegreePastAZ                  10  // Alt/Az mounts only. +/- maximum allowed Azimuth, default = 0.  Allowed range is 0 to 30
