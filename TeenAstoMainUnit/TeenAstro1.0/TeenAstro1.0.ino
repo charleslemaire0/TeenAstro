@@ -32,6 +32,7 @@
  *
  */
 
+#include <TeenAstroCoordConv.hpp>
 #include <TinyGPS++.h>
 #include <TeenAstroStepper.h>
 #include <Time.h>
@@ -42,7 +43,7 @@
 #include "Global.h"
  // Use Config.h to configure OnStep to your requirements
  // help stepper driver configuration
-#include "Align.h"
+
 #include "Command.h"
 #include "Config.TeenAstro.h"
 #include "eeprom.h"
@@ -114,6 +115,9 @@ void setup()
     // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
     // 1/16uS resolution timer, ticks per sidereal second
     EEPROM_writeLong(EE_siderealInterval, siderealInterval);
+
+    // the translation is not valid
+    EEPROM.write(EE_Tvalid,0);
 
     // finally, stop the init from happening again
     EEPROM_writeLong(EE_autoInitKey, initKey);
@@ -191,6 +195,9 @@ void setup()
   // this sets the sidereal timer, controls the tracking speed so that the mount moves precisely with the stars
   siderealInterval = EEPROM_readLong(EE_siderealInterval);
   updateSideral();
+
+  //this read the transformation
+  initTransformation();
 
   // set the system timer for millis() to the second highest priority
   SCB_SHPR3 = (32 << 24) | (SCB_SHPR3 & 0x00FFFFFF);
@@ -563,6 +570,25 @@ void initmount()
 
 }
 
+void initTransformation()
+{
+  byte TvalidFromEEPROM = EEPROM.read(EE_Tvalid);
+  if (TvalidFromEEPROM)
+  {
+    float t11 = EEPROM_readFloat(EE_T11);
+    float t12 = EEPROM_readFloat(EE_T12);
+    float t13 = EEPROM_readFloat(EE_T13);
+    float t21 = EEPROM_readFloat(EE_T21);
+    float t22 = EEPROM_readFloat(EE_T22);
+    float t23 = EEPROM_readFloat(EE_T23);
+    float t31 = EEPROM_readFloat(EE_T31);
+    float t32 = EEPROM_readFloat(EE_T32);
+    float t33 = EEPROM_readFloat(EE_T33);
+    alignment.setT(t11,t12,t13,t21,t22,t23,t31,t32,t33);
+  }
+  else
+    alignment.init();
+}
 void initCelestialPole()
 {
   if (isAltAZ())

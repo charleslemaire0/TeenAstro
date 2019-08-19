@@ -1,10 +1,11 @@
 #pragma once
+
 #include "Config.TeenAstro.h"
 #include "TelTimer.h"
 #include "Site.h"
 #include "FPoint.h"
 
-
+CoordConv alignment;
 timerLoop tlp;
 DateTimeTimers  rtk;
 // Location ----------------------------------------------------------------------------------------------------------------
