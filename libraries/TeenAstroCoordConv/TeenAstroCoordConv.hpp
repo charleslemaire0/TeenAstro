@@ -4,6 +4,7 @@
  * by          Markus Noga, Charles Lemaire
  *
  * Copyright (C) Markus Noga
+ * Copyright (C) Charles Lemaire
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -93,32 +94,9 @@ public:
 };
 
 
-// Converts local time and right ascension to local hour angle, and vice versa
-class HourAngleConv : public LA3 {
-public:
-	HourAngleConv() : t0(0) {}
-
-	// set t0, in seconds
-	void setT0(unsigned long t) { t0=t; }
-
-	// convert given right ascension to hour angle (both in radians), for given time (in seconds)
-	double toHourAngle(double ra, unsigned long t) const { return normalizeRads( (t-t0)*toSiderial - ra ); }
-
-	// convert given hour angle to right ascension (both in radians), for given time (in seconds)
-	double toRightAsc( double ha, unsigned long t) const { return normalizeRads( (t-t0)*toSiderial - ha ); }
-
-protected:
-	// conversion factor from local time in seconds, to siderial time in radians
-	static const double toSiderial;  
-
-	// zero time, in seconds
-	unsigned long t0;
-};
-
-
-// Converts between equatorial coordinates (right ascension/declination) 
-// and instrumental coordinates (altitude and azimuth), for a given timeStamp in seconds
-class CoordConv : public HourAngleConv {
+// Converts between reference coordinates (angle1/angle2) 
+// and instrumental coordinates (axis1 and axis2)
+class CoordConv : public LA3 {
 public:
 	CoordConv() { reset(); }
 
@@ -129,46 +107,41 @@ public:
 	bool isReady() const { return refs==3; }
 
 	// add a user-provided reference star (all values in degrees, except time in seconds). adding more than three has no effect
-	void addReferenceDeg(double ra, double dec, double az, double alt, unsigned long t);
+	void addReferenceDeg(double angle1, double angle2, double axis1, double axis2);
 
 	// Calculate third reference star from two provided ones. Returns false if more or less than two provided 
 	bool calculateThirdReference();
 
-	// Convert equatorial right ascension/dec coordinates to instrumental az/alt coordinates (all values in degrees, except time in seconds) 
-	void toHorizontalDeg(double &az, double &alt,  double ra, double dec, unsigned long t) const;
+	// Convert reference angle1/angle2 coordinates to instrumental axis1/axis2 coordinates (all values in degrees) 
+	void toHorizontalDeg(double &axis1, double &axis2,  double angle1, double angle2) const;
 
-	// Convert instrumental az/alt coordinates to  equatorial right ascension/dec coordinates (all values in degrees, except time in seconds) 
-	void toEquatorialDeg(double &ra,  double &dec, double az, double alt, unsigned long t) const;
+	// Convert instrumental axis1/axis2 coordinates to  reference angle1/angle2 coordinates (all values in degrees) 
+	void toReferenceDeg(double &angle1,  double &angle2, double axis1, double axis2) const;
 
 
 protected:
 	// add a user-provided reference star (all values in radians)
-	void addReference(double ha, double dec, double az, double alt);
+	void addReference(double angle1, double angle2, double axis1, double axis2);
 
 	// Build coordinate system transformation matrix
 	void buildTransformations();
 
-	// Convert equatorial hour angle/dec coordinates to instrumental az/alt coordinates (all values in radians) 
-	void toHorizontal(double &az, double &alt,  double ha,  double dec) const;
+	// Convert reference angle1/angle2 coordinates to instrumental axis1/axis2 coordinates (all values in radians) 
+	void toHorizontal(double &axis1, double &alt,  double angle1,  double angle2) const;
 
-	// Convert instrumental az/alt coordinates to  equatorial hour angle/dec coordinates (all values in radians) 
-	void toEquatorial(double &ha,  double &dec, double az, double alt) const;
+	// Convert instrumental axis1/axis2 coordinates to  equatorial hour angle/angle2 coordinates (all values in radians) 
+	void toReference(double &angle1,  double &angle2, double axis1, double axis2) const;
 
 
-	double T   [3][3];		// Transformation matrix from equatorial ha/dec cosines to instrumental axis2/axis1 cosines 
+	double T   [3][3];		// Transformation matrix from equatorial angle1/angle2 cosines to instrumental axis2/axis1 cosines 
   double Tinv[3][3];		// Inverse of the above 
 
   double dcAARef[3][3];	// axis1/axis2 direction cosine vectors for the three reference stars, indexed by reference first
-  double dcHDRef[3][3];	// ha/decl direction cosine vectors for the three reference stars, indexed by reference first
+  double dcHDRef[3][3];	// angle1/angle2l direction cosine vectors for the three reference stars, indexed by reference first
 
   unsigned char refs=0;	// number of reference stars
 };
 
-// A reference star, with name, right ascension and declination coordinates
-struct RefStar {
-	const char *name;
-	double ra;
-	double dec;
-};
+
 
 #endif // __CoordConv_hpp__

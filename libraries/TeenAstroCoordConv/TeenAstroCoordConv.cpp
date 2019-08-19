@@ -1,5 +1,6 @@
 // Telescope coordinate conversion
 // (C) 2016 Markus L. Noga
+// (C) 2019 Charles Lemaire
 
 // Inspired by:
 // Toshimi Taki, "A New Concept in Computer-Aided Telescopes", Sky & Telescope Feb 1989, pp. 194-196
@@ -121,52 +122,51 @@ void LA3::printV(const char *label, const double (&m)[3][3]) {
 }
 
 
-// HourAngleConv members
-//
-
-// conversion factor from local time in seconds, to siderial time in radians
-const double HourAngleConv::toSiderial=1.002737909350795*2*M_PI/(24.0*60.0*60.0);  
-
-
 // CoordConv methods
 //
 
+// create an identity transformation
+void CoordConv::init()
+{
+	addReferenceDeg(0, 0, 0, 0);
+	addReferenceDeg(90, 0, 90, 0);
+	addReferenceDeg(0, 90, 0, 90);
+}
+
 // add a user-provided reference star (all values in degrees, except time in seconds)
-void CoordConv::addReferenceDeg(double ra, double decl, double axis1, double axis2, unsigned long t) {
-	if(refs==0)
-		setT0(t);
-	addReference(toHourAngle(toRad(ra),t), toRad(decl), toRad(axis1), toRad(axis2));
+void CoordConv::addReferenceDeg(double angle1, double angle2, double axis1, double axis2) {
+	addReference(toRad(angle1), toRad(angle2), toRad(axis1), toRad(axis2));
 }
 
 
-// Convert equatorial right ascension/dec coordinates to instrumental axis1/axis2 coordinates (all values in degrees, except time in seconds) 
-void CoordConv::toInstrumentalDeg(double &axis1, double &axis2,  double ra,  double decl, unsigned long t) const {
+// Convert reference angle1/angle2 coordinates to instrumental axis1/axis2 coordinates (all values in degrees, except time in seconds) 
+void CoordConv::toInstrumentalDeg(double &axis1, double &axis2,  double angle1,  double angle2, unsigned long t) const {
 	double axis1Rad=0, axis2Rad=0;
-	toInstrumental(axis1Rad, axis2Rad, toHourAngle(toRad(ra),t), toRad(decl));
-	axis1 =toDeg(axis1Rad);
+	toInstrumental(axis1Rad, axis2Rad, toRad(angle1), toRad(angle2));
+	axis1=toDeg(axis1Rad);
 	axis2=toDeg(axis2Rad);
 }
 
-// Convert instrumental axis1/axis2 coordinates to  equatorial right ascension/dec coordinates (all values in degrees, except time in seconds) 
-void CoordConv::toEquatorialDeg(double &ra,  double &decl, double axis1, double axis2, unsigned long t) const {
-	double haRad=0, declRad=0;
-	toEquatorial(haRad, declRad, toRad(axis1), toRad(axis2));
-    ra=toDeg(toRightAsc(haRad, t));
-    decl=toDeg(declRad);
+// Convert instrumental axis1/axis2 coordinates to reference angle1/angle2 coordinates (all values in degrees, except time in seconds) 
+void CoordConv::toReferenceDeg(double &angle1,  double &angle2, double axis1, double axis2, unsigned long t) const {
+	double angle1Rad=0, angle2Rad=0;
+	toReference(angle1Rad, angle2Rad, toRad(axis1), toRad(axis2));
+    angle1=toDeg(angle1Rad);
+    angle2=toDeg(angle2Rad);
 }
 
 
 
 // add reference star (all values in radians). adding more than three has no effect
-void CoordConv::addReference(double ha, double decl, double axis1, double axis2) {
+void CoordConv::addReference(double angle1, double angle2, double axis1, double axis2) {
 	if(refs>=3)
 		return;
 
 #ifdef DEBUG_COUT
-	cout << "adding ref star: ha " << ha << "r decl " << decl << "r axis1 " << axis1 << "r axis2 " << axis2 << "r" << endl;
+	cout << "adding ref star: angle1 " << angle1 << "r angle2 " << angle2 << "r axis1 " << axis1 << "r axis2 " << axis2 << "r" << endl;
 #endif
 
-	toDirCos(dcHDRef[refs], decl, ha);
+	toDirCos(dcHDRef[refs], angle2, angle1);
 	printV("dcHD", dcHDRef[refs]);
 	toDirCos(dcAARef[refs], axis2, axis1 );
 	printV("dcAA", dcAARef[refs]);
@@ -220,13 +220,13 @@ void CoordConv::buildTransformations() {
 	printV("test", test);
 }
 
-// Convert equatorial hour angle/dec coordinates to instrumental axis1/axis2 coordinates (all values in radians) 
-void CoordConv::toInstrumental(double &axis1, double &axis2,  double ha,  double decl) const {
+// Convert reference angle1/angle2 coordinates to instrumental axis1/axis2 coordinates (all values in radians) 
+void CoordConv::toInstrumental(double &axis1, double &axis2,  double angle1,  double angle2) const {
 	#ifdef DEBUG_COUT
-	cout << "ha " << ha << "r decl " << decl << "r" << endl;
+	cout << "angle1 " << angle1 << "r angle2 " << angle2 << "r" << endl;
 	#endif
 	double dcHD[3], dcAA[3];
-	toDirCos(dcHD, decl, ha);
+	toDirCos(dcHD, angle2, angle1);
 	printV("dcHD ", dcHD);
 	multiply(dcAA, T, dcHD);
 	printV("dcAA ", dcAA);
@@ -238,8 +238,8 @@ void CoordConv::toInstrumental(double &axis1, double &axis2,  double ha,  double
 	#endif
 }
 
-// Convert instrumental axis1/axis2 coordinates to equatorial hour angle/dec coordinates (all values in radians)
-void CoordConv::toEquatorial(double &ha,  double &decl, double axis1, double axis2) const {
+// Convert instrumental axis1/axis2 coordinates to reference angle1/angle2 coordinates (all values in radians)
+void CoordConv::toReference(double &angle1,  double &angle2, double axis1, double axis2) const {
 	double dcAA[3], dcHD[3];
 	toDirCos(dcAA, axis2, axis1);
 	printV("dcAA ", dcAA);
@@ -247,8 +247,8 @@ void CoordConv::toEquatorial(double &ha,  double &decl, double axis1, double axi
 	printV("dcHD ", dcHD);
 	normalize(dcHD, dcHD);
 	printV("dcHDN", dcHD);
-	toAngles(decl, ha, dcHD);
+	toAngles(angle2, angle1, dcHD);
 	#ifdef DEBUG_COUT
-	cout << "ha " << ha << "r decl " << decl << "r" << endl;
+	cout << "angle1 " << angle1 << "r angle2 " << angle2 << "r" << endl;
 	#endif
 }
