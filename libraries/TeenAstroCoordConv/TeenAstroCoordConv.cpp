@@ -133,6 +133,35 @@ void CoordConv::init()
 	addReferenceDeg(0, 90, 0, 90);
 }
 
+// get the transformation to be stored into EEPROM
+void CoordConv::getT(float &m11, float &m12, float &m13,float &m21, float &m22, float &m23,float &m31, float &m32, float &m33)
+{
+	m11=T[0][0];
+	m12=T[0][1];
+	m13=T[0][2];
+	m21=T[1][0];
+	m22=T[1][1];
+	m23=T[1][2];
+	m31=T[2][0];
+	m32=T[2][1];
+	m33=T[2][2];
+}
+
+// set the transformation from EEPROM
+void CoordConv::setT(float m11, float m12, float m13,float m21, float m22, float m23,float m31, float m32, float m33)
+{
+	T[0][0]=m11;
+	T[0][1]=m12;
+	T[0][2]=m13;
+	T[1][0]=m21;
+	T[1][1]=m22;
+	T[1][2]=m23;
+	T[2][0]=m31;
+	T[2][1]=m32;
+	T[2][2]=m33;
+	refs = 3;
+}
+
 // add a user-provided reference star (all values in degrees, except time in seconds)
 void CoordConv::addReferenceDeg(double angle1, double angle2, double axis1, double axis2) {
 	addReference(toRad(angle1), toRad(angle2), toRad(axis1), toRad(axis2));

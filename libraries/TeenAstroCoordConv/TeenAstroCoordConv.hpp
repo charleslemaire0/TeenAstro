@@ -102,10 +102,19 @@ public:
 
 	// resets reference stars
 	void reset() { refs=0; }
+	
+	// create an identity transformation
+  void init();
 
 	// returns true if all required reference stars are set (need three)
 	bool isReady() const { return refs==3; }
 
+	// get the transformation to be stored into EEPROM
+	void getT(float &m11, float &m12, float &m13,float &m21, float &m22, float &m23,float &m31, float &m32, float &m33);
+	
+	// set the transformation from EEPROM
+	void setT(float m11, float m12, float m13,float m21, float m22, float m23,float m31, float m32, float m33);
+	
 	// add a user-provided reference star (all values in degrees, except time in seconds). adding more than three has no effect
 	void addReferenceDeg(double angle1, double angle2, double axis1, double axis2);
 
