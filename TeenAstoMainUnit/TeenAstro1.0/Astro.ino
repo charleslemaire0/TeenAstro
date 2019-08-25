@@ -386,13 +386,14 @@ double GetTrackingRate()
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // Low overhead altitude calculation, 16 calls to complete
-byte    ac_step = 0;
-double  ac_HA = 0, ac_De = 0, ac_Dec = 0;
-double  ac_sindec, ac_cosdec, ac_cosha;
-double  ac_sinalt;
+
 
 boolean do_fastalt_calc()
 {
+  static byte    ac_step = 0;
+  static double  ac_HA = 0, ac_De = 0, ac_Dec = 0;
+  static double  ac_sindec, ac_cosdec, ac_cosha;
+  static double  ac_sinalt;
   if (isAltAZ())
   {
     currentAlt = (double)(posAxis2) / StepsPerDegreeAxis2;
