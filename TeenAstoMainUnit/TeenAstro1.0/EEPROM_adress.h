@@ -14,18 +14,14 @@
 #define EE_maxRate          23
 #define EE_degAcc           25
 
+// limits
 #define EE_minAlt           26
 #define EE_maxAlt           27
-
 #define EE_dpmE             28
 #define EE_dpmW             29
 #define EE_dup              30
 
-#define EE_doCor            42
-#define EE_pdCor            46
-#define EE_altCor           50
-#define EE_azmCor           54
-
+//motor1
 #define EE_GearAxis1        58
 #define EE_StepRotAxis1     62
 #define EE_MicroAxis1       64
@@ -34,6 +30,7 @@
 #define EE_HighCurrAxis1    67
 #define EE_backlashAxis1    68
 
+//motor2
 #define EE_GearAxis2        72
 #define EE_StepRotAxis2     76
 #define EE_MicroAxis2       78
@@ -43,5 +40,17 @@
 #define EE_backlashAxis2    82
 
 #define EE_siderealInterval 88
-
 #define EE_autoInitKey      96
+
+//transformation matrix
+
+#define EE_T11              100
+#define EE_T12              104
+#define EE_T13              108
+#define EE_T21              112
+#define EE_T22              116
+#define EE_T23              120
+#define EE_T31              124
+#define EE_T32              128
+#define EE_T33              132
+#define EE_Tvalid           136

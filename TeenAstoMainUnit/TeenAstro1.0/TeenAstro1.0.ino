@@ -116,7 +116,7 @@ void setup()
     // 1/16uS resolution timer, ticks per sidereal second
     EEPROM_writeLong(EE_siderealInterval, siderealInterval);
 
-    // the translation is not valid
+    // the transformation is not valid
     EEPROM.write(EE_Tvalid,0);
 
     // finally, stop the init from happening again
@@ -573,7 +573,7 @@ void initmount()
 void initTransformation()
 {
   byte TvalidFromEEPROM = EEPROM.read(EE_Tvalid);
-  if (TvalidFromEEPROM)
+  if (TvalidFromEEPROM != 0)
   {
     float t11 = EEPROM_readFloat(EE_T11);
     float t12 = EEPROM_readFloat(EE_T12);
@@ -587,7 +587,10 @@ void initTransformation()
     alignment.setT(t11,t12,t13,t21,t22,t23,t31,t32,t33);
   }
   else
+  {
     alignment.init();
+  }
+  
 }
 void initCelestialPole()
 {

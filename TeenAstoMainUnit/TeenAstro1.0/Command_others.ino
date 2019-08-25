@@ -599,8 +599,11 @@ void Command_C()
     {
     case 'M':
     case 'S':
-      i = syncEqu(newTargetRA, newTargetDec, targetPierSide);
+    {
+      double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+      i = syncEqu(newTargetHA, newTargetDec, targetPierSide);
       break;
+    }
     case 'A':
       i = syncAltAz(newTargetAzm, newTargetAlt, targetPierSide);
       break;

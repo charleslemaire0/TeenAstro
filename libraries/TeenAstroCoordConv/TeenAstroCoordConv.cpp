@@ -46,8 +46,8 @@ void LA3::toDirCos(double (&dc)[3], double ang1, double ang2) {
 void LA3::toAngles(double &ang1, double &ang2, const double (&dc)[3]) {
 	ang1= asin( dc[2]);
 	ang2=-atan2(dc[1], dc[0]);
-   	if(ang2<0)
-		ang2+=2*M_PI;
+  // 	if(ang2<0)
+		//ang2+=2*M_PI;
 }
 
 // Copy a 3x3 matrix 

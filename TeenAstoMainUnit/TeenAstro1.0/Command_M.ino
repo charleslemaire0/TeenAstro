@@ -27,7 +27,8 @@ void Command_M(bool &supress_frame)
       newTargetRA = f;
       newTargetDec = f1;
       PierSide preferedPierSide = (GetPierSide() == PIER_EAST) ? PIER_WEST : PIER_EAST;
-      i = goToEqu(newTargetRA, newTargetDec, preferedPierSide);
+      double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+      i = goToEqu(newTargetHA, newTargetDec, preferedPierSide);
       reply[0] = i + '0';
       reply[1] = 0;
       quietReply = true;
@@ -142,7 +143,8 @@ void Command_M(bool &supress_frame)
         //         6=Outside limits          Outside limits, above the Zenith limit
         //         7=Guiding
         //         8=has a an Error
-    i = goToEqu(newTargetRA, newTargetDec, GetPierSide());
+    double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+    i = goToEqu(newTargetHA, newTargetDec, GetPierSide());
     reply[0] = i + '0';
     reply[1] = 0;
     quietReply = true;
