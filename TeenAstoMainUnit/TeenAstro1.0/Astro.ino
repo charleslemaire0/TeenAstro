@@ -451,8 +451,6 @@ boolean do_fastalt_calc()
   }
 }
 
-
-
 // -----------------------------------------------------------------------------------------------------------------------------
 // Refraction adjusted tracking
 
@@ -593,11 +591,10 @@ boolean do_refractionRate_calc()
 // AltAz tracking
 
 #define AltAzTrackingRange  1  // distance in arc-min (20) ahead of and behind the current Equ position, used for rate calculation
-double  az_Alt1, az_Alt2, az_Azm1, az_Azm2;
-
 boolean do_altAzmRate_calc()
 {
     boolean done = false;
+    static double  az_Alt1, az_Alt2, az_Azm1, az_Azm2;
     // turn off if not tracking at sidereal rate
     if (!sideralTracking)
     {
@@ -691,6 +688,8 @@ boolean do_altAzmRate_calc()
     return done;
 }
 
+
+//TODO
 boolean do_altAzmRate_calc2()
 {
 
@@ -731,9 +730,6 @@ boolean do_altAzmRate_calc2()
 
   HorToEqu(az_Alt, az_Azm, &az_HA1, &az_Dec1);
   // look ahead of and behind the current position
-
-
-
     return true;
 }
 // -----------------------------------------------------------------------------------------------------------------------------
