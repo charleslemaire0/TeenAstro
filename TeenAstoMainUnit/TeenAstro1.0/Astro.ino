@@ -689,51 +689,6 @@ boolean do_altAzmRate_calc()
 }
 
 
-//TODO
-boolean do_altAzmRate_calc2()
-{
-
-
-  // turn off if not tracking at sidereal rate
-  if (!sideralTracking || movingTo)
-  {
-    az_deltaAxis1 = 0.0;
-    az_deltaAxis2 = 0.0;
-    return true;
-  }
-
-
-
-  // convert units, get ahead of and behind current position
-
-  if (movingTo)
-  {
-    cli();
-    az_Axis1 = targetAxis1.part.m;
-    az_Axis2 = targetAxis2.part.m;
-    sei();
-  }
-  else
-  {
-    cli();
-    az_Axis1 = posAxis1;
-    az_Axis2 = posAxis2;
-    sei();
-  }
-
-  // get the Azm
-  az_Azm = (double)az_Axis1 / (double)StepsPerDegreeAxis1;
-
-  // get the Alt
-  az_Alt = (double)az_Axis2 / (double)StepsPerDegreeAxis2;
-
-
-  HorToEqu(az_Alt, az_Azm, &az_HA1, &az_Dec1);
-  // look ahead of and behind the current position
-    return true;
-}
-// -----------------------------------------------------------------------------------------------------------------------------
-
 //// Misc. numeric conversion
 //double timeRange(double t)
 //{
