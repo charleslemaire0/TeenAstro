@@ -143,6 +143,7 @@ volatile long       stepAxis2 = 1;
 #define stepAxis2   1
 #endif
 double              newTargetAlt = 0.0, newTargetAzm = 0.0; // holds the altitude and azmiuth for slews
+double              currentAzm = 0;                         // the current Azimuth
 double              currentAlt = 45;                        // the current altitude
 int                 minAlt;                                 // the minimum altitude, in degrees, for goTo's (so we don't try to point too low)
 int                 maxAlt;                                 // the maximum altitude, in degrees, for goTo's (to keep the telescope tube away from the mount/tripod)

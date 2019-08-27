@@ -286,15 +286,8 @@ void  Command_G()
     //  :GA#   Get Telescope Altitude
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //         The current scope altitude
-    if (isAltAZ())
-    {
-      cli();
-      f = (double)(posAxis2 /*+ indexAxis2Steps*/) / StepsPerDegreeAxis2;
-      sei();   
-    }
-    else
-      getHor(&f, &f1);
-    if (!doubleToDms(reply, &f, false, true))
+    getHor(&f,&f1);
+    if (!doubleToDms(reply, &f1, false, true))
       commandError = true;
     else
       quietReply = true;
@@ -618,19 +611,8 @@ void  Command_G()
   case 'Z':
     //  :GZ#   Get telescope azimuth
     //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
-    if (isAltAZ())
-    {
-      cli();
-      f1 = (double)(posAxis1 /*+ indexAxis1Steps*/) / StepsPerDegreeAxis1;
-      while(f1>360)
-        f1-=360;
-      while(f1<0)
-        f1+=360;
-      sei();
-    }
-    else
-      getHor(&f, &f1);
-    if (!doubleToDms(reply, &f1, true, false))
+    getHor(&f,&f1);
+    if (!doubleToDms(reply, &f, true, false))
       commandError = true;
     else
       quietReply = true;

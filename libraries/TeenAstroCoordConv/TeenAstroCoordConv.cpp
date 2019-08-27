@@ -125,14 +125,6 @@ void LA3::printV(const char *label, const double (&m)[3][3]) {
 // CoordConv methods
 //
 
-// create an identity transformation
-void CoordConv::init()
-{
-	addReferenceDeg(0, 0, 0, 0);
-	addReferenceDeg(90, 0, 90, 0);
-	addReferenceDeg(0, 90, 0, 90);
-}
-
 // get the transformation to be stored into EEPROM
 void CoordConv::getT(float &m11, float &m12, float &m13,float &m21, float &m22, float &m23,float &m31, float &m32, float &m33)
 {

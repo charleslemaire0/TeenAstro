@@ -196,8 +196,7 @@ void setup()
   siderealInterval = EEPROM_readLong(EE_siderealInterval);
   updateSideral();
 
-  //this read the transformation
-  initTransformation();
+
 
   // set the system timer for millis() to the second highest priority
   SCB_SHPR3 = (32 << 24) | (SCB_SHPR3 & 0x00FFFFFF);
@@ -228,6 +227,8 @@ void setup()
   rtk.resetLongitude(*localSite.longitude());
   initCelestialPole();
   initLat();
+  //this read the transformation
+  initTransformation();
 
   // get the Park status
   if (!iniAtPark())
@@ -287,13 +288,15 @@ void loop()
     {
       moveTo();
     }
-    // figure out the current Altitude
-    do_fastalt_calc();
+
+    if (rtk.m_lst % 16 != 0)
+      do_fastalt_calc();
+
     if (isAltAZ())
     {
       // figure out the current Alt/Azm tracking rates
       if (rtk.m_lst % 3 != 0)
-        do_altAzmRate_calc();
+        do_compensation_calc();
     }
     else
     {
@@ -475,7 +478,6 @@ void SafetyCheck(const bool forceTracking)
       lastError = ERR_NONE;
     }
   }
-
 }
 
 
@@ -560,10 +562,6 @@ void initmount()
   targetAxis2.part.f = 0;
   fstepAxis1.fixed = doubleToFixed(StepsPerSecondAxis1 / 100.0);
 
-  // initialize alignment
-
-
-
   // Tracking and rate control
   refraction_enable = isAltAZ() ? false : true;
   onTrack = false;
@@ -588,7 +586,21 @@ void initTransformation()
   }
   else
   {
-    alignment.init();
+    if (isAltAZ())
+    {
+      alignment.addReferenceDeg(0,0,0,0);
+      alignment.addReferenceDeg(0,90,0,90);
+      alignment.calculateThirdReference();
+    }
+    else
+    {
+      double ha,dec;
+      HorToEqu(180,0,&ha,&dec);
+      alignment.addReferenceDeg(180,0,ha,dec);
+      HorToEqu(180,90,&ha,&dec);
+      alignment.addReferenceDeg(180,90,ha,dec);
+      alignment.calculateThirdReference();
+    }
   }
   
 }

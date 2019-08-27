@@ -605,7 +605,7 @@ void Command_C()
       break;
     }
     case 'A':
-      i = syncAltAz(newTargetAzm, newTargetAlt, targetPierSide);
+      i = syncAzAlt(newTargetAzm, newTargetAlt, targetPierSide);
       break;
     }
     i = 0;

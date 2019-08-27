@@ -103,9 +103,6 @@ public:
 	// resets reference stars
 	void reset() { refs=0; }
 	
-	// create an identity transformation
-  void init();
-
 	// returns true if all required reference stars are set (need three)
 	bool isReady() const { return refs==3; }
 

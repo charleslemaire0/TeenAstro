@@ -12,7 +12,7 @@ void Command_M(bool &supress_frame)
     //         2=No object selected
     //         4=Position unreachable
     //         6=Outside limits
-    i = goToHor(&newTargetAlt, &newTargetAzm);
+    i = goToHor(&newTargetAzm, &newTargetAlt, GetPierSide() );
     reply[0] = i + '0';
     reply[1] = 0;
     quietReply = true;
