@@ -46,7 +46,7 @@
 
 #include "Command.h"
 #include "Config.TeenAstro.h"
-#include "eeprom.h"
+#include "EEPROM.h"
 #include "EEPROM_adress.h"
 
 
