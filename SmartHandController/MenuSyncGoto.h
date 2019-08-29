@@ -220,8 +220,8 @@ SmartHandController::MENU_RESULT SmartHandController::menuSolarSys(bool sync)
   const char *string_list_SolarSyst = "Sun\nMercury\nVenus\nMars\nJupiter\nSaturn\nUranus\nNeptune\nMoon";
   current_selection = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync Sol Sys" : "Goto Sol Sys", current_selection, string_list_SolarSyst);
   if (current_selection == 0) return MR_CANCEL;
-
-  if (current_selection>3) current_selection++;
+  int selected_planet = current_selection;
+  if (current_selection>3) selected_planet++;
   //if (current_selection == 1)
   //{ 
   //  DisplayMessage("Pointing at the Sun", "can be dangerous", 2000);
@@ -229,7 +229,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuSolarSys(bool sync)
   //  if (display->UserInterfaceInputValueBoolean(&buttonPad, "Goto Sun?", &GotoSun)) { if (!GotoSun) return MR_CANCEL; } else return MR_CANCEL;
   //}
 
-  if (DisplayMessageLX200(SyncGotoPlanetLX200(sync, current_selection-1),false)) return MR_QUIT;
+  if (DisplayMessageLX200(SyncGotoPlanetLX200(sync, selected_planet-1),false)) return MR_QUIT;
   return MR_CANCEL;
 }
 
