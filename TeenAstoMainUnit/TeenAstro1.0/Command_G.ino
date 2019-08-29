@@ -612,6 +612,7 @@ void  Command_G()
     //  :GZ#   Get telescope azimuth
     //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
     getHor(&f,&f1);
+    f = AzRange(f);
     if (!doubleToDms(reply, &f, true, false))
       commandError = true;
     else
