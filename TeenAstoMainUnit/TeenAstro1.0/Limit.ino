@@ -53,7 +53,7 @@
   }
   bool checkAxis1LimitAZALT(const long &axis1)
   {
-    return axis1 < (long)((360 + DegreePastAZ) * StepsPerDegreeAxis1) && axis1 >= long(-DegreePastAZ * StepsPerDegreeAxis1);
+    return axis1 < (long)((180 + DegreePastAZ) * StepsPerDegreeAxis1) && axis1 >= long((-180 - DegreePastAZ) * StepsPerDegreeAxis1);
   }
 
   // check if defined position is within limit

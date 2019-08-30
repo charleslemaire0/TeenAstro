@@ -676,10 +676,13 @@ boolean do_compensation_calc()
     break;
   case 120:
     // we have both -0.5hr and +0.5hr values // calculate tracking rate deltas'
+               // handle coordinate wrap
+    if ((axis1_after < -halfRotAxis1) && (axis1_before > halfRotAxis1)) axis1_after += 2*halfRotAxis1;
+    if ((axis1_before < -halfRotAxis1) && (axis1_after > halfRotAxis1)) axis1_after += 2*halfRotAxis1;
     // set rates
 
-    az_deltaAxis1 = ((axis1_after - axis1_before) / StepsPerDegreeAxis1 * (15.0 / (AltAzTrackingRange / 60.0)) / 2.0) * az_deltaRateScale;
-    az_deltaAxis2 = ((axis2_after - axis2_before) / StepsPerDegreeAxis2 * (15.0 / (AltAzTrackingRange / 60.0)) / 2.0) * az_deltaRateScale;
+    az_deltaAxis1 = (distStepAxis1(axis1_before, axis1_after) / StepsPerDegreeAxis1 * (15.0 / (AltAzTrackingRange / 60.0)) / 2.0) * az_deltaRateScale;
+    az_deltaAxis2 = (distStepAxis2(axis2_before, axis2_after) / StepsPerDegreeAxis2 * (15.0 / (AltAzTrackingRange / 60.0)) / 2.0) * az_deltaRateScale;
     // override for special case of near a celestial pole
     //if (90.0 - fabs(Dec_now) <= 0.5)
     //{
