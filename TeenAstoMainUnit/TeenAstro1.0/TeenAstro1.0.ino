@@ -588,8 +588,8 @@ void initTransformation()
   {
     if (isAltAZ())
     {
-      alignment.addReferenceDeg(0,0,0,0);
-      alignment.addReferenceDeg(0,90,0,90);
+      alignment.addReferenceDeg(0,0,180,0);
+      alignment.addReferenceDeg(0,90,180,90);
       alignment.calculateThirdReference();
     }
     else
