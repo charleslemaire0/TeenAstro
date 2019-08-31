@@ -36,27 +36,49 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
   }
 }
 
+
+
 SmartHandController::MENU_RESULT SmartHandController::menuCoordinates(bool sync)
 {
   static int current_selection = 1;
+  float azm,alt = 0;
   while (true) {
-    const char* string_list="J2000\nJNow\nAlt Az";
+    const char* string_list="J2000\nJNow\nAlt Az\nNorth\nSouth\nEast\nWest";
     int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync Coord." : "Goto Coord.", current_selection, string_list);
     if (selection == 0) return MR_CANCEL;
     current_selection=selection;
     switch (current_selection) {
-      case 1:
-        if (menuRADecJ2000(sync) == MR_QUIT) return MR_QUIT;
-        break;
-      case 2:
-        if (menuRADecNow(sync)==MR_QUIT) return MR_QUIT;
-        break;
-      case 3:
-        if (menuAltAz(sync) == MR_QUIT) return MR_QUIT;
-        break;
+    case 1:
+      if (menuRADecJ2000(sync) == MR_QUIT) return MR_QUIT;
+      break;
+    case 2:
+      if (menuRADecNow(sync) == MR_QUIT) return MR_QUIT;
+      break;
+    case 3:
+      if (menuAltAz(sync) == MR_QUIT) return MR_QUIT;
+      break;
+    case 4:
+      azm = 0;
+      alt = 0;
+      if (DisplayMessageLX200(SyncGotoLX200AltAz(sync, azm, alt))) return MR_QUIT;
+      break;
+    case 5:
+      azm = 180;
+      alt = 0;
+      if (DisplayMessageLX200(SyncGotoLX200AltAz(sync, azm, alt))) return MR_QUIT;
+      break;
+    case 6:
+      azm = 90;
+      alt = 0;
+      if (DisplayMessageLX200(SyncGotoLX200AltAz(sync, azm, alt))) return MR_QUIT;
+      break;
+    case 7:
+      azm = 270;
+      alt = 0;
+      if (DisplayMessageLX200(SyncGotoLX200AltAz(sync, azm, alt))) return MR_QUIT;
+      break;
     }
   }
-  
 }
 
 SmartHandController::MENU_RESULT SmartHandController::menuPier()
