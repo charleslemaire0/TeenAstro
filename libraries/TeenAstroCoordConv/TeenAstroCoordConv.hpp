@@ -98,13 +98,19 @@ public:
 // and instrumental coordinates (axis1 and axis2)
 class CoordConv : public LA3 {
 public:
-	CoordConv() { reset(); }
+	CoordConv() { reset(); isready = false;}
 
-	// resets reference stars
-	void reset() { refs=0; }
+  // resets reference stars
+  void reset() { refs = 0; }
+
+  // clean
+  void clean(){reset(); setT(0,0,0,0,0,0,0,0,0); isready = false;}
 	
 	// returns true if all required reference stars are set (need three)
-	bool isReady() const { return refs==3; }
+	bool isReady() const { return isready; }
+
+  // return the number of currently measured refs
+  unsigned char getRefs() const { return refs; }
 
 	// get the transformation to be stored into EEPROM
 	void getT(float &m11, float &m12, float &m13,float &m21, float &m22, float &m23,float &m31, float &m32, float &m33);
@@ -146,6 +152,7 @@ protected:
   double dcHDRef[3][3];	// angle1/angle2l direction cosine vectors for the three reference stars, indexed by reference first
 
   unsigned char refs=0;	// number of reference stars
+  bool isready=false;
 };
 
 

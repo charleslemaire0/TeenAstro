@@ -644,9 +644,7 @@ LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short objSys)
 
 LX200RETURN SyncSelectedStarLX200(unsigned short alignSelectedStar)
 {
-  //if (alignSelectedStar >= 0 && alignSelectedStar < NUM_STARS)
-  //  return SyncGotoCatLX200(false);
-  //else return LX200UNKOWN;
+ if (alignSelectedStar >= 0) return SyncGotoCatLX200(false); else return LX200UNKOWN;
 }
 
 LX200RETURN readReverseLX200(const uint8_t &axis, bool &reverse)

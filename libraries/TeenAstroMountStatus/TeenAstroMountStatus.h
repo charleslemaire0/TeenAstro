@@ -6,8 +6,9 @@ class TeenAstroMountStatus
 public:
 
   enum Errors { ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT, ERR_LIMIT_SENSE, ERR_DEC, ERR_AZM, ERR_UNDER_POLE, ERR_MERIDIAN, ERR_SYNC };
-  enum AlignMode { ALIM_ONE, ALIM_TWO, ALIM_THREE };
+  enum AlignMode { ALIM_OFF, ALIM_ONE, ALIM_TWO, ALIM_THREE };
   enum AlignState { ALI_OFF, ALI_SELECT, ALI_SLEW, ALI_RECENTER };
+  enum AlignReply { ALIR_FAILED1, ALIR_FAILED2, ALIR_DONE, ALIR_ADDED};
   enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
   enum TrackState { TRK_OFF, TRK_ON, TRK_SLEWING, TRK_UNKNOW };
   enum RateCompensation { RC_NONE, RC_REFR_RA, RC_REFR_BOTH, RC_FULL_RA, RC_FULL_BOTH };
@@ -61,7 +62,6 @@ private:
   bool            m_hasInfoFocuser = false;
 public:
   //Alignment Stuff
-
   bool            isAligning()  { return m_align != ALI_OFF; }
   bool            isAlignSlew() { return m_align == ALI_SLEW; };
   bool            isAlignSelect() { return m_align == ALI_SELECT; };
@@ -72,7 +72,9 @@ public:
   void            backStepAlign();
   bool            isLastStarAlign() { return (int)m_aliMode == m_alignStar;  };
   AlignMode       getAlignMode() { return m_aliMode; };
-  void            addStar();
+  int             getAlignStar() { return m_alignStar; };
+  void            setAlignMode(AlignMode mode){ m_aliMode = mode;};
+  AlignReply      addStar();
   unsigned short  alignSelectedStar = 1;
   int             alignMaxNumStars = -1;
 

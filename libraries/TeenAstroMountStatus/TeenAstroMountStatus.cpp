@@ -45,7 +45,7 @@ void TeenAstroMountStatus::backStepAlign()
   }
   if (isAlignRecenter())
   {
-    m_align = ALI_SLEW;
+    m_align = ALI_SELECT;
     return;
   }
   return;
@@ -330,33 +330,44 @@ bool TeenAstroMountStatus::getLastErrorMessage(char message[])
   return message[0];
 }
 
-void TeenAstroMountStatus::addStar()
+TeenAstroMountStatus::AlignReply TeenAstroMountStatus::addStar()
 {
   if (isAlignRecenter())
   {
-    if (SetLX200(":A+#")==LX200VALUESET)
+    char text[5] = ":A #";
+  
+    if (getAlignMode() == TeenAstroMountStatus::ALIM_TWO)
+      text[2] = '2';
+    else if (getAlignMode() == TeenAstroMountStatus::ALIM_THREE)
+      text[2] = '3';
+    else
     {
-      bool done = false;
+      stopAlign();
+      return AlignReply::ALIR_FAILED2;
+    }
+
+    if (SetLX200(text) == LX200VALUESET)
+    {
       if (isLastStarAlign())
       {
-        //TODO DisplayMessage("Alignment", "Success!", -1);
         stopAlign();
+        return AlignReply::ALIR_DONE;
       }
       else
       {
         nextStepAlign();
-        //TODO DisplayMessage("Add Star", "Success!", -1);
+        return AlignReply::ALIR_ADDED;
       }
     }
     else
     {
-      //TODO DisplayMessage("Add Star", "Failed!", -1);
       stopAlign();
+      return AlignReply::ALIR_FAILED1;
     }
   }
   else
   {
-    //TODO DisplayMessage("Failed!", "Wrong State", -1);
     stopAlign();
+    return AlignReply::ALIR_FAILED2;
   }
 }

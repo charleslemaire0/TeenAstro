@@ -194,7 +194,11 @@ void CoordConv::addReference(double angle1, double angle2, double axis1, double 
 
 	refs++;
 	if(refs==3)
+  {
 		buildTransformations();
+    isready = true;
+    refs = 0;
+  }
 }
 
 // Calculate third reference star from two provided ones. Returns false if more or less than two provided 
@@ -212,9 +216,9 @@ bool CoordConv::calculateThirdReference() {
 	normalize   (dcAARef[2], dcAARef[2]);
 	printV("dcAA", dcAARef[2]);
 
-	refs=3;
 	buildTransformations();
-
+  isready = true;
+  refs=0;
 	return true;
 }
 

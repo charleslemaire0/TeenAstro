@@ -561,20 +561,19 @@ void SmartHandController::update()
   }
   if (ta_MountStatus.isAlignSelect())
   {
-    //TODO
-    //if (ta_MountStatus.align == TeenAstroMountStatus::ALI_SELECT_STAR_1)
-    //  DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Western Sky", -1);
-    //else if (ta_MountStatus.align == TeenAstroMountStatus::ALI_SELECT_STAR_2)
-    //  DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Eastern Sky", -1);
-    //else if (ta_MountStatus.align == TeenAstroMountStatus::ALI_SELECT_STAR_3)
-    //  DisplayLongMessage("Select a Star", "HA = -3 hour", "Dec = +- 45 degree", "in the Eastern Sky", -1);
-    //if (!SelectStarAlign())
-    //{
-    //  DisplayMessage("Alignment", "Aborted", -1);
-    //  ta_MountStatus.align = TeenAstroMountStatus::ALI_OFF;
-    //  return;
-    //}
-    //ta_MountStatus.align = static_cast<TeenAstroMountStatus::AlignState>(ta_MountStatus.align + 1);
+    char message[10]="Star #?";
+    message[6] = '0' + ta_MountStatus.getAlignStar();
+    DisplayLongMessage("Select a Star", "From following list", "", message, -1);
+    if (!SelectStarAlign())
+    {
+      DisplayMessage("Selection", "Aborted", -1);
+      ta_MountStatus.backStepAlign();
+      return;
+    }
+    else
+    {
+      ta_MountStatus.nextStepAlign();
+    }
   }
   else if (top - lastpageupdate > 200)
   {
@@ -617,16 +616,28 @@ void SmartHandController::update()
     {
       menuFocuserSettings();
     }
-
     exitMenu = false;
     time_last_action = millis();
   }
-
   else if (eventbuttons[0] == E_CLICK && ta_MountStatus.isAlignRecenter())
   {
-    ta_MountStatus.addStar();
+    TeenAstroMountStatus::AlignReply reply = ta_MountStatus.addStar();
+    switch (reply)
+    {
+    case TeenAstroMountStatus::AlignReply::ALIR_FAILED1:
+      DisplayMessage("Alignment", "Failed!", -1);
+      break;
+    case TeenAstroMountStatus::AlignReply::ALIR_FAILED2:
+      DisplayMessage("Alignment", "Wrong!", -1);
+      break;
+    case TeenAstroMountStatus::AlignReply::ALIR_DONE:
+      DisplayMessage("Alignment", "Success!", -1);
+      break;
+    case TeenAstroMountStatus::AlignReply::ALIR_ADDED:
+      DisplayMessage("Star added", "=>", 1000);
+      break;
+    }
   }
-
 }
 
 void SmartHandController::updateMainDisplay(u8g2_uint_t page)
@@ -638,14 +649,15 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
   u8g2_uint_t step2 = u8g2_GetUTF8Width(u8g2, "4") + 1;
   ta_MountStatus.removeLastConnectionFailure();
   ta_MountStatus.updateMount();
-  if (ta_MountStatus.hasInfoMount() && ta_MountStatus.isAligning())
+  if (ta_MountStatus.isAligning())
+    page = 4;
+  if (ta_MountStatus.hasInfoMount() && page == 4)
   {
     TeenAstroMountStatus::TrackState curT = ta_MountStatus.getTrackingState();  
     if (curT != TeenAstroMountStatus::TRK_SLEWING && ta_MountStatus.isAlignSlew())
     {
       ta_MountStatus.nextStepAlign();
     }
-    page = 4;
   }
   else if (page == 0 && !ta_MountStatus.isPulseGuiding())
   {
@@ -885,27 +897,27 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     }
     else if (page == 4)
     {
-    /*  int idx = ta_MountStatus.alignSelectedStar - 1;
-      byte cat_letter = Star_letter[idx];
-      byte cat_const = Star_constellation[idx];
       u8g2_uint_t y = 36;
-      char txt[20];
+      static char text1[19] = "Slewing to Star";
+      static char text2[18] = "Recenter Star";
+      if (ta_MountStatus.isAlignSlew())
+        u8g2_DrawUTF8(u8g2, 0, y,text1);
+      else if (ta_MountStatus.isAlignRecenter())
+        u8g2_DrawUTF8(u8g2, 0, y, text2);
 
-      if ((ta_MountStatus.align - 1) % 3 == 1)
-      {
-        sprintf(txt, "Slew to Star %u", (ta_MountStatus.align - 1) / 3 + 1);
-      }
-      else if ((ta_MountStatus.align - 1) % 3 == 2)
-      {
-        sprintf(txt, "Recenter Star %u", (ta_MountStatus.align - 1) / 3 + 1);
-      }
-      u8g2_DrawUTF8(u8g2, 0, y, txt);
       y += line_height + 4;
-      const uint8_t* myfont = u8g2->font;
-      u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
-      u8g2_DrawGlyph(u8g2, 0, y, 944 + cat_letter);
-      u8g2_SetFont(u8g2, myfont);
-      u8g2_DrawUTF8(u8g2, 16, y, constellation_txt[cat_const - 1]);*/
+      if (cat_mgr.objectNameStr()[0] != 0)
+      {
+        u8g2_DrawUTF8(u8g2, 0, y, cat_mgr.objectNameStr());
+      }
+      else
+      {
+        u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
+        u8g2_DrawGlyph(u8g2, 0, y, 945 + cat_mgr.bayerFlam());
+        const uint8_t* myfont = u8g2->font; u8g2_SetFont(u8g2, myfont);
+        u8g2_DrawUTF8(u8g2, 16, y, cat_mgr.constellationStr());
+      }
+
     }
 
   } while (u8g2_NextPage(u8g2));
@@ -1178,7 +1190,7 @@ void SmartHandController::menuTelAction()
     }
     else if (currentstate == TeenAstroMountStatus::PRK_UNPARKED)
     {
-      const char *string_list_main_UnParkedL0 = telescoplocked ? "Goto\nSync\nTracking\nSide of Pier\nUnlock" : "Goto\nSync\nTracking\nSide of Pier\nLock";
+      const char *string_list_main_UnParkedL0 = telescoplocked ? "Goto\nSync\nTracking\nSide of Pier\nUnlock" : "Goto\nSync\nAlign\nTracking\nSide of Pier\nLock";
       current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, "Telescope Action", current_selection_L0, string_list_main_UnParkedL0);
       MENU_RESULT answer = MR_CANCEL;
       switch (current_selection_L0)
@@ -1195,12 +1207,16 @@ void SmartHandController::menuTelAction()
         answer == MR_OK || answer == MR_QUIT ? exitMenu =true: exitMenu =false;
         break;
       case 3:
-        menuTrack();
+        answer = menuAlignment();
+        answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
         break;
       case 4:
-        menuPier();
+        menuTrack();
         break;
       case 5:
+        menuPier();
+        break;
+      case 6:
         telescoplocked = !telescoplocked;
         exitMenu = true;
         break;
@@ -1322,81 +1338,77 @@ void SmartHandController::menuTrack()
   }
 }
 
-
-
-
-void SmartHandController::menuAlignment()
+SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
 {
-  //const char *string_list_AlignmentL2 = "1-Star Align.\n""2-Star Align.\n""3-Star Align.\n""Show Corr.\n""Clear Corr.";
-  //current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Alignment", 0, string_list_AlignmentL2);
-  //switch (current_selection_L2)
-  //{
-  //case 0:
-  //  return;
-  //case 1:
-  //  if (SetLX200(":A1#") == LX200VALUESET)
-  //  {
-  //    ta_MountStatus.startAlign(TeenAstroMountStatus::ALIM_ONE);
-  //  }
-  //  else
-  //  {
-  //    DisplayMessage("Alignment", "Failed!", -1);
-  //  }
-  //  break;
-  //case 2:
-  //  if (SetLX200(":A2#") == LX200VALUESET)
-  //  {
-  //    ta_MountStatus.startAlign(TeenAstroMountStatus::ALIM_TWO);
-  //  }
-  //  else
-  //  {
-  //    DisplayMessage("Alignment", "Failed!", -1);
-  //  }
-  //  break;
-  //case 3:
-  //  if (SetLX200(":A3#") == LX200VALUESET)
-  //  {
-  //    ta_MountStatus.startAlign(TeenAstroMountStatus::ALIM_THREE);
-  //  }
-  //  else
-  //  {
-  //    DisplayMessage("Alignment", "Failed!", -1);
-  //  }
-  //  break;
-  //case 4:
-  //  double val1;
-  //  double val2;
-  //  double val3;
-  //  double val4;
-  //  break;
-  //case 5:
-  //  if (SetLX200(":SX0x#") == LX200VALUESET)
-  //  {
-  //    DisplayMessage("Alignment", "Reset!", -1);
-  //  }
-  //  break;
-  //default:
-  //  break;
-  //}
-  //// Quit Menu
-  //exitMenu = true;
-
+  bool alignInProgress=ta_MountStatus.isAligning();
+  static int current_selection = 1;
+  while (true) {
+    const char* string_list = alignInProgress ? "Stop" : "2 Star\n3 Star\nSave\nClear" ;
+    int selection = display->UserInterfaceSelectionList(&buttonPad, "Alignment", current_selection, string_list);
+    if (selection == 0) return MR_CANCEL;
+    current_selection = selection;
+    switch (current_selection) {
+    case 1:
+      if (alignInProgress)
+      {
+        ta_MountStatus.stopAlign();
+        DisplayMessage("Alignment","canceled",-1);
+      }
+      else 
+      {
+        DisplayLongMessage("!WARNING!", "The mount must", "be set at", "home position.", -1);
+        if (display->UserInterfaceMessage(&buttonPad, "Ready for", "2 Star", "Alignment?", "NO\nYES") == 2)
+        {
+          if (SetLX200(":A0#") == LX200VALUESET)
+          {
+          ta_MountStatus.startAlign(TeenAstroMountStatus::AlignMode::ALIM_TWO);
+          return MR_QUIT;
+          }
+          else
+          {
+            DisplayMessage("Initilisation", "has failed", -1);
+          }
+        }
+      }
+      break;
+    case 2:
+      DisplayLongMessage("!WARNING!", "The mount must", "be set at", "home position.", -1);
+      if (display->UserInterfaceMessage(&buttonPad, "Ready for", "3 Star", "Alignment??", "NO\nYES") == 2)
+      {
+        if (SetLX200(":A0#") == LX200VALUESET)
+        {
+          ta_MountStatus.startAlign(TeenAstroMountStatus::AlignMode::ALIM_THREE);
+          return MR_QUIT;
+        }
+        else
+        {
+          DisplayMessage("Initilisation", "has failed", -1);
+        }
+      }
+      break;
+    }
+  }
 }
-
-
 
 bool SmartHandController::SelectStarAlign()
 {
-  //TODO!!
-  //buttonPad.setMenuMode();
-  //bool ok = false;
-  //ta_MountStatus.alignSelectedStar = display->UserInterfaceCatalog(&buttonPad, "select Star", ta_MountStatus.alignSelectedStar, STAR);
-  //if (ta_MountStatus.alignSelectedStar != 0)
-  //{
-  //  ok = DisplayMessageLX200(SyncSelectedStarLX200(ta_MountStatus.alignSelectedStar), false);
-  //}
-  //buttonPad.setControlerMode();
-  //return ok;
+  buttonPad.setMenuMode();
+  if (!cat_mgr.isInitialized())
+  {
+    double lat, LT0;
+    while (!ta_MountStatus.getLat(lat))
+    {
+    }
+    while (!ta_MountStatus.getLstT0(LT0))
+    {
+    }
+    cat_mgr.setLat(lat);
+    cat_mgr.setLstT0(LT0);
+  }
+  cat_mgr.filtersClear();
+  bool ok = menuCatalog(false, 0) != SmartHandController::MENU_RESULT::MR_CANCEL;
+  buttonPad.setControlerMode();
+  return ok;
 }
 
 

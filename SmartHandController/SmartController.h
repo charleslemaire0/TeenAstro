@@ -91,9 +91,7 @@ private:
   MENU_RESULT menuRADecNow(bool sync);
   MENU_RESULT menuRADecJ2000(bool sync);
   MENU_RESULT menuAltAz(bool sync);
-
-
-  void menuAlignment();
+  MENU_RESULT menuAlignment();
 
 
   bool SelectStarAlign();
