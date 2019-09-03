@@ -32,7 +32,6 @@ boolean syncAzAlt(double Azm, double Alt, PierSide Side)
   long axis1, axis2 = 0;
   double Axis1, Axis2 = 0;
   alignment.toInstrumentalDeg(Axis1, Axis2, Azm, Alt);
-  Angle2InsrtAngle(Side, &Axis1, &Axis2);
   InstrtoStep(Axis1, Axis2, Side, &axis1, &axis2);
   cli();
   posAxis1 = axis1;
