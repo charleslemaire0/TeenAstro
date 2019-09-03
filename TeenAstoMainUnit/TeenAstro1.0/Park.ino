@@ -21,8 +21,8 @@ boolean setPark()
     EEPROM_writeLong(EE_posAxis1, h);
     EEPROM_writeLong(EE_posAxis2, d);
 
-    // and the align
-    saveAlignModel();
+    //// and the align
+    //saveAlignModel();
     parkSaved = true;
     EEPROM.write(EE_parkSaved, parkSaved);
     sideralTracking = lastSideralTracking;
@@ -46,6 +46,17 @@ boolean saveAlignModel()
 {
   // and store our corrections
   //GeoAlign.writeCoe();
+  float t11, t12, t13, t21, t22, t23, t31, t32, t33 = 0;
+  alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
+  EEPROM_writeFloat(EE_T11, t11);
+  EEPROM_writeFloat(EE_T12, t12);
+  EEPROM_writeFloat(EE_T13, t13);
+  EEPROM_writeFloat(EE_T21, t21);
+  EEPROM_writeFloat(EE_T22, t22);
+  EEPROM_writeFloat(EE_T23, t23);
+  EEPROM_writeFloat(EE_T31, t31);
+  EEPROM_writeFloat(EE_T32, t32);
+  EEPROM_writeFloat(EE_T33, t33);
   return true;
 }
 

@@ -45,6 +45,7 @@ boolean syncAzAlt(double Azm, double Alt, PierSide Side)
   atHome = false;
   return true;
 }
+
 // gets the telescopes current RA and Dec, set returnHA to true for Horizon Angle instead of RA
 boolean getEqu(double *HA, double *Dec, boolean returnHA)
 {
