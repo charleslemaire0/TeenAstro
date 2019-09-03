@@ -1353,6 +1353,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       {
         ta_MountStatus.stopAlign();
         DisplayMessage("Alignment","canceled",-1);
+        return MR_QUIT;
       }
       else 
       {
@@ -1405,8 +1406,7 @@ bool SmartHandController::SelectStarAlign()
     cat_mgr.setLat(lat);
     cat_mgr.setLstT0(LT0);
   }
-  cat_mgr.filtersClear();
-  bool ok = menuCatalog(false, 0) != SmartHandController::MENU_RESULT::MR_CANCEL;
+  bool ok = menuCatalogAlign() != SmartHandController::MENU_RESULT::MR_CANCEL;
   buttonPad.setControlerMode();
   return ok;
 }

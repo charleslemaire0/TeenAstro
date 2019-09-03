@@ -76,6 +76,7 @@ private:
   MENU_RESULT menuPier();
   MENU_RESULT subMenuSyncGoto(char sync, int subMenuNum);
   MENU_RESULT menuCatalog(bool sync, int number);
+  MENU_RESULT menuCatalogAlign();
   MENU_RESULT menuCatalogs(bool sync);
   MENU_RESULT menuSolarSys(bool sync);
   MENU_RESULT menuFilters();

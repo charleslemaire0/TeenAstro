@@ -176,6 +176,33 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalog(bool sync, int
   return MR_CANCEL;
 }
 
+SmartHandController::MENU_RESULT SmartHandController::menuCatalogAlign()
+{
+  drawWait();
+  cat_mgr.select(0);
+  char title[20] = "";
+  cat_mgr.filtersClear();
+  cat_mgr.filterAdd(FM_OBJ_HAS_NAME);
+  cat_mgr.filterAdd(FM_ABOVE_HORIZON, 1);
+  strcat(title, "Goto ");
+  strcat(title, cat_mgr.catalogTitle());
+  if (cat_mgr.isInitialized()) {
+    if (cat_mgr.setIndex(cat_mgr.getIndex())) {
+      if (display->UserInterfaceCatalog(&buttonPad, title)) {
+        if (DisplayMessageLX200(SyncGotoCatLX200(false), false))
+        {
+          cat_mgr.filtersClear();
+          return MR_QUIT;
+        }
+      }
+    }
+    else DisplayMessage(cat_mgr.catalogTitle(), "No Object", -1);
+  }
+  else DisplayMessage(cat_mgr.catalogTitle(), "Not Init'd?", -1);
+  cat_mgr.filtersClear();
+  return MR_CANCEL;
+}
+
 SmartHandController::MENU_RESULT SmartHandController::menuCatalogs(bool sync)
 {
   static int current_selection = 1;
