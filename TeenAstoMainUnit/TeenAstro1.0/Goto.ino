@@ -181,8 +181,3 @@ byte goTo(long thisTargetAxis1, long thisTargetAxis2)
 
   return 0;
 }
-
-
-
-
-
