@@ -832,27 +832,6 @@ void enableRateAxis2(double vRate)
   sei();
 }
 
-// Remap HA DEC value between -180 +180 and -90 +90
-void CorrectHADec(double *HA, double *Dec)
-{
-  if (!isAltAZ())
-  {
-    // switch from under the pole coordinates
-    if (*Dec > 90.0)
-    {
-      *Dec = (90.0 - *Dec) + 90;
-      *HA = *HA - 180.0;
-    }
-    else if (*Dec < -90.0)
-    {
-      *Dec = (-90.0 - *Dec) - 90.0;
-      *HA = *HA - 180.0;
-    }
-  }
-  while (*HA > 180.0) *HA -= 360.0;
-  while (*HA < -180.0) *HA += 360.0;
-}
-
 void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side)
 {
   if (*AngleAxis2 > 90.0)
