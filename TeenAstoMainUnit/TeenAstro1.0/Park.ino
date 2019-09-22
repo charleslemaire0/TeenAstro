@@ -254,18 +254,4 @@ void unpark()
   return;
 }
 
-void syncPolarHome()
-{
-  // update starting coordinates to reflect NCP or SCP polar home position
-  startAxis1 = homeStepAxis1;
-  startAxis2 = homeStepAxis2;
-  cli();
-  targetAxis1.part.m = startAxis1;
-  targetAxis1.part.f = 0;
-  posAxis1 = startAxis1;
-  targetAxis2.part.m = startAxis2;
-  targetAxis2.part.f = 0;
-  posAxis2 = startAxis2;
-  sei();
-  atHome = true;
-}
+

@@ -59,7 +59,7 @@ Again:
     cli();
     // recompute distances
     updateDeltaTarget();
-    long a = getV(timerRateAxis1)*getV(timerRateAxis1) / (2. * AccAxis1);
+    long a = pow(getV(timerRateAxis1),2.) / (2. * AccAxis1);
     if (abs(deltaTargetAxis1) > a)
     {
       if (0 > deltaTargetAxis1)
@@ -70,7 +70,7 @@ Again:
       sei();
     }
     guideDirAxis1 = 'b';
-    a = getV(timerRateAxis2)*getV(timerRateAxis2) / (2. * AccAxis2);
+    a = pow(getV(timerRateAxis2),2.) / (2. * AccAxis2);
     if (abs(deltaTargetAxis2) > a)
     {
       if (0 > deltaTargetAxis2) // overshoot
@@ -174,9 +174,8 @@ Again:
     }
     else if (homeMount) {
       parkClearBacklash();
-      setHome();
+      syncPolarHome();
       homeMount = false;
-      atHome = true;
       // disable the stepper drivers
       enable_Axis(false);
     }

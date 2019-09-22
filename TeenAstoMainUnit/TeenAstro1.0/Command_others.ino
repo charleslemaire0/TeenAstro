@@ -79,7 +79,7 @@ void Command_dollar()
         EEPROM_writeInt(EE_GearAxis1, i);
       }
       unsetPark();
-      updateRatios();
+      updateRatios(true);
     }
     else
       commandError = true;
@@ -113,7 +113,7 @@ void Command_dollar()
         EEPROM_writeInt(EE_StepRotAxis1, i);
       }
       unsetPark();
-      updateRatios();
+      updateRatios(true);
     }
     else
       commandError = true;
@@ -148,7 +148,7 @@ void Command_dollar()
         motorAxis1.setMicrostep(MicroAxis1);
         EEPROM.write(EE_MicroAxis1, MicroAxis1);
       }
-      updateRatios();
+      updateRatios(true);
     }
     else
       commandError = true;
@@ -259,7 +259,7 @@ void Command_pct()
   switch (command[1])
   {
   case 'X':
-    initmotor();
+    initmotor(true);
     break;
   case 'B':
   {
@@ -434,11 +434,14 @@ void Command_A()
   case 'W':
     saveAlignModel();
     break;
+  case 'C':
+    initTransformation(true);
+    syncPolarHome();
+    break;
   case '0':
     // telescope should be set in the polar home (CWD) for a starting point
-     // this command sets indexAxis1, indexAxis2, azmCor=0; altCor=0;
-    setHome();
-    initTransformation();
+    initTransformation(true);
+    syncPolarHome();
     // enable the stepper drivers
     enable_Axis(true);
     delay(10);
@@ -589,7 +592,7 @@ void Command_h()
     //  :hF#   Reset telescope at the home position.  This position is required for a Cold Start.
     //         Point to the celestial pole with the counterweight pointing downwards (CWD position).
     //         Returns: Nothing
-    setHome();
+    syncPolarHome();
     quietReply = true;
     break;
   case 'C':
@@ -893,7 +896,7 @@ void Command_W()
     localSite.ReadSiteDefinition(currentSite);
     rtk.resetLongitude(*localSite.longitude());
     initCelestialPole();
-    initLat();
+    initTransformation(true);
     quietReply = true;
   }
   else

@@ -265,7 +265,7 @@ void Command_S(Command& process_command)
     {
       localSite.setLat(lat);
       initCelestialPole();
-      initLat();
+      initTransformation(true);
     }
     highPrecision = i;
   }

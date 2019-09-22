@@ -26,80 +26,44 @@ boolean goHome()
     return true;
 }
 
-// sets telescope home position; user manually moves to Hour Angle 90 and Declination 90 (CWD position),
-
-// then the first gotoEqu will set the pier side and turn on tracking
-boolean setHome()
+// resets telescope home position; user manually moves home position,
+bool syncPolarHome()
 {
-    if (movingTo) return false;  // fail, forcing home not allowed during a move
-    bool lastSideralTracking = sideralTracking;
-    sideralTracking = false;
-    // default values for state variables
-    dirAxis2 = 1;
-    initLat();
-    dirAxis1 = 1;
-    newTargetRA = 0;
-    newTargetDec = 0;
-    newTargetAlt = 0;
-    newTargetAzm = 0;
-
-
-    // reset pointing model
-    //alignNumStars = 0;
-    //alignThisStar = 0;
-
-
-    //GeoAlign.init();
-
-    // reset meridian flip control
-if (mountType==MOUNT_TYPE_GEM)
-    meridianFlip = FLIP_ALWAYS;
-else if (mountType==MOUNT_TYPE_FORK)
-    meridianFlip = FLIP_NEVER;
-else if (mountType == MOUNT_TYPE_FORK_ALT)
-    meridianFlip = FLIP_NEVER;
-else if (mountType == MOUNT_TYPE_ALTAZM)
-    meridianFlip = FLIP_NEVER;
-
-    // where we are
-    homeMount = false;
-    atHome = true;
-    lastError = ERR_NONE;
-
-    // reset tracking and rates
-    timerRateAxis1 = SiderealRate;
-    timerRateAxis2 = SiderealRate;
-
-    // not parked, but don't wipe the park position if it's saved - we can still use it
-    parkStatus = PRK_UNPARKED;
-    EEPROM.write(EE_parkStatus, parkStatus);
-
-    // the polar home position
-    startAxis1 = homeStepAxis1;
-    startAxis2 = homeStepAxis2;
-
-    // clear pulse-guiding state
-    guideDirAxis1 = 0;
-    guideDurationAxis1 = 0;
-    guideDurationLastAxis1 = 0;
-    guideDirAxis2 = 0;
-    guideDurationAxis2 = 0;
-    guideDurationLastAxis2 = 0;
-    enable_Axis(false);
-
-    cli();
-    targetAxis1.part.m = startAxis1;
-    targetAxis1.part.f = 0;
-    posAxis1 = startAxis1;
-    targetAxis2.part.m = startAxis2;
-    targetAxis2.part.f = 0;
-    posAxis2 = startAxis2;
-    blAxis1 = 0;
-    blAxis2 = 0;
-    sei();
-
-    // initialize/disable the stepper drivers
-    DecayModeTracking();
-    sideralTracking = lastSideralTracking;
-    return true;
+  if (movingTo) return false;  // fail, forcing home not allowed during a move
+  // default values for state variables
+  dirAxis2 = 1;
+  dirAxis1 = 1;
+  newTargetRA = 0;
+  newTargetDec = 0;
+  newTargetAlt = 0;
+  newTargetAzm = 0;
+  lastError = ERR_NONE;
+  // reset tracking and rates
+  timerRateAxis1 = SiderealRate;
+  timerRateAxis2 = SiderealRate;
+  parkStatus = PRK_UNPARKED;
+  EEPROM.update(EE_parkStatus, parkStatus);
+  // clear pulse-guiding state
+  guideDirAxis1 = 0;
+  guideDurationAxis1 = 0;
+  guideDurationLastAxis1 = 0;
+  guideDirAxis2 = 0;
+  guideDurationAxis2 = 0;
+  guideDurationLastAxis2 = 0;
+  // update starting coordinates to reflect NCP or SCP polar home position
+  startAxis1 = homeStepAxis1;
+  startAxis2 = homeStepAxis2;
+  cli();
+  targetAxis1.part.m = startAxis1;
+  targetAxis1.part.f = 0;
+  posAxis1 = startAxis1;
+  targetAxis2.part.m = startAxis2;
+  targetAxis2.part.f = 0;
+  posAxis2 = startAxis2;
+  sei();
+  // initialize/disable the stepper drivers
+  DecayModeTracking();
+  sideralTracking = false;
+  atHome = true;
+  return true;
 }
