@@ -151,7 +151,8 @@ void CoordConv::setT(float m11, float m12, float m13,float m21, float m22, float
 	T[2][0]=m31;
 	T[2][1]=m32;
 	T[2][2]=m33;
-	refs = 3;
+	refs = 0;
+  isready = true;
 }
 
 // add a user-provided reference star (all values in degrees, except time in seconds)

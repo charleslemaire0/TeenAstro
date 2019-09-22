@@ -104,7 +104,7 @@ public:
   void reset() { refs = 0; }
 
   // clean
-  void clean(){reset(); setT(0,0,0,0,0,0,0,0,0); isready = false;}
+  void clean() { setT(0, 0, 0, 0, 0, 0, 0, 0, 0); isready = false; }
 	
 	// returns true if all required reference stars are set (need three)
 	bool isReady() const { return isready; }
