@@ -149,10 +149,6 @@ PierSide predictSideOfPier(const double& Axis1_target, const double& Axis2_targe
   return  PIER_NOTVALID;
 }
 
-
-
-
-
 // moves the mount to a new Hour Angle and Declination - both are in steps.  Alternate targets are used when a meridian flip occurs
 
 byte goTo(long thisTargetAxis1, long thisTargetAxis2)
