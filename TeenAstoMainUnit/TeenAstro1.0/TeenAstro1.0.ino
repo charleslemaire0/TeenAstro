@@ -55,7 +55,7 @@
 #define FirmwareDate    __DATE__
 #define FirmwareNumber  "1.1"
 #define FirmwareName    "TeenAstro"
-#define FirmwareTime    "12:00:00"
+#define FirmwareTime    "00:00:00"
 
 
 // forces initialialization of a host of settings in EEPROM. OnStep does this automatically, most likely, you will want to leave this alone
@@ -117,17 +117,17 @@ void setup()
     EEPROM_writeLong(EE_siderealInterval, siderealInterval);
 
     // the transformation is not valid
-    EEPROM.write(EE_Tvalid,0);
+    EEPROM.write(EE_Tvalid, 0);
 
     // finally, stop the init from happening again
     EEPROM_writeLong(EE_autoInitKey, initKey);
 
-    // clear the pointing model
-    saveAlignModel();
   }
-
+  // get the site information, if a GPS were attached we would use that here instead
+  localSite.ReadCurrentSiteDefinition();
+  
   initmount();
-  initmotor();
+  initmotor(false);
 
   // init the date and time January 1, 2013. 0 hours LMT
   setSyncProvider(getTeensy3Time);
@@ -196,8 +196,6 @@ void setup()
   siderealInterval = EEPROM_readLong(EE_siderealInterval);
   updateSideral();
 
-
-
   // set the system timer for millis() to the second highest priority
   SCB_SHPR3 = (32 << 24) | (SCB_SHPR3 & 0x00FFFFFF);
 
@@ -221,15 +219,7 @@ void setup()
   Serial3.begin(9600);
 #endif
 
-
-  // get the site information, if a GPS were attached we would use that here instead
-  localSite.ReadCurrentSiteDefinition();
   rtk.resetLongitude(*localSite.longitude());
-  initCelestialPole();
-  initLat();
-  //this read the transformation
-  initTransformation();
-
   // get the Park status
   if (!iniAtPark())
   {
@@ -568,9 +558,14 @@ void initmount()
 
 }
 
-void initTransformation()
+void initTransformation(bool reset)
 {
   byte TvalidFromEEPROM = EEPROM.read(EE_Tvalid);
+  if (reset)
+  {
+    EEPROM.write(EE_Tvalid, 0);
+    TvalidFromEEPROM = 0;
+  }
   if (TvalidFromEEPROM != 0)
   {
     float t11 = EEPROM_readFloat(EE_T11);
@@ -602,8 +597,8 @@ void initTransformation()
       alignment.calculateThirdReference();
     }
   }
-  
 }
+
 void initCelestialPole()
 {
   if (isAltAZ())
@@ -620,17 +615,13 @@ void initCelestialPole()
     homeStepAxis1 = poleStepAxis1;
     homeStepAxis2 = poleStepAxis2;
   }
-}
-
-void initLat()
-{
   HADir = *localSite.latitude() > 0 ? HADirNCPInit : HADirSCPInit;
 }
 
-void initmotor()
+void initmotor(bool deleteAlignment)
 {
   readEEPROMmotor();
-  updateRatios();
+  updateRatios(deleteAlignment);
   motorAxis1.initMotor(static_cast<Motor::Motor_Driver>(AxisDriver),StepRotAxis1, Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin, (unsigned int)LowCurrAxis1 * 10, MicroAxis1);
   motorAxis2.initMotor(static_cast<Motor::Motor_Driver>(AxisDriver),StepRotAxis2, Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin, (unsigned int)LowCurrAxis2 * 10, MicroAxis2);
 }
@@ -679,7 +670,7 @@ void writeDefaultEEPROMmotor()
 }
 
 
-void updateRatios()
+void updateRatios(bool deleteAlignment)
 {
   cli()
   StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
@@ -692,7 +683,6 @@ void updateRatios()
   StepsPerSecondAxis1 = StepsPerDegreeAxis1 / 240.0;
   StepsPerSecondAxis2 = StepsPerDegreeAxis2 / 240.0;
 
-
   timerRateRatio = (StepsPerSecondAxis1 / StepsPerSecondAxis2);
   useTimerRateRatio = (StepsPerRotAxis1 != StepsPerRotAxis2);
   sei();
@@ -703,8 +693,8 @@ void updateRatios()
   quaterRotAxis2 = StepsPerRotAxis2 / 4L;
 
   initCelestialPole();
+  initTransformation(deleteAlignment);
   updateSideral();
-
   initMaxRate();
 }
 
