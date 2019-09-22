@@ -123,7 +123,7 @@ void setup()
     EEPROM_writeLong(EE_autoInitKey, initKey);
 
   }
-  // get the site information, if a GPS were attached we would use that here instead
+  // get the site information from EEPROM
   localSite.ReadCurrentSiteDefinition();
   
   initmount();
@@ -560,6 +560,7 @@ void initmount()
 
 void initTransformation(bool reset)
 {
+  alignment.clean();
   byte TvalidFromEEPROM = EEPROM.read(EE_Tvalid);
   if (reset)
   {
