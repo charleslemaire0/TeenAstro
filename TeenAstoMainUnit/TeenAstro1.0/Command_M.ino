@@ -145,6 +145,12 @@ void Command_M(bool &supress_frame)
         //         8=has a an Error
     double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     i = goToEqu(newTargetHA, newTargetDec, GetPierSide());
+    if (i==0)
+    {
+      sideralTracking = true;
+      lastSetTrakingEnable = millis();
+      atHome = false;
+    }
     reply[0] = i + '0';
     reply[1] = 0;
     quietReply = true;
