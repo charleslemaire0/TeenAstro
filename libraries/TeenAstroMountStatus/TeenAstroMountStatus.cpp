@@ -29,13 +29,7 @@ void TeenAstroMountStatus::backStepAlign()
     return;
   if (isAlignSelect())
   {
-    if (m_alignStar == 1)
-    {
-      stopAlign();
-      return;
-    }
-    m_align = ALI_RECENTER;
-    m_alignStar--;
+    stopAlign();
     return;
   };
   if (isAlignSlew())
