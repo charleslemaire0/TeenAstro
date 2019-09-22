@@ -1387,6 +1387,20 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         }
       }
       break;
+    case 4:
+      if (display->UserInterfaceMessage(&buttonPad, "Delete", "Star", "Alignment?", "NO\nYES") == 2)
+      {
+        if (SetLX200(":AC#") == LX200VALUESET)
+        {
+          DisplayMessage("Mount Synced", "at Home", -1);
+          return MR_QUIT;
+        }
+        else
+        {
+          DisplayMessage("Delete", "has failed", -1);
+        }
+      }
+      break;
     }
   }
 }
