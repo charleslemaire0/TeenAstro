@@ -439,7 +439,7 @@ void Command_A()
     syncPolarHome();
     break;
   case '0':
-    // telescope should be set in the polar home (CWD) for a starting point
+    // telescope should be set in the polar home for a starting point
     initTransformation(true);
     syncPolarHome();
     // enable the stepper drivers
@@ -455,8 +455,8 @@ void Command_A()
     double Azm, Alt;
     EquToHor(newTargetHA, newTargetDec, &Azm, &Alt);
     cli();
-    double Axis1 = posAxis1 / (double)StepsPerDegreeAxis1;
-    double Axis2 = posAxis2 / (double)StepsPerDegreeAxis2;
+    double Axis1 = posAxis1 / StepsPerDegreeAxis1;
+    double Axis2 = posAxis2 / StepsPerDegreeAxis2;
     sei()
       alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
     if (alignment.getRefs()==2)
@@ -471,8 +471,8 @@ void Command_A()
     double Azm, Alt;
     EquToHor(newTargetHA, newTargetDec, &Azm, &Alt);
     cli();
-    double Axis1 = posAxis1 / (double)StepsPerDegreeAxis1;
-    double Axis2 = posAxis2 / (double)StepsPerDegreeAxis2;
+    double Axis1 = posAxis1 / StepsPerDegreeAxis1;
+    double Axis2 = posAxis2 / StepsPerDegreeAxis2;
     sei()
       alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
     break;
