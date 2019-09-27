@@ -1234,7 +1234,7 @@ void SmartHandController::menuTelAction()
 void SmartHandController::menuSpeedRate()
 {
   buttonPad.setMenuMode();
-  char * string_list_Speed = "Guide\n1.0x\n4.0x\n16.0x\n64.0x\n0.5 Max\nMax";
+  char * string_list_Speed = "Guide\n1.0x\n4.0x\n16.0x\n32.0x\n64.0x\n0.5 Max\nMax";
   uint8_t selected_speed = display->UserInterfaceSelectionList(&buttonPad, "Set Speed", current_selection_speed, string_list_Speed);
   int speed;
   switch (selected_speed)
@@ -1254,12 +1254,15 @@ void SmartHandController::menuSpeedRate()
     speed = 5;
     break;
   case 5:
-    speed = 7;
+    speed = 6;
     break;
   case 6:
-    speed = 8;
+    speed = 7;
     break;
   case 7:
+    speed = 8;
+    break;
+  case 8:
     speed = 9;
     break;
   default:
