@@ -639,13 +639,14 @@ void Command_Q()
   case 0:
     //  :Q#    Halt all slews, stops goto
     //         Returns: Nothing
+    doSpiral = false;
     if ((parkStatus == PRK_UNPARKED) || (parkStatus == PRK_PARKING))
     {
       if (movingTo)
       {
         abortSlew = true;
       }
-      else if (GuidingState == GuidingRecenter || GuidingState == GuidingST4)
+      else if (GuidingState == GuidingRecenter || GuidingState == GuidingST4 || GuidingState == GuidingPulse)
       {
         if (guideDirAxis1)
           StopAxis1();
@@ -660,11 +661,8 @@ void Command_Q()
           guideDirAxis2 = 'b';
       }
     }
-
     quietReply = true;
     break;
-
-
   case 'e':
   case 'w':
     //  :Qe# & Qw#   Halt east/westward Slews

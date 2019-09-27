@@ -378,9 +378,6 @@ ISR(TIMER4_COMPA_vect)
           dirAxis2 = 1;
         else
           dirAxis2 = 0;   // Direction control
-
-      // Set direction.  Needs >=0.65uS before/after rising step signal (DRV8825 or A4988).
-
         if (ReverseAxis2^Axis2Reverse)
         {
           if (dirAxis2)

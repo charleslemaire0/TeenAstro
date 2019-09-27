@@ -251,6 +251,7 @@ void loop()
   if (!movingTo)
   {
     checkST4();
+    CheckSpiral();
     guideAxis1.fixed = 0;
     Guide();
   }

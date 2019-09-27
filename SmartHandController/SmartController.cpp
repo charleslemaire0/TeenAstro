@@ -179,6 +179,11 @@ static unsigned char GNSS_bits[] U8X8_PROGMEM = {
   0xe0, 0x07, 0x80, 0x1f, 0x80, 0x23, 0x2a, 0x42, 0x4a, 0x22, 0x12, 0x14,
   0x64, 0x08, 0x08, 0x00, 0x70, 0x00, 0x00, 0x00 };
 
+static unsigned char Spiral_bits[] U8X8_PROGMEM = {
+   0x00, 0x00, 0xfc, 0x3f, 0xfe, 0x7f, 0x06, 0x60, 0x06, 0x60, 0xc6, 0x63,
+   0xe6, 0x67, 0x66, 0x66, 0x66, 0x66, 0x06, 0x66, 0x06, 0x66, 0xfe, 0x67,
+   0xfc, 0x63, 0x00, 0x60, 0x00, 0x60, 0x00, 0x00 };
+
 static const unsigned char teenastro_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -477,7 +482,9 @@ bool SmartHandController::isSleeping()
 
 void SmartHandController::manualMove(bool &moving)
 {
-  moving = ta_MountStatus.getTrackingState() == TeenAstroMountStatus::TRK_SLEWING || ta_MountStatus.getParkState() == TeenAstroMountStatus::PRK_PARKING;
+  moving = ta_MountStatus.getTrackingState() == TeenAstroMountStatus::TRK_SLEWING ||
+    ta_MountStatus.getParkState() == TeenAstroMountStatus::PRK_PARKING ||
+    ta_MountStatus .isSpiralRunning();
   if (moving)
   {
     bool stop = (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART || eventbuttons[0] == E_DOUBLECLICK) ? true : false;
@@ -772,7 +779,11 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, align3_bits);
           x -= icon_width + 1;
         }
-
+        if (ta_MountStatus.isSpiralRunning())
+        {
+          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Spiral_bits);
+          x -= icon_width + 1;
+        }
         if (ta_MountStatus.isPulseGuiding())
         {
           display->drawXBMP(x - icon_width, 0, icon_width, icon_height, guiding__bits);
@@ -1190,7 +1201,7 @@ void SmartHandController::menuTelAction()
     }
     else if (currentstate == TeenAstroMountStatus::PRK_UNPARKED)
     {
-      const char *string_list_main_UnParkedL0 = telescoplocked ? "Goto\nSync\nTracking\nSide of Pier\nUnlock" : "Goto\nSync\nAlign\nTracking\nSide of Pier\nLock";
+      const char *string_list_main_UnParkedL0 = telescoplocked ? "Goto\nSync\nTracking\nSide of Pier\nUnlock" : "Goto\nSync\nAlign\nTracking\nSide of Pier\nLock\nSpiral";
       current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, "Telescope Action", current_selection_L0, string_list_main_UnParkedL0);
       MENU_RESULT answer = MR_CANCEL;
       switch (current_selection_L0)
@@ -1220,6 +1231,17 @@ void SmartHandController::menuTelAction()
         telescoplocked = !telescoplocked;
         exitMenu = true;
         break;
+      case 7:
+        if (SetLX200(":M@#") == LX200VALUESET)
+        {
+          DisplayMessage("Spiral Search", "Started", 500);
+        }
+        else
+        {
+          DisplayMessage("Command", "has Failed", 1000);
+        }
+        exitMenu = true;
+        break;
       default:
         break;
       }
@@ -1234,44 +1256,16 @@ void SmartHandController::menuTelAction()
 void SmartHandController::menuSpeedRate()
 {
   buttonPad.setMenuMode();
-  char * string_list_Speed = "Guide\n1.0x\n4.0x\n16.0x\n32.0x\n64.0x\n0.5 Max\nMax";
-  uint8_t selected_speed = display->UserInterfaceSelectionList(&buttonPad, "Set Speed", current_selection_speed, string_list_Speed);
-  int speed;
-  switch (selected_speed)
-  {
-  case 0:
-    break;
-  case 1:
-    speed = 0;
-    break;
-  case 2:
-    speed = 2;
-    break;
-  case 3:
-    speed = 4;
-    break;
-  case 4:
-    speed = 5;
-    break;
-  case 5:
-    speed = 6;
-    break;
-  case 6:
-    speed = 7;
-    break;
-  case 7:
-    speed = 8;
-    break;
-  case 8:
-    speed = 9;
-    break;
-  default:
-    break;
-  }
+  char * string_list_Speed = "Guide\n0.5x\n1.0x\n2.0x\n4.0x\n16.0x\n32.0x\n64.0x\n0.5 Max\nMax";
+  static unsigned char current_selection_speed = 4;
+  ta_MountStatus.updateMount();
+  if (!ta_MountStatus.getGuidingRate(current_selection_speed))
+    return;
+  uint8_t selected_speed = display->UserInterfaceSelectionList(&buttonPad, "Set Speed", current_selection_speed + 1 , string_list_Speed);
   if (selected_speed > 0)
   {
     char cmd[5] = ":Rn#";
-    cmd[2] = '0' + speed;
+    cmd[2] = '0' + selected_speed - 1;
     SetLX200(cmd);
     current_selection_speed = selected_speed;
   }

@@ -187,6 +187,14 @@ void Command_M(bool &supress_frame)
     quietReply = true;
     break;
   }
+
+  case '@':
+  {
+     //  :M@#   Start Spiral Search
+     //         Return 1
+     doSpiral = true;
+     break;
+  }
   default:
     commandError = true;
     break;

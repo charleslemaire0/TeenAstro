@@ -41,7 +41,7 @@ void StopAxis1()
   if (guideDirAxis1 == 'b')
     return;
   updateDeltaTarget();
-  long a = pow(getV(timerRateAxis1),2.) / (2 * AccAxis1);
+  long a = pow(getV(timerRateAxis1),2.) / (2. * AccAxis1);
   if (fabs(deltaTargetAxis1) > a)
   {
     if (0 > deltaTargetAxis1)
@@ -97,7 +97,7 @@ void MoveAxis2(const byte newguideDirAxis,const Guiding Mode)
 
 void StopAxis2()
 {
-  long a = pow(getV(timerRateAxis2),2.) / (2 * AccAxis2);
+  long a = pow(getV(timerRateAxis2),2.) / (2. * AccAxis2);
   updateDeltaTarget();
   if (fabs(deltaTargetAxis2) > a)
   {
@@ -109,6 +109,72 @@ void StopAxis2()
     sei();
   }
   guideDirAxis2 = 'b';
+}
+
+void CheckSpiral()
+{
+  static int iteration = 0;
+  if (!doSpiral)
+  {
+    if (iteration != 0)
+      iteration = 0;
+    return;
+  }
+  int duration = iteration / 2 + 1;
+  if (activeGuideRate > 7)
+  {
+    enableGuideRate(7, false);
+  }
+  else if (activeGuideRate < 2)
+  {
+    enableGuideRate(4, false);
+  }
+
+  if (iteration == 20)
+  {
+    StopAxis1();
+    StopAxis2();
+    iteration = 0;
+    doSpiral = false;
+    return;
+  }
+
+  if (iteration % 2 == 0)
+  {
+    if (guideDirAxis1)
+      return;
+    guideDirAxis2 = iteration % 4 < 2 ? 'n' : 's';
+    guideDurationLastAxis2 = micros();
+    guideDurationAxis2 = (long)duration * 3000000L;
+    if (guideDirAxis2 == 's' || guideDirAxis2 == 'n')
+    {
+      bool rev = false;
+      if (guideDirAxis2 == 's')
+        rev = true;
+      if (GetPierSide() >= PIER_WEST)
+        rev = !rev;
+      cli();
+      GuidingState = GuidingPulse;
+      guideTimerRateAxis2 = rev ? -guideTimerBaseRate : guideTimerBaseRate;
+      sei();
+    }
+  }
+  else
+  {
+    if (guideDirAxis2)
+      return;
+    guideDirAxis1 = iteration % 4 < 2 ? 'e' : 'w';
+    guideDurationLastAxis1 = micros();
+    guideDurationAxis1 = (long)duration * 3000000L;
+    cli();
+    GuidingState = GuidingPulse;
+    if (guideDirAxis1 == 'e')
+      guideTimerRateAxis1 = -guideTimerBaseRate;
+    else
+      guideTimerRateAxis1 = guideTimerBaseRate;
+    sei();
+  }
+  iteration++;
 }
 
 void checkST4()

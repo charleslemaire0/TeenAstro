@@ -21,7 +21,7 @@ void Guide()
     }
     if (guideDirAxis1 == 'w' || guideDirAxis1 == 'e')
     {
-      if (guideDurationAxis1 > 0 || GuidingState == GuidingRecenter ||GuidingState == GuidingST4)
+      if (guideDurationAxis1 > 0 || GuidingState == GuidingRecenter || GuidingState == GuidingST4)
       {
         if (!inbacklashAxis1)
         {

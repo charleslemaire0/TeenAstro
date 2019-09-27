@@ -46,7 +46,6 @@ private:
   uint8_t current_selection_L4 = 1;
   uint8_t current_timelocation = 1;
   uint8_t current_selection_SHC = 1;
-  uint8_t current_selection_speed = 5;
   uint8_t current_selection_guide = 3;
   uint8_t current_selection_FocuserConfig = 1;
   uint8_t current_selection_FocuserMotor = 1;

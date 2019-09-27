@@ -225,6 +225,15 @@ bool TeenAstroMountStatus::Parked()
 {
   return getParkState() == PRK_PARKED;
 }
+bool TeenAstroMountStatus::getGuidingRate(unsigned char &g)
+{
+  g = m_TempMount[4] - '0';
+  return g<10;
+}
+bool TeenAstroMountStatus::isSpiralRunning()
+{
+  return  m_TempMount[5] == '@';
+}
 bool TeenAstroMountStatus::isPulseGuiding()
 {
   return  m_TempMount[6] == '*';

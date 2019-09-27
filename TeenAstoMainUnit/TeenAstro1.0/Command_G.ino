@@ -533,19 +533,20 @@ void  Command_G()
     const char  *parkStatusCh = "pIPF";
     reply[2] = parkStatusCh[parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
     if (atHome) reply[3] = 'H';
-    //reply 4 is free
-    if (GuidingState != GuidingOFF)
+    reply[4] = '0' + activeGuideRate;
+    if (doSpiral) reply[5] = '@';
+    else if (GuidingState != GuidingOFF)
     {
       reply[5] = 'G';
-      if (GuidingState == GuidingPulse || GuidingState == GuidingST4) reply[6] = '*';
-      else if (GuidingState == GuidingRecenter) reply[6] = '+';
-      if (guideDirAxis1 == 'e') reply[7] = '>';
-      else if(guideDirAxis1 == 'w') reply[7] = '<';
-      else if (guideDirAxis1 == 'b') reply[7] = 'b';
-      if (guideDirAxis2 == 'n') reply[8] = '^';
-      else if (guideDirAxis2 == 's') reply[8] = '_';
-      else if (guideDirAxis2 == 'b') reply[8] = 'b';
     }
+    if (GuidingState == GuidingPulse || GuidingState == GuidingST4) reply[6] = '*';
+    else if (GuidingState == GuidingRecenter) reply[6] = '+';
+    if (guideDirAxis1 == 'e') reply[7] = '>';
+    else if (guideDirAxis1 == 'w') reply[7] = '<';
+    else if (guideDirAxis1 == 'b') reply[7] = 'b';
+    if (guideDirAxis2 == 'n') reply[8] = '^';
+    else if (guideDirAxis2 == 's') reply[8] = '_';
+    else if (guideDirAxis2 == 'b') reply[8] = 'b';
     if (faultAxis1 || faultAxis2) reply[9] = 'f';
     if (refraction)
       reply[10] = 'r';

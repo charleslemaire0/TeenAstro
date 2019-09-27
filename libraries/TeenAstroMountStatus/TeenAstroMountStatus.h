@@ -124,11 +124,12 @@ public:
   bool        getLstT0(double &T0);
   bool        getLat(double &lat);
   bool        getTrackingRate(double &r);
-
+  bool        getGuidingRate(unsigned char &g);
   bool validConnection() { return m_isValid; };
   bool atHome();
   bool Parking();
   bool Parked();
+  bool isSpiralRunning();
   bool isPulseGuiding();
   bool isGuidingN();
   bool isGuidingS();

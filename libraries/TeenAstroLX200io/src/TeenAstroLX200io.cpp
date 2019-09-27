@@ -84,7 +84,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     }
     if (command[1] == 'M') {
       if (strchr("ewnsg", command[2])) noResponse = true;
-      if (strchr("SAF?", command[2])) shortResponse = true;
+      if (strchr("SAF?@", command[2])) shortResponse = true;
     }
     if (command[1] == 'Q') {
       if (strchr("#ewns", command[2])) noResponse = true;
