@@ -192,8 +192,11 @@ void Command_M(bool &supress_frame)
   {
      //  :M@#   Start Spiral Search
      //         Return 1
-     doSpiral = true;
-     break;
+    if (movingTo || GuidingState != GuidingOFF)
+      commandError = true;
+    else
+      doSpiral = true;
+    break;
   }
   default:
     commandError = true;
