@@ -170,11 +170,11 @@ public:
       m_tmc5160->toff(4);
       m_tmc5160->hstrt(0);
       m_tmc5160->hend(2);
-      m_tmc5160->en_pwm_mode(false);
+      m_tmc5160->en_pwm_mode(true);
       m_tmc5160->pwm_freq(150);
       m_tmc5160->pwm_autoscale(true);
       m_tmc5160->pwm_grad(15);
-      m_tmc5160->TPWMTHRS(500);
+      m_tmc5160->TPWMTHRS(1000);
       setCurrent(Curr); // mA
       setMicrostep(Micros);
       if (EnPin > 0)
