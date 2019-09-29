@@ -281,19 +281,13 @@ void loop()
     }
 
     if (rtk.m_lst % 16 != 0)
-      do_fastalt_calc();
+      getHorApp(&currentAzm,&currentAlt);
 
     if (isAltAZ())
     {
       // figure out the current Alt/Azm tracking rates
       if (rtk.m_lst % 3 != 0)
         do_compensation_calc();
-    }
-    else
-    {
-      //// figure out the current refraction compensated tracking rate
-      //if (refraction && (rtk.m_lst % 3 != 0))
-      //  do_refractionRate_calc();
     }
     // check for fault signal, stop any slew or guide and turn tracking off
     if ((faultAxis1 || faultAxis2))
@@ -554,7 +548,8 @@ void initmount()
   fstepAxis1.fixed = doubleToFixed(StepsPerSecondAxis1 / 100.0);
 
   // Tracking and rate control
-  refraction_enable = isAltAZ() ? false : true;
+  refraction_enable = true;
+  refraction = refraction_enable;
   onTrack = false;
 
 }
@@ -592,9 +587,9 @@ void initTransformation(bool reset)
     else
     {
       double ha,dec;
-      HorToEqu(180,0,&ha,&dec);
+      HorTopoToEqu(180,0,&ha,&dec);
       alignment.addReferenceDeg(180,0,ha,dec);
-      HorToEqu(180,90,&ha,&dec);
+      HorTopoToEqu(180,90,&ha,&dec);
       alignment.addReferenceDeg(180,90,ha,dec);
       alignment.calculateThirdReference();
     }

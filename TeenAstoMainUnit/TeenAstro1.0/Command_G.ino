@@ -221,8 +221,8 @@ void Command_GX()
       break;  // Debug4, Dec refraction tracking rate
 
     case '5':
-      sprintf(reply, "%ld", (long)(ZenithTrackingRate() *
-        1000.0 * 1.00273790935));
+      //sprintf(reply, "%ld", (long)(ZenithTrackingRate() *
+      //  1000.0 * 1.00273790935));
       quietReply = true;
       break;  // Debug5, Alt RA refraction tracking rate
 
@@ -286,7 +286,7 @@ void  Command_G()
     //  :GA#   Get Telescope Altitude
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //         The current scope altitude
-    getHor(&f,&f1);
+    getHorApp(&f,&f1);
     if (!doubleToDms(reply, &f1, false, true))
       commandError = true;
     else
@@ -612,7 +612,7 @@ void  Command_G()
   case 'Z':
     //  :GZ#   Get telescope azimuth
     //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
-    getHor(&f,&f1);
+    getHorApp(&f,&f1);
     f = AzRange(f);
     if (!doubleToDms(reply, &f, true, false))
       commandError = true;

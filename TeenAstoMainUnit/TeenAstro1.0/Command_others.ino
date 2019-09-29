@@ -453,7 +453,7 @@ void Command_A()
   {
     double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
-    EquToHor(newTargetHA, newTargetDec, &Azm, &Alt);
+    EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt);
     cli();
     double Axis1 = posAxis1 / StepsPerDegreeAxis1;
     double Axis2 = posAxis2 / StepsPerDegreeAxis2;
@@ -469,7 +469,7 @@ void Command_A()
   {
     double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
-    EquToHor(newTargetHA, newTargetDec, &Azm, &Alt);
+    EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt);
     cli();
     double Axis1 = posAxis1 / StepsPerDegreeAxis1;
     double Axis2 = posAxis2 / StepsPerDegreeAxis2;
@@ -783,14 +783,14 @@ void Command_T()
     // solar tracking rate 60Hz 
     SetTrackingRate(TrackingSolar);
     sideralMode = SIDM_SUN;
-    refraction = false;
+    //refraction = false;
     quietReply = true;
     break;
   case 'L':
     // lunar tracking rate 57.9Hz
     SetTrackingRate(TrackingLunar);
     sideralMode = SIDM_MOON;
-    refraction = false;
+    //refraction = false;
     quietReply = true;
     break;
   case 'Q':
@@ -807,7 +807,7 @@ void Command_T()
   case 'K':
     // king tracking rate 60.136Hz
     SetTrackingRate(0.99953004401);
-    refraction = false;
+    //refraction = false;
     quietReply = true;
     break;
   case 'e':

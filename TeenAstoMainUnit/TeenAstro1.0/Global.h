@@ -25,7 +25,7 @@ MeridianFlip meridianFlip = FLIP_NEVER;
 Mount mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;
 
-boolean refraction_enable = false;
+boolean refraction_enable = true;
 boolean onTrack = false;
 
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
