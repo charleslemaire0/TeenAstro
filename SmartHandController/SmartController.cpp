@@ -1405,18 +1405,15 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
 bool SmartHandController::SelectStarAlign()
 {
   buttonPad.setMenuMode();
-  if (!cat_mgr.isInitialized())
+  double lat, LT0;
+  while (!ta_MountStatus.getLat(lat))
   {
-    double lat, LT0;
-    while (!ta_MountStatus.getLat(lat))
-    {
-    }
-    while (!ta_MountStatus.getLstT0(LT0))
-    {
-    }
-    cat_mgr.setLat(lat);
-    cat_mgr.setLstT0(LT0);
   }
+  while (!ta_MountStatus.getLstT0(LT0))
+  {
+  }
+  cat_mgr.setLat(lat);
+  cat_mgr.setLstT0(LT0);
   bool ok = menuCatalogAlign() != SmartHandController::MENU_RESULT::MR_CANCEL;
   buttonPad.setControlerMode();
   return ok;
