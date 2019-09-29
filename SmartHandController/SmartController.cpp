@@ -1419,8 +1419,6 @@ bool SmartHandController::SelectStarAlign()
   return ok;
 }
 
-
-
 void SmartHandController::menuDateAndTime()
 {
   const char *string_list_SettingsL2 = "Clock\nDate\nGNSS Time";
