@@ -698,7 +698,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     {
       TeenAstroMountStatus::ParkState curP = ta_MountStatus.getParkState();
       TeenAstroMountStatus::TrackState curT = ta_MountStatus.getTrackingState();
-      TeenAstroMountStatus::SideralMode currSM = ta_MountStatus.getSideralMode();
+      TeenAstroMountStatus::SiderealMode currSM = ta_MountStatus.getSiderealMode();
       TeenAstroMountStatus::PierState curPi = ta_MountStatus.getPierState();
       if (ta_MountStatus.isGNSSValid())
       {
@@ -881,15 +881,15 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     }
     else if (page == 2)
     {
-      if (ta_MountStatus.hasInfoUTC() && ta_MountStatus.hasInfoSideral())
+      if (ta_MountStatus.hasInfoUTC() && ta_MountStatus.hasInfoSidereal())
       {
         u8g2_uint_t y = 36;
         x = u8g2_GetDisplayWidth(u8g2);
         u8g2_DrawUTF8(u8g2, 0, y, "UTC");
         display->drawRA(x, y,ta_MountStatus.getUTC());
         y += line_height + 4;
-        u8g2_DrawUTF8(u8g2, 0, y, "Sideral");
-        display->drawRA(x, y, ta_MountStatus.getSideral());
+        u8g2_DrawUTF8(u8g2, 0, y, "Sidereal");
+        display->drawRA(x, y, ta_MountStatus.getSidereal());
       }
     }
     else if (page == 3)
@@ -1278,7 +1278,7 @@ void SmartHandController::menuTrack()
   TeenAstroMountStatus::TrackState currentstate = ta_MountStatus.getTrackingState();
   if (currentstate == TeenAstroMountStatus::TRK_ON)
   {
-    const char *string_list_tracking = "Stop Tracking\nSideral\nLunar\nSolar";
+    const char *string_list_tracking = "Stop Tracking\nSidereal\nLunar\nSolar";
     current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, "Tracking State", 0, string_list_tracking);
     switch (current_selection_L1)
     {
@@ -3002,12 +3002,12 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
     }
     else if (val == LX200GOPARK_FAILED)
     {
-      sprintf(text1, "Telecope");
+      sprintf(text1, "Telescope");
       sprintf(text2, "Can't Park");
     }
     else if (val == LX200GOHOME_FAILED)
     {
-      sprintf(text1, "Telecope");
+      sprintf(text1, "Telescope");
       sprintf(text2, "Can't go Home");
     }
     else

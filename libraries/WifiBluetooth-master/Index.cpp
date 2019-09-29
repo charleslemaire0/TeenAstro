@@ -68,7 +68,7 @@ void wifibluetooth::handleRoot() {
   data += temp;
   sendHtml(data);
   // LST
-  sprintf_P(temp,html_indexSidereal, ta_MountStatus.getSideral());
+  sprintf_P(temp,html_indexSidereal, ta_MountStatus.getSidereal());
   data += temp;
   sendHtml(data);
 
@@ -189,10 +189,10 @@ void wifibluetooth::handleRoot() {
   // Tracking rate
   sprintf(temp, "&nbsp;&nbsp;Tracking Rate: <font class=\"c\">%s</font>Hz<br />", ta_MountStatus.getTrackingRate());
   data += temp;
-  switch (ta_MountStatus.getSideralMode())
+  switch (ta_MountStatus.getSiderealMode())
   {
   case TeenAstroMountStatus::SID_STAR:
-    strcpy(temp2, "Sideral");
+    strcpy(temp2, "Sidereal");
     break;
   case TeenAstroMountStatus::SID_SUN:
     strcpy(temp2, "Solar");

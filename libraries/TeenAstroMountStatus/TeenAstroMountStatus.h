@@ -12,7 +12,7 @@ public:
   enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
   enum TrackState { TRK_OFF, TRK_ON, TRK_SLEWING, TRK_UNKNOW };
   enum RateCompensation { RC_NONE, RC_REFR_RA, RC_REFR_BOTH, RC_FULL_RA, RC_FULL_BOTH };
-  enum SideralMode { SID_STAR, SID_SUN, SID_MOON };
+  enum SiderealMode { SID_STAR, SID_SUN, SID_MOON };
   enum ParkState { PRK_UNPARKED, PRK_PARKED, PRK_FAILED, PRK_PARKING, PRK_UNKNOW };
   enum PierState { PIER_E, PIER_W, PIER_UNKNOW };
 private:
@@ -37,7 +37,7 @@ private:
   unsigned long   m_lastStateAzAlt;
   char            m_TempUTC[15] = "?";
   char            m_TempUTCdate[15] = "?";
-  char            m_TempSideral[15] = "?";
+  char            m_TempSidereal[15] = "?";
   unsigned long   m_lastStateTime;
   char            m_TempMount[17] = "?";
   unsigned long   m_lastStateMount;
@@ -56,7 +56,7 @@ private:
   bool            m_hasInfoAlt = false;
   bool            m_hasInfoUTC = false;
   bool            m_hasInfoUTCdate = false;
-  bool            m_hasInfoSideral = false;
+  bool            m_hasInfoSidereal = false;
   bool            m_hasInfoTrackingRate = false;
   bool            m_hasInfoMount = false;
   bool            m_hasInfoFocuser = false;
@@ -84,7 +84,7 @@ public:
   bool hasInfoAz() { return m_hasInfoAz; };
   bool hasInfoAlt() { return m_hasInfoAlt; };
   bool hasInfoUTC() { return m_hasInfoUTC; };
-  bool hasInfoSideral() { return m_hasInfoSideral; };
+  bool hasInfoSidereal() { return m_hasInfoSidereal; };
   bool hasInfoMount() { return m_hasInfoMount; };
   bool hasInfoFocuser() { return m_hasInfoFocuser; };
   bool hasInfoTrackingRate() { return m_hasInfoTrackingRate; };
@@ -100,7 +100,7 @@ public:
   const char* getAlt() { return  m_TempAlt; };
   const char* getUTC() { return m_TempUTC; };
   const char* getUTCdate() { return m_TempUTCdate; };
-  const char* getSideral() { return m_TempSideral; };
+  const char* getSidereal() { return m_TempSidereal; };
   const char* getMState() { return m_TempMount; };
   const char* getFocuser() { return m_TempFocuser; };
   const char* getTrackingRate() { return m_TempTrackingRate; };
@@ -117,7 +117,7 @@ public:
   Mount       getMount();
   ParkState   getParkState();
   TrackState  getTrackingState();
-  SideralMode getSideralMode();
+  SiderealMode getSiderealMode();
   PierState   getPierState();
   Errors      getError();
   bool        getLastErrorMessage(char message[]);

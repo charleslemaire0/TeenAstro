@@ -91,8 +91,8 @@ void TeenAstroMountStatus::updateTime()
   {
     m_hasInfoUTC = GetLX200(":GL#", m_TempUTC, sizeof(m_TempUTC)) == LX200VALUEGET;
     m_hasInfoUTCdate =  GetLX200(":GX81#", m_TempUTCdate, sizeof(m_TempUTCdate)) == LX200VALUEGET;
-    m_hasInfoSideral = GetLX200(":GS#", m_TempSideral, sizeof(m_TempSideral)) == LX200VALUEGET;
-    m_hasInfoUTC && m_hasInfoSideral  && m_hasInfoUTCdate ? m_lastStateTime = millis() : m_connectionFailure++;
+    m_hasInfoSidereal = GetLX200(":GS#", m_TempSidereal, sizeof(m_TempSidereal)) == LX200VALUEGET;
+    m_hasInfoUTC && m_hasInfoSidereal  && m_hasInfoUTCdate ? m_lastStateTime = millis() : m_connectionFailure++;
   }
 };
 void TeenAstroMountStatus::updateFocuser()
@@ -189,16 +189,16 @@ TeenAstroMountStatus::TrackState TeenAstroMountStatus::getTrackingState()
     return TRK_UNKNOW;
   }
 }
-TeenAstroMountStatus::SideralMode TeenAstroMountStatus::getSideralMode()
+TeenAstroMountStatus::SiderealMode TeenAstroMountStatus::getSiderealMode()
 {
   switch (m_TempMount[1])
   {
   case '2':
   case '1':
   case '0':
-    return  static_cast<SideralMode>(m_TempMount[1]-'0');
+    return  static_cast<SiderealMode>(m_TempMount[1]-'0');
   default:
-    return SideralMode::SID_STAR;
+    return SiderealMode::SID_STAR;
   }
 }
 bool TeenAstroMountStatus::getLstT0(double &T0)
