@@ -9,6 +9,7 @@
 
 #define EE_parkStatus       10
 #define EE_parkSaved        11
+#define EE_currentSite      12
 
 #define EE_pulseGuideRate   22
 #define EE_maxRate          23
@@ -42,15 +43,16 @@
 #define EE_siderealInterval 88
 #define EE_autoInitKey      96
 
-//transformation matrix
+#define EE_sites            100
 
-#define EE_T11              100
-#define EE_T12              104
-#define EE_T13              108
-#define EE_T21              112
-#define EE_T22              116
-#define EE_T23              120
-#define EE_T31              124
-#define EE_T32              128
-#define EE_T33              132
-#define EE_Tvalid           136
+//transformation matrix
+#define EE_T11              200
+#define EE_T12              204
+#define EE_T13              208
+#define EE_T21              212
+#define EE_T22              216
+#define EE_T23              220
+#define EE_T31              224
+#define EE_T32              228
+#define EE_T33              232
+#define EE_Tvalid           236
