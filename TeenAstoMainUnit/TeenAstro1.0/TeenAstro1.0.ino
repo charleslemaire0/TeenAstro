@@ -211,7 +211,7 @@ void setup()
 
 
   // get ready for serial communications
-  Serial1_Init(BAUD);
+  Serial1_Init(74880);
   Serial_Init(BAUD);                      // for Tiva TM4C the serial is redirected to serial5 in serial.ino file
   Serial2_Init(56000);
   //GNSS connection
