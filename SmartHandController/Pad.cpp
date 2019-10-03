@@ -392,6 +392,10 @@ int Pad::getWifiMode()
 {
   return m_wbt.getWifiMode();
 }
+const char* Pad::getPassword()
+{
+  return m_wbt.getPassword();
+}
 bool Pad::setWifiMode(int k)
 {
   return m_wbt.setWifiMode(k);

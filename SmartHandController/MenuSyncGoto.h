@@ -151,7 +151,6 @@ SmartHandController::MENU_RESULT SmartHandController::subMenuSyncGoto(char sync,
 
 SmartHandController::MENU_RESULT SmartHandController::menuCatalog(bool sync, int number)
 {
-  drawWait();
   cat_mgr.select(number);
   char title[20]="";
   setCatMgrFilters();
@@ -178,7 +177,6 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalog(bool sync, int
 
 SmartHandController::MENU_RESULT SmartHandController::menuCatalogAlign()
 {
-  drawWait();
   cat_mgr.select(0);
   char title[20] = "";
   cat_mgr.filtersClear();

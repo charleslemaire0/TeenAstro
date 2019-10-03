@@ -13,7 +13,6 @@ public:
   void manualMove(bool &moving);
   void drawIntro();
   void drawLoad();
-  void drawWait();
   void setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model);
 private:
   U8G2_EXT *display = NULL;
