@@ -1103,49 +1103,67 @@ void SmartHandController::menuTelAction()
     }
     else if (currentstate == TeenAstroMountStatus::PRK_UNPARKED)
     {
-      const char *string_list_main_UnParkedL0 = telescoplocked ? "Goto\nSync\nTracking\nSide of Pier\nUnlock" : "Goto\nSync\nAlign\nTracking\nSide of Pier\nLock\nSpiral";
+      const char *string_list_main_UnParkedL0 = telescoplocked ? "Unlock" : "Goto\nSync\nAlign\nTracking\nSide of Pier\nLock\nSpiral";
       current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, "Telescope Action", current_selection_L0, string_list_main_UnParkedL0);
       MENU_RESULT answer = MR_CANCEL;
-      switch (current_selection_L0)
+      if (telescoplocked)
       {
-      case 0:
-        exitMenu = true;
-        break;
-      case 1:
-        answer = menuSyncGoto(false);
-        answer == MR_OK || answer == MR_QUIT ? exitMenu =true: exitMenu =false;
-        break;
-      case 2:
-        answer = menuSyncGoto(true);
-        answer == MR_OK || answer == MR_QUIT ? exitMenu =true: exitMenu =false;
-        break;
-      case 3:
-        answer = menuAlignment();
-        answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
-        break;
-      case 4:
-        menuTrack();
-        break;
-      case 5:
-        menuPier();
-        break;
-      case 6:
-        telescoplocked = !telescoplocked;
-        exitMenu = true;
-        break;
-      case 7:
-        if (SetLX200(":M@#") == LX200VALUESET)
+        switch (current_selection_L0)
         {
-          DisplayMessage("Spiral Search", "Started", 500);
+        case 0:
+          exitMenu = true;
+          break;
+        case 1:
+          telescoplocked = false;
+          exitMenu = true;
+          break;
+        default:
+          break;
         }
-        else
+      }
+      else
+      {
+        switch (current_selection_L0)
         {
-          DisplayMessage("Command", "has Failed", 1000);
+        case 0:
+          exitMenu = true;
+          break;
+        case 1:
+          answer = menuSyncGoto(false);
+          answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
+          break;
+        case 2:
+          answer = menuSyncGoto(true);
+          answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
+          break;
+        case 3:
+          answer = menuAlignment();
+          answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
+          break;
+        case 4:
+          menuTrack();
+          break;
+        case 5:
+          menuPier();
+          break;
+        case 6:
+          telescoplocked = true;
+          exitMenu = true;
+          break;
+        case 7:
+          if (SetLX200(":M@#") == LX200VALUESET)
+          {
+            DisplayMessage("Spiral Search", "Started", 500);
+          }
+          else
+          {
+            DisplayMessage("Command", "has Failed", 1000);
+          }
+          exitMenu = true;
+          break;
+        default:
+          break;
         }
-        exitMenu = true;
-        break;
-      default:
-        break;
       }
     }
   }
@@ -2003,6 +2021,8 @@ void SmartHandController::menuUTCTime()
 
 void SmartHandController::menuFocuserAction()
 {
+  static  uint8_t current_selection = 1;
+  uint8_t choice;
   buttonPad.setMenuMode();
   int pos[10];
   int idx = 0;
@@ -2010,6 +2030,7 @@ void SmartHandController::menuFocuserAction()
   char temp[20] = { 0 };
   char txt[150] = { 0 };
   char out[20];
+  
   for (int k = 0; k < 10; k++)
   {
     sprintf(temp, ":Fx%d#", k);
@@ -2024,67 +2045,96 @@ void SmartHandController::menuFocuserAction()
     else
       continue;
   }
-  current_selection_L2 = 1;
   while (!exitMenu)
   {
     char menustxt[200] = {};
-    strcat(menustxt, txt);
-    focuserlocked ? strcat(menustxt, "Goto\nSync\nPark\nUnlock") : strcat(menustxt, "Goto\nSync\nPark\nLock");
-    const char *string_list_Focuser = &menustxt[0];
-    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Focuser Action", current_selection_L2, string_list_Focuser);
-    if (current_selection_L2 == 0)
+    if (focuserlocked)
     {
-      exitMenu = true;
-      break;
-    }
-    else if (current_selection_L2 - 1 < idx)
-    {
-      char cmd[15];
-      sprintf(cmd, ":Fg%d#", idxs[current_selection_L2-1]);
-      DisplayMessage("Goto", "Position", 1000);
-      SetLX200(cmd);
-      exitMenu = true;
+      strcat(menustxt, "Unlock");
     }
     else
     {
-      switch (current_selection_L2 - idx)
-      { 
-      case 1:
+      strcat(menustxt, txt);
+      strcat(menustxt, "Goto\nSync\nPark\nLock");
+    }
+
+    const char *string_list_Focuser = &menustxt[0];
+    choice = display->UserInterfaceSelectionList(&buttonPad, "Focuser Action", current_selection, string_list_Focuser);
+    if (choice!=0)
+    {
+      current_selection = choice;
+    }
+    if (focuserlocked)
+    {
+      switch (choice)
       {
-        if (display->UserInterfaceInputValueFloat(&buttonPad, "Goto Position", "", &FocuserPos, 0, 65535, 5, 0, ""))
-        {
-          char cmd[15];
-          sprintf(cmd, ":FG %05d#", (int)(FocuserPos));
-          DisplayMessage("Goto", "Position", 1000);
-          SetLX200(cmd);
-          exitMenu = true;
-        }
-        break;
-      }
-      case 2:
-      {
-        if (display->UserInterfaceInputValueFloat(&buttonPad, "Sync Position", "", &FocuserPos, 0, 65535, 5, 0, ""))
-        {
-          char cmd[15];
-          sprintf(cmd, ":FS %05d#", (int)(FocuserPos));
-          DisplayMessage("Synced", "at Position", 1000);
-          SetLX200(cmd);
-          exitMenu = true;
-        }
-        break;
-      }
-      case 3:
-      {
-        SetLX200(":FP#");
+      case 0:
         exitMenu = true;
         break;
-      }
-      case 4:
-        focuserlocked = !focuserlocked;
+      case 1:
+        focuserlocked = false;
         exitMenu = true;
         break;
       default:
         break;
+      }
+    }
+    else
+    {
+      if (choice == 0)
+      {
+        exitMenu = true;
+        break;
+      }
+      else if (choice - 1 < idx)
+      {
+        char cmd[15];
+        sprintf(cmd, ":Fg%d#", idxs[choice - 1]);
+        DisplayMessage("Goto", "Position", 1000);
+        SetLX200(cmd);
+        exitMenu = true;
+      }
+      else
+      {
+        switch (choice - idx)
+        {
+        case 1:
+        {
+          if (display->UserInterfaceInputValueFloat(&buttonPad, "Goto Position", "", &FocuserPos, 0, 65535, 5, 0, ""))
+          {
+            char cmd[15];
+            sprintf(cmd, ":FG %05d#", (int)(FocuserPos));
+            DisplayMessage("Goto", "Position", 1000);
+            SetLX200(cmd);
+            exitMenu = true;
+          }
+          break;
+        }
+        case 2:
+        {
+          if (display->UserInterfaceInputValueFloat(&buttonPad, "Sync Position", "", &FocuserPos, 0, 65535, 5, 0, ""))
+          {
+            char cmd[15];
+            sprintf(cmd, ":FS %05d#", (int)(FocuserPos));
+            DisplayMessage("Synced", "at Position", 1000);
+            SetLX200(cmd);
+            exitMenu = true;
+          }
+          break;
+        }
+        case 3:
+        {
+          SetLX200(":FP#");
+          exitMenu = true;
+          break;
+        }
+        case 4:
+          focuserlocked = true;
+          exitMenu = true;
+          break;
+        default:
+          break;
+        }
       }
     }
   }
