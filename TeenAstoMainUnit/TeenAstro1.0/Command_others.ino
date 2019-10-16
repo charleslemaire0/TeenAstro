@@ -462,6 +462,10 @@ void Command_A()
     if (alignment.getRefs()==2)
     {
       alignment.calculateThirdReference();
+      cli();
+      targetAxis1.part.m = posAxis1;
+      targetAxis2.part.m = posAxis2;
+      sei();
     }
     break;
   }
@@ -474,7 +478,14 @@ void Command_A()
     double Axis1 = posAxis1 / StepsPerDegreeAxis1;
     double Axis2 = posAxis2 / StepsPerDegreeAxis2;
     sei()
-      alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
+    alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
+    if (alignment.isReady)
+    {
+      cli();
+      targetAxis1.part.m = posAxis1;
+      targetAxis2.part.m = posAxis2;
+      sei();
+    }
     break;
   }
   default:
