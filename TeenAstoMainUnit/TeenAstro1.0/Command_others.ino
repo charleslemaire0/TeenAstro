@@ -479,7 +479,7 @@ void Command_A()
     double Axis2 = posAxis2 / StepsPerDegreeAxis2;
     sei()
     alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
-    if (alignment.isReady)
+    if (alignment.isReady())
     {
       cli();
       targetAxis1.part.m = posAxis1;
