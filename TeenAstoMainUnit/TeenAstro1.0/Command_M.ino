@@ -157,6 +157,35 @@ void Command_M(bool &supress_frame)
     supress_frame = true;
     break;
   }
+  case 'U':
+  {
+        //  :MU#   Goto the User Defined Target Object
+        //         Returns:
+        //         0=Goto is Possible
+        //         1=Object below horizon    Outside limits, below the Horizon limit
+        //         2=No object selected      Failure to resolve coordinates
+        //         4=Position unreachable    Not unparked
+        //         5=Busy                    Goto already active
+        //         6=Outside limits          Outside limits, above the Zenith limit
+        //         7=Guiding
+        //         8=has a an Error
+    PierSide targetPierSide = GetPierSide();
+    newTargetRA = (double)EEPROM_readFloat(EE_RA);
+    newTargetDec = (double)EEPROM_readFloat(EE_DEC);
+    double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+    i = goToEqu(newTargetHA, newTargetDec, targetPierSide);
+    if (i == 0)
+    {
+      sideralTracking = true;
+      lastSetTrakingEnable = millis();
+      atHome = false;
+    }
+    reply[0] = i + '0';
+    reply[1] = 0;
+    quietReply = true;
+    supress_frame = true;
+    break;
+  }
   case '?':
   {
     //  :M?#   Predict side of Pier for the Target Object

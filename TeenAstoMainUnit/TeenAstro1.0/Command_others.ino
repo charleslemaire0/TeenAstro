@@ -555,6 +555,16 @@ void Command_C()
       i = syncEqu(newTargetHA, newTargetDec, targetPierSide);
       break;
     }
+    case 'U':
+    {
+      // :CU# sync with the User Defined RA DEC
+      PierSide targetPierSide = GetPierSide();
+      newTargetRA = (double)EEPROM_readFloat(EE_RA);
+      newTargetDec = (double)EEPROM_readFloat(EE_DEC);
+      double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+      i = syncEqu(newTargetHA, newTargetDec, targetPierSide);
+      break;
+    }
     case 'A':
       i = syncAzAlt(newTargetAzm, newTargetAlt, targetPierSide);
       break;

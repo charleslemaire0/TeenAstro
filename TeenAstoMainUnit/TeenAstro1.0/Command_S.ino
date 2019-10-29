@@ -209,7 +209,6 @@ void Command_S(Command& process_command)
     break;
   }
   case 'n':
-
     localSite.setSiteName(parameter);
     break;
   case 'o':
@@ -234,7 +233,6 @@ void Command_S(Command& process_command)
       commandError = true;
   }
   break;
-
   case 'r':
     //  :SrHH:MM.T#
     //  :SrHH:MM:SS#
@@ -299,7 +297,15 @@ void Command_S(Command& process_command)
       commandError = true;
   }
   break;
-
+  case 'U':
+    // :SU# store current User defined Position
+    getEqu(&f, &f1, false);
+    f /= 15.0;
+    _ra = f;
+    _dec = f1;
+    EEPROM_writeFloat(EE_RA, (float)_ra);
+    EEPROM_writeFloat(EE_RA, (float)_dec);
+    break;
   case 'X':
     //  :SXnn,VVVVVV...#   Set OnStep value
     //          Return: 0 on failure

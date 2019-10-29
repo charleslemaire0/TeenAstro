@@ -11,6 +11,10 @@
 #define EE_parkSaved        11
 #define EE_currentSite      12
 
+// user defined RA DEC 
+#define EE_RA               14
+#define EE_DEC              18
+
 #define EE_pulseGuideRate   22
 #define EE_maxRate          23
 #define EE_degAcc           25
