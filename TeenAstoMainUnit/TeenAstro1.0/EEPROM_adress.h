@@ -12,8 +12,8 @@
 #define EE_currentSite      12
 
 // user defined RA DEC 
-#define EE_RA               14
-#define EE_DEC              18
+#define EE_RA               14 // in degree
+#define EE_DEC              18 // in degree
 
 #define EE_pulseGuideRate   22
 #define EE_maxRate          23

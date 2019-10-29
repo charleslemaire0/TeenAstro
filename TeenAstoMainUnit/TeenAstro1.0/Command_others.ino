@@ -538,7 +538,7 @@ void Command_C()
 {
   if ((parkStatus == PRK_UNPARKED) &&
       !movingTo &&
-      ( command[1] == 'A' || command[1] == 'M' || command[1] == 'S'))
+      ( command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
   {
     PierSide targetPierSide = GetPierSide();
     if (newTargetPierSide != PIER_NOTVALID)
@@ -558,7 +558,6 @@ void Command_C()
     case 'U':
     {
       // :CU# sync with the User Defined RA DEC
-      PierSide targetPierSide = GetPierSide();
       newTargetRA = (double)EEPROM_readFloat(EE_RA);
       newTargetDec = (double)EEPROM_readFloat(EE_DEC);
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
@@ -570,7 +569,7 @@ void Command_C()
       break;
     }
     i = 0;
-    if (command[1] == 'M' || command[1] == 'A')
+    if (command[1] == 'M' || command[1] == 'A' || command[1] == 'U')
     {
       if (i == 0) strcpy(reply, "N/A");
       if (i > 0) { reply[0] = 'E'; reply[1] = '0' + i; reply[2] = 0; }
