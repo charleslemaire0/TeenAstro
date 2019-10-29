@@ -5,6 +5,8 @@
 
 #define LX200sbuff 20
 #define LX200lbuff 50
+
+
 // integer numeric conversion with error checking
 boolean atoi2(char *a, int *i) {
   char *conv_end;
@@ -373,11 +375,22 @@ void SetSiteLX200(int& value)
   Ser.flush();
 }
 
-LX200RETURN Move2TargetLX200(bool RaDec)
+LX200RETURN Move2TargetLX200(TARGETTYPE target)
 {
   char out[LX200sbuff];
-  int val = RaDec ? readLX200Bytes(":MS#", out, sizeof(out), TIMEOUT_CMD)
-                  : readLX200Bytes(":MA#", out, sizeof(out), TIMEOUT_CMD);
+  int val;
+
+  switch (target)
+  {
+  case T_RADEC:
+    val = readLX200Bytes(":MS#", out, sizeof(out), TIMEOUT_CMD);
+    break;
+  case T_AZALT:
+    val = readLX200Bytes(":MA#", out, sizeof(out), TIMEOUT_CMD);
+    break;
+  case T_USERRADEC:
+    val = readLX200Bytes(":MU#", out, sizeof(out), TIMEOUT_CMD);
+  }
   LX200RETURN response;
 
   switch (out[0]-'0')
@@ -494,12 +507,33 @@ LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, b
     }
     else
     {
-      return Move2TargetLX200(true);
+      return Move2TargetLX200(T_RADEC);
     }
   }
   else
   {
     return LX200SETTARGETFAILED;
+  }
+}
+
+LX200RETURN SyncGotoUserLX200(bool sync)
+{
+  if (sync)
+  {
+    char out[LX200sbuff];
+    if (GetLX200(":CU#", out, LX200sbuff))
+    {
+      if (strcmp(out, "N/A") == 0)
+        return LX200SYNCED;
+      else
+        return LX200_ERR_SYNC;
+    }
+    else
+      return LX200_ERR_SYNC;
+  }
+  else
+  {
+    return Move2TargetLX200(T_USERRADEC);
   }
 }
 
@@ -522,7 +556,7 @@ LX200RETURN SyncGotoLX200AltAz(bool sync, uint16_t& vz1, uint8_t& vz2, uint8_t& 
     }
     else
     {
-      return Move2TargetLX200(false);
+      return Move2TargetLX200(T_AZALT);
     }
   }
   else
@@ -542,6 +576,7 @@ LX200RETURN SyncGotoLX200(bool sync, float &Ra, float &Dec)
   getdms(Decs, ispos, vd1, vd2, vd3);
   return SyncGotoLX200(sync, vr1, vr2, vr3, ispos, vd1, vd2, vd3);
 }
+
 
 LX200RETURN SyncGotoLX200AltAz(bool sync, float &Az, float &Alt)
 {

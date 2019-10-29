@@ -1103,7 +1103,7 @@ void SmartHandController::menuTelAction()
     }
     else if (currentstate == TeenAstroMountStatus::PRK_UNPARKED)
     {
-      const char *string_list_main_UnParkedL0 = telescoplocked ? "Unlock" : "Goto\nSync\nAlign\nTracking\nSide of Pier\nLock\nSpiral";
+      const char *string_list_main_UnParkedL0 = telescoplocked ? "Unlock" : "Goto\nSync\nAlign\nTracking\nSide of Pier\nSave RADEC\nLock\nSpiral";
       current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, "Telescope Action", current_selection_L0, string_list_main_UnParkedL0);
       MENU_RESULT answer = MR_CANCEL;
       if (telescoplocked)
@@ -1147,10 +1147,20 @@ void SmartHandController::menuTelAction()
           menuPier();
           break;
         case 6:
+          if (SetLX200(":SU#") == LX200VALUESET)
+          {
+            DisplayMessage("RA DEC", "Stored", 500);
+          }
+          else
+          {
+            DisplayMessage("Command", "has Failed", 1000);
+          }
+          break;
+        case 7:
           telescoplocked = true;
           exitMenu = true;
           break;
-        case 7:
+        case 8:
           if (SetLX200(":M@#") == LX200VALUESET)
           {
             DisplayMessage("Spiral Search", "Started", 500);

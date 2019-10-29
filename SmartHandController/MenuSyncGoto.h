@@ -12,7 +12,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
 
   while (true) {
     // build the list of star/dso catalogs
-    const char* string_list_gotoL1="Catalogs\nSolar System\nCoordinates\nHome\nPark";
+    const char* string_list_gotoL1="Catalogs\nSolar System\nCoordinates\nUser Defined\nHome\nPark";
     int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync" : "Goto", current_selection, string_list_gotoL1);
     if (selection == 0) return MR_CANCEL;
     current_selection=selection;
@@ -26,10 +26,13 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
       case 3:
         if (menuCoordinates(sync)==MR_QUIT) return MR_QUIT;
         break;
-      case 4:      
+      case 4:
+        if ( DisplayMessageLX200(SyncGotoUserLX200(sync), false)) return MR_QUIT;
+        break;
+      case 5:      
         if ( DisplayMessageLX200(SyncGoHomeLX200(sync), false)) return MR_QUIT;
         break;
-      case 5:
+      case 6:
         if ( DisplayMessageLX200(SyncGoParkLX200(sync), false)) return MR_QUIT;
         break;
     }
