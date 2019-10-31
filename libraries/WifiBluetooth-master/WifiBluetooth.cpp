@@ -502,6 +502,11 @@ void wifibluetooth::getIP(uint8_t* ip)
   ip[3] = local[3];
 }
 
+const char* wifibluetooth::getPassword()
+{
+   return &masterPassword[0];
+}
+
 int wifibluetooth::getWifiMode()
 {
   return activeWifiMode;

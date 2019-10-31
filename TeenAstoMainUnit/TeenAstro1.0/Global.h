@@ -1,10 +1,11 @@
 #pragma once
+
 #include "Config.TeenAstro.h"
 #include "TelTimer.h"
 #include "Site.h"
 #include "FPoint.h"
 
-
+CoordConv alignment;
 timerLoop tlp;
 DateTimeTimers  rtk;
 // Location ----------------------------------------------------------------------------------------------------------------
@@ -20,17 +21,16 @@ ParkState parkStatus = PRK_UNPARKED;
 boolean parkSaved = false;
 boolean atHome = true;
 boolean homeMount = false;
-PierSide pierSide = PIER_EAST;
 MeridianFlip meridianFlip = FLIP_NEVER;
 Mount mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;
 
-boolean refraction_enable = false;
+boolean refraction_enable = true;
 boolean onTrack = false;
 
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
-long                    siderealInterval = 15956313L;
-const long              masterSiderealInterval = 15956313L;
+double                  siderealInterval = 15956313.0;
+const double            masterSiderealInterval = 15956313.0;
 
 // default = 15956313 ticks per sidereal hundredth second, where a tick is 1/16 uS
 // this is stored in EEPROM which is updated/adjusted with the ":T+#" and ":T-#" commands
@@ -120,13 +120,11 @@ void                    TIMER4_COMPA_vect(void);
 PierSide newTargetPierSide = PIER_NOTVALID;
 
 volatile long       posAxis1;    // hour angle position in steps
-double              deltaSyncAxis1;
 volatile long       deltaTargetAxis1;
 volatile long       startAxis1;  // hour angle of goto start position in steps
 volatile fixed_t    targetAxis1; // hour angle of goto end   position in steps
 volatile byte       dirAxis1;    // stepping direction + or -
 double              newTargetRA; // holds the RA for goTos
-fixed_t             origTargetAxis1;
 #if defined(AXIS1_MODE) && defined(AXIS1_MODE_GOTO)
 volatile long       stepAxis1 = 1;
 #else
@@ -134,19 +132,18 @@ volatile long       stepAxis1 = 1;
 #endif
 
 volatile long       posAxis2;     // declination position in steps
-double              deltaSyncAxis2;
 volatile long       deltaTargetAxis2;
 volatile long       startAxis2;   // declination of goto start position in steps
 volatile fixed_t    targetAxis2;  // declination of goto end   position in steps
 volatile byte       dirAxis2;     // stepping direction + or -
 double              newTargetDec; // holds the Dec for goTos
-long                origTargetAxis2;
 #if defined(AXIS2_MODE) && defined(AXIS2_MODE_GOTO)
 volatile long       stepAxis2 = 1;
 #else
 #define stepAxis2   1
 #endif
 double              newTargetAlt = 0.0, newTargetAzm = 0.0; // holds the altitude and azmiuth for slews
+double              currentAzm = 0;                         // the current Azimuth
 double              currentAlt = 45;                        // the current altitude
 int                 minAlt;                                 // the minimum altitude, in degrees, for goTo's (so we don't try to point too low)
 int                 maxAlt;                                 // the maximum altitude, in degrees, for goTo's (to keep the telescope tube away from the mount/tripod)
@@ -166,7 +163,7 @@ enum Errors
   ERR_MOTOR_FAULT,
   ERR_ALT,
   ERR_LIMIT_SENSE,
-  ERR_DEC,
+  ERR_AXIS2,
   ERR_AZM,
   ERR_UNDER_POLE,
   ERR_MERIDIAN,
@@ -194,6 +191,7 @@ enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter };
 
 volatile bool movingTo = false;
 bool lastSideralTracking = false;
+bool doSpiral = false;
 volatile bool sideralTracking = false;
 volatile SID_Mode sideralMode = SIDM_STAR;
 volatile Guiding GuidingState = GuidingOFF;

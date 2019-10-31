@@ -142,7 +142,8 @@ public:
   static void setup();
   static void update();
   static void getIP(uint8_t* ip);
-  static int getWifiMode();
+  static int  getWifiMode();
+  static const char* getPassword();
   static bool setWifiMode(int k);
   static void getStationName(int k, char* SSID);
 };

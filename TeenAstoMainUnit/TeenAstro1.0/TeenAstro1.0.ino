@@ -32,6 +32,7 @@
  *
  */
 
+#include <TeenAstroCoordConv.hpp>
 #include <TinyGPS++.h>
 #include <TeenAstroStepper.h>
 #include <Time.h>
@@ -42,10 +43,10 @@
 #include "Global.h"
  // Use Config.h to configure OnStep to your requirements
  // help stepper driver configuration
-#include "Align.h"
+
 #include "Command.h"
 #include "Config.TeenAstro.h"
-#include "eeprom.h"
+#include "EEPROM.h"
 #include "EEPROM_adress.h"
 
 
@@ -54,7 +55,7 @@
 #define FirmwareDate    __DATE__
 #define FirmwareNumber  "1.1"
 #define FirmwareName    "TeenAstro"
-#define FirmwareTime    "12:00:00"
+#define FirmwareTime    "00:00:00"
 
 
 // forces initialialization of a host of settings in EEPROM. OnStep does this automatically, most likely, you will want to leave this alone
@@ -115,15 +116,18 @@ void setup()
     // 1/16uS resolution timer, ticks per sidereal second
     EEPROM_writeLong(EE_siderealInterval, siderealInterval);
 
+    // the transformation is not valid
+    EEPROM.write(EE_Tvalid, 0);
+
     // finally, stop the init from happening again
     EEPROM_writeLong(EE_autoInitKey, initKey);
 
-    // clear the pointing model
-    saveAlignModel();
   }
-
+  // get the site information from EEPROM
+  localSite.ReadCurrentSiteDefinition();
+  
   initmount();
-  initmotor();
+  initmotor(false);
 
   // init the date and time January 1, 2013. 0 hours LMT
   setSyncProvider(getTeensy3Time);
@@ -207,7 +211,7 @@ void setup()
 
 
   // get ready for serial communications
-  Serial1_Init(BAUD);
+  Serial1_Init(74880);
   Serial_Init(BAUD);                      // for Tiva TM4C the serial is redirected to serial5 in serial.ino file
   Serial2_Init(56000);
   //GNSS connection
@@ -215,13 +219,7 @@ void setup()
   Serial3.begin(9600);
 #endif
 
-
-  // get the site information, if a GPS were attached we would use that here instead
-  localSite.ReadCurrentSiteDefinition();
   rtk.resetLongitude(*localSite.longitude());
-  initCelestialPole();
-  initLat();
-
   // get the Park status
   if (!iniAtPark())
   {
@@ -253,6 +251,7 @@ void loop()
   if (!movingTo)
   {
     checkST4();
+    CheckSpiral();
     guideAxis1.fixed = 0;
     Guide();
   }
@@ -261,11 +260,9 @@ void loop()
 
   if (rtk.updatesiderealTimer())
   {
-    // SIDEREAL TRACKING -------------------------------------------------------------------------------
-    // only active while sidereal tracking with a guide rate that makes sense
-    if (sideralTracking && !movingTo)
+    // update Target position
+    if (sideralTracking)
     {
-      // apply the Tracking, Guiding
       cli();
       if (!inbacklashAxis1)
       {
@@ -277,38 +274,20 @@ void loop()
       }
       sei();
     }
-    // SIDEREAL TRACKING DURING GOTOS ------------------------------------------------------------------
-    // keeps the target where it's supposed to be while doing gotos
-    else if (movingTo)
+    // Goto Target
+    if (movingTo)
     {
-      if (sideralTracking)
-      {
-        // origTargetAxisn isn't used in Alt/Azm mode since meridian flips never happen
-        origTargetAxis1.fixed += fstepAxis1.fixed;
-        // don't advance the target during meridian flips
-        if ((pierSide == PIER_EAST) || (pierSide == PIER_WEST))
-        {
-          cli();
-          targetAxis1.fixed += fstepAxis1.fixed;
-          targetAxis2.fixed += fstepAxis2.fixed;
-          sei();
-        }
-      }
       moveTo();
     }
-    // figure out the current Altitude
-    do_fastalt_calc();
+
+    if (rtk.m_lst % 16 != 0)
+      getHorApp(&currentAzm,&currentAlt);
+
     if (isAltAZ())
     {
       // figure out the current Alt/Azm tracking rates
       if (rtk.m_lst % 3 != 0)
-        do_altAzmRate_calc();
-    }
-    else
-    {
-      // figure out the current refraction compensated tracking rate
-      if (refraction && (rtk.m_lst % 3 != 0))
-        do_refractionRate_calc();
+        do_compensation_calc();
     }
     // check for fault signal, stop any slew or guide and turn tracking off
     if ((faultAxis1 || faultAxis2))
@@ -367,7 +346,6 @@ void loop()
     // adjust tracking rate for Alt/Azm mounts
     // adjust tracking rate for refraction
     SetDeltaTrackingRate();
-    CheckPierSide();
     SafetyCheck(forceTracking);
   }
   else
@@ -384,16 +362,7 @@ void loop()
   }
 }
 
-void CheckPierSide()
-{
-  cli(); long pos = posAxis2; sei();
-  if (pos == -quaterRotAxis2 || pos == quaterRotAxis2)
-  {
-    return;
-  }
-  bool isEast = -quaterRotAxis2 < pos && pos < quaterRotAxis2;
-  pierSide = isEast ? PIER_EAST : PIER_WEST;
-}
+
 
 // safety checks,
 // keeps mount from tracking past the meridian limit, past the underPoleLimit,
@@ -401,22 +370,59 @@ void CheckPierSide()
 void SafetyCheck(const bool forceTracking)
 {
   // basic check to see if we're not at home
+  PierSide currentSide = GetPierSide();
+  long axis1, axis2;
+  setAtMount(axis1, axis2);
 
   if (atHome)
     atHome = !sideralTracking;
-
-  if (meridianFlip != FLIP_NEVER)
+        // check for exceeding MinDec for Eq. Fork
+  if (!isAltAZ())
   {
-    double HA, Dec;
-    GeoAlign.GetInstr(&HA, &Dec);
-    if (!checkPole(HA, pierSide, CHECKMODE_TRACKING))
+    if (!checkAxis2LimitEQ(axis2))
     {
-      if ((dirAxis1 == 1 && pierSide == PIER_EAST) || (dirAxis1 == 0 && pierSide == PIER_WEST))
+      lastError = ERR_AXIS2;
+      if (movingTo)
+        abortSlew = true;
+      else if (!forceTracking)
+        sideralTracking = false;
+    }
+    else if (lastError == ERR_AXIS2)
+    {
+      lastError = ERR_NONE;
+    }
+    if (mountType == MOUNT_TYPE_GEM)
+    {
+      if (!checkMeridian(axis1, axis2, CHECKMODE_TRACKING))
+      {
+        if ((dirAxis1 == 1 && currentSide == PIER_WEST) || (dirAxis1 == 0 && currentSide == PIER_EAST))
+        {
+          lastError = ERR_MERIDIAN;
+          if (movingTo)
+          {
+            abortSlew = true;
+          }
+          if (currentSide >= PIER_WEST && !forceTracking)
+            sideralTracking = false;
+        }
+        else if (lastError == ERR_MERIDIAN)
+        {
+          lastError = ERR_NONE;
+        }
+      }
+      else if (lastError == ERR_MERIDIAN)
+      {
+        lastError = ERR_NONE;
+      }
+    }
+    if (!checkPole(axis1, CHECKMODE_TRACKING))
+    {
+      if ((dirAxis1 == 1 && currentSide == PIER_EAST) || (dirAxis1 == 0 && currentSide == PIER_WEST))
       {
         lastError = ERR_UNDER_POLE;
         if (movingTo)
           abortSlew = true;
-        if (pierSide == PIER_EAST && !forceTracking)
+        if (currentSide == PIER_EAST && !forceTracking)
           sideralTracking = false;
       }
       else if (lastError == ERR_UNDER_POLE)
@@ -428,81 +434,34 @@ void SafetyCheck(const bool forceTracking)
     {
       lastError = ERR_NONE;
     }
-
-    if (!checkMeridian(HA, pierSide, CHECKMODE_TRACKING))
-    {
-      if ((dirAxis1 == 1 && pierSide == PIER_WEST) || (dirAxis1 == 0 && pierSide == PIER_EAST))
-      {
-        lastError = ERR_MERIDIAN;
-        if (movingTo)
-        {
-          abortSlew = true;
-        }
-        if (pierSide >= PIER_WEST && !forceTracking)
-          sideralTracking = false;
-      }
-      else if (lastError == ERR_MERIDIAN)
-      {
-        lastError = ERR_NONE;
-      }
-    }
-    else if (lastError == ERR_MERIDIAN)
-    {
-      lastError = ERR_NONE;
-    }
   }
   else
   {
-    if (!isAltAZ())
+    if (!checkAxis2LimitAZALT(axis2))
     {
-
-      // when Fork mounted, ignore pierSide and just stop the mount if it passes the underPoleLimit
-      double HA, Dec;
-      GeoAlign.GetInstr(&HA, &Dec);
-      double underPoleLimit = movingTo ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;  
-      if (HA > underPoleLimit * 15.)
-      {
-        lastError = ERR_UNDER_POLE;
-        if (movingTo)
-          abortSlew = true;
-        else if (!forceTracking)
-          sideralTracking = false;
-      }
-      else if (lastError == ERR_UNDER_POLE)
-      {
-        lastError = ERR_NONE;
-      }
+      lastError = ERR_AXIS2;
+      if (movingTo)
+        abortSlew = true;
+      else if (!forceTracking)
+        sideralTracking = false;
     }
-    else
+    else if (lastError == ERR_AXIS2)
     {
-      // when Alt/Azm mounted, just stop the mount if it passes MaxAzm
-      if (!checkAzimuth())
-      {
-        lastError = ERR_AZM;
-        if (movingTo)
-          abortSlew = true;
-        else if (!forceTracking)
-          sideralTracking = false;
-      }
-      else if (lastError == ERR_AZM)
-      {
-        lastError = ERR_NONE;
-      }
+      lastError = ERR_NONE;
     }
-  }
-
-  // check for exceeding MinDec for Eq. Fork
-  if (!checkDeclinatioLimit())
-  {
-    lastError = ERR_DEC;
-    if (movingTo)
-      abortSlew = true;
-    else if (!forceTracking)
-      sideralTracking = false;
-  }
-  else if (lastError == ERR_DEC)
-  {
-    lastError = ERR_NONE;
+    // when Alt/Azm mounted, just stop the mount if it passes MaxAzm
+    if (!checkAxis1LimitAZALT(axis1))
+    {
+      lastError = ERR_AZM;
+      if (movingTo)
+        abortSlew = true;
+      else if (!forceTracking)
+        sideralTracking = false;
+    }
+    else if (lastError == ERR_AZM)
+    {
+      lastError = ERR_NONE;
+    }
   }
 }
 
@@ -582,34 +541,67 @@ void initmount()
   fstepAxis1.fixed = 0;
   fstepAxis2.fixed = 0;
 
-  origTargetAxis1.fixed = 0;
   targetAxis1.part.m = quaterRotAxis1;
   targetAxis1.part.f = 0;
   targetAxis2.part.m = quaterRotAxis2;
   targetAxis2.part.f = 0;
   fstepAxis1.fixed = doubleToFixed(StepsPerSecondAxis1 / 100.0);
 
-  // initialize alignment
-  if (mountType == MOUNT_TYPE_ALTAZM)
-  {
-    Align.init();
-  }
-
-  GeoAlign.init();
-
   // Tracking and rate control
-  refraction_enable = isAltAZ() ? false : true;
+  refraction_enable = true;
+  refraction = refraction_enable;
   onTrack = false;
 
+}
+
+void initTransformation(bool reset)
+{
+  alignment.clean();
+  byte TvalidFromEEPROM = EEPROM.read(EE_Tvalid);
+  if (reset)
+  {
+    EEPROM.write(EE_Tvalid, 0);
+    TvalidFromEEPROM = 0;
+  }
+  if (TvalidFromEEPROM != 0)
+  {
+    float t11 = EEPROM_readFloat(EE_T11);
+    float t12 = EEPROM_readFloat(EE_T12);
+    float t13 = EEPROM_readFloat(EE_T13);
+    float t21 = EEPROM_readFloat(EE_T21);
+    float t22 = EEPROM_readFloat(EE_T22);
+    float t23 = EEPROM_readFloat(EE_T23);
+    float t31 = EEPROM_readFloat(EE_T31);
+    float t32 = EEPROM_readFloat(EE_T32);
+    float t33 = EEPROM_readFloat(EE_T33);
+    alignment.setT(t11,t12,t13,t21,t22,t23,t31,t32,t33);
+  }
+  else
+  {
+    if (isAltAZ())
+    {
+      alignment.addReferenceDeg(0,0,180,0);
+      alignment.addReferenceDeg(0,90,180,90);
+      alignment.calculateThirdReference();
+    }
+    else
+    {
+      double ha,dec;
+      HorTopoToEqu(180,0,&ha,&dec);
+      alignment.addReferenceDeg(180,0,ha,dec);
+      HorTopoToEqu(180,90,&ha,&dec);
+      alignment.addReferenceDeg(180,90,ha,dec);
+      alignment.calculateThirdReference();
+    }
+  }
 }
 
 void initCelestialPole()
 {
   if (isAltAZ())
   {
-    //double lat = *localSite.latitude();
-    poleStepAxis2 = quaterRotAxis2;
     poleStepAxis1 = (*localSite.latitude() < 0) ? halfRotAxis1 : 0L;
+    poleStepAxis2 = quaterRotAxis2;
     homeStepAxis1 = poleStepAxis1;
     homeStepAxis2 = 0;
   }
@@ -620,17 +612,13 @@ void initCelestialPole()
     homeStepAxis1 = poleStepAxis1;
     homeStepAxis2 = poleStepAxis2;
   }
-}
-
-void initLat()
-{
   HADir = *localSite.latitude() > 0 ? HADirNCPInit : HADirSCPInit;
 }
 
-void initmotor()
+void initmotor(bool deleteAlignment)
 {
   readEEPROMmotor();
-  updateRatios();
+  updateRatios(deleteAlignment);
   motorAxis1.initMotor(static_cast<Motor::Motor_Driver>(AxisDriver),StepRotAxis1, Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin, (unsigned int)LowCurrAxis1 * 10, MicroAxis1);
   motorAxis2.initMotor(static_cast<Motor::Motor_Driver>(AxisDriver),StepRotAxis2, Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin, (unsigned int)LowCurrAxis2 * 10, MicroAxis2);
 }
@@ -679,7 +667,7 @@ void writeDefaultEEPROMmotor()
 }
 
 
-void updateRatios()
+void updateRatios(bool deleteAlignment)
 {
   cli()
   StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
@@ -692,7 +680,6 @@ void updateRatios()
   StepsPerSecondAxis1 = StepsPerDegreeAxis1 / 240.0;
   StepsPerSecondAxis2 = StepsPerDegreeAxis2 / 240.0;
 
-
   timerRateRatio = (StepsPerSecondAxis1 / StepsPerSecondAxis2);
   useTimerRateRatio = (StepsPerRotAxis1 != StepsPerRotAxis2);
   sei();
@@ -703,8 +690,8 @@ void updateRatios()
   quaterRotAxis2 = StepsPerRotAxis2 / 4L;
 
   initCelestialPole();
+  initTransformation(deleteAlignment);
   updateSideral();
-
   initMaxRate();
 }
 

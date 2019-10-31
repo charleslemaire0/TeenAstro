@@ -21,7 +21,7 @@ void Guide()
     }
     if (guideDirAxis1 == 'w' || guideDirAxis1 == 'e')
     {
-      if (guideDurationAxis1 > 0 || GuidingState == GuidingRecenter ||GuidingState == GuidingST4)
+      if (guideDurationAxis1 > 0 || GuidingState == GuidingRecenter || GuidingState == GuidingST4)
       {
         if (!inbacklashAxis1)
         {
@@ -67,7 +67,7 @@ void Guide()
           bool rev = false;
           if (guideDirAxis2 == 's')
             rev = true;
-          if (pierSide >= PIER_WEST)
+          if (GetPierSide() >= PIER_WEST)
             rev = !rev;
           cli();
           rev ? targetAxis2.fixed -= amountGuideAxis2.fixed : targetAxis2.fixed += amountGuideAxis2.fixed;

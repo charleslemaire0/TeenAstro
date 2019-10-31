@@ -1,11 +1,11 @@
 #pragma once
 #include "Helper_math.h"
 #include "EEPROM.h"
+#include "EEPROM_adress.h"
 #include "Helper_EEProm.h"
 class siteDefinition
 {
-#define EE_currentSite  100
-#define EE_sites        101
+
 #define siteNameLen     15
 #define SiteSize        25
   struct ssite

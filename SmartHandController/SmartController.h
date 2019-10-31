@@ -13,7 +13,6 @@ public:
   void manualMove(bool &moving);
   void drawIntro();
   void drawLoad();
-  void drawWait();
   void setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model);
 private:
   U8G2_EXT *display = NULL;
@@ -46,7 +45,6 @@ private:
   uint8_t current_selection_L4 = 1;
   uint8_t current_timelocation = 1;
   uint8_t current_selection_SHC = 1;
-  uint8_t current_selection_speed = 5;
   uint8_t current_selection_guide = 3;
   uint8_t current_selection_FocuserConfig = 1;
   uint8_t current_selection_FocuserMotor = 1;
@@ -76,6 +74,7 @@ private:
   MENU_RESULT menuPier();
   MENU_RESULT subMenuSyncGoto(char sync, int subMenuNum);
   MENU_RESULT menuCatalog(bool sync, int number);
+  MENU_RESULT menuCatalogAlign();
   MENU_RESULT menuCatalogs(bool sync);
   MENU_RESULT menuSolarSys(bool sync);
   MENU_RESULT menuFilters();
@@ -91,9 +90,7 @@ private:
   MENU_RESULT menuRADecNow(bool sync);
   MENU_RESULT menuRADecJ2000(bool sync);
   MENU_RESULT menuAltAz(bool sync);
-
-
-  void menuAlignment();
+  MENU_RESULT menuAlignment();
 
 
   bool SelectStarAlign();

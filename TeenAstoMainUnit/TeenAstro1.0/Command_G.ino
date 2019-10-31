@@ -16,22 +16,22 @@ void Command_GX()
     switch (parameter[1])
     {
     case '2':
-      sprintf(reply, "%ld", (long)(GeoAlign.altCor * 3600.0));
+      /*sprintf(reply, "%ld", (long)(GeoAlign.altCor * 3600.0))*/;
       quietReply = true;
       break;  // altCor
 
     case '3':
-      sprintf(reply, "%ld", (long)(GeoAlign.azmCor * 3600.0));
+      /*sprintf(reply, "%ld", (long)(GeoAlign.azmCor * 3600.0));*/
       quietReply = true;
       break;  // azmCor
 
     case '4':
-      sprintf(reply, "%ld", (long)(GeoAlign.doCor * 3600.0));
+      /*sprintf(reply, "%ld", (long)(GeoAlign.doCor * 3600.0));*/
       quietReply = true;
       break;  // doCor
 
     case '5':
-      sprintf(reply, "%ld", (long)(GeoAlign.pdCor * 3600.0));
+      /*sprintf(reply, "%ld", (long)(GeoAlign.pdCor * 3600.0));*/
       quietReply = true;
       break;  // pdCor
     }
@@ -107,11 +107,11 @@ void Command_GX()
     case '4':
       if (meridianFlip == FLIP_NEVER)
       {
-        sprintf(reply, "%d N", (int)(pierSide));
+        sprintf(reply, "%d N", (int)(GetPierSide()));
       }
       else
       {
-        sprintf(reply, "%d", (int)(pierSide));
+        sprintf(reply, "%d", (int)(GetPierSide()));
       }
 
       quietReply = true;
@@ -168,11 +168,11 @@ void Command_GX()
       quietReply = true;
       break;
     case 'C':
-      sprintf(reply, "%ld", (long)round(MinDec));
+      //sprintf(reply, "%ld", (long)round(MinDec));
       quietReply = true;
       break;
     case 'D':
-      sprintf(reply, "%ld", (long)round(MaxDec));
+      //sprintf(reply, "%ld", (long)round(MaxDec));
       quietReply = true;
     default:
       commandError = true;
@@ -221,8 +221,8 @@ void Command_GX()
       break;  // Debug4, Dec refraction tracking rate
 
     case '5':
-      sprintf(reply, "%ld", (long)(ZenithTrackingRate() *
-        1000.0 * 1.00273790935));
+      //sprintf(reply, "%ld", (long)(ZenithTrackingRate() *
+      //  1000.0 * 1.00273790935));
       quietReply = true;
       break;  // Debug5, Alt RA refraction tracking rate
 
@@ -286,15 +286,8 @@ void  Command_G()
     //  :GA#   Get Telescope Altitude
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //         The current scope altitude
-    if (isAltAZ())
-    {
-      cli();
-      f = (double)(posAxis2 /*+ indexAxis2Steps*/) / StepsPerDegreeAxis2;
-      sei();   
-    }
-    else
-      getHor(&f, &f1);
-    if (!doubleToDms(reply, &f, false, true))
+    getHorApp(&f,&f1);
+    if (!doubleToDms(reply, &f1, false, true))
       commandError = true;
     else
       quietReply = true;
@@ -430,15 +423,18 @@ void  Command_G()
     break;
   }
   case 'm':
+  {
     //  :Gm#   Gets the meridian pier-side
     //         Returns: E#, W#, N# (none/parked), ?# (Meridian flip in progress)
     //         A # terminated string with the pier side.
+    PierSide currentSide = GetPierSide();
     reply[0] = '?';
     reply[1] = 0;
-    if (pierSide == PIER_EAST) reply[0] = 'E';
-    if (pierSide == PIER_WEST) reply[0] = 'W';
+    if (currentSide == PIER_EAST) reply[0] = 'E';
+    if (currentSide == PIER_WEST) reply[0] = 'W';
     quietReply = true;
     break;
+  }
   case 'n':
     //  :Gn#   Get Current Site name
     //         Returns: <string>#
@@ -537,19 +533,20 @@ void  Command_G()
     const char  *parkStatusCh = "pIPF";
     reply[2] = parkStatusCh[parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
     if (atHome) reply[3] = 'H';
-    //reply 4 is free
-    if (GuidingState != GuidingOFF)
+    reply[4] = '0' + activeGuideRate;
+    if (doSpiral) reply[5] = '@';
+    else if (GuidingState != GuidingOFF)
     {
       reply[5] = 'G';
-      if (GuidingState == GuidingPulse || GuidingState == GuidingST4) reply[6] = '*';
-      else if (GuidingState == GuidingRecenter) reply[6] = '+';
-      if (guideDirAxis1 == 'e') reply[7] = '>';
-      else if(guideDirAxis1 == 'w') reply[7] = '<';
-      else if (guideDirAxis1 == 'b') reply[7] = 'b';
-      if (guideDirAxis2 == 'n') reply[8] = '^';
-      else if (guideDirAxis2 == 's') reply[8] = '_';
-      else if (guideDirAxis2 == 'b') reply[8] = 'b';
     }
+    if (GuidingState == GuidingPulse || GuidingState == GuidingST4) reply[6] = '*';
+    else if (GuidingState == GuidingRecenter) reply[6] = '+';
+    if (guideDirAxis1 == 'e') reply[7] = '>';
+    else if (guideDirAxis1 == 'w') reply[7] = '<';
+    else if (guideDirAxis1 == 'b') reply[7] = 'b';
+    if (guideDirAxis2 == 'n') reply[8] = '^';
+    else if (guideDirAxis2 == 's') reply[8] = '_';
+    else if (guideDirAxis2 == 'b') reply[8] = 'b';
     if (faultAxis1 || faultAxis2) reply[9] = 'f';
     if (refraction)
       reply[10] = 'r';
@@ -570,8 +567,9 @@ void  Command_G()
       reply[12] = 'A';
     else
       reply[12] = 'U';
-    if (pierSide == PIER_EAST) reply[13] = 'E';
-    if (pierSide == PIER_WEST) reply[13] = 'W';
+    PierSide currentSide = GetPierSide();
+    if (currentSide == PIER_EAST) reply[13] = 'E';
+    if (currentSide == PIER_WEST) reply[13] = 'W';
     reply[14] = iSGNSSValid() ? '1': '0';
     reply[15] = '0' + lastError;
     reply[16] = 0;
@@ -614,19 +612,9 @@ void  Command_G()
   case 'Z':
     //  :GZ#   Get telescope azimuth
     //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
-    if (isAltAZ())
-    {
-      cli();
-      f1 = (double)(posAxis1 /*+ indexAxis1Steps*/) / StepsPerDegreeAxis1;
-      while(f1>360)
-        f1-=360;
-      while(f1<0)
-        f1+=360;
-      sei();
-    }
-    else
-      getHor(&f, &f1);
-    if (!doubleToDms(reply, &f1, true, false))
+    getHorApp(&f,&f1);
+    f = AzRange(f);
+    if (!doubleToDms(reply, &f, true, false))
       commandError = true;
     else
       quietReply = true;

@@ -33,6 +33,7 @@ public:
   bool isWifiRunning();
   bool turnWifiOn(bool turnOn);
   void getIP(uint8_t* ip);
+  const char* getPassword();
   bool setWifiMode(int k);
   int getWifiMode();
   void getStationName(int k, char* SSID);

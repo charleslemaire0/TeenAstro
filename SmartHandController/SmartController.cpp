@@ -179,6 +179,11 @@ static unsigned char GNSS_bits[] U8X8_PROGMEM = {
   0xe0, 0x07, 0x80, 0x1f, 0x80, 0x23, 0x2a, 0x42, 0x4a, 0x22, 0x12, 0x14,
   0x64, 0x08, 0x08, 0x00, 0x70, 0x00, 0x00, 0x00 };
 
+static unsigned char Spiral_bits[] U8X8_PROGMEM = {
+   0x00, 0x00, 0xfc, 0x3f, 0xfe, 0x7f, 0x06, 0x60, 0x06, 0x60, 0xc6, 0x63,
+   0xe6, 0x67, 0x66, 0x66, 0x66, 0x66, 0x06, 0x66, 0x06, 0x66, 0xfe, 0x67,
+   0xfc, 0x63, 0x00, 0x60, 0x00, 0x60, 0x00, 0x00 };
+
 static const unsigned char teenastro_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -271,96 +276,6 @@ static const unsigned char teenastro_bits[] U8X8_PROGMEM = {
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
-
-#define wait_width 128
-#define wait_height 64
-static unsigned char wait_bits[] U8X8_PROGMEM= {
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0xf8, 0xff, 0xff, 0xff, 0xff, 0x1f, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x40, 0x00, 0x00, 0x00, 0xfc, 0xff, 0xff, 0xff, 0xff, 0x3f, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0xfc, 0xff, 0xff,
-   0xff, 0xff, 0x3f, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0xa0, 0x00, 0x00,
-   0x00, 0xfc, 0xff, 0xff, 0xff, 0xff, 0x3f, 0x00, 0x80, 0x00, 0x00, 0x00,
-   0x00, 0xa0, 0x00, 0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x00, 0x18, 0x00,
-   0xc0, 0x01, 0x00, 0x00, 0x00, 0xa0, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00,
-   0x00, 0x00, 0x10, 0x00, 0xc0, 0x01, 0x00, 0x00, 0x00, 0x1c, 0x07, 0x00,
-   0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0xc0, 0x01, 0x00, 0x00,
-   0x00, 0x03, 0x18, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
-   0xe0, 0x03, 0x00, 0x00, 0x00, 0x1c, 0x07, 0x00, 0x00, 0x10, 0x00, 0x00,
-   0x00, 0x00, 0x08, 0x00, 0xfc, 0x1f, 0x00, 0x00, 0x00, 0xa0, 0x00, 0x00,
-   0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0xff, 0x7f, 0x00, 0x00,
-   0x00, 0xa0, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00,
-   0xfc, 0x1f, 0x00, 0x00, 0x00, 0xa0, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00,
-   0x00, 0x00, 0x04, 0x00, 0xe0, 0x03, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00,
-   0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0xc0, 0x01, 0x00, 0x00,
-   0x00, 0x40, 0x00, 0x00, 0x00, 0x20, 0xf8, 0xff, 0xff, 0x1f, 0x04, 0x00,
-   0xc0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0xf0, 0xff,
-   0xff, 0x0f, 0x02, 0x00, 0xc0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x10, 0x40, 0xe0, 0xff, 0xff, 0x07, 0x02, 0x00, 0x80, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x10, 0x80, 0xc0, 0xff, 0xff, 0x03, 0x01, 0x00,
-   0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x38, 0x80, 0x80, 0xff,
-   0xff, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0xfe, 0x00, 0x01, 0xff, 0xff, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x38, 0x00, 0x02, 0xfe, 0x7f, 0x40, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x04, 0xfc,
-   0x3f, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x10, 0x00, 0x08, 0xf8, 0x1f, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0xf0, 0x0f, 0x08, 0x00, 0x00,
-   0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0xe0,
-   0x07, 0x04, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x40, 0xc0, 0x03, 0x02, 0x00, 0x00, 0x00, 0x00, 0x1c, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x01, 0x01, 0x00, 0x00,
-   0x00, 0x00, 0x3e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x81,
-   0x81, 0x00, 0x00, 0x00, 0x00, 0x80, 0xff, 0x00, 0x00, 0x00, 0x08, 0x00,
-   0x00, 0x00, 0x00, 0x81, 0x81, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3e, 0x00,
-   0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x81, 0x81, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00, 0x81,
-   0x81, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x14, 0x00,
-   0x00, 0x00, 0x80, 0x80, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00,
-   0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x40, 0x80, 0x01, 0x02, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x20, 0x80,
-   0x01, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22, 0x00,
-   0x00, 0x00, 0x10, 0x80, 0x01, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x08, 0x80, 0x01, 0x10, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x41, 0x00, 0x00, 0x00, 0x04, 0x80,
-   0x01, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xe0, 0x80, 0x03,
-   0x00, 0x00, 0x02, 0x80, 0x01, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x1c, 0x00, 0x1c, 0x00, 0x00, 0x01, 0x80, 0x01, 0x80, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x60, 0x00, 0x80, 0x00, 0x80,
-   0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x1c,
-   0x00, 0x80, 0x00, 0xc0, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0xe0, 0x80, 0x03, 0x00, 0x40, 0x00, 0xc0, 0x03, 0x00, 0x02, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x41, 0x00, 0x00, 0x40, 0x00, 0xc0,
-   0x03, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22, 0x00,
-   0x00, 0x20, 0x00, 0xf0, 0x0f, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x22, 0x00, 0x00, 0x20, 0xf0, 0xff, 0xff, 0x0f, 0x04, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22, 0x00, 0x00, 0x20, 0xf8, 0xff,
-   0xff, 0x1f, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0x00,
-   0x00, 0x10, 0xfc, 0xff, 0xff, 0x3f, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x14, 0x00, 0x00, 0x10, 0xfe, 0xff, 0xff, 0x7f, 0x08, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x10, 0xfe, 0xff,
-   0xff, 0x7f, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00,
-   0x00, 0x08, 0xfe, 0xff, 0xff, 0x7f, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x08, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00,
-   0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x18, 0x00, 0x00, 0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0xf8, 0xff, 0xff, 0xff, 0xff, 0x1f, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfc, 0xff, 0xff,
-   0xff, 0xff, 0x3f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0xfc, 0xff, 0xff, 0xff, 0xff, 0x3f, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0xfc, 0xff, 0xff, 0xff, 0xff, 0x3f, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf8, 0xff, 0xff,
-   0xff, 0xff, 0x1f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00 };
 
 void SmartHandController::setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model)
 {
@@ -477,7 +392,9 @@ bool SmartHandController::isSleeping()
 
 void SmartHandController::manualMove(bool &moving)
 {
-  moving = ta_MountStatus.getTrackingState() == TeenAstroMountStatus::TRK_SLEWING || ta_MountStatus.getParkState() == TeenAstroMountStatus::PRK_PARKING;
+  moving = ta_MountStatus.getTrackingState() == TeenAstroMountStatus::TRK_SLEWING ||
+    ta_MountStatus.getParkState() == TeenAstroMountStatus::PRK_PARKING ||
+    ta_MountStatus .isSpiralRunning();
   if (moving)
   {
     bool stop = (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART || eventbuttons[0] == E_DOUBLECLICK) ? true : false;
@@ -561,20 +478,19 @@ void SmartHandController::update()
   }
   if (ta_MountStatus.isAlignSelect())
   {
-    //TODO
-    //if (ta_MountStatus.align == TeenAstroMountStatus::ALI_SELECT_STAR_1)
-    //  DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Western Sky", -1);
-    //else if (ta_MountStatus.align == TeenAstroMountStatus::ALI_SELECT_STAR_2)
-    //  DisplayLongMessage("Select a Star", "near the Meridian", "& the Celestial Equ.", "in the Eastern Sky", -1);
-    //else if (ta_MountStatus.align == TeenAstroMountStatus::ALI_SELECT_STAR_3)
-    //  DisplayLongMessage("Select a Star", "HA = -3 hour", "Dec = +- 45 degree", "in the Eastern Sky", -1);
-    //if (!SelectStarAlign())
-    //{
-    //  DisplayMessage("Alignment", "Aborted", -1);
-    //  ta_MountStatus.align = TeenAstroMountStatus::ALI_OFF;
-    //  return;
-    //}
-    //ta_MountStatus.align = static_cast<TeenAstroMountStatus::AlignState>(ta_MountStatus.align + 1);
+    char message[10]="Star #?";
+    message[6] = '0' + ta_MountStatus.getAlignStar();
+    DisplayLongMessage("Select a Star", "From following list", "", message, -1);
+    if (!SelectStarAlign())
+    {
+      DisplayMessage("Selection", "Aborted", -1);
+      ta_MountStatus.backStepAlign();
+      return;
+    }
+    else
+    {
+      ta_MountStatus.nextStepAlign();
+    }
   }
   else if (top - lastpageupdate > 200)
   {
@@ -617,16 +533,28 @@ void SmartHandController::update()
     {
       menuFocuserSettings();
     }
-
     exitMenu = false;
     time_last_action = millis();
   }
-
   else if (eventbuttons[0] == E_CLICK && ta_MountStatus.isAlignRecenter())
   {
-    ta_MountStatus.addStar();
+    TeenAstroMountStatus::AlignReply reply = ta_MountStatus.addStar();
+    switch (reply)
+    {
+    case TeenAstroMountStatus::AlignReply::ALIR_FAILED1:
+      DisplayMessage("Alignment", "Failed!", -1);
+      break;
+    case TeenAstroMountStatus::AlignReply::ALIR_FAILED2:
+      DisplayMessage("Alignment", "Wrong!", -1);
+      break;
+    case TeenAstroMountStatus::AlignReply::ALIR_DONE:
+      DisplayMessage("Alignment", "Success!", -1);
+      break;
+    case TeenAstroMountStatus::AlignReply::ALIR_ADDED:
+      DisplayMessage("Star added", "=>", 1000);
+      break;
+    }
   }
-
 }
 
 void SmartHandController::updateMainDisplay(u8g2_uint_t page)
@@ -638,14 +566,15 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
   u8g2_uint_t step2 = u8g2_GetUTF8Width(u8g2, "4") + 1;
   ta_MountStatus.removeLastConnectionFailure();
   ta_MountStatus.updateMount();
-  if (ta_MountStatus.hasInfoMount() && ta_MountStatus.isAligning())
+  if (ta_MountStatus.isAligning())
+    page = 4;
+  if (ta_MountStatus.hasInfoMount() && page == 4)
   {
     TeenAstroMountStatus::TrackState curT = ta_MountStatus.getTrackingState();  
     if (curT != TeenAstroMountStatus::TRK_SLEWING && ta_MountStatus.isAlignSlew())
     {
       ta_MountStatus.nextStepAlign();
     }
-    page = 4;
   }
   else if (page == 0 && !ta_MountStatus.isPulseGuiding())
   {
@@ -679,7 +608,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     {
       TeenAstroMountStatus::ParkState curP = ta_MountStatus.getParkState();
       TeenAstroMountStatus::TrackState curT = ta_MountStatus.getTrackingState();
-      TeenAstroMountStatus::SideralMode currSM = ta_MountStatus.getSideralMode();
+      TeenAstroMountStatus::SiderealMode currSM = ta_MountStatus.getSiderealMode();
       TeenAstroMountStatus::PierState curPi = ta_MountStatus.getPierState();
       if (ta_MountStatus.isGNSSValid())
       {
@@ -760,7 +689,11 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, align3_bits);
           x -= icon_width + 1;
         }
-
+        if (ta_MountStatus.isSpiralRunning())
+        {
+          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Spiral_bits);
+          x -= icon_width + 1;
+        }
         if (ta_MountStatus.isPulseGuiding())
         {
           display->drawXBMP(x - icon_width, 0, icon_width, icon_height, guiding__bits);
@@ -858,15 +791,15 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     }
     else if (page == 2)
     {
-      if (ta_MountStatus.hasInfoUTC() && ta_MountStatus.hasInfoSideral())
+      if (ta_MountStatus.hasInfoUTC() && ta_MountStatus.hasInfoSidereal())
       {
         u8g2_uint_t y = 36;
         x = u8g2_GetDisplayWidth(u8g2);
         u8g2_DrawUTF8(u8g2, 0, y, "UTC");
         display->drawRA(x, y,ta_MountStatus.getUTC());
         y += line_height + 4;
-        u8g2_DrawUTF8(u8g2, 0, y, "Sideral");
-        display->drawRA(x, y, ta_MountStatus.getSideral());
+        u8g2_DrawUTF8(u8g2, 0, y, "Sidereal");
+        display->drawRA(x, y, ta_MountStatus.getSidereal());
       }
     }
     else if (page == 3)
@@ -885,27 +818,27 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     }
     else if (page == 4)
     {
-    /*  int idx = ta_MountStatus.alignSelectedStar - 1;
-      byte cat_letter = Star_letter[idx];
-      byte cat_const = Star_constellation[idx];
       u8g2_uint_t y = 36;
-      char txt[20];
+      static char text1[19] = "Slewing to Star";
+      static char text2[18] = "Recenter Star";
+      if (ta_MountStatus.isAlignSlew())
+        u8g2_DrawUTF8(u8g2, 0, y,text1);
+      else if (ta_MountStatus.isAlignRecenter())
+        u8g2_DrawUTF8(u8g2, 0, y, text2);
 
-      if ((ta_MountStatus.align - 1) % 3 == 1)
-      {
-        sprintf(txt, "Slew to Star %u", (ta_MountStatus.align - 1) / 3 + 1);
-      }
-      else if ((ta_MountStatus.align - 1) % 3 == 2)
-      {
-        sprintf(txt, "Recenter Star %u", (ta_MountStatus.align - 1) / 3 + 1);
-      }
-      u8g2_DrawUTF8(u8g2, 0, y, txt);
       y += line_height + 4;
-      const uint8_t* myfont = u8g2->font;
-      u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
-      u8g2_DrawGlyph(u8g2, 0, y, 944 + cat_letter);
-      u8g2_SetFont(u8g2, myfont);
-      u8g2_DrawUTF8(u8g2, 16, y, constellation_txt[cat_const - 1]);*/
+      if (cat_mgr.objectNameStr()[0] != 0)
+      {
+        u8g2_DrawUTF8(u8g2, 0, y, cat_mgr.objectNameStr());
+      }
+      else
+      {
+        u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
+        u8g2_DrawGlyph(u8g2, 0, y, 945 + cat_mgr.bayerFlam());
+        const uint8_t* myfont = u8g2->font; u8g2_SetFont(u8g2, myfont);
+        u8g2_DrawUTF8(u8g2, 16, y, cat_mgr.constellationStr());
+      }
+
     }
 
   } while (u8g2_NextPage(u8g2));
@@ -919,14 +852,6 @@ void SmartHandController::drawIntro()
     display->drawXBMP(0, 0, teenastro_width, teenastro_height, teenastro_bits);
   } while (display->nextPage());
   delay(1500);
-}
-
-void SmartHandController::drawWait()
-{
-  display->firstPage();
-  do {
-    display->drawXBMP(0, 0, wait_width, wait_height, wait_bits);
-  } while (display->nextPage());
 }
 
 void SmartHandController::drawLoad()
@@ -1178,34 +1103,77 @@ void SmartHandController::menuTelAction()
     }
     else if (currentstate == TeenAstroMountStatus::PRK_UNPARKED)
     {
-      const char *string_list_main_UnParkedL0 = telescoplocked ? "Goto\nSync\nTracking\nSide of Pier\nUnlock" : "Goto\nSync\nTracking\nSide of Pier\nLock";
+      const char *string_list_main_UnParkedL0 = telescoplocked ? "Unlock" : "Goto\nSync\nAlign\nTracking\nSide of Pier\nSave RADEC\nLock\nSpiral";
       current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, "Telescope Action", current_selection_L0, string_list_main_UnParkedL0);
       MENU_RESULT answer = MR_CANCEL;
-      switch (current_selection_L0)
+      if (telescoplocked)
       {
-      case 0:
-        exitMenu = true;
-        break;
-      case 1:
-        answer = menuSyncGoto(false);
-        answer == MR_OK || answer == MR_QUIT ? exitMenu =true: exitMenu =false;
-        break;
-      case 2:
-        answer = menuSyncGoto(true);
-        answer == MR_OK || answer == MR_QUIT ? exitMenu =true: exitMenu =false;
-        break;
-      case 3:
-        menuTrack();
-        break;
-      case 4:
-        menuPier();
-        break;
-      case 5:
-        telescoplocked = !telescoplocked;
-        exitMenu = true;
-        break;
-      default:
-        break;
+        switch (current_selection_L0)
+        {
+        case 0:
+          exitMenu = true;
+          break;
+        case 1:
+          telescoplocked = false;
+          exitMenu = true;
+          break;
+        default:
+          break;
+        }
+      }
+      else
+      {
+        switch (current_selection_L0)
+        {
+        case 0:
+          exitMenu = true;
+          break;
+        case 1:
+          answer = menuSyncGoto(false);
+          answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
+          break;
+        case 2:
+          answer = menuSyncGoto(true);
+          answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
+          break;
+        case 3:
+          answer = menuAlignment();
+          answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
+          break;
+        case 4:
+          menuTrack();
+          break;
+        case 5:
+          menuPier();
+          break;
+        case 6:
+          if (SetLX200(":SU#") == LX200VALUESET)
+          {
+            DisplayMessage("RA DEC", "Stored", 500);
+          }
+          else
+          {
+            DisplayMessage("Command", "has Failed", 1000);
+          }
+          break;
+        case 7:
+          telescoplocked = true;
+          exitMenu = true;
+          break;
+        case 8:
+          if (SetLX200(":M@#") == LX200VALUESET)
+          {
+            DisplayMessage("Spiral Search", "Started", 500);
+          }
+          else
+          {
+            DisplayMessage("Command", "has Failed", 1000);
+          }
+          exitMenu = true;
+          break;
+        default:
+          break;
+        }
       }
     }
   }
@@ -1218,41 +1186,16 @@ void SmartHandController::menuTelAction()
 void SmartHandController::menuSpeedRate()
 {
   buttonPad.setMenuMode();
-  char * string_list_Speed = "Guide\n1.0x\n4.0x\n16.0x\n64.0x\n0.5 Max\nMax";
-  uint8_t selected_speed = display->UserInterfaceSelectionList(&buttonPad, "Set Speed", current_selection_speed, string_list_Speed);
-  int speed;
-  switch (selected_speed)
-  {
-  case 0:
-    break;
-  case 1:
-    speed = 0;
-    break;
-  case 2:
-    speed = 2;
-    break;
-  case 3:
-    speed = 4;
-    break;
-  case 4:
-    speed = 5;
-    break;
-  case 5:
-    speed = 7;
-    break;
-  case 6:
-    speed = 8;
-    break;
-  case 7:
-    speed = 9;
-    break;
-  default:
-    break;
-  }
+  char * string_list_Speed = "Guide\n0.5x\n1.0x\n2.0x\n4.0x\n16.0x\n32.0x\n64.0x\n0.5 Max\nMax";
+  static unsigned char current_selection_speed = 4;
+  ta_MountStatus.updateMount();
+  if (!ta_MountStatus.getGuidingRate(current_selection_speed))
+    return;
+  uint8_t selected_speed = display->UserInterfaceSelectionList(&buttonPad, "Set Speed", current_selection_speed + 1 , string_list_Speed);
   if (selected_speed > 0)
   {
     char cmd[5] = ":Rn#";
-    cmd[2] = '0' + speed;
+    cmd[2] = '0' + selected_speed - 1;
     SetLX200(cmd);
     current_selection_speed = selected_speed;
   }
@@ -1265,7 +1208,7 @@ void SmartHandController::menuTrack()
   TeenAstroMountStatus::TrackState currentstate = ta_MountStatus.getTrackingState();
   if (currentstate == TeenAstroMountStatus::TRK_ON)
   {
-    const char *string_list_tracking = "Stop Tracking\nSideral\nLunar\nSolar";
+    const char *string_list_tracking = "Stop Tracking\nSidereal\nLunar\nSolar";
     current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, "Tracking State", 0, string_list_tracking);
     switch (current_selection_L1)
     {
@@ -1322,84 +1265,89 @@ void SmartHandController::menuTrack()
   }
 }
 
-
-
-
-void SmartHandController::menuAlignment()
+SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
 {
-  //const char *string_list_AlignmentL2 = "1-Star Align.\n""2-Star Align.\n""3-Star Align.\n""Show Corr.\n""Clear Corr.";
-  //current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Alignment", 0, string_list_AlignmentL2);
-  //switch (current_selection_L2)
-  //{
-  //case 0:
-  //  return;
-  //case 1:
-  //  if (SetLX200(":A1#") == LX200VALUESET)
-  //  {
-  //    ta_MountStatus.startAlign(TeenAstroMountStatus::ALIM_ONE);
-  //  }
-  //  else
-  //  {
-  //    DisplayMessage("Alignment", "Failed!", -1);
-  //  }
-  //  break;
-  //case 2:
-  //  if (SetLX200(":A2#") == LX200VALUESET)
-  //  {
-  //    ta_MountStatus.startAlign(TeenAstroMountStatus::ALIM_TWO);
-  //  }
-  //  else
-  //  {
-  //    DisplayMessage("Alignment", "Failed!", -1);
-  //  }
-  //  break;
-  //case 3:
-  //  if (SetLX200(":A3#") == LX200VALUESET)
-  //  {
-  //    ta_MountStatus.startAlign(TeenAstroMountStatus::ALIM_THREE);
-  //  }
-  //  else
-  //  {
-  //    DisplayMessage("Alignment", "Failed!", -1);
-  //  }
-  //  break;
-  //case 4:
-  //  double val1;
-  //  double val2;
-  //  double val3;
-  //  double val4;
-  //  break;
-  //case 5:
-  //  if (SetLX200(":SX0x#") == LX200VALUESET)
-  //  {
-  //    DisplayMessage("Alignment", "Reset!", -1);
-  //  }
-  //  break;
-  //default:
-  //  break;
-  //}
-  //// Quit Menu
-  //exitMenu = true;
-
+  bool alignInProgress=ta_MountStatus.isAligning();
+  static int current_selection = 1;
+  while (true) {
+    const char* string_list = alignInProgress ? "Stop" : "2 Star\n3 Star\nSave\nClear" ;
+    int selection = display->UserInterfaceSelectionList(&buttonPad, "Alignment", current_selection, string_list);
+    if (selection == 0) return MR_CANCEL;
+    current_selection = selection;
+    switch (current_selection) {
+    case 1:
+      if (alignInProgress)
+      {
+        ta_MountStatus.stopAlign();
+        DisplayMessage("Alignment","canceled",-1);
+        return MR_QUIT;
+      }
+      else 
+      {
+        DisplayLongMessage("!WARNING!", "The mount must", "be set at", "home position.", -1);
+        if (display->UserInterfaceMessage(&buttonPad, "Ready for", "2 Star", "Alignment?", "NO\nYES") == 2)
+        {
+          if (SetLX200(":A0#") == LX200VALUESET)
+          {
+          ta_MountStatus.startAlign(TeenAstroMountStatus::AlignMode::ALIM_TWO);
+          return MR_QUIT;
+          }
+          else
+          {
+            DisplayMessage("Initilisation", "has failed", -1);
+          }
+        }
+      }
+      break;
+    case 2:
+      DisplayLongMessage("!WARNING!", "The mount must", "be set at", "home position.", -1);
+      if (display->UserInterfaceMessage(&buttonPad, "Ready for", "3 Star", "Alignment??", "NO\nYES") == 2)
+      {
+        if (SetLX200(":A0#") == LX200VALUESET)
+        {
+          ta_MountStatus.startAlign(TeenAstroMountStatus::AlignMode::ALIM_THREE);
+          return MR_QUIT;
+        }
+        else
+        {
+          DisplayMessage("Initilisation", "has failed", -1);
+        }
+      }
+      break;
+    case 4:
+      if (display->UserInterfaceMessage(&buttonPad, "Delete", "Star", "Alignment?", "NO\nYES") == 2)
+      {
+        if (SetLX200(":AC#") == LX200VALUESET)
+        {
+          DisplayMessage("Mount Synced", "at Home", -1);
+          return MR_QUIT;
+        }
+        else
+        {
+          DisplayMessage("Delete", "has failed", -1);
+        }
+      }
+      break;
+    }
+  }
 }
-
-
 
 bool SmartHandController::SelectStarAlign()
 {
-  //TODO!!
-  //buttonPad.setMenuMode();
-  //bool ok = false;
-  //ta_MountStatus.alignSelectedStar = display->UserInterfaceCatalog(&buttonPad, "select Star", ta_MountStatus.alignSelectedStar, STAR);
-  //if (ta_MountStatus.alignSelectedStar != 0)
-  //{
-  //  ok = DisplayMessageLX200(SyncSelectedStarLX200(ta_MountStatus.alignSelectedStar), false);
-  //}
-  //buttonPad.setControlerMode();
-  //return ok;
+  buttonPad.setMenuMode();
+  double lat, LT0;
+  while (!ta_MountStatus.getLat(lat))
+  {
+  }
+  while (!ta_MountStatus.getLstT0(LT0))
+  {
+  }
+  cat_mgr.setLat(lat);
+  cat_mgr.setLstT0(LT0);
+  bool ok = menuCatalogAlign() != SmartHandController::MENU_RESULT::MR_CANCEL;
+  buttonPad.setControlerMode();
+  return ok;
 }
-
-
 
 void SmartHandController::menuDateAndTime()
 {
@@ -2083,6 +2031,8 @@ void SmartHandController::menuUTCTime()
 
 void SmartHandController::menuFocuserAction()
 {
+  static  uint8_t current_selection = 1;
+  uint8_t choice;
   buttonPad.setMenuMode();
   int pos[10];
   int idx = 0;
@@ -2090,6 +2040,7 @@ void SmartHandController::menuFocuserAction()
   char temp[20] = { 0 };
   char txt[150] = { 0 };
   char out[20];
+  
   for (int k = 0; k < 10; k++)
   {
     sprintf(temp, ":Fx%d#", k);
@@ -2104,67 +2055,96 @@ void SmartHandController::menuFocuserAction()
     else
       continue;
   }
-  current_selection_L2 = 1;
   while (!exitMenu)
   {
     char menustxt[200] = {};
-    strcat(menustxt, txt);
-    focuserlocked ? strcat(menustxt, "Goto\nSync\nPark\nUnlock") : strcat(menustxt, "Goto\nSync\nPark\nLock");
-    const char *string_list_Focuser = &menustxt[0];
-    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Focuser Action", current_selection_L2, string_list_Focuser);
-    if (current_selection_L2 == 0)
+    if (focuserlocked)
     {
-      exitMenu = true;
-      break;
-    }
-    else if (current_selection_L2 - 1 < idx)
-    {
-      char cmd[15];
-      sprintf(cmd, ":Fg%d#", idxs[current_selection_L2-1]);
-      DisplayMessage("Goto", "Position", 1000);
-      SetLX200(cmd);
-      exitMenu = true;
+      strcat(menustxt, "Unlock");
     }
     else
     {
-      switch (current_selection_L2 - idx)
-      { 
-      case 1:
+      strcat(menustxt, txt);
+      strcat(menustxt, "Goto\nSync\nPark\nLock");
+    }
+
+    const char *string_list_Focuser = &menustxt[0];
+    choice = display->UserInterfaceSelectionList(&buttonPad, "Focuser Action", current_selection, string_list_Focuser);
+    if (choice!=0)
+    {
+      current_selection = choice;
+    }
+    if (focuserlocked)
+    {
+      switch (choice)
       {
-        if (display->UserInterfaceInputValueFloat(&buttonPad, "Goto Position", "", &FocuserPos, 0, 65535, 5, 0, ""))
-        {
-          char cmd[15];
-          sprintf(cmd, ":FG %05d#", (int)(FocuserPos));
-          DisplayMessage("Goto", "Position", 1000);
-          SetLX200(cmd);
-          exitMenu = true;
-        }
-        break;
-      }
-      case 2:
-      {
-        if (display->UserInterfaceInputValueFloat(&buttonPad, "Sync Position", "", &FocuserPos, 0, 65535, 5, 0, ""))
-        {
-          char cmd[15];
-          sprintf(cmd, ":FS %05d#", (int)(FocuserPos));
-          DisplayMessage("Synced", "at Position", 1000);
-          SetLX200(cmd);
-          exitMenu = true;
-        }
-        break;
-      }
-      case 3:
-      {
-        SetLX200(":FP#");
+      case 0:
         exitMenu = true;
         break;
-      }
-      case 4:
-        focuserlocked = !focuserlocked;
+      case 1:
+        focuserlocked = false;
         exitMenu = true;
         break;
       default:
         break;
+      }
+    }
+    else
+    {
+      if (choice == 0)
+      {
+        exitMenu = true;
+        break;
+      }
+      else if (choice - 1 < idx)
+      {
+        char cmd[15];
+        sprintf(cmd, ":Fg%d#", idxs[choice - 1]);
+        DisplayMessage("Goto", "Position", 1000);
+        SetLX200(cmd);
+        exitMenu = true;
+      }
+      else
+      {
+        switch (choice - idx)
+        {
+        case 1:
+        {
+          if (display->UserInterfaceInputValueFloat(&buttonPad, "Goto Position", "", &FocuserPos, 0, 65535, 5, 0, ""))
+          {
+            char cmd[15];
+            sprintf(cmd, ":FG %05d#", (int)(FocuserPos));
+            DisplayMessage("Goto", "Position", 1000);
+            SetLX200(cmd);
+            exitMenu = true;
+          }
+          break;
+        }
+        case 2:
+        {
+          if (display->UserInterfaceInputValueFloat(&buttonPad, "Sync Position", "", &FocuserPos, 0, 65535, 5, 0, ""))
+          {
+            char cmd[15];
+            sprintf(cmd, ":FS %05d#", (int)(FocuserPos));
+            DisplayMessage("Synced", "at Position", 1000);
+            SetLX200(cmd);
+            exitMenu = true;
+          }
+          break;
+        }
+        case 3:
+        {
+          SetLX200(":FP#");
+          exitMenu = true;
+          break;
+        }
+        case 4:
+          focuserlocked = true;
+          exitMenu = true;
+          break;
+        default:
+          break;
+        }
       }
     }
   }
@@ -2658,7 +2638,7 @@ void SmartHandController::menuWifi()
       powerCylceRequired = true;
       break;
     case 2:
-      DisplayMessage("masterPassword is", "password", -1);
+      DisplayMessage("Password is", buttonPad.getPassword(), -1);
       break;
     case 3:
     {
@@ -2984,12 +2964,12 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
     }
     else if (val == LX200GOPARK_FAILED)
     {
-      sprintf(text1, "Telecope");
+      sprintf(text1, "Telescope");
       sprintf(text2, "Can't Park");
     }
     else if (val == LX200GOHOME_FAILED)
     {
-      sprintf(text1, "Telecope");
+      sprintf(text1, "Telescope");
       sprintf(text2, "Can't go Home");
     }
     else

@@ -9,11 +9,13 @@ const unsigned int FM_ABOVE_HORIZON  = 1;
 const unsigned int FM_ALIGN_ALL_SKY  = 2;
 const unsigned int FM_CONSTELLATION  = 4;
 const unsigned int FM_OBJ_TYPE       = 8;
-const unsigned int FM_BY_MAG         = 16;
-const unsigned int FM_NEARBY         = 32;
-const unsigned int FM_DBL_MIN_SEP    = 64;
-const unsigned int FM_DBL_MAX_SEP    = 128;
-const unsigned int FM_VAR_MAX_PER    = 256;
+const unsigned int FM_OBJ_HAS_NAME   = 16;
+const unsigned int FM_BY_MAG         = 32;
+const unsigned int FM_NEARBY         = 64;
+const unsigned int FM_DBL_MIN_SEP    = 128;
+const unsigned int FM_DBL_MAX_SEP    = 256;
+const unsigned int FM_VAR_MAX_PER    = 512;
+
 
 enum CAT_TYPES {CAT_NONE, CAT_GEN_STAR, CAT_GEN_STAR_VCOMP, CAT_DBL_STAR, CAT_DBL_STAR_COMP, CAT_VAR_STAR, CAT_VAR_STAR_COMP, CAT_DSO, CAT_DSO_COMP, CAT_DSO_VCOMP};
 
@@ -37,6 +39,7 @@ class CatMgr {
     bool        hasDblStarCatalog();
     bool        hasVarStarCatalog();
     bool        isStarCatalog();
+    bool        isBrightStarCatalog();
     bool        isDblStarCatalog();
     bool        isVarStarCatalog();
     bool        isDsoCatalog();

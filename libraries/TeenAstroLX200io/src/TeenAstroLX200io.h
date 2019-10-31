@@ -11,6 +11,7 @@ enum LX200RETURN {
   LX200_ERR_MOTOR_FAULT, LX200_ERR_ALT, LX200_ERR_LIMIT_SENSE, LX200_ERR_DEC, LX200_ERR_AZM,  LX200_ERR_UNDER_POLE, LX200_ERR_MERIDIAN, LX200_ERR_SYNC, LX200NOOBJECTSELECTED, LX200PARKED, LX200BUSY, LX200LIMITS, LX200UNKOWN,
   LX200OK, LX200VALUESET, LX200VALUEGET, LX200SYNCED, LX200GOINGTO, LX200GOHOME, LX200GOPARK
 };
+enum TARGETTYPE{T_AZALT,T_RADEC,T_USERRADEC};
 
 bool isOk(LX200RETURN val);
 bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned long timeOutMs, bool keepHashtag = false);
@@ -26,7 +27,7 @@ LX200RETURN GetLatitudeLX200(double& degree);
 LX200RETURN GetLongitudeLX200(double& degree);
 LX200RETURN GetTrackingRateLX200(double& rate);
 void SetSiteLX200(int &value);
-LX200RETURN Move2TargetLX200(bool RaDec);
+LX200RETURN Move2TargetLX200(TARGETTYPE target);
 LX200RETURN SetTargetRaLX200(uint8_t& vr1, uint8_t& vr2, uint8_t& vr3);
 LX200RETURN SetTargetDecLX200(bool& ispos, uint8_t& vd1, uint8_t& vd2, uint8_t& vd3);
 LX200RETURN SyncGoHomeLX200(bool sync);
@@ -34,6 +35,7 @@ LX200RETURN SyncGoParkLX200(bool sync);
 LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t& vd3);
 LX200RETURN SyncGotoLX200(bool sync, float &Ra, float &Dec);
 LX200RETURN SyncGotoLX200AltAz(bool sync, float &Az, float &Alt);
+LX200RETURN SyncGotoUserLX200(bool sync);
 LX200RETURN SyncGotoLX200(bool sync, float &Ra, float &Dec, double epoch);
 LX200RETURN SyncSelectedStarLX200(unsigned short alignSelectedStar);
 LX200RETURN GetDateLX200(unsigned int &day, unsigned int &month, unsigned int &year);

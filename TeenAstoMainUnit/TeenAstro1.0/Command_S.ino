@@ -189,14 +189,14 @@ void Command_S(Command& process_command)
       }
       else if (parameter[0] == 'E')
       {
-        if (pierSide == PIER_WEST)
+        if (GetPierSide() == PIER_WEST)
         {
           newTargetPierSide = PIER_EAST;
         }
       }
       else if (parameter[0] == 'W')
       {
-        if (pierSide == PIER_EAST)
+        if (GetPierSide() == PIER_EAST)
         {
           newTargetPierSide = PIER_WEST;
         }
@@ -209,7 +209,6 @@ void Command_S(Command& process_command)
     break;
   }
   case 'n':
-
     localSite.setSiteName(parameter);
     break;
   case 'o':
@@ -234,7 +233,6 @@ void Command_S(Command& process_command)
       commandError = true;
   }
   break;
-
   case 'r':
     //  :SrHH:MM.T#
     //  :SrHH:MM:SS#
@@ -265,7 +263,7 @@ void Command_S(Command& process_command)
     {
       localSite.setLat(lat);
       initCelestialPole();
-      initLat();
+      initTransformation(true);
     }
     highPrecision = i;
   }
@@ -299,7 +297,14 @@ void Command_S(Command& process_command)
       commandError = true;
   }
   break;
-
+  case 'U':
+    // :SU# store current User defined Position
+    getEqu(&f, &f1, false);
+    _ra = f;
+    _dec = f1;
+    EEPROM_writeFloat(EE_RA, (float)_ra); 
+    EEPROM_writeFloat(EE_DEC, (float)_dec);
+    break;
   case 'X':
     //  :SXnn,VVVVVV...#   Set OnStep value
     //          Return: 0 on failure
@@ -319,26 +324,26 @@ void Command_S(Command& process_command)
       //  break;  // indexAxis2
 
       case '2':
-        GeoAlign.altCor = (double)strtol(&parameter[3], NULL,
-          10) / 3600.0;
+        /*GeoAlign.altCor = (double)strtol(&parameter[3], NULL,
+          10) / 3600.0;*/
         break;  // altCor
 
       case '3':
-        GeoAlign.azmCor = (double)strtol(&parameter[3], NULL,
-          10) / 3600.0;
+        //GeoAlign.azmCor = (double)strtol(&parameter[3], NULL,
+        //  10) / 3600.0;
         break;  // azmCor
 
       case '4':
-        GeoAlign.doCor = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
+        //GeoAlign.doCor = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
         break;  // doCor
 
       case '5':
-        GeoAlign.pdCor = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
+        //GeoAlign.pdCor = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
         break;  // pdCor
 
       case 'x':
-        GeoAlign.init();
-        GeoAlign.writeCoe();
+        //GeoAlign.init();
+        //GeoAlign.writeCoe();
         break;
       }
     }

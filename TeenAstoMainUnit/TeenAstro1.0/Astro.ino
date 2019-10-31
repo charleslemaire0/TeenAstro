@@ -299,13 +299,41 @@ boolean doubleToDms(char *reply, const double *f, boolean fullRange,
     return true;
 }
 
-
 // -----------------------------------------------------------------------------------------------------------------------------
 // Coordinate conversion
-// convert equatorial coordinates to horizon
 
+//Topocentric Apparent convertions
+
+// returns the amount of refraction (in arcminutes) at the given true altitude (degrees), pressure (millibars), and temperature (celsius)
+double trueRefrac(double Alt, double Pressure = 1010.0, double Temperature = 10.0) {
+  double TPC = (Pressure / 1010.0) * (283.0 / (273.0 + Temperature));
+  double r = ((1.02*cot((Alt + (10.3 / (Alt + 5.11))) / Rad))) * TPC;
+  if (r < 0.0) r = 0.0;
+  return r;
+}
+
+// returns the amount of refraction (in arcminutes) at the given apparent altitude (degrees), pressure (millibars), and temperature (celsius)
+double apparentRefrac(double Alt, double Pressure = 1010.0, double Temperature = 10.0) {
+  double r = -trueRefrac(Alt, Pressure, Temperature);
+  r = -trueRefrac(Alt + (r / 60.0), Pressure, Temperature);
+  return r;
+}
+
+void Topocentric2Apparent(double *Alt, double Pressure=1010.0, double Temperature=10.0)
+{
+  if (refraction)
+    *Alt += trueRefrac(*Alt, Pressure, Temperature) / 60.0;
+}
+
+void Apparent2Topocentric(double *Alt, double Pressure=1010.0, double Temperature=10.0)
+{
+  if (refraction)
+    *Alt += apparentRefrac(*Alt, Pressure, Temperature) / 60;
+}
+
+// convert equatorial coordinates to horizon
 // this takes approx. 363muS on a teensy 3.2 @ 72 Mhz
-void EquToHor(double HA, double Dec, double *Alt, double *Azm)
+void EquToHorTopo(double HA, double Dec,  double *Azm, double *Alt)
 {
     while (HA < 0.0) HA = HA + 360.0;
     while (HA >= 360.0) HA = HA - 360.0;
@@ -319,9 +347,6 @@ void EquToHor(double HA, double Dec, double *Alt, double *Azm)
     double sinDec = sin(Dec);
     double  SinAlt = (sinDec * localSite.sinLat()) + (cosDec * localSite.cosLat() * cosHA);
     *Alt = asin(SinAlt);
-
-    //double  t1 = sin(HA);
-    //double  t2 = cos(HA) * localSite.sinLat() - tan(Dec) * localSite.cosLat();
     double  t1 = sinHA;
     double  t2 = cosHA * localSite.sinLat() - sinDec/cosDec * localSite.cosLat();
     *Azm = atan2(t1, t2) * Rad;
@@ -329,13 +354,20 @@ void EquToHor(double HA, double Dec, double *Alt, double *Azm)
     *Alt = *Alt * Rad;
 }
 
+void EquToHorApp(double HA, double Dec,  double *Azm, double *Alt)
+{
+  EquToHorTopo(HA, Dec, Azm, Alt);
+  Topocentric2Apparent(Alt);
+}
+
 // convert horizon coordinates to equatorial
 
 // this takes approx. 1.4mS
-void HorToEqu(double Alt, double Azm, double *HA, double *Dec)
+void HorTopoToEqu( double Azm, double Alt, double *HA, double *Dec)
 {
     while (Azm < 0) Azm = Azm + 360.0;
     while (Azm >= 360.0) Azm = Azm - 360.0;
+
     Alt = Alt / Rad;
     Azm = Azm / Rad;
 
@@ -349,13 +381,14 @@ void HorToEqu(double Alt, double Azm, double *HA, double *Dec)
     *Dec = *Dec * Rad;
 }
 
+void HorAppToEqu(double Azm, double Alt, double *HA, double *Dec)
+{
+  Apparent2Topocentric(&Alt);
+  HorTopoToEqu(Azm, Alt, HA, Dec);
+}
+
 // -----------------------------------------------------------------------------------------------------------------------------
 // Refraction rate tracking
-int     az_step = 0;
-double  az_Axis1 = 0, az_Axis2 = 0;
-double  az_Dec = 0, az_HA = 0;
-double  az_Dec1 = 0, az_HA1 = 0, az_Dec2 = -91, az_HA2 = 0;
-double  az_Alt, az_Azm, _az_Alt;
 double  az_deltaAxis1 = 15.0, az_deltaAxis2 = 0.0;
 double  az_deltaRateScale = 1.0;
 
@@ -387,360 +420,81 @@ double GetTrackingRate()
     return az_deltaRateScale;
 }
 
-// -----------------------------------------------------------------------------------------------------------------------------
-// Low overhead altitude calculation, 16 calls to complete
-byte    ac_step = 0;
-double  ac_HA = 0, ac_De = 0, ac_Dec = 0;
-double  ac_sindec, ac_cosdec, ac_cosha;
-double  ac_sinalt;
-
-boolean do_fastalt_calc()
-{
-  if (isAltAZ())
-  {
-    currentAlt = (double)(posAxis2) / StepsPerDegreeAxis2;
-    return true;
-  }
-  else
-  {
-    boolean done = false;
-    ac_step++;
-
-    // load HA/Dec
-    if (ac_step == 1)
-    {
-        getApproxEqu(&ac_HA, &ac_De, true);
-        ac_Dec = ac_De;
-    }
-    else    // convert units
-    if (ac_step == 2)
-    {
-        ac_HA = ac_HA / Rad;
-        ac_Dec = ac_Dec / Rad;
-    }
-    else    // prep Dec
-    if (ac_step == 3)
-    {
-        ac_sindec = sin(ac_Dec);
-    }
-    else    // prep Dec
-    if (ac_step == 4)
-    {
-        ac_cosdec = cos(ac_Dec);
-    }
-    else    // prep HA
-    if (ac_step == 5)
-    {
-        ac_cosha = cos(ac_HA);
-    }
-    else    // calc Alt, phase 1
-    if (ac_step == 6)
-    {
-        ac_sinalt = (ac_sindec * localSite.sinLat()) + (ac_cosdec * localSite.cosLat() * ac_cosha);
-    }
-    else    // calc Alt, phase 2
-    if (ac_step == 7)
-    {
-        currentAlt = asin(ac_sinalt) * Rad;
-    }
-    else    // finish
-    if (ac_step == 8)
-    {
-        ac_step = 0;
-        done = true;
-    }
-        return done;
-  }
-}
-
-
-
-// -----------------------------------------------------------------------------------------------------------------------------
-// Refraction adjusted tracking
-
-// returns the amount of refraction (in arcminutes) at given altitude (degrees), pressure (millibars), and temperature (celsius)
-double Refrac(double Alt, double Pressure = 1010.0, double Temperature = 15.0)
-{
-    double  TPC = (Pressure / 1010.0) * (283.0 / (273.0 + Temperature));
-    double  r = ((1.02 * cot((Alt + (10.3 / (Alt + 5.11))) / Rad))) * TPC;
-    if (r < 0.0) r = 0.0;
-    return r;
-}
-
-// Alternate tracking rate calculation method
-double ZenithTrackingRate()
-{
-    double  Alt1 = currentAlt + 0.5;
-    if (Alt1 < 0.0) Alt1 = 0.0;
-
-    double  Alt2 = currentAlt - 0.5;
-    if (Alt2 < 0.0) Alt2 = 0.0;
-    if (currentAlt > 89.8) return 15.0;
-    if (currentAlt > 89.5) return 14.998;
-
-    double  Alt1_ = Alt1 - (Refrac(Alt1) / 60.0);
-    double  Alt2_ = Alt2 - (Refrac(Alt2) / 60.0);
-
-    return 15.0 * ((double) ((Alt1 - Alt2) / (Alt1_ - Alt2_)));
-}
-
-// distance in arc-min ahead of and behind the current Equ position, used for rate calculation
-
-#define RefractionRateRange 10
-
-boolean do_refractionRate_calc()
-{
-    boolean done = false;
-
-    // turn off if not tracking at sidereal rate
-    if (!sideralTracking || movingTo)
-    {
-        az_deltaAxis1 = 15.0;
-        az_deltaAxis2 = 0.0;
-        return true;
-    }
-
-    az_step++;
-
-    // load HA/Dec
-    if (az_step == 1)
-    {
-        if (onTrack)
-            getEqu(&az_Axis1, &az_Axis2, true);
-        else
-            getApproxEqu(&az_Axis1, &az_Axis2, true);
-    }
-    else    // convert units,  get ahead of and behind current position
-    if ((az_step == 5) || (az_step == 105))
-    {
-        az_Dec = az_Axis2;
-        az_HA = az_Axis1;
-        if (az_step == 5) az_HA = az_HA - (RefractionRateRange / 60.0);
-        if (az_step == 105) az_HA = az_HA + (RefractionRateRange / 60.0);
-    }
-    else    // get the Horizon coords
-    if ((az_step == 10) || (az_step == 110))
-    {
-        if (onTrack)
-            GeoAlign.EquToInstr(localSite.latitude(), az_HA, az_Dec, &az_HA, &az_Dec);
-    }
-
-    // get the Horizon coords
-    if ((az_step == 15) || (az_step == 115))
-    {
-        EquToHor(az_HA, az_Dec, &az_Alt, &az_Azm);
-    }
-    else    // apply refraction
-    if ((az_step == 20) || (az_step == 120))
-    {
-        az_Alt += Refrac(az_Alt) / 60.0;
-    }
-    else    // convert back to the Equtorial coords
-    if ((az_step == 25) || (az_step == 125))
-    {
-        HorToEqu(az_Alt, az_Azm, &az_HA1, &az_Dec1);
-        if (az_HA1 > 180.0) az_HA1 -= 360.0;    // HA range +/-180
-    }
-    else                        // calculate refraction rate deltas'
-    if ((az_step == 30) || (az_step == 130))
-    {
-        // store first calc
-        if (az_step == 30)
-        {
-            az_HA2 = az_HA1;
-            az_Dec2 = az_Dec1;
-        }
-
-        // we have both -0.5hr and +0.5hr values
-        if (az_step == 130)
-        {
-            // set rates
-            // handle coordinate wrap
-            if ((az_HA1 < -90.0) && (az_HA2 > 90.0)) az_HA1 += 360.0;
-            if ((az_HA2 < -90.0) && (az_HA1 > 90.0)) az_HA2 += 360.0;
-
-            // set rates
-            double  dax1 = (az_HA1 - az_HA2) *
-                (15.0 / (RefractionRateRange / 60.0)) / 2.0;
-            az_deltaAxis1 = (az_deltaAxis1 * 9.0 + dax1) / 10.0;
-
-            double  dax2 = (az_Dec1 - az_Dec2) *
-                (15.0 / (RefractionRateRange / 60.0)) / 2.0;
-            az_deltaAxis2 = (az_deltaAxis2 * 9.0 + dax2) / 10.0;
-
-            // override for special case of near a celestial pole
-            if (90.0 - fabs(az_Dec) < (1.0 / 3600.0))
-            {
-                az_deltaAxis1 = 15.0;
-                az_deltaAxis2 = 0.0;
-            }
-
-            // override for special case of near the zenith
-            if (currentAlt > (90.0 - 7.5))
-            {
-                az_deltaAxis1 = ZenithTrackingRate();
-                az_deltaAxis2 = 0.0;
-            }
-        }
-    }
-    else                        // finish once every 200 calls
-    if (az_step == 200)
-    {
-        az_step = 0;
-        done = true;
-    }
-
-    return done;
-}
-
-// -----------------------------------------------------------------------------------------------------------------------------
-// AltAz tracking
 
 #define AltAzTrackingRange  1  // distance in arc-min (20) ahead of and behind the current Equ position, used for rate calculation
-double  az_Alt1, az_Alt2, az_Azm1, az_Azm2;
-
-boolean do_altAzmRate_calc()
+boolean do_compensation_calc()
 {
-    boolean done = false;
-    // turn off if not tracking at sidereal rate
-    if (!sideralTracking)
-    {
-        az_deltaAxis1 = 0.0;
-        az_deltaAxis2 = 0.0;
-        return true;
-    }
-    az_step++;
-    // convert units, get ahead of and behind current position
-    if (az_step == 1)
-    {
-        if (movingTo)
-        {
-            cli();
-            az_Axis1 = targetAxis1.part.m;
-            az_Axis2 = targetAxis2.part.m;
-            sei();
-        }
-        else
-        {
-            cli();
-            az_Axis1 = posAxis1;
-            az_Axis2 = posAxis2;
-            sei();
-        }
-      // get the Azm
-      az_Azm = (double)az_Axis1 / (double)StepsPerDegreeAxis1;
-      // get the Alt
-      az_Alt = (double)az_Axis2 / (double)StepsPerDegreeAxis2;
-    }
-    else                        // convert to Equatorial coords
-      if ((az_step == 5))
-      {
-        HorToEqu(az_Alt, az_Azm, &az_HA1, &az_Dec1);
-    }
-    else                        // look ahead of and behind the current position
-    if ((az_step == 10) || (az_step == 110))
-    {
-        if (az_step == 10) az_HA = (az_HA1 - (AltAzTrackingRange / 60.0));
-        if (az_step == 110) az_HA = (az_HA1 + (AltAzTrackingRange / 60.0));
-        az_Dec = az_Dec1;
-    }
-    else                        // each back to the Horizon coords
-    if ((az_step == 15) || (az_step == 115))
-    {
-        EquToHor(az_HA, az_Dec, &az_Alt, &az_Azm);
-        if (az_Azm > 180.0) az_Azm -= 360.0;
-        if (az_Azm < -180.0) az_Azm += 360.0;
-
-        if (az_step == 15)
-        {
-            az_Alt2 = az_Alt;
-            az_Azm2 = az_Azm;
-        }
-
-        if (az_step == 115)
-        {
-            az_Alt1 = az_Alt;
-            az_Azm1 = az_Azm;
-        }
-    }
-    else                        // calculate tracking rate deltas'
-    if ((az_step == 20) || (az_step == 120))
-    {
-        // we have both -0.5hr and +0.5hr values
-        if (az_step == 120)
-        {
-            // handle coordinate wrap
-            if ((az_Azm1 < -90.0) && (az_Azm2 > 90.0)) az_Azm1 += 360.0;
-            if ((az_Azm2 < -90.0) && (az_Azm1 > 90.0)) az_Azm2 += 360.0;
-
-            // set rates
-            az_deltaAxis1 = ((az_Azm1 - az_Azm2) * (15.0 / (AltAzTrackingRange / 60.0)) / 2.0) * az_deltaRateScale;
-            az_deltaAxis2 = ((az_Alt1 - az_Alt2) * (15.0 / (AltAzTrackingRange / 60.0)) / 2.0) * az_deltaRateScale;
-
-            // override for special case of near a celestial pole
-            if (90.0 - fabs(az_Dec) <= 0.5)
-            {
-                az_deltaAxis1 = 0.0;
-                az_deltaAxis2 = 0.0;
-            }
-        }
-    }
-    else                        // finish once every 200 calls
-    if (az_step == 200)
-    {
-        az_step = 0;
-        done = true;
-    }
-
-    return done;
-}
-
-boolean do_altAzmRate_calc2()
-{
-
+  boolean done = false;
+  
+  static long axis1_before, axis1_after = 0;
+  static long axis2_before, axis2_after = 0;
+  static double Axis1_tmp, Axis2_tmp = 0;
+  static double HA_tmp, HA_now = 0;
+  static double Dec_tmp, Dec_now = 0;
+  static double Azm_tmp, Alt_tmp = 0;
+  static int    az_step = 0;
 
   // turn off if not tracking at sidereal rate
-  if (!sideralTracking || movingTo)
+  if (!sideralTracking)
   {
     az_deltaAxis1 = 0.0;
     az_deltaAxis2 = 0.0;
+    az_step = 0;
     return true;
   }
-
-
-
+  az_step++;
   // convert units, get ahead of and behind current position
-
-  if (movingTo)
+  switch (az_step)
   {
-    cli();
-    az_Axis1 = targetAxis1.part.m;
-    az_Axis2 = targetAxis2.part.m;
-    sei();
+  case 1:
+    if (movingTo)
+      getEquTarget(&HA_now, &Dec_now, true);
+    else
+      getEqu(&HA_now, &Dec_now, true);
+    break;
+  case 10:
+    // look ahead of the current position
+    HA_tmp = (HA_now - (AltAzTrackingRange / 60.0));
+    Dec_tmp = Dec_now;
+    break;
+  case 15:
+    EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp);
+    alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
+    InstrtoStep(Axis1_tmp, Axis2_tmp, GetPierSide(), &axis1_before, &axis2_before);
+    break;
+  case 110:
+    // look behind the current position
+    HA_tmp = (HA_now + (AltAzTrackingRange / 60.0));
+    Dec_tmp = Dec_now;
+    break;
+  case 115:
+    EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp);
+    alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
+    InstrtoStep(Axis1_tmp, Axis2_tmp, GetPierSide(), &axis1_after, &axis2_after);
+    break;
+  case 120:
+    // we have both -0.5hr and +0.5hr values // calculate tracking rate deltas'
+               // handle coordinate wrap
+    if ((axis1_after < -halfRotAxis1) && (axis1_before > halfRotAxis1)) axis1_after += 2*halfRotAxis1;
+    if ((axis1_before < -halfRotAxis1) && (axis1_after > halfRotAxis1)) axis1_after += 2*halfRotAxis1;
+    // set rates
+
+    az_deltaAxis1 = (distStepAxis1(axis1_before, axis1_after) / StepsPerDegreeAxis1 * (15.0 / (AltAzTrackingRange / 60.0)) / 2.0) * az_deltaRateScale;
+    az_deltaAxis2 = (distStepAxis2(axis2_before, axis2_after) / StepsPerDegreeAxis2 * (15.0 / (AltAzTrackingRange / 60.0)) / 2.0) * az_deltaRateScale;
+    // override for special case of near a celestial pole
+    //if (90.0 - fabs(Dec_now) <= 0.5)
+    //{
+    //  az_deltaAxis1 = 0.0;
+    //  az_deltaAxis2 = 0.0;
+    //}
+    break;
+  case 200:
+    az_step = 0;
+    done = true;
+    break;
   }
-  else
-  {
-    cli();
-    az_Axis1 = posAxis1;
-    az_Axis2 = posAxis2;
-    sei();
-  }
-
-  // get the Azm
-  az_Azm = (double)az_Axis1 / (double)StepsPerDegreeAxis1;
-
-  // get the Alt
-  az_Alt = (double)az_Axis2 / (double)StepsPerDegreeAxis2;
-
-
-  HorToEqu(az_Alt, az_Azm, &az_HA1, &az_Dec1);
-  // look ahead of and behind the current position
-
-
-
-    return true;
+  return done;
 }
-// -----------------------------------------------------------------------------------------------------------------------------
 
 //// Misc. numeric conversion
 //double timeRange(double t)
@@ -756,6 +510,14 @@ double haRange(double d)
     while (d < -180.0) d += 360.0;
     return d;
 }
+
+double AzRange(double d)
+{
+    while (d >= 360.0 ) d -= 360.0;
+    while (d < 0.0 ) d += 360.0;
+    return d;
+}
+
 
 double degRange(double d)
 {
@@ -864,50 +626,34 @@ void enableRateAxis2(double vRate)
   sei();
 }
 
-// Remap HA DEC value between -180 +180 and -90 +90
-void CorrectHADec(double *HA, double *Dec)
+void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side)
 {
-  if (!isAltAZ())
+  if (*AngleAxis2 > 90.0)
   {
-    // switch from under the pole coordinates
-    if (*Dec > 90.0)
-    {
-      *Dec = (90.0 - *Dec) + 90;
-      *HA = *HA - 180.0;
-    }
-    else if (*Dec < -90.0)
-    {
-      *Dec = (-90.0 - *Dec) - 90.0;
-      *HA = *HA - 180.0;
-    }
+    *AngleAxis2 = (90.0 - *AngleAxis2) + 90;
+    *AngleAxis1 = *AngleAxis1 - 180.0;
+    *Side = PierSide::PIER_WEST;
   }
-  while (*HA > 180.0) *HA -= 360.0;
-  while (*HA < -180.0) *HA += 360.0;
+  else if (*AngleAxis2 < -90.0)
+  {
+    *AngleAxis2 = (-90.0 - *AngleAxis2) - 90.0;
+    *AngleAxis1 = *AngleAxis1 - 180.0;
+    *Side = PierSide::PIER_WEST;
+  }
+  else
+    *Side = PierSide::PIER_EAST;
 }
 
-void InsrtHADec2HADec(double *HA, double *Dec, PierSide *Side)
+void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2)
 {
-  if (*Dec > 90.0)
+  if (Side >= PIER_WEST)
   {
-    *Dec = (90.0 - *Dec) + 90;
-    *HA = *HA - 180.0;
-  }
-  else if (*Dec < -90.0)
-  {
-    *Dec = (-90.0 - *Dec) - 90.0;
-    *HA = *HA - 180.0;
-  }
-}
-
-void HADec2InsrtHADec(double *HA, double *Dec, PierSide *Side )
-{
-  if (*Side >= PIER_WEST)
-  {
+    //TODO Verify for altaz!!
     if (*localSite.latitude() >= 0)
-      *Dec = (90.0 - *Dec) + 90;
+      *AngleAxis2 = (90.0 - *AngleAxis2) + 90;
     else
-      *Dec = (-90.0 - *Dec) - 90;
-    *HA = *HA + 180.0;
+      *AngleAxis2 = (-90.0 - *AngleAxis2) - 90;
+    *AngleAxis1 = *AngleAxis1 + 180.0;
   }
 }
 

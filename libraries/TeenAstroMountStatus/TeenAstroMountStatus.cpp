@@ -29,13 +29,7 @@ void TeenAstroMountStatus::backStepAlign()
     return;
   if (isAlignSelect())
   {
-    if (m_alignStar == 1)
-    {
-      stopAlign();
-      return;
-    }
-    m_align = ALI_RECENTER;
-    m_alignStar--;
+    stopAlign();
     return;
   };
   if (isAlignSlew())
@@ -45,7 +39,7 @@ void TeenAstroMountStatus::backStepAlign()
   }
   if (isAlignRecenter())
   {
-    m_align = ALI_SLEW;
+    m_align = ALI_SELECT;
     return;
   }
   return;
@@ -97,8 +91,8 @@ void TeenAstroMountStatus::updateTime()
   {
     m_hasInfoUTC = GetLX200(":GL#", m_TempUTC, sizeof(m_TempUTC)) == LX200VALUEGET;
     m_hasInfoUTCdate =  GetLX200(":GX81#", m_TempUTCdate, sizeof(m_TempUTCdate)) == LX200VALUEGET;
-    m_hasInfoSideral = GetLX200(":GS#", m_TempSideral, sizeof(m_TempSideral)) == LX200VALUEGET;
-    m_hasInfoUTC && m_hasInfoSideral  && m_hasInfoUTCdate ? m_lastStateTime = millis() : m_connectionFailure++;
+    m_hasInfoSidereal = GetLX200(":GS#", m_TempSidereal, sizeof(m_TempSidereal)) == LX200VALUEGET;
+    m_hasInfoUTC && m_hasInfoSidereal  && m_hasInfoUTCdate ? m_lastStateTime = millis() : m_connectionFailure++;
   }
 };
 void TeenAstroMountStatus::updateFocuser()
@@ -195,16 +189,16 @@ TeenAstroMountStatus::TrackState TeenAstroMountStatus::getTrackingState()
     return TRK_UNKNOW;
   }
 }
-TeenAstroMountStatus::SideralMode TeenAstroMountStatus::getSideralMode()
+TeenAstroMountStatus::SiderealMode TeenAstroMountStatus::getSiderealMode()
 {
   switch (m_TempMount[1])
   {
   case '2':
   case '1':
   case '0':
-    return  static_cast<SideralMode>(m_TempMount[1]-'0');
+    return  static_cast<SiderealMode>(m_TempMount[1]-'0');
   default:
-    return SideralMode::SID_STAR;
+    return SiderealMode::SID_STAR;
   }
 }
 bool TeenAstroMountStatus::getLstT0(double &T0)
@@ -230,6 +224,15 @@ bool TeenAstroMountStatus::Parking()
 bool TeenAstroMountStatus::Parked()
 {
   return getParkState() == PRK_PARKED;
+}
+bool TeenAstroMountStatus::getGuidingRate(unsigned char &g)
+{
+  g = m_TempMount[4] - '0';
+  return g<10;
+}
+bool TeenAstroMountStatus::isSpiralRunning()
+{
+  return  m_TempMount[5] == '@';
 }
 bool TeenAstroMountStatus::isPulseGuiding()
 {
@@ -330,33 +333,44 @@ bool TeenAstroMountStatus::getLastErrorMessage(char message[])
   return message[0];
 }
 
-void TeenAstroMountStatus::addStar()
+TeenAstroMountStatus::AlignReply TeenAstroMountStatus::addStar()
 {
   if (isAlignRecenter())
   {
-    if (SetLX200(":A+#")==LX200VALUESET)
+    char text[5] = ":A #";
+  
+    if (getAlignMode() == TeenAstroMountStatus::ALIM_TWO)
+      text[2] = '2';
+    else if (getAlignMode() == TeenAstroMountStatus::ALIM_THREE)
+      text[2] = '3';
+    else
     {
-      bool done = false;
+      stopAlign();
+      return AlignReply::ALIR_FAILED2;
+    }
+
+    if (SetLX200(text) == LX200VALUESET)
+    {
       if (isLastStarAlign())
       {
-        //TODO DisplayMessage("Alignment", "Success!", -1);
         stopAlign();
+        return AlignReply::ALIR_DONE;
       }
       else
       {
         nextStepAlign();
-        //TODO DisplayMessage("Add Star", "Success!", -1);
+        return AlignReply::ALIR_ADDED;
       }
     }
     else
     {
-      //TODO DisplayMessage("Add Star", "Failed!", -1);
       stopAlign();
+      return AlignReply::ALIR_FAILED1;
     }
   }
   else
   {
-    //TODO DisplayMessage("Failed!", "Wrong State", -1);
     stopAlign();
+    return AlignReply::ALIR_FAILED2;
   }
 }

@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <math.h>
-#include "Config.h"
 #include "TeenAstroCatalog.h"
 #include "CatalogTypes.h"
 #include "CatalogConfig.h"
@@ -176,6 +175,10 @@ bool CatMgr::isStarCatalog() {
          (catalogType()==CAT_VAR_STAR) || (catalogType()==CAT_VAR_STAR_COMP);
 }
 
+bool CatMgr::isBrightStarCatalog() {
+  return (catalogType()==CAT_GEN_STAR  || (catalogType()==CAT_GEN_STAR_VCOMP) );
+}
+
 bool CatMgr::isDblStarCatalog() {
   if (catalogType()==CAT_DBL_STAR) return true;
   if (catalogType()==CAT_DBL_STAR_COMP) return true;
@@ -317,7 +320,8 @@ bool CatMgr::hasActiveFilter() {
   if (_fm==FM_NONE) return false;
   if (_fm_horizon_limit != 0) return true; // doesn't apply to this indication
   if (_fm & FM_CONSTELLATION) return true;
-  if (isDsoCatalog() && (_fm & FM_OBJ_TYPE)) return true;
+  if (isBrightStarCatalog() && _fm & FM_OBJ_HAS_NAME) return true;
+  if (isDsoCatalog() && _fm & FM_OBJ_TYPE) return true;
   if (_fm & FM_BY_MAG) return true;
   if (_fm & FM_NEARBY) return true;
   if (isDblStarCatalog() && (_fm & FM_DBL_MAX_SEP)) return true;
@@ -336,6 +340,9 @@ bool CatMgr::isFiltered() {
   }
   if (_fm & FM_OBJ_TYPE) {
     if (isDsoCatalog() && (objectType()!=_fm_obj_type)) return true;
+  }
+  if (_fm & FM_OBJ_HAS_NAME) {
+    if (isBrightStarCatalog() && objectNameStr()[0]==0) return true;
   }
   if (_fm & FM_BY_MAG) {
     if (magnitude()>=_fm_mag_limit) return true;

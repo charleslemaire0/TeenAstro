@@ -99,7 +99,7 @@ ISR(TIMER1_COMPA_vect)
       double  x = deltaTargetAxis1;
       bool other_axis_done = fabs(deltaTargetAxis2) < BreakDistAxis2;
 
-      if ((!inbacklashAxis1) && (guideDirAxis1))
+      if (!inbacklashAxis1 && guideDirAxis1)
       {
         if ((fabs(guideTimerRateAxis1) < maxguideTimerRate) &&
           (fabs(guideTimerRateAxis1A) < maxguideTimerRate))
@@ -255,7 +255,7 @@ ISR(TIMER1_COMPA_vect)
     // travel through the backlash is done, but we weren't following the target while it was happening!
     // so now get us back to near where we need to be
     updateDeltaTarget();
-    if ((!inbacklashAxis1) && (wasInbacklashAxis1) && (!guideDirAxis1))
+    if (!inbacklashAxis1 && wasInbacklashAxis1 && !guideDirAxis1)
     {
       cli();
       if (abs(deltaTargetAxis1) > 2)
@@ -264,7 +264,7 @@ ISR(TIMER1_COMPA_vect)
         wasInbacklashAxis1 = false;
       sei();
     }
-    if ((!inbacklashAxis2) && (wasInbacklashAxis2) && (!guideDirAxis2))
+    if (!inbacklashAxis2 && wasInbacklashAxis2 && !guideDirAxis2)
     {
       cli();
       if (abs(deltaTargetAxis2) > 2)
@@ -378,9 +378,6 @@ ISR(TIMER4_COMPA_vect)
           dirAxis2 = 1;
         else
           dirAxis2 = 0;   // Direction control
-
-      // Set direction.  Needs >=0.65uS before/after rising step signal (DRV8825 or A4988).
-
         if (ReverseAxis2^Axis2Reverse)
         {
           if (dirAxis2)

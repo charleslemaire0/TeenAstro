@@ -24,10 +24,8 @@
                                      // too slow and the mount will be sluggish while it moves through the backlash
                                      // for the most part this doesn't need to be changed, but adjust when needed.  Default=25
 
-#define MinDec                   -91 // minimum allowed declination, default = -91 (off)  Ignored on Alt/Azm mounts.
-#define MaxDec                   +91 // maximum allowed declination, default =  91 (off)  Ignored on Alt/Azm mounts.
-                                     // For example, a value of +80 would stop gotos/tracking near the north celestial pole.
-                                     // For a Northern Hemisphere user, this would stop tracking when the mount is in the polar home position but
-                                     // that can be easily worked around by doing an alignment once and saving a park position (assuming a 
-                                     // fork/yolk mount with meridian flips turned off by setting the minutesPastMeridian values to cover the whole sky)
-#define MaxAzm                   270 // Alt/Az mounts only. +/- maximum allowed Azimuth, default =  180.  Allowed range is 180 to 360
+#define MinAxis2EQ                   -360 // minimum allowed position for axis2
+#define MaxAxis2EQ                   +360 // maximum allowed position for axis2
+#define MinAxis2AZALT                -10 // minimum allowed position for axis2
+#define MaxAxis2AZALT                 90 // maximum allowed position for axis2
+#define DegreePastAZ                  10  // Alt/Az mounts only. +/- maximum allowed Azimuth, default = 0.  Allowed range is 0 to 30

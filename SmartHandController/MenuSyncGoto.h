@@ -12,7 +12,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
 
   while (true) {
     // build the list of star/dso catalogs
-    const char* string_list_gotoL1="Catalogs\nSolar System\nCoordinates\nHome\nPark";
+    const char* string_list_gotoL1="Catalogs\nSolar System\nCoordinates\nUser Defined\nHome\nPark";
     int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync" : "Goto", current_selection, string_list_gotoL1);
     if (selection == 0) return MR_CANCEL;
     current_selection=selection;
@@ -26,37 +26,62 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
       case 3:
         if (menuCoordinates(sync)==MR_QUIT) return MR_QUIT;
         break;
-      case 4:      
+      case 4:
+        if ( DisplayMessageLX200(SyncGotoUserLX200(sync), false)) return MR_QUIT;
+        break;
+      case 5:      
         if ( DisplayMessageLX200(SyncGoHomeLX200(sync), false)) return MR_QUIT;
         break;
-      case 5:
+      case 6:
         if ( DisplayMessageLX200(SyncGoParkLX200(sync), false)) return MR_QUIT;
         break;
     }
   }
 }
 
+
+
 SmartHandController::MENU_RESULT SmartHandController::menuCoordinates(bool sync)
 {
   static int current_selection = 1;
+  float azm,alt = 0;
   while (true) {
-    const char* string_list="J2000\nJNow\nAlt Az";
+    const char* string_list="J2000\nJNow\nAlt Az\nNorth\nSouth\nEast\nWest";
     int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync Coord." : "Goto Coord.", current_selection, string_list);
     if (selection == 0) return MR_CANCEL;
     current_selection=selection;
     switch (current_selection) {
-      case 1:
-        if (menuRADecJ2000(sync) == MR_QUIT) return MR_QUIT;
-        break;
-      case 2:
-        if (menuRADecNow(sync)==MR_QUIT) return MR_QUIT;
-        break;
-      case 3:
-        if (menuAltAz(sync) == MR_QUIT) return MR_QUIT;
-        break;
+    case 1:
+      if (menuRADecJ2000(sync) == MR_QUIT) return MR_QUIT;
+      break;
+    case 2:
+      if (menuRADecNow(sync) == MR_QUIT) return MR_QUIT;
+      break;
+    case 3:
+      if (menuAltAz(sync) == MR_QUIT) return MR_QUIT;
+      break;
+    case 4:
+      azm = 0;
+      alt = 0;
+      if (DisplayMessageLX200(SyncGotoLX200AltAz(sync, azm, alt))) return MR_QUIT;
+      break;
+    case 5:
+      azm = 180;
+      alt = 0;
+      if (DisplayMessageLX200(SyncGotoLX200AltAz(sync, azm, alt))) return MR_QUIT;
+      break;
+    case 6:
+      azm = 90;
+      alt = 0;
+      if (DisplayMessageLX200(SyncGotoLX200AltAz(sync, azm, alt))) return MR_QUIT;
+      break;
+    case 7:
+      azm = 270;
+      alt = 0;
+      if (DisplayMessageLX200(SyncGotoLX200AltAz(sync, azm, alt))) return MR_QUIT;
+      break;
     }
   }
-  
 }
 
 SmartHandController::MENU_RESULT SmartHandController::menuPier()
@@ -129,7 +154,6 @@ SmartHandController::MENU_RESULT SmartHandController::subMenuSyncGoto(char sync,
 
 SmartHandController::MENU_RESULT SmartHandController::menuCatalog(bool sync, int number)
 {
-  drawWait();
   cat_mgr.select(number);
   char title[20]="";
   setCatMgrFilters();
@@ -151,6 +175,32 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalog(bool sync, int
       }
     } else DisplayMessage(cat_mgr.catalogTitle(), "No Object", -1);
   } else DisplayMessage(cat_mgr.catalogTitle(), "Not Init'd?", -1);
+  return MR_CANCEL;
+}
+
+SmartHandController::MENU_RESULT SmartHandController::menuCatalogAlign()
+{
+  cat_mgr.select(0);
+  char title[20] = "";
+  cat_mgr.filtersClear();
+  cat_mgr.filterAdd(FM_OBJ_HAS_NAME);
+  cat_mgr.filterAdd(FM_ABOVE_HORIZON, 1);
+  strcat(title, "Goto ");
+  strcat(title, cat_mgr.catalogTitle());
+  if (cat_mgr.isInitialized()) {
+    if (cat_mgr.setIndex(cat_mgr.getIndex())) {
+      if (display->UserInterfaceCatalog(&buttonPad, title)) {
+        if (DisplayMessageLX200(SyncGotoCatLX200(false), false))
+        {
+          cat_mgr.filtersClear();
+          return MR_QUIT;
+        }
+      }
+    }
+    else DisplayMessage(cat_mgr.catalogTitle(), "No Object", -1);
+  }
+  else DisplayMessage(cat_mgr.catalogTitle(), "Not Init'd?", -1);
+  cat_mgr.filtersClear();
   return MR_CANCEL;
 }
 
@@ -220,8 +270,8 @@ SmartHandController::MENU_RESULT SmartHandController::menuSolarSys(bool sync)
   const char *string_list_SolarSyst = "Sun\nMercury\nVenus\nMars\nJupiter\nSaturn\nUranus\nNeptune\nMoon";
   current_selection = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync Sol Sys" : "Goto Sol Sys", current_selection, string_list_SolarSyst);
   if (current_selection == 0) return MR_CANCEL;
-
-  if (current_selection>3) current_selection++;
+  int selected_planet = current_selection;
+  if (current_selection>3) selected_planet++;
   //if (current_selection == 1)
   //{ 
   //  DisplayMessage("Pointing at the Sun", "can be dangerous", 2000);
@@ -229,7 +279,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuSolarSys(bool sync)
   //  if (display->UserInterfaceInputValueBoolean(&buttonPad, "Goto Sun?", &GotoSun)) { if (!GotoSun) return MR_CANCEL; } else return MR_CANCEL;
   //}
 
-  if (DisplayMessageLX200(SyncGotoPlanetLX200(sync, current_selection-1),false)) return MR_QUIT;
+  if (DisplayMessageLX200(SyncGotoPlanetLX200(sync, selected_planet-1),false)) return MR_QUIT;
   return MR_CANCEL;
 }
 

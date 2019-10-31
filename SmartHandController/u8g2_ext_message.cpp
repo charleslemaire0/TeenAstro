@@ -171,18 +171,18 @@ u8g2_uint_t ext_UserInterfaceMessage(u8g2_t *u8g2, Pad *extPad, const char *titl
     for (;;)
     {
       event = ext_GetMenuEvent(extPad);
-      if (event == U8X8_MSG_GPIO_MENU_SELECT)
+      if (event == U8X8_MSG_GPIO_MENU_NEXT)
         return cursor + 1;
-      else if (event == U8X8_MSG_GPIO_MENU_HOME)
+      else if (event == U8X8_MSG_GPIO_MENU_PREV )
         return 0;
-      else if (event == U8X8_MSG_GPIO_MENU_NEXT || event == U8X8_MSG_GPIO_MENU_DOWN)
+      else if ( event == U8X8_MSG_GPIO_MENU_DOWN)
       {
         cursor++;
         if (cursor >= button_cnt)
           cursor = 0;
         break;
       }
-      else if (event == U8X8_MSG_GPIO_MENU_PREV || event == U8X8_MSG_GPIO_MENU_UP)
+      else if ( event == U8X8_MSG_GPIO_MENU_UP)
       {
         if (cursor == 0)
           cursor = button_cnt;

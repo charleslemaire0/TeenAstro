@@ -79,7 +79,7 @@ void Command_dollar()
         EEPROM_writeInt(EE_GearAxis1, i);
       }
       unsetPark();
-      updateRatios();
+      updateRatios(true);
     }
     else
       commandError = true;
@@ -113,7 +113,7 @@ void Command_dollar()
         EEPROM_writeInt(EE_StepRotAxis1, i);
       }
       unsetPark();
-      updateRatios();
+      updateRatios(true);
     }
     else
       commandError = true;
@@ -148,7 +148,7 @@ void Command_dollar()
         motorAxis1.setMicrostep(MicroAxis1);
         EEPROM.write(EE_MicroAxis1, MicroAxis1);
       }
-      updateRatios();
+      updateRatios(true);
     }
     else
       commandError = true;
@@ -259,7 +259,7 @@ void Command_pct()
   switch (command[1])
   {
   case 'X':
-    initmotor();
+    initmotor(true);
     break;
   case 'B':
   {
@@ -426,121 +426,72 @@ void Command_pct()
 
 //----------------------------------------------------------------------------------
 //   A - Alignment Commands
-//  :AW#  Align Write to EEPROM
-//         Returns: 1 on success
+
 void Command_A()
 {
-  if (command[1] == 'W')
+  switch (command[1])
   {
+  case 'W':
     saveAlignModel();
-  }
-  else    //  :A?#  Align status
-          //         Returns: mno#
-          //         where m is the maximum number of alignment stars
-          //               n is the current alignment star (0 otherwise)
-          //               o is the last required alignment star when an alignment is in progress (0 otherwise)
-    if (command[1] == '?')
+    break;
+  case 'C':
+    initTransformation(true);
+    syncPolarHome();
+    break;
+  case '0':
+    // telescope should be set in the polar home for a starting point
+    initTransformation(true);
+    syncPolarHome();
+    // enable the stepper drivers
+    enable_Axis(true);
+    delay(10);
+    // start tracking
+    sideralTracking = true;
+    lastSetTrakingEnable = millis();
+    break;
+  case '2':
+  {
+    double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+    double Azm, Alt;
+    EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt);
+    cli();
+    double Axis1 = posAxis1 / StepsPerDegreeAxis1;
+    double Axis2 = posAxis2 / StepsPerDegreeAxis2;
+    sei()
+      alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
+    if (alignment.getRefs()==2)
     {
-      reply[0] = maxAlignNumStar;
-      reply[1] = '0' + alignThisStar;
-      reply[2] = '0' + alignNumStars;
-      reply[3] = 0;
-      quietReply = true;
+      alignment.calculateThirdReference();
+      cli();
+      targetAxis1.part.m = posAxis1;
+      targetAxis2.part.m = posAxis2;
+      sei();
     }
-    else    //  :An#  Start Telescope Manual Alignment Sequence
-            //         This is to initiate a one or two-star alignment:
-            //         1) Before calling this function, the telescope should be in the polar-home position
-            //         2) Call this function
-            //         3) Set the target location (RA/Dec) to a bright star, etc. (near the celestial equator in the western sky)
-            //         4) Issue a goto command
-            //         5) Center the star/object using the guide commands (as needed)
-            //         6) Call :A+# command to accept the correction
-            //         ( for two-star alignment )
-            //         7) Set the target location (RA/Dec) to a bright star, etc. (near the celestial equator in the southern sky)
-            //         8) Issue a goto command
-            //         9) Center the star/object using the guide commands (as needed)
-            //         10) Call :A+# command to accept the correction
-            //         Returns:
-            //         1: When ready for your goto commands
-            //         0: If mount is busy
-      if ((command[1] >= '1') && (command[1] <= '9'))
-      {
-        // set current time and date before calling this routine
-        // Two star and three star align not supported with Fork mounts in alternate mode
-        
-        if (mountType == MOUNT_TYPE_FORK_ALT && alignThisStar != 1)
-        {
-          commandError = true;
-          alignNumStars = 0;
-          alignThisStar = 1;
-          return;
-        }
-          // telescope should be set in the polar home (CWD) for a starting point
-          // this command sets indexAxis1, indexAxis2, azmCor=0; altCor=0;
-          setHome();
-
-          // enable the stepper drivers
-          enable_Axis(true);
-          delay(10);
-
-          // start tracking
-          sideralTracking = true;
-          lastSetTrakingEnable = millis();
-          // start align...
-          alignNumStars = command[1] - '0';
-          alignThisStar = 1;
-
-
-        if (commandError)
-        {
-          alignNumStars = 0;
-          alignThisStar = 1;
-        }
-      }
-      else    //  :A+#  Manual Alignment, set target location
-              //         Returns:
-              //         1: If correction is accepted
-              //         0: Failure, Manual align mode not set or distance too far
-        if (command[1] == '+')
-        {
-          // after last star turn meridian flips off when align is done
-          if ((alignNumStars == alignThisStar) && (meridianFlip == FLIP_ALIGN))
-            meridianFlip = FLIP_NEVER;
-
-          // AltAz Taki method
-          if (isAltAZ() && (alignNumStars > 1) && (alignThisStar <= alignNumStars))
-          {
-            cli();
-
-            // get the Azm/Alt
-            double  F = (double)(posAxis1 /*+ indexAxis1Steps*/) / (double)StepsPerDegreeAxis1;
-            double  H = (double)(posAxis2 /*+ indexAxis2Steps*/) / (double)StepsPerDegreeAxis2;
-            sei();
-
-            // B=RA, D=Dec, H=Elevation (instr), F=Azimuth (instr), all in degrees
-            Align.addStar(alignThisStar, alignNumStars, haRange(rtk.LST() * 15.0 - newTargetRA), newTargetDec, H, F);
-            alignThisStar++;
-          }
-          else if (alignThisStar <= alignNumStars)
-            {
-              // RA, Dec (in degrees)
-              if (GeoAlign.addStar(alignThisStar, alignNumStars,
-                newTargetRA, newTargetDec))
-                alignThisStar++;
-              else
-                commandError = true;
-            }
-            else
-              commandError = true;
-
-          if (commandError)
-          {
-            alignNumStars = 0;
-            alignThisStar = 0;
-          }
-        }
-        else
-          commandError = true;
+    break;
+  }
+  case '3':
+  {
+    double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+    double Azm, Alt;
+    EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt);
+    cli();
+    double Axis1 = posAxis1 / StepsPerDegreeAxis1;
+    double Axis2 = posAxis2 / StepsPerDegreeAxis2;
+    sei()
+    alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
+    if (alignment.isReady())
+    {
+      cli();
+      targetAxis1.part.m = posAxis1;
+      targetAxis2.part.m = posAxis2;
+      sei();
+    }
+    break;
+  }
+  default:
+    commandError = true;
+  }
+    
 }
 
 
@@ -587,25 +538,38 @@ void Command_C()
 {
   if ((parkStatus == PRK_UNPARKED) &&
       !movingTo &&
-      ( command[1] == 'A' || command[1] == 'M' || command[1] == 'S'))
+      ( command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
   {
+    PierSide targetPierSide = GetPierSide();
     if (newTargetPierSide != PIER_NOTVALID)
     {
-      pierSide = newTargetPierSide;
+      targetPierSide = newTargetPierSide;
       newTargetPierSide = PIER_NOTVALID;
     }
     switch (command[1])
     {
     case 'M':
     case 'S':
-      i = syncEqu(newTargetRA, newTargetDec);
+    {
+      double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+      i = syncEqu(newTargetHA, newTargetDec, targetPierSide);
       break;
+    }
+    case 'U':
+    {
+      // :CU# sync with the User Defined RA DEC
+      newTargetRA = (double)EEPROM_readFloat(EE_RA);
+      newTargetDec = (double)EEPROM_readFloat(EE_DEC);
+      double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+      i = syncEqu(newTargetHA, newTargetDec, targetPierSide);
+      break;
+    }
     case 'A':
-      i = syncAltAz(newTargetAzm, newTargetAlt);
+      i = syncAzAlt(newTargetAzm, newTargetAlt, targetPierSide);
       break;
     }
     i = 0;
-    if (command[1] == 'M' || command[1] == 'A')
+    if (command[1] == 'M' || command[1] == 'A' || command[1] == 'U')
     {
       if (i == 0) strcpy(reply, "N/A");
       if (i > 0) { reply[0] = 'E'; reply[1] = '0' + i; reply[2] = 0; }
@@ -648,7 +612,7 @@ void Command_h()
     //  :hF#   Reset telescope at the home position.  This position is required for a Cold Start.
     //         Point to the celestial pole with the counterweight pointing downwards (CWD position).
     //         Returns: Nothing
-    setHome();
+    syncPolarHome();
     quietReply = true;
     break;
   case 'C':
@@ -678,7 +642,7 @@ void Command_h()
     //  :hR#   Restore parked telescope to operation
     //          Return: 0 on failure
     //                  1 on success
-    if (!unpark()) commandError = true;
+    unpark();
     break;
   default:
     commandError = true;
@@ -695,13 +659,14 @@ void Command_Q()
   case 0:
     //  :Q#    Halt all slews, stops goto
     //         Returns: Nothing
+    doSpiral = false;
     if ((parkStatus == PRK_UNPARKED) || (parkStatus == PRK_PARKING))
     {
       if (movingTo)
       {
         abortSlew = true;
       }
-      else if (GuidingState == GuidingRecenter || GuidingState == GuidingST4)
+      else if (GuidingState == GuidingRecenter || GuidingState == GuidingST4 || GuidingState == GuidingPulse)
       {
         if (guideDirAxis1)
           StopAxis1();
@@ -716,11 +681,8 @@ void Command_Q()
           guideDirAxis2 = 'b';
       }
     }
-
     quietReply = true;
     break;
-
-
   case 'e':
   case 'w':
     //  :Qe# & Qw#   Halt east/westward Slews
@@ -841,14 +803,14 @@ void Command_T()
     // solar tracking rate 60Hz 
     SetTrackingRate(TrackingSolar);
     sideralMode = SIDM_SUN;
-    refraction = false;
+    //refraction = false;
     quietReply = true;
     break;
   case 'L':
     // lunar tracking rate 57.9Hz
     SetTrackingRate(TrackingLunar);
     sideralMode = SIDM_MOON;
-    refraction = false;
+    //refraction = false;
     quietReply = true;
     break;
   case 'Q':
@@ -865,7 +827,7 @@ void Command_T()
   case 'K':
     // king tracking rate 60.136Hz
     SetTrackingRate(0.99953004401);
-    refraction = false;
+    //refraction = false;
     quietReply = true;
     break;
   case 'e':
@@ -952,7 +914,7 @@ void Command_W()
     localSite.ReadSiteDefinition(currentSite);
     rtk.resetLongitude(*localSite.longitude());
     initCelestialPole();
-    initLat();
+    initTransformation(true);
     quietReply = true;
   }
   else
