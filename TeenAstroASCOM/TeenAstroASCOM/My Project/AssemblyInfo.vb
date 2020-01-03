@@ -12,7 +12,7 @@ Imports System.Runtime.InteropServices
 <Assembly: AssemblyDescription("ASCOM Telescope driver for TeenAstro")>
 <Assembly: AssemblyCompany("Charles Lemaire")>
 <Assembly: AssemblyProduct("ASCOM Telescope driver for TeenAstro")>
-<Assembly: AssemblyCopyright("Copyright © 2019, Charles Lemaire")>
+<Assembly: AssemblyCopyright("Copyright © 2020, Charles Lemaire")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(True)>
@@ -30,5 +30,5 @@ Imports System.Runtime.InteropServices
 ' You can specify all the values or you can default the Build and Revision Numbers 
 ' by using the '*' as shown below:
 
-<Assembly: AssemblyVersion("1.1.1.0")>
-<Assembly: AssemblyFileVersion("1.1.1.0")>
+<Assembly: AssemblyVersion("1.2.0.0")>
+<Assembly: AssemblyFileVersion("1.2.0.0")>
