@@ -81,32 +81,16 @@ Public Class AxisRates
   ' Constructor - Friend prevents public creation
   ' of instances. Returned by Telescope.AxisRates.
   '
-  Friend Sub New(ByVal Axis As TelescopeAxes)
+  Friend Sub New(ByVal Axis As TelescopeAxes, ByRef slewSpeeds As Double(), ByVal speedToDegPerSec As Double)
     m_Axis = Axis
-    '
-    ' This collection must hold zero or more Rate objects describing the 
-    ' rates of motion ranges for the Telescope.MoveAxis() method
-    ' that are supported by your driver. It is OK to leave this 
-    ' array empty, indicating that MoveAxis() is not supported.
-    '
-    ' Note that we are constructing a rate array for the axis passed
-    ' to the constructor. Thus we switch() below, and each case should 
-    ' initialize the array for the rate for the selected axis.
-    '
-    Select Case Axis
-      Case TelescopeAxes.axisPrimary
-        ' TODO Initialize this array with any Primary axis rates that your driver may provide
-        ' Example: ReDim m_Rates(2)
-        '          m_Rates(0) = New Rate(10.0, 35.0)
-        '          m_Rates(1) = New Rate(60.1, 120.0)
-        Exit Sub
-      Case TelescopeAxes.axisSecondary
-        ' TODO Initialize this array with any Secondary axis rates that your driver may provide
-        Exit Sub
-      Case TelescopeAxes.axisTertiary
-        ' TODO Initialize this array with any Tertiary axis rates that your driver may provide
-        Exit Sub
-    End Select
+    If (Axis = TelescopeAxes.axisPrimary) Or (Axis = TelescopeAxes.axisSecondary) Then
+      ' Initialize slew rates 0-9 supported by TeenAstro LX200 command set. 
+      ReDim m_Rates(slewSpeeds.GetUpperBound(0))
+      For i = 0 To slewSpeeds.GetUpperBound(0)
+        Dim val As Double = slewSpeeds(i) * speedToDegPerSec
+        m_Rates(i) = New Rate(val, val)
+      Next
+    End If
   End Sub
 
 #Region "IAxisRates Members"

@@ -105,6 +105,12 @@ Public Class Telescope
   Private mastroUtilities As AstroUtils ' Private variable to hold an AstroUtils object to provide the Range method
   Private mTL As TraceLogger ' Private variable to hold the trace logger object (creates a diagnostic log file with information that you specify)
 
+  ' Slew speeds for speed settings 0-9 as defined in the main unit's Global.h in the array guideRates[].
+  ' Values are given as multiples of sidereal speed. Top values are overwritten by MAX_SPEED/2 and MAX_SPEED at runtime.
+  Private mSlewSpeeds() As Double = {0.25, 0.5, 1.0, 2.0, 4.0, 16.0, 32.0, 64.0, 64.0, 64.0}
+  Private mSlewSpeed As String = "" ' Last slew speed set via R command
+  Private mSiderealRate As Double = 15.04106858 / 3600 ' Sidereal rate in degrees per second
+
   'Private Shared mformcontrol As FormControl
   '
   ' Constructor - Must be public for COM registration!
@@ -506,7 +512,15 @@ Public Class Telescope
 
   Public Function AxisRates(Axis As TelescopeAxes) As IAxisRates Implements ITelescopeV3.AxisRates
     mTL.LogMessage("AxisRates", "Get - " & Axis.ToString())
-    Return New AxisRates(Axis)
+    ' Read maxSpeed from TeenAstro main unit and assign top two speed settings on this basis
+    Dim maxSpeed As Double, response As String = Me.CommandString("GX92")
+    mTL.LogMessage("AxisRates", "Get value: " & response)
+    If Not (Double.TryParse(response, maxSpeed)) Then
+      Throw New ASCOM.InvalidValueException("Retrieve MAX_SPEED via :GX92# has failed: '" & response & "'")
+    End If
+    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0) - 1) = maxSpeed / 2.0
+    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0)) = maxSpeed
+    Return New AxisRates(Axis, mSlewSpeeds, mSiderealRate)
   End Function
 
   Public ReadOnly Property Azimuth() As Double Implements ITelescopeV3.Azimuth
@@ -755,8 +769,44 @@ Public Class Telescope
   End Property
 
   Public Sub MoveAxis(Axis As TelescopeAxes, Rate As Double) Implements ITelescopeV3.MoveAxis
-    mTL.LogMessage("MoveAxis", "Not implemented")
-    Throw New ASCOM.MethodNotImplementedException("MoveAxis")
+    mTL.LogMessage("MoveAxis", Axis.ToString() & ":" & Rate.ToString())
+
+    ' Set slew speed to given rate, if different from currently set value.
+    Dim absRate As Double = Math.Abs(Rate)
+    Dim slewSpeed As String = ""
+    For i = mSlewSpeeds.GetUpperBound(0) To 0 Step -1
+      If (absRate >= 0.99 * mSlewSpeeds(i) * mSiderealRate) Then
+        slewSpeed = "R" & i.ToString()
+        Exit For
+      End If
+    Next
+    If (slewSpeed <> "") And (slewSpeed <> mSlewSpeed) Then
+      CommandBlind(slewSpeed)
+      mSlewSpeed = slewSpeed
+    End If
+
+    ' Issue movement command
+    Dim dir As String = ""
+    If (Axis = TelescopeAxes.axisPrimary) Then
+      If (Rate > 0) Then
+        dir = "Me"
+      ElseIf (Rate = 0) Then
+        dir = "Qe"  ' TeenAstro main unit implementation halts both east- and westward slews
+      Else
+        dir = "Mw"
+      End If
+    ElseIf (Axis = TelescopeAxes.axisSecondary) Then
+      If (Rate > 0) Then
+        dir = "Mn"
+      ElseIf (Rate = 0) Then
+        dir = "Qn"  ' TeenAstro main unit implementation halts both north- and southward slews
+      Else
+        dir = "Ms"
+      End If
+    Else
+      Throw New ASCOM.InvalidValueException("MoveAxis", Axis.ToString(), "0 To 1")
+    End If
+    CommandBlind(dir)
   End Sub
 
   Public Sub Park() Implements ITelescopeV3.Park
