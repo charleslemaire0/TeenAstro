@@ -79,8 +79,6 @@ Public Class Telescope
   Friend Shared mcomPort As String
   Friend Shared mIP As String
   Friend Shared mPort As Integer
-  Friend Shared mclient As Net.Sockets.TcpClient = Nothing
-  Friend Shared mstream As Net.Sockets.NetworkStream = Nothing
   Friend Shared mInterface As String
   Friend Shared mtraceState As Boolean = False
   Friend Shared mobjectIP As Net.IPAddress
@@ -171,7 +169,7 @@ Public Class Telescope
     If mInterface = "COM" Then
       Return GetSerial(Command, Mode, buf)
     ElseIf mInterface = "IP" Then
-      Return getStream(Command, Mode, buf)
+      Return getStreamIter(Command, Mode, buf)
     End If
     Return False
   End Function
@@ -240,7 +238,7 @@ Public Class Telescope
         mobjectSerial.Dispose()
         Throw New ASCOM.DriverException(ex.Message)
       End Try
-      mobjectSerial.ReceiveTimeoutMs = 500
+      mobjectSerial.ReceiveTimeout = 1
       If Not MyDevice() Then
         mobjectSerial.Connected = False
         mconnectedState = False
@@ -263,7 +261,7 @@ Public Class Telescope
 
   Private Sub ConnectIP(value As Boolean)
     If value Then
-      mupdateRate = -1
+      mupdateRate = 50
       If Not System.Net.IPAddress.TryParse(mIP, mobjectIP) Then
         MsgBox(mIP + " is Not AddressOf valid IP Address")
         Return
@@ -277,12 +275,6 @@ Public Class Telescope
         Throw New ASCOM.InvalidValueException("Connection has failed!")
       End If
     Else
-      ' Close everything.
-      mstream.Close()
-      mstream.Dispose()
-      mstream = Nothing
-      mclient.Close()
-      mclient = Nothing
       mconnectedState = False
       mTL.LogMessage("Connected Set", "Disconnecting from IP " + mIP)
     End If
@@ -317,66 +309,67 @@ Public Class Telescope
     End Set
   End Property
 
-  Shared Function getStream(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
-    Try
-      ' Create a TcpClient.
-      ' Note, for this client to work you need to have a TcpServer 
-      ' connected to the same address as specified by the server, port
-      ' combination.
-      Dim text As String = mobjectIP.ToString
-      If mclient Is Nothing Then
-        mclient = New Net.Sockets.TcpClient(text, mPort)
-        mstream = mclient.GetStream()
+  Private Function getStreamIter(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
+    Dim k As Integer = 0
+    While k < 3
+      buf = ""
+      If getStream(Command, Mode, buf) Then
+        Return True
+      Else
+        k += 1
       End If
+    End While
+    Return False
+  End Function
 
+  Private Function getStream(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
 
-      ' Translate the passed message into ASCII and store it as a Byte array.
-      Dim data As Byte() = Encoding.ASCII.GetBytes(Command)
-
-
-      ' Get a client stream for reading and writing.
-      '  Stream stream = client.GetStream();
-
-      ' Send the message to the connected TcpServer. 
-      mstream.Write(data, 0, data.Length)
-      mstream.Flush()
-      ' Receive the TcpServer.response.
-      ' Buffer to store the response bytes.
-      data = New Byte(256) {}
-
-      ' String to store the response ASCII representation.
-      buf = String.Empty
-      ' Read the first batch of the TcpServer response bytes.
-
-
+    Dim ClientSocket As System.Net.Sockets.TcpClient = New Net.Sockets.TcpClient
+    Dim result As IAsyncResult = ClientSocket.BeginConnect(mobjectIP, mPort, Nothing, Nothing)
+    Dim online = result.AsyncWaitHandle.WaitOne(1000, True)
+    If Not online Then
+      ClientSocket.Close()
+      mconnectedState = False
+      Return False
+    End If
+    Try
+      Dim ServerStream As Net.Sockets.NetworkStream = ClientSocket.GetStream()
+      Dim outStream As Byte() = System.Text.Encoding.ASCII.GetBytes(Command)
+      ServerStream.Write(outStream, 0, outStream.Length)
+      ServerStream.Flush()
+      buf = ""
       Select Case Mode
         Case 0
           getStream = True
         Case 1 To 2
-          Dim bytes As Integer = mstream.Read(data, 0, data.Length)
-          buf = Encoding.ASCII.GetString(data, 0, bytes)
+          Dim myReadBuffer(ClientSocket.ReceiveBufferSize) As Byte
+          Dim myCompleteMessage As StringBuilder = New StringBuilder()
+          Dim numberOfBytesRead As Integer = 0
+          ' Incoming message may be larger than the buffer size.
+          Do
+            numberOfBytesRead = ServerStream.Read(myReadBuffer, 0, myReadBuffer.Length)
+            myCompleteMessage.AppendFormat("{0}", Encoding.ASCII.GetString(myReadBuffer, 0, numberOfBytesRead))
+          Loop While ServerStream.DataAvailable
+          buf = myCompleteMessage.ToString()
           If Mode = 1 And buf <> "" Then
             buf = buf.Substring(0, 1)
           ElseIf Mode = 2 And buf <> "" Then
             buf = buf.Split("#")(0)
           End If
           getStream = buf <> ""
-
       End Select
-
-
-    Catch e As ArgumentNullException
-      'Console.WriteLine("ArgumentNullException: {0}", e)
-      Return False
-    Catch e As Net.Sockets.SocketException
-      'Console.WriteLine("SocketException: {0}", e)
-      Return False
+      ServerStream.Close()
+      ServerStream.Dispose()
+    Catch ex As Exception
+      getStream = False
     End Try
-
+    ClientSocket.Close()
+    ClientSocket = Nothing
   End Function
 
   Private Function GetSerial(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
     mobjectSerial.ClearBuffers()
+    mobjectSerial.ReceiveTimeout = 100
     mobjectSerial.Transmit(Command)
     Select Case Mode
       Case 0
@@ -453,7 +446,7 @@ Public Class Telescope
 
   Public ReadOnly Property AlignmentMode() As AlignmentModes Implements ITelescopeV3.AlignmentMode
     Get
-      updateTelStatus(False)
+      updateTelStatus()
       Dim m As String = mTelStatus.Substring(12, 1)
       mTL.LogMessage("AlignmentMode", m)
       If m = "E" Then
@@ -495,7 +488,7 @@ Public Class Telescope
 
   Public ReadOnly Property AtHome() As Boolean Implements ITelescopeV3.AtHome
     Get
-      updateTelStatus(False)
+      updateTelStatus()
       Dim isAtHome As Boolean = mTelStatus.Substring(3, 1) = "H"
       mTL.LogMessage("AtHome", "Get - " & isAtHome.ToString())
       Return isAtHome
@@ -504,7 +497,7 @@ Public Class Telescope
 
   Public ReadOnly Property AtPark() As Boolean Implements ITelescopeV3.AtPark
     Get
-      updateTelStatus(False)
+      updateTelStatus()
       Dim isAtPark As Boolean = mTelStatus.Substring(2, 1) = "P"
       mTL.LogMessage("AtPark", "Get - " & isAtPark.ToString())
       Return isAtPark
@@ -754,7 +747,7 @@ Public Class Telescope
 
   Public ReadOnly Property IsPulseGuiding() As Boolean Implements ITelescopeV3.IsPulseGuiding
     Get
-      updateTelStatus(False)
+      updateTelStatus()
       IsPulseGuiding = mTelStatus.Substring(6, 1) = "*"
       mTL.LogMessage("IsPulseGuiding Get", IsPulseGuiding.ToString)
       Return IsPulseGuiding
@@ -833,7 +826,7 @@ Public Class Telescope
 
   Public Property SideOfPier() As PierSide Implements ITelescopeV3.SideOfPier
     Get
-      updateTelStatus(False)
+      updateTelStatus()
       mTL.LogMessage("Get SideOfPier", mTelStatus(13))
       If (mTelStatus(13) = " ") Then
         mTL.LogMessage("Get SideOfPier", "Unknown")
@@ -1014,7 +1007,7 @@ Public Class Telescope
 
   Public ReadOnly Property Slewing() As Boolean Implements ITelescopeV3.Slewing
     Get
-      updateTelStatus(False)
+      updateTelStatus()
       If mTelStatus.Substring(0, 1) = "2" Or mTelStatus.Substring(0, 1) = "3" Or mTelStatus.Substring(6, 1) = "+" Then
         Slewing = True
       Else
@@ -1115,7 +1108,7 @@ Public Class Telescope
   Public Property Tracking() As Boolean Implements ITelescopeV3.Tracking
     Get
       Dim trk As Boolean = True
-      updateTelStatus(False)
+      updateTelStatus()
       If (mTelStatus.Substring(0, 1) = "1" Or mTelStatus.Substring(0, 1) = "3") Then
         trk = True
       ElseIf (mTelStatus.Substring(0, 1) = "0" Or mTelStatus.Substring(0, 1) = "2") Then
@@ -1234,9 +1227,9 @@ Public Class Telescope
     Return False
   End Function
 
-  Private Sub updateTelStatus(forceupdate As Boolean)
+  Private Sub updateTelStatus()
     Dim s1 As Double = (Date.UtcNow - mTelStatusDate).TotalMilliseconds
-    If s1 > mupdateRate Or mTelStatus = "" Or forceupdate Then
+    If s1 > mupdateRate Or mTelStatus = "" Then
       mTelStatus = Me.CommandString("GU")
       If (mTelStatus <> "") Then
         mTelStatusDate = Date.UtcNow
