@@ -550,8 +550,6 @@ void initmount()
   // Tracking and rate control
   refraction_enable = true;
   refraction = refraction_enable;
-  onTrack = false;
-
 }
 
 void initTransformation(bool reset)

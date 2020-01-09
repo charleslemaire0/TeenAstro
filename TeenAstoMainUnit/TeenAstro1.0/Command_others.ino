@@ -779,11 +779,10 @@ void Command_R()
 //  :TQ#   Track rate sidereal
 //  :TR#   Master sidereal clock reset (to calculated sidereal rate, stored in EEPROM)
 //  :TK#   Track rate king
-//  :Te#   Tracking enable  (OnStep only, replies 0/1)
-//  :Td#   Tracking disable (OnStep only, replies 0/1)
-//  :To#   OnTrack enable   (OnStep only, replies 0/1)
-//  :Tr#   Track refraction enable  (OnStep only, replies 0/1)
-//  :Tn#   Track refraction disable (OnStep only, replies 0/1)
+//  :Te#   Tracking enable  (replies 0/1)
+//  :Td#   Tracking disable (replies 0/1)
+//  :Tr#   Track refraction enable  (replies 0/1)
+//  :Tn#   Track refraction disable (replies 0/1)
 //         Returns: Nothing
 void Command_T()
 {
@@ -849,24 +848,15 @@ void Command_T()
       commandError = true;
     break;
 
-  case 'o':
-    // turn full compensation on, defaults to base sidereal tracking rate
-    refraction = refraction_enable;
-    onTrack = true;
-    SetTrackingRate(default_tracking_rate);
-    break;
-
   case 'r':
     // turn refraction compensation on, defaults to base sidereal tracking rate
     refraction = refraction_enable;
-    onTrack = false;
     SetTrackingRate(default_tracking_rate);
     break;
 
   case 'n':
     // turn refraction off, sidereal tracking rate resumes     
     refraction = false;
-    onTrack = false;
     SetTrackingRate(default_tracking_rate);
     break;
 

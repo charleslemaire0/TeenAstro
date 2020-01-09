@@ -552,7 +552,6 @@ void  Command_G()
       reply[10] = 'r';
     else
       reply[10] = 's';
-    if (onTrack) reply[11] = 't';
 
     // provide mount type
     if (mountType == MOUNT_TYPE_GEM)
