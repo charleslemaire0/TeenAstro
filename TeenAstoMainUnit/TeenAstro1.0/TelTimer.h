@@ -143,7 +143,7 @@ public:
     s = second(m_RTClock);
   }
 
-  long getTimeStamp()
+  unsigned long getTimeStamp()
   {
     return Teensy3Clock.get();
   }

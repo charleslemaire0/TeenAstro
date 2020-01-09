@@ -81,7 +81,7 @@ void Command_GX()
       quietReply = true;
       break;     
     case '2'://return seconds since 01/01/1970/00:00:00
-      long t = rtk.getTimeStamp();
+      unsigned long t = rtk.getTimeStamp();
       sprintf(reply, "%lu", t);
       quietReply = true;
       break;
