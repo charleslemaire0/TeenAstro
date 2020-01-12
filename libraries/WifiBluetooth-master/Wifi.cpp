@@ -5,7 +5,7 @@
 // Wifi setup
 
 
-const char html_wifiSerial[] PROGMEM= 
+const char html_wifiSerial1[] PROGMEM= 
 "<b>Performance and compatibility:</b><br/>"
 "<form method='post' action='/wifi.htm'>"
 "Command channel serial read time-out: <input style='width:4em' name='ccto' value='%d' type='number' min='5' max='100'> ms<br/>"
@@ -16,6 +16,15 @@ const char html_wifiMode1[] PROGMEM =
 "<form method='post' action='/wifi.htm'>"
 "<select style='width:10em' name='wifimode'>";
 const char html_wifiMode2[] PROGMEM =
+"</select>"
+"<button type='submit'>Upload</button>"
+"</form>"
+"<br/>\r\n";
+const char html_wifiConnectMode1[] PROGMEM =
+"<br/><b>Wifi connection Mode:</b><br/>"
+"<form method='post' action='/wifi.htm'>"
+"<select style='width:10em' name='wificonnectionmode'>";
+const char html_wifiConnectMode2[] PROGMEM =
 "</select>"
 "<button type='submit'>Upload</button>"
 "</form>"
@@ -176,7 +185,11 @@ void wifibluetooth::handleWifi() {
   activeWifiMode == WifiMode::M_AcessPoint ? data += "<option selected value='3'>AccessPoint</option>" : data += "<option value='3'>AccessPoint</option>";
   data += FPSTR(html_wifiMode2);
   sendHtml(data);
-  sprintf_P(temp, html_wifiSerial, CmdTimeout, WebTimeout); data += temp;
+  sprintf_P(temp, html_wifiSerial1, CmdTimeout, WebTimeout); data += temp;
+  data += FPSTR(html_wifiConnectMode1);
+  activeWifiConnectMode == WifiConnectMode::AutoClose ? data += "<option selected value='0'>One to Many</option>" : data += "<option value='0'>One to Many</option>";
+  activeWifiConnectMode == WifiConnectMode::KeepOpened ? data += "<option selected value='1'>One to One</option>" : data += "<option value='1'>One to One</option>";
+  data += FPSTR(html_wifiConnectMode2);
   sendHtml(data);
   for (int k = 0; k < 3; k++)
   {
@@ -237,10 +250,18 @@ void wifibluetooth::processWifiGet() {
   }
   //wifi Mode
 
-    v = server.arg("wifimode");
+  v = server.arg("wifimode");
   if (v != "") {
     activeWifiMode = static_cast<WifiMode>(v.toInt());
-    EEPROM.write(EEPROM_WifiMode, v.toInt());
+    EEPROM.write(EEPROM_WifiMode, activeWifiMode);
+    EEwrite = true;
+    restartRequired = true;
+  }
+
+  v = server.arg("wificonnectionmode");
+  if (v != "") {
+    activeWifiConnectMode = static_cast<WifiConnectMode>(v.toInt() > 0 );
+    EEPROM.write(EEPROM_WifiConnectMode, activeWifiConnectMode);
     EEwrite = true;
     restartRequired = true;
   }

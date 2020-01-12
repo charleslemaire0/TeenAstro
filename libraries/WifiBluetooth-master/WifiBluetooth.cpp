@@ -44,6 +44,7 @@ bool wifibluetooth::wifiOn = true;
 
 int wifibluetooth::WebTimeout = TIMEOUT_WEB;
 int wifibluetooth::CmdTimeout = TIMEOUT_CMD;
+wifibluetooth::WifiConnectMode wifibluetooth::activeWifiConnectMode = WifiConnectMode::AutoClose;
 
 char wifibluetooth::masterPassword[40] = Default_Password;
 
@@ -235,7 +236,7 @@ void wifibluetooth::writeStation2EEPROM(const int& k)
   for (int i = 0; i < 4; i++, adress++)
     EEPROM.write(adress, wifi_sta_sn[k][i]);
   EEPROM_writeString(adress, wifi_sta_ssid[k]); adress += sizeof(wifi_sta_ssid[k]);
-  EEPROM_writeString(adress, wifi_sta_pwd[k]);
+  EEPROM_writeString(adress, wifi_sta_pwd[k]); adress += sizeof(wifi_sta_pwd[k]);
 }
 void wifibluetooth::writeAccess2EEPROM()
 {
@@ -263,11 +264,13 @@ void wifibluetooth::initFromEEPROM()
     EEPROM.write(adress, 66); adress++;
     EEPROM.write(adress, 0); adress++;
     EEPROM.write(adress, 0); adress++;
-    EEPROM.write(EEPROM_WifiOn, wifiOn);
-    EEPROM.write(EEPROM_WifiMode, activeWifiMode);
+    EEPROM.write(EEPROM_WifiOn, (uint8_t)wifiOn);
+    EEPROM.write(EEPROM_WifiMode, (uint8_t)activeWifiMode);
     EEPROM.write(EEPROM_WebTimeout, (uint8_t)WebTimeout);
     EEPROM.write(EEPROM_CmdTimeout, (uint8_t)CmdTimeout); 
+    EEPROM.write(EEPROM_WifiConnectMode, (uint8_t)activeWifiConnectMode);
     EEPROM_writeString(EPPROM_password, masterPassword);
+
     for (int k = 0; k < 3; k++)
     {
       writeStation2EEPROM(k);
@@ -277,10 +280,36 @@ void wifibluetooth::initFromEEPROM()
   }
   else {
     wifiOn = EEPROM.read(EEPROM_WifiOn);
-    activeWifiMode = static_cast<WifiMode>(EEPROM.read(EEPROM_WifiMode)); 
+    uint8_t val = EEPROM.read(EEPROM_WifiMode);
+    activeWifiMode = static_cast<WifiMode>(val < 5 ? val : 0);
     WebTimeout = EEPROM.read(EEPROM_WebTimeout);
     CmdTimeout = EEPROM.read(EEPROM_CmdTimeout);
+    val = EEPROM.read(EEPROM_WifiConnectMode);
+    activeWifiConnectMode = static_cast<WifiConnectMode>(val < 2 ? val : 0 );
     EEPROM_readString(EPPROM_password, masterPassword);
+    bool passwordok = false;
+    for (int k = 0; k < 40; k++)
+    {
+      if (masterPassword[k] == 0)
+      {
+        if (k == 0)
+        {
+          break;
+        }
+        else
+        {
+          passwordok = true;
+          break;
+        }
+      }
+    }
+    if (!passwordok)
+    {
+      strcpy(masterPassword,Default_Password);
+      wifibluetooth::EEPROM_writeString(EPPROM_password, masterPassword);
+      EEPROM.commit();
+    }
+
     for (int k = 0; k < 3; k++)
     {
       adress = EEPROM_start_wifi_sta + k * 100;
@@ -414,15 +443,33 @@ void wifibluetooth::update()
 
   // disconnect client
   static unsigned long clientTime = 0;
-  if (cmdSvrClient && (!cmdSvrClient.connected()||clientTime < millis()))
-    cmdSvrClient.stop();
-
-  // new client
-  if (!cmdSvrClient && cmdSvr.hasClient()) {
-    // find free/disconnected spot
-    cmdSvrClient = cmdSvr.available();
-    clientTime = millis() + 2000UL;
+  switch (activeWifiConnectMode)
+  {
+  case WifiConnectMode::KeepOpened:
+    if (cmdSvrClient && !cmdSvrClient.connected())
+    {
+      cmdSvrClient.stop();
+    }
+    // new client
+    if (!cmdSvrClient && cmdSvr.hasClient())
+    {
+      cmdSvrClient = cmdSvr.available();
+    }
+    break;
+  case WifiConnectMode::AutoClose:
+  default:
+    if (cmdSvrClient && (!cmdSvrClient.connected() || clientTime < millis()))
+      cmdSvrClient.stop();
+    // new client
+    if (!cmdSvrClient && cmdSvr.hasClient()) {
+      // find free/disconnected spot
+      cmdSvrClient = cmdSvr.available();
+      clientTime = millis() + 2000UL;
+      break;
+    }
+    break;
   }
+
 
   static char writeBuffer[50] = "";
   static int writeBufferPos = 0;

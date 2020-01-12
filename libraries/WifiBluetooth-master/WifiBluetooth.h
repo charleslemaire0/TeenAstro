@@ -45,6 +45,7 @@
 #define EEPROM_WifiMode EEPROM_WifiOn + 1
 #define EEPROM_WebTimeout EEPROM_WifiMode + 1
 #define EEPROM_CmdTimeout EEPROM_WebTimeout + 1
+#define EEPROM_WifiConnectMode EEPROM_CmdTimeout + 1
 #define EEPROM_Contrast 20
 #define EEPROM_T1 21
 #define EEPROM_T2 22
@@ -57,10 +58,12 @@
 class wifibluetooth
 {
   enum Responding { R_NONE, R_ONE, R_BOOL, R_STRING };
-  enum WifiMode {M_Station1, M_Station2, M_Station3, M_AcessPoint, OFF};
+  enum WifiMode { M_Station1, M_Station2, M_Station3, M_AcessPoint, OFF };
+  enum WifiConnectMode { AutoClose, KeepOpened };
   static bool wifiOn;
   static int WebTimeout;
   static int CmdTimeout;
+  static WifiConnectMode activeWifiConnectMode;
 
 #define Default_Password "password"
   static char masterPassword[40];
