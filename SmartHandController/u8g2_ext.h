@@ -30,7 +30,7 @@ public:
 
   uint8_t UserInterfaceInputValueAz(Pad *extPad, long *value);
 
-  uint8_t UserInterfaceInputValueUTCTime(Pad *extPad, long *value);
+  uint8_t UserInterfaceInputValueLocalTime(Pad *extPad, long *value);
 
   uint8_t UserInterfaceInputValueLatitude(Pad *extPad, long *value);
 

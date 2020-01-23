@@ -89,7 +89,7 @@ void TeenAstroMountStatus::updateTime()
 {
   if (millis() - m_lastStateTime > updaterate)
   {
-    m_hasInfoUTC = GetLX200(":GL#", m_TempUTC, sizeof(m_TempUTC)) == LX200VALUEGET;
+    m_hasInfoUTC = GetLX200(":GX80#", m_TempUTC, sizeof(m_TempUTC)) == LX200VALUEGET;
     m_hasInfoUTCdate =  GetLX200(":GX81#", m_TempUTCdate, sizeof(m_TempUTCdate)) == LX200VALUEGET;
     m_hasInfoSidereal = GetLX200(":GS#", m_TempSidereal, sizeof(m_TempSidereal)) == LX200VALUEGET;
     m_hasInfoUTC && m_hasInfoSidereal  && m_hasInfoUTCdate ? m_lastStateTime = millis() : m_connectionFailure++;

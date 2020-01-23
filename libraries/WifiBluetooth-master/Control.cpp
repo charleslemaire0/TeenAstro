@@ -514,7 +514,7 @@ void wifibluetooth::processControlGet() {
     if ( (atoi2((char *)v.c_str(),&i)) && ((i>=2016) && (i<=9999))) {
       get_temp_year=i-2000;
       char temp[10];
-      sprintf(temp,":SC%02d/%02d/%02d#",get_temp_month,get_temp_day,get_temp_year);
+      sprintf(temp,":SX81%02d/%02d/%02d#",get_temp_month,get_temp_day,get_temp_year);
       SetLX200(temp);
     }
   }
@@ -531,7 +531,7 @@ void wifibluetooth::processControlGet() {
     if ( (atoi2((char *)v.c_str(),&i)) && ((i>=0) && (i<=59))) {
       get_temp_second=i;
       char temp[10];
-      sprintf(temp,":SL%02d:%02d:%02d#",get_temp_hour,get_temp_minute,get_temp_second);
+      sprintf(temp,":SX80%02d:%02d:%02d#",get_temp_hour,get_temp_minute,get_temp_second);
       SetLX200(temp);
     }
   }

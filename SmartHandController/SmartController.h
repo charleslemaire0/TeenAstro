@@ -117,7 +117,8 @@ private:
   void menuGuideRate();
   void menuSite();
   void menuSites();
-  void menuUTCTime();
+  void menuLocalTime();
+  void menuLocalTimeShift();
   void menuFocuserAction();
   void menuFocuserSettings();
   void menuFocuserConfig();
@@ -125,7 +126,7 @@ private:
   void menuDisplay();
   void menuContrast();
   void menuButtonSpeed();
-  void menuDate();
+  void menuLocalDate();
   void menuLatitude();
   void menuLongitude();
   void menuElevation();

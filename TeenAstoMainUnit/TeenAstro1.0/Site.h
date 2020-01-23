@@ -7,13 +7,14 @@ class siteDefinition
 {
 
 #define siteNameLen     15
-#define SiteSize        25
+#define SiteSize        27
   struct ssite
   {
     double latitude;
     double longitude;
     int16_t elevation;
-    char siteName[siteNameLen];
+    char siteName[siteNameLen + 1];
+    float toff; 
   };
 private:
   uint8_t  m_siteIndex;
@@ -38,6 +39,10 @@ public:
   {
     return &m_site.elevation;
   }
+  const float* toff()
+  {
+    return &m_site.toff;
+  }
   const char* siteName()
   {
     return &m_site.siteName[0];
@@ -61,7 +66,7 @@ public:
       return false;
     }
     m_site.longitude = l;
-    EEPROM_writeFloat(EE_sites + m_siteIndex * SiteSize + 4, (float)m_site.longitude);
+    EEPROM_writeFloat(EE_sites + m_siteIndex * SiteSize + EE_site_long, (float)m_site.longitude);
     return true;
   }
   bool setElev(const int16_t l)
@@ -71,13 +76,23 @@ public:
       return false;
     }
     m_site.elevation = l;
-    EEPROM_writeInt(EE_sites + m_siteIndex * SiteSize + 8, l);
+    EEPROM_writeInt(EE_sites + m_siteIndex * SiteSize + EE_site_height, l);
+    return true;
+  }
+  bool setToff(float toff)
+  { 
+    if (toff<=-12 || toff>=12)
+      return false;
+    m_site.toff = toff;
+    int val = (toff + 12.0 ) * 10.0;
+    EEPROM.write(EE_sites + m_siteIndex * SiteSize + EE_site_time, val);
     return true;
   }
   bool setSiteName(const char* s)
   {
     strncpy(m_site.siteName, s, siteNameLen);
-    EEPROM_writeString(EE_sites + m_siteIndex * SiteSize + 10, m_site.siteName);
+    m_site.siteName[15] = 0;
+    EEPROM_writeString(EE_sites + m_siteIndex * SiteSize + EE_site_name, m_site.siteName);
     return true;
   }
   const double sinLat()
@@ -110,6 +125,12 @@ public:
       setElev(0);
     }
     adress += 2;
+    m_site.toff = (float)EEPROM.read(adress) / 10.0 - 12.0;
+    if (m_site.toff < -12 && m_site.toff >12)
+    {
+      setToff(0);
+    }
+    adress++;
     EEPROM_readString(adress, m_site.siteName);
     m_cosLat = cos(m_site.latitude / Rad);
     m_sinLat = sin(m_site.latitude / Rad);

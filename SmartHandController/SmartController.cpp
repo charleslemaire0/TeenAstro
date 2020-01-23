@@ -1351,7 +1351,7 @@ bool SmartHandController::SelectStarAlign()
 
 void SmartHandController::menuDateAndTime()
 {
-  const char *string_list_SettingsL2 = "Clock\nDate\nGNSS Time";
+  const char *string_list_SettingsL2 = "Clock\nUTC Shift\nDate\nGNSS Time";
   while (!exitMenu)
   {
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Time Settings", current_selection_L2, string_list_SettingsL2);
@@ -1360,12 +1360,15 @@ void SmartHandController::menuDateAndTime()
     case 0:
       return;
     case 1:
-      menuUTCTime();
+      menuLocalTime();
       break;
     case 2:
-      menuDate();
+      menuLocalTimeShift();
       break;
     case 3:
+      menuLocalDate();
+      break;
+    case 5:
       if (ta_MountStatus.isGNSSValid())
         DisplayMessageLX200(SetLX200(":gt#"), false);
       else
@@ -2017,14 +2020,29 @@ void SmartHandController::menuSites()
   }
 }
 
-void SmartHandController::menuUTCTime()
+void SmartHandController::menuLocalTime()
 {
   long value;
-  if (DisplayMessageLX200(GetTimeLX200(value)))
+  if (DisplayMessageLX200(GetLocalTimeLX200(value)))
   {
-    if (display->UserInterfaceInputValueUTCTime(&buttonPad, &value))
+    if (display->UserInterfaceInputValueLocalTime(&buttonPad, &value))
     {
-      DisplayMessageLX200(SetTimeLX200(value), false);
+      DisplayMessageLX200(SetLocalTimeLX200(value), false);
+    }
+  }
+}
+
+void SmartHandController::menuLocalTimeShift()
+{
+  float val = 0;
+  if (DisplayMessageLX200(GetLX200Float(":GG#", &val)))
+  {
+    if (display->UserInterfaceInputValueFloat(&buttonPad, "UTC Time Shift", "", &val, -12, 12, 3, 1, " hour"))
+    {
+      char cmd[15];
+      sprintf(cmd, ":SG%+05.1f#", val);
+      if (DisplayMessageLX200(SetLX200(cmd)))
+        exitMenu = true;
     }
   }
 }
@@ -2473,7 +2491,7 @@ void SmartHandController::menuContrast()
 }
 
 
-void SmartHandController::menuDate()
+void SmartHandController::menuLocalDate()
 {
   char out[20];
   if (DisplayMessageLX200(GetLX200(":GC#", out, sizeof(out))))

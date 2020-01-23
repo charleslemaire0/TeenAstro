@@ -262,10 +262,34 @@ LX200RETURN GetLX200(char* command, char* output, int buffersize)
     return LX200GETVALUEFAILED;
 }
 
-LX200RETURN GetTimeLX200(unsigned int &hour, unsigned int &minute, unsigned int &second)
+LX200RETURN GetLX200Float(char* command, float* value)
+{
+  char out[LX200sbuff];
+  char* conv_end;
+  if (GetLX200(command, out, sizeof(out)) == LX200GETVALUEFAILED)
+    return LX200GETVALUEFAILED;
+  float f = strtod(out, &conv_end);
+  if ((&out[0] != conv_end) && (f >= -12 && f <= 12.0))
+  {
+    *value = f;
+    return LX200VALUEGET;
+  }
+  return LX200GETVALUEFAILED;
+}
+
+LX200RETURN GetLocalTimeLX200(unsigned int &hour, unsigned int &minute, unsigned int &second)
 {
   char out[LX200sbuff];
   if (GetLX200(":GL#", out, sizeof(out)) == LX200GETVALUEFAILED)
+    return LX200GETVALUEFAILED;
+  char2RA(out, hour, minute, second);
+  return LX200VALUEGET;
+}
+
+LX200RETURN GetUTCTimeLX200(unsigned int &hour, unsigned int &minute, unsigned int &second)
+{
+  char out[LX200sbuff];
+  if (GetLX200(":GX80#", out, sizeof(out)) == LX200GETVALUEFAILED)
     return LX200GETVALUEFAILED;
   char2RA(out, hour, minute, second);
   return LX200VALUEGET;
@@ -280,10 +304,10 @@ LX200RETURN GetRALX200(unsigned int &hour, unsigned int &minute, unsigned int &s
   return LX200VALUEGET;
 }
 
-LX200RETURN GetTimeLX200(long &value)
+LX200RETURN GetLocalTimeLX200(long &value)
 {
   unsigned int hour, minute, second;
-  if (!GetTimeLX200(hour, minute, second) == LX200GETVALUEFAILED)
+  if (!GetLocalTimeLX200(hour, minute, second) == LX200GETVALUEFAILED)
     return LX200GETVALUEFAILED;
   value = hour * 60 + minute;
   value *= 60;
@@ -291,7 +315,18 @@ LX200RETURN GetTimeLX200(long &value)
   return LX200VALUEGET;
 }
 
-LX200RETURN SetTimeLX200(long &value)
+LX200RETURN GetUTCTimeLX200(long &value)
+{
+  unsigned int hour, minute, second;
+  if (!GetUTCTimeLX200(hour, minute, second) == LX200GETVALUEFAILED)
+    return LX200GETVALUEFAILED;
+  value = hour * 60 + minute;
+  value *= 60;
+  value += second;
+  return LX200VALUEGET;
+}
+
+LX200RETURN SetLocalTimeLX200(long &value)
 {
   char cmd[LX200sbuff];
   unsigned int hour, minute, second;
@@ -301,9 +336,20 @@ LX200RETURN SetTimeLX200(long &value)
   value /= 60;
   hour = value;
   sprintf(cmd, ":SL%02d:%02d:%02d#", hour, minute, second);
-  if (SetLX200(cmd) ==  LX200VALUESET)
-    return SetLX200(":SG+00#");
-  return LX200SETVALUEFAILED;
+  return SetLX200(cmd);
+}
+
+LX200RETURN SetUTCTimeLX200(long &value)
+{
+  char cmd[LX200sbuff];
+  unsigned int hour, minute, second;
+  second = value % 60;
+  value /= 60;
+  minute = value % 60;
+  value /= 60;
+  hour = value;
+  sprintf(cmd, ":SX80%02d:%02d:%02d#", hour, minute, second);
+  return SetLX200(cmd);
 }
 
 LX200RETURN GetSiteLX200(int& value)
@@ -593,7 +639,7 @@ LX200RETURN SyncGotoLX200AltAz(bool sync, float &Az, float &Alt)
 LX200RETURN SyncGotoLX200(bool sync, float &Ra, float &Dec, double epoch)
 {
   unsigned int day, month, year;
-  if (GetDateLX200(day, month, year) != LX200VALUEGET)
+  if (GetUTCDateLX200(day, month, year) != LX200VALUEGET)
     return LX200GETVALUEFAILED;
   EquatorialCoordinates coo;
   coo.ra = Ra;
@@ -603,10 +649,27 @@ LX200RETURN SyncGotoLX200(bool sync, float &Ra, float &Dec, double epoch)
   return SyncGotoLX200(sync, cooNow.ra, cooNow.dec);
 }
 
-LX200RETURN GetDateLX200(unsigned int &day, unsigned int &month, unsigned int &year)
+LX200RETURN GetLocalDateLX200(unsigned int &day, unsigned int &month, unsigned int &year)
 {
   char out[LX200sbuff];
   if (GetLX200(":GC#", out, sizeof(out)) == LX200VALUEGET)
+  {
+    char* pEnd;
+    month = strtol(&out[0], &pEnd, 10);
+    day = strtol(&out[3], &pEnd, 10);
+    year = strtol(&out[6], &pEnd, 10) + 2000L;
+    return LX200VALUEGET;
+  }
+  else
+  {
+    return LX200GETVALUEFAILED;
+  }
+}
+
+LX200RETURN GetUTCDateLX200(unsigned int &day, unsigned int &month, unsigned int &year)
+{
+  char out[LX200sbuff];
+  if (GetLX200(":GX81#", out, sizeof(out)) == LX200VALUEGET)
   {
     char* pEnd;
     month = strtol(&out[0], &pEnd, 10);
@@ -635,7 +698,7 @@ LX200RETURN SyncGotoCatLX200(bool sync)
 {
   int epoch;
   unsigned int day, month, year;
-  if (GetDateLX200(day, month, year) == LX200GETVALUEFAILED) return LX200GETVALUEFAILED;
+  if (GetUTCDateLX200(day, month, year) == LX200GETVALUEFAILED) return LX200GETVALUEFAILED;
   if (!cat_mgr.isStarCatalog() && !cat_mgr.isDsoCatalog()) return LX200UNKOWN;
   EquatorialCoordinates coo;
   coo.ra = cat_mgr.rah();
@@ -651,11 +714,11 @@ LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short objSys)
   unsigned int day, month, year, hour, minute, second;
   int minuteLat, minuteLong;
   double  degreeLat, degreeLong;
-  if (GetDateLX200(day, month, year) == LX200GETVALUEFAILED)
+  if (GetUTCDateLX200(day, month, year) == LX200GETVALUEFAILED)
   {
     return LX200GETVALUEFAILED;
   }
-  if (GetTimeLX200(hour, minute, second) == LX200GETVALUEFAILED)
+  if (GetUTCTimeLX200(hour, minute, second) == LX200GETVALUEFAILED)
   {
     return LX200GETVALUEFAILED;
   }

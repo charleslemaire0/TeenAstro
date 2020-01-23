@@ -297,7 +297,7 @@ void  Command_G()
     //         Returns: HH:MM:SS#
     i = highPrecision;
     highPrecision = true;
-    if (!doubleToHms(reply, rtk.getUT()))
+    if (!doubleToHms(reply, rtk.getLT(localSite.toff())))
       commandError = true;
     else
       quietReply = true;
@@ -308,7 +308,7 @@ void  Command_G()
     //  :GC#   Get the current date
     //         Returns: MM/DD/YY#
     //         The current local calendar date
-    rtk.getUTDate(i2, i, i1, i3, i4, i5);
+    rtk.getULDate(i2, i, i1, i3, i4, i5, localSite.toff());
     i2 = i2 % 100;
     sprintf(reply, "%02d/%02d/%02d", i, i1, i2);
     quietReply = true;
@@ -361,9 +361,9 @@ void  Command_G()
     break;
   case 'G':
     //  :GG#   Get UTC offset time
-    //         Returns: sHH#
+    //         Returns: sHH.H#
     //         The number of decimal hours to add to local time to convert it to UTC 
-    sprintf(reply, "+00");
+    sprintf(reply, "%+05.1f", *localSite.toff());
     quietReply = true;
     break;
   case 'g':
@@ -392,9 +392,11 @@ void  Command_G()
 
   case 'L':
   {
+    //  :GL#   Get Local Time in 24 hour format
+    //         Returns: HH:MM:SS#
     i = highPrecision;
     highPrecision = true;
-    if (!doubleToHms(reply, rtk.getUT()))
+    if (!doubleToHms(reply, rtk.getLT(localSite.toff())))
       commandError = true;
     else
       quietReply = true;
@@ -413,11 +415,11 @@ void  Command_G()
   case 'P':
   {
     i = command[1] - 'M';
-    EEPROM_readString(EE_sites + i * 25 + 10, reply);
+    EEPROM_readString(EE_sites + i * SiteSize + EE_site_name, reply);
     if (reply[0] == 0)
     {
       sprintf(reply, "Site %d", i);
-      EEPROM_writeString(EE_sites + i * 25 + 10, reply);
+      EEPROM_writeString(EE_sites + i * SiteSize + EE_site_name, reply);
     }
     quietReply = true;
     break;

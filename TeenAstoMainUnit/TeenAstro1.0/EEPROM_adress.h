@@ -48,15 +48,20 @@
 #define EE_autoInitKey      96
 
 #define EE_sites            100
+#define EE_site_lat         0
+#define EE_site_long        4
+#define EE_site_height      8
+#define EE_site_time        10
+#define EE_site_name        11
 
 //transformation matrix
-#define EE_T11              200
-#define EE_T12              204
-#define EE_T13              208
-#define EE_T21              212
-#define EE_T22              216
-#define EE_T23              220
-#define EE_T31              224
-#define EE_T32              228
-#define EE_T33              232
-#define EE_Tvalid           236
+#define EE_T11              EE_sites +  27 * 4
+#define EE_T12              EE_T11 + 4
+#define EE_T13              EE_T11 + 8
+#define EE_T21              EE_T11 + 12
+#define EE_T22              EE_T11 + 16
+#define EE_T23              EE_T11 + 20
+#define EE_T31              EE_T11 + 24
+#define EE_T32              EE_T11 + 28
+#define EE_T33              EE_T11 + 32
+#define EE_Tvalid           EE_T11 + 36

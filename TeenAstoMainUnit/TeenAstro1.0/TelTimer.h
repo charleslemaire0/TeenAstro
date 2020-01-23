@@ -110,12 +110,10 @@ private:
   long                    m_guideSiderealTimer = 0;     // counter to issue steps during guiding
 //tmp variable
   time_t                  m_RTClock; 
-  double                  m_UT = 0.0;//tmp variable                  
+  double                  m_UT = 0.0;//tmp variable  
+  double                  m_LT = 0.0;//tmp variable  
   double                  m_JD = 0.0;//tmp variable                  
   double                  m_Sitelongitude;
-
- 
-
 public:
 
   double* getUT()
@@ -123,6 +121,14 @@ public:
     m_RTClock = Teensy3Clock.get();
     m_UT = hour(m_RTClock) + minute(m_RTClock) / 60.0 + second(m_RTClock) / 3600.0;
     return &m_UT;
+  }
+
+  double* getLT(const float*toff)
+  {
+    m_RTClock = Teensy3Clock.get();
+    m_RTClock -= (long)(*toff * 3600.0);
+    m_LT = hour(m_RTClock) + minute(m_RTClock) / 60.0 + second(m_RTClock) / 3600.0;
+    return &m_LT;
   }
 
   double* getJD()
@@ -135,6 +141,18 @@ public:
   void getUTDate(int& y, int& m, int& d, int&h, int&mi, int&s)
   {
     m_RTClock = Teensy3Clock.get();
+    y = year(m_RTClock);
+    m = month(m_RTClock);
+    d = day(m_RTClock);
+    h = hour(m_RTClock);
+    mi = minute(m_RTClock);
+    s = second(m_RTClock);
+  }
+
+  void getULDate(int& y, int& m, int& d, int&h, int&mi, int&s, const float* toff)
+  {
+    m_RTClock = Teensy3Clock.get();
+    m_RTClock -= (long)(*toff * 3600.0);
     y = year(m_RTClock);
     m = month(m_RTClock);
     d = day(m_RTClock);
@@ -156,7 +174,7 @@ public:
   }
 
   // Set RTC with give input
-  void setClock(int y1, int m1, int d1, int h1, int mi1, int s1, double Sitelongitude)
+  void setClock(int y1, int m1, int d1, int h1, int mi1, int s1, double Sitelongitude, float Sitetoff)
   {
     tmElements_t t1;
     t1.Year = y1 - 1970;
@@ -165,24 +183,14 @@ public:
     t1.Hour = h1;
     t1.Minute = mi1;
     t1.Second = s1;
-    Sitelongitude = m_Sitelongitude;
+    m_Sitelongitude = Sitelongitude;
     time_t t = makeTime(t1);
+    t += (long)(Sitetoff * 3600.0);
     Teensy3Clock.set(t);
     setTime(t);
     syncClock();
   }
-  // convert string in format MM/DD/YY to julian date
-  bool resetDate(char *date)
-  {
-    int     m1, d1, y1;
-    if (!dateToYYYYMMDD(&y1, &m1, &d1, date))
-    {
-      return false;
-    }
-    m_RTClock = Teensy3Clock.get();
-    setClock(y1, m1, d1, hour(m_RTClock), minute(m_RTClock), second(m_RTClock), m_Sitelongitude);
-    return true;
-  }
+
   void resetLongitude(double Sitelongitude)
   {
     m_Sitelongitude = Sitelongitude;

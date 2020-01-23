@@ -63,7 +63,7 @@ void Command_S(Command& process_command)
 
   case 'C':
     //  :SCMM/DD/YY#
-    //          Change Date to MM/DD/YY
+    //          Change Local Date to MM/DD/YY
     //          Return: 0 on failure
     //                  1 on success
     int y, m, d;
@@ -71,7 +71,7 @@ void Command_S(Command& process_command)
       commandError = true;
     else
     {
-      rtk.setClock(y, m, d, hour(), minute(), second(),*localSite.longitude());
+      rtk.setClock(y, m, d, hour(), minute(), second(),*localSite.longitude(), 0);
     }
     break;
   case 'e':
@@ -94,8 +94,6 @@ void Command_S(Command& process_command)
     if (!dmsToDouble(&newTargetDec, parameter, true))
       commandError = true;
     break;
-
-
   case 'g':
     //  :SgsDDD*MM# or :SgDDD*MM#
     //          Set current sites longitude to sDDD*MM an ASCII position string, East longitudes can be as negative or >180 degrees
@@ -120,6 +118,22 @@ void Command_S(Command& process_command)
     highPrecision = i;
   }
   break;
+  //  :SG[sHH.H]#
+//            Set the number of hours added to local time to yield UTC
+//            Return: 0 on failure
+//                    1 on success
+  case 'G':
+  {
+    f = strtod(parameter, &conv_end);
+    if ((&parameter[0] != conv_end) &&
+      (f >= -12 && f <= 12.0))
+    {
+      localSite.setToff(f);
+    }
+    else
+      commandError = true;
+  }
+  break;
   case 'h':
     //  :Sh+DD#
     //          Set the lowest elevation to which the telescope will goTo
@@ -138,8 +152,6 @@ void Command_S(Command& process_command)
       commandError = true;
   }
   break;
-
-
   case 'L':
     //  :SLHH:MM:SS#
     //          Set the local Time
@@ -153,9 +165,8 @@ void Command_S(Command& process_command)
       commandError = true;
     else
     {
-      rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude());
+      rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), *localSite.toff());
     }
-
     highPrecision = i;
   }
   break;
@@ -168,15 +179,15 @@ void Command_S(Command& process_command)
     //  :SN<string>#
     //  :SO<string>#
     //  :SP<string>#
-    //          Set site name to be <string>, up to 15 characters.
+    //          Set site name to be <string>, up to 14 characters.
     //          Return: 0 on failure
     //                  1 on success
   {
     i = command[1] - 'M';
-    if (strlen(parameter) > 15)
+    if (strlen(parameter) > 14)
       commandError = true;
     else
-      EEPROM_writeString(EE_sites + i * SiteSize + 10, parameter);
+      EEPROM_writeString(EE_sites + i * SiteSize + EE_site_name, parameter);
   }
   break;
   case 'm':
@@ -351,6 +362,34 @@ void Command_S(Command& process_command)
     {
       switch (parameter[1])
       {
+        //  :SX80HH:MM:SS#
+        //          Return: 0 on failure
+        //                  1 on success 
+      case '0':
+        i = highPrecision;
+        highPrecision = true;
+        int h1, m1, m2, s1;
+        if (!hmsToHms(&h1, &m1, &m2, &s1, &parameter[2]))
+          commandError = true;
+        else
+        {
+          rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), 0);
+        }
+        highPrecision = i;
+        break;
+      case '1':
+        //  :SX81MM/DD/YY#
+        //          Change Local Date to MM/DD/YY
+        //          Return: 0 on failure
+        //                  1 on success
+        int y, m, d;
+        if (!dateToYYYYMMDD(&y, &m, &d, &parameter[2]))
+          commandError = true;
+        else
+        {
+          rtk.setClock(y, m, d, hour(), minute(), second(), *localSite.longitude(), 0);
+        }
+        break;
       case '2':
       {
         char *pEnd;

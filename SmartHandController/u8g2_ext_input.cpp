@@ -652,10 +652,11 @@ uint8_t ext_UserInterfaceInputValueAz(u8g2_t *u8g2, Pad *extPad, long *value)
   return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Azimuth", value, 0, 324000*4, 3, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
 }
 
-uint8_t ext_UserInterfaceInputValueUTCTime(u8g2_t *u8g2, Pad *extPad, long *value)
+uint8_t ext_UserInterfaceInputValueLocalTime(u8g2_t *u8g2, Pad *extPad, long *value)
 {
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "UTC Time", value, 0, 86399, 2, ":", ":", "", "", "", true);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Local Time", value, 0, 86399, 2, ":", ":", "", "", "", true);
 }
+
 
 uint8_t ext_UserInterfaceInputValueLatitude(u8g2_t *u8g2, Pad *extPad, long *value)
 {

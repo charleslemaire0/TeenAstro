@@ -48,7 +48,7 @@ void Command_GNSS()
       initTransformation(true);      
       rtk.setClock(d.year(), d.month(), d.day(),
         t.hour(), t.minute(), t.second(),
-        *localSite.longitude());
+        *localSite.longitude(), 0);
     }
     else
       commandError = true;
@@ -58,7 +58,7 @@ void Command_GNSS()
     {
       rtk.setClock(d.year(), d.month(), d.day(),
         t.hour(), t.minute(), t.second(),
-        *localSite.longitude());
+        *localSite.longitude(), 0);
     }
     else
       commandError = true;

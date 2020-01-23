@@ -84,7 +84,7 @@ uint8_t ext_UserInterfaceInputValueAlt(u8g2_t *u8g2, Pad *extPad, long *value);
 
 uint8_t ext_UserInterfaceInputValueAz(u8g2_t *u8g2, Pad *extPad, long *value);
 
-uint8_t ext_UserInterfaceInputValueUTCTime(u8g2_t *u8g2, Pad *extPad, long *value);
+uint8_t ext_UserInterfaceInputValueLocalTime(u8g2_t *u8g2, Pad *extPad, long *value);
 
 uint8_t ext_UserInterfaceInputValueLatitude(u8g2_t *u8g2, Pad *extPad, long *value);
 

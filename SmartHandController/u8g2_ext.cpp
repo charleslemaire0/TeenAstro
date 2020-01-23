@@ -63,9 +63,9 @@ uint8_t U8G2_EXT::UserInterfaceInputValueAz(Pad *extPad, long *value)
   return ext_UserInterfaceInputValueAz(U8G2_EXT::getU8g2(), extPad, value);
 };
 
-uint8_t U8G2_EXT::UserInterfaceInputValueUTCTime(Pad *extPad, long *value)
+uint8_t U8G2_EXT::UserInterfaceInputValueLocalTime(Pad *extPad, long *value)
 {
-  return ext_UserInterfaceInputValueUTCTime(U8G2_EXT::getU8g2(), extPad, value);
+  return ext_UserInterfaceInputValueLocalTime(U8G2_EXT::getU8g2(), extPad, value);
 };
 
 uint8_t U8G2_EXT::UserInterfaceInputValueLatitude(Pad *extPad, long *value)
@@ -73,12 +73,10 @@ uint8_t U8G2_EXT::UserInterfaceInputValueLatitude(Pad *extPad, long *value)
   return ext_UserInterfaceInputValueLatitude(U8G2_EXT::getU8g2(), extPad, value);
 };
 
-
 uint8_t U8G2_EXT::UserInterfaceInputValueLongitude(Pad *extPad, long *value)
 {
   return ext_UserInterfaceInputValueLongitude(U8G2_EXT::getU8g2(), extPad, value);
 };
-
 
 uint8_t U8G2_EXT::drawRA(uint8_t x, uint8_t y, const char* Ra)
 {
