@@ -281,19 +281,17 @@ void Command_S(Command& process_command)
   break;
   case 'R':
   {
-    if (parameter[0] == 'R' && parameter[1] == 'E')
+    if (parameter[0] == 'E' && parameter[1] == 'F')
     {
       if (parameter[2] == '1' )
       {
         refraction = true;
         EEPROM.update(EE_refraction, refraction);
-        quietReply = true;
       }
       else if (parameter[2] == '0')
       {
         refraction = false;
         EEPROM.update(EE_refraction, refraction);
-        quietReply = true;
       }
       else
         commandError = true;
@@ -301,7 +299,7 @@ void Command_S(Command& process_command)
     else
       commandError = true;
   }
-
+  break;
   case 'T':
     //  :STdd.ddddd#
     //          Return: 0 on failure
