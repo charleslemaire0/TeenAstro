@@ -22,6 +22,13 @@ const char html_configSiteName3[] PROGMEM =
 " (Edit the name of the selected site)"
 "</form>"
 "\r\n";
+const char html_configTimeZone[] PROGMEM =
+"<form method='get' action='/configuration_site.htm'>"
+" <input value='%.1f' type='number' name='TimeZ' min='-12.' max='12' step='.5'>"
+"<button type='submit'>Upload</button>"
+" (Time Zone from -12 hour to 12 hour)"
+"</form>"
+"\r\n";
 const char html_configLongWE1[] PROGMEM =
 "<form method='get' action='/configuration_site.htm'>"
 "<select style='width:5em' name='site_g0'>";
@@ -97,13 +104,19 @@ void wifibluetooth::handleConfigurationSite() {
       data += temp;
       data += FPSTR(html_configSiteSelect2);
       sendHtml(data);
-      // name
 
+      // Name
       if (GetLX200(":Gn#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "error!");
       data += FPSTR(html_configSiteName1);
       sprintf_P(temp, html_configSiteName2, temp1);
       data += temp;
       data += FPSTR(html_configSiteName3);
+      sendHtml(data);
+
+      // Time Zone
+      if (GetLX200(":GG#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float TShift = -(float)strtof(&temp1[0], NULL);
+      sprintf_P(temp, html_configTimeZone, TShift);
+      data += temp;
       sendHtml(data);
 
       // Latitude
@@ -170,6 +183,14 @@ void wifibluetooth::processConfigurationSiteGet() {
   if (v != "") {
     sprintf(temp, ":Sn%s#", (char*)v.c_str());
     SetLX200(temp);
+  }
+  //Time Zone
+  v = server.arg("TimeZ");
+  if (v != "") {
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= -12) && (f <= 12))) {
+      sprintf(temp, ":SG%+05.1f#", -f);
+      SetLX200(temp);
+    }
   }
   // Location
   int long_deg = -999;
