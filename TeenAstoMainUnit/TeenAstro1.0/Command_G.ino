@@ -453,24 +453,33 @@ void  Command_G()
   case 'R':
     //  :GR#   Get Telescope RA
     //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
-    if (millis() - _coord_t < 100)
+    if (parameter[0] == 'E' && parameter[1] == 'F')
     {
-      f = _ra;
-      f1 = _dec;
-    }
-    else
-    {
-      getEqu(&f, &f1, false);
-      f /= 15.0;
-      _ra = f;
-      _dec = f1;
-      _coord_t = millis();
-    }
-
-    if (!doubleToHms(reply, &f))
-      commandError = true;
-    else
+      reply[0] = refraction ? '1' : '0';
+      reply[1] = 0;
       quietReply = true;
+    }
+    else
+    {
+      if (millis() - _coord_t < 100)
+      {
+        f = _ra;
+        f1 = _dec;
+      }
+      else
+      {
+        getEqu(&f, &f1, false);
+        f /= 15.0;
+        _ra = f;
+        _dec = f1;
+        _coord_t = millis();
+      }
+
+      if (!doubleToHms(reply, &f))
+        commandError = true;
+      else
+        quietReply = true;
+    }
     break;
   case 'r':
     //  :Gr#   Get current/target object RA
@@ -550,10 +559,8 @@ void  Command_G()
     else if (guideDirAxis2 == 's') reply[8] = '_';
     else if (guideDirAxis2 == 'b') reply[8] = 'b';
     if (faultAxis1 || faultAxis2) reply[9] = 'f';
-    if (refraction)
-      reply[10] = 'r';
-    else
-      reply[10] = 's';
+    if (correct_tracking)
+      reply[10] = 'c';
 
     // provide mount type
     if (mountType == MOUNT_TYPE_GEM)

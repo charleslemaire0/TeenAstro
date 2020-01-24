@@ -802,20 +802,22 @@ void Command_T()
     // solar tracking rate 60Hz 
     SetTrackingRate(TrackingSolar);
     sideralMode = SIDM_SUN;
-    //refraction = false;
+    correct_tracking = false;
     quietReply = true;
     break;
   case 'L':
     // lunar tracking rate 57.9Hz
     SetTrackingRate(TrackingLunar);
     sideralMode = SIDM_MOON;
-    //refraction = false;
+    correct_tracking = false;
     quietReply = true;
     break;
   case 'Q':
     // sidereal tracking rate
     SetTrackingRate(default_tracking_rate);
     sideralMode = SIDM_STAR;
+    correct_tracking = EEPROM.read(EE_corr_track);
+    correct_tracking = false;
     quietReply = true;
     break;
   case 'R':
@@ -826,7 +828,7 @@ void Command_T()
   case 'K':
     // king tracking rate 60.136Hz
     SetTrackingRate(0.99953004401);
-    //refraction = false;
+    correct_tracking = false;
     quietReply = true;
     break;
   case 'e':
@@ -849,14 +851,14 @@ void Command_T()
     break;
 
   case 'r':
-    // turn refraction compensation on, defaults to base sidereal tracking rate
-    refraction = refraction_enable;
+    // turn compensation on, defaults to base sidereal tracking rate
+    correct_tracking = true;
     SetTrackingRate(default_tracking_rate);
     break;
 
   case 'n':
-    // turn refraction off, sidereal tracking rate resumes     
-    refraction = false;
+    // turn compensation off, sidereal tracking rate resumes     
+    correct_tracking = false;
     SetTrackingRate(default_tracking_rate);
     break;
 

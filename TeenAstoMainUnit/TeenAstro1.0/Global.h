@@ -25,8 +25,8 @@ MeridianFlip meridianFlip = FLIP_NEVER;
 Mount mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;
 
-boolean refraction_enable = true;
-
+boolean refraction = true;
+boolean correct_tracking = false;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
 double                  siderealInterval = 15956313.0;
 const double            masterSiderealInterval = 15956313.0;
@@ -51,7 +51,6 @@ volatile double         timerRateAxis2 = 0;
 volatile double         timerRateBacklashAxis2 = 0;
 volatile boolean        inbacklashAxis2 = false;
 boolean                 faultAxis2 = false;
-boolean                 refraction = false;
 
 unsigned int GearAxis1;//2000
 unsigned int StepRotAxis1;

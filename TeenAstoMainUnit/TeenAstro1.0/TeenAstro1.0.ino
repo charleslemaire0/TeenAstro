@@ -85,6 +85,7 @@ void setup()
     // init the site information, lat/long/tz/name
     localSite.initdefault();
     EEPROM.write(EE_mountType, MOUNT_TYPE_GEM);
+    EEPROM.write(EE_refraction, 1);
     // init the min and max altitude
     minAlt = -10;
     maxAlt = 91;
@@ -93,7 +94,6 @@ void setup()
     EEPROM.write(EE_dpmE, 0);
     EEPROM.write(EE_dpmW, 0);
     EEPROM.write(EE_dup, (12 - 9) * 15);
-
     writeDefaultEEPROMmotor();
 
     // init the Park status
@@ -546,10 +546,10 @@ void initmount()
   targetAxis2.part.m = quaterRotAxis2;
   targetAxis2.part.f = 0;
   fstepAxis1.fixed = doubleToFixed(StepsPerSecondAxis1 / 100.0);
-
+  refraction  = EEPROM.read(EE_refraction);
   // Tracking and rate control
-  refraction_enable = true;
-  refraction = refraction_enable;
+  correct_tracking = EEPROM.read(EE_corr_track);
+  correct_tracking = false;
 }
 
 void initTransformation(bool reset)

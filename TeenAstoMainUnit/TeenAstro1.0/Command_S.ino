@@ -279,7 +279,28 @@ void Command_S(Command& process_command)
     highPrecision = i;
   }
   break;
-
+  case 'R':
+  {
+    if (parameter[0] == 'R' && parameter[1] == 'E')
+    {
+      if (parameter[2] == '1' )
+      {
+        refraction = true;
+        EEPROM.update(EE_refraction, refraction);
+        quietReply = true;
+      }
+      else if (parameter[2] == '0')
+      {
+        refraction = false;
+        EEPROM.update(EE_refraction, refraction);
+        quietReply = true;
+      }
+      else
+        commandError = true;
+    }
+    else
+      commandError = true;
+  }
 
   case 'T':
     //  :STdd.ddddd#
