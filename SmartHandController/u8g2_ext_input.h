@@ -62,6 +62,14 @@ return:
 1: value has been updated
 */
 
+uint8_t ext_UserInterfaceInputValueFloatIncr(u8g2_t *u8g2, Pad *extPad, const char *title, const char *pre, float *value, float lo, float hi, uint8_t len, uint8_t dec, float incr_ref, const char *post);
+
+/*
+return:
+0: value is not changed (HOME/Break Button pressed)
+1: value has been updated
+*/
+
 
 
 uint8_t ext_UserInterfaceInputValueDMS(u8g2_t *u8g2, Pad *extPad, const char *title, long *value, long lo, long hi,

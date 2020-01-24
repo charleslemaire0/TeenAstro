@@ -148,13 +148,15 @@ uint8_t ext_UserInterfaceInputValueInteger(u8g2_t *u8g2, Pad* extPad, const char
   //return r;  
 }
 
+
 /*
 return:
 0: value is not changed (HOME/Break Button pressed)
 1: value has been updated
 */
 
-uint8_t ext_UserInterfaceInputValueFloat(u8g2_t *u8g2, Pad* extPad, const char *title, const char *pre, float *value, float lo, float hi, uint8_t len, uint8_t dec, const char *post)
+
+uint8_t ext_UserInterfaceInputValueFloatIncr(u8g2_t *u8g2, Pad* extPad, const char *title, const char *pre, float *value, float lo, float hi, uint8_t len, uint8_t dec, float incr_ref, const char *post)
 {
   u8g2_SetFont(u8g2, u8g2_font_helvR12_te);
   static char outstr[15];
@@ -164,7 +166,6 @@ uint8_t ext_UserInterfaceInputValueFloat(u8g2_t *u8g2, Pad* extPad, const char *
   u8g2_uint_t  y, yy;
   u8g2_uint_t  pixel_width;
   u8g2_uint_t  x, xx;
-  float incr_ref = pow10f(dec*-1.);
   float incr = 0;
   float local_value = *value;
   //uint8_t r; /* not used ??? */
@@ -286,6 +287,17 @@ uint8_t ext_UserInterfaceInputValueFloat(u8g2_t *u8g2, Pad* extPad, const char *
 
   /* never reached */
   //return r;  
+}
+/*
+return:
+0: value is not changed (HOME/Break Button pressed)
+1: value has been updated
+*/
+
+
+uint8_t ext_UserInterfaceInputValueFloat(u8g2_t *u8g2, Pad* extPad, const char *title, const char *pre, float *value, float lo, float hi, uint8_t len, uint8_t dec, const char *post)
+{
+  return ext_UserInterfaceInputValueFloatIncr(u8g2, extPad, title, pre, value, lo, hi, len,dec,pow10f(dec*-1.),post);
 }
 
 /*

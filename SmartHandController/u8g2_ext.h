@@ -15,6 +15,8 @@ public:
 
   uint8_t UserInterfaceInputValueInteger(Pad *extPad, const char *title, const char *pre, uint8_t *value, uint8_t lo, uint8_t hi, uint8_t digits, const char *post);
 
+  uint8_t UserInterfaceInputValueFloatIncr(Pad *extPad, const char *title, const char *pre, float *value, float lo, float hi, uint8_t len, uint8_t dec, float incr_ref, const char *post);
+
   uint8_t UserInterfaceInputValueFloat(Pad *extPad, const char *title, const char *pre, float *value, float lo, float hi, uint8_t len, uint8_t dec, const char *post);
 
   uint8_t UserInterfaceInputValueDMS(Pad *extPad, const char *title, long *value, long lo, long hi,

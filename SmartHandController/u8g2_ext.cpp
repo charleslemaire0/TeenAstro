@@ -26,6 +26,12 @@ uint8_t U8G2_EXT::UserInterfaceInputValueInteger(Pad *extPad, const char *title,
   return ext_UserInterfaceInputValueInteger(U8G2_EXT::getU8g2(), extPad, title, pre, value, lo, hi, digits, post);
 };
 
+
+uint8_t U8G2_EXT::UserInterfaceInputValueFloatIncr(Pad *extPad, const char *title, const char *pre, float *value, float lo, float hi, uint8_t len, uint8_t dec, float incr_ref, const char *post)
+{
+  return ext_UserInterfaceInputValueFloatIncr(U8G2_EXT::getU8g2(), extPad, title, pre, value, lo,  hi,  len,  dec, incr_ref, post);
+}
+
 uint8_t U8G2_EXT::UserInterfaceInputValueFloat(Pad *extPad, const char *title, const char *pre, float *value, float lo, float hi, uint8_t len, uint8_t dec, const char *post)
 {
   return ext_UserInterfaceInputValueFloat(U8G2_EXT::getU8g2(), extPad, title, pre, value, lo,  hi,  len,  dec, post);
