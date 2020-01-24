@@ -1351,7 +1351,7 @@ bool SmartHandController::SelectStarAlign()
 
 void SmartHandController::menuDateAndTime()
 {
-  const char *string_list_SettingsL2 = "Clock\nUTC Shift\nDate\nGNSS Time";
+  const char *string_list_SettingsL2 = "Clock\nTime Zone\nDate\nGNSS Time";
   while (!exitMenu)
   {
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Time Settings", current_selection_L2, string_list_SettingsL2);
@@ -1363,7 +1363,7 @@ void SmartHandController::menuDateAndTime()
       menuLocalTime();
       break;
     case 2:
-      menuLocalTimeShift();
+      menuLocalTimeZone();
       break;
     case 3:
       menuLocalDate();
@@ -2032,15 +2032,16 @@ void SmartHandController::menuLocalTime()
   }
 }
 
-void SmartHandController::menuLocalTimeShift()
+void SmartHandController::menuLocalTimeZone()
 {
   float val = 0;
   if (DisplayMessageLX200(GetLX200Float(":GG#", &val)))
   {
-    if (display->UserInterfaceInputValueFloat(&buttonPad, "UTC Time Shift", "", &val, -12, 12, 3, 1, " hour"))
+    val *=-1;
+    if (display->UserInterfaceInputValueFloatIncr(&buttonPad, "Time Zone", "UTC ", &val, -12, 12, 3, 1, 0.5, " hour"))
     {
       char cmd[15];
-      sprintf(cmd, ":SG%+05.1f#", val);
+      sprintf(cmd, ":SG%+05.1f#", -val);
       if (DisplayMessageLX200(SetLX200(cmd)))
         exitMenu = true;
     }

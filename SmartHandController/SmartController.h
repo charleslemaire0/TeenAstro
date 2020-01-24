@@ -118,7 +118,7 @@ private:
   void menuSite();
   void menuSites();
   void menuLocalTime();
-  void menuLocalTimeShift();
+  void menuLocalTimeZone();
   void menuFocuserAction();
   void menuFocuserSettings();
   void menuFocuserConfig();
