@@ -3,8 +3,7 @@
 
 
 const char html_headB[] PROGMEM = "<!DOCTYPE HTML>\r\n<html>\r\n<head>\r\n";
-const char html_headerIdx[] PROGMEM = "<meta  name=\"viewport\"  http-equiv=\"refresh\"content=\"width=device-width, initial-scale=0.5\"; URL=/index.htm\">\r\n";
-const char html_headerOther[] PROGMEM = "<meta  name=\"viewport\" content=\"width=device-width, initial-scale=0.5\">\r\n";
+const char html_headerIdx[] PROGMEM = "<meta http-equiv=\"refresh\" content=\"5; URL=/index.htm\">\r\n";
 const char html_headE[] PROGMEM = "</head>\r\n";
 const char html_bodyB[] PROGMEM = "<body bgcolor='#26262A'>\r\n";
 
@@ -187,8 +186,6 @@ void wifibluetooth::preparePage(String &data, int page)
   data = FPSTR(html_headB);
   if (page == 1)
     data += FPSTR(html_headerIdx);
-  else
-    data += FPSTR(html_headerOther);
   data += FPSTR(html_main_cssB);
   data += FPSTR(html_main_css1);
   data += FPSTR(html_main_css2);
