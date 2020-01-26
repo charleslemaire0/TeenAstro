@@ -114,7 +114,7 @@ public:
     }
     adress += 4;
     m_site.longitude = EEPROM_readFloat(adress);
-    if (-180 > m_site.longitude || m_site.longitude > 180)
+    if (-360 >= m_site.longitude || m_site.longitude >= 360)
     {
       setLong(0);
     }
