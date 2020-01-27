@@ -77,7 +77,7 @@ void Command_GX()
       break;  
     case '1':// UTC date 
       rtk.getUTDate(i, i1, i2, i3, i4, i5);
-      i2 = i2 % 100;
+      i = i % 100;
       sprintf(reply, "%02d/%02d/%02d", i1, i2, i);
       quietReply = true;
       break;     
