@@ -101,16 +101,6 @@ private:
   void menuDateAndTime();
   void menuMount();
   void menuMountType();
-  void menuPredefinedMount();
-  void menuAltMount();
-  void menuSideres();
-  void menuFornax();
-  void menuKnopf();
-  void menuLosmandy();
-  void menuTakahashi();
-  void menuVixen();
-  bool menuMotorKit(int& gearBox,int& stepRot, int& current);
-  void writeDefaultMount(const bool& r1, const int& ttgr1, const bool& r2, const int& ttgr2, const int& stprot, const int& cL, const int& cH);
   void menuMotor(uint8_t idx);
   void menuAcceleration();
   void menuMaxRate();
