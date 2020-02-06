@@ -10,6 +10,7 @@
 #define DebugSer Serial           // default=Serial, or Serial1 for example (always 9600 baud)
 #define DEBUGBUTTON_OFF           // defualt=_OFF, use "DEBUGBUTTON" to activate
 
+
 // helper macros for debugging, with less typing
 #if defined(DEBUG_ON)
   #define D(x)     DebugSer.print(x)

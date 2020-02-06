@@ -129,7 +129,6 @@ private:
   void menuOverhead();
   void menuMeridian(bool east);
   void menuUnderPole();
-  bool menuSetStepperGearBox(const uint8_t &axis, unsigned short &worm);
   bool menuSetReverse(const uint8_t &axis);
   bool menuSetBacklash(const uint8_t &axis);
   bool menuSetTotGear(const uint8_t &axis);

@@ -1,6 +1,7 @@
 #include <TeenAstroFunction.h>
 #include "u8g2_ext_input.h"
 #include "u8g2_ext_event.h"
+#include "SHC_text.h"
 
 /*
 Copyright (c) 2018, 
@@ -600,8 +601,6 @@ uint8_t ext_UserInterfaceInputValueDate(u8g2_t *u8g2, Pad* extPad, const char *t
       }
       else if (event == U8X8_MSG_GPIO_MENU_UP)
       {
-
-
         if (incr > 0)
         {
           incr = 1.05*incr + incr_ref / 2;
@@ -643,43 +642,43 @@ uint8_t ext_UserInterfaceInputValueDate(u8g2_t *u8g2, Pad* extPad, const char *t
 
 uint8_t ext_UserInterfaceInputValueRA(u8g2_t *u8g2, Pad *extPad, long *value)
 {
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Right Asc.", value, 0, 86399, 2, "h", "m", "s", "", "", true);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, T_RIGHTASC, value, 0, 86399, 2, "h", "m", "s", "", "", true);
 }
 
 uint8_t ext_UserInterfaceInputValueDec(u8g2_t *u8g2, Pad *extPad, long *value)
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Declination", value, -324000, 324000, 2, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, T_DECLINAISON, value, -324000, 324000, 2, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
 }
 
 uint8_t ext_UserInterfaceInputValueAlt(u8g2_t *u8g2, Pad *extPad, long *value)
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Altitude", value, 0, 324000, 2, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, T_ALTITUDE, value, 0, 324000, 2, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
 }
 
 uint8_t ext_UserInterfaceInputValueAz(u8g2_t *u8g2, Pad *extPad, long *value)
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Azimuth", value, 0, 324000*4, 3, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, T_AZIMUTH, value, 0, 324000*4, 3, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
 }
 
 uint8_t ext_UserInterfaceInputValueLocalTime(u8g2_t *u8g2, Pad *extPad, long *value)
 {
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Local Time", value, 0, 86399, 2, ":", ":", "", "", "", true);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, T_LOCALTIME, value, 0, 86399, 2, ":", ":", "", "", "", true);
 }
 
 
 uint8_t ext_UserInterfaceInputValueLatitude(u8g2_t *u8g2, Pad *extPad, long *value)
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Latitude", value, -324000, 324000, 2, DEGREE_SYMBOL, "'", "\"", "N ", "S ", false);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, T_LATITUDE, value, -324000, 324000, 2, DEGREE_SYMBOL, "'", "\"", T_N " ", T_S " ", false);
 }
 
 uint8_t ext_UserInterfaceInputValueLongitude(u8g2_t *u8g2, Pad *extPad, long *value)
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, "Longitude", value, -648000, 648000, 3, DEGREE_SYMBOL, "'", "\"", "W ", "E ", false);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, T_LONGITUDE, value, -648000, 648000, 3, DEGREE_SYMBOL, "'", "\"", T_W " ", T_E " ", false);
 }
 
 void add_days(uint8_t& year, uint8_t& month, uint8_t& day, int days2add)
