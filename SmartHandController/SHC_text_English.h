@@ -1,5 +1,5 @@
-#pragma once
-#if LANGUAGE == ENGLISH
+﻿#pragma once
+
 #define T_N "N"
 #define T_S "S"
 #define T_E "E"
@@ -240,4 +240,3 @@
 #define T_PASSWORDIS "Password is"
 #define T_ACCESPOINT "AccesPoint"
 #define T_WIFIINTERFACE "Wifi Interface"
-#endif
