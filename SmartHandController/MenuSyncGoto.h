@@ -12,8 +12,9 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
 
   while (true) {
     // build the list of star/dso catalogs
-    const char* string_list_gotoL1="Catalogs\nSolar System\nCoordinates\nUser Defined\nHome\nPark";
-    int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync" : "Goto", current_selection, string_list_gotoL1);
+    const char* string_list_gotoL1= T_CATALOGS "\n" T_SOLARSYSTEM "\n" T_COORDINATES "\n" 
+                                    T_USERDEFINED "\n" T_HOME "\n" T_PARK;
+    int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? T_SYNC : T_GOTO, current_selection, string_list_gotoL1);
     if (selection == 0) return MR_CANCEL;
     current_selection=selection;
     switch (current_selection) {
@@ -46,7 +47,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuCoordinates(bool sync)
   static int current_selection = 1;
   float azm,alt = 0;
   while (true) {
-    const char* string_list="J2000\nJNow\nAlt Az\nNorth\nSouth\nEast\nWest";
+    const char* string_list="J2000\nJNow\nAlt Az\n" T_NORTH "\n" T_SOUTH "\n" T_EAST "\n" T_WEST;
     int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync Coord." : "Goto Coord.", current_selection, string_list);
     if (selection == 0) return MR_CANCEL;
     current_selection=selection;
@@ -89,7 +90,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuPier()
   MENU_RESULT answer = MR_CANCEL;
   ta_MountStatus.updateMount();
   uint8_t choice = ((uint8_t)ta_MountStatus.getPierState());
-  choice = display->UserInterfaceSelectionList(&buttonPad, "Set Side of Pier", choice, "East\nWest");
+  choice = display->UserInterfaceSelectionList(&buttonPad, T_SET T_SIDEOFPIER, choice, T_EAST "\n" T_WEST);
   bool ok = false;
   if (choice)
   {
@@ -244,9 +245,9 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalogs(bool sync)
       }
     }
     // add the normal filtering, solarsys, etc. items
-    strcat(string_list_gotoL1,"Filters");
+    strcat(string_list_gotoL1, T_FILTERS);
 
-    int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync Catalogs" : "Goto Catalogs", current_selection, string_list_gotoL1);
+    int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? T_SYNC T_CATALOGS : T_GOTO T_CATALOGS, current_selection, string_list_gotoL1);
     if (selection == 0) return MR_CANCEL;
     current_selection=selection;
 
@@ -267,7 +268,8 @@ SmartHandController::MENU_RESULT SmartHandController::menuSolarSys(bool sync)
   static int current_selection = 1;
   if (current_selection<1) current_selection=1;
 
-  const char *string_list_SolarSyst = "Sun\nMercury\nVenus\nMars\nJupiter\nSaturn\nUranus\nNeptune\nMoon";
+  const char *string_list_SolarSyst = T_SUN "\n" T_MERCURY "\n" T_VENUS "\n" T_MARS "\n"  T_JUPITER "\n"
+                                      T_SATURN "\n" T_URANUS "\n" T_NEPTUNE "\n" T_MOON;
   current_selection = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync Sol Sys" : "Goto Sol Sys", current_selection, string_list_SolarSyst);
   if (current_selection == 0) return MR_CANCEL;
   int selected_planet = current_selection;
@@ -287,7 +289,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilters()
 {
   int current_selection = 1;
   while (true) {
-    char string_list_Filters[200] = "Reset filters";
+    char string_list_Filters[200] = T_RESET " " T_FILTERS;
     char s[8];
     if (current_selection_filter_horizon) strcpy(s,"+"); else strcpy(s,"");
     strcat(string_list_Filters,"\n"); strcat(string_list_Filters,s); strcat(string_list_Filters,"Above Horizon"); strcat(string_list_Filters,s);
@@ -309,7 +311,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilters()
       if (current_selection_filter_dblmax>1) strcpy(s,"+"); else strcpy(s,"");
       strcat(string_list_Filters,"\n"); strcat(string_list_Filters,s); strcat(string_list_Filters,"Dbl* Max Sep."); strcat(string_list_Filters,s);
     }
-    current_selection = display->UserInterfaceSelectionList(&buttonPad, "Filters Allow", current_selection_filter, string_list_Filters);
+    current_selection = display->UserInterfaceSelectionList(&buttonPad, T_FILTERS T_ALLOW, current_selection_filter, string_list_Filters);
     if (current_selection == 0) return MR_CANCEL;
     current_selection_filter = current_selection;
     switch (current_selection) {
@@ -322,7 +324,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilters()
         current_selection_filter_dblmin = 1;
         current_selection_filter_dblmax = 1;
         current_selection_filter_varmax = 1;
-        DisplayMessage("Filters", "Reset", 1000);
+        DisplayMessage(T_FILTERS, T_RESET, 1000);
       break;
       case 2:
         menuFilterHorizon();
@@ -376,11 +378,11 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilterCon()
 {
   char string_list_fCon[1000]="";
   for (int l=0; l<89; l++) {
-    if (l==0) strcat(string_list_fCon,"All"); else strcat(string_list_fCon,cat_mgr.constellationCodeToStr(l-1));
+    if (l==0) strcat(string_list_fCon,T_ALL); else strcat(string_list_fCon,cat_mgr.constellationCodeToStr(l-1));
     if (l<88) strcat(string_list_fCon,"\n");
   }
   int last_selection_filter_con = current_selection_filter_con;
-  current_selection_filter_con = display->UserInterfaceSelectionList(&buttonPad, "Filter by Con", current_selection_filter_con, string_list_fCon);
+  current_selection_filter_con = display->UserInterfaceSelectionList(&buttonPad, T_FILTERBYCON, current_selection_filter_con, string_list_fCon);
   if (current_selection_filter_con == 0) { current_selection_filter_con=last_selection_filter_con; return MR_CANCEL; }
   return MR_OK;
 }
@@ -389,30 +391,32 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilterType()
 {
   char string_list_fType[500]="";
   for (int l=0; l<22; l++) {
-    if (l==0) strcat(string_list_fType,"All"); else strcat(string_list_fType,cat_mgr.objectTypeCodeToStr(l-1));
+    if (l==0) strcat(string_list_fType,T_ALL); else strcat(string_list_fType,cat_mgr.objectTypeCodeToStr(l-1));
     if (l<21) strcat(string_list_fType,"\n");
   }
   int last_selection_filter_type = current_selection_filter_type;
-  current_selection_filter_type = display->UserInterfaceSelectionList(&buttonPad, "Filter by Type", current_selection_filter_type, string_list_fType);
+  current_selection_filter_type = display->UserInterfaceSelectionList(&buttonPad, T_FILTERBYTYPE, current_selection_filter_type, string_list_fType);
   if (current_selection_filter_type == 0) { current_selection_filter_type=last_selection_filter_type; return MR_CANCEL; }
   return MR_OK;
 }
 
 SmartHandController::MENU_RESULT SmartHandController::menuFilterHorizon()
 {
-  const char* string_list_fHorizon="Above Horizon\nAbove 10 deg\nAbove 20 deg\nAbove 30 deg\nAbove 40 deg\nAbove 50 deg\nAbove 60 deg\nAbove 70 deg";
+  const char* string_list_fHorizon=T_ABOVE " " T_HORIZON "\n" T_ABOVE " 10 " T_DEG "\n" T_ABOVE " 20 " T_DEG "\n"
+                                   T_ABOVE " 30 " T_DEG "\n" T_ABOVE " 40 " T_DEG"\n" T_ABOVE " 50 " T_DEG "\n"
+                                   T_ABOVE " 60 " T_DEG "\n" T_ABOVE " 70 " T_DEG;
   int last_selection_filter_horizon = current_selection_filter_horizon;
-  current_selection_filter_horizon = display->UserInterfaceSelectionList(&buttonPad, "Filter Horizon", current_selection_filter_horizon, string_list_fHorizon);
+  current_selection_filter_horizon = display->UserInterfaceSelectionList(&buttonPad, T_FILTER " " T_HORIZON, current_selection_filter_horizon, string_list_fHorizon);
   if (current_selection_filter_horizon == 0) { current_selection_filter_horizon=last_selection_filter_horizon; return MR_CANCEL; }
   return MR_OK;
 }
 
 SmartHandController::MENU_RESULT SmartHandController::menuFilterByMag()
 {
-  const char* string_list_fMag="All\n" "10th\n" "11th\n" "12th\n" "13th\n" "14th\n" "15th\n" "16th";
+  const char* string_list_fMag= T_ALL "\n" "10th\n" "11th\n" "12th\n" "13th\n" "14th\n" "15th\n" "16th";
   int last_selection_filter_byMag = current_selection_filter_byMag;
 
-  current_selection_filter_byMag = display->UserInterfaceSelectionList(&buttonPad, "Filter Magnitude", current_selection_filter_byMag, string_list_fMag);
+  current_selection_filter_byMag = display->UserInterfaceSelectionList(&buttonPad, T_FILTER " Magnitude", current_selection_filter_byMag, string_list_fMag);
   if (current_selection_filter_byMag == 0) { current_selection_filter_byMag=last_selection_filter_byMag; return MR_CANCEL; }
   return MR_OK;
 }

@@ -1,9 +1,9 @@
 
 #include <TeenAstroMountStatus.h>
 #include "_EEPROM_ext.h"
+#include "SHC_text.h"
 #include "SmartController.h"
 #include "MenuSyncGoto.h"
-#include "SHC_text.h"
 
 static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":Fo#", ":Fi#" };
 static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":FO#", ":FI#" };
@@ -820,8 +820,8 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     else if (page == 4)
     {
       u8g2_uint_t y = 36;
-      static char text1[19] = T_SLEWINGTO " " T_STAR;
-      static char text2[18] = T_RECENTER " " T_STAR;
+      static char text1[29] = T_SLEWINGTO " " T_STAR;
+      static char text2[28] = T_RECENTER " " T_STAR;
       if (ta_MountStatus.isAlignSlew())
         u8g2_DrawUTF8(u8g2, 0, y,text1);
       else if (ta_MountStatus.isAlignRecenter())
@@ -1198,8 +1198,8 @@ void SmartHandController::menuTrack()
   TeenAstroMountStatus::TrackState currentstate = ta_MountStatus.getTrackingState();
   if (currentstate == TeenAstroMountStatus::TRK_ON)
   {
-    const char *string_list_tracking = T_STOPTRAKING "\n" T_SIDEREAL "\n" T_LUNAR "\n" T_SOLAR;
-    current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, T_TRAKINGSTATE, 0, string_list_tracking);
+    const char *string_list_tracking = T_STOPTRACKING "\n" T_SIDEREAL "\n" T_LUNAR "\n" T_SOLAR;
+    current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGSTATE, 0, string_list_tracking);
     switch (current_selection_L1)
     {
     case 1:
@@ -1230,8 +1230,8 @@ void SmartHandController::menuTrack()
   }
   else if (currentstate == TeenAstroMountStatus::TRK_OFF)
   {
-    const char *string_list_tracking = T_STARTTRAKING;
-    current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, T_TRAKINGSTATE, 0, string_list_tracking);
+    const char *string_list_tracking = T_STARTTRACKING;
+    current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGSTATE, 0, string_list_tracking);
     switch (current_selection_L1)
     {
     case 1:
@@ -1531,8 +1531,9 @@ void SmartHandController::menuMotor(const uint8_t axis)
 
   while (current_selection_L3 != 0)
   {
-    const char *string_list_Motor = "Show Settings\nRotation\nGear\n""Steps per Rotation\n""Micro Steps\n""Backlash\n""Low Current\n""High Current";
-    current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, axis == 1 ? "Motor 1" : "Motor 2", current_selection_L3, string_list_Motor);
+    const char *string_list_Motor = T_SHOWSETTINGS "\n" T_ROTATION "\n" T_GEAR "\n" T_STEPSPERROT "\n"
+                                     T_MICROSTEP "\n" T_BACKLASH "\n" T_LOWCURR "\n" T_HIGHCURR;
+    current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, axis == 1 ? T_MOTOR " 1" : T_MOTOR " 2", current_selection_L3, string_list_Motor);
     switch (current_selection_L3)
     {
     case 1:
@@ -1619,7 +1620,7 @@ void SmartHandController::menuSite()
   current_selection_L2 = 1;
   while (current_selection_L2 != 0)
   {
-    const char *string_list_SiteL2 = "Latitude\n""Longitude\n""Elevation\n""Select Site";
+    const char *string_list_SiteL2 = T_LATITUDE "\n" T_LONGITUDE "\n" T_SITEELEVATION "\n" T_SELECTSITE;
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Menu Site", current_selection_L2, string_list_SiteL2);
     switch (current_selection_L2)
     {
@@ -2393,7 +2394,7 @@ void SmartHandController::menuHorizon()
   if (DisplayMessageLX200(GetLX200(":Gh#", out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10);
-    if (display->UserInterfaceInputValueFloat(&buttonPad, T_HORIZONLIMIT, "", &angle, -10, 20, 2, 0, " degree"))
+    if (display->UserInterfaceInputValueFloat(&buttonPad, T_HORIZONLIMIT, "", &angle, -10, 20, 2, 0, " " T_DEGREE))
     {
       sprintf(out, ":Sh%+03d#", (int)angle);
       DisplayMessageLX200(SetLX200(out), false);
@@ -2407,7 +2408,7 @@ void SmartHandController::menuOverhead()
   if (DisplayMessageLX200(GetLX200(":Go#", out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10);
-    if (display->UserInterfaceInputValueFloat(&buttonPad, T_OVERHEADLIMIT, "", &angle, 60, 91, 2, 0, " degree"))
+    if (display->UserInterfaceInputValueFloat(&buttonPad, T_OVERHEADLIMIT, "", &angle, 60, 91, 2, 0, " " T_DEGREE))
     {
       sprintf(out, ":So%02d#", (int)angle);
       DisplayMessageLX200(SetLX200(out), false);
@@ -2422,7 +2423,7 @@ void SmartHandController::menuUnderPole()
   if (DisplayMessageLX200(GetLX200(":GXEB#", out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10) / 10;
-    if (display->UserInterfaceInputValueFloat(&buttonPad, T_MAXHOURANGLE, "+-", &angle, 9, 12, 2, 1, " " T_HOUR))
+    if (display->UserInterfaceInputValueFloat(&buttonPad, T_MAXHOURANGLE, "+-", &angle, 9, 12, 2, 1, " " T_HOURS))
     {
       sprintf(cmd, ":SXEB_%03d#", (int)(angle * 10));
       DisplayMessageLX200(SetLX200(cmd), false);
@@ -2440,7 +2441,7 @@ void SmartHandController::menuMeridian(bool east)
   if (DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10) / 4.0;
-    if (display->UserInterfaceInputValueFloat(&buttonPad, east ? T_MERIDIANLIMITE : T_MERIDIANLIMITW , "", &angle, -45, 45, 2, 0, " degree"))
+    if (display->UserInterfaceInputValueFloat(&buttonPad, east ? T_MERIDIANLIMITE : T_MERIDIANLIMITW , "", &angle, -45, 45, 2, 0, " " T_DEGREE))
     {
       sprintf(cmd, ":SXEX:%+03d#", (int)(angle*4.0));
       cmd[4] = east ? '9' : 'A';
