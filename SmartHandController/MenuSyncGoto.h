@@ -90,7 +90,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuPier()
   MENU_RESULT answer = MR_CANCEL;
   ta_MountStatus.updateMount();
   uint8_t choice = ((uint8_t)ta_MountStatus.getPierState());
-  choice = display->UserInterfaceSelectionList(&buttonPad, T_SET T_SIDEOFPIER, choice, T_EAST "\n" T_WEST);
+  choice = display->UserInterfaceSelectionList(&buttonPad, T_SETSIDEOFPIER, choice, T_EAST "\n" T_WEST);
   bool ok = false;
   if (choice)
   {

@@ -149,6 +149,7 @@
 #define T_STOPTRACKING "Stop Tracking"
 #define T_TRACKINGSTATE "Tracking State"
 #define T_SIDEOFPIER "Side of Pier"
+#define T_SETSIDEOFPIER "Set Side of Pier"
 #define T_SAVE "Save"
 #define T_SAVED "Saved"
 #define T_Clear "Clear"
