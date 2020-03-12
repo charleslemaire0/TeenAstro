@@ -569,6 +569,10 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
   ta_MountStatus.updateMount();
   if (ta_MountStatus.isAligning())
     page = 4;
+  else if (!ta_MountStatus.hasFocuser() && page == 3)
+  {
+    page = 0;
+  }
   if (ta_MountStatus.hasInfoMount() && page == 4)
   {
     TeenAstroMountStatus::TrackState curT = ta_MountStatus.getTrackingState();  

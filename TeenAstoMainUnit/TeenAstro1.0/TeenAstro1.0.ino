@@ -1,9 +1,9 @@
 /*
  * Title       On-Step
- * by          Howard Dutton, Charles Lemaire
+ * by          Howard Dutton, Charles Lemaire, Markus Noga, Francois Desvallée
  *
  * Copyright (C) 2012 to 2016 Howard Dutton
- * Copyright (C) 2016 to 2019 Charles Lemaire
+ * Copyright (C) 2016 to 2020 Charles Lemaire, Markus Noga, Francois Desvallée
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -211,7 +211,7 @@ void setup()
 
 
   // get ready for serial communications
-  Serial1_Init(74880);
+  Serial1_Init(57600);
   Serial_Init(BAUD);                      // for Tiva TM4C the serial is redirected to serial5 in serial.ino file
   Serial2_Init(56000);
   //GNSS connection
@@ -238,8 +238,16 @@ void setup()
 
   // prep timers
   rtk.updateTimers();
+  Serial2.write(":F?#");
   digitalWrite(LEDPin, HIGH);
-  delay(500);
+  delay(1000);
+  hasGNSS = Serial3.available()>0;
+  hasFocuser = Serial2.available()>0;
+  while (Serial2.available()>0)
+  {
+    char b = Serial2.read();
+    hasFocuser = '?';
+  }
   digitalWrite(LEDPin, LOW);
 }
 

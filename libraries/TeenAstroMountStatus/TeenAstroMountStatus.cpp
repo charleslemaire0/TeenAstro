@@ -97,6 +97,10 @@ void TeenAstroMountStatus::updateTime()
 };
 void TeenAstroMountStatus::updateFocuser()
 {
+  if (!m_hasFocuser)
+  {
+    return;
+  }
   if (millis() - m_lastStateFocuser > updaterate)
   {
     char fc[45];
@@ -105,6 +109,11 @@ void TeenAstroMountStatus::updateFocuser()
     {
       m_lastStateFocuser = millis();
       strncpy(m_TempFocuser, fc, 45);
+    }
+    else if (m_hasInfoFocuser && fc[0] == '0')
+    {
+      m_hasInfoFocuser = false;
+      m_hasFocuser = false;
     }
     else
     {
