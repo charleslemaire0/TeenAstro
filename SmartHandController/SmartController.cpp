@@ -1708,6 +1708,11 @@ void SmartHandController::menuLocalTimeZone()
 
 void SmartHandController::menuFocuserAction()
 {
+  if (!ta_MountStatus.hasFocuser())
+  {
+    DisplayMessage(T_FOCUSER, T_NOT_CONNECTED "!",500);
+    return;
+  }
   static  uint8_t current_selection = 1;
   uint8_t choice;
   buttonPad.setMenuMode();
@@ -2018,6 +2023,11 @@ void SmartHandController::menuFocuserMotor()
 
 void SmartHandController::menuFocuserSettings()
 {
+    if (!ta_MountStatus.hasFocuser())
+  {
+    DisplayMessage(T_FOCUSER, T_NOT_CONNECTED "!", 500);
+    return;
+  }
   buttonPad.setMenuMode();
   const char *string_list_Focuser = T_CONFIG "\n" T_MOTOR "\n" T_SHOWVERSION;
   while (!exitMenu)

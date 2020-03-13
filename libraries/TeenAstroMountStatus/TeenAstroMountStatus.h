@@ -88,7 +88,7 @@ public:
   bool hasInfoSidereal() { return m_hasInfoSidereal; };
   bool hasInfoMount() { return m_hasInfoMount; };
   bool hasInfoFocuser() { return m_hasInfoFocuser; };
-  bool hasFocuser() { return m_hasFocuser; }
+  bool hasFocuser() { static bool firstime = m_hasFocuser; if (firstime){updateFocuser();} return m_hasFocuser; }
   bool hasInfoTrackingRate() { return m_hasInfoTrackingRate; };
 
   const char* getVP() { return  m_TempVP; };
