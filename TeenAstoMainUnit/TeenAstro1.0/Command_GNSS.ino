@@ -6,6 +6,10 @@ static void smartDelay(unsigned long ms)
 #if VERSION == 220
   return;
 #endif
+  if (!hasGNSS)
+  {
+    return;
+  }
   unsigned long start = millis();
   do
   {
@@ -18,6 +22,10 @@ static void smartDelay(unsigned long ms)
 
 bool iSGNSSValid()
 {
+  if (!hasGNSS)
+  {
+    return false;
+  }
   bool valid = gps.date.isValid() && gps.date.age() < 5000;
   valid &= gps.time.isValid() && gps.time.age() < 5000;
   valid &= gps.location.isValid() && gps.location.age() < 5000;

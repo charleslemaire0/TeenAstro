@@ -6,7 +6,7 @@
 #ifdef ARDUINO_ESP8266_WEMOS_D1MINI
   // the serial interface to/from OnStep
 
-#define SERIAL_BAUD 74880
+#define SERIAL_BAUD 57600
 #define DEBUG_OFF
 // the hand controller buttons
 #define B_PIN0 D8               // Shift

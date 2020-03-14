@@ -60,6 +60,7 @@ private:
   bool            m_hasInfoTrackingRate = false;
   bool            m_hasInfoMount = false;
   bool            m_hasInfoFocuser = false;
+  bool            m_hasFocuser = true;
 public:
   //Alignment Stuff
   bool            isAligning()  { return m_align != ALI_OFF; }
@@ -87,6 +88,7 @@ public:
   bool hasInfoSidereal() { return m_hasInfoSidereal; };
   bool hasInfoMount() { return m_hasInfoMount; };
   bool hasInfoFocuser() { return m_hasInfoFocuser; };
+  bool hasFocuser() { static bool firstime = m_hasFocuser; if (firstime){updateFocuser();} return m_hasFocuser; }
   bool hasInfoTrackingRate() { return m_hasInfoTrackingRate; };
 
   const char* getVP() { return  m_TempVP; };

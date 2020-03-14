@@ -24,7 +24,8 @@ boolean homeMount = false;
 MeridianFlip meridianFlip = FLIP_NEVER;
 Mount mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;
-
+boolean hasFocuser = true;
+boolean hasGNSS = true;
 boolean refraction = true;
 boolean correct_tracking = false;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
@@ -199,7 +200,7 @@ unsigned long lastSecurityCheck = millis();
 boolean abortSlew = false;
 
 // Command processing -------------------------------------------------------------------------------------------------------
-#define BAUD    56000
+#define BAUD 57600
 
 boolean commandError = false;
 boolean quietReply = false;

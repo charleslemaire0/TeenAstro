@@ -3,6 +3,11 @@
 //   F - Focuser
 void Command_F()
 {
+  if (!hasFocuser)
+  {
+    commandError = true;
+    return;
+  }
   quietReply = true; // the focuser is responding
   boolean focuserNoResponse = false;
   boolean focuserShortResponse = false;

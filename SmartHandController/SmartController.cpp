@@ -569,6 +569,10 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
   ta_MountStatus.updateMount();
   if (ta_MountStatus.isAligning())
     page = 4;
+  else if (!ta_MountStatus.hasFocuser() && page == 3)
+  {
+    page = 0;
+  }
   if (ta_MountStatus.hasInfoMount() && page == 4)
   {
     TeenAstroMountStatus::TrackState curT = ta_MountStatus.getTrackingState();  
@@ -861,9 +865,9 @@ void SmartHandController::drawLoad()
   uint8_t x = 0;
   do {
     display->setFont(u8g2_font_helvR14_tr);
-    x = (display->getDisplayWidth() - display->getStrWidth("SHC " T_VERSION)) / 2;
+    x = (display->getDisplayWidth() - display->getUTF8Width("SHC " T_VERSION)) / 2;
     display->drawStr(x, display->getDisplayHeight() / 2. - 6, "SHC" T_VERSION);
-    x = (display->getDisplayWidth() - display->getStrWidth(_version)) / 2;
+    x = (display->getDisplayWidth() - display->getUTF8Width(_version)) / 2;
     display->drawStr(x, display->getDisplayHeight() / 2. + 22, _version);
   } while (display->nextPage());
   delay(1500);
@@ -1704,6 +1708,11 @@ void SmartHandController::menuLocalTimeZone()
 
 void SmartHandController::menuFocuserAction()
 {
+  if (!ta_MountStatus.hasFocuser())
+  {
+    DisplayMessage(T_FOCUSER, T_NOT_CONNECTED "!",500);
+    return;
+  }
   static  uint8_t current_selection = 1;
   uint8_t choice;
   buttonPad.setMenuMode();
@@ -2014,6 +2023,11 @@ void SmartHandController::menuFocuserMotor()
 
 void SmartHandController::menuFocuserSettings()
 {
+    if (!ta_MountStatus.hasFocuser())
+  {
+    DisplayMessage(T_FOCUSER, T_NOT_CONNECTED "!", 500);
+    return;
+  }
   buttonPad.setMenuMode();
   const char *string_list_Focuser = T_CONFIG "\n" T_MOTOR "\n" T_SHOWVERSION;
   while (!exitMenu)
@@ -2462,11 +2476,11 @@ void SmartHandController::DisplayMessage(const char* txt1, const char* txt2, int
     if (txt2 != NULL)
     {
       y = 50;
-      x = (display->getDisplayWidth() - display->getStrWidth(txt2)) / 2;
+      x = (display->getDisplayWidth() - display->getUTF8Width(txt2)) / 2;
       display->drawUTF8(x, y, txt2);
       y = 25;
     }
-    x = (display->getDisplayWidth() - display->getStrWidth(txt1)) / 2;
+    x = (display->getDisplayWidth() - display->getUTF8Width(txt1)) / 2;
     display->drawUTF8(x, y, txt1);
   } while (display->nextPage());
   if (duration >= 0)
@@ -2492,7 +2506,7 @@ void SmartHandController::DisplayLongMessage(const char* txt1, const char* txt2,
   display->firstPage();
   do {
     y = h;
-    x = (display->getDisplayWidth() - display->getStrWidth(txt1)) / 2;
+    x = (display->getDisplayWidth() - display->getUTF8Width(txt1)) / 2;
     display->drawUTF8(x, y, txt1);
     y += h;
     if (txt2 != NULL)
