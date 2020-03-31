@@ -83,3 +83,7 @@ TeenAstoMainUnit/TeenAstro1.0/~AutoRecover.TeenAstro1.0.vcxproj
 TeenAstroASCOM/.vs/TeenAstroASCOM/v14/.suo
 SimpleFocuser/.vs/SimpleFocuser/v14/.suo
 SimpleFocuser/.vs/config/applicationhost.config
+TeenAstoMainUnit/TeenAstro/.vs/TeenAstro/v14/.suo
+TeenAstoMainUnit/TeenAstro/.vs/TeenAstro1.0/v14/.suo
+TeenAstoMainUnit/TeenAstro/__vm/.TeenAstro.vsarduino.h
+TeenAstoMainUnit/TeenAstro/__vm/.TeenAstro1.0.vsarduino.h
