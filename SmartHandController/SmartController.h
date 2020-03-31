@@ -23,7 +23,7 @@ private:
   bool sleepDisplay = false;
   bool lowContrast = false;
 
-  bool powerCylceRequired = false;
+  bool powerCycleRequired = false;
   bool buttonCommand = false;
   bool Move[6] = { false, false, false, false, false, false };
   uint8_t displayT1;

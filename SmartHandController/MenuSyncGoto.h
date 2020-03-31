@@ -413,7 +413,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilterHorizon()
 
 SmartHandController::MENU_RESULT SmartHandController::menuFilterByMag()
 {
-  const char* string_list_fMag= T_ALL "\n" "10th\n" "11th\n" "12th\n" "13th\n" "14th\n" "15th\n" "16th";
+  const char* string_list_fMag= T_ALL "\n" "10\n" "11\n" "12\n" "13\n" "14\n" "15\n" "16";
   int last_selection_filter_byMag = current_selection_filter_byMag;
 
   current_selection_filter_byMag = display->UserInterfaceSelectionList(&buttonPad, T_FILTER " Magnitude", current_selection_filter_byMag, string_list_fMag);
