@@ -101,6 +101,8 @@ Public Class Telescope
   Private mtgtRa As Double = -999
   Private mtgtDec As Double = -999
 
+
+
   Private mutilities As Util ' Private variable to hold an ASCOM Utilities object
   Private mastroUtilities As AstroUtils ' Private variable to hold an AstroUtils object to provide the Range method
   Private mTL As TraceLogger ' Private variable to hold the trace logger object (creates a diagnostic log file with information that you specify)
@@ -1020,13 +1022,17 @@ Public Class Telescope
   End Property
 
   Public Sub SlewToAltAz(Azimuth As Double, Altitude As Double) Implements ITelescopeV3.SlewToAltAz
-    mTL.LogMessage("SlewToAltAz", "Not implemented")
-    Throw New ASCOM.MethodNotImplementedException("SlewToAltAz")
+    setAzalt(Azimuth, Altitude)
+    checkslew()
+    doslew(False, True)
+    mTL.LogMessage("SlewToAltAzAz", "done")
   End Sub
 
   Public Sub SlewToAltAzAsync(Azimuth As Double, Altitude As Double) Implements ITelescopeV3.SlewToAltAzAsync
-    mTL.LogMessage("SlewToAltAzAsync", "Not implemented")
-    Throw New ASCOM.MethodNotImplementedException("SlewToAltAzAsync")
+    setAzalt(Azimuth, Altitude)
+    checkslew()
+    doslew(True, True)
+    mTL.LogMessage("SlewToAltAzAsync", "done")
   End Sub
 
   Public Sub SlewToCoordinates(RightAscension As Double, Declination As Double) Implements ITelescopeV3.SlewToCoordinates
@@ -1125,6 +1131,15 @@ Public Class Telescope
     If Left$(sexa, 1) <> "-" Then
       sexa = "+" & sexa         ' Both need leading '+'
     End If
+    Return sexa
+  End Function
+
+  Private Function AzToString(value As Double) As String
+    value = value Mod 360
+    If value < 0 Then
+      value += 360
+    End If
+    Dim sexa As String = mutilities.DegreesToDMS(value, ":", ":", "") ' Long format, whole seconds
     Return sexa
   End Function
 
@@ -1236,8 +1251,14 @@ Public Class Telescope
     End If
   End Sub
 
-  Private Sub doslew(ByRef async As Boolean)
+  Private Sub doslew(ByRef async As Boolean, Optional ByRef altaz As Boolean = False)
+
     Dim state As String = Me.CommandSingleChar("MS", False)
+
+    If altaz Then
+      state = Me.CommandSingleChar("MA", False)
+    End If
+
     Dim ok = False
     Select Case state
       Case "0"
@@ -1300,6 +1321,16 @@ Public Class Telescope
     End While
   End Sub
 
+  Sub setAzalt(Azimuth As Double, Altitude As Double)
+    Dim sexa As String = AzToString(Azimuth)
+    If Not Me.CommandBool("Sz" & sexa) Then
+      Throw New ASCOM.InvalidOperationException
+    End If
+    sexa = DecToString(Altitude)
+    If Not Me.CommandBool("Sz" & sexa) Then
+      Throw New ASCOM.InvalidOperationException
+    End If
+  End Sub
 #End Region
 
 #Region "Private properties and methods"
