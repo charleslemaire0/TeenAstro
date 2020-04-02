@@ -1075,8 +1075,9 @@ Public Class Telescope
   End Property
 
   Public Sub SyncToAltAz(Azimuth As Double, Altitude As Double) Implements ITelescopeV3.SyncToAltAz
-    mTL.LogMessage("SyncToAltAz", "Not implemented")
-    Throw New ASCOM.MethodNotImplementedException("SyncToAltAz")
+    setAzalt(Azimuth, Altitude)
+    CommandString("CA")
+    mTL.LogMessage("SyncToAltAz", "done")
   End Sub
 
   Public Sub SyncToCoordinates(RightAscension As Double, Declination As Double) Implements ITelescopeV3.SyncToCoordinates
