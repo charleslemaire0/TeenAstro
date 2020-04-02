@@ -1,1 +1,0 @@
-move ..\..\..\SmartHandController\Release\SmartHandController.bin TeenAstroSHC_beta.bin
