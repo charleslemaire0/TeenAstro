@@ -247,7 +247,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalogs(bool sync)
     // add the normal filtering, solarsys, etc. items
     strcat(string_list_gotoL1, T_FILTERS);
 
-    int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? T_SYNC T_CATALOGS : T_GOTO T_CATALOGS, current_selection, string_list_gotoL1);
+    int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? T_SYNC T_CATALOGS : T_GOTO " " T_CATALOGS, current_selection, string_list_gotoL1);
     if (selection == 0) return MR_CANCEL;
     current_selection=selection;
 
@@ -270,7 +270,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuSolarSys(bool sync)
 
   const char *string_list_SolarSyst = T_SUN "\n" T_MERCURY "\n" T_VENUS "\n" T_MARS "\n"  T_JUPITER "\n"
                                       T_SATURN "\n" T_URANUS "\n" T_NEPTUNE "\n" T_MOON;
-  current_selection = display->UserInterfaceSelectionList(&buttonPad, sync ? "Sync Sol Sys" : "Goto Sol Sys", current_selection, string_list_SolarSyst);
+  current_selection = display->UserInterfaceSelectionList(&buttonPad, sync ? T_SYNC " " T_SOLARSYSTEM : T_GOTO " " T_SOLARSYSTEM, current_selection, string_list_SolarSyst);
   if (current_selection == 0) return MR_CANCEL;
   int selected_planet = current_selection;
   if (current_selection>3) selected_planet++;
@@ -413,7 +413,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilterHorizon()
 
 SmartHandController::MENU_RESULT SmartHandController::menuFilterByMag()
 {
-  const char* string_list_fMag= T_ALL "\n" "10th\n" "11th\n" "12th\n" "13th\n" "14th\n" "15th\n" "16th";
+  const char* string_list_fMag= T_ALL "\n" "10\n" "11\n" "12\n" "13\n" "14\n" "15\n" "16";
   int last_selection_filter_byMag = current_selection_filter_byMag;
 
   current_selection_filter_byMag = display->UserInterfaceSelectionList(&buttonPad, T_FILTER " Magnitude", current_selection_filter_byMag, string_list_fMag);

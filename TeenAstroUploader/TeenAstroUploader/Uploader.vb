@@ -91,7 +91,12 @@
       pHelp.FileName = "esptool.exe"
       Dim pcb As String = ComboBoxPCBSHC.SelectedItem()
       Dim fwv As String = ComboBoxFirmwareVersion.SelectedItem
-      Dim Binfile As String = fwv + "\" + "TeenAstroSHC_" + fwv + ".bin"
+      Dim lg As String = "_" + ComboBoxLanguage.SelectedItem
+      If fwv = "1.1" Or fwv = "1.0" Then
+        lg = ""
+      End If
+      Dim Binfile As String = fwv + "\" + "TeenAstroSHC_" + fwv + lg + ".bin"
+
       If Not System.IO.File.Exists(Binfile) Then
         MsgBox(Binfile + " Not found!")
         Return

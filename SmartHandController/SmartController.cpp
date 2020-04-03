@@ -462,7 +462,7 @@ void SmartHandController::update()
   top = millis();
   if (isSleeping())
     return;
-  if (powerCylceRequired)
+  if (powerCycleRequired)
   {
     display->sleepOff();
     DisplayMessage(T_PRESS_KEY, T_TO_REBOOT "...", -1);
@@ -880,7 +880,7 @@ void SmartHandController::resetSHC()
   {
     EEPROM_writeInt(0, 0);
     EEPROM.commit();
-    powerCylceRequired = true;
+    powerCycleRequired = true;
     exitMenu = true;
     return;
   }
@@ -1523,7 +1523,7 @@ void SmartHandController::menuMountType()
     delay(1000);
     Serial.end();
     exitMenu = true;
-    powerCylceRequired = true;
+    powerCycleRequired = true;
     Serial.println(out);
   }
 }
@@ -2292,14 +2292,14 @@ void SmartHandController::menuMainUnitInfo()
     case 2:
       DisplayMessageLX200(SetLX200(":$!#"), false);
       delay(500);
-      powerCylceRequired = true;
+      powerCycleRequired = true;
       return;
     case 3:
       if (display->UserInterfaceMessage(&buttonPad, "Reset", "To", "Factory?", "NO\nYES") == 2)
       {
         DisplayMessageLX200(SetLX200(":$$#"), false);
         delay(500);
-        powerCylceRequired = true;
+        powerCycleRequired = true;
         return;
       }
       break;
@@ -2325,7 +2325,7 @@ void SmartHandController::menuWifi()
     case 1:
       buttonPad.turnWifiOn(!buttonPad.isWifiOn());
       exitMenu = true;
-      powerCylceRequired = true;
+      powerCycleRequired = true;
       break;
     case 2:
       DisplayMessage(T_PASSWORDIS, buttonPad.getPassword(), -1);
@@ -2395,7 +2395,7 @@ void SmartHandController::menuWifiMode()
     else
     {
       buttonPad.setWifiMode(idxs[selected_item - 1]);
-      powerCylceRequired = true;
+      powerCycleRequired = true;
       exitMenu = true;
     }
   }
