@@ -149,7 +149,7 @@
 #define T_STOPTRACKING "Nachführung stoppen"
 #define T_TRACKINGSTATE "Status Nachführung"
 #define T_SIDEOFPIER "Seite der Montierung"
-#define T_SETSIDEOFPIER "Set Side of Pier
+#define T_SETSIDEOFPIER "Seite wälen"
 #define T_SAVE "Speichern"
 #define T_SAVED "Gespeichert"
 #define T_Clear "Löschen"
@@ -216,6 +216,7 @@
 #define T_MERIDIANLIMIT "Meridiangrenze"
 #define T_MERIDIANLIMITE "Meridiangrenze O"
 #define T_MERIDIANLIMITW "Meridiangrenze W"
+#define T_SELECTSITE "Ort wählen"
 
 #define T_MAXHOURANGLE "Max. Stundenwinkel"
 #define T_UNDERPOLE "Unter dem Pol"
