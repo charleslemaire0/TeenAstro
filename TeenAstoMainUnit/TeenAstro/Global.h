@@ -276,5 +276,5 @@ fixed_t         guideAxis2;
 
 // Reticule control
 #ifdef RETICULE_LED_PINS
-int             reticuleBrightness = RETICULE_LED_PINS;
+int             reticuleBrightness = 255;
 #endif

@@ -1,12 +1,16 @@
 #pragma once
 //uncomment the version PCB you are using
 
+#ifndef VERSION
+#define VERSION 240
+#endif
 
-//#define VERSION  220
-#define VERSION  240
-//#define VERSION  240
+
 
 #if VERSION == 220
+#ifdef AxisDriver
+#undef AxisDriver
+#endif
 #define AxisDriver      1                    //only with TOS100
 
 #define Axis1StepPin    2                   // Pin 2 (Step)
@@ -38,6 +42,9 @@
 #endif
 
 #if VERSION == 230
+#ifdef AxisDriver
+#undef AxisDriver
+#endif
 #define AxisDriver      1                 //only with TOS100
 
 #define Axis1StepPin    21                // Pin 22 (Step)
@@ -63,11 +70,14 @@
 #define ST4DEs          15                // ST4 South
 #define ST4DEn          16                // ST4 North
 #define ST4RAw          17                // ST4 West
-#define LEDPin          23 
+#define LEDPin          23
 #define MaxLED          16
 #endif
 
 #if VERSION == 240
+#ifndef AxisDriver
+#define AxisDriver      3                 // Select your driver 2 for the TMC2130, 3 for the TMC5160
+#endif
 #define AxisDriver      2                 // Select your driver 2 for the TMC2130, 3 for the TMC5160
 #define Axis1StepPin    22                // Pin 22 (Step)
 #define Axis1DirPin     2                 // Pin 3 (Dir)
@@ -77,6 +87,7 @@
 #define Axis2DirPin     4                 // Pin 19 (Dir)
 #define Axis2CSPin      19                // Pin 20 (CS)
 #define Axis2EnablePin  5                 // Pin 18 (enable)
+#define RETICULE_LED_PINS 6  
 #define PPS             18
 #define Axis1Reverse    1
 #define Axis2Reverse    1

@@ -142,16 +142,8 @@ void setup()
 
   // light reticule LED
 #ifdef RETICULE_LED_PINS
-#if defined(__arm__) && defined(TEENSYDUINO) && !defined(ALTERNATE_PINMAP_ON)
-#ifdef STATUS_LED_PINS_ON
-#undef STATUS_LED_PINS_ON
-#endif
-#ifdef STATUS_LED_PINS
-#undef STATUS_LED_PINS
-#endif
-#endif
-  pinMode(ReticulePin, OUTPUT);
-  analogWrite(ReticulePin, reticuleBrightness);
+  pinMode(RETICULE_LED_PINS, OUTPUT);
+  analogWrite(RETICULE_LED_PINS, reticuleBrightness);
 #endif
 
   // ST4 interface
@@ -245,7 +237,7 @@ void setup()
   hasFocuser = Serial2.available()>0;
   while (Serial2.available()>0)
   {
-    char b = Serial2.read();
+    Serial2.read();
     hasFocuser = '?';
   }
   digitalWrite(LEDPin, LOW);

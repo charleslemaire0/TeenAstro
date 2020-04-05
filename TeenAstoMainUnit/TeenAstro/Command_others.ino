@@ -521,7 +521,7 @@ void Command_B()
   if (reticuleBrightness > 255) reticuleBrightness = 255;
   if (command[1] == '+') reticuleBrightness -= scale;
   if (reticuleBrightness < 0) reticuleBrightness = 0;
-  analogWrite(ReticulePin, reticuleBrightness);
+  analogWrite(RETICULE_LED_PINS, reticuleBrightness);
 #endif
   quietReply = true;
 }
