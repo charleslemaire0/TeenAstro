@@ -92,7 +92,7 @@
       <AdditionalIncludeDirectories>$(ProjectDir)..\TeenAstro;$(ProjectDir)..\..\libraries\TeenAstroCoordConv;$(ProjectDir)..\..\libraries\TinyGPSPlus-1.0.2\src;$(ProjectDir)..\..\libraries\TeenAstroStepper;$(ProjectDir)..\..\libraries\TMC26XStepper-master;$(ProjectDir)..\..\libraries\TMCStepper-master\src;$(ProjectDir)..\..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\teensy\avr\libraries\SPI;$(ProjectDir)..\..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\teensy\avr\libraries\Time;$(ProjectDir)..\..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\teensy\avr\libraries\EEPROM;$(ProjectDir)..\..\..\..\..\..\..\Program Files (x86)\Arduino\libraries;$(ProjectDir)..\..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\teensy\avr\libraries;$(ProjectDir)..\..\libraries;$(ProjectDir)..\..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\teensy\avr\cores\teensy3;$(ProjectDir)..\..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\teensy\avr\cores\teensy3\avr;$(ProjectDir)..\..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\teensy\avr\cores\teensy3\util;$(ProjectDir)..\..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\arm\arm-none-eabi\include;$(ProjectDir)..\..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\arm\lib\gcc\arm-none-eabi\5.4.1\include;$(ProjectDir)..\..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\teensy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>$(ProjectDir)__vm\.TeenAstro.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
-      <PreprocessorDefinitions>__HARDWARE_mk20dx256__;__HARDWARE_MK20DX256__;__MK20DX256__;TEENSYDUINO=145;ARDUINO=10808;F_CPU=72000000;USB_SERIAL;LAYOUT_US_ENGLISH;__cplusplus=201103L;_VMICRO_INTELLISENSE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__HARDWARE_mk20dx256__;__HARDWARE_MK20DX256__;__MK20DX256__;TEENSYDUINO=151;ARDUINO=108012;ARDUINO_TEENSY32;F_CPU=72000000;USB_SERIAL;LAYOUT_US_ENGLISH;__cplusplus=201103L;_VMICRO_INTELLISENSE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -177,7 +177,7 @@
     <ClInclude Include="Helper_EEProm.h">
       <FileType>CppCode</FileType>
     </ClInclude>
-    <ClInclude Include="Helper_math.h">
+    <ClInclude Include="Helper_math.hpp">
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClInclude Include="Pins.TeenAstro.h">
@@ -189,7 +189,11 @@
     <ClInclude Include="TelTimer.h">
       <FileType>CppCode</FileType>
     </ClInclude>
+    <ClInclude Include="ValueToString.h" />
     <ClInclude Include="__vm\.TeenAstro.vsarduino.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ValueToString.cpp" />
   </ItemGroup>
   <PropertyGroup>
     <DebuggerFlavor>VisualMicroDebugger</DebuggerFlavor>

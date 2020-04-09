@@ -1,5 +1,6 @@
-#pragma once
-#define Rad 57.29577951
+#include <TeenAstroMath.h>
+#include <math.h>
+#include <Arduino.h>
 double frac(double v)
 {
   return v - ((long)v);
@@ -11,7 +12,7 @@ double cot(double n)
 }
 
 // integer numeric conversion with error checking
-boolean atoi2(char *a, int *i)
+bool atoi2(char *a, int *i)
 {
   char    *conv_end;
   long    l = strtol(a, &conv_end, 10);
@@ -20,3 +21,4 @@ boolean atoi2(char *a, int *i)
   *i = l;
   return true;
 }
+

@@ -1,10 +1,33 @@
 #pragma once
-
+#include <TeenAstroCoordConv.hpp>
 #include "Config.TeenAstro.h"
+#include "timerLoop.hpp"
 #include "TelTimer.h"
 #include "Site.h"
 #include "FPoint.h"
+#include <TeenAstroCoordConv.hpp>
+#include <TeenAstroMath.h>
+#include <TinyGPS++.h>
+#include <TeenAstroStepper.h>
+#include <Time.h>
+#include <math.h>
+#include <errno.h>
+#include <TimeLib.h>
+#include "Command.h"
+#include "Config.TeenAstro.h"
+#include "EEPROM.h"
+#include "EEPROM_adress.h"
+// firmware info, these are returned by the ":GV?#" commands
+#define FirmwareDate    __DATE__
+#define FirmwareNumber  "1.1"
+#define FirmwareName    "TeenAstro"
+#define FirmwareTime    "00:00:00"
 
+
+// forces initialialization of a host of settings in EEPROM. OnStep does this automatically, most likely, you will want to leave this alone
+#define initKey     915307548                       // unique identifier for the current initialization format, do not change
+
+TinyGPSPlus gps;
 CoordConv alignment;
 timerLoop tlp;
 DateTimeTimers  rtk;
@@ -218,11 +241,6 @@ byte bufferPtr_serial_zero = 0;
 char command_serial_one[25];
 char parameter_serial_one[25];
 byte bufferPtr_serial_one = 0;
-
-// Misc ---------------------------------------------------------------------------------------------------------------------
-#define Rad 57.29577951
-
-
 
 // serial speed
 unsigned long   baudRate[10] =

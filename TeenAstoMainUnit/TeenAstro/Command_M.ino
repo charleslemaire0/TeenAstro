@@ -1,5 +1,5 @@
 //   M - Telescope Movement Commands
-
+#include "ValueToString.h"
 void Command_M(bool &supress_frame)
 {
   switch (command[1])
@@ -196,12 +196,12 @@ void Command_M(bool &supress_frame)
     rastr[8] = 0;
     strncpy(decstr, &parameter[8], 9*sizeof(char));
     decstr[9] = 0;
-    if (!hmsToDouble(&objectRa, rastr))
+    if (!hmsToDouble(&objectRa, rastr, highPrecision))
     {
       commandError = true;
       return;
     }
-    if (!dmsToDouble(&objectDec, decstr, true))
+    if (!dmsToDouble(&objectDec, decstr, true, highPrecision))
     {
       commandError = true;
       return;

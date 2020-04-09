@@ -32,8 +32,8 @@
     <None Include="MoveTo.ino" />
     <None Include="Park.ino" />
     <None Include="Serial.ino" />
-    <None Include="Timer.ino" />
     <None Include="Limit.ino" />
+    <None Include="Timer.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.TeenAstro.vsarduino.h">
@@ -57,9 +57,6 @@
     <ClInclude Include="Helper_EEProm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Helper_math.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Pins.TeenAstro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -69,5 +66,16 @@
     <ClInclude Include="TelTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ValueToString.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Helper_math.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ValueToString.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

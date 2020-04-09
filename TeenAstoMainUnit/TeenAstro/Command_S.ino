@@ -1,4 +1,5 @@
 #include "Command.h"
+#include "ValueToString.h"
 //   S - Telescope Set Commands
 
 void Command_S(Command& process_command)
@@ -26,7 +27,7 @@ void Command_S(Command& process_command)
     //         Set target object altitude to sDD:MM# or sDD:MM:SS# (based on precision setting)
     //         Returns:
     //         0 if Object is within slew range, 1 otherwise
-    if (!dmsToDouble(&newTargetAlt, parameter, true))
+    if (!dmsToDouble(&newTargetAlt, parameter, true, highPrecision))
       commandError = true;
     break;
 
@@ -91,7 +92,7 @@ void Command_S(Command& process_command)
     //          Set target object declination to sDD*MM or sDD*MM:SS depending on the current precision setting
     //          Return: 0 on failure
     //                  1 on success
-    if (!dmsToDouble(&newTargetDec, parameter, true))
+    if (!dmsToDouble(&newTargetDec, parameter, true, highPrecision))
       commandError = true;
     break;
   case 'g':
@@ -100,14 +101,12 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
   {
-    i = highPrecision;
-    highPrecision = false;
     double longi= 0;
     if ((parameter[0] == '-') || (parameter[0] == '+'))
       i1 = 1;
     else
       i1 = 0;
-    if (!dmsToDouble(&longi, (char *)&parameter[i1], false))
+    if (!dmsToDouble(&longi, (char *)&parameter[i1], false, false))
       commandError = true;
     else
     {
@@ -115,7 +114,6 @@ void Command_S(Command& process_command)
       localSite.setLong(longi);
       rtk.resetLongitude(*localSite.longitude());
     }
-    highPrecision = i;
   }
   break;
   //  :SG[sHH.H]#
@@ -161,7 +159,7 @@ void Command_S(Command& process_command)
     i = highPrecision;
     highPrecision = true;
     int h1, m1, m2, s1;
-    if (!hmsToHms(&h1,&m1,&m2,&s1, parameter))
+    if (!hmsToHms(&h1,&m1,&m2,&s1, parameter, highPrecision))
       commandError = true;
     else
     {
@@ -251,7 +249,7 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
 
-    if (!hmsToDouble(&newTargetRA, parameter))
+    if (!hmsToDouble(&newTargetRA, parameter, highPrecision))
       commandError = true;
     else
       newTargetRA *= 15.0;
@@ -266,7 +264,7 @@ void Command_S(Command& process_command)
     i = highPrecision;
     highPrecision = false;
     double lat=0;
-    if (!dmsToDouble(&lat, parameter, true))
+    if (!dmsToDouble(&lat, parameter, true, highPrecision))
     {
       commandError = true;
     }
@@ -388,7 +386,7 @@ void Command_S(Command& process_command)
         i = highPrecision;
         highPrecision = true;
         int h1, m1, m2, s1;
-        if (!hmsToHms(&h1, &m1, &m2, &s1, &parameter[2]))
+        if (!hmsToHms(&h1, &m1, &m2, &s1, &parameter[2], highPrecision))
           commandError = true;
         else
         {
@@ -492,7 +490,7 @@ void Command_S(Command& process_command)
     //          Sets the target Object Azimuth
     //          Return: 0 on failure
     //                  1 on success
-    if (!dmsToDouble(&newTargetAzm, parameter, false))
+    if (!dmsToDouble(&newTargetAzm, parameter, false, highPrecision))
       commandError = true;
     break;
   default:
