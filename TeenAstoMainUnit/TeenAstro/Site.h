@@ -2,7 +2,7 @@
 #include "EEPROM.h"
 #include "EEPROM_adress.h"
 #include "Helper_EEProm.h"
-#ifndef rad
+#ifndef Rad
 #define Rad 57.29577951308
 #endif
 
