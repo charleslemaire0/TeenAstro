@@ -1,8 +1,11 @@
 #pragma once
-#include "Helper_math.h"
 #include "EEPROM.h"
 #include "EEPROM_adress.h"
 #include "Helper_EEProm.h"
+#ifndef rad
+#define Rad 57.29577951308
+#endif
+
 class siteDefinition
 {
 
@@ -148,12 +151,17 @@ public:
   void initdefault()
   {
     // init the site information, lat/long/tz/name
-    m_siteIndex = 0;
-    EEPROM.write(EE_currentSite, m_siteIndex);
-    setLat(0);
-    setLong(0);
-    setElev(0);
-    setSiteName("Site 0");
+    char txt[10];
+    for (k=0;k<2;k++)
+    {
+      m_siteIndex = k;
+      EEPROM.write(EE_currentSite, m_siteIndex);
+      setLat(0);
+      setLong(0);
+      setElev(0);
+      sprintf(txt,"Site %d",k);
+      setSiteName(txt);
+    }
   }
 };
 
