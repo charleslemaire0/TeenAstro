@@ -69,7 +69,10 @@
     <ClInclude Include="ValueToString.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Helper_math.hpp">
+    <ClInclude Include="timerLoop.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FirmwareDef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

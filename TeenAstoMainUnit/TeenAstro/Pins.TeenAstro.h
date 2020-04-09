@@ -1,11 +1,7 @@
 #pragma once
 //uncomment the version PCB you are using
 
-#ifndef VERSION
-#define VERSION 240
-#endif
-
-
+#include "FirmwareDef.h"
 
 #if VERSION == 220
 #ifdef AxisDriver

@@ -1,21 +1,7 @@
 // -----------------------------------------------------------------------------------------------------------------------------
 // Astronomy related functions
 #include "ValueToString.h"
-// convert string in format MM/DD/YY to julian date
-boolean dateToDouble(double *JulianDay, char *date)
-{
-    int     m1, d1, y1;
-    if (dateToYYYYMMDD(&y1, &m1, &d1, date))
-    {
-      *JulianDay = julian(y1, m1, d1);
-      return true;
-    }
-    return false;
-}
 
-// convert string in format HH:MM:SS to floating point
-
-// (also handles)           HH:MM.M
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // Coordinate conversion
