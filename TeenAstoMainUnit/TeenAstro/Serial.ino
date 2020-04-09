@@ -10,9 +10,6 @@ void Serial_Init(unsigned long baud)
 void Serial_send(const char data[])
 {
     Serial.print(data);
-    do
-    {
-    } while (Serial_transmit());
 }
 
 void Serial_print(const char data[])
@@ -20,10 +17,6 @@ void Serial_print(const char data[])
     Serial.print(data);
 }
 
-boolean Serial_transmit()
-{
-    return false;
-}
 
 boolean Serial_available()
 {
@@ -43,19 +36,11 @@ void Serial1_Init(unsigned long baud)
 void Serial1_send(const char data[])
 {
     Serial1_print(data);
-    do
-    {
-    } while (Serial1_transmit());
 }
 
 void Serial1_print(const char data[])
 {
     Serial1.print(data);
-}
-
-boolean Serial1_transmit()
-{
-    return false;
 }
 
 boolean Serial1_available()

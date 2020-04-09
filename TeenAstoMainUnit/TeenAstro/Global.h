@@ -177,7 +177,6 @@ enum Errors
   ERR_SYNC
 };
 
-
 enum SID_Mode
 {
   SIDM_STAR,

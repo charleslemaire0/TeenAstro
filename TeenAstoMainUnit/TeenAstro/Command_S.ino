@@ -43,14 +43,12 @@ void Command_S(Command& process_command)
       if (process_command == COMMAND_SERIAL)
       {
         Serial_print("1");
-        while (Serial_transmit());
         delay(20);
         Serial_Init(baudRate[i]);
       }
       else
       {
         Serial1_print("1");
-        while (Serial1_transmit());
         delay(20);
         Serial1_Init(baudRate[i]);
       }

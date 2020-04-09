@@ -27,7 +27,7 @@ void processCommands()
   {
     serial_one_ready = buildCommand_serial_one(Serial1_read());
   }
-  if (Serial_transmit() || Serial1_transmit()) return;
+
   process_command = COMMAND_NONE;
   if (serial_zero_ready)
   {
