@@ -85,7 +85,7 @@ Again:
     {
       sideralTracking = lastSideralTracking;
       parkStatus = PRK_UNPARKED;
-      EEPROM.write(EE_parkStatus, parkStatus);
+      XEEPROM.write(EE_parkStatus, parkStatus);
     }
     else if (homeMount)
     {
@@ -170,7 +170,7 @@ Again:
         }
         delay(250);
       }
-      EEPROM.write(EE_parkStatus, parkStatus);
+      XEEPROM.write(EE_parkStatus, parkStatus);
     }
     else if (homeMount) {
       parkClearBacklash();

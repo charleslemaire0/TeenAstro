@@ -1,25 +1,20 @@
 #pragma once
+#include <Arduino.h>
+#include <math.h>
 #include <TeenAstroCoordConv.hpp>
-#include "Config.TeenAstro.h"
-#include "timerLoop.hpp"
-#include "TelTimer.h"
-#include "Site.h"
-#include "FPoint.h"
 #include <TeenAstroCoordConv.hpp>
 #include <TeenAstroMath.h>
 #include <TinyGPS++.h>
 #include <TeenAstroStepper.h>
-#include <Time.h>
-#include <math.h>
-#include <errno.h>
-#include <TimeLib.h>
+#include "Config.TeenAstro.h"
+#include "timerLoop.hpp"
+#include "TelTimer.hpp"
+#include "Site.hpp"
+#include "FPoint.h"
 #include "Command.h"
 #include "Config.TeenAstro.h"
-#include "EEPROM.h"
 #include "EEPROM_adress.h"
-
-
-
+#include "XEEPROM.hpp"
 
 TinyGPSPlus gps;
 CoordConv alignment;
@@ -50,7 +45,7 @@ double                  siderealInterval = 15956313.0;
 const double            masterSiderealInterval = 15956313.0;
 
 // default = 15956313 ticks per sidereal hundredth second, where a tick is 1/16 uS
-// this is stored in EEPROM which is updated/adjusted with the ":T+#" and ":T-#" commands
+// this is stored in XEEPROM.which is updated/adjusted with the ":T+#" and ":T-#" commands
 // a higher number here means a longer count which slows down the sidereal clock
 const double            HzCf = 16000000.0 / 60.0;   // conversion factor to go to/from Hz for sidereal interval
 volatile double         SiderealRate;               // based on the siderealInterval, this is the time between steps for sidereal tracking

@@ -97,7 +97,7 @@ void Command_GX()
       quietReply = true;
       break;  // pulse-guide rate
     case '2':
-      sprintf(reply, "%d", EEPROM_readInt(EE_maxRate));
+      sprintf(reply, "%d", XEEPROM.readInt(EE_maxRate));
       quietReply = true;
       break;  // Max Slew rate
     case '3':
@@ -415,11 +415,11 @@ void  Command_G()
   case 'P':
   {
     i = command[1] - 'M';
-    EEPROM_readString(EE_sites + i * SiteSize + EE_site_name, reply);
+    XEEPROM.readString(EE_sites + i * SiteSize + EE_site_name, reply);
     if (reply[0] == 0)
     {
       sprintf(reply, "Site %d", i);
-      EEPROM_writeString(EE_sites + i * SiteSize + EE_site_name, reply);
+      XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, reply);
     }
     quietReply = true;
     break;

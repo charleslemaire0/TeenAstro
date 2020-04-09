@@ -11,7 +11,7 @@ void Command_S(Command& process_command)
     i = (int)(parameter[0] - '0');
     if (i > 0 && i < 5)
     {
-      EEPROM.write(EE_mountType, i);
+      XEEPROM.write(EE_mountType, i);
       Serial.end();
       Serial1.end();
       Serial2.end();
@@ -144,7 +144,7 @@ void Command_S(Command& process_command)
     if ((atoi2(parameter, &i)) && ((i >= -30) && (i <= 30)))
     {
       minAlt = i;
-      EEPROM.update(EE_minAlt, minAlt + 128);
+      XEEPROM.update(EE_minAlt, minAlt + 128);
     }
     else
       commandError = true;
@@ -185,7 +185,7 @@ void Command_S(Command& process_command)
     if (strlen(parameter) > 14)
       commandError = true;
     else
-      EEPROM_writeString(EE_sites + i * SiteSize + EE_site_name, parameter);
+      XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, parameter);
   }
   break;
   case 'm':
@@ -233,7 +233,7 @@ void Command_S(Command& process_command)
       {
         maxAlt = i;
         maxAlt = maxAlt > 87 && isAltAZ() ? 87 : maxAlt;
-        EEPROM.update(EE_maxAlt, maxAlt);
+        XEEPROM.update(EE_maxAlt, maxAlt);
       }
       else
         commandError = true;
@@ -284,12 +284,12 @@ void Command_S(Command& process_command)
       if (parameter[2] == '1' )
       {
         refraction = true;
-        EEPROM.update(EE_refraction, refraction);
+        XEEPROM.update(EE_refraction, refraction);
       }
       else if (parameter[2] == '0')
       {
         refraction = false;
-        EEPROM.update(EE_refraction, refraction);
+        XEEPROM.update(EE_refraction, refraction);
       }
       else
         commandError = true;
@@ -330,8 +330,8 @@ void Command_S(Command& process_command)
     getEqu(&f, &f1, false);
     _ra = f;
     _dec = f1;
-    EEPROM_writeFloat(EE_RA, (float)_ra); 
-    EEPROM_writeFloat(EE_DEC, (float)_dec);
+    XEEPROM.writeFloat(EE_RA, (float)_ra); 
+    XEEPROM.writeFloat(EE_DEC, (float)_dec);
     break;
   case 'X':
     //  :SXnn,VVVVVV...#   Set OnStep value
@@ -427,7 +427,7 @@ void Command_S(Command& process_command)
         {
           int val = strtol(&parameter[3], NULL, 10);
           val = val > 255 || val < 0 ? 100 : val;
-          EEPROM.write(EE_pulseGuideRate, val);
+          XEEPROM.write(EE_pulseGuideRate, val);
           guideRates[0] = (double)val / 100.;
           if (activeGuideRate == 0)
             enableGuideRate(0, true);
@@ -437,7 +437,7 @@ void Command_S(Command& process_command)
 
       case '2':   // set new acceleration rate
       {
-        EEPROM_writeInt(EE_maxRate, (int)strtol(&parameter[3], NULL, 10));
+        XEEPROM.writeInt(EE_maxRate, (int)strtol(&parameter[3], NULL, 10));
         initMaxRate();
         break;
       }
@@ -455,26 +455,26 @@ void Command_S(Command& process_command)
         break;
       case '2': // Set degree for acceleration
         DegreesForAcceleration = min(max(0.1*(double)strtol(&parameter[3], NULL, 10),0.1), 25.0);
-        EEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
+        XEEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
         SetAcceleration();
         break;
       case '9': // minutesPastMeridianE 
         minutesPastMeridianGOTOE = (double)strtol(&parameter[3], NULL, 10);
         if (minutesPastMeridianGOTOE > 180) minutesPastMeridianGOTOE = 180;
         if (minutesPastMeridianGOTOE < -180) minutesPastMeridianGOTOE = -180;
-        EEPROM.update(EE_dpmE, round((minutesPastMeridianGOTOE*15.0) / 60.0) + 128);
+        XEEPROM.update(EE_dpmE, round((minutesPastMeridianGOTOE*15.0) / 60.0) + 128);
         break;
       case 'A': // minutesPastMeridianW
         minutesPastMeridianGOTOW = (double)strtol(&parameter[3], NULL, 10);
         if (minutesPastMeridianGOTOW > 180) minutesPastMeridianGOTOW = 180;
         if (minutesPastMeridianGOTOW < -180) minutesPastMeridianGOTOW = -180;
-        EEPROM.update(EE_dpmW, round((minutesPastMeridianGOTOW*15.0) / 60.0) + 128);
+        XEEPROM.update(EE_dpmW, round((minutesPastMeridianGOTOW*15.0) / 60.0) + 128);
         break;
       case 'B': // minutesPastMeridianW
         underPoleLimitGOTO = (double)strtol(&parameter[3], NULL, 10)/10;
         if (underPoleLimitGOTO > 12) underPoleLimitGOTO = 12;
         if (underPoleLimitGOTO < 9) underPoleLimitGOTO = 9;
-        EEPROM.update(EE_dup, round(underPoleLimitGOTO*10.0));
+        XEEPROM.update(EE_dup, round(underPoleLimitGOTO*10.0));
         break;
 
       default: commandError = true;

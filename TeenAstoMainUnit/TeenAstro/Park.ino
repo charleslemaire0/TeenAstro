@@ -18,13 +18,13 @@ boolean setPark()
     h /= pow(2, MicroAxis1);
     d /= pow(2, MicroAxis2);
     // store our position
-    EEPROM_writeLong(EE_posAxis1, h);
-    EEPROM_writeLong(EE_posAxis2, d);
+    XEEPROM.writeLong(EE_posAxis1, h);
+    XEEPROM.writeLong(EE_posAxis2, d);
 
     //// and the align
     //saveAlignModel();
     parkSaved = true;
-    EEPROM.write(EE_parkSaved, parkSaved);
+    XEEPROM.write(EE_parkSaved, parkSaved);
     sideralTracking = lastSideralTracking;
     return true;
   }
@@ -38,7 +38,7 @@ void unsetPark()
   if (parkSaved)
   {
     parkSaved = false;
-    EEPROM.write(EE_parkSaved, parkSaved);
+    XEEPROM.write(EE_parkSaved, parkSaved);
   }
 }
 
@@ -48,15 +48,15 @@ boolean saveAlignModel()
   //GeoAlign.writeCoe();
   float t11, t12, t13, t21, t22, t23, t31, t32, t33 = 0;
   alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
-  EEPROM_writeFloat(EE_T11, t11);
-  EEPROM_writeFloat(EE_T12, t12);
-  EEPROM_writeFloat(EE_T13, t13);
-  EEPROM_writeFloat(EE_T21, t21);
-  EEPROM_writeFloat(EE_T22, t22);
-  EEPROM_writeFloat(EE_T23, t23);
-  EEPROM_writeFloat(EE_T31, t31);
-  EEPROM_writeFloat(EE_T32, t32);
-  EEPROM_writeFloat(EE_T33, t33);
+  XEEPROM.writeFloat(EE_T11, t11);
+  XEEPROM.writeFloat(EE_T12, t12);
+  XEEPROM.writeFloat(EE_T13, t13);
+  XEEPROM.writeFloat(EE_T21, t21);
+  XEEPROM.writeFloat(EE_T22, t22);
+  XEEPROM.writeFloat(EE_T23, t23);
+  XEEPROM.writeFloat(EE_T31, t31);
+  XEEPROM.writeFloat(EE_T32, t32);
+  XEEPROM.writeFloat(EE_T33, t33);
   return true;
 }
 
@@ -146,8 +146,8 @@ byte park()
       if (parkSaved)
       {
         // get the position we're supposed to park at
-        long    h = EEPROM_readLong(EE_posAxis1);
-        long    d = EEPROM_readLong(EE_posAxis2);
+        long    h = XEEPROM.readLong(EE_posAxis1);
+        long    d = XEEPROM.readLong(EE_posAxis2);
         h *= pow(2, MicroAxis1);
         d *= pow(2, MicroAxis2);
         // stop tracking
@@ -155,7 +155,7 @@ byte park()
         sideralTracking = false;
         // record our status
         parkStatus = PRK_PARKING;
-        EEPROM.write(EE_parkStatus, parkStatus);
+        XEEPROM.write(EE_parkStatus, parkStatus);
         goTo(h, d);
         return 0;
       }
@@ -186,8 +186,8 @@ boolean syncAtPark()
 
   // get our position
   int axis1, axis2;
-  axis1 = EEPROM_readLong(EE_posAxis1);
-  axis2 = EEPROM_readLong(EE_posAxis2);
+  axis1 = XEEPROM.readLong(EE_posAxis1);
+  axis2 = XEEPROM.readLong(EE_posAxis2);
   axis1 *= pow(2, MicroAxis1);
   axis2 *= pow(2, MicroAxis2);
   cli();
@@ -206,14 +206,14 @@ boolean syncAtPark()
 //initialisation at park
 bool iniAtPark()
 {
-  parkSaved = EEPROM.read(EE_parkSaved);
+  parkSaved = XEEPROM.read(EE_parkSaved);
   if (!parkSaved)
   {
-    EEPROM.write(EE_parkStatus, PRK_UNPARKED);
+    XEEPROM.write(EE_parkStatus, PRK_UNPARKED);
     parkStatus = PRK_UNPARKED;
     return false;
   }
-  byte parkStatusRead = EEPROM.read(EE_parkStatus);
+  byte parkStatusRead = XEEPROM.read(EE_parkStatus);
   bool ok = false;
   switch (parkStatusRead)
   {
@@ -226,7 +226,7 @@ bool iniAtPark()
     else
     {
       parkStatus = PRK_UNPARKED;
-      EEPROM.write(EE_parkStatus, PRK_UNPARKED);
+      XEEPROM.write(EE_parkStatus, PRK_UNPARKED);
     }
     break;
   case PRK_UNPARKED:
@@ -235,7 +235,7 @@ bool iniAtPark()
     break;
   default:
     parkStatus = PRK_UNPARKED;
-    EEPROM.write(EE_parkStatus, PRK_UNPARKED);
+    XEEPROM.write(EE_parkStatus, PRK_UNPARKED);
     break;
   }
   return ok;
@@ -248,7 +248,7 @@ void unpark()
     return;
   // update our status, we're not parked anymore
   parkStatus = PRK_UNPARKED;
-  EEPROM.write(EE_parkStatus, parkStatus);
+  XEEPROM.write(EE_parkStatus, parkStatus);
   // start tracking the sky
   sideralTracking = true;
   return;

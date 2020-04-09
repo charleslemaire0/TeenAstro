@@ -245,11 +245,11 @@ double angDist(double h, double d, double h1, double d1)
 
 void initMaxRate()
 {
-  double maxslewEEPROM = EEPROM_readInt(EE_maxRate);
+  double maxslewEEPROM = XEEPROM.readInt(EE_maxRate);
   double maxslewCorrected = SetRates(maxslewEEPROM);          // set the new acceleration rate
   if (abs(maxslewEEPROM - maxslewCorrected) > 2)
   {
-    EEPROM_writeInt(EE_maxRate, (int)maxslewCorrected);
+    XEEPROM.writeInt(EE_maxRate, (int)maxslewCorrected);
   }
 }
 

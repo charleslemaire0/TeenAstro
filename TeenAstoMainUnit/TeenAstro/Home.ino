@@ -42,7 +42,7 @@ bool syncPolarHome()
   timerRateAxis1 = SiderealRate;
   timerRateAxis2 = SiderealRate;
   parkStatus = PRK_UNPARKED;
-  EEPROM.update(EE_parkStatus, parkStatus);
+  XEEPROM.update(EE_parkStatus, parkStatus);
   // clear pulse-guiding state
   guideDirAxis1 = 0;
   guideDurationAxis1 = 0;

@@ -170,8 +170,8 @@ void Command_M(bool &supress_frame)
         //         7=Guiding
         //         8=has a an Error
     PierSide targetPierSide = GetPierSide();
-    newTargetRA = (double)EEPROM_readFloat(EE_RA);
-    newTargetDec = (double)EEPROM_readFloat(EE_DEC);
+    newTargetRA = (double)XEEPROM.readFloat(EE_RA);
+    newTargetDec = (double)XEEPROM.readFloat(EE_DEC);
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     i = goToEqu(newTargetHA, newTargetDec, targetPierSide);
     if (i == 0)

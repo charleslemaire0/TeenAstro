@@ -1,7 +1,6 @@
 #pragma once
-#include "EEPROM.h"
 #include "EEPROM_adress.h"
-#include "Helper_EEProm.h"
+#include "XEEPROM.hpp"
 #ifndef Rad
 #define Rad 57.29577951308
 #endif
@@ -57,7 +56,8 @@ public:
       return false;
     }
     m_site.latitude = l;
-    EEPROM_writeFloat(EE_sites + m_siteIndex * SiteSize, (float)m_site.latitude);
+
+    XEEPROM.writeFloat(EE_sites + m_siteIndex * SiteSize, (float)m_site.latitude);
     m_cosLat = cos(m_site.latitude / Rad);
     m_sinLat = sin(m_site.latitude / Rad);
     return true;
@@ -69,7 +69,7 @@ public:
       return false;
     }
     m_site.longitude = l;
-    EEPROM_writeFloat(EE_sites + m_siteIndex * SiteSize + EE_site_long, (float)m_site.longitude);
+    XEEPROM.writeFloat(EE_sites + m_siteIndex * SiteSize + EE_site_long, (float)m_site.longitude);
     return true;
   }
   bool setElev(const int16_t l)
@@ -79,7 +79,7 @@ public:
       return false;
     }
     m_site.elevation = l;
-    EEPROM_writeInt(EE_sites + m_siteIndex * SiteSize + EE_site_height, l);
+    XEEPROM.writeInt(EE_sites + m_siteIndex * SiteSize + EE_site_height, l);
     return true;
   }
   bool setToff(float toff)
@@ -88,14 +88,14 @@ public:
       return false;
     m_site.toff = toff;
     int val = (toff + 12.0 ) * 10.0;
-    EEPROM.write(EE_sites + m_siteIndex * SiteSize + EE_site_time, val);
+    XEEPROM.write(EE_sites + m_siteIndex * SiteSize + EE_site_time, val);
     return true;
   }
   bool setSiteName(const char* s)
   {
     strncpy(m_site.siteName, s, siteNameLen);
     m_site.siteName[15] = 0;
-    EEPROM_writeString(EE_sites + m_siteIndex * SiteSize + EE_site_name, m_site.siteName);
+    XEEPROM.writeString(EE_sites + m_siteIndex * SiteSize + EE_site_name, m_site.siteName);
     return true;
   }
   const double sinLat()
@@ -110,19 +110,19 @@ public:
   {
     m_siteIndex = siteIndex;
     int adress = EE_sites + m_siteIndex * SiteSize;
-    m_site.latitude = EEPROM_readFloat(adress);
+    m_site.latitude = XEEPROM.readFloat(adress);
     if (-90 > m_site.latitude || m_site.latitude > 90)
     {
       setLat(0);
     }
     adress += 4;
-    m_site.longitude = EEPROM_readFloat(adress);
+    m_site.longitude = XEEPROM.readFloat(adress);
     if (-360 >= m_site.longitude || m_site.longitude >= 360)
     {
       setLong(0);
     }
     adress += 4;
-    m_site.elevation = EEPROM_readInt(adress);
+    m_site.elevation = XEEPROM.readInt(adress);
     if (-200 > m_site.elevation || m_site.elevation > 8000)
     {
       setElev(0);
@@ -134,13 +134,13 @@ public:
       setToff(0);
     }
     adress++;
-    EEPROM_readString(adress, m_site.siteName);
+    XEEPROM.readString(adress, m_site.siteName);
     m_cosLat = cos(m_site.latitude / Rad);
     m_sinLat = sin(m_site.latitude / Rad);
   }
   void ReadCurrentSiteDefinition()
   {
-    m_siteIndex = EEPROM.read(EE_currentSite);
+    m_siteIndex = XEEPROM.read(EE_currentSite);
     if (m_siteIndex > 3)
     {
       initdefault();
@@ -155,7 +155,7 @@ public:
     for (int k=0;k<2;k++)
     {
       m_siteIndex = k;
-      EEPROM.write(EE_currentSite, m_siteIndex);
+      XEEPROM.write(EE_currentSite, m_siteIndex);
       setLat(0);
       setLong(0);
       setElev(0);
