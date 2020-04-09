@@ -27,3 +27,4 @@ public:
     return m_worst_time;
   }
 };
+static timerLoop tlp;

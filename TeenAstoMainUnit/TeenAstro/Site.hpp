@@ -164,4 +164,4 @@ public:
     }
   }
 };
-
+static siteDefinition localSite;

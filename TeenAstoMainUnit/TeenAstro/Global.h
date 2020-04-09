@@ -18,10 +18,6 @@
 
 TinyGPSPlus gps;
 CoordConv alignment;
-timerLoop tlp;
-DateTimeTimers  rtk;
-// Location ----------------------------------------------------------------------------------------------------------------
-siteDefinition      localSite;
 
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT};
 enum PierSide {PIER_NOTVALID, PIER_EAST, PIER_WEST};
