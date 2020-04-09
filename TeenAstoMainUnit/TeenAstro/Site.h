@@ -152,7 +152,7 @@ public:
   {
     // init the site information, lat/long/tz/name
     char txt[10];
-    for (k=0;k<2;k++)
+    for (int k=0;k<2;k++)
     {
       m_siteIndex = k;
       EEPROM.write(EE_currentSite, m_siteIndex);
