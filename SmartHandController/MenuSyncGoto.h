@@ -12,8 +12,9 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
 
   while (true) {
     // build the list of star/dso catalogs
-    const char* string_list_gotoL1= T_CATALOGS "\n" T_SOLARSYSTEM "\n" T_COORDINATES "\n" 
-                                    T_USERDEFINED "\n" T_HOME "\n" T_PARK;
+    const char* string_list_gotoL1 = sync ?
+      T_CATALOGS "\n" T_SOLARSYSTEM "\n" T_COORDINATES "\n" T_USERDEFINED "\n" T_HOME "\n" T_PARK :
+      T_CATALOGS "\n" T_SOLARSYSTEM "\n" T_COORDINATES "\n" T_USERDEFINED "\n" T_HOME "\n" T_PARK "\n" T_FLIP;
     int selection = display->UserInterfaceSelectionList(&buttonPad, sync ? T_SYNC : T_GOTO, current_selection, string_list_gotoL1);
     if (selection == 0) return MR_CANCEL;
     current_selection=selection;
@@ -36,6 +37,12 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
       case 6:
         if ( DisplayMessageLX200(SyncGoParkLX200(sync), false)) return MR_QUIT;
         break;
+      case 7:
+      {
+        if (DisplayMessageLX200(SetLX200(":MF#")))
+          exitMenu = true;
+        break;
+      }     
     }
   }
 }

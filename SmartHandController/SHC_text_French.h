@@ -125,6 +125,7 @@
 
 #define T_UNPARK "Déparc"
 #define T_PARK "Parc"
+#define T_FLIP "Retourne"
 #define T_HOME "Home"
 #define T_PARKED "Parqué"
 #define T_NOOBJECT "Pas d'Objet"
