@@ -23,7 +23,7 @@ public:
 private:
   U8G2_EXT *display = NULL;
   Pad buttonPad;
-  char _version[20]="Version ?";
+  char _version[20] = "Version ?";
 
   void updateMainDisplay(PAGES page);
   bool sleepDisplay = false;
@@ -128,7 +128,7 @@ private:
   void menuLongitude();
   void menuElevation();
   void menuMainUnitInfo();
- /* void menuHCInfo();*/
+  /* void menuHCInfo();*/
   void menuLimits();
   void menuWifi();
   void menuWifiMode();
