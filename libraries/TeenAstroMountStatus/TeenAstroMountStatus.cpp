@@ -10,7 +10,7 @@ void TeenAstroMountStatus::nextStepAlign()
   if (isAlignSelect())
   {
     m_align = ALI_SLEW; return;
-  };
+  }
   if (isAlignSlew())
   {
     m_align = ALI_RECENTER; return;

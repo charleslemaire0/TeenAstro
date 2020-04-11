@@ -15,29 +15,53 @@ void Command_GX()
   {
   case '0':
     // 0n: Align Model
+  {
+    float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
+    if (hasStarAlignment)
+    {
+      alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
+    }
     switch (parameter[1])
     {
+    case '0':
+      sprintf(reply, "%f", t11);
+      quietReply = true;
+      break;
+    case '1':
+      sprintf(reply, "%f", t12);
+      quietReply = true;
+      break;
     case '2':
-      /*sprintf(reply, "%ld", (long)(GeoAlign.altCor * 3600.0))*/;
+      sprintf(reply, "%f", t13);
       quietReply = true;
       break;  // altCor
-
     case '3':
-      /*sprintf(reply, "%ld", (long)(GeoAlign.azmCor * 3600.0));*/
+      sprintf(reply, "%f", t21);
       quietReply = true;
       break;  // azmCor
-
     case '4':
-      /*sprintf(reply, "%ld", (long)(GeoAlign.doCor * 3600.0));*/
+      sprintf(reply, "%f", t22);
       quietReply = true;
       break;  // doCor
-
     case '5':
-      /*sprintf(reply, "%ld", (long)(GeoAlign.pdCor * 3600.0));*/
+      sprintf(reply, "%f", t23);
+      quietReply = true;
+      break;  // pdCor
+    case '6':
+      sprintf(reply, "%f", t31);
+      quietReply = true;
+      break;  // pdCor
+    case '7':
+      sprintf(reply, "%f", t32);
+      quietReply = true;
+      break;  // pdCor
+    case '8':
+      sprintf(reply, "%f", t33);
       quietReply = true;
       break;  // pdCor
     }
     break;
+  }
   case '7':
     // for debug only
     switch (parameter[1])
@@ -561,7 +585,7 @@ void  Command_G()
     if (faultAxis1 || faultAxis2) reply[9] = 'f';
     if (correct_tracking)
       reply[10] = 'c';
-    reply[11] = has_alignment ? '1' : '0';
+    reply[11] = hasStarAlignment ? '1' : '0';
     // provide mount type
     if (mountType == MOUNT_TYPE_GEM)
     {

@@ -1,9 +1,6 @@
 #pragma once
 #include "EEPROM_adress.h"
 #include "XEEPROM.hpp"
-#ifndef Rad
-#define Rad 57.29577951308
-#endif
 
 class siteDefinition
 {
