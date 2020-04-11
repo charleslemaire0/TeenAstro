@@ -462,6 +462,7 @@ void Command_A()
     if (alignment.getRefs()==2)
     {
       alignment.calculateThirdReference();
+      has_alignment = true;
       cli();
       targetAxis1.part.m = posAxis1;
       targetAxis2.part.m = posAxis2;
@@ -481,6 +482,7 @@ void Command_A()
     alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
     if (alignment.isReady())
     {
+      has_alignment = true;
       cli();
       targetAxis1.part.m = posAxis1;
       targetAxis2.part.m = posAxis2;

@@ -185,6 +185,12 @@ static unsigned char Spiral_bits[] U8X8_PROGMEM = {
    0xe6, 0x67, 0x66, 0x66, 0x66, 0x66, 0x06, 0x66, 0x06, 0x66, 0xfe, 0x67,
    0xfc, 0x63, 0x00, 0x60, 0x00, 0x60, 0x00, 0x00 };
 
+static const unsigned char Aligned_bits[] U8X8_PROGMEM = {
+   0x00, 0x00, 0x02, 0x40, 0x04, 0x20, 0x28, 0x14, 0x30, 0x0c, 0x38, 0x1c,
+   0x80, 0x01, 0xc0, 0x03, 0xc0, 0x03, 0x80, 0x01, 0x38, 0x1c, 0x30, 0x0c,
+   0x28, 0x14, 0x04, 0x20, 0x02, 0x40, 0x00, 0x00 };
+
+
 static const unsigned char teenastro_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -710,12 +716,12 @@ void SmartHandController::updateMainDisplay(PAGES page)
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, align3_bits);
           x -= icon_width + 1;
         }
-        if (ta_MountStatus.isSpiralRunning())
+        else if (ta_MountStatus.isSpiralRunning())
         {
           display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Spiral_bits);
           x -= icon_width + 1;
         }
-        if (ta_MountStatus.isPulseGuiding())
+        else if (ta_MountStatus.isPulseGuiding())
         {
           display->drawXBMP(x - icon_width, 0, icon_width, icon_height, guiding__bits);
           display->setBitmapMode(1);
@@ -736,6 +742,11 @@ void SmartHandController::updateMainDisplay(PAGES page)
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, guiding_W_bits);
           }
           display->setBitmapMode(0);
+          x -= icon_width + 1;
+        }
+        else if (ta_MountStatus.isAligned())
+        {
+          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Aligned_bits);
           x -= icon_width + 1;
         }
       }

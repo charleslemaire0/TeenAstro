@@ -73,13 +73,13 @@ void Command_GX()
     case '0':// UTC time
       doubleToHms(reply, rtk.getUT(), true);
       quietReply = true;
-      break;  
+      break;
     case '1':// UTC date 
       rtk.getUTDate(i, i1, i2, i3, i4, i5);
       i = i % 100;
       sprintf(reply, "%02d/%02d/%02d", i1, i2, i);
       quietReply = true;
-      break;     
+      break;
     case '2'://return seconds since 01/01/1970/00:00:00
       unsigned long t = rtk.getTimeStamp();
       sprintf(reply, "%lu", t);
@@ -164,7 +164,7 @@ void Command_GX()
       quietReply = true;
       break;
     case 'B':
-      sprintf(reply, "%ld", (long)round(underPoleLimitGOTO*10));
+      sprintf(reply, "%ld", (long)round(underPoleLimitGOTO * 10));
       quietReply = true;
       break;
     case 'C':
@@ -286,7 +286,7 @@ void  Command_G()
     //  :GA#   Get Telescope Altitude
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //         The current scope altitude
-    getHorApp(&f,&f1);
+    getHorApp(&f, &f1);
     if (!doubleToDms(reply, &f1, false, true, highPrecision))
       commandError = true;
     else
@@ -510,8 +510,8 @@ void  Command_G()
     //         Returns the tracking rate if siderealTracking, 0.0 otherwise
     if (sideralTracking && !movingTo)
     {
-      f = isAltAZ() ? GetTrackingRate() : trackingTimerRateAxis1 ;
-      f *= 60* 1.00273790935;
+      f = isAltAZ() ? GetTrackingRate() : trackingTimerRateAxis1;
+      f *= 60 * 1.00273790935;
     }
     else
       f = 0.0;
@@ -536,8 +536,8 @@ void  Command_G()
   case 'U':
   {
     //  :GU#   Get telescope Status
-    for ( i = 0; i<50; i++)
-        reply[i] = ' ';
+    for (i = 0; i < 50; i++)
+      reply[i] = ' ';
     i = 0;
     reply[0] = '0' + 2 * movingTo + sideralTracking;
     reply[1] = '0' + sideralMode;
@@ -561,7 +561,7 @@ void  Command_G()
     if (faultAxis1 || faultAxis2) reply[9] = 'f';
     if (correct_tracking)
       reply[10] = 'c';
-
+    reply[11] = has_alignment ? '1' : '0';
     // provide mount type
     if (mountType == MOUNT_TYPE_GEM)
     {
@@ -578,7 +578,7 @@ void  Command_G()
     PierSide currentSide = GetPierSide();
     if (currentSide == PIER_EAST) reply[13] = 'E';
     if (currentSide == PIER_WEST) reply[13] = 'W';
-    reply[14] = iSGNSSValid() ? '1': '0';
+    reply[14] = iSGNSSValid() ? '1' : '0';
     reply[15] = '0' + lastError;
     reply[16] = 0;
     i = 17;
@@ -620,7 +620,7 @@ void  Command_G()
   case 'Z':
     //  :GZ#   Get telescope azimuth
     //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
-    getHorApp(&f,&f1);
+    getHorApp(&f, &f1);
     f = AzRange(f);
     if (!doubleToDms(reply, &f, true, false, highPrecision))
       commandError = true;

@@ -525,6 +525,7 @@ void initmount()
 void initTransformation(bool reset)
 {
   alignment.clean();
+  has_alignment = false;
   byte TvalidFromEEPROM = XEEPROM.read(EE_Tvalid);
   if (reset)
   {
@@ -543,6 +544,7 @@ void initTransformation(bool reset)
     float t32 = XEEPROM.readFloat(EE_T32);
     float t33 = XEEPROM.readFloat(EE_T33);
     alignment.setT(t11,t12,t13,t21,t22,t23,t31,t32,t33);
+    has_alignment = true;
   }
   else
   {
