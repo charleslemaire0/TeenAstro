@@ -38,11 +38,9 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(bool sync)
         if ( DisplayMessageLX200(SyncGoParkLX200(sync), false)) return MR_QUIT;
         break;
       case 7:
-      {
         if (DisplayMessageLX200(SetLX200(":MF#")))
-          exitMenu = true;
+          return MR_QUIT;
         break;
-      }     
     }
   }
 }
