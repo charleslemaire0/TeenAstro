@@ -275,3 +275,7 @@
 #define T_FILTERBYCON "Filter bei Kon"
 #define T_FILTERBYTYPE "Filter bei Typ"
 #define T_ABOVE_HORIZON "Über Horizont"
+
+#define T_RETICULE "Strichplatte"
+#define T_BRIGHTER "Heller"
+#define T_LESSBRIGHT "Weniger hell"

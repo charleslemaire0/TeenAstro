@@ -506,21 +506,15 @@ void Command_B()
   if (command[1] != '+' && command[1] != '-')
     return;
 #ifdef RETICULE_LED_PINS
-  int scale;
-  if (reticuleBrightness > 255 - 8)
-    scale = 1;
-  else if (reticuleBrightness > 255 - 32)
-    scale = 4;
-  else if (reticuleBrightness > 255 - 64)
-    scale = 12;
-  else if (reticuleBrightness > 255 - 128)
-    scale = 32;
-  else
-    scale = 64;
-  if (command[1] == '-') reticuleBrightness += scale;
   if (reticuleBrightness > 255) reticuleBrightness = 255;
-  if (command[1] == '+') reticuleBrightness -= scale;
-  if (reticuleBrightness < 0) reticuleBrightness = 0;
+  if (reticuleBrightness < 31) reticuleBrightness = 31;
+  
+  if (command[1] == '-') reticuleBrightness /= 1.4;
+  if (command[1] == '+') reticuleBrightness *= 1.4;
+
+  if (reticuleBrightness > 255) reticuleBrightness = 255;
+  if (reticuleBrightness < 31) reticuleBrightness = 31;
+
   analogWrite(RETICULE_LED_PINS, reticuleBrightness);
 #endif
   quietReply = true;

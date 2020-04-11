@@ -64,6 +64,7 @@ private:
   void resetSHC();
   void menuTelAction();
   void menuSpeedRate();
+  void menuReticule();
   void menuTrack();
 
   enum MENU_RESULT { MR_OK, MR_CANCEL, MR_QUIT };

@@ -274,3 +274,7 @@
 #define T_FILTERBYCON "Filtre par Const."
 #define T_FILTERBYTYPE "Filtre par Type"
 #define T_ABOVE_HORIZON "> Horizon"
+
+#define T_RETICULE "Réticule"
+#define T_BRIGHTER "plus brillant"
+#define T_LESSBRIGHT "moins brillant"
