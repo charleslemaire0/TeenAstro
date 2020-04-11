@@ -26,7 +26,6 @@
 *
 */
 
-
 #define Product "Teenastro SHC"
 #define SHCFirmwareDate          __DATE__
 #define SHCFirmwareTime          __TIME__

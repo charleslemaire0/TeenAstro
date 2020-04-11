@@ -1,15 +1,23 @@
 #pragma once
-
+#include <Arduino.h>
+#include <math.h>
+#include <TeenAstroCoordConv.hpp>
+#include <TeenAstroCoordConv.hpp>
+#include <TeenAstroMath.h>
+#include <TinyGPS++.h>
+#include <TeenAstroStepper.h>
 #include "Config.TeenAstro.h"
-#include "TelTimer.h"
-#include "Site.h"
+#include "timerLoop.hpp"
+#include "TelTimer.hpp"
+#include "Site.hpp"
 #include "FPoint.h"
+#include "Command.h"
+#include "Config.TeenAstro.h"
+#include "EEPROM_adress.h"
+#include "XEEPROM.hpp"
 
+TinyGPSPlus gps;
 CoordConv alignment;
-timerLoop tlp;
-DateTimeTimers  rtk;
-// Location ----------------------------------------------------------------------------------------------------------------
-siteDefinition      localSite;
 
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT};
 enum PierSide {PIER_NOTVALID, PIER_EAST, PIER_WEST};
@@ -33,7 +41,7 @@ double                  siderealInterval = 15956313.0;
 const double            masterSiderealInterval = 15956313.0;
 
 // default = 15956313 ticks per sidereal hundredth second, where a tick is 1/16 uS
-// this is stored in EEPROM which is updated/adjusted with the ":T+#" and ":T-#" commands
+// this is stored in XEEPROM.which is updated/adjusted with the ":T+#" and ":T-#" commands
 // a higher number here means a longer count which slows down the sidereal clock
 const double            HzCf = 16000000.0 / 60.0;   // conversion factor to go to/from Hz for sidereal interval
 volatile double         SiderealRate;               // based on the siderealInterval, this is the time between steps for sidereal tracking
@@ -44,6 +52,8 @@ double                  maxRate = MaxRate * 16L;
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
 
+
+//Timers
 volatile double         timerRateAxis1 = 0;
 volatile double         timerRateBacklashAxis1 = 0;
 volatile boolean        inbacklashAxis1 = false;
@@ -53,20 +63,23 @@ volatile double         timerRateBacklashAxis2 = 0;
 volatile boolean        inbacklashAxis2 = false;
 boolean                 faultAxis2 = false;
 
-unsigned int GearAxis1;//2000
+//Motor Axis1
+unsigned int GearAxis1;
 unsigned int StepRotAxis1;
 byte MicroAxis1;
 bool ReverseAxis1;
 u_int8_t HighCurrAxis1;
 u_int8_t LowCurrAxis1;
 
-unsigned int GearAxis2;//1800
+//Motor Axis2
+unsigned int GearAxis2;
 unsigned int StepRotAxis2;
 uint8_t MicroAxis2;
 bool ReverseAxis2;
 u_int8_t HighCurrAxis2;
 u_int8_t LowCurrAxis2;
 
+//tracking rate
 #define default_tracking_rate   1
 volatile double         trackingTimerRateAxis1 = default_tracking_rate;
 volatile double         trackingTimerRateAxis2 = default_tracking_rate;
@@ -76,28 +89,28 @@ volatile double         guideTimerRateAxis2 = 0.0;
 // backlash control
 int backlashAxis1 = 0;
 int backlashAxis2 = 0;
-
 volatile int    StepsBacklashAxis1 = 0;
 volatile int    StepsBacklashAxis2 = 0;
 volatile int    blAxis1 = 0;
 volatile int    blAxis2 = 0;
 
-long StepsPerRotAxis1; // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-long StepsPerRotAxis2; // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-double StepsPerDegreeAxis1;
-double StepsPerDegreeAxis2;
-double StepsPerSecondAxis1;
-double StepsPerSecondAxis2;
 
+//geometry Axis1
+long StepsPerRotAxis1; // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+double StepsPerDegreeAxis1;
+double StepsPerSecondAxis1;
 long halfRotAxis1;
 long quaterRotAxis1;
+long poleStepAxis1;
+long homeStepAxis1;
+
+//geometry Axis2
+long StepsPerRotAxis2; // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+double StepsPerDegreeAxis2;
+double StepsPerSecondAxis2;
 long halfRotAxis2;
 long quaterRotAxis2;
-
-long poleStepAxis1;
 long poleStepAxis2;
-
-long homeStepAxis1;
 long homeStepAxis2;
 
 volatile double         timerRateRatio;
@@ -118,32 +131,42 @@ void                    TIMER4_COMPA_vect(void);
 
 PierSide newTargetPierSide = PIER_NOTVALID;
 
+
+//Target and position Axis 1
 volatile long       posAxis1;    // hour angle position in steps
 volatile long       deltaTargetAxis1;
 volatile long       startAxis1;  // hour angle of goto start position in steps
 volatile fixed_t    targetAxis1; // hour angle of goto end   position in steps
 volatile byte       dirAxis1;    // stepping direction + or -
-double              newTargetRA; // holds the RA for goTos
 #if defined(AXIS1_MODE) && defined(AXIS1_MODE_GOTO)
 volatile long       stepAxis1 = 1;
 #else
 #define stepAxis1   1
 #endif
 
+//Target and position Axis 2
 volatile long       posAxis2;     // declination position in steps
 volatile long       deltaTargetAxis2;
 volatile long       startAxis2;   // declination of goto start position in steps
 volatile fixed_t    targetAxis2;  // declination of goto end   position in steps
 volatile byte       dirAxis2;     // stepping direction + or -
-double              newTargetDec; // holds the Dec for goTos
+
 #if defined(AXIS2_MODE) && defined(AXIS2_MODE_GOTO)
 volatile long       stepAxis2 = 1;
 #else
 #define stepAxis2   1
 #endif
-double              newTargetAlt = 0.0, newTargetAzm = 0.0; // holds the altitude and azmiuth for slews
+
+//Targets
+double              newTargetAlt = 0.0;                     // holds the altitude for goTos
+double              newTargetAzm = 0.0;                     // holds the azmiuth for goTos
+double              newTargetDec;                           // holds the Dec for goTos
+double              newTargetRA;                            // holds the RA for goTos
+
 double              currentAzm = 0;                         // the current Azimuth
 double              currentAlt = 45;                        // the current altitude
+
+//Limits
 int                 minAlt;                                 // the minimum altitude, in degrees, for goTo's (so we don't try to point too low)
 int                 maxAlt;                                 // the maximum altitude, in degrees, for goTo's (to keep the telescope tube away from the mount/tripod)
 long                minutesPastMeridianGOTOE;               // for goto's, how far past the meridian to allow before we do a flip (if on the East side of the pier)- one hour of RA is the default = 60.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
@@ -169,30 +192,31 @@ enum Errors
   ERR_SYNC
 };
 
+Errors lastError = ERR_NONE;
+Errors StartLoopError = ERR_NONE;
 
+//Command Precision
+boolean highPrecision = true;
+
+volatile bool movingTo = false;
+
+bool doSpiral = false;
+
+// Tracking
+#define TrackingSolar 0.99726956632
+#define TrackingLunar 0.96236513150
+bool lastSideralTracking = false;
+volatile bool sideralTracking = false;
 enum SID_Mode
 {
   SIDM_STAR,
   SIDM_SUN,
   SIDM_MOON
 };
-
-Errors lastError = ERR_NONE;
-Errors StartLoopError = ERR_NONE;
-
-boolean highPrecision = true;
-
-
-enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter };
-
-#define TrackingSolar 0.99726956632
-#define TrackingLunar 0.96236513150
-
-volatile bool movingTo = false;
-bool lastSideralTracking = false;
-bool doSpiral = false;
-volatile bool sideralTracking = false;
 volatile SID_Mode sideralMode = SIDM_STAR;
+
+//Guiding
+enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter };
 volatile Guiding GuidingState = GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
 unsigned long lastSecurityCheck = millis();
@@ -218,11 +242,6 @@ byte bufferPtr_serial_zero = 0;
 char command_serial_one[25];
 char parameter_serial_one[25];
 byte bufferPtr_serial_one = 0;
-
-// Misc ---------------------------------------------------------------------------------------------------------------------
-#define Rad 57.29577951
-
-
 
 // serial speed
 unsigned long   baudRate[10] =

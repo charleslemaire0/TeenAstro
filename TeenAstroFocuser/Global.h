@@ -14,7 +14,7 @@
 //uncomment the version you are using
 //#define VERSION220
 //#define VERSION230
-#define VERSION240
+#define VERSION230
 
 #ifdef VERSION240
 #define BOARDINFO "2.4.0"

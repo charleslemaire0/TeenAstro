@@ -31,37 +31,7 @@
  * with LX200 derived command set.
  *
  */
-
-#include <TeenAstroCoordConv.hpp>
-#include <TinyGPS++.h>
-#include <TeenAstroStepper.h>
-#include <Time.h>
-#include <math.h>
-#include "Helper_math.h"
-#include <errno.h>
-#include <TimeLib.h>
 #include "Global.h"
- // Use Config.h to configure OnStep to your requirements
- // help stepper driver configuration
-
-#include "Command.h"
-#include "Config.TeenAstro.h"
-#include "EEPROM.h"
-#include "EEPROM_adress.h"
-
-
-
-// firmware info, these are returned by the ":GV?#" commands
-#define FirmwareDate    __DATE__
-#define FirmwareNumber  "1.1"
-#define FirmwareName    "TeenAstro"
-#define FirmwareTime    "00:00:00"
-
-
-// forces initialialization of a host of settings in EEPROM. OnStep does this automatically, most likely, you will want to leave this alone
-#define initKey     915307548                       // unique identifier for the current initialization format, do not change
-TinyGPSPlus gps;
-
 
 void setup()
 {
@@ -75,52 +45,52 @@ void setup()
   }
 
   // EEPROM automatic initialization
-  long thisAutoInitKey = EEPROM_readLong(EE_autoInitKey);
+  long thisAutoInitKey = XEEPROM.readLong(EE_autoInitKey);
   if (thisAutoInitKey != initKey)
   {
-    for (int i = 0; i < EEPROM.length(); i++)
+    for (int i = 0; i < XEEPROM.length(); i++)
     {
-      EEPROM.write(i, 0);
+      XEEPROM.write(i, 0);
     }
     // init the site information, lat/long/tz/name
     localSite.initdefault();
-    EEPROM.write(EE_mountType, MOUNT_TYPE_GEM);
-    EEPROM.write(EE_refraction, 1);
+    XEEPROM.write(EE_mountType, MOUNT_TYPE_GEM);
+    XEEPROM.write(EE_refraction, 1);
     // init the min and max altitude
     minAlt = -10;
     maxAlt = 91;
-    EEPROM.write(EE_minAlt, minAlt + 128);
-    EEPROM.write(EE_maxAlt, maxAlt);
-    EEPROM.write(EE_dpmE, 0);
-    EEPROM.write(EE_dpmW, 0);
-    EEPROM.write(EE_dup, (12 - 9) * 15);
+    XEEPROM.write(EE_minAlt, minAlt + 128);
+    XEEPROM.write(EE_maxAlt, maxAlt);
+    XEEPROM.write(EE_dpmE, 0);
+    XEEPROM.write(EE_dpmW, 0);
+    XEEPROM.write(EE_dup, (12 - 9) * 15);
     writeDefaultEEPROMmotor();
 
     // init the Park status
-    EEPROM.write(EE_parkSaved, false);
-    EEPROM.write(EE_parkStatus, PRK_UNPARKED);
+    XEEPROM.write(EE_parkSaved, false);
+    XEEPROM.write(EE_parkStatus, PRK_UNPARKED);
 
     // init the pulse-guide rate
-    EEPROM.write(EE_pulseGuideRate, GuideRate1x);
+    XEEPROM.write(EE_pulseGuideRate, GuideRate1x);
 
     // init the default maxRate
     if (maxRate < 2L * 16L) maxRate = 2L * 16L;
     if (maxRate > 10000L * 16L) maxRate = 10000L * 16L;
-    EEPROM_writeInt(EE_maxRate, (int)(maxRate / 16L));
+    XEEPROM.writeInt(EE_maxRate, (int)(maxRate / 16L));
 
 
     // init degree for acceleration
-    EEPROM.write(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
+    XEEPROM.write(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
 
     // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
     // 1/16uS resolution timer, ticks per sidereal second
-    EEPROM_writeLong(EE_siderealInterval, siderealInterval);
+    XEEPROM.writeLong(EE_siderealInterval, siderealInterval);
 
     // the transformation is not valid
-    EEPROM.write(EE_Tvalid, 0);
+    XEEPROM.write(EE_Tvalid, 0);
 
     // finally, stop the init from happening again
-    EEPROM_writeLong(EE_autoInitKey, initKey);
+    XEEPROM.writeLong(EE_autoInitKey, initKey);
 
   }
   // get the site information from EEPROM
@@ -185,7 +155,7 @@ void setup()
   DecayModeTracking();
 
   // this sets the sidereal timer, controls the tracking speed so that the mount moves precisely with the stars
-  siderealInterval = EEPROM_readLong(EE_siderealInterval);
+  siderealInterval = XEEPROM.readLong(EE_siderealInterval);
   updateSideral();
 
   // set the system timer for millis() to the second highest priority
@@ -488,7 +458,7 @@ time_t getTeensy3Time()
 
 void initmount()
 {
-  byte mountTypeFromEEPROM = EEPROM.read(EE_mountType);
+  byte mountTypeFromEEPROM = XEEPROM.read(EE_mountType);
 
   mountType = mountTypeFromEEPROM < 1 || mountTypeFromEEPROM >  4 ? MOUNT_TYPE_GEM : static_cast<Mount>(mountTypeFromEEPROM);
 
@@ -514,11 +484,11 @@ void initmount()
   if (DegreesForAcceleration == 0 || DegreesForAcceleration > 25)
   {
     DegreesForAcceleration = 3.0;
-    EEPROM.write(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
+    XEEPROM.write(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
   }
   // get the min. and max altitude
-  minAlt = EEPROM.read(EE_minAlt) - 128;
-  maxAlt = EEPROM.read(EE_maxAlt);
+  minAlt = XEEPROM.read(EE_minAlt) - 128;
+  maxAlt = XEEPROM.read(EE_maxAlt);
   minutesPastMeridianGOTOE = round(((EEPROM.read(EE_dpmE) - 128)*60.0) / 15.0);
   if (abs(minutesPastMeridianGOTOE) > 180)
     minutesPastMeridianGOTOE = 60;
@@ -546,32 +516,32 @@ void initmount()
   targetAxis2.part.m = quaterRotAxis2;
   targetAxis2.part.f = 0;
   fstepAxis1.fixed = doubleToFixed(StepsPerSecondAxis1 / 100.0);
-  refraction  = EEPROM.read(EE_refraction);
+  refraction  = XEEPROM.read(EE_refraction);
   // Tracking and rate control
-  correct_tracking = EEPROM.read(EE_corr_track);
+  correct_tracking = XEEPROM.read(EE_corr_track);
   correct_tracking = false;
 }
 
 void initTransformation(bool reset)
 {
   alignment.clean();
-  byte TvalidFromEEPROM = EEPROM.read(EE_Tvalid);
+  byte TvalidFromEEPROM = XEEPROM.read(EE_Tvalid);
   if (reset)
   {
-    EEPROM.write(EE_Tvalid, 0);
+    XEEPROM.write(EE_Tvalid, 0);
     TvalidFromEEPROM = 0;
   }
   if (TvalidFromEEPROM != 0)
   {
-    float t11 = EEPROM_readFloat(EE_T11);
-    float t12 = EEPROM_readFloat(EE_T12);
-    float t13 = EEPROM_readFloat(EE_T13);
-    float t21 = EEPROM_readFloat(EE_T21);
-    float t22 = EEPROM_readFloat(EE_T22);
-    float t23 = EEPROM_readFloat(EE_T23);
-    float t31 = EEPROM_readFloat(EE_T31);
-    float t32 = EEPROM_readFloat(EE_T32);
-    float t33 = EEPROM_readFloat(EE_T33);
+    float t11 = XEEPROM.readFloat(EE_T11);
+    float t12 = XEEPROM.readFloat(EE_T12);
+    float t13 = XEEPROM.readFloat(EE_T13);
+    float t21 = XEEPROM.readFloat(EE_T21);
+    float t22 = XEEPROM.readFloat(EE_T22);
+    float t23 = XEEPROM.readFloat(EE_T23);
+    float t31 = XEEPROM.readFloat(EE_T31);
+    float t32 = XEEPROM.readFloat(EE_T32);
+    float t33 = XEEPROM.readFloat(EE_T33);
     alignment.setT(t11,t12,t13,t21,t22,t23,t31,t32,t33);
   }
   else
@@ -623,45 +593,45 @@ void initmotor(bool deleteAlignment)
 
 void readEEPROMmotor()
 {
-  backlashAxis1 = EEPROM_readInt(EE_backlashAxis1);
+  backlashAxis1 = XEEPROM.readInt(EE_backlashAxis1);
   blAxis1 = 0;
-  GearAxis1 = EEPROM_readInt(EE_GearAxis1);
-  StepRotAxis1 = EEPROM_readInt(EE_StepRotAxis1);
-  MicroAxis1 = EEPROM.read(EE_MicroAxis1);
+  GearAxis1 = XEEPROM.readInt(EE_GearAxis1);
+  StepRotAxis1 = XEEPROM.readInt(EE_StepRotAxis1);
+  MicroAxis1 = XEEPROM.read(EE_MicroAxis1);
   if (MicroAxis1 < 3) MicroAxis1 = 3; else if (MicroAxis1 > 8) MicroAxis1 = 8;
-  ReverseAxis1 = EEPROM.read(EE_ReverseAxis1);
-  LowCurrAxis1 = EEPROM.read(EE_LowCurrAxis1);
-  HighCurrAxis1 = EEPROM.read(EE_HighCurrAxis1);
+  ReverseAxis1 = XEEPROM.read(EE_ReverseAxis1);
+  LowCurrAxis1 = XEEPROM.read(EE_LowCurrAxis1);
+  HighCurrAxis1 = XEEPROM.read(EE_HighCurrAxis1);
 
-  backlashAxis2 = EEPROM_readInt(EE_backlashAxis2);
+  backlashAxis2 = XEEPROM.readInt(EE_backlashAxis2);
   blAxis2 = 0;
-  GearAxis2 = EEPROM_readInt(EE_GearAxis2);
-  StepRotAxis2 = EEPROM_readInt(EE_StepRotAxis2);
-  MicroAxis2 = EEPROM.read(EE_MicroAxis2);
+  GearAxis2 = XEEPROM.readInt(EE_GearAxis2);
+  StepRotAxis2 = XEEPROM.readInt(EE_StepRotAxis2);
+  MicroAxis2 = XEEPROM.read(EE_MicroAxis2);
   if (MicroAxis2 < 3) MicroAxis2 = 3; else if (MicroAxis2 > 8) MicroAxis2 = 8;
-  ReverseAxis2 = EEPROM.read(EE_ReverseAxis2);
-  LowCurrAxis2 = EEPROM.read(EE_LowCurrAxis2);
-  HighCurrAxis2 = EEPROM.read(EE_HighCurrAxis2);
+  ReverseAxis2 = XEEPROM.read(EE_ReverseAxis2);
+  LowCurrAxis2 = XEEPROM.read(EE_LowCurrAxis2);
+  HighCurrAxis2 = XEEPROM.read(EE_HighCurrAxis2);
 }
 
 void writeDefaultEEPROMmotor()
 {
   // init (clear) the backlash amounts
-  EEPROM_writeInt(EE_backlashAxis1, 0);
-  EEPROM_writeInt(EE_GearAxis1, 1800);
-  EEPROM_writeInt(EE_StepRotAxis1, 200);
-  EEPROM.write(EE_MicroAxis1, 4);
-  EEPROM.write(EE_ReverseAxis1, 0);
-  EEPROM.write(EE_HighCurrAxis1, 100);
-  EEPROM.write(EE_LowCurrAxis1, 100);
+  XEEPROM.writeInt(EE_backlashAxis1, 0);
+  XEEPROM.writeInt(EE_GearAxis1, 1800);
+  XEEPROM.writeInt(EE_StepRotAxis1, 200);
+  XEEPROM.write(EE_MicroAxis1, 4);
+  XEEPROM.write(EE_ReverseAxis1, 0);
+  XEEPROM.write(EE_HighCurrAxis1, 100);
+  XEEPROM.write(EE_LowCurrAxis1, 100);
 
-  EEPROM_writeInt(EE_backlashAxis2, 0);
-  EEPROM_writeInt(EE_GearAxis2, 1800);
-  EEPROM_writeInt(EE_StepRotAxis2, 200);
-  EEPROM.write(EE_MicroAxis2, 4);
-  EEPROM.write(EE_ReverseAxis2, 0);
-  EEPROM.write(EE_HighCurrAxis2, 100);
-  EEPROM.write(EE_LowCurrAxis2, 100);
+  XEEPROM.writeInt(EE_backlashAxis2, 0);
+  XEEPROM.writeInt(EE_GearAxis2, 1800);
+  XEEPROM.writeInt(EE_StepRotAxis2, 200);
+  XEEPROM.write(EE_MicroAxis2, 4);
+  XEEPROM.write(EE_ReverseAxis2, 0);
+  XEEPROM.write(EE_HighCurrAxis2, 100);
+  XEEPROM.write(EE_LowCurrAxis2, 100);
 }
 
 

@@ -1,6 +1,8 @@
 //----------------------------------------------------------------------------------
 // :GXnn#   Get OnStep value
 //         Returns: value
+#include "ValueToString.h"
+
 void Command_GX()
 {
   //  :GXnn#   Get OnStep value
@@ -69,10 +71,7 @@ void Command_GX()
     switch (parameter[1])
     {
     case '0':// UTC time
-      i = highPrecision;
-      highPrecision = true;
-      doubleToHms(reply, rtk.getUT());
-      highPrecision = i;
+      doubleToHms(reply, rtk.getUT(), true);
       quietReply = true;
       break;  
     case '1':// UTC date 
@@ -98,7 +97,7 @@ void Command_GX()
       quietReply = true;
       break;  // pulse-guide rate
     case '2':
-      sprintf(reply, "%d", EEPROM_readInt(EE_maxRate));
+      sprintf(reply, "%d", XEEPROM.readInt(EE_maxRate));
       quietReply = true;
       break;  // Max Slew rate
     case '3':
@@ -288,7 +287,7 @@ void  Command_G()
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //         The current scope altitude
     getHorApp(&f,&f1);
-    if (!doubleToDms(reply, &f1, false, true))
+    if (!doubleToDms(reply, &f1, false, true, highPrecision))
       commandError = true;
     else
       quietReply = true;
@@ -298,7 +297,7 @@ void  Command_G()
     //         Returns: HH:MM:SS#
     i = highPrecision;
     highPrecision = true;
-    if (!doubleToHms(reply, rtk.getLT(localSite.toff())))
+    if (!doubleToHms(reply, rtk.getLT(localSite.toff()), highPrecision))
       commandError = true;
     else
       quietReply = true;
@@ -341,7 +340,7 @@ void  Command_G()
       _coord_t = millis();
     }
 
-    if (!doubleToDms(reply, &f1, false, true))
+    if (!doubleToDms(reply, &f1, false, true, highPrecision))
       commandError = true;
     else
       quietReply = true;
@@ -349,7 +348,7 @@ void  Command_G()
   case 'd':
     //  :Gd#   Get Currently Selected Target Declination
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
-    if (!doubleToDms(reply, &newTargetDec, false, true))
+    if (!doubleToDms(reply, &newTargetDec, false, true, highPrecision))
       commandError = true;
     else
       quietReply = true;
@@ -374,7 +373,7 @@ void  Command_G()
     //         The current site Longitude. East Longitudes are negative
     int i = highPrecision;
     highPrecision = false;
-    if (!doubleToDms(reply, localSite.longitude(), true, true))
+    if (!doubleToDms(reply, localSite.longitude(), true, true, highPrecision))
       commandError = true;
     else
       quietReply = true;
@@ -397,7 +396,7 @@ void  Command_G()
     //         Returns: HH:MM:SS#
     i = highPrecision;
     highPrecision = true;
-    if (!doubleToHms(reply, rtk.getLT(localSite.toff())))
+    if (!doubleToHms(reply, rtk.getLT(localSite.toff()), highPrecision))
       commandError = true;
     else
       quietReply = true;
@@ -416,11 +415,11 @@ void  Command_G()
   case 'P':
   {
     i = command[1] - 'M';
-    EEPROM_readString(EE_sites + i * SiteSize + EE_site_name, reply);
+    XEEPROM.readString(EE_sites + i * SiteSize + EE_site_name, reply);
     if (reply[0] == 0)
     {
       sprintf(reply, "Site %d", i);
-      EEPROM_writeString(EE_sites + i * SiteSize + EE_site_name, reply);
+      XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, reply);
     }
     quietReply = true;
     break;
@@ -476,7 +475,7 @@ void  Command_G()
         _coord_t = millis();
       }
 
-      if (!doubleToHms(reply, &f))
+      if (!doubleToHms(reply, &f, highPrecision))
         commandError = true;
       else
         quietReply = true;
@@ -487,7 +486,7 @@ void  Command_G()
     //         Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
     f = newTargetRA;
     f /= 15.0;
-    if (!doubleToHms(reply, &f))
+    if (!doubleToHms(reply, &f, highPrecision))
       commandError = true;
     else
       quietReply = true;
@@ -499,7 +498,7 @@ void  Command_G()
     i = highPrecision;
     highPrecision = true;
     f = rtk.LST();
-    if (!doubleToHms(reply, &f))
+    if (!doubleToHms(reply, &f, highPrecision))
       commandError = true;
     else
       quietReply = true;
@@ -528,7 +527,7 @@ void  Command_G()
     //         The latitude of the current site. Positive for North latitudes
     i = highPrecision;
     highPrecision = false;
-    if (!doubleToDms(reply, localSite.latitude(), false, true))
+    if (!doubleToDms(reply, localSite.latitude(), false, true, highPrecision))
       commandError = true;
     else
       quietReply = true;
@@ -623,7 +622,7 @@ void  Command_G()
     //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
     getHorApp(&f,&f1);
     f = AzRange(f);
-    if (!doubleToDms(reply, &f, true, false))
+    if (!doubleToDms(reply, &f, true, false, highPrecision))
       commandError = true;
     else
       quietReply = true;

@@ -13,9 +13,9 @@ void Command_dollar()
   switch (command[1])
   {
   case '$':
-    for (int i = 0; i < EEPROM.length(); i++)
+    for (int i = 0; i < XEEPROM.length(); i++)
     {
-      EEPROM.write(i, 0);
+      XEEPROM.write(i, 0);
     }
   case '!':
     Serial.end();
@@ -34,13 +34,13 @@ void Command_dollar()
         if (parameter[0] == 'D')
         {
           backlashAxis2 = i;
-          EEPROM_writeInt(EE_backlashAxis2, backlashAxis2);
+          XEEPROM.writeInt(EE_backlashAxis2, backlashAxis2);
           StepsBacklashAxis2 = (int)round(((double)backlashAxis2 * 3600.0) / (double)StepsPerDegreeAxis2);
         }
         else if (parameter[0] == 'R')
         {
           backlashAxis1 = i;
-          EEPROM_writeInt(EE_backlashAxis1, backlashAxis1);
+          XEEPROM.writeInt(EE_backlashAxis1, backlashAxis1);
           StepsBacklashAxis1 = (int)round(((double)backlashAxis1 * 3600.0) / (double)StepsPerDegreeAxis1);
         }
         else
@@ -66,7 +66,7 @@ void Command_dollar()
         sei();
         StopAxis2();
         GearAxis2 = (unsigned int)i;
-        EEPROM_writeInt(EE_GearAxis2, i);
+        XEEPROM.writeInt(EE_GearAxis2, i);
       }
       else
       {
@@ -76,7 +76,7 @@ void Command_dollar()
         sei();
         StopAxis1();
         GearAxis1 = (unsigned int)i;
-        EEPROM_writeInt(EE_GearAxis1, i);
+        XEEPROM.writeInt(EE_GearAxis1, i);
       }
       unsetPark();
       updateRatios(true);
@@ -100,7 +100,7 @@ void Command_dollar()
         sei();
         StopAxis2();
         StepRotAxis2 = (unsigned int)i;
-        EEPROM_writeInt(EE_StepRotAxis2, i);
+        XEEPROM.writeInt(EE_StepRotAxis2, i);
       }
       else 
       {
@@ -110,7 +110,7 @@ void Command_dollar()
         sei();
         StopAxis1();
         StepRotAxis1 = (unsigned int)i;
-        EEPROM_writeInt(EE_StepRotAxis1, i);
+        XEEPROM.writeInt(EE_StepRotAxis1, i);
       }
       unsetPark();
       updateRatios(true);
@@ -135,7 +135,7 @@ void Command_dollar()
         StopAxis2();
         MicroAxis2 = i;       
         motorAxis2.setMicrostep(MicroAxis2);
-        EEPROM.write(EE_MicroAxis2, MicroAxis2);
+        XEEPROM.write(EE_MicroAxis2, MicroAxis2);
       }
       else
       {
@@ -146,7 +146,7 @@ void Command_dollar()
         StopAxis1();
         MicroAxis1 = i;
         motorAxis1.setMicrostep(MicroAxis1);
-        EEPROM.write(EE_MicroAxis1, MicroAxis1);
+        XEEPROM.write(EE_MicroAxis1, MicroAxis1);
       }
       updateRatios(true);
     }
@@ -163,12 +163,12 @@ void Command_dollar()
       if (parameter[0] == 'D')
       {
         ReverseAxis2 = parameter[1] == '1' ? true : false;
-        EEPROM.write(EE_ReverseAxis2, ReverseAxis2);
+        XEEPROM.write(EE_ReverseAxis2, ReverseAxis2);
       }
       else
       {
         ReverseAxis1 = parameter[1] == '1' ? true : false;
-        EEPROM.write(EE_ReverseAxis1, ReverseAxis1);
+        XEEPROM.write(EE_ReverseAxis1, ReverseAxis1);
       }
     }
     else
@@ -188,12 +188,12 @@ void Command_dollar()
         if (command[1] == 'C')
         {
           HighCurrAxis2 = (u_int8_t)i;
-          EEPROM.write(EE_HighCurrAxis2, HighCurrAxis2);
+          XEEPROM.write(EE_HighCurrAxis2, HighCurrAxis2);
         }
         else
         {
           LowCurrAxis2 = (u_int8_t)i;
-          EEPROM.write(EE_LowCurrAxis2, LowCurrAxis2);
+          XEEPROM.write(EE_LowCurrAxis2, LowCurrAxis2);
           motorAxis2.setCurrent((unsigned int)LowCurrAxis2 * 10);
         }
       }
@@ -202,12 +202,12 @@ void Command_dollar()
         if (command[1] == 'C')
         {
           HighCurrAxis1 = (u_int8_t)i ;
-          EEPROM.write(EE_HighCurrAxis1, HighCurrAxis1);
+          XEEPROM.write(EE_HighCurrAxis1, HighCurrAxis1);
         }
         else 
         {
           LowCurrAxis1 = (u_int8_t)i;
-          EEPROM.write(EE_LowCurrAxis1, LowCurrAxis1);
+          XEEPROM.write(EE_LowCurrAxis1, LowCurrAxis1);
           motorAxis1.setCurrent((unsigned int)LowCurrAxis1 * 10);
         }
       }
@@ -558,8 +558,8 @@ void Command_C()
     case 'U':
     {
       // :CU# sync with the User Defined RA DEC
-      newTargetRA = (double)EEPROM_readFloat(EE_RA);
-      newTargetDec = (double)EEPROM_readFloat(EE_DEC);
+      newTargetRA = (double)XEEPROM.readFloat(EE_RA);
+      newTargetDec = (double)XEEPROM.readFloat(EE_DEC);
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
       i = syncEqu(newTargetHA, newTargetDec, targetPierSide);
       break;
@@ -772,8 +772,8 @@ void Command_R()
 
 //----------------------------------------------------------------------------------
 //   T - Tracking Commands
-//  :T+#   Master sidereal clock faster by 0.1 Hertz (I use a fifth of the LX200 standard, stored in EEPROM)
-//  :T-#   Master sidereal clock slower by 0.1 Hertz (stored in EEPROM)
+//  :T+#   Master sidereal clock faster by 0.1 Hertz (I use a fifth of the LX200 standard, stored in XEEPROM)
+//  :T-#   Master sidereal clock slower by 0.1 Hertz (stored in XEEPROM)
 //  :TS#   Track rate solar
 //  :TL#   Track rate lunar
 //  :TQ#   Track rate sidereal
@@ -816,7 +816,7 @@ void Command_T()
     // sidereal tracking rate
     SetTrackingRate(default_tracking_rate);
     sideralMode = SIDM_STAR;
-    correct_tracking = EEPROM.read(EE_corr_track);
+    correct_tracking = XEEPROM.read(EE_corr_track);
     correct_tracking = false;
     quietReply = true;
     break;
@@ -871,7 +871,7 @@ void Command_T()
   if ((!commandError) && ((command[1] == '+') || (command[1] == '-') ||
     (command[1] == 'R')))
   {
-    EEPROM_writeLong(EE_siderealInterval, siderealInterval);
+    XEEPROM.writeLong(EE_siderealInterval, siderealInterval);
     updateSideral();
   }
 }
@@ -902,7 +902,7 @@ void Command_W()
   if ((command[1] >= '0') && (command[1] <= '3'))
   {
     uint8_t currentSite = command[1] - '0';
-    EEPROM.write(EE_currentSite, currentSite);
+    XEEPROM.write(EE_currentSite, currentSite);
     localSite.ReadSiteDefinition(currentSite);
     rtk.resetLongitude(*localSite.longitude());
     initCelestialPole();

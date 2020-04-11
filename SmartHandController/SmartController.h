@@ -4,22 +4,28 @@
 #include <TeenAstroLX200io.h>
 #include "Pad.h"
 #include "u8g2_ext.h"
-
+#define NUMPAGES 6
 class SmartHandController
 {
 public:
   enum OLED { OLED_SH1106, OLED_SSD1306, OLED_SSD1309 };
+  enum PAGES { P_RADEC, P_ALTAZ, P_TIME, P_AXIS, P_FOCUSER, P_ALIGN };
   void update();
   void manualMove(bool &moving);
   void drawIntro();
   void drawLoad();
   void setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model);
+  struct pageInfo
+  {
+    PAGES p;
+    bool show;
+  };
 private:
   U8G2_EXT *display = NULL;
   Pad buttonPad;
-  char _version[20]="Version ?";
+  char _version[20] = "Version ?";
 
-  void updateMainDisplay( u8g2_uint_t page);
+  void updateMainDisplay(PAGES page);
   bool sleepDisplay = false;
   bool lowContrast = false;
 
@@ -36,7 +42,8 @@ private:
   bool forceDisplayoff = false;
   bool focuserlocked = false;
   bool telescoplocked = false;
-  byte page = 0;
+  pageInfo pages[NUMPAGES] = { {P_RADEC,true},{P_ALTAZ,true}, {P_TIME,true}, {P_AXIS,true}, {P_FOCUSER,true}, {P_ALIGN,false} };
+  byte current_page;
   bool exitMenu = false;
   uint8_t current_selection_L0 = 1;
   uint8_t current_selection_L1 = 1;
@@ -121,7 +128,7 @@ private:
   void menuLongitude();
   void menuElevation();
   void menuMainUnitInfo();
- /* void menuHCInfo();*/
+  /* void menuHCInfo();*/
   void menuLimits();
   void menuWifi();
   void menuWifiMode();

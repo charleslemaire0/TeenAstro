@@ -278,6 +278,7 @@ static const unsigned char teenastro_bits[] U8X8_PROGMEM = {
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
+
 void SmartHandController::setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model)
 {
   if (EEPROM.length() == 0)
@@ -395,7 +396,7 @@ void SmartHandController::manualMove(bool &moving)
 {
   moving = ta_MountStatus.getTrackingState() == TeenAstroMountStatus::TRK_SLEWING ||
     ta_MountStatus.getParkState() == TeenAstroMountStatus::PRK_PARKING ||
-    ta_MountStatus .isSpiralRunning();
+    ta_MountStatus.isSpiralRunning();
   if (moving)
   {
     bool stop = (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART || eventbuttons[0] == E_DOUBLECLICK) ? true : false;
@@ -495,7 +496,7 @@ void SmartHandController::update()
   }
   else if (top - lastpageupdate > 200)
   {
-    updateMainDisplay(page);
+    updateMainDisplay(pages[current_page].p);
   }
   if (!ta_MountStatus.connected())
     return;
@@ -503,8 +504,22 @@ void SmartHandController::update()
   manualMove(moving);
   if (eventbuttons[0] == E_CLICK && !ta_MountStatus.isAligning())
   {
-    page++;
-    if (page > 3) page = 0;
+    for (int k = 1; k < NUMPAGES + 1; k++)
+    {
+      current_page++;
+      if (current_page >= NUMPAGES)
+        current_page = 0;
+      if (pages[current_page].show)
+      {
+        if (pages[current_page].p == P_FOCUSER && !ta_MountStatus.hasFocuser())
+        {
+          pages[current_page].show = false;
+          continue;
+        }
+        break;
+      }
+    }
+
     time_last_action = millis();
   }
   else if (moving)
@@ -558,7 +573,7 @@ void SmartHandController::update()
   }
 }
 
-void SmartHandController::updateMainDisplay(u8g2_uint_t page)
+void SmartHandController::updateMainDisplay(PAGES page)
 {
   u8g2_t *u8g2 = display->getU8g2();
   display->setFont(u8g2_font_helvR12_te);
@@ -568,34 +583,35 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
   ta_MountStatus.removeLastConnectionFailure();
   ta_MountStatus.updateMount();
   if (ta_MountStatus.isAligning())
-    page = 4;
-  else if (!ta_MountStatus.hasFocuser() && page == 3)
+    page = P_ALIGN;
+
+  if (ta_MountStatus.hasInfoMount() && page == P_ALIGN)
   {
-    page = 0;
-  }
-  if (ta_MountStatus.hasInfoMount() && page == 4)
-  {
-    TeenAstroMountStatus::TrackState curT = ta_MountStatus.getTrackingState();  
+    TeenAstroMountStatus::TrackState curT = ta_MountStatus.getTrackingState();
     if (curT != TeenAstroMountStatus::TRK_SLEWING && ta_MountStatus.isAlignSlew())
     {
       ta_MountStatus.nextStepAlign();
     }
   }
-  else if (page == 0 && !ta_MountStatus.isPulseGuiding())
+  else if (page == P_RADEC && !ta_MountStatus.isPulseGuiding())
   {
     ta_MountStatus.updateRaDec();
   }
-  else if (page == 1 && !ta_MountStatus.isPulseGuiding())
+  else if (page == P_ALTAZ && !ta_MountStatus.isPulseGuiding())
   {
     ta_MountStatus.updateAzAlt();
   }
-  else if (page == 2 && !ta_MountStatus.isPulseGuiding())
+  else if (page == P_TIME && !ta_MountStatus.isPulseGuiding())
   {
     ta_MountStatus.updateTime();
   }
-  else if (page == 3 && !ta_MountStatus.isPulseGuiding())
+  else if (page == P_FOCUSER && !ta_MountStatus.isPulseGuiding())
   {
     ta_MountStatus.updateFocuser();
+  }
+  else if (page == P_AXIS && !ta_MountStatus.isPulseGuiding())
+  {
+    ta_MountStatus.updateAxis();
   }
   u8g2_FirstPage(u8g2);
 
@@ -607,7 +623,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
     if (buttonPad.isWifiOn())
     {
       buttonPad.isWifiRunning() ? display->drawXBMP(0, 0, icon_width, icon_height, wifi_bits) : display->drawXBMP(0, 0, icon_width, icon_height, wifi_not_connected_bits);
-      xl =icon_width + 1;
+      xl = icon_width + 1;
     }
     if (ta_MountStatus.hasInfoMount())
     {
@@ -682,9 +698,9 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
         {
           display->drawXBMP(x - icon_width, 0, icon_width, icon_height, W_bits);
           x -= icon_width + 1;
-        }       
+        }
 
-        if (ta_MountStatus.isAligning() )
+        if (ta_MountStatus.isAligning())
         {
           if (ta_MountStatus.getAlignMode() == TeenAstroMountStatus::ALIM_ONE)
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, align1_bits);
@@ -753,7 +769,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
         break;
       }
     }
-    if (focuserlocked|| telescoplocked)
+    if (focuserlocked || telescoplocked)
     {
       display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Lock___bits);
       display->setBitmapMode(1);
@@ -764,7 +780,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
       display->setBitmapMode(0);
       x -= icon_width + 1;
     }
-    if (page == 0)
+    if (page == P_RADEC)
     {
       if (ta_MountStatus.hasInfoRa() && ta_MountStatus.hasInfoDec())
       {
@@ -777,7 +793,7 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
         display->drawDec(x, y, ta_MountStatus.getDec());
       }
     }
-    else if (page == 1)
+    else if (page == P_ALTAZ)
     {
       if (ta_MountStatus.hasInfoAz() && ta_MountStatus.hasInfoAlt())
       {
@@ -794,20 +810,20 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
         u8g2_DrawUTF8(u8g2, 0, y, "Alt.");
       }
     }
-    else if (page == 2)
+    else if (page == P_TIME)
     {
       if (ta_MountStatus.hasInfoUTC() && ta_MountStatus.hasInfoSidereal())
       {
         u8g2_uint_t y = 36;
         x = u8g2_GetDisplayWidth(u8g2);
         u8g2_DrawUTF8(u8g2, 0, y, "UTC");
-        display->drawRA(x, y,ta_MountStatus.getUTC());
+        display->drawRA(x, y, ta_MountStatus.getUTC());
         y += line_height + 4;
         u8g2_DrawUTF8(u8g2, 0, y, "Sidereal");
         display->drawRA(x, y, ta_MountStatus.getSidereal());
       }
     }
-    else if (page == 3)
+    else if (page == P_FOCUSER)
     {
       u8g2_uint_t y = 36;
       if (ta_MountStatus.hasInfoFocuser())
@@ -821,13 +837,23 @@ void SmartHandController::updateMainDisplay(u8g2_uint_t page)
         u8g2_DrawUTF8(u8g2, 0, y, T_NOT_CONNECTED);
       }
     }
-    else if (page == 4)
+    else if (page == P_AXIS)
+    {
+      u8g2_uint_t y = 36;
+      if (ta_MountStatus.hasInfoAxis1())
+      {
+        u8g2_DrawUTF8(u8g2, 0, y, ta_MountStatus.getAxis1());
+        y += line_height + 4;
+        u8g2_DrawUTF8(u8g2, 0, y, ta_MountStatus.getAxis2());
+      }
+    }
+    else if (page == P_ALIGN)
     {
       u8g2_uint_t y = 36;
       static char text1[29] = T_SLEWINGTO " " T_STAR;
       static char text2[28] = T_RECENTER " " T_STAR;
       if (ta_MountStatus.isAlignSlew())
-        u8g2_DrawUTF8(u8g2, 0, y,text1);
+        u8g2_DrawUTF8(u8g2, 0, y, text1);
       else if (ta_MountStatus.isAlignRecenter())
         u8g2_DrawUTF8(u8g2, 0, y, text2);
 
@@ -1028,7 +1054,7 @@ void SmartHandController::DisplayMotorSettings(const uint8_t &axis)
   sprintf(line1, T_MOTORSETTINGS, axis);
   if (DisplayMessageLX200(readReverseLX200(axis, reverse)))
   {
-    reverse ? sprintf(line3, T_REVERSEDROTATION ) : sprintf(line3, T_DIRECTROTATION);
+    reverse ? sprintf(line3, T_REVERSEDROTATION) : sprintf(line3, T_DIRECTROTATION);
   }
   if (DisplayMessageLX200(readTotGearLX200(axis, totGear)))
   {
@@ -1185,7 +1211,7 @@ void SmartHandController::menuSpeedRate()
   ta_MountStatus.updateMount();
   if (!ta_MountStatus.getGuidingRate(current_selection_speed))
     return;
-  uint8_t selected_speed = display->UserInterfaceSelectionList(&buttonPad, T_SETSPEED, current_selection_speed + 1 , string_list_Speed);
+  uint8_t selected_speed = display->UserInterfaceSelectionList(&buttonPad, T_SETSPEED, current_selection_speed + 1, string_list_Speed);
   if (selected_speed > 0)
   {
     char cmd[5] = ":Rn#";
@@ -1261,7 +1287,7 @@ void SmartHandController::menuTrack()
 
 SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
 {
-  bool alignInProgress=ta_MountStatus.isAligning();
+  bool alignInProgress = ta_MountStatus.isAligning();
   static int current_selection = 1;
   while (true) {
     const char* string_list = alignInProgress ? T_CANCEL : "2 " T_STAR "\n3 " T_STAR "\n" T_SAVE "\n" T_Clear;
@@ -1276,15 +1302,15 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         DisplayMessage(T_ALIGNMENT, T_CANCELED, -1);
         return MR_QUIT;
       }
-      else 
+      else
       {
         DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
         if (display->UserInterfaceMessage(&buttonPad, T_READYFOR, "2 " T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
         {
           if (SetLX200(":A0#") == LX200VALUESET)
           {
-          ta_MountStatus.startAlign(TeenAstroMountStatus::AlignMode::ALIM_TWO);
-          return MR_QUIT;
+            ta_MountStatus.startAlign(TeenAstroMountStatus::AlignMode::ALIM_TWO);
+            return MR_QUIT;
           }
           else
           {
@@ -1439,9 +1465,9 @@ void SmartHandController::menuTelSettings()
     case 1:
       menuSHCSettings();
       break;
-    //case 2:
-    //  menuAlignment();
-    //  break;
+      //case 2:
+      //  menuAlignment();
+      //  break;
     case 2:
       menuTimeAndSite();
       break;
@@ -1536,7 +1562,7 @@ void SmartHandController::menuMotor(const uint8_t axis)
   while (current_selection_L3 != 0)
   {
     const char *string_list_Motor = T_SHOWSETTINGS "\n" T_ROTATION "\n" T_GEAR "\n" T_STEPSPERROT "\n"
-                                     T_MICROSTEP "\n" T_BACKLASH "\n" T_LOWCURR "\n" T_HIGHCURR;
+      T_MICROSTEP "\n" T_BACKLASH "\n" T_LOWCURR "\n" T_HIGHCURR;
     current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, axis == 1 ? T_MOTOR " 1" : T_MOTOR " 2", current_selection_L3, string_list_Motor);
     switch (current_selection_L3)
     {
@@ -1578,7 +1604,7 @@ void SmartHandController::menuAcceleration()
   char cmd[20];
   if (DisplayMessageLX200(GetLX200(":GXE2#", outAcc, sizeof(outAcc))))
   {
-    float acc =atof(&outAcc[0]);
+    float acc = atof(&outAcc[0]);
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_ACCELERATION, "", &acc, 0.1, 25, 4, 1, " deg."))
     {
       sprintf(cmd, ":SXE2:%04d#", (int)(acc*10.));
@@ -1653,7 +1679,7 @@ void SmartHandController::menuSites()
   char n[15];
   char o[15];
   char p[15];
-  char txt[70]="";
+  char txt[70] = "";
   GetLX200(":GM#", m, sizeof(m));
   GetLX200(":GN#", n, sizeof(n));
   GetLX200(":GO#", o, sizeof(o));
@@ -1695,7 +1721,7 @@ void SmartHandController::menuLocalTimeZone()
   float val = 0;
   if (DisplayMessageLX200(GetLX200Float(":GG#", &val)))
   {
-    val *=-1;
+    val *= -1;
     if (display->UserInterfaceInputValueFloatIncr(&buttonPad, T_TIMEZONE, "UTC ", &val, -12, 12, 3, 1, 0.5, " hour"))
     {
       char cmd[15];
@@ -1710,7 +1736,7 @@ void SmartHandController::menuFocuserAction()
 {
   if (!ta_MountStatus.hasFocuser())
   {
-    DisplayMessage(T_FOCUSER, T_NOT_CONNECTED "!",500);
+    DisplayMessage(T_FOCUSER, T_NOT_CONNECTED "!", 500);
     return;
   }
   static  uint8_t current_selection = 1;
@@ -1722,7 +1748,7 @@ void SmartHandController::menuFocuserAction()
   char temp[20] = { 0 };
   char txt[150] = { 0 };
   char out[20];
-  
+
   for (int k = 0; k < 10; k++)
   {
     sprintf(temp, ":Fx%d#", k);
@@ -1752,7 +1778,7 @@ void SmartHandController::menuFocuserAction()
 
     const char *string_list_Focuser = &menustxt[0];
     choice = display->UserInterfaceSelectionList(&buttonPad, T_FOCUSERACTION, current_selection, string_list_Focuser);
-    if (choice!=0)
+    if (choice != 0)
     {
       current_selection = choice;
     }
@@ -1981,7 +2007,7 @@ void SmartHandController::menuFocuserMotor()
         uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, T_ROTATION, (uint8_t)rev + 1, string_list);
         if (choice)
         {
-          sprintf(cmd, ":F7 %d#", (int)(choice -1));
+          sprintf(cmd, ":F7 %d#", (int)(choice - 1));
           ValueSetRequested = true;
         }
         break;
@@ -2023,7 +2049,7 @@ void SmartHandController::menuFocuserMotor()
 
 void SmartHandController::menuFocuserSettings()
 {
-    if (!ta_MountStatus.hasFocuser())
+  if (!ta_MountStatus.hasFocuser())
   {
     DisplayMessage(T_FOCUSER, T_NOT_CONNECTED "!", 500);
     return;
@@ -2115,7 +2141,7 @@ void SmartHandController::menuDisplay()
 void SmartHandController::menuButtonSpeed()
 {
   const char *string_list_Display = T_SLOW "\n" T_MEDIUM "\n" T_FAST;
-  current_selection_L3 = (uint8_t)buttonPad.getButtonSpeed()+1;
+  current_selection_L3 = (uint8_t)buttonPad.getButtonSpeed() + 1;
   current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, T_BUTTONSPEED, current_selection_L3, string_list_Display);
   switch (current_selection_L3)
   {
@@ -2124,7 +2150,7 @@ void SmartHandController::menuButtonSpeed()
   case 1:
   case 2:
   case 3:
-    buttonPad.setButtonSpeed(static_cast<Pad::ButtonSpeed>(current_selection_L3-1));
+    buttonPad.setButtonSpeed(static_cast<Pad::ButtonSpeed>(current_selection_L3 - 1));
     buttonPad.setMenuMode();
     break;
   }
@@ -2284,9 +2310,9 @@ void SmartHandController::menuMainUnitInfo()
       }
       char out1[20];
       char out2[20];
-      if (DisplayMessageLX200(GetLX200(":GVN#", out1, 20)) && DisplayMessageLX200(GetLX200(":GVD#", out2, 20)) )
-      { 
-        
+      if (DisplayMessageLX200(GetLX200(":GVN#", out1, 20)) && DisplayMessageLX200(GetLX200(":GVD#", out2, 20)))
+      {
+
       }
       break;
     case 2:
@@ -2356,11 +2382,11 @@ void SmartHandController::menuWifi()
 void SmartHandController::menuWifiMode()
 {
   uint8_t idx = 0;
-  uint8_t idxs[4] = { 3,3,3,3};
+  uint8_t idxs[4] = { 3,3,3,3 };
   char temp[20] = { 0 };
   char txt[150] = { 0 };
   char out[40] = { 0 };
-  uint8_t selected_item=10;
+  uint8_t selected_item = 10;
   for (uint8_t k = 0; k < 3; k++)
   {
     buttonPad.getStationName((int)k, out);
@@ -2455,7 +2481,7 @@ void SmartHandController::menuMeridian(bool east)
   if (DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10) / 4.0;
-    if (display->UserInterfaceInputValueFloat(&buttonPad, east ? T_MERIDIANLIMITE : T_MERIDIANLIMITW , "", &angle, -45, 45, 2, 0, " " T_DEGREE))
+    if (display->UserInterfaceInputValueFloat(&buttonPad, east ? T_MERIDIANLIMITE : T_MERIDIANLIMITW, "", &angle, -45, 45, 2, 0, " " T_DEGREE))
     {
       sprintf(cmd, ":SXEX:%+03d#", (int)(angle*4.0));
       cmd[4] = east ? '9' : 'A';
@@ -2468,7 +2494,7 @@ void SmartHandController::menuMeridian(bool east)
 
 void SmartHandController::DisplayMessage(const char* txt1, const char* txt2, int duration)
 {
-   display->setFont(u8g2_font_helvR12_tf);
+  display->setFont(u8g2_font_helvR12_tf);
   uint8_t x;
   uint8_t y = 40;
   display->firstPage();
@@ -2582,7 +2608,7 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
     else if (val == LX200BELOWHORIZON)
     {
       sprintf(text1, T_TARGETIS);
-      sprintf(text2,  T_BELOWHORIZON "!");
+      sprintf(text2, T_BELOWHORIZON "!");
     }
     else if (val == LX200_ERR_MOTOR_FAULT)
     {

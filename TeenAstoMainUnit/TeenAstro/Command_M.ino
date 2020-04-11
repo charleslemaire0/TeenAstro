@@ -1,5 +1,5 @@
 //   M - Telescope Movement Commands
-
+#include "ValueToString.h"
 void Command_M(bool &supress_frame)
 {
   switch (command[1])
@@ -170,8 +170,8 @@ void Command_M(bool &supress_frame)
         //         7=Guiding
         //         8=has a an Error
     PierSide targetPierSide = GetPierSide();
-    newTargetRA = (double)EEPROM_readFloat(EE_RA);
-    newTargetDec = (double)EEPROM_readFloat(EE_DEC);
+    newTargetRA = (double)XEEPROM.readFloat(EE_RA);
+    newTargetDec = (double)XEEPROM.readFloat(EE_DEC);
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     i = goToEqu(newTargetHA, newTargetDec, targetPierSide);
     if (i == 0)
@@ -196,12 +196,12 @@ void Command_M(bool &supress_frame)
     rastr[8] = 0;
     strncpy(decstr, &parameter[8], 9*sizeof(char));
     decstr[9] = 0;
-    if (!hmsToDouble(&objectRa, rastr))
+    if (!hmsToDouble(&objectRa, rastr, highPrecision))
     {
       commandError = true;
       return;
     }
-    if (!dmsToDouble(&objectDec, decstr, true))
+    if (!dmsToDouble(&objectDec, decstr, true, highPrecision))
     {
       commandError = true;
       return;

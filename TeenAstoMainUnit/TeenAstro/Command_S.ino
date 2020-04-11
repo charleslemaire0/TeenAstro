@@ -1,4 +1,5 @@
 #include "Command.h"
+#include "ValueToString.h"
 //   S - Telescope Set Commands
 
 void Command_S(Command& process_command)
@@ -10,7 +11,7 @@ void Command_S(Command& process_command)
     i = (int)(parameter[0] - '0');
     if (i > 0 && i < 5)
     {
-      EEPROM.write(EE_mountType, i);
+      XEEPROM.write(EE_mountType, i);
       Serial.end();
       Serial1.end();
       Serial2.end();
@@ -26,7 +27,7 @@ void Command_S(Command& process_command)
     //         Set target object altitude to sDD:MM# or sDD:MM:SS# (based on precision setting)
     //         Returns:
     //         0 if Object is within slew range, 1 otherwise
-    if (!dmsToDouble(&newTargetAlt, parameter, true))
+    if (!dmsToDouble(&newTargetAlt, parameter, true, highPrecision))
       commandError = true;
     break;
 
@@ -42,14 +43,12 @@ void Command_S(Command& process_command)
       if (process_command == COMMAND_SERIAL)
       {
         Serial_print("1");
-        while (Serial_transmit());
         delay(20);
         Serial_Init(baudRate[i]);
       }
       else
       {
         Serial1_print("1");
-        while (Serial1_transmit());
         delay(20);
         Serial1_Init(baudRate[i]);
       }
@@ -91,7 +90,7 @@ void Command_S(Command& process_command)
     //          Set target object declination to sDD*MM or sDD*MM:SS depending on the current precision setting
     //          Return: 0 on failure
     //                  1 on success
-    if (!dmsToDouble(&newTargetDec, parameter, true))
+    if (!dmsToDouble(&newTargetDec, parameter, true, highPrecision))
       commandError = true;
     break;
   case 'g':
@@ -100,14 +99,12 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
   {
-    i = highPrecision;
-    highPrecision = false;
     double longi= 0;
     if ((parameter[0] == '-') || (parameter[0] == '+'))
       i1 = 1;
     else
       i1 = 0;
-    if (!dmsToDouble(&longi, (char *)&parameter[i1], false))
+    if (!dmsToDouble(&longi, (char *)&parameter[i1], false, false))
       commandError = true;
     else
     {
@@ -115,7 +112,6 @@ void Command_S(Command& process_command)
       localSite.setLong(longi);
       rtk.resetLongitude(*localSite.longitude());
     }
-    highPrecision = i;
   }
   break;
   //  :SG[sHH.H]#
@@ -146,7 +142,7 @@ void Command_S(Command& process_command)
     if ((atoi2(parameter, &i)) && ((i >= -30) && (i <= 30)))
     {
       minAlt = i;
-      EEPROM.update(EE_minAlt, minAlt + 128);
+      XEEPROM.update(EE_minAlt, minAlt + 128);
     }
     else
       commandError = true;
@@ -161,7 +157,7 @@ void Command_S(Command& process_command)
     i = highPrecision;
     highPrecision = true;
     int h1, m1, m2, s1;
-    if (!hmsToHms(&h1,&m1,&m2,&s1, parameter))
+    if (!hmsToHms(&h1,&m1,&m2,&s1, parameter, highPrecision))
       commandError = true;
     else
     {
@@ -187,7 +183,7 @@ void Command_S(Command& process_command)
     if (strlen(parameter) > 14)
       commandError = true;
     else
-      EEPROM_writeString(EE_sites + i * SiteSize + EE_site_name, parameter);
+      XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, parameter);
   }
   break;
   case 'm':
@@ -235,7 +231,7 @@ void Command_S(Command& process_command)
       {
         maxAlt = i;
         maxAlt = maxAlt > 87 && isAltAZ() ? 87 : maxAlt;
-        EEPROM.update(EE_maxAlt, maxAlt);
+        XEEPROM.update(EE_maxAlt, maxAlt);
       }
       else
         commandError = true;
@@ -251,7 +247,7 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
 
-    if (!hmsToDouble(&newTargetRA, parameter))
+    if (!hmsToDouble(&newTargetRA, parameter, highPrecision))
       commandError = true;
     else
       newTargetRA *= 15.0;
@@ -266,7 +262,7 @@ void Command_S(Command& process_command)
     i = highPrecision;
     highPrecision = false;
     double lat=0;
-    if (!dmsToDouble(&lat, parameter, true))
+    if (!dmsToDouble(&lat, parameter, true, highPrecision))
     {
       commandError = true;
     }
@@ -286,12 +282,12 @@ void Command_S(Command& process_command)
       if (parameter[2] == '1' )
       {
         refraction = true;
-        EEPROM.update(EE_refraction, refraction);
+        XEEPROM.update(EE_refraction, refraction);
       }
       else if (parameter[2] == '0')
       {
         refraction = false;
-        EEPROM.update(EE_refraction, refraction);
+        XEEPROM.update(EE_refraction, refraction);
       }
       else
         commandError = true;
@@ -332,8 +328,8 @@ void Command_S(Command& process_command)
     getEqu(&f, &f1, false);
     _ra = f;
     _dec = f1;
-    EEPROM_writeFloat(EE_RA, (float)_ra); 
-    EEPROM_writeFloat(EE_DEC, (float)_dec);
+    XEEPROM.writeFloat(EE_RA, (float)_ra); 
+    XEEPROM.writeFloat(EE_DEC, (float)_dec);
     break;
   case 'X':
     //  :SXnn,VVVVVV...#   Set OnStep value
@@ -388,7 +384,7 @@ void Command_S(Command& process_command)
         i = highPrecision;
         highPrecision = true;
         int h1, m1, m2, s1;
-        if (!hmsToHms(&h1, &m1, &m2, &s1, &parameter[2]))
+        if (!hmsToHms(&h1, &m1, &m2, &s1, &parameter[2], highPrecision))
           commandError = true;
         else
         {
@@ -429,7 +425,7 @@ void Command_S(Command& process_command)
         {
           int val = strtol(&parameter[3], NULL, 10);
           val = val > 255 || val < 0 ? 100 : val;
-          EEPROM.write(EE_pulseGuideRate, val);
+          XEEPROM.write(EE_pulseGuideRate, val);
           guideRates[0] = (double)val / 100.;
           if (activeGuideRate == 0)
             enableGuideRate(0, true);
@@ -439,7 +435,7 @@ void Command_S(Command& process_command)
 
       case '2':   // set new acceleration rate
       {
-        EEPROM_writeInt(EE_maxRate, (int)strtol(&parameter[3], NULL, 10));
+        XEEPROM.writeInt(EE_maxRate, (int)strtol(&parameter[3], NULL, 10));
         initMaxRate();
         break;
       }
@@ -457,26 +453,26 @@ void Command_S(Command& process_command)
         break;
       case '2': // Set degree for acceleration
         DegreesForAcceleration = min(max(0.1*(double)strtol(&parameter[3], NULL, 10),0.1), 25.0);
-        EEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
+        XEEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
         SetAcceleration();
         break;
       case '9': // minutesPastMeridianE 
         minutesPastMeridianGOTOE = (double)strtol(&parameter[3], NULL, 10);
         if (minutesPastMeridianGOTOE > 180) minutesPastMeridianGOTOE = 180;
         if (minutesPastMeridianGOTOE < -180) minutesPastMeridianGOTOE = -180;
-        EEPROM.update(EE_dpmE, round((minutesPastMeridianGOTOE*15.0) / 60.0) + 128);
+        XEEPROM.update(EE_dpmE, round((minutesPastMeridianGOTOE*15.0) / 60.0) + 128);
         break;
       case 'A': // minutesPastMeridianW
         minutesPastMeridianGOTOW = (double)strtol(&parameter[3], NULL, 10);
         if (minutesPastMeridianGOTOW > 180) minutesPastMeridianGOTOW = 180;
         if (minutesPastMeridianGOTOW < -180) minutesPastMeridianGOTOW = -180;
-        EEPROM.update(EE_dpmW, round((minutesPastMeridianGOTOW*15.0) / 60.0) + 128);
+        XEEPROM.update(EE_dpmW, round((minutesPastMeridianGOTOW*15.0) / 60.0) + 128);
         break;
       case 'B': // minutesPastMeridianW
         underPoleLimitGOTO = (double)strtol(&parameter[3], NULL, 10)/10;
         if (underPoleLimitGOTO > 12) underPoleLimitGOTO = 12;
         if (underPoleLimitGOTO < 9) underPoleLimitGOTO = 9;
-        EEPROM.update(EE_dup, round(underPoleLimitGOTO*10.0));
+        XEEPROM.update(EE_dup, round(underPoleLimitGOTO*10.0));
         break;
 
       default: commandError = true;
@@ -492,7 +488,7 @@ void Command_S(Command& process_command)
     //          Sets the target Object Azimuth
     //          Return: 0 on failure
     //                  1 on success
-    if (!dmsToDouble(&newTargetAzm, parameter, false))
+    if (!dmsToDouble(&newTargetAzm, parameter, false, highPrecision))
       commandError = true;
     break;
   default:
