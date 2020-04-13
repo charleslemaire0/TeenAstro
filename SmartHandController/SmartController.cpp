@@ -185,6 +185,11 @@ static unsigned char Spiral_bits[] U8X8_PROGMEM = {
    0xe6, 0x67, 0x66, 0x66, 0x66, 0x66, 0x06, 0x66, 0x06, 0x66, 0xfe, 0x67,
    0xfc, 0x63, 0x00, 0x60, 0x00, 0x60, 0x00, 0x00 };
 
+static unsigned char Aligned_bits[] U8X8_PROGMEM = {
+   0x00, 0x00, 0x02, 0x40, 0x04, 0x20, 0x28, 0x14, 0x30, 0x0c, 0x38, 0x1c,
+   0x80, 0x01, 0xc0, 0x03, 0xc0, 0x03, 0x80, 0x01, 0x38, 0x1c, 0x30, 0x0c,
+   0x28, 0x14, 0x04, 0x20, 0x02, 0x40, 0x00, 0x00 };
+
 static const unsigned char teenastro_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -710,12 +715,12 @@ void SmartHandController::updateMainDisplay(PAGES page)
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, align3_bits);
           x -= icon_width + 1;
         }
-        if (ta_MountStatus.isSpiralRunning())
+        else if (ta_MountStatus.isSpiralRunning())
         {
           display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Spiral_bits);
           x -= icon_width + 1;
         }
-        if (ta_MountStatus.isPulseGuiding())
+        else if (ta_MountStatus.isPulseGuiding())
         {
           display->drawXBMP(x - icon_width, 0, icon_width, icon_height, guiding__bits);
           display->setBitmapMode(1);
@@ -736,6 +741,11 @@ void SmartHandController::updateMainDisplay(PAGES page)
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, guiding_W_bits);
           }
           display->setBitmapMode(0);
+          x -= icon_width + 1;
+        }
+        else if (ta_MountStatus.isAligned())
+        {
+          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Aligned_bits);
           x -= icon_width + 1;
         }
       }
@@ -1018,9 +1028,9 @@ bool SmartHandController::menuSetHighCurrent(const uint8_t &axis)
 
 void SmartHandController::DisplayMountSettings()
 {
+  DisplayAccMaxRateSettings();
   DisplayMotorSettings(1);
   DisplayMotorSettings(2);
-  DisplayAccMaxRateSettings();
 }
 
 void SmartHandController::DisplayAccMaxRateSettings()
@@ -1029,15 +1039,15 @@ void SmartHandController::DisplayAccMaxRateSettings()
   char line1[32] = T_SLEWSETTING;
   char line3[32] = "";
   char line4[32] = "";
-  if (DisplayMessageLX200(GetLX200(":GXE2#", out, sizeof(out))))
-  {
-    float acc = atof(&out[0]);
-    sprintf(line3, T_ACCELERATION ": %.1f", acc);
-  }
   if (DisplayMessageLX200(GetLX200(":GX92#", out, sizeof(out))))
   {
     int maxrate = (float)strtol(&out[0], NULL, 10);
     sprintf(line4, T_MaxSlew ": %dx", maxrate);
+  }
+  if (DisplayMessageLX200(GetLX200(":GXE2#", out, sizeof(out))))
+  {
+    float acc = atof(&out[0]);
+    sprintf(line3, T_ACCELERATION ": %.1f", acc);
   }
   DisplayLongMessage(line1, NULL, line3, line4, -1);
 }
@@ -1220,6 +1230,23 @@ void SmartHandController::menuSpeedRate()
     current_selection_speed = selected_speed;
   }
   buttonPad.setControlerMode();
+}
+
+void SmartHandController::menuReticule()
+{
+  char *options = T_BRIGHTER "\n" T_LESSBRIGHT;
+  uint8_t selection = 1;
+  while (selection != 0)
+  {
+    selection = display->UserInterfaceSelectionList(&buttonPad, T_RETICULE, selection, options);
+    if (selection > 0)
+    {
+      char cmd[5] = ":Bn#";
+      cmd[2] = selection == 1 ? '+' : '-';
+      DisplayMessageLX200(SetLX200(cmd), false);
+    }
+  }
+
 }
 
 void SmartHandController::menuTrack()
@@ -1456,7 +1483,7 @@ void SmartHandController::menuTelSettings()
   current_selection_L1 = 1;
   while (!exitMenu)
   {
-    const char *string_list_SettingsL1 = T_HANDCONTROLLER "\n"/*"Alignment\n"*/T_TIME " & " T_SITE "\n" T_SETPARK "\n" T_MOUNT "\n" T_LIMITS "\n" T_MAINUNITINFO "\nWifi";
+    const char *string_list_SettingsL1 = T_HANDCONTROLLER "\n" T_TIME " & " T_SITE "\n" T_SETPARK "\n" T_MOUNT "\n" T_LIMITS "\n" T_MAINUNITINFO "\nWifi";
     current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPESETTINGS, current_selection_L1, string_list_SettingsL1);
     switch (current_selection_L1)
     {
@@ -1498,7 +1525,7 @@ void SmartHandController::menuMount()
   current_selection_L2 = 1;
   while (!exitMenu)
   {
-    const char *string_list_Mount = T_SHOWSETTINGS "\n" T_MOUNTTYPE "\n" T_MOTOR " 1\n" T_MOTOR " 2\n" T_GUIDERATE "\n" T_MAXRATE "\n" T_ACCELERATION;
+    const char *string_list_Mount = T_SHOWSETTINGS "\n" T_MOUNTTYPE "\n" T_MOTOR " 1\n" T_MOTOR " 2\n" T_GUIDERATE "\n" T_MAXRATE "\n" T_ACCELERATION "\n" T_RETICULE;
     current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, T_MOUNT, current_selection_L2, string_list_Mount);
     switch (current_selection_L2)
     {
@@ -1524,6 +1551,9 @@ void SmartHandController::menuMount()
       break;
     case 7:
       menuAcceleration();
+      break;
+    case 8:
+      menuReticule();
       break;
     default:
       break;
@@ -2427,7 +2457,6 @@ void SmartHandController::menuWifiMode()
   }
 }
 
-
 void SmartHandController::menuHorizon()
 {
   char out[20];
@@ -2489,8 +2518,6 @@ void SmartHandController::menuMeridian(bool east)
     }
   }
 }
-
-
 
 void SmartHandController::DisplayMessage(const char* txt1, const char* txt2, int duration)
 {

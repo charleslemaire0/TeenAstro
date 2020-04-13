@@ -2,7 +2,6 @@
 #include <Arduino.h>
 #include <math.h>
 #include <TeenAstroCoordConv.hpp>
-#include <TeenAstroCoordConv.hpp>
 #include <TeenAstroMath.h>
 #include <TinyGPS++.h>
 #include <TeenAstroStepper.h>
@@ -18,7 +17,7 @@
 
 TinyGPSPlus gps;
 CoordConv alignment;
-
+bool hasStarAlignment = false;
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT};
 enum PierSide {PIER_NOTVALID, PIER_EAST, PIER_WEST};
 enum MeridianFlip {FLIP_NEVER,FLIP_ALIGN,FLIP_ALWAYS};

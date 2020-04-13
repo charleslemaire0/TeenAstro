@@ -1,12 +1,12 @@
 //   $ - Set parameter
-  //   $B - Antibacklash 
-  //  :$BDddd# Set Dec Antibacklash
-  //          Return: 0 on failure
-  //                  1 on success
-  //  :$BRddd# Set RA Antibacklash
-  //          Return: 0 on failure
-  //                  1 on success
-  //         Set the Backlash values.  Units are arc-seconds
+//   $B - Antibacklash 
+//  :$BDddd# Set Dec Antibacklash
+//          Return: 0 on failure
+//                  1 on success
+//  :$BRddd# Set RA Antibacklash
+//          Return: 0 on failure
+//                  1 on success
+//         Set the Backlash values.  Units are arc-seconds
 
 void Command_dollar()
 {
@@ -462,6 +462,7 @@ void Command_A()
     if (alignment.getRefs()==2)
     {
       alignment.calculateThirdReference();
+      hasStarAlignment = true;
       cli();
       targetAxis1.part.m = posAxis1;
       targetAxis2.part.m = posAxis2;
@@ -477,10 +478,11 @@ void Command_A()
     cli();
     double Axis1 = posAxis1 / StepsPerDegreeAxis1;
     double Axis2 = posAxis2 / StepsPerDegreeAxis2;
-    sei()
+    sei();
     alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
     if (alignment.isReady())
     {
+      hasStarAlignment = true;
       cli();
       targetAxis1.part.m = posAxis1;
       targetAxis2.part.m = posAxis2;
@@ -506,21 +508,15 @@ void Command_B()
   if (command[1] != '+' && command[1] != '-')
     return;
 #ifdef RETICULE_LED_PINS
-  int scale;
-  if (reticuleBrightness > 255 - 8)
-    scale = 1;
-  else if (reticuleBrightness > 255 - 32)
-    scale = 4;
-  else if (reticuleBrightness > 255 - 64)
-    scale = 12;
-  else if (reticuleBrightness > 255 - 128)
-    scale = 32;
-  else
-    scale = 64;
-  if (command[1] == '-') reticuleBrightness += scale;
   if (reticuleBrightness > 255) reticuleBrightness = 255;
-  if (command[1] == '+') reticuleBrightness -= scale;
-  if (reticuleBrightness < 0) reticuleBrightness = 0;
+  if (reticuleBrightness < 31) reticuleBrightness = 31;
+  
+  if (command[1] == '-') reticuleBrightness /= 1.4;
+  if (command[1] == '+') reticuleBrightness *= 1.4;
+
+  if (reticuleBrightness > 255) reticuleBrightness = 255;
+  if (reticuleBrightness < 31) reticuleBrightness = 31;
+
   analogWrite(RETICULE_LED_PINS, reticuleBrightness);
 #endif
   quietReply = true;

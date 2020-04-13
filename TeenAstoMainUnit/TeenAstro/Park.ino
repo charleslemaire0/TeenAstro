@@ -42,12 +42,15 @@ void unsetPark()
   }
 }
 
-boolean saveAlignModel()
+void saveAlignModel()
 {
   // and store our corrections
-  //GeoAlign.writeCoe();
-  float t11, t12, t13, t21, t22, t23, t31, t32, t33 = 0;
-  alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
+  float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
+  XEEPROM.write(EE_Tvalid, hasStarAlignment);
+  if (hasStarAlignment)
+  {
+    alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
+  }
   XEEPROM.writeFloat(EE_T11, t11);
   XEEPROM.writeFloat(EE_T12, t12);
   XEEPROM.writeFloat(EE_T13, t13);
@@ -57,7 +60,7 @@ boolean saveAlignModel()
   XEEPROM.writeFloat(EE_T31, t31);
   XEEPROM.writeFloat(EE_T32, t32);
   XEEPROM.writeFloat(EE_T33, t33);
-  return true;
+  return;
 }
 
 // takes up backlash and returns to the current position

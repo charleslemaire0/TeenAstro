@@ -147,6 +147,7 @@ public:
   bool isGuidingS();
   bool isGuidingE();
   bool isGuidingW();
+  bool isAligned();
   bool isGNSSValid();
   //Connection Errors
   bool connected();

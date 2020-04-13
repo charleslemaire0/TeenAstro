@@ -10,7 +10,7 @@ void TeenAstroMountStatus::nextStepAlign()
   if (isAlignSelect())
   {
     m_align = ALI_SLEW; return;
-  };
+  }
   if (isAlignSlew())
   {
     m_align = ALI_RECENTER; return;
@@ -272,10 +272,15 @@ bool TeenAstroMountStatus::isGuidingS()
 {
   return  m_TempMount[8] == '_';
 }
+bool TeenAstroMountStatus::isAligned()
+{
+  return m_TempMount[11] == '1';
+}
 bool TeenAstroMountStatus::isGNSSValid()
 {
   return  m_TempMount[14] == '1';
 }
+
 TeenAstroMountStatus::PierState TeenAstroMountStatus::getPierState()
 {
   switch (m_TempMount[13])
