@@ -454,27 +454,42 @@ void Command_A()
     double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
     EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt);
+    if (alignebt.getRefs == 0)
+    {
+      syncAzAlt(Azm, Alt, targetPierSide);
+    }
+
     cli();
     double Axis1 = posAxis1 / StepsPerDegreeAxis1;
     double Axis2 = posAxis2 / StepsPerDegreeAxis2;
-    sei()
-      alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
-    if (alignment.getRefs()==2)
+    sei();
+
+    alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
+    if (alignment.getRefs() == 2)
     {
       alignment.calculateThirdReference();
-      hasStarAlignment = true;
-      cli();
-      targetAxis1.part.m = posAxis1;
-      targetAxis2.part.m = posAxis2;
-      sei();
+      if (alignment.isReady())
+      {
+        hasStarAlignment = true;
+        cli();
+        targetAxis1.part.m = posAxis1;
+        targetAxis1.part.f = 0;
+        targetAxis2.part.m = posAxis2;
+        targetAxis2.part.f = 0;
+        sei();
+      }
     }
     break;
   }
   case '3':
   {
-    double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+    double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
     EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt);
+    if (alignebt.getRefs == 0)
+    {
+      syncAzAlt(Azm, Alt, targetPierSide);
+    }
     cli();
     double Axis1 = posAxis1 / StepsPerDegreeAxis1;
     double Axis2 = posAxis2 / StepsPerDegreeAxis2;
@@ -484,8 +499,10 @@ void Command_A()
     {
       hasStarAlignment = true;
       cli();
-      targetAxis1.part.m = posAxis1;
-      targetAxis2.part.m = posAxis2;
+        targetAxis1.part.m = posAxis1;
+        targetAxis1.part.f = 0;
+        targetAxis2.part.m = posAxis2;
+        targetAxis2.part.f = 0
       sei();
     }
     break;
