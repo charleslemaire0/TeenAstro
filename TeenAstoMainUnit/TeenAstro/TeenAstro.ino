@@ -95,7 +95,7 @@ void setup()
   }
   // get the site information from EEPROM
   localSite.ReadCurrentSiteDefinition();
-  
+
   initmount();
   initmotor(false);
 
@@ -203,9 +203,9 @@ void setup()
   Serial2.write(":F?#");
   digitalWrite(LEDPin, HIGH);
   delay(1000);
-  hasGNSS = Serial3.available()>0;
-  hasFocuser = Serial2.available()>0;
-  while (Serial2.available()>0)
+  hasGNSS = Serial3.available() > 0;
+  hasFocuser = Serial2.available() > 0;
+  while (Serial2.available() > 0)
   {
     Serial2.read();
     hasFocuser = '?';
@@ -251,7 +251,7 @@ void loop()
     }
 
     if (rtk.m_lst % 16 != 0)
-      getHorApp(&currentAzm,&currentAlt);
+      getHorApp(&currentAzm, &currentAlt);
 
     if (isAltAZ())
     {
@@ -325,7 +325,7 @@ void loop()
     processCommands();
     smartDelay(0);
   }
-  
+
   if (StartLoopError != lastError)
   {
     lastError == ERR_NONE ? digitalWrite(LEDPin, LOW) : digitalWrite(LEDPin, HIGH);
@@ -346,7 +346,7 @@ void SafetyCheck(const bool forceTracking)
 
   if (atHome)
     atHome = !sideralTracking;
-        // check for exceeding MinDec for Eq. Fork
+  // check for exceeding MinDec for Eq. Fork
   if (!isAltAZ())
   {
     if (!checkAxis2LimitEQ(axis2))
@@ -516,7 +516,7 @@ void initmount()
   targetAxis2.part.m = quaterRotAxis2;
   targetAxis2.part.f = 0;
   fstepAxis1.fixed = doubleToFixed(StepsPerSecondAxis1 / 100.0);
-  refraction  = XEEPROM.read(EE_refraction);
+  refraction = XEEPROM.read(EE_refraction);
   // Tracking and rate control
   correct_tracking = XEEPROM.read(EE_corr_track);
   correct_tracking = false;
@@ -552,24 +552,24 @@ void initTransformation(bool reset)
     t31 = XEEPROM.readFloat(EE_T31);
     t32 = XEEPROM.readFloat(EE_T32);
     t33 = XEEPROM.readFloat(EE_T33);
-    alignment.setT(t11,t12,t13,t21,t22,t23,t31,t32,t33);
+    alignment.setT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
     hasStarAlignment = true;
   }
   else
   {
     if (isAltAZ())
     {
-      alignment.addReferenceDeg(0,0,180,0);
-      alignment.addReferenceDeg(0,90,180,90);
+      alignment.addReferenceDeg(0, 0, 180, 0);
+      alignment.addReferenceDeg(0, 90, 180, 90);
       alignment.calculateThirdReference();
     }
     else
     {
-      double ha,dec;
-      HorTopoToEqu(180,0,&ha,&dec);
-      alignment.addReferenceDeg(180,0,ha,dec);
-      HorTopoToEqu(180,90,&ha,&dec);
-      alignment.addReferenceDeg(180,90,ha,dec);
+      double ha, dec;
+      HorTopoToEqu(180, 0, &ha, &dec);
+      alignment.addReferenceDeg(180, 0, ha, dec);
+      HorTopoToEqu(180, 90, &ha, &dec);
+      alignment.addReferenceDeg(180, 90, ha, dec);
       alignment.calculateThirdReference();
     }
   }
@@ -598,8 +598,8 @@ void initmotor(bool deleteAlignment)
 {
   readEEPROMmotor();
   updateRatios(deleteAlignment);
-  motorAxis1.initMotor(static_cast<Motor::Motor_Driver>(AxisDriver),StepRotAxis1, Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin, (unsigned int)LowCurrAxis1 * 10, MicroAxis1);
-  motorAxis2.initMotor(static_cast<Motor::Motor_Driver>(AxisDriver),StepRotAxis2, Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin, (unsigned int)LowCurrAxis2 * 10, MicroAxis2);
+  motorAxis1.initMotor(static_cast<Motor::Motor_Driver>(AxisDriver), StepRotAxis1, Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin, (unsigned int)LowCurrAxis1 * 10, MicroAxis1);
+  motorAxis2.initMotor(static_cast<Motor::Motor_Driver>(AxisDriver), StepRotAxis2, Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin, (unsigned int)LowCurrAxis2 * 10, MicroAxis2);
 }
 
 void readEEPROMmotor()
@@ -649,7 +649,7 @@ void writeDefaultEEPROMmotor()
 void updateRatios(bool deleteAlignment)
 {
   cli()
-  StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+    StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerRotAxis2 = (long)GearAxis2 * StepRotAxis2 * (int)pow(2, MicroAxis2); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerDegreeAxis1 = (double)StepsPerRotAxis1 / 360.0;
   StepsBacklashAxis1 = (int)round(((double)backlashAxis1 * 3600.0) / (double)StepsPerDegreeAxis1);

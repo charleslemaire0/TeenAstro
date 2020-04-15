@@ -1,7 +1,7 @@
 //#pragma once
 void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
 {
- 
+
   bool canMove = parkStatus == PRK_UNPARKED;
   canMove &= !movingTo;
   canMove &= (GuidingState == GuidingOFF || GuidingState == Mode);
@@ -41,7 +41,7 @@ void StopAxis1()
   if (guideDirAxis1 == 'b')
     return;
   updateDeltaTarget();
-  long a = pow(getV(timerRateAxis1),2.) / (2. * AccAxis1);
+  long a = pow(getV(timerRateAxis1), 2.) / (2. * AccAxis1);
   if (fabs(deltaTargetAxis1) > a)
   {
     if (0 > deltaTargetAxis1)
@@ -54,7 +54,7 @@ void StopAxis1()
   guideDirAxis1 = 'b';
 }
 
-void MoveAxis2(const byte newguideDirAxis,const Guiding Mode)
+void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
 {
   bool canMove = parkStatus == PRK_UNPARKED;
   canMove &= !movingTo;
@@ -97,7 +97,7 @@ void MoveAxis2(const byte newguideDirAxis,const Guiding Mode)
 
 void StopAxis2()
 {
-  long a = pow(getV(timerRateAxis2),2.) / (2. * AccAxis2);
+  long a = pow(getV(timerRateAxis2), 2.) / (2. * AccAxis2);
   updateDeltaTarget();
   if (fabs(deltaTargetAxis2) > a)
   {
@@ -245,5 +245,5 @@ void checkST4()
       StopAxis2();
     }
   }
-  
+
 }

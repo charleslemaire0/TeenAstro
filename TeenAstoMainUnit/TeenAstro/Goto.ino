@@ -21,10 +21,10 @@ PierSide GetPierSide()
 //--------------------------------------------------------------------------------------------------
 // GoTo, commands to move the telescope to an location or to report the current location
 boolean syncEqu(double HA, double Dec, PierSide Side)
-{ 
-  double Azm,Alt = 0;
+{
+  double Azm, Alt = 0;
   EquToHorApp(HA, Dec, &Azm, &Alt);
-  return syncAzAlt(Azm,Alt,Side);
+  return syncAzAlt(Azm, Alt, Side);
 }
 // syncs the telescope/mount to the sky
 boolean syncAzAlt(double Azm, double Alt, PierSide Side)
@@ -72,7 +72,7 @@ boolean getEquTarget(double *HA, double *Dec, boolean returnHA)
 }
 
 // gets the telescopes current Apparent Alt and Azm!
-boolean getHorApp( double *Azm, double *Alt)
+boolean getHorApp(double *Azm, double *Alt)
 {
   cli();
   double Axis1 = posAxis1 / (double)StepsPerDegreeAxis1;
@@ -83,7 +83,7 @@ boolean getHorApp( double *Azm, double *Alt)
 }
 
 // gets the telescopes current Apparent Target Alt and Azm!
-boolean getHorAppTarget( double *Azm, double *Alt)
+boolean getHorAppTarget(double *Azm, double *Alt)
 {
   cli();
   double Axis1 = targetAxis1.part.m / (double)StepsPerDegreeAxis1;
@@ -101,9 +101,9 @@ byte goToEqu(double HA, double Dec, PierSide preferedPierSide)
   return goToHor(&azm, &alt, preferedPierSide);
 }
 // moves the mount to a new Altitude and Azmiuth (Alt,Azm) in degrees
-byte goToHor( double *Azm, double *Alt, PierSide preferedPierSide)
+byte goToHor(double *Azm, double *Alt, PierSide preferedPierSide)
 {
-  double Axis1_target,Axis2_target = 0;
+  double Axis1_target, Axis2_target = 0;
   long axis1_target, axis2_target = 0;
   if (movingTo)
   {
@@ -124,7 +124,7 @@ byte goToHor( double *Azm, double *Alt, PierSide preferedPierSide)
   alignment.toInstrumentalDeg(Axis1_target, Axis2_target, *Azm, *Alt);
   PierSide side = predictSideOfPier(Axis1_target, Axis2_target, preferedPierSide);
   if (side == 0)  return 6; //fail, outside limit
-  InstrtoStep(Axis1_target,Axis2_target,side, &axis1_target,&axis2_target);
+  InstrtoStep(Axis1_target, Axis2_target, side, &axis1_target, &axis2_target);
   return goTo(axis1_target, axis2_target);
 }
 

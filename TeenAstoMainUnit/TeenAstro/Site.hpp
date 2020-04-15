@@ -13,7 +13,7 @@ class siteDefinition
     double longitude;
     int16_t elevation;
     char siteName[siteNameLen + 1];
-    float toff; 
+    float toff;
   };
 private:
   uint8_t  m_siteIndex;
@@ -80,11 +80,11 @@ public:
     return true;
   }
   bool setToff(float toff)
-  { 
-    if (toff<=-12 || toff>=12)
+  {
+    if (toff <= -12 || toff >= 12)
       return false;
     m_site.toff = toff;
-    int val = (toff + 12.0 ) * 10.0;
+    int val = (toff + 12.0) * 10.0;
     XEEPROM.write(EE_sites + m_siteIndex * SiteSize + EE_site_time, val);
     return true;
   }
@@ -149,14 +149,14 @@ public:
   {
     // init the site information, lat/long/tz/name
     char txt[10];
-    for (int k=0;k<2;k++)
+    for (int k = 0; k < 2; k++)
     {
       m_siteIndex = k;
       XEEPROM.write(EE_currentSite, m_siteIndex);
       setLat(0);
       setLong(0);
       setElev(0);
-      sprintf(txt,"Site %d",k);
+      sprintf(txt, "Site %d", k);
       setSiteName(txt);
     }
   }

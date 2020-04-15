@@ -3,27 +3,27 @@
 // moves telescope to the home position, then stops tracking
 boolean goHome()
 {
-    if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return false; // fail, moving to home not allowed if PRK_PARKED
-    if (lastError != ERR_NONE) return false;                                // fail, cannot move if there are errors
-    if (movingTo) return false;                      // fail, moving to home not allowed during a move
-    if (guideDirAxis1 || guideDirAxis2) return false;                       // fail, moving to home not allowed while guiding
-    cli();
-       
-    targetAxis1.part.m = homeStepAxis1;
-    targetAxis1.part.f = 0;
-    targetAxis2.part.m = homeStepAxis2;
-    targetAxis2.part.f = 0;
-    startAxis1 = posAxis1;
-    startAxis2 = posAxis2;
-    SetSiderealClockRate(siderealInterval);
-    sei();
-    // stop tracking
-    lastSideralTracking = false;
-    sideralTracking = false;
-    movingTo = true;
-    homeMount = true;
-    DecayModeGoto();
-    return true;
+  if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return false; // fail, moving to home not allowed if PRK_PARKED
+  if (lastError != ERR_NONE) return false;                                // fail, cannot move if there are errors
+  if (movingTo) return false;                      // fail, moving to home not allowed during a move
+  if (guideDirAxis1 || guideDirAxis2) return false;                       // fail, moving to home not allowed while guiding
+  cli();
+
+  targetAxis1.part.m = homeStepAxis1;
+  targetAxis1.part.f = 0;
+  targetAxis2.part.m = homeStepAxis2;
+  targetAxis2.part.f = 0;
+  startAxis1 = posAxis1;
+  startAxis2 = posAxis2;
+  SetSiderealClockRate(siderealInterval);
+  sei();
+  // stop tracking
+  lastSideralTracking = false;
+  sideralTracking = false;
+  movingTo = true;
+  homeMount = true;
+  DecayModeGoto();
+  return true;
 }
 
 // resets telescope home position; user manually moves home position,

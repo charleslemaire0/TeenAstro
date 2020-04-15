@@ -364,74 +364,74 @@ ISR(TIMER3_COMPA_vect)
   }
 }
 ISR(TIMER4_COMPA_vect)
+{
+  digitalWriteFast(Axis2StepPin, LOW);
+  // on the much faster Teensy and Tiva TM4C run this ISR at twice the normal rate and pull the step pin low every other call
+  if (clearAxis2)
   {
-    digitalWriteFast(Axis2StepPin, LOW);
-    // on the much faster Teensy and Tiva TM4C run this ISR at twice the normal rate and pull the step pin low every other call
-    if (clearAxis2)
-    {
-      takeStepAxis2 = false;
-      updateDeltaTarget();
-      if (deltaTargetAxis2 != 0 || inbacklashAxis2)
-      {                       // move the Dec stepper to the target
-          // telescope normally starts on the EAST side of the pier looking at the WEST sky
-        if (0 < deltaTargetAxis2)
-          dirAxis2 = 1;
-        else
-          dirAxis2 = 0;   // Direction control
-        if (ReverseAxis2^Axis2Reverse)
-        {
-          if (dirAxis2)
-            digitalWriteFast(Axis2DirPin, LOW);
-          else
-            digitalWriteFast(Axis2DirPin, HIGH);
-        }
-        else
-        {
-          if (dirAxis2)
-            digitalWriteFast(Axis2DirPin, HIGH);
-          else
-            digitalWriteFast(Axis2DirPin, LOW);
-        }
-
-        // telescope moving toward celestial pole in the sky, blAxis2 is the amount of opposite backlash
-        if (dirAxis2 == 1)
-        {
-          if (blAxis2 < StepsBacklashAxis2)
-          {
-            blAxis2 += stepAxis2;
-            inbacklashAxis2 = true;
-          }
-          else
-          {
-            inbacklashAxis2 = false;
-            posAxis2 += stepAxis2;
-          }
-        }
-        else
-        {
-          if (blAxis2 > 0)
-          {
-            blAxis2 -= stepAxis2;
-            inbacklashAxis2 = true;
-          }
-          else
-          {
-            inbacklashAxis2 = false;
-            posAxis2 -= stepAxis2;
-          }
-        }
-        takeStepAxis2 = true;
-      }
-      clearAxis2 = false;
-    }
-    else
-    {
-      if (takeStepAxis2)
+    takeStepAxis2 = false;
+    updateDeltaTarget();
+    if (deltaTargetAxis2 != 0 || inbacklashAxis2)
+    {                       // move the Dec stepper to the target
+        // telescope normally starts on the EAST side of the pier looking at the WEST sky
+      if (0 < deltaTargetAxis2)
+        dirAxis2 = 1;
+      else
+        dirAxis2 = 0;   // Direction control
+      if (ReverseAxis2^Axis2Reverse)
       {
-        digitalWriteFast(Axis2StepPin, HIGH);
+        if (dirAxis2)
+          digitalWriteFast(Axis2DirPin, LOW);
+        else
+          digitalWriteFast(Axis2DirPin, HIGH);
       }
-      clearAxis2 = true;
-      PIT_LDVAL2 = nextAxis2Rate * stepAxis2;
+      else
+      {
+        if (dirAxis2)
+          digitalWriteFast(Axis2DirPin, HIGH);
+        else
+          digitalWriteFast(Axis2DirPin, LOW);
+      }
+
+      // telescope moving toward celestial pole in the sky, blAxis2 is the amount of opposite backlash
+      if (dirAxis2 == 1)
+      {
+        if (blAxis2 < StepsBacklashAxis2)
+        {
+          blAxis2 += stepAxis2;
+          inbacklashAxis2 = true;
+        }
+        else
+        {
+          inbacklashAxis2 = false;
+          posAxis2 += stepAxis2;
+        }
+      }
+      else
+      {
+        if (blAxis2 > 0)
+        {
+          blAxis2 -= stepAxis2;
+          inbacklashAxis2 = true;
+        }
+        else
+        {
+          inbacklashAxis2 = false;
+          posAxis2 -= stepAxis2;
+        }
+      }
+      takeStepAxis2 = true;
     }
+    clearAxis2 = false;
   }
+  else
+  {
+    if (takeStepAxis2)
+    {
+      digitalWriteFast(Axis2StepPin, HIGH);
+    }
+    clearAxis2 = true;
+    PIT_LDVAL2 = nextAxis2Rate * stepAxis2;
+  }
+}
 

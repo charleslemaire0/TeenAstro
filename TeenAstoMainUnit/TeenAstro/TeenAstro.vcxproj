@@ -117,9 +117,6 @@
     <None Include="Command_GNSS.ino">
       <FileType>CppCode</FileType>
     </None>
-    <None Include="Command_L.ino">
-      <FileType>CppCode</FileType>
-    </None>
     <None Include="Command_M.ino">
       <FileType>CppCode</FileType>
     </None>

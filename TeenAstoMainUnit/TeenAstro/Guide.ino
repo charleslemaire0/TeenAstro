@@ -33,7 +33,7 @@ void Guide()
           cli();
           targetAxis1.fixed += guideAxis1.fixed;
           sei();
-     ;
+          ;
           if (GuidingState == GuidingPulse)
           {
             // for pulse guiding, count down the mS and stop when timed out

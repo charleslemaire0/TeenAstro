@@ -70,7 +70,7 @@ void Command_S(Command& process_command)
       commandError = true;
     else
     {
-      rtk.setClock(y, m, d, hour(), minute(), second(),*localSite.longitude(), 0);
+      rtk.setClock(y, m, d, hour(), minute(), second(), *localSite.longitude(), 0);
     }
     break;
   case 'e':
@@ -99,7 +99,7 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
   {
-    double longi= 0;
+    double longi = 0;
     if ((parameter[0] == '-') || (parameter[0] == '+'))
       i1 = 1;
     else
@@ -157,7 +157,7 @@ void Command_S(Command& process_command)
     i = highPrecision;
     highPrecision = true;
     int h1, m1, m2, s1;
-    if (!hmsToHms(&h1,&m1,&m2,&s1, parameter, highPrecision))
+    if (!hmsToHms(&h1, &m1, &m2, &s1, parameter, highPrecision))
       commandError = true;
     else
     {
@@ -261,7 +261,7 @@ void Command_S(Command& process_command)
   {
     i = highPrecision;
     highPrecision = false;
-    double lat=0;
+    double lat = 0;
     if (!dmsToDouble(&lat, parameter, true, highPrecision))
     {
       commandError = true;
@@ -279,7 +279,7 @@ void Command_S(Command& process_command)
   {
     if (parameter[0] == 'E' && parameter[1] == 'F')
     {
-      if (parameter[2] == '1' )
+      if (parameter[2] == '1')
       {
         refraction = true;
         XEEPROM.update(EE_refraction, refraction);
@@ -328,7 +328,7 @@ void Command_S(Command& process_command)
     getEqu(&f, &f1, false);
     _ra = f;
     _dec = f1;
-    XEEPROM.writeFloat(EE_RA, (float)_ra); 
+    XEEPROM.writeFloat(EE_RA, (float)_ra);
     XEEPROM.writeFloat(EE_DEC, (float)_dec);
     break;
   case 'X':
@@ -341,13 +341,13 @@ void Command_S(Command& process_command)
     {                   // 0n: Align Model
       switch (parameter[1])
       {
-      //case '0':
-      //  indexAxis1 = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
-      //  break;  // indexAxis1
+        //case '0':
+        //  indexAxis1 = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
+        //  break;  // indexAxis1
 
-      //case '1':
-      //  indexAxis2 = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
-      //  break;  // indexAxis2
+        //case '1':
+        //  indexAxis2 = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
+        //  break;  // indexAxis2
 
       case '2':
         /*GeoAlign.altCor = (double)strtol(&parameter[3], NULL,
@@ -449,10 +449,10 @@ void Command_S(Command& process_command)
       switch (parameter[1])
       {
       case '1': // Set the MaxRate in sideral Speed
-        
+
         break;
       case '2': // Set degree for acceleration
-        DegreesForAcceleration = min(max(0.1*(double)strtol(&parameter[3], NULL, 10),0.1), 25.0);
+        DegreesForAcceleration = min(max(0.1*(double)strtol(&parameter[3], NULL, 10), 0.1), 25.0);
         XEEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
         SetAcceleration();
         break;
@@ -469,7 +469,7 @@ void Command_S(Command& process_command)
         XEEPROM.update(EE_dpmW, round((minutesPastMeridianGOTOW*15.0) / 60.0) + 128);
         break;
       case 'B': // minutesPastMeridianW
-        underPoleLimitGOTO = (double)strtol(&parameter[3], NULL, 10)/10;
+        underPoleLimitGOTO = (double)strtol(&parameter[3], NULL, 10) / 10;
         if (underPoleLimitGOTO > 12) underPoleLimitGOTO = 12;
         if (underPoleLimitGOTO < 9) underPoleLimitGOTO = 9;
         XEEPROM.update(EE_dup, round(underPoleLimitGOTO*10.0));

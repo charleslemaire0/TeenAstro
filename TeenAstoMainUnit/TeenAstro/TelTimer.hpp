@@ -9,12 +9,12 @@ public:
   volatile long           m_lst = 0;                    // this is the local (apparent) sidereal time in 1/100 seconds (23h 56m 4.1s per day = 86400 clock seconds/
 private:
 
-//timers members
+  //timers members
   unsigned long           m_clockTimer = 0;                 // wall time base, one second counter
   long                    m_siderealTimer = 0;          // counter to issue steps during tracking
   long                    m_guideSiderealTimer = 0;     // counter to issue steps during guiding
 //tmp variable
-  time_t                  m_RTClock; 
+  time_t                  m_RTClock;
   double                  m_UT = 0.0;//tmp variable  
   double                  m_LT = 0.0;//tmp variable  
   double                  m_JD = 0.0;//tmp variable                  
@@ -180,7 +180,7 @@ private:
         1720994.5
         );  //+(Time/24.0);
   }
-    void greg(double JulianDay, int *Year, int *Month, int *Day)
+  void greg(double JulianDay, int *Year, int *Month, int *Day)
   {
     double  A,
       B,

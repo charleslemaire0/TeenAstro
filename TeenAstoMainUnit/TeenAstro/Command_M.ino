@@ -12,7 +12,7 @@ void Command_M(bool &supress_frame)
     //         2=No object selected
     //         4=Position unreachable
     //         6=Outside limits
-    i = goToHor(&newTargetAzm, &newTargetAlt, GetPierSide() );
+    i = goToHor(&newTargetAzm, &newTargetAlt, GetPierSide());
     reply[0] = i + '0';
     reply[1] = 0;
     quietReply = true;
@@ -43,11 +43,11 @@ void Command_M(bool &supress_frame)
         //          Returns: Nothing
     if ((atoi2((char *)&parameter[1], &i)) &&
       ((i > 0) && (i <= 16399)) && sideralTracking && !movingTo &&
-       (GuidingState != GuidingRecenter || GuidingState != GuidingST4))
-    {     
+      (GuidingState != GuidingRecenter || GuidingState != GuidingST4))
+    {
       if ((parameter[0] == 'e') || (parameter[0] == 'w'))
       {
-        enableGuideRate(0,false);
+        enableGuideRate(0, false);
         guideDirAxis1 = parameter[0];
         guideDurationLastAxis1 = micros();
         guideDurationAxis1 = (long)i * 1000L;
@@ -64,7 +64,7 @@ void Command_M(bool &supress_frame)
       else if ((parameter[0] == 'n') || (parameter[0] == 's'))
       {
 
-        enableGuideRate(0,false);
+        enableGuideRate(0, false);
         guideDirAxis2 = parameter[0];
         guideDurationLastAxis2 = micros();
         guideDurationAxis2 = (long)i * 1000L;
@@ -129,7 +129,7 @@ void Command_M(bool &supress_frame)
   //  quietReply = true;
   //  supress_frame = true;
   //}
-  break;
+    break;
 
   case 'S':
   {
@@ -145,7 +145,7 @@ void Command_M(bool &supress_frame)
         //         8=has a an Error
     double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     i = goToEqu(newTargetHA, newTargetDec, GetPierSide());
-    if (i==0)
+    if (i == 0)
     {
       sideralTracking = true;
       lastSetTrakingEnable = millis();
@@ -159,16 +159,16 @@ void Command_M(bool &supress_frame)
   }
   case 'U':
   {
-        //  :MU#   Goto the User Defined Target Object
-        //         Returns:
-        //         0=Goto is Possible
-        //         1=Object below horizon    Outside limits, below the Horizon limit
-        //         2=No object selected      Failure to resolve coordinates
-        //         4=Position unreachable    Not unparked
-        //         5=Busy                    Goto already active
-        //         6=Outside limits          Outside limits, above the Zenith limit
-        //         7=Guiding
-        //         8=has a an Error
+    //  :MU#   Goto the User Defined Target Object
+    //         Returns:
+    //         0=Goto is Possible
+    //         1=Object below horizon    Outside limits, below the Horizon limit
+    //         2=No object selected      Failure to resolve coordinates
+    //         4=Position unreachable    Not unparked
+    //         5=Busy                    Goto already active
+    //         6=Outside limits          Outside limits, above the Zenith limit
+    //         7=Guiding
+    //         8=has a an Error
     PierSide targetPierSide = GetPierSide();
     newTargetRA = (double)XEEPROM.readFloat(EE_RA);
     newTargetDec = (double)XEEPROM.readFloat(EE_DEC);
@@ -192,9 +192,9 @@ void Command_M(bool &supress_frame)
     double objectRa, objectHa, objectDec;
     char rastr[12];
     char decstr[12];
-    strncpy(rastr, parameter, 8*sizeof(char));
+    strncpy(rastr, parameter, 8 * sizeof(char));
     rastr[8] = 0;
-    strncpy(decstr, &parameter[8], 9*sizeof(char));
+    strncpy(decstr, &parameter[8], 9 * sizeof(char));
     decstr[9] = 0;
     if (!hmsToDouble(&objectRa, rastr, highPrecision))
     {
@@ -206,7 +206,7 @@ void Command_M(bool &supress_frame)
       commandError = true;
       return;
     }
-    objectHa = haRange(rtk.LST() * 15.0 - objectRa *15);
+    objectHa = haRange(rtk.LST() * 15.0 - objectRa * 15);
 
     byte side = predictSideOfPier(objectHa, objectDec, GetPierSide());
     if (side == 0) reply[0] = '?';
@@ -219,8 +219,8 @@ void Command_M(bool &supress_frame)
 
   case '@':
   {
-     //  :M@#   Start Spiral Search
-     //         Return 1
+    //  :M@#   Start Spiral Search
+    //         Return 1
     if (movingTo || GuidingState != GuidingOFF)
       commandError = true;
     else

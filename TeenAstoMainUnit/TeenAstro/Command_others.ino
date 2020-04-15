@@ -54,9 +54,9 @@ void Command_dollar()
   case 'G':
   {
     int i;
-    if ((parameter[0] == 'D' || parameter[0] == 'R' )
+    if ((parameter[0] == 'D' || parameter[0] == 'R')
       && strlen(parameter) > 1 && strlen(parameter) < 11
-      && atoi2( &parameter[1], &i) )
+      && atoi2(&parameter[1], &i))
     {
       if (parameter[0] == 'D')
       {
@@ -70,7 +70,7 @@ void Command_dollar()
       }
       else
       {
-        double fact = (double) i/GearAxis1;
+        double fact = (double)i / GearAxis1;
         cli();
         posAxis1 = fact *posAxis1;
         sei();
@@ -102,7 +102,7 @@ void Command_dollar()
         StepRotAxis2 = (unsigned int)i;
         XEEPROM.writeInt(EE_StepRotAxis2, i);
       }
-      else 
+      else
       {
         double fact = (double)i / StepRotAxis1;
         cli();
@@ -124,7 +124,7 @@ void Command_dollar()
     int i;
     if ((parameter[0] == 'D' || parameter[0] == 'R')
       && (strlen(parameter) > 1) && (strlen(parameter) < 4)
-      && atoi2( &parameter[1], &i)  && ((i >= 3) && (i < 9)))
+      && atoi2(&parameter[1], &i) && ((i >= 3) && (i < 9)))
     {
       if (parameter[0] == 'D')
       {
@@ -133,7 +133,7 @@ void Command_dollar()
         posAxis2 = fact *posAxis2;
         sei();
         StopAxis2();
-        MicroAxis2 = i;       
+        MicroAxis2 = i;
         motorAxis2.setMicrostep(MicroAxis2);
         XEEPROM.write(EE_MicroAxis2, MicroAxis2);
       }
@@ -156,9 +156,9 @@ void Command_dollar()
   break;
   case 'R':
   {
-    if ((parameter[0] == 'D' || parameter[0] == 'R') 
+    if ((parameter[0] == 'D' || parameter[0] == 'R')
       && (strlen(parameter) > 1) && (strlen(parameter) < 3)
-      && (parameter[1]== '0' || parameter[1] ==  '1'))
+      && (parameter[1] == '0' || parameter[1] == '1'))
     {
       if (parameter[0] == 'D')
       {
@@ -201,10 +201,10 @@ void Command_dollar()
       {
         if (command[1] == 'C')
         {
-          HighCurrAxis1 = (u_int8_t)i ;
+          HighCurrAxis1 = (u_int8_t)i;
           XEEPROM.write(EE_HighCurrAxis1, HighCurrAxis1);
         }
-        else 
+        else
         {
           LowCurrAxis1 = (u_int8_t)i;
           XEEPROM.write(EE_LowCurrAxis1, LowCurrAxis1);
@@ -225,7 +225,7 @@ void Command_dollar()
       && ((i >= 0) && (i <= 127)))
     {
       i = i - 64;
-      
+
       if (parameter[0] == 'D')
       {
         motorAxis2.setSG(i);
@@ -499,18 +499,18 @@ void Command_A()
     {
       hasStarAlignment = true;
       cli();
-        targetAxis1.part.m = posAxis1;
-        targetAxis1.part.f = 0;
-        targetAxis2.part.m = posAxis2;
-        targetAxis2.part.f = 0
-      sei();
+      targetAxis1.part.m = posAxis1;
+      targetAxis1.part.f = 0;
+      targetAxis2.part.m = posAxis2;
+      targetAxis2.part.f = 0
+        sei();
     }
     break;
   }
   default:
     commandError = true;
   }
-    
+
 }
 
 
@@ -527,7 +527,7 @@ void Command_B()
 #ifdef RETICULE_LED_PINS
   if (reticuleBrightness > 255) reticuleBrightness = 255;
   if (reticuleBrightness < 31) reticuleBrightness = 31;
-  
+
   if (command[1] == '-') reticuleBrightness /= 1.4;
   if (command[1] == '+') reticuleBrightness *= 1.4;
 
@@ -550,8 +550,8 @@ void Command_B()
 void Command_C()
 {
   if ((parkStatus == PRK_UNPARKED) &&
-      !movingTo &&
-      ( command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
+    !movingTo &&
+    (command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
   {
     PierSide targetPierSide = GetPierSide();
     if (newTargetPierSide != PIER_NOTVALID)
@@ -878,8 +878,8 @@ void Command_T()
   default:
     commandError = true;
     break;
-}
-            
+  }
+
   // Only burn the new rate if changing the sidereal interval
   if ((!commandError) && ((command[1] == '+') || (command[1] == '-') ||
     (command[1] == 'R')))

@@ -23,13 +23,13 @@ double apparentRefrac(double Alt, double Pressure = 1010.0, double Temperature =
   return r;
 }
 
-void Topocentric2Apparent(double *Alt, double Pressure=1010.0, double Temperature=10.0)
+void Topocentric2Apparent(double *Alt, double Pressure = 1010.0, double Temperature = 10.0)
 {
   if (refraction)
     *Alt += trueRefrac(*Alt, Pressure, Temperature) / 60.0;
 }
 
-void Apparent2Topocentric(double *Alt, double Pressure=1010.0, double Temperature=10.0)
+void Apparent2Topocentric(double *Alt, double Pressure = 1010.0, double Temperature = 10.0)
 {
   if (refraction)
     *Alt += apparentRefrac(*Alt, Pressure, Temperature) / 60;
@@ -37,28 +37,28 @@ void Apparent2Topocentric(double *Alt, double Pressure=1010.0, double Temperatur
 
 // convert equatorial coordinates to horizon
 // this takes approx. 363muS on a teensy 3.2 @ 72 Mhz
-void EquToHorTopo(double HA, double Dec,  double *Azm, double *Alt)
+void EquToHorTopo(double HA, double Dec, double *Azm, double *Alt)
 {
-    while (HA < 0.0) HA = HA + 360.0;
-    while (HA >= 360.0) HA = HA - 360.0;
-    HA = HA / Rad;
-    Dec = Dec / Rad;
+  while (HA < 0.0) HA = HA + 360.0;
+  while (HA >= 360.0) HA = HA - 360.0;
+  HA = HA / Rad;
+  Dec = Dec / Rad;
 
-    //double  SinAlt = (sin(Dec) * localSite.sinLat()) + (cos(Dec) * localSite.cosLat() * cos(HA));
-    double cosHA = cos(HA);
-    double sinHA = sin(HA);
-    double cosDec = cos(Dec);
-    double sinDec = sin(Dec);
-    double  SinAlt = (sinDec * localSite.sinLat()) + (cosDec * localSite.cosLat() * cosHA);
-    *Alt = asin(SinAlt);
-    double  t1 = sinHA;
-    double  t2 = cosHA * localSite.sinLat() - sinDec/cosDec * localSite.cosLat();
-    *Azm = atan2(t1, t2) * Rad;
-    *Azm = *Azm + 180.0;
-    *Alt = *Alt * Rad;
+  //double  SinAlt = (sin(Dec) * localSite.sinLat()) + (cos(Dec) * localSite.cosLat() * cos(HA));
+  double cosHA = cos(HA);
+  double sinHA = sin(HA);
+  double cosDec = cos(Dec);
+  double sinDec = sin(Dec);
+  double  SinAlt = (sinDec * localSite.sinLat()) + (cosDec * localSite.cosLat() * cosHA);
+  *Alt = asin(SinAlt);
+  double  t1 = sinHA;
+  double  t2 = cosHA * localSite.sinLat() - sinDec / cosDec * localSite.cosLat();
+  *Azm = atan2(t1, t2) * Rad;
+  *Azm = *Azm + 180.0;
+  *Alt = *Alt * Rad;
 }
 
-void EquToHorApp(double HA, double Dec,  double *Azm, double *Alt)
+void EquToHorApp(double HA, double Dec, double *Azm, double *Alt)
 {
   EquToHorTopo(HA, Dec, Azm, Alt);
   Topocentric2Apparent(Alt);
@@ -67,22 +67,22 @@ void EquToHorApp(double HA, double Dec,  double *Azm, double *Alt)
 // convert horizon coordinates to equatorial
 
 // this takes approx. 1.4mS
-void HorTopoToEqu( double Azm, double Alt, double *HA, double *Dec)
+void HorTopoToEqu(double Azm, double Alt, double *HA, double *Dec)
 {
-    while (Azm < 0) Azm = Azm + 360.0;
-    while (Azm >= 360.0) Azm = Azm - 360.0;
+  while (Azm < 0) Azm = Azm + 360.0;
+  while (Azm >= 360.0) Azm = Azm - 360.0;
 
-    Alt = Alt / Rad;
-    Azm = Azm / Rad;
+  Alt = Alt / Rad;
+  Azm = Azm / Rad;
 
-    double  SinDec = (sin(Alt) * localSite.sinLat()) + (cos(Alt) * localSite.cosLat() * cos(Azm));
-    *Dec = asin(SinDec);
+  double  SinDec = (sin(Alt) * localSite.sinLat()) + (cos(Alt) * localSite.cosLat() * cos(Azm));
+  *Dec = asin(SinDec);
 
-    double  t1 = sin(Azm);
-    double  t2 = cos(Azm) * localSite.sinLat() - tan(Alt) * localSite.cosLat();
-    *HA = atan2(t1, t2) * Rad;
-    *HA = *HA + 180.0;
-    *Dec = *Dec * Rad;
+  double  t1 = sin(Azm);
+  double  t2 = cos(Azm) * localSite.sinLat() - tan(Alt) * localSite.cosLat();
+  *HA = atan2(t1, t2) * Rad;
+  *HA = *HA + 180.0;
+  *Dec = *Dec * Rad;
 }
 
 void HorAppToEqu(double Azm, double Alt, double *HA, double *Dec)
@@ -101,27 +101,27 @@ double  az_deltaRateScale = 1.0;
 // trackingTimerRateAxis1/2 are x the sidereal rate
 void SetDeltaTrackingRate()
 {
-    trackingTimerRateAxis1 = az_deltaAxis1 / 15.0;
-    trackingTimerRateAxis2 = az_deltaAxis2 / 15.0;
+  trackingTimerRateAxis1 = az_deltaAxis1 / 15.0;
+  trackingTimerRateAxis2 = az_deltaAxis2 / 15.0;
 
-    fstepAxis1.fixed = doubleToFixed((StepsPerSecondAxis1 * trackingTimerRateAxis1) / 100.0);
-    fstepAxis2.fixed = doubleToFixed((StepsPerSecondAxis2 * trackingTimerRateAxis2) / 100.0);
+  fstepAxis1.fixed = doubleToFixed((StepsPerSecondAxis1 * trackingTimerRateAxis1) / 100.0);
+  fstepAxis2.fixed = doubleToFixed((StepsPerSecondAxis2 * trackingTimerRateAxis2) / 100.0);
 }
 
 void SetTrackingRate(double r)
 {
-    az_deltaRateScale = r;
-    if (!isAltAZ())
-    {
-      az_deltaAxis1 = r * 15.0;
-      az_deltaAxis2 = 0.0;
-    }
-    SetDeltaTrackingRate();
+  az_deltaRateScale = r;
+  if (!isAltAZ())
+  {
+    az_deltaAxis1 = r * 15.0;
+    az_deltaAxis2 = 0.0;
+  }
+  SetDeltaTrackingRate();
 }
 
 double GetTrackingRate()
 {
-    return az_deltaRateScale;
+  return az_deltaRateScale;
 }
 
 
@@ -129,7 +129,7 @@ double GetTrackingRate()
 boolean do_compensation_calc()
 {
   boolean done = false;
-  
+
   static long axis1_before, axis1_after = 0;
   static long axis2_before, axis2_after = 0;
   static double Axis1_tmp, Axis2_tmp = 0;
@@ -179,8 +179,8 @@ boolean do_compensation_calc()
   case 120:
     // we have both -0.5hr and +0.5hr values // calculate tracking rate deltas'
                // handle coordinate wrap
-    if ((axis1_after < -halfRotAxis1) && (axis1_before > halfRotAxis1)) axis1_after += 2*halfRotAxis1;
-    if ((axis1_before < -halfRotAxis1) && (axis1_after > halfRotAxis1)) axis1_after += 2*halfRotAxis1;
+    if ((axis1_after < -halfRotAxis1) && (axis1_before > halfRotAxis1)) axis1_after += 2 * halfRotAxis1;
+    if ((axis1_before < -halfRotAxis1) && (axis1_after > halfRotAxis1)) axis1_after += 2 * halfRotAxis1;
     // set rates
 
     az_deltaAxis1 = (distStepAxis1(axis1_before, axis1_after) / StepsPerDegreeAxis1 * (15.0 / (AltAzTrackingRange / 60.0)) / 2.0) * az_deltaRateScale;
@@ -210,37 +210,37 @@ boolean do_compensation_calc()
 
 double haRange(double d)
 {
-    while (d >= 180.0) d -= 360.0;
-    while (d < -180.0) d += 360.0;
-    return d;
+  while (d >= 180.0) d -= 360.0;
+  while (d < -180.0) d += 360.0;
+  return d;
 }
 
 double AzRange(double d)
 {
-    while (d >= 360.0 ) d -= 360.0;
-    while (d < 0.0 ) d += 360.0;
-    return d;
+  while (d >= 360.0) d -= 360.0;
+  while (d < 0.0) d += 360.0;
+  return d;
 }
 
 
 double degRange(double d)
 {
-    while (d >= 360.0) d -= 360.0;
-    while (d < 0.0) d += 360.0;
-    return d;
+  while (d >= 360.0) d -= 360.0;
+  while (d < 0.0) d += 360.0;
+  return d;
 }
 
 double dist(double a, double b)
 {
-    if (a > b)
-        return a - b;
-    else
-        return b - a;
+  if (a > b)
+    return a - b;
+  else
+    return b - a;
 }
 
 double angDist(double h, double d, double h1, double d1)
 {
-    return acos(sin(d / Rad) * sin(d1 / Rad) + cos(d / Rad) * cos(d1 / Rad) * cos((h1 - h) / Rad)) * Rad;
+  return acos(sin(d / Rad) * sin(d1 / Rad) + cos(d / Rad) * cos(d1 / Rad) * cos((h1 - h) / Rad)) * Rad;
 }
 
 void initMaxRate()
@@ -257,12 +257,12 @@ void initMaxRate()
 // Acceleration rate calculation
 double SetRates(double maxslewrate)
 {
-   // set the new acceleration rate
+  // set the new acceleration rate
   double fact = 3600 / 15 * 1 / ((double)StepsPerDegreeAxis1 * 1 / 16 / 1000000.0);
   maxRate = max(fact / maxslewrate, (MaxRate / 2L) * 16L);
   maxslewrate = fact / maxRate;
   guideRates[9] = maxslewrate;
-  guideRates[8] = maxslewrate /2.;
+  guideRates[8] = maxslewrate / 2.;
   resetGuideRate();
   SetAcceleration();
   return maxslewrate;
@@ -272,8 +272,8 @@ void SetAcceleration()
 {
   double Vmax = getV(maxRate);
   cli();
-    AccAxis1 = Vmax / (2. * DegreesForAcceleration * StepsPerDegreeAxis1)*Vmax;
-    AccAxis2 = Vmax / (2. * DegreesForAcceleration * StepsPerDegreeAxis2)*Vmax;
+  AccAxis1 = Vmax / (2. * DegreesForAcceleration * StepsPerDegreeAxis1)*Vmax;
+  AccAxis2 = Vmax / (2. * DegreesForAcceleration * StepsPerDegreeAxis2)*Vmax;
   sei();
 }
 
@@ -361,14 +361,14 @@ void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2)
   }
 }
 
-long distStepAxis1( long start, long end)
+long distStepAxis1(long start, long end)
 {
   return end - start;
 }
 
 long distStepAxis2(long start, long end)
 {
- return end - start;
+  return end - start;
 }
 
 bool isAltAZ()

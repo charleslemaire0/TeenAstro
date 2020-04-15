@@ -23,7 +23,7 @@ Again:
   // adjust rates near the horizon to help keep from exceeding the minAlt limit
   if (!isAltAZ())
   {
-    if ( tempPosAxis2 != lastPosAxis2) {
+    if (tempPosAxis2 != lastPosAxis2) {
       bool decreasing = tempPosAxis2 < lastPosAxis2;
       if (GetPierSide() >= PIER_WEST)
         decreasing = !decreasing;
@@ -59,18 +59,18 @@ Again:
     cli();
     // recompute distances
     updateDeltaTarget();
-    long a = pow(getV(timerRateAxis1),2.) / (2. * AccAxis1);
+    long a = pow(getV(timerRateAxis1), 2.) / (2. * AccAxis1);
     if (abs(deltaTargetAxis1) > a)
     {
       if (0 > deltaTargetAxis1)
         a = -a;
       cli()
-      targetAxis1.part.m = posAxis1 + a;
+        targetAxis1.part.m = posAxis1 + a;
       targetAxis1.part.f = 0;
       sei();
     }
     guideDirAxis1 = 'b';
-    a = pow(getV(timerRateAxis2),2.) / (2. * AccAxis2);
+    a = pow(getV(timerRateAxis2), 2.) / (2. * AccAxis2);
     if (abs(deltaTargetAxis2) > a)
     {
       if (0 > deltaTargetAxis2) // overshoot
@@ -103,7 +103,7 @@ Again:
     temp = getRate(sqrt(distDestAxis1 * 2 * AccAxis1)); // slow down (temp gets bigger)
   }
   else
-  { 
+  {
     temp = getRate(sqrt(distStartAxis1 * 2 * AccAxis1)); // speed up (temp gets smaller)
   }
   if (temp < maxRate) temp = maxRate;                            // fastest rate
@@ -111,7 +111,7 @@ Again:
   cli(); timerRateAxis1 = temp; sei();
 
   // Now, for Declination
-  
+
   if (distStartAxis2 >= distDestAxis2)
   {
     temp = getRate(sqrt(distDestAxis2 * 2 * AccAxis2)); // slow down
@@ -205,14 +205,14 @@ bool DecayModeTrack = false;
 void DecayModeTracking() {
   if (DecayModeTrack) return;
   DecayModeTrack = true;
-  motorAxis1.setCurrent((unsigned int)LowCurrAxis1*10);
-  motorAxis2.setCurrent((unsigned int)LowCurrAxis2*10);
+  motorAxis1.setCurrent((unsigned int)LowCurrAxis1 * 10);
+  motorAxis2.setCurrent((unsigned int)LowCurrAxis2 * 10);
 }
 
 void DecayModeGoto() {
   if (!DecayModeTrack) return;
   DecayModeTrack = false;
-  motorAxis1.setCurrent((unsigned int)HighCurrAxis1*10);
-  motorAxis2.setCurrent((unsigned int)HighCurrAxis2*10);
+  motorAxis1.setCurrent((unsigned int)HighCurrAxis1 * 10);
+  motorAxis2.setCurrent((unsigned int)HighCurrAxis2 * 10);
 }
 
