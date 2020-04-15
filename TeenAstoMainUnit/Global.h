@@ -18,11 +18,11 @@
 TinyGPSPlus gps;
 CoordConv alignment;
 bool hasStarAlignment = false;
-enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT};
-enum PierSide {PIER_NOTVALID, PIER_EAST, PIER_WEST};
-enum MeridianFlip {FLIP_NEVER,FLIP_ALIGN,FLIP_ALWAYS};
-enum CheckMode {CHECKMODE_GOTO, CHECKMODE_TRACKING};
-enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED,  PRK_UNKNOW };
+enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
+enum PierSide { PIER_NOTVALID, PIER_EAST, PIER_WEST };
+enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
+enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
+enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW };
 
 ParkState parkStatus = PRK_UNPARKED;
 boolean parkSaved = false;
@@ -271,7 +271,7 @@ double          guideRates[10] =
   0.25 , 0.5 , 1.0 , 2.0 , 4.0 , 16.0, 32.0 , 64.0, 64.0, 64.0
 };
 
-//                      .25X .5x 1x 2x 4x  8x 24x 48x half-MaxRate MaxRate
+//.25X .5x 1x 2x 4x  8x 24x 48x half-MaxRate MaxRate
 volatile byte   activeGuideRate = GuideRateNone;
 
 volatile byte   guideDirAxis1 = 0;
