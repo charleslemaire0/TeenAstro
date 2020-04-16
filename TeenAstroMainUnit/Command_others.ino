@@ -454,9 +454,9 @@ void Command_A()
     double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
     EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt);
-    if (alignebt.getRefs == 0)
+    if (alignment.getRefs == 0)
     {
-      syncAzAlt(Azm, Alt, targetPierSide);
+      syncAzAlt(Azm, Alt, GetPierSide());
     }
 
     cli();
@@ -486,9 +486,9 @@ void Command_A()
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
     EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt);
-    if (alignebt.getRefs == 0)
+    if (alignment.getRefs == 0)
     {
-      syncAzAlt(Azm, Alt, targetPierSide);
+      syncAzAlt(Azm, Alt, GetPierSide());
     }
     cli();
     double Axis1 = posAxis1 / StepsPerDegreeAxis1;
