@@ -473,7 +473,14 @@ void SmartHandController::update()
     display->sleepOff();
     DisplayMessage(T_PRESS_KEY, T_TO_REBOOT "...", -1);
     DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
+
+#ifdef ARDUINO_D1_MINI32
+    ESP.restart();
+#endif
+#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
     ESP.reset();
+#endif
+
     return;
   }
   if (ta_MountStatus.notResponding())
@@ -481,7 +488,14 @@ void SmartHandController::update()
     display->sleepOff();
     DisplayMessage("!! " T_ERROR " !!", T_NOT_CONNECTED, -1);
     DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
+
+#ifdef ARDUINO_D1_MINI32
+    ESP.restart();
+#endif
+#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
     ESP.reset();
+#endif
+
   }
   if (ta_MountStatus.isAlignSelect())
   {
