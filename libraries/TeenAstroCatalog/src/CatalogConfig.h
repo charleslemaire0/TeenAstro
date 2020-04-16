@@ -11,19 +11,7 @@
 // ngc_select_c.h // for a selection of the brighter objects from the ngc catalog at somewhat reduced accuracy.
 
 // Note: You can navigate to and open the SmartHandController's catalogs directory in the Arduino IDE to see the available catalogs.
-#ifdef ESP32
-  #include "catalogs/stars.h"           // Catalog of 408 bright stars
-  #include "catalogs/stf.h"             // Struve STF catalog, limited to 4313 double stars
-  #include "catalogs/stt.h"             // Struve STT catalog, limited to 766 double stars
-  #include "catalogs/gcvs.h"            // General Catalog of Variable Stars, limited to 4478 stars brighter than Magnitude 11 w/ a difference in magnitude of >1 
-//#include "catalogs/carbon.h"          // Carbon Variable Stars, S&T list of 101 stars
-  #include "catalogs/messier.h"         // Charles Messier's famous catalog of 109 DSO's
-  #include "catalogs/caldwell.h"        // The Caldwell (supplement) catalog of 109 DSO's
-  #include "catalogs/herschel.h"        // Herschel's "400 best of the NGC" catalog
-  #include "catalogs/collinder.h"       // The Collinder catalog of 471 open clusters
-  #include "catalogs/ngc.h"             // The New General Catalog of 8154 DSO's
-  #include "catalogs/ic.h"              // The Index Catalog (supplement) of 5400 DSO's
-#else // Teensy3.2
+
   #include "catalogs/ta_stars_vc.h"        // Catalog of 408 bright stars
   #include "catalogs/ta_stf_select_c.h"    // Struve STF catalog, limited to 595 double stars brighter than Magnitude 8.5
   #include "catalogs/ta_stt_select_c.h"    // Struve STT catalog, limited to 114 double stars brighter than Magnitude 8.5
@@ -35,7 +23,7 @@
 //  #include "catalogs/ta_collinder_vc.h"    // The Collinder catalog of 471 open clusters
   #include "catalogs/ta_ngc_select_c.h"    // The New General Catalog of 2367 DSO's, limited to Magnitude 16 AND with surface brightness >= 22.5m/arc-sec^2
   #include "catalogs/ta_ic_select_c.h"     // The Index Catalog (supplement) of 473 DSO's, limited to Magnitude 16 AND with surface brightness >= 22.5m/arc-sec^2
-#endif
+
 
 // Note: There should be a matching line below for every catalog #included above (catalogs appear in the menus in the order the appear below):
 //catalog_t catalog[] = {
