@@ -155,37 +155,16 @@ const char html_controlFocus5[] PROGMEM =
 const char html_controlFocus6[] PROGMEM =
 "</div><br class='clear' />\r\n";
 
-#ifdef ROTATOR_ON
-const char html_controlRotate0[] PROGMEM =
-"<div class='b1' style='width: 27em'>";
-const char html_controlRotate1[] PROGMEM =
-"<button class='bbh' type='button' style='height: 2.1em' onpointerdown=\"gf('re')\" >Reset</button>"
-"<button class='bbh' type='button' style='height: 2.1em' onpointerdown=\"gf('ho')\" >Go Home</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-const char html_controlRotate2[] PROGMEM =
-"<button class='bbh' type='button' style='height: 2.1em' onpointerdown=\"gf('b2')\" >" ARROW_LL "</button>"
-"<button class='bbh' type='button' style='width: 2em' onpointerdown=\"gf('b1')\" >" ARROW_L "</button>";
-const char html_controlRotate3[] PROGMEM =
-"<button class='bbh' type='button' style='width: 2em' onpointerdown=\"gf('f1')\" >" ARROW_R "</button>"
-"<button class='bbh' type='button' style='height: 2.1em' onpointerdown=\"gf('f2')\" >" ARROW_RR "</button><br />";
-const char html_controlDeRotate1[] PROGMEM =
-"<button type='button' onpointerdown=\"gf('d1')\" >De-Rotate On</button>&nbsp;&nbsp;&nbsp;"
-"<button type='button' onpointerdown=\"gf('dr')\" >Rev</button>";
-const char html_controlDeRotate2[] PROGMEM =
-"<button type='button' onpointerdown=\"gf('dp')\" >P</button>&nbsp;&nbsp;&nbsp;"
-"<button type='button' onpointerdown=\"gf('d0')\" >De-Rotate Off</button>";
-const char html_controlRotate4[] PROGMEM =
-"</div><br class='clear' />\r\n";
-#endif
-
 
 const char html_controlEnd[] =
 "<br />\r\n";
 
 
-void wifibluetooth::handleControl() {
+void wifibluetooth::handleControl()
+{
   Ser.setTimeout(WebTimeout);
   sendHtmlStart();
-  char temp1[80]="";
+  char temp1[80] = "";
   String data;
   processControlGet();
   preparePage(data, 2);
@@ -232,18 +211,11 @@ void wifibluetooth::handleControl() {
   data += FPSTR(html_controlQuick3);
   sendHtml(data);
 
-
-
   // Guiding -------------------------------------------------
   data += FPSTR(html_controlGuide);
 
-
-  // Focusing ------------------------------------------------
-  boolean Focuser1; if (GetLX200(":FV#", temp1, sizeof(temp1)) == LX200VALUEGET) Focuser1 = true; else Focuser1 = false;
-  //Focuser1 = true;
-  boolean Focuser2 = false;
-  /* boolean Focuser2; if (sendCommand(":fA#",temp1,R_BOOL)) Focuser2=true; else Focuser2=false;*/
-  if (Focuser1) {
+  if (ta_MountStatus.hasFocuser())
+  {
     data += FPSTR(html_controlFocus1);
     data += "<div style='float: left;'>Focuser:</div><div style='float: right; text-align: right;' id='focuserpos'>?</div><br />";
     data += FPSTR(html_controlFocus3);
@@ -251,7 +223,6 @@ void wifibluetooth::handleControl() {
     data += FPSTR(html_controlFocus5);
     data += FPSTR(html_controlFocus6);
     sendHtml(data);
-
   }
 
   // Tracking control ----------------------------------------
@@ -260,26 +231,28 @@ void wifibluetooth::handleControl() {
   data += FPSTR(html_controlTrack3);
   data += FPSTR(html_controlTrack4);
   sendHtml(data);
-#ifdef OETHS
-  client->print(data); data="";
-#endif
+
 
 #ifdef ALIGN_ON
   // Get the align mode --------------------------------------
   data += FPSTR(html_controlAlign1);
-  if (mountStatus.alignMaxStars()<=3) {
-    for (int i=1; i<=mountStatus.alignMaxStars(); i++) { char temp2[120]=""; sprintf_P(temp2,html_controlAlign2,i,i,SIDEREAL_CH); data+=temp2; }
-  } else {
-    char temp2[120]="";
-    sprintf_P(temp2,html_controlAlign2,1,1,SIDEREAL_CH); data+=temp2;
-    sprintf_P(temp2,html_controlAlign2,4,4,SIDEREAL_CH); data+=temp2;
-    sprintf_P(temp2,html_controlAlign2,6,6,SIDEREAL_CH); data+=temp2;
+  if (mountStatus.alignMaxStars() <= 3)
+  {
+    for (int i = 1; i <= mountStatus.alignMaxStars(); i++)
+    {
+      char temp2[120] = ""; sprintf_P(temp2, html_controlAlign2, i, i, SIDEREAL_CH); data += temp2;
+    }
+  }
+  else
+  {
+    char temp2[120] = "";
+    sprintf_P(temp2, html_controlAlign2, 1, 1, SIDEREAL_CH); data += temp2;
+    sprintf_P(temp2, html_controlAlign2, 4, 4, SIDEREAL_CH); data += temp2;
+    sprintf_P(temp2, html_controlAlign2, 6, 6, SIDEREAL_CH); data += temp2;
   }
   data += FPSTR(html_controlAlign3);
 #endif
-#ifdef OETHS
-  client->print(data); data="";
-#endif
+
 
   // Tracking ------------------------------------------------
   data += FPSTR(html_controlTrack10);
@@ -287,148 +260,24 @@ void wifibluetooth::handleControl() {
   //Goto Sync
   data += FPSTR(html_controlParkHome);
 
-  // Rotate/De-Rotate ----------------------------------------
-#ifdef ROTATOR_ON
-  boolean Rotate=false;
-  boolean DeRotate=false;
-  if (sendCommand(":GX98#",temp1)) {
-    if (temp1[0]=='R') Rotate=true;
-    if (temp1[0]=='D') { Rotate=true; DeRotate=true; }
-  }
-  if (Rotate) {
-    data += FPSTR(html_controlRotate0);
-    data += "<div style='float: left;'>Rotator:</div><div style='float: right; text-align: right;' id='rotatorpos'>?</div><br />";
-    data += FPSTR(html_controlRotate1);
-    data += FPSTR(html_controlRotate2);
-    data += FPSTR(html_controlRotate3);
-  }
-  if (DeRotate) {
-    data += FPSTR(html_controlDeRotate1);
-    data += FPSTR(html_controlDeRotate2);
-  }
-  if (Rotate) {
-    data += FPSTR(html_controlRotate4);
-
-#ifdef OETHS
-    client->print(data); data="";
-#endif
-  }
-#endif
-  // Aux -----------------------------------------------------
-  #if defined(SW0) || defined(SW1) || defined(SW2) || defined(SW3) || defined(SW4) || defined(SW5) || defined(SW6) || defined(SW7) || defined(SW8) || defined(SW9) || defined(SW10) || defined(SW11) || defined(SW12) || defined(SW13) || defined(SW14) || defined(SW15) || defined(AN3) || defined(AN4) || defined(AN5) || defined(AN6) || defined(AN7) || defined(AN8)
-    data += html_controlAuxB;
-    // Digital Control
-    int c=0;
-    #ifdef SW0
-    data += html_controlSwitch0; c++;
-    #endif
-    #ifdef SW1
-    data += html_controlSwitch1; c++;
-    #endif
-    #ifdef SW2
-    data += html_controlSwitch2; c++;
-    #endif
-    #ifdef SW3
-    data += html_controlSwitch3; c++;
-    #endif
-    #ifdef SW4
-    data += html_controlSwitch4; c++;
-    #endif
-    #ifdef SW5
-    data += html_controlSwitch5; c++;
-    #endif
-    #ifdef SW6
-    data += html_controlSwitch6; c++;
-    #endif
-    #ifdef SW7
-    data += html_controlSwitch7; c++;
-    #endif
-    #ifdef SW8
-    data += html_controlSwitch8; c++;
-    #endif
-    #ifdef SW9
-    data += html_controlSwitch9; c++;
-    #endif
-    #ifdef SW10
-    data += html_controlSwitch10; c++;
-    #endif
-    #ifdef SW11
-    data += html_controlSwitch11; c++;
-    #endif
-    #ifdef SW12
-    data += html_controlSwitch12; c++;
-    #endif
-    #ifdef SW13
-    data += html_controlSwitch13; c++;
-    #endif
-    #ifdef SW14
-    data += html_controlSwitch14; c++;
-    #endif
-    #ifdef SW15
-    data += html_controlSwitch15; c++;
-    #endif
-    if (c>0) data+="<br />";
-
-#ifdef OETHS
-    client->print(data); data="";
-#endif
-
-    // Analog Control
-    #ifdef AN3
-    if (sendCommand(":GXG3#",temp1)) { data += html_controlAnalog3A; data += temp1; data += html_controlAnalog3B; data += temp1; data += html_controlAnalog3C; }
-    #endif
-    #ifdef AN4
-    if (sendCommand(":GXG4#",temp1)) { data += html_controlAnalog4A; data += temp1; data += html_controlAnalog4B; data += temp1; data += html_controlAnalog4C; }
-    #endif
-    #ifdef AN5
-    if (sendCommand(":GXG5#",temp1)) { data += html_controlAnalog5A; data += temp1; data += html_controlAnalog5B; data += temp1; data += html_controlAnalog5C; }
-    #endif
-    #ifdef AN6
-    if (sendCommand(":GXG6#",temp1)) { data += html_controlAnalog6A; data += temp1; data += html_controlAnalog6B; data += temp1; data += html_controlAnalog6C; }
-    #endif
-    #ifdef AN7
-    if (sendCommand(":GXG7#",temp1)) { data += html_controlAnalog7A; data += temp1; data += html_controlAnalog7B; data += temp1; data += html_controlAnalog7C; }
-    #endif
-    #ifdef AN8
-    if (sendCommand(":GXG8#",temp1)) { data += html_controlAnalog8A; data += temp1; data += html_controlAnalog8B; data += temp1; data += html_controlAnalog8C; }
-    #endif
-
-    data += html_controlAuxE;
-  #endif
-
   data += html_controlEnd;
-
   data += "</div></body></html>";
-
-#ifdef OETHS
-  client->print(data);
-#else
   //server.send(200, "text/html",data);
   sendHtml(data);
   sendHtmlDone(data);
-#endif
 }
 
-#ifdef OETHS
-void guideAjax(EthernetClient *client) {
-#else
-void wifibluetooth::guideAjax() {
-#endif
+void wifibluetooth::guideAjax()
+{
   processControlGet();
-#ifdef OETHS
-  client->print("");
-#else
-  server.send(200, "text/html","");
-#endif
+  server.send(200, "text/html", "");
 }
 
-#ifdef OETHS
-void wifibluetooth::controlAjax(EthernetClient *client) {
-#else
-void wifibluetooth::controlAjax() {
-#endif
-  String data="";
-  char temp[40]="";
+
+void wifibluetooth::controlAjax()
+{
+  String data = "";
+  char temp[40] = "";
   data += "focuserpos|";
   ta_MountStatus.updateFocuser();
   strcpy(temp, ta_MountStatus.getFocuser());
@@ -439,36 +288,8 @@ void wifibluetooth::controlAjax() {
   temp[16] = 0;
   data += &temp[11];
   data += "&deg C";
-#ifdef ROTATOR_ON
-  data += "rotatorpos|";
-  if (sendCommand(":rG#",temp)) { temp[9]=temp[5]; temp[10]=temp[6]; temp[11]=0; temp[4]='&'; temp[5]='d'; temp[6]='e'; temp[7]='g'; temp[8]=';'; data += temp; data += "&#39;\n"; } else { data += "?\n"; }
-#endif
 
-  #ifdef AN3
-    data += "an3v|"; if (sendCommand(":GXG3#",temp)) { data += temp; data += "\n"; } else { data += "?\n"; }
-  #endif
-  #ifdef AN4
-    data += "an4v|"; if (sendCommand(":GXG4#",temp)) { data += temp; data += "\n"; } else { data += "?\n"; }
-  #endif
-  #ifdef AN5
-    data += "an5v|"; if (sendCommand(":GXG5#",temp)) { data += temp; data += "\n"; } else { data += "?\n"; }
-  #endif
-  #ifdef AN6
-    data += "an6v|"; if (sendCommand(":GXG6#",temp)) { data += temp; data += "\n"; } else { data += "?\n"; }
-  #endif
-  #ifdef AN7
-    data += "an7v|"; if (sendCommand(":GXG7#",temp)) { data += temp; data += "\n"; } else { data += "?\n"; }
-  #endif
-  #ifdef AN8
-    data += "an8v|"; if (sendCommand(":GXG8#",temp)) { data += temp; data += "\n"; } else { data += "?\n"; }
-  #endif
-
-#ifdef OETHS
-  client->print(data);
-#else
-  server.send(200, "text/plain",data);
-
-#endif
+  server.send(200, "text/plain", data);
 }
 
 int get_temp_month;
@@ -478,203 +299,153 @@ int get_temp_hour;
 int get_temp_minute;
 int get_temp_second;
 
-void wifibluetooth::processControlGet() {
+void wifibluetooth::processControlGet()
+{
   String v;
   int i;
-  char temp[20]="";
+  char temp[20] = "";
   // Align
 #ifdef ALIGN_ON
-  v=server.arg("al");
-  if (v!="") {
-    if (v=="1") SetLX200(":A1#");
-    if (v=="2") SetLX200(":A2#");
-    if (v=="3") SetLX200(":A3#");
-    if (v=="4") SetLX200(":A4#");
-    if (v=="5") SetLX200(":A5#");
-    if (v=="6") SetLX200(":A6#");
-    if (v=="7") SetLX200(":A7#");
-    if (v=="8") SetLX200(":A8#");
-    if (v=="9") SetLX200(":A9#");
-    if (v=="n") SetLX200(":A+#");
-    if (v=="q") SetLX200(":Q#");
+  v = server.arg("al");
+  if (v != "")
+  {
+    if (v == "1") SetLX200(":A1#");
+    if (v == "2") SetLX200(":A2#");
+    if (v == "3") SetLX200(":A3#");
+    if (v == "4") SetLX200(":A4#");
+    if (v == "5") SetLX200(":A5#");
+    if (v == "6") SetLX200(":A6#");
+    if (v == "7") SetLX200(":A7#");
+    if (v == "8") SetLX200(":A8#");
+    if (v == "9") SetLX200(":A9#");
+    if (v == "n") SetLX200(":A+#");
+    if (v == "q") SetLX200(":Q#");
   }
 #endif
 
   // Set DATE/TIME
-  v=server.arg("dm");
-  if (v!="") {
-    if ( (atoi2((char *)v.c_str(),&i)) && ((i>=0) && (i<=11))) { get_temp_month=i+1; }
+  v = server.arg("dm");
+  if (v != "")
+  {
+    if ((atoi2((char *)v.c_str(), &i)) && ((i >= 0) && (i <= 11)))
+    {
+      get_temp_month = i + 1;
+    }
   }
-  v=server.arg("dd");
-  if (v!="") {
-    if ( (atoi2((char *)v.c_str(),&i)) && ((i>=1) && (i<=31))) { get_temp_day=i; }
+  v = server.arg("dd");
+  if (v != "")
+  {
+    if ((atoi2((char *)v.c_str(), &i)) && ((i >= 1) && (i <= 31)))
+    {
+      get_temp_day = i;
+    }
   }
-  v=server.arg("dy");
-  if (v!="") {
-    if ( (atoi2((char *)v.c_str(),&i)) && ((i>=2016) && (i<=9999))) {
-      get_temp_year=i-2000;
+  v = server.arg("dy");
+  if (v != "")
+  {
+    if ((atoi2((char *)v.c_str(), &i)) && ((i >= 2016) && (i <= 9999)))
+    {
+      get_temp_year = i - 2000;
       char temp[10];
-      sprintf(temp,":SX81%02d/%02d/%02d#",get_temp_month,get_temp_day,get_temp_year);
+      sprintf(temp, ":SX81%02d/%02d/%02d#", get_temp_month, get_temp_day, get_temp_year);
       SetLX200(temp);
     }
   }
-  v=server.arg("th");
-  if (v!="") {
-    if ( (atoi2((char *)v.c_str(),&i)) && ((i>=0) && (i<=23))) { get_temp_hour=i; }
+  v = server.arg("th");
+  if (v != "")
+  {
+    if ((atoi2((char *)v.c_str(), &i)) && ((i >= 0) && (i <= 23)))
+    {
+      get_temp_hour = i;
+    }
   }
-  v=server.arg("tm");
-  if (v!="") {
-    if ( (atoi2((char *)v.c_str(),&i)) && ((i>=0) && (i<=59))) { get_temp_minute=i; }
+  v = server.arg("tm");
+  if (v != "")
+  {
+    if ((atoi2((char *)v.c_str(), &i)) && ((i >= 0) && (i <= 59)))
+    {
+      get_temp_minute = i;
+    }
   }
-  v=server.arg("ts");
-  if (v!="") {
-    if ( (atoi2((char *)v.c_str(),&i)) && ((i>=0) && (i<=59))) {
-      get_temp_second=i;
+  v = server.arg("ts");
+  if (v != "")
+  {
+    if ((atoi2((char *)v.c_str(), &i)) && ((i >= 0) && (i <= 59)))
+    {
+      get_temp_second = i;
       char temp[10];
-      sprintf(temp,":SX80%02d:%02d:%02d#",get_temp_hour,get_temp_minute,get_temp_second);
+      sprintf(temp, ":SX80%02d:%02d:%02d#", get_temp_hour, get_temp_minute, get_temp_second);
       SetLX200(temp);
     }
   }
 
-  v=server.arg("dr");
-  if (v!="") {
+  v = server.arg("dr");
+  if (v != "")
+  {
     // Tracking control
-
-
     if (v == "on") SetLX200(":Te#");
-    if (v == "off") SetLX200(":Td#");
-    if (v == "f") SetLX200(":T+#"); // 0.02hz faster
-    if (v == "-") SetLX200(":T-#"); // 0.02hz slower
-    if (v == "r") SetLX200(":TR#"); // reset
-    
+    else if (v == "off") SetLX200(":Td#");
+    else if (v == "f") SetLX200(":T+#"); // 0.02hz faster
+    else if (v == "-") SetLX200(":T-#"); // 0.02hz slower
+    else if (v == "r") SetLX200(":TR#"); // reset
+
     // Tracking control
-    if (v=="Ts") SetLX200(":TQ#"); // sidereal
-    if (v=="Tl") SetLX200(":TL#"); // lunar
-    if (v=="Th") SetLX200(":TS#"); // solar
+    else if (v == "Ts") SetLX200(":TQ#"); // sidereal
+    else if (v == "Tl") SetLX200(":TL#"); // lunar
+    else if (v == "Th") SetLX200(":TS#"); // solar
 
     // quick
-    if (v=="qc") { SetLX200(":SX99,1#");} // meridian flip, pause->continue
-    if (v=="qr") { SetLX200(":hF#");}     // home, reset
-    if (v=="qh") { SetLX200(":hC#");}     // home, goto
-    if (v=="pr") { SetLX200(":hO#");}     // park, reset
-    if (v=="ps") { SetLX200(":hQ#");}     // set park
-    if (v=="pk") { SetLX200(":hP#");}     // park
-    if (v=="pu") { SetLX200(":hR#");}     // un-park
+    else if (v == "qc") SetLX200(":SX99,1#");  // meridian flip, pause->continue
+    else if (v == "qr") SetLX200(":hF#");  // home, reset
+    else if (v == "qh") SetLX200(":hC#");  // home, goto
+    else if (v == "pr") SetLX200(":hO#");  // park, reset
+    else if (v == "ps") SetLX200(":hQ#");  // set park
+    else if (v == "pk") SetLX200(":hP#");  // park
+    else if (v == "pu") SetLX200(":hR#");  // un-park
 
 
-    // GUIDE control direction
-    if (v=="n1") SetLX200(":Mn#");
-    if (v=="s1") SetLX200(":Ms#");
-    if (v=="e1") SetLX200(":Me#");
-    if (v=="w1") SetLX200(":Mw#");
-    if (v=="q1") SetLX200(":Q#");
+// GUIDE control direction
+    else if (v == "n1") SetLX200(":Mn#");
+    else if (v == "s1") SetLX200(":Ms#");
+    else if (v == "e1") SetLX200(":Me#");
+    else if (v == "w1") SetLX200(":Mw#");
+    else if (v == "q1") SetLX200(":Q#");
 
-    if (v=="n0") SetLX200(":Qn#");
-    if (v=="s0") SetLX200(":Qs#");
-    if (v=="e0") SetLX200(":Qe#");
-    if (v=="w0") SetLX200(":Qw#");
+    else if (v == "n0") SetLX200(":Qn#");
+    else if (v == "s0") SetLX200(":Qs#");
+    else if (v == "e0") SetLX200(":Qe#");
+    else if (v == "w0") SetLX200(":Qw#");
 
     // GUIDE control rate
-    if (v=="R0") SetLX200(":R0#");
-    if (v=="R1") SetLX200(":R1#");
-    if (v=="R2") SetLX200(":R2#");
-    if (v=="R3") SetLX200(":R3#");
-    if (v=="R4") SetLX200(":R4#");
-    if (v=="R5") SetLX200(":R5#");
-    if (v=="R6") SetLX200(":R6#");
-    if (v=="R7") SetLX200(":R7#");
-    if (v=="R8") SetLX200(":R8#");
-    if (v=="R9") SetLX200(":R9#");
+    else if (v == "R0") SetLX200(":R0#");
+    else if (v == "R1") SetLX200(":R1#");
+    else if (v == "R2") SetLX200(":R2#");
+    else if (v == "R3") SetLX200(":R3#");
+    else if (v == "R4") SetLX200(":R4#");
+    else if (v == "R5") SetLX200(":R5#");
+    else if (v == "R6") SetLX200(":R6#");
+    else if (v == "R7") SetLX200(":R7#");
+    else if (v == "R8") SetLX200(":R8#");
+    else if (v == "R9") SetLX200(":R9#");
 
     // Focuser
-    if (v=="Fz") SetLX200(":FP#");
-    if (v=="Fh") SetLX200(":FS0#");
-    if (v=="Fi") SetLX200(":F-#");
-    if (v=="Fo") SetLX200(":F+#");
-    if (v=="Fq") SetLX200(":FQ#");
+    else if (v == "Fz") SetLX200(":FP#");
+    else if (v == "Fh") SetLX200(":FS0#");
+    else if (v == "Fi") SetLX200(":F-#");
+    else if (v == "Fo") SetLX200(":F+#");
+    else if (v == "Fq") SetLX200(":FQ#");
 
     // Rotate/De-Rotate
-    if (v=="b2") SetLX200(":r3#:r<#");
-    if (v=="b1") SetLX200(":r1#:r<#");
-    if (v=="f1") SetLX200(":r1#:r>#");
-    if (v=="f2") SetLX200(":r3#:r>#");
-    if (v=="ho") SetLX200(":rC#");
-    if (v=="re") SetLX200(":rF#");
-    if (v=="d0") SetLX200(":r-#");
-    if (v=="d1") SetLX200(":r+#");
-    if (v=="dr") SetLX200(":rR#");
-    if (v=="dp") SetLX200(":rP#");
+    else if (v == "b2") SetLX200(":r3#:r<#");
+    else if (v == "b1") SetLX200(":r1#:r<#");
+    else if (v == "f1") SetLX200(":r1#:r>#");
+    else if (v == "f2") SetLX200(":r3#:r>#");
+    else if (v == "ho") SetLX200(":rC#");
+    else if (v == "re") SetLX200(":rF#");
+    else if (v == "d0") SetLX200(":r-#");
+    else if (v == "d1") SetLX200(":r+#");
+    else if (v == "dr") SetLX200(":rR#");
+    else if (v == "dp") SetLX200(":rP#");
     Ser.flush();
   }
-
-  // General purpose switches
-  #ifdef SW0
-  v=server.arg("sw0"); if (v!="") { SetLX200(":SXG0,"+v+"#");}
-  #endif
-  #ifdef SW1
-  v=server.arg("sw1"); if (v!="") { SetLX200(":SXG1,"+v+"#");}
-  #endif
-  #ifdef SW2
-  v=server.arg("sw2"); if (v!="") { SetLX200(":SXG2,"+v+"#");}
-  #endif
-  #ifdef SW3
-  v=server.arg("sw3"); if (v!="") { SetLX200(":SXG3,"+v+"#");}
-  #endif
-  #ifdef SW4
-  v=server.arg("sw4"); if (v!="") { SetLX200(":SXG4,"+v+"#");}
-  #endif
-  #ifdef SW5
-  v=server.arg("sw5"); if (v!="") { SetLX200(":SXG5,"+v+"#");}
-  #endif
-  #ifdef SW6
-  v=server.arg("sw6"); if (v!="") { SetLX200(":SXG6,"+v+"#");}
-  #endif
-  #ifdef SW7
-  v=server.arg("sw7"); if (v!="") { SetLX200(":SXG7,"+v+"#");}
-  #endif
-  #ifdef SW8
-  v=server.arg("sw8"); if (v!="") { SetLX200(":SXG8,"+v+"#");}
-  #endif
-  #ifdef SW9
-  v=server.arg("sw9"); if (v!="") { SetLX200(":SXG9,"+v+"#");}
-  #endif
-  #ifdef SW10
-  v=server.arg("swA"); if (v!="") { SetLX200(":SXGA,"+v+"#");}
-  #endif
-  #ifdef SW11
-  v=server.arg("swB"); if (v!="") { SetLX200(":SXGB,"+v+"#");}
-  #endif
-  #ifdef SW12
-  v=server.arg("swC"); if (v!="") { SetLX200(":SXGC,"+v+"#");}
-  #endif
-  #ifdef SW13
-  v=server.arg("swD"); if (v!="") { SetLX200(":SXGD,"+v+"#");}
-  #endif
-  #ifdef SW14
-  v=server.arg("swE"); if (v!="") { SetLX200(":SXGE,"+v+"#");}
-  #endif
-  #ifdef SW15
-  v=server.arg("swF"); if (v!="") { SetLX200(":SXGF,"+v+"#");}
-  #endif
-
-  // General purpose analog
-  #ifdef AN3
-  v=server.arg("an3"); if (v!="") { SetLX200f(":SXG3,%ld#",(v.toInt()*255L)/100L);}
-  #endif
-  #ifdef AN4
-  v=server.arg("an4"); if (v!="") { SetLX200f(":SXG4,%ld#",(v.toInt()*255L)/100L);}
-  #endif
-  #ifdef AN5
-  v=server.arg("an5"); if (v!="") { SetLX200f(":SXG5,%ld#",(v.toInt()*255L)/100L);}
-  #endif
-  #ifdef AN6
-  v=server.arg("an6"); if (v!="") { SetLX200f(":SXG6,%ld#",(v.toInt()*255L)/100L);}
-  #endif
-  #ifdef AN7
-  v=server.arg("an7"); if (v!="") { SetLX200f(":SXG7,%ld#",(v.toInt()*255L)/100L);}
-  #endif
-  #ifdef AN8
-  v=server.arg("an8"); if (v!="") { SetLX200f(":SXG8,%ld#",(v.toInt()*255L)/100L);}
-  #endif
-
 }

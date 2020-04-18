@@ -68,7 +68,8 @@ const char html_configElev3[] PROGMEM =
 "<br />\r\n";
 
 
-void wifibluetooth::handleConfigurationSite() {
+void wifibluetooth::handleConfigurationSite()
+{
   Ser.setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[150] = "";
@@ -167,27 +168,32 @@ void wifibluetooth::handleConfigurationSite() {
   sendHtmlDone(data);
 }
 
-void wifibluetooth::processConfigurationSiteGet() {
+void wifibluetooth::processConfigurationSiteGet()
+{
   String v;
   int i;
   float f;
   char temp[20] = "";
   // selected site
   v = server.arg("site_select");
-  if (v != "") {
+  if (v != "")
+  {
     sprintf(temp, ":W%s#", (char*)v.c_str());
     SetLX200(temp);
   }
   // name
   v = server.arg("site_n");
-  if (v != "") {
+  if (v != "")
+  {
     sprintf(temp, ":Sn%s#", (char*)v.c_str());
     SetLX200(temp);
   }
   //Time Zone
   v = server.arg("TimeZ");
-  if (v != "") {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= -12) && (f <= 12))) {
+  if (v != "")
+  {
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= -12) && (f <= 12)))
+    {
       sprintf(temp, ":SG%+05.1f#", -f);
       SetLX200(temp);
     }
@@ -196,20 +202,28 @@ void wifibluetooth::processConfigurationSiteGet() {
   int long_deg = -999;
   int sign = -1;
   v = server.arg("site_g0");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) { sign = i; }
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
+    {
+      sign = i;
+    }
   }
   v = server.arg("site_g1");
-  if (v != "") {
+  if (v != "")
+  {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -180) && (i <= 180)))
     {
-      long_deg = sign ? -i: i;
+      long_deg = sign ? -i : i;
     }
   }
   v = server.arg("site_g2");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 60))) {
-      if ((long_deg >= -180) && (long_deg <= 180)) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 60)))
+    {
+      if ((long_deg >= -180) && (long_deg <= 180))
+      {
         sprintf(temp, ":Sg%+04d*%02d#", long_deg, i);
         SetLX200(temp);
       }
@@ -217,19 +231,28 @@ void wifibluetooth::processConfigurationSiteGet() {
   }
   int lat_deg = -999;
   v = server.arg("site_t0");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) { sign = i; }
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
+    {
+      sign = i;
+    }
   }
   v = server.arg("site_t1");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 90))) {
-      lat_deg = sign ? -i : i; 
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 90)))
+    {
+      lat_deg = sign ? -i : i;
     }
   }
   v = server.arg("site_t2");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 60))) {
-      if ((lat_deg >= -90) && (lat_deg <= 90)) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 60)))
+    {
+      if ((lat_deg >= -90) && (lat_deg <= 90))
+      {
         v = server.arg("site_t0");
         sprintf(temp, ":St%+03d*%02d#", lat_deg, i);
         SetLX200(temp);
@@ -237,8 +260,10 @@ void wifibluetooth::processConfigurationSiteGet() {
     }
   }
   v = server.arg("site_e");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -200) && (i <= 8000))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -200) && (i <= 8000)))
+    {
       sprintf(temp, ":Se%+04d#", i);
       SetLX200(temp);
     }

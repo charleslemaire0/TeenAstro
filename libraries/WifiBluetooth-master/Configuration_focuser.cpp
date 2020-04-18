@@ -196,7 +196,7 @@ void wifibluetooth::handleConfigurationFocuser()
     }
   }
 
-  strcpy(temp,"</div></div></body></html>");
+  strcpy(temp, "</div></div></body></html>");
   data += temp;
 
   sendHtml(data);
@@ -204,90 +204,113 @@ void wifibluetooth::handleConfigurationFocuser()
 
 }
 
-void wifibluetooth::processConfigurationFocuserGet() {
+void wifibluetooth::processConfigurationFocuserGet()
+{
   String v;
   int i;
   float f;
-  char temp[20]="";
+  char temp[20] = "";
 
   v = server.arg("Park");
-  if (v != "") {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535))) {
+  if (v != "")
+  {
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535)))
+    {
       sprintf(temp, ":F0 %05d#", (int)f);
       SetLX200(temp);
     }
   }
 
   v = server.arg("MaxPos");
-  if (v != "") {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535))) {
+  if (v != "")
+  {
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535)))
+    {
       sprintf(temp, ":F1 %05d#", (int)f);
       SetLX200(temp);
     }
   }
 
   v = server.arg("LowSpeed");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 999))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 999)))
+    {
       sprintf(temp, ":F2 %d#", i);
       SetLX200(temp);
     }
   }
 
   v = server.arg("HighSpeed");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 999))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 999)))
+    {
       sprintf(temp, ":F3 %d#", i);
       SetLX200(temp);
     }
   }
 
   v = server.arg("GotoAcc");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99)))
+    {
       sprintf(temp, ":F4 %d#", i);
       SetLX200(temp);
     }
   }
   v = server.arg("ManAcc");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99)))
+    {
       sprintf(temp, ":F5 %d#", i);
       SetLX200(temp);
     }
   }
   v = server.arg("Dcc");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99)))
+    {
       sprintf(temp, ":F6 %d#", i);
       SetLX200(temp);
     }
   }
   v = server.arg("Rot");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
+    {
       sprintf(temp, ":F7 %d#", i);
       SetLX200(temp);
     }
   }
   v = server.arg("Res");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 512))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 512)))
+    {
       sprintf(temp, ":F8 %d#", i);
       SetLX200(temp);
     }
   }
   v = server.arg("MuF");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 4) && (i <= 128))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 4) && (i <= 128)))
+    {
       sprintf(temp, ":Fm %d#", (int)log2(i));
       SetLX200(temp);
     }
   }
 
   v = server.arg("HcF");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 1600))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 1600)))
+    {
       sprintf(temp, ":Fc %d#", i / 10);
       SetLX200(temp);
     }
@@ -296,8 +319,10 @@ void wifibluetooth::processConfigurationFocuserGet() {
   {
     sprintf(temp, "Fp%d", k);
     v = server.arg(temp);
-    if (v != "") {
-      if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535))) {
+    if (v != "")
+    {
+      if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535)))
+      {
         sprintf(temp, "Fn%d", k);
         v = server.arg(temp);
         sprintf(temp, ":Fs%d %05d_%s#", k, (int)f, (char*)v.c_str());

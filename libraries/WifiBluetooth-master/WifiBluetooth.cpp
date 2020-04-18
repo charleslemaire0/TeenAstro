@@ -191,6 +191,11 @@ void wifibluetooth::preparePage(String &data, int page)
 {
   char temp1[80] = "";
   data = FPSTR(html_headB);
+  if (!ta_MountStatus.hasFocuser() && page == 5 )
+  {
+    page = 1;
+  }
+
   if (page == 1)
     data += FPSTR(html_headerIdx);
   data += FPSTR(html_main_cssB);
@@ -225,7 +230,10 @@ void wifibluetooth::preparePage(String &data, int page)
   data += page == 2 ? FPSTR(html_links2S) : FPSTR(html_links2N);
   data += page == 3 ? FPSTR(html_links3S) : FPSTR(html_links3N);
   data += page == 4 ? FPSTR(html_links4S) : FPSTR(html_links4N);
-  data += page == 5 ? FPSTR(html_links5S) : FPSTR(html_links5N);
+  if (ta_MountStatus.hasFocuser())
+  {
+    data += page == 5 ? FPSTR(html_links5S) : FPSTR(html_links5N);
+  }
 #ifndef OETHS
   data += page == 6 ? FPSTR(html_links6S) : FPSTR(html_links6N);
 #endif
