@@ -132,3 +132,8 @@ libraries/TeenAstroCoordConv/examples/test1/.vs/test1/v15/Browse.VC.db
 libraries/TeenAstroCoordConv/examples/test1/test1.vcxproj
 libraries/TeenAstroCoordConv/examples/test1/test1.vcxproj.filters
 libraries/TeenAstroCoordConv/examples/test1/test1.vcxproj.user
+TeenAstroMainUnit/TeenAstroMainUnit.sln
+TeenAstroMainUnit/.vs/TeenAstroMainUnit/v15/Solution.VC.db-wal
+TeenAstroMainUnit/.vs/TeenAstroMainUnit/v15/Solution.VC.db-shm
+TeenAstroMainUnit/.vs/TeenAstroMainUnit/v15/Solution.VC.db
+TeenAstroMainUnit/.vs/TeenAstroMainUnit/v15/.suo
