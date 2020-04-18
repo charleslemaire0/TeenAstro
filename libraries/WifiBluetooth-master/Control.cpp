@@ -155,28 +155,6 @@ const char html_controlFocus5[] PROGMEM =
 const char html_controlFocus6[] PROGMEM =
 "</div><br class='clear' />\r\n";
 
-#ifdef ROTATOR_ON
-const char html_controlRotate0[] PROGMEM =
-"<div class='b1' style='width: 27em'>";
-const char html_controlRotate1[] PROGMEM =
-"<button class='bbh' type='button' style='height: 2.1em' onpointerdown=\"gf('re')\" >Reset</button>"
-"<button class='bbh' type='button' style='height: 2.1em' onpointerdown=\"gf('ho')\" >Go Home</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-const char html_controlRotate2[] PROGMEM =
-"<button class='bbh' type='button' style='height: 2.1em' onpointerdown=\"gf('b2')\" >" ARROW_LL "</button>"
-"<button class='bbh' type='button' style='width: 2em' onpointerdown=\"gf('b1')\" >" ARROW_L "</button>";
-const char html_controlRotate3[] PROGMEM =
-"<button class='bbh' type='button' style='width: 2em' onpointerdown=\"gf('f1')\" >" ARROW_R "</button>"
-"<button class='bbh' type='button' style='height: 2.1em' onpointerdown=\"gf('f2')\" >" ARROW_RR "</button><br />";
-const char html_controlDeRotate1[] PROGMEM =
-"<button type='button' onpointerdown=\"gf('d1')\" >De-Rotate On</button>&nbsp;&nbsp;&nbsp;"
-"<button type='button' onpointerdown=\"gf('dr')\" >Rev</button>";
-const char html_controlDeRotate2[] PROGMEM =
-"<button type='button' onpointerdown=\"gf('dp')\" >P</button>&nbsp;&nbsp;&nbsp;"
-"<button type='button' onpointerdown=\"gf('d0')\" >De-Rotate Off</button>";
-const char html_controlRotate4[] PROGMEM =
-"</div><br class='clear' />\r\n";
-#endif
-
 
 const char html_controlEnd[] =
 "<br />\r\n";
@@ -237,13 +215,8 @@ void wifibluetooth::handleControl() {
   // Guiding -------------------------------------------------
   data += FPSTR(html_controlGuide);
 
-
-  // Focusing ------------------------------------------------
-  boolean Focuser1; if (GetLX200(":FV#", temp1, sizeof(temp1)) == LX200VALUEGET) Focuser1 = true; else Focuser1 = false;
-  //Focuser1 = true;
-  boolean Focuser2 = false;
-  /* boolean Focuser2; if (sendCommand(":fA#",temp1,R_BOOL)) Focuser2=true; else Focuser2=false;*/
-  if (Focuser1) {
+  if (ta_MountStatus.hasFocuser())
+  {
     data += FPSTR(html_controlFocus1);
     data += "<div style='float: left;'>Focuser:</div><div style='float: right; text-align: right;' id='focuserpos'>?</div><br />";
     data += FPSTR(html_controlFocus3);
@@ -251,7 +224,6 @@ void wifibluetooth::handleControl() {
     data += FPSTR(html_controlFocus5);
     data += FPSTR(html_controlFocus6);
     sendHtml(data);
-
   }
 
   // Tracking control ----------------------------------------
