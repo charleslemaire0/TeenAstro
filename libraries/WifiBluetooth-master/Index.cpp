@@ -36,12 +36,13 @@ const char* html_indexLastError PROGMEM = "&nbsp;&nbsp;Last Error: <font class='
 const char* html_indexWorkload PROGMEM = "&nbsp;&nbsp;Workload: <font class='c'>%s</font><br />";
 
 
-void wifibluetooth::handleRoot() {
+void wifibluetooth::handleRoot()
+{
   Ser.setTimeout(WebTimeout);
   sendHtmlStart();
-  char temp[300]="";
-  char temp1[80]="";
-  char temp2[80]="";
+  char temp[300] = "";
+  char temp1[80] = "";
+  char temp2[80] = "";
   //updates
   ta_MountStatus.updateV();
   ta_MountStatus.updateTime();
@@ -53,9 +54,9 @@ void wifibluetooth::handleRoot() {
   String data;
   preparePage(data, 1);
   sendHtml(data);
-  data+="<div style='width: 27em;'>";
+  data += "<div style='width: 27em;'>";
 
-  data+="<b>Time and Date:</b><br />";
+  data += "<b>Time and Date:</b><br />";
   // Browser time
   data += FPSTR(html_settingsBrowserTime);
   sendHtml(data);
@@ -64,27 +65,27 @@ void wifibluetooth::handleRoot() {
   data += temp;
   sendHtml(data);
   // UTC Time
-  sprintf_P(temp,html_indexTime, ta_MountStatus.getUTC());
+  sprintf_P(temp, html_indexTime, ta_MountStatus.getUTC());
   data += temp;
   sendHtml(data);
   // LST
-  sprintf_P(temp,html_indexSidereal, ta_MountStatus.getSidereal());
+  sprintf_P(temp, html_indexSidereal, ta_MountStatus.getSidereal());
   data += temp;
   sendHtml(data);
 
 
 #ifdef AMBIENT_CONDITIONS_ON
-  if (!sendCommand(":GX9A#",temp1)) strcpy(temp1,"?"); sprinf_P(temp,html_indexTPHD,"Temperature:",temp1,"&deg;C"); data+=temp;
-  if (!sendCommand(":GX9B#",temp1)) strcpy(temp1,"?"); sprinf_P(temp,html_indexTPHD,"Barometric Pressure:",temp1,"mb"); data+=temp;
-  if (!sendCommand(":GX9C#",temp1)) strcpy(temp1,"?"); sprinf_P(temp,html_indexTPHD,"Relative Humidity:",temp1,"%"); data+=temp;
-  if (!sendCommand(":GX9E#",temp1)) strcpy(temp1,"?"); sprinf_P(temp,html_indexTPHD,"Dew Point Temperature:",temp1,"&deg;C"); data+=temp;
+  if (!sendCommand(":GX9A#", temp1)) strcpy(temp1, "?"); sprinf_P(temp, html_indexTPHD, "Temperature:", temp1, "&deg;C"); data += temp;
+  if (!sendCommand(":GX9B#", temp1)) strcpy(temp1, "?"); sprinf_P(temp, html_indexTPHD, "Barometric Pressure:", temp1, "mb"); data += temp;
+  if (!sendCommand(":GX9C#", temp1)) strcpy(temp1, "?"); sprinf_P(temp, html_indexTPHD, "Relative Humidity:", temp1, "%"); data += temp;
+  if (!sendCommand(":GX9E#", temp1)) strcpy(temp1, "?"); sprinf_P(temp, html_indexTPHD, "Dew Point Temperature:", temp1, "&deg;C"); data += temp;
 #endif
 
-  data+="<br /><b>Current Jnow Coordinates:</b><br />";
+  data += "<br /><b>Current Jnow Coordinates:</b><br />";
 
   // RA,Dec current
 
-  sprintf_P(temp,html_indexPosition, ta_MountStatus.getRa(), ta_MountStatus.getDec());
+  sprintf_P(temp, html_indexPosition, ta_MountStatus.getRa(), ta_MountStatus.getDec());
   data += temp;
   sendHtml(data);
 
@@ -119,7 +120,7 @@ void wifibluetooth::handleRoot() {
   // RA,Dec target
 
   data += "<br /><b>Last Jnow Target Coordinates:</b><br />";
-  sprintf_P(temp,html_indexPosition, ta_MountStatus.getRaT(), ta_MountStatus.getDecT());
+  sprintf_P(temp, html_indexPosition, ta_MountStatus.getRaT(), ta_MountStatus.getDecT());
   data += temp;
   sendHtml(data);
 
@@ -134,7 +135,7 @@ void wifibluetooth::handleRoot() {
   //}
 
 
-  data+="<br /><b>Operations:</b><br />";
+  data += "<br /><b>Operations:</b><br />";
 
   // Park
 
@@ -157,8 +158,8 @@ void wifibluetooth::handleRoot() {
     strcpy(temp1, "?");
     break;
   }
- // if (ta_MountStatus.atHome()) strcat(temp1," </font>(<font class=\"c\">At Home</font>)<font class=\"c\">");
-  sprintf_P(temp,html_indexPark,temp1);
+  // if (ta_MountStatus.atHome()) strcat(temp1," </font>(<font class=\"c\">At Home</font>)<font class=\"c\">");
+  sprintf_P(temp, html_indexPark, temp1);
   data += temp;
   sendHtml(data);
   // Tracking
@@ -177,13 +178,17 @@ void wifibluetooth::handleRoot() {
     strcpy(temp1, "?");
   }
 
-  strcpy(temp2,"</font>(<font class=\"c\">");
+  strcpy(temp2, "</font>(<font class=\"c\">");
   //if (mountStatus.rateCompensation()== MountStatus::RC_REFR_RA)   strcat(temp2,"Refr Comp RA Axis, ");
   //if (mountStatus.rateCompensation()== MountStatus::RC_REFR_BOTH) strcat(temp2,"Refr Comp Both Axis, ");
   //if (mountStatus.rateCompensation()== MountStatus::RC_FULL_RA)   strcat(temp2,"Full Comp RA Axis, ");
   //if (mountStatus.rateCompensation()== MountStatus::RC_FULL_BOTH) strcat(temp2,"Full Comp Both Axis, ");
-  if (temp2[strlen(temp2)-2]==',') { temp2[strlen(temp2)-2]=0; strcat(temp2,"</font>)<font class=\"c\">"); } else strcpy(temp2,"");
-  sprintf_P(temp,html_indexTracking,temp1,temp2);
+  if (temp2[strlen(temp2) - 2] == ',')
+  {
+    temp2[strlen(temp2) - 2] = 0; strcat(temp2, "</font>)<font class=\"c\">");
+  }
+  else strcpy(temp2, "");
+  sprintf_P(temp, html_indexTracking, temp1, temp2);
   data += temp;
   sendHtml(data);
   // Tracking rate
@@ -208,13 +213,13 @@ void wifibluetooth::handleRoot() {
   data += temp;
   sendHtml(data);
 
-  data+="<br /><b>State:</b><br />";
+  data += "<br /><b>State:</b><br />";
 
   // Last Error
-  if (ta_MountStatus.getError()!= TeenAstroMountStatus::ERR_NONE) strcpy(temp1,"</font><font class=\"y\">"); else strcpy(temp1,"");
+  if (ta_MountStatus.getError() != TeenAstroMountStatus::ERR_NONE) strcpy(temp1, "</font><font class=\"y\">"); else strcpy(temp1, "");
   ta_MountStatus.getLastErrorMessage(temp2);
-  strcat(temp1,temp2);
-  sprintf_P(temp,html_indexLastError,temp1);
+  strcat(temp1, temp2);
+  sprintf_P(temp, html_indexLastError, temp1);
   data += temp;
   sendHtml(data);
   // Loop time

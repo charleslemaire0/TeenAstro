@@ -133,18 +133,20 @@ const char html_reboot_t[] PROGMEM =
 "\r\n";
 bool restartRequired_t = false;
 
-void wifibluetooth::handleConfigurationTelescope() {
+void wifibluetooth::handleConfigurationTelescope()
+{
   Ser.setTimeout(WebTimeout);
   sendHtmlStart();
-  char temp[320]="";
-  char temp1[50]="";
-  char temp2[50]="";
+  char temp[320] = "";
+  char temp1[50] = "";
+  char temp2[50] = "";
   String data;
 
   processConfigurationTelescopeGet();
   preparePage(data, 4);
   sendHtml(data);
-  if (restartRequired_t) {
+  if (restartRequired_t)
+  {
     data += FPSTR(html_reboot_t);
     data += "</div></div></body></html>";
     sendHtml(data);
@@ -159,9 +161,9 @@ void wifibluetooth::handleConfigurationTelescope() {
   data += FPSTR(html_configMount_1);
   ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_GEM ? data += "<option selected value='1'>German</option>" : data += "<option value='1'>German</option>";
   ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK ? data += "<option selected value='2'>Fork</option>" : data += "<option value='2'>Fork</option>";
-	ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_ALTAZM ? data += "<option selected value='3'>Alt Az</option>" : data += "<option value='3'>Alt Az</option>";
-	ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK_ALT ? data += "<option selected value='4'>Alt Az Fork</option>" : data += "<option value='4'>Alt Az Fork</option>";
-  data += FPSTR(html_configMount_2);  
+  ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_ALTAZM ? data += "<option selected value='3'>Alt Az</option>" : data += "<option value='3'>Alt Az</option>";
+  ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK_ALT ? data += "<option selected value='4'>Alt Az Fork</option>" : data += "<option value='4'>Alt Az Fork</option>";
+  data += FPSTR(html_configMount_2);
   sendHtml(data);
 
   //if (!sendCommand(":GX90#", temp1, sizeof(temp1))) strcpy(temp1, "0"); int mountType = (int)strtol(&temp1[0], NULL, 10);
@@ -183,7 +185,7 @@ void wifibluetooth::handleConfigurationTelescope() {
   sendHtml(data);
 
   //Axis1
-  data+="<div style='width: 35em;'>";
+  data += "<div style='width: 35em;'>";
   data += "Motor: <br />";
   if (GetLX200(":%RR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int reverse = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configRotAxis_1, 1);
@@ -216,11 +218,11 @@ void wifibluetooth::handleConfigurationTelescope() {
   data += temp;
   sendHtml(data);
   if (GetLX200(":%MR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int micro = (int)strtol(&temp1[0], NULL, 10);
-  sprintf_P(temp, html_configMuAxis, (int)pow(2.,micro), 1, 1);
+  sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 1, 1);
   data += temp;
   sendHtml(data);
   if (GetLX200(":%MD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); micro = (int)strtol(&temp1[0], NULL, 10);
-  sprintf_P(temp, html_configMuAxis, (int)pow(2.,micro), 2, 2);
+  sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 2, 2);
   data += temp;
   sendHtml(data);
   if (GetLX200(":%BR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int backlashAxis = (int)strtol(&temp1[0], NULL, 10);
@@ -232,53 +234,56 @@ void wifibluetooth::handleConfigurationTelescope() {
   data += temp;
   sendHtml(data);
   if (GetLX200(":%cR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int lowC = (int)strtol(&temp1[0], NULL, 10);
-  sprintf_P(temp, html_configLCAxis, lowC*10, 1, 1);
+  sprintf_P(temp, html_configLCAxis, lowC * 10, 1, 1);
   data += temp;
   sendHtml(data);
   if (GetLX200(":%cD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); lowC = (int)strtol(&temp1[0], NULL, 10);
-  sprintf_P(temp, html_configLCAxis, lowC*10, 2, 2);
+  sprintf_P(temp, html_configLCAxis, lowC * 10, 2, 2);
   data += temp;
   sendHtml(data);
   if (GetLX200(":%CR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int highC = (int)strtol(&temp1[0], NULL, 10);
-  sprintf_P(temp, html_configHCAxis, highC*10, 1, 1);
+  sprintf_P(temp, html_configHCAxis, highC * 10, 1, 1);
   data += temp;
   sendHtml(data);
   if (GetLX200(":%CD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); highC = (int)strtol(&temp1[0], NULL, 10);
-  sprintf_P(temp, html_configHCAxis, highC*10, 2, 2);
+  sprintf_P(temp, html_configHCAxis, highC * 10, 2, 2);
   data += temp;
   data += "<br />";
 
   // Overhead and Horizon Limits
-  if (GetLX200(":Gh#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1,"0"); int minAlt=(int)strtol(&temp1[0],NULL,10);
-  sprintf_P(temp,html_configMinAlt,minAlt);
+  if (GetLX200(":Gh#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int minAlt = (int)strtol(&temp1[0], NULL, 10);
+  sprintf_P(temp, html_configMinAlt, minAlt);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":Go#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1,"0"); int maxAlt=(int)strtol(&temp1[0],NULL,10);
-  sprintf_P(temp,html_configMaxAlt,maxAlt);
+  if (GetLX200(":Go#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int maxAlt = (int)strtol(&temp1[0], NULL, 10);
+  sprintf_P(temp, html_configMaxAlt, maxAlt);
   data += temp;
   sendHtml(data);
   // Meridian Limits
-  if (GetLX200(":GXE9#", temp1, sizeof(temp1)) == LX200VALUEGET && GetLX200(":GXEA#", temp2, sizeof(temp2)) == LX200VALUEGET) {
-    int degPastMerE=(int)strtol(&temp1[0],NULL,10);
-    degPastMerE=round((degPastMerE*15.0)/60.0);
-    sprintf_P(temp,html_configPastMerE,degPastMerE);
+  if (GetLX200(":GXE9#", temp1, sizeof(temp1)) == LX200VALUEGET && GetLX200(":GXEA#", temp2, sizeof(temp2)) == LX200VALUEGET)
+  {
+    int degPastMerE = (int)strtol(&temp1[0], NULL, 10);
+    degPastMerE = round((degPastMerE*15.0) / 60.0);
+    sprintf_P(temp, html_configPastMerE, degPastMerE);
     data += temp;
-    int degPastMerW=(int)strtol(&temp2[0],NULL,10);
-    degPastMerW=round((degPastMerW*15.0)/60.0);
-    sprintf_P(temp,html_configPastMerW,degPastMerW);
+    int degPastMerW = (int)strtol(&temp2[0], NULL, 10);
+    degPastMerW = round((degPastMerW*15.0) / 60.0);
+    sprintf_P(temp, html_configPastMerW, degPastMerW);
     data += temp;
-  } else data += "<br />\r\n";
-  strcpy(temp,"</div></div></body></html>");
+  }
+  else data += "<br />\r\n";
+  strcpy(temp, "</div></div></body></html>");
   data += temp;
   sendHtml(data);
   sendHtmlDone(data);
 }
 
-void wifibluetooth::processConfigurationTelescopeGet() {
+void wifibluetooth::processConfigurationTelescopeGet()
+{
   String v;
   int i;
   float f;
-  char temp[20]="";
+  char temp[20] = "";
 
   v = server.arg("mount");
   if (v != "")
@@ -293,188 +298,241 @@ void wifibluetooth::processConfigurationTelescopeGet() {
   }
 
   v = server.arg("MaxR");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4000))){
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4000)))
+    {
       sprintf(temp, ":SX92:%04d#", i);
       SetLX200(temp);
     }
   }
 
   v = server.arg("Acc");
-  if (v != "") {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.1) && (f <= 25))) {
-      sprintf(temp, ":SXE2:%04d#", (int)(f*10));
+  if (v != "")
+  {
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.1) && (f <= 25)))
+    {
+      sprintf(temp, ":SXE2:%04d#", (int)(f * 10));
       SetLX200(temp);
     }
   }
 
   v = server.arg("GuideR");
-  if (v != "") {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.01) && (f <= 100))) {
+  if (v != "")
+  {
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.01) && (f <= 100)))
+    {
       sprintf(temp, ":SX90:%03d#", (int)(f * 100));
       SetLX200(temp);
     }
   }
 
   v = server.arg("mrot1");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
+    {
       sprintf(temp, ":$RR%d#", i);
       SetLX200(temp);
     }
   }
 
   v = server.arg("mrot2");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
+    {
       sprintf(temp, ":$RD%d#", i);
       SetLX200(temp);
     }
   }
   v = server.arg("mge1");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 60000))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 60000)))
+    {
       sprintf(temp, ":$GR%d#", i);
       SetLX200(temp);
     }
   }
   v = server.arg("mge2");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 60000))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 60000)))
+    {
       sprintf(temp, ":$GD%d#", i);
       SetLX200(temp);
     }
   }
   v = server.arg("mst1");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400)))
+    {
       sprintf(temp, ":$SR%d#", i);
       SetLX200(temp);
     }
   }
   v = server.arg("mst2");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400)))
+    {
       sprintf(temp, ":$SD%d#", i);
       SetLX200(temp);
     }
   }
   v = server.arg("mmu1");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256)))
+    {
       sprintf(temp, ":$MR%d#", (int)log2(i));
       SetLX200(temp);
     }
   }
   v = server.arg("mmu2");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256)))
+    {
       sprintf(temp, ":$MD%d#", (int)log2(i));
       SetLX200(temp);
     }
   }
   v = server.arg("mbl1");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
+    {
       sprintf(temp, ":$BR%d#", i);
       SetLX200(temp);
     }
   }
   v = server.arg("mbl2");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999))) {
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
+    {
       sprintf(temp, ":$BD%d#", i);
       SetLX200(temp);
     }
   }
   v = server.arg("mlc1");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000))) {
-      sprintf(temp, ":$cR%d#", i/10);
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000)))
+    {
+      sprintf(temp, ":$cR%d#", i / 10);
       SetLX200(temp);
     }
   }
   v = server.arg("mlc2");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000))) {
-      sprintf(temp, ":$cD%d#", i/10);
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000)))
+    {
+      sprintf(temp, ":$cD%d#", i / 10);
       SetLX200(temp);
     }
   }
   v = server.arg("mhc1");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000))) {
-      sprintf(temp, ":$CR%d#", i/10);
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000)))
+    {
+      sprintf(temp, ":$CR%d#", i / 10);
       SetLX200(temp);
     }
   }
   v = server.arg("mhc2");
-  if (v != "") {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000))) {
-      sprintf(temp, ":$CD%d#", i/10);
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000)))
+    {
+      sprintf(temp, ":$CD%d#", i / 10);
       SetLX200(temp);
     }
   }
   // Overhead and Horizon Limits
-  v=server.arg("ol");
-  if (v!="") {
-    if ( (atoi2((char*)v.c_str(),&i)) && ((i>=60) && (i<=90))) { 
-      sprintf(temp,":So%d#",i);
+  v = server.arg("ol");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 60) && (i <= 90)))
+    {
+      sprintf(temp, ":So%d#", i);
       SetLX200(temp);
     }
   }
-  v=server.arg("hl");
-  if (v!="") {
-    if ( (atoi2((char*)v.c_str(),&i)) && ((i>=-30) && (i<=30))) { 
-      sprintf(temp,":Sh%d#",i);
+  v = server.arg("hl");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -30) && (i <= 30)))
+    {
+      sprintf(temp, ":Sh%d#", i);
       SetLX200(temp);
     }
   }
 
   // Meridian Limits
-  v=server.arg("el");
-  if (v!="") {
-    if ( (atoi2((char*)v.c_str(),&i)) && ((i>=-45) && (i<=45))) { 
-      i=round((i*60.0)/15.0);
-      sprintf(temp,":SXE9,%d#",i);
+  v = server.arg("el");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
+    {
+      i = round((i*60.0) / 15.0);
+      sprintf(temp, ":SXE9,%d#", i);
       SetLX200(temp);
     }
   }
-  v=server.arg("wl");
-  if (v!="") {
-    if ( (atoi2((char*)v.c_str(),&i)) && ((i>=-45) && (i<=45))) { 
-      i=round((i*60.0)/15.0);
-      sprintf(temp,":SXEA,%d#",i);
+  v = server.arg("wl");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
+    {
+      i = round((i*60.0) / 15.0);
+      sprintf(temp, ":SXEA,%d#", i);
       SetLX200(temp);
     }
   }
 
   // Backlash Limits
-  v=server.arg("b1");
-  if (v!="") {
-    if ( (atoi2((char*)v.c_str(),&i)) && ((i>=0) && (i<=999))) { 
-      sprintf(temp,":$BR%d#",i);
+  v = server.arg("b1");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
+    {
+      sprintf(temp, ":$BR%d#", i);
       SetLX200(temp);
     }
   }
-  v=server.arg("b2");
-  if (v!="") {
-    if ( (atoi2((char*)v.c_str(),&i)) && ((i>=0) && (i<=999))) { 
-      sprintf(temp,":$BD%d#",i);
+  v = server.arg("b2");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
+    {
+      sprintf(temp, ":$BD%d#", i);
       SetLX200(temp);
     }
   }
 
-  int ut_hrs=-999;
-  v=server.arg("u1");
-  if (v!="") {
-    if ( (atoi2((char*)v.c_str(),&i)) && ((i>=-13) && (i<=13))) { ut_hrs=i; }
+  int ut_hrs = -999;
+  v = server.arg("u1");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -13) && (i <= 13)))
+    {
+      ut_hrs = i;
+    }
   }
-  v=server.arg("u2");
-  if (v!="") {
-    if ( (atoi2((char*)v.c_str(),&i)) && ((i==00) || (i==30) || (i==45))) {
-      if ((ut_hrs>=-13) && (ut_hrs<=13)) {
-        sprintf(temp,":SG%+03d:%02d#",ut_hrs,i);
+  v = server.arg("u2");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i == 00) || (i == 30) || (i == 45)))
+    {
+      if ((ut_hrs >= -13) && (ut_hrs <= 13))
+      {
+        sprintf(temp, ":SG%+03d:%02d#", ut_hrs, i);
         SetLX200(temp);
       }
     }

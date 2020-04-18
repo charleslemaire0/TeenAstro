@@ -68,9 +68,18 @@
 
 class wifibluetooth
 {
-  enum Responding { R_NONE, R_ONE, R_BOOL, R_STRING };
-  enum WifiMode { M_Station1, M_Station2, M_Station3, M_AcessPoint, OFF };
-  enum WifiConnectMode { AutoClose, KeepOpened };
+  enum Responding
+  {
+    R_NONE, R_ONE, R_BOOL, R_STRING
+  };
+  enum WifiMode
+  {
+    M_Station1, M_Station2, M_Station3, M_AcessPoint, OFF
+  };
+  enum WifiConnectMode
+  {
+    AutoClose, KeepOpened
+  };
   static bool wifiOn;
   static int WebTimeout;
   static int CmdTimeout;
