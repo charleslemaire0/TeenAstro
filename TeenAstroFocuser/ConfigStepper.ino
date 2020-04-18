@@ -12,7 +12,7 @@ void iniMot()
   pinMode(CSPin, OUTPUT);
   digitalWrite(CSPin, HIGH);
   teenAstroStepper.initMotor(static_cast<Motor::Motor_Driver>(TMC),
-    200, EnablePin, CSPin, _DirPin, _StepPin, 10.*curr->get(), micro->get());
+                             200, EnablePin, CSPin, _DirPin, _StepPin, 10.*curr->get(), micro->get());
   stepper.setMaxSpeed(lowSpeed->get()*pow(2, micro->get()));
   stepper.setAcceleration(AccFact*manAcc->get());
   stepper.setInverseRotation(reverse->get());
