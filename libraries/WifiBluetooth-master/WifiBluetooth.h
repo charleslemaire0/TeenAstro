@@ -2,12 +2,23 @@
 
 #include <Arduino.h>
 
+#ifdef ARDUINO_D1_MINI32
+#include <Wifi.h>
+#include <WebServer.h>
+#include <HTTPUpdate.h>
+#endif
+
+
+#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
 #include <ESP8266WiFi.h>
-#include <EEPROM.h>
-#include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFiAP.h>
 #include <ESP8266HTTPUpdateServer.h>
+#endif
+
+
+#include <EEPROM.h>
+#include <WiFiClient.h>
 #include <TeenAstroMountStatus.h>
 
 #define Product "TeenAstro Server"
@@ -83,7 +94,13 @@ class wifibluetooth
   static IPAddress wifi_ap_gw;
   static IPAddress wifi_ap_sn;
 
+#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
   static ESP8266WebServer server;
+#endif
+
+#ifdef ARDUINO_D1_MINI32
+  static WebServer server;
+#endif
 
   static WiFiServer cmdSvr;
   static WiFiClient cmdSvrClient;

@@ -66,13 +66,20 @@ IPAddress wifibluetooth::wifi_ap_ip = IPAddress(192, 168, 0, 1);
 IPAddress wifibluetooth::wifi_ap_gw = IPAddress(192, 168, 0, 1);
 IPAddress wifibluetooth::wifi_ap_sn = IPAddress(255, 255, 255, 0);
 
-ESP8266WebServer wifibluetooth::server;
+
+
 WiFiServer wifibluetooth::cmdSvr = WiFiServer(9999);
 WiFiClient wifibluetooth::cmdSvrClient;
 
+#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
+ESP8266WebServer wifibluetooth::server;
 ESP8266WebServer httpServer(80);
 ESP8266HTTPUpdateServer httpUpdater;
-
+#endif 
+#ifdef ARDUINO_D1_MINI32
+WebServer wifibluetooth::server;
+WebServer httpServer(80);
+#endif
 // -----------------------------------------------------------------------------------
 // EEPROM related functions
 
@@ -426,7 +433,10 @@ Again:
 #endif
   //MDNS.begin(host);
 
+#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
   httpUpdater.setup(&server);
+#endif
+  
   httpServer.begin();
 };
 
