@@ -25,6 +25,7 @@ void setup()
 	pinMode(_DirPin, OUTPUT);
   digitalWrite(_DirPin, LOW);
   digitalWrite(_StepPin, LOW);
+  digitalWrite(LEDPin, HIGH);
 	Serial.begin(9600);
 
 #ifdef VERSION220
@@ -50,8 +51,6 @@ void setup()
   tickTimer.begin(updateTemperature, 5000000);
   iniMot();
   iniPos();
-  digitalWrite(LEDPin, HIGH);
-  delay(500);
   digitalWrite(LEDPin, LOW);
 }
 
