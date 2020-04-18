@@ -204,11 +204,15 @@ void setup()
   digitalWrite(LEDPin, HIGH);
   delay(1000);
   hasGNSS = Serial3.available() > 0;
-  hasFocuser = Serial2.available() > 0;
+  //hasFocuser = Serial2.available() > 0;
+  char ret;
   while (Serial2.available() > 0)
   {
-    Serial2.read();
-    hasFocuser = '?';
+    ret = Serial2.read();
+    if (ret == '?')
+    {
+      hasFocuser = true;
+    }
   }
   digitalWrite(LEDPin, LOW);
 }
