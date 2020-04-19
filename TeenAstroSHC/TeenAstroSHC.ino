@@ -1,5 +1,5 @@
 /*
-* Title       TeenAstro Smart Hand Controller
+* Title  TeenAstro Smart Hand Controller
 *
 * Copyright (C) 2020 Charles Lemaire, Howard Dutton
 *
@@ -22,10 +22,10 @@
 *
 *
 * Author: Charles Lemaire, https://groups.io/g/TeenAstro
-* Author: Howard Dutton, http://www.stellarjourney.com, hjd1964@gmail.com
+* Author: Howard Dutton
 *
 */
-#include "Config.h"
+#include "SmartConfig.h"
 #include "SmartController.h"
 #include <TeenAstroMountStatus.h>
 
