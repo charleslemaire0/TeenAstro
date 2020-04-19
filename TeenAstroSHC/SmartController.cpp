@@ -1,6 +1,6 @@
 
 #include <TeenAstroMountStatus.h>
-#include "_EEPROM_ext.h"
+#include "XEEPROM.hpp"
 #include "SHC_text.h"
 #include "SmartController.h"
 

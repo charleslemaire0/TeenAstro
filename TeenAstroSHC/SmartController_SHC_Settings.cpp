@@ -1,6 +1,5 @@
 #include "SmartController.h"
 #include "SHC_text.h"
-#include "_EEPROM_ext.h"
 
 void SmartHandController::menuSHCSettings()
 {
@@ -123,8 +122,8 @@ void SmartHandController::resetSHC()
 {
   if (display->UserInterfaceMessage(&buttonPad, T_RESET, T_TO, T_FACTORY, T_NO "\n" T_YES) == 2)
   {
-    EEPROM_writeInt(0, 0);
-    EEPROM.commit();
+    XEEPROM.writeInt(0, 0);
+    XEEPROM.commit();
     powerCycleRequired = true;
     exitMenu = true;
     return;
