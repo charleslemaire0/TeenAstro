@@ -86,7 +86,7 @@ selection list with string line
 returns line height
 */
 
-static uint8_t ext_draw_catalog_list_line2(u8g2_t *u8g2, uint8_t y, CATALOG_DISPLAY_MODES displayMode, bool firstPass)
+static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPLAY_MODES displayMode, bool firstPass)
 {
   u8g2_uint_t x = 0;
 
@@ -377,7 +377,7 @@ side effects:
 u8g2_SetFontDirection(u8g2, 0);
 u8g2_SetFontPosBaseline(u8g2);
 */
-bool ext_UserInterfaceCatalog2(u8g2_t *u8g2, Pad* extPad, const char *title)
+bool ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *title)
 {
   u8g2_SetFont(u8g2, u8g2_font_helvR10_tf);
   u8g2_uint_t yy;
@@ -400,7 +400,7 @@ bool ext_UserInterfaceCatalog2(u8g2_t *u8g2, Pad* extPad, const char *title)
         u8g2_DrawHLine(u8g2, 0, yy - line_height - u8g2_GetDescent(u8g2) + 1, u8g2_GetDisplayWidth(u8g2));
         yy += 3;
       }
-      ext_draw_catalog_list_line2(u8g2, yy, thisDisplayMode, firstPass);
+      ext_draw_catalog_list_line(u8g2, yy, thisDisplayMode, firstPass);
       firstPass = false;
     } while (u8g2_NextPage(u8g2));
 

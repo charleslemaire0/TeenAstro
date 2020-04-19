@@ -9,7 +9,7 @@
 
 bool U8G2_EXT::UserInterfaceCatalog(Pad *extPad, const char *title)
 {
-  return ext_UserInterfaceCatalog2(U8G2_EXT::getU8g2(), extPad, title);
+  return ext_UserInterfaceCatalog(U8G2_EXT::getU8g2(), extPad, title);
 };
 
 uint8_t U8G2_EXT::UserInterfaceMessage(Pad *extPad, const char *title1, const char *title2, const char *title3, const char *buttons)
