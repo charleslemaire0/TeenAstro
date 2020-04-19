@@ -34,7 +34,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
-#include "u8g2_ext_catalog2.h"
+#include "u8g2_ext_catalog.h"
 #include <U8g2lib.h>
 #include <TeenAstroCatalog.h>
 #include "u8g2_ext_value.h"

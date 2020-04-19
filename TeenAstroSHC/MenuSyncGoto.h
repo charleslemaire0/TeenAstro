@@ -481,11 +481,11 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilterVarMaxPer()
 
 SmartHandController::MENU_RESULT SmartHandController::menuRADecNow(bool sync)
 {
-  if (display->UserInterfaceInputValueRA(&buttonPad, &angleRA))
+  if (display->UserInterfaceInputValueRA(&buttonPad, T_RIGHTASC, &angleRA))
   {
     float fR;
     secondsToFloat(angleRA,fR);
-    if (display->UserInterfaceInputValueDec(&buttonPad, &angleDEC))
+    if (display->UserInterfaceInputValueDec(&buttonPad, T_DECLINAISON, &angleDEC))
     {
       float fD;
       secondsToFloat(angleDEC,fD);
@@ -497,11 +497,11 @@ SmartHandController::MENU_RESULT SmartHandController::menuRADecNow(bool sync)
 
 SmartHandController::MENU_RESULT SmartHandController::menuRADecJ2000(bool sync)
 {
-  if (display->UserInterfaceInputValueRA(&buttonPad, &angleRA))
+  if (display->UserInterfaceInputValueRA(&buttonPad, T_RIGHTASC, &angleRA))
   {
     float fR;
     secondsToFloat(angleRA,fR);
-    if (display->UserInterfaceInputValueDec(&buttonPad, &angleDEC))
+    if (display->UserInterfaceInputValueDec(&buttonPad, T_DECLINAISON, &angleDEC))
     {
       float fD;
       secondsToFloat(angleDEC,fD);
@@ -513,11 +513,11 @@ SmartHandController::MENU_RESULT SmartHandController::menuRADecJ2000(bool sync)
 
 SmartHandController::MENU_RESULT SmartHandController::menuAltAz(bool sync)
 {
-  if (display->UserInterfaceInputValueAz(&buttonPad, &angleRA))
+  if (display->UserInterfaceInputValueAz(&buttonPad, T_AZIMUTH, &angleRA))
   {
     float fAz;
     secondsToFloat(angleRA,fAz);
-    if (display->UserInterfaceInputValueAlt(&buttonPad, &angleDEC))
+    if (display->UserInterfaceInputValueAlt(&buttonPad, T_ALTITUDE, &angleDEC))
     {
       float fAlt;
       secondsToFloat(angleDEC,fAlt);

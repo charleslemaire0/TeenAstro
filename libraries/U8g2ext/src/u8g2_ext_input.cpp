@@ -1,7 +1,6 @@
 #include <TeenAstroFunction.h>
 #include "u8g2_ext_input.h"
 #include "u8g2_ext_event.h"
-#include "SHC_text.h"
 
 /*
 Copyright (c) 2018, 
@@ -313,7 +312,7 @@ uint8_t ext_UserInterfaceInputValueDMS(u8g2_t *u8g2, Pad* extPad, const char *ti
   uint8_t digits1,
 
   char* symb1, char* symb2, char* symb3,
-  char* symb_plus, char* symb_minus,
+  const char* symb_plus, const char* symb_minus,
   bool display_seconds)
 {
 
@@ -640,45 +639,44 @@ uint8_t ext_UserInterfaceInputValueDate(u8g2_t *u8g2, Pad* extPad, const char *t
   //return r;  
 }
 
-uint8_t ext_UserInterfaceInputValueRA(u8g2_t *u8g2, Pad *extPad, long *value)
+uint8_t ext_UserInterfaceInputValueRA(u8g2_t *u8g2, Pad *extPad, const char* label, long *value)
 {
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, T_RIGHTASC, value, 0, 86399, 2, "h", "m", "s", "", "", true);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, label, value, 0, 86399, 2, "h", "m", "s", "", "", true);
 }
 
-uint8_t ext_UserInterfaceInputValueDec(u8g2_t *u8g2, Pad *extPad, long *value)
+uint8_t ext_UserInterfaceInputValueDec(u8g2_t *u8g2, Pad *extPad, const char* label, long *value)
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, T_DECLINAISON, value, -324000, 324000, 2, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, label, value, -324000, 324000, 2, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
 }
 
-uint8_t ext_UserInterfaceInputValueAlt(u8g2_t *u8g2, Pad *extPad, long *value)
+uint8_t ext_UserInterfaceInputValueAlt(u8g2_t *u8g2, Pad *extPad, const char* label, long *value)
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, T_ALTITUDE, value, 0, 324000, 2, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, label, value, 0, 324000, 2, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
 }
 
-uint8_t ext_UserInterfaceInputValueAz(u8g2_t *u8g2, Pad *extPad, long *value)
+uint8_t ext_UserInterfaceInputValueAz(u8g2_t *u8g2, Pad *extPad, const char* label, long *value)
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, T_AZIMUTH, value, 0, 324000*4, 3, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, label, value, 0, 324000*4, 3, DEGREE_SYMBOL, "'", "\"", "+", "-", true);
 }
 
-uint8_t ext_UserInterfaceInputValueLocalTime(u8g2_t *u8g2, Pad *extPad, long *value)
+uint8_t ext_UserInterfaceInputValueLocalTime(u8g2_t *u8g2, Pad *extPad, const char* label, long *value)
 {
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, T_LOCALTIME, value, 0, 86399, 2, ":", ":", "", "", "", true);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, label, value, 0, 86399, 2, ":", ":", "", "", "", true);
 }
 
-
-uint8_t ext_UserInterfaceInputValueLatitude(u8g2_t *u8g2, Pad *extPad, long *value)
-{
-  char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, T_LATITUDE, value, -324000, 324000, 2, DEGREE_SYMBOL, "'", "\"", T_N " ", T_S " ", false);
-}
-
-uint8_t ext_UserInterfaceInputValueLongitude(u8g2_t *u8g2, Pad *extPad, long *value)
+uint8_t ext_UserInterfaceInputValueLatitude(u8g2_t *u8g2, Pad *extPad, const char* label, const char* labelN, const char* labelS, long *value)
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, T_LONGITUDE, value, -648000, 648000, 3, DEGREE_SYMBOL, "'", "\"", T_W " ", T_E " ", false);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, label, value, -324000, 324000, 2, DEGREE_SYMBOL, "'", "\"", labelN, labelS, false);
+}
+
+uint8_t ext_UserInterfaceInputValueLongitude(u8g2_t *u8g2, Pad *extPad, const char* label, const char* labelW, const char* labelE, long *value)
+{
+  char DEGREE_SYMBOL[] = { 0xB0, '\0' };
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, label, value, -648000, 648000, 3, DEGREE_SYMBOL, "'", "\"", labelW, labelE, false);
 }
 
 void add_days(uint8_t& year, uint8_t& month, uint8_t& day, int days2add)

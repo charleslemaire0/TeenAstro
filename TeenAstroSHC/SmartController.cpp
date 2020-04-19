@@ -1753,7 +1753,7 @@ void SmartHandController::menuLocalTime()
   long value;
   if (DisplayMessageLX200(GetLocalTimeLX200(value)))
   {
-    if (display->UserInterfaceInputValueLocalTime(&buttonPad, &value))
+    if (display->UserInterfaceInputValueLocalTime(&buttonPad, T_LOCALTIME, &value))
     {
       DisplayMessageLX200(SetLocalTimeLX200(value), false);
     }
@@ -1766,7 +1766,7 @@ void SmartHandController::menuLocalTimeZone()
   if (DisplayMessageLX200(GetLX200Float(":GG#", &val)))
   {
     val *= -1;
-    if (display->UserInterfaceInputValueFloatIncr(&buttonPad, T_TIMEZONE, "UTC ", &val, -12, 12, 3, 1, 0.5, " hour"))
+    if (display->UserInterfaceInputValueFloatIncr(&buttonPad, T_TIMEZONE, "UTC ", &val, -12, 12, 3, 1, 0.5, " " T_HOUR))
     {
       char cmd[15];
       sprintf(cmd, ":SG%+05.1f#", -val);
@@ -2255,7 +2255,7 @@ void SmartHandController::menuLatitude()
   if (DisplayMessageLX200(GetLatitudeLX200(degree_d)))
   {
     long angle = degree_d * 3600;
-    if (display->UserInterfaceInputValueLatitude(&buttonPad, &angle))
+    if (display->UserInterfaceInputValueLatitude(&buttonPad, T_LONGITUDE, T_N " ", T_S " ", &angle))
     {
       char cmd[20];
       char sign = angle < 0 ? '-' : '+';
@@ -2277,7 +2277,7 @@ void SmartHandController::menuLongitude()
   if (DisplayMessageLX200(GetLongitudeLX200(degree_d)))
   {
     long angle = degree_d * 3600;
-    if (display->UserInterfaceInputValueLongitude(&buttonPad, &angle))
+    if (display->UserInterfaceInputValueLongitude(&buttonPad, T_LONGITUDE, T_W " ", T_E " ", &angle))
     {
       char cmd[20];
       char sign = angle < 0 ? '-' : '+';

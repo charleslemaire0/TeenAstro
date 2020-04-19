@@ -1,7 +1,19 @@
-#include "Pad.h"
+#include "TeenAstroPad.h"
 #include "Config.h"
 
 volatile byte eventbuttons[7] = { E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE };
+
+#if defined(DEBUG_ON)
+#define D(x)     DebugSer.print(x)
+#define DH(x,y)  DebugSer.print(x,HEX)
+#define DL(x)    DebugSer.println(x)
+#define DHL(x,y) DebugSer.println(x,HEX)
+#else
+#define D(x)
+#define DH(x,y)
+#define DL(x)
+#define DHL(x,y)
+#endif
 
 void click_s() {
   eventbuttons[B_SHIFT] = E_CLICK;

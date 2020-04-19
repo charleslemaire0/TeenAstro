@@ -1,5 +1,5 @@
 #include "u8g2_ext.h"
-#include "u8g2_ext_catalog2.h"
+#include "u8g2_ext_catalog.h"
 
 #include "u8g2_ext_input.h"
 #include "u8g2_ext_selection.h"
@@ -49,39 +49,39 @@ uint8_t U8G2_EXT::UserInterfaceInputValueDate(Pad *extPad, const char *title, ui
   return ext_UserInterfaceInputValueDate(U8G2_EXT::getU8g2(), extPad, title, year, month, day);
 };
 
-uint8_t U8G2_EXT::UserInterfaceInputValueRA(Pad *extPad, long *value)
+uint8_t U8G2_EXT::UserInterfaceInputValueRA(Pad *extPad, const char* label, long *value)
 {
-  return ext_UserInterfaceInputValueRA(U8G2_EXT::getU8g2(), extPad, value);
+  return ext_UserInterfaceInputValueRA(U8G2_EXT::getU8g2(), extPad, label, value);
 };
 
-uint8_t U8G2_EXT::UserInterfaceInputValueDec(Pad *extPad, long *value)
+uint8_t U8G2_EXT::UserInterfaceInputValueDec(Pad *extPad, const char* label, long *value)
 {
-  return ext_UserInterfaceInputValueDec(U8G2_EXT::getU8g2(), extPad, value);
+  return ext_UserInterfaceInputValueDec(U8G2_EXT::getU8g2(), extPad, label, value);
 };
 
-uint8_t U8G2_EXT::UserInterfaceInputValueAlt(Pad *extPad, long *value)
+uint8_t U8G2_EXT::UserInterfaceInputValueAlt(Pad *extPad, const char* label, long *value)
 {
-  return ext_UserInterfaceInputValueAlt(U8G2_EXT::getU8g2(), extPad, value);
+  return ext_UserInterfaceInputValueAlt(U8G2_EXT::getU8g2(), extPad, label, value);
 };
 
-uint8_t U8G2_EXT::UserInterfaceInputValueAz(Pad *extPad, long *value)
+uint8_t U8G2_EXT::UserInterfaceInputValueAz(Pad *extPad, const char* label, long *value)
 {
-  return ext_UserInterfaceInputValueAz(U8G2_EXT::getU8g2(), extPad, value);
+  return ext_UserInterfaceInputValueAz(U8G2_EXT::getU8g2(), extPad, label, value);
 };
 
-uint8_t U8G2_EXT::UserInterfaceInputValueLocalTime(Pad *extPad, long *value)
+uint8_t U8G2_EXT::UserInterfaceInputValueLocalTime(Pad *extPad, const char* label, long *value)
 {
-  return ext_UserInterfaceInputValueLocalTime(U8G2_EXT::getU8g2(), extPad, value);
+  return ext_UserInterfaceInputValueLocalTime(U8G2_EXT::getU8g2(), extPad, label, value);
 };
 
-uint8_t U8G2_EXT::UserInterfaceInputValueLatitude(Pad *extPad, long *value)
+uint8_t U8G2_EXT::UserInterfaceInputValueLatitude(Pad *extPad, const char* label, const char* labelN, const char* labelS, long *value)
 {
-  return ext_UserInterfaceInputValueLatitude(U8G2_EXT::getU8g2(), extPad, value);
+  return ext_UserInterfaceInputValueLatitude(U8G2_EXT::getU8g2(), extPad, label, labelN, labelS, value);
 };
 
-uint8_t U8G2_EXT::UserInterfaceInputValueLongitude(Pad *extPad, long *value)
+uint8_t U8G2_EXT::UserInterfaceInputValueLongitude(Pad *extPad, const char* label, const char* labelW, const char* labelE, long *value)
 {
-  return ext_UserInterfaceInputValueLongitude(U8G2_EXT::getU8g2(), extPad, value);
+  return ext_UserInterfaceInputValueLongitude(U8G2_EXT::getU8g2(), extPad, label, labelW, labelE, value);
 };
 
 uint8_t U8G2_EXT::drawRA(uint8_t x, uint8_t y, const char* Ra)

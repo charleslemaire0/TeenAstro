@@ -2,8 +2,9 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <TeenAstroLX200io.h>
-#include "Pad.h"
-#include "u8g2_ext.h"
+#include <u8g2_ext.h>
+#include <TeenAstroPad.h>
+
 #define NUMPAGES 6
 class SmartHandController
 {
