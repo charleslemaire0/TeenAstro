@@ -1,4 +1,4 @@
-#include "WifiBluetooth.h"
+#include "TeenAstroWifi.h"
 
 
 // -----------------------------------------------------------------------------------
@@ -131,7 +131,7 @@ bool loginRequired = true;
 
 // convert hex to int with error checking
 // returns -1 on error
-int wifibluetooth::hexToInt(String s)
+int TeenAstroWifi::hexToInt(String s)
 {
   int i0;
   int i1;
@@ -164,7 +164,7 @@ int wifibluetooth::hexToInt(String s)
 
 
 
-void wifibluetooth::handleWifi()
+void TeenAstroWifi::handleWifi()
 {
   char temp[300] = "";
   char temp1[80] = "";
@@ -252,7 +252,7 @@ void wifibluetooth::handleWifi()
   sendHtmlDone(data);
 }
 
-void wifibluetooth::processWifiGet()
+void TeenAstroWifi::processWifiGet()
 {
   String v, v1;
 
@@ -271,7 +271,7 @@ void wifibluetooth::processWifiGet()
   if (v != "")
   {
     strcpy(masterPassword, (char*)v.c_str());
-    wifibluetooth::EEPROM_writeString(EPPROM_password, masterPassword);
+    TeenAstroWifi::EEPROM_writeString(EPPROM_password, masterPassword);
     EEwrite = true;
   }
   //wifi Mode

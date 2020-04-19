@@ -3,7 +3,7 @@
 #define ALIGN_OFF
 #include <Arduino.h>
 #include <OneButton.h>
-#include <WifiBluetooth.h>
+#include <TeenAstroWifi.h>
 
 
 enum Button { B_SHIFT, B_NORTH, B_SOUTH, B_EAST, B_WEST, B_F, B_f };
@@ -14,7 +14,7 @@ class Pad
 public:
   enum ButtonSpeed { BS_SLOW, BS_MEDIUM, BS_FAST };
 private:
-  wifibluetooth m_wbt;
+  TeenAstroWifi m_wbt;
   bool m_buttonPressed;
   bool m_shiftPressed;
   OneButton *m_buttons[7];

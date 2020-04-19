@@ -1,5 +1,5 @@
 #include <TeenAstroLX200io.h>
-#include "WifiBluetooth.h"
+#include "TeenAstroWifi.h"
 // -----------------------------------------------------------------------------------
 // configuration_focuser
 const char html_configParkFocuser[] PROGMEM =
@@ -107,7 +107,7 @@ const char html_configPosFocuser[] PROGMEM =
 
 
 
-void wifibluetooth::handleConfigurationFocuser()
+void TeenAstroWifi::handleConfigurationFocuser()
 {
 
   char temp[320] = "";
@@ -204,7 +204,7 @@ void wifibluetooth::handleConfigurationFocuser()
 
 }
 
-void wifibluetooth::processConfigurationFocuserGet()
+void TeenAstroWifi::processConfigurationFocuserGet()
 {
   String v;
   int i;

@@ -1,5 +1,5 @@
 #include <TeenAstroLX200io.h>
-#include "WifiBluetooth.h"
+#include "TeenAstroWifi.h"
 #include "config.h"
 #include "Ajax.h"
 // -----------------------------------------------------------------------------------
@@ -160,7 +160,7 @@ const char html_controlEnd[] =
 "<br />\r\n";
 
 
-void wifibluetooth::handleControl()
+void TeenAstroWifi::handleControl()
 {
   Ser.setTimeout(WebTimeout);
   sendHtmlStart();
@@ -267,14 +267,14 @@ void wifibluetooth::handleControl()
   sendHtmlDone(data);
 }
 
-void wifibluetooth::guideAjax()
+void TeenAstroWifi::guideAjax()
 {
   processControlGet();
   server.send(200, "text/html", "");
 }
 
 
-void wifibluetooth::controlAjax()
+void TeenAstroWifi::controlAjax()
 {
   String data = "";
   char temp[40] = "";
@@ -299,7 +299,7 @@ int get_temp_hour;
 int get_temp_minute;
 int get_temp_second;
 
-void wifibluetooth::processControlGet()
+void TeenAstroWifi::processControlGet()
 {
   String v;
   int i;

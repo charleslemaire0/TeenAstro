@@ -1,6 +1,6 @@
 #include <TeenAstroLX200io.h>
 #include "config.h"
-#include "WifiBluetooth.h"
+#include "TeenAstroWifi.h"
 // -----------------------------------------------------------------------------------
 // configuration_telescope
 
@@ -133,7 +133,7 @@ const char html_reboot_t[] PROGMEM =
 "\r\n";
 bool restartRequired_t = false;
 
-void wifibluetooth::handleConfigurationTelescope()
+void TeenAstroWifi::handleConfigurationTelescope()
 {
   Ser.setTimeout(WebTimeout);
   sendHtmlStart();
@@ -278,7 +278,7 @@ void wifibluetooth::handleConfigurationTelescope()
   sendHtmlDone(data);
 }
 
-void wifibluetooth::processConfigurationTelescopeGet()
+void TeenAstroWifi::processConfigurationTelescopeGet()
 {
   String v;
   int i;

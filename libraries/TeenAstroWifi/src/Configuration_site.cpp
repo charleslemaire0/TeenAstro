@@ -1,5 +1,5 @@
 #include <TeenAstroLX200io.h>
-#include "WifiBluetooth.h"
+#include "TeenAstroWifi.h"
 // -----------------------------------------------------------------------------------
 // configuration_Site
 
@@ -68,7 +68,7 @@ const char html_configElev3[] PROGMEM =
 "<br />\r\n";
 
 
-void wifibluetooth::handleConfigurationSite()
+void TeenAstroWifi::handleConfigurationSite()
 {
   Ser.setTimeout(WebTimeout);
   sendHtmlStart();
@@ -168,7 +168,7 @@ void wifibluetooth::handleConfigurationSite()
   sendHtmlDone(data);
 }
 
-void wifibluetooth::processConfigurationSiteGet()
+void TeenAstroWifi::processConfigurationSiteGet()
 {
   String v;
   int i;

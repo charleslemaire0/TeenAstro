@@ -1,5 +1,5 @@
 #include <TeenAstroLX200io.h>
-#include "WifiBluetooth.h"
+#include "TeenAstroWifi.h"
 
 
 const char html_headB[] PROGMEM = "<!DOCTYPE HTML>\r\n<html>\r\n<head>\r\n";
@@ -40,58 +40,58 @@ const char html_links6S[] PROGMEM = "<a href='/wifi.htm' style='background-color
 const char html_links6N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />";
 
 
-bool wifibluetooth::wifiOn = true;
+bool TeenAstroWifi::wifiOn = true;
 
-int wifibluetooth::WebTimeout = TIMEOUT_WEB;
-int wifibluetooth::CmdTimeout = TIMEOUT_CMD;
-wifibluetooth::WifiConnectMode wifibluetooth::activeWifiConnectMode = WifiConnectMode::AutoClose;
+int TeenAstroWifi::WebTimeout = TIMEOUT_WEB;
+int TeenAstroWifi::CmdTimeout = TIMEOUT_CMD;
+TeenAstroWifi::WifiConnectMode TeenAstroWifi::activeWifiConnectMode = WifiConnectMode::AutoClose;
 
-char wifibluetooth::masterPassword[40] = Default_Password;
+char TeenAstroWifi::masterPassword[40] = Default_Password;
 
-wifibluetooth::WifiMode wifibluetooth::activeWifiMode = WifiMode::M_AcessPoint;
-bool wifibluetooth::stationDhcpEnabled[3] = { true, true, true };
+TeenAstroWifi::WifiMode TeenAstroWifi::activeWifiMode = WifiMode::M_AcessPoint;
+bool TeenAstroWifi::stationDhcpEnabled[3] = { true, true, true };
 
-char wifibluetooth::wifi_sta_ssid[3][40] = { "", "", "" };
-char wifibluetooth::wifi_sta_pwd[3][40] = { "", "", "" };
+char TeenAstroWifi::wifi_sta_ssid[3][40] = { "", "", "" };
+char TeenAstroWifi::wifi_sta_pwd[3][40] = { "", "", "" };
 
-IPAddress wifibluetooth::wifi_sta_ip[3] = { IPAddress(192, 168, 0, 1), IPAddress(192, 168, 0, 1), IPAddress(192, 168, 0, 1) };
-IPAddress wifibluetooth::wifi_sta_gw[3] = { IPAddress(192, 168, 0, 1), IPAddress(192, 168, 0, 1), IPAddress(192, 168, 0, 1) };
-IPAddress wifibluetooth::wifi_sta_sn[3] = { IPAddress(255, 255, 255, 0), IPAddress(255, 255, 255, 0), IPAddress(255, 255, 255, 0) };
+IPAddress TeenAstroWifi::wifi_sta_ip[3] = { IPAddress(192, 168, 0, 1), IPAddress(192, 168, 0, 1), IPAddress(192, 168, 0, 1) };
+IPAddress TeenAstroWifi::wifi_sta_gw[3] = { IPAddress(192, 168, 0, 1), IPAddress(192, 168, 0, 1), IPAddress(192, 168, 0, 1) };
+IPAddress TeenAstroWifi::wifi_sta_sn[3] = { IPAddress(255, 255, 255, 0), IPAddress(255, 255, 255, 0), IPAddress(255, 255, 255, 0) };
 
-char wifibluetooth::wifi_ap_ssid[40] = "TeenAstro";
-char wifibluetooth::wifi_ap_pwd[40] = "password";
-byte wifibluetooth::wifi_ap_ch = 7;
+char TeenAstroWifi::wifi_ap_ssid[40] = "TeenAstro";
+char TeenAstroWifi::wifi_ap_pwd[40] = "password";
+byte TeenAstroWifi::wifi_ap_ch = 7;
 
-IPAddress wifibluetooth::wifi_ap_ip = IPAddress(192, 168, 0, 1);
-IPAddress wifibluetooth::wifi_ap_gw = IPAddress(192, 168, 0, 1);
-IPAddress wifibluetooth::wifi_ap_sn = IPAddress(255, 255, 255, 0);
+IPAddress TeenAstroWifi::wifi_ap_ip = IPAddress(192, 168, 0, 1);
+IPAddress TeenAstroWifi::wifi_ap_gw = IPAddress(192, 168, 0, 1);
+IPAddress TeenAstroWifi::wifi_ap_sn = IPAddress(255, 255, 255, 0);
 
 
 
-WiFiServer wifibluetooth::cmdSvr = WiFiServer(9999);
-WiFiClient wifibluetooth::cmdSvrClient;
+WiFiServer TeenAstroWifi::cmdSvr = WiFiServer(9999);
+WiFiClient TeenAstroWifi::cmdSvrClient;
 
 #ifdef ARDUINO_ESP8266_WEMOS_D1MINI
-ESP8266WebServer wifibluetooth::server;
+ESP8266WebServer TeenAstroWifi::server;
 ESP8266WebServer httpServer(80);
 ESP8266HTTPUpdateServer httpUpdater;
 #endif 
 #ifdef ARDUINO_D1_MINI32
-WebServer wifibluetooth::server;
+WebServer TeenAstroWifi::server;
 WebServer httpServer(80);
 #endif
 // -----------------------------------------------------------------------------------
 // EEPROM related functions
 
 // write int numbers into EEPROM at position i (2 bytes)
-void wifibluetooth::EEPROM_writeInt(int i, int j) {
+void TeenAstroWifi::EEPROM_writeInt(int i, int j) {
   uint8_t *k = (uint8_t*)&j;
   EEPROM.write(i + 0, *k); k++;
   EEPROM.write(i + 1, *k);
 }
 
 // read int numbers from EEPROM at position i (2 bytes)
-int wifibluetooth::EEPROM_readInt(int i) {
+int TeenAstroWifi::EEPROM_readInt(int i) {
   uint16_t j;
   uint8_t *k = (uint8_t*)&j;
   *k = EEPROM.read(i + 0); k++;
@@ -100,7 +100,7 @@ int wifibluetooth::EEPROM_readInt(int i) {
 }
 
 // write 4 byte variable into EEPROM at position i (4 bytes)
-void wifibluetooth::EEPROM_writeQuad(int i, byte *v) {
+void TeenAstroWifi::EEPROM_writeQuad(int i, byte *v) {
   EEPROM.write(i + 0, *v); v++;
   EEPROM.write(i + 1, *v); v++;
   EEPROM.write(i + 2, *v); v++;
@@ -108,7 +108,7 @@ void wifibluetooth::EEPROM_writeQuad(int i, byte *v) {
 }
 
 // read 4 byte variable from EEPROM at position i (4 bytes)
-void wifibluetooth::EEPROM_readQuad(int i, byte *v) {
+void TeenAstroWifi::EEPROM_readQuad(int i, byte *v) {
   *v = EEPROM.read(i + 0); v++;
   *v = EEPROM.read(i + 1); v++;
   *v = EEPROM.read(i + 2); v++;
@@ -116,44 +116,44 @@ void wifibluetooth::EEPROM_readQuad(int i, byte *v) {
 }
 
 // write String into EEPROM at position i (40 bytes)
-void wifibluetooth::EEPROM_writeString(int i, char l[]) {
+void TeenAstroWifi::EEPROM_writeString(int i, char l[]) {
   for (int l1 = 0; l1<40; l1++) {
     EEPROM.write(i + l1, *l); l++;
   }
 }
 
 // read String from EEPROM at position i (40 bytes)
-void wifibluetooth::EEPROM_readString(int i, char l[]) {
+void TeenAstroWifi::EEPROM_readString(int i, char l[]) {
   for (int l1 = 0; l1<40; l1++) {
     *l = EEPROM.read(i + l1); l++;
   }
 }
 
 // write 4 byte float into EEPROM at position i (4 bytes)
-void wifibluetooth::EEPROM_writeFloat(int i, float f) {
+void TeenAstroWifi::EEPROM_writeFloat(int i, float f) {
   EEPROM_writeQuad(i, (byte*)&f);
 }
 
 // read 4 byte float from EEPROM at position i (4 bytes)
-float wifibluetooth::EEPROM_readFloat(int i) {
+float TeenAstroWifi::EEPROM_readFloat(int i) {
   float f;
   EEPROM_readQuad(i, (byte*)&f);
   return f;
 }
 
 // write 4 byte long into EEPROM at position i (4 bytes)
-void wifibluetooth::EEPROM_writeLong(int i, long l) {
+void TeenAstroWifi::EEPROM_writeLong(int i, long l) {
   EEPROM_writeQuad(i, (byte*)&l);
 }
 
 // read 4 byte long from EEPROM at position i (4 bytes)
-long wifibluetooth::EEPROM_readLong(int i) {
+long TeenAstroWifi::EEPROM_readLong(int i) {
   long l;
   EEPROM_readQuad(i, (byte*)&l);
   return l;
 }
 
-bool wifibluetooth::atoi2(char *a, int *i) {
+bool TeenAstroWifi::atoi2(char *a, int *i) {
   char *conv_end;
   long l = strtol(a, &conv_end, 10);
 
@@ -162,7 +162,7 @@ bool wifibluetooth::atoi2(char *a, int *i) {
   return true;
 };
 
-bool wifibluetooth::atof2(char *a, float *f) {
+bool TeenAstroWifi::atof2(char *a, float *f) {
   char *conv_end;
   double l = strtof(a, &conv_end);
 
@@ -171,7 +171,7 @@ bool wifibluetooth::atof2(char *a, float *f) {
   return true;
 };
 
-void wifibluetooth::handleNotFound()
+void TeenAstroWifi::handleNotFound()
 {
   String message = "File Not Found\n\n";
   message += "URI: ";
@@ -187,7 +187,7 @@ void wifibluetooth::handleNotFound()
   server.send(404, "text/plain", message);
 }
 
-void wifibluetooth::preparePage(String &data, int page)
+void TeenAstroWifi::preparePage(String &data, int page)
 {
   char temp1[80] = "";
   data = FPSTR(html_headB);
@@ -240,7 +240,7 @@ void wifibluetooth::preparePage(String &data, int page)
   data += FPSTR(html_onstep_header4);
 }
 
-void wifibluetooth::writeStation2EEPROM(const int& k)
+void TeenAstroWifi::writeStation2EEPROM(const int& k)
 {
   unsigned int adress = EEPROM_start_wifi_sta + k * 100;
   EEPROM.write(adress, stationDhcpEnabled[k]); adress++;
@@ -253,7 +253,7 @@ void wifibluetooth::writeStation2EEPROM(const int& k)
   EEPROM_writeString(adress, wifi_sta_ssid[k]); adress += sizeof(wifi_sta_ssid[k]);
   EEPROM_writeString(adress, wifi_sta_pwd[k]); adress += sizeof(wifi_sta_pwd[k]);
 }
-void wifibluetooth::writeAccess2EEPROM()
+void TeenAstroWifi::writeAccess2EEPROM()
 {
   unsigned int adress = EEPROM_start_wifi_ap;
   for (int i = 0; i < 4; i++, adress++)
@@ -267,7 +267,7 @@ void wifibluetooth::writeAccess2EEPROM()
   EEPROM_writeString(adress, wifi_ap_pwd);
 }
 
-void wifibluetooth::initFromEEPROM()
+void TeenAstroWifi::initFromEEPROM()
 {
   EEPROM.begin(1024);
   unsigned int adress = EEPROM_start;
@@ -321,7 +321,7 @@ void wifibluetooth::initFromEEPROM()
     if (!passwordok)
     {
       strcpy(masterPassword,Default_Password);
-      wifibluetooth::EEPROM_writeString(EPPROM_password, masterPassword);
+      TeenAstroWifi::EEPROM_writeString(EPPROM_password, masterPassword);
       EEPROM.commit();
     }
 
@@ -351,7 +351,7 @@ void wifibluetooth::initFromEEPROM()
   }
 }
 
-void wifibluetooth::setup()
+void TeenAstroWifi::setup()
 {
   initFromEEPROM();
 
@@ -402,14 +402,14 @@ Again:
 #endif
   switch (activeWifiMode)
   {
-  case wifibluetooth::M_AcessPoint:
+  case TeenAstroWifi::M_AcessPoint:
     WiFi.softAPConfig(wifi_ap_ip, wifi_ap_gw, wifi_ap_sn);
     WiFi.softAP(wifi_ap_ssid, wifi_ap_pwd, wifi_ap_ch);
     WiFi.mode(WIFI_AP);
     break;
-  case wifibluetooth::M_Station1:
-  case wifibluetooth::M_Station2:
-  case wifibluetooth::M_Station3:
+  case TeenAstroWifi::M_Station1:
+  case TeenAstroWifi::M_Station2:
+  case TeenAstroWifi::M_Station3:
     if (!stationDhcpEnabled[activeWifiMode])
     {
       WiFi.config(wifi_sta_ip[activeWifiMode], wifi_sta_gw[activeWifiMode], wifi_sta_sn[activeWifiMode]);
@@ -448,7 +448,7 @@ Again:
   httpServer.begin();
 };
 
-void wifibluetooth::update()
+void TeenAstroWifi::update()
 {
   if ((activeWifiMode == WifiMode::M_Station1 ||
        activeWifiMode == WifiMode::M_Station2 ||
@@ -527,12 +527,12 @@ void wifibluetooth::update()
   }
 }
 
-bool wifibluetooth::isWifiOn()
+bool TeenAstroWifi::isWifiOn()
 {
   return wifiOn;
 }
 
-bool wifibluetooth::isWifiRunning()
+bool TeenAstroWifi::isWifiRunning()
 {
   if (!wifiOn)
     return false;
@@ -543,14 +543,14 @@ bool wifibluetooth::isWifiRunning()
   return true;
 }
 
-void wifibluetooth::turnWifiOn(bool turnOn)
+void TeenAstroWifi::turnWifiOn(bool turnOn)
 {
   wifiOn = turnOn;
   EEPROM.write(EEPROM_WifiOn, turnOn);
   EEPROM.commit();
 }
 
-void wifibluetooth::getIP(uint8_t* ip)
+void TeenAstroWifi::getIP(uint8_t* ip)
 {
   IPAddress local;
   if (activeWifiMode == WifiMode::M_AcessPoint)
@@ -567,17 +567,17 @@ void wifibluetooth::getIP(uint8_t* ip)
   ip[3] = local[3];
 }
 
-const char* wifibluetooth::getPassword()
+const char* TeenAstroWifi::getPassword()
 {
    return &masterPassword[0];
 }
 
-int wifibluetooth::getWifiMode()
+int TeenAstroWifi::getWifiMode()
 {
   return activeWifiMode;
 }
 
-bool wifibluetooth::setWifiMode(int k)
+bool TeenAstroWifi::setWifiMode(int k)
 {
   if (k < 0 || k>3)
     return false;
@@ -587,7 +587,7 @@ bool wifibluetooth::setWifiMode(int k)
   return true;
 }
 
-void wifibluetooth::getStationName(int k, char* SSID )
+void TeenAstroWifi::getStationName(int k, char* SSID )
 {
   memcpy(SSID, wifi_sta_ssid[k], 40U);
   return;

@@ -1,6 +1,6 @@
 #include <TeenAstroLX200io.h>
 #include "config.h"
-#include "WifiBluetooth.h"
+#include "TeenAstroWifi.h"
 
 // -----------------------------------------------------------------------------------
 // The home page, status information
@@ -36,7 +36,7 @@ const char* html_indexLastError PROGMEM = "&nbsp;&nbsp;Last Error: <font class='
 const char* html_indexWorkload PROGMEM = "&nbsp;&nbsp;Workload: <font class='c'>%s</font><br />";
 
 
-void wifibluetooth::handleRoot()
+void TeenAstroWifi::handleRoot()
 {
   Ser.setTimeout(WebTimeout);
   sendHtmlStart();
