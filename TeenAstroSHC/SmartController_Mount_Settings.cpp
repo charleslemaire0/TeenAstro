@@ -3,12 +3,14 @@
 
 void SmartHandController::menuMount()
 {
-  current_selection_L2 = 1;
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
   while (!exitMenu)
   {
     const char *string_list_Mount = T_SHOWSETTINGS "\n" T_MOUNTTYPE "\n" T_MOTOR " 1\n" T_MOTOR " 2\n" T_GUIDERATE "\n" T_MAXRATE "\n" T_ACCELERATION "\n" T_RETICULE;
-    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, T_MOUNT, current_selection_L2, string_list_Mount);
-    switch (current_selection_L2)
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_MOUNT, s_sel, string_list_Mount);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
     {
     case 0:
       return;
@@ -70,18 +72,18 @@ void SmartHandController::DisplayAccMaxRateSettings()
 
 void SmartHandController::menuMountType()
 {
-  current_selection_L3 = ta_MountStatus.getMount();
-  if (current_selection_L3 == 0)
+  uint8_t tmp_sel = ta_MountStatus.getMount();
+  if (tmp_sel == 0)
   {
     DisplayLongMessage("!" T_WARNING "!", NULL, T_MOUNTTYPE, T_NOTDEFINED "!", -1);
-    current_selection_L3 = 1;
+    tmp_sel = 1;
   }
   const char *string_list_Mount = T_GERMANEQUATORIAL "\n" T_EQUATORIALFORK "\n" T_ALTAAZIMUTAL "\n" T_ALTAAZIMUTALFORK;
-  current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, T_MOUNTTYPE, current_selection_L3, string_list_Mount);
-  if (current_selection_L3)
+  tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_MOUNTTYPE, tmp_sel, string_list_Mount);
+  if (tmp_sel)
   {
     char out[10];
-    sprintf(out, ":S!%u#", current_selection_L3);
+    sprintf(out, ":S!%u#", tmp_sel);
     DisplayMessageLX200(SetLX200(out), false);
     delay(1000);
     Serial.end();

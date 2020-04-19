@@ -5,12 +5,15 @@
 void SmartHandController::menuTelSettings()
 {
   buttonPad.setMenuMode();
-  current_selection_L1 = 1;
+
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
   while (!exitMenu)
   {
-    const char *string_list_SettingsL1 = T_HANDCONTROLLER "\n" T_TIME " & " T_SITE "\n" T_SETPARK "\n" T_MOUNT "\n" T_LIMITS "\n" T_MAINUNITINFO "\nWifi";
-    current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPESETTINGS, current_selection_L1, string_list_SettingsL1);
-    switch (current_selection_L1)
+    const char *string_list_TelSettings = T_HANDCONTROLLER "\n" T_TIME " & " T_SITE "\n" T_SETPARK "\n" T_MOUNT "\n" T_LIMITS "\n" T_MAINUNITINFO "\nWifi";
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPESETTINGS, s_sel, string_list_TelSettings);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
     {
     case 0:
       exitMenu = true;
@@ -46,12 +49,14 @@ void SmartHandController::menuTelSettings()
 }
 void SmartHandController::menuMainUnitInfo()
 {
-  const char *string_list = T_SHOWVERSION "\n" T_REBOOT "\n" T_RESETTOFACTORY;
-  current_selection_L2 = 1;
-  while (current_selection_L2 != 0)
+  const char *string_list_MainUnitInfo = T_SHOWVERSION "\n" T_REBOOT "\n" T_RESETTOFACTORY;
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel = s_sel;
+  while (tmp_sel)
   {
-    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, T_MAINUNITINFO, 1, string_list);
-    switch (current_selection_L2)
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_MAINUNITINFO, tmp_sel, string_list_MainUnitInfo);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
     {
     case 0:
       return;
@@ -93,11 +98,13 @@ void SmartHandController::menuMainUnitInfo()
 void SmartHandController::menuLimits()
 {
   const char *string_list_LimitsL2 = T_HORIZON "\n" T_OVERHEAD "\n" T_MERIDIANE "\n" T_MERIDIANW "\n" T_UNDERPOLE;
-  current_selection_L3 = 1;
-  while (current_selection_L3 != 0)
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel = s_sel;
+  while (tmp_sel)
   {
-    current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, T_LIMITS, current_selection_L3, string_list_LimitsL2);
-    switch (current_selection_L3)
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_LIMITS, s_sel, string_list_LimitsL2);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
     {
     case 1:
       menuHorizon();

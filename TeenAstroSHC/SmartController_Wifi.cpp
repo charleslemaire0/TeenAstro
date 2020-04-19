@@ -6,11 +6,13 @@ void SmartHandController::menuWifi()
   const char *string_list = buttonPad.isWifiOn() ?
     T_TURNWIFIOFF "\n" T_SHOWPASSWORD "\n" T_SELECTMODE "\n" T_SHOWIP "\n" T_RESETTOFACTORY :
     T_TURNWIFION "\n" T_SHOWPASSWORD "\n" T_SELECTMODE "\n" T_SHOWIP "\n" T_RESETTOFACTORY;
-  current_selection_L2 = 1;
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
   while (!exitMenu)
   {
-    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Wifi", 1, string_list);
-    switch (current_selection_L2)
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, "Wifi", s_sel, string_list);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
     {
     case 0:
       return;

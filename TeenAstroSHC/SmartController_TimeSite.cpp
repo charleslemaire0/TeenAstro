@@ -4,12 +4,14 @@
 
 void SmartHandController::menuTimeAndSite()
 {
-  current_timelocation = 1;
-  const char *string_list_SettingsL2 = T_TIME "\n" T_SITE "\n" T_SYNCWITHGNSS;
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
+  const char *string_list_TimeAndSite = T_TIME "\n" T_SITE "\n" T_SYNCWITHGNSS;
   while (!exitMenu)
   {
-    current_timelocation = display->UserInterfaceSelectionList(&buttonPad, T_TIME " & " T_SITE, current_timelocation, string_list_SettingsL2);
-    switch (current_timelocation)
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TIME " & " T_SITE, s_sel, string_list_TimeAndSite);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
     {
     case 0:
       return;
@@ -31,11 +33,14 @@ void SmartHandController::menuTimeAndSite()
 
 void SmartHandController::menuDateAndTime()
 {
-  const char *string_list_SettingsL2 = T_CLOCK "\n" T_TIMEZONE "\n" T_DATE "\n" T_GNSSTIME;
+  const char *string_list_DateAndTime = T_CLOCK "\n" T_TIMEZONE "\n" T_DATE "\n" T_GNSSTIME;
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
   while (!exitMenu)
   {
-    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, T_TIMESETTINGS, current_selection_L2, string_list_SettingsL2);
-    switch (current_selection_L2)
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TIMESETTINGS, s_sel, string_list_DateAndTime);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
     {
     case 0:
       return;
@@ -61,12 +66,14 @@ void SmartHandController::menuDateAndTime()
 
 void SmartHandController::menuSite()
 {
-  current_selection_L2 = 1;
-  while (current_selection_L2 != 0)
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel = s_sel;
+  while (tmp_sel)
   {
-    const char *string_list_SiteL2 = T_LATITUDE "\n" T_LONGITUDE "\n" T_SITEELEVATION "\n" T_SELECTSITE;
-    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, "Menu Site", current_selection_L2, string_list_SiteL2);
-    switch (current_selection_L2)
+    const char *string_list_Site = T_LATITUDE "\n" T_LONGITUDE "\n" T_SITEELEVATION "\n" T_SELECTSITE;
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, "Menu Site", s_sel, string_list_Site);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
     {
     case 1:
       menuLatitude();
@@ -108,11 +115,11 @@ void SmartHandController::menuSites()
 
   if (DisplayMessageLX200(GetSiteLX200(val)))
   {
-    current_selection_L3 = val;
-    current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, "Menu Sites", current_selection_L3, txt);
-    if (current_selection_L3 != 0)
+    uint8_t tmp_sel = val;
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, "Menu Sites", tmp_sel, txt);
+    if ( tmp_sel != 0)
     {
-      val = current_selection_L3 - 1;
+      val = tmp_sel - 1;
       SetSiteLX200(val);
     }
   }

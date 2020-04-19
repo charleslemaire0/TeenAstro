@@ -51,18 +51,6 @@ private:
   pageInfo pages[NUMPAGES] = { {P_RADEC,true},{P_ALTAZ,true}, {P_TIME,true}, {P_AXIS,true}, {P_FOCUSER,true}, {P_ALIGN,false} };
   byte current_page;
   bool exitMenu = false;
-
-  uint8_t current_selection_L0 = 1;
-  uint8_t current_selection_L1 = 1;
-  uint8_t current_selection_L2 = 1;
-  uint8_t current_selection_L3 = 1;
-  uint8_t current_selection_L4 = 1;
-  uint8_t current_timelocation = 1;
-  uint8_t current_selection_SHC = 1;
-  uint8_t current_selection_guide = 3;
-  uint8_t current_selection_FocuserConfig = 1;
-  uint8_t current_selection_FocuserMotor = 1;
-  unsigned short current_selection_SolarSys = 1;
   
   long angleRA = 0;
   long angleDEC = 0;

@@ -3,6 +3,7 @@
 
 void SmartHandController::menuFocuserSettings()
 {
+  
   if (!ta_MountStatus.hasFocuser())
   {
     DisplayMessage(T_FOCUSER, T_NOT_CONNECTED "!", 500);
@@ -10,11 +11,14 @@ void SmartHandController::menuFocuserSettings()
   }
   buttonPad.setMenuMode();
   const char *string_list_Focuser = T_CONFIG "\n" T_MOTOR "\n" T_SHOWVERSION;
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
   while (!exitMenu)
   {
-    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, T_FOCUSERSETTINGS, current_selection_L2, string_list_Focuser);
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_FOCUSERSETTINGS, tmp_sel, string_list_Focuser);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
     bool ValueSetRequested = false;
-    switch (current_selection_L2)
+    switch (tmp_sel)
     {
     case 0:
       exitMenu = true;
@@ -50,14 +54,18 @@ void SmartHandController::menuFocuserConfig()
   char cmd[50];
   const char *string_list_Focuser = T_DISPLAYSETTINGS "\n" T_PARKPOSITION "\n" T_MAXPOSITION "\n" T_MANUALSPEED "\n" T_GOTOSPEED "\n" T_ACCFORMAN "\n" T_ACCFORGOTO;
   unsigned int sP, maxP, minS, maxS, cmdAcc, manAcc, manDec;
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
+
   float value;
   while (!exitMenu)
   {
     if (DisplayMessageLX200(readFocuserConfig(sP, maxP, minS, maxS, cmdAcc, manAcc, manDec)))
     {
-      current_selection_FocuserConfig = display->UserInterfaceSelectionList(&buttonPad, T_FOCUSERSETTINGS, current_selection_FocuserConfig, string_list_Focuser);
+      tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_FOCUSERSETTINGS, s_sel, string_list_Focuser);
+      s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
       bool ValueSetRequested = false;
-      switch (current_selection_FocuserConfig)
+      switch (tmp_sel)
       {
       case 0:
         return;
@@ -150,13 +158,16 @@ void SmartHandController::menuFocuserMotor()
   unsigned int res, mu, curr;
   bool rev;
   float value;
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
   while (!exitMenu)
   {
     if (DisplayMessageLX200(readFocuserMotor(rev, mu, res, curr)))
     {
-      current_selection_FocuserMotor = display->UserInterfaceSelectionList(&buttonPad, T_FOCUSERSETTINGS, current_selection_FocuserMotor, string_list_Focuser);
+      tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_FOCUSERSETTINGS, s_sel, string_list_Focuser);
+      s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
       bool ValueSetRequested = false;
-      switch (current_selection_FocuserMotor)
+      switch (tmp_sel)
       {
       case 0:
         return;

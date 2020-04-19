@@ -3,14 +3,15 @@
 
 void SmartHandController::menuMotor(const uint8_t axis)
 {
-  current_selection_L3 = 1;
-
-  while (current_selection_L3 != 0)
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel = s_sel;
+  while (tmp_sel)
   {
     const char *string_list_Motor = T_SHOWSETTINGS "\n" T_ROTATION "\n" T_GEAR "\n" T_STEPSPERROT "\n"
       T_MICROSTEP "\n" T_BACKLASH "\n" T_LOWCURR "\n" T_HIGHCURR;
-    current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, axis == 1 ? T_MOTOR " 1" : T_MOTOR " 2", current_selection_L3, string_list_Motor);
-    switch (current_selection_L3)
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, axis == 1 ? T_MOTOR " 1" : T_MOTOR " 2", tmp_sel, string_list_Motor);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
     {
     case 1:
       DisplayMotorSettings(axis);

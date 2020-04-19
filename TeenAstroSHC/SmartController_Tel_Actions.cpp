@@ -23,7 +23,9 @@ void SmartHandController::menuSpeedRate()
 void SmartHandController::menuTelAction()
 {
   buttonPad.setMenuMode();
-  current_selection_L0 = 1;
+
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
   while (!exitMenu)
   {
     ta_MountStatus.updateMount();
@@ -32,8 +34,9 @@ void SmartHandController::menuTelAction()
     if (currentstate == TeenAstroMountStatus::PRK_PARKED)
     {
       const char *string_list_main_ParkedL0 = T_UNPARK;
-      current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPEACTION, current_selection_L0, string_list_main_ParkedL0);
-      switch (current_selection_L0)
+      tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPEACTION, s_sel, string_list_main_ParkedL0);
+      s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+      switch (tmp_sel)
       {
       case 0:
         exitMenu = true;
@@ -49,11 +52,12 @@ void SmartHandController::menuTelAction()
     else if (currentstate == TeenAstroMountStatus::PRK_UNPARKED)
     {
       const char *string_list_main_UnParkedL0 = telescoplocked ? T_UNLOCK : T_GOTO "\n" T_SYNC "\n" T_ALIGN "\n" T_TRACKING "\n" T_SIDEOFPIER "\n" T_SAVE " RADEC\n" T_LOCK "\n" T_SPIRAL;
-      current_selection_L0 = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPEACTION, current_selection_L0, string_list_main_UnParkedL0);
+      tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPEACTION, s_sel, string_list_main_UnParkedL0);
+      s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
       MENU_RESULT answer = MR_CANCEL;
       if (telescoplocked)
       {
-        switch (current_selection_L0)
+        switch (tmp_sel)
         {
         case 0:
           exitMenu = true;
@@ -68,7 +72,7 @@ void SmartHandController::menuTelAction()
       }
       else
       {
-        switch (current_selection_L0)
+        switch (tmp_sel)
         {
         case 0:
           exitMenu = true;
@@ -132,11 +136,12 @@ void SmartHandController::menuTrack()
 {
   ta_MountStatus.updateMount();
   TeenAstroMountStatus::TrackState currentstate = ta_MountStatus.getTrackingState();
+  uint8_t tmp_sel;
   if (currentstate == TeenAstroMountStatus::TRK_ON)
   {
     const char *string_list_tracking = T_STOPTRACKING "\n" T_SIDEREAL "\n" T_LUNAR "\n" T_SOLAR;
-    current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGSTATE, 0, string_list_tracking);
-    switch (current_selection_L1)
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGSTATE, 0, string_list_tracking);
+    switch (tmp_sel)
     {
     case 1:
       char out[20];
@@ -167,8 +172,8 @@ void SmartHandController::menuTrack()
   else if (currentstate == TeenAstroMountStatus::TRK_OFF)
   {
     const char *string_list_tracking = T_STARTTRACKING;
-    current_selection_L1 = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGSTATE, 0, string_list_tracking);
-    switch (current_selection_L1)
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGSTATE, 0, string_list_tracking);
+    switch (tmp_sel)
     {
     case 1:
       if (SetLX200(":Te#") == LX200VALUESET)

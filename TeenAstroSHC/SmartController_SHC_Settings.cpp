@@ -3,12 +3,14 @@
 
 void SmartHandController::menuSHCSettings()
 {
-
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
   const char *string_list_SettingsL3 = T_DISPLAY "\n" T_BUTTONSPEED "\n" T_RESET;
   while (!exitMenu)
   {
-    current_selection_SHC = display->UserInterfaceSelectionList(&buttonPad, T_SHCSETTINGS, current_selection_SHC, string_list_SettingsL3);
-    switch (current_selection_SHC)
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_SHCSETTINGS, s_sel, string_list_SettingsL3);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
     {
     case 0:
       return;
@@ -28,11 +30,13 @@ void SmartHandController::menuSHCSettings()
 void SmartHandController::menuDisplay()
 {
   const char *string_list_Display = T_TURNOFF "\n" T_CONTRAST "\n" T_SLEEP "\n" T_DEEPSLEEP;
-  current_selection_L2 = 1;
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
   while (!exitMenu)
   {
-    current_selection_L2 = display->UserInterfaceSelectionList(&buttonPad, T_DISPLAY, current_selection_L2, string_list_Display);
-    switch (current_selection_L2)
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_DISPLAY, s_sel, string_list_Display);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
     {
     case 0:
       return;
@@ -73,10 +77,11 @@ void SmartHandController::menuDisplay()
 void SmartHandController::menuContrast()
 {
   const char *string_list_Display = T_MIN "\n" T_LOW "\n" T_HIGH "\n" T_MAX;
-  current_selection_L3 = 1;
-
-  current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, T_CONTRAST, current_selection_L3, string_list_Display);
-  switch (current_selection_L3)
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
+  tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_CONTRAST, tmp_sel, string_list_Display);
+  s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+  switch (tmp_sel)
   {
   case 0:
     return;
@@ -103,16 +108,16 @@ void SmartHandController::menuContrast()
 void SmartHandController::menuButtonSpeed()
 {
   const char *string_list_Display = T_SLOW "\n" T_MEDIUM "\n" T_FAST;
-  current_selection_L3 = (uint8_t)buttonPad.getButtonSpeed() + 1;
-  current_selection_L3 = display->UserInterfaceSelectionList(&buttonPad, T_BUTTONSPEED, current_selection_L3, string_list_Display);
-  switch (current_selection_L3)
+  uint8_t tmp_sel = (uint8_t)buttonPad.getButtonSpeed() + 1;
+  tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_BUTTONSPEED, tmp_sel, string_list_Display);
+  switch (tmp_sel)
   {
   case 0:
     return;
   case 1:
   case 2:
   case 3:
-    buttonPad.setButtonSpeed(static_cast<Pad::ButtonSpeed>(current_selection_L3 - 1));
+    buttonPad.setButtonSpeed(static_cast<Pad::ButtonSpeed>(tmp_sel - 1));
     buttonPad.setMenuMode();
     break;
   }
