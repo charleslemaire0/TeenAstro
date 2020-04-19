@@ -1,3 +1,4 @@
+#include <DallasTemperature.h>
 #include <TMCStepper_UTILITY.h>
 #include <TMCStepper.h>
 #include <TMC26XStepper.h>
