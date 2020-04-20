@@ -183,6 +183,8 @@ public:
       if (EnPin > 0)
         digitalWrite(EnPin, LOW);
       break;
+    case NODRIVER:
+      break;
     }
   };
 };
