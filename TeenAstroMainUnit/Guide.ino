@@ -4,9 +4,15 @@
 void Guide()
 {
   // 1/100 second sidereal timer, controls issue of steps at the selected RA and/or Dec rate(s)
+
   if (GuidingState == GuidingOFF)
   {
     return;
+  }
+  if (lastError != ERR_NONE)
+  {
+    guideDurationAxis1 = -1;
+    guideDurationAxis2 = -1;
   }
   if (rtk.updateguideSiderealTimer())
   {
@@ -33,7 +39,6 @@ void Guide()
           cli();
           targetAxis1.fixed += guideAxis1.fixed;
           sei();
-          ;
           if (GuidingState == GuidingPulse)
           {
             // for pulse guiding, count down the mS and stop when timed out
@@ -78,7 +83,6 @@ void Guide()
             guideDurationAxis2 -= (long)(micros() - guideDurationLastAxis2);
             guideDurationLastAxis2 = micros();
           }
-
         }
         else
         {
@@ -97,7 +101,6 @@ void Guide()
     {
       guideDurationAxis2 = -1;
     }
-
   }
 }
 

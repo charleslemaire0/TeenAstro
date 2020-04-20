@@ -42,8 +42,8 @@ void Command_M(bool &supress_frame)
     //  :Mgdnnnn# Pulse guide command
         //          Returns: Nothing
     if ((atoi2((char *)&parameter[1], &i)) &&
-      ((i > 0) && (i <= 16399)) && sideralTracking && !movingTo &&
-      (GuidingState != GuidingRecenter || GuidingState != GuidingST4))
+      ((i > 0) && (i <= 16399)) && sideralTracking && !movingTo && lastError == ERR_NONE &&
+        (GuidingState != GuidingRecenter || GuidingState != GuidingST4))
     {
       if ((parameter[0] == 'e') || (parameter[0] == 'w'))
       {

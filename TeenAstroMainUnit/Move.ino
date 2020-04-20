@@ -3,6 +3,7 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
 {
 
   bool canMove = parkStatus == PRK_UNPARKED;
+  canMove &= (Mode == GuidingRecenter || lastError == ERR_NONE);
   canMove &= !movingTo;
   canMove &= (GuidingState == GuidingOFF || GuidingState == Mode);
   if (canMove)
@@ -57,6 +58,7 @@ void StopAxis1()
 void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
 {
   bool canMove = parkStatus == PRK_UNPARKED;
+  canMove &= (Mode == GuidingRecenter || lastError == ERR_NONE);
   canMove &= !movingTo;
   canMove &= (GuidingState == GuidingOFF || GuidingState == Mode);
 
@@ -130,7 +132,7 @@ void CheckSpiral()
     enableGuideRate(4, false);
   }
 
-  if (iteration == 20)
+  if (iteration == 20 || lastError != ERR_NONE)
   {
     StopAxis1();
     StopAxis2();
@@ -179,27 +181,26 @@ void CheckSpiral()
 
 void checkST4()
 {
-  // ST4 INTERFACE -------------------------------------------------------------------------------------
-  // ST4 interface
-  static char            ST4RA_state = 0;
-  static char            ST4RA_last = 0;
-  static char            ST4DE_state = 0;
-  static char            ST4DE_last = 0;
+  //Simulated ST4 with inactive signals
+  byte w1 = HIGH, w2 = HIGH, e1 = HIGH, e2 = HIGH, n1 = HIGH, n2 = HIGH, s1 = HIGH, s2 = HIGH;
+  static char ST4RA_state = 0;
+  static char ST4RA_last = 0;
+  static char ST4DE_state = 0;
+  static char ST4DE_last = 0;
+  // ST4 port is active only if there is no mount Error
+  if (lastError == ERR_NONE)
+  {
+    w1 = digitalRead(ST4RAw);
+    e1 = digitalRead(ST4RAe);
+    n1 = digitalRead(ST4DEn);
+    s1 = digitalRead(ST4DEs);
+    delayMicroseconds(5);
+    w2 = digitalRead(ST4RAw);
+    e2 = digitalRead(ST4RAe);
+    n2 = digitalRead(ST4DEn);
+    s2 = digitalRead(ST4DEs);
+  }
 
-  byte    w1 = digitalRead(ST4RAw);
-  byte    e1 = digitalRead(ST4RAe);
-  byte    n1 = digitalRead(ST4DEn);
-  byte    s1 = digitalRead(ST4DEs);
-  delayMicroseconds(5);
-  byte    w2 = digitalRead(ST4RAw);
-  byte    e2 = digitalRead(ST4RAe);
-  byte    n2 = digitalRead(ST4DEn);
-  byte    s2 = digitalRead(ST4DEs);
-
-  //w1 = LOW; w2 = LOW;
-  //e1 = HIGH; e2 = HIGH; n1 = HIGH, n2 = HIGH; s1 = HIGH; s2 = HIGH;
-
-  // if signals aren't stable ignore them
   if ((w1 == w2) && (e1 == e2) && (n1 == n2) && (s1 == s2))
   {
     ST4RA_state = 0;
