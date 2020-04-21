@@ -1,37 +1,43 @@
 #pragma once
 #include <Arduino.h>
-#include <EEPROM.h>
 #include <TeenAstroLX200io.h>
-#include "Pad.h"
-#include "u8g2_ext.h"
+#include <u8g2_ext.h>
+#include <TeenAstroPad.h>
+#include "XEEPROM.hpp"
+
 #define NUMPAGES 6
 class SmartHandController
 {
 public:
-  enum OLED { OLED_SH1106, OLED_SSD1306, OLED_SSD1309 };
-  enum PAGES { P_RADEC, P_ALTAZ, P_TIME, P_AXIS, P_FOCUSER, P_ALIGN };
-  void update();
-  void manualMove(bool &moving);
-  void drawIntro();
-  void drawLoad();
+  enum OLED
+  {
+    OLED_SH1106, OLED_SSD1306, OLED_SSD1309
+  };
   void setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model);
+  void update();
+private:
+  enum PAGES
+  {
+    P_RADEC, P_ALTAZ, P_TIME, P_AXIS, P_FOCUSER, P_ALIGN
+  };
+  enum MENU_RESULT
+  {
+    MR_OK, MR_CANCEL, MR_QUIT
+  };
   struct pageInfo
   {
     PAGES p;
     bool show;
   };
-private:
   U8G2_EXT *display = NULL;
   Pad buttonPad;
   char _version[20] = "Version ?";
-
-  void updateMainDisplay(PAGES page);
   bool sleepDisplay = false;
   bool lowContrast = false;
-
   bool powerCycleRequired = false;
   bool buttonCommand = false;
   bool Move[6] = { false, false, false, false, false, false };
+
   uint8_t displayT1;
   uint8_t displayT2;
   uint8_t maxContrast;
@@ -45,19 +51,13 @@ private:
   pageInfo pages[NUMPAGES] = { {P_RADEC,true},{P_ALTAZ,true}, {P_TIME,true}, {P_AXIS,true}, {P_FOCUSER,true}, {P_ALIGN,false} };
   byte current_page;
   bool exitMenu = false;
-  uint8_t current_selection_L0 = 1;
-  uint8_t current_selection_L1 = 1;
-  uint8_t current_selection_L2 = 1;
-  uint8_t current_selection_L3 = 1;
-  uint8_t current_selection_L4 = 1;
-  uint8_t current_timelocation = 1;
-  uint8_t current_selection_SHC = 1;
-  uint8_t current_selection_guide = 3;
-  uint8_t current_selection_FocuserConfig = 1;
-  uint8_t current_selection_FocuserMotor = 1;
-  unsigned short current_selection_SolarSys = 1;
+  
   long angleRA = 0;
   long angleDEC = 0;
+  void manualMove(bool &moving);
+  void drawIntro();
+  void drawLoad();
+  void updateMainDisplay(PAGES page);
   void tickButtons();
   bool buttonPressed();
   bool isSleeping();
@@ -67,7 +67,6 @@ private:
   void menuReticule();
   void menuTrack();
 
-  enum MENU_RESULT { MR_OK, MR_CANCEL, MR_QUIT };
   uint8_t current_selection_filter = 1;
   uint8_t current_selection_filter_con = 1;
   uint8_t current_selection_filter_horizon = 1;
@@ -77,6 +76,7 @@ private:
   uint8_t current_selection_filter_dblmin = 1;
   uint8_t current_selection_filter_dblmax = 1;
   uint8_t current_selection_filter_varmax = 1;
+
   MENU_RESULT menuSyncGoto(bool sync);
   MENU_RESULT menuCoordinates(bool Sync);
   MENU_RESULT menuPier();
@@ -99,7 +99,6 @@ private:
   MENU_RESULT menuRADecJ2000(bool sync);
   MENU_RESULT menuAltAz(bool sync);
   MENU_RESULT menuAlignment();
-
 
   bool SelectStarAlign();
 
@@ -129,7 +128,6 @@ private:
   void menuLongitude();
   void menuElevation();
   void menuMainUnitInfo();
-  /* void menuHCInfo();*/
   void menuLimits();
   void menuWifi();
   void menuWifiMode();

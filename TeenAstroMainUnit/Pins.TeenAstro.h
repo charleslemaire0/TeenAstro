@@ -72,7 +72,7 @@
 
 #if VERSION == 240
 #ifndef AxisDriver
-#define AxisDriver      3                 // Select your driver 2 for the TMC2130, 3 for the TMC5160
+#define AxisDriver      3                 // Select your driver 2 for the TMC2130, 3 for the TMC5160, 4 for the TMC2160
 #endif
 #define Axis1StepPin    22                // Pin 22 (Step)
 #define Axis1DirPin     2                 // Pin 3 (Dir)

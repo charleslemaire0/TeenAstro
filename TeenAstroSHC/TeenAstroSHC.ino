@@ -1,7 +1,7 @@
 /*
-* Title       TeenAstro Smart Hand Controller
+* Title  TeenAstro Smart Hand Controller
 *
-* Copyright (C) 2019 Charles Lemaire, Howard Dutton
+* Copyright (C) 2020 Charles Lemaire, Howard Dutton
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -21,11 +21,12 @@
 * Revision History, see GitHub
 *
 *
-* Author: Charles Lemaire, https://pixelstelescopes.wordpress.com/teenastro/
-* Author: Howard Dutton, http://www.stellarjourney.com, hjd1964@gmail.com
+* Author: Charles Lemaire, https://groups.io/g/TeenAstro
+* Author: Howard Dutton
 *
 */
-
+#include "SmartConfig.h"
+#include "SmartController.h"
 #include <TeenAstroMountStatus.h>
 
 #define Product "Teenastro SHC"
@@ -34,9 +35,6 @@
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "2"
 #define SHCFirmwareVersionPatch  "b"
-
-#include "Config.h"
-#include "SmartController.h"
 
 const char SHCVersion[] = SHCFirmwareVersionMajor "." SHCFirmwareVersionMinor "." SHCFirmwareVersionPatch;
 const int pin[7] = { B_PIN0,B_PIN1,B_PIN2,B_PIN3,B_PIN4,B_PIN5,B_PIN6 };

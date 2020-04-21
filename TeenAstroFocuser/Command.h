@@ -5,9 +5,9 @@
 
 
 #if defined(ARDUINO) && ARDUINO >= 100
-	#include "Arduino.h"
+#include "Arduino.h"
 #else
-	#include "WProgram.h"
+#include "WProgram.h"
 #endif
 
 
@@ -59,7 +59,8 @@
 class SerCom
 {
 public:
-  SerCom(Stream& s) :ser(s) {}
+  SerCom(Stream& s) :ser(s)
+  {}
 
 private:
   Stream& ser;

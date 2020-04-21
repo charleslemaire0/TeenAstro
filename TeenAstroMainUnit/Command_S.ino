@@ -326,10 +326,8 @@ void Command_S(Command& process_command)
   case 'U':
     // :SU# store current User defined Position
     getEqu(&f, &f1, false);
-    _ra = f;
-    _dec = f1;
-    XEEPROM.writeFloat(EE_RA, (float)_ra);
-    XEEPROM.writeFloat(EE_DEC, (float)_dec);
+    XEEPROM.writeFloat(EE_RA, (float)f);
+    XEEPROM.writeFloat(EE_DEC, (float)f1);
     break;
   case 'X':
     //  :SXnn,VVVVVV...#   Set OnStep value

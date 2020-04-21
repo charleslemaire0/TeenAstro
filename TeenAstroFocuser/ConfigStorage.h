@@ -54,7 +54,7 @@ class ParameterPosition
 private:
   int m_adress;
   Parameterulong *m_pos;
-  char m_id[11]= { 0 };
+  char m_id[11] = { 0 };
 public:
   bool isvalid();
   unsigned long getPosition();
@@ -79,18 +79,18 @@ public:
   unsigned int getmin();
   Parameteruint(const int &adress, const  unsigned int &valuedefault, const unsigned int &value_min, const unsigned int &value_max);
 };
-  Parameteruint8_t *curr;
-  Parameteruint8_t *micro;
-  Parameteruint8_t *reverse;
-  Parameterulong *startPosition;
-  Parameterulong *maxPosition;
-  Parameteruint *lowSpeed;
-  Parameteruint *highSpeed;
-  Parameteruint8_t *cmdAcc;
-  Parameteruint8_t *manAcc;
-  Parameteruint8_t *manDec;
-  Parameteruint *resolution;
-  ParameterPosition *PositionList[10];
-  void loadConfig();
+Parameteruint8_t *curr;
+Parameteruint8_t *micro;
+Parameteruint8_t *reverse;
+Parameterulong *startPosition;
+Parameterulong *maxPosition;
+Parameteruint *lowSpeed;
+Parameteruint *highSpeed;
+Parameteruint8_t *cmdAcc;
+Parameteruint8_t *manAcc;
+Parameteruint8_t *manDec;
+Parameteruint *resolution;
+ParameterPosition *PositionList[10];
+void loadConfig();
 #endif
 
