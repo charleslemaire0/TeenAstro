@@ -1,11 +1,12 @@
 #pragma once
+// workload monitoring
 class timerLoop
 {
 private:
-  long                    m_this_micros = 0;
-  long                    m_time = 0;
-  long                    m_last_micros = 0;       // workload monitoring
-  long                    m_worst_time = 0;
+  long m_this_micros = 0;
+  long m_time        = 0;
+  long m_last_micros = 0;       
+  long m_worst_time  = 0;
 public:
   void monitor()
   {
