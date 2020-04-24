@@ -127,7 +127,6 @@ IntervalTimer           itimer4;
 void                    TIMER4_COMPA_vect(void);
 
 
-PierSide newTargetPierSide = PIER_NOTVALID;
 
 
 //Target and position Axis 1
@@ -136,6 +135,7 @@ volatile long       deltaTargetAxis1;
 volatile long       startAxis1;  // hour angle of goto start position in steps
 volatile long       targetAxis1; // hour angle of goto end   position in steps
 volatile byte       dirAxis1;    // stepping direction + or -
+long                fstepAxis1;  // amount of steps for Tracking
 #define stepAxis1   1
 
 
@@ -145,10 +145,13 @@ volatile long       deltaTargetAxis2;
 volatile long       startAxis2;   // declination of goto start position in steps
 volatile long       targetAxis2;  // declination of goto end   position in steps
 volatile byte       dirAxis2;     // stepping direction + or -
+long                fstepAxis2;   // amount of steps for Tracking
 #define stepAxis2   1
 
 
 //Targets
+PierSide newTargetPierSide = PIER_NOTVALID;
+
 double              newTargetAlt = 0.0;                     // holds the altitude for goTos
 double              newTargetAzm = 0.0;                     // holds the azmiuth for goTos
 double              newTargetDec;                           // holds the Dec for goTos
@@ -240,13 +243,9 @@ unsigned long   baudRate[10] =
   115200, 56700, 38400, 28800, 19200, 14400, 9600, 4800, 2400, 1200
 };
 
-//
+// Motors
 Motor motorAxis1;
 Motor motorAxis2;
-
-// tracking and PEC, fractional steps
-long         fstepAxis1;
-long         fstepAxis2;
 
 // guide command
 #define GuideRate1x     2
