@@ -119,11 +119,6 @@ volatile double         timerRateRatio;
 volatile double         AccAxis1 = 0; //acceleration in steps per second square
 volatile double         AccAxis2 = 0; //acceleration in steps per second square
 
-IntervalTimer           itimer3;
-void                    TIMER3_COMPA_vect(void);
-
-IntervalTimer           itimer4;
-void                    TIMER4_COMPA_vect(void);
 
 //Target and position Axis 1
 volatile long       posAxis1;    // hour angle position in steps
@@ -247,10 +242,7 @@ Motor motorAxis2;
 #define GuideRate16x    5
 #define GuideRateMax    9
 #define GuideRateNone   255
-#define RG 0
-#define RC 4
-#define RM 6
-#define RS 9
+
 
 double          guideRates[10] =
 {

@@ -158,19 +158,9 @@ void setup()
   siderealInterval = XEEPROM.readLong(EE_siderealInterval);
   updateSideral();
 
-  // set the system timer for millis() to the second highest priority
-  SCB_SHPR3 = (32 << 24) | (SCB_SHPR3 & 0x00FFFFFF);
 
-  itimer3.begin(TIMER3_COMPA_vect, (float)128 * 0.0625);
-  itimer4.begin(TIMER4_COMPA_vect, (float)128 * 0.0625);
 
-  // set the 1/100 second sidereal clock timer to run at the second highest priority
-  NVIC_SET_PRIORITY(IRQ_PIT_CH0, 32);
-
-  // set the motor timers to run at the highest priority
-  NVIC_SET_PRIORITY(IRQ_PIT_CH1, 0);
-  NVIC_SET_PRIORITY(IRQ_PIT_CH2, 0);
-
+  beginTimers();
 
   // get ready for serial communications
   Serial1_Init(57600);

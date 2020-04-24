@@ -3,8 +3,13 @@
 
 #define ISR(f)  void f (void)
 void TIMER1_COMPA_vect(void);
+void TIMER3_COMPA_vect(void);
+void TIMER4_COMPA_vect(void);
 
 static IntervalTimer  itimer1;
+static IntervalTimer  itimer3;
+static IntervalTimer  itimer4;
+
 static volatile double isrTimerRateAxis1 = 0;
 static volatile double isrTimerRateAxis2 = 0;
 
@@ -30,7 +35,19 @@ void SetSiderealClockRate(double Interval)
   isrTimerRateAxis1 = 0;
   isrTimerRateAxis2 = 0;
 }
+void beginTimers()
+{
+  // set the system timer for millis() to the second highest priority
+  SCB_SHPR3 = (32 << 24) | (SCB_SHPR3 & 0x00FFFFFF);
+  itimer3.begin(TIMER3_COMPA_vect, (float)128 * 0.0625);
+  itimer4.begin(TIMER4_COMPA_vect, (float)128 * 0.0625);
+  // set the 1/100 second sidereal clock timer to run at the second highest priority
+  NVIC_SET_PRIORITY(IRQ_PIT_CH0, 32);
 
+  // set the motor timers to run at the highest priority
+  NVIC_SET_PRIORITY(IRQ_PIT_CH1, 0);
+  NVIC_SET_PRIORITY(IRQ_PIT_CH2, 0);
+}
 // set timer1 to rate (in microseconds*16)
 static void Timer1SetRate(double rate)
 {
@@ -39,6 +56,8 @@ static void Timer1SetRate(double rate)
 
 // set timer3 to rate (in microseconds*16)
 static volatile uint32_t   nextAxis1Rate = 100000UL;
+
+
 static void Timer3SetRate(double rate)
 {
   cli();
@@ -58,12 +77,12 @@ static void Timer4SetRate(double rate)
 
 ISR(TIMER1_COMPA_vect)
 {
-  static volatile bool   wasInbacklashAxis1 = false;
-  static volatile bool   wasInbacklashAxis2 = false;
+  static volatile bool   wasInbacklashAxis1   = false;
+  static volatile bool   wasInbacklashAxis2   = false;
   static volatile double guideTimerRateAxis1A = 0;
   static volatile double guideTimerRateAxis2A = 0;
-  static volatile double runtimerRateAxis1 = 0;
-  static volatile double runTimerRateAxis2 = 0;
+  static volatile double runtimerRateAxis1    = 0;
+  static volatile double runTimerRateAxis2    = 0;
   // run 1/3 of the time at 3x the rate, unless a goto is happening
   rtk.m_lst++;
 
@@ -101,7 +120,7 @@ ISR(TIMER1_COMPA_vect)
           // use acceleration
           DecayModeGoto();
           double z = getRate(sqrt(fabs(x) * 2 * AccAxis1));
-          guideTimerRateAxis1A = (1.0 / ((StepsPerDegreeAxis1 * (z / 1000000.0))) * 3600.0);
+          guideTimerRateAxis1A = 3600.0 / (StepsPerDegreeAxis1 * z / 1000000.0);
           if (guideTimerRateAxis1A < maxguideTimerRate) guideTimerRateAxis1A = maxguideTimerRate;
         }
 
@@ -122,10 +141,10 @@ ISR(TIMER1_COMPA_vect)
       double timerRateAxis1B = fabs(guideTimerRateAxis1A + timerRateAxis1A);
       double calculatedTimerRateAxis1;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
-      if (timerRateAxis1B > 0.5)
+      if (timerRateAxis1B > 0.1)
         calculatedTimerRateAxis1 = SiderealRate / timerRateAxis1B;
       else
-        calculatedTimerRateAxis1 = (double)SiderealRate * 2.0;
+        calculatedTimerRateAxis1 = SiderealRate * 10.0;
 
 
       // remember our "running" rate and only update the actual rate when it changes
@@ -166,7 +185,7 @@ ISR(TIMER1_COMPA_vect)
           // use acceleration
           DecayModeGoto();
           double z = getRate(sqrt(fabs(x) * 2 * AccAxis2));
-          guideTimerRateAxis2A = (1.0 / (((double)StepsPerDegreeAxis2 * (z / 1000000.0))) * 3600.0);
+          guideTimerRateAxis2A = 3600.0 / (StepsPerDegreeAxis2 * z / 1000000.0) ;
           if (guideTimerRateAxis2A < maxguideTimerRate) guideTimerRateAxis2A = maxguideTimerRate;
         }
 
@@ -188,10 +207,10 @@ ISR(TIMER1_COMPA_vect)
       double calculatedTimerRateAxis2;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
      // calculatedTimerRateAxis2 = (double)SiderealRate / timerRateAxis2B;
-      if (timerRateAxis2B > 0.5)
-        calculatedTimerRateAxis2 = (double)SiderealRate / timerRateAxis2B;
+      if (timerRateAxis2B > 0.1)
+        calculatedTimerRateAxis2 = SiderealRate / timerRateAxis2B;
       else
-        calculatedTimerRateAxis2 = (double)SiderealRate * 2.0;
+        calculatedTimerRateAxis2 = 10.0 * SiderealRate;
 
       // remember our "running" rate and only update the actual rate when it changes
       if (runTimerRateAxis2 != calculatedTimerRateAxis2)
