@@ -58,8 +58,8 @@ volatile bool           inbacklashAxis1 = false;
 bool                    faultAxis1 = false;
 volatile double         timerRateAxis2 = 0;
 volatile double         timerRateBacklashAxis2 = 0;
-volatile bool        inbacklashAxis2 = false;
-bool                 faultAxis2 = false;
+volatile bool           inbacklashAxis2 = false;
+bool                    faultAxis2 = false;
 
 //Motor Axis1
 unsigned int GearAxis1;
@@ -269,8 +269,8 @@ unsigned long   guideDurationLastAxis2 = 0;
 
 long            lasttargetAxis1 = 0;
 long            debugv1 = 0;
-bool         axis1Enabled = false;
-bool         axis2Enabled = false;
+bool            axis1Enabled = false;
+bool            axis2Enabled = false;
 
 double          guideTimerBaseRate = 0;
 long            amountGuideAxis1;

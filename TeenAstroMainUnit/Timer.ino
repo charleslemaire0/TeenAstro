@@ -67,7 +67,6 @@ volatile bool    wasInbacklashAxis2 = false;
 
 volatile bool    gotoRateAxis1 = false;
 volatile bool    gotoRateAxis2 = false;
-volatile byte       cnt = 0;
 
 volatile double     guideTimerRateAxis1A = 0;
 volatile double     guideTimerRateAxis2A = 0;
