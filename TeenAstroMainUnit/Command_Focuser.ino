@@ -9,8 +9,8 @@ void Command_F()
     return;
   }
   quietReply = true; // the focuser is responding
-  boolean focuserNoResponse = false;
-  boolean focuserShortResponse = false;
+  bool focuserNoResponse = false;
+  bool focuserShortResponse = false;
   char command_out[30];
   Serial2.flush();
   while (Serial2.available() > 0) Serial2.read();

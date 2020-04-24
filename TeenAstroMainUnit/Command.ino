@@ -2,8 +2,8 @@
 // -----------------------------------------------------------------------------------
 // Command processing
 // these turn on and off checksum error correction on the serial ports, default=OFF
-boolean         serial_zero_ready = false;
-boolean         serial_one_ready = false;
+bool         serial_zero_ready = false;
+bool         serial_one_ready = false;
 
 // scratch-pad variables
 double          f, f1, f2, f3;
@@ -15,7 +15,7 @@ int             i, i1, i2, i3, i4, i5;
 void processCommands()
 {
   Command process_command = COMMAND_NONE;
-  boolean supress_frame = false;
+  bool supress_frame = false;
   if ((Serial_available() > 0) && (!serial_zero_ready))
   {
     serial_zero_ready = buildCommand_serial_zero(Serial_read());
@@ -141,7 +141,7 @@ void processCommands()
 }
 
 // Build up a command
-boolean buildCommand_serial_zero(char c)
+bool buildCommand_serial_zero(char c)
 {
   // (chr)6 is a special status command for the LX200 protocol
   if ((c == (char)6) && (bufferPtr_serial_zero == 0))
@@ -194,7 +194,7 @@ boolean buildCommand_serial_zero(char c)
 }
 
 // clear commands
-boolean clearCommand_serial_zero()
+bool clearCommand_serial_zero()
 {
   bufferPtr_serial_zero = 0;
   command_serial_zero[bufferPtr_serial_zero] = (char)0;
@@ -202,7 +202,7 @@ boolean clearCommand_serial_zero()
 }
 
 // Build up a command
-boolean buildCommand_serial_one(char c)
+bool buildCommand_serial_one(char c)
 {
   // (chr)6 is a special status command for the LX200 protocol
   if ((c == (char)6) && (bufferPtr_serial_one == 0))
@@ -252,7 +252,7 @@ boolean buildCommand_serial_one(char c)
 }
 
 // clear commands
-boolean clearCommand_serial_one()
+bool clearCommand_serial_one()
 {
   bufferPtr_serial_one = 0;
   command_serial_one[bufferPtr_serial_one] = (char)0;

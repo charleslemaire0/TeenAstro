@@ -20,14 +20,14 @@ PierSide GetPierSide()
 
 //--------------------------------------------------------------------------------------------------
 // GoTo, commands to move the telescope to an location or to report the current location
-boolean syncEqu(double HA, double Dec, PierSide Side)
+bool syncEqu(double HA, double Dec, PierSide Side)
 {
   double Azm, Alt = 0;
   EquToHorApp(HA, Dec, &Azm, &Alt);
   return syncAzAlt(Azm, Alt, Side);
 }
 // syncs the telescope/mount to the sky
-boolean syncAzAlt(double Azm, double Alt, PierSide Side)
+bool syncAzAlt(double Azm, double Alt, PierSide Side)
 {
   long axis1, axis2 = 0;
   double Axis1, Axis2 = 0;
@@ -44,7 +44,7 @@ boolean syncAzAlt(double Azm, double Alt, PierSide Side)
 }
 
 // gets the telescopes current Topocentric RA and Dec, set returnHA to true for Horizon Angle instead of RA
-boolean getEqu(double *HA, double *Dec, boolean returnHA)
+bool getEqu(double *HA, double *Dec, bool returnHA)
 {
   double  azm, alt = 0;
   getHorApp(&azm, &alt);
@@ -57,7 +57,7 @@ boolean getEqu(double *HA, double *Dec, boolean returnHA)
 }
 
 // gets the telescopes current Topocentric Target RA and Dec, set returnHA to true for Horizon Angle instead of RA
-boolean getEquTarget(double *HA, double *Dec, boolean returnHA)
+bool getEquTarget(double *HA, double *Dec, bool returnHA)
 {
   double  azm, alt = 0;
   getHorAppTarget(&azm, &alt);
@@ -70,7 +70,7 @@ boolean getEquTarget(double *HA, double *Dec, boolean returnHA)
 }
 
 // gets the telescopes current Apparent Alt and Azm!
-boolean getHorApp(double *Azm, double *Alt)
+bool getHorApp(double *Azm, double *Alt)
 {
   cli();
   double Axis1 = posAxis1 / (double)StepsPerDegreeAxis1;
@@ -81,7 +81,7 @@ boolean getHorApp(double *Azm, double *Alt)
 }
 
 // gets the telescopes current Apparent Target Alt and Azm!
-boolean getHorAppTarget(double *Azm, double *Alt)
+bool getHorAppTarget(double *Azm, double *Alt)
 {
   cli();
   double Axis1 = (double)targetAxis1 / StepsPerDegreeAxis1;

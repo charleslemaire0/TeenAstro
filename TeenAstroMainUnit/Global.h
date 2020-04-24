@@ -24,16 +24,16 @@ enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
 enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW };
 
 ParkState parkStatus = PRK_UNPARKED;
-boolean parkSaved = false;
-boolean atHome = true;
-boolean homeMount = false;
+bool parkSaved = false;
+bool atHome = true;
+bool homeMount = false;
 MeridianFlip meridianFlip = FLIP_NEVER;
 Mount mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;
-boolean hasFocuser = false;
-boolean hasGNSS = true;
-boolean refraction = true;
-boolean correct_tracking = false;
+bool hasFocuser = false;
+bool hasGNSS = true;
+bool refraction = true;
+bool correct_tracking = false;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
 double                  siderealInterval = 15956313.0;
 const double            masterSiderealInterval = 15956313.0;
@@ -54,12 +54,12 @@ double                  DegreesForAcceleration = 3;
 //Timers
 volatile double         timerRateAxis1 = 0;
 volatile double         timerRateBacklashAxis1 = 0;
-volatile boolean        inbacklashAxis1 = false;
-boolean                 faultAxis1 = false;
+volatile bool           inbacklashAxis1 = false;
+bool                    faultAxis1 = false;
 volatile double         timerRateAxis2 = 0;
 volatile double         timerRateBacklashAxis2 = 0;
-volatile boolean        inbacklashAxis2 = false;
-boolean                 faultAxis2 = false;
+volatile bool        inbacklashAxis2 = false;
+bool                 faultAxis2 = false;
 
 //Motor Axis1
 unsigned int GearAxis1;
@@ -185,7 +185,7 @@ Errors lastError = ERR_NONE;
 Errors StartLoopError = ERR_NONE;
 
 //Command Precision
-boolean highPrecision = true;
+bool highPrecision = true;
 
 volatile bool movingTo = false;
 
@@ -210,13 +210,13 @@ volatile Guiding GuidingState = GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
 unsigned long lastSecurityCheck = millis();
 
-boolean abortSlew = false;
+bool abortSlew = false;
 
 // Command processing -------------------------------------------------------------------------------------------------------
 #define BAUD 57600
 
-boolean commandError = false;
-boolean quietReply = false;
+bool commandError = false;
+bool quietReply = false;
 
 char reply[50];
 char command[3];
@@ -269,8 +269,8 @@ unsigned long   guideDurationLastAxis2 = 0;
 
 long            lasttargetAxis1 = 0;
 long            debugv1 = 0;
-boolean         axis1Enabled = false;
-boolean         axis2Enabled = false;
+bool         axis1Enabled = false;
+bool         axis2Enabled = false;
 
 double          guideTimerBaseRate = 0;
 long            amountGuideAxis1;

@@ -220,7 +220,7 @@ private:
     else
       *Year = floor(D - 4715.0);
   }
-  boolean dateToYYYYMMDD(int *y1, int *m1, int *d1, char *date)
+  bool dateToYYYYMMDD(int *y1, int *m1, int *d1, char *date)
   {
     char    m[3], d[3], y[3];
     if (strlen(date) != 8) return false;
@@ -246,7 +246,7 @@ private:
       *y1 = *y1 + 2100;
     return true;
   }
-  boolean dateToJD(double *JulianDay, char *date)
+  bool dateToJD(double *JulianDay, char *date)
   {
     int     m1, d1, y1;
     if (dateToYYYYMMDD(&y1, &m1, &d1, date))

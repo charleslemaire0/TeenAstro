@@ -128,9 +128,9 @@ double GetTrackingRate()
 
 
 #define AltAzTrackingRange  1  // distance in arc-min (20) ahead of and behind the current Equ position, used for rate calculation
-boolean do_compensation_calc()
+bool do_compensation_calc()
 {
-  boolean done = false;
+  bool done = false;
 
   static long axis1_before, axis1_after = 0;
   static long axis2_before, axis2_after = 0;

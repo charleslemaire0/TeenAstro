@@ -2,7 +2,7 @@
 // functions related to PRK_PARKING the mount
 
 // sets the park postion as the current position
-boolean setPark()
+bool setPark()
 {
   if ((parkStatus == PRK_UNPARKED) && !movingTo)
   {
@@ -64,7 +64,7 @@ void saveAlignModel()
 }
 
 // takes up backlash and returns to the current position
-boolean parkClearBacklash()
+bool parkClearBacklash()
 {
   // backlash takeup rate
   if (StepsBacklashAxis1 == 0 && StepsBacklashAxis2 == 0)
@@ -173,7 +173,7 @@ byte park()
 }
 
 // returns a parked telescope to operation, you must set date and time before calling this.  it also
-boolean syncAtPark()
+bool syncAtPark()
 {
   if (!parkSaved)
   {

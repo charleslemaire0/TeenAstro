@@ -3,10 +3,10 @@
 
 #define ISR(f)  void f (void)
 void                TIMER1_COMPA_vect(void);
-volatile boolean    clearAxis1 = true;
-volatile boolean    takeStepAxis1 = false;
-volatile boolean    clearAxis2 = true;
-volatile boolean    takeStepAxis2 = false;
+volatile bool    clearAxis1 = true;
+volatile bool    takeStepAxis1 = false;
+volatile bool    clearAxis2 = true;
+volatile bool    takeStepAxis2 = false;
 IntervalTimer       itimer1;
 
 double getV(double rate) //Speed in step per second
@@ -62,11 +62,11 @@ void Timer4SetRate(double rate)
 
 //--------------------------------------------------------------------------------------------------
 // Timer1 handles sidereal time and programming the drive rates
-volatile boolean    wasInbacklashAxis1 = false;
-volatile boolean    wasInbacklashAxis2 = false;
+volatile bool    wasInbacklashAxis1 = false;
+volatile bool    wasInbacklashAxis2 = false;
 
-volatile boolean    gotoRateAxis1 = false;
-volatile boolean    gotoRateAxis2 = false;
+volatile bool    gotoRateAxis1 = false;
+volatile bool    gotoRateAxis2 = false;
 volatile byte       cnt = 0;
 
 volatile double     guideTimerRateAxis1A = 0;

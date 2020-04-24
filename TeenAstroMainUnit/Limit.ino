@@ -41,13 +41,13 @@ bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
 }
 
 //for Eq Fork only
-boolean checkAxis2LimitEQ(const long &axis2)
+bool checkAxis2LimitEQ(const long &axis2)
 {
   return axis2 > MinAxis2EQ * StepsPerDegreeAxis2 && axis2 < MaxAxis2EQ * StepsPerDegreeAxis2;
 }
 
 //for az alt
-boolean checkAxis2LimitAZALT(const long &axis2)
+bool checkAxis2LimitAZALT(const long &axis2)
 {
   return axis2 > MinAxis2AZALT * StepsPerDegreeAxis2 && axis2 < MaxAxis2AZALT * StepsPerDegreeAxis2;
 }

@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------------------
 // functions related to Homing the mount
 // moves telescope to the home position, then stops tracking
-boolean goHome()
+bool goHome()
 {
   if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return false; // fail, moving to home not allowed if PRK_PARKED
   if (lastError != ERR_NONE) return false;                                // fail, cannot move if there are errors

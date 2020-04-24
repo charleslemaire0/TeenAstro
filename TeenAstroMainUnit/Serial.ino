@@ -18,7 +18,7 @@ void Serial_print(const char data[])
 }
 
 
-boolean Serial_available()
+bool Serial_available()
 {
   return Serial.available();
 }
@@ -43,7 +43,7 @@ void Serial1_print(const char data[])
   Serial1.print(data);
 }
 
-boolean Serial1_available()
+bool Serial1_available()
 {
   return Serial1.available();
 }
