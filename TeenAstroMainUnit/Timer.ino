@@ -2,75 +2,20 @@
 // Timers and interrupt handling
 
 #define ISR(f)  void f (void)
-void                TIMER1_COMPA_vect(void);
-volatile bool    clearAxis1 = true;
-volatile bool    takeStepAxis1 = false;
-volatile bool    clearAxis2 = true;
-volatile bool    takeStepAxis2 = false;
-IntervalTimer       itimer1;
+void TIMER1_COMPA_vect(void);
+
+static IntervalTimer  itimer1;
+static volatile double isrTimerRateAxis1 = 0;
+static volatile double isrTimerRateAxis2 = 0;
 
 double getV(double rate) //Speed in step per second
 {
   return 1000000.0 / (rate / 16.);
 }
-
-
 double getRate(double V)
 {
   return max(16. * 1000000.0 / V, maxRate);
 }
-
-
-//--------------------------------------------------------------------------------------------------
-
-// set timer1 to rate (in microseconds*16)
-void Timer1SetRate(double rate)
-{
-  itimer1.begin(TIMER1_COMPA_vect, rate * 0.0625);
-}
-
-// set the master sidereal clock rate, also forces rate update for RA/Dec timer rates so that PPS adjustments take hold immediately
-volatile double isrTimerRateAxis1 = 0;
-volatile double isrTimerRateAxis2 = 0;
-volatile double runtimerRateAxis1 = 0;
-volatile double runTimerRateAxis2 = 0;
-
-void SetSiderealClockRate(double Interval)
-{
-  Timer1SetRate(Interval / 100);
-  isrTimerRateAxis1 = 0;
-  isrTimerRateAxis2 = 0;
-}
-
-// set timer3 to rate (in microseconds*16)
-volatile uint32_t   nextAxis1Rate = 100000UL;
-void Timer3SetRate(double rate)
-{
-  cli();
-  nextAxis1Rate = (F_BUS / 1000000) * (rate * 0.0625) * 0.5 - 1;
-  sei();
-}
-
-// set timer4 to rate (in microseconds*16)
-volatile uint32_t   nextAxis2Rate = 100000UL;
-void Timer4SetRate(double rate)
-{
-  cli();
-  nextAxis2Rate = (F_BUS / 1000000) * (rate * 0.0625) * 0.5 - 1;
-  sei();
-}
-
-//--------------------------------------------------------------------------------------------------
-// Timer1 handles sidereal time and programming the drive rates
-volatile bool    wasInbacklashAxis1 = false;
-volatile bool    wasInbacklashAxis2 = false;
-
-volatile bool    gotoRateAxis1 = false;
-volatile bool    gotoRateAxis2 = false;
-
-volatile double     guideTimerRateAxis1A = 0;
-volatile double     guideTimerRateAxis2A = 0;
-
 void updateDeltaTarget()
 {
   cli();
@@ -78,9 +23,47 @@ void updateDeltaTarget()
   deltaTargetAxis2 = distStepAxis2(posAxis2, targetAxis2);
   sei();
 }
+// set the master sidereal clock rate, also forces rate update for RA/Dec timer rates so that PPS adjustments take hold immediately
+void SetSiderealClockRate(double Interval)
+{
+  Timer1SetRate(Interval / 100);
+  isrTimerRateAxis1 = 0;
+  isrTimerRateAxis2 = 0;
+}
+
+// set timer1 to rate (in microseconds*16)
+static void Timer1SetRate(double rate)
+{
+  itimer1.begin(TIMER1_COMPA_vect, rate * 0.0625);
+}
+
+// set timer3 to rate (in microseconds*16)
+static volatile uint32_t   nextAxis1Rate = 100000UL;
+static void Timer3SetRate(double rate)
+{
+  cli();
+  nextAxis1Rate = (F_BUS / 1000000) * (rate * 0.0625) * 0.5 - 1;
+  sei();
+}
+
+// set timer4 to rate (in microseconds*16)
+static volatile uint32_t   nextAxis2Rate = 100000UL;
+static void Timer4SetRate(double rate)
+{
+  cli();
+  nextAxis2Rate = (F_BUS / 1000000) * (rate * 0.0625) * 0.5 - 1;
+  sei();
+}
+
 
 ISR(TIMER1_COMPA_vect)
 {
+  static volatile bool   wasInbacklashAxis1 = false;
+  static volatile bool   wasInbacklashAxis2 = false;
+  static volatile double guideTimerRateAxis1A = 0;
+  static volatile double guideTimerRateAxis2A = 0;
+  static volatile double runtimerRateAxis1 = 0;
+  static volatile double runTimerRateAxis2 = 0;
   // run 1/3 of the time at 3x the rate, unless a goto is happening
   rtk.m_lst++;
 
@@ -281,6 +264,8 @@ ISR(TIMER1_COMPA_vect)
 }
 ISR(TIMER3_COMPA_vect)
 {
+  static volatile bool clearAxis1 = true;
+  static volatile bool takeStepAxis1 = false;
   digitalWriteFast(Axis1StepPin, LOW);
   if (clearAxis1)
   {
@@ -350,6 +335,8 @@ ISR(TIMER3_COMPA_vect)
 }
 ISR(TIMER4_COMPA_vect)
 {
+  static volatile bool clearAxis2 = true;
+  static volatile bool takeStepAxis2 = false;
   digitalWriteFast(Axis2StepPin, LOW);
   // on the much faster Teensy and Tiva TM4C run this ISR at twice the normal rate and pull the step pin low every other call
   if (clearAxis2)
