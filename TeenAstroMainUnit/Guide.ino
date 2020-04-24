@@ -31,13 +31,9 @@ void Guide()
       {
         if (!inbacklashAxis1)
         {
-          // guideAxis1 keeps track of how many steps we've moved for PEC recording
-          if (guideDirAxis1 == 'e')
-            guideAxis1 = -amountGuideAxis1;
-          else if (guideDirAxis1 == 'w')
-            guideAxis1 = amountGuideAxis1;
+          bool rev = guideDirAxis1 == 'e';
           cli();
-          targetAxis1 += guideAxis1;
+          rev ? targetAxis1 -= amountGuideAxis1 : targetAxis1 += amountGuideAxis1;
           sei();
           if (GuidingState == GuidingPulse)
           {

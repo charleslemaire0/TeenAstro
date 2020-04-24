@@ -9,7 +9,6 @@
 #include "timerLoop.hpp"
 #include "TelTimer.hpp"
 #include "Site.hpp"
-#include "FPoint.h"
 #include "Command.h"
 #include "Config.TeenAstro.h"
 #include "EEPROM_adress.h"
@@ -281,9 +280,7 @@ boolean         axis2Enabled = false;
 
 double          guideTimerBaseRate = 0;
 long            amountGuideAxis1;
-long            guideAxis1;
 long            amountGuideAxis2;
-long            guideAxis2;
 
 // Reticule control
 #ifdef RETICULE_LED_PINS

@@ -226,7 +226,6 @@ void loop()
   {
     checkST4();
     CheckSpiral();
-    guideAxis1 = 0;
     Guide();
   }
 
@@ -509,8 +508,6 @@ void initmount()
   // initialize some fixed-point values
   amountGuideAxis1 = 0;
   amountGuideAxis2 = 0;
-  guideAxis1 = 0;
-  guideAxis2 = 0;
 
   fstepAxis1 = 0;
   fstepAxis2 = 0;
