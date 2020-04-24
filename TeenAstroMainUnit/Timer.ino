@@ -90,9 +90,6 @@ ISR(TIMER1_COMPA_vect)
     double maxguideTimerRate = 4;
     // automatic rate calculation HA
     {
-
-      double calculatedTimerRateAxis1;
-
       // guide rate acceleration/deceleration and control
       updateDeltaTarget();
 
@@ -139,9 +136,9 @@ ISR(TIMER1_COMPA_vect)
           }
         }
       }
-      double  timerRateAxis1A = trackingTimerRateAxis1;
-      double  timerRateAxis1B = fabs(guideTimerRateAxis1A + timerRateAxis1A);
-
+      double timerRateAxis1A = trackingTimerRateAxis1;
+      double timerRateAxis1B = fabs(guideTimerRateAxis1A + timerRateAxis1A);
+      double calculatedTimerRateAxis1;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
       if (timerRateAxis1B > 0.5)
         calculatedTimerRateAxis1 = SiderealRate / timerRateAxis1B;
@@ -158,10 +155,7 @@ ISR(TIMER1_COMPA_vect)
     }
     // automatic rate calculation Dec
     {
-      double calculatedTimerRateAxis2;
-
       // guide rate acceleration/deceleration
-
       updateDeltaTarget();
 
       double x = fabs(deltaTargetAxis2);
@@ -207,9 +201,9 @@ ISR(TIMER1_COMPA_vect)
           }
         }
       }
-      double  timerRateAxis2A = trackingTimerRateAxis2;
-      double  timerRateAxis2B = fabs(guideTimerRateAxis2A + timerRateAxis2A);
-
+      double timerRateAxis2A = trackingTimerRateAxis2;
+      double timerRateAxis2B = fabs(guideTimerRateAxis2A + timerRateAxis2A);
+      double calculatedTimerRateAxis2;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
      // calculatedTimerRateAxis2 = (double)SiderealRate / timerRateAxis2B;
       if (timerRateAxis2B > 0.5)
@@ -289,23 +283,15 @@ ISR(TIMER1_COMPA_vect)
 ISR(TIMER3_COMPA_vect)
 {
   digitalWriteFast(Axis1StepPin, LOW);
-  // on the much faster Teensy run this ISR at twice the normal rate and pull the step pin low every other call
   if (clearAxis1)
   {
     takeStepAxis1 = false;
-    // Guessing about 4+4+1+ 4+4+1+ 1+ 2+1+2+ 13=37 clocks between here and the step signal which is 2.3uS
     updateDeltaTarget();
     if (deltaTargetAxis1 != 0 || inbacklashAxis1)
-    {                       // Move the RA stepper to the target
-      if (0 < deltaTargetAxis1)
-        dirAxis1 = 1;
-      else
-        dirAxis1 = 0;   // Direction control
-
-
-    // Guessing about 1+2+1+4+4+1=13 clocks between here and the step signal which is 0.81uS
-    // Set direction.  Needs >=0.65uS before/after rising step signal (DRV8825 or A4988).
-
+    {                       
+      // Move the RA stepper to the target
+      dirAxis1 = 0 < deltaTargetAxis1;
+      // Direction control
       if (ReverseAxis1^Axis1Reverse)
       {
         if (HADir == dirAxis1)
@@ -372,12 +358,11 @@ ISR(TIMER4_COMPA_vect)
     takeStepAxis2 = false;
     updateDeltaTarget();
     if (deltaTargetAxis2 != 0 || inbacklashAxis2)
-    {                       // move the Dec stepper to the target
-        // telescope normally starts on the EAST side of the pier looking at the WEST sky
-      if (0 < deltaTargetAxis2)
-        dirAxis2 = 1;
-      else
-        dirAxis2 = 0;   // Direction control
+    {                       
+      // move the Dec stepper to the target
+      // telescope normally starts on the EAST side of the pier looking at the WEST sky
+      dirAxis2 = 0 < deltaTargetAxis2;
+      // Direction control
       if (ReverseAxis2^Axis2Reverse)
       {
         if (dirAxis2)
