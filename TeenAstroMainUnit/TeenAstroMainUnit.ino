@@ -368,7 +368,7 @@ void SafetyCheck(const bool forceTracking)
     {
       if (!checkMeridian(axis1, axis2, CHECKMODE_TRACKING))
       {
-        if ((dirAxis1 == 1 && currentSide == PIER_WEST) || (dirAxis1 == 0 && currentSide == PIER_EAST))
+        if ((dirAxis1 && currentSide == PIER_WEST) || (!dirAxis1 && currentSide == PIER_EAST))
         {
           lastError = ERR_MERIDIAN;
           if (movingTo)
@@ -390,7 +390,7 @@ void SafetyCheck(const bool forceTracking)
     }
     if (!checkPole(axis1, CHECKMODE_TRACKING))
     {
-      if ((dirAxis1 == 1 && currentSide == PIER_EAST) || (dirAxis1 == 0 && currentSide == PIER_WEST))
+      if ((dirAxis1 && currentSide == PIER_EAST) || (!dirAxis1 && currentSide == PIER_WEST))
       {
         lastError = ERR_UNDER_POLE;
         if (movingTo)

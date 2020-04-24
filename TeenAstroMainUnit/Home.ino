@@ -29,8 +29,8 @@ bool syncPolarHome()
 {
   if (movingTo) return false;  // fail, forcing home not allowed during a move
   // default values for state variables
-  dirAxis2 = 1;
-  dirAxis1 = 1;
+  dirAxis2 = true;
+  dirAxis1 = true;
   newTargetRA = 0;
   newTargetDec = 0;
   newTargetAlt = 0;

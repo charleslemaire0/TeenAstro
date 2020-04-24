@@ -125,25 +125,21 @@ void                    TIMER3_COMPA_vect(void);
 IntervalTimer           itimer4;
 void                    TIMER4_COMPA_vect(void);
 
-
-
-
 //Target and position Axis 1
 volatile long       posAxis1;    // hour angle position in steps
 volatile long       deltaTargetAxis1;
 volatile long       startAxis1;  // hour angle of goto start position in steps
 volatile long       targetAxis1; // hour angle of goto end   position in steps
-volatile byte       dirAxis1;    // stepping direction + or -
+volatile bool       dirAxis1;    // stepping direction + or -
 long                fstepAxis1;  // amount of steps for Tracking
 #define stepAxis1   1
-
 
 //Target and position Axis 2
 volatile long       posAxis2;     // declination position in steps
 volatile long       deltaTargetAxis2;
 volatile long       startAxis2;   // declination of goto start position in steps
 volatile long       targetAxis2;  // declination of goto end   position in steps
-volatile byte       dirAxis2;     // stepping direction + or -
+volatile bool       dirAxis2;     // stepping direction + or -
 long                fstepAxis2;   // amount of steps for Tracking
 #define stepAxis2   1
 
@@ -167,9 +163,9 @@ long                minutesPastMeridianGOTOW;               // as above, if on t
 double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. OnStep will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 //                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
 
-#define HADirNCPInit    0
-#define HADirSCPInit    1
-volatile byte   HADir = HADirNCPInit;
+#define HADirNCPInit    false
+#define HADirSCPInit    true
+volatile bool   HADir = HADirNCPInit;
 
 // Status ------------------------------------------------------------------------------------------------------------------
 enum Errors
