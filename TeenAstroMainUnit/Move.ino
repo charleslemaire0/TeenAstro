@@ -48,8 +48,7 @@ void StopAxis1()
     if (0 > deltaTargetAxis1)
       a = -a;
     cli();
-    targetAxis1.part.m = posAxis1 + a;
-    targetAxis1.part.f = 0;
+    targetAxis1 = posAxis1 + a;
     sei();
   }
   guideDirAxis1 = 'b';
@@ -106,8 +105,7 @@ void StopAxis2()
     if (0 > deltaTargetAxis2)
       a = -a;
     cli();
-    targetAxis2.part.m = posAxis2 + a;
-    targetAxis2.part.f = 0;
+    targetAxis2 = posAxis2 + a;
     sei();
   }
   guideDirAxis2 = 'b';

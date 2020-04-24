@@ -2,7 +2,8 @@
 // functions to move the mount to the a new position
 
 // moves the mount
-void moveTo() {
+void moveTo()
+{
   // HA goes from +90...0..-90
   //                W   .   E
   static long lastPosAxis2 = 0;
@@ -23,7 +24,8 @@ Again:
   // adjust rates near the horizon to help keep from exceeding the minAlt limit
   if (!isAltAZ())
   {
-    if (tempPosAxis2 != lastPosAxis2) {
+    if (tempPosAxis2 != lastPosAxis2)
+    {
       bool decreasing = tempPosAxis2 < lastPosAxis2;
       if (GetPierSide() >= PIER_WEST)
         decreasing = !decreasing;
@@ -65,8 +67,7 @@ Again:
       if (0 > deltaTargetAxis1)
         a = -a;
       cli()
-        targetAxis1.part.m = posAxis1 + a;
-      targetAxis1.part.f = 0;
+        targetAxis1 = posAxis1 + a;
       sei();
     }
     guideDirAxis1 = 'b';
@@ -76,8 +77,7 @@ Again:
       if (0 > deltaTargetAxis2) // overshoot
         a = -a;
       cli();
-      targetAxis2.part.m = posAxis2 + a;
-      targetAxis2.part.f = 0;
+      targetAxis2 = posAxis2 + a;
       sei();
     }
     guideDirAxis2 = 'b';
@@ -172,7 +172,8 @@ Again:
       }
       XEEPROM.write(EE_parkStatus, parkStatus);
     }
-    else if (homeMount) {
+    else if (homeMount)
+    {
       parkClearBacklash();
       syncPolarHome();
       homeMount = false;
@@ -183,13 +184,16 @@ Again:
 }
 
 // fast integer square root routine, Integer Square Roots by Jack W. Crenshaw
-uint32_t isqrt32(uint32_t n) {
+uint32_t isqrt32(uint32_t n)
+{
   register uint32_t root = 0, remainder, place = 0x40000000;
   remainder = n;
 
   while (place > remainder) place = place >> 2;
-  while (place) {
-    if (remainder >= root + place) {
+  while (place)
+  {
+    if (remainder >= root + place)
+    {
       remainder = remainder - root - place;
       root = root + (place << 1);
     }
@@ -202,14 +206,16 @@ uint32_t isqrt32(uint32_t n) {
 bool DecayModeTrack = false;
 
 // if stepper drive can switch decay mode, set it here
-void DecayModeTracking() {
+void DecayModeTracking()
+{
   if (DecayModeTrack) return;
   DecayModeTrack = true;
   motorAxis1.setCurrent((unsigned int)LowCurrAxis1 * 10);
   motorAxis2.setCurrent((unsigned int)LowCurrAxis2 * 10);
 }
 
-void DecayModeGoto() {
+void DecayModeGoto()
+{
   if (!DecayModeTrack) return;
   DecayModeTrack = false;
   motorAxis1.setCurrent((unsigned int)HighCurrAxis1 * 10);

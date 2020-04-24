@@ -9,7 +9,8 @@
 //Topocentric Apparent convertions
 
 // returns the amount of refraction (in arcminutes) at the given true altitude (degrees), pressure (millibars), and temperature (celsius)
-double trueRefrac(double Alt, double Pressure = 1010.0, double Temperature = 10.0) {
+double trueRefrac(double Alt, double Pressure = 1010.0, double Temperature = 10.0)
+{
   double TPC = (Pressure / 1010.0) * (283.0 / (273.0 + Temperature));
   double r = ((1.02*cot((Alt + (10.3 / (Alt + 5.11))) / Rad))) * TPC;
   if (r < 0.0) r = 0.0;
@@ -17,7 +18,8 @@ double trueRefrac(double Alt, double Pressure = 1010.0, double Temperature = 10.
 }
 
 // returns the amount of refraction (in arcminutes) at the given apparent altitude (degrees), pressure (millibars), and temperature (celsius)
-double apparentRefrac(double Alt, double Pressure = 1010.0, double Temperature = 10.0) {
+double apparentRefrac(double Alt, double Pressure = 1010.0, double Temperature = 10.0)
+{
   double r = -trueRefrac(Alt, Pressure, Temperature);
   r = -trueRefrac(Alt + (r / 60.0), Pressure, Temperature);
   return r;
@@ -104,8 +106,8 @@ void SetDeltaTrackingRate()
   trackingTimerRateAxis1 = az_deltaAxis1 / 15.0;
   trackingTimerRateAxis2 = az_deltaAxis2 / 15.0;
 
-  fstepAxis1.fixed = doubleToFixed((StepsPerSecondAxis1 * trackingTimerRateAxis1) / 100.0);
-  fstepAxis2.fixed = doubleToFixed((StepsPerSecondAxis2 * trackingTimerRateAxis2) / 100.0);
+  fstepAxis1 = (long)(StepsPerSecondAxis1 * trackingTimerRateAxis1 / 100.0);
+  fstepAxis2 = (long)(StepsPerSecondAxis2 * trackingTimerRateAxis2 / 100.0);
 }
 
 void SetTrackingRate(double r)
@@ -292,8 +294,8 @@ void enableGuideRate(int g, bool force)
   guideTimerBaseRate = guideRates[g];
 
   cli();
-  amountGuideAxis1.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis1) / 100.0);
-  amountGuideAxis2.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis2) / 100.0);
+  amountGuideAxis1 = (long)(guideTimerBaseRate * StepsPerSecondAxis1 / 100.0);
+  amountGuideAxis2 = (long)(guideTimerBaseRate * StepsPerSecondAxis2 / 100.0);
   sei();
 }
 
@@ -303,8 +305,8 @@ void enableST4GuideRate()
   {
     guideTimerBaseRate = guideRates[0];
     cli();
-    amountGuideAxis1.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis1) / 100.0);
-    amountGuideAxis2.fixed = doubleToFixed((guideTimerBaseRate * StepsPerSecondAxis2) / 100.0);
+    amountGuideAxis1 = (long)(guideTimerBaseRate * StepsPerSecondAxis1 / 100.0);
+    amountGuideAxis2 = (long)(guideTimerBaseRate * StepsPerSecondAxis2 / 100.0);
     sei();
   }
 }
@@ -317,7 +319,7 @@ void resetGuideRate()
 void enableRateAxis1(double vRate)
 {
   cli();
-  amountGuideAxis1.fixed = doubleToFixed((abs(vRate) * StepsPerSecondAxis1) / 100.0);
+  amountGuideAxis1 = (long)((abs(vRate) * StepsPerSecondAxis1) / 100.0);
   guideTimerRateAxis1 = vRate;
   sei();
 }
@@ -325,7 +327,7 @@ void enableRateAxis1(double vRate)
 void enableRateAxis2(double vRate)
 {
   cli();
-  amountGuideAxis2.fixed = doubleToFixed((abs(vRate) * StepsPerSecondAxis2) / 100.0);
+  amountGuideAxis2 = (long)((abs(vRate) * StepsPerSecondAxis2) / 100.0);
   guideTimerRateAxis2 = vRate;
   sei();
 }

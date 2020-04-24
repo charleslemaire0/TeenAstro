@@ -210,7 +210,7 @@ void Command_GX()
     {
     case '0':
       cli();
-      temp = (long)(posAxis1 - ((long)targetAxis1.part.m));
+      temp = posAxis1 - targetAxis1;
       sei();
       sprintf(reply, "%ld", temp);
       quietReply = true;
@@ -218,7 +218,7 @@ void Command_GX()
 
     case '1':
       cli();
-      temp = (long)(posAxis2 - ((long)targetAxis2.part.m));
+      temp = posAxis2 - targetAxis2;
       sei();
       sprintf(reply, "%ld", temp);
       quietReply = true;
@@ -252,7 +252,7 @@ void Command_GX()
 
     case '6':
       cli();
-      temp = (long)(targetAxis1.part.m);
+      temp = targetAxis1;
       sei();
       sprintf(reply, "%ld", temp);
       quietReply = true;
@@ -260,7 +260,7 @@ void Command_GX()
 
     case '7':
       cli();
-      temp = (long)(targetAxis2.part.m);
+      temp = targetAxis2;
       sei();
       sprintf(reply, "%ld", temp);
       quietReply = true;
@@ -268,7 +268,7 @@ void Command_GX()
 
     case '8':
       cli();
-      temp = (long)(posAxis1);
+      temp = posAxis1;
       sei();
       sprintf(reply, "%ld", temp);
       quietReply = true;
@@ -276,7 +276,7 @@ void Command_GX()
 
     case '9':
       cli();
-      temp = (long)(posAxis2);
+      temp = posAxis2;
       sei();
       sprintf(reply, "%ld", temp);
       quietReply = true;

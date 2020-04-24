@@ -472,10 +472,8 @@ void Command_A()
       {
         hasStarAlignment = true;
         cli();
-        targetAxis1.part.m = posAxis1;
-        targetAxis1.part.f = 0;
-        targetAxis2.part.m = posAxis2;
-        targetAxis2.part.f = 0;
+        targetAxis1 = posAxis1;
+        targetAxis2 = posAxis2;
         sei();
       }
     }
@@ -499,10 +497,8 @@ void Command_A()
     {
       hasStarAlignment = true;
       cli();
-      targetAxis1.part.m = posAxis1;
-      targetAxis1.part.f = 0;
-      targetAxis2.part.m = posAxis2;
-      targetAxis2.part.f = 0;
+      targetAxis1 = posAxis1;
+      targetAxis2 = posAxis2;
       sei();
     }
     break;

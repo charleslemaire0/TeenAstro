@@ -226,7 +226,7 @@ void loop()
   {
     checkST4();
     CheckSpiral();
-    guideAxis1.fixed = 0;
+    guideAxis1 = 0;
     Guide();
   }
 
@@ -240,11 +240,11 @@ void loop()
       cli();
       if (!inbacklashAxis1)
       {
-        targetAxis1.fixed += fstepAxis1.fixed;
+        targetAxis1 += fstepAxis1;
       }
       if (!inbacklashAxis2)
       {
-        targetAxis2.fixed += fstepAxis2.fixed;
+        targetAxis2 += fstepAxis2;
       }
       sei();
     }
@@ -315,8 +315,8 @@ void loop()
     // for testing, average steps per second
     if (debugv1 > 100000) debugv1 = 100000;
     if (debugv1 < 0) debugv1 = 0;
-    debugv1 = (debugv1 * 19 + (targetAxis1.part.m * 1000 - lasttargetAxis1)) / 20;
-    lasttargetAxis1 = targetAxis1.part.m * 1000;
+    debugv1 = (debugv1 * 19 + (targetAxis1 * 1000 - lasttargetAxis1)) / 20;
+    lasttargetAxis1 = targetAxis1 * 1000;
     // adjust tracking rate for Alt/Azm mounts
     // adjust tracking rate for refraction
     SetDeltaTrackingRate();
@@ -507,19 +507,17 @@ void initmount()
 
 
   // initialize some fixed-point values
-  amountGuideAxis1.fixed = 0;
-  amountGuideAxis2.fixed = 0;
-  guideAxis1.fixed = 0;
-  guideAxis2.fixed = 0;
+  amountGuideAxis1 = 0;
+  amountGuideAxis2 = 0;
+  guideAxis1 = 0;
+  guideAxis2 = 0;
 
-  fstepAxis1.fixed = 0;
-  fstepAxis2.fixed = 0;
+  fstepAxis1 = 0;
+  fstepAxis2 = 0;
 
-  targetAxis1.part.m = quaterRotAxis1;
-  targetAxis1.part.f = 0;
-  targetAxis2.part.m = quaterRotAxis2;
-  targetAxis2.part.f = 0;
-  fstepAxis1.fixed = doubleToFixed(StepsPerSecondAxis1 / 100.0);
+  targetAxis1 = quaterRotAxis1;
+  targetAxis2 = quaterRotAxis2;
+  fstepAxis1 = (long)(StepsPerSecondAxis1 / 100.0);
   refraction = XEEPROM.read(EE_refraction);
   // Tracking and rate control
   correct_tracking = XEEPROM.read(EE_corr_track);

@@ -75,8 +75,8 @@ volatile double     guideTimerRateAxis2A = 0;
 void updateDeltaTarget()
 {
   cli();
-  deltaTargetAxis1 = distStepAxis1(posAxis1, (long)targetAxis1.part.m);
-  deltaTargetAxis2 = distStepAxis2(posAxis2, (long)targetAxis2.part.m);
+  deltaTargetAxis1 = distStepAxis1(posAxis1, targetAxis1);
+  deltaTargetAxis2 = distStepAxis2(posAxis2, targetAxis2);
   sei();
 }
 

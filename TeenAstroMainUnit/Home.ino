@@ -9,10 +9,8 @@ boolean goHome()
   if (guideDirAxis1 || guideDirAxis2) return false;                       // fail, moving to home not allowed while guiding
   cli();
 
-  targetAxis1.part.m = homeStepAxis1;
-  targetAxis1.part.f = 0;
-  targetAxis2.part.m = homeStepAxis2;
-  targetAxis2.part.f = 0;
+  targetAxis1 = homeStepAxis1;
+  targetAxis2 = homeStepAxis2;
   startAxis1 = posAxis1;
   startAxis2 = posAxis2;
   SetSiderealClockRate(siderealInterval);
@@ -54,11 +52,9 @@ bool syncPolarHome()
   startAxis1 = homeStepAxis1;
   startAxis2 = homeStepAxis2;
   cli();
-  targetAxis1.part.m = startAxis1;
-  targetAxis1.part.f = 0;
+  targetAxis1 = startAxis1;
   posAxis1 = startAxis1;
-  targetAxis2.part.m = startAxis2;
-  targetAxis2.part.f = 0;
+  targetAxis2 = startAxis2;
   posAxis2 = startAxis2;
   sei();
   // initialize/disable the stepper drivers

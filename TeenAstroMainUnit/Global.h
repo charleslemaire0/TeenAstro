@@ -135,7 +135,7 @@ PierSide newTargetPierSide = PIER_NOTVALID;
 volatile long       posAxis1;    // hour angle position in steps
 volatile long       deltaTargetAxis1;
 volatile long       startAxis1;  // hour angle of goto start position in steps
-volatile fixed_t    targetAxis1; // hour angle of goto end   position in steps
+volatile long       targetAxis1; // hour angle of goto end   position in steps
 volatile byte       dirAxis1;    // stepping direction + or -
 #define stepAxis1   1
 
@@ -144,7 +144,7 @@ volatile byte       dirAxis1;    // stepping direction + or -
 volatile long       posAxis2;     // declination position in steps
 volatile long       deltaTargetAxis2;
 volatile long       startAxis2;   // declination of goto start position in steps
-volatile fixed_t    targetAxis2;  // declination of goto end   position in steps
+volatile long       targetAxis2;  // declination of goto end   position in steps
 volatile byte       dirAxis2;     // stepping direction + or -
 #define stepAxis2   1
 
@@ -246,8 +246,8 @@ Motor motorAxis1;
 Motor motorAxis2;
 
 // tracking and PEC, fractional steps
-fixed_t         fstepAxis1;
-fixed_t         fstepAxis2;
+long         fstepAxis1;
+long         fstepAxis2;
 
 // guide command
 #define GuideRate1x     2
@@ -280,10 +280,10 @@ boolean         axis1Enabled = false;
 boolean         axis2Enabled = false;
 
 double          guideTimerBaseRate = 0;
-fixed_t         amountGuideAxis1;
-fixed_t         guideAxis1;
-fixed_t         amountGuideAxis2;
-fixed_t         guideAxis2;
+long            amountGuideAxis1;
+long            guideAxis1;
+long            amountGuideAxis2;
+long            guideAxis2;
 
 // Reticule control
 #ifdef RETICULE_LED_PINS
