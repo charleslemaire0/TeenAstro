@@ -112,7 +112,6 @@ long poleStepAxis2;
 long homeStepAxis2;
 
 volatile double         timerRateRatio;
-volatile boolean        useTimerRateRatio;
 
 #define BreakDistAxis1              (2L)
 #define BreakDistAxis2              (2L)

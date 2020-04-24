@@ -230,9 +230,9 @@ ISR(TIMER1_COMPA_vect)
       GuidingState = GuidingOFF;
     }
   }
-  double    thisTimerRateAxis1 = timerRateAxis1;
-  double    thisTimerRateAxis2 = useTimerRateRatio ? timerRateAxis2 * timerRateRatio : timerRateAxis2;
 
+  double thisTimerRateAxis1 = timerRateAxis1;
+  double thisTimerRateAxis2 = timerRateAxis2 * timerRateRatio;
 
   timerRateAxis2 = max(timerRateAxis2, maxRate);
   thisTimerRateAxis2 = timerRateAxis2;
