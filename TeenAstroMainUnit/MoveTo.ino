@@ -7,10 +7,10 @@ void moveTo()
   // HA goes from +90...0..-90
   //                W   .   E
   static long lastPosAxis2 = 0;
-  long distStartAxis1, distStartAxis2, distDestAxis1, distDestAxis2;
+  volatile long distStartAxis1, distStartAxis2, distDestAxis1, distDestAxis2;
   cli();
-  distStartAxis1 = abs(distStepAxis1(startAxis1, posAxis1));  // distance from start HA
-  distStartAxis2 = abs(distStepAxis2(startAxis2, posAxis2));  // distance from start Dec
+  distStartAxis1 = abs(vdistStepAxis1(&startAxis1, &posAxis1));  // distance from start HA
+  distStartAxis2 = abs(vdistStepAxis2(&startAxis2, &posAxis2));  // distance from start Dec
   sei();
   if (distStartAxis1 < 1) distStartAxis1 = 1;
   if (distStartAxis2 < 1) distStartAxis2 = 1;

@@ -6,6 +6,9 @@ static void smartDelay(unsigned long ms)
 #if VERSION == 220
   return;
 #endif
+#if VERSION == 230
+  return;
+#endif
   if (!hasGNSS)
   {
     return;

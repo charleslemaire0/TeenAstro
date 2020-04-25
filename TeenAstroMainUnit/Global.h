@@ -273,32 +273,41 @@ long            amountGuideAxis2;
 int             reticuleBrightness = 255;
 #endif
 
-long distStepAxis1(long start, long end)
+long distStepAxis1(long* start, long* end)
 {
-  return end - start;
+  return *end - *start;
+}
+long vdistStepAxis1(volatile long* start, volatile long* end)
+{
+  return *end -* start;
 }
 
-long distStepAxis2(long start, long end)
+long distStepAxis2(long* start, long* end)
 {
-  return end - start;
+  return *end - *start;
 }
+long vdistStepAxis2(volatile long* start, volatile long* end)
+{
+  return *end - *start;
+}
+
 void updateDeltaTarget()
 {
   cli();
-  deltaTargetAxis1 = distStepAxis1(posAxis1, targetAxis1);
-  deltaTargetAxis2 = distStepAxis2(posAxis2, targetAxis2);
+  deltaTargetAxis1 = vdistStepAxis1(&posAxis1, &targetAxis1);
+  deltaTargetAxis2 = vdistStepAxis2(&posAxis2, &targetAxis2);
   sei();
 }
 void updateDeltaTargetAxis1()
 {
   cli();
-  deltaTargetAxis1 = distStepAxis1(posAxis1, targetAxis1);
+  deltaTargetAxis1 = vdistStepAxis1(&posAxis1, &targetAxis1);
   sei();
 }
 void updateDeltaTargetAxis2()
 {
   cli();
-  deltaTargetAxis2 = distStepAxis1(posAxis2, targetAxis2);
+  deltaTargetAxis2 = vdistStepAxis1(&posAxis2, &targetAxis2);
   sei();
 }
 bool atTargetAxis1(bool update = false)
