@@ -133,11 +133,8 @@ Again:
   //    }
   //  }
   //}
-  updateDeltaTarget();
-  distDestAxis1 = abs(deltaTargetAxis1);  // distance from dest HA
-  distDestAxis2 = abs(deltaTargetAxis2);  // distance from dest Dec
 
-  if ((distDestAxis1 <= 2) && (distDestAxis2 <= 2))
+  if (atTargetAxis1(true) && atTargetAxis2(true))
   {
     //if (isAltAZ())
     //{

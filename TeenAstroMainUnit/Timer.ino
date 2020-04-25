@@ -21,13 +21,8 @@ double getRate(double V)
 {
   return max(16. * 1000000.0 / V, maxRate);
 }
-void updateDeltaTarget()
-{
-  cli();
-  deltaTargetAxis1 = distStepAxis1(posAxis1, targetAxis1);
-  deltaTargetAxis2 = distStepAxis2(posAxis2, targetAxis2);
-  sei();
-}
+
+
 // set the master sidereal clock rate, also forces rate update for RA/Dec timer rates so that PPS adjustments take hold immediately
 void SetSiderealClockRate(double Interval)
 {
@@ -95,7 +90,6 @@ ISR(TIMER1_COMPA_vect)
       updateDeltaTarget();
 
       double  x = deltaTargetAxis1;
-      bool other_axis_done = fabs(deltaTargetAxis2) < BreakDistAxis2;
 
       if (!inbacklashAxis1 && guideDirAxis1)
       {
@@ -127,12 +121,12 @@ ISR(TIMER1_COMPA_vect)
         // stop guiding
         if (guideDirAxis1 == 'b')
         {
-          if (fabs(x) < BreakDistAxis1)
+          if (atTargetAxis1())
           {
             guideDirAxis1 = 0;
             guideTimerRateAxis1 = 0;
             guideTimerRateAxis1A = 0;
-            if (other_axis_done)
+            if (atTargetAxis2())
               DecayModeTracking();
           }
         }
@@ -159,8 +153,7 @@ ISR(TIMER1_COMPA_vect)
       // guide rate acceleration/deceleration
       updateDeltaTarget();
 
-      double x = fabs(deltaTargetAxis2);
-      bool other_axis_done = fabs(deltaTargetAxis1) < BreakDistAxis1;
+      double x = abs(deltaTargetAxis2);
 
       if (!inbacklashAxis2 && guideDirAxis2)
       {
@@ -192,12 +185,12 @@ ISR(TIMER1_COMPA_vect)
         // stop guiding
         if (guideDirAxis2 == 'b')
         {
-          if (x < BreakDistAxis2)
+          if (atTargetAxis2())
           {
             guideDirAxis2 = 0;
             guideTimerRateAxis2 = 0;
             guideTimerRateAxis2A = 0;
-            if (other_axis_done)
+            if (atTargetAxis1())
               DecayModeTracking();
           }
         }
@@ -289,7 +282,7 @@ ISR(TIMER3_COMPA_vect)
   if (clearAxis1)
   {
     takeStepAxis1 = false;
-    updateDeltaTarget();
+    updateDeltaTargetAxis1();
     if (deltaTargetAxis1 != 0 || inbacklashAxis1)
     {                       
       // Move the RA stepper to the target
@@ -361,7 +354,7 @@ ISR(TIMER4_COMPA_vect)
   if (clearAxis2)
   {
     takeStepAxis2 = false;
-    updateDeltaTarget();
+    updateDeltaTargetAxis2();
     if (deltaTargetAxis2 != 0 || inbacklashAxis2)
     {                       
       // move the Dec stepper to the target

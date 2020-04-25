@@ -272,3 +272,44 @@ long            amountGuideAxis2;
 #ifdef RETICULE_LED_PINS
 int             reticuleBrightness = 255;
 #endif
+
+long distStepAxis1(long start, long end)
+{
+  return end - start;
+}
+
+long distStepAxis2(long start, long end)
+{
+  return end - start;
+}
+void updateDeltaTarget()
+{
+  cli();
+  deltaTargetAxis1 = distStepAxis1(posAxis1, targetAxis1);
+  deltaTargetAxis2 = distStepAxis2(posAxis2, targetAxis2);
+  sei();
+}
+void updateDeltaTargetAxis1()
+{
+  cli();
+  deltaTargetAxis1 = distStepAxis1(posAxis1, targetAxis1);
+  sei();
+}
+void updateDeltaTargetAxis2()
+{
+  cli();
+  deltaTargetAxis2 = distStepAxis1(posAxis2, targetAxis2);
+  sei();
+}
+bool atTargetAxis1(bool update = false)
+{
+  if (update)
+    updateDeltaTargetAxis1();
+  return abs(deltaTargetAxis1) < BreakDistAxis1;
+}
+bool atTargetAxis2(bool update = false)
+{
+  if (update)
+    updateDeltaTargetAxis2();
+  return abs(deltaTargetAxis2) < BreakDistAxis2;
+}

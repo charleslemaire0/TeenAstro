@@ -41,9 +41,9 @@ void StopAxis1()
 {
   if (guideDirAxis1 == 'b')
     return;
-  updateDeltaTarget();
+  updateDeltaTargetAxis1();
   long a = pow(getV(timerRateAxis1), 2.) / (2. * AccAxis1);
-  if (fabs(deltaTargetAxis1) > a)
+  if (abs(deltaTargetAxis1) > a)
   {
     if (0 > deltaTargetAxis1)
       a = -a;
@@ -99,8 +99,8 @@ void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
 void StopAxis2()
 {
   long a = pow(getV(timerRateAxis2), 2.) / (2. * AccAxis2);
-  updateDeltaTarget();
-  if (fabs(deltaTargetAxis2) > a)
+  updateDeltaTargetAxis2();
+  if (abs(deltaTargetAxis2) > a)
   {
     if (0 > deltaTargetAxis2)
       a = -a;

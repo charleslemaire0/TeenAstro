@@ -210,7 +210,7 @@ void Command_GX()
     {
     case '0':
       cli();
-      temp = posAxis1 - targetAxis1;
+      temp = distStepAxis1(posAxis1, targetAxis1);
       sei();
       sprintf(reply, "%ld", temp);
       quietReply = true;
@@ -218,7 +218,7 @@ void Command_GX()
 
     case '1':
       cli();
-      temp = posAxis2 - targetAxis2;
+      temp = distStepAxis2(posAxis2, targetAxis2);
       sei();
       sprintf(reply, "%ld", temp);
       quietReply = true;
