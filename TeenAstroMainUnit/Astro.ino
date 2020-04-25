@@ -160,7 +160,7 @@ bool do_compensation_calc()
     break;
   case 10:
     // look ahead of the current position
-    HA_tmp = (HA_now - (AltAzTrackingRange / 60.0));
+    HA_tmp = (HA_now - (AltAzTrackingRange / 60.));
     Dec_tmp = Dec_now;
     break;
   case 15:
@@ -170,7 +170,7 @@ bool do_compensation_calc()
     break;
   case 110:
     // look behind the current position
-    HA_tmp = (HA_now + (AltAzTrackingRange / 60.0));
+    HA_tmp = (HA_now + (AltAzTrackingRange / 60.));
     Dec_tmp = Dec_now;
     break;
   case 115:
@@ -185,8 +185,8 @@ bool do_compensation_calc()
     if ((axis1_before < -halfRotAxis1) && (axis1_after > halfRotAxis1)) axis1_after += 2 * halfRotAxis1;
     // set rates
 
-    az_deltaAxis1 = (distStepAxis1(axis1_before, axis1_after) / StepsPerDegreeAxis1 * (15.0 / (AltAzTrackingRange / 60.0)) / 2.0) * az_deltaRateScale;
-    az_deltaAxis2 = (distStepAxis2(axis2_before, axis2_after) / StepsPerDegreeAxis2 * (15.0 / (AltAzTrackingRange / 60.0)) / 2.0) * az_deltaRateScale;
+    az_deltaAxis1 = (distStepAxis1(axis1_before, axis1_after) / StepsPerDegreeAxis1 * (15. / (AltAzTrackingRange / 60.)) / 2.) * az_deltaRateScale;
+    az_deltaAxis2 = (distStepAxis2(axis2_before, axis2_after) / StepsPerDegreeAxis2 * (15. / (AltAzTrackingRange / 60.)) / 2.) * az_deltaRateScale;
     // override for special case of near a celestial pole
     //if (90.0 - fabs(Dec_now) <= 0.5)
     //{
@@ -334,7 +334,7 @@ void enableRateAxis2(double vRate)
 
 void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side)
 {
-  if (*AngleAxis2 > 90.0)
+  if (*AngleAxis2 > 90.)
   {
     *AngleAxis2 = (90. - *AngleAxis2) + 90.;
     *AngleAxis1 = *AngleAxis1 - 180.;
@@ -359,7 +359,7 @@ void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2)
       *AngleAxis2 = (90. - *AngleAxis2) + 90.;
     else
       *AngleAxis2 = (-90. - *AngleAxis2) - 90.;
-    *AngleAxis1 = *AngleAxis1 + 18.0;
+    *AngleAxis1 = *AngleAxis1 + 18.;
   }
 }
 
