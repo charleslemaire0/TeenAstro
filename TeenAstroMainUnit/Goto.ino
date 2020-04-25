@@ -84,8 +84,8 @@ bool getHorApp(double *Azm, double *Alt)
 bool getHorAppTarget(double *Azm, double *Alt)
 {
   cli();
-  double Axis1 = (double)targetAxis1 / StepsPerDegreeAxis1;
-  double Axis2 = (double)targetAxis2 / StepsPerDegreeAxis2;
+  double Axis1 = targetAxis1 / StepsPerDegreeAxis1;
+  double Axis2 = targetAxis2 / StepsPerDegreeAxis2;
   sei();
   alignment.toReferenceDeg(*Azm, *Alt, Axis1, Axis2);
   return true;

@@ -504,7 +504,7 @@ void initmount()
 
   targetAxis1 = quaterRotAxis1;
   targetAxis2 = quaterRotAxis2;
-  fstepAxis1 = (long)(StepsPerSecondAxis1 / 100.0);
+  fstepAxis1 = StepsPerSecondAxis1 / 100.0;
   refraction = XEEPROM.read(EE_refraction);
   // Tracking and rate control
   correct_tracking = XEEPROM.read(EE_corr_track);

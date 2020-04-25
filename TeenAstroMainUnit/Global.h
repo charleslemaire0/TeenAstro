@@ -116,26 +116,26 @@ volatile double         timerRateRatio;
 #define BreakDistAxis1              (2L)
 #define BreakDistAxis2              (2L)
 
-volatile double         AccAxis1 = 0; //acceleration in steps per second square
-volatile double         AccAxis2 = 0; //acceleration in steps per second square
+volatile double     AccAxis1 = 0; //acceleration in steps per second square
+volatile double     AccAxis2 = 0; //acceleration in steps per second square
 
 
 //Target and position Axis 1
 volatile long       posAxis1;    // hour angle position in steps
 volatile long       deltaTargetAxis1;
 volatile long       startAxis1;  // hour angle of goto start position in steps
-volatile long       targetAxis1; // hour angle of goto end   position in steps
+volatile double     targetAxis1; // hour angle of goto end   position in steps
 volatile bool       dirAxis1;    // stepping direction + or -
-long                fstepAxis1;  // amount of steps for Tracking
+double              fstepAxis1;  // amount of steps for Tracking
 #define stepAxis1   1
 
 //Target and position Axis 2
 volatile long       posAxis2;     // declination position in steps
 volatile long       deltaTargetAxis2;
 volatile long       startAxis2;   // declination of goto start position in steps
-volatile long       targetAxis2;  // declination of goto end   position in steps
+volatile double     targetAxis2;  // declination of goto end   position in steps
 volatile bool       dirAxis2;     // stepping direction + or -
-long                fstepAxis2;   // amount of steps for Tracking
+double              fstepAxis2;   // amount of steps for Tracking
 #define stepAxis2   1
 
 
@@ -265,8 +265,8 @@ bool            axis1Enabled = false;
 bool            axis2Enabled = false;
 
 double          guideTimerBaseRate = 0;
-long            amountGuideAxis1;
-long            amountGuideAxis2;
+double          amountGuideAxis1;
+double          amountGuideAxis2;
 
 // Reticule control
 #ifdef RETICULE_LED_PINS
@@ -277,16 +277,23 @@ long distStepAxis1(long* start, long* end)
 {
   return *end - *start;
 }
-long vdistStepAxis1(volatile long* start, volatile long* end)
+long distStepAxis1(volatile long* start, volatile long* end)
 {
   return *end -* start;
 }
-
+long distStepAxis1(volatile long* start, volatile double* end)
+{
+  return *end - *start;
+}
 long distStepAxis2(long* start, long* end)
 {
   return *end - *start;
 }
-long vdistStepAxis2(volatile long* start, volatile long* end)
+long distStepAxis2(volatile long* start, volatile long* end)
+{
+  return *end - *start;
+}
+long distStepAxis2(volatile long* start, volatile double* end)
 {
   return *end - *start;
 }
@@ -294,20 +301,20 @@ long vdistStepAxis2(volatile long* start, volatile long* end)
 void updateDeltaTarget()
 {
   cli();
-  deltaTargetAxis1 = vdistStepAxis1(&posAxis1, &targetAxis1);
-  deltaTargetAxis2 = vdistStepAxis2(&posAxis2, &targetAxis2);
+  deltaTargetAxis1 = distStepAxis1(&posAxis1, &targetAxis1);
+  deltaTargetAxis2 = distStepAxis2(&posAxis2, &targetAxis2);
   sei();
 }
 void updateDeltaTargetAxis1()
 {
   cli();
-  deltaTargetAxis1 = vdistStepAxis1(&posAxis1, &targetAxis1);
+  deltaTargetAxis1 = distStepAxis1(&posAxis1, &targetAxis1);
   sei();
 }
 void updateDeltaTargetAxis2()
 {
   cli();
-  deltaTargetAxis2 = vdistStepAxis1(&posAxis2, &targetAxis2);
+  deltaTargetAxis2 = distStepAxis2(&posAxis2, &targetAxis2);
   sei();
 }
 bool atTargetAxis1(bool update = false)

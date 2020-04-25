@@ -106,8 +106,8 @@ void SetDeltaTrackingRate()
   trackingTimerRateAxis1 = az_deltaAxis1 / 15.;
   trackingTimerRateAxis2 = az_deltaAxis2 / 15.;
 
-  fstepAxis1 = (long)(StepsPerSecondAxis1 * trackingTimerRateAxis1 / 100.);
-  fstepAxis2 = (long)(StepsPerSecondAxis2 * trackingTimerRateAxis2 / 100.);
+  fstepAxis1 = StepsPerSecondAxis1 * trackingTimerRateAxis1 / 100.0;
+  fstepAxis2 = StepsPerSecondAxis2 * trackingTimerRateAxis2 / 100.0;
 }
 
 void SetTrackingRate(double r)
@@ -286,8 +286,8 @@ void enableGuideRate(int g, bool force)
   guideTimerBaseRate = guideRates[g];
 
   cli();
-  amountGuideAxis1 = (long)(guideTimerBaseRate * StepsPerSecondAxis1 / 100.);
-  amountGuideAxis2 = (long)(guideTimerBaseRate * StepsPerSecondAxis2 / 100.);
+  amountGuideAxis1 = guideTimerBaseRate * StepsPerSecondAxis1 / 100.0;
+  amountGuideAxis2 = guideTimerBaseRate * StepsPerSecondAxis2 / 100.0;
   sei();
 }
 
@@ -297,8 +297,8 @@ void enableST4GuideRate()
   {
     guideTimerBaseRate = guideRates[0];
     cli();
-    amountGuideAxis1 = (long)(guideTimerBaseRate * StepsPerSecondAxis1 / 100.);
-    amountGuideAxis2 = (long)(guideTimerBaseRate * StepsPerSecondAxis2 / 100.);
+    amountGuideAxis1 = guideTimerBaseRate * StepsPerSecondAxis1 / 100.0;
+    amountGuideAxis2 = guideTimerBaseRate * StepsPerSecondAxis2 / 100.0;
     sei();
   }
 }
@@ -311,7 +311,7 @@ void resetGuideRate()
 void enableRateAxis1(double vRate)
 {
   cli();
-  amountGuideAxis1 = (long)((abs(vRate) * StepsPerSecondAxis1) / 100.);
+  amountGuideAxis1 = (abs(vRate) * StepsPerSecondAxis1) / 100.0;
   guideTimerRateAxis1 = vRate;
   sei();
 }
@@ -319,7 +319,7 @@ void enableRateAxis1(double vRate)
 void enableRateAxis2(double vRate)
 {
   cli();
-  amountGuideAxis2 = (long)((abs(vRate) * StepsPerSecondAxis2) / 100.);
+  amountGuideAxis2 = (abs(vRate) * StepsPerSecondAxis2) / 100.0;
   guideTimerRateAxis2 = vRate;
   sei();
 }

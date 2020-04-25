@@ -209,18 +209,14 @@ void Command_GX()
     switch (parameter[1])
     {
     case '0':
-      cli();
-      temp = vdistStepAxis1(&posAxis1, &targetAxis1);
-      sei();
-      sprintf(reply, "%ld", temp);
+      updateDeltaTargetAxis1();
+      sprintf(reply, "%ld", deltaTargetAxis1);
       quietReply = true;
       break;  // Debug0, true vs. target RA position
 
     case '1':
-      cli();
-      temp = vdistStepAxis2(&posAxis2, &targetAxis2);
-      sei();
-      sprintf(reply, "%ld", temp);
+      updateDeltaTargetAxis2();
+      sprintf(reply, "%ld", deltaTargetAxis2);
       quietReply = true;
       break;  // Debug1, true vs. target Dec position
 
