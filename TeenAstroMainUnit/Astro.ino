@@ -202,14 +202,6 @@ bool do_compensation_calc()
   return done;
 }
 
-//// Misc. numeric conversion
-//double timeRange(double t)
-//{
-//    while (t >= 24.0) t -= 24.0;
-//    while (t < 0.0) t += 24.0;
-//    return t;
-//}
-
 double haRange(double d)
 {
   while (d >= 180.) d -= 360.;
@@ -359,7 +351,7 @@ void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2)
       *AngleAxis2 = (90. - *AngleAxis2) + 90.;
     else
       *AngleAxis2 = (-90. - *AngleAxis2) - 90.;
-    *AngleAxis1 = *AngleAxis1 + 18.;
+    *AngleAxis1 = *AngleAxis1 + 180.;
   }
 }
 
