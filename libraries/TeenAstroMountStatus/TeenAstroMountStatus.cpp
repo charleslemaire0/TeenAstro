@@ -10,7 +10,7 @@ void TeenAstroMountStatus::nextStepAlign()
   if (isAlignSelect())
   {
     m_align = ALI_SLEW; return;
-  };
+  }
   if (isAlignSlew())
   {
     m_align = ALI_RECENTER; return;
@@ -83,6 +83,15 @@ void TeenAstroMountStatus::updateAzAlt()
     m_hasInfoAz = GetLX200(":GZ#", m_TempAz, sizeof(m_TempAz)) == LX200VALUEGET;
     m_hasInfoAlt = GetLX200(":GA#", m_TempAlt, sizeof(m_TempAlt)) == LX200VALUEGET;
     m_hasInfoAz && m_hasInfoAlt ? m_lastStateAzAlt = millis() : m_connectionFailure++;
+  }
+}
+void TeenAstroMountStatus::updateAxis()
+{
+  if (millis() - m_lastStateAxis > updaterate)
+  {
+    m_hasInfoAxis1 = GetLX200(":GXF8#", m_TempAxis1, sizeof(m_TempAxis1)) == LX200VALUEGET;
+    m_hasInfoAxis2 = GetLX200(":GXF9#", m_TempAxis2, sizeof(m_TempAxis2)) == LX200VALUEGET;
+    m_hasInfoAxis1 && m_hasInfoAxis2 ? m_lastStateAxis = millis() : m_connectionFailure++;
   }
 }
 void TeenAstroMountStatus::updateTime()
@@ -263,10 +272,15 @@ bool TeenAstroMountStatus::isGuidingS()
 {
   return  m_TempMount[8] == '_';
 }
+bool TeenAstroMountStatus::isAligned()
+{
+  return m_TempMount[11] == '1';
+}
 bool TeenAstroMountStatus::isGNSSValid()
 {
   return  m_TempMount[14] == '1';
 }
+
 TeenAstroMountStatus::PierState TeenAstroMountStatus::getPierState()
 {
   switch (m_TempMount[13])

@@ -10,16 +10,18 @@
 #include <stdint.h>
 
 // Class representing a particular time and date.
-class Time {
- public:
-  enum Day {
-    kSunday    = 1,
-    kMonday    = 2,
-    kTuesday   = 3,
+class Time
+{
+public:
+  enum Day
+  {
+    kSunday = 1,
+    kMonday = 2,
+    kTuesday = 3,
     kWednesday = 4,
-    kThursday  = 5,
-    kFriday    = 6,
-    kSaturday  = 7
+    kThursday = 5,
+    kFriday = 6,
+    kSaturday = 7
   };
 
   // Creates a Time object with a given time.
@@ -51,8 +53,9 @@ class Time {
 // this interface as doing so can lead to errors if the time changes as it is
 // being read or modified. Instead, using DS1302::time() guarantees safe reads
 // and writes using the DS1302's burst mode feature.
-class DS1302 {
- public:
+class DS1302
+{
+public:
   // Size of the DS1302's RAM storage, in bytes.
   static const int kRamSize = 31;
 

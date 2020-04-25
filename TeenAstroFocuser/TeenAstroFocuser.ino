@@ -1,3 +1,4 @@
+#include <DallasTemperature.h>
 #include <TMCStepper_UTILITY.h>
 #include <TMCStepper.h>
 #include <TMC26XStepper.h>
@@ -11,7 +12,7 @@ IntervalTimer tickTimer;
 bool isMoving = false;
 void setup()
 {
-	// set the PWM and brake pins so that the direction pins  // can be used to control the motor:
+  // set the PWM and brake pins so that the direction pins  // can be used to control the motor:
   pinMode(LEDPin, OUTPUT);
   for (int k = 0; k < 20; k++)
   {
@@ -21,11 +22,12 @@ void setup()
     delay(50);
   }
 
-	pinMode(_StepPin, OUTPUT);
-	pinMode(_DirPin, OUTPUT);
+  pinMode(_StepPin, OUTPUT);
+  pinMode(_DirPin, OUTPUT);
   digitalWrite(_DirPin, LOW);
   digitalWrite(_StepPin, LOW);
-	Serial.begin(9600);
+  digitalWrite(LEDPin, HIGH);
+  Serial.begin(9600);
 
 #ifdef VERSION220
   Serial2.setRX(FocuserRX);
@@ -50,8 +52,6 @@ void setup()
   tickTimer.begin(updateTemperature, 5000000);
   iniMot();
   iniPos();
-  digitalWrite(LEDPin, HIGH);
-  delay(500);
   digitalWrite(LEDPin, LOW);
 }
 

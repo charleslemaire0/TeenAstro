@@ -4,9 +4,9 @@
 #define _GLOBAL_h
 
 #if defined(ARDUINO) && ARDUINO >= 100
-	#include "Arduino.h"
+#include "Arduino.h"
 #else
-	#include "WProgram.h"
+#include "WProgram.h"
 #endif
 #define PROJECT "TeenAstro Focuser"
 #define Version "1.0.1"

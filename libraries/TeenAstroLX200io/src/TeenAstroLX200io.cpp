@@ -8,7 +8,8 @@
 
 
 // integer numeric conversion with error checking
-boolean atoi2(char *a, int *i) {
+boolean atoi2(char *a, int *i)
+{
   char *conv_end;
   long l = strtol(a, &conv_end, 10);
 
@@ -17,7 +18,8 @@ boolean atoi2(char *a, int *i) {
   return true;
 }
 
-void serialRecvFlush() {
+void serialRecvFlush()
+{
   while (Ser.available() > 0) Ser.read();
 }
 
@@ -47,14 +49,20 @@ void char2DEC(char* txt, int& deg, unsigned int& min, unsigned int& sec)
 
 
 // this readBytesUntil() lets you know if the "character" was found
-byte readBytesUntil2(char character, char buffer[], int length, boolean* characterFound, long timeout) {
+byte readBytesUntil2(char character, char buffer[], int length, boolean* characterFound, long timeout)
+{
   unsigned long startTime = millis() + timeout;
   int pos = 0;
   *characterFound = false;
-  while (((long)(startTime - millis()) > 0) && (pos < length)) {
-    if (Ser.available()) {
+  while (((long)(startTime - millis()) > 0) && (pos < length))
+  {
+    if (Ser.available())
+    {
       buffer[pos] = Ser.read();
-      if (buffer[pos] == character) { *characterFound = true; break; }
+      if (buffer[pos] == character)
+      {
+        *characterFound = true; break;
+      }
       pos++;
     }
   }
@@ -64,7 +72,8 @@ byte readBytesUntil2(char character, char buffer[], int length, boolean* charact
 
 
 // smart LX200 aware command and response over serial
-bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned long timeOutMs, bool keepHashtag ) {
+bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned long timeOutMs, bool keepHashtag)
+{
   Ser.setTimeout(timeOutMs);
   memset(recvBuffer, 0, bufferSize);
   // clear the read/write buffers
@@ -77,58 +86,90 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
   bool shortResponse = false;
 
   if ((command[0] == (char)6) && (command[1] == 0)) shortResponse = true;
-  if (command[0] == ':') {
-    if (command[1] == '%') {
+  if (command[0] == ':')
+  {
+    if (command[1] == '%')
+    {
       Ser.setTimeout(timeOutMs * 4);
     }
-    if (command[1] == 'A') {
-      if (strchr("W123456789+", command[2])) { shortResponse = true; Ser.setTimeout(timeOutMs * 4); }
+    if (command[1] == 'A')
+    {
+      if (strchr("W123456789+", command[2]))
+      {
+        shortResponse = true; Ser.setTimeout(timeOutMs * 4);
+      }
     }
-    if (command[1] == 'M') {
+    if (command[1] == 'M')
+    {
       if (strchr("ewnsg", command[2])) noResponse = true;
       if (strchr("SAF?@", command[2])) shortResponse = true;
     }
-    if (command[1] == 'Q') {
+    if (command[1] == 'Q')
+    {
       if (strchr("#ewns", command[2])) noResponse = true;
     }
-    if (command[1] == 'S') {
+    if (command[1] == 'S')
+    {
       if (strchr("!", command[2])) noResponse = true;
       else if (strchr("CLSGtgMNOPrdhoTBX", command[2])) shortResponse = true;
     }
-    if (command[1] == 'L') {
+    if (command[1] == 'L')
+    {
       if (strchr("BNCDL!", command[2])) noResponse = true;
       if (strchr("o$W", command[2])) shortResponse = true;
     }
-    if (command[1] == 'B') {
+    if (command[1] == 'B')
+    {
       if (strchr("+-", command[2])) noResponse = true;
     }
-    if (command[1] == 'C') {
+    if (command[1] == 'C')
+    {
       if (strchr("S", command[2])) noResponse = true;
     }
     if (command[1] == 'F')
     {
       Ser.setTimeout(timeOutMs * 5);
-      if (strchr("+-GPSgs", command[2])) { noResponse = true; }
-      if (strchr("OoIi:012345678cCmW", command[2])) { shortResponse = true; }
+      if (strchr("+-GPSgs", command[2]))
+      {
+        noResponse = true;
+      }
+      if (strchr("OoIi:012345678cCmW", command[2]))
+      {
+        shortResponse = true;
+      }
     }
-    if (command[1] == 'h') {
+    if (command[1] == 'h')
+    {
       if (strchr("F", command[2])) noResponse = true;
-      if (strchr("COPQR", command[2])) { shortResponse = true; Ser.setTimeout(timeOutMs * 2); }
+      if (strchr("COPQR", command[2]))
+      {
+        shortResponse = true; Ser.setTimeout(timeOutMs * 2);
+      }
     }
-    if (command[1] == 'T') {
+    if (command[1] == 'T')
+    {
       if (strchr("QR+-SLK", command[2])) noResponse = true;
       if (strchr("edrn", command[2])) shortResponse = true;
     }
     if (command[1] == 'U') noResponse = true;
-    if ((command[1] == 'W') && (command[2] != '?')) { noResponse = true; }
-    if ((command[1] == '$') && (command[2] == 'Q') && (command[3] == 'Z')) {
+    if ((command[1] == 'W') && (command[2] != '?'))
+    {
+      noResponse = true;
+    }
+    if ((command[1] == '$') && (command[2] == 'Q') && (command[3] == 'Z'))
+    {
       if (strchr("+-Z/!", command[4])) noResponse = true;
     }
-    if (command[1] == 'G') {
-      if (strchr("AZRD", command[2])) { timeOutMs *= 2; }
+    if (command[1] == 'G')
+    {
+      if (strchr("AZRD", command[2]))
+      {
+        timeOutMs *= 2;
+      }
     }
   }
-  if (noResponse) {
+  if (noResponse)
+  {
     recvBuffer[0] = 0;
     return true;
   }
@@ -145,7 +186,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     }
     return (recvBuffer[0] != 0);
   }
-  else 
+  else
   {
     // get full response, '#' terminated
     unsigned long start = millis();
@@ -439,7 +480,7 @@ LX200RETURN Move2TargetLX200(TARGETTYPE target)
   }
   LX200RETURN response;
 
-  switch (out[0]-'0')
+  switch (out[0] - '0')
   {
     //         1=Object below horizon    Outside limits, below the Horizon limit
     //         2=No object selected      Failure to resolve coordinates
@@ -536,12 +577,12 @@ LX200RETURN SetTargetAltLX200(bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t&
 
 LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t& vd3)
 {
-  if (SetTargetRaLX200(vr1, vr2, vr3) ==  LX200VALUESET && SetTargetDecLX200(ispos, vd1, vd2, vd3) == LX200VALUESET)
+  if (SetTargetRaLX200(vr1, vr2, vr3) == LX200VALUESET && SetTargetDecLX200(ispos, vd1, vd2, vd3) == LX200VALUESET)
   {
     if (sync)
     {
       char out[LX200sbuff];
-      if (GetLX200(":CM#",out, LX200sbuff))
+      if (GetLX200(":CM#", out, LX200sbuff))
       {
         if (strcmp(out, "N/A") == 0)
           return LX200SYNCED;
@@ -585,12 +626,12 @@ LX200RETURN SyncGotoUserLX200(bool sync)
 
 LX200RETURN SyncGotoLX200AltAz(bool sync, uint16_t& vz1, uint8_t& vz2, uint8_t& vz3, bool& ispos, uint16_t& va1, uint8_t& va2, uint8_t& va3)
 {
-  if (SetTargetAzLX200(vz1, vz2, vz3) ==  LX200VALUESET && SetTargetAltLX200(ispos, va1, va2, va3) == LX200VALUESET)
+  if (SetTargetAzLX200(vz1, vz2, vz3) == LX200VALUESET && SetTargetAltLX200(ispos, va1, va2, va3) == LX200VALUESET)
   {
     if (sync)
     {
       char out[LX200sbuff];
-      if (GetLX200(":CA#",out, LX200sbuff))
+      if (GetLX200(":CA#", out, LX200sbuff))
       {
         if (strcmp(out, "N/A") == 0)
           return LX200SYNCED;
@@ -703,7 +744,7 @@ LX200RETURN SyncGotoCatLX200(bool sync)
   EquatorialCoordinates coo;
   coo.ra = cat_mgr.rah();
   coo.dec = cat_mgr.dec();
-  epoch=cat_mgr.epoch(); if (epoch==0) return LX200GETVALUEFAILED;
+  epoch = cat_mgr.epoch(); if (epoch == 0) return LX200GETVALUEFAILED;
   EquatorialCoordinates cooNow;
   cooNow = Ephemeris::equatorialEquinoxToEquatorialJNowAtDateAndTime(coo, epoch, day, month, year, 0, 0, 0);
   return SyncGotoLX200(sync, cooNow.ra, cooNow.dec);
@@ -730,7 +771,7 @@ LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short objSys)
   {
     return LX200GETVALUEFAILED;
   }
-  
+
   Ephemeris Eph;
   Eph.flipLongitude(true);
 
@@ -742,13 +783,13 @@ LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short objSys)
 
 LX200RETURN SyncSelectedStarLX200(unsigned short alignSelectedStar)
 {
- if (alignSelectedStar >= 0) return SyncGotoCatLX200(false); else return LX200UNKOWN;
+  if (alignSelectedStar >= 0) return SyncGotoCatLX200(false); else return LX200UNKOWN;
 }
 
 LX200RETURN readReverseLX200(const uint8_t &axis, bool &reverse)
 {
   char out[LX200sbuff];
-  LX200RETURN ok = axis == 1 ? GetLX200(":%RR#", out , sizeof(out)) : GetLX200(":%RD#", out, sizeof(out));
+  LX200RETURN ok = axis == 1 ? GetLX200(":%RR#", out, sizeof(out)) : GetLX200(":%RD#", out, sizeof(out));
   if (ok == LX200VALUEGET)
   {
     reverse = out[0] == '1' ? true : false;
@@ -907,7 +948,7 @@ LX200RETURN readFocuserConfig(unsigned int& startPosition, unsigned int& maxPosi
   return LX200VALUEGET;
 }
 
-LX200RETURN readFocuserMotor(bool& reverse, unsigned int& micro, unsigned int& incr,  unsigned int& curr)
+LX200RETURN readFocuserMotor(bool& reverse, unsigned int& micro, unsigned int& incr, unsigned int& curr)
 {
   char out[LX200lbuff];
   if (GetLX200(":FM#", out, sizeof(out)) == LX200GETVALUEFAILED)
@@ -924,29 +965,35 @@ LX200RETURN readFocuserMotor(bool& reverse, unsigned int& micro, unsigned int& i
   return LX200VALUEGET;
 }
 
- 
+
 // convert string in format HH:MM:SS to floating point
 // (also handles)           HH:MM.M
-boolean hmsToDouble(double *f, char *hms) {
+boolean hmsToDouble(double *f, char *hms)
+{
   char h[3], m[5], s[3];
   int  h1, m1, m2 = 0, s1 = 0;
   boolean highPrecision = true;
 
   while (*hms == ' ') hms++; // strip prefix white-space
 
-  if (highPrecision) { if (strlen(hms) != 8) return false; }
+  if (highPrecision)
+  {
+    if (strlen(hms) != 8) return false;
+  }
   else if (strlen(hms) != 7) return false;
 
   h[0] = *hms++; h[1] = *hms++; h[2] = 0; atoi2(h, &h1);
-  if (highPrecision) {
+  if (highPrecision)
+  {
     if (*hms++ != ':') return false; m[0] = *hms++; m[1] = *hms++; m[2] = 0; atoi2(m, &m1);
     if (*hms++ != ':') return false; s[0] = *hms++; s[1] = *hms++; s[2] = 0; atoi2(s, &s1);
   }
-  else {
+  else
+  {
     if (*hms++ != ':') return false; m[0] = *hms++; m[1] = *hms++; m[2] = 0; atoi2(m, &m1);
     if (*hms++ != '.') return false; m2 = (*hms++) - '0';
   }
-  if ((h1<0) || (h1>23) || (m1<0) || (m1>59) || (m2<0) || (m2>9) || (s1<0) || (s1>59)) return false;
+  if ((h1 < 0) || (h1 > 23) || (m1 < 0) || (m1 > 59) || (m2 < 0) || (m2 > 9) || (s1 < 0) || (s1 > 59)) return false;
 
   *f = h1 + m1 / 60.0 + m2 / 600.0 + s1 / 3600.0;
   return true;
@@ -958,7 +1005,8 @@ boolean hmsToDouble(double *f, char *hms) {
 //                          DDD:MM
 //                          sDD*MM
 //                          DDD*MM
-boolean dmsToDouble(double *f, char *dms, boolean sign_present, boolean highPrecision) {
+boolean dmsToDouble(double *f, char *dms, boolean sign_present, boolean highPrecision)
+{
   char d[4], m[5], s[3];
   int d1, m1, s1 = 0;
   int lowLimit = 0, highLimit = 360;
@@ -971,25 +1019,33 @@ boolean dmsToDouble(double *f, char *dms, boolean sign_present, boolean highPrec
   checkLen1 = strlen(dms);
 
   // determine if the seconds field was used and accept it if so
-  if (highPrecision) {
+  if (highPrecision)
+  {
     checkLen = 9;
     if (checkLen1 != checkLen) return false;
   }
-  else {
+  else
+  {
     checkLen = 6;
-    if (checkLen1 != checkLen) {
-      if (checkLen1 == 9) { secondsOff = false; checkLen = 9; }
+    if (checkLen1 != checkLen)
+    {
+      if (checkLen1 == 9)
+      {
+        secondsOff = false; checkLen = 9;
+      }
       else return false;
     }
     else secondsOff = true;
   }
 
   // determine if the sign was used and accept it if so
-  if (sign_present) {
+  if (sign_present)
+  {
     if (*dms == '-') sign = -1.0; else if (*dms == '+') sign = 1.0; else return false;
     dms++; d[0] = *dms++; d[1] = *dms++; d[2] = 0; if (!atoi2(d, &d1)) return false;
   }
-  else {
+  else
+  {
     d[0] = *dms++; d[1] = *dms++; d[2] = *dms++; d[3] = 0; if (!atoi2(d, &d1)) return false;
   }
 
@@ -998,15 +1054,19 @@ boolean dmsToDouble(double *f, char *dms, boolean sign_present, boolean highPrec
 
   m[0] = *dms++; m[1] = *dms++; m[2] = 0; if (!atoi2(m, &m1)) return false;
 
-  if ((highPrecision) && (!secondsOff)) {
+  if ((highPrecision) && (!secondsOff))
+  {
     // make sure the seperator is an allowed character
     if (*dms++ != ':') return false;
     s[0] = *dms++; s[1] = *dms++; s[2] = 0; atoi2(s, &s1);
   }
 
-  if (sign_present) { lowLimit = -90; highLimit = 90; }
-  if ((d1<lowLimit) || (d1>highLimit) || (m1<0) || (m1>59) || (s1<0) || (s1>59)) return false;
+  if (sign_present)
+  {
+    lowLimit = -90; highLimit = 90;
+  }
+  if ((d1 < lowLimit) || (d1 > highLimit) || (m1 < 0) || (m1 > 59) || (s1 < 0) || (s1 > 59)) return false;
 
-  *f = sign*(d1 + m1 / 60.0 + s1 / 3600.0);
+  *f = sign * (d1 + m1 / 60.0 + s1 / 3600.0);
   return true;
 }

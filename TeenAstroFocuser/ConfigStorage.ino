@@ -26,7 +26,7 @@
 
 void EEPROMwrite(int idx, char* objaddress, unsigned int len)
 {
-  for (unsigned int t = 0; t<len; t++)
+  for (unsigned int t = 0; t < len; t++)
     EEPROM.write(idx + t, *(objaddress + t));
 }
 void EEPROMwrite_uint(int idx, unsigned int a)
@@ -60,9 +60,18 @@ Parameteruint8_t::Parameteruint8_t(const int &adress, const uint8_t &value_defau
   m_value_max = value_max;
   load();
 }
-uint8_t Parameteruint8_t::get() { return m_value; }
-uint8_t Parameteruint8_t::getmin(){ return m_value_min; }
-uint8_t Parameteruint8_t::getmax(){  return m_value_max; }
+uint8_t Parameteruint8_t::get()
+{
+  return m_value;
+}
+uint8_t Parameteruint8_t::getmin()
+{
+  return m_value_min;
+}
+uint8_t Parameteruint8_t::getmax()
+{
+  return m_value_max;
+}
 bool Parameteruint8_t::set(const uint8_t &val)
 {
   if (val<m_value_min || val>m_value_max)
@@ -91,9 +100,18 @@ Parameteruint::Parameteruint(const int &adress, const unsigned int &value_defaul
   m_value_max = value_max;
   load();
 }
-unsigned int Parameteruint::get() { return m_value; }
-unsigned int Parameteruint::getmin() { return m_value_min; }
-unsigned int Parameteruint::getmax() { return m_value_max; }
+unsigned int Parameteruint::get()
+{
+  return m_value;
+}
+unsigned int Parameteruint::getmin()
+{
+  return m_value_min;
+}
+unsigned int Parameteruint::getmax()
+{
+  return m_value_max;
+}
 bool Parameteruint::set(const unsigned int &val)
 {
   if (val<m_value_min || val>m_value_max)
@@ -123,9 +141,18 @@ Parameterulong::Parameterulong(const int &adress, const unsigned long &value_def
   m_value_max = value_max;
   load();
 }
-unsigned long Parameterulong::get() { return m_value; }
-unsigned long Parameterulong::getmin() { return m_value_min; }
-unsigned long Parameterulong::getmax() { return m_value_max; }
+unsigned long Parameterulong::get()
+{
+  return m_value;
+}
+unsigned long Parameterulong::getmin()
+{
+  return m_value_min;
+}
+unsigned long Parameterulong::getmax()
+{
+  return m_value_max;
+}
 bool Parameterulong::set(const unsigned long &val)
 {
   if (val<m_value_min || val>m_value_max)
@@ -150,17 +177,23 @@ ParameterPosition::ParameterPosition(const int &adress)
   m_adress = adress + sizeof(unsigned long);
   for (int k = 0; k < 11; k++)
   {
-    m_id[k] = EEPROM.read(m_adress +k);
+    m_id[k] = EEPROM.read(m_adress + k);
   }
 }
-void ParameterPosition::get(char* id, unsigned long &pos )
+void ParameterPosition::get(char* id, unsigned long &pos)
 {
-  memcpy(id, m_id, sizeof (m_id));
+  memcpy(id, m_id, sizeof(m_id));
   m_id[10] = 0;
   pos = m_pos->get();
 }
-unsigned long ParameterPosition::getPosition() { return m_pos->get(); }
-bool ParameterPosition::isvalid() { return m_id[0] != 0; }
+unsigned long ParameterPosition::getPosition()
+{
+  return m_pos->get();
+}
+bool ParameterPosition::isvalid()
+{
+  return m_id[0] != 0;
+}
 bool ParameterPosition::set(char* id, const unsigned long &pos)
 {
   bool endreached = false;
@@ -178,9 +211,10 @@ bool ParameterPosition::set(char* id, const unsigned long &pos)
 }
 
 
-void loadConfig() {
-	// To make sure there are settings, and they are YOURS!
-	// If nothing is found it will use the default settings.
+void loadConfig()
+{
+  // To make sure there are settings, and they are YOURS!
+  // If nothing is found it will use the default settings.
   int k = CONFIG_START;
   resolution = new Parameteruint(k, TAF_res_default, TAF_res_min, TAF_res_max);
   k += sizeof(unsigned int);
