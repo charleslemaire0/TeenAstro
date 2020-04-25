@@ -113,8 +113,8 @@ long homeStepAxis2;
 
 volatile double         timerRateRatio;
 
-#define BreakDistAxis1              (2L)
-#define BreakDistAxis2              (2L)
+long BreakDistAxis1 = 2;
+long BreakDistAxis2 = 2;
 
 volatile double     AccAxis1 = 0; //acceleration in steps per second square
 volatile double     AccAxis2 = 0; //acceleration in steps per second square
@@ -301,20 +301,20 @@ long distStepAxis2(volatile long* start, volatile double* end)
 void updateDeltaTarget()
 {
   cli();
-  deltaTargetAxis1 = distStepAxis1(&posAxis1, &targetAxis1);
-  deltaTargetAxis2 = distStepAxis2(&posAxis2, &targetAxis2);
+  deltaTargetAxis1 = (long)targetAxis1 - posAxis1;
+  deltaTargetAxis2 = (long)targetAxis2 - posAxis2;
   sei();
 }
 void updateDeltaTargetAxis1()
 {
   cli();
-  deltaTargetAxis1 = distStepAxis1(&posAxis1, &targetAxis1);
+  deltaTargetAxis1 = (long)targetAxis1 - posAxis1;
   sei();
 }
 void updateDeltaTargetAxis2()
 {
   cli();
-  deltaTargetAxis2 = distStepAxis2(&posAxis2, &targetAxis2);
+  deltaTargetAxis2 = (long)targetAxis2 - posAxis2;
   sei();
 }
 bool atTargetAxis1(bool update = false)

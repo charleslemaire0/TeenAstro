@@ -647,9 +647,12 @@ void updateRatios(bool deleteAlignment)
 
   StepsPerSecondAxis1 = StepsPerDegreeAxis1 / 240.0;
   StepsPerSecondAxis2 = StepsPerDegreeAxis2 / 240.0;
-
+  
   timerRateRatio = StepsPerSecondAxis1 / StepsPerSecondAxis2;
   sei();
+
+  BreakDistAxis1 = max(2, StepsPerDegreeAxis1/3600*0.2);
+  BreakDistAxis2 = max(2, StepsPerDegreeAxis2/3600*0.2);
 
   halfRotAxis1 = StepsPerRotAxis1 / 2L;
   quaterRotAxis1 = StepsPerRotAxis1 / 4L;
