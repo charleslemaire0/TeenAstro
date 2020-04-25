@@ -472,10 +472,8 @@ void Command_A()
       {
         hasStarAlignment = true;
         cli();
-        targetAxis1.part.m = posAxis1;
-        targetAxis1.part.f = 0;
-        targetAxis2.part.m = posAxis2;
-        targetAxis2.part.f = 0;
+        targetAxis1 = posAxis1;
+        targetAxis2 = posAxis2;
         sei();
       }
     }
@@ -499,10 +497,8 @@ void Command_A()
     {
       hasStarAlignment = true;
       cli();
-      targetAxis1.part.m = posAxis1;
-      targetAxis1.part.f = 0;
-      targetAxis2.part.m = posAxis2;
-      targetAxis2.part.f = 0;
+      targetAxis1 = posAxis1;
+      targetAxis2 = posAxis2;
       sei();
     }
     break;
@@ -740,6 +736,10 @@ void Command_R()
   //  :RS#   Set Slew rate to max (fastest) ?X (MaxRate)
   //  :Rn#   Set Slew rate to n, where n=0..9
   //         Returns: Nothing
+#define RG 0
+#define RC 4
+#define RM 6
+#define RS 9
   int i = 5;
   switch (command[1])
   {

@@ -20,14 +20,14 @@ PierSide GetPierSide()
 
 //--------------------------------------------------------------------------------------------------
 // GoTo, commands to move the telescope to an location or to report the current location
-boolean syncEqu(double HA, double Dec, PierSide Side)
+bool syncEqu(double HA, double Dec, PierSide Side)
 {
   double Azm, Alt = 0;
   EquToHorApp(HA, Dec, &Azm, &Alt);
   return syncAzAlt(Azm, Alt, Side);
 }
 // syncs the telescope/mount to the sky
-boolean syncAzAlt(double Azm, double Alt, PierSide Side)
+bool syncAzAlt(double Azm, double Alt, PierSide Side)
 {
   long axis1, axis2 = 0;
   double Axis1, Axis2 = 0;
@@ -36,17 +36,15 @@ boolean syncAzAlt(double Azm, double Alt, PierSide Side)
   cli();
   posAxis1 = axis1;
   posAxis2 = axis2;
-  targetAxis1.part.m = axis1;
-  targetAxis1.part.f = 0;
-  targetAxis2.part.m = axis2;
-  targetAxis2.part.f = 0;
+  targetAxis1 = posAxis1;
+  targetAxis2 = posAxis2;
   sei();
   atHome = false;
   return true;
 }
 
 // gets the telescopes current Topocentric RA and Dec, set returnHA to true for Horizon Angle instead of RA
-boolean getEqu(double *HA, double *Dec, boolean returnHA)
+bool getEqu(double *HA, double *Dec, bool returnHA)
 {
   double  azm, alt = 0;
   getHorApp(&azm, &alt);
@@ -59,7 +57,7 @@ boolean getEqu(double *HA, double *Dec, boolean returnHA)
 }
 
 // gets the telescopes current Topocentric Target RA and Dec, set returnHA to true for Horizon Angle instead of RA
-boolean getEquTarget(double *HA, double *Dec, boolean returnHA)
+bool getEquTarget(double *HA, double *Dec, bool returnHA)
 {
   double  azm, alt = 0;
   getHorAppTarget(&azm, &alt);
@@ -72,7 +70,7 @@ boolean getEquTarget(double *HA, double *Dec, boolean returnHA)
 }
 
 // gets the telescopes current Apparent Alt and Azm!
-boolean getHorApp(double *Azm, double *Alt)
+bool getHorApp(double *Azm, double *Alt)
 {
   cli();
   double Axis1 = posAxis1 / (double)StepsPerDegreeAxis1;
@@ -83,11 +81,11 @@ boolean getHorApp(double *Azm, double *Alt)
 }
 
 // gets the telescopes current Apparent Target Alt and Azm!
-boolean getHorAppTarget(double *Azm, double *Alt)
+bool getHorAppTarget(double *Azm, double *Alt)
 {
   cli();
-  double Axis1 = targetAxis1.part.m / (double)StepsPerDegreeAxis1;
-  double Axis2 = targetAxis2.part.m / (double)StepsPerDegreeAxis2;
+  double Axis1 = targetAxis1 / StepsPerDegreeAxis1;
+  double Axis2 = targetAxis2 / StepsPerDegreeAxis2;
   sei();
   alignment.toReferenceDeg(*Azm, *Alt, Axis1, Axis2);
   return true;
@@ -169,10 +167,8 @@ byte goTo(long thisTargetAxis1, long thisTargetAxis2)
   startAxis1 = posAxis1;
   startAxis2 = posAxis2;
 
-  targetAxis1.part.m = thisTargetAxis1;
-  targetAxis1.part.f = 0;
-  targetAxis2.part.m = thisTargetAxis2;
-  targetAxis2.part.f = 0;
+  targetAxis1 = thisTargetAxis1;
+  targetAxis2 = thisTargetAxis2;
 
   timerRateAxis1 = SiderealRate;
   timerRateAxis2 = SiderealRate;

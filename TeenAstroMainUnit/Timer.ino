@@ -2,49 +2,58 @@
 // Timers and interrupt handling
 
 #define ISR(f)  void f (void)
-void                TIMER1_COMPA_vect(void);
-volatile boolean    clearAxis1 = true;
-volatile boolean    takeStepAxis1 = false;
-volatile boolean    clearAxis2 = true;
-volatile boolean    takeStepAxis2 = false;
-IntervalTimer       itimer1;
+void TIMER1_COMPA_vect(void);
+void TIMER3_COMPA_vect(void);
+void TIMER4_COMPA_vect(void);
+
+static IntervalTimer  itimer1;
+static IntervalTimer  itimer3;
+static IntervalTimer  itimer4;
+
+static volatile double isrTimerRateAxis1 = 0;
+static volatile double isrTimerRateAxis2 = 0;
 
 double getV(double rate) //Speed in step per second
 {
   return 1000000.0 / (rate / 16.);
 }
-
-
 double getRate(double V)
 {
   return max(16. * 1000000.0 / V, maxRate);
 }
 
 
-//--------------------------------------------------------------------------------------------------
-
-// set timer1 to rate (in microseconds*16)
-void Timer1SetRate(double rate)
-{
-  itimer1.begin(TIMER1_COMPA_vect, rate * 0.0625);
-}
-
 // set the master sidereal clock rate, also forces rate update for RA/Dec timer rates so that PPS adjustments take hold immediately
-volatile double isrTimerRateAxis1 = 0;
-volatile double isrTimerRateAxis2 = 0;
-volatile double runtimerRateAxis1 = 0;
-volatile double runTimerRateAxis2 = 0;
-
 void SetSiderealClockRate(double Interval)
 {
   Timer1SetRate(Interval / 100);
   isrTimerRateAxis1 = 0;
   isrTimerRateAxis2 = 0;
 }
+void beginTimers()
+{
+  // set the system timer for millis() to the second highest priority
+  SCB_SHPR3 = (32 << 24) | (SCB_SHPR3 & 0x00FFFFFF);
+  itimer3.begin(TIMER3_COMPA_vect, (float)128 * 0.0625);
+  itimer4.begin(TIMER4_COMPA_vect, (float)128 * 0.0625);
+  // set the 1/100 second sidereal clock timer to run at the second highest priority
+  NVIC_SET_PRIORITY(IRQ_PIT_CH0, 32);
+
+  // set the motor timers to run at the highest priority
+  NVIC_SET_PRIORITY(IRQ_PIT_CH1, 0);
+  NVIC_SET_PRIORITY(IRQ_PIT_CH2, 0);
+}
+// set timer1 to rate (in microseconds*16)
+static void Timer1SetRate(double rate)
+{
+  itimer1.begin(TIMER1_COMPA_vect, rate * 0.0625);
+}
 
 // set timer3 to rate (in microseconds*16)
-volatile uint32_t   nextAxis1Rate = 100000UL;
-void Timer3SetRate(double rate)
+static volatile uint32_t   nextAxis1Rate = 100000UL;
+
+
+static void Timer3SetRate(double rate)
 {
   cli();
   nextAxis1Rate = (F_BUS / 1000000) * (rate * 0.0625) * 0.5 - 1;
@@ -52,36 +61,23 @@ void Timer3SetRate(double rate)
 }
 
 // set timer4 to rate (in microseconds*16)
-volatile uint32_t   nextAxis2Rate = 100000UL;
-void Timer4SetRate(double rate)
+static volatile uint32_t   nextAxis2Rate = 100000UL;
+static void Timer4SetRate(double rate)
 {
   cli();
   nextAxis2Rate = (F_BUS / 1000000) * (rate * 0.0625) * 0.5 - 1;
   sei();
 }
 
-//--------------------------------------------------------------------------------------------------
-// Timer1 handles sidereal time and programming the drive rates
-volatile boolean    wasInbacklashAxis1 = false;
-volatile boolean    wasInbacklashAxis2 = false;
-
-volatile boolean    gotoRateAxis1 = false;
-volatile boolean    gotoRateAxis2 = false;
-volatile byte       cnt = 0;
-
-volatile double     guideTimerRateAxis1A = 0;
-volatile double     guideTimerRateAxis2A = 0;
-
-void updateDeltaTarget()
-{
-  cli();
-  deltaTargetAxis1 = distStepAxis1(posAxis1, (long)targetAxis1.part.m);
-  deltaTargetAxis2 = distStepAxis2(posAxis2, (long)targetAxis2.part.m);
-  sei();
-}
 
 ISR(TIMER1_COMPA_vect)
 {
+  static volatile bool   wasInbacklashAxis1   = false;
+  static volatile bool   wasInbacklashAxis2   = false;
+  static volatile double guideTimerRateAxis1A = 0;
+  static volatile double guideTimerRateAxis2A = 0;
+  static volatile double runtimerRateAxis1    = 0;
+  static volatile double runTimerRateAxis2    = 0;
   // run 1/3 of the time at 3x the rate, unless a goto is happening
   rtk.m_lst++;
 
@@ -90,14 +86,10 @@ ISR(TIMER1_COMPA_vect)
     double maxguideTimerRate = 4;
     // automatic rate calculation HA
     {
-
-      double calculatedTimerRateAxis1;
-
       // guide rate acceleration/deceleration and control
       updateDeltaTarget();
 
       double  x = deltaTargetAxis1;
-      bool other_axis_done = fabs(deltaTargetAxis2) < BreakDistAxis2;
 
       if (!inbacklashAxis1 && guideDirAxis1)
       {
@@ -122,31 +114,31 @@ ISR(TIMER1_COMPA_vect)
           // use acceleration
           DecayModeGoto();
           double z = getRate(sqrt(fabs(x) * 2 * AccAxis1));
-          guideTimerRateAxis1A = (1.0 / ((StepsPerDegreeAxis1 * (z / 1000000.0))) * 3600.0);
+          guideTimerRateAxis1A = 3600.0 / (StepsPerDegreeAxis1 * z / 1000000.0);
           if (guideTimerRateAxis1A < maxguideTimerRate) guideTimerRateAxis1A = maxguideTimerRate;
         }
 
         // stop guiding
         if (guideDirAxis1 == 'b')
         {
-          if (fabs(x) < BreakDistAxis1)
+          if (atTargetAxis1())
           {
             guideDirAxis1 = 0;
             guideTimerRateAxis1 = 0;
             guideTimerRateAxis1A = 0;
-            if (other_axis_done)
+            if (atTargetAxis2())
               DecayModeTracking();
           }
         }
       }
-      double  timerRateAxis1A = trackingTimerRateAxis1;
-      double  timerRateAxis1B = fabs(guideTimerRateAxis1A + timerRateAxis1A);
-
+      double timerRateAxis1A = trackingTimerRateAxis1;
+      double timerRateAxis1B = fabs(guideTimerRateAxis1A + timerRateAxis1A);
+      double calculatedTimerRateAxis1;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
-      if (timerRateAxis1B > 0.5)
+      if (timerRateAxis1B > 0.1)
         calculatedTimerRateAxis1 = SiderealRate / timerRateAxis1B;
       else
-        calculatedTimerRateAxis1 = (double)SiderealRate * 2.0;
+        calculatedTimerRateAxis1 = SiderealRate * 10.0;
 
 
       // remember our "running" rate and only update the actual rate when it changes
@@ -158,14 +150,10 @@ ISR(TIMER1_COMPA_vect)
     }
     // automatic rate calculation Dec
     {
-      double calculatedTimerRateAxis2;
-
       // guide rate acceleration/deceleration
-
       updateDeltaTarget();
 
-      double x = fabs(deltaTargetAxis2);
-      bool other_axis_done = fabs(deltaTargetAxis1) < BreakDistAxis1;
+      double x = abs(deltaTargetAxis2);
 
       if (!inbacklashAxis2 && guideDirAxis2)
       {
@@ -190,32 +178,32 @@ ISR(TIMER1_COMPA_vect)
           // use acceleration
           DecayModeGoto();
           double z = getRate(sqrt(fabs(x) * 2 * AccAxis2));
-          guideTimerRateAxis2A = (1.0 / (((double)StepsPerDegreeAxis2 * (z / 1000000.0))) * 3600.0);
+          guideTimerRateAxis2A = 3600.0 / (StepsPerDegreeAxis2 * z / 1000000.0) ;
           if (guideTimerRateAxis2A < maxguideTimerRate) guideTimerRateAxis2A = maxguideTimerRate;
         }
 
         // stop guiding
         if (guideDirAxis2 == 'b')
         {
-          if (x < BreakDistAxis2)
+          if (atTargetAxis2())
           {
             guideDirAxis2 = 0;
             guideTimerRateAxis2 = 0;
             guideTimerRateAxis2A = 0;
-            if (other_axis_done)
+            if (atTargetAxis1())
               DecayModeTracking();
           }
         }
       }
-      double  timerRateAxis2A = trackingTimerRateAxis2;
-      double  timerRateAxis2B = fabs(guideTimerRateAxis2A + timerRateAxis2A);
-
+      double timerRateAxis2A = trackingTimerRateAxis2;
+      double timerRateAxis2B = fabs(guideTimerRateAxis2A + timerRateAxis2A);
+      double calculatedTimerRateAxis2;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
      // calculatedTimerRateAxis2 = (double)SiderealRate / timerRateAxis2B;
-      if (timerRateAxis2B > 0.5)
-        calculatedTimerRateAxis2 = (double)SiderealRate / timerRateAxis2B;
+      if (timerRateAxis2B > 0.1)
+        calculatedTimerRateAxis2 = SiderealRate / timerRateAxis2B;
       else
-        calculatedTimerRateAxis2 = (double)SiderealRate * 2.0;
+        calculatedTimerRateAxis2 = 10.0 * SiderealRate;
 
       // remember our "running" rate and only update the actual rate when it changes
       if (runTimerRateAxis2 != calculatedTimerRateAxis2)
@@ -230,9 +218,9 @@ ISR(TIMER1_COMPA_vect)
       GuidingState = GuidingOFF;
     }
   }
-  double    thisTimerRateAxis1 = timerRateAxis1;
-  double    thisTimerRateAxis2 = useTimerRateRatio ? timerRateAxis2 * timerRateRatio : timerRateAxis2;
 
+  double thisTimerRateAxis1 = timerRateAxis1;
+  double thisTimerRateAxis2 = timerRateAxis2 * timerRateRatio;
 
   timerRateAxis2 = max(timerRateAxis2, maxRate);
   thisTimerRateAxis2 = timerRateAxis2;
@@ -254,11 +242,10 @@ ISR(TIMER1_COMPA_vect)
   {
     // travel through the backlash is done, but we weren't following the target while it was happening!
     // so now get us back to near where we need to be
-    updateDeltaTarget();
     if (!inbacklashAxis1 && wasInbacklashAxis1 && !guideDirAxis1)
     {
       cli();
-      if (abs(deltaTargetAxis1) > 2)
+      if (!atTargetAxis1(true))
         thisTimerRateAxis1 = TakeupRate;
       else
         wasInbacklashAxis1 = false;
@@ -267,7 +254,7 @@ ISR(TIMER1_COMPA_vect)
     if (!inbacklashAxis2 && wasInbacklashAxis2 && !guideDirAxis2)
     {
       cli();
-      if (abs(deltaTargetAxis2) > 2)
+      if (!atTargetAxis2(true))
         thisTimerRateAxis2 = TakeupRate;
       else
         wasInbacklashAxis2 = false;
@@ -288,24 +275,18 @@ ISR(TIMER1_COMPA_vect)
 }
 ISR(TIMER3_COMPA_vect)
 {
+  static volatile bool clearAxis1 = true;
+  static volatile bool takeStepAxis1 = false;
   digitalWriteFast(Axis1StepPin, LOW);
-  // on the much faster Teensy run this ISR at twice the normal rate and pull the step pin low every other call
   if (clearAxis1)
   {
     takeStepAxis1 = false;
-    // Guessing about 4+4+1+ 4+4+1+ 1+ 2+1+2+ 13=37 clocks between here and the step signal which is 2.3uS
-    updateDeltaTarget();
+    updateDeltaTargetAxis1();
     if (deltaTargetAxis1 != 0 || inbacklashAxis1)
-    {                       // Move the RA stepper to the target
-      if (0 < deltaTargetAxis1)
-        dirAxis1 = 1;
-      else
-        dirAxis1 = 0;   // Direction control
-
-
-    // Guessing about 1+2+1+4+4+1=13 clocks between here and the step signal which is 0.81uS
-    // Set direction.  Needs >=0.65uS before/after rising step signal (DRV8825 or A4988).
-
+    {                       
+      // Move the RA stepper to the target
+      dirAxis1 = 0 < deltaTargetAxis1;
+      // Direction control
       if (ReverseAxis1^Axis1Reverse)
       {
         if (HADir == dirAxis1)
@@ -322,7 +303,7 @@ ISR(TIMER3_COMPA_vect)
       }
 
       // telescope moves WEST with the sky, blAxis1 is the amount of EAST backlash
-      if (dirAxis1 == 1)
+      if (dirAxis1)
       {
         if (blAxis1 < StepsBacklashAxis1)
         {
@@ -365,19 +346,20 @@ ISR(TIMER3_COMPA_vect)
 }
 ISR(TIMER4_COMPA_vect)
 {
+  static volatile bool clearAxis2 = true;
+  static volatile bool takeStepAxis2 = false;
   digitalWriteFast(Axis2StepPin, LOW);
   // on the much faster Teensy and Tiva TM4C run this ISR at twice the normal rate and pull the step pin low every other call
   if (clearAxis2)
   {
     takeStepAxis2 = false;
-    updateDeltaTarget();
+    updateDeltaTargetAxis2();
     if (deltaTargetAxis2 != 0 || inbacklashAxis2)
-    {                       // move the Dec stepper to the target
-        // telescope normally starts on the EAST side of the pier looking at the WEST sky
-      if (0 < deltaTargetAxis2)
-        dirAxis2 = 1;
-      else
-        dirAxis2 = 0;   // Direction control
+    {                       
+      // move the Dec stepper to the target
+      // telescope normally starts on the EAST side of the pier looking at the WEST sky
+      dirAxis2 = 0 < deltaTargetAxis2;
+      // Direction control
       if (ReverseAxis2^Axis2Reverse)
       {
         if (dirAxis2)
@@ -394,7 +376,7 @@ ISR(TIMER4_COMPA_vect)
       }
 
       // telescope moving toward celestial pole in the sky, blAxis2 is the amount of opposite backlash
-      if (dirAxis2 == 1)
+      if (dirAxis2)
       {
         if (blAxis2 < StepsBacklashAxis2)
         {

@@ -9,7 +9,6 @@
 #include "timerLoop.hpp"
 #include "TelTimer.hpp"
 #include "Site.hpp"
-#include "FPoint.h"
 #include "Command.h"
 #include "Config.TeenAstro.h"
 #include "EEPROM_adress.h"
@@ -25,16 +24,16 @@ enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
 enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW };
 
 ParkState parkStatus = PRK_UNPARKED;
-boolean parkSaved = false;
-boolean atHome = true;
-boolean homeMount = false;
+bool parkSaved = false;
+bool atHome = true;
+bool homeMount = false;
 MeridianFlip meridianFlip = FLIP_NEVER;
 Mount mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;
-boolean hasFocuser = false;
-boolean hasGNSS = true;
-boolean refraction = true;
-boolean correct_tracking = false;
+bool hasFocuser = false;
+bool hasGNSS = true;
+bool refraction = true;
+bool correct_tracking = false;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
 double                  siderealInterval = 15956313.0;
 const double            masterSiderealInterval = 15956313.0;
@@ -55,12 +54,12 @@ double                  DegreesForAcceleration = 3;
 //Timers
 volatile double         timerRateAxis1 = 0;
 volatile double         timerRateBacklashAxis1 = 0;
-volatile boolean        inbacklashAxis1 = false;
-boolean                 faultAxis1 = false;
+volatile bool           inbacklashAxis1 = false;
+bool                    faultAxis1 = false;
 volatile double         timerRateAxis2 = 0;
 volatile double         timerRateBacklashAxis2 = 0;
-volatile boolean        inbacklashAxis2 = false;
-boolean                 faultAxis2 = false;
+volatile bool           inbacklashAxis2 = false;
+bool                    faultAxis2 = false;
 
 //Motor Axis1
 unsigned int GearAxis1;
@@ -113,43 +112,36 @@ long poleStepAxis2;
 long homeStepAxis2;
 
 volatile double         timerRateRatio;
-volatile boolean        useTimerRateRatio;
 
 #define BreakDistAxis1              (2L)
 #define BreakDistAxis2              (2L)
 
-volatile double         AccAxis1 = 0; //acceleration in steps per second square
-volatile double         AccAxis2 = 0; //acceleration in steps per second square
-
-IntervalTimer           itimer3;
-void                    TIMER3_COMPA_vect(void);
-
-IntervalTimer           itimer4;
-void                    TIMER4_COMPA_vect(void);
-
-
-PierSide newTargetPierSide = PIER_NOTVALID;
+volatile double     AccAxis1 = 0; //acceleration in steps per second square
+volatile double     AccAxis2 = 0; //acceleration in steps per second square
 
 
 //Target and position Axis 1
 volatile long       posAxis1;    // hour angle position in steps
 volatile long       deltaTargetAxis1;
 volatile long       startAxis1;  // hour angle of goto start position in steps
-volatile fixed_t    targetAxis1; // hour angle of goto end   position in steps
-volatile byte       dirAxis1;    // stepping direction + or -
+volatile double     targetAxis1; // hour angle of goto end   position in steps
+volatile bool       dirAxis1;    // stepping direction + or -
+double              fstepAxis1;  // amount of steps for Tracking
 #define stepAxis1   1
-
 
 //Target and position Axis 2
 volatile long       posAxis2;     // declination position in steps
 volatile long       deltaTargetAxis2;
 volatile long       startAxis2;   // declination of goto start position in steps
-volatile fixed_t    targetAxis2;  // declination of goto end   position in steps
-volatile byte       dirAxis2;     // stepping direction + or -
+volatile double     targetAxis2;  // declination of goto end   position in steps
+volatile bool       dirAxis2;     // stepping direction + or -
+double              fstepAxis2;   // amount of steps for Tracking
 #define stepAxis2   1
 
 
 //Targets
+PierSide newTargetPierSide = PIER_NOTVALID;
+
 double              newTargetAlt = 0.0;                     // holds the altitude for goTos
 double              newTargetAzm = 0.0;                     // holds the azmiuth for goTos
 double              newTargetDec;                           // holds the Dec for goTos
@@ -166,9 +158,9 @@ long                minutesPastMeridianGOTOW;               // as above, if on t
 double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. OnStep will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 //                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
 
-#define HADirNCPInit    0
-#define HADirSCPInit    1
-volatile byte   HADir = HADirNCPInit;
+#define HADirNCPInit    false
+#define HADirSCPInit    true
+volatile bool   HADir = HADirNCPInit;
 
 // Status ------------------------------------------------------------------------------------------------------------------
 enum Errors
@@ -188,7 +180,7 @@ Errors lastError = ERR_NONE;
 Errors StartLoopError = ERR_NONE;
 
 //Command Precision
-boolean highPrecision = true;
+bool highPrecision = true;
 
 volatile bool movingTo = false;
 
@@ -213,13 +205,13 @@ volatile Guiding GuidingState = GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
 unsigned long lastSecurityCheck = millis();
 
-boolean abortSlew = false;
+bool abortSlew = false;
 
 // Command processing -------------------------------------------------------------------------------------------------------
 #define BAUD 57600
 
-boolean commandError = false;
-boolean quietReply = false;
+bool commandError = false;
+bool quietReply = false;
 
 char reply[50];
 char command[3];
@@ -241,23 +233,16 @@ unsigned long   baudRate[10] =
   115200, 56700, 38400, 28800, 19200, 14400, 9600, 4800, 2400, 1200
 };
 
-//
+// Motors
 Motor motorAxis1;
 Motor motorAxis2;
-
-// tracking and PEC, fractional steps
-fixed_t         fstepAxis1;
-fixed_t         fstepAxis2;
 
 // guide command
 #define GuideRate1x     2
 #define GuideRate16x    5
 #define GuideRateMax    9
 #define GuideRateNone   255
-#define RG 0
-#define RC 4
-#define RM 6
-#define RS 9
+
 
 double          guideRates[10] =
 {
@@ -276,16 +261,71 @@ unsigned long   guideDurationLastAxis2 = 0;
 
 long            lasttargetAxis1 = 0;
 long            debugv1 = 0;
-boolean         axis1Enabled = false;
-boolean         axis2Enabled = false;
+bool            axis1Enabled = false;
+bool            axis2Enabled = false;
 
 double          guideTimerBaseRate = 0;
-fixed_t         amountGuideAxis1;
-fixed_t         guideAxis1;
-fixed_t         amountGuideAxis2;
-fixed_t         guideAxis2;
+double          amountGuideAxis1;
+double          amountGuideAxis2;
 
 // Reticule control
 #ifdef RETICULE_LED_PINS
 int             reticuleBrightness = 255;
 #endif
+
+long distStepAxis1(long* start, long* end)
+{
+  return *end - *start;
+}
+long distStepAxis1(volatile long* start, volatile long* end)
+{
+  return *end -* start;
+}
+long distStepAxis1(volatile long* start, volatile double* end)
+{
+  return *end - *start;
+}
+long distStepAxis2(long* start, long* end)
+{
+  return *end - *start;
+}
+long distStepAxis2(volatile long* start, volatile long* end)
+{
+  return *end - *start;
+}
+long distStepAxis2(volatile long* start, volatile double* end)
+{
+  return *end - *start;
+}
+
+void updateDeltaTarget()
+{
+  cli();
+  deltaTargetAxis1 = distStepAxis1(&posAxis1, &targetAxis1);
+  deltaTargetAxis2 = distStepAxis2(&posAxis2, &targetAxis2);
+  sei();
+}
+void updateDeltaTargetAxis1()
+{
+  cli();
+  deltaTargetAxis1 = distStepAxis1(&posAxis1, &targetAxis1);
+  sei();
+}
+void updateDeltaTargetAxis2()
+{
+  cli();
+  deltaTargetAxis2 = distStepAxis2(&posAxis2, &targetAxis2);
+  sei();
+}
+bool atTargetAxis1(bool update = false)
+{
+  if (update)
+    updateDeltaTargetAxis1();
+  return abs(deltaTargetAxis1) < BreakDistAxis1;
+}
+bool atTargetAxis2(bool update = false)
+{
+  if (update)
+    updateDeltaTargetAxis2();
+  return abs(deltaTargetAxis2) < BreakDistAxis2;
+}

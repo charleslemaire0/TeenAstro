@@ -209,18 +209,14 @@ void Command_GX()
     switch (parameter[1])
     {
     case '0':
-      cli();
-      temp = (long)(posAxis1 - ((long)targetAxis1.part.m));
-      sei();
-      sprintf(reply, "%ld", temp);
+      updateDeltaTargetAxis1();
+      sprintf(reply, "%ld", deltaTargetAxis1);
       quietReply = true;
       break;  // Debug0, true vs. target RA position
 
     case '1':
-      cli();
-      temp = (long)(posAxis2 - ((long)targetAxis2.part.m));
-      sei();
-      sprintf(reply, "%ld", temp);
+      updateDeltaTargetAxis2();
+      sprintf(reply, "%ld", deltaTargetAxis2);
       quietReply = true;
       break;  // Debug1, true vs. target Dec position
 
@@ -252,7 +248,7 @@ void Command_GX()
 
     case '6':
       cli();
-      temp = (long)(targetAxis1.part.m);
+      temp = targetAxis1;
       sei();
       sprintf(reply, "%ld", temp);
       quietReply = true;
@@ -260,7 +256,7 @@ void Command_GX()
 
     case '7':
       cli();
-      temp = (long)(targetAxis2.part.m);
+      temp = targetAxis2;
       sei();
       sprintf(reply, "%ld", temp);
       quietReply = true;
@@ -268,7 +264,7 @@ void Command_GX()
 
     case '8':
       cli();
-      temp = (long)(posAxis1);
+      temp = posAxis1;
       sei();
       sprintf(reply, "%ld", temp);
       quietReply = true;
@@ -276,7 +272,7 @@ void Command_GX()
 
     case '9':
       cli();
-      temp = (long)(posAxis2);
+      temp = posAxis2;
       sei();
       sprintf(reply, "%ld", temp);
       quietReply = true;

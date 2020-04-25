@@ -125,7 +125,7 @@ bool doubleToHms(char *reply, double *f, bool hP)
 //                          DDD:MM
 //                          sDD*MM
 //                          DDD*MM
-bool dmsToDouble(double *f, char *dms, boolean sign_present, bool hP)
+bool dmsToDouble(double *f, char *dms, bool sign_present, bool hP)
 {
     char    d[4],
             m[5],
@@ -138,7 +138,7 @@ bool dmsToDouble(double *f, char *dms, boolean sign_present, bool hP)
     int     checkLen,
             checkLen1;
     double  sign = 1.0;
-    boolean secondsOff = false;
+    bool secondsOff = false;
 
     while (*dms == ' ') dms++;  // strip prefix white-space
     checkLen1 = strlen(dms);

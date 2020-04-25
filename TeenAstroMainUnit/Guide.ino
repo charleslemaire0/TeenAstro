@@ -31,13 +31,9 @@ void Guide()
       {
         if (!inbacklashAxis1)
         {
-          // guideAxis1 keeps track of how many steps we've moved for PEC recording
-          if (guideDirAxis1 == 'e')
-            guideAxis1.fixed = -amountGuideAxis1.fixed;
-          else if (guideDirAxis1 == 'w')
-            guideAxis1.fixed = amountGuideAxis1.fixed;
+          bool rev = guideDirAxis1 == 'e';
           cli();
-          targetAxis1.fixed += guideAxis1.fixed;
+          rev ? targetAxis1 -= amountGuideAxis1 : targetAxis1 += amountGuideAxis1;
           sei();
           if (GuidingState == GuidingPulse)
           {
@@ -75,7 +71,7 @@ void Guide()
           if (GetPierSide() >= PIER_WEST)
             rev = !rev;
           cli();
-          rev ? targetAxis2.fixed -= amountGuideAxis2.fixed : targetAxis2.fixed += amountGuideAxis2.fixed;
+          rev ? targetAxis2 -= amountGuideAxis2 : targetAxis2 += amountGuideAxis2;
           sei();
           if (GuidingState == GuidingPulse)
           {

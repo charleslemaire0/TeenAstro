@@ -158,19 +158,9 @@ void setup()
   siderealInterval = XEEPROM.readLong(EE_siderealInterval);
   updateSideral();
 
-  // set the system timer for millis() to the second highest priority
-  SCB_SHPR3 = (32 << 24) | (SCB_SHPR3 & 0x00FFFFFF);
 
-  itimer3.begin(TIMER3_COMPA_vect, (float)128 * 0.0625);
-  itimer4.begin(TIMER4_COMPA_vect, (float)128 * 0.0625);
 
-  // set the 1/100 second sidereal clock timer to run at the second highest priority
-  NVIC_SET_PRIORITY(IRQ_PIT_CH0, 32);
-
-  // set the motor timers to run at the highest priority
-  NVIC_SET_PRIORITY(IRQ_PIT_CH1, 0);
-  NVIC_SET_PRIORITY(IRQ_PIT_CH2, 0);
-
+  beginTimers();
 
   // get ready for serial communications
   Serial1_Init(57600);
@@ -226,7 +216,6 @@ void loop()
   {
     checkST4();
     CheckSpiral();
-    guideAxis1.fixed = 0;
     Guide();
   }
 
@@ -240,11 +229,11 @@ void loop()
       cli();
       if (!inbacklashAxis1)
       {
-        targetAxis1.fixed += fstepAxis1.fixed;
+        targetAxis1 += fstepAxis1;
       }
       if (!inbacklashAxis2)
       {
-        targetAxis2.fixed += fstepAxis2.fixed;
+        targetAxis2 += fstepAxis2;
       }
       sei();
     }
@@ -315,8 +304,8 @@ void loop()
     // for testing, average steps per second
     if (debugv1 > 100000) debugv1 = 100000;
     if (debugv1 < 0) debugv1 = 0;
-    debugv1 = (debugv1 * 19 + (targetAxis1.part.m * 1000 - lasttargetAxis1)) / 20;
-    lasttargetAxis1 = targetAxis1.part.m * 1000;
+    debugv1 = (debugv1 * 19 + (targetAxis1 * 1000 - lasttargetAxis1)) / 20;
+    lasttargetAxis1 = targetAxis1 * 1000;
     // adjust tracking rate for Alt/Azm mounts
     // adjust tracking rate for refraction
     SetDeltaTrackingRate();
@@ -369,7 +358,7 @@ void SafetyCheck(const bool forceTracking)
     {
       if (!checkMeridian(axis1, axis2, CHECKMODE_TRACKING))
       {
-        if ((dirAxis1 == 1 && currentSide == PIER_WEST) || (dirAxis1 == 0 && currentSide == PIER_EAST))
+        if ((dirAxis1 && currentSide == PIER_WEST) || (!dirAxis1 && currentSide == PIER_EAST))
         {
           lastError = ERR_MERIDIAN;
           if (movingTo)
@@ -391,7 +380,7 @@ void SafetyCheck(const bool forceTracking)
     }
     if (!checkPole(axis1, CHECKMODE_TRACKING))
     {
-      if ((dirAxis1 == 1 && currentSide == PIER_EAST) || (dirAxis1 == 0 && currentSide == PIER_WEST))
+      if ((dirAxis1 && currentSide == PIER_EAST) || (!dirAxis1 && currentSide == PIER_WEST))
       {
         lastError = ERR_UNDER_POLE;
         if (movingTo)
@@ -507,19 +496,15 @@ void initmount()
 
 
   // initialize some fixed-point values
-  amountGuideAxis1.fixed = 0;
-  amountGuideAxis2.fixed = 0;
-  guideAxis1.fixed = 0;
-  guideAxis2.fixed = 0;
+  amountGuideAxis1 = 0;
+  amountGuideAxis2 = 0;
 
-  fstepAxis1.fixed = 0;
-  fstepAxis2.fixed = 0;
+  fstepAxis1 = 0;
+  fstepAxis2 = 0;
 
-  targetAxis1.part.m = quaterRotAxis1;
-  targetAxis1.part.f = 0;
-  targetAxis2.part.m = quaterRotAxis2;
-  targetAxis2.part.f = 0;
-  fstepAxis1.fixed = doubleToFixed(StepsPerSecondAxis1 / 100.0);
+  targetAxis1 = quaterRotAxis1;
+  targetAxis2 = quaterRotAxis2;
+  fstepAxis1 = StepsPerSecondAxis1 / 100.0;
   refraction = XEEPROM.read(EE_refraction);
   // Tracking and rate control
   correct_tracking = XEEPROM.read(EE_corr_track);
@@ -652,8 +637,8 @@ void writeDefaultEEPROMmotor()
 
 void updateRatios(bool deleteAlignment)
 {
-  cli()
-    StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+  cli();
+  StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerRotAxis2 = (long)GearAxis2 * StepRotAxis2 * (int)pow(2, MicroAxis2); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerDegreeAxis1 = (double)StepsPerRotAxis1 / 360.0;
   StepsBacklashAxis1 = (int)round(((double)backlashAxis1 * 3600.0) / (double)StepsPerDegreeAxis1);
@@ -663,8 +648,7 @@ void updateRatios(bool deleteAlignment)
   StepsPerSecondAxis1 = StepsPerDegreeAxis1 / 240.0;
   StepsPerSecondAxis2 = StepsPerDegreeAxis2 / 240.0;
 
-  timerRateRatio = (StepsPerSecondAxis1 / StepsPerSecondAxis2);
-  useTimerRateRatio = (StepsPerRotAxis1 != StepsPerRotAxis2);
+  timerRateRatio = StepsPerSecondAxis1 / StepsPerSecondAxis2;
   sei();
 
   halfRotAxis1 = StepsPerRotAxis1 / 2L;
