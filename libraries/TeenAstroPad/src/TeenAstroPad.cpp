@@ -1,5 +1,4 @@
 #include "TeenAstroPad.h"
-#include "Config.h"
 
 volatile byte eventbuttons[7] = { E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE };
 
