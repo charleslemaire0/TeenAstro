@@ -3,6 +3,7 @@
 //         Returns: value
 #include "ValueToString.h"
 
+//All these command are not part of the LX200 Standard.
 void Command_GX()
 {
   //  :GXnn#   Get OnStep value
@@ -302,7 +303,7 @@ void  Command_G()
   switch (command[1])
   {
   case 'A':
-    //  :GA#   Get Telescope Altitude
+    //  :GA#   Get Telescope Altitude, Native LX200 command
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //         The current scope altitude
     getHorApp(&f, &f1);
@@ -312,7 +313,7 @@ void  Command_G()
       quietReply = true;
     break;
   case 'a':
-    //  :Ga#   Get Local Time in 12 hour format
+    //  :Ga#   Get Local Time in 12 hour format, Native LX200 command
     //         Returns: HH:MM:SS#
     i = highPrecision;
     highPrecision = true;
@@ -324,7 +325,7 @@ void  Command_G()
     break;
 
   case 'C':
-    //  :GC#   Get the current date
+    //  :GC#   Get the current date, Native LX200 command
     //         Returns: MM/DD/YY#
     //         The current local calendar date
     rtk.getULDate(i2, i, i1, i3, i4, i5, localSite.toff());
@@ -334,7 +335,7 @@ void  Command_G()
     break;
 
   case 'c':
-    //  :Gc#   Get the current time format
+    //  :Gc#   Get the current time format, Native LX200 command
     //         Returns: 24#
     //         The current local time format
     strcpy(reply, "24");
@@ -342,7 +343,7 @@ void  Command_G()
     break;
 
   case 'D':
-    //  :GD#   Get Telescope Declination
+    //  :GD#   Get Telescope Declination, Native LX200 command
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
 
     if (millis() - _coord_t < 100)
@@ -365,7 +366,7 @@ void  Command_G()
       quietReply = true;
     break;
   case 'd':
-    //  :Gd#   Get Currently Selected Target Declination
+    //  :Gd#   Get Currently Selected Target Declination, Native LX200 command
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     if (!doubleToDms(reply, &newTargetDec, false, true, highPrecision))
       commandError = true;
@@ -373,13 +374,13 @@ void  Command_G()
       quietReply = true;
     break;
   case 'e':
-    //  :Ge#   Get Current Site Elevation above see level in meter
+    //  :Ge#   Get Current Site Elevation above see level in meter, TeenAstro LX200 command
     //         Returns: sDDDD#
     sprintf(reply, "%+04d", *localSite.elevation());
     quietReply = true;
     break;
   case 'G':
-    //  :GG#   Get UTC offset time
+    //  :GG#   Get UTC offset time, Native LX200 command
     //         Returns: sHH.H#
     //         The number of decimal hours to add to local time to convert it to UTC 
     sprintf(reply, "%+05.1f", *localSite.toff());
@@ -387,7 +388,7 @@ void  Command_G()
     break;
   case 'g':
   {
-    //  :Gg#   Get Current Site Longitude
+    //  :Gg#   Get Current Site Longitude, Native LX200 command
     //         Returns: sDDD*MM#
     //         The current site Longitude. East Longitudes are negative
     int i = highPrecision;
@@ -401,7 +402,7 @@ void  Command_G()
   break;
   case 'h':
   {
-    //  :Gh#   Get Horizon Limit
+    //  :Gh#   Get Horizon Limit, Native LX200 command
     //         Returns: sDD*#
     //         The minimum elevation of an object above the horizon required for a mount goto
     sprintf(reply, "%+02d*", minAlt);
@@ -411,7 +412,7 @@ void  Command_G()
 
   case 'L':
   {
-    //  :GL#   Get Local Time in 24 hour format
+    //  :GL#   Get Local Time in 24 hour format, Native LX200 command
     //         Returns: HH:MM:SS#
     i = highPrecision;
     highPrecision = true;
@@ -422,10 +423,10 @@ void  Command_G()
     highPrecision = i;
   }
   break;
-  //  :GM#   Get Site 1 Name
-  //  :GN#   Get Site 2 Name
-  //  :GO#   Get Site 3 Name
-  //  :GP#   Get Site 4 Name
+  //  :GM#   Get Site 1 Name, Native LX200 command
+  //  :GN#   Get Site 2 Name, Native LX200 command
+  //  :GO#   Get Site 3 Name, Native LX200 command
+  //  :GP#   Get Site 4 Name, Native LX200 command
   //         Returns: <string>#
   //         A # terminated string with the name of the requested site.
   case 'M':
@@ -445,7 +446,7 @@ void  Command_G()
   }
   case 'm':
   {
-    //  :Gm#   Gets the meridian pier-side
+    //  :Gm#   Gets the meridian pier-side, TeenAstro LX200 command
     //         Returns: E#, W#, N# (none/parked), ?# (Meridian flip in progress)
     //         A # terminated string with the pier side.
     PierSide currentSide = GetPierSide();
@@ -457,20 +458,20 @@ void  Command_G()
     break;
   }
   case 'n':
-    //  :Gn#   Get Current Site name
+    //  :Gn#   Get Current Site name, TeenAstro LX200 command
     //         Returns: <string>#
     sprintf(reply, "%s", localSite.siteName());
     quietReply = true;
     break;
   case 'o':
-    //  :Go#   Get Overhead Limit
+    //  :Go#   Get Overhead Limit, TeenAstro LX200 command
     //         Returns: DD*#
     //         The highest elevation above the horizon that the telescope will goto
     sprintf(reply, "%02d*", maxAlt);
     quietReply = true;
     break;
   case 'R':
-    //  :GR#   Get Telescope RA
+    //  :GR#   Get Telescope RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
     if (parameter[0] == 'E' && parameter[1] == 'F')
     {
@@ -501,7 +502,7 @@ void  Command_G()
     }
     break;
   case 'r':
-    //  :Gr#   Get current/target object RA
+    //  :Gr#   Get current/target object RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
     f = newTargetRA;
     f /= 15.0;
@@ -511,7 +512,7 @@ void  Command_G()
       quietReply = true;
     break;
   case 'S':
-    //  :GS#   Get the Sidereal Time
+    //  :GS#   Get the Sidereal Time, Native LX200 command
     //         Returns: HH:MM:SS#
     //         The Sidereal Time as an ASCII Sexidecimal value in 24 hour format
     i = highPrecision;
@@ -524,7 +525,7 @@ void  Command_G()
     highPrecision = i;
     break;
   case 'T':
-    //  :GT#   Get tracking rate
+    //  :GT#   Get tracking rate, Native LX200 command
     //         Returns: dd.ddddd# (OnStep returns more decimal places than LX200 standard)
     //         Returns the tracking rate if siderealTracking, 0.0 otherwise
     if (sideralTracking && !movingTo)
@@ -541,7 +542,7 @@ void  Command_G()
     quietReply = true;
     break;
   case 't':
-    //  :Gt#   Get Current Site Latitude
+    //  :Gt#   Get Current Site Latitude, Native LX200 command
     //         Returns: sDD*MM#
     //         The latitude of the current site. Positive for North latitudes
     i = highPrecision;
@@ -554,7 +555,7 @@ void  Command_G()
     break;
   case 'U':
   {
-    //  :GU#   Get telescope Status
+    //  :GU#   Get telescope Status, TeenAstro LX200 command
     for (i = 0; i < 50; i++)
       reply[i] = ' ';
     i = 0;
@@ -615,15 +616,19 @@ void  Command_G()
     switch (parameter[0])
     {
     case 'D':
+      //  :GVD#   Get Firmware Date, Native LX200 command
       strcpy(reply, FirmwareDate);
       break;
     case 'N':
+      //  :GVD#   Get Firmware number, Native LX200 command
       strcpy(reply, FirmwareNumber);
       break;
     case 'P':
+      //  :GVP#   Get Firmware Name, Native LX200 command
       strcpy(reply, FirmwareName);
       break;
     case 'T':
+      //  :GVT#   Get Firmware Time, Native LX200 command
       strcpy(reply, FirmwareTime);
       break;
     default:
@@ -637,7 +642,7 @@ void  Command_G()
     Command_GX();
     break;
   case 'Z':
-    //  :GZ#   Get telescope azimuth
+    //  :GZ#   Get telescope azimuth, Native LX200 command
     //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
     getHorApp(&f, &f1);
     f = AzRange(f);
