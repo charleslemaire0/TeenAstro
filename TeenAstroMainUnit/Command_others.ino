@@ -542,7 +542,6 @@ void Command_B()
 //         Returns: Nothing (Sync's fail silently)
 //  :CM#   Synchonize the telescope with the current database object (as above)
 //         Returns: "N/A#" on success, "En#" on failure where n is the error code per the :MS# command
-
 void Command_C()
 {
   if ((parkStatus == PRK_UNPARKED) &&
@@ -894,7 +893,6 @@ void Command_T()
 //         Low -  RA/Dec/etc. displays and accepts HH:MM.M sDD*MM
 //         High - RA/Dec/etc. displays and accepts HH:MM:SS sDD*MM:SS
 //         Returns Nothing
-
 void Command_U()
 {
   if (command[1] == 0)

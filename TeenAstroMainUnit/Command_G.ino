@@ -14,7 +14,7 @@ void Command_GX()
   switch (parameter[0])
   {
   case '0':
-    // 0n: Align Model
+    // :GX0n# Align Model values
   {
     float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
     if (hasStarAlignment)
@@ -24,41 +24,50 @@ void Command_GX()
     switch (parameter[1])
     {
     case '0':
+      // :GX00#
       sprintf(reply, "%f", t11);
       quietReply = true;
       break;
     case '1':
+      // :GX01#
       sprintf(reply, "%f", t12);
       quietReply = true;
       break;
     case '2':
+      // :GX02#
       sprintf(reply, "%f", t13);
       quietReply = true;
-      break;  // altCor
+      break; 
     case '3':
+      // :GX03#
       sprintf(reply, "%f", t21);
       quietReply = true;
-      break;  // azmCor
+      break;
     case '4':
+      // :GX04#
       sprintf(reply, "%f", t22);
       quietReply = true;
-      break;  // doCor
+      break;
     case '5':
+      // :GX05#
       sprintf(reply, "%f", t23);
       quietReply = true;
-      break;  // pdCor
+      break;
     case '6':
+      // :GX06#
       sprintf(reply, "%f", t31);
       quietReply = true;
-      break;  // pdCor
+      break;
     case '7':
+      // :GX07#
       sprintf(reply, "%f", t32);
       quietReply = true;
-      break;  // pdCor
+      break;
     case '8':
+      // :GX08#
       sprintf(reply, "%f", t33);
       quietReply = true;
-      break;  // pdCor
+      break;
     }
     break;
   }
@@ -91,20 +100,24 @@ void Command_GX()
     }
     break;
   case '8':
-    // 8n: Date/Time
+    // :GX8n# Date/Time
     switch (parameter[1])
     {
-    case '0':// UTC time
+    case '0':
+      // :GX80# UTC time
       doubleToHms(reply, rtk.getUT(), true);
       quietReply = true;
       break;
-    case '1':// UTC date 
+    case '1':
+      // :GX81# UTC date 
       rtk.getUTDate(i, i1, i2, i3, i4, i5);
       i = i % 100;
       sprintf(reply, "%02d/%02d/%02d", i1, i2, i);
       quietReply = true;
       break;
-    case '2'://return seconds since 01/01/1970/00:00:00
+    case '2':
+      // :GX82# return seconds since 01/01/1970/00:00:00
+      // For debug...
       unsigned long t = rtk.getTimeStamp();
       sprintf(reply, "%lu", t);
       quietReply = true;
@@ -116,50 +129,36 @@ void Command_GX()
     switch (parameter[1])
     {
     case '0':
+      // :GX90# return user defined pulse guider rate
       dtostrf(guideRates[0], 2,
-        2, reply);
+              2, reply);
       quietReply = true;
-      break;  // pulse-guide rate
+      break;
     case '2':
+      // :GX92# return Max Slew rate
       sprintf(reply, "%d", XEEPROM.readInt(EE_maxRate));
       quietReply = true;
-      break;  // Max Slew rate
-    case '3':
-      sprintf(reply, "%ld", (long)(MaxRate));
-      quietReply = true;
-      break;  // MaxRate (default)
-    case '4':
-      if (meridianFlip == FLIP_NEVER)
-      {
-        sprintf(reply, "%d N", (int)(GetPierSide()));
-      }
-      else
-      {
-        sprintf(reply, "%d", (int)(GetPierSide()));
-      }
-
-      quietReply = true;
-      break;  // pierSide (N if never)
+      break;
+      break;
     }
-    break;
   case 'E':
     // En: Get config
     switch (parameter[1])
     {
-    case '1':
-      sprintf(reply, "%ld", (long)MaxRate);
-      quietReply = true;
-      break;
+
     case '2':
+      // :GXE2# returns the Degrees For Acceleration
       dtostrf(DegreesForAcceleration, 2, 1, reply);
       quietReply = true;
       break;
     case '3':
+      // :GXE2# returns the Backlash Take up Rate
       sprintf(reply, "%ld",
         (long)round(BacklashTakeupRate));
       quietReply = true;
       break;
     case '4':
+
       sprintf(reply, "%ld",
         (long)round(StepsPerDegreeAxis1));
       quietReply = true;
