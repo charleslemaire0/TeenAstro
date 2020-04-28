@@ -21,6 +21,12 @@ void Command_M(bool &supress_frame)
   case 'F':
   {
     // Flip Mount
+    //         Returns:
+    //         0=Goto is Possible
+    //         1=Object below horizon
+    //         2=No object selected
+    //         4=Position unreachable
+    //         6=Outside limits
     if (mountType == MOUNT_TYPE_GEM)
     {
       getEqu(&f, &f1, false);
@@ -36,7 +42,6 @@ void Command_M(bool &supress_frame)
     }
     break;
   }
-
   case 'g':
   {
     //  :Mgdnnnn# Pulse guide command
@@ -131,9 +136,9 @@ void Command_M(bool &supress_frame)
   //}
     break;
 
-  case 'S':
+  case 'S': //:MS#   Goto the Target Object
   {
-    //  :MS#   Goto the Target Object
+        //:MS#   Goto the Target Object
         //         Returns:
         //         0=Goto is Possible
         //         1=Object below horizon    Outside limits, below the Horizon limit
@@ -216,7 +221,6 @@ void Command_M(bool &supress_frame)
     quietReply = true;
     break;
   }
-
   case '@':
   {
     //  :M@#   Start Spiral Search
