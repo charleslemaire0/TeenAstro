@@ -177,7 +177,7 @@ void SmartHandController::menuLatitude()
   if (DisplayMessageLX200(GetLatitudeLX200(degree_d)))
   {
     long angle = degree_d * 3600;
-    if (display->UserInterfaceInputValueLatitude(&buttonPad, T_LONGITUDE, T_N " ", T_S " ", &angle))
+    if (display->UserInterfaceInputValueLatitude(&buttonPad, T_LATITUDE, T_N " ", T_S " ", &angle))
     {
       char cmd[20];
       char sign = angle < 0 ? '-' : '+';
