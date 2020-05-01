@@ -60,9 +60,6 @@ void processCommands()
     case '$':
       Command_dollar();
       break;
-    case '%':
-      Command_pct();
-      break;
     case 'A':
       Command_A();
       break;

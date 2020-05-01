@@ -107,11 +107,13 @@ private:
   void menuTimeAndSite();
   void menuDateAndTime();
   void menuMount();
+  void MenuRates();
   void menuMountType();
   void menuMotor(uint8_t idx);
   void menuAcceleration();
   void menuMaxRate();
   void menuGuideRate();
+  void menuRate(int r);
   void menuSite();
   void menuSites();
   void menuLocalTime();

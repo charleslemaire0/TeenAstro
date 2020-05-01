@@ -16,16 +16,21 @@
 #define EE_RA               14 // in degree
 #define EE_DEC              18 // in degree
 
-#define EE_pulseGuideRate   22
-#define EE_maxRate          23
-#define EE_degAcc           25
+// Rates
+#define EE_Rate0            22
+#define EE_Rate1            23
+#define EE_Rate2            24
+#define EE_Rate3            25
+#define EE_maxRate          26
+#define EE_DefaultRate      28
+#define EE_degAcc           29
 
 // limits
-#define EE_minAlt           26
-#define EE_maxAlt           27
-#define EE_dpmE             28
-#define EE_dpmW             29
-#define EE_dup              30
+#define EE_minAlt           33
+#define EE_maxAlt           34
+#define EE_dpmE             35
+#define EE_dpmW             36
+#define EE_dup              37
 
 //motor1
 #define EE_GearAxis1        58

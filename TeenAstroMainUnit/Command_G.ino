@@ -6,16 +6,11 @@
 //All these command are not part of the LX200 Standard.
 void Command_GX()
 {
-  //  :GXnn#   Get OnStep value
-  if (parameter[2] != (char)0)
-  {
-    commandError = true;
-    return;
-  }
+  //  :GXnn#   Get TeenAstro Specific value
   switch (parameter[0])
   {
-  case '0':
-    // :GX0n# Align Model values
+  case 'A':
+    // :GXAn# Align Model values
   {
     float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
     if (hasStarAlignment)
@@ -25,99 +20,281 @@ void Command_GX()
     switch (parameter[1])
     {
     case '0':
-      // :GX00#
+      // :GXA0#
       sprintf(reply, "%f", t11);
       quietReply = true;
       break;
     case '1':
-      // :GX01#
+      // :GXA1#
       sprintf(reply, "%f", t12);
       quietReply = true;
       break;
     case '2':
-      // :GX02#
+      // :GXA2#
       sprintf(reply, "%f", t13);
       quietReply = true;
-      break; 
+      break;
     case '3':
-      // :GX03#
+      // :GXA3#
       sprintf(reply, "%f", t21);
       quietReply = true;
       break;
     case '4':
-      // :GX04#
+      // :GXA4#
       sprintf(reply, "%f", t22);
       quietReply = true;
       break;
     case '5':
-      // :GX05#
+      // :GXA5#
       sprintf(reply, "%f", t23);
       quietReply = true;
       break;
     case '6':
-      // :GX06#
+      // :GXA6#
       sprintf(reply, "%f", t31);
       quietReply = true;
       break;
     case '7':
-      // :GX07#
+      // :GXA7#
       sprintf(reply, "%f", t32);
       quietReply = true;
       break;
     case '8':
-      // :GX08#
+      // :GXA8#
       sprintf(reply, "%f", t33);
       quietReply = true;
       break;
     }
     break;
   }
-  case '7':
-    // for debug only
+  break;
+  case 'D':
+    // :GXDnn# for Debug commands
     switch (parameter[1])
     {
-    case '0':
-      //sprintf(reply, "%d", (int)inbacklashAxis1);
-      //quietReply = true;
+    case'B':
+    {
+      // :GXDBn# Debug Backlash
+      switch (parameter[2])
+      {
+      case '0':
+        // :GXDB0# Debug inbacklashAxis1
+        sprintf(reply, "%d", (int)inbacklashAxis1);
+        quietReply = true;
+        break;
+      case '1':
+        // :GXDB1# Debug inbacklashAxis2
+        sprintf(reply, "%d", (int)inbacklashAxis1);
+        quietReply = true;
+        break;
+      case '2':
+        // :GXDB2# Debug Backlash blAxis1
+        sprintf(reply, "%d", (int)blAxis1);
+        quietReply = true;
+        break;
+      case '3':
+        // :GXDB3# Debug Backlash blAxis1
+        sprintf(reply, "%d", (int)blAxis2);
+        quietReply = true;
+        break;
+      default:
+        commandError = true;
+        break;
+      }
       break;
-    case '1':
-      //sprintf(reply, "%d", (int)inbacklashAxis1);
-      //quietReply = true;
-      break;
-    case '2':
-      //sprintf(reply, "%d", (int)blAxis1);
-      //quietReply = true;
-      break;
-    case '3':
-      //sprintf(reply, "%d", (int)blAxis1);
-      //quietReply = true;
-      break;
-    case '4':
-      //sprintf(reply, "%d", (int)blAxis1);
-      //quietReply = true;
-      break;
+    }
+    case 'R':
+    {
+      // :GXDRn# Debug Rates
+      switch (parameter[2])
+      {
 
-
+      case '0':
+        // :GXDR0# RA Monitored tracking rate
+        sprintf(reply, "%ld", (long)
+          ((debugv1 / 53333.3333333333) * 15000));
+        quietReply = true;
+        break;
+      case '1':
+        // :GXDR1# RA tracking rate
+        sprintf(reply, "%ld", (long)
+          (az_deltaAxis1 * 1000.0 * 1.00273790935));
+        quietReply = true;
+        break;
+      case '2':
+        // :GXDR2# Dec tracking rate
+        sprintf(reply, "%ld", (long)
+          (az_deltaAxis2 * 1000.0 * 1.00273790935));
+        quietReply = true;
+        break;
+      default:
+        commandError = true;
+        break;
+      }
+      break;
+    }
+    case 'P':
+    {
+      // :GXDPn# Debug Position and Target
+      long    temp;
+      switch (parameter[2])
+      {
+      case '0':
+        cli();
+        temp = posAxis1;
+        sei();
+        sprintf(reply, "%ld", temp);
+        quietReply = true;
+        break;  // Debug8, HA motor position
+      case '1':
+        cli();
+        temp = posAxis2;
+        sei();
+        sprintf(reply, "%ld", temp);
+        quietReply = true;
+        break;  // Debug9, Dec motor position
+      case '2':
+        cli();
+        temp = targetAxis1;
+        sei();
+        sprintf(reply, "%ld", temp);
+        quietReply = true;
+        break;  // Debug6, HA target position
+      case '3':
+        cli();
+        temp = targetAxis2;
+        sei();
+        sprintf(reply, "%ld", temp);
+        quietReply = true;
+        break;  // Debug7, Dec target position
+      case '4':
+        updateDeltaTargetAxis1();
+        sprintf(reply, "%ld", deltaTargetAxis1);
+        quietReply = true;
+        break;  // Debug0, true vs. target RA position
+      case '5':
+        updateDeltaTargetAxis2();
+        sprintf(reply, "%ld", deltaTargetAxis2);
+        quietReply = true;
+        break;
+      default:
+        commandError = true;
+        break;
+      }
+      break;
+    }
+    case 'W':
+    {
+      // :GXDW# Get workload
+      if (parameter[2] == 0)
+      {
+        sprintf(reply, "%ld%%", (tlp.getWorstTime() * 100L) / 9970L);
+        tlp.resetWorstTime();
+        quietReply = true;
+      }
+      else
+        commandError = true;
+      break;
     }
     break;
-  case '8':
-    // :GX8n# Date/Time
+    default:
+      commandError = true;
+      break;
+    }
+    break;
+  case 'R':
+    // :GXRn# user defined rates
+    switch (parameter[1])
+    {
+
+    case 'A':
+      // :GXRA# returns the Degrees For Acceleration
+      dtostrf(DegreesForAcceleration, 2, 1, reply);
+      quietReply = true;
+      break;
+    case 'B':
+      // :GXRB# returns the Backlash Take up Rate
+      sprintf(reply, "%ld", (long)round(BacklashTakeupRate));
+      quietReply = true;
+      break;
+    case 'D':
+      sprintf(reply, "%d", XEEPROM.read(EE_DefaultRate));
+      quietReply = true;
+      break;
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+      i = parameter[1] - '0';
+      // :GXRn# return user defined rate
+      dtostrf(guideRates[i], 2, 2, reply);
+      quietReply = true;
+      break;
+    case 'X':
+      // :GXRX# return Max Slew rate
+      sprintf(reply, "%d", XEEPROM.readInt(EE_maxRate));
+      quietReply = true;
+      break;
+
+    default:
+      commandError = true;
+      break;
+    }
+    break;
+  case 'L':
+    // :GXLn user defined limits
+    switch (parameter[1])
+    {
+    case 'E':
+      // :GXLE# return user defined Meridian East Limit
+      sprintf(reply, "%ld", (long)round(minutesPastMeridianGOTOE));
+      quietReply = true;
+      break;
+    case 'W':
+      // :GXLW# return user defined Meridian West Limit
+      sprintf(reply, "%ld", (long)round(minutesPastMeridianGOTOW));
+      quietReply = true;
+      break;
+    case 'U':
+      // :GXLU# return user defined Under pole Limit
+      sprintf(reply, "%ld", (long)round(underPoleLimitGOTO * 10));
+      quietReply = true;
+      break;
+    case 'O':
+      // :GXLO# return user defined horizon Limit
+      // NB: duplicate with :Go#
+      sprintf(reply, "%+02d*", maxAlt);
+      quietReply = true;
+      break;
+    case 'H':
+      // :GXLH# return user defined horizon Limit
+      // NB: duplicate with :Gh#
+      sprintf(reply, "%+02d*", minAlt);
+      quietReply = true;
+      break;
+    default:
+      commandError = true;
+      break;
+    }
+    break;
+  case 'T':
+    // :GXTn# Date/Time definition
     switch (parameter[1])
     {
     case '0':
-      // :GX80# UTC time
+      // :GXT0# UTC time
       doubleToHms(reply, rtk.getUT(), true);
       quietReply = true;
       break;
     case '1':
-      // :GX81# UTC date 
+      // :GXT1# UTC date 
       rtk.getUTDate(i, i1, i2, i3, i4, i5);
       i = i % 100;
       sprintf(reply, "%02d/%02d/%02d", i1, i2, i);
       quietReply = true;
       break;
     case '2':
-      // :GX82# return seconds since 01/01/1970/00:00:00
+      // :GXT2# return seconds since 01/01/1970/00:00:00
       // For debug...
       unsigned long t = rtk.getTimeStamp();
       sprintf(reply, "%lu", t);
@@ -125,166 +302,222 @@ void Command_GX()
       break;
     }
     break;
-  case '9':
-    // 9n: Misc.
-    switch (parameter[1])
+  case 'I':
+  {
+    // :GXI#   Get telescope Status
+    for (i = 0; i < 50; i++)
+      reply[i] = ' ';
+    i = 0;
+    reply[0] = '0' + 2 * movingTo + sideralTracking;
+    reply[1] = '0' + sideralMode;
+    const char  *parkStatusCh = "pIPF";
+    reply[2] = parkStatusCh[parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
+    if (atHome) reply[3] = 'H';
+    reply[4] = '0' + activeGuideRate;
+    if (doSpiral) reply[5] = '@';
+    else if (GuidingState != GuidingOFF)
     {
-    case '0':
-      // :GX90# return user defined pulse guider rate
-      dtostrf(guideRates[0], 2,
-              2, reply);
-      quietReply = true;
-      break;
-    case '2':
-      // :GX92# return Max Slew rate
-      sprintf(reply, "%d", XEEPROM.readInt(EE_maxRate));
-      quietReply = true;
-      break;
-      break;
+      reply[5] = 'G';
     }
-  case 'E':
-    // En: Get config
+    if (GuidingState == GuidingPulse || GuidingState == GuidingST4) reply[6] = '*';
+    else if (GuidingState == GuidingRecenter) reply[6] = '+';
+    if (guideDirAxis1 == 'e') reply[7] = '>';
+    else if (guideDirAxis1 == 'w') reply[7] = '<';
+    else if (guideDirAxis1 == 'b') reply[7] = 'b';
+    if (guideDirAxis2 == 'n') reply[8] = '^';
+    else if (guideDirAxis2 == 's') reply[8] = '_';
+    else if (guideDirAxis2 == 'b') reply[8] = 'b';
+    if (faultAxis1 || faultAxis2) reply[9] = 'f';
+    if (correct_tracking)
+      reply[10] = 'c';
+    reply[11] = hasStarAlignment ? '1' : '0';
+    // provide mount type
+    if (mountType == MOUNT_TYPE_GEM)
+    {
+      reply[12] = 'E';
+    }
+    else if (mountType == MOUNT_TYPE_FORK)
+      reply[12] = 'K';
+    else if (mountType == MOUNT_TYPE_FORK_ALT)
+      reply[12] = 'k';
+    else if (mountType == MOUNT_TYPE_ALTAZM)
+      reply[12] = 'A';
+    else
+      reply[12] = 'U';
+    PierSide currentSide = GetPierSide();
+    if (currentSide == PIER_EAST) reply[13] = 'E';
+    if (currentSide == PIER_WEST) reply[13] = 'W';
+    reply[14] = iSGNSSValid() ? '1' : '0';
+    reply[15] = '0' + lastError;
+    reply[16] = 0;
+    i = 17;
+    quietReply = true;                                   //         Returns: SS#
+  }
+  break;
+  case 'M':
+  {
     switch (parameter[1])
     {
-
-    case '2':
-      // :GXE2# returns the Degrees For Acceleration
-      dtostrf(DegreesForAcceleration, 2, 1, reply);
-      quietReply = true;
-      break;
-    case '3':
-      // :GXE2# returns the Backlash Take up Rate
-      sprintf(reply, "%ld",
-        (long)round(BacklashTakeupRate));
-      quietReply = true;
-      break;
-    case '4':
-
-      sprintf(reply, "%ld",
-        (long)round(StepsPerDegreeAxis1));
-      quietReply = true;
-      break;
-    case'5':
-      sprintf(reply, "%ld",
-        (long)round(StepsPerDegreeAxis2));
-      quietReply = true;
-      break;
-    case '6':
-      dtostrf(StepsPerSecondAxis1, 3, 6, reply);
-      quietReply = true;
-      break;
-    case '7':
-      quietReply = true;
-      break;
-    case '8':
-      quietReply = true;
-      break;
-    case '9':
-      sprintf(reply, "%ld", (long)round(minutesPastMeridianGOTOE));
-      quietReply = true;
-      break;
-    case 'A':
-      sprintf(reply, "%ld", (long)round(minutesPastMeridianGOTOW));
-      quietReply = true;
-      break;
     case 'B':
-      sprintf(reply, "%ld", (long)round(underPoleLimitGOTO * 10));
-      quietReply = true;
-      break;
+    {
+      if (parameter[2] == 'D')
+      {
+        sprintf(reply, "%d", backlashAxis2);
+        quietReply = true;
+      }
+      else if (parameter[2] == 'R')
+      {
+        sprintf(reply, "%d", backlashAxis1);
+        quietReply = true;
+      }
+      else
+        commandError = true;
+    }
+    break;
+    case 'G':
+    {
+      if (parameter[2] == 'D')
+      {
+        sprintf(reply, "%u", GearAxis2);
+        quietReply = true;
+      }
+      else if (parameter[2] == 'R')
+      {
+        sprintf(reply, "%u", GearAxis1);
+        quietReply = true;
+      }
+      else
+        commandError = true;
+    }
+    break;
+    case 'S':
+    {
+      if (parameter[2] == 'D')
+      {
+        sprintf(reply, "%u", StepRotAxis2);
+        quietReply = true;
+      }
+      else if (parameter[2] == 'R')
+      {
+        sprintf(reply, "%u", StepRotAxis1);
+        quietReply = true;
+      }
+      else
+        commandError = true;
+    }
+    break;
+    case 'M':
+    {
+      if (parameter[2] == 'D')
+      {
+        sprintf(reply, "%u", (unsigned  int)MicroAxis2);
+        quietReply = true;
+      }
+      else if (parameter[2] == 'R')
+      {
+        sprintf(reply, "%u", (unsigned  int)MicroAxis1);
+        quietReply = true;
+      }
+      else
+        commandError = true;
+    }
+    break;
+    case 'R':
+    {
+      if (parameter[2] == 'D')
+      {
+        sprintf(reply, "%u", (unsigned  int)ReverseAxis2);
+        quietReply = true;
+      }
+      else if (parameter[2] == 'R')
+      {
+        sprintf(reply, "%u", (unsigned  int)ReverseAxis1);
+        quietReply = true;
+      }
+      else
+        commandError = true;
+    }
+    break;
     case 'C':
-      //sprintf(reply, "%ld", (long)round(MinDec));
-      quietReply = true;
-      break;
-    case 'D':
-      //sprintf(reply, "%ld", (long)round(MaxDec));
-      quietReply = true;
+    {
+      if (parameter[2] == 'D')
+      {
+        sprintf(reply, "%u", HighCurrAxis2);
+        quietReply = true;
+      }
+      else if (parameter[2] == 'R')
+      {
+        sprintf(reply, "%u", HighCurrAxis1);
+        quietReply = true;
+      }
+      else
+        commandError = true;
+    }
+    break;
+    case 'c':
+    {
+      if (parameter[2] == 'D')
+      {
+        sprintf(reply, "%u", LowCurrAxis2);
+        quietReply = true;
+      }
+      else if (parameter[2] == 'R')
+      {
+        sprintf(reply, "%u", LowCurrAxis1);
+        quietReply = true;
+      }
+      else
+        commandError = true;
+    }
+    break;
+    case 'L':
+    {
+      if ((parameter[2] == 'D' || parameter[2] == 'R'))
+      {
+        if (parameter[2] == 'D')
+        {
+          sprintf(reply, "%d", motorAxis2.getSG());
+          quietReply = true;
+        }
+        else if (parameter[2] == 'R')
+        {
+          sprintf(reply, "%d", motorAxis1.getSG());
+          quietReply = true;
+        }
+        else
+          commandError = true;
+      }
+      else
+        commandError = true;
+    }
+    break;
+    case 'I':
+    {
+      if ((parameter[2] == 'D' || parameter[2] == 'R'))
+      {
+        if (parameter[2] == 'D')
+        {
+          sprintf(reply, "%u", motorAxis1.getCurrent());
+          quietReply = true;
+        }
+        else if (parameter[2] == 'R')
+        {
+          sprintf(reply, "%u", motorAxis2.getCurrent());
+          quietReply = true;
+        }
+        else
+          commandError = true;
+      }
+      else
+        commandError = true;
+    }
+    break;
     default:
       commandError = true;
       break;
-
     }
-    break;
-  case 'F':
-    long    temp;
-    switch (parameter[1])
-    {
-    case '0':
-      updateDeltaTargetAxis1();
-      sprintf(reply, "%ld", deltaTargetAxis1);
-      quietReply = true;
-      break;  // Debug0, true vs. target RA position
-
-    case '1':
-      updateDeltaTargetAxis2();
-      sprintf(reply, "%ld", deltaTargetAxis2);
-      quietReply = true;
-      break;  // Debug1, true vs. target Dec position
-
-              //              case '0': cli(); temp=(long)(((az_Azm1-az_Azm2)*2.0)*1000); sei(); sprintf(reply,"%ld",temp); quietReply=true; break;               // Debug0, true vs. target RA position
-              //              case '1': cli(); temp=(long)(az_Azm1); sei(); sprintf(reply,"%ld",temp); quietReply=true; break;                                    // Debug1, true vs. target Dec position
-    case '2':
-      sprintf(reply, "%ld", (long)
-        ((debugv1 / 53333.3333333333) * 15000));
-      quietReply = true;
-      break;  // Debug2, RA tracking rate
-
-    case '3':
-      sprintf(reply, "%ld", (long)
-        (az_deltaAxis1 * 1000.0 * 1.00273790935));
-      quietReply = true;
-      break;  // Debug3, RA refraction tracking rate
-
-    case '4':
-      sprintf(reply, "%ld", (long)
-        (az_deltaAxis2 * 1000.0 * 1.00273790935));
-      quietReply = true;
-      break;  // Debug4, Dec refraction tracking rate
-
-    case '5':
-      //sprintf(reply, "%ld", (long)(ZenithTrackingRate() *
-      //  1000.0 * 1.00273790935));
-      quietReply = true;
-      break;  // Debug5, Alt RA refraction tracking rate
-
-    case '6':
-      cli();
-      temp = targetAxis1;
-      sei();
-      sprintf(reply, "%ld", temp);
-      quietReply = true;
-      break;  // Debug6, HA target position
-
-    case '7':
-      cli();
-      temp = targetAxis2;
-      sei();
-      sprintf(reply, "%ld", temp);
-      quietReply = true;
-      break;  // Debug7, Dec target position
-
-    case '8':
-      cli();
-      temp = posAxis1;
-      sei();
-      sprintf(reply, "%ld", temp);
-      quietReply = true;
-      break;  // Debug8, HA motor position
-
-    case '9':
-      cli();
-      temp = posAxis2;
-      sei();
-      sprintf(reply, "%ld", temp);
-      quietReply = true;
-      break;  // Debug9, Dec motor position
-
-    case 'A':
-      sprintf(reply, "%ld%%", (tlp.getWorstTime() * 100L) / 9970L);
-      tlp.resetWorstTime();
-      quietReply = true;
-      break;  // DebugA, Workload
-    }
-    break;
+  }
+  break;
   default:
     commandError = true;
     break;
@@ -553,58 +786,6 @@ void  Command_G()
       quietReply = true;
     highPrecision = i;
     break;
-  case 'U':
-  {
-    //  :GU#   Get telescope Status, TeenAstro LX200 command
-    for (i = 0; i < 50; i++)
-      reply[i] = ' ';
-    i = 0;
-    reply[0] = '0' + 2 * movingTo + sideralTracking;
-    reply[1] = '0' + sideralMode;
-    const char  *parkStatusCh = "pIPF";
-    reply[2] = parkStatusCh[parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
-    if (atHome) reply[3] = 'H';
-    reply[4] = '0' + activeGuideRate;
-    if (doSpiral) reply[5] = '@';
-    else if (GuidingState != GuidingOFF)
-    {
-      reply[5] = 'G';
-    }
-    if (GuidingState == GuidingPulse || GuidingState == GuidingST4) reply[6] = '*';
-    else if (GuidingState == GuidingRecenter) reply[6] = '+';
-    if (guideDirAxis1 == 'e') reply[7] = '>';
-    else if (guideDirAxis1 == 'w') reply[7] = '<';
-    else if (guideDirAxis1 == 'b') reply[7] = 'b';
-    if (guideDirAxis2 == 'n') reply[8] = '^';
-    else if (guideDirAxis2 == 's') reply[8] = '_';
-    else if (guideDirAxis2 == 'b') reply[8] = 'b';
-    if (faultAxis1 || faultAxis2) reply[9] = 'f';
-    if (correct_tracking)
-      reply[10] = 'c';
-    reply[11] = hasStarAlignment ? '1' : '0';
-    // provide mount type
-    if (mountType == MOUNT_TYPE_GEM)
-    {
-      reply[12] = 'E';
-    }
-    else if (mountType == MOUNT_TYPE_FORK)
-      reply[12] = 'K';
-    else if (mountType == MOUNT_TYPE_FORK_ALT)
-      reply[12] = 'k';
-    else if (mountType == MOUNT_TYPE_ALTAZM)
-      reply[12] = 'A';
-    else
-      reply[12] = 'U';
-    PierSide currentSide = GetPierSide();
-    if (currentSide == PIER_EAST) reply[13] = 'E';
-    if (currentSide == PIER_WEST) reply[13] = 'W';
-    reply[14] = iSGNSSValid() ? '1' : '0';
-    reply[15] = '0' + lastError;
-    reply[16] = 0;
-    i = 17;
-    quietReply = true;                                   //         Returns: SS#
-  }
-  break;
   case 'V':
   {
     if (parameter[1] != (char)0)

@@ -252,11 +252,16 @@ void initMaxRate()
 double SetRates(double maxslewrate)
 {
   // set the new acceleration rate
-  double fact = 3600. / 15. * 1. / ( StepsPerDegreeAxis1 * 1. / 16. / 1000000.);
+  double stpdg = min(StepsPerDegreeAxis1, StepsPerDegreeAxis2);
+  double fact = 3600. / 15. * 1. / (stpdg * 1. / 16. / 1000000.);
   maxRate = max(fact / maxslewrate, (MaxRate / 2L) * 16L);
   maxslewrate = fact / maxRate;
-  guideRates[9] = maxslewrate;
-  guideRates[8] = maxslewrate / 2.;
+  guideRates[4] = maxslewrate;
+  if (guideRates[3] >= maxslewrate)
+  {
+    guideRates[3] = 64;
+    XEEPROM.write(EE_Rate3, guideRates[3]);
+  }
   resetGuideRate();
   SetAcceleration();
   return maxslewrate;
@@ -277,7 +282,7 @@ void enableGuideRate(int g, bool force)
   // don't do these lengthy calculations unless we have to
 
   if (g < 0) g = 0;
-  if (g > 9) g = 9;
+  if (g > 4) g = 4;
   if (!force && guideTimerBaseRate == guideRates[g]) return;
 
   activeGuideRate = g;
