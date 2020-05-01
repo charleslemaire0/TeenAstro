@@ -18,7 +18,7 @@ const char html_main_css7[] PROGMEM = " margin: none; text-align: center; text-d
 const char html_main_css8[] PROGMEM = "button { background-color: #A01010; font-weight: bold; border-radius: 5px; margin: 2px; padding: 4px 8px; }";
 const char html_main_css_control1[] PROGMEM = ".b1 { float: left; border: 2px solid #551111; background-color: #181818; text-align: center; margin: 5px; padding: 15px; padding-top: 3px; }";
 const char html_main_css_control2[] PROGMEM = ".gb { width: 60px; height: 50px; padding: 0px; }";
-const char html_main_css_control3[] PROGMEM = ".bb { height: 2.5em; width: 8em;} .bbh {   height: 2.5em; width: 4em;}";
+const char html_main_css_control3[] PROGMEM = ".bb { height: 2.5em; width: 8em;} .bbh {   height: 2.5em; width: 6em;}";
 const char html_main_cssE[] PROGMEM = "</STYLE>";
 
 const char html_onstep_header1[] PROGMEM = "<div class='t'><table width='100%%'><tr><td><b><font size='5'>";

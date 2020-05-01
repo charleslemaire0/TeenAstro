@@ -1,6 +1,5 @@
 #include <TeenAstroLX200io.h>
 #include "TeenAstroWifi.h"
-#include "config.h"
 #include "Ajax.h"
 // -----------------------------------------------------------------------------------
 // Telescope control related functions
@@ -135,11 +134,11 @@ const char html_controlGuide[] PROGMEM =
 "<button class='gb' type='button' onpointerdown=\"g('q1')\">" BUTTON_Stop "</button>"
 "<button class='gb' type='button' onpointerdown=\"g('w1')\" onpointerup=\"g('w0')\">" BUTTON_W "</button><br />"
 "<button class='gb' type='button' onpointerdown=\"g('s1')\" onpointerup=\"g('s0')\">" BUTTON_S "</button><br /><br />"
-"<button class='bbh' type='button' onpointerdown=\"g('R2')\">1x</button>"
-"<button class='bbh' type='button' onpointerdown=\"g('R4')\">4x</button>"
-"<button class='bbh' type='button' onpointerdown=\"g('R5')\">16x</button>"
-"<button class='bbh' type='button' onpointerdown=\"g('R7')\">64x</button>"
-"<button class='bbh' type='button' onpointerdown=\"g('R9')\">VMax</button>"
+"<button class='bbh' type='button' onpointerdown=\"g('R0')\">Guide</button>"
+"<button class='bbh' type='button' onpointerdown=\"g('R1')\">Slow</button>"
+"<button class='bbh' type='button' onpointerdown=\"g('R2')\">Medium</button>"
+"<button class='bbh' type='button' onpointerdown=\"g('R3')\">Fast</button>"
+"<button class='bbh' type='button' onpointerdown=\"g('R4')\">Max</button>"
 "</div><br class='clear' />\r\n";
 
 const char html_controlFocus1[] PROGMEM =
@@ -422,11 +421,6 @@ void TeenAstroWifi::processControlGet()
     else if (v == "R2") SetLX200(":R2#");
     else if (v == "R3") SetLX200(":R3#");
     else if (v == "R4") SetLX200(":R4#");
-    else if (v == "R5") SetLX200(":R5#");
-    else if (v == "R6") SetLX200(":R6#");
-    else if (v == "R7") SetLX200(":R7#");
-    else if (v == "R8") SetLX200(":R8#");
-    else if (v == "R9") SetLX200(":R9#");
 
     // Focuser
     else if (v == "Fz") SetLX200(":FP#");

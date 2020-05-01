@@ -98,8 +98,8 @@ void TeenAstroMountStatus::updateTime()
 {
   if (millis() - m_lastStateTime > updaterate)
   {
-    m_hasInfoUTC = GetLX200(":GX80#", m_TempUTC, sizeof(m_TempUTC)) == LX200VALUEGET;
-    m_hasInfoUTCdate =  GetLX200(":GX81#", m_TempUTCdate, sizeof(m_TempUTCdate)) == LX200VALUEGET;
+    m_hasInfoUTC = GetLX200(":GXT0#", m_TempUTC, sizeof(m_TempUTC)) == LX200VALUEGET;
+    m_hasInfoUTCdate =  GetLX200(":GXT1#", m_TempUTCdate, sizeof(m_TempUTCdate)) == LX200VALUEGET;
     m_hasInfoSidereal = GetLX200(":GS#", m_TempSidereal, sizeof(m_TempSidereal)) == LX200VALUEGET;
     m_hasInfoUTC && m_hasInfoSidereal  && m_hasInfoUTCdate ? m_lastStateTime = millis() : m_connectionFailure++;
   }
@@ -142,7 +142,7 @@ void TeenAstroMountStatus::updateMount()
 {
   if (millis() - m_lastStateMount > updaterate)
   {
-    m_hasInfoMount = GetLX200(":GU#", m_TempMount, sizeof(m_TempMount)) == LX200VALUEGET;
+    m_hasInfoMount = GetLX200(":GXI#", m_TempMount, sizeof(m_TempMount)) == LX200VALUEGET;
     m_hasInfoMount ? m_lastStateMount = millis() : m_connectionFailure++;
   }
 };
