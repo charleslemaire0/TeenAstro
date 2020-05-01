@@ -401,7 +401,6 @@ void Command_SX()
     }
     break;
   }
-
 }
 
 void Command_S(Command& process_command)
@@ -427,6 +426,7 @@ void Command_S(Command& process_command)
   case 'a':
     //  :SasDD*MM#
     //         Set target object altitude to sDD:MM# or sDD:MM:SS# (based on precision setting)
+    //         Native LX200
     //         Returns:
     //         0 if Object is within slew range, 1 otherwise
     if (!dmsToDouble(&newTargetAlt, parameter, true, highPrecision))
@@ -438,6 +438,7 @@ void Command_S(Command& process_command)
     //  :SBn#  Set Baud Rate n for Serial-0, where n is an ASCII digit (1..9) with the following interpertation
         //         0=115.2K, 1=56.7K, 2=38.4K, 3=28.8K, 4=19.2K, 5=14.4K, 6=9600, 7=4800, 8=2400, 9=1200
         //         Returns: "1" At the current baud rate and then changes to the new rate for further communication
+
   {
     i = (int)(parameter[0] - '0');
     if ((i >= 0) && (i < 10))
