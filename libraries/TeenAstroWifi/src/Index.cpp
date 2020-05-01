@@ -1,5 +1,4 @@
 #include <TeenAstroLX200io.h>
-#include "config.h"
 #include "TeenAstroWifi.h"
 
 // -----------------------------------------------------------------------------------
@@ -73,14 +72,6 @@ void TeenAstroWifi::handleRoot()
   data += temp;
   sendHtml(data);
 
-
-#ifdef AMBIENT_CONDITIONS_ON
-  if (!sendCommand(":GX9A#", temp1)) strcpy(temp1, "?"); sprinf_P(temp, html_indexTPHD, "Temperature:", temp1, "&deg;C"); data += temp;
-  if (!sendCommand(":GX9B#", temp1)) strcpy(temp1, "?"); sprinf_P(temp, html_indexTPHD, "Barometric Pressure:", temp1, "mb"); data += temp;
-  if (!sendCommand(":GX9C#", temp1)) strcpy(temp1, "?"); sprinf_P(temp, html_indexTPHD, "Relative Humidity:", temp1, "%"); data += temp;
-  if (!sendCommand(":GX9E#", temp1)) strcpy(temp1, "?"); sprinf_P(temp, html_indexTPHD, "Dew Point Temperature:", temp1, "&deg;C"); data += temp;
-#endif
-
   data += "<br /><b>Current Jnow Coordinates:</b><br />";
 
   // RA,Dec current
@@ -127,12 +118,6 @@ void TeenAstroWifi::handleRoot()
 
   //data+="<br /><b>Alignment:</b><br />";
 
-  //if ((mountStatus.mountType()== MountStatus::MT_GEM) || (mountStatus.mountType()== MountStatus::MT_FORK)) {
-  //  long altCor=0; if (sendCommand(":GX02#",temp1)) { altCor=strtol(&temp1[0],NULL,10); }
-  //  long azmCor=0; if (sendCommand(":GX03#",temp1)) { azmCor=strtol(&temp1[0],NULL,10); }
-  //  sprinf_P(temp,html_indexCorPolar,(long)(altCor),(long)(azmCor));
-  //  data += temp;
-  //}
 
 
   data += "<br /><b>Operations:</b><br />";

@@ -22,9 +22,30 @@ const char html_configMaxRate[] PROGMEM =
 " (Maximum Slewing speed from 32x to 4000x)"
 "</form>"
 "\r\n";
-const char html_configGuideRate[] PROGMEM =
+const char html_configRate3[] PROGMEM =
 "<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%.2f' type='number' name='GuideR' min='0.01' max='1' step='.01'>"
+" <input value='%.0f' type='number' name='R3' min='1' max='255' step='1'>"
+"<button type='submit'>Upload</button>"
+" (Fast Recenter speed speed from 1 to 255x)"
+"</form>"
+"\r\n";
+const char html_configRate2[] PROGMEM =
+"<form method='get' action='/configuration_telescope.htm'>"
+" <input value='%.0f' type='number' name='R2' min='1' max='255' step='1'>"
+"<button type='submit'>Upload</button>"
+" (Medium Recenter speed from 1x to 255x)"
+"</form>"
+"\r\n";
+const char html_configRate1[] PROGMEM =
+"<form method='get' action='/configuration_telescope.htm'>"
+" <input value='%.0f' type='number' name='R1' min='1' max='255' step='1'>"
+"<button type='submit'>Upload</button>"
+" (Slow Recenter speed from 1x to 255x)"
+"</form>"
+"\r\n";
+const char html_configRate0[] PROGMEM =
+"<form method='get' action='/configuration_telescope.htm'>"
+" <input value='%.2f' type='number' name='R0' min='0.01' max='1' step='.01'>"
 "<button type='submit'>Upload</button>"
 " (Guiding speed from 0.01x to 1x)"
 "</form>"
@@ -169,17 +190,32 @@ void TeenAstroWifi::handleConfigurationTelescope()
   //if (!sendCommand(":GX90#", temp1, sizeof(temp1))) strcpy(temp1, "0"); int mountType = (int)strtol(&temp1[0], NULL, 10);
   //sprintf(temp, html_configMount, mountType);
   //data += temp;
-  if (GetLX200(":GX92#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int maxRate = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":GXRX#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int maxRate = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configMaxRate, maxRate);
   data += temp;
   sendHtml(data);
 
-  if (GetLX200(":GX90#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float guideRate = (float)strtof(&temp1[0], NULL);
-  sprintf_P(temp, html_configGuideRate, guideRate);
+  if (GetLX200(":GXR3#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float Rate3 = (float)strtof(&temp1[0], NULL);
+  sprintf_P(temp, html_configRate3, Rate3);
   data += temp;
   sendHtml(data);
 
-  if (GetLX200(":GXE2#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float acc = (float)strtof(&temp1[0], NULL);
+  if (GetLX200(":GXR2#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float Rate2 = (float)strtof(&temp1[0], NULL);
+  sprintf_P(temp, html_configRate2, Rate2);
+  data += temp;
+  sendHtml(data);
+
+  if (GetLX200(":GXR1#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float Rate1 = (float)strtof(&temp1[0], NULL);
+  sprintf_P(temp, html_configRate1, Rate1);
+  data += temp;
+  sendHtml(data);
+
+  if (GetLX200(":GXR0#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float Rate0 = (float)strtof(&temp1[0], NULL);
+  sprintf_P(temp, html_configRate0, Rate0);
+  data += temp;
+  sendHtml(data);
+
+  if (GetLX200(":GXRA#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float acc = (float)strtof(&temp1[0], NULL);
   sprintf_P(temp, html_configAcceleration, acc);
   data += temp;
   sendHtml(data);
@@ -187,80 +223,88 @@ void TeenAstroWifi::handleConfigurationTelescope()
   //Axis1
   data += "<div style='width: 35em;'>";
   data += "Motor: <br />";
-  if (GetLX200(":%RR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int reverse = (int)strtol(&temp1[0], NULL, 10);
+  bool reverse = false;
+  readReverseLX200(1, reverse);
   sprintf_P(temp, html_configRotAxis_1, 1);
   data += temp;
   data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
   sprintf_P(temp, html_configRotAxis_2, 1);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":%RD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); reverse = (int)strtol(&temp1[0], NULL, 10);
+  reverse = false;
+  readReverseLX200(2, reverse);
   sprintf_P(temp, html_configRotAxis_1, 2);
   data += temp;
   data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
   sprintf_P(temp, html_configRotAxis_2, 2);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":%GR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int gear = (int)strtol(&temp1[0], NULL, 10);
-  sprintf_P(temp, html_configGeAxis, gear, 1, 1);
+  float gear = 0;
+  readTotGearLX200(1, gear);
+  sprintf_P(temp, html_configGeAxis, (int)gear, 1, 1);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":%GD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); gear = (int)strtol(&temp1[0], NULL, 10);
-  sprintf_P(temp, html_configGeAxis, gear, 2, 2);
+  readTotGearLX200(2, gear);
+  sprintf_P(temp, html_configGeAxis, (int)gear, 2, 2);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":%SR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int step = (int)strtol(&temp1[0], NULL, 10);
-  sprintf_P(temp, html_configStAxis, step, 1, 1);
+  float step;
+  readStepPerRotLX200(1, step);
+  sprintf_P(temp, html_configStAxis, (int)step, 1, 1);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":%SD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); step = (int)strtol(&temp1[0], NULL, 10);
-  sprintf_P(temp, html_configStAxis, step, 2, 2);
+  readStepPerRotLX200(2, step);
+  sprintf_P(temp, html_configStAxis, (int)step, 2, 2);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":%MR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int micro = (int)strtol(&temp1[0], NULL, 10);
+  uint8_t micro;
+  readMicroLX200(1, micro);
   sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 1, 1);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":%MD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); micro = (int)strtol(&temp1[0], NULL, 10);
+  readMicroLX200(2, micro);
   sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 2, 2);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":%BR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int backlashAxis = (int)strtol(&temp1[0], NULL, 10);
-  sprintf_P(temp, html_configBlAxis, backlashAxis, 1, 1);
+  float backlashAxis;
+  readBacklashLX200(1, backlashAxis);
+  sprintf_P(temp, html_configBlAxis, (int)backlashAxis, 1, 1);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":%BD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); backlashAxis = (int)strtol(&temp1[0], NULL, 10);
-  sprintf_P(temp, html_configBlAxis, backlashAxis, 2, 2);
+  readBacklashLX200(2, backlashAxis);
+  sprintf_P(temp, html_configBlAxis, (int)backlashAxis, 2, 2);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":%cR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int lowC = (int)strtol(&temp1[0], NULL, 10);
+  uint8_t lowC;
+  readLowCurrLX200(1, lowC);
   sprintf_P(temp, html_configLCAxis, lowC * 10, 1, 1);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":%cD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); lowC = (int)strtol(&temp1[0], NULL, 10);
+  readLowCurrLX200(2, lowC);
   sprintf_P(temp, html_configLCAxis, lowC * 10, 2, 2);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":%CR#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int highC = (int)strtol(&temp1[0], NULL, 10);
+  uint8_t highC;
+  readHighCurrLX200(1, highC);
   sprintf_P(temp, html_configHCAxis, highC * 10, 1, 1);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":%CD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); highC = (int)strtol(&temp1[0], NULL, 10);
+  readHighCurrLX200(2, highC);
   sprintf_P(temp, html_configHCAxis, highC * 10, 2, 2);
   data += temp;
   data += "<br />";
 
   // Overhead and Horizon Limits
-  if (GetLX200(":Gh#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int minAlt = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":GXLH#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int minAlt = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configMinAlt, minAlt);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":Go#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int maxAlt = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":GXLO#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int maxAlt = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configMaxAlt, maxAlt);
   data += temp;
   sendHtml(data);
   // Meridian Limits
-  if (GetLX200(":GXE9#", temp1, sizeof(temp1)) == LX200VALUEGET && GetLX200(":GXEA#", temp2, sizeof(temp2)) == LX200VALUEGET)
+  if (GetLX200(":GXLE#", temp1, sizeof(temp1)) == LX200VALUEGET && GetLX200(":GXLW#", temp2, sizeof(temp2)) == LX200VALUEGET)
   {
     int degPastMerE = (int)strtol(&temp1[0], NULL, 10);
     degPastMerE = round((degPastMerE*15.0) / 60.0);
@@ -302,7 +346,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4000)))
     {
-      sprintf(temp, ":SX92:%04d#", i);
+      sprintf(temp, ":SXRX:%04d#", i);
       SetLX200(temp);
     }
   }
@@ -312,17 +356,47 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.1) && (f <= 25)))
     {
-      sprintf(temp, ":SXE2:%04d#", (int)(f * 10));
+      sprintf(temp, ":SXRA:%04d#", (int)(f * 10));
       SetLX200(temp);
     }
   }
 
-  v = server.arg("GuideR");
+  v = server.arg("R3");
+  if (v != "")
+  {
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
+    {
+      sprintf(temp, ":SXR3:%03d#", (int)f);
+      SetLX200(temp);
+    }
+  }
+
+  v = server.arg("R2");
+  if (v != "")
+  {
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
+    {
+      sprintf(temp, ":SXR2:%03d#", (int)f);
+      SetLX200(temp);
+    }
+  }
+
+  v = server.arg("R1");
+  if (v != "")
+  {
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
+    {
+      sprintf(temp, ":SXR1:%03d#", (int)f);
+      SetLX200(temp);
+    }
+  }
+
+  v = server.arg("R0");
   if (v != "")
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.01) && (f <= 100)))
     {
-      sprintf(temp, ":SX90:%03d#", (int)(f * 100));
+      sprintf(temp, ":SXR0:%03d#", (int)(f * 100));
       SetLX200(temp);
     }
   }
@@ -332,8 +406,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
-      sprintf(temp, ":$RR%d#", i);
-      SetLX200(temp);
+      writeReverseLX200(1, i);
     }
   }
 
@@ -342,89 +415,88 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
-      sprintf(temp, ":$RD%d#", i);
-      SetLX200(temp);
+      writeReverseLX200(2, i);
     }
   }
+
   v = server.arg("mge1");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 60000)))
     {
-      sprintf(temp, ":$GR%d#", i);
-      SetLX200(temp);
+      writeTotGearLX200(1, (float)i);
     }
   }
+
   v = server.arg("mge2");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 60000)))
     {
-      sprintf(temp, ":$GD%d#", i);
-      SetLX200(temp);
+      writeTotGearLX200(2, (float)i);
     }
   }
+
   v = server.arg("mst1");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400)))
     {
-      sprintf(temp, ":$SR%d#", i);
-      SetLX200(temp);
+      writeStepPerRotLX200(1, i);
     }
   }
+
   v = server.arg("mst2");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400)))
     {
-      sprintf(temp, ":$SD%d#", i);
-      SetLX200(temp);
+      writeStepPerRotLX200(2, i);
     }
   }
+
   v = server.arg("mmu1");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256)))
     {
-      sprintf(temp, ":$MR%d#", (int)log2(i));
-      SetLX200(temp);
+      writeMicroLX200(1, (float)((int)log2(i)));
     }
   }
+
   v = server.arg("mmu2");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256)))
     {
-      sprintf(temp, ":$MD%d#", (int)log2(i));
-      SetLX200(temp);
+      writeMicroLX200(2, (float)((int)log2(i)));
     }
   }
+
   v = server.arg("mbl1");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
     {
-      sprintf(temp, ":$BR%d#", i);
-      SetLX200(temp);
+      writeBacklashLX200(1, (float)i);
     }
   }
+
   v = server.arg("mbl2");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
     {
-      sprintf(temp, ":$BD%d#", i);
-      SetLX200(temp);
+      writeBacklashLX200(2, (uint8_t)i);
     }
   }
+
   v = server.arg("mlc1");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000)))
     {
-      sprintf(temp, ":$cR%d#", i / 10);
-      SetLX200(temp);
+      writeLowCurrLX200(1, i / 10);
     }
   }
   v = server.arg("mlc2");
@@ -432,17 +504,16 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000)))
     {
-      sprintf(temp, ":$cD%d#", i / 10);
-      SetLX200(temp);
+      writeLowCurrLX200(2, i / 10);
     }
   }
+
   v = server.arg("mhc1");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000)))
     {
-      sprintf(temp, ":$CR%d#", i / 10);
-      SetLX200(temp);
+      writeHighCurrLX200(1, i / 10);
     }
   }
   v = server.arg("mhc2");
@@ -450,8 +521,25 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000)))
     {
-      sprintf(temp, ":$CD%d#", i / 10);
-      SetLX200(temp);
+      writeHighCurrLX200(2, i / 10);
+    }
+  }
+
+  // Backlash Limits
+  v = server.arg("b1");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
+    {
+      writeBacklashLX200(1, i);
+    }
+  }
+  v = server.arg("b2");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
+    {
+      writeBacklashLX200(2, i);
     }
   }
   // Overhead and Horizon Limits
@@ -460,7 +548,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 60) && (i <= 90)))
     {
-      sprintf(temp, ":So%d#", i);
+      sprintf(temp, ":SXLO%d#", i);
       SetLX200(temp);
     }
   }
@@ -469,7 +557,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -30) && (i <= 30)))
     {
-      sprintf(temp, ":Sh%d#", i);
+      sprintf(temp, ":SXLH%d#", i);
       SetLX200(temp);
     }
   }
@@ -481,7 +569,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
     {
       i = round((i*60.0) / 15.0);
-      sprintf(temp, ":SXE9,%d#", i);
+      sprintf(temp, ":SXLE,%d#", i);
       SetLX200(temp);
     }
   }
@@ -491,30 +579,12 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
     {
       i = round((i*60.0) / 15.0);
-      sprintf(temp, ":SXEA,%d#", i);
+      sprintf(temp, ":SXLW,%d#", i);
       SetLX200(temp);
     }
   }
 
-  // Backlash Limits
-  v = server.arg("b1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
-    {
-      sprintf(temp, ":$BR%d#", i);
-      SetLX200(temp);
-    }
-  }
-  v = server.arg("b2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
-    {
-      sprintf(temp, ":$BD%d#", i);
-      SetLX200(temp);
-    }
-  }
+
 
   int ut_hrs = -999;
   v = server.arg("u1");
