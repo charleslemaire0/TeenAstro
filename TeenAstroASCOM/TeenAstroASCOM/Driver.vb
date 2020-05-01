@@ -107,9 +107,9 @@ Public Class Telescope
   Private mastroUtilities As AstroUtils ' Private variable to hold an AstroUtils object to provide the Range method
   Private mTL As TraceLogger ' Private variable to hold the trace logger object (creates a diagnostic log file with information that you specify)
 
-  ' Slew speeds for speed settings 0-9 as defined in the main unit's Global.h in the array guideRates[].
-  ' Values are given as multiples of sidereal speed. Top values are overwritten by MAX_SPEED/2 and MAX_SPEED at runtime.
-  Private mSlewSpeeds() As Double = {0.25, 0.5, 1.0, 2.0, 4.0, 16.0, 32.0, 64.0, 64.0, 64.0}
+  ' Slew speeds for speed settings 0-4 as defined in the main unit's Global.h in the array guideRates[].
+  ' Values are given as multiples of sidereal speed. all these values are overwritten by EEPROM at runtime.
+  Private mSlewSpeeds() As Double = {1, 4, 16, 64, 64}
   Private mSlewSpeed As String = "" ' Last slew speed set via R command
   Private mSiderealRate As Double = 15.04106858 / 3600 ' Sidereal rate in degrees per second
 
@@ -515,13 +515,42 @@ Public Class Telescope
   Public Function AxisRates(Axis As TelescopeAxes) As IAxisRates Implements ITelescopeV3.AxisRates
     mTL.LogMessage("AxisRates", "Get - " & Axis.ToString())
     ' Read maxSpeed from TeenAstro main unit and assign top two speed settings on this basis
-    Dim maxSpeed As Double, response As String = Me.CommandString("GX92")
+    Dim Speed As Double, response As String
+    'MAX_SPEED
+    response = Me.CommandString("GXRX")
     mTL.LogMessage("AxisRates", "Get value: " & response)
-    If Not (Double.TryParse(response, maxSpeed)) Then
-      Throw New ASCOM.InvalidValueException("Retrieve MAX_SPEED via :GX92# has failed: '" & response & "'")
+    If Not (Double.TryParse(response, Speed)) Then
+      Throw New ASCOM.InvalidValueException("Retrieve MAX_SPEED via :GXRX# has failed: '" & response & "'")
     End If
-    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0) - 1) = maxSpeed / 2.0
-    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0)) = maxSpeed
+    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0)) = Speed
+    'FAST_SPEED
+    response = Me.CommandString("GXR3")
+    mTL.LogMessage("AxisRates", "Get value: " & response)
+    If Not (Double.TryParse(response, Speed)) Then
+      Throw New ASCOM.InvalidValueException("Retrieve FAST_SPEED via :GXR3# has failed: '" & response & "'")
+    End If
+    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0) - 1) = Speed
+    'MEDIUM_SPEED
+    response = Me.CommandString("GXR2")
+    mTL.LogMessage("AxisRates", "Get value: " & response)
+    If Not (Double.TryParse(response, Speed)) Then
+      Throw New ASCOM.InvalidValueException("Retrieve MEDIUM_SPEED via :GXR2# has failed: '" & response & "'")
+    End If
+    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0) - 2) = Speed
+    'SLOW_SPEED
+    response = Me.CommandString("GXR1")
+    mTL.LogMessage("AxisRates", "Get value: " & response)
+    If Not (Double.TryParse(response, Speed)) Then
+      Throw New ASCOM.InvalidValueException("Retrieve MEDIUM_SLOW via :GXR1# has failed: '" & response & "'")
+    End If
+    'GUIDE_SPEED
+    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0) - 3) = Speed
+    response = Me.CommandString("GXR0")
+    mTL.LogMessage("AxisRates", "Get value: " & response)
+    If Not (Double.TryParse(response, Speed)) Then
+      Throw New ASCOM.InvalidValueException("Retrieve GUIDE_SPEED via :GXR0# has failed: '" & response & "'")
+    End If
+    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0) - 4) = Speed / 100
     Return New AxisRates(Axis, mSlewSpeeds, mSiderealRate)
   End Function
 
@@ -1223,7 +1252,7 @@ Public Class Telescope
   Public Property UTCDate() As DateTime Implements ITelescopeV3.UTCDate
     Get
       Try
-        Dim secs As Double = CDbl(CommandString("GX82"))
+        Dim secs As Double = CDbl(CommandString("GXT2"))
         Dim utcDate__1 As DateTime = New DateTime(1970, 1, 1, 0, 0, 0).AddSeconds(secs)
         mTL.LogMessage("UTCDate", String.Format("Get - {0}", utcDate__1))
         Return utcDate__1
@@ -1234,7 +1263,7 @@ Public Class Telescope
     End Get
     Set(value As DateTime)
       Dim s As Long = (Date.UtcNow() - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds
-      If (CommandBool("SX82_" & s)) Then
+      If (CommandBool("SXT2_" & s)) Then
         mTL.LogMessage("Set UTCDate", "done")
       Else
         mTL.LogMessage("Set UTCDate", "failed")
@@ -1302,7 +1331,7 @@ Public Class Telescope
   Private Sub updateTelStatus()
     Dim s1 As Double = (Date.UtcNow - mTelStatusDate).TotalMilliseconds
     If s1 > mupdateRate Or mTelStatus = "" Then
-      mTelStatus = Me.CommandString("GU")
+      mTelStatus = Me.CommandString("GXI")
       If (mTelStatus <> "") Then
         mTelStatusDate = Date.UtcNow
       End If
