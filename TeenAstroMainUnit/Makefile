@@ -1,4 +1,4 @@
-TOOLS=$(HOME)/arduino-1.8.10
+TOOLS=$(HOME)/arduino-1.8.12
 ARD15=$(HOME)/.arduino15
 
 
