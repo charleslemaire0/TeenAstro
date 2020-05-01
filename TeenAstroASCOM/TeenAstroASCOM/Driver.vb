@@ -1314,9 +1314,6 @@ Public Class Telescope
     Dim asm As System.Reflection.Assembly = System.Reflection.Assembly.GetExecutingAssembly()
     Dim fvi As FileVersionInfo = FileVersionInfo.GetVersionInfo(asm.Location)
     Dim versionFW() As String = Me.CommandString("GVN").Split(".")
-    If Not versionFW.Length = 2 Then
-      Return False
-    End If
     Dim versionASCOM() As String = fvi.FileVersion.Split(".")
     If versionFW(0) = versionASCOM(0) And versionFW(1) = versionASCOM(1) Then
       Return True
