@@ -4,8 +4,8 @@
 void SmartHandController::menuSpeedRate()
 {
   buttonPad.setMenuMode();
-  char * string_list_Speed = "Guide\n0.5x\n1.0x\n2.0x\n4.0x\n16.0x\n32.0x\n64.0x\n0.5 Max\nMax";
-  static unsigned char current_selection_speed = 4;
+  char * string_list_Speed = T_GUIDE "\n" T_SLOW "\n" T_MEDIUM "\n" T_FAST "\n" T_MAX;
+  static unsigned char current_selection_speed = 3;
   ta_MountStatus.updateMount();
   if (!ta_MountStatus.getGuidingRate(current_selection_speed))
     return;

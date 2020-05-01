@@ -70,8 +70,11 @@ void setup()
     XEEPROM.write(EE_parkSaved, false);
     XEEPROM.write(EE_parkStatus, PRK_UNPARKED);
 
-    // init the pulse-guide rate
-    XEEPROM.write(EE_pulseGuideRate, GuideRate1x);
+    // init the  rate
+    XEEPROM.write(EE_Rate0, 100);
+    XEEPROM.write(EE_Rate1, 4);
+    XEEPROM.write(EE_Rate2, 16);
+    XEEPROM.write(EE_Rate3, 64);
 
     // init the default maxRate
     if (maxRate < 2L * 16L) maxRate = 2L * 16L;
@@ -179,13 +182,20 @@ void setup()
   }
 
   // get the pulse-guide rate
-  guideRates[0] = (float)EEPROM.read(EE_pulseGuideRate) / 100.;
+  int val = EEPROM.read(EE_Rate0);
+  guideRates[0] = val > 0 ? (float)val/100 : DefaultR0;
+  val = EEPROM.read(EE_Rate1);
+  guideRates[1] = val > 0 ? (float)val : DefaultR1;
+  val = EEPROM.read(EE_Rate2);
+  guideRates[2] = val > 0 ? (float)val : DefaultR2;
+  val = EEPROM.read(EE_Rate3);
+  guideRates[3] = val > 0 ? (float)val : DefaultR3;
 
   // makes onstep think that you parked the 'scope
   // combined with a hack in the goto syncEqu() function and you can quickly recover from
   // a reset without loosing much accuracy in the sky.  PEC is toast though.
   // set the default guide rate, 16x sidereal
-  enableGuideRate(GuideRateMax, true);
+  enableGuideRate(EEPROM.read(EE_DefaultRate), true);
   delay(10);
 
   // prep timers

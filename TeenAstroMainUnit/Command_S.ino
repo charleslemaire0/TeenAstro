@@ -1,6 +1,408 @@
 #include "Command.h"
 #include "ValueToString.h"
 //   S - Telescope Set Commands
+void Command_SX()
+{
+  //  :SXnn,VVVVVV...#   Set TeenAstro value
+//          Return: 0 on failure
+//                  1 on success
+  switch (parameter[0])
+  {
+  case '0':
+    // :SXAn# Align Model values
+    switch (parameter[1])
+    {
+    case '0':
+      break;
+    case '1':
+      break;
+    case '2':
+      break;
+    case '3':
+      break;
+    case '4':
+      break;
+    case '5':
+      break;
+    case 'x':
+      //GeoAlign.init();
+      //GeoAlign.writeCoe();
+      break;
+    }
+    break;
+  case 'R':
+    // :SXRn# Rates Settings
+    switch (parameter[1])
+    {
+
+    case 'A':
+      // :SXRA# Set degree for acceleration
+      DegreesForAcceleration = min(max(0.1*(double)strtol(&parameter[3], NULL, 10), 0.1), 25.0);
+      XEEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
+      SetAcceleration();
+      break;
+    case 'D':
+    {
+      // :SXRD# define default rate
+      int val = strtol(&parameter[3], NULL, 10);
+      val = val > 4 || val < 0 ? 3 : val;
+      XEEPROM.write(EE_DefaultRate, val);
+    }
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+      // :SXRn# Set Rate for user defined rates
+      if (GuidingState == GuidingOFF)
+      {
+        i = parameter[1] - '0';
+        int val = strtol(&parameter[3], NULL, 10);
+        val = val > 0 && val < 256 ? val : pow(4, i) ;
+        XEEPROM.write(EE_Rate0 + i, val);
+        if (i == 0)
+          guideRates[0] = (double)val / 100.;
+        else
+          guideRates[i] = val;
+        if (activeGuideRate == i)
+          enableGuideRate(i, true);
+      }
+      break;
+    case 'X':
+      // :SXRX# Set Rate for max Rate
+      XEEPROM.writeInt(EE_maxRate, (int)strtol(&parameter[3], NULL, 10));
+      initMaxRate();
+      break;
+    default:
+      commandError = true;
+      break;
+    }
+  case 'L':
+    // user defined limits
+    switch (parameter[1])
+    {
+    case 'E':
+      // :SXLE# set user defined Meridian East Limit
+      minutesPastMeridianGOTOE = (double)strtol(&parameter[3], NULL, 10);
+      if (minutesPastMeridianGOTOE > 180) minutesPastMeridianGOTOE = 180;
+      if (minutesPastMeridianGOTOE < -180) minutesPastMeridianGOTOE = -180;
+      XEEPROM.update(EE_dpmE, round((minutesPastMeridianGOTOE*15.0) / 60.0) + 128);
+      break;
+    case 'W':
+      // :SXLW# set user defined Meridian West Limit
+      minutesPastMeridianGOTOW = (double)strtol(&parameter[3], NULL, 10);
+      if (minutesPastMeridianGOTOW > 180) minutesPastMeridianGOTOW = 180;
+      if (minutesPastMeridianGOTOW < -180) minutesPastMeridianGOTOW = -180;
+      XEEPROM.update(EE_dpmW, round((minutesPastMeridianGOTOW*15.0) / 60.0) + 128);
+      break;
+    case 'U':
+      // :SXLU# set user defined Under Pole Limit
+      underPoleLimitGOTO = (double)strtol(&parameter[3], NULL, 10) / 10;
+      if (underPoleLimitGOTO > 12) underPoleLimitGOTO = 12;
+      if (underPoleLimitGOTO < 9) underPoleLimitGOTO = 9;
+      XEEPROM.update(EE_dup, round(underPoleLimitGOTO*10.0));
+      break;
+    case 'H':
+      // :GXLH# set user defined horizon Limit
+      // NB: duplicate with :Sh#
+      if ((atoi2(&parameter[3], &i)) && ((i >= -30) && (i <= 30)))
+      {
+        minAlt = i;
+        XEEPROM.update(EE_minAlt, minAlt + 128);
+      }
+      else
+        commandError = true;
+    case 'O':
+      // :GXLO# set user defined horizon Limit
+      // NB: duplicate with :So#
+      if ((atoi2(&parameter[3], &i)) && ((i >= 45) && (i <= 91)))
+      {
+        maxAlt = i;
+        XEEPROM.update(EE_maxAlt, maxAlt);
+      }
+      else
+        commandError = true;
+    default:
+      commandError = true;
+      break;
+    }
+  case 'T':
+    // :SXTn# Date/Time definition
+    switch (parameter[1])
+    {
+      //  :SXT0HH:MM:SS#
+      //          Return: 0 on failure
+      //                  1 on success 
+    case '0':
+      i = highPrecision;
+      highPrecision = true;
+      int h1, m1, m2, s1;
+      if (!hmsToHms(&h1, &m1, &m2, &s1, &parameter[2], highPrecision))
+        commandError = true;
+      else
+      {
+        rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), 0);
+      }
+      highPrecision = i;
+      break;
+    case '1':
+      //  :SXT1MM/DD/YY#
+      //          Change Local Date to MM/DD/YY
+      //          Return: 0 on failure
+      //                  1 on success
+      int y, m, d;
+      if (!dateToYYYYMMDD(&y, &m, &d, &parameter[2]))
+        commandError = true;
+      else
+      {
+        rtk.setClock(y, m, d, hour(), minute(), second(), *localSite.longitude(), 0);
+      }
+      break;
+    case '2':
+    {
+      //  :SXT2nnnnn#
+      //          Define current date from
+      //          Return: 0 on failure
+      //                  1 on success
+      char *pEnd;
+      unsigned long t = strtoul(&parameter[3], &pEnd, 10);
+      rtk.SetFromTimeStamp(t);
+      break;
+    }
+    }
+    break;
+  case 'M':
+    // :SXMnn# Mount Settings
+    switch (parameter[1])
+    {
+    case 'B':
+    {
+      // :SXMBn# Set Backlash
+      int i;
+      if ((strlen(parameter) > 1) && (strlen(parameter) < 5))
+      {
+        if ((atoi2((char *)&parameter[3], &i)) && ((i >= 0) && (i <= 999)))
+        {
+          if (parameter[2] == 'D')
+          {
+            backlashAxis2 = i;
+            XEEPROM.writeInt(EE_backlashAxis2, backlashAxis2);
+            StepsBacklashAxis2 = (int)round(((double)backlashAxis2 * 3600.0) / (double)StepsPerDegreeAxis2);
+          }
+          else if (parameter[2] == 'R')
+          {
+            backlashAxis1 = i;
+            XEEPROM.writeInt(EE_backlashAxis1, backlashAxis1);
+            StepsBacklashAxis1 = (int)round(((double)backlashAxis1 * 3600.0) / (double)StepsPerDegreeAxis1);
+          }
+          else
+            commandError = true;
+        }
+        else
+          commandError = true;
+      }
+    }
+    break;
+    case 'G':
+    {
+      // :SXMGn# Set Gear
+      int i;
+      if ((parameter[2] == 'D' || parameter[2] == 'R')
+          && strlen(&parameter[3]) > 1 && strlen(&parameter[3]) < 11
+          && atoi2(&parameter[3], &i))
+      {
+        if (parameter[2] == 'D')
+        {
+          double fact = (double)i / GearAxis2;
+          cli();
+          posAxis2 = fact * posAxis2;
+          sei();
+          StopAxis2();
+          GearAxis2 = (unsigned int)i;
+          XEEPROM.writeInt(EE_GearAxis2, i);
+        }
+        else
+        {
+          double fact = (double)i / GearAxis1;
+          cli();
+          posAxis1 = fact * posAxis1;
+          sei();
+          StopAxis1();
+          GearAxis1 = (unsigned int)i;
+          XEEPROM.writeInt(EE_GearAxis1, i);
+        }
+        unsetPark();
+        updateRatios(true);
+      }
+      else
+        commandError = true;
+    }
+    break;
+    case 'S':
+    {
+      // :SXMBn# Set Step per Rotation
+      int i;
+      if ((parameter[2] == 'D' || parameter[2] == 'R')
+          && (strlen(&parameter[3]) > 1) && (strlen(&parameter[3]) < 11)
+          && atoi2((char *)&parameter[3], &i))
+      {
+        if (parameter[2] == 'D')
+        {
+          double fact = (double)i / StepRotAxis2;
+          cli();
+          posAxis2 = fact * posAxis2;
+          sei();
+          StopAxis2();
+          StepRotAxis2 = (unsigned int)i;
+          XEEPROM.writeInt(EE_StepRotAxis2, i);
+        }
+        else
+        {
+          double fact = (double)i / StepRotAxis1;
+          cli();
+          posAxis1 = fact * posAxis1;
+          sei();
+          StopAxis1();
+          StepRotAxis1 = (unsigned int)i;
+          XEEPROM.writeInt(EE_StepRotAxis1, i);
+        }
+        unsetPark();
+        updateRatios(true);
+      }
+      else
+        commandError = true;
+    }
+    break;
+    case 'M':
+    {
+      // :SXMMn# Set Microstep
+      // for example :GRXMMR3# for 1/8 microstep on the first axis 
+      int i;
+      if ((parameter[2] == 'D' || parameter[2] == 'R')
+          && strlen(&parameter[3]) == 1
+          && atoi2(&parameter[3], &i)
+          && ((i >= 3) && (i < 9)))
+      {
+        if (parameter[2] == 'D')
+        {
+          double fact = pow(2., i - MicroAxis2);
+          cli();
+          posAxis2 = fact * posAxis2;
+          sei();
+          StopAxis2();
+          MicroAxis2 = i;
+          motorAxis2.setMicrostep(MicroAxis2);
+          XEEPROM.write(EE_MicroAxis2, MicroAxis2);
+        }
+        else
+        {
+          double fact = pow(2., i - MicroAxis1);
+          cli();
+          posAxis1 = fact * posAxis1;
+          sei();
+          StopAxis1();
+          MicroAxis1 = i;
+          motorAxis1.setMicrostep(MicroAxis1);
+          XEEPROM.write(EE_MicroAxis1, MicroAxis1);
+        }
+        updateRatios(true);
+      }
+      else
+        commandError = true;
+    }
+    break;
+    case 'R':
+    {
+      // :SXMRn# Set Reverse rotation
+      if ((parameter[2] == 'D' || parameter[2] == 'R')
+          &&  strlen(&parameter[3]) == 1
+          && (parameter[3] == '0' || parameter[3] == '1'))
+      {
+        if (parameter[2] == 'D')
+        {
+          ReverseAxis2 = parameter[3] == '1' ? true : false;
+          XEEPROM.write(EE_ReverseAxis2, ReverseAxis2);
+        }
+        else
+        {
+          ReverseAxis1 = parameter[3] == '1' ? true : false;
+          XEEPROM.write(EE_ReverseAxis1, ReverseAxis1);
+        }
+      }
+      else
+        commandError = true;
+    }
+    break;
+    case 'c':
+    case 'C':
+    {
+      // :SXMRn# Set Current
+      int i;
+      if ((strlen(&parameter[3]) > 1) && (strlen(&parameter[3]) < 5)
+          && atoi2((char *)&parameter[3], &i)
+          && ((i >= 0) && (i <= 255)))
+      {
+        if (parameter[2] == 'D')
+        {
+          if (parameter[1] == 'C')
+          {
+            HighCurrAxis2 = (u_int8_t)i;
+            XEEPROM.write(EE_HighCurrAxis2, HighCurrAxis2);
+          }
+          else
+          {
+            LowCurrAxis2 = (u_int8_t)i;
+            XEEPROM.write(EE_LowCurrAxis2, LowCurrAxis2);
+            motorAxis2.setCurrent((unsigned int)LowCurrAxis2 * 10);
+          }
+        }
+        else if (parameter[2] == 'R')
+        {
+          if (parameter[1] == 'C')
+          {
+            HighCurrAxis1 = (u_int8_t)i;
+            XEEPROM.write(EE_HighCurrAxis1, HighCurrAxis1);
+          }
+          else
+          {
+            LowCurrAxis1 = (u_int8_t)i;
+            XEEPROM.write(EE_LowCurrAxis1, LowCurrAxis1);
+            motorAxis1.setCurrent((unsigned int)LowCurrAxis1 * 10);
+          }
+        }
+      }
+      else
+        commandError = true;
+    }
+    break;
+    case 'F':
+    {
+      // :SXMRn# Set Stall guard
+      int i;
+      if ((parameter[2] == 'D' || parameter[2] == 'R')
+          && (strlen(&parameter[3]) > 1) && (strlen(&parameter[3]) < 5)
+          && atoi2((char *)&parameter[3], &i)
+          && ((i >= 0) && (i <= 127)))
+      {
+        i = i - 64;
+
+        if (parameter[2] == 'D')
+        {
+          motorAxis2.setSG(i);
+        }
+        else
+        {
+          motorAxis1.setSG(i);
+        }
+      }
+      else
+        commandError = true;
+    }
+    break;
+    }
+    break;
+  }
+
+}
 
 void Command_S(Command& process_command)
 {
@@ -330,157 +732,8 @@ void Command_S(Command& process_command)
     XEEPROM.writeFloat(EE_DEC, (float)f1);
     break;
   case 'X':
-    //  :SXnn,VVVVVV...#   Set OnStep value
-    //          Return: 0 on failure
-    //                  1 on success
-
-  {
-    if (parameter[0] == '0')
-    {                   // 0n: Align Model
-      switch (parameter[1])
-      {
-        //case '0':
-        //  indexAxis1 = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
-        //  break;  // indexAxis1
-
-        //case '1':
-        //  indexAxis2 = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
-        //  break;  // indexAxis2
-
-      case '2':
-        /*GeoAlign.altCor = (double)strtol(&parameter[3], NULL,
-          10) / 3600.0;*/
-        break;  // altCor
-
-      case '3':
-        //GeoAlign.azmCor = (double)strtol(&parameter[3], NULL,
-        //  10) / 3600.0;
-        break;  // azmCor
-
-      case '4':
-        //GeoAlign.doCor = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
-        break;  // doCor
-
-      case '5':
-        //GeoAlign.pdCor = (double)strtol(&parameter[3], NULL, 10) / 3600.0;
-        break;  // pdCor
-
-      case 'x':
-        //GeoAlign.init();
-        //GeoAlign.writeCoe();
-        break;
-      }
-    }
-    else if (parameter[0] == '8')
-    {
-      switch (parameter[1])
-      {
-        //  :SX80HH:MM:SS#
-        //          Return: 0 on failure
-        //                  1 on success 
-      case '0':
-        i = highPrecision;
-        highPrecision = true;
-        int h1, m1, m2, s1;
-        if (!hmsToHms(&h1, &m1, &m2, &s1, &parameter[2], highPrecision))
-          commandError = true;
-        else
-        {
-          rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), 0);
-        }
-        highPrecision = i;
-        break;
-      case '1':
-        //  :SX81MM/DD/YY#
-        //          Change Local Date to MM/DD/YY
-        //          Return: 0 on failure
-        //                  1 on success
-        int y, m, d;
-        if (!dateToYYYYMMDD(&y, &m, &d, &parameter[2]))
-          commandError = true;
-        else
-        {
-          rtk.setClock(y, m, d, hour(), minute(), second(), *localSite.longitude(), 0);
-        }
-        break;
-      case '2':
-      {
-        char *pEnd;
-        unsigned long t = strtoul(&parameter[3], &pEnd, 10);
-        rtk.SetFromTimeStamp(t);
-        break;
-      }
-      }
-      break;
-    }
-    else if (parameter[0] == '9')
-    {                   // 9n: Misc.
-      switch (parameter[1])
-      {
-      case '0':
-      {
-        if (GuidingState == GuidingOFF)
-        {
-          int val = strtol(&parameter[3], NULL, 10);
-          val = val > 255 || val < 0 ? 100 : val;
-          XEEPROM.write(EE_pulseGuideRate, val);
-          guideRates[0] = (double)val / 100.;
-          if (activeGuideRate == 0)
-            enableGuideRate(0, true);
-        }
-        break;
-      }
-
-      case '2':   // set new acceleration rate
-      {
-        XEEPROM.writeInt(EE_maxRate, (int)strtol(&parameter[3], NULL, 10));
-        initMaxRate();
-        break;
-      }
-      default:
-        commandError = true;
-        break;
-      }
-    }
-    else if (parameter[0] == 'E')
-    {
-      switch (parameter[1])
-      {
-      case '1': // Set the MaxRate in sideral Speed
-
-        break;
-      case '2': // Set degree for acceleration
-        DegreesForAcceleration = min(max(0.1*(double)strtol(&parameter[3], NULL, 10), 0.1), 25.0);
-        XEEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
-        SetAcceleration();
-        break;
-      case '9': // minutesPastMeridianE 
-        minutesPastMeridianGOTOE = (double)strtol(&parameter[3], NULL, 10);
-        if (minutesPastMeridianGOTOE > 180) minutesPastMeridianGOTOE = 180;
-        if (minutesPastMeridianGOTOE < -180) minutesPastMeridianGOTOE = -180;
-        XEEPROM.update(EE_dpmE, round((minutesPastMeridianGOTOE*15.0) / 60.0) + 128);
-        break;
-      case 'A': // minutesPastMeridianW
-        minutesPastMeridianGOTOW = (double)strtol(&parameter[3], NULL, 10);
-        if (minutesPastMeridianGOTOW > 180) minutesPastMeridianGOTOW = 180;
-        if (minutesPastMeridianGOTOW < -180) minutesPastMeridianGOTOW = -180;
-        XEEPROM.update(EE_dpmW, round((minutesPastMeridianGOTOW*15.0) / 60.0) + 128);
-        break;
-      case 'B': // minutesPastMeridianW
-        underPoleLimitGOTO = (double)strtol(&parameter[3], NULL, 10) / 10;
-        if (underPoleLimitGOTO > 12) underPoleLimitGOTO = 12;
-        if (underPoleLimitGOTO < 9) underPoleLimitGOTO = 9;
-        XEEPROM.update(EE_dup, round(underPoleLimitGOTO*10.0));
-        break;
-
-      default: commandError = true;
-      }
-    }
-    else
-      commandError = true;
-  }
-  break;
-
+    Command_SX();
+    break;
   case 'z':
     //  :SzDDD*MM#
     //          Sets the target Object Azimuth

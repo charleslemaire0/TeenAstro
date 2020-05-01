@@ -129,12 +129,12 @@ void SmartHandController::menuLimits()
 void SmartHandController::menuHorizon()
 {
   char out[20];
-  if (DisplayMessageLX200(GetLX200(":Gh#", out, sizeof(out))))
+  if (DisplayMessageLX200(GetLX200(":GXLH#", out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10);
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_HORIZONLIMIT, "", &angle, -10, 20, 2, 0, " " T_DEGREE))
     {
-      sprintf(out, ":Sh%+03d#", (int)angle);
+      sprintf(out, ":SXLH%+03d#", (int)angle);
       DisplayMessageLX200(SetLX200(out), false);
     }
   }
@@ -142,12 +142,12 @@ void SmartHandController::menuHorizon()
 void SmartHandController::menuOverhead()
 {
   char out[20];
-  if (DisplayMessageLX200(GetLX200(":Go#", out, sizeof(out))))
+  if (DisplayMessageLX200(GetLX200(":GXLO#", out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10);
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_OVERHEADLIMIT, "", &angle, 60, 91, 2, 0, " " T_DEGREE))
     {
-      sprintf(out, ":So%02d#", (int)angle);
+      sprintf(out, ":SXLO%02d#", (int)angle);
       DisplayMessageLX200(SetLX200(out), false);
     }
   }
@@ -156,12 +156,12 @@ void SmartHandController::menuUnderPole()
 {
   char out[20];
   char cmd[15];
-  if (DisplayMessageLX200(GetLX200(":GXEB#", out, sizeof(out))))
+  if (DisplayMessageLX200(GetLX200(":GXLU#", out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10) / 10;
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_MAXHOURANGLE, "+-", &angle, 9, 12, 2, 1, " " T_HOURS))
     {
-      sprintf(cmd, ":SXEB_%03d#", (int)(angle * 10));
+      sprintf(cmd, ":SXLU%03d#", (int)(angle * 10));
       DisplayMessageLX200(SetLX200(cmd), false);
     }
   }
@@ -170,16 +170,16 @@ void SmartHandController::menuMeridian(bool east)
 {
   char out[20];
   char cmd[15];
-  sprintf(cmd, ":GXEX#");
-  cmd[4] = east ? '9' : 'A';
+  sprintf(cmd, ":GXLX#");
+  cmd[4] = east ? 'E' : 'W';
 
   if (DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10) / 4.0;
     if (display->UserInterfaceInputValueFloat(&buttonPad, east ? T_MERIDIANLIMITE : T_MERIDIANLIMITW, "", &angle, -45, 45, 2, 0, " " T_DEGREE))
     {
-      sprintf(cmd, ":SXEX:%+03d#", (int)(angle*4.0));
-      cmd[4] = east ? '9' : 'A';
+      sprintf(cmd, ":SXLX:%+03d#", (int)(angle*4.0));
+      cmd[4] = east ? 'E' : 'W';
       DisplayMessageLX200(SetLX200(cmd), false);
     }
   }

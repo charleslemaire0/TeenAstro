@@ -238,19 +238,23 @@ Motor motorAxis1;
 Motor motorAxis2;
 
 // guide command
-#define GuideRate1x     2
-#define GuideRate16x    5
-#define GuideRateMax    9
-#define GuideRateNone   255
+#define GuideRateRG   0
+#define GuideRateRC   1
+#define GuideRateRM   2
+#define GuideRateRS   3
+#define GuideRateRX   4
 
-
-double          guideRates[10] =
+#define DefaultR0 1
+#define DefaultR1 4
+#define DefaultR2 16
+#define DefaultR3 64
+#define DefaultR4 64
+double          guideRates[5] =
 {
-  0.25 , 0.5 , 1.0 , 2.0 , 4.0 , 16.0, 32.0 , 64.0, 64.0, 64.0
+  DefaultR0 , DefaultR1 , DefaultR2 ,  DefaultR3 , DefaultR4
 };
 
-//.25X .5x 1x 2x 4x  8x 24x 48x half-MaxRate MaxRate
-volatile byte   activeGuideRate = GuideRateNone;
+volatile byte   activeGuideRate = GuideRateRS;
 
 volatile byte   guideDirAxis1 = 0;
 long            guideDurationAxis1 = -1;
