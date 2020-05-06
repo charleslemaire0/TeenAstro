@@ -1,5 +1,7 @@
 // -----------------------------------------------------------------------------------------------------------------------------
 // Astronomy related functions
+#include "Global.h"
+#include <TeenAstroMath.h>
 #include "ValueToString.h"
 
 
@@ -8,38 +10,10 @@
 
 //Topocentric Apparent convertions
 
-// returns the amount of refraction (in arcminutes) at the given true altitude (degrees), pressure (millibars), and temperature (celsius)
-double trueRefrac(double Alt, double Pressure = 1010., double Temperature = 10.)
-{
-  double TPC = (Pressure / 1010.) * (283. / (273. + Temperature));
-  double r = ((1.02*cot((Alt + (10.3 / (Alt + 5.11))) / Rad))) * TPC;
-  if (r < 0.) r = 0.;
-  return r;
-}
-
-// returns the amount of refraction (in arcminutes) at the given apparent altitude (degrees), pressure (millibars), and temperature (celsius)
-double apparentRefrac(double Alt, double Pressure = 1010., double Temperature = 10.)
-{
-  double r = -trueRefrac(Alt, Pressure, Temperature);
-  r = -trueRefrac(Alt + (r / 60.), Pressure, Temperature);
-  return r;
-}
-
-void Topocentric2Apparent(double *Alt, double Pressure = 1010., double Temperature = 10.)
-{
-  if (refraction)
-    *Alt += trueRefrac(*Alt, Pressure, Temperature) / 60.;
-}
-
-void Apparent2Topocentric(double *Alt, double Pressure = 1010., double Temperature = 10.)
-{
-  if (refraction)
-    *Alt += apparentRefrac(*Alt, Pressure, Temperature) / 60.;
-}
 
 // convert equatorial coordinates to horizon
 // this takes approx. 363muS on a teensy 3.2 @ 72 Mhz
-void EquToHorTopo(double HA, double Dec, double *Azm, double *Alt)
+void EquToHorTopo(double HA, double Dec, double *Azm, double *Alt, const double *cosLat, const double *sinLat)
 {
   while (HA < 0.) HA = HA + 360.;
   while (HA >= 360.) HA = HA - 360.;
@@ -51,25 +25,25 @@ void EquToHorTopo(double HA, double Dec, double *Azm, double *Alt)
   double sinHA = sin(HA);
   double cosDec = cos(Dec);
   double sinDec = sin(Dec);
-  double  SinAlt = (sinDec * localSite.sinLat()) + (cosDec * localSite.cosLat() * cosHA);
+  double  SinAlt = (sinDec * *sinLat) + (cosDec * *cosLat * cosHA);
   *Alt = asin(SinAlt);
   double  t1 = sinHA;
-  double  t2 = cosHA * localSite.sinLat() - sinDec / cosDec * localSite.cosLat();
+  double  t2 = cosHA * *sinLat - sinDec / cosDec * *cosLat;
   *Azm = atan2(t1, t2) * Rad;
   *Azm = *Azm + 180.;
   *Alt = *Alt * Rad;
 }
 
-void EquToHorApp(double HA, double Dec, double *Azm, double *Alt)
+void EquToHorApp(double HA, double Dec, double *Azm, double *Alt, const double *cosLat, const double *sinLat)
 {
-  EquToHorTopo(HA, Dec, Azm, Alt);
+  EquToHorTopo(HA, Dec, Azm, Alt, cosLat, sinLat);
   Topocentric2Apparent(Alt);
 }
 
 // convert horizon coordinates to equatorial
 
 // this takes approx. 1.4mS
-void HorTopoToEqu(double Azm, double Alt, double *HA, double *Dec)
+void HorTopoToEqu(double Azm, double Alt, double *HA, double *Dec, const double *cosLat, const double *sinLat)
 {
   while (Azm < 0.) Azm = Azm + 360.;
   while (Azm >= 360.) Azm = Azm - 360.;
@@ -77,20 +51,20 @@ void HorTopoToEqu(double Azm, double Alt, double *HA, double *Dec)
   Alt = Alt / Rad;
   Azm = Azm / Rad;
 
-  double  SinDec = (sin(Alt) * localSite.sinLat()) + (cos(Alt) * localSite.cosLat() * cos(Azm));
+  double  SinDec = (sin(Alt) * *sinLat) + (cos(Alt) * *cosLat * cos(Azm));
   *Dec = asin(SinDec);
 
   double  t1 = sin(Azm);
-  double  t2 = cos(Azm) * localSite.sinLat() - tan(Alt) * localSite.cosLat();
+  double  t2 = cos(Azm) * *sinLat - tan(Alt) * *cosLat;
   *HA = atan2(t1, t2) * Rad;
   *HA = *HA + 180.;
   *Dec = *Dec * Rad;
 }
 
-void HorAppToEqu(double Azm, double Alt, double *HA, double *Dec)
+void HorAppToEqu(double Azm, double Alt, double *HA, double *Dec, const double *cosLat, const double *sinLat)
 {
   Apparent2Topocentric(&Alt);
-  HorTopoToEqu(Azm, Alt, HA, Dec);
+  HorTopoToEqu(Azm, Alt, HA, Dec, cosLat, sinLat);
 }
 
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -154,9 +128,9 @@ bool do_compensation_calc()
   {
   case 1:
     if (movingTo)
-      getEquTarget(&HA_now, &Dec_now, true);
+      getEquTarget(&HA_now, &Dec_now, localSite.cosLat(), localSite.sinLat(), true);
     else
-      getEqu(&HA_now, &Dec_now, true);
+      getEqu(&HA_now, &Dec_now, localSite.cosLat(), localSite.sinLat(), true);
     break;
   case 10:
     // look ahead of the current position
@@ -164,7 +138,7 @@ bool do_compensation_calc()
     Dec_tmp = Dec_now;
     break;
   case 15:
-    EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp);
+    EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
     alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
     InstrtoStep(Axis1_tmp, Axis2_tmp, GetPierSide(), &axis1_before, &axis2_before);
     break;
@@ -174,7 +148,7 @@ bool do_compensation_calc()
     Dec_tmp = Dec_now;
     break;
   case 115:
-    EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp);
+    EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
     alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
     InstrtoStep(Axis1_tmp, Axis2_tmp, GetPierSide(), &axis1_after, &axis2_after);
     break;

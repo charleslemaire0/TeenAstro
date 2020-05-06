@@ -29,12 +29,12 @@ void Command_M(bool &supress_frame)
     //         6=Outside limits
     if (mountType == MOUNT_TYPE_GEM)
     {
-      getEqu(&f, &f1, false);
+      getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
       newTargetRA = f;
       newTargetDec = f1;
       PierSide preferedPierSide = (GetPierSide() == PIER_EAST) ? PIER_WEST : PIER_EAST;
       double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-      i = goToEqu(newTargetHA, newTargetDec, preferedPierSide);
+      i = goToEqu(newTargetHA, newTargetDec, preferedPierSide, localSite.cosLat(), localSite.sinLat());
       reply[0] = i + '0';
       reply[1] = 0;
       quietReply = true;
@@ -149,7 +149,7 @@ void Command_M(bool &supress_frame)
         //         7=Guiding
         //         8=has a an Error
     double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    i = goToEqu(newTargetHA, newTargetDec, GetPierSide());
+    i = goToEqu(newTargetHA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat());
     if (i == 0)
     {
       sideralTracking = true;
@@ -178,7 +178,7 @@ void Command_M(bool &supress_frame)
     newTargetRA = (double)XEEPROM.readFloat(EE_RA);
     newTargetDec = (double)XEEPROM.readFloat(EE_DEC);
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    i = goToEqu(newTargetHA, newTargetDec, targetPierSide);
+    i = goToEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
     if (i == 0)
     {
       sideralTracking = true;

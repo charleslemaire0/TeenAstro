@@ -53,7 +53,7 @@ void Command_A()
   {
     double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
-    EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt);
+    EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
     if (alignment.getRefs() == 0)
     {
       syncAzAlt(Azm, Alt, GetPierSide());
@@ -83,7 +83,7 @@ void Command_A()
   {
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
-    EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt);
+    EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
     if (alignment.getRefs() == 0)
     {
       syncAzAlt(Azm, Alt, GetPierSide());
@@ -160,7 +160,7 @@ void Command_C()
     case 'S':
     {
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-      i = syncEqu(newTargetHA, newTargetDec, targetPierSide);
+      i = syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
       break;
     }
     case 'U':
@@ -169,7 +169,7 @@ void Command_C()
       newTargetRA = (double)XEEPROM.readFloat(EE_RA);
       newTargetDec = (double)XEEPROM.readFloat(EE_DEC);
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-      i = syncEqu(newTargetHA, newTargetDec, targetPierSide);
+      i = syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
       break;
     }
     case 'A':

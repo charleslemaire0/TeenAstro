@@ -565,9 +565,9 @@ void initTransformation(bool reset)
     else
     {
       double ha, dec;
-      HorTopoToEqu(180, 0, &ha, &dec);
+      HorTopoToEqu(180, 0, &ha, &dec, localSite.cosLat(), localSite.sinLat());
       alignment.addReferenceDeg(180, 0, ha, dec);
-      HorTopoToEqu(180, 90, &ha, &dec);
+      HorTopoToEqu(180, 90, &ha, &dec, localSite.cosLat(), localSite.sinLat());
       alignment.addReferenceDeg(180, 90, ha, dec);
       alignment.calculateThirdReference();
     }

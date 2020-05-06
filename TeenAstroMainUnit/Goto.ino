@@ -20,10 +20,10 @@ PierSide GetPierSide()
 
 //--------------------------------------------------------------------------------------------------
 // GoTo, commands to move the telescope to an location or to report the current location
-bool syncEqu(double HA, double Dec, PierSide Side)
+bool syncEqu(double HA, double Dec, PierSide Side, const double *cosLat, const double *sinLat)
 {
   double Azm, Alt = 0;
-  EquToHorApp(HA, Dec, &Azm, &Alt);
+  EquToHorApp(HA, Dec, &Azm, &Alt, cosLat, sinLat);
   return syncAzAlt(Azm, Alt, Side);
 }
 // syncs the telescope/mount to the sky
@@ -44,11 +44,11 @@ bool syncAzAlt(double Azm, double Alt, PierSide Side)
 }
 
 // gets the telescopes current Topocentric RA and Dec, set returnHA to true for Horizon Angle instead of RA
-bool getEqu(double *HA, double *Dec, bool returnHA)
+bool getEqu(double *HA, double *Dec, const double *cosLat, const double *sinLat, bool returnHA)
 {
   double  azm, alt = 0;
   getHorApp(&azm, &alt);
-  HorAppToEqu(azm, alt, HA, Dec);
+  HorAppToEqu(azm, alt, HA, Dec, cosLat, sinLat);
   if (!returnHA)
   {
     *HA = degRange(rtk.LST() * 15.0 - *HA);
@@ -57,11 +57,11 @@ bool getEqu(double *HA, double *Dec, bool returnHA)
 }
 
 // gets the telescopes current Topocentric Target RA and Dec, set returnHA to true for Horizon Angle instead of RA
-bool getEquTarget(double *HA, double *Dec, bool returnHA)
+bool getEquTarget(double *HA, double *Dec, const double *cosLat, const double *sinLat, bool returnHA)
 {
   double  azm, alt = 0;
   getHorAppTarget(&azm, &alt);
-  HorAppToEqu(azm, alt, HA, Dec);
+  HorAppToEqu(azm, alt, HA, Dec, cosLat, sinLat);
   if (!returnHA)
   {
     *HA = degRange(rtk.LST() * 15.0 - *HA);
@@ -92,10 +92,10 @@ bool getHorAppTarget(double *Azm, double *Alt)
 }
 
 // moves the mount to a new Right Ascension and Declination (RA,Dec) in degrees
-byte goToEqu(double HA, double Dec, PierSide preferedPierSide)
+byte goToEqu(double HA, double Dec, PierSide preferedPierSide, const double *cosLat, const double *sinLat)
 {
   double azm, alt = 0;
-  EquToHorApp(HA, Dec, &azm, &alt);
+  EquToHorApp(HA, Dec, &azm, &alt, cosLat, sinLat);
   return goToHor(&azm, &alt, preferedPierSide);
 }
 // moves the mount to a new Altitude and Azmiuth (Alt,Azm) in degrees

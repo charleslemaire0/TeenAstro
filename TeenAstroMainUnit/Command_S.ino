@@ -728,7 +728,7 @@ void Command_S(Command& process_command)
   break;
   case 'U':
     // :SU# store current User defined Position
-    getEqu(&f, &f1, false);
+    getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
     XEEPROM.writeFloat(EE_RA, (float)f);
     XEEPROM.writeFloat(EE_DEC, (float)f1);
     break;

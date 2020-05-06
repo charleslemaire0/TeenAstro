@@ -22,3 +22,33 @@ bool atoi2(char *a, int *i)
   return true;
 }
 
+// -----------------------------------------------------------------------------------------------------------------------------
+// Coordinate conversion
+//Topocentric Apparent convertions
+// returns the amount of refraction (in arcminutes) at the given true altitude (degrees), pressure (millibars), and temperature (celsius)
+double trueRefrac(double Alt, double Pressure, double Temperature)
+{
+  double TPC = (Pressure / 1010.) * (283. / (273. + Temperature));
+  double r = ((1.02*cot((Alt + (10.3 / (Alt + 5.11))) / Rad))) * TPC;
+  if (r < 0.) r = 0.;
+  return r;
+}
+
+// returns the amount of refraction (in arcminutes) at the given apparent altitude (degrees), pressure (millibars), and temperature (celsius)
+double apparentRefrac(double Alt, double Pressure, double Temperature)
+{
+  double r = -trueRefrac(Alt, Pressure, Temperature);
+  r = -trueRefrac(Alt + (r / 60.), Pressure, Temperature);
+  return r;
+}
+
+void Topocentric2Apparent(double *Alt, double Pressure, double Temperature)
+{
+  *Alt += trueRefrac(*Alt, Pressure, Temperature) / 60.;
+}
+
+void Apparent2Topocentric(double *Alt, double Pressure, double Temperature)
+{
+  *Alt += apparentRefrac(*Alt, Pressure, Temperature) / 60.;
+}
+

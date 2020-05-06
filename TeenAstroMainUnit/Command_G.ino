@@ -586,7 +586,7 @@ void  Command_G()
     }
     else
     {
-      getEqu(&f, &f1, false);
+      getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
       f /= 15.0;
       _ra = f;
       _dec = f1;
@@ -721,7 +721,7 @@ void  Command_G()
       }
       else
       {
-        getEqu(&f, &f1, false);
+        getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
         f /= 15.0;
         _ra = f;
         _dec = f1;
