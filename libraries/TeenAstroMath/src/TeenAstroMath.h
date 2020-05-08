@@ -31,7 +31,6 @@ void EquToHorTopo(double HA, double Dec, double *Azm, double *Alt, const double 
 void EquToHorApp(double HA, double Dec, double *Azm, double *Alt, const double *cosLat, const double *sinLat);
 void HorTopoToEqu(double Azm, double Alt, double *HA, double *Dec, const double *cosLat, const double *sinLat);
 void HorAppToEqu(double Azm, double Alt, double *HA, double *Dec, const double *cosLat, const double *sinLat);
-
 void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side);
-void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2);
+void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2, const double *Lat);
 #endif

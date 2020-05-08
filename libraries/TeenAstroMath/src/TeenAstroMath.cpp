@@ -152,12 +152,12 @@ void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side)
   else
     *Side = PierSide::PIER_EAST;
 }
-void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2)
+void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2, const double *Lat)
 {
   if (Side >= PIER_WEST)
   {
     //TODO Verify for altaz!!
-    if (*localSite.latitude() >= 0)
+    if (*Lat >= 0)
       *AngleAxis2 = (90. - *AngleAxis2) + 90.;
     else
       *AngleAxis2 = (-90. - *AngleAxis2) - 90.;

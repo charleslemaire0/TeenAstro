@@ -7,7 +7,7 @@ void StepToInstr(long Axis1, long Axis2, double *AngleAxis1, double *AngleAxis2,
 
 void InstrtoStep(double AngleAxis1, double AngleAxis2, PierSide Side, long *Axis1, long *Axis2)
 {
-  Angle2InsrtAngle(Side, &AngleAxis1, &AngleAxis2);
+  Angle2InsrtAngle(Side, &AngleAxis1, &AngleAxis2, localSite.latitude());
   *Axis1 = (long)(AngleAxis1 * StepsPerDegreeAxis1);
   *Axis2 = (long)(AngleAxis2 * StepsPerDegreeAxis2);
 }
@@ -132,7 +132,7 @@ PierSide predictSideOfPier(const double& Axis1_target, const double& Axis2_targe
 {
   double Axis1 = Axis1_target;
   double Axis2 = Axis2_target;
-  Angle2InsrtAngle(inputSide, &Axis1, &Axis2);
+  Angle2InsrtAngle(inputSide, &Axis1, &Axis2, localSite.latitude());
   if (withinLimit(Axis1*StepsPerDegreeAxis1, Axis2*StepsPerDegreeAxis2))
   {
     return inputSide;
@@ -143,7 +143,7 @@ PierSide predictSideOfPier(const double& Axis1_target, const double& Axis2_targe
     if (inputSide == PIER_EAST) otherside = PIER_WEST; else otherside = PIER_EAST;
     Axis1 = Axis1_target;
     Axis2 = Axis2_target;
-    Angle2InsrtAngle(otherside, &Axis1, &Axis2);
+    Angle2InsrtAngle(otherside, &Axis1, &Axis2, localSite.latitude());
     if (withinLimit(Axis1*StepsPerDegreeAxis1, Axis2*StepsPerDegreeAxis2))
     {
       return otherside;
