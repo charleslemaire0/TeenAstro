@@ -52,3 +52,59 @@ void Apparent2Topocentric(double *Alt, double Pressure, double Temperature)
   *Alt += apparentRefrac(*Alt, Pressure, Temperature) / 60.;
 }
 
+// -----------------------------------------------------------------------------------------------------------------------------
+// Coordinate conversion
+
+//Topocentric Apparent convertions
+
+
+// convert equatorial coordinates to horizon
+// this takes approx. 363muS on a teensy 3.2 @ 72 Mhz
+void EquToHorTopo(double HA, double Dec, double *Azm, double *Alt, const double *cosLat, const double *sinLat)
+{
+  while (HA < 0.) HA = HA + 360.;
+  while (HA >= 360.) HA = HA - 360.;
+  HA = HA / Rad;
+  Dec = Dec / Rad;;
+  double cosHA = cos(HA);
+  double sinHA = sin(HA);
+  double cosDec = cos(Dec);
+  double sinDec = sin(Dec);
+  double  SinAlt = (sinDec * *sinLat) + (cosDec * *cosLat * cosHA);
+  *Alt = asin(SinAlt);
+  double  t1 = sinHA;
+  double  t2 = cosHA * *sinLat - sinDec / cosDec * *cosLat;
+  *Azm = atan2(t1, t2) * Rad;
+  *Azm = *Azm + 180.;
+  *Alt = *Alt * Rad;
+}
+void EquToHorApp(double HA, double Dec, double *Azm, double *Alt, const double *cosLat, const double *sinLat)
+{
+  EquToHorTopo(HA, Dec, Azm, Alt, cosLat, sinLat);
+  Topocentric2Apparent(Alt);
+}
+
+// convert horizon coordinates to equatorial
+// this takes approx. 1.4mS
+void HorTopoToEqu(double Azm, double Alt, double *HA, double *Dec, const double *cosLat, const double *sinLat)
+{
+  while (Azm < 0.) Azm = Azm + 360.;
+  while (Azm >= 360.) Azm = Azm - 360.;
+
+  Alt = Alt / Rad;
+  Azm = Azm / Rad;
+
+  double  SinDec = (sin(Alt) * *sinLat) + (cos(Alt) * *cosLat * cos(Azm));
+  *Dec = asin(SinDec);
+
+  double  t1 = sin(Azm);
+  double  t2 = cos(Azm) * *sinLat - tan(Alt) * *cosLat;
+  *HA = atan2(t1, t2) * Rad;
+  *HA = *HA + 180.;
+  *Dec = *Dec * Rad;
+}
+void HorAppToEqu(double Azm, double Alt, double *HA, double *Dec, const double *cosLat, const double *sinLat)
+{
+  Apparent2Topocentric(&Alt);
+  HorTopoToEqu(Azm, Alt, HA, Dec, cosLat, sinLat);
+}
