@@ -445,15 +445,15 @@ void Command_S(Command& process_command)
     {
       if (process_command == COMMAND_SERIAL)
       {
-        Serial_print("1");
+        Serial.print("1");
         delay(20);
-        Serial_Init(baudRate[i]);
+        Serial.begin(baudRate[i]);
       }
       else
       {
-        Serial1_print("1");
+        Serial1.print("1");
         delay(20);
-        Serial1_Init(baudRate[i]);
+        Serial1.begin(baudRate[i]);
       }
 
       quietReply = true;

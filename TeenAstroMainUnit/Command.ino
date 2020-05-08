@@ -16,13 +16,13 @@ void processCommands()
 {
   Command process_command = COMMAND_NONE;
   bool supress_frame = false;
-  if ((Serial_available() > 0) && (!serial_zero_ready))
+  if ((Serial.available() > 0) && (!serial_zero_ready))
   {
-    serial_zero_ready = buildCommand_serial_zero(Serial_read());
+    serial_zero_ready = buildCommand_serial_zero(Serial.read());
   }
-  if ((Serial1_available() > 0) && (!serial_one_ready))
+  if ((Serial1.available() > 0) && (!serial_one_ready))
   {
-    serial_one_ready = buildCommand_serial_one(Serial1_read());
+    serial_one_ready = buildCommand_serial_one(Serial1.read());
   }
 
   process_command = COMMAND_NONE;
@@ -123,13 +123,13 @@ void processCommands()
       if (process_command == COMMAND_SERIAL)
       {
         if (!supress_frame) strcat(reply, "#");
-        Serial_print(reply);
+        Serial.print(reply);
       }
 
       if (process_command == COMMAND_SERIAL1)
       {
         if (!supress_frame) strcat(reply, "#");
-        Serial1_print(reply);
+        Serial1.print(reply);
       }
     }
 
@@ -143,7 +143,7 @@ bool buildCommand_serial_zero(char c)
   // (chr)6 is a special status command for the LX200 protocol
   if ((c == (char)6) && (bufferPtr_serial_zero == 0))
   {
-    mountType == isAltAZ() ? Serial_print("A") : Serial_print("P");
+    mountType == isAltAZ() ? Serial.print("A") : Serial.print("P");
   }
 
   // ignore spaces/lf/cr, dropping spaces is another tweek to allow compatibility with LX200 protocol
@@ -204,7 +204,7 @@ bool buildCommand_serial_one(char c)
   // (chr)6 is a special status command for the LX200 protocol
   if ((c == (char)6) && (bufferPtr_serial_one == 0))
   {
-    mountType == isAltAZ() ? Serial1_print("A") : Serial1_print("P");
+    mountType == isAltAZ() ? Serial1.print("A") : Serial1.print("P");
   }
 
   // ignore spaces/lf/cr, dropping spaces is another tweek to allow compatibility with LX200 protocol

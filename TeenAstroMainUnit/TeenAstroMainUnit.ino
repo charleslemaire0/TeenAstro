@@ -160,15 +160,15 @@ void setup()
   // this sets the sidereal timer, controls the tracking speed so that the mount moves precisely with the stars
   siderealInterval = XEEPROM.readLong(EE_siderealInterval);
   updateSideral();
-
-
-
   beginTimers();
 
   // get ready for serial communications
-  Serial1_Init(57600);
-  Serial_Init(BAUD);                      // for Tiva TM4C the serial is redirected to serial5 in serial.ino file
-  Serial2_Init(56000);
+  Serial1.begin(57600);
+  Serial.begin(BAUD);                      
+  Serial2.setRX(FocuserRX);
+  Serial2.setTX(FocuserTX);
+  Serial2.begin(56000);
+  Serial2.setTimeout(10);
   //GNSS connection
 #if VERSION == 230 || VERSION == 240
   Serial3.begin(9600);
