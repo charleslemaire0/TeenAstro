@@ -5,15 +5,6 @@
 #include "ValueToString.h"
 
 
-
-
-// -----------------------------------------------------------------------------------------------------------------------------
-// Refraction rate tracking
-double  az_deltaAxis1 = 15., az_deltaAxis2 = 0.;
-double  az_deltaRateScale = 1.;
-
-// az_deltaH/D are in arc-seconds/second
-
 // trackingTimerRateAxis1/2 are x the sidereal rate
 void SetDeltaTrackingRate()
 {
@@ -39,7 +30,6 @@ double GetTrackingRate()
 {
   return az_deltaRateScale;
 }
-
 
 #define AltAzTrackingRange  1  // distance in arc-min (20) ahead of and behind the current Equ position, used for rate calculation
 bool do_compensation_calc()
@@ -114,40 +104,6 @@ bool do_compensation_calc()
     break;
   }
   return done;
-}
-
-double haRange(double d)
-{
-  while (d >= 180.) d -= 360.;
-  while (d < -180.) d += 360.;
-  return d;
-}
-
-double AzRange(double d)
-{
-  while (d >= 360.) d -= 360.;
-  while (d < 0.) d += 360.;
-  return d;
-}
-
-double degRange(double d)
-{
-  while (d >= 360.) d -= 360.;
-  while (d < 0.) d += 360.;
-  return d;
-}
-
-double dist(double a, double b)
-{
-  if (a > b)
-    return a - b;
-  else
-    return b - a;
-}
-
-double angDist(double h, double d, double h1, double d1)
-{
-  return acos(sin(d / Rad) * sin(d1 / Rad) + cos(d / Rad) * cos(d1 / Rad) * cos((h1 - h) / Rad)) * Rad;
 }
 
 void initMaxRate()
@@ -240,39 +196,6 @@ void enableRateAxis2(double vRate)
   guideTimerRateAxis2 = vRate;
   sei();
 }
-
-void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side)
-{
-  if (*AngleAxis2 > 90.)
-  {
-    *AngleAxis2 = (90. - *AngleAxis2) + 90.;
-    *AngleAxis1 = *AngleAxis1 - 180.;
-    *Side = PierSide::PIER_WEST;
-  }
-  else if (*AngleAxis2 < -90.)
-  {
-    *AngleAxis2 = (-90. - *AngleAxis2) - 90.;
-    *AngleAxis1 = *AngleAxis1 - 180.;
-    *Side = PierSide::PIER_WEST;
-  }
-  else
-    *Side = PierSide::PIER_EAST;
-}
-
-void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2)
-{
-  if (Side >= PIER_WEST)
-  {
-    //TODO Verify for altaz!!
-    if (*localSite.latitude() >= 0)
-      *AngleAxis2 = (90. - *AngleAxis2) + 90.;
-    else
-      *AngleAxis2 = (-90. - *AngleAxis2) - 90.;
-    *AngleAxis1 = *AngleAxis1 + 180.;
-  }
-}
-
-
 
 bool isAltAZ()
 {

@@ -22,6 +22,33 @@ bool atoi2(char *a, int *i)
   return true;
 }
 
+
+double haRange(double d)
+{
+  while (d >= 180.) d -= 360.;
+  while (d < -180.) d += 360.;
+  return d;
+}
+
+double AzRange(double d)
+{
+  while (d >= 360.) d -= 360.;
+  while (d < 0.) d += 360.;
+  return d;
+}
+
+double degRange(double d)
+{
+  while (d >= 360.) d -= 360.;
+  while (d < 0.) d += 360.;
+  return d;
+}
+
+double angDist(double h, double d, double h1, double d1)
+{
+  return acos(sin(d / Rad) * sin(d1 / Rad) + cos(d / Rad) * cos(d1 / Rad) * cos((h1 - h) / Rad)) * Rad;
+}
+
 // -----------------------------------------------------------------------------------------------------------------------------
 // Coordinate conversion
 //Topocentric Apparent convertions
@@ -107,4 +134,33 @@ void HorAppToEqu(double Azm, double Alt, double *HA, double *Dec, const double *
 {
   Apparent2Topocentric(&Alt);
   HorTopoToEqu(Azm, Alt, HA, Dec, cosLat, sinLat);
+}
+void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side)
+{
+  if (*AngleAxis2 > 90.)
+  {
+    *AngleAxis2 = (90. - *AngleAxis2) + 90.;
+    *AngleAxis1 = *AngleAxis1 - 180.;
+    *Side = PierSide::PIER_WEST;
+  }
+  else if (*AngleAxis2 < -90.)
+  {
+    *AngleAxis2 = (-90. - *AngleAxis2) - 90.;
+    *AngleAxis1 = *AngleAxis1 - 180.;
+    *Side = PierSide::PIER_WEST;
+  }
+  else
+    *Side = PierSide::PIER_EAST;
+}
+void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2)
+{
+  if (Side >= PIER_WEST)
+  {
+    //TODO Verify for altaz!!
+    if (*localSite.latitude() >= 0)
+      *AngleAxis2 = (90. - *AngleAxis2) + 90.;
+    else
+      *AngleAxis2 = (-90. - *AngleAxis2) - 90.;
+    *AngleAxis1 = *AngleAxis1 + 180.;
+  }
 }

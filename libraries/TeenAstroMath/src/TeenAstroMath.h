@@ -2,11 +2,22 @@
 #ifndef __TeenAstroMath_h__
 #define __TeenAstroMath_h__
 #define Rad 57.29577951308
+
+enum PierSide
+{
+  PIER_NOTVALID, PIER_EAST, PIER_WEST
+};
+
 double frac(double v);
 double cot(double n);
 // integer numeric conversion with error checking
 bool atoi2(char *a, int *i);
 
+double haRange(double d);
+double AzRange(double d);
+double degRange(double d);
+
+double angDist(double h, double d, double h1, double d1);
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // Coordinate conversion
@@ -21,4 +32,6 @@ void EquToHorApp(double HA, double Dec, double *Azm, double *Alt, const double *
 void HorTopoToEqu(double Azm, double Alt, double *HA, double *Dec, const double *cosLat, const double *sinLat);
 void HorAppToEqu(double Azm, double Alt, double *HA, double *Dec, const double *cosLat, const double *sinLat);
 
+void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side);
+void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2);
 #endif

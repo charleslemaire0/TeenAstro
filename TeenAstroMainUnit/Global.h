@@ -18,7 +18,6 @@ TinyGPSPlus gps;
 CoordConv alignment;
 bool hasStarAlignment = false;
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
-enum PierSide { PIER_NOTVALID, PIER_EAST, PIER_WEST };
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
 enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW };
@@ -60,6 +59,13 @@ volatile double         timerRateAxis2 = 0;
 volatile double         timerRateBacklashAxis2 = 0;
 volatile bool           inbacklashAxis2 = false;
 bool                    faultAxis2 = false;
+
+// -----------------------------------------------------------------------------------------------------------------------------
+// Refraction rate tracking
+// az_deltaAxis1/az_deltaAxis2 are in arc-seconds/second
+double  az_deltaAxis1 = 15., az_deltaAxis2 = 0.;
+double  az_deltaRateScale = 1.;
+
 
 //Motor Axis1
 unsigned int GearAxis1;
