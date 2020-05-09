@@ -163,8 +163,10 @@ void setup()
   beginTimers();
 
   // get ready for serial communications
+  Serial.begin(BAUD);
+  S_USB.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
   Serial1.begin(57600);
-  Serial.begin(BAUD);                      
+  S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
   Serial2.setRX(FocuserRX);
   Serial2.setTX(FocuserTX);
   Serial2.begin(56000);

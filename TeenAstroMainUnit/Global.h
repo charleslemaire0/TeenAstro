@@ -222,16 +222,6 @@ bool quietReply = false;
 char reply[50];
 char command[3];
 char parameter[25];
-byte bufferPtr = 0;
-
-// for serial 0
-char command_serial_zero[25];
-char parameter_serial_zero[25];
-byte bufferPtr_serial_zero = 0;
-// for serial 1
-char command_serial_one[25];
-char parameter_serial_one[25];
-byte bufferPtr_serial_one = 0;
 
 // serial speed
 unsigned long   baudRate[10] =
