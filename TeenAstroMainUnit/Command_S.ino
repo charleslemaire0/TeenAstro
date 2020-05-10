@@ -3,7 +3,7 @@
 //   S - Telescope Set Commands
 void Command_SX()
 {
-  //  :SXnn,VVVVVV...#   Set TeenAstro value
+//  :SXnn,VVVVVV...#   Set TeenAstro value
 //          Return: 0 on failure
 //                  1 on success
   switch (parameter[0])
@@ -57,7 +57,7 @@ void Command_SX()
       {
         i = parameter[1] - '0';
         int val = strtol(&parameter[3], NULL, 10);
-        val = val > 0 && val < 256 ? val : pow(4, i) ;
+        val = val > 0 && val < 256 ? val : pow(4, i);
         XEEPROM.write(EE_Rate0 + i, val);
         if (i == 0)
           guideRates[0] = (double)val / 100.;
@@ -65,15 +65,18 @@ void Command_SX()
           guideRates[i] = val;
         if (activeGuideRate == i)
           enableGuideRate(i, true);
+        strcpy(reply, "1");
       }
+      else strcpy(reply, "0");
       break;
     case 'X':
       // :SXRX# Set Rate for max Rate
       XEEPROM.writeInt(EE_maxRate, (int)strtol(&parameter[3], NULL, 10));
       initMaxRate();
+      strcpy(reply, "1");
       break;
     default:
-      commandError = true;
+      strcpy(reply, "0");
       break;
     }
   case 'L':
@@ -86,6 +89,7 @@ void Command_SX()
       if (minutesPastMeridianGOTOE > 180) minutesPastMeridianGOTOE = 180;
       if (minutesPastMeridianGOTOE < -180) minutesPastMeridianGOTOE = -180;
       XEEPROM.update(EE_dpmE, round((minutesPastMeridianGOTOE*15.0) / 60.0) + 128);
+      strcpy(reply, "1");
       break;
     case 'W':
       // :SXLW# set user defined Meridian West Limit
@@ -93,6 +97,7 @@ void Command_SX()
       if (minutesPastMeridianGOTOW > 180) minutesPastMeridianGOTOW = 180;
       if (minutesPastMeridianGOTOW < -180) minutesPastMeridianGOTOW = -180;
       XEEPROM.update(EE_dpmW, round((minutesPastMeridianGOTOW*15.0) / 60.0) + 128);
+      strcpy(reply, "1");
       break;
     case 'U':
       // :SXLU# set user defined Under Pole Limit
@@ -100,6 +105,7 @@ void Command_SX()
       if (underPoleLimitGOTO > 12) underPoleLimitGOTO = 12;
       if (underPoleLimitGOTO < 9) underPoleLimitGOTO = 9;
       XEEPROM.update(EE_dup, round(underPoleLimitGOTO*10.0));
+      strcpy(reply, "1");
       break;
     case 'H':
       // :GXLH# set user defined horizon Limit
@@ -108,9 +114,10 @@ void Command_SX()
       {
         minAlt = i;
         XEEPROM.update(EE_minAlt, minAlt + 128);
+        strcpy(reply, "1");
       }
       else
-        commandError = true;
+        strcpy(reply, "0");
     case 'O':
       // :GXLO# set user defined horizon Limit
       // NB: duplicate with :So#
@@ -118,11 +125,12 @@ void Command_SX()
       {
         maxAlt = i;
         XEEPROM.update(EE_maxAlt, maxAlt);
+        strcpy(reply, "1");
       }
       else
-        commandError = true;
+        strcpy(reply, "0");
     default:
-      commandError = true;
+      strcpy(reply, "0");
       break;
     }
   case 'T':
@@ -137,10 +145,11 @@ void Command_SX()
       highPrecision = true;
       int h1, m1, m2, s1;
       if (!hmsToHms(&h1, &m1, &m2, &s1, &parameter[2], highPrecision))
-        commandError = true;
+        strcpy(reply, "0");
       else
       {
         rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), 0);
+        strcpy(reply, "1");
       }
       highPrecision = i;
       break;
@@ -151,10 +160,11 @@ void Command_SX()
       //                  1 on success
       int y, m, d;
       if (!dateToYYYYMMDD(&y, &m, &d, &parameter[2]))
-        commandError = true;
+        strcpy(reply, "0");
       else
       {
         rtk.setClock(y, m, d, hour(), minute(), second(), *localSite.longitude(), 0);
+        strcpy(reply, "1");
       }
       break;
     case '2':
@@ -166,6 +176,7 @@ void Command_SX()
       char *pEnd;
       unsigned long t = strtoul(&parameter[3], &pEnd, 10);
       rtk.SetFromTimeStamp(t);
+      strcpy(reply, "1");
       break;
     }
     }
@@ -187,18 +198,20 @@ void Command_SX()
             backlashAxis2 = i;
             XEEPROM.writeInt(EE_backlashAxis2, backlashAxis2);
             StepsBacklashAxis2 = (int)round(((double)backlashAxis2 * 3600.0) / (double)StepsPerDegreeAxis2);
+            strcpy(reply, "1");
           }
           else if (parameter[2] == 'R')
           {
             backlashAxis1 = i;
             XEEPROM.writeInt(EE_backlashAxis1, backlashAxis1);
             StepsBacklashAxis1 = (int)round(((double)backlashAxis1 * 3600.0) / (double)StepsPerDegreeAxis1);
+            strcpy(reply, "1");
           }
           else
-            commandError = true;
+            strcpy(reply, "0");
         }
         else
-          commandError = true;
+          strcpy(reply, "0");
       }
     }
     break;
@@ -230,11 +243,12 @@ void Command_SX()
           GearAxis1 = (unsigned int)i;
           XEEPROM.writeInt(EE_GearAxis1, i);
         }
+        strcpy(reply, "1");
         unsetPark();
         updateRatios(true);
       }
       else
-        commandError = true;
+        strcpy(reply, "0");
     }
     break;
     case 'S':
@@ -265,11 +279,12 @@ void Command_SX()
           StepRotAxis1 = (unsigned int)i;
           XEEPROM.writeInt(EE_StepRotAxis1, i);
         }
+        strcpy(reply, "1");
         unsetPark();
         updateRatios(true);
       }
       else
-        commandError = true;
+        strcpy(reply, "0");
     }
     break;
     case 'M':
@@ -305,16 +320,16 @@ void Command_SX()
           XEEPROM.write(EE_MicroAxis1, MicroAxis1);
         }
         updateRatios(true);
+        strcpy(reply, "1");
       }
-      else
-        commandError = true;
+      else strcpy(reply, "0");
     }
     break;
     case 'R':
     {
       // :SXMRn# Set Reverse rotation
       if ((parameter[2] == 'D' || parameter[2] == 'R')
-          &&  strlen(&parameter[3]) == 1
+          && strlen(&parameter[3]) == 1
           && (parameter[3] == '0' || parameter[3] == '1'))
       {
         if (parameter[2] == 'D')
@@ -327,9 +342,10 @@ void Command_SX()
           ReverseAxis1 = parameter[3] == '1' ? true : false;
           XEEPROM.write(EE_ReverseAxis1, ReverseAxis1);
         }
+        strcpy(reply, "1");
       }
       else
-        commandError = true;
+        strcpy(reply, "0");
     }
     break;
     case 'c':
@@ -369,9 +385,9 @@ void Command_SX()
             motorAxis1.setCurrent((unsigned int)LowCurrAxis1 * 10);
           }
         }
+        strcpy(reply, "1");
       }
-      else
-        commandError = true;
+      else strcpy(reply, "0");
     }
     break;
     case 'F':
@@ -393,9 +409,9 @@ void Command_SX()
         {
           motorAxis1.setSG(i);
         }
+        strcpy(reply, "1");
       }
-      else
-        commandError = true;
+      else strcpy(reply, "0");
     }
     break;
     }
@@ -419,21 +435,17 @@ void Command_S(Command& process_command)
       delay(1000);
       _reboot_Teensyduino_();
     }
-    else
-      commandError = true;
+    else strcpy(reply, "0");
     break;
-
   case 'a':
     //  :SasDD*MM#
     //         Set target object altitude to sDD:MM# or sDD:MM:SS# (based on precision setting)
     //         Native LX200
     //         Returns:
     //         0 if Object is within slew range, 1 otherwise
-    if (!dmsToDouble(&newTargetAlt, parameter, true, highPrecision))
-      commandError = true;
+    if (dmsToDouble(&newTargetAlt, parameter, true, highPrecision)) strcpy(reply, "1");
+    else strcpy(reply, "1");
     break;
-
-
   case 'B':
     //  :SBn#  Set Baud Rate n for Serial-0, where n is an ASCII digit (1..9) with the following interpertation
         //         0=115.2K, 1=56.7K, 2=38.4K, 3=28.8K, 4=19.2K, 5=14.4K, 6=9600, 7=4800, 8=2400, 9=1200
@@ -455,25 +467,21 @@ void Command_S(Command& process_command)
         delay(20);
         Serial1.begin(baudRate[i]);
       }
-
-      quietReply = true;
+      strcpy(reply, "1");
     }
-    else
-      commandError = true;
+    else strcpy(reply, "0");
   }
-
-
   case 'C':
     //  :SCMM/DD/YY#
     //          Change Local Date to MM/DD/YY
     //          Return: 0 on failure
     //                  1 on success
     int y, m, d;
-    if (!dateToYYYYMMDD(&y, &m, &d, parameter))
-      commandError = true;
+    if (!dateToYYYYMMDD(&y, &m, &d, parameter)) strcpy(reply, "0");
     else
     {
       rtk.setClock(y, m, d, hour(), minute(), second(), *localSite.longitude(), 0);
+      strcpy(reply, "1");
     }
     break;
   case 'e':
@@ -483,18 +491,18 @@ void Command_S(Command& process_command)
     //                  1 on success
     if (atoi2(parameter, &i))
     {
-      commandError = !localSite.setElev(i);
+      if (localSite.setElev(i)) strcpy(reply, "1");
+      else strcpy(reply, "0");
     }
-    else
-      commandError = true;
+    else strcpy(reply, "0");
     break;
   case 'd':
     //  :SdsDD*MM#
     //          Set target object declination to sDD*MM or sDD*MM:SS depending on the current precision setting
     //          Return: 0 on failure
     //                  1 on success
-    if (!dmsToDouble(&newTargetDec, parameter, true, highPrecision))
-      commandError = true;
+    if (dmsToDouble(&newTargetDec, parameter, true, highPrecision)) strcpy(reply, "1");
+    else strcpy(reply, "0");
     break;
   case 'g':
     //  :SgsDDD*MM# or :SgDDD*MM#
@@ -503,18 +511,16 @@ void Command_S(Command& process_command)
     //                  1 on success
   {
     double longi = 0;
-    if ((parameter[0] == '-') || (parameter[0] == '+'))
-      i1 = 1;
-    else
-      i1 = 0;
-    if (!dmsToDouble(&longi, (char *)&parameter[i1], false, false))
-      commandError = true;
-    else
+    if ((parameter[0] == '-') || (parameter[0] == '+')) i1 = 1;
+    else i1 = 0;
+    if (dmsToDouble(&longi, (char *)&parameter[i1], false, false))
     {
       if (parameter[0] == '-') longi = -longi;
       localSite.setLong(longi);
       rtk.resetLongitude(*localSite.longitude());
+      strcpy(reply, "1");
     }
+    else strcpy(reply, "0");
   }
   break;
   //  :SG[sHH.H]#
@@ -528,9 +534,9 @@ void Command_S(Command& process_command)
       (f >= -12 && f <= 12.0))
     {
       localSite.setToff(f);
+      strcpy(reply, "1");
     }
-    else
-      commandError = true;
+    else strcpy(reply, "0");
   }
   break;
   case 'h':
@@ -540,15 +546,18 @@ void Command_S(Command& process_command)
     //                  1 on success
   {
     if ((parameter[0] == 0) || (strlen(parameter) > 3))
-      commandError = true;
+    {
+      strcpy(reply, "0");
+      return;
+    }
 
     if ((atoi2(parameter, &i)) && ((i >= -30) && (i <= 30)))
     {
       minAlt = i;
       XEEPROM.update(EE_minAlt, minAlt + 128);
+      strcpy(reply, "1");
     }
-    else
-      commandError = true;
+    else strcpy(reply, "0");
   }
   break;
   case 'L':
@@ -560,12 +569,12 @@ void Command_S(Command& process_command)
     i = highPrecision;
     highPrecision = true;
     int h1, m1, m2, s1;
-    if (!hmsToHms(&h1, &m1, &m2, &s1, parameter, highPrecision))
-      commandError = true;
-    else
+    if (hmsToHms(&h1, &m1, &m2, &s1, parameter, highPrecision))
     {
       rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), *localSite.toff());
+      strcpy(reply, "1");
     }
+    else strcpy(reply, "0");
     highPrecision = i;
   }
   break;
@@ -584,9 +593,12 @@ void Command_S(Command& process_command)
   {
     i = command[1] - 'M';
     if (strlen(parameter) > 14)
-      commandError = true;
+      strcpy(reply, "0");
     else
+    {
       XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, parameter);
+      strcpy(reply, "1");
+    }
   }
   break;
   case 'm':
@@ -596,12 +608,14 @@ void Command_S(Command& process_command)
       if (parameter[0] == 'N')
       {
         newTargetPierSide = PIER_NOTVALID;
+        strcpy(reply, "1");
       }
       else if (parameter[0] == 'E')
       {
         if (GetPierSide() == PIER_WEST)
         {
           newTargetPierSide = PIER_EAST;
+          strcpy(reply, "1");
         }
       }
       else if (parameter[0] == 'W')
@@ -609,17 +623,17 @@ void Command_S(Command& process_command)
         if (GetPierSide() == PIER_EAST)
         {
           newTargetPierSide = PIER_WEST;
+          strcpy(reply, "1");
         }
       }
-      else
-        commandError = true;
+      else strcpy(reply, "0");
     }
-    else
-      commandError = true;
+    else strcpy(reply, "0");
     break;
   }
   case 'n':
     localSite.setSiteName(parameter);
+    strcpy(reply, "1");
     break;
   case 'o':
     //  :SoDD#
@@ -635,12 +649,11 @@ void Command_S(Command& process_command)
         maxAlt = i;
         maxAlt = maxAlt > 87 && isAltAZ() ? 87 : maxAlt;
         XEEPROM.update(EE_maxAlt, maxAlt);
+        strcpy(reply, "1");
       }
-      else
-        commandError = true;
+      else strcpy(reply, "0");
     }
-    else
-      commandError = true;
+    else strcpy(reply, "0");
   }
   break;
   case 'r':
@@ -650,10 +663,12 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
 
-    if (!hmsToDouble(&newTargetRA, parameter, highPrecision))
-      commandError = true;
-    else
+    if (hmsToDouble(&newTargetRA, parameter, highPrecision))
+    {
       newTargetRA *= 15.0;
+      strcpy(reply, "1");
+    }
+    else strcpy(reply, "0");
     break;
 
   case 't':
@@ -665,16 +680,14 @@ void Command_S(Command& process_command)
     i = highPrecision;
     highPrecision = false;
     double lat = 0;
-    if (!dmsToDouble(&lat, parameter, true, highPrecision))
-    {
-      commandError = true;
-    }
-    else
+    if (dmsToDouble(&lat, parameter, true, highPrecision))
     {
       localSite.setLat(lat);
       initCelestialPole();
       initTransformation(true);
+      strcpy(reply, "1");
     }
+    else strcpy(reply, "0");
     highPrecision = i;
   }
   break;
@@ -686,17 +699,17 @@ void Command_S(Command& process_command)
       {
         refraction = true;
         XEEPROM.update(EE_refraction, refraction);
+        strcpy(reply, "1");
       }
       else if (parameter[2] == '0')
       {
         refraction = false;
         XEEPROM.update(EE_refraction, refraction);
+        strcpy(reply, "1");
       }
-      else
-        commandError = true;
+      else strcpy(reply, "0");
     }
-    else
-      commandError = true;
+    else strcpy(reply, "0");
   }
   break;
   case 'T':
@@ -718,12 +731,11 @@ void Command_S(Command& process_command)
         {
           trackingTimerRateAxis1 = (f / 60.0) / 1.00273790935;
         }
+        strcpy(reply, "1");
       }
-      else
-        commandError = true;
+      else strcpy(reply, "0");
     }
-    else
-      commandError = true;
+    else strcpy(reply, "0");
   }
   break;
   case 'U':
@@ -731,6 +743,7 @@ void Command_S(Command& process_command)
     getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
     XEEPROM.writeFloat(EE_RA, (float)f);
     XEEPROM.writeFloat(EE_DEC, (float)f1);
+    strcpy(reply, "1");
     break;
   case 'X':
     Command_SX();
@@ -740,11 +753,11 @@ void Command_S(Command& process_command)
     //          Sets the target Object Azimuth
     //          Return: 0 on failure
     //                  1 on success
-    if (!dmsToDouble(&newTargetAzm, parameter, false, highPrecision))
-      commandError = true;
+    if (dmsToDouble(&newTargetAzm, parameter, false, highPrecision)) strcpy(reply, "1");
+    else strcpy(reply, "1");
     break;
   default:
-    commandError = true;
+    strcpy(reply, "0");
     break;
   }
 }

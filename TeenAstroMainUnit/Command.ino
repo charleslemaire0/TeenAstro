@@ -9,7 +9,6 @@ int             i, i1, i2, i3, i4, i5;
 void processCommands()
 {
   Command process_command = COMMAND_NONE;
-  bool supress_frame = false;
 
   S_USB.update();
   S_SHC.update();
@@ -23,7 +22,6 @@ void processCommands()
     return;
   }
 
-  commandError = false;
   // Handles empty and one char replies
   reply[0] = 0;
   reply[1] = 0;
@@ -58,7 +56,7 @@ void processCommands()
     Command_h();
     break;
   case 'M':
-    Command_M(supress_frame);
+    Command_M();
     break;
   case 'Q':
     Command_Q();
@@ -76,27 +74,14 @@ void processCommands()
     Command_W();
     break;
   default:
-    commandError = true;
+    strcpy(reply, "0");
     break;
-  }
-
-  if (!quietReply)
-  {
-    if (commandError)
-      reply[0] = '0';
-    else
-      reply[0] = '1';
-    reply[1] = 0;
-    supress_frame = true;
   }
 
   if (strlen(reply) > 0)
   {
-    if (!supress_frame) strcat(reply, "#");
     S_USB.reply(reply, process_command);
     S_SHC.reply(reply, process_command);
   }
-  quietReply = false;
+
 }
-
-

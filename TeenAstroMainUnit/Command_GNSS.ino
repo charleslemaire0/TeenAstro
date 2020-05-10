@@ -62,7 +62,7 @@ void Command_GNSS()
         *localSite.longitude(), 0);
     }
     else
-      commandError = true;
+      strcpy(reply, "0");
     break;
   case 't':
     if (iSGNSSValid())
@@ -72,10 +72,10 @@ void Command_GNSS()
         *localSite.longitude(), 0);
     }
     else
-      commandError = true;
+      strcpy(reply, "0");
     break;
   default:
-    commandError = true;
+    strcpy(reply, "0");
     break;
   }
 

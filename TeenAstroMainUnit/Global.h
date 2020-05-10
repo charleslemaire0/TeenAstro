@@ -216,9 +216,6 @@ bool abortSlew = false;
 // Command processing -------------------------------------------------------------------------------------------------------
 #define BAUD 57600
 
-bool commandError = false;
-bool quietReply = false;
-
 char reply[50];
 char command[3];
 char parameter[25];

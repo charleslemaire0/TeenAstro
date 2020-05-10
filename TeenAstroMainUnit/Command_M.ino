@@ -1,6 +1,6 @@
 //   M - Telescope Movement Commands
 #include "ValueToString.h"
-void Command_M(bool &supress_frame)
+void Command_M()
 {
   switch (command[1])
   {
@@ -15,8 +15,6 @@ void Command_M(bool &supress_frame)
     i = goToHor(&newTargetAzm, &newTargetAlt, GetPierSide());
     reply[0] = i + '0';
     reply[1] = 0;
-    quietReply = true;
-    supress_frame = true;
     break;
   case 'F':
   {
@@ -37,15 +35,14 @@ void Command_M(bool &supress_frame)
       i = goToEqu(newTargetHA, newTargetDec, preferedPierSide, localSite.cosLat(), localSite.sinLat());
       reply[0] = i + '0';
       reply[1] = 0;
-      quietReply = true;
-      supress_frame = true;
     }
     break;
   }
   case 'g':
   {
     //  :Mgdnnnn# Pulse guide command
-        //          Returns: Nothing
+    //  Returns: Nothing
+
     if ((atoi2((char *)&parameter[1], &i)) &&
       ((i > 0) && (i <= 16399)) && sideralTracking && !movingTo && lastError == ERR_NONE &&
         (GuidingState != GuidingRecenter || GuidingState != GuidingST4))
@@ -88,29 +85,23 @@ void Command_M(bool &supress_frame)
         //reply[0] = '1';
         //reply[1] = 0;
       }
-      else
-        commandError = true;
     }
-    else
-      commandError = true;
     break;
   }
   case 'e':
   case 'w':
     //  :Me# & :Mw#      Move Telescope East or West at current slew rate
-    //         Returns: Nothing
+    //  Returns: Nothing
   {
     MoveAxis1(command[1], GuidingRecenter);
-    quietReply = true;
   }
   break;
   case 'n':
   case 's':
     //  :Mn# & :Ms#      Move Telescope North or South at current slew rate
-    //         Returns: Nothing
+    //  Returns: Nothing
   {
     MoveAxis2(command[1], GuidingRecenter);
-    quietReply = true;
   }
   break;
 
@@ -158,8 +149,6 @@ void Command_M(bool &supress_frame)
     }
     reply[0] = i + '0';
     reply[1] = 0;
-    quietReply = true;
-    supress_frame = true;
     break;
   }
   case 'U':
@@ -187,13 +176,13 @@ void Command_M(bool &supress_frame)
     }
     reply[0] = i + '0';
     reply[1] = 0;
-    quietReply = true;
-    supress_frame = true;
     break;
   }
   case '?':
   {
     //  :M?#   Predict side of Pier for the Target Object
+    // reply ?# or E# or W#
+    // reply !# if failed
     double objectRa, objectHa, objectDec;
     char rastr[12];
     char decstr[12];
@@ -203,36 +192,38 @@ void Command_M(bool &supress_frame)
     decstr[9] = 0;
     if (!hmsToDouble(&objectRa, rastr, highPrecision))
     {
-      commandError = true;
+      strcpy(reply, "!#");
       return;
     }
     if (!dmsToDouble(&objectDec, decstr, true, highPrecision))
     {
-      commandError = true;
+      strcpy(reply, "!#");
       return;
     }
     objectHa = haRange(rtk.LST() * 15.0 - objectRa * 15);
 
     byte side = predictSideOfPier(objectHa, objectDec, GetPierSide());
+    strcpy(reply, "?#");
     if (side == 0) reply[0] = '?';
     else if (side == PIER_EAST) reply[0] = 'E';
     else if (side == PIER_WEST) reply[0] = 'W';
-    reply[1] = 0;
-    quietReply = true;
     break;
   }
   case '@':
   {
     //  :M@#   Start Spiral Search
-    //         Return 1
+    //         Return 0 if failed, i if success
     if (movingTo || GuidingState != GuidingOFF)
-      commandError = true;
+      strcpy(reply, "0");
     else
+    {
+      strcpy(reply, "1");
       doSpiral = true;
+    }
     break;
   }
   default:
-    commandError = true;
+    strcpy(reply, "0");
     break;
   }
 }

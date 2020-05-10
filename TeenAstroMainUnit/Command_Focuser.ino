@@ -3,12 +3,12 @@
 //   F - Focuser
 void Command_F()
 {
-  if (!hasFocuser)
+  if (!hasFocuser )
   {
-    commandError = true;
+    if (command[1] == '?') strcpy(reply, "0#");
+    else strcpy(reply, "0");
     return;
   }
-  quietReply = true; // the focuser is responding
   bool focuserNoResponse = false;
   bool focuserShortResponse = false;
   char command_out[30];
@@ -101,10 +101,10 @@ void Command_F()
   {
   case '+':
   case '-':
+  case 'g':
+  case 'G':
   case 'P':
   case 'Q':
-  case 'G':
-  case 'g':
   case 's':
   case 'S':
     focuserNoResponse = true;
@@ -139,7 +139,7 @@ void Command_F()
     break;
   default:
   {
-    commandError = true;
+    strcpy(reply, "0");
     return;
     break;
   }
@@ -160,27 +160,31 @@ void Command_F()
         b = Serial2.read();
         if (b == '#' && !focuserShortResponse)
         {
-          quietReply = true;
+          reply[pos] = b;
+          reply[pos+1] = 0;
           return;
         }
         reply[pos] = b;
         pos++;
         if (pos > 49)
         {
-          commandError = true;
+          strcpy(reply, "0");
           return;
         }
         reply[pos] = 0;
         if (focuserShortResponse)
         {
-          quietReply = false;
           if (b != '1')
-            commandError = true;
+            strcpy(reply, "0");
           return;
         }
       }
 
     }
-    commandError = true;
+    strcpy(reply, "0");
+  }
+  else
+  {
+    reply[0] = 0;
   }
 }
