@@ -7,7 +7,7 @@
 void Command_GX()
 {
   //  :GXnn#   Get TeenAstro Specific value
-  switch (parameter[0])
+  switch (command[2])
   {
   case 'A':
     // :GXAn# Align Model values
@@ -17,7 +17,7 @@ void Command_GX()
     {
       alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
     }
-    switch (parameter[1])
+    switch (command[3])
     {
     case '0':
       // :GXA0#
@@ -63,12 +63,12 @@ void Command_GX()
   break;
   case 'D':
     // :GXDnn# for Debug commands
-    switch (parameter[1])
+    switch (command[3])
     {
     case'B':
     {
       // :GXDBn# Debug Backlash
-      switch (parameter[2])
+      switch (command[4])
       {
       case '0':
         // :GXDB0# Debug inbacklashAxis1
@@ -95,7 +95,7 @@ void Command_GX()
     case 'R':
     {
       // :GXDRn# Debug Rates
-      switch (parameter[2])
+      switch (command[4])
       {
       case '0':
         // :GXDR0# RA Monitored tracking rate
@@ -122,7 +122,7 @@ void Command_GX()
     {
       // :GXDPn# Debug Position and Target
       long    temp;
-      switch (parameter[2])
+      switch (command[4])
       {
       case '0':
         cli();
@@ -165,7 +165,7 @@ void Command_GX()
     case 'W':
     {
       // :GXDW# Get workload
-      if (parameter[2] == 0)
+      if (command[4] == 0)
       {
         sprintf(reply, "%ld%%#", (tlp.getWorstTime() * 100L) / 9970L);
         tlp.resetWorstTime();
@@ -182,7 +182,7 @@ void Command_GX()
     break;
   case 'R':
     // :GXRn# user defined rates
-    switch (parameter[1])
+    switch (command[3])
     {
 
     case 'A':
@@ -201,7 +201,7 @@ void Command_GX()
     case '1':
     case '2':
     case '3':
-      i = parameter[1] - '0';
+      i = command[3] - '0';
       // :GXRn# return user defined rate
       dtostrf(guideRates[i], 2, 2, reply);
       strcat(reply, "#");
@@ -217,7 +217,7 @@ void Command_GX()
     break;
   case 'L':
     // :GXLn user defined limits
-    switch (parameter[1])
+    switch (command[3])
     {
     case 'E':
       // :GXLE# return user defined Meridian East Limit
@@ -248,7 +248,7 @@ void Command_GX()
     break;
   case 'T':
     // :GXTn# Date/Time definition
-    switch (parameter[1])
+    switch (command[3])
     {
     case '0':
       // :GXT0# UTC time
@@ -324,15 +324,15 @@ void Command_GX()
   break;
   case 'M':
   {
-    switch (parameter[1])
+    switch (command[3])
     {
     case 'B':
     {
-      if (parameter[2] == 'D')
+      if (command[4] == 'D')
       {
         sprintf(reply, "%d#", backlashAxis2);
       }
-      else if (parameter[2] == 'R')
+      else if (command[4] == 'R')
       {
         sprintf(reply, "%d#", backlashAxis1);
       }
@@ -342,15 +342,13 @@ void Command_GX()
     break;
     case 'G':
     {
-      if (parameter[2] == 'D')
+      if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", GearAxis2);
-
+        //sprintf(reply, "%u#", GearAxis2);
       }
-      else if (parameter[2] == 'R')
+      else if (command[4] == 'R')
       {
         sprintf(reply, "%u#", GearAxis1);
-
       }
       else
         strcpy(reply, "0");
@@ -358,15 +356,13 @@ void Command_GX()
     break;
     case 'S':
     {
-      if (parameter[2] == 'D')
+      if (command[4] == 'D')
       {
         sprintf(reply, "%u#", StepRotAxis2);
-
       }
-      else if (parameter[2] == 'R')
+      else if (command[4] == 'R')
       {
         sprintf(reply, "%u#", StepRotAxis1);
-
       }
       else
         strcpy(reply, "0");
@@ -374,15 +370,13 @@ void Command_GX()
     break;
     case 'M':
     {
-      if (parameter[2] == 'D')
+      if (command[4] == 'D')
       {
         sprintf(reply, "%u#", (unsigned  int)MicroAxis2);
-
       }
-      else if (parameter[2] == 'R')
+      else if (command[4] == 'R')
       {
         sprintf(reply, "%u#", (unsigned  int)MicroAxis1);
-
       }
       else
         strcpy(reply, "0");
@@ -390,15 +384,13 @@ void Command_GX()
     break;
     case 'R':
     {
-      if (parameter[2] == 'D')
+      if (command[4] == 'D')
       {
         sprintf(reply, "%u#", (unsigned  int)ReverseAxis2);
-
       }
-      else if (parameter[2] == 'R')
+      else if (command[4] == 'R')
       {
         sprintf(reply, "%u#", (unsigned  int)ReverseAxis1);
-
       }
       else
         strcpy(reply, "0");
@@ -406,15 +398,13 @@ void Command_GX()
     break;
     case 'C':
     {
-      if (parameter[2] == 'D')
+      if (command[4] == 'D')
       {
         sprintf(reply, "%u#", HighCurrAxis2);
-
       }
-      else if (parameter[2] == 'R')
+      else if (command[4] == 'R')
       {
         sprintf(reply, "%u#", HighCurrAxis1);
-
       }
       else
         strcpy(reply, "0");
@@ -422,15 +412,13 @@ void Command_GX()
     break;
     case 'c':
     {
-      if (parameter[2] == 'D')
+      if (command[4] == 'D')
       {
         sprintf(reply, "%u#", LowCurrAxis2);
-
       }
-      else if (parameter[2] == 'R')
+      else if (command[4] == 'R')
       {
         sprintf(reply, "%u#", LowCurrAxis1);
-
       }
       else
         strcpy(reply, "0");
@@ -438,14 +426,13 @@ void Command_GX()
     break;
     case 'L':
     {
-      if ((parameter[2] == 'D' || parameter[2] == 'R'))
+      if ((command[4] == 'D' || command[4] == 'R'))
       {
-        if (parameter[2] == 'D')
+        if (command[4] == 'D')
         {
-          sprintf(reply, "%d#", motorAxis2.getSG());
-  
+          sprintf(reply, "%d#", motorAxis2.getSG());  
         }
-        else if (parameter[2] == 'R')
+        else if (command[4] == 'R')
         {
           sprintf(reply, "%d#", motorAxis1.getSG());
   
@@ -459,23 +446,19 @@ void Command_GX()
     break;
     case 'I':
     {
-      if ((parameter[2] == 'D' || parameter[2] == 'R'))
+      if ((command[4] == 'D' || command[4] == 'R'))
       {
-        if (parameter[2] == 'D')
+        if (command[4] == 'D')
         {
           sprintf(reply, "%u#", motorAxis1.getCurrent());
-  
         }
-        else if (parameter[2] == 'R')
+        else if (command[4] == 'R')
         {
-          sprintf(reply, "%u#", motorAxis2.getCurrent());
-  
+          sprintf(reply, "%u#", motorAxis2.getCurrent());  
         }
-        else
-          strcpy(reply, "0");
+        else strcpy(reply, "0");
       }
-      else
-        strcpy(reply, "0");
+      else strcpy(reply, "0");
     }
     break;
     default:
@@ -661,7 +644,7 @@ void  Command_G()
   case 'R':
     //  :GR#   Get Telescope RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
-    if (parameter[0] == 'E' && parameter[1] == 'F')
+    if (command[2] == 'E' && command[3] == 'F')
     {
       reply[0] = refraction ? '1' : '0';
       reply[1] = 0;
@@ -742,12 +725,12 @@ void  Command_G()
     break;
   case 'V':
   {
-    if (parameter[1] != (char)0)
+    if (command[3] != (char)0)
     {
       strcpy(reply, "0#");
       return;
     }
-    switch (parameter[0])
+    switch (command[2])
     {
     case 'D':
       //  :GVD#   Get Firmware Date, Native LX200 command

@@ -7,8 +7,7 @@ public:
 private:
   Command m_cmdSerial = COMMAND_NONE;
   bool m_ready = false;
-  char m_command[25] = "";
-  char m_parameter[25] = "";
+  char m_command[28] = "";
   byte m_bufferPtr = 0;
   bool clearCommand()
   {
@@ -64,14 +63,7 @@ public:
           clearCommand();
           m_ready = false;
         }
-        // break up the command into a two char command and the remaining parameter
-        // the parameter can be up to 16 chars in length
-        memmove(m_parameter, (char *)&m_command[3], 17);
-
-        // the command is either one or two chars in length
-        m_command[3] = 0;
-        memmove(m_command, (char *)&m_command[1], 3);
-
+        memmove(m_command, (char *)&m_command[1], strlen(&m_command[1]));
         m_ready = true;
       }
       else
@@ -80,12 +72,11 @@ public:
       }
     }
   }
-  void getCmdPar(char* cmd, char* par, Command& pcmd)
+  void getCmdPar(char* cmd, Command& pcmd)
   {
     if (!m_ready || pcmd != COMMAND_NONE)
       return;
     strcpy(cmd, m_command);
-    strcpy(par, m_parameter);
     m_ready = false;
     clearCommand();
     pcmd = m_cmdSerial;

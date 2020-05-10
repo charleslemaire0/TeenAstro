@@ -217,8 +217,7 @@ bool abortSlew = false;
 #define BAUD 57600
 
 char reply[50];
-char command[3];
-char parameter[25];
+char command[28];
 
 // serial speed
 unsigned long   baudRate[10] =

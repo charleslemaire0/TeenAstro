@@ -14,8 +14,8 @@ void processCommands()
   S_SHC.update();
 
   process_command = COMMAND_NONE;
-  S_USB.getCmdPar(command, parameter, process_command);
-  S_SHC.getCmdPar(command, parameter, process_command);
+  S_USB.getCmdPar(command, process_command);
+  S_SHC.getCmdPar(command, process_command);
 
   if (process_command == COMMAND_NONE)
   {
