@@ -1,9 +1,5 @@
 #include "Command.h"
-// scratch-pad variables
-double          f, f1, f2, f3;
-int             i, i1, i2, i3, i4, i5;
 
-//enum Command { COMMAND_NONE, COMMAND_SERIAL, COMMAND_SERIAL1, COMMAND_ETHERNET };
 
 // process commands
 void processCommands()

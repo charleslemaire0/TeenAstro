@@ -1,4 +1,5 @@
 #pragma once
+#include "global.h"
 enum Command { COMMAND_NONE, COMMAND_SERIAL, COMMAND_SERIAL1 };
 class T_Serial
 {
@@ -89,5 +90,27 @@ public:
     }
   }
 };
+
 T_Serial S_SHC;
 T_Serial S_USB;
+
+void processCommands();
+void Command_GNSS();
+void Command_dollar();
+void Command_A();
+void Command_B();
+void Command_C();
+void Command_D();
+void Command_F();
+void Command_h();
+void Command_M();
+void Command_Q();
+void Command_R();
+void Command_T();
+void Command_U();
+void Command_W();
+void Command_G();
+void Command_GX();
+void Command_S(Command& process_command);
+void Command_SX();
+bool iSGNSSValid();

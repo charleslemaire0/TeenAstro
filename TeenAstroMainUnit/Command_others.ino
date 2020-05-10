@@ -1,3 +1,4 @@
+#include "command.h"
 
 void Command_dollar()
 {
@@ -155,6 +156,7 @@ void Command_B()
 //         Returns: "N/A#" on success, "En#" on failure where n is the error code per the :MS# command
 void Command_C()
 {
+  int i;
   if ((parkStatus == PRK_UNPARKED) &&
     !movingTo &&
     (command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))

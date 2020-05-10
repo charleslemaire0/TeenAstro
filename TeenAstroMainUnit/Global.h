@@ -325,3 +325,44 @@ bool atTargetAxis2(bool update = false)
     updateDeltaTargetAxis2();
   return abs(deltaTargetAxis2) < BreakDistAxis2;
 }
+PierSide GetPierSide()
+{
+  cli(); long pos = posAxis2; sei();
+  return -quaterRotAxis2 <= pos && pos <= quaterRotAxis2 ? PIER_EAST : PIER_WEST;
+}
+//void smartDelay(unsigned long ms);
+//bool getHorApp(double *Azm, double *Alt);
+//bool getEqu(double *HA, double *Dec, const double *cosLat, const double *sinLat, bool returnHA);
+//bool isAltAZ();
+//double GetTrackingRate();
+//void SetTrackingRate(double r);
+//
+//void updateSideral();
+//void enableGuideRate(int g, bool force);
+//void initCelestialPole();
+//void initTransformation(bool reset);
+//bool syncAzAlt(double Azm, double Alt, PierSide Side);
+//bool syncEqu(double HA, double Dec, PierSide Side, const double *cosLat, const double *sinLat);
+//byte goToHor(double *Azm, double *Alt, PierSide preferedPierSide);
+//byte goToEqu(double HA, double Dec, PierSide preferedPierSide, const double *cosLat, const double *sinLat);
+//void MoveAxis1(const byte newguideDirAxis, const Guiding Mode);
+//void StopAxis1();
+//void MoveAxis2(const byte newguideDirAxis, const Guiding Mode);
+//void StopAxis2();
+//PierSide predictSideOfPier(const double& Axis1_target, const double& Axis2_target, const PierSide& inputSide);
+//void initmotor(bool deleteAlignment);
+//void updateRatios(bool deleteAlignment);
+//
+//bool syncPolarHome();
+//void saveAlignModel();
+//void enable_Axis(bool enable);
+//byte park();
+//bool setPark();
+//void unsetPark();
+//void unpark();
+//bool syncAtPark();
+//
+//bool goHome();
+//
+//void SetAcceleration();
+//void initMaxRate();

@@ -12,11 +12,7 @@ void InstrtoStep(double AngleAxis1, double AngleAxis2, PierSide Side, long *Axis
   *Axis2 = (long)(AngleAxis2 * StepsPerDegreeAxis2);
 }
 
-PierSide GetPierSide()
-{
-  cli(); long pos = posAxis2; sei();
-  return -quaterRotAxis2 <= pos && pos <= quaterRotAxis2 ? PIER_EAST : PIER_WEST;
-}
+
 
 //--------------------------------------------------------------------------------------------------
 // GoTo, commands to move the telescope to an location or to report the current location

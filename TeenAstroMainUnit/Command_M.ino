@@ -1,7 +1,10 @@
-//   M - Telescope Movement Commands
 #include "ValueToString.h"
+#include "Command.h"
+//   M - Telescope Movement Commands
 void Command_M()
 {
+  int i;
+  double f, f1;
   switch (command[1])
   {
   case 'A':

@@ -6,6 +6,7 @@ void Command_SX()
 //  :SXnn,VVVVVV...#   Set TeenAstro value
 //          Return: 0 on failure
 //                  1 on success
+  int i;
   switch (command[2])
   {
   case '0':
@@ -417,6 +418,8 @@ void Command_SX()
 void Command_S(Command& process_command)
 {
   char* conv_end;
+  int i;
+  double f, f1;
   switch (command[1])
   {
   case '!':
@@ -506,9 +509,9 @@ void Command_S(Command& process_command)
     //                  1 on success
   {
     double longi = 0;
-    if ((command[2] == '-') || (command[2] == '+')) i1 = 1;
-    else i1 = 0;
-    if (dmsToDouble(&longi, &command[2 + i1], false, false))
+    if ((command[2] == '-') || (command[2] == '+')) i = 1;
+    else i = 0;
+    if (dmsToDouble(&longi, &command[2 + i], false, false))
     {
       if (command[2] == '-') longi = -longi;
       localSite.setLong(longi);

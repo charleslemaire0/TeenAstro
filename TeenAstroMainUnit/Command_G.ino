@@ -1,11 +1,13 @@
-//----------------------------------------------------------------------------------
-// :GXnn#   Get OnStep value
-//         Returns: value
 #include "ValueToString.h"
+#include "Command.h"
 
-//All these command are not part of the LX200 Standard.
+//----------------------------------------------------------------------------------
+// :GXnn#  Get TeenAstro value
+//         Returns: value
+//         All these command are not part of the LX200 Standard.
 void Command_GX()
 {
+  int i;
   //  :GXnn#   Get TeenAstro Specific value
   switch (command[2])
   {
@@ -257,10 +259,14 @@ void Command_GX()
       break;
     case '1':
       // :GXT1# UTC date 
+    {
+      int i1, i2, i3, i4, i5;
       rtk.getUTDate(i, i1, i2, i3, i4, i5);
       i = i % 100;
       sprintf(reply, "%02d/%02d/%02d#", i1, i2, i);
       break;
+    }
+
     case '2':
       // :GXT2# return seconds since 01/01/1970/00:00:00
       // For debug...
@@ -478,10 +484,8 @@ void Command_GX()
 void  Command_G()
 {
   double f, f1;
-  int i, i1, i2;
-  unsigned long   _coord_t = 0;
-  double          _dec = 0;
-  double          _ra = 0;
+  int i;
+
   switch (command[1])
   {
   case 'A':
@@ -510,10 +514,13 @@ void  Command_G()
     //  :GC#   Get the current date, Native LX200 command
     //         Returns: MM/DD/YY#
     //         The current local calendar date
+  {
+    int i1, i2, i3, i4, i5;
     rtk.getULDate(i2, i, i1, i3, i4, i5, localSite.toff());
     i2 = i2 % 100;
     sprintf(reply, "%02d/%02d/%02d#", i, i1, i2);
     break;
+  }
   case 'c':
     //  :Gc#   Get the current time format, Native LX200 command
     //         Returns: 24#
@@ -521,8 +528,15 @@ void  Command_G()
     strcpy(reply, "24#");
     break;
   case 'D':
+  case 'R':
     //  :GD#   Get Telescope Declination, Native LX200 command
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
+    //  :GR#   Get Telescope RA, Native LX200 command
+    //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
+  {
+    static unsigned long _coord_t = 0;
+    static double _dec = 0;
+    static double _ra = 0;
 
     if (millis() - _coord_t < 100)
     {
@@ -537,12 +551,22 @@ void  Command_G()
       _dec = f1;
       _coord_t = millis();
     }
-
-    if (!doubleToDms(reply, &f1, false, true, highPrecision))
-      strcpy(reply, "0");
+    if (command[1] == 'D')
+    {
+      if (!doubleToDms(reply, &f1, false, true, highPrecision))
+        strcpy(reply, "0");
+      else
+        strcat(reply, "#");
+    }
     else
-      strcat(reply, "#");
+    {
+      if (!doubleToHms(reply, &f, highPrecision))
+        strcpy(reply, "0");
+      else
+        strcat(reply, "#");
+    }
     break;
+  }
   case 'd':
     //  :Gd#   Get Currently Selected Target Declination, Native LX200 command
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
@@ -640,36 +664,6 @@ void  Command_G()
     //         Returns: DD*#
     //         The highest elevation above the horizon that the telescope will goto
     sprintf(reply, "%02d*#", maxAlt);
-    break;
-  case 'R':
-    //  :GR#   Get Telescope RA, Native LX200 command
-    //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
-    if (command[2] == 'E' && command[3] == 'F')
-    {
-      reply[0] = refraction ? '1' : '0';
-      reply[1] = 0;
-    }
-    else
-    {
-      if (millis() - _coord_t < 100)
-      {
-        f = _ra;
-        f1 = _dec;
-      }
-      else
-      {
-        getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
-        f /= 15.0;
-        _ra = f;
-        _dec = f1;
-        _coord_t = millis();
-      }
-
-      if (!doubleToHms(reply, &f, highPrecision))
-        strcpy(reply, "0");
-      else
-        strcat(reply, "#");
-    }
     break;
   case 'r':
     //  :Gr#   Get current/target object RA, Native LX200 command
