@@ -344,7 +344,7 @@ void Command_GX()
     {
       if (command[4] == 'D')
       {
-        //sprintf(reply, "%u#", GearAxis2);
+        sprintf(reply, "%u#", GearAxis2);
       }
       else if (command[4] == 'R')
       {
