@@ -65,6 +65,7 @@ public:
           m_ready = false;
         }
         memmove(m_command, (char *)&m_command[1], strlen(&m_command[1]));
+        m_command[strlen(m_command) - 1] = 0;
         m_ready = true;
       }
       else
