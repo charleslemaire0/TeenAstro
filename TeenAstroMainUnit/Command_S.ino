@@ -3,7 +3,7 @@
 //   S - Telescope Set Commands
 void Command_SX()
 {
-//  :SXnn,VVVVVV...#   Set TeenAstro value
+//  :SXnnn,VVVVVV...#   Set TeenAstro value
 //          Return: 0 on failure
 //                  1 on success
   int i;
@@ -41,6 +41,7 @@ void Command_SX()
       DegreesForAcceleration = min(max(0.1*(double)strtol(&command[5], NULL, 10), 0.1), 25.0);
       XEEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
       SetAcceleration();
+      strcpy(reply, "1");
       break;
     case 'D':
     {
@@ -48,12 +49,13 @@ void Command_SX()
       int val = strtol(&command[5], NULL, 10);
       val = val > 4 || val < 0 ? 3 : val;
       XEEPROM.write(EE_DefaultRate, val);
+      strcpy(reply, "1");
+      break;
     }
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-      // :SXRn# Set Rate for user defined rates
+    case '0': // :SXR0,VVV# Set Rate for user defined rates
+    case '1': // :SXR1,VVV# Set Rate for user defined rates
+    case '2': // :SXR2,VVV# Set Rate for user defined rates
+    case '3': // :SXR3,VVV# Set Rate for user defined rates
       if (GuidingState == GuidingOFF)
       {
         i = command[3] - '0';
@@ -71,7 +73,7 @@ void Command_SX()
       else strcpy(reply, "0");
       break;
     case 'X':
-      // :SXRX# Set Rate for max Rate
+      // :SXRX,VVVV# Set Rate for max Rate
       XEEPROM.writeInt(EE_maxRate, (int)strtol(&command[5], NULL, 10));
       initMaxRate();
       strcpy(reply, "1");
@@ -85,7 +87,7 @@ void Command_SX()
     switch (command[3])
     {
     case 'E':
-      // :SXLE# set user defined Meridian East Limit
+      // :SXLE,VV.V# set user defined Meridian East Limit
       minutesPastMeridianGOTOE = (double)strtol(&command[5], NULL, 10);
       if (minutesPastMeridianGOTOE > 180) minutesPastMeridianGOTOE = 180;
       if (minutesPastMeridianGOTOE < -180) minutesPastMeridianGOTOE = -180;
@@ -93,7 +95,7 @@ void Command_SX()
       strcpy(reply, "1");
       break;
     case 'W':
-      // :SXLW# set user defined Meridian West Limit
+      // :SXLW,VV.V# set user defined Meridian West Limit
       minutesPastMeridianGOTOW = (double)strtol(&command[5], NULL, 10);
       if (minutesPastMeridianGOTOW > 180) minutesPastMeridianGOTOW = 180;
       if (minutesPastMeridianGOTOW < -180) minutesPastMeridianGOTOW = -180;
@@ -101,7 +103,7 @@ void Command_SX()
       strcpy(reply, "1");
       break;
     case 'U':
-      // :SXLU# set user defined Under Pole Limit
+      // :SXLU,VV# set user defined Under Pole Limit
       underPoleLimitGOTO = (double)strtol(&command[5], NULL, 10) / 10;
       if (underPoleLimitGOTO > 12) underPoleLimitGOTO = 12;
       if (underPoleLimitGOTO < 9) underPoleLimitGOTO = 9;
@@ -109,7 +111,7 @@ void Command_SX()
       strcpy(reply, "1");
       break;
     case 'H':
-      // :GXLH# set user defined horizon Limit
+      // :GXLH,VV# set user defined horizon Limit
       // NB: duplicate with :Sh#
       if ((atoi2(&command[5], &i)) && ((i >= -30) && (i <= 30)))
       {
