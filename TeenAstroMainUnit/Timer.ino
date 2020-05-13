@@ -74,8 +74,8 @@ ISR(TIMER1_COMPA_vect)
 {
   static volatile bool   wasInbacklashAxis1   = false;
   static volatile bool   wasInbacklashAxis2   = false;
-  static volatile double guideA1.timerRateA = 0;
-  static volatile double guideA2.timerRateA = 0;
+  static volatile double guideTimerRateAxisA1 = 0;
+  static volatile double guideTimerRateAxisA2 = 0;
   static volatile double runtimerRateAxis1    = 0;
   static volatile double runTimerRateAxis2    = 0;
   // run 1/3 of the time at 3x the rate, unless a goto is happening
@@ -94,7 +94,7 @@ ISR(TIMER1_COMPA_vect)
       if (!backlashA1.correcting  && guideA1.dir)
       {
         if ((fabs(guideA1.timerRate) < maxguideTimerRate) &&
-          (fabs(guideA1.timerRateA) < maxguideTimerRate))
+          (fabs(guideTimerRateAxisA1) < maxguideTimerRate))
         {
           // break mode
           if (guideA1.dir == 'b')
@@ -107,15 +107,15 @@ ISR(TIMER1_COMPA_vect)
           }
 
           // slow speed guiding, no acceleration
-          guideA1.timerRateA = guideA1.timerRate;
+          guideTimerRateAxisA1 = guideA1.timerRate;
         }
         else
         {
           // use acceleration
           DecayModeGoto();
           double z = getRate(sqrt(fabs(x) * 2 * AccAxis1));
-          guideA1.timerRateA = 3600.0 / (geoA1.stepsPerDegree * z / 1000000.0);
-          if (guideA1.timerRateA < maxguideTimerRate) guideA1.timerRateA = maxguideTimerRate;
+          guideTimerRateAxisA1 = 3600.0 / (geoA1.stepsPerDegree * z / 1000000.0);
+          if (guideTimerRateAxisA1 < maxguideTimerRate) guideTimerRateAxisA1 = maxguideTimerRate;
         }
 
         // stop guiding
@@ -125,14 +125,14 @@ ISR(TIMER1_COMPA_vect)
           {
             guideA1.dir = 0;
             guideA1.timerRate = 0;
-            guideA1.timerRateA = 0;
+            guideTimerRateAxisA1 = 0;
             if (atTargetAxis2())
               DecayModeTracking();
           }
         }
       }
       double timerRateAxis1A = trackingTimerRateAxis1;
-      double timerRateAxis1B = fabs(guideA1.timerRateA + timerRateAxis1A);
+      double timerRateAxis1B = fabs(guideTimerRateAxisA1 + timerRateAxis1A);
       double calculatedTimerRateAxis1;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
       if (timerRateAxis1B > 0.1)
@@ -158,7 +158,7 @@ ISR(TIMER1_COMPA_vect)
       if (!backlashA2.correcting  && guideA2.dir)
       {
         if ((fabs(guideA2.timerRate) < maxguideTimerRate) &&
-          (fabs(guideA2.timerRateA) < maxguideTimerRate))
+          (fabs(guideTimerRateAxisA2) < maxguideTimerRate))
         {
           // break mode
           if (guideA2.dir == 'b')
@@ -171,15 +171,15 @@ ISR(TIMER1_COMPA_vect)
           }
 
           // slow speed guiding, no acceleration
-          guideA2.timerRateA = guideA2.timerRate;
+          guideTimerRateAxisA2 = guideA2.timerRate;
         }
         else
         {
           // use acceleration
           DecayModeGoto();
           double z = getRate(sqrt(fabs(x) * 2 * AccAxis2));
-          guideA2.timerRateA = 3600.0 / (geoA2.stepsPerDegree * z / 1000000.0) ;
-          if (guideA2.timerRateA < maxguideTimerRate) guideA2.timerRateA = maxguideTimerRate;
+          guideTimerRateAxisA2 = 3600.0 / (geoA2.stepsPerDegree * z / 1000000.0) ;
+          if (guideTimerRateAxisA2 < maxguideTimerRate) guideTimerRateAxisA2 = maxguideTimerRate;
         }
 
         // stop guiding
@@ -189,14 +189,14 @@ ISR(TIMER1_COMPA_vect)
           {
             guideA2.dir = 0;
             guideA2.timerRate = 0;
-            guideA2.timerRateA = 0;
+            guideTimerRateAxisA2 = 0;
             if (atTargetAxis1())
               DecayModeTracking();
           }
         }
       }
       double timerRateAxis2A = trackingTimerRateAxis2;
-      double timerRateAxis2B = fabs(guideA2.timerRateA + timerRateAxis2A);
+      double timerRateAxis2B = fabs(guideTimerRateAxisA2 + timerRateAxis2A);
       double calculatedTimerRateAxis2;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
      // calculatedTimerRateAxis2 = (double)SiderealRate / timerRateAxis2B;
