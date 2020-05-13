@@ -91,7 +91,7 @@ ISR(TIMER1_COMPA_vect)
 
       double  x = deltaTargetAxis1;
 
-      if (!inbacklashAxis1 && guideDirAxis1)
+      if (!bl_Axis1.correcting  && guideDirAxis1)
       {
         if ((fabs(guideTimerRateAxis1) < maxguideTimerRate) &&
           (fabs(guideTimerRateAxis1A) < maxguideTimerRate))
@@ -155,7 +155,7 @@ ISR(TIMER1_COMPA_vect)
 
       double x = abs(deltaTargetAxis2);
 
-      if (!inbacklashAxis2 && guideDirAxis2)
+      if (!bl_Axis2.correcting  && guideDirAxis2)
       {
         if ((fabs(guideTimerRateAxis2) < maxguideTimerRate) &&
           (fabs(guideTimerRateAxis2A) < maxguideTimerRate))
@@ -226,14 +226,14 @@ ISR(TIMER1_COMPA_vect)
   thisTimerRateAxis2 = timerRateAxis2;
 
   // override rate during backlash compensation
-  if (inbacklashAxis1)
+  if (bl_Axis1.correcting)
   {
     thisTimerRateAxis1 = timerRateBacklashAxis1;
     wasInbacklashAxis1 = true;
   }
 
   // override rate during backlash compensation
-  if (inbacklashAxis2)
+  if (bl_Axis2.correcting)
   {
     thisTimerRateAxis2 = timerRateBacklashAxis2;
     wasInbacklashAxis2 = true;
@@ -242,7 +242,7 @@ ISR(TIMER1_COMPA_vect)
   {
     // travel through the backlash is done, but we weren't following the target while it was happening!
     // so now get us back to near where we need to be
-    if (!inbacklashAxis1 && wasInbacklashAxis1 && !guideDirAxis1)
+    if (!bl_Axis1.correcting  && wasInbacklashAxis1 && !guideDirAxis1)
     {
       cli();
       if (!atTargetAxis1(true))
@@ -251,7 +251,7 @@ ISR(TIMER1_COMPA_vect)
         wasInbacklashAxis1 = false;
       sei();
     }
-    if (!inbacklashAxis2 && wasInbacklashAxis2 && !guideDirAxis2)
+    if (!bl_Axis2.correcting  && wasInbacklashAxis2 && !guideDirAxis2)
     {
       cli();
       if (!atTargetAxis2(true))
@@ -282,7 +282,7 @@ ISR(TIMER3_COMPA_vect)
   {
     takeStepAxis1 = false;
     updateDeltaTargetAxis1();
-    if (deltaTargetAxis1 != 0 || inbacklashAxis1)
+    if (deltaTargetAxis1 != 0 || bl_Axis1.correcting)
     {                       
       // Move the RA stepper to the target
       dirAxis1 = 0 < deltaTargetAxis1;
@@ -305,27 +305,27 @@ ISR(TIMER3_COMPA_vect)
       // telescope moves WEST with the sky, blAxis1 is the amount of EAST backlash
       if (dirAxis1)
       {
-        if (blAxis1 < StepsBacklashAxis1)
+        if (bl_Axis1.movedSteps < bl_Axis1.inSteps)
         {
-          blAxis1 += stepAxis1;
-          inbacklashAxis1 = true;
+          bl_Axis1.movedSteps += stepAxis1;
+          bl_Axis1.correcting = true;
         }
         else
         {
-          inbacklashAxis1 = false;
+          bl_Axis1.correcting = false;
           posAxis1 += stepAxis1;
         }
       }
       else
       {
-        if (blAxis1 > 0)
+        if (bl_Axis1.movedSteps > 0)
         {
-          blAxis1 -= stepAxis1;
-          inbacklashAxis1 = true;
+          bl_Axis1.movedSteps -= stepAxis1;
+          bl_Axis1.correcting = true;
         }
         else
         {
-          inbacklashAxis1 = false;
+          bl_Axis1.correcting = false;
           posAxis1 -= stepAxis1;
         }
       }
@@ -354,7 +354,7 @@ ISR(TIMER4_COMPA_vect)
   {
     takeStepAxis2 = false;
     updateDeltaTargetAxis2();
-    if (deltaTargetAxis2 != 0 || inbacklashAxis2)
+    if (deltaTargetAxis2 != 0 || bl_Axis2.correcting)
     {                       
       // move the Dec stepper to the target
       // telescope normally starts on the EAST side of the pier looking at the WEST sky
@@ -378,27 +378,27 @@ ISR(TIMER4_COMPA_vect)
       // telescope moving toward celestial pole in the sky, blAxis2 is the amount of opposite backlash
       if (dirAxis2)
       {
-        if (blAxis2 < StepsBacklashAxis2)
+        if (bl_Axis2.movedSteps < bl_Axis2.inSteps)
         {
-          blAxis2 += stepAxis2;
-          inbacklashAxis2 = true;
+          bl_Axis2.movedSteps += stepAxis2;
+          bl_Axis2.correcting = true;
         }
         else
         {
-          inbacklashAxis2 = false;
+          bl_Axis2.correcting = false;
           posAxis2 += stepAxis2;
         }
       }
       else
       {
-        if (blAxis2 > 0)
+        if (bl_Axis2.movedSteps > 0)
         {
-          blAxis2 -= stepAxis2;
-          inbacklashAxis2 = true;
+          bl_Axis2.movedSteps -= stepAxis2;
+          bl_Axis2.correcting = true;
         }
         else
         {
-          inbacklashAxis2 = false;
+          bl_Axis2.correcting = false;
           posAxis2 -= stepAxis2;
         }
       }

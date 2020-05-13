@@ -29,7 +29,7 @@ void Guide()
     {
       if (guideDurationAxis1 > 0 || GuidingState == GuidingRecenter || GuidingState == GuidingST4)
       {
-        if (!inbacklashAxis1)
+        if (!bl_Axis1.correcting)
         {
           bool rev = guideDirAxis1 == 'e';
           cli();
@@ -63,7 +63,7 @@ void Guide()
     {
       if (guideDurationAxis2 > 0 || GuidingState == GuidingRecenter || GuidingState == GuidingST4)
       {
-        if (!inbacklashAxis2)
+        if (!bl_Axis2.correcting)
         {
           bool rev = false;
           if (guideDirAxis2 == 's')

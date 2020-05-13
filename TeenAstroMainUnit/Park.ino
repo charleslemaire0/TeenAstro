@@ -67,7 +67,7 @@ void saveAlignModel()
 bool parkClearBacklash()
 {
   // backlash takeup rate
-  if (StepsBacklashAxis1 == 0 && StepsBacklashAxis2 == 0)
+  if (bl_Axis1.inSteps == 0 && bl_Axis2.inSteps == 0)
   {
     return true;
   }
@@ -80,30 +80,30 @@ bool parkClearBacklash()
 
   // figure out how long we'll have to wait for the backlash to clear (+50%)
   long    t;
-  if (StepsBacklashAxis1 > StepsBacklashAxis2)
-    t = (long)(StepsBacklashAxis1 * 1500 / StepsPerSecondAxis1);
+  if (bl_Axis1.inSteps > bl_Axis2.inSteps)
+    t = (long)(bl_Axis1.inSteps * 1500 / StepsPerSecondAxis1);
   else
-    t = (long)(StepsBacklashAxis2 * 1500 / StepsPerSecondAxis2);
+    t = (long)(bl_Axis2.inSteps * 1500 / StepsPerSecondAxis2);
   t = (t / BacklashTakeupRate + 250) / 12;
 
   // start by moving fully into the backlash
   cli();
-  targetAxis1 += StepsBacklashAxis1;
-  targetAxis2 += StepsBacklashAxis2;
+  targetAxis1 += bl_Axis1.inSteps;
+  targetAxis2 += bl_Axis2.inSteps;
   sei();
 
   // wait until done or timed out
   for (int i = 0; i < 12; i++)
   {
-    if (blAxis1 != StepsBacklashAxis1 || posAxis1 != targetAxis1 ||
-        blAxis2 != StepsBacklashAxis2 || posAxis2 != targetAxis2)
+    if (bl_Axis1.movedSteps != bl_Axis1.inSteps || posAxis1 != targetAxis1 ||
+        bl_Axis2.movedSteps != bl_Axis2.inSteps || posAxis2 != targetAxis2)
       delay(t);
   }
 
   // then reverse direction and take it all up
   cli();
-  targetAxis1-= StepsBacklashAxis1;
-  targetAxis2-= StepsBacklashAxis2;
+  targetAxis1-= bl_Axis1.inSteps;
+  targetAxis2-= bl_Axis2.inSteps;
   sei();
 
 
@@ -111,8 +111,8 @@ bool parkClearBacklash()
   for (int i = 0; i < 24; i++)
   {
     updateDeltaTarget();
-    if ((blAxis1 != 0) || (deltaTargetAxis1 != 0) ||
-      (blAxis2 != 0) || (deltaTargetAxis2 != 0))
+    if ((bl_Axis1.movedSteps != 0) || (deltaTargetAxis1 != 0) ||
+      (bl_Axis2.movedSteps != 0) || (deltaTargetAxis2 != 0))
       delay(t);
   }
 
@@ -124,7 +124,7 @@ bool parkClearBacklash()
   sei();
 
   // return true on success
-  if ((blAxis1 != 0) || (blAxis2 != 0))
+  if ((bl_Axis1.movedSteps != 0) || (bl_Axis2.movedSteps != 0))
     return false;
   else
     return true;

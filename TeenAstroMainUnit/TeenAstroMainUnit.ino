@@ -239,11 +239,11 @@ void loop()
     if (sideralTracking)
     {
       cli();
-      if (!inbacklashAxis1)
+      if (!bl_Axis1.correcting)
       {
         targetAxis1 += fstepAxis1;
       }
-      if (!inbacklashAxis2)
+      if (!bl_Axis2.correcting)
       {
         targetAxis2 += fstepAxis2;
       }
@@ -605,8 +605,8 @@ void initmotor(bool deleteAlignment)
 
 void readEEPROMmotor()
 {
-  backlashAxis1 = XEEPROM.readInt(EE_backlashAxis1);
-  blAxis1 = 0;
+  bl_Axis1.inSeconds = XEEPROM.readInt(EE_backlashAxis1);
+  bl_Axis1.movedSteps = 0;
   GearAxis1 = XEEPROM.readInt(EE_GearAxis1);
   StepRotAxis1 = XEEPROM.readInt(EE_StepRotAxis1);
   MicroAxis1 = XEEPROM.read(EE_MicroAxis1);
@@ -615,8 +615,8 @@ void readEEPROMmotor()
   LowCurrAxis1 = XEEPROM.read(EE_LowCurrAxis1);
   HighCurrAxis1 = XEEPROM.read(EE_HighCurrAxis1);
 
-  backlashAxis2 = XEEPROM.readInt(EE_backlashAxis2);
-  blAxis2 = 0;
+  bl_Axis2.inSeconds = XEEPROM.readInt(EE_backlashAxis2);
+  bl_Axis2.movedSteps = 0;
   GearAxis2 = XEEPROM.readInt(EE_GearAxis2);
   StepRotAxis2 = XEEPROM.readInt(EE_StepRotAxis2);
   MicroAxis2 = XEEPROM.read(EE_MicroAxis2);
@@ -653,9 +653,9 @@ void updateRatios(bool deleteAlignment)
   StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerRotAxis2 = (long)GearAxis2 * StepRotAxis2 * (int)pow(2, MicroAxis2); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerDegreeAxis1 = (double)StepsPerRotAxis1 / 360.0;
-  StepsBacklashAxis1 = (int)round(((double)backlashAxis1 * 3600.0) / (double)StepsPerDegreeAxis1);
+  bl_Axis1.inSteps = (int)round(((double)bl_Axis1.inSeconds * 3600.0) / (double)StepsPerDegreeAxis1);
   StepsPerDegreeAxis2 = (double)StepsPerRotAxis2 / 360.0;
-  StepsBacklashAxis2 = (int)round(((double)backlashAxis2 * 3600.0) / (double)StepsPerDegreeAxis2);
+  bl_Axis2.inSteps = (int)round(((double)bl_Axis2.inSeconds * 3600.0) / (double)StepsPerDegreeAxis2);
 
   StepsPerSecondAxis1 = StepsPerDegreeAxis1 / 240.0;
   StepsPerSecondAxis2 = StepsPerDegreeAxis2 / 240.0;

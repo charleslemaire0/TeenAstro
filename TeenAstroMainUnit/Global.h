@@ -53,11 +53,9 @@ double                  DegreesForAcceleration = 3;
 //Timers
 volatile double         timerRateAxis1 = 0;
 volatile double         timerRateBacklashAxis1 = 0;
-volatile bool           inbacklashAxis1 = false;
 bool                    faultAxis1 = false;
 volatile double         timerRateAxis2 = 0;
 volatile double         timerRateBacklashAxis2 = 0;
-volatile bool           inbacklashAxis2 = false;
 bool                    faultAxis2 = false;
 
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -91,12 +89,15 @@ volatile double         guideTimerRateAxis1 = 0.0;
 volatile double         guideTimerRateAxis2 = 0.0;
 
 // backlash control
-int backlashAxis1 = 0;
-int backlashAxis2 = 0;
-volatile int    StepsBacklashAxis1 = 0;
-volatile int    StepsBacklashAxis2 = 0;
-volatile int    blAxis1 = 0;
-volatile int    blAxis2 = 0;
+struct backlash
+{
+  int inSeconds;
+  volatile int inSteps;
+  volatile bool correcting;
+  volatile int movedSteps;
+};
+backlash bl_Axis1 = { 0,0,0 };
+backlash bl_Axis2 = { 0,0,0 };
 
 
 //geometry Axis1
