@@ -514,9 +514,9 @@ void initmount()
   fstepAxis1 = 0;
   fstepAxis2 = 0;
 
-  targetAxis1 = quaterRotAxis1;
-  targetAxis2 = quaterRotAxis2;
-  fstepAxis1 = StepsPerSecondAxis1 / 100.0;
+  targetAxis1 = GA1.quaterRot;
+  targetAxis2 = GA2.quaterRot;
+  fstepAxis1 = GA1.stepsPerSecond / 100.0;
   refraction = XEEPROM.read(EE_refraction);
   // Tracking and rate control
   correct_tracking = XEEPROM.read(EE_corr_track);
@@ -580,17 +580,17 @@ void initCelestialPole()
 {
   if (isAltAZ())
   {
-    poleStepAxis1 = (*localSite.latitude() < 0) ? halfRotAxis1 : 0L;
-    poleStepAxis2 = quaterRotAxis2;
-    homeStepAxis1 = poleStepAxis1;
-    homeStepAxis2 = 0;
+    GA1.poleDef = (*localSite.latitude() < 0) ? GA1.halfRot : 0L;
+    GA2.poleDef = GA2.quaterRot;
+    GA1.homeDef = GA1.poleDef;
+    GA2.homeDef = 0;
   }
   else
   {
-    poleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
-    poleStepAxis2 = (*localSite.latitude() < 0) ? -quaterRotAxis2 : quaterRotAxis2;
-    homeStepAxis1 = poleStepAxis1;
-    homeStepAxis2 = poleStepAxis2;
+    GA1.poleDef = mountType == MOUNT_TYPE_GEM ? GA1.quaterRot : 0L;
+    GA2.poleDef = (*localSite.latitude() < 0) ? -GA2.quaterRot : GA2.quaterRot;
+    GA1.homeDef = GA1.poleDef;
+    GA2.homeDef = GA2.poleDef;
   }
   HADir = *localSite.latitude() > 0 ? HADirNCPInit : HADirSCPInit;
 }
@@ -650,26 +650,26 @@ void writeDefaultEEPROMmotor()
 void updateRatios(bool deleteAlignment)
 {
   cli();
-  StepsPerRotAxis1 = (long)MA1.gear * MA1.stepRot * (int)pow(2, MA1.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-  StepsPerRotAxis2 = (long)MA2.gear * MA2.stepRot * (int)pow(2, MA2.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-  StepsPerDegreeAxis1 = (double)StepsPerRotAxis1 / 360.0;
-  bl_Axis1.inSteps = (int)round(((double)bl_Axis1.inSeconds * 3600.0) / (double)StepsPerDegreeAxis1);
-  StepsPerDegreeAxis2 = (double)StepsPerRotAxis2 / 360.0;
-  bl_Axis2.inSteps = (int)round(((double)bl_Axis2.inSeconds * 3600.0) / (double)StepsPerDegreeAxis2);
+  GA1.stepsPerRot = (long)MA1.gear * MA1.stepRot * (int)pow(2, MA1.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+  GA2.stepsPerRot = (long)MA2.gear * MA2.stepRot * (int)pow(2, MA2.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+  GA1.stepsPerDegree = (double)GA1.stepsPerRot / 360.0;
+  bl_Axis1.inSteps = (int)round(((double)bl_Axis1.inSeconds * 3600.0) / (double)GA1.stepsPerDegree);
+  GA2.stepsPerDegree = (double)GA2.stepsPerRot / 360.0;
+  bl_Axis2.inSteps = (int)round(((double)bl_Axis2.inSeconds * 3600.0) / (double)GA2.stepsPerDegree);
 
-  StepsPerSecondAxis1 = StepsPerDegreeAxis1 / 240.0;
-  StepsPerSecondAxis2 = StepsPerDegreeAxis2 / 240.0;
+  GA1.stepsPerSecond = GA1.stepsPerDegree / 240.0;
+  GA2.stepsPerSecond = GA2.stepsPerDegree / 240.0;
   
-  timerRateRatio = StepsPerSecondAxis1 / StepsPerSecondAxis2;
+  timerRateRatio = GA1.stepsPerSecond / GA2.stepsPerSecond;
   sei();
 
-  BreakDistAxis1 = max(2, StepsPerDegreeAxis1/3600*0.2);
-  BreakDistAxis2 = max(2, StepsPerDegreeAxis2/3600*0.2);
+  BreakDistAxis1 = max(2, GA1.stepsPerDegree/3600*0.2);
+  BreakDistAxis2 = max(2, GA2.stepsPerDegree/3600*0.2);
 
-  halfRotAxis1 = StepsPerRotAxis1 / 2L;
-  quaterRotAxis1 = StepsPerRotAxis1 / 4L;
-  halfRotAxis2 = StepsPerRotAxis2 / 2L;
-  quaterRotAxis2 = StepsPerRotAxis2 / 4L;
+  GA1.halfRot = GA1.stepsPerRot / 2L;
+  GA1.quaterRot = GA1.stepsPerRot / 4L;
+  GA2.halfRot = GA2.stepsPerRot / 2L;
+  GA2.quaterRot = GA2.stepsPerRot / 4L;
 
   initCelestialPole();
   initTransformation(deleteAlignment);
@@ -681,7 +681,7 @@ void updateSideral()
 {
   // 16MHZ clocks for steps per second of sidereal tracking
   cli();
-  SiderealRate = siderealInterval / StepsPerSecondAxis1;
+  SiderealRate = siderealInterval / GA1.stepsPerSecond;
   TakeupRate = SiderealRate / 4L;
   sei();
   timerRateAxis1 = SiderealRate;

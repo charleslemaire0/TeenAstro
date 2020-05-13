@@ -11,8 +11,8 @@ void SetDeltaTrackingRate()
   trackingTimerRateAxis1 = az_deltaAxis1 / 15.;
   trackingTimerRateAxis2 = az_deltaAxis2 / 15.;
 
-  fstepAxis1 = StepsPerSecondAxis1 * trackingTimerRateAxis1 / 100.0;
-  fstepAxis2 = StepsPerSecondAxis2 * trackingTimerRateAxis2 / 100.0;
+  fstepAxis1 = GA1.stepsPerSecond * trackingTimerRateAxis1 / 100.0;
+  fstepAxis2 = GA2.stepsPerSecond * trackingTimerRateAxis2 / 100.0;
 }
 
 void SetTrackingRate(double r)
@@ -85,12 +85,12 @@ bool do_compensation_calc()
   case 120:
     // we have both -0.5hr and +0.5hr values // calculate tracking rate deltas'
                // handle coordinate wrap
-    if ((axis1_after < -halfRotAxis1) && (axis1_before > halfRotAxis1)) axis1_after += 2 * halfRotAxis1;
-    if ((axis1_before < -halfRotAxis1) && (axis1_after > halfRotAxis1)) axis1_after += 2 * halfRotAxis1;
+    if ((axis1_after < -GA1.halfRot) && (axis1_before > GA1.halfRot)) axis1_after += 2 * GA1.halfRot;
+    if ((axis1_before < -GA1.halfRot) && (axis1_after > GA1.halfRot)) axis1_after += 2 * GA1.halfRot;
     // set rates
 
-    az_deltaAxis1 = (distStepAxis1(&axis1_before, &axis1_after) / StepsPerDegreeAxis1 * (15. / (AltAzTrackingRange / 60.)) / 2.) * az_deltaRateScale;
-    az_deltaAxis2 = (distStepAxis2(&axis2_before, &axis2_after) / StepsPerDegreeAxis2 * (15. / (AltAzTrackingRange / 60.)) / 2.) * az_deltaRateScale;
+    az_deltaAxis1 = (distStepAxis1(&axis1_before, &axis1_after) / GA1.stepsPerDegree * (15. / (AltAzTrackingRange / 60.)) / 2.) * az_deltaRateScale;
+    az_deltaAxis2 = (distStepAxis2(&axis2_before, &axis2_after) / GA2.stepsPerDegree * (15. / (AltAzTrackingRange / 60.)) / 2.) * az_deltaRateScale;
     // override for special case of near a celestial pole
     //if (90.0 - fabs(Dec_now) <= 0.5)
     //{
@@ -120,7 +120,7 @@ void initMaxRate()
 double SetRates(double maxslewrate)
 {
   // set the new acceleration rate
-  double stpdg = min(StepsPerDegreeAxis1, StepsPerDegreeAxis2);
+  double stpdg = min(GA1.stepsPerDegree, GA2.stepsPerDegree);
   double fact = 3600. / 15. * 1. / (stpdg * 1. / 16. / 1000000.);
   maxRate = max(fact / maxslewrate, (MaxRate / 2L) * 16L);
   maxslewrate = fact / maxRate;
@@ -139,8 +139,8 @@ void SetAcceleration()
 {
   double Vmax = getV(maxRate);
   cli();
-  AccAxis1 = Vmax / (2. * DegreesForAcceleration * StepsPerDegreeAxis1)*Vmax;
-  AccAxis2 = Vmax / (2. * DegreesForAcceleration * StepsPerDegreeAxis2)*Vmax;
+  AccAxis1 = Vmax / (2. * DegreesForAcceleration * GA1.stepsPerDegree)*Vmax;
+  AccAxis2 = Vmax / (2. * DegreesForAcceleration * GA2.stepsPerDegree)*Vmax;
   sei();
 }
 
@@ -159,8 +159,8 @@ void enableGuideRate(int g, bool force)
   guideTimerBaseRate = guideRates[g];
 
   cli();
-  amountGuideAxis1 = guideTimerBaseRate * StepsPerSecondAxis1 / 100.0;
-  amountGuideAxis2 = guideTimerBaseRate * StepsPerSecondAxis2 / 100.0;
+  amountGuideAxis1 = guideTimerBaseRate * GA1.stepsPerSecond / 100.0;
+  amountGuideAxis2 = guideTimerBaseRate * GA2.stepsPerSecond / 100.0;
   sei();
 }
 
@@ -170,8 +170,8 @@ void enableST4GuideRate()
   {
     guideTimerBaseRate = guideRates[0];
     cli();
-    amountGuideAxis1 = guideTimerBaseRate * StepsPerSecondAxis1 / 100.0;
-    amountGuideAxis2 = guideTimerBaseRate * StepsPerSecondAxis2 / 100.0;
+    amountGuideAxis1 = guideTimerBaseRate * GA1.stepsPerSecond / 100.0;
+    amountGuideAxis2 = guideTimerBaseRate * GA2.stepsPerSecond / 100.0;
     sei();
   }
 }
@@ -184,7 +184,7 @@ void resetGuideRate()
 void enableRateAxis1(double vRate)
 {
   cli();
-  amountGuideAxis1 = (abs(vRate) * StepsPerSecondAxis1) / 100.0;
+  amountGuideAxis1 = (abs(vRate) * GA1.stepsPerSecond) / 100.0;
   guideTimerRateAxis1 = vRate;
   sei();
 }
@@ -192,7 +192,7 @@ void enableRateAxis1(double vRate)
 void enableRateAxis2(double vRate)
 {
   cli();
-  amountGuideAxis2 = (abs(vRate) * StepsPerSecondAxis2) / 100.0;
+  amountGuideAxis2 = (abs(vRate) * GA2.stepsPerSecond) / 100.0;
   guideTimerRateAxis2 = vRate;
   sei();
 }

@@ -60,8 +60,8 @@ void Command_A()
     }
 
     cli();
-    double Axis1 = posAxis1 / StepsPerDegreeAxis1;
-    double Axis2 = posAxis2 / StepsPerDegreeAxis2;
+    double Axis1 = posAxis1 / GA1.stepsPerDegree;
+    double Axis2 = posAxis2 / GA2.stepsPerDegree;
     sei();
 
     alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
@@ -90,8 +90,8 @@ void Command_A()
       syncAzAlt(Azm, Alt, GetPierSide());
     }
     cli();
-    double Axis1 = posAxis1 / StepsPerDegreeAxis1;
-    double Axis2 = posAxis2 / StepsPerDegreeAxis2;
+    double Axis1 = posAxis1 / GA1.stepsPerDegree;
+    double Axis2 = posAxis2 / GA2.stepsPerDegree;
     sei();
     alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
     if (alignment.isReady())

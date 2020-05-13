@@ -81,9 +81,9 @@ bool parkClearBacklash()
   // figure out how long we'll have to wait for the backlash to clear (+50%)
   long    t;
   if (bl_Axis1.inSteps > bl_Axis2.inSteps)
-    t = (long)(bl_Axis1.inSteps * 1500 / StepsPerSecondAxis1);
+    t = (long)(bl_Axis1.inSteps * 1500 / GA1.stepsPerSecond);
   else
-    t = (long)(bl_Axis2.inSteps * 1500 / StepsPerSecondAxis2);
+    t = (long)(bl_Axis2.inSteps * 1500 / GA2.stepsPerSecond);
   t = (t / BacklashTakeupRate + 250) / 12;
 
   // start by moving fully into the backlash

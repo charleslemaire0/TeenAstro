@@ -100,24 +100,20 @@ backlash bl_Axis1 = { 0,0,0 };
 backlash bl_Axis2 = { 0,0,0 };
 
 
-//geometry Axis1
-long StepsPerRotAxis1; // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-double StepsPerDegreeAxis1;
-double StepsPerSecondAxis1;
-long halfRotAxis1;
-long quaterRotAxis1;
-long poleStepAxis1;
-long homeStepAxis1;
-
-
-//geometry Axis2
-long StepsPerRotAxis2; // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-double StepsPerDegreeAxis2;
-double StepsPerSecondAxis2;
-long halfRotAxis2;
-long quaterRotAxis2;
-long poleStepAxis2;
-long homeStepAxis2;
+//geometry Axis
+class GeoAxis
+{
+public:
+  long   stepsPerRot; // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+  double stepsPerDegree;
+  double stepsPerSecond;
+  long   halfRot;   //in steps
+  long   quaterRot; //in steps
+  long   poleDef;   //in steps
+  long   homeDef;   //in steps
+};
+GeoAxis GA1;
+GeoAxis GA2;
 
 volatile double         timerRateRatio;
 
@@ -328,7 +324,7 @@ bool atTargetAxis2(bool update = false)
 PierSide GetPierSide()
 {
   cli(); long pos = posAxis2; sei();
-  return -quaterRotAxis2 <= pos && pos <= quaterRotAxis2 ? PIER_EAST : PIER_WEST;
+  return -GA2.quaterRot <= pos && pos <= GA2.quaterRot ? PIER_EAST : PIER_WEST;
 }
 //void smartDelay(unsigned long ms);
 //bool getHorApp(double *Azm, double *Alt);

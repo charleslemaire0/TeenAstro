@@ -114,7 +114,7 @@ ISR(TIMER1_COMPA_vect)
           // use acceleration
           DecayModeGoto();
           double z = getRate(sqrt(fabs(x) * 2 * AccAxis1));
-          guideTimerRateAxis1A = 3600.0 / (StepsPerDegreeAxis1 * z / 1000000.0);
+          guideTimerRateAxis1A = 3600.0 / (GA1.stepsPerDegree * z / 1000000.0);
           if (guideTimerRateAxis1A < maxguideTimerRate) guideTimerRateAxis1A = maxguideTimerRate;
         }
 
@@ -178,7 +178,7 @@ ISR(TIMER1_COMPA_vect)
           // use acceleration
           DecayModeGoto();
           double z = getRate(sqrt(fabs(x) * 2 * AccAxis2));
-          guideTimerRateAxis2A = 3600.0 / (StepsPerDegreeAxis2 * z / 1000000.0) ;
+          guideTimerRateAxis2A = 3600.0 / (GA2.stepsPerDegree * z / 1000000.0) ;
           if (guideTimerRateAxis2A < maxguideTimerRate) guideTimerRateAxis2A = maxguideTimerRate;
         }
 

@@ -9,8 +9,8 @@ bool goHome()
   if (guideDirAxis1 || guideDirAxis2) return false;                       // fail, moving to home not allowed while guiding
   cli();
 
-  targetAxis1 = homeStepAxis1;
-  targetAxis2 = homeStepAxis2;
+  targetAxis1 = GA1.homeDef;
+  targetAxis2 = GA2.homeDef;
   startAxis1 = posAxis1;
   startAxis2 = posAxis2;
   SetSiderealClockRate(siderealInterval);
@@ -49,8 +49,8 @@ bool syncPolarHome()
   guideDurationAxis2 = 0;
   guideDurationLastAxis2 = 0;
   // update starting coordinates to reflect NCP or SCP polar home position
-  startAxis1 = homeStepAxis1;
-  startAxis2 = homeStepAxis2;
+  startAxis1 = GA1.homeDef;
+  startAxis2 = GA2.homeDef;
   cli();
   targetAxis1 = startAxis1;
   posAxis1 = startAxis1;

@@ -33,7 +33,7 @@ Again:
       if (decreasing)
       {
         cli();
-        long a = max((currentAlt - minAlt)*StepsPerDegreeAxis2, 1);
+        long a = max((currentAlt - minAlt)*GA2.stepsPerDegree, 1);
         if (a < distDestAxis2)
           distDestAxis2 = a;
         sei();
@@ -42,7 +42,7 @@ Again:
         // if Dec is increasing, slow down HA
       {
         cli();
-        long a = max((currentAlt - minAlt)*StepsPerDegreeAxis1, 1);
+        long a = max((currentAlt - minAlt)*GA1.stepsPerDegree, 1);
         if (a < distDestAxis1)
           distDestAxis1 = a;
         sei();
@@ -127,8 +127,8 @@ Again:
   //if (isAltAZ())
   //{
   //  // In AltAz mode & at the end of slew & near the Zenith, disable tracking for a moment if we're getting close to the target
-  //  if ((distDestAxis1 <= (long)StepsPerDegreeAxis1 * 2L) && (distDestAxis2 <= (long)StepsPerDegreeAxis2 * 2L)) {
-  //    if ((long)targetAxis2.part.m > 80L * (long)StepsPerDegreeAxis2 ) {
+  //  if ((distDestAxis1 <= (long)GA1.stepsPerDegree * 2L) && (distDestAxis2 <= (long)GA2.stepsPerDegree * 2L)) {
+  //    if ((long)targetAxis2.part.m > 80L * (long)GA2.stepsPerDegree ) {
   //      sideralTracking = false;
   //    }
   //  }
