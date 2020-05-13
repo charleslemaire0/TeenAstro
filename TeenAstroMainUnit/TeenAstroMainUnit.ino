@@ -663,8 +663,8 @@ void updateRatios(bool deleteAlignment)
   timerRateRatio = GA1.stepsPerSecond / GA2.stepsPerSecond;
   sei();
 
-  BreakDistAxis1 = max(2, GA1.stepsPerDegree/3600*0.2);
-  BreakDistAxis2 = max(2, GA2.stepsPerDegree/3600*0.2);
+  GA1.breakDist = max(2, GA1.stepsPerDegree/3600*0.2);
+  GA2.breakDist = max(2, GA2.stepsPerDegree/3600*0.2);
 
   GA1.halfRot = GA1.stepsPerRot / 2L;
   GA1.quaterRot = GA1.stepsPerRot / 4L;
