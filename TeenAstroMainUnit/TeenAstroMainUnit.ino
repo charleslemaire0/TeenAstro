@@ -275,8 +275,8 @@ void loop()
         else
         {
           sideralTracking = false;
-          if (guideDirAxis1) guideDirAxis1 = 'b';
-          if (guideDirAxis2) guideDirAxis2 = 'b';
+          if (guideA1.dir) guideA1.dir = 'b';
+          if (guideA2.dir) guideA2.dir = 'b';
         }
       }
     }
@@ -508,15 +508,15 @@ void initmount()
 
 
   // initialize some fixed-point values
-  amountGuideAxis1 = 0;
-  amountGuideAxis2 = 0;
+  guideA1.amount = 0;
+  guideA2.amount = 0;
 
   fstepAxis1 = 0;
   fstepAxis2 = 0;
 
-  targetAxis1 = GA1.quaterRot;
-  targetAxis2 = GA2.quaterRot;
-  fstepAxis1 = GA1.stepsPerSecond / 100.0;
+  targetAxis1 = geoA1.quaterRot;
+  targetAxis2 = geoA2.quaterRot;
+  fstepAxis1 = geoA1.stepsPerSecond / 100.0;
   refraction = XEEPROM.read(EE_refraction);
   // Tracking and rate control
   correct_tracking = XEEPROM.read(EE_corr_track);
@@ -580,17 +580,17 @@ void initCelestialPole()
 {
   if (isAltAZ())
   {
-    GA1.poleDef = (*localSite.latitude() < 0) ? GA1.halfRot : 0L;
-    GA2.poleDef = GA2.quaterRot;
-    GA1.homeDef = GA1.poleDef;
-    GA2.homeDef = 0;
+    geoA1.poleDef = (*localSite.latitude() < 0) ? geoA1.halfRot : 0L;
+    geoA2.poleDef = geoA2.quaterRot;
+    geoA1.homeDef = geoA1.poleDef;
+    geoA2.homeDef = 0;
   }
   else
   {
-    GA1.poleDef = mountType == MOUNT_TYPE_GEM ? GA1.quaterRot : 0L;
-    GA2.poleDef = (*localSite.latitude() < 0) ? -GA2.quaterRot : GA2.quaterRot;
-    GA1.homeDef = GA1.poleDef;
-    GA2.homeDef = GA2.poleDef;
+    geoA1.poleDef = mountType == MOUNT_TYPE_GEM ? geoA1.quaterRot : 0L;
+    geoA2.poleDef = (*localSite.latitude() < 0) ? -geoA2.quaterRot : geoA2.quaterRot;
+    geoA1.homeDef = geoA1.poleDef;
+    geoA2.homeDef = geoA2.poleDef;
   }
   HADir = *localSite.latitude() > 0 ? HADirNCPInit : HADirSCPInit;
 }
@@ -650,26 +650,26 @@ void writeDefaultEEPROMmotor()
 void updateRatios(bool deleteAlignment)
 {
   cli();
-  GA1.stepsPerRot = (long)MA1.gear * MA1.stepRot * (int)pow(2, MA1.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-  GA2.stepsPerRot = (long)MA2.gear * MA2.stepRot * (int)pow(2, MA2.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-  GA1.stepsPerDegree = (double)GA1.stepsPerRot / 360.0;
-  bl_Axis1.inSteps = (int)round(((double)bl_Axis1.inSeconds * 3600.0) / (double)GA1.stepsPerDegree);
-  GA2.stepsPerDegree = (double)GA2.stepsPerRot / 360.0;
-  bl_Axis2.inSteps = (int)round(((double)bl_Axis2.inSeconds * 3600.0) / (double)GA2.stepsPerDegree);
+  geoA1.stepsPerRot = (long)MA1.gear * MA1.stepRot * (int)pow(2, MA1.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+  geoA2.stepsPerRot = (long)MA2.gear * MA2.stepRot * (int)pow(2, MA2.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+  geoA1.stepsPerDegree = (double)geoA1.stepsPerRot / 360.0;
+  bl_Axis1.inSteps = (int)round(((double)bl_Axis1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
+  geoA2.stepsPerDegree = (double)geoA2.stepsPerRot / 360.0;
+  bl_Axis2.inSteps = (int)round(((double)bl_Axis2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
 
-  GA1.stepsPerSecond = GA1.stepsPerDegree / 240.0;
-  GA2.stepsPerSecond = GA2.stepsPerDegree / 240.0;
+  geoA1.stepsPerSecond = geoA1.stepsPerDegree / 240.0;
+  geoA2.stepsPerSecond = geoA2.stepsPerDegree / 240.0;
   
-  timerRateRatio = GA1.stepsPerSecond / GA2.stepsPerSecond;
+  timerRateRatio = geoA1.stepsPerSecond / geoA2.stepsPerSecond;
   sei();
 
-  GA1.breakDist = max(2, GA1.stepsPerDegree/3600*0.2);
-  GA2.breakDist = max(2, GA2.stepsPerDegree/3600*0.2);
+  geoA1.breakDist = max(2, geoA1.stepsPerDegree/3600*0.2);
+  geoA2.breakDist = max(2, geoA2.stepsPerDegree/3600*0.2);
 
-  GA1.halfRot = GA1.stepsPerRot / 2L;
-  GA1.quaterRot = GA1.stepsPerRot / 4L;
-  GA2.halfRot = GA2.stepsPerRot / 2L;
-  GA2.quaterRot = GA2.stepsPerRot / 4L;
+  geoA1.halfRot = geoA1.stepsPerRot / 2L;
+  geoA1.quaterRot = geoA1.stepsPerRot / 4L;
+  geoA2.halfRot = geoA2.stepsPerRot / 2L;
+  geoA2.quaterRot = geoA2.stepsPerRot / 4L;
 
   initCelestialPole();
   initTransformation(deleteAlignment);
@@ -681,7 +681,7 @@ void updateSideral()
 {
   // 16MHZ clocks for steps per second of sidereal tracking
   cli();
-  SiderealRate = siderealInterval / GA1.stepsPerSecond;
+  SiderealRate = siderealInterval / geoA1.stepsPerSecond;
   TakeupRate = SiderealRate / 4L;
   sei();
   timerRateAxis1 = SiderealRate;

@@ -60,8 +60,8 @@ void Command_A()
     }
 
     cli();
-    double Axis1 = posAxis1 / GA1.stepsPerDegree;
-    double Axis2 = posAxis2 / GA2.stepsPerDegree;
+    double Axis1 = posAxis1 / geoA1.stepsPerDegree;
+    double Axis2 = posAxis2 / geoA2.stepsPerDegree;
     sei();
 
     alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
@@ -90,8 +90,8 @@ void Command_A()
       syncAzAlt(Azm, Alt, GetPierSide());
     }
     cli();
-    double Axis1 = posAxis1 / GA1.stepsPerDegree;
-    double Axis2 = posAxis2 / GA2.stepsPerDegree;
+    double Axis1 = posAxis1 / geoA1.stepsPerDegree;
+    double Axis2 = posAxis2 / geoA2.stepsPerDegree;
     sei();
     alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
     if (alignment.isReady())
@@ -293,17 +293,17 @@ void Command_Q()
       }
       else if (GuidingState == GuidingRecenter || GuidingState == GuidingST4 || GuidingState == GuidingPulse)
       {
-        if (guideDirAxis1)
+        if (guideA1.dir)
           StopAxis1();
-        if (guideDirAxis2)
+        if (guideA2.dir)
           StopAxis2();
       }
       else
       {
-        if (guideDirAxis1)
-          guideDirAxis1 = 'b';
-        if (guideDirAxis2)
-          guideDirAxis2 = 'b';
+        if (guideA1.dir)
+          guideA1.dir = 'b';
+        if (guideA2.dir)
+          guideA2.dir = 'b';
       }
     }
     break;
@@ -314,7 +314,7 @@ void Command_Q()
   {
     if ((parkStatus == PRK_UNPARKED) && !movingTo)
     {
-      if (guideDirAxis1)
+      if (guideA1.dir)
         StopAxis1();
     }
   }
@@ -326,7 +326,7 @@ void Command_Q()
   {
     if ((parkStatus == PRK_UNPARKED) && !movingTo)
     {
-      if (guideDirAxis2)
+      if (guideA2.dir)
         StopAxis2();
     }
   }

@@ -53,15 +53,15 @@ void Command_M()
       if ((command[2] == 'e') || (command[2] == 'w'))
       {
         enableGuideRate(0, false);
-        guideDirAxis1 = command[2];
-        guideDurationLastAxis1 = micros();
-        guideDurationAxis1 = (long)i * 1000L;
+        guideA1.dir = command[2];
+        guideA1.durationLast = micros();
+        guideA1.duration = (long)i * 1000L;
         cli();
         GuidingState = GuidingPulse;
-        if (guideDirAxis1 == 'e')
-          guideTimerRateAxis1 = -guideTimerBaseRate;
+        if (guideA1.dir == 'e')
+          guideA1.timerRate = -guideTimerBaseRate;
         else
-          guideTimerRateAxis1 = guideTimerBaseRate;
+          guideA1.timerRate = guideTimerBaseRate;
         sei();
         //reply[0] = '1';
         //reply[1] = 0;
@@ -70,19 +70,19 @@ void Command_M()
       {
 
         enableGuideRate(0, false);
-        guideDirAxis2 = command[2];
-        guideDurationLastAxis2 = micros();
-        guideDurationAxis2 = (long)i * 1000L;
-        if (guideDirAxis2 == 's' || guideDirAxis2 == 'n')
+        guideA2.dir = command[2];
+        guideA2.durationLast = micros();
+        guideA2.duration = (long)i * 1000L;
+        if (guideA2.dir == 's' || guideA2.dir == 'n')
         {
           bool rev = false;
-          if (guideDirAxis2 == 's')
+          if (guideA2.dir == 's')
             rev = true;
           if (GetPierSide() >= PIER_WEST)
             rev = !rev;
           cli();
           GuidingState = GuidingPulse;
-          guideTimerRateAxis2 = rev ? -guideTimerBaseRate : guideTimerBaseRate;
+          guideA2.timerRate = rev ? -guideTimerBaseRate : guideTimerBaseRate;
           sei();
         }
         //reply[0] = '1';

@@ -294,12 +294,12 @@ void Command_GX()
     }
     if (GuidingState == GuidingPulse || GuidingState == GuidingST4) reply[6] = '*';
     else if (GuidingState == GuidingRecenter) reply[6] = '+';
-    if (guideDirAxis1 == 'e') reply[7] = '>';
-    else if (guideDirAxis1 == 'w') reply[7] = '<';
-    else if (guideDirAxis1 == 'b') reply[7] = 'b';
-    if (guideDirAxis2 == 'n') reply[8] = '^';
-    else if (guideDirAxis2 == 's') reply[8] = '_';
-    else if (guideDirAxis2 == 'b') reply[8] = 'b';
+    if (guideA1.dir == 'e') reply[7] = '>';
+    else if (guideA1.dir == 'w') reply[7] = '<';
+    else if (guideA1.dir == 'b') reply[7] = 'b';
+    if (guideA2.dir == 'n') reply[8] = '^';
+    else if (guideA2.dir == 's') reply[8] = '_';
+    else if (guideA2.dir == 'b') reply[8] = 'b';
     if (faultAxis1 || faultAxis2) reply[9] = 'f';
     if (correct_tracking)
       reply[10] = 'c';

@@ -1,15 +1,15 @@
 void StepToInstr(long Axis1, long Axis2, double *AngleAxis1, double *AngleAxis2, PierSide* Side)
 {
-  *AngleAxis1 = ((double)Axis1) / GA1.stepsPerDegree;
-  *AngleAxis2 = ((double)Axis2) / GA2.stepsPerDegree;
+  *AngleAxis1 = ((double)Axis1) / geoA1.stepsPerDegree;
+  *AngleAxis2 = ((double)Axis2) / geoA2.stepsPerDegree;
   InsrtAngle2Angle(AngleAxis1, AngleAxis2, Side);
 }
 
 void InstrtoStep(double AngleAxis1, double AngleAxis2, PierSide Side, long *Axis1, long *Axis2)
 {
   Angle2InsrtAngle(Side, &AngleAxis1, &AngleAxis2, localSite.latitude());
-  *Axis1 = (long)(AngleAxis1 * GA1.stepsPerDegree);
-  *Axis2 = (long)(AngleAxis2 * GA2.stepsPerDegree);
+  *Axis1 = (long)(AngleAxis1 * geoA1.stepsPerDegree);
+  *Axis2 = (long)(AngleAxis2 * geoA2.stepsPerDegree);
 }
 
 
@@ -69,8 +69,8 @@ bool getEquTarget(double *HA, double *Dec, const double *cosLat, const double *s
 bool getHorApp(double *Azm, double *Alt)
 {
   cli();
-  double Axis1 = posAxis1 / (double)GA1.stepsPerDegree;
-  double Axis2 = posAxis2 / (double)GA2.stepsPerDegree;
+  double Axis1 = posAxis1 / (double)geoA1.stepsPerDegree;
+  double Axis2 = posAxis2 / (double)geoA2.stepsPerDegree;
   sei();
   alignment.toReferenceDeg(*Azm, *Alt, Axis1, Axis2);
   return true;
@@ -80,8 +80,8 @@ bool getHorApp(double *Azm, double *Alt)
 bool getHorAppTarget(double *Azm, double *Alt)
 {
   cli();
-  double Axis1 = targetAxis1 / GA1.stepsPerDegree;
-  double Axis2 = targetAxis2 / GA2.stepsPerDegree;
+  double Axis1 = targetAxis1 / geoA1.stepsPerDegree;
+  double Axis2 = targetAxis2 / geoA2.stepsPerDegree;
   sei();
   alignment.toReferenceDeg(*Azm, *Alt, Axis1, Axis2);
   return true;
@@ -104,7 +104,7 @@ byte goToHor(double *Azm, double *Alt, PierSide preferedPierSide)
     abortSlew = true;
     return 5;
   }   // fail, prior goto cancelled
-  if (guideDirAxis1 || guideDirAxis2) return 7;   // fail, unspecified error
+  if (guideA1.dir || guideA2.dir) return 7;   // fail, unspecified error
 
   //z = AzRange(z);
   // Check to see if this goto is valid
@@ -129,7 +129,7 @@ PierSide predictSideOfPier(const double& Axis1_target, const double& Axis2_targe
   double Axis1 = Axis1_target;
   double Axis2 = Axis2_target;
   Angle2InsrtAngle(inputSide, &Axis1, &Axis2, localSite.latitude());
-  if (withinLimit(Axis1*GA1.stepsPerDegree, Axis2*GA2.stepsPerDegree))
+  if (withinLimit(Axis1*geoA1.stepsPerDegree, Axis2*geoA2.stepsPerDegree))
   {
     return inputSide;
   }
@@ -140,7 +140,7 @@ PierSide predictSideOfPier(const double& Axis1_target, const double& Axis2_targe
     Axis1 = Axis1_target;
     Axis2 = Axis2_target;
     Angle2InsrtAngle(otherside, &Axis1, &Axis2, localSite.latitude());
-    if (withinLimit(Axis1*GA1.stepsPerDegree, Axis2*GA2.stepsPerDegree))
+    if (withinLimit(Axis1*geoA1.stepsPerDegree, Axis2*geoA2.stepsPerDegree))
     {
       return otherside;
     }

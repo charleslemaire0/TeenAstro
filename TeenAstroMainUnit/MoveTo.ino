@@ -33,7 +33,7 @@ Again:
       if (decreasing)
       {
         cli();
-        long a = max((currentAlt - minAlt)*GA2.stepsPerDegree, 1);
+        long a = max((currentAlt - minAlt)*geoA2.stepsPerDegree, 1);
         if (a < distDestAxis2)
           distDestAxis2 = a;
         sei();
@@ -42,7 +42,7 @@ Again:
         // if Dec is increasing, slow down HA
       {
         cli();
-        long a = max((currentAlt - minAlt)*GA1.stepsPerDegree, 1);
+        long a = max((currentAlt - minAlt)*geoA1.stepsPerDegree, 1);
         if (a < distDestAxis1)
           distDestAxis1 = a;
         sei();
@@ -70,7 +70,7 @@ Again:
         targetAxis1 = posAxis1 + a;
       sei();
     }
-    guideDirAxis1 = 'b';
+    guideA1.dir = 'b';
     a = pow(getV(timerRateAxis2), 2.) / (2. * AccAxis2);
     if (abs(deltaTargetAxis2) > a)
     {
@@ -80,7 +80,7 @@ Again:
       targetAxis2 = posAxis2 + a;
       sei();
     }
-    guideDirAxis2 = 'b';
+    guideA2.dir = 'b';
     if (parkStatus == PRK_PARKING)
     {
       sideralTracking = lastSideralTracking;
@@ -127,8 +127,8 @@ Again:
   //if (isAltAZ())
   //{
   //  // In AltAz mode & at the end of slew & near the Zenith, disable tracking for a moment if we're getting close to the target
-  //  if ((distDestAxis1 <= (long)GA1.stepsPerDegree * 2L) && (distDestAxis2 <= (long)GA2.stepsPerDegree * 2L)) {
-  //    if ((long)targetAxis2.part.m > 80L * (long)GA2.stepsPerDegree ) {
+  //  if ((distDestAxis1 <= (long)geoA1.stepsPerDegree * 2L) && (distDestAxis2 <= (long)geoA2.stepsPerDegree * 2L)) {
+  //    if ((long)targetAxis2.part.m > 80L * (long)geoA2.stepsPerDegree ) {
   //      sideralTracking = false;
   //    }
   //  }

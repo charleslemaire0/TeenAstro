@@ -10,14 +10,14 @@ void setAtMount(long &axis1, long &axis2)
 
 PierSide getPierSide(const long &axis2)
 {
-  return -GA2.quaterRot <= axis2 && axis2 <= GA2.quaterRot ? PIER_EAST : PIER_WEST;
+  return -geoA2.quaterRot <= axis2 && axis2 <= geoA2.quaterRot ? PIER_EAST : PIER_WEST;
 }
 
 //for GEM
 bool checkPole(const long &axis1, CheckMode mode)
 {
   double underPoleLimit = (mode == CHECKMODE_GOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;
-  return (axis1 > GA1.quaterRot - underPoleLimit * 15. * GA1.stepsPerDegree) && (axis1 < GA1.quaterRot + underPoleLimit * 15. * GA1.stepsPerDegree);
+  return (axis1 > geoA1.quaterRot - underPoleLimit * 15. * geoA1.stepsPerDegree) && (axis1 < geoA1.quaterRot + underPoleLimit * 15. * geoA1.stepsPerDegree);
   return true;
 }
 bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
@@ -28,10 +28,10 @@ bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
   switch (getPierSide(axis2))
   {
   case PIER_WEST:
-    if (axis1 > (12. + MinutesPastMeridianW / 60.)* 15.0 * GA1.stepsPerDegree) ok = false;
+    if (axis1 > (12. + MinutesPastMeridianW / 60.)* 15.0 * geoA1.stepsPerDegree) ok = false;
     break;
   case PIER_EAST:
-    if (axis1 < -MinutesPastMeridianE / 60. * 15.0 * GA1.stepsPerDegree) ok = false;
+    if (axis1 < -MinutesPastMeridianE / 60. * 15.0 * geoA1.stepsPerDegree) ok = false;
     break;
   default:
     ok = false;
@@ -43,17 +43,17 @@ bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
 //for Eq Fork only
 bool checkAxis2LimitEQ(const long &axis2)
 {
-  return axis2 > MinAxis2EQ * GA2.stepsPerDegree && axis2 < MaxAxis2EQ * GA2.stepsPerDegree;
+  return axis2 > MinAxis2EQ * geoA2.stepsPerDegree && axis2 < MaxAxis2EQ * geoA2.stepsPerDegree;
 }
 
 //for az alt
 bool checkAxis2LimitAZALT(const long &axis2)
 {
-  return axis2 > MinAxis2AZALT * GA2.stepsPerDegree && axis2 < MaxAxis2AZALT * GA2.stepsPerDegree;
+  return axis2 > MinAxis2AZALT * geoA2.stepsPerDegree && axis2 < MaxAxis2AZALT * geoA2.stepsPerDegree;
 }
 bool checkAxis1LimitAZALT(const long &axis1)
 {
-  return axis1 < (long)((180 + DegreePastAZ) * GA1.stepsPerDegree) && axis1 >= long((-180 - DegreePastAZ) * GA1.stepsPerDegree);
+  return axis1 < (long)((180 + DegreePastAZ) * geoA1.stepsPerDegree) && axis1 >= long((-180 - DegreePastAZ) * geoA1.stepsPerDegree);
 }
 
 // check if defined position is within limit

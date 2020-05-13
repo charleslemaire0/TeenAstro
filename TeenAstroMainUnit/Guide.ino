@@ -11,91 +11,91 @@ void Guide()
   }
   if (lastError != ERR_NONE)
   {
-    guideDurationAxis1 = -1;
-    guideDurationAxis2 = -1;
+    guideA1.duration = -1;
+    guideA2.duration = -1;
   }
   if (rtk.updateguideSiderealTimer())
   {
 
-    if (guideDurationAxis2 <= 0 && guideDurationAxis1 <= 0 && GuidingState == GuidingPulse)
+    if (guideA2.duration <= 0 && guideA1.duration <= 0 && GuidingState == GuidingPulse)
     {
       cli();
-      if (guideDirAxis1) guideDirAxis1 = 'b';
-      if (guideDirAxis2) guideDirAxis2 = 'b';
+      if (guideA1.dir) guideA1.dir = 'b';
+      if (guideA2.dir) guideA2.dir = 'b';
       sei();
       return;
     }
-    if (guideDirAxis1 == 'w' || guideDirAxis1 == 'e')
+    if (guideA1.dir == 'w' || guideA1.dir == 'e')
     {
-      if (guideDurationAxis1 > 0 || GuidingState == GuidingRecenter || GuidingState == GuidingST4)
+      if (guideA1.duration > 0 || GuidingState == GuidingRecenter || GuidingState == GuidingST4)
       {
         if (!bl_Axis1.correcting)
         {
-          bool rev = guideDirAxis1 == 'e';
+          bool rev = guideA1.dir == 'e';
           cli();
-          rev ? targetAxis1 -= amountGuideAxis1 : targetAxis1 += amountGuideAxis1;
+          rev ? targetAxis1 -= guideA1.amount : targetAxis1 += guideA1.amount;
           sei();
           if (GuidingState == GuidingPulse)
           {
             // for pulse guiding, count down the mS and stop when timed out
-            guideDurationAxis1 -= (long)(micros() - guideDurationLastAxis1);
-            guideDurationLastAxis1 = micros();
+            guideA1.duration -= (long)(micros() - guideA1.durationLast);
+            guideA1.durationLast = micros();
           }
         }
         else
         {
           // don't count time if in backlash
-          guideDurationLastAxis1 = micros();
+          guideA1.durationLast = micros();
         }
       }
       else
       {
         cli();
-        guideDirAxis1 = 'b';
+        guideA1.dir = 'b';
         sei();
       }
     }
     else
     {
-      guideDurationAxis1 = -1;
+      guideA1.duration = -1;
     }
-    if (guideDirAxis2 == 's' || guideDirAxis2 == 'n')
+    if (guideA2.dir == 's' || guideA2.dir == 'n')
     {
-      if (guideDurationAxis2 > 0 || GuidingState == GuidingRecenter || GuidingState == GuidingST4)
+      if (guideA2.duration > 0 || GuidingState == GuidingRecenter || GuidingState == GuidingST4)
       {
         if (!bl_Axis2.correcting)
         {
           bool rev = false;
-          if (guideDirAxis2 == 's')
+          if (guideA2.dir == 's')
             rev = true;
           if (GetPierSide() >= PIER_WEST)
             rev = !rev;
           cli();
-          rev ? targetAxis2 -= amountGuideAxis2 : targetAxis2 += amountGuideAxis2;
+          rev ? targetAxis2 -= guideA2.amount : targetAxis2 += guideA2.amount;
           sei();
           if (GuidingState == GuidingPulse)
           {
             // for pulse guiding, count down the mS and stop when timed out
-            guideDurationAxis2 -= (long)(micros() - guideDurationLastAxis2);
-            guideDurationLastAxis2 = micros();
+            guideA2.duration -= (long)(micros() - guideA2.durationLast);
+            guideA2.durationLast = micros();
           }
         }
         else
         {
           // don't count time if in backlash
-          guideDurationLastAxis2 = micros();
+          guideA2.durationLast = micros();
         }
       }
       else
       {
         cli();
-        guideDirAxis2 = 'b';
+        guideA2.dir = 'b';
         sei();
       }   // break
     }
     else
     {
-      guideDurationAxis2 = -1;
+      guideA2.duration = -1;
     }
   }
 }

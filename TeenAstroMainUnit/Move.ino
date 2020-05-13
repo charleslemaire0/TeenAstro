@@ -13,25 +13,25 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
     if (guideTimerBaseRate == 0)
     {
       cli();
-      guideDirAxis1 = 'b';
+      guideA1.dir = 'b';
       sei();
       return;
     }
     Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate, false);
     double newGuideTimerBaseRate = newguideDirAxis == 'e' ? -guideTimerBaseRate : guideTimerBaseRate;
-    bool samedirection = newGuideTimerBaseRate > 0 ? (guideTimerRateAxis1 > 0 ? true : false) : (guideTimerRateAxis1 > 0 ? false : true);
-    if (guideDirAxis1 && !samedirection && fabs(guideTimerRateAxis1) > 2)
+    bool samedirection = newGuideTimerBaseRate > 0 ? (guideA1.timerRate > 0 ? true : false) : (guideA1.timerRate > 0 ? false : true);
+    if (guideA1.dir && !samedirection && fabs(guideA1.timerRate) > 2)
     {
       StopAxis1();
     }
     else
     {
       GuidingState = Mode;
-      guideDirAxis1 = newguideDirAxis;
+      guideA1.dir = newguideDirAxis;
       atHome = false;
-      guideDurationAxis1 = -1;
+      guideA1.duration = -1;
       cli();
-      guideTimerRateAxis1 = newGuideTimerBaseRate;
+      guideA1.timerRate = newGuideTimerBaseRate;
       sei();
     }
   }
@@ -39,7 +39,7 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
 
 void StopAxis1()
 {
-  if (guideDirAxis1 == 'b')
+  if (guideA1.dir == 'b')
     return;
   updateDeltaTargetAxis1();
   long a = pow(getV(timerRateAxis1), 2.) / (2. * AccAxis1);
@@ -51,7 +51,7 @@ void StopAxis1()
     targetAxis1 = posAxis1 + a;
     sei();
   }
-  guideDirAxis1 = 'b';
+  guideA1.dir = 'b';
 }
 
 void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
@@ -66,7 +66,7 @@ void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
     if (guideTimerBaseRate == 0)
     {
       cli();
-      guideDirAxis2 = 'b';
+      guideA2.dir = 'b';
       sei();
       return;
     }
@@ -78,19 +78,19 @@ void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
       rev = !rev;
     Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate, false);
     double newGuideTimerBaseRate = rev ? -guideTimerBaseRate : guideTimerBaseRate;
-    bool samedirection = newGuideTimerBaseRate > 0 ? (guideTimerRateAxis2 > 0 ? true : false) : (guideTimerRateAxis2 > 0 ? false : true);
-    if (guideDirAxis2 && !samedirection && fabs(guideTimerRateAxis2) > 2)
+    bool samedirection = newGuideTimerBaseRate > 0 ? (guideA2.timerRate > 0 ? true : false) : (guideA2.timerRate > 0 ? false : true);
+    if (guideA2.dir && !samedirection && fabs(guideA2.timerRate) > 2)
     {
       StopAxis2();
     }
     else
     {
       GuidingState = Mode;
-      guideDirAxis2 = newguideDirAxis;
-      guideDurationAxis2 = -1;
+      guideA2.dir = newguideDirAxis;
+      guideA2.duration = -1;
       atHome = false;
       cli();
-      guideTimerRateAxis2 = newGuideTimerBaseRate;
+      guideA2.timerRate = newGuideTimerBaseRate;
       sei();
     }
   }
@@ -108,7 +108,7 @@ void StopAxis2()
     targetAxis2 = posAxis2 + a;
     sei();
   }
-  guideDirAxis2 = 'b';
+  guideA2.dir = 'b';
 }
 
 void CheckSpiral()
@@ -141,37 +141,37 @@ void CheckSpiral()
 
   if (iteration % 2 == 0)
   {
-    if (guideDirAxis1)
+    if (guideA1.dir)
       return;
-    guideDirAxis2 = iteration % 4 < 2 ? 'n' : 's';
-    guideDurationLastAxis2 = micros();
-    guideDurationAxis2 = (long)duration * 3000000L;
-    if (guideDirAxis2 == 's' || guideDirAxis2 == 'n')
+    guideA2.dir = iteration % 4 < 2 ? 'n' : 's';
+    guideA2.durationLast = micros();
+    guideA2.duration = (long)duration * 3000000L;
+    if (guideA2.dir == 's' || guideA2.dir == 'n')
     {
       bool rev = false;
-      if (guideDirAxis2 == 's')
+      if (guideA2.dir == 's')
         rev = true;
       if (GetPierSide() >= PIER_WEST)
         rev = !rev;
       cli();
       GuidingState = GuidingPulse;
-      guideTimerRateAxis2 = rev ? -guideTimerBaseRate : guideTimerBaseRate;
+      guideA2.timerRate = rev ? -guideTimerBaseRate : guideTimerBaseRate;
       sei();
     }
   }
   else
   {
-    if (guideDirAxis2)
+    if (guideA2.dir)
       return;
-    guideDirAxis1 = iteration % 4 < 2 ? 'e' : 'w';
-    guideDurationLastAxis1 = micros();
-    guideDurationAxis1 = (long)duration * 3000000L;
+    guideA1.dir = iteration % 4 < 2 ? 'e' : 'w';
+    guideA1.durationLast = micros();
+    guideA1.duration = (long)duration * 3000000L;
     cli();
     GuidingState = GuidingPulse;
-    if (guideDirAxis1 == 'e')
-      guideTimerRateAxis1 = -guideTimerBaseRate;
+    if (guideA1.dir == 'e')
+      guideA1.timerRate = -guideTimerBaseRate;
     else
-      guideTimerRateAxis1 = guideTimerBaseRate;
+      guideA1.timerRate = guideTimerBaseRate;
     sei();
   }
   iteration++;

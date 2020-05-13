@@ -61,7 +61,8 @@ bool                    faultAxis2 = false;
 // -----------------------------------------------------------------------------------------------------------------------------
 // Refraction rate tracking
 // az_deltaAxis1/az_deltaAxis2 are in arc-seconds/second
-double  az_deltaAxis1 = 15., az_deltaAxis2 = 0.;
+double  az_deltaAxis1 = 15.;
+double  az_deltaAxis2 = 0.;
 double  az_deltaRateScale = 1.;
 
 
@@ -86,8 +87,7 @@ MotorAxis MA2;
 #define default_tracking_rate   1
 volatile double         trackingTimerRateAxis1 = default_tracking_rate;
 volatile double         trackingTimerRateAxis2 = default_tracking_rate;
-volatile double         guideTimerRateAxis1 = 0.0;
-volatile double         guideTimerRateAxis2 = 0.0;
+
 
 // backlash control
 struct backlash
@@ -115,10 +115,10 @@ public:
   long   breakDist; //in steps
 };
 
-GeoAxis GA1;
-GeoAxis GA2;
+GeoAxis geoA1;
+GeoAxis geoA2;
 
-volatile double         timerRateRatio;
+volatile double     timerRateRatio;
 
 volatile double     AccAxis1 = 0; //acceleration in steps per second square
 volatile double     AccAxis2 = 0; //acceleration in steps per second square
@@ -237,19 +237,24 @@ unsigned long   baudRate[10] =
 #define DefaultR2 16
 #define DefaultR3 64
 #define DefaultR4 64
-double          guideRates[5] =
+double  guideRates[5] =
 {
   DefaultR0 , DefaultR1 , DefaultR2 ,  DefaultR3 , DefaultR4
 };
 
 volatile byte   activeGuideRate = GuideRateRS;
 
-volatile byte   guideDirAxis1 = 0;
-long            guideDurationAxis1 = -1;
-unsigned long   guideDurationLastAxis1 = 0;
-volatile byte   guideDirAxis2 = 0;
-long            guideDurationAxis2 = -1;
-unsigned long   guideDurationLastAxis2 = 0;
+class GuideAxis
+{
+public:
+  volatile byte   dir;
+  long            duration;
+  unsigned long   durationLast;
+  double          amount;
+  volatile double timerRate;
+};
+GuideAxis guideA1 = { 0,0,0,0,0 };
+GuideAxis guideA2 = { 0,0,0,0,0 };
 
 long            lasttargetAxis1 = 0;
 long            debugv1 = 0;
@@ -257,8 +262,6 @@ bool            axis1Enabled = false;
 bool            axis2Enabled = false;
 
 double          guideTimerBaseRate = 0;
-double          amountGuideAxis1;
-double          amountGuideAxis2;
 
 // Reticule control
 #ifdef RETICULE_LED_PINS
@@ -313,16 +316,16 @@ bool atTargetAxis1(bool update = false)
 {
   if (update)
     updateDeltaTargetAxis1();
-  return abs(deltaTargetAxis1) < GA1.breakDist;
+  return abs(deltaTargetAxis1) < geoA1.breakDist;
 }
 bool atTargetAxis2(bool update = false)
 {
   if (update)
     updateDeltaTargetAxis2();
-  return abs(deltaTargetAxis2) < GA2.breakDist;
+  return abs(deltaTargetAxis2) < geoA2.breakDist;
 }
 PierSide GetPierSide()
 {
   cli(); long pos = posAxis2; sei();
-  return -GA2.quaterRot <= pos && pos <= GA2.quaterRot ? PIER_EAST : PIER_WEST;
+  return -geoA2.quaterRot <= pos && pos <= geoA2.quaterRot ? PIER_EAST : PIER_WEST;
 }

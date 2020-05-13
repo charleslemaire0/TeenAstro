@@ -74,8 +74,8 @@ ISR(TIMER1_COMPA_vect)
 {
   static volatile bool   wasInbacklashAxis1   = false;
   static volatile bool   wasInbacklashAxis2   = false;
-  static volatile double guideTimerRateAxis1A = 0;
-  static volatile double guideTimerRateAxis2A = 0;
+  static volatile double guideA1.timerRateA = 0;
+  static volatile double guideA2.timerRateA = 0;
   static volatile double runtimerRateAxis1    = 0;
   static volatile double runTimerRateAxis2    = 0;
   // run 1/3 of the time at 3x the rate, unless a goto is happening
@@ -91,48 +91,48 @@ ISR(TIMER1_COMPA_vect)
 
       double  x = deltaTargetAxis1;
 
-      if (!bl_Axis1.correcting  && guideDirAxis1)
+      if (!bl_Axis1.correcting  && guideA1.dir)
       {
-        if ((fabs(guideTimerRateAxis1) < maxguideTimerRate) &&
-          (fabs(guideTimerRateAxis1A) < maxguideTimerRate))
+        if ((fabs(guideA1.timerRate) < maxguideTimerRate) &&
+          (fabs(guideA1.timerRateA) < maxguideTimerRate))
         {
           // break mode
-          if (guideDirAxis1 == 'b')
+          if (guideA1.dir == 'b')
           {
-            guideTimerRateAxis1 = trackingTimerRateAxis1;
-            if (guideTimerRateAxis1 >= 0)
-              guideTimerRateAxis1 = 1.0;
+            guideA1.timerRate = trackingTimerRateAxis1;
+            if (guideA1.timerRate >= 0)
+              guideA1.timerRate = 1.0;
             else
-              guideTimerRateAxis1 = -1.0;
+              guideA1.timerRate = -1.0;
           }
 
           // slow speed guiding, no acceleration
-          guideTimerRateAxis1A = guideTimerRateAxis1;
+          guideA1.timerRateA = guideA1.timerRate;
         }
         else
         {
           // use acceleration
           DecayModeGoto();
           double z = getRate(sqrt(fabs(x) * 2 * AccAxis1));
-          guideTimerRateAxis1A = 3600.0 / (GA1.stepsPerDegree * z / 1000000.0);
-          if (guideTimerRateAxis1A < maxguideTimerRate) guideTimerRateAxis1A = maxguideTimerRate;
+          guideA1.timerRateA = 3600.0 / (geoA1.stepsPerDegree * z / 1000000.0);
+          if (guideA1.timerRateA < maxguideTimerRate) guideA1.timerRateA = maxguideTimerRate;
         }
 
         // stop guiding
-        if (guideDirAxis1 == 'b')
+        if (guideA1.dir == 'b')
         {
           if (atTargetAxis1())
           {
-            guideDirAxis1 = 0;
-            guideTimerRateAxis1 = 0;
-            guideTimerRateAxis1A = 0;
+            guideA1.dir = 0;
+            guideA1.timerRate = 0;
+            guideA1.timerRateA = 0;
             if (atTargetAxis2())
               DecayModeTracking();
           }
         }
       }
       double timerRateAxis1A = trackingTimerRateAxis1;
-      double timerRateAxis1B = fabs(guideTimerRateAxis1A + timerRateAxis1A);
+      double timerRateAxis1B = fabs(guideA1.timerRateA + timerRateAxis1A);
       double calculatedTimerRateAxis1;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
       if (timerRateAxis1B > 0.1)
@@ -155,48 +155,48 @@ ISR(TIMER1_COMPA_vect)
 
       double x = abs(deltaTargetAxis2);
 
-      if (!bl_Axis2.correcting  && guideDirAxis2)
+      if (!bl_Axis2.correcting  && guideA2.dir)
       {
-        if ((fabs(guideTimerRateAxis2) < maxguideTimerRate) &&
-          (fabs(guideTimerRateAxis2A) < maxguideTimerRate))
+        if ((fabs(guideA2.timerRate) < maxguideTimerRate) &&
+          (fabs(guideA2.timerRateA) < maxguideTimerRate))
         {
           // break mode
-          if (guideDirAxis2 == 'b')
+          if (guideA2.dir == 'b')
           {
-            guideTimerRateAxis2 = trackingTimerRateAxis2;
-            if (guideTimerRateAxis2 >= 0)
-              guideTimerRateAxis2 = 1.0;
+            guideA2.timerRate = trackingTimerRateAxis2;
+            if (guideA2.timerRate >= 0)
+              guideA2.timerRate = 1.0;
             else
-              guideTimerRateAxis2 = -1.0;
+              guideA2.timerRate = -1.0;
           }
 
           // slow speed guiding, no acceleration
-          guideTimerRateAxis2A = guideTimerRateAxis2;
+          guideA2.timerRateA = guideA2.timerRate;
         }
         else
         {
           // use acceleration
           DecayModeGoto();
           double z = getRate(sqrt(fabs(x) * 2 * AccAxis2));
-          guideTimerRateAxis2A = 3600.0 / (GA2.stepsPerDegree * z / 1000000.0) ;
-          if (guideTimerRateAxis2A < maxguideTimerRate) guideTimerRateAxis2A = maxguideTimerRate;
+          guideA2.timerRateA = 3600.0 / (geoA2.stepsPerDegree * z / 1000000.0) ;
+          if (guideA2.timerRateA < maxguideTimerRate) guideA2.timerRateA = maxguideTimerRate;
         }
 
         // stop guiding
-        if (guideDirAxis2 == 'b')
+        if (guideA2.dir == 'b')
         {
           if (atTargetAxis2())
           {
-            guideDirAxis2 = 0;
-            guideTimerRateAxis2 = 0;
-            guideTimerRateAxis2A = 0;
+            guideA2.dir = 0;
+            guideA2.timerRate = 0;
+            guideA2.timerRateA = 0;
             if (atTargetAxis1())
               DecayModeTracking();
           }
         }
       }
       double timerRateAxis2A = trackingTimerRateAxis2;
-      double timerRateAxis2B = fabs(guideTimerRateAxis2A + timerRateAxis2A);
+      double timerRateAxis2B = fabs(guideA2.timerRateA + timerRateAxis2A);
       double calculatedTimerRateAxis2;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
      // calculatedTimerRateAxis2 = (double)SiderealRate / timerRateAxis2B;
@@ -213,7 +213,7 @@ ISR(TIMER1_COMPA_vect)
       }
     }
 
-    if (!guideDirAxis1 && !guideDirAxis2)
+    if (!guideA1.dir && !guideA2.dir)
     {
       GuidingState = GuidingOFF;
     }
@@ -242,7 +242,7 @@ ISR(TIMER1_COMPA_vect)
   {
     // travel through the backlash is done, but we weren't following the target while it was happening!
     // so now get us back to near where we need to be
-    if (!bl_Axis1.correcting  && wasInbacklashAxis1 && !guideDirAxis1)
+    if (!bl_Axis1.correcting  && wasInbacklashAxis1 && !guideA1.dir)
     {
       cli();
       if (!atTargetAxis1(true))
@@ -251,7 +251,7 @@ ISR(TIMER1_COMPA_vect)
         wasInbacklashAxis1 = false;
       sei();
     }
-    if (!bl_Axis2.correcting  && wasInbacklashAxis2 && !guideDirAxis2)
+    if (!bl_Axis2.correcting  && wasInbacklashAxis2 && !guideA2.dir)
     {
       cli();
       if (!atTargetAxis2(true))
