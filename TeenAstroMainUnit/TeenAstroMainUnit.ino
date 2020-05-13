@@ -239,11 +239,11 @@ void loop()
     if (sideralTracking)
     {
       cli();
-      if (!bl_Axis1.correcting)
+      if (!backlashA1.correcting)
       {
         targetAxis1 += fstepAxis1;
       }
-      if (!bl_Axis2.correcting)
+      if (!backlashA2.correcting)
       {
         targetAxis2 += fstepAxis2;
       }
@@ -605,8 +605,8 @@ void initmotor(bool deleteAlignment)
 
 void readEEPROMmotor()
 {
-  bl_Axis1.inSeconds = XEEPROM.readInt(EE_backlashAxis1);
-  bl_Axis1.movedSteps = 0;
+  backlashA1.inSeconds = XEEPROM.readInt(EE_backlashAxis1);
+  backlashA1.movedSteps = 0;
   MA1.gear = XEEPROM.readInt(EE_MA1gear);
   MA1.stepRot = XEEPROM.readInt(EE_MA1stepRot);
   MA1.micro = XEEPROM.read(EE_MA1micro);
@@ -615,8 +615,8 @@ void readEEPROMmotor()
   MA1.lowCurr = XEEPROM.read(EE_MA1lowCurr);
   MA1.highCurr = XEEPROM.read(EE_MA1highCurr);
 
-  bl_Axis2.inSeconds = XEEPROM.readInt(EE_backlashAxis2);
-  bl_Axis2.movedSteps = 0;
+  backlashA2.inSeconds = XEEPROM.readInt(EE_backlashAxis2);
+  backlashA2.movedSteps = 0;
   MA2.gear = XEEPROM.readInt(EE_MA2gear);
   MA2.stepRot = XEEPROM.readInt(EE_MA2stepRot);
   MA2.micro = XEEPROM.read(EE_MA2micro);
@@ -653,9 +653,9 @@ void updateRatios(bool deleteAlignment)
   geoA1.stepsPerRot = (long)MA1.gear * MA1.stepRot * (int)pow(2, MA1.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   geoA2.stepsPerRot = (long)MA2.gear * MA2.stepRot * (int)pow(2, MA2.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   geoA1.stepsPerDegree = (double)geoA1.stepsPerRot / 360.0;
-  bl_Axis1.inSteps = (int)round(((double)bl_Axis1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
+  backlashA1.inSteps = (int)round(((double)backlashA1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
   geoA2.stepsPerDegree = (double)geoA2.stepsPerRot / 360.0;
-  bl_Axis2.inSteps = (int)round(((double)bl_Axis2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
+  backlashA2.inSteps = (int)round(((double)backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
 
   geoA1.stepsPerSecond = geoA1.stepsPerDegree / 240.0;
   geoA2.stepsPerSecond = geoA2.stepsPerDegree / 240.0;

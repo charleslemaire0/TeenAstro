@@ -74,19 +74,19 @@ void Command_GX()
       {
       case '0':
         // :GXDB0# Debug inbacklashAxis1
-        sprintf(reply, "%d#", (int)bl_Axis1.correcting);
+        sprintf(reply, "%d#", (int)backlashA1.correcting);
         break;
       case '1':
         // :GXDB1# Debug inbacklashAxis2
-        sprintf(reply, "%d#", (int)bl_Axis2.correcting);
+        sprintf(reply, "%d#", (int)backlashA2.correcting);
         break;
       case '2':
         // :GXDB2# Debug Backlash blAxis1
-        sprintf(reply, "%d#", (int)bl_Axis1.movedSteps);
+        sprintf(reply, "%d#", (int)backlashA1.movedSteps);
         break;
       case '3':
         // :GXDB3# Debug Backlash blAxis1
-        sprintf(reply, "%d#", (int)bl_Axis2.movedSteps);
+        sprintf(reply, "%d#", (int)backlashA2.movedSteps);
         break;
       default:
         strcpy(reply, "0");
@@ -336,11 +336,11 @@ void Command_GX()
     {
       if (command[4] == 'D')
       {
-        sprintf(reply, "%d#", bl_Axis2.inSeconds);
+        sprintf(reply, "%d#", backlashA2.inSeconds);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%d#", bl_Axis1.inSeconds);
+        sprintf(reply, "%d#", backlashA1.inSeconds);
       }
       else
         strcpy(reply, "0");

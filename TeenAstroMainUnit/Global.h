@@ -97,8 +97,8 @@ struct backlash
   volatile bool correcting;
   volatile int movedSteps;
 };
-backlash bl_Axis1 = { 0,0,0 };
-backlash bl_Axis2 = { 0,0,0 };
+backlash backlashA1 = { 0,0,0 };
+backlash backlashA2 = { 0,0,0 };
 
 
 //geometry Axis

@@ -196,18 +196,18 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
-          bl_Axis2.inSeconds = i;
-          XEEPROM.writeInt(EE_backlashAxis2, bl_Axis2.inSeconds);
-          bl_Axis2.inSteps = (int)round(((double)bl_Axis2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
-          bl_Axis2.movedSteps = 0;
+          backlashA2.inSeconds = i;
+          XEEPROM.writeInt(EE_backlashAxis2, backlashA2.inSeconds);
+          backlashA2.inSteps = (int)round(((double)backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
+          backlashA2.movedSteps = 0;
           strcpy(reply, "1");
         }
         else if (command[4] == 'R')
         {
-          bl_Axis1.inSeconds = i;
-          XEEPROM.writeInt(EE_backlashAxis1, bl_Axis1.inSeconds);
-          bl_Axis1.inSteps = (int)round(((double)bl_Axis1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
-          bl_Axis1.movedSteps = 0;
+          backlashA1.inSeconds = i;
+          XEEPROM.writeInt(EE_backlashAxis1, backlashA1.inSeconds);
+          backlashA1.inSteps = (int)round(((double)backlashA1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
+          backlashA1.movedSteps = 0;
           strcpy(reply, "1");
         }
         else strcpy(reply, "0");

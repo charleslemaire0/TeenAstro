@@ -67,7 +67,7 @@ void saveAlignModel()
 bool parkClearBacklash()
 {
   // backlash takeup rate
-  if (bl_Axis1.inSteps == 0 && bl_Axis2.inSteps == 0)
+  if (backlashA1.inSteps == 0 && backlashA2.inSteps == 0)
   {
     return true;
   }
@@ -80,30 +80,30 @@ bool parkClearBacklash()
 
   // figure out how long we'll have to wait for the backlash to clear (+50%)
   long    t;
-  if (bl_Axis1.inSteps > bl_Axis2.inSteps)
-    t = (long)(bl_Axis1.inSteps * 1500 / geoA1.stepsPerSecond);
+  if (backlashA1.inSteps > backlashA2.inSteps)
+    t = (long)(backlashA1.inSteps * 1500 / geoA1.stepsPerSecond);
   else
-    t = (long)(bl_Axis2.inSteps * 1500 / geoA2.stepsPerSecond);
+    t = (long)(backlashA2.inSteps * 1500 / geoA2.stepsPerSecond);
   t = (t / BacklashTakeupRate + 250) / 12;
 
   // start by moving fully into the backlash
   cli();
-  targetAxis1 += bl_Axis1.inSteps;
-  targetAxis2 += bl_Axis2.inSteps;
+  targetAxis1 += backlashA1.inSteps;
+  targetAxis2 += backlashA2.inSteps;
   sei();
 
   // wait until done or timed out
   for (int i = 0; i < 12; i++)
   {
-    if (bl_Axis1.movedSteps != bl_Axis1.inSteps || posAxis1 != targetAxis1 ||
-        bl_Axis2.movedSteps != bl_Axis2.inSteps || posAxis2 != targetAxis2)
+    if (backlashA1.movedSteps != backlashA1.inSteps || posAxis1 != targetAxis1 ||
+        backlashA2.movedSteps != backlashA2.inSteps || posAxis2 != targetAxis2)
       delay(t);
   }
 
   // then reverse direction and take it all up
   cli();
-  targetAxis1-= bl_Axis1.inSteps;
-  targetAxis2-= bl_Axis2.inSteps;
+  targetAxis1-= backlashA1.inSteps;
+  targetAxis2-= backlashA2.inSteps;
   sei();
 
 
@@ -111,8 +111,8 @@ bool parkClearBacklash()
   for (int i = 0; i < 24; i++)
   {
     updateDeltaTarget();
-    if ((bl_Axis1.movedSteps != 0) || (deltaTargetAxis1 != 0) ||
-      (bl_Axis2.movedSteps != 0) || (deltaTargetAxis2 != 0))
+    if ((backlashA1.movedSteps != 0) || (deltaTargetAxis1 != 0) ||
+      (backlashA2.movedSteps != 0) || (deltaTargetAxis2 != 0))
       delay(t);
   }
 
@@ -124,7 +124,7 @@ bool parkClearBacklash()
   sei();
 
   // return true on success
-  if ((bl_Axis1.movedSteps != 0) || (bl_Axis2.movedSteps != 0))
+  if ((backlashA1.movedSteps != 0) || (backlashA2.movedSteps != 0))
     return false;
   else
     return true;
