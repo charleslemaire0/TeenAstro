@@ -11,8 +11,8 @@ void SetDeltaTrackingRate()
   trackingTimerRateAxis1 = az_deltaAxis1 / 15.;
   trackingTimerRateAxis2 = az_deltaAxis2 / 15.;
 
-  fstepAxis1 = geoA1.stepsPerSecond * trackingTimerRateAxis1 / 100.0;
-  fstepAxis2 = geoA2.stepsPerSecond * trackingTimerRateAxis2 / 100.0;
+  fstepAxis1 = geoA1.stepsPerCentiSecond * trackingTimerRateAxis1;
+  fstepAxis2 = geoA2.stepsPerCentiSecond * trackingTimerRateAxis2;
 }
 
 void SetTrackingRate(double r)
@@ -159,8 +159,8 @@ void enableGuideRate(int g, bool force)
   guideTimerBaseRate = guideRates[g];
 
   cli();
-  guideA1.amount = guideTimerBaseRate * geoA1.stepsPerSecond / 100.0;
-  guideA2.amount = guideTimerBaseRate * geoA2.stepsPerSecond / 100.0;
+  guideA1.amount = guideTimerBaseRate * geoA1.stepsPerCentiSecond;
+  guideA2.amount = guideTimerBaseRate * geoA2.stepsPerCentiSecond;
   sei();
 }
 
@@ -170,8 +170,8 @@ void enableST4GuideRate()
   {
     guideTimerBaseRate = guideRates[0];
     cli();
-    guideA1.amount = guideTimerBaseRate * geoA1.stepsPerSecond / 100.0;
-    guideA2.amount = guideTimerBaseRate * geoA2.stepsPerSecond / 100.0;
+    guideA1.amount = guideTimerBaseRate * geoA1.stepsPerCentiSecond;
+    guideA2.amount = guideTimerBaseRate * geoA2.stepsPerCentiSecond;
     sei();
   }
 }
@@ -184,7 +184,7 @@ void resetGuideRate()
 void enableRateAxis1(double vRate)
 {
   cli();
-  guideA1.amount = (abs(vRate) * geoA1.stepsPerSecond) / 100.0;
+  guideA1.amount = abs(vRate) * geoA1.stepsPerCentiSecond;
   guideA1.timerRate = vRate;
   sei();
 }
@@ -192,7 +192,7 @@ void enableRateAxis1(double vRate)
 void enableRateAxis2(double vRate)
 {
   cli();
-  guideA2.amount = (abs(vRate) * geoA2.stepsPerSecond) / 100.0;
+  guideA2.amount = abs(vRate) * geoA2.stepsPerCentiSecond;
   guideA2.timerRate = vRate;
   sei();
 }

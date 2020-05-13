@@ -350,11 +350,11 @@ void Command_GX()
     {
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", MA2.gear);
+        sprintf(reply, "%u#", motorA2.gear);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", MA1.gear);
+        sprintf(reply, "%u#", motorA1.gear);
       }
       else
         strcpy(reply, "0");
@@ -364,11 +364,11 @@ void Command_GX()
     {
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", MA2.stepRot);
+        sprintf(reply, "%u#", motorA2.stepRot);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", MA1.stepRot);
+        sprintf(reply, "%u#", motorA1.stepRot);
       }
       else
         strcpy(reply, "0");
@@ -378,11 +378,11 @@ void Command_GX()
     {
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", (unsigned  int)MA2.micro);
+        sprintf(reply, "%u#", (unsigned  int)motorA2.micro);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", (unsigned  int)MA1.micro);
+        sprintf(reply, "%u#", (unsigned  int)motorA1.micro);
       }
       else
         strcpy(reply, "0");
@@ -392,11 +392,11 @@ void Command_GX()
     {
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", (unsigned  int)MA2.reverse);
+        sprintf(reply, "%u#", (unsigned  int)motorA2.reverse);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", (unsigned  int)MA1.reverse);
+        sprintf(reply, "%u#", (unsigned  int)motorA1.reverse);
       }
       else
         strcpy(reply, "0");
@@ -406,11 +406,11 @@ void Command_GX()
     {
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", MA2.highCurr);
+        sprintf(reply, "%u#", motorA2.highCurr);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", MA1.highCurr);
+        sprintf(reply, "%u#", motorA1.highCurr);
       }
       else
         strcpy(reply, "0");
@@ -420,11 +420,11 @@ void Command_GX()
     {
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", MA2.lowCurr);
+        sprintf(reply, "%u#", motorA2.lowCurr);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", MA1.lowCurr);
+        sprintf(reply, "%u#", motorA1.lowCurr);
       }
       else
         strcpy(reply, "0");
@@ -436,11 +436,11 @@ void Command_GX()
       {
         if (command[4] == 'D')
         {
-          sprintf(reply, "%d#", MA2.driver.getSG());  
+          sprintf(reply, "%d#", motorA2.driver.getSG());  
         }
         else if (command[4] == 'R')
         {
-          sprintf(reply, "%d#", MA1.driver.getSG());
+          sprintf(reply, "%d#", motorA1.driver.getSG());
   
         }
         else
@@ -456,11 +456,11 @@ void Command_GX()
       {
         if (command[4] == 'D')
         {
-          sprintf(reply, "%u#", MA1.driver.getCurrent());
+          sprintf(reply, "%u#", motorA1.driver.getCurrent());
         }
         else if (command[4] == 'R')
         {
-          sprintf(reply, "%u#", MA2.driver.getCurrent());  
+          sprintf(reply, "%u#", motorA2.driver.getCurrent());  
         }
         else strcpy(reply, "0");
       }

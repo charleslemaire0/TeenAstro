@@ -516,7 +516,7 @@ void initmount()
 
   targetAxis1 = geoA1.quaterRot;
   targetAxis2 = geoA2.quaterRot;
-  fstepAxis1 = geoA1.stepsPerSecond / 100.0;
+  fstepAxis1 = geoA1.stepsPerCentiSecond;
   refraction = XEEPROM.read(EE_refraction);
   // Tracking and rate control
   correct_tracking = XEEPROM.read(EE_corr_track);
@@ -599,77 +599,63 @@ void initmotor(bool deleteAlignment)
 {
   readEEPROMmotor();
   updateRatios(deleteAlignment);
-  MA1.driver.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), MA1.stepRot, Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin, (unsigned int)MA1.lowCurr * 10, MA1.micro);
-  MA2.driver.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), MA2.stepRot, Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin, (unsigned int)MA2.lowCurr * 10, MA2.micro);
+  motorA1.driver.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), motorA1.stepRot, Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin, (unsigned int)motorA1.lowCurr * 10, motorA1.micro);
+  motorA2.driver.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), motorA2.stepRot, Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin, (unsigned int)motorA2.lowCurr * 10, motorA2.micro);
 }
 
 void readEEPROMmotor()
 {
   backlashA1.inSeconds = XEEPROM.readInt(EE_backlashAxis1);
   backlashA1.movedSteps = 0;
-  MA1.gear = XEEPROM.readInt(EE_MA1gear);
-  MA1.stepRot = XEEPROM.readInt(EE_MA1stepRot);
-  MA1.micro = XEEPROM.read(EE_MA1micro);
-  if (MA1.micro < 3) MA1.micro = 3; else if (MA1.micro > 8) MA1.micro = 8;
-  MA1.reverse = XEEPROM.read(EE_MA1reverse);
-  MA1.lowCurr = XEEPROM.read(EE_MA1lowCurr);
-  MA1.highCurr = XEEPROM.read(EE_MA1highCurr);
+  motorA1.gear = XEEPROM.readInt(EE_motorA1gear);
+  motorA1.stepRot = XEEPROM.readInt(EE_motorA1stepRot);
+  motorA1.micro = XEEPROM.read(EE_motorA1micro);
+  if (motorA1.micro < 3) motorA1.micro = 3; else if (motorA1.micro > 8) motorA1.micro = 8;
+  motorA1.reverse = XEEPROM.read(EE_motorA1reverse);
+  motorA1.lowCurr = XEEPROM.read(EE_motorA1lowCurr);
+  motorA1.highCurr = XEEPROM.read(EE_motorA1highCurr);
 
   backlashA2.inSeconds = XEEPROM.readInt(EE_backlashAxis2);
   backlashA2.movedSteps = 0;
-  MA2.gear = XEEPROM.readInt(EE_MA2gear);
-  MA2.stepRot = XEEPROM.readInt(EE_MA2stepRot);
-  MA2.micro = XEEPROM.read(EE_MA2micro);
-  if (MA2.micro < 3) MA2.micro = 3; else if (MA2.micro > 8) MA2.micro = 8;
-  MA2.reverse = XEEPROM.read(EE_MA2reverse);
-  MA2.lowCurr = XEEPROM.read(EE_MA2lowCurr);
-  MA2.highCurr = XEEPROM.read(EE_MA2highCurr);
+  motorA2.gear = XEEPROM.readInt(EE_motorA2gear);
+  motorA2.stepRot = XEEPROM.readInt(EE_motorA2stepRot);
+  motorA2.micro = XEEPROM.read(EE_motorA2micro);
+  if (motorA2.micro < 3) motorA2.micro = 3; else if (motorA2.micro > 8) motorA2.micro = 8;
+  motorA2.reverse = XEEPROM.read(EE_motorA2reverse);
+  motorA2.lowCurr = XEEPROM.read(EE_motorA2lowCurr);
+  motorA2.highCurr = XEEPROM.read(EE_motorA2highCurr);
 }
 
 void writeDefaultEEPROMmotor()
 {
   // init (clear) the backlash amounts
   XEEPROM.writeInt(EE_backlashAxis1, 0);
-  XEEPROM.writeInt(EE_MA1gear, 1800);
-  XEEPROM.writeInt(EE_MA1stepRot, 200);
-  XEEPROM.write(EE_MA1micro, 4);
-  XEEPROM.write(EE_MA1reverse, 0);
-  XEEPROM.write(EE_MA1highCurr, 100);
-  XEEPROM.write(EE_MA1lowCurr, 100);
+  XEEPROM.writeInt(EE_motorA1gear, 1800);
+  XEEPROM.writeInt(EE_motorA1stepRot, 200);
+  XEEPROM.write(EE_motorA1micro, 4);
+  XEEPROM.write(EE_motorA1reverse, 0);
+  XEEPROM.write(EE_motorA1highCurr, 100);
+  XEEPROM.write(EE_motorA1lowCurr, 100);
 
   XEEPROM.writeInt(EE_backlashAxis2, 0);
-  XEEPROM.writeInt(EE_MA2gear, 1800);
-  XEEPROM.writeInt(EE_MA2stepRot, 200);
-  XEEPROM.write(EE_MA2micro, 4);
-  XEEPROM.write(EE_MA2reverse, 0);
-  XEEPROM.write(EE_MA2highCurr, 100);
-  XEEPROM.write(EE_MA2lowCurr, 100);
+  XEEPROM.writeInt(EE_motorA2gear, 1800);
+  XEEPROM.writeInt(EE_motorA2stepRot, 200);
+  XEEPROM.write(EE_motorA2micro, 4);
+  XEEPROM.write(EE_motorA2reverse, 0);
+  XEEPROM.write(EE_motorA2highCurr, 100);
+  XEEPROM.write(EE_motorA2lowCurr, 100);
 }
 
 
 void updateRatios(bool deleteAlignment)
 {
   cli();
-  geoA1.stepsPerRot = (long)MA1.gear * MA1.stepRot * (int)pow(2, MA1.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-  geoA2.stepsPerRot = (long)MA2.gear * MA2.stepRot * (int)pow(2, MA2.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-  geoA1.stepsPerDegree = (double)geoA1.stepsPerRot / 360.0;
+  geoA1.setstepsPerRot((long)motorA1.gear * motorA1.stepRot * (int)pow(2, motorA1.micro));
+  geoA2.setstepsPerRot((long)motorA2.gear * motorA2.stepRot * (int)pow(2, motorA2.micro));
   backlashA1.inSteps = (int)round(((double)backlashA1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
-  geoA2.stepsPerDegree = (double)geoA2.stepsPerRot / 360.0;
   backlashA2.inSteps = (int)round(((double)backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
-
-  geoA1.stepsPerSecond = geoA1.stepsPerDegree / 240.0;
-  geoA2.stepsPerSecond = geoA2.stepsPerDegree / 240.0;
-  
   timerRateRatio = geoA1.stepsPerSecond / geoA2.stepsPerSecond;
   sei();
-
-  geoA1.breakDist = max(2, geoA1.stepsPerDegree/3600*0.2);
-  geoA2.breakDist = max(2, geoA2.stepsPerDegree/3600*0.2);
-
-  geoA1.halfRot = geoA1.stepsPerRot / 2L;
-  geoA1.quaterRot = geoA1.stepsPerRot / 4L;
-  geoA2.halfRot = geoA2.stepsPerRot / 2L;
-  geoA2.quaterRot = geoA2.stepsPerRot / 4L;
 
   initCelestialPole();
   initTransformation(deleteAlignment);
