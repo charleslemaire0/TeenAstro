@@ -160,15 +160,17 @@ void setup()
   // this sets the sidereal timer, controls the tracking speed so that the mount moves precisely with the stars
   siderealInterval = XEEPROM.readLong(EE_siderealInterval);
   updateSideral();
-
-
-
   beginTimers();
 
   // get ready for serial communications
-  Serial1_Init(57600);
-  Serial_Init(BAUD);                      // for Tiva TM4C the serial is redirected to serial5 in serial.ino file
-  Serial2_Init(56000);
+  Serial.begin(BAUD);
+  S_USB.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
+  Serial1.begin(57600);
+  S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
+  Serial2.setRX(FocuserRX);
+  Serial2.setTX(FocuserTX);
+  Serial2.begin(56000);
+  Serial2.setTimeout(10);
   //GNSS connection
 #if VERSION == 230 || VERSION == 240
   Serial3.begin(9600);
@@ -237,11 +239,11 @@ void loop()
     if (sideralTracking)
     {
       cli();
-      if (!inbacklashAxis1)
+      if (!backlashA1.correcting)
       {
         targetAxis1 += fstepAxis1;
       }
-      if (!inbacklashAxis2)
+      if (!backlashA2.correcting)
       {
         targetAxis2 += fstepAxis2;
       }
@@ -273,8 +275,8 @@ void loop()
         else
         {
           sideralTracking = false;
-          if (guideDirAxis1) guideDirAxis1 = 'b';
-          if (guideDirAxis2) guideDirAxis2 = 'b';
+          if (guideA1.dir) guideA1.dir = 'b';
+          if (guideA2.dir) guideA2.dir = 'b';
         }
       }
     }
@@ -506,15 +508,15 @@ void initmount()
 
 
   // initialize some fixed-point values
-  amountGuideAxis1 = 0;
-  amountGuideAxis2 = 0;
+  guideA1.amount = 0;
+  guideA2.amount = 0;
 
   fstepAxis1 = 0;
   fstepAxis2 = 0;
 
-  targetAxis1 = quaterRotAxis1;
-  targetAxis2 = quaterRotAxis2;
-  fstepAxis1 = StepsPerSecondAxis1 / 100.0;
+  targetAxis1 = geoA1.quaterRot;
+  targetAxis2 = geoA2.quaterRot;
+  fstepAxis1 = geoA1.stepsPerSecond / 100.0;
   refraction = XEEPROM.read(EE_refraction);
   // Tracking and rate control
   correct_tracking = XEEPROM.read(EE_corr_track);
@@ -565,9 +567,9 @@ void initTransformation(bool reset)
     else
     {
       double ha, dec;
-      HorTopoToEqu(180, 0, &ha, &dec);
+      HorTopoToEqu(180, 0, &ha, &dec, localSite.cosLat(), localSite.sinLat());
       alignment.addReferenceDeg(180, 0, ha, dec);
-      HorTopoToEqu(180, 90, &ha, &dec);
+      HorTopoToEqu(180, 90, &ha, &dec, localSite.cosLat(), localSite.sinLat());
       alignment.addReferenceDeg(180, 90, ha, dec);
       alignment.calculateThirdReference();
     }
@@ -578,17 +580,17 @@ void initCelestialPole()
 {
   if (isAltAZ())
   {
-    poleStepAxis1 = (*localSite.latitude() < 0) ? halfRotAxis1 : 0L;
-    poleStepAxis2 = quaterRotAxis2;
-    homeStepAxis1 = poleStepAxis1;
-    homeStepAxis2 = 0;
+    geoA1.poleDef = (*localSite.latitude() < 0) ? geoA1.halfRot : 0L;
+    geoA2.poleDef = geoA2.quaterRot;
+    geoA1.homeDef = geoA1.poleDef;
+    geoA2.homeDef = 0;
   }
   else
   {
-    poleStepAxis1 = mountType == MOUNT_TYPE_GEM ? quaterRotAxis1 : 0L;
-    poleStepAxis2 = (*localSite.latitude() < 0) ? -quaterRotAxis2 : quaterRotAxis2;
-    homeStepAxis1 = poleStepAxis1;
-    homeStepAxis2 = poleStepAxis2;
+    geoA1.poleDef = mountType == MOUNT_TYPE_GEM ? geoA1.quaterRot : 0L;
+    geoA2.poleDef = (*localSite.latitude() < 0) ? -geoA2.quaterRot : geoA2.quaterRot;
+    geoA1.homeDef = geoA1.poleDef;
+    geoA2.homeDef = geoA2.poleDef;
   }
   HADir = *localSite.latitude() > 0 ? HADirNCPInit : HADirSCPInit;
 }
@@ -597,77 +599,77 @@ void initmotor(bool deleteAlignment)
 {
   readEEPROMmotor();
   updateRatios(deleteAlignment);
-  motorAxis1.initMotor(static_cast<Motor::Motor_Driver>(AxisDriver), StepRotAxis1, Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin, (unsigned int)LowCurrAxis1 * 10, MicroAxis1);
-  motorAxis2.initMotor(static_cast<Motor::Motor_Driver>(AxisDriver), StepRotAxis2, Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin, (unsigned int)LowCurrAxis2 * 10, MicroAxis2);
+  MA1.driver.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), MA1.stepRot, Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin, (unsigned int)MA1.lowCurr * 10, MA1.micro);
+  MA2.driver.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), MA2.stepRot, Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin, (unsigned int)MA2.lowCurr * 10, MA2.micro);
 }
 
 void readEEPROMmotor()
 {
-  backlashAxis1 = XEEPROM.readInt(EE_backlashAxis1);
-  blAxis1 = 0;
-  GearAxis1 = XEEPROM.readInt(EE_GearAxis1);
-  StepRotAxis1 = XEEPROM.readInt(EE_StepRotAxis1);
-  MicroAxis1 = XEEPROM.read(EE_MicroAxis1);
-  if (MicroAxis1 < 3) MicroAxis1 = 3; else if (MicroAxis1 > 8) MicroAxis1 = 8;
-  ReverseAxis1 = XEEPROM.read(EE_ReverseAxis1);
-  LowCurrAxis1 = XEEPROM.read(EE_LowCurrAxis1);
-  HighCurrAxis1 = XEEPROM.read(EE_HighCurrAxis1);
+  backlashA1.inSeconds = XEEPROM.readInt(EE_backlashAxis1);
+  backlashA1.movedSteps = 0;
+  MA1.gear = XEEPROM.readInt(EE_MA1gear);
+  MA1.stepRot = XEEPROM.readInt(EE_MA1stepRot);
+  MA1.micro = XEEPROM.read(EE_MA1micro);
+  if (MA1.micro < 3) MA1.micro = 3; else if (MA1.micro > 8) MA1.micro = 8;
+  MA1.reverse = XEEPROM.read(EE_MA1reverse);
+  MA1.lowCurr = XEEPROM.read(EE_MA1lowCurr);
+  MA1.highCurr = XEEPROM.read(EE_MA1highCurr);
 
-  backlashAxis2 = XEEPROM.readInt(EE_backlashAxis2);
-  blAxis2 = 0;
-  GearAxis2 = XEEPROM.readInt(EE_GearAxis2);
-  StepRotAxis2 = XEEPROM.readInt(EE_StepRotAxis2);
-  MicroAxis2 = XEEPROM.read(EE_MicroAxis2);
-  if (MicroAxis2 < 3) MicroAxis2 = 3; else if (MicroAxis2 > 8) MicroAxis2 = 8;
-  ReverseAxis2 = XEEPROM.read(EE_ReverseAxis2);
-  LowCurrAxis2 = XEEPROM.read(EE_LowCurrAxis2);
-  HighCurrAxis2 = XEEPROM.read(EE_HighCurrAxis2);
+  backlashA2.inSeconds = XEEPROM.readInt(EE_backlashAxis2);
+  backlashA2.movedSteps = 0;
+  MA2.gear = XEEPROM.readInt(EE_MA2gear);
+  MA2.stepRot = XEEPROM.readInt(EE_MA2stepRot);
+  MA2.micro = XEEPROM.read(EE_MA2micro);
+  if (MA2.micro < 3) MA2.micro = 3; else if (MA2.micro > 8) MA2.micro = 8;
+  MA2.reverse = XEEPROM.read(EE_MA2reverse);
+  MA2.lowCurr = XEEPROM.read(EE_MA2lowCurr);
+  MA2.highCurr = XEEPROM.read(EE_MA2highCurr);
 }
 
 void writeDefaultEEPROMmotor()
 {
   // init (clear) the backlash amounts
   XEEPROM.writeInt(EE_backlashAxis1, 0);
-  XEEPROM.writeInt(EE_GearAxis1, 1800);
-  XEEPROM.writeInt(EE_StepRotAxis1, 200);
-  XEEPROM.write(EE_MicroAxis1, 4);
-  XEEPROM.write(EE_ReverseAxis1, 0);
-  XEEPROM.write(EE_HighCurrAxis1, 100);
-  XEEPROM.write(EE_LowCurrAxis1, 100);
+  XEEPROM.writeInt(EE_MA1gear, 1800);
+  XEEPROM.writeInt(EE_MA1stepRot, 200);
+  XEEPROM.write(EE_MA1micro, 4);
+  XEEPROM.write(EE_MA1reverse, 0);
+  XEEPROM.write(EE_MA1highCurr, 100);
+  XEEPROM.write(EE_MA1lowCurr, 100);
 
   XEEPROM.writeInt(EE_backlashAxis2, 0);
-  XEEPROM.writeInt(EE_GearAxis2, 1800);
-  XEEPROM.writeInt(EE_StepRotAxis2, 200);
-  XEEPROM.write(EE_MicroAxis2, 4);
-  XEEPROM.write(EE_ReverseAxis2, 0);
-  XEEPROM.write(EE_HighCurrAxis2, 100);
-  XEEPROM.write(EE_LowCurrAxis2, 100);
+  XEEPROM.writeInt(EE_MA2gear, 1800);
+  XEEPROM.writeInt(EE_MA2stepRot, 200);
+  XEEPROM.write(EE_MA2micro, 4);
+  XEEPROM.write(EE_MA2reverse, 0);
+  XEEPROM.write(EE_MA2highCurr, 100);
+  XEEPROM.write(EE_MA2lowCurr, 100);
 }
 
 
 void updateRatios(bool deleteAlignment)
 {
   cli();
-  StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-  StepsPerRotAxis2 = (long)GearAxis2 * StepRotAxis2 * (int)pow(2, MicroAxis2); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-  StepsPerDegreeAxis1 = (double)StepsPerRotAxis1 / 360.0;
-  StepsBacklashAxis1 = (int)round(((double)backlashAxis1 * 3600.0) / (double)StepsPerDegreeAxis1);
-  StepsPerDegreeAxis2 = (double)StepsPerRotAxis2 / 360.0;
-  StepsBacklashAxis2 = (int)round(((double)backlashAxis2 * 3600.0) / (double)StepsPerDegreeAxis2);
+  geoA1.stepsPerRot = (long)MA1.gear * MA1.stepRot * (int)pow(2, MA1.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+  geoA2.stepsPerRot = (long)MA2.gear * MA2.stepRot * (int)pow(2, MA2.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+  geoA1.stepsPerDegree = (double)geoA1.stepsPerRot / 360.0;
+  backlashA1.inSteps = (int)round(((double)backlashA1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
+  geoA2.stepsPerDegree = (double)geoA2.stepsPerRot / 360.0;
+  backlashA2.inSteps = (int)round(((double)backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
 
-  StepsPerSecondAxis1 = StepsPerDegreeAxis1 / 240.0;
-  StepsPerSecondAxis2 = StepsPerDegreeAxis2 / 240.0;
+  geoA1.stepsPerSecond = geoA1.stepsPerDegree / 240.0;
+  geoA2.stepsPerSecond = geoA2.stepsPerDegree / 240.0;
   
-  timerRateRatio = StepsPerSecondAxis1 / StepsPerSecondAxis2;
+  timerRateRatio = geoA1.stepsPerSecond / geoA2.stepsPerSecond;
   sei();
 
-  BreakDistAxis1 = max(2, StepsPerDegreeAxis1/3600*0.2);
-  BreakDistAxis2 = max(2, StepsPerDegreeAxis2/3600*0.2);
+  geoA1.breakDist = max(2, geoA1.stepsPerDegree/3600*0.2);
+  geoA2.breakDist = max(2, geoA2.stepsPerDegree/3600*0.2);
 
-  halfRotAxis1 = StepsPerRotAxis1 / 2L;
-  quaterRotAxis1 = StepsPerRotAxis1 / 4L;
-  halfRotAxis2 = StepsPerRotAxis2 / 2L;
-  quaterRotAxis2 = StepsPerRotAxis2 / 4L;
+  geoA1.halfRot = geoA1.stepsPerRot / 2L;
+  geoA1.quaterRot = geoA1.stepsPerRot / 4L;
+  geoA2.halfRot = geoA2.stepsPerRot / 2L;
+  geoA2.quaterRot = geoA2.stepsPerRot / 4L;
 
   initCelestialPole();
   initTransformation(deleteAlignment);
@@ -679,7 +681,7 @@ void updateSideral()
 {
   // 16MHZ clocks for steps per second of sidereal tracking
   cli();
-  SiderealRate = siderealInterval / StepsPerSecondAxis1;
+  SiderealRate = siderealInterval / geoA1.stepsPerSecond;
   TakeupRate = SiderealRate / 4L;
   sei();
   timerRateAxis1 = SiderealRate;
@@ -687,8 +689,8 @@ void updateSideral()
   SetTrackingRate(default_tracking_rate);
 
   // backlash takeup rates
-  timerRateBacklashAxis1 = timerRateAxis1 / BacklashTakeupRate;
-  timerRateBacklashAxis2 = timerRateAxis2 / BacklashTakeupRate;
+  backlashA1.timerRate = timerRateAxis1 / BacklashTakeupRate;
+  backlashA2.timerRate = timerRateAxis2 / BacklashTakeupRate;
 
   // initialize the timers that handle the sidereal clock, RA, and Dec
   SetSiderealClockRate(siderealInterval);

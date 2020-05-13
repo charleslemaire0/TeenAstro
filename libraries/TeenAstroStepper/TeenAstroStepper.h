@@ -2,15 +2,15 @@
 #include <TMC26XStepper.h>
 #include <TMCStepper.h>
 
-class Motor
+class Driver
 {
 public:
-  enum Motor_Driver
+  enum MOTORDRIVER
   {
     NODRIVER, TMC26X, TMC2130, TMC5160
   };
 private:
-  Motor_Driver m_driver = NODRIVER;
+  MOTORDRIVER m_driver = NODRIVER;
   TMC26XStepper *m_tmc26x = NULL;
   TMC2130Stepper *m_tmc2130 = NULL;
   TMC5160Stepper *m_tmc5160 = NULL;
@@ -102,7 +102,7 @@ public:
     return;
   };
 
-  void initMotor(Motor_Driver useddriver, int StepRot, int EnPin, int CSPin, int DirPin, int StepPin, unsigned int Curr, int Micros)
+  void initMotor(MOTORDRIVER useddriver, int StepRot, int EnPin, int CSPin, int DirPin, int StepPin, unsigned int Curr, int Micros)
   {
     m_driver = useddriver;
     switch (m_driver)

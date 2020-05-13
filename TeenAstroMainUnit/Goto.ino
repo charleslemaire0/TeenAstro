@@ -1,29 +1,25 @@
 void StepToInstr(long Axis1, long Axis2, double *AngleAxis1, double *AngleAxis2, PierSide* Side)
 {
-  *AngleAxis1 = ((double)Axis1) / StepsPerDegreeAxis1;
-  *AngleAxis2 = ((double)Axis2) / StepsPerDegreeAxis2;
+  *AngleAxis1 = ((double)Axis1) / geoA1.stepsPerDegree;
+  *AngleAxis2 = ((double)Axis2) / geoA2.stepsPerDegree;
   InsrtAngle2Angle(AngleAxis1, AngleAxis2, Side);
 }
 
 void InstrtoStep(double AngleAxis1, double AngleAxis2, PierSide Side, long *Axis1, long *Axis2)
 {
-  Angle2InsrtAngle(Side, &AngleAxis1, &AngleAxis2);
-  *Axis1 = (long)(AngleAxis1 * StepsPerDegreeAxis1);
-  *Axis2 = (long)(AngleAxis2 * StepsPerDegreeAxis2);
+  Angle2InsrtAngle(Side, &AngleAxis1, &AngleAxis2, localSite.latitude());
+  *Axis1 = (long)(AngleAxis1 * geoA1.stepsPerDegree);
+  *Axis2 = (long)(AngleAxis2 * geoA2.stepsPerDegree);
 }
 
-PierSide GetPierSide()
-{
-  cli(); long pos = posAxis2; sei();
-  return -quaterRotAxis2 <= pos && pos <= quaterRotAxis2 ? PIER_EAST : PIER_WEST;
-}
+
 
 //--------------------------------------------------------------------------------------------------
 // GoTo, commands to move the telescope to an location or to report the current location
-bool syncEqu(double HA, double Dec, PierSide Side)
+bool syncEqu(double HA, double Dec, PierSide Side, const double *cosLat, const double *sinLat)
 {
   double Azm, Alt = 0;
-  EquToHorApp(HA, Dec, &Azm, &Alt);
+  EquToHorApp(HA, Dec, &Azm, &Alt, cosLat, sinLat);
   return syncAzAlt(Azm, Alt, Side);
 }
 // syncs the telescope/mount to the sky
@@ -44,11 +40,11 @@ bool syncAzAlt(double Azm, double Alt, PierSide Side)
 }
 
 // gets the telescopes current Topocentric RA and Dec, set returnHA to true for Horizon Angle instead of RA
-bool getEqu(double *HA, double *Dec, bool returnHA)
+bool getEqu(double *HA, double *Dec, const double *cosLat, const double *sinLat, bool returnHA)
 {
   double  azm, alt = 0;
   getHorApp(&azm, &alt);
-  HorAppToEqu(azm, alt, HA, Dec);
+  HorAppToEqu(azm, alt, HA, Dec, cosLat, sinLat);
   if (!returnHA)
   {
     *HA = degRange(rtk.LST() * 15.0 - *HA);
@@ -57,11 +53,11 @@ bool getEqu(double *HA, double *Dec, bool returnHA)
 }
 
 // gets the telescopes current Topocentric Target RA and Dec, set returnHA to true for Horizon Angle instead of RA
-bool getEquTarget(double *HA, double *Dec, bool returnHA)
+bool getEquTarget(double *HA, double *Dec, const double *cosLat, const double *sinLat, bool returnHA)
 {
   double  azm, alt = 0;
   getHorAppTarget(&azm, &alt);
-  HorAppToEqu(azm, alt, HA, Dec);
+  HorAppToEqu(azm, alt, HA, Dec, cosLat, sinLat);
   if (!returnHA)
   {
     *HA = degRange(rtk.LST() * 15.0 - *HA);
@@ -73,8 +69,8 @@ bool getEquTarget(double *HA, double *Dec, bool returnHA)
 bool getHorApp(double *Azm, double *Alt)
 {
   cli();
-  double Axis1 = posAxis1 / (double)StepsPerDegreeAxis1;
-  double Axis2 = posAxis2 / (double)StepsPerDegreeAxis2;
+  double Axis1 = posAxis1 / (double)geoA1.stepsPerDegree;
+  double Axis2 = posAxis2 / (double)geoA2.stepsPerDegree;
   sei();
   alignment.toReferenceDeg(*Azm, *Alt, Axis1, Axis2);
   return true;
@@ -84,18 +80,18 @@ bool getHorApp(double *Azm, double *Alt)
 bool getHorAppTarget(double *Azm, double *Alt)
 {
   cli();
-  double Axis1 = targetAxis1 / StepsPerDegreeAxis1;
-  double Axis2 = targetAxis2 / StepsPerDegreeAxis2;
+  double Axis1 = targetAxis1 / geoA1.stepsPerDegree;
+  double Axis2 = targetAxis2 / geoA2.stepsPerDegree;
   sei();
   alignment.toReferenceDeg(*Azm, *Alt, Axis1, Axis2);
   return true;
 }
 
 // moves the mount to a new Right Ascension and Declination (RA,Dec) in degrees
-byte goToEqu(double HA, double Dec, PierSide preferedPierSide)
+byte goToEqu(double HA, double Dec, PierSide preferedPierSide, const double *cosLat, const double *sinLat)
 {
   double azm, alt = 0;
-  EquToHorApp(HA, Dec, &azm, &alt);
+  EquToHorApp(HA, Dec, &azm, &alt, cosLat, sinLat);
   return goToHor(&azm, &alt, preferedPierSide);
 }
 // moves the mount to a new Altitude and Azmiuth (Alt,Azm) in degrees
@@ -108,7 +104,7 @@ byte goToHor(double *Azm, double *Alt, PierSide preferedPierSide)
     abortSlew = true;
     return 5;
   }   // fail, prior goto cancelled
-  if (guideDirAxis1 || guideDirAxis2) return 7;   // fail, unspecified error
+  if (guideA1.dir || guideA2.dir) return 7;   // fail, unspecified error
 
   //z = AzRange(z);
   // Check to see if this goto is valid
@@ -132,8 +128,8 @@ PierSide predictSideOfPier(const double& Axis1_target, const double& Axis2_targe
 {
   double Axis1 = Axis1_target;
   double Axis2 = Axis2_target;
-  Angle2InsrtAngle(inputSide, &Axis1, &Axis2);
-  if (withinLimit(Axis1*StepsPerDegreeAxis1, Axis2*StepsPerDegreeAxis2))
+  Angle2InsrtAngle(inputSide, &Axis1, &Axis2, localSite.latitude());
+  if (withinLimit(Axis1*geoA1.stepsPerDegree, Axis2*geoA2.stepsPerDegree))
   {
     return inputSide;
   }
@@ -143,8 +139,8 @@ PierSide predictSideOfPier(const double& Axis1_target, const double& Axis2_targe
     if (inputSide == PIER_EAST) otherside = PIER_WEST; else otherside = PIER_EAST;
     Axis1 = Axis1_target;
     Axis2 = Axis2_target;
-    Angle2InsrtAngle(otherside, &Axis1, &Axis2);
-    if (withinLimit(Axis1*StepsPerDegreeAxis1, Axis2*StepsPerDegreeAxis2))
+    Angle2InsrtAngle(otherside, &Axis1, &Axis2, localSite.latitude());
+    if (withinLimit(Axis1*geoA1.stepsPerDegree, Axis2*geoA2.stepsPerDegree))
     {
       return otherside;
     }

@@ -33,7 +33,7 @@ Again:
       if (decreasing)
       {
         cli();
-        long a = max((currentAlt - minAlt)*StepsPerDegreeAxis2, 1);
+        long a = max((currentAlt - minAlt)*geoA2.stepsPerDegree, 1);
         if (a < distDestAxis2)
           distDestAxis2 = a;
         sei();
@@ -42,7 +42,7 @@ Again:
         // if Dec is increasing, slow down HA
       {
         cli();
-        long a = max((currentAlt - minAlt)*StepsPerDegreeAxis1, 1);
+        long a = max((currentAlt - minAlt)*geoA1.stepsPerDegree, 1);
         if (a < distDestAxis1)
           distDestAxis1 = a;
         sei();
@@ -70,7 +70,7 @@ Again:
         targetAxis1 = posAxis1 + a;
       sei();
     }
-    guideDirAxis1 = 'b';
+    guideA1.dir = 'b';
     a = pow(getV(timerRateAxis2), 2.) / (2. * AccAxis2);
     if (abs(deltaTargetAxis2) > a)
     {
@@ -80,7 +80,7 @@ Again:
       targetAxis2 = posAxis2 + a;
       sei();
     }
-    guideDirAxis2 = 'b';
+    guideA2.dir = 'b';
     if (parkStatus == PRK_PARKING)
     {
       sideralTracking = lastSideralTracking;
@@ -127,8 +127,8 @@ Again:
   //if (isAltAZ())
   //{
   //  // In AltAz mode & at the end of slew & near the Zenith, disable tracking for a moment if we're getting close to the target
-  //  if ((distDestAxis1 <= (long)StepsPerDegreeAxis1 * 2L) && (distDestAxis2 <= (long)StepsPerDegreeAxis2 * 2L)) {
-  //    if ((long)targetAxis2.part.m > 80L * (long)StepsPerDegreeAxis2 ) {
+  //  if ((distDestAxis1 <= (long)geoA1.stepsPerDegree * 2L) && (distDestAxis2 <= (long)geoA2.stepsPerDegree * 2L)) {
+  //    if ((long)targetAxis2.part.m > 80L * (long)geoA2.stepsPerDegree ) {
   //      sideralTracking = false;
   //    }
   //  }
@@ -207,15 +207,15 @@ void DecayModeTracking()
 {
   if (DecayModeTrack) return;
   DecayModeTrack = true;
-  motorAxis1.setCurrent((unsigned int)LowCurrAxis1 * 10);
-  motorAxis2.setCurrent((unsigned int)LowCurrAxis2 * 10);
+  MA1.driver.setCurrent((unsigned int)MA1.lowCurr * 10);
+  MA2.driver.setCurrent((unsigned int)MA2.lowCurr * 10);
 }
 
 void DecayModeGoto()
 {
   if (!DecayModeTrack) return;
   DecayModeTrack = false;
-  motorAxis1.setCurrent((unsigned int)HighCurrAxis1 * 10);
-  motorAxis2.setCurrent((unsigned int)HighCurrAxis2 * 10);
+  MA1.driver.setCurrent((unsigned int)MA1.highCurr * 10);
+  MA2.driver.setCurrent((unsigned int)MA2.highCurr * 10);
 }
 

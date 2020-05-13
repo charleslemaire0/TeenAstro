@@ -74,102 +74,116 @@ byte readBytesUntil2(char character, char buffer[], int length, boolean* charact
 // smart LX200 aware command and response over serial
 bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned long timeOutMs, bool keepHashtag)
 {
+  enum CMDREPLY
+  {
+    CMDR_NO, CMDR_SHORT, CMDR_LONG, CMDR_INVALID
+  };
+  CMDREPLY cmdreply = CMDR_NO;
   Ser.setTimeout(timeOutMs);
   memset(recvBuffer, 0, bufferSize);
   // clear the read/write buffers
   Ser.flush();
   serialRecvFlush();
   // send the command
-  Ser.print(command);
 
-  bool noResponse = false;
-  bool shortResponse = false;
-
-  if ((command[0] == (char)6) && (command[1] == 0)) shortResponse = true;
+  if ((command[0] == (char)6) && (command[1] == 0)) cmdreply = CMDR_SHORT;
   if (command[0] == ':')
   {
-    if (command[1] == 'A')
+    switch (command[1])
     {
-      if (strchr("W123456789+", command[2]))
+    case 'A':
+      if (strchr("023CW", command[2])) cmdreply = CMDR_SHORT;
+      else cmdreply = CMDR_INVALID;
+      break;
+    case 'B':
+      if (strchr("+-", command[2])) cmdreply = CMDR_NO;
+      else cmdreply = CMDR_INVALID;
+      break;
+    case 'C':
+      if (strchr("AMSU", command[2])) cmdreply = CMDR_LONG;
+      else cmdreply = CMDR_INVALID;
+      break;
+    case 'D':
+      if (strchr("#", command[2])) cmdreply = CMDR_LONG;
+      else cmdreply = CMDR_INVALID;
+      break;
+    case 'F':
+      if (strchr("+-gGPQsS", command[2])) cmdreply = CMDR_NO;
+      else if (strchr("OoIi:012345678cCmW", command[2])) cmdreply = CMDR_SHORT;
+      else if (strchr("x?~MV", command[2])) cmdreply = CMDR_LONG;
+      else cmdreply = CMDR_INVALID;
+      break;
+    case 'G':
+      if (strchr("AaCcDdegGhLMNOPmnoRrSTtVXZ", command[2]))
       {
-        shortResponse = true;
+        cmdreply = CMDR_LONG;
       }
-    }
-    if (command[1] == 'M')
-    {
-      if (strchr("ewnsg", command[2])) noResponse = true;
-      if (strchr("SAF?@", command[2])) shortResponse = true;
-    }
-    if (command[1] == 'Q')
-    {
-      if (strchr("#ewns", command[2])) noResponse = true;
-    }
-    if (command[1] == 'S')
-    {
-      if (strchr("!", command[2])) noResponse = true;
-      else if (strchr("CLSGtgMNOPrdhoTBX", command[2])) shortResponse = true;
-    }
-    if (command[1] == 'L')
-    {
-      if (strchr("BNCDL!", command[2])) noResponse = true;
-      if (strchr("o$W", command[2])) shortResponse = true;
-    }
-    if (command[1] == 'B')
-    {
-      if (strchr("+-", command[2])) noResponse = true;
-    }
-    if (command[1] == 'C')
-    {
-      if (strchr("S", command[2])) noResponse = true;
-    }
-    if (command[1] == 'F')
-    {
-      Ser.setTimeout(timeOutMs * 5);
-      if (strchr("+-GPSgs", command[2]))
+      else cmdreply = CMDR_INVALID;
+      break;
+    case 'h':
+      if (strchr("F", command[2])) cmdreply = CMDR_NO;
+      else if (strchr("COPQR", command[2]))
       {
-        noResponse = true;
+        cmdreply = CMDR_SHORT;
       }
-      if (strchr("OoIi:012345678cCmW", command[2]))
-      {
-        shortResponse = true;
-      }
-    }
-    if (command[1] == 'h')
-    {
-      if (strchr("F", command[2])) noResponse = true;
-      if (strchr("COPQR", command[2]))
-      {
-        shortResponse = true; Ser.setTimeout(timeOutMs * 2);
-      }
-    }
-    if (command[1] == 'T')
-    {
-      if (strchr("QR+-SLK", command[2])) noResponse = true;
-      if (strchr("edrn", command[2])) shortResponse = true;
-    }
-    if (command[1] == 'U') noResponse = true;
-    if ((command[1] == 'W') && (command[2] != '?'))
-    {
-      noResponse = true;
-    }
-    if ((command[1] == '$') && (command[2] == 'Q') && (command[3] == 'Z'))
-    {
-      if (strchr("+-Z/!", command[4])) noResponse = true;
-    }
-    if (command[1] == 'G')
-    {
-      if (strchr("AZRD", command[2]))
-      {
-        timeOutMs *= 2;
-      }
+      else cmdreply = CMDR_INVALID;
+      break;
+    case 'M':
+      if (strchr("ewnsg", command[2])) cmdreply = CMDR_NO;
+      else if (strchr("SAF@", command[2])) cmdreply = CMDR_SHORT;
+      else if (strchr("?", command[2])) cmdreply = CMDR_LONG;
+      else cmdreply = CMDR_INVALID;
+      break;
+    case 'Q':
+      if (strchr("#ewns", command[2])) cmdreply = CMDR_NO;
+      else cmdreply = CMDR_INVALID;
+      break;
+    case 'R':
+      if (strchr("GCMS01234", command[2])) cmdreply = CMDR_NO;
+      else cmdreply = CMDR_INVALID;
+      break;
+    case 'S':
+      if (strchr("!", command[2])) cmdreply = CMDR_NO;
+      else if (strchr("CLSGtgMNOPrdhoTBX", command[2])) cmdreply = CMDR_SHORT;
+      else cmdreply = CMDR_INVALID;
+      break;
+    case 'T':
+      if (strchr("QR+-SLK", command[2])) cmdreply = CMDR_NO;
+      else if (strchr("edrn", command[2])) cmdreply = CMDR_SHORT;
+      else cmdreply = CMDR_INVALID;
+      break;
+    case 'U':
+      if (strchr("#", command[2])) cmdreply = CMDR_NO;
+      else cmdreply = CMDR_INVALID;
+      break;
+    case 'W':
+      if (strchr("0123", command[2])) cmdreply = CMDR_NO;
+      else if (strchr("?", command[2])) cmdreply = CMDR_LONG;
+      else cmdreply = CMDR_INVALID;
+      break;
+    case'$':
+      if (strchr("$!", command[2])) cmdreply = CMDR_NO;
+      else if (strchr("X", command[2])) cmdreply = CMDR_SHORT;
+      else cmdreply = CMDR_INVALID;
+      break;
+    default:
+      cmdreply = CMDR_INVALID;
+      break;
     }
   }
-  if (noResponse)
+  else cmdreply = CMDR_INVALID;
+
+  if (cmdreply == CMDR_INVALID) return false;
+
+  Ser.print(command);
+ 
+  switch (cmdreply)
   {
+  case CMDR_NO:
     recvBuffer[0] = 0;
     return true;
-  }
-  else if (shortResponse)
+    break;
+  case CMDR_SHORT:
   {
     unsigned long start = millis();
     while (millis() - start < timeOutMs)
@@ -181,8 +195,9 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       }
     }
     return (recvBuffer[0] != 0);
+    break;
   }
-  else
+  case CMDR_LONG:
   {
     // get full response, '#' terminated
     unsigned long start = millis();
@@ -211,7 +226,12 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       }
     }
     return (recvBuffer[0] != 0);
+    break;
   }
+  default:
+    break;
+  }
+
 }
 
 bool isOk(LX200RETURN val)
