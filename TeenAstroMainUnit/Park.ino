@@ -15,8 +15,8 @@ bool setPark()
 
     long    h = (targetAxis1 / 1024L) * 1024L;
     long    d = (targetAxis2 / 1024L) * 1024L;
-    h /= pow(2, MicroAxis1);
-    d /= pow(2, MicroAxis2);
+    h /= pow(2, MA1.micro);
+    d /= pow(2, MA2.micro);
     // store our position
     XEEPROM.writeLong(EE_posAxis1, h);
     XEEPROM.writeLong(EE_posAxis2, d);
@@ -151,8 +151,8 @@ byte park()
         // get the position we're supposed to park at
         long    h = XEEPROM.readLong(EE_posAxis1);
         long    d = XEEPROM.readLong(EE_posAxis2);
-        h *= pow(2, MicroAxis1);
-        d *= pow(2, MicroAxis2);
+        h *= pow(2, MA1.micro);
+        d *= pow(2, MA2.micro);
         // stop tracking
         lastSideralTracking = false;
         sideralTracking = false;
@@ -191,8 +191,8 @@ bool syncAtPark()
   long axis1, axis2;
   axis1 = XEEPROM.readLong(EE_posAxis1);
   axis2 = XEEPROM.readLong(EE_posAxis2);
-  axis1 *= pow(2, MicroAxis1);
-  axis2 *= pow(2, MicroAxis2);
+  axis1 *= pow(2, MA1.micro);
+  axis2 *= pow(2, MA2.micro);
   cli();
   posAxis1 = axis1;
   targetAxis1 = axis1;

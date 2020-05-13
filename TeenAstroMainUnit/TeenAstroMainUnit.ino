@@ -599,59 +599,59 @@ void initmotor(bool deleteAlignment)
 {
   readEEPROMmotor();
   updateRatios(deleteAlignment);
-  motorAxis1.initMotor(static_cast<Motor::Motor_Driver>(AxisDriver), StepRotAxis1, Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin, (unsigned int)LowCurrAxis1 * 10, MicroAxis1);
-  motorAxis2.initMotor(static_cast<Motor::Motor_Driver>(AxisDriver), StepRotAxis2, Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin, (unsigned int)LowCurrAxis2 * 10, MicroAxis2);
+  MA1.driver.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), MA1.stepRot, Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin, (unsigned int)MA1.lowCurr * 10, MA1.micro);
+  MA2.driver.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), MA2.stepRot, Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin, (unsigned int)MA2.lowCurr * 10, MA2.micro);
 }
 
 void readEEPROMmotor()
 {
   bl_Axis1.inSeconds = XEEPROM.readInt(EE_backlashAxis1);
   bl_Axis1.movedSteps = 0;
-  GearAxis1 = XEEPROM.readInt(EE_GearAxis1);
-  StepRotAxis1 = XEEPROM.readInt(EE_StepRotAxis1);
-  MicroAxis1 = XEEPROM.read(EE_MicroAxis1);
-  if (MicroAxis1 < 3) MicroAxis1 = 3; else if (MicroAxis1 > 8) MicroAxis1 = 8;
-  ReverseAxis1 = XEEPROM.read(EE_ReverseAxis1);
-  LowCurrAxis1 = XEEPROM.read(EE_LowCurrAxis1);
-  HighCurrAxis1 = XEEPROM.read(EE_HighCurrAxis1);
+  MA1.gear = XEEPROM.readInt(EE_MA1gear);
+  MA1.stepRot = XEEPROM.readInt(EE_MA1stepRot);
+  MA1.micro = XEEPROM.read(EE_MA1micro);
+  if (MA1.micro < 3) MA1.micro = 3; else if (MA1.micro > 8) MA1.micro = 8;
+  MA1.reverse = XEEPROM.read(EE_MA1reverse);
+  MA1.lowCurr = XEEPROM.read(EE_MA1lowCurr);
+  MA1.highCurr = XEEPROM.read(EE_MA1highCurr);
 
   bl_Axis2.inSeconds = XEEPROM.readInt(EE_backlashAxis2);
   bl_Axis2.movedSteps = 0;
-  GearAxis2 = XEEPROM.readInt(EE_GearAxis2);
-  StepRotAxis2 = XEEPROM.readInt(EE_StepRotAxis2);
-  MicroAxis2 = XEEPROM.read(EE_MicroAxis2);
-  if (MicroAxis2 < 3) MicroAxis2 = 3; else if (MicroAxis2 > 8) MicroAxis2 = 8;
-  ReverseAxis2 = XEEPROM.read(EE_ReverseAxis2);
-  LowCurrAxis2 = XEEPROM.read(EE_LowCurrAxis2);
-  HighCurrAxis2 = XEEPROM.read(EE_HighCurrAxis2);
+  MA2.gear = XEEPROM.readInt(EE_MA2gear);
+  MA2.stepRot = XEEPROM.readInt(EE_MA2stepRot);
+  MA2.micro = XEEPROM.read(EE_MA2micro);
+  if (MA2.micro < 3) MA2.micro = 3; else if (MA2.micro > 8) MA2.micro = 8;
+  MA2.reverse = XEEPROM.read(EE_MA2reverse);
+  MA2.lowCurr = XEEPROM.read(EE_MA2lowCurr);
+  MA2.highCurr = XEEPROM.read(EE_MA2highCurr);
 }
 
 void writeDefaultEEPROMmotor()
 {
   // init (clear) the backlash amounts
   XEEPROM.writeInt(EE_backlashAxis1, 0);
-  XEEPROM.writeInt(EE_GearAxis1, 1800);
-  XEEPROM.writeInt(EE_StepRotAxis1, 200);
-  XEEPROM.write(EE_MicroAxis1, 4);
-  XEEPROM.write(EE_ReverseAxis1, 0);
-  XEEPROM.write(EE_HighCurrAxis1, 100);
-  XEEPROM.write(EE_LowCurrAxis1, 100);
+  XEEPROM.writeInt(EE_MA1gear, 1800);
+  XEEPROM.writeInt(EE_MA1stepRot, 200);
+  XEEPROM.write(EE_MA1micro, 4);
+  XEEPROM.write(EE_MA1reverse, 0);
+  XEEPROM.write(EE_MA1highCurr, 100);
+  XEEPROM.write(EE_MA1lowCurr, 100);
 
   XEEPROM.writeInt(EE_backlashAxis2, 0);
-  XEEPROM.writeInt(EE_GearAxis2, 1800);
-  XEEPROM.writeInt(EE_StepRotAxis2, 200);
-  XEEPROM.write(EE_MicroAxis2, 4);
-  XEEPROM.write(EE_ReverseAxis2, 0);
-  XEEPROM.write(EE_HighCurrAxis2, 100);
-  XEEPROM.write(EE_LowCurrAxis2, 100);
+  XEEPROM.writeInt(EE_MA2gear, 1800);
+  XEEPROM.writeInt(EE_MA2stepRot, 200);
+  XEEPROM.write(EE_MA2micro, 4);
+  XEEPROM.write(EE_MA2reverse, 0);
+  XEEPROM.write(EE_MA2highCurr, 100);
+  XEEPROM.write(EE_MA2lowCurr, 100);
 }
 
 
 void updateRatios(bool deleteAlignment)
 {
   cli();
-  StepsPerRotAxis1 = (long)GearAxis1 * StepRotAxis1 * (int)pow(2, MicroAxis1); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-  StepsPerRotAxis2 = (long)GearAxis2 * StepRotAxis2 * (int)pow(2, MicroAxis2); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+  StepsPerRotAxis1 = (long)MA1.gear * MA1.stepRot * (int)pow(2, MA1.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+  StepsPerRotAxis2 = (long)MA2.gear * MA2.stepRot * (int)pow(2, MA2.micro); // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   StepsPerDegreeAxis1 = (double)StepsPerRotAxis1 / 360.0;
   bl_Axis1.inSteps = (int)round(((double)bl_Axis1.inSeconds * 3600.0) / (double)StepsPerDegreeAxis1);
   StepsPerDegreeAxis2 = (double)StepsPerRotAxis2 / 360.0;

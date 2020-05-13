@@ -350,11 +350,11 @@ void Command_GX()
     {
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", GearAxis2);
+        sprintf(reply, "%u#", MA2.gear);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", GearAxis1);
+        sprintf(reply, "%u#", MA1.gear);
       }
       else
         strcpy(reply, "0");
@@ -364,11 +364,11 @@ void Command_GX()
     {
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", StepRotAxis2);
+        sprintf(reply, "%u#", MA2.stepRot);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", StepRotAxis1);
+        sprintf(reply, "%u#", MA1.stepRot);
       }
       else
         strcpy(reply, "0");
@@ -378,11 +378,11 @@ void Command_GX()
     {
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", (unsigned  int)MicroAxis2);
+        sprintf(reply, "%u#", (unsigned  int)MA2.micro);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", (unsigned  int)MicroAxis1);
+        sprintf(reply, "%u#", (unsigned  int)MA1.micro);
       }
       else
         strcpy(reply, "0");
@@ -392,11 +392,11 @@ void Command_GX()
     {
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", (unsigned  int)ReverseAxis2);
+        sprintf(reply, "%u#", (unsigned  int)MA2.reverse);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", (unsigned  int)ReverseAxis1);
+        sprintf(reply, "%u#", (unsigned  int)MA1.reverse);
       }
       else
         strcpy(reply, "0");
@@ -406,11 +406,11 @@ void Command_GX()
     {
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", HighCurrAxis2);
+        sprintf(reply, "%u#", MA2.highCurr);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", HighCurrAxis1);
+        sprintf(reply, "%u#", MA1.highCurr);
       }
       else
         strcpy(reply, "0");
@@ -420,11 +420,11 @@ void Command_GX()
     {
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", LowCurrAxis2);
+        sprintf(reply, "%u#", MA2.lowCurr);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", LowCurrAxis1);
+        sprintf(reply, "%u#", MA1.lowCurr);
       }
       else
         strcpy(reply, "0");
@@ -436,11 +436,11 @@ void Command_GX()
       {
         if (command[4] == 'D')
         {
-          sprintf(reply, "%d#", motorAxis2.getSG());  
+          sprintf(reply, "%d#", MA2.driver.getSG());  
         }
         else if (command[4] == 'R')
         {
-          sprintf(reply, "%d#", motorAxis1.getSG());
+          sprintf(reply, "%d#", MA1.driver.getSG());
   
         }
         else
@@ -456,11 +456,11 @@ void Command_GX()
       {
         if (command[4] == 'D')
         {
-          sprintf(reply, "%u#", motorAxis1.getCurrent());
+          sprintf(reply, "%u#", MA1.driver.getCurrent());
         }
         else if (command[4] == 'R')
         {
-          sprintf(reply, "%u#", motorAxis2.getCurrent());  
+          sprintf(reply, "%u#", MA2.driver.getCurrent());  
         }
         else strcpy(reply, "0");
       }

@@ -207,15 +207,15 @@ void DecayModeTracking()
 {
   if (DecayModeTrack) return;
   DecayModeTrack = true;
-  motorAxis1.setCurrent((unsigned int)LowCurrAxis1 * 10);
-  motorAxis2.setCurrent((unsigned int)LowCurrAxis2 * 10);
+  MA1.driver.setCurrent((unsigned int)MA1.lowCurr * 10);
+  MA2.driver.setCurrent((unsigned int)MA2.lowCurr * 10);
 }
 
 void DecayModeGoto()
 {
   if (!DecayModeTrack) return;
   DecayModeTrack = false;
-  motorAxis1.setCurrent((unsigned int)HighCurrAxis1 * 10);
-  motorAxis2.setCurrent((unsigned int)HighCurrAxis2 * 10);
+  MA1.driver.setCurrent((unsigned int)MA1.highCurr * 10);
+  MA2.driver.setCurrent((unsigned int)MA2.highCurr * 10);
 }
 

@@ -225,23 +225,23 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
-          double fact = (double)i / GearAxis2;
+          double fact = (double)i / MA2.gear;
           cli();
           posAxis2 = fact * posAxis2;
           sei();
           StopAxis2();
-          GearAxis2 = (unsigned int)i;
-          XEEPROM.writeInt(EE_GearAxis2, i);
+          MA2.gear = (unsigned int)i;
+          XEEPROM.writeInt(EE_MA2gear, i);
         }
         else
         {
-          double fact = (double)i / GearAxis1;
+          double fact = (double)i / MA1.gear;
           cli();
           posAxis1 = fact * posAxis1;
           sei();
           StopAxis1();
-          GearAxis1 = (unsigned int)i;
-          XEEPROM.writeInt(EE_GearAxis1, i);
+          MA1.gear = (unsigned int)i;
+          XEEPROM.writeInt(EE_MA1gear, i);
         }
         strcpy(reply, "1");
         unsetPark();
@@ -261,23 +261,23 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
-          double fact = (double)i / StepRotAxis2;
+          double fact = (double)i / MA2.stepRot;
           cli();
           posAxis2 = fact * posAxis2;
           sei();
           StopAxis2();
-          StepRotAxis2 = (unsigned int)i;
-          XEEPROM.writeInt(EE_StepRotAxis2, i);
+          MA2.stepRot = (unsigned int)i;
+          XEEPROM.writeInt(EE_MA2stepRot, i);
         }
         else
         {
-          double fact = (double)i / StepRotAxis1;
+          double fact = (double)i / MA1.stepRot;
           cli();
           posAxis1 = fact * posAxis1;
           sei();
           StopAxis1();
-          StepRotAxis1 = (unsigned int)i;
-          XEEPROM.writeInt(EE_StepRotAxis1, i);
+          MA1.stepRot = (unsigned int)i;
+          XEEPROM.writeInt(EE_MA1stepRot, i);
         }
         strcpy(reply, "1");
         unsetPark();
@@ -299,25 +299,25 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
-          double fact = pow(2., i - MicroAxis2);
+          double fact = pow(2., i - MA2.micro);
           cli();
           posAxis2 = fact * posAxis2;
           sei();
           StopAxis2();
-          MicroAxis2 = i;
-          motorAxis2.setMicrostep(MicroAxis2);
-          XEEPROM.write(EE_MicroAxis2, MicroAxis2);
+          MA2.micro = i;
+          MA2.driver.setMicrostep(MA2.micro);
+          XEEPROM.write(EE_MA2micro, MA2.micro);
         }
         else
         {
-          double fact = pow(2., i - MicroAxis1);
+          double fact = pow(2., i - MA1.micro);
           cli();
           posAxis1 = fact * posAxis1;
           sei();
           StopAxis1();
-          MicroAxis1 = i;
-          motorAxis1.setMicrostep(MicroAxis1);
-          XEEPROM.write(EE_MicroAxis1, MicroAxis1);
+          MA1.micro = i;
+          MA1.driver.setMicrostep(MA1.micro);
+          XEEPROM.write(EE_MA1micro, MA1.micro);
         }
         updateRatios(true);
         strcpy(reply, "1");
@@ -334,13 +334,13 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
-          ReverseAxis2 = command[5] == '1' ? true : false;
-          XEEPROM.write(EE_ReverseAxis2, ReverseAxis2);
+          MA2.reverse = command[5] == '1' ? true : false;
+          XEEPROM.write(EE_MA2reverse, MA2.reverse);
         }
         else
         {
-          ReverseAxis1 = command[5] == '1' ? true : false;
-          XEEPROM.write(EE_ReverseAxis1, ReverseAxis1);
+          MA1.reverse = command[5] == '1' ? true : false;
+          XEEPROM.write(EE_MA1reverse, MA1.reverse);
         }
         strcpy(reply, "1");
       }
@@ -361,28 +361,28 @@ void Command_SX()
         {
           if (command[3] == 'C')
           {
-            HighCurrAxis2 = (u_int8_t)i;
-            XEEPROM.write(EE_HighCurrAxis2, HighCurrAxis2);
+            MA2.highCurr = (u_int8_t)i;
+            XEEPROM.write(EE_MA2highCurr, MA2.highCurr);
           }
           else
           {
-            LowCurrAxis2 = (u_int8_t)i;
-            XEEPROM.write(EE_LowCurrAxis2, LowCurrAxis2);
-            motorAxis2.setCurrent((unsigned int)LowCurrAxis2 * 10);
+            MA2.lowCurr = (u_int8_t)i;
+            XEEPROM.write(EE_MA2lowCurr, MA2.lowCurr);
+            MA2.driver.setCurrent((unsigned int)MA2.lowCurr * 10);
           }
         }
         else if (command[4] == 'R')
         {
           if (command[3] == 'C')
           {
-            HighCurrAxis1 = (u_int8_t)i;
-            XEEPROM.write(EE_HighCurrAxis1, HighCurrAxis1);
+            MA1.highCurr = (u_int8_t)i;
+            XEEPROM.write(EE_MA1highCurr, MA1.highCurr);
           }
           else
           {
-            LowCurrAxis1 = (u_int8_t)i;
-            XEEPROM.write(EE_LowCurrAxis1, LowCurrAxis1);
-            motorAxis1.setCurrent((unsigned int)LowCurrAxis1 * 10);
+            MA1.lowCurr = (u_int8_t)i;
+            XEEPROM.write(EE_MA1lowCurr, MA1.lowCurr);
+            MA1.driver.setCurrent((unsigned int)MA1.lowCurr * 10);
           }
         }
         strcpy(reply, "1");
@@ -403,11 +403,11 @@ void Command_SX()
 
         if (command[4] == 'D')
         {
-          motorAxis2.setSG(i);
+          MA2.driver.setSG(i);
         }
         else
         {
-          motorAxis1.setSG(i);
+          MA1.driver.setSG(i);
         }
         strcpy(reply, "1");
       }

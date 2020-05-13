@@ -65,21 +65,21 @@ double  az_deltaAxis1 = 15., az_deltaAxis2 = 0.;
 double  az_deltaRateScale = 1.;
 
 
-//Motor Axis1
-unsigned int GearAxis1;
-unsigned int StepRotAxis1;
-byte MicroAxis1;
-bool ReverseAxis1;
-u_int8_t HighCurrAxis1;
-u_int8_t LowCurrAxis1;
+//Motor
+class MotorAxis
+{
+public:
+  unsigned int gear;
+  unsigned int stepRot;
+  byte micro;
+  bool reverse;
+  u_int8_t highCurr;
+  u_int8_t lowCurr;
+  Driver driver;
+};
+MotorAxis MA1;
+MotorAxis MA2;
 
-//Motor Axis2
-unsigned int GearAxis2;
-unsigned int StepRotAxis2;
-uint8_t MicroAxis2;
-bool ReverseAxis2;
-u_int8_t HighCurrAxis2;
-u_int8_t LowCurrAxis2;
 
 //tracking rate
 #define default_tracking_rate   1
@@ -108,6 +108,7 @@ long halfRotAxis1;
 long quaterRotAxis1;
 long poleStepAxis1;
 long homeStepAxis1;
+
 
 //geometry Axis2
 long StepsPerRotAxis2; // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
@@ -226,9 +227,7 @@ unsigned long   baudRate[10] =
   115200, 56700, 38400, 28800, 19200, 14400, 9600, 4800, 2400, 1200
 };
 
-// Motors
-Motor motorAxis1;
-Motor motorAxis2;
+
 
 // guide command
 #define GuideRateRG   0

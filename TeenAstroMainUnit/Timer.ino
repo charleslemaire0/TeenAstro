@@ -287,7 +287,7 @@ ISR(TIMER3_COMPA_vect)
       // Move the RA stepper to the target
       dirAxis1 = 0 < deltaTargetAxis1;
       // Direction control
-      if (ReverseAxis1^Axis1Reverse)
+      if (MA1.reverse^Axis1Reverse)
       {
         if (HADir == dirAxis1)
           digitalWriteFast(Axis1DirPin, LOW);
@@ -360,7 +360,7 @@ ISR(TIMER4_COMPA_vect)
       // telescope normally starts on the EAST side of the pier looking at the WEST sky
       dirAxis2 = 0 < deltaTargetAxis2;
       // Direction control
-      if (ReverseAxis2^Axis2Reverse)
+      if (MA2.reverse^Axis2Reverse)
       {
         if (dirAxis2)
           digitalWriteFast(Axis2DirPin, LOW);
