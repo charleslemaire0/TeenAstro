@@ -228,14 +228,14 @@ ISR(TIMER1_COMPA_vect)
   // override rate during backlash compensation
   if (backlashA1.correcting)
   {
-    thisTimerRateAxis1 = timerRateBacklashAxis1;
+    thisTimerRateAxis1 = backlashA1.timerRate;
     wasInbacklashAxis1 = true;
   }
 
   // override rate during backlash compensation
   if (backlashA2.correcting)
   {
-    thisTimerRateAxis2 = timerRateBacklashAxis2;
+    thisTimerRateAxis2 = backlashA2.timerRate;
     wasInbacklashAxis2 = true;
   }
   if (sideralTracking && !movingTo)

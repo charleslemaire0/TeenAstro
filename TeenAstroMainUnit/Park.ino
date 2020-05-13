@@ -74,8 +74,8 @@ bool parkClearBacklash()
   cli();
   long    LastTimerRateAxis1 = timerRateAxis1;
   long    LastTimerRateAxis2 = timerRateAxis2;
-  timerRateAxis1 = timerRateBacklashAxis1;
-  timerRateAxis2 = timerRateBacklashAxis2;
+  timerRateAxis1 = backlashA1.timerRate;
+  timerRateAxis2 = backlashA2.timerRate;
   sei();
 
   // figure out how long we'll have to wait for the backlash to clear (+50%)

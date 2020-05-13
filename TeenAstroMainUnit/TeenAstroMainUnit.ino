@@ -689,8 +689,8 @@ void updateSideral()
   SetTrackingRate(default_tracking_rate);
 
   // backlash takeup rates
-  timerRateBacklashAxis1 = timerRateAxis1 / BacklashTakeupRate;
-  timerRateBacklashAxis2 = timerRateAxis2 / BacklashTakeupRate;
+  backlashA1.timerRate = timerRateAxis1 / BacklashTakeupRate;
+  backlashA2.timerRate = timerRateAxis2 / BacklashTakeupRate;
 
   // initialize the timers that handle the sidereal clock, RA, and Dec
   SetSiderealClockRate(siderealInterval);

@@ -52,10 +52,8 @@ double                  DegreesForAcceleration = 3;
 
 //Timers
 volatile double         timerRateAxis1 = 0;
-volatile double         timerRateBacklashAxis1 = 0;
 bool                    faultAxis1 = false;
 volatile double         timerRateAxis2 = 0;
-volatile double         timerRateBacklashAxis2 = 0;
 bool                    faultAxis2 = false;
 
 // -----------------------------------------------------------------------------------------------------------------------------
@@ -92,13 +90,15 @@ volatile double         trackingTimerRateAxis2 = default_tracking_rate;
 // backlash control
 struct backlash
 {
-  int inSeconds;
-  volatile int inSteps;
-  volatile bool correcting;
-  volatile int movedSteps;
+  int             inSeconds;
+  volatile int    inSteps;
+  volatile bool   correcting;
+  volatile int    movedSteps;
+  volatile double timerRate;
 };
-backlash backlashA1 = { 0,0,0 };
-backlash backlashA2 = { 0,0,0 };
+
+backlash backlashA1 = { 0,0,0,0 };
+backlash backlashA2 = { 0,0,0,0 };
 
 
 //geometry Axis
