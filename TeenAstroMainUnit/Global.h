@@ -18,7 +18,6 @@ TinyGPSPlus gps;
 CoordConv alignment;
 bool hasStarAlignment = false;
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
-enum PierSide { PIER_NOTVALID, PIER_EAST, PIER_WEST };
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
 enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW };
@@ -53,68 +52,73 @@ double                  DegreesForAcceleration = 3;
 
 //Timers
 volatile double         timerRateAxis1 = 0;
-volatile double         timerRateBacklashAxis1 = 0;
-volatile bool           inbacklashAxis1 = false;
 bool                    faultAxis1 = false;
 volatile double         timerRateAxis2 = 0;
-volatile double         timerRateBacklashAxis2 = 0;
-volatile bool           inbacklashAxis2 = false;
 bool                    faultAxis2 = false;
 
-//Motor Axis1
-unsigned int GearAxis1;
-unsigned int StepRotAxis1;
-byte MicroAxis1;
-bool ReverseAxis1;
-u_int8_t HighCurrAxis1;
-u_int8_t LowCurrAxis1;
+// -----------------------------------------------------------------------------------------------------------------------------
+// Refraction rate tracking
+// az_deltaAxis1/az_deltaAxis2 are in arc-seconds/second
+double  az_deltaAxis1 = 15.;
+double  az_deltaAxis2 = 0.;
+double  az_deltaRateScale = 1.;
 
-//Motor Axis2
-unsigned int GearAxis2;
-unsigned int StepRotAxis2;
-uint8_t MicroAxis2;
-bool ReverseAxis2;
-u_int8_t HighCurrAxis2;
-u_int8_t LowCurrAxis2;
+
+//Motor
+class MotorAxis
+{
+public:
+  unsigned int gear;
+  unsigned int stepRot;
+  byte micro;
+  bool reverse;
+  u_int8_t highCurr;
+  u_int8_t lowCurr;
+  Driver driver;
+
+};
+MotorAxis MA1;
+MotorAxis MA2;
+
 
 //tracking rate
 #define default_tracking_rate   1
 volatile double         trackingTimerRateAxis1 = default_tracking_rate;
 volatile double         trackingTimerRateAxis2 = default_tracking_rate;
-volatile double         guideTimerRateAxis1 = 0.0;
-volatile double         guideTimerRateAxis2 = 0.0;
+
 
 // backlash control
-int backlashAxis1 = 0;
-int backlashAxis2 = 0;
-volatile int    StepsBacklashAxis1 = 0;
-volatile int    StepsBacklashAxis2 = 0;
-volatile int    blAxis1 = 0;
-volatile int    blAxis2 = 0;
+struct backlash
+{
+  int             inSeconds;
+  volatile int    inSteps;
+  volatile bool   correcting;
+  volatile int    movedSteps;
+  volatile double timerRate;
+};
+
+backlash backlashA1 = { 0,0,0,0 };
+backlash backlashA2 = { 0,0,0,0 };
 
 
-//geometry Axis1
-long StepsPerRotAxis1; // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-double StepsPerDegreeAxis1;
-double StepsPerSecondAxis1;
-long halfRotAxis1;
-long quaterRotAxis1;
-long poleStepAxis1;
-long homeStepAxis1;
+//geometry Axis
+class GeoAxis
+{
+public:
+  long   stepsPerRot; // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
+  double stepsPerDegree;
+  double stepsPerSecond;
+  long   halfRot;   //in steps
+  long   quaterRot; //in steps
+  long   poleDef;   //in steps
+  long   homeDef;   //in steps
+  long   breakDist; //in steps
+};
 
-//geometry Axis2
-long StepsPerRotAxis2; // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-double StepsPerDegreeAxis2;
-double StepsPerSecondAxis2;
-long halfRotAxis2;
-long quaterRotAxis2;
-long poleStepAxis2;
-long homeStepAxis2;
+GeoAxis geoA1;
+GeoAxis geoA2;
 
-volatile double         timerRateRatio;
-
-long BreakDistAxis1 = 2;
-long BreakDistAxis2 = 2;
+volatile double     timerRateRatio;
 
 volatile double     AccAxis1 = 0; //acceleration in steps per second square
 volatile double     AccAxis2 = 0; //acceleration in steps per second square
@@ -210,22 +214,8 @@ bool abortSlew = false;
 // Command processing -------------------------------------------------------------------------------------------------------
 #define BAUD 57600
 
-bool commandError = false;
-bool quietReply = false;
-
 char reply[50];
-char command[3];
-char parameter[25];
-byte bufferPtr = 0;
-
-// for serial 0
-char command_serial_zero[25];
-char parameter_serial_zero[25];
-byte bufferPtr_serial_zero = 0;
-// for serial 1
-char command_serial_one[25];
-char parameter_serial_one[25];
-byte bufferPtr_serial_one = 0;
+char command[28];
 
 // serial speed
 unsigned long   baudRate[10] =
@@ -233,9 +223,7 @@ unsigned long   baudRate[10] =
   115200, 56700, 38400, 28800, 19200, 14400, 9600, 4800, 2400, 1200
 };
 
-// Motors
-Motor motorAxis1;
-Motor motorAxis2;
+
 
 // guide command
 #define GuideRateRG   0
@@ -249,19 +237,24 @@ Motor motorAxis2;
 #define DefaultR2 16
 #define DefaultR3 64
 #define DefaultR4 64
-double          guideRates[5] =
+double  guideRates[5] =
 {
   DefaultR0 , DefaultR1 , DefaultR2 ,  DefaultR3 , DefaultR4
 };
 
 volatile byte   activeGuideRate = GuideRateRS;
 
-volatile byte   guideDirAxis1 = 0;
-long            guideDurationAxis1 = -1;
-unsigned long   guideDurationLastAxis1 = 0;
-volatile byte   guideDirAxis2 = 0;
-long            guideDurationAxis2 = -1;
-unsigned long   guideDurationLastAxis2 = 0;
+class GuideAxis
+{
+public:
+  volatile byte   dir;
+  long            duration;
+  unsigned long   durationLast;
+  double          amount;
+  volatile double timerRate;
+};
+GuideAxis guideA1 = { 0,0,0,0,0 };
+GuideAxis guideA2 = { 0,0,0,0,0 };
 
 long            lasttargetAxis1 = 0;
 long            debugv1 = 0;
@@ -269,8 +262,6 @@ bool            axis1Enabled = false;
 bool            axis2Enabled = false;
 
 double          guideTimerBaseRate = 0;
-double          amountGuideAxis1;
-double          amountGuideAxis2;
 
 // Reticule control
 #ifdef RETICULE_LED_PINS
@@ -325,11 +316,16 @@ bool atTargetAxis1(bool update = false)
 {
   if (update)
     updateDeltaTargetAxis1();
-  return abs(deltaTargetAxis1) < BreakDistAxis1;
+  return abs(deltaTargetAxis1) < geoA1.breakDist;
 }
 bool atTargetAxis2(bool update = false)
 {
   if (update)
     updateDeltaTargetAxis2();
-  return abs(deltaTargetAxis2) < BreakDistAxis2;
+  return abs(deltaTargetAxis2) < geoA2.breakDist;
+}
+PierSide GetPierSide()
+{
+  cli(); long pos = posAxis2; sei();
+  return -geoA2.quaterRot <= pos && pos <= geoA2.quaterRot ? PIER_EAST : PIER_WEST;
 }

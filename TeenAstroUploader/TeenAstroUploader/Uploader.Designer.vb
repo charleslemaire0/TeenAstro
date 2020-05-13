@@ -26,6 +26,8 @@ Partial Class Uploader
     Me.ComboBoxPCBMainUnitT = New System.Windows.Forms.ComboBox()
     Me.Label4 = New System.Windows.Forms.Label()
     Me.TabPage3 = New System.Windows.Forms.TabPage()
+    Me.Label7 = New System.Windows.Forms.Label()
+    Me.ComboBoxLanguage = New System.Windows.Forms.ComboBox()
     Me.ButtonWIFISHC = New System.Windows.Forms.Button()
     Me.TextBoxIP = New System.Windows.Forms.TextBox()
     Me.Label5 = New System.Windows.Forms.Label()
@@ -43,8 +45,6 @@ Partial Class Uploader
     Me.TabControlFirmware = New System.Windows.Forms.TabControl()
     Me.Label6 = New System.Windows.Forms.Label()
     Me.ComboBoxFirmwareVersion = New System.Windows.Forms.ComboBox()
-    Me.ComboBoxLanguage = New System.Windows.Forms.ComboBox()
-    Me.Label7 = New System.Windows.Forms.Label()
     Me.TabPage3.SuspendLayout()
     Me.TabPage2.SuspendLayout()
     Me.TabPage1.SuspendLayout()
@@ -87,6 +87,24 @@ Partial Class Uploader
     Me.TabPage3.TabIndex = 2
     Me.TabPage3.Text = "Hand controler"
     Me.TabPage3.UseVisualStyleBackColor = True
+    '
+    'Label7
+    '
+    Me.Label7.AutoSize = True
+    Me.Label7.Location = New System.Drawing.Point(6, 47)
+    Me.Label7.Name = "Label7"
+    Me.Label7.Size = New System.Drawing.Size(55, 13)
+    Me.Label7.TabIndex = 30
+    Me.Label7.Text = "Language"
+    '
+    'ComboBoxLanguage
+    '
+    Me.ComboBoxLanguage.FormattingEnabled = True
+    Me.ComboBoxLanguage.Items.AddRange(New Object() {"English", "French", "German"})
+    Me.ComboBoxLanguage.Location = New System.Drawing.Point(71, 44)
+    Me.ComboBoxLanguage.Name = "ComboBoxLanguage"
+    Me.ComboBoxLanguage.Size = New System.Drawing.Size(110, 21)
+    Me.ComboBoxLanguage.TabIndex = 29
     '
     'ButtonWIFISHC
     '
@@ -242,29 +260,11 @@ Partial Class Uploader
     'ComboBoxFirmwareVersion
     '
     Me.ComboBoxFirmwareVersion.FormattingEnabled = True
-    Me.ComboBoxFirmwareVersion.Items.AddRange(New Object() {"1.0", "1.1", "beta"})
+    Me.ComboBoxFirmwareVersion.Items.AddRange(New Object() {"1.1", "1.2"})
     Me.ComboBoxFirmwareVersion.Location = New System.Drawing.Point(124, 17)
     Me.ComboBoxFirmwareVersion.Name = "ComboBoxFirmwareVersion"
     Me.ComboBoxFirmwareVersion.Size = New System.Drawing.Size(143, 21)
     Me.ComboBoxFirmwareVersion.TabIndex = 13
-    '
-    'ComboBoxLanguage
-    '
-    Me.ComboBoxLanguage.FormattingEnabled = True
-    Me.ComboBoxLanguage.Items.AddRange(New Object() {"English", "French", "German"})
-    Me.ComboBoxLanguage.Location = New System.Drawing.Point(71, 44)
-    Me.ComboBoxLanguage.Name = "ComboBoxLanguage"
-    Me.ComboBoxLanguage.Size = New System.Drawing.Size(110, 21)
-    Me.ComboBoxLanguage.TabIndex = 29
-    '
-    'Label7
-    '
-    Me.Label7.AutoSize = True
-    Me.Label7.Location = New System.Drawing.Point(6, 47)
-    Me.Label7.Name = "Label7"
-    Me.Label7.Size = New System.Drawing.Size(55, 13)
-    Me.Label7.TabIndex = 30
-    Me.Label7.Text = "Language"
     '
     'Uploader
     '

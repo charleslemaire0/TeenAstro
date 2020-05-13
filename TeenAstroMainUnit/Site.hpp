@@ -95,13 +95,13 @@ public:
     XEEPROM.writeString(EE_sites + m_siteIndex * SiteSize + EE_site_name, m_site.siteName);
     return true;
   }
-  const double sinLat()
+  const double* sinLat()
   {
-    return m_sinLat;
+    return &m_sinLat;
   }
-  const double cosLat()
+  const double* cosLat()
   {
-    return m_cosLat;
+    return &m_cosLat;
   }
   void ReadSiteDefinition(uint8_t siteIndex)
   {

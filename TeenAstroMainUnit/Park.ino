@@ -15,8 +15,8 @@ bool setPark()
 
     long    h = (targetAxis1 / 1024L) * 1024L;
     long    d = (targetAxis2 / 1024L) * 1024L;
-    h /= pow(2, MicroAxis1);
-    d /= pow(2, MicroAxis2);
+    h /= pow(2, MA1.micro);
+    d /= pow(2, MA2.micro);
     // store our position
     XEEPROM.writeLong(EE_posAxis1, h);
     XEEPROM.writeLong(EE_posAxis2, d);
@@ -67,43 +67,43 @@ void saveAlignModel()
 bool parkClearBacklash()
 {
   // backlash takeup rate
-  if (StepsBacklashAxis1 == 0 && StepsBacklashAxis2 == 0)
+  if (backlashA1.inSteps == 0 && backlashA2.inSteps == 0)
   {
     return true;
   }
   cli();
   long    LastTimerRateAxis1 = timerRateAxis1;
   long    LastTimerRateAxis2 = timerRateAxis2;
-  timerRateAxis1 = timerRateBacklashAxis1;
-  timerRateAxis2 = timerRateBacklashAxis2;
+  timerRateAxis1 = backlashA1.timerRate;
+  timerRateAxis2 = backlashA2.timerRate;
   sei();
 
   // figure out how long we'll have to wait for the backlash to clear (+50%)
   long    t;
-  if (StepsBacklashAxis1 > StepsBacklashAxis2)
-    t = (long)(StepsBacklashAxis1 * 1500 / StepsPerSecondAxis1);
+  if (backlashA1.inSteps > backlashA2.inSteps)
+    t = (long)(backlashA1.inSteps * 1500 / geoA1.stepsPerSecond);
   else
-    t = (long)(StepsBacklashAxis2 * 1500 / StepsPerSecondAxis2);
+    t = (long)(backlashA2.inSteps * 1500 / geoA2.stepsPerSecond);
   t = (t / BacklashTakeupRate + 250) / 12;
 
   // start by moving fully into the backlash
   cli();
-  targetAxis1 += StepsBacklashAxis1;
-  targetAxis2 += StepsBacklashAxis2;
+  targetAxis1 += backlashA1.inSteps;
+  targetAxis2 += backlashA2.inSteps;
   sei();
 
   // wait until done or timed out
   for (int i = 0; i < 12; i++)
   {
-    if (blAxis1 != StepsBacklashAxis1 || posAxis1 != targetAxis1 ||
-        blAxis2 != StepsBacklashAxis2 || posAxis2 != targetAxis2)
+    if (backlashA1.movedSteps != backlashA1.inSteps || posAxis1 != targetAxis1 ||
+        backlashA2.movedSteps != backlashA2.inSteps || posAxis2 != targetAxis2)
       delay(t);
   }
 
   // then reverse direction and take it all up
   cli();
-  targetAxis1-= StepsBacklashAxis1;
-  targetAxis2-= StepsBacklashAxis2;
+  targetAxis1-= backlashA1.inSteps;
+  targetAxis2-= backlashA2.inSteps;
   sei();
 
 
@@ -111,8 +111,8 @@ bool parkClearBacklash()
   for (int i = 0; i < 24; i++)
   {
     updateDeltaTarget();
-    if ((blAxis1 != 0) || (deltaTargetAxis1 != 0) ||
-      (blAxis2 != 0) || (deltaTargetAxis2 != 0))
+    if ((backlashA1.movedSteps != 0) || (deltaTargetAxis1 != 0) ||
+      (backlashA2.movedSteps != 0) || (deltaTargetAxis2 != 0))
       delay(t);
   }
 
@@ -124,7 +124,7 @@ bool parkClearBacklash()
   sei();
 
   // return true on success
-  if ((blAxis1 != 0) || (blAxis2 != 0))
+  if ((backlashA1.movedSteps != 0) || (backlashA2.movedSteps != 0))
     return false;
   else
     return true;
@@ -151,8 +151,8 @@ byte park()
         // get the position we're supposed to park at
         long    h = XEEPROM.readLong(EE_posAxis1);
         long    d = XEEPROM.readLong(EE_posAxis2);
-        h *= pow(2, MicroAxis1);
-        d *= pow(2, MicroAxis2);
+        h *= pow(2, MA1.micro);
+        d *= pow(2, MA2.micro);
         // stop tracking
         lastSideralTracking = false;
         sideralTracking = false;
@@ -191,8 +191,8 @@ bool syncAtPark()
   long axis1, axis2;
   axis1 = XEEPROM.readLong(EE_posAxis1);
   axis2 = XEEPROM.readLong(EE_posAxis2);
-  axis1 *= pow(2, MicroAxis1);
-  axis2 *= pow(2, MicroAxis2);
+  axis1 *= pow(2, MA1.micro);
+  axis2 *= pow(2, MA2.micro);
   cli();
   posAxis1 = axis1;
   targetAxis1 = axis1;

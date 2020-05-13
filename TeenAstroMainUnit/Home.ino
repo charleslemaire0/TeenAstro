@@ -6,11 +6,11 @@ bool goHome()
   if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return false; // fail, moving to home not allowed if PRK_PARKED
   if (lastError != ERR_NONE) return false;                                // fail, cannot move if there are errors
   if (movingTo) return false;                      // fail, moving to home not allowed during a move
-  if (guideDirAxis1 || guideDirAxis2) return false;                       // fail, moving to home not allowed while guiding
+  if (guideA1.dir || guideA2.dir) return false;                       // fail, moving to home not allowed while guiding
   cli();
 
-  targetAxis1 = homeStepAxis1;
-  targetAxis2 = homeStepAxis2;
+  targetAxis1 = geoA1.homeDef;
+  targetAxis2 = geoA2.homeDef;
   startAxis1 = posAxis1;
   startAxis2 = posAxis2;
   SetSiderealClockRate(siderealInterval);
@@ -42,15 +42,15 @@ bool syncPolarHome()
   parkStatus = PRK_UNPARKED;
   XEEPROM.update(EE_parkStatus, parkStatus);
   // clear pulse-guiding state
-  guideDirAxis1 = 0;
-  guideDurationAxis1 = 0;
-  guideDurationLastAxis1 = 0;
-  guideDirAxis2 = 0;
-  guideDurationAxis2 = 0;
-  guideDurationLastAxis2 = 0;
+  guideA1.dir = 0;
+  guideA1.duration = 0;
+  guideA1.durationLast = 0;
+  guideA2.dir = 0;
+  guideA2.duration = 0;
+  guideA2.durationLast = 0;
   // update starting coordinates to reflect NCP or SCP polar home position
-  startAxis1 = homeStepAxis1;
-  startAxis2 = homeStepAxis2;
+  startAxis1 = geoA1.homeDef;
+  startAxis2 = geoA2.homeDef;
   cli();
   targetAxis1 = startAxis1;
   posAxis1 = startAxis1;

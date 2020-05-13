@@ -1,7 +1,10 @@
-//   M - Telescope Movement Commands
 #include "ValueToString.h"
-void Command_M(bool &supress_frame)
+#include "Command.h"
+//   M - Telescope Movement Commands
+void Command_M()
 {
+  int i;
+  double f, f1;
   switch (command[1])
   {
   case 'A':
@@ -15,8 +18,6 @@ void Command_M(bool &supress_frame)
     i = goToHor(&newTargetAzm, &newTargetAlt, GetPierSide());
     reply[0] = i + '0';
     reply[1] = 0;
-    quietReply = true;
-    supress_frame = true;
     break;
   case 'F':
   {
@@ -29,88 +30,81 @@ void Command_M(bool &supress_frame)
     //         6=Outside limits
     if (mountType == MOUNT_TYPE_GEM)
     {
-      getEqu(&f, &f1, false);
+      getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
       newTargetRA = f;
       newTargetDec = f1;
       PierSide preferedPierSide = (GetPierSide() == PIER_EAST) ? PIER_WEST : PIER_EAST;
       double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-      i = goToEqu(newTargetHA, newTargetDec, preferedPierSide);
+      i = goToEqu(newTargetHA, newTargetDec, preferedPierSide, localSite.cosLat(), localSite.sinLat());
       reply[0] = i + '0';
       reply[1] = 0;
-      quietReply = true;
-      supress_frame = true;
     }
     break;
   }
   case 'g':
   {
     //  :Mgdnnnn# Pulse guide command
-        //          Returns: Nothing
-    if ((atoi2((char *)&parameter[1], &i)) &&
+    //  Returns: Nothing
+
+    if ((atoi2((char *)&command[3], &i)) &&
       ((i > 0) && (i <= 16399)) && sideralTracking && !movingTo && lastError == ERR_NONE &&
         (GuidingState != GuidingRecenter || GuidingState != GuidingST4))
     {
-      if ((parameter[0] == 'e') || (parameter[0] == 'w'))
+      if ((command[2] == 'e') || (command[2] == 'w'))
       {
         enableGuideRate(0, false);
-        guideDirAxis1 = parameter[0];
-        guideDurationLastAxis1 = micros();
-        guideDurationAxis1 = (long)i * 1000L;
+        guideA1.dir = command[2];
+        guideA1.durationLast = micros();
+        guideA1.duration = (long)i * 1000L;
         cli();
         GuidingState = GuidingPulse;
-        if (guideDirAxis1 == 'e')
-          guideTimerRateAxis1 = -guideTimerBaseRate;
+        if (guideA1.dir == 'e')
+          guideA1.timerRate = -guideTimerBaseRate;
         else
-          guideTimerRateAxis1 = guideTimerBaseRate;
+          guideA1.timerRate = guideTimerBaseRate;
         sei();
         //reply[0] = '1';
         //reply[1] = 0;
       }
-      else if ((parameter[0] == 'n') || (parameter[0] == 's'))
+      else if ((command[2] == 'n') || (command[2] == 's'))
       {
 
         enableGuideRate(0, false);
-        guideDirAxis2 = parameter[0];
-        guideDurationLastAxis2 = micros();
-        guideDurationAxis2 = (long)i * 1000L;
-        if (guideDirAxis2 == 's' || guideDirAxis2 == 'n')
+        guideA2.dir = command[2];
+        guideA2.durationLast = micros();
+        guideA2.duration = (long)i * 1000L;
+        if (guideA2.dir == 's' || guideA2.dir == 'n')
         {
           bool rev = false;
-          if (guideDirAxis2 == 's')
+          if (guideA2.dir == 's')
             rev = true;
           if (GetPierSide() >= PIER_WEST)
             rev = !rev;
           cli();
           GuidingState = GuidingPulse;
-          guideTimerRateAxis2 = rev ? -guideTimerBaseRate : guideTimerBaseRate;
+          guideA2.timerRate = rev ? -guideTimerBaseRate : guideTimerBaseRate;
           sei();
         }
         //reply[0] = '1';
         //reply[1] = 0;
       }
-      else
-        commandError = true;
     }
-    else
-      commandError = true;
     break;
   }
   case 'e':
   case 'w':
     //  :Me# & :Mw#      Move Telescope East or West at current slew rate
-    //         Returns: Nothing
+    //  Returns: Nothing
   {
     MoveAxis1(command[1], GuidingRecenter);
-    quietReply = true;
   }
   break;
   case 'n':
   case 's':
     //  :Mn# & :Ms#      Move Telescope North or South at current slew rate
-    //         Returns: Nothing
+    //  Returns: Nothing
   {
     MoveAxis2(command[1], GuidingRecenter);
-    quietReply = true;
   }
   break;
 
@@ -149,7 +143,7 @@ void Command_M(bool &supress_frame)
         //         7=Guiding
         //         8=has a an Error
     double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    i = goToEqu(newTargetHA, newTargetDec, GetPierSide());
+    i = goToEqu(newTargetHA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat());
     if (i == 0)
     {
       sideralTracking = true;
@@ -158,8 +152,6 @@ void Command_M(bool &supress_frame)
     }
     reply[0] = i + '0';
     reply[1] = 0;
-    quietReply = true;
-    supress_frame = true;
     break;
   }
   case 'U':
@@ -178,7 +170,7 @@ void Command_M(bool &supress_frame)
     newTargetRA = (double)XEEPROM.readFloat(EE_RA);
     newTargetDec = (double)XEEPROM.readFloat(EE_DEC);
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    i = goToEqu(newTargetHA, newTargetDec, targetPierSide);
+    i = goToEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
     if (i == 0)
     {
       sideralTracking = true;
@@ -187,52 +179,54 @@ void Command_M(bool &supress_frame)
     }
     reply[0] = i + '0';
     reply[1] = 0;
-    quietReply = true;
-    supress_frame = true;
     break;
   }
   case '?':
   {
     //  :M?#   Predict side of Pier for the Target Object
+    // reply ?# or E# or W#
+    // reply !# if failed
     double objectRa, objectHa, objectDec;
     char rastr[12];
     char decstr[12];
-    strncpy(rastr, parameter, 8 * sizeof(char));
+    strncpy(rastr, &command[2], 8 * sizeof(char));
     rastr[8] = 0;
-    strncpy(decstr, &parameter[8], 9 * sizeof(char));
+    strncpy(decstr, &command[10], 9 * sizeof(char));
     decstr[9] = 0;
     if (!hmsToDouble(&objectRa, rastr, highPrecision))
     {
-      commandError = true;
+      strcpy(reply, "!#");
       return;
     }
     if (!dmsToDouble(&objectDec, decstr, true, highPrecision))
     {
-      commandError = true;
+      strcpy(reply, "!#");
       return;
     }
     objectHa = haRange(rtk.LST() * 15.0 - objectRa * 15);
 
     byte side = predictSideOfPier(objectHa, objectDec, GetPierSide());
+    strcpy(reply, "?#");
     if (side == 0) reply[0] = '?';
     else if (side == PIER_EAST) reply[0] = 'E';
     else if (side == PIER_WEST) reply[0] = 'W';
-    reply[1] = 0;
-    quietReply = true;
     break;
   }
   case '@':
   {
     //  :M@#   Start Spiral Search
-    //         Return 1
+    //         Return 0 if failed, i if success
     if (movingTo || GuidingState != GuidingOFF)
-      commandError = true;
+      strcpy(reply, "0");
     else
+    {
+      strcpy(reply, "1");
       doSpiral = true;
+    }
     break;
   }
   default:
-    commandError = true;
+    strcpy(reply, "0");
     break;
   }
 }
