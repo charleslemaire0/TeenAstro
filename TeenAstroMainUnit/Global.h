@@ -4,7 +4,6 @@
 #include <TeenAstroCoordConv.hpp>
 #include <TeenAstroMath.h>
 #include <TinyGPS++.h>
-#include <TeenAstroStepper.h>
 #include "Config.TeenAstro.h"
 #include "timerLoop.hpp"
 #include "TelTimer.hpp"
@@ -13,6 +12,7 @@
 #include "Config.TeenAstro.h"
 #include "EEPROM_adress.h"
 #include "XEEPROM.hpp"
+#include "Axis.hpp"
 
 TinyGPSPlus gps;
 CoordConv alignment;
@@ -44,11 +44,9 @@ const double            HzCf = 16000000.0 / 60.0;   // conversion factor to go t
 volatile double         SiderealRate;               // based on the siderealInterval, this is the time between steps for sidereal tracking
 volatile double         TakeupRate;                 // this is the takeup rate for synchronizing the target and actual positions when needed
 
-
 double                  maxRate = MaxRate * 16L;
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
-
 
 //Timers
 volatile double         timerRateAxis1 = 0;
@@ -63,57 +61,16 @@ double  az_deltaAxis1 = 15.;
 double  az_deltaAxis2 = 0.;
 double  az_deltaRateScale = 1.;
 
-
-//Motor
-class MotorAxis
-{
-public:
-  unsigned int gear;
-  unsigned int stepRot;
-  byte micro;
-  bool reverse;
-  u_int8_t highCurr;
-  u_int8_t lowCurr;
-  Driver driver;
-
-};
-MotorAxis MA1;
-MotorAxis MA2;
-
+MotorAxis motorA1;
+MotorAxis motorA2;
 
 //tracking rate
 #define default_tracking_rate   1
 volatile double         trackingTimerRateAxis1 = default_tracking_rate;
 volatile double         trackingTimerRateAxis2 = default_tracking_rate;
 
-
-// backlash control
-struct backlash
-{
-  int             inSeconds;
-  volatile int    inSteps;
-  volatile bool   correcting;
-  volatile int    movedSteps;
-  volatile double timerRate;
-};
-
 backlash backlashA1 = { 0,0,0,0 };
 backlash backlashA2 = { 0,0,0,0 };
-
-
-//geometry Axis
-class GeoAxis
-{
-public:
-  long   stepsPerRot; // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
-  double stepsPerDegree;
-  double stepsPerSecond;
-  long   halfRot;   //in steps
-  long   quaterRot; //in steps
-  long   poleDef;   //in steps
-  long   homeDef;   //in steps
-  long   breakDist; //in steps
-};
 
 GeoAxis geoA1;
 GeoAxis geoA2;
@@ -141,7 +98,6 @@ volatile double     targetAxis2;  // declination of goto end   position in steps
 volatile bool       dirAxis2;     // stepping direction + or -
 double              fstepAxis2;   // amount of steps for Tracking
 #define stepAxis2   1
-
 
 //Targets
 PierSide newTargetPierSide = PIER_NOTVALID;
@@ -223,8 +179,6 @@ unsigned long   baudRate[10] =
   115200, 56700, 38400, 28800, 19200, 14400, 9600, 4800, 2400, 1200
 };
 
-
-
 // guide command
 #define GuideRateRG   0
 #define GuideRateRC   1
@@ -244,15 +198,6 @@ double  guideRates[5] =
 
 volatile byte   activeGuideRate = GuideRateRS;
 
-class GuideAxis
-{
-public:
-  volatile byte   dir;
-  long            duration;
-  unsigned long   durationLast;
-  double          amount;
-  volatile double timerRate;
-};
 GuideAxis guideA1 = { 0,0,0,0,0 };
 GuideAxis guideA2 = { 0,0,0,0,0 };
 
@@ -316,13 +261,13 @@ bool atTargetAxis1(bool update = false)
 {
   if (update)
     updateDeltaTargetAxis1();
-  return abs(deltaTargetAxis1) < geoA1.breakDist;
+  return geoA1.atTarget(deltaTargetAxis1);
 }
 bool atTargetAxis2(bool update = false)
 {
   if (update)
     updateDeltaTargetAxis2();
-  return abs(deltaTargetAxis2) < geoA2.breakDist;
+  return geoA2.atTarget(deltaTargetAxis2);
 }
 PierSide GetPierSide()
 {

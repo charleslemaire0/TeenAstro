@@ -33,21 +33,21 @@
 #define EE_dup              37
 
 //motor1
-#define EE_MA1gear          58
-#define EE_MA1stepRot       62
-#define EE_MA1micro         64
-#define EE_MA1reverse       65
-#define EE_MA1lowCurr       66
-#define EE_MA1highCurr      67
+#define EE_motorA1gear          58
+#define EE_motorA1stepRot       62
+#define EE_motorA1micro         64
+#define EE_motorA1reverse       65
+#define EE_motorA1lowCurr       66
+#define EE_motorA1highCurr      67
 #define EE_backlashAxis1    68
 
 //motor2
-#define EE_MA2gear          72
-#define EE_MA2stepRot       76
-#define EE_MA2micro         78
-#define EE_MA2reverse       79
-#define EE_MA2lowCurr       80
-#define EE_MA2highCurr      81
+#define EE_motorA2gear          72
+#define EE_motorA2stepRot       76
+#define EE_motorA2micro         78
+#define EE_motorA2reverse       79
+#define EE_motorA2lowCurr       80
+#define EE_motorA2highCurr      81
 #define EE_backlashAxis2    82
 
 #define EE_siderealInterval 88

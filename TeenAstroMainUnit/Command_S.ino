@@ -225,23 +225,23 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
-          double fact = (double)i / MA2.gear;
+          double fact = (double)i / motorA2.gear;
           cli();
           posAxis2 = fact * posAxis2;
           sei();
           StopAxis2();
-          MA2.gear = (unsigned int)i;
-          XEEPROM.writeInt(EE_MA2gear, i);
+          motorA2.gear = (unsigned int)i;
+          XEEPROM.writeInt(EE_motorA2gear, i);
         }
         else
         {
-          double fact = (double)i / MA1.gear;
+          double fact = (double)i / motorA1.gear;
           cli();
           posAxis1 = fact * posAxis1;
           sei();
           StopAxis1();
-          MA1.gear = (unsigned int)i;
-          XEEPROM.writeInt(EE_MA1gear, i);
+          motorA1.gear = (unsigned int)i;
+          XEEPROM.writeInt(EE_motorA1gear, i);
         }
         strcpy(reply, "1");
         unsetPark();
@@ -261,23 +261,23 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
-          double fact = (double)i / MA2.stepRot;
+          double fact = (double)i / motorA2.stepRot;
           cli();
           posAxis2 = fact * posAxis2;
           sei();
           StopAxis2();
-          MA2.stepRot = (unsigned int)i;
-          XEEPROM.writeInt(EE_MA2stepRot, i);
+          motorA2.stepRot = (unsigned int)i;
+          XEEPROM.writeInt(EE_motorA2stepRot, i);
         }
         else
         {
-          double fact = (double)i / MA1.stepRot;
+          double fact = (double)i / motorA1.stepRot;
           cli();
           posAxis1 = fact * posAxis1;
           sei();
           StopAxis1();
-          MA1.stepRot = (unsigned int)i;
-          XEEPROM.writeInt(EE_MA1stepRot, i);
+          motorA1.stepRot = (unsigned int)i;
+          XEEPROM.writeInt(EE_motorA1stepRot, i);
         }
         strcpy(reply, "1");
         unsetPark();
@@ -299,25 +299,25 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
-          double fact = pow(2., i - MA2.micro);
+          double fact = pow(2., i - motorA2.micro);
           cli();
           posAxis2 = fact * posAxis2;
           sei();
           StopAxis2();
-          MA2.micro = i;
-          MA2.driver.setMicrostep(MA2.micro);
-          XEEPROM.write(EE_MA2micro, MA2.micro);
+          motorA2.micro = i;
+          motorA2.driver.setMicrostep(motorA2.micro);
+          XEEPROM.write(EE_motorA2micro, motorA2.micro);
         }
         else
         {
-          double fact = pow(2., i - MA1.micro);
+          double fact = pow(2., i - motorA1.micro);
           cli();
           posAxis1 = fact * posAxis1;
           sei();
           StopAxis1();
-          MA1.micro = i;
-          MA1.driver.setMicrostep(MA1.micro);
-          XEEPROM.write(EE_MA1micro, MA1.micro);
+          motorA1.micro = i;
+          motorA1.driver.setMicrostep(motorA1.micro);
+          XEEPROM.write(EE_motorA1micro, motorA1.micro);
         }
         updateRatios(true);
         strcpy(reply, "1");
@@ -334,13 +334,13 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
-          MA2.reverse = command[5] == '1' ? true : false;
-          XEEPROM.write(EE_MA2reverse, MA2.reverse);
+          motorA2.reverse = command[5] == '1' ? true : false;
+          XEEPROM.write(EE_motorA2reverse, motorA2.reverse);
         }
         else
         {
-          MA1.reverse = command[5] == '1' ? true : false;
-          XEEPROM.write(EE_MA1reverse, MA1.reverse);
+          motorA1.reverse = command[5] == '1' ? true : false;
+          XEEPROM.write(EE_motorA1reverse, motorA1.reverse);
         }
         strcpy(reply, "1");
       }
@@ -361,28 +361,28 @@ void Command_SX()
         {
           if (command[3] == 'C')
           {
-            MA2.highCurr = (u_int8_t)i;
-            XEEPROM.write(EE_MA2highCurr, MA2.highCurr);
+            motorA2.highCurr = (u_int8_t)i;
+            XEEPROM.write(EE_motorA2highCurr, motorA2.highCurr);
           }
           else
           {
-            MA2.lowCurr = (u_int8_t)i;
-            XEEPROM.write(EE_MA2lowCurr, MA2.lowCurr);
-            MA2.driver.setCurrent((unsigned int)MA2.lowCurr * 10);
+            motorA2.lowCurr = (u_int8_t)i;
+            XEEPROM.write(EE_motorA2lowCurr, motorA2.lowCurr);
+            motorA2.driver.setCurrent((unsigned int)motorA2.lowCurr * 10);
           }
         }
         else if (command[4] == 'R')
         {
           if (command[3] == 'C')
           {
-            MA1.highCurr = (u_int8_t)i;
-            XEEPROM.write(EE_MA1highCurr, MA1.highCurr);
+            motorA1.highCurr = (u_int8_t)i;
+            XEEPROM.write(EE_motorA1highCurr, motorA1.highCurr);
           }
           else
           {
-            MA1.lowCurr = (u_int8_t)i;
-            XEEPROM.write(EE_MA1lowCurr, MA1.lowCurr);
-            MA1.driver.setCurrent((unsigned int)MA1.lowCurr * 10);
+            motorA1.lowCurr = (u_int8_t)i;
+            XEEPROM.write(EE_motorA1lowCurr, motorA1.lowCurr);
+            motorA1.driver.setCurrent((unsigned int)motorA1.lowCurr * 10);
           }
         }
         strcpy(reply, "1");
@@ -403,11 +403,11 @@ void Command_SX()
 
         if (command[4] == 'D')
         {
-          MA2.driver.setSG(i);
+          motorA2.driver.setSG(i);
         }
         else
         {
-          MA1.driver.setSG(i);
+          motorA1.driver.setSG(i);
         }
         strcpy(reply, "1");
       }
