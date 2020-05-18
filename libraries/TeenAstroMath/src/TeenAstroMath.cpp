@@ -164,3 +164,28 @@ void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2, con
     *AngleAxis1 = *AngleAxis1 + 180.;
   }
 }
+
+long distStepAxis1(long* start, long* end)
+{
+  return *end - *start;
+}
+long distStepAxis1(volatile long* start, volatile long* end)
+{
+  return *end - *start;
+}
+long distStepAxis1(volatile long* start, volatile double* end)
+{
+  return *end - *start;
+}
+long distStepAxis2(long* start, long* end)
+{
+  return *end - *start;
+}
+long distStepAxis2(volatile long* start, volatile long* end)
+{
+  return *end - *start;
+}
+long distStepAxis2(volatile long* start, volatile double* end)
+{
+  return *end - *start;
+}
