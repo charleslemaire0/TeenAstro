@@ -103,9 +103,9 @@ void setup()
   initmotor(false);
 
   // init the date and time January 1, 2013. 0 hours LMT
-  setSyncProvider(getTeensy3Time);
+  setSyncProvider(rtk.getTime);
   setSyncInterval(1);
-  setTime(Teensy3Clock.get());
+  setTime(rtk.getTime);
 
   // initialize the stepper control pins Axis1 and Axis2
   pinMode(Axis1StepPin, OUTPUT);
@@ -456,10 +456,6 @@ void enable_Axis(bool enable)
   }
 }
 
-time_t getTeensy3Time()
-{
-  return Teensy3Clock.get();
-}
 
 void initmount()
 {
@@ -599,8 +595,8 @@ void initmotor(bool deleteAlignment)
 {
   readEEPROMmotor();
   updateRatios(deleteAlignment);
-  motorA1.driver.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), motorA1.stepRot, Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin, (unsigned int)motorA1.lowCurr * 10, motorA1.micro);
-  motorA2.driver.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), motorA2.stepRot, Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin, (unsigned int)motorA2.lowCurr * 10, motorA2.micro);
+  motorA1.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin);
+  motorA2.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin);
 }
 
 void readEEPROMmotor()
@@ -645,7 +641,6 @@ void writeDefaultEEPROMmotor()
   XEEPROM.write(EE_motorA2highCurr, 100);
   XEEPROM.write(EE_motorA2lowCurr, 100);
 }
-
 
 void updateRatios(bool deleteAlignment)
 {

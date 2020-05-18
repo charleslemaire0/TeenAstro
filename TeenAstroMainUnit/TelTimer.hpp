@@ -23,14 +23,14 @@ public:
 
   double* getUT()
   {
-    m_RTClock = Teensy3Clock.get();
+    m_RTClock = getTimeStamp();
     m_UT = hour(m_RTClock) + minute(m_RTClock) / 60.0 + second(m_RTClock) / 3600.0;
     return &m_UT;
   }
 
   double* getLT(const float*toff)
   {
-    m_RTClock = Teensy3Clock.get();
+    m_RTClock = getTime();
     m_RTClock -= (long)(*toff * 3600.0);
     m_LT = hour(m_RTClock) + minute(m_RTClock) / 60.0 + second(m_RTClock) / 3600.0;
     return &m_LT;
@@ -38,14 +38,14 @@ public:
 
   double* getJD()
   {
-    m_RTClock = Teensy3Clock.get();
+    m_RTClock = getTime();
     m_JD = julian(year(m_RTClock), month(m_RTClock), day(m_RTClock));
     return &m_JD;
   }
 
   void getUTDate(int& y, int& m, int& d, int&h, int&mi, int&s)
   {
-    m_RTClock = Teensy3Clock.get();
+    m_RTClock = getTime();
     y = year(m_RTClock);
     m = month(m_RTClock);
     d = day(m_RTClock);
@@ -56,7 +56,7 @@ public:
 
   void getULDate(int& y, int& m, int& d, int&h, int&mi, int&s, const float* toff)
   {
-    m_RTClock = Teensy3Clock.get();
+    m_RTClock = getTimeStamp();
     m_RTClock -= (long)(*toff * 3600.0);
     y = year(m_RTClock);
     m = month(m_RTClock);
@@ -70,7 +70,10 @@ public:
   {
     return Teensy3Clock.get();
   }
-
+  time_t getTime()
+  {
+    return Teensy3Clock.get();
+  }
   void SetFromTimeStamp(unsigned long t)
   {
     Teensy3Clock.set(t);
@@ -154,6 +157,7 @@ public:
     sei();
     m_clockTimer = millis();
   }
+
   //End TIMERS
 private:
   double timeRange(double t)
@@ -283,7 +287,7 @@ private:
   // convert date/time to Greenwich Apparent Sidereal time
   double green_ast()
   {
-    unsigned long RTClock = Teensy3Clock.get();
+    unsigned long RTClock = getTimeStamp();
     double JulianDay = julian(year(RTClock), month(RTClock), day(RTClock));
     double ut1 = hour(RTClock) + minute(RTClock) / 60.0 + second(RTClock) / 3600.0;
     int y,
