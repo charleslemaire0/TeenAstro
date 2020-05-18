@@ -222,6 +222,7 @@ void setup()
 void loop()
 {
   static bool forceTracking = false;
+  static Errors StartLoopError = ERR_NONE;
   StartLoopError = lastError;
   // GUIDING -------------------------------------------------------------------------------------------
   if (!movingTo)
