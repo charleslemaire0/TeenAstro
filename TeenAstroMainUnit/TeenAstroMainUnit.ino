@@ -105,7 +105,7 @@ void setup()
   // init the date and time January 1, 2013. 0 hours LMT
   setSyncProvider(rtk.getTime);
   setSyncInterval(1);
-  setTime(rtk.getTime);
+  setTime(rtk.getTime());
 
   // initialize the stepper control pins Axis1 and Axis2
   pinMode(Axis1StepPin, OUTPUT);

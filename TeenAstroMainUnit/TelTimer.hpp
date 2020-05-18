@@ -70,7 +70,7 @@ public:
   {
     return Teensy3Clock.get();
   }
-  time_t getTime()
+  static time_t getTime()
   {
     return Teensy3Clock.get();
   }
