@@ -180,26 +180,6 @@ Again:
   }
 }
 
-// fast integer square root routine, Integer Square Roots by Jack W. Crenshaw
-uint32_t isqrt32(uint32_t n)
-{
-  register uint32_t root = 0, remainder, place = 0x40000000;
-  remainder = n;
-
-  while (place > remainder) place = place >> 2;
-  while (place)
-  {
-    if (remainder >= root + place)
-    {
-      remainder = remainder - root - place;
-      root = root + (place << 1);
-    }
-    root = root >> 1;
-    place = place >> 2;
-  }
-  return root;
-}
-
 bool DecayModeTrack = false;
 
 // if stepper drive can switch decay mode, set it here
