@@ -5,6 +5,48 @@
 #include "ValueToString.h"
 
 
+void updateDeltaTarget()
+{
+  cli();
+  deltaTargetAxis1 = (long)targetAxis1 - posAxis1;
+  deltaTargetAxis2 = (long)targetAxis2 - posAxis2;
+  sei();
+}
+
+void updateDeltaTargetAxis1()
+{
+  cli();
+  deltaTargetAxis1 = (long)targetAxis1 - posAxis1;
+  sei();
+}
+
+void updateDeltaTargetAxis2()
+{
+  cli();
+  deltaTargetAxis2 = (long)targetAxis2 - posAxis2;
+  sei();
+}
+
+bool atTargetAxis1(bool update = false)
+{
+  if (update)
+    updateDeltaTargetAxis1();
+  return geoA1.atTarget(deltaTargetAxis1);
+}
+
+bool atTargetAxis2(bool update = false)
+{
+  if (update)
+    updateDeltaTargetAxis2();
+  return geoA2.atTarget(deltaTargetAxis2);
+}
+
+PierSide GetPierSide()
+{
+  cli(); long pos = posAxis2; sei();
+  return -geoA2.quaterRot <= pos && pos <= geoA2.quaterRot ? PIER_EAST : PIER_WEST;
+}
+
 // trackingTimerRateAxis1/2 are x the sidereal rate
 void SetDeltaTrackingRate()
 {

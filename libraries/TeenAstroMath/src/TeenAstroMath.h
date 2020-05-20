@@ -33,4 +33,13 @@ void HorTopoToEqu(double Azm, double Alt, double *HA, double *Dec, const double 
 void HorAppToEqu(double Azm, double Alt, double *HA, double *Dec, const double *cosLat, const double *sinLat);
 void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side);
 void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2, const double *Lat);
+
+//steps operations
+long distStepAxis1(long* start, long* end);
+long distStepAxis1(volatile long* start, volatile long* end);
+long distStepAxis1(volatile long* start, volatile double* end);
+long distStepAxis2(long* start, long* end);
+long distStepAxis2(volatile long* start, volatile long* end);
+long distStepAxis2(volatile long* start, volatile double* end);
+
 #endif

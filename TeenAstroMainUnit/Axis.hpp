@@ -62,4 +62,8 @@ public:
   u_int8_t highCurr;
   u_int8_t lowCurr;
   Driver driver;
+  void initMotor(Driver::MOTORDRIVER useddriver, int EnPin, int CSPin, int DirPin, int StepPin)
+  {
+    driver.initMotor(useddriver, stepRot, EnPin, CSPin, DirPin, StepPin, lowCurr * 10, micro);
+  }
 };
