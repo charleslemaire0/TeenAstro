@@ -17,6 +17,7 @@
 TinyGPSPlus gps;
 CoordConv alignment;
 bool hasStarAlignment = false;
+
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
@@ -98,7 +99,6 @@ enum Errors
   ERR_MERIDIAN,
   ERR_SYNC
 };
-
 Errors lastError = ERR_NONE;
 
 

@@ -291,7 +291,6 @@ ISR(TIMER3_COMPA_vect)
       if (motorA1.reverse^Axis1Reverse)
       {
         digitalWriteFast(Axis1DirPin, HADir != staA1.dir);
-
       }
       else
       {
