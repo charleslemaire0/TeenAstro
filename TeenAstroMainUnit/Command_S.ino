@@ -227,7 +227,7 @@ void Command_SX()
         {
           double fact = (double)i / motorA2.gear;
           cli();
-          posAxis2 = fact * posAxis2;
+          staA2.pos = fact * staA2.pos;
           sei();
           StopAxis2();
           motorA2.gear = (unsigned int)i;
@@ -237,7 +237,7 @@ void Command_SX()
         {
           double fact = (double)i / motorA1.gear;
           cli();
-          posAxis1 = fact * posAxis1;
+          staA1.pos = fact * staA1.pos;
           sei();
           StopAxis1();
           motorA1.gear = (unsigned int)i;
@@ -263,7 +263,7 @@ void Command_SX()
         {
           double fact = (double)i / motorA2.stepRot;
           cli();
-          posAxis2 = fact * posAxis2;
+          staA2.pos = fact * staA2.pos;
           sei();
           StopAxis2();
           motorA2.stepRot = (unsigned int)i;
@@ -273,7 +273,7 @@ void Command_SX()
         {
           double fact = (double)i / motorA1.stepRot;
           cli();
-          posAxis1 = fact * posAxis1;
+          staA1.pos = fact * staA1.pos;
           sei();
           StopAxis1();
           motorA1.stepRot = (unsigned int)i;
@@ -301,7 +301,7 @@ void Command_SX()
         {
           double fact = pow(2., i - motorA2.micro);
           cli();
-          posAxis2 = fact * posAxis2;
+          staA2.pos = fact * staA2.pos;
           sei();
           StopAxis2();
           motorA2.micro = i;
@@ -312,7 +312,7 @@ void Command_SX()
         {
           double fact = pow(2., i - motorA1.micro);
           cli();
-          posAxis1 = fact * posAxis1;
+          staA1.pos = fact * staA1.pos;
           sei();
           StopAxis1();
           motorA1.micro = i;
@@ -731,7 +731,7 @@ void Command_S(Command& process_command)
         }
         else
         {
-          trackingTimerRateAxis1 = (f / 60.0) / 1.00273790935;
+          staA1.trackingTimerRate = (f / 60.0) / 1.00273790935;
         }
         strcpy(reply, "1");
       }

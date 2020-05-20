@@ -42,13 +42,13 @@ void StopAxis1()
   if (guideA1.dir == 'b')
     return;
   updateDeltaTargetAxis1();
-  long a = pow(getV(timerRateAxis1), 2.) / (2. * AccAxis1);
-  if (abs(deltaTargetAxis1) > a)
+  long a = pow(getV(staA1.timerRate), 2.) / (2. * staA1.acc);
+  if (abs(staA1.deltaTarget) > a)
   {
-    if (0 > deltaTargetAxis1)
+    if (0 > staA1.deltaTarget)
       a = -a;
     cli();
-    targetAxis1 = posAxis1 + a;
+    staA1.target = staA1.pos + a;
     sei();
   }
   guideA1.dir = 'b';
@@ -98,14 +98,14 @@ void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
 
 void StopAxis2()
 {
-  long a = pow(getV(timerRateAxis2), 2.) / (2. * AccAxis2);
+  long a = pow(getV(staA2.timerRate), 2.) / (2. * staA2.acc);
   updateDeltaTargetAxis2();
-  if (abs(deltaTargetAxis2) > a)
+  if (abs(staA2.deltaTarget) > a)
   {
-    if (0 > deltaTargetAxis2)
+    if (0 > staA2.deltaTarget)
       a = -a;
     cli();
-    targetAxis2 = posAxis2 + a;
+    staA2.target = staA2.pos + a;
     sei();
   }
   guideA2.dir = 'b';

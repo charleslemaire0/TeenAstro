@@ -33,7 +33,7 @@ void Guide()
         {
           bool rev = guideA1.dir == 'e';
           cli();
-          rev ? targetAxis1 -= guideA1.amount : targetAxis1 += guideA1.amount;
+          rev ? staA1.target -= guideA1.amount : staA1.target += guideA1.amount;
           sei();
           if (GuidingState == GuidingPulse)
           {
@@ -71,7 +71,7 @@ void Guide()
           if (GetPierSide() >= PIER_WEST)
             rev = !rev;
           cli();
-          rev ? targetAxis2 -= guideA2.amount : targetAxis2 += guideA2.amount;
+          rev ? staA2.target -= guideA2.amount : staA2.target += guideA2.amount;
           sei();
           if (GuidingState == GuidingPulse)
           {

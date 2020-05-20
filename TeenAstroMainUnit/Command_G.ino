@@ -107,12 +107,12 @@ void Command_GX()
       case '1':
         // :GXDR1# RA tracking rate
         sprintf(reply, "%ld#", (long)
-          (az_deltaAxis1 * 1000.0 * 1.00273790935));
+          (staA1.az_delta * 1000.0 * 1.00273790935));
         break;
       case '2':
         // :GXDR2# Dec tracking rate
         sprintf(reply, "%ld#", (long)
-          (az_deltaAxis2 * 1000.0 * 1.00273790935));
+          (staA2.az_delta * 1000.0 * 1.00273790935));
         break;
       default:
         strcpy(reply, "0");
@@ -128,35 +128,35 @@ void Command_GX()
       {
       case '0':
         cli();
-        temp = posAxis1;
+        temp = staA1.pos;
         sei();
         sprintf(reply, "%ld#", temp);
         break;  // Debug8, HA motor position
       case '1':
         cli();
-        temp = posAxis2;
+        temp = staA2.pos;
         sei();
         sprintf(reply, "%ld#", temp);
         break;  // Debug9, Dec motor position
       case '2':
         cli();
-        temp = targetAxis1;
+        temp = staA1.target;
         sei();
         sprintf(reply, "%ld#", temp);
         break;  // Debug6, HA target position
       case '3':
         cli();
-        temp = targetAxis2;
+        temp = staA2.target;
         sei();
         sprintf(reply, "%ld#", temp);
         break;  // Debug7, Dec target position
       case '4':
         updateDeltaTargetAxis1();
-        sprintf(reply, "%ld#", deltaTargetAxis1);
+        sprintf(reply, "%ld#", staA1.deltaTarget);
         break;  // Debug0, true vs. target RA position
       case '5':
         updateDeltaTargetAxis2();
-        sprintf(reply, "%ld#", deltaTargetAxis2);
+        sprintf(reply, "%ld#", staA2.deltaTarget);
         break;
       default:
         strcpy(reply, "0");
@@ -300,7 +300,7 @@ void Command_GX()
     if (guideA2.dir == 'n') reply[8] = '^';
     else if (guideA2.dir == 's') reply[8] = '_';
     else if (guideA2.dir == 'b') reply[8] = 'b';
-    if (faultAxis1 || faultAxis2) reply[9] = 'f';
+    if (staA1.fault || staA2.fault) reply[9] = 'f';
     if (correct_tracking)
       reply[10] = 'c';
     reply[11] = hasStarAlignment ? '1' : '0';
@@ -694,7 +694,7 @@ void  Command_G()
     //         Returns the tracking rate if siderealTracking, 0.0 otherwise
     if (sideralTracking && !movingTo)
     {
-      f = isAltAZ() ? GetTrackingRate() : trackingTimerRateAxis1;
+      f = isAltAZ() ? GetTrackingRate() : staA1.trackingTimerRate;
       f *= 60 * 1.00273790935;
     }
     else

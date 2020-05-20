@@ -1,5 +1,6 @@
 // -----------------------------------------------------------------------------------
 // Timers and interrupt handling
+#define stepAxis   1
 
 #define ISR(f)  void f (void)
 void TIMER1_COMPA_vect(void);
@@ -89,7 +90,7 @@ ISR(TIMER1_COMPA_vect)
       // guide rate acceleration/deceleration and control
       updateDeltaTarget();
 
-      double  x = deltaTargetAxis1;
+      double  x = staA1.deltaTarget;
 
       if (!backlashA1.correcting  && guideA1.dir)
       {
@@ -99,7 +100,7 @@ ISR(TIMER1_COMPA_vect)
           // break mode
           if (guideA1.dir == 'b')
           {
-            guideA1.timerRate = trackingTimerRateAxis1;
+            guideA1.timerRate = staA1.trackingTimerRate;
             if (guideA1.timerRate >= 0)
               guideA1.timerRate = 1.0;
             else
@@ -113,7 +114,7 @@ ISR(TIMER1_COMPA_vect)
         {
           // use acceleration
           DecayModeGoto();
-          double z = getRate(sqrt(fabs(x) * 2 * AccAxis1));
+          double z = getRate(sqrt(fabs(x) * 2 * staA1.acc));
           guideTimerRateAxisA1 = 3600.0 / (geoA1.stepsPerDegree * z / 1000000.0);
           if (guideTimerRateAxisA1 < maxguideTimerRate) guideTimerRateAxisA1 = maxguideTimerRate;
         }
@@ -131,7 +132,7 @@ ISR(TIMER1_COMPA_vect)
           }
         }
       }
-      double timerRateAxis1A = trackingTimerRateAxis1;
+      double timerRateAxis1A = staA1.trackingTimerRate;
       double timerRateAxis1B = fabs(guideTimerRateAxisA1 + timerRateAxis1A);
       double calculatedTimerRateAxis1;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
@@ -144,7 +145,7 @@ ISR(TIMER1_COMPA_vect)
       // remember our "running" rate and only update the actual rate when it changes
       if (runtimerRateAxis1 != calculatedTimerRateAxis1)
       {
-        timerRateAxis1 = calculatedTimerRateAxis1;
+        staA1.timerRate = calculatedTimerRateAxis1;
         runtimerRateAxis1 = calculatedTimerRateAxis1;
       }
     }
@@ -153,7 +154,7 @@ ISR(TIMER1_COMPA_vect)
       // guide rate acceleration/deceleration
       updateDeltaTarget();
 
-      double x = abs(deltaTargetAxis2);
+      double x = abs(staA2.deltaTarget);
 
       if (!backlashA2.correcting  && guideA2.dir)
       {
@@ -163,7 +164,7 @@ ISR(TIMER1_COMPA_vect)
           // break mode
           if (guideA2.dir == 'b')
           {
-            guideA2.timerRate = trackingTimerRateAxis2;
+            guideA2.timerRate = staA2.trackingTimerRate;
             if (guideA2.timerRate >= 0)
               guideA2.timerRate = 1.0;
             else
@@ -177,7 +178,7 @@ ISR(TIMER1_COMPA_vect)
         {
           // use acceleration
           DecayModeGoto();
-          double z = getRate(sqrt(fabs(x) * 2 * AccAxis2));
+          double z = getRate(sqrt(fabs(x) * 2 * staA2.acc));
           guideTimerRateAxisA2 = 3600.0 / (geoA2.stepsPerDegree * z / 1000000.0) ;
           if (guideTimerRateAxisA2 < maxguideTimerRate) guideTimerRateAxisA2 = maxguideTimerRate;
         }
@@ -195,7 +196,7 @@ ISR(TIMER1_COMPA_vect)
           }
         }
       }
-      double timerRateAxis2A = trackingTimerRateAxis2;
+      double timerRateAxis2A = staA2.trackingTimerRate;
       double timerRateAxis2B = fabs(guideTimerRateAxisA2 + timerRateAxis2A);
       double calculatedTimerRateAxis2;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
@@ -208,7 +209,7 @@ ISR(TIMER1_COMPA_vect)
       // remember our "running" rate and only update the actual rate when it changes
       if (runTimerRateAxis2 != calculatedTimerRateAxis2)
       {
-        timerRateAxis2 = calculatedTimerRateAxis2;
+        staA2.timerRate = calculatedTimerRateAxis2;
         runTimerRateAxis2 = calculatedTimerRateAxis2;
       }
     }
@@ -219,11 +220,11 @@ ISR(TIMER1_COMPA_vect)
     }
   }
 
-  double thisTimerRateAxis1 = timerRateAxis1;
-  double thisTimerRateAxis2 = timerRateAxis2 * timerRateRatio;
+  double thisTimerRateAxis1 = staA1.timerRate;
+  double thisTimerRateAxis2 = staA2.timerRate * timerRateRatio;
 
-  timerRateAxis2 = max(timerRateAxis2, maxRate);
-  thisTimerRateAxis2 = timerRateAxis2;
+  staA2.timerRate = max(staA2.timerRate, maxRate);
+  thisTimerRateAxis2 = staA2.timerRate;
 
   // override rate during backlash compensation
   if (backlashA1.correcting)
@@ -282,51 +283,51 @@ ISR(TIMER3_COMPA_vect)
   {
     takeStepAxis1 = false;
     updateDeltaTargetAxis1();
-    if (deltaTargetAxis1 != 0 || backlashA1.correcting)
+    if (staA1.deltaTarget != 0 || backlashA1.correcting)
     {                       
       // Move the RA stepper to the target
-      dirAxis1 = 0 < deltaTargetAxis1;
+      staA1.dir = 0 < staA1.deltaTarget;
       // Direction control
       if (motorA1.reverse^Axis1Reverse)
       {
-        if (HADir == dirAxis1)
+        if (HADir == staA1.dir)
           digitalWriteFast(Axis1DirPin, LOW);
         else
           digitalWriteFast(Axis1DirPin, HIGH);
       }
       else
       {
-        if (HADir == dirAxis1)
+        if (HADir == staA1.dir)
           digitalWriteFast(Axis1DirPin, HIGH);
         else
           digitalWriteFast(Axis1DirPin, LOW);
       }
 
       // telescope moves WEST with the sky, blAxis1 is the amount of EAST backlash
-      if (dirAxis1)
+      if (staA1.dir)
       {
         if (backlashA1.movedSteps < backlashA1.inSteps)
         {
-          backlashA1.movedSteps += stepAxis1;
+          backlashA1.movedSteps += stepAxis;
           backlashA1.correcting = true;
         }
         else
         {
           backlashA1.correcting = false;
-          posAxis1 += stepAxis1;
+          staA1.pos += stepAxis;
         }
       }
       else
       {
         if (backlashA1.movedSteps > 0)
         {
-          backlashA1.movedSteps -= stepAxis1;
+          backlashA1.movedSteps -= stepAxis;
           backlashA1.correcting = true;
         }
         else
         {
           backlashA1.correcting = false;
-          posAxis1 -= stepAxis1;
+          staA1.pos -= stepAxis;
         }
       }
       takeStepAxis1 = true;
@@ -341,7 +342,7 @@ ISR(TIMER3_COMPA_vect)
       digitalWriteFast(Axis1StepPin, HIGH);
     }
     clearAxis1 = true;
-    PIT_LDVAL1 = nextAxis1Rate * stepAxis1;
+    PIT_LDVAL1 = nextAxis1Rate * stepAxis;
   }
 }
 ISR(TIMER4_COMPA_vect)
@@ -354,52 +355,52 @@ ISR(TIMER4_COMPA_vect)
   {
     takeStepAxis2 = false;
     updateDeltaTargetAxis2();
-    if (deltaTargetAxis2 != 0 || backlashA2.correcting)
+    if (staA2.deltaTarget != 0 || backlashA2.correcting)
     {                       
       // move the Dec stepper to the target
       // telescope normally starts on the EAST side of the pier looking at the WEST sky
-      dirAxis2 = 0 < deltaTargetAxis2;
+      staA2.dir = 0 < staA2.deltaTarget;
       // Direction control
       if (motorA2.reverse^Axis2Reverse)
       {
-        if (dirAxis2)
+        if (staA2.dir)
           digitalWriteFast(Axis2DirPin, LOW);
         else
           digitalWriteFast(Axis2DirPin, HIGH);
       }
       else
       {
-        if (dirAxis2)
+        if (staA2.dir)
           digitalWriteFast(Axis2DirPin, HIGH);
         else
           digitalWriteFast(Axis2DirPin, LOW);
       }
 
       // telescope moving toward celestial pole in the sky, blAxis2 is the amount of opposite backlash
-      if (dirAxis2)
+      if (staA2.dir)
       {
         if (backlashA2.movedSteps < backlashA2.inSteps)
         {
-          backlashA2.movedSteps += stepAxis2;
+          backlashA2.movedSteps += stepAxis;
           backlashA2.correcting = true;
         }
         else
         {
           backlashA2.correcting = false;
-          posAxis2 += stepAxis2;
+          staA2.pos += stepAxis;
         }
       }
       else
       {
         if (backlashA2.movedSteps > 0)
         {
-          backlashA2.movedSteps -= stepAxis2;
+          backlashA2.movedSteps -= stepAxis;
           backlashA2.correcting = true;
         }
         else
         {
           backlashA2.correcting = false;
-          posAxis2 -= stepAxis2;
+          staA2.pos -= stepAxis;
         }
       }
       takeStepAxis2 = true;
@@ -413,7 +414,7 @@ ISR(TIMER4_COMPA_vect)
       digitalWriteFast(Axis2StepPin, HIGH);
     }
     clearAxis2 = true;
-    PIT_LDVAL2 = nextAxis2Rate * stepAxis2;
+    PIT_LDVAL2 = nextAxis2Rate * stepAxis;
   }
 }
 

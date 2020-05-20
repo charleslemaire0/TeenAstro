@@ -60,8 +60,8 @@ void Command_A()
     }
 
     cli();
-    double Axis1 = posAxis1 / geoA1.stepsPerDegree;
-    double Axis2 = posAxis2 / geoA2.stepsPerDegree;
+    double Axis1 = staA1.pos / geoA1.stepsPerDegree;
+    double Axis2 = staA2.pos / geoA2.stepsPerDegree;
     sei();
 
     alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
@@ -72,8 +72,8 @@ void Command_A()
       {
         hasStarAlignment = true;
         cli();
-        targetAxis1 = posAxis1;
-        targetAxis2 = posAxis2;
+        staA1.target = staA1.pos;
+        staA2.target = staA2.pos;
         sei();
       }
     }
@@ -90,16 +90,16 @@ void Command_A()
       syncAzAlt(Azm, Alt, GetPierSide());
     }
     cli();
-    double Axis1 = posAxis1 / geoA1.stepsPerDegree;
-    double Axis2 = posAxis2 / geoA2.stepsPerDegree;
+    double Axis1 = staA1.pos / geoA1.stepsPerDegree;
+    double Axis2 = staA2.pos / geoA2.stepsPerDegree;
     sei();
     alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
     if (alignment.isReady())
     {
       hasStarAlignment = true;
       cli();
-      targetAxis1 = posAxis1;
-      targetAxis2 = posAxis2;
+      staA1.target = staA1.pos;
+      staA2.target = staA2.pos;
       sei();
     }
     strcpy(reply, "1");

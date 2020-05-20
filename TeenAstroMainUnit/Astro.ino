@@ -8,22 +8,22 @@
 void updateDeltaTarget()
 {
   cli();
-  deltaTargetAxis1 = (long)targetAxis1 - posAxis1;
-  deltaTargetAxis2 = (long)targetAxis2 - posAxis2;
+  staA1.deltaTarget = (long)staA1.target - staA1.pos;
+  staA2.deltaTarget = (long)staA2.target - staA2.pos;
   sei();
 }
 
 void updateDeltaTargetAxis1()
 {
   cli();
-  deltaTargetAxis1 = (long)targetAxis1 - posAxis1;
+  staA1.deltaTarget = (long)staA1.target - staA1.pos;
   sei();
 }
 
 void updateDeltaTargetAxis2()
 {
   cli();
-  deltaTargetAxis2 = (long)targetAxis2 - posAxis2;
+  staA2.deltaTarget = (long)staA2.target - staA2.pos;
   sei();
 }
 
@@ -31,30 +31,30 @@ bool atTargetAxis1(bool update = false)
 {
   if (update)
     updateDeltaTargetAxis1();
-  return geoA1.atTarget(deltaTargetAxis1);
+  return geoA1.atTarget(staA1.deltaTarget);
 }
 
 bool atTargetAxis2(bool update = false)
 {
   if (update)
     updateDeltaTargetAxis2();
-  return geoA2.atTarget(deltaTargetAxis2);
+  return geoA2.atTarget(staA2.deltaTarget);
 }
 
 PierSide GetPierSide()
 {
-  cli(); long pos = posAxis2; sei();
+  cli(); long pos = staA2.pos; sei();
   return -geoA2.quaterRot <= pos && pos <= geoA2.quaterRot ? PIER_EAST : PIER_WEST;
 }
 
-// trackingTimerRateAxis1/2 are x the sidereal rate
+// staA1.trackingTimerRate/2 are x the sidereal rate
 void SetDeltaTrackingRate()
 {
-  trackingTimerRateAxis1 = az_deltaAxis1 / 15.;
-  trackingTimerRateAxis2 = az_deltaAxis2 / 15.;
+  staA1.trackingTimerRate = staA1.az_delta / 15.;
+  staA2.trackingTimerRate = staA2.az_delta / 15.;
 
-  fstepAxis1 = geoA1.stepsPerCentiSecond * trackingTimerRateAxis1;
-  fstepAxis2 = geoA2.stepsPerCentiSecond * trackingTimerRateAxis2;
+  staA1.fstep = geoA1.stepsPerCentiSecond * staA1.trackingTimerRate;
+  staA2.fstep = geoA2.stepsPerCentiSecond * staA2.trackingTimerRate;
 }
 
 void SetTrackingRate(double r)
@@ -62,8 +62,8 @@ void SetTrackingRate(double r)
   az_deltaRateScale = r;
   if (!isAltAZ())
   {
-    az_deltaAxis1 = r * 15.;
-    az_deltaAxis2 = 0.;
+    staA1.az_delta = r * 15.;
+    staA2.az_delta = 0.;
   }
   SetDeltaTrackingRate();
 }
@@ -89,8 +89,8 @@ bool do_compensation_calc()
   // turn off if not tracking at sidereal rate
   if (!sideralTracking)
   {
-    az_deltaAxis1 = 0.;
-    az_deltaAxis2 = 0.;
+    staA1.az_delta = 0.;
+    staA2.az_delta = 0.;
     az_step = 0;
     return true;
   }
@@ -131,13 +131,13 @@ bool do_compensation_calc()
     if ((axis1_before < -geoA1.halfRot) && (axis1_after > geoA1.halfRot)) axis1_after += 2 * geoA1.halfRot;
     // set rates
 
-    az_deltaAxis1 = (distStepAxis1(&axis1_before, &axis1_after) / geoA1.stepsPerDegree * (15. / (AltAzTrackingRange / 60.)) / 2.) * az_deltaRateScale;
-    az_deltaAxis2 = (distStepAxis2(&axis2_before, &axis2_after) / geoA2.stepsPerDegree * (15. / (AltAzTrackingRange / 60.)) / 2.) * az_deltaRateScale;
+    staA1.az_delta = (distStepAxis1(&axis1_before, &axis1_after) / geoA1.stepsPerDegree * (15. / (AltAzTrackingRange / 60.)) / 2.) * az_deltaRateScale;
+    staA2.az_delta = (distStepAxis2(&axis2_before, &axis2_after) / geoA2.stepsPerDegree * (15. / (AltAzTrackingRange / 60.)) / 2.) * az_deltaRateScale;
     // override for special case of near a celestial pole
     //if (90.0 - fabs(Dec_now) <= 0.5)
     //{
-    //  az_deltaAxis1 = 0.0;
-    //  az_deltaAxis2 = 0.0;
+    //  staA1.az_delta = 0.0;
+    //  staA2.az_delta = 0.0;
     //}
     break;
   case 200:
@@ -181,8 +181,8 @@ void SetAcceleration()
 {
   double Vmax = getV(maxRate);
   cli();
-  AccAxis1 = Vmax / (2. * DegreesForAcceleration * geoA1.stepsPerDegree)*Vmax;
-  AccAxis2 = Vmax / (2. * DegreesForAcceleration * geoA2.stepsPerDegree)*Vmax;
+  staA1.acc = Vmax / (2. * DegreesForAcceleration * geoA1.stepsPerDegree)*Vmax;
+  staA2.acc = Vmax / (2. * DegreesForAcceleration * geoA2.stepsPerDegree)*Vmax;
   sei();
 }
 

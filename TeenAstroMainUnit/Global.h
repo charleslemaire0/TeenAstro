@@ -53,8 +53,6 @@ double  az_deltaRateScale = 1.;
 MotorAxis motorA1;
 MotorAxis motorA2;
 
-//tracking rate
-#define default_tracking_rate   1
 
 backlash backlashA1 = { 0,0,0,0 };
 backlash backlashA2 = { 0,0,0,0 };
@@ -63,37 +61,12 @@ GeoAxis geoA1;
 GeoAxis geoA2;
 
 volatile double     timerRateRatio;
+StatusAxis staA1;
+StatusAxis staA2;
 
 
-// Axis 1
-bool                axis1Enabled = false;
-volatile long       posAxis1;    // hour angle position in steps
-volatile long       deltaTargetAxis1;
-volatile long       startAxis1;  // hour angle of goto start position in steps
-volatile double     targetAxis1; // hour angle of goto end   position in steps
-volatile bool       dirAxis1;    // stepping direction + or -
-double              fstepAxis1;  // amount of steps for Tracking
-volatile double     timerRateAxis1 = 0;
-bool                faultAxis1 = false;
-volatile double     trackingTimerRateAxis1 = default_tracking_rate;
-double              az_deltaAxis1 = 15.; // Refraction rate tracking in arc-seconds/second
-volatile double     AccAxis1 = 0; //acceleration in steps per second square
-#define stepAxis1   1
 
-// Axis 2
-bool                axis2Enabled = false;
-volatile long       posAxis2;     // declination position in steps
-volatile long       deltaTargetAxis2;
-volatile long       startAxis2;   // declination of goto start position in steps
-volatile double     targetAxis2;  // declination of goto end   position in steps
-volatile bool       dirAxis2;     // stepping direction + or -
-double              fstepAxis2;   // amount of steps for Tracking
-volatile double     timerRateAxis2 = 0;
-bool                faultAxis2 = false;
-volatile double     trackingTimerRateAxis2 = default_tracking_rate;
-double              az_deltaAxis2 = 0.; // Refraction rate tracking in arc-seconds/second
-volatile double     AccAxis2 = 0; //acceleration in steps per second square
-#define stepAxis2   1
+
 
 //Targets
 PierSide newTargetPierSide = PIER_NOTVALID;
