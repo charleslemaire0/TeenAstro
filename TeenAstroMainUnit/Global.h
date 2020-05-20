@@ -48,28 +48,22 @@ double                  maxRate = MaxRate * 16L;
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
 
-double  az_deltaRateScale = 1.;
+double              az_deltaRateScale = 1.;
 
-MotorAxis motorA1;
-MotorAxis motorA2;
+MotorAxis           motorA1;
+MotorAxis           motorA2;
 
+backlash            backlashA1 = { 0,0,0,0 };
+backlash            backlashA2 = { 0,0,0,0 };
 
-backlash backlashA1 = { 0,0,0,0 };
-backlash backlashA2 = { 0,0,0,0 };
-
-GeoAxis geoA1;
-GeoAxis geoA2;
+GeoAxis             geoA1;
+GeoAxis             geoA2;
 
 volatile double     timerRateRatio;
-StatusAxis staA1;
-StatusAxis staA2;
+StatusAxis          staA1;
+StatusAxis          staA2;
 
-
-
-
-
-//Targets
-PierSide newTargetPierSide = PIER_NOTVALID;
+PierSide            newTargetPierSide = PIER_NOTVALID;
 
 double              newTargetAlt = 0.0;                     // holds the altitude for goTos
 double              newTargetAzm = 0.0;                     // holds the azmiuth for goTos

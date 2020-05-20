@@ -282,7 +282,7 @@ ISR(TIMER3_COMPA_vect)
   if (clearAxis1)
   {
     takeStepAxis1 = false;
-    updateDeltaTargetAxis1();
+    staA1.updateDeltaTarget();
     if (staA1.deltaTarget != 0 || backlashA1.correcting)
     {                       
       // Move the RA stepper to the target
@@ -290,17 +290,12 @@ ISR(TIMER3_COMPA_vect)
       // Direction control
       if (motorA1.reverse^Axis1Reverse)
       {
-        if (HADir == staA1.dir)
-          digitalWriteFast(Axis1DirPin, LOW);
-        else
-          digitalWriteFast(Axis1DirPin, HIGH);
+        digitalWriteFast(Axis1DirPin, HADir != staA1.dir);
+
       }
       else
       {
-        if (HADir == staA1.dir)
-          digitalWriteFast(Axis1DirPin, HIGH);
-        else
-          digitalWriteFast(Axis1DirPin, LOW);
+        digitalWriteFast(Axis1DirPin, HADir == staA1.dir);
       }
 
       // telescope moves WEST with the sky, blAxis1 is the amount of EAST backlash
@@ -354,7 +349,7 @@ ISR(TIMER4_COMPA_vect)
   if (clearAxis2)
   {
     takeStepAxis2 = false;
-    updateDeltaTargetAxis2();
+    staA2.updateDeltaTarget();
     if (staA2.deltaTarget != 0 || backlashA2.correcting)
     {                       
       // move the Dec stepper to the target
@@ -363,17 +358,11 @@ ISR(TIMER4_COMPA_vect)
       // Direction control
       if (motorA2.reverse^Axis2Reverse)
       {
-        if (staA2.dir)
-          digitalWriteFast(Axis2DirPin, LOW);
-        else
-          digitalWriteFast(Axis2DirPin, HIGH);
+        digitalWriteFast(Axis2DirPin, !staA2.dir);
       }
       else
       {
-        if (staA2.dir)
-          digitalWriteFast(Axis2DirPin, HIGH);
-        else
-          digitalWriteFast(Axis2DirPin, LOW);
+        digitalWriteFast(Axis2DirPin, staA2.dir);
       }
 
       // telescope moving toward celestial pole in the sky, blAxis2 is the amount of opposite backlash

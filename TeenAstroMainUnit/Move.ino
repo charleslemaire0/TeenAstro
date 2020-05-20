@@ -41,7 +41,7 @@ void StopAxis1()
 {
   if (guideA1.dir == 'b')
     return;
-  updateDeltaTargetAxis1();
+  staA1.updateDeltaTarget();
   long a = pow(getV(staA1.timerRate), 2.) / (2. * staA1.acc);
   if (abs(staA1.deltaTarget) > a)
   {
@@ -99,7 +99,7 @@ void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
 void StopAxis2()
 {
   long a = pow(getV(staA2.timerRate), 2.) / (2. * staA2.acc);
-  updateDeltaTargetAxis2();
+  staA2.updateDeltaTarget();
   if (abs(staA2.deltaTarget) > a)
   {
     if (0 > staA2.deltaTarget)

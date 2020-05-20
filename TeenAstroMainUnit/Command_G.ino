@@ -151,11 +151,11 @@ void Command_GX()
         sprintf(reply, "%ld#", temp);
         break;  // Debug7, Dec target position
       case '4':
-        updateDeltaTargetAxis1();
+        staA1.updateDeltaTarget();
         sprintf(reply, "%ld#", staA1.deltaTarget);
         break;  // Debug0, true vs. target RA position
       case '5':
-        updateDeltaTargetAxis2();
+        staA2.updateDeltaTarget();
         sprintf(reply, "%ld#", staA2.deltaTarget);
         break;
       default:

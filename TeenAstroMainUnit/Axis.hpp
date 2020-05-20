@@ -27,6 +27,12 @@ public:
   volatile double     timerRate = 0;
   volatile double     trackingTimerRate = default_tracking_rate;
   double              az_delta = 15.; // Refraction rate tracking in arc-seconds/second
+  void                updateDeltaTarget()
+  {
+    cli();
+    deltaTarget = (long)target - pos;
+    sei();
+  };
 };
 
 class GeoAxis

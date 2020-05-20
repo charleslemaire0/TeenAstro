@@ -13,31 +13,17 @@ void updateDeltaTarget()
   sei();
 }
 
-void updateDeltaTargetAxis1()
-{
-  cli();
-  staA1.deltaTarget = (long)staA1.target - staA1.pos;
-  sei();
-}
-
-void updateDeltaTargetAxis2()
-{
-  cli();
-  staA2.deltaTarget = (long)staA2.target - staA2.pos;
-  sei();
-}
-
 bool atTargetAxis1(bool update = false)
 {
   if (update)
-    updateDeltaTargetAxis1();
+    staA1.updateDeltaTarget();
   return geoA1.atTarget(staA1.deltaTarget);
 }
 
 bool atTargetAxis2(bool update = false)
 {
   if (update)
-    updateDeltaTargetAxis2();
+    staA2.updateDeltaTarget();
   return geoA2.atTarget(staA2.deltaTarget);
 }
 
