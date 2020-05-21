@@ -394,7 +394,7 @@ void Command_R()
 //  :TK#   Track rate king Returns: Nothing
 //  :Te#   Tracking enable  (replies 0/1)
 //  :Td#   Tracking disable (replies 0/1)
-//  :Tr#   Track refraction enable  (replies 0/1)
+//  :Tr#   Track compensation enable  (replies 0/1)
 //  :Tn#   Track refraction disable (replies 0/1)
 //         
 void Command_T()
@@ -415,14 +415,14 @@ void Command_T()
     // solar tracking rate 60Hz 
     SetTrackingRate(TrackingSolar);
     sideralMode = SIDM_SUN;
-    correct_tracking = false;
+    correct_tracking = XEEPROM.read(EE_corr_track);
     reply[0] = 0;
     break;
   case 'L':
     // lunar tracking rate 57.9Hz
     SetTrackingRate(TrackingLunar);
     sideralMode = SIDM_MOON;
-    correct_tracking = false;
+    correct_tracking = XEEPROM.read(EE_corr_track);
     reply[0] = 0;
     break;
   case 'Q':
@@ -430,18 +430,13 @@ void Command_T()
     SetTrackingRate(default_tracking_rate);
     sideralMode = SIDM_STAR;
     correct_tracking = XEEPROM.read(EE_corr_track);
-    correct_tracking = false;
     reply[0] = 0;
     break;
   case 'R':
     // reset master sidereal clock interval
     siderealInterval = masterSiderealInterval;
-    reply[0] = 0;
-    break;
-  case 'K':
-    // king tracking rate 60.136Hz
-    SetTrackingRate(0.99953004401);
-    correct_tracking = false;
+    sideralMode = SIDM_STAR;
+    correct_tracking = XEEPROM.read(EE_corr_track);
     reply[0] = 0;
     break;
   case 'e':
@@ -464,14 +459,14 @@ void Command_T()
     else
       strcpy(reply, "0");
     break;
-  case 'r':
-    // turn compensation on, defaults to base sidereal tracking rate
+  case 'c':
+    // turn compensation on
     correct_tracking = true;
     SetTrackingRate(default_tracking_rate);
     strcpy(reply, "1");
     break;
   case 'n':
-    // turn compensation off, sidereal tracking rate resumes     
+    // turn compensation off  
     correct_tracking = false;
     SetTrackingRate(default_tracking_rate);
     strcpy(reply, "1");

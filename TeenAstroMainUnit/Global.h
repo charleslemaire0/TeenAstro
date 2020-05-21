@@ -32,7 +32,6 @@ Mount mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;
 bool hasFocuser = false;
 bool hasGNSS = true;
-//bool refraction = true;
 bool correct_tracking = false;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
 double                  siderealInterval = 15956313.0;

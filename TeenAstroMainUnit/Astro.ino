@@ -70,6 +70,7 @@ bool do_compensation_calc()
   static double Dec_tmp, Dec_now = 0.;
   static double Azm_tmp, Alt_tmp = 0.;
   static int    az_step = 0;
+  static double fact = 1;
 
   // turn off if not tracking at sidereal rate
   if (!sideralTracking)
@@ -91,7 +92,19 @@ bool do_compensation_calc()
     break;
   case 10:
     // look ahead of the current position
-    HA_tmp = (HA_now - (AltAzTrackingRange / 60.));
+    switch (sideralMode)
+    {
+    case SIDM_STAR:
+      fact = 1;
+      break;
+    case SIDM_SUN:
+      fact = TrackingSolar;
+      break;
+    case SIDM_MOON:
+      fact = TrackingLunar;
+      break;
+    }
+    HA_tmp = HA_now - fact * AltAzTrackingRange / 60.;
     Dec_tmp = Dec_now;
     break;
   case 15:
@@ -101,7 +114,19 @@ bool do_compensation_calc()
     break;
   case 110:
     // look behind the current position
-    HA_tmp = (HA_now + (AltAzTrackingRange / 60.));
+    switch (sideralMode)
+    {
+    case SIDM_STAR:
+      fact = 1;
+      break;
+    case SIDM_SUN:
+      fact = TrackingSolar;
+      break;
+    case SIDM_MOON:
+      fact = TrackingLunar;
+      break;
+    }
+    HA_tmp = HA_now + fact * AltAzTrackingRange / 60.;
     Dec_tmp = Dec_now;
     break;
   case 115:

@@ -255,15 +255,15 @@ void loop()
       moveTo();
     }
 
-    if (rtk.m_lst % 16 != 0)
-      getHorApp(&currentAzm, &currentAlt);
-
-    if (isAltAZ())
+    if (rtk.m_lst % 16 == 0)
     {
-      // figure out the current Alt/Azm tracking rates
-      if (rtk.m_lst % 3 != 0)
+      getHorApp(&currentAzm, &currentAlt);
+      if (isAltAZ() || correct_tracking)
+      {
         do_compensation_calc();
+      }
     }
+    
     // check for fault signal, stop any slew or guide and turn tracking off
     if (staA1.fault || staA2.fault)
     {
@@ -284,7 +284,6 @@ void loop()
     {
       lastError = ERR_NONE;
     }
-
     // check altitude overhead limit and horizon limit
     if (currentAlt < minAlt || currentAlt > maxAlt)
     {
@@ -308,7 +307,7 @@ void loop()
 
   // HOUSEKEEPING --------------------------------------------------------------------------------------
   // timer... falls in once a second, keeps the universal time clock ticking,
-  unsigned long   m = millis();
+  static unsigned long m = millis();
   forceTracking = (m - lastSetTrakingEnable < 10000);
   if (!forceTracking) lastSetTrakingEnable = m + 10000;
   if (rtk.updateclockTimer(m))
@@ -515,7 +514,6 @@ void initmount()
   staA1.fstep = geoA1.stepsPerCentiSecond;
   // Tracking and rate control
   correct_tracking = XEEPROM.read(EE_corr_track);
-  correct_tracking = false;
 }
 
 void initTransformation(bool reset)
