@@ -85,6 +85,7 @@ void Command_SX()
       strcpy(reply, "0");
       break;
     }
+    break;
   case 'L':
     // user defined limits
     switch (command[3])
@@ -139,6 +140,7 @@ void Command_SX()
       strcpy(reply, "0");
       break;
     }
+    break;
   case 'T':
     // :SXTn# Date/Time definition
     switch (command[3])
@@ -467,8 +469,6 @@ void Command_S(Command& process_command)
     //  :SBn#  Set Baud Rate n for Serial-0, where n is an ASCII digit (1..9) with the following interpertation
         //         0=115.2K, 1=56.7K, 2=38.4K, 3=28.8K, 4=19.2K, 5=14.4K, 6=9600, 7=4800, 8=2400, 9=1200
         //         Returns: "1" At the current baud rate and then changes to the new rate for further communication
-
-  {
     i = (int)(command[2] - '0');
     if ((i >= 0) && (i < 10))
     {
@@ -487,7 +487,7 @@ void Command_S(Command& process_command)
       strcpy(reply, "1");
     }
     else strcpy(reply, "0");
-  }
+    break;
   case 'C':
     //  :SCMM/DD/YY#
     //          Change Local Date to MM/DD/YY
@@ -595,7 +595,6 @@ void Command_S(Command& process_command)
     highPrecision = i;
   }
   break;
-
   case 'M':
   case 'N':
   case 'O':
@@ -607,7 +606,6 @@ void Command_S(Command& process_command)
     //          Set site name to be <string>, up to 14 characters.
     //          Return: 0 on failure
     //                  1 on success
-  {
     i = command[1] - 'M';
     if (strlen(&command[2]) > 14)
       strcpy(reply, "0");
@@ -616,10 +614,8 @@ void Command_S(Command& process_command)
       XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, &command[2]);
       strcpy(reply, "1");
     }
-  }
-  break;
+    break;
   case 'm':
-  {
     if ((command[2] != 0) && (strlen(&command[2]) < 2))
     {
       if (command[2] == 'N')
@@ -647,7 +643,6 @@ void Command_S(Command& process_command)
     }
     else strcpy(reply, "0");
     break;
-  }
   case 'n':
     localSite.setSiteName(&command[2]);
     strcpy(reply, "1");
@@ -657,8 +652,6 @@ void Command_S(Command& process_command)
     //          Set the overhead elevation limit to DD#
     //          Return: 0 on failure
     //                  1 on success
-
-  {
     if ((command[2] != 0) && (strlen(&command[2]) < 3))
     {
       if ((atoi2(&command[2], &i)) && ((i >= 60) && (i <= 91)))
@@ -671,7 +664,6 @@ void Command_S(Command& process_command)
       else strcpy(reply, "0");
     }
     else strcpy(reply, "0");
-  }
   break;
   case 'r':
     //  :SrHH:MM.T#
@@ -679,7 +671,6 @@ void Command_S(Command& process_command)
     //          Set target object RA to HH:MM.T or HH:MM:SS (based on precision setting)
     //          Return: 0 on failure
     //                  1 on success
-
     if (hmsToDouble(&newTargetRA, &command[2], highPrecision))
     {
       newTargetRA *= 15.0;
@@ -687,29 +678,24 @@ void Command_S(Command& process_command)
     }
     else strcpy(reply, "0");
     break;
-
   case 't':
     //  :StsDD*MM#
     //          Sets the current site latitude to sDD*MM#
     //          Return: 0 on failure
     //                  1 on success                                                             
-  {
     i = highPrecision;
     highPrecision = false;
-    double lat = 0;
-    if (dmsToDouble(&lat, &command[2], true, highPrecision))
+    if (dmsToDouble(&f, &command[2], true, highPrecision))
     {
-      localSite.setLat(lat);
+      localSite.setLat(f);
       initCelestialPole();
       initTransformation(true);
       strcpy(reply, "1");
     }
     else strcpy(reply, "0");
     highPrecision = i;
-  }
-  break;
+    break;
   case 'R':
-  {
     if (command[2] == 'E' && command[3] == 'F')
     {
       if (command[4] == '1')
@@ -727,13 +713,11 @@ void Command_S(Command& process_command)
       else strcpy(reply, "0");
     }
     else strcpy(reply, "0");
-  }
-  break;
+    break;
   case 'T':
     //  :STdd.ddddd#
     //          Return: 0 on failure
     //                  1 on success
-  {
     if (!movingTo)
     {
       f = strtod(&command[2], &conv_end);
@@ -753,8 +737,7 @@ void Command_S(Command& process_command)
       else strcpy(reply, "0");
     }
     else strcpy(reply, "0");
-  }
-  break;
+    break;
   case 'U':
     // :SU# store current User defined Position
     getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
