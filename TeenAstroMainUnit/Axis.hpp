@@ -1,5 +1,6 @@
 #pragma once
 #include <TeenAstroStepper.h>
+#define default_tracking_rate 1
 //geometry Axis
 // backlash control
 struct backlash
@@ -9,6 +10,29 @@ struct backlash
   volatile bool   correcting;
   volatile int    movedSteps;
   volatile double timerRate;
+};
+
+class StatusAxis
+{
+public:
+  bool                enable = false;
+  bool                fault = false;
+  volatile double     acc = 0; //acceleration in steps per second square
+  volatile long       pos;    // hour angle position in steps
+  volatile long       start;  // hour angle of goto start position in steps
+  volatile double     target; // hour angle of goto end   position in steps
+  volatile long       deltaTarget;
+  volatile bool       dir;    // stepping direction + or -
+  double              fstep;  // amount of steps for Tracking
+  volatile double     timerRate = 0;
+  volatile double     trackingTimerRate = default_tracking_rate;
+  double              az_delta = 15.; // Refraction rate tracking in arc-seconds/second
+  void                updateDeltaTarget()
+  {
+    cli();
+    deltaTarget = (long)target - pos;
+    sei();
+  };
 };
 
 class GeoAxis

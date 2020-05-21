@@ -55,7 +55,6 @@ void setup()
     // init the site information, lat/long/tz/name
     localSite.initdefault();
     XEEPROM.write(EE_mountType, MOUNT_TYPE_GEM);
-    XEEPROM.write(EE_refraction, 1);
     // init the min and max altitude
     minAlt = -10;
     maxAlt = 91;
@@ -242,11 +241,11 @@ void loop()
       cli();
       if (!backlashA1.correcting)
       {
-        targetAxis1 += fstepAxis1;
+        staA1.target += staA1.fstep;
       }
       if (!backlashA2.correcting)
       {
-        targetAxis2 += fstepAxis2;
+        staA2.target += staA2.fstep;
       }
       sei();
     }
@@ -266,7 +265,7 @@ void loop()
         do_compensation_calc();
     }
     // check for fault signal, stop any slew or guide and turn tracking off
-    if ((faultAxis1 || faultAxis2))
+    if (staA1.fault || staA2.fault)
     {
       lastError = ERR_MOTOR_FAULT;
       if (!forceTracking)
@@ -317,8 +316,8 @@ void loop()
     // for testing, average steps per second
     if (debugv1 > 100000) debugv1 = 100000;
     if (debugv1 < 0) debugv1 = 0;
-    debugv1 = (debugv1 * 19 + (targetAxis1 * 1000 - lasttargetAxis1)) / 20;
-    lasttargetAxis1 = targetAxis1 * 1000;
+    debugv1 = (debugv1 * 19 + (staA1.target * 1000 - lasttargetAxis1)) / 20;
+    lasttargetAxis1 = staA1.target * 1000;
     // adjust tracking rate for Alt/Azm mounts
     // adjust tracking rate for refraction
     SetDeltaTrackingRate();
@@ -371,7 +370,7 @@ void SafetyCheck(const bool forceTracking)
     {
       if (!checkMeridian(axis1, axis2, CHECKMODE_TRACKING))
       {
-        if ((dirAxis1 && currentSide == PIER_WEST) || (!dirAxis1 && currentSide == PIER_EAST))
+        if ((staA1.dir && currentSide == PIER_WEST) || (!staA2.dir && currentSide == PIER_EAST))
         {
           lastError = ERR_MERIDIAN;
           if (movingTo)
@@ -393,7 +392,7 @@ void SafetyCheck(const bool forceTracking)
     }
     if (!checkPole(axis1, CHECKMODE_TRACKING))
     {
-      if ((dirAxis1 && currentSide == PIER_EAST) || (!dirAxis1 && currentSide == PIER_WEST))
+      if ((staA1.dir && currentSide == PIER_EAST) || (!staA2.dir && currentSide == PIER_WEST))
       {
         lastError = ERR_UNDER_POLE;
         if (movingTo)
@@ -447,13 +446,13 @@ void enable_Axis(bool enable)
 {
   if (enable)
   {
-    axis1Enabled = true;
-    axis2Enabled = true;
+    staA1.enable = true;
+    staA2.enable = true;
   }
   else
   {
-    axis1Enabled = false;
-    axis2Enabled = false;
+    staA1.enable = false;
+    staA2.enable = false;
   }
 }
 
@@ -508,13 +507,12 @@ void initmount()
   guideA1.amount = 0;
   guideA2.amount = 0;
 
-  fstepAxis1 = 0;
-  fstepAxis2 = 0;
+  staA1.fstep = 0;
+  staA2.fstep = 0;
 
-  targetAxis1 = geoA1.quaterRot;
-  targetAxis2 = geoA2.quaterRot;
-  fstepAxis1 = geoA1.stepsPerCentiSecond;
-  refraction = XEEPROM.read(EE_refraction);
+  staA1.target = geoA1.quaterRot;
+  staA2.target = geoA2.quaterRot;
+  staA1.fstep = geoA1.stepsPerCentiSecond;
   // Tracking and rate control
   correct_tracking = XEEPROM.read(EE_corr_track);
   correct_tracking = false;
@@ -666,13 +664,13 @@ void updateSideral()
   SiderealRate = siderealInterval / geoA1.stepsPerSecond;
   TakeupRate = SiderealRate / 4L;
   sei();
-  timerRateAxis1 = SiderealRate;
-  timerRateAxis2 = SiderealRate;
+  staA1.timerRate = SiderealRate;
+  staA2.timerRate = SiderealRate;
   SetTrackingRate(default_tracking_rate);
 
   // backlash takeup rates
-  backlashA1.timerRate = timerRateAxis1 / BacklashTakeupRate;
-  backlashA2.timerRate = timerRateAxis2 / BacklashTakeupRate;
+  backlashA1.timerRate = staA1.timerRate / BacklashTakeupRate;
+  backlashA2.timerRate = staA2.timerRate / BacklashTakeupRate;
 
   // initialize the timers that handle the sidereal clock, RA, and Dec
   SetSiderealClockRate(siderealInterval);

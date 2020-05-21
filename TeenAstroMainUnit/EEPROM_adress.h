@@ -11,7 +11,7 @@
 #define EE_parkStatus       10
 #define EE_parkSaved        11
 #define EE_currentSite      12
-#define EE_refraction       13
+#define EE_free             13
 // user defined RA DEC 
 #define EE_RA               14 // in degree
 #define EE_DEC              18 // in degree

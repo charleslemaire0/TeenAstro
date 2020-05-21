@@ -3,8 +3,8 @@
 void setAtMount(long &axis1, long &axis2)
 {
   cli();
-  axis1 = posAxis1;
-  axis2 = posAxis2;
+  axis1 = staA1.pos;
+  axis2 = staA2.pos;
   sei();
 }
 

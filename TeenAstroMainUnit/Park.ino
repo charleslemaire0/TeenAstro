@@ -9,12 +9,12 @@ bool setPark()
     lastSideralTracking = sideralTracking;
     sideralTracking = false;
 
-    // don't worry about moving around: during parking pec is turned off and backlash is cleared (0) so that targetAxis1/targetAxis2=posAxis1/posAxis2
+    // don't worry about moving around: during parking pec is turned off and backlash is cleared (0) so that staA1.target/targetAxis2=staA1.pos/staA2.pos
     // this should handle getting us back to the home position for micro-step modes up to 256X
     // if sync anywhere is enabled use the corrected location
 
-    long    h = (targetAxis1 / 1024L) * 1024L;
-    long    d = (targetAxis2 / 1024L) * 1024L;
+    long    h = (staA1.target / 1024L) * 1024L;
+    long    d = (staA2.target / 1024L) * 1024L;
     h /= pow(2, motorA1.micro);
     d /= pow(2, motorA2.micro);
     // store our position
@@ -72,10 +72,10 @@ bool parkClearBacklash()
     return true;
   }
   cli();
-  long    LastTimerRateAxis1 = timerRateAxis1;
-  long    LastTimerRateAxis2 = timerRateAxis2;
-  timerRateAxis1 = backlashA1.timerRate;
-  timerRateAxis2 = backlashA2.timerRate;
+  long    LastTimerRateAxis1 = staA1.timerRate;
+  long    LastTimerRateAxis2 = staA2.timerRate;
+  staA1.timerRate = backlashA1.timerRate;
+  staA2.timerRate = backlashA2.timerRate;
   sei();
 
   // figure out how long we'll have to wait for the backlash to clear (+50%)
@@ -88,22 +88,22 @@ bool parkClearBacklash()
 
   // start by moving fully into the backlash
   cli();
-  targetAxis1 += backlashA1.inSteps;
-  targetAxis2 += backlashA2.inSteps;
+  staA1.target += backlashA1.inSteps;
+  staA2.target += backlashA2.inSteps;
   sei();
 
   // wait until done or timed out
   for (int i = 0; i < 12; i++)
   {
-    if (backlashA1.movedSteps != backlashA1.inSteps || posAxis1 != targetAxis1 ||
-        backlashA2.movedSteps != backlashA2.inSteps || posAxis2 != targetAxis2)
+    if (backlashA1.movedSteps != backlashA1.inSteps || staA1.pos != staA1.target ||
+        backlashA2.movedSteps != backlashA2.inSteps || staA2.pos != staA2.target)
       delay(t);
   }
 
   // then reverse direction and take it all up
   cli();
-  targetAxis1-= backlashA1.inSteps;
-  targetAxis2-= backlashA2.inSteps;
+  staA1.target-= backlashA1.inSteps;
+  staA2.target-= backlashA2.inSteps;
   sei();
 
 
@@ -111,16 +111,16 @@ bool parkClearBacklash()
   for (int i = 0; i < 24; i++)
   {
     updateDeltaTarget();
-    if ((backlashA1.movedSteps != 0) || (deltaTargetAxis1 != 0) ||
-      (backlashA2.movedSteps != 0) || (deltaTargetAxis2 != 0))
+    if ((backlashA1.movedSteps != 0) || (staA1.deltaTarget != 0) ||
+      (backlashA2.movedSteps != 0) || (staA2.deltaTarget != 0))
       delay(t);
   }
 
   // we arrive back at the exact same position so ftargetAxis1/Dec don't need to be touched
   // move at the previous speed
   cli();
-  timerRateAxis1 = LastTimerRateAxis1;
-  timerRateAxis2 = LastTimerRateAxis2;
+  staA1.timerRate = LastTimerRateAxis1;
+  staA2.timerRate = LastTimerRateAxis2;
   sei();
 
   // return true on success
@@ -181,8 +181,8 @@ bool syncAtPark()
   }
   atHome = false;
   // enable the stepper drivers
-  axis1Enabled = true;
-  axis2Enabled = true;
+  staA1.enable = true;
+  staA2.enable = true;
   delay(10);
   // get corrections
   //GeoAlign.readCoe();
@@ -194,10 +194,10 @@ bool syncAtPark()
   axis1 *= pow(2, motorA1.micro);
   axis2 *= pow(2, motorA2.micro);
   cli();
-  posAxis1 = axis1;
-  targetAxis1 = axis1;
-  posAxis2 = axis2;
-  targetAxis2 = axis2;
+  staA1.pos = axis1;
+  staA1.target = axis1;
+  staA2.pos = axis2;
+  staA2.target = axis2;
   sei();
   // set Meridian Flip behaviour to match mount type
   meridianFlip = mountType == MOUNT_TYPE_GEM ? FLIP_ALWAYS : FLIP_NEVER;

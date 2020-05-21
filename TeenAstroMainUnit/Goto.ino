@@ -30,10 +30,10 @@ bool syncAzAlt(double Azm, double Alt, PierSide Side)
   alignment.toInstrumentalDeg(Axis1, Axis2, Azm, Alt);
   InstrtoStep(Axis1, Axis2, Side, &axis1, &axis2);
   cli();
-  posAxis1 = axis1;
-  posAxis2 = axis2;
-  targetAxis1 = posAxis1;
-  targetAxis2 = posAxis2;
+  staA1.pos = axis1;
+  staA2.pos = axis2;
+  staA1.target = staA1.pos;
+  staA2.target = staA2.pos;
   sei();
   atHome = false;
   return true;
@@ -69,8 +69,8 @@ bool getEquTarget(double *HA, double *Dec, const double *cosLat, const double *s
 bool getHorApp(double *Azm, double *Alt)
 {
   cli();
-  double Axis1 = posAxis1 / (double)geoA1.stepsPerDegree;
-  double Axis2 = posAxis2 / (double)geoA2.stepsPerDegree;
+  double Axis1 = staA1.pos / (double)geoA1.stepsPerDegree;
+  double Axis2 = staA2.pos / (double)geoA2.stepsPerDegree;
   sei();
   alignment.toReferenceDeg(*Azm, *Alt, Axis1, Axis2);
   return true;
@@ -80,8 +80,8 @@ bool getHorApp(double *Azm, double *Alt)
 bool getHorAppTarget(double *Azm, double *Alt)
 {
   cli();
-  double Axis1 = targetAxis1 / geoA1.stepsPerDegree;
-  double Axis2 = targetAxis2 / geoA2.stepsPerDegree;
+  double Axis1 = staA1.target / geoA1.stepsPerDegree;
+  double Axis2 = staA2.target / geoA2.stepsPerDegree;
   sei();
   alignment.toReferenceDeg(*Azm, *Alt, Axis1, Axis2);
   return true;
@@ -154,20 +154,20 @@ byte goTo(long thisTargetAxis1, long thisTargetAxis2)
 {
   // HA goes from +90...0..-90
   //                W   .   E
-  if (faultAxis1 || faultAxis2) return 7; // fail, unspecified error
+  if (staA1.fault || staA2.fault) return 7; // fail, unspecified error
   atHome = false;
   cli();
   movingTo = true;
   SetSiderealClockRate(siderealInterval);
 
-  startAxis1 = posAxis1;
-  startAxis2 = posAxis2;
+  staA1.start = staA1.pos;
+  staA2.start = staA2.pos;
 
-  targetAxis1 = thisTargetAxis1;
-  targetAxis2 = thisTargetAxis2;
+  staA1.target = thisTargetAxis1;
+  staA2.target = thisTargetAxis2;
 
-  timerRateAxis1 = SiderealRate;
-  timerRateAxis2 = SiderealRate;
+  staA1.timerRate = SiderealRate;
+  staA2.timerRate = SiderealRate;
   sei();
 
   DecayModeGoto();

@@ -9,18 +9,18 @@ void moveTo()
   static long lastPosAxis2 = 0;
   volatile long distStartAxis1, distStartAxis2, distDestAxis1, distDestAxis2;
   cli();
-  distStartAxis1 = abs(distStepAxis1(&startAxis1, &posAxis1));  // distance from start HA
-  distStartAxis2 = abs(distStepAxis2(&startAxis2, &posAxis2));  // distance from start Dec
+  distStartAxis1 = abs(distStepAxis1(&staA1.start, &staA1.pos));  // distance from start HA
+  distStartAxis2 = abs(distStepAxis2(&staA2.start, &staA2.pos));  // distance from start Dec
   sei();
   if (distStartAxis1 < 1) distStartAxis1 = 1;
   if (distStartAxis2 < 1) distStartAxis2 = 1;
 Again:
   updateDeltaTarget();
   cli();
-  long tempPosAxis2 = posAxis2;
+  long tempPosAxis2 = staA2.pos;
   sei();
-  distDestAxis1 = abs(deltaTargetAxis1);  // distance from dest HA
-  distDestAxis2 = abs(deltaTargetAxis2);  // distance from dest Dec
+  distDestAxis1 = abs(staA1.deltaTarget);  // distance from dest HA
+  distDestAxis2 = abs(staA2.deltaTarget);  // distance from dest Dec
   // adjust rates near the horizon to help keep from exceeding the minAlt limit
   if (!isAltAZ())
   {
@@ -61,23 +61,23 @@ Again:
     cli();
     // recompute distances
     updateDeltaTarget();
-    long a = pow(getV(timerRateAxis1), 2.) / (2. * AccAxis1);
-    if (abs(deltaTargetAxis1) > a)
+    long a = pow(getV(staA1.timerRate), 2.) / (2. * staA1.acc);
+    if (abs(staA1.deltaTarget) > a)
     {
-      if (0 > deltaTargetAxis1)
+      if (0 > staA1.deltaTarget)
         a = -a;
       cli()
-        targetAxis1 = posAxis1 + a;
+        staA1.target = staA1.pos + a;
       sei();
     }
     guideA1.dir = 'b';
-    a = pow(getV(timerRateAxis2), 2.) / (2. * AccAxis2);
-    if (abs(deltaTargetAxis2) > a)
+    a = pow(getV(staA2.timerRate), 2.) / (2. * staA2.acc);
+    if (abs(staA2.deltaTarget) > a)
     {
-      if (0 > deltaTargetAxis2) // overshoot
+      if (0 > staA2.deltaTarget) // overshoot
         a = -a;
       cli();
-      targetAxis2 = posAxis2 + a;
+      staA2.target = staA2.pos + a;
       sei();
     }
     guideA2.dir = 'b';
@@ -100,29 +100,29 @@ Again:
   double temp;
   if (distStartAxis1 >= distDestAxis1)
   {
-    temp = getRate(sqrt(distDestAxis1 * 2 * AccAxis1)); // slow down (temp gets bigger)
+    temp = getRate(sqrt(distDestAxis1 * 2 * staA1.acc)); // slow down (temp gets bigger)
   }
   else
   {
-    temp = getRate(sqrt(distStartAxis1 * 2 * AccAxis1)); // speed up (temp gets smaller)
+    temp = getRate(sqrt(distStartAxis1 * 2 * staA1.acc)); // speed up (temp gets smaller)
   }
   if (temp < maxRate) temp = maxRate;                            // fastest rate
   if (temp > TakeupRate) temp = TakeupRate;                      // slowest rate
-  cli(); timerRateAxis1 = temp; sei();
+  cli(); staA1.timerRate = temp; sei();
 
   // Now, for Declination
 
   if (distStartAxis2 >= distDestAxis2)
   {
-    temp = getRate(sqrt(distDestAxis2 * 2 * AccAxis2)); // slow down
+    temp = getRate(sqrt(distDestAxis2 * 2 * staA2.acc)); // slow down
   }
   else
   {
-    temp = getRate(sqrt(distStartAxis2 * 2 * AccAxis2));// speed up
+    temp = getRate(sqrt(distStartAxis2 * 2 * staA2.acc));// speed up
   }
   if (temp < maxRate) temp = maxRate;                            // fastest rate
   if (temp > TakeupRate) temp = TakeupRate;                      // slowest rate
-  cli(); timerRateAxis2 = temp; sei();
+  cli(); staA2.timerRate = temp; sei();
 
   //if (isAltAZ())
   //{
@@ -145,8 +145,8 @@ Again:
     movingTo = false;
     SetSiderealClockRate(siderealInterval);
     cli();
-    timerRateAxis1 = SiderealRate;
-    timerRateAxis2 = SiderealRate;
+    staA1.timerRate = SiderealRate;
+    staA2.timerRate = SiderealRate;
     sei();
     DecayModeTracking();
     // other special gotos: for parking the mount and homeing the mount
@@ -156,7 +156,7 @@ Again:
       for (int i = 0; i < 12; i++)  // give the drives a moment to settle in
       {
         updateDeltaTarget();
-        if (deltaTargetAxis1 == 0 && deltaTargetAxis2 == 0)
+        if (staA1.deltaTarget == 0 && staA2.deltaTarget == 0)
         {
           if (parkClearBacklash())
           {
@@ -178,26 +178,6 @@ Again:
       enable_Axis(false);
     }
   }
-}
-
-// fast integer square root routine, Integer Square Roots by Jack W. Crenshaw
-uint32_t isqrt32(uint32_t n)
-{
-  register uint32_t root = 0, remainder, place = 0x40000000;
-  remainder = n;
-
-  while (place > remainder) place = place >> 2;
-  while (place)
-  {
-    if (remainder >= root + place)
-    {
-      remainder = remainder - root - place;
-      root = root + (place << 1);
-    }
-    root = root >> 1;
-    place = place >> 2;
-  }
-  return root;
 }
 
 bool DecayModeTrack = false;

@@ -9,8 +9,8 @@ void Command_SX()
   int i;
   switch (command[2])
   {
-  case '0':
-    // :SXAn# Align Model values
+  case 'A':
+    // :SXAn,VVVVVV# Align Model values
     switch (command[3])
     {
     case '0':
@@ -29,15 +29,18 @@ void Command_SX()
       //GeoAlign.init();
       //GeoAlign.writeCoe();
       break;
+    default:
+      strcpy(reply, "0");
+      break;
     }
     break;
   case 'R':
-    // :SXRn# Rates Settings
+    // :SXRn,VVVV# Rates Settings
     switch (command[3])
     {
 
     case 'A':
-      // :SXRA# Set degree for acceleration
+      // :SXRA,VVV# Set degree for acceleration
       DegreesForAcceleration = min(max(0.1*(double)strtol(&command[5], NULL, 10), 0.1), 25.0);
       XEEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
       SetAcceleration();
@@ -45,7 +48,7 @@ void Command_SX()
       break;
     case 'D':
     {
-      // :SXRD# define default rate
+      // :SXRD,V# define default rate
       int val = strtol(&command[5], NULL, 10);
       val = val > 4 || val < 0 ? 3 : val;
       XEEPROM.write(EE_DefaultRate, val);
@@ -82,6 +85,7 @@ void Command_SX()
       strcpy(reply, "0");
       break;
     }
+    break;
   case 'L':
     // user defined limits
     switch (command[3])
@@ -136,6 +140,7 @@ void Command_SX()
       strcpy(reply, "0");
       break;
     }
+    break;
   case 'T':
     // :SXTn# Date/Time definition
     switch (command[3])
@@ -182,6 +187,9 @@ void Command_SX()
       strcpy(reply, "1");
       break;
     }
+    default:
+      strcpy(reply, "0");
+      break;
     }
     break;
   case 'M':
@@ -190,9 +198,9 @@ void Command_SX()
     {
     case 'B':
     {
-      // :SXMBn# Set Backlash
+      // :SXMBn,VVVV# Set Backlash
       int i;
-      if ((atoi2((char *)&command[5], &i)) && ((i >= 0) && (i <= 999)))
+      if ((atoi2((char *)&command[6], &i)) && ((i >= 0) && (i <= 999)))
       {
         if (command[4] == 'D')
         {
@@ -217,17 +225,17 @@ void Command_SX()
     break;
     case 'G':
     {
-      // :SXMGn# Set Gear
+      // :SXMGn,VVVV# Set Gear
       int i;
       if ((command[4] == 'D' || command[4] == 'R')
-          && strlen(&command[5]) > 1 && strlen(&command[5]) < 11
-          && atoi2(&command[5], &i))
+          && strlen(&command[6]) > 1 && strlen(&command[6]) < 11
+          && atoi2(&command[6], &i))
       {
         if (command[4] == 'D')
         {
           double fact = (double)i / motorA2.gear;
           cli();
-          posAxis2 = fact * posAxis2;
+          staA2.pos = fact * staA2.pos;
           sei();
           StopAxis2();
           motorA2.gear = (unsigned int)i;
@@ -237,7 +245,7 @@ void Command_SX()
         {
           double fact = (double)i / motorA1.gear;
           cli();
-          posAxis1 = fact * posAxis1;
+          staA1.pos = fact * staA1.pos;
           sei();
           StopAxis1();
           motorA1.gear = (unsigned int)i;
@@ -253,17 +261,17 @@ void Command_SX()
     break;
     case 'S':
     {
-      // :SXMBn# Set Step per Rotation
+      // :SXMBn,VVVV# Set Step per Rotation
       int i;
       if ((command[4] == 'D' || command[4] == 'R')
-          && (strlen(&command[5]) > 1) && (strlen(&command[5]) < 11)
-          && atoi2((char *)&command[5], &i))
+          && (strlen(&command[6]) > 1) && (strlen(&command[6]) < 11)
+          && atoi2((char *)&command[6], &i))
       {
         if (command[4] == 'D')
         {
           double fact = (double)i / motorA2.stepRot;
           cli();
-          posAxis2 = fact * posAxis2;
+          staA2.pos = fact * staA2.pos;
           sei();
           StopAxis2();
           motorA2.stepRot = (unsigned int)i;
@@ -273,7 +281,7 @@ void Command_SX()
         {
           double fact = (double)i / motorA1.stepRot;
           cli();
-          posAxis1 = fact * posAxis1;
+          staA1.pos = fact * staA1.pos;
           sei();
           StopAxis1();
           motorA1.stepRot = (unsigned int)i;
@@ -289,19 +297,19 @@ void Command_SX()
     break;
     case 'M':
     {
-      // :SXMMn# Set Microstep
+      // :SXMMn,V# Set Microstep
       // for example :GRXMMR3# for 1/8 microstep on the first axis 
       int i;
       if ((command[4] == 'D' || command[4] == 'R')
-          && strlen(&command[5]) == 1
-          && atoi2(&command[5], &i)
+          && strlen(&command[6]) == 1
+          && atoi2(&command[6], &i)
           && ((i >= 3) && (i < 9)))
       {
         if (command[4] == 'D')
         {
           double fact = pow(2., i - motorA2.micro);
           cli();
-          posAxis2 = fact * posAxis2;
+          staA2.pos = fact * staA2.pos;
           sei();
           StopAxis2();
           motorA2.micro = i;
@@ -312,7 +320,7 @@ void Command_SX()
         {
           double fact = pow(2., i - motorA1.micro);
           cli();
-          posAxis1 = fact * posAxis1;
+          staA1.pos = fact * staA1.pos;
           sei();
           StopAxis1();
           motorA1.micro = i;
@@ -327,19 +335,19 @@ void Command_SX()
     break;
     case 'R':
     {
-      // :SXMRn# Set Reverse rotation
+      // :SXMRn,V# Set Reverse rotation
       if ((command[4] == 'D' || command[4] == 'R')
-          && strlen(&command[5]) == 1
-          && (command[5] == '0' || command[5] == '1'))
+          && strlen(&command[6]) == 1
+          && (command[6] == '0' || command[6] == '1'))
       {
         if (command[4] == 'D')
         {
-          motorA2.reverse = command[5] == '1' ? true : false;
+          motorA2.reverse = command[6] == '1' ? true : false;
           XEEPROM.write(EE_motorA2reverse, motorA2.reverse);
         }
         else
         {
-          motorA1.reverse = command[5] == '1' ? true : false;
+          motorA1.reverse = command[6] == '1' ? true : false;
           XEEPROM.write(EE_motorA1reverse, motorA1.reverse);
         }
         strcpy(reply, "1");
@@ -353,8 +361,8 @@ void Command_SX()
     {
       // :SXMRn# Set Current
       int i;
-      if ((strlen(&command[5]) > 1) && (strlen(&command[5]) < 5)
-          && atoi2((char *)&command[5], &i)
+      if ((strlen(&command[6]) > 1) && (strlen(&command[6]) < 5)
+          && atoi2((char *)&command[6], &i)
           && ((i >= 0) && (i <= 255)))
       {
         if (command[4] == 'D')
@@ -395,8 +403,8 @@ void Command_SX()
       // :SXMRn# Set Stall guard
       int i;
       if ((command[4] == 'D' || command[4] == 'R')
-          && (strlen(&command[5]) > 1) && (strlen(&command[5]) < 5)
-          && atoi2((char *)&command[5], &i)
+          && (strlen(&command[6]) > 1) && (strlen(&command[6]) < 5)
+          && atoi2((char *)&command[6], &i)
           && ((i >= 0) && (i <= 127)))
       {
         i = i - 64;
@@ -414,7 +422,15 @@ void Command_SX()
       else strcpy(reply, "0");
     }
     break;
+    default:
+      strcpy(reply, "0");
+      break;
     }
+    break;
+  case 'O':
+    // :SXO-,VVVV Options
+  default:
+    strcpy(reply, "0");
     break;
   }
 }
@@ -452,8 +468,6 @@ void Command_S(Command& process_command)
     //  :SBn#  Set Baud Rate n for Serial-0, where n is an ASCII digit (1..9) with the following interpertation
         //         0=115.2K, 1=56.7K, 2=38.4K, 3=28.8K, 4=19.2K, 5=14.4K, 6=9600, 7=4800, 8=2400, 9=1200
         //         Returns: "1" At the current baud rate and then changes to the new rate for further communication
-
-  {
     i = (int)(command[2] - '0');
     if ((i >= 0) && (i < 10))
     {
@@ -472,7 +486,7 @@ void Command_S(Command& process_command)
       strcpy(reply, "1");
     }
     else strcpy(reply, "0");
-  }
+    break;
   case 'C':
     //  :SCMM/DD/YY#
     //          Change Local Date to MM/DD/YY
@@ -580,7 +594,6 @@ void Command_S(Command& process_command)
     highPrecision = i;
   }
   break;
-
   case 'M':
   case 'N':
   case 'O':
@@ -592,7 +605,6 @@ void Command_S(Command& process_command)
     //          Set site name to be <string>, up to 14 characters.
     //          Return: 0 on failure
     //                  1 on success
-  {
     i = command[1] - 'M';
     if (strlen(&command[2]) > 14)
       strcpy(reply, "0");
@@ -601,10 +613,8 @@ void Command_S(Command& process_command)
       XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, &command[2]);
       strcpy(reply, "1");
     }
-  }
-  break;
+    break;
   case 'm':
-  {
     if ((command[2] != 0) && (strlen(&command[2]) < 2))
     {
       if (command[2] == 'N')
@@ -632,7 +642,6 @@ void Command_S(Command& process_command)
     }
     else strcpy(reply, "0");
     break;
-  }
   case 'n':
     localSite.setSiteName(&command[2]);
     strcpy(reply, "1");
@@ -642,8 +651,6 @@ void Command_S(Command& process_command)
     //          Set the overhead elevation limit to DD#
     //          Return: 0 on failure
     //                  1 on success
-
-  {
     if ((command[2] != 0) && (strlen(&command[2]) < 3))
     {
       if ((atoi2(&command[2], &i)) && ((i >= 60) && (i <= 91)))
@@ -656,7 +663,6 @@ void Command_S(Command& process_command)
       else strcpy(reply, "0");
     }
     else strcpy(reply, "0");
-  }
   break;
   case 'r':
     //  :SrHH:MM.T#
@@ -664,7 +670,6 @@ void Command_S(Command& process_command)
     //          Set target object RA to HH:MM.T or HH:MM:SS (based on precision setting)
     //          Return: 0 on failure
     //                  1 on success
-
     if (hmsToDouble(&newTargetRA, &command[2], highPrecision))
     {
       newTargetRA *= 15.0;
@@ -672,53 +677,27 @@ void Command_S(Command& process_command)
     }
     else strcpy(reply, "0");
     break;
-
   case 't':
     //  :StsDD*MM#
     //          Sets the current site latitude to sDD*MM#
     //          Return: 0 on failure
     //                  1 on success                                                             
-  {
     i = highPrecision;
     highPrecision = false;
-    double lat = 0;
-    if (dmsToDouble(&lat, &command[2], true, highPrecision))
+    if (dmsToDouble(&f, &command[2], true, highPrecision))
     {
-      localSite.setLat(lat);
+      localSite.setLat(f);
       initCelestialPole();
       initTransformation(true);
       strcpy(reply, "1");
     }
     else strcpy(reply, "0");
     highPrecision = i;
-  }
-  break;
-  case 'R':
-  {
-    if (command[2] == 'E' && command[3] == 'F')
-    {
-      if (command[4] == '1')
-      {
-        refraction = true;
-        XEEPROM.update(EE_refraction, refraction);
-        strcpy(reply, "1");
-      }
-      else if (command[4] == '0')
-      {
-        refraction = false;
-        XEEPROM.update(EE_refraction, refraction);
-        strcpy(reply, "1");
-      }
-      else strcpy(reply, "0");
-    }
-    else strcpy(reply, "0");
-  }
-  break;
+    break;
   case 'T':
     //  :STdd.ddddd#
     //          Return: 0 on failure
     //                  1 on success
-  {
     if (!movingTo)
     {
       f = strtod(&command[2], &conv_end);
@@ -731,15 +710,14 @@ void Command_S(Command& process_command)
         }
         else
         {
-          trackingTimerRateAxis1 = (f / 60.0) / 1.00273790935;
+          staA1.trackingTimerRate = (f / 60.0) / 1.00273790935;
         }
         strcpy(reply, "1");
       }
       else strcpy(reply, "0");
     }
     else strcpy(reply, "0");
-  }
-  break;
+    break;
   case 'U':
     // :SU# store current User defined Position
     getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
