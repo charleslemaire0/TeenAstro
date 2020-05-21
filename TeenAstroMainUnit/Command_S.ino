@@ -9,8 +9,8 @@ void Command_SX()
   int i;
   switch (command[2])
   {
-  case '0':
-    // :SXAn# Align Model values
+  case 'A':
+    // :SXAn,VVVVVV# Align Model values
     switch (command[3])
     {
     case '0':
@@ -29,10 +29,13 @@ void Command_SX()
       //GeoAlign.init();
       //GeoAlign.writeCoe();
       break;
+    default:
+      strcpy(reply, "0");
+      break;
     }
     break;
   case 'R':
-    // :SXRn# Rates Settings
+    // :SXRn,VVVV# Rates Settings
     switch (command[3])
     {
 
@@ -182,6 +185,9 @@ void Command_SX()
       strcpy(reply, "1");
       break;
     }
+    default:
+      strcpy(reply, "0");
+      break;
     }
     break;
   case 'M':
@@ -414,7 +420,16 @@ void Command_SX()
       else strcpy(reply, "0");
     }
     break;
+    default:
+      strcpy(reply, "0");
+      break;
     }
+    break;
+  case 'O':
+    // :SXO-,VVVV Options
+    break;
+  default:
+    strcpy(reply, "0");
     break;
   }
 }
