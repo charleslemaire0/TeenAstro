@@ -219,6 +219,10 @@ TeenAstroMountStatus::SiderealMode TeenAstroMountStatus::getSiderealMode()
     return SiderealMode::SID_STAR;
   }
 }
+bool TeenAstroMountStatus::isTrackingCorrected()
+{
+  return m_TempMount[10] == 'c';
+}
 bool TeenAstroMountStatus::getLstT0(double &T0)
 {
   return GetLstT0LX200(T0) == LX200VALUEGET;

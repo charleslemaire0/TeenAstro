@@ -130,6 +130,7 @@ public:
   ParkState   getParkState();
   TrackState  getTrackingState();
   SiderealMode getSiderealMode();
+  bool        isTrackingCorrected();
   PierState   getPierState();
   Errors      getError();
   bool        getLastErrorMessage(char message[]);

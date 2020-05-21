@@ -108,6 +108,7 @@ private:
   void menuDateAndTime();
   void menuMount();
   void MenuRates();
+  void MenuTrackingCorrection();
   void menuMountType();
   void menuMotor(uint8_t idx);
   void menuAcceleration();

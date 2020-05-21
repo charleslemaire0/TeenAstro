@@ -90,10 +90,10 @@ void setup()
 
     // the transformation is not valid
     XEEPROM.write(EE_Tvalid, 0);
-
+    // reset flag for Tracking Correction
+    XEEPROM.write(EE_corr_track, 0);
     // finally, stop the init from happening again
     XEEPROM.writeLong(EE_autoInitKey, initKey);
-
   }
   // get the site information from EEPROM
   localSite.ReadCurrentSiteDefinition();
@@ -479,7 +479,6 @@ void initmount()
     maxAlignNumStar = 1;
   else if (mountType == MOUNT_TYPE_ALTAZM)
     maxAlignNumStar = 3;
-
   DegreesForAcceleration = 0.1*EEPROM.read(EE_degAcc);
   if (DegreesForAcceleration == 0 || DegreesForAcceleration > 25)
   {

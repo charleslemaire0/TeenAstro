@@ -159,6 +159,7 @@
 #define T_STARTTRACKING "Nachführung starten"
 #define T_STOPTRACKING "Nachführung stoppen"
 #define T_TRACKINGSTATE "Status Nachführung"
+#define T_TRACKINGCORRECTION "Nachführ. Korr."
 #define T_SIDEOFPIER "Montierungs-Seite"
 #define T_SETSIDEOFPIER "Seite wählen"
 #define T_SAVE "Speichern"

@@ -395,7 +395,7 @@ void Command_R()
 //  :Te#   Tracking enable  (replies 0/1)
 //  :Td#   Tracking disable (replies 0/1)
 //  :Tr#   Track compensation enable  (replies 0/1)
-//  :Tn#   Track refraction disable (replies 0/1)
+//  :Tn#   Track compensation disable (replies 0/1)
 //         
 void Command_T()
 {
@@ -463,12 +463,14 @@ void Command_T()
     // turn compensation on
     correct_tracking = true;
     SetTrackingRate(default_tracking_rate);
+    XEEPROM.update(EE_corr_track, 1);
     strcpy(reply, "1");
     break;
   case 'n':
     // turn compensation off  
     correct_tracking = false;
     SetTrackingRate(default_tracking_rate);
+    XEEPROM.update(EE_corr_track, 0);
     strcpy(reply, "1");
     break;
   default:

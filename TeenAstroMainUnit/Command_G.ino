@@ -301,7 +301,7 @@ void Command_GX()
     else if (guideA2.dir == 's') reply[8] = '_';
     else if (guideA2.dir == 'b') reply[8] = 'b';
     if (staA1.fault || staA2.fault) reply[9] = 'f';
-    if (correct_tracking)
+    if (correct_tracking || isAltAZ())
       reply[10] = 'c';
     reply[11] = hasStarAlignment ? '1' : '0';
     // provide mount type

@@ -159,6 +159,7 @@
 #define T_STARTTRACKING "Démarrer le Suivi"
 #define T_STOPTRACKING "Arrêter le Suivi"
 #define T_TRACKINGSTATE "État du Suivi"
+#define T_TRACKINGCORRECTION "Corr. du Suivi"
 #define T_SIDEOFPIER "Côté du Pilier"
 #define T_SETSIDEOFPIER "Déf. Côté du Pilier"
 #define T_SAVE "Sauver"
