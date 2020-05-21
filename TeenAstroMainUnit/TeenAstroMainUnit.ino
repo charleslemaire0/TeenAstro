@@ -55,7 +55,6 @@ void setup()
     // init the site information, lat/long/tz/name
     localSite.initdefault();
     XEEPROM.write(EE_mountType, MOUNT_TYPE_GEM);
-    XEEPROM.write(EE_refraction, 1);
     // init the min and max altitude
     minAlt = -10;
     maxAlt = 91;
@@ -514,7 +513,6 @@ void initmount()
   staA1.target = geoA1.quaterRot;
   staA2.target = geoA2.quaterRot;
   staA1.fstep = geoA1.stepsPerCentiSecond;
-  refraction = XEEPROM.read(EE_refraction);
   // Tracking and rate control
   correct_tracking = XEEPROM.read(EE_corr_track);
   correct_tracking = false;

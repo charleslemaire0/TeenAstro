@@ -40,7 +40,7 @@ void Command_SX()
     {
 
     case 'A':
-      // :SXRA# Set degree for acceleration
+      // :SXRA,VVV# Set degree for acceleration
       DegreesForAcceleration = min(max(0.1*(double)strtol(&command[5], NULL, 10), 0.1), 25.0);
       XEEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
       SetAcceleration();
@@ -48,7 +48,7 @@ void Command_SX()
       break;
     case 'D':
     {
-      // :SXRD# define default rate
+      // :SXRD,V# define default rate
       int val = strtol(&command[5], NULL, 10);
       val = val > 4 || val < 0 ? 3 : val;
       XEEPROM.write(EE_DefaultRate, val);
@@ -198,9 +198,9 @@ void Command_SX()
     {
     case 'B':
     {
-      // :SXMBn# Set Backlash
+      // :SXMBn,VVVV# Set Backlash
       int i;
-      if ((atoi2((char *)&command[5], &i)) && ((i >= 0) && (i <= 999)))
+      if ((atoi2((char *)&command[6], &i)) && ((i >= 0) && (i <= 999)))
       {
         if (command[4] == 'D')
         {
@@ -225,11 +225,11 @@ void Command_SX()
     break;
     case 'G':
     {
-      // :SXMGn# Set Gear
+      // :SXMGn,VVVV# Set Gear
       int i;
       if ((command[4] == 'D' || command[4] == 'R')
-          && strlen(&command[5]) > 1 && strlen(&command[5]) < 11
-          && atoi2(&command[5], &i))
+          && strlen(&command[6]) > 1 && strlen(&command[6]) < 11
+          && atoi2(&command[6], &i))
       {
         if (command[4] == 'D')
         {
@@ -261,11 +261,11 @@ void Command_SX()
     break;
     case 'S':
     {
-      // :SXMBn# Set Step per Rotation
+      // :SXMBn,VVVV# Set Step per Rotation
       int i;
       if ((command[4] == 'D' || command[4] == 'R')
-          && (strlen(&command[5]) > 1) && (strlen(&command[5]) < 11)
-          && atoi2((char *)&command[5], &i))
+          && (strlen(&command[6]) > 1) && (strlen(&command[6]) < 11)
+          && atoi2((char *)&command[6], &i))
       {
         if (command[4] == 'D')
         {
@@ -297,12 +297,12 @@ void Command_SX()
     break;
     case 'M':
     {
-      // :SXMMn# Set Microstep
+      // :SXMMn,V# Set Microstep
       // for example :GRXMMR3# for 1/8 microstep on the first axis 
       int i;
       if ((command[4] == 'D' || command[4] == 'R')
-          && strlen(&command[5]) == 1
-          && atoi2(&command[5], &i)
+          && strlen(&command[6]) == 1
+          && atoi2(&command[6], &i)
           && ((i >= 3) && (i < 9)))
       {
         if (command[4] == 'D')
@@ -335,19 +335,19 @@ void Command_SX()
     break;
     case 'R':
     {
-      // :SXMRn# Set Reverse rotation
+      // :SXMRn,V# Set Reverse rotation
       if ((command[4] == 'D' || command[4] == 'R')
-          && strlen(&command[5]) == 1
-          && (command[5] == '0' || command[5] == '1'))
+          && strlen(&command[6]) == 1
+          && (command[6] == '0' || command[6] == '1'))
       {
         if (command[4] == 'D')
         {
-          motorA2.reverse = command[5] == '1' ? true : false;
+          motorA2.reverse = command[6] == '1' ? true : false;
           XEEPROM.write(EE_motorA2reverse, motorA2.reverse);
         }
         else
         {
-          motorA1.reverse = command[5] == '1' ? true : false;
+          motorA1.reverse = command[6] == '1' ? true : false;
           XEEPROM.write(EE_motorA1reverse, motorA1.reverse);
         }
         strcpy(reply, "1");
@@ -361,8 +361,8 @@ void Command_SX()
     {
       // :SXMRn# Set Current
       int i;
-      if ((strlen(&command[5]) > 1) && (strlen(&command[5]) < 5)
-          && atoi2((char *)&command[5], &i)
+      if ((strlen(&command[6]) > 1) && (strlen(&command[6]) < 5)
+          && atoi2((char *)&command[6], &i)
           && ((i >= 0) && (i <= 255)))
       {
         if (command[4] == 'D')
@@ -403,8 +403,8 @@ void Command_SX()
       // :SXMRn# Set Stall guard
       int i;
       if ((command[4] == 'D' || command[4] == 'R')
-          && (strlen(&command[5]) > 1) && (strlen(&command[5]) < 5)
-          && atoi2((char *)&command[5], &i)
+          && (strlen(&command[6]) > 1) && (strlen(&command[6]) < 5)
+          && atoi2((char *)&command[6], &i)
           && ((i >= 0) && (i <= 127)))
       {
         i = i - 64;
@@ -429,7 +429,6 @@ void Command_SX()
     break;
   case 'O':
     // :SXO-,VVVV Options
-    break;
   default:
     strcpy(reply, "0");
     break;
@@ -694,25 +693,6 @@ void Command_S(Command& process_command)
     }
     else strcpy(reply, "0");
     highPrecision = i;
-    break;
-  case 'R':
-    if (command[2] == 'E' && command[3] == 'F')
-    {
-      if (command[4] == '1')
-      {
-        refraction = true;
-        XEEPROM.update(EE_refraction, refraction);
-        strcpy(reply, "1");
-      }
-      else if (command[4] == '0')
-      {
-        refraction = false;
-        XEEPROM.update(EE_refraction, refraction);
-        strcpy(reply, "1");
-      }
-      else strcpy(reply, "0");
-    }
-    else strcpy(reply, "0");
     break;
   case 'T':
     //  :STdd.ddddd#
