@@ -90,10 +90,10 @@ void setup()
 
     // the transformation is not valid
     XEEPROM.write(EE_Tvalid, 0);
-
+    // reset flag for Tracking Correction
+    XEEPROM.write(EE_corr_track, 0);
     // finally, stop the init from happening again
     XEEPROM.writeLong(EE_autoInitKey, initKey);
-
   }
   // get the site information from EEPROM
   localSite.ReadCurrentSiteDefinition();
@@ -255,15 +255,15 @@ void loop()
       moveTo();
     }
 
-    if (rtk.m_lst % 16 != 0)
-      getHorApp(&currentAzm, &currentAlt);
-
-    if (isAltAZ())
+    if (rtk.m_lst % 16 == 0)
     {
-      // figure out the current Alt/Azm tracking rates
-      if (rtk.m_lst % 3 != 0)
+      getHorApp(&currentAzm, &currentAlt);
+      if (isAltAZ() || correct_tracking)
+      {
         do_compensation_calc();
+      }
     }
+    
     // check for fault signal, stop any slew or guide and turn tracking off
     if (staA1.fault || staA2.fault)
     {
@@ -284,7 +284,6 @@ void loop()
     {
       lastError = ERR_NONE;
     }
-
     // check altitude overhead limit and horizon limit
     if (currentAlt < minAlt || currentAlt > maxAlt)
     {
@@ -308,7 +307,7 @@ void loop()
 
   // HOUSEKEEPING --------------------------------------------------------------------------------------
   // timer... falls in once a second, keeps the universal time clock ticking,
-  unsigned long   m = millis();
+  static unsigned long m = millis();
   forceTracking = (m - lastSetTrakingEnable < 10000);
   if (!forceTracking) lastSetTrakingEnable = m + 10000;
   if (rtk.updateclockTimer(m))
@@ -480,7 +479,6 @@ void initmount()
     maxAlignNumStar = 1;
   else if (mountType == MOUNT_TYPE_ALTAZM)
     maxAlignNumStar = 3;
-
   DegreesForAcceleration = 0.1*EEPROM.read(EE_degAcc);
   if (DegreesForAcceleration == 0 || DegreesForAcceleration > 25)
   {
@@ -515,7 +513,6 @@ void initmount()
   staA1.fstep = geoA1.stepsPerCentiSecond;
   // Tracking and rate control
   correct_tracking = XEEPROM.read(EE_corr_track);
-  correct_tracking = false;
 }
 
 void initTransformation(bool reset)

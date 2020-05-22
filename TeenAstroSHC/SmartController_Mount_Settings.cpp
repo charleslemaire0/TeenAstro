@@ -7,7 +7,7 @@ void SmartHandController::menuMount()
   uint8_t tmp_sel;
   while (!exitMenu)
   {
-    const char *string_list_Mount = T_SHOWSETTINGS "\n" T_MOUNTTYPE "\n" T_MOTOR " 1\n" T_MOTOR " 2\n" T_ACCELERATION "\n" T_SPEED "\n" T_RETICULE;
+    const char *string_list_Mount = T_SHOWSETTINGS "\n" T_MOUNTTYPE "\n" T_MOTOR " 1\n" T_MOTOR " 2\n" T_ACCELERATION "\n" T_SPEED "\n" T_TRACKINGCORRECTION "\n" T_RETICULE;
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_MOUNT, s_sel, string_list_Mount);
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
     switch (tmp_sel)
@@ -31,6 +31,9 @@ void SmartHandController::menuMount()
       break;
     case 6:
       MenuRates();
+      break;
+    case 7:
+      MenuTrackingCorrection();
       break;
     case 8:
       menuReticule();
@@ -72,6 +75,37 @@ void SmartHandController::MenuRates()
     default:
       break;
     }
+  }
+}
+
+void SmartHandController::MenuTrackingCorrection()
+{
+  ta_MountStatus.updateMount();
+
+  uint8_t tmp_sel;
+  bool corr_on = ta_MountStatus.isTrackingCorrected();
+
+  const char *string_list_tracking = corr_on ? T_OFF : T_ON;
+  tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGCORRECTION, 0, string_list_tracking);
+  switch (tmp_sel)
+  {
+  case 1:
+  {
+    char out[20];
+    memset(out, 0, sizeof(out));
+    if ((corr_on ? SetLX200(":Tn#") : SetLX200(":Tc#")) == LX200VALUESET)
+    {
+      DisplayMessage(T_TRACKINGCORRECTION, corr_on ? T_OFF : T_ON, 500);
+      exitMenu = true;
+    }
+    else
+    {
+      DisplayMessage(T_LX200COMMAND, T_FAILED, 1000);
+    }
+    break;
+  }
+  default:
+    break;
   }
 }
 
