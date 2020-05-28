@@ -346,7 +346,7 @@ void TeenAstroWifi::processControlGet()
     {
       get_temp_year = i - 2000;
       char temp[10];
-      sprintf(temp, ":SX81%02d/%02d/%02d#", get_temp_month, get_temp_day, get_temp_year);
+      sprintf(temp, ":SXT1%02d/%02d/%02d#", get_temp_month, get_temp_day, get_temp_year);
       SetLX200(temp);
     }
   }
@@ -373,7 +373,7 @@ void TeenAstroWifi::processControlGet()
     {
       get_temp_second = i;
       char temp[10];
-      sprintf(temp, ":SX80%02d:%02d:%02d#", get_temp_hour, get_temp_minute, get_temp_second);
+      sprintf(temp, ":SXT0%02d:%02d:%02d#", get_temp_hour, get_temp_minute, get_temp_second);
       SetLX200(temp);
     }
   }
@@ -394,7 +394,7 @@ void TeenAstroWifi::processControlGet()
     else if (v == "Th") SetLX200(":TS#"); // solar
 
     // quick
-    else if (v == "qc") SetLX200(":SX99,1#");  // meridian flip, pause->continue
+    else if (v == "qc") SetLX200(":MF#");  // meridian flip
     else if (v == "qr") SetLX200(":hF#");  // home, reset
     else if (v == "qh") SetLX200(":hC#");  // home, goto
     else if (v == "pr") SetLX200(":hO#");  // park, reset

@@ -1,5 +1,7 @@
-set OUTPUT=./TeenAstro_beta
-set BOARD=teensy:avr:teensy32:speed=72
+set OUTPUT=./TeenAstro_beta_240_TMC5160
+set BOARD=teensy:avr:teensy31:speed=72
 set OPTIONS=--build-properties compiler.cpp.extra_flags=-DVERSION
-set SKETCH=..\..\..\TeenAstoMainUnit\TeenAstro\TeenAstro.ino
-..\..\..\ArduinoCli\arduino-cli.exe compile -v -b %BOARD% -o %OUTPUT%_240_TMC5160 %OPTIONS%=240,-DAxisDriver=3 %SKETCH%
+set OPTION2=--build-properties build.extra_flags=
+rem set SKETCH=..\..\..\TeenAstoMainUnit\TeenAstroMainUnit.ino
+set SKETCH=..\..\..\TeenAstroMainUnit\TeenAstroMainUnit.ino
+"C:\Program Files (x86)\Arduino\arduino-cli.exe" compile -v -b %BOARD% -o %OUTPUT% %OPTIONS%=240,-DAxisDriver=3 %OPTION2% %SKETCH%
