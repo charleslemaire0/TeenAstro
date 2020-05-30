@@ -1,7 +1,9 @@
 import sys, json, csv, argparse
 from ruamel.yaml import YAML 
 from telnetlib import Telnet
-#from teenastro import TeenAstro
+from teenastro import TeenAstro, dms2deg, deg2dms
+
+import serial, time, datetime
 
 yaml = YAML()
 
@@ -59,16 +61,23 @@ def doTestCases(p, cfgFile, testFile):
   cmd = yaml.load(f.read())
   with open(testFile, mode='r') as csv_file:       # list of test cases
     testCases = csv.DictReader(csv_file,delimiter=';')
-    inputFields = testCases.fieldnames                # inputs to JS program
-    outputFields = cmd['output'].split()              # list of fields to extract from response
-    printCsv (outputFields)
 
+    print ("RA, Dec, computedAxis1, computedAxis2, pierSide, actualAxis1, actualAxis2")
     for row in testCases:
-      for field in inputFields:
-        cmd[field.strip()] = str2bool(row[field]) # create the command
-      resp = sendCommand (p,cmd)
-      printResult(resp, outputFields)
+#      for field in inputFields:   # assume fields are RAHA, dec
+      # get axis positions from TeenAstro
+      (pierSide,ra, dec) = taTest(ta, dms2deg (row['RAHA']),dms2deg (row['dec']))
 
+      # get axis positions from ScopeToSky
+      cmd['RAHA'] = row['RAHA'] # create the command
+      cmd['dec'] = row['dec'] # create the command
+      if (pierSide == 'E'):
+        cmd['flipped'] = True
+      else:
+        cmd['flipped'] = False
+      resp = json.loads(sendCommand (p,cmd))
+
+      print ("%s, %s, %s, %s, %c, %3.4f, %3.4f" % (row['RAHA'], row['dec'], resp['primaryAxis'],resp['secondaryAxis'], pierSide, ra, dec))
 
 # Declare function to define command-line arguments
 def readOptions(args=sys.argv[1:]):
@@ -82,6 +91,18 @@ def readOptions(args=sys.argv[1:]):
     opts.testcase = 'tests.csv'
   return opts
 
+
+def taTest(ta,ra,dec):
+  ta.gotoRaDec(ra,dec)
+
+  while ta.isSlewing():
+#    print ('.', end='', flush=True)
+    time.sleep(1)
+#  print("%c, %03.4f, %03.4f" % (ta.getPierSide(),ta.getAxis1(), ta.getAxis2()))
+  return (ta.getPierSide(),ta.getAxis1(), ta.getAxis2())
+
+
+
 # Main program
 # Call the function to read the argument values
 options = readOptions()
@@ -89,6 +110,23 @@ p = openPort()
 if (p == None):
   sys.exit()
 
+ta = TeenAstro('serial', '/dev/ttyACM0')
+#ta = TeenAstro('tcp', '192.168.0.12')
+
+ta.open()
+today = datetime.date.today()
+now = datetime.datetime.now()
+
+ta.setDate(today)
+ta.setLocalTime(now)
+
+ta.readSite()
+ta.readDateTime()
+ta.readSidTime()
+ta.readGears()
+ta.disableTrackingCompensation()
+
 doTestCases(p, options.config, options.testcase);
 
- 
+ta.disableTracking() 
+

@@ -14,29 +14,39 @@ import serial.tools.list_ports
 
 # Global variables
 Filename = 'TAConfig.json'
+portType = None
 
 MountDef = { 'mType':['German', 'Fork', 'Alt Az', 'Alt Az Fork'],
+      'DefaultR':['Guide', 'Slow', 'Medium','Fast', 'Max'],
       'MaxR':[i for i in range(32,4000)],'GuideR':[i/100 for i in range(1,100)],'Acc':[i/10 for i in range(1,251)],
+      'SlowR':[i for i in range(1,255)],'MediumR':[i for i in range(1,255)],'FastR':[i for i in range(1,255)],
       'mrot1':['Direct','Reverse'],'mge1':[i for i in range(1,60000)],'mst1':[i for i in range(1,400)],'mmu1':[8,16,32,64,128,256],
       'mbl1':[i for i in range(0,999)],'mlc1':[i for i in range(100,2000)],'mhc1':[i for i in range(100,2000)], 
       'mrot2':['Direct','Reverse'],'mge2':[i for i in range(1,60000)],'mst2':[i for i in range(1,400)],'mmu2':[8,16,32,64,128,256],
       'mbl2':[i for i in range(0,999)],'mlc2':[i for i in range(100,2000)],'mhc2':[i for i in range(100,2000)], 
-      'hl':[i for i in range(-30,30)], 'ol':[i for i in range(60,92)], 'el':[i for i in range(-45,45)], 'wl':[i for i in range(-45,45)]}
+      'hl':[i for i in range(-30,30)], 'ol':[i for i in range(60,92)], 'el':[i for i in range(-45,45)], 
+      'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)],
+      'NS':['North','South'],'latDeg':[i for i in range(0,90)], 'latMin':[i for i in range(0,60)], 
+      'EW':['East','West'],'longDeg':[i for i in range(0,180)], 'longMin':[i for i in range(0,60)],
+      'timezone':[i/10 for i in range(-110,120)], 'elevation':[i for i in range(0,8000)] }
 
 # Commands for getting mount parameters
 MountReadCmd = { 
-      'mType':'GU',
-      'MaxR':'GX92','GuideR':'GX90','Acc':'GXE2',
-      'mrot1':'%RR','mge1':'%GR','mst1':'%SR','mmu1':'%MR','mbl1':'%BR','mlc1':'%cR','mhc1':'%CR', 
-      'mrot2':'%RD','mge2':'%GD','mst2':'%SD','mmu2':'%MD','mbl2':'%BD','mlc2':'%cD','mhc2':'%CD', 
-      'hl':'Gh', 'ol':'Go', 'el':'GXE9', 'wl':'GXEA'
+      'mType':'GXI','DefaultR':'GXRD',
+      'MaxR':'GXRX','GuideR':'GXR0','Acc':'GXRA', 'SlowR':'GXR1','MediumR':'GXR2','FastR':'GXR3',
+      'mrot1':'GXMRR','mge1':'GXMGR','mst1':'GXMSR','mmu1':'GXMMR','mbl1':'GXMBR','mlc1':'GXMCR','mhc1':'GXMcR', 
+      'mrot2':'GXMRD','mge2':'GXMGD','mst2':'GXMSD','mmu2':'GXMMD','mbl2':'GXMBD','mlc2':'GXMCD','mhc2':'GXMcD', 
+      'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU', 
+      'latitude': 'Gt', 'longitude': 'Gg', 'UTCOffset': 'GG', 'elevation': 'Ge'
       } 
 MountSetCmd = {
-      'mType':'S!',
-      'MaxR':'SX92', 'GuideR':'SX90', 'Acc':'SXE2',
-      'mrot1':'$RR', 'mge1':'$GR', 'mst1':'$SR', 'mmu1':'$MR', 'mbl1':'$BR', 'mlc1':'$cR', 'mhc1':'$CR',
-      'mrot2':'$RD', 'mge2':'$GD', 'mst2':'$SD', 'mmu2':'$MD', 'mbl2':'$BD', 'mlc2':'$cD', 'mhc2':'$CD',
-      'hl':'Sh', 'ol':'So', 'el':'SXE9', 'wl':'SXEA'}
+      'mType':'S!','DefaultR':'SXRD:',
+      'MaxR':'SXRX:','GuideR':'SXR0:','Acc':'SXRA:', 'SlowR':'SXR1:','MediumR':'SXR2:','FastR':'SXR3:',
+      'mrot1':'SXMRR:','mge1':'SXMGR:','mst1':'SXMSR:','mmu1':'SXMMR:','mbl1':'SXMBR:','mlc1':'SXMCR:','mhc1':'SXMcR:', 
+      'mrot2':'SXMRD:','mge2':'SXMGD:','mst2':'SXMSD:','mmu2':'SXMMD:','mbl2':'SXMBD:','mlc2':'SXMCD:','mhc2':'SXMcD:', 
+      'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 
+      'latitude': 'St', 'longitude': 'Sg', 'UTCOffset': 'SG', 'elevation': 'Se'
+      } 
 
 
 sgCommTypeSerial = [sg.Radio('Serial', "RADIO1", size=(8, 1), enable_events=True, key='-Serial-'),
@@ -85,6 +95,8 @@ def openPort():
                         timeout=None, xonxoff=False, rtscts=False, write_timeout=None, dsrdtr=False,
                         inter_byte_timeout=None)
       logText('Opening port '+ values['-ComPorts-'])
+      global portType
+      portType = 'serial'
       return comm
     except:
       logText('Error opening port')
@@ -94,6 +106,7 @@ def openPort():
     try:
       comm = Telnet(values['-IPADDR-'], '9999')          # 9999 is the hard-coded IP port of TeenAstro
       logText('Opening port '+ values['-IPADDR-'] + ' 9999')
+      portType = 'telnet'
       return comm
     except:
       logText('Error opening port')
@@ -102,10 +115,11 @@ def openPort():
 
 
 def setMountType():
+
   comm = openPort()
   if (comm == None):
     return
-  cmdStr = ":" + MountSetCmd['mType']
+  cmdStr = ':' + MountSetCmd['mType']
   if (Mount['mType'] == 'German'):
     cmdStr +=  '0#'
   elif (Mount['mType'] == 'Fork'):
@@ -123,6 +137,8 @@ def writeData():
   comm = openPort()
   if (comm == None):
     return
+  
+  global portType
 
   for tag in list(MountSetCmd.keys()):
     cmdStr = ":" + MountSetCmd[tag]
@@ -150,41 +166,79 @@ def writeData():
     elif ((tag == 'mmu1') or (tag == 'mmu2')):
       # Microsteps
       # Microsteps are coded as the exponent of 2
-      print("Microsteps: %s -> %d" % (Mount[tag], int(math.log(int(Mount[tag]), 2))))
       cmdStr += str(int(math.log(int(Mount[tag]), 2)))
 
     elif ((tag == 'el') or (tag == 'wl')):    # EL / WL limits are stored in quarters of a degree
-      cmdStr += ':' + str(int(int(Mount[tag]) * 4))
+      cmdStr += str(int(int(Mount[tag]) * 4))
 
     elif ((tag == 'hl') or (tag == 'ol')):          # horizon and overhead limits 
       cmdStr += str(int(Mount[tag]))
 
-    elif tag == 'Acc':
-      cmdStr += ':' + str(int(float(Mount[tag]) * 10))
+    elif tag == 'ul':                               # under pole limit
+      cmdStr += str(int(float(Mount[tag]) * 10))
 
-    elif tag == 'MaxR':                             # max slewing rate
-      cmdStr += ':' + str(Mount[tag])
+    elif tag == 'Acc':
+      cmdStr += str(int(float(Mount[tag]) * 10))
+
+    elif tag == 'DefaultR':                         # default rate: 0 to 4
+      if (Mount[tag] == 'Guide'):
+        index = 0
+      elif (Mount[tag] == 'Slow'):
+        index = 1
+      elif (Mount[tag] == 'Medium'):
+        index = 2
+      elif (Mount[tag] == 'Fast'):
+        index = 3
+      elif (Mount[tag] == 'Max'):
+        index = 4
+      cmdStr += '%d' % index
 
     elif tag == 'GuideR':                           # guiding rate
-      cmdStr += ':' + str(int(float(Mount[tag]) * 100))
+      cmdStr += str(int(float(Mount[tag]) * 100))
 
-    elif ((tag == 'mge1') or (tag == 'mge2')):      # gear reduction
-      cmdStr += str(Mount[tag])
+    elif (tag == 'SlowR') or (tag == 'MediumR') or (tag == 'FastR'):
+      cmdStr += str(int(Mount[tag]))
 
-    elif ((tag == 'mst1') or (tag == 'mst2')):      # motor steps per revolution
-      cmdStr += str(Mount[tag])
+    elif (tag == 'latitude'):
+      if (Mount['NS']== 'North'):
+        sign = '+'
+      else:
+        sign = '-'
+      cmdStr += '%c%02d*%02d' % (sign, int(Mount['latDeg']), int(Mount['latMin']))
 
-    elif ((tag == 'mbl1') or (tag == 'mbl2')):      # backlash
+    elif (tag == 'longitude'):
+      if (Mount['EW']== 'West'):
+        sign = '+'
+      else:
+        sign = '-'
+      cmdStr += '%c%03d*%02d' % (sign, int(Mount['longDeg']), int(Mount['longMin']))
+
+    elif (tag == 'UTCOffset'):
+      cmdStr += '%+2.1f' % (-float(Mount['timezone']))
+
+
+    else:                         # all other cases
       cmdStr += str(Mount[tag])
 
     cmdStr += "#"
     print("Tag: %s,  command: %s" % (tag, cmdStr))
     comm.write(cmdStr.encode('utf-8'))
-    # Read response byte to allow some time before the next command
-    resp = (comm.read_until(b'1', 10)).decode('utf-8')
+    # handle differences between serial and telnet
+    if portType == 'serial':
+      resp =  (comm.read(1)).decode('utf-8')  
+    else:
+      resp =  (comm.read_some()).decode('utf-8')  
     print ("response %s" % resp)
 
-
+# splits Meade formats sDD*MM’SS and HH:MM:SS to lists
+def dmsSplit(dms):
+  dms = dms.replace('*',' ').replace("'",' ').replace(':',' ')
+  try:
+    d_m_s = dms.split()
+    return d_m_s
+  except:
+    d_m = dms.split()
+    return d_m
 
 def logText(t):
   print (t)
@@ -204,10 +258,10 @@ def readData():
 
   for tag in list(MountReadCmd.keys()): 
     cmdStr = ":" + MountReadCmd[tag] + "#"  
-
+    print (cmdStr)
     comm.write(cmdStr.encode('utf-8'))
-    resp =  (comm.read_until(b'#', 100)).decode('utf-8')[:-1]
 
+    resp =  (comm.read_until(b'#', 100)).decode('utf-8')[:-1]
     if (tag == 'mType'):
       mt = resp[12]     # Mount type is byte number 12 in the result string
       if (mt == 'E'):
@@ -234,11 +288,58 @@ def readData():
     elif ((tag == 'el') or (tag == 'wl')):      # EL / WL limits are indicated in quarters of a degree
       Mount[tag] = int(int(resp) / 4)
 
+    elif (tag == 'ul'):      # UL limit is coded in tenth of RA hour 
+      Mount[tag] = int(float(resp) / 10)
+
     elif ((tag == 'hl') or (tag == 'ol')):      # Trim the trailing asterisk of horizon / overhead limits 
       Mount[tag] = resp[:-1]
 
+    elif (tag == 'MaxR'):
+      Mount[tag] = int(resp)
+
+    elif (tag == 'GuideR'):
+      Mount[tag] = float(resp)
+
+    elif (tag == 'DefaultR'):
+      if (resp == '0'):
+        Mount[tag] = 'Guide'
+      elif (resp == '1'):
+        Mount[tag] = 'Slow'
+      elif (resp == '2'):
+        Mount[tag] = 'Medium'
+      elif (resp == '3'):
+        Mount[tag] = 'Fast'
+      elif (resp == '4'):
+        Mount[tag] = 'Max'
+
+    elif (tag == 'SlowR') or (tag == 'MediumR') or (tag == 'FastR'):  
+      Mount[tag] = int(float(resp))
+
+    elif (tag == 'latitude'):  
+      lat = dmsSplit(resp)
+      if (int(lat[0])>=0):
+        Mount['NS'] = 'North'
+      else:
+        Mount['NS'] = 'South'
+
+      Mount['latDeg'] = abs(int(lat[0]))
+      Mount['latMin'] = int(lat[1])
+
+    elif (tag == 'longitude'): 
+      longitude = dmsSplit(resp)
+      if (int(longitude[0])>=0):
+        Mount['EW'] = 'West'
+      else:
+        Mount['EW'] = 'East'
+      Mount['longDeg'] = abs(int(longitude[0]))
+      Mount['longMin'] = (longitude[1])
+
+    elif (tag == 'UTCOffset'):          # Meade defines UTCOffset as -TimeZone
+      Mount['timezone'] = - float(resp)
+
     else:
       Mount[tag] = resp
+
   logText('done')
   comm.close()
 
@@ -251,11 +352,10 @@ sg.SetOptions(
 
 readWriteRow = sg.Column([[sg.Button('Read from TeenAstro'), sg.Button('Write to TeenAstro'),
                sg.Button('Load from File', pad=((15,5),(5,5))), sg.Button('Save to File')]])
-separatorRow = sg.Column([[sg.Text('_' * 80)]])
+separatorRow = sg.Column([[sg.Text('_' * 120)]])
 
 mountTypeRow = sg.Column([[sg.Text('Mount Type'), sgSpin('mType', width=12),
-                           sg.Button('Set in TeenAstro'),
-                           sg.Text('(this reboots TeenAstro)')]])
+                           sg.Button('Set and reboot')]])
 
 # Initialize the default mount parameters
 Mount = {}
@@ -268,8 +368,14 @@ topRow = sg.Column([[sg.Text('IP Address:'), sg.Input('192.168.0.12', key='IPAdd
       [sg.Text('Mount Type'), sgSpin('mType', width=12)]])
 
 
-speedFrame = sg.Frame('Speeds', [[sgLabel('Max Slewing Speed'), sgSpin('MaxR')],
-          [sgLabel('Guiding Speed'), sgSpin('GuideR')],
+speedFrame = sg.Frame('Speeds', 
+          [
+          [sgLabel('Default Speed'), sgSpin('DefaultR')],
+          [sgLabel('Guide Speed'), sgSpin('GuideR')],
+          [sgLabel('Slow Speed'), sgSpin('SlowR')],
+          [sgLabel('Medium Speed'), sgSpin('MediumR')],
+          [sgLabel('Fast Speed'), sgSpin('FastR')],
+          [sgLabel('Max Speed'), sgSpin('MaxR')],
           [sgLabel('Acceleration'), sgSpin('Acc')]])
 
 motFrame1 = sg.Frame('RA Motor', [[sgLabel('Rotation'), sgSpin('mrot1', width=8)],
@@ -291,25 +397,39 @@ limitFrame = sg.Frame('Limits',
         [[sgLabel('Horizon'), sgSpin('hl')],
         [sgLabel('Overhead'), sgSpin('ol')],
         [sgLabel('Past Meridian East'), sgSpin('el')],
-          [sgLabel('Past Meridian West'), sgSpin('wl')]]
-          )
+        [sgLabel('Past Meridian West'), sgSpin('wl')],
+        [sgLabel('Under Pole'), sgSpin('ul')]]
+        )
+
+siteFrame = sg.Frame('Site', 
+          [
+          [sgLabel('Latitude'), sgSpin('NS'), sgSpin('latDeg'), sgSpin('latMin')],
+          [sgLabel('Longitude'), sgSpin('EW'), sgSpin('longDeg'), sgSpin('longMin')],
+          [sgLabel('Time Zone'), sgSpin('timezone')],
+          [sgLabel('Elevation'), sgSpin('elevation')],
+          ])
 
 secondRow = sg.Column([[speedFrame, limitFrame]])
 thirdRow = sg.Column([[motFrame1, motFrame2]])
 bottomRow = sg.Column([[sg.Output(key='Log',  size=(80, 3))]])
 
+leftColumn = sg.Column([[mountTypeRow],
+                        [secondRow],
+                        [thirdRow]])
+
+rightColumn = sg.Column([[siteFrame]]) 
+middleFrame = sg.Column([[leftColumn, rightColumn]])
+
 layout = [sgCommTypeSerial,
           sgCommTypeTCP,
           [readWriteRow],
           [separatorRow],
-          [mountTypeRow],
-          [secondRow],
-          [thirdRow],
+          [middleFrame],
           [bottomRow]
          ]
 
 
-window = sg.Window('TAConfig 1.0', layout)
+window = sg.Window('TAConfig 1.2', layout)
 
 
 while True:
