@@ -266,10 +266,8 @@ void Command_GX()
       sprintf(reply, "%02d/%02d/%02d#", i1, i2, i);
       break;
     }
-
-    case '2':
       // :GXT2# return seconds since 01/01/1970/00:00:00
-      // For debug...
+    case '2':
       unsigned long t = rtk.getTimeStamp();
       sprintf(reply, "%lu#", t);
       break;

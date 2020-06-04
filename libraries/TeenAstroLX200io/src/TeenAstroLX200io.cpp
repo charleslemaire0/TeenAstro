@@ -726,7 +726,7 @@ LX200RETURN GetLocalDateLX200(unsigned int &day, unsigned int &month, unsigned i
 LX200RETURN GetUTCDateLX200(unsigned int &day, unsigned int &month, unsigned int &year)
 {
   char out[LX200sbuff];
-  if (GetLX200(":SXT1#", out, sizeof(out)) == LX200VALUEGET)
+  if (GetLX200(":GXT1#", out, sizeof(out)) == LX200VALUEGET)
   {
     char* pEnd;
     month = strtol(&out[0], &pEnd, 10);
