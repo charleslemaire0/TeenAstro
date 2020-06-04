@@ -1,5 +1,5 @@
 #pragma once
-#include "global.h"
+#include "Global.h"
 enum Command { COMMAND_NONE, COMMAND_SERIAL, COMMAND_SERIAL1 };
 class T_Serial
 {

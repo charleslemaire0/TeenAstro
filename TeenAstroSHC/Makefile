@@ -8,12 +8,12 @@ all:  english french german
 
 
 french: 
-	arduino-cli compile -v -b $(BOARD) -o $(OUTPUT)_FR $(OPTIONS)=FRENCH SmartHandController.ino
+	arduino-cli compile -v -b $(BOARD) -o $(OUTPUT)_FR $(OPTIONS)=FRENCH TeenAstroSHC.ino
 	
 english: 
-	arduino-cli compile -v -b $(BOARD) -o $(OUTPUT)_EN $(OPTIONS)=ENGLISH SmartHandController.ino
+	arduino-cli compile -v -b $(BOARD) -o $(OUTPUT)_EN $(OPTIONS)=ENGLISH TeenAstroSHC.ino
 
 german: 
-	arduino-cli compile -v -b $(BOARD) -o $(OUTPUT)_DE $(OPTIONS)=GERMAN SmartHandController.ino
+	arduino-cli compile -v -b $(BOARD) -o $(OUTPUT)_DE $(OPTIONS)=GERMAN TeenAstroSHC.ino
 
 

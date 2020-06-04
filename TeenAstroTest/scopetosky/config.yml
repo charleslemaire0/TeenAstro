@@ -1,0 +1,27 @@
+command: computeScope
+output: RA dec primaryAxis secondaryAxis 
+
+#coordinates
+RAHA: '6:00:00'
+RAorHA: 'RA'
+dec: '0:00'
+includeCorrections: true
+coordinateYear: '2020'
+
+# setup (longitude is positive East of GMT)
+currentDateTime: true
+dateTime: 'Oct 10, 2020 00:00:00'
+timeZone: '2'
+latitude: '44.78'
+longitude: '5.77'
+
+# telescope
+includeRefraction: true
+alignment: 'equatorial'
+conversionStyle: 'trig'
+trackingRatesAlgorithm: 'deltaTime'
+canFlipMeridian: true
+flippedState: 'onEastSidePointingWest'
+flipped: false
+primaryAxis: '0.0'
+secondaryAxis: '0.0'
