@@ -1,0 +1,89 @@
+[
+    {
+        "mType": "German",
+        "DefaultR": "Max",
+        "MaxR": 800,
+        "GuideR": 0.6,
+        "Acc": "6.0",
+        "SlowR": 4,
+        "MediumR": 64,
+        "FastR": 254,
+        "mrot1": "Direct",
+        "mge1": "1920",
+        "mst1": "200",
+        "mmu1": 16,
+        "mbl1": "0",
+        "mlc1": 500,
+        "mhc1": 950,
+        "mrot2": "Reverse",
+        "mge2": "1721",
+        "mst2": "204",
+        "mmu2": 16,
+        "mbl2": "0",
+        "mlc2": 500,
+        "mhc2": 950,
+        "hl": "-3",
+        "ol": "+91",
+        "el": 10,
+        "wl": 12,
+        "ul": 11
+    },
+    [
+        {
+            "name": "StBaudille",
+            "latitude": [
+                44,
+                47
+            ],
+            "longitude": [
+                -5,
+                46
+            ],
+            "elevation": 0,
+            "currentSite": 0,
+            "timeZone": 2.0
+        },
+        {
+            "name": "Peisey",
+            "latitude": [
+                45,
+                0
+            ],
+            "longitude": [
+                -6,
+                0
+            ],
+            "elevation": 0,
+            "currentSite": 0,
+            "timeZone": 2.0
+        },
+        {
+            "name": "NewYork",
+            "latitude": [
+                0,
+                0
+            ],
+            "longitude": [
+                90,
+                0
+            ],
+            "elevation": 0,
+            "currentSite": 0,
+            "timeZone": -5.0
+        },
+        {
+            "name": "Pekin",
+            "latitude": [
+                0,
+                0
+            ],
+            "longitude": [
+                -90,
+                0
+            ],
+            "elevation": 0,
+            "currentSite": 0,
+            "timeZone": 12.0
+        }
+    ]
+]

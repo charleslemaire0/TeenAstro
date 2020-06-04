@@ -1,4 +1,4 @@
-import sys, json, csv, argparse
+import sys, json, csv, argparse, math
 from ruamel.yaml import YAML 
 from telnetlib import Telnet
 from teenastro import TeenAstro, dms2deg, deg2dms
@@ -55,6 +55,16 @@ def printResult(resp, fields):
     pFields.append(data[value])
   printCsv (pFields)
 
+def taTest(ta,ra,dec):
+  ta.gotoRaDec(ra,dec)
+
+  while ta.isSlewing():
+#    print ('.', end='', flush=True)
+    time.sleep(1)
+#  print("%c, %03.4f, %03.4f" % (ta.getPierSide(),ta.getAxis1(), ta.getAxis2()))
+  return (ta.getPierSide(),ta.getAxis1(), ta.getAxis2(), ta.getAzimuth(), ta.getAltitude())
+
+
 # Perform a list of test cases and print the result
 def doTestCases(p, cfgFile, testFile):
   f = open(cfgFile, 'r')   # static configuration 
@@ -62,22 +72,32 @@ def doTestCases(p, cfgFile, testFile):
   with open(testFile, mode='r') as csv_file:       # list of test cases
     testCases = csv.DictReader(csv_file,delimiter=';')
 
-    print ("RA, Dec, computedAxis1, computedAxis2, pierSide, actualAxis1, actualAxis2")
+    print ("RA, Dec, computedAxis1, computedAxis2, pierSide, actualAxis1, actualAxis2, delta1, delta2, deltaAz, deltaAlt")
     for row in testCases:
 #      for field in inputFields:   # assume fields are RAHA, dec
       # get axis positions from TeenAstro
-      (pierSide,ra, dec) = taTest(ta, dms2deg (row['RAHA']),dms2deg (row['dec']))
+      (pierSide,ra, dec, az, alt) = taTest(ta, dms2deg (row['RAHA']),dms2deg (row['dec']))
+      if (ra < 0):
+        ra = ra + 360
+      taSidT = ta.readSidTime()
 
       # get axis positions from ScopeToSky
-      cmd['RAHA'] = row['RAHA'] # create the command
-      cmd['dec'] = row['dec'] # create the command
+      cmd['RAHA'] = row['RAHA'] 
+      cmd['dec'] = row['dec'] 
       if (pierSide == 'E'):
         cmd['flipped'] = True
       else:
         cmd['flipped'] = False
       resp = json.loads(sendCommand (p,cmd))
+      delta1 = 3600 * (ra - float (resp['primaryAxis']))
+      delta2 = 3600 * (dec - float (resp['secondaryAxis']))
 
-      print ("%s, %s, %s, %s, %c, %3.4f, %3.4f" % (row['RAHA'], row['dec'], resp['primaryAxis'],resp['secondaryAxis'], pierSide, ra, dec))
+#      scSidT = (24.0 * float(resp['SidT'])) / (2*math.pi)
+#      deltaTime = 3600 * (taSidT - scSidT) 
+      deltaAz = 3600 * (az - float (resp['azimuth']))
+      deltaAlt = 3600 * (alt - float (resp['altitude']))      
+
+      print ("%s, %s, %s, %s, %c, %3.4f, %3.4f, %4.0f, %4.0f, %4.0f, %4.0f" % (row['RAHA'], row['dec'], resp['primaryAxis'],resp['secondaryAxis'], pierSide, ra, dec, delta1, delta2, deltaAz,deltaAlt))
 
 # Declare function to define command-line arguments
 def readOptions(args=sys.argv[1:]):
@@ -92,15 +112,6 @@ def readOptions(args=sys.argv[1:]):
   return opts
 
 
-def taTest(ta,ra,dec):
-  ta.gotoRaDec(ra,dec)
-
-  while ta.isSlewing():
-#    print ('.', end='', flush=True)
-    time.sleep(1)
-#  print("%c, %03.4f, %03.4f" % (ta.getPierSide(),ta.getAxis1(), ta.getAxis2()))
-  return (ta.getPierSide(),ta.getAxis1(), ta.getAxis2())
-
 
 
 # Main program
@@ -114,6 +125,10 @@ ta = TeenAstro('serial', '/dev/ttyACM0')
 #ta = TeenAstro('tcp', '192.168.0.12')
 
 ta.open()
+if (p == None):
+  print ('Error connecting to TeenAstro')
+  sys.exit()
+
 today = datetime.date.today()
 now = datetime.datetime.now()
 
@@ -124,7 +139,6 @@ ta.readSite()
 ta.readDateTime()
 ta.readSidTime()
 ta.readGears()
-ta.disableTrackingCompensation()
 
 doTestCases(p, options.config, options.testcase);
 

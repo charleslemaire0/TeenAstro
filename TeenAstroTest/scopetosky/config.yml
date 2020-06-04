@@ -5,8 +5,8 @@ output: RA dec primaryAxis secondaryAxis
 RAHA: '6:00:00'
 RAorHA: 'RA'
 dec: '0:00'
-includeCorrections: false
-coordinateYear: '2000'
+includeCorrections: true
+coordinateYear: '2020'
 
 # setup (longitude is positive East of GMT)
 currentDateTime: true
@@ -16,7 +16,7 @@ latitude: '44.78'
 longitude: '5.77'
 
 # telescope
-includeRefraction: false
+includeRefraction: true
 alignment: 'equatorial'
 conversionStyle: 'trig'
 trackingRatesAlgorithm: 'deltaTime'
