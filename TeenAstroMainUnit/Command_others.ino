@@ -1,4 +1,4 @@
-#include "command.h"
+#include "Command.h"
 
 void Command_dollar()
 {
