@@ -38,6 +38,8 @@ void SetSiteLX200(int &value);
 LX200RETURN Move2TargetLX200(TARGETTYPE target);
 LX200RETURN SetTargetRaLX200(uint8_t& vr1, uint8_t& vr2, uint8_t& vr3);
 LX200RETURN SetTargetDecLX200(bool& ispos, uint8_t& vd1, uint8_t& vd2, uint8_t& vd3);
+LX200RETURN SetTargetAzLX200(uint16_t& v1, uint8_t& v2, uint8_t& v3);
+LX200RETURN SetTargetAltLX200(bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t& vd3);
 LX200RETURN SyncGoHomeLX200(bool sync);
 LX200RETURN SyncGoParkLX200(bool sync);
 LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t& vd3);
