@@ -222,7 +222,7 @@ void SmartHandController::menuElevation()
     float alt = (float)strtol(&out[0], NULL, 10);
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_SITEELEVATION, "", &alt, -200, 8000, 2, 0, " meters"))
     {
-      sprintf(out, ":Se%+04d#", (int)alt);
+      sprintf(out, ":Se+04d#", (int)alt);
       DisplayMessageLX200(SetLX200(out), false);
     }
   }
