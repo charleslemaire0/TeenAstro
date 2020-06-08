@@ -29,6 +29,20 @@ void Command_SX()
       //GeoAlign.init();
       //GeoAlign.writeCoe();
       break;
+    case 'p':
+      if (command[5] == 'a' || command[5] == 't')
+      {
+        apparentPole = command[5] == 'a';
+        XEEPROM.update(EE_ApparentPole, apparentPole);
+        initTransformation(true);
+        syncPolarHome();
+        strcpy(reply, "1");
+      }
+      else
+      {
+        strcpy(reply, "0");
+      }
+      break;
     default:
       strcpy(reply, "0");
       break;
