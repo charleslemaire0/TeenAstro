@@ -7,7 +7,8 @@ void SmartHandController::menuMount()
   uint8_t tmp_sel;
   while (!exitMenu)
   {
-    const char *string_list_Mount = T_SHOWSETTINGS "\n" T_MOUNTTYPE "\n" T_MOTOR " 1\n" T_MOTOR " 2\n" T_ACCELERATION "\n" T_SPEED "\n" T_TRACKINGCORRECTION "\n" T_RETICULE;
+    const char *string_list_Mount = T_SHOWSETTINGS "\n" T_MOUNTTYPE "\n" T_MOTOR " 1\n" T_MOTOR " 2\n"
+      T_ACCELERATION "\n" T_SPEED "\n" T_TRACKINGCORRECTION "\n" T_POLAR_ALIGNMENT "\n" T_RETICULE;
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_MOUNT, s_sel, string_list_Mount);
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
     switch (tmp_sel)
@@ -36,6 +37,9 @@ void SmartHandController::menuMount()
       MenuTrackingCorrection();
       break;
     case 8:
+      menuPolarAlignment();
+      break;
+    case 9:
       menuReticule();
       break;
     default:
@@ -154,7 +158,26 @@ void SmartHandController::menuMountType()
     Serial.end();
     exitMenu = true;
     powerCycleRequired = true;
-    Serial.println(out);
+  }
+}
+
+void SmartHandController::menuPolarAlignment()
+{
+  char out[20];
+  char cmd[20];
+  uint8_t tmp_in, tmp_sel;
+  const char *string_list = T_APPARENT_POLE "\n" T_TRUE_POLE;
+  if (DisplayMessageLX200(GetLX200(":GXAp#", out, sizeof(out))))
+  {
+    tmp_in = out[0] == 't' ? 2 : out[0] == 'a' ? 1 : 0;
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_POLAR_ALIGNMENT, tmp_in, string_list);
+    if (tmp_sel && tmp_in != tmp_sel)
+    {
+      char out[10] = ":SXAp,x#";
+      out[6] = tmp_sel == 1 ? 'a' : 't';
+      DisplayMessageLX200(SetLX200(out), false);
+      exitMenu = true;
+    }
   }
 }
 

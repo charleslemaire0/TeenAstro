@@ -18,6 +18,9 @@
 #define T_FOCUSER "Fokusierer"
 #define T_MOUNT "Montierung"
 #define T_MOUNTTYPE "Montierungs-Art"
+#define T_POLAR_ALIGNMENT "Pol-Ausrichtung"
+#define T_TRUE_POLE "Wahrer Pol"
+#define T_APPARENT_POLE "Scheinbarer Pol"
 
 #define T_LIMITS "Grenzen"
 #define T_NOT_CONNECTED "Nicht verbunden"

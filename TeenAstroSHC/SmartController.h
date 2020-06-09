@@ -110,6 +110,7 @@ private:
   void MenuRates();
   void MenuTrackingCorrection();
   void menuMountType();
+  void menuPolarAlignment();
   void menuMotor(uint8_t idx);
   void menuAcceleration();
   void menuMaxRate();
