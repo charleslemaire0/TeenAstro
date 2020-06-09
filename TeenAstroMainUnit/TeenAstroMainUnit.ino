@@ -92,6 +92,8 @@ void setup()
     XEEPROM.write(EE_Tvalid, 0);
     // reset flag for Tracking Correction
     XEEPROM.write(EE_corr_track, 0);
+    // reset flag for Apparent Pole
+    XEEPROM.write(EE_ApparentPole, 1);
     // finally, stop the init from happening again
     XEEPROM.writeLong(EE_autoInitKey, initKey);
   }
@@ -559,11 +561,32 @@ void initTransformation(bool reset)
     else
     {
       double ha, dec;
-      HorTopoToEqu(180, 0, &ha, &dec, localSite.cosLat(), localSite.sinLat());
-      alignment.addReferenceDeg(180, 0, ha, dec);
-      HorTopoToEqu(180, 90, &ha, &dec, localSite.cosLat(), localSite.sinLat());
-      alignment.addReferenceDeg(180, 90, ha, dec);
-      alignment.calculateThirdReference();
+      apparentPole = XEEPROM.read(EE_ApparentPole);
+      double poleAlt = abs(*localSite.latitude());
+      if (apparentPole && poleAlt > 10)
+      {
+        Topocentric2Apparent(&poleAlt);
+        if (localSite.latitude() < 0)
+        {
+          alignment.addReferenceDeg(180, poleAlt, geoA1.poleDef / geoA1.stepsPerDegree, geoA2.poleDef / geoA2.stepsPerDegree);
+          alignment.addReferenceDeg(180, poleAlt + 90, geoA1.poleDef / geoA1.stepsPerDegree, geoA2.poleDef / geoA2.stepsPerDegree + 90);
+        }
+        else
+        {
+          alignment.addReferenceDeg(0, poleAlt, geoA1.poleDef / geoA1.stepsPerDegree, geoA2.poleDef / geoA2.stepsPerDegree);
+          alignment.addReferenceDeg(0, poleAlt + 90, geoA1.poleDef / geoA1.stepsPerDegree, geoA2.poleDef / geoA2.stepsPerDegree + 90);
+        }
+        alignment.calculateThirdReference();
+      }
+      else
+      {
+        HorTopoToEqu(180, 0, &ha, &dec, localSite.cosLat(), localSite.sinLat());
+        alignment.addReferenceDeg(180, 0, ha, dec);
+        HorTopoToEqu(180, 90, &ha, &dec, localSite.cosLat(), localSite.sinLat());
+        alignment.addReferenceDeg(180, 90, ha, dec);
+        alignment.calculateThirdReference();
+      }
+
     }
   }
 }

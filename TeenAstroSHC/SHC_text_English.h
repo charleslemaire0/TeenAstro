@@ -18,6 +18,10 @@
 #define T_FOCUSER "Focuser"
 #define T_MOUNT "Mount"
 #define T_MOUNTTYPE "Mount type"
+#define T_POLAR_ALIGNMENT "Polar Alignment"
+#define T_TRUE_POLE "True Pole"
+#define T_APPARENT_POLE "Apparent Pole"
+
 
 #define T_LIMITS "Limits"
 #define T_NOT_CONNECTED "Not Connected"

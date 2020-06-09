@@ -57,6 +57,9 @@ void Command_GX()
       // :GXA8#
       sprintf(reply, "%f#", t33);
       break;
+    case 'p':
+      apparentPole ? sprintf(reply, "a#") : sprintf(reply, "t#");
+      break;
     default:
       strcpy(reply, "0");
     }

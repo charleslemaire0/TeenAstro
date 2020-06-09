@@ -18,6 +18,9 @@
 #define T_FOCUSER "Focuser"
 #define T_MOUNT "Monture"
 #define T_MOUNTTYPE "Type de Monture"
+#define T_POLAR_ALIGNMENT "Alignement du Pôle"
+#define T_TRUE_POLE "Pôle Vrai"
+#define T_APPARENT_POLE "Pôle Apparent"
 
 #define T_LIMITS "Limites"
 #define T_NOT_CONNECTED "pas Connecté"

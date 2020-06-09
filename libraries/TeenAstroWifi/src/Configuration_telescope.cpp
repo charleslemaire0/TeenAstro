@@ -547,7 +547,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 60) && (i <= 90)))
     {
-      sprintf(temp, ":SXLO%d#", i);
+      sprintf(temp, ":SXLO,%d#", i);
       SetLX200(temp);
     }
   }
@@ -556,7 +556,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -30) && (i <= 30)))
     {
-      sprintf(temp, ":SXLH%d#", i);
+      sprintf(temp, ":SXLH,%d#", i);
       SetLX200(temp);
     }
   }

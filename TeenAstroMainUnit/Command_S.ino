@@ -29,6 +29,20 @@ void Command_SX()
       //GeoAlign.init();
       //GeoAlign.writeCoe();
       break;
+    case 'p':
+      if (command[5] == 'a' || command[5] == 't')
+      {
+        apparentPole = command[5] == 'a';
+        XEEPROM.update(EE_ApparentPole, apparentPole);
+        initTransformation(true);
+        syncPolarHome();
+        strcpy(reply, "1");
+      }
+      else
+      {
+        strcpy(reply, "0");
+      }
+      break;
     default:
       strcpy(reply, "0");
       break;
@@ -91,7 +105,7 @@ void Command_SX()
     switch (command[3])
     {
     case 'E':
-      // :SXLE,VV.V# set user defined Meridian East Limit
+      // :SXLE,sVV.V# set user defined Meridian East Limit
       minutesPastMeridianGOTOE = (double)strtol(&command[5], NULL, 10);
       if (minutesPastMeridianGOTOE > 180) minutesPastMeridianGOTOE = 180;
       if (minutesPastMeridianGOTOE < -180) minutesPastMeridianGOTOE = -180;
@@ -99,7 +113,7 @@ void Command_SX()
       strcpy(reply, "1");
       break;
     case 'W':
-      // :SXLW,VV.V# set user defined Meridian West Limit
+      // :SXLW,sVV.V# set user defined Meridian West Limit
       minutesPastMeridianGOTOW = (double)strtol(&command[5], NULL, 10);
       if (minutesPastMeridianGOTOW > 180) minutesPastMeridianGOTOW = 180;
       if (minutesPastMeridianGOTOW < -180) minutesPastMeridianGOTOW = -180;
@@ -115,7 +129,7 @@ void Command_SX()
       strcpy(reply, "1");
       break;
     case 'H':
-      // :GXLH,VV# set user defined horizon Limit
+      // :GXLH,sVV# set user defined horizon Limit
       // NB: duplicate with :Sh#
       if ((atoi2(&command[5], &i)) && ((i >= -30) && (i <= 30)))
       {
@@ -126,7 +140,7 @@ void Command_SX()
       else
         strcpy(reply, "0");
     case 'O':
-      // :GXLO# set user defined horizon Limit
+      // :SXLO,VV.VV# set user defined overhead Limit
       // NB: duplicate with :So#
       if ((atoi2(&command[5], &i)) && ((i >= 45) && (i <= 91)))
       {
