@@ -25,11 +25,15 @@ const char* html_indexSidereal PROGMEM = "&nbsp;(<font class='c'>%s</font>&nbsp;
 const char* html_indexPosition PROGMEM = "&nbsp;&nbsp;" Axis1 "=<font class='c'>%s</font>, " Axis2 "=<font class='c'>%s</font><br />";
 const char* html_indexTarget PROGMEM = "&nbsp;&nbsp;Target:&nbsp;&nbsp; " Axis1 "=<font class='c'>%s</font>, " Axis2 "=<font class='c'>%s</font><br />";
 
-const char* html_indexPier PROGMEM = "&nbsp;&nbsp;<font class='c'>%s</font> Pier Side (meridian flips <font class='c'>%s</font>)<br />";
+const char* html_indexPier PROGMEM = "&nbsp;&nbsp;<font class='c'>%s</font> Pier Side<br />";
 
-const char* html_indexCorPolar PROGMEM = "&nbsp;&nbsp;Polar Offset: &Delta; Alt=<font class='c'>%ld</font>\", &Delta; Azm=<font class='c'>%ld</font>\"<br />";
 const char* html_indexPark PROGMEM = "&nbsp;&nbsp;Parking: <font class='c'>%s</font><br />";
+const char* html_indexHasFocuser PROGMEM = "&nbsp;&nbsp;Has Focuser: <font class='c'>%s</font><br />";
+const char* html_indexGNSS PROGMEM = "&nbsp;&nbsp;GNSS: <font class='c'>%s</font><br />";
+const char* html_indexAligned PROGMEM = "&nbsp;&nbsp;Aligned: <font class='c'>%s</font><br />";
 const char* html_indexTracking PROGMEM = "&nbsp;&nbsp;Tracking: <font class='c'>%s %s</font><br />";
+const char* html_indexGuiding PROGMEM = "&nbsp;&nbsp;Guiding: <font class='c'>%s</font><br />";
+const char* html_indexSpiral PROGMEM = "&nbsp;&nbsp;Spiral running: <font class='c'>%s</font><br />";
 
 const char* html_indexLastError PROGMEM = "&nbsp;&nbsp;Last Error: <font class='c'>%s</font><br />";
 const char* html_indexWorkload PROGMEM = "&nbsp;&nbsp;Workload: <font class='c'>%s</font><br />";
@@ -48,7 +52,7 @@ void TeenAstroWifi::handleRoot()
   ta_MountStatus.updateRaDec();
   ta_MountStatus.updateMount();
   ta_MountStatus.updateRaDecT();
-  ta_MountStatus.updateTrackingRate();
+  //ta_MountStatus.updateTrackingRate();
 
   String data;
   preparePage(data, 1);
@@ -96,16 +100,8 @@ void TeenAstroWifi::handleRoot()
     strcpy(temp1, "Unknown");
     break;
   }
-  //
-  //todo
-  //if (mountStatus.meridianFlips()) {
-  //  strcpy(temp2, "On");
-  //  if (mountStatus.autoMeridianFlips()) strcat(temp2, "</font>, <font class=\"c\">Auto");
-  //}
-  //else strcpy(temp2, "Off");
-  //if (!ta_MountStatus.validConnection()()) strcpy(temp2, "?");
-  strcpy(temp2, "?");
-  sprintf_P(temp, html_indexPier, temp1, temp2);
+
+  sprintf_P(temp, html_indexPier, temp1);
   data += temp;
   sendHtml(data);
   // RA,Dec target
@@ -115,9 +111,13 @@ void TeenAstroWifi::handleRoot()
   data += temp;
   sendHtml(data);
 
-
-  //data+="<br /><b>Alignment:</b><br />";
-
+  data += "<br /><b>Alignment:</b><br />";
+  sendHtml(data);
+  //Aligned
+  ta_MountStatus.isAligned() ? strcpy(temp1, "Yes") : strcpy(temp1, "No");
+  sprintf_P(temp, html_indexAligned, temp1);
+  data += temp;
+  sendHtml(data);
 
 
   data += "<br /><b>Operations:</b><br />";
@@ -177,8 +177,8 @@ void TeenAstroWifi::handleRoot()
   data += temp;
   sendHtml(data);
   // Tracking rate
-  sprintf(temp, "&nbsp;&nbsp;Tracking Rate: <font class=\"c\">%s</font>Hz<br />", ta_MountStatus.getTrackingRate());
-  data += temp;
+  //sprintf(temp, "&nbsp;&nbsp;Tracking Rate: <font class=\"c\">%s</font>Hz<br />", ta_MountStatus.getTrackingRate());
+  //data += temp;
   switch (ta_MountStatus.getSiderealMode())
   {
   case TeenAstroMountStatus::SID_STAR:
@@ -197,6 +197,24 @@ void TeenAstroWifi::handleRoot()
   sprintf(temp, "&nbsp;&nbsp;Tracking Speed: <font class=\"c\">%s</font><br />", temp2);
   data += temp;
   sendHtml(data);
+
+  ta_MountStatus.isSpiralRunning() ? strcpy(temp1, "Yes") : strcpy(temp1, "No");
+  sprintf_P(temp, html_indexSpiral, temp1);
+  data += temp;
+  sendHtml(data);
+
+  //Focuser
+  ta_MountStatus.hasFocuser() ? strcpy(temp1, "Yes") :  strcpy(temp1, "No");
+  sprintf_P(temp, html_indexHasFocuser, temp1);
+  data += temp;
+  sendHtml(data);
+
+  //GNSS
+  ta_MountStatus.isGNSSValid() ? strcpy(temp1, "Tracking Satellite") : strcpy(temp1, "No Signal");
+  sprintf_P(temp, html_indexGNSS, temp1);
+  data += temp;
+  sendHtml(data);
+
 
   data += "<br /><b>State:</b><br />";
 
