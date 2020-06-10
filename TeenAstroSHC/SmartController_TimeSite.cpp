@@ -53,12 +53,13 @@ void SmartHandController::menuDateAndTime()
     case 3:
       menuLocalDate();
       break;
-    case 5:
+    case 4:
       if (ta_MountStatus.isGNSSValid())
         DisplayMessageLX200(SetLX200(":gt#"), false);
       else
         DisplayMessage(T_NOGNSS, T_SIGNAL, -1);
       break;
+    default:
       break;
     }
   }
@@ -222,7 +223,7 @@ void SmartHandController::menuElevation()
     float alt = (float)strtol(&out[0], NULL, 10);
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_SITEELEVATION, "", &alt, -200, 8000, 2, 0, " meters"))
     {
-      sprintf(out, ":Se+04d#", (int)alt);
+      sprintf(out, ":Se%+04d#", (int)alt);
       DisplayMessageLX200(SetLX200(out), false);
     }
   }
