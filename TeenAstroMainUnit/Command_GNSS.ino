@@ -60,6 +60,7 @@ void Command_GNSS()
       rtk.setClock(d.year(), d.month(), d.day(),
         t.hour(), t.minute(), t.second(),
         *localSite.longitude(), 0);
+      strcpy(reply, "1");
     }
     else
       strcpy(reply, "0");
@@ -70,6 +71,7 @@ void Command_GNSS()
       rtk.setClock(d.year(), d.month(), d.day(),
         t.hour(), t.minute(), t.second(),
         *localSite.longitude(), 0);
+      strcpy(reply, "1");
     }
     else
       strcpy(reply, "0");
