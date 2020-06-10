@@ -188,10 +188,22 @@ TeenAstroMountStatus::Mount TeenAstroMountStatus::getMount()
     return MOUNT_TYPE_FORK_ALT;
   case 'U':
     return MOUNT_UNDEFINED;
-    break;
   }
   return MOUNT_UNDEFINED;
 }
+
+bool TeenAstroMountStatus::isAltAz()
+{
+  switch (getMount())
+  {
+  case MOUNT_TYPE_GEM:
+  case MOUNT_TYPE_FORK:
+    return false;
+    break;
+  }
+  return true;
+}
+
 TeenAstroMountStatus::TrackState TeenAstroMountStatus::getTrackingState()
 {
   switch (m_TempMount[0])

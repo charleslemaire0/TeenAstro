@@ -127,6 +127,7 @@ public:
   void updateMount();
 
   Mount       getMount();
+  bool        isAltAz();
   ParkState   getParkState();
   TrackState  getTrackingState();
   SiderealMode getSiderealMode();
