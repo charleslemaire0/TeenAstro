@@ -8,17 +8,19 @@ const char html_headE[] PROGMEM = "</head>\r\n";
 const char html_bodyB[] PROGMEM = "<body bgcolor='#26262A'>\r\n";
 
 const char html_main_cssB[] PROGMEM = "<STYLE>";
-const char html_main_css1[] PROGMEM = ".clear { clear: both; } .a { background-color: #111111; } .t { padding: 10px 10px 20px 10px; border: 5px solid #551111;";
-const char html_main_css2[] PROGMEM = " margin: 25px 25px 0px 25px; color: #999999; background-color: #111111; min-width: 10em; } input { font-weight: bold; width:6em; background-color: #A01010; padding: 2px 2px; }";
-const char html_main_css3[] PROGMEM = ".b { padding: 10px; border-left: 5px solid #551111; border-right: 5px solid #551111; border-bottom: 5px solid #551111; margin: 0px 25px 25px 25px; color: #999999;";
-const char html_main_css4[] PROGMEM = "background-color: #111111; min-width: 10em; } select { width:7em; font-weight: bold; background-color: #A01010; padding: 2px 2px; } .c { color: #A01010; font-weight: bold; }";
-const char html_main_css5[] PROGMEM = "h1 { text-align: right; } a:hover, a:active { background-color: red; } .y { color: #FFFF00; font-weight: bold; }";
-const char html_main_css6[] PROGMEM = "a:link, a:visited { background-color: #332222; color: #a07070; border:1px solid red; padding: 5px 10px;";
-const char html_main_css7[] PROGMEM = " margin: none; text-align: center; text-decoration: none; display: inline-block; }";
-const char html_main_css8[] PROGMEM = "button { background-color: #A01010; font-weight: bold; border-radius: 5px; margin: 2px; padding: 4px 8px; }";
-const char html_main_css_control1[] PROGMEM = ".b1 { float: left; border: 2px solid #551111; background-color: #181818; text-align: center; margin: 5px; padding: 15px; padding-top: 3px; }";
+const char html_main_css1[] PROGMEM = ".clear { clear: both; } .a {  font-family: Helvetica; background-color: #111111; } .t { font-family: Helvetica; padding: 10px 10px 20px 10px; border: 5px solid #551111;";
+const char html_main_css2[] PROGMEM = " margin: 25px 25px 0px 25px; color: #999999; background-color: #111111; min-width: 10em; } input {font-family: Helvetica; font-weight: bold; width:6em; background-color: #A01010; padding: 2px 2px; }";
+const char html_main_css3[] PROGMEM = " .b { font-family: Helvetica; font-size: 75%; padding: 10px; border-left: 5px solid #551111; border-right: 5px solid #551111; border-bottom: 5px solid #551111; margin: 0px 25px 25px 25px; color: #999999; background-color: #111111; min-width: 10em; }";
+const char html_main_css4[] PROGMEM = " .bt { font-size: 125%; }";
+const char html_main_css5[] PROGMEM = " select { width:7em; font-weight: bold; font-family: Helvetica; background-color: #A01010; padding: 2px 2px; } .c { color: #A01010; font-weight: bold}";
+const char html_main_css6[] PROGMEM = "h1 { text-align: right; } a:hover, a:active { background-color: red; } .y { color: #FFFF00; font-weight: bold; font-family: Helvetica;}";
+const char html_main_css7[] PROGMEM = "a:link, a:visited { background-color: #332222; color: #a07070;  font-family: Helvetica; border:1px solid red; padding: 5px 10px;";
+const char html_main_css8[] PROGMEM = " margin: none; text-align: center; text-decoration: none; display: inline-block;}";
+const char html_main_css9[] PROGMEM = "button { background-color: #A01010; font-weight: bold; border-radius: 5px; margin: 2px; padding: 4px 8px; }";
+const char html_main_css_control1[] PROGMEM = ".b1 { font-family: Helvetica; float: left; border: 2px solid #551111; background-color: #181818; text-align: center; margin: 5px; padding: 15px; padding-top: 3px; }";
 const char html_main_css_control2[] PROGMEM = ".gb { width: 60px; height: 50px; padding: 0px; }";
 const char html_main_css_control3[] PROGMEM = ".bb { height: 2.5em; width: 8em;} .bbh {   height: 2.5em; width: 6em;}";
+const char html_main_css_control4[] PROGMEM = ".bct { font-family: Helvetica; font-size: 125% }";
 const char html_main_cssE[] PROGMEM = "</STYLE>";
 
 const char html_onstep_header1[] PROGMEM = "<div class='t'><table width='100%%'><tr><td><b><font size='5'>";
@@ -36,7 +38,7 @@ const char html_links4S[] PROGMEM = "<a href='/configuration_telescope.htm' styl
 const char html_links4N[] PROGMEM = "<a href='/configuration_telescope.htm'>Telescope</a>";
 const char html_links5S[] PROGMEM = "<a href='/configuration_focuser.htm' style='background-color: #552222;'>Focuser</a>";
 const char html_links5N[] PROGMEM = "<a href='/configuration_focuser.htm'>Focuser</a>";
-const char html_links6S[] PROGMEM = "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />";
+const char html_links6S[] PROGMEM = "<a href='/wifi.htm' style='background-color: #552222;>WiFi</a><br />";
 const char html_links6N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />";
 
 
@@ -207,12 +209,14 @@ void TeenAstroWifi::preparePage(String &data, int page)
   data += FPSTR(html_main_css6);
   data += FPSTR(html_main_css7);
   data += FPSTR(html_main_css8);
+  data += FPSTR(html_main_css9);
   sendHtml(data);
   if (page == 2)
   {
     data += FPSTR(html_main_css_control1);
     data += FPSTR(html_main_css_control2);
     data += FPSTR(html_main_css_control3);
+    data += FPSTR(html_main_css_control4);
     sendHtml(data);
   }
   data += FPSTR(html_main_cssE);

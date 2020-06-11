@@ -5,7 +5,7 @@
 
 
 const char html_configMount_1[] PROGMEM =
-"Equatorial Mount Type: <br />"
+"<div class='bt'> Equatorial Mount Type: <br/> </div>"
 "<form action='/configuration_telescope.htm'>"
 "<select name='mount' onchange='this.form.submit()' >";
 const char html_configMount_2[] PROGMEM =
@@ -13,8 +13,27 @@ const char html_configMount_2[] PROGMEM =
 "</form>"
 "<br/>\r\n";
 
+const char html_configTracking_1[] PROGMEM =
+"<div class='bt'> Corrected Tracking: <br/> </div>"
+"<form action='/configuration_telescope.htm'>"
+"<select name='tracking' onchange='this.form.submit()' >";
+const char html_configTracking_2[] PROGMEM =
+"</select>"
+"</form>"
+"<br/>\r\n";
+
+const char html_configPolar_1[] PROGMEM =
+"<div class='bt'> Polar Alignment: <br/> </div>"
+"<form action='/configuration_telescope.htm'>"
+"<select name='polar' onchange='this.form.submit()' >";
+const char html_configPolar_2[] PROGMEM =
+"</select>"
+"</form>"
+"<br/>\r\n";
+
+
 const char html_configMaxRate[] PROGMEM =
-"Speed & Acceleration: <br />"
+"<div class='bt'> Speed & Acceleration: <br/> </div>"
 "<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%d' type='number' name='MaxR' min='32' max='4000'>"
 "<button type='submit'>Upload</button>"
@@ -116,7 +135,7 @@ const char html_configHCAxis[] PROGMEM =
 "</form>"
 "\r\n";
 const char html_configMinAlt[] PROGMEM =
-"Limits: <br />"
+"<div class='bt'> Limits: <br/> </div>"
 "<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%d' type='number' name='hl' min='-30' max='30'>"
 "<button type='submit'>Upload</button>"
@@ -186,6 +205,22 @@ void TeenAstroWifi::handleConfigurationTelescope()
   data += FPSTR(html_configMount_2);
   sendHtml(data);
 
+  if (!ta_MountStatus.isAltAz())
+  {
+    data += FPSTR(html_configTracking_1);
+    ta_MountStatus.isTrackingCorrected() ? data += "<option selected value='1'>On</option>" : data += "<option value='1'>On</option>";
+    !ta_MountStatus.isTrackingCorrected() ? data += "<option selected value='2'>Off</option>" : data += "<option value='2'>Off</option>";
+    data += FPSTR(html_configTracking_2);
+    sendHtml(data);
+
+    data += FPSTR(html_configPolar_1);
+    if (GetLX200(":GXAp#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "a");
+    temp1[0] == 'a' ? data += "<option selected value='1'>Apparent</option>" : data += "<option value='1'>Apparent</option>";
+    temp1[0] == 't' ? data += "<option selected value='2'>True</option>" : data += "<option value='2'>True</option>";
+    data += FPSTR(html_configPolar_2);
+    sendHtml(data);
+  }
+
   //if (!sendCommand(":GX90#", temp1, sizeof(temp1))) strcpy(temp1, "0"); int mountType = (int)strtol(&temp1[0], NULL, 10);
   //sprintf(temp, html_configMount, mountType);
   //data += temp;
@@ -220,8 +255,7 @@ void TeenAstroWifi::handleConfigurationTelescope()
   sendHtml(data);
 
   //Axis1
-  data += "<div style='width: 35em;'>";
-  data += "Motor: <br />";
+  data += "<div class='bt'> Motor: <br/> </div>";
   bool reverse = false;
   readReverseLX200(1, reverse);
   sprintf_P(temp, html_configRotAxis_1, 1);
@@ -315,7 +349,7 @@ void TeenAstroWifi::handleConfigurationTelescope()
     data += temp;
   }
   else data += "<br />\r\n";
-  strcpy(temp, "</div></div></body></html>");
+  strcpy(temp, "</div></body></html>");
   data += temp;
   sendHtml(data);
   sendHtmlDone(data);
@@ -340,12 +374,30 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
     }
   }
 
+  v = server.arg("tracking");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
+    {
+      i == 1 ? SetLX200(":Tc#") : SetLX200(":Tn#");
+    }
+  }
+
+  v = server.arg("polar");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
+    {
+      i == 1 ? SetLX200(":SXAp,a#") : SetLX200(":SXAp,t#");
+    }
+  }
+
   v = server.arg("MaxR");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4000)))
     {
-      sprintf(temp, ":SXRX:%04d#", i);
+      sprintf(temp, ":SXRX,%04d#", i);
       SetLX200(temp);
     }
   }
@@ -355,7 +407,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.1) && (f <= 25)))
     {
-      sprintf(temp, ":SXRA:%04d#", (int)(f * 10));
+      sprintf(temp, ":SXRA,%04d#", (int)(f * 10));
       SetLX200(temp);
     }
   }
@@ -365,7 +417,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
     {
-      sprintf(temp, ":SXR3:%03d#", (int)f);
+      sprintf(temp, ":SXR3,%03d#", (int)f);
       SetLX200(temp);
     }
   }
@@ -375,7 +427,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
     {
-      sprintf(temp, ":SXR2:%03d#", (int)f);
+      sprintf(temp, ":SXR2,%03d#", (int)f);
       SetLX200(temp);
     }
   }
@@ -385,7 +437,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
     {
-      sprintf(temp, ":SXR1:%03d#", (int)f);
+      sprintf(temp, ":SXR1,%03d#", (int)f);
       SetLX200(temp);
     }
   }
@@ -395,7 +447,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.01) && (f <= 100)))
     {
-      sprintf(temp, ":SXR0:%03d#", (int)(f * 100));
+      sprintf(temp, ":SXR0,%03d#", (int)(f * 100));
       SetLX200(temp);
     }
   }

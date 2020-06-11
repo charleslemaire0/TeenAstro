@@ -1,5 +1,5 @@
 @echo off
-rem usage : TeenAstroBuilder -target MainUnit|SHC|Focuser -driver TMC2130|TMC5160|TMC2160 -hwvers 240 -local FRENCH|GERMAN|ENGLISH -release x.y -v
+rem usage : TeenAstroBuilder -target MainUnit|Focuser -driver TMC260|TMC2130|TMC5160|TMC2160 -hwvers 240 -release x.y -v
 
 setlocal enableDelayedExpansion
 
@@ -72,6 +72,8 @@ rem
 				  set AxisDriver=3
 				) else if /i [!driver!] == [TMC2160] (
 				  set AxisDriver=4
+				) else if /i [!driver!] == [TMC260] (
+				  set AxisDriver=1
 				) else (
 				  echo driver must be  TMC2130, TMC5160, or TMC2160
 				  exit /b		
@@ -90,23 +92,6 @@ rem
 					if /i [!hwvers!] NEQ [230] (
 						if /i [!hwvers!] NEQ [220] (
 							echo hwvers must be  220, 230, or 240
-							exit /b
-						)
-					)
-				) 
-              shift & shift
-           ) else (
-             echo No value specified for !curArg!
-             exit /b
-           )
-       ) else if /i [!curArg!] == [-local] (
-
-           if not [%2] == [] (
-              set local=%~2
-				if /i [!local!] NEQ [FRENCH] ( 
-					if /i [!local!] NEQ [GERMAN] (
-						if /i [!local!] NEQ [ENGLISH] (
-							echo local must be  FRENCH, GERMAN, or ENGLISH
 							exit /b
 						)
 					)
@@ -243,29 +228,6 @@ if /i [!target!] == [MainUnit] (
   goto compil_teensy
 ) 
 
-if /i [!target!] == [SHC] ( 
-  set SKETCH=..\..\..\TeenAstroSHC\TeenAstroSHC.ino
-  set OPTION1=-prefs=compiler.cpp.extra_flags=-DLANGUAGE=!local!
-rem  set OPTION2=-prefs=build.extra_flags=
-  set OPTION2=
-  set TOOLS_PATH2=!Arduino_Root_Path!\hardware\tools\esp8266
-  set BOARD=esp8266:esp8266:d1_mini:xtal=80,vt=flash,eesz=4M1M,ip=lm2n,dbg=Disabled,lvl=None____,wipe=none,baud=921600
-  if /i [!local!] == [FRENCH] (
-  set OUTPUT=!RELEASE_PATH!/TeenAstroSHC_!release!_French
-  ) else if /i [!local!] == [GERMAN] (
-  set OUTPUT=!RELEASE_PATH!/TeenAstroSHC_!release!_German
-  )	else if /i [!local!] == [ENGLISH] (
-  set OUTPUT=!RELEASE_PATH!/TeenAstroSHC_!release!_English
-  ) else (
-		echo local must be  FRENCH, GERMAN, or ENGLISH
-		exit /b
-  ) 
-
-  set OPTIONS=--build-properties compiler.cpp.extra_flags=-DLANGUAGE=!local!
-  set SKETCH=..\..\..\TeenAstroSHC\TeenAstroSHC.ino
-  goto compil_wemos_D1_mini
-) 
-
 if /i [!target!] == [Focuser] ( 
   set SKETCH=..\..\..\TeenAstroFocuser\TeenAstroFocuser.ino
   echo Focuser not yet   TBD
@@ -288,13 +250,6 @@ if %ERRORLEVEL% NEQ 0 exit /b
 
 copy /Y !BUILD_PATH!\!Buid_File!.elf !RELEASE_PATH!\!Target_File!.elf
 copy /Y !BUILD_PATH!\!Buid_File!.hex !RELEASE_PATH!\!Target_File!.hex
-
-exit /b
-
-:compil_wemos_D1_mini
-if /i !verbose!==[y] echo on
-
-..\..\..\ArduinoCli\arduino-cli.exe compile -v -b !BOARD! -o !OUTPUT! !OPTIONS!=!local! !SKETCH!
 
 exit /b
 

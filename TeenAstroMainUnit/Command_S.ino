@@ -657,8 +657,16 @@ void Command_S(Command& process_command)
     else strcpy(reply, "0");
     break;
   case 'n':
-    localSite.setSiteName(&command[2]);
-    strcpy(reply, "1");
+    if (strlen(&command[2]) > 14)
+    {
+      strcpy(reply, "0");
+    }
+    else
+    {
+      localSite.setSiteName(&command[2]);
+      strcpy(reply, "1");
+    }
+
     break;
   case 'o':
     //  :SoDD#

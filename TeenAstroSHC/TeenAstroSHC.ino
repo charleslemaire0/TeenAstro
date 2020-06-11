@@ -34,7 +34,7 @@
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "2"
-#define SHCFirmwareVersionPatch  "b"
+#define SHCFirmwareVersionPatch  "0"
 
 const char SHCVersion[] = SHCFirmwareVersionMajor "." SHCFirmwareVersionMinor "." SHCFirmwareVersionPatch;
 const int pin[7] = { B_PIN0,B_PIN1,B_PIN2,B_PIN3,B_PIN4,B_PIN5,B_PIN6 };
