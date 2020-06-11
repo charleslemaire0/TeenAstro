@@ -38,7 +38,7 @@ const char html_links4S[] PROGMEM = "<a href='/configuration_telescope.htm' styl
 const char html_links4N[] PROGMEM = "<a href='/configuration_telescope.htm'>Telescope</a>";
 const char html_links5S[] PROGMEM = "<a href='/configuration_focuser.htm' style='background-color: #552222;'>Focuser</a>";
 const char html_links5N[] PROGMEM = "<a href='/configuration_focuser.htm'>Focuser</a>";
-const char html_links6S[] PROGMEM = "<a href='/wifi.htm' style='background-color: #552222;>WiFi</a><br />";
+const char html_links6S[] PROGMEM = "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />";
 const char html_links6N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />";
 
 
