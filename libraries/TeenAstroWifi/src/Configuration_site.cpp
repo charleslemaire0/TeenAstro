@@ -4,7 +4,7 @@
 // configuration_Site
 
 const char html_configSiteSelect1[] PROGMEM =
-"Selected Site:<br/>"
+"<div class='bt' align='left'> Selected Site :<br/> </div>"
 "<form method='post' action='/configuration_site.htm'>"
 "<select onchange='this.form.submit()' style='width:11em' name='site_select'>";
 const char html_configSiteSelect2[] PROGMEM =
@@ -13,7 +13,7 @@ const char html_configSiteSelect2[] PROGMEM =
 "</form>"
 "\r\n";
 const char html_configSiteName1[] PROGMEM =
-"Selected Site definition: <br />"
+"<div class='bt' align='left'> Selected Site definition: <br/> </div>"
 "<form method='get' action='/configuration_site.htm'>";
 const char html_configSiteName2[] PROGMEM =
 " <input value='%s' style='width:10.25em' type='text' name='site_n' maxlength='14'>";

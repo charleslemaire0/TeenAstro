@@ -5,7 +5,7 @@
 
 
 const char html_configMount_1[] PROGMEM =
-"Equatorial Mount Type: <br />"
+"<div class='bt'> Equatorial Mount Type: <br/> </div>"
 "<form action='/configuration_telescope.htm'>"
 "<select name='mount' onchange='this.form.submit()' >";
 const char html_configMount_2[] PROGMEM =
@@ -14,7 +14,7 @@ const char html_configMount_2[] PROGMEM =
 "<br/>\r\n";
 
 const char html_configTracking_1[] PROGMEM =
-"Corrected Tracking: <br />"
+"<div class='bt'> Corrected Tracking: <br/> </div>"
 "<form action='/configuration_telescope.htm'>"
 "<select name='tracking' onchange='this.form.submit()' >";
 const char html_configTracking_2[] PROGMEM =
@@ -23,7 +23,7 @@ const char html_configTracking_2[] PROGMEM =
 "<br/>\r\n";
 
 const char html_configPolar_1[] PROGMEM =
-"Polar Alignment: <br />"
+"<div class='bt'> Polar Alignment: <br/> </div>"
 "<form action='/configuration_telescope.htm'>"
 "<select name='polar' onchange='this.form.submit()' >";
 const char html_configPolar_2[] PROGMEM =
@@ -33,7 +33,7 @@ const char html_configPolar_2[] PROGMEM =
 
 
 const char html_configMaxRate[] PROGMEM =
-"Speed & Acceleration: <br />"
+"<div class='bt'> Speed & Acceleration: <br/> </div>"
 "<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%d' type='number' name='MaxR' min='32' max='4000'>"
 "<button type='submit'>Upload</button>"
@@ -135,7 +135,7 @@ const char html_configHCAxis[] PROGMEM =
 "</form>"
 "\r\n";
 const char html_configMinAlt[] PROGMEM =
-"Limits: <br />"
+"<div class='bt'> Limits: <br/> </div>"
 "<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%d' type='number' name='hl' min='-30' max='30'>"
 "<button type='submit'>Upload</button>"
@@ -205,14 +205,14 @@ void TeenAstroWifi::handleConfigurationTelescope()
   data += FPSTR(html_configMount_2);
   sendHtml(data);
 
-  data += FPSTR(html_configTracking_1);
-  ta_MountStatus.isTrackingCorrected() ? data += "<option selected value='1'>On</option>" : data += "<option value='1'>On</option>";
-  !ta_MountStatus.isTrackingCorrected() ? data += "<option selected value='2'>Off</option>" : data += "<option value='2'>Off</option>";
-  data += FPSTR(html_configTracking_2);
-  sendHtml(data);
-
   if (!ta_MountStatus.isAltAz())
   {
+    data += FPSTR(html_configTracking_1);
+    ta_MountStatus.isTrackingCorrected() ? data += "<option selected value='1'>On</option>" : data += "<option value='1'>On</option>";
+    !ta_MountStatus.isTrackingCorrected() ? data += "<option selected value='2'>Off</option>" : data += "<option value='2'>Off</option>";
+    data += FPSTR(html_configTracking_2);
+    sendHtml(data);
+
     data += FPSTR(html_configPolar_1);
     if (GetLX200(":GXAp#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "a");
     temp1[0] == 'a' ? data += "<option selected value='1'>Apparent</option>" : data += "<option value='1'>Apparent</option>";
@@ -255,8 +255,7 @@ void TeenAstroWifi::handleConfigurationTelescope()
   sendHtml(data);
 
   //Axis1
-  data += "<div style='width: 35em;'>";
-  data += "Motor: <br />";
+  data += "<div class='bt'> Motor: <br/> </div>";
   bool reverse = false;
   readReverseLX200(1, reverse);
   sprintf_P(temp, html_configRotAxis_1, 1);
@@ -350,7 +349,7 @@ void TeenAstroWifi::handleConfigurationTelescope()
     data += temp;
   }
   else data += "<br />\r\n";
-  strcpy(temp, "</div></div></body></html>");
+  strcpy(temp, "</div></body></html>");
   data += temp;
   sendHtml(data);
   sendHtmlDone(data);

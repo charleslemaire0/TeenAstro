@@ -88,7 +88,7 @@ const char html_controlQuick3[]  PROGMEM =
 
 const char html_controlTrack1[]  PROGMEM =
 "<div class='b1' style='width: 27em'>"
-"<div align='left'>Tracking:</div>"
+"<div class='bct' align='left'>Tracking:</div>"
 "<button type='button' class='bbh' onpointerdown=\"g('Ts')\" type='submit'>" SIDEREAL_CH "</button>";
 const char html_controlTrack2[]  PROGMEM =
 "<button type='button' class='bbh' onpointerdown=\"g('Tl')\" type='submit'>" LUNAR_CH "</button>";
@@ -105,7 +105,7 @@ const char html_controlTrack4[] PROGMEM =
 #ifdef ALIGN_ON
 const char html_controlAlign1[]  PROGMEM =
 "<div class='b1' style='width: 16.2em'>"
-"<div align='left'>Align:</div>"
+"<div class='bct' align='left'>Align:</div>"
 "<form method='get' action='/control.htm'>";
 const char html_controlAlign2[]  PROGMEM =
 "<button class='bbh' type='submit' name=\"al\" value='%d'>%d%s</button>";
@@ -118,7 +118,7 @@ const char html_controlTrack10[]  PROGMEM = "<br class='clear' />\r\n";
 #endif
 const char html_controlParkHome[] PROGMEM =
 "<div class='b1' style='width: 27em'>"
-"<div align='left'>Park & Home:</div>"
+"<div class='bct' align='left'>Park & Home:</div>"
 "<button type = 'button' class = 'bb' onpointerdown = \"g('pk')\">Park</button>"
 "<button type = 'button' class = 'bb' onpointerdown = \"g('pr')\">Sync@Park</button>"
 "<button type = 'button' class = 'bb' onpointerdown = \"g('ps')\">Set Park</button><br / >"
@@ -128,7 +128,7 @@ const char html_controlParkHome[] PROGMEM =
 
 const char html_controlGuide[] PROGMEM =
 "<div class='b1' style='width: 27em'>"
-"<div align='left'>Recenter:</div>"
+"<div class='bct' align='left'>Recenter:</div>"
 "<button class='gb' type='button' onpointerdown=\"g('n1')\" onpointerup=\"g('n0')\">" BUTTON_N "</button><br />"
 "<button class='gb' type='button' onpointerdown=\"g('e1')\" onpointerup=\"g('e0')\">" BUTTON_E "</button>"
 "<button class='gb' type='button' onpointerdown=\"g('q1')\">" BUTTON_Stop "</button>"
@@ -216,7 +216,7 @@ void TeenAstroWifi::handleControl()
   if (ta_MountStatus.hasFocuser())
   {
     data += FPSTR(html_controlFocus1);
-    data += "<div style='float: left;'>Focuser:</div><div style='float: right; text-align: right;' id='focuserpos'>?</div><br />";
+    data += "<div class='bct' style='float: left;'>Focuser:</div><div style='float: right; text-align: right;' id='focuserpos'>?</div><br />";
     data += FPSTR(html_controlFocus3);
     data += FPSTR(html_controlFocus4);
     data += FPSTR(html_controlFocus5);
