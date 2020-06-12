@@ -84,7 +84,7 @@ void TeenAstroWifi::handleConfigurationSite()
     int selectedsite = 0;
     if ((atoi2(temp1, &selectedsite)) && ((selectedsite >= 0) && (selectedsite <= 3)))
     {
-      char m[16]; char n[16]; char o[16]; char p[16];
+      char m[32]; char n[32]; char o[32]; char p[32];
       GetLX200(":GM#", m, sizeof(m));
       GetLX200(":GN#", n, sizeof(n));
       GetLX200(":GO#", o, sizeof(o));

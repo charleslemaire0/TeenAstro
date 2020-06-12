@@ -5,14 +5,15 @@
 class siteDefinition
 {
 
-#define siteNameLen     15
+#define siteNameLen     15 // withnull character!
 #define SiteSize        27
+#define maxNumSite       3
   struct ssite
   {
     double latitude;
     double longitude;
     int16_t elevation;
-    char siteName[siteNameLen + 1];
+    char siteName[siteNameLen];
     float toff;
   };
 private:
@@ -90,10 +91,10 @@ public:
   }
   bool setSiteName(const char* s)
   {
-    strncpy(m_site.siteName, s, siteNameLen);
-    m_site.siteName[15] = 0;
-    XEEPROM.writeString(EE_sites + m_siteIndex * SiteSize + EE_site_name, m_site.siteName);
-    return true;
+    if (strlen(s) + 1 > siteNameLen)
+      return false;
+    strcpy(m_site.siteName, s);
+    return XEEPROM.writeString(EE_sites + m_siteIndex * SiteSize + EE_site_name, m_site.siteName, siteNameLen);
   }
   const double* sinLat()
   {
@@ -105,6 +106,8 @@ public:
   }
   void ReadSiteDefinition(uint8_t siteIndex)
   {
+    if (siteIndex > maxNumSite)
+      return;
     m_siteIndex = siteIndex;
     int adress = EE_sites + m_siteIndex * SiteSize;
     m_site.latitude = XEEPROM.readFloat(adress);
@@ -131,14 +134,19 @@ public:
       setToff(0);
     }
     adress++;
-    XEEPROM.readString(adress, m_site.siteName);
+    if (!XEEPROM.readString(adress, m_site.siteName, siteNameLen))
+    {
+      char txt[10];
+      sprintf(txt, "Site %d", m_siteIndex);
+      setSiteName(txt);
+    }
     m_cosLat = cos(m_site.latitude / Rad);
     m_sinLat = sin(m_site.latitude / Rad);
   }
   void ReadCurrentSiteDefinition()
   {
     m_siteIndex = XEEPROM.read(EE_currentSite);
-    if (m_siteIndex > 3)
+    if (m_siteIndex > maxNumSite)
     {
       initdefault();
     }
@@ -149,7 +157,7 @@ public:
   {
     // init the site information, lat/long/tz/name
     char txt[10];
-    for (int k = 0; k < 2; k++)
+    for (int k = 0; k < maxNumSite - 1; k++)
     {
       m_siteIndex = k;
       XEEPROM.write(EE_currentSite, m_siteIndex);
