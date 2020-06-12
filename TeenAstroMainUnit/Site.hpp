@@ -134,7 +134,8 @@ public:
       setToff(0);
     }
     adress++;
-    if (!XEEPROM.readString(adress, m_site.siteName, siteNameLen))
+    bool ok = XEEPROM.readString(adress, m_site.siteName, siteNameLen);
+    if (!ok || strlen(m_site.siteName) == 0)
     {
       char txt[10];
       sprintf(txt, "Site %d", m_siteIndex);
