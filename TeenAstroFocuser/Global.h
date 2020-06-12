@@ -9,11 +9,9 @@
 #include "WProgram.h"
 #endif
 #define PROJECT "TeenAstro Focuser"
-#define Version "1.0.2"
+#define FirmwareVersion "1.0.2"
 
-//uncomment the version you are using
-//#define VERSION220
-//#define VERSION230
+
 #ifndef VERSION
 #define VERSION 240
 #endif
@@ -29,7 +27,6 @@
 #define kCePin 4  // Chip Enable
 #define kIoPin 3 // Input/Output
 #define kSclkPin 2  // Serial Clock
-#define TMC AxisDriver
 #define EnablePin 20
 #define _StepPin 21
 #define _DirPin 22
@@ -51,8 +48,6 @@
 #define kIoPin 3 // Input/Output
 #define kSclkPin 2  // Serial Clock
 // TMC2130
-
-#define TMC AxisDriver
 
 #define EnablePin 5
 #define _StepPin 7
