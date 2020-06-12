@@ -9,23 +9,27 @@
 #include "WProgram.h"
 #endif
 #define PROJECT "TeenAstro Focuser"
-#define Version "1.0.1"
+#define Version "1.0.2"
 
 //uncomment the version you are using
 //#define VERSION220
 //#define VERSION230
-#define VERSION240
+#ifndef VERSION
+#define VERSION 240
+#endif
 
-#ifdef VERSION240
+#if VERSION == 240
 #define BOARDINFO "2.4.0"
 //TMC260=1  TMC2130=2 or TMC5160=3
-#define USEDTMC 2
+#ifndef AxisDriver
+#define AxisDriver 2
+#endif
 // Temperature Sensor
 // RTC
 #define kCePin 4  // Chip Enable
 #define kIoPin 3 // Input/Output
 #define kSclkPin 2  // Serial Clock
-#define TMC USEDTMC
+#define TMC AxisDriver
 #define EnablePin 20
 #define _StepPin 21
 #define _DirPin 22
@@ -35,15 +39,21 @@
 #define LEDPin 23 
 #endif
 
-#ifdef VERSION230
+#if VERSION == 230
 #define BOARDINFO "2.3.0"
 // TMC260=1, TMC2130=2 or TMC5160=3
-#define TMC 2
+#ifdef AxisDriver
+#undef  AxisDriver
+#endif
+#define AxisDriver 2
 // RTC
 #define kCePin 4  // Chip Enable
 #define kIoPin 3 // Input/Output
 #define kSclkPin 2  // Serial Clock
 // TMC2130
+
+#define TMC AxisDriver
+
 #define EnablePin 5
 #define _StepPin 7
 #define _DirPin 6
@@ -54,11 +64,14 @@
 #endif
 // VERSION23
 
-#ifdef VERSION220
+#if VERSION == 220
 
 #define BOARDINFO "2.2.0"
 //TMC260=1  TMC2130=2 or TMC5160=3
-#define TMC 2
+#ifdef AxisDriver
+#undef  AxisDriver
+#endif
+#define AxisDriver 2
 // RTC
 #define kCePin 4  // Chip Enable
 #define kIoPin 3 // Input/Output
