@@ -46,12 +46,14 @@ TeenAstroMountStatus ta_MountStatus;
 void setup(void)
 {
 #ifdef ARDUINO_D1_MINI32
-  HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309);
+  HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309, 2);
 return;
 #endif
   int value = analogRead(A0);
   if (value< 191)       //0.616129032V
-    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SH1106);
+  {
+    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SH1106, 1 );
+  }
   else if (value < 319) //1.029032258V
   {
     //empty
@@ -62,7 +64,7 @@ return;
   }
   else if (value < 575) //1.85483871V
   {
-    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309);
+    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309, 2);
   }
   else if (value < 703) //2.267741935V
   {
