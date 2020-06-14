@@ -29,7 +29,7 @@ void SmartHandController::menuSHCSettings()
 
 void SmartHandController::menuDisplay()
 {
-  const char *string_list_Display = T_TURNOFF "\n" T_CONTRAST "\n" T_SLEEP "\n" T_DEEPSLEEP;
+  const char *string_list_Display = T_TURNOFF "\n" T_CONTRAST "\n" T_SLEEP "\n" T_DEEPSLEEP "\n" T_SUBMODEL;
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
   while (!exitMenu)
@@ -54,8 +54,8 @@ void SmartHandController::menuDisplay()
     {
       if (display->UserInterfaceInputValueInteger(&buttonPad, T_LOWCONTRAST, T_AFTER " ", &displayT1, 3, 255, 3, "0 sec"))
       {
-        EEPROM.write(EEPROM_T1, displayT1);
-        EEPROM.commit();
+        XEEPROM.write(EEPROM_T1, displayT1);
+        XEEPROM.commit();
       }
       break;
     }
@@ -63,8 +63,20 @@ void SmartHandController::menuDisplay()
     {
       if (display->UserInterfaceInputValueInteger(&buttonPad, T_TURNDISPLAYOFF, T_AFTER " ", &displayT2, displayT1, 255, 3, "0 sec"))
       {
-        EEPROM.write(EEPROM_T2, displayT2);
-        EEPROM.commit();
+        XEEPROM.write(EEPROM_T2, displayT2);
+        XEEPROM.commit();
+      }
+      break;
+    }
+    case 5:
+    {
+      uint8_t val = XEEPROM.read(EEPROM_DISPLAYSUBMODEL);
+      if (display->UserInterfaceInputValueInteger(&buttonPad, T_SUBMODEL, "OLED ", &val, 0, num_supported_display - 1, 1, ""))
+      {
+        XEEPROM.write(EEPROM_DISPLAYSUBMODEL, val);
+        XEEPROM.commit();
+        powerCycleRequired = true;
+        exitMenu = true;
       }
       break;
     }

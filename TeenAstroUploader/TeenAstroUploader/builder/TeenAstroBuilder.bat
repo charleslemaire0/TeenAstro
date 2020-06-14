@@ -230,8 +230,13 @@ if /i [!target!] == [MainUnit] (
 
 if /i [!target!] == [Focuser] ( 
   set SKETCH=..\..\..\TeenAstroFocuser\TeenAstroFocuser.ino
-  echo Focuser not yet   TBD
-  exit /b
+    set OPTION1=-prefs=compiler.cpp.extra_flags=-DVERSION=!hwvers! -DAxisDriver=!AxisDriver!
+  set OPTION2=-prefs=build.extra_flags= 
+  set TOOLS_PATH2=!Arduino_Root_Path!\hardware\tools\avr
+  set BOARD="teensy:avr:teensy31:usb=serial,speed=72,opt=o2std,keys=en-us"
+  set Target_File=TeenAstroFocuser_!release!_!hwvers!_!driver!
+  set Buid_File=\TeenAstroFocuser.ino
+  goto compil_teensy
 ) 
 
 

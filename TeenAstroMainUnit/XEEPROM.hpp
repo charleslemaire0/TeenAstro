@@ -50,24 +50,33 @@ struct extendedEEPROM : EEPROMClass
     *v = EEPROM.read(i + 3);
   }
 
-  // write String into EEPROM at position i (16 bytes)
-  void writeString(int i, char l[])
+  // write String into EEPROM at position i
+  bool writeString(int i, char l[], int E_buffersize)
   {
-    for (int l1 = 0; l1 < 16; l1++)
+    if ((int)strlen(l) + 1 > E_buffersize)
+      return false;
+    for (int l1 = 0; l1 < (int)strlen(l) + 1; l1++)
     {
-      EEPROM.update(i + l1, *l);
-      l++;
+      EEPROM.update(i + l1, l[l1]);
     }
+    return true;
   }
 
-  // read String from EEPROM at position i (16 bytes)
-  void readString(int i, char l[])
-  {
-    for (int l1 = 0; l1 < 16; l1++)
+  // read String from EEPROM at position i
+  // the String must be stored with as null-terminated string!
+  bool readString(int i, char l[], int E_buffersize)
+  { 
+    bool validend = false;
+    for (int l1 = 0; l1 < E_buffersize; l1++)
     {
-      *l = EEPROM.read(i + l1);
-      l++;
+      l[l1] = EEPROM.read(i + l1);
+      if (!l[l1])
+      {
+        validend = true;
+        break;
+      }
     }
+    return validend;
   }
 
   // write 4 byte float into EEPROM at position i (4 bytes)

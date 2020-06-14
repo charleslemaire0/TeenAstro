@@ -9,9 +9,9 @@
       Dim fwv As String = ComboBoxFirmwareVersion.SelectedItem
       Select Case pcb
         Case "2.2 TMC260"
-          Hexfile = fwv + "\" + "Teenastro_" + fwv + "_220"
+          Hexfile = fwv + "\" + "Teenastro_" + fwv + "_220_TMC260"
         Case "2.3 TMC260"
-          Hexfile = fwv + "\" + "Teenastro_" + fwv + "_230"
+          Hexfile = fwv + "\" + "Teenastro_" + fwv + "_230_TMC260"
         Case "2.4 TMC2130"
           Hexfile = fwv + "\" + "Teenastro_" + fwv + "_240_TMC2130"
         Case "2.4 TMC5160"
@@ -42,7 +42,7 @@
     Me.Text = "TeenAstro Firmware Uploader " + version
     ComboBoxPCBMainUnitT.SelectedIndex = 0
     ComboBoxPCBMainUnitF.SelectedIndex = 0
-    ComboBoxFirmwareVersion.SelectedIndex = 1
+    ComboBoxFirmwareVersion.SelectedIndex = 0
     ComboBoxPCBSHC.SelectedIndex = 0
     For Each sp As String In My.Computer.Ports.SerialPortNames
       ComboBoxCOMSHC.Items.Add(sp)
@@ -58,10 +58,10 @@
       Dim Hexfile As String = ""
       Dim fwv As String = ComboBoxFirmwareVersion.SelectedItem
       Select Case pcb
-        Case "2.2"
-          Hexfile = fwv + "\" + "TeenAstroFocuser_" + fwv + "_220"
-        Case "2.3"
-          Hexfile = fwv + "\" + "TeenAstroFocuser_" + fwv + "_230"
+        Case "2.2 TMC2130"
+          Hexfile = fwv + "\" + "TeenAstroFocuser_" + fwv + "_220_TMC2130"
+        Case "2.3 TMC2130"
+          Hexfile = fwv + "\" + "TeenAstroFocuser_" + fwv + "_230_TMC2130"
         Case "2.4 TMC2130"
           Hexfile = fwv + "\" + "TeenAstroFocuser_" + fwv + "_240_TMC2130"
         Case "2.4 TMC5160"

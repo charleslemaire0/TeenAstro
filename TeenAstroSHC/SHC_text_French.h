@@ -205,6 +205,7 @@
 #define T_DISPLAY "Écran"
 #define T_BUTTONSPEED "Vitesse Boutons"
 
+#define T_SUBMODEL "Sous-modèle"
 #define T_CONTRAST "Contraste"
 #define T_TURNOFF "Éteindre"
 #define T_SLEEP "Veille"

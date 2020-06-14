@@ -82,7 +82,7 @@
 #define T_ROTATION "Drehung"
 #define T_BACKLASH "Getr. Spiel"
 #define T_GEAR "Getr. Zahl"
-#define T_RATIO "Verhältnis"
+#define T_RATIO "Untersetzung"
 #define T_MICROSTEP "Mikroschritt"
 #define T_INSECONDS "in Sekunden"
 #define T_MOTOR "Motor"
@@ -109,7 +109,7 @@
 #define T_ACCELERATION "Beschl."
 
 #define T_LATITUDE "Breitengrad"
-#define T_LONGITUDE "Längengrade"
+#define T_LONGITUDE "Längengrad"
 #define T_AZIMUTH "Azimut"
 #define T_ALTITUDE "Höhe"
 #define T_DECLINAISON "Deklination"
@@ -205,15 +205,16 @@
 #define T_DISPLAY "Anzeige"
 #define T_BUTTONSPEED "Geschw. Knopf"
 
+#define T_SUBMODEL "Untermodel"
 #define T_CONTRAST "Kontrast"
 #define T_TURNOFF "Ausschalten"
-#define T_SLEEP "Schlaf"
-#define T_DEEPSLEEP "Tiefer Schlaf"
+#define T_SLEEP "Dimmen"
+#define T_DEEPSLEEP "Aus"
 #define T_PRESSSHIFTKEY "Shift-Taste drücken"
 #define T_TOTURNON "zum Anschalten"
-#define T_AFTER "danach"
+#define T_AFTER "nach"
 #define T_LOWCONTRAST "Niedriger Kontrast"
-#define T_TURNDISPLAYOFF "Anzeige ausschalten"
+#define T_TURNDISPLAYOFF "Anzeige aussch."
 
 
 #define T_BUTTONSPEED "Geschw. Knopf"

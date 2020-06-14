@@ -14,19 +14,17 @@ compiler.ar.extra_flags=
 compiler.objcopy.eep.extra_flags=
 compiler.elf2hex.extra_flags=
 
+remplacer
+compiler.path={runtime.hardware.path}/../tools/
+par :
+compiler.path={runtime.ide.path}/hardware/tools/
+
 remplacer:
 
 recipe.cpp.o.pattern="{compiler.path}{build.toolchain}{build.command.g++}" -c {build.flags.optimize} {build.flags.common} {build.flags.dep} {build.flags.cpp} {build.flags.cpu} {build.flags.defs} -DARDUINO={runtime.ide.version} -DARDUINO_{build.board} -DF_CPU={build.fcpu} -D{build.usbtype} -DLAYOUT_{build.keylayout} "-I{build.path}/pch" {includes} "{source_file}" -o "{object_file}"
 
 par :
 recipe.cpp.o.pattern="{compiler.path}{build.toolchain}{build.command.g++}" -c {build.flags.optimize} {build.flags.common} {build.flags.dep} {build.flags.cpp} {build.flags.cpu} {build.flags.defs} {compiler.cpp.extra_flags} {build.extra_flags} -DARDUINO={runtime.ide.version} -DARDUINO_{build.board} -DF_CPU={build.fcpu} -D{build.usbtype} -DLAYOUT_{build.keylayout} "-I{build.path}/pch" {includes} "{source_file}" -o "{object_file}"
-
-remplacer
-compiler.path={runtime.hardware.path}/../tools/
-par :
-compiler.path={runtime.ide.path}/hardware/tools/
-
- 
 
 - Copier l’exécutable arduino-cli.exe dans C:\Program Files (x86)\Arduino\ qui doit êtr dans le PATH.
 

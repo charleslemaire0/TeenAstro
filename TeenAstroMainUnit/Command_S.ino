@@ -620,13 +620,11 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
     i = command[1] - 'M';
-    if (strlen(&command[2]) > 14)
-      strcpy(reply, "0");
+    if (strlen(&command[2]))
+      XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, &command[2], siteNameLen) ?
+      strcpy(reply, "1") : strcpy(reply, "0");
     else
-    {
-      XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, &command[2]);
-      strcpy(reply, "1");
-    }
+      strcpy(reply, "0");
     break;
   case 'm':
     if ((command[2] != 0) && (strlen(&command[2]) < 2))
@@ -657,16 +655,10 @@ void Command_S(Command& process_command)
     else strcpy(reply, "0");
     break;
   case 'n':
-    if (strlen(&command[2]) > 14)
-    {
-      strcpy(reply, "0");
-    }
+    if (strlen(&command[2]))
+      localSite.setSiteName(&command[2]) ? strcpy(reply, "1") : strcpy(reply, "0");
     else
-    {
-      localSite.setSiteName(&command[2]);
-      strcpy(reply, "1");
-    }
-
+      strcpy(reply, "0");
     break;
   case 'o':
     //  :SoDD#
