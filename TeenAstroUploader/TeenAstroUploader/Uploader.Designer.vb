@@ -200,7 +200,7 @@ Partial Class Uploader
     'ComboBoxPCBMainUnitF
     '
     Me.ComboBoxPCBMainUnitF.FormattingEnabled = True
-    Me.ComboBoxPCBMainUnitF.Items.AddRange(New Object() {"2.2", "2.3", "2.4 TMC2130", "2.4 TMC5160"})
+    Me.ComboBoxPCBMainUnitF.Items.AddRange(New Object() {"2.2 TMC2130", "2.3 TMC2130", "2.4 TMC2130", "2.4 TMC5160"})
     Me.ComboBoxPCBMainUnitF.Location = New System.Drawing.Point(71, 17)
     Me.ComboBoxPCBMainUnitF.Name = "ComboBoxPCBMainUnitF"
     Me.ComboBoxPCBMainUnitF.Size = New System.Drawing.Size(110, 21)
@@ -260,7 +260,7 @@ Partial Class Uploader
     'ComboBoxFirmwareVersion
     '
     Me.ComboBoxFirmwareVersion.FormattingEnabled = True
-    Me.ComboBoxFirmwareVersion.Items.AddRange(New Object() {"1.1", "1.2"})
+    Me.ComboBoxFirmwareVersion.Items.AddRange(New Object() {"1.2"})
     Me.ComboBoxFirmwareVersion.Location = New System.Drawing.Point(124, 17)
     Me.ComboBoxFirmwareVersion.Name = "ComboBoxFirmwareVersion"
     Me.ComboBoxFirmwareVersion.Size = New System.Drawing.Size(143, 21)
