@@ -7,14 +7,16 @@
 static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":Fo#", ":Fi#" };
 static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":FO#", ":FI#" };
 
-void SmartHandController::setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model)
+void SmartHandController::setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model, const uint8_t nSubmodel)
 {
-  if (EEPROM.length() == 0)
-    EEPROM.begin(1024);
+  if (XEEPROM.length() == 0)
+    XEEPROM.begin(1024);
   if (strlen(version) <= 19) strcpy(_version, version);
 
   //choose a 128x64 display supported by U8G2lib (if not listed below there are many many others in u8g2 library example Sketches)
   Serial.begin(SerialBaud);
+  num_supported_display = nSubmodel;
+  uint8_t submodel = XEEPROM.read(EEPROM_DISPLAYSUBMODEL);
   switch (model)
   {
   case OLED_SH1106:
@@ -24,7 +26,17 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
     display = new U8G2_EXT_SSD1306_128X64_NONAME_F_HW_I2C(U8G2_R0);
     break;
   case OLED_SSD1309:
-    display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0);
+    if (!submodel < num_supported_display)
+    {
+      submodel = 0;
+      XEEPROM.write(EEPROM_DISPLAYSUBMODEL, 0);
+    }
+    if (submodel == 0)
+      display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0);
+    else if (submodel == 1)
+      display = new U8G2_EXT_SSD1309_128X64_NONAME2_F_HW_I2C(U8G2_R0);
+    else
+      display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0);
     break;
   }
   display->begin();

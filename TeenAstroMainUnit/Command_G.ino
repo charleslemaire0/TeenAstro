@@ -635,11 +635,12 @@ void  Command_G()
   case 'P':
   {
     i = command[1] - 'M';
-    XEEPROM.readString(EE_sites + i * SiteSize + EE_site_name, reply);
-    if (reply[0] == 0 || strlen(reply)>15)
+    bool ok = XEEPROM.readString(EE_sites + i * SiteSize + EE_site_name, reply, siteNameLen);
+    ok = ok && reply[0] != 0;
+    if (!ok)
     {
       sprintf(reply, "Site %d", i);
-      XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, reply);
+      XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, reply, siteNameLen);
     }
     strcat(reply, "#");
     break;

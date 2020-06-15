@@ -19,7 +19,7 @@
 #include "DS1302.h"
 #define AccFact 1000
 
-Motor teenAstroStepper;
+Driver teenAstroStepper;
 Stepper stepper(_StepPin, _DirPin);
 
 StepControl controller;
@@ -37,10 +37,10 @@ long oldposition = 0;
 
 DS1302 *rtc = NULL;
 SerCom serCom0(Serial);
-#ifdef VERSION220
+#if VERSION == 220
 SerCom serComSHC(Serial2);
 #endif
-#if defined(VERSION230) || defined(VERSION240)
+#if VERSION == 230 || VERSION == 240
 SerCom serComSHC(Serial1);
 #endif
 #endif

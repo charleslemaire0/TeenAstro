@@ -645,7 +645,7 @@ void SerCom::sayHello(void)
   ser.print(" ");
   ser.print(BOARDINFO);
   ser.print(" ");
-  ser.print(Version);
+  ser.print(FirmwareVersion);
   ser.print("#");
   ser.flush();
 }

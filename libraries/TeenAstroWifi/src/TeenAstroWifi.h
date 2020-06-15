@@ -61,6 +61,7 @@
 #define EEPROM_T1 21
 #define EEPROM_T2 22
 #define EEPROM_BSPEED 23
+#define EEPROM_DISPLAYSUBMODEL 24
 #define EEPROM_start_wifi_sta 100
 #define EEPROM_start_wifi_ap 400
 #define EPPROM_password 50

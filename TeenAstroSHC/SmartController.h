@@ -13,7 +13,7 @@ public:
   {
     OLED_SH1106, OLED_SSD1306, OLED_SSD1309
   };
-  void setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model);
+  void setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model, const uint8_t nSubmodel);
   void update();
 private:
   enum PAGES
@@ -41,6 +41,7 @@ private:
   uint8_t displayT1;
   uint8_t displayT2;
   uint8_t maxContrast;
+  uint8_t num_supported_display;
   float  FocuserPos;
   unsigned long lastpageupdate = millis();
   unsigned long time_last_action = millis();
