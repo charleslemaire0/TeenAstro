@@ -40,8 +40,8 @@ MountDef = { 'mType':['German', 'Fork', 'Alt Az', 'Alt Az Fork'],
 MountReadCmd = { 
       'mType':'GXI','DefaultR':'GXRD',
       'MaxR':'GXRX','GuideR':'GXR0','Acc':'GXRA', 'SlowR':'GXR1','MediumR':'GXR2','FastR':'GXR3',
-      'mrot1':'GXMRR','mge1':'GXMGR','mst1':'GXMSR','mmu1':'GXMMR','mbl1':'GXMBR','mlc1':'GXMCR','mhc1':'GXMcR', 
-      'mrot2':'GXMRD','mge2':'GXMGD','mst2':'GXMSD','mmu2':'GXMMD','mbl2':'GXMBD','mlc2':'GXMCD','mhc2':'GXMcD', 
+      'mrot1':'GXMRR','mge1':'GXMGR','mst1':'GXMSR','mmu1':'GXMMR','mbl1':'GXMBR','mlc1':'GXMcR','mhc1':'GXMCR', 
+      'mrot2':'GXMRD','mge2':'GXMGD','mst2':'GXMSD','mmu2':'GXMMD','mbl2':'GXMBD','mlc2':'GXMcD','mhc2':'GXMCD', 
       'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU'
       } 
 MountSetCmd = {
@@ -51,6 +51,7 @@ MountSetCmd = {
       'mrot2':'SXMRD:','mge2':'SXMGD:','mst2':'SXMSD:','mmu2':'SXMMD:','mbl2':'SXMBD:','mlc2':'SXMCD:','mhc2':'SXMcD:', 
       'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 
       } 
+
 
 
 
@@ -132,7 +133,7 @@ def sendCommand(comm, cmdStr):
     resp =  (comm.read(1)).decode('utf-8')  
   else:
     resp =  (comm.read_some()).decode('utf-8')  
-
+  print (cmdStr, resp)
 
 def setMountType():
   if (comm == None):
@@ -339,7 +340,7 @@ class Site(object):
     setCurrentSite(comm, i)
     sendCommand(comm,':St%+03d*%02d#' % (self.latitude[0], self.latitude[1]))
     sendCommand(comm,':Sg%+04d*%02d#' % (self.longitude[0], self.longitude[1]))
-#    sendCommand(comm,':Se%+04d#' % self.elevation)
+    sendCommand(comm,':Se%+04d#' % self.elevation)
     sendCommand(comm,':SG%+02.1f#' % (-float(self.timeZone)))
     if (i==0):
       sendCommand(comm,':SM%s#' % self.name)
@@ -367,6 +368,9 @@ class Site(object):
 
   def setName(self, name):
     self.name = name  
+
+  def setElevation(self, elev):
+    self.elevation = int(elev)  
 
   # used for saving as JSON
   def serialize(self):
@@ -400,6 +404,7 @@ def updateCurrentSite():
   s.setLongitude(window['EW'].Get(),window['longDeg'].Get(), window['longMin'].Get())
   s.setName(window['siteName'].Get())
   s.setTimeZone(window['timeZone'].Get())
+  s.setElevation(window['elevation'].Get())
 
 # set values into UI "Sites" tab
 def updateSiteTab():
@@ -463,6 +468,10 @@ def updateStatus(comm):
     window['dec'].update("Declination: %s" % getValue(comm, 'GD'))
     window['az'].update("Azimuth: %s" % getValue(comm, 'GZ'))
     window['alt'].update("Altitude: %s" % getValue(comm, 'GA'))
+    window['axis1'].update("Axis 1: %s" % getValue(comm, 'GXDP0'))
+    window['axis2'].update("Axis 2: %s" % getValue(comm, 'GXDP1'))
+    window['pierside'].update("Pier Side: %c" % getValue(comm, 'GXI')[13])
+    resp = getValue(comm, MountReadCmd[tag]) 
 
 
 # Main program
@@ -544,9 +553,15 @@ coordFrame = sg.Frame('Coordinates',
           [sg.Text('Azimuth', key='az',size=(30,1))],
           [sg.Text('Altitude', key='alt',size=(30,1))]])
 
+debugFrame = sg.Frame('Debug', 
+          [[sg.Text('Axis 1 count', key='axis1',size=(30,1))],
+          [sg.Text('Axis 2 count', key='axis2',size=(30,1))],
+          [sg.Text('Pier side', key='pierside',size=(30,1))]],
+          )
+
 mountTab = [[mountTypeRow],[speedFrame, limitFrame],[motFrame1, motFrame2]]
 siteTab = [[siteFrame]]
-statusTab = [[timeFrame],[coordFrame]]
+statusTab = [[timeFrame],[coordFrame],[debugFrame]]
 bottomRow = sg.Output(key='Log',  size=(80, 4))
 
 topRow = [sg.Frame('Comm Port',[sgCommTypeSerial,sgCommTypeTCP,[sg.Button('Connect', key='connect')]])]
