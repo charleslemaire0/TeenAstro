@@ -1,5 +1,5 @@
 command: computeScope
-output: RA dec primaryAxis secondaryAxis 
+output: RA dec primaryAxis secondaryAxis azimuth altitude JD SidT
 
 #coordinates
 RAHA: '6:00:00'

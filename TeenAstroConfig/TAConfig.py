@@ -33,7 +33,7 @@ MountDef = { 'mType':['German', 'Fork', 'Alt Az', 'Alt Az Fork'],
       'mrot2':['Direct','Reverse'],'mge2':[i for i in range(1,60000)],'mst2':[i for i in range(1,400)],'mmu2':[8,16,32,64,128,256],
       'mbl2':[i for i in range(0,999)],'mlc2':[i for i in range(100,2000,10)],'mhc2':[i for i in range(100,2000)], 
       'hl':[i for i in range(-30,30)], 'ol':[i for i in range(60,92)], 'el':[i for i in range(-45,45)], 
-      'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)]
+      'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)],'poleAlign':['True', 'Apparent'], 'corrTrack':['enabled','disabled']
       }
 
 # Commands for getting mount parameters
@@ -42,14 +42,14 @@ MountReadCmd = {
       'MaxR':'GXRX','GuideR':'GXR0','Acc':'GXRA', 'SlowR':'GXR1','MediumR':'GXR2','FastR':'GXR3',
       'mrot1':'GXMRR','mge1':'GXMGR','mst1':'GXMSR','mmu1':'GXMMR','mbl1':'GXMBR','mlc1':'GXMcR','mhc1':'GXMCR', 
       'mrot2':'GXMRD','mge2':'GXMGD','mst2':'GXMSD','mmu2':'GXMMD','mbl2':'GXMBD','mlc2':'GXMcD','mhc2':'GXMCD', 
-      'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU'
+      'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU', 'poleAlign':'GXAp', 'corrTrack':'GXI'
       } 
 MountSetCmd = {
       'mType':'S!','DefaultR':'SXRD:',
       'MaxR':'SXRX:','GuideR':'SXR0:','Acc':'SXRA:', 'SlowR':'SXR1:','MediumR':'SXR2:','FastR':'SXR3:',
       'mrot1':'SXMRR:','mge1':'SXMGR:','mst1':'SXMSR:','mmu1':'SXMMR:','mbl1':'SXMBR:','mlc1':'SXMCR:','mhc1':'SXMcR:', 
       'mrot2':'SXMRD:','mge2':'SXMGD:','mst2':'SXMSD:','mmu2':'SXMMD:','mbl2':'SXMBD:','mlc2':'SXMCD:','mhc2':'SXMcD:', 
-      'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 
+      'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 'poleAlign':'SXAp:', 'corrTrack':'T'
       } 
 
 
@@ -214,6 +214,18 @@ def writeMountData():
     elif (tag == 'SlowR') or (tag == 'MediumR') or (tag == 'FastR'):
       cmdStr += str(int(Mount[tag]))
 
+    elif (tag == 'poleAlign'):
+      if (Mount[tag] == 'True'):
+        cmdStr += 't'
+      else:
+        cmdStr += 'a'
+
+    elif (tag == 'corrTrack'):
+      if (Mount[tag] == 'enabled'):
+        cmdStr += 'c'
+      else:
+        cmdStr += 'n'
+
     else:                         # all other cases
       cmdStr += str(Mount[tag])
 
@@ -306,6 +318,19 @@ def readMountData():
 
     elif (tag == 'SlowR') or (tag == 'MediumR') or (tag == 'FastR'):  
       Mount[tag] = int(float(resp))
+
+    elif (tag == 'poleAlign'):
+      if (resp == 'a'):
+        Mount[tag] = 'Apparent'
+      else:
+        Mount[tag] = 'True'
+
+    elif (tag == 'corrTrack'):
+      ct = resp[10]     # Corrected tracking is byte number 10 in the result string
+      if (ct == 'c'):
+        Mount[tag] = 'enabled'
+      else:  
+        Mount[tag] = 'disabled'
     else:
       Mount[tag] = resp
 
@@ -534,6 +559,10 @@ limitFrame = sg.Frame('Limits',
         [sgLabel('Past Meridian West'), sgSpin('wl')],
         [sgLabel('Under Pole'), sgSpin('ul')]])
 
+alignmentFrame = sg.Frame('Polar Alignment and Tracking', 
+        [[sgLabel('True / Apparent Pole'), sgSpin('poleAlign')],
+        [sgLabel('Corrected Tracking'), sgSpin('corrTrack')]])
+
 siteFrame = sg.Frame('Sites', 
           [[sgLabel('Site Number'), siteSpin('siteNum')],
           [sgLabel('Site Name'), sg.InputText('Site 0', size=(20,1), key='siteName')],
@@ -559,7 +588,7 @@ debugFrame = sg.Frame('Debug',
           [sg.Text('Pier side', key='pierside',size=(30,1))]],
           )
 
-mountTab = [[mountTypeRow],[speedFrame, limitFrame],[motFrame1, motFrame2]]
+mountTab = [[mountTypeRow],[speedFrame, sg.Column([[limitFrame], [alignmentFrame]])],[motFrame1, motFrame2]]
 siteTab = [[siteFrame]]
 statusTab = [[timeFrame],[coordFrame],[debugFrame]]
 bottomRow = sg.Output(key='Log',  size=(80, 4))

@@ -8,14 +8,13 @@ import serial, time, datetime
 yaml = YAML()
 
 
-def openPort():
-    try:
-      comm = Telnet('localhost', '7070')
-#      print('Opening port :'+ 'localhost' + ' 7070')
-      return comm
-    except:
-      print('Error opening port')
-      return None
+# Open TCP port to scopetosky (Javascript program running in background)
+def openScopeToSkyPort():
+#  try:
+    comm = Telnet('localhost', '7070')
+    return comm
+#  except:
+#    return None
 
 # Send a command represented as a JSON object to scopeToSky.js and return the result
 def sendCommand(p, cmd):
@@ -56,29 +55,41 @@ def printResult(resp, fields):
   printCsv (pFields)
 
 def taTest(ta,ra,dec):
-  ta.gotoRaDec(ra,dec)
+  res = ta.gotoRaDec(ra,dec)
+  if (res != 'ok'):
+#    print (res)
+    return None
 
   while ta.isSlewing():
-#    print ('.', end='', flush=True)
     time.sleep(1)
-#  print("%c, %03.4f, %03.4f" % (ta.getPierSide(),ta.getAxis1(), ta.getAxis2()))
   return (ta.getPierSide(),ta.getAxis1(), ta.getAxis2(), ta.getAzimuth(), ta.getAltitude())
 
 
+def printLabels():
+  print ("RA, Dec, computedAxis1, computedAxis2, azimuth, altitude, latitude, longitude, JD, SidT, pierSide, actualAxis1, actualAxis2, delta1, delta2,")
+
+
 # Perform a list of test cases and print the result
-def doTestCases(p, cfgFile, testFile):
+def doTestCases(p, ta, cfgFile, testFile):
   f = open(cfgFile, 'r')   # static configuration 
   cmd = yaml.load(f.read())
+
+  # set the site from config file into TeenAstro
+  ta.setLatitude(float(cmd['latitude']))
+  ta.setLongitude(-float(cmd['longitude'])) # scopetosky counts positive longitudes east of GMT
+  ta.setTimeZone(float(cmd['timeZone']))
+
   with open(testFile, mode='r') as csv_file:       # list of test cases
     testCases = csv.DictReader(csv_file,delimiter=';')
-
-    print ("RA, Dec, computedAxis1, computedAxis2, pierSide, actualAxis1, actualAxis2, delta1, delta2, deltaAz, deltaAlt")
+    printLabels()
     for row in testCases:
-#      for field in inputFields:   # assume fields are RAHA, dec
       # get axis positions from TeenAstro
-      (pierSide,ra, dec, az, alt) = taTest(ta, dms2deg (row['RAHA']),dms2deg (row['dec']))
-      if (ra < 0):
-        ra = ra + 360
+      try:
+        (pierSide,axis1, axis2, az, alt) = taTest(ta, dms2deg (row['RAHA']),dms2deg (row['dec']))
+      except:
+        continue
+      if (axis1 < 0):
+        axis1 = axis1 + 360
       taSidT = ta.readSidTime()
 
       # get axis positions from ScopeToSky
@@ -89,26 +100,66 @@ def doTestCases(p, cfgFile, testFile):
       else:
         cmd['flipped'] = False
       resp = json.loads(sendCommand (p,cmd))
-      delta1 = 3600 * (ra - float (resp['primaryAxis']))
-      delta2 = 3600 * (dec - float (resp['secondaryAxis']))
+      delta1 = 3600 * (axis1 - float (resp['primaryAxis']))
+      delta2 = 3600 * (axis2 - float (resp['secondaryAxis']))
 
-#      scSidT = (24.0 * float(resp['SidT'])) / (2*math.pi)
-#      deltaTime = 3600 * (taSidT - scSidT) 
-      deltaAz = 3600 * (az - float (resp['azimuth']))
-      deltaAlt = 3600 * (alt - float (resp['altitude']))      
+      # no point in comparing below 10 degrees
+      if (float(resp['altitude']) > 10.0):
+        print ("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %c, %3.4f, %3.4f, %4.0f, %4.0f, " % (row['RAHA'], row['dec'], resp['primaryAxis'],resp['secondaryAxis'], resp['azimuth'], resp['altitude'], resp['latitude'], resp['longitude'], resp['JD'], resp['SidT'], pierSide, axis1, axis2, delta1, delta2))
 
-      print ("%s, %s, %s, %s, %c, %3.4f, %3.4f, %4.0f, %4.0f, %4.0f, %4.0f" % (row['RAHA'], row['dec'], resp['primaryAxis'],resp['secondaryAxis'], pierSide, ra, dec, delta1, delta2, deltaAz,deltaAlt))
 
+# Run the default automatic test cases (series of RA circles at constant declination, from 80 degrees to -20 degrees) 
+def runAutoTests(p, ta, cfgFile):
+  f = open(cfgFile, 'r')   # static configuration 
+  
+  cmd = yaml.load(f.read())
+
+  # set the site from config file into TeenAstro
+  ta.setLatitude(float(cmd['latitude']))
+  ta.setLongitude(-float(cmd['longitude'])) # scopetosky counts positive longitudes east of GMT
+  ta.setTimeZone(float(cmd['timeZone']))
+
+  printLabels()
+  for dec in range(80, -40, -20):
+      for ra in range (0, 24, 2):  
+        try:
+          result = taTest(ta, ra, dec)
+          (pierSide,axis1, axis2, az, alt) = result
+        except:
+          continue
+        if (axis1 < 0):
+          axis1 = axis1 + 360
+        taSidT = ta.readSidTime()
+  
+        # get axis positions from ScopeToSky
+        cmd['RAHA'] = '%02d:00:00' % ra 
+        cmd['dec'] = '%02d:00:00' % dec 
+        if (pierSide == 'E'):
+          cmd['flipped'] = True
+        else:
+          cmd['flipped'] = False
+        resp = json.loads(sendCommand (p,cmd))
+        delta1 = 3600 * (axis1 - float (resp['primaryAxis']))
+        delta2 = 3600 * (axis2 - float (resp['secondaryAxis']))
+  
+        # no point in comparing below 10 degrees
+        if (float(resp['altitude']) > 10.0):
+          print ("%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %3.4f, %3.4f, %4.0f, %4.0f, " % (ra, dec, resp['primaryAxis'],resp['secondaryAxis'], resp['azimuth'], resp['altitude'], resp['latitude'], resp['longitude'], resp['JD'], resp['SidT'], pierSide, axis1, axis2, delta1, delta2))
+
+    
 # Declare function to define command-line arguments
 def readOptions(args=sys.argv[1:]):
   parser = argparse.ArgumentParser(description="The parsing commands lists.")
-  parser.add_argument('-c', '--config')
-  parser.add_argument('-t', '--testcase')
+  parser.add_argument('-c', '--config', help='static configuration file - default is config.yaml')
+  parser.add_argument('-t', '--testcase', help='list of test cases- default is to runAutoTests')
+  parser.add_argument('-p', '--porttype', help='TeenAstro Comm port: tcp or serial')
   opts = parser.parse_args(args)
   if opts.config == None:
     opts.config = 'config.yml'
   if opts.testcase == None:
-    opts.testcase = 'tests.csv'
+    opts.testcase = 'auto'
+  if opts.porttype == None:
+    opts.porttype = 'serial'
   return opts
 
 
@@ -117,17 +168,24 @@ def readOptions(args=sys.argv[1:]):
 # Main program
 # Call the function to read the argument values
 options = readOptions()
-p = openPort()
+
+p = openScopeToSkyPort()
 if (p == None):
+  print ('Error connecting to scopetosky')
   sys.exit()
 
-ta = TeenAstro('serial', '/dev/ttyACM0')
-#ta = TeenAstro('tcp', '192.168.0.12')
+# change default types as needed 
+if (options.porttype == 'serial'):
+  ta = TeenAstro('serial', '/dev/ttyACM0')
+else:
+  ta = TeenAstro('tcp', '192.168.0.12')
 
-ta.open()
-if (p == None):
+p2 = ta.open()
+
+if (p2 == None):
   print ('Error connecting to TeenAstro')
   sys.exit()
+
 
 today = datetime.date.today()
 now = datetime.datetime.now()
@@ -135,12 +193,15 @@ now = datetime.datetime.now()
 ta.setDate(today)
 ta.setLocalTime(now)
 
-ta.readSite()
+#ta.readSite()
 ta.readDateTime()
 ta.readSidTime()
 ta.readGears()
 
-doTestCases(p, options.config, options.testcase);
+if (options.testcase == 'auto'):
+  runAutoTests(p, ta, options.config)    
+else:
+  doTestCases(p, ta, options.config, options.testcase);
 
 ta.disableTracking() 
 
