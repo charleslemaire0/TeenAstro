@@ -26,7 +26,7 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
     display = new U8G2_EXT_SSD1306_128X64_NONAME_F_HW_I2C(U8G2_R0);
     break;
   case OLED_SSD1309:
-    if (!submodel < num_supported_display)
+    if (!(submodel < num_supported_display))
     {
       submodel = 0;
       XEEPROM.write(EEPROM_DISPLAYSUBMODEL, 0);
