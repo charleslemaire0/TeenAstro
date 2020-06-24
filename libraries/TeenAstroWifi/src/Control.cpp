@@ -440,6 +440,5 @@ void TeenAstroWifi::processControlGet()
     else if (v == "d1") SetLX200(":r+#");
     else if (v == "dr") SetLX200(":rR#");
     else if (v == "dp") SetLX200(":rP#");
-    Ser.flush();
   }
 }

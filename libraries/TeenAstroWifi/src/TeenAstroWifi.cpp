@@ -486,7 +486,7 @@ void TeenAstroWifi::update()
     if (!cmdSvrClient && cmdSvr.hasClient()) {
       // find free/disconnected spot
       cmdSvrClient = cmdSvr.available();
-      clientTime = millis() + 2000UL;
+      clientTime = millis() + 1000UL;
       break;
     }
     break;
@@ -520,7 +520,7 @@ void TeenAstroWifi::update()
         {
           if (cmdSvrClient && cmdSvrClient.connected()) {
             cmdSvrClient.print(readBuffer);
-            delay(2);
+            delay(3);
           }
         }
       }
