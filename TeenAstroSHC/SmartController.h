@@ -109,6 +109,7 @@ private:
   void menuDateAndTime();
   void menuMount();
   void MenuRates();
+  void MenuDefaultSpeed();
   void MenuTrackingCorrection();
   void menuMountType();
   void menuPolarAlignment();

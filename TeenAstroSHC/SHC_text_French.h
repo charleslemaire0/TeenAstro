@@ -41,6 +41,7 @@
 
 #define T_SPEED "Vitesse"
 #define T_GUIDESPEED "Vitesse guidage"
+#define T_DEFAULTSPEED "Vitesse standard"
 #define T_FASTSPEED "Vitesse rapide"
 #define T_MEDIUMSPEED "Vitesse moyenne"
 #define T_SLOWSPEED "Vitesse lente"
