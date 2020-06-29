@@ -2,7 +2,7 @@
   Private Sub ButtonUploadT_Click(sender As Object, e As EventArgs) Handles ButtonUploadT.Click
     Try
       Dim pHelp As New ProcessStartInfo
-      Dim exepath As String = System.IO.Path.GetDirectoryName(Application.ExecutablePath)
+      Dim exepath As String = """" & System.IO.Path.GetDirectoryName(Application.ExecutablePath) & """"
       pHelp.FileName = "teensy_post_compile.exe"
       Dim pcb As String = ComboBoxPCBMainUnitT.SelectedItem()
       Dim Hexfile As String = ""
@@ -52,7 +52,7 @@
   Private Sub ButtonUploadF_Click(sender As Object, e As EventArgs) Handles ButtonUploadF.Click
     Try
       Dim pHelp As New ProcessStartInfo
-      Dim exepath As String = System.IO.Path.GetDirectoryName(Application.ExecutablePath)
+      Dim exepath As String = """" & System.IO.Path.GetDirectoryName(Application.ExecutablePath) & """"
       pHelp.FileName = "teensy_post_compile.exe"
       Dim pcb As String = ComboBoxPCBMainUnitF.SelectedItem()
       Dim Hexfile As String = ""
@@ -87,7 +87,7 @@
   Private Sub ButtonUploadSHC_Click(sender As Object, e As EventArgs) Handles ButtonUploadSHC.Click
     Try
       Dim pHelp As New ProcessStartInfo
-      Dim exepath As String = System.IO.Path.GetDirectoryName(Application.ExecutablePath)
+      Dim exepath As String = """" & System.IO.Path.GetDirectoryName(Application.ExecutablePath) & """"
       pHelp.FileName = "esptool.exe"
       Dim pcb As String = ComboBoxPCBSHC.SelectedItem()
       Dim fwv As String = ComboBoxFirmwareVersion.SelectedItem
