@@ -9,7 +9,7 @@
 #define SHCFirmwareDate          __DATE__
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
-#define SHCFirmwareVersionMinor  "3"
+#define SHCFirmwareVersionMinor  "2"
 #define SHCFirmwareVersionPatch  "1"
 
 #define NUMPAGES 6
