@@ -223,6 +223,7 @@ void setup()
 void loop()
 {
   static bool forceTracking = false;
+  static unsigned long m;
   static Errors StartLoopError = ERR_NONE;
   StartLoopError = lastError;
   // GUIDING -------------------------------------------------------------------------------------------
@@ -309,7 +310,7 @@ void loop()
 
   // HOUSEKEEPING --------------------------------------------------------------------------------------
   // timer... falls in once a second, keeps the universal time clock ticking,
-  static unsigned long m = millis();
+  m = millis();
   forceTracking = (m - lastSetTrakingEnable < 10000);
   if (!forceTracking) lastSetTrakingEnable = m + 10000;
   if (rtk.updateclockTimer(m))
