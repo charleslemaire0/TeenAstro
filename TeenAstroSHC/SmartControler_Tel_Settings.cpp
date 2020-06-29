@@ -66,12 +66,6 @@ void SmartHandController::menuMainUnitInfo()
       {
         DisplayMessage(ta_MountStatus.getVN(), ta_MountStatus.getVD(), -1);
       }
-      char out1[20];
-      char out2[20];
-      if (DisplayMessageLX200(GetLX200(":GVN#", out1, 20)) && DisplayMessageLX200(GetLX200(":GVD#", out2, 20)))
-      {
-
-      }
       break;
     case 2:
       DisplayMessageLX200(SetLX200(":$!#"), false);

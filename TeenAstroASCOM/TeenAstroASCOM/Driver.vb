@@ -269,7 +269,7 @@ Public Class Telescope
 
   Private Sub ConnectIP(value As Boolean)
     If value Then
-      mupdateRate = 50
+      mupdateRate = -1
       If Not System.Net.IPAddress.TryParse(mIP, mobjectIP) Then
         MsgBox(mIP + " is Not AddressOf valid IP Address")
         Return
@@ -334,7 +334,7 @@ Public Class Telescope
 
     Dim ClientSocket As System.Net.Sockets.TcpClient = New Net.Sockets.TcpClient
     Dim result As IAsyncResult = ClientSocket.BeginConnect(mobjectIP, mPort, Nothing, Nothing)
-    Dim online = result.AsyncWaitHandle.WaitOne(1000, True)
+    Dim online = result.AsyncWaitHandle.WaitOne(500, True)
     If Not online Then
       ClientSocket.Close()
       mconnectedState = False
@@ -350,29 +350,30 @@ Public Class Telescope
         Case 0
           getStream = True
         Case 1 To 2
-          Dim myReadBuffer(ClientSocket.ReceiveBufferSize) As Byte
-          Dim myCompleteMessage As StringBuilder = New StringBuilder()
-          Dim numberOfBytesRead As Integer = 0
-          ' Incoming message may be larger than the buffer size.
-          Do
-            numberOfBytesRead = ServerStream.Read(myReadBuffer, 0, myReadBuffer.Length)
-            myCompleteMessage.AppendFormat("{0}", Encoding.ASCII.GetString(myReadBuffer, 0, numberOfBytesRead))
-          Loop While ServerStream.DataAvailable
-          buf = myCompleteMessage.ToString()
-          If Mode = 1 And buf <> "" Then
-            buf = buf.Substring(0, 1)
-          ElseIf Mode = 2 And buf <> "" Then
-            buf = buf.Split("#")(0)
+          If ServerStream.CanRead Then
+            Dim myReadBuffer(ClientSocket.ReceiveBufferSize) As Byte
+            Dim myCompleteMessage As StringBuilder = New StringBuilder()
+            Dim numberOfBytesRead As Integer = 0
+            ' Incoming message may be larger than the buffer size.
+            Do
+              numberOfBytesRead = ServerStream.Read(myReadBuffer, 0, myReadBuffer.Length)
+              myCompleteMessage.AppendFormat("{0}", Encoding.ASCII.GetString(myReadBuffer, 0, numberOfBytesRead))
+            Loop While ServerStream.DataAvailable
+            buf = myCompleteMessage.ToString()
+            If Mode = 1 And buf <> "" Then
+              buf = buf.Substring(0, 1)
+            ElseIf Mode = 2 And buf <> "" Then
+              buf = buf.Split("#")(0)
+            End If
+            getStream = buf <> ""
+          Else
+            getStream = False
           End If
-          getStream = buf <> ""
+
       End Select
-      ServerStream.Close()
-      ServerStream.Dispose()
     Catch ex As Exception
       getStream = False
     End Try
-    ClientSocket.Close()
-    ClientSocket = Nothing
   End Function
 
   Private Function GetSerial(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean

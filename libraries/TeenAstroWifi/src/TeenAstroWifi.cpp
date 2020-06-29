@@ -23,10 +23,10 @@ const char html_main_css_control3[] PROGMEM = ".bb { height: 2.5em; width: 8em;}
 const char html_main_css_control4[] PROGMEM = ".bct { font-family: Helvetica; font-size: 125% }";
 const char html_main_cssE[] PROGMEM = "</STYLE>";
 
-const char html_onstep_header1[] PROGMEM = "<div class='t'><table width='100%%'><tr><td><b><font size='5'>";
-const char html_onstep_header2[] PROGMEM = "</font></b></td><td align='right'><b>" Product " " FirmwareVersionMajor"."FirmwareVersionMinor "."FirmwareVersionPatch" (TeenAstro ";
-const char html_onstep_header3[] PROGMEM = ")</b></td></tr></table>";
-const char html_onstep_header4[] PROGMEM = "</div><div class='b'>\r\n";
+const char html_header1[] PROGMEM = "<div class='t'><table width='100%%'><tr><td><b><font size='5'>";
+const char html_header2[] PROGMEM = "</font></b></td><td align='right'><b>" Product " " ServerFirmwareVersionMajor "." ServerFirmwareVersionMinor "." ServerFirmwareVersionPatch ", Main Unit ";
+const char html_header3[] PROGMEM = "</b></td></tr></table>";
+const char html_header4[] PROGMEM = "</div><div class='b'>\r\n";
 
 const char html_links1S[] PROGMEM = "<a href='/index.htm' style='background-color: #552222;'>Status</a>";
 const char html_links1N[] PROGMEM = "<a href='/index.htm'>Status</a>";
@@ -222,14 +222,13 @@ void TeenAstroWifi::preparePage(String &data, int page)
   data += FPSTR(html_main_cssE);
   data += FPSTR(html_headE);
   data += FPSTR(html_bodyB);
-  // get status
-  if (!ta_MountStatus.validConnection()) ta_MountStatus.updateV();
+ 
   // finish the standard http response header
-  data += FPSTR(html_onstep_header1);
-  if (ta_MountStatus.validConnection()) data += ta_MountStatus.getVP(); else data += "Connection to TeenAstro Main unit is lost";
-  data += FPSTR(html_onstep_header2);
-  if (ta_MountStatus.validConnection()) data += ta_MountStatus.getVN(); else data += "?";
-  data += FPSTR(html_onstep_header3);
+  data += FPSTR(html_header1);
+  if (ta_MountStatus.hasInfoV()) data += ta_MountStatus.getVP(); else data += "Connection to TeenAstro Main unit is lost";
+  data += FPSTR(html_header2);
+  if (ta_MountStatus.hasInfoV()) data += ta_MountStatus.getVN(); else data += "?";
+  data += FPSTR(html_header3);
   data += page == 1 ? FPSTR(html_links1S) : FPSTR(html_links1N);
   data += page == 2 ? FPSTR(html_links2S) : FPSTR(html_links2N);
   data += page == 3 ? FPSTR(html_links3S) : FPSTR(html_links3N);
@@ -241,7 +240,7 @@ void TeenAstroWifi::preparePage(String &data, int page)
 #ifndef OETHS
   data += page == 6 ? FPSTR(html_links6S) : FPSTR(html_links6N);
 #endif
-  data += FPSTR(html_onstep_header4);
+  data += FPSTR(html_header4);
 }
 
 void TeenAstroWifi::writeStation2EEPROM(const int& k)
@@ -486,7 +485,7 @@ void TeenAstroWifi::update()
     if (!cmdSvrClient && cmdSvr.hasClient()) {
       // find free/disconnected spot
       cmdSvrClient = cmdSvr.available();
-      clientTime = millis() + 2000UL;
+      clientTime = millis() + 1000UL;
       break;
     }
     break;
@@ -520,7 +519,7 @@ void TeenAstroWifi::update()
         {
           if (cmdSvrClient && cmdSvrClient.connected()) {
             cmdSvrClient.print(readBuffer);
-            delay(2);
+            delay(3);
           }
         }
       }

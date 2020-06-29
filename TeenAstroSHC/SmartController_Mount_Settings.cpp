@@ -54,7 +54,7 @@ void SmartHandController::MenuRates()
   uint8_t tmp_sel;
   while (!exitMenu)
   {
-    const char *string_list = T_MAX "\n" T_FAST "\n" T_MEDIUM " \n" T_SLOW " \n" T_GUIDESPEED;
+    const char *string_list = T_MAX "\n" T_FAST "\n" T_MEDIUM " \n" T_SLOW " \n" T_GUIDESPEED "\n" T_DEFAULTSPEED;
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_SPEED, s_sel, string_list);
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
     switch (tmp_sel)
@@ -76,11 +76,34 @@ void SmartHandController::MenuRates()
     case 5:
       menuGuideRate();
       break;
+    case 6:
+      MenuDefaultSpeed();
+      break;
     default:
       break;
     }
   }
 }
+
+void SmartHandController::MenuDefaultSpeed()
+{
+  static uint8_t s_sel = 1;
+  char out[10];
+  uint8_t tmp_sel;
+  if (DisplayMessageLX200(GetLX200(":GXRD#", out, sizeof(out))))
+  {
+    s_sel = out[0] - '0' + 1;
+    s_sel = s_sel > 5 ? 4 : s_sel;
+    const char *string_list = T_GUIDESPEED " \n" T_SLOW "\n"  T_MEDIUM "\n" T_FAST "\n" T_MAX;
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_DEFAULTSPEED, s_sel, string_list);
+    if (tmp_sel)
+    {
+      sprintf(out, ":SXRD,%u#", tmp_sel - 1);
+      DisplayMessageLX200(SetLX200(out), false);
+    }
+  }
+}
+
 
 void SmartHandController::MenuTrackingCorrection()
 {
@@ -190,7 +213,7 @@ void SmartHandController::menuGuideRate()
     float guiderate = atof(&outRate[0]);
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_GUIDESPEED, "", &guiderate, 0.1f, 1.f, 4u, 2u, "x"))
     {
-      sprintf(cmd, ":SXR0:%03d#", (int)(guiderate * 100));
+      sprintf(cmd, ":SXR0,%03d#", (int)(guiderate * 100));
       DisplayMessageLX200(SetLX200(cmd));
     }
   }
@@ -201,14 +224,14 @@ void SmartHandController::menuRate(int r)
   char outRate[20];
   char cmd[20];
   sprintf(cmd, ":GXR%d#", r);
-  char title[20] ;
+  char title[20];
   r == 3 ? strcpy(title, T_FASTSPEED) : (r == 2 ? strcpy(title, T_MEDIUMSPEED) : strcpy(title, T_SLOWSPEED));
   if (DisplayMessageLX200(GetLX200(cmd, outRate, sizeof(outRate))))
   {
     float rate = atof(&outRate[0]);
     if (display->UserInterfaceInputValueFloat(&buttonPad, title, "", &rate, 1.f, 255.f, 4u, 0u, "x"))
     {
-      sprintf(cmd, ":SXR%d:%03d#", r, (int)(rate));
+      sprintf(cmd, ":SXR%d,%03d#", r, (int)(rate));
       DisplayMessageLX200(SetLX200(cmd));
     }
   }
@@ -224,7 +247,7 @@ void SmartHandController::menuMaxRate()
     float maxrate = (float)strtol(&outRate[0], NULL, 10);
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_MAXSPEED, "", &maxrate, 32, 4000, 4, 0, ""))
     {
-      sprintf(cmd, ":SXRX:%04d#", (int)maxrate);
+      sprintf(cmd, ":SXRX,%04d#", (int)maxrate);
       DisplayMessageLX200(SetLX200(cmd));
     }
   }
@@ -240,7 +263,7 @@ void SmartHandController::menuAcceleration()
     float acc = atof(&outAcc[0]);
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_ACCELERATION, "", &acc, 0.1, 25, 4, 1, " deg."))
     {
-      sprintf(cmd, ":SXRA:%04d#", (int)(acc*10.));
+      sprintf(cmd, ":SXRA,%04d#", (int)(acc*10.));
       DisplayMessageLX200(SetLX200(cmd));
     }
   }

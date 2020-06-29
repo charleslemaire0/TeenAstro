@@ -139,7 +139,8 @@ public:
   bool        getLat(double &lat);
   bool        getTrackingRate(double &r);
   bool        getGuidingRate(unsigned char &g);
-  bool validConnection() { return m_isValid; };
+  bool checkConnection(char* major, char* minor);
+  bool isConnectionValid() { return m_isValid; };
   bool atHome();
   bool Parking();
   bool Parked();
