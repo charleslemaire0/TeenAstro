@@ -11,6 +11,7 @@ import serial.tools.list_ports
 from threading import Timer
 
 # Helper function
+# convert from float to (d,m,s)
 def deg2dms(dd):
     negative = dd < 0
     dd = abs(dd)
@@ -24,6 +25,11 @@ def deg2dms(dd):
         else:
             seconds = -seconds
     return (degrees,minutes,seconds)
+
+def deg2dm(dd):
+  (d,m,s) = deg2dms(dd)
+  return (d,m)
+
 
 # converts from Meade formats sDD*MM’SS and HH:MM:SS
 def dms2deg(dms):
@@ -69,7 +75,6 @@ class TeenAstro(object):
     else:
       try:
         self.port = Telnet(self.portName, '9999')          # 9999 is the hard-coded IP port of TeenAstro
-        print('Opening port '+ self.portName + ' 9999')
         return self.port
       except:
         print('Error opening port')
@@ -106,6 +111,30 @@ class TeenAstro(object):
       self.latitude = dms2deg(self.getValue(':Gt#'))
       self.longitude = dms2deg(self.getValue(':Gg#'))
       self.UTCOffset = float(self.getValue(':GG#'))
+
+  def setLatitude(self, latitude):
+    if (self.sendCommand(':St%+03d*%02d#' % (deg2dm(latitude))) == '1'):
+      self.latitude = latitude
+    else:
+      print ('Error setting latitude')  
+ 
+  def setLongitude(self, longitude):
+    if (self.sendCommand(':Sg%+04d*%02d#' % (deg2dm(longitude))) == '1'):
+      self.longitude = longitude
+    else:
+      print ('Error setting longitude')  
+
+  def setTimeZone(self, timeZone):
+    if (self.sendCommand(':SG%+02.1f#' % (-float(timeZone))) == '1'):
+      self.timeZone = timeZone
+    else:
+      print ('Error setting timeZone')  
+ 
+  def setElevation(self, elevation):
+    if (self.sendCommand(':Se%+04d#' % elevation) == 1):
+      self.elevation = elevation
+    else:
+      print ('Error setting elevation')  
 
   def readDateTime(self):
     if (self.port != None):
@@ -182,22 +211,22 @@ class TeenAstro(object):
     self.sendCommand(":Sa%+02d*%02u:%02u#" % dmsAlt)
     self.sendCommand(":MA#")
 
+
   def gotoRaDec(self, ra, dec):
     dmsRa = deg2dms(ra)
     dmsDec = deg2dms(dec)
     res1 = self.sendCommand(":Sr%02u:%02u:%02u#" % dmsRa)
     if (res1 != '1'):
-      print ("error setting RA")
-      return
+      return ("error setting RA")
 
     res2 = self.sendCommand(":Sd%+02d*%02u:%02u#" % dmsDec)
     if (res2 != '1'):
-      print ("error setting RA")
-      return
+      return ("error setting Dec")
 
     res = self.sendCommand(":MS#")
     if (res != '0'):
-      print ("gotoRaDec error:", res)
+      return ("gotoRaDec error %s:" % res)
+    return ("ok")
 
   def enableTracking(self):
     self.sendCommand(":Te#")
@@ -210,7 +239,6 @@ class TeenAstro(object):
 
   def disableTrackingCompensation(self):
     self.sendCommand(":Tn#")
-
 
   def getAltitude(self):
     self.altitude = dms2deg(self.getValue(':GA#')[:-1])
@@ -227,6 +255,14 @@ class TeenAstro(object):
   def getDeclination(self):
     self.declination = dms2deg(self.getValue(':GD#')[:-1])
     return self.declination
+
+  def getLatitude(self):
+    self.latitude = dms2deg(self.getValue(':Gt#')[:-1])
+    return self.latitude
+
+  def getLongitude(self):
+    self.longitude = dms2deg(self.getValue(':Gg#')[:-1])
+    return self.longitude
 
 
 # Main program

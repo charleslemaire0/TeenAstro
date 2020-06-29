@@ -1,6 +1,0 @@
-coordinates/RAHA, coordinates/dec, coordinates/includeCorrections, telescope/includeRefraction,primaryAxis,secondaryAxis,
-05:00:00,30:00:00,True,False,99.3993,30.0292,
-04:00:00,20:00:00,False,False,114.7279,20,
-03:00:00,10:00:00,False,False,129.7279,10,
-03:00:00,10:00:00,True,False,129.4472,10.0822,
-03:00:00,10:00:00,True,True,129.4643,10.1012,

@@ -33,24 +33,25 @@ MountDef = { 'mType':['German', 'Fork', 'Alt Az', 'Alt Az Fork'],
       'mrot2':['Direct','Reverse'],'mge2':[i for i in range(1,60000)],'mst2':[i for i in range(1,400)],'mmu2':[8,16,32,64,128,256],
       'mbl2':[i for i in range(0,999)],'mlc2':[i for i in range(100,2000,10)],'mhc2':[i for i in range(100,2000)], 
       'hl':[i for i in range(-30,30)], 'ol':[i for i in range(60,92)], 'el':[i for i in range(-45,45)], 
-      'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)]
+      'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)],'poleAlign':['True', 'Apparent'], 'corrTrack':['enabled','disabled']
       }
 
 # Commands for getting mount parameters
 MountReadCmd = { 
       'mType':'GXI','DefaultR':'GXRD',
       'MaxR':'GXRX','GuideR':'GXR0','Acc':'GXRA', 'SlowR':'GXR1','MediumR':'GXR2','FastR':'GXR3',
-      'mrot1':'GXMRR','mge1':'GXMGR','mst1':'GXMSR','mmu1':'GXMMR','mbl1':'GXMBR','mlc1':'GXMCR','mhc1':'GXMcR', 
-      'mrot2':'GXMRD','mge2':'GXMGD','mst2':'GXMSD','mmu2':'GXMMD','mbl2':'GXMBD','mlc2':'GXMCD','mhc2':'GXMcD', 
-      'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU'
+      'mrot1':'GXMRR','mge1':'GXMGR','mst1':'GXMSR','mmu1':'GXMMR','mbl1':'GXMBR','mlc1':'GXMcR','mhc1':'GXMCR', 
+      'mrot2':'GXMRD','mge2':'GXMGD','mst2':'GXMSD','mmu2':'GXMMD','mbl2':'GXMBD','mlc2':'GXMcD','mhc2':'GXMCD', 
+      'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU', 'poleAlign':'GXAp', 'corrTrack':'GXI'
       } 
 MountSetCmd = {
       'mType':'S!','DefaultR':'SXRD:',
       'MaxR':'SXRX:','GuideR':'SXR0:','Acc':'SXRA:', 'SlowR':'SXR1:','MediumR':'SXR2:','FastR':'SXR3:',
       'mrot1':'SXMRR:','mge1':'SXMGR:','mst1':'SXMSR:','mmu1':'SXMMR:','mbl1':'SXMBR:','mlc1':'SXMCR:','mhc1':'SXMcR:', 
       'mrot2':'SXMRD:','mge2':'SXMGD:','mst2':'SXMSD:','mmu2':'SXMMD:','mbl2':'SXMBD:','mlc2':'SXMCD:','mhc2':'SXMcD:', 
-      'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 
+      'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 'poleAlign':'SXAp:', 'corrTrack':'T'
       } 
+
 
 
 
@@ -132,7 +133,7 @@ def sendCommand(comm, cmdStr):
     resp =  (comm.read(1)).decode('utf-8')  
   else:
     resp =  (comm.read_some()).decode('utf-8')  
-
+  print (cmdStr, resp)
 
 def setMountType():
   if (comm == None):
@@ -212,6 +213,18 @@ def writeMountData():
 
     elif (tag == 'SlowR') or (tag == 'MediumR') or (tag == 'FastR'):
       cmdStr += str(int(Mount[tag]))
+
+    elif (tag == 'poleAlign'):
+      if (Mount[tag] == 'True'):
+        cmdStr += 't'
+      else:
+        cmdStr += 'a'
+
+    elif (tag == 'corrTrack'):
+      if (Mount[tag] == 'enabled'):
+        cmdStr += 'c'
+      else:
+        cmdStr += 'n'
 
     else:                         # all other cases
       cmdStr += str(Mount[tag])
@@ -305,6 +318,19 @@ def readMountData():
 
     elif (tag == 'SlowR') or (tag == 'MediumR') or (tag == 'FastR'):  
       Mount[tag] = int(float(resp))
+
+    elif (tag == 'poleAlign'):
+      if (resp == 'a'):
+        Mount[tag] = 'Apparent'
+      else:
+        Mount[tag] = 'True'
+
+    elif (tag == 'corrTrack'):
+      ct = resp[10]     # Corrected tracking is byte number 10 in the result string
+      if (ct == 'c'):
+        Mount[tag] = 'enabled'
+      else:  
+        Mount[tag] = 'disabled'
     else:
       Mount[tag] = resp
 
@@ -339,7 +365,7 @@ class Site(object):
     setCurrentSite(comm, i)
     sendCommand(comm,':St%+03d*%02d#' % (self.latitude[0], self.latitude[1]))
     sendCommand(comm,':Sg%+04d*%02d#' % (self.longitude[0], self.longitude[1]))
-#    sendCommand(comm,':Se%+04d#' % self.elevation)
+    sendCommand(comm,':Se%+04d#' % self.elevation)
     sendCommand(comm,':SG%+02.1f#' % (-float(self.timeZone)))
     if (i==0):
       sendCommand(comm,':SM%s#' % self.name)
@@ -367,6 +393,9 @@ class Site(object):
 
   def setName(self, name):
     self.name = name  
+
+  def setElevation(self, elev):
+    self.elevation = int(elev)  
 
   # used for saving as JSON
   def serialize(self):
@@ -400,6 +429,7 @@ def updateCurrentSite():
   s.setLongitude(window['EW'].Get(),window['longDeg'].Get(), window['longMin'].Get())
   s.setName(window['siteName'].Get())
   s.setTimeZone(window['timeZone'].Get())
+  s.setElevation(window['elevation'].Get())
 
 # set values into UI "Sites" tab
 def updateSiteTab():
@@ -463,6 +493,10 @@ def updateStatus(comm):
     window['dec'].update("Declination: %s" % getValue(comm, 'GD'))
     window['az'].update("Azimuth: %s" % getValue(comm, 'GZ'))
     window['alt'].update("Altitude: %s" % getValue(comm, 'GA'))
+    window['axis1'].update("Axis 1: %s" % getValue(comm, 'GXDP0'))
+    window['axis2'].update("Axis 2: %s" % getValue(comm, 'GXDP1'))
+    window['pierside'].update("Pier Side: %c" % getValue(comm, 'GXI')[13])
+    resp = getValue(comm, MountReadCmd[tag]) 
 
 
 # Main program
@@ -525,6 +559,10 @@ limitFrame = sg.Frame('Limits',
         [sgLabel('Past Meridian West'), sgSpin('wl')],
         [sgLabel('Under Pole'), sgSpin('ul')]])
 
+alignmentFrame = sg.Frame('Polar Alignment and Tracking', 
+        [[sgLabel('True / Apparent Pole'), sgSpin('poleAlign')],
+        [sgLabel('Corrected Tracking'), sgSpin('corrTrack')]])
+
 siteFrame = sg.Frame('Sites', 
           [[sgLabel('Site Number'), siteSpin('siteNum')],
           [sgLabel('Site Name'), sg.InputText('Site 0', size=(20,1), key='siteName')],
@@ -544,9 +582,15 @@ coordFrame = sg.Frame('Coordinates',
           [sg.Text('Azimuth', key='az',size=(30,1))],
           [sg.Text('Altitude', key='alt',size=(30,1))]])
 
-mountTab = [[mountTypeRow],[speedFrame, limitFrame],[motFrame1, motFrame2]]
+debugFrame = sg.Frame('Debug', 
+          [[sg.Text('Axis 1 count', key='axis1',size=(30,1))],
+          [sg.Text('Axis 2 count', key='axis2',size=(30,1))],
+          [sg.Text('Pier side', key='pierside',size=(30,1))]],
+          )
+
+mountTab = [[mountTypeRow],[speedFrame, sg.Column([[limitFrame], [alignmentFrame]])],[motFrame1, motFrame2]]
 siteTab = [[siteFrame]]
-statusTab = [[timeFrame],[coordFrame]]
+statusTab = [[timeFrame],[coordFrame],[debugFrame]]
 bottomRow = sg.Output(key='Log',  size=(80, 4))
 
 topRow = [sg.Frame('Comm Port',[sgCommTypeSerial,sgCommTypeTCP,[sg.Button('Connect', key='connect')]])]
