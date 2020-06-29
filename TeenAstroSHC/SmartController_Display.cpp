@@ -292,23 +292,6 @@ void SmartHandController::drawIntro()
   delay(1500);
 }
 
-void SmartHandController::drawLoad()
-{
-  display->firstPage();
-  uint8_t x = 0;
-  do
-  {
-    display->setFont(u8g2_font_helvR14_tr);
-    x = (display->getDisplayWidth() - display->getUTF8Width("SHC " T_VERSION)) / 2;
-    display->drawStr(x, display->getDisplayHeight() / 2. - 6, "SHC" T_VERSION);
-    x = (display->getDisplayWidth() - display->getUTF8Width(_version)) / 2;
-    display->drawStr(x, display->getDisplayHeight() / 2. + 22, _version);
-  }
-  while (display->nextPage());
-  delay(1500);
-  display->setFont(u8g2_font_helvR12_te);
-}
-
 void SmartHandController::updateMainDisplay(PAGES page)
 {
   u8g2_t *u8g2 = display->getU8g2();

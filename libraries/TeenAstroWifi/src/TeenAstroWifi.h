@@ -22,11 +22,11 @@
 #include <TeenAstroMountStatus.h>
 
 #define Product "TeenAstro Server"
-#define FirmwareDate          __DATE__
-#define FirmwareTime          __TIME__
-#define FirmwareVersionMajor  "1"
-#define FirmwareVersionMinor  "2"
-#define FirmwareVersionPatch  "1"
+#define ServerFirmwareDate          __DATE__
+#define ServerFirmwareTime          __TIME__
+#define ServerFirmwareVersionMajor  "1"
+#define ServerFirmwareVersionMinor  "2"
+#define ServerFirmwareVersionPatch  "1"
 
 
 // -----------------------------------------------------------------------------------
