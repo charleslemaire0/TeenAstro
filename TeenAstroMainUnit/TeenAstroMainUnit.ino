@@ -562,31 +562,22 @@ void initTransformation(bool reset)
     {
       double ha, dec;
       apparentPole = XEEPROM.read(EE_ApparentPole);
-      double poleAlt = abs(*localSite.latitude());
-      if (apparentPole && poleAlt > 10)
+      double cosLat = *localSite.cosLat();
+      double sinLat = *localSite.sinLat();
+      if (apparentPole && abs(*localSite.latitude() > 10))
       {
-        Topocentric2Apparent(&poleAlt);
-        if (localSite.latitude() < 0)
-        {
-          alignment.addReferenceDeg(180, poleAlt, geoA1.poleDef / geoA1.stepsPerDegree, geoA2.poleDef / geoA2.stepsPerDegree);
-          alignment.addReferenceDeg(180, poleAlt + 90, geoA1.poleDef / geoA1.stepsPerDegree, geoA2.poleDef / geoA2.stepsPerDegree + 90);
-        }
-        else
-        {
-          alignment.addReferenceDeg(0, poleAlt, geoA1.poleDef / geoA1.stepsPerDegree, geoA2.poleDef / geoA2.stepsPerDegree);
-          alignment.addReferenceDeg(0, poleAlt + 90, geoA1.poleDef / geoA1.stepsPerDegree, geoA2.poleDef / geoA2.stepsPerDegree + 90);
-        }
-        alignment.calculateThirdReference();
-      }
-      else
-      {
-        HorTopoToEqu(180, 0, &ha, &dec, localSite.cosLat(), localSite.sinLat());
-        alignment.addReferenceDeg(180, 0, ha, dec);
-        HorTopoToEqu(180, 90, &ha, &dec, localSite.cosLat(), localSite.sinLat());
-        alignment.addReferenceDeg(180, 90, ha, dec);
-        alignment.calculateThirdReference();
-      }
-
+        double val = abs(*localSite.latitude());
+        Topocentric2Apparent(&val);
+        if (*localSite.latitude() < 0)
+          val = -val;
+        cosLat = cos(val / Rad);
+        sinLat = sin(val / Rad);
+      }   
+      HorTopoToEqu(180, 0, &ha, &dec, &cosLat, &sinLat);
+      alignment.addReferenceDeg(180, 0, ha, dec);
+      HorTopoToEqu(180, 90, &ha, &dec, &cosLat, &sinLat);
+      alignment.addReferenceDeg(180, 90, ha, dec);
+      alignment.calculateThirdReference();
     }
   }
 }
