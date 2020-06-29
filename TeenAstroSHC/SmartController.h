@@ -5,6 +5,13 @@
 #include <TeenAstroPad.h>
 #include "XEEPROM.hpp"
 
+#define Product "Teenastro SHC"
+#define SHCFirmwareDate          __DATE__
+#define SHCFirmwareTime          __TIME__
+#define SHCFirmwareVersionMajor  "1"
+#define SHCFirmwareVersionMinor  "2"
+#define SHCFirmwareVersionPatch  "1"
+
 #define NUMPAGES 6
 class SmartHandController
 {
@@ -57,7 +64,6 @@ private:
   long angleDEC = 0;
   void manualMove(bool &moving);
   void drawIntro();
-  void drawLoad();
   void updateMainDisplay(PAGES page);
   void tickButtons();
   bool buttonPressed();
@@ -109,6 +115,7 @@ private:
   void menuDateAndTime();
   void menuMount();
   void MenuRates();
+  void MenuDefaultSpeed();
   void MenuTrackingCorrection();
   void menuMountType();
   void menuPolarAlignment();

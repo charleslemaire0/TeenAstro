@@ -15,6 +15,7 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
 
   //choose a 128x64 display supported by U8G2lib (if not listed below there are many many others in u8g2 library example Sketches)
   Serial.begin(SerialBaud);
+
   num_supported_display = nSubmodel;
   uint8_t submodel = XEEPROM.read(EEPROM_DISPLAYSUBMODEL);
   switch (model)
@@ -26,7 +27,7 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
     display = new U8G2_EXT_SSD1306_128X64_NONAME_F_HW_I2C(U8G2_R0);
     break;
   case OLED_SSD1309:
-    if (!submodel < num_supported_display)
+    if (!(submodel < num_supported_display))
     {
       submodel = 0;
       XEEPROM.write(EEPROM_DISPLAYSUBMODEL, 0);
@@ -42,6 +43,7 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
   display->begin();
   drawIntro();
   buttonPad.setup(pin, active);
+
   tickButtons();
   maxContrast = EEPROM.read(EEPROM_Contrast);
   display->setContrast(maxContrast);
@@ -64,8 +66,16 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
   DebugSer.begin(9600);
   delay(1000);
 #endif
-
-  drawLoad();
+  display->setFont(u8g2_font_helvR12_te);
+  DisplayMessage("SHC " T_VERSION, _version, 1500);
+  int k = 0;
+  while (!ta_MountStatus.isConnectionValid() && k < 10)
+  {
+    ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor);
+    delay(200);
+    k++;
+  }
+  DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
 }
 
 void SmartHandController::update()
@@ -74,6 +84,16 @@ void SmartHandController::update()
   top = millis();
   if (isSleeping())
     return;
+  if (!ta_MountStatus.isConnectionValid() && ta_MountStatus.hasInfoV())
+  {
+    ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor);
+    buttonPad.setMenuMode();
+    DisplayMessage("!! " T_ERROR " !!", T_VERSION, -1);
+    DisplayMessage("SHC " T_VERSION, _version, 1500);
+    DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
+    buttonPad.setControlerMode();
+    return;
+  }
   if (powerCycleRequired)
   {
     display->sleepOff();
@@ -86,7 +106,6 @@ void SmartHandController::update()
 #ifdef ARDUINO_ESP8266_WEMOS_D1MINI
     ESP.reset();
 #endif
-
     return;
   }
   if (ta_MountStatus.notResponding())

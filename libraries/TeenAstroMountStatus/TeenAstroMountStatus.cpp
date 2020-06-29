@@ -49,13 +49,10 @@ void TeenAstroMountStatus::updateV()
   if (!m_hasInfoV)
   {
     m_hasInfoV = GetLX200(":GVP#", m_TempVP, sizeof(m_TempVP)) == LX200VALUEGET;
+    m_hasInfoV = m_hasInfoV && !strcmp(m_TempVP, "TeenAstro");
     m_hasInfoV = m_hasInfoV && GetLX200(":GVN#", m_TempVN, sizeof(m_TempVN)) == LX200VALUEGET;
     m_hasInfoV = m_hasInfoV && GetLX200(":GVD#", m_TempVD, sizeof(m_TempVD)) == LX200VALUEGET;
     m_hasInfoV ? 0 : m_connectionFailure++;
-    if (!m_isValid && strstr(m_TempVP, "TeenAstro"))
-    {
-      m_isValid = true;
-    }
   }
 };
 void TeenAstroMountStatus::updateRaDec()
@@ -246,6 +243,16 @@ bool TeenAstroMountStatus::getLat(double &lat)
 bool TeenAstroMountStatus::getTrackingRate(double &r)
 {
   return GetTrackingRateLX200(r) == LX200VALUEGET;
+};
+bool TeenAstroMountStatus::checkConnection(char* major, char* minor)
+{
+  if (!m_isValid)
+  { 
+    updateV();
+    m_isValid = hasInfoV() &&
+      m_TempVN[0] == major[0] && m_TempVN[2] == minor[0];
+  }
+  return m_isValid;
 };
 bool TeenAstroMountStatus::atHome()
 {

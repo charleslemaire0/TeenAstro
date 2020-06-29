@@ -47,7 +47,6 @@ void TeenAstroWifi::handleRoot()
   char temp1[80] = "";
   char temp2[80] = "";
   //updates
-  ta_MountStatus.updateV();
   ta_MountStatus.updateTime();
   ta_MountStatus.updateRaDec();
   ta_MountStatus.updateMount();

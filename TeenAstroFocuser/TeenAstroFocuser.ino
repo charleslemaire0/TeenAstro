@@ -29,13 +29,13 @@ void setup()
   digitalWrite(LEDPin, HIGH);
   Serial.begin(9600);
 
-#ifdef VERSION220
+#if VERSION == 220
   Serial2.setRX(FocuserRX);
   Serial2.setTX(FocuserTX);
   Serial2.begin(56000);
   Serial2.setTimeout(10);
 #endif
-#if defined(VERSION230) || defined (VERSION240)
+#if VERSION == 230 || VERSION == 240 
   Serial1.setRX(FocuserRX);
   Serial1.setTX(FocuserTX);
   Serial1.begin(56000);

@@ -120,6 +120,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     case 'G':
       if (strchr("AaCcDdegGhLMNOPmnoRrSTtVXZ", command[2]))
       {
+        timeOutMs *= 2;
         cmdreply = CMDR_LONG;
       }
       else cmdreply = CMDR_INVALID;
