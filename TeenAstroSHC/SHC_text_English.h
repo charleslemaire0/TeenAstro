@@ -183,6 +183,7 @@
 #define T_DECLIMIT "DEC limit"
 #define T_AZMLIMIT "AZM limit"
 #define T_BELOWHORIZON "Below Horizon"
+#define T_ABOVEOVERHEAD "Close to Zenith"
 #define T_TELESCOPEMOTOR "Telescope Motor"
 #define T_OUTSIDELIMITS "Outside Limits"
 #define T_FAULT "Fault"

@@ -123,6 +123,11 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
       sprintf(text1, T_TARGETIS);
       sprintf(text2, T_BELOWHORIZON "!");
     }
+    else if (val == LX200ABOVEOVERHEAD)
+    {
+      sprintf(text1, T_TARGETIS);
+      sprintf(text2, T_ABOVEOVERHEAD "!");
+    }
     else if (val == LX200_ERR_MOTOR_FAULT)
     {
       sprintf(text1, T_TELESCOPEMOTOR);

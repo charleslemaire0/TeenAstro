@@ -186,7 +186,7 @@ void setup()
 
   // get the pulse-guide rate
   int val = EEPROM.read(EE_Rate0);
-  guideRates[0] = val > 0 ? (float)val/100 : DefaultR0;
+  guideRates[0] = val > 0 ? (float)val / 100 : DefaultR0;
   val = EEPROM.read(EE_Rate1);
   guideRates[1] = val > 0 ? (float)val : DefaultR1;
   val = EEPROM.read(EE_Rate2);
@@ -223,6 +223,7 @@ void setup()
 void loop()
 {
   static bool forceTracking = false;
+  static unsigned long m;
   static Errors StartLoopError = ERR_NONE;
   StartLoopError = lastError;
   // GUIDING -------------------------------------------------------------------------------------------
@@ -260,12 +261,12 @@ void loop()
     if (rtk.m_lst % 16 == 0)
     {
       getHorApp(&currentAzm, &currentAlt);
-      if (isAltAZ() || correct_tracking)
+      if ((isAltAZ() || correct_tracking) && (rtk.m_lst % 64 == 0))
       {
         do_compensation_calc();
       }
     }
-    
+
     // check for fault signal, stop any slew or guide and turn tracking off
     if (staA1.fault || staA2.fault)
     {
@@ -309,7 +310,7 @@ void loop()
 
   // HOUSEKEEPING --------------------------------------------------------------------------------------
   // timer... falls in once a second, keeps the universal time clock ticking,
-  static unsigned long m = millis();
+  m = millis();
   forceTracking = (m - lastSetTrakingEnable < 10000);
   if (!forceTracking) lastSetTrakingEnable = m + 10000;
   if (rtk.updateclockTimer(m))
@@ -499,8 +500,7 @@ void initmount()
   underPoleLimitGOTO = (double)EEPROM.read(EE_dup) / 10;
   if (underPoleLimitGOTO < 9 || underPoleLimitGOTO>12)
     underPoleLimitGOTO = 12;
-  if (isAltAZ() && maxAlt > 87)
-    maxAlt = 87;
+
 
 
   // initialize some fixed-point values
@@ -562,31 +562,22 @@ void initTransformation(bool reset)
     {
       double ha, dec;
       apparentPole = XEEPROM.read(EE_ApparentPole);
-      double poleAlt = abs(*localSite.latitude());
-      if (apparentPole && poleAlt > 10)
+      double cosLat = *localSite.cosLat();
+      double sinLat = *localSite.sinLat();
+      if (apparentPole && abs(*localSite.latitude() > 10))
       {
-        Topocentric2Apparent(&poleAlt);
-        if (localSite.latitude() < 0)
-        {
-          alignment.addReferenceDeg(180, poleAlt, geoA1.poleDef / geoA1.stepsPerDegree, geoA2.poleDef / geoA2.stepsPerDegree);
-          alignment.addReferenceDeg(180, poleAlt + 90, geoA1.poleDef / geoA1.stepsPerDegree, geoA2.poleDef / geoA2.stepsPerDegree + 90);
-        }
-        else
-        {
-          alignment.addReferenceDeg(0, poleAlt, geoA1.poleDef / geoA1.stepsPerDegree, geoA2.poleDef / geoA2.stepsPerDegree);
-          alignment.addReferenceDeg(0, poleAlt + 90, geoA1.poleDef / geoA1.stepsPerDegree, geoA2.poleDef / geoA2.stepsPerDegree + 90);
-        }
-        alignment.calculateThirdReference();
+        double val = abs(*localSite.latitude());
+        Topocentric2Apparent(&val);
+        if (*localSite.latitude() < 0)
+          val = -val;
+        cosLat = cos(val / Rad);
+        sinLat = sin(val / Rad);
       }
-      else
-      {
-        HorTopoToEqu(180, 0, &ha, &dec, localSite.cosLat(), localSite.sinLat());
-        alignment.addReferenceDeg(180, 0, ha, dec);
-        HorTopoToEqu(180, 90, &ha, &dec, localSite.cosLat(), localSite.sinLat());
-        alignment.addReferenceDeg(180, 90, ha, dec);
-        alignment.calculateThirdReference();
-      }
-
+      HorTopoToEqu(180, 0, &ha, &dec, &cosLat, &sinLat);
+      alignment.addReferenceDeg(180, 0, ha, dec);
+      HorTopoToEqu(180, 90, &ha, &dec, &cosLat, &sinLat);
+      alignment.addReferenceDeg(180, 90, ha, dec);
+      alignment.calculateThirdReference();
     }
   }
 }
@@ -682,7 +673,7 @@ void updateSideral()
   // 16MHZ clocks for steps per second of sidereal tracking
   cli();
   SiderealRate = siderealInterval / geoA1.stepsPerSecond;
-  TakeupRate = SiderealRate / 4L;
+  TakeupRate = SiderealRate / 2L;
   sei();
   staA1.timerRate = SiderealRate;
   staA2.timerRate = SiderealRate;

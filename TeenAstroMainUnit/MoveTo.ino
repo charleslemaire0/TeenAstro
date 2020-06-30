@@ -124,24 +124,11 @@ Again:
   if (temp > TakeupRate) temp = TakeupRate;                      // slowest rate
   cli(); staA2.timerRate = temp; sei();
 
-  //if (isAltAZ())
-  //{
-  //  // In AltAz mode & at the end of slew & near the Zenith, disable tracking for a moment if we're getting close to the target
-  //  if ((distDestAxis1 <= (long)geoA1.stepsPerDegree * 2L) && (distDestAxis2 <= (long)geoA2.stepsPerDegree * 2L)) {
-  //    if ((long)targetAxis2.part.m > 80L * (long)geoA2.stepsPerDegree ) {
-  //      sideralTracking = false;
-  //    }
-  //  }
-  //}
+  double v1 = max(abs(staA1.az_delta / 15.), 1.);
+  double v2 = max(abs(staA2.az_delta / 15.), 1.);
 
-  if (atTargetAxis1(true) && atTargetAxis2(true))
+  if (atTargetAxis1(true, v1) && atTargetAxis2(true, v2))
   {
-    //if (isAltAZ())
-    //{
-    //  // Near the Zenith disable tracking in AltAz mode for a moment if we're getting close to the target
-    //  sideralTracking = true;
-    //}
-    // restore last tracking state
     movingTo = false;
     SetSiderealClockRate(siderealInterval);
     cli();
