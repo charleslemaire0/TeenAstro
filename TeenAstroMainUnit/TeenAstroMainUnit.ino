@@ -500,8 +500,7 @@ void initmount()
   underPoleLimitGOTO = (double)EEPROM.read(EE_dup) / 10;
   if (underPoleLimitGOTO < 9 || underPoleLimitGOTO>12)
     underPoleLimitGOTO = 12;
-  if (isAltAZ() && maxAlt > 87)
-    maxAlt = 87;
+
 
 
   // initialize some fixed-point values
@@ -674,7 +673,7 @@ void updateSideral()
   // 16MHZ clocks for steps per second of sidereal tracking
   cli();
   SiderealRate = siderealInterval / geoA1.stepsPerSecond;
-  TakeupRate = SiderealRate / 4L;
+  TakeupRate = SiderealRate / 2L;
   sei();
   staA1.timerRate = SiderealRate;
   staA2.timerRate = SiderealRate;
