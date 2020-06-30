@@ -529,6 +529,9 @@ LX200RETURN Move2TargetLX200(TARGETTYPE target)
   case 7:
     response = LX200BUSY;
     break;
+  case 8:
+    response = LX200ABOVEOVERHEAD;
+    break;
   case 11:
     response = LX200_ERR_MOTOR_FAULT;
     break;
@@ -549,9 +552,6 @@ LX200RETURN Move2TargetLX200(TARGETTYPE target)
     break;
   case 17:
     response = LX200_ERR_MERIDIAN;
-    break;
-  case 18:
-    response = LX200_ERR_SYNC;
     break;
   default:
     response = LX200UNKOWN;

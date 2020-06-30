@@ -96,8 +96,7 @@ enum Errors
   ERR_AXIS2,
   ERR_AZM,
   ERR_UNDER_POLE,
-  ERR_MERIDIAN,
-  ERR_SYNC
+  ERR_MERIDIAN
 };
 Errors lastError = ERR_NONE;
 
