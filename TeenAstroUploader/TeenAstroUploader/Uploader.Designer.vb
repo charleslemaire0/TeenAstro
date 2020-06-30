@@ -45,6 +45,7 @@ Partial Class Uploader
     Me.TabControlFirmware = New System.Windows.Forms.TabControl()
     Me.Label6 = New System.Windows.Forms.Label()
     Me.ComboBoxFirmwareVersion = New System.Windows.Forms.ComboBox()
+    Me.ButtonDownLoad = New System.Windows.Forms.Button()
     Me.TabPage3.SuspendLayout()
     Me.TabPage2.SuspendLayout()
     Me.TabPage1.SuspendLayout()
@@ -266,11 +267,21 @@ Partial Class Uploader
     Me.ComboBoxFirmwareVersion.Size = New System.Drawing.Size(143, 21)
     Me.ComboBoxFirmwareVersion.TabIndex = 13
     '
+    'ButtonDownLoad
+    '
+    Me.ButtonDownLoad.Location = New System.Drawing.Point(303, 15)
+    Me.ButtonDownLoad.Name = "ButtonDownLoad"
+    Me.ButtonDownLoad.Size = New System.Drawing.Size(75, 23)
+    Me.ButtonDownLoad.TabIndex = 16
+    Me.ButtonDownLoad.Text = "Download!"
+    Me.ButtonDownLoad.UseVisualStyleBackColor = True
+    '
     'Uploader
     '
     Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
     Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
     Me.ClientSize = New System.Drawing.Size(390, 240)
+    Me.Controls.Add(Me.ButtonDownLoad)
     Me.Controls.Add(Me.ComboBoxFirmwareVersion)
     Me.Controls.Add(Me.Label6)
     Me.Controls.Add(Me.TabControlFirmware)
@@ -314,4 +325,5 @@ Partial Class Uploader
   Friend WithEvents ComboBoxFirmwareVersion As ComboBox
   Friend WithEvents Label7 As Label
   Friend WithEvents ComboBoxLanguage As ComboBox
+  Friend WithEvents ButtonDownLoad As Button
 End Class

@@ -110,10 +110,9 @@ byte goToHor(double *Azm, double *Alt, PierSide preferedPierSide)
   // Check to see if this goto is valid
   if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return 4; // fail, PRK_PARKED
   if (lastError != ERR_NONE) return lastError + 10;   // fail, telescop has Errors State
-  if (*Alt < minAlt) return 1;   // fail, below horizon
-  if (*Alt > maxAlt) return 6;   // fail, outside limits
-  //if (Dec > MaxDec) return 6; // fail, outside limits
-  //if (Dec < MinDec) return 6; // fail, outside limits
+  if (*Alt < minAlt) return 1;   // fail, below min altitude
+  if (*Alt > maxAlt) return 8;   // fail, above max altitude
+
 
   alignment.toInstrumentalDeg(Axis1_target, Axis2_target, *Azm, *Alt);
   PierSide side = predictSideOfPier(Axis1_target, Axis2_target, preferedPierSide);

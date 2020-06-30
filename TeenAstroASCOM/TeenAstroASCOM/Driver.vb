@@ -929,36 +929,24 @@ Public Class Telescope
         If value = PierSide.pierUnknown Then
           Throw New ASCOM.InvalidValueException("German mount cannot be set with pierUnknow")
         ElseIf Not Me.SideOfPier = value Then
-          Dim state = Me.CommandSingleChar("MF").Substring(0, 1)
-          Select Case state
-            Case "0"
-              mTL.LogMessage("Slew to target", "Started")
-            Case "1"
-              Throw New ASCOM.InvalidOperationException("Object below horizon")
-            Case "2"
-              Throw New ASCOM.ValueNotSetException
-            Case "4"
-              Throw New ASCOM.ParkedException
-            Case "5"
-              Throw New ASCOM.InvalidOperationException("Telescop is busy")
-            Case "6"
-              Throw New ASCOM.InvalidOperationException("Outside limits")
-          End Select
+          Dim state = Me.CommandSingleChar("MF")
+          If state.Length = 0 Then
+            Throw New ASCOM.InvalidOperationException("Telescope is not replying")
+          ElseIf Not state.Length = 1 Then
+            Throw New ASCOM.InvalidOperationException("Telescope reply is corrupt")
+          End If
+          If state = "0" Then
+            mTL.LogMessage("Slew to target", "Started")
+          Else
+            ReportState(state)
+          End If
+
         End If
       Else
         Throw New ASCOM.InvalidOperationException("Change Side of Pier is only supported for german mount")
       End If
     End Set
   End Property
-
-  Public Sub ResetSide(value As PierSide)
-    If CanSetPierSide Then
-      If value = PierSide.pierUnknown Then
-        Throw New ASCOM.InvalidValueException("German mount cannot be set with pierUnknow")
-      End If
-
-    End If
-  End Sub
 
   Public ReadOnly Property SiderealTime() As Double Implements ITelescopeV3.SiderealTime
     Get
@@ -1284,30 +1272,55 @@ Public Class Telescope
 
   Private Sub doslew(ByRef async As Boolean, Optional ByRef altaz As Boolean = False)
 
-    Dim state As String = Me.CommandSingleChar("MS", False)
-
+    Dim state As String
     If altaz Then
       state = Me.CommandSingleChar("MA", False)
+    Else
+      state = Me.CommandSingleChar("MS", False)
     End If
+    If state.Length = 0 Then
+      Throw New ASCOM.InvalidOperationException("Telescope is not replying")
+    ElseIf Not state.Length = 1 Then
+      Throw New ASCOM.InvalidOperationException("Telescope reply is corrupt")
+    End If
+    If state = "0" Then
+      mTL.LogMessage("Slew to target", "Started")
+    Else
+      ReportState(state)
+    End If
+  End Sub
 
-    Dim ok = False
-    Select Case state
-      Case "0"
-        mTL.LogMessage("Slew to target", "Started")
-      Case "1"
-        Throw New ASCOM.InvalidOperationException("Object below horizon")
-      Case "2"
+  Private Sub ReportState(ByVal state As String)
+    Dim val As Integer = Asc(state(0)) - Asc("0"c)
+    Select Case val
+      Case 1
+        Throw New ASCOM.InvalidOperationException("Object below min altitude")
+      Case 2
         Throw New ASCOM.ValueNotSetException
-      Case "4"
+      Case 4
         Throw New ASCOM.ParkedException
-      Case "5"
-        Throw New ASCOM.InvalidOperationException("Telescop is busy")
-      Case "6"
-        Throw New ASCOM.InvalidOperationException("Target Outside limits")
-      Case "7"
-        Throw New ASCOM.InvalidOperationException("Telescope is Guiding")
-      Case "8"
-        Throw New ASCOM.InvalidOperationException("Telescope has Error")
+      Case 5
+        Throw New ASCOM.InvalidOperationException("Telescope is busy")
+      Case 7
+        Throw New ASCOM.InvalidOperationException("Telescope is busy")
+      Case 6
+        Throw New ASCOM.InvalidOperationException("Object is outside limits")
+      Case 8
+        Throw New ASCOM.InvalidOperationException("Object above max altitude")
+      Case 11
+        Throw New ASCOM.InvalidOperationException("Motor is fault")
+      Case 12
+        Throw New ASCOM.InvalidOperationException("Telescope is below horizon limit")
+      Case 13
+        Throw New ASCOM.InvalidOperationException("Limit Sensor")
+      Case 14
+        Throw New ASCOM.InvalidOperationException("Telescope is above max declination limit")
+      Case 15
+        Throw New ASCOM.InvalidOperationException("Telescope is outside azimunth limit")
+      Case 16
+        Throw New ASCOM.InvalidOperationException("Telescope is above overhead limit")
+      Case 17
+        Throw New ASCOM.InvalidOperationException("Telescope is outside meridian limit")
     End Select
   End Sub
 

@@ -2,20 +2,20 @@
   Private Sub ButtonUploadT_Click(sender As Object, e As EventArgs) Handles ButtonUploadT.Click
     Try
       Dim pHelp As New ProcessStartInfo
-      Dim exepath As String = System.IO.Path.GetDirectoryName(Application.ExecutablePath)
+      Dim exepath As String = """" & System.IO.Path.GetDirectoryName(Application.ExecutablePath) & """"
       pHelp.FileName = "teensy_post_compile.exe"
       Dim pcb As String = ComboBoxPCBMainUnitT.SelectedItem()
       Dim Hexfile As String = ""
       Dim fwv As String = ComboBoxFirmwareVersion.SelectedItem
       Select Case pcb
         Case "2.2 TMC260"
-          Hexfile = fwv + "\" + "Teenastro_" + fwv + "_220_TMC260"
+          Hexfile = "Teenastro_" + fwv + "_220_TMC260"
         Case "2.3 TMC260"
-          Hexfile = fwv + "\" + "Teenastro_" + fwv + "_230_TMC260"
+          Hexfile = "Teenastro_" + fwv + "_230_TMC260"
         Case "2.4 TMC2130"
-          Hexfile = fwv + "\" + "Teenastro_" + fwv + "_240_TMC2130"
+          Hexfile = "Teenastro_" + fwv + "_240_TMC2130"
         Case "2.4 TMC5160"
-          Hexfile = fwv + "\" + "Teenastro_" + fwv + "_240_TMC5160"
+          Hexfile = "Teenastro_" + fwv + "_240_TMC5160"
       End Select
 
       If Not System.IO.File.Exists(Hexfile + ".hex") Then
@@ -52,20 +52,20 @@
   Private Sub ButtonUploadF_Click(sender As Object, e As EventArgs) Handles ButtonUploadF.Click
     Try
       Dim pHelp As New ProcessStartInfo
-      Dim exepath As String = System.IO.Path.GetDirectoryName(Application.ExecutablePath)
+      Dim exepath As String = """" & System.IO.Path.GetDirectoryName(Application.ExecutablePath) & """"
       pHelp.FileName = "teensy_post_compile.exe"
       Dim pcb As String = ComboBoxPCBMainUnitF.SelectedItem()
       Dim Hexfile As String = ""
       Dim fwv As String = ComboBoxFirmwareVersion.SelectedItem
       Select Case pcb
         Case "2.2 TMC2130"
-          Hexfile = fwv + "\" + "TeenAstroFocuser_" + fwv + "_220_TMC2130"
+          Hexfile = "TeenAstroFocuser_" + fwv + "_220_TMC2130"
         Case "2.3 TMC2130"
-          Hexfile = fwv + "\" + "TeenAstroFocuser_" + fwv + "_230_TMC2130"
+          Hexfile = "TeenAstroFocuser_" + fwv + "_230_TMC2130"
         Case "2.4 TMC2130"
-          Hexfile = fwv + "\" + "TeenAstroFocuser_" + fwv + "_240_TMC2130"
+          Hexfile = "TeenAstroFocuser_" + fwv + "_240_TMC2130"
         Case "2.4 TMC5160"
-          Hexfile = fwv + "\" + "TeenAstroFocuser_" + fwv + "_240_TMC5160"
+          Hexfile = "TeenAstroFocuser_" + fwv + "_240_TMC5160"
       End Select
       If Not System.IO.File.Exists(Hexfile + ".hex") Then
         MsgBox(Hexfile + " Not found!")
@@ -87,15 +87,12 @@
   Private Sub ButtonUploadSHC_Click(sender As Object, e As EventArgs) Handles ButtonUploadSHC.Click
     Try
       Dim pHelp As New ProcessStartInfo
-      Dim exepath As String = System.IO.Path.GetDirectoryName(Application.ExecutablePath)
+      Dim exepath As String = """" & System.IO.Path.GetDirectoryName(Application.ExecutablePath) & """"
       pHelp.FileName = "esptool.exe"
       Dim pcb As String = ComboBoxPCBSHC.SelectedItem()
       Dim fwv As String = ComboBoxFirmwareVersion.SelectedItem
       Dim lg As String = "_" + ComboBoxLanguage.SelectedItem
-      If fwv = "1.1" Or fwv = "1.0" Then
-        lg = ""
-      End If
-      Dim Binfile As String = fwv + "\" + "TeenAstroSHC_" + fwv + lg + ".bin"
+      Dim Binfile As String = "TeenAstroSHC_" + fwv + lg + ".bin"
 
       If Not System.IO.File.Exists(Binfile) Then
         MsgBox(Binfile + " Not found!")
@@ -117,5 +114,34 @@
     Process.Start(webAddress)
   End Sub
 
-
+  Private Sub ButtonDownLoad_Click(sender As Object, e As EventArgs) Handles ButtonDownLoad.Click
+    Dim gitRootAdress As String = "https://github.com/charleslemaire0/TeenAstro/raw/Release_1.2/TeenAstroUploader/TeenAstroUploader/1.2/"
+    Dim Firmwares As New List(Of String)
+    Firmwares.Add("TeenAstroFocuser_1.2_220_TMC2130.hex")
+    Firmwares.Add("TeenAstroFocuser_1.2_230_TMC2130.hex")
+    Firmwares.Add("TeenAstroFocuser_1.2_240_TMC2130.hex")
+    Firmwares.Add("TeenAstroFocuser_1.2_240_TMC5160.hex")
+    Firmwares.Add("TeenAstroSHC_1.2_English.bin")
+    Firmwares.Add("TeenAstroSHC_1.2_French.bin")
+    Firmwares.Add("TeenAstroSHC_1.2_German.bin")
+    Firmwares.Add("TeenAstro_1.2_220_TMC260.hex")
+    Firmwares.Add("TeenAstro_1.2_230_TMC260.hex")
+    Firmwares.Add("TeenAstro_1.2_240_TMC2130.hex")
+    Firmwares.Add("TeenAstro_1.2_240_TMC5160.hex")
+    Dim n As Integer = 0
+    Using client As New System.Net.WebClient()
+      System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12
+      client.Headers.Add("user-agent", "Anything")
+      For Each firmware In Firmwares
+        Try
+          client.DownloadFile(gitRootAdress + firmware, firmware)
+        Catch ex As Exception
+          MsgBox(ex.Message)
+          Exit For
+        End Try
+        n = n + 1
+      Next
+      MsgBox(n.ToString & "of " & Firmwares.Count.ToString & " successfully downloaded!")
+    End Using
+  End Sub
 End Class

@@ -12,18 +12,18 @@ void updateDeltaTarget()
   sei();
 }
 
-bool atTargetAxis1(bool update = false)
+bool atTargetAxis1(bool update = false, double TrackingRate = 1.)
 {
   if (update)
     staA1.updateDeltaTarget();
-  return geoA1.atTarget(staA1.deltaTarget);
+  return geoA1.atTarget(staA1.deltaTarget, TrackingRate);
 }
 
-bool atTargetAxis2(bool update = false)
+bool atTargetAxis2(bool update = false, double TrackingRate = 1.)
 {
   if (update)
     staA2.updateDeltaTarget();
-  return geoA2.atTarget(staA2.deltaTarget);
+  return geoA2.atTarget(staA2.deltaTarget, TrackingRate);
 }
 
 PierSide GetPierSide()
@@ -32,7 +32,7 @@ PierSide GetPierSide()
   return -geoA2.quaterRot <= pos && pos <= geoA2.quaterRot ? PIER_EAST : PIER_WEST;
 }
 
-// staA1.trackingTimerRate/2 are x the sidereal rate
+// staA.trackingTimerRate are x the sidereal rate
 void SetDeltaTrackingRate()
 {
   staA1.trackingTimerRate = staA1.az_delta / 15.;
@@ -58,104 +58,71 @@ double GetTrackingRate()
   return az_deltaRateScale;
 }
 
-#define AltAzTrackingRange  1  // distance in arc-min (20) ahead of and behind the current Equ position, used for rate calculation
-bool do_compensation_calc()
+void do_compensation_calc()
 {
-  bool done = false;
+  // distance in arc-min (20) ahead of and behind the current Equ position, used for rate calculation
+  const double AltAzTrackingRange = 1.;
 
-  static long axis1_before, axis1_after = 0;
-  static long axis2_before, axis2_after = 0;
-  static double Axis1_tmp, Axis2_tmp = 0.;
-  static double HA_tmp, HA_now = 0.;
-  static double Dec_tmp, Dec_now = 0.;
-  static double Azm_tmp, Alt_tmp = 0.;
-  static int    az_step = 0;
-  static double fact = 1;
+  long axis1_before, axis1_after = 0;
+  long axis2_before, axis2_after = 0;
+  double Axis1_tmp, Axis2_tmp = 0.;
+  double HA_tmp, HA_now = 0.;
+  double Dec_tmp, Dec_now = 0.;
+  double Azm_tmp, Alt_tmp = 0.;
+  double fact = 1;
 
   // turn off if not tracking at sidereal rate
   if (!sideralTracking)
   {
     staA1.az_delta = 0.;
     staA2.az_delta = 0.;
-    az_step = 0;
-    return true;
+    return;
   }
-  az_step++;
-  // convert units, get ahead of and behind current position
-  switch (az_step)
-  {
-  case 1:
-    if (movingTo)
-      getEquTarget(&HA_now, &Dec_now, localSite.cosLat(), localSite.sinLat(), true);
-    else
-      getEqu(&HA_now, &Dec_now, localSite.cosLat(), localSite.sinLat(), true);
-    break;
-  case 10:
-    // look ahead of the current position
-    switch (sideralMode)
-    {
-    case SIDM_STAR:
-      fact = 1;
-      break;
-    case SIDM_SUN:
-      fact = TrackingSolar;
-      break;
-    case SIDM_MOON:
-      fact = TrackingLunar;
-      break;
-    }
-    HA_tmp = HA_now - fact * AltAzTrackingRange / 60.;
-    Dec_tmp = Dec_now;
-    break;
-  case 15:
-    EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
-    alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
-    InstrtoStep(Axis1_tmp, Axis2_tmp, GetPierSide(), &axis1_before, &axis2_before);
-    break;
-  case 110:
-    // look behind the current position
-    switch (sideralMode)
-    {
-    case SIDM_STAR:
-      fact = 1;
-      break;
-    case SIDM_SUN:
-      fact = TrackingSolar;
-      break;
-    case SIDM_MOON:
-      fact = TrackingLunar;
-      break;
-    }
-    HA_tmp = HA_now + fact * AltAzTrackingRange / 60.;
-    Dec_tmp = Dec_now;
-    break;
-  case 115:
-    EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
-    alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
-    InstrtoStep(Axis1_tmp, Axis2_tmp, GetPierSide(), &axis1_after, &axis2_after);
-    break;
-  case 120:
-    // we have both -0.5hr and +0.5hr values // calculate tracking rate deltas'
-               // handle coordinate wrap
-    if ((axis1_after < -geoA1.halfRot) && (axis1_before > geoA1.halfRot)) axis1_after += 2 * geoA1.halfRot;
-    if ((axis1_before < -geoA1.halfRot) && (axis1_after > geoA1.halfRot)) axis1_after += 2 * geoA1.halfRot;
-    // set rates
 
-    staA1.az_delta = (distStepAxis1(&axis1_before, &axis1_after) / geoA1.stepsPerDegree * (15. / (AltAzTrackingRange / 60.)) / 2.) * az_deltaRateScale;
-    staA2.az_delta = (distStepAxis2(&axis2_before, &axis2_after) / geoA2.stepsPerDegree * (15. / (AltAzTrackingRange / 60.)) / 2.) * az_deltaRateScale;
-    // override for special case of near a celestial pole
-    //if (90.0 - fabs(Dec_now) <= 0.5)
-    //{
-    //  staA1.az_delta = 0.0;
-    //  staA2.az_delta = 0.0;
-    //}
+  switch (sideralMode)
+  {
+  case SIDM_STAR:
+    fact = 1;
     break;
-  case 200:
-    az_step = 0;
-    done = true;
+  case SIDM_SUN:
+    fact = TrackingSolar;
+    break;
+  case SIDM_MOON:
+    fact = TrackingLunar;
     break;
   }
-  return done;
+
+  // if moving to a target select target as reference position if not select current position
+  if (movingTo)
+    getEquTarget(&HA_now, &Dec_now, localSite.cosLat(), localSite.sinLat(), true);
+  else
+    getEqu(&HA_now, &Dec_now, localSite.cosLat(), localSite.sinLat(), true);
+
+  // look ahead of the position
+  HA_tmp = HA_now - fact * AltAzTrackingRange / 60.;
+  Dec_tmp = Dec_now;
+  EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
+  alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
+  InstrtoStep(Axis1_tmp, Axis2_tmp, GetPierSide(), &axis1_before, &axis2_before);
+
+  // look behind the position
+  HA_tmp = HA_now + fact * AltAzTrackingRange / 60.;
+  Dec_tmp = Dec_now;
+  EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
+  alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
+  InstrtoStep(Axis1_tmp, Axis2_tmp, GetPierSide(), &axis1_after, &axis2_after);
+
+  // calculate tracking rate deltas'
+  // handle coordinate wrap
+  if ((axis1_after < -geoA1.halfRot) && (axis1_before > geoA1.halfRot)) axis1_after += 2 * geoA1.halfRot;
+  if ((axis1_before < -geoA1.halfRot) && (axis1_after > geoA1.halfRot)) axis1_after += 2 * geoA1.halfRot;
+  // set rates
+
+  staA1.az_delta = (distStepAxis1(&axis1_before, &axis1_after) / geoA1.stepsPerDegree * (15. / (AltAzTrackingRange / 60.)) / 2.) * az_deltaRateScale;
+  staA2.az_delta = (distStepAxis2(&axis2_before, &axis2_after) / geoA2.stepsPerDegree * (15. / (AltAzTrackingRange / 60.)) / 2.) * az_deltaRateScale;
+  //Limite rate up to 8 time the sidereal speed 
+  staA1.az_delta = min(max(staA1.az_delta, -120), 120);
+  staA2.az_delta = min(max(staA2.az_delta, -120), 120);
 }
 
 void initMaxRate()

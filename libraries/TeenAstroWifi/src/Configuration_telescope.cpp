@@ -627,7 +627,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   v = server.arg("ol");
   if (v != "")
   {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 60) && (i <= 90)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 60) && (i <= 91)))
     {
       sprintf(temp, ":SXLO,%d#", i);
       SetLX200(temp);
