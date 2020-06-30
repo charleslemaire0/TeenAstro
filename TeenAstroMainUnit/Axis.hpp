@@ -49,9 +49,9 @@ public:
 private:
   long   m_breakDist; //in steps
  public:
-  bool atTarget(const volatile long &deltaTarget)
+  bool atTarget(const volatile long &deltaTarget, double factor)
   {
-    return abs(deltaTarget) < m_breakDist;
+    return abs(deltaTarget) < m_breakDist * factor;
   }
   void setstepsPerRot(long val)
   {

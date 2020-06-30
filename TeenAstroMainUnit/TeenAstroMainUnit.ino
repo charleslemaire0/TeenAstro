@@ -186,7 +186,7 @@ void setup()
 
   // get the pulse-guide rate
   int val = EEPROM.read(EE_Rate0);
-  guideRates[0] = val > 0 ? (float)val/100 : DefaultR0;
+  guideRates[0] = val > 0 ? (float)val / 100 : DefaultR0;
   val = EEPROM.read(EE_Rate1);
   guideRates[1] = val > 0 ? (float)val : DefaultR1;
   val = EEPROM.read(EE_Rate2);
@@ -261,12 +261,12 @@ void loop()
     if (rtk.m_lst % 16 == 0)
     {
       getHorApp(&currentAzm, &currentAlt);
-      if (isAltAZ() || correct_tracking)
+      if ((isAltAZ() || correct_tracking) && (rtk.m_lst % 64 == 0))
       {
         do_compensation_calc();
       }
     }
-    
+
     // check for fault signal, stop any slew or guide and turn tracking off
     if (staA1.fault || staA2.fault)
     {
@@ -573,7 +573,7 @@ void initTransformation(bool reset)
           val = -val;
         cosLat = cos(val / Rad);
         sinLat = sin(val / Rad);
-      }   
+      }
       HorTopoToEqu(180, 0, &ha, &dec, &cosLat, &sinLat);
       alignment.addReferenceDeg(180, 0, ha, dec);
       HorTopoToEqu(180, 90, &ha, &dec, &cosLat, &sinLat);
