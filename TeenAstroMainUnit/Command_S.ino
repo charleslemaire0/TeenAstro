@@ -670,7 +670,6 @@ void Command_S(Command& process_command)
       if ((atoi2(&command[2], &i)) && ((i >= 60) && (i <= 91)))
       {
         maxAlt = i;
-        maxAlt = maxAlt > 87 && isAltAZ() ? 87 : maxAlt;
         XEEPROM.update(EE_maxAlt, maxAlt);
         strcpy(reply, "1");
       }
