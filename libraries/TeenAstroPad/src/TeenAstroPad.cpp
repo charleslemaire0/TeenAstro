@@ -101,11 +101,6 @@ void click_E() {
   DL("Button E click.");
 } // click2
 
-  //void doubleclick_E() {
-  //  eventbuttons[B_EAST] = E_DOUBLECLICK;
-  //  DL("Button E doubleclick.");
-  //} // doubleclick2
-
 void longPressStart_E() {
   eventbuttons[B_EAST] = E_LONGPRESSTART;
   DL("Button E longPress start");
@@ -126,11 +121,6 @@ void click_W() {
   eventbuttons[B_WEST] = E_CLICK;
   DL("Button W click.");
 } // click2
-
-  //void doubleclick_W() {
-  //  eventbuttons[B_WEST] = E_DOUBLECLICK;
-  //  DL("Button W doubleclick.");
-  //} // doubleclick2
 
 void longPressStart_W() {
   eventbuttons[B_WEST] = E_LONGPRESSTART;

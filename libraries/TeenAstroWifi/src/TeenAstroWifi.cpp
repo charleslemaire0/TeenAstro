@@ -485,48 +485,53 @@ void TeenAstroWifi::update()
     if (!cmdSvrClient && cmdSvr.hasClient()) {
       // find free/disconnected spot
       cmdSvrClient = cmdSvr.available();
-      clientTime = millis() + 1000UL;
+      clientTime = millis() + 2000UL;
       break;
     }
     break;
   }
 
 
-  static char writeBuffer[50] = "";
-  static int writeBufferPos = 0;
   // check clients for data, if found get the command, send cmd and pickup the response, then return the response
-  while (cmdSvrClient && cmdSvrClient.connected() && (cmdSvrClient.available() > 0)) {
-    // get the data
-    byte b = cmdSvrClient.read();
-    if (writeBufferPos == 0 && b != ':')
-      continue;
-    writeBuffer[writeBufferPos] = b;
-    writeBufferPos++;
-    if (writeBufferPos > 49)
+  while (cmdSvrClient.connected() || cmdSvrClient.available())
+  {
+    static char writeBuffer[50] = "";
+    static int writeBufferPos = 0;
+    while (cmdSvrClient.available())
     {
-      writeBufferPos = 0;
-      writeBuffer[writeBufferPos] = 0;
-      continue;
-    }
-    writeBuffer[writeBufferPos] = 0;
-    // send cmd and pickup the response
-    if ((b == '#') || ((strlen(writeBuffer) == 1) && (b == (char)6))) {
-      char readBuffer[50] = "";
-      if (readLX200Bytes(writeBuffer, readBuffer, sizeof(readBuffer), CmdTimeout, true))
+      // get the data
+      byte b = cmdSvrClient.read();
+      //if (writeBufferPos == 0 && b != ':')
+      //  continue;
+      writeBuffer[writeBufferPos] = b;
+      writeBufferPos++;
+      if (writeBufferPos > 49)
       {
-        // return the response, if we have one
-        if (strlen(readBuffer) > 0)
+        writeBufferPos = 0;
+        writeBuffer[writeBufferPos] = 0;
+        continue;
+      }
+      writeBuffer[writeBufferPos] = 0;
+      // send cmd and pickup the response
+      if ((b == '#') || ((strlen(writeBuffer) == 1) && (b == (char)6)))
+      {
+        char readBuffer[50] = "";
+        if (readLX200Bytes(writeBuffer, readBuffer, sizeof(readBuffer), CmdTimeout, true))
         {
-          if (cmdSvrClient && cmdSvrClient.connected()) {
-            cmdSvrClient.print(readBuffer);
-            delay(3);
+          // return the response, if we have one
+          if (strlen(readBuffer) > 0)
+          {
+            if (cmdSvrClient.connected())
+            {
+              cmdSvrClient.print(readBuffer);
+            }
           }
         }
+        writeBuffer[0] = 0;
+        writeBufferPos = 0;
       }
-      writeBuffer[0] = 0;
-      writeBufferPos = 0;
+      else server.handleClient();
     }
-    else server.handleClient();
   }
 }
 
