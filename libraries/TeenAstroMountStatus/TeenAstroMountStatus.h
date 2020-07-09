@@ -35,6 +35,9 @@ private:
   char            m_TempAz[15] = "?";
   char            m_TempAlt[15] = "?";
   unsigned long   m_lastStateAzAlt;
+  char            m_TempAxis1[15] = "?";
+  char            m_TempAxis2[15] = "?";
+  unsigned long   m_lastStateAxis;
   char            m_TempUTC[15] = "?";
   char            m_TempUTCdate[15] = "?";
   char            m_TempSidereal[15] = "?";
@@ -54,12 +57,15 @@ private:
   bool            m_hasInfoDecT = false;
   bool            m_hasInfoAz = false;
   bool            m_hasInfoAlt = false;
+  bool            m_hasInfoAxis1 = false;
+  bool            m_hasInfoAxis2 = false;
   bool            m_hasInfoUTC = false;
   bool            m_hasInfoUTCdate = false;
   bool            m_hasInfoSidereal = false;
   bool            m_hasInfoTrackingRate = false;
   bool            m_hasInfoMount = false;
   bool            m_hasInfoFocuser = false;
+  bool            m_hasFocuser = true;
 public:
   //Alignment Stuff
   bool            isAligning()  { return m_align != ALI_OFF; }
@@ -87,6 +93,9 @@ public:
   bool hasInfoSidereal() { return m_hasInfoSidereal; };
   bool hasInfoMount() { return m_hasInfoMount; };
   bool hasInfoFocuser() { return m_hasInfoFocuser; };
+  bool hasFocuser() { static bool firstime = m_hasFocuser; if (firstime){updateFocuser();} return m_hasFocuser; }
+  bool hasInfoAxis1() { return m_hasInfoAxis1; };
+  bool hasInfoAxis2() { return m_hasInfoAxis2; };
   bool hasInfoTrackingRate() { return m_hasInfoTrackingRate; };
 
   const char* getVP() { return  m_TempVP; };
@@ -98,6 +107,8 @@ public:
   const char* getDecT() { return  m_TempDecT; };
   const char* getAz() { return  m_TempAz; };
   const char* getAlt() { return  m_TempAlt; };
+  const char* getAxis1() { return  m_TempAxis1; };
+  const char* getAxis2() { return  m_TempAxis2; };
   const char* getUTC() { return m_TempUTC; };
   const char* getUTCdate() { return m_TempUTCdate; };
   const char* getSidereal() { return m_TempSidereal; };
@@ -109,15 +120,18 @@ public:
   void updateRaDec();
   void updateRaDecT();
   void updateAzAlt();
+  void updateAxis();
   void updateTime();
   void updateFocuser();
   void updateTrackingRate();
   void updateMount();
 
   Mount       getMount();
+  bool        isAltAz();
   ParkState   getParkState();
   TrackState  getTrackingState();
   SiderealMode getSiderealMode();
+  bool        isTrackingCorrected();
   PierState   getPierState();
   Errors      getError();
   bool        getLastErrorMessage(char message[]);
@@ -125,7 +139,8 @@ public:
   bool        getLat(double &lat);
   bool        getTrackingRate(double &r);
   bool        getGuidingRate(unsigned char &g);
-  bool validConnection() { return m_isValid; };
+  bool checkConnection(char* major, char* minor);
+  bool isConnectionValid() { return m_isValid; };
   bool atHome();
   bool Parking();
   bool Parked();
@@ -135,6 +150,7 @@ public:
   bool isGuidingS();
   bool isGuidingE();
   bool isGuidingW();
+  bool isAligned();
   bool isGNSSValid();
   //Connection Errors
   bool connected();

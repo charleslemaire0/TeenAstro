@@ -2,12 +2,15 @@
 #include <TMC26XStepper.h>
 #include <TMCStepper.h>
 
-class Motor
+class Driver
 {
 public:
-  enum Motor_Driver { NODRIVER, TMC26X, TMC2130, TMC5160 };
+  enum MOTORDRIVER
+  {
+    NODRIVER, TMC26X, TMC2130, TMC5160
+  };
 private:
-  Motor_Driver m_driver = NODRIVER;
+  MOTORDRIVER m_driver = NODRIVER;
   TMC26XStepper *m_tmc26x = NULL;
   TMC2130Stepper *m_tmc2130 = NULL;
   TMC5160Stepper *m_tmc5160 = NULL;
@@ -69,10 +72,10 @@ public:
       m_tmc26x->setCurrent(val);
       break;
     case TMC2130:
-      m_tmc2130->rms_current(val / sqrt(2),0.25);
+      m_tmc2130->rms_current(val / sqrt(2), 0.25);
       break;
     case TMC5160:
-      m_tmc5160->rms_current(val / sqrt(2),0.25);
+      m_tmc5160->rms_current(val / sqrt(2), 0.25);
       break;
     case NODRIVER:
       break;
@@ -99,7 +102,7 @@ public:
     return;
   };
 
-  void initMotor(Motor_Driver useddriver, int StepRot, int EnPin,  int CSPin, int DirPin, int StepPin, unsigned int Curr, int Micros)
+  void initMotor(MOTORDRIVER useddriver, int StepRot, int EnPin, int CSPin, int DirPin, int StepPin, unsigned int Curr, int Micros)
   {
     m_driver = useddriver;
     switch (m_driver)
@@ -117,10 +120,10 @@ public:
       m_tmc26x->start();
       break;
     case TMC2130:
-      m_tmc2130 = new TMC2130Stepper(CSPin,0.11-0.02);
+      m_tmc2130 = new TMC2130Stepper(CSPin, 0.11 - 0.02);
       if (EnPin > 0)
       {
-        pinMode(EnPin, OUTPUT);  
+        pinMode(EnPin, OUTPUT);
         digitalWrite(EnPin, HIGH); //deactivate driver (LOW active)
       }
       pinMode(DirPin, OUTPUT);
@@ -132,7 +135,7 @@ public:
       SPI.begin();
       pinMode(MISO, INPUT_PULLUP);
       m_tmc2130->push();
-			m_tmc2130->reset();
+      m_tmc2130->reset();
       m_tmc2130->tbl(1);
       m_tmc2130->TPOWERDOWN(255);
       m_tmc2130->toff(4);
@@ -179,6 +182,8 @@ public:
       setMicrostep(Micros);
       if (EnPin > 0)
         digitalWrite(EnPin, LOW);
+      break;
+    case NODRIVER:
       break;
     }
   };

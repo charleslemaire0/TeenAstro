@@ -79,8 +79,6 @@ Public Class Telescope
   Friend Shared mcomPort As String
   Friend Shared mIP As String
   Friend Shared mPort As Integer
-  Friend Shared mclient As Net.Sockets.TcpClient = Nothing
-  Friend Shared mstream As Net.Sockets.NetworkStream = Nothing
   Friend Shared mInterface As String
   Friend Shared mtraceState As Boolean = False
   Friend Shared mobjectIP As Net.IPAddress
@@ -103,9 +101,17 @@ Public Class Telescope
   Private mtgtRa As Double = -999
   Private mtgtDec As Double = -999
 
+
+
   Private mutilities As Util ' Private variable to hold an ASCOM Utilities object
   Private mastroUtilities As AstroUtils ' Private variable to hold an AstroUtils object to provide the Range method
   Private mTL As TraceLogger ' Private variable to hold the trace logger object (creates a diagnostic log file with information that you specify)
+
+  ' Slew speeds for speed settings 0-4 as defined in the main unit's Global.h in the array guideRates[].
+  ' Values are given as multiples of sidereal speed. all these values are overwritten by EEPROM at runtime.
+  Private mSlewSpeeds() As Double = {1, 4, 16, 64, 64}
+  Private mSlewSpeed As String = "" ' Last slew speed set via R command
+  Private mSiderealRate As Double = 15.04106858 / 3600 ' Sidereal rate in degrees per second
 
   'Private Shared mformcontrol As FormControl
   '
@@ -171,7 +177,7 @@ Public Class Telescope
     If mInterface = "COM" Then
       Return GetSerial(Command, Mode, buf)
     ElseIf mInterface = "IP" Then
-      Return getStream(Command, Mode, buf)
+      Return getStreamIter(Command, Mode, buf)
     End If
     Return False
   End Function
@@ -240,7 +246,7 @@ Public Class Telescope
         mobjectSerial.Dispose()
         Throw New ASCOM.DriverException(ex.Message)
       End Try
-      mobjectSerial.ReceiveTimeoutMs = 500
+      mobjectSerial.ReceiveTimeout = 1
       If Not MyDevice() Then
         mobjectSerial.Connected = False
         mconnectedState = False
@@ -277,12 +283,6 @@ Public Class Telescope
         Throw New ASCOM.InvalidValueException("Connection has failed!")
       End If
     Else
-      ' Close everything.
-      mstream.Close()
-      mstream.Dispose()
-      mstream = Nothing
-      mclient.Close()
-      mclient = Nothing
       mconnectedState = False
       mTL.LogMessage("Connected Set", "Disconnecting from IP " + mIP)
     End If
@@ -317,66 +317,68 @@ Public Class Telescope
     End Set
   End Property
 
-  Shared Function getStream(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
-    Try
-      ' Create a TcpClient.
-      ' Note, for this client to work you need to have a TcpServer 
-      ' connected to the same address as specified by the server, port
-      ' combination.
-      Dim text As String = mobjectIP.ToString
-      If mclient Is Nothing Then
-        mclient = New Net.Sockets.TcpClient(text, mPort)
-        mstream = mclient.GetStream()
+  Private Function getStreamIter(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
+    Dim k As Integer = 0
+    While k < 3
+      buf = ""
+      If getStream(Command, Mode, buf) Then
+        Return True
+      Else
+        k += 1
       End If
+    End While
+    Return False
+  End Function
 
+  Private Function getStream(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
 
-      ' Translate the passed message into ASCII and store it as a Byte array.
-      Dim data As Byte() = Encoding.ASCII.GetBytes(Command)
-
-
-      ' Get a client stream for reading and writing.
-      '  Stream stream = client.GetStream();
-
-      ' Send the message to the connected TcpServer. 
-      mstream.Write(data, 0, data.Length)
-      mstream.Flush()
-      ' Receive the TcpServer.response.
-      ' Buffer to store the response bytes.
-      data = New Byte(256) {}
-
-      ' String to store the response ASCII representation.
-      buf = String.Empty
-      ' Read the first batch of the TcpServer response bytes.
-
-
+    Dim ClientSocket As System.Net.Sockets.TcpClient = New Net.Sockets.TcpClient
+    Dim result As IAsyncResult = ClientSocket.BeginConnect(mobjectIP, mPort, Nothing, Nothing)
+    Dim online = result.AsyncWaitHandle.WaitOne(500, True)
+    If Not online Then
+      ClientSocket.Close()
+      mconnectedState = False
+      Return False
+    End If
+    Try
+      Dim ServerStream As Net.Sockets.NetworkStream = ClientSocket.GetStream()
+      Dim outStream As Byte() = System.Text.Encoding.ASCII.GetBytes(Command)
+      ServerStream.Write(outStream, 0, outStream.Length)
+      ServerStream.Flush()
+      buf = ""
       Select Case Mode
         Case 0
           getStream = True
         Case 1 To 2
-          Dim bytes As Integer = mstream.Read(data, 0, data.Length)
-          buf = Encoding.ASCII.GetString(data, 0, bytes)
-          If Mode = 1 And buf <> "" Then
-            buf = buf.Substring(0, 1)
-          ElseIf Mode = 2 And buf <> "" Then
-            buf = buf.Split("#")(0)
+          If ServerStream.CanRead Then
+            Dim myReadBuffer(ClientSocket.ReceiveBufferSize) As Byte
+            Dim myCompleteMessage As StringBuilder = New StringBuilder()
+            Dim numberOfBytesRead As Integer = 0
+            ' Incoming message may be larger than the buffer size.
+            Do
+              numberOfBytesRead = ServerStream.Read(myReadBuffer, 0, myReadBuffer.Length)
+              myCompleteMessage.AppendFormat("{0}", Encoding.ASCII.GetString(myReadBuffer, 0, numberOfBytesRead))
+            Loop While ServerStream.DataAvailable
+            buf = myCompleteMessage.ToString()
+            If Mode = 1 And buf <> "" Then
+              buf = buf.Substring(0, 1)
+            ElseIf Mode = 2 And buf <> "" Then
+              buf = buf.Split("#")(0)
+            End If
+            getStream = buf <> ""
+          Else
+            getStream = False
           End If
-          getStream = buf <> ""
 
       End Select
-
-
-    Catch e As ArgumentNullException
-      'Console.WriteLine("ArgumentNullException: {0}", e)
-      Return False
-    Catch e As Net.Sockets.SocketException
-      'Console.WriteLine("SocketException: {0}", e)
-      Return False
+    Catch ex As Exception
+      getStream = False
     End Try
-
   End Function
 
   Private Function GetSerial(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
     mobjectSerial.ClearBuffers()
+    mobjectSerial.ReceiveTimeout = 100
     mobjectSerial.Transmit(Command)
     Select Case Mode
       Case 0
@@ -453,7 +455,7 @@ Public Class Telescope
 
   Public ReadOnly Property AlignmentMode() As AlignmentModes Implements ITelescopeV3.AlignmentMode
     Get
-      updateTelStatus(False)
+      updateTelStatus()
       Dim m As String = mTelStatus.Substring(12, 1)
       mTL.LogMessage("AlignmentMode", m)
       If m = "E" Then
@@ -495,7 +497,7 @@ Public Class Telescope
 
   Public ReadOnly Property AtHome() As Boolean Implements ITelescopeV3.AtHome
     Get
-      updateTelStatus(False)
+      updateTelStatus()
       Dim isAtHome As Boolean = mTelStatus.Substring(3, 1) = "H"
       mTL.LogMessage("AtHome", "Get - " & isAtHome.ToString())
       Return isAtHome
@@ -504,7 +506,7 @@ Public Class Telescope
 
   Public ReadOnly Property AtPark() As Boolean Implements ITelescopeV3.AtPark
     Get
-      updateTelStatus(False)
+      updateTelStatus()
       Dim isAtPark As Boolean = mTelStatus.Substring(2, 1) = "P"
       mTL.LogMessage("AtPark", "Get - " & isAtPark.ToString())
       Return isAtPark
@@ -513,7 +515,44 @@ Public Class Telescope
 
   Public Function AxisRates(Axis As TelescopeAxes) As IAxisRates Implements ITelescopeV3.AxisRates
     mTL.LogMessage("AxisRates", "Get - " & Axis.ToString())
-    Return New AxisRates(Axis)
+    ' Read maxSpeed from TeenAstro main unit and assign top two speed settings on this basis
+    Dim Speed As Double, response As String
+    'MAX_SPEED
+    response = Me.CommandString("GXRX")
+    mTL.LogMessage("AxisRates", "Get value: " & response)
+    If Not (Double.TryParse(response, Speed)) Then
+      Throw New ASCOM.InvalidValueException("Retrieve MAX_SPEED via :GXRX# has failed: '" & response & "'")
+    End If
+    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0)) = Speed
+    'FAST_SPEED
+    response = Me.CommandString("GXR3")
+    mTL.LogMessage("AxisRates", "Get value: " & response)
+    If Not (Double.TryParse(response, Speed)) Then
+      Throw New ASCOM.InvalidValueException("Retrieve FAST_SPEED via :GXR3# has failed: '" & response & "'")
+    End If
+    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0) - 1) = Speed
+    'MEDIUM_SPEED
+    response = Me.CommandString("GXR2")
+    mTL.LogMessage("AxisRates", "Get value: " & response)
+    If Not (Double.TryParse(response, Speed)) Then
+      Throw New ASCOM.InvalidValueException("Retrieve MEDIUM_SPEED via :GXR2# has failed: '" & response & "'")
+    End If
+    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0) - 2) = Speed
+    'SLOW_SPEED
+    response = Me.CommandString("GXR1")
+    mTL.LogMessage("AxisRates", "Get value: " & response)
+    If Not (Double.TryParse(response, Speed)) Then
+      Throw New ASCOM.InvalidValueException("Retrieve MEDIUM_SLOW via :GXR1# has failed: '" & response & "'")
+    End If
+    'GUIDE_SPEED
+    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0) - 3) = Speed
+    response = Me.CommandString("GXR0")
+    mTL.LogMessage("AxisRates", "Get value: " & response)
+    If Not (Double.TryParse(response, Speed)) Then
+      Throw New ASCOM.InvalidValueException("Retrieve GUIDE_SPEED via :GXR0# has failed: '" & response & "'")
+    End If
+    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0) - 4) = Speed / 100
+    Return New AxisRates(Axis, mSlewSpeeds, mSiderealRate)
   End Function
 
   Public ReadOnly Property Azimuth() As Double Implements ITelescopeV3.Azimuth
@@ -754,7 +793,7 @@ Public Class Telescope
 
   Public ReadOnly Property IsPulseGuiding() As Boolean Implements ITelescopeV3.IsPulseGuiding
     Get
-      updateTelStatus(False)
+      updateTelStatus()
       IsPulseGuiding = mTelStatus.Substring(6, 1) = "*"
       mTL.LogMessage("IsPulseGuiding Get", IsPulseGuiding.ToString)
       Return IsPulseGuiding
@@ -762,8 +801,44 @@ Public Class Telescope
   End Property
 
   Public Sub MoveAxis(Axis As TelescopeAxes, Rate As Double) Implements ITelescopeV3.MoveAxis
-    mTL.LogMessage("MoveAxis", "Not implemented")
-    Throw New ASCOM.MethodNotImplementedException("MoveAxis")
+    mTL.LogMessage("MoveAxis", Axis.ToString() & ":" & Rate.ToString())
+
+    ' Set slew speed to given rate, if different from currently set value.
+    Dim absRate As Double = Math.Abs(Rate)
+    Dim slewSpeed As String = ""
+    For i = mSlewSpeeds.GetUpperBound(0) To 0 Step -1
+      If (absRate >= 0.99 * mSlewSpeeds(i) * mSiderealRate) Then
+        slewSpeed = "R" & i.ToString()
+        Exit For
+      End If
+    Next
+    If (slewSpeed <> "") And (slewSpeed <> mSlewSpeed) Then
+      CommandBlind(slewSpeed)
+      mSlewSpeed = slewSpeed
+    End If
+
+    ' Issue movement command
+    Dim dir As String = ""
+    If (Axis = TelescopeAxes.axisPrimary) Then
+      If (Rate > 0) Then
+        dir = "Me"
+      ElseIf (Rate = 0) Then
+        dir = "Qe"  ' TeenAstro main unit implementation halts both east- and westward slews
+      Else
+        dir = "Mw"
+      End If
+    ElseIf (Axis = TelescopeAxes.axisSecondary) Then
+      If (Rate > 0) Then
+        dir = "Mn"
+      ElseIf (Rate = 0) Then
+        dir = "Qn"  ' TeenAstro main unit implementation halts both north- and southward slews
+      Else
+        dir = "Ms"
+      End If
+    Else
+      Throw New ASCOM.InvalidValueException("MoveAxis", Axis.ToString(), "0 To 1")
+    End If
+    CommandBlind(dir)
   End Sub
 
   Public Sub Park() Implements ITelescopeV3.Park
@@ -833,7 +908,7 @@ Public Class Telescope
 
   Public Property SideOfPier() As PierSide Implements ITelescopeV3.SideOfPier
     Get
-      updateTelStatus(False)
+      updateTelStatus()
       mTL.LogMessage("Get SideOfPier", mTelStatus(13))
       If (mTelStatus(13) = " ") Then
         mTL.LogMessage("Get SideOfPier", "Unknown")
@@ -854,36 +929,24 @@ Public Class Telescope
         If value = PierSide.pierUnknown Then
           Throw New ASCOM.InvalidValueException("German mount cannot be set with pierUnknow")
         ElseIf Not Me.SideOfPier = value Then
-          Dim state = Me.CommandSingleChar("MF").Substring(0, 1)
-          Select Case state
-            Case "0"
-              mTL.LogMessage("Slew to target", "Started")
-            Case "1"
-              Throw New ASCOM.InvalidOperationException("Object below horizon")
-            Case "2"
-              Throw New ASCOM.ValueNotSetException
-            Case "4"
-              Throw New ASCOM.ParkedException
-            Case "5"
-              Throw New ASCOM.InvalidOperationException("Telescop is busy")
-            Case "6"
-              Throw New ASCOM.InvalidOperationException("Outside limits")
-          End Select
+          Dim state = Me.CommandSingleChar("MF")
+          If state.Length = 0 Then
+            Throw New ASCOM.InvalidOperationException("Telescope is not replying")
+          ElseIf Not state.Length = 1 Then
+            Throw New ASCOM.InvalidOperationException("Telescope reply is corrupt")
+          End If
+          If state = "0" Then
+            mTL.LogMessage("Slew to target", "Started")
+          Else
+            ReportState(state)
+          End If
+
         End If
       Else
         Throw New ASCOM.InvalidOperationException("Change Side of Pier is only supported for german mount")
       End If
     End Set
   End Property
-
-  Public Sub ResetSide(value As PierSide)
-    If CanSetPierSide Then
-      If value = PierSide.pierUnknown Then
-        Throw New ASCOM.InvalidValueException("German mount cannot be set with pierUnknow")
-      End If
-
-    End If
-  End Sub
 
   Public ReadOnly Property SiderealTime() As Double Implements ITelescopeV3.SiderealTime
     Get
@@ -977,13 +1040,17 @@ Public Class Telescope
   End Property
 
   Public Sub SlewToAltAz(Azimuth As Double, Altitude As Double) Implements ITelescopeV3.SlewToAltAz
-    mTL.LogMessage("SlewToAltAz", "Not implemented")
-    Throw New ASCOM.MethodNotImplementedException("SlewToAltAz")
+    setAzalt(Azimuth, Altitude)
+    checkslew()
+    doslew(False, True)
+    mTL.LogMessage("SlewToAltAzAz", "done")
   End Sub
 
   Public Sub SlewToAltAzAsync(Azimuth As Double, Altitude As Double) Implements ITelescopeV3.SlewToAltAzAsync
-    mTL.LogMessage("SlewToAltAzAsync", "Not implemented")
-    Throw New ASCOM.MethodNotImplementedException("SlewToAltAzAsync")
+    setAzalt(Azimuth, Altitude)
+    checkslew()
+    doslew(True, True)
+    mTL.LogMessage("SlewToAltAzAsync", "done")
   End Sub
 
   Public Sub SlewToCoordinates(RightAscension As Double, Declination As Double) Implements ITelescopeV3.SlewToCoordinates
@@ -1014,7 +1081,7 @@ Public Class Telescope
 
   Public ReadOnly Property Slewing() As Boolean Implements ITelescopeV3.Slewing
     Get
-      updateTelStatus(False)
+      updateTelStatus()
       If mTelStatus.Substring(0, 1) = "2" Or mTelStatus.Substring(0, 1) = "3" Or mTelStatus.Substring(6, 1) = "+" Then
         Slewing = True
       Else
@@ -1026,8 +1093,9 @@ Public Class Telescope
   End Property
 
   Public Sub SyncToAltAz(Azimuth As Double, Altitude As Double) Implements ITelescopeV3.SyncToAltAz
-    mTL.LogMessage("SyncToAltAz", "Not implemented")
-    Throw New ASCOM.MethodNotImplementedException("SyncToAltAz")
+    setAzalt(Azimuth, Altitude)
+    CommandString("CA")
+    mTL.LogMessage("SyncToAltAz", "done")
   End Sub
 
   Public Sub SyncToCoordinates(RightAscension As Double, Declination As Double) Implements ITelescopeV3.SyncToCoordinates
@@ -1085,6 +1153,15 @@ Public Class Telescope
     Return sexa
   End Function
 
+  Private Function AzToString(value As Double) As String
+    value = value Mod 360
+    If value < 0 Then
+      value += 360
+    End If
+    Dim sexa As String = mutilities.DegreesToDMS(value, ":", ":", "") ' Long format, whole seconds
+    Return sexa
+  End Function
+
   Public Property TargetRightAscension() As Double Implements ITelescopeV3.TargetRightAscension
     Get
       If mtgtRa = -999 Then
@@ -1115,7 +1192,7 @@ Public Class Telescope
   Public Property Tracking() As Boolean Implements ITelescopeV3.Tracking
     Get
       Dim trk As Boolean = True
-      updateTelStatus(False)
+      updateTelStatus()
       If (mTelStatus.Substring(0, 1) = "1" Or mTelStatus.Substring(0, 1) = "3") Then
         trk = True
       ElseIf (mTelStatus.Substring(0, 1) = "0" Or mTelStatus.Substring(0, 1) = "2") Then
@@ -1164,7 +1241,7 @@ Public Class Telescope
   Public Property UTCDate() As DateTime Implements ITelescopeV3.UTCDate
     Get
       Try
-        Dim secs As Double = CDbl(CommandString("GX82"))
+        Dim secs As Double = CDbl(CommandString("GXT2"))
         Dim utcDate__1 As DateTime = New DateTime(1970, 1, 1, 0, 0, 0).AddSeconds(secs)
         mTL.LogMessage("UTCDate", String.Format("Get - {0}", utcDate__1))
         Return utcDate__1
@@ -1175,7 +1252,7 @@ Public Class Telescope
     End Get
     Set(value As DateTime)
       Dim s As Long = (Date.UtcNow() - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds
-      If (CommandBool("SX82_" & s)) Then
+      If (CommandBool("SXT2_" & s)) Then
         mTL.LogMessage("Set UTCDate", "done")
       Else
         mTL.LogMessage("Set UTCDate", "failed")
@@ -1193,26 +1270,57 @@ Public Class Telescope
     End If
   End Sub
 
-  Private Sub doslew(ByRef async As Boolean)
-    Dim state As String = Me.CommandSingleChar("MS", False)
-    Dim ok = False
-    Select Case state
-      Case "0"
-        mTL.LogMessage("Slew to target", "Started")
-      Case "1"
-        Throw New ASCOM.InvalidOperationException("Object below horizon")
-      Case "2"
+  Private Sub doslew(ByRef async As Boolean, Optional ByRef altaz As Boolean = False)
+
+    Dim state As String
+    If altaz Then
+      state = Me.CommandSingleChar("MA", False)
+    Else
+      state = Me.CommandSingleChar("MS", False)
+    End If
+    If state.Length = 0 Then
+      Throw New ASCOM.InvalidOperationException("Telescope is not replying")
+    ElseIf Not state.Length = 1 Then
+      Throw New ASCOM.InvalidOperationException("Telescope reply is corrupt")
+    End If
+    If state = "0" Then
+      mTL.LogMessage("Slew to target", "Started")
+    Else
+      ReportState(state)
+    End If
+  End Sub
+
+  Private Sub ReportState(ByVal state As String)
+    Dim val As Integer = Asc(state(0)) - Asc("0"c)
+    Select Case val
+      Case 1
+        Throw New ASCOM.InvalidOperationException("Object below min altitude")
+      Case 2
         Throw New ASCOM.ValueNotSetException
-      Case "4"
+      Case 4
         Throw New ASCOM.ParkedException
-      Case "5"
-        Throw New ASCOM.InvalidOperationException("Telescop is busy")
-      Case "6"
-        Throw New ASCOM.InvalidOperationException("Target Outside limits")
-      Case "7"
-        Throw New ASCOM.InvalidOperationException("Telescope is Guiding")
-      Case "8"
-        Throw New ASCOM.InvalidOperationException("Telescope has Error")
+      Case 5
+        Throw New ASCOM.InvalidOperationException("Telescope is busy")
+      Case 7
+        Throw New ASCOM.InvalidOperationException("Telescope is busy")
+      Case 6
+        Throw New ASCOM.InvalidOperationException("Object is outside limits")
+      Case 8
+        Throw New ASCOM.InvalidOperationException("Object above max altitude")
+      Case 11
+        Throw New ASCOM.InvalidOperationException("Motor is fault")
+      Case 12
+        Throw New ASCOM.InvalidOperationException("Telescope is below horizon limit")
+      Case 13
+        Throw New ASCOM.InvalidOperationException("Limit Sensor")
+      Case 14
+        Throw New ASCOM.InvalidOperationException("Telescope is above max declination limit")
+      Case 15
+        Throw New ASCOM.InvalidOperationException("Telescope is outside azimunth limit")
+      Case 16
+        Throw New ASCOM.InvalidOperationException("Telescope is above overhead limit")
+      Case 17
+        Throw New ASCOM.InvalidOperationException("Telescope is outside meridian limit")
     End Select
   End Sub
 
@@ -1220,9 +1328,6 @@ Public Class Telescope
     Dim asm As System.Reflection.Assembly = System.Reflection.Assembly.GetExecutingAssembly()
     Dim fvi As FileVersionInfo = FileVersionInfo.GetVersionInfo(asm.Location)
     Dim versionFW() As String = Me.CommandString("GVN").Split(".")
-    If Not versionFW.Length = 2 Then
-      Return False
-    End If
     Dim versionASCOM() As String = fvi.FileVersion.Split(".")
     If versionFW(0) = versionASCOM(0) And versionFW(1) = versionASCOM(1) Then
       Return True
@@ -1234,10 +1339,10 @@ Public Class Telescope
     Return False
   End Function
 
-  Private Sub updateTelStatus(forceupdate As Boolean)
+  Private Sub updateTelStatus()
     Dim s1 As Double = (Date.UtcNow - mTelStatusDate).TotalMilliseconds
-    If s1 > mupdateRate Or mTelStatus = "" Or forceupdate Then
-      mTelStatus = Me.CommandString("GU")
+    If s1 > mupdateRate Or mTelStatus = "" Then
+      mTelStatus = Me.CommandString("GXI")
       If (mTelStatus <> "") Then
         mTelStatusDate = Date.UtcNow
       End If
@@ -1257,6 +1362,16 @@ Public Class Telescope
     End While
   End Sub
 
+  Sub setAzalt(Azimuth As Double, Altitude As Double)
+    Dim sexa As String = AzToString(Azimuth)
+    If Not Me.CommandBool("Sz" & sexa) Then
+      Throw New ASCOM.InvalidOperationException
+    End If
+    sexa = DecToString(Altitude)
+    If Not Me.CommandBool("Sz" & sexa) Then
+      Throw New ASCOM.InvalidOperationException
+    End If
+  End Sub
 #End Region
 
 #Region "Private properties and methods"

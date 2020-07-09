@@ -26,6 +26,8 @@ Partial Class Uploader
     Me.ComboBoxPCBMainUnitT = New System.Windows.Forms.ComboBox()
     Me.Label4 = New System.Windows.Forms.Label()
     Me.TabPage3 = New System.Windows.Forms.TabPage()
+    Me.Label7 = New System.Windows.Forms.Label()
+    Me.ComboBoxLanguage = New System.Windows.Forms.ComboBox()
     Me.ButtonWIFISHC = New System.Windows.Forms.Button()
     Me.TextBoxIP = New System.Windows.Forms.TextBox()
     Me.Label5 = New System.Windows.Forms.Label()
@@ -43,6 +45,7 @@ Partial Class Uploader
     Me.TabControlFirmware = New System.Windows.Forms.TabControl()
     Me.Label6 = New System.Windows.Forms.Label()
     Me.ComboBoxFirmwareVersion = New System.Windows.Forms.ComboBox()
+    Me.ButtonDownLoad = New System.Windows.Forms.Button()
     Me.TabPage3.SuspendLayout()
     Me.TabPage2.SuspendLayout()
     Me.TabPage1.SuspendLayout()
@@ -69,6 +72,8 @@ Partial Class Uploader
     '
     'TabPage3
     '
+    Me.TabPage3.Controls.Add(Me.Label7)
+    Me.TabPage3.Controls.Add(Me.ComboBoxLanguage)
     Me.TabPage3.Controls.Add(Me.ButtonWIFISHC)
     Me.TabPage3.Controls.Add(Me.TextBoxIP)
     Me.TabPage3.Controls.Add(Me.Label5)
@@ -84,9 +89,27 @@ Partial Class Uploader
     Me.TabPage3.Text = "Hand controler"
     Me.TabPage3.UseVisualStyleBackColor = True
     '
+    'Label7
+    '
+    Me.Label7.AutoSize = True
+    Me.Label7.Location = New System.Drawing.Point(6, 47)
+    Me.Label7.Name = "Label7"
+    Me.Label7.Size = New System.Drawing.Size(55, 13)
+    Me.Label7.TabIndex = 30
+    Me.Label7.Text = "Language"
+    '
+    'ComboBoxLanguage
+    '
+    Me.ComboBoxLanguage.FormattingEnabled = True
+    Me.ComboBoxLanguage.Items.AddRange(New Object() {"English", "French", "German"})
+    Me.ComboBoxLanguage.Location = New System.Drawing.Point(71, 44)
+    Me.ComboBoxLanguage.Name = "ComboBoxLanguage"
+    Me.ComboBoxLanguage.Size = New System.Drawing.Size(110, 21)
+    Me.ComboBoxLanguage.TabIndex = 29
+    '
     'ButtonWIFISHC
     '
-    Me.ButtonWIFISHC.Location = New System.Drawing.Point(187, 76)
+    Me.ButtonWIFISHC.Location = New System.Drawing.Point(187, 98)
     Me.ButtonWIFISHC.Name = "ButtonWIFISHC"
     Me.ButtonWIFISHC.Size = New System.Drawing.Size(119, 23)
     Me.ButtonWIFISHC.TabIndex = 28
@@ -95,7 +118,7 @@ Partial Class Uploader
     '
     'TextBoxIP
     '
-    Me.TextBoxIP.Location = New System.Drawing.Point(71, 78)
+    Me.TextBoxIP.Location = New System.Drawing.Point(71, 100)
     Me.TextBoxIP.Name = "TextBoxIP"
     Me.TextBoxIP.Size = New System.Drawing.Size(110, 20)
     Me.TextBoxIP.TabIndex = 25
@@ -103,7 +126,7 @@ Partial Class Uploader
     'Label5
     '
     Me.Label5.AutoSize = True
-    Me.Label5.Location = New System.Drawing.Point(6, 81)
+    Me.Label5.Location = New System.Drawing.Point(6, 103)
     Me.Label5.Name = "Label5"
     Me.Label5.Size = New System.Drawing.Size(52, 13)
     Me.Label5.TabIndex = 24
@@ -112,7 +135,7 @@ Partial Class Uploader
     'ComboBoxCOMSHC
     '
     Me.ComboBoxCOMSHC.FormattingEnabled = True
-    Me.ComboBoxCOMSHC.Location = New System.Drawing.Point(71, 49)
+    Me.ComboBoxCOMSHC.Location = New System.Drawing.Point(71, 71)
     Me.ComboBoxCOMSHC.Name = "ComboBoxCOMSHC"
     Me.ComboBoxCOMSHC.Size = New System.Drawing.Size(110, 21)
     Me.ComboBoxCOMSHC.TabIndex = 23
@@ -120,7 +143,7 @@ Partial Class Uploader
     'Label3
     '
     Me.Label3.AutoSize = True
-    Me.Label3.Location = New System.Drawing.Point(6, 52)
+    Me.Label3.Location = New System.Drawing.Point(6, 74)
     Me.Label3.Name = "Label3"
     Me.Label3.Size = New System.Drawing.Size(47, 13)
     Me.Label3.TabIndex = 22
@@ -128,7 +151,7 @@ Partial Class Uploader
     '
     'ButtonUploadSHC
     '
-    Me.ButtonUploadSHC.Location = New System.Drawing.Point(187, 47)
+    Me.ButtonUploadSHC.Location = New System.Drawing.Point(187, 69)
     Me.ButtonUploadSHC.Name = "ButtonUploadSHC"
     Me.ButtonUploadSHC.Size = New System.Drawing.Size(119, 23)
     Me.ButtonUploadSHC.TabIndex = 21
@@ -178,7 +201,7 @@ Partial Class Uploader
     'ComboBoxPCBMainUnitF
     '
     Me.ComboBoxPCBMainUnitF.FormattingEnabled = True
-    Me.ComboBoxPCBMainUnitF.Items.AddRange(New Object() {"2.2", "2.3", "2.4 TMC2130", "2.4 TMC5160"})
+    Me.ComboBoxPCBMainUnitF.Items.AddRange(New Object() {"2.2 TMC2130", "2.3 TMC2130", "2.4 TMC2130", "2.4 TMC5160"})
     Me.ComboBoxPCBMainUnitF.Location = New System.Drawing.Point(71, 17)
     Me.ComboBoxPCBMainUnitF.Name = "ComboBoxPCBMainUnitF"
     Me.ComboBoxPCBMainUnitF.Size = New System.Drawing.Size(110, 21)
@@ -238,17 +261,27 @@ Partial Class Uploader
     'ComboBoxFirmwareVersion
     '
     Me.ComboBoxFirmwareVersion.FormattingEnabled = True
-    Me.ComboBoxFirmwareVersion.Items.AddRange(New Object() {"1.0", "1.1", "beta"})
+    Me.ComboBoxFirmwareVersion.Items.AddRange(New Object() {"1.2"})
     Me.ComboBoxFirmwareVersion.Location = New System.Drawing.Point(124, 17)
     Me.ComboBoxFirmwareVersion.Name = "ComboBoxFirmwareVersion"
     Me.ComboBoxFirmwareVersion.Size = New System.Drawing.Size(143, 21)
     Me.ComboBoxFirmwareVersion.TabIndex = 13
+    '
+    'ButtonDownLoad
+    '
+    Me.ButtonDownLoad.Location = New System.Drawing.Point(303, 15)
+    Me.ButtonDownLoad.Name = "ButtonDownLoad"
+    Me.ButtonDownLoad.Size = New System.Drawing.Size(75, 23)
+    Me.ButtonDownLoad.TabIndex = 16
+    Me.ButtonDownLoad.Text = "Download!"
+    Me.ButtonDownLoad.UseVisualStyleBackColor = True
     '
     'Uploader
     '
     Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
     Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
     Me.ClientSize = New System.Drawing.Size(390, 240)
+    Me.Controls.Add(Me.ButtonDownLoad)
     Me.Controls.Add(Me.ComboBoxFirmwareVersion)
     Me.Controls.Add(Me.Label6)
     Me.Controls.Add(Me.TabControlFirmware)
@@ -290,4 +323,7 @@ Partial Class Uploader
   Friend WithEvents Label1 As Label
   Friend WithEvents Label6 As Label
   Friend WithEvents ComboBoxFirmwareVersion As ComboBox
+  Friend WithEvents Label7 As Label
+  Friend WithEvents ComboBoxLanguage As ComboBox
+  Friend WithEvents ButtonDownLoad As Button
 End Class

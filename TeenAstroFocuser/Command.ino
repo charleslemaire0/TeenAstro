@@ -3,7 +3,10 @@
 #define INPUT_SIZE 30
 
 //target
-enum MoveMode{RESET, GOTO, MAN};
+enum MoveMode
+{
+  RESET, GOTO, MAN
+};
 bool breakgoto = false;
 MoveMode mode = RESET;
 long target = 0;
@@ -18,7 +21,7 @@ void pid()
   if (deltaTarget == 0)
   {
     rotateController.stopAsync();
-    lastTick =0;
+    lastTick = 0;
     return;
   }
   if (millis() - lastTick > PID_Interval)
@@ -528,12 +531,12 @@ void SerCom::dumpConfig()
   char buf[50];
   sprintf(buf, "~%05u %05u %03u %03u %03u %03u %03u#",
     (unsigned int)(startPosition->get() / resolution->get()),
-    (unsigned int)(maxPosition->get() / resolution->get()),
-    lowSpeed->get(),
-    highSpeed->get(),
-    cmdAcc->get(),
-    manAcc->get(),
-    manDec->get()
+          (unsigned int)(maxPosition->get() / resolution->get()),
+          lowSpeed->get(),
+          highSpeed->get(),
+          cmdAcc->get(),
+          manAcc->get(),
+          manDec->get()
   );
   ser.print(buf);
   ser.flush();
@@ -544,9 +547,9 @@ void SerCom::dumpConfigMotor()
   char buf[50];
   sprintf(buf, "M%u %u %03u %03u#",
     (unsigned int)(reverse->get()),
-    (unsigned int)(micro->get()),
-    (unsigned int)(resolution->get()),
-    (unsigned int)(curr->get()));
+          (unsigned int)(micro->get()),
+          (unsigned int)(resolution->get()),
+          (unsigned int)(curr->get()));
   ser.print(buf);
   ser.flush();
 }
@@ -562,8 +565,8 @@ void SerCom::dumpState()
   unsigned int p = (unsigned int)(stepper.getPosition() / resolution->get());
   printvalue(p, 5, 0, false);
   ser.print(" ");
-  p = (controller.isRunning()|| rotateController.isRunning()) ?
-      (unsigned int)abs(rotateController.getCurrentSpeed() / pow(2, micro->get())) : 0;
+  p = (controller.isRunning() || rotateController.isRunning()) ?
+    (unsigned int)abs(rotateController.getCurrentSpeed() / pow(2, micro->get())) : 0;
   printvalue(p, 3, 0, false);
   ser.print(" ");
   printvalue(lastTemp, 2, 2, true);
@@ -642,7 +645,7 @@ void SerCom::sayHello(void)
   ser.print(" ");
   ser.print(BOARDINFO);
   ser.print(" ");
-  ser.print(Version);
+  ser.print(FirmwareVersion);
   ser.print("#");
   ser.flush();
 }

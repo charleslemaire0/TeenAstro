@@ -10,7 +10,7 @@ void TeenAstroMountStatus::nextStepAlign()
   if (isAlignSelect())
   {
     m_align = ALI_SLEW; return;
-  };
+  }
   if (isAlignSlew())
   {
     m_align = ALI_RECENTER; return;
@@ -49,13 +49,10 @@ void TeenAstroMountStatus::updateV()
   if (!m_hasInfoV)
   {
     m_hasInfoV = GetLX200(":GVP#", m_TempVP, sizeof(m_TempVP)) == LX200VALUEGET;
+    m_hasInfoV = m_hasInfoV && !strcmp(m_TempVP, "TeenAstro");
     m_hasInfoV = m_hasInfoV && GetLX200(":GVN#", m_TempVN, sizeof(m_TempVN)) == LX200VALUEGET;
     m_hasInfoV = m_hasInfoV && GetLX200(":GVD#", m_TempVD, sizeof(m_TempVD)) == LX200VALUEGET;
     m_hasInfoV ? 0 : m_connectionFailure++;
-    if (!m_isValid && strstr(m_TempVP, "TeenAstro"))
-    {
-      m_isValid = true;
-    }
   }
 };
 void TeenAstroMountStatus::updateRaDec()
@@ -85,18 +82,31 @@ void TeenAstroMountStatus::updateAzAlt()
     m_hasInfoAz && m_hasInfoAlt ? m_lastStateAzAlt = millis() : m_connectionFailure++;
   }
 }
+void TeenAstroMountStatus::updateAxis()
+{
+  if (millis() - m_lastStateAxis > updaterate)
+  {
+    m_hasInfoAxis1 = GetLX200(":GXF8#", m_TempAxis1, sizeof(m_TempAxis1)) == LX200VALUEGET;
+    m_hasInfoAxis2 = GetLX200(":GXF9#", m_TempAxis2, sizeof(m_TempAxis2)) == LX200VALUEGET;
+    m_hasInfoAxis1 && m_hasInfoAxis2 ? m_lastStateAxis = millis() : m_connectionFailure++;
+  }
+}
 void TeenAstroMountStatus::updateTime()
 {
   if (millis() - m_lastStateTime > updaterate)
   {
-    m_hasInfoUTC = GetLX200(":GL#", m_TempUTC, sizeof(m_TempUTC)) == LX200VALUEGET;
-    m_hasInfoUTCdate =  GetLX200(":GX81#", m_TempUTCdate, sizeof(m_TempUTCdate)) == LX200VALUEGET;
+    m_hasInfoUTC = GetLX200(":GXT0#", m_TempUTC, sizeof(m_TempUTC)) == LX200VALUEGET;
+    m_hasInfoUTCdate =  GetLX200(":GXT1#", m_TempUTCdate, sizeof(m_TempUTCdate)) == LX200VALUEGET;
     m_hasInfoSidereal = GetLX200(":GS#", m_TempSidereal, sizeof(m_TempSidereal)) == LX200VALUEGET;
     m_hasInfoUTC && m_hasInfoSidereal  && m_hasInfoUTCdate ? m_lastStateTime = millis() : m_connectionFailure++;
   }
 };
 void TeenAstroMountStatus::updateFocuser()
 {
+  if (!m_hasFocuser)
+  {
+    return;
+  }
   if (millis() - m_lastStateFocuser > updaterate)
   {
     char fc[45];
@@ -105,6 +115,11 @@ void TeenAstroMountStatus::updateFocuser()
     {
       m_lastStateFocuser = millis();
       strncpy(m_TempFocuser, fc, 45);
+    }
+    else if (m_hasInfoFocuser && fc[0] == '0')
+    {
+      m_hasInfoFocuser = false;
+      m_hasFocuser = false;
     }
     else
     {
@@ -124,7 +139,7 @@ void TeenAstroMountStatus::updateMount()
 {
   if (millis() - m_lastStateMount > updaterate)
   {
-    m_hasInfoMount = GetLX200(":GU#", m_TempMount, sizeof(m_TempMount)) == LX200VALUEGET;
+    m_hasInfoMount = GetLX200(":GXI#", m_TempMount, sizeof(m_TempMount)) == LX200VALUEGET;
     m_hasInfoMount ? m_lastStateMount = millis() : m_connectionFailure++;
   }
 };
@@ -170,10 +185,22 @@ TeenAstroMountStatus::Mount TeenAstroMountStatus::getMount()
     return MOUNT_TYPE_FORK_ALT;
   case 'U':
     return MOUNT_UNDEFINED;
-    break;
   }
   return MOUNT_UNDEFINED;
 }
+
+bool TeenAstroMountStatus::isAltAz()
+{
+  switch (getMount())
+  {
+  case MOUNT_TYPE_GEM:
+  case MOUNT_TYPE_FORK:
+    return false;
+    break;
+  }
+  return true;
+}
+
 TeenAstroMountStatus::TrackState TeenAstroMountStatus::getTrackingState()
 {
   switch (m_TempMount[0])
@@ -201,6 +228,10 @@ TeenAstroMountStatus::SiderealMode TeenAstroMountStatus::getSiderealMode()
     return SiderealMode::SID_STAR;
   }
 }
+bool TeenAstroMountStatus::isTrackingCorrected()
+{
+  return m_TempMount[10] == 'c';
+}
 bool TeenAstroMountStatus::getLstT0(double &T0)
 {
   return GetLstT0LX200(T0) == LX200VALUEGET;
@@ -212,6 +243,16 @@ bool TeenAstroMountStatus::getLat(double &lat)
 bool TeenAstroMountStatus::getTrackingRate(double &r)
 {
   return GetTrackingRateLX200(r) == LX200VALUEGET;
+};
+bool TeenAstroMountStatus::checkConnection(char* major, char* minor)
+{
+  if (!m_isValid)
+  { 
+    updateV();
+    m_isValid = hasInfoV() &&
+      m_TempVN[0] == major[0] && m_TempVN[2] == minor[0];
+  }
+  return m_isValid;
 };
 bool TeenAstroMountStatus::atHome()
 {
@@ -254,10 +295,15 @@ bool TeenAstroMountStatus::isGuidingS()
 {
   return  m_TempMount[8] == '_';
 }
+bool TeenAstroMountStatus::isAligned()
+{
+  return m_TempMount[11] == '1';
+}
 bool TeenAstroMountStatus::isGNSSValid()
 {
   return  m_TempMount[14] == '1';
 }
+
 TeenAstroMountStatus::PierState TeenAstroMountStatus::getPierState()
 {
   switch (m_TempMount[13])
