@@ -124,7 +124,7 @@
     End While
   End Sub
   Function SendVal(ByVal val As String, ByVal value As UShort) As Boolean
-    Dim s2 As String = "F" & val & " " & value
+    Dim s2 As String = "F" & val & "," & value
     Return Foc.CommandBool(s2)
   End Function
 End Class

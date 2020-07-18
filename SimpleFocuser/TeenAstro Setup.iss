@@ -5,13 +5,13 @@
 [Setup]
 AppID={{2cfd1dc5-0dea-4174-832e-46f7f9a55742}
 AppName=ASCOM TeenAstro Focuser Driver
-AppVerName=ASCOM TeenAstro Focuser Driver 1.1.1
-AppVersion=1.1.1
+AppVerName=ASCOM TeenAstro Focuser Driver 1.2.0
+AppVersion=1.2.0
 AppPublisher=Charles Lemaire <Charles_Lemaire@gmx.net>
 AppPublisherURL=mailto:Charles_Lemaire@gmx.net
 AppSupportURL=https://groups.io/g/TeenAstro/
 AppUpdatesURL=https://groups.io/g/TeenAstro/
-VersionInfoVersion=1.1.1
+VersionInfoVersion=1.2.0
 MinVersion=0,5.0.2195sp4
 DefaultDirName="{cf}\ASCOM\Focuser"
 DisableDirPage=yes
