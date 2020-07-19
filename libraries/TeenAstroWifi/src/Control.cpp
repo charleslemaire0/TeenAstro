@@ -424,7 +424,7 @@ void TeenAstroWifi::processControlGet()
 
     // Focuser
     else if (v == "Fz") SetLX200(":FP#");
-    else if (v == "Fh") SetLX200(":FS0#");
+    else if (v == "Fh") SetLX200(":FS,0#");
     else if (v == "Fi") SetLX200(":F-#");
     else if (v == "Fo") SetLX200(":F+#");
     else if (v == "Fq") SetLX200(":FQ#");
