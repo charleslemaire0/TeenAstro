@@ -1,4 +1,4 @@
-#include "SmartController.h"
+﻿#include "SmartController.h"
 #include "SHC_text.h"
 
 void SmartHandController::menuFocuserSettings()

@@ -142,6 +142,7 @@ bool SerCom::Get_Command()
     m_value = atoi(&m_input[4]);
   }
   m_hasReceivedCommand = true;
+  m_input[0] = 0;
   return m_hasReceivedCommand;
 }
 
