@@ -5,13 +5,13 @@
 [Setup]
 AppID={{a70371c0-9a81-4ba1-96a8-c7cb5e401062}
 AppName=ASCOM TeenAstro Telescope Driver
-AppVerName=ASCOM TeenAstro Telescope Driver 1.2.0.1
-AppVersion=1.2.0.1
+AppVerName=ASCOM TeenAstro Telescope Driver 1.2.0.2
+AppVersion=1.2.0.2
 AppPublisher=Charles Lemaire <Charles_Lemaire@gmx.net>
 AppPublisherURL=mailto:Charles_Lemaire@gmx.net
 AppSupportURL=https://groups.io/g/TeenAstro/
 AppUpdatesURL=https://groups.io/g/TeenAstro/
-VersionInfoVersion=1.2.0.1
+VersionInfoVersion=1.2.0.2
 MinVersion=0,5.0.2195sp4
 DefaultDirName="{cf}\ASCOM\Telescope"
 DisableDirPage=yes

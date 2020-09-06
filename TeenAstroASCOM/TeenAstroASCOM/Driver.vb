@@ -334,7 +334,7 @@ Public Class Telescope
 
     Dim ClientSocket As System.Net.Sockets.TcpClient = New Net.Sockets.TcpClient
     Dim result As IAsyncResult = ClientSocket.BeginConnect(mobjectIP, mPort, Nothing, Nothing)
-    Dim online = result.AsyncWaitHandle.WaitOne(500, True)
+    Dim online = result.AsyncWaitHandle.WaitOne(2000, True)
     If Not online Then
       ClientSocket.Close()
       mconnectedState = False
@@ -374,6 +374,7 @@ Public Class Telescope
     Catch ex As Exception
       getStream = False
     End Try
+    ClientSocket.Close()
   End Function
 
   Private Function GetSerial(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean

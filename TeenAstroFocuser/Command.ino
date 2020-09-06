@@ -136,12 +136,13 @@ bool SerCom::Get_Command()
   m_command = m_input[2];
   m_parameter = size < 4 ? 0 : m_input[3];
   m_valuedefined = false;
-  if (m_parameter == ' ')
+  if (m_parameter == ',')
   {
     m_valuedefined = true;
     m_value = atoi(&m_input[4]);
   }
   m_hasReceivedCommand = true;
+  m_input[0] = 0;
   return m_hasReceivedCommand;
 }
 
