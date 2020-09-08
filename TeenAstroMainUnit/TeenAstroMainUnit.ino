@@ -575,10 +575,10 @@ void initTransformation(bool reset)
         cosLat = cos(val / Rad);
         sinLat = sin(val / Rad);
       }
-      HorTopoToEqu(180, 0, &ha, &dec, &cosLat, &sinLat);
-      alignment.addReferenceDeg(180, 0, ha, dec);
-      HorTopoToEqu(180, 90, &ha, &dec, &cosLat, &sinLat);
-      alignment.addReferenceDeg(180, 90, ha, dec);
+      HorTopoToEqu(90., 45., &ha, &dec, &cosLat, &sinLat);
+      alignment.addReferenceDeg(90., 45., ha, dec);
+      HorTopoToEqu(270., 45., &ha, &dec, &cosLat, &sinLat);
+      alignment.addReferenceDeg(270., 45., ha, dec);
       alignment.calculateThirdReference();
     }
   }
