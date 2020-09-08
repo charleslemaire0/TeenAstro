@@ -1,7 +1,7 @@
 #pragma once
 #ifndef __TeenAstroMath_h__
 #define __TeenAstroMath_h__
-#define Rad 57.29577951308
+#define Rad 57.29577951308232
 
 enum PierSide
 {
