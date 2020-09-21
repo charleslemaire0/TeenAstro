@@ -1,4 +1,4 @@
-#include "SmartController.h"
+﻿#include "SmartController.h"
 #include "SHC_text.h"
 
 void SmartHandController::menuFocuserSettings()
@@ -94,49 +94,49 @@ void SmartHandController::menuFocuserConfig()
       {
         value = sP;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_PARKPOSITION, "", &value, 0, 65535, 5, 0, "");
-        sprintf(cmd, ":F0 %05d#", (int)(value));
+        sprintf(cmd, ":F0,%05d#", (int)(value));
         break;
       }
       case 3:
       {
         value = maxP;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_MAXPOSITION, "", &value, 0, 65535, 5, 0, "");
-        sprintf(cmd, ":F1 %05d#", (int)(value));
+        sprintf(cmd, ":F1,%05d#", (int)(value));
         break;
       }
       case 4:
       {
         value = minS;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_MANUALSPEED, "", &value, 1, 999, 5, 0, "");
-        sprintf(cmd, ":F2 %03d#", (int)(value));
+        sprintf(cmd, ":F2,%03d#", (int)(value));
         break;
       }
       case 5:
       {
         value = maxS;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_GOTOSPEED, "", &value, 1, 999, 5, 0, "");
-        sprintf(cmd, ":F3 %03d#", (int)(value));
+        sprintf(cmd, ":F3,%03d#", (int)(value));
         break;
       }
       case 6:
       {
         value = manAcc;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_ACCFORMAN, "", &value, 1, 100, 5, 0, "");
-        sprintf(cmd, ":F5 %03d#", (int)(value));
+        sprintf(cmd, ":F5,%03d#", (int)(value));
         break;
       }
       case 7:
       {
         value = cmdAcc;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_ACCFORGOTO, "", &value, 1, 100, 5, 0, "");
-        sprintf(cmd, ":F4 %03d#", (int)(value));
+        sprintf(cmd, ":F4,%03d#", (int)(value));
         break;
       }
       case 8:
       {
         value = manDec;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_DECFORMAN, "", &value, 1, 100, 5, 0, "");
-        sprintf(cmd, ":F6 %03d#", (int)(value));
+        sprintf(cmd, ":F6,%03d#", (int)(value));
         break;
       }
       default:
@@ -192,7 +192,7 @@ void SmartHandController::menuFocuserMotor()
         value = res;
 #define T_INCREMENTATION "Incrementation"
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_INCREMENTATION, "", &value, 1, 512, 5, 0, " " T_MICROSTEP);
-        sprintf(cmd, ":F8 %03d#", (int)(value));
+        sprintf(cmd, ":F8,%03d#", (int)(value));
         break;
         break;
       }
@@ -202,7 +202,7 @@ void SmartHandController::menuFocuserMotor()
         uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, T_ROTATION, (uint8_t)rev + 1, string_list);
         if (choice)
         {
-          sprintf(cmd, ":F7 %d#", (int)(choice - 1));
+          sprintf(cmd, ":F7,%d#", (int)(choice - 1));
           ValueSetRequested = true;
         }
         break;
@@ -216,7 +216,7 @@ void SmartHandController::menuFocuserMotor()
         if (choice)
         {
           microStep = choice - 1 + 2;
-          sprintf(cmd, ":Fm %d#", microStep);
+          sprintf(cmd, ":Fm,%d#", microStep);
           ValueSetRequested = true;
         }
         break;
@@ -225,7 +225,7 @@ void SmartHandController::menuFocuserMotor()
       {
         value = curr;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_CURRENT, "", &value, 1, 160, 10, 0, "0 mA");
-        sprintf(cmd, ":Fc %03d#", (int)(value));
+        sprintf(cmd, ":Fc,%03d#", (int)(value));
         break;
       }
       default:
@@ -330,7 +330,7 @@ void SmartHandController::menuFocuserAction()
           if (display->UserInterfaceInputValueFloat(&buttonPad, T_GOTOPOSITION, "", &FocuserPos, 0, 65535, 5, 0, ""))
           {
             char cmd[15];
-            sprintf(cmd, ":FG %05d#", (int)(FocuserPos));
+            sprintf(cmd, ":FG,%05d#", (int)(FocuserPos));
             DisplayMessage(T_GOTO, T_POSITION, 1000);
             SetLX200(cmd);
             exitMenu = true;
@@ -342,7 +342,7 @@ void SmartHandController::menuFocuserAction()
           if (display->UserInterfaceInputValueFloat(&buttonPad, T_SYNCPOSITION, "", &FocuserPos, 0, 65535, 5, 0, ""))
           {
             char cmd[15];
-            sprintf(cmd, ":FS %05d#", (int)(FocuserPos));
+            sprintf(cmd, ":FS,%05d#", (int)(FocuserPos));
             DisplayMessage(T_SYNCEDAT, T_POSITION, 1000);
             SetLX200(cmd);
             exitMenu = true;

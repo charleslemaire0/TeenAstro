@@ -343,7 +343,7 @@ Public Class Focuser
   Private focuserTemperature As Double = -99.99
   Private m_ismoving As Boolean = False
   Private m_maxPos As UShort
-  Private LastUpdate As Date = Now
+
 
   Public ReadOnly Property Absolute() As Boolean Implements IFocuserV2.Absolute
     Get
@@ -394,7 +394,7 @@ Public Class Focuser
   Public Sub Move(Position As Integer) Implements IFocuserV2.Move
     TL.LogMessage("Move", Position.ToString())
     If Position < m_maxPos Then
-      CommandBlind("FG " & Position)
+      CommandBlind("FG," & Position)
     End If
   End Sub
 
@@ -534,10 +534,6 @@ Public Class Focuser
 
   Private Sub UpdateStatus()
     Try
-      Dim a As Date = Now
-      If (a - LastUpdate).Milliseconds > 100 Then
-        LastUpdate = Now
-      End If
       Dim s As String = CommandString("F?").Trim("?")
       Dim elments As String() = s.Split(" ")
       focuserPosition = CInt(elments(0))
@@ -586,7 +582,7 @@ Public Class Focuser
   Private Function getStream(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
     Dim ClientSocket As System.Net.Sockets.TcpClient = New Net.Sockets.TcpClient
     Dim result As IAsyncResult = ClientSocket.BeginConnect(mobjectIP, mPort, Nothing, Nothing)
-    Dim online = result.AsyncWaitHandle.WaitOne(1000, True)
+    Dim online = result.AsyncWaitHandle.WaitOne(2000, True)
     If Not online Then
       ClientSocket.Close()
       mconnectedState = False
@@ -602,29 +598,33 @@ Public Class Focuser
         Case 0
           getStream = True
         Case 1 To 2
-          Dim myReadBuffer(ClientSocket.ReceiveBufferSize) As Byte
-          Dim myCompleteMessage As StringBuilder = New StringBuilder()
-          Dim numberOfBytesRead As Integer = 0
-          ' Incoming message may be larger than the buffer size.
-          Do
-            numberOfBytesRead = ServerStream.Read(myReadBuffer, 0, myReadBuffer.Length)
-            myCompleteMessage.AppendFormat("{0}", Encoding.ASCII.GetString(myReadBuffer, 0, numberOfBytesRead))
-          Loop While ServerStream.DataAvailable
-          buf = myCompleteMessage.ToString()
-          If Mode = 1 And buf <> "" Then
-            buf = buf.Substring(0, 1)
-          ElseIf Mode = 2 And buf <> "" Then
-            buf = buf.Split("#")(0)
+          If ServerStream.CanRead Then
+            Dim myReadBuffer(ClientSocket.ReceiveBufferSize) As Byte
+            Dim myCompleteMessage As StringBuilder = New StringBuilder()
+            Dim numberOfBytesRead As Integer = 0
+            Threading.Thread.Sleep(50)
+            ' Incoming message may be larger than the buffer size.
+            While ServerStream.DataAvailable
+              numberOfBytesRead = ServerStream.Read(myReadBuffer, 0, myReadBuffer.Length)
+              myCompleteMessage.AppendFormat("{0}", Encoding.ASCII.GetString(myReadBuffer, 0, numberOfBytesRead))
+            End While
+
+            buf = myCompleteMessage.ToString()
+            If Mode = 1 And buf <> "" Then
+              buf = buf.Substring(0, 1)
+            ElseIf Mode = 2 And buf <> "" Then
+              buf = buf.Split("#")(0)
+            End If
+            getStream = buf <> ""
+          Else
+            getStream = False
           End If
-          getStream = buf <> ""
+
       End Select
-      ServerStream.Close()
-      ServerStream.Dispose()
     Catch ex As Exception
       getStream = False
     End Try
     ClientSocket.Close()
-    ClientSocket = Nothing
   End Function
 
   Private Function GetSerial(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
