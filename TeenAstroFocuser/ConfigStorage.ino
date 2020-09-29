@@ -10,6 +10,9 @@
 #define TAF_micro_default  4
 #define TAF_micro_min 2
 #define TAF_micro_max 7
+#define TAF_steprot_default  200
+#define TAF_steprot_min 10
+#define TAF_steprot_max 800
 #define TAF_pos_default 0
 #define TAF_pos_min 0
 #define TAF_pos_max 2000000000UL
@@ -222,6 +225,8 @@ void loadConfig()
   k += sizeof(uint8_t);
   micro = new Parameteruint8_t(k, TAF_micro_default, TAF_micro_min, TAF_micro_max);
   k += sizeof(uint8_t);
+  steprot = new Parameteruint(k, TAF_steprot_default, TAF_steprot_min, TAF_steprot_max);
+  k += sizeof(unsigned int);
   reverse = new Parameteruint8_t(k, 0, 0, 1);
   k += sizeof(uint8_t);
   startPosition = new Parameterulong(k, TAF_pos_default, TAF_pos_min, min(TAF_pos_max, 65535 * resolution->get()));

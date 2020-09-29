@@ -48,6 +48,7 @@
 #define FocCmd_inpulse '8'
 #define FocCmd_current 'c'
 #define FocCmd_micro 'm'
+#define FocCmd_steprot 'r'
 
 
 #define Char_CR 13

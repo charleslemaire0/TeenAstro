@@ -109,7 +109,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       break;
     case 'F':
       if (strchr("+-gGPQsS", command[2])) cmdreply = CMDR_NO;
-      else if (strchr("OoIi:012345678cCmW", command[2])) cmdreply = CMDR_SHORT;
+      else if (strchr("OoIi:012345678cCmrW", command[2])) cmdreply = CMDR_SHORT;
       else if (strchr("x?~MV", command[2])) cmdreply = CMDR_LONG;
       else cmdreply = CMDR_INVALID;
       break;
@@ -901,6 +901,30 @@ LX200RETURN writeMicroLX200(const uint8_t &axis, const uint8_t &microStep)
   cmd[5] = axis == 1 ? 'R' : 'D';
   return SetLX200(cmd);
 }
+LX200RETURN readSilentStepLX200(const uint8_t &axis, uint8_t &silent)
+{
+  char out[LX200sbuff];
+  LX200RETURN ok = axis == 1 ? GetLX200(":GXMmR#", out, sizeof(out)) : GetLX200(":GXMmD#", out, sizeof(out));
+  if (ok == LX200VALUEGET)
+  {
+    long value = strtol(&out[0], NULL, 10);
+
+    if ((value >= 0 && value < 2))
+    {
+      silent = value;
+      return ok;
+    }
+    return LX200GETVALUEFAILED;
+  }
+  return ok;
+}
+LX200RETURN writeSilentStepLX200(const uint8_t &axis, const uint8_t &silent)
+{
+  char cmd[LX200sbuff];
+  sprintf(cmd, ":SXMmX,%u#", silent);
+  cmd[5] = axis == 1 ? 'R' : 'D';
+  return SetLX200(cmd);
+}
 LX200RETURN readLowCurrLX200(const uint8_t &axis, uint8_t &lowCurr)
 {
   char out[LX200sbuff];
@@ -970,20 +994,21 @@ LX200RETURN readFocuserConfig(unsigned int& startPosition, unsigned int& maxPosi
   return LX200VALUEGET;
 }
 
-LX200RETURN readFocuserMotor(bool& reverse, unsigned int& micro, unsigned int& incr, unsigned int& curr)
+LX200RETURN readFocuserMotor(bool& reverse, unsigned int& micro, unsigned int& incr, unsigned int& curr, unsigned int& steprot)
 {
   char out[LX200lbuff];
   if (GetLX200(":FM#", out, sizeof(out)) == LX200GETVALUEFAILED)
     if (GetLX200(":FM#", out, sizeof(out)) == LX200GETVALUEFAILED)
       if (GetLX200(":FM#", out, sizeof(out)) == LX200GETVALUEFAILED)
         return LX200GETVALUEFAILED;
-  if (strlen(out) != 12)
+  if (strlen(out) != 16)
     return LX200GETVALUEFAILED;
   char* pEnd;
   reverse = out[1] == '1';
   micro = out[3] - '0';
   incr = strtol(&out[5], &pEnd, 10);
   curr = strtol(&out[9], &pEnd, 10);
+  steprot = strtol(&out[13], &pEnd, 10);
   return LX200VALUEGET;
 }
 
