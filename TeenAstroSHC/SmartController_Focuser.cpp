@@ -15,7 +15,7 @@ void SmartHandController::menuFocuserSettings()
   uint8_t tmp_sel;
   while (!exitMenu)
   {
-    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_FOCUSERSETTINGS, tmp_sel, string_list_Focuser);
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_FOCUSERSETTINGS, s_sel, string_list_Focuser);
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
     bool ValueSetRequested = false;
     switch (tmp_sel)
@@ -154,15 +154,15 @@ void SmartHandController::menuFocuserConfig()
 void SmartHandController::menuFocuserMotor()
 {
   char cmd[50];
-  const char *string_list_Focuser = T_DISPLAYSETTINGS "\n" T_RESOLUTION "\n" T_ROTATION "\n" T_MICROSTEP "\n" T_CURRENT;
-  unsigned int res, mu, curr;
+  const char *string_list_Focuser = T_DISPLAYSETTINGS "\n" T_RESOLUTION "\n" T_ROTATION "\n" T_STEPSPERROT "\n" T_MICROSTEP "\n" T_CURRENT;
+  unsigned int res, mu, curr, steprot;
   bool rev;
   float value;
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
   while (!exitMenu)
   {
-    if (DisplayMessageLX200(readFocuserMotor(rev, mu, res, curr)))
+    if (DisplayMessageLX200(readFocuserMotor(rev, mu, res, curr, steprot)))
     {
       tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_FOCUSERSETTINGS, s_sel, string_list_Focuser);
       s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
@@ -178,10 +178,12 @@ void SmartHandController::menuFocuserMotor()
         char line2[32] = "";
         char line3[32] = "";
         char line4[32] = "";
-        sprintf(line1, T_MOTORSETTINGS);
+        sprintf(line1, "Motor Settings");//todo
+        rev ? sprintf(line2, T_REVERSEDROTATION) : sprintf(line2, T_DIRECTROTATION);
         sprintf(line3, T_RESOLUTION"  : %03u", res);
-        rev ? sprintf(line4, T_REVERSEDROTATION) : sprintf(line2, T_DIRECTROTATION);
         DisplayLongMessage(line1, line2, line3, line4, -1);
+
+        sprintf(line2, T_STEPS " : %03u", steprot);
         sprintf(line3, T_MICROSTEP " : %03u", (unsigned int)pow(2, mu));
         sprintf(line4, T_CURRENT " : %04umA", curr * 10);
         DisplayLongMessage(line1, line2, line3, line4, -1);
@@ -190,10 +192,8 @@ void SmartHandController::menuFocuserMotor()
       case 2:
       {
         value = res;
-#define T_INCREMENTATION "Incrementation"
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_INCREMENTATION, "", &value, 1, 512, 5, 0, " " T_MICROSTEP);
         sprintf(cmd, ":F8,%03d#", (int)(value));
-        break;
         break;
       }
       case 3:
@@ -209,6 +209,13 @@ void SmartHandController::menuFocuserMotor()
       }
       case 4:
       {
+        value = steprot;
+        ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_STEPSPERROT, "", &value, 10, 800, 3, 0, " " T_MICROSTEP);
+        sprintf(cmd, ":Fr,%03d#", (int)(value));
+        break;
+      }
+      case 5:
+      {
         uint8_t microStep = mu;
         char * string_list_micro = "4\n8\n16\n32\n64\n128";
         uint8_t choice = microStep - 2 + 1;
@@ -221,7 +228,7 @@ void SmartHandController::menuFocuserMotor()
         }
         break;
       }
-      case 5:
+      case 6:
       {
         value = curr;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_CURRENT, "", &value, 1, 160, 10, 0, "0 mA");

@@ -54,6 +54,7 @@ void Command_F()
   case 'c':
   case 'C':
   case 'm':
+  case 'r':
     focuserNoResponse = false;
     focuserShortResponse = true;
     break;

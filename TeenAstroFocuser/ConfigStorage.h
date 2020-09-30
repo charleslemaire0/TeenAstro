@@ -80,6 +80,7 @@ public:
   Parameteruint(const int &adress, const  unsigned int &valuedefault, const unsigned int &value_min, const unsigned int &value_max);
 };
 Parameteruint8_t *curr;
+Parameteruint *steprot;
 Parameteruint8_t *micro;
 Parameteruint8_t *reverse;
 Parameterulong *startPosition;

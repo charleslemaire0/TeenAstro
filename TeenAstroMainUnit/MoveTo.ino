@@ -167,7 +167,7 @@ Again:
   }
 }
 
-bool DecayModeTrack = false;
+
 
 // if stepper drive can switch decay mode, set it here
 void DecayModeTracking()

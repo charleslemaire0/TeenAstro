@@ -52,6 +52,8 @@ void TeenAstroMountStatus::updateV()
     m_hasInfoV = m_hasInfoV && !strcmp(m_TempVP, "TeenAstro");
     m_hasInfoV = m_hasInfoV && GetLX200(":GVN#", m_TempVN, sizeof(m_TempVN)) == LX200VALUEGET;
     m_hasInfoV = m_hasInfoV && GetLX200(":GVD#", m_TempVD, sizeof(m_TempVD)) == LX200VALUEGET;
+    m_hasInfoV = m_hasInfoV && GetLX200(":GVB#", m_TempVB, sizeof(m_TempVB)) == LX200VALUEGET;
+    m_hasInfoV = m_hasInfoV && GetLX200(":GVb#", m_TempVb, sizeof(m_TempVb)) == LX200VALUEGET;
     m_hasInfoV ? 0 : m_connectionFailure++;
   }
 };
@@ -254,6 +256,33 @@ bool TeenAstroMountStatus::checkConnection(char* major, char* minor)
   }
   return m_isValid;
 };
+bool TeenAstroMountStatus::getDriverName(char* name)
+{
+  if (!m_isValid)
+  {
+    updateV();
+    if (m_isValid)
+    {
+      switch (m_TempVb[0])
+      {
+      default:
+      case '0':
+        strcpy(name, "unknown");
+        break;
+      case '1':
+        strcpy(name, "TOS100");
+        break;
+      case '2':
+        strcpy(name, "TMC2130");
+        break;
+      case '3':
+        strcpy(name, "TMC5160");
+        break;
+      }
+    }
+  }
+  return m_isValid;
+}
 bool TeenAstroMountStatus::atHome()
 {
   return m_TempMount[3] == 'H';
@@ -301,9 +330,12 @@ bool TeenAstroMountStatus::isAligned()
 }
 bool TeenAstroMountStatus::isGNSSValid()
 {
-  return  m_TempMount[14] == '1';
+  return  bitRead(m_TempMount[14] - '0', 0);
 }
-
+bool TeenAstroMountStatus::isLowPower()
+{
+  return  bitRead(m_TempMount[14] - '0', 1);
+}
 TeenAstroMountStatus::PierState TeenAstroMountStatus::getPierState()
 {
   switch (m_TempMount[13])

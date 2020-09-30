@@ -15,6 +15,22 @@ private:
   TMC2130Stepper *m_tmc2130 = NULL;
   TMC5160Stepper *m_tmc5160 = NULL;
 public:
+
+  unsigned int getMode()
+  {
+    switch (m_driver)
+    {
+    case TMC26X:
+      return m_tmc26x->isCoolStepEnabled();
+    case TMC2130:
+      return  m_tmc2130->en_pwm_mode();
+    case TMC5160:
+      return  m_tmc5160->en_pwm_mode();
+    case NODRIVER:
+      break;
+    }
+    return 0;
+  }
   //get current in mA
   unsigned int getCurrent()
   {
@@ -63,6 +79,25 @@ public:
     }
     return;
   };
+
+  void setmode(bool i)
+  {
+    switch (m_driver)
+    {
+    case TMC26X:
+      m_tmc26x->setCoolStepEnabled(i);
+      return;
+    case TMC2130:
+      m_tmc2130->en_pwm_mode(i);
+      return;
+    case TMC5160:
+      m_tmc5160->en_pwm_mode(i);
+      break;
+    case NODRIVER:
+      break;
+    }
+    return;
+  };
   //set current in mA
   void setCurrent(unsigned int val)
   {
@@ -102,7 +137,8 @@ public:
     return;
   };
 
-  void initMotor(MOTORDRIVER useddriver, int StepRot, int EnPin, int CSPin, int DirPin, int StepPin, unsigned int Curr, int Micros)
+
+  void initMotor(MOTORDRIVER useddriver, int StepRot, int EnPin, int CSPin, int DirPin, int StepPin, unsigned int Curr, int Micros, bool silent)
   {
     m_driver = useddriver;
     switch (m_driver)
@@ -120,7 +156,7 @@ public:
       m_tmc26x->start();
       break;
     case TMC2130:
-      m_tmc2130 = new TMC2130Stepper(CSPin, 0.11 - 0.02);
+      m_tmc2130 = new TMC2130Stepper(CSPin);
       if (EnPin > 0)
       {
         pinMode(EnPin, OUTPUT);
@@ -136,16 +172,16 @@ public:
       pinMode(MISO, INPUT_PULLUP);
       m_tmc2130->push();
       m_tmc2130->reset();
-      m_tmc2130->tbl(1);
-      m_tmc2130->TPOWERDOWN(255);
-      m_tmc2130->toff(4);
-      m_tmc2130->hstrt(0);
-      m_tmc2130->hend(2);
-      m_tmc2130->en_pwm_mode(false);
-      m_tmc2130->pwm_freq(150);
-      m_tmc2130->pwm_autoscale(true);
-      m_tmc2130->pwm_grad(15);
-      m_tmc2130->TPWMTHRS(500);
+      //m_tmc2130->tbl(1);
+      //m_tmc2130->TPOWERDOWN(255);
+      m_tmc2130->toff(5);
+      //m_tmc2130->hstrt(0);
+      //m_tmc2130->hend(2);
+      m_tmc2130->en_pwm_mode(silent);
+      m_tmc2130->pwm_autoscale(silent);
+      //m_tmc2130->pwm_freq(150);
+      //m_tmc2130->pwm_grad(15);
+      //m_tmc2130->TPWMTHRS(500);
       setCurrent(Curr); // mA
       setMicrostep(Micros);
       if (EnPin > 0)
@@ -166,18 +202,18 @@ public:
       digitalWrite(CSPin, HIGH);
       SPI.begin();
       pinMode(MISO, INPUT_PULLUP);
-      m_tmc5160->reset();
-      m_tmc5160->push();
-      m_tmc5160->tbl(1);
-      m_tmc5160->TPOWERDOWN(255);
-      m_tmc5160->toff(4);
-      m_tmc5160->hstrt(0);
-      m_tmc5160->hend(2);
-      m_tmc5160->en_pwm_mode(false);
-      m_tmc5160->pwm_freq(150);
-      m_tmc5160->pwm_autoscale(true);
-      m_tmc5160->pwm_grad(15);
-      m_tmc5160->TPWMTHRS(1000);
+      //m_tmc5160->reset();
+      //m_tmc5160->push();
+      //m_tmc5160->tbl(1);
+      //m_tmc5160->TPOWERDOWN(255);
+      m_tmc5160->toff(5);
+      //m_tmc5160->hstrt(0);
+      //m_tmc5160->hend(2);
+      m_tmc5160->en_pwm_mode(silent);
+      m_tmc5160->pwm_autoscale(silent);
+      //m_tmc5160->pwm_freq(150);
+      //m_tmc5160->pwm_grad(15);
+      //m_tmc5160->TPWMTHRS(1000);
       setCurrent(Curr); // mA
       setMicrostep(Micros);
       if (EnPin > 0)

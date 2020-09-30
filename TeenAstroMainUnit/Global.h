@@ -27,6 +27,7 @@ ParkState parkStatus = PRK_UNPARKED;
 bool parkSaved = false;
 bool atHome = true;
 bool homeMount = false;
+bool DecayModeTrack = false;
 MeridianFlip meridianFlip = FLIP_NEVER;
 Mount mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;

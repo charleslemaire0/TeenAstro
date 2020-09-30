@@ -144,6 +144,24 @@ const char html_configHCAxis[] PROGMEM =
 " (High Current Axis%d, from 100mA to 2000mA)"
 "</form>"
 "\r\n";
+
+const char html_configSilentAxis_1[] PROGMEM =
+"<form action='/configuration_telescope.htm'>"
+"<select name='ms%d'>";
+const char html_configSilentAxis_r[] PROGMEM =
+"<option value ='0'>Off</option>"
+"<option selected value='1'>On</option>";
+const char html_configSilentAxis_d[] PROGMEM =
+"<option selected value ='0'>Off</option>"
+"<option value='1'>On</option>";
+
+const char html_configSilentAxis_2[] PROGMEM =
+"</select>"
+"<button type='submit'>Upload</button>"
+" (Silent Axis%d)"
+"</form>"
+"\r\n";
+
 const char html_configMinAlt[] PROGMEM =
 "<div class='bt'> Limits: <br/> </div>"
 "<form method='get' action='/configuration_telescope.htm'>"
@@ -276,6 +294,7 @@ void TeenAstroWifi::handleConfigurationTelescope()
   //Axis1
   data += "<div class='bt'> Motor: <br/> </div>";
   bool reverse = false;
+  uint8_t silent = false;
   readReverseLX200(1, reverse);
   sprintf_P(temp, html_configRotAxis_1, 1);
   data += temp;
@@ -344,6 +363,24 @@ void TeenAstroWifi::handleConfigurationTelescope()
   readHighCurrLX200(2, highC);
   sprintf_P(temp, html_configHCAxis, highC * 10, 2, 2);
   data += temp;
+  const char* board = ta_MountStatus.getVb();
+  if (board[0] - '0' > 1)
+  {
+    readSilentStepLX200(1, silent);
+    sprintf_P(temp, html_configSilentAxis_1, 1);
+    data += temp;
+    data += silent ? FPSTR(html_configSilentAxis_r) : FPSTR(html_configSilentAxis_d);
+    sprintf_P(temp, html_configSilentAxis_2, 1);
+    data += temp;
+    sendHtml(data);
+    readSilentStepLX200(2, silent);
+    sprintf_P(temp, html_configSilentAxis_1, 2);
+    data += temp;
+    data += silent ? FPSTR(html_configSilentAxis_r) : FPSTR(html_configSilentAxis_d);
+    sprintf_P(temp, html_configSilentAxis_2, 2);
+    data += temp;
+    sendHtml(data);
+  }
   data += "<br />";
 
   // Overhead and Horizon Limits
@@ -621,6 +658,24 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
     {
       writeBacklashLX200(2, i);
+    }
+  }
+
+  //silent mode
+  v = server.arg("ms1");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
+    {
+      writeSilentStepLX200(1, i);
+    }
+  }
+  v = server.arg("ms2");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
+    {
+      writeSilentStepLX200(2, i);
     }
   }
   // Overhead and Horizon Limits
