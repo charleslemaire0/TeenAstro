@@ -1,0 +1,1 @@
+You have to install these libs to compile TeenAstro
