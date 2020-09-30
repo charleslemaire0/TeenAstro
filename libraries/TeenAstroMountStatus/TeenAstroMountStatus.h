@@ -25,6 +25,8 @@ private:
 
   char            m_TempVP[20] = "?";
   char            m_TempVN[20] = "?";
+  char            m_TempVB[10] = "?";
+  char            m_TempVb[10] = "?";
   char            m_TempVD[20] = "?";
   char            m_TempRa[15] = "?";
   char            m_TempDec[15] = "?";
@@ -100,6 +102,8 @@ public:
 
   const char* getVP() { return  m_TempVP; };
   const char* getVN() { return  m_TempVN; };
+  const char* getVB() { return  m_TempVB; };
+  const char* getVb() { return  m_TempVb; };
   const char* getVD() { return  m_TempVD; };
   const char* getRa() { return  m_TempRa; };
   const char* getDec() { return  m_TempDec; };
@@ -140,6 +144,7 @@ public:
   bool        getTrackingRate(double &r);
   bool        getGuidingRate(unsigned char &g);
   bool checkConnection(char* major, char* minor);
+  bool getDriverName(char* name);
   bool isConnectionValid() { return m_isValid; };
   bool atHome();
   bool Parking();
@@ -152,6 +157,7 @@ public:
   bool isGuidingW();
   bool isAligned();
   bool isGNSSValid();
+  bool isLowPower();
   //Connection Errors
   bool connected();
   bool notResponding();

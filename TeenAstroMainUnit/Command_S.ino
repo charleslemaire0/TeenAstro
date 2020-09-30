@@ -311,13 +311,13 @@ void Command_SX()
     break;
     case 'M':
     {
-      // :SXMMn,V# Set Microstep
+      // :SXMMnV# Set Microstep
       // for example :GRXMMR3# for 1/8 microstep on the first axis 
       int i;
       if ((command[4] == 'D' || command[4] == 'R')
           && strlen(&command[6]) == 1
           && atoi2(&command[6], &i)
-          && ((i >= 3) && (i < 9)))
+          && ((i >= 1) && (i < 9)))
       {
         if (command[4] == 'D')
         {
@@ -328,6 +328,7 @@ void Command_SX()
           StopAxis2();
           motorA2.micro = i;
           motorA2.driver.setMicrostep(motorA2.micro);
+          updateRatios(true);
           XEEPROM.write(EE_motorA2micro, motorA2.micro);
         }
         else
@@ -339,6 +340,7 @@ void Command_SX()
           StopAxis1();
           motorA1.micro = i;
           motorA1.driver.setMicrostep(motorA1.micro);
+          updateRatios(true);
           XEEPROM.write(EE_motorA1micro, motorA1.micro);
         }
         updateRatios(true);
@@ -347,9 +349,34 @@ void Command_SX()
       else strcpy(reply, "0");
     }
     break;
+    case 'm':
+    {
+      // :SXMmnV# Set coolstep Stepper Mode
+     // for example :GRXMmR1# for cool step on the first axis 
+      int i;
+      if ((command[4] == 'D' || command[4] == 'R')
+          && strlen(&command[6]) == 1
+          && atoi2(&command[6], &i)
+          && ((i >= 0) && (i < 2)))
+      {
+        if (command[4] == 'D')
+        {
+          //motorA2.driver.setmode(i);
+          XEEPROM.write(EE_motorA2silent, i);
+        }
+        else
+        {
+          //motorA1.driver.setmode(i);
+          XEEPROM.write(EE_motorA1silent, i);
+        }
+        strcpy(reply, "1");
+      }
+      else strcpy(reply, "0");
+    }
+    break;
     case 'R':
     {
-      // :SXMRn,V# Set Reverse rotation
+      // :SXMRnV# Set Reverse rotation
       if ((command[4] == 'D' || command[4] == 'R')
           && strlen(&command[6]) == 1
           && (command[6] == '0' || command[6] == '1'))

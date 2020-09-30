@@ -39,7 +39,8 @@
 #define EE_motorA1reverse       65
 #define EE_motorA1lowCurr       66
 #define EE_motorA1highCurr      67
-#define EE_backlashAxis1    68
+#define EE_backlashAxis1        68
+#define EE_motorA1silent        70
 
 //motor2
 #define EE_motorA2gear          72
@@ -48,10 +49,11 @@
 #define EE_motorA2reverse       79
 #define EE_motorA2lowCurr       80
 #define EE_motorA2highCurr      81
-#define EE_backlashAxis2    82
+#define EE_backlashAxis2        82
+#define EE_motorA2silent        84
 
-#define EE_siderealInterval 88
-#define EE_autoInitKey      96
+#define EE_siderealInterval     88
+#define EE_autoInitKey          96
 
 #define EE_sites            100
 #define EE_site_lat         0

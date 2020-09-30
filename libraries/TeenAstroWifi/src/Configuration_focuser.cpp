@@ -75,6 +75,13 @@ const char html_configResolutionFocuser[] PROGMEM =
 " (Sampling in steps from 1(high resolution) to 512(low resolution))"
 "</form>"
 "<br/>\r\n";
+const char html_configStepRotFocuser[] PROGMEM =
+"<form method='get' action='/configuration_focuser.htm'>"
+" <input value='%d' type='number' name='StepRot' min='10' max='800'>"
+"<button type='submit'>Upload</button>"
+" (steps per rotation, from 10 to 800)"
+"</form>"
+"\r\n";
 const char html_configMuFocuser[] PROGMEM =
 "<form method='get' action='/configuration_focuser.htm'>"
 " <input value='%d' type='number' name='MuF' min='4' max='128'>"
@@ -149,12 +156,13 @@ void TeenAstroWifi::handleConfigurationFocuser()
     //sprintf_P(temp, html_configManDecFocuser, dec);
     //data += temp;
   }
-  if (GetLX200(":FM#", temp2, sizeof(temp2)) == LX200VALUEGET && temp2[0] == 'M')
+  bool reverse = false;
+  unsigned int micro = 3;
+  unsigned int resolution = 100;
+  unsigned int curr = 100;
+  unsigned int steprot = 100;
+  if (readFocuserMotor(reverse, micro, resolution, curr, steprot))
   {
-    int reverse = temp2[1] == '1';
-    int micro = (int)strtol(&temp2[3], NULL, 10);
-    int resolution = (int)strtol(&temp2[5], NULL, 10);
-    int curr = 10 * (int)strtol(&temp2[9], NULL, 10);
     data += "Resolution: <br />";
     sprintf_P(temp, html_configResolutionFocuser, resolution);
     data += temp;
@@ -165,6 +173,8 @@ void TeenAstroWifi::handleConfigurationFocuser()
     data += FPSTR(html_configRotFocuser_2);
     sendHtml(data);
     data += "Motor: <br />";
+    sprintf_P(temp, html_configStepRotFocuser, steprot);
+    data += temp;
     sprintf_P(temp, html_configMuFocuser, (int)pow(2., micro));
     data += temp;
     sprintf_P(temp, html_configHCFocuser, curr);
@@ -293,6 +303,15 @@ void TeenAstroWifi::processConfigurationFocuserGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 512)))
     {
       sprintf(temp, ":F8,%d#", i);
+      SetLX200(temp);
+    }
+  }
+  v = server.arg("StepRot");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 10) && (i <= 800)))
+    {
+      sprintf(temp, ":Fr,%d#", i);
       SetLX200(temp);
     }
   }
