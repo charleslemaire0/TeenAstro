@@ -8,7 +8,7 @@ void SmartHandController::menuMotor(const uint8_t axis)
   while (tmp_sel)
   {
     const char *string_list_Motor = T_SHOWSETTINGS "\n" T_ROTATION "\n" T_GEAR "\n" T_STEPSPERROT "\n"
-      T_MICROSTEP "\n" T_BACKLASH "\n" T_LOWCURR "\n" T_HIGHCURR;
+      T_MICROSTEP "\n" T_BACKLASH "\n" T_LOWCURR "\n" T_HIGHCURR "\n" "Silent" ;
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, axis == 1 ? T_MOTOR " 1" : T_MOTOR " 2", tmp_sel, string_list_Motor);
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
     switch (tmp_sel)
@@ -36,6 +36,9 @@ void SmartHandController::menuMotor(const uint8_t axis)
       break;
     case 8:
       menuSetHighCurrent(axis);
+      break;
+    case 9:
+      menuSetSilentStep(axis);
       break;
     default:
       break;
@@ -156,14 +159,31 @@ bool SmartHandController::menuSetMicro(const uint8_t &axis)
   if (!DisplayMessageLX200(readMicroLX200(axis, microStep)))
     return false;
   char text[20];
-  char * string_list_micro = "16 (~256)\n32\n64\n128\n256";
+  char * string_list_micro = "2\n4\n8\n16 (~256)\n32\n64\n128\n256";
   sprintf(text, T_STEPPER " M%u", axis);
-  uint8_t choice = microStep - 4 + 1;
+  uint8_t choice = microStep - 1 + 1;
   choice = display->UserInterfaceSelectionList(&buttonPad, text, choice, string_list_micro);
   if (choice)
   {
-    microStep = choice - 1 + 4;
+    microStep = choice - 1 + 1;
     return DisplayMessageLX200(writeMicroLX200(axis, microStep), false);
+  }
+  return true;
+}
+bool SmartHandController::menuSetSilentStep(const uint8_t &axis)
+{
+  uint8_t silent;
+  if (!DisplayMessageLX200(readSilentStepLX200(axis, silent)))
+    return false;
+  char text[20];
+  char * string_list_mode = T_OFF "\n" T_ON;
+  sprintf(text, T_STEPPER " M%u", axis);
+  uint8_t choice = silent + 1;
+  choice = display->UserInterfaceSelectionList(&buttonPad, text, choice, string_list_mode);
+  if (choice)
+  {
+    silent = choice - 1;
+    return DisplayMessageLX200(writeSilentStepLX200(axis, silent), false);
   }
   return true;
 }

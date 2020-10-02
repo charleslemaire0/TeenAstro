@@ -616,20 +616,30 @@ void readEEPROMmotor()
   motorA1.gear = XEEPROM.readInt(EE_motorA1gear);
   motorA1.stepRot = XEEPROM.readInt(EE_motorA1stepRot);
   motorA1.micro = XEEPROM.read(EE_motorA1micro);
-  if (motorA1.micro < 3) motorA1.micro = 3; else if (motorA1.micro > 8) motorA1.micro = 8;
+  if (motorA1.micro > 8 || motorA1.micro < 1)
+  {
+    motorA1.micro = 4;
+    XEEPROM.update(EE_motorA1micro, 4);
+  }
   motorA1.reverse = XEEPROM.read(EE_motorA1reverse);
   motorA1.lowCurr = XEEPROM.read(EE_motorA1lowCurr);
   motorA1.highCurr = XEEPROM.read(EE_motorA1highCurr);
+  motorA1.silent = XEEPROM.read(EE_motorA1silent);
 
   backlashA2.inSeconds = XEEPROM.readInt(EE_backlashAxis2);
   backlashA2.movedSteps = 0;
   motorA2.gear = XEEPROM.readInt(EE_motorA2gear);
   motorA2.stepRot = XEEPROM.readInt(EE_motorA2stepRot);
   motorA2.micro = XEEPROM.read(EE_motorA2micro);
-  if (motorA2.micro < 3) motorA2.micro = 3; else if (motorA2.micro > 8) motorA2.micro = 8;
+  if (motorA2.micro > 8 || motorA2.micro < 1)
+  {
+    motorA2.micro = 4;
+    XEEPROM.update(EE_motorA2micro, 4);
+  }
   motorA2.reverse = XEEPROM.read(EE_motorA2reverse);
   motorA2.lowCurr = XEEPROM.read(EE_motorA2lowCurr);
   motorA2.highCurr = XEEPROM.read(EE_motorA2highCurr);
+  motorA2.silent = XEEPROM.read(EE_motorA2silent);
 }
 
 void writeDefaultEEPROMmotor()
@@ -642,6 +652,7 @@ void writeDefaultEEPROMmotor()
   XEEPROM.write(EE_motorA1reverse, 0);
   XEEPROM.write(EE_motorA1highCurr, 100);
   XEEPROM.write(EE_motorA1lowCurr, 100);
+  XEEPROM.write(EE_motorA1silent, 1);
 
   XEEPROM.writeInt(EE_backlashAxis2, 0);
   XEEPROM.writeInt(EE_motorA2gear, 1800);
@@ -650,6 +661,7 @@ void writeDefaultEEPROMmotor()
   XEEPROM.write(EE_motorA2reverse, 0);
   XEEPROM.write(EE_motorA2highCurr, 100);
   XEEPROM.write(EE_motorA2lowCurr, 100);
+  XEEPROM.write(EE_motorA2silent, 1);
 }
 
 void updateRatios(bool deleteAlignment)

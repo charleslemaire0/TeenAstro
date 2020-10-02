@@ -321,12 +321,15 @@ void Command_GX()
     PierSide currentSide = GetPierSide();
     if (currentSide == PIER_EAST) reply[13] = 'E';
     if (currentSide == PIER_WEST) reply[13] = 'W';
-    reply[14] = iSGNSSValid() ? '1' : '0';
+
+    char val = 0;
+    bitWrite(val, 0, iSGNSSValid());
+    bitWrite(val, 1, DecayModeTrack);
+    reply[14] = '0' + val;
     reply[15] = '0' + lastError;
     reply[16] = '#';
     reply[17] = 0;
     i = 17;
-
   }
   break;
   case 'M':
@@ -384,6 +387,20 @@ void Command_GX()
       else if (command[4] == 'R')
       {
         sprintf(reply, "%u#", (unsigned  int)motorA1.micro);
+      }
+      else
+        strcpy(reply, "0");
+    }
+    break;
+    case 'm':
+    {
+      if (command[4] == 'D')
+      {
+        sprintf(reply, "%u#", (unsigned  int)motorA2.silent);
+      }
+      else if (command[4] == 'R')
+      {
+        sprintf(reply, "%u#", (unsigned  int)motorA1.silent);
       }
       else
         strcpy(reply, "0");
@@ -733,7 +750,7 @@ void  Command_G()
       strcpy(reply, FirmwareDate);
       break;
     case 'N':
-      //  :GVD#   Get Firmware number, Native LX200 command
+      //  :GVN#   Get Firmware number, Native LX200 command
       strcpy(reply, FirmwareNumber);
       break;
     case 'P':
@@ -743,6 +760,14 @@ void  Command_G()
     case 'T':
       //  :GVT#   Get Firmware Time, Native LX200 command
       strcpy(reply, FirmwareTime);
+      break;
+    case 'B':
+      //  :GVB#   Get Firmware board version, extended LX200 command
+      sprintf(reply, "%d", VERSION);
+      break;
+    case 'b':
+      //  :GVb#   Get Firmware Stepper driver board, extended LX200 command
+      sprintf(reply, "%d", AxisDriver);
       break;
     default:
       strcpy(reply, "0");

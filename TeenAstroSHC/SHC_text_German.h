@@ -83,7 +83,7 @@
 #define T_ROTATION "Drehung"
 #define T_BACKLASH "Getr. Spiel"
 #define T_GEAR "Getr. Zahl"
-#define T_RATIO "Untersetzung"
+#define T_RATIO "Untersetz."
 #define T_MICROSTEP "Mikroschritt"
 #define T_INSECONDS "in Sekunden"
 #define T_MOTOR "Motor"

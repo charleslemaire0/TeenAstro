@@ -227,7 +227,30 @@ void TeenAstroWifi::preparePage(String &data, int page)
   data += FPSTR(html_header1);
   if (ta_MountStatus.hasInfoV()) data += ta_MountStatus.getVP(); else data += "Connection to TeenAstro Main unit is lost";
   data += FPSTR(html_header2);
-  if (ta_MountStatus.hasInfoV()) data += ta_MountStatus.getVN(); else data += "?";
+  if (ta_MountStatus.hasInfoV())
+  {
+    data += ta_MountStatus.getVN();
+    data += " Board ";
+    data += ta_MountStatus.getVB();
+    data += " Driver ";
+    switch (ta_MountStatus.getVb()[0])
+    {
+    default:
+    case '0':
+      data += "unkown";
+      break;
+    case '1':
+      data += "TOS100";
+      break;
+    case '2':
+      data += "TMC2130";
+      break;
+    case '3':
+      data += "TMC5160";
+      break;
+    }
+  }
+  else data += "?";
   data += FPSTR(html_header3);
   data += page == 1 ? FPSTR(html_links1S) : FPSTR(html_links1N);
   data += page == 2 ? FPSTR(html_links2S) : FPSTR(html_links2N);
