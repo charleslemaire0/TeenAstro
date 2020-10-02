@@ -30,6 +30,7 @@ const char* html_indexPier PROGMEM = "&nbsp;&nbsp;<font class='c'>%s</font> Pier
 const char* html_indexPark PROGMEM = "&nbsp;&nbsp;Parking: <font class='c'>%s</font><br />";
 const char* html_indexHasFocuser PROGMEM = "&nbsp;&nbsp;Has Focuser: <font class='c'>%s</font><br />";
 const char* html_indexGNSS PROGMEM = "&nbsp;&nbsp;GNSS: <font class='c'>%s</font><br />";
+const char* html_indexPowerMode PROGMEM = "&nbsp;&nbsp;Power mode: <font class='c'>%s</font><br />";
 const char* html_indexAligned PROGMEM = "&nbsp;&nbsp;Aligned: <font class='c'>%s</font><br />";
 const char* html_indexTracking PROGMEM = "&nbsp;&nbsp;Tracking: <font class='c'>%s %s</font><br />";
 const char* html_indexGuiding PROGMEM = "&nbsp;&nbsp;Guiding: <font class='c'>%s</font><br />";
@@ -211,6 +212,12 @@ void TeenAstroWifi::handleRoot()
   //GNSS
   ta_MountStatus.isGNSSValid() ? strcpy(temp1, "Tracking Satellite") : strcpy(temp1, "No Signal");
   sprintf_P(temp, html_indexGNSS, temp1);
+  data += temp;
+  sendHtml(data);
+
+  //Power
+  ta_MountStatus.isLowPower() ? strcpy(temp1, "Low") : strcpy(temp1, "High");
+  sprintf_P(temp, html_indexPowerMode, temp1);
   data += temp;
   sendHtml(data);
 
