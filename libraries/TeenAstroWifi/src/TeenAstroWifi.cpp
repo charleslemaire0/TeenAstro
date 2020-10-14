@@ -524,8 +524,8 @@ void TeenAstroWifi::update()
     {
       // get the data
       byte b = cmdSvrClient.read();
-      //if (writeBufferPos == 0 && b != ':')
-      //  continue;
+      if (writeBufferPos == 0 && b != ':')
+        continue;
       writeBuffer[writeBufferPos] = b;
       writeBufferPos++;
       if (writeBufferPos > 49)
