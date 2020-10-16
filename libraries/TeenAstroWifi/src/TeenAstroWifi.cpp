@@ -516,7 +516,7 @@ void TeenAstroWifi::update()
 
 
   // check clients for data, if found get the command, send cmd and pickup the response, then return the response
-  while (cmdSvrClient.connected() || cmdSvrClient.available())
+  while (cmdSvrClient.connected() && cmdSvrClient.available())
   {
     static char writeBuffer[50] = "";
     static int writeBufferPos = 0;
