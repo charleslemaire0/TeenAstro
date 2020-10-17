@@ -32,9 +32,9 @@ void SetSiderealClockRate(double Interval)
   isrTimerRateAxis2 = 0;
 }
 
-#ifdef ARDUINO_TEENSY40 // In fact this code is suitable for Teensy 3.2 also
+#ifdef ARDUINO_TEENSY40 // F_BUS is not defined. Looking in Core 24000000 is used to convert µsec in timer ticks
 	#ifndef F_BUS
-	#define F_BUS F_BUS_ACTUAL
+	#define F_BUS 24000000
 	#endif
 
 void beginTimers()

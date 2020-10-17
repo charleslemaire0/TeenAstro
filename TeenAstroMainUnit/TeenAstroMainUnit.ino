@@ -1,9 +1,9 @@
 /*
  * Title       On-Step
- * by          Howard Dutton, Charles Lemaire, Markus Noga, Francois Desvallée
+ * by          Howard Dutton, Charles Lemaire, Markus Noga, Francois DesvallÃ©e
  *
  * Copyright (C) 2012 to 2016 Howard Dutton
- * Copyright (C) 2016 to 2020 Charles Lemaire, Markus Noga, Francois Desvallée
+ * Copyright (C) 2016 to 2020 Charles Lemaire, Markus Noga, Francois DesvallÃ©e
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
