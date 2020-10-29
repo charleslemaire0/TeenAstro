@@ -166,6 +166,7 @@ class TeenAstroWifi
   // read 4 byte long from EEPROM at position i (4 bytes)
   static long EEPROM_readLong(int i);
 public:
+  static char writeWifiBuffer[50];
   static bool isWifiOn();
   static bool isWifiRunning();
   static void turnWifiOn(bool turnOn);

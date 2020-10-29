@@ -18,10 +18,11 @@ class SmartHandController
 public:
   enum OLED
   {
-    OLED_SH1106, OLED_SSD1306, OLED_SSD1309
+    OLED_SH1106, OLED_SSD1306, OLED_SSD1309, EINK
   };
   void setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model, const uint8_t nSubmodel);
   void update();
+  Pad buttonPad;
 private:
   enum PAGES
   {
@@ -37,7 +38,7 @@ private:
     bool show;
   };
   U8G2_EXT *display = NULL;
-  Pad buttonPad;
+
   char _version[20] = "Version ?";
   bool sleepDisplay = false;
   bool lowContrast = false;

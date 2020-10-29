@@ -31,27 +31,5 @@
 #define B_PIN_UP_6 true
 #endif
 
-#ifdef ARDUINO_D1_MINI32
-  // the serial interface to/from OnStep
-
-#define SERIAL_BAUD 57600
-#define DEBUG_OFF
-// the hand controller buttons
-#define B_PIN0 5               // Shift
-#define B_PIN1 23              // N
-#define B_PIN2 19              // S
-#define B_PIN3 26              // E
-#define B_PIN4 18              // W
-#define B_PIN5 17              // F
-#define B_PIN6 16              // f
-
-#define B_PIN_UP_0 false        // true for active LOW, false if active HIGH
-#define B_PIN_UP_1 false
-#define B_PIN_UP_2 false
-#define B_PIN_UP_3 false
-#define B_PIN_UP_4 false
-#define B_PIN_UP_5 true
-#define B_PIN_UP_6 true
-#endif
 
 

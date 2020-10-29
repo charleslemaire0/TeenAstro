@@ -22,7 +22,7 @@ private:
   int             m_alignStar = 0;
 
   //Cache Answer
-
+  char            m_TempLC[50] = "?";
   char            m_TempVP[20] = "?";
   char            m_TempVN[20] = "?";
   char            m_TempVB[10] = "?";

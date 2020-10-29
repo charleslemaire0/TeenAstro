@@ -38,6 +38,9 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
     else
       display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0);
     break;
+  case EINK:
+    display = new U8G2_EXT_IL3820_V2_296x128_1_SW(U8G2_R0, D5, D7, D8, D6, D2);
+    break;
   }
   display->begin();
   drawIntro();
@@ -81,51 +84,53 @@ void SmartHandController::update()
 {
   tickButtons();
   top = millis();
-  if (!ta_MountStatus.isConnectionValid() && ta_MountStatus.hasInfoV())
-  {
-    ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor);
-    buttonPad.setMenuMode();
-    DisplayMessage("!! " T_ERROR " !!", T_VERSION, -1);
-    DisplayMessage("SHC " T_VERSION, _version, 1500);
-    DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
-    buttonPad.setControlerMode();
-    return;
-  }
-  if (powerCycleRequired)
-  {
-    display->sleepOff();
-    DisplayMessage(T_PRESS_KEY, T_TO_REBOOT "...", -1);
-    DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
-
-#ifdef ARDUINO_D1_MINI32
-    ESP.restart();
-#endif
-#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
-    ESP.reset();
-#endif
-    return;
-  }
-  if (ta_MountStatus.notResponding())
-  {
-    display->sleepOff();
-    DisplayMessage("!! " T_ERROR " !!", T_NOT_CONNECTED, -1);
-    DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
-
-#ifdef ARDUINO_D1_MINI32
-    ESP.restart();
-#endif
-#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
-    ESP.reset();
-#endif
-
-  }
-
-  if (top - lastpageupdate > 200)
-  {
-    updateMainDisplay(pages[current_page].p);
-  }
-  if (!ta_MountStatus.connected())
-    return;
+  DisplayMessage("last message", buttonPad.m_wbt.writeWifiBuffer, 100);
+  return;
+//  if (!ta_MountStatus.isConnectionValid() && ta_MountStatus.hasInfoV())
+//  {
+//    ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor);
+//    //buttonPad.setMenuMode();
+//    DisplayMessage("!! " T_ERROR " !!", T_VERSION, -1);
+//    DisplayMessage("SHC " T_VERSION, _version, 1500);
+//    DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
+//    //buttonPad.setControlerMode();
+//    return;
+//  }
+//  if (powerCycleRequired)
+//  {
+//    display->sleepOff();
+//    DisplayMessage(T_PRESS_KEY, T_TO_REBOOT "...", -1);
+//    DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
+//
+//#ifdef ARDUINO_D1_MINI32
+//    ESP.restart();
+//#endif
+//#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
+//    ESP.reset();
+//#endif
+//    return;
+//  }
+//  if (ta_MountStatus.notResponding())
+//  {
+//    display->sleepOff();
+//    DisplayMessage("!! " T_ERROR " !!", T_NOT_CONNECTED, -1);
+//    DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
+//
+//#ifdef ARDUINO_D1_MINI32
+//    ESP.restart();
+//#endif
+//#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
+//    ESP.reset();
+//#endif
+//
+//  }
+//
+//  if (top - lastpageupdate > 200)
+//  {
+//    updateMainDisplay(pages[current_page].p);
+//  }
+//  if (!ta_MountStatus.connected())
+//    return;
 }
 
 void SmartHandController::tickButtons()

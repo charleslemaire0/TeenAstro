@@ -239,10 +239,10 @@ void Pad::setup(const int pin[7], const bool active[7])
 {
   //For Shift button
 
-  for (int k = 0; k < 7; k++)
-  {
-    m_buttons[k] = new OneButton(pin[k], active[k], active[k]);
-  }
+  //for (int k = 0; k < 7; k++)
+  //{
+  //  m_buttons[k] = new OneButton(pin[k], active[k], active[k]);
+  //}
   uint8_t val =  EEPROM.read(EEPROM_BSPEED);
   if (val>2)
   {
@@ -253,8 +253,8 @@ void Pad::setup(const int pin[7], const bool active[7])
   else
     m_button_speed = static_cast<Pad::ButtonSpeed>(val);
   //For other buttons
-  setControlerMode();
-  attachEvent();
+  //setControlerMode();
+  //attachEvent();
   m_wbt.setup();
 }
 
@@ -263,7 +263,7 @@ void Pad::tickButtons()
   delay(1);
   m_buttonPressed = false;
   m_shiftPressed = false;
-  for (int k = 0; k < 7; k++)
+ /* for (int k = 0; k < 7; k++)
   {
     delay(1);
     eventbuttons[k] = E_NONE;
@@ -289,7 +289,7 @@ void Pad::tickButtons()
       eventbuttons[k] = E_NONE;
       eventbuttons[k + 1] = E_NONE;
     }
-  }
+  }*/
   m_wbt.update();
 }
 

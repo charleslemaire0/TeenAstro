@@ -60,6 +60,7 @@ IPAddress TeenAstroWifi::wifi_sta_ip[3] = { IPAddress(192, 168, 0, 1), IPAddress
 IPAddress TeenAstroWifi::wifi_sta_gw[3] = { IPAddress(192, 168, 0, 1), IPAddress(192, 168, 0, 1), IPAddress(192, 168, 0, 1) };
 IPAddress TeenAstroWifi::wifi_sta_sn[3] = { IPAddress(255, 255, 255, 0), IPAddress(255, 255, 255, 0), IPAddress(255, 255, 255, 0) };
 
+char TeenAstroWifi::writeWifiBuffer[50] = "?";
 char TeenAstroWifi::wifi_ap_ssid[40] = "TeenAstro";
 char TeenAstroWifi::wifi_ap_pwd[40] = "password";
 byte TeenAstroWifi::wifi_ap_ch = 7;
@@ -516,7 +517,7 @@ void TeenAstroWifi::update()
 
 
   // check clients for data, if found get the command, send cmd and pickup the response, then return the response
-  while (cmdSvrClient.connected() || cmdSvrClient.available())
+  while (cmdSvrClient.connected() && cmdSvrClient.available())
   {
     static char writeBuffer[50] = "";
     static int writeBufferPos = 0;
@@ -524,8 +525,8 @@ void TeenAstroWifi::update()
     {
       // get the data
       byte b = cmdSvrClient.read();
-      //if (writeBufferPos == 0 && b != ':')
-      //  continue;
+      if (writeBufferPos == 0 && b != ':')
+        continue;
       writeBuffer[writeBufferPos] = b;
       writeBufferPos++;
       if (writeBufferPos > 49)
@@ -539,6 +540,7 @@ void TeenAstroWifi::update()
       if ((b == '#') || ((strlen(writeBuffer) == 1) && (b == (char)6)))
       {
         char readBuffer[50] = "";
+        memcpy(writeWifiBuffer, writeBuffer, sizeof(writeBuffer));
         if (readLX200Bytes(writeBuffer, readBuffer, sizeof(readBuffer), CmdTimeout, true))
         {
           // return the response, if we have one
@@ -550,6 +552,7 @@ void TeenAstroWifi::update()
             }
           }
         }
+
         writeBuffer[0] = 0;
         writeBufferPos = 0;
       }

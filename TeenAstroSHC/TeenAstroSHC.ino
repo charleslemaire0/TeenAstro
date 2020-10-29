@@ -46,7 +46,7 @@ return;
   int value = analogRead(A0);
   if (value< 191)       //0.616129032V
   {
-    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SH1106, 1 );
+    HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::EINK, 1 );
   }
   else if (value < 319) //1.029032258V
   {

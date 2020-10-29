@@ -13,8 +13,8 @@ class Pad
 {
 public:
   enum ButtonSpeed { BS_SLOW, BS_MEDIUM, BS_FAST };
-private:
   TeenAstroWifi m_wbt;
+private:
   bool m_buttonPressed;
   bool m_shiftPressed;
   OneButton *m_buttons[7];
