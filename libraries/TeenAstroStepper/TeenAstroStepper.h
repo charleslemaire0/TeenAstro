@@ -172,17 +172,18 @@ public:
       pinMode(MISO, INPUT_PULLUP);
       m_tmc2130->push();
       m_tmc2130->reset();
-      //m_tmc2130->tbl(1);
-      //m_tmc2130->TPOWERDOWN(255);
+      m_tmc2130->tbl(1);
+      m_tmc2130->TPOWERDOWN(255);
       m_tmc2130->toff(5);
-      //m_tmc2130->hstrt(0);
-      //m_tmc2130->hend(2);
+      m_tmc2130->hstrt(0);
+      m_tmc2130->hend(2);
       m_tmc2130->en_pwm_mode(silent);
       m_tmc2130->pwm_autoscale(silent);
       //m_tmc2130->pwm_freq(150);
       //m_tmc2130->pwm_grad(15);
-      //m_tmc2130->TPWMTHRS(500);
+      m_tmc2130->TPWMTHRS(64);
       setCurrent(Curr); // mA
+      m_tmc2130->intpol(1);
       setMicrostep(Micros);
       if (EnPin > 0)
         digitalWrite(EnPin, LOW);
@@ -202,18 +203,19 @@ public:
       digitalWrite(CSPin, HIGH);
       SPI.begin();
       pinMode(MISO, INPUT_PULLUP);
-      //m_tmc5160->reset();
-      //m_tmc5160->push();
+      m_tmc5160->reset();
+      m_tmc5160->push();
       //m_tmc5160->tbl(1);
       //m_tmc5160->TPOWERDOWN(255);
       m_tmc5160->toff(5);
-      //m_tmc5160->hstrt(0);
-      //m_tmc5160->hend(2);
+      m_tmc5160->hstrt(0);
+      m_tmc5160->hend(2);
       m_tmc5160->en_pwm_mode(silent);
       m_tmc5160->pwm_autoscale(silent);
       //m_tmc5160->pwm_freq(150);
       //m_tmc5160->pwm_grad(15);
-      //m_tmc5160->TPWMTHRS(1000);
+      m_tmc5160->TPWMTHRS(64);
+      m_tmc2130->intpol(1);
       setCurrent(Curr); // mA
       setMicrostep(Micros);
       if (EnPin > 0)
