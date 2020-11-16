@@ -136,10 +136,10 @@ ISR(TIMER1_COMPA_vect)
       double timerRateAxis1B = fabs(guideTimerRateAxisA1 + timerRateAxis1A);
       double calculatedTimerRateAxis1;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
-      if (timerRateAxis1B > 0.1)
+      if (timerRateAxis1B > 0.5)
         calculatedTimerRateAxis1 = SiderealRate / timerRateAxis1B;
       else
-        calculatedTimerRateAxis1 = SiderealRate * 10.0;
+        calculatedTimerRateAxis1 = SiderealRate * 2.0;
 
 
       // remember our "running" rate and only update the actual rate when it changes
@@ -201,10 +201,10 @@ ISR(TIMER1_COMPA_vect)
       double calculatedTimerRateAxis2;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
      // calculatedTimerRateAxis2 = (double)SiderealRate / timerRateAxis2B;
-      if (timerRateAxis2B > 0.1)
+      if (timerRateAxis2B > 0.5)
         calculatedTimerRateAxis2 = SiderealRate / timerRateAxis2B;
       else
-        calculatedTimerRateAxis2 = 10.0 * SiderealRate;
+        calculatedTimerRateAxis2 = 2.0 * SiderealRate;
 
       // remember our "running" rate and only update the actual rate when it changes
       if (runTimerRateAxis2 != calculatedTimerRateAxis2)
