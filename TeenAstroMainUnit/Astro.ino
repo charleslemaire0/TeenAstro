@@ -141,7 +141,7 @@ double SetRates(double maxslewrate)
   // set the new acceleration rate
   double stpdg = min(geoA1.stepsPerDegree, geoA2.stepsPerDegree);
   double fact = 3600. / 15. * 1. / (stpdg * 1. / 16. / 1000000.);
-  maxRate = max(fact / maxslewrate, (MaxRate / 2L) * 16L);
+  maxRate = max(fact / maxslewrate, StepsMaxRate * 16L);
   maxslewrate = fact / maxRate;
   guideRates[4] = maxslewrate;
   if (guideRates[3] >= maxslewrate)
