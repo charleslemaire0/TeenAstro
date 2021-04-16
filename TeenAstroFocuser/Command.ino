@@ -399,12 +399,16 @@ bool SerCom::HaltRequest(void)
     m_hasReceivedCommand = false;
     break;
     //break Goto if goto is running and a Manual move is request
-  case FocCmd_in_wor:
-  case FocCmd_out_wor:
+
+
   case FocCmd_in:
   case FocCmd_in_stop:
   case FocCmd_out:
   case FocCmd_out_stop:
+    ser.print("0");
+    ser.flush();
+  case FocCmd_in_wor:
+  case FocCmd_out_wor:
     if (controller.isRunning() && !breakgoto)
     {
       breakgoto = true;
