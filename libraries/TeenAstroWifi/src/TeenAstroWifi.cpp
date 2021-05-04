@@ -42,7 +42,7 @@ const char html_links6S[] PROGMEM = "<a href='/wifi.htm' style='background-color
 const char html_links6N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />";
 
 
-bool TeenAstroWifi::wifiOn = true;
+bool TeenAstroWifi::wifiOn = false;
 
 int TeenAstroWifi::WebTimeout = TIMEOUT_WEB;
 int TeenAstroWifi::CmdTimeout = TIMEOUT_CMD;
@@ -80,7 +80,8 @@ ESP8266HTTPUpdateServer httpUpdater;
 #endif 
 #ifdef ARDUINO_D1_MINI32
 WebServer TeenAstroWifi::server;
-WebServer httpServer(80);
+WebServer server(80);
+
 #endif
 // -----------------------------------------------------------------------------------
 // EEPROM related functions
@@ -268,16 +269,19 @@ void TeenAstroWifi::preparePage(String &data, int page)
 
 void TeenAstroWifi::writeStation2EEPROM(const int& k)
 {
-  unsigned int adress = EEPROM_start_wifi_sta + k * 100;
-  EEPROM.write(adress, stationDhcpEnabled[k]); adress++;
-  for (int i = 0; i < 4; i++, adress++)
-    EEPROM.write(adress, wifi_sta_ip[k][i]);
-  for (int i = 0; i < 4; i++, adress++)
-    EEPROM.write(adress, wifi_sta_gw[k][i]);
-  for (int i = 0; i < 4; i++, adress++)
-    EEPROM.write(adress, wifi_sta_sn[k][i]);
-  EEPROM_writeString(adress, wifi_sta_ssid[k]); adress += sizeof(wifi_sta_ssid[k]);
-  EEPROM_writeString(adress, wifi_sta_pwd[k]); adress += sizeof(wifi_sta_pwd[k]);
+  if (k < NUM_sta)
+  {
+    unsigned int adress = EEPROM_start_wifi_sta + k * SIZE_sta;
+    EEPROM.write(adress, stationDhcpEnabled[k]); adress++;
+    for (int i = 0; i < 4; i++, adress++)
+      EEPROM.write(adress, wifi_sta_ip[k][i]);
+    for (int i = 0; i < 4; i++, adress++)
+      EEPROM.write(adress, wifi_sta_gw[k][i]);
+    for (int i = 0; i < 4; i++, adress++)
+      EEPROM.write(adress, wifi_sta_sn[k][i]);
+    EEPROM_writeString(adress, wifi_sta_ssid[k]); adress += sizeof(wifi_sta_ssid[k]);
+    EEPROM_writeString(adress, wifi_sta_pwd[k]); adress += sizeof(wifi_sta_pwd[k]);
+  }
 }
 void TeenAstroWifi::writeAccess2EEPROM()
 {
@@ -295,7 +299,11 @@ void TeenAstroWifi::writeAccess2EEPROM()
 
 void TeenAstroWifi::initFromEEPROM()
 {
+#ifdef ARDUINO_D1_MINI32
+  EEPROM.begin(512);
+#else
   EEPROM.begin(1024);
+#endif
   unsigned int adress = EEPROM_start;
   // EEPROM Init
   if (EEPROM.read(adress) != 82 || EEPROM.read(adress + 1) != 66 ||
@@ -312,7 +320,7 @@ void TeenAstroWifi::initFromEEPROM()
     EEPROM.write(EEPROM_WifiConnectMode, (uint8_t)activeWifiConnectMode);
     EEPROM_writeString(EPPROM_password, masterPassword);
 
-    for (int k = 0; k < 3; k++)
+    for (int k = 0; k < NUM_sta; k++)
     {
       writeStation2EEPROM(k);
     }
@@ -322,7 +330,17 @@ void TeenAstroWifi::initFromEEPROM()
   else {
     wifiOn = EEPROM.read(EEPROM_WifiOn);
     uint8_t val = EEPROM.read(EEPROM_WifiMode);
-    activeWifiMode = static_cast<WifiMode>(val < 5 ? val : 0);
+    if (val > 5 || (val <3 && val> NUM_sta))
+    {
+      activeWifiMode = WifiMode::M_AcessPoint;
+      EEPROM.write(EEPROM_WifiMode, (uint8_t)activeWifiMode);
+      EEPROM.commit();
+    }
+    else
+    {
+      activeWifiMode = static_cast<WifiMode>(val);
+    }
+
     WebTimeout = EEPROM.read(EEPROM_WebTimeout);
     CmdTimeout = EEPROM.read(EEPROM_CmdTimeout);
     val = EEPROM.read(EEPROM_WifiConnectMode);
@@ -351,9 +369,9 @@ void TeenAstroWifi::initFromEEPROM()
       EEPROM.commit();
     }
 
-    for (int k = 0; k < 3; k++)
+    for (int k = 0; k < NUM_sta; k++)
     {
-      adress = EEPROM_start_wifi_sta + k * 100;
+      adress = EEPROM_start_wifi_sta + k * SIZE_sta;
       stationDhcpEnabled[k] = EEPROM.read(adress); adress++;
       for (int i = 0; i < 4; i++, adress++)
          wifi_sta_ip[k][i] = EEPROM.read(adress);
@@ -379,13 +397,13 @@ void TeenAstroWifi::initFromEEPROM()
 
 void TeenAstroWifi::setup()
 {
+  wifiOn = false;
   initFromEEPROM();
 
 #ifndef DEBUG_ON
 
 
   byte tb = 0;
-Again:
 
   char c = 0;
 
@@ -429,9 +447,12 @@ Again:
   switch (activeWifiMode)
   {
   case TeenAstroWifi::M_AcessPoint:
-    WiFi.softAPConfig(wifi_ap_ip, wifi_ap_gw, wifi_ap_sn);
-    WiFi.softAP(wifi_ap_ssid, wifi_ap_pwd, wifi_ap_ch);
     WiFi.mode(WIFI_AP);
+
+    WiFi.softAP(wifi_ap_ssid, wifi_ap_pwd, wifi_ap_ch);
+    delay(1000);
+    WiFi.softAPConfig(wifi_ap_ip, wifi_ap_gw, wifi_ap_sn);
+    delay(1000);
     break;
   case TeenAstroWifi::M_Station1:
   case TeenAstroWifi::M_Station2:
@@ -441,8 +462,8 @@ Again:
       WiFi.config(wifi_sta_ip[activeWifiMode], wifi_sta_gw[activeWifiMode], wifi_sta_sn[activeWifiMode]);
     }
     WiFi.softAPdisconnect(true);
-    WiFi.begin(wifi_sta_ssid[activeWifiMode], wifi_sta_pwd[activeWifiMode]);
     WiFi.mode(WIFI_STA);
+    WiFi.begin(wifi_sta_ssid[activeWifiMode], wifi_sta_pwd[activeWifiMode]);
   default:
     break;
   }
@@ -469,13 +490,16 @@ Again:
 
 #ifdef ARDUINO_ESP8266_WEMOS_D1MINI
   httpUpdater.setup(&server);
+  httpServer.begin();
 #endif
   
-  httpServer.begin();
+
 };
 
 void TeenAstroWifi::update()
 {
+  if (wifiOn == false)
+    return;
   if ((activeWifiMode == WifiMode::M_Station1 ||
        activeWifiMode == WifiMode::M_Station2 ||
        activeWifiMode == WifiMode::M_Station3)

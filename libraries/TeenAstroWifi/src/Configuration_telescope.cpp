@@ -53,7 +53,7 @@ const char html_configRate3[] PROGMEM =
 "<form method='get' action='/configuration_telescope.htm'>"
 " <input value='%.0f' type='number' name='R3' min='1' max='255' step='1'>"
 "<button type='submit'>Upload</button>"
-" (Fast Recenter speed speed from 1 to 255x)"
+" (Fast Recenter speed from 1 to 255x)"
 "</form>"
 "\r\n";
 const char html_configRate2[] PROGMEM =
