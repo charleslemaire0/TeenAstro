@@ -16,9 +16,9 @@ static void smartDelay(unsigned long ms)
   unsigned long start = millis();
   do
   {
-    while (Serial3.available())
+    while (GNSS_Serial.available())
     {
-      gps.encode(Serial3.read());
+      gps.encode(GNSS_Serial.read());
     }
   } while (millis() - start < ms);
 }

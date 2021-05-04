@@ -12,8 +12,8 @@ void Command_F()
   bool focuserNoResponse = false;
   bool focuserShortResponse = false;
   char command_out[30] = ":";
-  Serial2.flush();
-  while (Serial2.available() > 0) Serial2.read();
+  Focus_Serial.flush();
+  while (Focus_Serial.available() > 0) Focus_Serial.read();
   strcat(command_out, command);
   strcat(command_out, "#");
 
@@ -66,8 +66,8 @@ void Command_F()
   }
   }
 
-  Serial2.print(command_out);
-  Serial2.flush();
+  Focus_Serial.print(command_out);
+  Focus_Serial.flush();
 
   if (!focuserNoResponse)
   {
@@ -76,9 +76,9 @@ void Command_F()
     char b = 0;
     while (millis() - start < 40)
     {
-      if (Serial2.available() > 0)
+      if (Focus_Serial.available() > 0)
       {
-        b = Serial2.read();
+        b = Focus_Serial.read();
         if (b == '#' && !focuserShortResponse)
         {
           reply[pos] = b;
