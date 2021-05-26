@@ -1,6 +1,5 @@
 
 #include <TeenAstroMountStatus.h>
-#include "XEEPROM.hpp"
 #include "SHC_text.h"
 #include "SmartController.h"
 
@@ -16,17 +15,16 @@ void SmartHandController::setup(
   const uint8_t nSubmodel)
 {
 #ifdef ARDUINO_D1_MINI32
-
   Ser.begin(SerialBaud, SERIAL_8N1, 27, 25);
 #else
   Ser.begin(SerialBaud);
 #endif
 
-  if (XEEPROM.length() == 0)
+  if (EEPROM.length() == 0)
 #ifdef ARDUINO_D1_MINI32
-    XEEPROM.begin(512);
+    EEPROM.begin(512);
 #else
-    XEEPROM.begin(1024);
+    EEPROM.begin(1024);
 #endif
 
   if (strlen(version) <= 19) strcpy(_version, version);
@@ -34,7 +32,7 @@ void SmartHandController::setup(
   //choose a 128x64 display supported by U8G2lib (if not listed below there are many many others in u8g2 library example Sketches)
 
   num_supported_display = nSubmodel;
-  uint8_t submodel = XEEPROM.read(EEPROM_DISPLAYSUBMODEL);
+  uint8_t submodel = EEPROM.read(EEPROM_DISPLAYSUBMODEL);
   switch (model)
   {
   case OLED_SH1106:
@@ -47,7 +45,7 @@ void SmartHandController::setup(
     if (!(submodel < num_supported_display))
     {
       submodel = 0;
-      XEEPROM.write(EEPROM_DISPLAYSUBMODEL, 0);
+      EEPROM.write(EEPROM_DISPLAYSUBMODEL, 0);
     }
     if (submodel == 0)
       display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0);
@@ -59,24 +57,24 @@ void SmartHandController::setup(
   }
   display->begin();
   drawIntro();
-  buttonPad.setup(pin, active);
+  buttonPad.setup(pin, active, EEPROM_BSPEED);
 
   tickButtons();
-  maxContrast = XEEPROM.read(EEPROM_Contrast);
+  maxContrast = EEPROM.read(EEPROM_Contrast);
   display->setContrast(maxContrast);
-  displayT1 = XEEPROM.read(EEPROM_T1);
+  displayT1 = EEPROM.read(EEPROM_T1);
   if (displayT1 < 3)
   {
     displayT1 = 3;
-    XEEPROM.write(EEPROM_T1, displayT1);
-    XEEPROM.commit();
+    EEPROM.write(EEPROM_T1, displayT1);
+    EEPROM.commit();
   }
   displayT2 = EEPROM.read(EEPROM_T2);
   if (displayT2 < displayT1)
   {
     displayT2 = displayT1;
-    XEEPROM.write(EEPROM_T2, displayT2);
-    XEEPROM.commit();
+    EEPROM.write(EEPROM_T2, displayT2);
+    EEPROM.commit();
   }
 
 #ifdef DEBUG_ON
