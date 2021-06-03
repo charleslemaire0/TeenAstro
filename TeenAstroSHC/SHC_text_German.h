@@ -146,7 +146,11 @@
 #define T_SELECTED "Ausgewählt"
 #define T_FOCUSERACTION "Fokusierer Aktion"
 
+#define T_PARKANDHOME "Park und Home"
 #define T_SETPARK "Setze Parkposition"
+#define T_SETHOME "Setze Homeposition"
+#define T_RESETHOME "Reset HomePosition"
+
 #define T_ATHOME "at Home"
 #define T_UNLOCK "Entsperren"
 #define T_LOCK "Sperre"

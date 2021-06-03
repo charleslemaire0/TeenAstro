@@ -1,5 +1,41 @@
 // -----------------------------------------------------------------------------------
 // functions related to Homing the mount
+
+bool setHome()
+{
+  if ((parkStatus == PRK_UNPARKED) && !movingTo)
+  {
+    lastSideralTracking = sideralTracking;
+    sideralTracking = false;
+
+    // don't worry about moving around: during parking pec is turned off and backlash is cleared (0) so that staA1.target/targetAxis2=staA1.pos/staA2.pos
+    // this should handle getting us back to the home position for micro-step modes up to 256X
+    // if sync anywhere is enabled use the corrected location
+
+    long h = (staA1.target / 1024L) * 1024L;
+    long d = (staA2.target / 1024L) * 1024L;
+
+    h /= pow(2, motorA1.micro);
+    d /= pow(2, motorA2.micro);
+    // store our position
+    XEEPROM.writeLong(EE_homePosAxis1, h);
+    XEEPROM.writeLong(EE_homePosAxis2, d);
+    XEEPROM.write(EE_homeSaved, 1);
+    initHome();
+    sideralTracking = lastSideralTracking;
+    return true;
+  }
+
+  return false;
+}
+
+// unset home position flag
+void unsetHome()
+{
+  XEEPROM.update(EE_homeSaved, 0);
+  initHome();
+}
+
 // moves telescope to the home position, then stops tracking
 bool goHome()
 {
@@ -25,7 +61,7 @@ bool goHome()
 }
 
 // resets telescope home position; user manually moves home position,
-bool syncPolarHome()
+bool syncAtHome()
 {
   if (movingTo) return false;  // fail, forcing home not allowed during a move
   // default values for state variables
@@ -49,6 +85,7 @@ bool syncPolarHome()
   guideA2.duration = 0;
   guideA2.durationLast = 0;
   // update starting coordinates to reflect NCP or SCP polar home position
+
   staA1.start = geoA1.homeDef;
   staA2.start = geoA2.homeDef;
   cli();
@@ -62,4 +99,28 @@ bool syncPolarHome()
   sideralTracking = false;
   atHome = true;
   return true;
+}
+
+// init the telescope home position;  if defined use the user defined home position
+void initHome()
+{
+  homeSaved = XEEPROM.read(EE_homeSaved);
+  if (homeSaved)
+  {
+    geoA1.homeDef = XEEPROM.readLong(EE_homePosAxis1)*pow(2, motorA1.micro);
+    geoA2.homeDef = XEEPROM.readLong(EE_homePosAxis2)*pow(2, motorA2.micro);
+  }
+  else
+  {
+    if (isAltAZ())
+    {
+      geoA1.homeDef = geoA1.poleDef;
+      geoA2.homeDef = 0;
+    }
+    else
+    {
+      geoA1.homeDef = geoA1.poleDef;
+      geoA2.homeDef = geoA2.poleDef;
+    }
+  }
 }

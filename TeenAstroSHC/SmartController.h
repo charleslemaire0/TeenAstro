@@ -139,6 +139,7 @@ private:
   void menuLongitude();
   void menuElevation();
   void menuMainUnitInfo();
+  void menuParkAndHome();
   void menuLimits();
   void menuWifi();
   void menuWifiMode();

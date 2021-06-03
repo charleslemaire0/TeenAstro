@@ -67,6 +67,7 @@ void setup()
 
     // init the Park status
     XEEPROM.write(EE_parkSaved, false);
+    XEEPROM.write(EE_homeSaved, false);
     XEEPROM.write(EE_parkStatus, PRK_UNPARKED);
 
     // init the  rate
@@ -181,7 +182,7 @@ void setup()
   // get the Park status
   if (!iniAtPark())
   {
-    syncPolarHome();
+    syncAtHome();
   }
 
   // get the pulse-guide rate
@@ -462,6 +463,7 @@ void enable_Axis(bool enable)
 void initmount()
 {
   byte mountTypeFromEEPROM = XEEPROM.read(EE_mountType);
+  
 
   mountType = mountTypeFromEEPROM < 1 || mountTypeFromEEPROM >  4 ? MOUNT_TYPE_GEM : static_cast<Mount>(mountTypeFromEEPROM);
 
@@ -584,19 +586,16 @@ void initTransformation(bool reset)
 
 void initCelestialPole()
 {
+  
   if (isAltAZ())
   {
     geoA1.poleDef = (*localSite.latitude() < 0) ? geoA1.halfRot : 0L;
     geoA2.poleDef = geoA2.quaterRot;
-    geoA1.homeDef = geoA1.poleDef;
-    geoA2.homeDef = 0;
   }
   else
   {
     geoA1.poleDef = mountType == MOUNT_TYPE_GEM ? geoA1.quaterRot : 0L;
     geoA2.poleDef = (*localSite.latitude() < 0) ? -geoA2.quaterRot : geoA2.quaterRot;
-    geoA1.homeDef = geoA1.poleDef;
-    geoA2.homeDef = geoA2.poleDef;
   }
   HADir = *localSite.latitude() > 0 ? HADirNCPInit : HADirSCPInit;
 }
@@ -604,7 +603,7 @@ void initCelestialPole()
 void initmotor(bool deleteAlignment)
 {
   readEEPROMmotor();
-  updateRatios(deleteAlignment);
+  updateRatios(deleteAlignment,false);
   motorA1.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin);
   motorA2.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin);
 }
@@ -664,7 +663,7 @@ void writeDefaultEEPROMmotor()
   XEEPROM.write(EE_motorA2silent, 0);
 }
 
-void updateRatios(bool deleteAlignment)
+void updateRatios(bool deleteAlignment, bool deleteHP)
 {
   cli();
   geoA1.setstepsPerRot((long)motorA1.gear * motorA1.stepRot * (int)pow(2, motorA1.micro));
@@ -676,6 +675,12 @@ void updateRatios(bool deleteAlignment)
 
   initCelestialPole();
   initTransformation(deleteAlignment);
+  if (deleteHP)
+  {
+    unsetPark();
+    unsetHome();
+  }
+  initHome();
   updateSideral();
   initMaxRate();
 }

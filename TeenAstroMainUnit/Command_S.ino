@@ -35,7 +35,7 @@ void Command_SX()
         apparentPole = command[5] == 'a';
         XEEPROM.update(EE_ApparentPole, apparentPole);
         initTransformation(true);
-        syncPolarHome();
+        syncAtHome();
         strcpy(reply, "1");
       }
       else
@@ -265,9 +265,9 @@ void Command_SX()
           motorA1.gear = (unsigned int)i;
           XEEPROM.writeInt(EE_motorA1gear, i);
         }
+        updateRatios(true,true);
+
         strcpy(reply, "1");
-        unsetPark();
-        updateRatios(true);
       }
       else
         strcpy(reply, "0");
@@ -301,9 +301,9 @@ void Command_SX()
           motorA1.stepRot = (unsigned int)i;
           XEEPROM.writeInt(EE_motorA1stepRot, i);
         }
+        updateRatios(true, true);
+
         strcpy(reply, "1");
-        unsetPark();
-        updateRatios(true);
       }
       else
         strcpy(reply, "0");
@@ -327,8 +327,7 @@ void Command_SX()
           sei();
           StopAxis2();
           motorA2.micro = i;
-          motorA2.driver.setMicrostep(motorA2.micro);
-          updateRatios(true);
+          motorA2.driver.setMicrostep(motorA2.micro);;
           XEEPROM.write(EE_motorA2micro, motorA2.micro);
         }
         else
@@ -340,10 +339,9 @@ void Command_SX()
           StopAxis1();
           motorA1.micro = i;
           motorA1.driver.setMicrostep(motorA1.micro);
-          updateRatios(true);
           XEEPROM.write(EE_motorA1micro, motorA1.micro);
         }
-        updateRatios(true);
+        updateRatios(true,false);
         strcpy(reply, "1");
       }
       else strcpy(reply, "0");
@@ -728,7 +726,9 @@ void Command_S(Command& process_command)
     {
       localSite.setLat(f);
       initCelestialPole();
+      initHome();
       initTransformation(true);
+      syncAtHome();
       strcpy(reply, "1");
     }
     else strcpy(reply, "0");

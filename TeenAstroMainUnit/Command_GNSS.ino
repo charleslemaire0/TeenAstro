@@ -56,6 +56,8 @@ void Command_GNSS()
       localSite.setLat(lat);
       localSite.setElev(h);
       initCelestialPole();
+      initHome();
+      syncAtHome();
       initTransformation(true);
       rtk.setClock(d.year(), d.month(), d.day(),
         t.hour(), t.minute(), t.second(),

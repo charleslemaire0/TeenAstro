@@ -146,7 +146,11 @@
 #define T_SELECTED "Selectionné"
 #define T_FOCUSERACTION "Action M.A.P"
 
+#define T_PARKANDHOME "Parc et maison"
 #define T_SETPARK "Déf. Pos. Parc"
+#define T_SETHOME "Déf Pos. Maison"
+#define T_RESETHOME "Reset Home Pos."
+
 #define T_ATHOME "à la maison"
 #define T_UNLOCK "Déverrouiller"
 #define T_LOCK "Verrouiller"

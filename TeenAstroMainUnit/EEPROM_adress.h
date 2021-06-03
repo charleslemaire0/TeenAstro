@@ -32,6 +32,11 @@
 #define EE_dpmW             36
 #define EE_dup              37
 
+//user defined homeposition
+#define EE_homeSaved       40
+#define EE_homePosAxis1     41 // in degree
+#define EE_homePosAxis2     45 // in degree
+
 //motor1
 #define EE_motorA1gear          58
 #define EE_motorA1stepRot       62

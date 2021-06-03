@@ -127,7 +127,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       break;
     case 'h':
       if (strchr("F", command[2])) cmdreply = CMDR_NO;
-      else if (strchr("COPQR", command[2]))
+      else if (strchr("BbCOPQR", command[2]))
       {
         cmdreply = CMDR_SHORT;
       }

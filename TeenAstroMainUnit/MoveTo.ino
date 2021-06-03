@@ -159,7 +159,7 @@ Again:
     else if (homeMount)
     {
       parkClearBacklash();
-      syncPolarHome();
+      syncAtHome();
       homeMount = false;
       // disable the stepper drivers
       enable_Axis(false);

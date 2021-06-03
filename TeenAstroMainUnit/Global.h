@@ -25,6 +25,7 @@ enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW }
 
 ParkState parkStatus = PRK_UNPARKED;
 bool parkSaved = false;
+bool homeSaved = false;
 bool atHome = true;
 bool homeMount = false;
 bool DecayModeTrack = false;
