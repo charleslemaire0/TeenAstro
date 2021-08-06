@@ -6,6 +6,7 @@
 #include <Wifi.h>
 #include <WebServer.h>
 #include <HTTPUpdate.h>
+#define ESP32
 #endif
 
 
@@ -14,6 +15,7 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFiAP.h>
 #include <ESP8266HTTPUpdateServer.h>
+#define ESP8266
 #endif
 
 
@@ -62,10 +64,15 @@
 #define EEPROM_T2 22
 #define EEPROM_BSPEED 23
 #define EEPROM_DISPLAYSUBMODEL 24
-#define EEPROM_start_wifi_sta 100
-#define EEPROM_start_wifi_ap 400
 #define EPPROM_password 50
-
+#define EEPROM_start_wifi_sta 100
+#ifdef ARDUINO_D1_MINI32
+#define NUM_sta 1
+#else
+#define NUM_sta 3
+#endif
+#define SIZE_sta 100
+#define EEPROM_start_wifi_ap EEPROM_start_wifi_sta + NUM_sta*SIZE_sta
 
 class TeenAstroWifi
 {

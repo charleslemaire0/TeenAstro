@@ -46,7 +46,7 @@ const double            HzCf = 16000000.0 / 60.0;   // conversion factor to go t
 volatile double         SiderealRate;               // based on the siderealInterval, this is the time between steps for sidereal tracking
 volatile double         TakeupRate;                 // this is the takeup rate for synchronizing the target and actual positions when needed
 
-double                  maxRate = MaxRate * 16L;
+double                  maxRate = StepsMaxRate * 16L;
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
 

@@ -31,6 +31,21 @@ void SetSiderealClockRate(double Interval)
   isrTimerRateAxis1 = 0;
   isrTimerRateAxis2 = 0;
 }
+
+#ifdef ARDUINO_TEENSY40 // F_BUS is not defined. Looking in Core 24000000 is used to convert µsec in timer ticks
+	#ifndef F_BUS
+	#define F_BUS 24000000
+	#endif
+
+void beginTimers()
+{
+  itimer3.begin(TIMER3_COMPA_vect, (float)128 * 0.0625);
+  itimer4.begin(TIMER4_COMPA_vect, (float)128 * 0.0625);
+  itimer3.priority(0);
+  itimer4.priority(0);
+  itimer1.priority(32);
+}
+#else
 void beginTimers()
 {
   // set the system timer for millis() to the second highest priority
@@ -44,6 +59,8 @@ void beginTimers()
   NVIC_SET_PRIORITY(IRQ_PIT_CH1, 0);
   NVIC_SET_PRIORITY(IRQ_PIT_CH2, 0);
 }
+
+#endif
 // set timer1 to rate (in microseconds*16)
 static void Timer1SetRate(double rate)
 {
@@ -136,10 +153,10 @@ ISR(TIMER1_COMPA_vect)
       double timerRateAxis1B = fabs(guideTimerRateAxisA1 + timerRateAxis1A);
       double calculatedTimerRateAxis1;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
-      if (timerRateAxis1B > 0.1)
+      if (timerRateAxis1B > 0.5)
         calculatedTimerRateAxis1 = SiderealRate / timerRateAxis1B;
       else
-        calculatedTimerRateAxis1 = SiderealRate * 10.0;
+        calculatedTimerRateAxis1 = SiderealRate * 2.0;
 
 
       // remember our "running" rate and only update the actual rate when it changes
@@ -201,10 +218,10 @@ ISR(TIMER1_COMPA_vect)
       double calculatedTimerRateAxis2;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
      // calculatedTimerRateAxis2 = (double)SiderealRate / timerRateAxis2B;
-      if (timerRateAxis2B > 0.1)
+      if (timerRateAxis2B > 0.5)
         calculatedTimerRateAxis2 = SiderealRate / timerRateAxis2B;
       else
-        calculatedTimerRateAxis2 = 10.0 * SiderealRate;
+        calculatedTimerRateAxis2 = 2.0 * SiderealRate;
 
       // remember our "running" rate and only update the actual rate when it changes
       if (runTimerRateAxis2 != calculatedTimerRateAxis2)

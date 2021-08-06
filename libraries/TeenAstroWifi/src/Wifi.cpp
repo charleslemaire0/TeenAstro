@@ -208,7 +208,7 @@ void TeenAstroWifi::handleWifi()
   activeWifiConnectMode == WifiConnectMode::KeepOpened ? data += "<option selected value='1'>One to One</option>" : data += "<option value='1'>One to One</option>";
   data += FPSTR(html_wifiConnectMode2);
   sendHtml(data);
-  for (int k = 0; k < 3; k++)
+  for (int k = 0; k < NUM_sta; k++)
   {
     sprintf_P(temp, html_wifiSSID1A, k); data += temp;
     sprintf_P(temp, html_wifiSSID1B, k, wifi_sta_ssid[k]); data += temp;
@@ -314,7 +314,7 @@ void TeenAstroWifi::processWifiGet()
   }
 
   // --------------------------------------------------------------------------------------------------------
-  for (int k = 0; k < 3; k++)
+  for (int k = 0; k < NUM_sta; k++)
   {
     char cmd[20];
     // Station MAC

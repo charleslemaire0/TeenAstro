@@ -18,11 +18,16 @@ constexpr float P = 10;             // (P)roportional constant of the regulator 
 void pid()
 {
   static unsigned lastTick = 0;
+
   if (deltaTarget == 0)
   {
     rotateController.stopAsync();
     lastTick = 0;
     return;
+  }
+  if (!rotateController.isRunning())
+  {
+    rotateController.rotateAsync(stepper);
   }
   if (millis() - lastTick > PID_Interval)
   {
@@ -394,12 +399,16 @@ bool SerCom::HaltRequest(void)
     m_hasReceivedCommand = false;
     break;
     //break Goto if goto is running and a Manual move is request
-  case FocCmd_in_wor:
-  case FocCmd_out_wor:
+
+
   case FocCmd_in:
   case FocCmd_in_stop:
   case FocCmd_out:
   case FocCmd_out_stop:
+    ser.print("0");
+    ser.flush();
+  case FocCmd_in_wor:
+  case FocCmd_out_wor:
     if (controller.isRunning() && !breakgoto)
     {
       breakgoto = true;
@@ -571,8 +580,20 @@ void SerCom::dumpState()
   unsigned int p = (unsigned int)(stepper.getPosition() / resolution->get());
   printvalue(p, 5, 0, false);
   ser.print(" ");
-  p = (controller.isRunning() || rotateController.isRunning()) ?
-    (unsigned int)abs(rotateController.getCurrentSpeed() / pow(2, micro->get())) : 0;
+  if (rotateController.isRunning())
+  {
+    p = (unsigned int)abs(rotateController.getCurrentSpeed() / pow(2, micro->get()));
+  }
+  else if (controller.isRunning())
+  {
+    p = (unsigned int)abs(controller.getCurrentSpeed() / pow(2, micro->get()));
+  }
+  else
+  {
+    p = 0;
+  }
+
+
   printvalue(p, 3, 0, false);
   ser.print(" ");
   printvalue(lastTemp, 2, 2, true);

@@ -7,14 +7,31 @@
 static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":Fo#", ":Fi#" };
 static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":FO#", ":FI#" };
 
-void SmartHandController::setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model, const uint8_t nSubmodel)
+void SmartHandController::setup(
+  const char version[], 
+  const int pin[7], 
+  const bool active[7], 
+  const int SerialBaud, 
+  const OLED model,
+  const uint8_t nSubmodel)
 {
+#ifdef ARDUINO_D1_MINI32
+
+  Ser.begin(SerialBaud, SERIAL_8N1, 27, 25);
+#else
+  Ser.begin(SerialBaud);
+#endif
+
   if (XEEPROM.length() == 0)
+#ifdef ARDUINO_D1_MINI32
+    XEEPROM.begin(512);
+#else
     XEEPROM.begin(1024);
+#endif
+
   if (strlen(version) <= 19) strcpy(_version, version);
 
   //choose a 128x64 display supported by U8G2lib (if not listed below there are many many others in u8g2 library example Sketches)
-  Serial.begin(SerialBaud);
 
   num_supported_display = nSubmodel;
   uint8_t submodel = XEEPROM.read(EEPROM_DISPLAYSUBMODEL);
@@ -45,21 +62,21 @@ void SmartHandController::setup(const char version[], const int pin[7], const bo
   buttonPad.setup(pin, active);
 
   tickButtons();
-  maxContrast = EEPROM.read(EEPROM_Contrast);
+  maxContrast = XEEPROM.read(EEPROM_Contrast);
   display->setContrast(maxContrast);
-  displayT1 = EEPROM.read(EEPROM_T1);
+  displayT1 = XEEPROM.read(EEPROM_T1);
   if (displayT1 < 3)
   {
     displayT1 = 3;
-    EEPROM.write(EEPROM_T1, displayT1);
-    EEPROM.commit();
+    XEEPROM.write(EEPROM_T1, displayT1);
+    XEEPROM.commit();
   }
   displayT2 = EEPROM.read(EEPROM_T2);
   if (displayT2 < displayT1)
   {
     displayT2 = displayT1;
-    EEPROM.write(EEPROM_T2, displayT2);
-    EEPROM.commit();
+    XEEPROM.write(EEPROM_T2, displayT2);
+    XEEPROM.commit();
   }
 
 #ifdef DEBUG_ON

@@ -121,14 +121,6 @@ void CheckSpiral()
     return;
   }
   int duration = iteration / 2 + 1;
-  if (activeGuideRate > 7)
-  {
-    enableGuideRate(7, false);
-  }
-  else if (activeGuideRate < 2)
-  {
-    enableGuideRate(4, false);
-  }
 
   if (iteration == 20 || lastError != ERR_NONE)
   {

@@ -1,7 +1,13 @@
 #pragma once
 #include<Arduino.h>
 #include<TeenAstroCatalog.h>
+
+#ifdef ESP32
+#define Ser Serial2
+#else
 #define Ser Serial
+#endif
+
 #define TIMEOUT_CMD 30         
 #define TIMEOUT_WEB 15
 

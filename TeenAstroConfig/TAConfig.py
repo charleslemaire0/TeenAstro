@@ -30,8 +30,10 @@ MountDef = { 'mType':['German', 'Fork', 'Alt Az', 'Alt Az Fork'],
       'SlowR':[i for i in range(1,255)],'MediumR':[i for i in range(1,255)],'FastR':[i for i in range(1,255)],
       'mrot1':['Direct','Reverse'],'mge1':[i for i in range(1,60000)],'mst1':[i for i in range(1,400)],'mmu1':[8,16,32,64,128,256],
       'mbl1':[i for i in range(0,999)],'mlc1':[i for i in range(100,2000,10)],'mhc1':[i for i in range(100,2000)], 
+      'msil1':[0,1],
       'mrot2':['Direct','Reverse'],'mge2':[i for i in range(1,60000)],'mst2':[i for i in range(1,400)],'mmu2':[8,16,32,64,128,256],
       'mbl2':[i for i in range(0,999)],'mlc2':[i for i in range(100,2000,10)],'mhc2':[i for i in range(100,2000)], 
+      'msil2':[0,1],
       'hl':[i for i in range(-30,30)], 'ol':[i for i in range(60,92)], 'el':[i for i in range(-45,45)], 
       'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)],'poleAlign':['True', 'Apparent'], 'corrTrack':['enabled','disabled']
       }
@@ -40,15 +42,15 @@ MountDef = { 'mType':['German', 'Fork', 'Alt Az', 'Alt Az Fork'],
 MountReadCmd = { 
       'mType':'GXI','DefaultR':'GXRD',
       'MaxR':'GXRX','GuideR':'GXR0','Acc':'GXRA', 'SlowR':'GXR1','MediumR':'GXR2','FastR':'GXR3',
-      'mrot1':'GXMRR','mge1':'GXMGR','mst1':'GXMSR','mmu1':'GXMMR','mbl1':'GXMBR','mlc1':'GXMcR','mhc1':'GXMCR', 
-      'mrot2':'GXMRD','mge2':'GXMGD','mst2':'GXMSD','mmu2':'GXMMD','mbl2':'GXMBD','mlc2':'GXMcD','mhc2':'GXMCD', 
+      'mrot1':'GXMRR','mge1':'GXMGR','mst1':'GXMSR','mmu1':'GXMMR','mbl1':'GXMBR','mlc1':'GXMcR','mhc1':'GXMCR', 'msil1':'GXMmR',
+      'mrot2':'GXMRD','mge2':'GXMGD','mst2':'GXMSD','mmu2':'GXMMD','mbl2':'GXMBD','mlc2':'GXMcD','mhc2':'GXMCD', 'msil2':'GXMmD',
       'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU', 'poleAlign':'GXAp', 'corrTrack':'GXI'
       } 
 MountSetCmd = {
       'mType':'S!','DefaultR':'SXRD:',
       'MaxR':'SXRX:','GuideR':'SXR0:','Acc':'SXRA:', 'SlowR':'SXR1:','MediumR':'SXR2:','FastR':'SXR3:',
-      'mrot1':'SXMRR:','mge1':'SXMGR:','mst1':'SXMSR:','mmu1':'SXMMR:','mbl1':'SXMBR:','mlc1':'SXMCR:','mhc1':'SXMcR:', 
-      'mrot2':'SXMRD:','mge2':'SXMGD:','mst2':'SXMSD:','mmu2':'SXMMD:','mbl2':'SXMBD:','mlc2':'SXMCD:','mhc2':'SXMcD:', 
+      'mrot1':'SXMRR:','mge1':'SXMGR:','mst1':'SXMSR:','mmu1':'SXMMR:','mbl1':'SXMBR:','mlc1':'SXMCR:','mhc1':'SXMcR:', 'msil1':'SXMmR:',
+      'mrot2':'SXMRD:','mge2':'SXMGD:','mst2':'SXMSD:','mmu2':'SXMMD:','mbl2':'SXMBD:','mlc2':'SXMCD:','mhc2':'SXMcD:', 'msil2':'SXMmD:',
       'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 'poleAlign':'SXAp:', 'corrTrack':'T'
       } 
 
@@ -122,7 +124,11 @@ def openPort():
 def getValue(comm, cmd):
   cmdStr = ":" + cmd + "#"  
   comm.write(cmdStr.encode('utf-8'))
-  val = comm.read_until(b'#', 100).decode('utf-8')[:-1]
+  try:
+    val = comm.read_until(b'#', 100).decode('utf-8')[:-1]
+  except:  
+    logText("getValue Error: %s" % cmd)
+    val = '?'
   return (val)
 
 def sendCommand(comm, cmdStr):
@@ -177,6 +183,9 @@ def writeMountData():
         cmdStr += '1'
       else:
         continue
+
+    elif ((tag == 'msil1') or (tag == 'msil2')):
+      cmdStr += Mount[tag]
 
     elif ((tag == 'mmu1') or (tag == 'mmu2')):
       # Microsteps
@@ -260,6 +269,24 @@ def updateView():
 
 
 # Open connection, read values from TeenAstro
+def readVersions():
+  if (comm == None):
+    return
+  window['mainUnitVersion'].update(getValue(comm, 'GVN')) 
+  window['boardVersion'].update(getValue(comm, 'GVB')) 
+  driverVersion = getValue(comm, 'GVb')
+  if driverVersion == '1': driverText = 'TOS100'
+  elif driverVersion == '2': driverText = 'TMC2130'
+  elif driverVersion == '3': driverText = 'TMC5160'
+  else: driverText = 'unknown'
+  window['driverVersion'].update(driverText) 
+    
+def clearVersions():
+  window['mainUnitVersion'].update('') 
+  window['boardVersion'].update('') 
+  window['driverVersion'].update('') 
+
+
 def readMountData():
   if (comm == None):
     return
@@ -284,6 +311,9 @@ def readMountData():
         Mount[tag] = 'Direct'
       else:  
         Mount[tag] = 'Reverse'
+
+    elif ((tag == 'msil1') or (tag == 'msil2')):
+      Mount[tag] = resp
 
     elif ((tag == 'mmu1') or (tag == 'mmu2')):  # Microsteps are coded as the exponent of 2
       Mount[tag] = int(math.pow(2, int(resp)))
@@ -496,7 +526,6 @@ def updateStatus(comm):
     window['axis1'].update("Axis 1: %s" % getValue(comm, 'GXDP0'))
     window['axis2'].update("Axis 2: %s" % getValue(comm, 'GXDP1'))
     window['pierside'].update("Pier Side: %c" % getValue(comm, 'GXI')[13])
-    resp = getValue(comm, MountReadCmd[tag]) 
 
 
 # Main program
@@ -525,7 +554,7 @@ sgCommTypeSerial = [sg.Radio('Serial', "RADIO1", size=(8, 1), enable_events=True
 
 sgCommTypeTCP = [sg.Radio('TCP', "RADIO1", default = True, size=(8, 1), enable_events=True, key='-TCPIP-'),
           sg.Text('IP Address:', size=(10, 1)),
-          sg.Input('192.168.0.12', key='-IPADDR-', size=(20, 1))]
+          sg.Input('192.168.0.108', key='-IPADDR-', size=(20, 1))]
   
 
 speedFrame = sg.Frame('Speeds', 
@@ -543,14 +572,14 @@ motFrame1 = sg.Frame('RA Motor', [[sgLabel('Rotation'), sgSpin('mrot1', width=8)
           [sgLabel('Steps'), sgSpin('mst1')],
           [sgLabel('Microsteps'), sgSpin('mmu1')],
           [sgLabel('Backlash'), sgSpin('mbl1')],
-          [sgLabel('Low / High current'), sgSpin( 'mlc1'), sgSpin('mhc1')]])
+          [sgLabel('Low/High current, Silent'), sgSpin( 'mlc1'), sgSpin('mhc1'), sgSpin('msil1')]])
 
 motFrame2 = sg.Frame('Dec Motor', [[sgLabel('Rotation'), sgSpin('mrot2', width=8)],
           [sgLabel('Gear'), sgSpin('mge2')],
           [sgLabel('Steps'), sgSpin('mst2')],
           [sgLabel('Microsteps'), sgSpin('mmu2')],
           [sgLabel('Backlash'), sgSpin('mbl2')],
-          [sgLabel('Low / High current'), sgSpin( 'mlc2'), sgSpin('mhc2')]])
+          [sgLabel('Low/High current, Silent'), sgSpin( 'mlc2'), sgSpin('mhc2'), sgSpin('msil2')]])
 
 limitFrame = sg.Frame('Limits', 
         [[sgLabel('Horizon'), sgSpin('hl')],
@@ -588,12 +617,22 @@ debugFrame = sg.Frame('Debug',
           [sg.Text('Pier side', key='pierside',size=(30,1))]],
           )
 
+commFrame = sg.Frame('Comm Port',[sgCommTypeSerial,sgCommTypeTCP,[sg.Button('Connect', key='connect')]])
+
+versionFrame = sg.Frame('Versions',
+          [
+          [sg.Text('Main Unit:'), sg.Text('', key='mainUnitVersion',size=(30,1))],
+          [sg.Text('Board:'), sg.Text('',key='boardVersion',size=(30,1))],
+          [sg.Text('Stepper Driver:'), sg.Text('',key='driverVersion',size=(30,1))]]
+          )
+
 mountTab = [[mountTypeRow],[speedFrame, sg.Column([[limitFrame], [alignmentFrame]])],[motFrame1, motFrame2]]
 siteTab = [[siteFrame]]
 statusTab = [[timeFrame],[coordFrame],[debugFrame]]
 bottomRow = sg.Output(key='Log',  size=(80, 4))
 
-topRow = [sg.Frame('Comm Port',[sgCommTypeSerial,sgCommTypeTCP,[sg.Button('Connect', key='connect')]])]
+topRow = [commFrame, versionFrame]
+
 layout = [ topRow,
           [sg.TabGroup([[sg.Tab('Mount', mountTab),
             sg.Tab('Sites', siteTab),
@@ -603,7 +642,7 @@ layout = [ topRow,
          ]
 
 
-window = sg.Window('TAConfig 1.2', layout)
+window = sg.Window('TAConfig 1.3', layout)
 
 comm = None
 
@@ -621,13 +660,18 @@ while True:
       if (comm != None):
         window['connect'].update('Disconnect')
         window['-ComPorts-'].update(disabled = True)
+        window['-Serial-'].update(disabled = True)
         window['-TCPIP-'].update(disabled = True)
+        readVersions()
+
     else:
       comm.close()
       logText('Disconnected')
+      clearVersions()
       comm = None
       window['connect'].update('Connect')
       window['-ComPorts-'].update(disabled = False)
+      window['-Serial-'].update(disabled = False)
       window['-TCPIP-'].update(disabled = False)
 
   elif event == 'Read from TeenAstro':

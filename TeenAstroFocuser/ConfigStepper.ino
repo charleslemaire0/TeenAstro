@@ -19,8 +19,6 @@ void iniMot()
   stepper.setMaxSpeed(lowSpeed->get()*pow(2, micro->get()));
   stepper.setAcceleration(AccFact*manAcc->get());
   stepper.setInverseRotation(reverse->get());
-  rotateController.rotateAsync(stepper);
-  rotateController.overrideSpeed(0);
   mode = MAN;
 }
 
