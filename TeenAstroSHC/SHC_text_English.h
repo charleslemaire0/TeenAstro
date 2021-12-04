@@ -58,7 +58,7 @@
 #define T_CANCELED "Canceled"
 #define T_WRONG "Wrong"
 #define T_NOTDEFINED "not defined"
-#define T_SUCESS "Sucess"
+#define T_SUCESS "Success"
 #define T_STARADDED "Star added"
 #define T_VERSION "version"
 #define T_YES "YES"
