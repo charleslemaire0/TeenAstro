@@ -297,7 +297,7 @@ return:
 
 uint8_t ext_UserInterfaceInputValueFloat(u8g2_t *u8g2, Pad* extPad, const char *title, const char *pre, float *value, float lo, float hi, uint8_t len, uint8_t dec, const char *post)
 {
-  return ext_UserInterfaceInputValueFloatIncr(u8g2, extPad, title, pre, value, lo, hi, len,dec,pow10f(dec*-1.),post);
+  return ext_UserInterfaceInputValueFloatIncr(u8g2, extPad, title, pre, value, lo, hi, len,dec,powf(10., dec*-1.),post);
 }
 
 /*
@@ -759,4 +759,3 @@ void supress_days(uint8_t& year, uint8_t& month, uint8_t& day, int days2supress)
       months[2] = 28;
   }
 }
-

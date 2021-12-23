@@ -3,7 +3,6 @@
 #include <TeenAstroLX200io.h>
 #include <u8g2_ext.h>
 #include <TeenAstroPad.h>
-#include "XEEPROM.hpp"
 
 #define Product "Teenastro SHC"
 #define SHCFirmwareDate          __DATE__
