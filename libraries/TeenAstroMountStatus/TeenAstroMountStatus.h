@@ -41,6 +41,7 @@ private:
   char            m_TempAxis2[15] = "?";
   unsigned long   m_lastStateAxis;
   char            m_TempUTC[15] = "?";
+  char            m_TempLHA[15] = "?";
   char            m_TempUTCdate[15] = "?";
   char            m_TempSidereal[15] = "?";
   unsigned long   m_lastStateTime;
@@ -62,6 +63,7 @@ private:
   bool            m_hasInfoAxis1 = false;
   bool            m_hasInfoAxis2 = false;
   bool            m_hasInfoUTC = false;
+  bool            m_hasInfoLHA = false;
   bool            m_hasInfoUTCdate = false;
   bool            m_hasInfoSidereal = false;
   bool            m_hasInfoTrackingRate = false;
@@ -92,6 +94,7 @@ public:
   bool hasInfoAz() { return m_hasInfoAz; };
   bool hasInfoAlt() { return m_hasInfoAlt; };
   bool hasInfoUTC() { return m_hasInfoUTC; };
+  bool hasInfoLHA() { return m_hasInfoLHA; };
   bool hasInfoSidereal() { return m_hasInfoSidereal; };
   bool hasInfoMount() { return m_hasInfoMount; };
   bool hasInfoFocuser() { return m_hasInfoFocuser; };
@@ -114,6 +117,7 @@ public:
   const char* getAxis1() { return  m_TempAxis1; };
   const char* getAxis2() { return  m_TempAxis2; };
   const char* getUTC() { return m_TempUTC; };
+  const char* getLHA() { return m_TempLHA; };
   const char* getUTCdate() { return m_TempUTCdate; };
   const char* getSidereal() { return m_TempSidereal; };
   const char* getMState() { return m_TempMount; };
@@ -126,6 +130,7 @@ public:
   void updateAzAlt();
   void updateAxis();
   void updateTime();
+  void updateLHA();
   void updateFocuser();
   void updateTrackingRate();
   void updateMount();

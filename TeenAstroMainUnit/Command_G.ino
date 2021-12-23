@@ -271,8 +271,47 @@ void Command_GX()
     }
       // :GXT2# return seconds since 01/01/1970/00:00:00
     case '2':
+    {
       unsigned long t = rtk.getTimeStamp();
       sprintf(reply, "%lu#", t);
+    }
+      break;
+    case '3':
+    {
+      // :GXT3# LHA time
+
+      static unsigned long _coord_t1 = 0;
+      static double _dec1 = 0;
+      static double _ra1 = 0;
+      
+      double tmpLST, f, f1;
+      tmpLST = rtk.LST();
+
+      if (millis() - _coord_t1 < 100)
+      {
+       f = _ra1;
+       f1 = _dec1;
+      }
+      else
+      {
+       getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+       f /= 15.0;
+       _ra1 = f;
+       _dec1 = f1;
+       _coord_t1 = millis();
+      }
+
+      tmpLST-=f;
+      if (tmpLST<-12)
+        tmpLST+=24;
+      else if (tmpLST>12)
+        tmpLST-=24;
+
+      if (!doubleToHms(reply, &tmpLST, true))
+        strcpy(reply, "0#");
+      else
+        strcat(reply, "#");
+    }
       break;
     }
     break;
@@ -608,9 +647,10 @@ void  Command_G()
   {
     //  :Gg#   Get Current Site Longitude, Native LX200 command
     //         Returns: sDDD*MM#
+    //  :Ggf#  Returns: sDDD*MM'SS#
     //         The current site Longitude. East Longitudes are negative
     int i = highPrecision;
-    highPrecision = false;
+    highPrecision = command[2]== 'f';
     if (!doubleToDms(reply, localSite.longitude(), true, true, highPrecision))
       strcpy(reply, "0");
     else
@@ -727,9 +767,10 @@ void  Command_G()
   case 't':
     //  :Gt#   Get Current Site Latitude, Native LX200 command
     //         Returns: sDD*MM#
+    //  :Gtf#  Returns: sDD*MM'SS#
     //         The latitude of the current site. Positive for North latitudes
     i = highPrecision;
-    highPrecision = false;
+    highPrecision = command[2] == 'f';
     if (!doubleToDms(reply, localSite.latitude(), false, true, highPrecision))
       strcpy(reply, "0");
     else

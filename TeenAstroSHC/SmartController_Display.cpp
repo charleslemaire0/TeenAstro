@@ -324,6 +324,10 @@ void SmartHandController::updateMainDisplay(PAGES page)
   {
     ta_MountStatus.updateTime();
   }
+  else if (page == P_HA && !ta_MountStatus.isPulseGuiding())
+  {
+    ta_MountStatus.updateLHA();
+  }
   else if (page == P_FOCUSER && !ta_MountStatus.isPulseGuiding())
   {
     ta_MountStatus.updateFocuser();
@@ -550,6 +554,18 @@ void SmartHandController::updateMainDisplay(PAGES page)
         u8g2_DrawUTF8(u8g2, 0, y, "Sidereal");
         display->drawRA(x, y, ta_MountStatus.getSidereal());
       }
+    }
+    else if (page == P_HA)
+    {
+      if (ta_MountStatus.hasInfoUTC() && ta_MountStatus.hasInfoLHA())
+      {
+        u8g2_uint_t y = 36;
+        x = u8g2_GetDisplayWidth(u8g2);
+        u8g2_DrawUTF8(u8g2, 0, y, "UTC");
+        display->drawRA(x, y, ta_MountStatus.getUTC());
+        y += line_height + 4;
+        u8g2_DrawUTF8(u8g2, 0, y, "LHA");
+        display->drawRA(x, y, ta_MountStatus.getLHA());      }
     }
     else if (page == P_FOCUSER)
     {

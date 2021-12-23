@@ -160,16 +160,28 @@ Public Class Telescope
 
   Public ReadOnly Property SupportedActions() As ArrayList Implements ITelescopeV3.SupportedActions
     Get
-      mTL.LogMessage("SupportedActions Get", "Returning empty arraylist")
-      Return New ArrayList()
-    End Get
+            mTL.LogMessage("SupportedActions Get", "Returning arraylisof supported actions") 'empty arraylist")
+            Dim suppActions As ArrayList = New ArrayList
+            suppActions.Add("AutoAlign")
+            Return suppActions 'New ArrayList()
+        End Get
   End Property
 
-  Public Function Action(ByVal ActionName As String, ByVal ActionParameters As String) As String Implements ITelescopeV3.Action
-    Throw New ActionNotImplementedException("Action " & ActionName & " is not supported by this driver")
-  End Function
+    Public Function Action(ByVal ActionName As String, ByVal ActionParameters As String) As String Implements ITelescopeV3.Action
+        If ActionName = "AutoAlign" Then
+            If Not Connected Then
+                Throw New ASCOM.NotConnectedException
+            End If
+            If Not Me.CommandBool("AA") Then
+                Throw New ASCOM.DriverException("AutoAlign command failure")
+            End If
+        Else
+            Throw New ActionNotImplementedException("Action " & ActionName & " is not supported by this driver")
+        End If
+        'Throw New ActionNotImplementedException("Action " & ActionName & " is not supported by this driver")
+    End Function
 
-  Private Function GenericCommand(ByVal Command As String, ByVal Raw As Boolean,
+    Private Function GenericCommand(ByVal Command As String, ByVal Raw As Boolean,
                                   ByVal Mode As Integer, ByRef buf As String) As Boolean
     If Not Raw Then
       Command = ":" & Command & "#"
@@ -211,8 +223,8 @@ Public Class Telescope
       Implements ITelescopeV3.CommandString
     Dim buf As String = ""
     If Not GenericCommand(Command, Raw, 2, buf) Then
-      Throw New ASCOM.InvalidValueException("CommandString " + Command + " has failed")
-    End If
+            Throw New ASCOM.InvalidValueException("CommandString " + Command + " has failed")
+        End If
     Return buf
   End Function
 
@@ -319,8 +331,8 @@ Public Class Telescope
 
   Private Function getStreamIter(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
     Dim k As Integer = 0
-    While k < 3
-      buf = ""
+        While k < 3
+            buf = ""
       If getStream(Command, Mode, buf) Then
         Return True
       Else
@@ -357,8 +369,8 @@ Public Class Telescope
             ' Incoming message may be larger than the buffer size.
             Do
               numberOfBytesRead = ServerStream.Read(myReadBuffer, 0, myReadBuffer.Length)
-              myCompleteMessage.AppendFormat("{0}", Encoding.ASCII.GetString(myReadBuffer, 0, numberOfBytesRead))
-            Loop While ServerStream.DataAvailable
+                            myCompleteMessage.AppendFormat("{0}", Encoding.ASCII.GetString(myReadBuffer, 0, numberOfBytesRead))
+                        Loop While ServerStream.DataAvailable
             buf = myCompleteMessage.ToString()
             If Mode = 1 And buf <> "" Then
               buf = buf.Substring(0, 1)
@@ -449,12 +461,15 @@ Public Class Telescope
 #End Region
 
 #Region "ITelescope Implementation"
-  Public Sub AbortSlew() Implements ITelescopeV3.AbortSlew
-    CommandBlind("Q")
-    mTL.LogMessage("AbortSlew", "done")
-  End Sub
+    Public Sub AbortSlew() Implements ITelescopeV3.AbortSlew
+        If Me.AtPark Then
+            Throw New ASCOM.ParkedException
+        End If
+        CommandBlind("Q")
+        mTL.LogMessage("AbortSlew", "done")
+    End Sub
 
-  Public ReadOnly Property AlignmentMode() As AlignmentModes Implements ITelescopeV3.AlignmentMode
+    Public ReadOnly Property AlignmentMode() As AlignmentModes Implements ITelescopeV3.AlignmentMode
     Get
       updateTelStatus()
       Dim m As String = mTelStatus.Substring(12, 1)
@@ -579,12 +594,12 @@ Public Class Telescope
     mTL.LogMessage("CanMoveAxis", "Get - " & Axis.ToString())
     Select Case Axis
       Case TelescopeAxes.axisPrimary
-        Return True
-      Case TelescopeAxes.axisSecondary
-        Return True
-      Case TelescopeAxes.axisTertiary
-        Return False
-      Case Else
+                Return True
+            Case TelescopeAxes.axisSecondary
+                Return True
+            Case TelescopeAxes.axisTertiary
+                Return False
+            Case Else
         Throw New InvalidValueException("CanMoveAxis", Axis.ToString(), "0 To 2")
     End Select
   End Function
@@ -658,16 +673,16 @@ Public Class Telescope
 
   Public ReadOnly Property CanSlewAltAz() As Boolean Implements ITelescopeV3.CanSlewAltAz
     Get
-      mTL.LogMessage("CanSlewAltAz", "Get - " & False.ToString())
-      Return False
-    End Get
+            mTL.LogMessage("CanSlewAltAz", "Get - " & True.ToString())
+            Return True
+        End Get
   End Property
 
   Public ReadOnly Property CanSlewAltAzAsync() As Boolean Implements ITelescopeV3.CanSlewAltAzAsync
     Get
-      mTL.LogMessage("CanSlewAltAzAsync", "Get - " & False.ToString())
-      Return False
-    End Get
+            mTL.LogMessage("CanSlewAltAzAsync", "Get - " & True.ToString())
+            Return True
+        End Get
   End Property
 
   Public ReadOnly Property CanSlewAsync() As Boolean Implements ITelescopeV3.CanSlewAsync
@@ -686,9 +701,9 @@ Public Class Telescope
 
   Public ReadOnly Property CanSyncAltAz() As Boolean Implements ITelescopeV3.CanSyncAltAz
     Get
-      mTL.LogMessage("CanSyncAltAz", "Get - " & False.ToString())
-      Return False
-    End Get
+            mTL.LogMessage("CanSyncAltAz", "Get - " & True.ToString())
+            Return True
+        End Get
   End Property
 
   Public ReadOnly Property CanUnpark() As Boolean Implements ITelescopeV3.CanUnpark
@@ -802,10 +817,14 @@ Public Class Telescope
   End Property
 
   Public Sub MoveAxis(Axis As TelescopeAxes, Rate As Double) Implements ITelescopeV3.MoveAxis
-    mTL.LogMessage("MoveAxis", Axis.ToString() & ":" & Rate.ToString())
+        mTL.LogMessage("MoveAxis", Axis.ToString() & ":" & Rate.ToString())
 
-    ' Set slew speed to given rate, if different from currently set value.
-    Dim absRate As Double = Math.Abs(Rate)
+        If Me.AtPark Then
+            Throw New ASCOM.ParkedException
+        End If
+
+        ' Set slew speed to given rate, if different from currently set value.
+        Dim absRate As Double = Math.Abs(Rate)
     Dim slewSpeed As String = ""
     For i = mSlewSpeeds.GetUpperBound(0) To 0 Step -1
       If (absRate >= 0.99 * mSlewSpeeds(i) * mSiderealRate) Then
@@ -844,8 +863,9 @@ Public Class Telescope
 
   Public Sub Park() Implements ITelescopeV3.Park
     If CommandBool("hP") Then
-      mTL.LogMessage("Park", "done")
-    Else
+            mTL.LogMessage("Park", "done")
+            Threading.Thread.Sleep(3000)
+        Else
       mTL.LogMessage("Park", "failed")
       Throw New ASCOM.InvalidValueException("The park has failed")
     End If
@@ -854,8 +874,8 @@ Public Class Telescope
   Public Sub PulseGuide(Direction As GuideDirections, Duration As Integer) Implements ITelescopeV3.PulseGuide
 
     Dim ok As Boolean = False
-    Dim dir As String = ""
-    Select Case Direction
+        Dim dir As String = ""
+        Select Case Direction
       Case GuideDirections.guideNorth
         dir = "Mgn"
       Case GuideDirections.guideSouth
@@ -982,8 +1002,8 @@ Public Class Telescope
 
   Public Property SiteLatitude() As Double Implements ITelescopeV3.SiteLatitude
     Get
-      Dim lati As Double = mutilities.DMSToDegrees(Me.CommandString("Gt"))
-      mTL.LogMessage("SiteLatitude Get", lati.ToString("0.000000"))
+            Dim lati As Double = mutilities.DMSToDegrees(Me.CommandString("Gtf"))
+            mTL.LogMessage("SiteLatitude Get", lati.ToString("0.000000"))
       Return lati
     End Get
     Set(value As Double)
@@ -998,16 +1018,18 @@ Public Class Telescope
       Else
         sg = "-"
       End If
-      Dim cmd As String = "St" + sg + deg.ToString("00") + "*" + min.ToString("00")
-      Me.CommandBool(cmd)
+            'Dim cmd As String = "St" + sg + deg.ToString("00") + "*" + min.ToString("00")
+            Dim cmd As String = "St" + sg + deg.ToString("00") + ":" + min.ToString("00") + ":" + ((Math.Abs(value) - deg) * 3600 - Math.Truncate(min) * 60).ToString("00")
+
+            Me.CommandBool(cmd)
       mTL.LogMessage("SiteLatitude Set", value)
     End Set
   End Property
 
   Public Property SiteLongitude() As Double Implements ITelescopeV3.SiteLongitude
     Get
-      Dim longi As Double = mutilities.DMSToDegrees(Me.CommandString("Gg")) * -1
-      mTL.LogMessage("SiteLongitude Get", longi.ToString("0.000000"))
+            Dim longi As Double = mutilities.DMSToDegrees(Me.CommandString("Ggf")) * -1
+            mTL.LogMessage("SiteLongitude Get", longi.ToString("0.000000"))
       Return longi
     End Get
     Set(value As Double)
@@ -1023,9 +1045,10 @@ Public Class Telescope
       Else
         sg = "-"
       End If
-      Dim cmd As String = "Sg" + sg + deg.ToString("000") + "*" + min.ToString("00")
-      Me.CommandBool(cmd)
-      mTL.LogMessage("SiteLongitude Set", value)
+            'Dim cmd As String = "Sg" + sg + deg.ToString("000") + "*" + min.ToString("00")
+            Dim cmd As String = "Sg" + sg + deg.ToString("000") + ":" + min.ToString("00") + ":" + ((Math.Abs(value) - deg) * 3600.0 - Math.Truncate(min) * 60.0).ToString("00")
+            Me.CommandBool(cmd)
+            mTL.LogMessage("SiteLongitude Set", value)
     End Set
   End Property
 
@@ -1040,47 +1063,83 @@ Public Class Telescope
     End Set
   End Property
 
-  Public Sub SlewToAltAz(Azimuth As Double, Altitude As Double) Implements ITelescopeV3.SlewToAltAz
-    setAzalt(Azimuth, Altitude)
-    checkslew()
-    doslew(False, True)
-    mTL.LogMessage("SlewToAltAzAz", "done")
-  End Sub
+    Public Sub SlewToAltAz(Azimuth As Double, Altitude As Double) Implements ITelescopeV3.SlewToAltAz
+        'If Me.AtPark Then
+        '    Throw New ASCOM.InvalidOperationException(ErrorCodes.InvalidWhileParked)
+        'End If
+        'If Me.Tracking Then
+        '    Throw New ASCOM.InvalidOperationException
+        'End If
+        setAzalt(Azimuth, Altitude)
+        checkslew()
+        doslew(False, True)
+        mTL.LogMessage("SlewToAltAzAz", "done")
+    End Sub
 
-  Public Sub SlewToAltAzAsync(Azimuth As Double, Altitude As Double) Implements ITelescopeV3.SlewToAltAzAsync
-    setAzalt(Azimuth, Altitude)
-    checkslew()
-    doslew(True, True)
-    mTL.LogMessage("SlewToAltAzAsync", "done")
-  End Sub
+    Public Sub SlewToAltAzAsync(Azimuth As Double, Altitude As Double) Implements ITelescopeV3.SlewToAltAzAsync
+        'If Me.AtPark Then
+        '    Throw New ASCOM.InvalidOperationException(ErrorCodes.InvalidWhileParked)
+        'End If
+        'If Me.Tracking Then
+        '    Throw New ASCOM.InvalidOperationException
+        'End If
+        setAzalt(Azimuth, Altitude)
+        checkslew()
+        doslew(True, True)
+        mTL.LogMessage("SlewToAltAzAsync", "done")
+    End Sub
 
-  Public Sub SlewToCoordinates(RightAscension As Double, Declination As Double) Implements ITelescopeV3.SlewToCoordinates
-    mTL.LogMessage("SlewToCoordinates", "done")
-    Me.TargetDeclination = Declination
-    Me.TargetRightAscension = RightAscension
-    Me.SlewToTarget()
-  End Sub
+    Public Sub SlewToCoordinates(RightAscension As Double, Declination As Double) Implements ITelescopeV3.SlewToCoordinates
+        'If Me.AtPark Then
+        '    Throw New ASCOM.InvalidOperationException(ErrorCodes.InvalidWhileParked)
+        'End If
+        'If Not Me.Tracking Then
+        '    Throw New ASCOM.InvalidOperationException
+        'End If
+        mTL.LogMessage("SlewToCoordinates", "done")
+        Me.TargetDeclination = Declination
+        Me.TargetRightAscension = RightAscension
+        Me.SlewToTarget()
+    End Sub
 
-  Public Sub SlewToCoordinatesAsync(RightAscension As Double, Declination As Double) Implements ITelescopeV3.SlewToCoordinatesAsync
-    mTL.LogMessage("SlewToCoordinatesAsync", "done")
-    Me.TargetDeclination = Declination
-    Me.TargetRightAscension = RightAscension
-    Me.SlewToTargetAsync()
-  End Sub
+    Public Sub SlewToCoordinatesAsync(RightAscension As Double, Declination As Double) Implements ITelescopeV3.SlewToCoordinatesAsync
+        'If Me.AtPark Then
+        '    Throw New ASCOM.InvalidOperationException(ErrorCodes.InvalidWhileParked)
+        'End If
+        'If Not Me.Tracking Then
+        '    Throw New ASCOM.InvalidOperationException
+        'End If
+        mTL.LogMessage("SlewToCoordinatesAsync", "done")
+        Me.TargetDeclination = Declination
+        Me.TargetRightAscension = RightAscension
+        Me.SlewToTargetAsync()
+    End Sub
 
-  Public Sub SlewToTarget() Implements ITelescopeV3.SlewToTarget
-    checkslew()
-    doslew(False)
-    mTL.LogMessage("SlewToTarget", "done")
-  End Sub
+    Public Sub SlewToTarget() Implements ITelescopeV3.SlewToTarget
+        'If Me.AtPark Then
+        '    Throw New ASCOM.InvalidOperationException(ErrorCodes.InvalidWhileParked)
+        'End If
+        'If Not Me.Tracking Then
+        '    Throw New ASCOM.InvalidOperationException
+        'End If
+        checkslew()
+        doslew(False)
+        mTL.LogMessage("SlewToTarget", "done")
+    End Sub
 
-  Public Sub SlewToTargetAsync() Implements ITelescopeV3.SlewToTargetAsync
-    checkslew()
-    doslew(True)
-    mTL.LogMessage("SlewToTarget", "done")
-  End Sub
+    Public Sub SlewToTargetAsync() Implements ITelescopeV3.SlewToTargetAsync
+        'If Me.AtPark Then
+        '    Throw New ASCOM.InvalidOperationException(ErrorCodes.InvalidWhileParked)
+        'End If
+        'If Not Me.Tracking Then
+        '    Throw New ASCOM.InvalidOperationException
+        'End If
+        checkslew()
+        doslew(True)
+        mTL.LogMessage("SlewToTarget", "done")
+    End Sub
 
-  Public ReadOnly Property Slewing() As Boolean Implements ITelescopeV3.Slewing
+    Public ReadOnly Property Slewing() As Boolean Implements ITelescopeV3.Slewing
     Get
       updateTelStatus()
       If mTelStatus.Substring(0, 1) = "2" Or mTelStatus.Substring(0, 1) = "3" Or mTelStatus.Substring(6, 1) = "+" Then
@@ -1099,14 +1158,17 @@ Public Class Telescope
     mTL.LogMessage("SyncToAltAz", "done")
   End Sub
 
-  Public Sub SyncToCoordinates(RightAscension As Double, Declination As Double) Implements ITelescopeV3.SyncToCoordinates
-    Me.TargetDeclination = Declination
-    Me.TargetRightAscension = RightAscension
-    SyncToTarget()
-    mTL.LogMessage("SyncToCoordinates", "done")
-  End Sub
+    Public Sub SyncToCoordinates(RightAscension As Double, Declination As Double) Implements ITelescopeV3.SyncToCoordinates
+        If Me.AtPark Then
+            Throw New ASCOM.ParkedException
+        End If
+        Me.TargetDeclination = Declination
+        Me.TargetRightAscension = RightAscension
+        SyncToTarget()
+        mTL.LogMessage("SyncToCoordinates", "done")
+    End Sub
 
-  Public Sub SyncToPark()
+    Public Sub SyncToPark()
     If CommandBool("hO") Then
       mTL.LogMessage("SyncToPark", "done")
     Else
@@ -1115,16 +1177,19 @@ Public Class Telescope
     End If
   End Sub
 
-  Public Sub SyncToTarget() Implements ITelescopeV3.SyncToTarget
-    If CommandString("CM") = "N/A" Then
-      mTL.LogMessage("SyncToTarget", "done")
-    Else
-      Throw New ASCOM.InvalidOperationException("SyncToTarget has failed")
-      mTL.LogMessage("SyncToTarget", "Failed")
-    End If
-  End Sub
+    Public Sub SyncToTarget() Implements ITelescopeV3.SyncToTarget
+        If Me.AtPark Then
+            Throw New ASCOM.ParkedException
+        End If
+        If CommandString("CM") = "N/A" Then
+            mTL.LogMessage("SyncToTarget", "done")
+        Else
+            Throw New ASCOM.InvalidOperationException("SyncToTarget has failed")
+            mTL.LogMessage("SyncToTarget", "Failed")
+        End If
+    End Sub
 
-  Public Property TargetDeclination() As Double Implements ITelescopeV3.TargetDeclination
+    Public Property TargetDeclination() As Double Implements ITelescopeV3.TargetDeclination
     Get
       If mtgtDec = -999 Then
         Throw New ASCOM.ValueNotSetException
@@ -1222,11 +1287,13 @@ Public Class Telescope
       mTL.LogMessage("TrackingRate Get", "done")
       Return trackingRate__1
     End Get
-    Set(value As DriveRates)
-      mTL.LogMessage("TrackingRate Set", "Not implemented")
-      Throw New ASCOM.PropertyNotImplementedException("TrackingRate", False)
-    End Set
-  End Property
+        Set(value As DriveRates)
+            mTL.LogMessage("TrackingRate Set", "Not implemented")
+            Tracking = True
+            'Fix for NINA (NOT ASCOM COMPLIANT)
+            'Throw New ASCOM.PropertyNotImplementedException("TrackingRate", False)
+        End Set
+    End Property
 
   Public ReadOnly Property TrackingRates() As ITrackingRates Implements ITelescopeV3.TrackingRates
     Get
@@ -1284,46 +1351,46 @@ Public Class Telescope
     ElseIf Not state.Length = 1 Then
       Throw New ASCOM.InvalidOperationException("Telescope reply is corrupt")
     End If
-    If state = "0" Then
-      mTL.LogMessage("Slew to target", "Started")
-    Else
-      ReportState(state)
+        If state = "0" Then
+            mTL.LogMessage("Slew to target", "Started")
+        Else
+            ReportState(state)
     End If
   End Sub
 
   Private Sub ReportState(ByVal state As String)
     Dim val As Integer = Asc(state(0)) - Asc("0"c)
-    Select Case val
-      Case 1
-        Throw New ASCOM.InvalidOperationException("Object below min altitude")
-      Case 2
-        Throw New ASCOM.ValueNotSetException
-      Case 4
-        Throw New ASCOM.ParkedException
-      Case 5
-        Throw New ASCOM.InvalidOperationException("Telescope is busy")
-      Case 7
-        Throw New ASCOM.InvalidOperationException("Telescope is busy")
-      Case 6
-        Throw New ASCOM.InvalidOperationException("Object is outside limits")
-      Case 8
-        Throw New ASCOM.InvalidOperationException("Object above max altitude")
-      Case 11
-        Throw New ASCOM.InvalidOperationException("Motor is fault")
-      Case 12
-        Throw New ASCOM.InvalidOperationException("Telescope is below horizon limit")
-      Case 13
-        Throw New ASCOM.InvalidOperationException("Limit Sensor")
-      Case 14
-        Throw New ASCOM.InvalidOperationException("Telescope is above max declination limit")
-      Case 15
-        Throw New ASCOM.InvalidOperationException("Telescope is outside azimunth limit")
-      Case 16
-        Throw New ASCOM.InvalidOperationException("Telescope is above overhead limit")
-      Case 17
-        Throw New ASCOM.InvalidOperationException("Telescope is outside meridian limit")
-    End Select
-  End Sub
+        Select Case val
+            Case 1
+                Throw New ASCOM.InvalidOperationException("Object below min altitude")
+            Case 2
+                Throw New ASCOM.ValueNotSetException
+            Case 4
+                Throw New ASCOM.ParkedException
+            Case 5
+                Throw New ASCOM.InvalidOperationException("Telescope is busy")
+            Case 7
+                Throw New ASCOM.InvalidOperationException("Telescope is busy")
+            Case 6
+                Throw New ASCOM.InvalidOperationException("Object is outside limits")
+            Case 8
+                Throw New ASCOM.InvalidOperationException("Object above max altitude")
+            Case 11
+                Throw New ASCOM.InvalidOperationException("Motor is fault")
+            Case 12
+                Throw New ASCOM.InvalidOperationException("Telescope is below horizon limit")
+            Case 13
+                Throw New ASCOM.InvalidOperationException("Limit Sensor")
+            Case 14
+                Throw New ASCOM.InvalidOperationException("Telescope is above max declination limit")
+            Case 15
+                Throw New ASCOM.InvalidOperationException("Telescope is outside azimunth limit")
+            Case 16
+                Throw New ASCOM.InvalidOperationException("Telescope is above overhead limit")
+            Case 17
+                Throw New ASCOM.InvalidOperationException("Telescope is outside meridian limit")
+        End Select
+    End Sub
 
   Private Function checkCompatibility() As Boolean
     Dim asm As System.Reflection.Assembly = System.Reflection.Assembly.GetExecutingAssembly()

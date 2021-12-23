@@ -570,7 +570,7 @@ void Command_S(Command& process_command)
     else strcpy(reply, "0");
     break;
   case 'g':
-    //  :SgsDDD*MM# or :SgDDD*MM#
+    //  :SgsDDD*MM# or :SgDDD*MM# or :SgsDDD:MM:SS# or SgDDD:MM:ss#
     //          Set current sites longitude to sDDD*MM an ASCII position string, East longitudes can be as negative or >180 degrees
     //          Return: 0 on failure
     //                  1 on success
@@ -578,7 +578,7 @@ void Command_S(Command& process_command)
     double longi = 0;
     if ((command[2] == '-') || (command[2] == '+')) i = 1;
     else i = 0;
-    if (dmsToDouble(&longi, &command[2 + i], false, false))
+    if (dmsToDouble(&longi, &command[2 + i], false, strlen(&command[7+i])>1? (command[8+i] == ':') : false))
     {
       if (command[2] == '-') longi = -longi;
       localSite.setLong(longi);
@@ -726,12 +726,15 @@ void Command_S(Command& process_command)
     else strcpy(reply, "0");
     break;
   case 't':
-    //  :StsDD*MM#
+    //  :StsDD*MM# or :StsDD:MM:SS#
     //          Sets the current site latitude to sDD*MM#
     //          Return: 0 on failure
     //                  1 on success                                                             
     i = highPrecision;
-    highPrecision = false;
+    if (strlen(&command[7])>1)
+      highPrecision = command[8]==':';
+      else
+      highPrecision = false;
     if (dmsToDouble(&f, &command[2], true, highPrecision))
     {
       localSite.setLat(f);

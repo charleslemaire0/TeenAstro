@@ -202,7 +202,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
   static int current_selection = 1;
   while (true)
   {
-    const char* string_list = alignInProgress ? T_CANCEL : "2 " T_STAR "\n3 " T_STAR "\n" T_SAVE "\n" T_Clear;
+    const char* string_list = alignInProgress ? T_CANCEL : "2 " T_STAR "\n3 " T_STAR "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear;
     int selection = display->UserInterfaceSelectionList(&buttonPad, T_ALIGNMENT, current_selection, string_list);
     if (selection == 0) return MR_CANCEL;
     current_selection = selection;
@@ -247,10 +247,39 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         }
       }
       break;
-    case 4:
+      case 4:
+      if (display->UserInterfaceMessage(&buttonPad, T_SAVE, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
+      {
+        if (SetLX200(":AW#") == LX200VALUESET)
+        {
+          DisplayMessage(T_ALIGNMENT, T_SAVED, -1);
+          return MR_QUIT;
+        }
+        else
+        {
+          DisplayMessage(T_SAVING, T_FAILED, -1);
+        }
+      }
+      break;
+    case 5:
       if (display->UserInterfaceMessage(&buttonPad, T_Clear, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
       {
         if (SetLX200(":AC#") == LX200VALUESET)
+        {
+          DisplayMessage(T_MOUNTSYNCED, T_ATHOME, -1);
+          return MR_QUIT;
+        }
+        else
+        {
+          DisplayMessage(T_Clear, T_FAILED, -1);
+        }
+      }
+      break;
+      case 3:
+      DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
+      if (display->UserInterfaceMessage(&buttonPad, T_READYFOR, T_PC, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
+      {
+        if (SetLX200(":AA#") == LX200VALUESET)
         {
           DisplayMessage(T_MOUNTSYNCED, T_ATHOME, -1);
           return MR_QUIT;

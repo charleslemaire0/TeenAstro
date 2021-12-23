@@ -103,6 +103,16 @@ void TeenAstroMountStatus::updateTime()
     m_hasInfoUTC && m_hasInfoSidereal  && m_hasInfoUTCdate ? m_lastStateTime = millis() : m_connectionFailure++;
   }
 };
+void TeenAstroMountStatus::updateLHA()
+{
+  if (millis() - m_lastStateTime > updaterate)
+  {
+    m_hasInfoUTC = GetLX200(":GXT0#", m_TempUTC, sizeof(m_TempUTC)) == LX200VALUEGET;
+    m_hasInfoLHA = GetLX200(":GXT3#", m_TempLHA, sizeof(m_TempUTC)) == LX200VALUEGET;
+    //m_hasInfoAxis1 = GetLX200(":GXF8#", m_TempAxis1, sizeof(m_TempAxis1)) == LX200VALUEGET;
+    m_hasInfoUTC && m_hasInfoLHA ? m_lastStateTime = millis() : m_connectionFailure++;
+  }
+};
 void TeenAstroMountStatus::updateFocuser()
 {
   if (!m_hasFocuser)

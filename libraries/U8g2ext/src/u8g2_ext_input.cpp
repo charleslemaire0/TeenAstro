@@ -670,13 +670,13 @@ uint8_t ext_UserInterfaceInputValueLocalTime(u8g2_t *u8g2, Pad *extPad, const ch
 uint8_t ext_UserInterfaceInputValueLatitude(u8g2_t *u8g2, Pad *extPad, const char* label, const char* labelN, const char* labelS, long *value)
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, label, value, -324000, 324000, 2, DEGREE_SYMBOL, "'", "\"", labelN, labelS, false);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, label, value, -324000, 324000, 2, DEGREE_SYMBOL, "'", "\"", labelN, labelS, true);
 }
 
 uint8_t ext_UserInterfaceInputValueLongitude(u8g2_t *u8g2, Pad *extPad, const char* label, const char* labelW, const char* labelE, long *value)
 {
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
-  return ext_UserInterfaceInputValueDMS(u8g2, extPad, label, value, -648000, 648000, 3, DEGREE_SYMBOL, "'", "\"", labelW, labelE, false);
+  return ext_UserInterfaceInputValueDMS(u8g2, extPad, label, value, -648000, 648000, 3, DEGREE_SYMBOL, "'", "\"", labelW, labelE, true);
 }
 
 void add_days(uint8_t& year, uint8_t& month, uint8_t& day, int days2add)

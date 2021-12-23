@@ -60,6 +60,9 @@ void Command_GNSS()
       rtk.setClock(d.year(), d.month(), d.day(),
         t.hour(), t.minute(), t.second(),
         *localSite.longitude(), 0);
+      //char sat[3];
+      //sprintf(sat, "%d", gps.satellites);
+      //strcpy(reply, sat);
       strcpy(reply, "1");
     }
     else

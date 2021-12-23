@@ -10,12 +10,25 @@ uint8_t ext_drawRA(u8g2_t *u8g2, uint8_t x, uint8_t y, const char* Ra)
   char Ram[3];
   char Ras[3];
 
-  memcpy(Rah, Ra, 2);
-  Rah[2] = '\0';
-  memcpy(Ram, &Ra[3], 2);
-  Ram[2] = '\0';
-  memcpy(Ras, &Ra[6], 2);
-  Ras[2] = '\0';
+  if (*Ra=='-')
+  {
+    memcpy(Rah, &Ra[1], 2);
+    Rah[2] = '\0';
+    memcpy(Ram, &Ra[4], 2);
+    Ram[2] = '\0';
+    memcpy(Ras, &Ra[7], 2);
+    Ras[2] = '\0';
+  }
+  else
+  {
+    memcpy(Rah, Ra, 2);
+    Rah[2] = '\0';
+    memcpy(Ram, &Ra[3], 2);
+    Ram[2] = '\0';
+    memcpy(Ras, &Ra[6], 2);
+    Ras[2] = '\0';
+  }
+
   if (x == u8g2_GetDisplayWidth(u8g2))
   {
     x -= step0 + 1;
@@ -28,6 +41,11 @@ uint8_t ext_drawRA(u8g2_t *u8g2, uint8_t x, uint8_t y, const char* Ra)
     u8g2_DrawUTF8(u8g2, x, y, ":");
     x -= step1;
     u8g2_DrawUTF8(u8g2, x, y, Rah);
+    if (*Ra=='-')
+    {
+      x -= step2;
+      u8g2_DrawUTF8(u8g2, x, y, "-");
+    }
   }
   else
   {
@@ -41,9 +59,8 @@ uint8_t ext_drawRA(u8g2_t *u8g2, uint8_t x, uint8_t y, const char* Ra)
     u8g2_DrawUTF8(u8g2, x, y, ":");
     x += step2;
     x += u8g2_DrawUTF8(u8g2, x, y, Ras);
-    return x;
   }
-
+  return x;
 }
 
 uint8_t ext_drawDec(u8g2_t *u8g2, uint8_t x, uint8_t y, const char* Dec)
@@ -111,7 +128,7 @@ uint8_t ext_drawDec(u8g2_t *u8g2, uint8_t x, uint8_t y, const char* Dec)
     x += step2 - u8g2_GetUTF8Width(u8g2, " ") / 2;
     x += u8g2_DrawUTF8(u8g2, x, y, decsec);
   }
-
+  return 0;
 }
 
 uint8_t ext_drawAz(u8g2_t *u8g2, uint8_t x, uint8_t y, const char* Az)
@@ -154,6 +171,7 @@ uint8_t ext_drawAz(u8g2_t *u8g2, uint8_t x, uint8_t y, const char* Az)
     x += step2 - u8g2_GetUTF8Width(u8g2, " ") / 2;
     x += u8g2_DrawUTF8(u8g2, x, y, Azsec);
   }
+  return 0;
 }
 
 uint8_t ext_drawFoc(u8g2_t *u8g2, uint8_t y, uint8_t line_height, const char* Foc)
@@ -171,6 +189,7 @@ uint8_t ext_drawFoc(u8g2_t *u8g2, uint8_t y, uint8_t line_height, const char* Fo
   memcpy(spd, &Foc[7], 3);
   spd[3] = 0;
   u8g2_DrawUTF8(u8g2, x, y, spd);
+  return 0;
 }
 
 
