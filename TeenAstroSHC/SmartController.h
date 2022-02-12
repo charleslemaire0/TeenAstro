@@ -146,6 +146,7 @@ private:
   void menuOverhead();
   void menuMeridian(bool east);
   void menuUnderPole();
+  void menuSouth();
   bool menuSetReverse(const uint8_t &axis);
   bool menuSetBacklash(const uint8_t &axis);
   bool menuSetTotGear(const uint8_t &axis);

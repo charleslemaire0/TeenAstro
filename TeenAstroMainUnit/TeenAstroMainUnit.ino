@@ -58,11 +58,13 @@ void setup()
     // init the min and max altitude
     minAlt = -10;
     maxAlt = 91;
+    maxDecToKeepTrackingOn = -91;
     XEEPROM.write(EE_minAlt, minAlt + 128);
     XEEPROM.write(EE_maxAlt, maxAlt);
     XEEPROM.write(EE_dpmE, 0);
     XEEPROM.write(EE_dpmW, 0);
     XEEPROM.write(EE_dup, (12 - 9) * 15);
+    XEEPROM.write(EE_dmaxDecToKeepOn, maxDecToKeepTrackingOn + 128);
     writeDefaultEEPROMmotor();
 
     // init the Park status
@@ -502,6 +504,8 @@ void initmount()
   underPoleLimitGOTO = (double)EEPROM.read(EE_dup) / 10;
   if (underPoleLimitGOTO < 9 || underPoleLimitGOTO>12)
     underPoleLimitGOTO = 12;
+  
+  maxDecToKeepTrackingOn = XEEPROM.read(EE_dmaxDecToKeepOn)-128;
 
 
 

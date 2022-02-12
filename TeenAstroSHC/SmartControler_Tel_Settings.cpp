@@ -91,7 +91,7 @@ void SmartHandController::menuMainUnitInfo()
 //----------------------------------//
 void SmartHandController::menuLimits()
 {
-  const char *string_list_LimitsL2 = T_HORIZON "\n" T_OVERHEAD "\n" T_MERIDIANE "\n" T_MERIDIANW "\n" T_UNDERPOLE;
+  const char *string_list_LimitsL2 = T_HORIZON "\n" T_OVERHEAD "\n" T_MERIDIANE "\n" T_MERIDIANW "\n" T_UNDERPOLE "\n" T_POINTINGSOUTH;
   static uint8_t s_sel = 1;
   uint8_t tmp_sel = s_sel;
   while (tmp_sel)
@@ -114,6 +114,9 @@ void SmartHandController::menuLimits()
       break;
     case 5:
       menuUnderPole();
+      break;
+    case 6:
+      menuSouth();
       break;
     default:
       break;
@@ -175,6 +178,19 @@ void SmartHandController::menuMeridian(bool east)
       sprintf(cmd, ":SXLX,%+03d#", (int)(angle*4.0));
       cmd[4] = east ? 'E' : 'W';
       DisplayMessageLX200(SetLX200(cmd), false);
+    }
+  }
+}
+void SmartHandController::menuSouth()
+{
+  char out[20];
+  if (DisplayMessageLX200(GetLX200(":GXLS#", out, sizeof(out))))
+  {
+    float angle = (float)strtol(&out[0], NULL, 10);
+    if (display->UserInterfaceInputValueFloat(&buttonPad, T_SOUTHSAFETRACKING, "", &angle, -91, 90, 2, 0, " " T_DEGREE))
+    {
+      sprintf(out, ":SXLS,%+03d#", (int)angle);
+      DisplayMessageLX200(SetLX200(out), false);
     }
   }
 }

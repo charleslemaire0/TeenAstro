@@ -237,6 +237,8 @@
 #define T_MERIDIANLIMIT "Meridian Limit"
 #define T_MERIDIANLIMITE "Meridian Limit E"
 #define T_MERIDIANLIMITW "Meridian Limit W"
+#define T_POINTINGSOUTH "Pointing S"
+#define T_SOUTHSAFETRACKING "Max safe Dec"
 #define T_SELECTSITE "Select Site"
 
 #define T_MAXHOURANGLE "Max Hour Angle"

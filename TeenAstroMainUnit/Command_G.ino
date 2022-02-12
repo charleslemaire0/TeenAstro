@@ -246,6 +246,10 @@ void Command_GX()
       // NB: duplicate with :Gh#
       sprintf(reply, "%+02d*#", minAlt);
       break;
+    case 'S':
+      // :GXLS# return user defined max safe dec
+      sprintf(reply, "%+02d*#", maxDecToKeepTrackingOn);
+      break;
     default:
       strcpy(reply, "0");
       break;

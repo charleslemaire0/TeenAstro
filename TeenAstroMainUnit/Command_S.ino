@@ -150,6 +150,12 @@ void Command_SX()
       }
       else
         strcpy(reply, "0");
+    case 'S':
+      // :SXLS,sVV.V# set user defined MaxDecToKeepTrackingOn
+      maxDecToKeepTrackingOn = (double)strtol(&command[5], NULL, 10);
+      XEEPROM.update(EE_dmaxDecToKeepOn , maxDecToKeepTrackingOn + 128);
+      strcpy(reply, "1");
+      break;
     default:
       strcpy(reply, "0");
       break;
