@@ -35,7 +35,7 @@ void SmartHandController::menuWifi()
       buttonPad.getIP(&ip[0]);
       char iptxt[16];
       sprintf(iptxt, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
-      DisplayMessage("IP Adress", iptxt, -1);
+      DisplayMessage("IP Address", iptxt, -1);
       break;
     }
     case 5:

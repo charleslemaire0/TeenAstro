@@ -333,53 +333,57 @@ Public Class Telescope
     Dim k As Integer = 0
         While k < 3
             buf = ""
-      If getStream(Command, Mode, buf) Then
-        Return True
-      Else
-        k += 1
-      End If
-    End While
-    Return False
-  End Function
+            If getStream(Command, Mode, buf) Then
+                Return True
+            Else
+                k += 1
+            End If
+        End While
+        Return False
+    End Function
 
-  Private Function getStream(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
+    Private Function getStream(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
 
-    Dim ClientSocket As System.Net.Sockets.TcpClient = New Net.Sockets.TcpClient
-    Dim result As IAsyncResult = ClientSocket.BeginConnect(mobjectIP, mPort, Nothing, Nothing)
-    Dim online = result.AsyncWaitHandle.WaitOne(2000, True)
-    If Not online Then
-      ClientSocket.Close()
-      mconnectedState = False
-      Return False
-    End If
-    Try
-      Dim ServerStream As Net.Sockets.NetworkStream = ClientSocket.GetStream()
-      Dim outStream As Byte() = System.Text.Encoding.ASCII.GetBytes(Command)
-      ServerStream.Write(outStream, 0, outStream.Length)
-      ServerStream.Flush()
-      buf = ""
-      Select Case Mode
-        Case 0
-          getStream = True
-        Case 1 To 2
-          If ServerStream.CanRead Then
-            Dim myReadBuffer(ClientSocket.ReceiveBufferSize) As Byte
-            Dim myCompleteMessage As StringBuilder = New StringBuilder()
-            Dim numberOfBytesRead As Integer = 0
-            ' Incoming message may be larger than the buffer size.
-            Do
-              numberOfBytesRead = ServerStream.Read(myReadBuffer, 0, myReadBuffer.Length)
+        Dim ClientSocket As System.Net.Sockets.TcpClient = New Net.Sockets.TcpClient
+        Dim result As IAsyncResult = ClientSocket.BeginConnect(mobjectIP, mPort, Nothing, Nothing)
+        Dim online = result.AsyncWaitHandle.WaitOne(2000, True)
+        If Not online Then
+            ClientSocket.Close()
+            mconnectedState = False
+            Return False
+        End If
+        Try
+            Dim ServerStream As Net.Sockets.NetworkStream = ClientSocket.GetStream()
+            Dim outStream As Byte() = System.Text.Encoding.ASCII.GetBytes(Command)
+            ServerStream.Write(outStream, 0, outStream.Length)
+            ServerStream.Flush()
+            buf = ""
+            Select Case Mode
+                Case 0
+                    If ServerStream.CanRead Then
+                        Dim myReadBuffer(ClientSocket.ReceiveBufferSize) As Byte
+                        ServerStream.Read(myReadBuffer, 0, myReadBuffer.Length)
+                    End If
+                    getStream = True
+                Case 1 To 2
+                    If ServerStream.CanRead Then
+                        Dim myReadBuffer(ClientSocket.ReceiveBufferSize) As Byte
+                        Dim myCompleteMessage As StringBuilder = New StringBuilder()
+                        Dim numberOfBytesRead As Integer = 0
+                        ' Incoming message may be larger than the buffer size.
+                        Do
+                            numberOfBytesRead = ServerStream.Read(myReadBuffer, 0, myReadBuffer.Length)
                             myCompleteMessage.AppendFormat("{0}", Encoding.ASCII.GetString(myReadBuffer, 0, numberOfBytesRead))
                         Loop While ServerStream.DataAvailable
-            buf = myCompleteMessage.ToString()
-            If Mode = 1 And buf <> "" Then
-              buf = buf.Substring(0, 1)
-            ElseIf Mode = 2 And buf <> "" Then
-              buf = buf.Split("#")(0)
-            End If
-            getStream = buf <> ""
-          Else
-            getStream = False
+                        buf = myCompleteMessage.ToString()
+                        If Mode = 1 And buf <> "" Then
+                            buf = buf.Substring(0, 1)
+                        ElseIf Mode = 2 And buf <> "" Then
+                            buf = buf.Split("#")(0)
+                        End If
+                        getStream = buf <> ""
+                    Else
+                        getStream = False
           End If
 
       End Select

@@ -270,7 +270,7 @@
 #define T_SELECTMODE "Select Mode"
 #define T_SHOWIP "Show IP"
 #define T_PASSWORDIS "Password is"
-#define T_ACCESPOINT "AccesPoint"
+#define T_ACCESPOINT "Access Point"
 #define T_WIFIINTERFACE "Wifi Interface"
 
 #define T_SUN "Sun"
