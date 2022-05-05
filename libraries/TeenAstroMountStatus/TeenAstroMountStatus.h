@@ -71,7 +71,7 @@ private:
   bool            m_hasInfoFocuser = false;
   bool            m_hasFocuser = true;
   unsigned short  m_GPSsyncCounter = 0;
-  bool            m_GPSSynced = false;
+  unsigned short  m_GPSSynced = 0;
 public:
   //Alignment Stuff
   bool            isAligning()  { return m_align != ALI_OFF; }
@@ -164,7 +164,7 @@ public:
   bool isGuidingW();
   bool isAligned();
   bool isGNSSValid();
-  unsigned short GPSSynced();
+  unsigned short GPSSynced(bool autoGPSSync);
   bool isLowPower();
   //Connection Errors
   bool connected();

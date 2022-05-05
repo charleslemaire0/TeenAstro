@@ -363,7 +363,7 @@ void SmartHandController::updateMainDisplay(PAGES page)
       TeenAstroMountStatus::TrackState curT = ta_MountStatus.getTrackingState();
       TeenAstroMountStatus::SiderealMode currSM = ta_MountStatus.getSiderealMode();
       TeenAstroMountStatus::PierState curPi = ta_MountStatus.getPierState();
-      switch (ta_MountStatus.GPSSynced())
+      switch (ta_MountStatus.GPSSynced(autoGPSSync))
       {
       case (1):
         display->drawXBMP(xl, 0, icon_width, icon_height, GNSS_bits);

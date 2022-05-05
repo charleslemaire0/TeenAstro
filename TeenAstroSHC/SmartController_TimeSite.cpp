@@ -1,12 +1,11 @@
 #include "SmartController.h"
 #include "SHC_text.h"
 
-
 void SmartHandController::menuTimeAndSite()
 {
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
-  const char *string_list_TimeAndSite = T_TIME "\n" T_SITE "\n" T_SYNCWITHGNSS;
+  const char *string_list_TimeAndSite = T_TIME "\n" T_SITE "\n" T_SYNCWITHGNSS "\n Auto " T_SYNCWITHGNSS;
   while (!exitMenu)
   {
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TIME " & " T_SITE, s_sel, string_list_TimeAndSite);
@@ -27,6 +26,28 @@ void SmartHandController::menuTimeAndSite()
       else
         DisplayMessage(T_NOGNSS, T_SIGNAL, -1);
       break;
+    case 4:
+    {
+      if (display->UserInterfaceMessage(&buttonPad, T_SET, "Auto", T_SYNCWITHGNSS "?", T_NO "\n" T_YES) == 2)
+      {
+        if (!autoGPSSync)
+        {
+          autoGPSSync = true;
+          EEPROM.write(EEPROM_AutoGPSSync, 1);
+          EEPROM.commit();
+        }
+      }
+      else
+      {
+        if (autoGPSSync)
+        {
+          autoGPSSync = false;
+          EEPROM.write(EEPROM_AutoGPSSync, 0);
+          EEPROM.commit();
+        }
+      }
+    }
+    break;
     }
   }
 }
@@ -118,7 +139,7 @@ void SmartHandController::menuSites()
   {
     uint8_t tmp_sel = val;
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, "Menu Sites", tmp_sel, txt);
-    if ( tmp_sel != 0)
+    if (tmp_sel != 0)
     {
       val = tmp_sel - 1;
       SetSiteLX200(val);
@@ -159,7 +180,7 @@ void SmartHandController::menuLocalDate()
   char out[20];
   if (DisplayMessageLX200(GetLX200(":GC#", out, sizeof(out))))
   {
-    char* pEnd;
+    char *pEnd;
     uint8_t month = strtol(&out[0], &pEnd, 10);
     uint8_t day = strtol(&out[3], &pEnd, 10);
     uint8_t year = strtol(&out[6], &pEnd, 10);
@@ -183,10 +204,10 @@ void SmartHandController::menuLatitude()
       char cmd[20];
       char sign = angle < 0 ? '-' : '+';
       angle = abs(angle);
-      seconds = angle%60;
-     // seconds = angle;
+      seconds = angle % 60;
+      // seconds = angle;
       angle /= 60;
-     // seconds -=angle*60;
+      // seconds -=angle*60;
       minute = angle % 60;
       degree = angle / 60;
       sprintf(cmd, ":St%+03d:%02d:%02d#", degree, minute, seconds);

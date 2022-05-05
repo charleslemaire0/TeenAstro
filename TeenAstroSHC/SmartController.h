@@ -58,6 +58,7 @@ private:
   pageInfo pages[NUMPAGES] = { {P_RADEC,true},{P_ALTAZ,true}, {P_TIME,true}, {P_AXIS,false}, {P_FOCUSER,true}, {P_ALIGN,false}, {P_HA, true} };
   byte current_page;
   bool exitMenu = false;
+  bool autoGPSSync = false;
   
   long angleRA = 0;
   long angleDEC = 0;

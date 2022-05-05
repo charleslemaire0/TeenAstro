@@ -198,7 +198,7 @@
 #define T_SIDEREAL "Sidereal"
 #define T_TIME "Time"
 #define T_SITE "Site"
-#define T_SYNCWITHGNSS "Sync with GNSS"
+#define T_SYNCWITHGNSS "Sync to GNSS"
 #define T_LUNAR "Lunar"
 #define T_SOLAR "Solar"
 #define T_CLOCK "Clock"

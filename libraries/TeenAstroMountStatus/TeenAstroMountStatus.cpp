@@ -345,29 +345,38 @@ bool TeenAstroMountStatus::isGNSSValid()
   return bitRead(m_TempMount[14] - '0', 0);
 }
 
-/*  3   <-> synced
-    1,2 <-> valid & NOT synced
+/*  3   <-> time and coord. synced
+    2   <-> time synced
+    1-2 <-> valid & NOT synced
     0   <-> invalid
 */
-unsigned short TeenAstroMountStatus::GPSSynced()
+unsigned short TeenAstroMountStatus::GPSSynced(bool autoGPSSync)
 {
   if (m_GPSSynced)
-    return 3;
+    return m_GPSSynced;
   if (isGNSSValid())
   {
     m_GPSsyncCounter++;
     if (m_GPSsyncCounter == 50)
     {
-      if (isOk(SetLX200(":gs#")))
+      if (autoGPSSync)
       {
-        m_GPSSynced = true;
-        return 3;
+        if (isOk(SetLX200(":gs#")))
+        {
+          m_GPSSynced = 3;
+          return 3;
+        }
       }
       else
       {
-        m_GPSsyncCounter = 0;
-        return 0;
+        if (isOk(SetLX200(":gt#")))
+        {
+          m_GPSSynced = 2;
+          return 2;
+        }
       }
+      m_GPSsyncCounter = 0;
+      return 0;
     }
     else
       return (m_GPSsyncCounter % 2 == 0 ? 1 : 2);

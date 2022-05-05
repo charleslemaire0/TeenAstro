@@ -60,6 +60,7 @@ void SmartHandController::setup(
   buttonPad.setup(pin, active, EEPROM_BSPEED);
 
   tickButtons();
+  autoGPSSync = EEPROM.read(EEPROM_AutoGPSSync);
   maxContrast = EEPROM.read(EEPROM_Contrast);
   display->setContrast(maxContrast);
   displayT1 = EEPROM.read(EEPROM_T1);
