@@ -304,7 +304,8 @@ void SmartHandController::drawIntro()
 void SmartHandController::updateMainDisplay(PAGES page)
 {
   u8g2_t *u8g2 = display->getU8g2();
-  display->setFont(u8g2_font_helvR12_te);
+  display->setFont(u8g2_font_helvB12_te);
+  //display->setFont(u8g2_font_helvR12_te);
   u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
   u8g2_uint_t step1 = u8g2_GetUTF8Width(u8g2, "44");
   u8g2_uint_t step2 = u8g2_GetUTF8Width(u8g2, "4") + 1;
@@ -568,7 +569,7 @@ void SmartHandController::updateMainDisplay(PAGES page)
         u8g2_DrawUTF8(u8g2, 0, y, "UTC");
         display->drawRA(x, y, ta_MountStatus.getUTC());
         y += line_height + 4;
-        u8g2_DrawUTF8(u8g2, 0, y, "Sidereal");
+        u8g2_DrawUTF8(u8g2, 0, y, "LST");
         display->drawRA(x, y, ta_MountStatus.getSidereal());
       }
     }

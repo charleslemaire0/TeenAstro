@@ -318,6 +318,7 @@ void TeenAstroWifi::initFromEEPROM()
     EEPROM.write(EEPROM_WebTimeout, (uint8_t)WebTimeout);
     EEPROM.write(EEPROM_CmdTimeout, (uint8_t)CmdTimeout); 
     EEPROM.write(EEPROM_WifiConnectMode, (uint8_t)activeWifiConnectMode);
+    EEPROM.write(EEPROM_AutoGPSSync, 0);
     EEPROM_writeString(EPPROM_password, masterPassword);
 
     for (int k = 0; k < NUM_sta; k++)
@@ -330,7 +331,9 @@ void TeenAstroWifi::initFromEEPROM()
   else {
     wifiOn = EEPROM.read(EEPROM_WifiOn);
     uint8_t val = EEPROM.read(EEPROM_WifiMode);
-    if (val > 5 || (val <3 && val> NUM_sta))
+    if (!wifiOn)
+      activeWifiMode = WifiMode::OFF;
+    else if (val > 5 || (val <3 && val> NUM_sta))
     {
       activeWifiMode = WifiMode::M_AcessPoint;
       EEPROM.write(EEPROM_WifiMode, (uint8_t)activeWifiMode);
@@ -407,7 +410,7 @@ void TeenAstroWifi::setup()
   char c = 0;
 
   // safety net
-  if ((c == 'R') || activeWifiMode == WifiMode::OFF) {
+  if ((c == 'R')) {//  ?? || activeWifiMode == WifiMode::OFF) {
     // reset EEPROM values, triggers an init
     EEPROM_writeInt(0, 0); EEPROM_writeInt(2, 0);
     activeWifiMode = WifiMode::M_AcessPoint;

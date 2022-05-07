@@ -82,7 +82,7 @@ void SmartHandController::setup(
   DebugSer.begin(9600);
   delay(1000);
 #endif
-  display->setFont(u8g2_font_helvR12_te);
+  //display->setFont(u8g2_font_helvR12_te);
   DisplayMessage("SHC " T_VERSION, _version, 1500);
   int k = 0;
   while (!ta_MountStatus.isConnectionValid() && k < 10)

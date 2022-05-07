@@ -52,7 +52,7 @@ void SmartHandController::menuDisplay()
       break;
     case 3:
     {
-      if (display->UserInterfaceInputValueInteger(&buttonPad, T_LOWCONTRAST, T_AFTER " ", &displayT1, 3, 255, 3, "0 sec"))
+      if (display->UserInterfaceInputValueInteger(&buttonPad, T_LOWCONTRAST, T_AFTER " ", &displayT1, 3, 255, 3, "0 s"))
       {
         EEPROM.write(EEPROM_T1, displayT1);
         EEPROM.commit();
@@ -61,7 +61,7 @@ void SmartHandController::menuDisplay()
     }
     case 4:
     {
-      if (display->UserInterfaceInputValueInteger(&buttonPad, T_TURNDISPLAYOFF, T_AFTER " ", &displayT2, displayT1, 255, 3, "0 sec"))
+      if (display->UserInterfaceInputValueInteger(&buttonPad, T_TURNDISPLAYOFF, T_AFTER " ", &displayT2, displayT1, 255, 3, "0 s"))
       {
         EEPROM.write(EEPROM_T2, displayT2);
         EEPROM.commit();

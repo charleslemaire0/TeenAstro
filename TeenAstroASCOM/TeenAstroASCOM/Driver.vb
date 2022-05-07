@@ -420,10 +420,9 @@ Public Class Telescope
 
   Public ReadOnly Property DriverInfo As String Implements ITelescopeV3.DriverInfo
     Get
-      Dim m_version As Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version
-      ' TODO customise this driver description
-      Dim s_driverInfo As String = "Information about the driver itself. Version: " + m_version.Major.ToString() + "." + m_version.Minor.ToString()
-      mTL.LogMessage("DriverInfo Get", s_driverInfo)
+            Dim m_version As Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version
+            Dim s_driverInfo As String = "Version: " + m_version.Major.ToString() + "." + m_version.Minor.ToString()
+            mTL.LogMessage("DriverInfo Get", s_driverInfo)
       Return s_driverInfo
     End Get
   End Property
@@ -589,9 +588,8 @@ Public Class Telescope
 
   Public ReadOnly Property CanFindHome() As Boolean Implements ITelescopeV3.CanFindHome
     Get
-      mTL.LogMessage("CanFindHome", "Get - " & False.ToString())
-      Return False
-    End Get
+            Return True
+        End Get
   End Property
 
   Public Function CanMoveAxis(Axis As TelescopeAxes) As Boolean Implements ITelescopeV3.CanMoveAxis
@@ -759,15 +757,18 @@ Public Class Telescope
   End Function
 
   Public Property DoesRefraction() As Boolean Implements ITelescopeV3.DoesRefraction
-    Get
-      mTL.LogMessage("DoesRefraction Get", False.ToString)
-      Return False
-    End Get
-    Set(value As Boolean)
-      mTL.LogMessage("DoesRefraction Set", "Not implemented")
-      Throw New ASCOM.PropertyNotImplementedException("DoesRefraction", True)
-    End Set
-  End Property
+        Get
+            updateTelStatus()
+            Return mTelStatus.Substring(10, 1) = "c"
+        End Get
+        Set(value As Boolean)
+            If value Then
+                CommandBlind("Te")
+            Else
+                CommandBlind("Tn")
+            End If
+        End Set
+    End Property
 
   Public ReadOnly Property EquatorialSystem() As EquatorialCoordinateType Implements ITelescopeV3.EquatorialSystem
     Get
@@ -777,12 +778,26 @@ Public Class Telescope
     End Get
   End Property
 
-  Public Sub FindHome() Implements ITelescopeV3.FindHome
-    mTL.LogMessage("FindHome", "Not implemented")
-    Throw New ASCOM.MethodNotImplementedException("FindHome")
-  End Sub
+    Public Sub FindHome() Implements ITelescopeV3.FindHome
+        If AtPark Then
+            Throw New ASCOM.InvalidOperationException("Telescope is parked")
+        End If
+        If Not AtHome Then
+            If CommandBool("hC") Then
+                Threading.Thread.Sleep(200)
+                While Me.Slewing
+                    Threading.Thread.Sleep(200)
+                End While
+            Else
+                Throw New ASCOM.DriverException("Homing failed")
+            End If
+            If Not AtHome Then
+                Throw New ASCOM.DriverException("Homing failed")
+            End If
+        End If
+    End Sub
 
-  Public ReadOnly Property FocalLength() As Double Implements ITelescopeV3.FocalLength
+    Public ReadOnly Property FocalLength() As Double Implements ITelescopeV3.FocalLength
     Get
       mTL.LogMessage("FocalLength Get", "Not implemented")
       Throw New ASCOM.PropertyNotImplementedException("FocalLength", False)
@@ -1286,16 +1301,30 @@ Public Class Telescope
   End Property
 
   Public Property TrackingRate() As DriveRates Implements ITelescopeV3.TrackingRate
-    Get
-      Dim trackingRate__1 As DriveRates = DriveRates.driveSidereal
-      mTL.LogMessage("TrackingRate Get", "done")
-      Return trackingRate__1
-    End Get
+        Get
+            Dim trackingRate__1 As DriveRates ' = DriveRates.driveSidereal
+            updateTelStatus()
+            Select Case mTelStatus.Substring(1, 1)
+                Case "0"
+                    trackingRate__1 = DriveRates.driveSidereal
+                Case "1"
+                    trackingRate__1 = DriveRates.driveSolar
+                Case "2"
+                    trackingRate__1 = DriveRates.driveLunar
+            End Select
+            Return trackingRate__1
+        End Get
         Set(value As DriveRates)
-            mTL.LogMessage("TrackingRate Set", "Not implemented")
-            Tracking = True
-            'Fix for NINA (NOT ASCOM COMPLIANT)
-            'Throw New ASCOM.PropertyNotImplementedException("TrackingRate", False)
+            Select Case value
+                Case DriveRates.driveSidereal
+                    CommandBlind("TQ")
+                Case DriveRates.driveSolar
+                    CommandBlind("TS")
+                Case DriveRates.driveLunar
+                    CommandBlind("TL")
+                    'Case DriveRates.driveKing
+                    'CommandBlind("TK")
+            End Select
         End Set
     End Property
 

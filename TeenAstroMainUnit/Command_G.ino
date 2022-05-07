@@ -641,6 +641,14 @@ void  Command_G()
     //         Returns: sDDDD#
     sprintf(reply, "%+04d#", *localSite.elevation());
     break;
+  case 'f':
+    //  :Gf#   Get master sidereal clock (tunable by :T+# and :T-# / reset by :TR#)
+    //         Returns: dd#
+    char    tmp[10];
+    dtostrf(siderealInterval, 0, 0, tmp);
+    strcpy(reply, tmp);
+    strcat(reply, "#");
+    break;
   case 'G':
     //  :GG#   Get UTC offset time, Native LX200 command
     //         Returns: sHH.H#

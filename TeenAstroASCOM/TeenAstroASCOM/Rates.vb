@@ -159,9 +159,10 @@ Public Class TrackingRates
     '          m_TrackingRates(1) = DriveRates.driveLunar
     '
     pos = New Threading.ThreadLocal(Of Integer)
-    ReDim m_TrackingRates(0)
+        ReDim m_TrackingRates(2)
         m_TrackingRates(0) = DriveRates.driveSidereal
-
+        m_TrackingRates(1) = DriveRates.driveSolar
+        m_TrackingRates(2) = DriveRates.driveLunar
     End Sub
 
 #Region "ITrackingRates Members"

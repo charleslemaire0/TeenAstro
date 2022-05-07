@@ -446,7 +446,7 @@ void Command_R()
 //  :TL#   Track rate lunar Returns: Nothing
 //  :TQ#   Track rate sidereal Returns: Nothing
 //  :TR#   Master sidereal clock reset (to calculated sidereal rate, stored in EEPROM) Returns: Nothing
-//  :TK#   Track rate king Returns: Nothing
+//  :TK#   Track rate king Returns: Nothing / Currently replaced by tracking compensation (that can be applied also to solar and lunar rates)
 //  :Te#   Tracking enable  (replies 0/1)
 //  :Td#   Tracking disable (replies 0/1)
 //  :Tr#   Track compensation enable  (replies 0/1)
