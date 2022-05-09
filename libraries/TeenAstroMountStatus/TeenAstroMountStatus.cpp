@@ -312,6 +312,10 @@ bool TeenAstroMountStatus::getGuidingRate(unsigned char &g)
   g = m_TempMount[4] - '0';
   return g < 10;
 }
+int TeenAstroMountStatus::getMovSpeed()
+{
+  return m_TempMount[4] - '0';
+}
 bool TeenAstroMountStatus::isSpiralRunning()
 {
   return m_TempMount[5] == '@';

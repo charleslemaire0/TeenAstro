@@ -15,6 +15,7 @@ public:
   enum SiderealMode { SID_STAR, SID_SUN, SID_MOON };
   enum ParkState { PRK_UNPARKED, PRK_PARKED, PRK_FAILED, PRK_PARKING, PRK_UNKNOW };
   enum PierState { PIER_E, PIER_W, PIER_UNKNOW };
+  enum MovSpeed { GUIDING, SLOW, MEDIUM, FAST, MAX };
 private:
   //Align
   AlignState      m_align = ALI_OFF;
@@ -150,6 +151,7 @@ public:
   bool        getLat(double &lat);
   bool        getTrackingRate(double &r);
   bool        getGuidingRate(unsigned char &g);
+  int         getMovSpeed();
   bool checkConnection(char* major, char* minor);
   bool getDriverName(char* name);
   bool isConnectionValid() { return m_isValid; };

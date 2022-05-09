@@ -1,24 +1,24 @@
 #include "SmartController.h"
 #include "SHC_text.h"
 
-void SmartHandController::menuSpeedRate()
-{
-  buttonPad.setMenuMode();
-  char * string_list_Speed = T_GUIDE "\n" T_SLOW "\n" T_MEDIUM "\n" T_FAST "\n" T_MAX;
-  static unsigned char current_selection_speed = 3;
-  ta_MountStatus.updateMount();
-  if (!ta_MountStatus.getGuidingRate(current_selection_speed))
-    return;
-  uint8_t selected_speed = display->UserInterfaceSelectionList(&buttonPad, T_SETSPEED, current_selection_speed + 1, string_list_Speed);
-  if (selected_speed > 0)
-  {
-    char cmd[5] = ":Rn#";
-    cmd[2] = '0' + selected_speed - 1;
-    SetLX200(cmd);
-    current_selection_speed = selected_speed;
-  }
-  buttonPad.setControlerMode();
-}
+// void SmartHandController::menuSpeedRate()
+// {
+//   buttonPad.setMenuMode();
+//   char * string_list_Speed = T_GUIDE "\n" T_SLOW "\n" T_MEDIUM "\n" T_FAST "\n" T_MAX;
+//   static unsigned char current_selection_speed = 3;
+//   ta_MountStatus.updateMount();
+//   if (!ta_MountStatus.getGuidingRate(current_selection_speed))
+//     return;
+//   uint8_t selected_speed = display->UserInterfaceSelectionList(&buttonPad, T_SETSPEED, current_selection_speed + 1, string_list_Speed);
+//   if (selected_speed > 0)
+//   {
+//     char cmd[5] = ":Rn#";
+//     cmd[2] = '0' + selected_speed - 1;
+//     SetLX200(cmd);
+//     current_selection_speed = selected_speed;
+//   }
+//   buttonPad.setControlerMode();
+// }
 
 void SmartHandController::menuTelAction()
 {
