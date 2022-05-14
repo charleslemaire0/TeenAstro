@@ -202,7 +202,11 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
   static int current_selection = 1;
   while (true)
   {
-    const char* string_list = alignInProgress ? T_CANCEL : "2 " T_STAR "\n3 " T_STAR "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear;
+    const char* string_list = alignInProgress ? T_CANCEL :
+    (ta_MountStatus.isAligned()?
+      "2 " T_STAR "\n3 " T_STAR "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error" :
+      "2 " T_STAR "\n3 " T_STAR "\n" T_PC " " T_ALIGNMENT//  "\n" T_SAVE "\n" T_Clear
+    );
     int selection = display->UserInterfaceSelectionList(&buttonPad, T_ALIGNMENT, current_selection, string_list);
     if (selection == 0) return MR_CANCEL;
     current_selection = selection;
@@ -290,6 +294,22 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         }
       }
       break;
+    case 6:
+      char err_az[15] ={"?"};
+      char err_alt[15] ={"?"};
+      char err_pol[15] ={"?"};
+      if (
+        GetLX200(":GXAe2#", err_pol, sizeof(err_pol)) == LX200VALUEGET
+        &&
+        GetLX200(":GXAe0#", err_az, sizeof(err_az)) == LX200VALUEGET
+        &&
+        GetLX200(":GXAe1#", err_alt, sizeof(err_alt)) == LX200VALUEGET)
+        {
+            DisplayLongMessage("[Sep.;Az.;Alt.]:", err_pol,err_az, err_alt,-1);
+        }
+        else
+            DisplayMessage("Alignment error:", "?", -1);
+    break;
     }
   }
 }

@@ -60,6 +60,14 @@ void Command_GX()
     case 'p':
       apparentPole ? sprintf(reply, "a#") : sprintf(reply, "t#");
       break;
+    case 'e':
+      // :GXAen#
+      double err = alignment.polErrorDeg(*localSite.latitude(), command[4]);
+      if (!doubleToDms(reply, &err, false, true, true))
+        strcpy(reply, "0");
+      else
+        strcat(reply, "#");
+      break;
     default:
       strcpy(reply, "0");
     }

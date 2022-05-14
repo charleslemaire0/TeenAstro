@@ -130,6 +130,8 @@ public:
 	// Convert instrumental axis1/axis2 coordinates to  reference angle1/angle2 coordinates (all values in degrees) 
 	void toReferenceDeg(double &angle1,  double &angle2, double axis1, double axis2) const;
 
+	double polErrorDeg(double lat, char sel);
+
 
 protected:
 	// add a user-provided reference star (all values in radians)
@@ -143,7 +145,6 @@ protected:
 
 	// Convert instrumental axis1/axis2 coordinates to  equatorial hour angle/angle2 coordinates (all values in radians) 
 	void toReference(double &angle1,  double &angle2, double axis1, double axis2) const;
-
 
 	double T   [3][3];		// Transformation matrix from equatorial angle1/angle2 cosines to instrumental axis2/axis1 cosines 
   double Tinv[3][3];		// Inverse of the above 

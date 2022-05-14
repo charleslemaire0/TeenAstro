@@ -517,7 +517,7 @@ void Command_S(Command& process_command)
     //         Returns:
     //         0 if Object is within slew range, 1 otherwise
     if (dmsToDouble(&newTargetAlt, &command[2], true, highPrecision)) strcpy(reply, "1");
-    else strcpy(reply, "1");
+    else strcpy(reply, "0");// "1" BUGS ELSEWHERE???
     break;
   case 'B':
     //  :SBn#  Set Baud Rate n for Serial-0, where n is an ASCII digit (1..9) with the following interpertation
@@ -791,7 +791,7 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
     if (dmsToDouble(&newTargetAzm, &command[2], false, highPrecision)) strcpy(reply, "1");
-    else strcpy(reply, "1");
+    else strcpy(reply, "0");// "1" BUGS ELSEWHERE???
     break;
   default:
     strcpy(reply, "0");
