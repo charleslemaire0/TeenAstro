@@ -365,7 +365,7 @@ unsigned short TeenAstroMountStatus::GPSSynced(bool autoGPSSync)
     {
       if (autoGPSSync)
       {
-        if (isOk(SetLX200(":gs#")))
+        if (isOk(SetLX200(":gS#")))
         {
           m_GPSSynced = 3;
           return 3;

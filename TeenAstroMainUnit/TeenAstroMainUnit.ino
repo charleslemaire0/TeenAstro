@@ -528,21 +528,23 @@ void initTransformation(bool reset)
   float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
   hasStarAlignment = false;
   alignment.clean();
-  if (reset)
+  byte TvalidFromEEPROM = XEEPROM.read(EE_Tvalid);
+
+  if (reset && TvalidFromEEPROM ==1)
   {
     XEEPROM.write(EE_Tvalid, 0);
-    XEEPROM.writeFloat(EE_T11, t11);
-    XEEPROM.writeFloat(EE_T12, t12);
-    XEEPROM.writeFloat(EE_T13, t13);
-    XEEPROM.writeFloat(EE_T21, t21);
-    XEEPROM.writeFloat(EE_T22, t22);
-    XEEPROM.writeFloat(EE_T23, t23);
-    XEEPROM.writeFloat(EE_T31, t31);
-    XEEPROM.writeFloat(EE_T32, t32);
-    XEEPROM.writeFloat(EE_T33, t33);
+//    XEEPROM.writeFloat(EE_T11, t11);
+//    XEEPROM.writeFloat(EE_T12, t12);
+//    XEEPROM.writeFloat(EE_T13, t13);
+//   XEEPROM.writeFloat(EE_T21, t21);
+//    XEEPROM.writeFloat(EE_T22, t22);
+//    XEEPROM.writeFloat(EE_T23, t23);
+//    XEEPROM.writeFloat(EE_T31, t31);
+//    XEEPROM.writeFloat(EE_T32, t32);
+//    XEEPROM.writeFloat(EE_T33, t33);
   }
-  byte TvalidFromEEPROM = XEEPROM.read(EE_Tvalid);
-  if (TvalidFromEEPROM == 1)
+
+  if (TvalidFromEEPROM == 1 && !reset)
   {
     t11 = XEEPROM.readFloat(EE_T11);
     t12 = XEEPROM.readFloat(EE_T12);
@@ -554,6 +556,7 @@ void initTransformation(bool reset)
     t32 = XEEPROM.readFloat(EE_T32);
     t33 = XEEPROM.readFloat(EE_T33);
     alignment.setT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
+    alignment.setTinvFromT();
     hasStarAlignment = true;
   }
   else

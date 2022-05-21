@@ -155,6 +155,10 @@ void CoordConv::setT(float m11, float m12, float m13,float m21, float m22, float
   isready = true;
 }
 
+void CoordConv::setTinvFromT() {
+	invert(Tinv, T);
+}
+
 // add a user-provided reference star (all values in degrees, except time in seconds)
 void CoordConv::addReferenceDeg(double angle1, double angle2, double axis1, double axis2) {
 	addReference(toRad(angle1), toRad(angle2), toRad(axis1), toRad(axis2));
