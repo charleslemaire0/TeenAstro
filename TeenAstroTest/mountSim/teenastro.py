@@ -74,7 +74,7 @@ class TeenAstro(object):
         
     else:
       try:
-        self.port = Telnet(host=self.portName, port='9999', timeout=5)          # 9999 is the hard-coded IP port of TeenAstro
+        self.port = Telnet(self.portName, '9999')          # 9999 is the hard-coded IP port of TeenAstro
         return self.port
       except:
         print('Error opening port')
@@ -161,6 +161,10 @@ class TeenAstro(object):
         self.status= self.getValue(':GXI#')
       except:
         print ("Error reading status")    
+
+  def readMountType(self):
+    self.readStatus()
+    return (self.status[12])
 
   def isStopped(self):
     self.readStatus()
