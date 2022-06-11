@@ -40,18 +40,24 @@ class Mount:
         self.axis1Steps = ta.getAxis1()
         self.axis2Steps = ta.getAxis2()
         self.alpha = self.beta = 0
-
+        self.latitude = ta.getLatitude()
 
     def update(self, ta, scene):
         xaxis, yaxis, zaxis = [1,0,0],[0,1,0],[0,0,1]
         a1 = ta.getAxis1()
         a2 = ta.getAxis2()
+        if (a1 == None) or (a2 == None):
+            print("Connection Error")
+            sys.exit(1)
 
         if (a1 != self.axis1Steps):
-            self.alpha = self.alpha + np.deg2rad((self.axis1Steps-a1))
+            if self.latitude > 0:
+                self.alpha = self.alpha + np.deg2rad(self.axis1Steps-a1)
+            else: 
+                self.alpha =self.alpha - np.deg2rad(self.axis1Steps-a1)
             self.axis1Steps = a1
         if (a2 != self.axis2Steps):
-            self.beta = self.beta + np.deg2rad((self.axis2Steps-a2))
+            self.beta = self.beta + np.deg2rad(self.axis2Steps-a2)
             self.axis2Steps = a2
 
 # The clumsy code below represents the transformations required on the parts of each mount 
@@ -63,7 +69,7 @@ class Mount:
             Mb = tt.concatenate_matrices(Mb1, Mb2)
             Mp1 = tt.translation_matrix([-17,38,0])
             Mp2 = tt.rotation_matrix(np.deg2rad(90), yaxis)      
-            Mp3 = tt.rotation_matrix(np.deg2rad(-45), xaxis)      
+            Mp3 = tt.rotation_matrix(np.deg2rad(abs(self.latitude)-90), xaxis)      
             Mp4 = tt.rotation_matrix(self.alpha, yaxis)
             Mp = tt.concatenate_matrices(Mp1, Mp2, Mp3, Mp4)
             Ms1 = tt.rotation_matrix(np.deg2rad(90), xaxis)
@@ -77,7 +83,7 @@ class Mount:
             Mb = tt.concatenate_matrices(Mb1, Mb2)
             Mp1 = tt.translation_matrix([0,60,0])
             Mp2 = tt.rotation_matrix(np.deg2rad(-90), xaxis)      
-            Mp3 = tt.rotation_matrix(np.deg2rad(-45), yaxis)      
+            Mp3 = tt.rotation_matrix(np.deg2rad(abs(self.latitude)-90), yaxis)      
             Mp4 = tt.rotation_matrix(self.alpha, zaxis)
             Mp = tt.concatenate_matrices(Mp1, Mp2, Mp3, Mp4)
             Ms1 = tt.rotation_matrix(np.deg2rad(90), yaxis)
@@ -90,7 +96,7 @@ class Mount:
             Mp1 = tt.rotation_matrix(self.alpha, zaxis)
             Mp2 = tt.translation_matrix([0, 0, 80])
             Mp = tt.concatenate_matrices(Mp1,Mp2)
-            Ms1 = tt.translation_matrix([28, 0, 18])
+            Ms1 = tt.translation_matrix([20, 0, 16])
             Ms2 = tt.rotation_matrix(-self.beta, xaxis)
             Ms = tt.concatenate_matrices(Mp,Ms1,Ms2)
 

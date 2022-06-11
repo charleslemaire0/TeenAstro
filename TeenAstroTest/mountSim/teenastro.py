@@ -186,7 +186,7 @@ class TeenAstro(object):
     if (self.port != None):
       try:
         self.axis1Steps = int(self.getValue(':GXDP0#').strip('#'))
-        self.axis1Degrees = 90 + (90.0 / 4) * (self.axis1Steps - 4*self.axis1Gear) / self.axis1Gear 
+        self.axis1Degrees = 90.0 * (1 + self.axis1Steps - 4.0*self.axis1Gear) / (4.0 * self.axis1Gear) 
         return self.axis1Degrees 
       except:
         print ("Error reading Axis1")
@@ -196,7 +196,7 @@ class TeenAstro(object):
     if (self.port != None):
       try:
         self.axis2Steps = int(self.getValue(':GXDP1#').strip('#'))
-        self.axis2Degrees =  90 - (90.0 / 4) * (self.axis2Steps - 4*self.axis2Gear) / self.axis2Gear
+        self.axis2Degrees = 90.0 * (1 - self.axis2Steps - 4.0*self.axis2Gear) / (4.0 * self.axis2Gear) 
         return self.axis2Degrees 
       except:
         print ("Error reading Axis2")
