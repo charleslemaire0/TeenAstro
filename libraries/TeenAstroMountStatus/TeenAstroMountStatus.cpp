@@ -360,9 +360,9 @@ TeenAstroMountStatus::Errors TeenAstroMountStatus::getError()
   case '3':
     return ERR_LIMIT_SENSE;
   case '4':
-    return ERR_DEC;
+    return ERR_LIMIT_A1;
   case '5':
-    return ERR_AZM;
+    return ERR_LIMIT_A2;
   case '6':
     return ERR_UNDER_POLE;
   case '7':
@@ -390,11 +390,11 @@ bool TeenAstroMountStatus::getLastErrorMessage(char message[])
   case ERR_LIMIT_SENSE:
     strcpy(message, "Limit Sense");
     break;
-  case ERR_DEC:
-    strcpy(message, "Dec Limit Exceeded");
+  case ERR_LIMIT_A1:
+    strcpy(message, "Axis1 Lim. Exceeded");
     break;
-  case ERR_AZM:
-    strcpy(message, "Azm Limit Exceeded");
+  case ERR_LIMIT_A2:
+    strcpy(message, "Axis2 Lim. Exceeded");
     break;
   case ERR_UNDER_POLE:
     strcpy(message, "Under Pole Limit Exceeded");

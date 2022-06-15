@@ -46,6 +46,8 @@ public:
   double stepsPerCentiSecond;
   long   halfRot;   //in steps
   long   quaterRot; //in steps
+  long   minAxis;   //in steps
+  long   maxAxis;   //in steps
 private:
   long   m_breakDist; //in steps
  public:
@@ -63,6 +65,10 @@ private:
     quaterRot = stepsPerRot / 4L;
     m_breakDist = max(2, stepsPerDegree / 3600.0 * 0.2);
     return;
+  }
+  bool withinLimit(const long &axis)
+  {
+    return !(axis < minAxis || axis > maxAxis);
   }
 };
 

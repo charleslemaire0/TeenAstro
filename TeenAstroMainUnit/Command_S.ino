@@ -104,6 +104,34 @@ void Command_SX()
     // user defined limits
     switch (command[3])
     {
+    case 'A':
+      // :SXLA,VVVV# set user defined minAXIS1 (always negatif)
+      i = (int)strtol(&command[5], NULL, 10);
+      XEEPROM.writeInt(EE_minAxis1,i);
+      initLimitMinAxis1();
+      strcpy(reply, "1");
+      break;
+    case 'B':
+      // :SXLB,VVVV# set user defined maxAXIS1 (always positf)
+      i = (int)strtol(&command[5], NULL, 10);
+      XEEPROM.writeInt(EE_maxAxis1,i);
+      initLimitMaxAxis1();
+      strcpy(reply, "1");
+      break;
+    case 'C':
+      // :SXLC,VVVV# set user defined minAXIS2 (always positf)
+      i = (int)strtol(&command[5], NULL, 10);
+      XEEPROM.writeInt(EE_minAxis2, i);
+      initLimitMinAxis2();
+      strcpy(reply, "1");
+      break;
+    case 'D':
+      // :SXLD,VVVV# set user defined maxAXIS2 (always positf)
+      i = (int)strtol(&command[5], NULL, 10);
+      XEEPROM.writeInt(EE_maxAxis2, i);
+      initLimitMaxAxis2();
+      strcpy(reply, "1");
+      break;
     case 'E':
       // :SXLE,sVV.V# set user defined Meridian East Limit
       minutesPastMeridianGOTOE = (double)strtol(&command[5], NULL, 10);

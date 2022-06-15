@@ -224,6 +224,26 @@ void Command_GX()
     // :GXLn user defined limits
     switch (command[3])
     {
+    case 'A':
+      // :GXLA# get user defined minAXIS1 (always negatif)
+      i = XEEPROM.readInt(EE_minAxis1);
+      sprintf(reply, "%d#", i);
+      break;
+    case 'B':
+      // :GXLB# get user defined maxAXIS1 (always positf)
+      i = XEEPROM.readInt(EE_maxAxis1);
+      sprintf(reply, "%d#", i);
+      break;
+    case 'C':
+      // :GXLC# get user defined minAXIS2 (always positf)
+      i = XEEPROM.readInt(EE_minAxis2);
+      sprintf(reply, "%d#", i);
+      break;
+    case 'D':
+      // :GXLD# get user defined maxAXIS2 (always positf)
+      i = XEEPROM.readInt(EE_maxAxis2);
+      sprintf(reply, "%d#", i);
+      break;
     case 'E':
       // :GXLE# return user defined Meridian East Limit
       sprintf(reply, "%ld#", (long)round(minutesPastMeridianGOTOE));

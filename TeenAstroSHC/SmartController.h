@@ -9,7 +9,7 @@
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "2"
-#define SHCFirmwareVersionPatch  "5"
+#define SHCFirmwareVersionPatch  "6"
 
 #define NUMPAGES 6
 class SmartHandController
@@ -141,11 +141,14 @@ private:
   void menuMainUnitInfo();
   void menuParkAndHome();
   void menuLimits();
+  void menuLimitGEM();
+  void menuLimitAxis();
   void menuWifi();
   void menuWifiMode();
   void menuHorizon();
   void menuOverhead();
   void menuMeridian(bool east);
+  void menuAxis(char mode);
   void menuUnderPole();
   bool menuSetReverse(const uint8_t &axis);
   bool menuSetBacklash(const uint8_t &axis);

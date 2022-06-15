@@ -63,6 +63,10 @@ void setup()
     XEEPROM.write(EE_dpmE, 0);
     XEEPROM.write(EE_dpmW, 0);
     XEEPROM.write(EE_dup, (12 - 9) * 15);
+    XEEPROM.writeInt(EE_minAxis1, 3600);
+    XEEPROM.writeInt(EE_maxAxis1, 3600);
+    XEEPROM.writeInt(EE_minAxis2, 3600);
+    XEEPROM.writeInt(EE_maxAxis2, 3600);
     writeDefaultEEPROMmotor();
 
     // init the Park status
@@ -354,45 +358,60 @@ void SafetyCheck(const bool forceTracking)
 
   if (atHome)
     atHome = !sideralTracking;
-  // check for exceeding MinDec for Eq. Fork
-  if (!isAltAZ())
+
+  if (!geoA1.withinLimit(axis1))
   {
-    if (!checkAxis2LimitEQ(axis2))
+    lastError = ERR_AXIS1;
+    if (movingTo)
+      abortSlew = true;
+    else if (!forceTracking)
+      sideralTracking = false;
+    return;
+  }
+  else if (lastError == ERR_AXIS1)
+  {
+    lastError = ERR_NONE;
+  }
+
+  //if (!geoA2.withinLimit(axis2))
+  //{
+  //  lastError = ERR_AXIS2;
+  //  if (movingTo)
+  //    abortSlew = true;
+  //  else if (!forceTracking)
+  //    sideralTracking = false;
+  //  return;
+  //}
+  //else if (lastError == ERR_AXIS2)
+  //{
+  //  lastError = ERR_NONE;
+  //}
+
+  if (mountType == MOUNT_TYPE_GEM)
+  {
+    if (!checkMeridian(axis1, axis2, CHECKMODE_TRACKING))
     {
-      lastError = ERR_AXIS2;
-      if (movingTo)
-        abortSlew = true;
-      else if (!forceTracking)
-        sideralTracking = false;
-    }
-    else if (lastError == ERR_AXIS2)
-    {
-      lastError = ERR_NONE;
-    }
-    if (mountType == MOUNT_TYPE_GEM)
-    {
-      if (!checkMeridian(axis1, axis2, CHECKMODE_TRACKING))
+      if ((staA1.dir && currentSide == PIER_WEST) || (!staA2.dir && currentSide == PIER_EAST))
       {
-        if ((staA1.dir && currentSide == PIER_WEST) || (!staA2.dir && currentSide == PIER_EAST))
+        lastError = ERR_MERIDIAN;
+        if (movingTo)
         {
-          lastError = ERR_MERIDIAN;
-          if (movingTo)
-          {
-            abortSlew = true;
-          }
-          if (currentSide >= PIER_WEST && !forceTracking)
-            sideralTracking = false;
+          abortSlew = true;
         }
-        else if (lastError == ERR_MERIDIAN)
-        {
-          lastError = ERR_NONE;
-        }
+        if (currentSide >= PIER_WEST && !forceTracking)
+          sideralTracking = false;
+        return;
       }
       else if (lastError == ERR_MERIDIAN)
       {
         lastError = ERR_NONE;
       }
     }
+    else if (lastError == ERR_MERIDIAN)
+    {
+      lastError = ERR_NONE;
+    }
+
     if (!checkPole(axis1, CHECKMODE_TRACKING))
     {
       if ((staA1.dir && currentSide == PIER_EAST) || (!staA2.dir && currentSide == PIER_WEST))
@@ -402,6 +421,7 @@ void SafetyCheck(const bool forceTracking)
           abortSlew = true;
         if (currentSide == PIER_EAST && !forceTracking)
           sideralTracking = false;
+        return;
       }
       else if (lastError == ERR_UNDER_POLE)
       {
@@ -413,34 +433,7 @@ void SafetyCheck(const bool forceTracking)
       lastError = ERR_NONE;
     }
   }
-  else
-  {
-    if (!checkAxis2LimitAZALT(axis2))
-    {
-      lastError = ERR_AXIS2;
-      if (movingTo)
-        abortSlew = true;
-      else if (!forceTracking)
-        sideralTracking = false;
-    }
-    else if (lastError == ERR_AXIS2)
-    {
-      lastError = ERR_NONE;
-    }
-    // when Alt/Azm mounted, just stop the mount if it passes MaxAzm
-    if (!checkAxis1LimitAZALT(axis1))
-    {
-      lastError = ERR_AZM;
-      if (movingTo)
-        abortSlew = true;
-      else if (!forceTracking)
-        sideralTracking = false;
-    }
-    else if (lastError == ERR_AZM)
-    {
-      lastError = ERR_NONE;
-    }
-  }
+
 }
 
 
@@ -502,9 +495,7 @@ void initmount()
   underPoleLimitGOTO = (double)EEPROM.read(EE_dup) / 10;
   if (underPoleLimitGOTO < 9 || underPoleLimitGOTO>12)
     underPoleLimitGOTO = 12;
-
-
-
+  
   // initialize some fixed-point values
   guideA1.amount = 0;
   guideA2.amount = 0;
@@ -681,6 +672,7 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
     unsetHome();
   }
   initHome();
+  initLimit();
   updateSideral();
   initMaxRate();
 }
