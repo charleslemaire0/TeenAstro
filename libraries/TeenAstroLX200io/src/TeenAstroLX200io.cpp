@@ -127,7 +127,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       break;
     case 'h':
       if (strchr("F", command[2])) cmdreply = CMDR_NO;
-      else if (strchr("BbCOPQR", command[2]))
+      else if (strchr("COPQR", command[2]))
       {
         cmdreply = CMDR_SHORT;
       }
@@ -135,7 +135,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       break;
     case 'M':
       if (strchr("ewnsg", command[2])) cmdreply = CMDR_NO;
-      else if (strchr("SAF@", command[2])) cmdreply = CMDR_SHORT;
+      else if (strchr("SAF@U", command[2])) cmdreply = CMDR_SHORT;
       else if (strchr("?", command[2])) cmdreply = CMDR_LONG;
       else cmdreply = CMDR_INVALID;
       break;
@@ -149,7 +149,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       break;
     case 'S':
       if (strchr("!", command[2])) cmdreply = CMDR_NO;
-      else if (strchr("aCeLSGtgmnMNOPrdhoTBXz", command[2])) cmdreply = CMDR_SHORT;
+      else if (strchr("aCeLSGtgmnMNOPrdhoTBXzU", command[2])) cmdreply = CMDR_SHORT;
       else cmdreply = CMDR_INVALID;
       break;
     case 'T':
@@ -184,59 +184,59 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
  
   switch (cmdreply)
   {
-  case CMDR_NO:
-    recvBuffer[0] = 0;
-    return true;
-    break;
-  case CMDR_SHORT:
-  {
-    unsigned long start = millis();
-    while (millis() - start < timeOutMs)
+    case CMDR_NO:
+      recvBuffer[0] = 0;
+      return true;
+      break;
+    case CMDR_SHORT:
     {
-      if (Ser.available())
+      unsigned long start = millis();
+      while (millis() - start < timeOutMs)
       {
-        recvBuffer[Ser.readBytes(recvBuffer, 1)] = 0;
-        break;
-      }
-    }
-    return (recvBuffer[0] != 0);
-    break;
-  }
-  case CMDR_LONG:
-  {
-    // get full response, '#' terminated
-    unsigned long start = millis();
-    int recvBufferPos = 0;
-    char b = 0;
-    while (millis() - start < timeOutMs)
-    {
-      recvBuffer[recvBufferPos] = 0;
-      if (Ser.available())
-      {
-        b = Ser.read();
-        if (b == '#')
+        if (Ser.available())
         {
-          if (keepHashtag)
-          {
-            recvBuffer[recvBufferPos] = b;
-            recvBufferPos++;
-          }
+          recvBuffer[Ser.readBytes(recvBuffer, 1)] = 0;
           break;
         }
-
-        start = millis();
-        recvBuffer[recvBufferPos] = b;
-        recvBufferPos++;
-        if (recvBufferPos > bufferSize - 1) recvBufferPos = bufferSize - 1;
       }
+      return (recvBuffer[0] != 0);
+      break;
     }
-    return (recvBuffer[0] != 0);
-    break;
-  }
-  default:
-    break;
-  }
+    case CMDR_LONG:
+    {
+      // get full response, '#' terminated
+      unsigned long start = millis();
+      int recvBufferPos = 0;
+      char b = 0;
+      while (millis() - start < timeOutMs)
+      {
+        recvBuffer[recvBufferPos] = 0;
+        if (Ser.available())
+        {
+          b = Ser.read();
+          if (b == '#')
+          {
+            if (keepHashtag)
+            {
+              recvBuffer[recvBufferPos] = b;
+              recvBufferPos++;
+            }
+            break;
+          }
 
+          start = millis();
+          recvBuffer[recvBufferPos] = b;
+          recvBufferPos++;
+          if (recvBufferPos > bufferSize - 1) recvBufferPos = bufferSize - 1;
+        }
+      }
+      return (recvBuffer[0] != 0);
+      break;
+    }
+    default:
+      break;
+  }
+  return false;
 }
 
 bool isOk(LX200RETURN val)
@@ -369,7 +369,7 @@ LX200RETURN GetRALX200(unsigned int &hour, unsigned int &minute, unsigned int &s
 LX200RETURN GetLocalTimeLX200(long &value)
 {
   unsigned int hour, minute, second;
-  if (!GetLocalTimeLX200(hour, minute, second) == LX200GETVALUEFAILED)
+  if (GetLocalTimeLX200(hour, minute, second) == LX200GETVALUEFAILED)
     return LX200GETVALUEFAILED;
   value = hour * 60 + minute;
   value *= 60;
@@ -380,7 +380,7 @@ LX200RETURN GetLocalTimeLX200(long &value)
 LX200RETURN GetUTCTimeLX200(long &value)
 {
   unsigned int hour, minute, second;
-  if (!GetUTCTimeLX200(hour, minute, second) == LX200GETVALUEFAILED)
+  if (GetUTCTimeLX200(hour, minute, second) == LX200GETVALUEFAILED)
     return LX200GETVALUEFAILED;
   value = hour * 60 + minute;
   value *= 60;
@@ -428,7 +428,6 @@ LX200RETURN GetSiteLX200(int& value)
 LX200RETURN GetLatitudeLX200(double& degree)
 {
   char out[LX200sbuff];
-  double minute;
   if (GetLX200(":Gt#", out, sizeof(out)) == LX200VALUEGET)
   {
     if (dmsToDouble(&degree, out, true, false))
@@ -562,24 +561,21 @@ LX200RETURN Move2TargetLX200(TARGETTYPE target)
 
 LX200RETURN SetTargetRaLX200(uint8_t& vr1, uint8_t& vr2, uint8_t& vr3)
 {
-  char cmd[LX200sbuff], out[LX200sbuff];
-  int iter = 0;
+  char cmd[LX200sbuff];
   sprintf(cmd, ":Sr%02u:%02u:%02u#", vr1, vr2, vr3);
   return SetLX200(cmd);
 }
 
 LX200RETURN SetTargetAzLX200(uint16_t& v1, uint8_t& v2, uint8_t& v3)
 {
-  char cmd[LX200sbuff], out[LX200sbuff];
-  int iter = 0;
+  char cmd[LX200sbuff];
   sprintf(cmd, ":Sz%03u*%02u:%02u#", v1, v2, v3);
   return SetLX200(cmd);
 }
 
 LX200RETURN SetTargetDecLX200(bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t& vd3)
 {
-  char cmd[LX200sbuff], out[LX200sbuff];
-  int iter = 0;
+  char cmd[LX200sbuff];
   sprintf(cmd, ":Sd+%02u:%02u:%02u#", vd1, vd2, vd3);
   if (!ispos)
     cmd[3] = '-';
@@ -588,8 +584,7 @@ LX200RETURN SetTargetDecLX200(bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t&
 
 LX200RETURN SetTargetAltLX200(bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t& vd3)
 {
-  char cmd[LX200sbuff], out[LX200sbuff];
-  int iter = 0;
+  char cmd[LX200sbuff];
   sprintf(cmd, ":Sa+%02u*%02u'%02u#", vd1, vd2, vd3);
   if (!ispos)
     cmd[3] = '-';
@@ -774,7 +769,6 @@ LX200RETURN SyncGotoCatLX200(bool sync)
 LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short objSys)
 {
   unsigned int day, month, year, hour, minute, second;
-  int minuteLat, minuteLong;
   double  degreeLat, degreeLong;
   if (GetUTCDateLX200(day, month, year) == LX200GETVALUEFAILED)
   {

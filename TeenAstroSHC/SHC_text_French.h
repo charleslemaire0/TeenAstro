@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #define T_N "N"
 #define T_S "S"

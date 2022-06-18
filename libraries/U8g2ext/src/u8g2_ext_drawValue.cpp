@@ -28,6 +28,7 @@ uint8_t ext_drawRA(u8g2_t *u8g2, uint8_t x, uint8_t y, const char* Ra)
     u8g2_DrawUTF8(u8g2, x, y, ":");
     x -= step1;
     u8g2_DrawUTF8(u8g2, x, y, Rah);
+    return x;
   }
   else
   {
@@ -111,7 +112,7 @@ uint8_t ext_drawDec(u8g2_t *u8g2, uint8_t x, uint8_t y, const char* Dec)
     x += step2 - u8g2_GetUTF8Width(u8g2, " ") / 2;
     x += u8g2_DrawUTF8(u8g2, x, y, decsec);
   }
-
+  return 0;
 }
 
 uint8_t ext_drawAz(u8g2_t *u8g2, uint8_t x, uint8_t y, const char* Az)
@@ -154,6 +155,7 @@ uint8_t ext_drawAz(u8g2_t *u8g2, uint8_t x, uint8_t y, const char* Az)
     x += step2 - u8g2_GetUTF8Width(u8g2, " ") / 2;
     x += u8g2_DrawUTF8(u8g2, x, y, Azsec);
   }
+  return 0;
 }
 
 uint8_t ext_drawFoc(u8g2_t *u8g2, uint8_t y, uint8_t line_height, const char* Foc)
@@ -171,6 +173,7 @@ uint8_t ext_drawFoc(u8g2_t *u8g2, uint8_t y, uint8_t line_height, const char* Fo
   memcpy(spd, &Foc[7], 3);
   spd[3] = 0;
   u8g2_DrawUTF8(u8g2, x, y, spd);
+  return 0;
 }
 
 
