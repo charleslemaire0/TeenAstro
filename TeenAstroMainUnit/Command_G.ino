@@ -8,6 +8,7 @@
 void Command_GX()
 {
   int i;
+  double f1;
   //  :GXnn#   Get TeenAstro Specific value
   switch (command[2])
   {
@@ -182,6 +183,30 @@ void Command_GX()
     break;
     default:
       strcpy(reply, "0");
+      break;
+    }
+    break;
+  case 'P':
+    // :GXPn# Intrument position
+    switch (command[3])
+    {
+    case '1':      
+      cli();
+      f1 = staA1.pos / geoA1.stepsPerDegree;
+      sei();
+      if (!doubleToDms(reply, &f1, false, true, highPrecision))
+        strcpy(reply, "0");
+      else
+        strcat(reply, "#");
+      break;
+    case '2':
+      cli();
+      f1 = staA2.pos / geoA2.stepsPerDegree;
+      sei();
+      if (!doubleToDms(reply, &f1, false, true, highPrecision))
+        strcpy(reply, "0");
+      else
+        strcat(reply, "#");
       break;
     }
     break;
