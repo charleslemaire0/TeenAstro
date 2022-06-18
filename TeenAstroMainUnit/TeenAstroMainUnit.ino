@@ -373,19 +373,19 @@ void SafetyCheck(const bool forceTracking)
     lastError = ERR_NONE;
   }
 
-  //if (!geoA2.withinLimit(axis2))
-  //{
-  //  lastError = ERR_AXIS2;
-  //  if (movingTo)
-  //    abortSlew = true;
-  //  else if (!forceTracking)
-  //    sideralTracking = false;
-  //  return;
-  //}
-  //else if (lastError == ERR_AXIS2)
-  //{
-  //  lastError = ERR_NONE;
-  //}
+  if (!geoA2.withinLimit(axis2))
+  {
+    lastError = ERR_AXIS2;
+    if (movingTo)
+      abortSlew = true;
+    else if (!forceTracking)
+      sideralTracking = false;
+    return;
+  }
+  else if (lastError == ERR_AXIS2)
+  {
+    lastError = ERR_NONE;
+  }
 
   if (mountType == MOUNT_TYPE_GEM)
   {
