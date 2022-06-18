@@ -5,7 +5,7 @@
 #define GERMAN 2
 
 #ifndef LANGUAGE
-#define LANGUAGE GERMAN
+#define LANGUAGE ENGLISH
 #endif
 
 #if LANGUAGE == ENGLISH
