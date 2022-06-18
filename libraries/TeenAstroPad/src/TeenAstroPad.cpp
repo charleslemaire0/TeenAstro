@@ -383,6 +383,7 @@ bool Pad::isWifiRunning()
 bool Pad::turnWifiOn(bool turnOn)
 {
   m_wbt.turnWifiOn(turnOn);
+  return true;
 }
 
 void Pad::getIP(uint8_t* ip)
