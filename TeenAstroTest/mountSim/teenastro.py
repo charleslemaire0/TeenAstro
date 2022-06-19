@@ -105,6 +105,14 @@ class TeenAstro(object):
       self.gear2 = self.getValue(':GXMGD#')
       self.steps2 = self.getValue(':GXMSD#')
       self.axis2Gear = int(self.gear2) * int(self.steps2)
+      if self.getValue(':GXMRR#') == '1':
+        self.axis1Reverse = True
+      else:
+        self.axis1Reverse = False
+      if self.getValue(':GXMRD#') == '1':
+        self.axis2Reverse = True
+      else:
+        self.axis2Reverse = False
 
   def readSite(self):
     if (self.port != None):
@@ -267,6 +275,8 @@ class TeenAstro(object):
   def getLongitude(self):
     self.longitude = dms2deg(self.getValue(':Gg#')[:-1])
     return self.longitude
+
+
 
 
 # Main program

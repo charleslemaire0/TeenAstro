@@ -51,13 +51,16 @@ class Mount:
             sys.exit(1)
 
         if (a1 != self.axis1Steps):
-            if self.latitude > 0:
-                self.alpha = self.alpha + np.deg2rad(self.axis1Steps-a1)
+            if ta.axis1Reverse:
+                self.alpha = self.alpha - np.deg2rad(self.axis1Steps-a1)
             else: 
-                self.alpha =self.alpha - np.deg2rad(self.axis1Steps-a1)
+                self.alpha =self.alpha + np.deg2rad(self.axis1Steps-a1)
             self.axis1Steps = a1
         if (a2 != self.axis2Steps):
-            self.beta = self.beta + np.deg2rad(self.axis2Steps-a2)
+            if ta.axis2Reverse:
+                self.beta = self.beta - np.deg2rad(self.axis2Steps-a2)
+            else:
+                self.beta = self.beta + np.deg2rad(self.axis2Steps-a2)
             self.axis2Steps = a2
 
 # The clumsy code below represents the transformations required on the parts of each mount 
