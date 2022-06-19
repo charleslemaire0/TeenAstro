@@ -24,7 +24,7 @@ SiteDef = {
       'sitename':'Site 0'  
       }
 
-MountDef = { 'mType':['German', 'Fork', 'Alt Az', 'Alt Az Fork'],
+MountDef = { 'mType':['Eq-German', 'Eq-Fork', 'AltAz-Tee', 'AltAz-Fork'],
       'DefaultR':['Guide', 'Slow', 'Medium','Fast', 'Max'],
       'MaxR':[i for i in range(32,4000)],'GuideR':[i/100 for i in range(1,100)],'Acc':[i/10 for i in range(1,251)],
       'SlowR':[i for i in range(1,255)],'MediumR':[i for i in range(1,255)],'FastR':[i for i in range(1,255)],
@@ -35,7 +35,8 @@ MountDef = { 'mType':['German', 'Fork', 'Alt Az', 'Alt Az Fork'],
       'mbl2':[i for i in range(0,999)],'mlc2':[i for i in range(100,2000,10)],'mhc2':[i for i in range(100,2000)], 
       'msil2':[0,1],
       'hl':[i for i in range(-30,30)], 'ol':[i for i in range(60,92)], 'el':[i for i in range(-45,45)], 
-      'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)],'poleAlign':['True', 'Apparent'], 'corrTrack':['enabled','disabled']
+      'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)],'poleAlign':['True', 'Apparent'], 'corrTrack':['enabled','disabled'],
+      'a1min':[i for i in range(-360,0)],'a1max':[i for i in range(0,360)],'a2min':[i for i in range(-360,0)],'a2max':[i for i in range(0,360)]
       }
 
 # Commands for getting mount parameters
@@ -44,14 +45,16 @@ MountReadCmd = {
       'MaxR':'GXRX','GuideR':'GXR0','Acc':'GXRA', 'SlowR':'GXR1','MediumR':'GXR2','FastR':'GXR3',
       'mrot1':'GXMRR','mge1':'GXMGR','mst1':'GXMSR','mmu1':'GXMMR','mbl1':'GXMBR','mlc1':'GXMcR','mhc1':'GXMCR', 'msil1':'GXMmR',
       'mrot2':'GXMRD','mge2':'GXMGD','mst2':'GXMSD','mmu2':'GXMMD','mbl2':'GXMBD','mlc2':'GXMcD','mhc2':'GXMCD', 'msil2':'GXMmD',
-      'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU', 'poleAlign':'GXAp', 'corrTrack':'GXI'
+      'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU', 'poleAlign':'GXAp', 'corrTrack':'GXI',
+      'a1min':'GXLA','a1max':'GXLB','a2min':'GXLC','a2max':'GXLD'
       } 
 MountSetCmd = {
       'mType':'S!','DefaultR':'SXRD:',
       'MaxR':'SXRX:','GuideR':'SXR0:','Acc':'SXRA:', 'SlowR':'SXR1:','MediumR':'SXR2:','FastR':'SXR3:',
       'mrot1':'SXMRR:','mge1':'SXMGR:','mst1':'SXMSR:','mmu1':'SXMMR:','mbl1':'SXMBR:','mlc1':'SXMCR:','mhc1':'SXMcR:', 'msil1':'SXMmR:',
       'mrot2':'SXMRD:','mge2':'SXMGD:','mst2':'SXMSD:','mmu2':'SXMMD:','mbl2':'SXMBD:','mlc2':'SXMCD:','mhc2':'SXMcD:', 'msil2':'SXMmD:',
-      'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 'poleAlign':'SXAp:', 'corrTrack':'T'
+      'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 'poleAlign':'SXAp:', 'corrTrack':'T',
+      'a1min':'SXLA:','a1max':'SXLB:','a2min':'SXLC:','a2max':'SXLD:'      
       } 
 
 
@@ -145,13 +148,13 @@ def setMountType():
   if (comm == None):
     return
   cmdStr = ':' + MountSetCmd['mType']
-  if (Mount['mType'] == 'German'):
+  if (Mount['mType'] == 'Eq-German'):
     cmdStr +=  '0#'
-  elif (Mount['mType'] == 'Fork'):
+  elif (Mount['mType'] == 'Eq-Fork'):
     cmdStr +=  '1#'
-  elif (Mount['mType'] == 'Alt Az'):
+  elif (Mount['mType'] == 'AltAz-Tee'):
     cmdStr +=  '2#'
-  elif (Mount['mType'] == 'Alt Az Fork'):
+  elif (Mount['mType'] == 'AltAz-Fork'):
     cmdStr +=  '3#'
   comm.write(cmdStr.encode('utf-8'))
    
@@ -203,6 +206,13 @@ def writeMountData():
 
     elif tag == 'Acc':
       cmdStr += str(int(float(Mount[tag]) * 10))
+
+    elif tag == 'a1min' or tag == 'a2min':
+      cmdStr += str(abs(int(Mount[tag])))
+
+    elif tag == 'a1max' or tag == 'a2max':
+      cmdStr += str(int(Mount[tag]))
+
 
     elif tag == 'DefaultR':                         # default rate: 0 to 4
       if (Mount[tag] == 'Guide'):
@@ -295,13 +305,13 @@ def readMountData():
     if (tag == 'mType'):
       mt = resp[12]     # Mount type is byte number 12 in the result string
       if (mt == 'E'):
-        Mount[tag] = 'German'
+        Mount[tag] = 'Eq-German'
       elif (mt == 'K'):
-        Mount[tag] = 'Fork'
+        Mount[tag] = 'Eq-Fork'
       elif (mt == 'A'):
-        Mount[tag] = 'Alt Az'
+        Mount[tag] = 'AltAz-Tee'
       elif (mt == 'k'):
-        Mount[tag] = 'Alt Az Fork'   
+        Mount[tag] = 'AltAz-Fork'   
 
     elif ((tag == 'mlc1') or (tag == 'mlc2') or (tag == 'mhc1') or (tag == 'mhc2')):   # Current values need multiply by 10    
       Mount[tag] = 10 * int(resp)
@@ -333,6 +343,15 @@ def readMountData():
 
     elif (tag == 'GuideR'):
       Mount[tag] = float(resp)
+
+    elif (tag == 'a1min'):
+      Mount[tag] = -int(float(resp)/10)
+    elif (tag == 'a1max'):
+      Mount[tag] = int(float(resp)/10)
+    elif (tag == 'a2min'):
+      Mount[tag] = -int(float(resp)/10)
+    elif (tag == 'a2max'):
+      Mount[tag] = int(float(resp)/10)
 
     elif (tag == 'DefaultR'):
       if (resp == '0'):
@@ -515,17 +534,20 @@ def writeSiteData():
   setCurrentSite(comm, currentSiteNum)
 
 
-def updateStatus(comm):      
-    window['date'].update("Date: %s" % getValue(comm, 'GC'))
-    window['localTime'].update("Local Time: %s" % getValue(comm, 'GL'))
-    window['sidTime'].update("Sidereal Time: %s" % getValue(comm, 'GS'))
-    window['ra'].update("Right Ascension: %s" % getValue(comm, 'GR'))
-    window['dec'].update("Declination: %s" % getValue(comm, 'GD'))
-    window['az'].update("Azimuth: %s" % getValue(comm, 'GZ'))
-    window['alt'].update("Altitude: %s" % getValue(comm, 'GA'))
-    window['axis1'].update("Axis 1: %s" % getValue(comm, 'GXDP0'))
-    window['axis2'].update("Axis 2: %s" % getValue(comm, 'GXDP1'))
-    window['pierside'].update("Pier Side: %c" % getValue(comm, 'GXI')[13])
+def updateStatus(comm):     
+  window['date'].update("Date: %s" % getValue(comm, 'GC'))
+  window['localTime'].update("Local Time: %s" % getValue(comm, 'GL'))
+  window['sidTime'].update("Sidereal Time: %s" % getValue(comm, 'GS'))
+  window['ra'].update("Right Ascension: %s" % getValue(comm, 'GR'))
+  window['dec'].update("Declination: %s" % getValue(comm, 'GD'))
+  window['az'].update("Azimuth: %s" % getValue(comm, 'GZ'))
+  window['alt'].update("Altitude: %s" % getValue(comm, 'GA'))
+  window['axis1'].update("Axis 1: %s" % getValue(comm, 'GXDP0'))
+  window['axis2'].update("Axis 2: %s" % getValue(comm, 'GXDP1'))
+  statusCode = getValue(comm, 'GXI')
+  window['pierside'].update("Pier Side: %c" % statusCode[13])
+  errorCodes = ['ERR_NONE','ERR_MOTOR_FAULT','ERR_HORIZON','ERR_LIMIT_SENSE','ERR_LIMIT_A1','ERR_LIMIT_A2','ERR_UNDER_POLE','ERR_MERIDIAN','ERR_SYNC'];
+  window['errorCode'].update(errorCodes[int(statusCode[15])])
 
 
 # Main program
@@ -554,7 +576,7 @@ sgCommTypeSerial = [sg.Radio('Serial', "RADIO1", size=(8, 1), enable_events=True
 
 sgCommTypeTCP = [sg.Radio('TCP', "RADIO1", default = True, size=(8, 1), enable_events=True, key='-TCPIP-'),
           sg.Text('IP Address:', size=(10, 1)),
-          sg.Input('192.168.0.108', key='-IPADDR-', size=(20, 1))]
+          sg.Input('192.168.0.21', key='-IPADDR-', size=(20, 1))]
   
 
 speedFrame = sg.Frame('Speeds', 
@@ -584,7 +606,13 @@ motFrame2 = sg.Frame('Dec Motor', [[sgLabel('Rotation'), sgSpin('mrot2', width=8
 limitFrame = sg.Frame('Limits', 
         [[sgLabel('Horizon'), sgSpin('hl')],
         [sgLabel('Overhead'), sgSpin('ol')],
-        [sgLabel('Past Meridian East'), sgSpin('el')],
+        [sgLabel('Axis1Min'), sgSpin('a1min')],
+        [sgLabel('Axis1Max'), sgSpin('a1max')],
+        [sgLabel('Axis2Min'), sgSpin('a2min')],
+        [sgLabel('Axis2Max'), sgSpin('a2max')]])
+
+gemLimitFrame = sg.Frame('GEM Limits', 
+        [[sgLabel('Past Meridian East'), sgSpin('el')],
         [sgLabel('Past Meridian West'), sgSpin('wl')],
         [sgLabel('Under Pole'), sgSpin('ul')]])
 
@@ -617,6 +645,9 @@ debugFrame = sg.Frame('Debug',
           [sg.Text('Pier side', key='pierside',size=(30,1))]],
           )
 
+errorFrame = sg.Frame('Error', 
+          [[sg.Text('Error Status', key='errorCode',size=(30,1))]])
+
 commFrame = sg.Frame('Comm Port',[sgCommTypeSerial,sgCommTypeTCP,[sg.Button('Connect', key='connect')]])
 
 versionFrame = sg.Frame('Versions',
@@ -626,9 +657,9 @@ versionFrame = sg.Frame('Versions',
           [sg.Text('Stepper Driver:'), sg.Text('',key='driverVersion',size=(30,1))]]
           )
 
-mountTab = [[mountTypeRow],[speedFrame, sg.Column([[limitFrame], [alignmentFrame]])],[motFrame1, motFrame2]]
+mountTab = [[mountTypeRow],[speedFrame, sg.Column([[limitFrame,gemLimitFrame], [alignmentFrame]])],[motFrame1, motFrame2]]
 siteTab = [[siteFrame]]
-statusTab = [[timeFrame],[coordFrame],[debugFrame]]
+statusTab = [[timeFrame],[coordFrame],[debugFrame],[errorFrame]]
 bottomRow = sg.Output(key='Log',  size=(80, 4))
 
 topRow = [commFrame, versionFrame]
@@ -642,12 +673,12 @@ layout = [ topRow,
          ]
 
 
-window = sg.Window('TAConfig 1.3', layout)
+window = sg.Window('TAConfig 1.4', layout)
 
 comm = None
 
 while True:
-  event, values = window.Read(1000)
+  event, values = window.Read(500)
   if (event =='__TIMEOUT__'):
     if (comm == None):
       continue
