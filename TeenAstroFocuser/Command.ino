@@ -405,7 +405,6 @@ bool SerCom::HaltRequest(void)
   case FocCmd_in_stop:
   case FocCmd_out:
   case FocCmd_out_stop:
-    ser.print("0");
     ser.flush();
   case FocCmd_in_wor:
   case FocCmd_out_wor:
