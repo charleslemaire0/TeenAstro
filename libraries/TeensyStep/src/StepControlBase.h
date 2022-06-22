@@ -56,8 +56,8 @@ namespace TeensyStep
 
         // Misc ---------------------------------------------------------
 
-        // set callback function to be called when target is reached
-        void setCallback(void (*_callback)()) { this->callback = _callback; }
+        // // set callback function to be called when target is reached
+         //void setCallback(void (*_callback)()) { this->callback = _callback; }
 
      protected:
         void accTimerISR();
@@ -92,12 +92,25 @@ namespace TeensyStep
         }
 
         // Calculate acceleration parameters --------------------------------
-        uint32_t targetSpeed = std::abs((*std::min_element(this->motorList, this->motorList + N, Stepper::cmpVmin))->vMax) * speedOverride; // use the lowest max frequency for the move, scale by relSpeed
         uint32_t pullInSpeed = this->leadMotor->vPullIn;
         uint32_t pullOutSpeed = this->leadMotor->vPullOut;
         uint32_t acceleration = (*std::min_element(this->motorList, this->motorList + N, Stepper::cmpAcc))->a; // use the lowest acceleration for the move
 
+        uint32_t targetSpeed = abs((*std::min_element(this->motorList, this->motorList + N, Stepper::cmpVmin))->vMax) * speedOverride; // use the lowest max frequency for the move, scale by relSpeed
         if (this->leadMotor->A == 0 || targetSpeed == 0) return;
+
+        // target speed----
+
+        float x = 0;
+        float leadSpeed = abs(this->leadMotor->vMax);
+        for (int i = 0; i < N; i++)
+        {
+            float relDist = this->motorList[i]->A / (float)this->leadMotor->A * leadSpeed / abs(this->motorList[i]->vMax);
+            if (relDist > x) x = relDist;
+           // Serial.printf("%d %f\n", i, relDist);
+        }
+        targetSpeed = leadSpeed / x;
+        //Serial.printf("\n%d\n",targetSpeed);
 
         // Start move--------------------------
         this->timerField.begin();
@@ -143,6 +156,8 @@ namespace TeensyStep
         {
             uint32_t newTarget = accelerator.initiateStopping(this->leadMotor->current);
             this->leadMotor->target = this->leadMotor->current + this->leadMotor->dir * newTarget;
+
+            if (this->leadMotor->target == this->leadMotor->current) this->timerField.end();
         }
     }
 
