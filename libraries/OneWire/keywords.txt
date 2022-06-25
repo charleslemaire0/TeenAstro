@@ -1,41 +1,38 @@
 #######################################
-# Syntax Coloring Map for OneButton
+# Syntax Coloring Map For OneWire
 #######################################
 
 #######################################
 # Datatypes (KEYWORD1)
 #######################################
 
-callbackFunction	KEYWORD1
-parameterizedCallbackFunction	KEYWORD1
+OneWire	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 
-setClickTicks	KEYWORD2
-setPressTicks	KEYWORD2
-setDebounceTicks	KEYWORD2
-attachClick	KEYWORD2
-attachDoubleClick	KEYWORD2
-attachMultiClick	KEYWORD2
-attachLongPressStart	KEYWORD2
-attachLongPressStop	KEYWORD2
-attachDuringLongPress	KEYWORD2
-tick	KEYWORD2
 reset	KEYWORD2
-getNumberClicks	KEYWORD2
-isIdle	KEYWORD2
-isLongPressed	KEYWORD2
+write_bit	KEYWORD2
+read_bit	KEYWORD2
+write	KEYWORD2
+write_bytes	KEYWORD2
+read	KEYWORD2
+read_bytes	KEYWORD2
+select	KEYWORD2
+skip	KEYWORD2
+depower	KEYWORD2
+reset_search	KEYWORD2
+search	KEYWORD2
+crc8	KEYWORD2
+crc16	KEYWORD2
+check_crc16	KEYWORD2
 
 #######################################
 # Instances (KEYWORD2)
 #######################################
 
-OneButton	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
 #######################################
-
-
