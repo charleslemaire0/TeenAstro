@@ -542,8 +542,10 @@ def updateStatus(comm):
   window['dec'].update("Declination: %s" % getValue(comm, 'GD'))
   window['az'].update("Azimuth: %s" % getValue(comm, 'GZ'))
   window['alt'].update("Altitude: %s" % getValue(comm, 'GA'))
-  window['axis1'].update("Axis 1: %s" % getValue(comm, 'GXDP0'))
-  window['axis2'].update("Axis 2: %s" % getValue(comm, 'GXDP1'))
+  window['axis1'].update("Axis 1 Steps: %s" % getValue(comm, 'GXDP0'))
+  window['axis2'].update("Axis 2 Steps: %s" % getValue(comm, 'GXDP1'))
+  window['axis1deg'].update("Axis 1 Deg: %s" % getValue(comm, 'GXP1'))
+  window['axis2deg'].update("Axis 2 Deg: %s" % getValue(comm, 'GXP2'))
   statusCode = getValue(comm, 'GXI')
   window['pierside'].update("Pier Side: %c" % statusCode[13])
   errorCodes = ['ERR_NONE','ERR_MOTOR_FAULT','ERR_HORIZON','ERR_LIMIT_SENSE','ERR_LIMIT_A1','ERR_LIMIT_A2','ERR_UNDER_POLE','ERR_MERIDIAN','ERR_SYNC'];
@@ -642,6 +644,8 @@ coordFrame = sg.Frame('Coordinates',
 debugFrame = sg.Frame('Debug', 
           [[sg.Text('Axis 1 count', key='axis1',size=(30,1))],
           [sg.Text('Axis 2 count', key='axis2',size=(30,1))],
+          [sg.Text('Axis 1 degrees', key='axis1deg',size=(30,1))],
+          [sg.Text('Axis 2 degrees', key='axis2deg',size=(30,1))],
           [sg.Text('Pier side', key='pierside',size=(30,1))]],
           )
 
