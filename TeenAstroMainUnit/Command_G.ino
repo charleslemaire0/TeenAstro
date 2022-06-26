@@ -194,7 +194,7 @@ void Command_GX()
       cli();
       f1 = staA1.pos / geoA1.stepsPerDegree;
       sei();
-      if (!doubleToDms(reply, &f1, false, true, highPrecision))
+      if (!doubleToDms(reply, &f1, true, true, highPrecision))
         strcpy(reply, "0");
       else
         strcat(reply, "#");
@@ -203,7 +203,7 @@ void Command_GX()
       cli();
       f1 = staA2.pos / geoA2.stepsPerDegree;
       sei();
-      if (!doubleToDms(reply, &f1, false, true, highPrecision))
+      if (!doubleToDms(reply, &f1, true, true, highPrecision))
         strcpy(reply, "0");
       else
         strcat(reply, "#");

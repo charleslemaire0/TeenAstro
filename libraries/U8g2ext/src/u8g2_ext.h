@@ -42,6 +42,8 @@ public:
 
   uint8_t drawDec(uint8_t x, uint8_t y, const char* Dec);
 
+  uint8_t drawIDeg(uint8_t x, uint8_t y, const char* IDeg);
+
   uint8_t drawAz(uint8_t x, uint8_t y, const char* Az);
 
   uint8_t drawFoc(uint8_t y, uint8_t line_height, const char* Foc);

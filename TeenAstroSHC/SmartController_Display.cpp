@@ -328,9 +328,13 @@ void SmartHandController::updateMainDisplay(PAGES page)
   {
     ta_MountStatus.updateFocuser();
   }
-  else if (page == P_AXIS && !ta_MountStatus.isPulseGuiding())
+  else if (page == P_AXIS_STEP && !ta_MountStatus.isPulseGuiding())
   {
-    ta_MountStatus.updateAxis();
+    ta_MountStatus.updateAxisStep();
+  }
+  else if (page == P_AXIS_DEG && !ta_MountStatus.isPulseGuiding())
+  {
+    ta_MountStatus.updateAxisDeg();
   }
   u8g2_FirstPage(u8g2);
 
@@ -565,15 +569,29 @@ void SmartHandController::updateMainDisplay(PAGES page)
         u8g2_DrawUTF8(u8g2, 0, y, T_NOT_CONNECTED);
       }
     }
-    else if (page == P_AXIS)
+    else if (page == P_AXIS_STEP)
     {
       u8g2_uint_t y = 36;
-      if (ta_MountStatus.hasInfoAxis1())
+      if (ta_MountStatus.hasInfoAxis1Step())
       {
-        u8g2_DrawUTF8(u8g2, 0, y, ta_MountStatus.getAxis1());
+        x = u8g2_GetDisplayWidth(u8g2);
+        display->drawRA(x, y, ta_MountStatus.getRa());
+        u8g2_DrawUTF8(u8g2, 0, y, "RA");
+        u8g2_DrawUTF8(u8g2, 0, y, ta_MountStatus.getAxis1Step());
         y += line_height + 4;
-        u8g2_DrawUTF8(u8g2, 0, y, ta_MountStatus.getAxis2());
+        u8g2_DrawUTF8(u8g2, 0, y, ta_MountStatus.getAxis2Step());
       }
+    }
+    else if (page == P_AXIS_DEG)
+    {
+      u8g2_uint_t y = 36;
+      x = u8g2_GetDisplayWidth(u8g2);
+      u8g2_DrawUTF8(u8g2, 0, y, "Ax1.");
+      display->drawIDeg(x, y, ta_MountStatus.getAxis1Deg());
+      y += line_height + 4;
+      x = u8g2_GetDisplayWidth(u8g2);
+      display->drawIDeg(x, y, ta_MountStatus.getAxis2Deg());
+      u8g2_DrawUTF8(u8g2, 0, y, "Ax2.");
     }
     else if (page == P_ALIGN)
     {
@@ -599,7 +617,6 @@ void SmartHandController::updateMainDisplay(PAGES page)
       }
 
     }
-
   }
   while (u8g2_NextPage(u8g2));
   lastpageupdate = millis();

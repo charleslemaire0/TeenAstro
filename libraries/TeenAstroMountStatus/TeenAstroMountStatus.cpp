@@ -84,13 +84,22 @@ void TeenAstroMountStatus::updateAzAlt()
     m_hasInfoAz && m_hasInfoAlt ? m_lastStateAzAlt = millis() : m_connectionFailure++;
   }
 }
-void TeenAstroMountStatus::updateAxis()
+void TeenAstroMountStatus::updateAxisStep()
 {
-  if (millis() - m_lastStateAxis > updaterate)
+  if (millis() - m_lastStateAxisStep > updaterate)
   {
-    m_hasInfoAxis1 = GetLX200(":GXF8#", m_TempAxis1, sizeof(m_TempAxis1)) == LX200VALUEGET;
-    m_hasInfoAxis2 = GetLX200(":GXF9#", m_TempAxis2, sizeof(m_TempAxis2)) == LX200VALUEGET;
-    m_hasInfoAxis1 && m_hasInfoAxis2 ? m_lastStateAxis = millis() : m_connectionFailure++;
+    m_hasInfoAxis1Step = GetLX200(":GXDP1#", m_TempAxis1Step, sizeof(m_TempAxis1Step)) == LX200VALUEGET;
+    m_hasInfoAxis2Step = GetLX200(":GXDP2#", m_TempAxis2Step, sizeof(m_TempAxis2Step)) == LX200VALUEGET;
+    m_hasInfoAxis1Step && m_hasInfoAxis2Step ? m_lastStateAxisStep = millis() : m_connectionFailure++;
+  }
+}
+void TeenAstroMountStatus::updateAxisDeg()
+{
+  if (millis() - m_lastStateAxisDeg > updaterate)
+  {
+    m_hasInfoAxis1Deg = GetLX200(":GXP1#", m_TempAxis1Deg, sizeof(m_TempAxis1Deg)) == LX200VALUEGET;
+    m_hasInfoAxis2Deg = GetLX200(":GXP2#", m_TempAxis2Deg, sizeof(m_TempAxis2Deg)) == LX200VALUEGET;
+    m_hasInfoAxis1Deg && m_hasInfoAxis2Deg ? m_lastStateAxisDeg = millis() : m_connectionFailure++;
   }
 }
 void TeenAstroMountStatus::updateTime()

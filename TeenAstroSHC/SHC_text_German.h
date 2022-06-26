@@ -233,11 +233,14 @@
 #define T_HORIZONLIMIT "Horizontgrenze"
 #define T_OVERHEAD "Zenit"
 #define T_OVERHEADLIMIT "Zenitgrenze"
+
+#define T_DISPLAYAXIS "Anzeige Axis"
 #define T_AXIS     "Axis"
 #define T_AXIS1MIN "Axis1 Min."
 #define T_AXIS1MAX "Axis1 Max."
 #define T_AXIS2MIN "Axis2 Min."
 #define T_AXIS2MAX "Axis2 Max."
+
 #define T_MERIDIANE "Meridian O"
 #define T_MERIDIANW "Meridian W"
 #define T_MERIDIANLIMIT "Meridiangrenze"

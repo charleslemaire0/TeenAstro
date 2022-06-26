@@ -273,7 +273,7 @@ void SmartHandController::menuLimitGEM()
 }
 void SmartHandController::menuLimitAxis()
 {
-  const char* string_list_LimitsL3 = T_AXIS1MIN "\n" T_AXIS1MAX "\n" T_AXIS2MIN "\n" T_AXIS2MAX ;
+  const char* string_list_LimitsL3 = T_DISPLAYAXIS "\n" T_AXIS1MIN "\n" T_AXIS1MAX "\n" T_AXIS2MIN "\n" T_AXIS2MAX;
   static uint8_t s_sel = 1;
   uint8_t tmp_sel = s_sel;
   while (tmp_sel)
@@ -283,15 +283,20 @@ void SmartHandController::menuLimitAxis()
     switch (tmp_sel)
     {
     case 1:
-      menuAxis('A');
+      pages[P_AXIS_DEG].show =
+        display->UserInterfaceMessage(&buttonPad, T_DISPLAY, T_AXIS, T_COORDINATES"?", T_NO "\n" T_YES) == 2;
+      current_page = P_AXIS_DEG;
       break;
     case 2:
-      menuAxis('B');
+      menuAxis('A');
       break;
     case 3:
-      menuAxis('C');
+      menuAxis('B');
       break;
     case 4:
+      menuAxis('C');
+      break;
+    case 5:
       menuAxis('D');
       break;
     default:

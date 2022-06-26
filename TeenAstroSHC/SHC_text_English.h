@@ -233,11 +233,14 @@
 #define T_HORIZON "Horizon"
 #define T_HORIZONLIMIT "Horizon Limit"
 #define T_OVERHEAD "Overhead"
+
+#define T_DISPLAYAXIS "Display Axis"
 #define T_AXIS     "Axis"
 #define T_AXIS1MIN "Axis1 Min."
 #define T_AXIS1MAX "Axis1 Max."
 #define T_AXIS2MIN "Axis2 Min."
 #define T_AXIS2MAX "Axis2 Max."
+
 #define T_OVERHEADLIMIT "Overhead Limit"
 #define T_MERIDIANE "Meridian E"
 #define T_MERIDIANW "Meridian W"
