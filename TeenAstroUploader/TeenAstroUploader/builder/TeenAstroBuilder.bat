@@ -199,7 +199,7 @@ REM Our application libraries
 set EXT_LIB=..\..\..\libraries
 
 REM Arduino IDE Version ID 
-set IDE_VERSION=10812
+set IDE_VERSION=10819
 REM Target Build Folder
 set BUILD_PATH=.\!target!_Build
 Rem Cache for core libraries
