@@ -32,9 +32,6 @@
 *.xml
 
 
-.DS_Store
-TeenAstroTest/mountSim/__pycache__/teenastro.cpython-39.pyc
-
 
 Release
 __vm
@@ -70,4 +67,3 @@ UINO.ipch
 /TeenAstroServer/TeenAstroServer.vcxproj.filters
 /TeenAstroServer/TeenAstroServer.vcxproj.user
 /TeenAstroUploader/TeenAstroUploader/builder/log.txt
-TeenAstroTest/mountSim/__pycache__/teenastro.cpython-39.pyc

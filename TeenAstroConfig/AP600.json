@@ -1,9 +1,9 @@
 [
     {
         "mType": "German",
-        "DefaultR": "Fast",
-        "MaxR": 769,
-        "GuideR": 0.5,
+        "DefaultR": "Max",
+        "MaxR": 800,
+        "GuideR": 0.6,
         "Acc": "6.0",
         "SlowR": 4,
         "MediumR": 64,
@@ -15,7 +15,6 @@
         "mbl1": "0",
         "mlc1": 500,
         "mhc1": 950,
-        "msil1": "1",
         "mrot2": "Reverse",
         "mge2": "1721",
         "mst2": "204",
@@ -23,14 +22,11 @@
         "mbl2": "0",
         "mlc2": 500,
         "mhc2": 950,
-        "msil2": "1",
         "hl": "-3",
-        "ol": "+80",
-        "el": 0,
-        "wl": 0,
-        "ul": 11,
-        "poleAlign": "True",
-        "corrTrack": "disabled"
+        "ol": "+91",
+        "el": 10,
+        "wl": 12,
+        "ul": 11
     },
     [
         {
@@ -43,9 +39,9 @@
                 -5,
                 46
             ],
-            "elevation": 851,
+            "elevation": 0,
             "currentSite": 0,
-            "timeZone": 1.0
+            "timeZone": 2.0
         },
         {
             "name": "Peisey",
@@ -57,7 +53,7 @@
                 -6,
                 0
             ],
-            "elevation": 1600,
+            "elevation": 0,
             "currentSite": 0,
             "timeZone": 2.0
         },
@@ -71,7 +67,7 @@
                 90,
                 0
             ],
-            "elevation": 10,
+            "elevation": 0,
             "currentSite": 0,
             "timeZone": -5.0
         },
@@ -85,7 +81,7 @@
                 -90,
                 0
             ],
-            "elevation": 1,
+            "elevation": 0,
             "currentSite": 0,
             "timeZone": 12.0
         }

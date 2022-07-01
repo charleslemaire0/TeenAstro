@@ -24,37 +24,32 @@ SiteDef = {
       'sitename':'Site 0'  
       }
 
-MountDef = { 'mType':['Eq-German', 'Eq-Fork', 'AltAz-Tee', 'AltAz-Fork'],
+MountDef = { 'mType':['German', 'Fork', 'Alt Az', 'Alt Az Fork'],
       'DefaultR':['Guide', 'Slow', 'Medium','Fast', 'Max'],
       'MaxR':[i for i in range(32,4000)],'GuideR':[i/100 for i in range(1,100)],'Acc':[i/10 for i in range(1,251)],
       'SlowR':[i for i in range(1,255)],'MediumR':[i for i in range(1,255)],'FastR':[i for i in range(1,255)],
       'mrot1':['Direct','Reverse'],'mge1':[i for i in range(1,60000)],'mst1':[i for i in range(1,400)],'mmu1':[8,16,32,64,128,256],
       'mbl1':[i for i in range(0,999)],'mlc1':[i for i in range(100,2000,10)],'mhc1':[i for i in range(100,2000)], 
-      'msil1':[0,1],
       'mrot2':['Direct','Reverse'],'mge2':[i for i in range(1,60000)],'mst2':[i for i in range(1,400)],'mmu2':[8,16,32,64,128,256],
       'mbl2':[i for i in range(0,999)],'mlc2':[i for i in range(100,2000,10)],'mhc2':[i for i in range(100,2000)], 
-      'msil2':[0,1],
       'hl':[i for i in range(-30,30)], 'ol':[i for i in range(60,92)], 'el':[i for i in range(-45,45)], 
-      'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)],'poleAlign':['True', 'Apparent'], 'corrTrack':['enabled','disabled'],
-      'a1min':[i for i in range(-360,0)],'a1max':[i for i in range(0,360)],'a2min':[i for i in range(-360,0)],'a2max':[i for i in range(0,360)]
+      'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)],'poleAlign':['True', 'Apparent'], 'corrTrack':['enabled','disabled']
       }
 
 # Commands for getting mount parameters
 MountReadCmd = { 
       'mType':'GXI','DefaultR':'GXRD',
       'MaxR':'GXRX','GuideR':'GXR0','Acc':'GXRA', 'SlowR':'GXR1','MediumR':'GXR2','FastR':'GXR3',
-      'mrot1':'GXMRR','mge1':'GXMGR','mst1':'GXMSR','mmu1':'GXMMR','mbl1':'GXMBR','mlc1':'GXMcR','mhc1':'GXMCR', 'msil1':'GXMmR',
-      'mrot2':'GXMRD','mge2':'GXMGD','mst2':'GXMSD','mmu2':'GXMMD','mbl2':'GXMBD','mlc2':'GXMcD','mhc2':'GXMCD', 'msil2':'GXMmD',
-      'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU', 'poleAlign':'GXAp', 'corrTrack':'GXI',
-      'a1min':'GXLA','a1max':'GXLB','a2min':'GXLC','a2max':'GXLD'
+      'mrot1':'GXMRR','mge1':'GXMGR','mst1':'GXMSR','mmu1':'GXMMR','mbl1':'GXMBR','mlc1':'GXMcR','mhc1':'GXMCR', 
+      'mrot2':'GXMRD','mge2':'GXMGD','mst2':'GXMSD','mmu2':'GXMMD','mbl2':'GXMBD','mlc2':'GXMcD','mhc2':'GXMCD', 
+      'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU', 'poleAlign':'GXAp', 'corrTrack':'GXI'
       } 
 MountSetCmd = {
       'mType':'S!','DefaultR':'SXRD:',
       'MaxR':'SXRX:','GuideR':'SXR0:','Acc':'SXRA:', 'SlowR':'SXR1:','MediumR':'SXR2:','FastR':'SXR3:',
-      'mrot1':'SXMRR:','mge1':'SXMGR:','mst1':'SXMSR:','mmu1':'SXMMR:','mbl1':'SXMBR:','mlc1':'SXMCR:','mhc1':'SXMcR:', 'msil1':'SXMmR:',
-      'mrot2':'SXMRD:','mge2':'SXMGD:','mst2':'SXMSD:','mmu2':'SXMMD:','mbl2':'SXMBD:','mlc2':'SXMCD:','mhc2':'SXMcD:', 'msil2':'SXMmD:',
-      'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 'poleAlign':'SXAp:', 'corrTrack':'T',
-      'a1min':'SXLA:','a1max':'SXLB:','a2min':'SXLC:','a2max':'SXLD:'      
+      'mrot1':'SXMRR:','mge1':'SXMGR:','mst1':'SXMSR:','mmu1':'SXMMR:','mbl1':'SXMBR:','mlc1':'SXMCR:','mhc1':'SXMcR:', 
+      'mrot2':'SXMRD:','mge2':'SXMGD:','mst2':'SXMSD:','mmu2':'SXMMD:','mbl2':'SXMBD:','mlc2':'SXMCD:','mhc2':'SXMcD:', 
+      'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 'poleAlign':'SXAp:', 'corrTrack':'T'
       } 
 
 
@@ -127,11 +122,7 @@ def openPort():
 def getValue(comm, cmd):
   cmdStr = ":" + cmd + "#"  
   comm.write(cmdStr.encode('utf-8'))
-  try:
-    val = comm.read_until(b'#', 100).decode('utf-8')[:-1]
-  except:  
-    logText("getValue Error: %s" % cmd)
-    val = '?'
+  val = comm.read_until(b'#', 100).decode('utf-8')[:-1]
   return (val)
 
 def sendCommand(comm, cmdStr):
@@ -148,13 +139,13 @@ def setMountType():
   if (comm == None):
     return
   cmdStr = ':' + MountSetCmd['mType']
-  if (Mount['mType'] == 'Eq-German'):
+  if (Mount['mType'] == 'German'):
     cmdStr +=  '0#'
-  elif (Mount['mType'] == 'Eq-Fork'):
+  elif (Mount['mType'] == 'Fork'):
     cmdStr +=  '1#'
-  elif (Mount['mType'] == 'AltAz-Tee'):
+  elif (Mount['mType'] == 'Alt Az'):
     cmdStr +=  '2#'
-  elif (Mount['mType'] == 'AltAz-Fork'):
+  elif (Mount['mType'] == 'Alt Az Fork'):
     cmdStr +=  '3#'
   comm.write(cmdStr.encode('utf-8'))
    
@@ -187,9 +178,6 @@ def writeMountData():
       else:
         continue
 
-    elif ((tag == 'msil1') or (tag == 'msil2')):
-      cmdStr += Mount[tag]
-
     elif ((tag == 'mmu1') or (tag == 'mmu2')):
       # Microsteps
       # Microsteps are coded as the exponent of 2
@@ -206,13 +194,6 @@ def writeMountData():
 
     elif tag == 'Acc':
       cmdStr += str(int(float(Mount[tag]) * 10))
-
-    elif tag == 'a1min' or tag == 'a2min':
-      cmdStr += str(abs(int(Mount[tag])))
-
-    elif tag == 'a1max' or tag == 'a2max':
-      cmdStr += str(int(Mount[tag]))
-
 
     elif tag == 'DefaultR':                         # default rate: 0 to 4
       if (Mount[tag] == 'Guide'):
@@ -279,24 +260,6 @@ def updateView():
 
 
 # Open connection, read values from TeenAstro
-def readVersions():
-  if (comm == None):
-    return
-  window['mainUnitVersion'].update(getValue(comm, 'GVN')) 
-  window['boardVersion'].update(getValue(comm, 'GVB')) 
-  driverVersion = getValue(comm, 'GVb')
-  if driverVersion == '1': driverText = 'TOS100'
-  elif driverVersion == '2': driverText = 'TMC2130'
-  elif driverVersion == '3': driverText = 'TMC5160'
-  else: driverText = 'unknown'
-  window['driverVersion'].update(driverText) 
-    
-def clearVersions():
-  window['mainUnitVersion'].update('') 
-  window['boardVersion'].update('') 
-  window['driverVersion'].update('') 
-
-
 def readMountData():
   if (comm == None):
     return
@@ -305,13 +268,13 @@ def readMountData():
     if (tag == 'mType'):
       mt = resp[12]     # Mount type is byte number 12 in the result string
       if (mt == 'E'):
-        Mount[tag] = 'Eq-German'
+        Mount[tag] = 'German'
       elif (mt == 'K'):
-        Mount[tag] = 'Eq-Fork'
+        Mount[tag] = 'Fork'
       elif (mt == 'A'):
-        Mount[tag] = 'AltAz-Tee'
+        Mount[tag] = 'Alt Az'
       elif (mt == 'k'):
-        Mount[tag] = 'AltAz-Fork'   
+        Mount[tag] = 'Alt Az Fork'   
 
     elif ((tag == 'mlc1') or (tag == 'mlc2') or (tag == 'mhc1') or (tag == 'mhc2')):   # Current values need multiply by 10    
       Mount[tag] = 10 * int(resp)
@@ -321,9 +284,6 @@ def readMountData():
         Mount[tag] = 'Direct'
       else:  
         Mount[tag] = 'Reverse'
-
-    elif ((tag == 'msil1') or (tag == 'msil2')):
-      Mount[tag] = resp
 
     elif ((tag == 'mmu1') or (tag == 'mmu2')):  # Microsteps are coded as the exponent of 2
       Mount[tag] = int(math.pow(2, int(resp)))
@@ -343,15 +303,6 @@ def readMountData():
 
     elif (tag == 'GuideR'):
       Mount[tag] = float(resp)
-
-    elif (tag == 'a1min'):
-      Mount[tag] = -int(float(resp)/10)
-    elif (tag == 'a1max'):
-      Mount[tag] = int(float(resp)/10)
-    elif (tag == 'a2min'):
-      Mount[tag] = -int(float(resp)/10)
-    elif (tag == 'a2max'):
-      Mount[tag] = int(float(resp)/10)
 
     elif (tag == 'DefaultR'):
       if (resp == '0'):
@@ -534,22 +485,18 @@ def writeSiteData():
   setCurrentSite(comm, currentSiteNum)
 
 
-def updateStatus(comm):     
-  window['date'].update("Date: %s" % getValue(comm, 'GC'))
-  window['localTime'].update("Local Time: %s" % getValue(comm, 'GL'))
-  window['sidTime'].update("Sidereal Time: %s" % getValue(comm, 'GS'))
-  window['ra'].update("Right Ascension: %s" % getValue(comm, 'GR'))
-  window['dec'].update("Declination: %s" % getValue(comm, 'GD'))
-  window['az'].update("Azimuth: %s" % getValue(comm, 'GZ'))
-  window['alt'].update("Altitude: %s" % getValue(comm, 'GA'))
-  window['axis1'].update("Axis 1 Steps: %s" % getValue(comm, 'GXDP0'))
-  window['axis2'].update("Axis 2 Steps: %s" % getValue(comm, 'GXDP1'))
-  window['axis1deg'].update("Axis 1 Deg: %s" % getValue(comm, 'GXP1'))
-  window['axis2deg'].update("Axis 2 Deg: %s" % getValue(comm, 'GXP2'))
-  statusCode = getValue(comm, 'GXI')
-  window['pierside'].update("Pier Side: %c" % statusCode[13])
-  errorCodes = ['ERR_NONE','ERR_MOTOR_FAULT','ERR_HORIZON','ERR_LIMIT_SENSE','ERR_LIMIT_A1','ERR_LIMIT_A2','ERR_UNDER_POLE','ERR_MERIDIAN','ERR_SYNC'];
-  window['errorCode'].update(errorCodes[int(statusCode[15])])
+def updateStatus(comm):      
+    window['date'].update("Date: %s" % getValue(comm, 'GC'))
+    window['localTime'].update("Local Time: %s" % getValue(comm, 'GL'))
+    window['sidTime'].update("Sidereal Time: %s" % getValue(comm, 'GS'))
+    window['ra'].update("Right Ascension: %s" % getValue(comm, 'GR'))
+    window['dec'].update("Declination: %s" % getValue(comm, 'GD'))
+    window['az'].update("Azimuth: %s" % getValue(comm, 'GZ'))
+    window['alt'].update("Altitude: %s" % getValue(comm, 'GA'))
+    window['axis1'].update("Axis 1: %s" % getValue(comm, 'GXDP0'))
+    window['axis2'].update("Axis 2: %s" % getValue(comm, 'GXDP1'))
+    window['pierside'].update("Pier Side: %c" % getValue(comm, 'GXI')[13])
+    resp = getValue(comm, MountReadCmd[tag]) 
 
 
 # Main program
@@ -578,7 +525,7 @@ sgCommTypeSerial = [sg.Radio('Serial', "RADIO1", size=(8, 1), enable_events=True
 
 sgCommTypeTCP = [sg.Radio('TCP', "RADIO1", default = True, size=(8, 1), enable_events=True, key='-TCPIP-'),
           sg.Text('IP Address:', size=(10, 1)),
-          sg.Input('192.168.0.21', key='-IPADDR-', size=(20, 1))]
+          sg.Input('192.168.0.12', key='-IPADDR-', size=(20, 1))]
   
 
 speedFrame = sg.Frame('Speeds', 
@@ -596,25 +543,19 @@ motFrame1 = sg.Frame('RA Motor', [[sgLabel('Rotation'), sgSpin('mrot1', width=8)
           [sgLabel('Steps'), sgSpin('mst1')],
           [sgLabel('Microsteps'), sgSpin('mmu1')],
           [sgLabel('Backlash'), sgSpin('mbl1')],
-          [sgLabel('Low/High current, Silent'), sgSpin( 'mlc1'), sgSpin('mhc1'), sgSpin('msil1')]])
+          [sgLabel('Low / High current'), sgSpin( 'mlc1'), sgSpin('mhc1')]])
 
 motFrame2 = sg.Frame('Dec Motor', [[sgLabel('Rotation'), sgSpin('mrot2', width=8)],
           [sgLabel('Gear'), sgSpin('mge2')],
           [sgLabel('Steps'), sgSpin('mst2')],
           [sgLabel('Microsteps'), sgSpin('mmu2')],
           [sgLabel('Backlash'), sgSpin('mbl2')],
-          [sgLabel('Low/High current, Silent'), sgSpin( 'mlc2'), sgSpin('mhc2'), sgSpin('msil2')]])
+          [sgLabel('Low / High current'), sgSpin( 'mlc2'), sgSpin('mhc2')]])
 
 limitFrame = sg.Frame('Limits', 
         [[sgLabel('Horizon'), sgSpin('hl')],
         [sgLabel('Overhead'), sgSpin('ol')],
-        [sgLabel('Axis1Min'), sgSpin('a1min')],
-        [sgLabel('Axis1Max'), sgSpin('a1max')],
-        [sgLabel('Axis2Min'), sgSpin('a2min')],
-        [sgLabel('Axis2Max'), sgSpin('a2max')]])
-
-gemLimitFrame = sg.Frame('GEM Limits', 
-        [[sgLabel('Past Meridian East'), sgSpin('el')],
+        [sgLabel('Past Meridian East'), sgSpin('el')],
         [sgLabel('Past Meridian West'), sgSpin('wl')],
         [sgLabel('Under Pole'), sgSpin('ul')]])
 
@@ -644,30 +585,15 @@ coordFrame = sg.Frame('Coordinates',
 debugFrame = sg.Frame('Debug', 
           [[sg.Text('Axis 1 count', key='axis1',size=(30,1))],
           [sg.Text('Axis 2 count', key='axis2',size=(30,1))],
-          [sg.Text('Axis 1 degrees', key='axis1deg',size=(30,1))],
-          [sg.Text('Axis 2 degrees', key='axis2deg',size=(30,1))],
           [sg.Text('Pier side', key='pierside',size=(30,1))]],
           )
 
-errorFrame = sg.Frame('Error', 
-          [[sg.Text('Error Status', key='errorCode',size=(30,1))]])
-
-commFrame = sg.Frame('Comm Port',[sgCommTypeSerial,sgCommTypeTCP,[sg.Button('Connect', key='connect')]])
-
-versionFrame = sg.Frame('Versions',
-          [
-          [sg.Text('Main Unit:'), sg.Text('', key='mainUnitVersion',size=(30,1))],
-          [sg.Text('Board:'), sg.Text('',key='boardVersion',size=(30,1))],
-          [sg.Text('Stepper Driver:'), sg.Text('',key='driverVersion',size=(30,1))]]
-          )
-
-mountTab = [[mountTypeRow],[speedFrame, sg.Column([[limitFrame,gemLimitFrame], [alignmentFrame]])],[motFrame1, motFrame2]]
+mountTab = [[mountTypeRow],[speedFrame, sg.Column([[limitFrame], [alignmentFrame]])],[motFrame1, motFrame2]]
 siteTab = [[siteFrame]]
-statusTab = [[timeFrame],[coordFrame],[debugFrame],[errorFrame]]
+statusTab = [[timeFrame],[coordFrame],[debugFrame]]
 bottomRow = sg.Output(key='Log',  size=(80, 4))
 
-topRow = [commFrame, versionFrame]
-
+topRow = [sg.Frame('Comm Port',[sgCommTypeSerial,sgCommTypeTCP,[sg.Button('Connect', key='connect')]])]
 layout = [ topRow,
           [sg.TabGroup([[sg.Tab('Mount', mountTab),
             sg.Tab('Sites', siteTab),
@@ -677,12 +603,12 @@ layout = [ topRow,
          ]
 
 
-window = sg.Window('TAConfig 1.4', layout)
+window = sg.Window('TAConfig 1.2', layout)
 
 comm = None
 
 while True:
-  event, values = window.Read(500)
+  event, values = window.Read(1000)
   if (event =='__TIMEOUT__'):
     if (comm == None):
       continue
@@ -695,18 +621,13 @@ while True:
       if (comm != None):
         window['connect'].update('Disconnect')
         window['-ComPorts-'].update(disabled = True)
-        window['-Serial-'].update(disabled = True)
         window['-TCPIP-'].update(disabled = True)
-        readVersions()
-
     else:
       comm.close()
       logText('Disconnected')
-      clearVersions()
       comm = None
       window['connect'].update('Connect')
       window['-ComPorts-'].update(disabled = False)
-      window['-Serial-'].update(disabled = False)
       window['-TCPIP-'].update(disabled = False)
 
   elif event == 'Read from TeenAstro':

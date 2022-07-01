@@ -31,21 +31,6 @@ void SetSiderealClockRate(double Interval)
   isrTimerRateAxis1 = 0;
   isrTimerRateAxis2 = 0;
 }
-
-#ifdef ARDUINO_TEENSY40 // F_BUS is not defined. Looking in Core 24000000 is used to convert µsec in timer ticks
-	#ifndef F_BUS
-	#define F_BUS 24000000
-	#endif
-
-void beginTimers()
-{
-  itimer3.begin(TIMER3_COMPA_vect, (float)128 * 0.0625);
-  itimer4.begin(TIMER4_COMPA_vect, (float)128 * 0.0625);
-  itimer3.priority(0);
-  itimer4.priority(0);
-  itimer1.priority(32);
-}
-#else
 void beginTimers()
 {
   // set the system timer for millis() to the second highest priority
@@ -59,8 +44,6 @@ void beginTimers()
   NVIC_SET_PRIORITY(IRQ_PIT_CH1, 0);
   NVIC_SET_PRIORITY(IRQ_PIT_CH2, 0);
 }
-
-#endif
 // set timer1 to rate (in microseconds*16)
 static void Timer1SetRate(double rate)
 {

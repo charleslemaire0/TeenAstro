@@ -12,17 +12,9 @@ void Command_dollar()
   case '!':
     Serial.end();
     Serial1.end();
-    Focus_Serial.end();
-    GNSS_Serial.end();
+    Serial2.end();
     delay(1000);
-#ifdef ARDUINO_TEENSY40 // In fact this code is suitable for Teensy 3.2 also
-#define CPU_RESTART_ADDR (uint32_t *)0xE000ED0C
-#define CPU_RESTART_VAL 0x5FA0004
-#define CPU_RESTART (*CPU_RESTART_ADDR = CPU_RESTART_VAL); 
-	CPU_RESTART;
-#else
     _reboot_Teensyduino_();
-#endif
     break;
   case 'X':
     initmotor(true);
