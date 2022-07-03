@@ -6,7 +6,7 @@
 
 // firmware info, these are returned by the ":GV?#" commands
 #define FirmwareDate    __DATE__
-#define FirmwareNumber  "1.2.4"
+#define FirmwareNumber  "1.3.0"
 #define FirmwareName    "TeenAstro"
 #define FirmwareTime    "00:00:00"
 // forces initialialization of a host of settings in XEEPROM. OnStep does this automatically, most likely, you will want to leave this alone
