@@ -92,7 +92,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     switch (command[1])
     {
     case 'A':
-      if (strchr("023CW", command[2])) cmdreply = CMDR_SHORT;
+      if (strchr("023CWA", command[2])) cmdreply = CMDR_SHORT;
       else cmdreply = CMDR_INVALID;
       break;
     case 'B':
@@ -114,11 +114,11 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       else cmdreply = CMDR_INVALID;
       break;
     case 'g':
-      if (strchr("ts", command[2])) cmdreply = CMDR_SHORT;
+      if (strchr("tsS", command[2])) cmdreply = CMDR_SHORT;
       else cmdreply = CMDR_INVALID;
       break;
     case 'G':
-      if (strchr("AaCcDdegGhLMNOPmnoRrSTtVXZ", command[2]))
+      if (strchr("AaCcDdefgGhLMNOPmnoRrSTtVXZ", command[2]))
       {
         timeOutMs *= 2;
         cmdreply = CMDR_LONG;
@@ -185,7 +185,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
   switch (cmdreply)
   {
   case CMDR_NO:
-    recvBuffer[0] = 0;
+    recvBuffer[0] = '\0';
     return true;
     break;
   case CMDR_SHORT:
@@ -234,6 +234,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     break;
   }
   default:
+    return false;
     break;
   }
 
@@ -429,9 +430,9 @@ LX200RETURN GetLatitudeLX200(double& degree)
 {
   char out[LX200sbuff];
   double minute;
-  if (GetLX200(":Gt#", out, sizeof(out)) == LX200VALUEGET)
+  if (GetLX200(":Gtf#", out, sizeof(out)) == LX200VALUEGET)
   {
-    if (dmsToDouble(&degree, out, true, false))
+    if (dmsToDouble(&degree, out, true, true))
       return LX200VALUEGET;
   }
   return LX200GETVALUEFAILED;
@@ -449,12 +450,12 @@ LX200RETURN GetLstT0LX200(double &T0)
 LX200RETURN GetLongitudeLX200(double& degree)
 {
   char out[LX200sbuff];
-  if (GetLX200(":Gg#", out, sizeof(out)) == LX200VALUEGET)
+  if (GetLX200(":Ggf#", out, sizeof(out)) == LX200VALUEGET)
   {
     double longi = 0;
     if ((out[0] == '-') || (out[0] == '+'))
     {
-      if (dmsToDouble(&longi, (char *)&out[1], false, false))
+      if (dmsToDouble(&longi, (char *)&out[1], false, true))
       {
         degree = out[0] == '-' ? -longi : longi;
         return LX200VALUEGET;

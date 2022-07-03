@@ -22,9 +22,28 @@ bool checkPole(const long &axis1, CheckMode mode)
 }
 bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
 {
-  bool ok = true;
-  double MinutesPastMeridianW = (mode == CHECKMODE_GOTO) ? minutesPastMeridianGOTOW : minutesPastMeridianGOTOW + 5;
-  double MinutesPastMeridianE = (mode == CHECKMODE_GOTO) ? minutesPastMeridianGOTOE : minutesPastMeridianGOTOE + 5;
+  bool ok = true; 
+  double _ra, _dec, MinutesPastMeridianW, MinutesPastMeridianE;
+
+  if (mode == CHECKMODE_GOTO)
+  {
+   MinutesPastMeridianW = minutesPastMeridianGOTOW;
+   MinutesPastMeridianE = minutesPastMeridianGOTOE;
+  }
+  else
+  {
+    getEqu(&_ra, &_dec, localSite.cosLat(), localSite.sinLat(), false);
+    if (_dec < maxDecToKeepTrackingOn)
+    {
+      MinutesPastMeridianW = 360;
+      MinutesPastMeridianE = 360;
+    }
+    else
+    {
+      MinutesPastMeridianW = minutesPastMeridianGOTOW + 5;
+      MinutesPastMeridianE = minutesPastMeridianGOTOE + 5;
+    }
+  }
   switch (getPierSide(axis2))
   {
   case PIER_WEST:

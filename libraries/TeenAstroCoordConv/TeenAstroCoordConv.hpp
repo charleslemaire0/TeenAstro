@@ -117,6 +117,8 @@ public:
 	
 	// set the transformation from EEPROM
 	void setT(float m11, float m12, float m13,float m21, float m22, float m23,float m31, float m32, float m33);
+
+	void setTinvFromT();
 	
 	// add a user-provided reference star (all values in degrees, except time in seconds). adding more than three has no effect
 	void addReferenceDeg(double angle1, double angle2, double axis1, double axis2);
@@ -129,6 +131,8 @@ public:
 
 	// Convert instrumental axis1/axis2 coordinates to  reference angle1/angle2 coordinates (all values in degrees) 
 	void toReferenceDeg(double &angle1,  double &angle2, double axis1, double axis2) const;
+
+	double polErrorDeg(double lat, char sel);
 
 
 protected:
@@ -143,7 +147,6 @@ protected:
 
 	// Convert instrumental axis1/axis2 coordinates to  equatorial hour angle/angle2 coordinates (all values in radians) 
 	void toReference(double &angle1,  double &angle2, double axis1, double axis2) const;
-
 
 	double T   [3][3];		// Transformation matrix from equatorial angle1/angle2 cosines to instrumental axis2/axis1 cosines 
   double Tinv[3][3];		// Inverse of the above 

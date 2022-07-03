@@ -1,24 +1,24 @@
 #include "SmartController.h"
 #include "SHC_text.h"
 
-void SmartHandController::menuSpeedRate()
-{
-  buttonPad.setMenuMode();
-  char * string_list_Speed = T_GUIDE "\n" T_SLOW "\n" T_MEDIUM "\n" T_FAST "\n" T_MAX;
-  static unsigned char current_selection_speed = 3;
-  ta_MountStatus.updateMount();
-  if (!ta_MountStatus.getGuidingRate(current_selection_speed))
-    return;
-  uint8_t selected_speed = display->UserInterfaceSelectionList(&buttonPad, T_SETSPEED, current_selection_speed + 1, string_list_Speed);
-  if (selected_speed > 0)
-  {
-    char cmd[5] = ":Rn#";
-    cmd[2] = '0' + selected_speed - 1;
-    SetLX200(cmd);
-    current_selection_speed = selected_speed;
-  }
-  buttonPad.setControlerMode();
-}
+// void SmartHandController::menuSpeedRate()
+// {
+//   buttonPad.setMenuMode();
+//   char * string_list_Speed = T_GUIDE "\n" T_SLOW "\n" T_MEDIUM "\n" T_FAST "\n" T_MAX;
+//   static unsigned char current_selection_speed = 3;
+//   ta_MountStatus.updateMount();
+//   if (!ta_MountStatus.getGuidingRate(current_selection_speed))
+//     return;
+//   uint8_t selected_speed = display->UserInterfaceSelectionList(&buttonPad, T_SETSPEED, current_selection_speed + 1, string_list_Speed);
+//   if (selected_speed > 0)
+//   {
+//     char cmd[5] = ":Rn#";
+//     cmd[2] = '0' + selected_speed - 1;
+//     SetLX200(cmd);
+//     current_selection_speed = selected_speed;
+//   }
+//   buttonPad.setControlerMode();
+// }
 
 void SmartHandController::menuTelAction()
 {
@@ -202,7 +202,11 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
   static int current_selection = 1;
   while (true)
   {
-    const char* string_list = alignInProgress ? T_CANCEL : "2 " T_STAR "\n3 " T_STAR "\n" T_SAVE "\n" T_Clear;
+    const char* string_list = alignInProgress ? T_CANCEL :
+    (ta_MountStatus.isAligned()?
+      "2 " T_STAR "\n3 " T_STAR "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error" :
+      "2 " T_STAR "\n3 " T_STAR "\n" T_PC " " T_ALIGNMENT//  "\n" T_SAVE "\n" T_Clear
+    );
     int selection = display->UserInterfaceSelectionList(&buttonPad, T_ALIGNMENT, current_selection, string_list);
     if (selection == 0) return MR_CANCEL;
     current_selection = selection;
@@ -247,7 +251,21 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         }
       }
       break;
-    case 4:
+      case 4:
+      if (display->UserInterfaceMessage(&buttonPad, T_SAVE, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
+      {
+        if (SetLX200(":AW#") == LX200VALUESET)
+        {
+          DisplayMessage(T_ALIGNMENT, T_SAVED, -1);
+          return MR_QUIT;
+        }
+        else
+        {
+          DisplayMessage(T_SAVING, T_FAILED, -1);
+        }
+      }
+      break;
+    case 5:
       if (display->UserInterfaceMessage(&buttonPad, T_Clear, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
       {
         if (SetLX200(":AC#") == LX200VALUESET)
@@ -261,6 +279,37 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         }
       }
       break;
+      case 3:
+      DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
+      if (display->UserInterfaceMessage(&buttonPad, T_READYFOR, T_PC, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
+      {
+        if (SetLX200(":AA#") == LX200VALUESET)
+        {
+          DisplayMessage(T_MOUNTSYNCED, T_ATHOME, -1);
+          return MR_QUIT;
+        }
+        else
+        {
+          DisplayMessage(T_Clear, T_FAILED, -1);
+        }
+      }
+      break;
+    case 6:
+      char err_az[15] ={"?"};
+      char err_alt[15] ={"?"};
+      char err_pol[15] ={"?"};
+      if (
+        GetLX200(":GXAe2#", err_pol, sizeof(err_pol)) == LX200VALUEGET
+        &&
+        GetLX200(":GXAe0#", err_az, sizeof(err_az)) == LX200VALUEGET
+        &&
+        GetLX200(":GXAe1#", err_alt, sizeof(err_alt)) == LX200VALUEGET)
+        {
+            DisplayLongMessage("[Sep.;Az.;Alt.]:", err_pol,err_az, err_alt,-1);
+        }
+        else
+            DisplayMessage("Alignment error:", "?", -1);
+    break;
     }
   }
 }

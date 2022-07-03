@@ -102,8 +102,8 @@ Public Class AxisRates
   End Property
 
   Public Sub Dispose() Implements IAxisRates.Dispose
-    Throw New System.NotImplementedException()
-  End Sub
+    'Throw New System.NotImplementedException()
+    End Sub
 
   Public Function GetEnumerator() As IEnumerator Implements IEnumerable.GetEnumerator, IAxisRates.GetEnumerator
     Return m_Rates.GetEnumerator()
@@ -159,10 +159,11 @@ Public Class TrackingRates
     '          m_TrackingRates(1) = DriveRates.driveLunar
     '
     pos = New Threading.ThreadLocal(Of Integer)
-    ReDim m_TrackingRates(0)
-    m_TrackingRates(0) = DriveRates.driveSidereal
-
-  End Sub
+        ReDim m_TrackingRates(2)
+        m_TrackingRates(0) = DriveRates.driveSidereal
+        m_TrackingRates(1) = DriveRates.driveSolar
+        m_TrackingRates(2) = DriveRates.driveLunar
+    End Sub
 
 #Region "ITrackingRates Members"
 
@@ -179,8 +180,8 @@ Public Class TrackingRates
 
   Public Sub Dispose() Implements ITrackingRates.Dispose
     pos.Dispose()
-    'Throw New System.NotImplementedException()
-  End Sub
+        'Throw New System.NotImplementedException()
+    End Sub
 
   Default Public ReadOnly Property Item(ByVal Index As Integer) As DriveRates Implements ITrackingRates.Item
     Get

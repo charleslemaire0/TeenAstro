@@ -15,6 +15,7 @@ public:
   enum SiderealMode { SID_STAR, SID_SUN, SID_MOON };
   enum ParkState { PRK_UNPARKED, PRK_PARKED, PRK_FAILED, PRK_PARKING, PRK_UNKNOW };
   enum PierState { PIER_E, PIER_W, PIER_UNKNOW };
+  enum MovSpeed { GUIDING, SLOW, MEDIUM, FAST, MAX };
 private:
   //Align
   AlignState      m_align = ALI_OFF;
@@ -41,6 +42,7 @@ private:
   char            m_TempAxis2[15] = "?";
   unsigned long   m_lastStateAxis;
   char            m_TempUTC[15] = "?";
+  char            m_TempLHA[15] = "?";
   char            m_TempUTCdate[15] = "?";
   char            m_TempSidereal[15] = "?";
   unsigned long   m_lastStateTime;
@@ -62,12 +64,15 @@ private:
   bool            m_hasInfoAxis1 = false;
   bool            m_hasInfoAxis2 = false;
   bool            m_hasInfoUTC = false;
+  bool            m_hasInfoLHA = false;
   bool            m_hasInfoUTCdate = false;
   bool            m_hasInfoSidereal = false;
   bool            m_hasInfoTrackingRate = false;
   bool            m_hasInfoMount = false;
   bool            m_hasInfoFocuser = false;
   bool            m_hasFocuser = true;
+  unsigned short  m_GPSsyncCounter = 0;
+  unsigned short  m_GPSSynced = 0;
 public:
   //Alignment Stuff
   bool            isAligning()  { return m_align != ALI_OFF; }
@@ -92,6 +97,7 @@ public:
   bool hasInfoAz() { return m_hasInfoAz; };
   bool hasInfoAlt() { return m_hasInfoAlt; };
   bool hasInfoUTC() { return m_hasInfoUTC; };
+  bool hasInfoLHA() { return m_hasInfoLHA; };
   bool hasInfoSidereal() { return m_hasInfoSidereal; };
   bool hasInfoMount() { return m_hasInfoMount; };
   bool hasInfoFocuser() { return m_hasInfoFocuser; };
@@ -114,6 +120,7 @@ public:
   const char* getAxis1() { return  m_TempAxis1; };
   const char* getAxis2() { return  m_TempAxis2; };
   const char* getUTC() { return m_TempUTC; };
+  const char* getLHA() { return m_TempLHA; };
   const char* getUTCdate() { return m_TempUTCdate; };
   const char* getSidereal() { return m_TempSidereal; };
   const char* getMState() { return m_TempMount; };
@@ -126,6 +133,7 @@ public:
   void updateAzAlt();
   void updateAxis();
   void updateTime();
+  void updateLHA();
   void updateFocuser();
   void updateTrackingRate();
   void updateMount();
@@ -143,6 +151,7 @@ public:
   bool        getLat(double &lat);
   bool        getTrackingRate(double &r);
   bool        getGuidingRate(unsigned char &g);
+  int         getMovSpeed();
   bool checkConnection(char* major, char* minor);
   bool getDriverName(char* name);
   bool isConnectionValid() { return m_isValid; };
@@ -157,6 +166,7 @@ public:
   bool isGuidingW();
   bool isAligned();
   bool isGNSSValid();
+  unsigned short GPSSynced(bool autoGPSSync);
   bool isLowPower();
   //Connection Errors
   bool connected();

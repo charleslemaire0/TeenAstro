@@ -1,40 +1,39 @@
 
 #include <TeenAstroMountStatus.h>
-#include "XEEPROM.hpp"
 #include "SHC_text.h"
 #include "SmartController.h"
 
-static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":Fo#", ":Fi#" };
-static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":FO#", ":FI#" };
+static char *BreakRC[6] = {":Qn#", ":Qs#", ":Qe#", ":Qw#", ":Fo#", ":Fi#"};
+static char *RC[6] = {":Mn#", ":Ms#", ":Me#", ":Mw#", ":FO#", ":FI#"};
 
 void SmartHandController::setup(
-  const char version[], 
-  const int pin[7], 
-  const bool active[7], 
-  const int SerialBaud, 
-  const OLED model,
-  const uint8_t nSubmodel)
+    const char version[],
+    const int pin[7],
+    const bool active[7],
+    const int SerialBaud,
+    const OLED model,
+    const uint8_t nSubmodel)
 {
 #ifdef ARDUINO_D1_MINI32
-
   Ser.begin(SerialBaud, SERIAL_8N1, 27, 25);
 #else
   Ser.begin(SerialBaud);
 #endif
 
-  if (XEEPROM.length() == 0)
+  if (EEPROM.length() == 0)
 #ifdef ARDUINO_D1_MINI32
-    XEEPROM.begin(512);
+    EEPROM.begin(512);
 #else
-    XEEPROM.begin(1024);
+    EEPROM.begin(1024);
 #endif
 
-  if (strlen(version) <= 19) strcpy(_version, version);
+  if (strlen(version) <= 19)
+    strcpy(_version, version);
 
   //choose a 128x64 display supported by U8G2lib (if not listed below there are many many others in u8g2 library example Sketches)
 
   num_supported_display = nSubmodel;
-  uint8_t submodel = XEEPROM.read(EEPROM_DISPLAYSUBMODEL);
+  uint8_t submodel = EEPROM.read(EEPROM_DISPLAYSUBMODEL);
   switch (model)
   {
   case OLED_SH1106:
@@ -47,7 +46,7 @@ void SmartHandController::setup(
     if (!(submodel < num_supported_display))
     {
       submodel = 0;
-      XEEPROM.write(EEPROM_DISPLAYSUBMODEL, 0);
+      EEPROM.write(EEPROM_DISPLAYSUBMODEL, 0);
     }
     if (submodel == 0)
       display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0);
@@ -59,31 +58,32 @@ void SmartHandController::setup(
   }
   display->begin();
   drawIntro();
-  buttonPad.setup(pin, active);
+  buttonPad.setup(pin, active, EEPROM_BSPEED);
 
   tickButtons();
-  maxContrast = XEEPROM.read(EEPROM_Contrast);
+  autoGPSSync = EEPROM.read(EEPROM_AutoGPSSync);
+  maxContrast = EEPROM.read(EEPROM_Contrast);
   display->setContrast(maxContrast);
-  displayT1 = XEEPROM.read(EEPROM_T1);
+  displayT1 = EEPROM.read(EEPROM_T1);
   if (displayT1 < 3)
   {
     displayT1 = 3;
-    XEEPROM.write(EEPROM_T1, displayT1);
-    XEEPROM.commit();
+    EEPROM.write(EEPROM_T1, displayT1);
+    EEPROM.commit();
   }
   displayT2 = EEPROM.read(EEPROM_T2);
   if (displayT2 < displayT1)
   {
     displayT2 = displayT1;
-    XEEPROM.write(EEPROM_T2, displayT2);
-    XEEPROM.commit();
+    EEPROM.write(EEPROM_T2, displayT2);
+    EEPROM.commit();
   }
 
 #ifdef DEBUG_ON
   DebugSer.begin(9600);
   delay(1000);
 #endif
-  display->setFont(u8g2_font_helvR12_te);
+  //display->setFont(u8g2_font_helvR12_te);
   DisplayMessage("SHC " T_VERSION, _version, 1500);
   int k = 0;
   while (!ta_MountStatus.isConnectionValid() && k < 10)
@@ -137,7 +137,6 @@ void SmartHandController::update()
 #ifdef ARDUINO_ESP8266_WEMOS_D1MINI
     ESP.reset();
 #endif
-
   }
   if (ta_MountStatus.isAlignSelect())
   {
@@ -189,29 +188,54 @@ void SmartHandController::update()
   }
   else if (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART && !ta_MountStatus.isAligning())
   {
-    if (eventbuttons[3] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    if (eventbuttons[1] == E_LONGPRESSSTOP)
     {
-      menuTelAction();
-    }
-    else if (eventbuttons[1] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
-    {
-      menuSpeedRate();
+      char cmd[5] = ":Rn#";
+      int currSp = ta_MountStatus.getMovSpeed();
+      if (currSp < 4)
+      {
+        cmd[2] = '0' + currSp + 1; //)%5;
+        SetLX200(cmd);
+      }
       time_last_action = millis();
     }
-    else if (eventbuttons[4] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    else if (eventbuttons[2] == E_LONGPRESSSTOP)
     {
-      menuTelSettings();
+      char cmd[5] = ":Rn#";
+      int currSp = ta_MountStatus.getMovSpeed();
+      if (currSp > 0)
+      {
+        cmd[2] = '0' + currSp - 1;
+        SetLX200(cmd);
+      }
+      time_last_action = millis();
     }
-    else if (eventbuttons[6] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    else
     {
-      menuFocuserAction();
+      if (eventbuttons[3] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+      {
+        menuTelAction();
+      }
+      // else if (eventbuttons[1] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+      // {
+      //   menuSpeedRate();
+      //   time_last_action = millis();
+      // }
+      else if (eventbuttons[4] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+      {
+        menuTelSettings();
+      }
+      else if (eventbuttons[6] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+      {
+        menuFocuserAction();
+      }
+      else if (eventbuttons[5] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+      {
+        menuFocuserSettings();
+      }
+      exitMenu = false;
+      time_last_action = millis();
     }
-    else if (eventbuttons[5] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
-    {
-      menuFocuserSettings();
-    }
-    exitMenu = false;
-    time_last_action = millis();
   }
   else if (eventbuttons[0] == E_CLICK && ta_MountStatus.isAlignRecenter())
   {
@@ -219,13 +243,13 @@ void SmartHandController::update()
     switch (reply)
     {
     case TeenAstroMountStatus::AlignReply::ALIR_FAILED1:
-      DisplayMessage(T_ALIGNMENT, T_FAILED"!", -1);
+      DisplayMessage(T_ALIGNMENT, T_FAILED "!", -1);
       break;
     case TeenAstroMountStatus::AlignReply::ALIR_FAILED2:
-      DisplayMessage(T_ALIGNMENT, T_WRONG"!", -1);
+      DisplayMessage(T_ALIGNMENT, T_WRONG "!", -1);
       break;
     case TeenAstroMountStatus::AlignReply::ALIR_DONE:
-      DisplayMessage(T_ALIGNMENT, T_SUCESS"!", -1);
+      DisplayMessage(T_ALIGNMENT, T_SUCESS "!", -1);
       break;
     case TeenAstroMountStatus::AlignReply::ALIR_ADDED:
       DisplayMessage(T_STARADDED, "=>", 1000);
@@ -301,8 +325,8 @@ bool SmartHandController::isSleeping()
 void SmartHandController::manualMove(bool &moving)
 {
   moving = ta_MountStatus.getTrackingState() == TeenAstroMountStatus::TRK_SLEWING ||
-    ta_MountStatus.getParkState() == TeenAstroMountStatus::PRK_PARKING ||
-    ta_MountStatus.isSpiralRunning();
+           ta_MountStatus.getParkState() == TeenAstroMountStatus::PRK_PARKING ||
+           ta_MountStatus.isSpiralRunning();
   if (moving)
   {
     bool stop = (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART || eventbuttons[0] == E_DOUBLECLICK) ? true : false;

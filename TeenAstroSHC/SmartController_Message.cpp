@@ -83,7 +83,7 @@ void SmartHandController::DisplayLongMessage(const char* txt1, const char* txt2,
         break;
     }
   }
-  display->setFont(u8g2_font_helvR12_te);
+  //display->setFont(u8g2_font_helvR12_te);
 }
 
 bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)

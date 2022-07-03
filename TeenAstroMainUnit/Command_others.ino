@@ -18,8 +18,8 @@ void Command_dollar()
 #ifdef ARDUINO_TEENSY40 // In fact this code is suitable for Teensy 3.2 also
 #define CPU_RESTART_ADDR (uint32_t *)0xE000ED0C
 #define CPU_RESTART_VAL 0x5FA0004
-#define CPU_RESTART (*CPU_RESTART_ADDR = CPU_RESTART_VAL); 
-	CPU_RESTART;
+#define CPU_RESTART (*CPU_RESTART_ADDR = CPU_RESTART_VAL);
+    CPU_RESTART;
 #else
     _reboot_Teensyduino_();
 #endif
@@ -38,9 +38,10 @@ void Command_dollar()
 //   A - Alignment Commands
 //  :A0#
 //  :A2#
-//  :A3#   
-//  :AC#     
-//  :AW#    
+//  :A3#
+//  :AC#
+//  :AW#
+//  :AA#  Resets alignment as AC# AND activates alignment on next 3 syncs!  (<-> sync modded accordingly)
 void Command_A()
 {
   switch (command[1])
@@ -59,7 +60,7 @@ void Command_A()
     break;
   case '2':
   {
-    double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+    double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
     EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
     if (alignment.getRefs() == 0)
@@ -114,8 +115,10 @@ void Command_A()
     break;
   }
   case 'C':
+  case 'A':
     initTransformation(true);
     syncPolarHome();
+    autoAlignmentBySync = command[1] == 'A';
     strcpy(reply, "1");
     break;
   case 'W':
@@ -139,14 +142,20 @@ void Command_B()
   if (command[1] != '+' && command[1] != '-')
     return;
 #ifdef RETICULE_LED_PINS
-  if (reticuleBrightness > 255) reticuleBrightness = 255;
-  if (reticuleBrightness < 31) reticuleBrightness = 31;
+  if (reticuleBrightness > 255)
+    reticuleBrightness = 255;
+  if (reticuleBrightness < 31)
+    reticuleBrightness = 31;
 
-  if (command[1] == '-') reticuleBrightness /= 1.4;
-  if (command[1] == '+') reticuleBrightness *= 1.4;
+  if (command[1] == '-')
+    reticuleBrightness /= 1.4;
+  if (command[1] == '+')
+    reticuleBrightness *= 1.4;
 
-  if (reticuleBrightness > 255) reticuleBrightness = 255;
-  if (reticuleBrightness < 31) reticuleBrightness = 31;
+  if (reticuleBrightness > 255)
+    reticuleBrightness = 255;
+  if (reticuleBrightness < 31)
+    reticuleBrightness = 31;
 
   analogWrite(RETICULE_LED_PINS, reticuleBrightness);
 #endif
@@ -166,8 +175,8 @@ void Command_C()
 {
   int i;
   if ((parkStatus == PRK_UNPARKED) &&
-    !movingTo &&
-    (command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
+      !movingTo &&
+      (command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
   {
     PierSide targetPierSide = GetPierSide();
     if (newTargetPierSide != PIER_NOTVALID)
@@ -179,11 +188,36 @@ void Command_C()
     {
     case 'M':
     case 'S':
-    {
-      double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-      i = syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
-      break;
-    }
+      double newTargetHA;
+      if (autoAlignmentBySync){
+        newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+        double Azm, Alt;
+        EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
+        if (alignment.getRefs() == 0)
+        {
+          syncAzAlt(Azm, Alt, GetPierSide());
+        }
+        cli();
+        double Axis1 = staA1.pos / geoA1.stepsPerDegree;
+        double Axis2 = staA2.pos / geoA2.stepsPerDegree;
+        sei();
+        alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
+        if (alignment.isReady())
+          {
+            hasStarAlignment = true;
+            cli();
+            staA1.target = staA1.pos;
+            staA2.target = staA2.pos;
+            sei();
+            autoAlignmentBySync = false;
+          }
+      }
+      else
+      {
+        newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+        i = syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
+      }
+        break;
     case 'U':
     {
       // :CU# sync with the User Defined RA DEC
@@ -200,12 +234,17 @@ void Command_C()
     i = 0;
     if (command[1] == 'M' || command[1] == 'A' || command[1] == 'U')
     {
-      if (i == 0) strcpy(reply, "N/A#");
-      if (i > 0) { reply[0] = 'E'; reply[1] = '0' + i; reply[2] = '#'; }
+      if (i == 0)
+        strcpy(reply, "N/A#");
+      if (i > 0)
+      {
+        reply[0] = 'E';
+        reply[1] = '0' + i;
+        reply[2] = '#';
+      }
     }
   }
 }
-
 
 //----------------------------------------------------------------------------------
 //   D - Distance Bars
@@ -246,29 +285,37 @@ void Command_h()
     //  :hC#   Moves telescope to the home position
     //          Return: 0 on failure
     //                  1 on success
-    if (!goHome()) strcpy(reply, "0");
-    else strcpy(reply, "1");
+    if (!goHome())
+      strcpy(reply, "0");
+    else
+      strcpy(reply, "1");
     break;
   case 'O':
     // : hO#   Reset telescope at the Park position if Park position is stored.
     //          Return: 0 on failure
     //                  1 on success
-    if (!syncAtPark()) strcpy(reply, "0");
-    else strcpy(reply, "1");
+    if (!syncAtPark())
+      strcpy(reply, "0");
+    else
+      strcpy(reply, "1");
     break;
   case 'P':
     // : hP#   Goto the Park Position
     //          Return: 0 on failure
     //                  1 on success
-    if (park()) strcpy(reply, "0");
-    else strcpy(reply, "1");
+    if (park())
+      strcpy(reply, "0");
+    else
+      strcpy(reply, "1");
     break;
   case 'Q':
     //  :hQ#   Set the park position
     //          Return: 0 on failure
     //                  1 on success
-    if (!setPark()) strcpy(reply, "0");
-    else strcpy(reply, "1");
+    if (!setPark())
+      strcpy(reply, "0");
+    else
+      strcpy(reply, "1");
     break;
   case 'R':
     //  :hR#   Restore parked telescope to operation
@@ -319,26 +366,26 @@ void Command_Q()
   case 'w':
     //  :Qe# & Qw#   Halt east/westward Slews
     //         Returns: Nothing
-  {
-    if ((parkStatus == PRK_UNPARKED) && !movingTo)
     {
-      if (guideA1.dir)
-        StopAxis1();
+      if ((parkStatus == PRK_UNPARKED) && !movingTo)
+      {
+        if (guideA1.dir)
+          StopAxis1();
+      }
     }
-  }
-  break;
+    break;
   case 'n':
   case 's':
     //  :Qn# & Qs#   Halt north/southward Slews
     //         Returns: Nothing
-  {
-    if ((parkStatus == PRK_UNPARKED) && !movingTo)
     {
-      if (guideA2.dir)
-        StopAxis2();
+      if ((parkStatus == PRK_UNPARKED) && !movingTo)
+      {
+        if (guideA2.dir)
+          StopAxis2();
+      }
     }
-  }
-  break;
+    break;
   default:
     strcpy(reply, "0");
     break;
@@ -399,12 +446,12 @@ void Command_R()
 //  :TL#   Track rate lunar Returns: Nothing
 //  :TQ#   Track rate sidereal Returns: Nothing
 //  :TR#   Master sidereal clock reset (to calculated sidereal rate, stored in EEPROM) Returns: Nothing
-//  :TK#   Track rate king Returns: Nothing
+//  :TK#   Track rate king Returns: Nothing / Currently replaced by tracking compensation (that can be applied also to solar and lunar rates)
 //  :Te#   Tracking enable  (replies 0/1)
 //  :Td#   Tracking disable (replies 0/1)
 //  :Tr#   Track compensation enable  (replies 0/1)
 //  :Tn#   Track compensation disable (replies 0/1)
-//         
+//
 void Command_T()
 {
 
@@ -420,7 +467,7 @@ void Command_T()
     reply[0] = 0;
     break;
   case 'S':
-    // solar tracking rate 60Hz 
+    // solar tracking rate 60Hz
     SetTrackingRate(TrackingSolar);
     sideralMode = SIDM_SUN;
     correct_tracking = XEEPROM.read(EE_corr_track);
@@ -475,7 +522,7 @@ void Command_T()
     strcpy(reply, "1");
     break;
   case 'n':
-    // turn compensation off  
+    // turn compensation off
     correct_tracking = false;
     SetTrackingRate(default_tracking_rate);
     XEEPROM.update(EE_corr_track, 0);
@@ -487,7 +534,7 @@ void Command_T()
   }
 
   // Only burn the new rate if changing the sidereal interval
-  if ( command[1] == '+'|| command[1] == '-' || command[1] == 'R')
+  if (command[1] == '+' || command[1] == '-' || command[1] == 'R')
   {
     XEEPROM.writeLong(EE_siderealInterval, siderealInterval);
     updateSideral();

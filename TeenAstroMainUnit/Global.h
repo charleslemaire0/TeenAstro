@@ -31,6 +31,7 @@ bool DecayModeTrack = false;
 MeridianFlip meridianFlip = FLIP_NEVER;
 Mount mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;
+bool autoAlignmentBySync = false;
 bool apparentPole = true;
 bool hasFocuser = false;
 bool hasGNSS = true;
@@ -82,6 +83,7 @@ long                minutesPastMeridianGOTOE;               // for goto's, how f
 long                minutesPastMeridianGOTOW;               // as above, if on the West side of the pier.  If left alone, the mount will stop tracking when it hits the this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. OnStep will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 //                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
+long                 maxDecToKeepTrackingOn;                 // tracking off 6 hours after transit if dec<maxDecToKeepTrackingOn
 
 #define HADirNCPInit    false
 #define HADirSCPInit    true

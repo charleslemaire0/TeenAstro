@@ -47,19 +47,23 @@ void Command_GNSS()
   switch (command[1])
   {
   case 's':
+  case 'S':
     if (iSGNSSValid())
     {
       double lat = l.lat();
       double longi = -l.lng();
       double h = a.meters();
-      localSite.setLong(longi);
-      localSite.setLat(lat);
-      localSite.setElev(h);
+      localSite.setLong(longi, command[1] == 's');
+      localSite.setLat(lat, command[1] == 's');
+      localSite.setElev(h, command[1] == 's');
       initCelestialPole();
       initTransformation(true);
       rtk.setClock(d.year(), d.month(), d.day(),
         t.hour(), t.minute(), t.second(),
         *localSite.longitude(), 0);
+      //char sat[3];
+      //sprintf(sat, "%d", gps.satellites);
+      //strcpy(reply, sat);
       strcpy(reply, "1");
     }
     else

@@ -31,6 +31,7 @@
 #define EE_dpmE             35
 #define EE_dpmW             36
 #define EE_dup              37
+#define EE_dmaxDecToKeepOn  38
 
 //motor1
 #define EE_motorA1gear          58

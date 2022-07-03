@@ -17,13 +17,15 @@ private:
   TeenAstroWifi m_wbt;
   bool m_buttonPressed;
   bool m_shiftPressed;
+  int m_adress;
   OneButton *m_buttons[7];
   ButtonSpeed m_button_speed;
 public:
-  void setup(const int pin[7], const bool active[7]);
+  void setup(const int pin[7], const bool active[7], int adress);
   void setMenuMode();
   void setControlerMode();
   ButtonSpeed getButtonSpeed();
+  void readButtonSpeed();
   void setButtonSpeed(ButtonSpeed bs);
   void attachEvent();
   void tickButtons();
@@ -31,7 +33,7 @@ public:
   bool shiftPressed();
   bool isWifiOn();
   bool isWifiRunning();
-  bool turnWifiOn(bool turnOn);
+  void turnWifiOn(bool turnOn);
   void getIP(uint8_t* ip);
   const char* getPassword();
   bool setWifiMode(int k);
