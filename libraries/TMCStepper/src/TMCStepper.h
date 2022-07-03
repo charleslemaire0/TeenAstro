@@ -8,15 +8,30 @@
 
 #if defined(ARDUINO) && ARDUINO >= 100
 	#include <Arduino.h>
+	#include <SPI.h>
+	#include <Stream.h>
+#elif defined(bcm2835)
+	#include <bcm2835.h>
+	#include "source/bcm2835_spi.h"
+	#include "source/bcm2835_stream.h"
+#elif __cplusplus >= 201703L
+	#if __has_include(<Arduino.h>)
+		#include <Arduino.h>
+	#endif
+	#if __has_include(<SPI.h>)
+		#include <SPI.h>
+	#endif
+	#if __has_include(<Stream.h>)
+		#include <Stream.h>
+	#endif
 #endif
-
-#include <Stream.h>
-#include <SPI.h>
 
 #if (__cplusplus == 201703L) && defined(__has_include)
 	#define SW_CAPABLE_PLATFORM __has_include(<SoftwareSerial.h>)
+#elif defined(__AVR__) || defined(TARGET_LPC1768) || defined(ARDUINO_ARCH_STM32)
+	#define SW_CAPABLE_PLATFORM true
 #else
-	#define SW_CAPABLE_PLATFORM defined(__AVR__) || defined(TARGET_LPC1768) || defined(ARDUINO_ARCH_STM32)
+	#define SW_CAPABLE_PLATFORM false
 #endif
 
 #if SW_CAPABLE_PLATFORM
@@ -46,7 +61,7 @@
 #define INIT2224_REGISTER(REG) TMC2224_n::REG##_t REG##_register = TMC2224_n::REG##_t
 #define SET_ALIAS(TYPE, DRIVER, NEW, ARG, OLD) TYPE (DRIVER::*NEW)(ARG) = &DRIVER::OLD
 
-#define TMCSTEPPER_VERSION 0x000602 // v0.6.2
+#define TMCSTEPPER_VERSION 0x000703 // v0.7.3
 
 class TMCStepper {
 	public:
@@ -329,6 +344,10 @@ class TMC2130Stepper : public TMCStepper {
 		uint8_t status_response;
 
 	protected:
+		void beginTransaction();
+		void endTransaction();
+		uint8_t transfer(const uint8_t data);
+		void transferEmptyBytes(const uint8_t n);
 		void write(uint8_t addressByte, uint32_t config);
 		uint32_t read(uint8_t addressByte);
 
@@ -581,11 +600,11 @@ class TMC5130Stepper : public TMC2160Stepper {
 		uint32_t VSTART();
 		void VSTART(uint32_t input);
 		// W: A1
-		uint16_t A1();
-		void A1(uint16_t input);
+		uint16_t a1();
+		void a1(uint16_t input);
 		// W: V1
-		uint32_t V1();
-		void V1(uint32_t input);
+		uint32_t v1();
+		void v1(uint32_t input);
 		// W: AMAX
 		uint16_t AMAX();
 		void AMAX(uint16_t input);
@@ -596,8 +615,8 @@ class TMC5130Stepper : public TMC2160Stepper {
 		uint16_t DMAX();
 		void DMAX(uint16_t input);
 		// W: D1
-		uint16_t D1();
-		void D1(uint16_t input);
+		uint16_t d1();
+		void d1(uint16_t input);
 		// W: VSTOP
 		uint32_t VSTOP();
 		void VSTOP(uint32_t input);
@@ -813,9 +832,11 @@ class TMC2208Stepper : public TMCStepper {
 			TMC2208Stepper(uint16_t SW_RX_pin, uint16_t SW_TX_pin, float RS) :
 				TMC2208Stepper(SW_RX_pin, SW_TX_pin, RS, TMC2208_SLAVE_ADDR)
 				{}
+
+			__attribute__((deprecated("Boolean argument has been deprecated and does nothing")))
 			TMC2208Stepper(uint16_t SW_RX_pin, uint16_t SW_TX_pin, float RS, bool) :
 				TMC2208Stepper(SW_RX_pin, SW_TX_pin, RS, TMC2208_SLAVE_ADDR)
-				{}
+				{};
 		#else
 			TMC2208Stepper(uint16_t, uint16_t, float) = delete; // Your platform does not currently support Software Serial
 		#endif
@@ -823,7 +844,7 @@ class TMC2208Stepper : public TMCStepper {
 		void push();
 		void begin();
 		#if SW_CAPABLE_PLATFORM
-			void beginSerial(uint32_t baudrate);
+			void beginSerial(uint32_t baudrate) __attribute__((weak));
 		#else
 			void beginSerial(uint32_t) = delete; // Your platform does not currently support Software Serial
 		#endif
@@ -990,6 +1011,13 @@ class TMC2208Stepper : public TMCStepper {
 
 		SSwitch *sswitch = nullptr;
 
+		int available();
+		void preWriteCommunication();
+		void preReadCommunication();
+		int16_t serial_read();
+		uint8_t serial_write(const uint8_t data);
+		void postWriteCommunication();
+		void postReadCommunication();
 		void write(uint8_t, uint32_t);
 		uint32_t read(uint8_t);
 		const uint8_t slave_address;
@@ -1000,8 +1028,7 @@ class TMC2208Stepper : public TMCStepper {
 		static constexpr uint8_t abort_window = 5;
 		static constexpr uint8_t max_retries = 2;
 
-		template<typename SERIAL_TYPE>
-		uint64_t _sendDatagram(SERIAL_TYPE &, uint8_t [], const uint8_t, uint16_t);
+		uint64_t _sendDatagram(uint8_t [], const uint8_t, uint16_t);
 };
 
 class TMC2209Stepper : public TMC2208Stepper {

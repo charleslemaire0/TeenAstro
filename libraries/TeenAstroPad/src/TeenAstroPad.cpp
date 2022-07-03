@@ -1,4 +1,5 @@
-#include "TeenAstroPad.h"
+#include <Arduino.h>
+#include <TeenAstroPad.h>
 
 volatile byte eventbuttons[7] = { E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE };
 
@@ -235,26 +236,18 @@ void Pad::attachEvent()
   m_buttons[B_f]->attachDuringLongPress(longPress_f);
 
 }
-void Pad::setup(const int pin[7], const bool active[7])
+void Pad::setup(const int pin[7], const bool active[7], const int adress)
 {
-  //For Shift button
-
+  m_adress = adress;
   for (int k = 0; k < 7; k++)
   {
     m_buttons[k] = new OneButton(pin[k], active[k], active[k]);
   }
-  uint8_t val =  EEPROM.read(EEPROM_BSPEED);
-  if (val>2)
-  {
-    m_button_speed = BS_MEDIUM;
-    EEPROM.write(EEPROM_BSPEED,static_cast<uint8_t>(m_button_speed));
-    EEPROM.commit();
-  }
-  else
-    m_button_speed = static_cast<Pad::ButtonSpeed>(val);
-  //For other buttons
-  setControlerMode();
   attachEvent();
+
+  readButtonSpeed();
+  setControlerMode();
+
   m_wbt.setup();
 }
 
@@ -298,13 +291,33 @@ Pad::ButtonSpeed Pad::getButtonSpeed()
  return m_button_speed;
 }
 
-void Pad::setButtonSpeed(ButtonSpeed bs)
+void Pad::setButtonSpeed(Pad::ButtonSpeed bs)
 {
-  if (m_button_speed != bs)
+  m_button_speed = bs;
+  uint8_t val = static_cast<uint8_t>(m_button_speed);
+  EEPROM.put(m_adress, val);
+}
+
+void Pad::readButtonSpeed()
+{
+  uint8_t val;
+  EEPROM.get(m_adress, val);
+  if (val == 0)
   {
-    m_button_speed = bs;
-    EEPROM.write(EEPROM_BSPEED, static_cast<uint8_t>(m_button_speed));
-    EEPROM.commit();
+    m_button_speed = BS_SLOW;
+  }
+  else if (val == 1)
+  {
+    m_button_speed = BS_MEDIUM;
+  }
+  else if (val == 2)
+  {
+    m_button_speed = BS_FAST;
+  }
+  else
+  {
+    m_button_speed = BS_MEDIUM;
+    EEPROM.put(m_adress, (uint8_t)1);
   }
 }
 
@@ -383,6 +396,7 @@ bool Pad::isWifiRunning()
 bool Pad::turnWifiOn(bool turnOn)
 {
   m_wbt.turnWifiOn(turnOn);
+  return true;
 }
 
 void Pad::getIP(uint8_t* ip)

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #define T_N "N"
 #define T_S "S"
@@ -146,7 +146,11 @@
 #define T_SELECTED "Selectionné"
 #define T_FOCUSERACTION "Action M.A.P"
 
+#define T_PARKANDHOME "Parc et maison"
 #define T_SETPARK "Déf. Pos. Parc"
+#define T_SETHOME "Déf Pos. Maison"
+#define T_RESETHOME "Reset Home Pos."
+
 #define T_ATHOME "à la maison"
 #define T_UNLOCK "Déverrouiller"
 #define T_LOCK "Verrouiller"
@@ -228,6 +232,14 @@
 #define T_HORIZONLIMIT "Limite Horizon"
 #define T_OVERHEAD "Zénith"
 #define T_OVERHEADLIMIT "Limite Zénith"
+
+#define T_DISPLAYAXIS "Affiche Axes"
+#define T_AXIS     "Axes"
+#define T_AXIS1MIN "Axes1 Min."
+#define T_AXIS1MAX "Axes1 Max."
+#define T_AXIS2MIN "Axes2 Min."
+#define T_AXIS2MAX "Axes2 Max."
+
 #define T_MERIDIANE "Méridien Est"
 #define T_MERIDIANW "Méridien Ouest"
 #define T_MERIDIANLIMIT "Limite Méridien"

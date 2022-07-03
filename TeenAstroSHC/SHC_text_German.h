@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #define T_N "N"
 #define T_S "S"
@@ -146,7 +146,11 @@
 #define T_SELECTED "Ausgewählt"
 #define T_FOCUSERACTION "Fokusierer Aktion"
 
+#define T_PARKANDHOME "Park und Home"
 #define T_SETPARK "Setze Parkposition"
+#define T_SETHOME "Setze Homeposition"
+#define T_RESETHOME "Reset HomePosition"
+
 #define T_ATHOME "at Home"
 #define T_UNLOCK "Entsperren"
 #define T_LOCK "Sperre"
@@ -229,6 +233,14 @@
 #define T_HORIZONLIMIT "Horizontgrenze"
 #define T_OVERHEAD "Zenit"
 #define T_OVERHEADLIMIT "Zenitgrenze"
+
+#define T_DISPLAYAXIS "Anzeige Axis"
+#define T_AXIS     "Axis"
+#define T_AXIS1MIN "Axis1 Min."
+#define T_AXIS1MAX "Axis1 Max."
+#define T_AXIS2MIN "Axis2 Min."
+#define T_AXIS2MAX "Axis2 Max."
+
 #define T_MERIDIANE "Meridian O"
 #define T_MERIDIANW "Meridian W"
 #define T_MERIDIANLIMIT "Meridiangrenze"
@@ -254,7 +266,7 @@
 #define T_REBOOT "Neustart"
 #define T_RESETTOFACTORY "zurücksetzen auf Werk"
 #define T_FIRMWAREVERSION "Firmwareversion"
-#define T_GERMANEQUATORIAL "Deutsche Montierung"
+#define T_GERMANEQUATORIAL "Deutsche Monti."
 #define T_EQUATORIALFORK "Äquatorial Gabel"
 #define T_ALTAAZIMUTAL "Alt-Azimutal"
 #define T_ALTAAZIMUTALFORK "Alt-Azimutal Gabel"

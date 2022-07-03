@@ -28,6 +28,7 @@ uint8_t ext_drawRA(u8g2_t *u8g2, uint8_t x, uint8_t y, const char* Ra)
     u8g2_DrawUTF8(u8g2, x, y, ":");
     x -= step1;
     u8g2_DrawUTF8(u8g2, x, y, Rah);
+    return x;
   }
   else
   {
@@ -111,7 +112,76 @@ uint8_t ext_drawDec(u8g2_t *u8g2, uint8_t x, uint8_t y, const char* Dec)
     x += step2 - u8g2_GetUTF8Width(u8g2, " ") / 2;
     x += u8g2_DrawUTF8(u8g2, x, y, decsec);
   }
+  return 0;
+}
 
+uint8_t ext_drawIDeg(u8g2_t* u8g2, uint8_t x, uint8_t y, const char* IDeg)
+{
+  char DEGREE_SYMBOL[] = { 0xB0, '\0' };
+  u8g2_uint_t step0 = u8g2_GetUTF8Width(u8g2, "000");
+  u8g2_uint_t step1 = u8g2_GetUTF8Width(u8g2, "00");
+  u8g2_uint_t step2 = u8g2_GetUTF8Width(u8g2, "0");
+  char isign[2];
+  char ideg[4];
+  char imin[3];
+  char isec[3];
+  memcpy(isign, IDeg, 1);
+  isign[1] = '\0';
+  memcpy(ideg, &IDeg[1], 3);
+  ideg[3] = '\0';
+  memcpy(imin, &IDeg[5], 2);
+  imin[2] = '\0';
+  memcpy(isec, &IDeg[8], 2);
+  isec[2] = '\0';
+
+  if (x == u8g2_GetDisplayWidth(u8g2))
+  {
+    x -= step1 + 1;
+    u8g2_DrawUTF8(u8g2, x, y, isec);
+    x -= step2 - u8g2_GetUTF8Width(u8g2, " ") / 2;
+    u8g2_DrawUTF8(u8g2, x, y, "'");
+    x -= step1 + u8g2_GetUTF8Width(u8g2, " ") / 2;
+    u8g2_DrawUTF8(u8g2, x, y, imin);
+    x -= step2;
+    u8g2_DrawUTF8(u8g2, x, y, DEGREE_SYMBOL);
+    x -= step0;
+    u8g2_DrawUTF8(u8g2, x, y, ideg);
+    x -= u8g2_GetUTF8Width(u8g2, "+");
+    if (isign[0] == '-')
+    {
+      x += u8g2_GetUTF8Width(u8g2, "0") / 3;
+      u8g2_DrawUTF8(u8g2, x, y, isign);
+    }
+    else
+    {
+      x -= u8g2_GetUTF8Width(u8g2, "0") / 3;
+      u8g2_DrawUTF8(u8g2, x, y, isign);
+    }
+  }
+  else
+  {
+    if (isign[0] == '-')
+    {
+      x += u8g2_GetUTF8Width(u8g2, "0") / 3;
+      u8g2_DrawUTF8(u8g2, x, y, isign);
+    }
+    else
+    {
+      u8g2_DrawUTF8(u8g2, x, y, isign);
+      x += u8g2_GetUTF8Width(u8g2, "0") / 3;
+    }
+    x += u8g2_GetUTF8Width(u8g2, "+");
+    u8g2_DrawUTF8(u8g2, x, y, ideg);
+    x += step1;
+    u8g2_DrawUTF8(u8g2, x, y, DEGREE_SYMBOL);
+    x += step2;
+    u8g2_DrawUTF8(u8g2, x, y, imin);
+    x += step1 + u8g2_GetUTF8Width(u8g2, " ") / 2;
+    u8g2_DrawUTF8(u8g2, x, y, "'");
+    x += step2 - u8g2_GetUTF8Width(u8g2, " ") / 2;
+    x += u8g2_DrawUTF8(u8g2, x, y, isec);
+  }
+  return 0;
 }
 
 uint8_t ext_drawAz(u8g2_t *u8g2, uint8_t x, uint8_t y, const char* Az)
@@ -154,6 +224,7 @@ uint8_t ext_drawAz(u8g2_t *u8g2, uint8_t x, uint8_t y, const char* Az)
     x += step2 - u8g2_GetUTF8Width(u8g2, " ") / 2;
     x += u8g2_DrawUTF8(u8g2, x, y, Azsec);
   }
+  return 0;
 }
 
 uint8_t ext_drawFoc(u8g2_t *u8g2, uint8_t y, uint8_t line_height, const char* Foc)
@@ -171,6 +242,7 @@ uint8_t ext_drawFoc(u8g2_t *u8g2, uint8_t y, uint8_t line_height, const char* Fo
   memcpy(spd, &Foc[7], 3);
   spd[3] = 0;
   u8g2_DrawUTF8(u8g2, x, y, spd);
+  return 0;
 }
 
 

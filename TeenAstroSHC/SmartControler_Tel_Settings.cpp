@@ -10,7 +10,7 @@ void SmartHandController::menuTelSettings()
   uint8_t tmp_sel;
   while (!exitMenu)
   {
-    const char *string_list_TelSettings = T_HANDCONTROLLER "\n" T_TIME " & " T_SITE "\n" T_SETPARK "\n" T_MOUNT "\n" T_LIMITS "\n" T_MAINUNITINFO "\nWifi";
+    const char *string_list_TelSettings = T_HANDCONTROLLER "\n" T_TIME " & " T_SITE "\n" T_PARKANDHOME "\n" T_MOUNT "\n" T_LIMITS "\n" T_MAINUNITINFO "\nWifi";
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPESETTINGS, s_sel, string_list_TelSettings);
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
     switch (tmp_sel)
@@ -27,7 +27,7 @@ void SmartHandController::menuTelSettings()
       menuTimeAndSite();
       break;
     case 3:
-      DisplayMessageLX200(SetLX200(":hQ#"), false);
+      menuParkAndHome();
       break;
     case 4:
       menuMount();
@@ -86,12 +86,39 @@ void SmartHandController::menuMainUnitInfo()
     }
   }
 }
+void SmartHandController::menuParkAndHome()
+{
+  const char *string_list_ParkAndHome = T_SETPARK "\n" T_SETHOME "\n" T_RESETHOME;
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel = s_sel;
+  while (tmp_sel)
+  {
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_PARKANDHOME, tmp_sel, string_list_ParkAndHome);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
+    {
+    case 0:
+      return;
+    case 1:
+      DisplayMessageLX200(SetLX200(":hQ#"), false);
+      return;
+    case 2:
+      DisplayMessageLX200(SetLX200(":hB#"), false);
+      return;
+    case 3:
+      DisplayMessageLX200(SetLX200(":hb#"), false);
+      return;
+    default:
+      break;
+    }
+  }
+}
 //----------------------------------//
 //             LIMITS               //
 //----------------------------------//
 void SmartHandController::menuLimits()
 {
-  const char *string_list_LimitsL2 = T_HORIZON "\n" T_OVERHEAD "\n" T_MERIDIANE "\n" T_MERIDIANW "\n" T_UNDERPOLE;
+  const char *string_list_LimitsL2 = T_HORIZON "\n" T_OVERHEAD "\n" T_AXIS "\n" T_GERMANEQUATORIAL ;
   static uint8_t s_sel = 1;
   uint8_t tmp_sel = s_sel;
   while (tmp_sel)
@@ -107,13 +134,10 @@ void SmartHandController::menuLimits()
       menuOverhead();
       break;
     case 3:
-      menuMeridian(true);
+      menuLimitAxis();
       break;
     case 4:
-      menuMeridian(false);
-      break;
-    case 5:
-      menuUnderPole();
+      menuLimitGEM();
       break;
     default:
       break;
@@ -178,3 +202,107 @@ void SmartHandController::menuMeridian(bool east)
     }
   }
 }
+void SmartHandController::menuAxis(char mode)
+{
+  char out[20];
+  char cmd[15];
+  char menu[32];
+  double fact = 10.;
+  double minval = 0;
+  double maxval = 360;
+  sprintf(cmd, ":GXLX#");
+  
+  cmd[4] = mode;
+  switch (mode)
+  {
+  case 'A':
+    sprintf(menu, T_AXIS1MIN);
+    fact *= -1;
+    minval = -360;
+    maxval = 0;
+    break;
+  case 'B':
+    sprintf(menu, T_AXIS1MAX);
+    break;
+  case 'C':
+    sprintf(menu, T_AXIS2MIN);
+    fact *= -1;
+    minval = -360;
+    maxval = 0;
+    break;
+  case 'D':
+    sprintf(menu, T_AXIS2MAX);
+    break;
+  }
+
+  if (DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+  {
+    float val = (float)strtol(&out[0], NULL, 10) / fact;
+    if (display->UserInterfaceInputValueFloat(&buttonPad, menu, "", &val, minval, maxval, 3, 1, " " T_DEGREE))
+    {
+      sprintf(cmd, ":SXLX,%+03d#", (int)(val * fact));
+      cmd[4] = mode;
+      DisplayMessageLX200(SetLX200(cmd), false);
+    }
+  }
+}
+void SmartHandController::menuLimitGEM()
+{
+  const char* string_list_LimitsL3 = T_MERIDIANE "\n" T_MERIDIANW "\n" T_UNDERPOLE;
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel = s_sel;
+  while (tmp_sel)
+  {
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_GERMANEQUATORIAL, s_sel, string_list_LimitsL3);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
+    {
+    case 1:
+      menuMeridian(true);
+      break;
+    case 2:
+      menuMeridian(false);
+      break;
+    case 3:
+      menuUnderPole();
+      break;
+    default:
+      break;
+    }
+  }
+}
+void SmartHandController::menuLimitAxis()
+{
+  const char* string_list_LimitsL3 = T_DISPLAYAXIS "\n" T_AXIS1MIN "\n" T_AXIS1MAX "\n" T_AXIS2MIN "\n" T_AXIS2MAX;
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel = s_sel;
+  while (tmp_sel)
+  {
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_AXIS, s_sel, string_list_LimitsL3);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
+    {
+    case 1:
+      pages[P_AXIS_DEG].show =
+        display->UserInterfaceMessage(&buttonPad, T_DISPLAY, T_AXIS, T_COORDINATES"?", T_NO "\n" T_YES) == 2;
+      current_page = P_AXIS_DEG;
+      break;
+    case 2:
+      menuAxis('A');
+      break;
+    case 3:
+      menuAxis('B');
+      break;
+    case 4:
+      menuAxis('C');
+      break;
+    case 5:
+      menuAxis('D');
+      break;
+    default:
+      break;
+    }
+  }
+
+}
+

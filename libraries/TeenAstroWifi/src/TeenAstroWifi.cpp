@@ -42,7 +42,7 @@ const char html_links6S[] PROGMEM = "<a href='/wifi.htm' style='background-color
 const char html_links6N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />";
 
 
-bool TeenAstroWifi::wifiOn = false;
+bool TeenAstroWifi::wifiOn = true;
 
 int TeenAstroWifi::WebTimeout = TIMEOUT_WEB;
 int TeenAstroWifi::CmdTimeout = TIMEOUT_CMD;
@@ -397,7 +397,6 @@ void TeenAstroWifi::initFromEEPROM()
 
 void TeenAstroWifi::setup()
 {
-  wifiOn = false;
   initFromEEPROM();
 
 #ifndef DEBUG_ON

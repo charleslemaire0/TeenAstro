@@ -3,16 +3,15 @@
 #include <TeenAstroLX200io.h>
 #include <u8g2_ext.h>
 #include <TeenAstroPad.h>
-#include "XEEPROM.hpp"
 
 #define Product "Teenastro SHC"
 #define SHCFirmwareDate          __DATE__
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "2"
-#define SHCFirmwareVersionPatch  "4"
+#define SHCFirmwareVersionPatch  "6"
 
-#define NUMPAGES 6
+#define NUMPAGES 7
 class SmartHandController
 {
 public:
@@ -25,7 +24,7 @@ public:
 private:
   enum PAGES
   {
-    P_RADEC, P_ALTAZ, P_TIME, P_AXIS, P_FOCUSER, P_ALIGN
+    P_RADEC, P_ALTAZ, P_TIME, P_AXIS_STEP, P_AXIS_DEG, P_FOCUSER, P_ALIGN
   };
   enum MENU_RESULT
   {
@@ -56,7 +55,7 @@ private:
   bool forceDisplayoff = false;
   bool focuserlocked = false;
   bool telescoplocked = false;
-  pageInfo pages[NUMPAGES] = { {P_RADEC,true},{P_ALTAZ,true}, {P_TIME,true}, {P_AXIS,false}, {P_FOCUSER,true}, {P_ALIGN,false} };
+  pageInfo pages[NUMPAGES] = { {P_RADEC,true},{P_ALTAZ,true}, {P_TIME,true}, {P_AXIS_STEP,false}, {P_AXIS_DEG,false}, {P_FOCUSER,true}, {P_ALIGN,false} };
   byte current_page;
   bool exitMenu = false;
   
@@ -140,12 +139,16 @@ private:
   void menuLongitude();
   void menuElevation();
   void menuMainUnitInfo();
+  void menuParkAndHome();
   void menuLimits();
+  void menuLimitGEM();
+  void menuLimitAxis();
   void menuWifi();
   void menuWifiMode();
   void menuHorizon();
   void menuOverhead();
   void menuMeridian(bool east);
+  void menuAxis(char mode);
   void menuUnderPole();
   bool menuSetReverse(const uint8_t &axis);
   bool menuSetBacklash(const uint8_t &axis);

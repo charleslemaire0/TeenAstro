@@ -25,37 +25,54 @@
 #define EE_DefaultRate      28
 #define EE_degAcc           29
 
-// limits
+// limits Localsite
 #define EE_minAlt           33
 #define EE_maxAlt           34
-#define EE_dpmE             35
-#define EE_dpmW             36
-#define EE_dup              37
+// limits AXIS
+#define EE_minAxis1         36
+#define EE_maxAxis1         38
+#define EE_minAxis2         40
+#define EE_maxAxis2         42
 
-//motor1
-#define EE_motorA1gear          58
-#define EE_motorA1stepRot       62
-#define EE_motorA1micro         64
-#define EE_motorA1reverse       65
-#define EE_motorA1lowCurr       66
-#define EE_motorA1highCurr      67
-#define EE_backlashAxis1        68
-#define EE_motorA1silent        70
+               
+// limits GEM
+#define EE_dpmE             52
+#define EE_dpmW             53
+#define EE_dup              54
+// limits Altaz
+#define EE_DegreePastAZ     55
 
-//motor2
-#define EE_motorA2gear          72
-#define EE_motorA2stepRot       76
-#define EE_motorA2micro         78
-#define EE_motorA2reverse       79
-#define EE_motorA2lowCurr       80
-#define EE_motorA2highCurr      81
-#define EE_backlashAxis2        82
-#define EE_motorA2silent        84
+//user defined homeposition
+#define EE_homeSaved        56
+#define EE_homePosAxis1     57 // in degree
+#define EE_homePosAxis2     61 // in degree
 
 #define EE_siderealInterval     88
 #define EE_autoInitKey          96
 
-#define EE_sites            100
+//motor1
+#define EE_motorA1gear          100
+#define EE_motorA1stepRot       104
+#define EE_motorA1micro         106
+#define EE_motorA1reverse       107
+#define EE_motorA1lowCurr       108
+#define EE_motorA1highCurr      109
+#define EE_backlashAxis1        110
+#define EE_motorA1silent        112
+
+//motor2
+#define EE_motorA2gear          114
+#define EE_motorA2stepRot       118
+#define EE_motorA2micro         120
+#define EE_motorA2reverse       121
+#define EE_motorA2lowCurr       122
+#define EE_motorA2highCurr      123
+#define EE_backlashAxis2        124
+#define EE_motorA2silent        126
+
+
+
+#define EE_sites            200
 #define EE_site_lat         0
 #define EE_site_long        4
 #define EE_site_height      8

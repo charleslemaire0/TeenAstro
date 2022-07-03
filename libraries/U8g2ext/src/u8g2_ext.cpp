@@ -90,6 +90,11 @@ uint8_t U8G2_EXT::drawRA(uint8_t x, uint8_t y, const char* Ra)
 };
 
 
+uint8_t U8G2_EXT::drawIDeg(uint8_t x, uint8_t y, const char* IDeg)
+{
+  return ext_drawIDeg(U8G2_EXT::getU8g2(), x, y, IDeg);
+};
+
 uint8_t U8G2_EXT::drawDec(uint8_t x, uint8_t y, const char* Dec)
 {
   return ext_drawDec(U8G2_EXT::getU8g2(), x,  y, Dec);

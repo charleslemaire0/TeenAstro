@@ -36,7 +36,7 @@ TMC2208Stepper::TMC2208Stepper(Stream * SerialPort, float RS, uint8_t addr, uint
 		if (SWSerial != nullptr)
 		{
 			SWSerial->begin(baudrate);
-			SWSerial->stopListening();
+			SWSerial->end();
 		}
 		#if defined(ARDUINO_ARCH_AVR)
 			if (RXTX_pin > 0) {
@@ -106,6 +106,84 @@ uint8_t TMC2208Stepper::calcCRC(uint8_t datagram[], uint8_t len) {
 	return crc;
 }
 
+__attribute__((weak))
+int TMC2208Stepper::available() {
+	int out = 0;
+	#if SW_CAPABLE_PLATFORM
+		if (SWSerial != nullptr) {
+			out = SWSerial->available();
+		} else
+	#endif
+		if (HWSerial != nullptr) {
+			out = HWSerial->available();
+		}
+
+	return out;
+}
+
+__attribute__((weak))
+void TMC2208Stepper::preWriteCommunication() {
+	if (HWSerial != nullptr) {
+		if (sswitch != nullptr)
+			sswitch->active();
+	}
+}
+
+__attribute__((weak))
+void TMC2208Stepper::preReadCommunication() {
+	#if SW_CAPABLE_PLATFORM
+		if (SWSerial != nullptr) {
+			SWSerial->listen();
+		} else
+	#endif
+		if (HWSerial != nullptr) {
+			if (sswitch != nullptr)
+				sswitch->active();
+		}
+}
+
+__attribute__((weak))
+int16_t TMC2208Stepper::serial_read() {
+	int16_t out = 0;
+	#if SW_CAPABLE_PLATFORM
+		if (SWSerial != nullptr) {
+			out = SWSerial->read();
+		} else
+	#endif
+		if (HWSerial != nullptr) {
+			out = HWSerial->read();
+		}
+
+	return out;
+}
+
+__attribute__((weak))
+uint8_t TMC2208Stepper::serial_write(const uint8_t data) {
+	int out = 0;;
+	#if SW_CAPABLE_PLATFORM
+		if (SWSerial != nullptr) {
+			return SWSerial->write(data);
+		} else
+	#endif
+		if (HWSerial != nullptr) {
+			return HWSerial->write(data);
+		}
+
+	return out;
+}
+
+__attribute__((weak))
+void TMC2208Stepper::postWriteCommunication() {}
+
+__attribute__((weak))
+void TMC2208Stepper::postReadCommunication() {
+	#if SW_CAPABLE_PLATFORM
+		if (SWSerial != nullptr) {
+			SWSerial->end();
+		}
+	#endif
+}
+
 void TMC2208Stepper::write(uint8_t addr, uint32_t regVal) {
 	uint8_t len = 7;
 	addr |= TMC_WRITE;
@@ -113,27 +191,18 @@ void TMC2208Stepper::write(uint8_t addr, uint32_t regVal) {
 
 	datagram[len] = calcCRC(datagram, len);
 
-	#if SW_CAPABLE_PLATFORM
-		if (SWSerial != nullptr) {
-				for(int i=0; i<=len; i++){
-					bytesWritten += SWSerial->write(datagram[i]);
-				}
-		} else
-	#endif
-		{
-			if (sswitch != nullptr)
-				sswitch->active();
+	preWriteCommunication();
 
-			for(int i=0; i<=len; i++){			
-				bytesWritten += HWSerial->write(datagram[i]);
-		}
+	for(uint8_t i=0; i<=len; i++) {
+		bytesWritten += serial_write(datagram[i]);
 	}
+	postWriteCommunication();
+
 	delay(replyDelay);
 }
 
-template<typename SERIAL_TYPE>
-uint64_t TMC2208Stepper::_sendDatagram(SERIAL_TYPE &serPtr, uint8_t datagram[], const uint8_t len, uint16_t timeout) {
-	while (serPtr.available() > 0) serPtr.read(); // Flush
+uint64_t TMC2208Stepper::_sendDatagram(uint8_t datagram[], const uint8_t len, uint16_t timeout) {
+	while (available() > 0) serial_read(); // Flush
 
 	#if defined(ARDUINO_ARCH_AVR)
 		if (RXTX_pin > 0) {
@@ -142,7 +211,7 @@ uint64_t TMC2208Stepper::_sendDatagram(SERIAL_TYPE &serPtr, uint8_t datagram[], 
 		}
 	#endif
 
-	for(int i=0; i<=len; i++) serPtr.write(datagram[i]);
+	for(int i=0; i<=len; i++) serial_write(datagram[i]);
 
 	#if defined(ARDUINO_ARCH_AVR)
 		if (RXTX_pin > 0) {
@@ -166,7 +235,7 @@ uint64_t TMC2208Stepper::_sendDatagram(SERIAL_TYPE &serPtr, uint8_t datagram[], 
 		}
 		if (!timeout) return 0;
 
-		int16_t res = serPtr.read();
+		int16_t res = serial_read();
 		if (res < 0) continue;
 
 		sync <<= 8;
@@ -188,7 +257,7 @@ uint64_t TMC2208Stepper::_sendDatagram(SERIAL_TYPE &serPtr, uint8_t datagram[], 
 		}
 		if (!timeout) return 0;
 
-		int16_t res = serPtr.read();
+		int16_t res = serial_read();
 		if (res < 0) continue;
 
 		out <<= 8;
@@ -204,7 +273,7 @@ uint64_t TMC2208Stepper::_sendDatagram(SERIAL_TYPE &serPtr, uint8_t datagram[], 
 		}
 	#endif
 
-	while (serPtr.available() > 0) serPtr.read(); // Flush
+	while (available() > 0) serial_read(); // Flush
 
 	return out;
 }
@@ -217,19 +286,9 @@ uint32_t TMC2208Stepper::read(uint8_t addr) {
 	uint64_t out = 0x00000000UL;
 
 	for (uint8_t i = 0; i < max_retries; i++) {
-		#if SW_CAPABLE_PLATFORM
-			if (SWSerial != nullptr) {
-					SWSerial->listen();
-					out = _sendDatagram(*SWSerial, datagram, len, abort_window);
-					SWSerial->stopListening();
-			} else
-		#endif
-			{
-				if (sswitch != nullptr)
-					sswitch->active();
-
-				out = _sendDatagram(*HWSerial, datagram, len, abort_window);
-			}
+		preReadCommunication();
+		out = _sendDatagram(datagram, len, abort_window);
+		postReadCommunication();
 
 		delay(replyDelay);
 
