@@ -128,15 +128,15 @@ static unsigned char E_bits[] U8X8_PROGMEM = {
     0x22, 0x20, 0x22, 0x20, 0xe2, 0x21, 0x22, 0x20, 0x22, 0x20, 0xe4, 0x13,
     0x08, 0x08, 0x10, 0x04, 0xe0, 0x03, 0x00, 0x00};
 
-static unsigned char ErrDe_bits[] U8X8_PROGMEM = {
-    0xff, 0xff, 0x00, 0x80, 0x0e, 0xb0, 0x02, 0xb0, 0x66, 0xb3, 0x22, 0xb1,
-    0x2e, 0xb1, 0x00, 0xb0, 0x1e, 0xb0, 0x22, 0xb0, 0xa2, 0xb3, 0xa2, 0xb2,
-    0xa2, 0x83, 0xa2, 0xb0, 0x9e, 0xb3, 0x00, 0x80};
+static unsigned char ErrA1_bits[] U8X8_PROGMEM = {
+   0xff, 0xff, 0x00, 0x80, 0x0e, 0xb0, 0x02, 0xb0, 0x66, 0xb3, 0x22, 0xb1,
+   0x2e, 0xb1, 0x00, 0xb0, 0x00, 0xb0, 0x1c, 0xb2, 0x22, 0xb3, 0xa2, 0xb2,
+   0x3e, 0x82, 0x22, 0xb2, 0x22, 0xb2, 0x00, 0x80 };
 
-static unsigned char ErrAz_bits[] U8X8_PROGMEM = {
+static unsigned char ErrA2_bits[] U8X8_PROGMEM = {
     0xff, 0xff, 0x00, 0x80, 0x0e, 0xb0, 0x02, 0xb0, 0x66, 0xb3, 0x22, 0xb1,
-    0x2e, 0xb1, 0x00, 0xb0, 0x00, 0xb0, 0x08, 0xb0, 0x94, 0xb3, 0x22, 0xb2,
-    0x3e, 0x81, 0xa2, 0xb0, 0xa2, 0xb3, 0x00, 0x80};
+   0x2e, 0xb1, 0x00, 0xb0, 0x00, 0xb0, 0x1c, 0xb0, 0xa2, 0xb3, 0x22, 0xb2,
+   0xbe, 0x83, 0xa2, 0xb0, 0xa2, 0xb3, 0x00, 0x80 };
 
 static unsigned char ErrHo_bits[] U8X8_PROGMEM = {
     0xff, 0xff, 0x00, 0x80, 0x0e, 0xb0, 0x02, 0xb0, 0x66, 0xb3, 0x22, 0xb1,
@@ -367,9 +367,13 @@ void SmartHandController::updateMainDisplay(PAGES page)
   {
     ta_MountStatus.updateFocuser();
   }
-  else if (page == P_AXIS && !ta_MountStatus.isPulseGuiding())
+  else if (page == P_AXIS_STEP && !ta_MountStatus.isPulseGuiding())
   {
-    ta_MountStatus.updateAxis();
+    ta_MountStatus.updateAxisStep();
+  }
+  else if (page == P_AXIS_DEG && !ta_MountStatus.isPulseGuiding())
+  {
+    ta_MountStatus.updateAxisDeg();
   }
   u8g2_FirstPage(u8g2);
 
@@ -544,12 +548,12 @@ void SmartHandController::updateMainDisplay(PAGES page)
         display->drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrHo_bits);
         x -= icon_width + 1;
         break;
-      case TeenAstroMountStatus::ERR_DEC:
-        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrDe_bits);
+      case TeenAstroMountStatus::ERR_LIMIT_A1:
+        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrA1_bits);
         x -= icon_width + 1;
         break;
-      case TeenAstroMountStatus::ERR_AZM:
-        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrAz_bits);
+      case TeenAstroMountStatus::ERR_LIMIT_A2:
+        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrA2_bits);
         x -= icon_width + 1;
         break;
       case TeenAstroMountStatus::ERR_UNDER_POLE:
@@ -645,15 +649,29 @@ void SmartHandController::updateMainDisplay(PAGES page)
         u8g2_DrawUTF8(u8g2, 0, y, T_NOT_CONNECTED);
       }
     }
-    else if (page == P_AXIS)
+    else if (page == P_AXIS_STEP)
     {
       u8g2_uint_t y = 36;
-      if (ta_MountStatus.hasInfoAxis1())
+      if (ta_MountStatus.hasInfoAxis1Step())
       {
-        u8g2_DrawUTF8(u8g2, 0, y, ta_MountStatus.getAxis1());
+        x = u8g2_GetDisplayWidth(u8g2);
+        display->drawRA(x, y, ta_MountStatus.getRa());
+        u8g2_DrawUTF8(u8g2, 0, y, "RA");
+        u8g2_DrawUTF8(u8g2, 0, y, ta_MountStatus.getAxis1Step());
         y += line_height + 4;
-        u8g2_DrawUTF8(u8g2, 0, y, ta_MountStatus.getAxis2());
+        u8g2_DrawUTF8(u8g2, 0, y, ta_MountStatus.getAxis2Step());
       }
+    }
+    else if (page == P_AXIS_DEG)
+    {
+      u8g2_uint_t y = 36;
+      x = u8g2_GetDisplayWidth(u8g2);
+      u8g2_DrawUTF8(u8g2, 0, y, "Ax1.");
+      display->drawIDeg(x, y, ta_MountStatus.getAxis1Deg());
+      y += line_height + 4;
+      x = u8g2_GetDisplayWidth(u8g2);
+      display->drawIDeg(x, y, ta_MountStatus.getAxis2Deg());
+      u8g2_DrawUTF8(u8g2, 0, y, "Ax2.");
     }
     else if (page == P_ALIGN)
     {
@@ -679,7 +697,6 @@ void SmartHandController::updateMainDisplay(PAGES page)
         u8g2_DrawUTF8(u8g2, 16, y, cat_mgr.constellationStr());
       }
     }
-
   } while (u8g2_NextPage(u8g2));
   lastpageupdate = millis();
 }

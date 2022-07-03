@@ -29,7 +29,6 @@ namespace TeensyStep
         void setTargetRel(int32_t delta); // Set target position relative to current position
 
         inline int32_t getPosition() const { return current; }
-        inline int32_t getCurrentSpeed() const { return currentSpeed; }
         inline void setPosition(int32_t pos) { current = pos; }
         int32_t dir;
 
@@ -52,8 +51,8 @@ namespace TeensyStep
         // compare functions
         static bool cmpDelta(const Stepper* a, const Stepper* b) { return a->A > b->A; }
         static bool cmpAcc(const Stepper* a, const Stepper* b) { return a->a < b->a; }
-        static bool cmpVmin(const Stepper* a, const Stepper* b) { return std::abs(a->vMax) < std::abs(b->vMax); }
-        static bool cmpVmax(const Stepper* a, const Stepper* b) { return std::abs(a->vMax) > std::abs(b->vMax); }
+        static bool cmpVmin(const Stepper* a, const Stepper* b) { return abs(a->vMax) < abs(b->vMax); }
+        static bool cmpVmax(const Stepper* a, const Stepper* b) { return abs(a->vMax) > abs(b->vMax); }
 
         // Pin & Dir registers
 #if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)

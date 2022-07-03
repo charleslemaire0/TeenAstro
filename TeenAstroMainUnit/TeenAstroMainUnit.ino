@@ -1,9 +1,9 @@
 /*
  * Title       On-Step
- * by          Howard Dutton, Charles Lemaire, Markus Noga, Francois Desvallée
+ * by          Howard Dutton, Charles Lemaire, Markus Noga, Francois Desvall�e
  *
  * Copyright (C) 2012 to 2016 Howard Dutton
- * Copyright (C) 2016 to 2020 Charles Lemaire, Markus Noga, Francois Desvallée
+ * Copyright (C) 2016 to 2020 Charles Lemaire, Markus Noga, Francois Desvall�e
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,11 +64,15 @@ void setup()
     XEEPROM.write(EE_dpmE, 0);
     XEEPROM.write(EE_dpmW, 0);
     XEEPROM.write(EE_dup, (12 - 9) * 15);
-    XEEPROM.write(EE_dmaxDecToKeepOn, maxDecToKeepTrackingOn + 128);
+    XEEPROM.writeInt(EE_minAxis1, 3600);
+    XEEPROM.writeInt(EE_maxAxis1, 3600);
+    XEEPROM.writeInt(EE_minAxis2, 3600);
+    XEEPROM.writeInt(EE_maxAxis2, 3600);
     writeDefaultEEPROMmotor();
 
     // init the Park status
     XEEPROM.write(EE_parkSaved, false);
+    XEEPROM.write(EE_homeSaved, false);
     XEEPROM.write(EE_parkStatus, PRK_UNPARKED);
 
     // init the  rate
@@ -170,22 +174,20 @@ void setup()
   S_USB.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
   Serial1.begin(57600);
   S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
-
-  Focus_Serial.setRX(FocuserRX);
-  Focus_Serial.setTX(FocuserTX);
-  Focus_Serial.begin(56000);
-  Focus_Serial.setTimeout(10);
-
+  Serial2.setRX(FocuserRX);
+  Serial2.setTX(FocuserTX);
+  Serial2.begin(56000);
+  Serial2.setTimeout(10);
   //GNSS connection
-#if VERSION == 230 || VERSION == 240 || VERSION == 250
-  GNSS_Serial.begin(9600);
+#if VERSION == 230 || VERSION == 240
+  Serial3.begin(9600);
 #endif
 
   rtk.resetLongitude(*localSite.longitude());
   // get the Park status
   if (!iniAtPark())
   {
-    syncPolarHome();
+    syncAtHome();
   }
 
   // get the pulse-guide rate
@@ -207,15 +209,15 @@ void setup()
 
   // prep timers
   rtk.updateTimers();
-  Focus_Serial.write(":F?#");
+  Serial2.write(":F?#");
   digitalWrite(LEDPin, HIGH);
   delay(1000);
-  hasGNSS = GNSS_Serial.available() > 0;
-  //hasFocuser = Focus_Serial.available() > 0;
+  hasGNSS = Serial3.available() > 0;
+  //hasFocuser = Serial2.available() > 0;
   char ret;
-  while (Focus_Serial.available() > 0)
+  while (Serial2.available() > 0)
   {
-    ret = Focus_Serial.read();
+    ret = Serial2.read();
     if (ret == '?')
     {
       hasFocuser = true;
@@ -357,45 +359,60 @@ void SafetyCheck(const bool forceTracking)
 
   if (atHome)
     atHome = !sideralTracking;
-  // check for exceeding MinDec for Eq. Fork
-  if (!isAltAZ())
+
+  if (!geoA1.withinLimit(axis1))
   {
-    if (!checkAxis2LimitEQ(axis2))
+    lastError = ERR_AXIS1;
+    if (movingTo)
+      abortSlew = true;
+    else if (!forceTracking)
+      sideralTracking = false;
+    return;
+  }
+  else if (lastError == ERR_AXIS1)
+  {
+    lastError = ERR_NONE;
+  }
+
+  if (!geoA2.withinLimit(axis2))
+  {
+    lastError = ERR_AXIS2;
+    if (movingTo)
+      abortSlew = true;
+    else if (!forceTracking)
+      sideralTracking = false;
+    return;
+  }
+  else if (lastError == ERR_AXIS2)
+  {
+    lastError = ERR_NONE;
+  }
+
+  if (mountType == MOUNT_TYPE_GEM)
+  {
+    if (!checkMeridian(axis1, axis2, CHECKMODE_TRACKING))
     {
-      lastError = ERR_AXIS2;
-      if (movingTo)
-        abortSlew = true;
-      else if (!forceTracking)
-        sideralTracking = false;
-    }
-    else if (lastError == ERR_AXIS2)
-    {
-      lastError = ERR_NONE;
-    }
-    if (mountType == MOUNT_TYPE_GEM)
-    {
-      if (!checkMeridian(axis1, axis2, CHECKMODE_TRACKING))
+      if ((staA1.dir && currentSide == PIER_WEST) || (!staA2.dir && currentSide == PIER_EAST))
       {
-        if ((staA1.dir && currentSide == PIER_WEST) || (!staA1.dir && currentSide == PIER_EAST))
+        lastError = ERR_MERIDIAN;
+        if (movingTo)
         {
-          lastError = ERR_MERIDIAN;
-          if (movingTo)
-          {
-            abortSlew = true;
-          }
-          if (currentSide >= PIER_WEST && !forceTracking)
-            sideralTracking = false;
+          abortSlew = true;
         }
-        else if (lastError == ERR_MERIDIAN)
-        {
-          lastError = ERR_NONE;
-        }
+        if (currentSide >= PIER_WEST && !forceTracking)
+          sideralTracking = false;
+        return;
       }
       else if (lastError == ERR_MERIDIAN)
       {
         lastError = ERR_NONE;
       }
     }
+    else if (lastError == ERR_MERIDIAN)
+    {
+      lastError = ERR_NONE;
+    }
+
     if (!checkPole(axis1, CHECKMODE_TRACKING))
     {
       if ((staA1.dir && currentSide == PIER_EAST) || (!staA2.dir && currentSide == PIER_WEST))
@@ -405,6 +422,7 @@ void SafetyCheck(const bool forceTracking)
           abortSlew = true;
         if (currentSide == PIER_EAST && !forceTracking)
           sideralTracking = false;
+        return;
       }
       else if (lastError == ERR_UNDER_POLE)
       {
@@ -416,34 +434,7 @@ void SafetyCheck(const bool forceTracking)
       lastError = ERR_NONE;
     }
   }
-  else
-  {
-    if (!checkAxis2LimitAZALT(axis2))
-    {
-      lastError = ERR_AXIS2;
-      if (movingTo)
-        abortSlew = true;
-      else if (!forceTracking)
-        sideralTracking = false;
-    }
-    else if (lastError == ERR_AXIS2)
-    {
-      lastError = ERR_NONE;
-    }
-    // when Alt/Azm mounted, just stop the mount if it passes MaxAzm
-    if (!checkAxis1LimitAZALT(axis1))
-    {
-      lastError = ERR_AZM;
-      if (movingTo)
-        abortSlew = true;
-      else if (!forceTracking)
-        sideralTracking = false;
-    }
-    else if (lastError == ERR_AZM)
-    {
-      lastError = ERR_NONE;
-    }
-  }
+
 }
 
 
@@ -466,6 +457,7 @@ void enable_Axis(bool enable)
 void initmount()
 {
   byte mountTypeFromEEPROM = XEEPROM.read(EE_mountType);
+  
 
   mountType = mountTypeFromEEPROM < 1 || mountTypeFromEEPROM >  4 ? MOUNT_TYPE_GEM : static_cast<Mount>(mountTypeFromEEPROM);
 
@@ -506,8 +498,6 @@ void initmount()
     underPoleLimitGOTO = 12;
   
   maxDecToKeepTrackingOn = XEEPROM.read(EE_dmaxDecToKeepOn)-128;
-
-
 
   // initialize some fixed-point values
   guideA1.amount = 0;
@@ -593,19 +583,16 @@ void initTransformation(bool reset)
 
 void initCelestialPole()
 {
+  
   if (isAltAZ())
   {
     geoA1.poleDef = (*localSite.latitude() < 0) ? geoA1.halfRot : 0L;
     geoA2.poleDef = geoA2.quaterRot;
-    geoA1.homeDef = geoA1.poleDef;
-    geoA2.homeDef = 0;
   }
   else
   {
     geoA1.poleDef = mountType == MOUNT_TYPE_GEM ? geoA1.quaterRot : 0L;
     geoA2.poleDef = (*localSite.latitude() < 0) ? -geoA2.quaterRot : geoA2.quaterRot;
-    geoA1.homeDef = geoA1.poleDef;
-    geoA2.homeDef = geoA2.poleDef;
   }
   HADir = *localSite.latitude() > 0 ? HADirNCPInit : HADirSCPInit;
 }
@@ -613,7 +600,7 @@ void initCelestialPole()
 void initmotor(bool deleteAlignment)
 {
   readEEPROMmotor();
-  updateRatios(deleteAlignment);
+  updateRatios(deleteAlignment,false);
   motorA1.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin);
   motorA2.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin);
 }
@@ -673,7 +660,7 @@ void writeDefaultEEPROMmotor()
   XEEPROM.write(EE_motorA2silent, 0);
 }
 
-void updateRatios(bool deleteAlignment)
+void updateRatios(bool deleteAlignment, bool deleteHP)
 {
   cli();
   geoA1.setstepsPerRot((long)motorA1.gear * motorA1.stepRot * (int)pow(2, motorA1.micro));
@@ -685,6 +672,13 @@ void updateRatios(bool deleteAlignment)
 
   initCelestialPole();
   initTransformation(deleteAlignment);
+  if (deleteHP)
+  {
+    unsetPark();
+    unsetHome();
+  }
+  initHome();
+  initLimit();
   updateSideral();
   initMaxRate();
 }

@@ -25,6 +25,7 @@ enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW }
 
 ParkState parkStatus = PRK_UNPARKED;
 bool parkSaved = false;
+bool homeSaved = false;
 bool atHome = true;
 bool homeMount = false;
 bool DecayModeTrack = false;
@@ -82,6 +83,8 @@ int                 maxAlt;                                 // the maximum altit
 long                minutesPastMeridianGOTOE;               // for goto's, how far past the meridian to allow before we do a flip (if on the East side of the pier)- one hour of RA is the default = 60.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 long                minutesPastMeridianGOTOW;               // as above, if on the West side of the pier.  If left alone, the mount will stop tracking when it hits the this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. OnStep will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
+
+                                                           
 //                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
 long                 maxDecToKeepTrackingOn;                 // tracking off 6 hours after transit if dec<maxDecToKeepTrackingOn
 
@@ -96,8 +99,8 @@ enum Errors
   ERR_MOTOR_FAULT,
   ERR_ALT,
   ERR_LIMIT_SENSE,
+  ERR_AXIS1,
   ERR_AXIS2,
-  ERR_AZM,
   ERR_UNDER_POLE,
   ERR_MERIDIAN
 };

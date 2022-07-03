@@ -49,7 +49,7 @@ void Command_A()
   case '0':
     // telescope should be set in the polar home for a starting point
     initTransformation(true);
-    syncPolarHome();
+    syncAtHome();
     // enable the stepper drivers
     enable_Axis(true);
     delay(10);
@@ -117,7 +117,7 @@ void Command_A()
   case 'C':
   case 'A':
     initTransformation(true);
-    syncPolarHome();
+    syncAtHome();
     autoAlignmentBySync = command[1] == 'A';
     strcpy(reply, "1");
     break;
@@ -279,7 +279,7 @@ void Command_h()
     //  :hF#   Reset telescope at the home position.  This position is required for a Cold Start.
     //         Point to the celestial pole with the counterweight pointing downwards (CWD position).
     //         Return: Nothing
-    syncPolarHome();
+    syncAtHome();
     break;
   case 'C':
     //  :hC#   Moves telescope to the home position
@@ -289,6 +289,22 @@ void Command_h()
       strcpy(reply, "0");
     else
       strcpy(reply, "1");
+    break;
+  case 'B':
+    //  :hB#   Set the home position
+    //          Return: 0 on failure
+    //                  1 on success
+    if (!setHome()) strcpy(reply, "0");
+    else strcpy(reply, "1");
+    break;
+  case 'b':
+    //  :hb#   Reset the home position
+    //          Return: 0 on failure
+    //                  1 on success
+    homeSaved = false;
+    XEEPROM.write(EE_homeSaved, false);
+    initHome();
+    strcpy(reply, "1");
     break;
   case 'O':
     // : hO#   Reset telescope at the Park position if Park position is stored.
@@ -324,6 +340,8 @@ void Command_h()
     unpark();
     strcpy(reply, "1");
     break;
+
+
   default:
     strcpy(reply, "0");
     break;
@@ -575,7 +593,9 @@ void Command_W()
     localSite.ReadSiteDefinition(currentSite);
     rtk.resetLongitude(*localSite.longitude());
     initCelestialPole();
+    initHome();
     initTransformation(true);
+    syncAtHome();
     reply[0] = 0;
     break;
   }

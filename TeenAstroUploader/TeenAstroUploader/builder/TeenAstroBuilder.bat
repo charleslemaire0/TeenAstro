@@ -199,7 +199,7 @@ REM Our application libraries
 set EXT_LIB=..\..\..\libraries
 
 REM Arduino IDE Version ID 
-set IDE_VERSION=10812
+set IDE_VERSION=10819
 REM Target Build Folder
 set BUILD_PATH=.\!target!_Build
 Rem Cache for core libraries
@@ -219,8 +219,7 @@ rem
 
 if /i [!target!] == [MainUnit] ( 
   set SKETCH=..\..\..\TeenAstroMainUnit\TeenAstroMainUnit.ino
-  set OPTION1=-prefs=compiler.cpp.extra_flags=-DVERSION=!hwvers! -DAxisDriver=!AxisDriver!
-  set OPTION2=-prefs=build.extra_flags= 
+	set OPTION=build.flags.defs=-D__MK20DX256__ -DTEENSYDUINO=157 -DVERSION=!hwvers! -DAxisDriver=!AxisDriver!
   set TOOLS_PATH2=!Arduino_Root_Path!\hardware\tools\avr
   set BOARD="teensy:avr:teensy31:usb=serial,speed=72,opt=o2std,keys=en-us"
   set Target_File=TeenAstro_!release!_!hwvers!_!driver!
@@ -230,8 +229,7 @@ if /i [!target!] == [MainUnit] (
 
 if /i [!target!] == [Focuser] ( 
   set SKETCH=..\..\..\TeenAstroFocuser\TeenAstroFocuser.ino
-    set OPTION1=-prefs=compiler.cpp.extra_flags=-DVERSION=!hwvers! -DAxisDriver=!AxisDriver!
-  set OPTION2=-prefs=build.extra_flags= 
+  set OPTION=build.flags.defs=-D__MK20DX256__ -DTEENSYDUINO=157 -DVERSION=!hwvers! -DAxisDriver=!AxisDriver!
   set TOOLS_PATH2=!Arduino_Root_Path!\hardware\tools\avr
   set BOARD="teensy:avr:teensy31:usb=serial,speed=72,opt=o2std,keys=en-us"
   set Target_File=TeenAstroFocuser_!release!_!hwvers!_!driver!
@@ -248,8 +246,8 @@ if /i !verbose!==[y] (
   echo on 
   )
 
-arduino-builder.exe -dump-prefs -logger=human -warnings=none !verb! -hardware "%HARDW_PATH1%" -hardware "%HARDW_PATH2%" -tools "%TOOLS_PATH1%" -tools "%TOOLS_PATH2%" -tools "%TOOLS_PATH3%" -built-in-libraries "%BI_LIB%" -libraries "%EXT_LIB%" -fqbn "%BOARD%" -ide-version="%IDE_VERSION%" -build-path "%BUILD_PATH%" -build-cache "%BUILD_CACHE%" "%OPTION1%" "%OPTION2%" "%SKETCH%" 
-arduino-builder.exe -compile -logger=human -warnings=none !verb! -hardware "%HARDW_PATH1%" -hardware "%HARDW_PATH2%" -tools "%TOOLS_PATH1%" -tools "%TOOLS_PATH2%" -tools "%TOOLS_PATH3%" -built-in-libraries "%BI_LIB%" -libraries "%EXT_LIB%" -fqbn "!BOARD!" -ide-version="%IDE_VERSION%" -build-path "%BUILD_PATH%" -build-cache "%BUILD_CACHE%" "%OPTION1%" "%OPTION2%" "%SKETCH%" 
+arduino-builder.exe -dump-prefs -logger=human -warnings=none !verb! -hardware "%HARDW_PATH1%" -hardware "%HARDW_PATH2%" -tools "%TOOLS_PATH1%" -tools "%TOOLS_PATH2%" -tools "%TOOLS_PATH3%" -built-in-libraries "%BI_LIB%" -libraries "%EXT_LIB%" -fqbn "!BOARD!" -ide-version="%IDE_VERSION%" -build-path "%BUILD_PATH%" -build-cache "%BUILD_CACHE%" -prefs "%OPTION%" "%SKETCH%"
+arduino-builder.exe -compile -logger=human -warnings=none !verb! -hardware "%HARDW_PATH1%" -hardware "%HARDW_PATH2%" -tools "%TOOLS_PATH1%" -tools "%TOOLS_PATH2%" -tools "%TOOLS_PATH3%" -built-in-libraries "%BI_LIB%" -libraries "%EXT_LIB%" -fqbn "!BOARD!" -ide-version="%IDE_VERSION%" -build-path "%BUILD_PATH%" -build-cache "%BUILD_CACHE%" -prefs "%OPTION%" "%SKETCH%"
 
 if %ERRORLEVEL% NEQ 0 exit /b
 

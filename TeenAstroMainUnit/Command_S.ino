@@ -35,7 +35,7 @@ void Command_SX()
         apparentPole = command[5] == 'a';
         XEEPROM.update(EE_ApparentPole, apparentPole);
         initTransformation(true);
-        syncPolarHome();
+        syncAtHome();
         strcpy(reply, "1");
       }
       else
@@ -104,6 +104,34 @@ void Command_SX()
     // user defined limits
     switch (command[3])
     {
+    case 'A':
+      // :SXLA,VVVV# set user defined minAXIS1 (always negatif)
+      i = (int)strtol(&command[5], NULL, 10);
+      XEEPROM.writeInt(EE_minAxis1,i);
+      initLimitMinAxis1();
+      strcpy(reply, "1");
+      break;
+    case 'B':
+      // :SXLB,VVVV# set user defined maxAXIS1 (always positf)
+      i = (int)strtol(&command[5], NULL, 10);
+      XEEPROM.writeInt(EE_maxAxis1,i);
+      initLimitMaxAxis1();
+      strcpy(reply, "1");
+      break;
+    case 'C':
+      // :SXLC,VVVV# set user defined minAXIS2 (always positf)
+      i = (int)strtol(&command[5], NULL, 10);
+      XEEPROM.writeInt(EE_minAxis2, i);
+      initLimitMinAxis2();
+      strcpy(reply, "1");
+      break;
+    case 'D':
+      // :SXLD,VVVV# set user defined maxAXIS2 (always positf)
+      i = (int)strtol(&command[5], NULL, 10);
+      XEEPROM.writeInt(EE_maxAxis2, i);
+      initLimitMaxAxis2();
+      strcpy(reply, "1");
+      break;
     case 'E':
       // :SXLE,sVV.V# set user defined Meridian East Limit
       minutesPastMeridianGOTOE = (double)strtol(&command[5], NULL, 10);
@@ -271,9 +299,9 @@ void Command_SX()
           motorA1.gear = (unsigned int)i;
           XEEPROM.writeInt(EE_motorA1gear, i);
         }
+        updateRatios(true,true);
+
         strcpy(reply, "1");
-        unsetPark();
-        updateRatios(true);
       }
       else
         strcpy(reply, "0");
@@ -307,9 +335,9 @@ void Command_SX()
           motorA1.stepRot = (unsigned int)i;
           XEEPROM.writeInt(EE_motorA1stepRot, i);
         }
+        updateRatios(true, true);
+
         strcpy(reply, "1");
-        unsetPark();
-        updateRatios(true);
       }
       else
         strcpy(reply, "0");
@@ -333,8 +361,7 @@ void Command_SX()
           sei();
           StopAxis2();
           motorA2.micro = i;
-          motorA2.driver.setMicrostep(motorA2.micro);
-          updateRatios(true);
+          motorA2.driver.setMicrostep(motorA2.micro);;
           XEEPROM.write(EE_motorA2micro, motorA2.micro);
         }
         else
@@ -346,10 +373,9 @@ void Command_SX()
           StopAxis1();
           motorA1.micro = i;
           motorA1.driver.setMicrostep(motorA1.micro);
-          updateRatios(true);
           XEEPROM.write(EE_motorA1micro, motorA1.micro);
         }
-        updateRatios(true);
+        updateRatios(true,false);
         strcpy(reply, "1");
       }
       else strcpy(reply, "0");
@@ -496,17 +522,9 @@ void Command_S(Command& process_command)
       XEEPROM.write(EE_mountType, i);
       Serial.end();
       Serial1.end();
-      GNSS_Serial.end();
-      Focus_Serial.end();
+      Serial2.end();
       delay(1000);
-#ifdef ARDUINO_TEENSY40 // In fact this code is suitable for Teensy 3.2 also
-#define CPU_RESTART_ADDR (uint32_t *)0xE000ED0C
-#define CPU_RESTART_VAL 0x5FA0004
-#define CPU_RESTART (*CPU_RESTART_ADDR = CPU_RESTART_VAL); 
-	CPU_RESTART;
-#else
-    _reboot_Teensyduino_();
-#endif
+      _reboot_Teensyduino_();
     }
     else strcpy(reply, "0");
     break;
@@ -745,7 +763,9 @@ void Command_S(Command& process_command)
     {
       localSite.setLat(f);
       initCelestialPole();
+      initHome();
       initTransformation(true);
+      syncAtHome();
       strcpy(reply, "1");
     }
     else strcpy(reply, "0");

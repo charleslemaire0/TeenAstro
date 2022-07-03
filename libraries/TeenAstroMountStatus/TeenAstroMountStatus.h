@@ -5,7 +5,7 @@ class TeenAstroMountStatus
 {
 public:
 
-  enum Errors { ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT, ERR_LIMIT_SENSE, ERR_DEC, ERR_AZM, ERR_UNDER_POLE, ERR_MERIDIAN, ERR_SYNC };
+  enum Errors { ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT, ERR_LIMIT_SENSE, ERR_LIMIT_A1, ERR_LIMIT_A2, ERR_UNDER_POLE, ERR_MERIDIAN, ERR_SYNC };
   enum AlignMode { ALIM_OFF, ALIM_ONE, ALIM_TWO, ALIM_THREE };
   enum AlignState { ALI_OFF, ALI_SELECT, ALI_SLEW, ALI_RECENTER };
   enum AlignReply { ALIR_FAILED1, ALIR_FAILED2, ALIR_DONE, ALIR_ADDED};
@@ -38,9 +38,12 @@ private:
   char            m_TempAz[15] = "?";
   char            m_TempAlt[15] = "?";
   unsigned long   m_lastStateAzAlt;
-  char            m_TempAxis1[15] = "?";
-  char            m_TempAxis2[15] = "?";
-  unsigned long   m_lastStateAxis;
+  char            m_TempAxis1Step[15] = "?";
+  char            m_TempAxis2Step[15] = "?";
+  unsigned long   m_lastStateAxisStep;
+  char            m_TempAxis1Deg[15] = "?";
+  char            m_TempAxis2Deg[15] = "?";
+  unsigned long   m_lastStateAxisDeg;
   char            m_TempUTC[15] = "?";
   char            m_TempLHA[15] = "?";
   char            m_TempUTCdate[15] = "?";
@@ -61,8 +64,10 @@ private:
   bool            m_hasInfoDecT = false;
   bool            m_hasInfoAz = false;
   bool            m_hasInfoAlt = false;
-  bool            m_hasInfoAxis1 = false;
-  bool            m_hasInfoAxis2 = false;
+  bool            m_hasInfoAxis1Step = false;
+  bool            m_hasInfoAxis2Step = false;
+  bool            m_hasInfoAxis1Deg = false;
+  bool            m_hasInfoAxis2Deg = false;
   bool            m_hasInfoUTC = false;
   bool            m_hasInfoLHA = false;
   bool            m_hasInfoUTCdate = false;
@@ -102,8 +107,10 @@ public:
   bool hasInfoMount() { return m_hasInfoMount; };
   bool hasInfoFocuser() { return m_hasInfoFocuser; };
   bool hasFocuser() { static bool firstime = m_hasFocuser; if (firstime){updateFocuser();} return m_hasFocuser; }
-  bool hasInfoAxis1() { return m_hasInfoAxis1; };
-  bool hasInfoAxis2() { return m_hasInfoAxis2; };
+  bool hasInfoAxis1Step() { return m_hasInfoAxis1Step; };
+  bool hasInfoAxis2Step() { return m_hasInfoAxis2Step; };
+  bool hasInfoAxis1Deg() { return m_hasInfoAxis1Deg; };
+  bool hasInfoAxis2Deg() { return m_hasInfoAxis2Deg; };
   bool hasInfoTrackingRate() { return m_hasInfoTrackingRate; };
 
   const char* getVP() { return  m_TempVP; };
@@ -117,8 +124,10 @@ public:
   const char* getDecT() { return  m_TempDecT; };
   const char* getAz() { return  m_TempAz; };
   const char* getAlt() { return  m_TempAlt; };
-  const char* getAxis1() { return  m_TempAxis1; };
-  const char* getAxis2() { return  m_TempAxis2; };
+  const char* getAxis1Step() { return  m_TempAxis1Step; };
+  const char* getAxis2Step() { return  m_TempAxis2Step; };
+  const char* getAxis1Deg() { return  m_TempAxis1Deg; };
+  const char* getAxis2Deg() { return  m_TempAxis2Deg; };
   const char* getUTC() { return m_TempUTC; };
   const char* getLHA() { return m_TempLHA; };
   const char* getUTCdate() { return m_TempUTCdate; };
@@ -131,7 +140,8 @@ public:
   void updateRaDec();
   void updateRaDecT();
   void updateAzAlt();
-  void updateAxis();
+  void updateAxisStep();
+  void updateAxisDeg();
   void updateTime();
   void updateLHA();
   void updateFocuser();
