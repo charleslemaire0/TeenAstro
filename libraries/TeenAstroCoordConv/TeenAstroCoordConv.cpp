@@ -285,7 +285,7 @@ void CoordConv::toReference(double &angle1,  double &angle2, double axis1, doubl
 	#endif
 }
 
-double CoordConv::polErrorDeg(double lat, char sel)
+double CoordConv::polErrorDeg(double lat, Err sel)
 {
 // 	lat=(40+49/60+51/3600)*pi/180;x=Tinv*[0;0;1]; x_id=[cos(lat);0;sin(lat)];
 // pol_err=acos(x'/norm(x)*x_id)*180/pi
@@ -300,15 +300,23 @@ double CoordConv::polErrorDeg(double lat, char sel)
 	normalize(x,x);
 	switch (sel)
 	{
-		case '0':
+		case EQ_AZ:
 		//err_az
+			if(x[0]==0)			
+			{
+				return x[1] > 0 ?  90.0 :  -90.0;
+			}
 			return toDeg(atan(x[1]/x[0]));
 		break;
-		case '1':
+		case EQ_ALT:
 		//err_alt
+			if (x[0] == 0)
+			{
+				return x[2] > 0 ? 90.0 - toDeg(lat) : -90.0 - toDeg(lat);
+			}
 			return toDeg(atan(x[2]/x[0])-lat);
 		break;
-		default:
+		case POL_W:
 		//err_pol
 			return toDeg(acos(x[0]*x_id[0]+x[1]*x_id[1]+x[2]*x_id[2]));
 	}

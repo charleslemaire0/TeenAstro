@@ -98,6 +98,7 @@ public:
 // and instrumental coordinates (axis1 and axis2)
 class CoordConv : public LA3 {
 public:
+	enum Err { EQ_AZ, EQ_ALT, POL_W };
 	CoordConv() { reset(); isready = false;}
 
   // resets reference stars
@@ -132,7 +133,7 @@ public:
 	// Convert instrumental axis1/axis2 coordinates to  reference angle1/angle2 coordinates (all values in degrees) 
 	void toReferenceDeg(double &angle1,  double &angle2, double axis1, double axis2) const;
 
-	double polErrorDeg(double lat, char sel);
+	double polErrorDeg(double lat, Err sel);
 
 
 protected:

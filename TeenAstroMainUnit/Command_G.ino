@@ -8,7 +8,6 @@
 void Command_GX()
 {
   int i;
-  double f1;
   //  :GXnn#   Get TeenAstro Specific value
   switch (command[2])
   {
@@ -63,14 +62,34 @@ void Command_GX()
       break;
     case 'e':
       // :GXAen#
-    {
       double err = alignment.polErrorDeg(*localSite.latitude(), command[4]);
       if (!doubleToDms(reply, &err, false, true, true))
+    case 'a':
+    case 'z':
+    case 'w':
+    {
+      // :GXAa#
+      // :GXAz# 
+      // :GXAw#
+      CoordConv::Err request = CoordConv::Err::POL_W;
+      switch (command[3])
+      {
+      case'a':
+        request = CoordConv::Err::EQ_ALT;
+        break;
+      case'z':
+        request = CoordConv::Err::EQ_AZ;
+        break;
+      case 'w':
+        request = CoordConv::Err::POL_W;
+        break;
+      }
+      f1 = alignment.polErrorDeg(*localSite.latitude(), request);
+      if (!doubleToDms(reply, &f1, false, true, true))
         strcpy(reply, "0");
       else
         strcat(reply, "#");
       break;
-    }
     default:
       strcpy(reply, "0");
     }
@@ -196,30 +215,6 @@ void Command_GX()
       break;
     }
     break;
-  case 'P':
-    // :GXPn# Intrument position
-    switch (command[3])
-    {
-    case '1':      
-      cli();
-      f1 = staA1.pos / geoA1.stepsPerDegree;
-      sei();
-      if (!doubleToDms(reply, &f1, true, true, highPrecision))
-        strcpy(reply, "0");
-      else
-        strcat(reply, "#");
-      break;
-    case '2':
-      cli();
-      f1 = staA2.pos / geoA2.stepsPerDegree;
-      sei();
-      if (!doubleToDms(reply, &f1, true, true, highPrecision))
-        strcpy(reply, "0");
-      else
-        strcat(reply, "#");
-      break;
-    }
-    break;
   case 'R':
     // :GXRn# user defined rates
     switch (command[3])
@@ -259,26 +254,6 @@ void Command_GX()
     // :GXLn user defined limits
     switch (command[3])
     {
-    case 'A':
-      // :GXLA# get user defined minAXIS1 (always negatif)
-      i = XEEPROM.readInt(EE_minAxis1);
-      sprintf(reply, "%d#", i);
-      break;
-    case 'B':
-      // :GXLB# get user defined maxAXIS1 (always positf)
-      i = XEEPROM.readInt(EE_maxAxis1);
-      sprintf(reply, "%d#", i);
-      break;
-    case 'C':
-      // :GXLC# get user defined minAXIS2 (always positf)
-      i = XEEPROM.readInt(EE_minAxis2);
-      sprintf(reply, "%d#", i);
-      break;
-    case 'D':
-      // :GXLD# get user defined maxAXIS2 (always positf)
-      i = XEEPROM.readInt(EE_maxAxis2);
-      sprintf(reply, "%d#", i);
-      break;
     case 'E':
       // :GXLE# return user defined Meridian East Limit
       sprintf(reply, "%ld#", (long)round(minutesPastMeridianGOTOE));
