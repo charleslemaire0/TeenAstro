@@ -196,7 +196,7 @@ bool SmartHandController::menuSetLowCurrent(const uint8_t &axis)
   }
   char text[20];
   sprintf(text, T_LOWCURR " M%u", axis);
-  if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &lowCurr, 10, 200, 3, "0 mA " T_PEAK))
+  if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &lowCurr, 20, 280, 3, "0 mA " T_PEAK))
   {
     return DisplayMessageLX200(writeLowCurrLX200(axis, lowCurr), false);
   }
@@ -211,7 +211,7 @@ bool SmartHandController::menuSetHighCurrent(const uint8_t &axis)
   }
   char text[20];
   sprintf(text, T_HIGHCURR " M%u", axis);
-  if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &highCurr, 10, 200, 3, "0 mA " T_PEAK))
+  if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &highCurr, 20, 280, 3, "0 mA " T_PEAK))
   {
     return DisplayMessageLX200(writeHighCurrLX200(axis, highCurr), false);
   }

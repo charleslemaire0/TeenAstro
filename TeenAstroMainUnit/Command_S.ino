@@ -437,12 +437,12 @@ void Command_SX()
           if (command[3] == 'C')
           {
             motorA2.highCurr = (u_int8_t)i;
-            XEEPROM.write(EE_motorA2highCurr, motorA2.highCurr);
+            XEEPROM.write(EE_motorA2highCurr, motorA2.highCurr / 2);
           }
           else
           {
             motorA2.lowCurr = (u_int8_t)i;
-            XEEPROM.write(EE_motorA2lowCurr, motorA2.lowCurr);
+            XEEPROM.write(EE_motorA2lowCurr, motorA2.lowCurr / 2);
             motorA2.driver.setCurrent((unsigned int)motorA2.lowCurr * 10);
           }
         }
@@ -451,12 +451,12 @@ void Command_SX()
           if (command[3] == 'C')
           {
             motorA1.highCurr = (u_int8_t)i;
-            XEEPROM.write(EE_motorA1highCurr, motorA1.highCurr);
+            XEEPROM.write(EE_motorA1highCurr, motorA1.highCurr / 2);
           }
           else
           {
             motorA1.lowCurr = (u_int8_t)i;
-            XEEPROM.write(EE_motorA1lowCurr, motorA1.lowCurr);
+            XEEPROM.write(EE_motorA1lowCurr, motorA1.lowCurr / 2);
             motorA1.driver.setCurrent((unsigned int)motorA1.lowCurr * 10);
           }
         }

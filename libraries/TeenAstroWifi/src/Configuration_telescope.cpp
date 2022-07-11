@@ -132,16 +132,16 @@ const char html_configMuAxis[] PROGMEM =
 "\r\n";
 const char html_configLCAxis[] PROGMEM =
 "<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%d' type='number' name='mlc%d' min='100' max='2000' step='10'>"
+" <input value='%d' type='number' name='mlc%d' min='200' max='2800' step='200'>"
 "<button type='submit'>Upload</button>"
-" (Low Current Axis%d, from 100mA to 2000mA)"
+" (Low Current Axis%d, from 200mA to 2800mA)"
 "</form>"
 "\r\n";
 const char html_configHCAxis[] PROGMEM =
 "<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%d' type='number' name='mhc%d' min='100' max='2000' step='10'>"
+" <input value='%d' type='number' name='mhc%d' min='200' max='2800' step='200'>"
 "<button type='submit'>Upload</button>"
-" (High Current Axis%d, from 100mA to 2000mA)"
+" (High Current Axis%d, from 200mA to 2800mA)"
 "</form>"
 "\r\n";
 
@@ -612,7 +612,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   v = server.arg("mlc1");
   if (v != "")
   {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
     {
       writeLowCurrLX200(1, i / 10);
     }
@@ -620,7 +620,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   v = server.arg("mlc2");
   if (v != "")
   {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
     {
       writeLowCurrLX200(2, i / 10);
     }
@@ -629,7 +629,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   v = server.arg("mhc1");
   if (v != "")
   {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
     {
       writeHighCurrLX200(1, i / 10);
     }
@@ -637,7 +637,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
   v = server.arg("mhc2");
   if (v != "")
   {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 2000)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
     {
       writeHighCurrLX200(2, i / 10);
     }
