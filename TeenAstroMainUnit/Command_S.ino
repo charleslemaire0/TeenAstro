@@ -505,8 +505,9 @@ void Command_SX()
 void Command_S(Command& process_command)
 {
   char* conv_end;
-  int i;
+  int i,j;
   double f, f1;
+
   switch (command[1])
   {
   case '!':
@@ -529,7 +530,7 @@ void Command_S(Command& process_command)
     //         Returns:
     //         0 if Object is within slew range, 1 otherwise
     if (dmsToDouble(&newTargetAlt, &command[2], true, highPrecision)) strcpy(reply, "1");
-    else strcpy(reply, "1");
+    else strcpy(reply, "0");
     break;
   case 'B':
     //  :SBn#  Set Baud Rate n for Serial-0, where n is an ASCII digit (1..9) with the following interpertation
@@ -588,7 +589,7 @@ void Command_S(Command& process_command)
     else strcpy(reply, "0");
     break;
   case 'g':
-    //  :SgsDDD*MM# or :SgDDD*MM#
+    //  :SgsDDD*MM# or :SgDDD*MM# or :SgsDDD:MM:SS# or SgDDD:MM:ss#
     //          Set current sites longitude to sDDD*MM an ASCII position string, East longitudes can be as negative or >180 degrees
     //          Return: 0 on failure
     //                  1 on success
@@ -596,7 +597,8 @@ void Command_S(Command& process_command)
     double longi = 0;
     if ((command[2] == '-') || (command[2] == '+')) i = 1;
     else i = 0;
-    if (dmsToDouble(&longi, &command[2 + i], false, false))
+    j = strlen(&command[7 + i]) > 1 ? (command[8 + i] == ':') : 0;
+    if (dmsToDouble(&longi, &command[2 + i], false, j))
     {
       if (command[2] == '-') longi = -longi;
       localSite.setLong(longi);
@@ -744,12 +746,15 @@ void Command_S(Command& process_command)
     else strcpy(reply, "0");
     break;
   case 't':
-    //  :StsDD*MM#
+    //  :StsDD*MM# or :StsDD:MM:SS#
     //          Sets the current site latitude to sDD*MM#
     //          Return: 0 on failure
     //                  1 on success                                                             
     i = highPrecision;
-    highPrecision = false;
+    if (strlen(&command[7])>1)
+      highPrecision = command[8]==':';
+      else
+      highPrecision = false;
     if (dmsToDouble(&f, &command[2], true, highPrecision))
     {
       localSite.setLat(f);
@@ -802,7 +807,7 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
     if (dmsToDouble(&newTargetAzm, &command[2], false, highPrecision)) strcpy(reply, "1");
-    else strcpy(reply, "1");
+    else strcpy(reply, "0");// "1" BUGS ELSEWHERE???
     break;
   default:
     strcpy(reply, "0");

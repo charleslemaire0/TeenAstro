@@ -123,7 +123,6 @@
 #define T_MAXPOSITION2 "Max Pos."
 #define T_STARTPOSITION2 "Start Pos."
 
-#define T_PARKPOSITION "Park Position"
 #define T_GOTOPOSITION "Goto Position"
 #define T_SYNCPOSITION "Sync Position"
 #define T_MANUALSPEED "Manuelle Geschw."
@@ -163,6 +162,7 @@
 #define T_HOURS "Stunden"
 #define T_SYNCEDAT "Sync. bei"
 #define T_ALIGN "Ausrichten"
+#define T_PC "Computer"
 #define T_TRACKING "Nachführung"
 #define T_STARTTRACKING "Nachführ. starten"
 #define T_STOPTRACKING "Nachführ. stoppen"
@@ -172,6 +172,7 @@
 #define T_SETSIDEOFPIER "Seite wählen"
 #define T_SAVE "Speichern"
 #define T_SAVED "Gespeichert"
+#define T_SAVING "Speicherung"
 #define T_Clear "Löschen"
 #define T_SPIRAL "Spiral"
 #define T_LX200COMMAND "LX200 Command"
@@ -221,7 +222,6 @@
 #define T_AFTER "nach"
 #define T_LOWCONTRAST "Niedriger Kontrast"
 #define T_TURNDISPLAYOFF "Anzeige aussch."
-
 
 #define T_BUTTONSPEED "Geschw. Knopf"
 #define T_SLOW "Langsam"

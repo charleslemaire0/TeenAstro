@@ -22,13 +22,12 @@
 #define T_TRUE_POLE "True Pole"
 #define T_APPARENT_POLE "Apparent Pole"
 
-
 #define T_LIMITS "Limits"
 #define T_NOT_CONNECTED "Not Connected"
 #define T_TUNKOWN "Unkown"
 #define T_ERROR "ERROR"
-#define T_WARNING "WARNING"
 #define T_STAR "Star"
+#define T_WARNING "WARNING"
 #define T_SLEWINGTO "Slewing to" 
 #define T_RECENTER "Recenter"
 #define T_SELECTASTAR "Select a Star"
@@ -58,7 +57,7 @@
 #define T_CANCELED "Canceled"
 #define T_WRONG "Wrong"
 #define T_NOTDEFINED "not defined"
-#define T_SUCESS "Sucess"
+#define T_SUCESS "Success"
 #define T_STARADDED "Star added"
 #define T_VERSION "version"
 #define T_YES "YES"
@@ -124,7 +123,6 @@
 #define T_MAXPOSITION2 "Max  Pos."
 #define T_STARTPOSITION2 "Start Pos."
 
-#define T_PARKPOSITION "Park Position"
 #define T_GOTOPOSITION "Goto Position"
 #define T_SYNCPOSITION "Sync Position"
 #define T_MANUALSPEED "Manual Speed"
@@ -164,6 +162,7 @@
 #define T_HOURS "Hours"
 #define T_SYNCEDAT "Synced at"
 #define T_ALIGN "Align"
+#define T_PC "PC"
 #define T_TRACKING "Tracking"
 #define T_STARTTRACKING "Start Tracking"
 #define T_STOPTRACKING "Stop Tracking"
@@ -173,6 +172,7 @@
 #define T_SETSIDEOFPIER "Set Side of Pier"
 #define T_SAVE "Save"
 #define T_SAVED "Saved"
+#define T_SAVING "Saving"
 #define T_Clear "Clear"
 #define T_SPIRAL "Spiral"
 #define T_LX200COMMAND "LX200 Command"
@@ -200,7 +200,7 @@
 #define T_SIDEREAL "Sidereal"
 #define T_TIME "Time"
 #define T_SITE "Site"
-#define T_SYNCWITHGNSS "Sync with GNSS"
+#define T_SYNCWITHGNSS "Sync to GNSS"
 #define T_LUNAR "Lunar"
 #define T_SOLAR "Solar"
 #define T_CLOCK "Clock"
@@ -222,7 +222,6 @@
 #define T_AFTER "after"
 #define T_LOWCONTRAST "Low Contrast"
 #define T_TURNDISPLAYOFF "Turn display off"
-
 
 #define T_BUTTONSPEED "Button Speed"
 #define T_SLOW "Slow"
@@ -278,7 +277,7 @@
 #define T_SELECTMODE "Select Mode"
 #define T_SHOWIP "Show IP"
 #define T_PASSWORDIS "Password is"
-#define T_ACCESPOINT "AccesPoint"
+#define T_ACCESPOINT "Access Point"
 #define T_WIFIINTERFACE "Wifi Interface"
 
 #define T_SUN "Sun"

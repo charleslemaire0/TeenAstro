@@ -1,12 +1,11 @@
 #include "SmartController.h"
 #include "SHC_text.h"
 
-
 void SmartHandController::menuTimeAndSite()
 {
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
-  const char *string_list_TimeAndSite = T_TIME "\n" T_SITE "\n" T_SYNCWITHGNSS;
+  const char* string_list_TimeAndSite = T_TIME "\n" T_SITE "\n" T_SYNCWITHGNSS;
   while (!exitMenu)
   {
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TIME " & " T_SITE, s_sel, string_list_TimeAndSite);
@@ -33,7 +32,7 @@ void SmartHandController::menuTimeAndSite()
 
 void SmartHandController::menuDateAndTime()
 {
-  const char *string_list_DateAndTime = T_CLOCK "\n" T_TIMEZONE "\n" T_DATE "\n" T_GNSSTIME;
+  const char* string_list_DateAndTime = T_CLOCK "\n" T_TIMEZONE "\n" T_DATE "\n" T_GNSSTIME;
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
   while (!exitMenu)
@@ -71,7 +70,7 @@ void SmartHandController::menuSite()
   uint8_t tmp_sel = s_sel;
   while (tmp_sel)
   {
-    const char *string_list_Site = T_LATITUDE "\n" T_LONGITUDE "\n" T_SITEELEVATION "\n" T_SELECTSITE;
+    const char* string_list_Site = T_LATITUDE "\n" T_LONGITUDE "\n" T_SITEELEVATION "\n" T_SELECTSITE;
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, "Menu Site", s_sel, string_list_Site);
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
     switch (tmp_sel)
@@ -118,7 +117,7 @@ void SmartHandController::menuSites()
   {
     uint8_t tmp_sel = val;
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, "Menu Sites", tmp_sel, txt);
-    if ( tmp_sel != 0)
+    if (tmp_sel != 0)
     {
       val = tmp_sel - 1;
       SetSiteLX200(val);
@@ -174,7 +173,7 @@ void SmartHandController::menuLocalDate()
 void SmartHandController::menuLatitude()
 {
   double degree_d;
-  int degree, minute;
+  int degree, minute, seconds;
   if (DisplayMessageLX200(GetLatitudeLX200(degree_d)))
   {
     long angle = degree_d * 3600;
@@ -183,10 +182,14 @@ void SmartHandController::menuLatitude()
       char cmd[20];
       char sign = angle < 0 ? '-' : '+';
       angle = abs(angle);
+      seconds = angle % 60;
+      // seconds = angle;
       angle /= 60;
+      // seconds -=angle*60;
       minute = angle % 60;
       degree = angle / 60;
-      sprintf(cmd, ":St%+03d*%02d#", degree, minute);
+      sprintf(cmd, ":St%+03d:%02d:%02d#", degree, minute, seconds);
+      //sprintf(cmd, ":St%+03d*%02d#", degree, minute);
       cmd[3] = sign;
       DisplayMessageLX200(SetLX200(cmd), false);
     }
@@ -196,7 +199,7 @@ void SmartHandController::menuLatitude()
 void SmartHandController::menuLongitude()
 {
   double degree_d;
-  int degree, minute;
+  int degree, minute, seconds;
   if (DisplayMessageLX200(GetLongitudeLX200(degree_d)))
   {
     long angle = degree_d * 3600;
@@ -205,10 +208,13 @@ void SmartHandController::menuLongitude()
       char cmd[20];
       char sign = angle < 0 ? '-' : '+';
       angle = abs(angle);
+      seconds = angle % 60;
       angle /= 60;
+      //seconds -= angle*60;
       minute = angle % 60;
       degree = angle / 60;
-      sprintf(cmd, ":Sg%+04d*%02d#", degree, minute);
+      sprintf(cmd, ":Sg%+04d:%02d:%02d#", degree, minute, seconds);
+      //sprintf(cmd, ":Sg%+04d*%02d#", degree, minute);
       cmd[3] = sign;
       DisplayMessageLX200(SetLX200(cmd), false);
     }

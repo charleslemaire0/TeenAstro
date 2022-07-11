@@ -32,6 +32,7 @@ bool DecayModeTrack = false;
 MeridianFlip meridianFlip = FLIP_NEVER;
 Mount mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;
+bool autoAlignmentBySync = false;
 bool apparentPole = true;
 bool hasFocuser = false;
 bool hasGNSS = true;

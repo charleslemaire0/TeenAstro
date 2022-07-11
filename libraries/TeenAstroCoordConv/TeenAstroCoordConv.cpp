@@ -155,6 +155,10 @@ void CoordConv::setT(float m11, float m12, float m13,float m21, float m22, float
   isready = true;
 }
 
+void CoordConv::setTinvFromT() {
+	invert(Tinv, T);
+}
+
 // add a user-provided reference star (all values in degrees, except time in seconds)
 void CoordConv::addReferenceDeg(double angle1, double angle2, double axis1, double axis2) {
 	addReference(toRad(angle1), toRad(angle2), toRad(axis1), toRad(axis2));
@@ -200,6 +204,8 @@ void CoordConv::addReference(double angle1, double angle2, double axis1, double 
     isready = true;
     refs = 0;
   }
+  else
+	isready = false;
 }
 
 // Calculate third reference star from two provided ones. Returns false if more or less than two provided 
@@ -277,4 +283,41 @@ void CoordConv::toReference(double &angle1,  double &angle2, double axis1, doubl
 	#ifdef DEBUG_COUT
 	cout << "angle1 " << angle1 << "r angle2 " << angle2 << "r" << endl;
 	#endif
+}
+
+double CoordConv::polErrorDeg(double lat, Err sel)
+{
+// 	lat=(40+49/60+51/3600)*pi/180;x=Tinv*[0;0;1]; x_id=[cos(lat);0;sin(lat)];
+// pol_err=acos(x'/norm(x)*x_id)*180/pi
+// err_az=atan(x(2)/x(1))*180/pi
+// err_alt=(atan(x(3)/x(1))-lat)*pi/180
+
+	//y=[cos(lat);0; sin(lat)]; x=Tinv*[0;0;1];x=x/norm(x);
+	//Polerr=acos(x'*y)*180/pi
+	lat = toRad(lat);
+	double x_id [3]= {cos(lat),0,sin(lat)};
+	double x[3] = {Tinv[0][2], Tinv[1][2], Tinv[2][2]};
+	normalize(x,x);
+	switch (sel)
+	{
+		case EQ_AZ:
+		//err_az
+			if(x[0]==0)			
+			{
+				return x[1] > 0 ?  90.0 :  -90.0;
+			}
+			return toDeg(atan(x[1]/x[0]));
+		break;
+		case EQ_ALT:
+		//err_alt
+			if (x[0] == 0)
+			{
+				return x[2] > 0 ? 90.0 - toDeg(lat) : -90.0 - toDeg(lat);
+			}
+			return toDeg(atan(x[2]/x[0])-lat);
+		break;
+		case POL_W:
+		//err_pol
+			return toDeg(acos(x[0]*x_id[0]+x[1]*x_id[1]+x[2]*x_id[2]));
+	}
 }

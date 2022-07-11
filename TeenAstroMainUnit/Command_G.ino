@@ -59,14 +59,44 @@ void Command_GX()
       sprintf(reply, "%f#", t33);
       break;
     case 'p':
+      // :GXAp#
       apparentPole ? sprintf(reply, "a#") : sprintf(reply, "t#");
       break;
+    case 'a':
+    case 'z':
+    case 'w':
+    {
+      // :GXAa#
+      // :GXAz# 
+      // :GXAw#
+      CoordConv::Err request = CoordConv::Err::POL_W;
+      i = 1;
+      switch (command[3])
+      {
+      case'a':
+        request = CoordConv::Err::EQ_ALT;
+        break;
+      case'z':
+        request = CoordConv::Err::EQ_AZ;
+        break;
+      case 'w':
+        request = CoordConv::Err::POL_W;
+        break;
+      default:
+        i = 0;
+      }
+      f1 = alignment.polErrorDeg(*localSite.latitude(), request);
+      if (!doubleToDms(reply, &f1, false, true, true) || i == 0)
+        strcpy(reply, "0");
+      else
+        strcat(reply, "#");
+      break;
+    }
     default:
       strcpy(reply, "0");
+      break;
     }
-    break;
   }
-  break;
   case 'D':
     // :GXDnn# for Debug commands
     switch (command[3])
@@ -314,11 +344,50 @@ void Command_GX()
       sprintf(reply, "%02d/%02d/%02d#", i1, i2, i);
       break;
     }
-      // :GXT2# return seconds since 01/01/1970/00:00:00
+    // :GXT2# return seconds since 01/01/1970/00:00:00
     case '2':
+    {
       unsigned long t = rtk.getTimeStamp();
       sprintf(reply, "%lu#", t);
-      break;
+    }
+    break;
+    case '3':
+    {
+      // :GXT3# LHA time
+
+      static unsigned long _coord_t1 = 0;
+      static double _dec1 = 0;
+      static double _ra1 = 0;
+
+      double tmpLST, f, f1;
+      tmpLST = rtk.LST();
+
+      if (millis() - _coord_t1 < 100)
+      {
+        f = _ra1;
+        f1 = _dec1;
+      }
+      else
+      {
+        getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+        f /= 15.0;
+        _ra1 = f;
+        _dec1 = f1;
+        _coord_t1 = millis();
+      }
+
+      tmpLST -= f;
+      if (tmpLST < -12)
+        tmpLST += 24;
+      else if (tmpLST > 12)
+        tmpLST -= 24;
+
+      if (!doubleToHms(reply, &tmpLST, true))
+        strcpy(reply, "0#");
+      else
+        strcat(reply, "#");
+    }
+    break;
     }
     break;
   case 'I':
@@ -329,7 +398,7 @@ void Command_GX()
     i = 0;
     reply[0] = '0' + 2 * movingTo + sideralTracking;
     reply[1] = '0' + sideralMode;
-    const char  *parkStatusCh = "pIPF";
+    const char* parkStatusCh = "pIPF";
     reply[2] = parkStatusCh[parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
     if (atHome) reply[3] = 'H';
     reply[4] = '0' + activeGuideRate;
@@ -499,12 +568,12 @@ void Command_GX()
       {
         if (command[4] == 'D')
         {
-          sprintf(reply, "%d#", motorA2.driver.getSG());  
+          sprintf(reply, "%d#", motorA2.driver.getSG());
         }
         else if (command[4] == 'R')
         {
           sprintf(reply, "%d#", motorA1.driver.getSG());
-  
+
         }
         else
           strcpy(reply, "0");
@@ -523,7 +592,7 @@ void Command_GX()
         }
         else if (command[4] == 'R')
         {
-          sprintf(reply, "%u#", motorA2.driver.getCurrent());  
+          sprintf(reply, "%u#", motorA2.driver.getCurrent());
         }
         else strcpy(reply, "0");
       }
@@ -643,6 +712,14 @@ void  Command_G()
     //         Returns: sDDDD#
     sprintf(reply, "%+04d#", *localSite.elevation());
     break;
+  case 'f':
+    //  :Gf#   Get master sidereal clock (tunable by :T+# and :T-# / reset by :TR#)
+    //         Returns: dd#
+    char    tmp[10];
+    dtostrf(siderealInterval, 0, 0, tmp);
+    strcpy(reply, tmp);
+    strcat(reply, "#");
+    break;
   case 'G':
     //  :GG#   Get UTC offset time, Native LX200 command
     //         Returns: sHH.H#
@@ -653,9 +730,10 @@ void  Command_G()
   {
     //  :Gg#   Get Current Site Longitude, Native LX200 command
     //         Returns: sDDD*MM#
+    //  :Ggf#  Returns: sDDD*MM'SS#
     //         The current site Longitude. East Longitudes are negative
     int i = highPrecision;
-    highPrecision = false;
+    highPrecision = command[2] == 'f';
     if (!doubleToDms(reply, localSite.longitude(), true, true, highPrecision))
       strcpy(reply, "0");
     else
@@ -772,9 +850,10 @@ void  Command_G()
   case 't':
     //  :Gt#   Get Current Site Latitude, Native LX200 command
     //         Returns: sDD*MM#
+    //  :Gtf#  Returns: sDD*MM'SS#
     //         The latitude of the current site. Positive for North latitudes
     i = highPrecision;
-    highPrecision = false;
+    highPrecision = command[2] == 'f';
     if (!doubleToDms(reply, localSite.latitude(), false, true, highPrecision))
       strcpy(reply, "0");
     else

@@ -33,7 +33,7 @@ public:
   bool shiftPressed();
   bool isWifiOn();
   bool isWifiRunning();
-  bool turnWifiOn(bool turnOn);
+  void turnWifiOn(bool turnOn);
   void getIP(uint8_t* ip);
   const char* getPassword();
   bool setWifiMode(int k);

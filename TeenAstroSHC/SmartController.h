@@ -8,10 +8,10 @@
 #define SHCFirmwareDate          __DATE__
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
-#define SHCFirmwareVersionMinor  "2"
-#define SHCFirmwareVersionPatch  "6"
+#define SHCFirmwareVersionMinor  "3"
+#define SHCFirmwareVersionPatch  "0"
 
-#define NUMPAGES 7
+#define NUMPAGES 8
 class SmartHandController
 {
 public:
@@ -24,7 +24,7 @@ public:
 private:
   enum PAGES
   {
-    P_RADEC, P_ALTAZ, P_TIME, P_AXIS_STEP, P_AXIS_DEG, P_FOCUSER, P_ALIGN
+    P_RADEC, P_ALTAZ, P_TIME, P_AXIS_STEP, P_AXIS_DEG, P_FOCUSER, P_ALIGN, P_HA
   };
   enum MENU_RESULT
   {
@@ -55,7 +55,7 @@ private:
   bool forceDisplayoff = false;
   bool focuserlocked = false;
   bool telescoplocked = false;
-  pageInfo pages[NUMPAGES] = { {P_RADEC,true},{P_ALTAZ,true}, {P_TIME,true}, {P_AXIS_STEP,false}, {P_AXIS_DEG,false}, {P_FOCUSER,true}, {P_ALIGN,false} };
+  pageInfo pages[NUMPAGES] = { {P_RADEC,true},{P_ALTAZ,true}, {P_TIME,true}, {P_AXIS_STEP,false}, {P_AXIS_DEG,false}, {P_FOCUSER,true}, {P_ALIGN,false}, {P_HA,false} };
   byte current_page;
   bool exitMenu = false;
   

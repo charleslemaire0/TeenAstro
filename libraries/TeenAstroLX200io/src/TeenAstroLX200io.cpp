@@ -8,9 +8,9 @@
 
 
 // integer numeric conversion with error checking
-boolean atoi2(char *a, int *i)
+boolean atoi2(char* a, int* i)
 {
-  char *conv_end;
+  char* conv_end;
   long l = strtol(a, &conv_end, 10);
 
   if ((l < -32767) || (l > 32768) || (&a[0] == conv_end)) return false;
@@ -92,7 +92,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     switch (command[1])
     {
     case 'A':
-      if (strchr("023CW", command[2])) cmdreply = CMDR_SHORT;
+      if (strchr("023CWA", command[2])) cmdreply = CMDR_SHORT;
       else cmdreply = CMDR_INVALID;
       break;
     case 'B':
@@ -118,7 +118,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       else cmdreply = CMDR_INVALID;
       break;
     case 'G':
-      if (strchr("AaCcDdegGhLMNOPmnoRrSTtVXZ", command[2]))
+      if (strchr("AaCcDdefgGhLMNOPmnoRrSTtVXZ", command[2]))
       {
         timeOutMs *= 2;
         cmdreply = CMDR_LONG;
@@ -181,60 +181,61 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
   if (cmdreply == CMDR_INVALID) return false;
 
   Ser.print(command);
- 
+
   switch (cmdreply)
   {
-    case CMDR_NO:
-      recvBuffer[0] = 0;
-      return true;
-      break;
-    case CMDR_SHORT:
+  case CMDR_NO:
+    recvBuffer[0] = '\0';
+    return true;
+    break;
+  case CMDR_SHORT:
+  {
+    unsigned long start = millis();
+    while (millis() - start < timeOutMs)
     {
-      unsigned long start = millis();
-      while (millis() - start < timeOutMs)
+      if (Ser.available())
       {
-        if (Ser.available())
+        recvBuffer[Ser.readBytes(recvBuffer, 1)] = 0;
+        break;
+      }
+    }
+    return (recvBuffer[0] != 0);
+    break;
+  }
+  case CMDR_LONG:
+  {
+    // get full response, '#' terminated
+    unsigned long start = millis();
+    int recvBufferPos = 0;
+    char b = 0;
+    while (millis() - start < timeOutMs)
+    {
+      recvBuffer[recvBufferPos] = 0;
+      if (Ser.available())
+      {
+        b = Ser.read();
+        if (b == '#')
         {
-          recvBuffer[Ser.readBytes(recvBuffer, 1)] = 0;
+          if (keepHashtag)
+          {
+            recvBuffer[recvBufferPos] = b;
+            recvBufferPos++;
+          }
           break;
         }
-      }
-      return (recvBuffer[0] != 0);
-      break;
-    }
-    case CMDR_LONG:
-    {
-      // get full response, '#' terminated
-      unsigned long start = millis();
-      int recvBufferPos = 0;
-      char b = 0;
-      while (millis() - start < timeOutMs)
-      {
-        recvBuffer[recvBufferPos] = 0;
-        if (Ser.available())
-        {
-          b = Ser.read();
-          if (b == '#')
-          {
-            if (keepHashtag)
-            {
-              recvBuffer[recvBufferPos] = b;
-              recvBufferPos++;
-            }
-            break;
-          }
 
-          start = millis();
-          recvBuffer[recvBufferPos] = b;
-          recvBufferPos++;
-          if (recvBufferPos > bufferSize - 1) recvBufferPos = bufferSize - 1;
-        }
+        start = millis();
+        recvBuffer[recvBufferPos] = b;
+        recvBufferPos++;
+        if (recvBufferPos > bufferSize - 1) recvBufferPos = bufferSize - 1;
       }
-      return (recvBuffer[0] != 0);
-      break;
     }
-    default:
-      break;
+    return (recvBuffer[0] != 0);
+    break;
+  }
+  default:
+    return false;
+    break;
   }
   return false;
 }
@@ -339,7 +340,7 @@ LX200RETURN GetLX200Float(char* command, float* value)
   return LX200GETVALUEFAILED;
 }
 
-LX200RETURN GetLocalTimeLX200(unsigned int &hour, unsigned int &minute, unsigned int &second)
+LX200RETURN GetLocalTimeLX200(unsigned int& hour, unsigned int& minute, unsigned int& second)
 {
   char out[LX200sbuff];
   if (GetLX200(":GL#", out, sizeof(out)) == LX200GETVALUEFAILED)
@@ -348,7 +349,7 @@ LX200RETURN GetLocalTimeLX200(unsigned int &hour, unsigned int &minute, unsigned
   return LX200VALUEGET;
 }
 
-LX200RETURN GetUTCTimeLX200(unsigned int &hour, unsigned int &minute, unsigned int &second)
+LX200RETURN GetUTCTimeLX200(unsigned int& hour, unsigned int& minute, unsigned int& second)
 {
   char out[LX200sbuff];
   if (GetLX200(":GXT0#", out, sizeof(out)) == LX200GETVALUEFAILED)
@@ -357,7 +358,7 @@ LX200RETURN GetUTCTimeLX200(unsigned int &hour, unsigned int &minute, unsigned i
   return LX200VALUEGET;
 }
 
-LX200RETURN GetRALX200(unsigned int &hour, unsigned int &minute, unsigned int &second)
+LX200RETURN GetRALX200(unsigned int& hour, unsigned int& minute, unsigned int& second)
 {
   char out[LX200sbuff];
   if (GetLX200(":GR#", out, sizeof(out)) == LX200GETVALUEFAILED)
@@ -366,7 +367,7 @@ LX200RETURN GetRALX200(unsigned int &hour, unsigned int &minute, unsigned int &s
   return LX200VALUEGET;
 }
 
-LX200RETURN GetLocalTimeLX200(long &value)
+LX200RETURN GetLocalTimeLX200(long& value)
 {
   unsigned int hour, minute, second;
   if (GetLocalTimeLX200(hour, minute, second) == LX200GETVALUEFAILED)
@@ -377,7 +378,7 @@ LX200RETURN GetLocalTimeLX200(long &value)
   return LX200VALUEGET;
 }
 
-LX200RETURN GetUTCTimeLX200(long &value)
+LX200RETURN GetUTCTimeLX200(long& value)
 {
   unsigned int hour, minute, second;
   if (GetUTCTimeLX200(hour, minute, second) == LX200GETVALUEFAILED)
@@ -388,7 +389,7 @@ LX200RETURN GetUTCTimeLX200(long &value)
   return LX200VALUEGET;
 }
 
-LX200RETURN SetLocalTimeLX200(long &value)
+LX200RETURN SetLocalTimeLX200(long& value)
 {
   char cmd[LX200sbuff];
   unsigned int hour, minute, second;
@@ -401,7 +402,7 @@ LX200RETURN SetLocalTimeLX200(long &value)
   return SetLX200(cmd);
 }
 
-LX200RETURN SetUTCTimeLX200(long &value)
+LX200RETURN SetUTCTimeLX200(long& value)
 {
   char cmd[LX200sbuff];
   unsigned int hour, minute, second;
@@ -428,14 +429,14 @@ LX200RETURN GetSiteLX200(int& value)
 LX200RETURN GetLatitudeLX200(double& degree)
 {
   char out[LX200sbuff];
-  if (GetLX200(":Gt#", out, sizeof(out)) == LX200VALUEGET)
+  if (GetLX200(":Gtf#", out, sizeof(out)) == LX200VALUEGET)
   {
-    if (dmsToDouble(&degree, out, true, false))
+    if (dmsToDouble(&degree, out, true, true))
       return LX200VALUEGET;
   }
   return LX200GETVALUEFAILED;
 }
-LX200RETURN GetLstT0LX200(double &T0)
+LX200RETURN GetLstT0LX200(double& T0)
 {
   char out[LX200sbuff];
   if (GetLX200(":GS#", out, sizeof(out)) == LX200VALUEGET)
@@ -448,12 +449,12 @@ LX200RETURN GetLstT0LX200(double &T0)
 LX200RETURN GetLongitudeLX200(double& degree)
 {
   char out[LX200sbuff];
-  if (GetLX200(":Gg#", out, sizeof(out)) == LX200VALUEGET)
+  if (GetLX200(":Ggf#", out, sizeof(out)) == LX200VALUEGET)
   {
     double longi = 0;
     if ((out[0] == '-') || (out[0] == '+'))
     {
-      if (dmsToDouble(&longi, (char *)&out[1], false, false))
+      if (dmsToDouble(&longi, (char*)&out[1], false, true))
       {
         degree = out[0] == '-' ? -longi : longi;
         return LX200VALUEGET;
@@ -668,7 +669,7 @@ LX200RETURN SyncGotoLX200AltAz(bool sync, uint16_t& vz1, uint8_t& vz2, uint8_t& 
   }
 }
 
-LX200RETURN SyncGotoLX200(bool sync, float &Ra, float &Dec)
+LX200RETURN SyncGotoLX200(bool sync, float& Ra, float& Dec)
 {
   uint8_t vr1, vr2, vr3, vd2, vd3;
   uint16_t vd1;
@@ -681,7 +682,7 @@ LX200RETURN SyncGotoLX200(bool sync, float &Ra, float &Dec)
 }
 
 
-LX200RETURN SyncGotoLX200AltAz(bool sync, float &Az, float &Alt)
+LX200RETURN SyncGotoLX200AltAz(bool sync, float& Az, float& Alt)
 {
   uint8_t  vz2, vz3, va2, va3;
   uint16_t vz1, va1;
@@ -693,7 +694,7 @@ LX200RETURN SyncGotoLX200AltAz(bool sync, float &Az, float &Alt)
   return SyncGotoLX200AltAz(sync, vz1, vz2, vz3, ispos, va1, va2, va3);
 }
 
-LX200RETURN SyncGotoLX200(bool sync, float &Ra, float &Dec, double epoch)
+LX200RETURN SyncGotoLX200(bool sync, float& Ra, float& Dec, double epoch)
 {
   unsigned int day, month, year;
   if (GetUTCDateLX200(day, month, year) != LX200VALUEGET)
@@ -706,7 +707,7 @@ LX200RETURN SyncGotoLX200(bool sync, float &Ra, float &Dec, double epoch)
   return SyncGotoLX200(sync, cooNow.ra, cooNow.dec);
 }
 
-LX200RETURN GetLocalDateLX200(unsigned int &day, unsigned int &month, unsigned int &year)
+LX200RETURN GetLocalDateLX200(unsigned int& day, unsigned int& month, unsigned int& year)
 {
   char out[LX200sbuff];
   if (GetLX200(":GC#", out, sizeof(out)) == LX200VALUEGET)
@@ -723,7 +724,7 @@ LX200RETURN GetLocalDateLX200(unsigned int &day, unsigned int &month, unsigned i
   }
 }
 
-LX200RETURN GetUTCDateLX200(unsigned int &day, unsigned int &month, unsigned int &year)
+LX200RETURN GetUTCDateLX200(unsigned int& day, unsigned int& month, unsigned int& year)
 {
   char out[LX200sbuff];
   if (GetLX200(":GXT1#", out, sizeof(out)) == LX200VALUEGET)
@@ -801,7 +802,7 @@ LX200RETURN SyncSelectedStarLX200(unsigned short alignSelectedStar)
   if (alignSelectedStar >= 0) return SyncGotoCatLX200(false); else return LX200UNKOWN;
 }
 
-LX200RETURN readReverseLX200(const uint8_t &axis, bool &reverse)
+LX200RETURN readReverseLX200(const uint8_t& axis, bool& reverse)
 {
   char out[LX200sbuff];
   LX200RETURN ok = axis == 1 ? GetLX200(":GXMRR#", out, sizeof(out)) : GetLX200(":GXMRD#", out, sizeof(out));
@@ -812,7 +813,7 @@ LX200RETURN readReverseLX200(const uint8_t &axis, bool &reverse)
   return ok;
 }
 
-LX200RETURN writeReverseLX200(const uint8_t &axis, const bool &reverse)
+LX200RETURN writeReverseLX200(const uint8_t& axis, const bool& reverse)
 {
   char text[LX200sbuff];
   sprintf(text, ":SXMRX,%u#", (unsigned int)reverse);
@@ -820,7 +821,7 @@ LX200RETURN writeReverseLX200(const uint8_t &axis, const bool &reverse)
   return SetLX200(text);
 }
 
-LX200RETURN readBacklashLX200(const uint8_t &axis, float &backlash)
+LX200RETURN readBacklashLX200(const uint8_t& axis, float& backlash)
 {
   char out[LX200sbuff];
   LX200RETURN ok = axis == 1 ? GetLX200(":GXMBR#", out, sizeof(out)) : GetLX200(":GXMBD#", out, sizeof(out));
@@ -830,14 +831,14 @@ LX200RETURN readBacklashLX200(const uint8_t &axis, float &backlash)
   }
   return ok;
 }
-LX200RETURN writeBacklashLX200(const uint8_t &axis, const float &backlash)
+LX200RETURN writeBacklashLX200(const uint8_t& axis, const float& backlash)
 {
   char cmd[LX200sbuff];
   sprintf(cmd, ":SXMBX,%u#", (unsigned int)backlash);
   cmd[5] = axis == 1 ? 'R' : 'D';
   return SetLX200(cmd);
 }
-LX200RETURN readTotGearLX200(const uint8_t &axis, float &totGear)
+LX200RETURN readTotGearLX200(const uint8_t& axis, float& totGear)
 {
   char out[LX200sbuff];
   LX200RETURN ok = axis == 1 ? GetLX200(":GXMGR#", out, sizeof(out)) : GetLX200(":GXMGD#", out, sizeof(out));
@@ -847,14 +848,14 @@ LX200RETURN readTotGearLX200(const uint8_t &axis, float &totGear)
   }
   return ok;
 }
-LX200RETURN writeTotGearLX200(const uint8_t &axis, const float &totGear)
+LX200RETURN writeTotGearLX200(const uint8_t& axis, const float& totGear)
 {
   char cmd[LX200sbuff];
   sprintf(cmd, ":SXMGX,%u#", (unsigned int)totGear);
   cmd[5] = axis == 1 ? 'R' : 'D';
   return SetLX200(cmd);
 }
-LX200RETURN readStepPerRotLX200(const uint8_t &axis, float &stepPerRot)
+LX200RETURN readStepPerRotLX200(const uint8_t& axis, float& stepPerRot)
 {
   char out[LX200sbuff];
   LX200RETURN ok = axis == 1 ? GetLX200(":GXMSR#", out, sizeof(out)) : GetLX200(":GXMSD#", out, sizeof(out));
@@ -864,14 +865,14 @@ LX200RETURN readStepPerRotLX200(const uint8_t &axis, float &stepPerRot)
   }
   return ok;
 }
-LX200RETURN writeStepPerRotLX200(const uint8_t &axis, const float &stepPerRot)
+LX200RETURN writeStepPerRotLX200(const uint8_t& axis, const float& stepPerRot)
 {
   char cmd[LX200sbuff];
   sprintf(cmd, ":SXMSX,%u#", (unsigned int)stepPerRot);
   cmd[5] = axis == 1 ? 'R' : 'D';
   return SetLX200(cmd);
 }
-LX200RETURN readMicroLX200(const uint8_t &axis, uint8_t &microStep)
+LX200RETURN readMicroLX200(const uint8_t& axis, uint8_t& microStep)
 {
   char out[LX200sbuff];
   LX200RETURN ok = axis == 1 ? GetLX200(":GXMMR#", out, sizeof(out)) : GetLX200(":GXMMD#", out, sizeof(out));
@@ -888,14 +889,14 @@ LX200RETURN readMicroLX200(const uint8_t &axis, uint8_t &microStep)
   }
   return ok;
 }
-LX200RETURN writeMicroLX200(const uint8_t &axis, const uint8_t &microStep)
+LX200RETURN writeMicroLX200(const uint8_t& axis, const uint8_t& microStep)
 {
   char cmd[LX200sbuff];
   sprintf(cmd, ":SXMMX,%u#", microStep);
   cmd[5] = axis == 1 ? 'R' : 'D';
   return SetLX200(cmd);
 }
-LX200RETURN readSilentStepLX200(const uint8_t &axis, uint8_t &silent)
+LX200RETURN readSilentStepLX200(const uint8_t& axis, uint8_t& silent)
 {
   char out[LX200sbuff];
   LX200RETURN ok = axis == 1 ? GetLX200(":GXMmR#", out, sizeof(out)) : GetLX200(":GXMmD#", out, sizeof(out));
@@ -912,14 +913,14 @@ LX200RETURN readSilentStepLX200(const uint8_t &axis, uint8_t &silent)
   }
   return ok;
 }
-LX200RETURN writeSilentStepLX200(const uint8_t &axis, const uint8_t &silent)
+LX200RETURN writeSilentStepLX200(const uint8_t& axis, const uint8_t& silent)
 {
   char cmd[LX200sbuff];
   sprintf(cmd, ":SXMmX,%u#", silent);
   cmd[5] = axis == 1 ? 'R' : 'D';
   return SetLX200(cmd);
 }
-LX200RETURN readLowCurrLX200(const uint8_t &axis, uint8_t &lowCurr)
+LX200RETURN readLowCurrLX200(const uint8_t& axis, uint8_t& lowCurr)
 {
   char out[LX200sbuff];
   LX200RETURN ok = axis == 1 ? GetLX200(":GXMcR#", out, sizeof(out)) : GetLX200(":GXMcD#", out, sizeof(out));
@@ -935,14 +936,14 @@ LX200RETURN readLowCurrLX200(const uint8_t &axis, uint8_t &lowCurr)
   }
   return ok;
 }
-LX200RETURN writeLowCurrLX200(const uint8_t &axis, const uint8_t &lowCurr)
+LX200RETURN writeLowCurrLX200(const uint8_t& axis, const uint8_t& lowCurr)
 {
   char cmd[LX200sbuff];
   sprintf(cmd, ":SXMcX,%u#", lowCurr);
   cmd[5] = axis == 1 ? 'R' : 'D';
   return SetLX200(cmd);
 }
-LX200RETURN readHighCurrLX200(const uint8_t &axis, uint8_t &highCurr)
+LX200RETURN readHighCurrLX200(const uint8_t& axis, uint8_t& highCurr)
 {
   char out[LX200sbuff];
   LX200RETURN ok = axis == 1 ? GetLX200(":GXMCR#", out, sizeof(out)) : GetLX200(":GXMCD#", out, sizeof(out));
@@ -958,7 +959,7 @@ LX200RETURN readHighCurrLX200(const uint8_t &axis, uint8_t &highCurr)
   }
   return ok;
 }
-LX200RETURN writeHighCurrLX200(const uint8_t &axis, const uint8_t &highCurr)
+LX200RETURN writeHighCurrLX200(const uint8_t& axis, const uint8_t& highCurr)
 {
   char cmd[LX200sbuff];
   sprintf(cmd, ":SXMCX,%u#", highCurr);
@@ -967,8 +968,8 @@ LX200RETURN writeHighCurrLX200(const uint8_t &axis, const uint8_t &highCurr)
 }
 
 LX200RETURN readFocuserConfig(unsigned int& startPosition, unsigned int& maxPosition,
-                              unsigned int& minSpeed, unsigned int& maxSpeed,
-                              unsigned int& cmdAcc, unsigned int& manAcc, unsigned int& manDec)
+  unsigned int& minSpeed, unsigned int& maxSpeed,
+  unsigned int& cmdAcc, unsigned int& manAcc, unsigned int& manDec)
 {
   char out[LX200lbuff];
   if (GetLX200(":F~#", out, sizeof(out)) == LX200GETVALUEFAILED)
@@ -1009,7 +1010,7 @@ LX200RETURN readFocuserMotor(bool& reverse, unsigned int& micro, unsigned int& i
 
 // convert string in format HH:MM:SS to floating point
 // (also handles)           HH:MM.M
-boolean hmsToDouble(double *f, char *hms)
+boolean hmsToDouble(double* f, char* hms)
 {
   char h[3], m[5], s[3];
   int  h1, m1, m2 = 0, s1 = 0;
@@ -1046,7 +1047,7 @@ boolean hmsToDouble(double *f, char *hms)
 //                          DDD:MM
 //                          sDD*MM
 //                          DDD*MM
-boolean dmsToDouble(double *f, char *dms, boolean sign_present, boolean highPrecision)
+boolean dmsToDouble(double* f, char* dms, boolean sign_present, boolean highPrecision)
 {
   char d[4], m[5], s[3];
   int d1, m1, s1 = 0;

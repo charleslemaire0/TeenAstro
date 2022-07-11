@@ -15,8 +15,9 @@ public:
   enum SiderealMode { SID_STAR, SID_SUN, SID_MOON };
   enum ParkState { PRK_UNPARKED, PRK_PARKED, PRK_FAILED, PRK_PARKING, PRK_UNKNOW };
   enum PierState { PIER_E, PIER_W, PIER_UNKNOW };
+  enum GuidingRate { UNKNOW = -1, GUIDING, SLOW, MEDIUM, FAST, MAX };
 private:
-  //Align
+  //Align 
   AlignState      m_align = ALI_OFF;
   AlignMode       m_aliMode = ALIM_ONE;
   int             m_alignStar = 0;
@@ -44,6 +45,7 @@ private:
   char            m_TempAxis2Deg[15] = "?";
   unsigned long   m_lastStateAxisDeg;
   char            m_TempUTC[15] = "?";
+  char            m_TempLHA[15] = "?";
   char            m_TempUTCdate[15] = "?";
   char            m_TempSidereal[15] = "?";
   unsigned long   m_lastStateTime;
@@ -67,6 +69,7 @@ private:
   bool            m_hasInfoAxis1Deg = false;
   bool            m_hasInfoAxis2Deg = false;
   bool            m_hasInfoUTC = false;
+  bool            m_hasInfoLHA = false;
   bool            m_hasInfoUTCdate = false;
   bool            m_hasInfoSidereal = false;
   bool            m_hasInfoTrackingRate = false;
@@ -97,6 +100,7 @@ public:
   bool hasInfoAz() { return m_hasInfoAz; };
   bool hasInfoAlt() { return m_hasInfoAlt; };
   bool hasInfoUTC() { return m_hasInfoUTC; };
+  bool hasInfoLHA() { return m_hasInfoLHA; };
   bool hasInfoSidereal() { return m_hasInfoSidereal; };
   bool hasInfoMount() { return m_hasInfoMount; };
   bool hasInfoFocuser() { return m_hasInfoFocuser; };
@@ -123,6 +127,7 @@ public:
   const char* getAxis1Deg() { return  m_TempAxis1Deg; };
   const char* getAxis2Deg() { return  m_TempAxis2Deg; };
   const char* getUTC() { return m_TempUTC; };
+  const char* getLHA() { return m_TempLHA; };
   const char* getUTCdate() { return m_TempUTCdate; };
   const char* getSidereal() { return m_TempSidereal; };
   const char* getMState() { return m_TempMount; };
@@ -136,6 +141,7 @@ public:
   void updateAxisStep();
   void updateAxisDeg();
   void updateTime();
+  void updateLHA();
   void updateFocuser();
   void updateTrackingRate();
   void updateMount();
@@ -152,7 +158,7 @@ public:
   bool        getLstT0(double &T0);
   bool        getLat(double &lat);
   bool        getTrackingRate(double &r);
-  bool        getGuidingRate(unsigned char &g);
+  GuidingRate getGuidingRate();
   bool checkConnection(char* major, char* minor);
   bool getDriverName(char* name);
   bool isConnectionValid() { return m_isValid; };

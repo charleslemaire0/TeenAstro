@@ -22,7 +22,7 @@ bool setPark()
     XEEPROM.writeLong(EE_posAxis2, d);
 
     //// and the align
-    //saveAlignModel();
+    saveAlignModel();
     parkSaved = true;
     XEEPROM.write(EE_parkSaved, parkSaved);
     sideralTracking = lastSideralTracking;
@@ -210,7 +210,6 @@ bool iniAtPark()
   parkSaved = XEEPROM.read(EE_parkSaved);
   if (!parkSaved)
   {
-    XEEPROM.write(EE_parkStatus, PRK_UNPARKED);
     parkStatus = PRK_UNPARKED;
     return false;
   }
