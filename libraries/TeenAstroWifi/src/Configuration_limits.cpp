@@ -4,18 +4,26 @@
 // configuration_telescope
 
 const char html_configMinAlt[] PROGMEM =
-"<div class='bt'> Limits: <br/> </div>"
+"<div class='bt'> Limits Altitude: <br/> </div>"
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%d' type='number' name='hl' min='-30' max='30'>"
 "<button type='submit'>Upload</button>"
-" (Horizon, in degrees +/- 30)"
+" (Minimum Altitude, in degrees +/- 30)"
 "</form>"
 "\r\n";
 const char html_configMaxAlt[] PROGMEM =
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%d' type='number' name='ol' min='60' max='91'>"
 "<button type='submit'>Upload</button>"
-" (Overhead, in degrees 60 to 90, set 91 to deactivate)"
+" (Maximum Altitude, in degrees 60 to 90, set 91 to deactivate)"
+"</form>"
+"\r\n";
+const char html_configUnderPole[] PROGMEM =
+"<div class='bt'> Limits German Equatorial Mount: <br/> </div>"
+"<form method='get' action='/configuration_limits.htm'>"
+" <input value='%.1f' type='number' name='up' min='9' max='12' step='0.1'>"
+"<button type='submit'>Upload</button>"
+" (Under pole limite, in hours  from +/-9 to +/-12)"
 "</form>"
 "\r\n";
 const char html_configPastMerE[] PROGMEM =
@@ -76,17 +84,28 @@ void TeenAstroWifi::handleConfigurationLimits()
   data += temp;
   sendHtml(data);
   // Meridian Limits
-  if (GetLX200(":GXLE#", temp1, sizeof(temp1)) == LX200VALUEGET && GetLX200(":GXLW#", temp2, sizeof(temp2)) == LX200VALUEGET)
+  if (ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_GEM)
   {
-    int degPastMerE = (int)strtol(&temp1[0], NULL, 10);
-    degPastMerE = round((degPastMerE*15.0) / 60.0);
-    sprintf_P(temp, html_configPastMerE, degPastMerE);
-    data += temp;
-    int degPastMerW = (int)strtol(&temp2[0], NULL, 10);
-    degPastMerW = round((degPastMerW*15.0) / 60.0);
-    sprintf_P(temp, html_configPastMerW, degPastMerW);
-    data += temp;
+    if (GetLX200(":GXLU#", temp1, sizeof(temp1)) == LX200VALUEGET)
+    {
+      float angle = (float)strtol(&temp1[0], NULL, 10) / 10;
+      sprintf_P(temp, html_configUnderPole, angle);
+      data += temp;
+    }
+    if (GetLX200(":GXLE#", temp1, sizeof(temp1)) == LX200VALUEGET && GetLX200(":GXLW#", temp2, sizeof(temp2)) == LX200VALUEGET)
+    {
+      int degPastMerE = (int)strtol(&temp1[0], NULL, 10);
+      degPastMerE = round((degPastMerE * 15.0) / 60.0);
+      sprintf_P(temp, html_configPastMerE, degPastMerE);
+      data += temp;
+      int degPastMerW = (int)strtol(&temp2[0], NULL, 10);
+      degPastMerW = round((degPastMerW * 15.0) / 60.0);
+      sprintf_P(temp, html_configPastMerW, degPastMerW);
+      data += temp;
+    }
+
   }
+
   else data += "<br />\r\n";
   strcpy(temp, "</div></body></html>");
   data += temp;
@@ -143,7 +162,15 @@ void TeenAstroWifi::processConfigurationLimitsGet()
       SetLX200(temp);
     }
   }
-
+  v = server.arg("up");
+  if (v != "")
+  {
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 9) && (f <= 12)))
+    {
+      sprintf(temp, ":SXLU,%03d#", (int)(f * 10));
+      SetLX200(temp);
+    }
+  }
 
 
   int ut_hrs = -999;
