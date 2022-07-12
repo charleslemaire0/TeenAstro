@@ -40,6 +40,38 @@ const char html_configPastMerW[] PROGMEM =
 " (Past Meridian when West of the pier, in degrees +/-45)"
 "</form>"
 "<br />\r\n";
+const char html_configMinAxis1[] PROGMEM =
+"<div class='bt'> Limits of Instrument Axis 1: <br/> </div>"
+"<form method='get' action='/configuration_limits.htm'>"
+" <input value='%.1f' type='number' name='mia1' min='-360' max='0' step='0.1'>"
+"<button type='submit'>Upload</button>"
+" (Minimum value for instrument axis 1, in degrees from -360 to 0)"
+"</form>"
+"\r\n";
+const char html_configMaxAxis1[] PROGMEM =
+"<form method='get' action='/configuration_limits.htm'>"
+" <input value='%.1f' type='number' name='maa1' min='0' max='360' step='0.1'>"
+"<button type='submit'>Upload</button>"
+" (Maximum value for instrument axis 1, in degrees from 0 to 360)"
+"</form>"
+"\r\n";
+const char html_configMinAxis2[] PROGMEM =
+"<div class='bt'> Limits of Instrument Axis 2: <br/> </div>"
+"<form method='get' action='/configuration_limits.htm'>"
+" <input value='%.1f' type='number' name='mia2' min='-360' max='0' step='0.1'>"
+"<button type='submit'>Upload</button>"
+" (Minimum value for instrument axis 2, in degrees from -360 to 0)"
+"</form>"
+"\r\n";
+const char html_configMaxAxis2[] PROGMEM =
+"<form method='get' action='/configuration_limits.htm'>"
+" <input value='%.1f' type='number' name='maa2' min='0' max='360' step='0.1'>"
+"<button type='submit'>Upload</button>"
+" (Maximum value for instrument axis 2, in degrees from 0 to 360)"
+"</form>"
+"\r\n";
+
+
 
 //const char html_reboot_t[] PROGMEM =
 //"<br/><form method='get' action='/configuration_mount.htm'>"
@@ -106,6 +138,31 @@ void TeenAstroWifi::handleConfigurationLimits()
 
   }
 
+  if (GetLX200(":GXLA#", temp1, sizeof(temp1)) == LX200VALUEGET)
+  {
+    float angle = -(float)strtol(&temp1[0], NULL, 10) / 10;
+    sprintf_P(temp, html_configMinAxis1, angle);
+    data += temp;
+  }
+  if (GetLX200(":GXLB#", temp1, sizeof(temp1)) == LX200VALUEGET)
+  {
+    float angle = (float)strtol(&temp1[0], NULL, 10) / 10;
+    sprintf_P(temp, html_configMaxAxis1, angle);
+    data += temp;
+  }
+  if (GetLX200(":GXLC#", temp1, sizeof(temp1)) == LX200VALUEGET)
+  {
+    float angle = -(float)strtol(&temp1[0], NULL, 10) / 10;
+    sprintf_P(temp, html_configMinAxis2, angle);
+    data += temp;
+  }
+  if (GetLX200(":GXLD#", temp1, sizeof(temp1)) == LX200VALUEGET)
+  {
+    float angle = (float)strtol(&temp1[0], NULL, 10) / 10;
+    sprintf_P(temp, html_configMaxAxis2, angle);
+    data += temp;
+  }
+
   else data += "<br />\r\n";
   strcpy(temp, "</div></body></html>");
   data += temp;
@@ -168,6 +225,42 @@ void TeenAstroWifi::processConfigurationLimitsGet()
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 9) && (f <= 12)))
     {
       sprintf(temp, ":SXLU,%03d#", (int)(f * 10));
+      SetLX200(temp);
+    }
+  }
+  v = server.arg("mia1");
+  if (v != "")
+  {
+    if ((atof2((char*)v.c_str(), &f)) && ((-f >= 0) && (-f <= 360)))
+    {
+      sprintf(temp, ":SXLA,%04d#", (int)(-f * 10));
+      SetLX200(temp);
+    }
+  }
+  v = server.arg("maa1");
+  if (v != "")
+  {
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 360)))
+    {
+      sprintf(temp, ":SXLB,%04d#", (int)(f * 10));
+      SetLX200(temp);
+    }
+  }
+  v = server.arg("mia2");
+  if (v != "")
+  {
+    if ((atof2((char*)v.c_str(), &f)) && ((-f >= 0) && (-f <= 360)))
+    {
+      sprintf(temp, ":SXLC,%04d#", (int)(-f * 10));
+      SetLX200(temp);
+    }
+  }
+  v = server.arg("maa2");
+  if (v != "")
+  {
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 360)))
+    {
+      sprintf(temp, ":SXLD,%04d#", (int)(f * 10));
       SetLX200(temp);
     }
   }
