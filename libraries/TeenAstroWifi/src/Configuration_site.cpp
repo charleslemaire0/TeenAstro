@@ -35,9 +35,11 @@ const char html_configLongWE1[] PROGMEM =
 const char html_configLongWE2[] PROGMEM =
 "</select>";
 const char html_configLongDeg[] PROGMEM =
-" <input value='%s' type='number' name='site_g1' min='0' max='179'>&nbsp;&deg;&nbsp;";
+" <input value='%d' type='number' name='site_g1' min='0' max='179'>&nbsp;&deg;&nbsp;";
 const char html_configLongMin[] PROGMEM =
-" <input value='%s' type='number' name='site_g2' min='0' max='59'>&nbsp;'&nbsp;&nbsp;";
+" <input value='%d' type='number' name='site_g2' min='0' max='59'>&nbsp;'&nbsp;&nbsp;";
+const char html_configLongSec[] PROGMEM =
+" <input value='%d' type='number' name='site_g3' min='0' max='59'>&nbsp;\"&nbsp;&nbsp;";
 const char html_uploadLong[] PROGMEM =
 "<button type='submit'>Upload</button>"
 " (Longitude, in degree and minute)"
@@ -49,9 +51,11 @@ const char html_configLatNS1[] PROGMEM =
 const char html_configLatNS2[] PROGMEM =
 "</select>";
 const char html_configLatDeg[] PROGMEM =
-" <input value='%s' type='number' name='site_t1' min='0' max='90'>&nbsp;&deg;&nbsp;";
+" <input value='%d' type='number' name='site_t1' min='0' max='89'>&nbsp;&deg;&nbsp;";
 const char html_configLatMin[] PROGMEM =
-" <input value='%s' type='number' name='site_t2' min='0' max='59'>&nbsp;'&nbsp;&nbsp;";
+" <input value='%d' type='number' name='site_t2' min='0' max='59'>&nbsp;'&nbsp;&nbsp;";
+const char html_configLatSec[] PROGMEM =
+" <input value='%d' type='number' name='site_t3' min='0' max='59'>&nbsp;\"&nbsp;&nbsp;";
 const char html_uploadLat[] PROGMEM =
 "<button type='submit'>Upload</button>"
 " (Latitude, in degree and minute)"
@@ -74,7 +78,7 @@ void TeenAstroWifi::handleConfigurationSite()
   sendHtmlStart();
   char temp[150] = "";
   char temp1[50] = "";
-
+  int tmp;
   String data;
   processConfigurationSiteGet();
   preparePage(data, ServerPage::Site);
@@ -121,36 +125,48 @@ void TeenAstroWifi::handleConfigurationSite()
       sendHtml(data);
 
       // Latitude
-      if (GetLX200(":Gt#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "+00*00");
-      temp1[3] = 0; // deg. part only
+      if (GetLX200(":Gtf#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "+00*00*00");
       data += FPSTR(html_configLatNS1);
       sendHtml(data);
       temp1[0] == '+' ? data += "<option selected value='0'>North</option>" : data += "<option value='0'>North</option>";
       temp1[0] == '-' ? data += "<option selected value='1'>Sud</option>" : data += "<option value='1'>Sud</option>";
       data += FPSTR(html_configLatNS2);
       temp1[0] = '0'; // remove +
-      sprintf_P(temp, html_configLatDeg, temp1);
+      temp1[3] = 0;
+      temp1[6] = 0;
+      temp1[9] = 0;
+      tmp = (int)strtol(&temp1[0], NULL, 10);
+      sprintf_P(temp, html_configLatDeg, tmp);
+      data += temp;      
+      tmp = (int)strtol(&temp1[4], NULL, 10);
+      sprintf_P(temp, html_configLatMin, tmp);
       data += temp;
-      sendHtml(data);
-      sprintf_P(temp, html_configLatMin, (char*)&temp1[4]);
+      tmp = (int)strtol(&temp1[7], NULL, 10);
+      sprintf_P(temp, html_configLatSec, tmp);
       data += temp;
-      sendHtml(data);
       data += FPSTR(html_uploadLat);
       sendHtml(data);
       // Longitude
-      if (GetLX200(":Gg#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "+000*00");
-      temp1[4] = 0; // deg. part only
+      if (GetLX200(":Ggf#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "+000*00*00");
       data += FPSTR(html_configLongWE1);
       temp1[0] == '+' ? data += "<option selected value='0'>West</option>" : data += "<option value='0'>West</option>";
       temp1[0] == '-' ? data += "<option selected value='1'>East</option>" : data += "<option value='1'>East</option>";
       data += FPSTR(html_configLongWE2);
-      sendHtml(data);
       temp1[0] = '0'; // sign
-      sprintf_P(temp, html_configLongDeg, temp1);
+      temp1[4] = 0;
+      temp1[7] = 0;
+      temp1[10] = 0;
+      tmp = (int)strtol(&temp1[0], NULL, 10);
+      sprintf_P(temp, html_configLongDeg, tmp);
       data += temp;
-      sprintf_P(temp, html_configLongMin, (char*)&temp1[5]);
+      tmp = (int)strtol(&temp1[5], NULL, 10);
+      sprintf_P(temp, html_configLongMin, tmp);
+      data += temp;
+      tmp = (int)strtol(&temp1[8], NULL, 10);
+      sprintf_P(temp, html_configLongSec, tmp);
       data += temp;
       data += FPSTR(html_uploadLong);
+      sendHtml(data);
       // Elevation
       if (GetLX200(":Ge#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "+000");
       if (temp1[0] == '+') temp1[0] = '0';
@@ -200,6 +216,7 @@ void TeenAstroWifi::processConfigurationSiteGet()
   }
   // Location
   int long_deg = -999;
+  int long_min = 0;
   int sign = -1;
   v = server.arg("site_g0");
   if (v != "")
@@ -212,24 +229,36 @@ void TeenAstroWifi::processConfigurationSiteGet()
   v = server.arg("site_g1");
   if (v != "")
   {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -180) && (i <= 180)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i < 180)))
     {
-      long_deg = sign ? -i : i;
+      long_deg = i;
     }
   }
   v = server.arg("site_g2");
   if (v != "")
   {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i < 60)))
+    {
+      long_min = i;
+    }
+  }
+  v = server.arg("site_g3");
+  if (v != "")
+  {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 60)))
     {
-      if ((long_deg >= -180) && (long_deg <= 180))
+      if ((long_deg >= 0) && (long_deg < 180) && (long_min >= 0) && (long_min < 60))
       {
-        sprintf(temp, ":Sg%+04d*%02d#", long_deg, i);
+        sprintf(temp, ":Sg%+04d:%02d:%02d#", long_deg, long_min, i);
+        if (sign)
+          temp[3] = '-';
         SetLX200(temp);
       }
     }
   }
+
   int lat_deg = -999;
+  int lat_min = 0;
   v = server.arg("site_t0");
   if (v != "")
   {
@@ -241,9 +270,9 @@ void TeenAstroWifi::processConfigurationSiteGet()
   v = server.arg("site_t1");
   if (v != "")
   {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 90)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i < 90)))
     {
-      lat_deg = sign ? -i : i;
+      lat_deg = i;
     }
   }
   v = server.arg("site_t2");
@@ -251,10 +280,19 @@ void TeenAstroWifi::processConfigurationSiteGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 60)))
     {
-      if ((lat_deg >= -90) && (lat_deg <= 90))
+      lat_min = i;
+    }
+  }
+  v = server.arg("site_t3");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i < 60)))
+    {
+      if ((lat_deg >= 0) && (lat_deg < 90)&&(lat_min >= 0) && (lat_min < 60))
       {
-        v = server.arg("site_t0");
-        sprintf(temp, ":St%+03d*%02d#", lat_deg, i);
+        sprintf(temp, ":St%+03d:%02d:%02d#", lat_deg, lat_min, i);
+        if (sign)
+          temp[3] = '-';
         SetLX200(temp);
       }
     }
