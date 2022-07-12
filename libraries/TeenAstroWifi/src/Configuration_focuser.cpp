@@ -123,7 +123,7 @@ void TeenAstroWifi::handleConfigurationFocuser()
   String data;
   sendHtmlStart();
   processConfigurationFocuserGet();
-  preparePage(data, 5);
+  preparePage(data, ServerPage::Focuser);
   sendHtml(data);
 
   if (GetLX200(":F~#", temp1, sizeof(temp1)) == LX200VALUEGET && temp1[0] == '~')

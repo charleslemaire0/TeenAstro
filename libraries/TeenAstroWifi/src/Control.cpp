@@ -166,7 +166,7 @@ void TeenAstroWifi::handleControl()
   char temp1[80] = "";
   String data;
   processControlGet();
-  preparePage(data, 2);
+  preparePage(data, ServerPage::Control);
   sendHtml(data);
   // guide (etc) script
   data += FPSTR(html_controlScript1);

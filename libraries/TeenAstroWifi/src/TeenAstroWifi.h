@@ -27,8 +27,8 @@
 #define ServerFirmwareDate          __DATE__
 #define ServerFirmwareTime          __TIME__
 #define ServerFirmwareVersionMajor  "1"
-#define ServerFirmwareVersionMinor  "2"
-#define ServerFirmwareVersionPatch  "4"
+#define ServerFirmwareVersionMinor  "3"
+#define ServerFirmwareVersionPatch  "0"
 
 
 // -----------------------------------------------------------------------------------
@@ -88,6 +88,10 @@ class TeenAstroWifi
   {
     AutoClose, KeepOpened
   };
+  enum ServerPage
+  {
+    Index=1, Control, Speed, Mount, Limits, Site, Focuser, Wifi
+  };
   static bool wifiOn;
   static int WebTimeout;
   static int CmdTimeout;
@@ -122,11 +126,15 @@ class TeenAstroWifi
   static WiFiServer cmdSvr;
   static WiFiClient cmdSvrClient;
   static const char* HighSpeedCommsStr(long baud);
-  static void preparePage(String &data, int page);
+  static void preparePage(String &data, ServerPage page);
   static void processConfigurationSiteGet();
   static void handleConfigurationSite();
-  static void processConfigurationTelescopeGet();
-  static void handleConfigurationTelescope();
+  static void processConfigurationSpeedGet();
+  static void handleConfigurationSpeed();
+  static void processConfigurationMountGet();
+  static void handleConfigurationMount();
+  static void processConfigurationLimitsGet();
+  static void handleConfigurationLimits();
   static void processConfigurationFocuserGet();
   static void handleConfigurationFocuser();
   static void handleRoot();

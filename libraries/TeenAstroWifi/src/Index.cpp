@@ -55,7 +55,7 @@ void TeenAstroWifi::handleRoot()
   //ta_MountStatus.updateTrackingRate();
 
   String data;
-  preparePage(data, 1);
+  preparePage(data, ServerPage::Index);
   sendHtml(data);
   data += "<div style='width: 27em;'>";
 

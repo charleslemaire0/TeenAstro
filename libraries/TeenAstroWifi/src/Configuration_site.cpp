@@ -77,7 +77,7 @@ void TeenAstroWifi::handleConfigurationSite()
 
   String data;
   processConfigurationSiteGet();
-  preparePage(data, 3);
+  preparePage(data, ServerPage::Site);
   sendHtml(data);
   if (GetLX200(":W?#", temp1, sizeof(temp1)) == LX200VALUEGET)
   {

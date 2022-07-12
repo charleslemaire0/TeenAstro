@@ -32,14 +32,19 @@ const char html_links1S[] PROGMEM = "<a href='/index.htm' style='background-colo
 const char html_links1N[] PROGMEM = "<a href='/index.htm'>Status</a>";
 const char html_links2S[] PROGMEM = "<a href='/control.htm' style='background-color: #552222;'>Control</a>";
 const char html_links2N[] PROGMEM = "<a href='/control.htm'>Control</a>";
-const char html_links3S[] PROGMEM = "<a href='/configuration_site.htm' style='background-color: #552222;'>Site</a>";
-const char html_links3N[] PROGMEM = "<a href='/configuration_site.htm'>Site</a>";
-const char html_links4S[] PROGMEM = "<a href='/configuration_telescope.htm' style='background-color: #552222;'>Telescope</a>";
-const char html_links4N[] PROGMEM = "<a href='/configuration_telescope.htm'>Telescope</a>";
-const char html_links5S[] PROGMEM = "<a href='/configuration_focuser.htm' style='background-color: #552222;'>Focuser</a>";
-const char html_links5N[] PROGMEM = "<a href='/configuration_focuser.htm'>Focuser</a>";
-const char html_links6S[] PROGMEM = "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />";
-const char html_links6N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />";
+const char html_links3S[] PROGMEM = "<a href='/configuration_speed.htm' style='background-color: #552222;'>Speed</a>";
+const char html_links3N[] PROGMEM = "<a href='/configuration_speed.htm'>Speed</a>";
+const char html_links4S[] PROGMEM = "<a href='/configuration_site.htm' style='background-color: #552222;'>Site</a>";
+const char html_links4N[] PROGMEM = "<a href='/configuration_site.htm'>Site</a>";
+const char html_links5S[] PROGMEM = "<a href='/configuration_mount.htm' style='background-color: #552222;'>Mount</a>";
+const char html_links5N[] PROGMEM = "<a href='/configuration_mount.htm'>Mount</a>";
+const char html_links6S[] PROGMEM = "<a href='/configuration_limits.htm' style='background-color: #552222;'>Limits</a>";
+const char html_links6N[] PROGMEM = "<a href='/configuration_limits.htm'>Limits</a>";
+const char html_links7S[] PROGMEM = "<a href='/configuration_focuser.htm' style='background-color: #552222;'>Focuser</a>";
+const char html_links7N[] PROGMEM = "<a href='/configuration_focuser.htm'>Focuser</a>";
+const char html_links8S[] PROGMEM = "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />";
+const char html_links8N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />";
+
 
 
 bool TeenAstroWifi::wifiOn = true;
@@ -190,16 +195,16 @@ void TeenAstroWifi::handleNotFound()
   server.send(404, "text/plain", message);
 }
 
-void TeenAstroWifi::preparePage(String &data, int page)
+void TeenAstroWifi::preparePage(String &data, ServerPage page)
 {
   char temp1[80] = "";
   data = FPSTR(html_headB);
-  if (!ta_MountStatus.hasFocuser() && page == 5 )
+  if (!ta_MountStatus.hasFocuser() && page == ServerPage::Focuser)
   {
-    page = 1;
+    page = ServerPage::Index;
   }
 
-  if (page == 1)
+  if (page == ServerPage::Index)
     data += FPSTR(html_headerIdx);
   data += FPSTR(html_main_cssB);
   data += FPSTR(html_main_css1);
@@ -212,7 +217,7 @@ void TeenAstroWifi::preparePage(String &data, int page)
   data += FPSTR(html_main_css8);
   data += FPSTR(html_main_css9);
   sendHtml(data);
-  if (page == 2)
+  if (page == ServerPage::Control)
   {
     data += FPSTR(html_main_css_control1);
     data += FPSTR(html_main_css_control2);
@@ -253,16 +258,18 @@ void TeenAstroWifi::preparePage(String &data, int page)
   }
   else data += "?";
   data += FPSTR(html_header3);
-  data += page == 1 ? FPSTR(html_links1S) : FPSTR(html_links1N);
-  data += page == 2 ? FPSTR(html_links2S) : FPSTR(html_links2N);
-  data += page == 3 ? FPSTR(html_links3S) : FPSTR(html_links3N);
-  data += page == 4 ? FPSTR(html_links4S) : FPSTR(html_links4N);
+  data += page == ServerPage::Index ? FPSTR(html_links1S) : FPSTR(html_links1N);
+  data += page == ServerPage::Control ? FPSTR(html_links2S) : FPSTR(html_links2N);
+  data += page == ServerPage::Speed ? FPSTR(html_links3S) : FPSTR(html_links3N);
+  data += page == ServerPage::Site ? FPSTR(html_links4S) : FPSTR(html_links4N);
+  data += page == ServerPage::Mount ? FPSTR(html_links5S) : FPSTR(html_links5N);
+  data += page == ServerPage::Limits ? FPSTR(html_links6S) : FPSTR(html_links6N);
   if (ta_MountStatus.hasFocuser())
   {
-    data += page == 5 ? FPSTR(html_links5S) : FPSTR(html_links5N);
+    data += page == ServerPage::Focuser ? FPSTR(html_links7S) : FPSTR(html_links7N);
   }
 #ifndef OETHS
-  data += page == 6 ? FPSTR(html_links6S) : FPSTR(html_links6N);
+  data += page == ServerPage::Wifi ? FPSTR(html_links8S) : FPSTR(html_links8N);
 #endif
   data += FPSTR(html_header4);
 }
@@ -472,7 +479,9 @@ void TeenAstroWifi::setup()
   server.on("/", handleRoot);
   server.on("/index.htm", handleRoot);
   server.on("/configuration_site.htm", handleConfigurationSite);
-  server.on("/configuration_telescope.htm", handleConfigurationTelescope);
+  server.on("/configuration_speed.htm", handleConfigurationSpeed);
+  server.on("/configuration_mount.htm", handleConfigurationMount);
+  server.on("/configuration_limits.htm", handleConfigurationLimits);
   server.on("/configuration_focuser.htm", handleConfigurationFocuser);
   server.on("/control.htm", handleControl);
   server.on("/control.txt", controlAjax);

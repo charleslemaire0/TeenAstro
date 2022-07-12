@@ -6,7 +6,7 @@
 
 const char html_configMount_1[] PROGMEM =
 "<div class='bt'> Equatorial Mount Type: <br/> </div>"
-"<form action='/configuration_telescope.htm'>"
+"<form action='/configuration_mount.htm'>"
 "<select name='mount' onchange='this.form.submit()' >";
 const char html_configMount_2[] PROGMEM =
 "</select>"
@@ -15,7 +15,7 @@ const char html_configMount_2[] PROGMEM =
 
 const char html_configTracking_1[] PROGMEM =
 "<div class='bt'> Corrected Tracking: <br/> </div>"
-"<form action='/configuration_telescope.htm'>"
+"<form action='/configuration_mount.htm'>"
 "<select name='tracking' onchange='this.form.submit()' >";
 const char html_configTracking_2[] PROGMEM =
 "</select>"
@@ -24,69 +24,15 @@ const char html_configTracking_2[] PROGMEM =
 
 const char html_configPolar_1[] PROGMEM =
 "<div class='bt'> Polar Alignment: <br/> </div>"
-"<form action='/configuration_telescope.htm'>"
+"<form action='/configuration_mount.htm'>"
 "<select name='polar' onchange='this.form.submit()' >";
 const char html_configPolar_2[] PROGMEM =
 "</select>"
 "</form>"
 "<br/>\r\n";
 
-const char html_configRateD_0[] PROGMEM =
-"<div class='bt'> Speed & Acceleration: <br/> </div>"
-"<form action='/configuration_telescope.htm'>"
-"<select name='RD'>";
-const char html_configRateD_1[] PROGMEM =
-"</select>"
-"<button type='submit'>Upload</button>"
-" (Active speed after main unit start)"
-"</form>"
-"\r\n";
-
-const char html_configMaxRate[] PROGMEM =
-"<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%d' type='number' name='MaxR' min='32' max='4000'>"
-"<button type='submit'>Upload</button>"
-" (Maximum Slewing speed from 32x to 4000x)"
-"</form>"
-"\r\n";
-const char html_configRate3[] PROGMEM =
-"<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%.0f' type='number' name='R3' min='1' max='255' step='1'>"
-"<button type='submit'>Upload</button>"
-" (Fast Recenter speed from 1 to 255x)"
-"</form>"
-"\r\n";
-const char html_configRate2[] PROGMEM =
-"<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%.0f' type='number' name='R2' min='1' max='255' step='1'>"
-"<button type='submit'>Upload</button>"
-" (Medium Recenter speed from 1x to 255x)"
-"</form>"
-"\r\n";
-const char html_configRate1[] PROGMEM =
-"<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%.0f' type='number' name='R1' min='1' max='255' step='1'>"
-"<button type='submit'>Upload</button>"
-" (Slow Recenter speed from 1x to 255x)"
-"</form>"
-"\r\n";
-const char html_configRate0[] PROGMEM =
-"<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%.2f' type='number' name='R0' min='0.01' max='1' step='.01'>"
-"<button type='submit'>Upload</button>"
-" (Guiding speed from 0.01x to 1x)"
-"</form>"
-"\r\n";
-
-const char html_configAcceleration[] PROGMEM =
-"<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%.1f' type='number' name='Acc' min='0.1' max='25' step='.1'>"
-"<button type='submit'>Upload</button>"
-" (Acceleration, number of degrees to reach the Max Speed from 0.1° to 25°)"
-"</form>"
-"<br />\r\n";
 const char html_configRotAxis_1[] PROGMEM =
-"<form action='/configuration_telescope.htm'>"
+"<form action='/configuration_mount.htm'>"
 "<select name='mrot%d'>";
 const char html_configRotAxis_r[] PROGMEM =
 "<option value ='0'>Direct</option>"
@@ -103,42 +49,42 @@ const char html_configRotAxis_2[] PROGMEM =
 "\r\n";
 
 const char html_configBlAxis[] PROGMEM =
-"<form method='get' action='/configuration_telescope.htm'>"
+"<form method='get' action='/configuration_mount.htm'>"
 " <input value='%d' type='number' name='mbl%d' min='0' max='999'>"
 "<button type='submit'>Upload</button>"
 " (Backlash Axis%d, in arc-seconds from 0 to 999)"
 "</form>"
 "\r\n";
 const char html_configGeAxis[] PROGMEM =
-"<form method='get' action='/configuration_telescope.htm'>"
+"<form method='get' action='/configuration_mount.htm'>"
 " <input value='%d' type='number' name='mge%d' min='1' max='60000'>"
 "<button type='submit'>Upload</button>"
 " (Gear Axis%d, from 1 to 60000)"
 "</form>"
 "\r\n";
 const char html_configStAxis[] PROGMEM =
-"<form method='get' action='/configuration_telescope.htm'>"
+"<form method='get' action='/configuration_mount.htm'>"
 " <input value='%d' type='number' name='mst%d' min='1' max='400'>"
 "<button type='submit'>Upload</button>"
 " (Steps per Rotation Axis%d, from 1 to 400)"
 "</form>"
 "\r\n";
 const char html_configMuAxis[] PROGMEM =
-"<form method='get' action='/configuration_telescope.htm'>"
+"<form method='get' action='/configuration_mount.htm'>"
 " <input value='%d' type='number' name='mmu%d' min='8' max='256'>"
 "<button type='submit'>Upload</button>"
 " (Microsteps Axis%d, valid value are 8, 16, 32, 64, 128, 256)"
 "</form>"
 "\r\n";
 const char html_configLCAxis[] PROGMEM =
-"<form method='get' action='/configuration_telescope.htm'>"
+"<form method='get' action='/configuration_mount.htm'>"
 " <input value='%d' type='number' name='mlc%d' min='200' max='2800' step='200'>"
 "<button type='submit'>Upload</button>"
 " (Low Current Axis%d, from 200mA to 2800mA)"
 "</form>"
 "\r\n";
 const char html_configHCAxis[] PROGMEM =
-"<form method='get' action='/configuration_telescope.htm'>"
+"<form method='get' action='/configuration_mount.htm'>"
 " <input value='%d' type='number' name='mhc%d' min='200' max='2800' step='200'>"
 "<button type='submit'>Upload</button>"
 " (High Current Axis%d, from 200mA to 2800mA)"
@@ -146,7 +92,7 @@ const char html_configHCAxis[] PROGMEM =
 "\r\n";
 
 const char html_configSilentAxis_1[] PROGMEM =
-"<form action='/configuration_telescope.htm'>"
+"<form action='/configuration_mount.htm'>"
 "<select name='ms%d'>";
 const char html_configSilentAxis_r[] PROGMEM =
 "<option value ='0'>Off</option>"
@@ -162,45 +108,15 @@ const char html_configSilentAxis_2[] PROGMEM =
 "</form>"
 "\r\n";
 
-const char html_configMinAlt[] PROGMEM =
-"<div class='bt'> Limits: <br/> </div>"
-"<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%d' type='number' name='hl' min='-30' max='30'>"
-"<button type='submit'>Upload</button>"
-" (Horizon, in degrees +/- 30)"
-"</form>"
-"\r\n";
-const char html_configMaxAlt[] PROGMEM =
-"<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%d' type='number' name='ol' min='60' max='91'>"
-"<button type='submit'>Upload</button>"
-" (Overhead, in degrees 60 to 90, set 91 to deactivate)"
-"</form>"
-"\r\n";
-const char html_configPastMerE[] PROGMEM =
-"<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%d' type='number' name='el' min='-45' max='45'>"
-"<button type='submit'>Upload</button>"
-" (Past Meridian when East of the pier, in degrees +/-45)"
-"</form>"
-"\r\n";
-const char html_configPastMerW[] PROGMEM =
-"<form method='get' action='/configuration_telescope.htm'>"
-" <input value='%d' type='number' name='wl' min='-45' max='45'>"
-"<button type='submit'>Upload</button>"
-" (Past Meridian when West of the pier, in degrees +/-45)"
-"</form>"
-"<br />\r\n";
-
 const char html_reboot_t[] PROGMEM =
-"<br/><form method='get' action='/configuration_telescope.htm'>"
+"<br/><form method='get' action='/configuration_mount.htm'>"
 "<b>The main unit will now restart please wait some seconds and then press continue.</b><br/><br/>"
 "<button type='submit'>Continue</button>"
 "</form><br/><br/><br/><br/>"
 "\r\n";
 bool restartRequired_t = false;
 
-void TeenAstroWifi::handleConfigurationTelescope()
+void TeenAstroWifi::handleConfigurationMount()
 {
   Ser.setTimeout(WebTimeout);
   sendHtmlStart();
@@ -209,8 +125,8 @@ void TeenAstroWifi::handleConfigurationTelescope()
   char temp2[50] = "";
   String data;
 
-  processConfigurationTelescopeGet();
-  preparePage(data, 4);
+  processConfigurationMountGet();
+  preparePage(data, ServerPage::Mount);
   sendHtml(data);
   if (restartRequired_t)
   {
@@ -248,48 +164,6 @@ void TeenAstroWifi::handleConfigurationTelescope()
     data += FPSTR(html_configPolar_2);
     sendHtml(data);
   }
-
-
-  if (GetLX200(":GXRD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "4"); int val = temp1[0] - '0';
-  val = min(max(val, 0), 4);
-  data += FPSTR(html_configRateD_0);
-  val == 0 ? data += "<option selected value='0'>Guiding</option>" : data += "<option value='0'>Guiding</option>";
-  val == 1 ? data += "<option selected value='1'>Slow</option>" : data += "<option value='1'>Slow</option>";
-  val == 2 ? data += "<option selected value='2'>Medium</option>" : data += "<option value='2'>Medium</option>";
-  val == 3 ? data += "<option selected value='3'>Fast</option>" : data += "<option value='3'>Fast</option>";
-  val == 4 ? data += "<option selected value='4'>Max</option>" : data += "<option value='4'>Max</option>";
-  data += FPSTR(html_configRateD_1);
-  sendHtml(data);
-
-  if (GetLX200(":GXRX#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int maxRate = (int)strtol(&temp1[0], NULL, 10);
-  sprintf_P(temp, html_configMaxRate, maxRate);
-  data += temp;
-  sendHtml(data);
-
-  if (GetLX200(":GXR3#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float Rate3 = (float)strtof(&temp1[0], NULL);
-  sprintf_P(temp, html_configRate3, Rate3);
-  data += temp;
-  sendHtml(data);
-
-  if (GetLX200(":GXR2#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float Rate2 = (float)strtof(&temp1[0], NULL);
-  sprintf_P(temp, html_configRate2, Rate2);
-  data += temp;
-  sendHtml(data);
-
-  if (GetLX200(":GXR1#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float Rate1 = (float)strtof(&temp1[0], NULL);
-  sprintf_P(temp, html_configRate1, Rate1);
-  data += temp;
-  sendHtml(data);
-
-  if (GetLX200(":GXR0#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float Rate0 = (float)strtof(&temp1[0], NULL);
-  sprintf_P(temp, html_configRate0, Rate0);
-  data += temp;
-  sendHtml(data);
-
-  if (GetLX200(":GXRA#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float acc = (float)strtof(&temp1[0], NULL);
-  sprintf_P(temp, html_configAcceleration, acc);
-  data += temp;
-  sendHtml(data);
 
   //Axis1
   data += "<div class='bt'> Motor: <br/> </div>";
@@ -381,37 +255,14 @@ void TeenAstroWifi::handleConfigurationTelescope()
     data += temp;
     sendHtml(data);
   }
-  data += "<br />";
 
-  // Overhead and Horizon Limits
-  if (GetLX200(":GXLH#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int minAlt = (int)strtol(&temp1[0], NULL, 10);
-  sprintf_P(temp, html_configMinAlt, minAlt);
-  data += temp;
-  sendHtml(data);
-  if (GetLX200(":GXLO#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int maxAlt = (int)strtol(&temp1[0], NULL, 10);
-  sprintf_P(temp, html_configMaxAlt, maxAlt);
-  data += temp;
-  sendHtml(data);
-  // Meridian Limits
-  if (GetLX200(":GXLE#", temp1, sizeof(temp1)) == LX200VALUEGET && GetLX200(":GXLW#", temp2, sizeof(temp2)) == LX200VALUEGET)
-  {
-    int degPastMerE = (int)strtol(&temp1[0], NULL, 10);
-    degPastMerE = round((degPastMerE*15.0) / 60.0);
-    sprintf_P(temp, html_configPastMerE, degPastMerE);
-    data += temp;
-    int degPastMerW = (int)strtol(&temp2[0], NULL, 10);
-    degPastMerW = round((degPastMerW*15.0) / 60.0);
-    sprintf_P(temp, html_configPastMerW, degPastMerW);
-    data += temp;
-  }
-  else data += "<br />\r\n";
   strcpy(temp, "</div></body></html>");
   data += temp;
   sendHtml(data);
   sendHtmlDone(data);
 }
 
-void TeenAstroWifi::processConfigurationTelescopeGet()
+void TeenAstroWifi::processConfigurationMountGet()
 {
   String v;
   int i;
@@ -616,7 +467,7 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
     {
       writeLowCurrLX200(1, i / 10);
     }
-  }
+  } 
   v = server.arg("mlc2");
   if (v != "")
   {
@@ -678,49 +529,6 @@ void TeenAstroWifi::processConfigurationTelescopeGet()
       writeSilentStepLX200(2, i);
     }
   }
-  // Overhead and Horizon Limits
-  v = server.arg("ol");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 60) && (i <= 91)))
-    {
-      sprintf(temp, ":SXLO,%d#", i);
-      SetLX200(temp);
-    }
-  }
-  v = server.arg("hl");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -30) && (i <= 30)))
-    {
-      sprintf(temp, ":SXLH,%d#", i);
-      SetLX200(temp);
-    }
-  }
-
-  // Meridian Limits
-  v = server.arg("el");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
-    {
-      i = round((i*60.0) / 15.0);
-      sprintf(temp, ":SXLE,%d#", i);
-      SetLX200(temp);
-    }
-  }
-  v = server.arg("wl");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
-    {
-      i = round((i*60.0) / 15.0);
-      sprintf(temp, ":SXLW,%d#", i);
-      SetLX200(temp);
-    }
-  }
-
-
 
   int ut_hrs = -999;
   v = server.arg("u1");

@@ -171,7 +171,7 @@ void TeenAstroWifi::handleWifi()
   String data;
   sendHtmlStart();
   processWifiGet();
-  preparePage(data, 6);
+  preparePage(data, ServerPage::Wifi);
   sendHtml(data);
   data += "<div style='width: 40em;'>";
 
