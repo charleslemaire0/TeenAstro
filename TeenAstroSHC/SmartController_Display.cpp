@@ -374,7 +374,7 @@ void SmartHandController::updateMainDisplay(PAGES page)
     if (buttonPad.isWifiOn())
     {
       buttonPad.isWifiRunning() ? display->drawXBMP(0, 0, icon_width, icon_height, wifi_bits) : display->drawXBMP(0, 0, icon_width, icon_height, wifi_not_connected_bits);
-      xl = icon_width + 1;
+      xl += icon_width + 1;
     }
     if (ta_MountStatus.hasInfoMount())
     {
@@ -385,7 +385,7 @@ void SmartHandController::updateMainDisplay(PAGES page)
       if (ta_MountStatus.isGNSSValid())
       {
         display->drawXBMP(xl, 0, icon_width, icon_height, GNSS_bits);
-        xl = icon_width + 1;
+        xl += icon_width + 1;
       }
       switch (ta_MountStatus.getGuidingRate())
       {
