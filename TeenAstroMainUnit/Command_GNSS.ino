@@ -29,13 +29,55 @@ bool iSGNSSValid()
   {
     return false;
   }
-  bool valid = gps.date.isValid() && gps.date.age() < 5000;
-  valid &= gps.time.isValid() && gps.time.age() < 5000;
-  valid &= gps.location.isValid() && gps.location.age() < 5000;
-  valid &= gps.altitude.isValid() && gps.altitude.age() < 5000;
+  bool valid = GNSSTimeIsValid();
+  valid &= GNSSLocationIsValid();
   return valid;
 }
 
+
+bool GNSSTimeIsValid()
+{
+  return gps.time.isValid() && gps.time.age() < 5000 &&  gps.date.isValid() && gps.date.age() < 5000;
+}
+
+bool GNSSLocationIsValid()
+{
+  return gps.location.isValid() && gps.location.age() < 5000 &&
+    gps.altitude.isValid() && gps.altitude.age() < 5000;
+}
+
+bool isTimeSyncWithGNSS()
+{
+  static unsigned long t1 = 0;
+  static bool lastreply = false;
+  if (millis() - t1 > 5000)
+  {
+    TinyGPSDate d = gps.date;
+    TinyGPSTime t = gps.time;
+    long delta = rtk.GetDeltaUTC(d.year(), d.month(), d.day(),
+      t.hour(), t.minute(), t.second());
+    lastreply = abs(delta) < 5;
+    t1 = millis();
+  }
+  return lastreply;
+}
+
+bool isLocationSyncWithGNSS()
+{
+  static unsigned long t1 = 0;
+  static bool lastreply = false;
+  if (millis() - t1 > 5000)
+  {
+    TinyGPSLocation l = gps.location;
+    TinyGPSAltitude a = gps.altitude;
+    double dlng = fabs(degRange(*localSite.longitude() - (-l.lng())));
+    double dlat = fabs(*localSite.latitude() - l.lat());
+    double dele = fabs(*localSite.elevation() - a.meters());
+    lastreply = dlng < 0.01 && dlat < 0.01 && dele < 100;
+    t1 = millis();
+  }
+  return lastreply;
+}
 
 void Command_GNSS()
 {

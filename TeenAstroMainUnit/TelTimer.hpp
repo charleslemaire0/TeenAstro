@@ -28,6 +28,20 @@ public:
     return &m_UT;
   }
 
+  long GetDeltaUTC(const int& y,const  int& m,const  int& d,const int& h,const int& mi,const int& s)
+  {
+    tmElements_t t1;
+    t1.Year = y - 1970;
+    t1.Month = m;
+    t1.Day = d;
+    t1.Hour = h;
+    t1.Minute = mi;
+    t1.Second = s;
+    time_t delta = makeTime(t1);
+    m_RTClock = getTime();
+    return  m_RTClock - delta;
+  }
+
   double* getLT(const float*toff)
   {
     m_RTClock = getTime();

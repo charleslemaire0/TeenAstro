@@ -349,14 +349,23 @@ bool TeenAstroMountStatus::isAligned()
 {
   return m_TempMount[11] == '1';
 }
+bool TeenAstroMountStatus::hasGNSSBoard()
+{
+  return bitRead(m_TempMount[14] - 'A', 0);
+}
 bool TeenAstroMountStatus::isGNSSValid()
 {
-  return bitRead(m_TempMount[14] - '0', 0);
+  return bitRead(m_TempMount[14] - 'A', 1);
 }
-bool TeenAstroMountStatus::isLowPower()
+bool TeenAstroMountStatus::isGNSSTimeSync()
 {
-  return bitRead(m_TempMount[14] - '0', 1);
+  return bitRead(m_TempMount[14] - 'A', 2);
 }
+bool TeenAstroMountStatus::isGNSSLocationSync()
+{
+  return bitRead(m_TempMount[14] - 'A', 3);
+}
+
 TeenAstroMountStatus::PierState TeenAstroMountStatus::getPierState()
 {
   switch (m_TempMount[13])

@@ -172,8 +172,11 @@ public:
   bool isGuidingE();
   bool isGuidingW();
   bool isAligned();
+  bool hasGNSSBoard();
   bool isGNSSValid();
-  bool isLowPower();
+  bool isGNSSTimeSync();
+  bool isGNSSLocationSync();
+ 
   //Connection Errors
   bool connected();
   bool notResponding();

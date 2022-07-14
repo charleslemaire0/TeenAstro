@@ -437,9 +437,17 @@ void Command_GX()
     if (currentSide == PIER_WEST) reply[13] = 'W';
 
     char val = 0;
-    bitWrite(val, 0, iSGNSSValid());
-    bitWrite(val, 1, DecayModeTrack);
-    reply[14] = '0' + val;
+    bitWrite(val, 0, hasGNSS);
+    if (iSGNSSValid())
+    {
+      bitWrite(val, 1, true);
+      bitWrite(val, 2, isTimeSyncWithGNSS());
+      bitWrite(val, 3, isLocationSyncWithGNSS());
+    }
+
+    //bitWrite(val, 7, DecayModeTrack);
+
+    reply[14] = 'A' + val;
     reply[15] = '0' + lastError;
     reply[16] = '#';
     reply[17] = 0;

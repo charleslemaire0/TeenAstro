@@ -178,6 +178,16 @@ static unsigned char GNSS_bits[] U8X8_PROGMEM = {
     0xe0, 0x07, 0x80, 0x1f, 0x80, 0x23, 0x2a, 0x42, 0x4a, 0x22, 0x12, 0x14,
     0x64, 0x08, 0x08, 0x00, 0x70, 0x00, 0x00, 0x00 };
 
+static unsigned char GNSSL_bits[] U8X8_PROGMEM = {
+   0x00, 0x00, 0x40, 0x00, 0xa0, 0x00, 0x10, 0x01, 0x08, 0x01, 0x10, 0x07,
+   0xe0, 0x07, 0x80, 0x1f, 0x80, 0x23, 0x00, 0x42, 0x84, 0x22, 0x84, 0x14,
+   0x84, 0x08, 0x04, 0x00, 0xbc, 0x00, 0x00, 0x00 };
+
+static unsigned char GNSST_bits[] U8X8_PROGMEM = {
+   0x00, 0x00, 0x40, 0x00, 0xa0, 0x00, 0x10, 0x01, 0x08, 0x01, 0x10, 0x07,
+   0xe0, 0x07, 0x80, 0x1f, 0x80, 0x23, 0x00, 0x42, 0xbe, 0x22, 0x88, 0x14,
+   0x88, 0x08, 0x08, 0x00, 0x88, 0x00, 0x00, 0x00 };
+
 static unsigned char GUIDINGSP_bits[] U8X8_PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -382,11 +392,28 @@ void SmartHandController::updateMainDisplay(PAGES page)
       TeenAstroMountStatus::TrackState curT = ta_MountStatus.getTrackingState();
       TeenAstroMountStatus::SiderealMode currSM = ta_MountStatus.getSiderealMode();
       TeenAstroMountStatus::PierState curPi = ta_MountStatus.getPierState();
-      if (ta_MountStatus.isGNSSValid())
+      if (ta_MountStatus.hasGNSSBoard())
       {
-        display->drawXBMP(xl, 0, icon_width, icon_height, GNSS_bits);
-        xl += icon_width + 1;
+        if (ta_MountStatus.isGNSSValid())
+        {
+          if (!ta_MountStatus.isGNSSTimeSync())
+          {
+            display->drawXBMP(xl, 0, icon_width, icon_height, GNSST_bits);
+            xl += icon_width + 1;
+          }
+          if (!ta_MountStatus.isGNSSLocationSync())
+          {
+            display->drawXBMP(xl, 0, icon_width, icon_height, GNSSL_bits);
+            xl += icon_width + 1;
+          }
+          if (ta_MountStatus.isGNSSLocationSync() && ta_MountStatus.isGNSSTimeSync())
+          {
+            display->drawXBMP(xl, 0, icon_width, icon_height, GNSS_bits);
+            xl += icon_width + 1;
+          }
+        }
       }
+ 
       switch (ta_MountStatus.getGuidingRate())
       {
       case (TeenAstroMountStatus::GuidingRate::GUIDING):

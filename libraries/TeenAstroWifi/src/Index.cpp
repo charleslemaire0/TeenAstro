@@ -215,11 +215,7 @@ void TeenAstroWifi::handleRoot()
   data += temp;
   sendHtml(data);
 
-  //Power
-  ta_MountStatus.isLowPower() ? strcpy(temp1, "Low") : strcpy(temp1, "High");
-  sprintf_P(temp, html_indexPowerMode, temp1);
-  data += temp;
-  sendHtml(data);
+
 
 
   data += "<br /><b>State:</b><br />";
