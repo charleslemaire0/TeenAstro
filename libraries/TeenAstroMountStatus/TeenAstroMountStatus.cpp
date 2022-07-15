@@ -176,20 +176,15 @@ bool TeenAstroMountStatus::notResponding()
 }
 TeenAstroMountStatus::ParkState TeenAstroMountStatus::getParkState()
 {
-  if (strchr(&m_TempMount[0], 'P') != NULL)
+  switch (m_TempMount[2])
   {
+  case 'P':
     return PRK_PARKED;
-  }
-  else if (strchr(&m_TempMount[0], 'p') != NULL)
-  {
+  case 'p':
     return PRK_UNPARKED;
-  }
-  else if (strchr(&m_TempMount[0], 'I') != NULL)
-  {
+  case 'I':
     return PRK_PARKING;
-  }
-  else if (strchr(&m_TempMount[0], 'F') != NULL)
-  {
+  case 'F':
     return PRK_FAILED;
   }
   return PRK_UNKNOW;
