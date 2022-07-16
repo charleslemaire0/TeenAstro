@@ -45,15 +45,15 @@ void ApplyTrackingRate()
 void SetTrackingRate(double rHA, double rDEC)
 {
   RequestedTrackingRateHA = rHA;
-  RequestedTrackingRateHA = rDEC;
+  RequestedTrackingRateDEC = rDEC;
   if (isAltAZ() || correct_tracking)
   {
     do_compensation_calc();
   }
   else
   {
-    staA1.RequestedTrackingRate = rHA;
-    staA2.RequestedTrackingRate = rDEC;
+    staA1.RequestedTrackingRate = RequestedTrackingRateHA;
+    staA2.RequestedTrackingRate = RequestedTrackingRateDEC;
   }
   ApplyTrackingRate();
 }
