@@ -25,8 +25,8 @@ public:
   volatile bool       dir;    // stepping direction + or -
   double              fstep;  // amount of steps for Tracking
   volatile double     timerRate = 0;
-  volatile double     trackingTimerRate = default_tracking_rate;
-  double              az_delta = 15.; // Refraction rate tracking in arc-seconds/second
+  volatile double     CurrentTrackingRate = default_tracking_rate; //effective rate tracking in arc-hours/hours 
+  double              RequestedTrackingRate = default_tracking_rate; //computed  rate tracking in arc-seconds/second
   void                updateDeltaTarget()
   {
     cli();

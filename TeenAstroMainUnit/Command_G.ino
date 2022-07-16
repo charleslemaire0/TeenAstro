@@ -139,14 +139,12 @@ void Command_GX()
           ((debugv1 / 53333.3333333333) * 15000));
         break;
       case '1':
-        // :GXDR1# RA tracking rate
-        sprintf(reply, "%ld#", (long)
-          (staA1.az_delta * 1000.0 * 1.00273790935));
+        // :GXDR1# axis requested tracking rate in sideral
+        sprintf(reply, "%f#", staA1.RequestedTrackingRate);
         break;
       case '2':
-        // :GXDR2# Dec tracking rate
-        sprintf(reply, "%ld#", (long)
-          (staA2.az_delta * 1000.0 * 1.00273790935));
+        // :GXDR2# Dec tracking rate in sideral 
+        sprintf(reply, "%f#", staA2.RequestedTrackingRate);
         break;
       default:
         strcpy(reply, "0");
@@ -840,11 +838,11 @@ void  Command_G()
     break;
   case 'T':
     //  :GT#   Get tracking rate, Native LX200 command
-    //         Returns: dd.ddddd# (OnStep returns more decimal places than LX200 standard)
+    //         Returns: dd.ddddd#
     //         Returns the tracking rate if siderealTracking, 0.0 otherwise
     if (sideralTracking && !movingTo)
     {
-      f = isAltAZ() ? GetTrackingRate() : staA1.trackingTimerRate;
+      f = RequestedTrackingRateHA;
       f *= 60 * 1.00273790935;
     }
     else

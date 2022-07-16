@@ -783,7 +783,8 @@ void Command_S(Command& process_command)
         }
         else
         {
-          staA1.trackingTimerRate = (f / 60.0) / 1.00273790935;
+          RequestedTrackingRateHA = (f / 60.0) / 1.00273790935;
+          // todo apply rate
         }
         strcpy(reply, "1");
       }

@@ -100,7 +100,7 @@ ISR(TIMER1_COMPA_vect)
           // break mode
           if (guideA1.dir == 'b')
           {
-            guideA1.timerRate = staA1.trackingTimerRate;
+            guideA1.timerRate = staA1.CurrentTrackingRate;
             if (guideA1.timerRate >= 0)
               guideA1.timerRate = 1.0;
             else
@@ -132,7 +132,7 @@ ISR(TIMER1_COMPA_vect)
           }
         }
       }
-      double timerRateAxis1A = staA1.trackingTimerRate;
+      double timerRateAxis1A = staA1.CurrentTrackingRate;
       double timerRateAxis1B = fabs(guideTimerRateAxisA1 + timerRateAxis1A);
       double calculatedTimerRateAxis1;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking
@@ -164,7 +164,7 @@ ISR(TIMER1_COMPA_vect)
           // break mode
           if (guideA2.dir == 'b')
           {
-            guideA2.timerRate = staA2.trackingTimerRate;
+            guideA2.timerRate = staA2.CurrentTrackingRate;
             if (guideA2.timerRate >= 0)
               guideA2.timerRate = 1.0;
             else
@@ -196,7 +196,7 @@ ISR(TIMER1_COMPA_vect)
           }
         }
       }
-      double timerRateAxis2A = staA2.trackingTimerRate;
+      double timerRateAxis2A = staA2.CurrentTrackingRate;
       double timerRateAxis2B = fabs(guideTimerRateAxisA2 + timerRateAxis2A);
       double calculatedTimerRateAxis2;
       // round up to run the motor timers just a tiny bit slow, then adjust below if we start to fall behind during sidereal tracking

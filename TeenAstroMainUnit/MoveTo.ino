@@ -127,8 +127,8 @@ Again:
   if (temp > TakeupRate) temp = TakeupRate;                      // slowest rate
   cli(); staA2.timerRate = temp; sei();
 
-  double v1 = max(abs(staA1.az_delta / 15.), 1.);
-  double v2 = max(abs(staA2.az_delta / 15.), 1.);
+  double v1 = max(abs(staA1.RequestedTrackingRate), 1.);
+  double v2 = max(abs(staA2.RequestedTrackingRate), 1.);
 
   if (atTargetAxis1(true, v1) && atTargetAxis2(true, v2))
   {

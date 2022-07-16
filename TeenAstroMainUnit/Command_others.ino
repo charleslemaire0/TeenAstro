@@ -463,6 +463,7 @@ void Command_R()
 //  :TS#   Track rate solar Returns: Nothing
 //  :TL#   Track rate lunar Returns: Nothing
 //  :TQ#   Track rate sidereal Returns: Nothing
+//  :TT#   Track rate target Returns: Nothing
 //  :TR#   Master sidereal clock reset (to calculated sidereal rate, stored in EEPROM) Returns: Nothing
 //  :TK#   Track rate king Returns: Nothing / Currently replaced by tracking compensation (that can be applied also to solar and lunar rates)
 //  :Te#   Tracking enable  (replies 0/1)
@@ -486,30 +487,33 @@ void Command_T()
     break;
   case 'S':
     // solar tracking rate 60Hz
-    SetTrackingRate(TrackingSolar);
+    SetTrackingRate(TrackingSolar,0);
     sideralMode = SIDM_SUN;
-    correct_tracking = XEEPROM.read(EE_corr_track);
     reply[0] = 0;
     break;
   case 'L':
     // lunar tracking rate 57.9Hz
-    SetTrackingRate(TrackingLunar);
+    SetTrackingRate(TrackingLunar,0);
     sideralMode = SIDM_MOON;
-    correct_tracking = XEEPROM.read(EE_corr_track);
     reply[0] = 0;
     break;
   case 'Q':
     // sidereal tracking rate
-    SetTrackingRate(default_tracking_rate);
+    SetTrackingRate(TrackingStar,0);
     sideralMode = SIDM_STAR;
-    correct_tracking = XEEPROM.read(EE_corr_track);
     reply[0] = 0;
     break;
   case 'R':
     // reset master sidereal clock interval
     siderealInterval = masterSiderealInterval;
+    SetTrackingRate(TrackingStar, 0);
     sideralMode = SIDM_STAR;
-    correct_tracking = XEEPROM.read(EE_corr_track);
+    reply[0] = 0;
+    break;
+  case 'T':
+    //set master sidereal clock interval
+    SetTrackingRate(0, 0);
+    sideralMode = SIDM_TARGET;
     reply[0] = 0;
     break;
   case 'e':
@@ -535,14 +539,14 @@ void Command_T()
   case 'c':
     // turn compensation on
     correct_tracking = true;
-    SetTrackingRate(default_tracking_rate);
+    SetTrackingRate(RequestedTrackingRateHA, RequestedTrackingRateDEC);
     XEEPROM.update(EE_corr_track, 1);
     strcpy(reply, "1");
     break;
   case 'n':
     // turn compensation off
     correct_tracking = false;
-    SetTrackingRate(default_tracking_rate);
+    SetTrackingRate(RequestedTrackingRateHA, RequestedTrackingRateDEC);
     XEEPROM.update(EE_corr_track, 0);
     strcpy(reply, "1");
     break;
