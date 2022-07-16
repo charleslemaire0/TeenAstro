@@ -653,8 +653,8 @@ Public Class Telescope
 
   Public ReadOnly Property CanSetRightAscensionRate() As Boolean Implements ITelescopeV3.CanSetRightAscensionRate
     Get
-      mTL.LogMessage("CanSetRightAscensionRate", "Get - " & False.ToString())
-      Return False
+      mTL.LogMessage("CanSetRightAscensionRate", "Get - " & True.ToString())
+      Return True
     End Get
   End Property
 
@@ -804,25 +804,41 @@ Public Class Telescope
     End Get
   End Property
 
+  Private Function GetGuideRate() As Double
+    'GUIDE_SPEED
+    Dim response As String = Me.CommandString("GXR0")
+    Dim speed As Double
+    mTL.LogMessage("AxisRates", "Get value: " & response)
+    If Not (Double.TryParse(response, speed)) Then
+      Throw New ASCOM.InvalidValueException("Retrieve GetGuideRate via :GXR0# has failed: '" & response & "'")
+    End If
+    Return speed / 100 * mSiderealRate
+  End Function
+  Private Sub SetGuideRate(Val As Double)
+    Dim speed As Integer = Val / mSiderealRate * 100
+    Dim cmd As String = "SXR0 " & speed.ToString("000")
+    mTL.LogMessage("AxisRates", "Set value: " & Val)
+    If Not Me.CommandBool(cmd) Then
+      Throw New ASCOM.InvalidValueException("Set SetGuideRate via :" & cmd & " has failed")
+    End If
+  End Sub
+
   Public Property GuideRateDeclination() As Double Implements ITelescopeV3.GuideRateDeclination
     Get
-      mTL.LogMessage("GuideRateDeclination Get", "Not implemented")
-      Throw New ASCOM.PropertyNotImplementedException("GuideRateDeclination", False)
+      Return GetGuideRate()
     End Get
     Set(value As Double)
-      mTL.LogMessage("GuideRateDeclination Set", "Not implemented")
-      Throw New ASCOM.PropertyNotImplementedException("GuideRateDeclination", True)
+      SetGuideRate(value)
     End Set
   End Property
 
+
   Public Property GuideRateRightAscension() As Double Implements ITelescopeV3.GuideRateRightAscension
     Get
-      mTL.LogMessage("GuideRateRightAscension Get", "Not implemented")
-      Throw New ASCOM.PropertyNotImplementedException("GuideRateRightAscension", False)
+      Return GetGuideRate()
     End Get
     Set(value As Double)
-      mTL.LogMessage("GuideRateRightAscension Set", "Not implemented")
-      Throw New ASCOM.PropertyNotImplementedException("GuideRateRightAscension", True)
+      SetGuideRate(value)
     End Set
   End Property
 
@@ -895,7 +911,7 @@ Public Class Telescope
 
   Public Sub PulseGuide(Direction As GuideDirections, Duration As Integer) Implements ITelescopeV3.PulseGuide
 
-    Dim ok As Boolean = Not AtPark And Not Slewing And Tracking
+    Dim ok As Boolean = Not AtPark And Not Slewing
     If ok Then
       Dim dir As String = ""
       Select Case Direction
@@ -1047,7 +1063,9 @@ Public Class Telescope
       Dim cmd As String = "St" + sg + deg.ToString("00") + ":" + min.ToString("00") + ":" + sec.ToString("00")
       'Dim cmd As String = "St" + sg + deg.ToString("00") + "*" + min.ToString("00")
       'Dim cmd As String = "St" + sg + deg.ToString("00") + ":" + min.ToString("00") + ":" + ((Math.Abs(value) - deg) * 3600 - Math.Truncate(min) * 60).ToString("00")
-      Me.CommandBool(cmd)
+      If Not Me.CommandBool(cmd) Then
+        Throw New ASCOM.InvalidOperationException
+      End If
       mTL.LogMessage("SiteLatitude Set", value)
     End Set
   End Property
@@ -1071,7 +1089,9 @@ Public Class Telescope
         value = -value
       End If
       Dim cmd As String = "Sg" + sg + DegtoDDDMMSS(value)
-      Me.CommandBool(cmd)
+      If Not Me.CommandBool(cmd) Then
+        Throw New ASCOM.InvalidOperationException
+      End If
       mTL.LogMessage("SiteLongitude Set", value)
     End Set
   End Property
