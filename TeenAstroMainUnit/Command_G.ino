@@ -139,11 +139,11 @@ void Command_GX()
           ((debugv1 / 53333.3333333333) * 15000));
         break;
       case '1':
-        // :GXDR1# axis requested tracking rate in sideral
+        // :GXDR1# axis1 requested tracking rate in sideral
         sprintf(reply, "%f#", staA1.RequestedTrackingRate);
         break;
       case '2':
-        // :GXDR2# Dec tracking rate in sideral 
+        // :GXDR2# axis2 requested tracking rate in sideral 
         sprintf(reply, "%f#", staA2.RequestedTrackingRate);
         break;
       default:
@@ -218,7 +218,7 @@ void Command_GX()
     // :GXPn# Intrument position
     switch (command[3])
     {
-    case '1':      
+    case '1':
       cli();
       f1 = staA1.pos / geoA1.stepsPerDegree;
       sei();
@@ -242,7 +242,15 @@ void Command_GX()
     // :GXRn# user defined rates
     switch (command[3])
     {
-
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+      i = command[3] - '0';
+      // :GXRn# return user defined rate
+      dtostrf(guideRates[i], 2, 2, reply);
+      strcat(reply, "#");
+      break;
     case 'A':
       // :GXRA# returns the Degrees For Acceleration
       dtostrf(DegreesForAcceleration, 2, 1, reply);
@@ -253,20 +261,24 @@ void Command_GX()
       sprintf(reply, "%ld#", (long)round(BacklashTakeupRate));
       break;
     case 'D':
+      // :GXRD# returns the Default Rate
       sprintf(reply, "%d#", XEEPROM.read(EE_DefaultRate));
-      break;
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-      i = command[3] - '0';
-      // :GXRn# return user defined rate
-      dtostrf(guideRates[i], 2, 2, reply);
-      strcat(reply, "#");
       break;
     case 'X':
       // :GXRX# return Max Slew rate
       sprintf(reply, "%d#", XEEPROM.readInt(EE_maxRate));
+      break;
+    case 'r':
+      // :GXRr# Requested RA traking rate in sideral
+      sprintf(reply, "%ld#", (long)((RequestedTrackingRateHA - 1) * 10000.0));
+      break;
+    case 'h':
+      // :GXRh# Requested HA traking rate in sideral
+      sprintf(reply, "%ld#", (long)(RequestedTrackingRateHA * 10000.0));
+      break;
+    case 'd':
+      // :GXRd# Requested DEC traking rate in sideral
+      sprintf(reply, "%ld#", (long)(RequestedTrackingRateDEC * 10000.0));
       break;
     default:
       strcpy(reply, "0");

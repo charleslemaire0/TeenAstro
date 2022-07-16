@@ -511,8 +511,8 @@ void Command_T()
     reply[0] = 0;
     break;
   case 'T':
-    //set master sidereal clock interval
-    SetTrackingRate(0, 0);
+    //set Target tracking rate
+    SetTrackingRate(RequestedTrackingRateHA, RequestedTrackingRateDEC);
     sideralMode = SIDM_TARGET;
     reply[0] = 0;
     break;
