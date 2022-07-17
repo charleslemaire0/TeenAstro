@@ -522,6 +522,7 @@ void Command_T()
       lastSetTrakingEnable = millis();
       atHome = false;
       sideralTracking = true;
+      SetTrackingRate(RequestedTrackingRateHA, RequestedTrackingRateDEC);
       strcpy(reply, "1");
     }
     else
