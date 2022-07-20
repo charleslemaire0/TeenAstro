@@ -20,6 +20,10 @@ double getV(double rate) //Speed in step per second
 }
 double getRate(double V)
 {
+  if (V == 0)
+  {
+    return maxRate;
+  }
   return max(16. * 1000000.0 / V, maxRate);
 }
 
