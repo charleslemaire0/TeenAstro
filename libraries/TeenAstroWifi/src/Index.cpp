@@ -210,7 +210,26 @@ void TeenAstroWifi::handleRoot()
   sendHtml(data);
 
   //GNSS
-  ta_MountStatus.isGNSSValid() ? strcpy(temp1, "Tracking Satellite") : strcpy(temp1, "No Signal");
+  if (ta_MountStatus.hasGNSSBoard())
+  {
+    if (ta_MountStatus.isGNSSValid())
+    {
+      strcpy(temp1, "Tracking Satellite, ");
+      ta_MountStatus.isGNSSTimeSync() ? strcpy(temp2, "Time Sync, ") : strcpy(temp2, " Time Not Sync, ");
+      strcat(temp1, temp2);
+      ta_MountStatus.isGNSSLocationSync() ? strcpy(temp2, " Loc. Sync") : strcpy(temp2, " Loc. Not Sync");
+      strcat(temp1, temp2);
+    }
+    else
+    {
+      strcpy(temp1, "GNSS board detected, no signal");
+    }
+  }
+  else
+  {
+    strcpy(temp1, "No GNSS board detected");
+  }
+
   sprintf_P(temp, html_indexGNSS, temp1);
   data += temp;
   sendHtml(data);
