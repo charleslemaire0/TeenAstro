@@ -141,7 +141,7 @@ void SmartHandController::menuTrack()
   uint8_t tmp_sel;
   if (currentstate == TeenAstroMountStatus::TRK_ON)
   {
-    const char* string_list_tracking = T_STOPTRACKING "\n" T_SIDEREAL "\n" T_LUNAR "\n" T_SOLAR;
+    const char* string_list_tracking = T_STOPTRACKING "\n" T_SIDEREAL "\n" T_LUNAR "\n" T_SOLAR "\n" T_TARGET;
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGSTATE, 0, string_list_tracking);
     switch (tmp_sel)
     {
@@ -166,6 +166,9 @@ void SmartHandController::menuTrack()
       break;
     case 4:
       exitMenu = DisplayMessageLX200(SetLX200(":TS#"));
+      break;
+    case 5:
+      exitMenu = DisplayMessageLX200(SetLX200(":TT#"));
       break;
     default:
       break;
