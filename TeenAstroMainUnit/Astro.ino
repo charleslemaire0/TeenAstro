@@ -35,25 +35,35 @@ PierSide GetPierSide()
 // staA.trackingTimerRate are x the sidereal rate
 void ApplyTrackingRate()
 {
+
   staA1.CurrentTrackingRate = staA1.RequestedTrackingRate;
   staA2.CurrentTrackingRate = staA2.RequestedTrackingRate;
-
   staA1.fstep = geoA1.stepsPerCentiSecond * staA1.CurrentTrackingRate;
   staA2.fstep = geoA2.stepsPerCentiSecond * staA2.CurrentTrackingRate;
+
 }
 
 void SetTrackingRate(double rHA, double rDEC)
 {
   RequestedTrackingRateHA = rHA;
   RequestedTrackingRateDEC = rDEC;
-  if (isAltAZ() || correct_tracking)
+  computeTrackingRate();
+}
+void computeTrackingRate()
+{  
+  //reset SideralMode if it is equal to sideralspeed
+  if (RequestedTrackingRateHA == 1 && RequestedTrackingRateDEC == 0)
+  {
+    sideralMode = SIDM_STAR;
+  }
+  if (isAltAZ() || correct_tracking || sideralMode == SIDM_TARGET)
   {
     do_compensation_calc();
   }
   else
   {
     staA1.RequestedTrackingRate = RequestedTrackingRateHA;
-    staA2.RequestedTrackingRate = RequestedTrackingRateDEC;
+    staA2.RequestedTrackingRate = 0;
   }
   ApplyTrackingRate();
 }
@@ -62,7 +72,7 @@ void SetTrackingRate(double rHA, double rDEC)
 void do_compensation_calc()
 {
   // 1 arc-min ahead of and behind the current Equ position, used for rate calculation
-  const double TimeRange = 1./60.;
+  const double TimeRange = 60;
 
   long axis1_before, axis1_after = 0;
   long axis2_before, axis2_after = 0;
@@ -70,7 +80,7 @@ void do_compensation_calc()
   double HA_tmp, HA_now = 0.;
   double Dec_tmp, Dec_now = 0.;
   double Azm_tmp, Alt_tmp = 0.;
-  double DriftHA = 0;
+  double DriftHA = 0; 
   double DriftDEC = 0;
   // turn off if not tracking at sidereal rate
   if (!sideralTracking)
@@ -79,10 +89,11 @@ void do_compensation_calc()
     staA2.RequestedTrackingRate = 0.;
     return;
   }
-
-  DriftHA = RequestedTrackingRateHA * TimeRange;
+ 
+  DriftHA = RequestedTrackingRateHA * TimeRange * 15;
+  DriftHA /= 3600;
   DriftDEC = RequestedTrackingRateDEC * TimeRange;
-
+  DriftDEC /= 3600;
   // if moving to a target select target as reference position if not select current position
   if (movingTo)
     getEquTarget(&HA_now, &Dec_now, localSite.cosLat(), localSite.sinLat(), true);
@@ -106,14 +117,14 @@ void do_compensation_calc()
   // calculate tracking rate deltas'
   // handle coordinate wrap
   if ((axis1_after < -geoA1.halfRot) && (axis1_before > geoA1.halfRot)) axis1_after += 2 * geoA1.halfRot;
-  if ((axis1_before < -geoA1.halfRot) && (axis1_after > geoA1.halfRot)) axis1_after += 2 * geoA1.halfRot;
+  if ((axis1_before < -geoA1.halfRot) && (axis1_after > geoA1.halfRot)) axis1_before += 2 * geoA1.halfRot;
   // set rates
 
-  staA1.RequestedTrackingRate = (distStepAxis1(&axis1_before, &axis1_after) / geoA1.stepsPerDegree * (1. / TimeRange) / 2.);
-  staA2.RequestedTrackingRate = (distStepAxis2(&axis2_before, &axis2_after) / geoA2.stepsPerDegree * (1. / TimeRange) / 2.);
+  staA1.RequestedTrackingRate = 0.5 * distStepAxis1(&axis1_before, &axis1_after) / geoA1.stepsPerDegree * (3600. / (TimeRange*15));
+  staA2.RequestedTrackingRate = 0.5 * distStepAxis2(&axis2_before, &axis2_after) / geoA2.stepsPerDegree * (3600. / (TimeRange*15));
   //Limite rate up to 8 time the sidereal speed 
-  staA1.RequestedTrackingRate = min(max(staA1.RequestedTrackingRate, -8), 8);
-  staA2.RequestedTrackingRate = min(max(staA2.RequestedTrackingRate, -8), 8);
+  //staA1.RequestedTrackingRate = min(max(staA1.RequestedTrackingRate, -8), 8);
+  //staA2.RequestedTrackingRate = min(max(staA2.RequestedTrackingRate, -8), 8);
 }
 
 void initMaxRate()

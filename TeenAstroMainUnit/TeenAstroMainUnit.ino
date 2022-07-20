@@ -265,7 +265,7 @@ void loop()
     if (rtk.m_lst % 16 == 0)
     {
       getHorApp(&currentAzm, &currentAlt);
-      if ((isAltAZ() || correct_tracking) && (rtk.m_lst % 64 == 0))
+      if ((isAltAZ() || correct_tracking || sideralMode == SIDM_TARGET) && (rtk.m_lst % 64 == 0))
       {
         do_compensation_calc();
       }

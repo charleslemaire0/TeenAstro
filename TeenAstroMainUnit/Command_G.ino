@@ -9,6 +9,7 @@ void Command_GX()
 {
   int i;
   double f1;
+  long   l1;
   //  :GXnn#   Get TeenAstro Specific value
   switch (command[2])
   {
@@ -146,6 +147,12 @@ void Command_GX()
         // :GXDR2# axis2 requested tracking rate in sideral 
         sprintf(reply, "%f#", staA2.RequestedTrackingRate);
         break;
+      case '3':
+        sprintf(reply, "%f#", (double)staA1.CurrentTrackingRate);
+        break;
+      case '4':
+        sprintf(reply, "%f#", (double)staA1.fstep);
+        break;
       default:
         strcpy(reply, "0");
         break;
@@ -270,15 +277,18 @@ void Command_GX()
       break;
     case 'r':
       // :GXRr# Requested RA traking rate in sideral
-      sprintf(reply, "%ld#", (long)((RequestedTrackingRateHA - 1) * 10000.0));
+      l1 = -(RequestedTrackingRateHA - 1.0) * 10000.0;
+      sprintf(reply, "%ld#", l1);
       break;
     case 'h':
+      l1 = RequestedTrackingRateHA * 10000.0;
       // :GXRh# Requested HA traking rate in sideral
-      sprintf(reply, "%ld#", (long)(RequestedTrackingRateHA * 10000.0));
+      sprintf(reply, "%ld#", l1);
       break;
     case 'd':
       // :GXRd# Requested DEC traking rate in sideral
-      sprintf(reply, "%ld#", (long)(RequestedTrackingRateDEC * 10000.0));
+      l1 = RequestedTrackingRateDEC * 10000.0;
+      sprintf(reply, "%ld#", l1);
       break;
     default:
       strcpy(reply, "0");

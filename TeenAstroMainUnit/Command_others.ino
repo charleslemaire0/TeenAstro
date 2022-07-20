@@ -420,10 +420,7 @@ void Command_R()
   //  :RS#   Set Slew rate to max (fastest) ?X (MaxRate)
   //  :Rn#   Set Slew rate to n, where n=0..9
   //         Returns: Nothing
-#define RG 0
-#define RC 1
-#define RM 2
-#define RS 3
+
   int i = 5;
   switch (command[1])
   {
@@ -512,7 +509,7 @@ void Command_T()
     break;
   case 'T':
     //set Target tracking rate
-    SetTrackingRate(RequestedTrackingRateHA, RequestedTrackingRateDEC);
+    computeTrackingRate();
     sideralMode = SIDM_TARGET;
     reply[0] = 0;
     break;
@@ -522,7 +519,7 @@ void Command_T()
       lastSetTrakingEnable = millis();
       atHome = false;
       sideralTracking = true;
-      SetTrackingRate(RequestedTrackingRateHA, RequestedTrackingRateDEC);
+      computeTrackingRate();
       strcpy(reply, "1");
     }
     else
@@ -540,14 +537,14 @@ void Command_T()
   case 'c':
     // turn compensation on
     correct_tracking = true;
-    SetTrackingRate(RequestedTrackingRateHA, RequestedTrackingRateDEC);
+    computeTrackingRate();
     XEEPROM.update(EE_corr_track, 1);
     strcpy(reply, "1");
     break;
   case 'n':
     // turn compensation off
     correct_tracking = false;
-    SetTrackingRate(RequestedTrackingRateHA, RequestedTrackingRateDEC);
+    computeTrackingRate();
     XEEPROM.update(EE_corr_track, 0);
     strcpy(reply, "1");
     break;

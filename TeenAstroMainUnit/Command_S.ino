@@ -95,18 +95,24 @@ void Command_SX()
       strcpy(reply, "1");
       break;
     case 'r':
-      // :SXRr,VVVVVVVVVV# Set Rate for RA
-      RequestedTrackingRateHA = 1. + strtol(&command[5], NULL, 10) / 10000.0;
+      // :SXRr,VVVVVVVVVV# Set Rate for RA 
+      sideralMode = SIDM_TARGET;
+      RequestedTrackingRateHA = 1. - (double)strtol(&command[5], NULL, 10) / 10000.0;
+      computeTrackingRate();
       strcpy(reply, "1");
       break;
     case 'h':
       // :SXRh,VVVVVVVVVV# Set Rate for HA
-      RequestedTrackingRateHA = strtol(&command[5], NULL, 10) / 10000.0;
+      sideralMode = SIDM_TARGET;
+      RequestedTrackingRateHA = (double)strtol(&command[5], NULL, 10) / 10000.0;
+      computeTrackingRate();
       strcpy(reply, "1");
       break;
     case 'd':
       // :SXRd,VVVVVVVVVV# Set Rate for DEC
-      RequestedTrackingRateDEC = strtol(&command[5], NULL, 10) / 10000.0;
+      sideralMode = SIDM_TARGET;
+      RequestedTrackingRateDEC = (double)strtol(&command[5], NULL, 10) / 10000.0;
+      computeTrackingRate();
       strcpy(reply, "1");
       break;
     default:
@@ -555,13 +561,13 @@ void Command_S(Command& process_command)
     {
       if (process_command == COMMAND_SERIAL)
       {
-        Serial.print("1");
+        Serial.print('1');
         delay(20);
         Serial.begin(baudRate[i]);
       }
       else
       {
-        Serial1.print("1");
+        Serial1.print('1');
         delay(20);
         Serial1.begin(baudRate[i]);
       }

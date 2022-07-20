@@ -17,16 +17,16 @@ class StatusAxis
 public:
   bool                enable = false;
   bool                fault = false;
-  volatile double     acc = 0; //acceleration in steps per second square
-  volatile long       pos;    // hour angle position in steps
-  volatile long       start;  // hour angle of goto start position in steps
-  volatile double     target; // hour angle of goto end   position in steps
+  volatile double     acc = 0;// acceleration in steps per second square
+  volatile long       pos;    // angle position in steps
+  volatile long       start;  // angle of goto start position in steps
+  volatile double     target; // angle of goto end   position in steps
   volatile long       deltaTarget;
   volatile bool       dir;    // stepping direction + or -
   double              fstep;  // amount of steps for Tracking
   volatile double     timerRate = 0;
-  volatile double     CurrentTrackingRate = default_tracking_rate; //effective rate tracking in arc-hours/hours 
-  double              RequestedTrackingRate = default_tracking_rate; //computed  rate tracking in arc-seconds/second
+  volatile double     CurrentTrackingRate = default_tracking_rate; //effective rate tracking in Hour arc-seconds/second
+  double              RequestedTrackingRate = default_tracking_rate; //computed  rate tracking in Hour arc-seconds/second
   void                updateDeltaTarget()
   {
     cli();
@@ -53,7 +53,7 @@ private:
  public:
   bool atTarget(const volatile long &deltaTarget, double factor)
   {
-    return abs(deltaTarget) < m_breakDist * factor;
+    return abs(deltaTarget) < max (m_breakDist * factor, m_breakDist);
   }
   void setstepsPerRot(long val)
   {
