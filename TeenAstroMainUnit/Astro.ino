@@ -82,6 +82,8 @@ void do_compensation_calc()
   double Azm_tmp, Alt_tmp = 0.;
   double DriftHA = 0; 
   double DriftDEC = 0;
+  double axis1_delta, axis2_delta= 0;
+
   // turn off if not tracking at sidereal rate
   if (!sideralTracking)
   {
@@ -89,11 +91,13 @@ void do_compensation_calc()
     staA2.RequestedTrackingRate = 0.;
     return;
   }
- 
+
+  PierSide side_tmp = GetPierSide();
   DriftHA = RequestedTrackingRateHA * TimeRange * 15;
   DriftHA /= 3600;
   DriftDEC = RequestedTrackingRateDEC * TimeRange;
   DriftDEC /= 3600;
+
   // if moving to a target select target as reference position if not select current position
   if (movingTo)
     getEquTarget(&HA_now, &Dec_now, localSite.cosLat(), localSite.sinLat(), true);
@@ -105,23 +109,27 @@ void do_compensation_calc()
   Dec_tmp = Dec_now - DriftDEC;
   EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
   alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
-  InstrtoStep(Axis1_tmp, Axis2_tmp, GetPierSide(), &axis1_before, &axis2_before);
+  InstrtoStep(Axis1_tmp, Axis2_tmp, side_tmp, &axis1_before, &axis2_before);
 
   // look behind the position
   HA_tmp = HA_now + DriftHA;
   Dec_tmp = Dec_now + DriftDEC;
   EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
   alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
-  InstrtoStep(Axis1_tmp, Axis2_tmp, GetPierSide(), &axis1_after, &axis2_after);
+  InstrtoStep(Axis1_tmp, Axis2_tmp, side_tmp, &axis1_after, &axis2_after);
 
-  // calculate tracking rate deltas'
-  // handle coordinate wrap
-  if ((axis1_after < -geoA1.halfRot) && (axis1_before > geoA1.halfRot)) axis1_after += 2 * geoA1.halfRot;
-  if ((axis1_before < -geoA1.halfRot) && (axis1_after > geoA1.halfRot)) axis1_before += 2 * geoA1.halfRot;
-  // set rates
+  axis1_delta = distStepAxis1(&axis1_before, &axis1_after) / geoA1.stepsPerDegree;
+  while (axis1_delta < -180) axis1_delta += 360.;
+  while (axis1_delta >= 180) axis1_delta -= 360.;
 
-  staA1.RequestedTrackingRate = 0.5 * distStepAxis1(&axis1_before, &axis1_after) / geoA1.stepsPerDegree * (3600. / (TimeRange*15));
-  staA2.RequestedTrackingRate = 0.5 * distStepAxis2(&axis2_before, &axis2_after) / geoA2.stepsPerDegree * (3600. / (TimeRange*15));
+  axis2_delta = distStepAxis2(&axis2_before, &axis2_after) / geoA2.stepsPerDegree;
+  while (axis2_delta < -180) axis2_delta += 360.;
+  while (axis2_delta >= 180) axis2_delta -= 360.;
+
+  staA1.RequestedTrackingRate = 0.5 * axis1_delta * (3600. / (TimeRange*15));
+  staA2.RequestedTrackingRate = 0.5 * axis2_delta * (3600. / (TimeRange*15));
+
+
   //Limite rate up to 8 time the sidereal speed 
   //staA1.RequestedTrackingRate = min(max(staA1.RequestedTrackingRate, -8), 8);
   //staA2.RequestedTrackingRate = min(max(staA2.RequestedTrackingRate, -8), 8);
