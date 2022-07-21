@@ -154,7 +154,7 @@ void TeenAstroMountStatus::updateTrackingRate()
 {
   if (millis() - m_lastStateTrackingRate > updaterate)
   {
-    m_hasInfoTrackingRate = GetLX200(":GXRa#", m_TempTrackingRateRa, sizeof(m_TempTrackingRateDec)) == LX200VALUEGET;
+    m_hasInfoTrackingRate = GetLX200(":GXRr#", m_TempTrackingRateRa, sizeof(m_TempTrackingRateDec)) == LX200VALUEGET;
     m_hasInfoTrackingRate ? m_lastStateTrackingRate = millis() : m_connectionFailure++;
     m_hasInfoTrackingRate &= GetLX200(":GXRd#", m_TempTrackingRateDec, sizeof(m_TempTrackingRateDec)) == LX200VALUEGET;
     m_hasInfoTrackingRate ? m_lastStateTrackingRate = millis() : m_connectionFailure++;
