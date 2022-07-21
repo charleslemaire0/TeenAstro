@@ -152,10 +152,12 @@ void TeenAstroMountStatus::updateFocuser()
 };
 void TeenAstroMountStatus::updateTrackingRate()
 {
-  if (millis() - m_lastTrackingRate > updaterate)
+  if (millis() - m_lastStateTrackingRate > updaterate)
   {
-    m_hasInfoTrackingRate = GetLX200(":GT#", m_TempTrackingRate, sizeof(m_TempTrackingRate)) == LX200VALUEGET;
-    m_hasInfoTrackingRate ? m_lastTrackingRate = millis() : m_connectionFailure++;
+    m_hasInfoTrackingRate = GetLX200(":GXRa#", m_TempTrackingRateRa, sizeof(m_TempTrackingRateDec)) == LX200VALUEGET;
+    m_hasInfoTrackingRate ? m_lastStateTrackingRate = millis() : m_connectionFailure++;
+    m_hasInfoTrackingRate &= GetLX200(":GXRd#", m_TempTrackingRateDec, sizeof(m_TempTrackingRateDec)) == LX200VALUEGET;
+    m_hasInfoTrackingRate ? m_lastStateTrackingRate = millis() : m_connectionFailure++;
   }
 };
 void TeenAstroMountStatus::updateMount()
@@ -238,12 +240,13 @@ TeenAstroMountStatus::SiderealMode TeenAstroMountStatus::getSiderealMode()
 {
   switch (m_TempMount[1])
   {
+  case '3':
   case '2':
   case '1':
   case '0':
     return static_cast<SiderealMode>(m_TempMount[1] - '0');
   default:
-    return SiderealMode::SID_STAR;
+    return SiderealMode::SID_UNKNOWN;
   }
 }
 bool TeenAstroMountStatus::isTrackingCorrected()
@@ -315,6 +318,10 @@ TeenAstroMountStatus::GuidingRate TeenAstroMountStatus::getGuidingRate()
 {
   int val = m_TempMount[4] - '0';
   return (val > -1 && val < 5) ? static_cast<GuidingRate>(val) : UNKNOW;
+}
+TeenAstroMountStatus::RateCompensation TeenAstroMountStatus::getRateCompensation()
+{
+  return m_TempMount[10] == 'c' ? TeenAstroMountStatus::RC_FULL_BOTH : RateCompensation::RC_NONE;
 }
 bool TeenAstroMountStatus::isSpiralRunning()
 {

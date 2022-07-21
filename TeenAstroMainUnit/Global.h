@@ -52,7 +52,6 @@ double                  maxRate = StepsMaxRate * 16L;
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
 
-double              az_deltaRateScale = 1.;
 
 MotorAxis           motorA1;
 MotorAxis           motorA2;
@@ -114,6 +113,7 @@ volatile bool movingTo = false;
 bool doSpiral = false;
 
 // Tracking
+#define TrackingStar  1
 #define TrackingSolar 0.99726956632
 #define TrackingLunar 0.96236513150
 bool lastSideralTracking = false;
@@ -122,12 +122,15 @@ enum SID_Mode
 {
   SIDM_STAR,
   SIDM_SUN,
-  SIDM_MOON
+  SIDM_MOON,
+  SIDM_TARGET
 };
 volatile SID_Mode sideralMode = SIDM_STAR;
+double  RequestedTrackingRateHA = TrackingStar;
+double  RequestedTrackingRateDEC = 0;
 
 //Guiding
-enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter };
+enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter, GuidingAtRate };
 volatile Guiding GuidingState = GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
 unsigned long lastSecurityCheck = millis();
@@ -146,12 +149,9 @@ unsigned long   baudRate[10] =
   115200, 56700, 38400, 28800, 19200, 14400, 9600, 4800, 2400, 1200
 };
 
+enum GuideRate {RG,RC,RM,RS,RX};
 // guide command
-#define GuideRateRG   0
-#define GuideRateRC   1
-#define GuideRateRM   2
-#define GuideRateRS   3
-#define GuideRateRX   4
+
 
 #define DefaultR0 1
 #define DefaultR1 4
@@ -163,7 +163,7 @@ double  guideRates[5] =
   DefaultR0 , DefaultR1 , DefaultR2 ,  DefaultR3 , DefaultR4
 };
 
-volatile byte   activeGuideRate = GuideRateRS;
+volatile byte activeGuideRate = GuideRate::RS;
 
 GuideAxis guideA1 = { 0,0,0,0,0 };
 GuideAxis guideA2 = { 0,0,0,0,0 };

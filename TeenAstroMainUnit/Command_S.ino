@@ -52,23 +52,6 @@ void Command_SX()
     // :SXRn,VVVV# Rates Settings
     switch (command[3])
     {
-
-    case 'A':
-      // :SXRA,VVV# Set degree for acceleration
-      DegreesForAcceleration = min(max(0.1*(double)strtol(&command[5], NULL, 10), 0.1), 25.0);
-      XEEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
-      SetAcceleration();
-      strcpy(reply, "1");
-      break;
-    case 'D':
-    {
-      // :SXRD,V# define default rate
-      int val = strtol(&command[5], NULL, 10);
-      val = val > 4 || val < 0 ? 3 : val;
-      XEEPROM.write(EE_DefaultRate, val);
-      strcpy(reply, "1");
-      break;
-    }
     case '0': // :SXR0,VVV# Set Rate for user defined rates
     case '1': // :SXR1,VVV# Set Rate for user defined rates
     case '2': // :SXR2,VVV# Set Rate for user defined rates
@@ -89,10 +72,47 @@ void Command_SX()
       }
       else strcpy(reply, "0");
       break;
+    case 'A':
+      // :SXRA,VVV# Set degree for acceleration
+      DegreesForAcceleration = min(max(0.1*(double)strtol(&command[5], NULL, 10), 0.1), 25.0);
+      XEEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
+      SetAcceleration();
+      strcpy(reply, "1");
+      break;
+    case 'D':
+    {
+      // :SXRD,V# define default rate
+      int val = strtol(&command[5], NULL, 10);
+      val = val > 4 || val < 0 ? 3 : val;
+      XEEPROM.write(EE_DefaultRate, val);
+      strcpy(reply, "1");
+      break;
+    }
     case 'X':
       // :SXRX,VVVV# Set Rate for max Rate
       XEEPROM.writeInt(EE_maxRate, (int)strtol(&command[5], NULL, 10));
       initMaxRate();
+      strcpy(reply, "1");
+      break;
+    case 'r':
+      // :SXRr,VVVVVVVVVV# Set Rate for RA 
+      sideralMode = SIDM_TARGET;
+      RequestedTrackingRateHA = 1. - (double)strtol(&command[5], NULL, 10) / 10000.0;
+      computeTrackingRate();
+      strcpy(reply, "1");
+      break;
+    case 'h':
+      // :SXRh,VVVVVVVVVV# Set Rate for HA
+      sideralMode = SIDM_TARGET;
+      RequestedTrackingRateHA = (double)strtol(&command[5], NULL, 10) / 10000.0;
+      computeTrackingRate();
+      strcpy(reply, "1");
+      break;
+    case 'd':
+      // :SXRd,VVVVVVVVVV# Set Rate for DEC
+      sideralMode = SIDM_TARGET;
+      RequestedTrackingRateDEC = (double)strtol(&command[5], NULL, 10) / 10000.0;
+      computeTrackingRate();
       strcpy(reply, "1");
       break;
     default:
@@ -541,13 +561,13 @@ void Command_S(Command& process_command)
     {
       if (process_command == COMMAND_SERIAL)
       {
-        Serial.print("1");
+        Serial.print('1');
         delay(20);
         Serial.begin(baudRate[i]);
       }
       else
       {
-        Serial1.print("1");
+        Serial1.print('1');
         delay(20);
         Serial1.begin(baudRate[i]);
       }
@@ -783,7 +803,8 @@ void Command_S(Command& process_command)
         }
         else
         {
-          staA1.trackingTimerRate = (f / 60.0) / 1.00273790935;
+          RequestedTrackingRateHA = (f / 60.0) / 1.00273790935;
+          // todo apply rate
         }
         strcpy(reply, "1");
       }

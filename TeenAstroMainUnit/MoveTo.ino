@@ -101,34 +101,33 @@ Again:
 
   // First, for Right Ascension
   double temp;
+
   if (distStartAxis1 >= distDestAxis1)
   {
-    temp = getRate(sqrt(distDestAxis1 * 2 * staA1.acc)); // slow down (temp gets bigger)
+    temp = getRate(sqrt(distDestAxis1 * 2 * staA1.acc) + (staA1.RequestedTrackingRate) / SiderealRate); // slow down (temp gets bigger)
   }
   else
   {
-    temp = getRate(sqrt(distStartAxis1 * 2 * staA1.acc)); // speed up (temp gets smaller)
+    temp = getRate(sqrt(distStartAxis1 * 2 * staA1.acc) + (staA1.RequestedTrackingRate) / SiderealRate); // speed up (temp gets smaller)
   }
-  if (temp < maxRate) temp = maxRate;                            // fastest rate
-  if (temp > TakeupRate) temp = TakeupRate;                      // slowest rate
+  if (temp < maxRate) temp = maxRate; // fastest rate
   cli(); staA1.timerRate = temp; sei();
 
   // Now, for Declination
 
   if (distStartAxis2 >= distDestAxis2)
   {
-    temp = getRate(sqrt(distDestAxis2 * 2 * staA2.acc)); // slow down
+    temp = getRate(sqrt(distDestAxis2 * 2 * staA2.acc + (staA2.RequestedTrackingRate) / SiderealRate)); // slow down
   }
   else
   {
-    temp = getRate(sqrt(distStartAxis2 * 2 * staA2.acc));// speed up
+    temp = getRate(sqrt(distStartAxis2 * 2 * staA2.acc + (staA2.RequestedTrackingRate) / SiderealRate));// speed up
   }
-  if (temp < maxRate) temp = maxRate;                            // fastest rate
-  if (temp > TakeupRate) temp = TakeupRate;                      // slowest rate
+  if (temp < maxRate) temp = maxRate; // fastest rate
   cli(); staA2.timerRate = temp; sei();
 
-  double v1 = max(abs(staA1.az_delta / 15.), 1.);
-  double v2 = max(abs(staA2.az_delta / 15.), 1.);
+  double v1 = max(abs(staA1.RequestedTrackingRate), 1.);
+  double v2 = max(abs(staA2.RequestedTrackingRate), 1.);
 
   if (atTargetAxis1(true, v1) && atTargetAxis2(true, v2))
   {

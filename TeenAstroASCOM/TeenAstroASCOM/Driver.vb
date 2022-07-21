@@ -623,15 +623,15 @@ Public Class Telescope
 
   Public ReadOnly Property CanSetDeclinationRate() As Boolean Implements ITelescopeV3.CanSetDeclinationRate
     Get
-      mTL.LogMessage("CanSetDeclinationRate", "Get - " & False.ToString())
-      Return False
+      mTL.LogMessage("CanSetDeclinationRate", "Get - " & True.ToString())
+      Return True
     End Get
   End Property
 
   Public ReadOnly Property CanSetGuideRates() As Boolean Implements ITelescopeV3.CanSetGuideRates
     Get
-      mTL.LogMessage("CanSetGuideRates", "Get - " & False.ToString())
-      Return False
+      mTL.LogMessage("CanSetGuideRates", "Get - " & True.ToString())
+      Return True
     End Get
   End Property
 
@@ -729,11 +729,21 @@ Public Class Telescope
 
   Public Property DeclinationRate() As Double Implements ITelescopeV3.DeclinationRate
     Get
-      Return 0
+      Dim rate As Double
+      Dim response As String = Me.CommandString("GXRd")
+      mTL.LogMessage("DeclinationRate", "Get value: " & response)
+      If Not (Double.TryParse(response, rate)) Then
+        Throw New ASCOM.InvalidValueException("Retrieve DeclinationRate via :GXRr# has failed: '" & response & "'")
+      End If
+      Return (rate) / 10000
     End Get
     Set(value As Double)
-      mTL.LogMessage("DeclinationRate Set", "Not implemented")
-      Throw New ASCOM.PropertyNotImplementedException("DeclinationRate", True)
+      Dim rate As Integer = value * 10000
+      Dim cmd As String = "SXRd," & rate.ToString()
+      mTL.LogMessage("DeclinationRate", "Set value: " & cmd)
+      If Not Me.CommandBool(cmd) Then
+        Throw New ASCOM.InvalidValueException("Set DeclinationRate via :" & cmd & " has failed")
+      End If
     End Set
   End Property
 
@@ -816,7 +826,7 @@ Public Class Telescope
   End Function
   Private Sub SetGuideRate(Val As Double)
     Dim speed As Integer = Val / mSiderealRate * 100
-    Dim cmd As String = "SXR0 " & speed.ToString("000")
+    Dim cmd As String = "SXR0," & speed.ToString("000")
     mTL.LogMessage("AxisRates", "Set value: " & Val)
     If Not Me.CommandBool(cmd) Then
       Throw New ASCOM.InvalidValueException("Set SetGuideRate via :" & cmd & " has failed")
@@ -948,11 +958,21 @@ Public Class Telescope
 
   Public Property RightAscensionRate() As Double Implements ITelescopeV3.RightAscensionRate
     Get
-      Return 0
+      Dim rate As Double
+      Dim response As String = Me.CommandString("GXRr")
+      mTL.LogMessage("RightAscensionRate", "Get value: " & response)
+      If Not (Double.TryParse(response, rate)) Then
+        Throw New ASCOM.InvalidValueException("Retrieve RightAscensionRate via :GXRr# has failed: '" & response & "'")
+      End If
+      Return rate / 10000
     End Get
     Set(value As Double)
-      mTL.LogMessage("RightAscensionRate Set", "Not implemented")
-      Throw New ASCOM.PropertyNotImplementedException("RightAscensionRate", True)
+      Dim rate As Integer = value * 10000
+      Dim cmd As String = "SXRr," & rate.ToString()
+      mTL.LogMessage("RightAscensionRate", "Set value: " & cmd)
+      If Not Me.CommandBool(cmd) Then
+        Throw New ASCOM.InvalidValueException("Set RightAscensionRate via :" & cmd & " has failed")
+      End If
     End Set
   End Property
 
@@ -1356,7 +1376,7 @@ Public Class Telescope
     End Get
     Set(value As DateTime)
       Dim s As Long = (Date.UtcNow() - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds
-      If (CommandBool("SXT2_" & s)) Then
+      If (CommandBool("SXT2," & s)) Then
         mTL.LogMessage("Set UTCDate", "done")
       Else
         mTL.LogMessage("Set UTCDate", "failed")

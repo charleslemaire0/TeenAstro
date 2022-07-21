@@ -212,7 +212,6 @@ void setup()
   digitalWrite(LEDPin, HIGH);
   delay(1000);
   hasGNSS = Serial3.available() > 0;
-  //hasFocuser = Serial2.available() > 0;
   char ret;
   while (Serial2.available() > 0)
   {
@@ -266,7 +265,7 @@ void loop()
     if (rtk.m_lst % 16 == 0)
     {
       getHorApp(&currentAzm, &currentAlt);
-      if ((isAltAZ() || correct_tracking) && (rtk.m_lst % 64 == 0))
+      if ((isAltAZ() || correct_tracking || sideralMode == SIDM_TARGET) && (rtk.m_lst % 64 == 0))
       {
         do_compensation_calc();
       }
@@ -327,7 +326,7 @@ void loop()
     lasttargetAxis1 = staA1.target * 1000;
     // adjust tracking rate for Alt/Azm mounts
     // adjust tracking rate for refraction
-    SetDeltaTrackingRate();
+    ApplyTrackingRate();
     SafetyCheck(forceTracking);
   }
   else
@@ -679,7 +678,7 @@ void updateSideral()
   sei();
   staA1.timerRate = SiderealRate;
   staA2.timerRate = SiderealRate;
-  SetTrackingRate(default_tracking_rate);
+  SetTrackingRate(default_tracking_rate,0);
 
   // backlash takeup rates
   backlashA1.timerRate = staA1.timerRate / BacklashTakeupRate;

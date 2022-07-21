@@ -9,6 +9,7 @@ void Command_GX()
 {
   int i;
   double f1;
+  long   l1;
   //  :GXnn#   Get TeenAstro Specific value
   switch (command[2])
   {
@@ -139,14 +140,18 @@ void Command_GX()
           ((debugv1 / 53333.3333333333) * 15000));
         break;
       case '1':
-        // :GXDR1# RA tracking rate
-        sprintf(reply, "%ld#", (long)
-          (staA1.az_delta * 1000.0 * 1.00273790935));
+        // :GXDR1# axis1 requested tracking rate in sideral
+        sprintf(reply, "%f#", staA1.RequestedTrackingRate);
         break;
       case '2':
-        // :GXDR2# Dec tracking rate
-        sprintf(reply, "%ld#", (long)
-          (staA2.az_delta * 1000.0 * 1.00273790935));
+        // :GXDR2# axis2 requested tracking rate in sideral 
+        sprintf(reply, "%f#", staA2.RequestedTrackingRate);
+        break;
+      case '3':
+        sprintf(reply, "%f#", (double)staA1.CurrentTrackingRate);
+        break;
+      case '4':
+        sprintf(reply, "%f#", (double)staA1.fstep);
         break;
       default:
         strcpy(reply, "0");
@@ -220,7 +225,7 @@ void Command_GX()
     // :GXPn# Intrument position
     switch (command[3])
     {
-    case '1':      
+    case '1':
       cli();
       f1 = staA1.pos / geoA1.stepsPerDegree;
       sei();
@@ -244,7 +249,15 @@ void Command_GX()
     // :GXRn# user defined rates
     switch (command[3])
     {
-
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+      i = command[3] - '0';
+      // :GXRn# return user defined rate
+      dtostrf(guideRates[i], 2, 2, reply);
+      strcat(reply, "#");
+      break;
     case 'A':
       // :GXRA# returns the Degrees For Acceleration
       dtostrf(DegreesForAcceleration, 2, 1, reply);
@@ -255,20 +268,27 @@ void Command_GX()
       sprintf(reply, "%ld#", (long)round(BacklashTakeupRate));
       break;
     case 'D':
+      // :GXRD# returns the Default Rate
       sprintf(reply, "%d#", XEEPROM.read(EE_DefaultRate));
-      break;
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-      i = command[3] - '0';
-      // :GXRn# return user defined rate
-      dtostrf(guideRates[i], 2, 2, reply);
-      strcat(reply, "#");
       break;
     case 'X':
       // :GXRX# return Max Slew rate
       sprintf(reply, "%d#", XEEPROM.readInt(EE_maxRate));
+      break;
+    case 'r':
+      // :GXRr# Requested RA traking rate in sideral
+      l1 = -(RequestedTrackingRateHA - 1.0) * 10000.0;
+      sprintf(reply, "%ld#", l1);
+      break;
+    case 'h':
+      l1 = RequestedTrackingRateHA * 10000.0;
+      // :GXRh# Requested HA traking rate in sideral
+      sprintf(reply, "%ld#", l1);
+      break;
+    case 'd':
+      // :GXRd# Requested DEC traking rate in sideral
+      l1 = RequestedTrackingRateDEC * 10000.0;
+      sprintf(reply, "%ld#", l1);
       break;
     default:
       strcpy(reply, "0");
@@ -840,11 +860,11 @@ void  Command_G()
     break;
   case 'T':
     //  :GT#   Get tracking rate, Native LX200 command
-    //         Returns: dd.ddddd# (OnStep returns more decimal places than LX200 standard)
+    //         Returns: dd.ddddd#
     //         Returns the tracking rate if siderealTracking, 0.0 otherwise
     if (sideralTracking && !movingTo)
     {
-      f = isAltAZ() ? GetTrackingRate() : staA1.trackingTimerRate;
+      f = RequestedTrackingRateHA;
       f *= 60 * 1.00273790935;
     }
     else

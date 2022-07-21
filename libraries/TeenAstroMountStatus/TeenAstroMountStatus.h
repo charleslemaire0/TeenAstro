@@ -12,7 +12,7 @@ public:
   enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
   enum TrackState { TRK_OFF, TRK_ON, TRK_SLEWING, TRK_UNKNOW };
   enum RateCompensation { RC_NONE, RC_REFR_RA, RC_REFR_BOTH, RC_FULL_RA, RC_FULL_BOTH };
-  enum SiderealMode { SID_STAR, SID_SUN, SID_MOON };
+  enum SiderealMode { SID_UNKNOWN=-1,SID_STAR, SID_SUN, SID_MOON, SID_TARGET };
   enum ParkState { PRK_UNPARKED, PRK_PARKED, PRK_FAILED, PRK_PARKING, PRK_UNKNOW };
   enum PierState { PIER_E, PIER_W, PIER_UNKNOW };
   enum GuidingRate { UNKNOW = -1, GUIDING, SLOW, MEDIUM, FAST, MAX };
@@ -51,8 +51,9 @@ private:
   unsigned long   m_lastStateTime;
   char            m_TempMount[17] = "?";
   unsigned long   m_lastStateMount;
-  char            m_TempTrackingRate[15] = "?";
-  unsigned long   m_lastTrackingRate;
+  unsigned long   m_lastStateTrackingRate;
+  char            m_TempTrackingRateRa[15] = "?";
+  char            m_TempTrackingRateDec[15] = "?";
   char            m_TempFocuser[45] = "?";
   unsigned long   m_lastStateFocuser;
   int             m_connectionFailure = 0;
@@ -126,13 +127,15 @@ public:
   const char* getAxis2Step() { return  m_TempAxis2Step; };
   const char* getAxis1Deg() { return  m_TempAxis1Deg; };
   const char* getAxis2Deg() { return  m_TempAxis2Deg; };
+
   const char* getUTC() { return m_TempUTC; };
   const char* getLHA() { return m_TempLHA; };
   const char* getUTCdate() { return m_TempUTCdate; };
   const char* getSidereal() { return m_TempSidereal; };
   const char* getMState() { return m_TempMount; };
   const char* getFocuser() { return m_TempFocuser; };
-  const char* getTrackingRate() { return m_TempTrackingRate; };
+  const char* getTrackingRateRa() { return m_TempTrackingRateRa; };
+  const char* getTrackingRateDec() { return m_TempTrackingRateDec; };
 
   void updateV();
   void updateRaDec();
@@ -146,19 +149,20 @@ public:
   void updateTrackingRate();
   void updateMount();
 
-  Mount       getMount();
-  bool        isAltAz();
-  ParkState   getParkState();
-  TrackState  getTrackingState();
-  SiderealMode getSiderealMode();
-  bool        isTrackingCorrected();
-  PierState   getPierState();
-  Errors      getError();
-  bool        getLastErrorMessage(char message[]);
-  bool        getLstT0(double &T0);
-  bool        getLat(double &lat);
-  bool        getTrackingRate(double &r);
-  GuidingRate getGuidingRate();
+  Mount             getMount();
+  bool              isAltAz();
+  ParkState         getParkState();
+  TrackState        getTrackingState();
+  SiderealMode      getSiderealMode();
+  bool              isTrackingCorrected();
+  PierState         getPierState();
+  Errors            getError();
+  bool              getLastErrorMessage(char message[]);
+  bool              getLstT0(double &T0);
+  bool              getLat(double &lat);
+  bool              getTrackingRate(double &r);
+  GuidingRate       getGuidingRate();
+  RateCompensation  getRateCompensation();
   bool checkConnection(char* major, char* minor);
   bool getDriverName(char* name);
   bool isConnectionValid() { return m_isValid; };
