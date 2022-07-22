@@ -97,6 +97,7 @@ void Command_GX()
       strcpy(reply, "0");
       break;
     }
+    break;
   }
   case 'D':
     // :GXDnn# for Debug commands
