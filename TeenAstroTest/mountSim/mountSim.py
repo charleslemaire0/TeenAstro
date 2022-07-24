@@ -6,24 +6,7 @@ import glooey
 import trimesh.transformations as tt
 import pyglet
 from pyglet import clock
-from teenastro import TeenAstro
-
-
-# Helper function
-# convert from float to (d,m,s)
-def deg2dms(dd):
-    negative = dd < 0
-    dd = abs(dd)
-    minutes,seconds = divmod(dd*3600,60)
-    degrees,minutes = divmod(minutes,60)
-    if negative:
-        if degrees > 0:
-            degrees = -degrees
-        elif minutes > 0:
-            minutes = -minutes
-        else:
-            seconds = -seconds
-    return (degrees,minutes,seconds)
+from teenastro import TeenAstro, deg2dms
 
 class Mount:
     def __init__(self, ta):
@@ -216,6 +199,17 @@ class Application:
         pyglet.clock.schedule_interval(self.update, 1. / 5) 
         pyglet.app.run()
 
+    def startFlipTest(self, dt):
+        if self.mount.mountType != 'E':
+            self.log('Can only run meridian flip test with German Equatorial mount')
+            return
+        self.log('Starting meridian flip test')
+        if not self.ta.isAtHome():
+            self.log('Error - mount is not at home')
+            return
+
+        self.flipTestState = 'start'
+        pyglet.clock.schedule_interval(self.runFlipTest, 0.5) 
 
     def runFlipTest(self, dt):
         if self.ta.isSlewing():
@@ -261,19 +255,10 @@ class Application:
                 self.ta.goHome()
                 pyglet.clock.unschedule(self.runFlipTest) 
 
-
-    def startFlipTest(self, dt):
-        if self.mount.mountType != 'E':
-            self.log('Can only run meridian flip test with German Equatorial mount')
-            return
-        self.log('Starting meridian flip test')
-        if not self.ta.isAtHome():
-            self.log('Error - mount is not at home')
-            return
-
-        self.flipTestState = 'start'
-        pyglet.clock.schedule_interval(self.runFlipTest, 0.5) 
-
+    def startCoordTest(self,arg):
+        self.testStep = 0
+        self.testData = []
+        pyglet.clock.schedule_interval(self.runCoordTest, 0.5) 
 
     def runCoordTest(self, dt):
         if self.ta.isSlewing():
@@ -295,11 +280,6 @@ class Application:
         if (res):
             self.log(res)
         self.testStep = self.testStep + 1
-
-    def startCoordTest(self,arg):
-        self.testStep = 0
-        self.testData = []
-        pyglet.clock.schedule_interval(self.runCoordTest, 0.5) 
 
 
     # May override this with a graphical window in the future

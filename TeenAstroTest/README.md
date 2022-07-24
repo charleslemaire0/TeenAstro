@@ -1,26 +1,11 @@
-# Scope to Sky and TeenAstro
+# Testing TeenAstro 
 
-Mel Bartel’s [Scope to Sky calculator](https://www.bbastrodesigns.com/scopeToSky.html), written in Javascript with an HTML user interface, has several functions:  
-- Given sky coordinates (either Right Ascension or Hour Angle, and Declination), compute a telescope’s axis positions.   
-- Given a telescope’s axis positions, compute the corresponding sky coordinates.  
-- For a telescope with encoders, display encoder values for a given telescope position or compute telescope position according to the encoder values.  
+We now have 2 Python programs to test TeenAstro:
 
-The configuration includes:  
-- Setup site, time and date, time zone  
-- equatorial and altazimuth mounts  
-- Correction for precession, nutation and annual aberration  
-- Correction for refraction  
-- For equatorial mounts, set pier side (mount flip)  
-- Conversion styles (trigonometry or matrix)  
-- Tracking rates algorithms (method for computing the rates)  
-- Encoder gears
+- MountSim is a mount simulator that displays any of the 4 models of mounts supported by TeenAstro, and moves according to the axis positions reported
+- autoTest is a test program that compares the axis positions against values computed with the [skyfield](https://rhodesmill.org/skyfield/) astronomy library
 
-
-## How to use it for testing TeenAstro Firmware
-We generate a set of test cases (sky positions, site, time etc.), use ScopeToSky to compute axes positions for each, and use them as Goto targets for a TeenAstro. We read the stepper counts for both axes, normalize them back to degrees, and compare with the computed values.
-
-See complete documentation at [http://astro.roya.org/teenastro_linux/scopetosky/](http://astro.roya.org/teenastro_linux/scopetosky/)
-
+The previous test program that used Mel Bartel's Scope to Sky calculator is no longer supported. 
 
 
 
