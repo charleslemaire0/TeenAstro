@@ -13,23 +13,16 @@ const char html_configMount_2[] PROGMEM =
 "</form>"
 "<br/>\r\n";
 
-const char html_configTracking_1[] PROGMEM =
-"<div class='bt'> Corrected Tracking: <br/> </div>"
+const char html_configRefraction[] PROGMEM =
+"<div class='bt'> Refraction Options: <br/> </div>";
+const char html_Opt_1[] PROGMEM =
 "<form action='/configuration_mount.htm'>"
-"<select name='tracking' onchange='this.form.submit()' >";
-const char html_configTracking_2[] PROGMEM =
-"</select>"
-"</form>"
-"<br/>\r\n";
+"<select name='%s' onchange='this.form.submit()' >";
 
-const char html_configPolar_1[] PROGMEM =
-"<div class='bt'> Polar Alignment: <br/> </div>"
-"<form action='/configuration_mount.htm'>"
-"<select name='polar' onchange='this.form.submit()' >";
-const char html_configPolar_2[] PROGMEM =
-"</select>"
-"</form>"
-"<br/>\r\n";
+const char html_on_1[] PROGMEM = "<option selected value='1'>On</option>";
+const char html_on_2[] PROGMEM = "<option value='1'>On</option>";
+const char html_off_1[] PROGMEM = "<option selected value='2'>Off</option>";
+const char html_off_2[] PROGMEM = "<option value='2'>Off</option>";
 
 const char html_configRotAxis_1[] PROGMEM =
 "<form action='/configuration_mount.htm'>"
@@ -40,7 +33,6 @@ const char html_configRotAxis_r[] PROGMEM =
 const char html_configRotAxis_d[] PROGMEM =
 "<option selected value ='0'>Direct</option>"
 "<option value='1'>Reverse</option>";
-
 const char html_configRotAxis_2[] PROGMEM =
 "</select>"
 "<button type='submit'>Upload</button>"
@@ -114,6 +106,9 @@ const char html_reboot_t[] PROGMEM =
 "<button type='submit'>Continue</button>"
 "</form><br/><br/><br/><br/>"
 "\r\n";
+
+
+
 bool restartRequired_t = false;
 
 void TeenAstroWifi::handleConfigurationMount()
@@ -149,21 +144,27 @@ void TeenAstroWifi::handleConfigurationMount()
   data += FPSTR(html_configMount_2);
   sendHtml(data);
 
+  data += FPSTR(html_configRefraction);
   if (!ta_MountStatus.isAltAz())
   {
-    data += FPSTR(html_configTracking_1);
-    ta_MountStatus.isTrackingCorrected() ? data += "<option selected value='1'>On</option>" : data += "<option value='1'>On</option>";
-    !ta_MountStatus.isTrackingCorrected() ? data += "<option selected value='2'>Off</option>" : data += "<option value='2'>Off</option>";
-    data += FPSTR(html_configTracking_2);
-    sendHtml(data);
 
-    data += FPSTR(html_configPolar_1);
-    if (GetLX200(":GXAp#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "a");
-    temp1[0] == 'a' ? data += "<option selected value='1'>Apparent</option>" : data += "<option value='1'>Apparent</option>";
-    temp1[0] == 't' ? data += "<option selected value='2'>True</option>" : data += "<option value='2'>True</option>";
-    data += FPSTR(html_configPolar_2);
+    sprintf_P(temp, html_Opt_1, "polar");
+    data += temp;
+    if (GetLX200(":GXrp#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "n");
+
+    temp1[0] == 'y' ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
+    temp1[0] == 'n' ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
+    data += "</select> Consider Refraction for Pole definiton</form><br/>\r\n";
     sendHtml(data);
   }
+
+  sprintf_P(temp, html_Opt_1, "gotor");
+  data += temp;
+  if (GetLX200(":GXrg#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "n");
+  temp1[0] == 'y' ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
+  temp1[0] == 'n' ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
+  data += "</select> Consider Refraction for Goto and Sync</form><br/>\r\n";
+  sendHtml(data);
 
   //Axis1
   data += "<div class='bt'> Motor: <br/> </div>";
@@ -281,21 +282,21 @@ void TeenAstroWifi::processConfigurationMountGet()
     }
   }
 
-  v = server.arg("tracking");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
-    {
-      i == 1 ? SetLX200(":Tc#") : SetLX200(":Tn#");
-    }
-  }
-
   v = server.arg("polar");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
     {
-      i == 1 ? SetLX200(":SXAp,a#") : SetLX200(":SXAp,t#");
+      i == 1 ? SetLX200(":SXrp,y#") : SetLX200(":SXrp,n#");
+    }
+  }
+
+  v = server.arg("gotor");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
+    {
+      i == 1 ? SetLX200(":SXrg,y#") : SetLX200(":SXrg,n#");
     }
   }
 

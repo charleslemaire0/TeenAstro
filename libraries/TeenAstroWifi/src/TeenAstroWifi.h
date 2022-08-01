@@ -90,7 +90,7 @@ class TeenAstroWifi
   };
   enum ServerPage
   {
-    Index=1, Control, Speed, Mount, Limits, Site, Focuser, Wifi
+    Index=1, Control, Speed, Tracking, Mount, Limits, Site, Focuser, Wifi
   };
   static bool wifiOn;
   static int WebTimeout;
@@ -131,6 +131,8 @@ class TeenAstroWifi
   static void handleConfigurationSite();
   static void processConfigurationSpeedGet();
   static void handleConfigurationSpeed();
+  static void processConfigurationTrackingGet();
+  static void handleConfigurationTracking();
   static void processConfigurationMountGet();
   static void handleConfigurationMount();
   static void processConfigurationLimitsGet();
@@ -138,23 +140,21 @@ class TeenAstroWifi
   static void processConfigurationFocuserGet();
   static void handleConfigurationFocuser();
   static void handleRoot();
-  static void handleSettings();
 
-  static void settingsAjax();
-  static void processSettingsGet();
   static void controlAjax();
   static void processControlGet();
   static void guideAjax();
+  static void trackAjax();
+  static void trackinfoAjax();
   static void handleControl();
-  static void handlePec();
-  static void pecAjax();
-  static void processPecGet();
   static void handleWifi();
   static void handleNotFound();
   static void initFromEEPROM();
   static void writeStation2EEPROM(const int& k);
   static void writeAccess2EEPROM();
   static void processWifiGet();
+
+  static void addTrackingInfo(String &data);
 
   static bool atoi2(char *a, int *i);
   static bool atof2(char *a, float *f);

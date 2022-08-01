@@ -7,45 +7,45 @@ const char html_headerIdx[] PROGMEM = "<meta http-equiv=\"refresh\" content=\"5;
 const char html_headE[] PROGMEM = "</head>\r\n";
 const char html_bodyB[] PROGMEM = "<body bgcolor='#26262A'>\r\n";
 
-const char html_main_cssB[] PROGMEM = "<STYLE>";
-const char html_main_css1[] PROGMEM = ".clear { clear: both; } .a {  font-family: Helvetica; background-color: #111111; } .t { font-family: Helvetica; padding: 10px 10px 20px 10px; border: 5px solid #551111;";
-const char html_main_css2[] PROGMEM = " margin: 25px 25px 0px 25px; color: #999999; background-color: #111111; min-width: 10em; } input {font-family: Helvetica; font-weight: bold; width:6em; background-color: #A01010; padding: 2px 2px; }";
-const char html_main_css3[] PROGMEM = " .b { font-family: Helvetica; font-size: 75%; padding: 10px; border-left: 5px solid #551111; border-right: 5px solid #551111; border-bottom: 5px solid #551111; margin: 0px 25px 25px 25px; color: #999999; background-color: #111111; min-width: 10em; }";
-const char html_main_css4[] PROGMEM = " .bt { font-size: 125%; }";
-const char html_main_css5[] PROGMEM = " select { width:7em; font-weight: bold; font-family: Helvetica; background-color: #A01010; padding: 2px 2px; } .c { color: #A01010; font-weight: bold}";
-const char html_main_css6[] PROGMEM = "h1 { text-align: right; } a:hover, a:active { background-color: red; } .y { color: #FFFF00; font-weight: bold; font-family: Helvetica;}";
-const char html_main_css7[] PROGMEM = "a:link, a:visited { background-color: #332222; color: #a07070;  font-family: Helvetica; border:1px solid red; padding: 5px 10px;";
-const char html_main_css8[] PROGMEM = " margin: none; text-align: center; text-decoration: none; display: inline-block;}";
-const char html_main_css9[] PROGMEM = "button { background-color: #A01010; font-weight: bold; border-radius: 5px; margin: 2px; padding: 4px 8px; }";
-const char html_main_css_control1[] PROGMEM = ".b1 { font-family: Helvetica; float: left; border: 2px solid #551111; background-color: #181818; text-align: center; margin: 5px; padding: 15px; padding-top: 3px; }";
-const char html_main_css_control2[] PROGMEM = ".gb { width: 60px; height: 50px; padding: 0px; }";
-const char html_main_css_control3[] PROGMEM = ".bb { height: 2.5em; width: 8em;} .bbh {   height: 2.5em; width: 6em;}";
-const char html_main_css_control4[] PROGMEM = ".bct { font-family: Helvetica; font-size: 125% }";
-const char html_main_cssE[] PROGMEM = "</STYLE>";
+const char html_main_cssB[] PROGMEM = "<STYLE>\n";
+const char html_main_css1[] PROGMEM = ".clear { clear: both; } .a {  font-family: Helvetica; background-color: #111111; } .t { font-family: Helvetica; padding: 10px 10px 20px 10px; border: 5px solid #551111;\n";
+const char html_main_css2[] PROGMEM = " margin: 25px 25px 0px 25px; color: #999999; background-color: #111111; min-width: 10em; } input {font-family: Helvetica; font-weight: bold; width:6em; background-color: #A01010; padding: 2px 2px; }\n";
+const char html_main_css3[] PROGMEM = " .b { font-family: Helvetica; font-size: 75%; padding: 10px; border-left: 5px solid #551111; border-right: 5px solid #551111; border-bottom: 5px solid #551111; margin: 0px 25px 25px 25px; color: #999999; background-color: #111111; min-width: 10em; }\n";
+const char html_main_css4[] PROGMEM = " .bt { font-size: 125%; }\n";
+const char html_main_css5[] PROGMEM = " select { width:7em; font-weight: bold; font-family: Helvetica; background-color: #A01010; padding: 2px 2px; } .c { color: #A01010; font-weight: bold}\n";
+const char html_main_css6[] PROGMEM = "h1 { text-align: right; } a:hover, a:active { background-color: red; } .y { color: #FFFF00; font-weight: bold; font-family: Helvetica;}\n";
+const char html_main_css7[] PROGMEM = "a:link, a:visited { background-color: #332222; color: #a07070;  font-family: Helvetica; border:1px solid red; padding: 5px 10px;\n";
+const char html_main_css8[] PROGMEM = " margin: none; text-align: center; text-decoration: none; display: inline-block;}\n";
+const char html_main_css9[] PROGMEM = "button { background-color: #A01010; font-weight: bold; border-radius: 5px; margin: 2px; padding: 4px 8px; }\n";
+const char html_main_css_control1[] PROGMEM = ".b1 { font-family: Helvetica; float: left; border: 2px solid #551111; background-color: #181818; text-align: center; margin: 5px; padding: 15px; padding-top: 3px; }\n";
+const char html_main_css_control2[] PROGMEM = ".gb { width: 60px; height: 50px; padding: 0px; }\n";
+const char html_main_css_control3[] PROGMEM = ".bb { height: 2.5em; width: 8em;} .bbh {   height: 2.5em; width: 6em;}\n";
+const char html_main_css_control4[] PROGMEM = ".bct { font-family: Helvetica; font-size: 125% }\n";
+const char html_main_cssE[] PROGMEM = "</STYLE>\n";
 
-const char html_header1[] PROGMEM = "<div class='t'><table width='100%%'><tr><td><b><font size='5'>";
-const char html_header2[] PROGMEM = "</font></b></td><td align='right'><b>" Product " " ServerFirmwareVersionMajor "." ServerFirmwareVersionMinor "." ServerFirmwareVersionPatch ", Main Unit ";
-const char html_header3[] PROGMEM = "</b></td></tr></table>";
+const char html_header1[] PROGMEM = "<div class='t'><table width='100%%'><tr><td><b><font size='5'>\n";
+const char html_header2[] PROGMEM = "</font></b></td><td align='right'><b>" Product " " ServerFirmwareVersionMajor "." ServerFirmwareVersionMinor "." ServerFirmwareVersionPatch ", Main Unit \n";
+const char html_header3[] PROGMEM = "</b></td></tr></table>\n";
 const char html_header4[] PROGMEM = "</div><div class='b'>\r\n";
 
-const char html_links1S[] PROGMEM = "<a href='/index.htm' style='background-color: #552222;'>Status</a>";
-const char html_links1N[] PROGMEM = "<a href='/index.htm'>Status</a>";
-const char html_links2S[] PROGMEM = "<a href='/control.htm' style='background-color: #552222;'>Control</a>";
-const char html_links2N[] PROGMEM = "<a href='/control.htm'>Control</a>";
-const char html_links3S[] PROGMEM = "<a href='/configuration_speed.htm' style='background-color: #552222;'>Speed</a>";
-const char html_links3N[] PROGMEM = "<a href='/configuration_speed.htm'>Speed</a>";
-const char html_links4S[] PROGMEM = "<a href='/configuration_site.htm' style='background-color: #552222;'>Site</a>";
-const char html_links4N[] PROGMEM = "<a href='/configuration_site.htm'>Site</a>";
-const char html_links5S[] PROGMEM = "<a href='/configuration_mount.htm' style='background-color: #552222;'>Mount</a>";
-const char html_links5N[] PROGMEM = "<a href='/configuration_mount.htm'>Mount</a>";
-const char html_links6S[] PROGMEM = "<a href='/configuration_limits.htm' style='background-color: #552222;'>Limits</a>";
-const char html_links6N[] PROGMEM = "<a href='/configuration_limits.htm'>Limits</a>";
-const char html_links7S[] PROGMEM = "<a href='/configuration_focuser.htm' style='background-color: #552222;'>Focuser</a>";
-const char html_links7N[] PROGMEM = "<a href='/configuration_focuser.htm'>Focuser</a>";
-const char html_links8S[] PROGMEM = "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />";
-const char html_links8N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />";
-
-
+const char html_links1S[] PROGMEM = "<a href='/index.htm' style='background-color: #552222;'>Status</a>\n";
+const char html_links1N[] PROGMEM = "<a href='/index.htm'>Status</a>\n";
+const char html_links2S[] PROGMEM = "<a href='/control.htm' style='background-color: #552222;'>Control</a>\n";
+const char html_links2N[] PROGMEM = "<a href='/control.htm'>Control</a>\n";
+const char html_links3S[] PROGMEM = "<a href='/configuration_speed.htm' style='background-color: #552222;'>Speed</a>\n";
+const char html_links3N[] PROGMEM = "<a href='/configuration_speed.htm'>Speed</a>\n";
+const char html_links4S[] PROGMEM = "<a href='/configuration_tracking.htm' style='background-color: #552222;'>Tracking</a>\n";
+const char html_links4N[] PROGMEM = "<a href='/configuration_tracking.htm'>Tracking</a>\n";
+const char html_links5S[] PROGMEM = "<a href='/configuration_site.htm' style='background-color: #552222;'>Site</a>\n";
+const char html_links5N[] PROGMEM = "<a href='/configuration_site.htm'>Site</a>\n";
+const char html_links6S[] PROGMEM = "<a href='/configuration_mount.htm' style='background-color: #552222;'>Mount</a>\n";
+const char html_links6N[] PROGMEM = "<a href='/configuration_mount.htm'>Mount</a>\n";
+const char html_links7S[] PROGMEM = "<a href='/configuration_limits.htm' style='background-color: #552222;'>Limits</a>\n";
+const char html_links7N[] PROGMEM = "<a href='/configuration_limits.htm'>Limits</a>\n";
+const char html_links8S[] PROGMEM = "<a href='/configuration_focuser.htm' style='background-color: #552222;'>Focuser</a>\n";
+const char html_links8N[] PROGMEM = "<a href='/configuration_focuser.htm'>Focuser</a>\n";
+const char html_links9S[] PROGMEM = "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />\n";
+const char html_links9N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />\n";
 
 bool TeenAstroWifi::wifiOn = true;
 
@@ -217,7 +217,7 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   data += FPSTR(html_main_css8);
   data += FPSTR(html_main_css9);
   sendHtml(data);
-  if (page == ServerPage::Control)
+  if (page == ServerPage::Control|| page ==ServerPage::Tracking)
   {
     data += FPSTR(html_main_css_control1);
     data += FPSTR(html_main_css_control2);
@@ -261,15 +261,16 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   data += page == ServerPage::Index ? FPSTR(html_links1S) : FPSTR(html_links1N);
   data += page == ServerPage::Control ? FPSTR(html_links2S) : FPSTR(html_links2N);
   data += page == ServerPage::Speed ? FPSTR(html_links3S) : FPSTR(html_links3N);
-  data += page == ServerPage::Site ? FPSTR(html_links4S) : FPSTR(html_links4N);
-  data += page == ServerPage::Mount ? FPSTR(html_links5S) : FPSTR(html_links5N);
-  data += page == ServerPage::Limits ? FPSTR(html_links6S) : FPSTR(html_links6N);
+  data += page == ServerPage::Tracking ? FPSTR(html_links4S) : FPSTR(html_links4N);
+  data += page == ServerPage::Site ? FPSTR(html_links5S) : FPSTR(html_links5N);
+  data += page == ServerPage::Mount ? FPSTR(html_links6S) : FPSTR(html_links6N);
+  data += page == ServerPage::Limits ? FPSTR(html_links7S) : FPSTR(html_links7N);
   if (ta_MountStatus.hasFocuser())
   {
-    data += page == ServerPage::Focuser ? FPSTR(html_links7S) : FPSTR(html_links7N);
+    data += page == ServerPage::Focuser ? FPSTR(html_links8S) : FPSTR(html_links8N);
   }
 #ifndef OETHS
-  data += page == ServerPage::Wifi ? FPSTR(html_links8S) : FPSTR(html_links8N);
+  data += page == ServerPage::Wifi ? FPSTR(html_links9S) : FPSTR(html_links9N);
 #endif
   data += FPSTR(html_header4);
 }
@@ -480,12 +481,15 @@ void TeenAstroWifi::setup()
   server.on("/index.htm", handleRoot);
   server.on("/configuration_site.htm", handleConfigurationSite);
   server.on("/configuration_speed.htm", handleConfigurationSpeed);
+  server.on("/configuration_tracking.htm", handleConfigurationTracking);
   server.on("/configuration_mount.htm", handleConfigurationMount);
   server.on("/configuration_limits.htm", handleConfigurationLimits);
   server.on("/configuration_focuser.htm", handleConfigurationFocuser);
   server.on("/control.htm", handleControl);
   server.on("/control.txt", controlAjax);
   server.on("/guide.txt", guideAjax);
+  server.on("/track.txt", trackAjax);
+  server.on("/trackinfo.txt", trackinfoAjax);
   server.on("/wifi.htm", handleWifi);
   server.onNotFound(handleNotFound);
 

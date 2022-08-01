@@ -12,16 +12,20 @@
 #include "Config.TeenAstro.h"
 #include "EEPROM_adress.h"
 #include "XEEPROM.hpp"
+#include "Refraction.hpp"
 #include "Axis.hpp"
 
 TinyGPSPlus gps;
 CoordConv alignment;
 bool hasStarAlignment = false;
+bool TrackingCompForAlignment = false;
 
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
 enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW };
+enum RateCompensation { RC_UNKOWN = -1, RC_NONE, RC_ALIGN_RA, RC_ALIGN_BOTH, RC_FULL_RA, RC_FULL_BOTH };
+enum TrackingCompensation {TC_NONE, TC_RA, TC_BOTH};
 
 ParkState parkStatus = PRK_UNPARKED;
 bool parkSaved = false;
@@ -33,10 +37,12 @@ MeridianFlip meridianFlip = FLIP_NEVER;
 Mount mountType = MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;
 bool autoAlignmentBySync = false;
-bool apparentPole = true;
+
 bool hasFocuser = false;
 bool hasGNSS = true;
-bool correct_tracking = false;
+
+RefractionFlags doesRefraction;
+TrackingCompensation tc = TC_NONE;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
 double                  siderealInterval = 15956313.0;
 const double            masterSiderealInterval = 15956313.0;
@@ -125,10 +131,13 @@ enum SID_Mode
   SIDM_MOON,
   SIDM_TARGET
 };
-volatile SID_Mode sideralMode = SIDM_STAR;
-double  RequestedTrackingRateHA = TrackingStar;
-double  RequestedTrackingRateDEC = 0;
 
+volatile SID_Mode sideralMode = SIDM_STAR;
+
+double  RequestedTrackingRateHA = TrackingStar; // in RA seconds per sideral second
+double  RequestedTrackingRateDEC = 0; // in DEC seconds per sideral second
+long    storedTrakingRateRA = 0;
+long    storedTrakingRateDEC = 0;
 //Guiding
 enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter, GuidingAtRate };
 volatile Guiding GuidingState = GuidingOFF;

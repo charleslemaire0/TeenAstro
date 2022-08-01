@@ -62,7 +62,15 @@ void Command_A()
   {
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
-    EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
+    if (doesRefraction.forGoto)
+    {
+      EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
+    }
+    else
+    {
+      EquToHorTopo(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
+    }
+
     if (alignment.getRefs() == 0)
     {
       syncAzAlt(Azm, Alt, GetPierSide());
@@ -93,7 +101,15 @@ void Command_A()
   {
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
-    EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
+    if (doesRefraction.forGoto)
+    {
+      EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
+    }
+    else
+    {
+      EquToHorTopo(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
+    }
+
     if (alignment.getRefs() == 0)
     {
       syncAzAlt(Azm, Alt, GetPierSide());
@@ -192,7 +208,14 @@ void Command_C()
       if (autoAlignmentBySync){
         newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         double Azm, Alt;
-        EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
+        if (doesRefraction.forGoto)
+        {
+          EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
+        }
+        else
+        {
+          EquToHorTopo(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
+        }
         if (alignment.getRefs() == 0)
         {
           syncAzAlt(Azm, Alt, GetPierSide());
@@ -462,12 +485,12 @@ void Command_R()
 //  :TQ#   Track rate sidereal Returns: Nothing
 //  :TT#   Track rate target Returns: Nothing
 //  :TR#   Master sidereal clock reset (to calculated sidereal rate, stored in EEPROM) Returns: Nothing
-//  :TK#   Track rate king Returns: Nothing / Currently replaced by tracking compensation (that can be applied also to solar and lunar rates)
 //  :Te#   Tracking enable  (replies 0/1)
 //  :Td#   Tracking disable (replies 0/1)
-//  :Tr#   Track compensation enable  (replies 0/1)
-//  :Tn#   Track compensation disable (replies 0/1)
-//
+
+//  :T0#   Track compensation disable (replies 0/1)
+//  :T1#   Track compensation only in RA (replies 0/1)
+//  :T2#   Track compensation BOTH (replies 0/1)
 void Command_T()
 {
 
@@ -509,7 +532,7 @@ void Command_T()
     break;
   case 'T':
     //set Target tracking rate
-    computeTrackingRate();
+    SetTrackingRate(1.0 - (double)storedTrakingRateRA / 10000.0, (double)storedTrakingRateDEC / 10000.0);
     sideralMode = SIDM_TARGET;
     reply[0] = 0;
     break;
@@ -519,7 +542,7 @@ void Command_T()
       lastSetTrakingEnable = millis();
       atHome = false;
       sideralTracking = true;
-      computeTrackingRate();
+      computeTrackingRate(true);
       strcpy(reply, "1");
     }
     else
@@ -534,18 +557,25 @@ void Command_T()
     else
       strcpy(reply, "0");
     break;
-  case 'c':
-    // turn compensation on
-    correct_tracking = true;
-    computeTrackingRate();
-    XEEPROM.update(EE_corr_track, 1);
+  case '0':
+    // turn compensation off
+    tc = TC_NONE;
+    computeTrackingRate(true);
+    XEEPROM.update(EE_TC_Axis, 0);
     strcpy(reply, "1");
     break;
-  case 'n':
-    // turn compensation off
-    correct_tracking = false;
-    computeTrackingRate();
-    XEEPROM.update(EE_corr_track, 0);
+  case '1':
+    // turn compensation RA only
+    tc = TC_RA;
+    computeTrackingRate(true);
+    XEEPROM.update(EE_TC_Axis, 0);
+    strcpy(reply, "1");
+    break;
+  case '2':
+    // turn compensation BOTH
+    tc = TC_BOTH;
+    computeTrackingRate(true);
+    XEEPROM.update(EE_TC_Axis, 2);
     strcpy(reply, "1");
     break;
   default:

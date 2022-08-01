@@ -153,8 +153,8 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       else cmdreply = CMDR_INVALID;
       break;
     case 'T':
-      if (strchr("QR+-SLK", command[2])) cmdreply = CMDR_NO;
-      else if (strchr("edrnc", command[2])) cmdreply = CMDR_SHORT;
+      if (strchr("R+-TSLQ", command[2])) cmdreply = CMDR_NO;
+      else if (strchr("ed012", command[2])) cmdreply = CMDR_SHORT;
       else cmdreply = CMDR_INVALID;
       break;
     case 'U':

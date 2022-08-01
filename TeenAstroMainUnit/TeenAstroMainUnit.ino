@@ -96,17 +96,22 @@ void setup()
     // the transformation is not valid
     XEEPROM.write(EE_Tvalid, 0);
     // reset flag for Tracking Correction
-    XEEPROM.write(EE_corr_track, 0);
+    XEEPROM.write(EE_TC_Axis, 0);
+
+    XEEPROM.writeLong(EE_RA_Drift, 0);
+    XEEPROM.writeLong(EE_DEC_Drift, 0);
+
     // reset flag for Apparent Pole
-    XEEPROM.write(EE_ApparentPole, 1);
+    doesRefraction.resetEEPROM();
     // finally, stop the init from happening again
     XEEPROM.writeLong(EE_autoInitKey, initKey);
   }
   // get the site information from EEPROM
   localSite.ReadCurrentSiteDefinition();
-
+  doesRefraction.readFromEEPROM();
   initmount();
   initmotor(false);
+
 
   // init the date and time January 1, 2013. 0 hours LMT
   setSyncProvider(rtk.getTime);
@@ -265,9 +270,9 @@ void loop()
     if (rtk.m_lst % 16 == 0)
     {
       getHorApp(&currentAzm, &currentAlt);
-      if ((isAltAZ() || correct_tracking || sideralMode == SIDM_TARGET) && (rtk.m_lst % 64 == 0))
+      if (rtk.m_lst % 64 == 0)
       {
-        do_compensation_calc();
+        computeTrackingRate(false);
       }
     }
 
@@ -454,10 +459,10 @@ void enable_Axis(bool enable)
 
 void initmount()
 {
-  byte mountTypeFromEEPROM = XEEPROM.read(EE_mountType);
-  
+  byte val = XEEPROM.read(EE_mountType);
+  long lval = 0;
 
-  mountType = mountTypeFromEEPROM < 1 || mountTypeFromEEPROM >  4 ? MOUNT_TYPE_GEM : static_cast<Mount>(mountTypeFromEEPROM);
+  mountType = val < 1 || val >  4 ? MOUNT_TYPE_GEM : static_cast<Mount>(val);
 
   if (mountType == MOUNT_TYPE_GEM)
     meridianFlip = FLIP_ALWAYS;
@@ -506,7 +511,13 @@ void initmount()
   staA2.target = geoA2.quaterRot;
   staA1.fstep = geoA1.stepsPerCentiSecond;
   // Tracking and rate control
-  correct_tracking = XEEPROM.read(EE_corr_track);
+  val = XEEPROM.read(EE_TC_Axis);
+  tc = val < 0 || val >  2 ? TC_NONE : static_cast<TrackingCompensation>(val);
+  lval = XEEPROM.read(EE_RA_Drift);
+  storedTrakingRateRA  = lval < -50000 || lval > 50000? 0 :lval;
+  lval = XEEPROM.read(EE_DEC_Drift);
+  storedTrakingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
+
 }
 
 void initTransformation(bool reset)
@@ -545,11 +556,10 @@ void initTransformation(bool reset)
     }
     else
     {
-      double ha, dec;
-      apparentPole = XEEPROM.read(EE_ApparentPole);
+      double ha, dec; 
       double cosLat = *localSite.cosLat();
       double sinLat = *localSite.sinLat();
-      if (apparentPole && abs(*localSite.latitude() > 10))
+      if (doesRefraction.forPole && abs(*localSite.latitude() > 10))
       {
         double val = abs(*localSite.latitude());
         Topocentric2Apparent(&val);
@@ -674,7 +684,7 @@ void updateSideral()
   // 16MHZ clocks for steps per second of sidereal tracking
   cli();
   SiderealRate = siderealInterval / geoA1.stepsPerSecond;
-  TakeupRate = SiderealRate / 2L;
+  TakeupRate = SiderealRate / 8L;
   sei();
   staA1.timerRate = SiderealRate;
   staA2.timerRate = SiderealRate;

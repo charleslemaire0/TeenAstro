@@ -19,9 +19,7 @@
 #define ARROW_D "&lt;"
 #define ARROW_U "&gt;"
 #define ARROW_UU "&gt;&gt;"
-#define SIDEREAL_CH "&#9733;"
-#define LUNAR_CH "&#9790;"
-#define SOLAR_CH "&#9737;"
+
 #define BUTTON_N "N"
 #define BUTTON_S "S"
 #define BUTTON_E "E"
@@ -86,21 +84,6 @@ const char html_controlQuick2[] PROGMEM =
 const char html_controlQuick3[]  PROGMEM =
 "</div><br class='clear' />\r\n";
 
-const char html_controlTrack1[]  PROGMEM =
-"<div class='b1' style='width: 27em'>"
-"<div class='bct' align='left'>Tracking:</div>"
-"<button type='button' class='bbh' onpointerdown=\"g('Ts')\" type='submit'>" SIDEREAL_CH "</button>";
-const char html_controlTrack2[]  PROGMEM =
-"<button type='button' class='bbh' onpointerdown=\"g('Tl')\" type='submit'>" LUNAR_CH "</button>";
-const char html_controlTrack3[]  PROGMEM =
-"<button type='button' class='bbh' onpointerdown=\"g('Th')\" type='submit'>" SOLAR_CH "</button>";
-const char html_controlTrack4[] PROGMEM =
-"<button type='button' class='bbh' onpointerdown=\"g('on')\" type='submit'>On</button>"
-"<button type='button' class='bbh' onpointerdown=\"g('off')\" type='submit'>Off</button><br/></div>";
-//const char html_controlTrack5[] PROGMEM =
-//"<button type='button' class='bbh' style='width: 2.6em' onpointerdown=\"g('-')\" type='submit'>" MINUS_CH "</button>"
-//"<button type='button' class='bbh' style='width: 2.6em' onpointerdown=\"g('f')\" type='submit'>" PLUS_CH " </button>"
-//"<button type='button' class='bbh' onpointerdown=\"g('r')\" type='submit'>Reset</button>""</div>";
 
 #ifdef ALIGN_ON
 const char html_controlAlign1[]  PROGMEM =
@@ -114,7 +97,7 @@ const char html_controlAlign3[]  PROGMEM =
 const char html_controlTrack4[]  PROGMEM =
 "</div><br class='clear' />\r\n";
 #else 
-const char html_controlTrack10[]  PROGMEM = "<br class='clear' />\r\n";
+
 #endif
 const char html_controlParkHome[] PROGMEM =
 "<div class='b1' style='width: 27em'>"
@@ -224,14 +207,6 @@ void TeenAstroWifi::handleControl()
     sendHtml(data);
   }
 
-  // Tracking control ----------------------------------------
-  data += FPSTR(html_controlTrack1);
-  data += FPSTR(html_controlTrack2);
-  data += FPSTR(html_controlTrack3);
-  data += FPSTR(html_controlTrack4);
-  sendHtml(data);
-
-
 #ifdef ALIGN_ON
   // Get the align mode --------------------------------------
   data += FPSTR(html_controlAlign1);
@@ -251,44 +226,13 @@ void TeenAstroWifi::handleControl()
   }
   data += FPSTR(html_controlAlign3);
 #endif
-
-
-  // Tracking ------------------------------------------------
-  data += FPSTR(html_controlTrack10);
-
   //Goto Sync
   data += FPSTR(html_controlParkHome);
-
   data += html_controlEnd;
   data += "</div></body></html>";
   //server.send(200, "text/html",data);
   sendHtml(data);
   sendHtmlDone(data);
-}
-
-void TeenAstroWifi::guideAjax()
-{
-  processControlGet();
-  server.send(200, "text/html", "");
-}
-
-
-void TeenAstroWifi::controlAjax()
-{
-  String data = "";
-  char temp[40] = "";
-  data += "focuserpos|";
-  ta_MountStatus.updateFocuser();
-  strcpy(temp, ta_MountStatus.getFocuser());
-  temp[6] = 0;
-  data += &temp[1];
-  data += " steps, ";
-  temp[10] = 0;
-  temp[16] = 0;
-  data += &temp[11];
-  data += "&deg C";
-
-  server.send(200, "text/plain", data);
 }
 
 int get_temp_month;
@@ -326,7 +270,7 @@ void TeenAstroWifi::processControlGet()
   v = server.arg("dm");
   if (v != "")
   {
-    if ((atoi2((char *)v.c_str(), &i)) && ((i >= 0) && (i <= 11)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 11)))
     {
       get_temp_month = i + 1;
     }
@@ -334,7 +278,7 @@ void TeenAstroWifi::processControlGet()
   v = server.arg("dd");
   if (v != "")
   {
-    if ((atoi2((char *)v.c_str(), &i)) && ((i >= 1) && (i <= 31)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 31)))
     {
       get_temp_day = i;
     }
@@ -342,7 +286,7 @@ void TeenAstroWifi::processControlGet()
   v = server.arg("dy");
   if (v != "")
   {
-    if ((atoi2((char *)v.c_str(), &i)) && ((i >= 2016) && (i <= 9999)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 2016) && (i <= 9999)))
     {
       get_temp_year = i - 2000;
       char temp[10];
@@ -353,7 +297,7 @@ void TeenAstroWifi::processControlGet()
   v = server.arg("th");
   if (v != "")
   {
-    if ((atoi2((char *)v.c_str(), &i)) && ((i >= 0) && (i <= 23)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 23)))
     {
       get_temp_hour = i;
     }
@@ -361,7 +305,7 @@ void TeenAstroWifi::processControlGet()
   v = server.arg("tm");
   if (v != "")
   {
-    if ((atoi2((char *)v.c_str(), &i)) && ((i >= 0) && (i <= 59)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 59)))
     {
       get_temp_minute = i;
     }
@@ -369,7 +313,7 @@ void TeenAstroWifi::processControlGet()
   v = server.arg("ts");
   if (v != "")
   {
-    if ((atoi2((char *)v.c_str(), &i)) && ((i >= 0) && (i <= 59)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 59)))
     {
       get_temp_second = i;
       char temp[10];
@@ -381,20 +325,9 @@ void TeenAstroWifi::processControlGet()
   v = server.arg("dr");
   if (v != "")
   {
-    // Tracking control
-    if (v == "on") SetLX200(":Te#");
-    else if (v == "off") SetLX200(":Td#");
-    else if (v == "f") SetLX200(":T+#"); // 0.02hz faster
-    else if (v == "-") SetLX200(":T-#"); // 0.02hz slower
-    else if (v == "r") SetLX200(":TR#"); // reset
-
-    // Tracking control
-    else if (v == "Ts") SetLX200(":TQ#"); // sidereal
-    else if (v == "Tl") SetLX200(":TL#"); // lunar
-    else if (v == "Th") SetLX200(":TS#"); // solar
 
     // quick
-    else if (v == "qc") SetLX200(":MF#");  // meridian flip
+    if (v == "qc") SetLX200(":MF#");  // meridian flip
     else if (v == "qr") SetLX200(":hF#");  // home, reset
     else if (v == "qh") SetLX200(":hC#");  // home, goto
     else if (v == "pr") SetLX200(":hO#");  // park, reset
@@ -441,4 +374,30 @@ void TeenAstroWifi::processControlGet()
     else if (v == "dr") SetLX200(":rR#");
     else if (v == "dp") SetLX200(":rP#");
   }
+}
+
+void TeenAstroWifi::controlAjax()
+{
+  if (ta_MountStatus.hasFocuser())
+  {
+    String data = "";
+    char temp[40] = "";
+    data += "focuserpos|";
+    ta_MountStatus.updateFocuser();
+    strcpy(temp, ta_MountStatus.getFocuser());
+    temp[6] = 0;
+    data += &temp[1];
+    data += " steps, ";
+    temp[10] = 0;
+    temp[16] = 0;
+    data += &temp[11];
+    data += "&deg C";
+    server.send(200, "text/plain", data);
+  }
+}
+
+void TeenAstroWifi::guideAjax()
+{
+  processControlGet();
+  server.send(200, "text/html", "");
 }

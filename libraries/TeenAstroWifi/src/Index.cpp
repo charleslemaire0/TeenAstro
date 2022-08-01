@@ -32,11 +32,7 @@ const char* html_indexHasFocuser PROGMEM = "&nbsp;&nbsp;Has Focuser: <font class
 const char* html_indexGNSS PROGMEM = "&nbsp;&nbsp;GNSS: <font class='c'>%s</font><br />";
 const char* html_indexPowerMode PROGMEM = "&nbsp;&nbsp;Power mode: <font class='c'>%s</font><br />";
 const char* html_indexAligned PROGMEM = "&nbsp;&nbsp;Aligned: <font class='c'>%s</font><br />";
-const char* html_indexTracking PROGMEM = "&nbsp;&nbsp;Tracking: <font class='c'>%s</font><br />";
-const char* html_indexTrackingCorrections PROGMEM = "&nbsp;&nbsp;Tracking Corrections: <font class='c'>%s</font><br />";
-const char* html_indexTrackingSpeed1 PROGMEM = "&nbsp;&nbsp;Tracking Speed: <font class=\"c\">%s</font><br />";
-const char* html_indexTrackingSpeedRA PROGMEM = "&nbsp;&nbsp;drift Ra: <font class=\"c\"> %.5f sec/SI</font><br />";
-const char* html_indexTrackingSpeedDEC PROGMEM = "&nbsp;&nbsp;drift Dec: <font class=\"c\"> %.5f arcsec/SI</font><br />";
+
 const char* html_indexGuiding PROGMEM = "&nbsp;&nbsp;Guiding: <font class='c'>%s</font><br />";
 const char* html_indexSpiral PROGMEM = "&nbsp;&nbsp;Spiral running: <font class='c'>%s</font><br />";
 
@@ -125,7 +121,7 @@ void TeenAstroWifi::handleRoot()
   sendHtml(data);
 
 
-  data += "<br /><b>Operations:</b><br />";
+  data += "<br/><b>Operations:</b><br/>";
   // Park
   switch (ta_MountStatus.getParkState())
   {
@@ -150,87 +146,8 @@ void TeenAstroWifi::handleRoot()
   sprintf_P(temp, html_indexPark, temp1);
   data += temp;
   sendHtml(data);
-  // Tracking
-  switch (ta_MountStatus.getTrackingState())
-  {
-  case TeenAstroMountStatus::TRK_SLEWING:
-    strcpy(temp1, "Slewing");
-    break;
-  case TeenAstroMountStatus::TRK_ON:
-    strcpy(temp1, "On");
-    break;
-  case  TeenAstroMountStatus::TRK_OFF:
-    strcpy(temp1, "Off");
-    break;
-  default:
-    strcpy(temp1, "?");
-  }
-  sprintf_P(temp, html_indexTracking, temp1);
-  data += temp;
 
-  switch (ta_MountStatus.getRateCompensation())
-  {
-  case TeenAstroMountStatus::RateCompensation::RC_REFR_RA:
-    strcpy(temp1, "Refr Comp RA Axis");
-    break;
-  case TeenAstroMountStatus::RateCompensation::RC_REFR_BOTH:
-    strcpy(temp1, "Refr Comp Both Axis");
-    break;
-  case TeenAstroMountStatus::RateCompensation::RC_FULL_RA:
-    strcpy(temp1, "Full Comp RA Axis");
-    break;
-  case TeenAstroMountStatus::RateCompensation::RC_FULL_BOTH:
-    strcpy(temp1, "Full Comp Both Axis");
-    break;
-  default:
-    strcpy(temp1, "No Comp Axis");
-    break;
-  }
-  sprintf_P(temp, html_indexTrackingCorrections, temp1);
-  data += temp;
-  sendHtml(data);
-  // Tracking rate
-  //sprintf(temp, "&nbsp;&nbsp;Tracking Rate: <font class=\"c\">%s</font>Hz<br />", ta_MountStatus.getTrackingRate());
-  //data += temp;
-  bool showRates = false;
-  switch (ta_MountStatus.getSiderealMode())
-  {
-  case TeenAstroMountStatus::SID_STAR:
-    strcpy(temp2, "Sidereal");
-    break;
-  case TeenAstroMountStatus::SID_SUN:
-    strcpy(temp2, "Solar");
-    break;
-  case TeenAstroMountStatus::SID_MOON:
-    strcpy(temp2, "Lunar");
-    break;
-  case TeenAstroMountStatus::SID_TARGET:
-  {
-    strcpy(temp2, "Target");
-    showRates = true;
-    break;
-  }
-  default:
-    strcpy(temp2, "Unkown");
-    break;
-  }
-  sprintf_P(temp, html_indexTrackingSpeed1, temp2);
-  data += temp;
-  sendHtml(data);
-  if (showRates  )
-  {
-    ta_MountStatus.updateTrackingRate();
-    if (ta_MountStatus.hasInfoTrackingRate())
-    {
-      float RateRa  = strtol(ta_MountStatus.getTrackingRateRa(), NULL, 10) / 10000.0;
-      sprintf_P(temp, html_indexTrackingSpeedRA, RateRa);
-      data += temp;
-      float RateDec = strtol(ta_MountStatus.getTrackingRateDec(), NULL, 10) / 10000.0;
-      sprintf_P(temp, html_indexTrackingSpeedDEC, RateDec);
-      data += temp;
-      sendHtml(data);
-    }
-  }
+  //addTrackingInfo();
 
   ta_MountStatus.isSpiralRunning() ? strcpy(temp1, "Yes") : strcpy(temp1, "No");
   sprintf_P(temp, html_indexSpiral, temp1);
