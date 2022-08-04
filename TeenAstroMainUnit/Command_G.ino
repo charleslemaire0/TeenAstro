@@ -59,9 +59,9 @@ void Command_GX()
       // :GXA8#
       sprintf(reply, "%f#", t33);
       break;
-    case 'p':
-      // :GXAp#
-      apparentPole ? sprintf(reply, "a#") : sprintf(reply, "t#");
+    case 'c':
+      // :GXAc#
+      TrackingCompForAlignment ? sprintf(reply, "y#") : sprintf(reply, "n#");
       break;
     case 'a':
     case 'z':
@@ -246,6 +246,24 @@ void Command_GX()
       break;
     }
     break;
+  case 'r':
+    // :GXrn# user defined refraction settings
+    switch (command[3])
+    {
+    case 'p':
+      doesRefraction.forPole ? sprintf(reply, "y#") : sprintf(reply, "n#");
+      break;
+    case 'g':
+      doesRefraction.forGoto ? sprintf(reply, "y#") : sprintf(reply, "n#");
+      break;
+    case 't':
+      doesRefraction.forTracking ? sprintf(reply, "y#") : sprintf(reply, "n#");
+      break;
+    default:
+      strcpy(reply, "0");
+      break;
+    }
+    break;
   case 'R':
     // :GXRn# user defined rates
     switch (command[3])
@@ -290,6 +308,14 @@ void Command_GX()
       // :GXRd# Requested DEC traking rate in sideral
       l1 = RequestedTrackingRateDEC * 10000.0;
       sprintf(reply, "%ld#", l1);
+      break;
+    case 'e':
+      // :GXRe,VVVVVVVVVV# get stored Rate for RA
+      sprintf(reply, "%ld#", storedTrakingRateRA);
+      break;
+    case 'f':
+      // :GXRf,VVVVVVVVVV# get stored Rate for DEC
+      sprintf(reply, "%ld#", storedTrakingRateDEC);
       break;
     default:
       strcpy(reply, "0");
@@ -437,8 +463,26 @@ void Command_GX()
     else if (guideA2.dir == 's') reply[8] = '_';
     else if (guideA2.dir == 'b') reply[8] = 'b';
     if (staA1.fault || staA2.fault) reply[9] = 'f';
-    if (correct_tracking || isAltAZ())
-      reply[10] = 'c';
+    reply[10] = '0';
+    if (isAltAZ())
+      reply[10] +=  doesRefraction.forTracking ? RC_FULL_BOTH : RC_ALIGN_BOTH;
+    else if (tc == TC_NONE || (!doesRefraction.forTracking && !TrackingCompForAlignment))
+    {
+      reply[10] += RC_NONE;
+    }
+    else
+    {
+      if (doesRefraction.forTracking)
+      {
+        reply[10] += RC_FULL_RA;
+      }
+      else if (TrackingCompForAlignment)
+      {
+        reply[10] += RC_ALIGN_RA;
+      }
+      if (tc == TC_BOTH)
+        reply[10] += 1;
+    }
     reply[11] = hasStarAlignment ? '1' : '0';
     // provide mount type
     if (mountType == MOUNT_TYPE_GEM)

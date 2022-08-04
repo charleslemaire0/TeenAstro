@@ -3,14 +3,17 @@
 //   S - Telescope Set Commands
 void Command_SX()
 {
-//  :SXnnn,VVVVVV...#   Set TeenAstro value
-//          Return: 0 on failure
-//                  1 on success
+  //  :SXnnn,VVVVVV...#   Set TeenAstro value
+  //          Return: 0 on failure
+  //                  1 on success
   int i;
+  long lval;
+  bool ok = false;
   switch (command[2])
   {
   case 'A':
     // :SXAn,VVVVVV# Align Model values
+  {
     switch (command[3])
     {
     case '0':
@@ -29,25 +32,60 @@ void Command_SX()
       //GeoAlign.init();
       //GeoAlign.writeCoe();
       break;
-    case 'p':
-      if (command[5] == 'a' || command[5] == 't')
+    case 'c':
+      i = command[5] == 'y' ? 1 : (command[5] == 'n' ? 0 : -1);
+      if (i != -1)
       {
-        apparentPole = command[5] == 'a';
-        XEEPROM.update(EE_ApparentPole, apparentPole);
-        initTransformation(true);
-        syncAtHome();
-        strcpy(reply, "1");
+        ok = 1;
+        TrackingCompForAlignment = i;
       }
-      else
+    }
+    if (ok)
+      strcpy(reply, "1");
+    else
+      strcpy(reply, "0");
+    break;
+  }
+  case 'r':
+    // :SXrn,V# refraction Settings
+  {
+    i = command[5] == 'y' ? 1 : (command[5] == 'n' ? 0 : -1);
+    switch (command[3])
+    {
+    case 'p':
+      if (i != -1)
       {
-        strcpy(reply, "0");
+        if (doesRefraction.setPole(i))
+        {
+          initTransformation(true);
+          syncAtHome();
+        }
+        ok = true;
+      }
+      break;
+    case 'g':
+      if (i != -1)
+      {
+        doesRefraction.setGoto(i);
+        ok = true;
+      }
+      break;
+    case 't':
+      if (i != -1)
+      {
+        doesRefraction.setTracking(i);
+        ok = true;
       }
       break;
     default:
-      strcpy(reply, "0");
       break;
     }
+    if (ok)
+      strcpy(reply, "1");
+    else
+      strcpy(reply, "0");
     break;
+  }
   case 'R':
     // :SXRn,VVVV# Rates Settings
     switch (command[3])
@@ -74,7 +112,7 @@ void Command_SX()
       break;
     case 'A':
       // :SXRA,VVV# Set degree for acceleration
-      DegreesForAcceleration = min(max(0.1*(double)strtol(&command[5], NULL, 10), 0.1), 25.0);
+      DegreesForAcceleration = min(max(0.1 * (double)strtol(&command[5], NULL, 10), 0.1), 25.0);
       XEEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
       SetAcceleration();
       strcpy(reply, "1");
@@ -98,21 +136,35 @@ void Command_SX()
       // :SXRr,VVVVVVVVVV# Set Rate for RA 
       sideralMode = SIDM_TARGET;
       RequestedTrackingRateHA = 1. - (double)strtol(&command[5], NULL, 10) / 10000.0;
-      computeTrackingRate();
+      computeTrackingRate(true);
       strcpy(reply, "1");
       break;
     case 'h':
       // :SXRh,VVVVVVVVVV# Set Rate for HA
       sideralMode = SIDM_TARGET;
       RequestedTrackingRateHA = (double)strtol(&command[5], NULL, 10) / 10000.0;
-      computeTrackingRate();
+      computeTrackingRate(true);
       strcpy(reply, "1");
       break;
     case 'd':
       // :SXRd,VVVVVVVVVV# Set Rate for DEC
       sideralMode = SIDM_TARGET;
       RequestedTrackingRateDEC = (double)strtol(&command[5], NULL, 10) / 10000.0;
-      computeTrackingRate();
+      computeTrackingRate(true);
+      strcpy(reply, "1");
+      break;
+    case 'e':
+      // :SXRe,VVVVVVVVVV# Store Rate for RA
+      lval = strtol(&command[5], NULL, 10) ;
+      storedTrakingRateRA = lval < -50000 || lval > 50000 ? 0 : lval;
+      XEEPROM.writeLong(EE_RA_Drift, storedTrakingRateRA);
+      strcpy(reply, "1");
+      break;
+    case 'f':
+      // :SXRf,VVVVVVVVVV# Store Rate for DEC
+      lval = strtol(&command[5], NULL, 10) ;
+      storedTrakingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
+      XEEPROM.writeLong(EE_DEC_Drift, storedTrakingRateDEC);
       strcpy(reply, "1");
       break;
     default:
@@ -127,14 +179,14 @@ void Command_SX()
     case 'A':
       // :SXLA,VVVV# set user defined minAXIS1 (always negatif)
       i = (int)strtol(&command[5], NULL, 10);
-      XEEPROM.writeInt(EE_minAxis1,i);
+      XEEPROM.writeInt(EE_minAxis1, i);
       initLimitMinAxis1();
       strcpy(reply, "1");
       break;
     case 'B':
       // :SXLB,VVVV# set user defined maxAXIS1 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
-      XEEPROM.writeInt(EE_maxAxis1,i);
+      XEEPROM.writeInt(EE_maxAxis1, i);
       initLimitMaxAxis1();
       strcpy(reply, "1");
       break;
@@ -157,7 +209,7 @@ void Command_SX()
       minutesPastMeridianGOTOE = (double)strtol(&command[5], NULL, 10);
       if (minutesPastMeridianGOTOE > 180) minutesPastMeridianGOTOE = 180;
       if (minutesPastMeridianGOTOE < -180) minutesPastMeridianGOTOE = -180;
-      XEEPROM.update(EE_dpmE, round((minutesPastMeridianGOTOE*15.0) / 60.0) + 128);
+      XEEPROM.update(EE_dpmE, round((minutesPastMeridianGOTOE * 15.0) / 60.0) + 128);
       strcpy(reply, "1");
       break;
     case 'W':
@@ -165,7 +217,7 @@ void Command_SX()
       minutesPastMeridianGOTOW = (double)strtol(&command[5], NULL, 10);
       if (minutesPastMeridianGOTOW > 180) minutesPastMeridianGOTOW = 180;
       if (minutesPastMeridianGOTOW < -180) minutesPastMeridianGOTOW = -180;
-      XEEPROM.update(EE_dpmW, round((minutesPastMeridianGOTOW*15.0) / 60.0) + 128);
+      XEEPROM.update(EE_dpmW, round((minutesPastMeridianGOTOW * 15.0) / 60.0) + 128);
       strcpy(reply, "1");
       break;
     case 'U':
@@ -173,7 +225,7 @@ void Command_SX()
       underPoleLimitGOTO = (double)strtol(&command[5], NULL, 10) / 10;
       if (underPoleLimitGOTO > 12) underPoleLimitGOTO = 12;
       if (underPoleLimitGOTO < 9) underPoleLimitGOTO = 9;
-      XEEPROM.update(EE_dup, round(underPoleLimitGOTO*10.0));
+      XEEPROM.update(EE_dup, round(underPoleLimitGOTO * 10.0));
       strcpy(reply, "1");
       break;
     case 'H':
@@ -243,7 +295,7 @@ void Command_SX()
       //          Define current date from
       //          Return: 0 on failure
       //                  1 on success
-      char *pEnd;
+      char* pEnd;
       unsigned long t = strtoul(&command[5], &pEnd, 10);
       rtk.SetFromTimeStamp(t);
       strcpy(reply, "1");
@@ -262,7 +314,7 @@ void Command_SX()
     {
       // :SXMBn,VVVV# Set Backlash
       int i;
-      if ((atoi2((char *)&command[6], &i)) && ((i >= 0) && (i <= 999)))
+      if ((atoi2((char*)&command[6], &i)) && ((i >= 0) && (i <= 999)))
       {
         if (command[4] == 'D')
         {
@@ -290,8 +342,8 @@ void Command_SX()
       // :SXMGn,VVVV# Set Gear
       int i;
       if ((command[4] == 'D' || command[4] == 'R')
-          && strlen(&command[6]) > 1 && strlen(&command[6]) < 11
-          && atoi2(&command[6], &i))
+        && strlen(&command[6]) > 1 && strlen(&command[6]) < 11
+        && atoi2(&command[6], &i))
       {
         if (command[4] == 'D')
         {
@@ -313,7 +365,7 @@ void Command_SX()
           motorA1.gear = (unsigned int)i;
           XEEPROM.writeInt(EE_motorA1gear, i);
         }
-        updateRatios(true,true);
+        updateRatios(true, true);
 
         strcpy(reply, "1");
       }
@@ -326,8 +378,8 @@ void Command_SX()
       // :SXMBn,VVVV# Set Step per Rotation
       int i;
       if ((command[4] == 'D' || command[4] == 'R')
-          && (strlen(&command[6]) > 1) && (strlen(&command[6]) < 11)
-          && atoi2((char *)&command[6], &i))
+        && (strlen(&command[6]) > 1) && (strlen(&command[6]) < 11)
+        && atoi2((char*)&command[6], &i))
       {
         if (command[4] == 'D')
         {
@@ -363,9 +415,9 @@ void Command_SX()
       // for example :GRXMMR3# for 1/8 microstep on the first axis 
       int i;
       if ((command[4] == 'D' || command[4] == 'R')
-          && strlen(&command[6]) == 1
-          && atoi2(&command[6], &i)
-          && ((i >= 1) && (i < 9)))
+        && strlen(&command[6]) == 1
+        && atoi2(&command[6], &i)
+        && ((i >= 1) && (i < 9)))
       {
         if (command[4] == 'D')
         {
@@ -389,7 +441,7 @@ void Command_SX()
           motorA1.driver.setMicrostep(motorA1.micro);
           XEEPROM.write(EE_motorA1micro, motorA1.micro);
         }
-        updateRatios(true,false);
+        updateRatios(true, false);
         strcpy(reply, "1");
       }
       else strcpy(reply, "0");
@@ -401,9 +453,9 @@ void Command_SX()
      // for example :GRXMmR1# for cool step on the first axis 
       int i;
       if ((command[4] == 'D' || command[4] == 'R')
-          && strlen(&command[6]) == 1
-          && atoi2(&command[6], &i)
-          && ((i >= 0) && (i < 2)))
+        && strlen(&command[6]) == 1
+        && atoi2(&command[6], &i)
+        && ((i >= 0) && (i < 2)))
       {
         if (command[4] == 'D')
         {
@@ -424,8 +476,8 @@ void Command_SX()
     {
       // :SXMRnV# Set Reverse rotation
       if ((command[4] == 'D' || command[4] == 'R')
-          && strlen(&command[6]) == 1
-          && (command[6] == '0' || command[6] == '1'))
+        && strlen(&command[6]) == 1
+        && (command[6] == '0' || command[6] == '1'))
       {
         if (command[4] == 'D')
         {
@@ -449,8 +501,8 @@ void Command_SX()
       // :SXMRn# Set Current
       int i;
       if ((strlen(&command[6]) > 1) && (strlen(&command[6]) < 5)
-          && atoi2((char *)&command[6], &i)
-          && ((i >= 0) && (i <= 255)))
+        && atoi2((char*)&command[6], &i)
+        && ((i >= 0) && (i <= 255)))
       {
         if (command[4] == 'D')
         {
@@ -490,9 +542,9 @@ void Command_SX()
       // :SXMRn# Set Stall guard
       int i;
       if ((command[4] == 'D' || command[4] == 'R')
-          && (strlen(&command[6]) > 1) && (strlen(&command[6]) < 5)
-          && atoi2((char *)&command[6], &i)
-          && ((i >= 0) && (i <= 127)))
+        && (strlen(&command[6]) > 1) && (strlen(&command[6]) < 5)
+        && atoi2((char*)&command[6], &i)
+        && ((i >= 0) && (i <= 127)))
       {
         i = i - 64;
 
@@ -525,7 +577,7 @@ void Command_SX()
 void Command_S(Command& process_command)
 {
   char* conv_end;
-  int i,j;
+  int i, j;
   double f, f1;
 
   switch (command[1])
@@ -751,7 +803,7 @@ void Command_S(Command& process_command)
       else strcpy(reply, "0");
     }
     else strcpy(reply, "0");
-  break;
+    break;
   case 'r':
     //  :SrHH:MM.T#
     //  :SrHH:MM:SS#
@@ -771,9 +823,9 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success                                                             
     i = highPrecision;
-    if (strlen(&command[7])>1)
-      highPrecision = command[8]==':';
-      else
+    if (strlen(&command[7]) > 1)
+      highPrecision = command[8] == ':';
+    else
       highPrecision = false;
     if (dmsToDouble(&f, &command[2], true, highPrecision))
     {

@@ -47,33 +47,49 @@ void SetTrackingRate(double rHA, double rDEC)
 {
   RequestedTrackingRateHA = rHA;
   RequestedTrackingRateDEC = rDEC;
-  computeTrackingRate();
+  computeTrackingRate(true);
 }
-void computeTrackingRate()
+
+void computeTrackingRate(bool apply)
 {  
   //reset SideralMode if it is equal to sideralspeed
   if (RequestedTrackingRateHA == 1 && RequestedTrackingRateDEC == 0)
   {
     sideralMode = SIDM_STAR;
   }
-  if (isAltAZ() || correct_tracking || sideralMode == SIDM_TARGET)
+  if (isAltAZ() || sideralMode == SIDM_TARGET)
   {
     do_compensation_calc();
+  }
+  else if (tc == TC_NONE)
+  {
+    staA1.RequestedTrackingRate = RequestedTrackingRateHA;
+    staA2.RequestedTrackingRate = 0;
+  }
+  else if (doesRefraction.forTracking || TrackingCompForAlignment)
+  {
+    do_compensation_calc();
+    if (tc == TC_RA)
+    {
+      staA2.RequestedTrackingRate = 0;
+    }
   }
   else
   {
     staA1.RequestedTrackingRate = RequestedTrackingRateHA;
     staA2.RequestedTrackingRate = 0;
   }
-  ApplyTrackingRate();
+  if (apply)
+  {
+    ApplyTrackingRate();
+  }
 }
-
 
 void do_compensation_calc()
 {
   // 1 arc-min ahead of and behind the current Equ position, used for rate calculation
-  const double TimeRange = 60;
 
+  const double TimeRange = 60;
   long axis1_before, axis1_after = 0;
   long axis2_before, axis2_after = 0;
   double Axis1_tmp, Axis2_tmp = 0.;
@@ -107,14 +123,30 @@ void do_compensation_calc()
   // look ahead of the position
   HA_tmp = HA_now - DriftHA;
   Dec_tmp = Dec_now - DriftDEC;
-  EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
+  if (doesRefraction.forTracking)
+  {
+    EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
+  }
+  else
+  {
+    EquToHorTopo(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
+  }
+  
   alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
   InstrtoStep(Axis1_tmp, Axis2_tmp, side_tmp, &axis1_before, &axis2_before);
 
   // look behind the position
   HA_tmp = HA_now + DriftHA;
   Dec_tmp = Dec_now + DriftDEC;
-  EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
+  if (doesRefraction.forTracking)
+  {
+    EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
+  }
+  else
+  {
+    EquToHorTopo(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
+  }
+
   alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
   InstrtoStep(Axis1_tmp, Axis2_tmp, side_tmp, &axis1_after, &axis2_after);
 

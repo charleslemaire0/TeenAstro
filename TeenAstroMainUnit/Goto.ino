@@ -19,7 +19,15 @@ void InstrtoStep(double AngleAxis1, double AngleAxis2, PierSide Side, long *Axis
 bool syncEqu(double HA, double Dec, PierSide Side, const double *cosLat, const double *sinLat)
 {
   double Azm, Alt = 0;
-  EquToHorApp(HA, Dec, &Azm, &Alt, cosLat, sinLat);
+  if (doesRefraction.forGoto)
+  {
+    EquToHorApp(HA, Dec, &Azm, &Alt, cosLat, sinLat);
+  }
+  else
+  {
+    EquToHorTopo(HA, Dec, &Azm, &Alt, cosLat, sinLat);
+  }
+
   return syncAzAlt(Azm, Alt, Side);
 }
 // syncs the telescope/mount to the sky
@@ -44,7 +52,14 @@ bool getEqu(double *HA, double *Dec, const double *cosLat, const double *sinLat,
 {
   double  azm, alt = 0;
   getHorApp(&azm, &alt);
-  HorAppToEqu(azm, alt, HA, Dec, cosLat, sinLat);
+  if (doesRefraction.forGoto)
+  {
+    HorAppToEqu(azm, alt, HA, Dec, cosLat, sinLat);
+  }
+  else
+  {
+    HorTopoToEqu(azm, alt, HA, Dec, cosLat, sinLat);
+  }
   if (!returnHA)
   {
     *HA = degRange(rtk.LST() * 15.0 - *HA);
@@ -57,7 +72,14 @@ bool getEquTarget(double *HA, double *Dec, const double *cosLat, const double *s
 {
   double  azm, alt = 0;
   getHorAppTarget(&azm, &alt);
-  HorAppToEqu(azm, alt, HA, Dec, cosLat, sinLat);
+  if (doesRefraction.forGoto)
+  {
+    HorAppToEqu(azm, alt, HA, Dec, cosLat, sinLat);
+  }
+  else
+  {
+    HorTopoToEqu(azm, alt, HA, Dec, cosLat, sinLat);
+  }
   if (!returnHA)
   {
     *HA = degRange(rtk.LST() * 15.0 - *HA);
@@ -91,7 +113,15 @@ bool getHorAppTarget(double *Azm, double *Alt)
 byte goToEqu(double HA, double Dec, PierSide preferedPierSide, const double *cosLat, const double *sinLat)
 {
   double azm, alt = 0;
-  EquToHorApp(HA, Dec, &azm, &alt, cosLat, sinLat);
+  if (doesRefraction.forGoto)
+  {
+    EquToHorApp(HA, Dec, &azm, &alt, cosLat, sinLat);
+  }
+  else
+  {
+    EquToHorTopo(HA, Dec, &azm, &alt, cosLat, sinLat);
+  }
+
   return goToHor(&azm, &alt, preferedPierSide);
 }
 // moves the mount to a new Altitude and Azmiuth (Alt,Azm) in degrees

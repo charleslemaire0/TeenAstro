@@ -154,12 +154,31 @@ void TeenAstroMountStatus::updateTrackingRate()
 {
   if (millis() - m_lastStateTrackingRate > updaterate)
   {
-    m_hasInfoTrackingRate = GetLX200(":GXRr#", m_TempTrackingRateRa, sizeof(m_TempTrackingRateDec)) == LX200VALUEGET;
+    char reply[15] = "0";
+    m_hasInfoTrackingRate = GetLX200(":GXRr#", reply, sizeof(reply)) == LX200VALUEGET;
+    m_TempTrackingRateRa = strtol(reply, NULL, 10);
     m_hasInfoTrackingRate ? m_lastStateTrackingRate = millis() : m_connectionFailure++;
-    m_hasInfoTrackingRate &= GetLX200(":GXRd#", m_TempTrackingRateDec, sizeof(m_TempTrackingRateDec)) == LX200VALUEGET;
+    m_hasInfoTrackingRate &= GetLX200(":GXRd#", reply, sizeof(reply)) == LX200VALUEGET;
+    m_TempTrackingRateDec = strtol(reply, NULL, 10);
     m_hasInfoTrackingRate ? m_lastStateTrackingRate = millis() : m_connectionFailure++;
   }
 };
+bool TeenAstroMountStatus::updateStoredTrackingRate()
+{
+  char reply[15] = "0";
+  bool ok = GetLX200(":GXRe#", reply, sizeof(reply)) == LX200VALUEGET;
+  if (ok)
+  {
+    m_TempStoredTrackingRateRa = strtol(reply, NULL, 10);
+  }
+  ok &= GetLX200(":GXRf#", reply, sizeof(reply)) == LX200VALUEGET;
+  if (ok)
+  {
+    m_TempStoredTrackingRateDec = strtol(reply, NULL, 10);
+  }
+  return ok;
+};
+
 void TeenAstroMountStatus::updateMount()
 {
   if (millis() - m_lastStateMount > updaterate)
@@ -321,14 +340,16 @@ TeenAstroMountStatus::GuidingRate TeenAstroMountStatus::getGuidingRate()
 }
 TeenAstroMountStatus::RateCompensation TeenAstroMountStatus::getRateCompensation()
 {
-  return m_TempMount[10] == 'c' ? TeenAstroMountStatus::RC_FULL_BOTH : RateCompensation::RC_NONE;
+  int val = m_TempMount[10] - '0';
+
+  return (val > -1 && val < 5) ? static_cast<RateCompensation>(val) : RateCompensation::RC_UNKNOWN;
 }
 bool TeenAstroMountStatus::isSpiralRunning()
 {
   return m_TempMount[5] == '@';
 }
 bool TeenAstroMountStatus::isPulseGuiding()
-{
+{  
   return m_TempMount[6] == '*';
 }
 bool TeenAstroMountStatus::isGuidingE()
