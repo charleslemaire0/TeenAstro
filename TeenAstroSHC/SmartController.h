@@ -123,6 +123,8 @@ private:
   void menuMaxRate();
   void menuGuideRate();
   void menuRate(int r);
+  void menuTrackRate();
+  void menuSetDriftRate(int axis);
   void menuSite();
   void menuSites();
   void menuLocalTime();

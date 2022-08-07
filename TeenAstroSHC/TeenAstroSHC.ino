@@ -40,9 +40,7 @@ TeenAstroMountStatus ta_MountStatus;
 void setup(void)
 {
 #ifdef ARDUINO_D1_MINI32
-  Serial.begin(115200);
   HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309, 2);
-
 return;
 #endif
   int value = analogRead(A0);

@@ -54,7 +54,7 @@ void SmartHandController::MenuRates()
   uint8_t tmp_sel;
   while (!exitMenu)
   {
-    const char *string_list = T_MAX "\n" T_FAST "\n" T_MEDIUM " \n" T_SLOW " \n" T_GUIDESPEED "\n" T_DEFAULTSPEED;
+    const char *string_list = T_MAX "\n" T_FAST "\n" T_MEDIUM " \n" T_SLOW " \n" T_GUIDESPEED "\n" T_TRACKSPEED "\n" T_DEFAULTSPEED;
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_SPEED, s_sel, string_list);
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
     switch (tmp_sel)
@@ -77,6 +77,9 @@ void SmartHandController::MenuRates()
       menuGuideRate();
       break;
     case 6:
+      menuTrackRate();
+      break;
+    case 7:
       MenuDefaultSpeed();
       break;
     default:
@@ -218,6 +221,52 @@ void SmartHandController::menuGuideRate()
     }
   }
 }
+
+void SmartHandController::menuTrackRate()
+{
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
+  while (!exitMenu)
+  {
+    const char* string_list_TrackRate = T_RIGHTASC "\n" T_DECLINAISON;
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TRACKSPEED, s_sel, string_list_TrackRate);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
+    {
+    case 0:
+      return;
+    case 1:
+      menuSetDriftRate(0);
+      break;
+    case 2:
+      menuSetDriftRate(1);
+      break;
+    }
+  }
+}
+
+void SmartHandController::menuSetDriftRate(int axis)
+{
+  char outRate[20];
+  char cmd[20];
+  sprintf(cmd, ":GXRx#");
+  cmd[4] = axis == 0 ? 'e' : 'f';
+  char title[20];
+  char unit[20];
+  axis == 0 ? strcpy(title, T_RIGHTASC) : strcpy(title, T_DECLINAISON);
+  axis == 0 ? strcpy(unit, "s/SI") : strcpy(unit, "\"/SI");
+  if (DisplayMessageLX200(GetLX200(cmd, outRate, sizeof(outRate))))
+  {
+    float rate = (float)atol(&outRate[0])/10000.0;
+    if (display->UserInterfaceInputValueFloat(&buttonPad, title, "", &rate, -2.f, 2.f, 6u, 4u, unit))
+    {
+      sprintf(cmd, ":SXRx,%06ld#", (long)(rate*10000));
+      cmd[4] = axis == 0 ? 'e' : 'f';
+      DisplayMessageLX200(SetLX200(cmd));
+    }
+  }
+}
+
 
 void SmartHandController::menuRate(int r)
 {

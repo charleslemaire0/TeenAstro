@@ -41,6 +41,7 @@
 #define T_SPEED "Geschwindigkeit"
 #define T_GUIDESPEED "Guiding Geschw."
 #define T_DEFAULTSPEED "Standard Geschw."
+#define T_TRACKSPEED "NachFühr. Geschw."
 #define T_FASTSPEED "Schnell Geschw."
 #define T_MEDIUMSPEED "Normal Geschw."
 #define T_SLOWSPEED "Langsam Geschw."
