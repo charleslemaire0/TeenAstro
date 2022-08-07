@@ -217,7 +217,9 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   data += FPSTR(html_main_css8);
   data += FPSTR(html_main_css9);
   sendHtml(data);
-  if (page == ServerPage::Control|| page ==ServerPage::Tracking)
+  if (page == ServerPage::Control ||
+      page == ServerPage::Tracking ||
+      page == ServerPage::Site)
   {
     data += FPSTR(html_main_css_control1);
     data += FPSTR(html_main_css_control2);

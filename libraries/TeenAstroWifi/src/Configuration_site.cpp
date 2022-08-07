@@ -3,6 +3,79 @@
 // -----------------------------------------------------------------------------------
 // configuration_Site
 
+#define CLOCK_CH "&#x1F565;"
+#define LOCATION "&#127760;"
+ //Request https!!!
+//const char html_configSiteScript[] PROGMEM =
+//"<script>\n"
+//"function ConvertDDToDMS(D) {\n"
+//"  return {\n"
+//"    dir : D < 0 ? 1 : 0,"
+//"    deg : 0 | (D < 0 ? (D = -D) : D),\n"
+//"    min : 0 | (((D += 1e-9) % 1) * 60),\n"
+//"    sec : (0 | (((D * 60) % 1) * 6000)) / 100,\n"
+//"  };\n"
+//"}\n"
+//"function getLocation() {\n"
+//"  window.alert('sometext');\n"
+//"  if (navigator.geolocation) {\n"
+//"    navigator.geolocation.getCurrentPosition(showPosition);\n"
+//"  }\n"
+//"  else {\n"
+//"  }\n"
+//"}\n"
+//"function showPosition(position) {\n"
+//"var lat = ConvertDDToDMS(position.coords.latitude);\n"
+//"var long = ConvertDDToDMS(position.coords.longitude);\n"
+//"document.getElementById('site_g0').value = long.dir;\n"
+//"document.getElementById('site_g1').value = long.deg;\n"
+//"document.getElementById('site_g2').value = long.min;\n"
+//"document.getElementById('site_g3').value = 0;\n"
+//"document.getElementById('site_t0').value = lat.dir;\n"
+//"document.getElementById('site_t1').value = lat.deg;\n"
+//"document.getElementById('site_t2').value = lat.min;\n"
+//"document.getElementById('site_t3').value = 0;\n"
+//"}\n"
+//"</script>\n";
+
+
+const char html_BrowserTimeScript1[] PROGMEM =
+"<script>\r\n"
+"function SetDateTime(value) {\n"
+"if ( value == 0 ){"
+"  var d1 = new Date();\n"
+"  document.getElementById('dd').value = d1.getUTCDate();\n"
+"  document.getElementById('dm').value = d1.getUTCMonth();\n"
+"  document.getElementById('dy').value = d1.getUTCFullYear();\n"
+"  document.getElementById('th').value = d1.getUTCHours();\n"
+"  document.getElementById('tm').value = d1.getUTCMinutes();\n"
+"  document.getElementById('ts').value = d1.getUTCSeconds();\n"
+"}\n"
+"else if ( value == 1 ){ document.getElementById('GNSST').value = 1;}\n"
+"else if ( value == 2 ){ document.getElementById('GNSSS').value = 1;}\n"
+"}\r\n"
+"</script>\r\n";
+
+const char html_siteQuick0[] PROGMEM =
+"<div class='b1' style='width: 35em'>\n"
+"<div class='bct' align='left'>Get Time and Location:</div>\n"
+"<form style='display: inline;' method='get' action='/configuration_site.htm'>\n";
+const char html_siteQuick1[] PROGMEM =
+"<button name='b1' class='bb' value='st' type='submit' onpointerdown='SetDateTime(0);'> Browser " CLOCK_CH "</button>\n";
+const char html_siteGNSS[] PROGMEM =
+"<button name='b2' class='bb' value='st' type='submit' onpointerdown='SetDateTime(1);'> GNSS " CLOCK_CH "</button>\n"
+"<button name='b3' class='bb' value='st' type='submit' onpointerdown='SetDateTime(2);'> GNSS " LOCATION "" CLOCK_CH "</button>\n";
+const char html_siteQuick1a[] PROGMEM =
+"<input id='dm' type='hidden' name='dm'>\n"
+"<input id='dd' type='hidden' name='dd'>\n"
+"<input id='dy' type='hidden' name='dy'>\n"
+"<input id='th' type='hidden' name='th'>\n"
+"<input id='tm' type='hidden' name='tm'>\n"
+"<input id='ts' type='hidden' name='ts'>\n"
+"<input id='GNSST' type='hidden' name='GNSST'>\n"
+"<input id='GNSSS' type='hidden' name='GNSSS'>\n"
+"</form></div>\n"
+"<br class='clear' />\r\n\n";
 const char html_configSiteSelect1[] PROGMEM =
 "<div class='bt' align='left'> Selected Site :<br/> </div>"
 "<form method='post' action='/configuration_site.htm'>"
@@ -83,6 +156,19 @@ void TeenAstroWifi::handleConfigurationSite()
   processConfigurationSiteGet();
   preparePage(data, ServerPage::Site);
   sendHtml(data);
+  data += FPSTR(html_BrowserTimeScript1);
+  sendHtml(data);
+  data += FPSTR(html_siteQuick0);
+  sendHtml(data);
+  data += FPSTR(html_siteQuick1);
+  sendHtml(data);
+  if (ta_MountStatus.hasGNSSBoard())
+  {
+    data += FPSTR(html_siteGNSS);
+    sendHtml(data);
+  }
+  data += FPSTR(html_siteQuick1a);
+  sendHtml(data);
   if (GetLX200(":W?#", temp1, sizeof(temp1)) == LX200VALUEGET)
   {
     int selectedsite = 0;
@@ -137,7 +223,7 @@ void TeenAstroWifi::handleConfigurationSite()
       temp1[9] = 0;
       tmp = (int)strtol(&temp1[0], NULL, 10);
       sprintf_P(temp, html_configLatDeg, tmp);
-      data += temp;      
+      data += temp;
       tmp = (int)strtol(&temp1[4], NULL, 10);
       sprintf_P(temp, html_configLatMin, tmp);
       data += temp;
@@ -184,6 +270,13 @@ void TeenAstroWifi::handleConfigurationSite()
   sendHtmlDone(data);
 }
 
+int get_temp_month;
+int get_temp_day;
+int get_temp_year;
+int get_temp_hour;
+int get_temp_minute;
+int get_temp_second;
+
 void TeenAstroWifi::processConfigurationSiteGet()
 {
   String v;
@@ -214,6 +307,63 @@ void TeenAstroWifi::processConfigurationSiteGet()
       SetLX200(temp);
     }
   }
+
+  // Set DATE/TIME
+  v = server.arg("dm");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 11)))
+    {
+      get_temp_month = i + 1;
+    }
+  }
+  v = server.arg("dd");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 31)))
+    {
+      get_temp_day = i;
+    }
+  }
+  v = server.arg("dy");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 2016) && (i <= 9999)))
+    {
+      get_temp_year = i - 2000;
+      char temp[10];
+      sprintf(temp, ":SXT1%02d/%02d/%02d#", get_temp_month, get_temp_day, get_temp_year);
+      SetLX200(temp);
+    }
+  }
+  v = server.arg("th");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 23)))
+    {
+      get_temp_hour = i;
+    }
+  }
+  v = server.arg("tm");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 59)))
+    {
+      get_temp_minute = i;
+    }
+  }
+  v = server.arg("ts");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 59)))
+    {
+      get_temp_second = i;
+      char temp[10];
+      sprintf(temp, ":SXT0%02d:%02d:%02d#", get_temp_hour, get_temp_minute, get_temp_second);
+      SetLX200(temp);
+    }
+  }
+
   // Location
   int long_deg = -999;
   int long_min = 0;
@@ -288,7 +438,7 @@ void TeenAstroWifi::processConfigurationSiteGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i < 60)))
     {
-      if ((lat_deg >= 0) && (lat_deg < 90)&&(lat_min >= 0) && (lat_min < 60))
+      if ((lat_deg >= 0) && (lat_deg < 90) && (lat_min >= 0) && (lat_min < 60))
       {
         sprintf(temp, ":St%+03d:%02d:%02d#", lat_deg, lat_min, i);
         if (sign)
@@ -306,5 +456,17 @@ void TeenAstroWifi::processConfigurationSiteGet()
       SetLX200(temp);
     }
   }
+
+  v = server.arg("GNSSS");
+  if (v != "")
+  {
+    SetLX200(":gs#");
+  }
+  v = server.arg("GNSST");
+  if (v != "")
+  {
+    SetLX200(":gt#");
+  }
+
 }
 
