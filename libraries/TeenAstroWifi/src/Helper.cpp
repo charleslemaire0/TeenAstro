@@ -12,7 +12,7 @@ void TeenAstroWifi::addTrackingInfo(String &data )
 {
   char temp[300] = "";
   char temp1[80] = "";
-
+  ta_MountStatus.updateMount();
   data += FPSTR(html_TrackingState);
 
   switch (ta_MountStatus.getTrackingState())
