@@ -115,8 +115,14 @@ private:
   void menuMount();
   void MenuRates();
   void MenuDefaultSpeed();
+
+  void MenuTracking();
   void MenuTrackingCorrection();
+  void MenuTrackingRefraction();
+  void MenuTrackingAlignment();
   void menuMountType();
+  void MenuRefraction();
+  void MenuRefractionForGoto();
   void menuPolarAlignment();
   void menuMotor(uint8_t idx);
   void menuAcceleration();
