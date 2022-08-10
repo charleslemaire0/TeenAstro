@@ -164,8 +164,7 @@ private:
   bool menuSetStepPerRot(const uint8_t &axis);
   bool menuSetMicro(const uint8_t &axis);
   bool menuSetSilentStep(const uint8_t &axis);
-  bool menuSetLowCurrent(const uint8_t &axis);
-  bool menuSetHighCurrent(const uint8_t &axis);
+  bool menuSetCurrent(const uint8_t &axis, bool high);
   void DisplayMountSettings();
   void DisplayAccMaxRateSettings();
   void DisplayMotorSettings(const uint8_t &axis);

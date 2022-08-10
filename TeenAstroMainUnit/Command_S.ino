@@ -499,37 +499,35 @@ void Command_SX()
     case 'C':
     {
       // :SXMRn# Set Current
-      int i;
-      if ((strlen(&command[6]) > 1) && (strlen(&command[6]) < 5)
-        && atoi2((char*)&command[6], &i)
-        && ((i >= 0) && (i <= 255)))
+      unsigned int curr = (unsigned int)(strtol(&command[6], NULL, 10)/100)*100;
+      if (((curr >= 100) && (curr <= 2800)))
       {
         if (command[4] == 'D')
         {
           if (command[3] == 'C')
           {
-            motorA2.highCurr = (u_int8_t)i;
-            XEEPROM.write(EE_motorA2highCurr, motorA2.highCurr / 2);
+            motorA2.highCurr = curr;
+            XEEPROM.write(EE_motorA2highCurr, motorA2.highCurr / 100);
           }
           else
           {
-            motorA2.lowCurr = (u_int8_t)i;
-            XEEPROM.write(EE_motorA2lowCurr, motorA2.lowCurr / 2);
-            motorA2.driver.setCurrent((unsigned int)motorA2.lowCurr * 10);
+            motorA2.lowCurr = curr;
+            XEEPROM.write(EE_motorA2lowCurr, motorA2.lowCurr / 100);
+            motorA2.driver.setCurrent((unsigned int)motorA2.lowCurr);
           }
         }
         else if (command[4] == 'R')
         {
           if (command[3] == 'C')
           {
-            motorA1.highCurr = (u_int8_t)i;
-            XEEPROM.write(EE_motorA1highCurr, motorA1.highCurr / 2);
+            motorA1.highCurr = curr;
+            XEEPROM.write(EE_motorA1highCurr, motorA1.highCurr / 100);
           }
           else
           {
-            motorA1.lowCurr = (u_int8_t)i;
-            XEEPROM.write(EE_motorA1lowCurr, motorA1.lowCurr / 2);
-            motorA1.driver.setCurrent((unsigned int)motorA1.lowCurr * 10);
+            motorA1.lowCurr = curr;
+            XEEPROM.write(EE_motorA1lowCurr, motorA1.lowCurr / 100);
+            motorA1.driver.setCurrent((unsigned int)motorA1.lowCurr);
           }
         }
         strcpy(reply, "1");

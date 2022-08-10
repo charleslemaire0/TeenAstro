@@ -521,10 +521,12 @@ void Command_GX()
   break;
   case 'M':
   {
+    // :GXM..#   Get Motor Settings
     switch (command[3])
     {
     case 'B':
     {
+      // :GXMB.#   Get Motor backlash
       if (command[4] == 'D')
       {
         sprintf(reply, "%d#", backlashA2.inSeconds);
@@ -539,6 +541,7 @@ void Command_GX()
     break;
     case 'G':
     {
+      // :GXMG.#   Get Motor Gear
       if (command[4] == 'D')
       {
         sprintf(reply, "%u#", motorA2.gear);
@@ -553,6 +556,7 @@ void Command_GX()
     break;
     case 'S':
     {
+      // :GXMS.#   Get Stepper Step per Rotation
       if (command[4] == 'D')
       {
         sprintf(reply, "%u#", motorA2.stepRot);
@@ -567,6 +571,7 @@ void Command_GX()
     break;
     case 'M':
     {
+      // :GXMM.#   Get Stepper MicroStep per step
       if (command[4] == 'D')
       {
         sprintf(reply, "%u#", (unsigned  int)motorA2.micro);
@@ -581,6 +586,7 @@ void Command_GX()
     break;
     case 'm':
     {
+      // :GXMm.#   Get Stepper Silent mode on/off
       if (command[4] == 'D')
       {
         sprintf(reply, "%u#", (unsigned  int)motorA2.silent);
@@ -595,6 +601,7 @@ void Command_GX()
     break;
     case 'R':
     {
+      // :GXMR.#   Get Motor Reverse Rotation on/off
       if (command[4] == 'D')
       {
         sprintf(reply, "%u#", (unsigned  int)motorA2.reverse);
@@ -609,6 +616,7 @@ void Command_GX()
     break;
     case 'C':
     {
+      // :GXMC.#   Get Motor HighCurrent in mA
       if (command[4] == 'D')
       {
         sprintf(reply, "%u#", motorA2.highCurr);
@@ -623,13 +631,14 @@ void Command_GX()
     break;
     case 'c':
     {
+      // :GXMR.#   Get Motor LowCurrent in mA
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", motorA2.lowCurr);
+        sprintf(reply, "%u#", (unsigned int)motorA2.lowCurr);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", motorA1.lowCurr);
+        sprintf(reply, "%u#", (unsigned int)motorA1.lowCurr);
       }
       else
         strcpy(reply, "0");
