@@ -170,7 +170,7 @@ void TeenAstroWifi::handleConfigurationMount()
   data += "<div class='bt'> Motor: <br/> </div>";
   bool reverse = false;
   uint8_t silent = false;
-  if (readReverseLX200(1, reverse)==LX200VALUEGET)
+  if (readReverseLX200(1, reverse) == LX200VALUEGET)
   {
     sprintf_P(temp, html_configRotAxis_1, 1);
     data += temp;
