@@ -424,7 +424,7 @@ void SmartHandController::updateMainDisplay(PAGES page)
           }
         }
       }
- 
+
       switch (ta_MountStatus.getGuidingRate())
       {
       case (TeenAstroMountStatus::GuidingRate::GUIDING):
@@ -445,7 +445,7 @@ void SmartHandController::updateMainDisplay(PAGES page)
       default:
         break;
       }
-     
+
 
       if (curP == TeenAstroMountStatus::PRK_PARKED)
       {
@@ -498,7 +498,7 @@ void SmartHandController::updateMainDisplay(PAGES page)
           case TeenAstroMountStatus::RC_FULL_RA:
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_1_bits);
             break;
-          case TeenAstroMountStatus::RC_ALIGN_BOTH:   
+          case TeenAstroMountStatus::RC_ALIGN_BOTH:
           case TeenAstroMountStatus::RC_FULL_BOTH:
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_2_bits);
             break;
@@ -694,8 +694,6 @@ void SmartHandController::updateMainDisplay(PAGES page)
       if (ta_MountStatus.hasInfoAxis1Step())
       {
         x = u8g2_GetDisplayWidth(u8g2);
-        display->drawRA(x, y, ta_MountStatus.getRa());
-        u8g2_DrawUTF8(u8g2, 0, y, "RA");
         u8g2_DrawUTF8(u8g2, 0, y, ta_MountStatus.getAxis1Step());
         y += line_height + 4;
         u8g2_DrawUTF8(u8g2, 0, y, ta_MountStatus.getAxis2Step());
