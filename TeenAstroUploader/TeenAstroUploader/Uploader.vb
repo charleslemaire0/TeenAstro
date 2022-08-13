@@ -145,4 +145,6 @@
       MsgBox(n.ToString & "of " & Firmwares.Count.ToString & " successfully downloaded!")
     End Using
   End Sub
+
+
 End Class
