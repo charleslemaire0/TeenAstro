@@ -80,6 +80,13 @@ class TeenAstro(object):
         print('Error opening port')
         return None
 
+  def close(self):
+    self.port.close()
+    self.port = None
+
+  def isConnected(self):
+    return self.port != None
+
   def getValue(self, cmdStr):
     self.port.write(cmdStr.encode('utf-8'))
     # Read response byte to allow some time before the next command
@@ -94,16 +101,25 @@ class TeenAstro(object):
       resp =  (self.port.read(1)).decode('utf-8')  
     else:
       resp =  (self.port.read_some()).decode('utf-8')  
-        
     return resp
+
+  def getAxis1Steps(self):
+    steps = int(self.getValue(':GXDP0#'))
+    return steps
+
+  def getAxis2Steps(self):
+    steps = int(self.getValue(':GXDP1#'))
+    return steps
 
   def readGears(self):
     if (self.port != None):
       self.gear1 = self.getValue(':GXMGR#')
       self.steps1 = self.getValue(':GXMSR#')
+      self.microsteps1 = int(self.getValue(':GXMMR#'))
       self.axis1Gear = int(self.gear1) * int(self.steps1)
       self.gear2 = self.getValue(':GXMGD#')
       self.steps2 = self.getValue(':GXMSD#')
+      self.microsteps2 = int(self.getValue(':GXMMD#'))
       self.axis2Gear = int(self.gear2) * int(self.steps2)
       if self.getValue(':GXMRR#') == '1':
         self.axis1Reverse = True
@@ -149,6 +165,8 @@ class TeenAstro(object):
       self.localTime = datetime.time.fromisoformat(self.getValue(':GL#'))
       (m,d,y) = self.getValue(':GC#').split('/')
       self.currentDate = datetime.date (int(y)+2000, int(m), int(d))
+      tz = datetime.timezone(datetime.timedelta(hours=self.getTimeZone()))
+      return datetime.datetime (int(y)+2000, int(m), int(d), self.localTime.hour, self.localTime.minute, self.localTime.second, 0, tz)
 
   def readSidTime(self):
     if (self.port != None):
@@ -230,7 +248,6 @@ class TeenAstro(object):
     self.sendCommand(":Sa%+02d*%02u:%02u#" % dmsAlt)
     self.sendCommand(":MA#")
 
-
   def gotoRaDec(self, ra, dec):
     dmsRa = deg2dms(ra)
     dmsDec = deg2dms(dec)
@@ -260,27 +277,31 @@ class TeenAstro(object):
     self.sendCommand(":Tn#")
 
   def getAltitude(self):
-    self.altitude = dms2deg(self.getValue(':GA#')[:-1])
+    self.altitude = dms2deg(self.getValue(':GA#'))
     return self.altitude
 
   def getAzimuth(self):
-    self.azimuth = dms2deg(self.getValue(':GZ#')[:-1])
+    self.azimuth = dms2deg(self.getValue(':GZ#'))
     return self.azimuth
 
   def getRA(self):
-    self.RA =  dms2deg(self.getValue(':GR#')[:-1])  
+    self.RA =  dms2deg(self.getValue(':GR#'))  
+    return self.RA
+
+  def getLST(self):
+    self.RA =  dms2deg(self.getValue(':GS#'))  
     return self.RA
 
   def getDeclination(self):
-    self.declination = dms2deg(self.getValue(':GD#')[:-1])
+    self.declination = dms2deg(self.getValue(':GD#'))
     return self.declination
 
   def getLatitude(self):
-    self.latitude = dms2deg(self.getValue(':Gt#')[:-1])
+    self.latitude = dms2deg(self.getValue(':Gt#'))
     return self.latitude
 
   def getLongitude(self):
-    self.longitude = dms2deg(self.getValue(':Gg#')[:-1])
+    self.longitude = dms2deg(self.getValue(':Gg#'))
     return self.longitude
 
   def getMeridianEastLimit(self):
@@ -290,6 +311,11 @@ class TeenAstro(object):
   def getMeridianWestLimit(self):
     self.meridianWestLimit = int (self.getValue(':GXLW#')) / 4
     return self.meridianWestLimit
+
+  def getTimeZone(self):
+    self.timeZone = -float (self.getValue(':GG#'))
+    return self.timeZone
+
 
 
 # Main program
