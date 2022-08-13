@@ -115,19 +115,20 @@
   End Sub
 
   Private Sub ButtonDownLoad_Click(sender As Object, e As EventArgs) Handles ButtonDownLoad.Click
-    Dim gitRootAdress As String = "https://github.com/charleslemaire0/TeenAstro/raw/Release_1.2/TeenAstroUploader/TeenAstroUploader/1.2/"
+    Dim ver As String = "1.3"
+    Dim gitRootAdress As String = "https://github.com/charleslemaire0/TeenAstro/raw/Release_" + ver + "/TeenAstroUploader/TeenAstroUploader/" + ver + "/"
     Dim Firmwares As New List(Of String)
-    Firmwares.Add("TeenAstroFocuser_1.2_220_TMC2130.hex")
-    Firmwares.Add("TeenAstroFocuser_1.2_230_TMC2130.hex")
-    Firmwares.Add("TeenAstroFocuser_1.2_240_TMC2130.hex")
-    Firmwares.Add("TeenAstroFocuser_1.2_240_TMC5160.hex")
-    Firmwares.Add("TeenAstroSHC_1.2_English.bin")
-    Firmwares.Add("TeenAstroSHC_1.2_French.bin")
-    Firmwares.Add("TeenAstroSHC_1.2_German.bin")
-    Firmwares.Add("TeenAstro_1.2_220_TMC260.hex")
-    Firmwares.Add("TeenAstro_1.2_230_TMC260.hex")
-    Firmwares.Add("TeenAstro_1.2_240_TMC2130.hex")
-    Firmwares.Add("TeenAstro_1.2_240_TMC5160.hex")
+    Firmwares.Add("TeenAstroFocuser_" + ver + "_220_TMC2130.hex")
+    Firmwares.Add("TeenAstroFocuser_" + ver + "_230_TMC2130.hex")
+    Firmwares.Add("TeenAstroFocuser_" + ver + "_240_TMC2130.hex")
+    Firmwares.Add("TeenAstroFocuser_" + ver + "_240_TMC5160.hex")
+    Firmwares.Add("TeenAstroSHC_" + ver + "_English.bin")
+    Firmwares.Add("TeenAstroSHC_" + ver + "_French.bin")
+    Firmwares.Add("TeenAstroSHC_" + ver + "_German.bin")
+    Firmwares.Add("TeenAstro_" + ver + "_220_TMC260.hex")
+    Firmwares.Add("TeenAstro_" + ver + "_230_TMC260.hex")
+    Firmwares.Add("TeenAstro_" + ver + "_240_TMC2130.hex")
+    Firmwares.Add("TeenAstro_" + ver + "_240_TMC5160.hex")
     Dim n As Integer = 0
     Using client As New System.Net.WebClient()
       System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12
