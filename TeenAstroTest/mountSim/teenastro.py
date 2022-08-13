@@ -80,6 +80,13 @@ class TeenAstro(object):
         print('Error opening port')
         return None
 
+  def close(self):
+    self.port.close()
+    self.port = None
+
+  def isConnected(self):
+    return self.port != None
+
   def getValue(self, cmdStr):
     self.port.write(cmdStr.encode('utf-8'))
     # Read response byte to allow some time before the next command
@@ -94,16 +101,25 @@ class TeenAstro(object):
       resp =  (self.port.read(1)).decode('utf-8')  
     else:
       resp =  (self.port.read_some()).decode('utf-8')  
-        
     return resp
+
+  def getAxis1Steps(self):
+    steps = int(self.getValue(':GXDP0#'))
+    return steps
+
+  def getAxis2Steps(self):
+    steps = int(self.getValue(':GXDP1#'))
+    return steps
 
   def readGears(self):
     if (self.port != None):
       self.gear1 = self.getValue(':GXMGR#')
       self.steps1 = self.getValue(':GXMSR#')
+      self.microsteps1 = int(self.getValue(':GXMMR#'))
       self.axis1Gear = int(self.gear1) * int(self.steps1)
       self.gear2 = self.getValue(':GXMGD#')
       self.steps2 = self.getValue(':GXMSD#')
+      self.microsteps2 = int(self.getValue(':GXMMD#'))
       self.axis2Gear = int(self.gear2) * int(self.steps2)
       if self.getValue(':GXMRR#') == '1':
         self.axis1Reverse = True
