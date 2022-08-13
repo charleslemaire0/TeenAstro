@@ -93,6 +93,21 @@ static unsigned char tracking_bits[] U8X8_PROGMEM = {
     0x3e, 0x00, 0x7e, 0x00, 0xfe, 0x00, 0x7e, 0x00, 0x3e, 0x00, 0x1e, 0x00,
     0x0e, 0x00, 0x06, 0x00, 0x02, 0x00, 0x00, 0x00 };
 
+static unsigned char tracking_1_bits[] U8X8_PROGMEM = {
+   0x00, 0x00, 0x00, 0x10, 0x00, 0x18, 0x00, 0x10, 0x00, 0x10, 0x00, 0x10,
+   0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+static unsigned char tracking_2_bits[] U8X8_PROGMEM = {
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x3c, 0x00, 0x20, 0x00, 0x18, 0x00, 0x04,
+   0x00, 0x3c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+static unsigned char tracking_target_bits[] U8X8_PROGMEM = {
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x7c, 0x00, 0x10, 0x00, 0x10, 0x00, 0x10,
+   0x00, 0x10, 0x00, 0x10, 0x00, 0x10, 0x00, 0x00 };
+
 static unsigned char tracking_moon_bits[] U8X8_PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3c, 0x00, 0x0e, 0x00, 0x0e,
@@ -107,11 +122,6 @@ static unsigned char tracking_sun_bits[] U8X8_PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3c, 0x00, 0x42, 0x00, 0x5a,
     0x00, 0x5a, 0x00, 0x42, 0x00, 0x3c, 0x00, 0x00 };
-
-static unsigned char tracking_king_bits[] U8X8_PROGMEM = {
-    0x00, 0x00, 0x00, 0x24, 0x00, 0x14, 0x00, 0x0c, 0x00, 0x0c, 0x00, 0x14,
-    0x00, 0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
 static unsigned char sleewing_bits[] U8X8_PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x02, 0x01, 0x06, 0x03, 0x0e, 0x07, 0x1e, 0x0f,
@@ -392,6 +402,7 @@ void SmartHandController::updateMainDisplay(PAGES page)
       TeenAstroMountStatus::TrackState curT = ta_MountStatus.getTrackingState();
       TeenAstroMountStatus::SiderealMode currSM = ta_MountStatus.getSiderealMode();
       TeenAstroMountStatus::PierState curPi = ta_MountStatus.getPierState();
+      TeenAstroMountStatus::RateCompensation curC = ta_MountStatus.getRateCompensation();
       if (ta_MountStatus.hasGNSSBoard())
       {
         if (ta_MountStatus.isGNSSValid())
@@ -413,7 +424,7 @@ void SmartHandController::updateMainDisplay(PAGES page)
           }
         }
       }
- 
+
       switch (ta_MountStatus.getGuidingRate())
       {
       case (TeenAstroMountStatus::GuidingRate::GUIDING):
@@ -434,6 +445,8 @@ void SmartHandController::updateMainDisplay(PAGES page)
       default:
         break;
       }
+
+
       if (curP == TeenAstroMountStatus::PRK_PARKED)
       {
         display->drawXBMP(x - icon_width, 0, icon_width, icon_height, parked_bits);
@@ -460,22 +473,39 @@ void SmartHandController::updateMainDisplay(PAGES page)
         {
           display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_bits);
           display->setBitmapMode(1);
-          if (currSM == TeenAstroMountStatus::SID_STAR)
+          switch (currSM)
           {
+          case TeenAstroMountStatus::SID_UNKNOWN:
+            break;
+          case TeenAstroMountStatus::SID_STAR:
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_star_bits);
-          }
-          else if (currSM == TeenAstroMountStatus::SID_MOON)
-          {
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_moon_bits);
-          }
-          else if (currSM == TeenAstroMountStatus::SID_SUN)
-          {
+            break;
+          case TeenAstroMountStatus::SID_SUN:
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_sun_bits);
+            break;
+          case TeenAstroMountStatus::SID_MOON:
+            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_moon_bits);
+            break;
+          case TeenAstroMountStatus::SID_TARGET:
+            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_target_bits);
+            break;
+          default:
+            break;
           }
-          if (ta_MountStatus.isTrackingCorrected())
+          switch (curC)
           {
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_king_bits);
+          case TeenAstroMountStatus::RC_ALIGN_RA:
+          case TeenAstroMountStatus::RC_FULL_RA:
+            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_1_bits);
+            break;
+          case TeenAstroMountStatus::RC_ALIGN_BOTH:
+          case TeenAstroMountStatus::RC_FULL_BOTH:
+            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_2_bits);
+            break;
+          default:
+            break;
           }
+
           display->setBitmapMode(0);
 
           x -= icon_width + 1;
@@ -664,8 +694,6 @@ void SmartHandController::updateMainDisplay(PAGES page)
       if (ta_MountStatus.hasInfoAxis1Step())
       {
         x = u8g2_GetDisplayWidth(u8g2);
-        display->drawRA(x, y, ta_MountStatus.getRa());
-        u8g2_DrawUTF8(u8g2, 0, y, "RA");
         u8g2_DrawUTF8(u8g2, 0, y, ta_MountStatus.getAxis1Step());
         y += line_height + 4;
         u8g2_DrawUTF8(u8g2, 0, y, ta_MountStatus.getAxis2Step());

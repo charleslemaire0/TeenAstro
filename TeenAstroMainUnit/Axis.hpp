@@ -90,11 +90,11 @@ public:
   byte micro;
   bool reverse;
   bool silent;
-  u_int8_t highCurr;
-  u_int8_t lowCurr;
+  unsigned int highCurr; //in mA
+  unsigned int lowCurr; //in mA
   Driver driver;
   void initMotor(Driver::MOTORDRIVER useddriver, int EnPin, int CSPin, int DirPin, int StepPin)
   {
-    driver.initMotor(useddriver, stepRot, EnPin, CSPin, DirPin, StepPin, lowCurr * 10, micro, silent);
+    driver.initMotor(useddriver, stepRot, EnPin, CSPin, DirPin, StepPin, lowCurr , micro, silent);
   }
 };

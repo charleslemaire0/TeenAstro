@@ -92,18 +92,18 @@ void TeenAstroMountStatus::updateAxisStep()
   {
     m_hasInfoAxis1Step = GetLX200(":GXDP1#", m_TempAxis1Step, sizeof(m_TempAxis1Step)) == LX200VALUEGET;
     m_hasInfoAxis2Step = GetLX200(":GXDP2#", m_TempAxis2Step, sizeof(m_TempAxis2Step)) == LX200VALUEGET;
-    m_hasInfoAxis1Step && m_hasInfoAxis2Step ? m_lastStateAxisStep = millis() : m_connectionFailure++;
+    m_hasInfoAxis1Step&& m_hasInfoAxis2Step ? m_lastStateAxisStep = millis() : m_connectionFailure++;
   }
-}
+};
 void TeenAstroMountStatus::updateAxisDeg()
 {
   if (millis() - m_lastStateAxisDeg > updaterate)
   {
     m_hasInfoAxis1Deg = GetLX200(":GXP1#", m_TempAxis1Deg, sizeof(m_TempAxis1Deg)) == LX200VALUEGET;
     m_hasInfoAxis2Deg = GetLX200(":GXP2#", m_TempAxis2Deg, sizeof(m_TempAxis2Deg)) == LX200VALUEGET;
-    m_hasInfoAxis1Deg && m_hasInfoAxis2Deg ? m_lastStateAxisDeg = millis() : m_connectionFailure++;
+    m_hasInfoAxis1Deg&& m_hasInfoAxis2Deg ? m_lastStateAxisDeg = millis() : m_connectionFailure++;
   }
-}
+};
 void TeenAstroMountStatus::updateTime()
 {
   if (millis() - m_lastStateTime > updaterate)
@@ -190,11 +190,11 @@ void TeenAstroMountStatus::updateMount()
 bool TeenAstroMountStatus::connected()
 {
   return m_connectionFailure == 0;
-}
+};
 bool TeenAstroMountStatus::notResponding()
 {
   return m_connectionFailure > 4;
-}
+};
 TeenAstroMountStatus::ParkState TeenAstroMountStatus::getParkState()
 {
   switch (m_TempMount[2])
@@ -209,7 +209,7 @@ TeenAstroMountStatus::ParkState TeenAstroMountStatus::getParkState()
     return PRK_FAILED;
   }
   return PRK_UNKNOW;
-}
+};
 TeenAstroMountStatus::Mount TeenAstroMountStatus::getMount()
 {
   switch (m_TempMount[12])

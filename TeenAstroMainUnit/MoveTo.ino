@@ -169,22 +169,20 @@ Again:
   }
 }
 
-
-
 // if stepper drive can switch decay mode, set it here
 void DecayModeTracking()
 {
   if (DecayModeTrack) return;
   DecayModeTrack = true;
-  motorA1.driver.setCurrent((unsigned int)motorA1.lowCurr * 10);
-  motorA2.driver.setCurrent((unsigned int)motorA2.lowCurr * 10);
+  motorA1.driver.setCurrent((unsigned int)motorA1.lowCurr);
+  motorA2.driver.setCurrent((unsigned int)motorA2.lowCurr);
 }
 
 void DecayModeGoto()
 {
   if (!DecayModeTrack) return;
   DecayModeTrack = false;
-  motorA1.driver.setCurrent((unsigned int)motorA1.highCurr * 10);
-  motorA2.driver.setCurrent((unsigned int)motorA2.highCurr * 10);
+  motorA1.driver.setCurrent((unsigned int)motorA1.highCurr);
+  motorA2.driver.setCurrent((unsigned int)motorA2.highCurr);
 }
 

@@ -70,14 +70,14 @@ const char html_configMuAxis[] PROGMEM =
 "\r\n";
 const char html_configLCAxis[] PROGMEM =
 "<form method='get' action='/configuration_mount.htm'>"
-" <input value='%d' type='number' name='mlc%d' min='200' max='2800' step='200'>"
+" <input value='%u' type='number' name='mlc%d' min='200' max='2800' step='200'>"
 "<button type='submit'>Upload</button>"
 " (Low Current Axis%d, from 200mA to 2800mA)"
 "</form>"
 "\r\n";
 const char html_configHCAxis[] PROGMEM =
 "<form method='get' action='/configuration_mount.htm'>"
-" <input value='%d' type='number' name='mhc%d' min='200' max='2800' step='200'>"
+" <input value='%u' type='number' name='mhc%d' min='200' max='2800' step='200'>"
 "<button type='submit'>Upload</button>"
 " (High Current Axis%d, from 200mA to 2800mA)"
 "</form>"
@@ -170,91 +170,126 @@ void TeenAstroWifi::handleConfigurationMount()
   data += "<div class='bt'> Motor: <br/> </div>";
   bool reverse = false;
   uint8_t silent = false;
-  readReverseLX200(1, reverse);
-  sprintf_P(temp, html_configRotAxis_1, 1);
-  data += temp;
-  data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
-  sprintf_P(temp, html_configRotAxis_2, 1);
-  data += temp;
-  sendHtml(data);
+  if (readReverseLX200(1, reverse) == LX200VALUEGET)
+  {
+    sprintf_P(temp, html_configRotAxis_1, 1);
+    data += temp;
+    data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
+    sprintf_P(temp, html_configRotAxis_2, 1);
+    data += temp;
+    sendHtml(data);
+  }
   reverse = false;
-  readReverseLX200(2, reverse);
-  sprintf_P(temp, html_configRotAxis_1, 2);
-  data += temp;
-  data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
-  sprintf_P(temp, html_configRotAxis_2, 2);
-  data += temp;
-  sendHtml(data);
+  if (readReverseLX200(2, reverse) == LX200VALUEGET)
+  {
+    sprintf_P(temp, html_configRotAxis_1, 2);
+    data += temp;
+    data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
+    sprintf_P(temp, html_configRotAxis_2, 2);
+    data += temp;
+    sendHtml(data);
+  }
   float gear = 0;
-  readTotGearLX200(1, gear);
-  sprintf_P(temp, html_configGeAxis, (int)gear, 1, 1);
-  data += temp;
-  sendHtml(data);
-  readTotGearLX200(2, gear);
-  sprintf_P(temp, html_configGeAxis, (int)gear, 2, 2);
-  data += temp;
-  sendHtml(data);
+  if (readTotGearLX200(1, gear) == LX200VALUEGET)
+  {
+    sprintf_P(temp, html_configGeAxis, (int)gear, 1, 1);
+    data += temp;
+    sendHtml(data);
+  }
+  if (readTotGearLX200(2, gear) == LX200VALUEGET)
+  {
+    sprintf_P(temp, html_configGeAxis, (int)gear, 2, 2);
+    data += temp;
+    sendHtml(data);
+  }
   float step;
-  readStepPerRotLX200(1, step);
-  sprintf_P(temp, html_configStAxis, (int)step, 1, 1);
-  data += temp;
-  sendHtml(data);
-  readStepPerRotLX200(2, step);
-  sprintf_P(temp, html_configStAxis, (int)step, 2, 2);
-  data += temp;
-  sendHtml(data);
+
+  if (readStepPerRotLX200(1, step) == LX200VALUEGET)
+  {
+    sprintf_P(temp, html_configStAxis, (int)step, 1, 1);
+    data += temp;
+    sendHtml(data);
+  }
+  if (readStepPerRotLX200(2, step) == LX200VALUEGET)
+  {
+    sprintf_P(temp, html_configStAxis, (int)step, 2, 2);
+    data += temp;
+    sendHtml(data);
+  }
   uint8_t micro;
-  readMicroLX200(1, micro);
-  sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 1, 1);
-  data += temp;
-  sendHtml(data);
-  readMicroLX200(2, micro);
-  sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 2, 2);
-  data += temp;
-  sendHtml(data);
+  if (readMicroLX200(1, micro) == LX200VALUEGET)
+  {
+    sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 1, 1);
+    data += temp;
+    sendHtml(data);
+  }
+  if (readMicroLX200(2, micro) == LX200VALUEGET)
+  {
+    sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 2, 2);
+    data += temp;
+    sendHtml(data);
+  }
   float backlashAxis;
-  readBacklashLX200(1, backlashAxis);
-  sprintf_P(temp, html_configBlAxis, (int)backlashAxis, 1, 1);
-  data += temp;
-  sendHtml(data);
-  readBacklashLX200(2, backlashAxis);
-  sprintf_P(temp, html_configBlAxis, (int)backlashAxis, 2, 2);
-  data += temp;
-  sendHtml(data);
-  uint8_t lowC;
-  readLowCurrLX200(1, lowC);
-  sprintf_P(temp, html_configLCAxis, lowC * 10, 1, 1);
-  data += temp;
-  sendHtml(data);
-  readLowCurrLX200(2, lowC);
-  sprintf_P(temp, html_configLCAxis, lowC * 10, 2, 2);
-  data += temp;
-  sendHtml(data);
-  uint8_t highC;
-  readHighCurrLX200(1, highC);
-  sprintf_P(temp, html_configHCAxis, highC * 10, 1, 1);
-  data += temp;
-  sendHtml(data);
-  readHighCurrLX200(2, highC);
-  sprintf_P(temp, html_configHCAxis, highC * 10, 2, 2);
-  data += temp;
+  if (readBacklashLX200(1, backlashAxis) == LX200VALUEGET)
+  {
+    sprintf_P(temp, html_configBlAxis, (int)backlashAxis, 1, 1);
+    data += temp;
+    sendHtml(data);
+  }
+  if (readBacklashLX200(2, backlashAxis) == LX200VALUEGET)
+  {
+    sprintf_P(temp, html_configBlAxis, (int)backlashAxis, 2, 2);
+    data += temp;
+    sendHtml(data);
+  }
+  unsigned int lowC;
+  if (readLowCurrLX200(1, lowC) == LX200VALUEGET)
+  {
+    sprintf_P(temp, html_configLCAxis, lowC, 1, 1);
+    data += temp;
+    sendHtml(data);
+  }
+
+  if (readLowCurrLX200(2, lowC) == LX200VALUEGET)
+  {
+    sprintf_P(temp, html_configLCAxis, lowC, 2, 2);
+    data += temp;
+    sendHtml(data);
+  }
+  unsigned int highC;
+  if (readHighCurrLX200(1, highC) == LX200VALUEGET)
+  {
+    sprintf_P(temp, html_configHCAxis, highC, 1, 1);
+    data += temp;
+    sendHtml(data);
+  }
+  if (readHighCurrLX200(2, highC) == LX200VALUEGET)
+  {
+    sprintf_P(temp, html_configHCAxis, highC, 2, 2);
+    data += temp;
+    sendHtml(data);
+  }
   const char* board = ta_MountStatus.getVb();
   if (board[0] - '0' > 1)
   {
-    readSilentStepLX200(1, silent);
-    sprintf_P(temp, html_configSilentAxis_1, 1);
-    data += temp;
-    data += silent ? FPSTR(html_configSilentAxis_r) : FPSTR(html_configSilentAxis_d);
-    sprintf_P(temp, html_configSilentAxis_2, 1);
-    data += temp;
-    sendHtml(data);
-    readSilentStepLX200(2, silent);
-    sprintf_P(temp, html_configSilentAxis_1, 2);
-    data += temp;
-    data += silent ? FPSTR(html_configSilentAxis_r) : FPSTR(html_configSilentAxis_d);
-    sprintf_P(temp, html_configSilentAxis_2, 2);
-    data += temp;
-    sendHtml(data);
+    if (readSilentStepLX200(1, silent) == LX200VALUEGET)
+    {
+      sprintf_P(temp, html_configSilentAxis_1, 1);
+      data += temp;
+      data += silent ? FPSTR(html_configSilentAxis_r) : FPSTR(html_configSilentAxis_d);
+      sprintf_P(temp, html_configSilentAxis_2, 1);
+      data += temp;
+      sendHtml(data);
+    }
+    if (readSilentStepLX200(2, silent) == LX200VALUEGET)
+    {
+      sprintf_P(temp, html_configSilentAxis_1, 2);
+      data += temp;
+      data += silent ? FPSTR(html_configSilentAxis_r) : FPSTR(html_configSilentAxis_d);
+      sprintf_P(temp, html_configSilentAxis_2, 2);
+      data += temp;
+      sendHtml(data);
+    }
   }
 
   strcpy(temp, "</div></body></html>");
@@ -466,15 +501,15 @@ void TeenAstroWifi::processConfigurationMountGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
     {
-      writeLowCurrLX200(1, i / 10);
+      writeLowCurrLX200(1, i);
     }
-  } 
+  }
   v = server.arg("mlc2");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
     {
-      writeLowCurrLX200(2, i / 10);
+      writeLowCurrLX200(2, i);
     }
   }
 
@@ -483,7 +518,7 @@ void TeenAstroWifi::processConfigurationMountGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
     {
-      writeHighCurrLX200(1, i / 10);
+      writeHighCurrLX200(1, i);
     }
   }
   v = server.arg("mhc2");
@@ -491,7 +526,7 @@ void TeenAstroWifi::processConfigurationMountGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
     {
-      writeHighCurrLX200(2, i / 10);
+      writeHighCurrLX200(2, i);
     }
   }
 

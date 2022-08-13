@@ -38,44 +38,10 @@ const char  html_controlScript1[] = "<script>\n"
 "function sf(key,v1){s(key,v1);autoFastRun();}\n"
 "</script>\n";
 
-const char html_controlScript2[] PROGMEM =
-"<script>\r\n"
-"function SetDateTime() {"
-#ifdef TIMEZONE_ON
-"var d1 = new Date();"
-"var jan = new Date(d1.getFullYear(), 0, 1);"
-"var d = new Date(d1.getTime()-(jan.getTimezoneOffset()-d1.getTimezoneOffset())*60*1000);";
-const char html_controlScript3[] =
-"document.getElementById('dd').value = d.getDate();"
-"document.getElementById('dm').value = d.getMonth();"
-"document.getElementById('dy').value = d.getFullYear();";
-const char html_controlScript4[] =
-"document.getElementById('th').value = d.getHours();"
-"document.getElementById('tm').value = d.getMinutes();"
-"document.getElementById('ts').value = d.getSeconds();"
-#else
-"var d1 = new Date();";
-const char html_controlScript3[] PROGMEM =
-"document.getElementById('dd').value = d1.getUTCDate();"
-"document.getElementById('dm').value = d1.getUTCMonth();"
-"document.getElementById('dy').value = d1.getUTCFullYear();";
-const char html_controlScript4[] PROGMEM =
-"document.getElementById('th').value = d1.getUTCHours();"
-"document.getElementById('tm').value = d1.getUTCMinutes();"
-"document.getElementById('ts').value = d1.getUTCSeconds();"
-#endif
-"}\r\n"
-"</script>\r\n";
 
 const char html_controlQuick0[] PROGMEM =
 "<div style='text-align: center; width: 30em'>"
 "<form style='display: inline;' method='get' action='/control.htm'>";
-const char html_controlQuick1[] PROGMEM =
-"<button name='qb' class='bb' value='st' type='submit' onpointerdown='SetDateTime();'>" CLOCK_CH "</button>"
-"&nbsp;&nbsp;";
-const char html_controlQuick1a[] PROGMEM =
-"<input id='dm' type='hidden' name='dm'><input id='dd' type='hidden' name='dd'><input id='dy' type='hidden' name='dy'>"
-"<input id='th' type='hidden' name='th'><input id='tm' type='hidden' name='tm'><input id='ts' type='hidden' name='ts'>";
 
 const char html_controlQuick2[] PROGMEM =
 "&nbsp;&nbsp;"
@@ -153,10 +119,6 @@ void TeenAstroWifi::handleControl()
   sendHtml(data);
   // guide (etc) script
   data += FPSTR(html_controlScript1);
-  // clock script
-  data += FPSTR(html_controlScript2);
-  data += FPSTR(html_controlScript3);
-  data += FPSTR(html_controlScript4);
   sendHtml(data);
   // active ajax page is: controlAjax();
   data += "<script>var ajaxPage='control.txt';</script>\n";
@@ -171,9 +133,6 @@ void TeenAstroWifi::handleControl()
   {
     if (ta_MountStatus.Parked() || ta_MountStatus.atHome())
     {
-      data += FPSTR(html_controlQuick1);
-      data += FPSTR(html_controlQuick1a);
-      sendHtml(data);
       if (ta_MountStatus.Parked())
       {
         data += FPSTR(html_controlQuick2);
@@ -235,12 +194,7 @@ void TeenAstroWifi::handleControl()
   sendHtmlDone(data);
 }
 
-int get_temp_month;
-int get_temp_day;
-int get_temp_year;
-int get_temp_hour;
-int get_temp_minute;
-int get_temp_second;
+
 
 void TeenAstroWifi::processControlGet()
 {
@@ -266,61 +220,6 @@ void TeenAstroWifi::processControlGet()
   }
 #endif
 
-  // Set DATE/TIME
-  v = server.arg("dm");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 11)))
-    {
-      get_temp_month = i + 1;
-    }
-  }
-  v = server.arg("dd");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 31)))
-    {
-      get_temp_day = i;
-    }
-  }
-  v = server.arg("dy");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 2016) && (i <= 9999)))
-    {
-      get_temp_year = i - 2000;
-      char temp[10];
-      sprintf(temp, ":SXT1%02d/%02d/%02d#", get_temp_month, get_temp_day, get_temp_year);
-      SetLX200(temp);
-    }
-  }
-  v = server.arg("th");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 23)))
-    {
-      get_temp_hour = i;
-    }
-  }
-  v = server.arg("tm");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 59)))
-    {
-      get_temp_minute = i;
-    }
-  }
-  v = server.arg("ts");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 59)))
-    {
-      get_temp_second = i;
-      char temp[10];
-      sprintf(temp, ":SXT0%02d:%02d:%02d#", get_temp_hour, get_temp_minute, get_temp_second);
-      SetLX200(temp);
-    }
-  }
 
   v = server.arg("dr");
   if (v != "")
