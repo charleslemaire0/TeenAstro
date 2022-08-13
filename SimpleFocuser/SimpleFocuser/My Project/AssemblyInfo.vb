@@ -12,7 +12,7 @@ Imports System.Runtime.InteropServices
 <Assembly: AssemblyDescription("ASCOM Focuser driver for TeenAstro")>
 <Assembly: AssemblyCompany("Charles Lemaire")>
 <Assembly: AssemblyProduct("ASCOM Focuser driver for TeenAstro")>
-<Assembly: AssemblyCopyright("Copyright © 2020, Charles Lemaire")>
+<Assembly: AssemblyCopyright("Copyright © 2022, Charles Lemaire")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(True)>
@@ -31,5 +31,5 @@ Imports System.Runtime.InteropServices
 ' by using the '*' as shown below:
 ' <Assembly: AssemblyVersion("1.0.*")> 
 
-<Assembly: AssemblyVersion("1.2.0.0")>
-<Assembly: AssemblyFileVersion("1.2.0.0")>
+<Assembly: AssemblyVersion("1.3.0.0")>
+<Assembly: AssemblyFileVersion("1.3.0.0")>
