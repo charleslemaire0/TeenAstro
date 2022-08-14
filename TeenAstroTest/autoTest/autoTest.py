@@ -8,7 +8,7 @@
 import math, time, sys, argparse, csv
 import PySimpleGUI as sg
 import numpy as np  
-
+from numpy.polynomial.polynomial import polyfit
 from skyfield.api import wgs84, load, position_of_radec
 from skyfield.positionlib import Apparent, Barycentric, Astrometric, Distance
 from skyfield.earthlib import refraction
@@ -46,12 +46,12 @@ pointTestTab = [[sg.Column([
 
 driftTestTab = [[sg.Column([
                     [sg.B(button_text = 'Start', key='startStopDrift'),sg.B(button_text = 'Clear', key='clearDrift'),
-                     sg.B(button_text = 'Save', key='saveDrift'), sg.B(button_text = '+',key='zoomIn'),sg.B(button_text = '-',key='zoomOut')],
-                    [sg.Canvas(key='drift_cv', size=(640, 400))]]
-                )]
+                     sg.B(button_text = 'Save', key='saveDrift'), sg.B(button_text = '+',key='zoomIn'),sg.B(button_text = '-',key='zoomOut')]])],
+                    [sg.Canvas(key='drift_cv', size=(640, 400)),sg.Column([[sg.T('RA (arc-sec/sec):'), sg.T('0', key='ra_rate')],[sg.T('Dec (arc-sec/sec):'), sg.T('0', key='dec_rate')]])] 
                 ]
 
 bottomRow = sg.Output(key='Log',  size=(80, 4))
+#bottomRow = []
 
 layout = [ [topRow],
           [sg.TabGroup([[
@@ -215,10 +215,11 @@ class pointingPlot():
 
 
 class driftPlot():
-    def __init__(self, canvas, ta, ts):
+    def __init__(self, window, ta, ts):
+        self.window = window
         self.ta = ta
         self.ts = ts
-        self.x = np.linspace(0, 100, numSamples)
+        self.x = np.linspace(0, numSamples-1, numSamples)
         self.ra = np.zeros(numSamples)
         self.dec = np.zeros(numSamples)
         self.fig, self.axes = plt.subplots(2, sharex=True, sharey=True, figsize=(10,6), dpi=36)
@@ -229,11 +230,11 @@ class driftPlot():
         self.axes[1].set_ylabel('Declination (arc-sec)')
         self.line1, = self.axes[0].plot(self.x,self.ra,'green')
         self.line2, = self.axes[1].plot(self.x,self.dec,'red')
-        self.figure_canvas_agg = FigureCanvasTkAgg(self.fig, master=canvas)
+        self.figure_canvas_agg = FigureCanvasTkAgg(self.fig, master=window['drift_cv'].TKCanvas)
         self.planets = load('de421.bsp')
         self.state = 'STOP'
 
-    def handleEvent(self, ev, window):
+    def handleEvent(self, ev, w):
         if (ev == 'startStopDrift'):
             if not self.ta.isConnected():
                 self.log('Not connected')
@@ -241,11 +242,11 @@ class driftPlot():
 
             if self.state == 'STOP':
                 self.log ('running')
-                window['startStopDrift'].update('Stop')
+                self.window['startStopDrift'].update('Stop')
                 self.start()
             else:
                 self.log ('stopped')
-                window['startStopDrift'].update('Start')
+                self.window['startStopDrift'].update('Start')
                 self.state = 'STOP'
 
         if (ev == 'clearDrift'):
@@ -286,6 +287,16 @@ class driftPlot():
     def render(self):
         self.figure_canvas_agg.draw()
         self.figure_canvas_agg.get_tk_widget().pack(side='right', fill='both', expand=1)
+        try:
+            ra_rate = 3600 * (self.ra[-1] - self.ra[-10]) / 10
+        except:
+            ra_rate = 0
+        self.window['ra_rate'].Update('{0:2.2f}'.format(ra_rate)) 
+        try:
+            dec_rate = 3600 * (self.dec[-1] - self.dec[-10]) / 10
+        except:
+            dec_rate = 0
+        self.window['dec_rate'].Update('{0:2.2f}'.format(dec_rate)) 
 
     def update(self, ra, dec):
         self.ra = np.append(self.ra, ra)
@@ -307,8 +318,8 @@ class driftPlot():
         lst = t1.gmst + self.lon / 15       # in hours   
 
         pierSide = self.ta.getPierSide()
-        axis1 = convertAxis1(self.ta.getAxis1(), pierSide)
-        axis2 = convertAxis2(self.ta.getAxis2(), pierSide)
+        axis1 = self.ta.getAxis1()
+        axis2 = self.ta.getAxis2()
         self.initialRA = 15.0 * lst - axis1  # in degrees
         self.initialDec = axis2
         self.state = 'RECORD'
@@ -318,8 +329,8 @@ class driftPlot():
         lst = 15.0 * t1.gmst + self.lon         # in degrees   
 
         pierSide = self.ta.getPierSide()
-        axis1 = convertAxis1(self.ta.getAxis1(), pierSide)
-        axis2 = convertAxis2(self.ta.getAxis2(), pierSide)
+        axis1 = self.ta.getAxis1()
+        axis2 = self.ta.getAxis2()
         ra = lst - axis1  # in degrees
         dec = axis2
         self.update(ra-self.initialRA, dec-self.initialDec)
@@ -351,10 +362,12 @@ class Application:
     def __init__(self, options):
 
         self.ts = load.timescale()
-        self.ta = TeenAstro('tcp', options.ip)
 
         self.window = sg.Window('TeenAstro AutoTest', layout, finalize=True, size=(1024,640))
-        self.dp = driftPlot(self.window['drift_cv'].TKCanvas, self.ta, self.ts)
+        self.window['-IPADDR-'].update(options.ip)
+        self.ta = TeenAstro('tcp', options.ip)
+
+        self.dp = driftPlot(self.window, self.ta, self.ts)
         self.pp = pointingPlot(self.window['point_cv'].TKCanvas, self.ta, self.ts)
         self.run()
 
@@ -388,7 +401,7 @@ class Application:
                     self.window['connect'].update('Connect')
                 else:
                     if self.ta.portType == 'tcp':
-                        self.portName = values['-IPADDR-']
+                        self.ta.portName = values['-IPADDR-']
                     else:
                         self.ta.portName = values['-ComPorts-']
                     self.connect() 
