@@ -180,7 +180,8 @@ GuideAxis guideA2 = { 0,0,0,0,0 };
 long            lasttargetAxis1 = 0;
 long            debugv1 = 0;
 
-double          guideTimerBaseRate = 0;
+double          guideTimerBaseRate1 = 0;
+double          guideTimerBaseRate2 = 0;
 
 // Reticule control
 #ifdef RETICULE_LED_PINS

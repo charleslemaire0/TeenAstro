@@ -212,27 +212,46 @@ void enableGuideRate(int g, bool force)
 
   if (g < 0) g = 0;
   if (g > 4) g = 4;
-  if (!force && guideTimerBaseRate == guideRates[g]) return;
+  if (!force && (guideTimerBaseRate1 == guideRates[g] && guideTimerBaseRate2 == guideTimerBaseRate1)) return;
 
   activeGuideRate = g;
 
   // this enables the guide rate
-  guideTimerBaseRate = guideRates[g];
-
+  guideTimerBaseRate1 = guideRates[g];
+  guideTimerBaseRate2 = guideTimerBaseRate1;
   cli();
-  guideA1.amount = guideTimerBaseRate * geoA1.stepsPerCentiSecond;
-  guideA2.amount = guideTimerBaseRate * geoA2.stepsPerCentiSecond;
+  guideA1.amount = guideTimerBaseRate1 * geoA1.stepsPerCentiSecond;
+  guideA2.amount = guideTimerBaseRate2 * geoA2.stepsPerCentiSecond;
   sei();
+}
+
+void enableGuideAtRate(int axis, double rate)
+{
+  if (axis == 1  && guideTimerBaseRate1!= rate)
+  {
+    guideTimerBaseRate1 = rate;
+    cli();
+    guideA1.amount = rate * geoA1.stepsPerCentiSecond;
+    sei();
+  }
+  else if (axis == 2 && guideTimerBaseRate2 != rate)
+  {
+    guideTimerBaseRate2 = rate;
+    cli();
+    guideA2.amount = rate * geoA2.stepsPerCentiSecond;
+    sei();
+  }
 }
 
 void enableST4GuideRate()
 {
-  if (guideTimerBaseRate != guideRates[0])
+  if (guideTimerBaseRate1 != guideRates[0] || guideTimerBaseRate2 != guideTimerBaseRate1)
   {
-    guideTimerBaseRate = guideRates[0];
+    guideTimerBaseRate1 = guideRates[0];
+    guideTimerBaseRate2 = guideTimerBaseRate1;
     cli();
-    guideA1.amount = guideTimerBaseRate * geoA1.stepsPerCentiSecond;
-    guideA2.amount = guideTimerBaseRate * geoA2.stepsPerCentiSecond;
+    guideA1.amount = guideTimerBaseRate1 * geoA1.stepsPerCentiSecond;
+    guideA2.amount = guideTimerBaseRate2 * geoA2.stepsPerCentiSecond;
     sei();
   }
 }

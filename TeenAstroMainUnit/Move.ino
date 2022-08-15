@@ -10,7 +10,7 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
   {
     // block user from changing direction at high rates, just stop the guide instead
     // estimate new guideTimerBaseRate
-    if (guideTimerBaseRate == 0)
+    if (guideTimerBaseRate1 == 0)
     {
       cli();
       guideA1.dir = 'b';
@@ -18,7 +18,7 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
       return;
     }
     Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate, false);
-    double newGuideTimerBaseRate = newguideDirAxis == 'e' ? -guideTimerBaseRate : guideTimerBaseRate;
+    double newGuideTimerBaseRate = newguideDirAxis == 'e' ? -guideTimerBaseRate1 : guideTimerBaseRate1;
     bool samedirection = newGuideTimerBaseRate > 0 ? (guideA1.timerRate > 0 ? true : false) : (guideA1.timerRate > 0 ? false : true);
     if (guideA1.dir && !samedirection && fabs(guideA1.timerRate) > 2)
     {
@@ -63,7 +63,7 @@ void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
 
   if (canMove)
   {
-    if (guideTimerBaseRate == 0)
+    if (guideTimerBaseRate2 == 0)
     {
       cli();
       guideA2.dir = 'b';
@@ -77,7 +77,7 @@ void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
     if (GetPierSide() >= PIER_WEST)
       rev = !rev;
     Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate, false);
-    double newGuideTimerBaseRate = rev ? -guideTimerBaseRate : guideTimerBaseRate;
+    double newGuideTimerBaseRate = rev ? -guideTimerBaseRate2 : guideTimerBaseRate2;
     bool samedirection = newGuideTimerBaseRate > 0 ? (guideA2.timerRate > 0 ? true : false) : (guideA2.timerRate > 0 ? false : true);
     if (guideA2.dir && !samedirection && fabs(guideA2.timerRate) > 2)
     {
@@ -147,7 +147,7 @@ void CheckSpiral()
         rev = !rev;
       cli();
       GuidingState = GuidingPulse;
-      guideA2.timerRate = rev ? -guideTimerBaseRate : guideTimerBaseRate;
+      guideA2.timerRate = rev ? -guideTimerBaseRate2 : guideTimerBaseRate2;
       sei();
     }
   }
@@ -161,9 +161,9 @@ void CheckSpiral()
     cli();
     GuidingState = GuidingPulse;
     if (guideA1.dir == 'e')
-      guideA1.timerRate = -guideTimerBaseRate;
+      guideA1.timerRate = -guideTimerBaseRate1;
     else
-      guideA1.timerRate = guideTimerBaseRate;
+      guideA1.timerRate = guideTimerBaseRate1;
     sei();
   }
   iteration++;
