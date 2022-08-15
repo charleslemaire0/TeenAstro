@@ -177,7 +177,7 @@ void TeenAstroWifi::handleConfigurationFocuser()
     data += temp;
     sprintf_P(temp, html_configMuFocuser, (int)pow(2., micro));
     data += temp;
-    sprintf_P(temp, html_configHCFocuser, curr);
+    sprintf_P(temp, html_configHCFocuser, curr*10);
     data += temp;
     sendHtml(data);
   }
