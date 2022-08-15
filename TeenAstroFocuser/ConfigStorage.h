@@ -27,6 +27,7 @@ public:
   uint8_t get();
   void load();
   bool set(const uint8_t& val);
+  void reset();
   uint8_t getmax();
   uint8_t getmin();
   Parameteruint8_t(const int &adress, const uint8_t &value_default, const  uint8_t &value_min, const  uint8_t &value_max);
@@ -44,6 +45,7 @@ public:
   unsigned long get();
   void load();
   bool set(const unsigned long& val);
+  void reset();
   unsigned long getmax();
   unsigned long getmin();
   Parameterulong(const int &adress, const  unsigned long &valuedefault, const unsigned long &value_min, const unsigned long &value_max);
@@ -60,6 +62,7 @@ public:
   unsigned long getPosition();
   void get(char* id, unsigned long& val);
   bool set(char* id, const unsigned long& val);
+  void reset();
   ParameterPosition(const int &adress);
 };
 
@@ -75,6 +78,7 @@ public:
   unsigned int get();
   void load();
   bool set(const unsigned int& val);
+  void reset();
   unsigned int getmax();
   unsigned int getmin();
   Parameteruint(const int &adress, const  unsigned int &valuedefault, const unsigned int &value_min, const unsigned int &value_max);
