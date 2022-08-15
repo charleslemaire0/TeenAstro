@@ -141,6 +141,7 @@ long    storedTrakingRateDEC = 0;
 //Guiding
 enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter, GuidingAtRate };
 volatile Guiding GuidingState = GuidingOFF;
+Guiding lastGuidingState = GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
 unsigned long lastSecurityCheck = millis();
 

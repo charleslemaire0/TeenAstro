@@ -37,6 +37,43 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
   }
 }
 
+void MoveAxis1AtRate(const double newrate)
+{
+  bool canMove = parkStatus == PRK_UNPARKED;
+  canMove &= lastError == ERR_NONE;
+  canMove &= !movingTo;
+  canMove &= (GuidingState == GuidingOFF || GuidingState == GuidingAtRate);
+  if (canMove)
+  {
+    if (newrate == 0)
+    {
+      StopAxis1();
+      return;
+    }
+    if (GuidingState != GuidingAtRate)
+    {
+      lastSideralTracking = sideralTracking;
+      sideralTracking = false;
+    }
+    enableGuideAtRate(1, abs(newrate));
+    bool samedirection = (newrate > 0) == (guideA1.timerRate > 0);
+    if (guideA1.dir && !samedirection /*&& fabs(guideA1.timerRate) > 2*/)
+    {
+      StopAxis1();
+    }
+    else
+    {
+      GuidingState = GuidingAtRate;
+      guideA1.dir = newrate > 0 ?  '+' : '-';
+      atHome = false;
+      guideA1.duration = -1;
+      cli();
+      guideA1.timerRate = newrate;
+      sei();
+    }
+  }
+}
+
 void StopAxis1()
 {
   if (guideA1.dir == 'b')
@@ -96,6 +133,44 @@ void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
   }
 }
 
+void MoveAxis2AtRate(const double newrate)
+{
+
+  bool canMove = parkStatus == PRK_UNPARKED;
+  canMove &= !movingTo;
+  canMove &= (GuidingState == GuidingOFF || GuidingState == GuidingAtRate);
+  canMove &= lastError == ERR_NONE;
+  if (canMove)
+  {
+    if (newrate == 0)
+    {
+      StopAxis2();
+      return;
+    }
+    if (GuidingState != GuidingAtRate)
+    {
+      lastSideralTracking = sideralTracking;
+      sideralTracking = false;
+    }
+    enableGuideAtRate(2, abs(newrate));
+    bool samedirection = (newrate > 0) == (guideA2.timerRate > 0);
+    if (guideA2.dir && !samedirection && fabs(guideA2.timerRate) > 2)
+    {
+      StopAxis2();
+    }
+    else
+    {
+      GuidingState = GuidingAtRate;
+      guideA2.dir = newrate > 0 ? '+' : '-';
+      atHome = false;
+      guideA2.duration = -1;
+      cli();
+      guideA2.timerRate = newrate;
+      sei();
+    }
+  }
+}
+
 void StopAxis2()
 {
   long a = pow(getV(staA2.timerRate), 2.) / (2. * staA2.acc);
@@ -109,6 +184,21 @@ void StopAxis2()
     sei();
   }
   guideA2.dir = 'b';
+}
+
+void CheckEndOfMoveAxisAtRate()
+{
+  if (lastGuidingState == GuidingAtRate && GuidingState == GuidingOFF)
+  {
+    if (lastSideralTracking)
+    {
+      lastSetTrakingEnable = millis();
+      sideralTracking = true;
+      computeTrackingRate(true);
+    }
+    resetGuideRate();
+  }
+  lastGuidingState = GuidingState;
 }
 
 void CheckSpiral()

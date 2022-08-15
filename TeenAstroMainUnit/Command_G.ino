@@ -454,13 +454,14 @@ void Command_GX()
     {
       reply[5] = 'G';
     }
-    if (GuidingState == GuidingPulse || GuidingState == GuidingST4) reply[6] = '*';
+    if (GuidingState == GuidingPulse || GuidingState == GuidingST4 ) reply[6] = '*';
     else if (GuidingState == GuidingRecenter) reply[6] = '+';
-    if (guideA1.dir == 'e') reply[7] = '>';
-    else if (guideA1.dir == 'w') reply[7] = '<';
+    else if (GuidingState == GuidingAtRate) reply[6] = '-';
+    if (guideA1.dir == 'e' || guideA1.dir == '+') reply[7] = '>';
+    else if (guideA1.dir == 'w' || guideA1.dir == '-') reply[7] = '<';
     else if (guideA1.dir == 'b') reply[7] = 'b';
-    if (guideA2.dir == 'n') reply[8] = '^';
-    else if (guideA2.dir == 's') reply[8] = '_';
+    if (guideA2.dir == 'n' || guideA2.dir == '+') reply[8] = '^';
+    else if (guideA2.dir == 's' || guideA2.dir == '-') reply[8] = '_';
     else if (guideA2.dir == 'b') reply[8] = 'b';
     if (staA1.fault || staA2.fault) reply[9] = 'f';
     reply[10] = '0';

@@ -276,6 +276,8 @@ void loop()
       }
     }
 
+    CheckEndOfMoveAxisAtRate();
+
     // check for fault signal, stop any slew or guide and turn tracking off
     if (staA1.fault || staA2.fault)
     {

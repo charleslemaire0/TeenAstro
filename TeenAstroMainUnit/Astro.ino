@@ -231,14 +231,14 @@ void enableGuideAtRate(int axis, double rate)
   {
     guideTimerBaseRate1 = rate;
     cli();
-    guideA1.amount = rate * geoA1.stepsPerCentiSecond;
+    guideA1.amount = guideTimerBaseRate1 * geoA1.stepsPerCentiSecond;
     sei();
   }
   else if (axis == 2 && guideTimerBaseRate2 != rate)
   {
     guideTimerBaseRate2 = rate;
     cli();
-    guideA2.amount = rate * geoA2.stepsPerCentiSecond;
+    guideA2.amount = guideTimerBaseRate2 * geoA2.stepsPerCentiSecond;
     sei();
   }
 }

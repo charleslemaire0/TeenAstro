@@ -5,8 +5,33 @@ void Command_M()
 {
   int i;
   double f, f1;
+  bool ok = false;
+  char* conv_end;
   switch (command[1])
   {
+    //  :M1svv.vvv# Move Axis1 at rate (signed value!) in time the sideral speed
+    //  :M2svv.vvv# Move Axis2 at rate (signed value!) in time the sideral speed
+  case '1':
+  case '2':
+    f = strtod(&command[2], &conv_end);
+    ok = (&command[2] != conv_end) && abs(f) <= guideRates[4];
+    ok &= !movingTo && lastError == ERR_NONE;
+    ok &= (GuidingState == GuidingOFF || GuidingState == GuidingAtRate);
+    if (ok)
+    {
+      if (command[1] == '1')
+      {
+        MoveAxis1AtRate(f);
+      }
+      else
+      {
+        MoveAxis2AtRate(f);
+      }
+      strcpy(reply, "1");
+    }
+    else
+      strcpy(reply, "0");
+    break;
   case 'A':
     //  :MA#   Goto the target Alt and Az
     //         Returns:
@@ -52,7 +77,7 @@ void Command_M()
     {
       if ((command[2] == 'e') || (command[2] == 'w'))
       {
-        enableGuideRate(0, false);
+        enableST4GuideRate();
         guideA1.dir = command[2];
         guideA1.durationLast = micros();
         guideA1.duration = (long)i * 1000L;
@@ -68,8 +93,7 @@ void Command_M()
       }
       else if ((command[2] == 'n') || (command[2] == 's'))
       {
-
-        enableGuideRate(0, false);
+        enableST4GuideRate();
         guideA2.dir = command[2];
         guideA2.durationLast = micros();
         guideA2.duration = (long)i * 1000L;
