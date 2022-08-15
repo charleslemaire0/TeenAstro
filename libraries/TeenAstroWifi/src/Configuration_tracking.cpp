@@ -45,7 +45,7 @@ const char html_configRateDEC[] PROGMEM =
 "<form method='get' action='/configuration_tracking.htm'>"
 " <input value='%f' type='number' name='RDEC' min='-5' max='+5' step='0.0001'>"
 "<button type='submit'>Upload</button>"
-" (user defined DEC drift in sec/SI)"
+" (user defined DEC drift in arcsec/SI)"
 "</form>"
 "\r\n";
 
