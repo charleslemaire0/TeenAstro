@@ -108,7 +108,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       else cmdreply = CMDR_INVALID;
       break;
     case 'F':
-      if (strchr("+-gGPQsS", command[2])) cmdreply = CMDR_NO;
+      if (strchr("+-gGPQsS$!", command[2])) cmdreply = CMDR_NO;
       else if (strchr("OoIi:012345678cCmrW", command[2])) cmdreply = CMDR_SHORT;
       else if (strchr("x?~MV", command[2])) cmdreply = CMDR_LONG;
       else cmdreply = CMDR_INVALID;

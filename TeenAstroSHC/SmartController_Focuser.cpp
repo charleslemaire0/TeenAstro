@@ -10,7 +10,7 @@ void SmartHandController::menuFocuserSettings()
     return;
   }
   buttonPad.setMenuMode();
-  const char *string_list_Focuser = T_CONFIG "\n" T_MOTOR "\n" T_SHOWVERSION;
+  const char *string_list_Focuser = T_CONFIG "\n" T_MOTOR "\n" T_FOCUSERINFO;
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
   while (!exitMenu)
@@ -35,12 +35,7 @@ void SmartHandController::menuFocuserSettings()
     }
     case 3:
     {
-      char out1[50];
-      if (DisplayMessageLX200(GetLX200(":FV#", out1, 50)))
-      {
-        out1[31] = 0;
-        DisplayMessage(T_FIRMWAREVERSION, &out1[26], -1);
-      }
+      menuFocuserInfo();
       break;
     }
     default:
@@ -48,6 +43,49 @@ void SmartHandController::menuFocuserSettings()
     }
   }
   buttonPad.setControlerMode();
+}
+void SmartHandController::menuFocuserInfo()
+{
+  char out[50];
+  const char* string_list_Focuser = T_SHOWVERSION "\n" T_REBOOT "\n" T_RESETTOFACTORY;
+
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
+
+  while (!exitMenu)
+  {
+
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_FOCUSERINFO, s_sel, string_list_Focuser);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
+    {
+    case 1:
+      if (DisplayMessageLX200(GetLX200(":FV#", out,sizeof(out))))
+      {
+        out[31] = 0;
+        DisplayMessage(T_FIRMWAREVERSION, &out[26], -1);
+      }
+      return;
+      break;
+    case 2:
+      DisplayMessageLX200(SetLX200(":F!#"));
+      DisplayMessage(T_FOCUSER, T_REBOOT, -1);
+      delay(500);
+      powerCycleRequired = true;
+      break;
+    case 3:
+      if (display->UserInterfaceMessage(&buttonPad, "Reset", "To", "Factory?", "NO\nYES") == 2)
+      {
+        DisplayMessageLX200(SetLX200(":F$#"), false);
+        DisplayMessage(T_FOCUSER, T_RESET, -1);
+        delay(500);
+        powerCycleRequired = true;
+        return;
+      }
+      break;
+    }
+
+  }
 }
 void SmartHandController::menuFocuserConfig()
 {

@@ -107,6 +107,7 @@
 #define T_SHOWSETTINGS "Afficher Paramètres"
 #define T_FOCUSERSETTINGS "Param. Focuser"
 #define T_DISPLAYSETTINGS "Param. Écran"
+#define T_FOCUSERINFO "Info Focuser"
 
 #define T_ACCELERATION "Accélération"
 
