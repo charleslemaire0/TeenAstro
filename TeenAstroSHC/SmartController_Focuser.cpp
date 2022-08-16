@@ -59,6 +59,8 @@ void SmartHandController::menuFocuserInfo()
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
     switch (tmp_sel)
     {
+    case 0:
+      return;
     case 1:
       if (DisplayMessageLX200(GetLX200(":FV#", out,sizeof(out))))
       {
@@ -72,7 +74,8 @@ void SmartHandController::menuFocuserInfo()
       DisplayMessage(T_FOCUSER, T_REBOOT, -1);
       delay(500);
       powerCycleRequired = true;
-      break;
+      exitMenu = true;
+      return;
     case 3:
       if (display->UserInterfaceMessage(&buttonPad, "Reset", "To", "Factory?", "NO\nYES") == 2)
       {
@@ -80,6 +83,7 @@ void SmartHandController::menuFocuserInfo()
         DisplayMessage(T_FOCUSER, T_RESET, -1);
         delay(500);
         powerCycleRequired = true;
+        exitMenu = true;
         return;
       }
       break;
