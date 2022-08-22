@@ -24,7 +24,7 @@ def deg2dms(dd):
             minutes = -minutes
         else:
             seconds = -seconds
-    return (degrees,minutes,seconds)
+    return (int(degrees),int(minutes),int(seconds))
 
 def deg2dm(dd):
   (d,m,s) = deg2dms(dd)
@@ -264,6 +264,13 @@ class TeenAstro(object):
       return ("gotoRaDec error %s:" % res)
     return ("ok")
 
+  def syncRaDec(self):  # Sync to the current target
+    res1 = self.sendCommand(":CM#")
+    if (res1 != '0'):
+      return ("error synching")
+    else:
+      return ("ok")
+
   def enableTracking(self):
     self.sendCommand(":Te#")
 
@@ -288,6 +295,9 @@ class TeenAstro(object):
     self.RA =  dms2deg(self.getValue(':GR#'))  
     return self.RA
 
+  def getTargetRA(self):
+    return dms2deg(self.getValue(':Gr#'))
+
   def getLST(self):
     self.RA =  dms2deg(self.getValue(':GS#'))  
     return self.RA
@@ -295,6 +305,9 @@ class TeenAstro(object):
   def getDeclination(self):
     self.declination = dms2deg(self.getValue(':GD#'))
     return self.declination
+
+  def getTargetDeclination(self):
+    return dms2deg(self.getValue(':Gd#'))
 
   def getLatitude(self):
     self.latitude = dms2deg(self.getValue(':Gt#'))
