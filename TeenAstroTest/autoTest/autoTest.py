@@ -396,7 +396,13 @@ class alignmentPlot():
         self.ta = ta
         self.ts = ts
         self.planets = load('de421.bsp')
+        # Load star catalog and compute Jnow from J2000 coordinates
         self.stars = read_csv('stars.csv')
+        t = ts.now()
+        astrometric = self.planets['earth'].at(t).observe(Star(ra_hours=self.stars.ra_hours, dec_degrees=self.stars.dec_degrees))
+        ra, dec, dist = astrometric.radec(epoch=t)
+        self.stars['ra_hours'] = ra.hours
+        self.stars['dec_degrees'] = dec.degrees
         self.namedStarsIndex = self.stars['name'].notnull()
         self.namedStars = self.stars[self.namedStarsIndex].copy()
         self.namedStars['starDesignation'] =  self.namedStars['bayer'] + ' ' + self.namedStars['const'] + '-' + self.namedStars['name']    
@@ -493,6 +499,13 @@ class alignmentPlot():
         Δδ = np.radians(Δe) * np.cos(h) + np.radians(Δa) * np.cos(Φ) * np.sin(h)
         return np.degrees(Δα) / 15, np.degrees(Δδ)
 
+    def project(self, ra, dec):
+        t = self.ts.from_datetime(self.ta.readDateTime())      # converted to skyfield format
+        center = self.site.at(t).observe(Star(ra_hours=ra, dec_degrees=dec))
+        projection = build_stereographic_projection(center)
+        star_positions = self.site.at(t).observe(Star(ra_hours=self.stars.ra_hours, dec_degrees=self.stars.dec_degrees)) 
+        self.stars['x'], self.stars['y'] = projection(star_positions)
+
     def update(self):
         ra, dec, lst, ha = self.getAxisCoords()
         ra = ra + self.home_error_axis1 /  15
@@ -500,11 +513,7 @@ class alignmentPlot():
         Δα, Δδ = self.computePolarError(self.pole_error_az, self.pole_error_alt, dec, lst, ha)
         ra = ra + Δα
         dec = dec + Δδ
-        t = self.ts.from_datetime(self.ta.readDateTime())      # converted to skyfield format
-        center = self.site.at(t).observe(Star(ra_hours=ra, dec_degrees=dec))
-        projection = build_stereographic_projection(center)
-        star_positions = self.site.at(t).observe(Star.from_dataframe(self.stars))
-        self.stars['x'], self.stars['y'] = projection(star_positions)
+        self.project(ra, dec)
         angle = np.pi - self.field_of_view_degrees / 360.0 * np.pi
         limit = np.sin(angle) / (1.0 - np.cos(angle))
         self.ax.clear()
@@ -524,11 +533,7 @@ class alignmentPlot():
         self.lon = -self.ta.getLongitude()       # LX200 treats west longitudes as positive, Skyfield as negative
         self.site = self.planets['earth'] + wgs84.latlon(self.lat, self.lon)
         ra, dec, lst, ha = self.getAxisCoords()
-        t = self.ts.from_datetime(self.ta.readDateTime())      # converted to skyfield format
-        center = self.site.at(t).observe(Star(ra_hours=ra, dec_degrees=dec))
-        projection = build_stereographic_projection(center)
-        star_positions = self.site.at(t).observe(Star.from_dataframe(self.stars))
-        self.stars['x'], self.stars['y'] = projection(star_positions)
+        self.project(ra, dec)
         self.scatter = self.ax.scatter(self.stars['x'], self.stars['y'],s=self.marker_size, color='k')
         self.state = 'RUN'
 
