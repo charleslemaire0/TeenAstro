@@ -950,10 +950,12 @@ Public Class Telescope
       End If
     End Get
     Set(value As PierSide)
+      Dim currentSide As PierSide = Me.SideOfPier()
       If CanSetPierSide Then
         If value = PierSide.pierUnknown Then
           Throw New ASCOM.InvalidValueException("German mount cannot be set with pierUnknow")
-        ElseIf Not Me.SideOfPier = value Then
+        ElseIf currentSide <> value Then
+          checkFlip()
           Dim state = Me.CommandSingleChar("MF")
           If state.Length = 0 Then
             Throw New ASCOM.InvalidOperationException("Telescope is not replying")
@@ -1447,7 +1449,29 @@ Public Class Telescope
       Me.AbortSlew()
       Threading.Thread.Sleep(100)
     End While
+    While Me.IsPulseGuiding
+      Me.AbortSlew()
+      Threading.Thread.Sleep(100)
+    End While
   End Sub
+
+  Private Sub checkFlip()
+    If Me.AtPark Then
+      Throw New ASCOM.ParkedException
+    End If
+    If Not Me.Tracking Then
+      Throw New ASCOM.InvalidOperationException
+    End If
+    While Me.Slewing
+      Me.AbortSlew()
+      Threading.Thread.Sleep(100)
+    End While
+    While Me.IsPulseGuiding
+      Me.AbortSlew()
+      Threading.Thread.Sleep(100)
+    End While
+  End Sub
+
 
   Private Sub checkslewALTAZ()
 
