@@ -1,4 +1,4 @@
-import math, time, sys, argparse, csv
+import math, time, sys, argparse, csv, random
 import numpy as np  
 import trimesh
 import trimesh.viewer
@@ -164,6 +164,7 @@ class Application:
 
         self.mount = Mount(self.ta)
         self.testData = []
+        self.t1 = 0
 
         scene = trimesh.Scene([self.mount.base, self.mount.primary, self.mount.secondary])
         self.scene_widget1 = trimesh.viewer.SceneWidget(scene)
@@ -203,7 +204,6 @@ class Application:
         if self.mount.mountType != 'E':
             self.log('Can only run meridian flip test with German Equatorial mount')
             return
-        self.log('Starting meridian flip test')
         if not self.ta.isAtHome():
             self.log('Error - mount is not at home')
             return
@@ -218,42 +218,75 @@ class Application:
         code = self.ta.getErrorCode()
         if code!= 'ERR_NONE':
             self.log(code)
+            self.log('Pier Side: %s' % self.ta.getPierSide())
+            self.log('RA:%s Dec:%s' % (deg2dms(self.ra), deg2dms(self.dec)))
             pyglet.clock.unschedule(self.runFlipTest) 
             return
 
         if self.flipTestState == 'start':
+            self.log('Starting Meridian Test')
             self.eastLimit = self.ta.getMeridianEastLimit()
             self.westLimit = self.ta.getMeridianWestLimit()
 
             self.initialRA = self.ta.readSidTime() + (1.0 + float(self.eastLimit)) / 15.0 # goto "eastLimit" east of south meridian  
-            self.initialDec = 0
+            self.initialDec = 45.5
             self.ta.gotoRaDec(self.initialRA, self.initialDec)
             self.log('goto East Limit')
             self.flipTestState = 'goto1'
             return
 
         if self.flipTestState == 'goto1':
-            self.ra = self.ta.getRA() - (0.04 + float(self.eastLimit + self.westLimit) / 15)  # go almost to west limit 
+            self.ra = self.ta.getRA() - (0.05 + float(self.eastLimit + self.westLimit) / 15.0)  # go almost to west limit 
             self.dec = self.ta.getDeclination()
             self.log('goto West Limit')
             self.ta.gotoRaDec(self.ra, self.dec)
             self.flipTestState = 'goto2'
             self.t = self.startWaiting = time.time()
+            return
 
         if self.flipTestState == 'goto2':
-            if (self.ta.getPierSide() == 'W'):    # still on west side. wait 5 seconds and issue a goto to the same position
+            if (self.ta.getPierSide() == 'W'):    # still on west side. 
                 t = time.time()
-                if (t < self.t + 5):
+                if (t < self.t + 1):
                     return
                 self.t = t
-                print('.')
-                t = time.time()
-                self.ta.gotoRaDec(self.ra, self.dec)
+                self.t1 = self.t1 + 1
+                gt = random.randint(0,999)
+                if gt % 4 == 0:
+                    dir = 'w'
+                elif gt % 4 == 1:
+                    dir = 'e'
+                elif gt % 4 == 2:
+                    dir = 'n'
+                elif gt % 4 == 3:
+                    dir = 's'
+                self.log('Guiding %s %d' % (dir, gt))
+                self.ta.guideCmd(dir, gt)
+                # every n seconds, issue a goto to the same position
+                if self.t1 == 60:
+                    self.t1 = 0
+                    self.log('Goto %s %s' % (deg2dms(self.ra), deg2dms(self.dec)))
+                    self.ta.gotoRaDec(self.ra, self.dec)
+                    self.log('Requesting flip')
+                    # poll a few times to see if we start slewing
+                    loop = 0
+                    while True:
+                        if self.ta.isSlewing():
+                            self.log('Slewing')
+                            break
+                        time.sleep(0.1)
+                        loop = loop + 1
+                        if loop == 10:
+                            ha = 15.0 * (self.ta.getLST() - self.ra) 
+                            self.log('Request to flip failed at hour angle %02.2f degrees' % ha)
+                            break
 
             else:           # we have flipped - test is done
                 self.log('meridian flip done after %d seconds - goto Home' % (self.t - self.startWaiting))
                 self.ta.goHome()
-                pyglet.clock.unschedule(self.runFlipTest) 
+                self.flipTestState = 'start'    # redo until end of time
+                time.sleep(1)       # give some time before starting test again
+#                pyglet.clock.unschedule(self.runFlipTest) 
 
     def startCoordTest(self,arg):
         self.testStep = 0

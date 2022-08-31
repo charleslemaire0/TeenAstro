@@ -329,6 +329,8 @@ class TeenAstro(object):
     self.timeZone = -float (self.getValue(':GG#'))
     return self.timeZone
 
+  def guideCmd(self, dir, ms):
+    self.port.write((":Mg%1s%04u#" % (dir, ms)).encode('utf-8'))  # does not return a value
 
 
 # Main program

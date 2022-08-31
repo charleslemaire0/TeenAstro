@@ -548,6 +548,7 @@ def updateStatus(comm):
   window['axis2deg'].update("Axis 2 Deg: %s" % getValue(comm, 'GXP2'))
   statusCode = getValue(comm, 'GXI')
   window['pierside'].update("Pier Side: %c" % statusCode[13])
+  window['slewing'].update("Slewing/Tracking: %c" % statusCode[0])
   errorCodes = ['ERR_NONE','ERR_MOTOR_FAULT','ERR_HORIZON','ERR_LIMIT_SENSE','ERR_LIMIT_A1','ERR_LIMIT_A2','ERR_UNDER_POLE','ERR_MERIDIAN','ERR_SYNC'];
   window['errorCode'].update(errorCodes[int(statusCode[15])])
 
@@ -646,8 +647,8 @@ debugFrame = sg.Frame('Debug',
           [sg.Text('Axis 2 count', key='axis2',size=(30,1))],
           [sg.Text('Axis 1 degrees', key='axis1deg',size=(30,1))],
           [sg.Text('Axis 2 degrees', key='axis2deg',size=(30,1))],
-          [sg.Text('Pier side', key='pierside',size=(30,1))]],
-          )
+          [sg.Text('Pier side', key='pierside',size=(30,1))],
+          [sg.Text('Slewing/Tracking', key='slewing',size=(30,1))]])
 
 errorFrame = sg.Frame('Error', 
           [[sg.Text('Error Status', key='errorCode',size=(30,1))]])
