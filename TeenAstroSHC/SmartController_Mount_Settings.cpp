@@ -186,7 +186,7 @@ void SmartHandController::MenuTrackingRefraction()
 {
   char out[10];
   uint8_t tmp_sel;
-  if (GetLX200(":GXrt#", out, sizeof(out)) == LX200GETVALUEFAILED) strcpy(out, "n");
+  if (GetLX200(":GXrt#", out, sizeof(out)) == LX200_GETVALUEFAILED) strcpy(out, "n");
   bool corr_on = out[0] == 'y';
   const char* string_list_tracking = corr_on ? T_OFF : T_ON;
   tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_REFRACTION, 0, string_list_tracking);
@@ -196,7 +196,7 @@ void SmartHandController::MenuTrackingRefraction()
   {
     char out[20];
     memset(out, 0, sizeof(out));
-    if ((corr_on ? SetLX200(":SXrt,n#") : SetLX200(":SXrt,y#")) == LX200VALUESET)
+    if ((corr_on ? SetLX200(":SXrt,n#") : SetLX200(":SXrt,y#")) == LX200_VALUESET)
     {
       DisplayMessage(T_REFRACTION, corr_on ? T_OFF : T_ON, 500);
     }
@@ -216,7 +216,7 @@ void SmartHandController::MenuTrackingAlignment()
 {
   char out[10];
   uint8_t tmp_sel;
-  if (GetLX200(":GXAc#", out, sizeof(out)) == LX200GETVALUEFAILED) strcpy(out, "n");
+  if (GetLX200(":GXAc#", out, sizeof(out)) == LX200_GETVALUEFAILED) strcpy(out, "n");
   bool corr_on = out[0] == 'y';
   const char* string_list_tracking = corr_on ? T_OFF : T_ON;
   tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_ALIGNMENT, 0, string_list_tracking);
@@ -226,7 +226,7 @@ void SmartHandController::MenuTrackingAlignment()
   {
     char out[20];
     memset(out, 0, sizeof(out));
-    if ((corr_on ? SetLX200(":SXAc,n#") : SetLX200(":SXAc,y#")) == LX200VALUESET)
+    if ((corr_on ? SetLX200(":SXAc,n#") : SetLX200(":SXAc,y#")) == LX200_VALUESET)
     {
       DisplayMessage(T_ALIGNMENT, corr_on ? T_OFF : T_ON, 500);
     }
@@ -320,7 +320,7 @@ void SmartHandController::menuPolarAlignment()
 {
   char out[10];
   uint8_t tmp_sel;
-  if (GetLX200(":GXrp#", out, sizeof(out)) == LX200GETVALUEFAILED) strcpy(out, "n#");
+  if (GetLX200(":GXrp#", out, sizeof(out)) == LX200_GETVALUEFAILED) strcpy(out, "n#");
   bool corr_on = out[0] == 'y';
   const char* string_list_tracking =  T_TRUE_POLE "\n" T_APPARENT_POLE;
   tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_POLAR_ALIGNMENT, 0, string_list_tracking);
@@ -328,7 +328,7 @@ void SmartHandController::menuPolarAlignment()
   {
   case 1:
   {
-    if (corr_on ? SetLX200(":SXrp,n#") == LX200VALUESET : SetLX200(":SXrp,y#") == LX200VALUESET)
+    if (corr_on ? SetLX200(":SXrp,n#") == LX200_VALUESET : SetLX200(":SXrp,y#") == LX200_VALUESET)
     {
       DisplayMessage(T_POLAR_ALIGNMENT, corr_on ? T_TRUE_POLE : T_APPARENT_POLE, 500);
     }
@@ -347,7 +347,7 @@ void SmartHandController::MenuRefractionForGoto()
 {
   char out[10];
   uint8_t tmp_sel;
-  if (GetLX200(":GXrg#", out, sizeof(out)) == LX200GETVALUEFAILED) strcpy(out, "n#");
+  if (GetLX200(":GXrg#", out, sizeof(out)) == LX200_GETVALUEFAILED) strcpy(out, "n#");
   bool corr_on = out[0] == 'y';
   const char* string_list_tracking = corr_on ? T_OFF : T_ON;
   tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_REFRACTION, 0, string_list_tracking);
@@ -355,7 +355,7 @@ void SmartHandController::MenuRefractionForGoto()
   {
   case 1:
   {
-    if (corr_on ? SetLX200(":SXrg,n#") == LX200VALUESET : SetLX200(":SXrg,y#") == LX200VALUESET)
+    if (corr_on ? SetLX200(":SXrg,n#") == LX200_VALUESET : SetLX200(":SXrg,y#") == LX200_VALUESET)
     {
       DisplayMessage(T_REFRACTION, corr_on ? T_OFF : T_ON, 500);
     }

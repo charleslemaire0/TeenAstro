@@ -62,14 +62,7 @@ void Command_A()
   {
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
-    if (doesRefraction.forGoto)
-    {
-      EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-    }
-    else
-    {
-      EquToHorTopo(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-    }
+    EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
 
     if (alignment.getRefs() == 0)
     {
@@ -101,15 +94,7 @@ void Command_A()
   {
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
-    if (doesRefraction.forGoto)
-    {
-      EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-    }
-    else
-    {
-      EquToHorTopo(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-    }
-
+    EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
     if (alignment.getRefs() == 0)
     {
       syncAzAlt(Azm, Alt, GetPierSide());
@@ -208,14 +193,7 @@ void Command_C()
       if (autoAlignmentBySync){
         newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         double Azm, Alt;
-        if (doesRefraction.forGoto)
-        {
-          EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-        }
-        else
-        {
-          EquToHorTopo(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-        }
+        EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
         if (alignment.getRefs() == 0)
         {
           syncAzAlt(Azm, Alt, GetPierSide());

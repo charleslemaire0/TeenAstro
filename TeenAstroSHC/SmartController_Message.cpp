@@ -91,39 +91,39 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
   char text1[20] = "";
   char text2[20] = "";
   int time = -1;
-  if (val < LX200OK)
+  if (val < LX200_OK)
   {
-    if (val == LX200NOTOK)
+    if (val == LX200_NOTOK)
     {
       sprintf(text1, T_LX200COMMAND);
       sprintf(text2, T_HASFAILED "!");
     }
-    else if (val == LX200SETVALUEFAILED)
+    else if (val == LX200_SETVALUEFAILED)
     {
       sprintf(text1, T_SETVEALUE);
       sprintf(text2, T_HASFAILED "!");
     }
-    else if (val == LX200GETVALUEFAILED)
+    else if (val == LX200_GETVALUEFAILED)
     {
       sprintf(text1, T_GETVEALUE);
       sprintf(text2, T_HASFAILED "!");
     }
-    else if (val == LX200SYNCFAILED)
+    else if (val == LX200_SYNCFAILED)
     {
       sprintf(text1, T_SYNC);
       sprintf(text2, T_HASFAILED "!");
     }
-    else if (val == LX200SETTARGETFAILED)
+    else if (val == LX200_SETTARGETFAILED)
     {
       sprintf(text1, T_SETTARGET);
       sprintf(text2, T_HASFAILED "!");
     }
-    else if (val == LX200BELOWHORIZON)
+    else if (val == LX200_TARGETBELOWHORIZON)
     {
       sprintf(text1, T_TARGETIS);
       sprintf(text2, T_BELOWHORIZON "!");
     }
-    else if (val == LX200ABOVEOVERHEAD)
+    else if (val == LX200_TARGETABOVEOVERHEAD)
     {
       sprintf(text1, T_TARGETIS);
       sprintf(text2, T_ABOVEOVERHEAD "!");
@@ -143,16 +143,6 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
       sprintf(text1, T_TELESCOPEEXCEED);
       sprintf(text2, T_SENSORLIMIT "!");
     }
-    else if (val == LX200_ERR_DEC)
-    {
-      sprintf(text1, T_TELESCOPEEXCEED);
-      sprintf(text2, T_DECLIMIT "!");
-    }
-    else if (val == LX200_ERR_AZM)
-    {
-      sprintf(text1, T_TELESCOPEEXCEED);
-      sprintf(text2, T_AZMLIMIT "!");
-    }
     else if (val == LX200_ERR_UNDER_POLE)
     {
       sprintf(text1, T_TELESCOPEEXCEED);
@@ -163,42 +153,47 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
       sprintf(text1, T_TELESCOPEEXCEED);
       sprintf(text2, T_MERIDIANLIMIT "!");
     }
-    else if (val == LX200_ERR_SYNC)
+    else if (val == LX200_ERR_AXIS1)
     {
       sprintf(text1, T_TELESCOPEIS);
-      sprintf(text2, T_OUTSIDELIMITS "!");
+      sprintf(text2, T_OUTSIDELIMITS " 1!");
     }
-    else if (val == LX200NOOBJECTSELECTED)
+    else if (val == LX200_ERR_AXIS2)
+    {
+      sprintf(text1, T_TELESCOPEIS);
+      sprintf(text2, T_OUTSIDELIMITS " 2!");
+    }
+    else if (val == LX200_ERRGOTO_NOOBJECTSELECTED)
     {
       sprintf(text1, T_NOOBJECT);
       sprintf(text2, T_SELECTED "!");
     }
-    else if (val == LX200PARKED)
+    else if (val == LX200_ERRGOTO_PARKED)
     {
       sprintf(text1, T_TELESCOPEIS);
       sprintf(text2, T_PARKED "!");
     }
-    else if (val == LX200BUSY)
+    else if (val == LX200_ERRGOTO_BUSY)
     {
       sprintf(text1, T_TELESCOPEIS);
       sprintf(text2, T_BUSY "!");
     }
-    else if (val == LX200LIMITS)
+    else if (val == LX200_ERRGOTO_LIMITS)
     {
       sprintf(text1, T_TARGETIS);
       sprintf(text2, T_OUTSIDELIMITS "!");
     }
-    else if (val == LX200UNKOWN)
+    else if (val == LX200_ERRGOTO_UNKOWN)
     {
       sprintf(text1, T_TUNKOWN);
       sprintf(text2, T_ERROR "!");
     }
-    else if (val == LX200GOPARK_FAILED)
+    else if (val == LX200_GOPARK_FAILED)
     {
       sprintf(text1, T_TELESCOPE);
       sprintf(text2, T_CANTPARK "!");
     }
-    else if (val == LX200GOHOME_FAILED)
+    else if (val == LX200_GOHOME_FAILED)
     {
       sprintf(text1, T_TELESCOPE);
       sprintf(text2, T_CANTGOHOME "!");
@@ -213,37 +208,37 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
   else if (!silentOk)
   {
     time = 1000;
-    if (val == LX200OK)
+    if (val == LX200_OK)
     {
       sprintf(text1, T_LX200COMMAND);
       sprintf(text2, T_DONE "!");
     }
-    else if (val == LX200VALUESET)
+    else if (val == LX200_VALUESET)
     {
       sprintf(text1, T_VALUE);
       sprintf(text2, T_SET "!");
     }
-    else if (val == LX200VALUEGET)
+    else if (val == LX200_VALUEGET)
     {
       sprintf(text1, T_VALUE);
       sprintf(text2, T_GET "!");
     }
-    else if (val == LX200SYNCED)
+    else if (val == LX200_SYNCED)
     {
       sprintf(text1, T_TELESCOPE);
       sprintf(text2, T_SYNCED "!");
     }
-    else if (val == LX200GOINGTO)
+    else if (val == LX200_GOTO_TARGET)
     {
       sprintf(text1, T_SLEWINGTO);
       sprintf(text2, T_TARGET);
     }
-    else if (val == LX200GOPARK)
+    else if (val == LX200_GOPARK)
     {
       sprintf(text1, T_SLEWINGTO);
       sprintf(text2, T_PARK);
     }
-    else if (val == LX200GOHOME)
+    else if (val == LX200_GOHOME)
     {
       sprintf(text1, T_SLEWINGTO);
       sprintf(text2, T_HOME);

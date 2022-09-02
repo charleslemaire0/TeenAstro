@@ -97,19 +97,41 @@ double              underPoleLimitGOTO;                     // maximum allowed h
 volatile bool   HADir = HADirNCPInit;
 
 // Status ------------------------------------------------------------------------------------------------------------------
-enum Errors
+enum ErrorsTraking
 {
-  ERR_NONE,
-  ERR_MOTOR_FAULT,
-  ERR_ALT,
-  ERR_LIMIT_SENSE,
-  ERR_AXIS1,
-  ERR_AXIS2,
-  ERR_UNDER_POLE,
-  ERR_MERIDIAN
+  ERRT_NONE,
+  ERRT_MOTOR_FAULT,
+  ERRT_ALT,
+  ERRT_LIMIT_SENSE,
+  ERRT_AXIS1,
+  ERRT_AXIS2,
+  ERRT_UNDER_POLE,
+  ERRT_MERIDIAN
 };
-Errors lastError = ERR_NONE;
 
+ErrorsTraking lastError = ERRT_NONE;
+
+enum ErrorsGoTo
+{
+  ERRGOTO_NONE,
+  ERRGOTO_BELOWHORIZON,
+  ERRGOTO_NOOBJECTSELECTED,
+  ERRGOTO_SAMESIDE,
+  ERRGOTO_PARKED,
+  ERRGOTO_SLEWING,
+  ERRGOTO_LIMITS,
+  ERRGOTO_GUIDING,
+  ERRGOTO_ABOVEOVERHEAD,
+  ERRGOTO_MOTOR,
+  ERRGOTO____,
+  ERRGOTO_MOTOR_FAULT,
+  ERRGOTO_ALT,
+  ERRGOTO_LIMIT_SENSE,
+  ERRGOTO_AXIS1,
+  ERRGOTO_AXIS2,
+  ERRGOTO_UNDER_POLE,
+  ERRGOTO_MERIDIAN
+};
 
 //Command Precision
 bool highPrecision = true;
@@ -141,6 +163,7 @@ long    storedTrakingRateDEC = 0;
 //Guiding
 enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter, GuidingAtRate };
 volatile Guiding GuidingState = GuidingOFF;
+Guiding lastGuidingState = GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
 unsigned long lastSecurityCheck = millis();
 
@@ -180,7 +203,8 @@ GuideAxis guideA2 = { 0,0,0,0,0 };
 long            lasttargetAxis1 = 0;
 long            debugv1 = 0;
 
-double          guideTimerBaseRate = 0;
+double          guideTimerBaseRate1 = 0;
+double          guideTimerBaseRate2 = 0;
 
 // Reticule control
 #ifdef RETICULE_LED_PINS

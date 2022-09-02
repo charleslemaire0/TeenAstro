@@ -3,14 +3,14 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
 {
 
   bool canMove = parkStatus == PRK_UNPARKED;
-  canMove &= (Mode == GuidingRecenter || lastError == ERR_NONE);
+  canMove &= (Mode == GuidingRecenter || lastError == ERRT_NONE);
   canMove &= !movingTo;
   canMove &= (GuidingState == GuidingOFF || GuidingState == Mode);
   if (canMove)
   {
     // block user from changing direction at high rates, just stop the guide instead
     // estimate new guideTimerBaseRate
-    if (guideTimerBaseRate == 0)
+    if (guideTimerBaseRate1 == 0)
     {
       cli();
       guideA1.dir = 'b';
@@ -18,7 +18,7 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
       return;
     }
     Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate, false);
-    double newGuideTimerBaseRate = newguideDirAxis == 'e' ? -guideTimerBaseRate : guideTimerBaseRate;
+    double newGuideTimerBaseRate = newguideDirAxis == 'e' ? -guideTimerBaseRate1 : guideTimerBaseRate1;
     bool samedirection = newGuideTimerBaseRate > 0 ? (guideA1.timerRate > 0 ? true : false) : (guideA1.timerRate > 0 ? false : true);
     if (guideA1.dir && !samedirection && fabs(guideA1.timerRate) > 2)
     {
@@ -32,6 +32,43 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
       guideA1.duration = -1;
       cli();
       guideA1.timerRate = newGuideTimerBaseRate;
+      sei();
+    }
+  }
+}
+
+void MoveAxis1AtRate(const double newrate)
+{
+  bool canMove = parkStatus == PRK_UNPARKED;
+  canMove &= lastError == ERRT_NONE;
+  canMove &= !movingTo;
+  canMove &= (GuidingState == GuidingOFF || GuidingState == GuidingAtRate);
+  if (canMove)
+  {
+    if (newrate == 0)
+    {
+      StopAxis1();
+      return;
+    }
+    if (GuidingState != GuidingAtRate)
+    {
+      lastSideralTracking = sideralTracking;
+      sideralTracking = false;
+    }
+    enableGuideAtRate(1, abs(newrate));
+    bool samedirection = (newrate > 0) == (guideA1.timerRate > 0);
+    if (guideA1.dir && !samedirection /*&& fabs(guideA1.timerRate) > 2*/)
+    {
+      StopAxis1();
+    }
+    else
+    {
+      GuidingState = GuidingAtRate;
+      guideA1.dir = newrate > 0 ?  '+' : '-';
+      atHome = false;
+      guideA1.duration = -1;
+      cli();
+      guideA1.timerRate = newrate;
       sei();
     }
   }
@@ -57,13 +94,13 @@ void StopAxis1()
 void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
 {
   bool canMove = parkStatus == PRK_UNPARKED;
-  canMove &= (Mode == GuidingRecenter || lastError == ERR_NONE);
+  canMove &= (Mode == GuidingRecenter || lastError == ERRT_NONE);
   canMove &= !movingTo;
   canMove &= (GuidingState == GuidingOFF || GuidingState == Mode);
 
   if (canMove)
   {
-    if (guideTimerBaseRate == 0)
+    if (guideTimerBaseRate2 == 0)
     {
       cli();
       guideA2.dir = 'b';
@@ -77,7 +114,7 @@ void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
     if (GetPierSide() >= PIER_WEST)
       rev = !rev;
     Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate, false);
-    double newGuideTimerBaseRate = rev ? -guideTimerBaseRate : guideTimerBaseRate;
+    double newGuideTimerBaseRate = rev ? -guideTimerBaseRate2 : guideTimerBaseRate2;
     bool samedirection = newGuideTimerBaseRate > 0 ? (guideA2.timerRate > 0 ? true : false) : (guideA2.timerRate > 0 ? false : true);
     if (guideA2.dir && !samedirection && fabs(guideA2.timerRate) > 2)
     {
@@ -91,6 +128,44 @@ void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
       atHome = false;
       cli();
       guideA2.timerRate = newGuideTimerBaseRate;
+      sei();
+    }
+  }
+}
+
+void MoveAxis2AtRate(const double newrate)
+{
+
+  bool canMove = parkStatus == PRK_UNPARKED;
+  canMove &= !movingTo;
+  canMove &= (GuidingState == GuidingOFF || GuidingState == GuidingAtRate);
+  canMove &= lastError == ERRT_NONE;
+  if (canMove)
+  {
+    if (newrate == 0)
+    {
+      StopAxis2();
+      return;
+    }
+    if (GuidingState != GuidingAtRate)
+    {
+      lastSideralTracking = sideralTracking;
+      sideralTracking = false;
+    }
+    enableGuideAtRate(2, abs(newrate));
+    bool samedirection = (newrate > 0) == (guideA2.timerRate > 0);
+    if (guideA2.dir && !samedirection && fabs(guideA2.timerRate) > 2)
+    {
+      StopAxis2();
+    }
+    else
+    {
+      GuidingState = GuidingAtRate;
+      guideA2.dir = newrate > 0 ? '+' : '-';
+      atHome = false;
+      guideA2.duration = -1;
+      cli();
+      guideA2.timerRate = newrate;
       sei();
     }
   }
@@ -111,6 +186,21 @@ void StopAxis2()
   guideA2.dir = 'b';
 }
 
+void CheckEndOfMoveAxisAtRate()
+{
+  if (lastGuidingState == GuidingAtRate && GuidingState == GuidingOFF)
+  {
+    if (lastSideralTracking)
+    {
+      lastSetTrakingEnable = millis();
+      sideralTracking = true;
+      computeTrackingRate(true);
+    }
+    resetGuideRate();
+  }
+  lastGuidingState = GuidingState;
+}
+
 void CheckSpiral()
 {
   static int iteration = 0;
@@ -122,7 +212,7 @@ void CheckSpiral()
   }
   int duration = iteration / 2 + 1;
 
-  if (iteration == 20 || lastError != ERR_NONE)
+  if (iteration == 20 || lastError != ERRT_NONE)
   {
     StopAxis1();
     StopAxis2();
@@ -147,7 +237,7 @@ void CheckSpiral()
         rev = !rev;
       cli();
       GuidingState = GuidingPulse;
-      guideA2.timerRate = rev ? -guideTimerBaseRate : guideTimerBaseRate;
+      guideA2.timerRate = rev ? -guideTimerBaseRate2 : guideTimerBaseRate2;
       sei();
     }
   }
@@ -161,9 +251,9 @@ void CheckSpiral()
     cli();
     GuidingState = GuidingPulse;
     if (guideA1.dir == 'e')
-      guideA1.timerRate = -guideTimerBaseRate;
+      guideA1.timerRate = -guideTimerBaseRate1;
     else
-      guideA1.timerRate = guideTimerBaseRate;
+      guideA1.timerRate = guideTimerBaseRate1;
     sei();
   }
   iteration++;
@@ -178,7 +268,7 @@ void checkST4()
   static char ST4DE_state = 0;
   static char ST4DE_last = 0;
   // ST4 port is active only if there is no mount Error
-  if (lastError == ERR_NONE)
+  if (lastError == ERRT_NONE)
   {
     w1 = digitalRead(ST4RAw);
     e1 = digitalRead(ST4RAe);

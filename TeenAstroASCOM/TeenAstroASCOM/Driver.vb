@@ -110,7 +110,7 @@ Public Class Telescope
 
   ' Slew speeds for speed settings 0-4 as defined in the main unit's Global.h in the array guideRates[].
   ' Values are given as multiples of sidereal speed. all these values are overwritten by EEPROM at runtime.
-  Private mSlewSpeeds() As Double = {1, 4, 16, 64, 64}
+  Private mSlewSpeeds As Double = 0
   Private mSlewSpeed As String = "" ' Last slew speed set via R command
   Private mSiderealRate As Double = 15.04106858 / 3600 ' Sidereal rate in degrees per second
 
@@ -542,35 +542,7 @@ Public Class Telescope
     If Not (Double.TryParse(response, Speed)) Then
       Throw New ASCOM.InvalidValueException("Retrieve MAX_SPEED via :GXRX# has failed: '" & response & "'")
     End If
-    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0)) = Speed
-    'FAST_SPEED
-    response = Me.CommandString("GXR3")
-    mTL.LogMessage("AxisRates", "Get value: " & response)
-    If Not (Double.TryParse(response, Speed)) Then
-      Throw New ASCOM.InvalidValueException("Retrieve FAST_SPEED via :GXR3# has failed: '" & response & "'")
-    End If
-    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0) - 1) = Speed
-    'MEDIUM_SPEED
-    response = Me.CommandString("GXR2")
-    mTL.LogMessage("AxisRates", "Get value: " & response)
-    If Not (Double.TryParse(response, Speed)) Then
-      Throw New ASCOM.InvalidValueException("Retrieve MEDIUM_SPEED via :GXR2# has failed: '" & response & "'")
-    End If
-    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0) - 2) = Speed
-    'SLOW_SPEED
-    response = Me.CommandString("GXR1")
-    mTL.LogMessage("AxisRates", "Get value: " & response)
-    If Not (Double.TryParse(response, Speed)) Then
-      Throw New ASCOM.InvalidValueException("Retrieve MEDIUM_SLOW via :GXR1# has failed: '" & response & "'")
-    End If
-    'GUIDE_SPEED
-    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0) - 3) = Speed
-    response = Me.CommandString("GXR0")
-    mTL.LogMessage("AxisRates", "Get value: " & response)
-    If Not (Double.TryParse(response, Speed)) Then
-      Throw New ASCOM.InvalidValueException("Retrieve GUIDE_SPEED via :GXR0# has failed: '" & response & "'")
-    End If
-    mSlewSpeeds(mSlewSpeeds.GetUpperBound(0) - 4) = Speed / 100
+    mSlewSpeeds = Speed
     Return New AxisRates(Axis, mSlewSpeeds, mSiderealRate)
   End Function
 
@@ -863,49 +835,22 @@ Public Class Telescope
 
   Public Sub MoveAxis(Axis As TelescopeAxes, Rate As Double) Implements ITelescopeV3.MoveAxis
     mTL.LogMessage("MoveAxis", Axis.ToString() & ":" & Rate.ToString())
-
+    Dim cmd As String
     If Me.AtPark Then
       Throw New ASCOM.ParkedException
     End If
-    If Rate < 0.0000208903730277778 Or Rate > 2.25342238166667 Then
-
-    End If
-    ' Set slew speed to given rate, if different from currently set value.
-    Dim absRate As Double = Math.Abs(Rate)
-    Dim slewSpeed As String = ""
-    For i = mSlewSpeeds.GetUpperBound(0) To 0 Step -1
-      If (absRate >= 0.99 * mSlewSpeeds(i) * mSiderealRate) Then
-        slewSpeed = "R" & i.ToString()
-        Exit For
-      End If
-    Next
-    If (slewSpeed <> "") And (slewSpeed <> mSlewSpeed) Then
-      CommandBlind(slewSpeed)
-      mSlewSpeed = slewSpeed
-    End If
-
-    ' Issue movement command
-    Dim dir As String = ""
+    Rate = Rate / mSiderealRate
     If (Axis = TelescopeAxes.axisPrimary) Then
-      If (Rate > 0) Then
-        dir = "Me"
-      ElseIf (Rate = 0) Then
-        dir = "Qe"  ' TeenAstro main unit implementation halts both east- and westward slews
-      Else
-        dir = "Mw"
-      End If
+      cmd = "M1" & Rate.ToString()
     ElseIf (Axis = TelescopeAxes.axisSecondary) Then
-      If (Rate > 0) Then
-        dir = "Mn"
-      ElseIf (Rate = 0) Then
-        dir = "Qn"  ' TeenAstro main unit implementation halts both north- and southward slews
-      Else
-        dir = "Ms"
-      End If
+      cmd = "M2" & Rate.ToString()
     Else
       Throw New ASCOM.InvalidValueException("MoveAxis", Axis.ToString(), "0 To 1")
     End If
-    CommandBlind(dir)
+    If Not Me.CommandBool(cmd) Then
+      Throw New ASCOM.InvalidValueException("MoveAxis via :" & cmd & " has failed")
+    End If
+
   End Sub
 
   Public Sub Park() Implements ITelescopeV3.Park
@@ -1005,10 +950,12 @@ Public Class Telescope
       End If
     End Get
     Set(value As PierSide)
+      Dim currentSide As PierSide = Me.SideOfPier()
       If CanSetPierSide Then
         If value = PierSide.pierUnknown Then
           Throw New ASCOM.InvalidValueException("German mount cannot be set with pierUnknow")
-        ElseIf Not Me.SideOfPier = value Then
+        ElseIf currentSide <> value Then
+          checkFlip()
           Dim state = Me.CommandSingleChar("MF")
           If state.Length = 0 Then
             Throw New ASCOM.InvalidOperationException("Telescope is not replying")
@@ -1170,7 +1117,10 @@ Public Class Telescope
   Public ReadOnly Property Slewing() As Boolean Implements ITelescopeV3.Slewing
     Get
       updateTelStatus()
-      If mTelStatus.Substring(0, 1) = "2" Or mTelStatus.Substring(0, 1) = "3" Or mTelStatus.Substring(6, 1) = "+" Then
+      If mTelStatus.Substring(0, 1) = "2" Or
+        mTelStatus.Substring(0, 1) = "3" Or
+        mTelStatus.Substring(6, 1) = "+" Or
+        mTelStatus.Substring(6, 1) = "-" Then
         Slewing = True
       Else
         Slewing = False
@@ -1499,16 +1449,36 @@ Public Class Telescope
       Me.AbortSlew()
       Threading.Thread.Sleep(100)
     End While
+    While Me.IsPulseGuiding
+      Me.AbortSlew()
+      Threading.Thread.Sleep(100)
+    End While
   End Sub
+
+  Private Sub checkFlip()
+    If Me.AtPark Then
+      Throw New ASCOM.ParkedException
+    End If
+    If Not Me.Tracking Then
+      Throw New ASCOM.InvalidOperationException
+    End If
+    While Me.Slewing
+      Me.AbortSlew()
+      Threading.Thread.Sleep(100)
+    End While
+    While Me.IsPulseGuiding
+      Me.AbortSlew()
+      Threading.Thread.Sleep(100)
+    End While
+  End Sub
+
 
   Private Sub checkslewALTAZ()
 
     If Me.AtPark Then
       Throw New ASCOM.ParkedException
     End If
-    If Me.Tracking Then
-      Throw New ASCOM.InvalidOperationException
-    End If
+
 
     While Me.Slewing
       Me.AbortSlew()

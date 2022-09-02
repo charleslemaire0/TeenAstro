@@ -9,7 +9,7 @@
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "3"
-#define SHCFirmwareVersionPatch  "0"
+#define SHCFirmwareVersionPatch  "1"
 
 #define NUMPAGES 8
 class SmartHandController
@@ -139,6 +139,7 @@ private:
   void menuFocuserSettings();
   void menuFocuserConfig();
   void menuFocuserMotor();
+  void menuFocuserInfo();
   void menuDisplay();
   void menuContrast();
   void menuButtonSpeed();

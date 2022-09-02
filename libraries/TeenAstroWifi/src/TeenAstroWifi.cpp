@@ -457,6 +457,9 @@ void TeenAstroWifi::setup()
 #endif
   switch (activeWifiMode)
   {
+  case TeenAstroWifi::OFF:
+    WiFi.mode(WIFI_OFF);
+    break;
   case TeenAstroWifi::M_AcessPoint:
     WiFi.mode(WIFI_AP);
 

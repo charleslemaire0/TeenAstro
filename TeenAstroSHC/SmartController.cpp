@@ -332,7 +332,7 @@ void SmartHandController::manualMove(bool &moving)
         if (k < 5)
           SetBoolLX200(BreakRC[k - 1]);
         else
-          Move[k - 1] = !(SetBoolLX200(BreakRC[k - 1]) == LX200VALUESET);
+          Move[k - 1] = !(SetBoolLX200(BreakRC[k - 1]) == LX200_VALUESET);
         continue;
       }
       else if (eventbuttons[0] == E_NONE && !Move[k - 1] && (eventbuttons[k] == E_LONGPRESS || eventbuttons[k] == E_CLICK || eventbuttons[k] == E_LONGPRESSTART))
@@ -348,7 +348,7 @@ void SmartHandController::manualMove(bool &moving)
           }
         }
         else if (!focuserlocked)
-          Move[k - 1] = (SetBoolLX200(RC[k - 1]) == LX200VALUESET);
+          Move[k - 1] = (SetBoolLX200(RC[k - 1]) == LX200_VALUESET);
         continue;
       }
       moving = moving || Move[k - 1];

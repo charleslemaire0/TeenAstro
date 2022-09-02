@@ -81,15 +81,13 @@ Public Class AxisRates
   ' Constructor - Friend prevents public creation
   ' of instances. Returned by Telescope.AxisRates.
   '
-  Friend Sub New(ByVal Axis As TelescopeAxes, ByRef slewSpeeds As Double(), ByVal speedToDegPerSec As Double)
+  Friend Sub New(ByVal Axis As TelescopeAxes, ByRef slewSpeeds As Double, ByVal speedToDegPerSec As Double)
     m_Axis = Axis
     If (Axis = TelescopeAxes.axisPrimary) Or (Axis = TelescopeAxes.axisSecondary) Then
-      ' Initialize slew rates 0-9 supported by TeenAstro LX200 command set. 
-      ReDim m_Rates(slewSpeeds.GetUpperBound(0))
-      For i = 0 To slewSpeeds.GetUpperBound(0)
-        Dim val As Double = slewSpeeds(i) * speedToDegPerSec
-        m_Rates(i) = New Rate(val, val)
-      Next
+      ' Initialize slew rates 0-5 supported by TeenAstro LX200 command set. 
+      ReDim m_Rates(0)
+      Dim val As Double = slewSpeeds * speedToDegPerSec
+      m_Rates(0) = New Rate(0, val)
     End If
   End Sub
 

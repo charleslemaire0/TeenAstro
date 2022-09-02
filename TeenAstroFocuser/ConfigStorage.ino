@@ -85,6 +85,10 @@ bool Parameteruint8_t::set(const uint8_t &val)
   EEPROM.write(m_adress, m_value);
   return true;
 }
+void Parameteruint8_t::reset()
+{
+  set(m_value_default);
+}
 void Parameteruint8_t::load()
 {
   uint val = EEPROM.read(m_adress);
@@ -124,6 +128,10 @@ bool Parameteruint::set(const unsigned int &val)
   m_value = val;
   EEPROMwrite_uint(m_adress, m_value);
   return true;
+}
+void Parameteruint::reset()
+{
+  set(m_value_default);
 }
 void Parameteruint::load()
 {
@@ -165,6 +173,10 @@ bool Parameterulong::set(const unsigned long &val)
   m_value = val;
   EEPROMwrite_ulong(m_adress, m_value);
   return true;
+}
+void Parameterulong::reset()
+{
+  set(m_value_default);
 }
 void Parameterulong::load()
 {
@@ -212,8 +224,10 @@ bool ParameterPosition::set(char* id, const unsigned long &pos)
   m_pos->set(pos);
   return true;
 }
-
-
+void ParameterPosition::reset()
+{
+  m_id[0] = 0;
+}
 void loadConfig()
 {
   // To make sure there are settings, and they are YOURS!
@@ -249,7 +263,25 @@ void loadConfig()
     k += sizeof(unsigned long) + sizeof(char[11]);
   }
 }
-
+void resetConfig()
+{
+  resolution->reset();
+  curr->reset();
+  micro->reset();
+  steprot->reset();
+  reverse->reset();
+  startPosition->reset();
+  maxPosition->reset();
+  lowSpeed->reset();
+  highSpeed->reset();
+  cmdAcc->reset();
+  manAcc->reset();
+  manDec->reset();
+  for (int i = 0; i < 10; i++)
+  {
+    PositionList[i]->reset();
+  }
+}
 
 
 

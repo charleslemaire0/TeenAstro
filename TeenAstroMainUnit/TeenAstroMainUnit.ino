@@ -233,7 +233,7 @@ void loop()
 {
   static bool forceTracking = false;
   static unsigned long m;
-  static Errors StartLoopError = ERR_NONE;
+  static ErrorsTraking StartLoopError = ERRT_NONE;
   StartLoopError = lastError;
   // GUIDING -------------------------------------------------------------------------------------------
   if (!movingTo)
@@ -276,10 +276,12 @@ void loop()
       }
     }
 
+    CheckEndOfMoveAxisAtRate();
+
     // check for fault signal, stop any slew or guide and turn tracking off
     if (staA1.fault || staA2.fault)
     {
-      lastError = ERR_MOTOR_FAULT;
+      lastError = ERRT_MOTOR_FAULT;
       if (!forceTracking)
       {
         if (movingTo)
@@ -292,25 +294,25 @@ void loop()
         }
       }
     }
-    else if (lastError == ERR_MOTOR_FAULT)
+    else if (lastError == ERRT_MOTOR_FAULT)
     {
-      lastError = ERR_NONE;
+      lastError = ERRT_NONE;
     }
     // check altitude overhead limit and horizon limit
     if (currentAlt < minAlt || currentAlt > maxAlt)
     {
       if (!forceTracking)
       {
-        lastError = ERR_ALT;
+        lastError = ERRT_ALT;
         if (movingTo)
           abortSlew = true;
         else
           sideralTracking = false;
       }
     }
-    else if (lastError == ERR_ALT)
+    else if (lastError == ERRT_ALT)
     {
-      lastError = ERR_NONE;
+      lastError = ERRT_NONE;
     }
   }
 
@@ -344,7 +346,7 @@ void loop()
 
   if (StartLoopError != lastError)
   {
-    lastError == ERR_NONE ? digitalWrite(LEDPin, LOW) : digitalWrite(LEDPin, HIGH);
+    lastError == ERRT_NONE ? digitalWrite(LEDPin, LOW) : digitalWrite(LEDPin, HIGH);
   }
 }
 
@@ -365,30 +367,30 @@ void SafetyCheck(const bool forceTracking)
 
   if (!geoA1.withinLimit(axis1))
   {
-    lastError = ERR_AXIS1;
+    lastError = ERRT_AXIS1;
     if (movingTo)
       abortSlew = true;
     else if (!forceTracking)
       sideralTracking = false;
     return;
   }
-  else if (lastError == ERR_AXIS1)
+  else if (lastError == ERRT_AXIS1)
   {
-    lastError = ERR_NONE;
+    lastError = ERRT_NONE;
   }
 
   if (!geoA2.withinLimit(axis2))
   {
-    lastError = ERR_AXIS2;
+    lastError = ERRT_AXIS2;
     if (movingTo)
       abortSlew = true;
     else if (!forceTracking)
       sideralTracking = false;
     return;
   }
-  else if (lastError == ERR_AXIS2)
+  else if (lastError == ERRT_AXIS2)
   {
-    lastError = ERR_NONE;
+    lastError = ERRT_NONE;
   }
 
   if (mountType == MOUNT_TYPE_GEM)
@@ -397,7 +399,7 @@ void SafetyCheck(const bool forceTracking)
     {
       if ((staA1.dir && currentSide == PIER_WEST) || (!staA2.dir && currentSide == PIER_EAST))
       {
-        lastError = ERR_MERIDIAN;
+        lastError = ERRT_MERIDIAN;
         if (movingTo)
         {
           abortSlew = true;
@@ -406,35 +408,35 @@ void SafetyCheck(const bool forceTracking)
           sideralTracking = false;
         return;
       }
-      else if (lastError == ERR_MERIDIAN)
+      else if (lastError == ERRT_MERIDIAN)
       {
-        lastError = ERR_NONE;
+        lastError = ERRT_NONE;
       }
     }
-    else if (lastError == ERR_MERIDIAN)
+    else if (lastError == ERRT_MERIDIAN)
     {
-      lastError = ERR_NONE;
+      lastError = ERRT_NONE;
     }
 
     if (!checkPole(axis1, CHECKMODE_TRACKING))
     {
       if ((staA1.dir && currentSide == PIER_EAST) || (!staA2.dir && currentSide == PIER_WEST))
       {
-        lastError = ERR_UNDER_POLE;
+        lastError = ERRT_UNDER_POLE;
         if (movingTo)
           abortSlew = true;
         if (currentSide == PIER_EAST && !forceTracking)
           sideralTracking = false;
         return;
       }
-      else if (lastError == ERR_UNDER_POLE)
+      else if (lastError == ERRT_UNDER_POLE)
       {
-        lastError = ERR_NONE;
+        lastError = ERRT_NONE;
       }
     }
-    else if (lastError == ERR_UNDER_POLE)
+    else if (lastError == ERRT_UNDER_POLE)
     {
-      lastError = ERR_NONE;
+      lastError = ERRT_NONE;
     }
   }
 
@@ -607,15 +609,30 @@ void readEEPROMmotor()
   backlashA1.movedSteps = 0;
   motorA1.gear = XEEPROM.readInt(EE_motorA1gear);
   motorA1.stepRot = XEEPROM.readInt(EE_motorA1stepRot);
+
   motorA1.micro = XEEPROM.read(EE_motorA1micro);
   if (motorA1.micro > 8 || motorA1.micro < 1)
   {
     motorA1.micro = 4;
-    XEEPROM.update(EE_motorA1micro, 4);
+    XEEPROM.update(EE_motorA1micro, 4u);
   }
+
   motorA1.reverse = XEEPROM.read(EE_motorA1reverse);
+
   motorA1.lowCurr = (unsigned int)XEEPROM.read(EE_motorA1lowCurr) * 100;
+  if (motorA1.lowCurr > 2800u || motorA1.lowCurr < 200u)
+  {
+    motorA1.lowCurr = 1000u;
+    XEEPROM.write(EE_motorA1lowCurr, 10u);
+  }
+
   motorA1.highCurr = (unsigned int)XEEPROM.read(EE_motorA1highCurr) * 100;
+  if (motorA1.highCurr > 2800u || motorA1.highCurr < 200u)
+  {
+    motorA1.highCurr = 1000u;
+    XEEPROM.write(EE_motorA1highCurr, 10u);
+  }
+
   motorA1.silent = XEEPROM.read(EE_motorA1silent);
 
   backlashA2.inSeconds = XEEPROM.readInt(EE_backlashAxis2);
@@ -629,8 +646,21 @@ void readEEPROMmotor()
     XEEPROM.update(EE_motorA2micro, 4);
   }
   motorA2.reverse = XEEPROM.read(EE_motorA2reverse);
+
   motorA2.lowCurr = (unsigned int)XEEPROM.read(EE_motorA2lowCurr) * 100;
+  if (motorA2.lowCurr > 2800u || motorA2.lowCurr < 200u)
+  {
+    motorA2.lowCurr = 1000u;
+    XEEPROM.write(EE_motorA2lowCurr, 10u);
+  }
+
   motorA2.highCurr = (unsigned int)XEEPROM.read(EE_motorA2highCurr) * 100;
+  if (motorA2.highCurr > 2800u || motorA2.highCurr < 200u)
+  {
+    motorA2.highCurr = 1000u;
+    XEEPROM.write(EE_motorA2highCurr, 10u);
+  }
+
   motorA2.silent = XEEPROM.read(EE_motorA2silent);
 }
 
@@ -642,8 +672,8 @@ void writeDefaultEEPROMmotor()
   XEEPROM.writeInt(EE_motorA1stepRot, 200);
   XEEPROM.write(EE_motorA1micro, 4);
   XEEPROM.write(EE_motorA1reverse, 0);
-  XEEPROM.write(EE_motorA1highCurr, 50);
-  XEEPROM.write(EE_motorA1lowCurr, 50);
+  XEEPROM.write(EE_motorA1highCurr, 10);
+  XEEPROM.write(EE_motorA1lowCurr, 10);
   XEEPROM.write(EE_motorA1silent, 0);
 
   XEEPROM.writeInt(EE_backlashAxis2, 0);
@@ -651,8 +681,8 @@ void writeDefaultEEPROMmotor()
   XEEPROM.writeInt(EE_motorA2stepRot, 200);
   XEEPROM.write(EE_motorA2micro, 4);
   XEEPROM.write(EE_motorA2reverse, 0);
-  XEEPROM.write(EE_motorA2highCurr, 50);
-  XEEPROM.write(EE_motorA2lowCurr, 50);
+  XEEPROM.write(EE_motorA2highCurr, 10);
+  XEEPROM.write(EE_motorA2lowCurr, 10);
   XEEPROM.write(EE_motorA2silent, 0);
 }
 
