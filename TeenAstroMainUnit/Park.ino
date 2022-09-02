@@ -138,7 +138,7 @@ byte park()
   {
     return 0;
   }
-  if (lastError != ERR_NONE)
+  if (lastError != ERRT_NONE)
   {
     return 4;
   }

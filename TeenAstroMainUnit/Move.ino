@@ -3,7 +3,7 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
 {
 
   bool canMove = parkStatus == PRK_UNPARKED;
-  canMove &= (Mode == GuidingRecenter || lastError == ERR_NONE);
+  canMove &= (Mode == GuidingRecenter || lastError == ERRT_NONE);
   canMove &= !movingTo;
   canMove &= (GuidingState == GuidingOFF || GuidingState == Mode);
   if (canMove)
@@ -40,7 +40,7 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
 void MoveAxis1AtRate(const double newrate)
 {
   bool canMove = parkStatus == PRK_UNPARKED;
-  canMove &= lastError == ERR_NONE;
+  canMove &= lastError == ERRT_NONE;
   canMove &= !movingTo;
   canMove &= (GuidingState == GuidingOFF || GuidingState == GuidingAtRate);
   if (canMove)
@@ -94,7 +94,7 @@ void StopAxis1()
 void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
 {
   bool canMove = parkStatus == PRK_UNPARKED;
-  canMove &= (Mode == GuidingRecenter || lastError == ERR_NONE);
+  canMove &= (Mode == GuidingRecenter || lastError == ERRT_NONE);
   canMove &= !movingTo;
   canMove &= (GuidingState == GuidingOFF || GuidingState == Mode);
 
@@ -139,7 +139,7 @@ void MoveAxis2AtRate(const double newrate)
   bool canMove = parkStatus == PRK_UNPARKED;
   canMove &= !movingTo;
   canMove &= (GuidingState == GuidingOFF || GuidingState == GuidingAtRate);
-  canMove &= lastError == ERR_NONE;
+  canMove &= lastError == ERRT_NONE;
   if (canMove)
   {
     if (newrate == 0)
@@ -212,7 +212,7 @@ void CheckSpiral()
   }
   int duration = iteration / 2 + 1;
 
-  if (iteration == 20 || lastError != ERR_NONE)
+  if (iteration == 20 || lastError != ERRT_NONE)
   {
     StopAxis1();
     StopAxis2();
@@ -268,7 +268,7 @@ void checkST4()
   static char ST4DE_state = 0;
   static char ST4DE_last = 0;
   // ST4 port is active only if there is no mount Error
-  if (lastError == ERR_NONE)
+  if (lastError == ERRT_NONE)
   {
     w1 = digitalRead(ST4RAw);
     e1 = digitalRead(ST4RAe);

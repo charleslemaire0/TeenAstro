@@ -233,7 +233,7 @@ void loop()
 {
   static bool forceTracking = false;
   static unsigned long m;
-  static Errors StartLoopError = ERR_NONE;
+  static ErrorsTraking StartLoopError = ERRT_NONE;
   StartLoopError = lastError;
   // GUIDING -------------------------------------------------------------------------------------------
   if (!movingTo)
@@ -281,7 +281,7 @@ void loop()
     // check for fault signal, stop any slew or guide and turn tracking off
     if (staA1.fault || staA2.fault)
     {
-      lastError = ERR_MOTOR_FAULT;
+      lastError = ERRT_MOTOR_FAULT;
       if (!forceTracking)
       {
         if (movingTo)
@@ -294,25 +294,25 @@ void loop()
         }
       }
     }
-    else if (lastError == ERR_MOTOR_FAULT)
+    else if (lastError == ERRT_MOTOR_FAULT)
     {
-      lastError = ERR_NONE;
+      lastError = ERRT_NONE;
     }
     // check altitude overhead limit and horizon limit
     if (currentAlt < minAlt || currentAlt > maxAlt)
     {
       if (!forceTracking)
       {
-        lastError = ERR_ALT;
+        lastError = ERRT_ALT;
         if (movingTo)
           abortSlew = true;
         else
           sideralTracking = false;
       }
     }
-    else if (lastError == ERR_ALT)
+    else if (lastError == ERRT_ALT)
     {
-      lastError = ERR_NONE;
+      lastError = ERRT_NONE;
     }
   }
 
@@ -346,7 +346,7 @@ void loop()
 
   if (StartLoopError != lastError)
   {
-    lastError == ERR_NONE ? digitalWrite(LEDPin, LOW) : digitalWrite(LEDPin, HIGH);
+    lastError == ERRT_NONE ? digitalWrite(LEDPin, LOW) : digitalWrite(LEDPin, HIGH);
   }
 }
 
@@ -367,30 +367,30 @@ void SafetyCheck(const bool forceTracking)
 
   if (!geoA1.withinLimit(axis1))
   {
-    lastError = ERR_AXIS1;
+    lastError = ERRT_AXIS1;
     if (movingTo)
       abortSlew = true;
     else if (!forceTracking)
       sideralTracking = false;
     return;
   }
-  else if (lastError == ERR_AXIS1)
+  else if (lastError == ERRT_AXIS1)
   {
-    lastError = ERR_NONE;
+    lastError = ERRT_NONE;
   }
 
   if (!geoA2.withinLimit(axis2))
   {
-    lastError = ERR_AXIS2;
+    lastError = ERRT_AXIS2;
     if (movingTo)
       abortSlew = true;
     else if (!forceTracking)
       sideralTracking = false;
     return;
   }
-  else if (lastError == ERR_AXIS2)
+  else if (lastError == ERRT_AXIS2)
   {
-    lastError = ERR_NONE;
+    lastError = ERRT_NONE;
   }
 
   if (mountType == MOUNT_TYPE_GEM)
@@ -399,7 +399,7 @@ void SafetyCheck(const bool forceTracking)
     {
       if ((staA1.dir && currentSide == PIER_WEST) || (!staA2.dir && currentSide == PIER_EAST))
       {
-        lastError = ERR_MERIDIAN;
+        lastError = ERRT_MERIDIAN;
         if (movingTo)
         {
           abortSlew = true;
@@ -408,35 +408,35 @@ void SafetyCheck(const bool forceTracking)
           sideralTracking = false;
         return;
       }
-      else if (lastError == ERR_MERIDIAN)
+      else if (lastError == ERRT_MERIDIAN)
       {
-        lastError = ERR_NONE;
+        lastError = ERRT_NONE;
       }
     }
-    else if (lastError == ERR_MERIDIAN)
+    else if (lastError == ERRT_MERIDIAN)
     {
-      lastError = ERR_NONE;
+      lastError = ERRT_NONE;
     }
 
     if (!checkPole(axis1, CHECKMODE_TRACKING))
     {
       if ((staA1.dir && currentSide == PIER_EAST) || (!staA2.dir && currentSide == PIER_WEST))
       {
-        lastError = ERR_UNDER_POLE;
+        lastError = ERRT_UNDER_POLE;
         if (movingTo)
           abortSlew = true;
         if (currentSide == PIER_EAST && !forceTracking)
           sideralTracking = false;
         return;
       }
-      else if (lastError == ERR_UNDER_POLE)
+      else if (lastError == ERRT_UNDER_POLE)
       {
-        lastError = ERR_NONE;
+        lastError = ERRT_NONE;
       }
     }
-    else if (lastError == ERR_UNDER_POLE)
+    else if (lastError == ERRT_UNDER_POLE)
     {
-      lastError = ERR_NONE;
+      lastError = ERRT_NONE;
     }
   }
 

@@ -76,7 +76,7 @@ void TeenAstroWifi::handleConfigurationSpeed()
   //update
   ta_MountStatus.updateMount();
 
-  if (GetLX200(":GXRD#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "4"); int val = temp1[0] - '0';
+  if (GetLX200(":GXRD#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "4"); int val = temp1[0] - '0';
   val = min(max(val, 0), 4);
   data += FPSTR(html_configRateD_0);
   val == 0 ? data += "<option selected value='0'>Guiding</option>" : data += "<option value='0'>Guiding</option>";
@@ -87,32 +87,32 @@ void TeenAstroWifi::handleConfigurationSpeed()
   data += FPSTR(html_configRateD_1);
   sendHtml(data);
 
-  if (GetLX200(":GXRX#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int maxRate = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":GXRX#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); int maxRate = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configMaxRate, maxRate);
   data += temp;
   sendHtml(data);
 
-  if (GetLX200(":GXR3#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float Rate3 = (float)strtof(&temp1[0], NULL);
+  if (GetLX200(":GXR3#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); float Rate3 = (float)strtof(&temp1[0], NULL);
   sprintf_P(temp, html_configRate3, Rate3);
   data += temp;
   sendHtml(data);
 
-  if (GetLX200(":GXR2#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float Rate2 = (float)strtof(&temp1[0], NULL);
+  if (GetLX200(":GXR2#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); float Rate2 = (float)strtof(&temp1[0], NULL);
   sprintf_P(temp, html_configRate2, Rate2);
   data += temp;
   sendHtml(data);
 
-  if (GetLX200(":GXR1#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float Rate1 = (float)strtof(&temp1[0], NULL);
+  if (GetLX200(":GXR1#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); float Rate1 = (float)strtof(&temp1[0], NULL);
   sprintf_P(temp, html_configRate1, Rate1);
   data += temp;
   sendHtml(data);
 
-  if (GetLX200(":GXR0#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float Rate0 = (float)strtof(&temp1[0], NULL);
+  if (GetLX200(":GXR0#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); float Rate0 = (float)strtof(&temp1[0], NULL);
   sprintf_P(temp, html_configRate0, Rate0);
   data += temp;
   sendHtml(data);
 
-  if (GetLX200(":GXRA#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float acc = (float)strtof(&temp1[0], NULL);
+  if (GetLX200(":GXRA#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); float acc = (float)strtof(&temp1[0], NULL);
   sprintf_P(temp, html_configAcceleration, acc);
   data += temp;
   sendHtml(data);

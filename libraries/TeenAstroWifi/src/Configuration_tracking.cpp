@@ -115,7 +115,7 @@ void TeenAstroWifi::handleConfigurationTracking()
   data += FPSTR(html_configTrackingOptions);
   sprintf_P(temp, html_Opt_1, "trackr");
   data += temp;
-  if (GetLX200(":GXrt#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "n");
+  if (GetLX200(":GXrt#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "n");
   temp1[0] == 'y' ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
   temp1[0] == 'n' ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
   data += "</select> Consider Refraction for Tracking</form><br/>\r\n";;
@@ -125,7 +125,7 @@ void TeenAstroWifi::handleConfigurationTracking()
   {
     sprintf_P(temp, html_Opt_1, "alignr");
     data += temp;
-    if (GetLX200(":GXAc#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "n");
+    if (GetLX200(":GXAc#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "n");
     temp1[0] == 'y' ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
     temp1[0] == 'n' ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
     data += "</select> Consider Alignment for Tracking</form><br/>\r\n";;

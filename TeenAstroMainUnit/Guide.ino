@@ -28,7 +28,7 @@ void apply_GuidingA2()
 }
 bool StopIfMountError()
 {
-  bool error = lastError != ERR_NONE;
+  bool error = lastError != ERRT_NONE;
   if (error)
   {
     guideA1.duration = -1;

@@ -40,7 +40,7 @@ void unsetHome()
 bool goHome()
 {
   if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return false; // fail, moving to home not allowed if PRK_PARKED
-  if (lastError != ERR_NONE) return false;                                // fail, cannot move if there are errors
+  if (lastError != ERRT_NONE) return false;                                // fail, cannot move if there are errors
   if (movingTo) return false;                      // fail, moving to home not allowed during a move
   if (guideA1.dir || guideA2.dir) return false;                       // fail, moving to home not allowed while guiding
   cli();
@@ -71,7 +71,7 @@ bool syncAtHome()
   newTargetDec = 0;
   newTargetAlt = 0;
   newTargetAzm = 0;
-  lastError = ERR_NONE;
+  lastError = ERRT_NONE;
   // reset tracking and rates
   staA1.timerRate = SiderealRate;
   staA2.timerRate = SiderealRate;

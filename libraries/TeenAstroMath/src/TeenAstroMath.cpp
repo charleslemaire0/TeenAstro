@@ -111,6 +111,16 @@ void EquToHorApp(double HA, double Dec, double *Azm, double *Alt, const double *
   Topocentric2Apparent(Alt);
 }
 
+void EquToHor(double HA, double Dec, bool refraction, double* Azm, double* Alt, const double* cosLat, const double* sinLat)
+{
+  EquToHorTopo(HA, Dec, Azm, Alt, cosLat, sinLat);
+  if (refraction)
+  {
+    Topocentric2Apparent(Alt);
+  }
+}
+
+
 // convert horizon coordinates to equatorial
 // this takes approx. 1.4mS
 void HorTopoToEqu(double Azm, double Alt, double *HA, double *Dec, const double *cosLat, const double *sinLat)
