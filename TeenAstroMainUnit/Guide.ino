@@ -2,11 +2,6 @@
 
 // Guide, commands to move the mount in any direction at a series of fixed rates
 
-void FinishpulseGuiding()
-{
-  return;
-}
-
 
 void apply_GuidingA1()
 {
