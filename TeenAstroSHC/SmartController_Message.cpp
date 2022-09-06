@@ -156,12 +156,12 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
     else if (val == LX200_ERR_AXIS1)
     {
       sprintf(text1, T_TELESCOPEIS);
-      sprintf(text2, T_OUTSIDELIMITS " 1!");
+      sprintf(text2, T_OUTSIDELIMITS " A1!");
     }
     else if (val == LX200_ERR_AXIS2)
     {
       sprintf(text1, T_TELESCOPEIS);
-      sprintf(text2, T_OUTSIDELIMITS " 2!");
+      sprintf(text2, T_OUTSIDELIMITS " A2!");
     }
     else if (val == LX200_ERRGOTO_NOOBJECTSELECTED)
     {
