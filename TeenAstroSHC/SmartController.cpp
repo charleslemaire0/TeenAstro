@@ -84,13 +84,24 @@ void SmartHandController::setup(
   display->setFont(u8g2_font_helvR12_te);
   DisplayMessage("SHC " T_VERSION, _version, 1500);
   int k = 0;
+  
   while (!ta_MountStatus.isConnectionValid() && k < 10)
   {
     ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor);
     delay(200);
     k++;
   }
-  DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
+  if (ta_MountStatus.isConnectionValid())
+  {
+    ta_MountStatus.updateMount();
+    DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
+    if (!ta_MountStatus.hasGNSSBoard())
+    {
+      ta_MountStatus.updateTime();
+      DisplayMessage(T_TIME " Universal", ta_MountStatus.getUTC(), 1500);
+      DisplayMessage(T_DATE " Universal", ta_MountStatus.getUTCdate(), 1500);
+    }
+  }
 }
 
 void SmartHandController::update()
