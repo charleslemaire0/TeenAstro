@@ -165,6 +165,7 @@ public:
   bool              getLastErrorMessage(char message[]);
   bool              getLstT0(double &T0);
   bool              getLat(double &lat);
+  bool              getLong(double &longi);
   bool              getTrackingRate(double &r);
   GuidingRate       getGuidingRate();
   RateCompensation  getRateCompensation();
