@@ -761,19 +761,13 @@ void Command_S(Command& process_command)
       }
       else if (command[2] == 'E')
       {
-        if (GetPierSide() == PIER_WEST)
-        {
-          newTargetPierSide = PIER_EAST;
-          strcpy(reply, "1");
-        }
+        newTargetPierSide = PIER_EAST;
+        strcpy(reply, "1");
       }
       else if (command[2] == 'W')
       {
-        if (GetPierSide() == PIER_EAST)
-        {
-          newTargetPierSide = PIER_WEST;
-          strcpy(reply, "1");
-        }
+        newTargetPierSide = PIER_WEST;
+        strcpy(reply, "1"); 
       }
       else strcpy(reply, "0");
     }

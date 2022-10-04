@@ -1376,16 +1376,20 @@ Public Class Telescope
         Throw New ASCOM.InvalidOperationException("Object below min altitude")
       Case 2
         Throw New ASCOM.ValueNotSetException
+      Case 3
+        Throw New ASCOM.InvalidOperationException("Mount Cannot Flip here")
       Case 4
         Throw New ASCOM.ParkedException
       Case 5
-        Throw New ASCOM.InvalidOperationException("Telescope is busy")
-      Case 7
-        Throw New ASCOM.InvalidOperationException("Telescope is busy")
+        Throw New ASCOM.InvalidOperationException("Telescope is Slewing")
       Case 6
         Throw New ASCOM.InvalidOperationException("Object is outside limits")
+      Case 7
+        Throw New ASCOM.InvalidOperationException("Telescope is Guiding")
       Case 8
         Throw New ASCOM.InvalidOperationException("Object above max altitude")
+      Case 9
+        Throw New ASCOM.InvalidOperationException("Motor is fault")
       Case 11
         Throw New ASCOM.InvalidOperationException("Motor is fault")
       Case 12
@@ -1393,9 +1397,9 @@ Public Class Telescope
       Case 13
         Throw New ASCOM.InvalidOperationException("Limit Sensor")
       Case 14
-        Throw New ASCOM.InvalidOperationException("Telescope is above max declination limit")
+        Throw New ASCOM.InvalidOperationException("Telescope is outside Axis 1 limit")
       Case 15
-        Throw New ASCOM.InvalidOperationException("Telescope is outside azimunth limit")
+        Throw New ASCOM.InvalidOperationException("Telescope is outside Axis 2 limit")
       Case 16
         Throw New ASCOM.InvalidOperationException("Telescope is above overhead limit")
       Case 17

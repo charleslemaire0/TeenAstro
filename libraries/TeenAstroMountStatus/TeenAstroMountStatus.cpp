@@ -280,6 +280,10 @@ bool TeenAstroMountStatus::getLat(double &lat)
 {
   return GetLatitudeLX200(lat) == LX200_VALUEGET;
 };
+bool TeenAstroMountStatus::getLong(double &longi)
+{
+  return GetLongitudeLX200(longi) == LX200_VALUEGET;
+};
 bool TeenAstroMountStatus::getTrackingRate(double &r)
 {
   return GetTrackingRateLX200(r) == LX200_VALUEGET;
