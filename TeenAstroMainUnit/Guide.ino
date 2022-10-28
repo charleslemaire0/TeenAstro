@@ -21,20 +21,25 @@ void apply_GuidingA2()
   rev ? staA2.target -= guideA2.amount : staA2.target += guideA2.amount;
   sei();
 }
+void StopGuiding()
+{
+  guideA1.duration = -1;
+  guideA2.duration = -1;
+  cli();
+  if (guideA1.dir) guideA1.dir = 'b';
+  if (guideA2.dir) guideA2.dir = 'b';
+  sei();
+}
 bool StopIfMountError()
 {
   bool error = lastError != ERRT_NONE;
   if (error)
   {
-    guideA1.duration = -1;
-    guideA2.duration = -1;
-    cli();
-    if (guideA1.dir) guideA1.dir = 'b';
-    if (guideA2.dir) guideA2.dir = 'b';
-    sei();
+    StopGuiding();
   }
   return error;
 }
+
 void PerformPulseGuiding()
 {
   if (StopIfMountError())
