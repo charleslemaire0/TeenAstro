@@ -184,7 +184,7 @@ ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2)
   atHome = false;
   cli();
   movingTo = true;
-  SetSiderealClockRate(siderealInterval);
+  SetsiderealClockRate(siderealClockRate);
 
   staA1.start = staA1.pos;
   staA2.start = staA2.pos;
@@ -192,8 +192,9 @@ ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2)
   staA1.target = thisTargetAxis1;
   staA2.target = thisTargetAxis2;
 
-  staA1.timerRate = SiderealRate;
-  staA2.timerRate = SiderealRate;
+  staA1.resetToSidereal();
+  staA2.resetToSidereal();
+
   sei();
 
   DecayModeGoto();

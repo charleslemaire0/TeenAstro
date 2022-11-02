@@ -320,7 +320,7 @@ void Command_SX()
         {
           backlashA2.inSeconds = i;
           XEEPROM.writeInt(EE_backlashAxis2, backlashA2.inSeconds);
-          backlashA2.inSteps = (int)round(((double)backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
+          backlashA2.inSteps = (int)round((double)backlashA2.inSeconds / geoA2.stepsPerArcSecond);
           backlashA2.movedSteps = 0;
           strcpy(reply, "1");
         }
@@ -328,7 +328,7 @@ void Command_SX()
         {
           backlashA1.inSeconds = i;
           XEEPROM.writeInt(EE_backlashAxis1, backlashA1.inSeconds);
-          backlashA1.inSteps = (int)round(((double)backlashA1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
+          backlashA1.inSteps = (int)round((double)backlashA1.inSeconds / geoA1.stepsPerArcSecond);
           backlashA1.movedSteps = 0;
           strcpy(reply, "1");
         }
