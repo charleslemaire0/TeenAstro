@@ -50,9 +50,10 @@ def dms2deg(dms):
 
 class TeenAstro(object):
 
-  def __init__(self, portType, portName):
+  def __init__(self, portType='tcp', portName='192.168.0.21', baudRate=57600):
     self.portType = portType
     self.portName = portName
+    self.baudRate = baudRate
     self.port = None
     self.axis1Gear = 0
     self.axis2Gear = 0
@@ -60,10 +61,14 @@ class TeenAstro(object):
 
 
   def open(self):
+    if self.portType == None:
+      print('Error opening port')
+      return None
+      
     if self.portType == 'serial':
       try:
         self.port = serial.Serial(port=self.portName,
-                          baudrate=57600, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
+                          baudrate=self.baudRate, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
                           stopbits=serial.STOPBITS_ONE,
                           timeout=None, xonxoff=False, rtscts=False, write_timeout=None, dsrdtr=False,
                           inter_byte_timeout=None)

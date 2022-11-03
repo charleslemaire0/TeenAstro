@@ -134,14 +134,14 @@ class Mount:
 # Declare function to define command-line arguments
 def readOptions(args=sys.argv[1:]):
   parser = argparse.ArgumentParser(description="The parsing commands lists.")
-  parser.add_argument('-p', '--ip', help='TeenAstro IP address')
+  parser.add_argument('-t', '--portType', help='TeenAstro connection type (tcp or serial)')
+  parser.add_argument('-p', '--portName', help='TeenAstro IP address or serial port')
+  parser.add_argument('-b', '--baudRate', help='TeenAstro baud rate')
   opts = parser.parse_args(args)
-  if opts.ip == None:
-    opts.ip = '192.168.0.21'
   return opts
 
-testCase = [{'name':'South','az':180,'alt':0}, {'name':'East','az':90,'alt':0},{'name':'North','az':0,'alt':0},{'name':'West','az':270,'alt':0}]
-#testCase = [{'name':'South','az':180,'alt':0}, {'name':'East','az':90,'alt':0}]
+#testCase = [{'name':'South','az':180,'alt':0}, {'name':'East','az':90,'alt':0},{'name':'North','az':0,'alt':0},{'name':'West','az':270,'alt':0}]
+testCase = [{'name':'North','az':0,'alt':0},{'name':'East','az':90,'alt':0}, {'name':'South','az':180,'alt':0}]
 
 
 # Main program
@@ -155,7 +155,7 @@ class Application:
         gui = glooey.Gui(window)
         hbox = glooey.HBox()
 
-        self.ta = self.init_TeenAstro(options.ip)
+        self.ta = self.init_TeenAstro(portType=options.portType, portName=options.portName, baudRate=options.baudRate)
         if self.ta == None:
             self.log ("Error connecting to TeenAstro")
             sys.exit(1)
@@ -319,8 +319,8 @@ class Application:
     def log(self, message):
         print (message)
 
-    def init_TeenAstro(self, ip):
-        ta = TeenAstro('tcp', ip)
+    def init_TeenAstro(self, portType, portName, baudRate):
+        ta = TeenAstro(portType=portType, portName=portName, baudRate=baudRate)
         p = ta.open()
 
         if (p == None):

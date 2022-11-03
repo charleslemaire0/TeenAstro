@@ -20,29 +20,34 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import serial.tools.list_ports
 
 sys.path.insert(0, '../mountSim')
+from pointingPlot import pointingPlot
+from driftPlot import driftPlot
+from slewPlot import slewPlot
 from teenastro import TeenAstro, deg2dms
 
-numSamples = 100
-sampleFreq = 1
+sampleFreq = 2
 earth = 399 # NEAF code for the earth center of mass
 
-sgCommTypeSerial = [sg.Radio('Serial', "RADIO1", size=(8, 1), enable_events=True, key='-serial-'),
-          sg.Text('Device:', size=(10, 1)),
-          sg.Combo('ComPorts', [], key='-ComPorts-', size=(20, 1), disabled=True)]
+sgCommTypeSerial = [sg.Radio('Serial', "RADIO1", size=(8, 1), enable_events=True, key='-Serial-'),
+          sg.Text('Device:', size=(10, 1)), sg.Combo('ComPorts', [],  key='-ComPorts-', size=(20, 1), disabled=True),
+          sg.Text('Baud Rate:', size=(10, 1)), sg.Combo(['9600','19200','57600','115200'], default_value='115200',key='-BaudRate-', size=(20, 1)),]
 
 sgCommTypeTCP = [sg.Radio('TCP', "RADIO1", default = True, size=(8, 1), enable_events=True, key='-tcp-'),
           sg.Text('IP Address:', size=(10, 1)),
           sg.Input('192.168.0.21', key='-IPADDR-', size=(20, 1))]
 
-commFrame = sg.Frame('Comm Port',[sgCommTypeSerial,sgCommTypeTCP])
+commFrame = sg.Frame('Comm Port',[sgCommTypeSerial,sgCommTypeTCP,[sg.Button('Connect', key='connect')]])
 
-topRow = [commFrame, sg.B('Connect', key='connect'),sg.B('Exit')]
+
+topRow = [commFrame, sg.B('Exit')]
 
 coordFrame = sg.Frame('Coordinates',[[sg.T(' ', size=10), sg.T('Displayed', size=10),sg.T('Computed', size=10)],
                                      [sg.T('Azimuth', size=10), sg.T('0', size=10, key='az_disp'),sg.T('0', size=10, key='az_comp')],
                                      [sg.T('Altitude', size=10), sg.T('0', size=10, key='alt_disp'),sg.T('0', size=10, key='alt_comp')]])
 
 driftFrame = sg.Frame('Drift Rates', [[sg.T('RA (arc-sec/sec):'), sg.T('0', key='ra_rate')],[sg.T('Dec (arc-sec/sec):'), sg.T('0', key='dec_rate')]]) 
+
+slewFrame = sg.Frame('Slew Rates', [[sg.T('RA (arc-sec/sec):'), sg.T('0', key='ra_rate')],[sg.T('Dec (arc-sec/sec):'), sg.T('0', key='dec_rate')]]) 
 
 def sgSpin(label):
     return sg.Spin(values = [i for i in range(-100,100,10)], initial_value=0, key=label, readonly=True, background_color='white', size=6)
@@ -62,8 +67,16 @@ pointTestTab = [[sg.Column([
 
 driftTestTab = [[sg.Column([
                     [sg.B(button_text = 'Start', key='startStopDrift'),sg.B(button_text = 'Clear', key='clearDrift'),
-                     sg.B(button_text = 'Save', key='saveDrift'), sg.B(button_text = '+',key='zoomIn'),sg.B(button_text = '-',key='zoomOut')],
+                     sg.B(button_text = 'Save', key='saveDrift'), sg.B(button_text = '+',key='zoomInD'),sg.B(button_text = '-',key='zoomOutD')],
                     [sg.Canvas(key='drift_cv', size=(640, 400))]]), driftFrame]
+                ]
+
+slewTestTab = [[sg.Column([
+                    [sg.B(button_text = 'Home', key='slewHome'),sg.B(button_text = 'North', key='slewNorth'),sg.B(button_text = 'West', key='slewWest'),
+                     sg.B(button_text = 'East', key='slewEast'),sg.B(button_text = 'South', key='slewSouth'),sg.B(button_text = 'Zenith', key='slewZenith'),
+                     sg.B(button_text = 'Clear', key='clearSlew'),
+                     sg.B(button_text = 'Save', key='saveSlew')],
+                    [sg.Canvas(key='slew_cv', size=(640, 400))]])]
                 ]
 
 alignmentTab = [[sg.Column([
@@ -75,326 +88,47 @@ alignmentTab = [[sg.Column([
                 ]
 
 
-bottomRow = sg.Output(key='Log',  size=(80, 12))
-#bottomRow = []
+#bottomRow = sg.Output(key='Log',  size=(80, 12))
+bottomRow = []
 
 layout = [ [topRow],
           [sg.TabGroup([[
             sg.Tab('Pointing Test', pointTestTab, key='ptest'),
             sg.Tab('Drift Test', driftTestTab, key='dtest'),
+            sg.Tab('Slew Test', slewTestTab, key='stest'),
             sg.Tab('Alignment Test', alignmentTab, key='atest')]],
             key='tgroup')],
           [bottomRow]
          ]
 
-# Declare function to define command-line arguments
-def readOptions(args=sys.argv[1:]):
-  parser = argparse.ArgumentParser(description="The parsing commands lists.")
-  parser.add_argument('-p', '--ip', help='TeenAstro IP address')
-  opts = parser.parse_args(args)
-  if opts.ip == None:
-    opts.ip = '192.168.0.21'
-  return opts
 
 
 
 # Utility functions
 
-def convertAxis1(axis1, pierSide):
+def eqAxesToHaDec(axis1, axis2, pierSide):
     if (pierSide == 'E'):
-        return axis1
-    else:
-        return axis1+180
-
-def convertAxis2(axis2, pierSide):
-    if (pierSide == 'E'):
-        return axis2 
-    else:
-        return 180-axis2
-
-# Pointing test case
-testCase =  [
-                {'az':0,'alt':40}, {'az':20,'alt':40},{'az':40,'alt':40},{'az':60,'alt':40},{'az':80,'alt':40},
-                {'az':100,'alt':40}, {'az':120,'alt':40},{'az':140,'alt':40},{'az':160,'alt':40},{'az':180,'alt':40},
-                {'az':200,'alt':40}, {'az':220,'alt':40},{'az':240,'alt':40},{'az':260,'alt':40},{'az':280,'alt':40},
-                {'az':300,'alt':40}, {'az':320,'alt':40},{'az':340,'alt':40}
-            ]
-
-class pointingPlot():
-    def __init__(self, window, ta, ts):
-        self.window = window
-        self.ta = ta
-        self.ts = ts
-        self.az = []
-        self.alt = []
-        self.fig, self.ax = plt.subplots(subplot_kw={'projection': 'polar'}, figsize=(10,6), dpi=36)
-        self.line, = self.ax.plot(self.az, self.alt)
-        self.ax.set_rmin(90)
-        self.ax.set_rmax(-15)
-        self.ax.set_rticks([0,15,30,45,60,75,90],fontsize=20)  # radial ticks
-        self.ax.set_rlabel_position(-22.5)  
-        self.ax.set_theta_zero_location("N")
-        self.ax.grid(True)
-        self.figure_canvas_agg = FigureCanvasTkAgg(self.fig, master=window['point_cv'].TKCanvas)
-        self.planets = load('de421.bsp')
-        self.testStep = 0
-        self.state = 'STOP'
-
-    def handleEvent(self, ev, v, window):
-        if ev == 'clearPoint':
-            self.az = []
-            self.alt =  []
-            self.line.set_data(self.az, self.alt)
-            self.render()
-
-        if ev == 'startPointTest':
-            if not self.ta.isConnected():
-                self.log('Not connected')
-                return
-            window['startPointTest'].update(disabled = True)
-            self.state = 'RUNNING'
-            return
-
-        if (ev == 'savePoint'):
-            self.saveCsv()
-            return
-
-        if (ev =='__TIMEOUT__'):
-            if not self.ta.isConnected():
-                return
-
-            self.update()
-            if self.state == 'RUNNING':
-                if self.ta.isSlewing():
-                    return
-    
-                altaz = testCase[self.testStep]
-                self.log('goto az:{0} alt:{1}'.format(altaz['az'], altaz['alt']))
-                self.ta.gotoAzAlt(altaz['az'], altaz['alt'])
-
-                self.testStep = self.testStep + 1
-                if (self.testStep == len(testCase)):
-                    self.log('Test done')
-                    self.state = 'STOP'
-                    window['startPointTest'].update(disabled = False)
-                    self.testStep = 0
-
-
-
-    def saveCsv(self):
-        self.log ('Saving to pointTest.csv')
-        data = np.stack((self.az, self.alt), axis=1)
-        np.savetxt("pointTest.csv", data, delimiter=",", fmt="%.2f",
-                       header="az, alt", comments="")
-
-    def log(self, message):
-        print (message)
-
-    def az2string(self, dms):
-        return "{0:03d}º{1:02d}'{2:02d}''".format(dms[0], dms[1], dms[2])
-
-    def alt2string(self, dms):
-        return "{0:+02d}º{1:02d}'{2:02d}''".format(dms[0], dms[1], dms[2])
-
-    def update(self):
-        self.lat = self.ta.getLatitude()
-        self.lon = -self.ta.getLongitude()       # LX200 treats west longitudes as positive, Skyfield as negative
-        self.site = self.planets['earth'] + wgs84.latlon(self.lat, self.lon)
-        alt = self.ta.getAltitude()
-        az = self.ta.getAzimuth()
-        ra = self.ta.getRA()
-        dec = self.ta.getDeclination()
-        t1 = self.ta.readDateTime()         # python datetime from TeenAstro
-        t2 = self.ts.from_datetime(t1)      # converted to skyfield format
-        pos = self.site.at(t2).observe(Star(ra_hours=ra, dec_degrees=dec))
-        alt_comp, az_comp, dist = pos.apparent().altaz()
-        self.window['az_comp'].Update(self.az2string(deg2dms(az_comp.degrees)))
-        self.window['alt_comp'].Update(self.az2string(deg2dms(alt_comp.degrees)))
-
-        self.az = np.append(self.az, az)
-        self.alt = np.append(self.alt, alt)
-        self.window['az_disp'].Update(self.az2string(deg2dms(az)))
-        self.window['alt_disp'].Update(self.alt2string(deg2dms(alt)))
-        self.line.set_data(np.deg2rad(self.az), self.alt)
-        self.render()
-
-    def render(self):
-        self.figure_canvas_agg.draw()
-        self.figure_canvas_agg.get_tk_widget().pack(side='right', fill='both', expand=1)
-
-    def start(self):
-        self.axis1 = self.axis2 = 0
-        self.state = 'RUN'
-        self.testStep = 0
-        self.log ('starting Point Test')
-        res = self.ta.gotoAzAlt(testCase[self.testStep]['az'], testCase[self.testStep]['alt'])
-
-
-    def run(self):
-        if self.state == 'STOP':
-            return
-
-        if self.state == 'RECORD':
-            alt = self.ta.getAltitude()
-            az = self.ta.getAzimuth()
-            self.update(az, alt)
-            self.render()
-            return
-
-        # Finished slewing
-        t1 = self.ta.readDateTime()         # python datetime from TeenAstro
-        t2 = self.ts.from_datetime(t1)      # converted to skyfield format
-        lst = t2.gmst + self.lon / 15   
-
-#        print (refraction(0.0, temperature_C=15.0, pressure_mbar=1030.0))
-        axis1 = self.ta.getAxis1() 
-        axis2 = self.ta.getAxis2()
-        alt = self.ta.getAltitude()
-        az = self.ta.getAzimuth()
-        pierSide = self.ta.getPierSide()
-
-        # report test result, execute next step
-        self.update(az, alt)
-        self.testStep += 1
-        if self.testStep == len(testCase):
-            self.log('Finished test - go Home')
-            self.ta.goHome()
-            self.busy = False
-            self.state = 'STOP'
-            return
-        res = self.ta.gotoAzAlt(testCase[self.testStep]['az'], testCase[self.testStep]['alt'])
-
-
-
-
-class driftPlot():
-    def __init__(self, window, ta, ts):
-        self.window = window
-        self.ta = ta
-        self.ts = ts
-        self.x = np.linspace(0, numSamples-1, numSamples)
-        self.ra = np.zeros(numSamples)
-        self.dec = np.zeros(numSamples)
-        self.fig, self.axes = plt.subplots(2, sharex=True, sharey=True, figsize=(10,6), dpi=36)
-        self.yScale = 10
-        self.axes[0].set_ylim(-self.yScale,self.yScale)
-        self.axes[0].set_xlabel('time (seconds)')
-        self.axes[0].set_ylabel('Right Ascension (arc-sec)')
-        self.axes[1].set_ylabel('Declination (arc-sec)')
-        self.line1, = self.axes[0].plot(self.x,self.ra,'green')
-        self.line2, = self.axes[1].plot(self.x,self.dec,'red')
-        self.figure_canvas_agg = FigureCanvasTkAgg(self.fig, master=window['drift_cv'].TKCanvas)
-        self.planets = load('de421.bsp')
-        self.state = 'STOP'
-
-    def handleEvent(self, ev, v, w):
-        if (ev == 'startStopDrift'):
-            if not self.ta.isConnected():
-                self.log('Not connected')
-                return
-
-            if self.state == 'STOP':
-                self.log ('running')
-                self.window['startStopDrift'].update('Stop')
-                self.start()
-            else:
-                self.log ('stopped')
-                self.window['startStopDrift'].update('Start')
-                self.state = 'STOP'
-
-        if (ev == 'clearDrift'):
-            self.ra = np.zeros(numSamples)
-            self.dec =  np.zeros(numSamples)
-            self.update(0, 0)
-            self.render()
-
-        if (ev == 'saveDrift'):
-            self.saveCsv()
-
-        if (ev == 'zoomIn'):
-            self.yScale = self.yScale / 2
-            self.axes[0].set_ylim(-self.yScale,self.yScale)
-            self.render()
-
-        if (ev == 'zoomOut'):
-            self.yScale = self.yScale * 2
-            self.axes[0].set_ylim(-self.yScale,self.yScale)
-            self.render()
-
-        if (ev =='__TIMEOUT__'):
-            if not self.ta.isConnected():
-                return
-            if (self.state == 'RECORD'):
-                self.run()
-
-
-    def saveCsv(self):
-        self.log ('Saving to driftTest.csv')
-        data = np.stack((self.ra, self.dec), axis=1)
-        np.savetxt("driftTest.csv", data, delimiter=",", fmt="%3.8f",
-                       header="axis1Drift, axis2Drift", comments="")
-
-    def log(self, message):
-        print (message)
-
-    def render(self):
-        self.figure_canvas_agg.draw()
-        self.figure_canvas_agg.get_tk_widget().pack(side='right', fill='both', expand=1)
-        try:
-            ra_rate = 3600 * (self.ra[-1] - self.ra[-10]) / 10
-        except:
-            ra_rate = 0
-        self.window['ra_rate'].Update('{0:2.2f}'.format(ra_rate)) 
-        try:
-            dec_rate = 3600 * (self.dec[-1] - self.dec[-10]) / 10
-        except:
-            dec_rate = 0
-        self.window['dec_rate'].Update('{0:2.2f}'.format(dec_rate)) 
-
-    def update(self, ra, dec):
-        self.ra = np.append(self.ra, ra)
-        self.line1.set_ydata(3600*self.ra[-100:])   # arc-seconds
-        self.dec = np.append(self.dec, dec)
-        self.line2.set_ydata(3600*self.dec[-100:])
-
-    def start(self):
-        if not self.ta.isConnected():
-            self.log('Not connected')
-            return
-        self.log ('start Drift Test')
-        self.testStep = 0
-
-        self.lat = self.ta.getLatitude()
-        self.lon = -self.ta.getLongitude()       # LX200 treats west longitudes as positive, Skyfield as negative
-
-        t1 = self.ts.now()
-        lst = t1.gmst + self.lon / 15       # in hours   
-
-        pierSide = self.ta.getPierSide()
-        axis1 = self.ta.getAxis1()
-        axis2 = self.ta.getAxis2()
-        self.initialRA = 15.0 * lst - axis1  # in degrees
-        self.initialDec = axis2
-        self.state = 'RECORD'
-
-    def run(self):
-        t1 = self.ts.now()
-        lst = 15.0 * t1.gmst + self.lon         # in degrees   
-
-        pierSide = self.ta.getPierSide()
-        axis1 = self.ta.getAxis1()
-        axis2 = self.ta.getAxis2()
-        ra = lst - axis1  # in degrees
+        ha = axis1 / 15
         dec = axis2
-        self.update(ra-self.initialRA, dec-self.initialDec)
-        self.render()
+    else:
+        ha = (axis1+180) / 15
+        dec = 180-axis2
+    return ha, dec
+
+def altazAxesToAltAz(axis1, axis2):
+    az = 180 + axis1
+    alt = axis2
+    return az, alt
+
+
+
 
 
 class alignmentPlot():
-    def __init__(self, window, ta, ts):
+    def __init__(self, window, ts, ta):
         self.window = window
-        self.ta = ta
         self.ts = ts
+        self.ta = ta
         self.planets = load('de421.bsp')
         # Load star catalog and compute Jnow from J2000 coordinates
         self.stars = read_csv('stars.csv')
@@ -461,7 +195,7 @@ class alignmentPlot():
             ra = star.ra_hours.values[0]
             dec = star.dec_degrees.values[0]
             self.log('Goto {0}'.format (self.window['alignmentTarget'].get()))
-            self.log(self.ta.gotoRaDec(ra,dec))
+            self.ta.gotoRaDec(ra,dec)
 
         if (ev =='__TIMEOUT__'):
             if not self.ta.isConnected():
@@ -486,9 +220,8 @@ class alignmentPlot():
         axis1 = self.ta.getAxis1()
         axis2 = self.ta.getAxis2()        
         lst = self.ta.getLST()            # in hours
-        ha = convertAxis1(axis1, pierSide) / 15 
+        ha, dec = eqAxesToHaDec(axis1, axis2, pierSide)
         ra = lst - ha                      # in hours
-        dec = convertAxis2(axis2, pierSide)
         return (ra,dec,lst,ha)   
 
     def computePolarError(self, Δa, Δe, dec, lst, ha):    # from Wikipedia
@@ -528,7 +261,10 @@ class alignmentPlot():
         if not self.ta.isConnected():
             self.log('Not connected')
             return
-
+        self.mountType = self.ta.readMountType()
+        if not self.mountType in ['E', 'K']:
+            self.log('not yet implemented for Alt Az mounts')
+            return
         self.lat = self.ta.getLatitude()
         self.lon = -self.ta.getLongitude()       # LX200 treats west longitudes as positive, Skyfield as negative
         self.site = self.planets['earth'] + wgs84.latlon(self.lat, self.lon)
@@ -538,22 +274,43 @@ class alignmentPlot():
         self.state = 'RUN'
 
 
+# Declare function to define command-line arguments
+def readOptions(args=sys.argv[1:]):
+  parser = argparse.ArgumentParser(description="The parsing commands lists.")
+  parser.add_argument('-t', '--portType', help='TeenAstro connection type (tcp or serial)')
+  parser.add_argument('-p', '--portName', help='TeenAstro IP address or serial port')
+  parser.add_argument('-b', '--baudRate', help='TeenAstro baud rate')
+  opts = parser.parse_args(args)
+  return opts
 
 
 # Main program
 class Application:
 
     def __init__(self, options):
-
         self.ts = load.timescale()
 
         self.window = sg.Window('TeenAstro AutoTest', layout, finalize=True, size=(1024,720))
-        self.window['-IPADDR-'].update(options.ip)
-        self.ta = TeenAstro('tcp', options.ip)
+        if options.portType == 'tcp':
+            self.window['-tcp-'].update(value = True)
+            self.window['-IPADDR-'].update(disabled = False)
+            self.window['-IPADDR-'].update(options.portName)
+            self.window['-IPADDR-'].SetFocus()
+            self.window['-ComPorts-'].update(disabled = True)
+        elif options.portType == 'serial':
+            self.window['-Serial-'].update(value = True)
+            self.window['-ComPorts-'].update(disabled = False)
+            self.window['-ComPorts-'].SetFocus()
+            self.window['-ComPorts-'].update(options.portName)
+            self.window['-BaudRate-'].update(options.baudRate)
+            self.window['-IPADDR-'].update(disabled = True)
 
-        self.dp = driftPlot(self.window, self.ta, self.ts)
-        self.pp = pointingPlot(self.window, self.ta, self.ts)
-        self.ap = alignmentPlot(self.window, self.ta, self.ts)
+        self.ta = TeenAstro(portType=options.portType, portName=options.portName, baudRate=options.baudRate)
+
+        self.dp = driftPlot(self.window, self.ts, self.ta)
+        self.pp = pointingPlot(self.window, self.ts, self.ta)
+        self.ap = alignmentPlot(self.window, self.ts, self.ta)
+        self.sp = slewPlot(self.window, self.ts, self.ta)
         self.run()
 
     def run(self):
@@ -562,35 +319,47 @@ class Application:
 
             if event in (sg.WIN_CLOSED, 'Exit'): 
                 break
-
-            if event == '-serial-':
-                self.log('Serial selected')
-                self.window['-ComPorts-'].SetFocus()
-                self.window['-ComPorts-'].update(disabled = False)
-                self.window['-IPADDR-'].update(disabled = True)
-                # collect available serial ports on the system
-                serPortList = serial.tools.list_ports.comports()
-                serPortsDetected = []
-                for port in serPortList:
-                    serPortsDetected.append(port.device)
-                self.window['-ComPorts-'].update(values = sorted(serPortsDetected))            
-                self.ta.portType = 'serial'
              
-            if event == '-tcp-':
-                self.log('TCP selected')
-                self.portType = 'tcp'
+            if event == '-Serial-':
+              print('Serial selected')
+              self.window['-ComPorts-'].SetFocus()
+              self.window['-ComPorts-'].update(disabled = False)
+              self.window['-IPADDR-'].update(disabled = True)
+              # collect available serial ports on the system
+              serPortList = serial.tools.list_ports.comports()
+              serPortsDetected = []
+              for port in serPortList:
+                serPortsDetected.append(port.device)
+              self.window['-ComPorts-'].update(values = sorted(serPortsDetected))
+              self.ta.portType = 'serial'
 
+            if event == '-tcp-':
+              print('TCP selected')
+              self.window['-ComPorts-'].update(disabled = True)
+              self.window['-IPADDR-'].SetFocus()
+              self.window['-IPADDR-'].update(disabled = False)
+              self.ta.portType = 'tcp'
+  
             if event == 'connect':
                 if self.ta.isConnected():
                     self.ta.close()
+                    print ('Disconnected')
                     self.window['connect'].update('Connect')
                 else:
                     if self.ta.portType == 'tcp':
-                        self.ta.portName = values['-IPADDR-']
+                        self.ta = TeenAstro(portType='tcp', portName=values['-IPADDR-'], baudRate=values['-BaudRate-'])
                     else:
-                        self.ta.portName = values['-ComPorts-']
-                    self.connect() 
-                    self.window['connect'].update('Disconnect')
+                        self.ta = TeenAstro(portType='serial', portName=values['-ComPorts-'], baudRate=values['-BaudRate-'])
+                    p = self.ta.open()
+                    if (p != None):
+                        print ('connected')
+                        self.window['connect'].update('Disconnect')
+                        self.dp.ta = self.ta
+                        self.pp.ta = self.ta
+                        self.ap.ta = self.ta
+                        self.sp.ta = self.ta
+                    else:
+                        print ('Error opening port')
 
             t = self.window['tgroup'].get()
             if t == 'dtest':
@@ -599,19 +368,11 @@ class Application:
                 self.pp.handleEvent(event, values, self.window)
             elif t == 'atest':
                 self.ap.handleEvent(event, values, self.window)
+            elif t == 'stest':
+                self.sp.handleEvent(event, values, self.window)
                 
         self.window.close()
 
-
-    def connect(self):
-        try:
-            p = self.ta.open()
-        except:
-            self.log ("Error connecting to TeenAstro")
-            return
-        if p == None:
-            self.log ("Error connecting to TeenAstro")
-            return
 
     def log(self, message):
         print (message)
