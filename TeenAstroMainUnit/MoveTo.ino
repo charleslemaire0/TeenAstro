@@ -7,27 +7,27 @@ void moveTo()
   // HA goes from +90...0..-90
   //                W   .   E
   static long lastPosAxis2 = 0;
-  volatile long distStartAxis1, distStartAxis2, distDestAxis1, distDestAxis2;
-  cli();
-  distStartAxis1 = abs(distStepAxis1(&staA1.start, &staA1.pos));  // distance from start HA
-  distStartAxis2 = abs(distStepAxis2(&staA2.start, &staA2.pos));  // distance from start Dec
-  sei();
-  if (distStartAxis1 < 1) distStartAxis1 = 1;
-  if (distStartAxis2 < 1) distStartAxis2 = 1;
+  volatile unsigned long distStartAxis1, distStartAxis2, distDestAxis1, distDestAxis2, d;
+  staA1.updateDeltaStart();
+  staA2.updateDeltaStart();
+  distStartAxis1 = max(abs(staA1.deltaStart),1L);  // distance from start HA
+  distStartAxis2 = max(abs(staA2.deltaStart),1L);  // distance from start Dec
+
 Again:
-  updateDeltaTarget();
-  cli();
-  long tempPosAxis2 = staA2.pos;
-  sei();
-  distDestAxis1 = abs(staA1.deltaTarget);  // distance from dest HA
-  distDestAxis2 = abs(staA2.deltaTarget);  // distance from dest Dec
+  staA1.updateDeltaTarget();
+  staA2.updateDeltaTarget();
+
+  distDestAxis1 = max(abs(staA1.deltaTarget),1L);  // distance from dest HA
+  distDestAxis2 = max(abs(staA2.deltaTarget),1L);  // distance from dest Dec
   // adjust rates near the horizon to help keep from exceeding the minAlt limit
   if (!isAltAZ())
   {
+    cli();
+    volatile long tempPosAxis2 = staA2.pos;
+    sei();
     if (tempPosAxis2 != lastPosAxis2)
     {
       bool decreasing = tempPosAxis2 < lastPosAxis2;
-
       //  Correct according to pier side and latitude
       if ((GetPierSide() == PIER_WEST) == (*localSite.latitude() > 0))
           decreasing = !decreasing;
@@ -36,7 +36,7 @@ Again:
       if (decreasing)
       {
         cli();
-        long a = max((currentAlt - minAlt)*geoA2.stepsPerDegree, 1);
+        unsigned long a = max((currentAlt - minAlt)*geoA2.stepsPerDegree, 1);
         if (a < distDestAxis2)
           distDestAxis2 = a;
         sei();
@@ -45,7 +45,7 @@ Again:
         // if Dec is increasing, slow down HA
       {
         cli();
-        long a = max((currentAlt - minAlt)*geoA1.stepsPerDegree, 1);
+        unsigned long a = max((currentAlt - minAlt)*geoA1.stepsPerDegree, 1);
         if (a < distDestAxis1)
           distDestAxis1 = a;
         sei();
@@ -54,35 +54,12 @@ Again:
     lastPosAxis2 = tempPosAxis2;
   }
 
-  if (distDestAxis1 < 1) distDestAxis1 = 1;
-  if (distDestAxis2 < 1) distDestAxis2 = 1;
-
   // quickly slow the motors and stop in 1 degree
   if (abortSlew)
   {
-    // set the destination near where we are now
-    cli();
-    // recompute distances
-    updateDeltaTarget();
-    long a = pow(getV(staA1.timerRate), 2.) / (2. * staA1.acc);
-    if (abs(staA1.deltaTarget) > a)
-    {
-      if (0 > staA1.deltaTarget)
-        a = -a;
-      cli()
-        staA1.target = staA1.pos + a;
-      sei();
-    }
+    staA1.breakMove();
     guideA1.dir = 'b';
-    a = pow(getV(staA2.timerRate), 2.) / (2. * staA2.acc);
-    if (abs(staA2.deltaTarget) > a)
-    {
-      if (0 > staA2.deltaTarget) // overshoot
-        a = -a;
-      cli();
-      staA2.target = staA2.pos + a;
-      sei();
-    }
+    staA2.breakMove();
     guideA2.dir = 'b';
     if (parkStatus == PRK_PARKING)
     {
@@ -101,41 +78,26 @@ Again:
 
   // First, for Right Ascension
   double temp;
-
-  if (distStartAxis1 >= distDestAxis1)
-  {
-    temp = getRate(sqrt(distDestAxis1 * 2 * staA1.acc) + (staA1.RequestedTrackingRate) / SiderealRate); // slow down (temp gets bigger)
-  }
-  else
-  {
-    temp = getRate(sqrt(distStartAxis1 * 2 * staA1.acc) + (staA1.RequestedTrackingRate) / SiderealRate); // speed up (temp gets smaller)
-  }
-  if (temp < maxRate) temp = maxRate; // fastest rate
-  cli(); staA1.timerRate = temp; sei();
+  d = distStartAxis1 < distDestAxis1 ? distStartAxis1 : distDestAxis1;
+  temp = getRate(staA2.GetVfromDist(d), minRate1);
+  cli();
+  staA1.timeByStep_Cur = max(temp, maxRate1);
+  sei();
 
   // Now, for Declination
-
-  if (distStartAxis2 >= distDestAxis2)
-  {
-    temp = getRate(sqrt(distDestAxis2 * 2 * staA2.acc + (staA2.RequestedTrackingRate) / SiderealRate)); // slow down
-  }
-  else
-  {
-    temp = getRate(sqrt(distStartAxis2 * 2 * staA2.acc + (staA2.RequestedTrackingRate) / SiderealRate));// speed up
-  }
-  if (temp < maxRate) temp = maxRate; // fastest rate
-  cli(); staA2.timerRate = temp; sei();
-
-  double v1 = max(abs(staA1.RequestedTrackingRate), 1.);
-  double v2 = max(abs(staA2.RequestedTrackingRate), 1.);
-
-  if (atTargetAxis1(true, v1) && atTargetAxis2(true, v2))
+  d = distStartAxis2 < distDestAxis2 ? distStartAxis2 : distDestAxis2;
+  temp = getRate(staA2.GetVfromDist(d), minRate2);
+  cli();
+  staA2.timeByStep_Cur = max(temp, maxRate2);
+  sei();
+  
+  if (staA1.atTarget(false) && staA2.atTarget(false))
   {
     movingTo = false;
-    SetSiderealClockRate(siderealInterval);
+    SetsiderealClockRate(siderealClockRate);
     cli();
-    staA1.timerRate = SiderealRate;
-    staA2.timerRate = SiderealRate;
+    staA1.resetToSidereal();
+    staA2.resetToSidereal();
     sei();
     DecayModeTracking();
     // other special gotos: for parking the mount and homeing the mount

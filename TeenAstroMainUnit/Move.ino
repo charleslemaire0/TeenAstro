@@ -79,7 +79,7 @@ void StopAxis1()
   if (guideA1.dir == 'b')
     return;
   staA1.updateDeltaTarget();
-  long a = pow(getV(staA1.timerRate), 2.) / (2. * staA1.acc);
+  long a = pow(getV(staA1.timeByStep_Cur), 2.) / (4. * staA1.acc);
   if (abs(staA1.deltaTarget) > a)
   {
     if (0 > staA1.deltaTarget)
@@ -173,7 +173,7 @@ void MoveAxis2AtRate(const double newrate)
 
 void StopAxis2()
 {
-  long a = pow(getV(staA2.timerRate), 2.) / (2. * staA2.acc);
+  long a = pow(getV(staA2.timeByStep_Cur), 2.) / (4. * staA2.acc);
   staA2.updateDeltaTarget();
   if (abs(staA2.deltaTarget) > a)
   {

@@ -44,17 +44,24 @@ bool hasGNSS = true;
 RefractionFlags doesRefraction;
 TrackingCompensation tc = TC_NONE;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
-double                  siderealInterval = 15956313.0;
-const double            masterSiderealInterval = 15956313.0;
+double                  siderealClockRate = 15956313.0;
+const double            masterSiderealClockRate = 15956313.0;
 
 // default = 15956313 ticks per sidereal hundredth second, where a tick is 1/16 uS
 // this is stored in XEEPROM.which is updated/adjusted with the ":T+#" and ":T-#" commands
 // a higher number here means a longer count which slows down the sidereal clock
-const double            HzCf = 16000000.0 / 60.0;   // conversion factor to go to/from Hz for sidereal interval
-volatile double         SiderealRate;               // based on the siderealInterval, this is the time between steps for sidereal tracking
-volatile double         TakeupRate;                 // this is the takeup rate for synchronizing the target and actual positions when needed
+const double            tick2microSec = 0.0625;
+const double            microSec2Tick = 16.0;
+const double            masterClockRate = microSec2Tick*1000000;    // reference frequence for tick
+const double            HzCf = masterClockRate / 60.0;   // conversion factor to go to/from Hz for sidereal interval
+            
 
-double                  maxRate = StepsMaxRate * 16L;
+
+double                  maxRate1 = StepsMaxRate * microSec2Tick;
+double                  minRate1 = StepsMinRate * microSec2Tick;
+double                  maxRate2 = StepsMaxRate * microSec2Tick;
+double                  minRate2 = StepsMinRate * microSec2Tick;
+
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
 
@@ -68,7 +75,6 @@ backlash            backlashA2 = { 0,0,0,0 };
 GeoAxis             geoA1;
 GeoAxis             geoA2;
 
-volatile double     timerRateRatio;
 StatusAxis          staA1;
 StatusAxis          staA2;
 

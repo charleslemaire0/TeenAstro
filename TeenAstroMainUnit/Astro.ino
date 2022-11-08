@@ -6,24 +6,14 @@
 
 void updateDeltaTarget()
 {
-  cli();
-  staA1.deltaTarget = (long)staA1.target - staA1.pos;
-  staA2.deltaTarget = (long)staA2.target - staA2.pos;
-  sei();
+  staA1.updateDeltaTarget();
+  staA2.updateDeltaTarget();
 }
 
-bool atTargetAxis1(bool update = false, double TrackingRate = 1.)
+void updateDeltaStart()
 {
-  if (update)
-    staA1.updateDeltaTarget();
-  return geoA1.atTarget(staA1.deltaTarget, TrackingRate);
-}
-
-bool atTargetAxis2(bool update = false, double TrackingRate = 1.)
-{
-  if (update)
-    staA2.updateDeltaTarget();
-  return geoA2.atTarget(staA2.deltaTarget, TrackingRate);
+  staA1.updateDeltaStart();
+  staA2.updateDeltaStart();
 }
 
 PierSide GetPierSide()
@@ -51,7 +41,7 @@ void SetTrackingRate(double rHA, double rDEC)
 }
 
 void computeTrackingRate(bool apply)
-{  
+{
   //reset SideralMode if it is equal to sideralspeed
   if (RequestedTrackingRateHA == 1 && RequestedTrackingRateDEC == 0)
   {
@@ -96,9 +86,9 @@ void do_compensation_calc()
   double HA_tmp, HA_now = 0.;
   double Dec_tmp, Dec_now = 0.;
   double Azm_tmp, Alt_tmp = 0.;
-  double DriftHA = 0; 
+  double DriftHA = 0;
   double DriftDEC = 0;
-  double axis1_delta, axis2_delta= 0;
+  double axis1_delta, axis2_delta = 0;
 
   // turn off if not tracking at sidereal rate
   if (!sideralTracking)
@@ -143,8 +133,8 @@ void do_compensation_calc()
   while (axis2_delta < -180) axis2_delta += 360.;
   while (axis2_delta >= 180) axis2_delta -= 360.;
 
-  staA1.RequestedTrackingRate = 0.5 * axis1_delta * (3600. / (TimeRange*15));
-  staA2.RequestedTrackingRate = 0.5 * axis2_delta * (3600. / (TimeRange*15));
+  staA1.RequestedTrackingRate = 0.5 * axis1_delta * (3600. / (TimeRange * 15));
+  staA2.RequestedTrackingRate = 0.5 * axis2_delta * (3600. / (TimeRange * 15));
 
 
   //Limite rate up to 8 time the sidereal speed 
@@ -155,38 +145,42 @@ void do_compensation_calc()
 void initMaxRate()
 {
   double maxslewEEPROM = XEEPROM.readInt(EE_maxRate);
-  double maxslewCorrected = SetRates(maxslewEEPROM);          // set the new acceleration rate
-  if (abs(maxslewEEPROM - maxslewCorrected) > 2)
-  {
-    XEEPROM.writeInt(EE_maxRate, (int)maxslewCorrected);
-  }
+  SetRates(maxslewEEPROM);          // set the new acceleration rate
 }
 
 // Acceleration rate calculation
-double SetRates(double maxslewrate)
+void SetRates(double maxslewrate)
 {
   // set the new acceleration rate
-  double stpdg = max(geoA1.stepsPerDegree, geoA2.stepsPerDegree);
-  double fact = 3600. / 15. * 1. / (stpdg * 1. / 16. / 1000000.);
-  maxRate = max(fact / maxslewrate, StepsMaxRate * 16L);
-  maxslewrate = fact / maxRate;
-  guideRates[4] = maxslewrate;
-  if (guideRates[3] >= maxslewrate)
+
+  double fact1 = masterClockRate / geoA1.stepsPerSecond;
+  double fact2 = masterClockRate / geoA2.stepsPerSecond;
+  maxRate1 = max(fact1 / maxslewrate, StepsMaxRate * microSec2Tick);
+  maxRate2 = max(fact2 / maxslewrate, StepsMaxRate * microSec2Tick);
+  double maxslewCorrected = min(fact1 / maxRate1, fact2 / maxRate2);
+  if (abs(maxslewrate - maxslewCorrected) > 2)
+  {
+    XEEPROM.writeInt(EE_maxRate, (int)maxslewCorrected);
+  }
+  maxRate1 = fact1 / maxslewCorrected;
+  maxRate2 = fact2 / maxslewCorrected;
+  guideRates[4] = maxslewCorrected;
+  if (guideRates[3] >= maxslewCorrected)
   {
     guideRates[3] = 64;
     XEEPROM.write(EE_Rate3, guideRates[3]);
   }
   resetGuideRate();
   SetAcceleration();
-  return maxslewrate;
 }
 
 void SetAcceleration()
 {
-  double Vmax = getV(maxRate);
+  double Vmax1 = getV(maxRate1);
+  double Vmax2 = getV(maxRate2);
   cli();
-  staA1.acc = Vmax / (2. * DegreesForAcceleration * geoA1.stepsPerDegree)*Vmax;
-  staA2.acc = Vmax / (2. * DegreesForAcceleration * geoA2.stepsPerDegree)*Vmax;
+  staA1.acc = Vmax1 / (4. * DegreesForAcceleration * geoA1.stepsPerDegree) * Vmax1;
+  staA2.acc = Vmax2 / (4. * DegreesForAcceleration * geoA2.stepsPerDegree) * Vmax2;
   sei();
 }
 
@@ -212,7 +206,7 @@ void enableGuideRate(int g, bool force)
 
 void enableGuideAtRate(int axis, double rate)
 {
-  if (axis == 1  && guideTimerBaseRate1!= rate)
+  if (axis == 1 && guideTimerBaseRate1 != rate)
   {
     guideTimerBaseRate1 = rate;
     cli();

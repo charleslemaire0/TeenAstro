@@ -81,9 +81,7 @@ void setup()
     XEEPROM.write(EE_Rate3, 64);
 
     // init the default maxRate
-    if (maxRate < 2L * 16L) maxRate = 2L * 16L;
-    if (maxRate > 10000L * 16L) maxRate = 10000L * 16L;
-    XEEPROM.writeInt(EE_maxRate, (int)(maxRate / 16L));
+    XEEPROM.writeInt(EE_maxRate, 200);
 
 
     // init degree for acceleration
@@ -91,7 +89,7 @@ void setup()
 
     // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
     // 1/16uS resolution timer, ticks per sidereal second
-    XEEPROM.writeLong(EE_siderealInterval, siderealInterval);
+    XEEPROM.writeLong(EE_siderealClockRate, siderealClockRate);
 
     // the transformation is not valid
     XEEPROM.write(EE_Tvalid, 0);
@@ -169,7 +167,7 @@ void setup()
   DecayModeTracking();
 
   // this sets the sidereal timer, controls the tracking speed so that the mount moves precisely with the stars
-  siderealInterval = XEEPROM.readLong(EE_siderealInterval);
+  siderealClockRate = XEEPROM.readLong(EE_siderealClockRate);
   updateSideral();
   beginTimers();
 
@@ -693,7 +691,6 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
   geoA2.setstepsPerRot((long)motorA2.gear * motorA2.stepRot * (int)pow(2, motorA2.micro));
   backlashA1.inSteps = (int)round(((double)backlashA1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
   backlashA2.inSteps = (int)round(((double)backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
-  timerRateRatio = geoA1.stepsPerSecond / geoA2.stepsPerSecond;
   sei();
 
   initCelestialPole();
@@ -713,17 +710,16 @@ void updateSideral()
 {
   // 16MHZ clocks for steps per second of sidereal tracking
   cli();
-  SiderealRate = siderealInterval / geoA1.stepsPerSecond;
-  TakeupRate = SiderealRate / 8L;
+  staA1.setSidereal(siderealClockRate, geoA1.stepsPerSecond, masterClockRate);
+  staA2.setSidereal(siderealClockRate, geoA2.stepsPerSecond, masterClockRate);
   sei();
-  staA1.timerRate = SiderealRate;
-  staA2.timerRate = SiderealRate;
+
   SetTrackingRate(default_tracking_rate,0);
 
   // backlash takeup rates
-  backlashA1.timerRate = staA1.timerRate / BacklashTakeupRate;
-  backlashA2.timerRate = staA2.timerRate / BacklashTakeupRate;
+  backlashA1.timerRate = staA1.timeByStep_Cur / BacklashTakeupRate;
+  backlashA2.timerRate = staA2.timeByStep_Cur / BacklashTakeupRate;
 
   // initialize the timers that handle the sidereal clock, RA, and Dec
-  SetSiderealClockRate(siderealInterval);
+  SetsiderealClockRate(siderealClockRate);
 }

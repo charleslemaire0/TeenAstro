@@ -17,22 +17,114 @@ class StatusAxis
 public:
   bool                enable = false;
   bool                fault = false;
-  volatile double     acc = 0;// acceleration in steps per second square
-  volatile long       pos;    // angle position in steps
-  volatile long       start;  // angle of goto start position in steps
-  volatile double     target; // angle of goto end   position in steps
+  volatile double     acc = 0;                         // acceleration in steps per second square
+  volatile long       pos;                             // angle position in steps
+  volatile long       start;                           // angle of goto start position in steps
+  volatile double     target;                          // angle of goto end   position in steps
   volatile long       deltaTarget;
-  volatile bool       dir;    // stepping direction + or -
-  double              fstep;  // amount of steps for Tracking
-  volatile double     timerRate = 0;
+  volatile long       deltaStart;
+  volatile bool       dir;                             // stepping direction + or -
+  double              fstep;                           // amount of steps for Tracking
+  volatile double     timeByStep_Sid;                  // based on the siderealClockRate, this is the time between steps for sidereal tracking
+  volatile double     takeupRate;                      // this is the takeup rate for synchronizing the target and actual positions when needed
+  volatile double     timeByStep_Cur = 0;              // this is the time between steps for the current rotation speed
   volatile double     CurrentTrackingRate = default_tracking_rate; //effective rate tracking in Hour arc-seconds/second
   double              RequestedTrackingRate = default_tracking_rate; //computed  rate tracking in Hour arc-seconds/second
-  void                updateDeltaTarget()
+  long                minstepdist;
+  double              masterClockRate;
+  void updateDeltaTarget()
   {
     cli();
     deltaTarget = (long)target - pos;
     sei();
   };
+  void updateDeltaStart()
+  {
+    cli();
+    deltaStart = pos - start;
+    sei();
+  };
+  bool atTarget(bool update)
+  {
+    if (update)
+    {
+      updateDeltaTarget();
+    }
+    return abs(deltaTarget) < max(minstepdist * RequestedTrackingRate ,1);
+  };
+  void resetToSidereal()
+  {
+    timeByStep_Cur = timeByStep_Sid;
+  };
+  void setSidereal(double siderealClockRate, double stepsPerSecond, double ClockRate)
+  {
+    masterClockRate = ClockRate;
+    timeByStep_Sid = siderealClockRate / stepsPerSecond;
+    minstepdist = 0.25 * stepsPerSecond;
+    takeupRate = timeByStep_Sid / 8L;
+    resetToSidereal();
+  };
+  //double GetVfromTime(const double& time)
+  //{
+  //  
+  //}
+  //double GetTimeToBreak()
+  //{
+  //  //to do timerRate is not signed!!
+  //  return abs(getV(timerRate) - getV(siderealRate / RequestedTrackingRate)) / (2 * acc);
+  //}
+  //double GetVfromDist2(volatile long& distDestAxis1)
+  //{
+  //  //first compute the time we need to get that position
+  //  // solve a*t^2 + b*t + c = 0 => a0 * t^2 + v0 * t - deltaP = 0
+  //  // with a = acc, b = v0 (current speed) 
+  //  //compute determinant b2 ? 4ac
+  //  double v0 = getV(timerRate);
+  //  double deter = pow(v0, 2) + 4 * acc * distDestAxis1;
+  //  double t = (sqrt(deter) - v0) / (2 * acc);
+  //  //then compute speed from the time V = 2*acc*t+V0
+  //  return 2 * acc * t + v0;
+  //};
+  //long breakDist2()
+  //{
+  //  double t = GetTimeToBreak();
+  //  return acc* pow(t, 2) + getV(timerRate) * t;
+  //};
+  double GetRatefromTarget()
+  {
+    volatile unsigned long delta = abs(deltaTarget);
+    return getRate(GetVfromDist(delta));
+  }
+  double GetVfromDist(const volatile unsigned long& distDestAxis1)
+  {
+    return sqrt(distDestAxis1 * 4. * acc) ;
+  };
+  long breakDist()
+  {
+    return (long)pow(getV(timeByStep_Cur), 2.) / (4. * acc);
+  };
+  void breakMove()
+  {
+    updateDeltaTarget();
+    long a = breakDist();
+    if (abs(deltaTarget) > a)
+    {
+      if (0 > deltaTarget) // overshoot
+        a = -a;
+      cli();
+      target = pos + a;
+      sei();
+    }
+  }
+private:
+  double getV(double rate) //Speed in step per second
+  {
+    return masterClockRate / rate ;
+  }
+  double getRate(double V)
+  {
+    return masterClockRate / V;
+  }
 };
 
 class GeoAxis
@@ -42,6 +134,7 @@ public:
   long   homeDef;   //in steps
   long   stepsPerRot; // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   double stepsPerDegree;
+  double stepsPerArcSecond;
   double stepsPerSecond;
   double stepsPerCentiSecond;
   long   halfRot;   //in steps
@@ -51,19 +144,15 @@ public:
 private:
   long   m_breakDist; //in steps
  public:
-  bool atTarget(const volatile long &deltaTarget, double factor)
-  {
-    return abs(deltaTarget) < max (m_breakDist * factor, m_breakDist);
-  }
   void setstepsPerRot(long val)
   {
     stepsPerRot = val;
     stepsPerDegree = stepsPerRot / 360.0;
     stepsPerSecond = stepsPerRot / 86400.0;
+    stepsPerArcSecond = stepsPerDegree / 3600.0;
     stepsPerCentiSecond = stepsPerRot / 8640000.0;
     halfRot = stepsPerRot / 2L;
-    quaterRot = stepsPerRot / 4L;
-    m_breakDist = max(2, stepsPerDegree / 3600.0 * 0.2);
+    quaterRot = stepsPerRot / 4L;    
     return;
   }
   bool withinLimit(const long &axis)
