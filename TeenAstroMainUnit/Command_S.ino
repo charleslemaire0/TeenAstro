@@ -585,11 +585,18 @@ void Command_S(Command& process_command)
     if (i > 0 && i < 5)
     {
       XEEPROM.write(EE_mountType, i);
-      Serial.end();
-      Serial1.end();
-      Serial2.end();
-      delay(1000);
-      _reboot_Teensyduino_();
+      if (!atHome)
+      {
+        strcpy(reply, "0");
+      }
+      else
+      {
+        Serial.end();
+        Serial1.end();
+        Serial2.end();
+        delay(1000);
+        _reboot_Teensyduino_();
+      }
     }
     else strcpy(reply, "0");
     break;
