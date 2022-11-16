@@ -146,8 +146,9 @@ ISR(TIMER1_COMPA_vect)
         }
       }
       // compute timerRateAxis  and avoid timerRate  to be extremly large
-      volatile double timerRateAxis1 = max(fabs(guideTimerRateAxisA1 + staA1.CurrentTrackingRate), 0.25);
+      volatile double timerRateAxis1 = fabs(guideTimerRateAxisA1 + staA1.CurrentTrackingRate);
       staA1.timeByStep_Cur = max(staA1.timeByStep_Sid / timerRateAxis1, maxRate1);
+      staA1.timeByStep_Cur = min(staA1.timeByStep_Cur, minRate1);
     }
 
     {
@@ -205,8 +206,9 @@ ISR(TIMER1_COMPA_vect)
         }
       }
       // compute timerRateAxis  and avoid timerRate  to be extremly large
-      volatile double timerRateAxis2 = max(fabs(guideTimerRateAxisA2 + staA2.CurrentTrackingRate), 0.25);
+      volatile double timerRateAxis2 = fabs(guideTimerRateAxisA2 + staA2.CurrentTrackingRate);
       staA2.timeByStep_Cur = max(staA2.timeByStep_Sid / timerRateAxis2, maxRate2);
+      staA2.timeByStep_Cur = min(staA2.timeByStep_Cur, minRate2);
     }
 
     if (!guideA1.dir && !guideA2.dir)

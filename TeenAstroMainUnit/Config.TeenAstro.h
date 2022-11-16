@@ -21,7 +21,7 @@
                                      // * = minimum can be lower, when both AXIS1/AXIS2_MODE_GOTO are used by AXIS1/AXIS2_STEP_GOTO times
 
 
-#define StepsMinRate        60000000 // this is the maximum number of micro-seconds between micro-steps
+#define StepsMinRate           10000 // this is the maximum number of micro-seconds between micro-steps
 
 
 #define BacklashTakeupRate        16 // backlash takeup rate (in multipules of the sidereal rate): too fast and your motors will stall,
