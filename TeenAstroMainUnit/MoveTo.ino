@@ -79,14 +79,14 @@ Again:
   // First, for Right Ascension
   double temp;
   d = distStartAxis1 < distDestAxis1 ? distStartAxis1 : distDestAxis1;
-  temp = getRate(staA2.GetVfromDist(d), minRate1);
+  temp = getRate(staA1.GetVfromDist(d), staA1.timeByStep_Sid/0.25);
   cli();
   staA1.timeByStep_Cur = max(temp, maxRate1);
   sei();
 
   // Now, for Declination
   d = distStartAxis2 < distDestAxis2 ? distStartAxis2 : distDestAxis2;
-  temp = getRate(staA2.GetVfromDist(d), minRate2);
+  temp = getRate(staA2.GetVfromDist(d), staA2.timeByStep_Sid/0.25);
   cli();
   staA2.timeByStep_Cur = max(temp, maxRate2);
   sei();
