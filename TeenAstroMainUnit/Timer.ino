@@ -31,7 +31,7 @@ interval speed2interval(speed V, speed minV)
 // set the master sidereal clock rate, also forces rate update for RA/Dec timer rates so that PPS adjustments take hold immediately
 void SetsiderealClockRate(double clockRate)
 {
-  Timer1SetRate(clockRate / 100);
+  Timer1SetInterval(clockRate / 100);
   isrTimerRateAxis1 = 0;
   isrTimerRateAxis2 = 0;
 }
@@ -48,29 +48,29 @@ void beginTimers()
   NVIC_SET_PRIORITY(IRQ_PIT_CH1, 0);
   NVIC_SET_PRIORITY(IRQ_PIT_CH2, 0);
 }
-// set timer1 to rate (in microseconds*16)
-static void Timer1SetRate(double rate)
+// set timer1 to interval (in microseconds*16)
+static void Timer1SetInterval(interval i)
 {
-  itimer1.begin(TIMER1_COMPA_vect, rate * 0.0625);
+  itimer1.begin(TIMER1_COMPA_vect, i * 0.0625);
 }
 
-// set timer3 to rate (in microseconds*16)
+// set timer3 to interval (in microseconds*16)
 static volatile uint32_t   nextAxis1Rate = 100000UL;
 
 
-static void Timer3SetRate(double rate)
+static void Timer3SetInterval(interval i)
 {
   cli();
-  nextAxis1Rate = (F_BUS / masterClockRate) * rate * 0.5 - 1;
+  nextAxis1Rate = (F_BUS / masterClockRate) * i * 0.5 - 1;
   sei();
 }
 
-// set timer4 to rate (in microseconds*16)
+// set timer4 to interval (in microseconds*16)
 static volatile uint32_t   nextAxis2Rate = 100000UL;
-static void Timer4SetRate(double rate)
+static void Timer4SetInterval(interval i)
 {
   cli();
-  nextAxis2Rate = (F_BUS / masterClockRate) * rate * 0.5 - 1;
+  nextAxis2Rate = (F_BUS / masterClockRate) * i * 0.5 - 1;
   sei();
 }
 
@@ -271,12 +271,12 @@ ISR(TIMER1_COMPA_vect)
   // set the rates
   if (thisTimerRateAxis1 != isrTimerRateAxis1)
   {
-    Timer3SetRate(thisTimerRateAxis1);
+    Timer3SetInterval(thisTimerRateAxis1);
     isrTimerRateAxis1 = thisTimerRateAxis1;
   }
   if (thisTimerRateAxis2 != isrTimerRateAxis2)
   {
-    Timer4SetRate(thisTimerRateAxis2);
+    Timer4SetInterval(thisTimerRateAxis2);
     isrTimerRateAxis2 = thisTimerRateAxis2;
   }
 }
