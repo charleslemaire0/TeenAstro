@@ -147,8 +147,8 @@ ISR(TIMER1_COMPA_vect)
       }
       // compute timerRateAxis  and avoid timerRate  to be extremly large
       volatile double timerRateAxis1 = fabs(guideTimerRateAxisA1 + staA1.CurrentTrackingRate);
-      staA1.timeByStep_Cur = max(staA1.timeByStep_Sid / timerRateAxis1, minInterval1);
-      staA1.timeByStep_Cur = min(staA1.timeByStep_Cur, maxInterval1);
+      staA1.interval_Step_Cur = max(staA1.interval_Step_Sid / timerRateAxis1, minInterval1);
+      staA1.interval_Step_Cur = min(staA1.interval_Step_Cur, maxInterval1);
     }
 
     {
@@ -207,8 +207,8 @@ ISR(TIMER1_COMPA_vect)
       }
       // compute timerRateAxis  and avoid timerRate  to be extremly large
       volatile double timerRateAxis2 = fabs(guideTimerRateAxisA2 + staA2.CurrentTrackingRate);
-      staA2.timeByStep_Cur = max(staA2.timeByStep_Sid / timerRateAxis2, minInterval2);
-      staA2.timeByStep_Cur = min(staA2.timeByStep_Cur, maxInterval2);
+      staA2.interval_Step_Cur = max(staA2.interval_Step_Sid / timerRateAxis2, minInterval2);
+      staA2.interval_Step_Cur = min(staA2.interval_Step_Cur, maxInterval2);
     }
 
     if (!guideA1.dir && !guideA2.dir)
@@ -217,8 +217,8 @@ ISR(TIMER1_COMPA_vect)
     }
   }
 
-  volatile double thisTimerRateAxis1 = staA1.timeByStep_Cur;
-  volatile double thisTimerRateAxis2 = staA2.timeByStep_Cur;
+  volatile double thisTimerRateAxis1 = staA1.interval_Step_Cur;
+  volatile double thisTimerRateAxis2 = staA2.interval_Step_Cur;
 
   // override rate during backlash compensation
   if (backlashA1.correcting)

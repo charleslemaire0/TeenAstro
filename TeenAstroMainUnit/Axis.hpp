@@ -25,9 +25,9 @@ public:
   volatile long       deltaStart;
   volatile bool       dir;                             // stepping direction + or -
   double              fstep;                           // amount of steps for Tracking
-  volatile double     timeByStep_Sid;                  // based on the siderealClockSpeed, this is the time between steps for sidereal tracking
+  volatile double     interval_Step_Sid;                  // based on the siderealClockSpeed, this is the time between steps for sidereal tracking 
   volatile double     takeupRate;                      // this is the takeup rate for synchronizing the target and actual positions when needed
-  volatile double     timeByStep_Cur = 0;              // this is the time between steps for the current rotation speed
+  volatile double     interval_Step_Cur = 0;              // this is the time between steps for the current rotation speed
   volatile double     CurrentTrackingRate = default_tracking_rate; //effective rate tracking in Hour arc-seconds/second
   double              RequestedTrackingRate = default_tracking_rate; //computed  rate tracking in Hour arc-seconds/second
   long                minstepdist;
@@ -54,14 +54,14 @@ public:
   };
   void resetToSidereal()
   {
-    timeByStep_Cur = timeByStep_Sid;
+    interval_Step_Cur = interval_Step_Sid;
   };
   void setSidereal(double siderealClockSpeed, double stepsPerSecond, double cs)
   {
     ClockSpeed = cs;
-    timeByStep_Sid = siderealClockSpeed / stepsPerSecond;
+    interval_Step_Sid = siderealClockSpeed / stepsPerSecond;
     minstepdist = 0.25 * stepsPerSecond;
-    takeupRate = timeByStep_Sid / 8L;
+    takeupRate = interval_Step_Sid / 8L;
     resetToSidereal();
   };
   //double interval2speedfromTime(const double& time)
@@ -73,7 +73,7 @@ public:
   //  //to do timerRate is not signed!!
   //  return abs(interval2speed(timerRate) - interval2speed(siderealRate / RequestedTrackingRate)) / (2 * acc);
   //}
-  //double interval2speedfromDist2(volatile long& distDestAxis1)
+  //double speedfromDist2(volatile long& distDestAxis1)
   //{
   //  //first compute the time we need to get that position
   //  // solve a*t^2 + b*t + c = 0 => a0 * t^2 + v0 * t - deltaP = 0
@@ -90,18 +90,18 @@ public:
   //  double t = GetTimeToBreak();
   //  return acc* pow(t, 2) + interval2speed(timerRate) * t;
   //};
-  double speed2intervalfromTarget()
+  double speedfromTarget()
   {
     volatile unsigned long delta = abs(deltaTarget);
-    return speed2interval(interval2speedfromDist(delta));
+    return speed2interval(speedfromDist(delta));
   }
-  double interval2speedfromDist(const volatile unsigned long& distDestAxis1)
+  double speedfromDist(const volatile unsigned long& distDestAxis1)
   {
     return sqrt(distDestAxis1 * 4. * acc) ;
   };
   long breakDist()
   {
-    return (long)pow(interval2speed(timeByStep_Cur), 2.) / (4. * acc);
+    return (long)pow(interval2speed(interval_Step_Cur), 2.) / (4. * acc);
   };
   void breakMove()
   {
@@ -117,13 +117,13 @@ public:
     }
   }
 private:
-  double interval2speed(double rate) //Speed in step per second
+  double interval2speed(double interval)
   {
-    return masterClockSpeed / rate ;
+    return ClockSpeed / interval;
   }
   double speed2interval(double V)
   {
-    return masterClockSpeed / V;
+    return ClockSpeed / V;
   }
 };
 
