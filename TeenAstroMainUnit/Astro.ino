@@ -176,8 +176,8 @@ void SetRates(double maxslewrate)
 
 void SetAcceleration()
 {
-  double Vmax1 = getV(minInterval1);
-  double Vmax2 = getV(minInterval2);
+  double Vmax1 = interval2speed(minInterval1);
+  double Vmax2 = interval2speed(minInterval2);
   cli();
   staA1.acc = Vmax1 / (4. * DegreesForAcceleration * geoA1.stepsPerDegree) * Vmax1;
   staA2.acc = Vmax2 / (4. * DegreesForAcceleration * geoA2.stepsPerDegree) * Vmax2;

@@ -14,17 +14,17 @@ static IntervalTimer  itimer4;
 static volatile double isrTimerRateAxis1 = 0;
 static volatile double isrTimerRateAxis2 = 0;
 
-double getV(double rate) //Speed in step per second
+speed interval2speed(interval i) //Speed in step per second
 {
-  return masterClockRate / rate;
+  return masterClockRate / i;
 }
-double getRate(double V, double minRate)
+interval speed2interval(speed V, speed minV)
 {
   if (V == 0)
   {
-    return minRate;
+    return minV;
   }
-  return min(masterClockRate / V, minRate);
+  return min(masterClockRate / V, minV);
 }
 
 

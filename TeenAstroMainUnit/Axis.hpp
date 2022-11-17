@@ -64,22 +64,22 @@ public:
     takeupRate = timeByStep_Sid / 8L;
     resetToSidereal();
   };
-  //double GetVfromTime(const double& time)
+  //double interval2speedfromTime(const double& time)
   //{
   //  
   //}
   //double GetTimeToBreak()
   //{
   //  //to do timerRate is not signed!!
-  //  return abs(getV(timerRate) - getV(siderealRate / RequestedTrackingRate)) / (2 * acc);
+  //  return abs(interval2speed(timerRate) - interval2speed(siderealRate / RequestedTrackingRate)) / (2 * acc);
   //}
-  //double GetVfromDist2(volatile long& distDestAxis1)
+  //double interval2speedfromDist2(volatile long& distDestAxis1)
   //{
   //  //first compute the time we need to get that position
   //  // solve a*t^2 + b*t + c = 0 => a0 * t^2 + v0 * t - deltaP = 0
   //  // with a = acc, b = v0 (current speed) 
   //  //compute determinant b2 ? 4ac
-  //  double v0 = getV(timerRate);
+  //  double v0 = interval2speed(timerRate);
   //  double deter = pow(v0, 2) + 4 * acc * distDestAxis1;
   //  double t = (sqrt(deter) - v0) / (2 * acc);
   //  //then compute speed from the time V = 2*acc*t+V0
@@ -88,20 +88,20 @@ public:
   //long breakDist2()
   //{
   //  double t = GetTimeToBreak();
-  //  return acc* pow(t, 2) + getV(timerRate) * t;
+  //  return acc* pow(t, 2) + interval2speed(timerRate) * t;
   //};
-  double GetRatefromTarget()
+  double speed2intervalfromTarget()
   {
     volatile unsigned long delta = abs(deltaTarget);
-    return getRate(GetVfromDist(delta));
+    return speed2interval(interval2speedfromDist(delta));
   }
-  double GetVfromDist(const volatile unsigned long& distDestAxis1)
+  double interval2speedfromDist(const volatile unsigned long& distDestAxis1)
   {
     return sqrt(distDestAxis1 * 4. * acc) ;
   };
   long breakDist()
   {
-    return (long)pow(getV(timeByStep_Cur), 2.) / (4. * acc);
+    return (long)pow(interval2speed(timeByStep_Cur), 2.) / (4. * acc);
   };
   void breakMove()
   {
@@ -117,11 +117,11 @@ public:
     }
   }
 private:
-  double getV(double rate) //Speed in step per second
+  double interval2speed(double rate) //Speed in step per second
   {
     return masterClockRate / rate ;
   }
-  double getRate(double V)
+  double speed2interval(double V)
   {
     return masterClockRate / V;
   }
