@@ -20,6 +20,9 @@ CoordConv alignment;
 bool hasStarAlignment = false;
 bool TrackingCompForAlignment = false;
 
+typedef double interval;
+typedef double speed;
+
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
@@ -57,10 +60,10 @@ const double            HzCf = masterClockRate / 60.0;   // conversion factor to
             
 
 
-double                  minInterval1 = StepsMaxRate * microSec2Tick;
-double                  maxInterval1 = StepsMinRate * microSec2Tick;
-double                  minInterval2 = StepsMaxRate * microSec2Tick;
-double                  maxInterval2 = StepsMinRate * microSec2Tick;
+interval                minInterval1 = StepsMinInterval * microSec2Tick;
+interval                maxInterval1 = StepsMaxInterval * microSec2Tick;
+interval                minInterval2 = StepsMinInterval * microSec2Tick;
+interval                maxInterval2 = StepsMaxInterval * microSec2Tick;
 
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
