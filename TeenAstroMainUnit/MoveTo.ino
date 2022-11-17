@@ -94,7 +94,7 @@ Again:
   if (staA1.atTarget(false) && staA2.atTarget(false))
   {
     movingTo = false;
-    SetsiderealClockRate(siderealClockRate);
+    SetsiderealClockSpeed(siderealClockSpeed);
     cli();
     staA1.resetToSidereal();
     staA2.resetToSidereal();

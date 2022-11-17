@@ -89,7 +89,7 @@ void setup()
 
     // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
     // 1/16uS resolution timer, ticks per sidereal second
-    XEEPROM.writeLong(EE_siderealClockRate, siderealClockRate*16);
+    XEEPROM.writeLong(EE_siderealClockSpeed, siderealClockSpeed*16);
 
     // the transformation is not valid
     XEEPROM.write(EE_Tvalid, 0);
@@ -167,7 +167,7 @@ void setup()
   DecayModeTracking();
 
   // this sets the sidereal timer, controls the tracking speed so that the mount moves precisely with the stars
-  siderealClockRate = (double)XEEPROM.readLong(EE_siderealClockRate)/16.0;
+  siderealClockSpeed = (double)XEEPROM.readLong(EE_siderealClockSpeed)/16.0;
   updateSideral();
   beginTimers();
 
@@ -708,10 +708,9 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
 
 void updateSideral()
 {
-  // 16MHZ clocks for steps per second of sidereal tracking
   cli();
-  staA1.setSidereal(siderealClockRate, geoA1.stepsPerSecond, masterClockRate);
-  staA2.setSidereal(siderealClockRate, geoA2.stepsPerSecond, masterClockRate);
+  staA1.setSidereal(siderealClockSpeed, geoA1.stepsPerSecond, masterClockSpeed);
+  staA2.setSidereal(siderealClockSpeed, geoA2.stepsPerSecond, masterClockSpeed);
   sei();
 
   SetTrackingRate(default_tracking_rate,0);
@@ -721,5 +720,5 @@ void updateSideral()
   backlashA2.timerRate = staA2.timeByStep_Cur / BacklashTakeupRate;
 
   // initialize the timers that handle the sidereal clock, RA, and Dec
-  SetsiderealClockRate(siderealClockRate);
+  SetsiderealClockSpeed(siderealClockSpeed);
 }

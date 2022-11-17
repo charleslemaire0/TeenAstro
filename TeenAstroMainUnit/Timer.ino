@@ -16,7 +16,7 @@ static volatile double isrTimerRateAxis2 = 0;
 
 speed interval2speed(interval i) //Speed in step per second
 {
-  return masterClockRate / i;
+  return masterClockSpeed / i;
 }
 interval speed2interval(speed V, speed minV)
 {
@@ -24,14 +24,14 @@ interval speed2interval(speed V, speed minV)
   {
     return minV;
   }
-  return min(masterClockRate / V, minV);
+  return min(masterClockSpeed / V, minV);
 }
 
 
 // set the master sidereal clock rate, also forces rate update for RA/Dec timer rates so that PPS adjustments take hold immediately
-void SetsiderealClockRate(double clockRate)
+void SetsiderealClockSpeed(double cs)
 {
-  Timer1SetInterval(clockRate / 100);
+  Timer1SetInterval(cs / 100);
   isrTimerRateAxis1 = 0;
   isrTimerRateAxis2 = 0;
 }
@@ -61,7 +61,7 @@ static volatile uint32_t   nextAxis1Rate = 100000UL;
 static void Timer3SetInterval(interval i)
 {
   cli();
-  nextAxis1Rate = (F_BUS / masterClockRate) * i * 0.5 - 1;
+  nextAxis1Rate = (F_BUS / masterClockSpeed) * i * 0.5 - 1;
   sei();
 }
 
@@ -70,7 +70,7 @@ static volatile uint32_t   nextAxis2Rate = 100000UL;
 static void Timer4SetInterval(interval i)
 {
   cli();
-  nextAxis2Rate = (F_BUS / masterClockRate) * i * 0.5 - 1;
+  nextAxis2Rate = (F_BUS / masterClockSpeed) * i * 0.5 - 1;
   sei();
 }
 

@@ -49,7 +49,7 @@ bool goHome()
   staA2.target = geoA2.homeDef;
   staA1.start = staA1.pos;
   staA2.start = staA2.pos;
-  SetsiderealClockRate(siderealClockRate);
+  SetsiderealClockSpeed(siderealClockSpeed);
   sei();
   // stop tracking
   lastSideralTracking = false;

@@ -25,13 +25,13 @@ public:
   volatile long       deltaStart;
   volatile bool       dir;                             // stepping direction + or -
   double              fstep;                           // amount of steps for Tracking
-  volatile double     timeByStep_Sid;                  // based on the siderealClockRate, this is the time between steps for sidereal tracking
+  volatile double     timeByStep_Sid;                  // based on the siderealClockSpeed, this is the time between steps for sidereal tracking
   volatile double     takeupRate;                      // this is the takeup rate for synchronizing the target and actual positions when needed
   volatile double     timeByStep_Cur = 0;              // this is the time between steps for the current rotation speed
   volatile double     CurrentTrackingRate = default_tracking_rate; //effective rate tracking in Hour arc-seconds/second
   double              RequestedTrackingRate = default_tracking_rate; //computed  rate tracking in Hour arc-seconds/second
   long                minstepdist;
-  double              masterClockRate;
+  double              ClockSpeed;
   void updateDeltaTarget()
   {
     cli();
@@ -56,10 +56,10 @@ public:
   {
     timeByStep_Cur = timeByStep_Sid;
   };
-  void setSidereal(double siderealClockRate, double stepsPerSecond, double ClockRate)
+  void setSidereal(double siderealClockSpeed, double stepsPerSecond, double cs)
   {
-    masterClockRate = ClockRate;
-    timeByStep_Sid = siderealClockRate / stepsPerSecond;
+    ClockSpeed = cs;
+    timeByStep_Sid = siderealClockSpeed / stepsPerSecond;
     minstepdist = 0.25 * stepsPerSecond;
     takeupRate = timeByStep_Sid / 8L;
     resetToSidereal();
@@ -119,11 +119,11 @@ public:
 private:
   double interval2speed(double rate) //Speed in step per second
   {
-    return masterClockRate / rate ;
+    return masterClockSpeed / rate ;
   }
   double speed2interval(double V)
   {
-    return masterClockRate / V;
+    return masterClockSpeed / V;
   }
 };
 
