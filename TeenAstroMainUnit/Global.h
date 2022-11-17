@@ -57,10 +57,10 @@ const double            HzCf = masterClockRate / 60.0;   // conversion factor to
             
 
 
-double                  maxRate1 = StepsMaxRate * microSec2Tick;
-double                  minRate1 = StepsMinRate * microSec2Tick;
-double                  maxRate2 = StepsMaxRate * microSec2Tick;
-double                  minRate2 = StepsMinRate * microSec2Tick;
+double                  minInterval1 = StepsMaxRate * microSec2Tick;
+double                  maxInterval1 = StepsMinRate * microSec2Tick;
+double                  minInterval2 = StepsMaxRate * microSec2Tick;
+double                  maxInterval2 = StepsMinRate * microSec2Tick;
 
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;

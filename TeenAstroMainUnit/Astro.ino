@@ -155,15 +155,15 @@ void SetRates(double maxslewrate)
 
   double fact1 = masterClockRate / geoA1.stepsPerSecond;
   double fact2 = masterClockRate / geoA2.stepsPerSecond;
-  maxRate1 = max(fact1 / maxslewrate, StepsMaxRate * microSec2Tick);
-  maxRate2 = max(fact2 / maxslewrate, StepsMaxRate * microSec2Tick);
-  double maxslewCorrected = min(fact1 / maxRate1, fact2 / maxRate2);
+  minInterval1 = max(fact1 / maxslewrate, StepsMaxRate * microSec2Tick);
+  minInterval2 = max(fact2 / maxslewrate, StepsMaxRate * microSec2Tick);
+  double maxslewCorrected = min(fact1 / minInterval1, fact2 / minInterval2);
   if (abs(maxslewrate - maxslewCorrected) > 2)
   {
     XEEPROM.writeInt(EE_maxRate, (int)maxslewCorrected);
   }
-  maxRate1 = fact1 / maxslewCorrected;
-  maxRate2 = fact2 / maxslewCorrected;
+  minInterval1 = fact1 / maxslewCorrected;
+  minInterval2 = fact2 / maxslewCorrected;
   guideRates[4] = maxslewCorrected;
   if (guideRates[3] >= maxslewCorrected)
   {
@@ -176,8 +176,8 @@ void SetRates(double maxslewrate)
 
 void SetAcceleration()
 {
-  double Vmax1 = getV(maxRate1);
-  double Vmax2 = getV(maxRate2);
+  double Vmax1 = getV(minInterval1);
+  double Vmax2 = getV(minInterval2);
   cli();
   staA1.acc = Vmax1 / (4. * DegreesForAcceleration * geoA1.stepsPerDegree) * Vmax1;
   staA2.acc = Vmax2 / (4. * DegreesForAcceleration * geoA2.stepsPerDegree) * Vmax2;
