@@ -47,23 +47,22 @@ bool hasGNSS = true;
 RefractionFlags doesRefraction;
 TrackingCompensation tc = TC_NONE;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
-double                  siderealClockRate = 15956313.0;
-const double            masterSiderealClockRate = 15956313.0;
+double                  siderealClockRate = 997269.5625;
+const double            masterSiderealClockRate = 997269.5625;
 
-// default = 15956313 ticks per sidereal hundredth second, where a tick is 1/16 uS
+// default = 997269.5625 ticks per sidereal hundredth second, where a tick is 1 uS
 // this is stored in XEEPROM.which is updated/adjusted with the ":T+#" and ":T-#" commands
 // a higher number here means a longer count which slows down the sidereal clock
-const double            tick2microSec = 0.0625;
-const double            microSec2Tick = 16.0;
-const double            masterClockRate = microSec2Tick*1000000;    // reference frequence for tick
+
+const double            masterClockRate = 1000000;    // reference frequence for tick
 const double            HzCf = masterClockRate / 60.0;   // conversion factor to go to/from Hz for sidereal interval
             
 
 
-interval                minInterval1 = StepsMinInterval * microSec2Tick;
-interval                maxInterval1 = StepsMaxInterval * microSec2Tick;
-interval                minInterval2 = StepsMinInterval * microSec2Tick;
-interval                maxInterval2 = StepsMaxInterval * microSec2Tick;
+interval                minInterval1 = StepsMinInterval;
+interval                maxInterval1 = StepsMaxInterval;
+interval                minInterval2 = StepsMinInterval;
+interval                maxInterval2 = StepsMaxInterval;
 
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;

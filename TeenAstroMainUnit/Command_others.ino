@@ -564,7 +564,7 @@ void Command_T()
   // Only burn the new rate if changing the sidereal interval
   if (command[1] == '+' || command[1] == '-' || command[1] == 'R')
   {
-    XEEPROM.writeLong(EE_siderealClockRate, siderealClockRate);
+    XEEPROM.writeLong(EE_siderealClockRate, siderealClockRate*16);
     updateSideral();
   }
 }

@@ -155,8 +155,8 @@ void SetRates(double maxslewrate)
 
   double fact1 = masterClockRate / geoA1.stepsPerSecond;
   double fact2 = masterClockRate / geoA2.stepsPerSecond;
-  minInterval1 = max(fact1 / maxslewrate, StepsMinInterval * microSec2Tick);
-  minInterval2 = max(fact2 / maxslewrate, StepsMinInterval * microSec2Tick);
+  minInterval1 = max(fact1 / maxslewrate, StepsMinInterval );
+  minInterval2 = max(fact2 / maxslewrate, StepsMinInterval );
   double maxslewCorrected = min(fact1 / minInterval1, fact2 / minInterval2);
   if (abs(maxslewrate - maxslewCorrected) > 2)
   {

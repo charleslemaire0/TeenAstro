@@ -39,8 +39,8 @@ void beginTimers()
 {
   // set the system timer for millis() to the second highest priority
   SCB_SHPR3 = (32 << 24) | (SCB_SHPR3 & 0x00FFFFFF);
-  itimer3.begin(TIMER3_COMPA_vect, (float)128 * 0.0625);
-  itimer4.begin(TIMER4_COMPA_vect, (float)128 * 0.0625);
+  itimer3.begin(TIMER3_COMPA_vect, 100);
+  itimer4.begin(TIMER4_COMPA_vect, 100);
   // set the 1/100 second sidereal clock timer to run at the second highest priority
   NVIC_SET_PRIORITY(IRQ_PIT_CH0, 32);
 
@@ -48,13 +48,13 @@ void beginTimers()
   NVIC_SET_PRIORITY(IRQ_PIT_CH1, 0);
   NVIC_SET_PRIORITY(IRQ_PIT_CH2, 0);
 }
-// set timer1 to interval (in microseconds*16)
+// set timer1 to interval (in microseconds)
 static void Timer1SetInterval(interval i)
 {
-  itimer1.begin(TIMER1_COMPA_vect, i * 0.0625);
+  itimer1.begin(TIMER1_COMPA_vect, i );
 }
 
-// set timer3 to interval (in microseconds*16)
+// set timer3 to interval (in microseconds)
 static volatile uint32_t   nextAxis1Rate = 100000UL;
 
 
@@ -65,7 +65,7 @@ static void Timer3SetInterval(interval i)
   sei();
 }
 
-// set timer4 to interval (in microseconds*16)
+// set timer4 to interval (in microseconds)
 static volatile uint32_t   nextAxis2Rate = 100000UL;
 static void Timer4SetInterval(interval i)
 {

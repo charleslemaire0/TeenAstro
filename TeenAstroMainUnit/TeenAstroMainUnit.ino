@@ -89,7 +89,7 @@ void setup()
 
     // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
     // 1/16uS resolution timer, ticks per sidereal second
-    XEEPROM.writeLong(EE_siderealClockRate, siderealClockRate);
+    XEEPROM.writeLong(EE_siderealClockRate, siderealClockRate*16);
 
     // the transformation is not valid
     XEEPROM.write(EE_Tvalid, 0);
@@ -167,7 +167,7 @@ void setup()
   DecayModeTracking();
 
   // this sets the sidereal timer, controls the tracking speed so that the mount moves precisely with the stars
-  siderealClockRate = XEEPROM.readLong(EE_siderealClockRate);
+  siderealClockRate = (double)XEEPROM.readLong(EE_siderealClockRate)/16.0;
   updateSideral();
   beginTimers();
 
