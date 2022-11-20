@@ -72,8 +72,8 @@ bool parkClearBacklash()
     return true;
   }
   cli();
-  long    LastTimerRateAxis1 = staA1.interval_Step_Cur;
-  long    LastTimerRateAxis2 = staA2.interval_Step_Cur;
+  long LastIntervalAxis1 = staA1.interval_Step_Cur;
+  long LastIntervalAxis2 = staA2.interval_Step_Cur;
   staA1.interval_Step_Cur = backlashA1.interval_Step;
   staA2.interval_Step_Cur = backlashA2.interval_Step;
   sei();
@@ -119,8 +119,8 @@ bool parkClearBacklash()
   // we arrive back at the exact same position so ftargetAxis1/Dec don't need to be touched
   // move at the previous speed
   cli();
-  staA1.interval_Step_Cur = LastTimerRateAxis1;
-  staA2.interval_Step_Cur = LastTimerRateAxis2;
+  staA1.interval_Step_Cur = LastIntervalAxis1;
+  staA2.interval_Step_Cur = LastIntervalAxis2;
   sei();
 
   // return true on success
