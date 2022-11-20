@@ -55,22 +55,22 @@ static void Timer1SetInterval(interval i)
 }
 
 // set timer3 to interval (in microseconds)
-static volatile uint32_t   nextAxis1Rate = 100000UL;
+static volatile uint32_t   nextIntervalAxis1 = 100000UL;
 
 
 static void Timer3SetInterval(interval i)
 {
   cli();
-  nextAxis1Rate = (F_BUS / masterClockSpeed) * i * 0.5 - 1;
+  nextIntervalAxis1 = (F_BUS / masterClockSpeed) * i * 0.5 - 1;
   sei();
 }
 
 // set timer4 to interval (in microseconds)
-static volatile uint32_t   nextAxis2Rate = 100000UL;
+static volatile uint32_t   nextIntervalAxis2 = 100000UL;
 static void Timer4SetInterval(interval i)
 {
   cli();
-  nextAxis2Rate = (F_BUS / masterClockSpeed) * i * 0.5 - 1;
+  nextIntervalAxis2 = (F_BUS / masterClockSpeed) * i * 0.5 - 1;
   sei();
 }
 
@@ -341,7 +341,7 @@ ISR(TIMER3_COMPA_vect)
       digitalWriteFast(Axis1StepPin, HIGH);
     }
     clearAxis1 = true;
-    PIT_LDVAL1 = nextAxis1Rate * stepAxis;
+    PIT_LDVAL1 = nextIntervalAxis1 * stepAxis;
   }
 }
 ISR(TIMER4_COMPA_vect)
@@ -407,6 +407,6 @@ ISR(TIMER4_COMPA_vect)
       digitalWriteFast(Axis2StepPin, HIGH);
     }
     clearAxis2 = true;
-    PIT_LDVAL2 = nextAxis2Rate * stepAxis;
+    PIT_LDVAL2 = nextIntervalAxis2 * stepAxis;
   }
 }
