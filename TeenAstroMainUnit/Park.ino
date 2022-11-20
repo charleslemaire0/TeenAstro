@@ -74,8 +74,8 @@ bool parkClearBacklash()
   cli();
   long    LastTimerRateAxis1 = staA1.interval_Step_Cur;
   long    LastTimerRateAxis2 = staA2.interval_Step_Cur;
-  staA1.interval_Step_Cur = backlashA1.timerRate;
-  staA2.interval_Step_Cur = backlashA2.timerRate;
+  staA1.interval_Step_Cur = backlashA1.interval_Step;
+  staA2.interval_Step_Cur = backlashA2.interval_Step;
   sei();
 
   // figure out how long we'll have to wait for the backlash to clear (+50%)

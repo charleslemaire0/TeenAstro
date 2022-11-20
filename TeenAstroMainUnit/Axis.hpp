@@ -5,11 +5,11 @@
 // backlash control
 struct backlash
 {
-  int             inSeconds;
-  volatile int    inSteps;
-  volatile bool   correcting;
-  volatile int    movedSteps;
-  volatile double timerRate;
+  int               inSeconds;
+  volatile int      inSteps;
+  volatile bool     correcting;
+  volatile int      movedSteps;
+  volatile double   interval_Step;
 };
 
 class StatusAxis
@@ -26,7 +26,7 @@ public:
   volatile bool       dir;                             // stepping direction + or -
   double              fstep;                           // amount of steps for Tracking
   volatile double     interval_Step_Sid;                  // based on the siderealClockSpeed, this is the time between steps for sidereal tracking 
-  volatile double     takeupRate;                      // this is the takeup rate for synchronizing the target and actual positions when needed
+  volatile double     takeupInterval;                      // this is the takeup rate for synchronizing the target and actual positions when needed
   volatile double     interval_Step_Cur = 0;              // this is the time between steps for the current rotation speed
   volatile double     CurrentTrackingRate = default_tracking_rate; //effective rate tracking in Hour arc-seconds/second
   double              RequestedTrackingRate = default_tracking_rate; //computed  rate tracking in Hour arc-seconds/second
@@ -61,7 +61,7 @@ public:
     ClockSpeed = cs;
     interval_Step_Sid = siderealClockSpeed / stepsPerSecond;
     minstepdist = 0.25 * stepsPerSecond;
-    takeupRate = interval_Step_Sid / 8L;
+    takeupInterval = interval_Step_Sid / 8L;
     resetToSidereal();
   };
   //double interval2speedfromTime(const double& time)

@@ -11,8 +11,8 @@ static IntervalTimer  itimer1;
 static IntervalTimer  itimer3;
 static IntervalTimer  itimer4;
 
-static volatile double isrTimerRateAxis1 = 0;
-static volatile double isrTimerRateAxis2 = 0;
+static volatile double isrIntervalAxis1 = 0;
+static volatile double isrIntervalAxis2 = 0;
 
 speed interval2speed(interval i) //Speed in step per second
 {
@@ -32,8 +32,8 @@ interval speed2interval(speed V, speed minV)
 void SetsiderealClockSpeed(double cs)
 {
   Timer1SetInterval(cs / 100);
-  isrTimerRateAxis1 = 0;
-  isrTimerRateAxis2 = 0;
+  isrIntervalAxis1 = 0;
+  isrIntervalAxis2 = 0;
 }
 void beginTimers()
 {
@@ -217,20 +217,20 @@ ISR(TIMER1_COMPA_vect)
     }
   }
 
-  volatile double thisTimerRateAxis1 = staA1.interval_Step_Cur;
-  volatile double thisTimerRateAxis2 = staA2.interval_Step_Cur;
+  volatile double thisIntervalAxis1 = staA1.interval_Step_Cur;
+  volatile double thisIntervalAxis2 = staA2.interval_Step_Cur;
 
   // override rate during backlash compensation
   if (backlashA1.correcting)
   {
-    thisTimerRateAxis1 = backlashA1.timerRate;
+    thisIntervalAxis1 = backlashA1.interval_Step;
     wasInbacklashAxis1 = true;
   }
 
   // override rate during backlash compensation
   if (backlashA2.correcting)
   {
-    thisTimerRateAxis2 = backlashA2.timerRate;
+    thisIntervalAxis2 = backlashA2.interval_Step;
     wasInbacklashAxis2 = true;
   }
   if (sideralTracking && !movingTo)
@@ -242,7 +242,7 @@ ISR(TIMER1_COMPA_vect)
       if (!staA1.atTarget(true))
       {
         cli();
-        thisTimerRateAxis1 = staA1.takeupRate;
+        thisIntervalAxis1 = staA1.takeupInterval;
         sei();
       }
       else
@@ -257,7 +257,7 @@ ISR(TIMER1_COMPA_vect)
       if (!staA2.atTarget(true))
       {
         cli();
-        thisTimerRateAxis2 = staA2.takeupRate;
+        thisIntervalAxis2 = staA2.takeupInterval;
         sei();
       }
       else
@@ -269,15 +269,15 @@ ISR(TIMER1_COMPA_vect)
     }
   }
   // set the rates
-  if (thisTimerRateAxis1 != isrTimerRateAxis1)
+  if (thisIntervalAxis1 != isrIntervalAxis1)
   {
-    Timer3SetInterval(thisTimerRateAxis1);
-    isrTimerRateAxis1 = thisTimerRateAxis1;
+    Timer3SetInterval(thisIntervalAxis1);
+    isrIntervalAxis1 = thisIntervalAxis1;
   }
-  if (thisTimerRateAxis2 != isrTimerRateAxis2)
+  if (thisIntervalAxis2 != isrIntervalAxis2)
   {
-    Timer4SetInterval(thisTimerRateAxis2);
-    isrTimerRateAxis2 = thisTimerRateAxis2;
+    Timer4SetInterval(thisIntervalAxis2);
+    isrIntervalAxis2 = thisIntervalAxis2;
   }
 }
 ISR(TIMER3_COMPA_vect)
