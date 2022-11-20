@@ -244,7 +244,7 @@ void enableRateAxis1(double vRate)
 {
   cli();
   guideA1.amount = abs(vRate) * geoA1.stepsPerCentiSecond;
-  guideA1.timerRate = vRate;
+  guideA1.atRate = vRate;
   sei();
 }
 
@@ -252,7 +252,7 @@ void enableRateAxis2(double vRate)
 {
   cli();
   guideA2.amount = abs(vRate) * geoA2.stepsPerCentiSecond;
-  guideA2.timerRate = vRate;
+  guideA2.atRate = vRate;
   sei();
 }
 

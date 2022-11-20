@@ -19,8 +19,8 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
     }
     Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate, false);
     double newGuideTimerBaseRate = newguideDirAxis == 'e' ? -guideTimerBaseRate1 : guideTimerBaseRate1;
-    bool samedirection = newGuideTimerBaseRate > 0 ? (guideA1.timerRate > 0 ? true : false) : (guideA1.timerRate > 0 ? false : true);
-    if (guideA1.dir && !samedirection && fabs(guideA1.timerRate) > 2)
+    bool samedirection = newGuideTimerBaseRate > 0 ? (guideA1.atRate > 0 ? true : false) : (guideA1.atRate > 0 ? false : true);
+    if (guideA1.dir && !samedirection && fabs(guideA1.atRate) > 2)
     {
       StopAxis1();
     }
@@ -31,7 +31,7 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
       atHome = false;
       guideA1.duration = -1;
       cli();
-      guideA1.timerRate = newGuideTimerBaseRate;
+      guideA1.atRate = newGuideTimerBaseRate;
       sei();
     }
   }
@@ -56,8 +56,8 @@ void MoveAxis1AtRate(const double newrate)
       sideralTracking = false;
     }
     enableGuideAtRate(1, abs(newrate));
-    bool samedirection = (newrate > 0) == (guideA1.timerRate > 0);
-    if (guideA1.dir && !samedirection /*&& fabs(guideA1.timerRate) > 2*/)
+    bool samedirection = (newrate > 0) == (guideA1.atRate > 0);
+    if (guideA1.dir && !samedirection /*&& fabs(guideA1.atRate) > 2*/)
     {
       StopAxis1();
     }
@@ -68,7 +68,7 @@ void MoveAxis1AtRate(const double newrate)
       atHome = false;
       guideA1.duration = -1;
       cli();
-      guideA1.timerRate = newrate;
+      guideA1.atRate = newrate;
       sei();
     }
   }
@@ -115,8 +115,8 @@ void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
       rev = !rev;
     Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate, false);
     double newGuideTimerBaseRate = rev ? -guideTimerBaseRate2 : guideTimerBaseRate2;
-    bool samedirection = newGuideTimerBaseRate > 0 ? (guideA2.timerRate > 0 ? true : false) : (guideA2.timerRate > 0 ? false : true);
-    if (guideA2.dir && !samedirection && fabs(guideA2.timerRate) > 2)
+    bool samedirection = newGuideTimerBaseRate > 0 ? (guideA2.atRate > 0 ? true : false) : (guideA2.atRate > 0 ? false : true);
+    if (guideA2.dir && !samedirection && fabs(guideA2.atRate) > 2)
     {
       StopAxis2();
     }
@@ -127,7 +127,7 @@ void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
       guideA2.duration = -1;
       atHome = false;
       cli();
-      guideA2.timerRate = newGuideTimerBaseRate;
+      guideA2.atRate = newGuideTimerBaseRate;
       sei();
     }
   }
@@ -153,8 +153,8 @@ void MoveAxis2AtRate(const double newrate)
       sideralTracking = false;
     }
     enableGuideAtRate(2, abs(newrate));
-    bool samedirection = (newrate > 0) == (guideA2.timerRate > 0);
-    if (guideA2.dir && !samedirection && fabs(guideA2.timerRate) > 2)
+    bool samedirection = (newrate > 0) == (guideA2.atRate > 0);
+    if (guideA2.dir && !samedirection && fabs(guideA2.atRate) > 2)
     {
       StopAxis2();
     }
@@ -165,7 +165,7 @@ void MoveAxis2AtRate(const double newrate)
       atHome = false;
       guideA2.duration = -1;
       cli();
-      guideA2.timerRate = newrate;
+      guideA2.atRate = newrate;
       sei();
     }
   }
@@ -237,7 +237,7 @@ void CheckSpiral()
         rev = !rev;
       cli();
       GuidingState = GuidingPulse;
-      guideA2.timerRate = rev ? -guideTimerBaseRate2 : guideTimerBaseRate2;
+      guideA2.atRate = rev ? -guideTimerBaseRate2 : guideTimerBaseRate2;
       sei();
     }
   }
@@ -251,9 +251,9 @@ void CheckSpiral()
     cli();
     GuidingState = GuidingPulse;
     if (guideA1.dir == 'e')
-      guideA1.timerRate = -guideTimerBaseRate1;
+      guideA1.atRate = -guideTimerBaseRate1;
     else
-      guideA1.timerRate = guideTimerBaseRate1;
+      guideA1.atRate = guideTimerBaseRate1;
     sei();
   }
   iteration++;

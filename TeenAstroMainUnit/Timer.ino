@@ -79,56 +79,56 @@ ISR(TIMER1_COMPA_vect)
 {
   static volatile bool   wasInbacklashAxis1 = false;
   static volatile bool   wasInbacklashAxis2 = false;
-  static volatile double guideTimerRateAxisA1 = 0;
+  static volatile double tmp_guideRateAxisA1 = 0;
   static volatile double tmp_1 = 0;
   static volatile double tmp_2 = 0;
-  static volatile double guideTimerRateAxisA2 = 0;
+  static volatile double tmp_guideRateAxisA2 = 0;
 
   static volatile double sign;
   rtk.m_lst++;
   // in this mode the target is always a bit faster than the scope because we move first the target!!
   if (!movingTo)
   {
-    double maxguideTimerRate = 16;
+    double max_guideRate = 16;
     // guide rate acceleration/deceleration
     {
       // guide rate acceleration/deceleration and control
       updateDeltaTarget();
       if (!backlashA1.correcting && guideA1.dir)
       {
-        if ((fabs(guideA1.timerRate) < maxguideTimerRate) &&
-          (fabs(guideTimerRateAxisA1) < maxguideTimerRate))
+        if ((fabs(guideA1.atRate) < max_guideRate) &&
+          (fabs(tmp_guideRateAxisA1) < max_guideRate))
         {
           // slow speed guiding, no acceleration
-          guideTimerRateAxisA1 = guideA1.timerRate;
+          tmp_guideRateAxisA1 = guideA1.atRate;
         }
         else
         {
           DecayModeGoto();
           // for acceleration, we know run this routine this a fix amount of time 1/100 of a sideral second
-          sign = guideA1.timerRate < 0 ? -1 : 1;
+          sign = guideA1.atRate < 0 ? -1 : 1;
           if (guideA1.dir == 'b')
           {      
-            tmp_1 = guideTimerRateAxisA1 - 2 * staA1.acc * 0.01 * sign / geoA1.stepsPerSecond;
+            tmp_1 = tmp_guideRateAxisA1 - 2 * staA1.acc * 0.01 * sign / geoA1.stepsPerSecond;
             tmp_2 = sqrt(fabs(staA1.deltaTarget) * 4 * staA1.acc) * sign / geoA1.stepsPerSecond ;
-            guideTimerRateAxisA1 = guideA1.timerRate < 0 ?
+            tmp_guideRateAxisA1 = guideA1.atRate < 0 ?
               max(tmp_1, tmp_2) :
               min(tmp_1, tmp_2);
  
           } 
           else
           {
-            guideTimerRateAxisA1 += 2 * staA1.acc * 0.01 * sign / geoA1.stepsPerSecond;
+            tmp_guideRateAxisA1 += 2 * staA1.acc * 0.01 * sign / geoA1.stepsPerSecond;
           }
-          if (guideTimerRateAxisA1 < 0)
+          if (tmp_guideRateAxisA1 < 0)
           {
-            guideTimerRateAxisA1 = min(-maxguideTimerRate, guideTimerRateAxisA1);
-            guideTimerRateAxisA1 = max(guideA1.timerRate, guideTimerRateAxisA1);           
+            tmp_guideRateAxisA1 = min(-max_guideRate, tmp_guideRateAxisA1);
+            tmp_guideRateAxisA1 = max(guideA1.atRate, tmp_guideRateAxisA1);           
           }
           else
           {
-            guideTimerRateAxisA1 = max(maxguideTimerRate, guideTimerRateAxisA1);
-            guideTimerRateAxisA1 = min(guideA1.timerRate, guideTimerRateAxisA1);
+            tmp_guideRateAxisA1 = max(max_guideRate, tmp_guideRateAxisA1);
+            tmp_guideRateAxisA1 = min(guideA1.atRate, tmp_guideRateAxisA1);
           }
         }
 
@@ -138,15 +138,15 @@ ISR(TIMER1_COMPA_vect)
           if (staA1.atTarget(false))
           {
             guideA1.dir = 0;
-            guideA1.timerRate = 0;
-            guideTimerRateAxisA1 = 0;
+            guideA1.atRate = 0;
+            tmp_guideRateAxisA1 = 0;
             if (staA2.atTarget(false))
               DecayModeTracking();
           }
         }
       }
       // compute timerRateAxis  and avoid timerRate  to be extremly large
-      volatile double timerRateAxis1 = fabs(guideTimerRateAxisA1 + staA1.CurrentTrackingRate);
+      volatile double timerRateAxis1 = fabs(tmp_guideRateAxisA1 + staA1.CurrentTrackingRate);
       staA1.interval_Step_Cur = max(staA1.interval_Step_Sid / timerRateAxis1, minInterval1);
       staA1.interval_Step_Cur = min(staA1.interval_Step_Cur, maxInterval1);
     }
@@ -156,38 +156,38 @@ ISR(TIMER1_COMPA_vect)
       updateDeltaTarget();
       if (!backlashA2.correcting && guideA2.dir)
       {
-        if ((fabs(guideA2.timerRate) < maxguideTimerRate) &&
-          (fabs(guideTimerRateAxisA2) < maxguideTimerRate))
+        if ((fabs(guideA2.atRate) < max_guideRate) &&
+          (fabs(tmp_guideRateAxisA2) < max_guideRate))
         {
           // slow speed guiding, no acceleration
-          guideTimerRateAxisA2 = guideA2.timerRate;
+          tmp_guideRateAxisA2 = guideA2.atRate;
         }
         else
         {
           DecayModeGoto();
           // for acceleration, we know run this routine this a fix amount of time 1/100 of a sideral second
-          sign = guideA2.timerRate < 0 ? -1 : 1;
+          sign = guideA2.atRate < 0 ? -1 : 1;
           if (guideA2.dir == 'b')
           {
-            tmp_1 = guideTimerRateAxisA2 - 2 * staA2.acc * 0.01 * sign / geoA2.stepsPerSecond;
+            tmp_1 = tmp_guideRateAxisA2 - 2 * staA2.acc * 0.01 * sign / geoA2.stepsPerSecond;
             tmp_2 = sqrt(fabs(staA2.deltaTarget) * 4 * staA2.acc) * sign / geoA2.stepsPerSecond;
-            guideTimerRateAxisA2 = guideA2.timerRate < 0 ?
+            tmp_guideRateAxisA2 = guideA2.atRate < 0 ?
               max(tmp_1, tmp_2) :
               min(tmp_1, tmp_2);
           }
           else
           {
-            guideTimerRateAxisA2 += 2 * staA2.acc * 0.01 * sign / geoA2.stepsPerSecond;
+            tmp_guideRateAxisA2 += 2 * staA2.acc * 0.01 * sign / geoA2.stepsPerSecond;
           }
-          if (guideTimerRateAxisA2 < 0)
+          if (tmp_guideRateAxisA2 < 0)
           {
-            guideTimerRateAxisA2 = min(-maxguideTimerRate, guideTimerRateAxisA2);
-            guideTimerRateAxisA2 = max(guideA2.timerRate, guideTimerRateAxisA2);
+            tmp_guideRateAxisA2 = min(-max_guideRate, tmp_guideRateAxisA2);
+            tmp_guideRateAxisA2 = max(guideA2.atRate, tmp_guideRateAxisA2);
           }
           else
           {
-            guideTimerRateAxisA2 = max(maxguideTimerRate, guideTimerRateAxisA2);
-            guideTimerRateAxisA2 = min(guideA2.timerRate, guideTimerRateAxisA2);
+            tmp_guideRateAxisA2 = max(max_guideRate, tmp_guideRateAxisA2);
+            tmp_guideRateAxisA2 = min(guideA2.atRate, tmp_guideRateAxisA2);
           }
 
         }
@@ -198,15 +198,15 @@ ISR(TIMER1_COMPA_vect)
           if (staA2.atTarget(false))
           {
             guideA2.dir = 0;
-            guideA2.timerRate = 0;
-            guideTimerRateAxisA2 = 0;
+            guideA2.atRate = 0;
+            tmp_guideRateAxisA2 = 0;
             if (staA1.atTarget(false))
               DecayModeTracking();
           }
         }
       }
       // compute timerRateAxis  and avoid timerRate  to be extremly large
-      volatile double timerRateAxis2 = fabs(guideTimerRateAxisA2 + staA2.CurrentTrackingRate);
+      volatile double timerRateAxis2 = fabs(tmp_guideRateAxisA2 + staA2.CurrentTrackingRate);
       staA2.interval_Step_Cur = max(staA2.interval_Step_Sid / timerRateAxis2, minInterval2);
       staA2.interval_Step_Cur = min(staA2.interval_Step_Cur, maxInterval2);
     }

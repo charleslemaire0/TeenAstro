@@ -168,7 +168,7 @@ public:
   long            duration;
   unsigned long   durationLast;
   double          amount;
-  volatile double timerRate;
+  volatile double atRate;
 };
 
 class MotorAxis
