@@ -206,7 +206,7 @@ void setup()
   // combined with a hack in the goto syncEqu() function and you can quickly recover from
   // a reset without loosing much accuracy in the sky.  PEC is toast though.
   // set the default guide rate, 16x sidereal
-  enableGuideRate(EEPROM.read(EE_DefaultRate), true);
+  enableGuideRate(EEPROM.read(EE_DefaultRate));
   delay(10);
 
   // prep timers
@@ -692,6 +692,9 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
   backlashA1.inSteps = (int)round(((double)backlashA1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
   backlashA2.inSteps = (int)round(((double)backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
   sei();
+
+  guideA1.init(&geoA1.stepsPerCentiSecond, guideRates[activeGuideRate]);
+  guideA2.init(&geoA2.stepsPerCentiSecond, guideRates[activeGuideRate]);
 
   initCelestialPole();
   initTransformation(deleteAlignment);

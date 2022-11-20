@@ -450,7 +450,7 @@ void Command_R()
   }
   if (!movingTo && GuidingState == GuidingOFF)
   {
-    enableGuideRate(i, false);
+    enableGuideRate(i);
   }
 }
 

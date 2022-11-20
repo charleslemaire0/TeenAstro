@@ -185,75 +185,24 @@ void SetAcceleration()
 }
 
 // calculates the tracking speed for move commands
-void enableGuideRate(int g, bool force)
+void enableGuideRate(int g)
 {
-  // don't do these lengthy calculations unless we have to
-
   if (g < 0) g = 0;
   if (g > 4) g = 4;
-  if (!force && (guideTimerBaseRate1 == guideRates[g] && guideTimerBaseRate2 == guideTimerBaseRate1)) return;
-
   activeGuideRate = g;
-
-  // this enables the guide rate
-  guideTimerBaseRate1 = guideRates[g];
-  guideTimerBaseRate2 = guideTimerBaseRate1;
-  cli();
-  guideA1.amount = guideTimerBaseRate1 * geoA1.stepsPerCentiSecond;
-  guideA2.amount = guideTimerBaseRate2 * geoA2.stepsPerCentiSecond;
-  sei();
+  guideA1.enableAtRate(guideRates[g]);
+  guideA2.enableAtRate(guideRates[g]);
 }
 
-void enableGuideAtRate(int axis, double rate)
-{
-  if (axis == 1 && guideTimerBaseRate1 != rate)
-  {
-    guideTimerBaseRate1 = rate;
-    cli();
-    guideA1.amount = guideTimerBaseRate1 * geoA1.stepsPerCentiSecond;
-    sei();
-  }
-  else if (axis == 2 && guideTimerBaseRate2 != rate)
-  {
-    guideTimerBaseRate2 = rate;
-    cli();
-    guideA2.amount = guideTimerBaseRate2 * geoA2.stepsPerCentiSecond;
-    sei();
-  }
-}
 
 void enableST4GuideRate()
 {
-  if (guideTimerBaseRate1 != guideRates[0] || guideTimerBaseRate2 != guideTimerBaseRate1)
-  {
-    guideTimerBaseRate1 = guideRates[0];
-    guideTimerBaseRate2 = guideTimerBaseRate1;
-    cli();
-    guideA1.amount = guideTimerBaseRate1 * geoA1.stepsPerCentiSecond;
-    guideA2.amount = guideTimerBaseRate2 * geoA2.stepsPerCentiSecond;
-    sei();
-  }
+  enableGuideRate(0);
 }
 
 void resetGuideRate()
 {
-  enableGuideRate(activeGuideRate, true);
-}
-
-void enableRateAxis1(double vRate)
-{
-  cli();
-  guideA1.amount = abs(vRate) * geoA1.stepsPerCentiSecond;
-  guideA1.atRate = vRate;
-  sei();
-}
-
-void enableRateAxis2(double vRate)
-{
-  cli();
-  guideA2.amount = abs(vRate) * geoA2.stepsPerCentiSecond;
-  guideA2.atRate = vRate;
-  sei();
+  enableGuideRate(activeGuideRate);
 }
 
 bool isAltAZ()

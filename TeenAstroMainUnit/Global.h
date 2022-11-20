@@ -205,14 +205,12 @@ double  guideRates[5] =
 
 volatile byte activeGuideRate = GuideRate::RS;
 
-GuideAxis guideA1 = { 0,0,0,0,0 };
-GuideAxis guideA2 = { 0,0,0,0,0 };
+GuideAxis guideA1;
+GuideAxis guideA2;
 
 long            lasttargetAxis1 = 0;
 long            debugv1 = 0;
 
-double          guideTimerBaseRate1 = 0;
-double          guideTimerBaseRate2 = 0;
 
 // Reticule control
 #ifdef RETICULE_LED_PINS

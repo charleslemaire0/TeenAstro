@@ -169,6 +169,27 @@ public:
   unsigned long   durationLast;
   double          amount;
   volatile double atRate;
+  double          absRate;
+private:
+  double*         m_stepsPerCentiSecond;
+public:
+  void init(double* stepsPerCentiSecond, double rate)
+  {
+    dir = 0;
+    duration = 0;
+    m_stepsPerCentiSecond = stepsPerCentiSecond;
+    enableAtRate(rate);
+  }
+  void enableAtRate(double rate)
+  {
+    if ( absRate != rate)
+    {
+      absRate = rate;
+      cli();
+      amount = absRate * *m_stepsPerCentiSecond;
+      sei();
+    }
+  }
 };
 
 class MotorAxis
