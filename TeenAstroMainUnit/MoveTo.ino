@@ -80,14 +80,14 @@ Again:
   double computed_interval;
   d = distStartAxis1 < distDestAxis1 ? distStartAxis1 : distDestAxis1;
 
-  computed_interval = speed2interval(staA1.speedfromDist(d), staA1.interval_Step_Sid/0.25);
+  computed_interval = speed2interval(staA1.speedfromDist(d), maxInterval1);
   cli();
   staA1.interval_Step_Cur = max(computed_interval, minInterval1);
   sei();
 
   // Now, for Declination
   d = distStartAxis2 < distDestAxis2 ? distStartAxis2 : distDestAxis2;
-  computed_interval = speed2interval(staA2.speedfromDist(d), staA2.interval_Step_Sid/0.25);
+  computed_interval = speed2interval(staA2.speedfromDist(d), maxInterval2);
   cli();
   staA2.interval_Step_Cur = max(computed_interval, minInterval2);
   sei();
