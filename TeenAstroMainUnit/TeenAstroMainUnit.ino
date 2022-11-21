@@ -324,11 +324,6 @@ void loop()
   if (!forceTracking) lastSetTrakingEnable = m + 10000;
   if (rtk.updateclockTimer(m))
   {
-    // for testing, average steps per second
-    if (debugv1 > 100000) debugv1 = 100000;
-    if (debugv1 < 0) debugv1 = 0;
-    debugv1 = (debugv1 * 19 + (staA1.target * 1000 - lasttargetAxis1)) / 20;
-    lasttargetAxis1 = staA1.target * 1000;
     // adjust tracking rate for Alt/Azm mounts
     // adjust tracking rate for refraction
     ApplyTrackingRate();

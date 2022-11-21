@@ -135,11 +135,6 @@ void Command_GX()
       // :GXDRn# Debug Rates
       switch (command[4])
       {
-      case '0':
-        // :GXDR0# RA Monitored tracking rate
-        sprintf(reply, "%ld#", (long)
-          ((debugv1 / 53333.3333333333) * 15000));
-        break;
       case '1':
         // :GXDR1# axis1 requested tracking rate in sideral
         sprintf(reply, "%f#", staA1.RequestedTrackingRate);

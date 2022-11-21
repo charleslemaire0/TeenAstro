@@ -208,10 +208,6 @@ volatile byte activeGuideRate = GuideRate::RS;
 GuideAxis guideA1;
 GuideAxis guideA2;
 
-long            lasttargetAxis1 = 0;
-long            debugv1 = 0;
-
-
 // Reticule control
 #ifdef RETICULE_LED_PINS
 int             reticuleBrightness = 255;
