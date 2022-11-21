@@ -62,14 +62,7 @@ void Command_A()
   {
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
-    if (doesRefraction.forGoto)
-    {
-      EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-    }
-    else
-    {
-      EquToHorTopo(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-    }
+    EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
 
     if (alignment.getRefs() == 0)
     {
@@ -101,15 +94,7 @@ void Command_A()
   {
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
-    if (doesRefraction.forGoto)
-    {
-      EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-    }
-    else
-    {
-      EquToHorTopo(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-    }
-
+    EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
     if (alignment.getRefs() == 0)
     {
       syncAzAlt(Azm, Alt, GetPierSide());
@@ -208,14 +193,7 @@ void Command_C()
       if (autoAlignmentBySync){
         newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         double Azm, Alt;
-        if (doesRefraction.forGoto)
-        {
-          EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-        }
-        else
-        {
-          EquToHorTopo(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-        }
+        EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
         if (alignment.getRefs() == 0)
         {
           syncAzAlt(Azm, Alt, GetPierSide());
@@ -472,7 +450,7 @@ void Command_R()
   }
   if (!movingTo && GuidingState == GuidingOFF)
   {
-    enableGuideRate(i, false);
+    enableGuideRate(i);
   }
 }
 
@@ -498,11 +476,11 @@ void Command_T()
 
   {
   case '+':
-    siderealInterval -= HzCf * (0.02);
+    siderealClockSpeed -= HzCf * (0.02);
     reply[0] = 0;
     break;
   case '-':
-    siderealInterval += HzCf * (0.02);
+    siderealClockSpeed += HzCf * (0.02);
     reply[0] = 0;
     break;
   case 'S':
@@ -525,7 +503,7 @@ void Command_T()
     break;
   case 'R':
     // reset master sidereal clock interval
-    siderealInterval = masterSiderealInterval;
+    siderealClockSpeed = mastersiderealClockSpeed;
     SetTrackingRate(TrackingStar, 0);
     sideralMode = SIDM_STAR;
     reply[0] = 0;
@@ -586,7 +564,7 @@ void Command_T()
   // Only burn the new rate if changing the sidereal interval
   if (command[1] == '+' || command[1] == '-' || command[1] == 'R')
   {
-    XEEPROM.writeLong(EE_siderealInterval, siderealInterval);
+    XEEPROM.writeLong(EE_siderealClockSpeed, siderealClockSpeed*16);
     updateSideral();
   }
 }

@@ -229,6 +229,7 @@ bool SerCom::SetRequest(void)
     {
       EEPROM.write(i, 0);
     }
+    resetConfig();
   case FocCmd_Reboot:
     Serial.end();
     Serial1.end();

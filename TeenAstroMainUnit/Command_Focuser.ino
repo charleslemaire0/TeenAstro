@@ -27,6 +27,8 @@ void Command_F()
   case 'Q':
   case 's':
   case 'S':
+  case '!':
+  case '$':
     focuserNoResponse = true;
     break;
   case 'x':

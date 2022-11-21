@@ -150,7 +150,7 @@ void TeenAstroWifi::handleConfigurationMount()
 
     sprintf_P(temp, html_Opt_1, "polar");
     data += temp;
-    if (GetLX200(":GXrp#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "n");
+    if (GetLX200(":GXrp#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "n");
 
     temp1[0] == 'y' ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
     temp1[0] == 'n' ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
@@ -160,7 +160,7 @@ void TeenAstroWifi::handleConfigurationMount()
 
   sprintf_P(temp, html_Opt_1, "gotor");
   data += temp;
-  if (GetLX200(":GXrg#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "n");
+  if (GetLX200(":GXrg#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "n");
   temp1[0] == 'y' ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
   temp1[0] == 'n' ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
   data += "</select> Consider Refraction for Goto and Sync</form><br/>\r\n";
@@ -170,7 +170,7 @@ void TeenAstroWifi::handleConfigurationMount()
   data += "<div class='bt'> Motor: <br/> </div>";
   bool reverse = false;
   uint8_t silent = false;
-  if (readReverseLX200(1, reverse) == LX200VALUEGET)
+  if (readReverseLX200(1, reverse) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configRotAxis_1, 1);
     data += temp;
@@ -180,7 +180,7 @@ void TeenAstroWifi::handleConfigurationMount()
     sendHtml(data);
   }
   reverse = false;
-  if (readReverseLX200(2, reverse) == LX200VALUEGET)
+  if (readReverseLX200(2, reverse) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configRotAxis_1, 2);
     data += temp;
@@ -190,13 +190,13 @@ void TeenAstroWifi::handleConfigurationMount()
     sendHtml(data);
   }
   float gear = 0;
-  if (readTotGearLX200(1, gear) == LX200VALUEGET)
+  if (readTotGearLX200(1, gear) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configGeAxis, (int)gear, 1, 1);
     data += temp;
     sendHtml(data);
   }
-  if (readTotGearLX200(2, gear) == LX200VALUEGET)
+  if (readTotGearLX200(2, gear) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configGeAxis, (int)gear, 2, 2);
     data += temp;
@@ -204,66 +204,66 @@ void TeenAstroWifi::handleConfigurationMount()
   }
   float step;
 
-  if (readStepPerRotLX200(1, step) == LX200VALUEGET)
+  if (readStepPerRotLX200(1, step) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configStAxis, (int)step, 1, 1);
     data += temp;
     sendHtml(data);
   }
-  if (readStepPerRotLX200(2, step) == LX200VALUEGET)
+  if (readStepPerRotLX200(2, step) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configStAxis, (int)step, 2, 2);
     data += temp;
     sendHtml(data);
   }
   uint8_t micro;
-  if (readMicroLX200(1, micro) == LX200VALUEGET)
+  if (readMicroLX200(1, micro) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 1, 1);
     data += temp;
     sendHtml(data);
   }
-  if (readMicroLX200(2, micro) == LX200VALUEGET)
+  if (readMicroLX200(2, micro) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 2, 2);
     data += temp;
     sendHtml(data);
   }
   float backlashAxis;
-  if (readBacklashLX200(1, backlashAxis) == LX200VALUEGET)
+  if (readBacklashLX200(1, backlashAxis) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configBlAxis, (int)backlashAxis, 1, 1);
     data += temp;
     sendHtml(data);
   }
-  if (readBacklashLX200(2, backlashAxis) == LX200VALUEGET)
+  if (readBacklashLX200(2, backlashAxis) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configBlAxis, (int)backlashAxis, 2, 2);
     data += temp;
     sendHtml(data);
   }
   unsigned int lowC;
-  if (readLowCurrLX200(1, lowC) == LX200VALUEGET)
+  if (readLowCurrLX200(1, lowC) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configLCAxis, lowC, 1, 1);
     data += temp;
     sendHtml(data);
   }
 
-  if (readLowCurrLX200(2, lowC) == LX200VALUEGET)
+  if (readLowCurrLX200(2, lowC) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configLCAxis, lowC, 2, 2);
     data += temp;
     sendHtml(data);
   }
   unsigned int highC;
-  if (readHighCurrLX200(1, highC) == LX200VALUEGET)
+  if (readHighCurrLX200(1, highC) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configHCAxis, highC, 1, 1);
     data += temp;
     sendHtml(data);
   }
-  if (readHighCurrLX200(2, highC) == LX200VALUEGET)
+  if (readHighCurrLX200(2, highC) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configHCAxis, highC, 2, 2);
     data += temp;
@@ -272,7 +272,7 @@ void TeenAstroWifi::handleConfigurationMount()
   const char* board = ta_MountStatus.getVb();
   if (board[0] - '0' > 1)
   {
-    if (readSilentStepLX200(1, silent) == LX200VALUEGET)
+    if (readSilentStepLX200(1, silent) == LX200_VALUEGET)
     {
       sprintf_P(temp, html_configSilentAxis_1, 1);
       data += temp;
@@ -281,7 +281,7 @@ void TeenAstroWifi::handleConfigurationMount()
       data += temp;
       sendHtml(data);
     }
-    if (readSilentStepLX200(2, silent) == LX200VALUEGET)
+    if (readSilentStepLX200(2, silent) == LX200_VALUEGET)
     {
       sprintf_P(temp, html_configSilentAxis_1, 2);
       data += temp;

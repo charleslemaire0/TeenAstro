@@ -5,13 +5,13 @@
 [Setup]
 AppID={{a70371c0-9a81-4ba1-96a8-c7cb5e401062}
 AppName=ASCOM TeenAstro Telescope Driver
-AppVerName=ASCOM TeenAstro Telescope Driver 1.2.0.3
-AppVersion=1.2.0.3
-AppPublisher=Armando Beneduce <armando.beneduce@libero.it>
-AppPublisherURL=mailto:armando.beneduce@libero.it
+AppVerName=ASCOM TeenAstro Telescope Driver 1.3.3.0
+AppVersion=1.3.3.0
+AppPublisher=TeenAstroGroup <TeenAstro@groups.io>
+AppPublisherURL=mailto:TeenAstro@groups.io
 AppSupportURL=https://groups.io/g/TeenAstro/
 AppUpdatesURL=https://groups.io/g/TeenAstro/
-VersionInfoVersion=1.2.0.3
+VersionInfoVersion=1.3.3.0
 MinVersion=0,6.0.2195sp4
 DefaultDirName="{cf}\ASCOM\Telescope"
 DisableDirPage=yes
@@ -62,7 +62,7 @@ Filename: "{dotnet4064}\regasm.exe"; Parameters: "-u ""{app}\ASCOM.TeenAstro.Tel
 
 [Code]
 const
-   REQUIRED_PLATFORM_VERSION = 6.4;    // Set this to the minimum required ASCOM Platform version for this application
+   REQUIRED_PLATFORM_VERSION = 6.5;    // Set this to the minimum required ASCOM Platform version for this application
 
 //
 // Function to return the ASCOM Platform's version number as a double.

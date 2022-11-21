@@ -84,13 +84,24 @@ void SmartHandController::setup(
   display->setFont(u8g2_font_helvR12_te);
   DisplayMessage("SHC " T_VERSION, _version, 1500);
   int k = 0;
+  
   while (!ta_MountStatus.isConnectionValid() && k < 10)
   {
     ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor);
     delay(200);
     k++;
   }
-  DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
+  if (ta_MountStatus.isConnectionValid())
+  {
+    ta_MountStatus.updateMount();
+    DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
+    if (!ta_MountStatus.hasGNSSBoard())
+    {
+      ta_MountStatus.updateTime();
+      DisplayMessage(T_TIME " Universal", ta_MountStatus.getUTC(), 1500);
+      DisplayMessage(T_DATE " Universal", ta_MountStatus.getUTCdate(), 1500);
+    }
+  }
 }
 
 void SmartHandController::update()
@@ -332,7 +343,7 @@ void SmartHandController::manualMove(bool &moving)
         if (k < 5)
           SetBoolLX200(BreakRC[k - 1]);
         else
-          Move[k - 1] = !(SetBoolLX200(BreakRC[k - 1]) == LX200VALUESET);
+          Move[k - 1] = !(SetBoolLX200(BreakRC[k - 1]) == LX200_VALUESET);
         continue;
       }
       else if (eventbuttons[0] == E_NONE && !Move[k - 1] && (eventbuttons[k] == E_LONGPRESS || eventbuttons[k] == E_CLICK || eventbuttons[k] == E_LONGPRESSTART))
@@ -348,7 +359,7 @@ void SmartHandController::manualMove(bool &moving)
           }
         }
         else if (!focuserlocked)
-          Move[k - 1] = (SetBoolLX200(RC[k - 1]) == LX200VALUESET);
+          Move[k - 1] = (SetBoolLX200(RC[k - 1]) == LX200_VALUESET);
         continue;
       }
       moving = moving || Move[k - 1];

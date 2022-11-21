@@ -126,7 +126,7 @@ void TeenAstroWifi::handleConfigurationFocuser()
   preparePage(data, ServerPage::Focuser);
   sendHtml(data);
 
-  if (GetLX200(":F~#", temp1, sizeof(temp1)) == LX200VALUEGET && temp1[0] == '~')
+  if (GetLX200(":F~#", temp1, sizeof(temp1)) == LX200_VALUEGET && temp1[0] == '~')
   {
     int park = (int)strtol(&temp1[1], NULL, 10);
     int maxPos = (int)strtol(&temp1[7], NULL, 10);
@@ -177,7 +177,7 @@ void TeenAstroWifi::handleConfigurationFocuser()
     data += temp;
     sprintf_P(temp, html_configMuFocuser, (int)pow(2., micro));
     data += temp;
-    sprintf_P(temp, html_configHCFocuser, curr);
+    sprintf_P(temp, html_configHCFocuser, curr*10);
     data += temp;
     sendHtml(data);
   }

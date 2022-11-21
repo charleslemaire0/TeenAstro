@@ -107,6 +107,7 @@
 #define T_SHOWSETTINGS "Zeige Einst."
 #define T_FOCUSERSETTINGS "Fokusierer Einst."
 #define T_DISPLAYSETTINGS "Anzeige Einst."
+#define T_FOCUSERINFO "Fokusierer Info"
 
 #define T_ACCELERATION "Beschl."
 

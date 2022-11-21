@@ -19,15 +19,7 @@ void InstrtoStep(double AngleAxis1, double AngleAxis2, PierSide Side, long *Axis
 bool syncEqu(double HA, double Dec, PierSide Side, const double *cosLat, const double *sinLat)
 {
   double Azm, Alt = 0;
-  if (doesRefraction.forGoto)
-  {
-    EquToHorApp(HA, Dec, &Azm, &Alt, cosLat, sinLat);
-  }
-  else
-  {
-    EquToHorTopo(HA, Dec, &Azm, &Alt, cosLat, sinLat);
-  }
-
+  EquToHor(HA, Dec, doesRefraction.forGoto, &Azm, &Alt, cosLat, sinLat);
   return syncAzAlt(Azm, Alt, Side);
 }
 // syncs the telescope/mount to the sky
@@ -113,15 +105,7 @@ bool getHorAppTarget(double *Azm, double *Alt)
 byte goToEqu(double HA, double Dec, PierSide preferedPierSide, const double *cosLat, const double *sinLat)
 {
   double azm, alt = 0;
-  if (doesRefraction.forGoto)
-  {
-    EquToHorApp(HA, Dec, &azm, &alt, cosLat, sinLat);
-  }
-  else
-  {
-    EquToHorTopo(HA, Dec, &azm, &alt, cosLat, sinLat);
-  }
-
+  EquToHor(HA, Dec, doesRefraction.forGoto,&azm, &alt, cosLat, sinLat);
   return goToHor(&azm, &alt, preferedPierSide);
 }
 // moves the mount to a new Altitude and Azmiuth (Alt,Azm) in degrees
@@ -129,65 +113,78 @@ byte goToHor(double *Azm, double *Alt, PierSide preferedPierSide)
 {
   double Axis1_target, Axis2_target = 0;
   long axis1_target, axis2_target = 0;
-  if (movingTo)
-  {
-    abortSlew = true;
-    return 5;
-  }   // fail, prior goto cancelled
-  if (guideA1.dir || guideA2.dir) return 7;   // fail, unspecified error
+  PierSide selectedSide = PierSide::PIER_NOTVALID;
 
-  //z = AzRange(z);
-  // Check to see if this goto is valid
-  if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return 4; // fail, PRK_PARKED
-  if (lastError != ERR_NONE) return lastError + 10;   // fail, telescop has Errors State
-  if (*Alt < minAlt) return 1;   // fail, below min altitude
-  if (*Alt > maxAlt) return 8;   // fail, above max altitude
-
+  if (*Alt < minAlt) return ERRGOTO_BELOWHORIZON;   // fail, below min altitude
+  if (*Alt > maxAlt) return ERRGOTO_ABOVEOVERHEAD;   // fail, above max altitude
 
   alignment.toInstrumentalDeg(Axis1_target, Axis2_target, *Azm, *Alt);
-  PierSide side = predictSideOfPier(Axis1_target, Axis2_target, preferedPierSide);
-  if (side == 0)  return 6; //fail, outside limit
-  InstrtoStep(Axis1_target, Axis2_target, side, &axis1_target, &axis2_target);
+  if (!predictTarget(Axis1_target, Axis2_target, preferedPierSide,
+    axis1_target, axis2_target, selectedSide))
+  {
+    return ERRGOTO_LIMITS; //fail, outside limit
+  }
+
   return goTo(axis1_target, axis2_target);
 }
 
-// Predict Side of Pier
+// Predict Target
 // return 0 if no side can reach the given position
-PierSide predictSideOfPier(const double& Axis1_target, const double& Axis2_target, const PierSide& inputSide)
+bool predictTarget(const double& Axis1_in, const double& Axis2_in, const PierSide& inputSide,
+                           long& Axis1_out, long& Axis2_out, PierSide& outputSide)
 {
-  double Axis1 = Axis1_target;
-  double Axis2 = Axis2_target;
-  Angle2InsrtAngle(inputSide, &Axis1, &Axis2, localSite.latitude());
-  if (withinLimit(Axis1*geoA1.stepsPerDegree, Axis2*geoA2.stepsPerDegree))
+  double Axis1 = Axis1_in;
+  double Axis2 = Axis2_in;
+  outputSide = inputSide;
+  Angle2InsrtAngle(outputSide, &Axis1, &Axis2, localSite.latitude());
+  Axis1_out = Axis1 * geoA1.stepsPerDegree;
+  Axis2_out = Axis2 * geoA2.stepsPerDegree;
+  if (withinLimit(Axis1_out , Axis2_out ))
   {
-    return inputSide;
+    return true;
   }
   else if (meridianFlip == FLIP_ALWAYS)
   {
-    PierSide otherside;
-    if (inputSide == PIER_EAST) otherside = PIER_WEST; else otherside = PIER_EAST;
-    Axis1 = Axis1_target;
-    Axis2 = Axis2_target;
-    Angle2InsrtAngle(otherside, &Axis1, &Axis2, localSite.latitude());
-    if (withinLimit(Axis1*geoA1.stepsPerDegree, Axis2*geoA2.stepsPerDegree))
+    double Axis1 = Axis1_in;
+    double Axis2 = Axis2_in;
+    if (inputSide == PIER_EAST) outputSide = PIER_WEST; else outputSide = PIER_EAST;
+    Angle2InsrtAngle(outputSide, &Axis1, &Axis2, localSite.latitude());
+    Axis1_out = Axis1 * geoA1.stepsPerDegree;
+    Axis2_out = Axis2 * geoA2.stepsPerDegree;
+    if (withinLimit(Axis1_out, Axis2_out))
     {
-      return otherside;
+      return true;
     }
   }
-  return  PIER_NOTVALID;
+  return  false;
 }
 
 // moves the mount to a new Hour Angle and Declination - both are in steps.  Alternate targets are used when a meridian flip occurs
 
-byte goTo(long thisTargetAxis1, long thisTargetAxis2)
+ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2)
 {
   // HA goes from +90...0..-90
   //                W   .   E
-  if (staA1.fault || staA2.fault) return 7; // fail, unspecified error
+
+  if (movingTo)
+  {
+    abortSlew = true;
+    return ERRGOTO_SLEWING;
+  }   // fail, prior goto cancelled
+  if (guideA1.dir || guideA2.dir) return ERRGOTO_GUIDING;   // fail, unspecified error
+
+  //z = AzRange(z);
+  // Check to see if this goto is valid
+  if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return ERRGOTO_PARKED; // fail, PRK_PARKED
+  if (lastError != ERRT_NONE)
+  {
+    return static_cast<ErrorsGoTo>(lastError + 10);   // fail, telescop has Errors State
+  }
+  if (staA1.fault || staA2.fault) return ERRGOTO_MOTOR; // fail, unspecified error
   atHome = false;
   cli();
   movingTo = true;
-  SetSiderealClockRate(siderealInterval);
+  SetsiderealClockSpeed(siderealClockSpeed);
 
   staA1.start = staA1.pos;
   staA2.start = staA2.pos;
@@ -195,11 +192,30 @@ byte goTo(long thisTargetAxis1, long thisTargetAxis2)
   staA1.target = thisTargetAxis1;
   staA2.target = thisTargetAxis2;
 
-  staA1.timerRate = SiderealRate;
-  staA2.timerRate = SiderealRate;
+  staA1.resetToSidereal();
+  staA2.resetToSidereal();
+
   sei();
 
   DecayModeGoto();
 
-  return 0;
+  return ERRGOTO_NONE;
 }
+
+
+ErrorsGoTo Flip()
+{
+  long axis1Flip, axis2Flip;
+  PierSide selectedSide = PIER_NOTVALID;
+  PierSide preferedPierSide = (GetPierSide() == PIER_EAST) ? PIER_WEST : PIER_EAST;
+  cli();
+  double Axis1 = staA1.pos / (double)geoA1.stepsPerDegree;
+  double Axis2 = staA2.pos / (double)geoA2.stepsPerDegree;
+  sei();
+  if (!predictTarget(Axis1, Axis2, preferedPierSide, axis1Flip, axis2Flip, selectedSide))
+  {
+    return ERRGOTO_SAMESIDE;
+  }
+  return goTo(axis1Flip, axis2Flip);
+}
+

@@ -105,7 +105,7 @@ void Command_SX()
         else
           guideRates[i] = val;
         if (activeGuideRate == i)
-          enableGuideRate(i, true);
+          enableGuideRate(i);
         strcpy(reply, "1");
       }
       else strcpy(reply, "0");
@@ -320,7 +320,7 @@ void Command_SX()
         {
           backlashA2.inSeconds = i;
           XEEPROM.writeInt(EE_backlashAxis2, backlashA2.inSeconds);
-          backlashA2.inSteps = (int)round(((double)backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
+          backlashA2.inSteps = (int)round((double)backlashA2.inSeconds / geoA2.stepsPerArcSecond);
           backlashA2.movedSteps = 0;
           strcpy(reply, "1");
         }
@@ -328,7 +328,7 @@ void Command_SX()
         {
           backlashA1.inSeconds = i;
           XEEPROM.writeInt(EE_backlashAxis1, backlashA1.inSeconds);
-          backlashA1.inSteps = (int)round(((double)backlashA1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
+          backlashA1.inSteps = (int)round((double)backlashA1.inSeconds / geoA1.stepsPerArcSecond);
           backlashA1.movedSteps = 0;
           strcpy(reply, "1");
         }
@@ -585,11 +585,18 @@ void Command_S(Command& process_command)
     if (i > 0 && i < 5)
     {
       XEEPROM.write(EE_mountType, i);
-      Serial.end();
-      Serial1.end();
-      Serial2.end();
-      delay(1000);
-      _reboot_Teensyduino_();
+      if (!atHome)
+      {
+        strcpy(reply, "0");
+      }
+      else
+      {
+        Serial.end();
+        Serial1.end();
+        Serial2.end();
+        delay(1000);
+        _reboot_Teensyduino_();
+      }
     }
     else strcpy(reply, "0");
     break;
@@ -761,19 +768,13 @@ void Command_S(Command& process_command)
       }
       else if (command[2] == 'E')
       {
-        if (GetPierSide() == PIER_WEST)
-        {
-          newTargetPierSide = PIER_EAST;
-          strcpy(reply, "1");
-        }
+        newTargetPierSide = PIER_EAST;
+        strcpy(reply, "1");
       }
       else if (command[2] == 'W')
       {
-        if (GetPierSide() == PIER_EAST)
-        {
-          newTargetPierSide = PIER_WEST;
-          strcpy(reply, "1");
-        }
+        newTargetPierSide = PIER_WEST;
+        strcpy(reply, "1"); 
       }
       else strcpy(reply, "0");
     }

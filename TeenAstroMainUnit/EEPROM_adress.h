@@ -49,7 +49,7 @@
 #define EE_homePosAxis1     57 // in degree
 #define EE_homePosAxis2     61 // in degree
 
-#define EE_siderealInterval     88
+#define EE_siderealClockSpeed     88
 #define EE_autoInitKey          96
 
 //motor1

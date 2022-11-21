@@ -81,9 +81,7 @@ void setup()
     XEEPROM.write(EE_Rate3, 64);
 
     // init the default maxRate
-    if (maxRate < 2L * 16L) maxRate = 2L * 16L;
-    if (maxRate > 10000L * 16L) maxRate = 10000L * 16L;
-    XEEPROM.writeInt(EE_maxRate, (int)(maxRate / 16L));
+    XEEPROM.writeInt(EE_maxRate, 200);
 
 
     // init degree for acceleration
@@ -91,7 +89,7 @@ void setup()
 
     // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
     // 1/16uS resolution timer, ticks per sidereal second
-    XEEPROM.writeLong(EE_siderealInterval, siderealInterval);
+    XEEPROM.writeLong(EE_siderealClockSpeed, siderealClockSpeed*16);
 
     // the transformation is not valid
     XEEPROM.write(EE_Tvalid, 0);
@@ -168,8 +166,8 @@ void setup()
   // automatic mode switching before/after slews, initialize micro-step mode
   DecayModeTracking();
 
-  // this sets the sidereal timer, controls the tracking speed so that the mount moves precisely with the stars
-  siderealInterval = XEEPROM.readLong(EE_siderealInterval);
+  // this sets the sidereal clock speed, controls the tracking speed so that the mount moves precisely with the stars
+  siderealClockSpeed = (double)XEEPROM.readLong(EE_siderealClockSpeed)/16.0;
   updateSideral();
   beginTimers();
 
@@ -208,7 +206,7 @@ void setup()
   // combined with a hack in the goto syncEqu() function and you can quickly recover from
   // a reset without loosing much accuracy in the sky.  PEC is toast though.
   // set the default guide rate, 16x sidereal
-  enableGuideRate(EEPROM.read(EE_DefaultRate), true);
+  enableGuideRate(EEPROM.read(EE_DefaultRate));
   delay(10);
 
   // prep timers
@@ -233,7 +231,7 @@ void loop()
 {
   static bool forceTracking = false;
   static unsigned long m;
-  static Errors StartLoopError = ERR_NONE;
+  static ErrorsTraking StartLoopError = ERRT_NONE;
   StartLoopError = lastError;
   // GUIDING -------------------------------------------------------------------------------------------
   if (!movingTo)
@@ -276,10 +274,12 @@ void loop()
       }
     }
 
+    CheckEndOfMoveAxisAtRate();
+
     // check for fault signal, stop any slew or guide and turn tracking off
     if (staA1.fault || staA2.fault)
     {
-      lastError = ERR_MOTOR_FAULT;
+      lastError = ERRT_MOTOR_FAULT;
       if (!forceTracking)
       {
         if (movingTo)
@@ -292,25 +292,25 @@ void loop()
         }
       }
     }
-    else if (lastError == ERR_MOTOR_FAULT)
+    else if (lastError == ERRT_MOTOR_FAULT)
     {
-      lastError = ERR_NONE;
+      lastError = ERRT_NONE;
     }
     // check altitude overhead limit and horizon limit
     if (currentAlt < minAlt || currentAlt > maxAlt)
     {
       if (!forceTracking)
       {
-        lastError = ERR_ALT;
+        lastError = ERRT_ALT;
         if (movingTo)
           abortSlew = true;
         else
           sideralTracking = false;
       }
     }
-    else if (lastError == ERR_ALT)
+    else if (lastError == ERRT_ALT)
     {
-      lastError = ERR_NONE;
+      lastError = ERRT_NONE;
     }
   }
 
@@ -324,11 +324,6 @@ void loop()
   if (!forceTracking) lastSetTrakingEnable = m + 10000;
   if (rtk.updateclockTimer(m))
   {
-    // for testing, average steps per second
-    if (debugv1 > 100000) debugv1 = 100000;
-    if (debugv1 < 0) debugv1 = 0;
-    debugv1 = (debugv1 * 19 + (staA1.target * 1000 - lasttargetAxis1)) / 20;
-    lasttargetAxis1 = staA1.target * 1000;
     // adjust tracking rate for Alt/Azm mounts
     // adjust tracking rate for refraction
     ApplyTrackingRate();
@@ -344,7 +339,7 @@ void loop()
 
   if (StartLoopError != lastError)
   {
-    lastError == ERR_NONE ? digitalWrite(LEDPin, LOW) : digitalWrite(LEDPin, HIGH);
+    lastError == ERRT_NONE ? digitalWrite(LEDPin, LOW) : digitalWrite(LEDPin, HIGH);
   }
 }
 
@@ -365,30 +360,30 @@ void SafetyCheck(const bool forceTracking)
 
   if (!geoA1.withinLimit(axis1))
   {
-    lastError = ERR_AXIS1;
+    lastError = ERRT_AXIS1;
     if (movingTo)
       abortSlew = true;
     else if (!forceTracking)
       sideralTracking = false;
     return;
   }
-  else if (lastError == ERR_AXIS1)
+  else if (lastError == ERRT_AXIS1)
   {
-    lastError = ERR_NONE;
+    lastError = ERRT_NONE;
   }
 
   if (!geoA2.withinLimit(axis2))
   {
-    lastError = ERR_AXIS2;
+    lastError = ERRT_AXIS2;
     if (movingTo)
       abortSlew = true;
     else if (!forceTracking)
       sideralTracking = false;
     return;
   }
-  else if (lastError == ERR_AXIS2)
+  else if (lastError == ERRT_AXIS2)
   {
-    lastError = ERR_NONE;
+    lastError = ERRT_NONE;
   }
 
   if (mountType == MOUNT_TYPE_GEM)
@@ -397,7 +392,7 @@ void SafetyCheck(const bool forceTracking)
     {
       if ((staA1.dir && currentSide == PIER_WEST) || (!staA2.dir && currentSide == PIER_EAST))
       {
-        lastError = ERR_MERIDIAN;
+        lastError = ERRT_MERIDIAN;
         if (movingTo)
         {
           abortSlew = true;
@@ -406,35 +401,35 @@ void SafetyCheck(const bool forceTracking)
           sideralTracking = false;
         return;
       }
-      else if (lastError == ERR_MERIDIAN)
+      else if (lastError == ERRT_MERIDIAN)
       {
-        lastError = ERR_NONE;
+        lastError = ERRT_NONE;
       }
     }
-    else if (lastError == ERR_MERIDIAN)
+    else if (lastError == ERRT_MERIDIAN)
     {
-      lastError = ERR_NONE;
+      lastError = ERRT_NONE;
     }
 
     if (!checkPole(axis1, CHECKMODE_TRACKING))
     {
       if ((staA1.dir && currentSide == PIER_EAST) || (!staA2.dir && currentSide == PIER_WEST))
       {
-        lastError = ERR_UNDER_POLE;
+        lastError = ERRT_UNDER_POLE;
         if (movingTo)
           abortSlew = true;
         if (currentSide == PIER_EAST && !forceTracking)
           sideralTracking = false;
         return;
       }
-      else if (lastError == ERR_UNDER_POLE)
+      else if (lastError == ERRT_UNDER_POLE)
       {
-        lastError = ERR_NONE;
+        lastError = ERRT_NONE;
       }
     }
-    else if (lastError == ERR_UNDER_POLE)
+    else if (lastError == ERRT_UNDER_POLE)
     {
-      lastError = ERR_NONE;
+      lastError = ERRT_NONE;
     }
   }
 
@@ -607,15 +602,30 @@ void readEEPROMmotor()
   backlashA1.movedSteps = 0;
   motorA1.gear = XEEPROM.readInt(EE_motorA1gear);
   motorA1.stepRot = XEEPROM.readInt(EE_motorA1stepRot);
+
   motorA1.micro = XEEPROM.read(EE_motorA1micro);
   if (motorA1.micro > 8 || motorA1.micro < 1)
   {
     motorA1.micro = 4;
-    XEEPROM.update(EE_motorA1micro, 4);
+    XEEPROM.update(EE_motorA1micro, 4u);
   }
+
   motorA1.reverse = XEEPROM.read(EE_motorA1reverse);
+
   motorA1.lowCurr = (unsigned int)XEEPROM.read(EE_motorA1lowCurr) * 100;
+  if (motorA1.lowCurr > 2800u || motorA1.lowCurr < 200u)
+  {
+    motorA1.lowCurr = 1000u;
+    XEEPROM.write(EE_motorA1lowCurr, 10u);
+  }
+
   motorA1.highCurr = (unsigned int)XEEPROM.read(EE_motorA1highCurr) * 100;
+  if (motorA1.highCurr > 2800u || motorA1.highCurr < 200u)
+  {
+    motorA1.highCurr = 1000u;
+    XEEPROM.write(EE_motorA1highCurr, 10u);
+  }
+
   motorA1.silent = XEEPROM.read(EE_motorA1silent);
 
   backlashA2.inSeconds = XEEPROM.readInt(EE_backlashAxis2);
@@ -629,8 +639,21 @@ void readEEPROMmotor()
     XEEPROM.update(EE_motorA2micro, 4);
   }
   motorA2.reverse = XEEPROM.read(EE_motorA2reverse);
+
   motorA2.lowCurr = (unsigned int)XEEPROM.read(EE_motorA2lowCurr) * 100;
+  if (motorA2.lowCurr > 2800u || motorA2.lowCurr < 200u)
+  {
+    motorA2.lowCurr = 1000u;
+    XEEPROM.write(EE_motorA2lowCurr, 10u);
+  }
+
   motorA2.highCurr = (unsigned int)XEEPROM.read(EE_motorA2highCurr) * 100;
+  if (motorA2.highCurr > 2800u || motorA2.highCurr < 200u)
+  {
+    motorA2.highCurr = 1000u;
+    XEEPROM.write(EE_motorA2highCurr, 10u);
+  }
+
   motorA2.silent = XEEPROM.read(EE_motorA2silent);
 }
 
@@ -642,8 +665,8 @@ void writeDefaultEEPROMmotor()
   XEEPROM.writeInt(EE_motorA1stepRot, 200);
   XEEPROM.write(EE_motorA1micro, 4);
   XEEPROM.write(EE_motorA1reverse, 0);
-  XEEPROM.write(EE_motorA1highCurr, 50);
-  XEEPROM.write(EE_motorA1lowCurr, 50);
+  XEEPROM.write(EE_motorA1highCurr, 10);
+  XEEPROM.write(EE_motorA1lowCurr, 10);
   XEEPROM.write(EE_motorA1silent, 0);
 
   XEEPROM.writeInt(EE_backlashAxis2, 0);
@@ -651,8 +674,8 @@ void writeDefaultEEPROMmotor()
   XEEPROM.writeInt(EE_motorA2stepRot, 200);
   XEEPROM.write(EE_motorA2micro, 4);
   XEEPROM.write(EE_motorA2reverse, 0);
-  XEEPROM.write(EE_motorA2highCurr, 50);
-  XEEPROM.write(EE_motorA2lowCurr, 50);
+  XEEPROM.write(EE_motorA2highCurr, 10);
+  XEEPROM.write(EE_motorA2lowCurr, 10);
   XEEPROM.write(EE_motorA2silent, 0);
 }
 
@@ -663,8 +686,10 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
   geoA2.setstepsPerRot((long)motorA2.gear * motorA2.stepRot * (int)pow(2, motorA2.micro));
   backlashA1.inSteps = (int)round(((double)backlashA1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
   backlashA2.inSteps = (int)round(((double)backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
-  timerRateRatio = geoA1.stepsPerSecond / geoA2.stepsPerSecond;
   sei();
+
+  guideA1.init(&geoA1.stepsPerCentiSecond, guideRates[activeGuideRate]);
+  guideA2.init(&geoA2.stepsPerCentiSecond, guideRates[activeGuideRate]);
 
   initCelestialPole();
   initTransformation(deleteAlignment);
@@ -681,19 +706,17 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
 
 void updateSideral()
 {
-  // 16MHZ clocks for steps per second of sidereal tracking
   cli();
-  SiderealRate = siderealInterval / geoA1.stepsPerSecond;
-  TakeupRate = SiderealRate / 8L;
+  staA1.setSidereal(siderealClockSpeed, geoA1.stepsPerSecond, masterClockSpeed);
+  staA2.setSidereal(siderealClockSpeed, geoA2.stepsPerSecond, masterClockSpeed);
   sei();
-  staA1.timerRate = SiderealRate;
-  staA2.timerRate = SiderealRate;
+
   SetTrackingRate(default_tracking_rate,0);
 
   // backlash takeup rates
-  backlashA1.timerRate = staA1.timerRate / BacklashTakeupRate;
-  backlashA2.timerRate = staA2.timerRate / BacklashTakeupRate;
+  backlashA1.interval_Step = staA1.interval_Step_Cur / BacklashTakeupRate;
+  backlashA2.interval_Step = staA2.interval_Step_Cur / BacklashTakeupRate;
 
-  // initialize the timers that handle the sidereal clock, RA, and Dec
-  SetSiderealClockRate(siderealInterval);
+  // initialize the sidereal clock, RA, and Dec
+  SetsiderealClockSpeed(siderealClockSpeed);
 }

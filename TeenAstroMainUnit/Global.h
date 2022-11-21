@@ -20,6 +20,9 @@ CoordConv alignment;
 bool hasStarAlignment = false;
 bool TrackingCompForAlignment = false;
 
+typedef double interval;
+typedef double speed;
+
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
@@ -44,17 +47,23 @@ bool hasGNSS = true;
 RefractionFlags doesRefraction;
 TrackingCompensation tc = TC_NONE;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
-double                  siderealInterval = 15956313.0;
-const double            masterSiderealInterval = 15956313.0;
+double                  siderealClockSpeed = 997269.5625;
+const double            mastersiderealClockSpeed = 997269.5625;
 
-// default = 15956313 ticks per sidereal hundredth second, where a tick is 1/16 uS
+// default = 997269.5625 ticks per sidereal hundredth second, where a tick is 1 uS
 // this is stored in XEEPROM.which is updated/adjusted with the ":T+#" and ":T-#" commands
 // a higher number here means a longer count which slows down the sidereal clock
-const double            HzCf = 16000000.0 / 60.0;   // conversion factor to go to/from Hz for sidereal interval
-volatile double         SiderealRate;               // based on the siderealInterval, this is the time between steps for sidereal tracking
-volatile double         TakeupRate;                 // this is the takeup rate for synchronizing the target and actual positions when needed
 
-double                  maxRate = StepsMaxRate * 16L;
+const double            masterClockSpeed = 1000000;    // reference frequence for tick
+const double            HzCf = masterClockSpeed / 60.0;   // conversion factor to go to/from Hz for sidereal interval
+            
+
+
+interval                minInterval1 = StepsMinInterval;
+interval                maxInterval1 = StepsMaxInterval;
+interval                minInterval2 = StepsMinInterval;
+interval                maxInterval2 = StepsMaxInterval;
+
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
 
@@ -68,7 +77,6 @@ backlash            backlashA2 = { 0,0,0,0 };
 GeoAxis             geoA1;
 GeoAxis             geoA2;
 
-volatile double     timerRateRatio;
 StatusAxis          staA1;
 StatusAxis          staA2;
 
@@ -97,19 +105,41 @@ double              underPoleLimitGOTO;                     // maximum allowed h
 volatile bool   HADir = HADirNCPInit;
 
 // Status ------------------------------------------------------------------------------------------------------------------
-enum Errors
+enum ErrorsTraking
 {
-  ERR_NONE,
-  ERR_MOTOR_FAULT,
-  ERR_ALT,
-  ERR_LIMIT_SENSE,
-  ERR_AXIS1,
-  ERR_AXIS2,
-  ERR_UNDER_POLE,
-  ERR_MERIDIAN
+  ERRT_NONE,
+  ERRT_MOTOR_FAULT,
+  ERRT_ALT,
+  ERRT_LIMIT_SENSE,
+  ERRT_AXIS1,
+  ERRT_AXIS2,
+  ERRT_UNDER_POLE,
+  ERRT_MERIDIAN
 };
-Errors lastError = ERR_NONE;
 
+ErrorsTraking lastError = ERRT_NONE;
+
+enum ErrorsGoTo
+{
+  ERRGOTO_NONE,
+  ERRGOTO_BELOWHORIZON,
+  ERRGOTO_NOOBJECTSELECTED,
+  ERRGOTO_SAMESIDE,
+  ERRGOTO_PARKED,
+  ERRGOTO_SLEWING,
+  ERRGOTO_LIMITS,
+  ERRGOTO_GUIDING,
+  ERRGOTO_ABOVEOVERHEAD,
+  ERRGOTO_MOTOR,
+  ERRGOTO____,
+  ERRGOTO_MOTOR_FAULT,
+  ERRGOTO_ALT,
+  ERRGOTO_LIMIT_SENSE,
+  ERRGOTO_AXIS1,
+  ERRGOTO_AXIS2,
+  ERRGOTO_UNDER_POLE,
+  ERRGOTO_MERIDIAN
+};
 
 //Command Precision
 bool highPrecision = true;
@@ -141,6 +171,7 @@ long    storedTrakingRateDEC = 0;
 //Guiding
 enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter, GuidingAtRate };
 volatile Guiding GuidingState = GuidingOFF;
+Guiding lastGuidingState = GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
 unsigned long lastSecurityCheck = millis();
 
@@ -174,13 +205,8 @@ double  guideRates[5] =
 
 volatile byte activeGuideRate = GuideRate::RS;
 
-GuideAxis guideA1 = { 0,0,0,0,0 };
-GuideAxis guideA2 = { 0,0,0,0,0 };
-
-long            lasttargetAxis1 = 0;
-long            debugv1 = 0;
-
-double          guideTimerBaseRate = 0;
+GuideAxis guideA1;
+GuideAxis guideA2;
 
 // Reticule control
 #ifdef RETICULE_LED_PINS
