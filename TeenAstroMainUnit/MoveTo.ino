@@ -77,7 +77,6 @@ Again:
   }
 
   // First, for Right Ascension
-  double computed_interval;
   d = distStartAxis1 < distDestAxis1 ? distStartAxis1 : distDestAxis1;
   cli();
   staA1.setIntervalfromDist(d, minInterval1, maxInterval1);

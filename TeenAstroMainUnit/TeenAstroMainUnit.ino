@@ -1,9 +1,9 @@
 /*
- * Title       On-Step
+ * Title       TeenAstro
  * by          Howard Dutton, Charles Lemaire, Markus Noga, Francois Desvall�e
  *
- * Copyright (C) 2012 to 2016 Howard Dutton
- * Copyright (C) 2016 to 2020 Charles Lemaire, Markus Noga, Francois Desvall�e
+ * Copyright (C) 2012 to 2016 On-Step by Howard Dutton
+ * Copyright (C) 2016 to 2022 TeenAstro by Charles Lemaire, Markus Noga, Francois Desvall�e
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -201,11 +201,6 @@ void setup()
   guideRates[2] = val > 0 ? (float)val : DefaultR2;
   val = EEPROM.read(EE_Rate3);
   guideRates[3] = val > 0 ? (float)val : DefaultR3;
-
-  // makes onstep think that you parked the 'scope
-  // combined with a hack in the goto syncEqu() function and you can quickly recover from
-  // a reset without loosing much accuracy in the sky.  PEC is toast though.
-  // set the default guide rate, 16x sidereal
   enableGuideRate(EEPROM.read(EE_DefaultRate));
   delay(10);
 
