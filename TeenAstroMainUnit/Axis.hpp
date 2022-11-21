@@ -90,15 +90,12 @@ public:
   //  double t = GetTimeToBreak();
   //  return acc* pow(t, 2) + interval2speed(timerRate) * t;
   //};
-  double speedfromTarget()
-  {
-    volatile unsigned long delta = abs(deltaTarget);
-    return speed2interval(speedfromDist(delta));
-  }
-  double speedfromDist(const volatile unsigned long& distDestAxis1)
-  {
-    return sqrt(distDestAxis1 * 4. * acc);
-  };
+  //double speedfromTarget()
+  //{
+  //  volatile unsigned long delta = abs(deltaTarget);
+  //  return speed2interval(speedfromDist(delta));
+  //}
+
   long breakDist()
   {
     return (long)pow(interval2speed(interval_Step_Cur), 2.) / (4. * acc);
@@ -115,16 +112,40 @@ public:
       target = pos + a;
       sei();
     }
-  }
+  };
+  void setIntervalfromDist(const volatile unsigned long& d, double minInterval, double maxInterval)
+  {
+    interval_Step_Cur = max(speed2interval(speedfromDist(d), maxInterval), minInterval);
+  };
+  void setIntervalfromRate(double rate, double minInterval, double maxInterval)
+  {
+    if (rate == 0)
+    {
+      interval_Step_Cur = maxInterval;
+    }
+    else
+    {
+      interval_Step_Cur = max(min(interval_Step_Sid / rate, maxInterval), minInterval);
+    }
+  };
 private:
+  double speedfromDist(const volatile unsigned long& d)
+  {
+    return sqrt(d * 4. * acc);
+  };
   double interval2speed(double interval)
   {
     return ClockSpeed / interval;
   }
-  double speed2interval(double V)
+  double speed2interval(double V, double maxInterval)
   {
-    return ClockSpeed / V;
+    if (V == 0)
+    {
+      return maxInterval;
+    }
+    return min(ClockSpeed / V, maxInterval);
   }
+
 };
 
 class GeoAxis

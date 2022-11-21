@@ -147,8 +147,7 @@ ISR(TIMER1_COMPA_vect)
         }
       }
       volatile double sumRateA1 = fabs(tmp_guideRateA1 + staA1.CurrentTrackingRate);
-      staA1.interval_Step_Cur = max(staA1.interval_Step_Sid / sumRateA1, minInterval1);
-      staA1.interval_Step_Cur = min(staA1.interval_Step_Cur, maxInterval1);
+      staA1.setIntervalfromRate(sumRateA1, minInterval1, maxInterval1);
     }
 
     {
@@ -204,10 +203,8 @@ ISR(TIMER1_COMPA_vect)
           }
         }
       }
-
       volatile double sumRateA2 = fabs(tmp_guideRateA2 + staA2.CurrentTrackingRate);
-      staA2.interval_Step_Cur = max(staA2.interval_Step_Sid / sumRateA2, minInterval2);
-      staA2.interval_Step_Cur = min(staA2.interval_Step_Cur, maxInterval2);
+      staA2.setIntervalfromRate(sumRateA2, minInterval2, maxInterval2);
     }
 
     if (!guideA1.dir && !guideA2.dir)
