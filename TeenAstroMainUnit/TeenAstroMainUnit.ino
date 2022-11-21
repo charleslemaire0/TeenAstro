@@ -166,7 +166,7 @@ void setup()
   // automatic mode switching before/after slews, initialize micro-step mode
   DecayModeTracking();
 
-  // this sets the sidereal timer, controls the tracking speed so that the mount moves precisely with the stars
+  // this sets the sidereal clock speed, controls the tracking speed so that the mount moves precisely with the stars
   siderealClockSpeed = (double)XEEPROM.readLong(EE_siderealClockSpeed)/16.0;
   updateSideral();
   beginTimers();
@@ -722,6 +722,6 @@ void updateSideral()
   backlashA1.interval_Step = staA1.interval_Step_Cur / BacklashTakeupRate;
   backlashA2.interval_Step = staA2.interval_Step_Cur / BacklashTakeupRate;
 
-  // initialize the timers that handle the sidereal clock, RA, and Dec
+  // initialize the sidereal clock, RA, and Dec
   SetsiderealClockSpeed(siderealClockSpeed);
 }
