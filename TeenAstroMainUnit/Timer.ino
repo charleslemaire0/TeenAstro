@@ -20,7 +20,7 @@ speed interval2speed(interval i) //Speed in step per second
 {
   return masterClockSpeed / i;
 }
-interval speed2interval(speed V, speed maxInterval)
+interval speed2interval(speed V, interval maxInterval)
 {
   if (V == 0)
   {
