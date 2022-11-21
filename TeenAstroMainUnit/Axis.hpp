@@ -50,7 +50,7 @@ public:
     {
       updateDeltaTarget();
     }
-    return abs(deltaTarget) < max(minstepdist * RequestedTrackingRate ,1);
+    return abs(deltaTarget) < max(minstepdist * RequestedTrackingRate, 1);
   };
   void resetToSidereal()
   {
@@ -97,7 +97,7 @@ public:
   }
   double speedfromDist(const volatile unsigned long& distDestAxis1)
   {
-    return sqrt(distDestAxis1 * 4. * acc) ;
+    return sqrt(distDestAxis1 * 4. * acc);
   };
   long breakDist()
   {
@@ -143,7 +143,7 @@ public:
   long   maxAxis;   //in steps
 private:
   long   m_breakDist; //in steps
- public:
+public:
   void setstepsPerRot(long val)
   {
     stepsPerRot = val;
@@ -152,10 +152,10 @@ private:
     stepsPerArcSecond = stepsPerDegree / 3600.0;
     stepsPerCentiSecond = stepsPerRot / 8640000.0;
     halfRot = stepsPerRot / 2L;
-    quaterRot = stepsPerRot / 4L;    
+    quaterRot = stepsPerRot / 4L;
     return;
   }
-  bool withinLimit(const long &axis)
+  bool withinLimit(const long& axis)
   {
     return !(axis < minAxis || axis > maxAxis);
   }
@@ -171,7 +171,7 @@ public:
   volatile double atRate;
   double          absRate;
 private:
-  double*         m_stepsPerCentiSecond;
+  double* m_stepsPerCentiSecond;
 public:
   void init(double* stepsPerCentiSecond, double rate)
   {
@@ -182,7 +182,7 @@ public:
   }
   void enableAtRate(double rate)
   {
-    if ( absRate != rate)
+    if (absRate != rate)
     {
       absRate = rate;
       cli();
@@ -205,6 +205,6 @@ public:
   Driver driver;
   void initMotor(Driver::MOTORDRIVER useddriver, int EnPin, int CSPin, int DirPin, int StepPin)
   {
-    driver.initMotor(useddriver, stepRot, EnPin, CSPin, DirPin, StepPin, lowCurr , micro, silent);
+    driver.initMotor(useddriver, stepRot, EnPin, CSPin, DirPin, StepPin, lowCurr, micro, silent);
   }
 };

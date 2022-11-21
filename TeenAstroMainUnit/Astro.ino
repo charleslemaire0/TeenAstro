@@ -22,15 +22,12 @@ PierSide GetPierSide()
   return -geoA2.quaterRot <= pos && pos <= geoA2.quaterRot ? PIER_EAST : PIER_WEST;
 }
 
-// staA.trackingTimerRate are x the sidereal rate
 void ApplyTrackingRate()
 {
-
   staA1.CurrentTrackingRate = staA1.RequestedTrackingRate;
   staA2.CurrentTrackingRate = staA2.RequestedTrackingRate;
   staA1.fstep = geoA1.stepsPerCentiSecond * staA1.CurrentTrackingRate;
   staA2.fstep = geoA2.stepsPerCentiSecond * staA2.CurrentTrackingRate;
-
 }
 
 void SetTrackingRate(double rHA, double rDEC)
@@ -155,8 +152,8 @@ void SetRates(double maxslewrate)
 
   double fact1 = masterClockSpeed / geoA1.stepsPerSecond;
   double fact2 = masterClockSpeed / geoA2.stepsPerSecond;
-  minInterval1 = max(fact1 / maxslewrate, StepsMinInterval );
-  minInterval2 = max(fact2 / maxslewrate, StepsMinInterval );
+  minInterval1 = max(fact1 / maxslewrate, StepsMinInterval);
+  minInterval2 = max(fact2 / maxslewrate, StepsMinInterval);
   double maxslewCorrected = min(fact1 / minInterval1, fact2 / minInterval2);
   if (abs(maxslewrate - maxslewCorrected) > 2)
   {
