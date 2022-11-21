@@ -77,18 +77,19 @@ Again:
   }
 
   // First, for Right Ascension
-  double temp;
+  double computed_interval;
   d = distStartAxis1 < distDestAxis1 ? distStartAxis1 : distDestAxis1;
-  temp = speed2interval(staA1.speedfromDist(d), staA1.interval_Step_Sid/0.25);
+
+  computed_interval = speed2interval(staA1.speedfromDist(d), staA1.interval_Step_Sid/0.25);
   cli();
-  staA1.interval_Step_Cur = max(temp, minInterval1);
+  staA1.interval_Step_Cur = max(computed_interval, minInterval1);
   sei();
 
   // Now, for Declination
   d = distStartAxis2 < distDestAxis2 ? distStartAxis2 : distDestAxis2;
-  temp = speed2interval(staA2.speedfromDist(d), staA2.interval_Step_Sid/0.25);
+  computed_interval = speed2interval(staA2.speedfromDist(d), staA2.interval_Step_Sid/0.25);
   cli();
-  staA2.interval_Step_Cur = max(temp, minInterval2);
+  staA2.interval_Step_Cur = max(computed_interval, minInterval2);
   sei();
   
   if (staA1.atTarget(false) && staA2.atTarget(false))
