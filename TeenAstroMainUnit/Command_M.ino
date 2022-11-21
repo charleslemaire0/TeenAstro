@@ -74,9 +74,9 @@ void Command_M()
         cli();
         GuidingState = GuidingPulse;
         if (guideA1.dir == 'e')
-          guideA1.timerRate = -guideTimerBaseRate1;
+          guideA1.atRate = -guideA1.absRate;
         else
-          guideA1.timerRate = guideTimerBaseRate1;
+          guideA1.atRate = guideA1.absRate;
         sei();
         //reply[0] = '1';
         //reply[1] = 0;
@@ -96,7 +96,7 @@ void Command_M()
             rev = !rev;
           cli();
           GuidingState = GuidingPulse;
-          guideA2.timerRate = rev ? -guideTimerBaseRate2 : guideTimerBaseRate2;
+          guideA2.atRate = rev ? -guideA2.absRate : guideA2.absRate;
           sei();
         }
         //reply[0] = '1';

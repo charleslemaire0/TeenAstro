@@ -22,15 +22,12 @@ PierSide GetPierSide()
   return -geoA2.quaterRot <= pos && pos <= geoA2.quaterRot ? PIER_EAST : PIER_WEST;
 }
 
-// staA.trackingTimerRate are x the sidereal rate
 void ApplyTrackingRate()
 {
-
   staA1.CurrentTrackingRate = staA1.RequestedTrackingRate;
   staA2.CurrentTrackingRate = staA2.RequestedTrackingRate;
   staA1.fstep = geoA1.stepsPerCentiSecond * staA1.CurrentTrackingRate;
   staA2.fstep = geoA2.stepsPerCentiSecond * staA2.CurrentTrackingRate;
-
 }
 
 void SetTrackingRate(double rHA, double rDEC)
@@ -153,17 +150,17 @@ void SetRates(double maxslewrate)
 {
   // set the new acceleration rate
 
-  double fact1 = masterClockRate / geoA1.stepsPerSecond;
-  double fact2 = masterClockRate / geoA2.stepsPerSecond;
-  maxRate1 = max(fact1 / maxslewrate, StepsMaxRate * microSec2Tick);
-  maxRate2 = max(fact2 / maxslewrate, StepsMaxRate * microSec2Tick);
-  double maxslewCorrected = min(fact1 / maxRate1, fact2 / maxRate2);
+  double fact1 = masterClockSpeed / geoA1.stepsPerSecond;
+  double fact2 = masterClockSpeed / geoA2.stepsPerSecond;
+  minInterval1 = max(fact1 / maxslewrate, StepsMinInterval);
+  minInterval2 = max(fact2 / maxslewrate, StepsMinInterval);
+  double maxslewCorrected = min(fact1 / minInterval1, fact2 / minInterval2);
   if (abs(maxslewrate - maxslewCorrected) > 2)
   {
     XEEPROM.writeInt(EE_maxRate, (int)maxslewCorrected);
   }
-  maxRate1 = fact1 / maxslewCorrected;
-  maxRate2 = fact2 / maxslewCorrected;
+  minInterval1 = fact1 / maxslewCorrected;
+  minInterval2 = fact2 / maxslewCorrected;
   guideRates[4] = maxslewCorrected;
   if (guideRates[3] >= maxslewCorrected)
   {
@@ -176,8 +173,8 @@ void SetRates(double maxslewrate)
 
 void SetAcceleration()
 {
-  double Vmax1 = getV(maxRate1);
-  double Vmax2 = getV(maxRate2);
+  double Vmax1 = interval2speed(minInterval1);
+  double Vmax2 = interval2speed(minInterval2);
   cli();
   staA1.acc = Vmax1 / (4. * DegreesForAcceleration * geoA1.stepsPerDegree) * Vmax1;
   staA2.acc = Vmax2 / (4. * DegreesForAcceleration * geoA2.stepsPerDegree) * Vmax2;
@@ -185,75 +182,24 @@ void SetAcceleration()
 }
 
 // calculates the tracking speed for move commands
-void enableGuideRate(int g, bool force)
+void enableGuideRate(int g)
 {
-  // don't do these lengthy calculations unless we have to
-
   if (g < 0) g = 0;
   if (g > 4) g = 4;
-  if (!force && (guideTimerBaseRate1 == guideRates[g] && guideTimerBaseRate2 == guideTimerBaseRate1)) return;
-
   activeGuideRate = g;
-
-  // this enables the guide rate
-  guideTimerBaseRate1 = guideRates[g];
-  guideTimerBaseRate2 = guideTimerBaseRate1;
-  cli();
-  guideA1.amount = guideTimerBaseRate1 * geoA1.stepsPerCentiSecond;
-  guideA2.amount = guideTimerBaseRate2 * geoA2.stepsPerCentiSecond;
-  sei();
+  guideA1.enableAtRate(guideRates[g]);
+  guideA2.enableAtRate(guideRates[g]);
 }
 
-void enableGuideAtRate(int axis, double rate)
-{
-  if (axis == 1 && guideTimerBaseRate1 != rate)
-  {
-    guideTimerBaseRate1 = rate;
-    cli();
-    guideA1.amount = guideTimerBaseRate1 * geoA1.stepsPerCentiSecond;
-    sei();
-  }
-  else if (axis == 2 && guideTimerBaseRate2 != rate)
-  {
-    guideTimerBaseRate2 = rate;
-    cli();
-    guideA2.amount = guideTimerBaseRate2 * geoA2.stepsPerCentiSecond;
-    sei();
-  }
-}
 
 void enableST4GuideRate()
 {
-  if (guideTimerBaseRate1 != guideRates[0] || guideTimerBaseRate2 != guideTimerBaseRate1)
-  {
-    guideTimerBaseRate1 = guideRates[0];
-    guideTimerBaseRate2 = guideTimerBaseRate1;
-    cli();
-    guideA1.amount = guideTimerBaseRate1 * geoA1.stepsPerCentiSecond;
-    guideA2.amount = guideTimerBaseRate2 * geoA2.stepsPerCentiSecond;
-    sei();
-  }
+  enableGuideRate(0);
 }
 
 void resetGuideRate()
 {
-  enableGuideRate(activeGuideRate, true);
-}
-
-void enableRateAxis1(double vRate)
-{
-  cli();
-  guideA1.amount = abs(vRate) * geoA1.stepsPerCentiSecond;
-  guideA1.timerRate = vRate;
-  sei();
-}
-
-void enableRateAxis2(double vRate)
-{
-  cli();
-  guideA2.amount = abs(vRate) * geoA2.stepsPerCentiSecond;
-  guideA2.timerRate = vRate;
-  sei();
+  enableGuideRate(activeGuideRate);
 }
 
 bool isAltAZ()

@@ -1,6 +1,8 @@
 // -----------------------------------------------------------------------------------
 // Timers and interrupt handling
 #define stepAxis   1
+#define clockRatio 0.01
+
 
 #define ISR(f)  void f (void)
 void TIMER1_COMPA_vect(void);
@@ -11,36 +13,36 @@ static IntervalTimer  itimer1;
 static IntervalTimer  itimer3;
 static IntervalTimer  itimer4;
 
-static volatile double isrTimerRateAxis1 = 0;
-static volatile double isrTimerRateAxis2 = 0;
+static volatile double isrIntervalAxis1 = 0;
+static volatile double isrIntervalAxis2 = 0;
 
-double getV(double rate) //Speed in step per second
+speed interval2speed(interval i) //Speed in step per second
 {
-  return masterClockRate / rate;
+  return masterClockSpeed / i;
 }
-double getRate(double V, double minRate)
+interval speed2interval(speed V, interval maxInterval)
 {
   if (V == 0)
   {
-    return minRate;
+    return maxInterval;
   }
-  return min(masterClockRate / V, minRate);
+  return min(masterClockSpeed / V, maxInterval);
 }
 
 
-// set the master sidereal clock rate, also forces rate update for RA/Dec timer rates so that PPS adjustments take hold immediately
-void SetsiderealClockRate(double clockRate)
+// set the master sidereal clock rate, also forces rate update for Axis1 & Axis2 
+void SetsiderealClockSpeed(double cs)
 {
-  Timer1SetRate(clockRate / 100);
-  isrTimerRateAxis1 = 0;
-  isrTimerRateAxis2 = 0;
+  Timer1SetInterval(cs * clockRatio);
+  isrIntervalAxis1 = 0;
+  isrIntervalAxis2 = 0;
 }
 void beginTimers()
 {
   // set the system timer for millis() to the second highest priority
   SCB_SHPR3 = (32 << 24) | (SCB_SHPR3 & 0x00FFFFFF);
-  itimer3.begin(TIMER3_COMPA_vect, (float)128 * 0.0625);
-  itimer4.begin(TIMER4_COMPA_vect, (float)128 * 0.0625);
+  itimer3.begin(TIMER3_COMPA_vect, 100);
+  itimer4.begin(TIMER4_COMPA_vect, 100);
   // set the 1/100 second sidereal clock timer to run at the second highest priority
   NVIC_SET_PRIORITY(IRQ_PIT_CH0, 32);
 
@@ -48,29 +50,29 @@ void beginTimers()
   NVIC_SET_PRIORITY(IRQ_PIT_CH1, 0);
   NVIC_SET_PRIORITY(IRQ_PIT_CH2, 0);
 }
-// set timer1 to rate (in microseconds*16)
-static void Timer1SetRate(double rate)
+// set timer1 to interval (in microseconds)
+static void Timer1SetInterval(interval i)
 {
-  itimer1.begin(TIMER1_COMPA_vect, rate * 0.0625);
+  itimer1.begin(TIMER1_COMPA_vect, i);
 }
 
-// set timer3 to rate (in microseconds*16)
-static volatile uint32_t   nextAxis1Rate = 100000UL;
+// set timer3 to interval (in microseconds)
+static volatile uint32_t   nextIntervalAxis1 = 100000UL;
 
 
-static void Timer3SetRate(double rate)
+static void Timer3SetInterval(interval i)
 {
   cli();
-  nextAxis1Rate = (F_BUS / masterClockRate) * rate * 0.5 - 1;
+  nextIntervalAxis1 = (F_BUS / masterClockSpeed) * i * 0.5 - 1;
   sei();
 }
 
-// set timer4 to rate (in microseconds*16)
-static volatile uint32_t   nextAxis2Rate = 100000UL;
-static void Timer4SetRate(double rate)
+// set timer4 to interval (in microseconds)
+static volatile uint32_t   nextIntervalAxis2 = 100000UL;
+static void Timer4SetInterval(interval i)
 {
   cli();
-  nextAxis2Rate = (F_BUS / masterClockRate) * rate * 0.5 - 1;
+  nextIntervalAxis2 = (F_BUS / masterClockSpeed) * i * 0.5 - 1;
   sei();
 }
 
@@ -79,56 +81,55 @@ ISR(TIMER1_COMPA_vect)
 {
   static volatile bool   wasInbacklashAxis1 = false;
   static volatile bool   wasInbacklashAxis2 = false;
-  static volatile double guideTimerRateAxisA1 = 0;
+  static volatile double tmp_guideRateA1 = 0;
+  static volatile double tmp_guideRateA2 = 0;
   static volatile double tmp_1 = 0;
   static volatile double tmp_2 = 0;
-  static volatile double guideTimerRateAxisA2 = 0;
-
   static volatile double sign;
   rtk.m_lst++;
   // in this mode the target is always a bit faster than the scope because we move first the target!!
   if (!movingTo)
   {
-    double maxguideTimerRate = 16;
+    double max_guideRate = 16;
     // guide rate acceleration/deceleration
     {
       // guide rate acceleration/deceleration and control
       updateDeltaTarget();
       if (!backlashA1.correcting && guideA1.dir)
       {
-        if ((fabs(guideA1.timerRate) < maxguideTimerRate) &&
-          (fabs(guideTimerRateAxisA1) < maxguideTimerRate))
+        if ((fabs(guideA1.atRate) < max_guideRate) &&
+          (fabs(tmp_guideRateA1) < max_guideRate))
         {
           // slow speed guiding, no acceleration
-          guideTimerRateAxisA1 = guideA1.timerRate;
+          tmp_guideRateA1 = guideA1.atRate;
         }
         else
         {
           DecayModeGoto();
-          // for acceleration, we know run this routine this a fix amount of time 1/100 of a sideral second
-          sign = guideA1.timerRate < 0 ? -1 : 1;
+          // for acceleration, we know run this routine this a fix amount of time "clockRatio" of a sideral second
+          sign = guideA1.atRate < 0 ? -1 : 1;
           if (guideA1.dir == 'b')
-          {      
-            tmp_1 = guideTimerRateAxisA1 - 2 * staA1.acc * 0.01 * sign / geoA1.stepsPerSecond;
-            tmp_2 = sqrt(fabs(staA1.deltaTarget) * 4 * staA1.acc) * sign / geoA1.stepsPerSecond ;
-            guideTimerRateAxisA1 = guideA1.timerRate < 0 ?
+          {
+            tmp_1 = tmp_guideRateA1 - 2 * staA1.acc * clockRatio * sign / geoA1.stepsPerSecond;
+            tmp_2 = sqrt(fabs(staA1.deltaTarget) * 4 * staA1.acc) * sign / geoA1.stepsPerSecond;
+            tmp_guideRateA1 = guideA1.atRate < 0 ?
               max(tmp_1, tmp_2) :
               min(tmp_1, tmp_2);
- 
-          } 
-          else
-          {
-            guideTimerRateAxisA1 += 2 * staA1.acc * 0.01 * sign / geoA1.stepsPerSecond;
-          }
-          if (guideTimerRateAxisA1 < 0)
-          {
-            guideTimerRateAxisA1 = min(-maxguideTimerRate, guideTimerRateAxisA1);
-            guideTimerRateAxisA1 = max(guideA1.timerRate, guideTimerRateAxisA1);           
+
           }
           else
           {
-            guideTimerRateAxisA1 = max(maxguideTimerRate, guideTimerRateAxisA1);
-            guideTimerRateAxisA1 = min(guideA1.timerRate, guideTimerRateAxisA1);
+            tmp_guideRateA1 += 2 * staA1.acc * clockRatio * sign / geoA1.stepsPerSecond;
+          }
+          if (tmp_guideRateA1 < 0)
+          {
+            tmp_guideRateA1 = min(-max_guideRate, tmp_guideRateA1);
+            tmp_guideRateA1 = max(guideA1.atRate, tmp_guideRateA1);
+          }
+          else
+          {
+            tmp_guideRateA1 = max(max_guideRate, tmp_guideRateA1);
+            tmp_guideRateA1 = min(guideA1.atRate, tmp_guideRateA1);
           }
         }
 
@@ -138,56 +139,53 @@ ISR(TIMER1_COMPA_vect)
           if (staA1.atTarget(false))
           {
             guideA1.dir = 0;
-            guideA1.timerRate = 0;
-            guideTimerRateAxisA1 = 0;
+            guideA1.atRate = 0;
+            tmp_guideRateA1 = 0;
             if (staA2.atTarget(false))
               DecayModeTracking();
           }
         }
       }
-      // compute timerRateAxis  and avoid timerRate  to be extremly large
-      volatile double timerRateAxis1 = fabs(guideTimerRateAxisA1 + staA1.CurrentTrackingRate);
-      staA1.timeByStep_Cur = max(staA1.timeByStep_Sid / timerRateAxis1, maxRate1);
-      staA1.timeByStep_Cur = min(staA1.timeByStep_Cur, minRate1);
+      volatile double sumRateA1 = fabs(tmp_guideRateA1 + staA1.CurrentTrackingRate);
+      staA1.setIntervalfromRate(sumRateA1, minInterval1, maxInterval1);
     }
 
     {
-
       updateDeltaTarget();
       if (!backlashA2.correcting && guideA2.dir)
       {
-        if ((fabs(guideA2.timerRate) < maxguideTimerRate) &&
-          (fabs(guideTimerRateAxisA2) < maxguideTimerRate))
+        if ((fabs(guideA2.atRate) < max_guideRate) &&
+          (fabs(tmp_guideRateA2) < max_guideRate))
         {
           // slow speed guiding, no acceleration
-          guideTimerRateAxisA2 = guideA2.timerRate;
+          tmp_guideRateA2 = guideA2.atRate;
         }
         else
         {
           DecayModeGoto();
-          // for acceleration, we know run this routine this a fix amount of time 1/100 of a sideral second
-          sign = guideA2.timerRate < 0 ? -1 : 1;
+          // for acceleration, we know run this routine this a fix amount of time "clockRatio" of a sideral second
+          sign = guideA2.atRate < 0 ? -1 : 1;
           if (guideA2.dir == 'b')
           {
-            tmp_1 = guideTimerRateAxisA2 - 2 * staA2.acc * 0.01 * sign / geoA2.stepsPerSecond;
+            tmp_1 = tmp_guideRateA2 - 2 * staA2.acc * clockRatio * sign / geoA2.stepsPerSecond;
             tmp_2 = sqrt(fabs(staA2.deltaTarget) * 4 * staA2.acc) * sign / geoA2.stepsPerSecond;
-            guideTimerRateAxisA2 = guideA2.timerRate < 0 ?
+            tmp_guideRateA2 = guideA2.atRate < 0 ?
               max(tmp_1, tmp_2) :
               min(tmp_1, tmp_2);
           }
           else
           {
-            guideTimerRateAxisA2 += 2 * staA2.acc * 0.01 * sign / geoA2.stepsPerSecond;
+            tmp_guideRateA2 += 2 * staA2.acc * clockRatio * sign / geoA2.stepsPerSecond;
           }
-          if (guideTimerRateAxisA2 < 0)
+          if (tmp_guideRateA2 < 0)
           {
-            guideTimerRateAxisA2 = min(-maxguideTimerRate, guideTimerRateAxisA2);
-            guideTimerRateAxisA2 = max(guideA2.timerRate, guideTimerRateAxisA2);
+            tmp_guideRateA2 = min(-max_guideRate, tmp_guideRateA2);
+            tmp_guideRateA2 = max(guideA2.atRate, tmp_guideRateA2);
           }
           else
           {
-            guideTimerRateAxisA2 = max(maxguideTimerRate, guideTimerRateAxisA2);
-            guideTimerRateAxisA2 = min(guideA2.timerRate, guideTimerRateAxisA2);
+            tmp_guideRateA2 = max(max_guideRate, tmp_guideRateA2);
+            tmp_guideRateA2 = min(guideA2.atRate, tmp_guideRateA2);
           }
 
         }
@@ -198,17 +196,15 @@ ISR(TIMER1_COMPA_vect)
           if (staA2.atTarget(false))
           {
             guideA2.dir = 0;
-            guideA2.timerRate = 0;
-            guideTimerRateAxisA2 = 0;
+            guideA2.atRate = 0;
+            tmp_guideRateA2 = 0;
             if (staA1.atTarget(false))
               DecayModeTracking();
           }
         }
       }
-      // compute timerRateAxis  and avoid timerRate  to be extremly large
-      volatile double timerRateAxis2 = fabs(guideTimerRateAxisA2 + staA2.CurrentTrackingRate);
-      staA2.timeByStep_Cur = max(staA2.timeByStep_Sid / timerRateAxis2, maxRate2);
-      staA2.timeByStep_Cur = min(staA2.timeByStep_Cur, minRate2);
+      volatile double sumRateA2 = fabs(tmp_guideRateA2 + staA2.CurrentTrackingRate);
+      staA2.setIntervalfromRate(sumRateA2, minInterval2, maxInterval2);
     }
 
     if (!guideA1.dir && !guideA2.dir)
@@ -217,20 +213,20 @@ ISR(TIMER1_COMPA_vect)
     }
   }
 
-  volatile double thisTimerRateAxis1 = staA1.timeByStep_Cur;
-  volatile double thisTimerRateAxis2 = staA2.timeByStep_Cur;
+  volatile double thisIntervalAxis1 = staA1.interval_Step_Cur;
+  volatile double thisIntervalAxis2 = staA2.interval_Step_Cur;
 
   // override rate during backlash compensation
   if (backlashA1.correcting)
   {
-    thisTimerRateAxis1 = backlashA1.timerRate;
+    thisIntervalAxis1 = backlashA1.interval_Step;
     wasInbacklashAxis1 = true;
   }
 
   // override rate during backlash compensation
   if (backlashA2.correcting)
   {
-    thisTimerRateAxis2 = backlashA2.timerRate;
+    thisIntervalAxis2 = backlashA2.interval_Step;
     wasInbacklashAxis2 = true;
   }
   if (sideralTracking && !movingTo)
@@ -242,7 +238,7 @@ ISR(TIMER1_COMPA_vect)
       if (!staA1.atTarget(true))
       {
         cli();
-        thisTimerRateAxis1 = staA1.takeupRate;
+        thisIntervalAxis1 = staA1.takeupInterval;
         sei();
       }
       else
@@ -257,7 +253,7 @@ ISR(TIMER1_COMPA_vect)
       if (!staA2.atTarget(true))
       {
         cli();
-        thisTimerRateAxis2 = staA2.takeupRate;
+        thisIntervalAxis2 = staA2.takeupInterval;
         sei();
       }
       else
@@ -269,15 +265,15 @@ ISR(TIMER1_COMPA_vect)
     }
   }
   // set the rates
-  if (thisTimerRateAxis1 != isrTimerRateAxis1)
+  if (thisIntervalAxis1 != isrIntervalAxis1)
   {
-    Timer3SetRate(thisTimerRateAxis1);
-    isrTimerRateAxis1 = thisTimerRateAxis1;
+    Timer3SetInterval(thisIntervalAxis1);
+    isrIntervalAxis1 = thisIntervalAxis1;
   }
-  if (thisTimerRateAxis2 != isrTimerRateAxis2)
+  if (thisIntervalAxis2 != isrIntervalAxis2)
   {
-    Timer4SetRate(thisTimerRateAxis2);
-    isrTimerRateAxis2 = thisTimerRateAxis2;
+    Timer4SetInterval(thisIntervalAxis2);
+    isrIntervalAxis2 = thisIntervalAxis2;
   }
 }
 ISR(TIMER3_COMPA_vect)
@@ -341,7 +337,7 @@ ISR(TIMER3_COMPA_vect)
       digitalWriteFast(Axis1StepPin, HIGH);
     }
     clearAxis1 = true;
-    PIT_LDVAL1 = nextAxis1Rate * stepAxis;
+    PIT_LDVAL1 = nextIntervalAxis1 * stepAxis;
   }
 }
 ISR(TIMER4_COMPA_vect)
@@ -407,6 +403,6 @@ ISR(TIMER4_COMPA_vect)
       digitalWriteFast(Axis2StepPin, HIGH);
     }
     clearAxis2 = true;
-    PIT_LDVAL2 = nextAxis2Rate * stepAxis;
+    PIT_LDVAL2 = nextIntervalAxis2 * stepAxis;
   }
 }

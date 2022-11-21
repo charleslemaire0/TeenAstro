@@ -105,7 +105,7 @@ void Command_SX()
         else
           guideRates[i] = val;
         if (activeGuideRate == i)
-          enableGuideRate(i, true);
+          enableGuideRate(i);
         strcpy(reply, "1");
       }
       else strcpy(reply, "0");

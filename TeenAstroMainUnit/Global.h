@@ -20,6 +20,9 @@ CoordConv alignment;
 bool hasStarAlignment = false;
 bool TrackingCompForAlignment = false;
 
+typedef double interval;
+typedef double speed;
+
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
@@ -44,23 +47,22 @@ bool hasGNSS = true;
 RefractionFlags doesRefraction;
 TrackingCompensation tc = TC_NONE;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
-double                  siderealClockRate = 15956313.0;
-const double            masterSiderealClockRate = 15956313.0;
+double                  siderealClockSpeed = 997269.5625;
+const double            mastersiderealClockSpeed = 997269.5625;
 
-// default = 15956313 ticks per sidereal hundredth second, where a tick is 1/16 uS
+// default = 997269.5625 ticks per sidereal hundredth second, where a tick is 1 uS
 // this is stored in XEEPROM.which is updated/adjusted with the ":T+#" and ":T-#" commands
 // a higher number here means a longer count which slows down the sidereal clock
-const double            tick2microSec = 0.0625;
-const double            microSec2Tick = 16.0;
-const double            masterClockRate = microSec2Tick*1000000;    // reference frequence for tick
-const double            HzCf = masterClockRate / 60.0;   // conversion factor to go to/from Hz for sidereal interval
+
+const double            masterClockSpeed = 1000000;    // reference frequence for tick
+const double            HzCf = masterClockSpeed / 60.0;   // conversion factor to go to/from Hz for sidereal interval
             
 
 
-double                  maxRate1 = StepsMaxRate * microSec2Tick;
-double                  minRate1 = StepsMinRate * microSec2Tick;
-double                  maxRate2 = StepsMaxRate * microSec2Tick;
-double                  minRate2 = StepsMinRate * microSec2Tick;
+interval                minInterval1 = StepsMinInterval;
+interval                maxInterval1 = StepsMaxInterval;
+interval                minInterval2 = StepsMinInterval;
+interval                maxInterval2 = StepsMaxInterval;
 
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
@@ -203,14 +205,8 @@ double  guideRates[5] =
 
 volatile byte activeGuideRate = GuideRate::RS;
 
-GuideAxis guideA1 = { 0,0,0,0,0 };
-GuideAxis guideA2 = { 0,0,0,0,0 };
-
-long            lasttargetAxis1 = 0;
-long            debugv1 = 0;
-
-double          guideTimerBaseRate1 = 0;
-double          guideTimerBaseRate2 = 0;
+GuideAxis guideA1;
+GuideAxis guideA2;
 
 // Reticule control
 #ifdef RETICULE_LED_PINS

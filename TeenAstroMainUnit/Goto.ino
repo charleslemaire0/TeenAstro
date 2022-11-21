@@ -184,7 +184,7 @@ ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2)
   atHome = false;
   cli();
   movingTo = true;
-  SetsiderealClockRate(siderealClockRate);
+  SetsiderealClockSpeed(siderealClockSpeed);
 
   staA1.start = staA1.pos;
   staA2.start = staA2.pos;

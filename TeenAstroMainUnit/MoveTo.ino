@@ -77,24 +77,22 @@ Again:
   }
 
   // First, for Right Ascension
-  double temp;
+  double computed_interval;
   d = distStartAxis1 < distDestAxis1 ? distStartAxis1 : distDestAxis1;
-  temp = getRate(staA1.GetVfromDist(d), staA1.timeByStep_Sid/0.25);
   cli();
-  staA1.timeByStep_Cur = max(temp, maxRate1);
+  staA1.setIntervalfromDist(d, minInterval1, maxInterval1);
   sei();
 
   // Now, for Declination
   d = distStartAxis2 < distDestAxis2 ? distStartAxis2 : distDestAxis2;
-  temp = getRate(staA2.GetVfromDist(d), staA2.timeByStep_Sid/0.25);
   cli();
-  staA2.timeByStep_Cur = max(temp, maxRate2);
+  staA2.setIntervalfromDist(d, minInterval2, maxInterval2);
   sei();
   
   if (staA1.atTarget(false) && staA2.atTarget(false))
   {
     movingTo = false;
-    SetsiderealClockRate(siderealClockRate);
+    SetsiderealClockSpeed(siderealClockSpeed);
     cli();
     staA1.resetToSidereal();
     staA2.resetToSidereal();
