@@ -1,9 +1,9 @@
 /*
- * Title       On-Step
+ * Title       TeenAstro
  * by          Howard Dutton, Charles Lemaire, Markus Noga, Francois Desvall�e
  *
- * Copyright (C) 2012 to 2016 Howard Dutton
- * Copyright (C) 2016 to 2020 Charles Lemaire, Markus Noga, Francois Desvall�e
+ * Copyright (C) 2012 to 2016 On-Step by Howard Dutton
+ * Copyright (C) 2016 to 2022 TeenAstro by Charles Lemaire, Markus Noga, Francois Desvall�e
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,9 +81,7 @@ void setup()
     XEEPROM.write(EE_Rate3, 64);
 
     // init the default maxRate
-    if (maxRate < 2L * 16L) maxRate = 2L * 16L;
-    if (maxRate > 10000L * 16L) maxRate = 10000L * 16L;
-    XEEPROM.writeInt(EE_maxRate, (int)(maxRate / 16L));
+    XEEPROM.writeInt(EE_maxRate, 200);
 
 
     // init degree for acceleration
@@ -91,7 +89,7 @@ void setup()
 
     // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
     // 1/16uS resolution timer, ticks per sidereal second
-    XEEPROM.writeLong(EE_siderealInterval, siderealInterval);
+    XEEPROM.writeLong(EE_siderealClockSpeed, siderealClockSpeed*16);
 
     // the transformation is not valid
     XEEPROM.write(EE_Tvalid, 0);
@@ -168,8 +166,8 @@ void setup()
   // automatic mode switching before/after slews, initialize micro-step mode
   DecayModeTracking();
 
-  // this sets the sidereal timer, controls the tracking speed so that the mount moves precisely with the stars
-  siderealInterval = XEEPROM.readLong(EE_siderealInterval);
+  // this sets the sidereal clock speed, controls the tracking speed so that the mount moves precisely with the stars
+  siderealClockSpeed = (double)XEEPROM.readLong(EE_siderealClockSpeed)/16.0;
   updateSideral();
   beginTimers();
 
@@ -203,12 +201,7 @@ void setup()
   guideRates[2] = val > 0 ? (float)val : DefaultR2;
   val = EEPROM.read(EE_Rate3);
   guideRates[3] = val > 0 ? (float)val : DefaultR3;
-
-  // makes onstep think that you parked the 'scope
-  // combined with a hack in the goto syncEqu() function and you can quickly recover from
-  // a reset without loosing much accuracy in the sky.  PEC is toast though.
-  // set the default guide rate, 16x sidereal
-  enableGuideRate(EEPROM.read(EE_DefaultRate), true);
+  enableGuideRate(EEPROM.read(EE_DefaultRate));
   delay(10);
 
   // prep timers
@@ -326,11 +319,6 @@ void loop()
   if (!forceTracking) lastSetTrakingEnable = m + 10000;
   if (rtk.updateclockTimer(m))
   {
-    // for testing, average steps per second
-    if (debugv1 > 100000) debugv1 = 100000;
-    if (debugv1 < 0) debugv1 = 0;
-    debugv1 = (debugv1 * 19 + (staA1.target * 1000 - lasttargetAxis1)) / 20;
-    lasttargetAxis1 = staA1.target * 1000;
     // adjust tracking rate for Alt/Azm mounts
     // adjust tracking rate for refraction
     ApplyTrackingRate();
@@ -693,8 +681,10 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
   geoA2.setstepsPerRot((long)motorA2.gear * motorA2.stepRot * (int)pow(2, motorA2.micro));
   backlashA1.inSteps = (int)round(((double)backlashA1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
   backlashA2.inSteps = (int)round(((double)backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
-  timerRateRatio = geoA1.stepsPerSecond / geoA2.stepsPerSecond;
   sei();
+
+  guideA1.init(&geoA1.stepsPerCentiSecond, guideRates[activeGuideRate]);
+  guideA2.init(&geoA2.stepsPerCentiSecond, guideRates[activeGuideRate]);
 
   initCelestialPole();
   initTransformation(deleteAlignment);
@@ -711,19 +701,17 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
 
 void updateSideral()
 {
-  // 16MHZ clocks for steps per second of sidereal tracking
   cli();
-  SiderealRate = siderealInterval / geoA1.stepsPerSecond;
-  TakeupRate = SiderealRate / 8L;
+  staA1.setSidereal(siderealClockSpeed, geoA1.stepsPerSecond, masterClockSpeed);
+  staA2.setSidereal(siderealClockSpeed, geoA2.stepsPerSecond, masterClockSpeed);
   sei();
-  staA1.timerRate = SiderealRate;
-  staA2.timerRate = SiderealRate;
+
   SetTrackingRate(default_tracking_rate,0);
 
   // backlash takeup rates
-  backlashA1.timerRate = staA1.timerRate / BacklashTakeupRate;
-  backlashA2.timerRate = staA2.timerRate / BacklashTakeupRate;
+  backlashA1.interval_Step = staA1.interval_Step_Cur / BacklashTakeupRate;
+  backlashA2.interval_Step = staA2.interval_Step_Cur / BacklashTakeupRate;
 
-  // initialize the timers that handle the sidereal clock, RA, and Dec
-  SetSiderealClockRate(siderealInterval);
+  // initialize the sidereal clock, RA, and Dec
+  SetsiderealClockSpeed(siderealClockSpeed);
 }

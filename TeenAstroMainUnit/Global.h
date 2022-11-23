@@ -20,6 +20,9 @@ CoordConv alignment;
 bool hasStarAlignment = false;
 bool TrackingCompForAlignment = false;
 
+typedef double interval;
+typedef double speed;
+
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
@@ -44,17 +47,23 @@ bool hasGNSS = true;
 RefractionFlags doesRefraction;
 TrackingCompensation tc = TC_NONE;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
-double                  siderealInterval = 15956313.0;
-const double            masterSiderealInterval = 15956313.0;
+double                  siderealClockSpeed = 997269.5625;
+const double            mastersiderealClockSpeed = 997269.5625;
 
-// default = 15956313 ticks per sidereal hundredth second, where a tick is 1/16 uS
+// default = 997269.5625 ticks per sidereal hundredth second, where a tick is 1 uS
 // this is stored in XEEPROM.which is updated/adjusted with the ":T+#" and ":T-#" commands
 // a higher number here means a longer count which slows down the sidereal clock
-const double            HzCf = 16000000.0 / 60.0;   // conversion factor to go to/from Hz for sidereal interval
-volatile double         SiderealRate;               // based on the siderealInterval, this is the time between steps for sidereal tracking
-volatile double         TakeupRate;                 // this is the takeup rate for synchronizing the target and actual positions when needed
 
-double                  maxRate = StepsMaxRate * 16L;
+const double            masterClockSpeed = 1000000;    // reference frequence for tick
+const double            HzCf = masterClockSpeed / 60.0;   // conversion factor to go to/from Hz for sidereal interval
+            
+
+
+interval                minInterval1 = StepsMinInterval;
+interval                maxInterval1 = StepsMaxInterval;
+interval                minInterval2 = StepsMinInterval;
+interval                maxInterval2 = StepsMaxInterval;
+
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
 
@@ -68,7 +77,6 @@ backlash            backlashA2 = { 0,0,0,0 };
 GeoAxis             geoA1;
 GeoAxis             geoA2;
 
-volatile double     timerRateRatio;
 StatusAxis          staA1;
 StatusAxis          staA2;
 
@@ -87,7 +95,7 @@ int                 minAlt;                                 // the minimum altit
 int                 maxAlt;                                 // the maximum altitude, in degrees, for goTo's (to keep the telescope tube away from the mount/tripod)
 long                minutesPastMeridianGOTOE;               // for goto's, how far past the meridian to allow before we do a flip (if on the East side of the pier)- one hour of RA is the default = 60.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 long                minutesPastMeridianGOTOW;               // as above, if on the West side of the pier.  If left alone, the mount will stop tracking when it hits the this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
-double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. OnStep will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
+double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. Telescop will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 
                                                            
 //                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
@@ -197,14 +205,8 @@ double  guideRates[5] =
 
 volatile byte activeGuideRate = GuideRate::RS;
 
-GuideAxis guideA1 = { 0,0,0,0,0 };
-GuideAxis guideA2 = { 0,0,0,0,0 };
-
-long            lasttargetAxis1 = 0;
-long            debugv1 = 0;
-
-double          guideTimerBaseRate1 = 0;
-double          guideTimerBaseRate2 = 0;
+GuideAxis guideA1;
+GuideAxis guideA2;
 
 // Reticule control
 #ifdef RETICULE_LED_PINS

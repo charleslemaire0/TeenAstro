@@ -49,7 +49,7 @@ bool goHome()
   staA2.target = geoA2.homeDef;
   staA1.start = staA1.pos;
   staA2.start = staA2.pos;
-  SetSiderealClockRate(siderealInterval);
+  SetsiderealClockSpeed(siderealClockSpeed);
   sei();
   // stop tracking
   lastSideralTracking = false;
@@ -73,8 +73,8 @@ bool syncAtHome()
   newTargetAzm = 0;
   lastError = ERRT_NONE;
   // reset tracking and rates
-  staA1.timerRate = SiderealRate;
-  staA2.timerRate = SiderealRate;
+  staA1.resetToSidereal();
+  staA2.resetToSidereal();
   parkStatus = PRK_UNPARKED;
   XEEPROM.update(EE_parkStatus, parkStatus);
   // clear pulse-guiding state

@@ -450,7 +450,7 @@ void Command_R()
   }
   if (!movingTo && GuidingState == GuidingOFF)
   {
-    enableGuideRate(i, false);
+    enableGuideRate(i);
   }
 }
 
@@ -476,11 +476,11 @@ void Command_T()
 
   {
   case '+':
-    siderealInterval -= HzCf * (0.02);
+    siderealClockSpeed -= HzCf * (0.02);
     reply[0] = 0;
     break;
   case '-':
-    siderealInterval += HzCf * (0.02);
+    siderealClockSpeed += HzCf * (0.02);
     reply[0] = 0;
     break;
   case 'S':
@@ -503,7 +503,7 @@ void Command_T()
     break;
   case 'R':
     // reset master sidereal clock interval
-    siderealInterval = masterSiderealInterval;
+    siderealClockSpeed = mastersiderealClockSpeed;
     SetTrackingRate(TrackingStar, 0);
     sideralMode = SIDM_STAR;
     reply[0] = 0;
@@ -564,7 +564,7 @@ void Command_T()
   // Only burn the new rate if changing the sidereal interval
   if (command[1] == '+' || command[1] == '-' || command[1] == 'R')
   {
-    XEEPROM.writeLong(EE_siderealInterval, siderealInterval);
+    XEEPROM.writeLong(EE_siderealClockSpeed, siderealClockSpeed*16);
     updateSideral();
   }
 }
