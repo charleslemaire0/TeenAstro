@@ -12,8 +12,8 @@ void Command_dollar()
   case '!':
     Serial.end();
     Serial1.end();
-    Serial2.end();
-    Serial3.end();
+    Focus_Serial.end();
+    GNSS_Serial.end();
     delay(1000);
 #ifdef ARDUINO_TEENSY40 // In fact this code is suitable for Teensy 3.2 also
 #define CPU_RESTART_ADDR (uint32_t *)0xE000ED0C
