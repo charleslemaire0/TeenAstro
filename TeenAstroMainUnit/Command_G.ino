@@ -435,6 +435,7 @@ void Command_GX()
   case 'I':
   {
     // :GXI#   Get telescope Status
+    PierSide currentSide = GetPierSide();
     for (i = 0; i < 50; i++)
       reply[i] = ' ';
     i = 0;
@@ -452,12 +453,23 @@ void Command_GX()
     if (GuidingState == GuidingPulse || GuidingState == GuidingST4 ) reply[6] = '*';
     else if (GuidingState == GuidingRecenter) reply[6] = '+';
     else if (GuidingState == GuidingAtRate) reply[6] = '-';
-    if (guideA1.dir == 'e' || guideA1.dir == '+') reply[7] = '>';
-    else if (guideA1.dir == 'w' || guideA1.dir == '-') reply[7] = '<';
+    if ( guideA1.dir == '+') reply[7] = '>';
+    else if ( guideA1.dir == '-') reply[7] = '<';
     else if (guideA1.dir == 'b') reply[7] = 'b';
-    if (guideA2.dir == 'n' || guideA2.dir == '+') reply[8] = '^';
-    else if (guideA2.dir == 's' || guideA2.dir == '-') reply[8] = '_';
-    else if (guideA2.dir == 'b') reply[8] = 'b';
+    
+    if (currentSide == PIER_WEST)
+    {
+      if (guideA2.dir == '-') reply[8] = '^';
+      else if (guideA2.dir == '+') reply[8] = '_';
+      else if (guideA2.dir == 'b') reply[8] = 'b';
+    }
+    else
+    {
+      if (guideA2.dir == '+') reply[8] = '^';
+      else if (guideA2.dir == '-') reply[8] = '_';
+      else if (guideA2.dir == 'b') reply[8] = 'b';
+    }
+
     if (staA1.fault || staA2.fault) reply[9] = 'f';
     reply[10] = '0';
     if (isAltAZ())
@@ -493,7 +505,7 @@ void Command_GX()
       reply[12] = 'A';
     else
       reply[12] = 'U';
-    PierSide currentSide = GetPierSide();
+
     if (currentSide == PIER_EAST) reply[13] = 'E';
     if (currentSide == PIER_WEST) reply[13] = 'W';
 
