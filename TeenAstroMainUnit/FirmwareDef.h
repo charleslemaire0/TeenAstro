@@ -6,7 +6,7 @@
 
 // firmware info, these are returned by the ":GV?#" commands
 #define FirmwareDate    __DATE__
-#define FirmwareNumber  "1.3.5"
+#define FirmwareNumber  "1.3.6"
 #define FirmwareName    "TeenAstro"
 #define FirmwareTime    "00:00:00"
 // forces initialialization of a host of settings in XEEPROM.

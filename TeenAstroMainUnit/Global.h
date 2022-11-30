@@ -102,6 +102,7 @@ double              underPoleLimitGOTO;                     // maximum allowed h
 
 #define HADirNCPInit    false
 #define HADirSCPInit    true
+
 volatile bool   HADir = HADirNCPInit;
 
 // Status ------------------------------------------------------------------------------------------------------------------
