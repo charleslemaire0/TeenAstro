@@ -89,7 +89,6 @@ void Command_M()
       else if ((command[2] == 'n') || (command[2] == 's'))
       {
         enableST4GuideRate();
-        guideA2.dir = command[2];
         if (GetPierSide() >= PIER_WEST)
         {
           if (command[2] == 'n')
