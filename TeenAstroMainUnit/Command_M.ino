@@ -68,7 +68,14 @@ void Command_M()
       if ((command[2] == 'e') || (command[2] == 'w'))
       {
         enableST4GuideRate();
-        guideA1.dir = command[2];
+        if (command[2] == 'e')
+        {
+          guideA1.dir = '-';
+        }
+        else if (command[2] == 'w')
+        {
+          guideA1.dir = '+';
+        }
         guideA1.durationLast = micros();
         guideA1.duration = (long)i * 1000L;
         cli();
@@ -85,15 +92,35 @@ void Command_M()
       {
         enableST4GuideRate();
         guideA2.dir = command[2];
+        if (GetPierSide() >= PIER_WEST)
+        {
+          if (command[2] == 'n')
+          {
+            guideA2.dir = '-';
+          }
+          else if (command[2] == 's')
+          {
+            guideA2.dir = '+';
+          }
+        }
+        else
+        {
+          if (command[2] == 'n')
+          {
+            guideA2.dir = '+';
+          }
+          else if (command[2] == 's')
+          {
+            guideA2.dir = '-';
+          }
+        }
         guideA2.durationLast = micros();
         guideA2.duration = (long)i * 1000L;
-        if (guideA2.dir == 's' || guideA2.dir == 'n')
+        if (guideA2.dir == '+' || guideA2.dir == '+')
         {
-          bool rev = false;
-          if (guideA2.dir == 's')
+          bool rev = false; 
+          if (guideA2.dir = '-')
             rev = true;
-          if (GetPierSide() >= PIER_WEST)
-            rev = !rev;
           cli();
           GuidingState = GuidingPulse;
           guideA2.atRate = rev ? -guideA2.absRate : guideA2.absRate;
@@ -105,21 +132,28 @@ void Command_M()
     }
     break;
   }
-  case 'e':
-  case 'w':
     //  :Me# & :Mw#      Move Telescope East or West at current slew rate
     //  Returns: Nothing
-  {
-    MoveAxis1(command[1], GuidingRecenter);
-  }
+  case 'e':
+    MoveAxis1('-', GuidingRecenter);
+    break;
+  case 'w':
+    MoveAxis1('+', GuidingRecenter);
+    break;
   break;
+  //  :Mn# & :Ms#      Move Telescope North or South at current slew rate
+  //  Returns: Nothing
   case 'n':
+    if (GetPierSide() >= PIER_WEST)
+      MoveAxis2('-', GuidingRecenter);
+    else
+      MoveAxis2('+', GuidingRecenter);
+    break;
   case 's':
-    //  :Mn# & :Ms#      Move Telescope North or South at current slew rate
-    //  Returns: Nothing
-  {
-    MoveAxis2(command[1], GuidingRecenter);
-  }
+    if (GetPierSide() >= PIER_WEST)
+      MoveAxis2('+', GuidingRecenter);
+    else
+     MoveAxis2('-', GuidingRecenter);
   break;
 
   case 'P':

@@ -17,7 +17,9 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
       return;
     }
     Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate);
-    double newGuideTimerBaseRate = newguideDirAxis == 'e' ? -guideA1.absRate : guideA1.absRate;
+    bool rev = newguideDirAxis == '-';
+    Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate);
+    double newGuideTimerBaseRate = rev ? -guideA1.absRate : guideA1.absRate;
     bool samedirection = newGuideTimerBaseRate > 0 ? (guideA1.atRate > 0 ? true : false) : (guideA1.atRate > 0 ? false : true);
     if (guideA1.dir && !samedirection && fabs(guideA1.atRate) > 2)
     {
@@ -56,7 +58,7 @@ void MoveAxis1AtRate(const double newrate)
     }
     guideA1.enableAtRate(abs(newrate));
     bool samedirection = (newrate > 0) == (guideA1.atRate > 0);
-    if (guideA1.dir && !samedirection /*&& fabs(guideA1.atRate) > 2*/)
+    if (guideA1.dir && !samedirection && fabs(guideA1.atRate) > 2)
     {
       StopAxis1();
     }
@@ -96,7 +98,7 @@ void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
   canMove &= (Mode == GuidingRecenter || lastError == ERRT_NONE);
   canMove &= !movingTo;
   canMove &= (GuidingState == GuidingOFF || GuidingState == Mode);
-
+  
   if (canMove)
   {
     if (guideA2.absRate == 0)
@@ -107,11 +109,7 @@ void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
       return;
     }
     // block user from changing direction at high rates, just stop the guide instead
-    bool rev = false;
-    if (newguideDirAxis == 's')
-      rev = true;
-    if (GetPierSide() >= PIER_WEST)
-      rev = !rev;
+    bool rev = newguideDirAxis == '-';
     Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate);
     double newGuideTimerBaseRate = rev ? -guideA2.absRate : guideA2.absRate;
     bool samedirection = newGuideTimerBaseRate > 0 ? (guideA2.atRate > 0 ? true : false) : (guideA2.atRate > 0 ? false : true);
@@ -224,35 +222,24 @@ void CheckSpiral()
   {
     if (guideA1.dir)
       return;
-    guideA2.dir = iteration % 4 < 2 ? 'n' : 's';
+    guideA2.dir = iteration % 4 < 2 ? '+' : '-';
     guideA2.durationLast = micros();
     guideA2.duration = (long)duration * 3000000L;
-    if (guideA2.dir == 's' || guideA2.dir == 'n')
-    {
-      bool rev = false;
-      if (guideA2.dir == 's')
-        rev = true;
-      if (GetPierSide() >= PIER_WEST)
-        rev = !rev;
-      cli();
-      GuidingState = GuidingPulse;
-      guideA2.atRate = rev ? -guideA2.absRate : guideA2.absRate;
-      sei();
-    }
+    cli();
+    GuidingState = GuidingPulse;
+    guideA2.atRate = guideA2.dir == '-' ? -guideA2.absRate : guideA2.absRate;
+    sei();
   }
   else
   {
     if (guideA2.dir)
       return;
-    guideA1.dir = iteration % 4 < 2 ? 'e' : 'w';
+    guideA1.dir = iteration % 4 < 2 ? '-' : '+';
     guideA1.durationLast = micros();
     guideA1.duration = (long)duration * 3000000L;
     cli();
     GuidingState = GuidingPulse;
-    if (guideA1.dir == 'e')
-      guideA1.atRate = -guideA1.absRate;
-    else
-      guideA1.atRate = guideA1.absRate;
+    guideA1.atRate = guideA1.dir == '-' ? -guideA1.absRate : guideA1.absRate;
     sei();
   }
   iteration++;
@@ -285,17 +272,37 @@ void checkST4()
     ST4RA_state = 0;
     if (w1 == LOW)
     {
-      if (e1 != LOW) ST4RA_state = 'w';
+      if (e1 != LOW) ST4RA_state = '+';
     }
     else if (e1 == LOW)
-      ST4RA_state = 'e';
+      ST4RA_state = '-';
     ST4DE_state = 0;
     if (n1 == LOW)
     {
-      if (s1 != LOW) ST4DE_state = 'n';
+      if (s1 != LOW)
+      {
+        if (GetPierSide() >= PIER_WEST)
+        {
+          ST4DE_state = '-';
+        }
+        else
+        {
+          ST4DE_state = '+';
+        }
+      }
     }
     else if (s1 == LOW)
-      ST4DE_state = 's';
+    {
+      if (GetPierSide() >= PIER_WEST)
+      {
+        ST4DE_state = '+';
+      }
+      else
+      {
+        ST4DE_state = '-';
+      }
+    }
+      
   }
 
   // RA changed?

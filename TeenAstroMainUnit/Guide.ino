@@ -5,18 +5,14 @@
 
 void apply_GuidingA1()
 {
-  bool rev = guideA1.dir == 'e';
+  bool rev = guideA1.dir == '-';
   cli();
   rev ? staA1.target -= guideA1.amount : staA1.target += guideA1.amount;
   sei();
 }
 void apply_GuidingA2()
 {
-  bool rev = false;
-  if (guideA2.dir == 's')
-    rev = true;
-  if (GetPierSide() >= PIER_WEST)
-    rev = !rev;
+  bool rev = guideA2.dir == '-';
   cli();
   rev ? staA2.target -= guideA2.amount : staA2.target += guideA2.amount;
   sei();
@@ -52,7 +48,7 @@ void PerformPulseGuiding()
     sei();
     return;
   }
-  if (guideA1.dir == 'w' || guideA1.dir == 'e')
+  if (guideA1.dir == '+' || guideA1.dir == '-')
   {
     if (guideA1.duration > 0)
     {
@@ -79,7 +75,7 @@ void PerformPulseGuiding()
   {
     guideA1.duration = -1;
   }
-  if (guideA2.dir == 's' || guideA2.dir == 'n')
+  if (guideA2.dir == '-' || guideA2.dir == '+')
   {
     if (guideA2.duration > 0 )
     {
@@ -114,14 +110,14 @@ void PerfomST4Guiding()
 {
   if (StopIfMountError())
     return;
-  if (guideA1.dir == 'w' || guideA1.dir == 'e')
+  if (guideA1.dir == '+' || guideA1.dir == '-')
   {
     if (!backlashA1.correcting)
     {
       apply_GuidingA1();
     }
   }
-  if (guideA2.dir == 's' || guideA2.dir == 'n')
+  if (guideA2.dir == '+' || guideA2.dir == '-')
   {
     if (!backlashA2.correcting)
     {
@@ -132,14 +128,14 @@ void PerfomST4Guiding()
 
 void PerfomGuidingRecenter()
 {
-  if (guideA1.dir == 'w' || guideA1.dir == 'e')
+  if (guideA1.dir == '+' || guideA1.dir == '-')
   {
     if (!backlashA1.correcting)
     {
       apply_GuidingA1();
     }
   }
-  if (guideA2.dir == 's' || guideA2.dir == 'n')
+  if (guideA2.dir == '+' || guideA2.dir == '-')
   {
     if (!backlashA2.correcting)
     {
