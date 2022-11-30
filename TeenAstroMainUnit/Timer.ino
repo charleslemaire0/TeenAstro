@@ -107,7 +107,7 @@ ISR(TIMER1_COMPA_vect)
   // in this mode the target is always a bit faster than the scope because we move first the target!!
   if (!movingTo)
   {
-    double max_guideRate = 16;
+    double max_guideRate = 8;
     // guide rate acceleration/deceleration
     {
       // guide rate acceleration/deceleration and control
@@ -126,13 +126,8 @@ ISR(TIMER1_COMPA_vect)
           // for acceleration, we know run this routine this a fix amount of time "clockRatio" of a sideral second
           sign = guideA1.atRate < 0 ? -1 : 1;
           if (guideA1.dir == 'b')
-          {
-            tmp_1 = tmp_guideRateA1 - 2 * staA1.acc * clockRatio * sign / geoA1.stepsPerSecond;
-            tmp_2 = sqrt(fabs(staA1.deltaTarget) * 4 * staA1.acc) * sign / geoA1.stepsPerSecond;
-            tmp_guideRateA1 = guideA1.atRate < 0 ?
-              max(tmp_1, tmp_2) :
-              min(tmp_1, tmp_2);
-
+          {    
+            tmp_guideRateA1 = sqrt(fabs(staA1.deltaTarget) * 4 * staA1.acc) * sign / geoA1.stepsPerSecond;
           }
           else
           {
@@ -184,11 +179,7 @@ ISR(TIMER1_COMPA_vect)
           sign = guideA2.atRate < 0 ? -1 : 1;
           if (guideA2.dir == 'b')
           {
-            tmp_1 = tmp_guideRateA2 - 2 * staA2.acc * clockRatio * sign / geoA2.stepsPerSecond;
-            tmp_2 = sqrt(fabs(staA2.deltaTarget) * 4 * staA2.acc) * sign / geoA2.stepsPerSecond;
-            tmp_guideRateA2 = guideA2.atRate < 0 ?
-              max(tmp_1, tmp_2) :
-              min(tmp_1, tmp_2);
+            tmp_guideRateA2 = sqrt(fabs(staA2.deltaTarget) * 4 * staA2.acc) * sign / geoA2.stepsPerSecond;
           }
           else
           {
