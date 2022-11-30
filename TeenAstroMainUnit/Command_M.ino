@@ -78,12 +78,10 @@ void Command_M()
         }
         guideA1.durationLast = micros();
         guideA1.duration = (long)i * 1000L;
+        bool rev = guideA1.dir == '-';
         cli();
-        GuidingState = GuidingPulse;
-        if (guideA1.dir == 'e')
-          guideA1.atRate = -guideA1.absRate;
-        else
-          guideA1.atRate = guideA1.absRate;
+        GuidingState = GuidingPulse;     
+        guideA1.atRate = rev ? -guideA1.absRate : guideA1.absRate;
         sei();
         //reply[0] = '1';
         //reply[1] = 0;
@@ -116,16 +114,12 @@ void Command_M()
         }
         guideA2.durationLast = micros();
         guideA2.duration = (long)i * 1000L;
-        if (guideA2.dir == '+' || guideA2.dir == '+')
-        {
-          bool rev = false; 
-          if (guideA2.dir = '-')
-            rev = true;
-          cli();
-          GuidingState = GuidingPulse;
-          guideA2.atRate = rev ? -guideA2.absRate : guideA2.absRate;
-          sei();
-        }
+        bool rev = guideA2.dir == '-';
+        cli();
+        GuidingState = GuidingPulse;
+        guideA2.atRate = rev ? -guideA2.absRate : guideA2.absRate;
+        sei();
+        
         //reply[0] = '1';
         //reply[1] = 0;
       }
