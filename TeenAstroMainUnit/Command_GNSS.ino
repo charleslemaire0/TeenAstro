@@ -70,7 +70,15 @@ bool isLocationSyncWithGNSS()
     double dlng = fabs(degRange(*localSite.longitude() - (-l.lng())));
     double dlat = fabs(*localSite.latitude() - l.lat());
     double dele = fabs(*localSite.elevation() - a.meters());
-    lastreply = dlng < 0.01 && dlat < 0.01 && dele < 100;
+    if (abs(l.lat()) > 85)
+    {
+      lastreply = dlat < 0.01 && dele < 100;
+    }
+    else
+    {
+      lastreply = dlng < 0.01 / cos(l.lat() / Rad) && dlat < 0.01 && dele < 100;
+    }
+
     t1 = millis();
   }
   return lastreply;
