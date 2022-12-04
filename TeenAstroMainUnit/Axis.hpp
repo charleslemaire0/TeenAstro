@@ -185,15 +185,55 @@ public:
 class GuideAxis
 {
 public:
-  volatile byte   dir;
+
   long            duration;
   unsigned long   durationLast;
   double          amount;
   volatile double atRate;
   double          absRate;
 private:
+  volatile byte   dir;
   double* m_stepsPerCentiSecond;
 public:
+  bool isBraking()
+  {
+    return  dir == 'b';
+  }
+  void brake()
+  {
+    if (isBusy())
+    {
+      dir = 'b';
+    }
+  }
+  bool isBusy()
+  {
+    return dir != 0;
+  }
+  bool isGuiding()
+  {
+    return isFW() || isBW();
+  }
+  void setIdle()
+  {
+    dir = 0;
+  }
+  void moveFW()
+  {
+    dir = '+';
+  }
+  void moveBW()
+  {
+    dir = '-';
+  }
+  bool isBW()
+  {
+    return dir == '-';
+  }
+  bool isFW()
+  {
+    return dir == '+';
+  }
   void init(double* stepsPerCentiSecond, double rate)
   {
     dir = 0;

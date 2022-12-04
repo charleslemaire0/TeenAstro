@@ -367,17 +367,13 @@ void Command_Q()
       }
       else if (GuidingState == GuidingRecenter || GuidingState == GuidingST4 || GuidingState == GuidingPulse)
       {
-        if (guideA1.dir)
-          StopAxis1();
-        if (guideA2.dir)
-          StopAxis2();
+        StopAxis1();
+        StopAxis2();
       }
       else
       {
-        if (guideA1.dir)
-          guideA1.dir = 'b';
-        if (guideA2.dir)
-          guideA2.dir = 'b';
+        guideA1.brake();
+        guideA2.brake();
       }
     }
     break;
@@ -388,8 +384,7 @@ void Command_Q()
     {
       if ((parkStatus == PRK_UNPARKED) && !movingTo)
       {
-        if (guideA1.dir)
-          StopAxis1();
+        StopAxis1();
       }
     }
     break;
@@ -400,8 +395,7 @@ void Command_Q()
     {
       if ((parkStatus == PRK_UNPARKED) && !movingTo)
       {
-        if (guideA2.dir)
-          StopAxis2();
+        StopAxis2();
       }
     }
     break;

@@ -100,8 +100,6 @@ ISR(TIMER1_COMPA_vect)
   static volatile bool   wasInbacklashAxis2 = false;
   static volatile double tmp_guideRateA1 = 0;
   static volatile double tmp_guideRateA2 = 0;
-  static volatile double tmp_1 = 0;
-  static volatile double tmp_2 = 0;
   static volatile double sign;
   rtk.m_lst++;
   // in this mode the target is always a bit faster than the scope because we move first the target!!
@@ -112,7 +110,7 @@ ISR(TIMER1_COMPA_vect)
     {
       // guide rate acceleration/deceleration and control
       updateDeltaTarget();
-      if (!backlashA1.correcting && guideA1.dir)
+      if (!backlashA1.correcting && guideA1.isBusy())
       {
         if ((fabs(guideA1.atRate) < max_guideRate) &&
           (fabs(tmp_guideRateA1) < max_guideRate))
@@ -125,7 +123,7 @@ ISR(TIMER1_COMPA_vect)
           DecayModeGoto();
           // for acceleration, we know run this routine this a fix amount of time "clockRatio" of a sideral second
           sign = guideA1.atRate < 0 ? -1 : 1;
-          if (guideA1.dir == 'b')
+          if (guideA1.isBraking())
           {    
             tmp_guideRateA1 = sqrt(fabs(staA1.deltaTarget) * 4 * staA1.acc) * sign / geoA1.stepsPerSecond;
           }
@@ -146,11 +144,11 @@ ISR(TIMER1_COMPA_vect)
         }
 
         // stop guiding
-        if (guideA1.dir == 'b')
+        if (guideA1.isBraking())
         {
           if (staA1.atTarget(false))
           {
-            guideA1.dir = 0;
+            guideA1.setIdle();
             guideA1.atRate = 0;
             tmp_guideRateA1 = 0;
             if (staA2.atTarget(false))
@@ -164,7 +162,7 @@ ISR(TIMER1_COMPA_vect)
 
     {
       updateDeltaTarget();
-      if (!backlashA2.correcting && guideA2.dir)
+      if (!backlashA2.correcting && guideA2.isBusy())
       {
         if ((fabs(guideA2.atRate) < max_guideRate) &&
           (fabs(tmp_guideRateA2) < max_guideRate))
@@ -177,7 +175,7 @@ ISR(TIMER1_COMPA_vect)
           DecayModeGoto();
           // for acceleration, we know run this routine this a fix amount of time "clockRatio" of a sideral second
           sign = guideA2.atRate < 0 ? -1 : 1;
-          if (guideA2.dir == 'b')
+          if (guideA2.isBraking())
           {
             tmp_guideRateA2 = sqrt(fabs(staA2.deltaTarget) * 4 * staA2.acc) * sign / geoA2.stepsPerSecond;
           }
@@ -199,11 +197,11 @@ ISR(TIMER1_COMPA_vect)
         }
 
         // stop guiding
-        if (guideA2.dir == 'b')
+        if (guideA2.isBraking())
         {
           if (staA2.atTarget(false))
           {
-            guideA2.dir = 0;
+            guideA2.setIdle();
             guideA2.atRate = 0;
             tmp_guideRateA2 = 0;
             if (staA1.atTarget(false))
@@ -215,9 +213,9 @@ ISR(TIMER1_COMPA_vect)
       staA2.setIntervalfromRate(sumRateA2, minInterval2, maxInterval2);
     }
 
-    if (!guideA1.dir && !guideA2.dir)
+    if (!guideA1.isBusy() && !guideA2.isBusy())
     {
-      GuidingState = GuidingOFF;
+      GuidingState = Guiding::GuidingOFF;
     }
   }
 
@@ -241,7 +239,7 @@ ISR(TIMER1_COMPA_vect)
   {
     // travel through the backlash is done, but we weren't following the target while it was happening!
     // so now get us back to near where we need to be
-    if (!backlashA1.correcting && wasInbacklashAxis1 && !guideA1.dir)
+    if (!backlashA1.correcting && wasInbacklashAxis1 && !guideA1.isBusy())
     {
       if (!staA1.atTarget(true))
       {
@@ -256,7 +254,7 @@ ISR(TIMER1_COMPA_vect)
         sei();
       }
     }
-    if (!backlashA2.correcting && wasInbacklashAxis2 && !guideA2.dir)
+    if (!backlashA2.correcting && wasInbacklashAxis2 && !guideA2.isBusy())
     {
       if (!staA2.atTarget(true))
       {

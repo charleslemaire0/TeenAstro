@@ -58,9 +58,9 @@ Again:
   if (abortSlew)
   {
     staA1.breakMove();
-    guideA1.dir = 'b';
+    guideA1.brake();
     staA2.breakMove();
-    guideA2.dir = 'b';
+    guideA2.brake();
     if (parkStatus == PRK_PARKING)
     {
       sideralTracking = lastSideralTracking;

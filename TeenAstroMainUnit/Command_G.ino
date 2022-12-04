@@ -453,21 +453,21 @@ void Command_GX()
     if (GuidingState == GuidingPulse || GuidingState == GuidingST4 ) reply[6] = '*';
     else if (GuidingState == GuidingRecenter) reply[6] = '+';
     else if (GuidingState == GuidingAtRate) reply[6] = '-';
-    if ( guideA1.dir == '+') reply[7] = '>';
-    else if ( guideA1.dir == '-') reply[7] = '<';
-    else if (guideA1.dir == 'b') reply[7] = 'b';
+    if ( guideA1.isFW()) reply[7] = '>';
+    else if ( guideA1.isBW()) reply[7] = '<';
+    else if (guideA1.isBraking()) reply[7] = 'b';
     
     if (currentSide == PIER_WEST)
     {
-      if (guideA2.dir == '-') reply[8] = '^';
-      else if (guideA2.dir == '+') reply[8] = '_';
-      else if (guideA2.dir == 'b') reply[8] = 'b';
+      if (guideA2.isBW()) reply[8] = '^';
+      else if (guideA2.isFW()) reply[8] = '_';
+      else if (guideA2.isBraking()) reply[8] = 'b';
     }
     else
     {
-      if (guideA2.dir == '+') reply[8] = '^';
-      else if (guideA2.dir == '-') reply[8] = '_';
-      else if (guideA2.dir == 'b') reply[8] = 'b';
+      if (guideA2.isFW()) reply[8] = '^';
+      else if (guideA2.isBW()) reply[8] = '_';
+      else if (guideA2.isBraking()) reply[8] = 'b';
     }
 
     if (staA1.fault || staA2.fault) reply[9] = 'f';

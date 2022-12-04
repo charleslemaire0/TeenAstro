@@ -284,8 +284,8 @@ void loop()
         else
         {
           sideralTracking = false;
-          if (guideA1.dir) guideA1.dir = 'b';
-          if (guideA2.dir) guideA2.dir = 'b';
+          guideA1.brake();
+          guideA2.brake();
         }
       }
     }

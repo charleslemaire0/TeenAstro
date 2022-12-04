@@ -15,8 +15,8 @@ void Command_M()
   case '2':
     f = strtod(&command[2], &conv_end);
     ok = (&command[2] != conv_end) && abs(f) <= guideRates[4];
-    ok &= !movingTo && lastError == ERRT_NONE;
-    ok &= (GuidingState == GuidingOFF || GuidingState == GuidingAtRate);
+    ok &= !movingTo && lastError == ErrorsTraking::ERRT_NONE;
+    ok &= (GuidingState == Guiding::GuidingOFF || GuidingState == Guiding::GuidingAtRate);
     if (ok)
     {
       if (command[1] == '1')
@@ -70,17 +70,17 @@ void Command_M()
         enableST4GuideRate();
         if (command[2] == 'e')
         {
-          guideA1.dir = '-';
+          guideA1.moveBW();
         }
         else if (command[2] == 'w')
         {
-          guideA1.dir = '+';
+          guideA1.moveFW();
         }
         guideA1.durationLast = micros();
         guideA1.duration = (long)i * 1000L;
-        bool rev = guideA1.dir == '-';
+        bool rev = guideA1.isBW();
         cli();
-        GuidingState = GuidingPulse;     
+        GuidingState = Guiding::GuidingPulse;
         guideA1.atRate = rev ? -guideA1.absRate : guideA1.absRate;
         sei();
         //reply[0] = '1';
@@ -93,29 +93,29 @@ void Command_M()
         {
           if (command[2] == 'n')
           {
-            guideA2.dir = '-';
+            guideA2.moveBW();
           }
           else if (command[2] == 's')
           {
-            guideA2.dir = '+';
+            guideA2.moveFW();
           }
         }
         else
         {
           if (command[2] == 'n')
           {
-            guideA2.dir = '+';
+            guideA2.moveFW();
           }
           else if (command[2] == 's')
           {
-            guideA2.dir = '-';
+            guideA2.moveBW();
           }
         }
         guideA2.durationLast = micros();
         guideA2.duration = (long)i * 1000L;
-        bool rev = guideA2.dir == '-';
+        bool rev = guideA2.isBW();
         cli();
-        GuidingState = GuidingPulse;
+        GuidingState = Guiding::GuidingPulse;
         guideA2.atRate = rev ? -guideA2.absRate : guideA2.absRate;
         sei();
         
@@ -128,25 +128,25 @@ void Command_M()
     //  :Me# & :Mw#      Move Telescope East or West at current slew rate
     //  Returns: Nothing
   case 'e':
-    MoveAxis1('-', GuidingRecenter);
+    MoveAxis1(true, Guiding::GuidingRecenter);
     break;
   case 'w':
-    MoveAxis1('+', GuidingRecenter);
+    MoveAxis1(false, Guiding::GuidingRecenter);
     break;
   break;
   //  :Mn# & :Ms#      Move Telescope North or South at current slew rate
   //  Returns: Nothing
   case 'n':
     if (GetPierSide() >= PIER_WEST)
-      MoveAxis2('-', GuidingRecenter);
+      MoveAxis2(true, Guiding::GuidingRecenter);
     else
-      MoveAxis2('+', GuidingRecenter);
+      MoveAxis2(false, Guiding::GuidingRecenter);
     break;
   case 's':
     if (GetPierSide() >= PIER_WEST)
-      MoveAxis2('+', GuidingRecenter);
+      MoveAxis2(false, Guiding::GuidingRecenter);
     else
-     MoveAxis2('-', GuidingRecenter);
+     MoveAxis2(true, Guiding::GuidingRecenter);
   break;
 
   case 'P':
@@ -247,7 +247,7 @@ void Command_M()
   {
     //  :M@#   Start Spiral Search
     //         Return 0 if failed, i if success
-    if (movingTo || GuidingState != GuidingOFF)
+    if (movingTo || GuidingState != Guiding::GuidingOFF)
       strcpy(reply, "0");
     else
     {

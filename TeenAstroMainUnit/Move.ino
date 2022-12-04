@@ -1,5 +1,5 @@
 //#pragma once
-void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
+void MoveAxis1(const bool BW, const Guiding Mode)
 {
   bool canMove = parkStatus == PRK_UNPARKED;
   canMove &= (Mode == GuidingRecenter || lastError == ERRT_NONE);
@@ -12,23 +12,22 @@ void MoveAxis1(const byte newguideDirAxis, const Guiding Mode)
     if (guideA1.absRate == 0)
     {
       cli();
-      guideA1.dir = 'b';
+      guideA1.brake();
       sei();
       return;
     }
     Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate);
-    bool rev = newguideDirAxis == '-';
     Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate);
-    double newGuideTimerBaseRate = rev ? -guideA1.absRate : guideA1.absRate;
+    double newGuideTimerBaseRate = BW ? -guideA1.absRate : guideA1.absRate;
     bool samedirection = newGuideTimerBaseRate > 0 ? (guideA1.atRate > 0 ? true : false) : (guideA1.atRate > 0 ? false : true);
-    if (guideA1.dir && !samedirection && fabs(guideA1.atRate) > 2)
+    if (guideA1.isBusy() && !samedirection && fabs(guideA1.atRate) > 2)
     {
       StopAxis1();
     }
     else
     {
       GuidingState = Mode;
-      guideA1.dir = newguideDirAxis;
+      BW ? guideA1.moveBW() : guideA1.moveFW();
       atHome = false;
       guideA1.duration = -1;
       cli();
@@ -58,14 +57,14 @@ void MoveAxis1AtRate(const double newrate)
     }
     guideA1.enableAtRate(abs(newrate));
     bool samedirection = (newrate > 0) == (guideA1.atRate > 0);
-    if (guideA1.dir && !samedirection && fabs(guideA1.atRate) > 2)
+    if (guideA1.isBusy() && !samedirection && fabs(guideA1.atRate) > 2)
     {
       StopAxis1();
     }
     else
     {
       GuidingState = GuidingAtRate;
-      guideA1.dir = newrate > 0 ?  '+' : '-';
+      newrate > 0 ?  guideA1.moveFW() : guideA1.moveBW();
       atHome = false;
       guideA1.duration = -1;
       cli();
@@ -77,7 +76,8 @@ void MoveAxis1AtRate(const double newrate)
 
 void StopAxis1()
 {
-  if (guideA1.dir == 'b')
+
+  if (guideA1.isBraking()||!guideA1.isBusy())
     return;
   staA1.updateDeltaTarget();
   long a = pow(interval2speed(staA1.interval_Step_Cur), 2.) / (4. * staA1.acc);
@@ -89,38 +89,37 @@ void StopAxis1()
     staA1.target = staA1.pos + a;
     sei();
   }
-  guideA1.dir = 'b';
+  guideA1.brake();
 }
 
-void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
+void MoveAxis2(const bool BW, const Guiding Mode)
 {
   bool canMove = parkStatus == PRK_UNPARKED;
-  canMove &= (Mode == GuidingRecenter || lastError == ERRT_NONE);
+  canMove &= (Mode == Guiding::GuidingRecenter || lastError == ERRT_NONE);
   canMove &= !movingTo;
-  canMove &= (GuidingState == GuidingOFF || GuidingState == Mode);
+  canMove &= (GuidingState == Guiding::GuidingOFF || GuidingState == Mode);
   
   if (canMove)
   {
     if (guideA2.absRate == 0)
     {
       cli();
-      guideA2.dir = 'b';
+      guideA2.brake();
       sei();
       return;
     }
     // block user from changing direction at high rates, just stop the guide instead
-    bool rev = newguideDirAxis == '-';
     Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate);
-    double newGuideTimerBaseRate = rev ? -guideA2.absRate : guideA2.absRate;
+    double newGuideTimerBaseRate = BW ? -guideA2.absRate : guideA2.absRate;
     bool samedirection = newGuideTimerBaseRate > 0 ? (guideA2.atRate > 0 ? true : false) : (guideA2.atRate > 0 ? false : true);
-    if (guideA2.dir && !samedirection && fabs(guideA2.atRate) > 2)
+    if (guideA2.isBusy() && !samedirection && fabs(guideA2.atRate) > 2)
     {
       StopAxis2();
     }
     else
     {
       GuidingState = Mode;
-      guideA2.dir = newguideDirAxis;
+      BW ? guideA2.moveBW() : guideA2.moveFW();
       guideA2.duration = -1;
       atHome = false;
       cli();
@@ -132,7 +131,6 @@ void MoveAxis2(const byte newguideDirAxis, const Guiding Mode)
 
 void MoveAxis2AtRate(const double newrate)
 {
-
   bool canMove = parkStatus == PRK_UNPARKED;
   canMove &= !movingTo;
   canMove &= (GuidingState == GuidingOFF || GuidingState == GuidingAtRate);
@@ -151,14 +149,14 @@ void MoveAxis2AtRate(const double newrate)
     }
     guideA2.enableAtRate(abs(newrate));
     bool samedirection = (newrate > 0) == (guideA2.atRate > 0);
-    if (guideA2.dir && !samedirection && fabs(guideA2.atRate) > 2)
+    if (guideA2.isBusy() && !samedirection && fabs(guideA2.atRate) > 2)
     {
       StopAxis2();
     }
     else
     {
-      GuidingState = GuidingAtRate;
-      guideA2.dir = newrate > 0 ? '+' : '-';
+      GuidingState = Guiding::GuidingAtRate;
+      newrate > 0 ? guideA2.moveFW() : guideA2.moveBW();
       atHome = false;
       guideA2.duration = -1;
       cli();
@@ -170,6 +168,8 @@ void MoveAxis2AtRate(const double newrate)
 
 void StopAxis2()
 {
+  if (guideA2.isBraking() || !guideA2.isBusy())
+    return;
   long a = pow(interval2speed(staA2.interval_Step_Cur), 2.) / (4. * staA2.acc);
   staA2.updateDeltaTarget();
   if (abs(staA2.deltaTarget) > a)
@@ -180,7 +180,7 @@ void StopAxis2()
     staA2.target = staA2.pos + a;
     sei();
   }
-  guideA2.dir = 'b';
+  guideA2.brake();
 }
 
 void CheckEndOfMoveAxisAtRate()
@@ -220,26 +220,26 @@ void CheckSpiral()
 
   if (iteration % 2 == 0)
   {
-    if (guideA1.dir)
+    if (guideA1.isBusy())
       return;
-    guideA2.dir = iteration % 4 < 2 ? '+' : '-';
+    iteration % 4 < 2 ? guideA1.moveFW() : guideA1.moveBW();
     guideA2.durationLast = micros();
     guideA2.duration = (long)duration * 3000000L;
     cli();
-    GuidingState = GuidingPulse;
-    guideA2.atRate = guideA2.dir == '-' ? -guideA2.absRate : guideA2.absRate;
+    GuidingState = Guiding::GuidingPulse;
+    guideA2.atRate = guideA2.isBW() ? -guideA2.absRate : guideA2.absRate;
     sei();
   }
   else
   {
-    if (guideA2.dir)
+    if (guideA2.isBusy())
       return;
-    guideA1.dir = iteration % 4 < 2 ? '-' : '+';
+    iteration % 4 < 2 ? guideA1.moveBW() : guideA1.moveFW();
     guideA1.durationLast = micros();
     guideA1.duration = (long)duration * 3000000L;
     cli();
-    GuidingState = GuidingPulse;
-    guideA1.atRate = guideA1.dir == '-' ? -guideA1.absRate : guideA1.absRate;
+    GuidingState = Guiding::GuidingPulse;
+    guideA1.atRate = guideA1.isBW() ? -guideA1.absRate : guideA1.absRate;
     sei();
   }
   iteration++;
@@ -310,8 +310,8 @@ void checkST4()
   {
     ST4RA_last = ST4RA_state;
     if (ST4RA_state)
-    {
-      MoveAxis1(ST4RA_state, GuidingST4);
+    {       
+      MoveAxis1(ST4RA_state == '-', Guiding::GuidingST4);
     }
     else
     {
@@ -325,7 +325,7 @@ void checkST4()
     ST4DE_last = ST4DE_state;
     if (ST4DE_state)
     {
-      MoveAxis2(ST4DE_state, GuidingST4);
+      MoveAxis2(ST4DE_state == '-', Guiding::GuidingST4);
     }
     else
     {
