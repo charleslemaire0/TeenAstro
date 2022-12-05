@@ -112,17 +112,17 @@ ISR(TIMER1_COMPA_vect)
       updateDeltaTarget();
       if (!backlashA1.correcting && guideA1.isBusy())
       {
-        if ((fabs(guideA1.atRate) < max_guideRate) &&
+        if ((guideA1.absRate < max_guideRate) &&
           (fabs(tmp_guideRateA1) < max_guideRate))
         {
           // slow speed guiding, no acceleration
-          tmp_guideRateA1 = guideA1.atRate;
+          tmp_guideRateA1 = guideA1.getRate();
         }
         else
         {
           DecayModeGoto();
           // for acceleration, we know run this routine this a fix amount of time "clockRatio" of a sideral second
-          sign = guideA1.atRate < 0 ? -1 : 1;
+          sign = guideA1.isDirBW() ? -1 : 1;
           if (guideA1.isBraking())
           {    
             tmp_guideRateA1 = sqrt(fabs(staA1.deltaTarget) * 4 * staA1.acc) * sign / geoA1.stepsPerSecond;
@@ -134,12 +134,12 @@ ISR(TIMER1_COMPA_vect)
           if (tmp_guideRateA1 < 0)
           {
             tmp_guideRateA1 = min(-max_guideRate, tmp_guideRateA1);
-            tmp_guideRateA1 = max(guideA1.atRate, tmp_guideRateA1);
+            tmp_guideRateA1 = max(guideA1.getRate(), tmp_guideRateA1);
           }
           else
           {
             tmp_guideRateA1 = max(max_guideRate, tmp_guideRateA1);
-            tmp_guideRateA1 = min(guideA1.atRate, tmp_guideRateA1);
+            tmp_guideRateA1 = min(guideA1.getRate(), tmp_guideRateA1);
           }
         }
 
@@ -149,7 +149,7 @@ ISR(TIMER1_COMPA_vect)
           if (staA1.atTarget(false))
           {
             guideA1.setIdle();
-            guideA1.atRate = 0;
+            guideA1.enableAtRate(0);
             tmp_guideRateA1 = 0;
             if (staA2.atTarget(false))
               DecayModeTracking();
@@ -164,17 +164,17 @@ ISR(TIMER1_COMPA_vect)
       updateDeltaTarget();
       if (!backlashA2.correcting && guideA2.isBusy())
       {
-        if ((fabs(guideA2.atRate) < max_guideRate) &&
+        if ((guideA2.absRate < max_guideRate) &&
           (fabs(tmp_guideRateA2) < max_guideRate))
         {
           // slow speed guiding, no acceleration
-          tmp_guideRateA2 = guideA2.atRate;
+          tmp_guideRateA2 = guideA2.getRate();
         }
         else
         {
           DecayModeGoto();
           // for acceleration, we know run this routine this a fix amount of time "clockRatio" of a sideral second
-          sign = guideA2.atRate < 0 ? -1 : 1;
+          sign = guideA2.isDirBW() ? -1 : 1;
           if (guideA2.isBraking())
           {
             tmp_guideRateA2 = sqrt(fabs(staA2.deltaTarget) * 4 * staA2.acc) * sign / geoA2.stepsPerSecond;
@@ -186,12 +186,12 @@ ISR(TIMER1_COMPA_vect)
           if (tmp_guideRateA2 < 0)
           {
             tmp_guideRateA2 = min(-max_guideRate, tmp_guideRateA2);
-            tmp_guideRateA2 = max(guideA2.atRate, tmp_guideRateA2);
+            tmp_guideRateA2 = max(guideA2.getRate(), tmp_guideRateA2);
           }
           else
           {
             tmp_guideRateA2 = max(max_guideRate, tmp_guideRateA2);
-            tmp_guideRateA2 = min(guideA2.atRate, tmp_guideRateA2);
+            tmp_guideRateA2 = min(guideA2.getRate(), tmp_guideRateA2);
           }
 
         }
@@ -202,7 +202,7 @@ ISR(TIMER1_COMPA_vect)
           if (staA2.atTarget(false))
           {
             guideA2.setIdle();
-            guideA2.atRate = 0;
+            guideA2.enableAtRate(0);
             tmp_guideRateA2 = 0;
             if (staA1.atTarget(false))
               DecayModeTracking();

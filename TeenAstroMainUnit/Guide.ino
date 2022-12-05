@@ -5,16 +5,14 @@
 
 void apply_GuidingA1()
 {
-  bool rev = guideA1.isBW();
   cli();
-  rev ? staA1.target -= guideA1.amount : staA1.target += guideA1.amount;
+  staA1.target += guideA1.getAmount();
   sei();
 }
 void apply_GuidingA2()
 {
-  bool rev = guideA2.isBW();
   cli();
-  rev ? staA2.target -= guideA2.amount : staA2.target += guideA2.amount;
+  staA2.target += guideA2.getAmount();
   sei();
 }
 void StopGuiding()
@@ -48,7 +46,7 @@ void PerformPulseGuiding()
     sei();
     return;
   }
-  if (guideA1.isGuiding())
+  if (guideA1.isMoving())
   {
     if (guideA1.duration > 0)
     {
@@ -75,7 +73,7 @@ void PerformPulseGuiding()
   {
     guideA1.duration = -1;
   }
-  if (guideA2.isGuiding())
+  if (guideA2.isMoving())
   {
     if (guideA2.duration > 0 )
     {
@@ -110,14 +108,14 @@ void PerfomST4Guiding()
 {
   if (StopIfMountError())
     return;
-  if (guideA1.isGuiding())
+  if (guideA1.isMoving())
   {
     if (!backlashA1.correcting)
     {
       apply_GuidingA1();
     }
   }
-  if (guideA2.isGuiding())
+  if (guideA2.isMoving())
   {
     if (!backlashA2.correcting)
     {
@@ -128,14 +126,14 @@ void PerfomST4Guiding()
 
 void PerfomGuidingRecenter()
 {
-  if (guideA1.isGuiding())
+  if (guideA1.isMoving())
   {
     if (!backlashA1.correcting)
     {
       apply_GuidingA1();
     }
   }
-  if (guideA2.isGuiding())
+  if (guideA2.isMoving())
   {
     if (!backlashA2.correcting)
     {
@@ -148,23 +146,21 @@ void PerformGuidingAtRate()
 {
   if (StopIfMountError())
     return;
-  if (guideA1.isGuiding())
+  if (guideA1.isMoving())
   {
     if (!backlashA1.correcting)
     {
-      bool rev = guideA1.isBW();
       cli();
-      rev ? staA1.target -= guideA1.amount : staA1.target += guideA1.amount;
+      staA1.target += guideA1.getAmount();
       sei();
     }
   }
-  if (guideA2.isGuiding())
+  if (guideA2.isMoving())
   {
     if (!backlashA2.correcting)
     {
-      bool rev = guideA2.isBW();
       cli();
-      rev ? staA2.target -= guideA2.amount : staA2.target += guideA2.amount;
+      staA2.target += guideA2.getAmount();
       sei();
     }
   }

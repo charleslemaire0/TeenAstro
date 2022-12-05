@@ -493,8 +493,8 @@ void initmount()
     underPoleLimitGOTO = 12;
   
   // initialize some fixed-point values
-  guideA1.amount = 0;
-  guideA2.amount = 0;
+  //guideA1.amount = 0;
+  //guideA2.amount = 0;
 
   staA1.fstep = 0;
   staA2.fstep = 0;

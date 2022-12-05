@@ -78,10 +78,8 @@ void Command_M()
         }
         guideA1.durationLast = micros();
         guideA1.duration = (long)i * 1000L;
-        bool rev = guideA1.isBW();
         cli();
         GuidingState = Guiding::GuidingPulse;
-        guideA1.atRate = rev ? -guideA1.absRate : guideA1.absRate;
         sei();
         //reply[0] = '1';
         //reply[1] = 0;
@@ -113,10 +111,8 @@ void Command_M()
         }
         guideA2.durationLast = micros();
         guideA2.duration = (long)i * 1000L;
-        bool rev = guideA2.isBW();
         cli();
         GuidingState = Guiding::GuidingPulse;
-        guideA2.atRate = rev ? -guideA2.absRate : guideA2.absRate;
         sei();
         
         //reply[0] = '1';
