@@ -156,7 +156,7 @@ void CheckSpiral()
   {
     if (guideA1.isBusy())
       return;
-    iteration % 4 < 2 ? guideA1.moveFW() : guideA1.moveBW();
+    iteration % 4 < 2 ? guideA2.moveFW() : guideA2.moveBW();
     guideA2.durationLast = micros();
     guideA2.duration = (long)duration * 3000000L;
     cli();
