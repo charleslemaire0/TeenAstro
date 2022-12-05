@@ -197,7 +197,7 @@ private:
 public:
   bool isMFW()
   {
-    return mst == MFW;
+    return m_mst == MFW;
   }
   bool isMBW()
   {
