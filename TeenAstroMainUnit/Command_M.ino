@@ -21,11 +21,11 @@ void Command_M()
     {
       if (command[1] == '1')
       {
-        MoveAxis1AtRate(f);
+        MoveAxisAtRate1(f);
       }
       else
       {
-        MoveAxis2AtRate(f);
+        MoveAxisAtRate2(f);
       }
       strcpy(reply, "1");
     }
