@@ -93,192 +93,147 @@ static void Timer4SetInterval(interval i)
   sei();
 }
 
-
-ISR(TIMER1_COMPA_vect)
+static void UpdateIntervalTrackingGuiding(GuideAxis* guideA, StatusAxis* staA,
+  backlash* backlashA, GeoAxis* geoA, StatusAxis* staA_other,
+  volatile double& tmp_guideRateA,
+  const double minInterval, const double maxInterval)
 {
-  static volatile bool   wasInbacklashAxis1 = false;
-  static volatile bool   wasInbacklashAxis2 = false;
-  static volatile double tmp_guideRateA1 = 0;
-  static volatile double tmp_guideRateA2 = 0;
+  static double max_guideRate = 8;
   static volatile double sign;
-  rtk.m_lst++;
-  // in this mode the target is always a bit faster than the scope because we move first the target!!
-  if (!movingTo)
+  // guide rate acceleration/deceleration and control
+  updateDeltaTarget();
+  if (!backlashA->correcting && guideA->isBusy())
   {
-    double max_guideRate = 8;
-    // guide rate acceleration/deceleration
+    if ((guideA->absRate < max_guideRate) &&
+      (fabs(tmp_guideRateA) < max_guideRate))
     {
-      // guide rate acceleration/deceleration and control
-      updateDeltaTarget();
-      if (!backlashA1.correcting && guideA1.isBusy())
-      {
-        if ((guideA1.absRate < max_guideRate) &&
-          (fabs(tmp_guideRateA1) < max_guideRate))
-        {
-          // slow speed guiding, no acceleration
-          tmp_guideRateA1 = guideA1.getRate();
-        }
-        else
-        {
-          DecayModeGoto();
-          // for acceleration, we know run this routine this a fix amount of time "clockRatio" of a sideral second
-          sign = guideA1.isDirBW() ? -1 : 1;
-          if (guideA1.isBraking())
-          {    
-            tmp_guideRateA1 = sqrt(fabs(staA1.deltaTarget) * 4 * staA1.acc) * sign / geoA1.stepsPerSecond;
-          }
-          else
-          {
-            tmp_guideRateA1 += 2 * staA1.acc * clockRatio * sign / geoA1.stepsPerSecond;
-          }
-          if (tmp_guideRateA1 < 0)
-          {
-            tmp_guideRateA1 = min(-max_guideRate, tmp_guideRateA1);
-            tmp_guideRateA1 = max(guideA1.getRate(), tmp_guideRateA1);
-          }
-          else
-          {
-            tmp_guideRateA1 = max(max_guideRate, tmp_guideRateA1);
-            tmp_guideRateA1 = min(guideA1.getRate(), tmp_guideRateA1);
-          }
-        }
-
-        // stop guiding
-        if (guideA1.isBraking())
-        {
-          if (staA1.atTarget(false))
-          {
-            guideA1.setIdle();
-            tmp_guideRateA1 = 0;
-            if (staA2.atTarget(false))
-              DecayModeTracking();
-          }
-        }
-      }
-      volatile double sumRateA1 = fabs(tmp_guideRateA1 + staA1.CurrentTrackingRate);
-      staA1.setIntervalfromRate(sumRateA1, minInterval1, maxInterval1);
+      // slow speed guiding, no acceleration
+      tmp_guideRateA = guideA->getRate();
     }
-
+    else
     {
-      updateDeltaTarget();
-      if (!backlashA2.correcting && guideA2.isBusy())
+      DecayModeGoto();
+      // for acceleration, we know run this routine this a fix amount of time "clockRatio" of a sideral second
+      sign = guideA->isDirBW() ? -1 : 1;
+      if (guideA->isBraking())
       {
-        if ((guideA2.absRate < max_guideRate) &&
-          (fabs(tmp_guideRateA2) < max_guideRate))
-        {
-          // slow speed guiding, no acceleration
-          tmp_guideRateA2 = guideA2.getRate();
-        }
-        else
-        {
-          DecayModeGoto();
-          // for acceleration, we know run this routine this a fix amount of time "clockRatio" of a sideral second
-          sign = guideA2.isDirBW() ? -1 : 1;
-          if (guideA2.isBraking())
-          {
-            tmp_guideRateA2 = sqrt(fabs(staA2.deltaTarget) * 4 * staA2.acc) * sign / geoA2.stepsPerSecond;
-          }
-          else
-          {
-            tmp_guideRateA2 += 2 * staA2.acc * clockRatio * sign / geoA2.stepsPerSecond;
-          }
-          if (tmp_guideRateA2 < 0)
-          {
-            tmp_guideRateA2 = min(-max_guideRate, tmp_guideRateA2);
-            tmp_guideRateA2 = max(guideA2.getRate(), tmp_guideRateA2);
-          }
-          else
-          {
-            tmp_guideRateA2 = max(max_guideRate, tmp_guideRateA2);
-            tmp_guideRateA2 = min(guideA2.getRate(), tmp_guideRateA2);
-          }
-
-        }
-
-        // stop guiding
-        if (guideA2.isBraking())
-        {
-          if (staA2.atTarget(false))
-          {
-            guideA2.setIdle();
-            tmp_guideRateA2 = 0;
-            if (staA1.atTarget(false))
-              DecayModeTracking();
-          }
-        }
+        tmp_guideRateA = sqrt(fabs(staA->deltaTarget) * 4 * staA->acc) * sign / geoA->stepsPerSecond;
       }
-      volatile double sumRateA2 = fabs(tmp_guideRateA2 + staA2.CurrentTrackingRate);
-      staA2.setIntervalfromRate(sumRateA2, minInterval2, maxInterval2);
+      else
+      {
+        tmp_guideRateA += 2 * staA->acc * clockRatio * sign / geoA->stepsPerSecond;
+      }
+      if (tmp_guideRateA < 0)
+      {
+        tmp_guideRateA = min(-max_guideRate, tmp_guideRateA);
+        tmp_guideRateA = max(guideA->getRate(), tmp_guideRateA);
+      }
+      else
+      {
+        tmp_guideRateA = max(max_guideRate, tmp_guideRateA);
+        tmp_guideRateA = min(guideA->getRate(), tmp_guideRateA);
+      }
     }
-
-    if (!guideA1.isBusy() && !guideA2.isBusy())
+    // stop guiding
+    if (guideA->isBraking())
     {
-      GuidingState = Guiding::GuidingOFF;
+      if (staA->atTarget(false))
+      {
+        guideA->setIdle();
+        tmp_guideRateA = 0;
+        if (staA_other->atTarget(false))
+          DecayModeTracking();
+      }
     }
   }
+  volatile double sumRateA = fabs(tmp_guideRateA + staA->CurrentTrackingRate);
+  staA->setIntervalfromRate(sumRateA, minInterval, maxInterval);
+}
 
-  volatile double thisIntervalAxis1 = staA1.interval_Step_Cur;
-  volatile double thisIntervalAxis2 = staA2.interval_Step_Cur;
+static void UpdateIntervalTrackingGuiding1()
+{
+  static volatile double tmp_guideRateA1 = 0;
+  UpdateIntervalTrackingGuiding(&guideA1, &staA1, &backlashA1, &geoA1, &staA2, tmp_guideRateA1, minInterval1, maxInterval1);
+}
 
+static void UpdateIntervalTrackingGuiding2()
+{
+  static volatile double tmp_guideRateA2 = 0;
+  UpdateIntervalTrackingGuiding(&guideA2, &staA2, &backlashA2, &geoA2, &staA1, tmp_guideRateA2, minInterval2, maxInterval2);
+}
+
+static void BacklashComp(GuideAxis* guideA, StatusAxis* staA, backlash* backlashA,
+  volatile double& thisIntervalAxis, volatile bool& wasInbacklashAxis)
+{
   // override rate during backlash compensation
-  if (backlashA1.correcting)
+  if (backlashA->correcting)
   {
-    thisIntervalAxis1 = backlashA1.interval_Step;
-    wasInbacklashAxis1 = true;
-  }
-
-  // override rate during backlash compensation
-  if (backlashA2.correcting)
-  {
-    thisIntervalAxis2 = backlashA2.interval_Step;
-    wasInbacklashAxis2 = true;
+    thisIntervalAxis = backlashA->interval_Step;
+    wasInbacklashAxis = true;
   }
   if (sideralTracking && !movingTo)
   {
     // travel through the backlash is done, but we weren't following the target while it was happening!
     // so now get us back to near where we need to be
-    if (!backlashA1.correcting && wasInbacklashAxis1 && !guideA1.isBusy())
+    if (!backlashA->correcting && wasInbacklashAxis && !guideA->isBusy())
     {
-      if (!staA1.atTarget(true))
+      if (!staA->atTarget(true))
       {
         cli();
-        thisIntervalAxis1 = staA1.takeupInterval;
+        thisIntervalAxis = staA->takeupInterval;
         sei();
       }
       else
       {
         cli();
-        wasInbacklashAxis1 = false;
-        sei();
-      }
-    }
-    if (!backlashA2.correcting && wasInbacklashAxis2 && !guideA2.isBusy())
-    {
-      if (!staA2.atTarget(true))
-      {
-        cli();
-        thisIntervalAxis2 = staA2.takeupInterval;
-        sei();
-      }
-      else
-      {
-        cli();
-        wasInbacklashAxis2 = false;
+        wasInbacklashAxis = false;
         sei();
       }
     }
   }
-  // set the rates
+}
+
+static void BacklashAndApplyInterval1()
+{
+  static volatile bool   wasInbacklashAxis1 = false;
+  volatile double thisIntervalAxis1 = staA1.interval_Step_Cur;
+  BacklashComp(&guideA1, &staA1, &backlashA1, thisIntervalAxis1, wasInbacklashAxis1);
   if (thisIntervalAxis1 != isrIntervalAxis1)
   {
     Timer3SetInterval(thisIntervalAxis1);
     isrIntervalAxis1 = thisIntervalAxis1;
   }
+}
+
+static void BacklashAndApplyInterval2()
+{
+  static volatile bool   wasInbacklashAxis2 = false;
+  volatile double thisIntervalAxis2 = staA2.interval_Step_Cur;
+  BacklashComp(&guideA2, &staA2, &backlashA2, thisIntervalAxis2, wasInbacklashAxis2);
   if (thisIntervalAxis2 != isrIntervalAxis2)
   {
     Timer4SetInterval(thisIntervalAxis2);
     isrIntervalAxis2 = thisIntervalAxis2;
   }
+}
+
+ISR(TIMER1_COMPA_vect)
+{
+ 
+  rtk.m_lst++;
+  // in this mode the target is always a bit faster than the scope because we move first the target!!
+  if (!movingTo)
+  {
+    // guide rate acceleration/deceleration
+    UpdateIntervalTrackingGuiding1();
+    UpdateIntervalTrackingGuiding2();
+    if (!guideA1.isBusy() && !guideA2.isBusy())
+    {
+      GuidingState = Guiding::GuidingOFF;
+    }
+  }
+  BacklashAndApplyInterval1();
+  BacklashAndApplyInterval2();
 }
 ISR(TIMER3_COMPA_vect)
 {
