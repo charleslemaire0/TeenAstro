@@ -71,16 +71,7 @@ static void StopAxis(GuideAxis* guideA, StatusAxis* staA)
 {
   if (!guideA->isMoving())
     return;
-  staA->updateDeltaTarget();
-  long a = pow(interval2speed(staA->interval_Step_Cur), 2.) / (4. * staA->acc);
-  if (abs(staA->deltaTarget) > a)
-  {
-    if (0 > staA->deltaTarget)
-      a = -a;
-    cli();
-    staA->target = staA->pos + a;
-    sei();
-  }
+  staA->breakMove();
   guideA->brake();
 }
 
