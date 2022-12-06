@@ -109,10 +109,10 @@ void Command_GNSS()
       rtk.setClock(d.year(), d.month(), d.day(),
         t.hour(), t.minute(), t.second(),
         *localSite.longitude(), 0);
-      strcpy(reply, "1");
+      replyOk();
     }
     else
-      strcpy(reply, "0");
+      replyFailed();
     break;
   case 't':
     if (iSGNSSValid())
@@ -120,13 +120,13 @@ void Command_GNSS()
       rtk.setClock(d.year(), d.month(), d.day(),
         t.hour(), t.minute(), t.second(),
         *localSite.longitude(), 0);
-      strcpy(reply, "1");
+      replyOk();
     }
     else
-      strcpy(reply, "0");
+      replyFailed();
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 

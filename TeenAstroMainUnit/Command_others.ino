@@ -26,10 +26,10 @@ void Command_dollar()
     break;
   case 'X':
     initmotor(true);
-    strcpy(reply, "1");
+    replyOk();
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }
@@ -56,7 +56,7 @@ void Command_A()
     // start tracking
     sideralTracking = true;
     lastSetTrakingEnable = millis();
-    strcpy(reply, "1");
+    replyOk();
     break;
   case '2':
   {
@@ -87,7 +87,7 @@ void Command_A()
         sei();
       }
     }
-    strcpy(reply, "1");
+    replyOk();
     break;
   }
   case '3':
@@ -112,7 +112,7 @@ void Command_A()
       staA2.target = staA2.pos;
       sei();
     }
-    strcpy(reply, "1");
+    replyOk();
     break;
   }
   case 'C':
@@ -120,14 +120,14 @@ void Command_A()
     initTransformation(true);
     syncAtHome();
     autoAlignmentBySync = command[1] == 'A';
-    strcpy(reply, "1");
+    replyOk();
     break;
   case 'W':
     saveAlignModel();
-    strcpy(reply, "1");
+    replyOk();
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
   }
 }
 
@@ -160,7 +160,7 @@ void Command_B()
 
   analogWrite(RETICULE_LED_PINS, reticuleBrightness);
 #endif
-  reply[0] = 0;
+  replyNothing();
 }
 
 //   C - Sync Control
@@ -254,7 +254,7 @@ void Command_D()
 {
   if (command[1] != 0)
   {
-    strcpy(reply, "0");
+    replyFailed();
     return;
   }
     
@@ -287,16 +287,16 @@ void Command_h()
     //          Return: 0 on failure
     //                  1 on success
     if (!goHome())
-      strcpy(reply, "0");
+      replyFailed();
     else
-      strcpy(reply, "1");
+      replyOk();
     break;
   case 'B':
     //  :hB#   Set the home position
     //          Return: 0 on failure
     //                  1 on success
-    if (!setHome()) strcpy(reply, "0");
-    else strcpy(reply, "1");
+    if (!setHome()) replyFailed();
+    else replyOk();
     break;
   case 'b':
     //  :hb#   Reset the home position
@@ -305,46 +305,46 @@ void Command_h()
     homeSaved = false;
     XEEPROM.write(EE_homeSaved, false);
     initHome();
-    strcpy(reply, "1");
+    replyOk();
     break;
   case 'O':
     // : hO#   Reset telescope at the Park position if Park position is stored.
     //          Return: 0 on failure
     //                  1 on success
     if (!syncAtPark())
-      strcpy(reply, "0");
+      replyFailed();
     else
-      strcpy(reply, "1");
+      replyOk();
     break;
   case 'P':
     // : hP#   Goto the Park Position
     //          Return: 0 on failure
     //                  1 on success
     if (park())
-      strcpy(reply, "0");
+      replyFailed();
     else
-      strcpy(reply, "1");
+      replyOk();
     break;
   case 'Q':
     //  :hQ#   Set the park position
     //          Return: 0 on failure
     //                  1 on success
     if (!setPark())
-      strcpy(reply, "0");
+      replyFailed();
     else
-      strcpy(reply, "1");
+      replyOk();
     break;
   case 'R':
     //  :hR#   Restore parked telescope to operation
     //          Return: 0 on failure
     //                  1 on success
     unpark();
-    strcpy(reply, "1");
+    replyOk();
     break;
 
 
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }
@@ -400,7 +400,7 @@ void Command_Q()
     }
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }
@@ -439,7 +439,7 @@ void Command_R()
     i = command[1] - '0';
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     return;
   }
   if (!movingTo && GuidingState == GuidingOFF)
@@ -471,42 +471,42 @@ void Command_T()
   {
   case '+':
     siderealClockSpeed -= HzCf * (0.02);
-    reply[0] = 0;
+    replyNothing();
     break;
   case '-':
     siderealClockSpeed += HzCf * (0.02);
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'S':
     // solar tracking rate 60Hz
     SetTrackingRate(TrackingSolar,0);
     sideralMode = SIDM_SUN;
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'L':
     // lunar tracking rate 57.9Hz
     SetTrackingRate(TrackingLunar,0);
     sideralMode = SIDM_MOON;
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'Q':
     // sidereal tracking rate
     SetTrackingRate(TrackingStar,0);
     sideralMode = SIDM_STAR;
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'R':
     // reset master sidereal clock interval
     siderealClockSpeed = mastersiderealClockSpeed;
     SetTrackingRate(TrackingStar, 0);
     sideralMode = SIDM_STAR;
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'T':
     //set Target tracking rate
     SetTrackingRate(1.0 - (double)storedTrakingRateRA / 10000.0, (double)storedTrakingRateDEC / 10000.0);
     sideralMode = SIDM_TARGET;
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'e':
     if (parkStatus == PRK_UNPARKED)
@@ -515,43 +515,43 @@ void Command_T()
       atHome = false;
       sideralTracking = true;
       computeTrackingRate(true);
-      strcpy(reply, "1");
+      replyOk();
     }
     else
-      strcpy(reply, "0");
+      replyFailed();
     break;
   case 'd':
     if (parkStatus == PRK_UNPARKED)
     {
       sideralTracking = false;
-      strcpy(reply, "1");
+      replyOk();
     }
     else
-      strcpy(reply, "0");
+      replyFailed();
     break;
   case '0':
     // turn compensation off
     tc = TC_NONE;
     computeTrackingRate(true);
     XEEPROM.update(EE_TC_Axis, 0);
-    strcpy(reply, "1");
+    replyOk();
     break;
   case '1':
     // turn compensation RA only
     tc = TC_RA;
     computeTrackingRate(true);
     XEEPROM.update(EE_TC_Axis, 0);
-    strcpy(reply, "1");
+    replyOk();
     break;
   case '2':
     // turn compensation BOTH
     tc = TC_BOTH;
     computeTrackingRate(true);
     XEEPROM.update(EE_TC_Axis, 2);
-    strcpy(reply, "1");
+    replyOk();
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 
@@ -573,10 +573,10 @@ void Command_U()
   if (command[1] == 0)
   {
     highPrecision = !highPrecision;
-    reply[0] = 0;
+    replyNothing();
   }
   else
-    strcpy(reply, "0");
+    replyFailed();
 }
 
 //   W - Site Select/Site get
@@ -600,14 +600,14 @@ void Command_W()
     initHome();
     initTransformation(true);
     syncAtHome();
-    reply[0] = 0;
+    replyNothing();
     break;
   }
   case '?':
     sprintf(reply, "%d#", localSite.siteIndex());
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }

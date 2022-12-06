@@ -27,10 +27,10 @@ void Command_M()
       {
         MoveAxisAtRate2(f);
       }
-      strcpy(reply, "1");
+      replyOk();
     }
     else
-      strcpy(reply, "0");
+      replyFailed();
     break;
   case 'A':
     //  :MA#   Goto the target Alt and Az
@@ -244,17 +244,17 @@ void Command_M()
     //  :M@#   Start Spiral Search
     //         Return 0 if failed, i if success
     if (movingTo || GuidingState != Guiding::GuidingOFF)
-      strcpy(reply, "0");
+      replyFailed();
     else
     {
-      strcpy(reply, "1");
+      replyOk();
       atHome = false;
       doSpiral = true;
     }
     break;
   }
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }
