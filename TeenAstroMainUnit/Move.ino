@@ -152,6 +152,11 @@ void CheckSpiral()
     return;
   }
 
+  if (iteration == 0)
+  {
+    enableGuideRate(activeGuideRate);
+  }
+
   if (iteration % 2 == 0)
   {
     if (guideA1.isBusy())

@@ -149,7 +149,6 @@ ISR(TIMER1_COMPA_vect)
           if (staA1.atTarget(false))
           {
             guideA1.setIdle();
-            guideA1.enableAtRate(0);
             tmp_guideRateA1 = 0;
             if (staA2.atTarget(false))
               DecayModeTracking();
@@ -202,7 +201,6 @@ ISR(TIMER1_COMPA_vect)
           if (staA2.atTarget(false))
           {
             guideA2.setIdle();
-            guideA2.enableAtRate(0);
             tmp_guideRateA2 = 0;
             if (staA1.atTarget(false))
               DecayModeTracking();

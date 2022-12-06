@@ -248,6 +248,7 @@ void Command_M()
     else
     {
       strcpy(reply, "1");
+      atHome = false;
       doSpiral = true;
     }
     break;
