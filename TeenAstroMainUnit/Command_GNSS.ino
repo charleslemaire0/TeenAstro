@@ -1,6 +1,22 @@
 #include "Command.h"
 // This custom version of delay() ensures that the gps object
 // is being "fed".
+#define N_GNSS_OBS 3
+static double dlat[N_GNSS_OBS];//*localSite.latitude();
+static double dlng[N_GNSS_OBS];//*localSite.longitude(); 
+static double dele[N_GNSS_OBS];//*localSite.elevation();
+
+void resetDeltaLoc()
+{
+  for (int i = 0; i < N_GNSS_OBS; i++)
+  {
+    dlat[i] = 0;
+    dlng[i] = 0;
+    dele[i] = 0;
+  }
+}
+
+
 static void smartDelay(unsigned long ms)
 {
 #if VERSION == 220
@@ -59,26 +75,48 @@ bool isTimeSyncWithGNSS()
   return lastreply;
 }
 
+
+double std_dev(double* val, int nval)
+{
+  double s = 0;
+  double m = 0;
+  for (int i = 0; i < nval; i++)
+  {
+    m += val[i];
+  }
+  m /= nval;
+  for (int i = 0; i < nval; i++)
+  {
+    s += pow(val[i] - m, 2);
+  }
+  return sqrt(s / (nval - 1));
+}
+
 bool isLocationSyncWithGNSS()
 {
+  static int i = 0;
   static unsigned long t1 = 0;
   static bool lastreply = false;
   if (millis() - t1 > 5000)
   {
     TinyGPSLocation l = gps.location;
     TinyGPSAltitude a = gps.altitude;
-    double dlng = fabs(degRange(*localSite.longitude() - (-l.lng())));
-    double dlat = fabs(*localSite.latitude() - l.lat());
-    double dele = fabs(*localSite.elevation() - a.meters());
-    if (abs(l.lat()) > 85)
-    {
-      lastreply = dlat < 0.01 && dele < 100;
-    }
-    else
-    {
-      lastreply = dlng < 0.01 / cos(l.lat() / Rad) && dlat < 0.01 && dele < 100;
-    }
 
+    dlng[i] = 3600*fabs(haRange(*localSite.longitude() - (-l.lng())));
+    dlat[i] = 3660*fabs(*localSite.latitude() - l.lat());
+    dele[i] = fabs(*localSite.elevation() - a.meters());
+    double dlng_s= std_dev(dlng, N_GNSS_OBS);
+    double dlat_s = std_dev(dlat, N_GNSS_OBS);
+    double dele_s = std_dev(dele, N_GNSS_OBS);
+    lastreply = dlng[i] < max(5 * dlng_s, 1);
+    lastreply &= dlat[i] < max(5 * dlat_s, 1);
+    lastreply &= dele[i] < max(5 * dele_s, 10);
+    lastreply &= dlng_s < 1;
+    lastreply &= dlat_s < 1;
+    lastreply &= dele_s < 10;
+    i++;
+    if (i == N_GNSS_OBS)
+      i = 0;
     t1 = millis();
   }
   return lastreply;
@@ -109,6 +147,7 @@ void Command_GNSS()
       rtk.setClock(d.year(), d.month(), d.day(),
         t.hour(), t.minute(), t.second(),
         *localSite.longitude(), 0);
+      resetDeltaLoc();
       replyOk();
     }
     else
