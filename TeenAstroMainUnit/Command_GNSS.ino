@@ -94,6 +94,7 @@ double std_dev(double* val, int nval)
 
 bool isLocationSyncWithGNSS()
 {
+  char text[128]:
   static int i = 0;
   static unsigned long t1 = 0;
   static bool lastreply = false;
@@ -108,16 +109,23 @@ bool isLocationSyncWithGNSS()
     double dlng_s= std_dev(dlng, N_GNSS_OBS);
     double dlat_s = std_dev(dlat, N_GNSS_OBS);
     double dele_s = std_dev(dele, N_GNSS_OBS);
-    lastreply = dlng[i] < max(5 * dlng_s, 1);
-    lastreply &= dlat[i] < max(5 * dlat_s, 1);
-    lastreply &= dele[i] < max(5 * dele_s, 10);
-    lastreply &= dlng_s < 1;
-    lastreply &= dlat_s < 1;
-    lastreply &= dele_s < 10;
+    lastreply = dlng[i] < max(5 * dlng_s, 2);
+    lastreply &= dlat[i] < max(5 * dlat_s, 2);
+    lastreply &= dele[i] < max(5 * dele_s, 20);
+    lastreply &= dlng_s < 2;
+    lastreply &= dlat_s < 2;
+    lastreply &= dele_s < 20;
     i++;
     if (i == N_GNSS_OBS)
       i = 0;
     t1 = millis();
+
+
+    //sprintf(text, "lng= %+01.5f, lat=%+01.5f, ele= %+01.5f\n", dlng[i], dlat[i], dele[i]);
+    //Serial.print(text);
+
+    //sprintf(text, "lng_s= %+01.5f, lat_s=%+01.5f, ele_s= %+01.5f\n", dlng_s, dlat_s, dele_s);
+    //Serial.print(text);
   }
   return lastreply;
 }
