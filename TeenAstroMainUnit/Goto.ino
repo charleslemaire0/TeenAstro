@@ -169,18 +169,18 @@ ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2)
   if (movingTo)
   {
     abortSlew = true;
-    return ERRGOTO_SLEWING;
+    return ErrorsGoTo::ERRGOTO_SLEWING;
   }   // fail, prior goto cancelled
-  if (guideA1.dir || guideA2.dir) return ERRGOTO_GUIDING;   // fail, unspecified error
+  if (guideA1.isBusy() || guideA2.isBusy()) return ErrorsGoTo::ERRGOTO_GUIDINGBUSY;   // fail, unspecified error
 
   //z = AzRange(z);
   // Check to see if this goto is valid
-  if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return ERRGOTO_PARKED; // fail, PRK_PARKED
+  if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return ErrorsGoTo::ERRGOTO_PARKED; // fail, PRK_PARKED
   if (lastError != ERRT_NONE)
   {
     return static_cast<ErrorsGoTo>(lastError + 10);   // fail, telescop has Errors State
   }
-  if (staA1.fault || staA2.fault) return ERRGOTO_MOTOR; // fail, unspecified error
+  if (staA1.fault || staA2.fault) return ErrorsGoTo::ERRGOTO_MOTOR; // fail, unspecified error
   atHome = false;
   cli();
   movingTo = true;
@@ -199,7 +199,7 @@ ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2)
 
   DecayModeGoto();
 
-  return ERRGOTO_NONE;
+  return ErrorsGoTo::ERRGOTO_NONE;
 }
 
 
@@ -214,7 +214,7 @@ ErrorsGoTo Flip()
   sei();
   if (!predictTarget(Axis1, Axis2, preferedPierSide, axis1Flip, axis2Flip, selectedSide))
   {
-    return ERRGOTO_SAMESIDE;
+    return ErrorsGoTo::ERRGOTO_SAMESIDE;
   }
   return goTo(axis1Flip, axis2Flip);
 }

@@ -184,19 +184,96 @@ public:
 
 class GuideAxis
 {
+  
 public:
-  volatile byte   dir;
   long            duration;
   unsigned long   durationLast;
-  double          amount;
-  volatile double atRate;
   double          absRate;
 private:
+  enum moveStatus { MBW = -2, BBW = -1, Idle = 0, BFW = 1, MFW = 2 };
+  volatile moveStatus m_mst;
+  volatile double  m_amount;
   double* m_stepsPerCentiSecond;
 public:
+  bool isMFW()
+  {
+    return m_mst == MFW;
+  }
+  bool isMBW()
+  {
+    return m_mst == MBW;
+  }
+  bool isDirFW()
+  {
+    return m_mst >= BFW;
+  }
+  bool isDirBW()
+  {
+    return m_mst <= BBW;
+  }
+  bool isBusy()
+  {
+    return m_mst != Idle;
+  }
+  bool isBraking()
+  {
+    return  m_mst == BBW || m_mst == BFW;
+  }
+  bool isMoving()
+  {
+    return m_mst == MFW || m_mst == MBW;
+  }
+  double getRate()
+  {
+    if (isDirFW())
+    {
+      return absRate;
+    }
+    else if (isDirBW())
+    {
+      return -absRate;
+    }
+    return 0;
+  }
+  double getAmount()
+  {
+    if (isDirFW())
+    {
+      return m_amount;
+    }
+    else if (isDirBW())
+    {
+      return -m_amount;
+    }
+    return 0;
+  }
+  void setIdle()
+  {
+    m_mst = Idle;
+  }
+  void moveFW()
+  {
+    m_mst = MFW;
+  }
+  void moveBW()
+  {
+    m_mst = MBW;
+  }
+  void brake()
+  {
+    if (isMFW())
+    {
+      m_mst = BFW;
+    }
+    if (isMBW())
+    {
+      m_mst = BBW;
+    }
+  }
+
   void init(double* stepsPerCentiSecond, double rate)
   {
-    dir = 0;
+    m_mst = Idle;
     duration = 0;
     m_stepsPerCentiSecond = stepsPerCentiSecond;
     enableAtRate(rate);
@@ -207,7 +284,7 @@ public:
     {
       absRate = rate;
       cli();
-      amount = absRate * *m_stepsPerCentiSecond;
+      m_amount = absRate * *m_stepsPerCentiSecond;
       sei();
     }
   }

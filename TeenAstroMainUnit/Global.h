@@ -30,14 +30,14 @@ enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW }
 enum RateCompensation { RC_UNKOWN = -1, RC_NONE, RC_ALIGN_RA, RC_ALIGN_BOTH, RC_FULL_RA, RC_FULL_BOTH };
 enum TrackingCompensation {TC_NONE, TC_RA, TC_BOTH};
 
-ParkState parkStatus = PRK_UNPARKED;
+ParkState parkStatus = ParkState::PRK_UNPARKED;
 bool parkSaved = false;
 bool homeSaved = false;
 bool atHome = true;
 bool homeMount = false;
 bool DecayModeTrack = false;
-MeridianFlip meridianFlip = FLIP_NEVER;
-Mount mountType = MOUNT_TYPE_GEM;
+MeridianFlip meridianFlip = MeridianFlip::FLIP_NEVER;
+Mount mountType = Mount::MOUNT_TYPE_GEM;
 byte maxAlignNumStar = 0;
 bool autoAlignmentBySync = false;
 
@@ -45,7 +45,7 @@ bool hasFocuser = false;
 bool hasGNSS = true;
 
 RefractionFlags doesRefraction;
-TrackingCompensation tc = TC_NONE;
+TrackingCompensation tc = TrackingCompensation::TC_NONE;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
 double                  siderealClockSpeed = 997269.5625;
 const double            mastersiderealClockSpeed = 997269.5625;
@@ -95,13 +95,14 @@ int                 minAlt;                                 // the minimum altit
 int                 maxAlt;                                 // the maximum altitude, in degrees, for goTo's (to keep the telescope tube away from the mount/tripod)
 long                minutesPastMeridianGOTOE;               // for goto's, how far past the meridian to allow before we do a flip (if on the East side of the pier)- one hour of RA is the default = 60.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 long                minutesPastMeridianGOTOW;               // as above, if on the West side of the pier.  If left alone, the mount will stop tracking when it hits the this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
-double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. OnStep will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
+double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. Telescop will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 
                                                            
 //                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
 
 #define HADirNCPInit    false
 #define HADirSCPInit    true
+
 volatile bool   HADir = HADirNCPInit;
 
 // Status ------------------------------------------------------------------------------------------------------------------
@@ -117,7 +118,7 @@ enum ErrorsTraking
   ERRT_MERIDIAN
 };
 
-ErrorsTraking lastError = ERRT_NONE;
+ErrorsTraking lastError = ErrorsTraking::ERRT_NONE;
 
 enum ErrorsGoTo
 {
@@ -128,7 +129,7 @@ enum ErrorsGoTo
   ERRGOTO_PARKED,
   ERRGOTO_SLEWING,
   ERRGOTO_LIMITS,
-  ERRGOTO_GUIDING,
+  ERRGOTO_GUIDINGBUSY,
   ERRGOTO_ABOVEOVERHEAD,
   ERRGOTO_MOTOR,
   ERRGOTO____,
@@ -162,16 +163,17 @@ enum SID_Mode
   SIDM_TARGET
 };
 
-volatile SID_Mode sideralMode = SIDM_STAR;
+volatile SID_Mode sideralMode = SID_Mode::SIDM_STAR;
 
 double  RequestedTrackingRateHA = TrackingStar; // in RA seconds per sideral second
 double  RequestedTrackingRateDEC = 0; // in DEC seconds per sideral second
 long    storedTrakingRateRA = 0;
 long    storedTrakingRateDEC = 0;
 //Guiding
+
 enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter, GuidingAtRate };
-volatile Guiding GuidingState = GuidingOFF;
-Guiding lastGuidingState = GuidingOFF;
+volatile Guiding GuidingState = Guiding::GuidingOFF;
+Guiding lastGuidingState = Guiding::GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
 unsigned long lastSecurityCheck = millis();
 

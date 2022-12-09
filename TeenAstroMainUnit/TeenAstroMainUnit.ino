@@ -1,9 +1,9 @@
 /*
- * Title       On-Step
+ * Title       TeenAstro
  * by          Howard Dutton, Charles Lemaire, Markus Noga, Francois Desvall�e
  *
- * Copyright (C) 2012 to 2016 Howard Dutton
- * Copyright (C) 2016 to 2020 Charles Lemaire, Markus Noga, Francois Desvall�e
+ * Copyright (C) 2012 to 2016 On-Step by Howard Dutton
+ * Copyright (C) 2016 to 2022 TeenAstro by Charles Lemaire, Markus Noga, Francois Desvall�e
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -176,13 +176,15 @@ void setup()
   S_USB.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
   Serial1.begin(57600);
   S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
-  Serial2.setRX(FocuserRX);
-  Serial2.setTX(FocuserTX);
-  Serial2.begin(56000);
-  Serial2.setTimeout(10);
+
+  Focus_Serial.setRX(FocuserRX);
+  Focus_Serial.setTX(FocuserTX);
+  Focus_Serial.begin(56000);
+  Focus_Serial.setTimeout(10);
+
   //GNSS connection
-#if VERSION == 230 || VERSION == 240
-  Serial3.begin(9600);
+#if VERSION == 230 || VERSION == 240 || VERSION == 250
+  GNSS_Serial.begin(9600);
 #endif
 
   rtk.resetLongitude(*localSite.longitude());
@@ -201,24 +203,19 @@ void setup()
   guideRates[2] = val > 0 ? (float)val : DefaultR2;
   val = EEPROM.read(EE_Rate3);
   guideRates[3] = val > 0 ? (float)val : DefaultR3;
-
-  // makes onstep think that you parked the 'scope
-  // combined with a hack in the goto syncEqu() function and you can quickly recover from
-  // a reset without loosing much accuracy in the sky.  PEC is toast though.
-  // set the default guide rate, 16x sidereal
   enableGuideRate(EEPROM.read(EE_DefaultRate));
   delay(10);
 
   // prep timers
   rtk.updateTimers();
-  Serial2.write(":F?#");
+  Focus_Serial.write(":F?#");
   digitalWrite(LEDPin, HIGH);
   delay(1000);
-  hasGNSS = Serial3.available() > 0;
+  hasGNSS = GNSS_Serial.available() > 0;
   char ret;
-  while (Serial2.available() > 0)
+  while (Focus_Serial.available() > 0)
   {
-    ret = Serial2.read();
+    ret = Focus_Serial.read();
     if (ret == '?')
     {
       hasFocuser = true;
@@ -287,8 +284,8 @@ void loop()
         else
         {
           sideralTracking = false;
-          if (guideA1.dir) guideA1.dir = 'b';
-          if (guideA2.dir) guideA2.dir = 'b';
+          guideA1.brake();
+          guideA2.brake();
         }
       }
     }
@@ -496,8 +493,8 @@ void initmount()
     underPoleLimitGOTO = 12;
   
   // initialize some fixed-point values
-  guideA1.amount = 0;
-  guideA2.amount = 0;
+  //guideA1.amount = 0;
+  //guideA2.amount = 0;
 
   staA1.fstep = 0;
   staA2.fstep = 0;

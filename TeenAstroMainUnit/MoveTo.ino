@@ -58,9 +58,9 @@ Again:
   if (abortSlew)
   {
     staA1.breakMove();
-    guideA1.dir = 'b';
+    guideA1.brake();
     staA2.breakMove();
-    guideA2.dir = 'b';
+    guideA2.brake();
     if (parkStatus == PRK_PARKING)
     {
       sideralTracking = lastSideralTracking;
@@ -77,7 +77,6 @@ Again:
   }
 
   // First, for Right Ascension
-  double computed_interval;
   d = distStartAxis1 < distDestAxis1 ? distStartAxis1 : distDestAxis1;
   cli();
   staA1.setIntervalfromDist(d, minInterval1, maxInterval1);

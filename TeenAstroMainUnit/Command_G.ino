@@ -88,13 +88,13 @@ void Command_GX()
       }
       f1 = alignment.polErrorDeg(*localSite.latitude(), request);
       if (!doubleToDms(reply, &f1, false, true, true) || i == 0)
-        strcpy(reply, "0");
+        replyFailed();
       else
         strcat(reply, "#");
       break;
     }
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
     break;
@@ -125,7 +125,7 @@ void Command_GX()
         sprintf(reply, "%d#", (int)backlashA2.movedSteps);
         break;
       default:
-        strcpy(reply, "0");
+        replyFailed();
         break;
       }
       break;
@@ -150,7 +150,7 @@ void Command_GX()
         sprintf(reply, "%f#", (double)staA1.fstep);
         break;
       default:
-        strcpy(reply, "0");
+        replyFailed();
         break;
       }
       break;
@@ -194,7 +194,7 @@ void Command_GX()
         sprintf(reply, "%ld#", staA2.deltaTarget);
         break;
       default:
-        strcpy(reply, "0");
+        replyFailed();
         break;
       }
       break;
@@ -208,12 +208,12 @@ void Command_GX()
         tlp.resetWorstTime();
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
       break;
     }
     break;
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
     break;
@@ -226,7 +226,7 @@ void Command_GX()
       f1 = staA1.pos / geoA1.stepsPerDegree;
       sei();
       if (!doubleToDms(reply, &f1, true, true, highPrecision))
-        strcpy(reply, "0");
+        replyFailed();
       else
         strcat(reply, "#");
       break;
@@ -235,7 +235,7 @@ void Command_GX()
       f1 = staA2.pos / geoA2.stepsPerDegree;
       sei();
       if (!doubleToDms(reply, &f1, true, true, highPrecision))
-        strcpy(reply, "0");
+        replyFailed();
       else
         strcat(reply, "#");
       break;
@@ -255,7 +255,7 @@ void Command_GX()
       doesRefraction.forTracking ? sprintf(reply, "y#") : sprintf(reply, "n#");
       break;
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
     break;
@@ -313,7 +313,7 @@ void Command_GX()
       sprintf(reply, "%ld#", storedTrakingRateDEC);
       break;
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
     break;
@@ -364,7 +364,7 @@ void Command_GX()
       sprintf(reply, "%+02d*#", minAlt);
       break;
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
     break;
@@ -435,6 +435,7 @@ void Command_GX()
   case 'I':
   {
     // :GXI#   Get telescope Status
+    PierSide currentSide = GetPierSide();
     for (i = 0; i < 50; i++)
       reply[i] = ' ';
     i = 0;
@@ -452,12 +453,23 @@ void Command_GX()
     if (GuidingState == GuidingPulse || GuidingState == GuidingST4 ) reply[6] = '*';
     else if (GuidingState == GuidingRecenter) reply[6] = '+';
     else if (GuidingState == GuidingAtRate) reply[6] = '-';
-    if (guideA1.dir == 'e' || guideA1.dir == '+') reply[7] = '>';
-    else if (guideA1.dir == 'w' || guideA1.dir == '-') reply[7] = '<';
-    else if (guideA1.dir == 'b') reply[7] = 'b';
-    if (guideA2.dir == 'n' || guideA2.dir == '+') reply[8] = '^';
-    else if (guideA2.dir == 's' || guideA2.dir == '-') reply[8] = '_';
-    else if (guideA2.dir == 'b') reply[8] = 'b';
+    if ( guideA1.isMFW()) reply[7] = '>';
+    else if ( guideA1.isMBW()) reply[7] = '<';
+    else if (guideA1.isBraking()) reply[7] = 'b';
+    
+    if (currentSide == PIER_WEST)
+    {
+      if (guideA2.isMBW()) reply[8] = '^';
+      else if (guideA2.isMFW()) reply[8] = '_';
+      else if (guideA2.isBraking()) reply[8] = 'b';
+    }
+    else
+    {
+      if (guideA2.isMFW()) reply[8] = '^';
+      else if (guideA2.isMBW()) reply[8] = '_';
+      else if (guideA2.isBraking()) reply[8] = 'b';
+    }
+
     if (staA1.fault || staA2.fault) reply[9] = 'f';
     reply[10] = '0';
     if (isAltAZ())
@@ -493,7 +505,7 @@ void Command_GX()
       reply[12] = 'A';
     else
       reply[12] = 'U';
-    PierSide currentSide = GetPierSide();
+
     if (currentSide == PIER_EAST) reply[13] = 'E';
     if (currentSide == PIER_WEST) reply[13] = 'W';
 
@@ -532,7 +544,7 @@ void Command_GX()
         sprintf(reply, "%d#", backlashA1.inSeconds);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'G':
@@ -547,7 +559,7 @@ void Command_GX()
         sprintf(reply, "%u#", motorA1.gear);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'S':
@@ -562,7 +574,7 @@ void Command_GX()
         sprintf(reply, "%u#", motorA1.stepRot);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'M':
@@ -577,7 +589,7 @@ void Command_GX()
         sprintf(reply, "%u#", (unsigned  int)motorA1.micro);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'm':
@@ -592,7 +604,7 @@ void Command_GX()
         sprintf(reply, "%u#", (unsigned  int)motorA1.silent);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'R':
@@ -607,7 +619,7 @@ void Command_GX()
         sprintf(reply, "%u#", (unsigned  int)motorA1.reverse);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'C':
@@ -622,7 +634,7 @@ void Command_GX()
         sprintf(reply, "%u#", motorA1.highCurr);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'c':
@@ -637,7 +649,7 @@ void Command_GX()
         sprintf(reply, "%u#", (unsigned int)motorA1.lowCurr);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'L':
@@ -654,10 +666,10 @@ void Command_GX()
 
         }
         else
-          strcpy(reply, "0");
+          replyFailed();
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'I':
@@ -672,19 +684,19 @@ void Command_GX()
         {
           sprintf(reply, "%u#", motorA2.driver.getCurrent());
         }
-        else strcpy(reply, "0");
+        else replyFailed();
       }
-      else strcpy(reply, "0");
+      else replyFailed();
     }
     break;
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
   }
   break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }
@@ -704,7 +716,7 @@ void  Command_G()
     //         The current scope altitude
     getHorApp(&f, &f1);
     if (!doubleToDms(reply, &f1, false, true, highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     break;
@@ -714,7 +726,7 @@ void  Command_G()
     i = highPrecision;
     highPrecision = true;
     if (!doubleToHms(reply, rtk.getLT(localSite.toff()), highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     highPrecision = i;
@@ -764,14 +776,14 @@ void  Command_G()
     if (command[1] == 'D')
     {
       if (!doubleToDms(reply, &f1, false, true, highPrecision))
-        strcpy(reply, "0");
+        replyFailed();
       else
         strcat(reply, "#");
     }
     else
     {
       if (!doubleToHms(reply, &f, highPrecision))
-        strcpy(reply, "0");
+        replyFailed();
       else
         strcat(reply, "#");
     }
@@ -781,7 +793,7 @@ void  Command_G()
     //  :Gd#   Get Currently Selected Target Declination, Native LX200 command
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     if (!doubleToDms(reply, &newTargetDec, false, true, highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     break;
@@ -813,7 +825,7 @@ void  Command_G()
     int i = highPrecision;
     highPrecision = command[2] == 'f';
     if (!doubleToDms(reply, localSite.longitude(), true, true, highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     highPrecision = i;
@@ -835,7 +847,7 @@ void  Command_G()
     i = highPrecision;
     highPrecision = true;
     if (!doubleToHms(reply, rtk.getLT(localSite.toff()), highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     highPrecision = i;
@@ -891,7 +903,7 @@ void  Command_G()
     f = newTargetRA;
     f /= 15.0;
     if (!doubleToHms(reply, &f, highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     break;
@@ -903,7 +915,7 @@ void  Command_G()
     highPrecision = true;
     f = rtk.LST();
     if (!doubleToHms(reply, &f, highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     highPrecision = i;
@@ -933,7 +945,7 @@ void  Command_G()
     i = highPrecision;
     highPrecision = command[2] == 'f';
     if (!doubleToDms(reply, localSite.latitude(), false, true, highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     highPrecision = i;
@@ -972,7 +984,7 @@ void  Command_G()
       sprintf(reply, "%d", AxisDriver);
       break;
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
     strcat(reply, "#");
@@ -987,12 +999,12 @@ void  Command_G()
     getHorApp(&f, &f1);
     f = AzRange(f);
     if (!doubleToDms(reply, &f, true, false, highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }

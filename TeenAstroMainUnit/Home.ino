@@ -42,7 +42,7 @@ bool goHome()
   if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return false; // fail, moving to home not allowed if PRK_PARKED
   if (lastError != ERRT_NONE) return false;                                // fail, cannot move if there are errors
   if (movingTo) return false;                      // fail, moving to home not allowed during a move
-  if (guideA1.dir || guideA2.dir) return false;                       // fail, moving to home not allowed while guiding
+  if (guideA1.isBusy() || guideA2.isBusy()) return false;                       // fail, moving to home not allowed while guiding
   cli();
 
   staA1.target = geoA1.homeDef;
@@ -71,17 +71,17 @@ bool syncAtHome()
   newTargetDec = 0;
   newTargetAlt = 0;
   newTargetAzm = 0;
-  lastError = ERRT_NONE;
+  lastError = ErrorsTraking::ERRT_NONE;
   // reset tracking and rates
   staA1.resetToSidereal();
   staA2.resetToSidereal();
-  parkStatus = PRK_UNPARKED;
+  parkStatus = ParkState::PRK_UNPARKED;
   XEEPROM.update(EE_parkStatus, parkStatus);
   // clear pulse-guiding state
-  guideA1.dir = 0;
+  guideA1.setIdle();
   guideA1.duration = 0;
   guideA1.durationLast = 0;
-  guideA2.dir = 0;
+  guideA2.setIdle();
   guideA2.duration = 0;
   guideA2.durationLast = 0;
   // update starting coordinates to reflect NCP or SCP polar home position
