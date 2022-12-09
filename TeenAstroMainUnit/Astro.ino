@@ -164,7 +164,7 @@ void SetRates(double maxslewrate)
   guideRates[4] = maxslewCorrected;
   if (guideRates[3] >= maxslewCorrected)
   {
-    guideRates[3] = 64;
+    guideRates[3] = maxslewCorrected/2;
     XEEPROM.write(EE_Rate3, guideRates[3]);
   }
   resetGuideRate();
