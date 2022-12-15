@@ -94,7 +94,7 @@ double std_dev(double* val, int nval)
 
 bool isLocationSyncWithGNSS()
 {
-  char text[128]:
+
   static int i = 0;
   static unsigned long t1 = 0;
   static bool lastreply = false;
