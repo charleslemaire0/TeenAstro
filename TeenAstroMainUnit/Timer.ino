@@ -38,7 +38,7 @@ void SetsiderealClockSpeed(double cs)
   isrIntervalAxis2 = 0;
 }
 
-#ifdef ARDUINO_TEENSY40 // F_BUS is not defined. Looking in Core 24000000 is used to convert µsec in timer ticks
+#if defined(ARDUINO_TEENSY40) || defined(ARDUINO_TEENSY_MICROMOD) // F_BUS is not defined. Looking in Core 24000000 is used to convert µsec in timer ticks
 	#ifndef F_BUS
 	#define F_BUS 24000000
 	#endif
