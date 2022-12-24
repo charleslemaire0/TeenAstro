@@ -174,8 +174,13 @@ void setup()
   // get ready for serial communications
   Serial.begin(BAUD);
   S_USB.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
+#ifdef ARDUINO_TEENSY_MICROMOD
+  Serial4.begin(57600);
+  S_SHC.attach_Stream((Stream *)&Serial4, COMMAND_SERIAL1);
+#else
   Serial1.begin(57600);
   S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
+#endif
 
   Focus_Serial.setRX(FocuserRX);
   Focus_Serial.setTX(FocuserTX);
@@ -183,7 +188,7 @@ void setup()
   Focus_Serial.setTimeout(10);
 
   //GNSS connection
-#if VERSION == 230 || VERSION == 240 || VERSION == 250
+#if VERSION != 220
   GNSS_Serial.begin(9600);
 #endif
 

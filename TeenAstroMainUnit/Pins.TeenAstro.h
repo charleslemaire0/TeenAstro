@@ -140,3 +140,47 @@
 #define MaxLED          16
 #endif
 
+
+#if VERSION == 298   // teensy micromod, beta board by lordzurp
+
+#define Focus_Serial Serial3
+#define GNSS_Serial  Serial2
+
+#ifndef AxisDriver
+#define AxisDriver      4                 // Select your driver 2 for the TMC2130, 3 for the TMC5160, 4 for the TMC2660
+#endif
+
+#define Axis1StepPin    32               // Pin 6 (Step)
+#define Axis1DirPin     26               // Pin 5 (Dir)
+#define Axis1CSPin      9               // Pin 3 (CS)
+#define Axis1EnablePin  6               // Pin 4 (enable)
+
+#define Axis2StepPin    35              // Pin 22 (Step)
+#define Axis2DirPin     34              // Pin 21 (Dir)
+#define Axis2CSPin      38              // Pin 23 (CS)
+#define Axis2EnablePin  39              // Pin 20 (enable)
+
+#define Axis1Reverse    1
+#define Axis2Reverse    1
+
+// Pin 11 12 13 are used!! for SPI
+
+//Focuser Interface
+#define FocuserRX       15
+#define FocuserTX       14
+
+// LED interface
+#define LEDPin          27
+#define MaxLED          16
+
+// Unused pins
+// ST4 interface
+#define ST4RAe          40                // ST4 REast
+#define ST4DEs          41                // ST4 South
+#define ST4DEn          42                // ST4 North
+#define ST4RAw          43                // ST4 West
+
+#define RETICULE_LED_PINS 28
+#define PPS             10
+#endif
+
