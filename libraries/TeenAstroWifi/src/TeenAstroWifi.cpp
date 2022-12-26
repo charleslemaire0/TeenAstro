@@ -78,23 +78,17 @@ IPAddress TeenAstroWifi::wifi_ap_sn = IPAddress(255, 255, 255, 0);
 WiFiServer TeenAstroWifi::cmdSvr = WiFiServer(9999);
 WiFiClient TeenAstroWifi::cmdSvrClient;
 
-#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
+#ifdef ARDUINO_ARCH_ESP8266
 ESP8266WebServer TeenAstroWifi::server;
 ESP8266WebServer httpServer(80);
 ESP8266HTTPUpdateServer httpUpdater;
 #endif 
-#ifdef ARDUINO_D1_MINI32
-WebServer TeenAstroWifi::server;
-WebServer server(80);
-#endif
 
-#ifdef ARDUINO_ESP32_DEV
+#ifdef ARDUINO_ARCH_ESP32
 WebServer TeenAstroWifi::server;
 WebServer server(80);
 HTTPUpdateServer httpUpdater;
-#endif 
-
-
+#endif
 
 // -----------------------------------------------------------------------------------
 // EEPROM related functions
