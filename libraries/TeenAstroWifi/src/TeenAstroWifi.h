@@ -18,6 +18,12 @@
 #define ESP8266
 #endif
 
+#ifdef ARDUINO_ESP32_DEV
+#include <WiFi.h>
+#include <WebServer.h>
+#include <WiFiAP.h>
+#include <HTTPUpdateServer.h>
+#endif
 
 #include <EEPROM.h>
 #include <WiFiClient.h>
@@ -122,6 +128,11 @@ class TeenAstroWifi
 #ifdef ARDUINO_D1_MINI32
   static WebServer server;
 #endif
+
+#ifdef ARDUINO_ESP32_DEV
+  static WebServer server;
+#endif
+
 
   static WiFiServer cmdSvr;
   static WiFiClient cmdSvrClient;

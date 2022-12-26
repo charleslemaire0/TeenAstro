@@ -86,8 +86,16 @@ ESP8266HTTPUpdateServer httpUpdater;
 #ifdef ARDUINO_D1_MINI32
 WebServer TeenAstroWifi::server;
 WebServer server(80);
-
 #endif
+
+#ifdef ARDUINO_ESP32_DEV
+WebServer TeenAstroWifi::server;
+WebServer server(80);
+HTTPUpdateServer httpUpdater;
+#endif 
+
+
+
 // -----------------------------------------------------------------------------------
 // EEPROM related functions
 

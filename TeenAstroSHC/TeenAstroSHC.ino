@@ -43,6 +43,12 @@ void setup(void)
   HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309, 2);
 return;
 #endif
+
+#ifdef ARDUINO_ESP32_DEV
+  HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309, 2);
+return;
+#endif
+#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
   int value = analogRead(A0);
   if (value< 191)       //0.616129032V
   {
@@ -72,7 +78,7 @@ return;
   {
     //empty
   }
-    
+#endif    
 }
 
 void loop()
