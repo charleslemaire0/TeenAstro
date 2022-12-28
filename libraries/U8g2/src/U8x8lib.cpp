@@ -38,27 +38,12 @@
 
 
 #include "U8x8lib.h"
-
-#ifdef ARDUINO
-
 #ifdef U8X8_HAVE_HW_SPI
 #include <SPI.h>
 #endif 
-
 #ifdef U8X8_HAVE_HW_I2C
-#  ifdef U8X8_HAVE_HW_I2C_TEENSY3
-#    include <i2c_t3.h>
-#  else
-#    include <Wire.h>
-#    ifdef U8X8_HAVE_2ND_HW_I2C
-#      if defined(MINICORE) && defined(__AVR_ATmega328PB__)
-#        include <Wire1.h>
-#      endif
-#    endif
-#  endif
-#endif /* U8X8_HAVE_HW_I2C */
-
-#endif /* ARDUINO */ 
+#include <Wire.h>
+#endif
 
 
 
@@ -87,7 +72,6 @@ size_t U8X8::write(uint8_t v)
 /*=============================================*/
 /*=== ARDUINO GPIO & DELAY ===*/
 
-#ifdef ARDUINO
 #ifdef U8X8_USE_PINS
 extern "C" uint8_t u8x8_gpio_and_delay_arduino(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, U8X8_UNUSED void *arg_ptr)
 {
@@ -217,7 +201,7 @@ extern "C" uint8_t u8x8_gpio_and_delay_arduino(u8x8_t *u8x8, uint8_t msg, uint8_
 
 #elif __AVR_ARCH__ == 4 || __AVR_ARCH__ == 5 || __AVR_ARCH__ == 51 || __AVR_ARCH__ == 6 || __AVR_ARCH__ == 103
 
-/* this function completely replaces u8x8_byte_4wire_sw_spi*/
+/* this function completly replaces u8x8_byte_4wire_sw_spi*/
 extern "C" uint8_t u8x8_byte_arduino_3wire_sw_spi(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr)
 {
   uint8_t i;
@@ -401,7 +385,7 @@ extern "C" uint8_t u8x8_byte_arduino_3wire_sw_spi(u8x8_t *u8x8, uint8_t msg, uin
 
 #elif __AVR_ARCH__ == 4 || __AVR_ARCH__ == 5 || __AVR_ARCH__ == 51 || __AVR_ARCH__ == 6 || __AVR_ARCH__ == 103
 
-/* this function completely replaces u8x8_byte_4wire_sw_spi*/
+/* this function completly replaces u8x8_byte_4wire_sw_spi*/
 extern "C" uint8_t u8x8_byte_arduino_4wire_sw_spi(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr)
 {
   uint8_t SREG_backup;
@@ -547,7 +531,7 @@ extern "C" uint8_t u8x8_byte_arduino_4wire_sw_spi(u8x8_t *u8x8, uint8_t msg, uin
 
 #elif defined(__SAM3X8E__) 		/* Arduino DUE */
 
-/* this function completely replaces u8x8_byte_4wire_sw_spi*/
+/* this function completly replaces u8x8_byte_4wire_sw_spi*/
 extern "C" uint8_t u8x8_byte_arduino_4wire_sw_spi(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr)
 {
   uint8_t i, b;
@@ -1331,7 +1315,7 @@ extern "C" uint8_t u8x8_byte_arduino_hw_i2c(U8X8_UNUSED u8x8_t *u8x8, U8X8_UNUSE
       if ( u8x8->pins[U8X8_PIN_I2C_CLOCK] != U8X8_PIN_NONE && u8x8->pins[U8X8_PIN_I2C_DATA] != U8X8_PIN_NONE )
       {
 	// second argument for the wire lib is the clock pin. In u8g2, the first argument of the  clock pin in the clock/data pair
-	Wire.begin((int)u8x8->pins[U8X8_PIN_I2C_DATA] , u8x8->pins[U8X8_PIN_I2C_CLOCK]);
+	Wire.begin(u8x8->pins[U8X8_PIN_I2C_DATA] , u8x8->pins[U8X8_PIN_I2C_CLOCK]);
       }
       else
       {
@@ -1346,11 +1330,8 @@ extern "C" uint8_t u8x8_byte_arduino_hw_i2c(U8X8_UNUSED u8x8_t *u8x8, U8X8_UNUSE
     case U8X8_MSG_BYTE_START_TRANSFER:
 #if ARDUINO >= 10600
       /* not sure when the setClock function was introduced, but it is there since 1.6.0 */
-      /* if there is any error with Wire.setClock() just remove this function call by */
-      /* defining U8X8_DO_NOT_SET_WIRE_CLOCK */
-#ifndef U8X8_DO_NOT_SET_WIRE_CLOCK
-      Wire.setClock(u8x8->bus_clock);
-#endif 
+      /* if there is any error with Wire.setClock() just remove this function call */
+      Wire.setClock(u8x8->bus_clock); 
 #endif
       Wire.beginTransmission(u8x8_GetI2CAddress(u8x8)>>1);
       break;
@@ -1382,11 +1363,8 @@ extern "C" uint8_t u8x8_byte_arduino_2nd_hw_i2c(U8X8_UNUSED u8x8_t *u8x8, U8X8_U
     case U8X8_MSG_BYTE_START_TRANSFER:
 #if ARDUINO >= 10600
       /* not sure when the setClock function was introduced, but it is there since 1.6.0 */
-      /* if there is any error with Wire.setClock() just remove this function call by */
-      /* defining U8X8_DO_NOT_SET_WIRE_CLOCK */
-#ifndef U8X8_DO_NOT_SET_WIRE_CLOCK
+      /* if there is any error with Wire.setClock() just remove this function call */
       Wire1.setClock(u8x8->bus_clock); 
-#endif
 #endif
       Wire1.beginTransmission(u8x8_GetI2CAddress(u8x8)>>1);
       break;
@@ -1660,7 +1638,6 @@ extern "C" uint8_t u8x8_byte_arduino_ks0108(u8x8_t *u8x8, uint8_t msg, uint8_t a
 }
   
 #endif
-#endif /*ARDUINO*/
 
 
 
