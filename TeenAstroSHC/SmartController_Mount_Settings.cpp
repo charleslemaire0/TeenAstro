@@ -281,11 +281,17 @@ void SmartHandController::menuMountType()
   {
     char out[10];
     sprintf(out, ":S!%u#", tmp_sel);
-    DisplayMessageLX200(SetLX200(out), false);
-    delay(1000);
-    Serial.end();
-    exitMenu = true;
-    powerCycleRequired = true;
+    LX200RETURN answ = SetLX200(out);
+
+    DisplayMessageLX200(answ, false);
+    if (answ == LX200_VALUESET)
+    {
+      delay(1000);
+      Serial.end();
+      exitMenu = true;
+      powerCycleRequired = true;
+    }
+
   }
 }
 
