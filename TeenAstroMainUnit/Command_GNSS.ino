@@ -138,6 +138,7 @@ void Command_GNSS()
 
   switch (command[1])
   {
+    // :gs# full sync with GNSS
   case 's':
     if (iSGNSSValid())
     {
@@ -160,6 +161,7 @@ void Command_GNSS()
     else
       replyFailed();
     break;
+    // :gt# time sync with GNSS
   case 't':
     if (iSGNSSValid())
     {
