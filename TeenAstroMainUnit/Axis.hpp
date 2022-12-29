@@ -294,12 +294,19 @@ class MotorAxis
 {
 public:
   unsigned int gear;
+  bool isGearFix;
   unsigned int stepRot;
+  bool isStepRotFix;
   byte micro;
+  bool isMicroFix;
   bool reverse;
+  bool isReverseFix;
   bool silent;
+  bool isSilentFix;
   unsigned int highCurr; //in mA
+  bool isHighCurrfix;
   unsigned int lowCurr; //in mA
+  bool isLowCurrfix;
   Driver driver;
   void initMotor(Driver::MOTORDRIVER useddriver, int EnPin, int CSPin, int DirPin, int StepPin)
   {

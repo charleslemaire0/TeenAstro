@@ -155,14 +155,14 @@ void Command_SX()
       break;
     case 'e':
       // :SXRe,VVVVVVVVVV# Store Rate for RA
-      lval = strtol(&command[5], NULL, 10) ;
+      lval = strtol(&command[5], NULL, 10);
       storedTrakingRateRA = lval < -50000 || lval > 50000 ? 0 : lval;
       XEEPROM.writeLong(EE_RA_Drift, storedTrakingRateRA);
       replyOk();
       break;
     case 'f':
       // :SXRf,VVVVVVVVVV# Store Rate for DEC
-      lval = strtol(&command[5], NULL, 10) ;
+      lval = strtol(&command[5], NULL, 10);
       storedTrakingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
       XEEPROM.writeLong(EE_DEC_Drift, storedTrakingRateDEC);
       replyOk();
@@ -341,117 +341,160 @@ void Command_SX()
     {
       // :SXMGn,VVVV# Set Gear
       int i;
+      bool ok = false;
       if ((command[4] == 'D' || command[4] == 'R')
         && strlen(&command[6]) > 1 && strlen(&command[6]) < 11
         && atoi2(&command[6], &i))
       {
         if (command[4] == 'D')
         {
-          double fact = (double)i / motorA2.gear;
-          cli();
-          staA2.pos = fact * staA2.pos;
-          sei();
-          StopAxis2();
-          motorA2.gear = (unsigned int)i;
-          XEEPROM.writeInt(EE_motorA2gear, i);
+          if (!motorA2.isGearFix)
+          {
+            double fact = (double)i / motorA2.gear;
+            cli();
+            staA2.pos = fact * staA2.pos;
+            sei();
+            StopAxis2();
+            motorA2.gear = (unsigned int)i;
+            XEEPROM.writeInt(EE_motorA2gear, i);
+            ok = true;
+          }
         }
         else
         {
-          double fact = (double)i / motorA1.gear;
-          cli();
-          staA1.pos = fact * staA1.pos;
-          sei();
-          StopAxis1();
-          motorA1.gear = (unsigned int)i;
-          XEEPROM.writeInt(EE_motorA1gear, i);
+          if (!motorA1.isGearFix)
+          {
+            double fact = (double)i / motorA1.gear;
+            cli();
+            staA1.pos = fact * staA1.pos;
+            sei();
+            StopAxis1();
+            motorA1.gear = (unsigned int)i;
+            XEEPROM.writeInt(EE_motorA1gear, i);
+            ok = true;
+          }
         }
+      }
+      if (ok)
+      {
         updateRatios(true, true);
-
         replyOk();
       }
       else
+      {
         replyFailed();
+      }
     }
     break;
     case 'S':
     {
       // :SXMBn,VVVV# Set Step per Rotation
       int i;
+      bool ok = false;
       if ((command[4] == 'D' || command[4] == 'R')
         && (strlen(&command[6]) > 1) && (strlen(&command[6]) < 11)
         && atoi2((char*)&command[6], &i))
       {
         if (command[4] == 'D')
         {
-          double fact = (double)i / motorA2.stepRot;
-          cli();
-          staA2.pos = fact * staA2.pos;
-          sei();
-          StopAxis2();
-          motorA2.stepRot = (unsigned int)i;
-          XEEPROM.writeInt(EE_motorA2stepRot, i);
+          if (!motorA2.isStepRotFix)
+          {
+            double fact = (double)i / motorA2.stepRot;
+            cli();
+            staA2.pos = fact * staA2.pos;
+            sei();
+            StopAxis2();
+            motorA2.stepRot = (unsigned int)i;
+            XEEPROM.writeInt(EE_motorA2stepRot, i);
+            ok = true;
+          }
         }
         else
         {
-          double fact = (double)i / motorA1.stepRot;
-          cli();
-          staA1.pos = fact * staA1.pos;
-          sei();
-          StopAxis1();
-          motorA1.stepRot = (unsigned int)i;
-          XEEPROM.writeInt(EE_motorA1stepRot, i);
+          if (!motorA1.isStepRotFix)
+          {
+            double fact = (double)i / motorA1.stepRot;
+            cli();
+            staA1.pos = fact * staA1.pos;
+            sei();
+            StopAxis1();
+            motorA1.stepRot = (unsigned int)i;
+            XEEPROM.writeInt(EE_motorA1stepRot, i);
+            ok = true;
+          }
         }
+       
+      }
+      if (ok)
+      {
         updateRatios(true, true);
-
         replyOk();
       }
       else
+      {
         replyFailed();
+      }
     }
     break;
     case 'M':
     {
-      // :SXMMnV# Set Microstep
+      // :SXMMn,V# Set Microstep
       // for example :GRXMMR3# for 1/8 microstep on the first axis 
       int i;
+      bool ok = false;
       if ((command[4] == 'D' || command[4] == 'R')
         && strlen(&command[6]) == 1
         && atoi2(&command[6], &i)
         && ((i >= 1) && (i < 9)))
       {
         if (command[4] == 'D')
-        {
-          double fact = pow(2., i - motorA2.micro);
-          cli();
-          staA2.pos = fact * staA2.pos;
-          sei();
-          StopAxis2();
-          motorA2.micro = i;
-          motorA2.driver.setMicrostep(motorA2.micro);;
-          XEEPROM.write(EE_motorA2micro, motorA2.micro);
+        { 
+          if (!motorA2.isMicroFix)
+          {
+            double fact = pow(2., i - motorA2.micro);
+            cli();
+            staA2.pos = fact * staA2.pos;
+            sei();
+            StopAxis2();
+            motorA2.micro = i;
+            motorA2.driver.setMicrostep(motorA2.micro);;
+            XEEPROM.write(EE_motorA2micro, motorA2.micro);
+            ok = true;
+          }
         }
         else
         {
-          double fact = pow(2., i - motorA1.micro);
-          cli();
-          staA1.pos = fact * staA1.pos;
-          sei();
-          StopAxis1();
-          motorA1.micro = i;
-          motorA1.driver.setMicrostep(motorA1.micro);
-          XEEPROM.write(EE_motorA1micro, motorA1.micro);
+          if (!motorA1.isMicroFix)
+          {
+            double fact = pow(2., i - motorA1.micro);
+            cli();
+            staA1.pos = fact * staA1.pos;
+            sei();
+            StopAxis1();
+            motorA1.micro = i;
+            motorA1.driver.setMicrostep(motorA1.micro);
+            XEEPROM.write(EE_motorA1micro, motorA1.micro);
+            ok = true;
+          }
         }
+      }
+      if (ok)
+      {
         updateRatios(true, false);
         replyOk();
       }
-      else replyFailed();
+      else
+      {
+        replyFailed();
+      }
     }
     break;
     case 'm':
     {
-      // :SXMmnV# Set coolstep Stepper Mode
+      // :SXMmn,V# Set coolstep Stepper Mode
      // for example :GRXMmR1# for cool step on the first axis 
       int i;
+      bool ok = false;
       if ((command[4] == 'D' || command[4] == 'R')
         && strlen(&command[6]) == 1
         && atoi2(&command[6], &i)
@@ -459,78 +502,110 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
+          if (!motorA2.isSilentFix)
+          {
           //motorA2.driver.setmode(i);
-          XEEPROM.write(EE_motorA2silent, i);
+            XEEPROM.write(EE_motorA2silent, i);
+            ok = true;
+          }
+
         }
         else
         {
+          if (!motorA1.isSilentFix)
+          {
           //motorA1.driver.setmode(i);
-          XEEPROM.write(EE_motorA1silent, i);
+            XEEPROM.write(EE_motorA1silent, i);
+            ok = true;
+          }
         }
-        replyOk();
       }
-      else replyFailed();
+      ok ? replyOk() : replyFailed();
     }
     break;
     case 'R':
     {
-      // :SXMRnV# Set Reverse rotation
+      // :SXMRn,V# Set Reverse rotation
+      bool ok = false;
       if ((command[4] == 'D' || command[4] == 'R')
         && strlen(&command[6]) == 1
         && (command[6] == '0' || command[6] == '1'))
       {
         if (command[4] == 'D')
         {
-          motorA2.reverse = command[6] == '1' ? true : false;
-          XEEPROM.write(EE_motorA2reverse, motorA2.reverse);
+          if (!motorA2.isReverseFix)
+          {
+            motorA2.reverse = command[6] == '1' ? true : false;
+            XEEPROM.write(EE_motorA2reverse, motorA2.reverse);
+            ok = true;
+          }
         }
         else
         {
-          motorA1.reverse = command[6] == '1' ? true : false;
-          XEEPROM.write(EE_motorA1reverse, motorA1.reverse);
+          if (!motorA1.isReverseFix)
+          {
+            motorA1.reverse = command[6] == '1' ? true : false;
+            XEEPROM.write(EE_motorA1reverse, motorA1.reverse);
+            ok = true;
+          }
         }
-        replyOk();
       }
-      else
-        replyFailed();
+      ok ? replyOk() : replyFailed();
     }
     break;
     case 'c':
     case 'C':
     {
       // :SXMRn# Set Current
-      unsigned int curr = (unsigned int)(strtol(&command[6], NULL, 10)/100)*100;
-      if (((curr >= 100) && (curr <= 2800)))
+      unsigned int curr = (unsigned int)(strtol(&command[6], NULL, 10) / 100) * 100;
+      bool ok = false;
+      if (curr >= 100 && curr <= 2800)
       {
         if (command[4] == 'D')
         {
           if (command[3] == 'C')
           {
-            motorA2.highCurr = curr;
-            XEEPROM.write(EE_motorA2highCurr, motorA2.highCurr / 100);
+            if (!motorA2.isHighCurrfix)
+            {
+              motorA2.highCurr = curr;
+              XEEPROM.write(EE_motorA2highCurr, motorA2.highCurr / 100);
+              ok = true;
+            }
           }
           else
           {
-            motorA2.lowCurr = curr;
-            XEEPROM.write(EE_motorA2lowCurr, motorA2.lowCurr / 100);
-            motorA2.driver.setCurrent((unsigned int)motorA2.lowCurr);
+            if (!motorA2.isLowCurrfix)
+            {
+              motorA2.lowCurr = curr;
+              XEEPROM.write(EE_motorA2lowCurr, motorA2.lowCurr / 100);
+              motorA2.driver.setCurrent((unsigned int)motorA2.lowCurr);
+              ok = true;
+            }
           }
         }
         else if (command[4] == 'R')
         {
           if (command[3] == 'C')
           {
-            motorA1.highCurr = curr;
-            XEEPROM.write(EE_motorA1highCurr, motorA1.highCurr / 100);
+            if (!motorA1.isHighCurrfix)
+            {
+              motorA1.highCurr = curr;
+              XEEPROM.write(EE_motorA1highCurr, motorA1.highCurr / 100);
+              ok = true;
+            }
           }
           else
           {
-            motorA1.lowCurr = curr;
-            XEEPROM.write(EE_motorA1lowCurr, motorA1.lowCurr / 100);
-            motorA1.driver.setCurrent((unsigned int)motorA1.lowCurr);
+            if (!motorA1.isLowCurrfix)
+            {
+              motorA1.lowCurr = curr;
+              XEEPROM.write(EE_motorA1lowCurr, motorA1.lowCurr / 100);
+              motorA1.driver.setCurrent((unsigned int)motorA1.lowCurr);
+              ok = true;
+            }
           }
         }
-        replyOk();
+        ok ? replyOk() : replyFailed();
       }
       else replyFailed();
     }
@@ -580,9 +655,12 @@ void Command_S(Command& process_command)
 
   switch (command[1])
   {
+    //  :S!n#
+    //         Set The Mount Type
+    //         Return Nothing As it force a reboot
   case '!':
     i = (int)(command[2] - '0');
-    if (i > 0 && i < 5)
+    if (i > 0 && i < 5 && !isMountTypeFix)
     {
       XEEPROM.write(EE_mountType, i);
       if (!atHome)
@@ -593,16 +671,16 @@ void Command_S(Command& process_command)
       {
         Serial.end();
         Serial1.end();
-      GNSS_Serial.end();
-      Focus_Serial.end();
+        GNSS_Serial.end();
+        Focus_Serial.end();
         delay(1000);
 #ifdef ARDUINO_TEENSY40 // In fact this code is suitable for Teensy 3.2 also
 #define CPU_RESTART_ADDR (uint32_t *)0xE000ED0C
 #define CPU_RESTART_VAL 0x5FA0004
 #define CPU_RESTART (*CPU_RESTART_ADDR = CPU_RESTART_VAL); 
-	CPU_RESTART;
+        CPU_RESTART;
 #else
-    _reboot_Teensyduino_();
+        _reboot_Teensyduino_();
 #endif
       }
     }
@@ -782,7 +860,7 @@ void Command_S(Command& process_command)
       else if (command[2] == 'W')
       {
         newTargetPierSide = PIER_WEST;
-        replyOk(); 
+        replyOk();
       }
       else replyFailed();
     }

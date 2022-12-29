@@ -456,10 +456,26 @@ void enable_Axis(bool enable)
 
 void initmount()
 {
-  byte val = XEEPROM.read(EE_mountType);
   long lval = 0;
+  byte val = 0;
+#ifdef D_mountType
+  mountType = static_cast<Mount>(D_mountType);
+  isMountTypeFix = true;
+#else
+  val = XEEPROM.read(EE_mountType);
+  if (val < 1 || val >  4)
+  {
+    XEEPROM.write(EE_mountType, MOUNT_TYPE_GEM);
+    mountType = MOUNT_TYPE_GEM;
+  }
+  else
+  {
+    mountType = static_cast<Mount>(val);
+  }
+  isMountTypeFix = false;
+#endif
 
-  mountType = val < 1 || val >  4 ? MOUNT_TYPE_GEM : static_cast<Mount>(val);
+
 
   if (mountType == MOUNT_TYPE_GEM)
     meridianFlip = FLIP_ALWAYS;
@@ -598,65 +614,158 @@ void initmotor(bool deleteAlignment)
   motorA2.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin);
 }
 
+
 void readEEPROMmotor()
 {
   backlashA1.inSeconds = XEEPROM.readInt(EE_backlashAxis1);
   backlashA1.movedSteps = 0;
-  motorA1.gear = XEEPROM.readInt(EE_motorA1gear);
-  motorA1.stepRot = XEEPROM.readInt(EE_motorA1stepRot);
+  backlashA2.inSeconds = XEEPROM.readInt(EE_backlashAxis2);
+  backlashA2.movedSteps = 0;
 
+  //AXIS 1
+#ifdef D_motorA1gear
+  motorA1.gear = D_motorA1gear;
+  motorA1.isGearFix = true;
+#else
+  motorA1.gear = XEEPROM.readInt(EE_motorA1gear);
+  motorA1.isGearFix = false;
+#endif
+
+#ifdef D_motorA1stepRot
+  motorA1.stepRot = D_motorA1stepRot;
+  motorA1.isStepRotFix = true;
+#else
+  motorA1.stepRot = XEEPROM.readInt(EE_motorA1stepRot);
+  motorA1.isStepRotFix = false;
+#endif 
+
+#ifdef D_motorA1micro
+  motorA1.micro = D_motorA1micro;
+  motorA1.isMicroFix = true;
+#else
   motorA1.micro = XEEPROM.read(EE_motorA1micro);
   if (motorA1.micro > 8 || motorA1.micro < 1)
   {
     motorA1.micro = 4;
     XEEPROM.update(EE_motorA1micro, 4u);
   }
+  motorA1.isMicroFix = false;
+#endif
 
+#ifdef D_motorA1reverse
+  motorA1.reverse = D_motorA1reverse;
+  motorA1.isReverseFix = true;
+#else
   motorA1.reverse = XEEPROM.read(EE_motorA1reverse);
+  motorA1.isReverseFix = false;
+#endif 
 
+#ifdef D_motorA1lowCurr
+  motorA1.lowCurr = D_motorA1lowCurr;
+  motorA1.isLowCurrfix = true;
+#else
   motorA1.lowCurr = (unsigned int)XEEPROM.read(EE_motorA1lowCurr) * 100;
   if (motorA1.lowCurr > 2800u || motorA1.lowCurr < 200u)
   {
     motorA1.lowCurr = 1000u;
     XEEPROM.write(EE_motorA1lowCurr, 10u);
   }
+  motorA1.isLowCurrfix = false;
+#endif 
 
+#ifdef D_motorA1highCurr
+  motorA1.highCurr = D_motorA1highCurr;
+  motorA1.isHighCurrfix = true;
+#else
   motorA1.highCurr = (unsigned int)XEEPROM.read(EE_motorA1highCurr) * 100;
   if (motorA1.highCurr > 2800u || motorA1.highCurr < 200u)
   {
     motorA1.highCurr = 1000u;
     XEEPROM.write(EE_motorA1highCurr, 10u);
   }
+  motorA1.isHighCurrfix = false;
+#endif
 
+#ifdef D_motorA1silent
+  motorA1.silent = D_motorA1silent;
+  motorA1.isSilentFix = true;
+#else
   motorA1.silent = XEEPROM.read(EE_motorA1silent);
+  motorA1.isSilentFix = false;
+#endif
 
-  backlashA2.inSeconds = XEEPROM.readInt(EE_backlashAxis2);
-  backlashA2.movedSteps = 0;
+ //AXIS 2
+#ifdef D_motorA2gear
+  motorA2.gear = D_motorA2gear;
+  motorA2.isGearFix = true;
+#else
   motorA2.gear = XEEPROM.readInt(EE_motorA2gear);
+  motorA2.isGearFix = false;
+#endif
+
+#ifdef D_motorA2stepRot
+  motorA2.stepRot = D_motorA2stepRot;
+  motorA2.isStepRotFix = true;
+#else
   motorA2.stepRot = XEEPROM.readInt(EE_motorA2stepRot);
+  motorA2.isStepRotFix = false;
+#endif 
+
+#ifdef D_motorA2micro
+  motorA2.micro = D_motorA2micro;
+  motorA2.isMicroFix = true;
+#else
   motorA2.micro = XEEPROM.read(EE_motorA2micro);
   if (motorA2.micro > 8 || motorA2.micro < 1)
   {
     motorA2.micro = 4;
-    XEEPROM.update(EE_motorA2micro, 4);
+    XEEPROM.update(EE_motorA2micro, 4u);
   }
-  motorA2.reverse = XEEPROM.read(EE_motorA2reverse);
+  motorA2.isMicroFix = false;
+#endif
 
+#ifdef D_motorA2reverse
+  motorA2.reverse = D_motorA2reverse;
+  motorA2.isReverseFix = true;
+#else
+  motorA2.reverse = XEEPROM.read(EE_motorA2reverse);
+  motorA2.isReverseFix = false;
+#endif 
+
+#ifdef D_motorA2lowCurr
+  motorA2.lowCurr = D_motorA2lowCurr;
+  motorA2.isLowCurrfix = true;
+#else
   motorA2.lowCurr = (unsigned int)XEEPROM.read(EE_motorA2lowCurr) * 100;
   if (motorA2.lowCurr > 2800u || motorA2.lowCurr < 200u)
   {
     motorA2.lowCurr = 1000u;
     XEEPROM.write(EE_motorA2lowCurr, 10u);
   }
+  motorA2.isLowCurrfix = false;
+#endif 
 
+#ifdef D_motorA2highCurr
+  motorA2.highCurr = D_motorA2highCurr;
+  motorA2.isHighCurrfix = true;
+#else
   motorA2.highCurr = (unsigned int)XEEPROM.read(EE_motorA2highCurr) * 100;
   if (motorA2.highCurr > 2800u || motorA2.highCurr < 200u)
   {
     motorA2.highCurr = 1000u;
     XEEPROM.write(EE_motorA2highCurr, 10u);
   }
+  motorA2.isHighCurrfix = false;
+#endif
 
+#ifdef D_motorA2silent
+  motorA2.silent = D_motorA2silent;
+  motorA2.isSilentFix = true;
+#else
   motorA2.silent = XEEPROM.read(EE_motorA2silent);
+  motorA2.isSilentFix = false;
+#endif
+
 }
 
 void writeDefaultEEPROMmotor()

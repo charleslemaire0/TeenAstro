@@ -971,6 +971,10 @@ void  Command_G()
       //  :GVP#   Get Firmware Name, Native LX200 command
       strcpy(reply, FirmwareName);
       break;
+    case 'p':
+      //  :GVp#   Get Firmware SubName
+      strcpy(reply, FirmwareSubName);
+      break;
     case 'T':
       //  :GVT#   Get Firmware Time, Native LX200 command
       strcpy(reply, FirmwareTime);

@@ -18,3 +18,11 @@
 #define BacklashTakeupRate        16 // backlash takeup rate (in multipules of the sidereal rate): too fast and your motors will stall,
                                      // too slow and the mount will be sluggish while it moves through the backlash
                                      // for the most part this doesn't need to be changed, but adjust when needed.  Default=25
+
+#ifdef MOUNT_TEMPLATE
+#include "Config.Mount.Template.h"
+#else
+#include "Config.Mount.Universal.h"
+#endif
+
+
