@@ -149,7 +149,7 @@ bool highPrecision = true;
 volatile bool movingTo = false;
 
 bool doSpiral = false;
-
+double SpiralFOV = 1;
 // Tracking
 #define TrackingStar  1
 #define TrackingSolar 0.99726956632
