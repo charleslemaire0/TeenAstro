@@ -38,7 +38,7 @@ static void MoveAxisAtRate(GuideAxis* guideA, StatusAxis* staA, const double new
   bool canMove = parkStatus == PRK_UNPARKED;
   canMove &= lastError == ERRT_NONE;
   canMove &= !movingTo;
-  canMove &= (GuidingState == GuidingOFF || GuidingState == GuidingAtRate);
+  canMove &= (GuidingState == GuidingOFF || GuidingState == GuidingAtRate ) ;
   if (canMove)
   {
     if (newrate == 0)
@@ -125,52 +125,99 @@ void CheckEndOfMoveAxisAtRate()
 
 void CheckSpiral()
 {
-  static int iteration = 0;
+  // the spiral is a virtual moving object on the sky at a certain RA DEC rate
+  static bool startPointDefined = false;
+  static CoordConv helper;
+  static unsigned long clk_ini, clk_last, clk_now;
+
   if (!doSpiral)
   {
-    if (iteration != 0)
-      iteration = 0;
+    //reset startPointDefined
+    if (startPointDefined )
+    {
+      startPointDefined = false;
+    }
     return;
   }
-  int duration = iteration / 2 + 1;
 
-  if (iteration == 20 || lastError != ERRT_NONE)
+  if (lastError != ERRT_NONE)
   {
     StopAxis1();
     StopAxis2();
-    iteration = 0;
     doSpiral = false;
     return;
   }
 
-  if (iteration == 0)
+  if (!startPointDefined)
   {
-    enableGuideRate(activeGuideRate);
+    //compute local sky coordinate system at the start position
+    //we define the local coordinate system in or that the telescop is now at HA_L = 0, and DEC_L =0
+    double HA_ref, Dec_ref;
+    getEqu(&HA_ref, &Dec_ref, localSite.cosLat(), localSite.sinLat(), true);
+    helper.addReferenceDeg(HA_ref, Dec_ref, 0, 0);
+    double shift = Dec_ref > 0 ? -45 : 45;
+    helper.addReferenceDeg(HA_ref, Dec_ref + shift, 0, shift);
+    helper.calculateThirdReference();
+    //init time
+    clk_ini = millis();
+    clk_last = clk_ini;
+    startPointDefined = true;
+    return;
   }
 
-  if (iteration % 2 == 0)
+  clk_now = millis();
+  unsigned long t = clk_now - clk_ini;
+  unsigned long dt = clk_now - clk_last;
+
+  //if the Spiral runs more than 2 minutes stop it
+  if (t > 120000 )
   {
-    if (guideA1.isBusy())
-      return;
-    iteration % 4 < 2 ? guideA2.moveFW() : guideA2.moveBW();
-    guideA2.durationLast = micros();
-    guideA2.duration = (long)duration * 3000000L;
-    cli();
-    GuidingState = Guiding::GuidingPulse;
-    sei();
+    StopAxis1();
+    StopAxis2();
+    doSpiral = false;
+    return;
   }
-  else
+
+  // update Spiral only each 200ms
+  if (dt < 200)
   {
-    if (guideA2.isBusy())
-      return;
-    iteration % 4 < 2 ? guideA1.moveBW() : guideA1.moveFW();
-    guideA1.durationLast = micros();
-    guideA1.duration = (long)duration * 3000000L;
-    cli();
-    GuidingState = Guiding::GuidingPulse;
-    sei();
+    return;
   }
-  iteration++;
+
+  double HA_prev, HA_next, Dec_prev, Dec_next;
+  double SpiraleRateA1, SpiraleRateA2;
+
+  double t_prev = 0.001 * (t - dt);
+  double t_next = 0.001 * (t + dt);
+
+  //compute local position along the spiral before
+  double hl_prev = 0.4 * SpiralFOV * sqrt(t_prev) * cos(sqrt(t_prev));
+  double dl_prev = 0.4 * SpiralFOV * sqrt(t_prev) * sin(sqrt(t_prev));
+  //compute local position along the spiral after
+  double hl_next = 0.4 * SpiralFOV * sqrt(t_next) * cos(sqrt(t_next));
+  double dl_next = 0.4 * SpiralFOV * sqrt(t_next) * sin(sqrt(t_next));
+  //now get these position in the sky
+
+  helper.toReferenceDeg(HA_prev, Dec_prev, hl_prev, dl_prev);
+  helper.toReferenceDeg(HA_next, Dec_next, hl_next, dl_next);
+
+  PierSide side_tmp = GetPierSide();
+
+  RateFromMovingTarget(HA_prev, Dec_prev, HA_next, Dec_next,
+    0.002*dt, side_tmp, doesRefraction.forGoto,
+    SpiraleRateA1, SpiraleRateA2);
+
+  if (abs(SpiraleRateA1) > guideRates[4] || abs(SpiraleRateA2) > guideRates[4])
+  {
+    StopAxis1();
+    StopAxis2();
+    doSpiral = false;
+    return;
+  }
+
+  MoveAxisAtRate1(SpiraleRateA1);
+  MoveAxisAtRate2(SpiraleRateA2);
+  clk_last = clk_now;
 }
 
 void checkST4()

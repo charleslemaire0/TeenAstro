@@ -9,7 +9,7 @@
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "3"
-#define SHCFirmwareVersionPatch  "2"
+#define SHCFirmwareVersionPatch  "3"
 
 #define NUMPAGES 8
 class SmartHandController
@@ -86,6 +86,7 @@ private:
   MENU_RESULT menuSyncGoto(bool sync);
   MENU_RESULT menuCoordinates(bool Sync);
   MENU_RESULT menuPier();
+  MENU_RESULT menuSpirale();
   MENU_RESULT subMenuSyncGoto(char sync, int subMenuNum);
   MENU_RESULT menuCatalog(bool sync, int number);
   MENU_RESULT menuCatalogAlign();

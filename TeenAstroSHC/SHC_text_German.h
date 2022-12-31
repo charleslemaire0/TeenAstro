@@ -182,6 +182,7 @@
 #define T_SAVING "Speicherung"
 #define T_Clear "Löschen"
 #define T_SPIRAL "Spiral"
+#define T_FIELDOFVIEW "Gesichtsfeld"
 #define T_LX200COMMAND "LX200 Command"
 #define T_SETVEALUE "Wert setzen"
 #define T_GETVEALUE "Wert auslesen"

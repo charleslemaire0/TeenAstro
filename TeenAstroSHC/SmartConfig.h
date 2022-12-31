@@ -9,8 +9,6 @@
 #define DEBUGBUTTON_OFF           // defualt=_OFF, use "DEBUGBUTTON" to activate
 
 #ifdef ARDUINO_ESP8266_WEMOS_D1MINI
-  // the serial interface to/from OnStep
-
 #define SERIAL_BAUD 57600
 #define DEBUG_OFF
 // the hand controller buttons
@@ -32,8 +30,6 @@
 #endif
 
 #ifdef ARDUINO_D1_MINI32
-  // the serial interface to/from OnStep
-
 #define SERIAL_BAUD 57600
 #define DEBUG_OFF
 // the hand controller buttons
@@ -54,9 +50,28 @@
 #define B_PIN_UP_6 true
 #endif
 
-#ifdef ARDUINO_ESP32_DEV
-  // the serial interface to/from OnStep
+#ifdef ARDUINO_TTGO_LoRa32_V1
+#define SERIAL_BAUD 57600
+#define DEBUG_OFF
+// the Keypad controller buttons
+#define B_PIN0 21               // Row1
+#define B_PIN1 22               // Row2
+#define B_PIN2 17               // Row3
+#define B_PIN3  2               // Row4
+#define B_PIN4 15               // Col1
+#define B_PIN5 13               // Col2
+#define B_PIN6 12               // Col3
 
+#define B_PIN_UP_0 false        // true for active LOW, false if active HIGH
+#define B_PIN_UP_1 false
+#define B_PIN_UP_2 false
+#define B_PIN_UP_3 false
+#define B_PIN_UP_4 false
+#define B_PIN_UP_5 false
+#define B_PIN_UP_6 false
+#endif
+
+#ifdef ARDUINO_ESP32_DEV
 #define SERIAL_BAUD 57600
 #define DEBUG_OFF
 // the hand controller buttons

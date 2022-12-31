@@ -182,6 +182,7 @@
 #define T_SAVING "Saving"
 #define T_Clear "Clear"
 #define T_SPIRAL "Spiral"
+#define T_FIELDOFVIEW "Field of view"
 #define T_LX200COMMAND "LX200 Command"
 #define T_SETVEALUE "Set Value"
 #define T_GETVEALUE "Get Value"

@@ -241,12 +241,13 @@ void Command_M()
   }
   case '@':
   {
-    //  :M@#   Start Spiral Search
+    //  :M@V#   Start Spiral Search V in arcminutes
     //         Return 0 if failed, i if success
     if (movingTo || GuidingState != Guiding::GuidingOFF)
       replyFailed();
     else
     {
+      double SpiralFOV = (double)strtol(&command[2], NULL, 10) / 60.0;
       replyOk();
       atHome = false;
       doSpiral = true;

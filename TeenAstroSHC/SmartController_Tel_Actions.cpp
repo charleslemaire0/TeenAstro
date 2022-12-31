@@ -112,16 +112,10 @@ void SmartHandController::menuTelAction()
           exitMenu = true;
           break;
         case 8:
-          if (SetLX200(":M@#") == LX200_VALUESET)
-          {
-            DisplayMessage(T_SPIRAL, T_STARTED, 500);
-          }
-          else
-          {
-            DisplayMessage(T_LX200COMMAND, T_FAILED, 1000);
-          }
-          exitMenu = true;
+        {
+          menuSpirale();
           break;
+        }
         default:
           break;
         }

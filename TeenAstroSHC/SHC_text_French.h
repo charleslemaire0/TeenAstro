@@ -182,6 +182,7 @@
 #define T_SAVING "Sauvegarde"
 #define T_Clear "Effacer"
 #define T_SPIRAL "Spirale"
+#define T_FIELDOFVIEW "Champs Visuel"
 #define T_LX200COMMAND "Commande LX200"
 #define T_SETVEALUE "Init. Valeur"
 #define T_GETVEALUE "Lire Valeur"
