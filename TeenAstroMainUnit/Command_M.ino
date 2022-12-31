@@ -247,7 +247,7 @@ void Command_M()
       replyFailed();
     else
     {
-      double SpiralFOV = (double)strtol(&command[2], NULL, 10) / 60.0;
+      SpiralFOV = (double)strtol(&command[2], NULL, 10) / 60.0;
       replyOk();
       atHome = false;
       doSpiral = true;
