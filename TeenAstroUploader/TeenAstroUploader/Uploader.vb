@@ -42,11 +42,9 @@
     Me.Text = "TeenAstro Firmware Uploader " + version
     ComboBoxPCBMainUnitT.SelectedIndex = 0
     ComboBoxPCBMainUnitF.SelectedIndex = 0
+    ComboBoxLanguage.SelectedIndex = 0
     ComboBoxFirmwareVersion.SelectedIndex = 0
     ComboBoxPCBSHC.SelectedIndex = 0
-    For Each sp As String In My.Computer.Ports.SerialPortNames
-      ComboBoxCOMSHC.Items.Add(sp)
-    Next
   End Sub
 
   Private Sub ButtonUploadF_Click(sender As Object, e As EventArgs) Handles ButtonUploadF.Click
@@ -147,4 +145,10 @@
   End Sub
 
 
+  Private Sub ComboBoxCOMSHC_Click(sender As Object, e As EventArgs) Handles ComboBoxCOMSHC.Click
+    ComboBoxCOMSHC.Items.Clear()
+    For Each sp As String In My.Computer.Ports.SerialPortNames
+      ComboBoxCOMSHC.Items.Add(sp)
+    Next
+  End Sub
 End Class
