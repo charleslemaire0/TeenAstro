@@ -72,7 +72,7 @@ void computeTrackingRate(bool apply)
   }
 }
 
-bool RateFromMovingTarget(const double &HA_prev, const double &Dec_prev,
+void RateFromMovingTarget(const double &HA_prev, const double &Dec_prev,
   const double &HA_next, const double &Dec_next,
   const double &TimeRange, const PierSide &side, const bool &refr, 
   double &A1_trackingRate, double &A2_trackingRate)
