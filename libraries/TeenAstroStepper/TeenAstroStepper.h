@@ -186,7 +186,10 @@ public:
     {
     case TMC26X:
       if (EnPin > 0)
-        digitalWrite(EnPin, LOW);
+      {
+        pinMode(EnPin, OUTPUT);
+        digitalWrite(EnPin, HIGH);
+      }
       m_tmc26x = new TMC26XStepper(StepRot, CSPin, DirPin, StepPin, Curr);
       m_tmc26x->setSpreadCycleChopper(2, 24, 8, 6, 0);
       m_tmc26x->setRandomOffTime(0);
@@ -195,6 +198,10 @@ public:
       m_tmc26x->setCoolStepConfiguration(480, 480, 1, 3, COOL_STEP_HALF_CS_LIMIT);
       m_tmc26x->setCoolStepEnabled(false);
       m_tmc26x->start();
+      if (EnPin > 0)
+      {
+        digitalWrite(EnPin, LOW);
+      }
       break;
     case TMC2130:
       m_tmc2130 = new TMC2130Stepper(CSPin);
@@ -226,7 +233,9 @@ public:
       setCurrent(Curr); // mA
       setMicrostep(Micros);
       if (EnPin > 0)
+      {
         digitalWrite(EnPin, LOW);
+      }
       break;
     case TMC5160:
       m_tmc5160 = new TMC5160Stepper(CSPin);
