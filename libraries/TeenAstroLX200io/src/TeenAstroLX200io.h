@@ -2,11 +2,14 @@
 #include<Arduino.h>
 #include<TeenAstroCatalog.h>
 
-#ifdef ESP32
-#define Ser Serial2
-#else
+
+#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
 #define Ser Serial
 #endif
+#ifdef ARDUINO_LOLIN_C3_MINI
+#define Ser Serial1
+#endif
+
 
 #define TIMEOUT_CMD 30         
 #define TIMEOUT_WEB 15

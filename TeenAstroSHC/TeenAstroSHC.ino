@@ -43,7 +43,7 @@ void setup(void)
   HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309, 2);
   return;
 #else
-  int value = analogRead(A0);
+  int value = analogRead(A_SCREEN);
   if (value< 191)       //0.616129032V
   {
     HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SH1106, 1 );

@@ -14,8 +14,8 @@ void SmartHandController::setup(
   const OLED model,
   const uint8_t nSubmodel)
 {
-#ifdef ARDUINO_D1_MINI32
-  Ser.begin(SerialBaud, SERIAL_8N1, 27, 25);
+#ifdef ARDUINO_LOLIN_C3_MINI
+  Ser.begin(SerialBaud, SERIAL_8N1, RX, TX);
 #else
   Ser.begin(SerialBaud);
 #endif
