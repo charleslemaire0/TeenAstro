@@ -35,6 +35,7 @@
 
 void setup()
 {
+
   pinMode(LEDPin, OUTPUT);
   for (int k = 0; k < 20; k++)
   {
@@ -116,11 +117,7 @@ void setup()
   setSyncInterval(1);
   setTime(rtk.getTime());
 
-  // initialize the stepper control pins Axis1 and Axis2
-  pinMode(Axis1StepPin, OUTPUT);
-  pinMode(Axis1DirPin, OUTPUT);
-  pinMode(Axis2StepPin, OUTPUT);
-  pinMode(Axis2DirPin, OUTPUT);
+
 
   // light reticule LED
 #ifdef RETICULE_LED_PINS
@@ -612,8 +609,66 @@ void initmotor(bool deleteAlignment)
   updateRatios(deleteAlignment,false);
   motorA1.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin);
   motorA2.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin);
+  readEEPROMmotorCurrent();
+  motorA1.driver.setCurrent((unsigned int)motorA1.lowCurr);
+  motorA2.driver.setCurrent((unsigned int)motorA2.lowCurr);
 }
+void readEEPROMmotorCurrent()
+{
+#ifdef D_motorA1lowCurr
+  motorA1.lowCurr = D_motorA1lowCurr;
+  motorA1.isLowCurrfix = true;
+#else
+  motorA1.lowCurr = (unsigned int)XEEPROM.read(EE_motorA1lowCurr) * 100;
+  if (motorA1.lowCurr > motorA1.driver.getMaxCurrent() || motorA1.lowCurr < 200u)
+  {
+    motorA1.lowCurr = 1000u;
+    XEEPROM.write(EE_motorA1lowCurr, 10u);
+  }
+  motorA1.isLowCurrfix = false;
+#endif 
 
+#ifdef D_motorA1highCurr
+  motorA1.highCurr = D_motorA1highCurr;
+  motorA1.isHighCurrfix = true;
+#else
+  motorA1.highCurr = (unsigned int)XEEPROM.read(EE_motorA1highCurr) * 100;
+  if (motorA1.highCurr > motorA1.driver.getMaxCurrent() || motorA1.highCurr < 200u)
+  {
+    motorA1.highCurr = 1000u;
+    XEEPROM.write(EE_motorA1highCurr, 10u);
+  }
+  motorA1.isHighCurrfix = false;
+#endif
+
+
+#ifdef D_motorA2lowCurr
+  motorA2.lowCurr = D_motorA2lowCurr;
+  motorA2.isLowCurrfix = true;
+#else
+  motorA2.lowCurr = (unsigned int)XEEPROM.read(EE_motorA2lowCurr) * 100;
+  if (motorA2.lowCurr > motorA2.driver.getMaxCurrent() || motorA2.lowCurr < 200u)
+  {
+    motorA2.lowCurr = 1000u;
+    XEEPROM.write(EE_motorA2lowCurr, 10u);
+  }
+  motorA2.isLowCurrfix = false;
+#endif 
+
+#ifdef D_motorA2highCurr
+  motorA2.highCurr = D_motorA2highCurr;
+  motorA2.isHighCurrfix = true;
+#else
+  motorA2.highCurr = (unsigned int)XEEPROM.read(EE_motorA2highCurr) * 100;
+  if (motorA2.highCurr > motorA2.driver.getMaxCurrent() || motorA2.highCurr < 200u)
+  {
+    motorA2.highCurr = 1000u;
+    XEEPROM.write(EE_motorA2highCurr, 10u);
+  }
+  motorA2.isHighCurrfix = false;
+#endif
+
+}
 
 void readEEPROMmotor()
 {
@@ -660,31 +715,7 @@ void readEEPROMmotor()
   motorA1.isReverseFix = false;
 #endif 
 
-#ifdef D_motorA1lowCurr
-  motorA1.lowCurr = D_motorA1lowCurr;
-  motorA1.isLowCurrfix = true;
-#else
-  motorA1.lowCurr = (unsigned int)XEEPROM.read(EE_motorA1lowCurr) * 100;
-  if (motorA1.lowCurr > 2800u || motorA1.lowCurr < 200u)
-  {
-    motorA1.lowCurr = 1000u;
-    XEEPROM.write(EE_motorA1lowCurr, 10u);
-  }
-  motorA1.isLowCurrfix = false;
-#endif 
 
-#ifdef D_motorA1highCurr
-  motorA1.highCurr = D_motorA1highCurr;
-  motorA1.isHighCurrfix = true;
-#else
-  motorA1.highCurr = (unsigned int)XEEPROM.read(EE_motorA1highCurr) * 100;
-  if (motorA1.highCurr > 2800u || motorA1.highCurr < 200u)
-  {
-    motorA1.highCurr = 1000u;
-    XEEPROM.write(EE_motorA1highCurr, 10u);
-  }
-  motorA1.isHighCurrfix = false;
-#endif
 
 #ifdef D_motorA1silent
   motorA1.silent = D_motorA1silent;
@@ -732,31 +763,6 @@ void readEEPROMmotor()
   motorA2.isReverseFix = false;
 #endif 
 
-#ifdef D_motorA2lowCurr
-  motorA2.lowCurr = D_motorA2lowCurr;
-  motorA2.isLowCurrfix = true;
-#else
-  motorA2.lowCurr = (unsigned int)XEEPROM.read(EE_motorA2lowCurr) * 100;
-  if (motorA2.lowCurr > 2800u || motorA2.lowCurr < 200u)
-  {
-    motorA2.lowCurr = 1000u;
-    XEEPROM.write(EE_motorA2lowCurr, 10u);
-  }
-  motorA2.isLowCurrfix = false;
-#endif 
-
-#ifdef D_motorA2highCurr
-  motorA2.highCurr = D_motorA2highCurr;
-  motorA2.isHighCurrfix = true;
-#else
-  motorA2.highCurr = (unsigned int)XEEPROM.read(EE_motorA2highCurr) * 100;
-  if (motorA2.highCurr > 2800u || motorA2.highCurr < 200u)
-  {
-    motorA2.highCurr = 1000u;
-    XEEPROM.write(EE_motorA2highCurr, 10u);
-  }
-  motorA2.isHighCurrfix = false;
-#endif
 
 #ifdef D_motorA2silent
   motorA2.silent = D_motorA2silent;

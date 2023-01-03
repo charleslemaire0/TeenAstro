@@ -310,6 +310,6 @@ public:
   Driver driver;
   void initMotor(Driver::MOTORDRIVER useddriver, int EnPin, int CSPin, int DirPin, int StepPin)
   {
-    driver.initMotor(useddriver, stepRot, EnPin, CSPin, DirPin, StepPin, lowCurr, micro, silent);
+    driver.initMotor(useddriver, stepRot, EnPin, CSPin, DirPin, StepPin, 200, micro, silent);
   }
 };

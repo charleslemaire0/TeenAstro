@@ -559,9 +559,9 @@ void Command_SX()
       // :SXMRn# Set Current
       unsigned int curr = (unsigned int)(strtol(&command[6], NULL, 10) / 100) * 100;
       bool ok = false;
-      if (curr >= 100 && curr <= 2800)
+      if (curr >= 100 )
       {
-        if (command[4] == 'D')
+        if (command[4] == 'D' && curr <= motorA2.driver.getMaxCurrent())
         {
           if (command[3] == 'C')
           {
@@ -583,7 +583,7 @@ void Command_SX()
             }
           }
         }
-        else if (command[4] == 'R')
+        else if (command[4] == 'R' && curr <= motorA1.driver.getMaxCurrent())
         {
           if (command[3] == 'C')
           {
