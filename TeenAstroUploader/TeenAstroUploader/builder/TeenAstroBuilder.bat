@@ -246,8 +246,8 @@ if /i !verbose!==[y] (
   echo on 
   )
 
-arduino-builder.exe -dump-prefs -logger=human -warnings=none !verb! -hardware "%HARDW_PATH1%" -hardware "%HARDW_PATH2%" -tools "%TOOLS_PATH1%" -tools "%TOOLS_PATH2%" -tools "%TOOLS_PATH3%" -built-in-libraries "%BI_LIB%" -libraries "%EXT_LIB%" -fqbn "!BOARD!" -ide-version="%IDE_VERSION%" -build-path "%BUILD_PATH%" -build-cache "%BUILD_CACHE%" -prefs "%OPTION%" "%SKETCH%"
-arduino-builder.exe -compile -logger=human -warnings=none !verb! -hardware "%HARDW_PATH1%" -hardware "%HARDW_PATH2%" -tools "%TOOLS_PATH1%" -tools "%TOOLS_PATH2%" -tools "%TOOLS_PATH3%" -built-in-libraries "%BI_LIB%" -libraries "%EXT_LIB%" -fqbn "!BOARD!" -ide-version="%IDE_VERSION%" -build-path "%BUILD_PATH%" -build-cache "%BUILD_CACHE%" -prefs "%OPTION%" "%SKETCH%"
+"C:\Program Files (x86)\Arduino\arduino-builder.exe" -dump-prefs -logger=human -warnings=none !verb! -hardware "%HARDW_PATH1%" -hardware "%HARDW_PATH2%" -tools "%TOOLS_PATH1%" -tools "%TOOLS_PATH2%" -tools "%TOOLS_PATH3%" -built-in-libraries "%BI_LIB%" -libraries "%EXT_LIB%" -fqbn "!BOARD!" -ide-version="%IDE_VERSION%" -build-path "%BUILD_PATH%" -build-cache "%BUILD_CACHE%" -prefs "%OPTION%" "%SKETCH%"
+"C:\Program Files (x86)\Arduino\arduino-builder.exe" -compile -logger=human -warnings=none !verb! -hardware "%HARDW_PATH1%" -hardware "%HARDW_PATH2%" -tools "%TOOLS_PATH1%" -tools "%TOOLS_PATH2%" -tools "%TOOLS_PATH3%" -built-in-libraries "%BI_LIB%" -libraries "%EXT_LIB%" -fqbn "!BOARD!" -ide-version="%IDE_VERSION%" -build-path "%BUILD_PATH%" -build-cache "%BUILD_CACHE%" -prefs "%OPTION%" "%SKETCH%"
 
 if %ERRORLEVEL% NEQ 0 exit /b
 
