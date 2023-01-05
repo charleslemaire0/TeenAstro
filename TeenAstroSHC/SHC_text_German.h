@@ -23,6 +23,7 @@
 #define T_APPARENT_POLE "Scheinbarer Pol"
 
 #define T_LIMITS "Grenzen"
+#define T_CONNECTED "verbunden"
 #define T_NOT_CONNECTED "Nicht verbunden"
 #define T_TUNKOWN "Unbekannt"
 #define T_ERROR "FEHLER"

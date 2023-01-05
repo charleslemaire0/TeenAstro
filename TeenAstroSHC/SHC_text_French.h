@@ -23,6 +23,7 @@
 #define T_APPARENT_POLE "Pôle Apparent"
 
 #define T_LIMITS "Limites"
+#define T_CONNECTED "Connecté"
 #define T_NOT_CONNECTED "pas Connecté"
 #define T_TUNKOWN "Inconnue"
 #define T_ERROR "ERREUR"
