@@ -101,3 +101,8 @@ UINO.ipch
 /TeenAstroUploader/TeenAstroUploader/builder/MainUnit_Build/TeenAstroMainUnit.ino.elf
 /TeenAstroUploader/TeenAstroUploader/builder/MainUnit_Build/TeenAstroMainUnit.ino.hex
 /TeenAstroUploader/TeenAstroUploader/builder/MainUnit_Build/TeenAstroMainUnit.ino.sym
+TeenAstroMainUnit/.vscode/*
+TeenAstroMainUnit/pio/*
+TeenAstroSHC/.vscode/*
+TeenAstroSHC/pio/*
+

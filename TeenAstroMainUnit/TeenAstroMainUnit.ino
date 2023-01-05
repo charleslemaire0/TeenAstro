@@ -171,13 +171,8 @@ void setup()
   // get ready for serial communications
   Serial.begin(BAUD);
   S_USB.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
-#ifdef ARDUINO_TEENSY_MICROMOD
-  Serial4.begin(57600);
-  S_SHC.attach_Stream((Stream *)&Serial4, COMMAND_SERIAL1);
-#else
   Serial1.begin(57600);
   S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
-#endif
 
   Focus_Serial.setRX(FocuserRX);
   Focus_Serial.setTX(FocuserTX);
