@@ -252,7 +252,7 @@ public:
       digitalWrite(CSPin, HIGH);
       SPI.begin();
       pinMode(MISO, INPUT_PULLUP);
-      m_tmc2130->reset();
+      m_tmc5160->reset();
       m_tmc5160->push();
       m_tmc5160->TPOWERDOWN(255);
       m_tmc5160->tbl(2);
