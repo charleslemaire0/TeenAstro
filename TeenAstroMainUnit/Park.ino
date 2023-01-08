@@ -84,7 +84,7 @@ bool parkClearBacklash()
     t = (long)(backlashA1.inSteps * 1500 / geoA1.stepsPerSecond);
   else
     t = (long)(backlashA2.inSteps * 1500 / geoA2.stepsPerSecond);
-  t = (t / BacklashTakeupRate + 250) / 12;
+  t = (t / staA1.takeupRate + 250) / 12;
 
   // start by moving fully into the backlash
   cli();

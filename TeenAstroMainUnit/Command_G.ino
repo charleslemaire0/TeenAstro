@@ -279,7 +279,7 @@ void Command_GX()
       break;
     case 'B':
       // :GXRB# returns the Backlash Take up Rate
-      sprintf(reply, "%ld#", (long)round(BacklashTakeupRate));
+      sprintf(reply, "%ld#", (long)round(staA1.takeupRate));
       break;
     case 'D':
       // :GXRD# returns the Default Rate

@@ -831,8 +831,8 @@ void updateSideral()
   SetTrackingRate(default_tracking_rate,0);
 
   // backlash takeup rates
-  backlashA1.interval_Step = staA1.interval_Step_Cur / BacklashTakeupRate;
-  backlashA2.interval_Step = staA2.interval_Step_Cur / BacklashTakeupRate;
+  backlashA1.interval_Step = staA1.takeupInterval;
+  backlashA2.interval_Step = staA2.takeupInterval;
 
   // initialize the sidereal clock, RA, and Dec
   SetsiderealClockSpeed(siderealClockSpeed);
