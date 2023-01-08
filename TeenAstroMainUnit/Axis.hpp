@@ -26,8 +26,9 @@ public:
   volatile bool       dir;                             // stepping direction + or -
   double              fstep;                           // amount of steps for Tracking
   volatile double     interval_Step_Sid;                  // based on the siderealClockSpeed, this is the time between steps for sidereal tracking 
-  volatile double     takeupInterval;                      // this is the takeup rate for synchronizing the target and actual positions when needed
-  volatile double     interval_Step_Cur = 0;              // this is the time between steps for the current rotation speed
+  volatile double     takeupRate;                      // this is the takeup rate for synchronizing the target and actual positions when needed
+  volatile double     takeupInterval;
+  volatile double     interval_Step_Cur = 0;            // this is the time between steps for the current rotation speed
   volatile double     CurrentTrackingRate = default_tracking_rate; //effective rate tracking in Hour arc-seconds/second
   double              RequestedTrackingRate = default_tracking_rate; //computed  rate tracking in Hour arc-seconds/second
   long                minstepdist;
@@ -61,7 +62,8 @@ public:
     ClockSpeed = cs;
     interval_Step_Sid = siderealClockSpeed / stepsPerSecond;
     minstepdist = 0.25 * stepsPerSecond;
-    takeupInterval = interval_Step_Sid / 8L;
+    takeupRate = 8L;
+    takeupInterval = interval_Step_Sid / takeupRate;
     resetToSidereal();
   };
   //double interval2speedfromTime(const double& time)
@@ -98,20 +100,33 @@ public:
 
   long breakDist()
   {
-    return (long)pow(interval2speed(interval_Step_Cur), 2.) / (4. * acc);
+    return (long)pow(interval2speed(interval_Step_Cur), 2.) / (2. * acc);
   };
-  void breakMove()
+
+  void breakMoveLowRate()
   {
     updateDeltaTarget();
     long a = breakDist();
     if (abs(deltaTarget) > a)
     {
-      if (0 > deltaTarget) // overshoot
+      if (0 > deltaTarget)
         a = -a;
       cli();
       target = pos + a;
+      deltaTarget = a;
       sei();
     }
+  };
+  void breakMoveHighRate()
+  {
+    updateDeltaTarget();
+    long a = breakDist();
+    if (0 > deltaTarget) 
+      a = -a;
+    cli();
+    target = pos + a;
+    deltaTarget = a;
+    sei();
   };
   void setIntervalfromDist(const volatile unsigned long& d, double minInterval, double maxInterval)
   {
@@ -131,7 +146,7 @@ public:
 private:
   double speedfromDist(const volatile unsigned long& d)
   {
-    return sqrt(d * 4. * acc);
+    return sqrt(d * 2. * acc);
   };
   double interval2speed(double interval)
   {

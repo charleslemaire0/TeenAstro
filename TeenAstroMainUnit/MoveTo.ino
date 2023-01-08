@@ -57,9 +57,9 @@ Again:
   // quickly slow the motors and stop in 1 degree
   if (abortSlew)
   {
-    staA1.breakMove();
+    staA1.breakMoveLowRate();
     guideA1.brake();
-    staA2.breakMove();
+    staA2.breakMoveLowRate();
     guideA2.brake();
     if (parkStatus == PRK_PARKING)
     {

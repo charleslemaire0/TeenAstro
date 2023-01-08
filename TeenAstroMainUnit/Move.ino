@@ -71,7 +71,6 @@ static void StopAxis(GuideAxis* guideA, StatusAxis* staA)
 {
   if (!guideA->isMoving())
     return;
-  staA->breakMove();
   guideA->brake();
 }
 

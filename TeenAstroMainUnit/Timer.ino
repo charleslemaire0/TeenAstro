@@ -98,10 +98,9 @@ static void UpdateIntervalTrackingGuiding(GuideAxis* guideA, StatusAxis* staA,
   volatile double& tmp_guideRateA,
   const double minInterval, const double maxInterval)
 {
-  static double max_guideRate = 8;
+  volatile double max_guideRate = staA->takeupRate;
   static volatile double sign;
   // guide rate acceleration/deceleration and control
-  updateDeltaTarget();
   if (!backlashA->correcting && guideA->isBusy())
   {
     if ((guideA->absRate < max_guideRate) &&
@@ -117,7 +116,15 @@ static void UpdateIntervalTrackingGuiding(GuideAxis* guideA, StatusAxis* staA,
       sign = guideA->isDirBW() ? -1 : 1;
       if (guideA->isBraking())
       {
-        tmp_guideRateA = sqrt(fabs(staA->deltaTarget) * 4 * staA->acc) * sign / geoA->stepsPerSecond;
+        tmp_guideRateA -= 2 * staA->acc * clockRatio * sign / geoA->stepsPerSecond;
+        if (sign == 1)
+        {
+          tmp_guideRateA = max(tmp_guideRateA, max_guideRate);
+        }
+        else
+        {
+          tmp_guideRateA = min(tmp_guideRateA, -max_guideRate);
+        }
       }
       else
       {
@@ -137,10 +144,19 @@ static void UpdateIntervalTrackingGuiding(GuideAxis* guideA, StatusAxis* staA,
     // stop guiding
     if (guideA->isBraking())
     {
+      if (max_guideRate < abs(tmp_guideRateA))
+      {
+        staA->breakMoveHighRate();
+      }
+      else
+      {
+        staA->breakMoveLowRate();
+      }
       if (staA->atTarget(false))
       {
         guideA->setIdle();
         tmp_guideRateA = 0;
+        staA_other->updateDeltaTarget();
         if (staA_other->atTarget(false))
           DecayModeTracking();
       }
