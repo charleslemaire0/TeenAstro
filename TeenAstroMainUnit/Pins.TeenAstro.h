@@ -114,13 +114,13 @@
 #define AxisDriver      3                 // Select your driver 2 for the TMC2130, 3 for the TMC5160, 4 for the TMC2160
 #endif
 #define Axis1StepPin    22                // Pin 22 (Step)
-#define Axis1DirPin     2                 // Pin 3 (Dir)
-#define Axis1CSPin      21                // Pin 5 (CS)
-#define Axis1EnablePin  3                 // Pin 5 (enable)
-#define Axis2StepPin    20                // Pin 6 (Step)
-#define Axis2DirPin     4                 // Pin 19 (Dir)
-#define Axis2CSPin      19                // Pin 20 (CS)
-#define Axis2EnablePin  5                 // Pin 18 (enable)
+#define Axis1DirPin     2                 // Pin 2 (Dir)
+#define Axis1CSPin      9                 // Pin 9 (CS)
+#define Axis1EnablePin  3                 // Pin 3 (enable)
+#define Axis2StepPin    20                // Pin 20 (Step)
+#define Axis2DirPin     4                 // Pin 4 (Dir)
+#define Axis2CSPin      10                // Pin 10 (CS)
+#define Axis2EnablePin  5                 // Pin 5 (enable)
 #define RETICULE_LED_PINS 6  
 #define PPS             18
 #define Axis1Reverse    1
@@ -130,15 +130,19 @@
 #define FocuserRX       15
 #define FocuserTX       14
 // ST4 interface
-#define ST4RAe          9                  // ST4 REast
-#define ST4DEs          8                 // ST4 South
-#define ST4DEn          16                // ST4 North
-#define ST4RAw          17                // ST4 West
+#define ST4RAe          16                  // ST4 REast
+#define ST4DEs          17                 // ST4 South
+#define ST4DEn          18                // ST4 North
+#define ST4RAw          19                // ST4 West
 
 // LED interface
 #define LEDPin          23 
 #define MaxLED          16
+
+#define LimitSensor     21
 #endif
+
+
 
 
 #if VERSION == 298   // teensy micromod, beta board by lordzurp
