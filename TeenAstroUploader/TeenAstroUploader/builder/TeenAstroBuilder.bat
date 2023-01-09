@@ -88,11 +88,13 @@ rem
 
            if not [%2] == [] (
               set hwvers=%~2
-				if /i [!hwvers!] NEQ [240] ( 
-					if /i [!hwvers!] NEQ [230] (
-						if /i [!hwvers!] NEQ [220] (
-							echo hwvers must be  220, 230, or 240
-							exit /b
+				if /i [!hwvers!] NEQ [250] ( 
+					if /i [!hwvers!] NEQ [240] ( 
+						if /i [!hwvers!] NEQ [230] (
+							if /i [!hwvers!] NEQ [220] (
+								echo hwvers must be  220, 230, 240 or 250
+								exit /b
+							)
 						)
 					)
 				) 
@@ -216,12 +218,24 @@ rem    No more flags or options.
 rem
 rem    Process Now
 rem
+if /i [!hwvers!] == [220]  ( 
+  set BOARD="teensy:avr:teensy31:usb=serial,speed=72,opt=o2std,keys=en-us"
+  set OPTION=build.flags.defs=-D__MK20DX256__ -DTEENSYDUINO=157 -DVERSION=!hwvers! -DAxisDriver=!AxisDriver!
+) else if /i [!hwvers!] == [230]  ( 
+  set BOARD="teensy:avr:teensy31:usb=serial,speed=72,opt=o2std,keys=en-us"
+  set OPTION=build.flags.defs=-D__MK20DX256__ -DTEENSYDUINO=157 -DVERSION=!hwvers! -DAxisDriver=!AxisDriver!
+) else if /i [!hwvers!] == [240]  ( 
+  set BOARD="teensy:avr:teensy31:usb=serial,speed=72,opt=o2std,keys=en-us"
+  set OPTION=build.flags.defs=-D__MK20DX256__ -DTEENSYDUINO=157 -DVERSION=!hwvers! -DAxisDriver=!AxisDriver!
+) else if /i [!hwvers!] == [250]  ( 
+  set BOARD="teensy:avr:teensy40:usb=serial,speed=450,opt=o2std,keys=en-us"
+  set OPTION=build.flags.defs=-D__IMXRT1062__ -DTEENSYDUINO=157 -DVERSION=!hwvers! -DAxisDriver=!AxisDriver!
+)
 
 if /i [!target!] == [MainUnit] ( 
   set SKETCH=..\..\..\TeenAstroMainUnit\TeenAstroMainUnit.ino
-	set OPTION=build.flags.defs=-D__MK20DX256__ -DTEENSYDUINO=157 -DVERSION=!hwvers! -DAxisDriver=!AxisDriver!
+
   set TOOLS_PATH2=!Arduino_Root_Path!\hardware\tools\avr
-  set BOARD="teensy:avr:teensy31:usb=serial,speed=72,opt=o2std,keys=en-us"
   set Target_File=TeenAstro_!release!_!hwvers!_!driver!
   set Buid_File=TeenAstroMainUnit.ino
   goto compil_teensy
@@ -229,9 +243,7 @@ if /i [!target!] == [MainUnit] (
 
 if /i [!target!] == [Focuser] ( 
   set SKETCH=..\..\..\TeenAstroFocuser\TeenAstroFocuser.ino
-  set OPTION=build.flags.defs=-D__MK20DX256__ -DTEENSYDUINO=157 -DVERSION=!hwvers! -DAxisDriver=!AxisDriver!
   set TOOLS_PATH2=!Arduino_Root_Path!\hardware\tools\avr
-  set BOARD="teensy:avr:teensy31:usb=serial,speed=72,opt=o2std,keys=en-us"
   set Target_File=TeenAstroFocuser_!release!_!hwvers!_!driver!
   set Buid_File=\TeenAstroFocuser.ino
   goto compil_teensy
