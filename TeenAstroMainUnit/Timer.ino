@@ -38,15 +38,12 @@ void SetsiderealClockSpeed(double cs)
   isrIntervalAxis2 = 0;
 }
 
-#if defined(ARDUINO_TEENSY40) || defined(ARDUINO_TEENSY_MICROMOD) // F_BUS is not defined. Looking in Core 24000000 is used to convert µsec in timer ticks
-	#ifndef F_BUS
-	#define F_BUS 24000000
-	#endif
+#if defined(ARDUINO_TEENSY40) || defined(ARDUINO_TEENSY_MICROMOD) 
 
 void beginTimers()
 {
-  itimer3.begin(TIMER3_COMPA_vect, (float)128 * 0.0625);
-  itimer4.begin(TIMER4_COMPA_vect, (float)128 * 0.0625);
+  itimer3.begin(TIMER3_COMPA_vect, (float)100);
+  itimer4.begin(TIMER4_COMPA_vect, (float)100);
   itimer3.priority(0);
   itimer4.priority(0);
   itimer1.priority(32);
@@ -73,24 +70,16 @@ static void Timer1SetInterval(interval i)
   itimer1.begin(TIMER1_COMPA_vect, i);
 }
 
-// set timer3 to interval (in microseconds)
-static volatile uint32_t   nextIntervalAxis1 = 100000UL;
-
 
 static void Timer3SetInterval(interval i)
 {
-  cli();
-  nextIntervalAxis1 = (F_BUS / masterClockSpeed) * i * 0.5 - 1;
-  sei();
+  itimer3.update(i * 0.5);
 }
 
 // set timer4 to interval (in microseconds)
-static volatile uint32_t   nextIntervalAxis2 = 100000UL;
 static void Timer4SetInterval(interval i)
 {
-  cli();
-  nextIntervalAxis2 = (F_BUS / masterClockSpeed) * i * 0.5 - 1;
-  sei();
+  itimer4.update(i * 0.5);
 }
 
 static void UpdateIntervalTrackingGuiding(GuideAxis* guideA, StatusAxis* staA,
@@ -312,7 +301,6 @@ ISR(TIMER3_COMPA_vect)
       digitalWriteFast(Axis1StepPin, HIGH);
     }
     clearAxis1 = true;
-    PIT_LDVAL1 = nextIntervalAxis1 * stepAxis;
   }
 }
 ISR(TIMER4_COMPA_vect)
@@ -378,6 +366,5 @@ ISR(TIMER4_COMPA_vect)
       digitalWriteFast(Axis2StepPin, HIGH);
     }
     clearAxis2 = true;
-    PIT_LDVAL2 = nextIntervalAxis2 * stepAxis;
   }
 }
