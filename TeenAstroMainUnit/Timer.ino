@@ -266,26 +266,26 @@ ISR(TIMER3_COMPA_vect)
       {
         if (backlashA1.movedSteps < backlashA1.inSteps)
         {
-          backlashA1.movedSteps += stepAxis;
+          backlashA1.movedSteps++;
           backlashA1.correcting = true;
         }
         else
         {
           backlashA1.correcting = false;
-          staA1.pos += stepAxis;
+          staA1.pos++;
         }
       }
       else
       {
         if (backlashA1.movedSteps > 0)
         {
-          backlashA1.movedSteps -= stepAxis;
+          backlashA1.movedSteps--;
           backlashA1.correcting = true;
         }
         else
         {
           backlashA1.correcting = false;
-          staA1.pos -= stepAxis;
+          staA1.pos--;
         }
       }
       takeStepAxis1 = true;
@@ -331,26 +331,26 @@ ISR(TIMER4_COMPA_vect)
       {
         if (backlashA2.movedSteps < backlashA2.inSteps)
         {
-          backlashA2.movedSteps += stepAxis;
+          backlashA2.movedSteps++;
           backlashA2.correcting = true;
         }
         else
         {
           backlashA2.correcting = false;
-          staA2.pos += stepAxis;
+          staA2.pos++;
         }
       }
       else
       {
         if (backlashA2.movedSteps > 0)
         {
-          backlashA2.movedSteps -= stepAxis;
+          backlashA2.movedSteps--;
           backlashA2.correcting = true;
         }
         else
         {
           backlashA2.correcting = false;
-          staA2.pos -= stepAxis;
+          staA2.pos--;
         }
       }
       takeStepAxis2 = true;
