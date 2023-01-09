@@ -16,13 +16,23 @@
           Hexfile = "Teenastro_" + fwv + "_240_TMC2130"
         Case "2.4 TMC5160"
           Hexfile = "Teenastro_" + fwv + "_240_TMC5160"
+        Case "2.5 TMC2130"
+          Hexfile = "Teenastro_" + fwv + "_250_TMC2130"
+        Case "2.5 TMC5160"
+          Hexfile = "Teenastro_" + fwv + "_250_TMC5160"
       End Select
 
       If Not System.IO.File.Exists(Hexfile + ".hex") Then
         MsgBox(Hexfile + " not found!")
         Return
       End If
-      Dim cmd As String = "-file=" & Hexfile & " -path=" & exepath & " -tools=" & exepath & " -board=TEENSY31"
+      Dim cmd As String = ""
+      Select Case pcb
+        Case "2.2 TMC260", "2.3 TMC260", "2.4 TMC2130", "2.4 TMC5160"
+          cmd = "-file=" & Hexfile & " -path=" & exepath & " -tools=" & exepath & " -board=TEENSY31"
+        Case "2.5 TMC2130", "2.5 TMC5160"
+          cmd = "-file=" & Hexfile & " -path=" & exepath & " -tools=" & exepath & " -board=TEENSY40"
+      End Select
       pHelp.Arguments = cmd
       pHelp.WindowStyle = ProcessWindowStyle.Normal
       Dim proc1 As Process = Process.Start(pHelp)
@@ -127,6 +137,8 @@
     Firmwares.Add("TeenAstro_" + ver + "_230_TMC260.hex")
     Firmwares.Add("TeenAstro_" + ver + "_240_TMC2130.hex")
     Firmwares.Add("TeenAstro_" + ver + "_240_TMC5160.hex")
+    Firmwares.Add("TeenAstro_" + ver + "_250_TMC2130.hex")
+    Firmwares.Add("TeenAstro_" + ver + "_250_TMC5160.hex")
     Dim n As Integer = 0
     Using client As New System.Net.WebClient()
       System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12

@@ -101,3 +101,7 @@ UINO.ipch
 /TeenAstroUploader/TeenAstroUploader/builder/MainUnit_Build/TeenAstroMainUnit.ino.elf
 /TeenAstroUploader/TeenAstroUploader/builder/MainUnit_Build/TeenAstroMainUnit.ino.hex
 /TeenAstroUploader/TeenAstroUploader/builder/MainUnit_Build/TeenAstroMainUnit.ino.sym
+/TeenAstroUploader/TeenAstroUploader/builder/log_Main_TMC2130_250.txt
+/TeenAstroUploader/TeenAstroUploader/builder/log_Main_TMC5160_250.txt
+/TeenAstroUploader/TeenAstroUploader/builder/MainUnit_Build/sketch/Config.Mount.Template.h
+/TeenAstroUploader/TeenAstroUploader/builder/MainUnit_Build/sketch/Config.Mount.Universal.h

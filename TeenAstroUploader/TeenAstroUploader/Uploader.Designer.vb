@@ -55,7 +55,7 @@ Partial Class Uploader
         'ComboBoxPCBMainUnitT
         '
         Me.ComboBoxPCBMainUnitT.FormattingEnabled = True
-        Me.ComboBoxPCBMainUnitT.Items.AddRange(New Object() {"2.2 TMC260", "2.3 TMC260", "2.4 TMC2130", "2.4 TMC5160"})
+        Me.ComboBoxPCBMainUnitT.Items.AddRange(New Object() {"2.2 TMC260", "2.3 TMC260", "2.4 TMC2130", "2.4 TMC5160", "2.5 TMC2130", "2.5 TMC5160"})
         Me.ComboBoxPCBMainUnitT.Location = New System.Drawing.Point(71, 17)
         Me.ComboBoxPCBMainUnitT.Name = "ComboBoxPCBMainUnitT"
         Me.ComboBoxPCBMainUnitT.Size = New System.Drawing.Size(110, 21)
