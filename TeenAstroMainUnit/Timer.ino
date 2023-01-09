@@ -223,8 +223,7 @@ static void BacklashAndApplyInterval2()
 }
 
 ISR(TIMER1_COMPA_vect)
-{
- 
+{ 
   rtk.m_lst++;
   // in this mode the target is always a bit faster than the scope because we move first the target!!
   if (!movingTo)
@@ -240,6 +239,7 @@ ISR(TIMER1_COMPA_vect)
   BacklashAndApplyInterval1();
   BacklashAndApplyInterval2();
 }
+
 ISR(TIMER3_COMPA_vect)
 {
   static volatile bool clearAxis1 = true;
