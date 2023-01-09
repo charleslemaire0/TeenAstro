@@ -100,7 +100,7 @@ public:
 
   long breakDist()
   {
-    return (long)pow(interval2speed(interval_Step_Cur), 2.) / (2. * acc);
+    return (long)(pow(interval2speed(interval_Step_Cur), 2.) / (2. * acc));
   };
 
   void breakMoveLowRate()
@@ -146,9 +146,9 @@ public:
 private:
   double speedfromDist(const volatile unsigned long& d)
   {
-    return sqrt(d * 2. * acc);
+    return sqrt((long double)d * 2. * acc);
   };
-  double interval2speed(double interval)
+  long double interval2speed(double interval)
   {
     return ClockSpeed / interval;
   }
