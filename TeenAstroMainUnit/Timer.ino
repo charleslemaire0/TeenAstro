@@ -1,8 +1,6 @@
 // -----------------------------------------------------------------------------------
 // Timers and interrupt handling
-#define stepAxis   1
 #define clockRatio 0.01
-
 
 #define ISR(f)  void f (void)
 void TIMER1_COMPA_vect(void);
@@ -303,12 +301,12 @@ ISR(TIMER3_COMPA_vect)
     clearAxis1 = true;
   }
 }
+
 ISR(TIMER4_COMPA_vect)
 {
   static volatile bool clearAxis2 = true;
   static volatile bool takeStepAxis2 = false;
   digitalWriteFast(Axis2StepPin, LOW);
-  // on the much faster Teensy and Tiva TM4C run this ISR at twice the normal rate and pull the step pin low every other call
   if (clearAxis2)
   {
     takeStepAxis2 = false;
