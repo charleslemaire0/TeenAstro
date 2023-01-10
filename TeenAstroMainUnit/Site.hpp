@@ -146,7 +146,7 @@ public:
   }
   void ReadCurrentSiteDefinition()
   {
-    m_siteIndex = XEEPROM.read(EE_currentSite);
+    m_siteIndex = XEEPROM.read(getMountAddress(EE_currentSite));
     if (m_siteIndex > maxNumSite)
     {
       initdefault();
@@ -161,7 +161,7 @@ public:
     for (int k = 0; k < maxNumSite - 1; k++)
     {
       m_siteIndex = k;
-      XEEPROM.write(EE_currentSite, m_siteIndex);
+      XEEPROM.write(getMountAddress(EE_currentSite), m_siteIndex);
       setLat(0);
       setLong(0);
       setElev(0);

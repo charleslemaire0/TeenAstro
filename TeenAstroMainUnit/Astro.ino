@@ -154,7 +154,7 @@ void do_compensation_calc()
 
 void initMaxRate()
 {
-  double maxslewEEPROM = XEEPROM.readInt(EE_maxRate);
+  double maxslewEEPROM = XEEPROM.readInt(getMountAddress(EE_maxRate));
   SetRates(maxslewEEPROM);          // set the new acceleration rate
 }
 
@@ -170,7 +170,7 @@ void SetRates(double maxslewrate)
   double maxslewCorrected = min(fact1 / minInterval1, fact2 / minInterval2);
   if (abs(maxslewrate - maxslewCorrected) > 2)
   {
-    XEEPROM.writeInt(EE_maxRate, (int)maxslewCorrected);
+    XEEPROM.writeInt(getMountAddress(getMountAddress(EE_maxRate)), (int)maxslewCorrected);
   }
   minInterval1 = fact1 / maxslewCorrected;
   minInterval2 = fact2 / maxslewCorrected;
@@ -178,7 +178,7 @@ void SetRates(double maxslewrate)
   if (guideRates[3] >= maxslewCorrected)
   {
     guideRates[3] = maxslewCorrected/2;
-    XEEPROM.write(EE_Rate3, guideRates[3]);
+    XEEPROM.write(getMountAddress(EE_Rate3), guideRates[3]);
   }
   resetGuideRate();
   SetAcceleration();

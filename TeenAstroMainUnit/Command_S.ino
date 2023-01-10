@@ -99,7 +99,7 @@ void Command_SX()
         i = command[3] - '0';
         int val = strtol(&command[5], NULL, 10);
         val = val > 0 && val < 256 ? val : pow(4, i);
-        XEEPROM.write(EE_Rate0 + i, val);
+        XEEPROM.write(getMountAddress(EE_Rate0 + i), val);
         if (i == 0)
           guideRates[0] = (double)val / 100.;
         else
@@ -113,7 +113,7 @@ void Command_SX()
     case 'A':
       // :SXRA,VVV# Set degree for acceleration
       DegreesForAcceleration = min(max(0.1 * (double)strtol(&command[5], NULL, 10), 0.1), 25.0);
-      XEEPROM.update(EE_degAcc, (uint8_t)(DegreesForAcceleration * 10));
+      XEEPROM.update(getMountAddress(EE_degAcc), (uint8_t)(DegreesForAcceleration * 10));
       SetAcceleration();
       replyOk();
       break;
@@ -122,13 +122,13 @@ void Command_SX()
       // :SXRD,V# define default rate
       int val = strtol(&command[5], NULL, 10);
       val = val > 4 || val < 0 ? 3 : val;
-      XEEPROM.write(EE_DefaultRate, val);
+      XEEPROM.write(getMountAddress(EE_DefaultRate), val);
       replyOk();
       break;
     }
     case 'X':
       // :SXRX,VVVV# Set Rate for max Rate
-      XEEPROM.writeInt(EE_maxRate, (int)strtol(&command[5], NULL, 10));
+      XEEPROM.writeInt(getMountAddress(EE_maxRate), (int)strtol(&command[5], NULL, 10));
       initMaxRate();
       replyOk();
       break;
@@ -157,14 +157,14 @@ void Command_SX()
       // :SXRe,VVVVVVVVVV# Store Rate for RA
       lval = strtol(&command[5], NULL, 10);
       storedTrakingRateRA = lval < -50000 || lval > 50000 ? 0 : lval;
-      XEEPROM.writeLong(EE_RA_Drift, storedTrakingRateRA);
+      XEEPROM.writeLong(getMountAddress(EE_RA_Drift), storedTrakingRateRA);
       replyOk();
       break;
     case 'f':
       // :SXRf,VVVVVVVVVV# Store Rate for DEC
       lval = strtol(&command[5], NULL, 10);
       storedTrakingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
-      XEEPROM.writeLong(EE_DEC_Drift, storedTrakingRateDEC);
+      XEEPROM.writeLong(getMountAddress(EE_DEC_Drift), storedTrakingRateDEC);
       replyOk();
       break;
     default:
@@ -179,28 +179,28 @@ void Command_SX()
     case 'A':
       // :SXLA,VVVV# set user defined minAXIS1 (always negatif)
       i = (int)strtol(&command[5], NULL, 10);
-      XEEPROM.writeInt(EE_minAxis1, i);
+      XEEPROM.writeInt(getMountAddress(EE_minAxis1), i);
       initLimitMinAxis1();
       replyOk();
       break;
     case 'B':
       // :SXLB,VVVV# set user defined maxAXIS1 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
-      XEEPROM.writeInt(EE_maxAxis1, i);
+      XEEPROM.writeInt(getMountAddress(EE_maxAxis1), i);
       initLimitMaxAxis1();
       replyOk();
       break;
     case 'C':
       // :SXLC,VVVV# set user defined minAXIS2 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
-      XEEPROM.writeInt(EE_minAxis2, i);
+      XEEPROM.writeInt(getMountAddress(EE_minAxis2), i);
       initLimitMinAxis2();
       replyOk();
       break;
     case 'D':
       // :SXLD,VVVV# set user defined maxAXIS2 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
-      XEEPROM.writeInt(EE_maxAxis2, i);
+      XEEPROM.writeInt(getMountAddress(EE_maxAxis2), i);
       initLimitMaxAxis2();
       replyOk();
       break;
@@ -209,7 +209,7 @@ void Command_SX()
       minutesPastMeridianGOTOE = (double)strtol(&command[5], NULL, 10);
       if (minutesPastMeridianGOTOE > 180) minutesPastMeridianGOTOE = 180;
       if (minutesPastMeridianGOTOE < -180) minutesPastMeridianGOTOE = -180;
-      XEEPROM.update(EE_dpmE, round((minutesPastMeridianGOTOE * 15.0) / 60.0) + 128);
+      XEEPROM.update(getMountAddress(EE_dpmE), round((minutesPastMeridianGOTOE * 15.0) / 60.0) + 128);
       replyOk();
       break;
     case 'W':
@@ -217,7 +217,7 @@ void Command_SX()
       minutesPastMeridianGOTOW = (double)strtol(&command[5], NULL, 10);
       if (minutesPastMeridianGOTOW > 180) minutesPastMeridianGOTOW = 180;
       if (minutesPastMeridianGOTOW < -180) minutesPastMeridianGOTOW = -180;
-      XEEPROM.update(EE_dpmW, round((minutesPastMeridianGOTOW * 15.0) / 60.0) + 128);
+      XEEPROM.update(getMountAddress(EE_dpmW), round((minutesPastMeridianGOTOW * 15.0) / 60.0) + 128);
       replyOk();
       break;
     case 'U':
@@ -225,7 +225,7 @@ void Command_SX()
       underPoleLimitGOTO = (double)strtol(&command[5], NULL, 10) / 10;
       if (underPoleLimitGOTO > 12) underPoleLimitGOTO = 12;
       if (underPoleLimitGOTO < 9) underPoleLimitGOTO = 9;
-      XEEPROM.update(EE_dup, round(underPoleLimitGOTO * 10.0));
+      XEEPROM.update(getMountAddress(EE_dup), round(underPoleLimitGOTO * 10.0));
       replyOk();
       break;
     case 'H':
@@ -234,7 +234,7 @@ void Command_SX()
       if ((atoi2(&command[5], &i)) && ((i >= -30) && (i <= 30)))
       {
         minAlt = i;
-        XEEPROM.update(EE_minAlt, minAlt + 128);
+        XEEPROM.update(getMountAddress(EE_minAlt), minAlt + 128);
         replyOk();
       }
       else
@@ -245,7 +245,7 @@ void Command_SX()
       if ((atoi2(&command[5], &i)) && ((i >= 45) && (i <= 91)))
       {
         maxAlt = i;
-        XEEPROM.update(EE_maxAlt, maxAlt);
+        XEEPROM.update(getMountAddress(EE_maxAlt), maxAlt);
         replyOk();
       }
       else
@@ -319,7 +319,7 @@ void Command_SX()
         if (command[4] == 'D')
         {
           backlashA2.inSeconds = i;
-          XEEPROM.writeInt(EE_backlashAxis2, backlashA2.inSeconds);
+          XEEPROM.writeInt(getMountAddress(EE_backlashAxis2), backlashA2.inSeconds);
           backlashA2.inSteps = (int)round((double)backlashA2.inSeconds / geoA2.stepsPerArcSecond);
           backlashA2.movedSteps = 0;
           replyOk();
@@ -327,7 +327,7 @@ void Command_SX()
         else if (command[4] == 'R')
         {
           backlashA1.inSeconds = i;
-          XEEPROM.writeInt(EE_backlashAxis1, backlashA1.inSeconds);
+          XEEPROM.writeInt(getMountAddress(EE_backlashAxis1), backlashA1.inSeconds);
           backlashA1.inSteps = (int)round((double)backlashA1.inSeconds / geoA1.stepsPerArcSecond);
           backlashA1.movedSteps = 0;
           replyOk();
@@ -356,7 +356,7 @@ void Command_SX()
             sei();
             StopAxis2();
             motorA2.gear = (unsigned int)i;
-            XEEPROM.writeInt(EE_motorA2gear, i);
+            XEEPROM.writeInt(getMountAddress(EE_motorA2gear), i);
             ok = true;
           }
         }
@@ -370,7 +370,7 @@ void Command_SX()
             sei();
             StopAxis1();
             motorA1.gear = (unsigned int)i;
-            XEEPROM.writeInt(EE_motorA1gear, i);
+            XEEPROM.writeInt(getMountAddress(EE_motorA1gear), i);
             ok = true;
           }
         }
@@ -405,7 +405,7 @@ void Command_SX()
             sei();
             StopAxis2();
             motorA2.stepRot = (unsigned int)i;
-            XEEPROM.writeInt(EE_motorA2stepRot, i);
+            XEEPROM.writeInt(getMountAddress(EE_motorA2stepRot), i);
             ok = true;
           }
         }
@@ -419,7 +419,7 @@ void Command_SX()
             sei();
             StopAxis1();
             motorA1.stepRot = (unsigned int)i;
-            XEEPROM.writeInt(EE_motorA1stepRot, i);
+            XEEPROM.writeInt(getMountAddress(EE_motorA1stepRot), i);
             ok = true;
           }
         }
@@ -458,7 +458,7 @@ void Command_SX()
             StopAxis2();
             motorA2.micro = i;
             motorA2.driver.setMicrostep(motorA2.micro);;
-            XEEPROM.write(EE_motorA2micro, motorA2.micro);
+            XEEPROM.write(getMountAddress(EE_motorA2micro), motorA2.micro);
             ok = true;
           }
         }
@@ -473,7 +473,7 @@ void Command_SX()
             StopAxis1();
             motorA1.micro = i;
             motorA1.driver.setMicrostep(motorA1.micro);
-            XEEPROM.write(EE_motorA1micro, motorA1.micro);
+            XEEPROM.write(getMountAddress(EE_motorA1micro), motorA1.micro);
             ok = true;
           }
         }
@@ -505,7 +505,7 @@ void Command_SX()
           if (!motorA2.isSilentFix)
           {
           //motorA2.driver.setmode(i);
-            XEEPROM.write(EE_motorA2silent, i);
+            XEEPROM.write(getMountAddress(EE_motorA2silent), i);
             ok = true;
           }
 
@@ -515,7 +515,7 @@ void Command_SX()
           if (!motorA1.isSilentFix)
           {
           //motorA1.driver.setmode(i);
-            XEEPROM.write(EE_motorA1silent, i);
+            XEEPROM.write(getMountAddress(EE_motorA1silent), i);
             ok = true;
           }
         }
@@ -536,7 +536,7 @@ void Command_SX()
           if (!motorA2.isReverseFix)
           {
             motorA2.reverse = command[6] == '1' ? true : false;
-            XEEPROM.write(EE_motorA2reverse, motorA2.reverse);
+            XEEPROM.write(getMountAddress(EE_motorA2reverse), motorA2.reverse);
             ok = true;
           }
         }
@@ -545,7 +545,7 @@ void Command_SX()
           if (!motorA1.isReverseFix)
           {
             motorA1.reverse = command[6] == '1' ? true : false;
-            XEEPROM.write(EE_motorA1reverse, motorA1.reverse);
+            XEEPROM.write(getMountAddress(EE_motorA1reverse), motorA1.reverse);
             ok = true;
           }
         }
@@ -568,7 +568,7 @@ void Command_SX()
             if (!motorA2.isHighCurrfix)
             {
               motorA2.highCurr = curr;
-              XEEPROM.write(EE_motorA2highCurr, motorA2.highCurr / 100);
+              XEEPROM.write(getMountAddress(EE_motorA2highCurr), motorA2.highCurr / 100);
               ok = true;
             }
           }
@@ -577,7 +577,7 @@ void Command_SX()
             if (!motorA2.isLowCurrfix)
             {
               motorA2.lowCurr = curr;
-              XEEPROM.write(EE_motorA2lowCurr, motorA2.lowCurr / 100);
+              XEEPROM.write(getMountAddress(EE_motorA2lowCurr), motorA2.lowCurr / 100);
               motorA2.driver.setCurrent((unsigned int)motorA2.lowCurr);
               ok = true;
             }
@@ -590,7 +590,7 @@ void Command_SX()
             if (!motorA1.isHighCurrfix)
             {
               motorA1.highCurr = curr;
-              XEEPROM.write(EE_motorA1highCurr, motorA1.highCurr / 100);
+              XEEPROM.write(getMountAddress(EE_motorA1highCurr), motorA1.highCurr / 100);
               ok = true;
             }
           }
@@ -599,7 +599,7 @@ void Command_SX()
             if (!motorA1.isLowCurrfix)
             {
               motorA1.lowCurr = curr;
-              XEEPROM.write(EE_motorA1lowCurr, motorA1.lowCurr / 100);
+              XEEPROM.write(getMountAddress(EE_motorA1lowCurr), motorA1.lowCurr / 100);
               motorA1.driver.setCurrent((unsigned int)motorA1.lowCurr);
               ok = true;
             }
@@ -662,7 +662,7 @@ void Command_S(Command& process_command)
     i = (int)(command[2] - '0');
     if (i > 0 && i < 5 && !isMountTypeFix)
     {
-      XEEPROM.write(EE_mountType, i);
+      XEEPROM.write(getMountAddress(EE_mountType), i);
       if (!atHome)
       {
         replyFailed();
@@ -802,7 +802,7 @@ void Command_S(Command& process_command)
     if ((atoi2(&command[2], &i)) && ((i >= -30) && (i <= 30)))
     {
       minAlt = i;
-      XEEPROM.update(EE_minAlt, minAlt + 128);
+      XEEPROM.update(getMountAddress(EE_minAlt), minAlt + 128);
       replyOk();
     }
     else replyFailed();
@@ -882,7 +882,7 @@ void Command_S(Command& process_command)
       if ((atoi2(&command[2], &i)) && ((i >= 60) && (i <= 91)))
       {
         maxAlt = i;
-        XEEPROM.update(EE_maxAlt, maxAlt);
+        XEEPROM.update(getMountAddress(EE_maxAlt), maxAlt);
         replyOk();
       }
       else replyFailed();
@@ -952,8 +952,8 @@ void Command_S(Command& process_command)
   case 'U':
     // :SU# store current User defined Position
     getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
-    XEEPROM.writeFloat(EE_RA, (float)f);
-    XEEPROM.writeFloat(EE_DEC, (float)f1);
+    XEEPROM.writeFloat(getMountAddress(EE_RA), (float)f);
+    XEEPROM.writeFloat(getMountAddress(EE_DEC), (float)f1);
     replyOk();
     break;
   case 'X':

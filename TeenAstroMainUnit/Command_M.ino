@@ -182,8 +182,8 @@ void Command_M()
     //  :MU#   Goto the User Defined Target Object
     //         Returns an ERRGOTO
     PierSide targetPierSide = GetPierSide();
-    newTargetRA = (double)XEEPROM.readFloat(EE_RA);
-    newTargetDec = (double)XEEPROM.readFloat(EE_DEC);
+    newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
+    newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     i = goToEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
     if (i == 0)

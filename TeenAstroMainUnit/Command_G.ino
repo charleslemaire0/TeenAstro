@@ -283,11 +283,11 @@ void Command_GX()
       break;
     case 'D':
       // :GXRD# returns the Default Rate
-      sprintf(reply, "%d#", XEEPROM.read(EE_DefaultRate));
+      sprintf(reply, "%d#", XEEPROM.read(getMountAddress(EE_DefaultRate)));
       break;
     case 'X':
       // :GXRX# return Max Slew rate
-      sprintf(reply, "%d#", XEEPROM.readInt(EE_maxRate));
+      sprintf(reply, "%d#", XEEPROM.readInt(getMountAddress(EE_maxRate)));
       break;
     case 'r':
       // :GXRr# Requested RA traking rate in sideral
@@ -323,22 +323,22 @@ void Command_GX()
     {
     case 'A':
       // :GXLA# get user defined minAXIS1 (always negatif)
-      i = XEEPROM.readInt(EE_minAxis1);
+      i = XEEPROM.readInt(getMountAddress(EE_minAxis1));
       sprintf(reply, "%d#", i);
       break;
     case 'B':
       // :GXLB# get user defined maxAXIS1 (always positf)
-      i = XEEPROM.readInt(EE_maxAxis1);
+      i = XEEPROM.readInt(getMountAddress(EE_maxAxis1));
       sprintf(reply, "%d#", i);
       break;
     case 'C':
       // :GXLC# get user defined minAXIS2 (always positf)
-      i = XEEPROM.readInt(EE_minAxis2);
+      i = XEEPROM.readInt(getMountAddress(EE_minAxis2));
       sprintf(reply, "%d#", i);
       break;
     case 'D':
       // :GXLD# get user defined maxAXIS2 (always positf)
-      i = XEEPROM.readInt(EE_maxAxis2);
+      i = XEEPROM.readInt(getMountAddress(EE_maxAxis2));
       sprintf(reply, "%d#", i);
       break;
     case 'E':
