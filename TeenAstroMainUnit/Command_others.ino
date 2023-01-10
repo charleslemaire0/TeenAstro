@@ -222,8 +222,8 @@ void Command_C()
     case 'U':
     {
       // :CU# sync with the User Defined RA DEC
-      newTargetRA = (double)XEEPROM.readFloat(EE_RA);
-      newTargetDec = (double)XEEPROM.readFloat(EE_DEC);
+      newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
+      newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
       i = syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
       break;
@@ -303,7 +303,7 @@ void Command_h()
     //          Return: 0 on failure
     //                  1 on success
     homeSaved = false;
-    XEEPROM.write(EE_homeSaved, false);
+    XEEPROM.write(getMountAddress(EE_homeSaved), false);
     initHome();
     replyOk();
     break;
@@ -533,21 +533,21 @@ void Command_T()
     // turn compensation off
     tc = TC_NONE;
     computeTrackingRate(true);
-    XEEPROM.update(EE_TC_Axis, 0);
+    XEEPROM.update(getMountAddress(EE_TC_Axis), 0);
     replyOk();
     break;
   case '1':
     // turn compensation RA only
     tc = TC_RA;
     computeTrackingRate(true);
-    XEEPROM.update(EE_TC_Axis, 0);
+    XEEPROM.update(getMountAddress(EE_TC_Axis), 0);
     replyOk();
     break;
   case '2':
     // turn compensation BOTH
     tc = TC_BOTH;
     computeTrackingRate(true);
-    XEEPROM.update(EE_TC_Axis, 2);
+    XEEPROM.update(getMountAddress(EE_TC_Axis), 2);
     replyOk();
     break;
   default:
@@ -558,7 +558,7 @@ void Command_T()
   // Only burn the new rate if changing the sidereal interval
   if (command[1] == '+' || command[1] == '-' || command[1] == 'R')
   {
-    XEEPROM.writeLong(EE_siderealClockSpeed, siderealClockSpeed*16);
+    XEEPROM.writeLong(getMountAddress(EE_siderealClockSpeed), siderealClockSpeed*16);
     updateSideral();
   }
 }
@@ -593,7 +593,7 @@ void Command_W()
   case '3':
   {
     uint8_t currentSite = command[1] - '0';
-    XEEPROM.write(EE_currentSite, currentSite);
+    XEEPROM.write(getMountAddress(EE_currentSite), currentSite);
     localSite.ReadSiteDefinition(currentSite);
     rtk.resetLongitude(*localSite.longitude());
     initCelestialPole();
