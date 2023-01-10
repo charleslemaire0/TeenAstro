@@ -165,6 +165,7 @@ public:
       setLat(0);
       setLong(0);
       setElev(0);
+      setToff(0);
       sprintf(txt, "Site %d", k);
       setSiteName(txt);
     }
