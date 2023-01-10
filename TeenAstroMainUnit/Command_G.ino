@@ -695,6 +695,22 @@ void Command_GX()
     }
   }
   break;
+  case 'O':
+    // :GXOn# Options
+  {
+    switch (command[3])
+    {
+    case 'I':
+      // :GXOI# Mount idx
+      sprintf(reply, "%d#", midx);
+      break;
+    case 'N':
+      // :GXOI# Mount Name
+      sprintf(reply, "%s#", mountName);
+      break;
+    }
+  }
+  break;
   default:
     replyFailed();
     break;

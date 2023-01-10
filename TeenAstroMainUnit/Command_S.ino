@@ -307,7 +307,7 @@ void Command_SX()
     }
     break;
   case 'M':
-    // :SXMnn# Mount Settings
+    // :SXMnn# Motor Settings
     switch (command[3])
     {
     case 'B':
@@ -641,6 +641,36 @@ void Command_SX()
     break;
   case 'O':
     // :SXO-,VVVV Options
+    switch (command[3])
+    {
+    case 'I':
+      // :SXOI,V set Mount index
+    {
+      if ((atoi2(&command[5], &i)) && ((i >= 0) && (i < maxNumMount)))
+      {
+        midx = i;
+        replyOk();
+      }
+      else
+        replyFailed();
+    }
+    break;
+    case 'N':
+      // :SXON,NNNN set Mount Name
+    {
+      if (strlen(&command[5]) < MountNameLen + 1)
+      {
+        memcpy(mountName, &command[5], MountNameLen * sizeof(char));
+        XEEPROM.writeString(getMountAddress(EE_mountName), mountName, MountNameLen);
+        replyOk();
+      }
+      else
+        replyFailed();
+      break;
+    }
+    break;
+    }
+    break;
   default:
     replyFailed();
     break;
