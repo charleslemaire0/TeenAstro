@@ -385,7 +385,16 @@ void SafetyCheck(const bool forceTracking)
       lastError = ERRT_NONE;
     }
   }
-
+  if (atHome && lastError != ERRT_NONE)
+  {
+    unsetHome();
+    syncAtHome();
+  }
+  if (parkStatus == PRK_PARKED && lastError != ERRT_NONE)
+  {
+    unsetPark();
+    syncAtHome();
+  }
 }
 
 
