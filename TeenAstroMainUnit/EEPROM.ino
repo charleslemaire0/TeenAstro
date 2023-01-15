@@ -79,10 +79,10 @@ void writeDefaultMount()
   doesRefraction.writeDefaultToEEPROM();
 }
 
-void writeDefaultMountName()
+void writeDefaultMountName(int i)
 {
-  sprintf(mountName, "Mount %d", midx);
-  XEEPROM.writeString(getMountAddress(EE_mountName), mountName, MountNameLen);
+  sprintf(mountName[i], "Mount %d", i);
+  XEEPROM.writeString(getMountAddress(EE_mountName), mountName[i], MountNameLen);
 }
 
 void initMount()
@@ -97,10 +97,13 @@ void initMount()
     writeDefaultMounts();
   }
 
-  bool ok = XEEPROM.readString(getMountAddress(EE_mountName), mountName, MountNameLen);
-  if (!ok || strlen(mountName) == 0)
+  for (int i = 0; i < 2; i++)
   {
-    writeDefaultMountName();
+    bool ok = XEEPROM.readString(getMountAddress(EE_mountName), mountName[i], MountNameLen);
+    if (!ok || strlen(mountName[i]) == 0)
+    {
+      writeDefaultMountName(i);
+    }
   }
 
 #ifdef D_mountType

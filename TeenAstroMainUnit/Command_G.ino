@@ -704,9 +704,17 @@ void Command_GX()
       // :GXOI# Mount idx
       sprintf(reply, "%d#", midx);
       break;
-    case 'N':
-      // :GXOI# Mount Name
-      sprintf(reply, "%s#", mountName);
+    case 'A':
+      // :GXOA# Mount Name
+      sprintf(reply, "%s#", mountName[midx]);
+      break;
+    case 'B':
+      // :GXOB# first Mount Name
+      sprintf(reply, "%s#", mountName[0]);
+      break;
+    case 'C':
+      // :GXOC# second Mount Name
+      sprintf(reply, "%s#", mountName[1]);
       break;
     }
   }

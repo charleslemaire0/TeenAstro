@@ -662,8 +662,8 @@ void Command_SX()
     {
       if (strlen(&command[5]) < MountNameLen + 1)
       {
-        memcpy(mountName, &command[5], MountNameLen * sizeof(char));
-        XEEPROM.writeString(getMountAddress(EE_mountName), mountName, MountNameLen);
+        memcpy(mountName[midx], &command[5], MountNameLen * sizeof(char));
+        XEEPROM.writeString(getMountAddress(EE_mountName), mountName[midx], MountNameLen);
         replyOk();
       }
       else
