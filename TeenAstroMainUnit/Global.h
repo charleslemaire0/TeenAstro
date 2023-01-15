@@ -38,7 +38,7 @@ bool homeMount = false;
 bool DecayModeTrack = false;
 MeridianFlip meridianFlip = MeridianFlip::FLIP_NEVER;
 Mount mountType = Mount::MOUNT_TYPE_GEM;
-char mountName[2][15];
+char mountName[maxNumMount][15];
 bool isMountTypeFix = false;
 byte maxAlignNumStar = 0;
 bool autoAlignmentBySync = false;
