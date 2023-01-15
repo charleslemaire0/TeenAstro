@@ -103,17 +103,23 @@ void SmartHandController::menuSites()
   {
     GetSiteNameLX200(i, sitename, sizeof(sitename));
     strcat(txt, sitename);
-    strcat(txt, "\n");
+    if (i != 2)
+    {
+      strcat(txt, "\n");
+    }
   }
 
   if (DisplayMessageLX200(GetSiteLX200(val)))
   {
-    uint8_t tmp_sel = val;
-    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, "Menu Sites", tmp_sel, txt);
+    uint8_t tmp_in = val + 1;
+    uint8_t tmp_sel = display->UserInterfaceSelectionList(&buttonPad, "Menu Sites", tmp_in, txt);
     if (tmp_sel != 0)
     {
-      val = tmp_sel - 1;
-      SetSiteLX200(val);
+      if (tmp_sel != tmp_in)
+      {
+        val = (int)tmp_sel - 1;
+        SetSiteLX200(val);
+      }
     }
   }
 }

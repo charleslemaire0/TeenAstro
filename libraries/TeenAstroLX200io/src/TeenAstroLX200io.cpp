@@ -421,7 +421,7 @@ LX200RETURN GetSiteLX200(int& value)
   char out[LX200sbuff];
   if (GetLX200(":W?#", out, sizeof(out)) == LX200_VALUEGET)
   {
-    value = (int)strtol(&out[0], NULL, 10) + 1;
+    value = (int)strtol(&out[0], NULL, 10);
     return LX200_VALUEGET;
   }
   return LX200_GETVALUEFAILED;
@@ -431,7 +431,7 @@ LX200RETURN GetSiteNameLX200(int idx, char* name, int len)
 {
   char out[LX200sbuff];
   char cmd[10] = ":GM#";
-  cmd[3] += idx;
+  cmd[2] += idx;
   return GetLX200(cmd, name, len);
 }
 
