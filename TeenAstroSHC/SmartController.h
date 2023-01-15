@@ -168,6 +168,7 @@ private:
   bool menuSetSilentStep(const uint8_t &axis);
   bool menuSetCurrent(const uint8_t &axis, bool high);
   void DisplayMountSettings();
+  void menuMounts();
   void DisplayAccMaxRateSettings();
   void DisplayMotorSettings(const uint8_t &axis);
   void DisplayMessage(const char* txt1, const char* txt2 = NULL, int duration = 0);

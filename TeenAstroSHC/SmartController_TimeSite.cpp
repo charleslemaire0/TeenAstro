@@ -1,3 +1,4 @@
+#include <TeenAstroLX200io.h>
 #include "SmartController.h"
 #include "SHC_text.h"
 
@@ -96,22 +97,14 @@ void SmartHandController::menuSite()
 void SmartHandController::menuSites()
 {
   int val;
-  char m[15];
-  char n[15];
-  char o[15];
-  char p[15];
+  char sitename[15];
   char txt[70] = "";
-  GetLX200(":GM#", m, sizeof(m));
-  GetLX200(":GN#", n, sizeof(n));
-  GetLX200(":GO#", o, sizeof(o));
-  GetLX200(":GP#", p, sizeof(p));
-  strcat(txt, m);
-  strcat(txt, "\n");
-  strcat(txt, n);
-  strcat(txt, "\n");
-  strcat(txt, o);
-  strcat(txt, "\n");
-  strcat(txt, p);
+  for (int i = 0; i < 3; i++)
+  {
+    GetSiteNameLX200(i, sitename, sizeof(sitename));
+    strcat(txt, sitename);
+    strcat(txt, "\n");
+  }
 
   if (DisplayMessageLX200(GetSiteLX200(val)))
   {

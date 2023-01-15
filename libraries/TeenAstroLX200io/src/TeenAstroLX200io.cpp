@@ -427,6 +427,33 @@ LX200RETURN GetSiteLX200(int& value)
   return LX200_GETVALUEFAILED;
 }
 
+LX200RETURN GetSiteNameLX200(int idx, char* name, int len)
+{
+  char out[LX200sbuff];
+  char cmd[10] = ":GM#";
+  cmd[3] += idx;
+  return GetLX200(cmd, name, len);
+}
+
+LX200RETURN GetMountIdxLX200(int& value)
+{
+  char out[LX200sbuff];
+  if (GetLX200(":GXOI#", out, sizeof(out)) == LX200_VALUEGET)
+  {
+    value = (int)strtol(&out[0], NULL, 10);
+    return LX200_VALUEGET;
+  }
+  return LX200_GETVALUEFAILED;
+}
+
+LX200RETURN GetMountNameLX200(int idx, char* name, int len)
+{
+  char out[LX200sbuff];
+  char cmd[10] = ":GXOB#";
+  cmd[4] += idx;
+  return GetLX200(cmd, name, len);
+}
+
 LX200RETURN GetLatitudeLX200(double& degree)
 {
   char out[LX200sbuff];
@@ -476,12 +503,28 @@ LX200RETURN GetDeclinationLX200(double& degree)
   return LX200_GETVALUEFAILED;
 }
 
-void SetSiteLX200(int& value)
+LX200RETURN SetSiteLX200(int& value)
 {
   char cmd[LX200sbuff];
   sprintf(cmd, ":W%d#", value);
-  SetLX200(cmd);
+  return SetLX200(cmd);
 }
+
+LX200RETURN SetMountLX200(int& value)
+{
+  char cmd[LX200sbuff];
+  sprintf(cmd, ":SXOI,%d#", value);
+  return SetLX200(cmd);
+}
+
+LX200RETURN SetMountNameLX200(int idx, char* name)
+{
+  char cmd[LX200sbuff];
+  sprintf(cmd, ":SXOB,%s#", idx);
+  cmd[4] += idx;
+  return SetLX200(cmd);
+}
+
 
 LX200RETURN Move2TargetLX200(TARGETTYPE target)
 {
