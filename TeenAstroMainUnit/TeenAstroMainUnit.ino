@@ -80,10 +80,7 @@ void setup()
 #endif
 
   // ST4 interface
-  pinMode(ST4RAw, INPUT);
-  pinMode(ST4RAe, INPUT);
-  pinMode(ST4DEn, INPUT);
-  pinMode(ST4DEs, INPUT);
+  setupST4();
 
   // inputs for stepper drivers fault signal
 #ifndef AXIS1_FAULT_OFF

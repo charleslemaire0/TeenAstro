@@ -130,10 +130,10 @@
 #define FocuserRX       15
 #define FocuserTX       14
 // ST4 interface
-#define ST4RAe          16                  // ST4 REast
+#define ST4RAe          16                 // ST4 REast
 #define ST4DEs          17                 // ST4 South
-#define ST4DEn          18                // ST4 North
-#define ST4RAw          19                // ST4 West
+#define ST4DEn          18                 // ST4 North
+#define ST4RAw          19                 // ST4 West
 
 // LED interface
 #define LEDPin          23 
@@ -177,14 +177,8 @@
 #define LEDPin          27
 #define MaxLED          16
 
-// Unused pins
-// ST4 interface
-#define ST4RAe          40                // ST4 REast
-#define ST4DEs          41                // ST4 South
-#define ST4DEn          42                // ST4 North
-#define ST4RAw          43                // ST4 West
-
 #define RETICULE_LED_PINS 28
 #define PPS             10
 #endif
 
+#define HASST4 (defined ST4RAw && defined ST4RAe && defined ST4DEn && defined ST4DEs)
