@@ -880,13 +880,11 @@ void  Command_G()
   //  :GM#   Get Site 1 Name, Native LX200 command
   //  :GN#   Get Site 2 Name, Native LX200 command
   //  :GO#   Get Site 3 Name, Native LX200 command
-  //  :GP#   Get Site 4 Name, Native LX200 command
   //         Returns: <string>#
   //         A # terminated string with the name of the requested site.
   case 'M':
   case 'N':
   case 'O':
-  case 'P':
   {
     i = command[1] - 'M';
     bool ok = XEEPROM.readString(EE_sites + i * SiteSize + EE_site_name, reply, siteNameLen);
