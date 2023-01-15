@@ -657,13 +657,21 @@ void Command_SX()
         replyFailed();
     }
     break;
-    case 'N':
+    case 'A':
+    case 'B':
+    case 'C':
       // :SXON,NNNN set Mount Name
     {
+
+      int i = 0;
+      if (command[3] == 'A')
+        i = midx;
+      else if (command[3] == 'C')
+        i = 1;
       if (strlen(&command[5]) < MountNameLen + 1)
       {
-        memcpy(mountName[midx], &command[5], MountNameLen * sizeof(char));
-        XEEPROM.writeString(getMountAddress(EE_mountName), mountName[midx], MountNameLen);
+        memcpy(mountName[i], &command[5], MountNameLen * sizeof(char));
+        XEEPROM.writeString(getMountAddress(EE_mountName, i), mountName[i], MountNameLen);
         replyOk();
       }
       else

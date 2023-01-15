@@ -99,7 +99,7 @@ void initMount()
 
   for (int i = 0; i < maxNumMount; i++)
   {
-    bool ok = XEEPROM.readString(getMountAddress(EE_mountName), mountName[i], MountNameLen);
+    bool ok = XEEPROM.readString(getMountAddress(EE_mountName,i), mountName[i], MountNameLen);
     if (!ok || strlen(mountName[i]) == 0)
     {
       writeDefaultMountName(i);

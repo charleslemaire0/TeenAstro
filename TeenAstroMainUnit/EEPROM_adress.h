@@ -111,3 +111,8 @@ int getMountAddress(int adress)
 {
   return EE_Mounts + MountSize * midx + adress;
 }
+
+int getMountAddress(int adress, int idx)
+{
+  return EE_Mounts + MountSize * idx + adress;
+}
