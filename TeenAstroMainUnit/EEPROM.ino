@@ -29,7 +29,7 @@ void writeDefaultMounts()
 
 void writeDefaultMount()
 {
-  writeDefaultMountName();
+  writeDefaultMountName(midx);
   XEEPROM.write(getMountAddress(EE_mountType), MOUNT_TYPE_GEM);
   // init the min and max altitude
   minAlt = -10;
@@ -97,7 +97,7 @@ void initMount()
     writeDefaultMounts();
   }
 
-  for (int i = 0; i < 2; i++)
+  for (int i = 0; i < maxNumMount; i++)
   {
     bool ok = XEEPROM.readString(getMountAddress(EE_mountName), mountName[i], MountNameLen);
     if (!ok || strlen(mountName[i]) == 0)
