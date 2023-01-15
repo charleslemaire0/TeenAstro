@@ -38,42 +38,27 @@ void checkST4()
   n2 = digitalRead(ST4DEn);
   s2 = digitalRead(ST4DEs);
 
-  if ((w1 == w2) && (e1 == e2) && (n1 == n2) && (s1 == s2))
+  if ((w1 == w2) && (e1 == e2))
   {
     ST4RA_state = 0;
-    if (w1 == LOW)
+    if (w1 != e1)
     {
-      if (e1 != LOW) ST4RA_state = '+';
+      if (w1 == LOW)
+        ST4RA_state = '+';
+      if (e1 == LOW)
+        ST4RA_state = '-';
     }
-    else if (e1 == LOW)
-      ST4RA_state = '-';
+  }
+  if ((n1 == n2) && (s1 == s2))
+  {
     ST4DE_state = 0;
-    if (n1 == LOW)
+    if (n1 != s1)
     {
-      if (s1 != LOW)
-      {
-        if (GetPierSide() >= PIER_WEST)
-        {
-          ST4DE_state = '-';
-        }
-        else
-        {
-          ST4DE_state = '+';
-        }
-      }
+      if (n1 == LOW)
+        ST4RA_state = GetPierSide() >= PIER_WEST ? '-' : '+';
+      if (s1 == LOW)
+        ST4RA_state = GetPierSide() >= PIER_WEST ? '+' : '-';
     }
-    else if (s1 == LOW)
-    {
-      if (GetPierSide() >= PIER_WEST)
-      {
-        ST4DE_state = '+';
-      }
-      else
-      {
-        ST4DE_state = '-';
-      }
-    }
-
   }
 
   // RA changed?
