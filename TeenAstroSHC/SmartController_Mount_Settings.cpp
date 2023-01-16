@@ -262,7 +262,10 @@ void SmartHandController::menuMounts()
   {
     GetMountNameLX200(i, mountname, sizeof(mountname));
     strcat(txt, mountname);
-    strcat(txt, "\n");
+    if (i != 1)
+    {
+      strcat(txt, "\n");
+    }
   }
 
   if (DisplayMessageLX200(GetMountIdxLX200(val)))
