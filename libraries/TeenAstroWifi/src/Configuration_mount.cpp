@@ -354,7 +354,8 @@ void TeenAstroWifi::processConfigurationMountGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
-      SetMountLX200(i); 
+      SetMountLX200(i);
+      restartRequired_t = true;
     }
   }
   // name
