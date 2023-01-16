@@ -84,7 +84,7 @@ const char html_configSiteSelect2[] PROGMEM =
 "</select>"
 " (Select your predefined site)"
 "</form>"
-"\r\n";
+"<br/>\r\n";
 const char html_configSiteName1[] PROGMEM =
 "<div class='bt' align='left'> Selected Site definition: <br/> </div>"
 "<form method='get' action='/configuration_site.htm'>";
@@ -174,11 +174,10 @@ void TeenAstroWifi::handleConfigurationSite()
     int selectedsite = 0;
     if ((atoi2(temp1, &selectedsite)) && ((selectedsite >= 0) && (selectedsite <= 3)))
     {
-      char m[32]; char n[32]; char o[32]; char p[32];
+      char m[32]; char n[32]; char o[32];
       GetLX200(":GM#", m, sizeof(m));
       GetLX200(":GN#", n, sizeof(n));
       GetLX200(":GO#", o, sizeof(o));
-      GetLX200(":GP#", p, sizeof(p));
       data += FPSTR(html_configSiteSelect1);
       sendHtml(data);
       selectedsite == 0 ? data += "<option selected value='0'>" : data += "<option value='0'>";
@@ -189,9 +188,6 @@ void TeenAstroWifi::handleConfigurationSite()
       data += temp;
       selectedsite == 2 ? data += "<option selected value='2'>" : data += "<option value='2'>";
       sprintf(temp, "%s</option>", o);
-      data += temp;
-      selectedsite == 3 ? data += "<option selected value='3'>" : data += "<option value='3'>";
-      sprintf(temp, "%s</option>", p);
       data += temp;
       data += FPSTR(html_configSiteSelect2);
       sendHtml(data);
