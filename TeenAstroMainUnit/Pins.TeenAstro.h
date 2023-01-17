@@ -134,6 +134,12 @@
 #define ST4DEs          17                 // ST4 South
 #define ST4DEn          18                 // ST4 North
 #define ST4RAw          19                 // ST4 West
+// encoder interface
+#define EA1A             25
+#define EA1B             27
+#define EA2A             31
+#define EA2B             33
+
 
 // LED interface
 #define LEDPin          23 
@@ -182,3 +188,4 @@
 #endif
 
 #define HASST4 (defined ST4RAw && defined ST4RAe && defined ST4DEn && defined ST4DEs)
+#define HASEncoder (defined EA1A && defined EA1B && defined EA2A && defined EA2B)

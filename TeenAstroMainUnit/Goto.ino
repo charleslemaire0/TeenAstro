@@ -59,6 +59,26 @@ bool getEqu(double *HA, double *Dec, const double *cosLat, const double *sinLat,
   return true;
 }
 
+bool getEquE(double* HA, double* Dec, const double* cosLat, const double* sinLat, bool returnHA)
+{
+  double  azm, alt = 0;
+  getHorAppE(&azm, &alt);
+  if (doesRefraction.forGoto)
+  {
+    HorAppToEqu(azm, alt, HA, Dec, cosLat, sinLat);
+  }
+  else
+  {
+    HorTopoToEqu(azm, alt, HA, Dec, cosLat, sinLat);
+  }
+  if (!returnHA)
+  {
+    *HA = degRange(rtk.LST() * 15.0 - *HA);
+  }
+  return true;
+}
+
+
 // gets the telescopes current Topocentric Target RA and Dec, set returnHA to true for Horizon Angle instead of RA
 bool getEquTarget(double *HA, double *Dec, const double *cosLat, const double *sinLat, bool returnHA)
 {
@@ -89,6 +109,16 @@ bool getHorApp(double *Azm, double *Alt)
   alignment.toReferenceDeg(*Azm, *Alt, Axis1, Axis2);
   return true;
 }
+
+bool getHorAppE(double* Azm, double* Alt)
+{
+  double Axis1, Axis2;
+  encoderA1.r_deg(Axis1);
+  encoderA2.r_deg(Axis2);
+  alignment.toReferenceDeg(*Azm, *Alt, Axis1, Axis2);
+  return true;
+}
+
 
 // gets the telescopes current Apparent Target Alt and Azm!
 bool getHorAppTarget(double *Azm, double *Alt)

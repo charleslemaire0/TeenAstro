@@ -5,10 +5,42 @@
 // :GXnn#  Get TeenAstro value
 //         Returns: value
 //         All these command are not part of the LX200 Standard.
+
+void PrintAtitude(double& val)
+{
+  if (!doubleToDms(reply, &val, false, true, highPrecision))
+    replyFailed();
+  else
+    strcat(reply, "#");
+}
+void PrintAzimuth(double& val)
+{
+  val = AzRange(val);
+  if (!doubleToDms(reply, &val, true, false, highPrecision))
+    replyFailed();
+  else
+    strcat(reply, "#");
+}
+void PrintDec(double& val)
+{
+  if (!doubleToDms(reply, &val, false, true, highPrecision))
+    replyFailed();
+  else
+    strcat(reply, "#");
+}
+void PrintRa(double& val)
+{
+  if (!doubleToHms(reply, &val, highPrecision))
+    replyFailed();
+  else
+    strcat(reply, "#");
+}
+
+
 void Command_GX()
 {
   int i;
-  double f1;
+  double f,f1;
   long   l1;
   //  :GXnn#   Get TeenAstro Specific value
   switch (command[2])
@@ -98,6 +130,63 @@ void Command_GX()
       break;
     }
     break;
+  }
+  case 'E':
+    // :GXEn# get encoder commands
+  {
+    switch (command[3])
+    {
+    case '1':
+    case '2':
+      // :GXE1# get degree encoder 1
+    {
+      command[3] == '1' ? encoderA1.r_deg(f1) : encoderA2.r_deg(f1);
+      if (!doubleToDms(reply, &f1, true, true, highPrecision))
+        replyFailed();
+      else
+        strcat(reply, "#");
+    }
+    break;
+    case 'A':
+    case 'Z':
+      // :GXEA#,:GXEZ#  get encoder altitude and azimuth
+      // :GXEA Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
+      // :GXEZ Returns: DDD* MM# or DDD * MM'SS# (based on precision setting)
+    {
+      getHorAppE(&f, &f1);
+      command[3] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
+    }
+    case 'D':
+    case 'R':
+    {
+      //  :GD#   Get Telescope Encoder Declination
+      //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
+      //  :GR#   Get Telescope Encoder RA
+      //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
+      static unsigned long _coord_t = 0;
+      static double _dec = 0;
+      static double _ra = 0;
+      if (millis() - _coord_t < 100)
+      {
+        f = _ra;
+        f1 = _dec;
+      }
+      else
+      {
+        getEquE(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+        f /= 15.0;
+        _ra = f;
+        _dec = f1;
+        _coord_t = millis();
+      }
+      command[1] == 'D' ? PrintDec(f1) : PrintRa(f);
+    }
+    break;
+    default:
+      replyFailed();
+      break;
+    }
+
   }
   case 'D':
     // :GXDnn# for Debug commands
@@ -735,14 +824,13 @@ void  Command_G()
   switch (command[1])
   {
   case 'A':
+  case 'Z':
     //  :GA#   Get Telescope Altitude, Native LX200 command
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
-    //         The current scope altitude
-    getHorApp(&f, &f1);
-    if (!doubleToDms(reply, &f1, false, true, highPrecision))
-      replyFailed();
-    else
-      strcat(reply, "#");
+    //  :GZ#   Get telescope azimuth, Native LX200 command
+    //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
+    getHorAppE(&f, &f1);
+    command[3] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
     break;
   case 'a':
     //  :Ga#   Get Local Time in 12 hour format, Native LX200 command
@@ -797,20 +885,7 @@ void  Command_G()
       _dec = f1;
       _coord_t = millis();
     }
-    if (command[1] == 'D')
-    {
-      if (!doubleToDms(reply, &f1, false, true, highPrecision))
-        replyFailed();
-      else
-        strcat(reply, "#");
-    }
-    else
-    {
-      if (!doubleToHms(reply, &f, highPrecision))
-        replyFailed();
-      else
-        strcat(reply, "#");
-    }
+    command[1] == 'D' ? PrintDec(f1) : PrintRa(f);
     break;
   }
   case 'd':
@@ -1018,16 +1093,6 @@ void  Command_G()
   break;
   case 'X':
     Command_GX();
-    break;
-  case 'Z':
-    //  :GZ#   Get telescope azimuth, Native LX200 command
-    //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
-    getHorApp(&f, &f1);
-    f = AzRange(f);
-    if (!doubleToDms(reply, &f, true, false, highPrecision))
-      replyFailed();
-    else
-      strcat(reply, "#");
     break;
   default:
     replyFailed();

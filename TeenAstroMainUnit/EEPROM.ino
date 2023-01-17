@@ -1,4 +1,8 @@
 // EEPROM automatic initialization
+
+static const unsigned geardefault = 200u;
+static const unsigned pulseRotdefault = 400;
+
 void AutoinitEEPROM()
 {  
   long thisAutoInitKey = XEEPROM.readLong(EE_autoInitKey);
@@ -179,6 +183,9 @@ void initMount()
   doesRefraction.readFromEEPROM();
   initmotor(false);
   // get the site information from EEPROM
+
+  initencoder();
+
   localSite.ReadCurrentSiteDefinition();
 }
 
@@ -264,6 +271,17 @@ void initmotor(bool deleteAlignment)
   readEEPROMmotorCurrent();
   motorA1.driver.setCurrent((unsigned int)motorA1.lowCurr);
   motorA2.driver.setCurrent((unsigned int)motorA2.lowCurr);
+}
+
+void initencoder()
+{
+  readEEPROMencoder();
+  encoderA1.updateRatio();
+  encoderA2.updateRatio();
+#if HASEncoder
+  encoderA1.init(EA1A, EA1B);
+  encoderA2.init(EA2A, EA2B);
+#endif
 }
 
 void readEEPROMmotorCurrent()
@@ -447,4 +465,94 @@ void writeDefaultEEPROMmotor()
   XEEPROM.write(getMountAddress(EE_motorA2highCurr), 10);
   XEEPROM.write(getMountAddress(EE_motorA2lowCurr), 10);
   XEEPROM.write(getMountAddress(EE_motorA2silent), 0);
+}
+
+
+
+void readEEPROMencoder()
+{
+
+  //AXIS 1
+#ifdef D_encoderA1gear
+  encoderA1.gear = D_encoderA1gear;
+  encoderA1.isGearFix = true;
+#else
+  encoderA1.gear = XEEPROM.readInt(getMountAddress(EE_encoderA1gear));
+  if (encoderA1.gear == 0)
+  {
+    XEEPROM.writeInt(getMountAddress(EE_encoderA1gear), geardefault);
+    encoderA1.gear = geardefault;
+  }
+  encoderA1.isGearFix = false;
+#endif
+
+#ifdef D_encoderA1pulseRot
+  encoderA1.pulseRot = D_encoderA1pulseRot;
+  encoderA1.isStepRotFix = true;
+#else
+  encoderA1.pulseRot = XEEPROM.readInt(getMountAddress(EE_encoderA1pulseRot));
+  if (encoderA1.pulseRot == 0)
+  {
+    XEEPROM.writeInt(getMountAddress(EE_encoderA1pulseRot), pulseRotdefault);
+    encoderA1.pulseRot = pulseRotdefault;
+  }
+  encoderA1.isPulseRotFix = false;
+#endif 
+
+
+#ifdef D_encoderA1reverse
+  encoderA1.reverse = D_encoderA1reverse;
+  encoderA1.isReverseFix = true;
+#else
+  encoderA1.reverse = XEEPROM.read(getMountAddress(EE_encoderA1reverse));
+  encoderA1.isReverseFix = false;
+#endif 
+
+  //AXIS 2
+#ifdef D_encoderA2gear
+  encoderA2.gear = D_encoderA2gear;
+  encoderA2.isGearFix = true;
+#else
+  encoderA2.gear = XEEPROM.readInt(getMountAddress(EE_encoderA2gear));
+  if (encoderA2.gear == 0)
+  {
+    XEEPROM.writeInt(getMountAddress(EE_encoderA2gear), geardefault);
+    encoderA2.gear = geardefault;
+  }
+  encoderA2.isGearFix = false;
+#endif
+
+#ifdef D_encoderA2pulseRot
+  encoderA2.pulseRot = D_encoderA2pulseRot;
+  encoderA2.isStepRotFix = true;
+#else
+  encoderA2.pulseRot = XEEPROM.readInt(getMountAddress(EE_encoderA2pulseRot));
+  if (encoderA2.pulseRot == 0)
+  {
+    XEEPROM.writeInt(getMountAddress(EE_encoderA2pulseRot), pulseRotdefault);
+    encoderA2.pulseRot = pulseRotdefault;
+  }
+  encoderA2.isPulseRotFix = false;
+#endif 
+
+#ifdef D_encoderA2reverse
+  encoderA2.reverse = D_encoderA2reverse;
+  encoderA2.isReverseFix = true;
+#else
+  encoderA2.reverse = XEEPROM.read(getMountAddress(EE_encoderA2reverse));
+  encoderA2.isReverseFix = false;
+#endif 
+
+}
+
+void writeDefaultEEPROMencoder()
+{
+
+  XEEPROM.writeInt(getMountAddress(EE_encoderA1gear), geardefault);
+  XEEPROM.writeInt(getMountAddress(EE_encoderA1pulseRot), pulseRotdefault);
+  XEEPROM.write(getMountAddress(EE_encoderA1reverse), 0);
+  XEEPROM.writeInt(getMountAddress(EE_encoderA2gear), geardefault);
+  XEEPROM.writeInt(getMountAddress(EE_encoderA2pulseRot), pulseRotdefault);
+  XEEPROM.write(getMountAddress(EE_encoderA2reverse), 0);
+
 }

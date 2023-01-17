@@ -14,6 +14,7 @@
 #include "XEEPROM.hpp"
 #include "Refraction.hpp"
 #include "Axis.hpp"
+#include "AxisEncoder.hpp"
 
 TinyGPSPlus gps;
 CoordConv alignment;
@@ -72,6 +73,9 @@ double                  DegreesForAcceleration = 3;
 
 MotorAxis           motorA1;
 MotorAxis           motorA2;
+
+EncoderAxis         encoderA1;
+EncoderAxis         encoderA2;
 
 backlash            backlashA1 = { 0,0,0,0 };
 backlash            backlashA2 = { 0,0,0,0 };
