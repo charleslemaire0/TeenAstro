@@ -132,7 +132,7 @@ void Command_GX()
     break;
   }
   case 'E':
-    // :GXEn# get encoder commands
+    // :GXEnn# get encoder commands
   {
     switch (command[3])
     {
@@ -153,7 +153,12 @@ void Command_GX()
       // :GXEA Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
       // :GXEZ Returns: DDD* MM# or DDD * MM'SS# (based on precision setting)
     {
+#if HASEncoder
       getHorAppE(&f, &f1);
+#else
+      getHorApp(&f, &f1);
+#endif // HASEncoder
+
       command[3] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
     }
     case 'D':
@@ -173,7 +178,11 @@ void Command_GX()
       }
       else
       {
+#if HASEncoder
         getEquE(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+#else
+        getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+#endif
         f /= 15.0;
         _ra = f;
         _dec = f1;
@@ -182,12 +191,58 @@ void Command_GX()
       command[1] == 'D' ? PrintDec(f1) : PrintRa(f);
     }
     break;
+    case 'G':
+    {
+      // :GXEG.#   Get Encoder Gear
+      if (command[4] == 'D')
+      {
+        sprintf(reply, "%u#", encoderA2.gear);
+      }
+      else if (command[4] == 'R')
+      {
+        sprintf(reply, "%u#", encoderA1.gear);
+      }
+      else
+        replyFailed();
+    }
+    break;
+    case 'S':
+    {
+      // :GXES.#   Get Encoder pulse per Rotation
+      if (command[4] == 'D')
+      {
+        sprintf(reply, "%u#", encoderA2.pulseRot);
+      }
+      else if (command[4] == 'R')
+      {
+        sprintf(reply, "%u#", encoderA1.pulseRot);
+      }
+      else
+        replyFailed();
+    }
+    break;
+
+    case 'r':
+    {
+      // :GXMr.#   Get Encoder reverse Rotation on/off
+      if (command[4] == 'D')
+      {
+        sprintf(reply, "%u#", (unsigned  int)motorA2.reverse);
+      }
+      else if (command[4] == 'R')
+      {
+        sprintf(reply, "%u#", (unsigned  int)motorA1.reverse);
+      }
+      else
+        replyFailed();
+    }
+    break;
     default:
       replyFailed();
       break;
     }
-
   }
+  break;
   case 'D':
     // :GXDnn# for Debug commands
     switch (command[3])
