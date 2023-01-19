@@ -12,6 +12,7 @@ double frac(double v);
 double cot(double n);
 // integer numeric conversion with error checking
 bool atoi2(char *a, int *i);
+bool atoui2(char* a, unsigned int* i);
 
 double haRange(double d);
 double AzRange(double d);
