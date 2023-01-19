@@ -39,11 +39,11 @@ TeenAstroMountStatus ta_MountStatus;
 
 void setup(void)
 {
-#ifdef ARDUINO_D1_MINI32
+#ifdef ARDUINO_TTGO_LoRa32_V1
   HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309, 2);
-return;
-#endif
-  int value = analogRead(A0);
+  return;
+#else
+  int value = analogRead(A_SCREEN);
   if (value< 191)       //0.616129032V
   {
     HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SH1106, 1 );
@@ -72,7 +72,7 @@ return;
   {
     //empty
   }
-    
+#endif    
 }
 
 void loop()

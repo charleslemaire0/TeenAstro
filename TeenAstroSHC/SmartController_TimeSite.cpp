@@ -1,3 +1,4 @@
+#include <TeenAstroLX200io.h>
 #include "SmartController.h"
 #include "SHC_text.h"
 
@@ -96,31 +97,29 @@ void SmartHandController::menuSite()
 void SmartHandController::menuSites()
 {
   int val;
-  char m[15];
-  char n[15];
-  char o[15];
-  char p[15];
+  char sitename[15];
   char txt[70] = "";
-  GetLX200(":GM#", m, sizeof(m));
-  GetLX200(":GN#", n, sizeof(n));
-  GetLX200(":GO#", o, sizeof(o));
-  GetLX200(":GP#", p, sizeof(p));
-  strcat(txt, m);
-  strcat(txt, "\n");
-  strcat(txt, n);
-  strcat(txt, "\n");
-  strcat(txt, o);
-  strcat(txt, "\n");
-  strcat(txt, p);
+  for (int i = 0; i < 3; i++)
+  {
+    GetSiteNameLX200(i, sitename, sizeof(sitename));
+    strcat(txt, sitename);
+    if (i != 2)
+    {
+      strcat(txt, "\n");
+    }
+  }
 
   if (DisplayMessageLX200(GetSiteLX200(val)))
   {
-    uint8_t tmp_sel = val;
-    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, "Menu Sites", tmp_sel, txt);
+    uint8_t tmp_in = val + 1;
+    uint8_t tmp_sel = display->UserInterfaceSelectionList(&buttonPad, "Menu Sites", tmp_in, txt);
     if (tmp_sel != 0)
     {
-      val = tmp_sel - 1;
-      SetSiteLX200(val);
+      if (tmp_sel != tmp_in)
+      {
+        val = (int)tmp_sel - 1;
+        SetSiteLX200(val);
+      }
     }
   }
 }

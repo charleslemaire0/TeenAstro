@@ -59,6 +59,26 @@ bool getEqu(double *HA, double *Dec, const double *cosLat, const double *sinLat,
   return true;
 }
 
+bool getEquE(double* HA, double* Dec, const double* cosLat, const double* sinLat, bool returnHA)
+{
+  double  azm, alt = 0;
+  getHorAppE(&azm, &alt);
+  if (doesRefraction.forGoto)
+  {
+    HorAppToEqu(azm, alt, HA, Dec, cosLat, sinLat);
+  }
+  else
+  {
+    HorTopoToEqu(azm, alt, HA, Dec, cosLat, sinLat);
+  }
+  if (!returnHA)
+  {
+    *HA = degRange(rtk.LST() * 15.0 - *HA);
+  }
+  return true;
+}
+
+
 // gets the telescopes current Topocentric Target RA and Dec, set returnHA to true for Horizon Angle instead of RA
 bool getEquTarget(double *HA, double *Dec, const double *cosLat, const double *sinLat, bool returnHA)
 {
@@ -89,6 +109,16 @@ bool getHorApp(double *Azm, double *Alt)
   alignment.toReferenceDeg(*Azm, *Alt, Axis1, Axis2);
   return true;
 }
+
+bool getHorAppE(double* Azm, double* Alt)
+{
+  double Axis1, Axis2;
+  encoderA1.r_deg(Axis1);
+  encoderA2.r_deg(Axis2);
+  alignment.toReferenceDeg(*Azm, *Alt, Axis1, Axis2);
+  return true;
+}
+
 
 // gets the telescopes current Apparent Target Alt and Azm!
 bool getHorAppTarget(double *Azm, double *Alt)
@@ -169,18 +199,18 @@ ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2)
   if (movingTo)
   {
     abortSlew = true;
-    return ERRGOTO_SLEWING;
+    return ErrorsGoTo::ERRGOTO_SLEWING;
   }   // fail, prior goto cancelled
-  if (guideA1.dir || guideA2.dir) return ERRGOTO_GUIDING;   // fail, unspecified error
+  if (guideA1.isBusy() || guideA2.isBusy()) return ErrorsGoTo::ERRGOTO_GUIDINGBUSY;   // fail, unspecified error
 
   //z = AzRange(z);
   // Check to see if this goto is valid
-  if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return ERRGOTO_PARKED; // fail, PRK_PARKED
+  if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return ErrorsGoTo::ERRGOTO_PARKED; // fail, PRK_PARKED
   if (lastError != ERRT_NONE)
   {
     return static_cast<ErrorsGoTo>(lastError + 10);   // fail, telescop has Errors State
   }
-  if (staA1.fault || staA2.fault) return ERRGOTO_MOTOR; // fail, unspecified error
+  if (staA1.fault || staA2.fault) return ErrorsGoTo::ERRGOTO_MOTOR; // fail, unspecified error
   atHome = false;
   cli();
   movingTo = true;
@@ -199,7 +229,7 @@ ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2)
 
   DecayModeGoto();
 
-  return ERRGOTO_NONE;
+  return ErrorsGoTo::ERRGOTO_NONE;
 }
 
 
@@ -214,7 +244,7 @@ ErrorsGoTo Flip()
   sei();
   if (!predictTarget(Axis1, Axis2, preferedPierSide, axis1Flip, axis2Flip, selectedSide))
   {
-    return ERRGOTO_SAMESIDE;
+    return ErrorsGoTo::ERRGOTO_SAMESIDE;
   }
   return goTo(axis1Flip, axis2Flip);
 }

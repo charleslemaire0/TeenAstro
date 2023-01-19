@@ -15,22 +15,22 @@ void Command_M()
   case '2':
     f = strtod(&command[2], &conv_end);
     ok = (&command[2] != conv_end) && abs(f) <= guideRates[4];
-    ok &= !movingTo && lastError == ERRT_NONE;
-    ok &= (GuidingState == GuidingOFF || GuidingState == GuidingAtRate);
+    ok &= !movingTo && lastError == ErrorsTraking::ERRT_NONE;
+    ok &= (GuidingState == Guiding::GuidingOFF || GuidingState == Guiding::GuidingAtRate);
     if (ok)
     {
       if (command[1] == '1')
       {
-        MoveAxis1AtRate(f);
+        MoveAxisAtRate1(f);
       }
       else
       {
-        MoveAxis2AtRate(f);
+        MoveAxisAtRate2(f);
       }
-      strcpy(reply, "1");
+      replyOk();
     }
     else
-      strcpy(reply, "0");
+      replyFailed();
     break;
   case 'A':
     //  :MA#   Goto the target Alt and Az
@@ -68,15 +68,18 @@ void Command_M()
       if ((command[2] == 'e') || (command[2] == 'w'))
       {
         enableST4GuideRate();
-        guideA1.dir = command[2];
+        if (command[2] == 'e')
+        {
+          guideA1.moveBW();
+        }
+        else if (command[2] == 'w')
+        {
+          guideA1.moveFW();
+        }
         guideA1.durationLast = micros();
         guideA1.duration = (long)i * 1000L;
         cli();
-        GuidingState = GuidingPulse;
-        if (guideA1.dir == 'e')
-          guideA1.atRate = -guideA1.absRate;
-        else
-          guideA1.atRate = guideA1.absRate;
+        GuidingState = Guiding::GuidingPulse;
         sei();
         //reply[0] = '1';
         //reply[1] = 0;
@@ -84,42 +87,62 @@ void Command_M()
       else if ((command[2] == 'n') || (command[2] == 's'))
       {
         enableST4GuideRate();
-        guideA2.dir = command[2];
+        if (GetPierSide() >= PIER_WEST)
+        {
+          if (command[2] == 'n')
+          {
+            guideA2.moveBW();
+          }
+          else if (command[2] == 's')
+          {
+            guideA2.moveFW();
+          }
+        }
+        else
+        {
+          if (command[2] == 'n')
+          {
+            guideA2.moveFW();
+          }
+          else if (command[2] == 's')
+          {
+            guideA2.moveBW();
+          }
+        }
         guideA2.durationLast = micros();
         guideA2.duration = (long)i * 1000L;
-        if (guideA2.dir == 's' || guideA2.dir == 'n')
-        {
-          bool rev = false;
-          if (guideA2.dir == 's')
-            rev = true;
-          if (GetPierSide() >= PIER_WEST)
-            rev = !rev;
-          cli();
-          GuidingState = GuidingPulse;
-          guideA2.atRate = rev ? -guideA2.absRate : guideA2.absRate;
-          sei();
-        }
+        cli();
+        GuidingState = Guiding::GuidingPulse;
+        sei();
+        
         //reply[0] = '1';
         //reply[1] = 0;
       }
     }
     break;
   }
-  case 'e':
-  case 'w':
     //  :Me# & :Mw#      Move Telescope East or West at current slew rate
     //  Returns: Nothing
-  {
-    MoveAxis1(command[1], GuidingRecenter);
-  }
+  case 'e':
+    MoveAxis1(true, Guiding::GuidingRecenter);
+    break;
+  case 'w':
+    MoveAxis1(false, Guiding::GuidingRecenter);
+    break;
   break;
+  //  :Mn# & :Ms#      Move Telescope North or South at current slew rate
+  //  Returns: Nothing
   case 'n':
+    if (GetPierSide() >= PIER_WEST)
+      MoveAxis2(true, Guiding::GuidingRecenter);
+    else
+      MoveAxis2(false, Guiding::GuidingRecenter);
+    break;
   case 's':
-    //  :Mn# & :Ms#      Move Telescope North or South at current slew rate
-    //  Returns: Nothing
-  {
-    MoveAxis2(command[1], GuidingRecenter);
-  }
+    if (GetPierSide() >= PIER_WEST)
+      MoveAxis2(false, Guiding::GuidingRecenter);
+    else
+     MoveAxis2(true, Guiding::GuidingRecenter);
   break;
 
   case 'P':
@@ -159,8 +182,8 @@ void Command_M()
     //  :MU#   Goto the User Defined Target Object
     //         Returns an ERRGOTO
     PierSide targetPierSide = GetPierSide();
-    newTargetRA = (double)XEEPROM.readFloat(EE_RA);
-    newTargetDec = (double)XEEPROM.readFloat(EE_DEC);
+    newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
+    newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     i = goToEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
     if (i == 0)
@@ -218,19 +241,21 @@ void Command_M()
   }
   case '@':
   {
-    //  :M@#   Start Spiral Search
+    //  :M@V#   Start Spiral Search V in arcminutes
     //         Return 0 if failed, i if success
-    if (movingTo || GuidingState != GuidingOFF)
-      strcpy(reply, "0");
+    if (movingTo || GuidingState != Guiding::GuidingOFF)
+      replyFailed();
     else
     {
-      strcpy(reply, "1");
+      SpiralFOV = (double)strtol(&command[2], NULL, 10) / 60.0;
+      replyOk();
+      atHome = false;
       doSpiral = true;
     }
     break;
   }
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }

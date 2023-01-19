@@ -5,20 +5,14 @@
 
 void apply_GuidingA1()
 {
-  bool rev = guideA1.dir == 'e';
   cli();
-  rev ? staA1.target -= guideA1.amount : staA1.target += guideA1.amount;
+  staA1.target += guideA1.getAmount();
   sei();
 }
 void apply_GuidingA2()
 {
-  bool rev = false;
-  if (guideA2.dir == 's')
-    rev = true;
-  if (GetPierSide() >= PIER_WEST)
-    rev = !rev;
   cli();
-  rev ? staA2.target -= guideA2.amount : staA2.target += guideA2.amount;
+  staA2.target += guideA2.getAmount();
   sei();
 }
 void StopGuiding()
@@ -26,8 +20,8 @@ void StopGuiding()
   guideA1.duration = -1;
   guideA2.duration = -1;
   cli();
-  if (guideA1.dir) guideA1.dir = 'b';
-  if (guideA2.dir) guideA2.dir = 'b';
+  guideA1.brake();
+  guideA2.brake();
   sei();
 }
 bool StopIfMountError()
@@ -47,12 +41,12 @@ void PerformPulseGuiding()
   if (guideA2.duration <= 0 && guideA1.duration <= 0 )
   {
     cli();
-    if (guideA1.dir) guideA1.dir = 'b';
-    if (guideA2.dir) guideA2.dir = 'b';
+    guideA1.brake();
+    guideA2.brake();
     sei();
     return;
   }
-  if (guideA1.dir == 'w' || guideA1.dir == 'e')
+  if (guideA1.isMoving())
   {
     if (guideA1.duration > 0)
     {
@@ -71,7 +65,7 @@ void PerformPulseGuiding()
     else
     {
       cli();
-      guideA1.dir = 'b';
+      guideA1.brake();
       sei();
     }
   }
@@ -79,7 +73,7 @@ void PerformPulseGuiding()
   {
     guideA1.duration = -1;
   }
-  if (guideA2.dir == 's' || guideA2.dir == 'n')
+  if (guideA2.isMoving())
   {
     if (guideA2.duration > 0 )
     {
@@ -99,7 +93,7 @@ void PerformPulseGuiding()
     else
     {
       cli();
-      guideA2.dir = 'b';
+      guideA2.brake();
       sei();
     } 
   }
@@ -114,14 +108,14 @@ void PerfomST4Guiding()
 {
   if (StopIfMountError())
     return;
-  if (guideA1.dir == 'w' || guideA1.dir == 'e')
+  if (guideA1.isMoving())
   {
     if (!backlashA1.correcting)
     {
       apply_GuidingA1();
     }
   }
-  if (guideA2.dir == 's' || guideA2.dir == 'n')
+  if (guideA2.isMoving())
   {
     if (!backlashA2.correcting)
     {
@@ -132,14 +126,14 @@ void PerfomST4Guiding()
 
 void PerfomGuidingRecenter()
 {
-  if (guideA1.dir == 'w' || guideA1.dir == 'e')
+  if (guideA1.isMoving())
   {
     if (!backlashA1.correcting)
     {
       apply_GuidingA1();
     }
   }
-  if (guideA2.dir == 's' || guideA2.dir == 'n')
+  if (guideA2.isMoving())
   {
     if (!backlashA2.correcting)
     {
@@ -152,23 +146,21 @@ void PerformGuidingAtRate()
 {
   if (StopIfMountError())
     return;
-  if (guideA1.dir == '+' || guideA1.dir == '-')
+  if (guideA1.isMoving())
   {
     if (!backlashA1.correcting)
     {
-      bool rev = guideA1.dir == '-';
       cli();
-      rev ? staA1.target -= guideA1.amount : staA1.target += guideA1.amount;
+      staA1.target += guideA1.getAmount();
       sei();
     }
   }
-  if (guideA2.dir == '+' || guideA2.dir == '-')
+  if (guideA2.isMoving())
   {
     if (!backlashA2.correcting)
     {
-      bool rev = guideA2.dir == '-';
       cli();
-      rev ? staA2.target -= guideA2.amount : staA2.target += guideA2.amount;
+      staA2.target += guideA2.getAmount();
       sei();
     }
   }

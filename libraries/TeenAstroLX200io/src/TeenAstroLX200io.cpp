@@ -76,7 +76,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
 {
   enum CMDREPLY
   {
-    CMDR_NO, CMDR_SHORT, CMDR_LONG, CMDR_INVALID
+    CMDR_NO, CMDR_SHORT, CMDR_SHORT_BOOL, CMDR_LONG, CMDR_INVALID
   };
   CMDREPLY cmdreply = CMDR_NO;
   Ser.setTimeout(timeOutMs);
@@ -92,7 +92,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     switch (command[1])
     {
     case 'A':
-      if (strchr("023CWA", command[2])) cmdreply = CMDR_SHORT;
+      if (strchr("023CWA", command[2])) cmdreply = CMDR_SHORT_BOOL;
       else cmdreply = CMDR_INVALID;
       break;
     case 'B':
@@ -109,12 +109,12 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       break;
     case 'F':
       if (strchr("+-gGPQsS$!", command[2])) cmdreply = CMDR_NO;
-      else if (strchr("OoIi:012345678cCmrW", command[2])) cmdreply = CMDR_SHORT;
+      else if (strchr("OoIi:012345678cCmrW", command[2])) cmdreply = CMDR_SHORT_BOOL;
       else if (strchr("x?~MV", command[2])) cmdreply = CMDR_LONG;
       else cmdreply = CMDR_INVALID;
       break;
     case 'g':
-      if (strchr("ts", command[2])) cmdreply = CMDR_SHORT;
+      if (strchr("ts", command[2])) cmdreply = CMDR_SHORT_BOOL;
       else cmdreply = CMDR_INVALID;
       break;
     case 'G':
@@ -129,13 +129,14 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       if (strchr("F", command[2])) cmdreply = CMDR_NO;
       else if (strchr("BbCOPQR", command[2]))
       {
-        cmdreply = CMDR_SHORT;
+        cmdreply = CMDR_SHORT_BOOL;
       }
       else cmdreply = CMDR_INVALID;
       break;
     case 'M':
       if (strchr("ewnsg", command[2])) cmdreply = CMDR_NO;
-      else if (strchr("12SAF@U", command[2])) cmdreply = CMDR_SHORT;
+      else if (strchr("SAUF", command[2])) cmdreply = CMDR_SHORT;
+      else if (strchr("12@", command[2])) cmdreply = CMDR_SHORT_BOOL;
       else if (strchr("?", command[2])) cmdreply = CMDR_LONG;
       else cmdreply = CMDR_INVALID;
       break;
@@ -148,13 +149,12 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       else cmdreply = CMDR_INVALID;
       break;
     case 'S':
-      if (strchr("!", command[2])) cmdreply = CMDR_NO;
-      else if (strchr("aCeLSGtgmnMNOPrdhoTBXzU", command[2])) cmdreply = CMDR_SHORT;
+      if (strchr("!aCeLSGtgmnMNOPrdhoTBXzU", command[2])) cmdreply = CMDR_SHORT_BOOL;
       else cmdreply = CMDR_INVALID;
       break;
     case 'T':
       if (strchr("R+-TSLQ", command[2])) cmdreply = CMDR_NO;
-      else if (strchr("ed012", command[2])) cmdreply = CMDR_SHORT;
+      else if (strchr("ed012", command[2])) cmdreply = CMDR_SHORT_BOOL;
       else cmdreply = CMDR_INVALID;
       break;
     case 'U':
@@ -168,7 +168,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       break;
     case'$':
       if (strchr("$!", command[2])) cmdreply = CMDR_NO;
-      else if (strchr("X", command[2])) cmdreply = CMDR_SHORT;
+      else if (strchr("X", command[2])) cmdreply = CMDR_SHORT_BOOL;
       else cmdreply = CMDR_INVALID;
       break;
     default:
@@ -189,17 +189,27 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     return true;
     break;
   case CMDR_SHORT:
+  case CMDR_SHORT_BOOL:
   {
     unsigned long start = millis();
     while (millis() - start < timeOutMs)
     {
       if (Ser.available())
       {
-        recvBuffer[Ser.readBytes(recvBuffer, 1)] = 0;
+        char b = Ser.read();
+        recvBuffer[0] = b;
         break;
       }
     }
-    return (recvBuffer[0] != 0);
+    if (recvBuffer[0] == 0)
+      return false;
+
+    if (CMDR_SHORT_BOOL)
+    {
+      return recvBuffer[0] == '1';
+    }
+
+    return true;
     break;
   }
   case CMDR_LONG:
@@ -252,15 +262,6 @@ LX200RETURN SetLX200(char* command)
     return  LX200_VALUESET;
   else
     return LX200_SETVALUEFAILED;
-}
-
-LX200RETURN SetBoolLX200(char* command)
-{
-  char out[LX200sbuff];
-  if (readLX200Bytes(command, out, sizeof(out), TIMEOUT_CMD))
-    if (out[0] == '1')
-      return  LX200_VALUESET;
-  return LX200_SETVALUEFAILED;
 }
 
 LX200RETURN SyncGoHomeLX200(bool sync)
@@ -420,10 +421,37 @@ LX200RETURN GetSiteLX200(int& value)
   char out[LX200sbuff];
   if (GetLX200(":W?#", out, sizeof(out)) == LX200_VALUEGET)
   {
-    value = (int)strtol(&out[0], NULL, 10) + 1;
+    value = (int)strtol(&out[0], NULL, 10);
     return LX200_VALUEGET;
   }
   return LX200_GETVALUEFAILED;
+}
+
+LX200RETURN GetSiteNameLX200(int idx, char* name, int len)
+{
+  char out[LX200sbuff];
+  char cmd[10] = ":GM#";
+  cmd[2] += idx;
+  return GetLX200(cmd, name, len);
+}
+
+LX200RETURN GetMountIdxLX200(int& value)
+{
+  char out[LX200sbuff];
+  if (GetLX200(":GXOI#", out, sizeof(out)) == LX200_VALUEGET)
+  {
+    value = (int)strtol(&out[0], NULL, 10);
+    return LX200_VALUEGET;
+  }
+  return LX200_GETVALUEFAILED;
+}
+
+LX200RETURN GetMountNameLX200(int idx, char* name, int len)
+{
+  char out[LX200sbuff];
+  char cmd[10] = ":GXOB#";
+  cmd[4] += idx;
+  return GetLX200(cmd, name, len);
 }
 
 LX200RETURN GetLatitudeLX200(double& degree)
@@ -475,13 +503,28 @@ LX200RETURN GetDeclinationLX200(double& degree)
   return LX200_GETVALUEFAILED;
 }
 
-void SetSiteLX200(int& value)
+LX200RETURN SetSiteLX200(int& value)
 {
   char cmd[LX200sbuff];
   sprintf(cmd, ":W%d#", value);
-  Ser.print(cmd);
-  Ser.flush();
+  return SetLX200(cmd);
 }
+
+LX200RETURN SetMountLX200(int& value)
+{
+  char cmd[LX200sbuff];
+  sprintf(cmd, ":SXOI,%d#", value);
+  return SetLX200(cmd);
+}
+
+LX200RETURN SetMountNameLX200(int idx, char* name)
+{
+  char cmd[LX200sbuff];
+  sprintf(cmd, ":SXOB,%s#", idx);
+  cmd[4] += idx;
+  return SetLX200(cmd);
+}
+
 
 LX200RETURN Move2TargetLX200(TARGETTYPE target)
 {

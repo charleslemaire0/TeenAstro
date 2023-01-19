@@ -26,8 +26,9 @@ public:
   volatile bool       dir;                             // stepping direction + or -
   double              fstep;                           // amount of steps for Tracking
   volatile double     interval_Step_Sid;                  // based on the siderealClockSpeed, this is the time between steps for sidereal tracking 
-  volatile double     takeupInterval;                      // this is the takeup rate for synchronizing the target and actual positions when needed
-  volatile double     interval_Step_Cur = 0;              // this is the time between steps for the current rotation speed
+  volatile double     takeupRate;                      // this is the takeup rate for synchronizing the target and actual positions when needed
+  volatile double     takeupInterval;
+  volatile double     interval_Step_Cur = 0;            // this is the time between steps for the current rotation speed
   volatile double     CurrentTrackingRate = default_tracking_rate; //effective rate tracking in Hour arc-seconds/second
   double              RequestedTrackingRate = default_tracking_rate; //computed  rate tracking in Hour arc-seconds/second
   long                minstepdist;
@@ -61,7 +62,8 @@ public:
     ClockSpeed = cs;
     interval_Step_Sid = siderealClockSpeed / stepsPerSecond;
     minstepdist = 0.25 * stepsPerSecond;
-    takeupInterval = interval_Step_Sid / 8L;
+    takeupRate = 8L;
+    takeupInterval = interval_Step_Sid / takeupRate;
     resetToSidereal();
   };
   //double interval2speedfromTime(const double& time)
@@ -98,20 +100,33 @@ public:
 
   long breakDist()
   {
-    return (long)pow(interval2speed(interval_Step_Cur), 2.) / (4. * acc);
+    return (long)(pow(interval2speed(interval_Step_Cur), 2.) / (2. * acc));
   };
-  void breakMove()
+
+  void breakMoveLowRate()
   {
     updateDeltaTarget();
     long a = breakDist();
     if (abs(deltaTarget) > a)
     {
-      if (0 > deltaTarget) // overshoot
+      if (0 > deltaTarget)
         a = -a;
       cli();
       target = pos + a;
+      deltaTarget = a;
       sei();
     }
+  };
+  void breakMoveHighRate()
+  {
+    updateDeltaTarget();
+    long a = breakDist();
+    if (0 > deltaTarget) 
+      a = -a;
+    cli();
+    target = pos + a;
+    deltaTarget = a;
+    sei();
   };
   void setIntervalfromDist(const volatile unsigned long& d, double minInterval, double maxInterval)
   {
@@ -131,9 +146,9 @@ public:
 private:
   double speedfromDist(const volatile unsigned long& d)
   {
-    return sqrt(d * 4. * acc);
+    return sqrt((long double)d * 2. * acc);
   };
-  double interval2speed(double interval)
+  long double interval2speed(double interval)
   {
     return ClockSpeed / interval;
   }
@@ -184,19 +199,96 @@ public:
 
 class GuideAxis
 {
+  
 public:
-  volatile byte   dir;
   long            duration;
   unsigned long   durationLast;
-  double          amount;
-  volatile double atRate;
   double          absRate;
 private:
+  enum moveStatus { MBW = -2, BBW = -1, Idle = 0, BFW = 1, MFW = 2 };
+  volatile moveStatus m_mst;
+  volatile double  m_amount;
   double* m_stepsPerCentiSecond;
 public:
+  bool isMFW()
+  {
+    return m_mst == MFW;
+  }
+  bool isMBW()
+  {
+    return m_mst == MBW;
+  }
+  bool isDirFW()
+  {
+    return m_mst >= BFW;
+  }
+  bool isDirBW()
+  {
+    return m_mst <= BBW;
+  }
+  bool isBusy()
+  {
+    return m_mst != Idle;
+  }
+  bool isBraking()
+  {
+    return  m_mst == BBW || m_mst == BFW;
+  }
+  bool isMoving()
+  {
+    return m_mst == MFW || m_mst == MBW;
+  }
+  double getRate()
+  {
+    if (isDirFW())
+    {
+      return absRate;
+    }
+    else if (isDirBW())
+    {
+      return -absRate;
+    }
+    return 0;
+  }
+  double getAmount()
+  {
+    if (isDirFW())
+    {
+      return m_amount;
+    }
+    else if (isDirBW())
+    {
+      return -m_amount;
+    }
+    return 0;
+  }
+  void setIdle()
+  {
+    m_mst = Idle;
+  }
+  void moveFW()
+  {
+    m_mst = MFW;
+  }
+  void moveBW()
+  {
+    m_mst = MBW;
+  }
+  void brake()
+  {
+    if (isMFW())
+    {
+      m_mst = BFW;
+    }
+    if (isMBW())
+    {
+      m_mst = BBW;
+    }
+  }
+
   void init(double* stepsPerCentiSecond, double rate)
   {
-    dir = 0;
+    m_mst = Idle;
     duration = 0;
     m_stepsPerCentiSecond = stepsPerCentiSecond;
     enableAtRate(rate);
@@ -207,7 +299,7 @@ public:
     {
       absRate = rate;
       cli();
-      amount = absRate * *m_stepsPerCentiSecond;
+      m_amount = absRate * *m_stepsPerCentiSecond;
       sei();
     }
   }
@@ -217,15 +309,22 @@ class MotorAxis
 {
 public:
   unsigned int gear;
+  bool isGearFix;
   unsigned int stepRot;
+  bool isStepRotFix;
   byte micro;
+  bool isMicroFix;
   bool reverse;
+  bool isReverseFix;
   bool silent;
+  bool isSilentFix;
   unsigned int highCurr; //in mA
+  bool isHighCurrfix;
   unsigned int lowCurr; //in mA
+  bool isLowCurrfix;
   Driver driver;
   void initMotor(Driver::MOTORDRIVER useddriver, int EnPin, int CSPin, int DirPin, int StepPin)
   {
-    driver.initMotor(useddriver, stepRot, EnPin, CSPin, DirPin, StepPin, lowCurr, micro, silent);
+    driver.initMotor(useddriver, stepRot, EnPin, CSPin, DirPin, StepPin, 200, micro, silent);
   }
 };

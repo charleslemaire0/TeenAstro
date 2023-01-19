@@ -14,6 +14,7 @@
 #include "XEEPROM.hpp"
 #include "Refraction.hpp"
 #include "Axis.hpp"
+#include "AxisEncoder.hpp"
 
 TinyGPSPlus gps;
 CoordConv alignment;
@@ -30,14 +31,16 @@ enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW }
 enum RateCompensation { RC_UNKOWN = -1, RC_NONE, RC_ALIGN_RA, RC_ALIGN_BOTH, RC_FULL_RA, RC_FULL_BOTH };
 enum TrackingCompensation {TC_NONE, TC_RA, TC_BOTH};
 
-ParkState parkStatus = PRK_UNPARKED;
+ParkState parkStatus = ParkState::PRK_UNPARKED;
 bool parkSaved = false;
 bool homeSaved = false;
 bool atHome = true;
 bool homeMount = false;
 bool DecayModeTrack = false;
-MeridianFlip meridianFlip = FLIP_NEVER;
-Mount mountType = MOUNT_TYPE_GEM;
+MeridianFlip meridianFlip = MeridianFlip::FLIP_NEVER;
+Mount mountType = Mount::MOUNT_TYPE_GEM;
+char mountName[maxNumMount][15];
+bool isMountTypeFix = false;
 byte maxAlignNumStar = 0;
 bool autoAlignmentBySync = false;
 
@@ -45,7 +48,7 @@ bool hasFocuser = false;
 bool hasGNSS = true;
 
 RefractionFlags doesRefraction;
-TrackingCompensation tc = TC_NONE;
+TrackingCompensation tc = TrackingCompensation::TC_NONE;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
 double                  siderealClockSpeed = 997269.5625;
 const double            mastersiderealClockSpeed = 997269.5625;
@@ -70,6 +73,9 @@ double                  DegreesForAcceleration = 3;
 
 MotorAxis           motorA1;
 MotorAxis           motorA2;
+
+EncoderAxis         encoderA1;
+EncoderAxis         encoderA2;
 
 backlash            backlashA1 = { 0,0,0,0 };
 backlash            backlashA2 = { 0,0,0,0 };
@@ -102,6 +108,7 @@ double              underPoleLimitGOTO;                     // maximum allowed h
 
 #define HADirNCPInit    false
 #define HADirSCPInit    true
+
 volatile bool   HADir = HADirNCPInit;
 
 // Status ------------------------------------------------------------------------------------------------------------------
@@ -117,7 +124,7 @@ enum ErrorsTraking
   ERRT_MERIDIAN
 };
 
-ErrorsTraking lastError = ERRT_NONE;
+ErrorsTraking lastError = ErrorsTraking::ERRT_NONE;
 
 enum ErrorsGoTo
 {
@@ -128,7 +135,7 @@ enum ErrorsGoTo
   ERRGOTO_PARKED,
   ERRGOTO_SLEWING,
   ERRGOTO_LIMITS,
-  ERRGOTO_GUIDING,
+  ERRGOTO_GUIDINGBUSY,
   ERRGOTO_ABOVEOVERHEAD,
   ERRGOTO_MOTOR,
   ERRGOTO____,
@@ -147,7 +154,7 @@ bool highPrecision = true;
 volatile bool movingTo = false;
 
 bool doSpiral = false;
-
+double SpiralFOV = 1;
 // Tracking
 #define TrackingStar  1
 #define TrackingSolar 0.99726956632
@@ -162,16 +169,17 @@ enum SID_Mode
   SIDM_TARGET
 };
 
-volatile SID_Mode sideralMode = SIDM_STAR;
+volatile SID_Mode sideralMode = SID_Mode::SIDM_STAR;
 
 double  RequestedTrackingRateHA = TrackingStar; // in RA seconds per sideral second
 double  RequestedTrackingRateDEC = 0; // in DEC seconds per sideral second
 long    storedTrakingRateRA = 0;
 long    storedTrakingRateDEC = 0;
 //Guiding
+
 enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter, GuidingAtRate };
-volatile Guiding GuidingState = GuidingOFF;
-Guiding lastGuidingState = GuidingOFF;
+volatile Guiding GuidingState = Guiding::GuidingOFF;
+Guiding lastGuidingState = Guiding::GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
 unsigned long lastSecurityCheck = millis();
 

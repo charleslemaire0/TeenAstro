@@ -13,8 +13,20 @@
 #define AXIS1_DISABLED_HIGH
 #define AXIS2_DISABLED_HIGH
 // ADJUST THE FOLLOWING TO MATCH YOUR MOUNT --------------------------------------------------------------------------------
-#define StepsMinInterval          20 // this is the minimum number of micro-seconds between micro-steps                        
+
+
+#if defined(ARDUINO_TEENSY40) || defined(ARDUINO_TEENSY_MICROMOD)
+#define StepsMinInterval          4 // this is the minimum number of micro-seconds between micro-steps                        
+#else
+#define StepsMinInterval         16 // this is the minimum number of micro-seconds between micro-steps 
+#endif
 #define StepsMaxInterval      100000 // this is the maximum number of micro-seconds between micro-steps
-#define BacklashTakeupRate        16 // backlash takeup rate (in multipules of the sidereal rate): too fast and your motors will stall,
-                                     // too slow and the mount will be sluggish while it moves through the backlash
-                                     // for the most part this doesn't need to be changed, but adjust when needed.  Default=25
+
+
+#ifdef MOUNT_TEMPLATE
+#include "Config.Mount.Template.h"
+#else
+#include "Config.Mount.Universal.h"
+#endif
+
+

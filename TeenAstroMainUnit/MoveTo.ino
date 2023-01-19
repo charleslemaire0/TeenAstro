@@ -57,15 +57,15 @@ Again:
   // quickly slow the motors and stop in 1 degree
   if (abortSlew)
   {
-    staA1.breakMove();
-    guideA1.dir = 'b';
-    staA2.breakMove();
-    guideA2.dir = 'b';
+    staA1.breakMoveLowRate();
+    guideA1.brake();
+    staA2.breakMoveLowRate();
+    guideA2.brake();
     if (parkStatus == PRK_PARKING)
     {
       sideralTracking = lastSideralTracking;
       parkStatus = PRK_UNPARKED;
-      XEEPROM.write(EE_parkStatus, parkStatus);
+      XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
     }
     else if (homeMount)
     {
@@ -115,7 +115,7 @@ Again:
         }
         delay(250);
       }
-      XEEPROM.write(EE_parkStatus, parkStatus);
+      XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
     }
     else if (homeMount)
     {

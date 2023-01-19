@@ -78,16 +78,18 @@ IPAddress TeenAstroWifi::wifi_ap_sn = IPAddress(255, 255, 255, 0);
 WiFiServer TeenAstroWifi::cmdSvr = WiFiServer(9999);
 WiFiClient TeenAstroWifi::cmdSvrClient;
 
-#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
+#ifdef ARDUINO_ARCH_ESP8266
 ESP8266WebServer TeenAstroWifi::server;
 ESP8266WebServer httpServer(80);
 ESP8266HTTPUpdateServer httpUpdater;
 #endif 
-#ifdef ARDUINO_D1_MINI32
+
+#ifdef ARDUINO_ARCH_ESP32
 WebServer TeenAstroWifi::server;
 WebServer server(80);
-
+HTTPUpdateServer httpUpdater;
 #endif
+
 // -----------------------------------------------------------------------------------
 // EEPROM related functions
 
@@ -462,8 +464,10 @@ void TeenAstroWifi::setup()
     break;
   case TeenAstroWifi::M_AcessPoint:
     WiFi.mode(WIFI_AP);
-
     WiFi.softAP(wifi_ap_ssid, wifi_ap_pwd, wifi_ap_ch);
+#ifdef ARDUINO_LOLIN_C3_MINI
+    WiFi.setTxPower(WIFI_POWER_8_5dBm);
+#endif // ARDUINO_LOLIN_C3_MINI
     delay(1000);
     WiFi.softAPConfig(wifi_ap_ip, wifi_ap_gw, wifi_ap_sn);
     delay(1000);
@@ -478,6 +482,9 @@ void TeenAstroWifi::setup()
     WiFi.softAPdisconnect(true);
     WiFi.mode(WIFI_STA);
     WiFi.begin(wifi_sta_ssid[activeWifiMode], wifi_sta_pwd[activeWifiMode]);
+#ifdef ARDUINO_LOLIN_C3_MINI
+    WiFi.setTxPower(WIFI_POWER_8_5dBm);
+#endif // ARDUINO_LOLIN_C3_MINI
   default:
     break;
   }

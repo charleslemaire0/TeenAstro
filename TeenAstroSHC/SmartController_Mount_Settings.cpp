@@ -1,13 +1,14 @@
 #include "SmartController.h"
 #include "SHC_text.h"
 
+
 void SmartHandController::menuMount()
 {
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
   while (!exitMenu)
   {
-    const char *string_list_Mount = T_SHOWSETTINGS "\n" T_MOUNTTYPE "\n" T_MOTOR " 1\n" T_MOTOR " 2\n"
+    const char *string_list_Mount = T_SHOWSETTINGS "\n" T_MOUNT "\n" T_MOUNTTYPE "\n" T_MOTOR " 1\n" T_MOTOR " 2\n"
       T_ACCELERATION "\n" T_SPEED "\n" T_TRACKING "\n" T_REFRACTION "\n" T_RETICULE;
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_MOUNT, s_sel, string_list_Mount);
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
@@ -19,27 +20,30 @@ void SmartHandController::menuMount()
       DisplayMountSettings();
       break;
     case 2:
-      menuMountType();
+     menuMounts();
       break;
     case 3:
-      menuMotor(1);
+      menuMountType();
       break;
     case 4:
-      menuMotor(2);
+      menuMotor(1);
       break;
     case 5:
-      menuAcceleration();
+      menuMotor(2);
       break;
     case 6:
-      MenuRates();
+      menuAcceleration();
       break;
     case 7:
-      MenuTracking();
+      MenuRates();
       break;
     case 8:
-      MenuRefraction();
+      MenuTracking();
       break;
     case 9:
+      MenuRefraction();
+      break;
+    case 10:
       menuReticule();
       break;
     default:
@@ -243,17 +247,53 @@ void SmartHandController::MenuTrackingAlignment()
 
 void SmartHandController::DisplayMountSettings()
 {
+ 
   DisplayAccMaxRateSettings();
   DisplayMotorSettings(1);
   DisplayMotorSettings(2);
 }
 
+void SmartHandController::menuMounts()
+{
+  int val;
+  char mountname[15];
+  char txt[70] = "";
+  for (int i = 0; i < 2; i++)
+  {
+    GetMountNameLX200(i, mountname, sizeof(mountname));
+    strcat(txt, mountname);
+    if (i != 1)
+    {
+      strcat(txt, "\n");
+    }
+  }
+
+  if (DisplayMessageLX200(GetMountIdxLX200(val)))
+  {
+    uint8_t tmp_in = val + 1;
+    uint8_t tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_SELECT_MOUNT, tmp_in, txt);
+    if (tmp_sel != 0)
+    {   
+      if (tmp_in != tmp_sel)
+      {
+        val = (int)tmp_sel - 1;
+        SetMountLX200(val);
+        powerCycleRequired = true;
+        exitMenu = true;
+      }
+    }
+  }
+}
+
 void SmartHandController::DisplayAccMaxRateSettings()
 {
   char out[20];
-  char line1[32] = T_SLEWSETTING;
+  char line1[32] = "";
+  char line2[32] = T_SLEWSETTING;
   char line3[32] = "";
   char line4[32] = "";
+  DisplayMessageLX200(GetLX200(":GXOA#", line1, sizeof(line1)));
+
   if (DisplayMessageLX200(GetLX200(":GXRX#", out, sizeof(out))))
   {
     int maxrate = (float)strtol(&out[0], NULL, 10);
@@ -264,7 +304,7 @@ void SmartHandController::DisplayAccMaxRateSettings()
     float acc = atof(&out[0]);
     sprintf(line3, T_ACCELERATION ": %.1f", acc);
   }
-  DisplayLongMessage(line1, NULL, line3, line4, -1);
+  DisplayLongMessage(line1, line2, line3, line4, -1);
 }
 
 void SmartHandController::menuMountType()
@@ -281,11 +321,17 @@ void SmartHandController::menuMountType()
   {
     char out[10];
     sprintf(out, ":S!%u#", tmp_sel);
-    DisplayMessageLX200(SetLX200(out), false);
-    delay(1000);
-    Serial.end();
-    exitMenu = true;
-    powerCycleRequired = true;
+    LX200RETURN answ = SetLX200(out);
+
+    DisplayMessageLX200(answ, false);
+    if (answ == LX200_VALUESET)
+    {
+      delay(1000);
+      Serial.end();
+      exitMenu = true;
+      powerCycleRequired = true;
+    }
+
   }
 }
 

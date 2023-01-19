@@ -319,5 +319,8 @@ double CoordConv::polErrorDeg(double lat, Err sel)
 		case POL_W:
 		//err_pol
 			return toDeg(acos(x[0]*x_id[0]+x[1]*x_id[1]+x[2]*x_id[2]));
+		break;
+		default:
+			return 0;
 	}
 }

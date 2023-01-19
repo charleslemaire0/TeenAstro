@@ -14,8 +14,8 @@ void SmartHandController::setup(
   const OLED model,
   const uint8_t nSubmodel)
 {
-#ifdef ARDUINO_D1_MINI32
-  Ser.begin(SerialBaud, SERIAL_8N1, 27, 25);
+#ifdef ARDUINO_LOLIN_C3_MINI
+  Ser.begin(SerialBaud, SERIAL_8N1, RX, TX);
 #else
   Ser.begin(SerialBaud);
 #endif
@@ -341,9 +341,9 @@ void SmartHandController::manualMove(bool &moving)
         buttonCommand = true;
         Move[k - 1] = false;
         if (k < 5)
-          SetBoolLX200(BreakRC[k - 1]);
+          SetLX200(BreakRC[k - 1]);
         else
-          Move[k - 1] = !(SetBoolLX200(BreakRC[k - 1]) == LX200_VALUESET);
+          Move[k - 1] = !(SetLX200(BreakRC[k - 1]) == LX200_VALUESET);
         continue;
       }
       else if (eventbuttons[0] == E_NONE && !Move[k - 1] && (eventbuttons[k] == E_LONGPRESS || eventbuttons[k] == E_CLICK || eventbuttons[k] == E_LONGPRESSTART))
@@ -355,11 +355,11 @@ void SmartHandController::manualMove(bool &moving)
           if (!telescoplocked)
           {
             Move[k - 1] = true;
-            SetBoolLX200(RC[k - 1]);
+            SetLX200(RC[k - 1]);
           }
         }
         else if (!focuserlocked)
-          Move[k - 1] = (SetBoolLX200(RC[k - 1]) == LX200_VALUESET);
+          Move[k - 1] = (SetLX200(RC[k - 1]) == LX200_VALUESET);
         continue;
       }
       moving = moving || Move[k - 1];
