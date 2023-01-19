@@ -46,6 +46,127 @@ void Command_SX()
       replyFailed();
     break;
   }
+  case 'E':
+    // :SXEnn# set encoder commands
+  {
+    switch (command[3])
+    {
+    case 'G':
+    {
+      // :SXEGn,VVVV# Set Gear
+      unsigned int i;
+      bool ok = false;
+      if ((command[4] == 'D' || command[4] == 'R')
+        && strlen(&command[6]) > 1 && strlen(&command[6]) < 11
+        && atoui2(&command[6], &i)&& i!=0)
+      {
+        if (command[4] == 'D')
+        {
+          if (!encoderA2.isGearFix)
+          {
+            encoderA2.gear = i;
+            XEEPROM.writeInt(getMountAddress(EE_encoderA2gear), i);
+            encoderA2.updateRatio();
+            ok = true;
+          }
+        }
+        else
+        {
+          if (!encoderA1.isGearFix)
+          {
+            encoderA1.gear = i;
+            XEEPROM.writeInt(getMountAddress(EE_encoderA1gear), i);
+            encoderA1.updateRatio();
+            ok = true;
+          }
+        }
+      }
+      if (ok)
+      {
+        replyOk();
+      }
+      else
+      {
+        replyFailed();
+      }
+    }
+    break;
+    case 'S':
+    {
+      // :SXESn,VVVV# Set pulse per Rotation
+      unsigned int i;
+      bool ok = false;
+      if ((command[4] == 'D' || command[4] == 'R')
+        && (strlen(&command[6]) > 1) && (strlen(&command[6]) < 11)
+        && atoui2((char*)&command[6], &i))
+      {
+        if (command[4] == 'D')
+        {
+          if (!encoderA2.isPulseRotFix)
+          {
+            encoderA2.pulseRot = i;
+            XEEPROM.writeInt(getMountAddress(EE_encoderA2pulseRot), i);
+            encoderA2.updateRatio();
+            ok = true;
+          }
+        }
+        else
+        {
+          if (!encoderA1.isPulseRotFix)
+          {
+            encoderA1.pulseRot = i;
+            XEEPROM.writeInt(getMountAddress(EE_encoderA1pulseRot), i);
+            encoderA1.updateRatio();
+            ok = true;
+          }
+        }
+
+      }
+      if (ok)
+      {
+        replyOk();
+      }
+      else
+      {
+        replyFailed();
+      }
+    }
+    break;
+    case 'r':
+    {
+      // :SXErn,V# Set Encoder Reverse rotation
+      bool ok = false;
+      if ((command[4] == 'D' || command[4] == 'R')
+        && strlen(&command[6]) == 1
+        && (command[6] == '0' || command[6] == '1'))
+      {
+        if (command[4] == 'D')
+        {
+          if (!encoderA2.isReverseFix)
+          {
+            encoderA2.reverse = command[6] == '1' ? true : false;
+            XEEPROM.write(getMountAddress(EE_encoderA2reverse), encoderA2.reverse);
+            encoderA2.updateRatio();
+            ok = true;
+          }
+        }
+        else
+        {
+          if (!encoderA1.isReverseFix)
+          {
+            encoderA1.reverse = command[6] == '1' ? true : false;
+            XEEPROM.write(getMountAddress(EE_encoderA1reverse), encoderA1.reverse);
+            encoderA2.updateRatio();
+            ok = true;
+          }
+        }
+      }
+      ok ? replyOk() : replyFailed();
+    }
+    break;
+    }
+    break;
+  }
   case 'r':
     // :SXrn,V# refraction Settings
   {
