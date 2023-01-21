@@ -212,9 +212,9 @@ void Command_GX()
         replyFailed();
     }
     break;
-    case 'S':
+    case 'P':
     {
-      // :GXES.#   Get Encoder pulse per Rotation
+      // :GXEP.#   Get Encoder pulse per Rotation
       if (command[4] == 'D')
       {
         sprintf(reply, "%u#", encoderA2.pulseRot);

@@ -68,7 +68,7 @@ void Command_SX()
       unsigned int i;
       bool ok = false;
       if ((command[4] == 'D' || command[4] == 'R')
-        && strlen(&command[6]) > 1 && strlen(&command[6]) < 11
+        && strlen(&command[6]) > 0 && strlen(&command[6]) < 11
         && atoui2(&command[6], &i)&& i!=0)
       {
         if (command[4] == 'D')
@@ -102,13 +102,13 @@ void Command_SX()
       }
     }
     break;
-    case 'S':
+    case 'P':
     {
-      // :SXESn,VVVV# Set pulse per Rotation
+      // :SXEPn,VVVV# Set pulse per Rotation
       unsigned int i;
       bool ok = false;
       if ((command[4] == 'D' || command[4] == 'R')
-        && (strlen(&command[6]) > 1) && (strlen(&command[6]) < 11)
+        && (strlen(&command[6]) > 0) && (strlen(&command[6]) < 11)
         && atoui2((char*)&command[6], &i))
       {
         if (command[4] == 'D')
