@@ -240,7 +240,14 @@ void Command_C()
     if (command[1] == 'M' || command[1] == 'A' || command[1] == 'U')
     {
       if (i == 0)
+      {
         strcpy(reply, "N/A#");
+        if (command[1] != 'e' && command[1] != 'E')
+        {
+          syncEwithT();
+        }
+      }
+
       if (i > 0)
       {
         reply[0] = 'E';

@@ -98,6 +98,7 @@ bool syncAtHome()
   DecayModeTracking();
   sideralTracking = false;
   atHome = true;
+  syncEwithT();
   return true;
 }
 
