@@ -8,14 +8,15 @@
 class EncoderAxis
 {
 public:
-	unsigned int gear;
-	bool isGearFix;
-	unsigned int pulseRot;
-	bool isPulseRotFix;
+	double pulsePerDegree;
+	bool isPulsePerDegreeFix;
 	bool reverse;
 	bool isReverseFix;
  private:
-	 double m_pulse2degree = 0.0001;
+	 bool has_Ref = false;
+	 double deg_T_Ref;
+	 long pulse_E_Ref;
+
 	 Encoder* m_ecd = NULL;
  public:
 	 bool connected()
@@ -26,21 +27,53 @@ public:
 	 {
 		 m_ecd = new Encoder(pinA, pinB);
 	 };
-	 void updateRatio()
+	 long readencoder()
 	 {
-		 m_pulse2degree = reverse ? -360. / (gear * pulseRot) : 360. / (gear * pulseRot);
-	 };
+		 return m_ecd->read();
+	 }
 	 double r_deg()
 	 {
-		return connected() ? (double)(m_ecd->read()) * m_pulse2degree : 0;  
+		 double deg = 0;
+		 if (!connected())
+			 return deg;
+		 deg = readencoder() / (double)pulsePerDegree;
+		 if (reverse)
+			 deg *= -1;
+		return deg;  
 	 };
 	 void w_deg(const double deg)
 	 {
-     if (connected())
+		if (connected())
      {
-       m_ecd->write(deg / m_pulse2degree);
+      if (reverse)
+      {
+        m_ecd->write(- deg * pulsePerDegree);
+      }
+      else
+      {
+        m_ecd->write( deg * pulsePerDegree);
+			}
      }
 	 };
+	 void setRef(const double deg_T)
+	 {
+		 deg_T_Ref = deg_T;
+		 pulse_E_Ref = readencoder();
+		 has_Ref = true;
+	 }
+	 bool calibrate(const double deg_T)
+	 {
+		 if (!has_Ref)
+			 return  false;
+		 double dP = readencoder() - pulse_E_Ref;
+		 double dD = deg_T - deg_T_Ref;
+		 if (dP == 0 || dD == 0)
+			 return false;
+		 reverse = (dP > 0) != (dD > 0);
+		 pulsePerDegree =  abs(dP / dD);
+		 return true;
+	 }
+
 };
 
 

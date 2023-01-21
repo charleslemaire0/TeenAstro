@@ -49,6 +49,7 @@ void Command_SX()
   case 'E':
     // :SXEnn# set encoder commands
   {
+
     switch (command[3])
     {
     case 'O':
@@ -61,87 +62,40 @@ void Command_SX()
         EncodeSyncMode = static_cast<EncoderSync>(i);
         XEEPROM.write(getMountAddress(EE_encoderSync), EncodeSyncMode);
       }
-    }
-    break;
-    case 'G':
-    {
-      // :SXEGn,VVVV# Set Gear
-      unsigned int i;
-      bool ok = false;
-      if ((command[4] == 'D' || command[4] == 'R')
-        && strlen(&command[6]) > 0 && strlen(&command[6]) < 11
-        && atoui2(&command[6], &i)&& i!=0)
-      {
-        if (command[4] == 'D')
-        {
-          if (!encoderA2.isGearFix)
-          {
-            encoderA2.gear = i;
-            XEEPROM.writeInt(getMountAddress(EE_encoderA2gear), i);
-            encoderA2.updateRatio();
-            ok = true;
-          }
-        }
-        else
-        {
-          if (!encoderA1.isGearFix)
-          {
-            encoderA1.gear = i;
-            XEEPROM.writeInt(getMountAddress(EE_encoderA1gear), i);
-            encoderA1.updateRatio();
-            ok = true;
-          }
-        }
-      }
-      if (ok)
-      {
-        replyOk();
-      }
-      else
-      {
-        replyFailed();
-      }
+      ok ? replyOk() : replyFailed();
     }
     break;
     case 'P':
     {
-      // :SXEPn,VVVV# Set pulse per Rotation
-      unsigned int i;
+      // :SXEPn,VVVV# Set pulse per 100deg
       bool ok = false;
       if ((command[4] == 'D' || command[4] == 'R')
-        && (strlen(&command[6]) > 0) && (strlen(&command[6]) < 11)
-        && atoui2((char*)&command[6], &i))
+        && (strlen(&command[6]) > 0) && (strlen(&command[6]) < 7)
+        )
       {
+        char* pEnd;
+        unsigned long p = strtoul(&command[6], &pEnd, 10);
         if (command[4] == 'D')
         {
-          if (!encoderA2.isPulseRotFix)
+          if (!encoderA2.isPulsePerDegreeFix)
           {
-            encoderA2.pulseRot = i;
-            XEEPROM.writeInt(getMountAddress(EE_encoderA2pulseRot), i);
-            encoderA2.updateRatio();
+            encoderA2.pulsePerDegree = 0.01 * p;
+            XEEPROM.writeLong(getMountAddress(EE_encoderA2pulsePerDegree), p);
             ok = true;
           }
         }
         else
         {
-          if (!encoderA1.isPulseRotFix)
+          if (!encoderA1.isPulsePerDegreeFix)
           {
-            encoderA1.pulseRot = i;
-            XEEPROM.writeInt(getMountAddress(EE_encoderA1pulseRot), i);
-            encoderA1.updateRatio();
+            encoderA1.pulsePerDegree = 0.01 * p;
+            XEEPROM.writeLong(getMountAddress(EE_encoderA1pulsePerDegree), p);
             ok = true;
           }
         }
 
       }
-      if (ok)
-      {
-        replyOk();
-      }
-      else
-      {
-        replyFailed();
-      }
+      ok ? replyOk() : replyFailed();
     }
     break;
     case 'r':
@@ -158,7 +112,6 @@ void Command_SX()
           {
             encoderA2.reverse = command[6] == '1' ? true : false;
             XEEPROM.write(getMountAddress(EE_encoderA2reverse), encoderA2.reverse);
-            encoderA2.updateRatio();
             ok = true;
           }
         }
@@ -168,16 +121,16 @@ void Command_SX()
           {
             encoderA1.reverse = command[6] == '1' ? true : false;
             XEEPROM.write(getMountAddress(EE_encoderA1reverse), encoderA1.reverse);
-            encoderA2.updateRatio();
             ok = true;
           }
         }
       }
       ok ? replyOk() : replyFailed();
     }
+    default:
+      replyFailed();
     break;
     }
-    ok ? replyOk() : replyFailed();
     break;
   }
   case 'r':
@@ -557,7 +510,7 @@ void Command_SX()
             ok = true;
           }
         }
-       
+
       }
       if (ok)
       {
@@ -582,7 +535,7 @@ void Command_SX()
         && ((i >= 1) && (i < 9)))
       {
         if (command[4] == 'D')
-        { 
+        {
           if (!motorA2.isMicroFix)
           {
             double fact = pow(2., i - motorA2.micro);
@@ -638,7 +591,7 @@ void Command_SX()
         {
           if (!motorA2.isSilentFix)
           {
-          //motorA2.driver.setmode(i);
+            //motorA2.driver.setmode(i);
             XEEPROM.write(getMountAddress(EE_motorA2silent), i);
             ok = true;
           }
@@ -648,7 +601,7 @@ void Command_SX()
         {
           if (!motorA1.isSilentFix)
           {
-          //motorA1.driver.setmode(i);
+            //motorA1.driver.setmode(i);
             XEEPROM.write(getMountAddress(EE_motorA1silent), i);
             ok = true;
           }
@@ -693,7 +646,7 @@ void Command_SX()
       // :SXMRn# Set Current
       unsigned int curr = (unsigned int)(strtol(&command[6], NULL, 10) / 100) * 100;
       bool ok = false;
-      if (curr >= 100 )
+      if (curr >= 100)
       {
         if (command[4] == 'D' && curr <= motorA2.driver.getMaxCurrent())
         {

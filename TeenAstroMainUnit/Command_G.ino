@@ -40,7 +40,7 @@ void PrintRa(double& val)
 void Command_GX()
 {
   int i;
-  double f,f1;
+  double f, f1;
   long   l1;
   //  :GXnn#   Get TeenAstro Specific value
   switch (command[2])
@@ -197,31 +197,17 @@ void Command_GX()
       sprintf(reply, "%u#", EncodeSyncMode);
     }
     break;
-    case 'G':
-    {
-      // :GXEG.#   Get Encoder Gear
-      if (command[4] == 'D')
-      {
-        sprintf(reply, "%u#", encoderA2.gear);
-      }
-      else if (command[4] == 'R')
-      {
-        sprintf(reply, "%u#", encoderA1.gear);
-      }
-      else
-        replyFailed();
-    }
-    break;
+
     case 'P':
     {
-      // :GXEP.#   Get Encoder pulse per Rotation
+      // :GXEP.#   Get Encoder pulse per 100 deg
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", encoderA2.pulseRot);
+        sprintf(reply, "%lu#", (unsigned long)(100.0 * encoderA2.pulsePerDegree));
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", encoderA1.pulseRot);
+        sprintf(reply, "%lu#", (unsigned long)(100.0 * encoderA1.pulsePerDegree));
       }
       else
         replyFailed();
@@ -600,13 +586,13 @@ void Command_GX()
     {
       reply[5] = 'G';
     }
-    if (GuidingState == GuidingPulse || GuidingState == GuidingST4 ) reply[6] = '*';
+    if (GuidingState == GuidingPulse || GuidingState == GuidingST4) reply[6] = '*';
     else if (GuidingState == GuidingRecenter) reply[6] = '+';
     else if (GuidingState == GuidingAtRate) reply[6] = '-';
-    if ( guideA1.isMFW()) reply[7] = '>';
-    else if ( guideA1.isMBW()) reply[7] = '<';
+    if (guideA1.isMFW()) reply[7] = '>';
+    else if (guideA1.isMBW()) reply[7] = '<';
     else if (guideA1.isBraking()) reply[7] = 'b';
-    
+
     if (currentSide == PIER_WEST)
     {
       if (guideA2.isMBW()) reply[8] = '^';
@@ -623,7 +609,7 @@ void Command_GX()
     if (staA1.fault || staA2.fault) reply[9] = 'f';
     reply[10] = '0';
     if (isAltAZ())
-      reply[10] +=  doesRefraction.forTracking ? RC_FULL_BOTH : RC_ALIGN_BOTH;
+      reply[10] += doesRefraction.forTracking ? RC_FULL_BOTH : RC_ALIGN_BOTH;
     else if (tc == TC_NONE || (!doesRefraction.forTracking && !TrackingCompForAlignment))
     {
       reply[10] += RC_NONE;

@@ -22,10 +22,8 @@
 #define D_motorA2lowCurr 1000
 #define D_motorA2silent 0
 
-#define D_encoderA1gear 200
-#define D_encoderA1pluseRot 400
+#define D_encoderA1plusePerDegree 400
 #define D_encoderA1reverse 0
 
-#define D_encoderA2gear 200
-#define D_encoderA2pluseRot 400
+#define D_encoderA2plusePerDegree 400
 #define D_encoderA2reverse 0
