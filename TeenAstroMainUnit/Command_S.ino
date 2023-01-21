@@ -59,9 +59,10 @@ void Command_SX()
       {
         ok = true;
         EncodeSyncMode = static_cast<EncoderSync>(i);
+        XEEPROM.write(getMountAddress(EE_encoderSync), EncodeSyncMode);
       }
-      break;
     }
+    break;
     case 'G':
     {
       // :SXEGn,VVVV# Set Gear
@@ -176,6 +177,7 @@ void Command_SX()
     }
     break;
     }
+    ok ? replyOk() : replyFailed();
     break;
   }
   case 'r':
