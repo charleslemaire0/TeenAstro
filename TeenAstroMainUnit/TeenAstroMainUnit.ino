@@ -196,7 +196,11 @@ void loop()
     EncodeSyncMode != ES_OFF &&
     rtk.m_lst % 10 == 0)
   {    
-    autoSyncWithEncoder(EncodeSyncMode);
+    if (autoSyncWithEncoder(EncodeSyncMode))
+    {
+      if (atHome) atHome = false;
+      if (parkStatus != PRK_UNPARKED) parkStatus = PRK_UNPARKED;
+    }
   }
 
   // 0.01 SECOND TIMED ---------------------------------------------------------------------------------
