@@ -2,6 +2,7 @@
 
 static const unsigned geardefault = 200u;
 static const unsigned pulseRotdefault = 400;
+static const EncoderSync EncoderSyncDefault = EncoderSync::ES_OFF;
 
 void AutoinitEEPROM()
 {  
@@ -472,6 +473,19 @@ void writeDefaultEEPROMmotor()
 void readEEPROMencoder()
 {
 
+  //EncoderSync
+  uint8_t val = 0;
+  val = XEEPROM.read(getMountAddress(EE_encoderSync));
+  if (val > EncoderSyncDefault)
+  {
+    XEEPROM.write(getMountAddress(EE_encoderSync), EncoderSyncDefault);
+    EncodeSyncMode = EncoderSyncDefault;
+  }
+  else
+  {
+    EncodeSyncMode = static_cast<EncoderSync>(val);
+  }
+  
   //AXIS 1
 #ifdef D_encoderA1gear
   encoderA1.gear = D_encoderA1gear;
@@ -547,7 +561,7 @@ void readEEPROMencoder()
 
 void writeDefaultEEPROMencoder()
 {
-
+  XEEPROM.write(getMountAddress(EE_encoderSync), EncoderSyncDefault);
   XEEPROM.writeInt(getMountAddress(EE_encoderA1gear), geardefault);
   XEEPROM.writeInt(getMountAddress(EE_encoderA1pulseRot), pulseRotdefault);
   XEEPROM.write(getMountAddress(EE_encoderA1reverse), 0);

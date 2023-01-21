@@ -51,6 +51,17 @@ void Command_SX()
   {
     switch (command[3])
     {
+    case 'O':
+      // :SXEO#  set encoder Sync Option
+    {
+      unsigned int i;
+      if (atoui2(&command[5], &i) && i <= (unsigned int)(EncoderSync::ES_OFF))
+      {
+        ok = true;
+        EncodeSyncMode = static_cast<EncoderSync>(i);
+      }
+      break;
+    }
     case 'G':
     {
       // :SXEGn,VVVV# Set Gear

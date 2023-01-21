@@ -30,9 +30,9 @@ public:
 	 {
 		 m_pulse2degree = reverse ? -360. / (gear * pulseRot) : 360. / (gear * pulseRot);
 	 };
-	 void r_deg(double& deg)
+	 double r_deg()
 	 {
-		deg = connected() ? (double)(m_ecd->read()) * m_pulse2degree : 0;  
+		return connected() ? (double)(m_ecd->read()) * m_pulse2degree : 0;  
 	 };
 	 void w_deg(const double deg)
 	 {

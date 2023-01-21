@@ -160,6 +160,10 @@ void Command_B()
 //         Returns: "N/A#" on success, "En#" on failure where n is the error code per the :MS# command
 //  :CU#   Synchonize the telescope with the User defined object
 //         Returns: "N/A#" on success, "En#" on failure where n is the error code per the :MS# command
+//  :CE#   Synchonize the telescope with the Encoders
+//         Returns: "N/A#" and always success
+//  :Ce#   Synchonize the Encoder with the telescope
+//         Returns: "N/A#" and always success
 void Command_C()
 {
   int i;
@@ -207,6 +211,18 @@ void Command_C()
         i = syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
       }
         break;
+    case 'E':
+    {
+      syncTwithE();
+      i = 0;
+      break;
+    }
+    case 'e':
+    {
+      syncEwithT();
+      i = 0;
+      break;
+    }
     case 'U':
     {
       // :CU# sync with the User Defined RA DEC

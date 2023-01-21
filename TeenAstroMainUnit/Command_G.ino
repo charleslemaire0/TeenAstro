@@ -140,7 +140,7 @@ void Command_GX()
     case '2':
       // :GXE1# get degree encoder 1
     {
-      command[3] == '1' ? encoderA1.r_deg(f1) : encoderA2.r_deg(f1);
+      f1 = command[3] == '1' ? encoderA1.r_deg() : encoderA2.r_deg();
       if (!doubleToDms(reply, &f1, true, true, highPrecision))
         replyFailed();
       else
@@ -189,6 +189,12 @@ void Command_GX()
         _coord_t = millis();
       }
       command[1] == 'D' ? PrintDec(f1) : PrintRa(f);
+    }
+    break;
+    case 'O':
+      // :GXEO#  get encoder Sync Option
+    {
+      sprintf(reply, "%u#", EncodeSyncMode);
     }
     break;
     case 'G':
@@ -661,7 +667,10 @@ void Command_GX()
       bitWrite(val, 2, isTimeSyncWithGNSS());
       bitWrite(val, 3, isLocationSyncWithGNSS());
     }
-
+    bitWrite(val, 4, hasFocuser);
+#if HASEncoder
+    bitWrite(val, 5, 1);
+#endif
     //bitWrite(val, 7, DecayModeTrack);
 
     reply[14] = 'A' + val;

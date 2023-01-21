@@ -25,6 +25,7 @@ typedef double interval;
 typedef double speed;
 
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
+enum EncoderSync { ES_240, ES_120, ES_60, ES_30, ES_15, ES_OFF };
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
 enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW };
@@ -70,10 +71,10 @@ interval                maxInterval2 = StepsMaxInterval;
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
 
-
 MotorAxis           motorA1;
 MotorAxis           motorA2;
 
+EncoderSync         EncodeSyncMode = EncoderSync::ES_OFF;
 EncoderAxis         encoderA1;
 EncoderAxis         encoderA2;
 

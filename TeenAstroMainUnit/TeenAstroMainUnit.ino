@@ -190,6 +190,14 @@ void loop()
     CheckSpiral();
     Guide();
   }
+  // ENCODER -------------------------------------------------------------------------------------------
+  if (!movingTo &&
+    GuidingState == GuidingOFF &&
+    EncodeSyncMode != ES_OFF &&
+    rtk.m_lst % 10 == 0)
+  {    
+    autoSyncWithEncoder(EncodeSyncMode);
+  }
 
   // 0.01 SECOND TIMED ---------------------------------------------------------------------------------
 

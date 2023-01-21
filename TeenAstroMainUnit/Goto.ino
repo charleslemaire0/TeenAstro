@@ -38,6 +38,72 @@ bool syncAzAlt(double Azm, double Alt, PierSide Side)
   atHome = false;
   return true;
 }
+void syncTwithE()
+{
+#if HASEncoder
+  long axis1 = (long)(encoderA1.r_deg() * geoA1.stepsPerDegree);
+  long axis2 = (long)(encoderA2.r_deg() * geoA2.stepsPerDegree);
+  cli();
+  staA1.pos = axis1;
+  staA2.pos = axis2;
+  staA1.target = staA1.pos;
+  staA2.target = staA2.pos;
+  sei();
+  atHome = false;
+#endif
+}
+
+void syncEwithT()
+{
+#if HASEncoder
+  long axis1, axis2;
+  cli();
+  axis1 = staA1.pos;
+  axis2 = staA2.pos;
+  sei();
+  encoderA1.w_deg(axis1 / geoA1.stepsPerDegree);
+  encoderA2.w_deg(axis2 / geoA2.stepsPerDegree);
+#endif
+}
+ 
+bool autoSyncWithEncoder(EncoderSync mode)
+{
+  bool synced = false;
+#if HASEncoder
+  static EncoderSync lastmode = ES_OFF;
+  static double tol = 0;
+
+  if (lastmode != mode)
+  {
+    tol = 2. * pow(2., -((int)mode));
+    lastmode = mode;
+  }
+  long axis1T, axis2T;
+  cli();
+  axis1T = staA1.pos;
+  axis2T = staA2.pos;
+  sei();
+  long axis1E = (long)(encoderA1.r_deg() * geoA1.stepsPerDegree);
+  long axis2E = (long)(encoderA2.r_deg() * geoA2.stepsPerDegree);
+  if (abs(axis1T - axis1E) > tol * geoA1.stepsPerDegree)
+  {
+    cli();
+    staA1.pos = axis1E;
+    staA1.target = staA1.pos;
+    sei();
+    synced = true;
+  }
+  if (abs(axis2T - axis2E) > tol * geoA2.stepsPerDegree)
+  {
+    cli();
+    staA2.pos = axis2E;
+    staA2.target = staA2.pos;
+    sei();
+    synced = true;
+  }
+#endif
+  return synced;
+}
 
 // gets the telescopes current Topocentric RA and Dec, set returnHA to true for Horizon Angle instead of RA
 bool getEqu(double *HA, double *Dec, const double *cosLat, const double *sinLat, bool returnHA)
@@ -112,11 +178,12 @@ bool getHorApp(double *Azm, double *Alt)
 
 bool getHorAppE(double* Azm, double* Alt)
 {
-  double Axis1, Axis2;
-  encoderA1.r_deg(Axis1);
-  encoderA2.r_deg(Axis2);
-  alignment.toReferenceDeg(*Azm, *Alt, Axis1, Axis2);
+#if HASEncoder
+  alignment.toReferenceDeg(*Azm, *Alt, encoderA1.r_deg(), encoderA2.r_deg());
   return true;
+#else
+  return getHorApp(Azm, Alt);
+#endif
 }
 
 
