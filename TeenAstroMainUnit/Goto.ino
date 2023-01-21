@@ -105,6 +105,17 @@ bool autoSyncWithEncoder(EncoderSync mode)
   return synced;
 }
 
+void getInstrDeg(double* A1, double* A2)
+{
+  long axis1, axis2;
+  cli();
+  axis1 = staA1.pos;
+  axis2 = staA2.pos;
+  sei();
+  *A1 = axis1 / geoA1.stepsPerDegree;
+  *A2 = axis2 / geoA2.stepsPerDegree;
+}
+
 // gets the telescopes current Topocentric RA and Dec, set returnHA to true for Horizon Angle instead of RA
 bool getEqu(double *HA, double *Dec, const double *cosLat, const double *sinLat, bool returnHA)
 {
