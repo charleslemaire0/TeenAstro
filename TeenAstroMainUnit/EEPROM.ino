@@ -182,12 +182,12 @@ void initMount()
   storedTrakingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
 
   doesRefraction.readFromEEPROM();
-  initmotor(false);
+
   // get the site information from EEPROM
-
-  initencoder();
-
   localSite.ReadCurrentSiteDefinition();
+  initmotor(false);
+  initencoder();
+  syncEwithT();
 }
 
 void initTransformation(bool reset)
