@@ -30,9 +30,6 @@ void Command_dollar()
 //  :AC#
 //  :AW#
 //  :AA#  Resets alignment as AC# AND activates alignment on next 3 syncs!  (<-> sync modded accordingly)
-//  :AES#  Align Encoder Start
-//  :AEE#  Align Encoder End
-//  :AEQ#  Align Encoder Quit
 
 void Command_A()
 {
