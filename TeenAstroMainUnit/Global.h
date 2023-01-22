@@ -25,7 +25,7 @@ typedef double interval;
 typedef double speed;
 
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
-enum EncoderSync { ES_60, ES_30, ES_15, ES_8, ES_4, ES_2, ES_1, ES_OFF };
+enum EncoderSync {ES_OFF, ES_60, ES_30, ES_15, ES_8, ES_4, ES_2, ES_1 };
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
 enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW };
