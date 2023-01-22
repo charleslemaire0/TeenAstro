@@ -209,7 +209,7 @@ void Command_C()
         syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
         syncEwithT();
       }
-      if (command[1] = 'M')
+      if (command[1] == 'M')
       {
         strcpy(reply, "N/A#");
       }
