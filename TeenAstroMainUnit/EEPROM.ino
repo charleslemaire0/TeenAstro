@@ -471,17 +471,8 @@ void readEEPROMencoder()
 {
 
   //EncoderSync
-  uint8_t val = 0;
-  val = XEEPROM.read(getMountAddress(EE_encoderSync));
-  if (val > EncoderSyncDefault)
-  {
-    XEEPROM.write(getMountAddress(EE_encoderSync), EncoderSyncDefault);
-    EncodeSyncMode = EncoderSyncDefault;
-  }
-  else
-  {
-    EncodeSyncMode = static_cast<EncoderSync>(val);
-  }
+  int val = XEEPROM.read(getMountAddress(EE_encoderSync));
+  EncodeSyncMode = static_cast<EncoderSync>(val);
 
   //AXIS 1
 
