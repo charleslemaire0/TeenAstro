@@ -1,6 +1,6 @@
 // EEPROM automatic initialization
 
-static const float pulsePerDegreedefault = 10;
+static const float pulsePerDegreedefault = 15;
 static const EncoderSync EncoderSyncDefault = EncoderSync::ES_OFF;
 
 void AutoinitEEPROM()
@@ -490,7 +490,7 @@ void readEEPROMencoder()
   encoderA1.isStepRotFix = true;
 #else
   encoderA1.pulsePerDegree = 0.01 * XEEPROM.readLong(getMountAddress(EE_encoderA1pulsePerDegree));
-  if (encoderA1.pulsePerDegree == 0)
+  if (encoderA1.pulsePerDegree <= 0 || encoderA2.pulsePerDegree > 3600)
   {
     XEEPROM.writeLong(getMountAddress(EE_encoderA1pulsePerDegree), 100 * pulsePerDegreedefault);
     encoderA1.pulsePerDegree = pulsePerDegreedefault;
@@ -514,7 +514,7 @@ void readEEPROMencoder()
   encoderA2.isStepRotFix = true;
 #else
   encoderA2.pulsePerDegree = 0.01 * XEEPROM.readLong(getMountAddress(EE_encoderA2pulsePerDegree));
-  if (encoderA2.pulsePerDegree == 0)
+  if (encoderA2.pulsePerDegree <= 0 || encoderA2.pulsePerDegree > 3600)
   {
     XEEPROM.writeLong(getMountAddress(EE_encoderA2pulsePerDegree), 100 * pulsePerDegreedefault);
     encoderA2.pulsePerDegree = pulsePerDegreedefault;

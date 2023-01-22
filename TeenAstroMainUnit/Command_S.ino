@@ -67,7 +67,7 @@ void Command_SX()
     break;
     case 'P':
     {
-      // :SXEPn,VVVV# Set pulse per 100deg
+      // :SXEPn,VVVV# Set pulse per 100deg max
       bool ok = false;
       if ((command[4] == 'D' || command[4] == 'R')
         && (strlen(&command[6]) > 0) && (strlen(&command[6]) < 7)
@@ -75,22 +75,25 @@ void Command_SX()
       {
         char* pEnd;
         unsigned long p = strtoul(&command[6], &pEnd, 10);
-        if (command[4] == 'D')
+        if (p > 0 && p <= 360000)
         {
-          if (!encoderA2.isPulsePerDegreeFix)
+          if (command[4] == 'D')
           {
-            encoderA2.pulsePerDegree = 0.01 * p;
-            XEEPROM.writeLong(getMountAddress(EE_encoderA2pulsePerDegree), p);
-            ok = true;
+            if (!encoderA2.isPulsePerDegreeFix)
+            {
+              encoderA2.pulsePerDegree = 0.01 * p;
+              XEEPROM.writeLong(getMountAddress(EE_encoderA2pulsePerDegree), p);
+              ok = true;
+            }
           }
-        }
-        else
-        {
-          if (!encoderA1.isPulsePerDegreeFix)
+          else
           {
-            encoderA1.pulsePerDegree = 0.01 * p;
-            XEEPROM.writeLong(getMountAddress(EE_encoderA1pulsePerDegree), p);
-            ok = true;
+            if (!encoderA1.isPulsePerDegreeFix)
+            {
+              encoderA1.pulsePerDegree = 0.01 * p;
+              XEEPROM.writeLong(getMountAddress(EE_encoderA1pulsePerDegree), p);
+              ok = true;
+            }
           }
         }
 
