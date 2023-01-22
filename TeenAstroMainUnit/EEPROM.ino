@@ -490,7 +490,7 @@ void readEEPROMencoder()
   encoderA1.isStepRotFix = true;
 #else
   encoderA1.pulsePerDegree = 0.01 * XEEPROM.readLong(getMountAddress(EE_encoderA1pulsePerDegree));
-  if (encoderA1.pulsePerDegree <= 0 || encoderA2.pulsePerDegree > 3600)
+  if (encoderA1.pulsePerDegree <= 0 || encoderA1.pulsePerDegree > 3600)
   {
     XEEPROM.writeLong(getMountAddress(EE_encoderA1pulsePerDegree), 100 * pulsePerDegreedefault);
     encoderA1.pulsePerDegree = pulsePerDegreedefault;
