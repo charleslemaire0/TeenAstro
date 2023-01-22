@@ -118,44 +118,6 @@ void Command_A()
     saveAlignModel();
     replyOk();
     break;
-  case 'E':
-  {
-    switch (command[2])
-    {
-    case 'S':
-    {
-      //  :AES#  Align Encoder Start
-      double A1, A2;
-      EncodeSyncMode = ES_OFF;
-      syncEwithT();
-      getInstrDeg(&A1, &A2);
-      encoderA1.setRef(A1);
-      encoderA2.setRef(A2);
-      replyOk();
-    }
-    break;
-    case 'E':
-    {
-      //  :AES#  Align Encoder End
-      double A1, A2;
-      getInstrDeg(&A1, &A2);
-      bool ok = encoderA1.calibrate(A1);
-      ok &= encoderA1.calibrate(A2);
-      ok ? replyOk() : replyFailed();
-    }
-    case 'Q':
-    {
-      //  :AEQ#  Align Encoder Quit
-      
-
-    }
-    break;
-    default:
-      replyFailed();
-      break;
-    }
-    break;
-  }
   default:
     replyFailed();
     break;
@@ -195,24 +157,20 @@ void Command_B()
 }
 
 //   C - Sync Control
-//  :CA#   Synchonize the telescope with the current Azimuth and Altitude coordinates
-//         Returns: "N/A#" on success, "En#" on failure where n is the error code per the :MS# command
+//  :CA#   Synchonize the telescope with the current Target Azimuth and Altitude coordinates
+//         Returns: "N/A#" 
 //  :CM#   Synchonize the telescope with the current database object (as above)
-//         Returns: "N/A#" on success, "En#" on failure where n is the error code per the :MS# command
-//  :CS#   Synchonize the telescope with the current right ascension and declination coordinates
-//         Returns: "N/A#" on success, "En#" on failure where n is the error code per the :MS# command
+//         Returns: "N/A#"  
+//  :CS#   Synchonize the telescope with the current Target right ascension and declination coordinates
+//         Returns: "N/A#" 
 //  :CU#   Synchonize the telescope with the User defined object
-//         Returns: "N/A#" on success, "En#" on failure where n is the error code per the :MS# command
-//  :CE#   Synchonize the telescope with the Encoders
-//         Returns: "N/A#" and always success
-//  :Ce#   Synchonize the Encoder with the telescope
-//         Returns: "N/A#" and always success
+//         Returns: "N/A#"
+
 void Command_C()
 {
-  int i;
   if ((parkStatus == PRK_UNPARKED) &&
-      !movingTo &&
-      (command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
+    !movingTo &&
+    (command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
   {
     PierSide targetPierSide = GetPierSide();
     if (newTargetPierSide != PIER_NOTVALID)
@@ -225,7 +183,7 @@ void Command_C()
     case 'M':
     case 'S':
       double newTargetHA;
-      if (autoAlignmentBySync){
+      if (autoAlignmentBySync) {
         newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         double Azm, Alt;
         EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
@@ -239,67 +197,122 @@ void Command_C()
         sei();
         alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
         if (alignment.isReady())
-          {
-            hasStarAlignment = true;
-            cli();
-            staA1.target = staA1.pos;
-            staA2.target = staA2.pos;
-            sei();
-            autoAlignmentBySync = false;
-          }
+        {
+          hasStarAlignment = true;
+          cli();
+          staA1.target = staA1.pos;
+          staA2.target = staA2.pos;
+          sei();
+          autoAlignmentBySync = false;
+        }
       }
       else
       {
         newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-        i = syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
+        syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
+        syncEwithT();
       }
-        break;
-    case 'E':
-    {
-      syncTwithE();
-      i = 0;
+      if (command[1] = 'M')
+      {
+        strcpy(reply, "N/A#");
+      }
+
       break;
-    }
-    case 'e':
-    {
-      syncEwithT();
-      i = 0;
-      break;
-    }
     case 'U':
     {
       // :CU# sync with the User Defined RA DEC
       newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
       newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-      i = syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
+      syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
+      syncEwithT();
+      strcpy(reply, "N/A#");
       break;
     }
     case 'A':
-      i = syncAzAlt(newTargetAzm, newTargetAlt, targetPierSide);
+      syncAzAlt(newTargetAzm, newTargetAlt, targetPierSide);
+      syncEwithT();
+      strcpy(reply, "N/A#");
       break;
-    }
-    i = 0;
-    if (command[1] == 'M' || command[1] == 'A' || command[1] == 'U')
-    {
-      if (i == 0)
-      {
-        strcpy(reply, "N/A#");
-        if (command[1] != 'e' && command[1] != 'E')
-        {
-          syncEwithT();
-        }
-      }
-
-      if (i > 0)
-      {
-        reply[0] = 'E';
-        reply[1] = '0' + i;
-        reply[2] = '#';
-      }
     }
   }
 }
+//----------------------------------------------------------------------------------
+//    E - encoder commands
+//    all commands Returns 1# or 0#
+//  :EAS#  Align Encoder Start
+//  :EAE#  Align Encoder End
+//  :EAQ#  Align Encoder Quit
+//  :ECT#   Synchonize the telescope with the Encoders
+//  :ECE#   Synchonize the Encoders with the telescope
+void Command_E()
+{
+  switch (command[2])
+  {
+  case 'A':
+  {
+    switch (command[3])
+    {
+    case 'S':
+    {
+      //  :EAS#  Align Encoder Start
+      double A1, A2;
+      EncodeSyncMode = ES_OFF;
+      syncEwithT();
+      getInstrDeg(&A1, &A2);
+      encoderA1.setRef(A1);
+      encoderA2.setRef(A2);
+      replyOk();
+    }
+    break;
+    case 'E':
+    {
+      //  :EAE#  Align Encoder End
+      double A1, A2;
+      getInstrDeg(&A1, &A2);
+      bool ok = encoderA1.calibrate(A1);
+      ok &= encoderA1.calibrate(A2);
+      ok ? replyOk() : replyFailed();
+    }
+    case 'Q':
+    {
+      //  :EAQ#  Align Encoder Quit
+      encoderA1.delRef();
+      encoderA2.delRef();
+    }
+    break;
+    default:
+      replyFailed();
+      break;
+    }
+    break;
+  }
+  break;
+  case 'C':
+  {
+    switch (command[3])
+    {
+      //  :ECT#   Synchonize the telescope with the Encoders
+    case 'T':
+    {
+      syncTwithE();
+      break;
+    }
+    //  :ECE#   Synchonize the Encoders with the telescope
+    case 'E':
+    {
+      syncEwithT();
+      break;
+    }
+    }
+  }
+  break;
+  default:
+    replyFailed();
+    break;
+  }
+}
+
 
 //----------------------------------------------------------------------------------
 //   D - Distance Bars
@@ -311,7 +324,7 @@ void Command_D()
     replyFailed();
     return;
   }
-    
+
   if (movingTo)
   {
     reply[0] = (char)127;
@@ -435,24 +448,24 @@ void Command_Q()
   case 'w':
     //  :Qe# & Qw#   Halt east/westward Slews
     //         Returns: Nothing
+  {
+    if ((parkStatus == PRK_UNPARKED) && !movingTo)
     {
-      if ((parkStatus == PRK_UNPARKED) && !movingTo)
-      {
-        StopAxis1();
-      }
+      StopAxis1();
     }
-    break;
+  }
+  break;
   case 'n':
   case 's':
     //  :Qn# & Qs#   Halt north/southward Slews
     //         Returns: Nothing
+  {
+    if ((parkStatus == PRK_UNPARKED) && !movingTo)
     {
-      if ((parkStatus == PRK_UNPARKED) && !movingTo)
-      {
-        StopAxis2();
-      }
+      StopAxis2();
     }
-    break;
+  }
+  break;
   default:
     replyFailed();
     break;
@@ -533,19 +546,19 @@ void Command_T()
     break;
   case 'S':
     // solar tracking rate 60Hz
-    SetTrackingRate(TrackingSolar,0);
+    SetTrackingRate(TrackingSolar, 0);
     sideralMode = SIDM_SUN;
     replyNothing();
     break;
   case 'L':
     // lunar tracking rate 57.9Hz
-    SetTrackingRate(TrackingLunar,0);
+    SetTrackingRate(TrackingLunar, 0);
     sideralMode = SIDM_MOON;
     replyNothing();
     break;
   case 'Q':
     // sidereal tracking rate
-    SetTrackingRate(TrackingStar,0);
+    SetTrackingRate(TrackingStar, 0);
     sideralMode = SIDM_STAR;
     replyNothing();
     break;
@@ -612,7 +625,7 @@ void Command_T()
   // Only burn the new rate if changing the sidereal interval
   if (command[1] == '+' || command[1] == '-' || command[1] == 'R')
   {
-    XEEPROM.writeLong(getMountAddress(EE_siderealClockSpeed), siderealClockSpeed*16);
+    XEEPROM.writeLong(getMountAddress(EE_siderealClockSpeed), siderealClockSpeed * 16);
     updateSideral();
   }
 }
