@@ -191,6 +191,11 @@ void loop()
     Guide();
   }
   // ENCODER -------------------------------------------------------------------------------------------
+  if (encoderA1.calibrating() != encoderA2.calibrating())
+  {
+    encoderA1.delRef();
+    encoderA2.delRef();
+  }
   if (!movingTo &&
     GuidingState == GuidingOFF &&
     EncodeSyncMode != ES_OFF &&
@@ -202,6 +207,7 @@ void loop()
       if (parkStatus != PRK_UNPARKED) parkStatus = PRK_UNPARKED;
     }
   }
+
 
   // 0.01 SECOND TIMED ---------------------------------------------------------------------------------
 

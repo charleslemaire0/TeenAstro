@@ -61,6 +61,14 @@ public:
 		 pulse_E_Ref = readencoder();
 		 has_Ref = true;
 	 }
+	 void delRef()
+	 {
+		 has_Ref = false;
+	 }
+	 bool calibrating()
+	 {
+		 return has_Ref;
+	 }
 	 bool calibrate(const double deg_T)
 	 {
 		 if (!has_Ref)

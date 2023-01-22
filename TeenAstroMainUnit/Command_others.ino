@@ -30,8 +30,10 @@ void Command_dollar()
 //  :AC#
 //  :AW#
 //  :AA#  Resets alignment as AC# AND activates alignment on next 3 syncs!  (<-> sync modded accordingly)
-//  :Ae#  Align Encoder Start
-//  :AE#  Align Encoder End
+//  :AES#  Align Encoder Start
+//  :AEE#  Align Encoder End
+//  :AEQ#  Align Encoder Quit
+
 void Command_A()
 {
   switch (command[1])
@@ -118,26 +120,45 @@ void Command_A()
     break;
   case 'E':
   {
-    double A1, A2;
-    EncodeSyncMode = ES_OFF;
-    syncEwithT();
-    getInstrDeg(&A1, &A2);
-    encoderA1.setRef(A1);
-    encoderA2.setRef(A2);
-    replyOk();
+    switch (command[2])
+    {
+    case 'S':
+    {
+      //  :AES#  Align Encoder Start
+      double A1, A2;
+      EncodeSyncMode = ES_OFF;
+      syncEwithT();
+      getInstrDeg(&A1, &A2);
+      encoderA1.setRef(A1);
+      encoderA2.setRef(A2);
+      replyOk();
+    }
+    break;
+    case 'E':
+    {
+      //  :AES#  Align Encoder End
+      double A1, A2;
+      getInstrDeg(&A1, &A2);
+      bool ok = encoderA1.calibrate(A1);
+      ok &= encoderA1.calibrate(A2);
+      ok ? replyOk() : replyFailed();
+    }
+    case 'Q':
+    {
+      //  :AEQ#  Align Encoder Quit
+      
+
+    }
+    break;
+    default:
+      replyFailed();
+      break;
+    }
+    break;
   }
-  break;
-  case 'e':
-  {
-    double A1, A2;
-    getInstrDeg(&A1, &A2);
-    bool ok = encoderA1.calibrate(A1);
-    ok &= encoderA1.calibrate(A2);
-    ok ? replyOk() : replyFailed();
-  }
-  break;
   default:
     replyFailed();
+    break;
   }
 }
 

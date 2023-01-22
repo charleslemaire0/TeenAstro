@@ -656,6 +656,7 @@ void Command_GX()
     bitWrite(val, 4, hasFocuser);
 #if HASEncoder
     bitWrite(val, 5, 1);
+    bitWrite(val, 6, encoderA1.calibrating() && encoderA2.calibrating());
 #endif
     //bitWrite(val, 7, DecayModeTrack);
 
