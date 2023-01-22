@@ -392,6 +392,30 @@ bool TeenAstroMountStatus::isGNSSLocationSync()
 {
   return bitRead(m_TempMount[14] - 'A', 3);
 }
+bool TeenAstroMountStatus::hasFocuser()
+{
+  static bool firstime = m_hasFocuser;
+  if (firstime)
+  {
+    updateMount();
+    m_hasFocuser = bitRead(m_TempMount[14] - 'A', 4);
+  }
+  return m_hasFocuser;
+}
+bool TeenAstroMountStatus::hasEncoder()
+{
+  static bool firstime = m_hasEncoder;
+  if (firstime)
+  {
+    updateMount();
+    m_hasEncoder = bitRead(m_TempMount[14] - 'A', 5);
+  }
+  return m_hasEncoder;
+}
+bool TeenAstroMountStatus::CalibratingEncoder()
+{
+  return bitRead(m_TempMount[14] - 'A', 5);
+}
 
 TeenAstroMountStatus::PierState TeenAstroMountStatus::getPierState()
 {

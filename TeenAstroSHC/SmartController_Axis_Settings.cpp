@@ -105,9 +105,9 @@ bool SmartHandController::menuSetReverse(const uint8_t &axis)
   if (!DisplayMessageLX200(readReverseLX200(axis, reverse)))
     return false;
   char text[20];
-  char * string_list_micro = T_DIRECT "\n" T_REVERSE;
+  char * string_list = T_DIRECT "\n" T_REVERSE;
   sprintf(text, T_ROTATION " M%u", axis);
-  uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, text, (uint8_t)reverse + 1, string_list_micro);
+  uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, text, (uint8_t)reverse + 1, string_list);
   if (choice)
   {
     reverse = (bool)(choice - 1);
@@ -220,6 +220,37 @@ bool SmartHandController::menuSetCurrent(const uint8_t &axis, bool high)
       return DisplayMessageLX200(writeHighCurrLX200(axis, curr), false);
     else
       return DisplayMessageLX200(writeLowCurrLX200(axis, curr), false);
+  }
+  return true;
+}
+bool SmartHandController::menuSetEncoderReverse(const uint8_t& axis)
+{
+  bool reverse;
+  if (!DisplayMessageLX200(readEncoderReverseLX200(axis, reverse)))
+    return false;
+  char text[20];
+  char* string_list = T_DIRECT "\n" T_REVERSE;
+  sprintf(text, T_ROTATION " M%u", axis);
+  uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, text, (uint8_t)reverse + 1, string_list );
+  if (choice)
+  {
+    reverse = (bool)(choice - 1);
+    return DisplayMessageLX200(writeReverseLX200(axis, reverse), false);
+  }
+  return true;
+}
+bool SmartHandController::menuSetEncoderPulsePerDegree(const uint8_t& axis)
+{
+  float ppd;
+  if (!DisplayMessageLX200(readPulsePerDegreeLX200(axis, ppd)))
+    return false;
+  char text[20];
+  ppd /= 100;
+  sprintf(text, T_PULSEPERDEGREE " E%u", axis);
+  if (display->UserInterfaceInputValueFloatIncr( & buttonPad, text, "", &ppd, 0.5, 3600.00, 5, 2, 0.01, ""))
+  {
+    ppd *= 100;
+    return DisplayMessageLX200(writePulsePerDegreeLX200(axis, ppd), false);
   }
   return true;
 }

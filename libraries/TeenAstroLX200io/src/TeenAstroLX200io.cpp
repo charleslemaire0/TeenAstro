@@ -100,9 +100,14 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       else cmdreply = CMDR_INVALID;
       break;
     case 'C':
-      if (strchr("AMSU", command[2])) cmdreply = CMDR_LONG;
+      if (strchr("AMU", command[2])) cmdreply = CMDR_LONG;
+      else if (strchr("S", command[2])) cmdreply = CMDR_NO;
       else cmdreply = CMDR_INVALID;
       break;
+    case 'E':
+      if (strchr("AC", command[2])) cmdreply = CMDR_SHORT_BOOL;
+      else cmdreply = CMDR_INVALID;
+        break;
     case 'D':
       if (strchr("#", command[2])) cmdreply = CMDR_LONG;
       else cmdreply = CMDR_INVALID;
@@ -850,6 +855,7 @@ LX200RETURN SyncSelectedStarLX200(unsigned short alignSelectedStar)
   if (alignSelectedStar >= 0) return SyncGotoCatLX200(false); else return LX200_ERRGOTO_UNKOWN;
 }
 
+//MOTOR
 LX200RETURN readReverseLX200(const uint8_t& axis, bool& reverse)
 {
   char out[LX200sbuff];
@@ -892,14 +898,14 @@ LX200RETURN readTotGearLX200(const uint8_t& axis, float& totGear)
   LX200RETURN ok = axis == 1 ? GetLX200(":GXMGR#", out, sizeof(out)) : GetLX200(":GXMGD#", out, sizeof(out));
   if (ok == LX200_VALUEGET)
   {
-    totGear = (float)strtol(&out[0], NULL, 10);
+    totGear = 0.01*(float)strtol(&out[0], NULL, 10);
   }
   return ok;
 }
 LX200RETURN writeTotGearLX200(const uint8_t& axis, const float& totGear)
 {
   char cmd[LX200sbuff];
-  sprintf(cmd, ":SXMGX,%u#", (unsigned int)totGear);
+  sprintf(cmd, ":SXMGX,%u#", (unsigned long)(totGear*100));
   cmd[5] = axis == 1 ? 'R' : 'D';
   return SetLX200(cmd);
 }
@@ -1011,6 +1017,79 @@ LX200RETURN writeHighCurrLX200(const uint8_t& axis, const unsigned int& highCurr
 {
   char cmd[LX200sbuff];
   sprintf(cmd, ":SXMCX,%u#", highCurr);
+  cmd[5] = axis == 1 ? 'R' : 'D';
+  return SetLX200(cmd);
+}
+
+//ENCODER
+LX200RETURN StartEncoderCalibration()
+{
+  return SetLX200(":EAS#");
+}
+
+LX200RETURN CancelEncoderCalibration()
+{
+  return SetLX200(":EAQ#");
+}
+
+LX200RETURN CompleteEncoderCalibration()
+{
+  return SetLX200(":EAE#");
+}
+
+LX200RETURN readEncoderAutoSync(uint8_t& syncmode)
+{
+  char out[LX200sbuff];
+  LX200RETURN ok = GetLX200(":GXEO#", out, sizeof(out));
+  if (ok == LX200_VALUEGET)
+  {
+    syncmode = out[0] - '0';
+    if (syncmode < 8)
+    {
+      return ok;
+    }
+  }
+  return LX200_GETVALUEFAILED;
+}
+
+LX200RETURN writeEncoderAutoSync(const uint8_t syncmode)
+{
+  char cmd[LX200sbuff];
+  sprintf(cmd, ":SXEO,%d#", (int)syncmode);
+  return SetLX200(cmd);
+}
+
+LX200RETURN readEncoderReverseLX200(const uint8_t& axis, bool& reverse)
+{
+  char out[LX200sbuff];
+  LX200RETURN ok = axis == 1 ? GetLX200(":GXErR#", out, sizeof(out)) : GetLX200(":GXErD#", out, sizeof(out));
+  if (ok == LX200_VALUEGET)
+  {
+    reverse = out[0] == '1' ? true : false;
+  }
+  return ok;
+}
+LX200RETURN writeEncoderReverseLX200(const uint8_t& axis, const bool& reverse)
+{
+  char text[LX200sbuff];
+  sprintf(text, ":SXErX,%u#", (unsigned int)reverse);
+  text[5] = axis == 1 ? 'R' : 'D';
+  return SetLX200(text);
+}
+LX200RETURN readPulsePerDegreeLX200(const uint8_t& axis, float& ppd)
+{
+  char out[LX200sbuff];
+  LX200RETURN ok = axis == 1 ? GetLX200(":GXEPR#", out, sizeof(out)) : GetLX200(":GXEPD#", out, sizeof(out));
+  if (ok == LX200_VALUEGET)
+  {
+    ppd = (float)strtol(&out[0], NULL, 10);
+  }
+  return ok;
+}
+LX200RETURN writePulsePerDegreeLX200(const uint8_t& axis, const float& ppd)
+{
+  char cmd[LX200sbuff];
+  sprintf(cmd, ":SXEPX,%u#", (unsigned long)(ppd));
   cmd[5] = axis == 1 ? 'R' : 'D';
   return SetLX200(cmd);
 }

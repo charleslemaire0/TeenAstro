@@ -93,6 +93,7 @@ LX200RETURN GetLocalDateLX200(unsigned int &day, unsigned int &month, unsigned i
 LX200RETURN GetUTCDateLX200(unsigned int &day, unsigned int &month, unsigned int &year);
 LX200RETURN SyncGotoCatLX200(bool sync);
 LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short obj);
+//motor
 LX200RETURN readReverseLX200(const uint8_t &axis, bool &reverse);
 LX200RETURN writeReverseLX200(const uint8_t &axis, const bool &reverse);
 LX200RETURN readBacklashLX200(const uint8_t &axis, float &backlash);
@@ -109,6 +110,18 @@ LX200RETURN readLowCurrLX200(const uint8_t &axis, unsigned int &lowCurr);
 LX200RETURN writeLowCurrLX200(const uint8_t &axis, const unsigned int &lowCurr);
 LX200RETURN readHighCurrLX200(const uint8_t &axis, unsigned int &highCurr);
 LX200RETURN writeHighCurrLX200(const uint8_t &axis, const unsigned int &highCurr);
+//encoder
+LX200RETURN readEncoderReverseLX200(const uint8_t& axis, bool& reverse);
+LX200RETURN writeEncoderReverseLX200(const uint8_t& axis, const bool& reverse);
+LX200RETURN readPulsePerDegreeLX200(const uint8_t& axis, float& ppd);
+LX200RETURN writePulsePerDegreeLX200(const uint8_t& axis, const float& ppd);
+LX200RETURN StartEncoderCalibration();
+LX200RETURN CancelEncoderCalibration();
+LX200RETURN CompleteEncoderCalibration();
+LX200RETURN readEncoderAutoSync(uint8_t& syncmode);
+LX200RETURN writeEncoderAutoSync(const uint8_t syncmode);
+
+//focuser
 LX200RETURN readFocuserConfig(unsigned int& startPosition, unsigned int& maxPosition,
                               unsigned int& minSpeed, unsigned int& maxSpeed,
                               unsigned int& cmdAcc, unsigned int& manAcc, unsigned int& manDec);

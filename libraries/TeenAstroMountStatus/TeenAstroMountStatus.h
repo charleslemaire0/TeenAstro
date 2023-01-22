@@ -79,6 +79,7 @@ private:
   bool            m_hasInfoMount = false;
   bool            m_hasInfoFocuser = false;
   bool            m_hasFocuser = true;
+  bool            m_hasEncoder = true;
 public:
   //Alignment Stuff
   bool            isAligning()  { return m_align != ALI_OFF; }
@@ -107,7 +108,7 @@ public:
   bool hasInfoSidereal() { return m_hasInfoSidereal; };
   bool hasInfoMount() { return m_hasInfoMount; };
   bool hasInfoFocuser() { return m_hasInfoFocuser; };
-  bool hasFocuser() { static bool firstime = m_hasFocuser; if (firstime){updateFocuser();} return m_hasFocuser; }
+  bool hasFocuser();
   bool hasInfoAxis1Step() { return m_hasInfoAxis1Step; };
   bool hasInfoAxis2Step() { return m_hasInfoAxis2Step; };
   bool hasInfoAxis1Deg() { return m_hasInfoAxis1Deg; };
@@ -186,7 +187,9 @@ public:
   bool isGNSSValid();
   bool isGNSSTimeSync();
   bool isGNSSLocationSync();
- 
+  bool hasEncoder();
+  bool CalibratingEncoder();
+
   //Connection Errors
   bool connected();
   bool notResponding();

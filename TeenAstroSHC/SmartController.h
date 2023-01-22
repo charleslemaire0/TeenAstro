@@ -151,6 +151,9 @@ private:
   void menuMainUnitInfo();
   void menuParkAndHome();
   void menuLimits();
+  void menuEncoders();
+  void menuAutoSyncEncoder();
+  void menuCalibrationEncoder();
   void menuLimitGEM();
   void menuLimitAxis();
   void menuWifi();
@@ -167,6 +170,8 @@ private:
   bool menuSetMicro(const uint8_t &axis);
   bool menuSetSilentStep(const uint8_t &axis);
   bool menuSetCurrent(const uint8_t &axis, bool high);
+  bool menuSetEncoderPulsePerDegree(const uint8_t& axis);
+  bool menuSetEncoderReverse(const uint8_t& axis);
   void DisplayMountSettings();
   void menuMounts();
   void DisplayAccMaxRateSettings();
