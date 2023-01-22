@@ -40,6 +40,7 @@ void processCommands()
     break;
   case 'E':
     Command_E();
+    break;
   case 'F':
     Command_F();
     break;

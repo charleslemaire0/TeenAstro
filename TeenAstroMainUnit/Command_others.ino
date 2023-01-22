@@ -244,11 +244,11 @@ void Command_C()
 //  :ECE#   Synchonize the Encoders with the telescope
 void Command_E()
 {
-  switch (command[2])
+  switch (command[1])
   {
   case 'A':
   {
-    switch (command[3])
+    switch (command[2])
     {
     case 'S':
     {
@@ -271,23 +271,24 @@ void Command_E()
       ok &= encoderA1.calibrate(A2);
       ok ? replyOk() : replyFailed();
     }
+    break;
     case 'Q':
     {
       //  :EAQ#  Align Encoder Quit
       encoderA1.delRef();
       encoderA2.delRef();
+      replyOk();
     }
     break;
     default:
       replyFailed();
       break;
     }
-    break;
   }
   break;
   case 'C':
   {
-    switch (command[3])
+    switch (command[2])
     {
       //  :ECT#   Synchonize the telescope with the Encoders
     case 'T':
