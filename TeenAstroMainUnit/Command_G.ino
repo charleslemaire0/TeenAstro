@@ -158,9 +158,9 @@ void Command_GX()
 #else
       getHorApp(&f, &f1);
 #endif // HASEncoder
-
       command[3] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
     }
+    break;
     case 'D':
     case 'R':
     {
@@ -188,7 +188,7 @@ void Command_GX()
         _dec = f1;
         _coord_t = millis();
       }
-      command[1] == 'D' ? PrintDec(f1) : PrintRa(f);
+      command[3] == 'D' ? PrintDec(f1) : PrintRa(f);
     }
     break;
     case 'O':
