@@ -881,7 +881,7 @@ void  Command_G()
     //  :GZ#   Get telescope azimuth, Native LX200 command
     //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
     getHorAppE(&f, &f1);
-    command[3] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
+    command[1] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
     break;
   case 'a':
     //  :Ga#   Get Local Time in 12 hour format, Native LX200 command
