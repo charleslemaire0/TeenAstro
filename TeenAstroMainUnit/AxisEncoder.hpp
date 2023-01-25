@@ -13,6 +13,8 @@ public:
 	bool reverse;
 	bool isReverseFix;
  private:
+
+	 //members for calibration
 	 bool has_Ref = false;
 	 double deg_T_Ref;
 	 long pulse_E_Ref;
@@ -55,6 +57,7 @@ public:
 			}
      }
 	 };
+
 	 void setRef(const double deg_T)
 	 {
 		 deg_T_Ref = deg_T;
@@ -81,6 +84,10 @@ public:
 		 pulsePerDegree =  abs(dP / dD);
 		 return true;
 	 }
+	 double deltaTarget(const double deg_Target)
+	 {
+		 return deg_Target - r_deg();
+	 };
 
 };
 

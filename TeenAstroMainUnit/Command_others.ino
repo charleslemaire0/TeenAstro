@@ -237,9 +237,9 @@ void Command_C()
 //----------------------------------------------------------------------------------
 //    E - encoder commands
 //    all commands Returns 1# or 0#
-//  :EAS#  Align Encoder Start
-//  :EAE#  Align Encoder End
-//  :EAQ#  Align Encoder Quit
+//  :EAS#   Align Encoder Start
+//  :EAE#   Align Encoder End
+//  :EAQ#   Align Encoder Quit
 //  :ECT#   Synchonize the telescope with the Encoders
 //  :ECE#   Synchonize the Encoders with the telescope
 void Command_E()
@@ -302,7 +302,32 @@ void Command_E()
       syncEwithT();
       break;
     }
+    default:
+      replyFailed();
+      break;
     }
+  }
+  break;
+  case 'D':
+  {
+    float delta1;
+    float delta2;
+    int e=0;
+    if (command[2] == 'E')
+    {
+      e = PushToEqu(newTargetRA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat(), &delta1, &delta2);
+      sprintf(reply, "E%d,%+05d,%+05d#", e,(int)(60*delta1), (int)(60*delta2));
+    }
+    else if (command[2] == 'A')
+    {
+      e = PushToHor(&newTargetAzm, &newTargetAlt, GetPierSide(), &delta1, &delta2);
+      sprintf(reply, "E%d,%+05d,%+05d#", e,(int)(60*delta1), (int)(60*delta2));
+    }
+    else
+    {
+      replyFailed();
+    }
+
   }
   break;
   default:
