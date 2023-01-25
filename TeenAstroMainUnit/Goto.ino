@@ -244,7 +244,9 @@ byte goToEqu(double HA, double Dec, PierSide preferedPierSide, const double* cos
   return goToHor(&azm, &alt, preferedPierSide);
 }
 // moves the mount to a new Altitude and Azmiuth (Alt,Azm) in degrees
-byte goToHor(double* Azm, double* Alt, PierSide preferedPierSide)
+
+
+byte goToHor(const double* Azm,const double* Alt, PierSide preferedPierSide)
 {
   double Axis1_target, Axis2_target = 0;
   long axis1_target, axis2_target = 0;
