@@ -56,7 +56,7 @@ void Command_SX()
       // :SXEO#  set encoder Sync Option
     {
       unsigned int i;
-      if (atoui2(&command[5], &i) && i <= (unsigned int)(EncoderSync::ES_OFF))
+      if (atoui2(&command[5], &i) && i <= (unsigned int)(EncoderSync::ES_ALWAYS))
       {
         ok = true;
         EncodeSyncMode = static_cast<EncoderSync>(i);

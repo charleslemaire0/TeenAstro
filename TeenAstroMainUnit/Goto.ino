@@ -95,8 +95,8 @@ bool autoSyncWithEncoder(EncoderSync mode)
     case ES_2:
       tol = 2. / 60.;
       break;
-    case ES_1:
-      tol = 1. / 60.;
+    case ES_ALWAYS:
+      tol = 0.;
       break;
     case ES_OFF:
       return false;
