@@ -316,12 +316,12 @@ void Command_E()
     if (command[2] == 'E')
     {
       e = PushToEqu(newTargetRA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat(), &delta1, &delta2);
-      sprintf(reply, "E%d,%+05d,%+05d#", e,(int)(60*delta1), (int)(60*delta2));
+      sprintf(reply, "E%d,%+06d,%+06d#", e,(int)(60*delta1), (int)(60*delta2));
     }
     else if (command[2] == 'A')
     {
       e = PushToHor(&newTargetAzm, &newTargetAlt, GetPierSide(), &delta1, &delta2);
-      sprintf(reply, "E%d,%+05d,%+05d#", e,(int)(60*delta1), (int)(60*delta2));
+      sprintf(reply, "E%d,%+06,%+06d#", e,(int)(60*delta1), (int)(60*delta2));
     }
     else
     {
