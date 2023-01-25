@@ -321,7 +321,7 @@ void Command_E()
     else if (command[2] == 'A')
     {
       e = PushToHor(&newTargetAzm, &newTargetAlt, GetPierSide(), &delta1, &delta2);
-      sprintf(reply, "E%d,%+06,%+06d#", e,(int)(60*delta1), (int)(60*delta2));
+      sprintf(reply, "E%d,%+06d,%+06d#", e,(int)(60*delta1), (int)(60*delta2));
     }
     else
     {
