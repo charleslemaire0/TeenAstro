@@ -164,6 +164,8 @@
 #define T_UNLOCK "Unlock"
 #define T_LOCK "Lock"
 #define T_GOTO "Goto"
+#define T_PUSHTO "Pushto"
+#define T_PUSHINGTO "Pushing to"
 #define T_POSITION "Position"
 
 #define T_SYNC "Sync"

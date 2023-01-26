@@ -312,16 +312,51 @@ void Command_E()
   {
     float delta1;
     float delta2;
+    int e = 0;
+    switch (PushtoStatus)
+    {
+    case PT_RADEC:
+      e = PushToEqu(newTargetRA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat(), &delta1, &delta2);
+      sprintf(reply, "%d,%+06d,%+06d#", e, (int)(60 * delta1), (int)(60 * delta2));
+      break;
+    case PT_ALTAZ:
+      e = PushToHor(&newTargetAzm, &newTargetAlt, GetPierSide(), &delta1, &delta2);
+      sprintf(reply, "%d,%+06d,%+06d#", e, (int)(60 * delta1), (int)(60 * delta2));
+      break;
+    default:
+      sprintf(reply, "%d,%+06d,%+06d#", 0, 0, 0);
+      break;
+    }
+  }
+  break;
+  case 'M':
+  {
+    float delta1;
+    float delta2;
     int e=0;
-    if (command[2] == 'E')
+    if (command[2] == 'S')
     {
       e = PushToEqu(newTargetRA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat(), &delta1, &delta2);
-      sprintf(reply, "E%d,%+06d,%+06d#", e,(int)(60*delta1), (int)(60*delta2));
+      sprintf(reply, "%d", e);
+      PushtoStatus = PT_RADEC;
     }
     else if (command[2] == 'A')
     {
       e = PushToHor(&newTargetAzm, &newTargetAlt, GetPierSide(), &delta1, &delta2);
-      sprintf(reply, "E%d,%+06d,%+06d#", e,(int)(60*delta1), (int)(60*delta2));
+      sprintf(reply, "%d", e);
+      PushtoStatus = PT_ALTAZ;
+    }
+    else if (command[2] == 'U')
+    {
+      newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
+      newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
+      e = PushToEqu(newTargetRA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat(), &delta1, &delta2);
+      sprintf(reply, "%d", e);
+      PushtoStatus = PT_RADEC;
+    }
+    else if (command[2] == 'Q')
+    {
+      PushtoStatus = PT_OFF;
     }
     else
     {

@@ -657,6 +657,7 @@ void Command_GX()
 #if HASEncoder
     bitWrite(val, 5, 1);
     bitWrite(val, 6, encoderA1.calibrating() && encoderA2.calibrating());
+    bitWrite(val, 7, PushtoStatus != PT_OFF);
 #endif
     //bitWrite(val, 7, DecayModeTrack);
 
