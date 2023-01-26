@@ -364,6 +364,10 @@ void SmartHandController::updateMainDisplay(PAGES page)
   {
     ta_MountStatus.updateAzAlt();
   }
+  else if (page == P_PUSH && !ta_MountStatus.isPulseGuiding())
+  {
+    ta_MountStatus.updatePush();
+  }
   else if (page == P_TIME && !ta_MountStatus.isPulseGuiding())
   {
     ta_MountStatus.updateTime();
@@ -646,6 +650,21 @@ void SmartHandController::updateMainDisplay(PAGES page)
         x = u8g2_GetDisplayWidth(u8g2);
         display->drawDec(x, y, ta_MountStatus.getAlt());
         u8g2_DrawUTF8(u8g2, 0, y, "Alt.");
+      }
+    }
+    else if (page == P_PUSH)
+    {
+      if (ta_MountStatus.hasInfoPush())
+      {
+        display->setFont(u8g2_font_courB18_tn);
+        u8g2_uint_t y = 39;
+        x = u8g2_GetDisplayWidth(u8g2);
+        const char* txt1 = ta_MountStatus.GetPushA1();
+        const char* txt2 = ta_MountStatus.GetPushA2();
+        u8g2_DrawUTF8(u8g2, 20, y, ta_MountStatus.GetPushA1());
+        y += 22;
+        u8g2_DrawUTF8(u8g2, 20, y, ta_MountStatus.GetPushA2());
+        display->setFont(u8g2_font_helvR12_te);
       }
     }
     else if (page == P_TIME)

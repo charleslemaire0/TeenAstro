@@ -38,6 +38,8 @@ private:
   char            m_TempAz[15] = "?";
   char            m_TempAlt[15] = "?";
   unsigned long   m_lastStateAzAlt;
+  char            m_TempPush[20] = "?";
+  unsigned long   m_lastStatePush;
   char            m_TempAxis1Step[15] = "?";
   char            m_TempAxis2Step[15] = "?";
   unsigned long   m_lastStateAxisStep;
@@ -67,6 +69,7 @@ private:
   bool            m_hasInfoDecT = false;
   bool            m_hasInfoAz = false;
   bool            m_hasInfoAlt = false;
+  bool            m_hasInfoPush = false;
   bool            m_hasInfoAxis1Step = false;
   bool            m_hasInfoAxis2Step = false;
   bool            m_hasInfoAxis1Deg = false;
@@ -103,6 +106,7 @@ public:
   bool hasInfoDec() { return m_hasInfoDec; };
   bool hasInfoAz() { return m_hasInfoAz; };
   bool hasInfoAlt() { return m_hasInfoAlt; };
+  bool hasInfoPush() { return m_hasInfoPush; };
   bool hasInfoUTC() { return m_hasInfoUTC; };
   bool hasInfoLHA() { return m_hasInfoLHA; };
   bool hasInfoSidereal() { return m_hasInfoSidereal; };
@@ -126,6 +130,9 @@ public:
   const char* getDecT() { return  m_TempDecT; };
   const char* getAz() { return  m_TempAz; };
   const char* getAlt() { return  m_TempAlt; };
+  const char* GetPushA1() { return &m_TempPush[2]; };
+  const char* GetPushA2() { return &m_TempPush[9]; };
+  const char* GetPushE() { return &m_TempPush[0]; };
   const char* getAxis1Step() { return  m_TempAxis1Step; };
   const char* getAxis2Step() { return  m_TempAxis2Step; };
   const char* getAxis1Deg() { return  m_TempAxis1Deg; };
@@ -146,6 +153,7 @@ public:
   void updateRaDec();
   void updateRaDecT();
   void updateAzAlt();
+  void updatePush();
   void updateAxisStep();
   void updateAxisDeg();
   void updateTime();

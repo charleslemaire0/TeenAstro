@@ -11,7 +11,7 @@
 #define SHCFirmwareVersionMinor  "3"
 #define SHCFirmwareVersionPatch  "3"
 
-#define NUMPAGES 8
+#define NUMPAGES 9
 class SmartHandController
 {
 public:
@@ -24,7 +24,7 @@ public:
 private:
   enum PAGES
   {
-    P_RADEC, P_ALTAZ, P_TIME, P_AXIS_STEP, P_AXIS_DEG, P_FOCUSER, P_ALIGN, P_HA
+    P_RADEC, P_ALTAZ, P_PUSH, P_TIME, P_AXIS_STEP, P_AXIS_DEG, P_FOCUSER, P_ALIGN, P_HA
   };
   enum MENU_RESULT
   {
@@ -55,7 +55,7 @@ private:
   bool forceDisplayoff = false;
   bool focuserlocked = false;
   bool telescoplocked = false;
-  pageInfo pages[NUMPAGES] = { {P_RADEC,true},{P_ALTAZ,true}, {P_TIME,true}, {P_AXIS_STEP,false}, {P_AXIS_DEG,false}, {P_FOCUSER,true}, {P_ALIGN,false}, {P_HA,false} };
+  pageInfo pages[NUMPAGES] = { {P_RADEC,true},{P_ALTAZ,true}, {P_PUSH,true}, {P_TIME,true}, {P_AXIS_STEP,false}, {P_AXIS_DEG,false}, {P_FOCUSER,true}, {P_ALIGN,false}, {P_HA,false} };
   byte current_page;
   bool exitMenu = false;
   
@@ -83,15 +83,17 @@ private:
   uint8_t current_selection_filter_dblmax = 1;
   uint8_t current_selection_filter_varmax = 1;
 
-  MENU_RESULT menuSyncGoto(bool sync);
-  MENU_RESULT menuCoordinates(bool Sync);
+
+
+  MENU_RESULT menuSyncGoto(NAV mode);
+  MENU_RESULT menuCoordinates(NAV mode);
   MENU_RESULT menuPier();
   MENU_RESULT menuSpirale();
-  MENU_RESULT subMenuSyncGoto(char sync, int subMenuNum);
-  MENU_RESULT menuCatalog(bool sync, int number);
+  MENU_RESULT subMenuSyncGoto(NAV mode, int subMenuNum);
+  MENU_RESULT menuCatalog(NAV mode, int number);
   MENU_RESULT menuCatalogAlign();
-  MENU_RESULT menuCatalogs(bool sync);
-  MENU_RESULT menuSolarSys(bool sync);
+  MENU_RESULT menuCatalogs(NAV mode);
+  MENU_RESULT menuSolarSys(NAV mode);
   MENU_RESULT menuFilters();
   void setCatMgrFilters();
   MENU_RESULT menuFilterCon();
@@ -102,9 +104,9 @@ private:
   MENU_RESULT menuFilterDblMinSep();
   MENU_RESULT menuFilterDblMaxSep();
   MENU_RESULT menuFilterVarMaxPer();
-  MENU_RESULT menuRADecNow(bool sync);
-  MENU_RESULT menuRADecJ2000(bool sync);
-  MENU_RESULT menuAltAz(bool sync);
+  MENU_RESULT menuRADecNow(NAV mode);
+  MENU_RESULT menuRADecJ2000(NAV mode);
+  MENU_RESULT menuAltAz(NAV mode);
   MENU_RESULT menuAlignment();
 
   bool SelectStarAlign();

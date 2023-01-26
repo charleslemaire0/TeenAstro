@@ -86,6 +86,16 @@ void TeenAstroMountStatus::updateAzAlt()
     m_hasInfoAz &&m_hasInfoAlt ? m_lastStateAzAlt = millis() : m_connectionFailure++;
   }
 }
+void TeenAstroMountStatus::updatePush()
+{
+  if (millis() - m_lastStatePush > updaterate)
+  {
+    m_hasInfoPush = GetLX200(":ED#", m_TempPush, sizeof(m_TempPush)) == LX200_VALUEGET;
+    m_TempPush[1] = 0;
+    m_TempPush[8] = 0;
+    m_hasInfoPush ? m_lastStatePush = millis() : m_connectionFailure++;
+  }
+}
 void TeenAstroMountStatus::updateAxisStep()
 {
   if (millis() - m_lastStateAxisStep > updaterate)
