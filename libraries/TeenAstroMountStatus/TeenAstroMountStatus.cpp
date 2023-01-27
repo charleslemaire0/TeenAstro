@@ -88,7 +88,7 @@ void TeenAstroMountStatus::updateAzAlt()
 }
 void TeenAstroMountStatus::updatePush()
 {
-  if (millis() - m_lastStatePush > updaterate)
+  if (m_hasEncoder && millis() - m_lastStatePush > updaterate)
   {
     m_hasInfoPush = GetLX200(":ED#", m_TempPush, sizeof(m_TempPush)) == LX200_VALUEGET;
     m_TempPush[1] = 0;

@@ -29,12 +29,20 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(NAV mode)
 {
   static int current_selection = 1;
 
+  if (mode == NAV_PUSHTO && !ta_MountStatus.hasEncoder())
+  {
+    DisplayMessage(T_ENCODERS, T_NOT_CONNECTED,-1);
+    return MR_OK;
+  }
+
   while (true)
   {
     // build the list of star/dso catalogs
-    const char* string_list_gotoL1 = mode != NAV_SYNC ?
+    const char* string_list_gotoL1 = mode == NAV_SYNC ?
       T_CATALOGS "\n" T_SOLARSYSTEM "\n" T_COORDINATES "\n" T_USERDEFINED "\n" T_HOME "\n" T_PARK :
-      T_CATALOGS "\n" T_SOLARSYSTEM "\n" T_COORDINATES "\n" T_USERDEFINED "\n" T_HOME "\n" T_PARK "\n" T_FLIP;
+      mode == NAV_GOTO ?
+      T_CATALOGS "\n" T_SOLARSYSTEM "\n" T_COORDINATES "\n" T_USERDEFINED "\n" T_HOME "\n" T_PARK "\n" T_FLIP :
+      T_CATALOGS "\n" T_SOLARSYSTEM "\n" T_COORDINATES "\n" T_USERDEFINED;
 
     const char* menu = mode == NAV_SYNC ? T_SYNC : (mode == NAV_GOTO ? T_GOTO : T_PUSHTO);
     int selection = display->UserInterfaceSelectionList(&buttonPad, menu
