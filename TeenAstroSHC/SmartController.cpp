@@ -202,20 +202,20 @@ void SmartHandController::update()
     {
       menuTelAction();
     }
-    else if (eventbuttons[1] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    else if (eventbuttons[1] == E_LONGPRESS || eventbuttons[1] == E_CLICK || eventbuttons[1] == E_LONGPRESSTART)
     {
       menuSpeedRate();
       time_last_action = millis();
     }
-    else if (eventbuttons[4] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    else if (eventbuttons[4] == E_LONGPRESS || eventbuttons[4] == E_CLICK || eventbuttons[4] == E_LONGPRESSTART)
     {
       menuTelSettings();
     }
-    else if (eventbuttons[6] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    else if (eventbuttons[6] == E_LONGPRESS || eventbuttons[6] == E_CLICK || eventbuttons[6] == E_LONGPRESSTART)
     {
       menuFocuserAction();
     }
-    else if (eventbuttons[5] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    else if (eventbuttons[5] == E_LONGPRESS || eventbuttons[5] == E_CLICK || eventbuttons[5] == E_LONGPRESSTART)
     {
       menuFocuserSettings();
     }
