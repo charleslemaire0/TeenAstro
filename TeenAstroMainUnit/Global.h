@@ -76,9 +76,11 @@ double                  DegreesForAcceleration = 3;
 MotorAxis           motorA1;
 MotorAxis           motorA2;
 
+#if HASEncoder
 EncoderSync         EncodeSyncMode = EncoderSync::ES_OFF;
 EncoderAxis         encoderA1;
 EncoderAxis         encoderA2;
+#endif
 
 backlash            backlashA1 = { 0,0,0,0 };
 backlash            backlashA2 = { 0,0,0,0 };

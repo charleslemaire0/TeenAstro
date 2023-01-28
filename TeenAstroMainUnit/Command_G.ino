@@ -140,11 +140,13 @@ void Command_GX()
     case '2':
       // :GXE1# get degree encoder 1
     {
+#if HASEncoder
       f1 = command[3] == '1' ? encoderA1.r_deg() : encoderA2.r_deg();
       if (!doubleToDms(reply, &f1, true, true, highPrecision))
         replyFailed();
       else
         strcat(reply, "#");
+#endif // HASEncoder
     }
     break;
     case 'A':
@@ -194,7 +196,9 @@ void Command_GX()
     case 'O':
       // :GXEO#  get encoder Sync Option
     {
+#if HASEncoder
       sprintf(reply, "%u#", EncodeSyncMode);
+#endif // HASEncoder
     }
     break;
 
@@ -203,11 +207,15 @@ void Command_GX()
       // :GXEP.#   Get Encoder pulse per 100 deg
       if (command[4] == 'D')
       {
+#if HASEncoder
         sprintf(reply, "%lu#", (unsigned long)(100.0 * encoderA2.pulsePerDegree));
+#endif // HASEncoder
       }
       else if (command[4] == 'R')
       {
+#if HASEncoder
         sprintf(reply, "%lu#", (unsigned long)(100.0 * encoderA1.pulsePerDegree));
+#endif // HASEncoder
       }
       else
         replyFailed();

@@ -252,6 +252,7 @@ void Command_E()
     {
     case 'S':
     {
+#if HasEncoder
       //  :EAS#  Align Encoder Start
       double A1, A2;
       EncodeSyncMode = ES_OFF;
@@ -260,24 +261,29 @@ void Command_E()
       encoderA1.setRef(A1);
       encoderA2.setRef(A2);
       replyOk();
+#endif // HASEncoder
     }
     break;
     case 'E':
     {
+#if HasEncoder
       //  :EAE#  Align Encoder End
       double A1, A2;
       getInstrDeg(&A1, &A2);
       bool ok = encoderA1.calibrate(A1);
       ok &= encoderA1.calibrate(A2);
       ok ? replyOk() : replyFailed();
+#endif // HASEncoder
     }
     break;
     case 'Q':
     {
+#if HasEncoder
       //  :EAQ#  Align Encoder Quit
       encoderA1.delRef();
       encoderA2.delRef();
       replyOk();
+#endif // HASEncoder
     }
     break;
     default:

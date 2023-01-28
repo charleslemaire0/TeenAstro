@@ -1,6 +1,6 @@
 void setupST4()
 {
-#ifdef HASST4
+#if HASST4
   pinMode(ST4RAw, INPUT);
   pinMode(ST4RAe, INPUT);
   pinMode(ST4DEn, INPUT);
@@ -10,7 +10,7 @@ void setupST4()
 
 void checkST4()
 {
-#ifdef HASST4
+#if HASST4
   //Simulated ST4 with inactive signals
   byte w1 = HIGH, w2 = HIGH, e1 = HIGH, e2 = HIGH, n1 = HIGH, n2 = HIGH, s1 = HIGH, s2 = HIGH;
   static char ST4RA_state = 0;

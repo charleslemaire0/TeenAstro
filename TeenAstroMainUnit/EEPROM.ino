@@ -62,7 +62,7 @@ void writeDefaultMount()
   // init the default maxRate
   XEEPROM.writeInt(getMountAddress(EE_maxRate), DefaultR4);
 
-  // init degree for acceleration 1°
+  // init degree for acceleration 1
   XEEPROM.write(getMountAddress(EE_degAcc), (uint8_t)(1 * 10));
 
   // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
@@ -469,7 +469,7 @@ void writeDefaultEEPROMmotor()
 
 void readEEPROMencoder()
 {
-
+#if HASEncoder
   //EncoderSync
   int val = XEEPROM.read(getMountAddress(EE_encoderSync));
   EncodeSyncMode = static_cast<EncoderSync>(val);
@@ -521,14 +521,17 @@ void readEEPROMencoder()
   encoderA2.isReverseFix = false;
 #endif 
 
+#endif // HasEncoder
 }
 
 void writeDefaultEEPROMencoder()
 {
+#if HASEncoder
   XEEPROM.write(getMountAddress(EE_encoderSync), EncoderSyncDefault);
   XEEPROM.writeLong(getMountAddress(EE_encoderA1pulsePerDegree), 100 * pulsePerDegreedefault);
   XEEPROM.write(getMountAddress(EE_encoderA1reverse), 0);
   XEEPROM.writeLong(getMountAddress(EE_encoderA2pulsePerDegree), 100 * pulsePerDegreedefault);
   XEEPROM.write(getMountAddress(EE_encoderA2reverse), 0);
+#endif // HasEncoder
 
 }

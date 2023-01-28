@@ -55,6 +55,7 @@ void Command_SX()
     case 'O':
       // :SXEO#  set encoder Sync Option
     {
+#if HasEncoder
       unsigned int i;
       if (atoui2(&command[5], &i) && i <= (unsigned int)(EncoderSync::ES_ALWAYS))
       {
@@ -63,10 +64,12 @@ void Command_SX()
         XEEPROM.write(getMountAddress(EE_encoderSync), EncodeSyncMode);
       }
       ok ? replyOk() : replyFailed();
+#endif // HASEncoder
     }
     break;
     case 'P':
     {
+#if HasEncoder
       // :SXEPn,VVVV# Set pulse per 100deg max
       bool ok = false;
       if ((command[4] == 'D' || command[4] == 'R')
@@ -99,10 +102,12 @@ void Command_SX()
 
       }
       ok ? replyOk() : replyFailed();
+#endif // HASEncoder
     }
     break;
     case 'r':
     {
+#if HasEncoder
       // :SXErn,V# Set Encoder Reverse rotation
       bool ok = false;
       if ((command[4] == 'D' || command[4] == 'R')
@@ -129,6 +134,7 @@ void Command_SX()
         }
       }
       ok ? replyOk() : replyFailed();
+#endif // HASEncoder
     }
     default:
       replyFailed();

@@ -109,36 +109,31 @@
 
 #if VERSION == 245                      // Teensy 3.2, beta board, not released, small batch in test - lordzurp
 
-#define Focus_Serial Serial2
-#define GNSS_Serial  Serial3
-#ifndef AxisDriver
-#define AxisDriver      3                 // Select your driver 2 for the TMC2130, 3 for the TMC5160, 4 for the TMC2160
-#endif
-#define Axis1StepPin    22                // Pin 22 (Step)
-#define Axis1DirPin     2                 // Pin 3 (Dir)
-#define Axis1CSPin      21                // Pin 5 (CS)
-#define Axis1EnablePin  3                 // Pin 5 (enable)
-#define Axis2StepPin    20                // Pin 6 (Step)
-#define Axis2DirPin     4                 // Pin 19 (Dir)
-#define Axis2CSPin      19                // Pin 20 (CS)
-#define Axis2EnablePin  5                 // Pin 18 (enable)
-#define RETICULE_LED_PINS 6  
-#define PPS             18
-#define Axis1Reverse    1
-#define Axis2Reverse    1
-// Pin 11 12 13 are used!! for SPI
-//Focuser Interface
-#define FocuserRX       9
-#define FocuserTX       10
-// ST4 interface
-#define ST4RAe          14                // ST4 REast
-#define ST4DEs          15                // ST4 South
-#define ST4DEn          16                // ST4 North
-#define ST4RAw          17                // ST4 West
+    #define GNSS_Serial  Serial3
+    #ifndef AxisDriver
+    #define AxisDriver      3                 // Select your driver 2 for the TMC2130, 3 for the TMC5160, 4 for the TMC2160
+    #endif
+    #define Axis1StepPin    22                // Pin 22 (Step)
+    #define Axis1DirPin     2                 // Pin 3 (Dir)
+    #define Axis1CSPin      21                // Pin 5 (CS)
+    #define Axis1EnablePin  3                 // Pin 5 (enable)
+    #define Axis2StepPin    20                // Pin 6 (Step)
+    #define Axis2DirPin     4                 // Pin 19 (Dir)
+    #define Axis2CSPin      19                // Pin 20 (CS)
+    #define Axis2EnablePin  5                 // Pin 18 (enable)
+    #define PPS             18
+    #define Axis1Reverse    1
+    #define Axis2Reverse    1
 
-// LED interface
-#define LEDPin          23 
-#define MaxLED          16
+    //Focuser Interface
+    #define Focus_Serial Serial2
+    #define FocuserRX       9
+    #define FocuserTX       10
+
+    // LED interface
+    #define LEDPin          23 
+    //#define RETICULE_LED_PINS 6  
+    //#define MaxLED          16
 
 #endif
 
@@ -229,8 +224,6 @@
 
 #endif
 
-
-
 #if VERSION == 259                       // teensy micromod, beta board, not released - lordzurp
 
     // GNSS
@@ -259,10 +252,8 @@
 
     // LED interface
     #define LEDPin          27
-    #define MaxLED          16
-    #define RETICULE_LED_PINS 28
 
-    // **************
+    /* **************
     // *** UNUSED ***
     // **************
         // ST4 interface
@@ -271,10 +262,17 @@
         #define ST4DEn          43                // ST4 North
         #define ST4RAw          44                // ST4 West
 
+        // LED interface
+        #define MaxLED          16
+        #define RETICULE_LED_PINS 28
+
+    */
+
         //Focuser Interface
         #define Focus_Serial Serial3
         #define FocuserRX       15
         #define FocuserTX       14
+
 #endif
 
 #if VERSION == 260                          // teensy micromod, release candidate board - lordzurp
@@ -311,10 +309,8 @@
 
     // LED interface
     #define LEDPin          27
-    #define MaxLED          16
-    #define RETICULE_LED_PINS 28
 
-    // ==============
+    /* ==============
     // =   UNUSED   =
     // ==============
         // ST4 interface
@@ -323,10 +319,15 @@
         #define ST4DEn          43                // ST4 North
         #define ST4RAw          44                // ST4 West
 
+        // LED interface
+        #define MaxLED          16
+        #define RETICULE_LED_PINS 28
+    */
         //Focuser Interface
         #define Focus_Serial Serial3
         #define FocuserRX       15
         #define FocuserTX       14
+
 #endif
 
 #define HASST4 (defined ST4RAw && defined ST4RAe && defined ST4DEn && defined ST4DEs)

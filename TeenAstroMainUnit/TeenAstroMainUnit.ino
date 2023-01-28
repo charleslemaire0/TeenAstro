@@ -191,6 +191,7 @@ void loop()
     Guide();
   }
   // ENCODER -------------------------------------------------------------------------------------------
+#if HasEncoder
   if (encoderA1.calibrating() != encoderA2.calibrating())
   {
     encoderA1.delRef();
@@ -207,7 +208,7 @@ void loop()
       if (parkStatus != PRK_UNPARKED) parkStatus = PRK_UNPARKED;
     }
   }
-
+#endif // HASEncoder
 
   // 0.01 SECOND TIMED ---------------------------------------------------------------------------------
 

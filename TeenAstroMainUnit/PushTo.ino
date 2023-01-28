@@ -2,14 +2,17 @@
 byte PushToEqu(const double Ra, const double Dec, PierSide preferedPierSide, const double* cosLat, const double* sinLat,
   float* deltaA1, float* deltaA2)
 {
+#if HasEncoder
   double azm, alt = 0;
   double Ha = haRange(rtk.LST() * 15.0 - Ra);
   EquToHor(Ha, Dec, doesRefraction.forGoto, &azm, &alt, cosLat, sinLat);
   return PushToHor(&azm, &alt, preferedPierSide, deltaA1, deltaA2);
+#endif // HASEncoder
 }
 
 byte PushToHor(const double* Azm, const double* Alt, PierSide preferedPierSide, float* deltaA1, float* deltaA2)
 {
+#if HasEncoder
   double Axis1_target, Axis2_target = 0;
   long axis1_target, axis2_target = 0;
   PierSide selectedSide = PierSide::PIER_NOTVALID;
@@ -28,5 +31,6 @@ byte PushToHor(const double* Azm, const double* Alt, PierSide preferedPierSide, 
   *deltaA1 = encoderA1.deltaTarget(Axis1_target);
   *deltaA2 = encoderA2.deltaTarget(Axis2_target);
   return ERRGOTO_NONE;
+#endif // HASEncoder
 }
 
