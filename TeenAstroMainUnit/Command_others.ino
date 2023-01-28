@@ -179,6 +179,7 @@ void Command_C()
     {
     case 'M':
     case 'S':
+    {
       double newTargetHA;
       if (autoAlignmentBySync) {
         newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
@@ -213,8 +214,8 @@ void Command_C()
       {
         strcpy(reply, "N/A#");
       }
-
-      break;
+    }
+    break;
     case 'U':
     {
       // :CU# sync with the User Defined RA DEC
@@ -242,6 +243,7 @@ void Command_C()
 //  :EAQ#   Align Encoder Quit
 //  :ECT#   Synchonize the telescope with the Encoders
 //  :ECE#   Synchonize the Encoders with the telescope
+//  :ECS#   Synchronise at the end of a pushto to Target
 void Command_E()
 {
   switch (command[1])
@@ -290,18 +292,46 @@ void Command_E()
   {
     switch (command[2])
     {
-      //  :ECT#   Synchonize the telescope with the Encoders
     case 'T':
     {
+      //  :ECT#   Synchonize the telescope with the Encoders
       syncTwithE();
-      break;
+      replyOk();
     }
-    //  :ECE#   Synchonize the Encoders with the telescope
+    break;
     case 'E':
     {
+      //  :ECE#   Synchonize the Encoders with the telescope
       syncEwithT();
-      break;
+      replyOk();
     }
+    break;
+    case 'S':
+    {
+      //  :ECE#   Synchonize the Telescope and Encoder to Target
+      switch (PushtoStatus)
+      {
+      case PT_RADEC:
+      {
+        double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+        syncEqu(newTargetHA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat());
+        syncEwithT();
+        replyOk();
+      }
+      break;
+      case PT_ALTAZ:
+      {
+        syncAzAlt(newTargetAzm, newTargetAlt, GetPierSide());
+        syncEwithT();
+        replyOk();
+      }
+      break;
+      default:
+        replyFailed();
+        break;
+      }
+    }
+    break;
     default:
       replyFailed();
       break;
@@ -333,7 +363,7 @@ void Command_E()
   {
     float delta1;
     float delta2;
-    int e=0;
+    int e = 0;
     if (command[2] == 'S')
     {
       e = PushToEqu(newTargetRA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat(), &delta1, &delta2);
@@ -357,6 +387,7 @@ void Command_E()
     else if (command[2] == 'Q')
     {
       PushtoStatus = PT_OFF;
+      replyOk();
     }
     else
     {
