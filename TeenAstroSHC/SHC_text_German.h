@@ -63,6 +63,7 @@
 #define T_STOP "Stop"
 #define T_CANCEL "Abbruch"
 #define T_CANCELED "Abgebrochen"
+#define T_COMPLETE "beendet"
 #define T_WRONG "Falsch"
 #define T_NOTDEFINED "nicht definiert"
 #define T_SUCESS "Erfolg"
@@ -163,6 +164,8 @@
 #define T_UNLOCK "Entsperren"
 #define T_LOCK "Sperre"
 #define T_GOTO "Goto"
+#define T_PUSHTO "Pushto"
+#define T_PUSHINGTO "Pushing to"
 #define T_POSITION "Position"
 
 #define T_SYNC "Synchronisierung"
