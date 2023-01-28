@@ -418,13 +418,17 @@ bool TeenAstroMountStatus::hasEncoder()
   if (firstime)
   {
     updateMount();
-    m_hasEncoder = bitRead(m_TempMount[14] - 'A', 5);
+    m_hasEncoder = bitRead(m_TempMount[16] - 'A', 0);
   }
   return m_hasEncoder;
 }
 bool TeenAstroMountStatus::CalibratingEncoder()
 {
-  return bitRead(m_TempMount[14] - 'A', 5);
+  return bitRead(m_TempMount[16] - 'A', 1);
+}
+bool TeenAstroMountStatus::isPushingto()
+{
+  return bitRead(m_TempMount[16] - 'A', 2);
 }
 
 TeenAstroMountStatus::PierState TeenAstroMountStatus::getPierState()

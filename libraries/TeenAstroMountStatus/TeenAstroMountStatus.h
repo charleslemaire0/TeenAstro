@@ -51,7 +51,7 @@ private:
   char            m_TempUTCdate[15] = "?";
   char            m_TempSidereal[15] = "?";
   unsigned long   m_lastStateTime;
-  char            m_TempMount[17] = "?";
+  char            m_TempMount[20] = "?";
   unsigned long   m_lastStateMount;
   unsigned long   m_lastStateTrackingRate;
   long            m_TempTrackingRateRa = 0;
@@ -184,6 +184,7 @@ public:
   bool atHome();
   bool Parking();
   bool Parked();
+  bool isPushingto();
   bool isSpiralRunning();
   bool isPulseGuiding();
   bool isGuidingN();
