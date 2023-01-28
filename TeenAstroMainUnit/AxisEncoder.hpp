@@ -2,7 +2,7 @@
 #ifndef _EncoderAxis_h
 #define _EncoderAxis_h
 
-#if defined(ARDUINO_TEENSY40) || defined(ARDUINO_TEENSY_MICROMOD) || ARDUINO_TEENSY32
+#if defined(ARDUINO_TEENSY40) || defined(ARDUINO_TEENSY_MICROMOD) || ARDUINO_TEENSY31 || ARDUINO_TEENSY32
 #include <Encoder.h>
 
 class EncoderAxis
