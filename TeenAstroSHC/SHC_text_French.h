@@ -23,7 +23,13 @@
 #define T_TRUE_POLE "Pôle Vrai"
 #define T_APPARENT_POLE "Pôle Apparent"
 
+#define T_ENCODERS "Encodeurs"
+#define T_PULSEPERDEGREE "Pulse par deg"
+#define T_AUTO_SYNC "Auto Sync"
+#define T_CALIBRATION "Calibration"
+
 #define T_LIMITS "Limites"
+#define T_CONNECTED "Connecté"
 #define T_NOT_CONNECTED "pas Connecté"
 #define T_TUNKOWN "Inconnue"
 #define T_ERROR "ERREUR"

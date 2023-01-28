@@ -23,7 +23,13 @@
 #define T_TRUE_POLE "Wahrer Pol"
 #define T_APPARENT_POLE "Scheinbarer Pol"
 
+#define T_ENCODERS "Encoders"
+#define T_PULSEPERDEGREE "Pulse per deg"
+#define T_AUTO_SYNC "Auto Sync"
+#define T_CALIBRATION "Calibration"
+
 #define T_LIMITS "Grenzen"
+#define T_CONNECTED "verbunden"
 #define T_NOT_CONNECTED "Nicht verbunden"
 #define T_TUNKOWN "Unbekannt"
 #define T_ERROR "FEHLER"
