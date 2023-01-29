@@ -160,3 +160,10 @@ const char* Txt_Constellations[89] = {
   "LMi","Lac","Leo","Lep","Lib","Lup","Lyn","Lyr","Men","Mic","Mon","Mus","Nor","Oct","Oph","Ori","Pav","Peg","Per","Phe","Pic","PsA",
   "Psc","Pup","Pyx","Ret","Scl","Sco","Sct","Ser","Sex","Sge","Sgr","Tau","Tel","TrA","Tri","Tuc","UMa","UMi","Vel","Vir","Vol","Vul"," ---"
 };
+
+const char* Txt_Constellations_long[89] = {
+  "Andromède","La Machine pneumatique","L'Oiseau de paradis","L'Aigle","Le Verseau","L'Autel","Le Bélier","Le Cocher","Le Bouvier","Le Burin","La Girafe","Le Capricorne","La Carène","Cassiopée","Le Centaure","Céphée","La Baleine","Le Caméléon","Le Compas","Le Grand Chien","Le Petit Chien","Le Cancer",
+  "La Colombe","La Chevelure de Bérénice","La Couronne australe","La Couronne boréale","La Coupe","La Croix du Sud","Le Corbeau","Les Chiens de chasse","Le Cygne","Le Dauphin","La Dorade","Le Dragon","Le Petit Cheval","L'Éridan","Le Fourneau","Les Gémeaux","La Grue","Hercule","L'Horloge","L'Hydre","L'Hydre mâle","L'Indien",
+  "Le Lézard","Le Lion","Le Lièvre","La Balance","Le Petit Lion","Le Loup","Le Lynx","La Lyre","La Table","Le Microscope","La Licorne","La Mouche","La Règle","L'Octant","Ophiuchus","Orion","Le Paon","Pégase","Persée","Le Phénix","Le Peintre","Le Poisson austral",
+  "Les Poissons","La Poupe","La Boussole","Le Réticule","Le Sculpteur","Le Scorpion","L'Écu de Sobieski","Le Serpent","Le Sextant","La Flèche","Le Sagittaire","Le Taureau","Le Télescope","Le Triangle austral","Le Triangle","Le Toucan","La Grande Ourse","La Petite Ourse","Les Voiles","La Vierge","Le Poisson volant","Le Petit Renard"," ---"
+};
