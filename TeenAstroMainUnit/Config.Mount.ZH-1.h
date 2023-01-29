@@ -27,3 +27,5 @@
 
 #define D_encoderA2plusePerDegree 400
 #define D_encoderA2reverse 0
+
+#define DefaultR4 960
