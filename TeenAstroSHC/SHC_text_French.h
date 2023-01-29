@@ -92,7 +92,7 @@
 #define T_ROTATION "Rotation"
 #define T_BACKLASH "Jeu"
 #define T_GEAR "Réduction"
-#define T_RATIO "Rapport"
+#define T_RATIO "Ratio"
 #define T_MICROSTEP "Micropas"
 #define T_INSECONDS "en secondes"
 #define T_MOTOR "Moteur"

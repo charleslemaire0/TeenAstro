@@ -428,8 +428,8 @@ void enable_Axis(bool enable)
 void updateRatios(bool deleteAlignment, bool deleteHP)
 {
   cli();
-  geoA1.setstepsPerRot((long)motorA1.gear * motorA1.stepRot * (int)pow(2, motorA1.micro));
-  geoA2.setstepsPerRot((long)motorA2.gear * motorA2.stepRot * (int)pow(2, motorA2.micro));
+  geoA1.setstepsPerRot((long)motorA1.gear / 100 * motorA1.stepRot * (int)pow(2, motorA1.micro));
+  geoA2.setstepsPerRot((long)motorA2.gear / 100 * motorA2.stepRot * (int)pow(2, motorA2.micro));
   backlashA1.inSteps = (int)round(((double)backlashA1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
   backlashA2.inSteps = (int)round(((double)backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
   sei();

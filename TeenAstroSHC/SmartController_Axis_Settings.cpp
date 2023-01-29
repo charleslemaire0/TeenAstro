@@ -135,7 +135,7 @@ bool SmartHandController::menuSetTotGear(const uint8_t &axis)
     return false;
   char text[20];
   sprintf(text, T_GEAR " M%u", axis);
-  if (display->UserInterfaceInputValueFloat(&buttonPad, text, T_RATIO, &totGear, 1, 60000, 5, 0, ""))
+  if (display->UserInterfaceInputValueFloat(&buttonPad, text, T_RATIO, &totGear, 1, 60000, 5, 2, ""))
   {
     return DisplayMessageLX200(writeTotGearLX200(axis, totGear), false);
   }
@@ -148,7 +148,7 @@ bool SmartHandController::menuSetStepPerRot(const uint8_t &axis)
     return false;
   char text[20];
   sprintf(text, T_STEPPER " M%u", axis);
-  if (display->UserInterfaceInputValueFloatIncr(&buttonPad, text, "", &stepPerRot, 20, 400, 3, 0, 20, " " T_STEPS))
+  if (display->UserInterfaceInputValueFloatIncr(&buttonPad, text, "", &stepPerRot, 200, 400, 3, 0, 200, " " T_STEPS))
   {
     return DisplayMessageLX200(writeStepPerRotLX200(axis, stepPerRot), false);
   }
