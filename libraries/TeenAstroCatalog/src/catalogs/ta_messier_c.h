@@ -5,7 +5,7 @@
 #define Cat_Messier_Prefix "M"
 #define NUM_MESSIER 109
 
-const char *Cat_Messier_Names=
+const char *Cat_Messier_Names_EN=
 "Crab Nebula;"
 "Butterfly Clstr;"
 "Ptolemy Clstr;"
@@ -43,6 +43,45 @@ const char *Cat_Messier_Names=
 "Owl Nebula;"
 "Pinwheel Gxy;"
 "Sombrero Gxy";
+
+const char *Cat_Messier_Names_FR=
+"Nébuleuse du Crabe;"
+"Amas du Papillon;"
+"Amas de Ptolémée;"
+"Nébuleuse de la Lagune;"
+"Amas du Canard Sauvage;"
+"Grand amas d'Hercule;"
+"Nuage de Pégase;"
+"Nébuleuse de l'Aigle;"
+"Omega - Nébuleuse du Cygne;"
+"Nébuleuse Trifide;"
+"Amas du Sagittaire;"
+"Nuage d'étoiles du Sagittaire;"
+"Nébuleuse de l'Haltère;"
+"Galaxie d'Andromède;"
+"Galaxie du Triangle;"
+"Amas du Moulinet;"
+"Amas de la Méduse;"
+"Winnecke 4;"
+"Nébuleuse d'Orion;"
+"Nébuleuse de Mairan;"
+"Amas de la Ruche;"
+"Pléiades;"
+"Galaxie du Tourbillon;"
+"Nébuleuse de l'Anneau;"
+"Galaxie du Tournesol;"
+"Galaxie de l'Œil noir;"
+"Triplet de Leo;"
+"Galaxie du Hamburger5;"
+"Nébuleuse du Petit Haltère;"
+"Cetus A.;"
+"Galaxie de Bode;"
+"Galaxie du Cigare;"
+"Galaxie Pin-wheel;"
+"Virgo A.;"
+"Nébuleuse du Hibou;"
+"Galaxie du Moulinet;"
+"Galaxie du Sombrero;";
 
 const char *Cat_Messier_SubId=
 " NGC1952;"

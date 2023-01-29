@@ -5,7 +5,7 @@
 #define Cat_Caldwell_Prefix "C"
 #define NUM_CALDWELL 109
 
-const char *Cat_Caldwell_Names=
+const char *Cat_Caldwell_Names_EN=
 "Bow-Tie Nebula;"
 "Iris Nebula;"
 "Cat's Eye Nebula;"
@@ -52,6 +52,54 @@ const char *Cat_Caldwell_Names=
 "Theta Car Cluster;"
 "Tarantula Nebula;"
 "47 Tucanae;";
+
+const char *Cat_Caldwell_Names_FR=
+"Nébuleuse du Nœud de cravate;"
+"Nébuleuse de l'Iris;"
+"Nébuleuse de l'Œil de Chat;"
+"Nébuleuse de la Grotte;"
+"Nébuleuse de la Bulle;"
+"Galaxie du Feu d'artifice;"
+"Amas de la Chouette;"
+"Double amas de Persée;"
+"Clignement planétaire;"
+"Nébuleuse du Cocon;"
+"Nébuleuse de l'Amérique du Nord;"
+"Nébuleuse de la Boule de neige bleue;"
+"Perseus A;"
+"Nébuleuse du Croissant;"
+"Nébuleuse de l'Étoile flamboyante;"
+"Galaxie de la Baleine;"
+"Dentelles du Cygne (Grande dentelle);"
+"Dentelles du Cygne (Petite dentelle et Triangle de Pickering);"
+"Galaxie de l'Aiguille;"
+"Nébuleuse de l'Esquimau;"
+"Hyades;"
+"Nébuleuse variable de Hubble;"
+"Nébuleuse de la Rosette;"
+"Galaxie du Fuseau;"
+"Nébuleuse Saturne;"
+"Galaxie de Barnard;"
+"Fantôme de Jupiter;"
+"Galaxies des Antennes;"
+"Galaxies des Antennes;"
+"Nébuleuse de l'Hélice ou Œil de Dieu;"
+"Galaxie du Sculpteur;"
+"Nébuleuse de l'Insecte ou Nébuleuse du Papillon;"
+"Nébuleuse du Huit éclaté ou Nébuleuse de l'Anneau du Sud;"
+"Centaurus A;"
+"Oméga du Centaure;"
+"Amas d'Omicron des Voiles;"
+"Amas de S de la Règle;"
+"Amas du Puits aux vœux;"
+"Nébuleuse de la Carène;"
+"Boîte à bijoux;"
+"Amas du Diamant;"
+"Sac à charbon;"
+"Nébuleuse de Lambda du Centaure;"
+"Pléiades du Sud;"
+"Nébuleuse de la Tarentule;"
+"47 du Toucan;";
 
 const char *Cat_Caldwell_SubId=
 " NGC188;"

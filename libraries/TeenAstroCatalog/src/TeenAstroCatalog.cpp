@@ -624,7 +624,7 @@ byte CatMgr::constellation() {
 
 // Constellation string
 const char* CatMgr::constellationStr() {
-  return Txt_Constellations_long[constellation()];
+  return Txt_Constellations_FR[constellation()];
 }
 
 // Constellation string, from constellation number
