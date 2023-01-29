@@ -90,28 +90,33 @@ void SmartHandController::setup(
     k++;
   }
   
+  display->setFont(u8g2_font_helvR12_te);
+  ta_MountStatus.updateMount();
+  char SHC_version[40];
+  sprintf(SHC_version, "SHC : %s", _version);
+  char Main_version[40];
+  sprintf(Main_version, "Main Unit : %s", ta_MountStatus.getVN());
   if (ta_MountStatus.isConnectionValid())
   {
-    display->setFont(u8g2_font_helvR12_te);
-    ta_MountStatus.updateMount();
-    char SHC_version[40];
-    sprintf(SHC_version, "SHC : %s", _version);
-    char Main_version[40];
-    sprintf(Main_version, "Main Unit : %s", ta_MountStatus.getVN());
     DisplayLongMessage(T_CONNECTED " !", "", SHC_version,  Main_version, 2000);
-
-    if (!ta_MountStatus.hasGNSSBoard())
-    {
-      ta_MountStatus.updateTime();
-      unsigned int hour=0, minute=0, second=0;
-      GetLocalTimeLX200(hour, minute, second);
-      char date_time[40];
-      sprintf(date_time, "%s : %.2d:%.2d:%.2d", T_TIME, hour, minute, second);
-      char date_time2[40];
-      sprintf(date_time2, "%s : %s", T_DATE, ta_MountStatus.getUTCdate());
-      DisplayMessage(date_time, date_time2, 2000);
-    }
   }
+  else
+  {
+    DisplayLongMessage("!! " T_ERROR " !!", T_NOT_CONNECTED " !", SHC_version,  Main_version, 5000);
+  }
+
+  if (!ta_MountStatus.hasGNSSBoard())
+  {
+    ta_MountStatus.updateTime();
+    unsigned int hour=0, minute=0, second=0;
+    GetLocalTimeLX200(hour, minute, second);
+    char date_time[40];
+    sprintf(date_time, "%s : %.2d:%.2d:%.2d", T_TIME, hour, minute, second);
+    char date_time2[40];
+    sprintf(date_time2, "%s : %s", T_DATE, ta_MountStatus.getUTCdate());
+    DisplayMessage(date_time, date_time2, 2000);
+  }
+  
 }
 
 void SmartHandController::update()

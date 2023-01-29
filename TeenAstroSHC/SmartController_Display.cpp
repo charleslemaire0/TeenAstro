@@ -333,7 +333,7 @@ void SmartHandController::drawIntro()
   {
     display->drawXBMP(0, 0, teenastro_width, teenastro_height, teenastro_bits);
   } while (display->nextPage());
-  delay(1500);
+  delay(2500);
 }
 
 void SmartHandController::updateMainDisplay(PAGES page)
