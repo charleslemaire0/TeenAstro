@@ -23,10 +23,10 @@
 #define StepsMaxInterval      100000 // this is the maximum number of micro-seconds between micro-steps
 
 
-#ifdef MOUNT_TEMPLATE
-#include "Config.Mount.Template.h"
+#if MOUNT_TEMPLATE == 1
+    #include "Config.Mount.ZH-1.h"
 #else
-#include "Config.Mount.Universal.h"
+    #include "Config.Mount.Universal.h"
 #endif
 
 
