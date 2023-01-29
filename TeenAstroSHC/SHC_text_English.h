@@ -18,9 +18,15 @@
 #define T_FOCUSER "Focuser"
 #define T_MOUNT "Mount"
 #define T_MOUNTTYPE "Mount type"
+#define T_SELECT_MOUNT "Select Mount"
 #define T_POLAR_ALIGNMENT "Polar Alignment"
 #define T_TRUE_POLE "True Pole"
 #define T_APPARENT_POLE "Apparent Pole"
+
+#define T_ENCODERS "Encoders"
+#define T_PULSEPERDEGREE "Pulse per deg"
+#define T_AUTO_SYNC "Auto Sync"
+#define T_CALIBRATION "Calibration"
 
 #define T_LIMITS "Limits"
 #define T_NOT_CONNECTED "Not Connected"
@@ -52,10 +58,12 @@
 #define T_SLOW "Slow"
 #define T_MAX "Max"
 
+#define T_START "Start"
 #define T_STARTED "Started"
 #define T_STOP "Stop"
 #define T_CANCEL "Cancel"
 #define T_CANCELED "Canceled"
+#define T_COMPLETE "Complete"
 #define T_WRONG "Wrong"
 #define T_NOTDEFINED "not defined"
 #define T_SUCESS "Success"
@@ -156,6 +164,8 @@
 #define T_UNLOCK "Unlock"
 #define T_LOCK "Lock"
 #define T_GOTO "Goto"
+#define T_PUSHTO "Pushto"
+#define T_PUSHINGTO "Pushing to"
 #define T_POSITION "Position"
 
 #define T_SYNC "Sync"

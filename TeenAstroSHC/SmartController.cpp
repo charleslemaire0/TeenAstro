@@ -104,8 +104,99 @@ void SmartHandController::setup(
   }
 }
 
+void SmartHandController::getNextpage()
+{
+  for (int k = 1; k < NUMPAGES + 1; k++)
+  {
+    current_page++;
+    if (current_page >= NUMPAGES)
+      current_page = 0;
+    if (pages[current_page].show)
+    {
+      if (pages[current_page].p == P_FOCUSER && !ta_MountStatus.hasFocuser())
+      {
+        pages[current_page].show = false;
+        continue;
+      }
+      break;
+    }
+  }
+}
+
+void SmartHandController::updateAlign(bool moving)
+{
+  if (ta_MountStatus.isAlignSelect())
+  {
+    char message[10] = T_STAR "#?";
+    message[6] = '0' + ta_MountStatus.getAlignStar();
+    DisplayLongMessage(T_SELECTASTAR, T_FROMFOLLOWINGLIST, "", message, -1);
+    if (!SelectStarAlign())
+    {
+      DisplayMessage(T_SELECTION, T_ABORTED, -1);
+      ta_MountStatus.backStepAlign();
+      return;
+    }
+    else
+    {
+      ta_MountStatus.nextStepAlign();
+    }
+  }
+  else if (top - lastpageupdate > 200)
+  {
+    updateMainDisplay(pages[current_page].p);
+  }
+  if (moving)
+  {
+    return;
+  }
+  else if (eventbuttons[0] == E_CLICK && ta_MountStatus.isAlignRecenter())
+  {
+    TeenAstroMountStatus::AlignReply reply = ta_MountStatus.addStar();
+    switch (reply)
+    {
+    case TeenAstroMountStatus::AlignReply::ALIR_FAILED1:
+      DisplayMessage(T_ALIGNMENT, T_FAILED"!", -1);
+      break;
+    case TeenAstroMountStatus::AlignReply::ALIR_FAILED2:
+      DisplayMessage(T_ALIGNMENT, T_WRONG"!", -1);
+      break;
+    case TeenAstroMountStatus::AlignReply::ALIR_DONE:
+      DisplayMessage(T_ALIGNMENT, T_SUCESS"!", -1);
+      break;
+    case TeenAstroMountStatus::AlignReply::ALIR_ADDED:
+      DisplayMessage(T_STARADDED, "=>", 1000);
+      break;
+    }
+  }
+  return;
+}
+
+void SmartHandController::updatePushing(bool moving)
+{
+  if (top - lastpageupdate > 200)
+  {
+    updateMainDisplay(pages[P_PUSH].p);
+  }
+  if (moving)
+  {
+    return;
+  }
+  else if (eventbuttons[0] == E_CLICK)
+  {
+    buttonPad.setMenuMode();
+    if (display->UserInterfaceMessage(&buttonPad, T_SYNCEDAT, T_TARGET, "", T_YES "\n" T_NO) == 1)
+    {
+      DisplayMessageLX200(SetLX200(":ECS#"), 0.5);
+    }
+    buttonPad.setControlerMode();
+    DisplayMessageLX200(SetLX200(":EMQ#"));
+  }
+}
+
+
 void SmartHandController::update()
 {
+  bool moving = false;
   tickButtons();
   top = millis();
   if (isSleeping())
@@ -148,99 +239,60 @@ void SmartHandController::update()
 #endif
 
   }
-  if (ta_MountStatus.isAlignSelect())
+
+  manualMove(moving);
+  if (ta_MountStatus.isAligning())
   {
-    char message[10] = T_STAR "#?";
-    message[6] = '0' + ta_MountStatus.getAlignStar();
-    DisplayLongMessage(T_SELECTASTAR, T_FROMFOLLOWINGLIST, "", message, -1);
-    if (!SelectStarAlign())
-    {
-      DisplayMessage(T_SELECTION, T_ABORTED, -1);
-      ta_MountStatus.backStepAlign();
-      return;
-    }
-    else
-    {
-      ta_MountStatus.nextStepAlign();
-    }
+    updateAlign(moving);
+    return;
   }
-  else if (top - lastpageupdate > 200)
+  if (ta_MountStatus.isPushingto())
   {
+    updatePushing(moving);
+    return;
+  }
+
+  if (top - lastpageupdate > 200)
+  {
+
     updateMainDisplay(pages[current_page].p);
   }
-  if (!ta_MountStatus.connected())
-    return;
-  bool moving = false;
-  manualMove(moving);
-  if (eventbuttons[0] == E_CLICK && !ta_MountStatus.isAligning())
-  {
-    for (int k = 1; k < NUMPAGES + 1; k++)
-    {
-      current_page++;
-      if (current_page >= NUMPAGES)
-        current_page = 0;
-      if (pages[current_page].show)
-      {
-        if (pages[current_page].p == P_FOCUSER && !ta_MountStatus.hasFocuser())
-        {
-          pages[current_page].show = false;
-          continue;
-        }
-        break;
-      }
-    }
 
+  if (eventbuttons[0] == E_CLICK )
+  {
+    getNextpage();
     time_last_action = millis();
   }
   else if (moving)
   {
     return;
   }
-  else if (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART && !ta_MountStatus.isAligning())
+  else if (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART)
   {
     if (eventbuttons[3] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
     {
       menuTelAction();
     }
-    else if (eventbuttons[1] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    else if (eventbuttons[1] == E_LONGPRESS || eventbuttons[1] == E_CLICK || eventbuttons[1] == E_LONGPRESSTART)
     {
       menuSpeedRate();
-      time_last_action = millis();
     }
-    else if (eventbuttons[4] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    else if (eventbuttons[4] == E_LONGPRESS || eventbuttons[4] == E_CLICK || eventbuttons[4] == E_LONGPRESSTART)
     {
       menuTelSettings();
     }
-    else if (eventbuttons[6] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    else if (eventbuttons[6] == E_LONGPRESS || eventbuttons[6] == E_CLICK || eventbuttons[6] == E_LONGPRESSTART)
     {
       menuFocuserAction();
     }
-    else if (eventbuttons[5] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    else if (eventbuttons[5] == E_LONGPRESS || eventbuttons[5] == E_CLICK || eventbuttons[5] == E_LONGPRESSTART)
     {
       menuFocuserSettings();
     }
     exitMenu = false;
     time_last_action = millis();
   }
-  else if (eventbuttons[0] == E_CLICK && ta_MountStatus.isAlignRecenter())
-  {
-    TeenAstroMountStatus::AlignReply reply = ta_MountStatus.addStar();
-    switch (reply)
-    {
-    case TeenAstroMountStatus::AlignReply::ALIR_FAILED1:
-      DisplayMessage(T_ALIGNMENT, T_FAILED"!", -1);
-      break;
-    case TeenAstroMountStatus::AlignReply::ALIR_FAILED2:
-      DisplayMessage(T_ALIGNMENT, T_WRONG"!", -1);
-      break;
-    case TeenAstroMountStatus::AlignReply::ALIR_DONE:
-      DisplayMessage(T_ALIGNMENT, T_SUCESS"!", -1);
-      break;
-    case TeenAstroMountStatus::AlignReply::ALIR_ADDED:
-      DisplayMessage(T_STARADDED, "=>", 1000);
-      break;
-    }
-  }
+ 
 }
 
 void SmartHandController::tickButtons()

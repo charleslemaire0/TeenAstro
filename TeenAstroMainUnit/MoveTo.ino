@@ -65,7 +65,7 @@ Again:
     {
       sideralTracking = lastSideralTracking;
       parkStatus = PRK_UNPARKED;
-      XEEPROM.write(EE_parkStatus, parkStatus);
+      XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
     }
     else if (homeMount)
     {
@@ -115,7 +115,7 @@ Again:
         }
         delay(250);
       }
-      XEEPROM.write(EE_parkStatus, parkStatus);
+      XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
     }
     else if (homeMount)
     {

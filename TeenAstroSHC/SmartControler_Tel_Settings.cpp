@@ -2,6 +2,7 @@
 #include "SHC_text.h"
 
 
+
 void SmartHandController::menuTelSettings()
 {
   buttonPad.setMenuMode();
@@ -10,7 +11,7 @@ void SmartHandController::menuTelSettings()
   uint8_t tmp_sel;
   while (!exitMenu)
   {
-    const char *string_list_TelSettings = T_HANDCONTROLLER "\n" T_TIME " & " T_SITE "\n" T_PARKANDHOME "\n" T_MOUNT "\n" T_LIMITS "\n" T_MAINUNITINFO "\nWifi";
+    const char* string_list_TelSettings = T_HANDCONTROLLER "\n" T_TIME " & " T_SITE "\n" T_PARKANDHOME "\n" T_MOUNT "\n" T_LIMITS "\n" T_ENCODERS "\n" T_MAINUNITINFO "\nWifi";
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPESETTINGS, s_sel, string_list_TelSettings);
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
     switch (tmp_sel)
@@ -36,9 +37,12 @@ void SmartHandController::menuTelSettings()
       menuLimits();
       break;
     case 6:
-      menuMainUnitInfo();
+      menuEncoders();
       break;
     case 7:
+      menuMainUnitInfo();
+      break;
+    case 8:
       menuWifi();
       break;
     default:
@@ -49,7 +53,7 @@ void SmartHandController::menuTelSettings()
 }
 void SmartHandController::menuMainUnitInfo()
 {
-  const char *string_list_MainUnitInfo = T_SHOWVERSION "\n" T_REBOOT "\n" T_RESETTOFACTORY;
+  const char* string_list_MainUnitInfo = T_SHOWVERSION "\n" T_REBOOT "\n" T_RESETTOFACTORY;
   static uint8_t s_sel = 1;
   uint8_t tmp_sel = s_sel;
   while (tmp_sel)
@@ -88,7 +92,7 @@ void SmartHandController::menuMainUnitInfo()
 }
 void SmartHandController::menuParkAndHome()
 {
-  const char *string_list_ParkAndHome = T_SETPARK "\n" T_SETHOME "\n" T_RESETHOME;
+  const char* string_list_ParkAndHome = T_SETPARK "\n" T_SETHOME "\n" T_RESETHOME;
   static uint8_t s_sel = 1;
   uint8_t tmp_sel = s_sel;
   while (tmp_sel)
@@ -118,10 +122,10 @@ void SmartHandController::menuParkAndHome()
 //----------------------------------//
 void SmartHandController::menuLimits()
 {
-  const char *string_list_LimitsL2 = T_HORIZON "\n" T_OVERHEAD "\n" T_AXIS "\n" T_GERMANEQUATORIAL ;
+  const char* string_list_LimitsL2 = T_HORIZON "\n" T_OVERHEAD "\n" T_AXIS "\n" T_GERMANEQUATORIAL;
   static uint8_t s_sel = 1;
   uint8_t tmp_sel = s_sel;
-  while (tmp_sel)
+  while (!exitMenu && tmp_sel)
   {
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_LIMITS, s_sel, string_list_LimitsL2);
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
@@ -196,7 +200,7 @@ void SmartHandController::menuMeridian(bool east)
     float angle = (float)strtol(&out[0], NULL, 10) / 4.0;
     if (display->UserInterfaceInputValueFloat(&buttonPad, east ? T_MERIDIANLIMITE : T_MERIDIANLIMITW, "", &angle, -45, 45, 2, 0, " " T_DEGREE))
     {
-      sprintf(cmd, ":SXLX,%+03d#", (int)(angle*4.0));
+      sprintf(cmd, ":SXLX,%+03d#", (int)(angle * 4.0));
       cmd[4] = east ? 'E' : 'W';
       DisplayMessageLX200(SetLX200(cmd), false);
     }
@@ -211,7 +215,7 @@ void SmartHandController::menuAxis(char mode)
   double minval = 0;
   double maxval = 360;
   sprintf(cmd, ":GXLX#");
-  
+
   cmd[4] = mode;
   switch (mode)
   {
@@ -284,8 +288,10 @@ void SmartHandController::menuLimitAxis()
     {
     case 1:
       pages[P_AXIS_DEG].show =
-        display->UserInterfaceMessage(&buttonPad, T_DISPLAY, T_AXIS, T_COORDINATES"?", T_NO "\n" T_YES) == 2;
+        display->UserInterfaceMessage(&buttonPad, T_DISPLAY, T_AXIS, T_COORDINATES"?", T_YES "\n" T_NO ) == 1;
       current_page = P_AXIS_DEG;
+      exitMenu = true;
+      return;
       break;
     case 2:
       menuAxis('A');
@@ -305,4 +311,93 @@ void SmartHandController::menuLimitAxis()
   }
 
 }
+//----------------------------------//
+//           ENCODERS               //
+//----------------------------------//
+void SmartHandController::menuEncoders()
+{
+  if (!ta_MountStatus.hasEncoder())
+  {
+    DisplayMessage(T_ENCODERS, T_NOT_CONNECTED, -1);
+    return;
+  }
+  const char* string_list = T_AUTO_SYNC "\n" T_CALIBRATION "\n" T_PULSEPERDEGREE " E1\n" T_REVERSE " E1\n" T_PULSEPERDEGREE " E2\n" T_REVERSE " E2";
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel = s_sel;
+  while (!exitMenu)
+  {
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_ENCODERS, s_sel, string_list);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
+    {
+    case 1:
+      menuAutoSyncEncoder();
+      break;
+    case 2:
+      menuCalibrationEncoder();
+      break;
+    case 3:
+      menuSetEncoderPulsePerDegree(1);
+      break;
+    case 4:
+      menuSetEncoderReverse(1);
+      break;
+    case 5:
+      menuSetEncoderPulsePerDegree(2);
+      break;
+    case 6:
+      menuSetEncoderReverse(2);
+      break;
+    default:
+      return;
+      break;
+    }
+  }
+}
 
+void SmartHandController::menuAutoSyncEncoder()
+{
+  const char* string_list = T_OFF"\n60'\n30'\n15'\n8'\n4'\n2'\n1'" ;
+  static uint8_t s_sel = 1;
+  DisplayMessageLX200(readEncoderAutoSync(s_sel), true);
+  uint8_t tmp_sel = s_sel + 1;
+  while (tmp_sel)
+  {
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_AUTO_SYNC, tmp_sel, string_list);
+    if (tmp_sel && tmp_sel != s_sel + 1)
+    {
+      DisplayMessageLX200(writeEncoderAutoSync(tmp_sel - 1), false);
+      return;
+    }
+  }
+}
+
+void SmartHandController::menuCalibrationEncoder()
+{
+  const char* string_list = T_START "\n" T_CANCEL "\n" T_COMPLETE;
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel = s_sel;
+  while (!exitMenu)
+  {
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_CALIBRATION, s_sel, string_list);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
+    {
+    case 1:
+      DisplayMessageLX200(StartEncoderCalibration(), false);
+      exitMenu = true;
+      break;
+    case 2:
+      DisplayMessageLX200(CancelEncoderCalibration(), false);
+      exitMenu = true;
+      break;
+    case 3:
+      DisplayMessageLX200(CompleteEncoderCalibration(), false);
+      exitMenu = true;
+      break;
+    default:
+      return;
+      break;
+    }
+  }
+}

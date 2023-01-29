@@ -18,6 +18,23 @@ boolean atoi2(char* a, int* i)
   return true;
 }
 
+char selectLetter(NAV mode, char s, char g, char p)
+{
+  switch (mode)
+  {
+  case NAV_SYNC:
+    return s;
+    break;
+  case NAV_GOTO:
+    return g;
+    break;
+  case NAV_PUSHTO:
+    return p;
+    break;
+  }
+  return 0;
+}
+
 void serialRecvFlush()
 {
   while (Ser.available() > 0) Ser.read();
@@ -100,7 +117,14 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       else cmdreply = CMDR_INVALID;
       break;
     case 'C':
-      if (strchr("AMSU", command[2])) cmdreply = CMDR_LONG;
+      if (strchr("AMU", command[2])) cmdreply = CMDR_LONG;
+      else if (strchr("S", command[2])) cmdreply = CMDR_NO;
+      else cmdreply = CMDR_INVALID;
+      break;
+    case 'E':
+      if (strchr("AC", command[2])) cmdreply = CMDR_SHORT_BOOL;
+      else if (command[2] == 'M' && strchr("ASUQ", command[3])) cmdreply = CMDR_SHORT;
+      else if (command[2] == 'D') cmdreply = CMDR_LONG;
       else cmdreply = CMDR_INVALID;
       break;
     case 'D':
@@ -264,11 +288,15 @@ LX200RETURN SetLX200(char* command)
     return LX200_SETVALUEFAILED;
 }
 
-LX200RETURN SyncGoHomeLX200(bool sync)
+LX200RETURN SyncGoHomeLX200(NAV mode)
 {
   char cmd[5];
   sprintf(cmd, ":hX#");
-  cmd[2] = sync ? 'F' : 'C';
+  if (mode == NAV_PUSHTO)
+  {
+    return LX200_SETVALUEFAILED;
+  }
+  cmd[2] = selectLetter(mode, 'F', 'C', 0);
 
   char out[LX200sbuff];
   bool ok = readLX200Bytes(cmd, out, sizeof(out), TIMEOUT_CMD);
@@ -276,7 +304,7 @@ LX200RETURN SyncGoHomeLX200(bool sync)
   {
     return LX200_SETVALUEFAILED;
   }
-  if (sync)
+  if (mode == NAV_SYNC)
   {
     return  LX200_SYNCED;
   }
@@ -291,11 +319,15 @@ LX200RETURN SyncGoHomeLX200(bool sync)
   }
 }
 
-LX200RETURN SyncGoParkLX200(bool sync)
+LX200RETURN SyncGoParkLX200(NAV mode)
 {
   char cmd[LX200sbuff];
   sprintf(cmd, ":hX#");
-  cmd[2] = sync ? 'O' : 'P';
+  if (mode == NAV_PUSHTO)
+  {
+    return LX200_SETVALUEFAILED;
+  }
+  cmd[2] = selectLetter(mode, 'O', 'P', 0);
 
   char out[LX200sbuff];
   bool ok = readLX200Bytes(cmd, out, sizeof(out), TIMEOUT_CMD);
@@ -303,7 +335,7 @@ LX200RETURN SyncGoParkLX200(bool sync)
   {
     return LX200_SETVALUEFAILED;
   }
-  if (sync)
+  if (mode == NAV_SYNC)
   {
     return LX200_SYNCED;
   }
@@ -421,10 +453,37 @@ LX200RETURN GetSiteLX200(int& value)
   char out[LX200sbuff];
   if (GetLX200(":W?#", out, sizeof(out)) == LX200_VALUEGET)
   {
-    value = (int)strtol(&out[0], NULL, 10) + 1;
+    value = (int)strtol(&out[0], NULL, 10);
     return LX200_VALUEGET;
   }
   return LX200_GETVALUEFAILED;
+}
+
+LX200RETURN GetSiteNameLX200(int idx, char* name, int len)
+{
+  char out[LX200sbuff];
+  char cmd[10] = ":GM#";
+  cmd[2] += idx;
+  return GetLX200(cmd, name, len);
+}
+
+LX200RETURN GetMountIdxLX200(int& value)
+{
+  char out[LX200sbuff];
+  if (GetLX200(":GXOI#", out, sizeof(out)) == LX200_VALUEGET)
+  {
+    value = (int)strtol(&out[0], NULL, 10);
+    return LX200_VALUEGET;
+  }
+  return LX200_GETVALUEFAILED;
+}
+
+LX200RETURN GetMountNameLX200(int idx, char* name, int len)
+{
+  char out[LX200sbuff];
+  char cmd[10] = ":GXOB#";
+  cmd[4] += idx;
+  return GetLX200(cmd, name, len);
 }
 
 LX200RETURN GetLatitudeLX200(double& degree)
@@ -476,35 +535,36 @@ LX200RETURN GetDeclinationLX200(double& degree)
   return LX200_GETVALUEFAILED;
 }
 
-void SetSiteLX200(int& value)
+LX200RETURN SetSiteLX200(int& value)
 {
   char cmd[LX200sbuff];
   sprintf(cmd, ":W%d#", value);
-  SetLX200(cmd);
+  return SetLX200(cmd);
 }
 
-LX200RETURN Move2TargetLX200(TARGETTYPE target)
+LX200RETURN SetMountLX200(int& value)
 {
-  char out[LX200sbuff];
-  int val;
+  char cmd[LX200sbuff];
+  sprintf(cmd, ":SXOI,%d#", value);
+  return SetLX200(cmd);
+}
 
-  switch (target)
-  {
-  case T_RADEC:
-    val = readLX200Bytes(":MS#", out, sizeof(out), TIMEOUT_CMD);
-    break;
-  case T_AZALT:
-    val = readLX200Bytes(":MA#", out, sizeof(out), TIMEOUT_CMD);
-    break;
-  case T_USERRADEC:
-    val = readLX200Bytes(":MU#", out, sizeof(out), TIMEOUT_CMD);
-  }
+LX200RETURN SetMountNameLX200(int idx, char* name)
+{
+  char cmd[LX200sbuff];
+  sprintf(cmd, ":SXOB,%s#", idx);
+  cmd[4] += idx;
+  return SetLX200(cmd);
+}
+
+
+LX200RETURN Err2LX200(ErrorsGoTo err, bool isgoto)
+{
   LX200RETURN response;
-  ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
   switch (err)
   {
   case ERRGOTO_NONE:
-    response = LX200_GOTO_TARGET;
+    response = isgoto ? LX200_GOTO_TARGET : LX200_PUSHTO_TARGET;
     break;
   case ERRGOTO_BELOWHORIZON:
     response = LX200_TARGETBELOWHORIZON;
@@ -561,8 +621,49 @@ LX200RETURN Move2TargetLX200(TARGETTYPE target)
     response = LX200_ERRGOTO_UNKOWN;
     break;
   }
-
   return response;
+}
+
+
+LX200RETURN Move2TargetLX200(TARGETTYPE target)
+{
+  char out[LX200sbuff];
+  int val;
+
+  switch (target)
+  {
+  case T_RADEC:
+    val = readLX200Bytes(":MS#", out, sizeof(out), TIMEOUT_CMD);
+    break;
+  case T_AZALT:
+    val = readLX200Bytes(":MA#", out, sizeof(out), TIMEOUT_CMD);
+    break;
+  case T_USERRADEC:
+    val = readLX200Bytes(":MU#", out, sizeof(out), TIMEOUT_CMD);
+  }
+  LX200RETURN response;
+  ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
+  return Err2LX200(err, true);
+}
+
+LX200RETURN Push2TargetLX200(TARGETTYPE target)
+{
+  char out[LX200sbuff];
+  int val;
+  switch (target)
+  {
+  case T_RADEC:
+    val = readLX200Bytes(":EMS#", out, sizeof(out), TIMEOUT_CMD);
+    break;
+  case T_AZALT:
+    val = readLX200Bytes(":EMA#", out, sizeof(out), TIMEOUT_CMD);
+    break;
+  case T_USERRADEC:
+    val = readLX200Bytes(":EMU#", out, sizeof(out), TIMEOUT_CMD);
+  }
+  LX200RETURN response;
+  ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
+  return Err2LX200(err,false);
 }
 
 LX200RETURN SetTargetRaLX200(uint8_t& vr1, uint8_t& vr2, uint8_t& vr3)
@@ -597,11 +698,12 @@ LX200RETURN SetTargetAltLX200(bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t&
   return SetLX200(cmd);
 }
 
-LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t& vd3)
+LX200RETURN SyncGotoLX200(NAV mode, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, bool& ispos, uint16_t& vd1, uint8_t& vd2, uint8_t& vd3)
 {
   if (SetTargetRaLX200(vr1, vr2, vr3) == LX200_VALUESET && SetTargetDecLX200(ispos, vd1, vd2, vd3) == LX200_VALUESET)
   {
-    if (sync)
+
+    if (mode == NAV_SYNC)
     {
       char out[LX200sbuff];
       if (GetLX200(":CM#", out, LX200sbuff))
@@ -614,9 +716,13 @@ LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, b
       else
         return LX200_SYNCFAILED;
     }
-    else
+    else if (mode == NAV_GOTO)
     {
       return Move2TargetLX200(T_RADEC);
+    }
+    else if (mode == NAV_PUSHTO)
+    {
+      return Push2TargetLX200(T_RADEC);
     }
   }
   else
@@ -625,9 +731,9 @@ LX200RETURN SyncGotoLX200(bool sync, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, b
   }
 }
 
-LX200RETURN SyncGotoUserLX200(bool sync)
+LX200RETURN SyncGotoUserLX200(NAV mode)
 {
-  if (sync)
+  if (mode == NAV_SYNC)
   {
     char out[LX200sbuff];
     if (GetLX200(":CU#", out, LX200sbuff))
@@ -640,17 +746,21 @@ LX200RETURN SyncGotoUserLX200(bool sync)
     else
       return LX200_SYNCFAILED;
   }
-  else
+  else if (mode == NAV_GOTO)
   {
     return Move2TargetLX200(T_USERRADEC);
   }
+  else if (mode == NAV_PUSHTO)
+  {
+    return Push2TargetLX200(T_USERRADEC);
+  }
 }
 
-LX200RETURN SyncGotoLX200AltAz(bool sync, uint16_t& vz1, uint8_t& vz2, uint8_t& vz3, bool& ispos, uint16_t& va1, uint8_t& va2, uint8_t& va3)
+LX200RETURN SyncGotoLX200AltAz(NAV mode, uint16_t& vz1, uint8_t& vz2, uint8_t& vz3, bool& ispos, uint16_t& va1, uint8_t& va2, uint8_t& va3)
 {
   if (SetTargetAzLX200(vz1, vz2, vz3) == LX200_VALUESET && SetTargetAltLX200(ispos, va1, va2, va3) == LX200_VALUESET)
   {
-    if (sync)
+    if (mode == NAV_SYNC)
     {
       char out[LX200sbuff];
       if (GetLX200(":CA#", out, LX200sbuff))
@@ -663,9 +773,13 @@ LX200RETURN SyncGotoLX200AltAz(bool sync, uint16_t& vz1, uint8_t& vz2, uint8_t& 
       else
         return LX200_SYNCFAILED;
     }
-    else
+    else if(mode == NAV_GOTO)
     {
       return Move2TargetLX200(T_AZALT);
+    }
+    else if (mode == NAV_PUSHTO)
+    {
+      return Push2TargetLX200(T_AZALT);
     }
   }
   else
@@ -674,7 +788,7 @@ LX200RETURN SyncGotoLX200AltAz(bool sync, uint16_t& vz1, uint8_t& vz2, uint8_t& 
   }
 }
 
-LX200RETURN SyncGotoLX200(bool sync, float& Ra, float& Dec)
+LX200RETURN SyncGotoLX200(NAV mode, float& Ra, float& Dec)
 {
   uint8_t vr1, vr2, vr3, vd2, vd3;
   uint16_t vd1;
@@ -683,11 +797,11 @@ LX200RETURN SyncGotoLX200(bool sync, float& Ra, float& Dec)
   long Decs = (long)(Dec * 3600);
   gethms(Ras, vr1, vr2, vr3);
   getdms(Decs, ispos, vd1, vd2, vd3);
-  return SyncGotoLX200(sync, vr1, vr2, vr3, ispos, vd1, vd2, vd3);
+  return SyncGotoLX200(mode, vr1, vr2, vr3, ispos, vd1, vd2, vd3);
 }
 
 
-LX200RETURN SyncGotoLX200AltAz(bool sync, float& Az, float& Alt)
+LX200RETURN SyncGotoLX200AltAz(NAV mode, float& Az, float& Alt)
 {
   uint8_t  vz2, vz3, va2, va3;
   uint16_t vz1, va1;
@@ -696,10 +810,10 @@ LX200RETURN SyncGotoLX200AltAz(bool sync, float& Az, float& Alt)
   long Altcs = (long)(Alt * 3600);
   getdms(Azs, ispos, vz1, vz2, vz3);
   getdms(Altcs, ispos, va1, va2, va3);
-  return SyncGotoLX200AltAz(sync, vz1, vz2, vz3, ispos, va1, va2, va3);
+  return SyncGotoLX200AltAz(mode, vz1, vz2, vz3, ispos, va1, va2, va3);
 }
 
-LX200RETURN SyncGotoLX200(bool sync, float& Ra, float& Dec, double epoch)
+LX200RETURN SyncGotoLX200(NAV mode, float& Ra, float& Dec, double epoch)
 {
   unsigned int day, month, year;
   if (GetUTCDateLX200(day, month, year) != LX200_VALUEGET)
@@ -709,7 +823,7 @@ LX200RETURN SyncGotoLX200(bool sync, float& Ra, float& Dec, double epoch)
   coo.dec = Dec;
   EquatorialCoordinates cooNow;
   cooNow = Ephemeris::equatorialEquinoxToEquatorialJNowAtDateAndTime(coo, epoch, day, month, year, 0, 0, 0);
-  return SyncGotoLX200(sync, cooNow.ra, cooNow.dec);
+  return SyncGotoLX200(mode, cooNow.ra, cooNow.dec);
 }
 
 LX200RETURN GetLocalDateLX200(unsigned int& day, unsigned int& month, unsigned int& year)
@@ -757,7 +871,7 @@ LX200RETURN GetTrackingRateLX200(double& rate)
   return LX200_GETVALUEFAILED;
 }
 
-LX200RETURN SyncGotoCatLX200(bool sync)
+LX200RETURN SyncGotoCatLX200(NAV mode)
 {
   int epoch;
   unsigned int day, month, year;
@@ -769,10 +883,10 @@ LX200RETURN SyncGotoCatLX200(bool sync)
   epoch = cat_mgr.epoch(); if (epoch == 0) return LX200_GETVALUEFAILED;
   EquatorialCoordinates cooNow;
   cooNow = Ephemeris::equatorialEquinoxToEquatorialJNowAtDateAndTime(coo, epoch, day, month, year, 0, 0, 0);
-  return SyncGotoLX200(sync, cooNow.ra, cooNow.dec);
+  return SyncGotoLX200(mode, cooNow.ra, cooNow.dec);
 }
 
-LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short objSys)
+LX200RETURN SyncGotoPlanetLX200(NAV mode, unsigned short objSys)
 {
   unsigned int day, month, year, hour, minute, second;
   double  degreeLat, degreeLong;
@@ -799,14 +913,15 @@ LX200RETURN SyncGotoPlanetLX200(bool sync, unsigned short objSys)
   Eph.setLocationOnEarth((float)degreeLat, 0, 0, (float)degreeLong, 0, 0);
   SolarSystemObjectIndex objI = static_cast<SolarSystemObjectIndex>(objSys);
   SolarSystemObject obj = Eph.solarSystemObjectAtDateAndTime(objI, day, month, year, hour, minute, second);
-  return SyncGotoLX200(sync, obj.equaCoordinates.ra, obj.equaCoordinates.dec);
+  return SyncGotoLX200(mode, obj.equaCoordinates.ra, obj.equaCoordinates.dec);
 }
 
 LX200RETURN SyncSelectedStarLX200(unsigned short alignSelectedStar)
 {
-  if (alignSelectedStar >= 0) return SyncGotoCatLX200(false); else return LX200_ERRGOTO_UNKOWN;
+  if (alignSelectedStar >= 0) return SyncGotoCatLX200(NAV_GOTO); else return LX200_ERRGOTO_UNKOWN;
 }
 
+//MOTOR
 LX200RETURN readReverseLX200(const uint8_t& axis, bool& reverse)
 {
   char out[LX200sbuff];
@@ -849,14 +964,14 @@ LX200RETURN readTotGearLX200(const uint8_t& axis, float& totGear)
   LX200RETURN ok = axis == 1 ? GetLX200(":GXMGR#", out, sizeof(out)) : GetLX200(":GXMGD#", out, sizeof(out));
   if (ok == LX200_VALUEGET)
   {
-    totGear = (float)strtol(&out[0], NULL, 10);
+    totGear = 0.01 * (float)strtol(&out[0], NULL, 10);
   }
   return ok;
 }
 LX200RETURN writeTotGearLX200(const uint8_t& axis, const float& totGear)
 {
   char cmd[LX200sbuff];
-  sprintf(cmd, ":SXMGX,%u#", (unsigned int)totGear);
+  sprintf(cmd, ":SXMGX,%u#", (unsigned long)(totGear * 100));
   cmd[5] = axis == 1 ? 'R' : 'D';
   return SetLX200(cmd);
 }
@@ -968,6 +1083,79 @@ LX200RETURN writeHighCurrLX200(const uint8_t& axis, const unsigned int& highCurr
 {
   char cmd[LX200sbuff];
   sprintf(cmd, ":SXMCX,%u#", highCurr);
+  cmd[5] = axis == 1 ? 'R' : 'D';
+  return SetLX200(cmd);
+}
+
+//ENCODER
+LX200RETURN StartEncoderCalibration()
+{
+  return SetLX200(":EAS#");
+}
+
+LX200RETURN CancelEncoderCalibration()
+{
+  return SetLX200(":EAQ#");
+}
+
+LX200RETURN CompleteEncoderCalibration()
+{
+  return SetLX200(":EAE#");
+}
+
+LX200RETURN readEncoderAutoSync(uint8_t& syncmode)
+{
+  char out[LX200sbuff];
+  LX200RETURN ok = GetLX200(":GXEO#", out, sizeof(out));
+  if (ok == LX200_VALUEGET)
+  {
+    syncmode = out[0] - '0';
+    if (syncmode < 8)
+    {
+      return ok;
+    }
+  }
+  return LX200_GETVALUEFAILED;
+}
+
+LX200RETURN writeEncoderAutoSync(const uint8_t syncmode)
+{
+  char cmd[LX200sbuff];
+  sprintf(cmd, ":SXEO,%d#", (int)syncmode);
+  return SetLX200(cmd);
+}
+
+LX200RETURN readEncoderReverseLX200(const uint8_t& axis, bool& reverse)
+{
+  char out[LX200sbuff];
+  LX200RETURN ok = axis == 1 ? GetLX200(":GXErR#", out, sizeof(out)) : GetLX200(":GXErD#", out, sizeof(out));
+  if (ok == LX200_VALUEGET)
+  {
+    reverse = out[0] == '1' ? true : false;
+  }
+  return ok;
+}
+LX200RETURN writeEncoderReverseLX200(const uint8_t& axis, const bool& reverse)
+{
+  char text[LX200sbuff];
+  sprintf(text, ":SXErX,%u#", (unsigned int)reverse);
+  text[5] = axis == 1 ? 'R' : 'D';
+  return SetLX200(text);
+}
+LX200RETURN readPulsePerDegreeLX200(const uint8_t& axis, float& ppd)
+{
+  char out[LX200sbuff];
+  LX200RETURN ok = axis == 1 ? GetLX200(":GXEPR#", out, sizeof(out)) : GetLX200(":GXEPD#", out, sizeof(out));
+  if (ok == LX200_VALUEGET)
+  {
+    ppd = (float)strtol(&out[0], NULL, 10);
+  }
+  return ok;
+}
+LX200RETURN writePulsePerDegreeLX200(const uint8_t& axis, const float& ppd)
+{
+  char cmd[LX200sbuff];
+  sprintf(cmd, ":SXEPX,%u#", (unsigned long)(ppd));
   cmd[5] = axis == 1 ? 'R' : 'D';
   return SetLX200(cmd);
 }

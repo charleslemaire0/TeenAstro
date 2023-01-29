@@ -14,6 +14,7 @@
 #include "XEEPROM.hpp"
 #include "Refraction.hpp"
 #include "Axis.hpp"
+#include "AxisEncoder.hpp"
 
 TinyGPSPlus gps;
 CoordConv alignment;
@@ -24,6 +25,8 @@ typedef double interval;
 typedef double speed;
 
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
+enum EncoderSync {ES_OFF, ES_60, ES_30, ES_15, ES_8, ES_4, ES_2, ES_ALWAYS };
+enum Pushto {PT_OFF, PT_RADEC, PT_ALTAZ};
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
 enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW };
@@ -38,10 +41,12 @@ bool homeMount = false;
 bool DecayModeTrack = false;
 MeridianFlip meridianFlip = MeridianFlip::FLIP_NEVER;
 Mount mountType = Mount::MOUNT_TYPE_GEM;
+char mountName[maxNumMount][15];
 bool isMountTypeFix = false;
 byte maxAlignNumStar = 0;
 bool autoAlignmentBySync = false;
 
+Pushto PushtoStatus = PT_OFF;
 bool hasFocuser = false;
 bool hasGNSS = true;
 
@@ -68,9 +73,12 @@ interval                maxInterval2 = StepsMaxInterval;
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
 
-
 MotorAxis           motorA1;
 MotorAxis           motorA2;
+
+EncoderSync         EncodeSyncMode = EncoderSync::ES_OFF;
+EncoderAxis         encoderA1;
+EncoderAxis         encoderA2;
 
 backlash            backlashA1 = { 0,0,0,0 };
 backlash            backlashA2 = { 0,0,0,0 };

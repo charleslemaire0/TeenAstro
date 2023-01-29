@@ -233,6 +233,11 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
       sprintf(text1, T_SLEWINGTO);
       sprintf(text2, T_TARGET);
     }
+    else if (val == LX200_PUSHTO_TARGET)
+    {
+      sprintf(text1, T_PUSHINGTO);
+      sprintf(text2, T_TARGET);
+    }
     else if (val == LX200_GOPARK)
     {
       sprintf(text1, T_SLEWINGTO);
