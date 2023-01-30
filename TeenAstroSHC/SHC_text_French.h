@@ -13,7 +13,7 @@
 #define T_PRESS_KEY "App. sur boutton"
 #define T_TO_REBOOT "pour redémarrer"
 #define T_WILL_REBOOT "va redémarrer"
-#define T_DEVICE "Dispositif"
+#define T_DEVICE "TeenAstro"
 #define T_TELESCOPE "Télescope"
 #define T_FOCUSER "Focuser"
 #define T_MOUNT "Monture"

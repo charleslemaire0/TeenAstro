@@ -13,7 +13,7 @@
 #define T_PRESS_KEY "Press key"
 #define T_TO_REBOOT "to reboot"
 #define T_WILL_REBOOT "will reboot"
-#define T_DEVICE "Device"
+#define T_DEVICE "TeenAstro"
 #define T_TELESCOPE "Telescope"
 #define T_FOCUSER "Focuser"
 #define T_MOUNT "Mount"
