@@ -208,13 +208,13 @@ enum GuideRate {RG,RC,RM,RS,RX};
 #define DefaultR1 4
 #define DefaultR2 16
 #define DefaultR3 64
-#define DefaultR4 64
+#define DefaultR4 600
 double  guideRates[5] =
 {
   DefaultR0 , DefaultR1 , DefaultR2 ,  DefaultR3 , DefaultR4
 };
 
-volatile byte activeGuideRate = GuideRate::RS;
+volatile byte activeGuideRate = GuideRate::RX;
 
 GuideAxis guideA1;
 GuideAxis guideA2;
