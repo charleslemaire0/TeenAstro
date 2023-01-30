@@ -125,7 +125,7 @@ void SmartHandController::menuLimits()
   const char* string_list_LimitsL2 = T_HORIZON "\n" T_OVERHEAD "\n" T_AXIS "\n" T_GERMANEQUATORIAL;
   static uint8_t s_sel = 1;
   uint8_t tmp_sel = s_sel;
-  while (tmp_sel)
+  while (!exitMenu && tmp_sel)
   {
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_LIMITS, s_sel, string_list_LimitsL2);
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
@@ -288,8 +288,10 @@ void SmartHandController::menuLimitAxis()
     {
     case 1:
       pages[P_AXIS_DEG].show =
-        display->UserInterfaceMessage(&buttonPad, T_DISPLAY, T_AXIS, T_COORDINATES"?", T_NO "\n" T_YES) == 2;
+        display->UserInterfaceMessage(&buttonPad, T_DISPLAY, T_AXIS, T_COORDINATES"?", T_YES "\n" T_NO ) == 1;
       current_page = P_AXIS_DEG;
+      exitMenu = true;
+      return;
       break;
     case 2:
       menuAxis('A');

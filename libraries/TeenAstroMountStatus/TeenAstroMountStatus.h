@@ -45,13 +45,15 @@ private:
   unsigned long   m_lastStateAxisStep;
   char            m_TempAxis1Deg[15] = "?";
   char            m_TempAxis2Deg[15] = "?";
+  char            m_TempAxis1EDeg[15] = "?";
+  char            m_TempAxis2EDeg[15] = "?";
   unsigned long   m_lastStateAxisDeg;
   char            m_TempUTC[15] = "?";
   char            m_TempLHA[15] = "?";
   char            m_TempUTCdate[15] = "?";
   char            m_TempSidereal[15] = "?";
   unsigned long   m_lastStateTime;
-  char            m_TempMount[17] = "?";
+  char            m_TempMount[20] = "?";
   unsigned long   m_lastStateMount;
   unsigned long   m_lastStateTrackingRate;
   long            m_TempTrackingRateRa = 0;
@@ -74,6 +76,8 @@ private:
   bool            m_hasInfoAxis2Step = false;
   bool            m_hasInfoAxis1Deg = false;
   bool            m_hasInfoAxis2Deg = false;
+  bool            m_hasInfoAxis1EDeg = false;
+  bool            m_hasInfoAxis2EDeg = false;
   bool            m_hasInfoUTC = false;
   bool            m_hasInfoLHA = false;
   bool            m_hasInfoUTCdate = false;
@@ -117,6 +121,8 @@ public:
   bool hasInfoAxis2Step() { return m_hasInfoAxis2Step; };
   bool hasInfoAxis1Deg() { return m_hasInfoAxis1Deg; };
   bool hasInfoAxis2Deg() { return m_hasInfoAxis2Deg; };
+  bool hasInfoAxis1EDeg() { return m_hasInfoAxis1EDeg; };
+  bool hasInfoAxis2EDeg() { return m_hasInfoAxis2EDeg; };
   bool hasInfoTrackingRate() { return m_hasInfoTrackingRate; };
 
   const char* getVP() { return  m_TempVP; };
@@ -137,6 +143,8 @@ public:
   const char* getAxis2Step() { return  m_TempAxis2Step; };
   const char* getAxis1Deg() { return  m_TempAxis1Deg; };
   const char* getAxis2Deg() { return  m_TempAxis2Deg; };
+  const char* getAxis1EDeg() { return  m_TempAxis1EDeg; };
+  const char* getAxis2EDeg() { return  m_TempAxis2EDeg; };
 
   const char* getUTC() { return m_TempUTC; };
   const char* getLHA() { return m_TempLHA; };
@@ -184,6 +192,7 @@ public:
   bool atHome();
   bool Parking();
   bool Parked();
+  bool isPushingto();
   bool isSpiralRunning();
   bool isPulseGuiding();
   bool isGuidingN();

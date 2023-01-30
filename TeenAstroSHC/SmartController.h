@@ -22,6 +22,9 @@ public:
   void setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model, const uint8_t nSubmodel);
   void update();
 private:
+  void getNextpage();
+  void updateAlign(bool moving);
+  void updatePushing(bool moving);
   enum PAGES
   {
     P_RADEC, P_ALTAZ, P_PUSH, P_TIME, P_AXIS_STEP, P_AXIS_DEG, P_FOCUSER, P_ALIGN, P_HA
@@ -55,7 +58,7 @@ private:
   bool forceDisplayoff = false;
   bool focuserlocked = false;
   bool telescoplocked = false;
-  pageInfo pages[NUMPAGES] = { {P_RADEC,true},{P_ALTAZ,true}, {P_PUSH,true}, {P_TIME,true}, {P_AXIS_STEP,false}, {P_AXIS_DEG,false}, {P_FOCUSER,true}, {P_ALIGN,false}, {P_HA,false} };
+  pageInfo pages[NUMPAGES] = { {P_RADEC,true},{P_ALTAZ,true}, {P_PUSH,false}, {P_TIME,true}, {P_AXIS_STEP,false}, {P_AXIS_DEG,false}, {P_FOCUSER,true}, {P_ALIGN,false}, {P_HA,false} };
   byte current_page;
   bool exitMenu = false;
   

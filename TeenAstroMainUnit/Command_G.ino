@@ -661,18 +661,17 @@ void Command_GX()
       bitWrite(val, 2, isTimeSyncWithGNSS());
       bitWrite(val, 3, isLocationSyncWithGNSS());
     }
-    bitWrite(val, 4, hasFocuser);
-#if HASEncoder
-    bitWrite(val, 5, 1);
-    bitWrite(val, 6, encoderA1.calibrating() && encoderA2.calibrating());
-    bitWrite(val, 7, PushtoStatus != PT_OFF);
-#endif
-    //bitWrite(val, 7, DecayModeTrack);
-
     reply[14] = 'A' + val;
     reply[15] = '0' + lastError;
-    reply[16] = '#';
-    reply[17] = 0;
+    val = 0;
+#if HASEncoder
+    bitWrite(val, 0, 1);
+    bitWrite(val, 1, encoderA1.calibrating() && encoderA2.calibrating());
+    bitWrite(val, 2, PushtoStatus != PT_OFF);
+#endif
+    reply[16] = 'A' + val;
+    reply[17] = '#';
+    reply[18] = 0;
     i = 17;
   }
   break;

@@ -720,14 +720,25 @@ void SmartHandController::updateMainDisplay(PAGES page)
     }
     else if (page == P_AXIS_DEG)
     {
-      u8g2_uint_t y = 36;
+      display->setFont(u8g2_font_helvR08_te);
+      line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
+      u8g2_uint_t y = 26;
       x = u8g2_GetDisplayWidth(u8g2);
       u8g2_DrawUTF8(u8g2, 0, y, "Ax1.");
       display->drawIDeg(x, y, ta_MountStatus.getAxis1Deg());
-      y += line_height + 4;
-      x = u8g2_GetDisplayWidth(u8g2);
-      display->drawIDeg(x, y, ta_MountStatus.getAxis2Deg());
+      y += line_height;
       u8g2_DrawUTF8(u8g2, 0, y, "Ax2.");
+      display->drawIDeg(x, y, ta_MountStatus.getAxis2Deg());
+      y += line_height;
+      if (ta_MountStatus.hasEncoder())
+      {
+        u8g2_DrawUTF8(u8g2, 0, y, "Ax1E.");
+        display->drawIDeg(x, y, ta_MountStatus.getAxis1EDeg());
+        y += line_height;
+        u8g2_DrawUTF8(u8g2, 0, y, "Ax2E.");
+        display->drawIDeg(x, y, ta_MountStatus.getAxis2EDeg());
+      }
+      display->setFont(u8g2_font_helvR12_te);
     }
     else if (page == P_ALIGN)
     {
