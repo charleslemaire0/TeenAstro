@@ -83,6 +83,45 @@ const char *Cat_Messier_Names_FR=
 "Galaxie du Moulinet;"
 "Galaxie du Sombrero;";
 
+const char *Cat_Messier_Names_DE=
+"Krabbennebel;"
+"Schmetterlingshaufen;"
+"Ptolemäus-Haufen";
+"Lagunennebel;"
+"Wildenten-Haufen;"
+"Großer Herkules-Cluster;"
+"Pegasus-Wolke;"
+"Adlernebel;"
+"Omega - Schwanennebel;".
+"Trifidnebel;"
+"Sternhaufen des Schützen;"
+"Sternwolke des Schützen;"
+"Hantelnebel;"
+"Andromeda-Galaxie;"
+"Dreiecksgalaxie;"
+"Mühle-Haufen;"
+"Quallenhaufen;"
+"Winnecke 4;"
+"Orionnebel;"
+"Mairan-Nebel;"
+"Bienenstockhaufen;"
+"Plejaden;"
+"Wirbelwind-Galaxie;"
+"Ringnebel;"
+"Sonnenblumen-Galaxie;"
+"Galaxie des Schwarzen Auges;"
+"Leo-Triplett;"
+"Hamburger Galaxie5;"
+"Kleiner Hantelnebel;"
+"Cetus A.;"
+"Bode-Galaxie;"
+"Zigarren-Galaxie;"
+"Pin-wheel-Galaxie;"
+"Virgo A.;"
+"Eulennebel;"
+"Windrad-Galaxie;"
+"Sombrero-Galaxie;"
+
 const char *Cat_Messier_SubId=
 " NGC1952;"
 " NGC7089;"
@@ -298,7 +337,7 @@ const dso_comp_t Cat_Messier[NUM_MESSIER] PROGMEM = {
   {     0, 24,  0,   100, 100,  119, 33811,   5760  },
   {    36, 82,  0,   101, 101,  104, 38375,  19787  },
   {     0, 16,  1,   102, 103,   99,  4249,  22084  },
-  {    37, 29,  0,   103, 104,  105, 34588,  -4232  },
+  {    37, 85,  0,   103, 104,  105, 34588,  -4232  },
   {     0, 46,  0,   104, 105,  123, 29483,   4581  },
   {     0, 11,  0,   105, 106,  109, 33631,  17222  },
   {     0, 58,  8,   106, 107,  114, 45171,  -4753  },
