@@ -86,13 +86,13 @@ const char *Cat_Messier_Names_FR=
 const char *Cat_Messier_Names_DE=
 "Krabbennebel;"
 "Schmetterlingshaufen;"
-"Ptolemäus-Haufen";
+"Ptolemäus-Haufen;"
 "Lagunennebel;"
 "Wildenten-Haufen;"
 "Großer Herkules-Cluster;"
 "Pegasus-Wolke;"
 "Adlernebel;"
-"Omega - Schwanennebel;".
+"Omega - Schwanennebel;"
 "Trifidnebel;"
 "Sternhaufen des Schützen;"
 "Sternwolke des Schützen;"
@@ -120,7 +120,7 @@ const char *Cat_Messier_Names_DE=
 "Virgo A.;"
 "Eulennebel;"
 "Windrad-Galaxie;"
-"Sombrero-Galaxie;"
+"Sombrero-Galaxie;";
 
 const char *Cat_Messier_SubId=
 " NGC1952;"

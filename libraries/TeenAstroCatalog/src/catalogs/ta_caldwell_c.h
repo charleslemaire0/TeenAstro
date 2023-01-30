@@ -71,7 +71,7 @@ const char *Cat_Caldwell_Names_FR=
 "Nébuleuse de l'Étoile flamboyante;"
 "Galaxie de la Baleine;"
 "Dentelles du Cygne (Grande dentelle);"
-"Dentelles du Cygne (Petite dentelle et Triangle de Pickering);"
+"Dentelles du Cygne (Petite dentelle);"
 "Galaxie de l'Aiguille;"
 "Nébuleuse de l'Esquimau;"
 "Hyades;"
@@ -83,10 +83,10 @@ const char *Cat_Caldwell_Names_FR=
 "Fantôme de Jupiter;"
 "Galaxies des Antennes;"
 "Galaxies des Antennes;"
-"Nébuleuse de l'Hélice ou Œil de Dieu;"
+"Nébuleuse de l'Hélice;"
 "Galaxie du Sculpteur;"
-"Nébuleuse de l'Insecte ou Nébuleuse du Papillon;"
-"Nébuleuse du Huit éclaté ou Nébuleuse de l'Anneau du Sud;"
+"Nébuleuse du Papillon;"
+"Nébuleuse de l'Anneau du Sud;"
 "Centaurus A;"
 "Oméga du Centaure;"
 "Amas d'Omicron des Voiles;"
@@ -147,7 +147,7 @@ const char *Cat_Caldwell_Names_DE=
 "Lambda-Nebel des Zentauren;"
 "Südliche Plejaden;"
 "Tarantelnebel;"
-"47 des Tukans;";s
+"47 des Tukans;";
 
 const char *Cat_Caldwell_SubId=
 " NGC188;"
