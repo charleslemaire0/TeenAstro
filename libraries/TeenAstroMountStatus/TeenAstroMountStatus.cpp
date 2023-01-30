@@ -340,6 +340,9 @@ bool TeenAstroMountStatus::getDriverName(char* name)
       case '3':
         strcpy(name, "TMC5160");
         break;
+      case '4':
+        strcpy(name, "TMC2660");
+        break;
       }
     }
   }
