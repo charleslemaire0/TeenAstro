@@ -98,8 +98,13 @@ void SmartHandController::setup(
     if (!ta_MountStatus.hasGNSSBoard())
     {
       ta_MountStatus.updateTime();
-      DisplayMessage(T_TIME " Universal", ta_MountStatus.getUTC(), 1500);
-      DisplayMessage(T_DATE " Universal", ta_MountStatus.getUTCdate(), 1500);
+      unsigned int hour=0, minute=0, second=0;
+      GetLocalTimeLX200(hour, minute, second);
+      char date_time[40];
+      sprintf(date_time, "%s : %.2d:%.2d:%.2d", T_TIME, hour, minute, second);
+      char date_time2[40];
+      sprintf(date_time2, "%s : %s", T_DATE, ta_MountStatus.getUTCdate());
+      DisplayMessage(date_time, date_time2, 2000);
     }
   }
 }
