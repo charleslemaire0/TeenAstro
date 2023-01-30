@@ -98,7 +98,7 @@ void SmartHandController::setup(
     if (!ta_MountStatus.hasGNSSBoard())
     {
       ta_MountStatus.updateTime();
-      unsigned int hour=0, minute=0, second=0;
+      unsigned int hour = 0, minute = 0, second = 0;
       GetLocalTimeLX200(hour, minute, second);
       char date_time[40];
       sprintf(date_time, "%s : %.2d:%.2d:%.2d", T_TIME, hour, minute, second);
@@ -106,6 +106,10 @@ void SmartHandController::setup(
       sprintf(date_time2, "%s : %s", T_DATE, ta_MountStatus.getUTCdate());
       DisplayMessage(date_time, date_time2, 2000);
     }
+  }
+  else
+  {
+    DisplayMessage("!! " T_ERROR " !!", T_NOT_CONNECTED " !", 5000);
   }
 }
 
