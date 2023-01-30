@@ -8,7 +8,7 @@
 
 #define D_motorA1gear 1600       // = physical ratio * 100
 #define D_motorA1stepRot 400
-#define D_motorA1micro 8        // microstep : 1, 2, 4 ,8, 16, 32, 64, 128, 256
+#define D_motorA1micro 8        // microstep 0 to 8 : 1, 2, 4 ,8, 16, 32, 64, 128, 256
 #define D_motorA1reverse 0
 #define D_motorA1highCurr 1600
 #define D_motorA1lowCurr 1200
@@ -16,7 +16,7 @@
 
 #define D_motorA2gear 800       // = physical ratio * 100
 #define D_motorA2stepRot 400
-#define D_motorA2micro 8        // microstep : 1, 2, 4 ,8, 16, 32, 64, 128, 256
+#define D_motorA2micro 8        // microstep 0 to 8 : 1, 2, 4 ,8, 16, 32, 64, 128, 256
 #define D_motorA2reverse 0
 #define D_motorA2highCurr 1600
 #define D_motorA2lowCurr 1200
