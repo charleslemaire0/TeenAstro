@@ -142,7 +142,7 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
         if (j_line1 > (lenght-1)) j_line1=0;
         memmove(output, line+j_line1, lenght-j_line1);
         memmove(output+(lenght-j_line1), line, j_line1);
-        memmove(output+13, "\0", 1);
+        memmove(output+12, "\0", 1);
         sprintf(line, "%s", output);
       }
       u8g2_DrawUTF8(u8g2, x, y, line);
@@ -345,7 +345,7 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
       sprintf(line, "%s", cat_mgr.objectNameStr());
       if (u8g2_GetUTF8Width(u8g2, line) >= 128)
       {
-        sprintf(line, "     %s     ", line);
+        sprintf(line, "     %s     ", cat_mgr.objectNameStr());
         lenght = strlen(line);
         if (j_line2 > (lenght-1)) j_line2=0;
         memmove(output, line+j_line2, lenght-j_line2);
