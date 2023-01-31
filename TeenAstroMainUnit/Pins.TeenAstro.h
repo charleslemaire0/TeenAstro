@@ -341,7 +341,7 @@
     #define FocuserTX       14
 
     // GNSS
-    #define GNSS_Serial     Serial4
+    #define GNSS_Serial     Serial2
     #define PPS             5
 
     // LED
