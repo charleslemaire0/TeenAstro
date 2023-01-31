@@ -5,7 +5,8 @@
 #define Cat_Messier_Prefix "M"
 #define NUM_MESSIER 109
 
-const char *Cat_Messier_Names_EN=
+#if LANGUAGE == ENGLISH
+const char *Cat_Messier_Names=
 "Crab Nebula;"
 "Butterfly Clstr;"
 "Ptolemy Clstr;"
@@ -43,8 +44,8 @@ const char *Cat_Messier_Names_EN=
 "Owl Nebula;"
 "Pinwheel Gxy;"
 "Sombrero Gxy";
-
-const char *Cat_Messier_Names_FR=
+#elif LANGUAGE == FRENCH
+const char *Cat_Messier_Names=
 "Nébuleuse du Crabe;"
 "Amas du Papillon;"
 "Amas de Ptolémée;"
@@ -82,8 +83,8 @@ const char *Cat_Messier_Names_FR=
 "Nébuleuse du Hibou;"
 "Galaxie du Moulinet;"
 "Galaxie du Sombrero;";
-
-const char *Cat_Messier_Names_DE=
+#elif LANGUAGE == GERMAN
+const char *Cat_Messier_Names=
 "Krabbennebel;"
 "Schmetterlingshaufen;"
 "Ptolemäus-Haufen;"
@@ -121,6 +122,7 @@ const char *Cat_Messier_Names_DE=
 "Eulennebel;"
 "Windrad-Galaxie;"
 "Sombrero-Galaxie;";
+#endif
 
 const char *Cat_Messier_SubId=
 " NGC1952;"
