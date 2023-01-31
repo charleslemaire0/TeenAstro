@@ -43,7 +43,9 @@ MeridianFlip meridianFlip = MeridianFlip::FLIP_NEVER;
 Mount mountType = Mount::MOUNT_TYPE_GEM;
 char mountName[maxNumMount][15];
 
-#ifndef isMountTypeFix
+#ifdef D_mountType
+bool isMountTypeFix = true;
+#else
 bool isMountTypeFix = false;
 #endif
 

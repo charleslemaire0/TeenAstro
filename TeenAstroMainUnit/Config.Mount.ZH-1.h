@@ -5,7 +5,6 @@
 
 // MOUNT_TYPE_GEM = 1, MOUNT_TYPE_FORK = 2, MOUNT_TYPE_ALTAZM = 3, MOUNT_TYPE_FORK_ALT = 4
 #define D_mountType 4
-bool isMountTypeFix = true;
 
 #define D_motorA1gear 16       // = physical ratio * 100
 #define D_motorA1stepRot 400
