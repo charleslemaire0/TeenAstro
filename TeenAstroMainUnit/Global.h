@@ -42,7 +42,11 @@ bool DecayModeTrack = false;
 MeridianFlip meridianFlip = MeridianFlip::FLIP_NEVER;
 Mount mountType = Mount::MOUNT_TYPE_GEM;
 char mountName[maxNumMount][15];
+
+#ifndef isMountTypeFix
 bool isMountTypeFix = false;
+#endif
+
 byte maxAlignNumStar = 0;
 bool autoAlignmentBySync = false;
 
@@ -208,7 +212,9 @@ enum GuideRate {RG,RC,RM,RS,RX};
 #define DefaultR1 4
 #define DefaultR2 16
 #define DefaultR3 64
-#define DefaultR4 600
+#ifndef DefaultR4
+  #define DefaultR4 600
+#endif
 double  guideRates[5] =
 {
   DefaultR0 , DefaultR1 , DefaultR2 ,  DefaultR3 , DefaultR4
