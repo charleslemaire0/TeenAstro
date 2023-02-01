@@ -1,9 +1,5 @@
 #pragma once
 
-#define ENGLISH 0
-#define FRENCH 1
-#define GERMAN 2
-
 #include <TeenAstroCatalog.h>
 
 // maximum number of catalogs supported
@@ -158,33 +154,18 @@ const char* Txt_Object_Type[21] = {
   "Reflectn Nbla", "SuperNov Rmnt",  "Emission Nbla",  "Non Existant","Nova",       "Duplicate",      "Dark Nebula"
 };
 
-// Constellation abbreviation, alphabetical order
-/*const char* Txt_Constellations[89] = {
+//Constellation abbreviation, alphabetical order
+const char* Txt_Constellations[89] = {
   "And","Ant","Aps","Aql","Aqr","Ara","Ari","Aur","Boo","CMa","CMi","CVn","Cae","Cam","Cap","Car","Cas","Cen","Cep","Cet","Cha","Cir",
   "Cnc","Col","Com","CrA","CrB","Crt","Cru","Crv","Cyg","Del","Dor","Dra","Equ","Eri","For","Gem","Gru","Her","Hor","Hya","Hyi","Ind",
   "LMi","Lac","Leo","Lep","Lib","Lup","Lyn","Lyr","Men","Mic","Mon","Mus","Nor","Oct","Oph","Ori","Pav","Peg","Per","Phe","Pic","PsA",
   "Psc","Pup","Pyx","Ret","Scl","Sco","Sct","Ser","Sex","Sge","Sgr","Tau","Tel","TrA","Tri","Tuc","UMa","UMi","Vel","Vir","Vol","Vul"," ---"
-};*/
+};
 
-#if LANGUAGE == ENGLISH
-const char* Txt_Constellations[89] = {
+const char* Txt_Constellations_Long[89] = {
   "Andromeda","Antlia","Apus","Aquila","Aquarius","Ara","Aries","Auriga","Boötes","Canis Major","Canis Minor","Canes Venatici","Caelum","Camelopardalis","Capricornus","Carina","Cassiopeia","Centaurus","Cepheus","Cetus","Chamaeleon","Circinus",
   "Cancer","Columba","Coma Berenices","Corona Australis","Corona Borealis","Crater","Crux","Corvus","Cygnus","Delphinus","Dorado","Draco","Equuleus","Eridanus","Fornax","Gemini","Grus","Hercules","Horologium","Hydra","Hydrus","Indus",
   "Leo Minor","Lacerta","Leo","Lepus","Libra","Lupus","Lynx","Lyra","Mensa","Microscopium","Monoceros","Musca","Norma","Octans","Ophiuchus","Orion","Pavo","Pegasus","Perseus","Phoenix","Pictor","Piscis Austrinus",
-  "Pisces","Puppis","Pyxis","Reticulum","Sculptor","Scorpius","Scutum","Serpens[11]","Sextans","Sagitta","Sagittarius","Taurus","Telescopium","Triangulum Australe","Triangulum","Tucana","Ursa Major","Ursa Minor","Vela","Virgo","Volans","Vulpecula","---"
+  "Pisces","Puppis","Pyxis","Reticulum","Sculptor","Scorpius","Scutum","Serpens","Sextans","Sagitta","Sagittarius","Taurus","Telescopium","Triangulum Australe","Triangulum","Tucana","Ursa Major","Ursa Minor","Vela","Virgo","Volans","Vulpecula","---"
 };
-#elif LANGUAGE == FRENCH
-const char* Txt_Constellations[89] = {
-  "Andromède","La Machine pneumatique","L'Oiseau de paradis","L'Aigle","Le Verseau","L'Autel","Le Bélier","Le Cocher","Le Bouvier","Le Grand Chien","Le Petit Chien","Les Chiens de chasse","Le Burin","La Girafe","Le Capricorne","La Carène","Cassiopée","Le Centaure","Céphée","La Baleine","Le Caméléon","Le Compas",
-  "Le Cancer","La Colombe","La Chevelure de Bérénice","La Couronne australe","La Couronne boréale","La Coupe","La Croix du Sud","Le Corbeau","Le Cygne","Le Dauphin","La Dorade","Le Dragon","Le Petit Cheval","L'Éridan","Le Fourneau","Les Gémeaux","La Grue","Hercule","L'Horloge","L'Hydre","L'Hydre mâle","L'Indien",
-  "Le Petit Lion","Le Lézard","Le Lion","Le Lièvre","La Balance","Le Loup","Le Lynx","La Lyre","La Table","Le Microscope","La Licorne","La Mouche","La Règle","L'Octant","Ophiuchus","Orion","Le Paon","Pégase","Persée","Le Phénix","Le Peintre","Le Poisson austral",
-  "Les Poissons","La Poupe","La Boussole","Le Réticule","Le Sculpteur","Le Scorpion","L'Écu de Sobieski","Le Serpent","Le Sextant","La Flèche","Le Sagittaire","Le Taureau","Le Télescope","Le Triangle austral","Le Triangle","Le Toucan","La Grande Ourse","La Petite Ourse","Les Voiles","La Vierge","Le Poisson volant","Le Petit Renard"," ---"
-};
-#elif LANGUAGE == GERMAN
-const char* Txt_Constellations[89] = {
-  "Andromeda","Luftpumpe","Paradiesvogel","Adler","Wassermann","Altar","Widder","Fuhrmann","Bärenhüter","Großer Hund","Kleiner Hund","Jagdhunde","Grabstichel","Giraffe","Steinbock","Kiel des Schiffs","Kassiopeia","Zentaur","Kepheus","Walfisch","Chamäleon","Zirkel",
-  "Krebs","Taube","Haar der Berenike","Südliche Krone","Nördliche Krone","Becher","Kreuz des Südens","Rabe","Schwan","Delphin","Schwertfisch","Drache","Füllen","Eridanus","Chemischer Ofen","Zwillinge","Kranich","Herkules","Pendeluhr","Wasser schlange","Kleine Wasser schlange","Indianer (Inder)",
-  "Kleiner Löwe","Eidechse","Löwe","Hase","Waage","Wolf","Luchs","Leier","Tafelberg","Mikroskop","Einhorn","Fliege","Winkelmaß","Oktant","Schlangen träger","Orion","Pfau","Pegasus","Perseus","Phönix","Maler","Südlicher Fisch",
-  "Fische","Achterdeck des Schiffs","Schiffskompass","Netz","Bildhauer","Skorpion","Schild","Schlange","Sextant","Pfeil","Schütze","Stier","Teleskop","Südliches Dreieck","Dreieck","Tukan","Großer Bär","Kleiner Bär","Segel des Schiffs","Jungfrau","Fliegender Fisch","Fuchs","---"
-};
-#endif
+

@@ -1,4 +1,5 @@
 #pragma once
+#include <TeenAstroLanguage.h>
 // This data is machine generated from the Open NGC database.
 // Do NOT edit this data manually. Rather, fix the import programs and rerun.
 #define Cat_Messier_Title "Messier"

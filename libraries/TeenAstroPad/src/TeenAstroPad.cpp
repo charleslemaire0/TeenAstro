@@ -253,6 +253,7 @@ void Pad::setup(const int pin[7], const bool active[7], const int adress)
 
 void Pad::tickButtons()
 {
+  static unsigned long last_update = millis();
   delay(1);
   m_buttonPressed = false;
   m_shiftPressed = false;
@@ -283,7 +284,12 @@ void Pad::tickButtons()
       eventbuttons[k + 1] = E_NONE;
     }
   }
-  m_wbt.update();
+  if (millis() - last_update > 100)
+  {
+    m_wbt.update();
+    last_update = millis();
+  }
+
 }
 
 Pad::ButtonSpeed Pad::getButtonSpeed()

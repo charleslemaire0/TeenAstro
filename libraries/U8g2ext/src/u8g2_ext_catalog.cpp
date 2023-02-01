@@ -86,9 +86,6 @@ selection list with string line
 returns line height
 */
 
-int j_line1 = 0;
-int j_line2 = 0;
-
 static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPLAY_MODES displayMode, bool firstPass)
 {
   u8g2_uint_t x = 0;
@@ -97,9 +94,8 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
   const uint8_t* myfont = u8g2->font;
   u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
 
-  char line[64];
-  char output[64];
-  int lenght;
+  char line[32];
+
 
   int dx = u8g2_GetDisplayWidth(u8g2);
   if (cat_mgr.isStarCatalog())
@@ -133,20 +129,7 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
         u8g2_SetFont(u8g2, myfont);
       }
       // Constellation Abbreviation
-
-      sprintf(line, "%s", cat_mgr.constellationStr());
-      if (u8g2_GetUTF8Width(u8g2, line) >= 100)
-      {
-        sprintf(line, "  %s  ", cat_mgr.constellationStr());
-        lenght = strlen(line);
-        if (j_line1 > (lenght-1)) j_line1=0;
-        memmove(output, line+j_line1, lenght-j_line1);
-        memmove(output+(lenght-j_line1), line, j_line1);
-        memmove(output+12, "\0", 1);
-        sprintf(line, "%s", output);
-      }
-      u8g2_DrawUTF8(u8g2, x, y, line);
-
+      u8g2_DrawUTF8(u8g2, x, y, cat_mgr.constellationStr());
     }
     else
     {
@@ -326,33 +309,41 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
       y += line_height;
       x = 0;
 
+      // Object type text
+      u8g2_DrawUTF8(u8g2, x, y, cat_mgr.objectTypeStr());
+
+      // Constellation Abberviation
       sprintf(line, "%s", cat_mgr.constellationStr());
-      if (u8g2_GetUTF8Width(u8g2, line) >= 128)
-      {
-        sprintf(line, "     %s     ", cat_mgr.constellationStr());
-        lenght = strlen(line);
-        if (j_line1 > (lenght-1)) j_line1=0;
-        memmove(output, line+j_line1, lenght-j_line1);
-        memmove(output+(lenght-j_line1), line, j_line1);
-        sprintf(line, "%s", output);
-      }
-       u8g2_DrawUTF8(u8g2, x, y, line);
+      step0 = u8g2_GetUTF8Width(u8g2, line);
+      u8g2_DrawUTF8(u8g2, dx - step0, y, line);
 
       // Object Name, when the DSO catalogs include it
       y += line_height;
       x = 0;
-
-      sprintf(line, "%s", cat_mgr.objectNameStr());
-      if (u8g2_GetUTF8Width(u8g2, line) >= 128)
+ 
+      int len = strlen(cat_mgr.objectNameStr());
+      if (len * 2 < 128 && len>16)
       {
-        sprintf(line, "     %s     ", cat_mgr.objectNameStr());
-        lenght = strlen(line);
-        if (j_line2 > (lenght-1)) j_line2=0;
-        memmove(output, line+j_line2, lenght-j_line2);
-        memmove(output+(lenght-j_line2), line, j_line2);
-        sprintf(line, "%s", output);
+        static int i;
+        char movingtext[128] = "";
+        strncpy(movingtext, cat_mgr.objectNameStr(), len);
+        movingtext[len] = ' ';
+        strncpy(&movingtext[len+1], cat_mgr.objectNameStr(),len ); 
+        int w = u8g2_GetUTF8Width(u8g2, movingtext);
+        if (i >= w || firstPass)
+        {
+          i = 0;
+        }
+        x = - i;
+        i++;
+        u8g2_DrawUTF8(u8g2, x, y, movingtext);
       }
-       u8g2_DrawUTF8(u8g2, x, y, line);
+      else
+      {
+        u8g2_DrawUTF8(u8g2, x, y, cat_mgr.objectNameStr());
+      }
+    
+    
     }
   }
 
@@ -414,8 +405,6 @@ bool ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *title)
   u8g2_SetFont(u8g2, u8g2_font_helvR10_tf);
   u8g2_uint_t yy;
   int incr = 0;
-  j_line1 = 0;
-  j_line2 = 0;
   uint8_t event;
   CATALOG_DISPLAY_MODES thisDisplayMode = DM_INFO;
 
@@ -445,14 +434,10 @@ bool ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *title)
       {
         thisDisplayMode = (CATALOG_DISPLAY_MODES)((int)thisDisplayMode + 1);
         if (thisDisplayMode > DM_HOR_COORDS) thisDisplayMode = DM_INFO; break;
-        j_line1=0;
-        j_line2=0;
       }
       else if (event == U8X8_MSG_GPIO_MENU_PREV) return false;
       else if (event == U8X8_MSG_GPIO_MENU_DOWN)
       {
-        j_line1=0;
-        j_line2=0;
         for (int k = 0; k < incr/100 + 1; k++)
         {
           cat_mgr.incIndex();
@@ -462,8 +447,6 @@ bool ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *title)
       }
       else if (event == U8X8_MSG_GPIO_MENU_UP)
       {
-        j_line1=0;
-        j_line2=0;
         for (int k = 0; k < incr/100 + 1; k++)
         {
           cat_mgr.decIndex(); 
@@ -477,7 +460,7 @@ bool ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *title)
       }
       // auto-refresh display
       static unsigned long lastRefresh = 0;
-      if (millis() - lastRefresh > 250) { lastRefresh = millis(); j_line1 ++; j_line2 ++; break; }
+      if (millis() - lastRefresh > 500) { lastRefresh = millis(); break; }
     }
   }
 }
