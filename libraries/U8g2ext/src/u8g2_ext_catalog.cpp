@@ -330,12 +330,12 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
         movingtext[len] = ' ';
         strncpy(&movingtext[len+1], cat_mgr.objectNameStr(),len ); 
         int w = u8g2_GetUTF8Width(u8g2, movingtext);
-        if (i >= w || firstPass)
+        if (i >= w/2 )
         {
           i = 0;
         }
         x = - i;
-        i++;
+        i+=5;
         u8g2_DrawUTF8(u8g2, x, y, movingtext);
       }
       else
