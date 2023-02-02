@@ -6,7 +6,7 @@
 #define Cat_STT_Prefix "STT"
 #define NUM_STT 114
 
-const char *Cat_STT_Names=
+const char *Cat_STT_Names PROGMEM=
 "F8V;"
 "F2;"
 "B8V+B9V;"

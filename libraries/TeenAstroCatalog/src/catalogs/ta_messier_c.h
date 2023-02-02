@@ -7,7 +7,7 @@
 #define NUM_MESSIER 109
 
 #if LANGUAGE == ENGLISH
-const char *Cat_Messier_Names=
+const char *Cat_Messier_Names PROGMEM =
 "Crab Nebula;"
 "Butterfly Clstr;"
 "Ptolemy Clstr;"
@@ -46,7 +46,7 @@ const char *Cat_Messier_Names=
 "Pinwheel Gxy;"
 "Sombrero Gxy";
 #elif LANGUAGE == FRENCH
-const char *Cat_Messier_Names=
+const char *Cat_Messier_Names PROGMEM =
 "Néb. du Crabe;"
 "Amas du Papillon;"
 "Amas de Ptolémée;"
@@ -58,7 +58,7 @@ const char *Cat_Messier_Names=
 "Omega - Néb. du Cygne;"
 "Néb. Trifide;"
 "Amas du Sagittaire;"
-"Nuage d'étoiles du Sagittaire;"
+"Nuage d'étoiles du Sagitt.;"
 "Néb. de l'Haltère;"
 "Glx. d'Andromède;"
 "Glx. du Triangle;"
@@ -72,10 +72,10 @@ const char *Cat_Messier_Names=
 "Glx. du Tourbillon;"
 "Néb. de l'Anneau;"
 "Glx. du Tournesol;"
-"Glx. de l'Œil noir;"
+"Glx. de l'Oeil noir;"
 "Triplet de Leo;"
-"Glx. du Hamburger5;"
-"Néb. du Petit Haltère;"
+"Glx. du Hamburger;"
+"Néb. de la Pt Haltère;"
 "Cetus A.;"
 "Glx. de Bode;"
 "Glx. du Cigare;"
@@ -85,7 +85,7 @@ const char *Cat_Messier_Names=
 "Glx. du Moulinet;"
 "Glx. du Sombrero;";
 #elif LANGUAGE == GERMAN
-const char *Cat_Messier_Names=
+const char *Cat_Messier_Names PROGMEM =
 "Krabbennebel;"
 "Schmetterlingshaufen;"
 "Ptolemäus-Haufen;"
@@ -113,7 +113,7 @@ const char *Cat_Messier_Names=
 "Sonnenblumen-Glx.;"
 "Glx. des Schwarzen Auges;"
 "Leo-Triplett;"
-"Hamburger Glx.5;"
+"Hamburger Glx.;"
 "Kleiner Hantelnebel;"
 "Cetus A.;"
 "Bode-Glx.;"
@@ -125,7 +125,7 @@ const char *Cat_Messier_Names=
 "Sombrero-Glx.;";
 #endif
 
-const char *Cat_Messier_SubId=
+const char *Cat_Messier_SubId PROGMEM =
 " NGC1952;"
 " NGC7089;"
 " NGC5272;"

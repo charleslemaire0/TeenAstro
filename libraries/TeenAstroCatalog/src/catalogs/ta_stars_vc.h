@@ -5,7 +5,7 @@
 #define Cat_Stars_Prefix "Star "
 #define NUM_STARS 408
 
-const char *Cat_Stars_Names=
+const char *Cat_Stars_Names PROGMEM =
 "Alpheratz;"
 "Mirach;"
 "Almach;"

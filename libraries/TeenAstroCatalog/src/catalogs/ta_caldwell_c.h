@@ -8,7 +8,7 @@
 
 
 #if LANGUAGE == ENGLISH
-  const char *Cat_Caldwell_Names=
+  const char *Cat_Caldwell_Names PROGMEM =
     "Bow-Tie Nebula;"
     "Iris Nebula;"
     "Cat's Eye Nebula;"
@@ -56,7 +56,7 @@
     "Tarantula Nebula;"
     "47 Tucanae;";
 #elif LANGUAGE == FRENCH
-  const char *Cat_Caldwell_Names=
+  const char *Cat_Caldwell_Names PROGMEM =
     "Noeud de cravate;"
     "L'Iris;"
     "L'Oeil de Chat;"
@@ -104,7 +104,7 @@
     "La Tarentule;"
     "47 du Toucan;";
 #elif LANGUAGE == GERMAN
-  const char *Cat_Caldwell_Names=
+  const char *Cat_Caldwell_Names PROGMEM =
     "Krawattenknoten-Nebel;"
     "Iris-Nebel;"
     "Katzenaugen-Nebel;"
@@ -153,7 +153,7 @@
     "47 des Tukans;";
 #endif
 
-const char *Cat_Caldwell_SubId=
+const char *Cat_Caldwell_SubId PROGMEM =
 " NGC188;"
 " NGC40;"
 " NGC4236;"
