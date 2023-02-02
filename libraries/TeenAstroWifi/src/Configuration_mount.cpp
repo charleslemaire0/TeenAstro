@@ -190,24 +190,26 @@ void TeenAstroWifi::handleConfigurationMount()
     data += FPSTR(html_configRefraction);
     if (!ta_MountStatus.isAltAz())
     {
-
-      sprintf_P(temp, html_Opt_1, "polar");
+      if (GetLX200(":GXrp#", temp1, sizeof(temp1)) != LX200_GETVALUEFAILED) ;
+      {
+        sprintf_P(temp, html_Opt_1, "polar");
+        data += temp;
+        temp1[0] == 'y' ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
+        temp1[0] == 'n' ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
+        data += "</select> Consider Refraction for Pole definition</form><br/>\r\n";
+        sendHtml(data);
+      }
+    }
+    if (GetLX200(":GXrg#", temp1, sizeof(temp1)) != LX200_GETVALUEFAILED)
+    {
+      sprintf_P(temp, html_Opt_1, "gotor");
       data += temp;
-      if (GetLX200(":GXrp#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "n");
-
       temp1[0] == 'y' ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
       temp1[0] == 'n' ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
-      data += "</select> Consider Refraction for Pole definiton</form><br/>\r\n";
+      data += "</select> Consider Refraction for Goto and Sync</form><br/>\r\n";
       sendHtml(data);
     }
 
-    sprintf_P(temp, html_Opt_1, "gotor");
-    data += temp;
-    if (GetLX200(":GXrg#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "n");
-    temp1[0] == 'y' ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
-    temp1[0] == 'n' ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
-    data += "</select> Consider Refraction for Goto and Sync</form><br/>\r\n";
-    sendHtml(data);
 
     //Axis1
     data += "<div class='bt'> Motor: <br/> </div>";
