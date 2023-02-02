@@ -632,6 +632,15 @@ const char* CatMgr::constellationCodeToStr(int code) {
   if ((code>=0) && (code<=87)) return Txt_Constellations[code]; else return "";
 }
 
+const char* CatMgr::constellationStrLong() {
+  return Txt_Constellations_Long[constellation()];
+}
+
+// Constellation string, from constellation number
+const char* CatMgr::constellationCodeToStrLong(int code) {
+  if ((code >= 0) && (code <= 87)) return Txt_Constellations_Long[code]; else return "";
+}
+
 // Object type code
 byte CatMgr::objectType() {
   if (_selected<0) return -1;
