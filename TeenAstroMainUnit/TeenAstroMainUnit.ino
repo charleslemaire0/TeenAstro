@@ -192,12 +192,10 @@ void loop()
     encoderA1.delRef();
     encoderA2.delRef();
   }
-  if (!movingTo &&
-    GuidingState == GuidingOFF &&
-    EncodeSyncMode != ES_OFF &&
-    rtk.m_lst % 10 == 0)
-  {    
-    if (autoSyncWithEncoder(EncodeSyncMode))
+  if (!movingTo && GuidingState == GuidingOFF && rtk.m_lst % 10)
+  {
+    EncoderSync mode = PushtoStatus == PT_OFF ? EncodeSyncMode : ES_ALWAYS;
+    if (autoSyncWithEncoder(mode))
     {
       if (atHome) atHome = false;
       if (parkStatus != PRK_UNPARKED) parkStatus = PRK_UNPARKED;
