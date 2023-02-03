@@ -357,7 +357,7 @@ void SmartHandController::menuEncoders()
 
 void SmartHandController::menuAutoSyncEncoder()
 {
-  const char* string_list = T_OFF"\n60'\n30'\n15'\n8'\n4'\n2'\n1'" ;
+  const char* string_list = T_OFF "\n60'\n30'\n15'\n8'\n4'\n2'\n" T_ON ;
   static uint8_t s_sel = 1;
   DisplayMessageLX200(readEncoderAutoSync(s_sel), true);
   uint8_t tmp_sel = s_sel + 1;
