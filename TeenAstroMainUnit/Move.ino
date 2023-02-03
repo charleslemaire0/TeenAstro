@@ -168,8 +168,8 @@ void CheckSpiral()
   unsigned long t = clk_now - clk_ini;
   unsigned long dt = clk_now - clk_last;
 
-  //if the Spiral runs more than 2 minutes stop it
-  if (t > 120000 )
+  //if the Spiral runs more than 5 minutes stop it
+  if (t > 300000 )
   {
     StopAxis1();
     StopAxis2();
