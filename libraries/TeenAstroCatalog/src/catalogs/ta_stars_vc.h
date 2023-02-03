@@ -5,7 +5,7 @@
 #define Cat_Stars_Prefix "Star "
 #define NUM_STARS 408
 
-const char *Cat_Stars_Names PROGMEM =
+const char Cat_Stars_Names[] PROGMEM =
 "Alpheratz;"
 "Mirach;"
 "Almach;"
@@ -194,7 +194,7 @@ const char *Cat_Stars_Names PROGMEM =
 "Vindemiatrix;"
 "Heze";
 
-const char *Cat_Stars_SubId="";
+const char Cat_Stars_SubId[] PROGMEM = "";
 
 CAT_TYPES Cat_Stars_Type=CAT_GEN_STAR_VCOMP;
 const gen_star_vcomp_t Cat_Stars[NUM_STARS] PROGMEM = {

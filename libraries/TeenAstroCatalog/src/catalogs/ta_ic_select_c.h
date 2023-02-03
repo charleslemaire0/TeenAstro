@@ -7,9 +7,9 @@
 #define Cat_IC_Prefix "IC"
 #define NUM_IC 473
 
-const char *Cat_IC_Names="";
+const char Cat_IC_Names[] PROGMEM = "";
 
-const char *Cat_IC_SubId="A;B;A;B;A";
+const char Cat_IC_SubId[] PROGMEM = "A;B;A;B;A";
 
 CAT_TYPES Cat_IC_Type=CAT_DSO_COMP;
 const dso_comp_t Cat_IC[NUM_IC] PROGMEM = {

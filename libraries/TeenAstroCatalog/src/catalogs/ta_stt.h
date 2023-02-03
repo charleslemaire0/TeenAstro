@@ -774,7 +774,7 @@ const char *Cat_STT_Names=
 "G8III-IV;"
 "PN;"
 ;
-const char *Cat_STT_SubId=
+const char Cat_STT_SubId[] PROGMEM=
 "AB;"
 "AB,C;"
 "AB;"

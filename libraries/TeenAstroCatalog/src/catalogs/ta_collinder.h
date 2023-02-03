@@ -6,7 +6,7 @@
 #define Cat_Collinder_Prefix "Cr"
 #define NUM_COLLINDER 471
 
-const char *Cat_Collinder_Names=
+const char Cat_Collinder_Names[] PROGMEM=
 "Plei 30* 5';"
 "Plei 20* 21';"
 "Plei 20* 7';"
@@ -479,7 +479,7 @@ const char *Cat_Collinder_Names=
 "Neb 110* 9' I5146;"
 "Plei ?* 130'";
 
-const char *Cat_Collinder_SubId=
+const char Cat_Collinder_SubId[] PROGMEM=
 " N103;"
 " N129;"
 " N133;"

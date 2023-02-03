@@ -7,9 +7,9 @@
 #define Cat_NGC_Prefix "NGC"
 #define NUM_NGC 2367
 
-const char *Cat_NGC_Names="";
+const char Cat_NGC_Names[] PROGMEM ="";
 
-const char *Cat_NGC_SubId="A;A;B;A;A;B;A;B;A;A;A;A;A;B;A;A;A;A;B;C;A;A;B;A;A;B;B;B;A;B;B;A;B;A;A;B;"
+const char Cat_NGC_SubId[] PROGMEM ="A;A;B;A;A;B;A;B;A;A;A;A;A;B;A;A;A;A;B;C;A;A;B;A;A;B;B;B;A;B;B;A;B;A;A;B;"
                           "A;B;A;A;D;B;A;A;A;A;B;A;A;B;A;A;A;A;A;D;A;A;B;B;D;B;A;A;A;B;A;A;A;B;B;A";
 
 CAT_TYPES Cat_NGC_Type=CAT_DSO_COMP;

@@ -7,7 +7,7 @@
 #define NUM_MESSIER 109
 
 #if LANGUAGE == ENGLISH
-const char *Cat_Messier_Names PROGMEM =
+const char Cat_Messier_Names[] PROGMEM =
 "Crab Nebula;"
 "Butterfly Clstr;"
 "Ptolemy Clstr;"
@@ -46,7 +46,7 @@ const char *Cat_Messier_Names PROGMEM =
 "Pinwheel Gxy;"
 "Sombrero Gxy";
 #elif LANGUAGE == FRENCH
-const char *Cat_Messier_Names PROGMEM =
+const char Cat_Messier_Names[] PROGMEM =
 "Néb. du Crabe;"
 "Amas du Papillon;"
 "Amas de Ptolémée;"
@@ -85,7 +85,7 @@ const char *Cat_Messier_Names PROGMEM =
 "Glx. du Moulinet;"
 "Glx. du Sombrero;";
 #elif LANGUAGE == GERMAN
-const char *Cat_Messier_Names PROGMEM =
+const char Cat_Messier_Names[] PROGMEM =
 "Krabbennebel;"
 "Schmetterlingshaufen;"
 "Ptolemäus-Haufen;"
@@ -125,7 +125,7 @@ const char *Cat_Messier_Names PROGMEM =
 "Sombrero-Glx.;";
 #endif
 
-const char *Cat_Messier_SubId PROGMEM =
+const char Cat_Messier_SubId[] PROGMEM =
 " NGC1952;"
 " NGC7089;"
 " NGC5272;"
