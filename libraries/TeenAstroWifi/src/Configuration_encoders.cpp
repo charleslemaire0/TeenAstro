@@ -5,8 +5,8 @@
 
 const char html_configEncoders_1[] PROGMEM =
 "<div class='bt'> Encoders Sync Mode: <br/> </div>"
-"<form action='/configuration_mount.htm'>"
-"<select name='mount' onchange='this.form.submit()' >";
+"<form action='/configuration_encoders.htm'>"
+"<select name='smE' onchange='this.form.submit()' >";
 const char html_configEncoders_2[] PROGMEM =
 "</select>"
 "</form>"
@@ -15,7 +15,7 @@ const char html_configEncoders_2[] PROGMEM =
 const char html_configPPDAxis1[] PROGMEM =
 "<div class='bt'> Encoders of Instrument Axis 1: <br/> </div>"
 "<form method='get' action='/configuration_encoders.htm'>"
-" <input value='%.01f' type='number' name='ppda1' min='0' max='3600' step='0.01'>"
+" <input value='%.2f' type='number' name='ppdEa1' min='0' max='3600' step='0.01'>"
 "<button type='submit'>Upload</button>"
 " (Pulse per degree axis 1 from 0 to 3600)"
 "</form>"
@@ -24,14 +24,14 @@ const char html_configPPDAxis1[] PROGMEM =
 const char html_configPPDAxis2[] PROGMEM =
 "<div class='bt'> Encoders of Instrument Axis 2: <br/> </div>"
 "<form method='get' action='/configuration_encoders.htm'>"
-" <input value='%.01f' type='number' name='ppda2' min='0' max='3600' step='0.01'>"
+" <input value='%.2f' type='number' name='ppdEa2' min='0' max='3600' step='0.01'>"
 "<button type='submit'>Upload</button>"
 " (Pulse per degree axis 2 from 0 to 3600)"
 "</form>"
 "\r\n";
 
 const char html_configRotEAxis_1[] PROGMEM =
-"<form action='/configuration_mount.htm'>"
+"<form action='/configuration_encoders.htm'>"
 "<select name='mrotE%d'>";
 const char html_configRotEAxis_r[] PROGMEM =
 "<option value ='0'>Direct</option>"
@@ -46,15 +46,6 @@ const char html_configRotEAxis_2[] PROGMEM =
 "</form>"
 "\r\n";
 
-
-//const char html_reboot_t[] PROGMEM =
-//"<br/><form method='get' action='/configuration_mount.htm'>"
-//"<b>The main unit will now restart please wait some seconds and then press continue.</b><br/><br/>"
-//"<button type='submit'>Continue</button>"
-//"</form><br/><br/><br/><br/>"
-//"\r\n";
-//bool restartRequired_t = false;
-
 void TeenAstroWifi::handleConfigurationEncoders()
 {
   Ser.setTimeout(WebTimeout);
@@ -64,82 +55,61 @@ void TeenAstroWifi::handleConfigurationEncoders()
   char temp2[50] = "";
   String data;
 
-  processConfigurationLimitsGet();
-  preparePage(data, ServerPage::Limits);
+  processConfigurationEncodersGet();
+  preparePage(data, ServerPage::Encoders);
   sendHtml(data);
-  //if (restartRequired_t)
-  //{
-  //  data += FPSTR(html_reboot_t);
-  //  data += "</div></div></body></html>";
-  //  sendHtml(data);
-  //  sendHtmlDone(data);
-  //  restartRequired_t = false;
-  //  delay(1000);
-  //  return;
-  //}
-  //update
   ta_MountStatus.updateMount();
+  uint8_t EncodersyncMode = 0;
+  if (readEncoderAutoSync(EncodersyncMode) == LX200_VALUEGET)
+  {
+    data += FPSTR(html_configEncoders_1);
+    EncodersyncMode == 0 ? data += PSTR("<option selected value='0'>OFF</option>") : data += PSTR("<option value='0'>OFF</option>");
+    EncodersyncMode == 1 ? data += PSTR("<option selected value='1'>60'</option>") : data += PSTR("<option value='1'>60'</option>");
+    EncodersyncMode == 2 ? data += PSTR("<option selected value='2'>30'</option>") : data += PSTR("<option value='2'>30'</option>");
+    EncodersyncMode == 3 ? data += PSTR("<option selected value='3'>15'</option>") : data += PSTR("<option value='3'>15'</option>");
+    EncodersyncMode == 4 ? data += PSTR("<option selected value='4'>8'</option>") : data += PSTR("<option value='4'>8'</option>");
+    EncodersyncMode == 5 ? data += PSTR("<option selected value='5'>4'</option>") : data += PSTR("<option value='5'>4'</option>");
+    EncodersyncMode == 6 ? data += PSTR("<option selected value='6'>2'</option>") : data += PSTR("<option value='6'>2'</option>");
+    EncodersyncMode == 7 ? data += PSTR("<option selected value='7'>ON</option>") : data += PSTR("<option value='7'>ON</option>");
+    data += FPSTR(html_configEncoders_2);
+    sendHtml(data);
+  }
+  // PPD and Roatio Encoders
+  float ppd = 0;
+  bool reverse = false;
 
+  if (readPulsePerDegreeLX200(1, ppd) == LX200_VALUEGET)
+  {
+    sprintf_P(temp, html_configPPDAxis1, ppd/100.0);
+    data += temp;
+    sendHtml(data);
+  }
+  if (readEncoderReverseLX200(1, reverse) == LX200_VALUEGET)
+  {
+    sprintf_P(temp, html_configRotEAxis_1, 1);
+    data += temp;
+    data += reverse ? FPSTR(html_configRotEAxis_r) : FPSTR(html_configRotEAxis_d);
+    sprintf_P(temp, html_configRotEAxis_2, 1);
+    data += temp;
+    sendHtml(data);
+  }
 
+  if (readPulsePerDegreeLX200(2, ppd) == LX200_VALUEGET)
+  {
+    sprintf_P(temp, html_configPPDAxis2, ppd/100.0);
+    data += temp;
+    sendHtml(data);
+  }
+  if (readEncoderReverseLX200(2, reverse) == LX200_VALUEGET)
+  {
+    sprintf_P(temp, html_configRotEAxis_1, 2);
+    data += temp;
+    data += reverse ? FPSTR(html_configRotEAxis_r) : FPSTR(html_configRotEAxis_d);
+    sprintf_P(temp, html_configRotEAxis_2, 2);
+    data += temp;
+    sendHtml(data);
+  }
 
-  // Overhead and Horizon Encoders
-  //if (GetLX200(":GXLH#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); int minAlt = (int)strtol(&temp1[0], NULL, 10);
-  //sprintf_P(temp, html_configMinAlt, minAlt);
-  //data += temp;
-  //sendHtml(data);
-  //if (GetLX200(":GXLO#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); int maxAlt = (int)strtol(&temp1[0], NULL, 10);
-  //sprintf_P(temp, html_configMaxAlt, maxAlt);
-  //data += temp;
-  //sendHtml(data);
-  //// Meridian Encoders
-  //if (ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_GEM)
-  //{
-  //  if (GetLX200(":GXLU#", temp1, sizeof(temp1)) == LX200_VALUEGET)
-  //  {
-  //    float angle = (float)strtol(&temp1[0], NULL, 10) / 10;
-  //    sprintf_P(temp, html_configUnderPole, angle);
-  //    data += temp;
-  //  }
-  //  if (GetLX200(":GXLE#", temp1, sizeof(temp1)) == LX200_VALUEGET && GetLX200(":GXLW#", temp2, sizeof(temp2)) == LX200_VALUEGET)
-  //  {
-  //    int degPastMerE = (int)strtol(&temp1[0], NULL, 10);
-  //    degPastMerE = round((degPastMerE * 15.0) / 60.0);
-  //    sprintf_P(temp, html_configPastMerE, degPastMerE);
-  //    data += temp;
-  //    int degPastMerW = (int)strtol(&temp2[0], NULL, 10);
-  //    degPastMerW = round((degPastMerW * 15.0) / 60.0);
-  //    sprintf_P(temp, html_configPastMerW, degPastMerW);
-  //    data += temp;
-  //  }
-
-  //}
-
-  //if (GetLX200(":GXLA#", temp1, sizeof(temp1)) == LX200_VALUEGET)
-  //{
-  //  float angle = -(float)strtol(&temp1[0], NULL, 10) / 10;
-  //  sprintf_P(temp, html_configMinAxis1, angle);
-  //  data += temp;
-  //}
-  //if (GetLX200(":GXLB#", temp1, sizeof(temp1)) == LX200_VALUEGET)
-  //{
-  //  float angle = (float)strtol(&temp1[0], NULL, 10) / 10;
-  //  sprintf_P(temp, html_configMaxAxis1, angle);
-  //  data += temp;
-  //}
-  //if (GetLX200(":GXLC#", temp1, sizeof(temp1)) == LX200_VALUEGET)
-  //{
-  //  float angle = -(float)strtol(&temp1[0], NULL, 10) / 10;
-  //  sprintf_P(temp, html_configMinAxis2, angle);
-  //  data += temp;
-  //}
-  //if (GetLX200(":GXLD#", temp1, sizeof(temp1)) == LX200_VALUEGET)
-  //{
-  //  float angle = (float)strtol(&temp1[0], NULL, 10) / 10;
-  //  sprintf_P(temp, html_configMaxAxis2, angle);
-  //  data += temp;
-  //}
-
-  //else data += "<br />\r\n";
   strcpy(temp, "</div></body></html>");
   data += temp;
   sendHtml(data);
@@ -151,116 +121,45 @@ void TeenAstroWifi::processConfigurationEncodersGet()
   String v;
   int i;
   float f;
-  char temp[20] = "";
 
- 
-  // Overhead and Horizon Encoders
-  v = server.arg("ol");
+  v = server.arg("smE");
   if (v != "")
   {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 60) && (i <= 91)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 7)))
     {
-      sprintf(temp, ":SXLO,%d#", i);
-      SetLX200(temp);
+      writeEncoderAutoSync(i);
     }
   }
-  v = server.arg("hl");
+  v = server.arg("ppdEa1");
   if (v != "")
   {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -30) && (i <= 30)))
+    if ((atof2((char*)v.c_str(), &f)) && ((f > 0) && (f <= 3600)))
     {
-      sprintf(temp, ":SXLH,%d#", i);
-      SetLX200(temp);
+      writePulsePerDegreeLX200(1, f*100);
     }
   }
-
-  // Meridian Encoders
-  v = server.arg("el");
+  v = server.arg("ppdEa2");
   if (v != "")
   {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
+    if ((atof2((char*)v.c_str(), &f)) && ((f > 0) && (f <= 3600)))
     {
-      i = round((i*60.0) / 15.0);
-      sprintf(temp, ":SXLE,%d#", i);
-      SetLX200(temp);
+      writePulsePerDegreeLX200(2, f*100);
     }
   }
-  v = server.arg("wl");
+  v = server.arg("mrotE1");
   if (v != "")
   {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
-      i = round((i*60.0) / 15.0);
-      sprintf(temp, ":SXLW,%d#", i);
-      SetLX200(temp);
+      writeEncoderReverseLX200(1, i);
     }
   }
-  v = server.arg("up");
+  v = server.arg("mrotE2");
   if (v != "")
   {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 9) && (f <= 12)))
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
-      sprintf(temp, ":SXLU,%03d#", (int)(f * 10));
-      SetLX200(temp);
-    }
-  }
-  v = server.arg("mia1");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((-f >= 0) && (-f <= 360)))
-    {
-      sprintf(temp, ":SXLA,%04d#", (int)(-f * 10));
-      SetLX200(temp);
-    }
-  }
-  v = server.arg("maa1");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 360)))
-    {
-      sprintf(temp, ":SXLB,%04d#", (int)(f * 10));
-      SetLX200(temp);
-    }
-  }
-  v = server.arg("mia2");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((-f >= 0) && (-f <= 360)))
-    {
-      sprintf(temp, ":SXLC,%04d#", (int)(-f * 10));
-      SetLX200(temp);
-    }
-  }
-  v = server.arg("maa2");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 360)))
-    {
-      sprintf(temp, ":SXLD,%04d#", (int)(f * 10));
-      SetLX200(temp);
-    }
-  }
-
-
-  int ut_hrs = -999;
-  v = server.arg("u1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -13) && (i <= 13)))
-    {
-      ut_hrs = i;
-    }
-  }
-  v = server.arg("u2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i == 00) || (i == 30) || (i == 45)))
-    {
-      if ((ut_hrs >= -13) && (ut_hrs <= 13))
-      {
-        sprintf(temp, ":SG%+03d:%02d#", ut_hrs, i);
-        SetLX200(temp);
-      }
+      writeEncoderReverseLX200(2, i);
     }
   }
 }
