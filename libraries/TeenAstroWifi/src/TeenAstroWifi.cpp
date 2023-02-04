@@ -207,6 +207,10 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   {
     page = ServerPage::Index;
   }
+  else if (!ta_MountStatus.hasEncoder() && page == ServerPage::Encoders)
+  {
+    page = ServerPage::Index;
+  }
 
   if (page == ServerPage::Index)
     data += FPSTR(html_headerIdx);
