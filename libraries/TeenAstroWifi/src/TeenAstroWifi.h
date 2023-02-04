@@ -207,4 +207,5 @@ public:
   static const char* getPassword();
   static bool setWifiMode(int k);
   static void getStationName(int k, char* SSID);
+  static void initOTA();
 };
