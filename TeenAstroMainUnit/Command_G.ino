@@ -216,14 +216,14 @@ void Command_GX()
 
     case 'r':
     {
-      // :GXMr.#   Get Encoder reverse Rotation on/off
+      // :GXEr.#   Get Encoder reverse Rotation on/off
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", (unsigned  int)motorA2.reverse);
+        sprintf(reply, "%u#", (unsigned  int)encoderA2.reverse);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", (unsigned  int)motorA1.reverse);
+        sprintf(reply, "%u#", (unsigned  int)encoderA1.reverse);
       }
       else
         replyFailed();

@@ -130,6 +130,7 @@ void Command_SX()
       }
       ok ? replyOk() : replyFailed();
     }
+    break;
     default:
       replyFailed();
     break;
