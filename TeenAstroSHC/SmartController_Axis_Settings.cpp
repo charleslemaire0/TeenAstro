@@ -148,7 +148,7 @@ bool SmartHandController::menuSetStepPerRot(const uint8_t &axis)
     return false;
   char text[20];
   sprintf(text, T_STEPPER " M%u", axis);
-  if (display->UserInterfaceInputValueFloat(&buttonPad, text, "", &stepPerRot, 1, 400, 3, 0, " " T_STEPS))
+  if (display->UserInterfaceInputValueFloatIncr(&buttonPad, text, "", &stepPerRot, 20, 400, 3, 0, 20, " " T_STEPS))
   {
     return DisplayMessageLX200(writeStepPerRotLX200(axis, stepPerRot), false);
   }
@@ -235,7 +235,7 @@ bool SmartHandController::menuSetEncoderReverse(const uint8_t& axis)
   if (choice)
   {
     reverse = (bool)(choice - 1);
-    return DisplayMessageLX200(writeReverseLX200(axis, reverse), false);
+    return DisplayMessageLX200(writeEncoderReverseLX200(axis, reverse), false);
   }
   return true;
 }

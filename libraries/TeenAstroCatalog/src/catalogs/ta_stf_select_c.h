@@ -6,7 +6,7 @@
 #define Cat_STF_Prefix "STF"
 #define NUM_STF 595
 
-const char *Cat_STF_Names=
+const char Cat_STF_Names[] PROGMEM =
 "A4IV;"
 "B8V;"
 "A9V+F3V;"
@@ -603,7 +603,7 @@ const char *Cat_STF_Names=
 "A3IV;"
 "O9V+;"
 ;
-const char *Cat_STF_SubId=
+const char Cat_STF_SubId[] PROGMEM =
 "AB,C;"
 "AB;"
 "AB;"

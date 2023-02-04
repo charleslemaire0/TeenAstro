@@ -6,9 +6,9 @@
 #define Cat_NGC_Prefix "NGC"
 #define NUM_NGC 8154
 
-const char *Cat_NGC_Names="";
+const char Cat_NGC_Names[] PROGMEM = "";
 
-const char *Cat_NGC_SubId=
+const char Cat_NGC_SubId[] PROGMEM =
 "A;B;A;A;B;B;A;A;A;B;A;B;C;D;A;B;A;B;A;A;A;A;B;B;A;B;A;B;C;A;B;A;B;A;A;A;"
 "A;B;A;A;B;A;A;A;A;B;C;A;A;B;A;A;B;A;B;A;B;A;A;B;A;A;B;A;B;A;B;A;A;B;A;B;"
 "A;A;B;A;B;A;B;A;B;C;A;A;B;B;A;B;A;B;A;B;A;A;A;B;A;B;A;B;A;A;A;A;B;A;B;A;"

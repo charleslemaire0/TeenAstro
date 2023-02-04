@@ -1,11 +1,13 @@
 #pragma once
+#include <TeenAstroLanguage.h>
 // This data is machine generated from the Open NGC database.
 // Do NOT edit this data manually. Rather, fix the import programs and rerun.
 #define Cat_Messier_Title "Messier"
 #define Cat_Messier_Prefix "M"
 #define NUM_MESSIER 109
 
-const char *Cat_Messier_Names=
+#if LANGUAGE == ENGLISH
+const char Cat_Messier_Names[] PROGMEM =
 "Crab Nebula;"
 "Butterfly Clstr;"
 "Ptolemy Clstr;"
@@ -43,8 +45,87 @@ const char *Cat_Messier_Names=
 "Owl Nebula;"
 "Pinwheel Gxy;"
 "Sombrero Gxy";
+#elif LANGUAGE == FRENCH
+const char Cat_Messier_Names[] PROGMEM =
+"Néb. du Crabe;"
+"Amas du Papillon;"
+"Amas de Ptolémée;"
+"Néb. de la Lagune;"
+"Amas du Canard Sauvage;"
+"Grand amas d'Hercule;"
+"Nuage de Pégase;"
+"Néb. de l'Aigle;"
+"Omega - Néb. du Cygne;"
+"Néb. Trifide;"
+"Amas du Sagittaire;"
+"Nuage d'étoiles du Sagitt.;"
+"Néb. de l'Haltère;"
+"Glx. d'Andromède;"
+"Glx. du Triangle;"
+"Amas du Moulinet;"
+"Amas de la Méduse;"
+"Winnecke 4;"
+"Néb. d'Orion;"
+"Néb. de Mairan;"
+"Amas de la Ruche;"
+"Pléiades;"
+"Glx. du Tourbillon;"
+"Néb. de l'Anneau;"
+"Glx. du Tournesol;"
+"Glx. de l'Oeil noir;"
+"Triplet de Leo;"
+"Glx. du Hamburger;"
+"Néb. de la Pt Haltère;"
+"Cetus A.;"
+"Glx. de Bode;"
+"Glx. du Cigare;"
+"Glx. Pin-wheel;"
+"Virgo A.;"
+"Néb. du Hibou;"
+"Glx. du Moulinet;"
+"Glx. du Sombrero;";
+#elif LANGUAGE == GERMAN
+const char Cat_Messier_Names[] PROGMEM =
+"Krabbennebel;"
+"Schmetterlingshaufen;"
+"Ptolemäus-Haufen;"
+"Lagunennebel;"
+"Wildenten-Haufen;"
+"Großer Herkules-Cluster;"
+"Pegasus-Wolke;"
+"Adlernebel;"
+"Omega - Schwanennebel;"
+"Trifidnebel;"
+"Sternhaufen des Schützen;"
+"Sternwolke des Schützen;"
+"Hantelnebel;"
+"Andromeda-Glx.;"
+"DreiecksGlx.;"
+"Mühle-Haufen;"
+"Quallenhaufen;"
+"Winnecke 4;"
+"Orionnebel;"
+"Mairan-Nebel;"
+"Bienenstockhaufen;"
+"Plejaden;"
+"Wirbelwind-Glx.;"
+"Ringnebel;"
+"Sonnenblumen-Glx.;"
+"Glx. des Schwarzen Auges;"
+"Leo-Triplett;"
+"Hamburger Glx.;"
+"Kleiner Hantelnebel;"
+"Cetus A.;"
+"Bode-Glx.;"
+"Zigarren-Glx.;"
+"Pin-wheel-Glx.;"
+"Virgo A.;"
+"Eulennebel;"
+"Windrad-Glx.;"
+"Sombrero-Glx.;";
+#endif
 
-const char *Cat_Messier_SubId=
+const char Cat_Messier_SubId[] PROGMEM =
 " NGC1952;"
 " NGC7089;"
 " NGC5272;"
@@ -259,7 +340,7 @@ const dso_comp_t Cat_Messier[NUM_MESSIER] PROGMEM = {
   {     0, 24,  0,   100, 100,  119, 33811,   5760  },
   {    36, 82,  0,   101, 101,  104, 38375,  19787  },
   {     0, 16,  1,   102, 103,   99,  4249,  22084  },
-  {    37, 29,  0,   103, 104,  105, 34588,  -4232  },
+  {    37, 85,  0,   103, 104,  105, 34588,  -4232  },
   {     0, 46,  0,   104, 105,  123, 29483,   4581  },
   {     0, 11,  0,   105, 106,  109, 33631,  17222  },
   {     0, 58,  8,   106, 107,  114, 45171,  -4753  },

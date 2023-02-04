@@ -93,17 +93,6 @@ void TeenAstroWifi::handleConfigurationLimits()
   processConfigurationLimitsGet();
   preparePage(data, ServerPage::Limits);
   sendHtml(data);
-  //if (restartRequired_t)
-  //{
-  //  data += FPSTR(html_reboot_t);
-  //  data += "</div></div></body></html>";
-  //  sendHtml(data);
-  //  sendHtmlDone(data);
-  //  restartRequired_t = false;
-  //  delay(1000);
-  //  return;
-  //}
-  //update
   ta_MountStatus.updateMount();
 
   // Overhead and Horizon Limits

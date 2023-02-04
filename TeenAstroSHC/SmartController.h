@@ -8,8 +8,8 @@
 #define SHCFirmwareDate          __DATE__
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
-#define SHCFirmwareVersionMinor  "3"
-#define SHCFirmwareVersionPatch  "3"
+#define SHCFirmwareVersionMinor  "4"
+#define SHCFirmwareVersionPatch  "b"
 
 #define NUMPAGES 9
 class SmartHandController

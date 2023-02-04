@@ -5,7 +5,7 @@
 #define Cat_Caldwell_Prefix "C"
 #define NUM_CALDWELL 109
 
-const char *Cat_Caldwell_Names=
+const char Cat_Caldwell_Names[] PROGMEM=
 "Bow-Tie Nebula;"
 "Iris Nebula;"
 "Cat's Eye Nebula;"
@@ -52,7 +52,7 @@ const char *Cat_Caldwell_Names=
 "Theta Car Cluster;"
 "Tarantula Nebula;"
 "47 Tucanae;";
-const char *Cat_Caldwell_SubId=
+const char Cat_Caldwell_SubId[] PROGMEM=
 " NGC188;"
 " NGC40;"
 " NGC4236;"

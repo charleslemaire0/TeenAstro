@@ -103,7 +103,7 @@ class TeenAstroWifi
   };
   enum ServerPage
   {
-    Index=1, Control, Speed, Tracking, Mount, Limits, Site, Focuser, Wifi
+    Index=1, Control, Speed, Tracking, Mount, Limits, Encoders, Site, Focuser, Wifi
   };
   static bool wifiOn;
   static int WebTimeout;
@@ -151,6 +151,8 @@ class TeenAstroWifi
   static void handleConfigurationMount();
   static void processConfigurationLimitsGet();
   static void handleConfigurationLimits();
+  static void processConfigurationEncodersGet();
+  static void handleConfigurationEncoders();
   static void processConfigurationFocuserGet();
   static void handleConfigurationFocuser();
   static void handleRoot();
@@ -205,4 +207,5 @@ public:
   static const char* getPassword();
   static bool setWifiMode(int k);
   static void getStationName(int k, char* SSID);
+  static void initOTA();
 };

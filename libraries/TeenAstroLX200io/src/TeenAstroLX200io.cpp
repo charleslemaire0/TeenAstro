@@ -964,14 +964,14 @@ LX200RETURN readTotGearLX200(const uint8_t& axis, float& totGear)
   LX200RETURN ok = axis == 1 ? GetLX200(":GXMGR#", out, sizeof(out)) : GetLX200(":GXMGD#", out, sizeof(out));
   if (ok == LX200_VALUEGET)
   {
-    totGear = 0.01 * (float)strtol(&out[0], NULL, 10);
+    totGear = (float)strtol(&out[0], NULL, 10);
   }
   return ok;
 }
 LX200RETURN writeTotGearLX200(const uint8_t& axis, const float& totGear)
 {
   char cmd[LX200sbuff];
-  sprintf(cmd, ":SXMGX,%u#", (unsigned long)(totGear * 100));
+  sprintf(cmd, ":SXMGX,%u#", (unsigned int)(totGear));
   cmd[5] = axis == 1 ? 'R' : 'D';
   return SetLX200(cmd);
 }

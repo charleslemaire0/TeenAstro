@@ -99,11 +99,15 @@ bool autoSyncWithEncoder(EncoderSync mode)
       tol = 0.;
       break;
     case ES_OFF:
-      return false;
       break;
     default:
       break;
     }
+    lastmode = mode;
+  }
+  if (mode == ES_OFF)
+  {
+    return false;
   }
   long axis1T, axis2T;
   cli();

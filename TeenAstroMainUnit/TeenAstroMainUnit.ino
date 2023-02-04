@@ -122,13 +122,9 @@ void setup()
   // get ready for serial communications
   Serial.begin(BAUD);
   S_USB.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
-#ifdef ARDUINO_TEENSY_MICROMOD
-  Serial4.begin(57600);
-  S_SHC.attach_Stream((Stream *)&Serial4, COMMAND_SERIAL1);
-#else
   Serial1.begin(57600);
   S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
-#endif
+
 
   Focus_Serial.setRX(FocuserRX);
   Focus_Serial.setTX(FocuserTX);
@@ -196,12 +192,10 @@ void loop()
     encoderA1.delRef();
     encoderA2.delRef();
   }
-  if (!movingTo &&
-    GuidingState == GuidingOFF &&
-    EncodeSyncMode != ES_OFF &&
-    rtk.m_lst % 10 == 0)
-  {    
-    if (autoSyncWithEncoder(EncodeSyncMode))
+  if (!movingTo && GuidingState == GuidingOFF && rtk.m_lst % 10)
+  {
+    EncoderSync mode = PushtoStatus == PT_OFF ? EncodeSyncMode : ES_ALWAYS;
+    if (autoSyncWithEncoder(mode))
     {
       if (atHome) atHome = false;
       if (parkStatus != PRK_UNPARKED) parkStatus = PRK_UNPARKED;

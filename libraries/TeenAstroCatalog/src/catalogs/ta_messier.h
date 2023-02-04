@@ -5,7 +5,7 @@
 #define Cat_Messier_Prefix "M"
 #define NUM_MESSIER 109
 
-const char *Cat_Messier_Names=
+const char Cat_Messier_Names[] PROGMEM=
 "Crab Nebula;"
 "Butterfly Clstr;"
 "Ptolemy Clstr;"
@@ -44,7 +44,7 @@ const char *Cat_Messier_Names=
 "Pinwheel Gxy;"
 "Sombrero Gxy";
 
-const char *Cat_Messier_SubId=
+const char Cat_Messier_SubId[] PROGMEM=
 " NGC1952;"
 " NGC7089;"
 " NGC5272;"

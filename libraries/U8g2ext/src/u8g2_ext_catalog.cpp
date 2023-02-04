@@ -320,7 +320,35 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
       // Object Name, when the DSO catalogs include it
       y += line_height;
       x = 0;
-      u8g2_DrawUTF8(u8g2, x, y, cat_mgr.objectNameStr());
+ 
+      int len = strlen(cat_mgr.objectNameStr());
+      int txt_w = u8g2_GetUTF8Width(u8g2, cat_mgr.objectNameStr());
+      if (txt_w < dx  )
+      {
+        u8g2_DrawUTF8(u8g2, x, y, cat_mgr.objectNameStr());
+      }
+      else if (len * 2  + 3 < 128 )
+      {
+        static int i;
+        char movingtext[128] = "";
+        strncpy(movingtext, cat_mgr.objectNameStr(), len);
+        strncpy(&movingtext[len], "...", 3);
+        strncpy(&movingtext[len+3], cat_mgr.objectNameStr(),len ); 
+        txt_w = u8g2_GetUTF8Width(u8g2, movingtext);
+        if (i >= txt_w /2 )
+        {
+          i = 0;
+        }
+        x = - i;
+        i+=5;
+        u8g2_DrawUTF8(u8g2, x, y, movingtext);
+      }
+      else
+      {
+        u8g2_DrawUTF8(u8g2, x, y, cat_mgr.objectNameStr());
+      }
+    
+    
     }
   }
 
@@ -437,7 +465,7 @@ bool ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *title)
       }
       // auto-refresh display
       static unsigned long lastRefresh = 0;
-      if ((thisDisplayMode == DM_HOR_COORDS) && (millis() - lastRefresh > 2000)) { lastRefresh = millis(); break; }
+      if (millis() - lastRefresh > 500) { lastRefresh = millis(); break; }
     }
   }
 }
