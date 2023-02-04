@@ -247,7 +247,7 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
     {
     default:
     case '0':
-      data += "unkown";
+      data += "Generic";
       break;
     case '1':
       data += "TOS100";
@@ -257,6 +257,9 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
       break;
     case '3':
       data += "TMC5160";
+      break;
+    case '4':
+      data += "TMC2160";
       break;
     }
   }
