@@ -213,12 +213,9 @@ void SmartHandController::update()
 
   if (!ta_MountStatus.isConnectionValid() && ta_MountStatus.hasInfoV())
   {
-    ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor);
+    display->sleepOff();
     buttonPad.setMenuMode();
     DisplayMessage("!! " T_ERROR " !!", T_VERSION, -1);
-    DisplayMessage("SHC " T_VERSION, _version, 1500);
-    DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
-    buttonPad.setControlerMode();
 #ifdef ARDUINO_D1_MINI32
     ESP.restart();
 #endif
@@ -231,6 +228,7 @@ void SmartHandController::update()
   if (powerCycleRequired)
   {
     display->sleepOff();
+    buttonPad.setMenuMode();
     DisplayMessage(T_PRESS_KEY, T_TO_REBOOT "...", -1);
     DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
 
@@ -245,6 +243,7 @@ void SmartHandController::update()
   if (ta_MountStatus.notResponding())
   {
     display->sleepOff();
+    buttonPad.setMenuMode();
     DisplayMessage("!! " T_ERROR " !!", T_NOT_CONNECTED, -1);
     DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
 
