@@ -235,7 +235,7 @@ bool SmartHandController::menuSetEncoderReverse(const uint8_t& axis)
   if (choice)
   {
     reverse = (bool)(choice - 1);
-    return DisplayMessageLX200(writeReverseLX200(axis, reverse), false);
+    return DisplayMessageLX200(writeEncoderReverseLX200(axis, reverse), false);
   }
   return true;
 }

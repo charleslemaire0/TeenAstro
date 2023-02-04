@@ -85,16 +85,20 @@ void SmartHandController::setup(
   DisplayMessage("SHC " T_VERSION, _version, 1500);
   int k = 0;
   
-  while (!ta_MountStatus.isConnectionValid() && k < 10)
+  while (!ta_MountStatus.hasInfoV() && k < 10)
   {
-    ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor);
+    ta_MountStatus.updateV();
     delay(200);
     k++;
   }
-  if (ta_MountStatus.isConnectionValid())
+  if (k == 10)
+  {
+    return;
+  }
+  DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
+  if (ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor))
   {
     ta_MountStatus.updateMount();
-    DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
     if (!ta_MountStatus.hasGNSSBoard())
     {
       ta_MountStatus.updateTime();
@@ -106,10 +110,6 @@ void SmartHandController::setup(
       sprintf(date_time2, "%s : %s", T_DATE, ta_MountStatus.getUTCdate());
       DisplayMessage(date_time, date_time2, 2000);
     }
-  }
-  else
-  {
-    DisplayMessage("!! " T_ERROR " !!", T_NOT_CONNECTED " !", 5000);
   }
 }
 
@@ -210,19 +210,25 @@ void SmartHandController::update()
   top = millis();
   if (isSleeping())
     return;
+
   if (!ta_MountStatus.isConnectionValid() && ta_MountStatus.hasInfoV())
   {
-    ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor);
+    display->sleepOff();
     buttonPad.setMenuMode();
     DisplayMessage("!! " T_ERROR " !!", T_VERSION, -1);
-    DisplayMessage("SHC " T_VERSION, _version, 1500);
-    DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
-    buttonPad.setControlerMode();
+#ifdef ARDUINO_D1_MINI32
+    ESP.restart();
+#endif
+#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
+    ESP.reset();
+#endif
     return;
   }
+
   if (powerCycleRequired)
   {
     display->sleepOff();
+    buttonPad.setMenuMode();
     DisplayMessage(T_PRESS_KEY, T_TO_REBOOT "...", -1);
     DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
 
@@ -237,6 +243,7 @@ void SmartHandController::update()
   if (ta_MountStatus.notResponding())
   {
     display->sleepOff();
+    buttonPad.setMenuMode();
     DisplayMessage("!! " T_ERROR " !!", T_NOT_CONNECTED, -1);
     DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
 
