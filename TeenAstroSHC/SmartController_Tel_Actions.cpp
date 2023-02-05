@@ -207,8 +207,8 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
   {
     const char* string_list = alignInProgress ? T_CANCEL :
       (ta_MountStatus.isAligned() ?
-        "2 " T_STAR "\n3 " T_STAR "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error" :
-        "2 " T_STAR "\n3 " T_STAR "\n" T_PC " " T_ALIGNMENT//  "\n" T_SAVE "\n" T_Clear
+        "2 " T_STARS "\n3 " T_STARS "\n" T_PC "\n" T_SAVE "\n" T_Clear "\nShow align. error" :
+        "2 " T_STARS "\n3 " T_STARS "\n" T_PC //  "\n" T_SAVE "\n" T_Clear
         );
     int selection = display->UserInterfaceSelectionList(&buttonPad, T_ALIGNMENT, current_selection, string_list);
     if (selection == 0) return MR_CANCEL;
