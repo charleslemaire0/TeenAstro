@@ -285,12 +285,12 @@
     #define Axis2EnablePin  39              // Pin 39 (Motor 2 enable)
 
     // Focuser
-    #define Focus_Serial    Serial3
+    #define Focus_Serial    Serial2
     #define FocuserRX       15
     #define FocuserTX       14
 
     // GNSS
-    #define GNSS_Serial     Serial2
+    #define GNSS_Serial     Serial3
     #define PPS             10
 
     // LED

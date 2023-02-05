@@ -27,6 +27,8 @@
 #include "Config.Mount.Template.h"
 #elif defined MOUNT_ZH_1
 #include "Config.Mount.ZH-1.h"
+#elif defined MOUNT_validator
+#include "Config.Mount.validator.h"
 #else
 #include "Config.Mount.Universal.h"
 #endif
