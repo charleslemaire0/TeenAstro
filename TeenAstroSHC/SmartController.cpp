@@ -55,10 +55,16 @@ void SmartHandController::setup(
       display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0);
     break;
   }
+  SHCrotated = EEPROM.read(EEPROM_DISPLAY180) == 255;
+  
+  if (SHCrotated)
+  {
+    display->setDisplayRotation(U8G2_R2);
+  }
+
   display->begin();
   drawIntro();
-  buttonPad.setup(pin, active, EEPROM_BSPEED);
-
+  buttonPad.setup(pin, active, EEPROM_BSPEED, SHCrotated);
   tickButtons();
   maxContrast = EEPROM.read(EEPROM_Contrast);
   display->setContrast(maxContrast);

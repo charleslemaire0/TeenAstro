@@ -46,7 +46,7 @@ private:
   bool powerCycleRequired = false;
   bool buttonCommand = false;
   bool Move[6] = { false, false, false, false, false, false };
-
+  bool SHCrotated = false;
   uint8_t displayT1;
   uint8_t displayT2;
   uint8_t maxContrast;
@@ -148,6 +148,7 @@ private:
   void menuFocuserInfo();
   void menuDisplay();
   void menuContrast();
+  void menuErgonomy();
   void menuButtonSpeed();
   void menuLocalDate();
   void menuLatitude();

@@ -5,7 +5,7 @@ void SmartHandController::menuSHCSettings()
 {
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
-  const char *string_list_SettingsL3 = T_DISPLAY "\n" T_BUTTONSPEED "\n" T_RESET;
+  const char *string_list_SettingsL3 = T_DISPLAY "\n" T_BUTTONSPEED "\n" T_ERGONOMICS "\n" T_RESET;
   while (!exitMenu)
   {
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_SHCSETTINGS, s_sel, string_list_SettingsL3);
@@ -21,6 +21,9 @@ void SmartHandController::menuSHCSettings()
       menuButtonSpeed();
       break;
     case 3:
+      menuErgonomy();
+      break;
+    case 4:
       resetSHC();
       break;
     }
@@ -84,6 +87,31 @@ void SmartHandController::menuDisplay()
       break;
     }
   }
+}
+
+void SmartHandController::menuErgonomy()
+{
+  const char* string_list_Display = T_RIGHT_HANDER "\n" T_LEFT_HANDER ;
+  uint8_t s_sel = SHCrotated ? 2 : 1;
+  uint8_t tmp_sel;
+  tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_ERGONOMICS, s_sel, string_list_Display);
+  if (tmp_sel == s_sel|| tmp_sel == 0)
+    return;
+
+  switch (tmp_sel)
+  {
+  case 1:
+    EEPROM.write(EEPROM_DISPLAY180, 0);
+    break;
+  case 2:
+    EEPROM.write(EEPROM_DISPLAY180, 255);
+    break;
+  default:
+    break;
+  }
+  EEPROM.commit();
+  powerCycleRequired = true;
+  exitMenu = true;
 }
 
 void SmartHandController::menuContrast()
