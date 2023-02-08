@@ -250,7 +250,7 @@ Public Class Telescope
         Return
       End Try
       mobjectSerial.Speed = 57600
-      mupdateRate = 10
+      mupdateRate = -1
       Try
         mobjectSerial.Connected = True
       Catch ex As Exception
@@ -281,7 +281,7 @@ Public Class Telescope
 
   Private Sub ConnectIP(value As Boolean)
     If value Then
-      mupdateRate = 10
+      mupdateRate = -1
       If Not System.Net.IPAddress.TryParse(mIP, mobjectIP) Then
         MsgBox(mIP + " is Not AddressOf valid IP Address")
         Return
