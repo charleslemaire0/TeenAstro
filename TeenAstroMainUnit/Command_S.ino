@@ -225,7 +225,7 @@ void Command_SX()
     case 'r':
       // :SXRr,VVVVVVVVVV# Set Rate for RA 
       sideralMode = SIDM_TARGET;
-      RequestedTrackingRateHA = 1. - (double)strtol(&command[5], NULL, 10) / 10000.0;
+      RequestedTrackingRateHA = (double)(10000l - strtol(&command[5], NULL, 10)) / 10000.;
       computeTrackingRate(true);
       replyOk();
       break;

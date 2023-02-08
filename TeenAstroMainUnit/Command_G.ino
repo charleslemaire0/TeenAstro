@@ -427,7 +427,7 @@ void Command_GX()
       break;
     case 'r':
       // :GXRr# Requested RA traking rate in sideral
-      l1 = -(RequestedTrackingRateHA - 1.0) * 10000.0;
+      l1 = 10000l - (long)(RequestedTrackingRateHA * 10000.0);
       sprintf(reply, "%ld#", l1);
       break;
     case 'h':
