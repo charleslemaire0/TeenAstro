@@ -41,6 +41,7 @@ Imports System
 Imports System.Collections
 Imports System.Collections.Generic
 Imports System.Globalization
+Imports System.Reflection
 Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Text.RegularExpressions
@@ -124,8 +125,13 @@ Public Class Telescope
     mTL = New TraceLogger("", "TeenAstro")
     mTL.Enabled = mtraceState
     mTL.LogMessage("Telescope", "Starting initialisation")
-
     mutilities = New Util() ' Initialise util object
+
+    Dim assembly As System.Reflection.Assembly = System.Reflection.Assembly.GetExecutingAssembly()
+    Dim fvi As FileVersionInfo = FileVersionInfo.GetVersionInfo(assembly.Location)
+    Dim version As String = fvi.FileVersion
+    mutilities.SerialTraceFile = mTL.LogFilePath + "\TeenAstro_Serial_" + version + ".txt"
+    mutilities.SerialTrace = mtraceState
     mastroUtilities = New AstroUtils 'Initialise new astro utiliites object
 
     'TODO: Implement your additional construction here
@@ -250,7 +256,7 @@ Public Class Telescope
         Return
       End Try
       mobjectSerial.Speed = 57600
-      mupdateRate = 10
+      mupdateRate = -1
       Try
         mobjectSerial.Connected = True
       Catch ex As Exception
@@ -281,7 +287,7 @@ Public Class Telescope
 
   Private Sub ConnectIP(value As Boolean)
     If value Then
-      mupdateRate = 10
+      mupdateRate = -1
       If Not System.Net.IPAddress.TryParse(mIP, mobjectIP) Then
         MsgBox(mIP + " is Not AddressOf valid IP Address")
         Return
@@ -850,7 +856,6 @@ Public Class Telescope
     If Not Me.CommandBool(cmd) Then
       Throw New ASCOM.InvalidValueException("MoveAxis via :" & cmd & " has failed")
     End If
-
   End Sub
 
   Public Sub Park() Implements ITelescopeV3.Park
@@ -883,7 +888,7 @@ Public Class Telescope
 
       mTL.LogMessage("PulseGuide", dir & Duration & " done ")
     Else
-      Throw New ASCOM.InvalidValueException("Pulse guiding failed")
+      Throw New ASCOM.InvalidOperationException("Pulse guiding failed")
       mTL.LogMessage("PulseGuide", dir & Duration & " has failed ")
     End If
 
