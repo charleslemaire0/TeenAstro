@@ -34,6 +34,7 @@
 #define T_TUNKOWN "Unkown"
 #define T_ERROR "ERROR"
 #define T_STAR "Star"
+#define T_STARS "Stars"
 #define T_WARNING "WARNING"
 #define T_SLEWINGTO "Slewing to" 
 #define T_RECENTER "Recenter"

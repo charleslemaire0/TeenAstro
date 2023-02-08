@@ -35,6 +35,7 @@
 #define T_ERROR "FEHLER"
 #define T_WARNING "WARNUNG"
 #define T_STAR "Stern"
+#define T_STARS "Sterne"
 #define T_SLEWINGTO "Fahre zu"
 #define T_RECENTER "Neuzentrieren"
 #define T_SELECTASTAR "Stern wählen"
