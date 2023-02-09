@@ -45,6 +45,7 @@ Imports System.Reflection
 Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Text.RegularExpressions
+Imports System.Windows.Forms.AxHost
 
 <Guid("e3db1df1-f25d-42ce-ba54-5c035ac6f94c")>
 <ClassInterface(ClassInterfaceType.None)>
@@ -746,14 +747,32 @@ Public Class Telescope
 
   Public Property DoesRefraction() As Boolean Implements ITelescopeV3.DoesRefraction
     Get
-      updateTelStatus()
-      Return mTelStatus.Substring(10, 1) = "c"
+      Dim str1 As String = CommandString("GXrg")
+      Dim str2 As String = CommandString("GXrp")
+      Dim str3 As String = CommandString("GXrt")
+
+      If (str1.Length = 1 And str2.Length = 1 And str3.Length = 1) Then
+        Return str1.Substring(0, 1) = "y" And str2.Substring(0, 1) = "y" And str3.Substring(0, 1) = "y"
+      End If
+      Throw New ASCOM.InvalidOperationException("get refraction failed")
     End Get
     Set(value As Boolean)
+      Dim ok As Boolean = True
       If value Then
-        CommandBlind("Te")
+        ok = CommandBool("SXrg,y")
+        ok = ok And CommandBool("SXrp,y")
+        ok = ok And CommandBool("SXrt,y")
       Else
-        CommandBlind("Tn")
+        ok = CommandBool("SXrg,n")
+        ok = ok And CommandBool("SXrp,n")
+        ok = ok And CommandBool("SXrt,n")
+      End If
+      If Not ok Then
+        If (value) Then
+          Throw New ASCOM.DriverException("turn refraction on failed")
+        Else
+          Throw New ASCOM.DriverException("turn refraction off failed")
+        End If
       End If
     End Set
   End Property
@@ -819,8 +838,6 @@ Public Class Telescope
       SetGuideRate(value)
     End Set
   End Property
-
-
   Public Property GuideRateRightAscension() As Double Implements ITelescopeV3.GuideRateRightAscension
     Get
       Return GetGuideRate()

@@ -5,7 +5,7 @@
     <StartProgram>C:\Program Files %28x86%29\ASCOM\Conform\Conform.exe</StartProgram>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <StartProgram>C:\Program Files %28x86%29\ASCOM\Conform\Conform32.exe</StartProgram>
+    <StartProgram>C:\Program Files %28x86%29\ASCOM\Conform\Conform.exe</StartProgram>
     <StartAction>Program</StartAction>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
