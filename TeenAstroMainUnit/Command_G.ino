@@ -168,26 +168,12 @@ void Command_GX()
       //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
       //  :GR#   Get Telescope Encoder RA
       //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
-      static unsigned long _coord_t = 0;
-      static double _dec = 0;
-      static double _ra = 0;
-      if (millis() - _coord_t < 100)
-      {
-        f = _ra;
-        f1 = _dec;
-      }
-      else
-      {
 #if HASEncoder
-        getEquE(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+      getEquE(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
 #else
-        getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+      getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
 #endif
-        f /= 15.0;
-        _ra = f;
-        _dec = f1;
-        _coord_t = millis();
-      }
+      f /= 15.0;    
       command[3] == 'D' ? PrintDec(f1) : PrintRa(f);
     }
     break;
