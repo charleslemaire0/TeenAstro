@@ -1423,7 +1423,7 @@ Public Class Telescope
     End If
     MsgBox(
   "Connection has failed!" & vbCrLf &
-  "TeenAstro version is " & versionFW(1) & "." & versionFW(1) &
+  "TeenAstro version is " & versionFW(0) & "." & versionFW(1) & "." & versionFW(2) &
   ", TeenAstro driver version is " & fvi.FileVersion)
     Return False
   End Function
