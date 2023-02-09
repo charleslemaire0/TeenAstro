@@ -888,7 +888,7 @@ Public Class Telescope
 
       mTL.LogMessage("PulseGuide", dir & Duration & " done ")
     Else
-      Throw New ASCOM.InvalidOperationException("Pulse guiding failed")
+      Throw New ASCOM.DriverException("Pulse guiding failed")
       mTL.LogMessage("PulseGuide", dir & Duration & " has failed ")
     End If
 
@@ -932,7 +932,7 @@ Public Class Telescope
       mTL.LogMessage("SetPark", "done")
     Else
       mTL.LogMessage("SetPark", "failed")
-      Throw New ASCOM.InvalidValueException("Set Park failed")
+      Throw New ASCOM.DriverException("Set Park failed")
     End If
   End Sub
 
