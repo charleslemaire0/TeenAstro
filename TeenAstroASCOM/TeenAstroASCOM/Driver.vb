@@ -1198,7 +1198,8 @@ Public Class Telescope
       Throw New ASCOM.InvalidValueException
     End If
     Dim sexa As String = mutilities.DegreesToDMS(value, ":", ":", "") ' Long format, whole seconds
-    If Left$(sexa, 1) <> "-" Then
+
+    If Strings.Left(sexa, 1) <> "-" Then
       sexa = "+" & sexa         ' Both need leading '+'
     End If
     Return sexa
@@ -1209,7 +1210,7 @@ Public Class Telescope
       Throw New ASCOM.InvalidValueException
     End If
     Dim sexa As String = mutilities.DegreesToDMS(value, ":", ":", "") ' Long format, whole seconds
-    If Left$(sexa, 1) <> "-" Then
+    If Strings.Left(sexa, 1) <> "-" Then
       sexa = "+" & sexa         ' Both need leading '+'
     End If
     Return sexa
