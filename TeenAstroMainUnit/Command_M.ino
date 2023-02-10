@@ -62,7 +62,7 @@ void Command_M()
     //  Returns: Nothing
 
     if ((atoi2((char *)&command[3], &i)) &&
-      ((i > 0) && (i <= 16399)) && sideralTracking && !movingTo && lastError == ERRT_NONE &&
+      ((i > 0) && (i <= 16399)) && !movingTo && lastError == ERRT_NONE &&
         (GuidingState != GuidingRecenter || GuidingState != GuidingST4))
     {
       if ((command[2] == 'e') || (command[2] == 'w'))
