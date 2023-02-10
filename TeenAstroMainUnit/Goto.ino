@@ -32,8 +32,8 @@ bool syncAzAlt(double Azm, double Alt, PierSide Side)
   cli();
   staA1.pos = axis1;
   staA2.pos = axis2;
-  staA1.target = staA1.pos;
-  staA2.target = staA2.pos;
+  staA1.target = axis1;
+  staA2.target = axis2;
   sei();
   atHome = false;
   return true;
