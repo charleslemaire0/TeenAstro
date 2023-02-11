@@ -1,9 +1,11 @@
+#include <cmath>
+#include <cstdint>
 #include <TeenAstroMath.h>
-#include <math.h>
 #include <Arduino.h>
+
 double frac(double v)
 {
-  return v - ((long)v);
+  return v - floor(v);
 }
 
 double cot(double n)
