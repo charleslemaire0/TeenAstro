@@ -187,7 +187,7 @@ Public Class Telescope
     If mInterface = "COM" Then
       Return GetSerial(Command, Mode, buf)
     ElseIf mInterface = "IP" Then
-      Return getStreamIter(Command, Mode, buf)
+      Return getStream(Command, Mode, buf)
     End If
     Return False
   End Function
@@ -325,19 +325,6 @@ Public Class Telescope
 
     End Set
   End Property
-
-  Private Function getStreamIter(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
-    Dim k As Integer = 0
-    While k < 3
-      buf = ""
-      If getStream(Command, Mode, buf) Then
-        Return True
-      Else
-        k += 1
-      End If
-    End While
-    Return False
-  End Function
 
   Private Function getStream(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
 
