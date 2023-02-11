@@ -355,6 +355,10 @@ ErrorsGoTo Flip()
   sei();
   if (!predictTarget(Axis1, Axis2, preferedPierSide, axis1Flip, axis2Flip, selectedSide))
   {
+    return ErrorsGoTo::ERRGOTO_LIMITS;
+  }
+  if (selectedSide == GetPierSide())
+  {
     return ErrorsGoTo::ERRGOTO_SAMESIDE;
   }
   return goTo(axis1Flip, axis2Flip);
