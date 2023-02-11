@@ -837,20 +837,45 @@ Public Class Telescope
   Public Sub MoveAxis(Axis As TelescopeAxes, Rate As Double) Implements ITelescopeV3.MoveAxis
     mTL.LogMessage("MoveAxis", Axis.ToString() & ":" & Rate.ToString())
     Dim cmd As String
+    Dim waitStopM1 As Boolean = False
+    Dim waitStopM2 As Boolean = False
     If Me.AtPark Then
       Throw New ASCOM.ParkedException
     End If
     Rate = Rate / mSiderealRate
     If (Axis = TelescopeAxes.axisPrimary) Then
       cmd = "M1" & Rate.ToString()
+      If Rate = 0 Then
+        waitStopM1 = True
+      End If
     ElseIf (Axis = TelescopeAxes.axisSecondary) Then
       cmd = "M2" & Rate.ToString()
+      If Rate = 0 Then
+        waitStopM2 = True
+      End If
     Else
       Throw New ASCOM.InvalidValueException("MoveAxis", Axis.ToString(), "0 To 1")
     End If
     If Not Me.CommandBool(cmd) Then
       Throw New ASCOM.InvalidValueException("MoveAxis via :" & cmd & " has failed")
     End If
+    If waitStopM1 Then
+      Dim list As New List(Of String)({"G-<", "G->", "G-b"})
+      updateTelStatus()
+      While list.Contains(mTelStatus.Substring(5, 3))
+        Threading.Thread.Sleep(200)
+        updateTelStatus()
+      End While
+    End If
+    If waitStopM2 Then
+      Dim list As New List(Of String)({"G-^", "G-_", "G-b"})
+      updateTelStatus()
+      While list.Contains(mTelStatus.Remove(7, 1).Substring(5, 3))
+        Threading.Thread.Sleep(200)
+        updateTelStatus()
+      End While
+    End If
+
   End Sub
 
   Public Sub Park() Implements ITelescopeV3.Park
