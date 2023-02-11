@@ -228,7 +228,7 @@ void Command_M()
       strcpy(reply, "!#");
       break;
     }
-    alignment.toInstrumentalDeg(axis1angle, axis2angle, azm, alt);
+    alignment.toAxisDeg(axis1angle, axis2angle, azm, alt);
     bool ok = predictTarget(axis1angle, axis2angle, GetPierSide(), axis1step, axis2step,predictedSide);
     if (!ok)
     {

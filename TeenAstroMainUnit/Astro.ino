@@ -84,12 +84,12 @@ void RateFromMovingTarget(const double &HA_prev, const double &Dec_prev,
   double axis1_delta, axis2_delta = 0;
 
   EquToHor(HA_prev, Dec_prev, refr, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
-  alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
-  InstrtoStep(Axis1_tmp, Axis2_tmp, side, &axis1_before, &axis2_before);
+  alignment.toAxisDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
+  Angle2Step(Axis1_tmp, Axis2_tmp, side, &axis1_before, &axis2_before);
 
   EquToHor(HA_next, Dec_next, refr, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
-  alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
-  InstrtoStep(Axis1_tmp, Axis2_tmp, side, &axis1_after, &axis2_after);
+  alignment.toAxisDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
+  Angle2Step(Axis1_tmp, Axis2_tmp, side, &axis1_after, &axis2_after);
 
   axis1_delta = distStepAxis1(&axis1_before, &axis1_after) / geoA1.stepsPerDegree;
   while (axis1_delta < -180) axis1_delta += 360.;
