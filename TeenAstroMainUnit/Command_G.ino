@@ -905,23 +905,8 @@ void  Command_G()
     //  :GR#   Get Telescope RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
   {
-    static unsigned long _coord_t = 0;
-    static double _dec = 0;
-    static double _ra = 0;
-
-    if (millis() - _coord_t < 100)
-    {
-      f = _ra;
-      f1 = _dec;
-    }
-    else
-    {
-      getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
-      f /= 15.0;
-      _ra = f;
-      _dec = f1;
-      _coord_t = millis();
-    }
+    getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+    f /= 15.0;
     command[1] == 'D' ? PrintDec(f1) : PrintRa(f);
     break;
   }
