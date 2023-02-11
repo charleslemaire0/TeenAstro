@@ -1408,13 +1408,7 @@ Public Class Telescope
   End Function
 
   Private Sub updateTelStatus()
-    Dim s1 As Double = (Date.UtcNow - mTelStatusDate).TotalMilliseconds
-    If s1 > mupdateRate Or mTelStatus = "" Then
-      mTelStatus = Me.CommandString("GXI")
-      If (mTelStatus <> "") Then
-        mTelStatusDate = Date.UtcNow
-      End If
-    End If
+    mTelStatus = Me.CommandString("GXI")
   End Sub
 
   Private Function DegtoDDDMMSS(value As Double) As String
