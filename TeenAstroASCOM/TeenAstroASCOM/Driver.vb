@@ -497,13 +497,9 @@ Public Class Telescope
 
   Public ReadOnly Property Altitude() As Double Implements ITelescopeV3.Altitude
     Get
-      Dim s1 As Double = (Date.UtcNow - mAltdate).TotalMilliseconds
-      If s1 > mupdateRate Then
-        mAlt = mutilities.DMSToDegrees(Me.CommandString("GA"))
-        mAltdate = Date.UtcNow
-      End If
-      mTL.LogMessage("Altitude", mAlt.ToString("0.0000000"))
-      Return mAlt
+      Dim Alt As Double = mutilities.DMSToDegrees(Me.CommandString("GA"))
+      mTL.LogMessage("Altitude", Alt.ToString("0.0000000"))
+      Return Alt
     End Get
   End Property
 
@@ -555,13 +551,10 @@ Public Class Telescope
 
   Public ReadOnly Property Azimuth() As Double Implements ITelescopeV3.Azimuth
     Get
-      Dim s1 As Double = (Date.UtcNow - mAZdate).TotalMilliseconds
-      If s1 > mupdateRate Then
-        mAZ = mutilities.DMSToDegrees(Me.CommandString("GZ"))
-        mAZdate = Date.UtcNow
-      End If
-      mTL.LogMessage("Azimuth", mAZ.ToString("0.0000000"))
-      Return mAZ
+
+      Dim AZ As Double = mutilities.DMSToDegrees(Me.CommandString("GZ"))
+      mTL.LogMessage("Azimuth", AZ.ToString("0.0000000"))
+      Return AZ
     End Get
   End Property
 
@@ -696,13 +689,9 @@ Public Class Telescope
 
   Public ReadOnly Property Declination() As Double Implements ITelescopeV3.Declination
     Get
-      Dim s1 As Double = (Date.UtcNow - mDecdate).TotalMilliseconds
-      If s1 > mupdateRate Then
-        mDec = mutilities.DMSToDegrees(Me.CommandString("GD"))
-        mDecdate = Date.UtcNow
-      End If
-      mTL.LogMessage("Declination", "Get - " & mutilities.DegreesToDMS(mDec))
-      Return mDec
+      Dim Dec As Double = mutilities.DMSToDegrees(Me.CommandString("GD"))
+      mTL.LogMessage("Declination", "Get - " & mutilities.DegreesToDMS(Dec))
+      Return Dec
     End Get
   End Property
 
@@ -913,13 +902,9 @@ Public Class Telescope
 
   Public ReadOnly Property RightAscension() As Double Implements ITelescopeV3.RightAscension
     Get
-      Dim s1 As Double = (Date.UtcNow - mRadate).TotalMilliseconds()
-      If s1 > mupdateRate Then
-        mRa = mutilities.HMSToHours(Me.CommandString("GR"))
-        mRadate = Date.UtcNow
-      End If
-      mTL.LogMessage("RightAscension", "Get - " & mutilities.HoursToHMS(mRa))
-      Return mRa
+      Dim Ra As Double = mutilities.HMSToHours(Me.CommandString("GR"))
+      mTL.LogMessage("RightAscension", "Get - " & mutilities.HoursToHMS(Ra))
+      Return Ra
     End Get
   End Property
 
