@@ -653,6 +653,54 @@ void Command_GX()
     i = 17;
   }
   break;
+  case 'J':
+  {
+    //specific command for ASCOM
+    switch (command[3])
+    {
+    case 'P':
+      // :GXJP# get if pulse guiding
+    {
+      if (GuidingState == GuidingPulse || GuidingState == GuidingST4)
+      {
+        strcpy(reply, "1#");
+      }
+      else
+      {
+        strcpy(reply, "0#");
+      }
+    }
+    break;
+    case 'S':
+      // :GXJS# get if Slewing
+    {
+      if (GuidingState == GuidingRecenter || GuidingState == GuidingAtRate || movingTo)
+      {
+        strcpy(reply, "1#");
+      }
+      else
+      {
+        strcpy(reply, "0#");
+      }
+
+    }
+    break;
+    case 'T':
+      // :GXJT# get if tracking
+    {
+      if (sideralTracking)
+      {
+        strcpy(reply, "1#");
+      }
+      else
+      {
+        strcpy(reply, "0#");
+      }
+    }
+      break;
+    }
+  }
+    break;
   case 'M':
   {
     // :GXM..#   Get Motor Settings

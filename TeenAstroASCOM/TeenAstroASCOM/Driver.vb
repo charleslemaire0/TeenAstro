@@ -88,17 +88,9 @@ Public Class Telescope
   Private mconnectedState As Boolean = False ' Private variable to hold the connected state
   Private mbLongFormat As Boolean
 
-  Private mupdateRate As Double = -1
-  Private mRa As Double
-  Private mRadate As Date = Date.UtcNow
-  Private mDec As Double
-  Private mDecdate As Date = Date.UtcNow
-  Private mAlt As Double
-  Private mAltdate As Date = Date.UtcNow
-  Private mAZ As Double
-  Private mAZdate As Date = Date.UtcNow
   Private mTelStatus As String
-  Private mTelStatusDate As Date = Date.UtcNow
+
+
   Private mConnectionStatusDate As Date
 
   Private mtgtRa As Double = -999
@@ -257,7 +249,6 @@ Public Class Telescope
         Return
       End Try
       mobjectSerial.Speed = 57600
-      mupdateRate = -1
       Try
         mobjectSerial.Connected = True
       Catch ex As Exception
@@ -288,7 +279,6 @@ Public Class Telescope
 
   Private Sub ConnectIP(value As Boolean)
     If value Then
-      mupdateRate = -1
       If Not System.Net.IPAddress.TryParse(mIP, mobjectIP) Then
         MsgBox(mIP + " is Not AddressOf valid IP Address")
         Return
@@ -838,8 +828,7 @@ Public Class Telescope
 
   Public ReadOnly Property IsPulseGuiding() As Boolean Implements ITelescopeV3.IsPulseGuiding
     Get
-      updateTelStatus()
-      IsPulseGuiding = mTelStatus.Substring(6, 1) = "*"
+      IsPulseGuiding = Me.CommandBool("GXJP")
       mTL.LogMessage("IsPulseGuiding Get", IsPulseGuiding.ToString)
       Return IsPulseGuiding
     End Get
@@ -865,13 +854,13 @@ Public Class Telescope
   End Sub
 
   Public Sub Park() Implements ITelescopeV3.Park
-
-    If CommandBool("hP") Then
+    Dim cmd As String = "hP"
+    If CommandBool(cmd) Then
       mTL.LogMessage("Park", "done")
       Threading.Thread.Sleep(3000)
     Else
       mTL.LogMessage("Park", "failed")
-      Throw New ASCOM.InvalidValueException("The park has failed")
+      Throw New ASCOM.DriverException("Park has failed")
     End If
   End Sub
 
@@ -1123,15 +1112,7 @@ Public Class Telescope
 
   Public ReadOnly Property Slewing() As Boolean Implements ITelescopeV3.Slewing
     Get
-      updateTelStatus()
-      If mTelStatus.Substring(0, 1) = "2" Or
-        mTelStatus.Substring(0, 1) = "3" Or
-        mTelStatus.Substring(6, 1) = "+" Or
-        mTelStatus.Substring(6, 1) = "-" Then
-        Slewing = True
-      Else
-        Slewing = False
-      End If
+      Slewing = Me.CommandBool("GXJS")
       mTL.LogMessage("slewing", Slewing)
       Return Slewing
     End Get
@@ -1185,8 +1166,9 @@ Public Class Telescope
     Set(value As Double)
       mTL.LogMessage("TargetDeclination Set", value.ToString)
       Dim sexa As String = DecToString(value)
-      If Not Me.CommandBool("Sd" & sexa) Then
-        Throw New ASCOM.InvalidOperationException
+      Dim cmd As String = "Sd" & sexa
+      If Not Me.CommandBool(cmd) Then
+        Throw New ASCOM.InvalidOperationException("Set Target Declination " & cmd & " has failed")
       End If
 
       mtgtDec = value
@@ -1237,8 +1219,9 @@ Public Class Telescope
     Set(value As Double)
       mTL.LogMessage("TargetRightAscension Set", value.ToString)
       Dim sexa As String = RaToString(value)   ' Long format, whole seconds
-      If Not Me.CommandBool("Sr" & sexa) Then
-        Throw New ASCOM.InvalidOperationException
+      Dim cmd As String = "Sr" & sexa
+      If Not Me.CommandBool(cmd) Then
+        Throw New ASCOM.InvalidOperationException("Set Target RightAscension " & cmd & " has failed")
       End If
       mtgtRa = value
     End Set
@@ -1255,13 +1238,7 @@ Public Class Telescope
 
   Public Property Tracking() As Boolean Implements ITelescopeV3.Tracking
     Get
-      Dim trk As Boolean = True
-      updateTelStatus()
-      If (mTelStatus.Substring(0, 1) = "1" Or mTelStatus.Substring(0, 1) = "3") Then
-        trk = True
-      ElseIf (mTelStatus.Substring(0, 1) = "0" Or mTelStatus.Substring(0, 1) = "2") Then
-        trk = False
-      End If
+      Dim trk As Boolean = CommandBool("GXJT")
       mTL.LogMessage("Tracking", "Get - " & trk.ToString())
       Return trk
     End Get
@@ -1361,9 +1338,9 @@ Public Class Telescope
       state = Me.CommandSingleChar("MS", False)
     End If
     If state.Length = 0 Then
-      Throw New ASCOM.InvalidOperationException("Telescope is not replying")
+      Throw New ASCOM.DriverException("Telescope is not replying")
     ElseIf Not state.Length = 1 Then
-      Throw New ASCOM.InvalidOperationException("Telescope reply is corrupt")
+      Throw New ASCOM.DriverException("Telescope reply is corrupt")
     End If
     If state = "0" Then
       mTL.LogMessage("Slew to target", "Started")
