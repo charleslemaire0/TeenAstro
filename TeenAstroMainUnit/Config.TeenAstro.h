@@ -16,9 +16,9 @@
 
 
 #if defined(ARDUINO_TEENSY40) || defined(ARDUINO_TEENSY_MICROMOD)
-#define StepsMinInterval          4 // this is the minimum number of micro-seconds between micro-steps                        
+#define StepsMinInterval          3 // this is the minimum number of micro-seconds between micro-steps                        
 #else
-#define StepsMinInterval         16 // this is the minimum number of micro-seconds between micro-steps 
+#define StepsMinInterval         12 // this is the minimum number of micro-seconds between micro-steps 
 #endif
 #define StepsMaxInterval      100000 // this is the maximum number of micro-seconds between micro-steps
 
