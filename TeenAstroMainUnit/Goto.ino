@@ -354,6 +354,7 @@ ErrorsGoTo Flip()
   double Axis1 = staA1.pos / (double)geoA1.stepsPerDegree;
   double Axis2 = staA2.pos / (double)geoA2.stepsPerDegree;
   sei();
+  InsrtAngle2Angle(&Axis1, &Axis2, &selectedSide);
   if (!predictTarget(Axis1, Axis2, preferedPierSide, axis1Flip, axis2Flip, selectedSide))
   {
     return ErrorsGoTo::ERRGOTO_LIMITS;
