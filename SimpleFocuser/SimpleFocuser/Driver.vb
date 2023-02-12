@@ -618,7 +618,7 @@ Public Class Focuser
 
   Private Function GetSerial(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
     mobjectSerial.ClearBuffers()
-    mobjectSerial.ReceiveTimeout = 100
+    mobjectSerial.ReceiveTimeout = 1
     mobjectSerial.Transmit(Command)
     Select Case Mode
       Case 0
