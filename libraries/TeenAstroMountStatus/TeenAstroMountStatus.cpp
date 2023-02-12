@@ -417,12 +417,6 @@ bool TeenAstroMountStatus::isGNSSLocationSync()
 }
 bool TeenAstroMountStatus::hasFocuser()
 {
-  static bool firstime = m_hasFocuser;
-  if (firstime)
-  {
-    updateMount();
-    m_hasFocuser = bitRead(m_TempMount[14] - 'A', 4);
-  }
   return m_hasFocuser;
 }
 bool TeenAstroMountStatus::hasEncoder()
