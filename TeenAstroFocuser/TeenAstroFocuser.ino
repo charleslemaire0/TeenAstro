@@ -28,7 +28,7 @@ void setup()
   digitalWrite(LEDPin, HIGH);
   loadConfig();
   tempSensors.begin();
-  tempSensors.setResolution(12);
+  tempSensors.setResolution(11);
   tempSensors.requestTemperaturesByIndex(0);
   lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999), -99.9999);
   tempSensors.setWaitForConversion(false);
@@ -71,6 +71,5 @@ void updateTemperature()
   {
     tempSensors.requestTemperaturesByIndex(0);
     lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999F), -99.9999F);
-    lastTempTick = millis();
   }
 }
