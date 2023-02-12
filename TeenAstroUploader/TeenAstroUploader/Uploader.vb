@@ -60,7 +60,7 @@ Public Class Uploader
     ComboBoxPCBSHC.SelectedIndex = 0
   End Sub
 
-  Private Sub ButtonUploadF_Click(sender As Object, e As EventArgs) Handles ButtonUploadT.Click
+  Private Sub ButtonUploadF_Click(sender As Object, e As EventArgs) Handles ButtonUploadF.Click
     Try
       Dim pHelp As New ProcessStartInfo
       Dim exepath As String = """" & System.IO.Path.GetDirectoryName(Application.ExecutablePath) & """"
@@ -90,7 +90,7 @@ Public Class Uploader
       End If
       Dim cmd As String = ""
       Select Case pcb
-        Case "2.2 TMC260", "2.3 TMC260", "2.4 TMC2130", "2.4 TMC5160"
+        Case "2.2 TMC2130", "2.3 TMC2130", "2.4 TMC2130", "2.4 TMC5160"
           cmd = "-file=" & Hexfile & " -path=" & HexPath & " -tools=" & exepath & " -board=TEENSY31"
         Case "2.5 TMC2130", "2.5 TMC5160"
           cmd = "-file=" & Hexfile & " -path=" & HexPath & " -tools=" & exepath & " -board=TEENSY40"
