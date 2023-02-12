@@ -61,6 +61,8 @@ void setup()
     digitalWrite(LEDPin, LOW);
     delay(50);
   }
+  digitalWrite(LEDPin, HIGH);
+
 
   // Check that EEPROM is ok
   AutoinitEEPROM();
@@ -119,23 +121,6 @@ void setup()
   updateSideral();
   beginTimers();
 
-  // get ready for serial communications
-  Serial.begin(BAUD);
-  S_USB.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
-  Serial1.begin(57600);
-  S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
-
-
-  Focus_Serial.setRX(FocuserRX);
-  Focus_Serial.setTX(FocuserTX);
-  Focus_Serial.begin(56000);
-  Focus_Serial.setTimeout(10);
-
-  //GNSS connection
-#if VERSION != 220
-  GNSS_Serial.begin(9600);
-#endif
-
   rtk.resetLongitude(*localSite.longitude());
   // get the Park status
   if (!iniAtPark())
@@ -157,10 +142,22 @@ void setup()
 
   // prep timers
   rtk.updateTimers();
-  Focus_Serial.write(":F?#");
-  digitalWrite(LEDPin, HIGH);
-  delay(1000);
+
+  //GNSS connection
+#if VERSION != 220
+  GNSS_Serial.begin(9600);
+#endif
   hasGNSS = GNSS_Serial.available() > 0;
+
+  //Focuser connection
+  Focus_Serial.setRX(FocuserRX);
+  Focus_Serial.setTX(FocuserTX);
+  Focus_Serial.begin(56000);
+  Focus_Serial.setTimeout(10);
+  delay(1000);
+  Focus_Serial.write(":F?#");
+  Focus_Serial.flush();
+  delay(250);
   char ret;
   while (Focus_Serial.available() > 0)
   {
@@ -170,6 +167,13 @@ void setup()
       hasFocuser = true;
     }
   }
+
+  // get ready for serial communications
+  Serial.begin(BAUD);
+  S_USB.attach_Stream((Stream*)&Serial, COMMAND_SERIAL);
+  Serial1.begin(57600);
+  S_SHC.attach_Stream((Stream*)&Serial1, COMMAND_SERIAL1);
+
   digitalWrite(LEDPin, LOW);
 }
 
