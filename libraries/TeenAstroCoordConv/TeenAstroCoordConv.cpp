@@ -165,15 +165,15 @@ void CoordConv::addReferenceDeg(double angle1, double angle2, double axis1, doub
 }
 
 
-// Convert reference angle1/angle2 coordinates to instrumental axis1/axis2 coordinates (all values in degrees) 
-void CoordConv::toInstrumentalDeg(double &axis1, double &axis2,  double angle1,  double angle2) const {
+// Convert reference angle1/angle2 coordinates to axis axis1/axis2 coordinates (all values in degrees) 
+void CoordConv::toAxisDeg(double &axis1, double &axis2,  double angle1,  double angle2) const {
 	double axis1Rad=0, axis2Rad=0;
-	toInstrumental(axis1Rad, axis2Rad, toRad(angle1), toRad(angle2));
+	toAxis(axis1Rad, axis2Rad, toRad(angle1), toRad(angle2));
 	axis1=toDeg(axis1Rad);
 	axis2=toDeg(axis2Rad);
 }
 
-// Convert instrumental axis1/axis2 coordinates to reference angle1/angle2 coordinates (all values in degrees) 
+// Convert axis axis1/axis2 coordinates to reference angle1/angle2 coordinates (all values in degrees) 
 void CoordConv::toReferenceDeg(double &angle1,  double &angle2, double axis1, double axis2) const {
 	double angle1Rad=0, angle2Rad=0;
 	toReference(angle1Rad, angle2Rad, toRad(axis1), toRad(axis2));
@@ -252,8 +252,8 @@ void CoordConv::buildTransformations() {
 	printV("test", test);
 }
 
-// Convert reference angle1/angle2 coordinates to instrumental axis1/axis2 coordinates (all values in radians) 
-void CoordConv::toInstrumental(double &axis1, double &axis2,  double angle1,  double angle2) const {
+// Convert reference angle1/angle2 coordinates to axis axis1/axis2 coordinates (all values in radians) 
+void CoordConv::toAxis(double &axis1, double &axis2,  double angle1,  double angle2) const {
 	#ifdef DEBUG_COUT
 	cout << "angle1 " << angle1 << "r angle2 " << angle2 << "r" << endl;
 	#endif
@@ -270,7 +270,7 @@ void CoordConv::toInstrumental(double &axis1, double &axis2,  double angle1,  do
 	#endif
 }
 
-// Convert instrumental axis1/axis2 coordinates to reference angle1/angle2 coordinates (all values in radians)
+// Convert axis axis1/axis2 coordinates to reference angle1/angle2 coordinates (all values in radians)
 void CoordConv::toReference(double &angle1,  double &angle2, double axis1, double axis2) const {
 	double dcAA[3], dcHD[3];
 	toDirCos(dcAA, axis2, axis1);

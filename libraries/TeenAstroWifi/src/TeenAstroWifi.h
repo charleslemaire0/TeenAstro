@@ -40,7 +40,7 @@
 #define ServerFirmwareDate          __DATE__
 #define ServerFirmwareTime          __TIME__
 #define ServerFirmwareVersionMajor  "1"
-#define ServerFirmwareVersionMinor  "3"
+#define ServerFirmwareVersionMinor  "4"
 #define ServerFirmwareVersionPatch  "0"
 
 
@@ -77,6 +77,7 @@
 #define EEPROM_T2 22
 #define EEPROM_BSPEED 23
 #define EEPROM_DISPLAYSUBMODEL 24
+#define EEPROM_DISPLAY180 25
 #define EPPROM_password 50
 #define EEPROM_start_wifi_sta 100
 #ifdef ARDUINO_D1_MINI32

@@ -1,11 +1,11 @@
-void StepToInstr(long Axis1, long Axis2, double* AngleAxis1, double* AngleAxis2, PierSide* Side)
+void StepToAngle(long Axis1, long Axis2, double* AngleAxis1, double* AngleAxis2, PierSide* Side)
 {
   *AngleAxis1 = ((double)Axis1) / geoA1.stepsPerDegree;
   *AngleAxis2 = ((double)Axis2) / geoA2.stepsPerDegree;
   InsrtAngle2Angle(AngleAxis1, AngleAxis2, Side);
 }
 
-void InstrtoStep(double AngleAxis1, double AngleAxis2, PierSide Side, long* Axis1, long* Axis2)
+void Angle2Step(double AngleAxis1, double AngleAxis2, PierSide Side, long* Axis1, long* Axis2)
 {
   Angle2InsrtAngle(Side, &AngleAxis1, &AngleAxis2, localSite.latitude());
   *Axis1 = (long)(AngleAxis1 * geoA1.stepsPerDegree);
@@ -27,13 +27,13 @@ bool syncAzAlt(double Azm, double Alt, PierSide Side)
 {
   long axis1, axis2 = 0;
   double Axis1, Axis2 = 0;
-  alignment.toInstrumentalDeg(Axis1, Axis2, Azm, Alt);
-  InstrtoStep(Axis1, Axis2, Side, &axis1, &axis2);
+  alignment.toAxisDeg(Axis1, Axis2, Azm, Alt);
+  Angle2Step(Axis1, Axis2, Side, &axis1, &axis2);
   cli();
   staA1.pos = axis1;
   staA2.pos = axis2;
-  staA1.target = staA1.pos;
-  staA2.target = staA2.pos;
+  staA1.target = axis1;
+  staA2.target = axis2;
   sei();
   atHome = false;
   return true;
@@ -259,7 +259,7 @@ byte goToHor(const double* Azm,const double* Alt, PierSide preferedPierSide)
   if (*Alt < minAlt) return ERRGOTO_BELOWHORIZON;   // fail, below min altitude
   if (*Alt > maxAlt) return ERRGOTO_ABOVEOVERHEAD;   // fail, above max altitude
 
-  alignment.toInstrumentalDeg(Axis1_target, Axis2_target, *Azm, *Alt);
+  alignment.toAxisDeg(Axis1_target, Axis2_target, *Azm, *Alt);
   if (!predictTarget(Axis1_target, Axis2_target, preferedPierSide,
     axis1_target, axis2_target, selectedSide))
   {
@@ -271,6 +271,7 @@ byte goToHor(const double* Azm,const double* Alt, PierSide preferedPierSide)
 
 // Predict Target
 // return 0 if no side can reach the given position
+// Axis1_in and Axis2_in are angle coordinates not instr angle coordinates
 bool predictTarget(const double& Axis1_in, const double& Axis2_in, const PierSide& inputSide,
   long& Axis1_out, long& Axis2_out, PierSide& outputSide)
 {
@@ -353,7 +354,12 @@ ErrorsGoTo Flip()
   double Axis1 = staA1.pos / (double)geoA1.stepsPerDegree;
   double Axis2 = staA2.pos / (double)geoA2.stepsPerDegree;
   sei();
+  InsrtAngle2Angle(&Axis1, &Axis2, &selectedSide);
   if (!predictTarget(Axis1, Axis2, preferedPierSide, axis1Flip, axis2Flip, selectedSide))
+  {
+    return ErrorsGoTo::ERRGOTO_LIMITS;
+  }
+  if (selectedSide == GetPierSide())
   {
     return ErrorsGoTo::ERRGOTO_SAMESIDE;
   }

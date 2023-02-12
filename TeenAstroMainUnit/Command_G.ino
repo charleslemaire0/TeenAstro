@@ -168,26 +168,12 @@ void Command_GX()
       //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
       //  :GR#   Get Telescope Encoder RA
       //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
-      static unsigned long _coord_t = 0;
-      static double _dec = 0;
-      static double _ra = 0;
-      if (millis() - _coord_t < 100)
-      {
-        f = _ra;
-        f1 = _dec;
-      }
-      else
-      {
 #if HASEncoder
-        getEquE(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+      getEquE(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
 #else
-        getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+      getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
 #endif
-        f /= 15.0;
-        _ra = f;
-        _dec = f1;
-        _coord_t = millis();
-      }
+      f /= 15.0;    
       command[3] == 'D' ? PrintDec(f1) : PrintRa(f);
     }
     break;
@@ -427,7 +413,7 @@ void Command_GX()
       break;
     case 'r':
       // :GXRr# Requested RA traking rate in sideral
-      l1 = -(RequestedTrackingRateHA - 1.0) * 10000.0;
+      l1 = 10000l - (long)(RequestedTrackingRateHA * 10000.0);
       sprintf(reply, "%ld#", l1);
       break;
     case 'h':
@@ -667,6 +653,54 @@ void Command_GX()
     i = 17;
   }
   break;
+  case 'J':
+  {
+    //specific command for ASCOM
+    switch (command[3])
+    {
+    case 'P':
+      // :GXJP# get if pulse guiding
+    {
+      if (GuidingState == GuidingPulse || GuidingState == GuidingST4)
+      {
+        strcpy(reply, "1#");
+      }
+      else
+      {
+        strcpy(reply, "0#");
+      }
+    }
+    break;
+    case 'S':
+      // :GXJS# get if Slewing
+    {
+      if (GuidingState == GuidingRecenter || GuidingState == GuidingAtRate || movingTo)
+      {
+        strcpy(reply, "1#");
+      }
+      else
+      {
+        strcpy(reply, "0#");
+      }
+
+    }
+    break;
+    case 'T':
+      // :GXJT# get if tracking
+    {
+      if (sideralTracking)
+      {
+        strcpy(reply, "1#");
+      }
+      else
+      {
+        strcpy(reply, "0#");
+      }
+    }
+      break;
+    }
+  }
+    break;
   case 'M':
   {
     // :GXM..#   Get Motor Settings
@@ -919,23 +953,8 @@ void  Command_G()
     //  :GR#   Get Telescope RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
   {
-    static unsigned long _coord_t = 0;
-    static double _dec = 0;
-    static double _ra = 0;
-
-    if (millis() - _coord_t < 100)
-    {
-      f = _ra;
-      f1 = _dec;
-    }
-    else
-    {
-      getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
-      f /= 15.0;
-      _ra = f;
-      _dec = f1;
-      _coord_t = millis();
-    }
+    getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+    f /= 15.0;
     command[1] == 'D' ? PrintDec(f1) : PrintRa(f);
     break;
   }

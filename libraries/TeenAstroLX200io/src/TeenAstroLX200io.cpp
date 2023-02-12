@@ -225,15 +225,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
         break;
       }
     }
-    if (recvBuffer[0] == 0)
-      return false;
-
-    if (CMDR_SHORT_BOOL)
-    {
-      return recvBuffer[0] == '1';
-    }
-
-    return true;
+    return recvBuffer[0] != 0;
     break;
   }
   case CMDR_LONG:

@@ -270,7 +270,7 @@ public:
         digitalWrite(EnPin, LOW);
       break;
     case TMC2660:
-      m_tmc2660 = new TMC2660Stepper(CSPin);
+      m_tmc2660 = new TMC2660Stepper(CSPin, 0.075);
       if (EnPin > 0)
       {
         pinMode(EnPin, OUTPUT);

@@ -41,7 +41,7 @@ return:
 
 static void adaptiveInc(const float incr_ref,const float fact,const float threshold, float& incr)
 {
-  if (incr > 0 != incr_ref > 0)
+  if (incr > 0 != incr_ref > 0 || incr == 0)
   {
     incr = incr_ref;
   }

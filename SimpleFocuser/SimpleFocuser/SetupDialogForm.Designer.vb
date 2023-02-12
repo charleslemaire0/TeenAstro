@@ -174,6 +174,7 @@ Partial Class SetupDialogForm
         'RadioButtonIP
         '
         Me.RadioButtonIP.AutoSize = True
+        Me.RadioButtonIP.Enabled = False
         Me.RadioButtonIP.Location = New System.Drawing.Point(9, 49)
         Me.RadioButtonIP.Name = "RadioButtonIP"
         Me.RadioButtonIP.Size = New System.Drawing.Size(70, 17)

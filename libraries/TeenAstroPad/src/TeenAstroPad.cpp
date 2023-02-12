@@ -236,13 +236,28 @@ void Pad::attachEvent()
   m_buttons[B_f]->attachDuringLongPress(longPress_f);
 
 }
-void Pad::setup(const int pin[7], const bool active[7], const int adress)
+void Pad::setup(const int pin[7], const bool active[7], const int adress, const bool rotated)
 {
   m_adress = adress;
-  for (int k = 0; k < 7; k++)
+  if (!rotated)
   {
-    m_buttons[k] = new OneButton(pin[k], active[k], active[k]);
+    for (int k = 0; k < 7; k++)
+    {
+      m_buttons[k] = new OneButton(pin[k], active[k], active[k]);
+    }
   }
+  else
+  {
+    m_buttons[0] = new OneButton(pin[0], active[0], active[0]);
+    m_buttons[1] = new OneButton(pin[2], active[2], active[2]);
+    m_buttons[2] = new OneButton(pin[1], active[1], active[1]);
+    m_buttons[3] = new OneButton(pin[4], active[4], active[4]);
+    m_buttons[4] = new OneButton(pin[3], active[3], active[3]);
+    m_buttons[5] = new OneButton(pin[6], active[6], active[6]);
+    m_buttons[6] = new OneButton(pin[5], active[5], active[5]);
+  }
+
+
   attachEvent();
 
   readButtonSpeed();

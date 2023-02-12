@@ -29,7 +29,7 @@
  *
  * Description:
  *
- * Conversion from instrumental to sky coordinates
+ * Conversion from axis to sky coordinates
  *
  */
 #pragma once
@@ -95,7 +95,7 @@ public:
 
 
 // Converts between reference coordinates (angle1/angle2) 
-// and instrumental coordinates (axis1 and axis2)
+// and axis coordinates (axis1 and axis2)
 class CoordConv : public LA3 {
 public:
 	enum Err { EQ_AZ, EQ_ALT, POL_W };
@@ -127,10 +127,10 @@ public:
 	// Calculate third reference star from two provided ones. Returns false if more or less than two provided 
 	bool calculateThirdReference();
 
-	// Convert reference angle1/angle2 coordinates to instrumental axis1/axis2 coordinates (all values in degrees) 
-	void toInstrumentalDeg(double &axis1, double &axis2,  double angle1, double angle2) const;
+	// Convert reference angle1/angle2 coordinates to axis axis1/axis2 coordinates (all values in degrees) 
+	void toAxisDeg(double &axis1, double &axis2,  double angle1, double angle2) const;
 
-	// Convert instrumental axis1/axis2 coordinates to  reference angle1/angle2 coordinates (all values in degrees) 
+	// Convert axis axis1/axis2 coordinates to  reference angle1/angle2 coordinates (all values in degrees) 
 	void toReferenceDeg(double &angle1,  double &angle2, double axis1, double axis2) const;
 
 	double polErrorDeg(double lat, Err sel);
@@ -143,13 +143,13 @@ protected:
 	// Build coordinate system transformation matrix
 	void buildTransformations();
 
-	// Convert reference angle1/angle2 coordinates to instrumental axis1/axis2 coordinates (all values in radians) 
-	void toInstrumental(double &axis1, double &alt,  double angle1,  double angle2) const;
+	// Convert reference angle1/angle2 coordinates to axis axis1/axis2 coordinates (all values in radians) 
+	void toAxis(double &axis1, double &alt,  double angle1,  double angle2) const;
 
-	// Convert instrumental axis1/axis2 coordinates to  equatorial hour angle/angle2 coordinates (all values in radians) 
+	// Convert axis axis1/axis2 coordinates to  equatorial hour angle/angle2 coordinates (all values in radians) 
 	void toReference(double &angle1,  double &angle2, double axis1, double axis2) const;
 
-	double T   [3][3];		// Transformation matrix from equatorial angle1/angle2 cosines to instrumental axis2/axis1 cosines 
+	double T   [3][3];		// Transformation matrix from equatorial angle1/angle2 cosines to axis axis2/axis1 cosines 
   double Tinv[3][3];		// Inverse of the above 
 
   double dcAARef[3][3];	// axis1/axis2 direction cosine vectors for the three reference stars, indexed by reference first

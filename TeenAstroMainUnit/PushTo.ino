@@ -17,7 +17,7 @@ byte PushToHor(const double* Azm, const double* Alt, PierSide preferedPierSide, 
   if (*Alt < minAlt) return ERRGOTO_BELOWHORIZON;   // fail, below min altitude
   if (*Alt > maxAlt) return ERRGOTO_ABOVEOVERHEAD;   // fail, above max altitude
 
-  alignment.toInstrumentalDeg(Axis1_target, Axis2_target, *Azm, *Alt);
+  alignment.toAxisDeg(Axis1_target, Axis2_target, *Azm, *Alt);
   if (!predictTarget(Axis1_target, Axis2_target, preferedPierSide,
     axis1_target, axis2_target, selectedSide))
   {
