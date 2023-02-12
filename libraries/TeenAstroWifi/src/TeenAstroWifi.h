@@ -40,7 +40,7 @@
 #define ServerFirmwareDate          __DATE__
 #define ServerFirmwareTime          __TIME__
 #define ServerFirmwareVersionMajor  "1"
-#define ServerFirmwareVersionMinor  "3"
+#define ServerFirmwareVersionMinor  "4"
 #define ServerFirmwareVersionPatch  "0"
 
 
