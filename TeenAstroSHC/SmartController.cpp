@@ -88,15 +88,15 @@ void SmartHandController::setup(
   delay(1000);
 #endif
   display->setFont(u8g2_font_helvR12_te);
-  DisplayMessage("SHC " T_VERSION, _version, 1500);
   int k = 0;
-  
   while (!ta_MountStatus.hasInfoV() && k < 10)
   {
     ta_MountStatus.updateV();
-    delay(200);
+    ta_MountStatus.removeLastConnectionFailure();
+    delay(500);
     k++;
   }
+  DisplayMessage("SHC " T_VERSION, _version, 1500);
   if (k == 10)
   {
     return;
@@ -104,6 +104,16 @@ void SmartHandController::setup(
   DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
   if (ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor))
   {
+    ta_MountStatus.updateFocuser();
+    if (ta_MountStatus.hasFocuser())
+    {
+      char out[50];
+      if (DisplayMessageLX200(GetLX200(":FV#", out, sizeof(out))))
+      {
+        out[31] = 0;
+        DisplayMessage("Focuser " T_VERSION, &out[26], 1500);
+      }
+    }
     ta_MountStatus.updateMount();
     if (!ta_MountStatus.hasGNSSBoard())
     {
@@ -115,6 +125,10 @@ void SmartHandController::setup(
       char date_time2[40];
       sprintf(date_time2, "%s : %s", T_DATE, ta_MountStatus.getUTCdate());
       DisplayMessage(date_time, date_time2, 2000);
+    }
+    else
+    {
+      DisplayMessage("GNSS", T_CONNECTED, 1500);
     }
   }
 }
