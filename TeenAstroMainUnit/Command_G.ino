@@ -40,7 +40,7 @@ void PrintRa(double& val)
 void Command_GX()
 {
   int i;
-  double f,f1;
+  double f, f1;
   long   l1;
   //  :GXnn#   Get TeenAstro Specific value
   switch (command[2])
@@ -140,7 +140,7 @@ void Command_GX()
     case '2':
       // :GXE1# get degree encoder 1
     {
-      command[3] == '1' ? encoderA1.r_deg(f1) : encoderA2.r_deg(f1);
+      f1 = command[3] == '1' ? encoderA1.r_deg() : encoderA2.r_deg();
       if (!doubleToDms(reply, &f1, true, true, highPrecision))
         replyFailed();
       else
@@ -158,9 +158,9 @@ void Command_GX()
 #else
       getHorApp(&f, &f1);
 #endif // HASEncoder
-
       command[3] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
     }
+    break;
     case 'D':
     case 'R':
     {
@@ -168,54 +168,32 @@ void Command_GX()
       //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
       //  :GR#   Get Telescope Encoder RA
       //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
-      static unsigned long _coord_t = 0;
-      static double _dec = 0;
-      static double _ra = 0;
-      if (millis() - _coord_t < 100)
-      {
-        f = _ra;
-        f1 = _dec;
-      }
-      else
-      {
 #if HASEncoder
-        getEquE(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+      getEquE(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
 #else
-        getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+      getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
 #endif
-        f /= 15.0;
-        _ra = f;
-        _dec = f1;
-        _coord_t = millis();
-      }
-      command[1] == 'D' ? PrintDec(f1) : PrintRa(f);
+      f /= 15.0;    
+      command[3] == 'D' ? PrintDec(f1) : PrintRa(f);
     }
     break;
-    case 'G':
+    case 'O':
+      // :GXEO#  get encoder Sync Option
     {
-      // :GXEG.#   Get Encoder Gear
+      sprintf(reply, "%u#", EncodeSyncMode);
+    }
+    break;
+
+    case 'P':
+    {
+      // :GXEP.#   Get Encoder pulse per 100 deg
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", encoderA2.gear);
+        sprintf(reply, "%lu#", (unsigned long)(100.0 * encoderA2.pulsePerDegree));
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", encoderA1.gear);
-      }
-      else
-        replyFailed();
-    }
-    break;
-    case 'S':
-    {
-      // :GXES.#   Get Encoder pulse per Rotation
-      if (command[4] == 'D')
-      {
-        sprintf(reply, "%u#", encoderA2.pulseRot);
-      }
-      else if (command[4] == 'R')
-      {
-        sprintf(reply, "%u#", encoderA1.pulseRot);
+        sprintf(reply, "%lu#", (unsigned long)(100.0 * encoderA1.pulsePerDegree));
       }
       else
         replyFailed();
@@ -224,14 +202,14 @@ void Command_GX()
 
     case 'r':
     {
-      // :GXMr.#   Get Encoder reverse Rotation on/off
+      // :GXEr.#   Get Encoder reverse Rotation on/off
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", (unsigned  int)motorA2.reverse);
+        sprintf(reply, "%u#", (unsigned  int)encoderA2.reverse);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", (unsigned  int)motorA1.reverse);
+        sprintf(reply, "%u#", (unsigned  int)encoderA1.reverse);
       }
       else
         replyFailed();
@@ -435,7 +413,7 @@ void Command_GX()
       break;
     case 'r':
       // :GXRr# Requested RA traking rate in sideral
-      l1 = -(RequestedTrackingRateHA - 1.0) * 10000.0;
+      l1 = 10000l - (long)(RequestedTrackingRateHA * 10000.0);
       sprintf(reply, "%ld#", l1);
       break;
     case 'h':
@@ -594,13 +572,13 @@ void Command_GX()
     {
       reply[5] = 'G';
     }
-    if (GuidingState == GuidingPulse || GuidingState == GuidingST4 ) reply[6] = '*';
+    if (GuidingState == GuidingPulse || GuidingState == GuidingST4) reply[6] = '*';
     else if (GuidingState == GuidingRecenter) reply[6] = '+';
     else if (GuidingState == GuidingAtRate) reply[6] = '-';
-    if ( guideA1.isMFW()) reply[7] = '>';
-    else if ( guideA1.isMBW()) reply[7] = '<';
+    if (guideA1.isMFW()) reply[7] = '>';
+    else if (guideA1.isMBW()) reply[7] = '<';
     else if (guideA1.isBraking()) reply[7] = 'b';
-    
+
     if (currentSide == PIER_WEST)
     {
       if (guideA2.isMBW()) reply[8] = '^';
@@ -617,7 +595,7 @@ void Command_GX()
     if (staA1.fault || staA2.fault) reply[9] = 'f';
     reply[10] = '0';
     if (isAltAZ())
-      reply[10] +=  doesRefraction.forTracking ? RC_FULL_BOTH : RC_ALIGN_BOTH;
+      reply[10] += doesRefraction.forTracking ? RC_FULL_BOTH : RC_ALIGN_BOTH;
     else if (tc == TC_NONE || (!doesRefraction.forTracking && !TrackingCompForAlignment))
     {
       reply[10] += RC_NONE;
@@ -661,16 +639,68 @@ void Command_GX()
       bitWrite(val, 2, isTimeSyncWithGNSS());
       bitWrite(val, 3, isLocationSyncWithGNSS());
     }
-
-    //bitWrite(val, 7, DecayModeTrack);
-
     reply[14] = 'A' + val;
     reply[15] = '0' + lastError;
-    reply[16] = '#';
-    reply[17] = 0;
+    val = 0;
+#if HASEncoder
+    bitWrite(val, 0, 1);
+    bitWrite(val, 1, encoderA1.calibrating() && encoderA2.calibrating());
+    bitWrite(val, 2, PushtoStatus != PT_OFF);
+#endif
+    reply[16] = 'A' + val;
+    reply[17] = '#';
+    reply[18] = 0;
     i = 17;
   }
   break;
+  case 'J':
+  {
+    //specific command for ASCOM
+    switch (command[3])
+    {
+    case 'P':
+      // :GXJP# get if pulse guiding
+    {
+      if (GuidingState == GuidingPulse || GuidingState == GuidingST4)
+      {
+        strcpy(reply, "1#");
+      }
+      else
+      {
+        strcpy(reply, "0#");
+      }
+    }
+    break;
+    case 'S':
+      // :GXJS# get if Slewing
+    {
+      if (GuidingState == GuidingRecenter || GuidingState == GuidingAtRate || movingTo)
+      {
+        strcpy(reply, "1#");
+      }
+      else
+      {
+        strcpy(reply, "0#");
+      }
+
+    }
+    break;
+    case 'T':
+      // :GXJT# get if tracking
+    {
+      if (sideralTracking)
+      {
+        strcpy(reply, "1#");
+      }
+      else
+      {
+        strcpy(reply, "0#");
+      }
+    }
+      break;
+    }
+  }
+    break;
   case 'M':
   {
     // :GXM..#   Get Motor Settings
@@ -885,7 +915,7 @@ void  Command_G()
     //  :GZ#   Get telescope azimuth, Native LX200 command
     //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
     getHorAppE(&f, &f1);
-    command[3] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
+    command[1] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
     break;
   case 'a':
     //  :Ga#   Get Local Time in 12 hour format, Native LX200 command
@@ -923,23 +953,8 @@ void  Command_G()
     //  :GR#   Get Telescope RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
   {
-    static unsigned long _coord_t = 0;
-    static double _dec = 0;
-    static double _ra = 0;
-
-    if (millis() - _coord_t < 100)
-    {
-      f = _ra;
-      f1 = _dec;
-    }
-    else
-    {
-      getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
-      f /= 15.0;
-      _ra = f;
-      _dec = f1;
-      _coord_t = millis();
-    }
+    getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+    f /= 15.0;
     command[1] == 'D' ? PrintDec(f1) : PrintRa(f);
     break;
   }

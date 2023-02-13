@@ -40,7 +40,7 @@
 #define ServerFirmwareDate          __DATE__
 #define ServerFirmwareTime          __TIME__
 #define ServerFirmwareVersionMajor  "1"
-#define ServerFirmwareVersionMinor  "3"
+#define ServerFirmwareVersionMinor  "4"
 #define ServerFirmwareVersionPatch  "0"
 
 
@@ -77,6 +77,7 @@
 #define EEPROM_T2 22
 #define EEPROM_BSPEED 23
 #define EEPROM_DISPLAYSUBMODEL 24
+#define EEPROM_DISPLAY180 25
 #define EPPROM_password 50
 #define EEPROM_start_wifi_sta 100
 #ifdef ARDUINO_D1_MINI32
@@ -103,7 +104,7 @@ class TeenAstroWifi
   };
   enum ServerPage
   {
-    Index=1, Control, Speed, Tracking, Mount, Limits, Site, Focuser, Wifi
+    Index=1, Control, Speed, Tracking, Mount, Limits, Encoders, Site, Focuser, Wifi
   };
   static bool wifiOn;
   static int WebTimeout;
@@ -151,6 +152,8 @@ class TeenAstroWifi
   static void handleConfigurationMount();
   static void processConfigurationLimitsGet();
   static void handleConfigurationLimits();
+  static void processConfigurationEncodersGet();
+  static void handleConfigurationEncoders();
   static void processConfigurationFocuserGet();
   static void handleConfigurationFocuser();
   static void handleRoot();
@@ -205,4 +208,5 @@ public:
   static const char* getPassword();
   static bool setWifiMode(int k);
   static void getStationName(int k, char* SSID);
+  static void initOTA();
 };

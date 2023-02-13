@@ -73,34 +73,32 @@ void Command_F()
 
   if (!focuserNoResponse)
   {
-    unsigned long start = millis();
+    delay(20);
     int pos = 0;
     char b = 0;
-    while (millis() - start < 40)
+
+    while (Focus_Serial.available() > 0)
     {
-      if (Focus_Serial.available() > 0)
+      b = Focus_Serial.read();
+      if (b == '#' && !focuserShortResponse)
       {
-        b = Focus_Serial.read();
-        if (b == '#' && !focuserShortResponse)
-        {
-          reply[pos] = b;
-          reply[pos+1] = 0;
-          return;
-        }
         reply[pos] = b;
-        pos++;
-        if (pos > 49)
-        {
+        reply[pos + 1] = 0;
+        return;
+      }
+      reply[pos] = b;
+      pos++;
+      if (pos > 49)
+      {
+        replyFailed();
+        return;
+      }
+      reply[pos] = 0;
+      if (focuserShortResponse)
+      {
+        if (b != '1')
           replyFailed();
-          return;
-        }
-        reply[pos] = 0;
-        if (focuserShortResponse)
-        {
-          if (b != '1')
-            replyFailed();
-          return;
-        }
+        return;
       }
 
     }

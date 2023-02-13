@@ -62,7 +62,7 @@ void Command_M()
     //  Returns: Nothing
 
     if ((atoi2((char *)&command[3], &i)) &&
-      ((i > 0) && (i <= 16399)) && sideralTracking && !movingTo && lastError == ERRT_NONE &&
+      ((i > 0) && (i <= 16399)) && !movingTo && lastError == ERRT_NONE &&
         (GuidingState != GuidingRecenter || GuidingState != GuidingST4))
     {
       if ((command[2] == 'e') || (command[2] == 'w'))
@@ -228,7 +228,7 @@ void Command_M()
       strcpy(reply, "!#");
       break;
     }
-    alignment.toInstrumentalDeg(axis1angle, axis2angle, azm, alt);
+    alignment.toAxisDeg(axis1angle, axis2angle, azm, alt);
     bool ok = predictTarget(axis1angle, axis2angle, GetPierSide(), axis1step, axis2step,predictedSide);
     if (!ok)
     {

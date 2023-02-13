@@ -38,6 +38,9 @@ void processCommands()
   case 'D':
     Command_D();
     break;
+  case 'E':
+    Command_E();
+    break;
   case 'F':
     Command_F();
     break;

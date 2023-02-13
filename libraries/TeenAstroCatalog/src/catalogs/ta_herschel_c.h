@@ -5,9 +5,9 @@
 #define Cat_Herschel_Prefix "NGC"
 #define NUM_HERSCHEL 398
 
-const char *Cat_Herschel_Names="";
+const char Cat_Herschel_Names[] PROGMEM ="";
 
-const char *Cat_Herschel_SubId="";
+const char Cat_Herschel_SubId[] PROGMEM ="";
 
 CAT_TYPES Cat_Herschel_Type=CAT_DSO_COMP;
 const dso_comp_t Cat_Herschel[NUM_HERSCHEL] PROGMEM = {

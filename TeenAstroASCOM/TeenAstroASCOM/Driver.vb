@@ -41,9 +41,11 @@ Imports System
 Imports System.Collections
 Imports System.Collections.Generic
 Imports System.Globalization
+Imports System.Reflection
 Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Text.RegularExpressions
+Imports System.Windows.Forms.AxHost
 
 <Guid("e3db1df1-f25d-42ce-ba54-5c035ac6f94c")>
 <ClassInterface(ClassInterfaceType.None)>
@@ -86,17 +88,9 @@ Public Class Telescope
   Private mconnectedState As Boolean = False ' Private variable to hold the connected state
   Private mbLongFormat As Boolean
 
-  Private mupdateRate As Double = -1
-  Private mRa As Double
-  Private mRadate As Date = Date.UtcNow
-  Private mDec As Double
-  Private mDecdate As Date = Date.UtcNow
-  Private mAlt As Double
-  Private mAltdate As Date = Date.UtcNow
-  Private mAZ As Double
-  Private mAZdate As Date = Date.UtcNow
   Private mTelStatus As String
-  Private mTelStatusDate As Date = Date.UtcNow
+
+
   Private mConnectionStatusDate As Date
 
   Private mtgtRa As Double = -999
@@ -124,8 +118,13 @@ Public Class Telescope
     mTL = New TraceLogger("", "TeenAstro")
     mTL.Enabled = mtraceState
     mTL.LogMessage("Telescope", "Starting initialisation")
-
     mutilities = New Util() ' Initialise util object
+
+    Dim assembly As System.Reflection.Assembly = System.Reflection.Assembly.GetExecutingAssembly()
+    Dim fvi As FileVersionInfo = FileVersionInfo.GetVersionInfo(assembly.Location)
+    Dim version As String = fvi.FileVersion
+    mutilities.SerialTraceFile = mTL.LogFilePath + "\TeenAstro_Serial_" + version + ".txt"
+    mutilities.SerialTrace = mtraceState
     mastroUtilities = New AstroUtils 'Initialise new astro utiliites object
 
     'TODO: Implement your additional construction here
@@ -188,7 +187,7 @@ Public Class Telescope
     If mInterface = "COM" Then
       Return GetSerial(Command, Mode, buf)
     ElseIf mInterface = "IP" Then
-      Return getStreamIter(Command, Mode, buf)
+      Return getStream(Command, Mode, buf)
     End If
     Return False
   End Function
@@ -250,7 +249,6 @@ Public Class Telescope
         Return
       End Try
       mobjectSerial.Speed = 57600
-      mupdateRate = 10
       Try
         mobjectSerial.Connected = True
       Catch ex As Exception
@@ -281,7 +279,6 @@ Public Class Telescope
 
   Private Sub ConnectIP(value As Boolean)
     If value Then
-      mupdateRate = 10
       If Not System.Net.IPAddress.TryParse(mIP, mobjectIP) Then
         MsgBox(mIP + " is Not AddressOf valid IP Address")
         Return
@@ -328,19 +325,6 @@ Public Class Telescope
 
     End Set
   End Property
-
-  Private Function getStreamIter(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
-    Dim k As Integer = 0
-    While k < 3
-      buf = ""
-      If getStream(Command, Mode, buf) Then
-        Return True
-      Else
-        k += 1
-      End If
-    End While
-    Return False
-  End Function
 
   Private Function getStream(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
 
@@ -490,13 +474,9 @@ Public Class Telescope
 
   Public ReadOnly Property Altitude() As Double Implements ITelescopeV3.Altitude
     Get
-      Dim s1 As Double = (Date.UtcNow - mAltdate).TotalMilliseconds
-      If s1 > mupdateRate Then
-        mAlt = mutilities.DMSToDegrees(Me.CommandString("GA"))
-        mAltdate = Date.UtcNow
-      End If
-      mTL.LogMessage("Altitude", mAlt.ToString("0.0000000"))
-      Return mAlt
+      Dim Alt As Double = mutilities.DMSToDegrees(Me.CommandString("GA"))
+      mTL.LogMessage("Altitude", Alt.ToString("0.0000000"))
+      Return Alt
     End Get
   End Property
 
@@ -548,13 +528,10 @@ Public Class Telescope
 
   Public ReadOnly Property Azimuth() As Double Implements ITelescopeV3.Azimuth
     Get
-      Dim s1 As Double = (Date.UtcNow - mAZdate).TotalMilliseconds
-      If s1 > mupdateRate Then
-        mAZ = mutilities.DMSToDegrees(Me.CommandString("GZ"))
-        mAZdate = Date.UtcNow
-      End If
-      mTL.LogMessage("Azimuth", mAZ.ToString("0.0000000"))
-      Return mAZ
+
+      Dim AZ As Double = mutilities.DMSToDegrees(Me.CommandString("GZ"))
+      mTL.LogMessage("Azimuth", AZ.ToString("0.0000000"))
+      Return AZ
     End Get
   End Property
 
@@ -689,13 +666,9 @@ Public Class Telescope
 
   Public ReadOnly Property Declination() As Double Implements ITelescopeV3.Declination
     Get
-      Dim s1 As Double = (Date.UtcNow - mDecdate).TotalMilliseconds
-      If s1 > mupdateRate Then
-        mDec = mutilities.DMSToDegrees(Me.CommandString("GD"))
-        mDecdate = Date.UtcNow
-      End If
-      mTL.LogMessage("Declination", "Get - " & mutilities.DegreesToDMS(mDec))
-      Return mDec
+      Dim Dec As Double = mutilities.DMSToDegrees(Me.CommandString("GD"))
+      mTL.LogMessage("Declination", "Get - " & mutilities.DegreesToDMS(Dec))
+      Return Dec
     End Get
   End Property
 
@@ -740,14 +713,32 @@ Public Class Telescope
 
   Public Property DoesRefraction() As Boolean Implements ITelescopeV3.DoesRefraction
     Get
-      updateTelStatus()
-      Return mTelStatus.Substring(10, 1) = "c"
+      Dim str1 As String = CommandString("GXrg")
+      Dim str2 As String = CommandString("GXrp")
+      Dim str3 As String = CommandString("GXrt")
+
+      If (str1.Length = 1 And str2.Length = 1 And str3.Length = 1) Then
+        Return str1.Substring(0, 1) = "y" And str2.Substring(0, 1) = "y" And str3.Substring(0, 1) = "y"
+      End If
+      Throw New ASCOM.InvalidOperationException("get refraction failed")
     End Get
     Set(value As Boolean)
+      Dim ok As Boolean = True
       If value Then
-        CommandBlind("Te")
+        ok = CommandBool("SXrg,y")
+        ok = ok And CommandBool("SXrp,y")
+        ok = ok And CommandBool("SXrt,y")
       Else
-        CommandBlind("Tn")
+        ok = CommandBool("SXrg,n")
+        ok = ok And CommandBool("SXrp,n")
+        ok = ok And CommandBool("SXrt,n")
+      End If
+      If Not ok Then
+        If (value) Then
+          Throw New ASCOM.DriverException("turn refraction on failed")
+        Else
+          Throw New ASCOM.DriverException("turn refraction off failed")
+        End If
       End If
     End Set
   End Property
@@ -813,8 +804,6 @@ Public Class Telescope
       SetGuideRate(value)
     End Set
   End Property
-
-
   Public Property GuideRateRightAscension() As Double Implements ITelescopeV3.GuideRateRightAscension
     Get
       Return GetGuideRate()
@@ -826,8 +815,7 @@ Public Class Telescope
 
   Public ReadOnly Property IsPulseGuiding() As Boolean Implements ITelescopeV3.IsPulseGuiding
     Get
-      updateTelStatus()
-      IsPulseGuiding = mTelStatus.Substring(6, 1) = "*"
+      IsPulseGuiding = Me.CommandBool("GXJP")
       mTL.LogMessage("IsPulseGuiding Get", IsPulseGuiding.ToString)
       Return IsPulseGuiding
     End Get
@@ -836,31 +824,55 @@ Public Class Telescope
   Public Sub MoveAxis(Axis As TelescopeAxes, Rate As Double) Implements ITelescopeV3.MoveAxis
     mTL.LogMessage("MoveAxis", Axis.ToString() & ":" & Rate.ToString())
     Dim cmd As String
+    Dim waitStopM1 As Boolean = False
+    Dim waitStopM2 As Boolean = False
     If Me.AtPark Then
       Throw New ASCOM.ParkedException
     End If
     Rate = Rate / mSiderealRate
     If (Axis = TelescopeAxes.axisPrimary) Then
       cmd = "M1" & Rate.ToString()
+      If Rate = 0 Then
+        waitStopM1 = True
+      End If
     ElseIf (Axis = TelescopeAxes.axisSecondary) Then
       cmd = "M2" & Rate.ToString()
+      If Rate = 0 Then
+        waitStopM2 = True
+      End If
     Else
       Throw New ASCOM.InvalidValueException("MoveAxis", Axis.ToString(), "0 To 1")
     End If
     If Not Me.CommandBool(cmd) Then
       Throw New ASCOM.InvalidValueException("MoveAxis via :" & cmd & " has failed")
     End If
+    If waitStopM1 Then
+      Dim list As New List(Of String)({"G-<", "G->", "G-b"})
+      updateTelStatus()
+      While list.Contains(mTelStatus.Substring(5, 3))
+        Threading.Thread.Sleep(200)
+        updateTelStatus()
+      End While
+    End If
+    If waitStopM2 Then
+      Dim list As New List(Of String)({"G-^", "G-_", "G-b"})
+      updateTelStatus()
+      While list.Contains(mTelStatus.Remove(7, 1).Substring(5, 3))
+        Threading.Thread.Sleep(200)
+        updateTelStatus()
+      End While
+    End If
 
   End Sub
 
   Public Sub Park() Implements ITelescopeV3.Park
-
-    If CommandBool("hP") Then
+    Dim cmd As String = "hP"
+    If CommandBool(cmd) Then
       mTL.LogMessage("Park", "done")
       Threading.Thread.Sleep(3000)
     Else
       mTL.LogMessage("Park", "failed")
-      Throw New ASCOM.InvalidValueException("The park has failed")
+      Throw New ASCOM.DriverException("Park has failed")
     End If
   End Sub
 
@@ -883,7 +895,7 @@ Public Class Telescope
 
       mTL.LogMessage("PulseGuide", dir & Duration & " done ")
     Else
-      Throw New ASCOM.InvalidValueException("Pulse guiding failed")
+      Throw New ASCOM.DriverException("Pulse guiding failed")
       mTL.LogMessage("PulseGuide", dir & Duration & " has failed ")
     End If
 
@@ -891,13 +903,9 @@ Public Class Telescope
 
   Public ReadOnly Property RightAscension() As Double Implements ITelescopeV3.RightAscension
     Get
-      Dim s1 As Double = (Date.UtcNow - mRadate).TotalMilliseconds()
-      If s1 > mupdateRate Then
-        mRa = mutilities.HMSToHours(Me.CommandString("GR"))
-        mRadate = Date.UtcNow
-      End If
-      mTL.LogMessage("RightAscension", "Get - " & mutilities.HoursToHMS(mRa))
-      Return mRa
+      Dim Ra As Double = mutilities.HMSToHours(Me.CommandString("GR"))
+      mTL.LogMessage("RightAscension", "Get - " & mutilities.HoursToHMS(Ra))
+      Return Ra
     End Get
   End Property
 
@@ -927,7 +935,7 @@ Public Class Telescope
       mTL.LogMessage("SetPark", "done")
     Else
       mTL.LogMessage("SetPark", "failed")
-      Throw New ASCOM.InvalidValueException("Set Park failed")
+      Throw New ASCOM.DriverException("Set Park failed")
     End If
   End Sub
 
@@ -1116,15 +1124,7 @@ Public Class Telescope
 
   Public ReadOnly Property Slewing() As Boolean Implements ITelescopeV3.Slewing
     Get
-      updateTelStatus()
-      If mTelStatus.Substring(0, 1) = "2" Or
-        mTelStatus.Substring(0, 1) = "3" Or
-        mTelStatus.Substring(6, 1) = "+" Or
-        mTelStatus.Substring(6, 1) = "-" Then
-        Slewing = True
-      Else
-        Slewing = False
-      End If
+      Slewing = Me.CommandBool("GXJS")
       mTL.LogMessage("slewing", Slewing)
       Return Slewing
     End Get
@@ -1178,8 +1178,9 @@ Public Class Telescope
     Set(value As Double)
       mTL.LogMessage("TargetDeclination Set", value.ToString)
       Dim sexa As String = DecToString(value)
-      If Not Me.CommandBool("Sd" & sexa) Then
-        Throw New ASCOM.InvalidOperationException
+      Dim cmd As String = "Sd" & sexa
+      If Not Me.CommandBool(cmd) Then
+        Throw New ASCOM.InvalidOperationException("Set Target Declination " & cmd & " has failed")
       End If
 
       mtgtDec = value
@@ -1193,7 +1194,8 @@ Public Class Telescope
       Throw New ASCOM.InvalidValueException
     End If
     Dim sexa As String = mutilities.DegreesToDMS(value, ":", ":", "") ' Long format, whole seconds
-    If Left$(sexa, 1) <> "-" Then
+
+    If Strings.Left(sexa, 1) <> "-" Then
       sexa = "+" & sexa         ' Both need leading '+'
     End If
     Return sexa
@@ -1204,7 +1206,7 @@ Public Class Telescope
       Throw New ASCOM.InvalidValueException
     End If
     Dim sexa As String = mutilities.DegreesToDMS(value, ":", ":", "") ' Long format, whole seconds
-    If Left$(sexa, 1) <> "-" Then
+    If Strings.Left(sexa, 1) <> "-" Then
       sexa = "+" & sexa         ' Both need leading '+'
     End If
     Return sexa
@@ -1229,8 +1231,9 @@ Public Class Telescope
     Set(value As Double)
       mTL.LogMessage("TargetRightAscension Set", value.ToString)
       Dim sexa As String = RaToString(value)   ' Long format, whole seconds
-      If Not Me.CommandBool("Sr" & sexa) Then
-        Throw New ASCOM.InvalidOperationException
+      Dim cmd As String = "Sr" & sexa
+      If Not Me.CommandBool(cmd) Then
+        Throw New ASCOM.InvalidOperationException("Set Target RightAscension " & cmd & " has failed")
       End If
       mtgtRa = value
     End Set
@@ -1247,13 +1250,7 @@ Public Class Telescope
 
   Public Property Tracking() As Boolean Implements ITelescopeV3.Tracking
     Get
-      Dim trk As Boolean = True
-      updateTelStatus()
-      If (mTelStatus.Substring(0, 1) = "1" Or mTelStatus.Substring(0, 1) = "3") Then
-        trk = True
-      ElseIf (mTelStatus.Substring(0, 1) = "0" Or mTelStatus.Substring(0, 1) = "2") Then
-        trk = False
-      End If
+      Dim trk As Boolean = CommandBool("GXJT")
       mTL.LogMessage("Tracking", "Get - " & trk.ToString())
       Return trk
     End Get
@@ -1353,9 +1350,9 @@ Public Class Telescope
       state = Me.CommandSingleChar("MS", False)
     End If
     If state.Length = 0 Then
-      Throw New ASCOM.InvalidOperationException("Telescope is not replying")
+      Throw New ASCOM.DriverException("Telescope is not replying")
     ElseIf Not state.Length = 1 Then
-      Throw New ASCOM.InvalidOperationException("Telescope reply is corrupt")
+      Throw New ASCOM.DriverException("Telescope reply is corrupt")
     End If
     If state = "0" Then
       mTL.LogMessage("Slew to target", "Started")
@@ -1417,19 +1414,13 @@ Public Class Telescope
     End If
     MsgBox(
   "Connection has failed!" & vbCrLf &
-  "TeenAstro version is " & versionFW(1) & "." & versionFW(1) &
+  "TeenAstro version is " & versionFW(0) & "." & versionFW(1) & "." & versionFW(2) &
   ", TeenAstro driver version is " & fvi.FileVersion)
     Return False
   End Function
 
   Private Sub updateTelStatus()
-    Dim s1 As Double = (Date.UtcNow - mTelStatusDate).TotalMilliseconds
-    If s1 > mupdateRate Or mTelStatus = "" Then
-      mTelStatus = Me.CommandString("GXI")
-      If (mTelStatus <> "") Then
-        mTelStatusDate = Date.UtcNow
-      End If
-    End If
+    mTelStatus = Me.CommandString("GXI")
   End Sub
 
   Private Function DegtoDDDMMSS(value As Double) As String

@@ -25,6 +25,8 @@ typedef double interval;
 typedef double speed;
 
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
+enum EncoderSync {ES_OFF, ES_60, ES_30, ES_15, ES_8, ES_4, ES_2, ES_ALWAYS };
+enum Pushto {PT_OFF, PT_RADEC, PT_ALTAZ};
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
 enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW };
@@ -41,9 +43,11 @@ MeridianFlip meridianFlip = MeridianFlip::FLIP_NEVER;
 Mount mountType = Mount::MOUNT_TYPE_GEM;
 char mountName[maxNumMount][15];
 bool isMountTypeFix = false;
+
 byte maxAlignNumStar = 0;
 bool autoAlignmentBySync = false;
 
+Pushto PushtoStatus = PT_OFF;
 bool hasFocuser = false;
 bool hasGNSS = true;
 
@@ -70,10 +74,10 @@ interval                maxInterval2 = StepsMaxInterval;
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
 
-
 MotorAxis           motorA1;
 MotorAxis           motorA2;
 
+EncoderSync         EncodeSyncMode = EncoderSync::ES_OFF;
 EncoderAxis         encoderA1;
 EncoderAxis         encoderA2;
 
@@ -205,13 +209,15 @@ enum GuideRate {RG,RC,RM,RS,RX};
 #define DefaultR1 4
 #define DefaultR2 16
 #define DefaultR3 64
-#define DefaultR4 64
+#ifndef DefaultR4
+  #define DefaultR4 600
+#endif
 double  guideRates[5] =
 {
   DefaultR0 , DefaultR1 , DefaultR2 ,  DefaultR3 , DefaultR4
 };
 
-volatile byte activeGuideRate = GuideRate::RS;
+volatile byte activeGuideRate = GuideRate::RX;
 
 GuideAxis guideA1;
 GuideAxis guideA2;

@@ -14,21 +14,30 @@ void setup()
 {
   // set the PWM and brake pins so that the direction pins  // can be used to control the motor:
   pinMode(LEDPin, OUTPUT);
-  for (int k = 0; k < 20; k++)
+  for (int k = 0; k < 10; k++)
   {
     digitalWrite(LEDPin, HIGH);
     delay(10);
     digitalWrite(LEDPin, LOW);
     delay(50);
   }
-
   pinMode(_StepPin, OUTPUT);
   pinMode(_DirPin, OUTPUT);
   digitalWrite(_DirPin, LOW);
   digitalWrite(_StepPin, LOW);
   digitalWrite(LEDPin, HIGH);
-  Serial.begin(9600);
+  loadConfig();
+  tempSensors.begin();
+  tempSensors.setResolution(11);
+  tempSensors.requestTemperaturesByIndex(0);
+  lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999), -99.9999);
+  tempSensors.setWaitForConversion(false);
+  tickTimer.priority(255); // lowest priority, potentially long caclulations need to be interruptable by TeensyStep
+  tickTimer.begin(updateTemperature, 5000000);
+  iniMot();
+  iniPos();
 
+  Serial.begin(9600);
 #if VERSION == 220
   Serial2.setRX(FocuserRX);
   Serial2.setTX(FocuserTX);
@@ -41,17 +50,6 @@ void setup()
   Serial1.begin(56000);
   Serial1.setTimeout(10);
 #endif
-
-  loadConfig();
-  tempSensors.begin();
-  tempSensors.setResolution(12);
-  tempSensors.requestTemperaturesByIndex(0);
-  lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999), -99.9999);
-  tempSensors.setWaitForConversion(false);
-  tickTimer.priority(255); // lowest priority, potentially long caclulations need to be interruptable by TeensyStep
-  tickTimer.begin(updateTemperature, 5000000);
-  iniMot();
-  iniPos();
   digitalWrite(LEDPin, LOW);
 }
 
@@ -73,6 +71,5 @@ void updateTemperature()
   {
     tempSensors.requestTemperaturesByIndex(0);
     lastTemp = max(min(tempSensors.getTempCByIndex(0), 99.9999F), -99.9999F);
-    lastTempTick = millis();
   }
 }

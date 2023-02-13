@@ -77,6 +77,8 @@ var_star_comp_t  _varStarCompObject  = { 0,0,0,0,0,0,0,0,0,0 };
 dso_t            _dsoObject          = { 0,0,0,0,0,0,0,0 };
 dso_comp_t       _dsoCompObject      = { 0,0,0,0,0,0,0,0 };
 dso_vcomp_t      _dsoVCompObject     = { 0,0,0,0,0,0,0 };
+char             _genNames[3500];
+char             _genSubIds[3500];
 
 // handle catalog selection (0..n)
 void CatMgr::select(int number) {
@@ -98,6 +100,11 @@ void CatMgr::select(int number) {
     if (catalog[_selected].CatalogType==CAT_DSO)            _dsoCatalog         =(dso_t*)catalog[_selected].Objects; else
     if (catalog[_selected].CatalogType==CAT_DSO_COMP)       _dsoCompCatalog     =(dso_comp_t*)catalog[_selected].Objects; else
     if (catalog[_selected].CatalogType==CAT_DSO_VCOMP)      _dsoVCompCatalog    =(dso_vcomp_t*)catalog[_selected].Objects; else _selected=-1;
+    if (_selected>=0)
+    {
+      memcpy_P(_genNames, catalog[_selected].ObjectNames, 3500);
+      memcpy_P(_genSubIds, catalog[_selected].ObjectSubIds, 3000);
+    }
   }
 }
 
@@ -632,6 +639,15 @@ const char* CatMgr::constellationCodeToStr(int code) {
   if ((code>=0) && (code<=87)) return Txt_Constellations[code]; else return "";
 }
 
+const char* CatMgr::constellationStrLong() {
+  return Txt_Constellations_Long[constellation()];
+}
+
+// Constellation string, from constellation number
+const char* CatMgr::constellationCodeToStrLong(int code) {
+  if ((code >= 0) && (code <= 87)) return Txt_Constellations_Long[code]; else return "";
+}
+
 // Object type code
 byte CatMgr::objectType() {
   if (_selected<0) return -1;
@@ -678,7 +694,7 @@ long CatMgr::objectName() {
 const char* CatMgr::objectNameStr() {
   if (_selected<0) return "";
   long elementNum=objectName();
-  if (elementNum>=0) return getElementFromString(catalog[_selected].ObjectNames,elementNum); else return "";
+  if (elementNum>=0) return getElementFromString(_genNames,elementNum); else return "";
 }
 
 // Object Id
@@ -719,7 +735,7 @@ long CatMgr::subId() {
 const char* CatMgr::subIdStr() {
   if (_selected<0) return "";
   long elementNum=subId();
-  if (elementNum>=0) return getElementFromString(catalog[_selected].ObjectSubIds,elementNum); else return "";
+  if (elementNum>=0) return getElementFromString(_genSubIds,elementNum); else return "";
 }
 
 // For Bayer designated Stars 0 = Alp, etc. to 23. For Fleemstead designated Stars 25 = '1', etc.

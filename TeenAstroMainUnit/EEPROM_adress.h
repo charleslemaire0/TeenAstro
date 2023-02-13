@@ -94,18 +94,18 @@ uint8_t             midx;
 #define EE_motorA2silent        126
 
 //encoder1
-#define EE_encoderA1gear          130
-#define EE_encoderA1pulseRot      132
-#define EE_encoderA1reverse       134
+#define EE_encoderA1pulsePerDegree 130
+#define EE_encoderA1reverse        134
 //encoder2
-#define EE_encoderA2gear          135
-#define EE_encoderA2pulseRot      137
-#define EE_encoderA2reverse       139
+#define EE_encoderA2pulsePerDegree 135
+#define EE_encoderA2reverse        139
 
-#define EE_mountName            140
+#define EE_encoderSync            140
+
+#define EE_mountName              141
 
 //transformation matrix
-#define EE_T11              150
+#define EE_T11              160
 #define EE_T12              EE_T11 + 4
 #define EE_T13              EE_T11 + 8
 #define EE_T21              EE_T11 + 12

@@ -112,7 +112,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilterCon()
   char string_list_fCon[1000] = "";
   for (int l = 0; l < 89; l++)
   {
-    if (l == 0) strcat(string_list_fCon, T_ALL); else strcat(string_list_fCon, cat_mgr.constellationCodeToStr(l - 1));
+    if (l == 0) strcat(string_list_fCon, T_ALL); else strcat(string_list_fCon, cat_mgr.constellationCodeToStrLong(l - 1));
     if (l < 88) strcat(string_list_fCon, "\n");
   }
   int last_selection_filter_con = current_selection_filter_con;

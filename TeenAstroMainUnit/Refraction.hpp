@@ -40,9 +40,9 @@ public:
   void readFromEEPROM()
   {
     uint8_t val = XEEPROM.read(getMountAddress(EE_refraction));
-    forPole = bitRead(XEEPROM.read(val), 0);
-    forGoto = bitRead(XEEPROM.read(val), 1);
-    forTracking = bitRead(XEEPROM.read(val), 2);
+    forPole = bitRead(val, 0);
+    forGoto = bitRead(val, 1);
+    forTracking = bitRead(val, 2);
   }
   void writeToEEPROM()
   {

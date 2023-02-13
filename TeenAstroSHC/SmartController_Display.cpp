@@ -364,6 +364,10 @@ void SmartHandController::updateMainDisplay(PAGES page)
   {
     ta_MountStatus.updateAzAlt();
   }
+  else if (page == P_PUSH && !ta_MountStatus.isPulseGuiding())
+  {
+    ta_MountStatus.updatePush();
+  }
   else if (page == P_TIME && !ta_MountStatus.isPulseGuiding())
   {
     ta_MountStatus.updateTime();
@@ -648,6 +652,21 @@ void SmartHandController::updateMainDisplay(PAGES page)
         u8g2_DrawUTF8(u8g2, 0, y, "Alt.");
       }
     }
+    else if (page == P_PUSH)
+    {
+      if (ta_MountStatus.hasInfoPush())
+      {
+        display->setFont(u8g2_font_courB18_tn);
+        u8g2_uint_t y = 39;
+        x = u8g2_GetDisplayWidth(u8g2);
+        const char* txt1 = ta_MountStatus.GetPushA1();
+        const char* txt2 = ta_MountStatus.GetPushA2();
+        u8g2_DrawUTF8(u8g2, 20, y, ta_MountStatus.GetPushA1());
+        y += 22;
+        u8g2_DrawUTF8(u8g2, 20, y, ta_MountStatus.GetPushA2());
+        display->setFont(u8g2_font_helvR12_te);
+      }
+    }
     else if (page == P_TIME)
     {
       if (ta_MountStatus.hasInfoUTC() && ta_MountStatus.hasInfoSidereal())
@@ -701,14 +720,25 @@ void SmartHandController::updateMainDisplay(PAGES page)
     }
     else if (page == P_AXIS_DEG)
     {
-      u8g2_uint_t y = 36;
+      display->setFont(u8g2_font_helvR08_te);
+      line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
+      u8g2_uint_t y = 26;
       x = u8g2_GetDisplayWidth(u8g2);
       u8g2_DrawUTF8(u8g2, 0, y, "Ax1.");
       display->drawIDeg(x, y, ta_MountStatus.getAxis1Deg());
-      y += line_height + 4;
-      x = u8g2_GetDisplayWidth(u8g2);
-      display->drawIDeg(x, y, ta_MountStatus.getAxis2Deg());
+      y += line_height;
       u8g2_DrawUTF8(u8g2, 0, y, "Ax2.");
+      display->drawIDeg(x, y, ta_MountStatus.getAxis2Deg());
+      y += line_height;
+      if (ta_MountStatus.hasEncoder())
+      {
+        u8g2_DrawUTF8(u8g2, 0, y, "Ax1E.");
+        display->drawIDeg(x, y, ta_MountStatus.getAxis1EDeg());
+        y += line_height;
+        u8g2_DrawUTF8(u8g2, 0, y, "Ax2E.");
+        display->drawIDeg(x, y, ta_MountStatus.getAxis2EDeg());
+      }
+      display->setFont(u8g2_font_helvR12_te);
     }
     else if (page == P_ALIGN)
     {

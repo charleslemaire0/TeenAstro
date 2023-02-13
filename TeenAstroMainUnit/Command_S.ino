@@ -46,6 +46,97 @@ void Command_SX()
       replyFailed();
     break;
   }
+  case 'E':
+    // :SXEnn# set encoder commands
+  {
+
+    switch (command[3])
+    {
+    case 'O':
+      // :SXEO#  set encoder Sync Option
+    {
+      unsigned int i;
+      if (atoui2(&command[5], &i) && i <= (unsigned int)(EncoderSync::ES_ALWAYS))
+      {
+        ok = true;
+        EncodeSyncMode = static_cast<EncoderSync>(i);
+        XEEPROM.write(getMountAddress(EE_encoderSync), EncodeSyncMode);
+      }
+      ok ? replyOk() : replyFailed();
+    }
+    break;
+    case 'P':
+    {
+      // :SXEPn,VVVV# Set pulse per 100deg max
+      bool ok = false;
+      if ((command[4] == 'D' || command[4] == 'R')
+        && (strlen(&command[6]) > 0) && (strlen(&command[6]) < 7)
+        )
+      {
+        char* pEnd;
+        unsigned long p = strtoul(&command[6], &pEnd, 10);
+        if (p > 0 && p <= 360000)
+        {
+          if (command[4] == 'D')
+          {
+            if (!encoderA2.isPulsePerDegreeFix)
+            {
+              encoderA2.pulsePerDegree = 0.01 * p;
+              XEEPROM.writeLong(getMountAddress(EE_encoderA2pulsePerDegree), p);
+              ok = true;
+            }
+          }
+          else
+          {
+            if (!encoderA1.isPulsePerDegreeFix)
+            {
+              encoderA1.pulsePerDegree = 0.01 * p;
+              XEEPROM.writeLong(getMountAddress(EE_encoderA1pulsePerDegree), p);
+              ok = true;
+            }
+          }
+        }
+
+      }
+      ok ? replyOk() : replyFailed();
+    }
+    break;
+    case 'r':
+    {
+      // :SXErn,V# Set Encoder Reverse rotation
+      bool ok = false;
+      if ((command[4] == 'D' || command[4] == 'R')
+        && strlen(&command[6]) == 1
+        && (command[6] == '0' || command[6] == '1'))
+      {
+        if (command[4] == 'D')
+        {
+          if (!encoderA2.isReverseFix)
+          {
+            encoderA2.reverse = command[6] == '1' ? true : false;
+            XEEPROM.write(getMountAddress(EE_encoderA2reverse), encoderA2.reverse);
+            ok = true;
+          }
+        }
+        else
+        {
+          if (!encoderA1.isReverseFix)
+          {
+            encoderA1.reverse = command[6] == '1' ? true : false;
+            XEEPROM.write(getMountAddress(EE_encoderA1reverse), encoderA1.reverse);
+            ok = true;
+          }
+        }
+      }
+      ok ? replyOk() : replyFailed();
+    }
+    break;
+    default:
+      replyFailed();
+    break;
+    }
+    break;
+  }
   case 'r':
     // :SXrn,V# refraction Settings
   {
@@ -135,7 +226,7 @@ void Command_SX()
     case 'r':
       // :SXRr,VVVVVVVVVV# Set Rate for RA 
       sideralMode = SIDM_TARGET;
-      RequestedTrackingRateHA = 1. - (double)strtol(&command[5], NULL, 10) / 10000.0;
+      RequestedTrackingRateHA = (double)(10000l - strtol(&command[5], NULL, 10)) / 10000.;
       computeTrackingRate(true);
       replyOk();
       break;
@@ -423,7 +514,7 @@ void Command_SX()
             ok = true;
           }
         }
-       
+
       }
       if (ok)
       {
@@ -448,7 +539,7 @@ void Command_SX()
         && ((i >= 1) && (i < 9)))
       {
         if (command[4] == 'D')
-        { 
+        {
           if (!motorA2.isMicroFix)
           {
             double fact = pow(2., i - motorA2.micro);
@@ -504,7 +595,7 @@ void Command_SX()
         {
           if (!motorA2.isSilentFix)
           {
-          //motorA2.driver.setmode(i);
+            //motorA2.driver.setmode(i);
             XEEPROM.write(getMountAddress(EE_motorA2silent), i);
             ok = true;
           }
@@ -514,7 +605,7 @@ void Command_SX()
         {
           if (!motorA1.isSilentFix)
           {
-          //motorA1.driver.setmode(i);
+            //motorA1.driver.setmode(i);
             XEEPROM.write(getMountAddress(EE_motorA1silent), i);
             ok = true;
           }
@@ -559,7 +650,7 @@ void Command_SX()
       // :SXMRn# Set Current
       unsigned int curr = (unsigned int)(strtol(&command[6], NULL, 10) / 100) * 100;
       bool ok = false;
-      if (curr >= 100 )
+      if (curr >= 100)
       {
         if (command[4] == 'D' && curr <= motorA2.driver.getMaxCurrent())
         {
