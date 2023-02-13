@@ -52,8 +52,11 @@ void reboot()
 
 void setup()
 {
-
   pinMode(LEDPin, OUTPUT);
+  //GNSS connection
+#if VERSION != 220
+  GNSS_Serial.begin(9600);
+#endif
   for (int k = 0; k < 20; k++)
   {
     digitalWrite(LEDPin, HIGH);
@@ -143,10 +146,7 @@ void setup()
   // prep timers
   rtk.updateTimers();
 
-  //GNSS connection
-#if VERSION != 220
-  GNSS_Serial.begin(9600);
-#endif
+
   hasGNSS = GNSS_Serial.available() > 0;
 
   //Focuser connection
