@@ -9,7 +9,7 @@
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "4"
-#define SHCFirmwareVersionPatch  "0"
+#define SHCFirmwareVersionPatch  "1"
 
 #define NUMPAGES 9
 class SmartHandController
@@ -58,7 +58,7 @@ private:
   bool forceDisplayoff = false;
   bool focuserlocked = false;
   bool telescoplocked = false;
-  pageInfo pages[NUMPAGES] = { {P_RADEC,true},{P_ALTAZ,true}, {P_PUSH,false}, {P_TIME,true}, {P_AXIS_STEP,false}, {P_AXIS_DEG,false}, {P_FOCUSER,true}, {P_ALIGN,false}, {P_HA,false} };
+  pageInfo pages[NUMPAGES] = { {P_RADEC,true},{P_ALTAZ,true}, {P_PUSH,false}, {P_TIME,true}, {P_AXIS_STEP,false}, {P_AXIS_DEG,false}, {P_FOCUSER,true}, {P_ALIGN,false}, {P_HA,true} };
   byte current_page;
   bool exitMenu = false;
   

@@ -99,6 +99,10 @@
         #define AxisDriver  3               // Select your driver 2 for the TMC2130, 3 for the TMC5160, 4 for the TMC2160
     #endif
 
+    #ifndef ARDUINO_TEENSY32
+        #define ARDUINO_TEENSY32
+    #endif
+
     // Motor 1 : RA / AZ
     #define Axis1Reverse    1
 

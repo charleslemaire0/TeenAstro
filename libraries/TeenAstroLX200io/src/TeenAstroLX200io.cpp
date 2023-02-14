@@ -716,6 +716,7 @@ LX200RETURN SyncGotoLX200(NAV mode, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3, bo
     {
       return Push2TargetLX200(T_RADEC);
     }
+    return LX200_SETVALUEFAILED;
   }
   else
   {
@@ -746,6 +747,7 @@ LX200RETURN SyncGotoUserLX200(NAV mode)
   {
     return Push2TargetLX200(T_USERRADEC);
   }
+  return LX200_SYNCFAILED;
 }
 
 LX200RETURN SyncGotoLX200AltAz(NAV mode, uint16_t& vz1, uint8_t& vz2, uint8_t& vz3, bool& ispos, uint16_t& va1, uint8_t& va2, uint8_t& va3)
@@ -773,6 +775,7 @@ LX200RETURN SyncGotoLX200AltAz(NAV mode, uint16_t& vz1, uint8_t& vz2, uint8_t& v
     {
       return Push2TargetLX200(T_AZALT);
     }
+    return LX200_SETTARGETFAILED;
   }
   else
   {
