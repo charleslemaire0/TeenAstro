@@ -14,8 +14,8 @@ void SmartHandController::setup(
   const OLED model,
   const uint8_t nSubmodel)
 {
-#ifdef ARDUINO_D1_MINI32
-  Ser.begin(SerialBaud, SERIAL_8N1, 27, 25);
+#ifdef ARDUINO_LOLIN_C3_MINI
+  Ser.begin(SerialBaud, SERIAL_8N1, RX, TX);
 #else
   Ser.begin(SerialBaud);
 #endif
@@ -55,10 +55,16 @@ void SmartHandController::setup(
       display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0);
     break;
   }
+  SHCrotated = EEPROM.read(EEPROM_DISPLAY180) == 255;
+  
+  if (SHCrotated)
+  {
+    display->setDisplayRotation(U8G2_R2);
+  }
+
   display->begin();
   drawIntro();
-  buttonPad.setup(pin, active, EEPROM_BSPEED);
-
+  buttonPad.setup(pin, active, EEPROM_BSPEED, SHCrotated);
   tickButtons();
   maxContrast = EEPROM.read(EEPROM_Contrast);
   display->setContrast(maxContrast);
@@ -82,61 +88,72 @@ void SmartHandController::setup(
   delay(1000);
 #endif
   display->setFont(u8g2_font_helvR12_te);
-  DisplayMessage("SHC " T_VERSION, _version, 1500);
   int k = 0;
-  while (!ta_MountStatus.isConnectionValid() && k < 10)
+  while (!ta_MountStatus.hasInfoV() && k < 10)
   {
-    ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor);
-    delay(200);
+    ta_MountStatus.updateV();
+    ta_MountStatus.removeLastConnectionFailure();
+    delay(500);
     k++;
   }
+  DisplayMessage("SHC " T_VERSION, _version, 1500);
+  if (k == 10)
+  {
+    return;
+  }
   DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
+  if (ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor))
+  {
+    ta_MountStatus.updateFocuser();
+    if (ta_MountStatus.hasFocuser())
+    {
+      char out[50];
+      if (DisplayMessageLX200(GetLX200(":FV#", out, sizeof(out))))
+      {
+        out[31] = 0;
+        DisplayMessage("Focuser " T_VERSION, &out[26], 1500);
+      }
+    }
+    ta_MountStatus.updateMount();
+    if (!ta_MountStatus.hasGNSSBoard())
+    {
+      ta_MountStatus.updateTime();
+      unsigned int hour = 0, minute = 0, second = 0;
+      GetLocalTimeLX200(hour, minute, second);
+      char date_time[40];
+      sprintf(date_time, "%s : %.2d:%.2d:%.2d", T_TIME, hour, minute, second);
+      char date_time2[40];
+      sprintf(date_time2, "%s : %s", T_DATE, ta_MountStatus.getUTCdate());
+      DisplayMessage(date_time, date_time2, 2000);
+    }
+    else
+    {
+      DisplayMessage("GNSS", T_CONNECTED, 1500);
+    }
+  }
 }
 
-void SmartHandController::update()
+void SmartHandController::getNextpage()
 {
-  tickButtons();
-  top = millis();
-  if (isSleeping())
-    return;
-  if (!ta_MountStatus.isConnectionValid() && ta_MountStatus.hasInfoV())
+  for (int k = 1; k < NUMPAGES + 1; k++)
   {
-    ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor);
-    buttonPad.setMenuMode();
-    DisplayMessage("!! " T_ERROR " !!", T_VERSION, -1);
-    DisplayMessage("SHC " T_VERSION, _version, 1500);
-    DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
-    buttonPad.setControlerMode();
-    return;
+    current_page++;
+    if (current_page >= NUMPAGES)
+      current_page = 0;
+    if (pages[current_page].show)
+    {
+      if (pages[current_page].p == P_FOCUSER && !ta_MountStatus.hasFocuser())
+      {
+        pages[current_page].show = false;
+        continue;
+      }
+      break;
+    }
   }
-  if (powerCycleRequired)
-  {
-    display->sleepOff();
-    DisplayMessage(T_PRESS_KEY, T_TO_REBOOT "...", -1);
-    DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
+}
 
-#ifdef ARDUINO_D1_MINI32
-    ESP.restart();
-#endif
-#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
-    ESP.reset();
-#endif
-    return;
-  }
-  if (ta_MountStatus.notResponding())
-  {
-    display->sleepOff();
-    DisplayMessage("!! " T_ERROR " !!", T_NOT_CONNECTED, -1);
-    DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
-
-#ifdef ARDUINO_D1_MINI32
-    ESP.restart();
-#endif
-#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
-    ESP.reset();
-#endif
-
-  }
+void SmartHandController::updateAlign(bool moving)
+{
   if (ta_MountStatus.isAlignSelect())
   {
     char message[10] = T_STAR "#?";
@@ -157,59 +174,9 @@ void SmartHandController::update()
   {
     updateMainDisplay(pages[current_page].p);
   }
-  if (!ta_MountStatus.connected())
-    return;
-  bool moving = false;
-  manualMove(moving);
-  if (eventbuttons[0] == E_CLICK && !ta_MountStatus.isAligning())
-  {
-    for (int k = 1; k < NUMPAGES + 1; k++)
-    {
-      current_page++;
-      if (current_page >= NUMPAGES)
-        current_page = 0;
-      if (pages[current_page].show)
-      {
-        if (pages[current_page].p == P_FOCUSER && !ta_MountStatus.hasFocuser())
-        {
-          pages[current_page].show = false;
-          continue;
-        }
-        break;
-      }
-    }
-
-    time_last_action = millis();
-  }
-  else if (moving)
+  if (moving)
   {
     return;
-  }
-  else if (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART && !ta_MountStatus.isAligning())
-  {
-    if (eventbuttons[3] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
-    {
-      menuTelAction();
-    }
-    else if (eventbuttons[1] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
-    {
-      menuSpeedRate();
-      time_last_action = millis();
-    }
-    else if (eventbuttons[4] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
-    {
-      menuTelSettings();
-    }
-    else if (eventbuttons[6] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
-    {
-      menuFocuserAction();
-    }
-    else if (eventbuttons[5] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
-    {
-      menuFocuserSettings();
-    }
-    exitMenu = false;
-    time_last_action = millis();
   }
   else if (eventbuttons[0] == E_CLICK && ta_MountStatus.isAlignRecenter())
   {
@@ -230,6 +197,138 @@ void SmartHandController::update()
       break;
     }
   }
+  return;
+}
+
+void SmartHandController::updatePushing(bool moving)
+{
+  if (top - lastpageupdate > 200)
+  {
+    updateMainDisplay(pages[P_PUSH].p);
+  }
+  if (moving)
+  {
+    return;
+  }
+  else if (eventbuttons[0] == E_CLICK)
+  {
+    buttonPad.setMenuMode();
+    if (display->UserInterfaceMessage(&buttonPad, T_SYNCEDAT, T_TARGET, "", T_YES "\n" T_NO) == 1)
+    {
+      DisplayMessageLX200(SetLX200(":ECS#"), 0.5);
+    }
+    buttonPad.setControlerMode();
+    DisplayMessageLX200(SetLX200(":EMQ#"));
+  }
+}
+
+
+void SmartHandController::update()
+{
+  bool moving = false;
+  tickButtons();
+  top = millis();
+  if (isSleeping())
+    return;
+
+  if (!ta_MountStatus.isConnectionValid() && ta_MountStatus.hasInfoV())
+  {
+    display->sleepOff();
+    buttonPad.setMenuMode();
+    DisplayMessage("!! " T_ERROR " !!", T_VERSION, -1);
+#ifdef ARDUINO_D1_MINI32
+    ESP.restart();
+#endif
+#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
+    ESP.reset();
+#endif
+    return;
+  }
+
+  if (powerCycleRequired)
+  {
+    display->sleepOff();
+    buttonPad.setMenuMode();
+    DisplayMessage(T_PRESS_KEY, T_TO_REBOOT "...", -1);
+    DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
+
+#ifdef ARDUINO_D1_MINI32
+    ESP.restart();
+#endif
+#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
+    ESP.reset();
+#endif
+    return;
+  }
+  if (ta_MountStatus.notResponding())
+  {
+    display->sleepOff();
+    buttonPad.setMenuMode();
+    DisplayMessage("!! " T_ERROR " !!", T_NOT_CONNECTED, -1);
+    DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
+
+#ifdef ARDUINO_D1_MINI32
+    ESP.restart();
+#endif
+#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
+    ESP.reset();
+#endif
+
+  }
+
+  manualMove(moving);
+  if (ta_MountStatus.isAligning())
+  {
+    updateAlign(moving);
+    return;
+  }
+  if (ta_MountStatus.isPushingto())
+  {
+    updatePushing(moving);
+    return;
+  }
+
+  if (top - lastpageupdate > 200)
+  {
+
+    updateMainDisplay(pages[current_page].p);
+  }
+
+  if (eventbuttons[0] == E_CLICK )
+  {
+    getNextpage();
+    time_last_action = millis();
+  }
+  else if (moving)
+  {
+    return;
+  }
+  else if (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART)
+  {
+    if (eventbuttons[3] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
+    {
+      menuTelAction();
+    }
+    else if (eventbuttons[1] == E_LONGPRESS || eventbuttons[1] == E_CLICK || eventbuttons[1] == E_LONGPRESSTART)
+    {
+      menuSpeedRate();
+    }
+    else if (eventbuttons[4] == E_LONGPRESS || eventbuttons[4] == E_CLICK || eventbuttons[4] == E_LONGPRESSTART)
+    {
+      menuTelSettings();
+    }
+    else if (eventbuttons[6] == E_LONGPRESS || eventbuttons[6] == E_CLICK || eventbuttons[6] == E_LONGPRESSTART)
+    {
+      menuFocuserAction();
+    }
+    else if (eventbuttons[5] == E_LONGPRESS || eventbuttons[5] == E_CLICK || eventbuttons[5] == E_LONGPRESSTART)
+    {
+      menuFocuserSettings();
+    }
+    exitMenu = false;
+    time_last_action = millis();
+  }
+ 
 }
 
 void SmartHandController::tickButtons()
@@ -330,9 +429,9 @@ void SmartHandController::manualMove(bool &moving)
         buttonCommand = true;
         Move[k - 1] = false;
         if (k < 5)
-          SetBoolLX200(BreakRC[k - 1]);
+          SetLX200(BreakRC[k - 1]);
         else
-          Move[k - 1] = !(SetBoolLX200(BreakRC[k - 1]) == LX200VALUESET);
+          Move[k - 1] = !(SetLX200(BreakRC[k - 1]) == LX200_VALUESET);
         continue;
       }
       else if (eventbuttons[0] == E_NONE && !Move[k - 1] && (eventbuttons[k] == E_LONGPRESS || eventbuttons[k] == E_CLICK || eventbuttons[k] == E_LONGPRESSTART))
@@ -344,11 +443,11 @@ void SmartHandController::manualMove(bool &moving)
           if (!telescoplocked)
           {
             Move[k - 1] = true;
-            SetBoolLX200(RC[k - 1]);
+            SetLX200(RC[k - 1]);
           }
         }
         else if (!focuserlocked)
-          Move[k - 1] = (SetBoolLX200(RC[k - 1]) == LX200VALUESET);
+          Move[k - 1] = (SetLX200(RC[k - 1]) == LX200_VALUESET);
         continue;
       }
       moving = moving || Move[k - 1];

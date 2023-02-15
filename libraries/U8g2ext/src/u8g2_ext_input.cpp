@@ -39,6 +39,19 @@ return:
 1: value has been updated
 */
 
+static void adaptiveInc(const float incr_ref,const float fact,const float threshold, float& incr)
+{
+  if (incr > 0 != incr_ref > 0 || incr == 0)
+  {
+    incr = incr_ref;
+  }
+  else
+  {
+    incr = fact * incr + incr_ref / 2;
+    incr = incr_ref >= 0 ? min(incr, threshold) : max(incr, threshold);
+  }
+}
+
 uint8_t ext_UserInterfaceInputValueInteger(u8g2_t *u8g2, Pad* extPad, const char *title, const char *pre, uint8_t *value, uint8_t lo, uint8_t hi, uint8_t digits, const char *post)
 {
   u8g2_SetFont(u8g2, u8g2_font_helvR12_te);
@@ -259,8 +272,9 @@ uint8_t ext_UserInterfaceInputValueFloatIncr(u8g2_t *u8g2, Pad* extPad, const ch
         }
         else
         {
-          incr < 0 ? incr = 0 : incr += incr_ref;
-          local_value += incr;
+          adaptiveInc(incr_ref, 1.05, 100, incr);
+          local_value += long(incr/ incr_ref )* incr_ref;
+          local_value = min(local_value, hi);
         }
         break;
       }
@@ -273,8 +287,9 @@ uint8_t ext_UserInterfaceInputValueFloatIncr(u8g2_t *u8g2, Pad* extPad, const ch
         }
         else
         {
-          incr > 0 ? incr = 0 : incr -= incr_ref;
-          local_value += incr;
+          adaptiveInc(-incr_ref, 1.05, -100, incr);
+          local_value += long(incr / incr_ref) * incr_ref;
+          local_value = max(local_value, lo);
         }
         break;
       }
@@ -600,31 +615,13 @@ uint8_t ext_UserInterfaceInputValueDate(u8g2_t *u8g2, Pad* extPad, const char *t
       }
       else if (event == U8X8_MSG_GPIO_MENU_UP)
       {
-        if (incr > 0)
-        {
-          incr = 1.05*incr + incr_ref / 2;
-        }
-        else
-          incr = incr_ref;
-        if (incr > 30)
-          incr = 30;
-
+        adaptiveInc(incr_ref, 1.05, 30, incr);
         add_days(local_year, local_month, local_day, incr);
         break;
       }
       else if (event == U8X8_MSG_GPIO_MENU_DOWN)
       {
-
-
-        if (incr < 0)
-        {
-          incr = 1.05*incr - incr_ref / 2;
-        }
-        else
-          incr = -incr_ref;
-        if (incr < -30)
-          incr = -30;
-
+        adaptiveInc(-incr_ref, 1.05, -30, incr);
         supress_days(local_year, local_month, local_day, -incr);
         break;
       }

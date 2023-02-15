@@ -1,8 +1,9 @@
 /*
- * Title       On-Step
- * by          Howard Dutton
+ * Title       TeenAstro
+ * by          Charles Lemaire
  *
  * Copyright (C) 2014 Howard Dutton
+ * Copyright (C) 2016-2023 Charles Lemaire
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,8 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * 
- * Author: Howard Dutton
- * http://www.stellarjourney.com
- * hjd1964@gmail.com
+ * Author: Charles Lemaire
+ * e2e4e7e5cf1@gmail.com
  *
  */

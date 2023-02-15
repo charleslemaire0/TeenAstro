@@ -21,7 +21,7 @@ private:
   OneButton *m_buttons[7];
   ButtonSpeed m_button_speed;
 public:
-  void setup(const int pin[7], const bool active[7], int adress);
+  void setup(const int pin[7], const bool active[7], int adress, bool rotated);
   void setMenuMode();
   void setControlerMode();
   ButtonSpeed getButtonSpeed();

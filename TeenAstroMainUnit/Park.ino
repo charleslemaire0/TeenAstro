@@ -18,13 +18,13 @@ bool setPark()
     h /= pow(2, motorA1.micro);
     d /= pow(2, motorA2.micro);
     // store our position
-    XEEPROM.writeLong(EE_posAxis1, h);
-    XEEPROM.writeLong(EE_posAxis2, d);
+    XEEPROM.writeLong(getMountAddress(EE_posAxis1), h);
+    XEEPROM.writeLong(getMountAddress(EE_posAxis2), d);
 
     //// and the align
     saveAlignModel();
     parkSaved = true;
-    XEEPROM.write(EE_parkSaved, parkSaved);
+    XEEPROM.write(getMountAddress(EE_parkSaved), parkSaved);
     sideralTracking = lastSideralTracking;
     return true;
   }
@@ -38,7 +38,7 @@ void unsetPark()
   if (parkSaved)
   {
     parkSaved = false;
-    XEEPROM.write(EE_parkSaved, parkSaved);
+    XEEPROM.write(getMountAddress(EE_parkSaved), parkSaved);
   }
 }
 
@@ -46,20 +46,20 @@ void saveAlignModel()
 {
   // and store our corrections
   float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
-  XEEPROM.write(EE_Tvalid, hasStarAlignment);
+  XEEPROM.write(getMountAddress(EE_Tvalid), hasStarAlignment);
   if (hasStarAlignment)
   {
     alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
   }
-  XEEPROM.writeFloat(EE_T11, t11);
-  XEEPROM.writeFloat(EE_T12, t12);
-  XEEPROM.writeFloat(EE_T13, t13);
-  XEEPROM.writeFloat(EE_T21, t21);
-  XEEPROM.writeFloat(EE_T22, t22);
-  XEEPROM.writeFloat(EE_T23, t23);
-  XEEPROM.writeFloat(EE_T31, t31);
-  XEEPROM.writeFloat(EE_T32, t32);
-  XEEPROM.writeFloat(EE_T33, t33);
+  XEEPROM.writeFloat(getMountAddress(EE_T11), t11);
+  XEEPROM.writeFloat(getMountAddress(EE_T12), t12);
+  XEEPROM.writeFloat(getMountAddress(EE_T13), t13);
+  XEEPROM.writeFloat(getMountAddress(EE_T21), t21);
+  XEEPROM.writeFloat(getMountAddress(EE_T22), t22);
+  XEEPROM.writeFloat(getMountAddress(EE_T23), t23);
+  XEEPROM.writeFloat(getMountAddress(EE_T31), t31);
+  XEEPROM.writeFloat(getMountAddress(EE_T32), t32);
+  XEEPROM.writeFloat(getMountAddress(EE_T33), t33);
   return;
 }
 
@@ -72,10 +72,10 @@ bool parkClearBacklash()
     return true;
   }
   cli();
-  long    LastTimerRateAxis1 = staA1.timerRate;
-  long    LastTimerRateAxis2 = staA2.timerRate;
-  staA1.timerRate = backlashA1.timerRate;
-  staA2.timerRate = backlashA2.timerRate;
+  long LastIntervalAxis1 = staA1.interval_Step_Cur;
+  long LastIntervalAxis2 = staA2.interval_Step_Cur;
+  staA1.interval_Step_Cur = backlashA1.interval_Step;
+  staA2.interval_Step_Cur = backlashA2.interval_Step;
   sei();
 
   // figure out how long we'll have to wait for the backlash to clear (+50%)
@@ -84,7 +84,7 @@ bool parkClearBacklash()
     t = (long)(backlashA1.inSteps * 1500 / geoA1.stepsPerSecond);
   else
     t = (long)(backlashA2.inSteps * 1500 / geoA2.stepsPerSecond);
-  t = (t / BacklashTakeupRate + 250) / 12;
+  t = (t / staA1.takeupRate + 250) / 12;
 
   // start by moving fully into the backlash
   cli();
@@ -119,8 +119,8 @@ bool parkClearBacklash()
   // we arrive back at the exact same position so ftargetAxis1/Dec don't need to be touched
   // move at the previous speed
   cli();
-  staA1.timerRate = LastTimerRateAxis1;
-  staA2.timerRate = LastTimerRateAxis2;
+  staA1.interval_Step_Cur = LastIntervalAxis1;
+  staA2.interval_Step_Cur = LastIntervalAxis2;
   sei();
 
   // return true on success
@@ -138,7 +138,7 @@ byte park()
   {
     return 0;
   }
-  if (lastError != ERR_NONE)
+  if (lastError != ERRT_NONE)
   {
     return 4;
   }
@@ -149,8 +149,8 @@ byte park()
       if (parkSaved)
       {
         // get the position we're supposed to park at
-        long    h = XEEPROM.readLong(EE_posAxis1);
-        long    d = XEEPROM.readLong(EE_posAxis2);
+        long    h = XEEPROM.readLong(getMountAddress(EE_posAxis1));
+        long    d = XEEPROM.readLong(getMountAddress(EE_posAxis2));
         h *= pow(2, motorA1.micro);
         d *= pow(2, motorA2.micro);
         // stop tracking
@@ -158,7 +158,7 @@ byte park()
         sideralTracking = false;
         // record our status
         parkStatus = PRK_PARKING;
-        XEEPROM.write(EE_parkStatus, parkStatus);
+        XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
         goTo(h, d);
         return 0;
       }
@@ -189,8 +189,8 @@ bool syncAtPark()
 
   // get our position
   long axis1, axis2;
-  axis1 = XEEPROM.readLong(EE_posAxis1);
-  axis2 = XEEPROM.readLong(EE_posAxis2);
+  axis1 = XEEPROM.readLong(getMountAddress(EE_posAxis1));
+  axis2 = XEEPROM.readLong(getMountAddress(EE_posAxis2));
   axis1 *= pow(2, motorA1.micro);
   axis2 *= pow(2, motorA2.micro);
   cli();
@@ -201,19 +201,20 @@ bool syncAtPark()
   sei();
   // set Meridian Flip behaviour to match mount type
   meridianFlip = mountType == MOUNT_TYPE_GEM ? FLIP_ALWAYS : FLIP_NEVER;
+  syncEwithT();
   return true;
 }
 
 //initialisation at park
 bool iniAtPark()
 {
-  parkSaved = XEEPROM.read(EE_parkSaved);
+  parkSaved = XEEPROM.read(getMountAddress(EE_parkSaved));
   if (!parkSaved)
   {
     parkStatus = PRK_UNPARKED;
     return false;
   }
-  byte parkStatusRead = XEEPROM.read(EE_parkStatus);
+  byte parkStatusRead = XEEPROM.read(getMountAddress(EE_parkStatus));
   bool ok = false;
   switch (parkStatusRead)
   {
@@ -226,7 +227,7 @@ bool iniAtPark()
     else
     {
       parkStatus = PRK_UNPARKED;
-      XEEPROM.write(EE_parkStatus, PRK_UNPARKED);
+      XEEPROM.write(getMountAddress(EE_parkStatus), PRK_UNPARKED);
     }
     break;
   case PRK_UNPARKED:
@@ -235,7 +236,7 @@ bool iniAtPark()
     break;
   default:
     parkStatus = PRK_UNPARKED;
-    XEEPROM.write(EE_parkStatus, PRK_UNPARKED);
+    XEEPROM.write(getMountAddress(EE_parkStatus), PRK_UNPARKED);
     break;
   }
   return ok;
@@ -248,7 +249,7 @@ void unpark()
     return;
   // update our status, we're not parked anymore
   parkStatus = PRK_UNPARKED;
-  XEEPROM.write(EE_parkStatus, parkStatus);
+  XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
   // start tracking the sky
   sideralTracking = true;
   return;

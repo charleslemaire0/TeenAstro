@@ -53,7 +53,7 @@ void SmartHandController::menuTelAction()
     }
     else if (currentstate == TeenAstroMountStatus::PRK_UNPARKED)
     {
-      const char* string_list_main_UnParkedL0 = telescoplocked ? T_UNLOCK : T_GOTO "\n" T_SYNC "\n" T_ALIGN "\n" T_TRACKING "\n" T_SIDEOFPIER "\n" T_SAVE " RADEC\n" T_LOCK "\n" T_SPIRAL;
+      const char* string_list_main_UnParkedL0 = telescoplocked ? T_UNLOCK : T_GOTO "\n" T_PUSHTO "\n" T_SYNC "\n" T_ALIGN "\n" T_TRACKING "\n" T_SIDEOFPIER "\n" T_SAVE " RADEC\n" T_LOCK "\n" T_SPIRAL;
       tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPEACTION, s_sel, string_list_main_UnParkedL0);
       s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
       MENU_RESULT answer = MR_CANCEL;
@@ -80,25 +80,29 @@ void SmartHandController::menuTelAction()
           exitMenu = true;
           break;
         case 1:
-          answer = menuSyncGoto(false);
+          answer = menuSyncGoto(NAV_GOTO);
           answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
           break;
         case 2:
-          answer = menuSyncGoto(true);
+          answer = menuSyncGoto(NAV_PUSHTO);
           answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
           break;
         case 3:
-          answer = menuAlignment();
+          answer = menuSyncGoto(NAV_SYNC);
           answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
           break;
         case 4:
-          menuTrack();
+          answer = menuAlignment();
+          answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
           break;
         case 5:
-          menuPier();
+          menuTrack();
           break;
         case 6:
-          if (SetLX200(":SU#") == LX200VALUESET)
+          menuPier();
+          break;
+        case 7:
+          if (SetLX200(":SU#") == LX200_VALUESET)
           {
             DisplayMessage("RA DEC", T_SAVED, 500);
           }
@@ -107,21 +111,15 @@ void SmartHandController::menuTelAction()
             DisplayMessage(T_LX200COMMAND, T_FAILED, 1000);
           }
           break;
-        case 7:
+        case 8:
           telescoplocked = true;
           exitMenu = true;
           break;
-        case 8:
-          if (SetLX200(":M@#") == LX200VALUESET)
-          {
-            DisplayMessage(T_SPIRAL, T_STARTED, 500);
-          }
-          else
-          {
-            DisplayMessage(T_LX200COMMAND, T_FAILED, 1000);
-          }
-          exitMenu = true;
+        case 9:
+        {
+          menuSpirale();
           break;
+        }
         default:
           break;
         }
@@ -148,7 +146,7 @@ void SmartHandController::menuTrack()
     case 1:
       char out[20];
       memset(out, 0, sizeof(out));
-      if (SetLX200(":Td#") == LX200VALUESET)
+      if (SetLX200(":Td#") == LX200_VALUESET)
       {
         DisplayMessage(T_TRACKING, T_OFF, 500);
         exitMenu = true;
@@ -181,7 +179,7 @@ void SmartHandController::menuTrack()
     switch (tmp_sel)
     {
     case 1:
-      if (SetLX200(":Te#") == LX200VALUESET)
+      if (SetLX200(":Te#") == LX200_VALUESET)
       {
         DisplayMessage(T_TRACKING, T_ON, 500);
         exitMenu = true;
@@ -209,8 +207,8 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
   {
     const char* string_list = alignInProgress ? T_CANCEL :
       (ta_MountStatus.isAligned() ?
-        "2 " T_STAR "\n3 " T_STAR "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error" :
-        "2 " T_STAR "\n3 " T_STAR "\n" T_PC " " T_ALIGNMENT//  "\n" T_SAVE "\n" T_Clear
+        "2 " T_STARS "\n3 " T_STARS "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error" :
+        "2 " T_STARS "\n3 " T_STARS "\n" T_PC " " T_ALIGNMENT//  "\n" T_SAVE "\n" T_Clear
         );
     int selection = display->UserInterfaceSelectionList(&buttonPad, T_ALIGNMENT, current_selection, string_list);
     if (selection == 0) return MR_CANCEL;
@@ -229,7 +227,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
         if (display->UserInterfaceMessage(&buttonPad, T_READYFOR, "2 " T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
         {
-          if (SetLX200(":A0#") == LX200VALUESET)
+          if (SetLX200(":A0#") == LX200_VALUESET)
           {
             ta_MountStatus.startAlign(TeenAstroMountStatus::AlignMode::ALIM_TWO);
             return MR_QUIT;
@@ -245,7 +243,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
       if (display->UserInterfaceMessage(&buttonPad, T_READYFOR, "3 " T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
       {
-        if (SetLX200(":A0#") == LX200VALUESET)
+        if (SetLX200(":A0#") == LX200_VALUESET)
         {
           ta_MountStatus.startAlign(TeenAstroMountStatus::AlignMode::ALIM_THREE);
           return MR_QUIT;
@@ -259,7 +257,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
     case 4:
       if (display->UserInterfaceMessage(&buttonPad, T_SAVE, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
       {
-        if (SetLX200(":AW#") == LX200VALUESET)
+        if (SetLX200(":AW#") == LX200_VALUESET)
         {
           DisplayMessage(T_ALIGNMENT, T_SAVED, -1);
           return MR_QUIT;
@@ -273,7 +271,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
     case 5:
       if (display->UserInterfaceMessage(&buttonPad, T_Clear, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
       {
-        if (SetLX200(":AC#") == LX200VALUESET)
+        if (SetLX200(":AC#") == LX200_VALUESET)
         {
           DisplayMessage(T_MOUNTSYNCED, T_ATHOME, -1);
           return MR_QUIT;
@@ -288,7 +286,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
       if (display->UserInterfaceMessage(&buttonPad, T_READYFOR, T_PC, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
       {
-        if (SetLX200(":AA#") == LX200VALUESET)
+        if (SetLX200(":AA#") == LX200_VALUESET)
         {
           DisplayMessage(T_MOUNTSYNCED, T_ATHOME, -1);
           return MR_QUIT;
@@ -304,11 +302,11 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       char err_alt[15] = { "?" };
       char err_pol[15] = { "?" };
       if (
-        GetLX200(":GXAw#", err_pol, sizeof(err_pol)) == LX200VALUEGET
+        GetLX200(":GXAw#", err_pol, sizeof(err_pol)) == LX200_VALUEGET
         &&
-        GetLX200(":GXAz#", err_az, sizeof(err_az)) == LX200VALUEGET
+        GetLX200(":GXAz#", err_az, sizeof(err_az)) == LX200_VALUEGET
         &&
-        GetLX200(":GXAa#", err_alt, sizeof(err_alt)) == LX200VALUEGET)
+        GetLX200(":GXAa#", err_alt, sizeof(err_alt)) == LX200_VALUEGET)
       {
         DisplayLongMessage("[Sep.;Az.;Alt.]:", err_pol, err_az, err_alt, -1);
       }

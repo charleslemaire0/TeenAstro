@@ -84,7 +84,7 @@ const char html_configSiteSelect2[] PROGMEM =
 "</select>"
 " (Select your predefined site)"
 "</form>"
-"\r\n";
+"<br/>\r\n";
 const char html_configSiteName1[] PROGMEM =
 "<div class='bt' align='left'> Selected Site definition: <br/> </div>"
 "<form method='get' action='/configuration_site.htm'>";
@@ -169,16 +169,15 @@ void TeenAstroWifi::handleConfigurationSite()
   }
   data += FPSTR(html_siteQuick1a);
   sendHtml(data);
-  if (GetLX200(":W?#", temp1, sizeof(temp1)) == LX200VALUEGET)
+  if (GetLX200(":W?#", temp1, sizeof(temp1)) == LX200_VALUEGET)
   {
     int selectedsite = 0;
     if ((atoi2(temp1, &selectedsite)) && ((selectedsite >= 0) && (selectedsite <= 3)))
     {
-      char m[32]; char n[32]; char o[32]; char p[32];
+      char m[32]; char n[32]; char o[32];
       GetLX200(":GM#", m, sizeof(m));
       GetLX200(":GN#", n, sizeof(n));
       GetLX200(":GO#", o, sizeof(o));
-      GetLX200(":GP#", p, sizeof(p));
       data += FPSTR(html_configSiteSelect1);
       sendHtml(data);
       selectedsite == 0 ? data += "<option selected value='0'>" : data += "<option value='0'>";
@@ -190,14 +189,11 @@ void TeenAstroWifi::handleConfigurationSite()
       selectedsite == 2 ? data += "<option selected value='2'>" : data += "<option value='2'>";
       sprintf(temp, "%s</option>", o);
       data += temp;
-      selectedsite == 3 ? data += "<option selected value='3'>" : data += "<option value='3'>";
-      sprintf(temp, "%s</option>", p);
-      data += temp;
       data += FPSTR(html_configSiteSelect2);
       sendHtml(data);
 
       // Name
-      if (GetLX200(":Gn#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "error!");
+      if (GetLX200(":Gn#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "error!");
       data += FPSTR(html_configSiteName1);
       sprintf_P(temp, html_configSiteName2, temp1);
       data += temp;
@@ -205,13 +201,13 @@ void TeenAstroWifi::handleConfigurationSite()
       sendHtml(data);
 
       // Time Zone
-      if (GetLX200(":GG#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); float TShift = -(float)strtof(&temp1[0], NULL);
+      if (GetLX200(":GG#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); float TShift = -(float)strtof(&temp1[0], NULL);
       sprintf_P(temp, html_configTimeZone, TShift);
       data += temp;
       sendHtml(data);
 
       // Latitude
-      if (GetLX200(":Gtf#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "+00*00*00");
+      if (GetLX200(":Gtf#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "+00*00*00");
       data += FPSTR(html_configLatNS1);
       sendHtml(data);
       temp1[0] == '+' ? data += "<option selected value='0'>North</option>" : data += "<option value='0'>North</option>";
@@ -233,7 +229,7 @@ void TeenAstroWifi::handleConfigurationSite()
       data += FPSTR(html_uploadLat);
       sendHtml(data);
       // Longitude
-      if (GetLX200(":Ggf#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "+000*00*00");
+      if (GetLX200(":Ggf#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "+000*00*00");
       data += FPSTR(html_configLongWE1);
       temp1[0] == '+' ? data += "<option selected value='0'>West</option>" : data += "<option value='0'>West</option>";
       temp1[0] == '-' ? data += "<option selected value='1'>East</option>" : data += "<option value='1'>East</option>";
@@ -254,7 +250,7 @@ void TeenAstroWifi::handleConfigurationSite()
       data += FPSTR(html_uploadLong);
       sendHtml(data);
       // Elevation
-      if (GetLX200(":Ge#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "+000");
+      if (GetLX200(":Ge#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "+000");
       if (temp1[0] == '+') temp1[0] = '0';
       data += FPSTR(html_configElev1);
       sprintf_P(temp, html_configElev2, temp1);

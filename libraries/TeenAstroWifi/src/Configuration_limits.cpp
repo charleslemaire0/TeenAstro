@@ -93,38 +93,27 @@ void TeenAstroWifi::handleConfigurationLimits()
   processConfigurationLimitsGet();
   preparePage(data, ServerPage::Limits);
   sendHtml(data);
-  //if (restartRequired_t)
-  //{
-  //  data += FPSTR(html_reboot_t);
-  //  data += "</div></div></body></html>";
-  //  sendHtml(data);
-  //  sendHtmlDone(data);
-  //  restartRequired_t = false;
-  //  delay(1000);
-  //  return;
-  //}
-  //update
   ta_MountStatus.updateMount();
 
   // Overhead and Horizon Limits
-  if (GetLX200(":GXLH#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int minAlt = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":GXLH#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); int minAlt = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configMinAlt, minAlt);
   data += temp;
   sendHtml(data);
-  if (GetLX200(":GXLO#", temp1, sizeof(temp1)) == LX200GETVALUEFAILED) strcpy(temp1, "0"); int maxAlt = (int)strtol(&temp1[0], NULL, 10);
+  if (GetLX200(":GXLO#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); int maxAlt = (int)strtol(&temp1[0], NULL, 10);
   sprintf_P(temp, html_configMaxAlt, maxAlt);
   data += temp;
   sendHtml(data);
   // Meridian Limits
   if (ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_GEM)
   {
-    if (GetLX200(":GXLU#", temp1, sizeof(temp1)) == LX200VALUEGET)
+    if (GetLX200(":GXLU#", temp1, sizeof(temp1)) == LX200_VALUEGET)
     {
       float angle = (float)strtol(&temp1[0], NULL, 10) / 10;
       sprintf_P(temp, html_configUnderPole, angle);
       data += temp;
     }
-    if (GetLX200(":GXLE#", temp1, sizeof(temp1)) == LX200VALUEGET && GetLX200(":GXLW#", temp2, sizeof(temp2)) == LX200VALUEGET)
+    if (GetLX200(":GXLE#", temp1, sizeof(temp1)) == LX200_VALUEGET && GetLX200(":GXLW#", temp2, sizeof(temp2)) == LX200_VALUEGET)
     {
       int degPastMerE = (int)strtol(&temp1[0], NULL, 10);
       degPastMerE = round((degPastMerE * 15.0) / 60.0);
@@ -138,25 +127,25 @@ void TeenAstroWifi::handleConfigurationLimits()
 
   }
 
-  if (GetLX200(":GXLA#", temp1, sizeof(temp1)) == LX200VALUEGET)
+  if (GetLX200(":GXLA#", temp1, sizeof(temp1)) == LX200_VALUEGET)
   {
     float angle = -(float)strtol(&temp1[0], NULL, 10) / 10;
     sprintf_P(temp, html_configMinAxis1, angle);
     data += temp;
   }
-  if (GetLX200(":GXLB#", temp1, sizeof(temp1)) == LX200VALUEGET)
+  if (GetLX200(":GXLB#", temp1, sizeof(temp1)) == LX200_VALUEGET)
   {
     float angle = (float)strtol(&temp1[0], NULL, 10) / 10;
     sprintf_P(temp, html_configMaxAxis1, angle);
     data += temp;
   }
-  if (GetLX200(":GXLC#", temp1, sizeof(temp1)) == LX200VALUEGET)
+  if (GetLX200(":GXLC#", temp1, sizeof(temp1)) == LX200_VALUEGET)
   {
     float angle = -(float)strtol(&temp1[0], NULL, 10) / 10;
     sprintf_P(temp, html_configMinAxis2, angle);
     data += temp;
   }
-  if (GetLX200(":GXLD#", temp1, sizeof(temp1)) == LX200VALUEGET)
+  if (GetLX200(":GXLD#", temp1, sizeof(temp1)) == LX200_VALUEGET)
   {
     float angle = (float)strtol(&temp1[0], NULL, 10) / 10;
     sprintf_P(temp, html_configMaxAxis2, angle);

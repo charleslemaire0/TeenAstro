@@ -10,26 +10,14 @@ void Command_dollar()
       XEEPROM.write(i, 0);
     }
   case '!':
-    Serial.end();
-    Serial1.end();
-    Serial2.end();
-    Serial3.end();
-    delay(1000);
-#ifdef ARDUINO_TEENSY40 // In fact this code is suitable for Teensy 3.2 also
-#define CPU_RESTART_ADDR (uint32_t *)0xE000ED0C
-#define CPU_RESTART_VAL 0x5FA0004
-#define CPU_RESTART (*CPU_RESTART_ADDR = CPU_RESTART_VAL);
-    CPU_RESTART;
-#else
-    _reboot_Teensyduino_();
-#endif
+    reboot();
     break;
   case 'X':
     initmotor(true);
-    strcpy(reply, "1");
+    replyOk();
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }
@@ -42,6 +30,7 @@ void Command_dollar()
 //  :AC#
 //  :AW#
 //  :AA#  Resets alignment as AC# AND activates alignment on next 3 syncs!  (<-> sync modded accordingly)
+
 void Command_A()
 {
   switch (command[1])
@@ -56,20 +45,13 @@ void Command_A()
     // start tracking
     sideralTracking = true;
     lastSetTrakingEnable = millis();
-    strcpy(reply, "1");
+    replyOk();
     break;
   case '2':
   {
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
-    if (doesRefraction.forGoto)
-    {
-      EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-    }
-    else
-    {
-      EquToHorTopo(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-    }
+    EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
 
     if (alignment.getRefs() == 0)
     {
@@ -94,22 +76,14 @@ void Command_A()
         sei();
       }
     }
-    strcpy(reply, "1");
+    replyOk();
     break;
   }
   case '3':
   {
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Azm, Alt;
-    if (doesRefraction.forGoto)
-    {
-      EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-    }
-    else
-    {
-      EquToHorTopo(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-    }
-
+    EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
     if (alignment.getRefs() == 0)
     {
       syncAzAlt(Azm, Alt, GetPierSide());
@@ -127,7 +101,7 @@ void Command_A()
       staA2.target = staA2.pos;
       sei();
     }
-    strcpy(reply, "1");
+    replyOk();
     break;
   }
   case 'C':
@@ -135,14 +109,15 @@ void Command_A()
     initTransformation(true);
     syncAtHome();
     autoAlignmentBySync = command[1] == 'A';
-    strcpy(reply, "1");
+    replyOk();
     break;
   case 'W':
     saveAlignModel();
-    strcpy(reply, "1");
+    replyOk();
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
+    break;
   }
 }
 
@@ -175,24 +150,24 @@ void Command_B()
 
   analogWrite(RETICULE_LED_PINS, reticuleBrightness);
 #endif
-  reply[0] = 0;
+  replyNothing();
 }
 
 //   C - Sync Control
-//  :CA#   Synchonize the telescope with the current Azimuth and Altitude coordinates
-//         Returns: "N/A#" on success, "En#" on failure where n is the error code per the :MS# command
+//  :CA#   Synchonize the telescope with the current Target Azimuth and Altitude coordinates
+//         Returns: "N/A#" 
 //  :CM#   Synchonize the telescope with the current database object (as above)
-//         Returns: "N/A#" on success, "En#" on failure where n is the error code per the :MS# command
-//  :CS#   Synchonize the telescope with the current right ascension and declination coordinates
-//         Returns: "N/A#" on success, "En#" on failure where n is the error code per the :MS# command
+//         Returns: "N/A#"  
+//  :CS#   Synchonize the telescope with the current Target right ascension and declination coordinates
+//         Returns: "N/A#" 
 //  :CU#   Synchonize the telescope with the User defined object
-//         Returns: "N/A#" on success, "En#" on failure where n is the error code per the :MS# command
+//         Returns: "N/A#"
+
 void Command_C()
 {
-  int i;
   if ((parkStatus == PRK_UNPARKED) &&
-      !movingTo &&
-      (command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
+    !movingTo &&
+    (command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
   {
     PierSide targetPierSide = GetPierSide();
     if (newTargetPierSide != PIER_NOTVALID)
@@ -204,18 +179,12 @@ void Command_C()
     {
     case 'M':
     case 'S':
+    {
       double newTargetHA;
-      if (autoAlignmentBySync){
+      if (autoAlignmentBySync) {
         newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         double Azm, Alt;
-        if (doesRefraction.forGoto)
-        {
-          EquToHorApp(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-        }
-        else
-        {
-          EquToHorTopo(newTargetHA, newTargetDec, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-        }
+        EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
         if (alignment.getRefs() == 0)
         {
           syncAzAlt(Azm, Alt, GetPierSide());
@@ -226,48 +195,213 @@ void Command_C()
         sei();
         alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
         if (alignment.isReady())
-          {
-            hasStarAlignment = true;
-            cli();
-            staA1.target = staA1.pos;
-            staA2.target = staA2.pos;
-            sei();
-            autoAlignmentBySync = false;
-          }
+        {
+          hasStarAlignment = true;
+          cli();
+          staA1.target = staA1.pos;
+          staA2.target = staA2.pos;
+          sei();
+          autoAlignmentBySync = false;
+        }
       }
       else
       {
         newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-        i = syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
+        syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
+        syncEwithT();
       }
-        break;
+      if (command[1] == 'M')
+      {
+        strcpy(reply, "N/A#");
+      }
+    }
+    break;
     case 'U':
     {
       // :CU# sync with the User Defined RA DEC
-      newTargetRA = (double)XEEPROM.readFloat(EE_RA);
-      newTargetDec = (double)XEEPROM.readFloat(EE_DEC);
+      newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
+      newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-      i = syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
+      syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
+      syncEwithT();
+      strcpy(reply, "N/A#");
       break;
     }
     case 'A':
-      i = syncAzAlt(newTargetAzm, newTargetAlt, targetPierSide);
+      syncAzAlt(newTargetAzm, newTargetAlt, targetPierSide);
+      syncEwithT();
+      strcpy(reply, "N/A#");
       break;
-    }
-    i = 0;
-    if (command[1] == 'M' || command[1] == 'A' || command[1] == 'U')
-    {
-      if (i == 0)
-        strcpy(reply, "N/A#");
-      if (i > 0)
-      {
-        reply[0] = 'E';
-        reply[1] = '0' + i;
-        reply[2] = '#';
-      }
     }
   }
 }
+//----------------------------------------------------------------------------------
+//    E - encoder commands
+//    all commands Returns 1# or 0#
+//  :EAS#   Align Encoder Start
+//  :EAE#   Align Encoder End
+//  :EAQ#   Align Encoder Quit
+//  :ECT#   Synchonize the telescope with the Encoders
+//  :ECE#   Synchonize the Encoders with the telescope
+//  :ECS#   Synchronise at the end of a pushto to Target
+void Command_E()
+{
+  switch (command[1])
+  {
+  case 'A':
+  {
+    switch (command[2])
+    {
+    case 'S':
+    {
+      //  :EAS#  Align Encoder Start
+      double A1, A2;
+      EncodeSyncMode = ES_OFF;
+      syncEwithT();
+      getInstrDeg(&A1, &A2);
+      encoderA1.setRef(A1);
+      encoderA2.setRef(A2);
+      replyOk();
+    }
+    break;
+    case 'E':
+    {
+      //  :EAE#  Align Encoder End
+      double A1, A2;
+      getInstrDeg(&A1, &A2);
+      bool ok = encoderA1.calibrate(A1);
+      ok &= encoderA1.calibrate(A2);
+      ok ? replyOk() : replyFailed();
+    }
+    break;
+    case 'Q':
+    {
+      //  :EAQ#  Align Encoder Quit
+      encoderA1.delRef();
+      encoderA2.delRef();
+      replyOk();
+    }
+    break;
+    default:
+      replyFailed();
+      break;
+    }
+  }
+  break;
+  case 'C':
+  {
+    switch (command[2])
+    {
+    case 'T':
+    {
+      //  :ECT#   Synchonize the telescope with the Encoders
+      syncTwithE();
+      replyOk();
+    }
+    break;
+    case 'E':
+    {
+      //  :ECE#   Synchonize the Encoders with the telescope
+      syncEwithT();
+      replyOk();
+    }
+    break;
+    case 'S':
+    {
+      //  :ECE#   Synchonize the Telescope and Encoder to Target
+      switch (PushtoStatus)
+      {
+      case PT_RADEC:
+      {
+        double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+        syncEqu(newTargetHA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat());
+        syncEwithT();
+        replyOk();
+      }
+      break;
+      case PT_ALTAZ:
+      {
+        syncAzAlt(newTargetAzm, newTargetAlt, GetPierSide());
+        syncEwithT();
+        replyOk();
+      }
+      break;
+      default:
+        replyFailed();
+        break;
+      }
+    }
+    break;
+    default:
+      replyFailed();
+      break;
+    }
+  }
+  break;
+  case 'D':
+  {
+    float delta1;
+    float delta2;
+    int e = 0;
+    switch (PushtoStatus)
+    {
+    case PT_RADEC:
+      e = PushToEqu(newTargetRA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat(), &delta1, &delta2);
+      sprintf(reply, "%d,%+06d,%+06d#", e, (int)(60 * delta1), (int)(60 * delta2));
+      break;
+    case PT_ALTAZ:
+      e = PushToHor(&newTargetAzm, &newTargetAlt, GetPierSide(), &delta1, &delta2);
+      sprintf(reply, "%d,%+06d,%+06d#", e, (int)(60 * delta1), (int)(60 * delta2));
+      break;
+    default:
+      sprintf(reply, "%d,%+06d,%+06d#", 0, 0, 0);
+      break;
+    }
+  }
+  break;
+  case 'M':
+  {
+    float delta1;
+    float delta2;
+    int e = 0;
+    if (command[2] == 'S')
+    {
+      e = PushToEqu(newTargetRA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat(), &delta1, &delta2);
+      sprintf(reply, "%d", e);
+      PushtoStatus = PT_RADEC;
+    }
+    else if (command[2] == 'A')
+    {
+      e = PushToHor(&newTargetAzm, &newTargetAlt, GetPierSide(), &delta1, &delta2);
+      sprintf(reply, "%d", e);
+      PushtoStatus = PT_ALTAZ;
+    }
+    else if (command[2] == 'U')
+    {
+      newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
+      newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
+      e = PushToEqu(newTargetRA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat(), &delta1, &delta2);
+      sprintf(reply, "%d", e);
+      PushtoStatus = PT_RADEC;
+    }
+    else if (command[2] == 'Q')
+    {
+      PushtoStatus = PT_OFF;
+      replyOk();
+    }
+    else
+    {
+      replyFailed();
+    }
+
+  }
+  break;
+  default:
+    replyFailed();
+    break;
+  }
+}
+
 
 //----------------------------------------------------------------------------------
 //   D - Distance Bars
@@ -276,10 +410,10 @@ void Command_D()
 {
   if (command[1] != 0)
   {
-    strcpy(reply, "0");
+    replyFailed();
     return;
   }
-    
+
   if (movingTo)
   {
     reply[0] = (char)127;
@@ -309,64 +443,64 @@ void Command_h()
     //          Return: 0 on failure
     //                  1 on success
     if (!goHome())
-      strcpy(reply, "0");
+      replyFailed();
     else
-      strcpy(reply, "1");
+      replyOk();
     break;
   case 'B':
     //  :hB#   Set the home position
     //          Return: 0 on failure
     //                  1 on success
-    if (!setHome()) strcpy(reply, "0");
-    else strcpy(reply, "1");
+    if (!setHome()) replyFailed();
+    else replyOk();
     break;
   case 'b':
     //  :hb#   Reset the home position
     //          Return: 0 on failure
     //                  1 on success
     homeSaved = false;
-    XEEPROM.write(EE_homeSaved, false);
+    XEEPROM.write(getMountAddress(EE_homeSaved), false);
     initHome();
-    strcpy(reply, "1");
+    replyOk();
     break;
   case 'O':
     // : hO#   Reset telescope at the Park position if Park position is stored.
     //          Return: 0 on failure
     //                  1 on success
     if (!syncAtPark())
-      strcpy(reply, "0");
+      replyFailed();
     else
-      strcpy(reply, "1");
+      replyOk();
     break;
   case 'P':
     // : hP#   Goto the Park Position
     //          Return: 0 on failure
     //                  1 on success
     if (park())
-      strcpy(reply, "0");
+      replyFailed();
     else
-      strcpy(reply, "1");
+      replyOk();
     break;
   case 'Q':
     //  :hQ#   Set the park position
     //          Return: 0 on failure
     //                  1 on success
     if (!setPark())
-      strcpy(reply, "0");
+      replyFailed();
     else
-      strcpy(reply, "1");
+      replyOk();
     break;
   case 'R':
     //  :hR#   Restore parked telescope to operation
     //          Return: 0 on failure
     //                  1 on success
     unpark();
-    strcpy(reply, "1");
+    replyOk();
     break;
 
 
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }
@@ -389,17 +523,13 @@ void Command_Q()
       }
       else if (GuidingState == GuidingRecenter || GuidingState == GuidingST4 || GuidingState == GuidingPulse)
       {
-        if (guideA1.dir)
-          StopAxis1();
-        if (guideA2.dir)
-          StopAxis2();
+        StopAxis1();
+        StopAxis2();
       }
       else
       {
-        if (guideA1.dir)
-          guideA1.dir = 'b';
-        if (guideA2.dir)
-          guideA2.dir = 'b';
+        guideA1.brake();
+        guideA2.brake();
       }
     }
     break;
@@ -407,28 +537,26 @@ void Command_Q()
   case 'w':
     //  :Qe# & Qw#   Halt east/westward Slews
     //         Returns: Nothing
+  {
+    if ((parkStatus == PRK_UNPARKED) && !movingTo)
     {
-      if ((parkStatus == PRK_UNPARKED) && !movingTo)
-      {
-        if (guideA1.dir)
-          StopAxis1();
-      }
+      StopAxis1();
     }
-    break;
+  }
+  break;
   case 'n':
   case 's':
     //  :Qn# & Qs#   Halt north/southward Slews
     //         Returns: Nothing
+  {
+    if ((parkStatus == PRK_UNPARKED) && !movingTo)
     {
-      if ((parkStatus == PRK_UNPARKED) && !movingTo)
-      {
-        if (guideA2.dir)
-          StopAxis2();
-      }
+      StopAxis2();
     }
-    break;
+  }
+  break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }
@@ -467,12 +595,12 @@ void Command_R()
     i = command[1] - '0';
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     return;
   }
   if (!movingTo && GuidingState == GuidingOFF)
   {
-    enableGuideRate(i, false);
+    enableGuideRate(i);
   }
 }
 
@@ -498,43 +626,43 @@ void Command_T()
 
   {
   case '+':
-    siderealInterval -= HzCf * (0.02);
-    reply[0] = 0;
+    siderealClockSpeed -= HzCf * (0.02);
+    replyNothing();
     break;
   case '-':
-    siderealInterval += HzCf * (0.02);
-    reply[0] = 0;
+    siderealClockSpeed += HzCf * (0.02);
+    replyNothing();
     break;
   case 'S':
     // solar tracking rate 60Hz
-    SetTrackingRate(TrackingSolar,0);
+    SetTrackingRate(TrackingSolar, 0);
     sideralMode = SIDM_SUN;
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'L':
     // lunar tracking rate 57.9Hz
-    SetTrackingRate(TrackingLunar,0);
+    SetTrackingRate(TrackingLunar, 0);
     sideralMode = SIDM_MOON;
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'Q':
     // sidereal tracking rate
-    SetTrackingRate(TrackingStar,0);
+    SetTrackingRate(TrackingStar, 0);
     sideralMode = SIDM_STAR;
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'R':
     // reset master sidereal clock interval
-    siderealInterval = masterSiderealInterval;
+    siderealClockSpeed = mastersiderealClockSpeed;
     SetTrackingRate(TrackingStar, 0);
     sideralMode = SIDM_STAR;
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'T':
     //set Target tracking rate
     SetTrackingRate(1.0 - (double)storedTrakingRateRA / 10000.0, (double)storedTrakingRateDEC / 10000.0);
     sideralMode = SIDM_TARGET;
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'e':
     if (parkStatus == PRK_UNPARKED)
@@ -543,50 +671,50 @@ void Command_T()
       atHome = false;
       sideralTracking = true;
       computeTrackingRate(true);
-      strcpy(reply, "1");
+      replyOk();
     }
     else
-      strcpy(reply, "0");
+      replyFailed();
     break;
   case 'd':
     if (parkStatus == PRK_UNPARKED)
     {
       sideralTracking = false;
-      strcpy(reply, "1");
+      replyOk();
     }
     else
-      strcpy(reply, "0");
+      replyFailed();
     break;
   case '0':
     // turn compensation off
     tc = TC_NONE;
     computeTrackingRate(true);
-    XEEPROM.update(EE_TC_Axis, 0);
-    strcpy(reply, "1");
+    XEEPROM.update(getMountAddress(EE_TC_Axis), 0);
+    replyOk();
     break;
   case '1':
     // turn compensation RA only
     tc = TC_RA;
     computeTrackingRate(true);
-    XEEPROM.update(EE_TC_Axis, 0);
-    strcpy(reply, "1");
+    XEEPROM.update(getMountAddress(EE_TC_Axis), 0);
+    replyOk();
     break;
   case '2':
     // turn compensation BOTH
     tc = TC_BOTH;
     computeTrackingRate(true);
-    XEEPROM.update(EE_TC_Axis, 2);
-    strcpy(reply, "1");
+    XEEPROM.update(getMountAddress(EE_TC_Axis), 2);
+    replyOk();
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 
   // Only burn the new rate if changing the sidereal interval
   if (command[1] == '+' || command[1] == '-' || command[1] == 'R')
   {
-    XEEPROM.writeLong(EE_siderealInterval, siderealInterval);
+    XEEPROM.writeLong(getMountAddress(EE_siderealClockSpeed), siderealClockSpeed * 16);
     updateSideral();
   }
 }
@@ -601,10 +729,10 @@ void Command_U()
   if (command[1] == 0)
   {
     highPrecision = !highPrecision;
-    reply[0] = 0;
+    replyNothing();
   }
   else
-    strcpy(reply, "0");
+    replyFailed();
 }
 
 //   W - Site Select/Site get
@@ -621,21 +749,21 @@ void Command_W()
   case '3':
   {
     uint8_t currentSite = command[1] - '0';
-    XEEPROM.write(EE_currentSite, currentSite);
+    XEEPROM.write(getMountAddress(EE_currentSite), currentSite);
     localSite.ReadSiteDefinition(currentSite);
     rtk.resetLongitude(*localSite.longitude());
     initCelestialPole();
     initHome();
     initTransformation(true);
     syncAtHome();
-    reply[0] = 0;
+    replyNothing();
     break;
   }
   case '?':
     sprintf(reply, "%d#", localSite.siteIndex());
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }

@@ -19,8 +19,7 @@ void processCommands()
   }
 
   // Handles empty and one char replies
-  reply[0] = 0;
-  reply[1] = 0;
+  clearReply();
 
   switch (command[0])
   {
@@ -38,6 +37,9 @@ void processCommands()
     break;
   case 'D':
     Command_D();
+    break;
+  case 'E':
+    Command_E();
     break;
   case 'F':
     Command_F();
@@ -70,7 +72,7 @@ void processCommands()
     Command_W();
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 
@@ -80,4 +82,24 @@ void processCommands()
     S_SHC.reply(reply, process_command);
   }
 
+}
+
+void replyFailed()
+{
+  strcpy(reply, "0");
+}
+void replyOk()
+{
+  strcpy(reply, "1");
+}
+void replyNothing()
+{
+  reply[0] = 0;
+}
+void clearReply()
+{
+  for (int i = 0; i < 50; i++)
+  {
+    reply[i] = 0;
+  }
 }

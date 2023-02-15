@@ -3,6 +3,27 @@
 // 0-1023 bytes
 // general purpose storage 0..99
 
+uint8_t             midx;
+
+#define EE_autoInitKey      0
+#define EE_currentMount     4
+
+#define EE_sites            10
+#define EE_site_lat         0
+#define EE_site_long        4
+#define EE_site_height      8
+#define EE_site_time        10
+#define EE_site_name        11
+
+
+#define MountNameLen     15 // withnull character!
+#define MountSize        200
+#define maxNumMount      2
+
+
+#define EE_Mounts           100
+#define MountSize           200
+
 #define EE_mountType        0
 #define EE_posAxis1         1
 #define EE_posAxis2         5
@@ -24,6 +45,8 @@
 #define EE_maxRate          26
 #define EE_DefaultRate      28
 #define EE_degAcc           29
+#define EE_TakeupRate       30
+
 
 // limits Localsite
 #define EE_minAlt           33
@@ -41,16 +64,14 @@
 #define EE_dpmE             52
 #define EE_dpmW             53
 #define EE_dup              54
-// limits Altaz
-#define EE_DegreePastAZ     55
 
 //user defined homeposition
 #define EE_homeSaved        56
 #define EE_homePosAxis1     57 // in degree
 #define EE_homePosAxis2     61 // in degree
 
-#define EE_siderealInterval     88
-#define EE_autoInitKey          96
+#define EE_siderealClockSpeed     88
+
 
 //motor1
 #define EE_motorA1gear          100
@@ -72,17 +93,19 @@
 #define EE_backlashAxis2        124
 #define EE_motorA2silent        126
 
+//encoder1
+#define EE_encoderA1pulsePerDegree 130
+#define EE_encoderA1reverse        134
+//encoder2
+#define EE_encoderA2pulsePerDegree 135
+#define EE_encoderA2reverse        139
 
+#define EE_encoderSync            140
 
-#define EE_sites            200
-#define EE_site_lat         0
-#define EE_site_long        4
-#define EE_site_height      8
-#define EE_site_time        10
-#define EE_site_name        11
+#define EE_mountName              141
 
 //transformation matrix
-#define EE_T11              EE_sites +  27 * 4
+#define EE_T11              160
 #define EE_T12              EE_T11 + 4
 #define EE_T13              EE_T11 + 8
 #define EE_T21              EE_T11 + 12
@@ -92,3 +115,13 @@
 #define EE_T32              EE_T11 + 28
 #define EE_T33              EE_T11 + 32
 #define EE_Tvalid           EE_T11 + 36
+
+int getMountAddress(int adress)
+{
+  return EE_Mounts + MountSize * midx + adress;
+}
+
+int getMountAddress(int adress, int idx)
+{
+  return EE_Mounts + MountSize * idx + adress;
+}

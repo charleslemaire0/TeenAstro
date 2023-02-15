@@ -6,7 +6,7 @@
 #define Cat_STT_Prefix "STT"
 #define NUM_STT 766
 
-const char *Cat_STT_Names=
+const char Cat_STT_Names[] PROGMEM=
 "A0;"
 "F8V;"
 "G0III;"
@@ -774,7 +774,7 @@ const char *Cat_STT_Names=
 "G8III-IV;"
 "PN;"
 ;
-const char *Cat_STT_SubId=
+const char Cat_STT_SubId[] PROGMEM =
 "AB;"
 "AB,C;"
 "AB;"

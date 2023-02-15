@@ -6,24 +6,14 @@
 
 void updateDeltaTarget()
 {
-  cli();
-  staA1.deltaTarget = (long)staA1.target - staA1.pos;
-  staA2.deltaTarget = (long)staA2.target - staA2.pos;
-  sei();
+  staA1.updateDeltaTarget();
+  staA2.updateDeltaTarget();
 }
 
-bool atTargetAxis1(bool update = false, double TrackingRate = 1.)
+void updateDeltaStart()
 {
-  if (update)
-    staA1.updateDeltaTarget();
-  return geoA1.atTarget(staA1.deltaTarget, TrackingRate);
-}
-
-bool atTargetAxis2(bool update = false, double TrackingRate = 1.)
-{
-  if (update)
-    staA2.updateDeltaTarget();
-  return geoA2.atTarget(staA2.deltaTarget, TrackingRate);
+  staA1.updateDeltaStart();
+  staA2.updateDeltaStart();
 }
 
 PierSide GetPierSide()
@@ -32,15 +22,12 @@ PierSide GetPierSide()
   return -geoA2.quaterRot <= pos && pos <= geoA2.quaterRot ? PIER_EAST : PIER_WEST;
 }
 
-// staA.trackingTimerRate are x the sidereal rate
 void ApplyTrackingRate()
 {
-
   staA1.CurrentTrackingRate = staA1.RequestedTrackingRate;
   staA2.CurrentTrackingRate = staA2.RequestedTrackingRate;
   staA1.fstep = geoA1.stepsPerCentiSecond * staA1.CurrentTrackingRate;
   staA2.fstep = geoA2.stepsPerCentiSecond * staA2.CurrentTrackingRate;
-
 }
 
 void SetTrackingRate(double rHA, double rDEC)
@@ -51,7 +38,7 @@ void SetTrackingRate(double rHA, double rDEC)
 }
 
 void computeTrackingRate(bool apply)
-{  
+{
   //reset SideralMode if it is equal to sideralspeed
   if (RequestedTrackingRateHA == 1 && RequestedTrackingRateDEC == 0)
   {
@@ -85,20 +72,48 @@ void computeTrackingRate(bool apply)
   }
 }
 
+void RateFromMovingTarget(const double &HA_prev, const double &Dec_prev,
+  const double &HA_next, const double &Dec_next,
+  const double &TimeRange, const PierSide &side, const bool &refr, 
+  double &A1_trackingRate, double &A2_trackingRate)
+{
+  double Axis1_tmp, Axis2_tmp = 0.;
+  double Azm_tmp, Alt_tmp = 0.;
+  long axis1_before, axis1_after = 0;
+  long axis2_before, axis2_after = 0;
+  double axis1_delta, axis2_delta = 0;
+
+  EquToHor(HA_prev, Dec_prev, refr, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
+  alignment.toAxisDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
+  Angle2Step(Axis1_tmp, Axis2_tmp, side, &axis1_before, &axis2_before);
+
+  EquToHor(HA_next, Dec_next, refr, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
+  alignment.toAxisDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
+  Angle2Step(Axis1_tmp, Axis2_tmp, side, &axis1_after, &axis2_after);
+
+  axis1_delta = distStepAxis1(&axis1_before, &axis1_after) / geoA1.stepsPerDegree;
+  while (axis1_delta < -180) axis1_delta += 360.;
+  while (axis1_delta >= 180) axis1_delta -= 360.;
+
+  axis2_delta = distStepAxis2(&axis2_before, &axis2_after) / geoA2.stepsPerDegree;
+  while (axis2_delta < -180) axis2_delta += 360.;
+  while (axis2_delta >= 180) axis2_delta -= 360.;
+
+
+  A1_trackingRate = 0.5 * axis1_delta * (3600. / (TimeRange * 15));
+  A2_trackingRate = 0.5 * axis2_delta * (3600. / (TimeRange * 15));
+
+}
+
 void do_compensation_calc()
 {
   // 1 arc-min ahead of and behind the current Equ position, used for rate calculation
 
   const double TimeRange = 60;
-  long axis1_before, axis1_after = 0;
-  long axis2_before, axis2_after = 0;
-  double Axis1_tmp, Axis2_tmp = 0.;
-  double HA_tmp, HA_now = 0.;
-  double Dec_tmp, Dec_now = 0.;
-  double Azm_tmp, Alt_tmp = 0.;
-  double DriftHA = 0; 
-  double DriftDEC = 0;
-  double axis1_delta, axis2_delta= 0;
+  double HA_prev, HA_next, HA_now = 0.;
+  double Dec_prev, Dec_next, Dec_now = 0.;
+  double DriftHA, DriftDEC = 0;
+  double RateA1,RateA2 = 0;
 
   // turn off if not tracking at sidereal rate
   if (!sideralTracking)
@@ -121,141 +136,83 @@ void do_compensation_calc()
     getEqu(&HA_now, &Dec_now, localSite.cosLat(), localSite.sinLat(), true);
 
   // look ahead of the position
-  HA_tmp = HA_now - DriftHA;
-  Dec_tmp = Dec_now - DriftDEC;
-  if (doesRefraction.forTracking)
-  {
-    EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
-  }
-  else
-  {
-    EquToHorTopo(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
-  }
-  
-  alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
-  InstrtoStep(Axis1_tmp, Axis2_tmp, side_tmp, &axis1_before, &axis2_before);
+  HA_prev = HA_now - DriftHA;
+  Dec_prev = Dec_now - DriftDEC;
 
   // look behind the position
-  HA_tmp = HA_now + DriftHA;
-  Dec_tmp = Dec_now + DriftDEC;
-  if (doesRefraction.forTracking)
-  {
-    EquToHorApp(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
-  }
-  else
-  {
-    EquToHorTopo(HA_tmp, Dec_tmp, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
-  }
+  HA_next = HA_now + DriftHA;
+  Dec_next = Dec_now + DriftDEC;
 
-  alignment.toInstrumentalDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
-  InstrtoStep(Axis1_tmp, Axis2_tmp, side_tmp, &axis1_after, &axis2_after);
+  RateFromMovingTarget(HA_prev, Dec_prev, HA_next, Dec_next,
+    TimeRange, side_tmp, doesRefraction.forTracking,
+    RateA1, RateA2);
 
-  axis1_delta = distStepAxis1(&axis1_before, &axis1_after) / geoA1.stepsPerDegree;
-  while (axis1_delta < -180) axis1_delta += 360.;
-  while (axis1_delta >= 180) axis1_delta -= 360.;
-
-  axis2_delta = distStepAxis2(&axis2_before, &axis2_after) / geoA2.stepsPerDegree;
-  while (axis2_delta < -180) axis2_delta += 360.;
-  while (axis2_delta >= 180) axis2_delta -= 360.;
-
-  staA1.RequestedTrackingRate = 0.5 * axis1_delta * (3600. / (TimeRange*15));
-  staA2.RequestedTrackingRate = 0.5 * axis2_delta * (3600. / (TimeRange*15));
-
-
-  //Limite rate up to 8 time the sidereal speed 
-  //staA1.RequestedTrackingRate = min(max(staA1.RequestedTrackingRate, -8), 8);
-  //staA2.RequestedTrackingRate = min(max(staA2.RequestedTrackingRate, -8), 8);
+  //Limite rate up to 16 time the sidereal speed 
+  staA1.RequestedTrackingRate = min(max(RateA1, -16), 16);
+  staA2.RequestedTrackingRate = min(max(RateA2, -16), 16);
 }
 
 void initMaxRate()
 {
-  double maxslewEEPROM = XEEPROM.readInt(EE_maxRate);
-  double maxslewCorrected = SetRates(maxslewEEPROM);          // set the new acceleration rate
-  if (abs(maxslewEEPROM - maxslewCorrected) > 2)
-  {
-    XEEPROM.writeInt(EE_maxRate, (int)maxslewCorrected);
-  }
+  double maxslewEEPROM = XEEPROM.readInt(getMountAddress(EE_maxRate));
+  SetRates(maxslewEEPROM);          // set the new acceleration rate
 }
 
 // Acceleration rate calculation
-double SetRates(double maxslewrate)
+void SetRates(double maxslewrate)
 {
   // set the new acceleration rate
-  double stpdg = min(geoA1.stepsPerDegree, geoA2.stepsPerDegree);
-  double fact = 3600. / 15. * 1. / (stpdg * 1. / 16. / 1000000.);
-  maxRate = max(fact / maxslewrate, StepsMaxRate * 16L);
-  maxslewrate = fact / maxRate;
-  guideRates[4] = maxslewrate;
-  if (guideRates[3] >= maxslewrate)
+
+  double fact1 = masterClockSpeed / geoA1.stepsPerSecond;
+  double fact2 = masterClockSpeed / geoA2.stepsPerSecond;
+  minInterval1 = max(fact1 / maxslewrate, StepsMinInterval);
+  minInterval2 = max(fact2 / maxslewrate, StepsMinInterval);
+  double maxslewCorrected = min(fact1 / minInterval1, fact2 / minInterval2);
+  if (abs(maxslewrate - maxslewCorrected) > 2)
   {
-    guideRates[3] = 64;
-    XEEPROM.write(EE_Rate3, guideRates[3]);
+    XEEPROM.writeInt(getMountAddress(getMountAddress(EE_maxRate)), (int)maxslewCorrected);
+  }
+  minInterval1 = fact1 / maxslewCorrected;
+  minInterval2 = fact2 / maxslewCorrected;
+  guideRates[4] = maxslewCorrected;
+  if (guideRates[3] >= maxslewCorrected)
+  {
+    guideRates[3] = maxslewCorrected/2;
+    XEEPROM.write(getMountAddress(EE_Rate3), guideRates[3]);
   }
   resetGuideRate();
   SetAcceleration();
-  return maxslewrate;
 }
 
 void SetAcceleration()
 {
-  double Vmax = getV(maxRate);
+  double Vmax1 = interval2speed(minInterval1);
+  double Vmax2 = interval2speed(minInterval2);
   cli();
-  staA1.acc = Vmax / (2. * DegreesForAcceleration * geoA1.stepsPerDegree)*Vmax;
-  staA2.acc = Vmax / (2. * DegreesForAcceleration * geoA2.stepsPerDegree)*Vmax;
+  staA1.acc = Vmax1 / (4. * DegreesForAcceleration * geoA1.stepsPerDegree) * Vmax1;
+  staA2.acc = Vmax2 / (4. * DegreesForAcceleration * geoA2.stepsPerDegree) * Vmax2;
   sei();
 }
 
 // calculates the tracking speed for move commands
-void enableGuideRate(int g, bool force)
+void enableGuideRate(int g)
 {
-  // don't do these lengthy calculations unless we have to
-
   if (g < 0) g = 0;
   if (g > 4) g = 4;
-  if (!force && guideTimerBaseRate == guideRates[g]) return;
-
   activeGuideRate = g;
-
-  // this enables the guide rate
-  guideTimerBaseRate = guideRates[g];
-
-  cli();
-  guideA1.amount = guideTimerBaseRate * geoA1.stepsPerCentiSecond;
-  guideA2.amount = guideTimerBaseRate * geoA2.stepsPerCentiSecond;
-  sei();
+  guideA1.enableAtRate(guideRates[g]);
+  guideA2.enableAtRate(guideRates[g]);
 }
+
 
 void enableST4GuideRate()
 {
-  if (guideTimerBaseRate != guideRates[0])
-  {
-    guideTimerBaseRate = guideRates[0];
-    cli();
-    guideA1.amount = guideTimerBaseRate * geoA1.stepsPerCentiSecond;
-    guideA2.amount = guideTimerBaseRate * geoA2.stepsPerCentiSecond;
-    sei();
-  }
+  enableGuideRate(0);
 }
 
 void resetGuideRate()
 {
-  enableGuideRate(activeGuideRate, true);
-}
-
-void enableRateAxis1(double vRate)
-{
-  cli();
-  guideA1.amount = abs(vRate) * geoA1.stepsPerCentiSecond;
-  guideA1.timerRate = vRate;
-  sei();
-}
-
-void enableRateAxis2(double vRate)
-{
-  cli();
-  guideA2.amount = abs(vRate) * geoA2.stepsPerCentiSecond;
-  guideA2.timerRate = vRate;
-  sei();
+  enableGuideRate(activeGuideRate);
 }
 
 bool isAltAZ()

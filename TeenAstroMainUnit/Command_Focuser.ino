@@ -6,14 +6,14 @@ void Command_F()
   if (!hasFocuser )
   {
     if (command[1] == '?') strcpy(reply, "0#");
-    else strcpy(reply, "0");
+    else replyFailed();
     return;
   }
   bool focuserNoResponse = false;
   bool focuserShortResponse = false;
   char command_out[30] = ":";
-  Serial2.flush();
-  while (Serial2.available() > 0) Serial2.read();
+  Focus_Serial.flush();
+  while (Focus_Serial.available() > 0) Focus_Serial.read();
   strcat(command_out, command);
   strcat(command_out, "#");
 
@@ -27,6 +27,8 @@ void Command_F()
   case 'Q':
   case 's':
   case 'S':
+  case '!':
+  case '$':
     focuserNoResponse = true;
     break;
   case 'x':
@@ -60,52 +62,50 @@ void Command_F()
     break;
   default:
   {
-    strcpy(reply, "0");
+    replyFailed();
     return;
     break;
   }
   }
 
-  Serial2.print(command_out);
-  Serial2.flush();
+  Focus_Serial.print(command_out);
+  Focus_Serial.flush();
 
   if (!focuserNoResponse)
   {
-    unsigned long start = millis();
+    delay(20);
     int pos = 0;
     char b = 0;
-    while (millis() - start < 40)
+
+    while (Focus_Serial.available() > 0)
     {
-      if (Serial2.available() > 0)
+      b = Focus_Serial.read();
+      if (b == '#' && !focuserShortResponse)
       {
-        b = Serial2.read();
-        if (b == '#' && !focuserShortResponse)
-        {
-          reply[pos] = b;
-          reply[pos+1] = 0;
-          return;
-        }
         reply[pos] = b;
-        pos++;
-        if (pos > 49)
-        {
-          strcpy(reply, "0");
-          return;
-        }
-        reply[pos] = 0;
-        if (focuserShortResponse)
-        {
-          if (b != '1')
-            strcpy(reply, "0");
-          return;
-        }
+        reply[pos + 1] = 0;
+        return;
+      }
+      reply[pos] = b;
+      pos++;
+      if (pos > 49)
+      {
+        replyFailed();
+        return;
+      }
+      reply[pos] = 0;
+      if (focuserShortResponse)
+      {
+        if (b != '1')
+          replyFailed();
+        return;
       }
 
     }
-    strcpy(reply, "0");
+    replyFailed();
   }
   else
   {
-    reply[0] = 0;
+    replyNothing();
   }
 }

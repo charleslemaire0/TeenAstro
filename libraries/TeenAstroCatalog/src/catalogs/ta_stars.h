@@ -1,11 +1,19 @@
 #pragma once
 // This data is machine generated from the KStars Star database.
 // Do NOT edit this data manually. Rather, fix the import programs and rerun.
-#define Cat_Stars_Title "Bright Stars"
+
+#if LANGUAGE == ENGLISH
+  #define Cat_Stars_Title "Bright Stars"
+#elif LANGUAGE == FRENCH
+  #define Cat_Stars_Title "Etoiles brillantes"
+#elif LANGUAGE == GERMAN
+  #define Cat_Stars_Title "leuchtende Sterne"
+#endif
+
 #define Cat_Stars_Prefix "Star "
 #define NUM_STARS 408
 
-const char *Cat_Stars_Names=
+const char Cat_Stars_Names[] PROGMEM=
 "Alpheratz;"
 "Mirach;"
 "Almach;"
@@ -194,7 +202,7 @@ const char *Cat_Stars_Names=
 "Vindemiatrix;"
 "Heze";
 
-const char *Cat_Stars_SubId="";
+const char Cat_Stars_SubId[] PROGMEM="";
 
 CAT_TYPES Cat_Stars_Type=CAT_GEN_STAR;
 const gen_star_t Cat_Stars[NUM_STARS] PROGMEM = {

@@ -39,10 +39,10 @@ public:
   }
   void readFromEEPROM()
   {
-    uint8_t val = XEEPROM.read(EE_refraction);
-    forPole = bitRead(XEEPROM.read(val), 0);
-    forGoto = bitRead(XEEPROM.read(val), 1);
-    forTracking = bitRead(XEEPROM.read(val), 2);
+    uint8_t val = XEEPROM.read(getMountAddress(EE_refraction));
+    forPole = bitRead(val, 0);
+    forGoto = bitRead(val, 1);
+    forTracking = bitRead(val, 2);
   }
   void writeToEEPROM()
   {
@@ -50,9 +50,9 @@ public:
     bitWrite(val, 0, forPole);
     bitWrite(val, 1, forGoto);
     bitWrite(val, 2, forTracking);
-    XEEPROM.update(EE_refraction, val);
+    XEEPROM.update(getMountAddress(EE_refraction), val);
   }
-  void resetEEPROM()
+  void writeDefaultToEEPROM()
   {
     forPole = false;
     forGoto = false;

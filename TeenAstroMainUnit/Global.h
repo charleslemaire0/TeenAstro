@@ -14,53 +14,72 @@
 #include "XEEPROM.hpp"
 #include "Refraction.hpp"
 #include "Axis.hpp"
+#include "AxisEncoder.hpp"
 
 TinyGPSPlus gps;
 CoordConv alignment;
 bool hasStarAlignment = false;
 bool TrackingCompForAlignment = false;
 
+typedef double interval;
+typedef double speed;
+
 enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
+enum EncoderSync {ES_OFF, ES_60, ES_30, ES_15, ES_8, ES_4, ES_2, ES_ALWAYS };
+enum Pushto {PT_OFF, PT_RADEC, PT_ALTAZ};
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
 enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW };
 enum RateCompensation { RC_UNKOWN = -1, RC_NONE, RC_ALIGN_RA, RC_ALIGN_BOTH, RC_FULL_RA, RC_FULL_BOTH };
 enum TrackingCompensation {TC_NONE, TC_RA, TC_BOTH};
 
-ParkState parkStatus = PRK_UNPARKED;
+ParkState parkStatus = ParkState::PRK_UNPARKED;
 bool parkSaved = false;
 bool homeSaved = false;
 bool atHome = true;
 bool homeMount = false;
 bool DecayModeTrack = false;
-MeridianFlip meridianFlip = FLIP_NEVER;
-Mount mountType = MOUNT_TYPE_GEM;
+MeridianFlip meridianFlip = MeridianFlip::FLIP_NEVER;
+Mount mountType = Mount::MOUNT_TYPE_GEM;
+char mountName[maxNumMount][15];
+bool isMountTypeFix = false;
+
 byte maxAlignNumStar = 0;
 bool autoAlignmentBySync = false;
 
+Pushto PushtoStatus = PT_OFF;
 bool hasFocuser = false;
 bool hasGNSS = true;
 
 RefractionFlags doesRefraction;
-TrackingCompensation tc = TC_NONE;
+TrackingCompensation tc = TrackingCompensation::TC_NONE;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
-double                  siderealInterval = 15956313.0;
-const double            masterSiderealInterval = 15956313.0;
+double                  siderealClockSpeed = 997269.5625;
+const double            mastersiderealClockSpeed = 997269.5625;
 
-// default = 15956313 ticks per sidereal hundredth second, where a tick is 1/16 uS
+// default = 997269.5625 ticks per sidereal hundredth second, where a tick is 1 uS
 // this is stored in XEEPROM.which is updated/adjusted with the ":T+#" and ":T-#" commands
 // a higher number here means a longer count which slows down the sidereal clock
-const double            HzCf = 16000000.0 / 60.0;   // conversion factor to go to/from Hz for sidereal interval
-volatile double         SiderealRate;               // based on the siderealInterval, this is the time between steps for sidereal tracking
-volatile double         TakeupRate;                 // this is the takeup rate for synchronizing the target and actual positions when needed
 
-double                  maxRate = StepsMaxRate * 16L;
+const double            masterClockSpeed = 1000000;    // reference frequence for tick
+const double            HzCf = masterClockSpeed / 60.0;   // conversion factor to go to/from Hz for sidereal interval
+            
+
+
+interval                minInterval1 = StepsMinInterval;
+interval                maxInterval1 = StepsMaxInterval;
+interval                minInterval2 = StepsMinInterval;
+interval                maxInterval2 = StepsMaxInterval;
+
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
 
-
 MotorAxis           motorA1;
 MotorAxis           motorA2;
+
+EncoderSync         EncodeSyncMode = EncoderSync::ES_OFF;
+EncoderAxis         encoderA1;
+EncoderAxis         encoderA2;
 
 backlash            backlashA1 = { 0,0,0,0 };
 backlash            backlashA2 = { 0,0,0,0 };
@@ -68,7 +87,6 @@ backlash            backlashA2 = { 0,0,0,0 };
 GeoAxis             geoA1;
 GeoAxis             geoA2;
 
-volatile double     timerRateRatio;
 StatusAxis          staA1;
 StatusAxis          staA2;
 
@@ -87,29 +105,52 @@ int                 minAlt;                                 // the minimum altit
 int                 maxAlt;                                 // the maximum altitude, in degrees, for goTo's (to keep the telescope tube away from the mount/tripod)
 long                minutesPastMeridianGOTOE;               // for goto's, how far past the meridian to allow before we do a flip (if on the East side of the pier)- one hour of RA is the default = 60.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 long                minutesPastMeridianGOTOW;               // as above, if on the West side of the pier.  If left alone, the mount will stop tracking when it hits the this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
-double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. OnStep will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
+double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. Telescop will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 
                                                            
 //                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
 
 #define HADirNCPInit    false
 #define HADirSCPInit    true
+
 volatile bool   HADir = HADirNCPInit;
 
 // Status ------------------------------------------------------------------------------------------------------------------
-enum Errors
+enum ErrorsTraking
 {
-  ERR_NONE,
-  ERR_MOTOR_FAULT,
-  ERR_ALT,
-  ERR_LIMIT_SENSE,
-  ERR_AXIS1,
-  ERR_AXIS2,
-  ERR_UNDER_POLE,
-  ERR_MERIDIAN
+  ERRT_NONE,
+  ERRT_MOTOR_FAULT,
+  ERRT_ALT,
+  ERRT_LIMIT_SENSE,
+  ERRT_AXIS1,
+  ERRT_AXIS2,
+  ERRT_UNDER_POLE,
+  ERRT_MERIDIAN
 };
-Errors lastError = ERR_NONE;
 
+ErrorsTraking lastError = ErrorsTraking::ERRT_NONE;
+
+enum ErrorsGoTo
+{
+  ERRGOTO_NONE,
+  ERRGOTO_BELOWHORIZON,
+  ERRGOTO_NOOBJECTSELECTED,
+  ERRGOTO_SAMESIDE,
+  ERRGOTO_PARKED,
+  ERRGOTO_SLEWING,
+  ERRGOTO_LIMITS,
+  ERRGOTO_GUIDINGBUSY,
+  ERRGOTO_ABOVEOVERHEAD,
+  ERRGOTO_MOTOR,
+  ERRGOTO____,
+  ERRGOTO_MOTOR_FAULT,
+  ERRGOTO_ALT,
+  ERRGOTO_LIMIT_SENSE,
+  ERRGOTO_AXIS1,
+  ERRGOTO_AXIS2,
+  ERRGOTO_UNDER_POLE,
+  ERRGOTO_MERIDIAN
+};
 
 //Command Precision
 bool highPrecision = true;
@@ -117,7 +158,7 @@ bool highPrecision = true;
 volatile bool movingTo = false;
 
 bool doSpiral = false;
-
+double SpiralFOV = 1;
 // Tracking
 #define TrackingStar  1
 #define TrackingSolar 0.99726956632
@@ -132,15 +173,17 @@ enum SID_Mode
   SIDM_TARGET
 };
 
-volatile SID_Mode sideralMode = SIDM_STAR;
+volatile SID_Mode sideralMode = SID_Mode::SIDM_STAR;
 
 double  RequestedTrackingRateHA = TrackingStar; // in RA seconds per sideral second
 double  RequestedTrackingRateDEC = 0; // in DEC seconds per sideral second
 long    storedTrakingRateRA = 0;
 long    storedTrakingRateDEC = 0;
 //Guiding
+
 enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter, GuidingAtRate };
-volatile Guiding GuidingState = GuidingOFF;
+volatile Guiding GuidingState = Guiding::GuidingOFF;
+Guiding lastGuidingState = Guiding::GuidingOFF;
 unsigned long lastSetTrakingEnable = millis();
 unsigned long lastSecurityCheck = millis();
 
@@ -166,21 +209,18 @@ enum GuideRate {RG,RC,RM,RS,RX};
 #define DefaultR1 4
 #define DefaultR2 16
 #define DefaultR3 64
-#define DefaultR4 64
+#ifndef DefaultR4
+  #define DefaultR4 600
+#endif
 double  guideRates[5] =
 {
   DefaultR0 , DefaultR1 , DefaultR2 ,  DefaultR3 , DefaultR4
 };
 
-volatile byte activeGuideRate = GuideRate::RS;
+volatile byte activeGuideRate = GuideRate::RX;
 
-GuideAxis guideA1 = { 0,0,0,0,0 };
-GuideAxis guideA2 = { 0,0,0,0,0 };
-
-long            lasttargetAxis1 = 0;
-long            debugv1 = 0;
-
-double          guideTimerBaseRate = 0;
+GuideAxis guideA1;
+GuideAxis guideA2;
 
 // Reticule control
 #ifdef RETICULE_LED_PINS

@@ -30,6 +30,7 @@
 #include <TeenAstroMountStatus.h>
 
 
+
 const char SHCVersion[] = SHCFirmwareVersionMajor "." SHCFirmwareVersionMinor "." SHCFirmwareVersionPatch;
 const int pin[7] = { B_PIN0,B_PIN1,B_PIN2,B_PIN3,B_PIN4,B_PIN5,B_PIN6 };
 const bool active[7] = { B_PIN_UP_0,B_PIN_UP_1,B_PIN_UP_2,B_PIN_UP_3,B_PIN_UP_4,B_PIN_UP_5,B_PIN_UP_6 };
@@ -39,11 +40,11 @@ TeenAstroMountStatus ta_MountStatus;
 
 void setup(void)
 {
-#ifdef ARDUINO_D1_MINI32
+#ifdef ARDUINO_TTGO_LoRa32_V1
   HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309, 2);
-return;
-#endif
-  int value = analogRead(A0);
+  return;
+#else
+  int value = analogRead(A_SCREEN);
   if (value< 191)       //0.616129032V
   {
     HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SH1106, 1 );
@@ -72,7 +73,7 @@ return;
   {
     //empty
   }
-    
+#endif    
 }
 
 void loop()

@@ -1,3 +1,4 @@
+#include <ArduinoOTA.h>
 #include <TeenAstroLX200io.h>
 #include "TeenAstroWifi.h"
 
@@ -42,10 +43,12 @@ const char html_links6S[] PROGMEM = "<a href='/configuration_mount.htm' style='b
 const char html_links6N[] PROGMEM = "<a href='/configuration_mount.htm'>Mount</a>\n";
 const char html_links7S[] PROGMEM = "<a href='/configuration_limits.htm' style='background-color: #552222;'>Limits</a>\n";
 const char html_links7N[] PROGMEM = "<a href='/configuration_limits.htm'>Limits</a>\n";
-const char html_links8S[] PROGMEM = "<a href='/configuration_focuser.htm' style='background-color: #552222;'>Focuser</a>\n";
-const char html_links8N[] PROGMEM = "<a href='/configuration_focuser.htm'>Focuser</a>\n";
-const char html_links9S[] PROGMEM = "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />\n";
-const char html_links9N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />\n";
+const char html_links8S[] PROGMEM = "<a href='/configuration_encoders.htm' style='background-color: #552222;'>Encoders</a>\n";
+const char html_links8N[] PROGMEM = "<a href='/configuration_encoders.htm'>Encoders</a>\n";
+const char html_links9S[] PROGMEM = "<a href='/configuration_focuser.htm' style='background-color: #552222;'>Focuser</a>\n";
+const char html_links9N[] PROGMEM = "<a href='/configuration_focuser.htm'>Focuser</a>\n";
+const char html_links10S[] PROGMEM = "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />\n";
+const char html_links10N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />\n";
 
 bool TeenAstroWifi::wifiOn = true;
 
@@ -78,16 +81,18 @@ IPAddress TeenAstroWifi::wifi_ap_sn = IPAddress(255, 255, 255, 0);
 WiFiServer TeenAstroWifi::cmdSvr = WiFiServer(9999);
 WiFiClient TeenAstroWifi::cmdSvrClient;
 
-#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
+#ifdef ARDUINO_ARCH_ESP8266
 ESP8266WebServer TeenAstroWifi::server;
 ESP8266WebServer httpServer(80);
 ESP8266HTTPUpdateServer httpUpdater;
 #endif 
-#ifdef ARDUINO_D1_MINI32
+
+#ifdef ARDUINO_ARCH_ESP32
 WebServer TeenAstroWifi::server;
 WebServer server(80);
-
+HTTPUpdateServer httpUpdater;
 #endif
+
 // -----------------------------------------------------------------------------------
 // EEPROM related functions
 
@@ -203,6 +208,10 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   {
     page = ServerPage::Index;
   }
+  else if (!ta_MountStatus.hasEncoder() && page == ServerPage::Encoders)
+  {
+    page = ServerPage::Index;
+  }
 
   if (page == ServerPage::Index)
     data += FPSTR(html_headerIdx);
@@ -245,7 +254,7 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
     {
     default:
     case '0':
-      data += "unkown";
+      data += "Generic";
       break;
     case '1':
       data += "TOS100";
@@ -255,6 +264,9 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
       break;
     case '3':
       data += "TMC5160";
+      break;
+    case '4':
+      data += "TMC2160";
       break;
     }
   }
@@ -267,12 +279,16 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   data += page == ServerPage::Site ? FPSTR(html_links5S) : FPSTR(html_links5N);
   data += page == ServerPage::Mount ? FPSTR(html_links6S) : FPSTR(html_links6N);
   data += page == ServerPage::Limits ? FPSTR(html_links7S) : FPSTR(html_links7N);
+  if (ta_MountStatus.hasEncoder())
+  {
+    data += page == ServerPage::Encoders ? FPSTR(html_links8S) : FPSTR(html_links8N);
+  }
   if (ta_MountStatus.hasFocuser())
   {
-    data += page == ServerPage::Focuser ? FPSTR(html_links8S) : FPSTR(html_links8N);
+    data += page == ServerPage::Focuser ? FPSTR(html_links9S) : FPSTR(html_links9N);
   }
 #ifndef OETHS
-  data += page == ServerPage::Wifi ? FPSTR(html_links9S) : FPSTR(html_links9N);
+  data += page == ServerPage::Wifi ? FPSTR(html_links10S) : FPSTR(html_links10N);
 #endif
   data += FPSTR(html_header4);
 }
@@ -457,10 +473,15 @@ void TeenAstroWifi::setup()
 #endif
   switch (activeWifiMode)
   {
+  case TeenAstroWifi::OFF:
+    WiFi.mode(WIFI_OFF);
+    break;
   case TeenAstroWifi::M_AcessPoint:
     WiFi.mode(WIFI_AP);
-
     WiFi.softAP(wifi_ap_ssid, wifi_ap_pwd, wifi_ap_ch);
+#ifdef ARDUINO_LOLIN_C3_MINI
+    WiFi.setTxPower(WIFI_POWER_8_5dBm);
+#endif // ARDUINO_LOLIN_C3_MINI
     delay(1000);
     WiFi.softAPConfig(wifi_ap_ip, wifi_ap_gw, wifi_ap_sn);
     delay(1000);
@@ -475,6 +496,9 @@ void TeenAstroWifi::setup()
     WiFi.softAPdisconnect(true);
     WiFi.mode(WIFI_STA);
     WiFi.begin(wifi_sta_ssid[activeWifiMode], wifi_sta_pwd[activeWifiMode]);
+#ifdef ARDUINO_LOLIN_C3_MINI
+    WiFi.setTxPower(WIFI_POWER_8_5dBm);
+#endif // ARDUINO_LOLIN_C3_MINI
   default:
     break;
   }
@@ -486,6 +510,7 @@ void TeenAstroWifi::setup()
   server.on("/configuration_tracking.htm", handleConfigurationTracking);
   server.on("/configuration_mount.htm", handleConfigurationMount);
   server.on("/configuration_limits.htm", handleConfigurationLimits);
+  server.on("/configuration_encoders.htm", handleConfigurationEncoders);
   server.on("/configuration_focuser.htm", handleConfigurationFocuser);
   server.on("/control.htm", handleControl);
   server.on("/control.txt", controlAjax);
@@ -508,8 +533,7 @@ void TeenAstroWifi::setup()
   httpUpdater.setup(&server);
   httpServer.begin();
 #endif
-  
-
+  initOTA();
 };
 
 void TeenAstroWifi::update()
@@ -524,6 +548,7 @@ void TeenAstroWifi::update()
     return;
   }
   server.handleClient();
+  ArduinoOTA.handle();
 
   // disconnect client
   static unsigned long clientTime = 0;
@@ -664,3 +689,43 @@ void TeenAstroWifi::getStationName(int k, char* SSID )
   return;
 }
 
+void TeenAstroWifi::initOTA()
+{
+  ArduinoOTA.onStart([]() {
+    String type;
+  if (ArduinoOTA.getCommand() == U_FLASH) {
+    type = "sketch";
+  }
+  else {  // U_FS
+    type = "filesystem";
+  }
+
+  // NOTE: if updating FS this would be the place to unmount FS using FS.end()
+  Serial.println("Start updating " + type);
+    });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+    });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+  if (error == OTA_AUTH_ERROR) {
+    Serial.println("Auth Failed");
+  }
+  else if (error == OTA_BEGIN_ERROR) {
+    Serial.println("Begin Failed");
+  }
+  else if (error == OTA_CONNECT_ERROR) {
+    Serial.println("Connect Failed");
+  }
+  else if (error == OTA_RECEIVE_ERROR) {
+    Serial.println("Receive Failed");
+  }
+  else if (error == OTA_END_ERROR) {
+    Serial.println("End Failed");
+  }
+    });
+  ArduinoOTA.begin();
+}

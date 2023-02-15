@@ -18,9 +18,9 @@ bool setHome()
     h /= pow(2, motorA1.micro);
     d /= pow(2, motorA2.micro);
     // store our position
-    XEEPROM.writeLong(EE_homePosAxis1, h);
-    XEEPROM.writeLong(EE_homePosAxis2, d);
-    XEEPROM.write(EE_homeSaved, 1);
+    XEEPROM.writeLong(getMountAddress(EE_homePosAxis1), h);
+    XEEPROM.writeLong(getMountAddress(EE_homePosAxis2), d);
+    XEEPROM.write(getMountAddress(EE_homeSaved), 1);
     initHome();
     sideralTracking = lastSideralTracking;
     return true;
@@ -32,7 +32,7 @@ bool setHome()
 // unset home position flag
 void unsetHome()
 {
-  XEEPROM.update(EE_homeSaved, 0);
+  XEEPROM.update(getMountAddress(EE_homeSaved), 0);
   initHome();
 }
 
@@ -40,16 +40,16 @@ void unsetHome()
 bool goHome()
 {
   if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return false; // fail, moving to home not allowed if PRK_PARKED
-  if (lastError != ERR_NONE) return false;                                // fail, cannot move if there are errors
+  if (lastError != ERRT_NONE) return false;                                // fail, cannot move if there are errors
   if (movingTo) return false;                      // fail, moving to home not allowed during a move
-  if (guideA1.dir || guideA2.dir) return false;                       // fail, moving to home not allowed while guiding
+  if (guideA1.isBusy() || guideA2.isBusy()) return false;                       // fail, moving to home not allowed while guiding
   cli();
 
   staA1.target = geoA1.homeDef;
   staA2.target = geoA2.homeDef;
   staA1.start = staA1.pos;
   staA2.start = staA2.pos;
-  SetSiderealClockRate(siderealInterval);
+  SetsiderealClockSpeed(siderealClockSpeed);
   sei();
   // stop tracking
   lastSideralTracking = false;
@@ -71,17 +71,17 @@ bool syncAtHome()
   newTargetDec = 0;
   newTargetAlt = 0;
   newTargetAzm = 0;
-  lastError = ERR_NONE;
+  lastError = ErrorsTraking::ERRT_NONE;
   // reset tracking and rates
-  staA1.timerRate = SiderealRate;
-  staA2.timerRate = SiderealRate;
-  parkStatus = PRK_UNPARKED;
-  XEEPROM.update(EE_parkStatus, parkStatus);
+  staA1.resetToSidereal();
+  staA2.resetToSidereal();
+  parkStatus = ParkState::PRK_UNPARKED;
+  XEEPROM.update(getMountAddress(EE_parkStatus), parkStatus);
   // clear pulse-guiding state
-  guideA1.dir = 0;
+  guideA1.setIdle();
   guideA1.duration = 0;
   guideA1.durationLast = 0;
-  guideA2.dir = 0;
+  guideA2.setIdle();
   guideA2.duration = 0;
   guideA2.durationLast = 0;
   // update starting coordinates to reflect NCP or SCP polar home position
@@ -98,17 +98,18 @@ bool syncAtHome()
   DecayModeTracking();
   sideralTracking = false;
   atHome = true;
+  syncEwithT();
   return true;
 }
 
 // init the telescope home position;  if defined use the user defined home position
 void initHome()
 {
-  homeSaved = XEEPROM.read(EE_homeSaved);
+  homeSaved = XEEPROM.read(getMountAddress(EE_homeSaved));
   if (homeSaved)
   {
-    geoA1.homeDef = XEEPROM.readLong(EE_homePosAxis1)*pow(2, motorA1.micro);
-    geoA2.homeDef = XEEPROM.readLong(EE_homePosAxis2)*pow(2, motorA2.micro);
+    geoA1.homeDef = XEEPROM.readLong(getMountAddress(EE_homePosAxis1))*pow(2, motorA1.micro);
+    geoA2.homeDef = XEEPROM.readLong(getMountAddress(EE_homePosAxis2))*pow(2, motorA2.micro);
   }
   else
   {

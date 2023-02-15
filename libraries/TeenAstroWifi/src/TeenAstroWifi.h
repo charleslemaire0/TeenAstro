@@ -18,6 +18,19 @@
 #define ESP8266
 #endif
 
+#ifdef ARDUINO_ESP32_DEV
+#include <WiFi.h>
+#include <WebServer.h>
+#include <WiFiAP.h>
+#include <HTTPUpdateServer.h>
+#endif
+
+#ifdef ARDUINO_ARCH_ESP32
+#include <WiFi.h>
+#include <WebServer.h>
+#include <WiFiAP.h>
+#include <HTTPUpdateServer.h>
+#endif
 
 #include <EEPROM.h>
 #include <WiFiClient.h>
@@ -27,7 +40,7 @@
 #define ServerFirmwareDate          __DATE__
 #define ServerFirmwareTime          __TIME__
 #define ServerFirmwareVersionMajor  "1"
-#define ServerFirmwareVersionMinor  "3"
+#define ServerFirmwareVersionMinor  "4"
 #define ServerFirmwareVersionPatch  "0"
 
 
@@ -64,6 +77,7 @@
 #define EEPROM_T2 22
 #define EEPROM_BSPEED 23
 #define EEPROM_DISPLAYSUBMODEL 24
+#define EEPROM_DISPLAY180 25
 #define EPPROM_password 50
 #define EEPROM_start_wifi_sta 100
 #ifdef ARDUINO_D1_MINI32
@@ -90,7 +104,7 @@ class TeenAstroWifi
   };
   enum ServerPage
   {
-    Index=1, Control, Speed, Tracking, Mount, Limits, Site, Focuser, Wifi
+    Index=1, Control, Speed, Tracking, Mount, Limits, Encoders, Site, Focuser, Wifi
   };
   static bool wifiOn;
   static int WebTimeout;
@@ -115,13 +129,14 @@ class TeenAstroWifi
   static IPAddress wifi_ap_gw;
   static IPAddress wifi_ap_sn;
 
-#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
+#ifdef ARDUINO_ARCH_ESP8266
   static ESP8266WebServer server;
 #endif
 
-#ifdef ARDUINO_D1_MINI32
+#ifdef ARDUINO_ARCH_ESP32
   static WebServer server;
 #endif
+
 
   static WiFiServer cmdSvr;
   static WiFiClient cmdSvrClient;
@@ -137,6 +152,8 @@ class TeenAstroWifi
   static void handleConfigurationMount();
   static void processConfigurationLimitsGet();
   static void handleConfigurationLimits();
+  static void processConfigurationEncodersGet();
+  static void handleConfigurationEncoders();
   static void processConfigurationFocuserGet();
   static void handleConfigurationFocuser();
   static void handleRoot();
@@ -191,4 +208,5 @@ public:
   static const char* getPassword();
   static bool setWifiMode(int k);
   static void getStationName(int k, char* SSID);
+  static void initOTA();
 };

@@ -18,7 +18,6 @@ bool checkPole(const long &axis1, CheckMode mode)
 {
   double underPoleLimit = (mode == CHECKMODE_GOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;
   return (axis1 > geoA1.quaterRot - underPoleLimit * 15. * geoA1.stepsPerDegree) && (axis1 < geoA1.quaterRot + underPoleLimit * 15. * geoA1.stepsPerDegree);
-  return true;
 }
 bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
 {
@@ -81,42 +80,42 @@ void initLimit()
 
 void initLimitMinAxis1()
 {
-  int val = XEEPROM.readInt(EE_minAxis1);
+  int val = XEEPROM.readInt(getMountAddress(EE_minAxis1));
   if (val < 0 || val > 3600)
   {
     val = 3600;
-    XEEPROM.writeInt(EE_minAxis1, val);
+    XEEPROM.writeInt(getMountAddress(EE_minAxis1), val);
   }
   geoA1.minAxis = -val * geoA1.stepsPerDegree / 10.0;
 }
 void initLimitMaxAxis1()
 {
-  int val = XEEPROM.readInt(EE_maxAxis1);
+  int val = XEEPROM.readInt(getMountAddress(EE_maxAxis1));
   if (val < 0 || val > 3600)
   {
     val = 3600;
-    XEEPROM.writeInt(EE_maxAxis1, val);
+    XEEPROM.writeInt(getMountAddress(EE_maxAxis1), val);
   }
 
   geoA1.maxAxis = val * geoA1.stepsPerDegree / 10.0;
 }
 void initLimitMinAxis2()
 {
-  int val = XEEPROM.readInt(EE_minAxis2);
+  int val = XEEPROM.readInt(getMountAddress(EE_minAxis2));
   if (val < 0 || val > 3600)
   {
     val = 3600;
-    XEEPROM.writeInt(EE_minAxis2, val);
+    XEEPROM.writeInt(getMountAddress(EE_minAxis2), val);
   }
   geoA2.minAxis = -val * geoA1.stepsPerDegree / 10.0;
 }
 void initLimitMaxAxis2()
 {
-  int val = XEEPROM.readInt(EE_maxAxis2);
+  int val = XEEPROM.readInt(getMountAddress(EE_maxAxis2));
   if (val < 0 || val > 3600)
   {
     val = 3600;
-    XEEPROM.writeInt(EE_maxAxis2, val);
+    XEEPROM.writeInt(getMountAddress(EE_maxAxis2), val);
   }
   geoA2.maxAxis = val * geoA2.stepsPerDegree / 10.0;
 }
