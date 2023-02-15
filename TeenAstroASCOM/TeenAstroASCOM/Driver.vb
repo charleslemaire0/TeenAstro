@@ -1031,13 +1031,7 @@ Public Class Telescope
         sg = "-"
         value = -value
       End If
-      Dim deg = Math.Truncate(value)
-      Dim min = 60 * (value - deg)
-      Dim sec = Math.Truncate((min - Math.Truncate(min)) * 60 + 0.5)
-      min = Math.Truncate(min)
-      Dim cmd As String = "St" + sg + deg.ToString("00") + ":" + min.ToString("00") + ":" + sec.ToString("00")
-      'Dim cmd As String = "St" + sg + deg.ToString("00") + "*" + min.ToString("00")
-      'Dim cmd As String = "St" + sg + deg.ToString("00") + ":" + min.ToString("00") + ":" + ((Math.Abs(value) - deg) * 3600 - Math.Truncate(min) * 60).ToString("00")
+      Dim cmd As String = "St" + sg + DegtoDDMMSS(value)
       If Not Me.CommandBool(cmd) Then
         Throw New ASCOM.InvalidOperationException
       End If
@@ -1194,7 +1188,6 @@ Public Class Telescope
       Throw New ASCOM.InvalidValueException
     End If
     Dim sexa As String = mutilities.DegreesToDMS(value, ":", ":", "") ' Long format, whole seconds
-
     If Strings.Left(sexa, 1) <> "-" Then
       sexa = "+" & sexa         ' Both need leading '+'
     End If
@@ -1423,13 +1416,24 @@ Public Class Telescope
     mTelStatus = Me.CommandString("GXI")
   End Sub
 
+
+  Private Sub DegtoDMS(ByVal degf As Double, ByRef degi As Integer, ByRef mini As Integer, ByRef seci As Integer)
+    Dim tts As Integer = Math.Floor(degf * 3600 + 0.5)
+    degi = tts \ 3600
+    mini = (tts - degi * 3600) \ 60
+    seci = tts Mod 60
+  End Sub
   Private Function DegtoDDDMMSS(value As Double) As String
-    Dim deg As Double = Math.Truncate(value)
-    Dim min As Double = 60 * (value - deg)
-    Dim sec As Integer = Math.Truncate((min - Math.Truncate(min)) * 60 + 0.5)
-    min = Math.Truncate(min)
-    Return deg.ToString("000") + ":" + min.ToString("00") + ":" + sec.ToString("00")
+    Dim d, m, s As Integer
+    DegtoDMS(value, d, m, s)
+    Return d.ToString("000") + ":" + m.ToString("00") + ":" + s.ToString("00")
   End Function
+  Private Function DegtoDDMMSS(value As Double) As String
+    Dim d, m, s As Integer
+    DegtoDMS(value, d, m, s)
+    Return d.ToString("00") + ":" + m.ToString("00") + ":" + s.ToString("00")
+  End Function
+
   Private Sub checkslewRADEC()
     If mtgtDec = -999 Or mtgtRa = -999 Then
       Throw New ASCOM.ValueNotSetException
