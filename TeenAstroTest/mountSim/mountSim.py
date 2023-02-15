@@ -1,4 +1,4 @@
-import math, time, sys, argparse, csv
+import math, time, sys, argparse, csv, random
 import numpy as np  
 import trimesh
 import trimesh.viewer
@@ -7,11 +7,14 @@ import trimesh.transformations as tt
 import pyglet
 from pyglet import clock
 from teenastro import TeenAstro, deg2dms
+textInput = ''
+cmdComplete = False
 
 class Mount:
     def __init__(self, ta):
 
         self.mountType = ta.readMountType()     # one-letter code returned by TeenAstro 
+        self.version = ta.getVersion()
 
         # Read the 3 parts that compose each type of mount
         if (self.mountType == 'E'):             # Equatorial German (GEM)
@@ -54,20 +57,28 @@ class Mount:
         alt = ta.getAltitude()
 
 # The transformations from axis positions (reported by TeenAstro) and rotations of the model
-# Need to take into account both the hemisphere and the motor configurations
+# Need to take into account the motor configurations 
+# and also the S hemisphere which inverts the RA axis (for Firmware 2.x only)
         if (a1 != self.axis1Degrees):
-            if ta.axis1Reverse != (self.latitude>0):
-                dir = 1
+            if (self.version[0] == '3'):
+                if ta.axis1Reverse:
+                    dir = 1
+                else:
+                    dir = -1       
             else:
-                dir = -1
+                if ta.axis1Reverse != (self.latitude>0):
+                    dir = 1
+                else:
+                    dir = -1
             self.alpha = self.alpha + dir * np.deg2rad(self.axis1Degrees-a1)
             self.axis1Degrees = a1
 
         if (a2 != self.axis2Degrees):
             if ta.axis2Reverse:
-                self.beta = self.beta + np.deg2rad(self.axis2Degrees-a2)
+                dir = 1
             else:
-                self.beta = self.beta - np.deg2rad(self.axis2Degrees-a2)
+                dir = -1
+            self.beta = self.beta + dir * np.deg2rad(self.axis2Degrees-a2)
             self.axis2Degrees = a2
 
 # The clumsy code below represents the transformations required on the parts of each mount 
@@ -134,14 +145,13 @@ class Mount:
 # Declare function to define command-line arguments
 def readOptions(args=sys.argv[1:]):
   parser = argparse.ArgumentParser(description="The parsing commands lists.")
-  parser.add_argument('-p', '--ip', help='TeenAstro IP address')
+  parser.add_argument('-t', '--portType', help='TeenAstro connection type (tcp or serial)')
+  parser.add_argument('-p', '--portName', help='TeenAstro IP address or serial port')
+  parser.add_argument('-b', '--baudRate', help='TeenAstro baud rate')
   opts = parser.parse_args(args)
-  if opts.ip == None:
-    opts.ip = '192.168.0.21'
   return opts
 
-testCase = [{'name':'South','az':180,'alt':0}, {'name':'East','az':90,'alt':0},{'name':'North','az':0,'alt':0},{'name':'West','az':270,'alt':0}]
-#testCase = [{'name':'South','az':180,'alt':0}, {'name':'East','az':90,'alt':0}]
+testCase = [{'name':'North','az':0,'alt':0},{'name':'East','az':90,'alt':0}, {'name':'South','az':180,'alt':0}]
 
 
 # Main program
@@ -155,7 +165,7 @@ class Application:
         gui = glooey.Gui(window)
         hbox = glooey.HBox()
 
-        self.ta = self.init_TeenAstro(options.ip)
+        self.ta = self.init_TeenAstro(portType=options.portType, portName=options.portName, baudRate=options.baudRate)
         if self.ta == None:
             self.log ("Error connecting to TeenAstro")
             sys.exit(1)
@@ -164,6 +174,7 @@ class Application:
 
         self.mount = Mount(self.ta)
         self.testData = []
+        self.t1 = 0
 
         scene = trimesh.Scene([self.mount.base, self.mount.primary, self.mount.secondary])
         self.scene_widget1 = trimesh.viewer.SceneWidget(scene)
@@ -203,7 +214,6 @@ class Application:
         if self.mount.mountType != 'E':
             self.log('Can only run meridian flip test with German Equatorial mount')
             return
-        self.log('Starting meridian flip test')
         if not self.ta.isAtHome():
             self.log('Error - mount is not at home')
             return
@@ -218,42 +228,75 @@ class Application:
         code = self.ta.getErrorCode()
         if code!= 'ERR_NONE':
             self.log(code)
+            self.log('Pier Side: %s' % self.ta.getPierSide())
+            self.log('RA:%s Dec:%s' % (deg2dms(self.ra), deg2dms(self.dec)))
             pyglet.clock.unschedule(self.runFlipTest) 
             return
 
         if self.flipTestState == 'start':
+            self.log('Starting Meridian Test')
             self.eastLimit = self.ta.getMeridianEastLimit()
             self.westLimit = self.ta.getMeridianWestLimit()
 
             self.initialRA = self.ta.readSidTime() + (1.0 + float(self.eastLimit)) / 15.0 # goto "eastLimit" east of south meridian  
-            self.initialDec = 0
+            self.initialDec = 45.5
             self.ta.gotoRaDec(self.initialRA, self.initialDec)
             self.log('goto East Limit')
             self.flipTestState = 'goto1'
             return
 
         if self.flipTestState == 'goto1':
-            self.ra = self.ta.getRA() - (0.04 + float(self.eastLimit + self.westLimit) / 15)  # go almost to west limit 
+            self.ra = self.ta.getRA() - (0.05 + float(self.eastLimit + self.westLimit) / 15.0)  # go almost to west limit 
             self.dec = self.ta.getDeclination()
             self.log('goto West Limit')
             self.ta.gotoRaDec(self.ra, self.dec)
             self.flipTestState = 'goto2'
             self.t = self.startWaiting = time.time()
+            return
 
         if self.flipTestState == 'goto2':
-            if (self.ta.getPierSide() == 'W'):    # still on west side. wait 5 seconds and issue a goto to the same position
+            if (self.ta.getPierSide() == 'W'):    # still on west side. 
                 t = time.time()
-                if (t < self.t + 5):
+                if (t < self.t + 1):
                     return
                 self.t = t
-                print('.')
-                t = time.time()
-                self.ta.gotoRaDec(self.ra, self.dec)
+                self.t1 = self.t1 + 1
+                gt = random.randint(0,999)
+                if gt % 4 == 0:
+                    dir = 'w'
+                elif gt % 4 == 1:
+                    dir = 'e'
+                elif gt % 4 == 2:
+                    dir = 'n'
+                elif gt % 4 == 3:
+                    dir = 's'
+                self.log('Guiding %s %d' % (dir, gt))
+                self.ta.guideCmd(dir, gt)
+                # every n seconds, issue a goto to the same position
+                if self.t1 == 60:
+                    self.t1 = 0
+                    self.log('Goto %s %s' % (deg2dms(self.ra), deg2dms(self.dec)))
+                    self.ta.gotoRaDec(self.ra, self.dec)
+                    self.log('Requesting flip')
+                    # poll a few times to see if we start slewing
+                    loop = 0
+                    while True:
+                        if self.ta.isSlewing():
+                            self.log('Slewing')
+                            break
+                        time.sleep(0.1)
+                        loop = loop + 1
+                        if loop == 10:
+                            ha = 15.0 * (self.ta.getLST() - self.ra) 
+                            self.log('Request to flip failed at hour angle %02.2f degrees' % ha)
+                            break
 
             else:           # we have flipped - test is done
                 self.log('meridian flip done after %d seconds - goto Home' % (self.t - self.startWaiting))
                 self.ta.goHome()
-                pyglet.clock.unschedule(self.runFlipTest) 
+                self.flipTestState = 'start'    # redo until end of time
+                time.sleep(1)       # give some time before starting test again
+#                pyglet.clock.unschedule(self.runFlipTest) 
 
     def startCoordTest(self,arg):
         self.testStep = 0
@@ -286,8 +329,8 @@ class Application:
     def log(self, message):
         print (message)
 
-    def init_TeenAstro(self, ip):
-        ta = TeenAstro('tcp', ip)
+    def init_TeenAstro(self, portType, portName, baudRate):
+        ta = TeenAstro(portType=portType, portName=portName, baudRate=baudRate)
         p = ta.open()
 
         if (p == None):
@@ -316,10 +359,66 @@ class Application:
                                           height=height)
 
         @window.event
-        def on_key_press(symbol, modifiers):
-            if modifiers == 0:
-                if symbol == pyglet.window.key.Q:
-                    window.close()
+        # custom commands for low-level testing
+        def on_text(ch):
+            if (ch == 's'):
+                self.ta.moveCmd('s')
+                print ('move S')
+            elif (ch == 'n'):
+                self.ta.moveCmd('n')
+                print ('move N')
+            elif (ch == 'e'):
+                self.ta.moveCmd('e')
+                print ('move E')
+            elif (ch == 'w'):
+                self.ta.moveCmd('w')
+                print ('move W')
+            elif (ch == 'q'):
+                self.ta.abort()
+                print ('abort')
+            elif (ch == 't'):
+                print ('Enable Tracking')
+                self.ta.enableTracking()
+            elif (ch == 'd'): 
+                print ('Disable Tracking')
+                self.ta.disableTracking()
+            elif (ch == '<'):               # RA test
+                ra = self.ta.getRA()
+                dec = self.ta.getDeclination()
+                ra = ra + 1
+                if ra > 24:
+                    ra = ra - 24
+                self.ta.gotoRaDec(ra, dec)
+                print ('goto RA=%f Dec=%f'% (ra,dec))
+            elif (ch == '>'):               # RA test
+                ra = self.ta.getRA()
+                dec = self.ta.getDeclination()
+                ra = ra - 1
+                if ra < 0:
+                    ra = ra + 24
+                self.ta.gotoRaDec(ra, dec)
+                print ('goto RA=%f Dec=%f'% (ra,dec))
+            elif (ch == 'v'):               # RA test
+                ra = self.ta.getRA()
+                dec = self.ta.getDeclination()
+                if dec > 15:
+                    dec = dec - 15
+                self.ta.gotoRaDec(ra, dec)
+                print ('goto RA=%f Dec=%f'% (ra,dec))
+            elif (ch == '^'):               # RA test
+                ra = self.ta.getRA()
+                dec = self.ta.getDeclination()
+                if dec > -75:
+                    dec = dec - 15
+                self.ta.gotoRaDec(ra, dec)
+                print ('goto RA=%f Dec=%f'% (ra,dec))
+            elif (ch == 'h'):
+                self.ta.goHome()
+                print ('go home')
+            elif (ch == 'z'):
+                self.ta.gotoAzAlt(0, 90)
+                print ('go to Zenith')
+
         return window
 
  

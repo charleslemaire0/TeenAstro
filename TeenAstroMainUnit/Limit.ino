@@ -18,7 +18,6 @@ bool checkPole(const long &axis1, CheckMode mode)
 {
   double underPoleLimit = (mode == CHECKMODE_GOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;
   return (axis1 > geoA1.quaterRot - underPoleLimit * 15. * geoA1.stepsPerDegree) && (axis1 < geoA1.quaterRot + underPoleLimit * 15. * geoA1.stepsPerDegree);
-  return true;
 }
 bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
 {
