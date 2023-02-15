@@ -52,8 +52,11 @@ void reboot()
 
 void setup()
 {
-
   pinMode(LEDPin, OUTPUT);
+  //GNSS connection
+#if VERSION != 220
+  GNSS_Serial.begin(9600);
+#endif
   for (int k = 0; k < 20; k++)
   {
     digitalWrite(LEDPin, HIGH);
@@ -143,10 +146,7 @@ void setup()
   // prep timers
   rtk.updateTimers();
 
-  //GNSS connection
-#if VERSION != 220
-  GNSS_Serial.begin(9600);
-#endif
+
   hasGNSS = GNSS_Serial.available() > 0;
 
   //Focuser connection
@@ -356,7 +356,7 @@ void SafetyCheck(const bool forceTracking)
   {
     if (!checkMeridian(axis1, axis2, CHECKMODE_TRACKING))
     {
-      if ((staA1.dir && currentSide == PIER_WEST) || (!staA2.dir && currentSide == PIER_EAST))
+      if ((staA1.dir && currentSide == PIER_WEST) || (!staA1.dir && currentSide == PIER_EAST))
       {
         lastError = ERRT_MERIDIAN;
         if (movingTo)
@@ -379,7 +379,7 @@ void SafetyCheck(const bool forceTracking)
 
     if (!checkPole(axis1, CHECKMODE_TRACKING))
     {
-      if ((staA1.dir && currentSide == PIER_EAST) || (!staA2.dir && currentSide == PIER_WEST))
+      if ((staA1.dir && currentSide == PIER_EAST) || (!staA1.dir && currentSide == PIER_WEST))
       {
         lastError = ERRT_UNDER_POLE;
         if (movingTo)
