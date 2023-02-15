@@ -36,7 +36,7 @@ def dms2deg(dms):
   dms = dms.replace('*',' ').replace("'",' ').replace(':',' ')
   try:
     (d,m,s) = dms.split()
-    if (float(d) >= 0):
+    if (d[0] != '-'):
       return float(d) + float(m)/60 + float(s)/3600
     else:
       return float(d) - float(m)/60 - float(s)/3600
@@ -115,6 +115,14 @@ class TeenAstro(object):
   def getAxis2Steps(self):
     steps = int(self.getValue(':GXDP1#'))
     return steps
+
+  def getAxis1Speed(self):
+    speed = float(self.getValue(':GXDR3#'))
+    return speed
+
+  def getAxis2Speed(self):
+    speed = float(self.getValue(':GXDR4#'))
+    return speed
 
   def readGears(self):
     if (self.port != None):
@@ -336,6 +344,18 @@ class TeenAstro(object):
 
   def guideCmd(self, dir, ms):
     self.port.write((":Mg%1s%04u#" % (dir, ms)).encode('utf-8'))  # does not return a value
+
+  def moveCmd(self, dir):
+    self.port.write((":M%1s#" % (dir)).encode('utf-8'))  # does not return a value
+
+  def stopCmd(self, dir):
+    self.port.write((":Q%1s#" % (dir)).encode('utf-8'))
+
+  def abort(self):
+    self.port.write(":Q#".encode('utf-8'))
+
+  def getVersion(self):
+    return self.getValue(':GVN#')
 
 
 # Main program

@@ -150,14 +150,15 @@ def setMountType():
     return
   cmdStr = ':' + MountSetCmd['mType']
   if (Mount['mType'] == 'Eq-German'):
-    cmdStr +=  '0#'
-  elif (Mount['mType'] == 'Eq-Fork'):
     cmdStr +=  '1#'
-  elif (Mount['mType'] == 'AltAz-Tee'):
+  elif (Mount['mType'] == 'Eq-Fork'):
     cmdStr +=  '2#'
-  elif (Mount['mType'] == 'AltAz-Fork'):
+  elif (Mount['mType'] == 'AltAz-Tee'):
     cmdStr +=  '3#'
+  elif (Mount['mType'] == 'AltAz-Fork'):
+    cmdStr +=  '4#'
   comm.write(cmdStr.encode('utf-8'))
+  sys.exit()
    
 
 
@@ -514,7 +515,7 @@ def readSiteData():
   # remember the current site
   currentSiteNum = int(getValue(comm, 'W?'))
   if (currentSiteNum not in [1,2,3,4]):
-    currentSiteNum = 1
+    currentSiteNum = 0
 
   # read all 4 sites
   for i in range(0,4):
@@ -735,7 +736,7 @@ while True:
     writeMountData()
     writeSiteData()
   
-  elif event == 'Set in TeenAstro':
+  elif event == 'Set and reboot':
     setMountType()
 
   elif event == 'Load from File':

@@ -7,11 +7,14 @@ import trimesh.transformations as tt
 import pyglet
 from pyglet import clock
 from teenastro import TeenAstro, deg2dms
+textInput = ''
+cmdComplete = False
 
 class Mount:
     def __init__(self, ta):
 
         self.mountType = ta.readMountType()     # one-letter code returned by TeenAstro 
+        self.version = ta.getVersion()
 
         # Read the 3 parts that compose each type of mount
         if (self.mountType == 'E'):             # Equatorial German (GEM)
@@ -54,20 +57,28 @@ class Mount:
         alt = ta.getAltitude()
 
 # The transformations from axis positions (reported by TeenAstro) and rotations of the model
-# Need to take into account both the hemisphere and the motor configurations
+# Need to take into account the motor configurations 
+# and also the S hemisphere which inverts the RA axis (for Firmware 2.x only)
         if (a1 != self.axis1Degrees):
-            if ta.axis1Reverse != (self.latitude>0):
-                dir = 1
+            if (self.version[0] == '3'):
+                if ta.axis1Reverse:
+                    dir = 1
+                else:
+                    dir = -1       
             else:
-                dir = -1
+                if ta.axis1Reverse != (self.latitude>0):
+                    dir = 1
+                else:
+                    dir = -1
             self.alpha = self.alpha + dir * np.deg2rad(self.axis1Degrees-a1)
             self.axis1Degrees = a1
 
         if (a2 != self.axis2Degrees):
             if ta.axis2Reverse:
-                self.beta = self.beta + np.deg2rad(self.axis2Degrees-a2)
+                dir = 1
             else:
-                self.beta = self.beta - np.deg2rad(self.axis2Degrees-a2)
+                dir = -1
+            self.beta = self.beta + dir * np.deg2rad(self.axis2Degrees-a2)
             self.axis2Degrees = a2
 
 # The clumsy code below represents the transformations required on the parts of each mount 
@@ -140,7 +151,6 @@ def readOptions(args=sys.argv[1:]):
   opts = parser.parse_args(args)
   return opts
 
-#testCase = [{'name':'South','az':180,'alt':0}, {'name':'East','az':90,'alt':0},{'name':'North','az':0,'alt':0},{'name':'West','az':270,'alt':0}]
 testCase = [{'name':'North','az':0,'alt':0},{'name':'East','az':90,'alt':0}, {'name':'South','az':180,'alt':0}]
 
 
@@ -349,10 +359,66 @@ class Application:
                                           height=height)
 
         @window.event
-        def on_key_press(symbol, modifiers):
-            if modifiers == 0:
-                if symbol == pyglet.window.key.Q:
-                    window.close()
+        # custom commands for low-level testing
+        def on_text(ch):
+            if (ch == 's'):
+                self.ta.moveCmd('s')
+                print ('move S')
+            elif (ch == 'n'):
+                self.ta.moveCmd('n')
+                print ('move N')
+            elif (ch == 'e'):
+                self.ta.moveCmd('e')
+                print ('move E')
+            elif (ch == 'w'):
+                self.ta.moveCmd('w')
+                print ('move W')
+            elif (ch == 'q'):
+                self.ta.abort()
+                print ('abort')
+            elif (ch == 't'):
+                print ('Enable Tracking')
+                self.ta.enableTracking()
+            elif (ch == 'd'): 
+                print ('Disable Tracking')
+                self.ta.disableTracking()
+            elif (ch == '<'):               # RA test
+                ra = self.ta.getRA()
+                dec = self.ta.getDeclination()
+                ra = ra + 1
+                if ra > 24:
+                    ra = ra - 24
+                self.ta.gotoRaDec(ra, dec)
+                print ('goto RA=%f Dec=%f'% (ra,dec))
+            elif (ch == '>'):               # RA test
+                ra = self.ta.getRA()
+                dec = self.ta.getDeclination()
+                ra = ra - 1
+                if ra < 0:
+                    ra = ra + 24
+                self.ta.gotoRaDec(ra, dec)
+                print ('goto RA=%f Dec=%f'% (ra,dec))
+            elif (ch == 'v'):               # RA test
+                ra = self.ta.getRA()
+                dec = self.ta.getDeclination()
+                if dec > 15:
+                    dec = dec - 15
+                self.ta.gotoRaDec(ra, dec)
+                print ('goto RA=%f Dec=%f'% (ra,dec))
+            elif (ch == '^'):               # RA test
+                ra = self.ta.getRA()
+                dec = self.ta.getDeclination()
+                if dec > -75:
+                    dec = dec - 15
+                self.ta.gotoRaDec(ra, dec)
+                print ('goto RA=%f Dec=%f'% (ra,dec))
+            elif (ch == 'h'):
+                self.ta.goHome()
+                print ('go home')
+            elif (ch == 'z'):
+                self.ta.gotoAzAlt(0, 90)
+                print ('go to Zenith')
+
         return window
 
  

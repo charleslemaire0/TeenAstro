@@ -38,16 +38,21 @@ sgCommTypeTCP = [sg.Radio('TCP', "RADIO1", default = True, size=(8, 1), enable_e
 
 commFrame = sg.Frame('Comm Port',[sgCommTypeSerial,sgCommTypeTCP,[sg.Button('Connect', key='connect')]])
 
-
 topRow = [commFrame, sg.B('Exit')]
 
 coordFrame = sg.Frame('Coordinates',[[sg.T(' ', size=10), sg.T('Displayed', size=10),sg.T('Computed', size=10)],
                                      [sg.T('Azimuth', size=10), sg.T('0', size=10, key='az_disp'),sg.T('0', size=10, key='az_comp')],
                                      [sg.T('Altitude', size=10), sg.T('0', size=10, key='alt_disp'),sg.T('0', size=10, key='alt_comp')]])
 
-driftFrame = sg.Frame('Drift Rates', [[sg.T('RA (arc-sec/sec):'), sg.T('0', key='ra_rate')],[sg.T('Dec (arc-sec/sec):'), sg.T('0', key='dec_rate')]]) 
+driftFrame = sg.Frame('Drift Rates (arc-sec/S)', [[sg.T('RA:'), sg.T('0', key='ra_rate')],[sg.T('Dec:'), sg.T('0', key='dec_rate')]]) 
 
-slewFrame = sg.Frame('Slew Rates', [[sg.T('RA (arc-sec/sec):'), sg.T('0', key='ra_rate')],[sg.T('Dec (arc-sec/sec):'), sg.T('0', key='dec_rate')]]) 
+axisFrame = sg.Frame('Axis Positions (º)', [[sg.T('Axis1:'), sg.T('0', key='axis1_degrees')],[sg.T('Axis2:'), sg.T('0', key='axis2_degrees')]]) 
+
+stepsFrame = sg.Frame('Axis Positions (steps)', [[sg.T('Axis1:'), sg.T('0', key='axis1_steps')],[sg.T('Axis2:'), sg.T('0', key='axis2_steps')]]) 
+
+speedFrame = sg.Frame('Axis Speeds (steps/S)', [[sg.T('Axis1:'), sg.T('0', key='axis1_speed')],[sg.T('Axis2:'), sg.T('0', key='axis2_speed')]]) 
+
+slewFrame = sg.Frame('Slew Rates (arc-sec/S)', [[sg.T('RA:'), sg.T('0', key='ra_rate')],[sg.T('Dec:'), sg.T('0', key='dec_rate')]]) 
 
 def sgSpin(label):
     return sg.Spin(values = [i for i in range(-100,100,10)], initial_value=0, key=label, readonly=True, background_color='white', size=6)
@@ -66,9 +71,9 @@ pointTestTab = [[sg.Column([
                ]
 
 driftTestTab = [[sg.Column([
-                    [sg.B(button_text = 'Start', key='startStopDrift'),sg.B(button_text = 'Clear', key='clearDrift'),
+                    [sg.B(button_text = 'Start Tracking', key='startStopTrack'),sg.B(button_text = 'Reset', key='resetDrift'),
                      sg.B(button_text = 'Save', key='saveDrift'), sg.B(button_text = '+',key='zoomInD'),sg.B(button_text = '-',key='zoomOutD')],
-                    [sg.Canvas(key='drift_cv', size=(640, 400))]]), driftFrame]
+                    [sg.Canvas(key='drift_cv', size=(640, 400))]]), sg.Column([[driftFrame], [axisFrame], [stepsFrame], [speedFrame]])]
                 ]
 
 slewTestTab = [[sg.Column([
@@ -115,10 +120,6 @@ def eqAxesToHaDec(axis1, axis2, pierSide):
         dec = 180-axis2
     return ha, dec
 
-def altazAxesToAltAz(axis1, axis2):
-    az = 180 + axis1
-    alt = axis2
-    return az, alt
 
 
 
