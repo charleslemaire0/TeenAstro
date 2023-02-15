@@ -1,9 +1,11 @@
+#include <cmath>
+#include <cstdint>
 #include <TeenAstroMath.h>
-#include <math.h>
 #include <Arduino.h>
+
 double frac(double v)
 {
-  return v - ((long)v);
+  return v - floor(v);
 }
 
 double cot(double n)
@@ -12,23 +14,23 @@ double cot(double n)
 }
 
 // integer numeric conversion with error checking
-bool atoi2(char *a, int *i)
+bool atoi2(char *a, int16_t *i)
 {
   char    *conv_end;
-  long    l = strtol(a, &conv_end, 10);
+  int32_t l = strtol(a, &conv_end, 10);
 
-  if ((l < -32767) || (l > 32768) || (&a[0] == conv_end)) return false;
-  *i = l;
+  if ((l < INT16_MIN) || (l > INT16_MAX) || (&a[0] == conv_end)) return false;
+  *i = (int16_t)(l);
   return true;
 }
 
-bool atoui2(char* a, unsigned int* i)
+bool atoui2(char* a, uint16_t* i)
 {
   char* conv_end;
-  unsigned long l = strtoul(a, &conv_end, 10);
+  uint32_t l = strtoul(a, &conv_end, 10);
 
-  if ( (l > 65535) || (&a[0] == conv_end)) return false;
-  *i = l;
+  if ( (l > UINT16_MAX) || (&a[0] == conv_end)) return false;
+  *i = (uint16_t)(l);
   return true;
 }
 
