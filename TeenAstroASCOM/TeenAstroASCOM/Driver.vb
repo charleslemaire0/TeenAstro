@@ -1031,13 +1031,13 @@ Public Class Telescope
         sg = "-"
         value = -value
       End If
-      Dim deg = Math.Truncate(value)
-      Dim min = 60 * (value - deg)
-      Dim sec = Math.Truncate((min - Math.Truncate(min)) * 60 + 0.5)
-      min = Math.Truncate(min)
+
+      value += 0.5 / 3600
+      Dim deg = Math.Floor(value)
+      Dim sec = Math.Floor(3600.0 * (value - deg))
+      Dim min = Math.Floor(sec / 60.0)
+      sec = sec - min * 60
       Dim cmd As String = "St" + sg + deg.ToString("00") + ":" + min.ToString("00") + ":" + sec.ToString("00")
-      'Dim cmd As String = "St" + sg + deg.ToString("00") + "*" + min.ToString("00")
-      'Dim cmd As String = "St" + sg + deg.ToString("00") + ":" + min.ToString("00") + ":" + ((Math.Abs(value) - deg) * 3600 - Math.Truncate(min) * 60).ToString("00")
       If Not Me.CommandBool(cmd) Then
         Throw New ASCOM.InvalidOperationException
       End If
@@ -1063,7 +1063,13 @@ Public Class Telescope
         sg = "+"
         value = -value
       End If
-      Dim cmd As String = "Sg" + sg + DegtoDDDMMSS(value)
+
+      value += 0.5 / 3600
+      Dim deg = Math.Floor(value)
+      Dim sec = Math.Floor(3600.0 * (value - deg))
+      Dim min = Math.Floor(sec / 60.0)
+      sec = sec - min * 60
+      Dim cmd As String = "Sg" + sg + deg.ToString("000") + ":" + min.ToString("00") + ":" + sec.ToString("00")
       If Not Me.CommandBool(cmd) Then
         Throw New ASCOM.InvalidOperationException
       End If
