@@ -45,7 +45,7 @@ MountReadCmd = {
       'MaxR':'GXRX','GuideR':'GXR0','Acc':'GXRA', 'SlowR':'GXR1','MediumR':'GXR2','FastR':'GXR3',
       'mrot1':'GXMRR','mge1':'GXMGR','mst1':'GXMSR','mmu1':'GXMMR','mbl1':'GXMBR','mlc1':'GXMcR','mhc1':'GXMCR', 'msil1':'GXMmR',
       'mrot2':'GXMRD','mge2':'GXMGD','mst2':'GXMSD','mmu2':'GXMMD','mbl2':'GXMBD','mlc2':'GXMcD','mhc2':'GXMCD', 'msil2':'GXMmD',
-      'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU', 'poleAlign':'GXAp', 'corrTrack':'GXI',
+      'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU', 'corrTrack':'GXI',
       'a1min':'GXLA','a1max':'GXLB','a2min':'GXLC','a2max':'GXLD'
       } 
 MountSetCmd = {
@@ -53,7 +53,7 @@ MountSetCmd = {
       'MaxR':'SXRX:','GuideR':'SXR0:','Acc':'SXRA:', 'SlowR':'SXR1:','MediumR':'SXR2:','FastR':'SXR3:',
       'mrot1':'SXMRR:','mge1':'SXMGR:','mst1':'SXMSR:','mmu1':'SXMMR:','mbl1':'SXMBR:','mlc1':'SXMCR:','mhc1':'SXMcR:', 'msil1':'SXMmR:',
       'mrot2':'SXMRD:','mge2':'SXMGD:','mst2':'SXMSD:','mmu2':'SXMMD:','mbl2':'SXMBD:','mlc2':'SXMCD:','mhc2':'SXMcD:', 'msil2':'SXMmD:',
-      'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 'poleAlign':'SXAp:', 'corrTrack':'T',
+      'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 'poleAlign':'SXAc:', 'corrTrack':'T',
       'a1min':'SXLA:','a1max':'SXLB:','a2min':'SXLC:','a2max':'SXLD:'      
       } 
 
@@ -99,9 +99,9 @@ def sgLabel(text):
 def openPort():
   if window['-Serial-'].Get():
     try:
-      logText('Opening port '+ values['-ComPorts-'])
+      logText('Opening port '+ values['-ComPorts-'] + values['-BaudRate-'])
       comm = serial.Serial(port=values['-ComPorts-'],
-                        baudrate=57600, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
+                        baudrate=int(values['-BaudRate-']), bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
                         stopbits=serial.STOPBITS_ONE,
                         timeout=None, xonxoff=False, rtscts=False, write_timeout=None, dsrdtr=False,
                         inter_byte_timeout=None)
@@ -128,7 +128,8 @@ def getValue(comm, cmd):
   cmdStr = ":" + cmd + "#"  
   comm.write(cmdStr.encode('utf-8'))
   try:
-    val = comm.read_until(b'#', 100).decode('utf-8')[:-1]
+    val1 = comm.read_until(b'#', 50)
+    val = val1.decode('utf-8')[:-1]
   except:  
     logText("getValue Error: %s" % cmd)
     val = '?'
@@ -149,14 +150,15 @@ def setMountType():
     return
   cmdStr = ':' + MountSetCmd['mType']
   if (Mount['mType'] == 'Eq-German'):
-    cmdStr +=  '0#'
-  elif (Mount['mType'] == 'Eq-Fork'):
     cmdStr +=  '1#'
-  elif (Mount['mType'] == 'AltAz-Tee'):
+  elif (Mount['mType'] == 'Eq-Fork'):
     cmdStr +=  '2#'
-  elif (Mount['mType'] == 'AltAz-Fork'):
+  elif (Mount['mType'] == 'AltAz-Tee'):
     cmdStr +=  '3#'
+  elif (Mount['mType'] == 'AltAz-Fork'):
+    cmdStr +=  '4#'
   comm.write(cmdStr.encode('utf-8'))
+  sys.exit()
    
 
 
@@ -175,8 +177,7 @@ def writeMountData():
     elif ((tag == 'mlc1') or (tag == 'mlc2')
           or (tag == 'mhc1') or (tag == 'mhc2')):
       # motor current high and low settings
-      # Current values need to be divided by 10
-      cmdStr += str(int(int(Mount[tag]) / 10))
+      cmdStr += str(int(Mount[tag]))
       
     elif ((tag == 'mrot1') or (tag == 'mrot2')):
       # motor rotation direction
@@ -188,7 +189,7 @@ def writeMountData():
         continue
 
     elif ((tag == 'msil1') or (tag == 'msil2')):
-      cmdStr += Mount[tag]
+      cmdStr += str(Mount[tag])
 
     elif ((tag == 'mmu1') or (tag == 'mmu2')):
       # Microsteps
@@ -208,10 +209,10 @@ def writeMountData():
       cmdStr += str(int(float(Mount[tag]) * 10))
 
     elif tag == 'a1min' or tag == 'a2min':
-      cmdStr += str(abs(int(Mount[tag])))
+      cmdStr += str(10*abs(int(Mount[tag])))
 
     elif tag == 'a1max' or tag == 'a2max':
-      cmdStr += str(int(Mount[tag]))
+      cmdStr += str(10*int(Mount[tag]))
 
 
     elif tag == 'DefaultR':                         # default rate: 0 to 4
@@ -252,8 +253,7 @@ def writeMountData():
 #    print("Tag: %s,  command: %s" % (tag, cmdStr))
 
     sendCommand(comm, cmdStr)
-
-
+  
 
 
 
@@ -302,6 +302,7 @@ def readMountData():
     return
   for tag in list(MountReadCmd.keys()): 
     resp = getValue(comm, MountReadCmd[tag]) 
+    print (tag)
     if (tag == 'mType'):
       mt = resp[12]     # Mount type is byte number 12 in the result string
       if (mt == 'E'):
@@ -314,7 +315,7 @@ def readMountData():
         Mount[tag] = 'AltAz-Fork'   
 
     elif ((tag == 'mlc1') or (tag == 'mlc2') or (tag == 'mhc1') or (tag == 'mhc2')):   # Current values need multiply by 10    
-      Mount[tag] = 10 * int(resp)
+      Mount[tag] = int(resp)
 
     elif ((tag == 'mrot1') or (tag == 'mrot2')):
       if (resp == '0'):
@@ -513,6 +514,9 @@ def readSiteData():
     return
   # remember the current site
   currentSiteNum = int(getValue(comm, 'W?'))
+  if (currentSiteNum not in [1,2,3,4]):
+    currentSiteNum = 0
+
   # read all 4 sites
   for i in range(0,4):
     s = sites[i]
@@ -547,9 +551,20 @@ def updateStatus(comm):
   window['axis1deg'].update("Axis 1 Deg: %s" % getValue(comm, 'GXP1'))
   window['axis2deg'].update("Axis 2 Deg: %s" % getValue(comm, 'GXP2'))
   statusCode = getValue(comm, 'GXI')
-  window['pierside'].update("Pier Side: %c" % statusCode[13])
+  try:
+    window['pierside'].update("Pier Side: %c" % statusCode[13])
+  except:
+    window['pierside'].update("Pier Side: ?")
+  try:
+    window['slewing'].update("Slewing/Tracking: %c" % statusCode[0])
+  except:
+    window['slewing'].update("Slewing/Tracking: ?")
+
   errorCodes = ['ERR_NONE','ERR_MOTOR_FAULT','ERR_HORIZON','ERR_LIMIT_SENSE','ERR_LIMIT_A1','ERR_LIMIT_A2','ERR_UNDER_POLE','ERR_MERIDIAN','ERR_SYNC'];
-  window['errorCode'].update(errorCodes[int(statusCode[15])])
+  try:
+    window['errorCode'].update(errorCodes[int(statusCode[15])])
+  except:
+    window['errorCode'].update('unknown error')
 
 
 # Main program
@@ -573,8 +588,8 @@ for tag in list(MountDef.keys()):
   Mount[tag] = (MountDef[tag])[0]
 
 sgCommTypeSerial = [sg.Radio('Serial', "RADIO1", size=(8, 1), enable_events=True, key='-Serial-'),
-          sg.Text('Device:', size=(10, 1)),
-          sg.Combo('ComPorts', [], key='-ComPorts-', size=(20, 1), disabled=True)]
+          sg.Text('Device:', size=(10, 1)), sg.Combo('ComPorts', [],  key='-ComPorts-', size=(20, 1), disabled=True),
+          sg.Text('Baud Rate:', size=(10, 1)), sg.Combo(['9600','19200','57600','115200'], default_value='115200',key='-BaudRate-', size=(20, 1)),]
 
 sgCommTypeTCP = [sg.Radio('TCP', "RADIO1", default = True, size=(8, 1), enable_events=True, key='-TCPIP-'),
           sg.Text('IP Address:', size=(10, 1)),
@@ -646,8 +661,8 @@ debugFrame = sg.Frame('Debug',
           [sg.Text('Axis 2 count', key='axis2',size=(30,1))],
           [sg.Text('Axis 1 degrees', key='axis1deg',size=(30,1))],
           [sg.Text('Axis 2 degrees', key='axis2deg',size=(30,1))],
-          [sg.Text('Pier side', key='pierside',size=(30,1))]],
-          )
+          [sg.Text('Pier side', key='pierside',size=(30,1))],
+          [sg.Text('Slewing/Tracking', key='slewing',size=(30,1))]])
 
 errorFrame = sg.Frame('Error', 
           [[sg.Text('Error Status', key='errorCode',size=(30,1))]])
@@ -664,7 +679,10 @@ versionFrame = sg.Frame('Versions',
 mountTab = [[mountTypeRow],[speedFrame, sg.Column([[limitFrame,gemLimitFrame], [alignmentFrame]])],[motFrame1, motFrame2]]
 siteTab = [[siteFrame]]
 statusTab = [[timeFrame],[coordFrame],[debugFrame],[errorFrame]]
-bottomRow = sg.Output(key='Log',  size=(80, 4))
+
+# Comment out next line to get the output on the command line
+#bottomRow = sg.Output(key='Log',  size=(80, 4))
+bottomRow = sg.Text(key='None',  size=(80, 4))
 
 topRow = [commFrame, versionFrame]
 
@@ -718,7 +736,7 @@ while True:
     writeMountData()
     writeSiteData()
   
-  elif event == 'Set in TeenAstro':
+  elif event == 'Set and reboot':
     setMountType()
 
   elif event == 'Load from File':
