@@ -59,6 +59,9 @@ void writeDefaultMount()
   XEEPROM.write(getMountAddress(EE_Rate2), DefaultR2);
   XEEPROM.write(getMountAddress(EE_Rate3), DefaultR3);
 
+  // init the default recentering speed
+  XEEPROM.write(getMountAddress(EE_DefaultRate), DefaultR4);
+
   // init the default maxRate
   XEEPROM.writeInt(getMountAddress(EE_maxRate), DefaultR4);
 
