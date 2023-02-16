@@ -204,6 +204,7 @@ public:
   bool isGNSSValid();
   bool isGNSSTimeSync();
   bool isGNSSLocationSync();
+  bool isHdopSmall();
   bool hasEncoder();
   bool CalibratingEncoder();
 

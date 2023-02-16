@@ -59,6 +59,11 @@ bool GNSSLocationIsValid()
     gps.altitude.isValid() && gps.altitude.age() < 5000;
 }
 
+bool isHdopSmall()
+{
+  return gps.hdop.isValid() && gps.hdop.age() < 5000 && gps.hdop.hdop() < 2.0;
+}
+
 bool isTimeSyncWithGNSS()
 {
   static unsigned long t1 = 0;
@@ -103,7 +108,7 @@ bool isLocationSyncWithGNSS()
     TinyGPSAltitude a = gps.altitude;
 
     dlng[i] = 3600*fabs(haRange(*localSite.longitude() - (-l.lng())));
-    dlat[i] = 3660*fabs(*localSite.latitude() - l.lat());
+    dlat[i] = 3600*fabs(*localSite.latitude() - l.lat());
     dele[i] = fabs(*localSite.elevation() - a.meters());
     double dlng_s= std_dev(dlng, N_GNSS_OBS);
     double dlat_s = std_dev(dlat, N_GNSS_OBS);

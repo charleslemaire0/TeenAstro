@@ -415,6 +415,10 @@ bool TeenAstroMountStatus::isGNSSLocationSync()
 {
   return bitRead(m_TempMount[14] - 'A', 3);
 }
+bool TeenAstroMountStatus::isHdopSmall()
+{
+  return bitRead(m_TempMount[14] - 'A', 4);
+}
 bool TeenAstroMountStatus::hasFocuser()
 {
   return m_hasFocuser;
