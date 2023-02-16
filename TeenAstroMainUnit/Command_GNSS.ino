@@ -59,6 +59,11 @@ bool GNSSLocationIsValid()
     gps.altitude.isValid() && gps.altitude.age() < 5000;
 }
 
+bool isHdopSmall()
+{
+  return gps.hdop.isValid() && gps.hdop.age() < 5000 && gps.hdop.hdop() < 2.0;
+}
+
 bool isTimeSyncWithGNSS()
 {
   static unsigned long t1 = 0;
