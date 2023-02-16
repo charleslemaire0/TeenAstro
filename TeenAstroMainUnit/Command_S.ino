@@ -742,7 +742,7 @@ void Command_SX()
         midx = i;
         XEEPROM.write(EE_currentMount, midx);
         replyOk();
-        reboot();
+        reboot_unit = true;
       }
       else
         replyFailed();
@@ -794,14 +794,8 @@ void Command_S(Command& process_command)
     if (i > 0 && i < 5 && !isMountTypeFix)
     {
       XEEPROM.write(getMountAddress(EE_mountType), i);
-      if (!atHome)
-      {
-        replyFailed();
-      }
-      else
-      {
-        reboot();
-      }
+      replyOk();
+      reboot_unit = true;
     }
     else replyFailed();
     break;

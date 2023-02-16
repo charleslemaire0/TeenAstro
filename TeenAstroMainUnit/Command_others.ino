@@ -10,7 +10,8 @@ void Command_dollar()
       XEEPROM.write(i, 0);
     }
   case '!':
-    reboot();
+    reboot_unit = true;
+    replyOk();
     break;
   case 'X':
     initmotor(true);

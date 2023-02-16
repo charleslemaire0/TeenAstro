@@ -64,7 +64,7 @@ const double            mastersiderealClockSpeed = 997269.5625;
 const double            masterClockSpeed = 1000000;    // reference frequence for tick
 const double            HzCf = masterClockSpeed / 60.0;   // conversion factor to go to/from Hz for sidereal interval
             
-
+bool reboot_unit = false;
 
 interval                minInterval1 = StepsMinInterval;
 interval                maxInterval1 = StepsMaxInterval;
