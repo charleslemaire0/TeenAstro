@@ -6,7 +6,7 @@ void SmartHandController::menuTimeAndSite()
 {
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
-  const char* string_list_TimeAndSite = T_TIME "\n" T_SITE "\n" T_SYNCWITHGNSS;
+  const char* string_list_TimeAndSite = T_TIME "\n" T_SITE "\n" T_SYNCWITHGNSS "\n Auto " T_SYNCWITHGNSS;;
   while (!exitMenu)
   {
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TIME " & " T_SITE, s_sel, string_list_TimeAndSite);
@@ -22,10 +22,29 @@ void SmartHandController::menuTimeAndSite()
       menuSite();
       break;
     case 3:
+      // Override by SHC Manual GPS sync - just in case autoGPSSync wont't success 
+      autoGPSSyncOnBoot = false;
       if (ta_MountStatus.isGNSSValid())
         DisplayMessageLX200(SetLX200(":gs#"), false);
       else
         DisplayMessage(T_NOGNSS, T_SIGNAL, -1);
+      break;
+    case 4:
+      if (display->UserInterfaceMessage(&buttonPad, T_SYNCWITHGNSS, "on Boot?", "", T_NO "\n" T_YES) == 2)
+      {
+        if (!autoGPSSyncOnBoot) //No need to update EEPROM if already enabled
+        {
+          autoGPSSyncOnBoot = true;
+          EEPROM.write(EEPROM_AutoGPSSync, 1);
+          EEPROM.commit();
+        }
+      }
+      else
+      {   // Need to update EEPROM without check (autoGPSSyncOnBoot can have been reset by a fix on boot)
+          autoGPSSyncOnBoot = false;
+          EEPROM.write(EEPROM_AutoGPSSync, 0);
+          EEPROM.commit();
+      }
       break;
     }
   }

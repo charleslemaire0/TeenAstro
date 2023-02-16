@@ -138,7 +138,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       else cmdreply = CMDR_INVALID;
       break;
     case 'g':
-      if (strchr("ts", command[2])) cmdreply = CMDR_SHORT_BOOL;
+      if (strchr("tsS", command[2])) cmdreply = CMDR_SHORT_BOOL;
       else cmdreply = CMDR_INVALID;
       break;
     case 'G':

@@ -198,6 +198,11 @@ static unsigned char GNSST_bits[] U8X8_PROGMEM = {
    0xe0, 0x07, 0x80, 0x1f, 0x80, 0x23, 0x00, 0x42, 0xbe, 0x22, 0x88, 0x14,
    0x88, 0x08, 0x08, 0x00, 0x88, 0x00, 0x00, 0x00 };
 
+static unsigned char GNSS_1_bits[] U8X8_PROGMEM = {
+   0x00, 0x00, 0x40, 0x00, 0xa0, 0x00, 0x10, 0x01, 0x08, 0x01, 0x10, 0x07,
+   0xe0, 0x07, 0x80, 0x1f, 0x80, 0x23, 0x28, 0x42, 0x48, 0x22, 0x10, 0x14,
+   0x60, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
 static unsigned char GUIDINGSP_bits[] U8X8_PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -411,22 +416,39 @@ void SmartHandController::updateMainDisplay(PAGES page)
       {
         if (ta_MountStatus.isGNSSValid())
         {
-          if (!ta_MountStatus.isGNSSTimeSync())
-          {
-            display->drawXBMP(xl, 0, icon_width, icon_height, GNSST_bits);
-            xl += icon_width + 1;
-          }
-          if (!ta_MountStatus.isGNSSLocationSync())
-          {
-            display->drawXBMP(xl, 0, icon_width, icon_height, GNSSL_bits);
-            xl += icon_width + 1;
-          }
           if (ta_MountStatus.isGNSSLocationSync() && ta_MountStatus.isGNSSTimeSync())
           {
             display->drawXBMP(xl, 0, icon_width, icon_height, GNSS_bits);
             xl += icon_width + 1;
           }
+          else
+          {
+            if (!ta_MountStatus.isGNSSTimeSync())
+            {
+              display->drawXBMP(xl, 0, icon_width, icon_height, GNSST_bits);
+              xl += icon_width + 1;
+            }
+            if (!ta_MountStatus.isGNSSLocationSync())
+            {
+              display->drawXBMP(xl, 0, icon_width, icon_height, GNSSL_bits);
+              xl += icon_width + 1;
+            }
+          }
+
+          if (autoGPSSyncOnBoot)
+            if (ta_MountStatus.isHdopSmall())
+            {
+              if (ta_MountStatus.GPSAutoSync())
+                autoGPSSyncOnBoot = false;
+            }
+            else
+            {
+              display->drawXBMP(xl, 0, icon_width, icon_height, GNSS_1_bits);
+              xl += icon_width + 1;
+            }
         }
+        if (autoGPSSyncOnBoot)
+          time_last_action = millis();
       }
 
       switch (ta_MountStatus.getGuidingRate())

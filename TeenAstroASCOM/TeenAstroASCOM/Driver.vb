@@ -175,8 +175,9 @@ Public Class Telescope
       If Not Me.CommandBool("AA") Then
         Throw New ASCOM.DriverException("AutoAlign command failure")
       End If
+    Else
+      Throw New ActionNotImplementedException("Action " & ActionName & " is not supported by this driver")
     End If
-    Throw New ActionNotImplementedException("Action " & ActionName & " is not supported by this driver")
   End Function
 
   Private Function GenericCommand(ByVal Command As String, ByVal Raw As Boolean,

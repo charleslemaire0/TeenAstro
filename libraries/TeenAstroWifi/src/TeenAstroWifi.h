@@ -72,6 +72,7 @@
 #define EEPROM_WebTimeout EEPROM_WifiMode + 1
 #define EEPROM_CmdTimeout EEPROM_WebTimeout + 1
 #define EEPROM_WifiConnectMode EEPROM_CmdTimeout + 1
+#define EEPROM_AutoGPSSync EEPROM_WifiConnectMode + 1
 #define EEPROM_Contrast 20
 #define EEPROM_T1 21
 #define EEPROM_T2 22

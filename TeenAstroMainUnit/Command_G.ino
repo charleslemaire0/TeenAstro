@@ -638,6 +638,7 @@ void Command_GX()
       bitWrite(val, 1, true);
       bitWrite(val, 2, isTimeSyncWithGNSS());
       bitWrite(val, 3, isLocationSyncWithGNSS());
+      bitWrite(val, 4, isHdopSmall());
     }
     reply[14] = 'A' + val;
     reply[15] = '0' + lastError;

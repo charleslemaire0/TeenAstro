@@ -47,37 +47,39 @@ public:
   {
     return &m_site.siteName[0];
   }
-  bool setLat(const double l)
+  bool setLat(const double l, bool saveToEeprom = true)
   {
     if (-90 > l || l > 90)
     {
       return false;
     }
     m_site.latitude = l;
-
-    XEEPROM.writeFloat(EE_sites + m_siteIndex * SiteSize, (float)m_site.latitude);
+    if (saveToEeprom)
+      XEEPROM.writeFloat(EE_sites + m_siteIndex * SiteSize, (float)m_site.latitude);
     m_cosLat = cos(m_site.latitude / Rad);
     m_sinLat = sin(m_site.latitude / Rad);
     return true;
   }
-  bool setLong(const double l)
+  bool setLong(const double l, bool saveToEeprom = true)
   {
     if (-360 > l || l > 360)
     {
       return false;
     }
     m_site.longitude = l;
-    XEEPROM.writeFloat(EE_sites + m_siteIndex * SiteSize + EE_site_long, (float)m_site.longitude);
+    if (saveToEeprom)
+      XEEPROM.writeFloat(EE_sites + m_siteIndex * SiteSize + EE_site_long, (float)m_site.longitude);
     return true;
   }
-  bool setElev(const int16_t l)
+  bool setElev(const int16_t l,  bool saveToEeprom = true)
   {
     if (-200 > l || l > 8000)
     {
       return false;
     }
     m_site.elevation = l;
-    XEEPROM.writeInt(EE_sites + m_siteIndex * SiteSize + EE_site_height, l);
+    if (saveToEeprom)
+      XEEPROM.writeInt(EE_sites + m_siteIndex * SiteSize + EE_site_height, l);
     return true;
   }
   bool setToff(float toff)

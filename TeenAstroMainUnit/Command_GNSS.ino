@@ -59,6 +59,11 @@ bool GNSSLocationIsValid()
     gps.altitude.isValid() && gps.altitude.age() < 5000;
 }
 
+bool isHdopSmall()
+{
+  return gps.hdop.isValid() && gps.hdop.age() < 5000 && gps.hdop.hdop() < 2.0;
+}
+
 bool isTimeSyncWithGNSS()
 {
   static unsigned long t1 = 0;
@@ -103,7 +108,7 @@ bool isLocationSyncWithGNSS()
     TinyGPSAltitude a = gps.altitude;
 
     dlng[i] = 3600*fabs(haRange(*localSite.longitude() - (-l.lng())));
-    dlat[i] = 3660*fabs(*localSite.latitude() - l.lat());
+    dlat[i] = 3600*fabs(*localSite.latitude() - l.lat());
     dele[i] = fabs(*localSite.elevation() - a.meters());
     double dlng_s= std_dev(dlng, N_GNSS_OBS);
     double dlat_s = std_dev(dlat, N_GNSS_OBS);
@@ -140,14 +145,15 @@ void Command_GNSS()
   {
     // :gs# full sync with GNSS
   case 's':
+  case 'S':
     if (iSGNSSValid())
     {
       double lat = l.lat();
       double longi = -l.lng();
       double h = a.meters();
-      localSite.setLong(longi);
-      localSite.setLat(lat);
-      localSite.setElev(h);
+      localSite.setLong(longi, command[1] == 's');
+      localSite.setLat(lat, command[1] == 's');
+      localSite.setElev(h, command[1] == 's');
       initCelestialPole();
       initHome();
       syncAtHome();
