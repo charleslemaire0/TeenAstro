@@ -118,7 +118,7 @@ void SmartHandController::menuSites()
       if (tmp_sel != tmp_in)
       {
         val = (int)tmp_sel - 1;
-        SetSiteLX200(val);
+        DisplayMessageLX200(SetSiteLX200(val),false);
       }
     }
   }
