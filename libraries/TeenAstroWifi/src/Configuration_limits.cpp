@@ -39,6 +39,14 @@ const char html_configPastMerW[] PROGMEM =
 "<button type='submit'>Upload</button>"
 " (Past Meridian when West of the pier, in degrees +/-45)"
 "</form>"
+"\r\n";
+const char html_configMiDistanceFromPole[] PROGMEM =
+"<div class='bt'> Tracking safety override when far from Pole: <br/> </div>"
+"<form method='get' action='/configuration_limits.htm'>"
+" <input value='%d' type='number' name='miDistanceFromPole' min='0' max='181'>"
+"<button type='submit'>Upload</button>"
+" (Minimum distance from Pole to keep tracking on for 6 hours after transit, 181 to disable)"
+"</form>"
 "<br />\r\n";
 const char html_configMinAxis1[] PROGMEM =
 "<div class='bt'> Limits of Instrument Axis 1: <br/> </div>"
@@ -85,7 +93,7 @@ void TeenAstroWifi::handleConfigurationLimits()
 {
   Ser.setTimeout(WebTimeout);
   sendHtmlStart();
-  char temp[320] = "";
+  char temp[350] = "";
   char temp1[50] = "";
   char temp2[50] = "";
   String data;
@@ -124,7 +132,9 @@ void TeenAstroWifi::handleConfigurationLimits()
       sprintf_P(temp, html_configPastMerW, degPastMerW);
       data += temp;
     }
-
+    if (GetLX200(":GXLS#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "181"); int miDistanceFromPole = (int)strtol(&temp1[0], NULL, 10);
+    sprintf_P(temp, html_configMiDistanceFromPole, miDistanceFromPole);
+    data += temp;
   }
 
   if (GetLX200(":GXLA#", temp1, sizeof(temp1)) == LX200_VALUEGET)
@@ -214,6 +224,15 @@ void TeenAstroWifi::processConfigurationLimitsGet()
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 9) && (f <= 12)))
     {
       sprintf(temp, ":SXLU,%03d#", (int)(f * 10));
+      SetLX200(temp);
+    }
+  }
+  v = server.arg("miDistanceFromPole");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 181)))
+    {
+      sprintf(temp, ":SXLS,%d#", i);
       SetLX200(temp);
     }
   }
