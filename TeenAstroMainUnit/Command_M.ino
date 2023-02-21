@@ -25,7 +25,7 @@ void Command_M()
       }
       else
       {
-        MoveAxisAtRate2(f);
+        MoveAxisAtRate2(GetPierSide() >= PIER_WEST? -f : f);
       }
       replyOk();
     }
