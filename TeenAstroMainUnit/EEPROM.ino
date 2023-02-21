@@ -43,6 +43,7 @@ void writeDefaultMount()
   XEEPROM.write(getMountAddress(EE_dpmE), 0);
   XEEPROM.write(getMountAddress(EE_dpmW), 0);
   XEEPROM.write(getMountAddress(EE_dup), (12 - 9) * 15);
+  XEEPROM.write(getMountAddress(EE_dpmDistanceFromPole), 181);
   XEEPROM.writeInt(getMountAddress(EE_minAxis1), 3600);
   XEEPROM.writeInt(getMountAddress(EE_maxAxis1), 3600);
   XEEPROM.writeInt(getMountAddress(EE_minAxis2), 3600);
@@ -65,7 +66,7 @@ void writeDefaultMount()
   // init the default maxRate
   XEEPROM.writeInt(getMountAddress(EE_maxRate), DefaultR4);
 
-  // init degree for acceleration 1°
+  // init degree for acceleration 1Â°
   XEEPROM.write(getMountAddress(EE_degAcc), (uint8_t)(1 * 10));
 
   // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
@@ -155,6 +156,7 @@ void initMount()
   // get the min. and max altitude
   minAlt = XEEPROM.read(getMountAddress(EE_minAlt)) - 128;
   maxAlt = XEEPROM.read(getMountAddress(EE_maxAlt));
+  distanceFromPoleToKeepTrackingOn = XEEPROM.read(getMountAddress(EE_dpmDistanceFromPole));
   minutesPastMeridianGOTOE = round(((EEPROM.read(getMountAddress(EE_dpmE)) - 128) * 60.0) / 15.0);
   if (abs(minutesPastMeridianGOTOE) > 180)
     minutesPastMeridianGOTOE = 60;

@@ -64,6 +64,7 @@ uint8_t             midx;
 #define EE_dpmE             52
 #define EE_dpmW             53
 #define EE_dup              54
+#define EE_dpmDistanceFromPole  55
 
 //user defined homeposition
 #define EE_homeSaved        56

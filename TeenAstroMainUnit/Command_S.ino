@@ -320,7 +320,7 @@ void Command_SX()
       replyOk();
       break;
     case 'H':
-      // :GXLH,sVV# set user defined horizon Limit
+      // :SXLH,sVV# set user defined horizon Limit
       // NB: duplicate with :Sh#
       if ((atoi2(&command[5], &i)) && ((i >= -30) && (i <= 30)))
       {
@@ -330,6 +330,7 @@ void Command_SX()
       }
       else
         replyFailed();
+      break;
     case 'O':
       // :SXLO,VV.VV# set user defined overhead Limit
       // NB: duplicate with :So#
@@ -341,6 +342,18 @@ void Command_SX()
       }
       else
         replyFailed();
+      break;
+    case 'S':
+      // :SXLS,sVV# set user defined distance from Pole to keep tracking on for 6 hours after transit, in degrees
+      if ((atoi2(&command[5], &i)) && ((i >= 0) && (i <= 181)))
+      {
+        distanceFromPoleToKeepTrackingOn = i;
+        XEEPROM.update(getMountAddress(EE_dpmDistanceFromPole), distanceFromPoleToKeepTrackingOn);
+        replyOk();
+      }
+      else
+        replyFailed();
+      break;
     default:
       replyFailed();
       break;

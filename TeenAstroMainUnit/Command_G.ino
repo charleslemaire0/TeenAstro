@@ -485,6 +485,10 @@ void Command_GX()
       // NB: duplicate with :Gh#
       sprintf(reply, "%+02d*#", minAlt);
       break;
+    case 'S':
+      // :GXLS# return user defined minimum distance in degreee from pole to keep tracking on for 6 hours after transit
+      sprintf(reply, "%02d*#", distanceFromPoleToKeepTrackingOn);
+      break;
     default:
       replyFailed();
       break;
