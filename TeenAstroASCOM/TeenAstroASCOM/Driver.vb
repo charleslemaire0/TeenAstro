@@ -758,9 +758,9 @@ Public Class Telescope
     End If
     If Not AtHome Then
       If CommandBool("hC") Then
-        Threading.Thread.Sleep(200)
+        Threading.Thread.Sleep(1000)
         While Me.Slewing
-          Threading.Thread.Sleep(200)
+          Threading.Thread.Sleep(1000)
         End While
       Else
         Throw New ASCOM.DriverException("Homing failed")
