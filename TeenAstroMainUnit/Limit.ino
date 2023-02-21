@@ -107,7 +107,7 @@ void initLimitMinAxis2()
     val = 3600;
     XEEPROM.writeInt(getMountAddress(EE_minAxis2), val);
   }
-  geoA2.minAxis = -val * geoA1.stepsPerDegree / 10.0;
+  geoA2.minAxis = -val * geoA2.stepsPerDegree / 10.0;
 }
 void initLimitMaxAxis2()
 {
