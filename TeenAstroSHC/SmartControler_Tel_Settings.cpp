@@ -188,6 +188,20 @@ void SmartHandController::menuUnderPole()
     }
   }
 }
+void SmartHandController::menuFarFromPole()
+{
+  char out[20];
+  if (DisplayMessageLX200(GetLX200(":GXLS#", out, sizeof(out))))
+  {
+    float angle = (float)strtol(&out[0], NULL, 10);
+    if (display->UserInterfaceInputValueFloat(&buttonPad, T_DISTANCE, "", &angle, 0, 181, 2, 0, " " T_DEGREE))
+    {
+      sprintf(out, ":SXLS,%03d#", (int)angle);
+      DisplayMessageLX200(SetLX200(out), false);
+    }
+  }
+}
+
 void SmartHandController::menuMeridian(bool east)
 {
   char out[20];
@@ -252,7 +266,7 @@ void SmartHandController::menuAxis(char mode)
 }
 void SmartHandController::menuLimitGEM()
 {
-  const char* string_list_LimitsL3 = T_MERIDIANE "\n" T_MERIDIANW "\n" T_UNDERPOLE;
+  const char* string_list_LimitsL3 = T_MERIDIANE "\n" T_MERIDIANW "\n" T_UNDERPOLE  "\n" T_FARFROMPOLE;
   static uint8_t s_sel = 1;
   uint8_t tmp_sel = s_sel;
   while (tmp_sel)
@@ -269,6 +283,9 @@ void SmartHandController::menuLimitGEM()
       break;
     case 3:
       menuUnderPole();
+      break;
+    case 4:
+      menuFarFromPole();
       break;
     default:
       break;
