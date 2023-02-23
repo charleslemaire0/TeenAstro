@@ -145,8 +145,7 @@ void setup()
 
   // prep timers
   rtk.updateTimers();
-
-
+  delay(2000);
   hasGNSS = GNSS_Serial.available() > 0;
 
   //Focuser connection
@@ -154,7 +153,6 @@ void setup()
   Focus_Serial.setTX(FocuserTX);
   Focus_Serial.begin(56000);
   Focus_Serial.setTimeout(10);
-  delay(1000);
   Focus_Serial.write(":F?#");
   Focus_Serial.flush();
   delay(250);
