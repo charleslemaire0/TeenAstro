@@ -149,7 +149,7 @@ bool TeenAstroMountStatus::findFocuser()
 {
   int k = 0;
   char fc[45];
-  while (!m_hasFocuser && k < 5)
+  while (!m_hasFocuser && k < 3)
   {
     if (GetLX200(":F?#", fc, sizeof(m_TempFocuser)) == LX200_VALUEGET)
     {
@@ -158,6 +158,8 @@ bool TeenAstroMountStatus::findFocuser()
         m_hasFocuser = true;
       }
     }
+    delay(100);
+    k++;
   }
   return m_hasFocuser;
 }
