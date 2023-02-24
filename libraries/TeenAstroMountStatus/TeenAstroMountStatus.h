@@ -205,6 +205,7 @@ public:
   bool isGNSSTimeSync();
   bool isGNSSLocationSync();
   bool isHdopSmall();
+  bool findFocuser();
   bool hasEncoder();
   bool CalibratingEncoder();
 
