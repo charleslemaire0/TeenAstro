@@ -172,13 +172,13 @@ void SmartHandController::MenuTrackingCorrection()
     case 0:
       return;
     case 1:
-      DisplayMessageLX200(SetLX200(":T0#"));
+      DisplayMessageLX200(SetLX200(":T0#"),false);
       break;
     case 2:
-      DisplayMessageLX200(SetLX200(":T1#"));
+      DisplayMessageLX200(SetLX200(":T1#"),false);
       break;
     case 3:
-      DisplayMessageLX200(SetLX200(":T2#"));
+      DisplayMessageLX200(SetLX200(":T2#"),false);
       break;
     default:
       break;
@@ -440,7 +440,7 @@ void SmartHandController::menuGuideRate()
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_GUIDESPEED, "", &guiderate, 0.1f, 1.f, 4u, 2u, "x"))
     {
       sprintf(cmd, ":SXR0,%03d#", (int)(guiderate * 100));
-      DisplayMessageLX200(SetLX200(cmd));
+      DisplayMessageLX200(SetLX200(cmd),false);
     }
   }
 }
@@ -485,7 +485,7 @@ void SmartHandController::menuSetDriftRate(int axis)
     {
       sprintf(cmd, ":SXRx,%06ld#", (long)(rate*10000));
       cmd[4] = axis == 0 ? 'e' : 'f';
-      DisplayMessageLX200(SetLX200(cmd));
+      DisplayMessageLX200(SetLX200(cmd),false);
     }
   }
 }
@@ -504,7 +504,7 @@ void SmartHandController::menuRate(int r)
     if (display->UserInterfaceInputValueFloat(&buttonPad, title, "", &rate, 1.f, 255.f, 4u, 0u, "x"))
     {
       sprintf(cmd, ":SXR%d,%03d#", r, (int)(rate));
-      DisplayMessageLX200(SetLX200(cmd));
+      DisplayMessageLX200(SetLX200(cmd),false);
     }
   }
 }
@@ -520,7 +520,7 @@ void SmartHandController::menuMaxRate()
     if (display->UserInterfaceInputValueFloatIncr(&buttonPad, T_MAXSPEED, "", &maxrate, 60, 3600, 4, 0, 60, ""))
     {
       sprintf(cmd, ":SXRX,%04d#", (int)maxrate);
-      DisplayMessageLX200(SetLX200(cmd));
+      DisplayMessageLX200(SetLX200(cmd),false);
     }
   }
 }
@@ -536,7 +536,7 @@ void SmartHandController::menuAcceleration()
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_ACCELERATION, "", &acc, 0.1, 25, 4, 1, " deg."))
     {
       sprintf(cmd, ":SXRA,%04d#", (int)(acc*10.));
-      DisplayMessageLX200(SetLX200(cmd));
+      DisplayMessageLX200(SetLX200(cmd),false);
     }
   }
 }

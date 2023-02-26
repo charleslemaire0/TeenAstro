@@ -118,7 +118,7 @@ void SmartHandController::menuSites()
       if (tmp_sel != tmp_in)
       {
         val = (int)tmp_sel - 1;
-        SetSiteLX200(val);
+        DisplayMessageLX200(SetSiteLX200(val),false);
       }
     }
   }
@@ -146,7 +146,7 @@ void SmartHandController::menuLocalTimeZone()
     {
       char cmd[15];
       sprintf(cmd, ":SG%+05.1f#", -val);
-      if (DisplayMessageLX200(SetLX200(cmd)))
+      if (DisplayMessageLX200(SetLX200(cmd),false))
         exitMenu = true;
     }
   }

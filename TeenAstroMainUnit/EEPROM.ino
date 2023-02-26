@@ -59,6 +59,9 @@ void writeDefaultMount()
   XEEPROM.write(getMountAddress(EE_Rate2), DefaultR2);
   XEEPROM.write(getMountAddress(EE_Rate3), DefaultR3);
 
+  // init the default recentering speed
+  XEEPROM.write(getMountAddress(EE_DefaultRate), 3);
+
   // init the default maxRate
   XEEPROM.writeInt(getMountAddress(EE_maxRate), DefaultR4);
 
@@ -219,8 +222,16 @@ void initTransformation(bool reset)
   {
     if (isAltAZ())
     {
-      alignment.addReferenceDeg(0, 0, 180, 0);
-      alignment.addReferenceDeg(0, 90, 180, 90);
+      if (*localSite.latitude() > 0)
+      {
+        alignment.addReferenceDeg(0, 0, 180, 0);
+        alignment.addReferenceDeg(0, 90, 180, 90);
+      }
+      else
+      {
+        alignment.addReferenceDeg(0, 0, 0, 0);
+        alignment.addReferenceDeg(0, 90, 0, 90);
+      }
       alignment.calculateThirdReference();
     }
     else
@@ -251,7 +262,7 @@ void initCelestialPole()
 
   if (isAltAZ())
   {
-    geoA1.poleDef = (*localSite.latitude() < 0) ? geoA1.halfRot : 0L;
+    geoA1.poleDef =  0L;
     geoA2.poleDef = geoA2.quaterRot;
   }
   else

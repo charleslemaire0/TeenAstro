@@ -175,8 +175,9 @@ Public Class Telescope
       If Not Me.CommandBool("AA") Then
         Throw New ASCOM.DriverException("AutoAlign command failure")
       End If
+    Else
+      Throw New ActionNotImplementedException("Action " & ActionName & " is not supported by this driver")
     End If
-    Throw New ActionNotImplementedException("Action " & ActionName & " is not supported by this driver")
   End Function
 
   Private Function GenericCommand(ByVal Command As String, ByVal Raw As Boolean,
@@ -757,9 +758,9 @@ Public Class Telescope
     End If
     If Not AtHome Then
       If CommandBool("hC") Then
-        Threading.Thread.Sleep(200)
+        Threading.Thread.Sleep(1000)
         While Me.Slewing
-          Threading.Thread.Sleep(200)
+          Threading.Thread.Sleep(1000)
         End While
       Else
         Throw New ASCOM.DriverException("Homing failed")

@@ -81,7 +81,10 @@ void processCommands()
     S_USB.reply(reply, process_command);
     S_SHC.reply(reply, process_command);
   }
-
+  if (reboot_unit)
+  {
+    reboot();
+  }
 }
 
 void replyFailed()
