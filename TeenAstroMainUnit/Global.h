@@ -47,7 +47,7 @@ bool isMountTypeFix = false;
 byte maxAlignNumStar = 0;
 bool autoAlignmentBySync = false;
 
-Pushto PushtoStatus = PT_OFF;
+Pushto PushtoStatus = Pushto::PT_OFF;
 bool hasFocuser = false;
 bool hasGNSS = true;
 
