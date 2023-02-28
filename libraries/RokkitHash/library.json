@@ -1,0 +1,26 @@
+{
+    "name": "RokkitHash",
+    "keywords": "hash, superfasthash, hsieh, rokkit, sukkopera",
+    "description": "Arduino port of Paul Hsieh's 'SuperFastHash'. A very quick hash function, see http://www.azillionmonkeys.com/qed/hash.html for more information about its inner workings.",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/SukkoPera/Arduino-Rokkit-Hash.git"
+    },
+    "version": "0.0.0-alpha+sha.20151212",
+    "authors": [
+        {
+            "name": "SukkoPera",
+            "email": "software@sukkology.net",
+            "url": "http://www.sukkology.net/blog/",
+            "maintainer": true
+        },
+        {
+            "name": "Rob Tillaart"
+        },
+        {
+            "name": "Alex K"
+        }
+    ],
+    "frameworks": "arduino",
+    "platforms": "*"
+}

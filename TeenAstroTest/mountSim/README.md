@@ -29,24 +29,22 @@ optional arguments:
 
 
 
+A graphic window opens, that displays a simplified mount model, selected according to your type of mount, and 2 test options:
+
+- The Coordinates test starts a sequence of Goto to 3 successive directions (North, East, South). It is trivial to add more directions by simply editing the Python code.
+- The Meridian Flip test (only for GEM mounts) requests a Goto to the west limit and issues periodic Goto requests to the same RA/Dec positions, while performing guiding commands. After a few minutes the mount decides to perform the flip. 
+
+ 
+
+There are additional commands to duplicate the handset functionality: On the keyboard, type 'e', 'w', 'n', 's' to initiate mount movements. 'q' stops the movement, 'h' requests a Goto Home.
 
 
 
+![](mountSim.png)
 
 
 
-A graphic window opens, that displays a simplified mount model, selected according to your type of mount:
-
-![](altaz_fork/altaz_fork.png)
-
-![](altaz_tee/altaz_tee.png)
-
-![](eq_fork/eq_fork.png)
-
-![](eq_german/eq_german.png)
-
-
-You can now move the mount with the hand controller. It is also possible to control TeenAstro remotely, either with the Web interface from the SHC, or through a program running on your PC (Ekos, SkySafari etc.).   
+It is also possible to control TeenAstro with the hand controller, or remotely, either with the Web interface from the SHC, or through a program running on your PC (Ekos, SkySafari etc.).   
 Note that you can have only one Wifi (IP) port at a time, so the PC program should use USB, not Wifi.   
 You can run mountSim in parallel with your mount, or without. In this case it is possible to speed up the maximum speed up to 2000x or more. (You may need to lower the gear reduction). 
 

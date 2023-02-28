@@ -14,23 +14,27 @@ double cot(double n)
 }
 
 // integer numeric conversion with error checking
-bool atoi2(char *a, int16_t *i)
+bool atoi2(char *a, int *i)
 {
   char    *conv_end;
   int32_t l = strtol(a, &conv_end, 10);
+  int16_t tmp;
 
   if ((l < INT16_MIN) || (l > INT16_MAX) || (&a[0] == conv_end)) return false;
-  *i = (int16_t)(l);
+  tmp = (int16_t)(l);
+  *i = tmp;
   return true;
 }
 
-bool atoui2(char* a, uint16_t* i)
+bool atoui2(char* a, unsigned int* i)
 {
   char* conv_end;
   uint32_t l = strtoul(a, &conv_end, 10);
+  uint16_t tmp;
 
   if ( (l > UINT16_MAX) || (&a[0] == conv_end)) return false;
-  *i = (uint16_t)(l);
+  tmp = (uint16_t)(l);
+  *i = tmp;
   return true;
 }
 
