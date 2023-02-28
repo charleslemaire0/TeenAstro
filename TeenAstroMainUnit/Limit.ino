@@ -34,7 +34,7 @@ bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
     //CHECKMODETRACKING ONLY FOR GEM
     MinutesPastMeridianW = minutesPastMeridianGOTOW + 5;
     MinutesPastMeridianE = minutesPastMeridianGOTOE + 5;
-    if (distanceFromPoleToKeepTrackingOn < 180)
+    if (distanceFromPoleToKeepTrackingOn < 180) // false if UNOFFICIALFEATURES is not defined
     {
       if (_currPierSide == PIER_EAST)
       {

@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+//#define UNOFFICIALFEATURES
 
 class TeenAstroMountStatus
 {

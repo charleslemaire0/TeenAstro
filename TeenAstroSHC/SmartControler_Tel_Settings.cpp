@@ -188,6 +188,8 @@ void SmartHandController::menuUnderPole()
     }
   }
 }
+
+#ifdef UNOFFICIALFEATURES
 void SmartHandController::menuFarFromPole()
 {
   char out[20];
@@ -201,6 +203,7 @@ void SmartHandController::menuFarFromPole()
     }
   }
 }
+#endif
 
 void SmartHandController::menuMeridian(bool east)
 {
@@ -266,7 +269,12 @@ void SmartHandController::menuAxis(char mode)
 }
 void SmartHandController::menuLimitGEM()
 {
-  const char* string_list_LimitsL3 = T_MERIDIANE "\n" T_MERIDIANW "\n" T_UNDERPOLE  "\n" T_FARFROMPOLE;
+  #ifndef UNOFFICIALFEATURES
+    const char* string_list_LimitsL3 = T_MERIDIANE "\n" T_MERIDIANW "\n" T_UNDERPOLE;
+  #else
+    const char* string_list_LimitsL3 = T_MERIDIANE "\n" T_MERIDIANW "\n" T_UNDERPOLE  "\n" T_FARFROMPOLE;
+  #endif
+
   static uint8_t s_sel = 1;
   uint8_t tmp_sel = s_sel;
   while (tmp_sel)
@@ -284,9 +292,13 @@ void SmartHandController::menuLimitGEM()
     case 3:
       menuUnderPole();
       break;
+    
+    #ifdef UNOFFICIALFEATURES
     case 4:
       menuFarFromPole();
       break;
+    #endif
+
     default:
       break;
     }
