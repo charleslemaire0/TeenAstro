@@ -192,6 +192,11 @@ void initMount()
   initmotor(false);
   initencoder();
   syncEwithT();
+
+#ifndef UNOFFICIALFEATURES
+  distanceFromPoleToKeepTrackingOn = 181;
+#endif
+
 }
 
 void initTransformation(bool reset)
