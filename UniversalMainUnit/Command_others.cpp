@@ -432,11 +432,11 @@ void Command_T()
 
   {
   case '+':
-    siderealClockRate -= HzCf * (0.02);
+    siderealClockSpeed -= HzCf * (0.02);
     reply[0] = 0;
     break;
   case '-':
-    siderealClockRate += HzCf * (0.02);
+    siderealClockSpeed += HzCf * (0.02);
     reply[0] = 0;
     break;
   case 'S':
@@ -456,7 +456,7 @@ void Command_T()
     break;
   case 'R':
     // reset master sidereal clock interval
-    siderealClockRate = masterSiderealClockRate;
+    siderealClockSpeed = mastersiderealClockSpeed;
     mount.mP->setTrackingSpeed(TrackingStar);
     reply[0] = 0;
     break;
@@ -520,7 +520,7 @@ void Command_T()
   // Only burn the new rate if changing the sidereal interval
   if (command[1] == '+' || command[1] == '-' || command[1] == 'R')
   {
-    XEEPROM.writeLong(EE_siderealClockRate, siderealClockRate);
+    XEEPROM.writeLong(EE_siderealClockSpeed, siderealClockSpeed);
     updateSidereal();
   }
 }

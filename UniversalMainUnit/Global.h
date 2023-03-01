@@ -125,12 +125,12 @@ GLOBAL EventGroupHandle_t mountEvents;  // abort etc.
 
 // One sidereal day is 86164.09 clock seconds
 // One sidereal second is 86164.09 / 86400 = 0.9972... clock second
-// siderealClockRate = number of 1/16µS ticks in one sidereal second = (16 * 1000000 * 0.9972) = 15956313 
+// siderealClockSpeed = number of 1/16µS ticks in one sidereal second = (16 * 1000000 * 0.9972) = 15956313 
 #define TICKS_PER_SEC 16000000
-#define masterSiderealClockRate 15956313.0
-#define SIDEREAL_SECOND (masterSiderealClockRate / TICKS_PER_SEC)
+#define mastersiderealClockSpeed 15956313.0
+#define SIDEREAL_SECOND (mastersiderealClockSpeed / TICKS_PER_SEC)
 #define HzCf  (TICKS_PER_SEC / 60.0)   // conversion factor to go to/from Hz for sidereal interval
-GLOBAL double  siderealClockRate;
+GLOBAL double  siderealClockSpeed;
 
 GLOBAL char reply[50];
 GLOBAL char command[28];
@@ -195,3 +195,5 @@ GLOBAL GuideAxis           guideA2;
 GLOBAL CoordConv           alignment;
 GLOBAL Limits              limits;
 GLOBAL DateTimeTimers      rtk;
+
+GLOBAL uint8_t             midx;

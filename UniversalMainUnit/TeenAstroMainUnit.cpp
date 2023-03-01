@@ -280,7 +280,7 @@ void updateSidereal()
 #if 0 
   // 16MHZ clocks for steps per second of sidereal tracking
   cli();
-  SiderealRate = siderealClockRate / geoA1.stepsPerSecond;
+  SiderealRate = siderealClockSpeed / geoA1.stepsPerSecond;
   TakeupRate = SiderealRate / 8L;
   sei();
   staA1.timerRate = SiderealRate;
@@ -292,7 +292,7 @@ void updateSidereal()
   backlashA2.timerRate = staA2.timerRate / BacklashTakeupRate;
 
   // initialize the timers that handle the sidereal clock, RA, and Dec
-  setSiderealClockRate(siderealClockRate);
+  setsiderealClockSpeed(siderealClockSpeed);
 #endif
 }
 
@@ -358,7 +358,7 @@ void EEPROM_AutoInit(void)
 
     // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
     // 1/16uS resolution timer, ticks per sidereal second
-    XEEPROM.writeLong(EE_siderealClockRate, siderealClockRate);
+    XEEPROM.writeLong(EE_siderealClockSpeed, siderealClockSpeed);
 
     // the transformation is not valid
     XEEPROM.write(EE_Tvalid, 0);
@@ -426,7 +426,7 @@ void setup()
   // automatic mode switching before/after slews, initialize micro-step mode
 //  DecayModeTracking();
 
-  siderealClockRate = XEEPROM.readLong(EE_siderealClockRate);
+  siderealClockSpeed = XEEPROM.readLong(EE_siderealClockSpeed);
   updateSidereal();
   beginTimer();
   mount.mP->setTrackingSpeed(TrackingStar);

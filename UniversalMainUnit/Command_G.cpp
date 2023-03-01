@@ -710,7 +710,7 @@ void  Command_G()
     //  :Gf#   Get master sidereal clock (tunable by :T+# and :T-# / reset by :TR#)
     //         Returns: dd#
     char    tmp[10];
-    dtostrf(siderealClockRate, 0, 0, tmp);
+    dtostrf(siderealClockSpeed, 0, 0, tmp);
     strcpy(reply, tmp);
     strcat(reply, "#");
     break;

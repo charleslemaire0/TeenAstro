@@ -728,9 +728,11 @@ void Command_S(Command& process_command)
   case 'M':
   case 'N':
   case 'O':
+  case 'P':
     //  :SM<string>#
     //  :SN<string>#
     //  :SO<string>#
+    //  :SP<string>#
     //          Set site name to be <string>, up to 14 characters.
     //          Return: 0 on failure
     //                  1 on success
@@ -858,6 +860,9 @@ void Command_S(Command& process_command)
     XEEPROM.writeFloat(EE_DEC, (float)f1);
     strcpy(reply, "1");
     break;
+  case 'X':
+  	Command_SX();
+  	break;
   case 'z':
     //  :SzDDD*MM#
     //          Sets the target Object Azimuth
