@@ -199,9 +199,12 @@ void enableGuideRate(int g)
 {
   if (g < 0) g = 0;
   if (g > 4) g = 4;
-  activeGuideRate = g;
-  guideA1.enableAtRate(guideRates[g]);
-  guideA2.enableAtRate(guideRates[g]);
+  if (activeGuideRate != g)
+  {
+    activeGuideRate = g;
+    guideA1.enableAtRate(guideRates[g]);
+    guideA2.enableAtRate(guideRates[g]);
+  }
 }
 
 
