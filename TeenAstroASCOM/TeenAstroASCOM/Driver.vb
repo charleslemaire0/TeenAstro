@@ -1546,7 +1546,7 @@ Public Class Telescope
       If mconnectedState And s1 > 1000 Then
         mConnectionStatusDate = Date.UtcNow
         Try
-          mconnectedState = CommandString("GVP") = "TeenAstro"
+          mconnectedState = CommandBool("GXJC")
         Catch ex As Exception
           'Throw New ASCOM.DriverException(ex.Message)
           mconnectedState = False
