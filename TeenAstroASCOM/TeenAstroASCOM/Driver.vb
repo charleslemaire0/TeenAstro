@@ -198,6 +198,7 @@ Public Class Telescope
     If Not GenericCommand(Command, Raw, 0, buf) Then
       Throw New ASCOM.InvalidValueException("CommandBlind " + Command + " has failed")
     End If
+    mConnectionStatusDate = Date.UtcNow
   End Sub
 
   Public Function CommandBool(ByVal Command As String, Optional ByVal Raw As Boolean = False) As Boolean _
@@ -206,6 +207,7 @@ Public Class Telescope
     If Not GenericCommand(Command, Raw, 1, buf) Then
       Throw New ASCOM.InvalidValueException("CommandBool " + Command + " has failed")
     End If
+    mConnectionStatusDate = Date.UtcNow
     Return buf = "1"
   End Function
 
@@ -214,6 +216,7 @@ Public Class Telescope
     If Not GenericCommand(Command, Raw, 1, buf) Then
       Throw New ASCOM.InvalidValueException("CommandSingleChar " + Command + " has failed")
     End If
+    mConnectionStatusDate = Date.UtcNow
     Return buf
   End Function
 
@@ -224,6 +227,7 @@ Public Class Telescope
     If Not GenericCommand(Command, Raw, 2, buf) Then
       Throw New ASCOM.InvalidValueException("CommandString " + Command + " has failed")
     End If
+    mConnectionStatusDate = Date.UtcNow
     Return buf
   End Function
 
