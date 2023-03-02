@@ -832,12 +832,12 @@ Public Class Telescope
     End If
     Rate = Rate / mSiderealRate
     If (Axis = TelescopeAxes.axisPrimary) Then
-      cmd = "M1" & Rate.ToString()
+      cmd = "M1" & Rate.ToString("+0.0000000;-0.0000000")
       If Rate = 0 Then
         waitStopM1 = True
       End If
     ElseIf (Axis = TelescopeAxes.axisSecondary) Then
-      cmd = "M2" & Rate.ToString()
+      cmd = "M2" & Rate.ToString("+0.0000000;-0.0000000")
       If Rate = 0 Then
         waitStopM2 = True
       End If
