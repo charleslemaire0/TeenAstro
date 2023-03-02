@@ -845,6 +845,7 @@ Public Class Telescope
       Throw New ASCOM.InvalidValueException("MoveAxis", Axis.ToString(), "0 To 1")
     End If
     If Not Me.CommandBool(cmd) Then
+      Me.AbortSlew()
       Throw New ASCOM.InvalidValueException("MoveAxis via :" & cmd & " has failed")
     End If
     If waitStopM1 Then
