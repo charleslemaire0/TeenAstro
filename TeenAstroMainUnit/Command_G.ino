@@ -659,6 +659,12 @@ void Command_GX()
     //specific command for ASCOM
     switch (command[3])
     {
+    case 'C':
+      // :GXJC# get if connected
+    {
+      strcpy(reply, "1#");
+    }
+    break;
     case 'P':
       // :GXJP# get if pulse guiding
     {
@@ -683,7 +689,6 @@ void Command_GX()
       {
         strcpy(reply, "0#");
       }
-
     }
     break;
     case 'T':
