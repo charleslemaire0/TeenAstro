@@ -170,7 +170,7 @@ void SetRates(double maxslewrate)
   double maxslewCorrected = min(fact1 / minInterval1, fact2 / minInterval2);
   if (abs(maxslewrate - maxslewCorrected) > 2)
   {
-    XEEPROM.writeInt(getMountAddress(getMountAddress(EE_maxRate)), (int)maxslewCorrected);
+    XEEPROM.writeInt(getMountAddress(EE_maxRate), (int)maxslewCorrected);
   }
   minInterval1 = fact1 / maxslewCorrected;
   minInterval2 = fact2 / maxslewCorrected;
