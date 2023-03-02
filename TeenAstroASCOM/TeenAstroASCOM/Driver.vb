@@ -380,7 +380,7 @@ Public Class Telescope
 
   Private Function GetSerial(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
     mobjectSerial.ClearBuffers()
-    mobjectSerial.ReceiveTimeout = 1000 'necessary for the device hub
+    mobjectSerial.ReceiveTimeout = 5
     mobjectSerial.Transmit(Command)
     Select Case Mode
       Case 0
