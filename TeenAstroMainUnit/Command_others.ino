@@ -522,15 +522,10 @@ void Command_Q()
       {
         abortSlew = true;
       }
-      else if (GuidingState == GuidingRecenter || GuidingState == GuidingST4 || GuidingState == GuidingPulse)
+      else
       {
         StopAxis1();
         StopAxis2();
-      }
-      else
-      {
-        guideA1.brake();
-        guideA2.brake();
       }
     }
     break;
