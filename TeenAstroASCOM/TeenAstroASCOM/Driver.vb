@@ -1547,15 +1547,22 @@ Public Class Telescope
       ' TODO check that the driver hardware connection exists and is connected to the hardware
       Dim s1 As Double = (Date.UtcNow - mConnectionStatusDate).TotalMilliseconds
       ' TODO check that the driver hardware connection exists and is connected to the hardware
-      If mconnectedState And s1 > 1000 Then
-        mConnectionStatusDate = Date.UtcNow
-        Try
-          mconnectedState = CommandBool("GXJC")
-        Catch ex As Exception
-          'Throw New ASCOM.DriverException(ex.Message)
+
+      Try
+        If (s1 > 1000 And mconnectedState) Then
           mconnectedState = False
-        End Try
-      End If
+          Dim k As Integer = 0
+          While Not mconnectedState And k < 10
+            mconnectedState = CommandBool("GXJC")
+            Threading.Thread.Sleep(200)
+            k += 1
+          End While
+          mconnectedState = k < 10
+        End If
+      Catch ex As Exception
+        'Throw New ASCOM.DriverException(ex.Message)
+        mconnectedState = False
+      End Try
       Return mconnectedState
     End Get
   End Property
