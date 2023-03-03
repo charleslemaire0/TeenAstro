@@ -470,7 +470,7 @@ Public Class Telescope
         Return AlignmentModes.algGermanPolar
       ElseIf m = "K" Then
         Return AlignmentModes.algPolar
-      ElseIf m = "k" Or m = "K" Then
+      ElseIf m = "k" Or m = "A" Then
         Return AlignmentModes.algAltAz
       End If
     End Get
