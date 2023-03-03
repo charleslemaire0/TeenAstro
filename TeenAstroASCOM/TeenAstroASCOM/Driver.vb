@@ -271,7 +271,7 @@ Public Class Telescope
         mconnectedState = True
       End If
       If Not mconnectedState Then
-        Throw New ASCOM.InvalidValueException("Connection has failed!")
+        Throw New ASCOM.NotConnectedException("Connection has failed!")
       End If
 
     Else
