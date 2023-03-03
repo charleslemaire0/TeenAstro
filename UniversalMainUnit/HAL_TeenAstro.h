@@ -13,3 +13,6 @@
 #include "HAL_esp32.h"         
 #include "HAL_pins_esp32.h"  
 #endif
+
+void          HAL_setRealTimeClock(unsigned long t);
+unsigned long HAL_getRealTimeClock(void);

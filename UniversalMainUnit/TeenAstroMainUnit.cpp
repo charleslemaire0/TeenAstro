@@ -375,13 +375,6 @@ void EEPROM_AutoInit(void)
   }  
 }
 
-time_t getFreeRTOSTimer(void)
-{
-  // until we get a real-time clock, return phony time around Jan 1 2020
-  return ((50 * 365.25 * 24 * 3600) + ((double) xTaskGetTickCount() / 1000.0));
-}
-
-
 
 void setup()
 {
@@ -405,13 +398,10 @@ void setup()
   initMount();
   initMotors(false);
 
-  // init the date and time January 1, 2013. 0 hours LMT
-  setSyncProvider(getFreeRTOSTimer);
-
-#if 0
+  // init time and date
+  setSyncProvider(rtk.getTime);
   setSyncInterval(1);
   setTime(rtk.getTime());
-#endif
 
   // FreeRTOS structures
   // Mutexes to prevent concurrent accesses 

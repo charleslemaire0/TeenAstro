@@ -1,4 +1,6 @@
 // All chip specific stuff
+#ifdef __ESP32__
+
 #include <Arduino.h>
 #define ISR(f) void IRAM_ATTR f(void) 
 
@@ -6,3 +8,5 @@
 
 #define MAX_TEENASTRO_SPEED       (1000000 / MIN_INTERRUPT_PERIOD)  // in µsteps / S
 #define BacklashTakeupRate         5 // backlash takeup rate (in multiples of the sidereal rate) - not used at this time
+
+#endif

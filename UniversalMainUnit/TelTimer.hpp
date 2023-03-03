@@ -90,16 +90,16 @@ public:
   }
   static time_t getTime()
   {
-    return getFreeRTOSTimer();
+    return HAL_getRealTimeClock();
   }
   void SetFromTimeStamp(unsigned long t)
   {
-//    Teensy3Clock.set(t);
+    HAL_setRealTimeClock(t);
     setTime(t);
     syncClock();
   }
 
-  // Set RTC with give input
+  // Set RTC with given input
   void setClock(int y1, int m1, int d1, int h1, int mi1, int s1, double Sitelongitude, float Sitetoff)
   {
     tmElements_t t1;
@@ -112,7 +112,7 @@ public:
     m_Sitelongitude = Sitelongitude;
     time_t t = makeTime(t1);
     t += (long)(Sitetoff * 3600.0);
-//    Teensy3Clock.set(t);
+    HAL_setRealTimeClock(t);
     setTime(t);
     syncClock();
   }

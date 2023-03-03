@@ -271,6 +271,8 @@ void controlTask(UNUSED(void *arg))
           currentMode = CTL_MODE_GOTO;
           motorA1.setVmax(fabs(speed)*geoA1.stepsPerSecond/SIDEREAL_SECOND);
           motorA1.setTargetPos(target);  
+          setEvents(EV_SLEWING);
+          resetEvents(EV_AT_HOME);
           break;
 
         case CTL_MSG_MOVE_AXIS2:
@@ -281,6 +283,8 @@ void controlTask(UNUSED(void *arg))
           currentMode = CTL_MODE_GOTO;
           motorA2.setVmax(fabs(speed)*geoA2.stepsPerSecond/SIDEREAL_SECOND);
           motorA2.setTargetPos(target);  
+          setEvents(EV_SLEWING);
+          resetEvents(EV_AT_HOME);
           break;
 
         case CTL_MSG_SET_SLEW_SPEED:
