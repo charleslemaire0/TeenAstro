@@ -14,10 +14,28 @@ void Command_M()
   case '1':
   case '2':
     f = strtod(&command[2], &conv_end);
-    ok = (&command[2] != conv_end) && abs(f) <= guideRates[4];
-    ok &= !movingTo && lastError == ErrorsTraking::ERRT_NONE;
-    ok &= (GuidingState == Guiding::GuidingOFF || GuidingState == Guiding::GuidingAtRate);
-    if (ok)
+    ok = (&command[2] != conv_end);
+    if (!ok)
+    {
+      strcpy(reply, "i");
+    }
+    else if (abs(f) > guideRates[4])
+    {
+      strcpy(reply, "h");
+    }
+    else if (movingTo)
+    {
+      strcpy(reply, "s");
+    }
+    else if (lastError != ErrorsTraking::ERRT_NONE)
+    {
+      strcpy(reply, "e");
+    }
+    else if (!(GuidingState == Guiding::GuidingOFF || GuidingState == Guiding::GuidingAtRate))
+    {
+      strcpy(reply, "g");
+    }
+    else
     {
       if (command[1] == '1')
       {
@@ -29,8 +47,7 @@ void Command_M()
       }
       replyOk();
     }
-    else
-      replyFailed();
+
     break;
   case 'A':
     //  :MA#   Goto the target Alt and Az
