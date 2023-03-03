@@ -665,6 +665,23 @@ void Command_GX()
       strcpy(reply, "1#");
     }
     break;
+    case 'M':
+      // :GXJMn# get if axis is still moving
+    {
+      if (command[4] == '1' && GuidingState == Guiding::GuidingAtRate && guideA1.isBusy())
+      {
+        strcpy(reply, "1#");
+      }
+      else if (command[4] == '2' && GuidingState == Guiding::GuidingAtRate && guideA2.isBusy())
+      {
+        strcpy(reply, "1#");
+      }
+      else
+      {
+        strcpy(reply, "0#");
+      }
+      break;
+    }
     case 'P':
       // :GXJP# get if pulse guiding
     {

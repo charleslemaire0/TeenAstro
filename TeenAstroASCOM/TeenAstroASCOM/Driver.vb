@@ -845,24 +845,26 @@ Public Class Telescope
     Else
       Throw New ASCOM.InvalidValueException("MoveAxis", Axis.ToString(), "0 To 1")
     End If
-    If Not Me.CommandBool(cmd) Then
-      Me.AbortSlew()
+    Dim ret As String = Me.CommandString(cmd)
+    If ret = "0" Or ret = "i" Then
       Throw New ASCOM.InvalidValueException("MoveAxis via :" & cmd & " has failed")
+    ElseIf ret = "e" Then
+      Throw New ASCOM.DriverException("MoveAxis is ignored, the telescop has already an error")
+    ElseIf ret = "h" Then
+      Throw New ASCOM.InvalidValueException("MoveAxis via :" & cmd & " has failed, the requested rate is not supported")
+    ElseIf ret = "s" Then
+      Throw New ASCOM.DriverException("MoveAxis is ignored, the telescop is slewing")
+    ElseIf ret = "g" Then
+      Throw New ASCOM.DriverException("MoveAxis is ignored, the telescop is guiding")
     End If
     If waitStopM1 Then
-      Dim list As New List(Of String)({"G-<", "G->", "G-b"})
-      updateTelStatus()
-      While list.Contains(mTelStatus.Substring(5, 3))
-        Threading.Thread.Sleep(200)
-        updateTelStatus()
+      While CommandBool("GXJM1")
+        Threading.Thread.Sleep(500)
       End While
     End If
     If waitStopM2 Then
-      Dim list As New List(Of String)({"G-^", "G-_", "G-b"})
-      updateTelStatus()
-      While list.Contains(mTelStatus.Remove(7, 1).Substring(5, 3))
-        Threading.Thread.Sleep(200)
-        updateTelStatus()
+      While CommandBool("GXJM2")
+        Threading.Thread.Sleep(500)
       End While
     End If
 
