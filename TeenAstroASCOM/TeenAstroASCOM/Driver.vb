@@ -1451,11 +1451,11 @@ Public Class Telescope
     End If
     While Me.Slewing
       Me.AbortSlew()
-      Threading.Thread.Sleep(100)
+      Threading.Thread.Sleep(200)
     End While
     While Me.IsPulseGuiding
       Me.AbortSlew()
-      Threading.Thread.Sleep(100)
+      Threading.Thread.Sleep(200)
     End While
   End Sub
 
