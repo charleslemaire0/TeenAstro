@@ -261,7 +261,7 @@ Public Class Telescope
         mobjectSerial.Dispose()
         Throw New ASCOM.DriverException(ex.Message)
       End Try
-      mobjectSerial.ReceiveTimeout = 1
+      mobjectSerial.ReceiveTimeoutMs = 5000
       If Not MyDevice() Then
         mobjectSerial.Connected = False
         mconnectedState = False
@@ -384,7 +384,6 @@ Public Class Telescope
 
   Private Function GetSerial(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
     mobjectSerial.ClearBuffers()
-    mobjectSerial.ReceiveTimeout = 5
     mobjectSerial.Transmit(Command)
     Select Case Mode
       Case 0
@@ -396,6 +395,7 @@ Public Class Telescope
         buf = mobjectSerial.ReceiveTerminated("#").TrimEnd("#")
         GetSerial = buf <> ""
     End Select
+    mobjectSerial.ClearBuffers()
   End Function
 
   Public ReadOnly Property Description As String Implements ITelescopeV3.Description
