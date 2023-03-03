@@ -201,6 +201,7 @@ void enableGuideRate(int g)
   if (g > 4) g = 4;
   if (activeGuideRate != g)
   {
+    // if we reset the guide rate it cancels the current pulse guiding
     activeGuideRate = g;
     guideA1.enableAtRate(guideRates[g]);
     guideA2.enableAtRate(guideRates[g]);
