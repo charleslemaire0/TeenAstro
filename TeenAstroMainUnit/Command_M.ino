@@ -45,9 +45,8 @@ void Command_M()
       {
         MoveAxisAtRate2(f);
       }
-      replyOk();
+      replyShortTrue();
     }
-
     break;
   case 'A':
     //  :MA#   Goto the target Alt and Az
@@ -215,9 +214,9 @@ void Command_M()
   }
   case '?':
   {
-    //  :M?#   Predict side of Pier for the Target Object
-    // reply ?# or E# or W#
-    // reply !# if failed
+    // :M?#   Predict side of Pier for the Target Object
+    // reply ? or E or W
+    // reply ! if failed
     double Ra, Ha, Dec, azm, alt = 0, axis1angle,axis2angle;
     long axis1step, axis2step;
     PierSide predictedSide = PIER_NOTVALID;
@@ -228,32 +227,33 @@ void Command_M()
     rastr[8] = 0;
     strncpy(decstr, &command[10], 9 * sizeof(char));
     decstr[9] = 0;
+
     if (!hmsToDouble(&Ra, rastr, highPrecision))
     {
-      strcpy(reply, "!#");
+      strcpy(reply, "!");
       break;
     }
     if (!dmsToDouble(&Dec, decstr, true, highPrecision))
     {
-      strcpy(reply, "!#");
+      strcpy(reply, "!");
       break;
     }
     Ha = haRange(rtk.LST() * 15.0 - Ra * 15);
     EquToHor(Ha, Dec, doesRefraction.forGoto,&azm, &alt, localSite.cosLat(), localSite.sinLat());
     if (alt < minAlt || alt > maxAlt)
     {
-      strcpy(reply, "!#");
+      strcpy(reply, "!");
       break;
     }
     alignment.toAxisDeg(axis1angle, axis2angle, azm, alt);
     bool ok = predictTarget(axis1angle, axis2angle, GetPierSide(), axis1step, axis2step,predictedSide);
     if (!ok)
     {
-      strcpy(reply, "!#");
+      strcpy(reply, "?");
       break;
     }
-    else if (predictedSide == PIER_EAST) strcpy(reply, "E#");
-    else if (predictedSide == PIER_WEST) strcpy(reply, "W#");
+    else if (predictedSide == PIER_EAST) strcpy(reply, "E");
+    else if (predictedSide == PIER_WEST) strcpy(reply, "W");
     break;
   }
   case '@':
@@ -261,18 +261,18 @@ void Command_M()
     //  :M@V#   Start Spiral Search V in arcminutes
     //         Return 0 if failed, i if success
     if (movingTo || GuidingState != Guiding::GuidingOFF)
-      replyFailed();
+      replyShortFalse();
     else
     {
       SpiralFOV = (double)strtol(&command[2], NULL, 10) / 60.0;
-      replyOk();
+      replyShortTrue();
       atHome = false;
       doSpiral = true;
     }
     break;
   }
   default:
-    replyFailed();
+    replyNothing();
     break;
   }
 }

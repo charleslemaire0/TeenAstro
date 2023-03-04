@@ -11,14 +11,14 @@ void Command_dollar()
     }
   case '!':
     reboot_unit = true;
-    replyOk();
+    replyShortTrue();
     break;
   case 'X':
     initmotor(true);
-    replyOk();
+    replyShortTrue();
     break;
   default:
-    replyFailed();
+    replyNothing();
     break;
   }
 }
@@ -46,7 +46,7 @@ void Command_A()
     // start tracking
     sideralTracking = true;
     lastSetTrakingEnable = millis();
-    replyOk();
+    replyShortTrue();
     break;
   case '2':
   {
@@ -77,7 +77,7 @@ void Command_A()
         sei();
       }
     }
-    replyOk();
+    replyShortTrue();
     break;
   }
   case '3':
@@ -102,7 +102,7 @@ void Command_A()
       staA2.target = staA2.pos;
       sei();
     }
-    replyOk();
+    replyShortTrue();
     break;
   }
   case 'C':
@@ -110,14 +110,14 @@ void Command_A()
     initTransformation(true);
     syncAtHome();
     autoAlignmentBySync = command[1] == 'A';
-    replyOk();
+    replyShortTrue();
     break;
   case 'W':
     saveAlignModel();
-    replyOk();
+    replyShortTrue();
     break;
   default:
-    replyFailed();
+    replyNothing();
     break;
   }
 }
@@ -238,13 +238,18 @@ void Command_C()
 }
 //----------------------------------------------------------------------------------
 //    E - encoder commands
-//    all commands Returns 1# or 0#
-//  :EAS#   Align Encoder Start
-//  :EAE#   Align Encoder End
-//  :EAQ#   Align Encoder Quit
-//  :ECT#   Synchonize the telescope with the Encoders
-//  :ECE#   Synchonize the Encoders with the telescope
-//  :ECS#   Synchronise at the end of a pushto to Target
+//  :EAS#   Align Encoder Start Returns 1# or 0#
+//  :EAE#   Align Encoder End Returns 1# or 0#
+//  :EAQ#   Align Encoder Quit Returns 1# or 0#
+//  :ECT#   Synchonize the telescope with the Encoders Returns 1# or 0#
+//  :ECE#   Synchonize the Encoders with the telescope Returns 1# or 0#
+//  :ECS#   Synchronise at the end of a pushto to Target Returns 1# or 0#
+//  :ED#   Distance to target axis Returns long#
+//  :EMS#   Set pushTo sidereal Target
+//  :EMU#   Set pushTo sidereal User defined Target
+//  :EMA#   Set pushTo altaz Target
+//  :EMQ#   Set pushTo altaz Target
+
 void Command_E()
 {
   switch (command[1])
@@ -262,7 +267,7 @@ void Command_E()
       getInstrDeg(&A1, &A2);
       encoderA1.setRef(A1);
       encoderA2.setRef(A2);
-      replyOk();
+      replyLongTrue();
     }
     break;
     case 'E':
@@ -272,7 +277,7 @@ void Command_E()
       getInstrDeg(&A1, &A2);
       bool ok = encoderA1.calibrate(A1);
       ok &= encoderA1.calibrate(A2);
-      ok ? replyOk() : replyFailed();
+      ok ? replyLongTrue() : replyLongFalse();
     }
     break;
     case 'Q':
@@ -280,11 +285,11 @@ void Command_E()
       //  :EAQ#  Align Encoder Quit
       encoderA1.delRef();
       encoderA2.delRef();
-      replyOk();
+      replyLongTrue();
     }
     break;
     default:
-      replyFailed();
+      replyNothing();
       break;
     }
   }
@@ -297,19 +302,19 @@ void Command_E()
     {
       //  :ECT#   Synchonize the telescope with the Encoders
       syncTwithE();
-      replyOk();
+      replyLongTrue();
     }
     break;
     case 'E':
     {
       //  :ECE#   Synchonize the Encoders with the telescope
       syncEwithT();
-      replyOk();
+      replyLongTrue();
     }
     break;
     case 'S':
     {
-      //  :ECE#   Synchonize the Telescope and Encoder to Target
+      //  :ECS#   Synchonize the Telescope and Encoder to Target
       switch (PushtoStatus)
       {
       case PT_RADEC:
@@ -317,24 +322,24 @@ void Command_E()
         double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         syncEqu(newTargetHA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat());
         syncEwithT();
-        replyOk();
+        replyLongTrue();
       }
       break;
       case PT_ALTAZ:
       {
         syncAzAlt(newTargetAzm, newTargetAlt, GetPierSide());
         syncEwithT();
-        replyOk();
+        replyLongTrue();
       }
       break;
       default:
-        replyFailed();
+        replyLongTrue();
         break;
       }
     }
     break;
     default:
-      replyFailed();
+      replyLongUnknow();
       break;
     }
   }
@@ -388,17 +393,16 @@ void Command_E()
     else if (command[2] == 'Q')
     {
       PushtoStatus = PT_OFF;
-      replyOk();
+      replyShortTrue();
     }
     else
     {
-      replyFailed();
+      replyNothing();
     }
-
   }
   break;
   default:
-    replyFailed();
+    replyNothing();
     break;
   }
 }
@@ -411,7 +415,7 @@ void Command_D()
 {
   if (command[1] != 0)
   {
-    replyFailed();
+    replyShortFalse();
     return;
   }
 
@@ -444,16 +448,16 @@ void Command_h()
     //          Return: 0 on failure
     //                  1 on success
     if (!goHome())
-      replyFailed();
+      replyShortFalse();
     else
-      replyOk();
+      replyShortTrue();
     break;
   case 'B':
     //  :hB#   Set the home position
     //          Return: 0 on failure
     //                  1 on success
-    if (!setHome()) replyFailed();
-    else replyOk();
+    if (!setHome()) replyShortFalse();
+    else replyShortTrue();
     break;
   case 'b':
     //  :hb#   Reset the home position
@@ -462,46 +466,44 @@ void Command_h()
     homeSaved = false;
     XEEPROM.write(getMountAddress(EE_homeSaved), false);
     initHome();
-    replyOk();
+    replyShortTrue();
     break;
   case 'O':
     // : hO#   Reset telescope at the Park position if Park position is stored.
     //          Return: 0 on failure
     //                  1 on success
     if (!syncAtPark())
-      replyFailed();
+      replyShortFalse();
     else
-      replyOk();
+      replyShortTrue();
     break;
   case 'P':
     // : hP#   Goto the Park Position
     //          Return: 0 on failure
     //                  1 on success
     if (park())
-      replyFailed();
+      replyShortFalse();
     else
-      replyOk();
+      replyShortTrue();
     break;
   case 'Q':
     //  :hQ#   Set the park position
     //          Return: 0 on failure
     //                  1 on success
     if (!setPark())
-      replyFailed();
+      replyShortFalse();
     else
-      replyOk();
+      replyShortTrue();
     break;
   case 'R':
     //  :hR#   Restore parked telescope to operation
     //          Return: 0 on failure
     //                  1 on success
     unpark();
-    replyOk();
+    replyShortTrue();
     break;
-
-
   default:
-    replyFailed();
+    replyNothing();
     break;
   }
 }
@@ -552,7 +554,7 @@ void Command_Q()
   }
   break;
   default:
-    replyFailed();
+    replyNothing();
     break;
   }
 }
@@ -591,7 +593,7 @@ void Command_R()
     i = command[1] - '0';
     break;
   default:
-    replyFailed();
+    replyNothing();
     return;
   }
   if (!movingTo && GuidingState == GuidingOFF)
@@ -667,43 +669,43 @@ void Command_T()
       atHome = false;
       sideralTracking = true;
       computeTrackingRate(true);
-      replyOk();
+      replyShortTrue();
     }
     else
-      replyFailed();
+      replyShortFalse();
     break;
   case 'd':
     if (parkStatus == PRK_UNPARKED)
     {
       sideralTracking = false;
-      replyOk();
+      replyShortTrue();
     }
     else
-      replyFailed();
+      replyShortFalse();
     break;
   case '0':
     // turn compensation off
     tc = TC_NONE;
     computeTrackingRate(true);
     XEEPROM.update(getMountAddress(EE_TC_Axis), 0);
-    replyOk();
+    replyShortTrue();
     break;
   case '1':
     // turn compensation RA only
     tc = TC_RA;
     computeTrackingRate(true);
     XEEPROM.update(getMountAddress(EE_TC_Axis), 0);
-    replyOk();
+    replyShortTrue();
     break;
   case '2':
     // turn compensation BOTH
     tc = TC_BOTH;
     computeTrackingRate(true);
     XEEPROM.update(getMountAddress(EE_TC_Axis), 2);
-    replyOk();
+    replyShortTrue();
     break;
   default:
-    replyFailed();
+    replyNothing();
     break;
   }
 
@@ -728,7 +730,7 @@ void Command_U()
     replyNothing();
   }
   else
-    replyFailed();
+    replyNothing();
 }
 
 //   W - Site Select/Site get
@@ -742,7 +744,6 @@ void Command_W()
   case '0':
   case '1':
   case '2':
-  case '3':
   {
     uint8_t currentSite = command[1] - '0';
     XEEPROM.write(getMountAddress(EE_currentSite), currentSite);
@@ -759,7 +760,7 @@ void Command_W()
     sprintf(reply, "%d#", localSite.siteIndex());
     break;
   default:
-    replyFailed();
+    replyNothing();
     break;
   }
 }

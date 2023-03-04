@@ -172,7 +172,7 @@ Public Class Telescope
       If Not Connected Then
         Throw New ASCOM.NotConnectedException
       End If
-      If Not Me.CommandBool("AA") Then
+      If Not CommandBoolSingleChar("AA") Then
         Throw New ASCOM.DriverException("AutoAlign command failure")
       End If
     Else
@@ -204,11 +204,36 @@ Public Class Telescope
   Public Function CommandBool(ByVal Command As String, Optional ByVal Raw As Boolean = False) As Boolean _
     Implements ITelescopeV3.CommandBool
     Dim buf As String = ""
-    If Not GenericCommand(Command, Raw, 2, buf) Then
+    If Not GenericCommand(Command, Raw, 1, buf) Then
       Throw New ASCOM.NotConnectedException("CommandBool " + Command + " has failed")
     End If
     mConnectionStatusDate = Date.UtcNow
     Return buf = "1"
+  End Function
+
+  Private Function CommandBoolString(ByVal Command As String, Optional ByVal Raw As Boolean = False) As Boolean
+    Dim buf As String = CommandString(Command, Raw)
+    If buf.Length > 0 Then
+      If buf = "1" Then
+        Return True
+      ElseIf buf = "0" Then
+        Return False
+      End If
+      Throw New ASCOM.DriverException("CommandBoolString " + Command + " returned invalid value: " & buf)
+    End If
+    Return False
+  End Function
+  Private Function CommandBoolSingleChar(ByVal Command As String, Optional ByVal Raw As Boolean = False) As Boolean
+    Dim buf As String = CommandSingleChar(Command, Raw)
+    If buf.Length > 0 Then
+      If buf = "1" Then
+        Return True
+      ElseIf buf = "0" Then
+        Return False
+      End If
+      Throw New ASCOM.DriverException("CommandBoolSingleChar " + Command + " returned invalid value: " & buf)
+    End If
+    Return False
   End Function
 
   Private Function CommandSingleChar(ByVal Command As String, Optional ByVal Raw As Boolean = False) As String
@@ -219,7 +244,6 @@ Public Class Telescope
     mConnectionStatusDate = Date.UtcNow
     Return buf
   End Function
-
 
   Public Function CommandString(ByVal Command As String, Optional ByVal Raw As Boolean = False) As String _
     Implements ITelescopeV3.CommandString
@@ -395,7 +419,6 @@ Public Class Telescope
         buf = mobjectSerial.ReceiveTerminated("#").TrimEnd("#")
         GetSerial = buf <> ""
     End Select
-    mobjectSerial.ClearBuffers()
   End Function
 
   Public ReadOnly Property Description As String Implements ITelescopeV3.Description
@@ -688,7 +711,7 @@ Public Class Telescope
       Dim rate As Integer = value * 10000
       Dim cmd As String = "SXRd," & rate.ToString()
       mTL.LogMessage("Set DeclinationRate", "value: " & cmd)
-      If Not Me.CommandBool(cmd) Then
+      If Not CommandBoolSingleChar(cmd) Then
         Throw New ASCOM.InvalidValueException("Set DeclinationRate via :" & cmd & " has failed")
       End If
     End Set
@@ -697,7 +720,7 @@ Public Class Telescope
   Public Function DestinationSideOfPier(RightAscension As Double, Declination As Double) As PierSide Implements ITelescopeV3.DestinationSideOfPier
     Dim RaString As String = RaToString(RightAscension)
     Dim DecString As String = DecToString(Declination)
-    Dim state As String = Me.CommandString("M?" + RaString + DecString)
+    Dim state As String = Me.CommandSingleChar("M?" + RaString + DecString)
     If state = "E" Then
       DestinationSideOfPier = PierSide.pierEast
     ElseIf state = "W" Then
@@ -727,13 +750,13 @@ Public Class Telescope
     Set(value As Boolean)
       Dim ok As Boolean = True
       If value Then
-        ok = CommandBool("SXrg,y")
-        ok = ok And CommandBool("SXrp,y")
-        ok = ok And CommandBool("SXrt,y")
+        ok = CommandBoolSingleChar("SXrg,y")
+        ok = ok And CommandBoolSingleChar("SXrp,y")
+        ok = ok And CommandBoolSingleChar("SXrt,y")
       Else
-        ok = CommandBool("SXrg,n")
-        ok = ok And CommandBool("SXrp,n")
-        ok = ok And CommandBool("SXrt,n")
+        ok = CommandBoolSingleChar("SXrg,n")
+        ok = ok And CommandBoolSingleChar("SXrp,n")
+        ok = ok And CommandBoolSingleChar("SXrt,n")
       End If
       If Not ok Then
         If (value) Then
@@ -758,7 +781,7 @@ Public Class Telescope
       Throw New ASCOM.InvalidOperationException("Telescope is parked")
     End If
     If Not AtHome Then
-      If CommandBool("hC") Then
+      If CommandBoolSingleChar("hC") Then
         Threading.Thread.Sleep(1000)
         While Me.Slewing
           Threading.Thread.Sleep(1000)
@@ -793,7 +816,7 @@ Public Class Telescope
     Dim speed As Integer = Val / mSiderealRate * 100
     Dim cmd As String = "SXR0," & speed.ToString("000")
     mTL.LogMessage("Set AxisRates", "value: " & Val)
-    If Not Me.CommandBool(cmd) Then
+    If Not Me.CommandBoolSingleChar(cmd) Then
       Throw New ASCOM.InvalidValueException("Set SetGuideRate via :" & cmd & " has failed")
     End If
   End Sub
@@ -817,7 +840,7 @@ Public Class Telescope
 
   Public ReadOnly Property IsPulseGuiding() As Boolean Implements ITelescopeV3.IsPulseGuiding
     Get
-      IsPulseGuiding = Me.CommandBool("GXJP")
+      IsPulseGuiding = CommandBoolString("GXJP")
       mTL.LogMessage("Get IsPulseGuiding", IsPulseGuiding.ToString)
       Return IsPulseGuiding
     End Get
@@ -845,7 +868,7 @@ Public Class Telescope
     Else
       Throw New ASCOM.InvalidValueException("MoveAxis", Axis.ToString(), "0 To 1")
     End If
-    Dim ret As String = Me.CommandString(cmd)
+    Dim ret As String = Me.CommandSingleChar(cmd)
     If ret = "0" Or ret = "i" Then
       Throw New ASCOM.InvalidValueException("MoveAxis via :" & cmd & " has failed")
     ElseIf ret = "e" Then
@@ -858,12 +881,12 @@ Public Class Telescope
       Throw New ASCOM.DriverException("MoveAxis is ignored, the telescop is guiding")
     End If
     If waitStopM1 Then
-      While CommandBool("GXJM1")
+      While CommandBoolString("GXJM1")
         Threading.Thread.Sleep(500)
       End While
     End If
     If waitStopM2 Then
-      While CommandBool("GXJM2")
+      While CommandBoolString("GXJM2")
         Threading.Thread.Sleep(500)
       End While
     End If
@@ -872,7 +895,7 @@ Public Class Telescope
 
   Public Sub Park() Implements ITelescopeV3.Park
     Dim cmd As String = "hP"
-    If CommandBool(cmd) Then
+    If CommandBoolSingleChar(cmd) Then
       mTL.LogMessage("Park", "done")
       Threading.Thread.Sleep(3000)
     Else
@@ -928,14 +951,14 @@ Public Class Telescope
       Dim rate As Integer = value * 10000
       Dim cmd As String = "SXRr," & rate.ToString()
       mTL.LogMessage("Set RightAscensionRate", "value: " & cmd)
-      If Not Me.CommandBool(cmd) Then
+      If Not CommandBoolSingleChar(cmd) Then
         Throw New ASCOM.InvalidValueException("Set RightAscensionRate via :" & cmd & " has failed")
       End If
     End Set
   End Property
 
   Public Sub SetPark() Implements ITelescopeV3.SetPark
-    Dim ok As Boolean = CommandBool("hQ")
+    Dim ok As Boolean = CommandBoolSingleChar("hQ")
     If ok Then
       mTL.LogMessage("SetPark", "done")
     Else
@@ -1016,7 +1039,7 @@ Public Class Telescope
         sg = "-"
       End If
       Dim cmd As String = "Se" + sg + Math.Abs(value).ToString("00000")
-      Me.CommandBool(cmd)
+      CommandBoolSingleChar(cmd)
     End Set
   End Property
 
@@ -1038,7 +1061,7 @@ Public Class Telescope
         value = -value
       End If
       Dim cmd As String = "St" + sg + DegtoDDMMSS(value)
-      If Not Me.CommandBool(cmd) Then
+      If Not CommandBoolSingleChar(cmd) Then
         Throw New ASCOM.InvalidOperationException
       End If
       mTL.LogMessage("SiteLatitude Set", value)
@@ -1064,7 +1087,7 @@ Public Class Telescope
         value = -value
       End If
       Dim cmd As String = "Sg" + sg + DegtoDDDMMSS(value)
-      If Not Me.CommandBool(cmd) Then
+      If Not CommandBoolSingleChar(cmd) Then
         Throw New ASCOM.InvalidOperationException
       End If
       mTL.LogMessage("Set SiteLongitude", value)
@@ -1124,7 +1147,7 @@ Public Class Telescope
 
   Public ReadOnly Property Slewing() As Boolean Implements ITelescopeV3.Slewing
     Get
-      Slewing = Me.CommandBool("GXJS")
+      Slewing = CommandBoolString("GXJS")
       mTL.LogMessage("slewing", Slewing)
       Return Slewing
     End Get
@@ -1144,7 +1167,7 @@ Public Class Telescope
   End Sub
 
   Public Sub SyncToPark()
-    If CommandBool("hO") Then
+    If CommandBoolSingleChar("hO") Then
       mTL.LogMessage("SyncToPark", "done")
     Else
       Throw New ASCOM.InvalidOperationException("SyncToPark has failed")
@@ -1179,7 +1202,7 @@ Public Class Telescope
       mTL.LogMessage("Set TargetDeclination", value.ToString)
       Dim sexa As String = DecToString(value)
       Dim cmd As String = "Sd" & sexa
-      If Not Me.CommandBool(cmd) Then
+      If Not CommandBoolSingleChar(cmd) Then
         Throw New ASCOM.InvalidOperationException("Set Target Declination " & cmd & " has failed")
       End If
 
@@ -1231,7 +1254,7 @@ Public Class Telescope
       mTL.LogMessage("Set TargetRightAscension", value.ToString)
       Dim sexa As String = RaToString(value)   ' Long format, whole seconds
       Dim cmd As String = "Sr" & sexa
-      If Not Me.CommandBool(cmd) Then
+      If Not CommandBoolSingleChar(cmd) Then
         Throw New ASCOM.InvalidOperationException("Set Target RightAscension " & cmd & " has failed")
       End If
       mtgtRa = value
@@ -1249,17 +1272,17 @@ Public Class Telescope
 
   Public Property Tracking() As Boolean Implements ITelescopeV3.Tracking
     Get
-      Dim trk As Boolean = CommandBool("GXJT")
+      Dim trk As Boolean = CommandBoolString("GXJT")
       mTL.LogMessage("Get Tracking", trk.ToString())
       Return trk
     End Get
     Set(value As Boolean)
       If value Then
-        If Not Me.CommandBool("Te") Then
+        If Not CommandBoolSingleChar("Te") Then
           Throw New ASCOM.InvalidValueException
         End If
       Else
-        If Not Me.CommandBool("Td") Then
+        If Not CommandBoolSingleChar("Td") Then
           Throw New ASCOM.InvalidOperationException
         End If
       End If
@@ -1321,7 +1344,7 @@ Public Class Telescope
     End Get
     Set(value As DateTime)
       Dim s As Long = (Date.UtcNow() - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds
-      If (CommandBool("SXT2," & s)) Then
+      If (CommandBoolSingleChar("SXT2," & s)) Then
         mTL.LogMessage("Set UTCDate", "done")
       Else
         mTL.LogMessage("Set UTCDate", "failed")
@@ -1331,7 +1354,7 @@ Public Class Telescope
   End Property
 
   Public Sub Unpark() Implements ITelescopeV3.Unpark
-    If Me.CommandBool("hR") Then
+    If CommandBoolSingleChar("hR") Then
       mTL.LogMessage("Unpark", "done")
     Else
       mTL.LogMessage("Unpark", "failed")
@@ -1492,11 +1515,11 @@ Public Class Telescope
 
   Private Sub setAzalt(Azimuth As Double, Altitude As Double)
     Dim sexa As String = AzToString(Azimuth)
-    If Not Me.CommandBool("Sz" & sexa) Then
+    If Not CommandBoolSingleChar("Sz" & sexa) Then
       Throw New ASCOM.InvalidOperationException
     End If
     sexa = AltToString(Altitude)
-    If Not Me.CommandBool("Sa" & sexa) Then
+    If Not CommandBoolSingleChar("Sa" & sexa) Then
       Throw New ASCOM.InvalidOperationException
     End If
   End Sub
@@ -1553,7 +1576,7 @@ Public Class Telescope
           mconnectedState = False
           Dim k As Integer = 0
           While Not mconnectedState And k < 10
-            mconnectedState = CommandBool("GXJC")
+            mconnectedState = CommandBoolString("GXJC")
             Threading.Thread.Sleep(200)
             k += 1
           End While
