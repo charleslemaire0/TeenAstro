@@ -1,0 +1,10 @@
+bool atTargetAxis1(bool update = false, double TrackingRate = 1.);
+bool atTargetAxis2(bool update = false, double TrackingRate = 1.);
+void ApplyTrackingRate(void);
+void computeTrackingRate(bool apply);
+void do_compensation_calc(void);
+double SetRates(double maxslewrate);
+void SetAcceleration(void);
+void enableGuideRate(int g, bool force);
+void initMaxSpeed(void);
+bool isAltAz(void);

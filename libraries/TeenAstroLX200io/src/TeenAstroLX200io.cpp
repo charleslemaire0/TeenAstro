@@ -122,9 +122,8 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       else cmdreply = CMDR_INVALID;
       break;
     case 'E':
-      if (strchr("AC", command[2])) cmdreply = CMDR_SHORT_BOOL;
+      if (strchr("ACD", command[2])) cmdreply = CMDR_LONG;
       else if (command[2] == 'M' && strchr("ASUQ", command[3])) cmdreply = CMDR_SHORT;
-      else if (command[2] == 'D') cmdreply = CMDR_LONG;
       else cmdreply = CMDR_INVALID;
       break;
     case 'D':
@@ -159,9 +158,8 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       break;
     case 'M':
       if (strchr("ewnsg", command[2])) cmdreply = CMDR_NO;
-      else if (strchr("SAUF", command[2])) cmdreply = CMDR_SHORT;
+      else if (strchr("SAUF?", command[2])) cmdreply = CMDR_SHORT;
       else if (strchr("12@", command[2])) cmdreply = CMDR_SHORT_BOOL;
-      else if (strchr("?", command[2])) cmdreply = CMDR_LONG;
       else cmdreply = CMDR_INVALID;
       break;
     case 'Q':
@@ -173,7 +171,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       else cmdreply = CMDR_INVALID;
       break;
     case 'S':
-      if (strchr("!aCeLSGtgmnMNOPrdhoTBXzU", command[2])) cmdreply = CMDR_SHORT_BOOL;
+      if (strchr("!aBCedgGhLmMnNoOrtTUXz", command[2])) cmdreply = CMDR_SHORT_BOOL;
       else cmdreply = CMDR_INVALID;
       break;
     case 'T':
@@ -234,6 +232,8 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     unsigned long start = millis();
     int recvBufferPos = 0;
     char b = 0;
+    bool Hashtagfound = false;
+    bool ok = true;
     while (millis() - start < timeOutMs)
     {
       recvBuffer[recvBufferPos] = 0;
@@ -247,16 +247,23 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
             recvBuffer[recvBufferPos] = b;
             recvBufferPos++;
           }
+          Hashtagfound = true;
           break;
         }
-
         start = millis();
         recvBuffer[recvBufferPos] = b;
         recvBufferPos++;
-        if (recvBufferPos > bufferSize - 1) recvBufferPos = bufferSize - 1;
+        if (recvBufferPos > bufferSize - 1)
+        {
+          ok = false;
+          recvBufferPos = bufferSize - 1;
+        }
       }
     }
-    return (recvBuffer[0] != 0);
+    ok &= (recvBuffer[0] != 0);
+    ok &= Hashtagfound;
+    ok &= keepHashtag ? recvBufferPos > 1 : recvBufferPos > 0;
+    return ok;
     break;
   }
   default:

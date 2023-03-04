@@ -170,7 +170,7 @@ void SetRates(double maxslewrate)
   double maxslewCorrected = min(fact1 / minInterval1, fact2 / minInterval2);
   if (abs(maxslewrate - maxslewCorrected) > 2)
   {
-    XEEPROM.writeInt(getMountAddress(getMountAddress(EE_maxRate)), (int)maxslewCorrected);
+    XEEPROM.writeInt(getMountAddress(EE_maxRate), (int)maxslewCorrected);
   }
   minInterval1 = fact1 / maxslewCorrected;
   minInterval2 = fact2 / maxslewCorrected;
@@ -199,9 +199,13 @@ void enableGuideRate(int g)
 {
   if (g < 0) g = 0;
   if (g > 4) g = 4;
-  activeGuideRate = g;
-  guideA1.enableAtRate(guideRates[g]);
-  guideA2.enableAtRate(guideRates[g]);
+  if (activeGuideRate != g)
+  {
+    // if we reset the guide rate it cancels the current pulse guiding
+    activeGuideRate = g;
+    guideA1.enableAtRate(guideRates[g]);
+    guideA2.enableAtRate(guideRates[g]);
+  }
 }
 
 
