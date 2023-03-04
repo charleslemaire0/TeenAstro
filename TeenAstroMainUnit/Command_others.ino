@@ -735,7 +735,7 @@ void Command_U()
 
 //   W - Site Select/Site get
 //  :Wn#
-//         Sets current site to n, 0..3 or queries site with ?
+//         Sets current site to n, 0..2 or queries site with ?
 //         Returns: Nothing or current site ?#
 void Command_W()
 {
