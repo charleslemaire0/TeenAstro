@@ -12,18 +12,18 @@ set LANG=_French
 REN %OUTPUT%%LANG%\TeenAstroSHC.ino.bin %SHCNAME%%LANG%.bin
 REN %OUTPUT%%LANG%\TeenAstroSHC.ino.elf %SHCNAME%%LANG%.elf
 REN %OUTPUT%%LANG%\TeenAstroSHC.ino.map %SHCNAME%%LANG%.map
-move /Y %OUTPUT%%LANG%\*.* .\.\%VER%
+move /Y %OUTPUT%%LANG%\*.* ..\%VER%
 
 set LANG=_German
 ..\..\..\ArduinoCli\arduino-cli.exe compile --libraries ..\..\..\libraries -v -b %BOARD% --output-dir %OUTPUT%%LANG% %OPTIONS%=GERMAN %SKETCH%
 REN %OUTPUT%%LANG%\TeenAstroSHC.ino.bin %SHCNAME%%LANG%.bin
 REN %OUTPUT%%LANG%\TeenAstroSHC.ino.elf %SHCNAME%%LANG%.elf
 REN %OUTPUT%%LANG%\TeenAstroSHC.ino.map %SHCNAME%%LANG%.map
-move /Y %OUTPUT%%LANG%\*.* .\.\%VER%
+move /Y %OUTPUT%%LANG%\*.* ..\%VER%
 
 set LANG=_English
 ..\..\..\ArduinoCli\arduino-cli.exe compile --libraries ..\..\..\libraries -v -b %BOARD% --output-dir %OUTPUT%%LANG% %OPTIONS%=ENGLISH %SKETCH%
 REN %OUTPUT%%LANG%\TeenAstroSHC.ino.bin %SHCNAME%%LANG%.bin
 REN %OUTPUT%%LANG%\TeenAstroSHC.ino.elf %SHCNAME%%LANG%.elf
 REN %OUTPUT%%LANG%\TeenAstroSHC.ino.map %SHCNAME%%LANG%.map
-move /Y %OUTPUT%%LANG%\*.* .\.\%VER%
+move /Y %OUTPUT%%LANG%\*.* ..\%VER%

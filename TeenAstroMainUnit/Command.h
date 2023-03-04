@@ -6,7 +6,7 @@ class T_Serial
 public:
   Stream* m_serial = NULL;
 private:
-  Command m_cmdSerial = COMMAND_NONE;
+  Command m_cmdSerial = Command::COMMAND_NONE;
   bool m_ready = false;
   char m_command[28] = "";
   byte m_bufferPtr = 0;

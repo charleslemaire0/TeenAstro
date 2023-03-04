@@ -72,7 +72,7 @@ void processCommands()
     Command_W();
     break;
   default:
-    replyFailed();
+    replyNothing();
     break;
   }
 
@@ -87,18 +87,41 @@ void processCommands()
   }
 }
 
-void replyFailed()
-{
-  strcpy(reply, "0");
-}
-void replyOk()
+void replyShortTrue()
 {
   strcpy(reply, "1");
 }
+
+void replyLongTrue()
+{
+  strcpy(reply, "1#");
+}
+
+void replyShortFalse()
+{
+  strcpy(reply, "0");
+}
+
+void replyLongFalse()
+{
+  strcpy(reply, "0#");
+}
+
+void replyLongUnknow()
+{
+  strcpy(reply, "#");
+}
+
+void replyValueSetShort(bool set)
+{
+  set ? replyShortTrue() : replyShortFalse();
+}
+
 void replyNothing()
 {
   reply[0] = 0;
 }
+
 void clearReply()
 {
   for (int i = 0; i < 50; i++)

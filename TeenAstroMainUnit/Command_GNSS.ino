@@ -161,10 +161,10 @@ void Command_GNSS()
         t.hour(), t.minute(), t.second(),
         *localSite.longitude(), 0);
       resetDeltaLoc();
-      replyOk();
+      replyShortTrue();
     }
     else
-      replyFailed();
+      replyShortFalse();
     break;
     // :gt# time sync with GNSS
   case 't':
@@ -173,13 +173,13 @@ void Command_GNSS()
       rtk.setClock(d.year(), d.month(), d.day(),
         t.hour(), t.minute(), t.second(),
         *localSite.longitude(), 0);
-      replyOk();
+      replyShortTrue();
     }
     else
-      replyFailed();
+      replyShortFalse();
     break;
   default:
-    replyFailed();
+    replyNothing();
     break;
   }
 
