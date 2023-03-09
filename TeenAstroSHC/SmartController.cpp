@@ -103,9 +103,8 @@ void SmartHandController::setup(
   }
   DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
   if (ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor))
-  {
-    ta_MountStatus.updateFocuser();
-    if (ta_MountStatus.hasFocuser())
+  {    
+    if (ta_MountStatus.findFocuser())
     {
       char out[50];
       if (DisplayMessageLX200(GetLX200(":FV#", out, sizeof(out))))

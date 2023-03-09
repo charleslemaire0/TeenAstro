@@ -144,6 +144,26 @@ void TeenAstroMountStatus::updateLHA()
     m_hasInfoUTC&& m_hasInfoLHA ? m_lastStateTime = millis() : m_connectionFailure++;
   }
 };
+
+bool TeenAstroMountStatus::findFocuser()
+{
+  int k = 0;
+  char fc[45];
+  while (!m_hasFocuser && k < 3)
+  {
+    if (GetLX200(":F?#", fc, sizeof(m_TempFocuser)) == LX200_VALUEGET)
+    {
+      if (fc[0] == '?')
+      {
+        m_hasFocuser = true;
+      }
+    }
+    delay(100);
+    k++;
+  }
+  return m_hasFocuser;
+}
+
 void TeenAstroMountStatus::updateFocuser()
 {
   if (!m_hasFocuser)
@@ -162,7 +182,6 @@ void TeenAstroMountStatus::updateFocuser()
     else if (m_hasInfoFocuser && fc[0] == '0')
     {
       m_hasInfoFocuser = false;
-      m_hasFocuser = false;
     }
     else
     {

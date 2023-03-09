@@ -86,7 +86,7 @@ private:
   bool            m_hasInfoTrackingRate = false;
   bool            m_hasInfoMount = false;
   bool            m_hasInfoFocuser = false;
-  bool            m_hasFocuser = true;
+  bool            m_hasFocuser = false;
   bool            m_hasEncoder = true;
 public:
   //Alignment Stuff
@@ -206,6 +206,7 @@ public:
   bool isGNSSTimeSync();
   bool isGNSSLocationSync();
   bool isHdopSmall();
+  bool findFocuser();
   bool hasEncoder();
   bool CalibratingEncoder();
 

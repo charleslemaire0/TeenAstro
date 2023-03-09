@@ -119,10 +119,10 @@ uint8_t             midx;
 
 int getMountAddress(int adress)
 {
-  return EE_Mounts + MountSize * midx + adress;
+  return (int)EE_Mounts + (int)MountSize * (int)midx + adress;
 }
 
 int getMountAddress(int adress, int idx)
 {
-  return EE_Mounts + MountSize * idx + adress;
+  return (int)EE_Mounts + (int)MountSize * (int)idx + adress;
 }
