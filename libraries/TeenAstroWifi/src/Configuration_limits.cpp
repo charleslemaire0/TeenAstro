@@ -40,7 +40,7 @@ const char html_configPastMerW[] PROGMEM =
 " (Past Meridian when West of the pier, in degrees +/-45)"
 "</form>"
 "\r\n";
-#ifdef UNOFFICIALFEATURES
+#ifdef keepTrackingOnWhenFarFromPole
 const char html_configMiDistanceFromPole[] PROGMEM =
 "<div class='bt'> Tracking safety override when far from Pole: <br/> </div>"
 "<form method='get' action='/configuration_limits.htm'>"
@@ -134,7 +134,7 @@ void TeenAstroWifi::handleConfigurationLimits()
       sprintf_P(temp, html_configPastMerW, degPastMerW);
       data += temp;
     }
-    #ifdef UNOFFICIALFEATURES
+    #ifdef keepTrackingOnWhenFarFromPole
     if (GetLX200(":GXLS#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "181"); int miDistanceFromPole = (int)strtol(&temp1[0], NULL, 10);
     sprintf_P(temp, html_configMiDistanceFromPole, miDistanceFromPole);
     data += temp;
@@ -231,7 +231,7 @@ void TeenAstroWifi::processConfigurationLimitsGet()
       SetLX200(temp);
     }
   }
-  #ifdef UNOFFICIALFEATURES
+  #ifdef keepTrackingOnWhenFarFromPole
   v = server.arg("miDistanceFromPole");
   if (v != "")
   {

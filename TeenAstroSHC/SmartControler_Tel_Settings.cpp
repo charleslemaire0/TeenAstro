@@ -189,7 +189,7 @@ void SmartHandController::menuUnderPole()
   }
 }
 
-#ifdef UNOFFICIALFEATURES
+#ifdef keepTrackingOnWhenFarFromPole
 void SmartHandController::menuFarFromPole()
 {
   char out[20];
@@ -269,7 +269,7 @@ void SmartHandController::menuAxis(char mode)
 }
 void SmartHandController::menuLimitGEM()
 {
-  #ifndef UNOFFICIALFEATURES
+  #ifndef keepTrackingOnWhenFarFromPole
     const char* string_list_LimitsL3 = T_MERIDIANE "\n" T_MERIDIANW "\n" T_UNDERPOLE;
   #else
     const char* string_list_LimitsL3 = T_MERIDIANE "\n" T_MERIDIANW "\n" T_UNDERPOLE  "\n" T_FARFROMPOLE;
@@ -293,7 +293,7 @@ void SmartHandController::menuLimitGEM()
       menuUnderPole();
       break;
     
-    #ifdef UNOFFICIALFEATURES
+    #ifdef keepTrackingOnWhenFarFromPole
     case 4:
       menuFarFromPole();
       break;

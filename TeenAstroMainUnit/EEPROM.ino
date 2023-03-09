@@ -1,3 +1,4 @@
+#include "../libraries/customizations.h"
 // EEPROM automatic initialization
 
 static const float pulsePerDegreedefault = 15;
@@ -192,8 +193,8 @@ void initMount()
   initmotor(false);
   initencoder();
   syncEwithT();
-
-#ifndef UNOFFICIALFEATURES
+  
+#ifndef keepTrackingOnWhenFarFromPole
   distanceFromPoleToKeepTrackingOn = 181;
 #endif
 

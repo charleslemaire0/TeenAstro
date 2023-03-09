@@ -169,7 +169,7 @@ private:
   void menuMeridian(bool east);
   void menuAxis(char mode);
   void menuUnderPole();
-  #ifdef UNOFFICIALFEATURES
+  #ifdef keepTrackingOnWhenFarFromPole
   void menuFarFromPole();
   #endif
   bool menuSetReverse(const uint8_t &axis);
