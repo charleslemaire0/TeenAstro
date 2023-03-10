@@ -136,7 +136,7 @@ bool autoSyncWithEncoder(EncoderSync mode)
   return synced;
 }
 
-void getInstrDeg(double* A1, double* A2)
+void getInstrDeg(double* A1, double* A2, double* A3)
 {
   long axis1, axis2;
   cli();
@@ -145,6 +145,7 @@ void getInstrDeg(double* A1, double* A2)
   sei();
   *A1 = axis1 / geoA1.stepsPerDegree;
   *A2 = axis2 / geoA2.stepsPerDegree;
+  *A3 = 0;
 }
 
 // gets the telescopes current Topocentric RA and Dec, set returnHA to true for Horizon Angle instead of RA
@@ -210,10 +211,8 @@ bool getEquTarget(double* HA, double* Dec, const double* cosLat, const double* s
 // gets the telescopes current Apparent Alt and Azm!
 bool getHorApp(double* Azm, double* Alt)
 {
-  cli();
-  double Axis1 = staA1.pos / (double)geoA1.stepsPerDegree;
-  double Axis2 = staA2.pos / (double)geoA2.stepsPerDegree;
-  sei();
+  double Axis1, Axis2, Axis3;
+  getInstrDeg(&Axis1, &Axis2, &Axis3);
   alignment.toReferenceDeg(*Azm, *Alt, Axis1, Axis2);
   return true;
 }
@@ -350,10 +349,10 @@ ErrorsGoTo Flip()
   long axis1Flip, axis2Flip;
   PierSide selectedSide = PIER_NOTVALID;
   PierSide preferedPierSide = (GetPierSide() == PIER_EAST) ? PIER_WEST : PIER_EAST;
-  cli();
-  double Axis1 = staA1.pos / (double)geoA1.stepsPerDegree;
-  double Axis2 = staA2.pos / (double)geoA2.stepsPerDegree;
-  sei();
+
+  double Axis1, Axis2, Axis3;
+  getInstrDeg(&Axis1, &Axis2, &Axis3);
+
   InsrtAngle2Angle(&Axis1, &Axis2, &selectedSide);
   if (!predictTarget(Axis1, Axis2, preferedPierSide, axis1Flip, axis2Flip, selectedSide))
   {

@@ -59,12 +59,10 @@ void Command_A()
       syncAzAlt(Azm, Alt, GetPierSide());
     }
 
-    cli();
-    double Axis1 = staA1.pos / geoA1.stepsPerDegree;
-    double Axis2 = staA2.pos / geoA2.stepsPerDegree;
-    sei();
-
+    double Axis1, Axis2, Axis3;
+    getInstrDeg(&Axis1, &Axis2, &Axis3);
     alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
+
     if (alignment.getRefs() == 2)
     {
       alignment.calculateThirdReference();
@@ -89,11 +87,11 @@ void Command_A()
     {
       syncAzAlt(Azm, Alt, GetPierSide());
     }
-    cli();
-    double Axis1 = staA1.pos / geoA1.stepsPerDegree;
-    double Axis2 = staA2.pos / geoA2.stepsPerDegree;
-    sei();
+
+    double Axis1, Axis2, Axis3;
+    getInstrDeg(&Axis1, &Axis2, &Axis3);
     alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
+
     if (alignment.isReady())
     {
       hasStarAlignment = true;
@@ -190,11 +188,11 @@ void Command_C()
         {
           syncAzAlt(Azm, Alt, GetPierSide());
         }
-        cli();
-        double Axis1 = staA1.pos / geoA1.stepsPerDegree;
-        double Axis2 = staA2.pos / geoA2.stepsPerDegree;
-        sei();
+
+        double Axis1, Axis2, Axis3;
+        getInstrDeg(&Axis1, &Axis2, &Axis3);
         alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
+
         if (alignment.isReady())
         {
           hasStarAlignment = true;
@@ -261,10 +259,10 @@ void Command_E()
     case 'S':
     {
       //  :EAS#  Align Encoder Start
-      double A1, A2;
+      double A1, A2, A3;
       EncodeSyncMode = ES_OFF;
       syncEwithT();
-      getInstrDeg(&A1, &A2);
+      getInstrDeg(&A1, &A2, &A3);
       encoderA1.setRef(A1);
       encoderA2.setRef(A2);
       replyLongTrue();
@@ -273,8 +271,8 @@ void Command_E()
     case 'E':
     {
       //  :EAE#  Align Encoder End
-      double A1, A2;
-      getInstrDeg(&A1, &A2);
+      double A1, A2, A3;
+      getInstrDeg(&A1, &A2, &A3);
       bool ok = encoderA1.calibrate(A1);
       ok &= encoderA1.calibrate(A2);
       ok ? replyLongTrue() : replyLongFalse();
