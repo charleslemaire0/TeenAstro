@@ -19,12 +19,37 @@ bool checkPole(const long &axis1, CheckMode mode)
   double underPoleLimit = (mode == CHECKMODE_GOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;
   return (axis1 > geoA1.quaterRot - underPoleLimit * 15. * geoA1.stepsPerDegree) && (axis1 < geoA1.quaterRot + underPoleLimit * 15. * geoA1.stepsPerDegree);
 }
+
 bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
 {
   bool ok = true;
-  double MinutesPastMeridianW = (mode == CHECKMODE_GOTO) ? minutesPastMeridianGOTOW : minutesPastMeridianGOTOW + 5;
-  double MinutesPastMeridianE = (mode == CHECKMODE_GOTO) ? minutesPastMeridianGOTOE : minutesPastMeridianGOTOE + 5;
-  switch (getPierSide(axis2))
+  double MinutesPastMeridianW, MinutesPastMeridianE;
+  PierSide _currPierSide = getPierSide(axis2);
+  if (mode == CHECKMODE_GOTO)
+  {
+    MinutesPastMeridianW = minutesPastMeridianGOTOW;
+    MinutesPastMeridianE = minutesPastMeridianGOTOE;
+  }
+  else
+  {
+    //CHECKMODETRACKING ONLY FOR GEM
+    MinutesPastMeridianW = minutesPastMeridianGOTOW + 5;
+    MinutesPastMeridianE = minutesPastMeridianGOTOE + 5;
+    if (distanceFromPoleToKeepTrackingOn < 180) // false if keepTrackingOnWhenFarFromPole (customization) is not defined
+    {
+      if (_currPierSide == PIER_EAST)
+      {
+        if (axis2 < (90 - distanceFromPoleToKeepTrackingOn) * geoA2.stepsPerDegree)
+          MinutesPastMeridianW = MinutesPastMeridianE = 360;
+      }
+      else if (_currPierSide == PIER_WEST)
+      {
+        if (axis2 > (90 + distanceFromPoleToKeepTrackingOn) * geoA2.stepsPerDegree)
+          MinutesPastMeridianW = MinutesPastMeridianE = 360;
+      }
+    }
+  }
+  switch (_currPierSide)
   {
   case PIER_WEST:
     if (axis1 > (12. + MinutesPastMeridianW / 60.)* 15.0 * geoA1.stepsPerDegree) ok = false;

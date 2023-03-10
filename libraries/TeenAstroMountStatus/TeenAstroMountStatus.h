@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include "../libraries/customizations.h"
 
 class TeenAstroMountStatus
 {
