@@ -41,9 +41,18 @@
 #include <math.h> // for M_PI
 #endif
 
+
+
 // Basic linear algebra operations for 3-vectors and 3x3 matrices 
 class LA3 {
 public:
+	enum RotAxis { ROTAXISX, ROTAXISY, ROTAXISZ };
+  struct SingleRotation
+  {
+		RotAxis axis;
+    double angle;
+  };
+
 	// Multiply two 3-vectors
 	static void crossProduct(double (&out)[3], const double (&a)[3], const double (&b)[3]);
 
@@ -52,6 +61,11 @@ public:
 
 	// Normalize a 3-vector to unit length 
 	static void normalize(double (&out)[3], const double (&in)[3]);
+
+
+
+
+
 
 	// Calculate cosine direction vector from two given polar angles (in radians)
 	static void toDirCos(double (&dc)[3], double ang1, double ang2);
@@ -82,6 +96,22 @@ public:
 
 	// Multiply 3x3 matrix with 3-vector
 	static void multiply(double (&out)[3], const double (&m)[3][3], const double (&v)[3]);
+
+	// get getIdentityMatrix
+	static void getIdentityMatrix(double(&out)[3][3]);
+
+	// get a Matrix after a single rotation
+	void getSingleRotationMatrix(double(&out)[3][3], const LA3::SingleRotation sr);
+
+	// get a Matrix after a sequence of rotations
+	void getMultipleRotationMatrix(double(&out)[3][3], const LA3::SingleRotation* sr, int n);
+
+	// Calculate Euler Angle RX0RYRX1 (in radians) from Matrix()
+	void getEulerRx0RyRx1(const double(&r)[3][3], double& thetaX0, double& thetaY, double& thetaX1);
+
+	// Calculate Euler Angle (in radians) from Matrix()
+	void getEulerRzRxRy(const double(&r)[3][3], double& thetaZ, double& thetaX, double& thetaY);
+
 
 	// Calculate determinant of a 3x3 matrix
 	static double determinant(const double (&m)[3][3]);

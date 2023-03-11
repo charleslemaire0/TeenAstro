@@ -1,4 +1,4 @@
-// Telescope coordinate conversion
+﻿// Telescope coordinate conversion
 // (C) 2016 Markus L. Noga
 // (C) 2019 Charles Lemaire
 
@@ -106,6 +106,161 @@ void LA3::multiply(double (&out)[3], const double (&m)[3][3], const double (&v)[
 		out[i]=res;
 	}
 }
+
+// get getIdentityMatrix
+void LA3::getIdentityMatrix(double(&out)[3][3])
+{
+	out[0][0] = 1;
+	out[1][0] = 0;
+	out[2][0] = 0;
+	//column 1
+	out[0][1] = 0;
+	out[1][1] = 1;
+	out[2][1] = 0;
+	//column 2
+	out[0][2] = 0;
+	out[1][2] = 0;
+	out[2][2] = 1;
+}
+
+// get a Matrix after a single rotation
+void LA3::getSingleRotationMatrix(double(&out)[3][3], const LA3::SingleRotation sr)
+{
+	double cosA = cos(sr.angle);
+	double sinA = sin(sr.angle);
+	switch (sr.axis)
+	{
+	case LA3::ROTAXISX:
+	{
+		//column 0
+		out[0][0] = 1;
+		out[1][0] = 0;
+		out[2][0] = 0;
+		//column 1
+		out[0][1] = 0;
+		out[1][1] = cosA;
+		out[2][1] = sinA;
+		//column 2
+		out[0][2] = 0;
+		out[1][2] = -sinA;
+		out[2][2] = cosA;
+	}
+	break;
+	case LA3::ROTAXISY:
+	{
+		//column 0
+		out[0][0] = cosA;
+		out[1][0] = 0;
+		out[2][0] = -sinA;
+		//column 1
+		out[0][1] = 0;
+		out[1][1] = 1;
+		out[2][1] = 0;
+		//column 2
+		out[0][2] = sinA;
+		out[1][2] = 0;
+		out[2][2] = cosA;
+	}
+	break;
+	case LA3::ROTAXISZ:
+	{
+		//column 0
+		out[0][0] = cosA;
+		out[1][0] = sinA;
+		out[2][0] = 0;
+		//column 1
+		out[0][1] = -sinA;
+		out[1][1] = cosA;
+		out[2][1] = 0;
+		//column 2
+		out[0][2] = 0;
+		out[1][2] = 0;
+		out[2][2] = 1;
+	}
+	break;
+	}
+}
+
+// get a Matrix after a sequence of rotations
+void LA3::getMultipleRotationMatrix(double(&out)[3][3], const LA3::SingleRotation* sr, int n)
+{
+	double next_rotm[3][3];
+	double curr_rotm[3][3];
+	double prod_rotm[3][3];
+	double* curr, * prod, * tmp;
+
+	getSingleRotationMatrix(curr_rotm, sr[0]);
+
+	for (int k = 1; k < n; k++)
+	{
+		getSingleRotationMatrix(nextrot, sr[k]);
+		multiply(prod_rotm, curr_rotm, nextrot);
+		curr = curr_rotm;
+		prod = prod_rotm;
+		tmp = curr;
+		curr = prod;
+		prod = tmp;
+	}
+	copy(out, curr_rotm);
+}
+
+// Calculate Euler Angle RX0RYRX1 (in radians) from Matrix()
+void LA3::getEulerRx0RyRx1(const double(&r)[3][3], double& thetaX0, double& thetaY, double& thetaX1)
+{
+	if (r[0][0] < 1)
+	{
+		if (r[0][0] > −1)
+		{
+			thetaY = acos(r[0][0]);
+			thetaX0 = atan2(r[1][0], -r[2][0]);
+			thetaX1 = atan2(r[0][1], r[0][2]);
+		}
+		else // r00 = −1
+		{
+			// Not a unique solution : thetaX1 − thetaX0 = atan2(−r12 , r11)
+			thetaY = M_PI;
+			thetaX0 = −atan2(−r[1][2], r[1][1]);
+			thetaX1 = 0;
+		}
+	}
+	else // r00 = +1
+	{
+		// Not a unique solution : thetaX1 + thetaX0 = atan2(−r12 , r11)
+		thetaY = 0;
+		thetaX0 = atan2(−r[1][2], r[1][1]);
+		thetaX1 = 0;
+	}
+}
+
+// Calculate Euler Angle (in radians) from Matrix()
+void LA3::getEulerRzRxRy(const double(&r)[3][3], double& thetaZ, double& thetaX, double& thetaY)
+{
+	if (r[2][1] < +1)
+	{
+		if (r[2][1] > −1)
+		{
+			thetaX = asin(r[2][1]);
+			thetaZ = atan2(−r[0][1], r[1][1]);
+			thetaY = atan2(−r[2][0], r[2][2]);
+		}
+		else // r21 = −1
+		{
+			// Not a unique solution : thetaX − thetaZ = atan2(−r12 , r 11 )
+			thetaX = −M_PI / 2;
+			thetaZ = −atan2(r[0][2], r[0][0]);
+			thetaY = 0;
+		}
+	}
+	else // r21 = +1
+	{
+		// Not a unique solution : thetaX + thetaZ = atan2(−r12 , r 1 1 )
+		thetaX = +M_PI / 2;
+		thetaZ = atan2(r[0][2], r[0][0]);
+		thetaY = 0;
+	}
+}
+
+
 
 void LA3::printV(const char *label, const double (&v)[3]) {
 #ifdef DEBUG_COUT
