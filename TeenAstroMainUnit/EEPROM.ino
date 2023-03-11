@@ -1,5 +1,4 @@
-#include "../libraries/customizations.h"
-// EEPROM automatic initialization
+#include "TeenAstoCustomizations.h"
 
 static const float pulsePerDegreedefault = 15;
 static const EncoderSync EncoderSyncDefault = EncoderSync::ES_OFF;
