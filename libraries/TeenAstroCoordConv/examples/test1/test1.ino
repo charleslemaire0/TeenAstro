@@ -16,7 +16,7 @@ CoordConv Misalignment2;
 
 void setup()
 {
-
+  Serial.begin(57600);
 }
 
 class coord
@@ -63,7 +63,7 @@ void loop()
   for (int k = 0; k < 3; k++)
   {
     instruments2[k] = instruments1[k].addError(SyncError);
-    virtualMount.toInstrumentalDeg(instruments2[k].ra, instruments2[k].dec, stars[k].ra, stars[k].dec);
+    virtualMount.toAxisDeg(instruments2[k].ra, instruments2[k].dec, stars[k].ra, stars[k].dec);
   }
 
   // First scenario
