@@ -169,6 +169,9 @@ private:
   void menuMeridian(bool east);
   void menuAxis(char mode);
   void menuUnderPole();
+  #ifdef keepTrackingOnWhenFarFromPole
+  void menuFarFromPole();
+  #endif
   bool menuSetReverse(const uint8_t &axis);
   bool menuSetBacklash(const uint8_t &axis);
   bool menuSetTotGear(const uint8_t &axis);

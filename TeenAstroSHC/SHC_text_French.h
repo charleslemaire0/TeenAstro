@@ -274,6 +274,9 @@
 #define T_UNDERPOLE "Sous le Pôle"
 #define T_UNDERPOLELIMIT "Sous Limite Pôle"
 
+#define T_FARFROMPOLE "Far From Pole"
+#define T_DISTANCE "Distance"
+
 #define T_CURRENTLYTRACKING "Suivi en cours"
 #define T_CANNOTBECHANGED "Impossible de changer"
 #define T_INITIALISATION "Initialisation"

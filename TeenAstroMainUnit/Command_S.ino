@@ -341,6 +341,18 @@ void Command_SX()
       replyValueSetShort(ok);
     }
     break;
+    case 'S':
+      // :SXLS,sVV# set user defined distance from Pole to keep tracking on for 6 hours after transit, in degrees
+    {
+      bool ok = (atoi2(&command[5], &i)) && ((i >= 0) && (i <= 181));
+      if (ok)
+      {
+        distanceFromPoleToKeepTrackingOn = i;
+        XEEPROM.update(getMountAddress(EE_dpmDistanceFromPole), distanceFromPoleToKeepTrackingOn);
+      }
+      replyValueSetShort(ok);
+    }
+    break;
     default:
       replyNothing();
       break;
