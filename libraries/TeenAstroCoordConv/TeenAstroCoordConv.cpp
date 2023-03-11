@@ -1,4 +1,4 @@
-﻿// Telescope coordinate conversion
+// Telescope coordinate conversion
 // (C) 2016 Markus L. Noga
 // (C) 2019 Charles Lemaire
 
@@ -193,10 +193,10 @@ void LA3::getMultipleRotationMatrix(double(&out)[3][3], const LA3::SingleRotatio
 
 	for (int k = 1; k < n; k++)
 	{
-		getSingleRotationMatrix(nextrot, sr[k]);
-		multiply(prod_rotm, curr_rotm, nextrot);
-		curr = curr_rotm;
-		prod = prod_rotm;
+		getSingleRotationMatrix(next_rotm, sr[k]);
+		multiply(prod_rotm, curr_rotm, next_rotm);
+		curr = &curr_rotm[0][0];
+		prod = &prod_rotm[0][0];
 		tmp = curr;
 		curr = prod;
 		prod = tmp;
@@ -209,25 +209,25 @@ void LA3::getEulerRx0RyRx1(const double(&r)[3][3], double& thetaX0, double& thet
 {
 	if (r[0][0] < 1)
 	{
-		if (r[0][0] > −1)
+		if (r[0][0] > -1)
 		{
 			thetaY = acos(r[0][0]);
 			thetaX0 = atan2(r[1][0], -r[2][0]);
 			thetaX1 = atan2(r[0][1], r[0][2]);
 		}
-		else // r00 = −1
+		else // r00 = -1
 		{
-			// Not a unique solution : thetaX1 − thetaX0 = atan2(−r12 , r11)
+			// Not a unique solution : thetaX1 - thetaX0 = atan2(-r12 , r11)
 			thetaY = M_PI;
-			thetaX0 = −atan2(−r[1][2], r[1][1]);
+			thetaX0 = -atan2(-r[1][2], r[1][1]);
 			thetaX1 = 0;
 		}
 	}
 	else // r00 = +1
 	{
-		// Not a unique solution : thetaX1 + thetaX0 = atan2(−r12 , r11)
+		// Not a unique solution : thetaX1 + thetaX0 = atan2(-r12 , r11)
 		thetaY = 0;
-		thetaX0 = atan2(−r[1][2], r[1][1]);
+		thetaX0 = atan2(-r[1][2], r[1][1]);
 		thetaX1 = 0;
 	}
 }
@@ -237,23 +237,23 @@ void LA3::getEulerRzRxRy(const double(&r)[3][3], double& thetaZ, double& thetaX,
 {
 	if (r[2][1] < +1)
 	{
-		if (r[2][1] > −1)
+		if (r[2][1] > -1)
 		{
 			thetaX = asin(r[2][1]);
-			thetaZ = atan2(−r[0][1], r[1][1]);
-			thetaY = atan2(−r[2][0], r[2][2]);
+			thetaZ = atan2(-r[0][1], r[1][1]);
+			thetaY = atan2(-r[2][0], r[2][2]);
 		}
-		else // r21 = −1
+		else // r21 = -1
 		{
-			// Not a unique solution : thetaX − thetaZ = atan2(−r12 , r 11 )
-			thetaX = −M_PI / 2;
-			thetaZ = −atan2(r[0][2], r[0][0]);
+			// Not a unique solution : thetaX - thetaZ = atan2(-r12 , r 11 )
+			thetaX = -M_PI / 2;
+			thetaZ = -atan2(r[0][2], r[0][0]);
 			thetaY = 0;
 		}
 	}
 	else // r21 = +1
 	{
-		// Not a unique solution : thetaX + thetaZ = atan2(−r12 , r 1 1 )
+		// Not a unique solution : thetaX + thetaZ = atan2(-r12 , r 1 1 )
 		thetaX = +M_PI / 2;
 		thetaZ = atan2(r[0][2], r[0][0]);
 		thetaY = 0;
