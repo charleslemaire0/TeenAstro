@@ -101,17 +101,16 @@ public:
 	static void getIdentityMatrix(double(&out)[3][3]);
 
 	// get a Matrix after a single rotation
-	void getSingleRotationMatrix(double(&out)[3][3], const LA3::SingleRotation sr);
+	static void getSingleRotationMatrix(double(&out)[3][3], const LA3::SingleRotation sr);
 
 	// get a Matrix after a sequence of rotations
-	void getMultipleRotationMatrix(double(&out)[3][3], const LA3::SingleRotation* sr, int n);
+	static void getMultipleRotationMatrix(double(&out)[3][3], const LA3::SingleRotation* sr, int n);
 
 	// Calculate Euler Angle RX0RYRX1 (in radians) from Matrix()
-	void getEulerRx0RyRx1(const double(&r)[3][3], double& thetaX0, double& thetaY, double& thetaX1);
+	static void getEulerRx0RyRx1(const double(&r)[3][3], double& thetaX0, double& thetaY, double& thetaX1);
 
 	// Calculate Euler Angle (in radians) from Matrix()
-	void getEulerRzRxRy(const double(&r)[3][3], double& thetaZ, double& thetaX, double& thetaY);
-
+	static void getEulerRzRxRy(const double(&r)[3][3], double& thetaZ, double& thetaX, double& thetaY);
 
 	// Calculate determinant of a 3x3 matrix
 	static double determinant(const double (&m)[3][3]);

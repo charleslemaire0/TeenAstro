@@ -195,11 +195,13 @@ void LA3::getMultipleRotationMatrix(double(&out)[3][3], const LA3::SingleRotatio
 	{
 		getSingleRotationMatrix(next_rotm, sr[k]);
 		multiply(prod_rotm, curr_rotm, next_rotm);
-		curr = &curr_rotm[0][0];
-		prod = &prod_rotm[0][0];
-		tmp = curr;
-		curr = prod;
-		prod = tmp;
+		copy(curr_rotm, prod_rotm);
+
+		//curr = &curr_rotm[0][0];
+		//prod = &prod_rotm[0][0];
+		//tmp = curr;
+		//curr = prod;
+		//prod = tmp;
 	}
 	copy(out, curr_rotm);
 }
