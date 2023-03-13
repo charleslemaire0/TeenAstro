@@ -1,4 +1,4 @@
-// Telescope coordinate conversion
+﻿// Telescope coordinate conversion
 // (C) 2016 Markus L. Noga
 // (C) 2019 Charles Lemaire
 
@@ -187,23 +187,16 @@ void LA3::getMultipleRotationMatrix(double(&out)[3][3], const LA3::SingleRotatio
 	double next_rotm[3][3];
 	double curr_rotm[3][3];
 	double prod_rotm[3][3];
-	double* curr, * prod, * tmp;
 
-	getSingleRotationMatrix(curr_rotm, sr[0]);
+	getIdentityMatrix(curr_rotm);
 
-	for (int k = 1; k < n; k++)
+	for (int k = 0; k < n; k++)
 	{
 		getSingleRotationMatrix(next_rotm, sr[k]);
 		multiply(prod_rotm, curr_rotm, next_rotm);
 		copy(curr_rotm, prod_rotm);
-
-		//curr = &curr_rotm[0][0];
-		//prod = &prod_rotm[0][0];
-		//tmp = curr;
-		//curr = prod;
-		//prod = tmp;
 	}
-	copy(out, curr_rotm);
+	copy(out, prod_rotm);
 }
 
 // Calculate Euler Angle RX0RYRX1 (in radians) from Matrix()
@@ -247,7 +240,7 @@ void LA3::getEulerRzRxRy(const double(&r)[3][3], double& thetaZ, double& thetaX,
 		}
 		else // r21 = -1
 		{
-			// Not a unique solution : thetaX - thetaZ = atan2(-r12 , r 11 )
+			// Not a unique solution : thetaY - thetaZ = atan2(r02 , r00 )
 			thetaX = -M_PI / 2;
 			thetaZ = -atan2(r[0][2], r[0][0]);
 			thetaY = 0;
@@ -255,14 +248,67 @@ void LA3::getEulerRzRxRy(const double(&r)[3][3], double& thetaZ, double& thetaX,
 	}
 	else // r21 = +1
 	{
-		// Not a unique solution : thetaX + thetaZ = atan2(-r12 , r 1 1 )
+		// Not a unique solution : thetaY + thetaZ = atan2(r02 , r00 )
 		thetaX = +M_PI / 2;
 		thetaZ = atan2(r[0][2], r[0][0]);
 		thetaY = 0;
 	}
 }
 
+// Calculate Euler Angle (in radians) from Matrix()
+void LA3::getEulerRzRyRx(const double(&r)[3][3], double& thetaZ, double& thetaY, double& thetaX)
+{
+	if (r[2][0] < +1)
+	{
+		if (r[2][0] > -1)
+		{
+			thetaY = asin(-r[2][0]);
+			thetaZ = atan2(r[1][0], r[0][0]);
+			thetaX = atan2(r[2][1], r[2][2]);
+		}
+		else // r21 = -1
+		{
+			// Not a unique solution : thetaX - thetaZ = atan2(-r12 , r11 )
+			thetaY = +M_PI / 2;
+			thetaZ = -atan2(r[1][2], r[1][1]);
+			thetaX = 0;
+		}
+	}
+	else // r21 = +1
+	{
+		// Not a unique solution : thetaX + thetaZ = atan2(-r12 , r11 )
+		thetaY = -M_PI / 2;
+		thetaZ = atan2(-r[1][2], r[1][1]);
+		thetaX = 0;
+	}
+}
 
+void LA3::getEulerRxRyRz(const double(&r)[3][3], double& thetaX, double& thetaY, double& thetaZ)
+{
+  if (r[0][2] < +1)
+  {
+    if (r[0][2] > -1)
+    {
+      thetaY = asin(r[0][2]);
+      thetaX = atan2(-r[1][2], r[2][2]);
+      thetaZ = atan2(-r[0][1], r[0][0]);
+    }
+    else // r02 = -1
+    {
+      // Not a unique solution : thetaZ - thetaX = atan2 ( r10 , r11 )
+      thetaY = -M_PI / 2;
+      thetaX = -atan2(r[1][0], r[1][1]);
+      thetaZ = 0;
+    }
+  }
+  else // r02 = +1
+  {
+    // Not a unique solution : thetaZ + thetaX = atan2 ( r10 , r11 )
+    thetaY = +M_PI / 2;
+    thetaX = atan2(r[1][0], r[1][1]);
+    thetaZ = 0;
+  }
+}
 
 void LA3::printV(const char *label, const double (&v)[3]) {
 #ifdef DEBUG_COUT

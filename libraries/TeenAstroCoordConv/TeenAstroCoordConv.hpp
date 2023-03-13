@@ -112,6 +112,12 @@ public:
 	// Calculate Euler Angle (in radians) from Matrix()
 	static void getEulerRzRxRy(const double(&r)[3][3], double& thetaZ, double& thetaX, double& thetaY);
 
+	// Calculate Euler Angle (in radians) from Matrix()
+	static void getEulerRzRyRx(const double(&r)[3][3], double& thetaZ, double& thetaY, double& thetaX);
+
+	// Calculate Euler Angle (in radians) from Matrix()
+	static void getEulerRxRyRz(const double(&r)[3][3], double& thetaX, double& thetaY, double& thetaZ);
+
 	// Calculate determinant of a 3x3 matrix
 	static double determinant(const double (&m)[3][3]);
 
