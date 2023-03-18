@@ -85,11 +85,11 @@ def loadFile(Filename):
 
 def sgSpin(tag, width=5):
   r = MountDef[tag]
-  return ( sg.Spin(values=r, initial_value=r[0], key=tag,size=(width,1), enable_events=True))
+  return ( sg.Spin(values=r, initial_value=r[0], key=tag,size=(width,1), enable_events=True, change_submits=True))
 
 def siteSpin(tag, width=5):
   r = SiteDef[tag]
-  return ( sg.Spin(values=r, initial_value=r[0], key=tag,size=(width,1), enable_events=True))
+  return ( sg.Spin(values=r, initial_value=r[0], key=tag,size=(width,1), enable_events=True, change_submits=True))
 
 
 def sgLabel(text):
@@ -401,7 +401,6 @@ class Site(object):
     self.longitude = dmsSplit(getValue(comm, 'Gg'))
     self.elevation = int(getValue(comm, 'Ge'))
     self.timeZone = -float(getValue(comm, 'GG'))
-
     if (i==0):
       self.name = getValue(comm, 'GM')
     elif (i==1):  
@@ -518,7 +517,7 @@ def readSiteData():
     currentSiteNum = 0
 
   # read all 4 sites
-  for i in range(0,4):
+  for i in range(0,3):
     s = sites[i]
     s.read(comm, i)
 
@@ -695,7 +694,7 @@ layout = [ topRow,
          ]
 
 
-window = sg.Window('TAConfig 1.4', layout)
+window = sg.Window('TAConfig 1.5', layout)
 
 comm = None
 
@@ -703,6 +702,7 @@ while True:
   event, values = window.Read(500)
   if (event =='__TIMEOUT__'):
     if (comm == None):
+      window.refresh()
       continue
     updateStatus(comm)
     continue

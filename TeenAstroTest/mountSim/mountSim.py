@@ -15,6 +15,7 @@ class Mount:
 
         self.mountType = ta.readMountType()     # one-letter code returned by TeenAstro 
         self.version = ta.getVersion()
+        self.name = ta.getName()
 
         # Read the 3 parts that compose each type of mount
         if (self.mountType == 'E'):             # Equatorial German (GEM)
@@ -60,7 +61,7 @@ class Mount:
 # Need to take into account the motor configurations 
 # and also the S hemisphere which inverts the RA axis (for Firmware 2.x only)
         if (a1 != self.axis1Degrees):
-            if (self.version[0] == '3'):
+            if (self.name == 'TeenAstroUniversal'):
                 if ta.axis1Reverse:
                     dir = 1
                 else:

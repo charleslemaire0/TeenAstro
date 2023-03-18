@@ -93,12 +93,15 @@ class TeenAstro(object):
     return self.port != None
 
   def getValue(self, cmdStr):
+#    self.log(cmdStr)
     self.port.write(cmdStr.encode('utf-8'))
     # Read response byte to allow some time before the next command
     resp = (self.port.read_until(b'#', 100)).decode('utf-8')
+#    self.log(resp)
     return resp.strip('#')
 
   def sendCommand(self, cmdStr):
+#    self.log(cmdStr)
     self.port.write(cmdStr.encode('utf-8'))
 
     # handle differences between serial and telnet
@@ -346,6 +349,7 @@ class TeenAstro(object):
     self.port.write((":Mg%1s%04u#" % (dir, ms)).encode('utf-8'))  # does not return a value
 
   def moveCmd(self, dir):
+    self.log(":M%1s#" % (dir))
     self.port.write((":M%1s#" % (dir)).encode('utf-8'))  # does not return a value
 
   def stopCmd(self, dir):
@@ -356,6 +360,14 @@ class TeenAstro(object):
 
   def getVersion(self):
     return self.getValue(':GVN#')
+
+  def getName(self):
+    return self.getValue(':GVP#')
+
+  def log(self, msg):
+    ts = datetime.datetime.now().timestamp()    
+    print(ts, msg)
+
 
 
 # Main program
