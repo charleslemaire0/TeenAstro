@@ -7,22 +7,22 @@ bool setHome()
   if ((parkStatus == PRK_UNPARKED) && !isSlewing())
   {
     lastsiderealTracking = isTracking();
-    mount.mP->stopTracking();
+    stopTracking();
 #if 0
     long h = (staA1.target / 1024L) * 1024L;
     long d = (staA2.target / 1024L) * 1024L;
     h /= pow(2, motorA1.micro);
     d /= pow(2, motorA2.micro);
     // store our position
-    XEEPROM.writeLong(EE_homePosAxis1, h);
-    XEEPROM.writeLong(EE_homePosAxis2, d);
-    XEEPROM.write(EE_homeSaved, 1);
+    XEEPROM.writeLong(getMountAddress(EE_homePosAxis1), h);
+    XEEPROM.writeLong(getMountAddress(EE_homePosAxis2), d);
+    XEEPROM.write(getMountAddress(EE_homeSaved), 1);
 #endif
     initHome();
     if (lastsiderealTracking)
-      mount.mP->startTracking();
+      startTracking();
     else
-      mount.mP->stopTracking();
+      stopTracking();
 
     return true;
   }
@@ -33,7 +33,7 @@ bool setHome()
 // unset home position flag
 void unsetHome()
 {
-  XEEPROM.write(EE_homeSaved, 0);
+  XEEPROM.write(getMountAddress(EE_homeSaved), 0);
   initHome();
 }
 
@@ -64,7 +64,7 @@ bool syncAtHome()
   lastError = ERRT_NONE;
 
   parkStatus = PRK_UNPARKED;
-  XEEPROM.write(EE_parkStatus, parkStatus);
+  XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
 
   // update starting coordinates to reflect NCP or SCP polar home position
   motorA1.setCurrentPos(geoA1.homeDef);
@@ -74,7 +74,7 @@ bool syncAtHome()
 
   // initialize/disable the stepper drivers
   DecayModeTracking();
-  mount.mP->stopTracking();
+  stopTracking();
   setEvents(EV_AT_HOME);
   return true;
 }

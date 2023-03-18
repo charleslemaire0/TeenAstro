@@ -5,6 +5,6 @@ void computeTrackingRate(bool apply);
 void do_compensation_calc(void);
 double SetRates(double maxslewrate);
 void SetAcceleration(void);
-void enableGuideRate(int g, bool force);
+void enableGuideRate(int g);
 void initMaxSpeed(void);
 bool isAltAz(void);

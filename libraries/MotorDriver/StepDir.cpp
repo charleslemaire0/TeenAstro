@@ -1,9 +1,14 @@
+#include "TMCStepper.h"
+#include "MotionControl.h"
+
 #ifdef __ESP32__
 #include <Arduino.h>
 #define ISR(f) void IRAM_ATTR f(void) 
+#define MIN_INTERRUPT_PERIOD 10UL      // µS
+#define MAX_INTERRUPT_PERIOD 200000UL  // 200 mS 
+// the motor task runs every 10mS
+#define TICK_PERIOD_MS 10
 #endif
-#include "TMCStepper.h"
-#include "MotionControl.h"
 
 #ifdef __arm__
 #include "arduino_freertos.h"
@@ -13,17 +18,17 @@
 #define ISR(f)  void f(void)
 IntervalTimer  itimer3;
 IntervalTimer  itimer4;
+// Periods in µS, speeds in steps/S
+// *** replace by constants from the HAL
+#define MIN_INTERRUPT_PERIOD 5UL        // µS
+#define MAX_INTERRUPT_PERIOD 200000UL  // 200 mS 
+// the motor task runs every 10mS
+#define TICK_PERIOD_MS 10
 #endif
 
 
 #include "StepDir.h"
 
-// Periods in µS, speeds in steps/S
-// *** replace by constants from the main program
-#define MIN_PERIOD 20UL     // 20 µS
-#define MAX_PERIOD 200000UL  // 200 mS 
-// the motor task runs every 10mS
-#define TICK_PERIOD_MS 10
 
 /*
  * Compute deceleration distance in steps from current speed and max. acceleration
@@ -42,18 +47,18 @@ long decelDistance(double speed, unsigned long aMax)
 unsigned long getPeriod(double V)
 {
   if (V == 0)
-    return MAX_PERIOD;
+    return MAX_INTERRUPT_PERIOD;
 
   unsigned long period = 1000000UL / fabs(V);
 
-  if (period <= MIN_PERIOD)
+  if (period <= MIN_INTERRUPT_PERIOD)
   {
-    period = MIN_PERIOD;
+    period = MIN_INTERRUPT_PERIOD;
   }
  
-  if (period >= MAX_PERIOD)
+  if (period >= MAX_INTERRUPT_PERIOD)
   {
-    period = MAX_PERIOD;
+    period = MAX_INTERRUPT_PERIOD;
   }
   return period;
 }
@@ -74,18 +79,18 @@ void StepDir::logMotion(long pos, double speed)
 // Common interrupt handler code for both motors 
 void StepDirInterruptHandler(StepDir *mcP)
 {
+	static bool edgePos = 0;
   if (mcP->currentSpeed == 0)
     return;
-
-  // step the motor
-  digitalWrite(mcP->stepPin, 1);
 
   // update internal step counter
   if (mcP->currentSpeed < 0.0)
     mcP->currentPos--;
   else
     mcP->currentPos++;
-  digitalWrite(mcP->stepPin, 0);
+  // step the motor
+  digitalWrite(mcP->stepPin, edgePos);
+  edgePos = ! edgePos;
 }
 
 
@@ -496,10 +501,10 @@ void StepDir::resetAbort(void)
 
 bool StepDir::positionReached(void)
 {
-  return ((currentPos == targetPos) && !isSlewing());
+  return ((currentPos == targetPos) && !isMoving());
 }
 
-bool StepDir::isSlewing(void)
+bool StepDir::isMoving(void)
 {
   return((getEvents() & EV_MOT_GOTO) !=0);
 }

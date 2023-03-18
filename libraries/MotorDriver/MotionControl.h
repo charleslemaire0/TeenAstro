@@ -11,7 +11,7 @@ public:
   virtual long getTargetPos(void);
   virtual double getSpeed(void);
   virtual bool positionReached(void);
-  virtual bool isSlewing(void);
+  virtual bool isMoving(void);
   virtual void adjustSpeed(double);
   virtual void abort(void);
   virtual double getVmax(void);

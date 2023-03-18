@@ -39,19 +39,19 @@ class slewPlot():
             self.slewHome()
 
         if (ev == 'slewNorth'):
-            self.slewDir(0, 0)
+            self.slewDir(0, 45)
 
         if (ev == 'slewWest'):
-            self.slewDir(270, 0)
+            self.slewDir(270, 45)
 
         if (ev == 'slewEast'):
-            self.slewDir(90, 0)
+            self.slewDir(90, 45)
 
         if (ev == 'slewSouth'):
-            self.slewDir(180, 0)
+            self.slewDir(180, 45)
 
         if (ev == 'slewZenith'):
-            self.slewDir(0, 90)
+            self.slewDir(184, 45)
 
         if (ev == 'clearSlew'):
             self.ra = np.zeros(numSamples)

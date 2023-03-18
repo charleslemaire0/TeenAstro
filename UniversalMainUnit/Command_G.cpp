@@ -86,13 +86,13 @@ void Command_GX()
       }
       f1 = alignment.polErrorDeg(*localSite.latitude(), request);
       if (!doubleToDms(reply, &f1, false, true, true) || i == 0)
-        strcpy(reply, "0");
+        replyFailed();
       else
         strcat(reply, "#");
       break;
     }
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
     break;
@@ -124,7 +124,7 @@ void Command_GX()
         sprintf(reply, "%d#", (int)mount.backlashA2.movedSteps);
         break;
       default:
-        strcpy(reply, "0");
+        replyFailed();
         break;
       }
       break;
@@ -134,31 +134,28 @@ void Command_GX()
       // :GXDRn# Debug Rates
       switch (command[4])
       {
+#if 0
       case '0':
         // :GXDR0# RA Monitored tracking rate
-//        sprintf(reply, "%ld#", (long)((debugv1 / 53333.3333333333) * 15000));
-        sprintf(reply, "%f#", 0);
+        sprintf(reply, "%ld#", (long)((debugv1 / 53333.3333333333) * 15000));
         break;
+#endif
       case '1':
-        // :GXDR1# axis1 requested tracking rate in sidereal
+        // :GXDR1# axis1 requested tracking rate in steps/s
         sprintf(reply, "%f#", motorA1.getVmax());
-        sprintf(reply, "%f#", 0);
         break;
       case '2':
-        // :GXDR2# axis2 requested tracking rate in sidereal 
+        // :GXDR2# axis2 requested tracking rate in steps/s 
         sprintf(reply, "%f#", motorA2.getVmax());
-        sprintf(reply, "%f#", 0);
         break;
       case '3':
         sprintf(reply, "%f#", motorA1.getSpeed());
-        sprintf(reply, "%f#", 0);
         break;
       case '4':
         sprintf(reply, "%f#", motorA2.getSpeed());
-        sprintf(reply, "%f#", 0);
         break;
       default:
-        strcpy(reply, "0");
+        replyFailed();
         break;
       }
       break;
@@ -186,7 +183,7 @@ void Command_GX()
         sprintf(reply, "%ld#", temp);
         break; 
       default:
-        strcpy(reply, "0");
+        replyFailed();
         break;
       }
       break;
@@ -201,13 +198,13 @@ void Command_GX()
         tlp.resetWorstTime();
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
       break;
     }
     break;
 #endif    
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
     break;
@@ -218,14 +215,14 @@ void Command_GX()
     case '1':
       f1 = motorA1.getCurrentPos() / geoA1.stepsPerDegree;
       if (!doubleToDms(reply, &f1, true, true, highPrecision))
-        strcpy(reply, "0");
+        replyFailed();
       else
         strcat(reply, "#");
       break;
     case '2':
       f1 = motorA2.getCurrentPos() / geoA2.stepsPerDegree;
       if (!doubleToDms(reply, &f1, true, true, highPrecision))
-        strcpy(reply, "0");
+        replyFailed();
       else
         strcat(reply, "#");
       break;
@@ -245,7 +242,7 @@ void Command_GX()
       doesRefraction.forTracking ? sprintf(reply, "y#") : sprintf(reply, "n#");
       break;
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
     break;
@@ -273,11 +270,11 @@ void Command_GX()
       break;
     case 'D':
       // :GXRD# returns the Default Rate
-      sprintf(reply, "%d#", XEEPROM.read(EE_DefaultRate));
+      sprintf(reply, "%d#", XEEPROM.read(getMountAddress(EE_DefaultRate)));
       break;
     case 'X':
       // :GXRX# return Max Slew rate
-      sprintf(reply, "%d#", XEEPROM.readInt(EE_maxRate));
+      sprintf(reply, "%d#", XEEPROM.readInt(getMountAddress(EE_maxRate)));
       break;
     case 'r':
       // :GXRr# Requested RA traking rate in sidereal
@@ -303,7 +300,7 @@ void Command_GX()
       sprintf(reply, "%ld#", storedTrackingRateDEC);
       break;
     default:
-      strcpy(reply, "0");
+        replyFailed();
       break;
     }
     break;
@@ -312,23 +309,23 @@ void Command_GX()
     switch (command[3])
     {
     case 'A':
-      // :GXLA# get user defined minAXIS1 (always negatif)
-      i = XEEPROM.readInt(EE_minAxis1);
+      // :GXLA# get user defined minAXIS1 (always negative)
+      i = XEEPROM.readInt(getMountAddress(EE_minAxis1));
       sprintf(reply, "%d#", i);
       break;
     case 'B':
-      // :GXLB# get user defined maxAXIS1 (always positf)
-      i = XEEPROM.readInt(EE_maxAxis1);
+      // :GXLB# get user defined maxAXIS1 (always positive)
+      i = XEEPROM.readInt(getMountAddress(EE_maxAxis1));
       sprintf(reply, "%d#", i);
       break;
     case 'C':
-      // :GXLC# get user defined minAXIS2 (always positf)
-      i = XEEPROM.readInt(EE_minAxis2);
+      // :GXLC# get user defined minAXIS2 (always negative)
+      i = XEEPROM.readInt(getMountAddress(EE_minAxis2));
       sprintf(reply, "%d#", i);
       break;
     case 'D':
-      // :GXLD# get user defined maxAXIS2 (always positf)
-      i = XEEPROM.readInt(EE_maxAxis2);
+      // :GXLD# get user defined maxAXIS2 (always positive)
+      i = XEEPROM.readInt(getMountAddress(EE_maxAxis2));
       sprintf(reply, "%d#", i);
       break;
     case 'E':
@@ -354,7 +351,7 @@ void Command_GX()
       sprintf(reply, "%+02d*#", limits.minAlt);
       break;
     default:
-      strcpy(reply, "0");
+        replyFailed();
       break;
     }
     break;
@@ -485,7 +482,7 @@ void Command_GX()
         sprintf(reply, "%d#", mount.backlashA2.inSeconds);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'G':
@@ -500,7 +497,7 @@ void Command_GX()
         sprintf(reply, "%u#", motorA1.gear);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'S':
@@ -515,7 +512,7 @@ void Command_GX()
         sprintf(reply, "%u#", motorA1.stepRot);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'M':
@@ -530,7 +527,7 @@ void Command_GX()
         sprintf(reply, "%u#", (unsigned  int)motorA1.micro);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'm':
@@ -545,7 +542,7 @@ void Command_GX()
         sprintf(reply, "%u#", (unsigned  int)motorA1.silent);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'R':
@@ -560,7 +557,7 @@ void Command_GX()
         sprintf(reply, "%u#", (unsigned  int)motorA1.reverse);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'C':
@@ -575,7 +572,7 @@ void Command_GX()
         sprintf(reply, "%u#", motorA1.highCurr);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
     case 'c':
@@ -590,17 +587,41 @@ void Command_GX()
         sprintf(reply, "%u#", (unsigned int)motorA1.lowCurr);
       }
       else
-        strcpy(reply, "0");
+        replyFailed();
     }
     break;
+  case 'O':
+    // :GXOn# Options
+  {
+    switch (command[3])
+    {
+    case 'I':
+      // :GXOI# Mount idx
+      sprintf(reply, "%d#", currentMount);
+      break;
+    case 'A':
+      // :GXOA# Mount Name
+      sprintf(reply, "%s#", mountNames[currentMount]);
+      break;
+    case 'B':
+      // :GXOB# first Mount Name
+      sprintf(reply, "%s#", mountNames[0]);
+      break;
+    case 'C':
+      // :GXOC# second Mount Name
+      sprintf(reply, "%s#", mountNames[1]);
+      break;
+    }
+  }
+  break;
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
   }
   break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }
@@ -620,7 +641,7 @@ void  Command_G()
     //         The current scope altitude
     mount.mP->getHorApp(&horCoords);
     if (!doubleToDms(reply, &horCoords.alt, false, true, highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     break;
@@ -630,7 +651,7 @@ void  Command_G()
     i = highPrecision;
     highPrecision = true;
     if (!doubleToHms(reply, rtk.getLT(localSite.toff()), highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     highPrecision = i;
@@ -680,14 +701,14 @@ void  Command_G()
     if (command[1] == 'D')
     {
       if (!doubleToDms(reply, &f1, false, true, highPrecision))
-        strcpy(reply, "0");
+        replyFailed();
       else
         strcat(reply, "#");
     }
     else
     {
       if (!doubleToHms(reply, &f, highPrecision))
-        strcpy(reply, "0");
+        replyFailed();
       else
         strcat(reply, "#");
     }
@@ -697,7 +718,7 @@ void  Command_G()
     //  :Gd#   Get Currently Selected Target Declination, Native LX200 command
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     if (!doubleToDms(reply, &newTargetDec, false, true, highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     break;
@@ -729,7 +750,7 @@ void  Command_G()
     int i = highPrecision;
     highPrecision = command[2] == 'f';
     if (!doubleToDms(reply, localSite.longitude(), true, true, highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     highPrecision = i;
@@ -751,7 +772,7 @@ void  Command_G()
     i = highPrecision;
     highPrecision = true;
     if (!doubleToHms(reply, rtk.getLT(localSite.toff()), highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     highPrecision = i;
@@ -769,12 +790,12 @@ void  Command_G()
   case 'P':
   {
     i = command[1] - 'M';
-    bool ok = XEEPROM.readString(EE_sites + i * SiteSize + EE_site_name, reply, siteNameLen);
+    bool ok = XEEPROM.readString(EE_sites + i * SiteSize + EE_site_name, reply, SiteNameLen);
     ok = ok && reply[0] != 0;
     if (!ok)
     {
       sprintf(reply, "Site %d", i);
-      XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, reply, siteNameLen);
+      XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, reply, SiteNameLen);
     }
     strcat(reply, "#");
     break;
@@ -811,7 +832,7 @@ void  Command_G()
     f = newTargetRA;
     f /= 15.0;
     if (!doubleToHms(reply, &f, highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     break;
@@ -823,7 +844,7 @@ void  Command_G()
     highPrecision = true;
     f = rtk.LST();
     if (!doubleToHms(reply, &f, highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     highPrecision = i;
@@ -853,7 +874,7 @@ void  Command_G()
     i = highPrecision;
     highPrecision = command[2] == 'f';
     if (!doubleToDms(reply, localSite.latitude(), false, true, highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     highPrecision = i;
@@ -892,7 +913,7 @@ void  Command_G()
 //      sprintf(reply, "%d", AxisDriver);   // TODO
       break;
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
     strcat(reply, "#");
@@ -907,12 +928,12 @@ void  Command_G()
     mount.mP->getHorApp(&horCoords);
     f = AzRange(horCoords.az);
     if (!doubleToDms(reply, &f, true, false, highPrecision))
-      strcpy(reply, "0");
+      replyFailed();
     else
       strcat(reply, "#");
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }

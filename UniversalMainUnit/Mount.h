@@ -62,25 +62,19 @@ public:
   virtual bool syncAzAlt(double Azm, double Alt, PierSide Side);
   virtual byte Flip();
   virtual PierSide GetPierSide();
-  virtual void startTracking(void);
-  virtual void stopTracking(void);
   virtual void setTrackingSpeed(double speed);
-  virtual void MoveAxis1(const byte dir);
-  virtual void MoveAxis1AtRate(double speed, const byte dir);
-  virtual void StopAxis1(void);
-  virtual void MoveAxis2(const byte dir);
-  virtual void MoveAxis2AtRate(double speed, const byte dir);
-  virtual void StopAxis2(void);
   virtual void getTrackingSpeeds(Speeds *);
   virtual void initHome(Steps *);
   virtual void startGuiding(char, int);
   virtual bool getTargetPierSide(EqCoords *eP, PierSide *psOutP);
   virtual long poleDir(char);
   virtual int decDirection(void);
+  virtual void updateRaDec(void);
   double  trackingSpeed, guidingSpeed;  // multiple of sidereal speed 
   Speeds  trackingSpeeds;               // actual tracking speeds including guiding and spiral           
   bool axis1Guiding=false, axis2Guiding=false;
   TimerHandle_t axis1Timer, axis2Timer;
+  double currentRA, currentDec;
 };
 
 class EqMount : public Mnt 
@@ -104,21 +98,14 @@ public:
   bool checkPole(long, CheckMode);
   bool checkMeridian(Axes*, CheckMode, PierSide);
   bool withinLimits(long, long);
-  void startTracking(void);
-  void stopTracking(void);
   void setTrackingSpeed(double speed);
-  void MoveAxis1(const byte dir);
-  void MoveAxis1AtRate(double speed, const byte dir);
-  void StopAxis1(void);
-  void MoveAxis2(const byte dir);
-  void MoveAxis2AtRate(double speed, const byte dir);
-  void StopAxis2(void);
   void getTrackingSpeeds(Speeds *);
   void initHome(Steps *);
   void startGuiding(char, int);
   bool getTargetPierSide(EqCoords *eP, PierSide *psOutP);
   long poleDir(char);
   int decDirection(void);
+  void updateRaDec(void);
   // constructor
   EqMount(MountType t)
   {
@@ -156,21 +143,16 @@ public:
   bool withinLimits(long, long);
   byte Flip(void);
   PierSide GetPierSide(void);
-  void startTracking(void);
-  void stopTracking(void);
+  PierSide otherSide(PierSide ps);
   void setTrackingSpeed(double speed);
-  void MoveAxis1(const byte dir);
-  void MoveAxis1AtRate(double speed, const byte dir);
-  void StopAxis1(void);
-  void MoveAxis2(const byte dir);
-  void MoveAxis2AtRate(double speed, const byte dir);
-  void StopAxis2(void);
   void getTrackingSpeeds(Speeds *);
   void initHome(Steps *);
   void startGuiding(char, int);
   bool getTargetPierSide(EqCoords *eP, PierSide *psOutP);
   long poleDir(char);
   int decDirection(void);
+  void updateRaDec(void);
+  // constructor
   AltAzMount(MountType t)
   {
     type = t;

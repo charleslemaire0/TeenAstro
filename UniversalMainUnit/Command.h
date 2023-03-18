@@ -112,3 +112,7 @@ void Command_G(void);
 void Command_GX(void);
 void Command_S(Command& process_command);
 bool iSGNSSValid(void);
+void replyFailed(void);
+void replyOk(void);
+void replyNothing(void);
+void clearReply(void);

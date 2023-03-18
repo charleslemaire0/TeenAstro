@@ -8,7 +8,7 @@ bool setPark()
   if ((parkStatus == PRK_UNPARKED) && !isSlewing())
   {
     lastsiderealTracking = isTracking();
-    mount.mP->stopTracking();
+    stopTracking();
 
     // don't worry about moving around: during parking pec is turned off and backlash is cleared (0) so that staA1.target/targetAxis2=staA1.pos/staA2.pos
     // this should handle getting us back to the home position for micro-step modes up to 256X
@@ -20,17 +20,17 @@ bool setPark()
     h /= pow(2, motorA1.micro);
     d /= pow(2, motorA2.micro);
     // store our position
-    XEEPROM.writeLong(EE_posAxis1, h);
-    XEEPROM.writeLong(EE_posAxis2, d);
+    XEEPROM.writeLong(getMountAddress(EE_posAxis1), h);
+    XEEPROM.writeLong(getMountAddress(EE_posAxis2), d);
 
     //// and the align
     saveAlignModel();
     parkSaved = true;
-    XEEPROM.write(EE_parkSaved, parkSaved);
+    XEEPROM.write(getMountAddress(EE_parkSaved), parkSaved);
     if (lastsiderealTracking)
-      mount.mP->startTracking();
+      startTracking();
     else
-      mount.mP->stopTracking();
+      stopTracking();
 
     return true;
   }
@@ -44,7 +44,7 @@ void unsetPark()
   if (parkSaved)
   {
     parkSaved = false;
-    XEEPROM.write(EE_parkSaved, parkSaved);
+    XEEPROM.write(getMountAddress(EE_parkSaved), parkSaved);
   }
 }
 
@@ -57,15 +57,15 @@ void saveAlignModel()
   {
     alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
   }
-  XEEPROM.writeFloat(EE_T11, t11);
-  XEEPROM.writeFloat(EE_T12, t12);
-  XEEPROM.writeFloat(EE_T13, t13);
-  XEEPROM.writeFloat(EE_T21, t21);
-  XEEPROM.writeFloat(EE_T22, t22);
-  XEEPROM.writeFloat(EE_T23, t23);
-  XEEPROM.writeFloat(EE_T31, t31);
-  XEEPROM.writeFloat(EE_T32, t32);
-  XEEPROM.writeFloat(EE_T33, t33);
+  XEEPROM.writeFloat(getMountAddress(EE_T11), t11);
+  XEEPROM.writeFloat(getMountAddress(EE_T12), t12);
+  XEEPROM.writeFloat(getMountAddress(EE_T13), t13);
+  XEEPROM.writeFloat(getMountAddress(EE_T21), t21);
+  XEEPROM.writeFloat(getMountAddress(EE_T22), t22);
+  XEEPROM.writeFloat(getMountAddress(EE_T23), t23);
+  XEEPROM.writeFloat(getMountAddress(EE_T31), t31);
+  XEEPROM.writeFloat(getMountAddress(EE_T32), t32);
+  XEEPROM.writeFloat(getMountAddress(EE_T33), t33);
   return;
 }
 
@@ -157,16 +157,16 @@ byte park()
       {
         Steps steps;
         // get the position we're supposed to park at
-        long    h = XEEPROM.readLong(EE_posAxis1);
-        long    d = XEEPROM.readLong(EE_posAxis2);
+        long    h = XEEPROM.readLong(getMountAddress(EE_posAxis1));
+        long    d = XEEPROM.readLong(getMountAddress(EE_posAxis2));
         h *= pow(2, motorA1.micro);
         d *= pow(2, motorA2.micro);
         // stop tracking
         lastsiderealTracking = false;
-        mount.mP->stopTracking();
+        stopTracking();
         // record our status
         parkStatus = PRK_PARKING;
-        XEEPROM.write(EE_parkStatus, parkStatus);
+        XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
         steps.steps1 = h;
         steps.steps2 = d;
 
@@ -211,13 +211,13 @@ bool syncAtPark()
 //initialisation at park
 bool iniAtPark()
 {
-  parkSaved = XEEPROM.read(EE_parkSaved);
+  parkSaved = XEEPROM.read(getMountAddress(EE_parkSaved));
   if (!parkSaved)
   {
     parkStatus = PRK_UNPARKED;
     return false;
   }
-  byte parkStatusRead = XEEPROM.read(EE_parkStatus);
+  byte parkStatusRead = XEEPROM.read(getMountAddress(EE_parkStatus));
   bool ok = false;
   switch (parkStatusRead)
   {
@@ -230,7 +230,7 @@ bool iniAtPark()
     else
     {
       parkStatus = PRK_UNPARKED;
-      XEEPROM.write(EE_parkStatus, PRK_UNPARKED);
+      XEEPROM.write(getMountAddress(EE_parkStatus), PRK_UNPARKED);
     }
     break;
   case PRK_UNPARKED:
@@ -239,7 +239,7 @@ bool iniAtPark()
     break;
   default:
     parkStatus = PRK_UNPARKED;
-    XEEPROM.write(EE_parkStatus, PRK_UNPARKED);
+    XEEPROM.write(getMountAddress(EE_parkStatus), PRK_UNPARKED);
     break;
   }
   return ok;
@@ -252,9 +252,9 @@ void unpark()
     return;
   // update our status, we're not parked anymore
   parkStatus = PRK_UNPARKED;
-  XEEPROM.write(EE_parkStatus, parkStatus);
+  XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
   // start tracking the sky
-  mount.mP->startTracking();
+  startTracking();
   return;
 }
 

@@ -69,7 +69,7 @@ bool Mc5160::positionReached(void)
   return drvP->position_reached();
 }
 
-bool Mc5160::isSlewing(void)
+bool Mc5160::isMoving(void)
 {
   return !(drvP->vzero());
 }

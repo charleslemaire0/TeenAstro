@@ -2,7 +2,7 @@ UniversalMainUnit
 ======  
 ### Introduction
 
-This is the first release of the TeenAstro redesign documented [here](https://fdesvallees.github.io/teenastro_v3/teenastro_v3/)
+This is an early release of the TeenAstro redesign documented [here](https://fdesvallees.github.io/teenastro_v3/teenastro_v3/)
 
 It supports both step/dir and position/velocity interface without requiring a rebuild. It should even be possible to run each motor with a different interface.
 
@@ -11,12 +11,12 @@ It already has:
 - Basic command handling through 2 serial ports 
 - Mount movements in 4 directions
 - Goto
-- Tracking (not fully working for AltAz mounts)
+- Tracking 
 - Guiding is there but not tested
 - Parking, custom Home position are not implemented
 - HAL is partly done but there are still some #ifdefs in the code that need to be removed
 - EEPROM support: small change to support the RAM/Flash implementation of ESP32, that also requires a task to commit the changes to flash when needed. 
-- RealTime clock: my boards do not have a clock, so I report a fake time.
+- RealTime clock: ESP32 does not have a clock, so it reports a fake time.
 
 
 
@@ -27,7 +27,6 @@ What is does **not** have:
 - GPS, Focuser
 - Encoder support
 
-The MainUnit code was forked from the 1.3 release, so it needs work to upgrade to the 1.4 code, including new :GXI command fields and EEPROM addresses.
 
 ### Hardware support
 
@@ -41,6 +40,8 @@ The most important change is the introduction of FreeRTOS. This allows the creat
 
 - Queues for exchanging messages between tasks
 - Semaphores for protecting variables and hardware accesses (including SPI)
+- Event Groups that replace most of the global variables in the original code
+- Software timers for various operations
 
 Only the MainUnit code is changed. SHC, Focuser are not touched. TeenAstroStepper is replaced by the new MotorDriver class.
 

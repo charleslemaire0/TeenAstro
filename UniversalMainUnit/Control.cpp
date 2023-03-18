@@ -39,7 +39,7 @@ bool isTracking(void)
   return getEvent(EV_TRACKING);
 }
 
-void abortSlew(void)
+void stopMoving(void)
 {
   setEvents(EV_ABORT);
 }
@@ -56,16 +56,16 @@ void DecayModeTracking()
 {
   if (DecayModeTrack) return;
   DecayModeTrack = true;
-//  motorA1.drvP->rms_current((unsigned int)motorA1.lowCurr); 
-//  motorA2.drvP->rms_current((unsigned int)motorA2.lowCurr);
+  motorA1.drvP->rms_current((unsigned int)motorA1.lowCurr); 
+  motorA2.drvP->rms_current((unsigned int)motorA2.lowCurr);
 }
 
 void DecayModeGoto()
 {
   if (!DecayModeTrack) return;
   DecayModeTrack = false;
-//  motorA1.drvP->rms_current((unsigned int)motorA1.highCurr);
-//  motorA2.drvP->rms_current((unsigned int)motorA2.highCurr);
+  motorA1.drvP->rms_current((unsigned int)motorA1.highCurr);
+  motorA2.drvP->rms_current((unsigned int)motorA2.highCurr);
 }
 
 
@@ -78,7 +78,7 @@ void controlTask(UNUSED(void *arg))
   CTL_MODE currentMode = CTL_MODE_IDLE;
   CTL_MODE previousMode;
   long axis1Target, axis2Target;
-  bool decreasingDec=false, dangerZone=false;
+  bool dangerZone=false;
   long count = 0;
 
   while (1)
@@ -88,27 +88,36 @@ void controlTask(UNUSED(void *arg))
     switch (currentMode)
     {
       case CTL_MODE_IDLE:
-        // check if both motors stopped slewing, then reset event
-        if (! (motorA1.isSlewing() ||  motorA2.isSlewing()))
-          resetEvents(EV_SLEWING);
+        if (getEvent(EV_START_TRACKING))
+        {
+          Speeds speeds;
+          currentMode = CTL_MODE_TRACKING;
+          resetEvents(EV_AT_HOME);
+          mount.mP->getTrackingSpeeds(&speeds);
+          motorA1.setVmax(fabs(speeds.speed1));
+          motorA1.setTargetPos(speeds.speed1>0 ? geoA1.stepsPerRot : -geoA1.stepsPerRot);
+
+          motorA2.setVmax(fabs(speeds.speed2));
+          motorA2.setTargetPos(speeds.speed2>0 ? geoA2.stepsPerRot : -geoA2.stepsPerRot);
+          resetEvents(EV_START_TRACKING);
+          setEvents(EV_TRACKING);
+        }
         break;
 
       case CTL_MODE_TRACKING:
-        // check if both motors stopped slewing, then reset event
-        if (! (motorA1.isSlewing() ||  motorA2.isSlewing()))
-          resetEvents(EV_SLEWING);
-
         // check tracking speed every 100mS
         if (count % 10 == 0)
         {
           Speeds speeds;
           mount.mP->getTrackingSpeeds(&speeds);
-          motorA1.setVmax(fabs(speeds.speed1));
-          if (speeds.speed1 > 0)
-            motorA1.setTargetPos(geoA1.stepsPerRot);
-          else
-            motorA1.setTargetPos(-geoA1.stepsPerRot);
-
+          if (speeds.speed1 != 0)
+          {
+            motorA1.setVmax(fabs(speeds.speed1));
+            if (speeds.speed1 > 0)
+              motorA1.setTargetPos(geoA1.stepsPerRot);
+            else
+              motorA1.setTargetPos(-geoA1.stepsPerRot);            
+          }
           if (speeds.speed2 != 0)
           {
             motorA2.setVmax(fabs(speeds.speed2));
@@ -125,6 +134,7 @@ void controlTask(UNUSED(void *arg))
         // check if the mount has reached target
         if (motorA1.positionReached() &&  motorA2.positionReached())
         {
+          mount.mP->updateRaDec();
           currentMode = CTL_MODE_IDLE;
           resetEvents(EV_SLEWING);
           if (getEvent(EV_GOING_HOME))
@@ -172,11 +182,13 @@ void controlTask(UNUSED(void *arg))
         }
         break;
 
-      case CTL_MODE_ERR:
+      case CTL_MODE_STOPPING:
         // wait until motors stopped, reset mode to idle
-        if (! (motorA1.isSlewing() ||  motorA2.isSlewing()))
+        if (! (motorA1.isMoving() ||  motorA2.isMoving()))
         {
           resetAbort();
+          resetEvents(EV_SLEWING);
+          resetEvents(EV_TRACKING);
           currentMode = CTL_MODE_IDLE;
         }
         break;
@@ -190,7 +202,7 @@ void controlTask(UNUSED(void *arg))
     {
       motorA1.abort();
       motorA2.abort();
-      currentMode = CTL_MODE_ERR;
+      currentMode = CTL_MODE_STOPPING;
     }
   
   unsigned msgBuffer[CTL_MAX_MESSAGE_SIZE];
@@ -205,8 +217,6 @@ void controlTask(UNUSED(void *arg))
       switch(msgBuffer[0])
       {
         case CTL_MSG_GOTO:
-          if (currentMode != CTL_MODE_IDLE)
-            break;
           if (getEvent(EV_ERROR))
             break;
           currentMode = CTL_MODE_GOTO;
@@ -221,8 +231,6 @@ void controlTask(UNUSED(void *arg))
           break;
 
         case CTL_MSG_GOTO_HOME:
-          if (currentMode != CTL_MODE_IDLE)
-            break;
           if (getEvent(EV_ERROR))
             break;
           currentMode = CTL_MODE_GOTO;
@@ -236,31 +244,12 @@ void controlTask(UNUSED(void *arg))
           break;
 
         case CTL_MSG_START_TRACKING:
-          if (getEvent(EV_ERROR))
-            break;
-          if (currentMode == CTL_MODE_IDLE)
-          {
-            Speeds speeds;
-            currentMode = CTL_MODE_TRACKING;
-            resetEvents(EV_AT_HOME);
-            mount.mP->getTrackingSpeeds(&speeds);
-            motorA1.setVmax(fabs(speeds.speed1));
-            motorA1.setTargetPos(speeds.speed1>0 ? geoA1.stepsPerRot : -geoA1.stepsPerRot);
-
-            motorA2.setVmax(fabs(speeds.speed2));
-            motorA2.setTargetPos(speeds.speed2>0 ? geoA2.stepsPerRot : -geoA2.stepsPerRot);
-            setEvents(EV_TRACKING);
-          }
+          // set the event to start tracking as soon as we are in idle mode
+          setEvents(EV_START_TRACKING);
           break;
 
         case CTL_MSG_STOP_TRACKING:
-          if (currentMode == CTL_MODE_TRACKING)
-          {
-            currentMode = CTL_MODE_IDLE;
-            motorA1.setVmax(0.0);
-            motorA2.setVmax(0.0);
-            resetEvents(EV_TRACKING);
-          }
+          stopMoving();
           break;
 
         case CTL_MSG_MOVE_AXIS1:
@@ -308,6 +297,69 @@ void controlTask(UNUSED(void *arg))
     }
     vTaskDelayUntil( &xLastWakeTime, xPeriod );
   }
+}
+
+void startTracking(void)
+{
+  unsigned msg[CTL_MAX_MESSAGE_SIZE];
+  msg[0] = CTL_MSG_START_TRACKING; 
+  xQueueSend( controlQueue, &msg, 0);
+}
+
+void stopTracking(void)
+{
+  unsigned msg[CTL_MAX_MESSAGE_SIZE];
+  msg[0] = CTL_MSG_STOP_TRACKING; 
+  xQueueSend( controlQueue, &msg, 0);
+}
+
+void MoveAxis1(const byte dir)
+{
+  MoveAxis1AtRate(guideRates[activeGuideRate], dir);
+}
+
+void MoveAxis1AtRate(double speed, const byte dir)
+{
+  unsigned msg[CTL_MAX_MESSAGE_SIZE];
+
+  msg[0] = CTL_MSG_MOVE_AXIS1; 
+  msg[1] = (dir == 'w' ? geoA1.westDef : geoA1.eastDef);
+  memcpy(&msg[2], &speed, sizeof(double));
+  xQueueSend(controlQueue, &msg, 0);
+}
+
+void StopAxis1()
+{
+  unsigned msg[CTL_MAX_MESSAGE_SIZE];
+ 
+  msg[0] = CTL_MSG_STOP_AXIS1; 
+  xQueueSend(controlQueue, &msg, 0);
+}
+
+void MoveAxis2(const byte dir)
+{
+  MoveAxis2AtRate(guideRates[activeGuideRate], dir);
+}
+
+void MoveAxis2AtRate(double speed, const byte dir)
+{
+  unsigned msg[CTL_MAX_MESSAGE_SIZE];
+  long target;
+
+  target = mount.mP->poleDir(dir);
+
+  msg[0] = CTL_MSG_MOVE_AXIS2; 
+  msg[1] = target;
+  memcpy(&msg[2], &speed, sizeof(double));
+  xQueueSend(controlQueue, &msg, 0);
+}
+
+void StopAxis2()
+{
+  unsigned msg[CTL_MAX_MESSAGE_SIZE];
+ 
+  msg[0] = CTL_MSG_STOP_AXIS2; 
+  xQueueSend(controlQueue, &msg, 0);
 }
 
 

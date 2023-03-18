@@ -14,5 +14,19 @@
 #include "HAL_pins_esp32.h"  
 #endif
 
+
+struct EE_Site
+{
+  float lat;
+  float lon;
+  uint16_t elev;
+  uint8_t tz;
+  char name[16];
+};
+
 void          HAL_setRealTimeClock(unsigned long t);
 unsigned long HAL_getRealTimeClock(void);
+void          HAL_reboot(void);
+void          HAL_beginTimer(void f(void), unsigned long);
+void          HAL_EEPROM_begin(void);
+

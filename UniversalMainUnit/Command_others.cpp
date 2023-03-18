@@ -9,25 +9,17 @@ void Command_dollar()
     {
       XEEPROM.write(i, 0);
     }
+    break;
   case '!':
-    Serial.end();
-    Serial1.end();
-    Serial2.end();
-//    Serial3.end();
-    delay(1000);
-#ifdef ARDUINO_TEENSY40 // In fact this code is suitable for Teensy 3.2 also
-#define CPU_RESTART_ADDR (uint32_t *)0xE000ED0C
-#define CPU_RESTART_VAL 0x5FA0004
-#define CPU_RESTART (*CPU_RESTART_ADDR = CPU_RESTART_VAL);
-    CPU_RESTART;
-#endif
+    reboot_unit = true;
+    replyOk();
     break;
   case 'X':
     initMotors(true);
-    strcpy(reply, "1");
+    replyOk();
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }
@@ -50,11 +42,9 @@ void Command_A()
     syncAtHome();
     // enable the stepper drivers
     delay(10);
-    // start tracking
-    mount.mP->startTracking();
-//    siderealTracking = true;
+    startTracking();
     lastSetTrackingEnable = millis();
-    strcpy(reply, "1");
+    replyOk();
     break;
   case '2':
   {
@@ -82,7 +72,7 @@ void Command_A()
         motorA2.setTargetPos(motorA2.getCurrentPos());
       }
     }
-    strcpy(reply, "1");
+    replyOk();
     break;
   }
   case '3':
@@ -105,7 +95,7 @@ void Command_A()
       motorA1.setTargetPos(motorA1.getCurrentPos());
       motorA2.setTargetPos(motorA2.getCurrentPos());
     }
-    strcpy(reply, "1");
+    replyOk();
     break;
   }
   case 'C':
@@ -113,14 +103,14 @@ void Command_A()
     initTransformation(true);
     syncAtHome();
     autoAlignmentBySync = command[1] == 'A';
-    strcpy(reply, "1");
+    replyOk();
     break;
   case 'W':
     saveAlignModel();
-    strcpy(reply, "1");
+    replyOk();
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
   }
 }
 
@@ -153,7 +143,7 @@ void Command_B()
 
   analogWrite(RETICULE_LED_PINS, reticuleBrightness);
 #endif
-  reply[0] = 0;
+  replyNothing();
 }
 
 //   C - Sync Control
@@ -211,8 +201,8 @@ void Command_C()
     case 'U':
     {
       // :CU# sync with the User Defined RA DEC
-      newTargetRA = (double)XEEPROM.readFloat(EE_RA);
-      newTargetDec = (double)XEEPROM.readFloat(EE_DEC);
+      newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
+      newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
       i = mount.mP->syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
       break;
@@ -243,7 +233,7 @@ void Command_D()
 {
   if (command[1] != 0)
   {
-    strcpy(reply, "0");
+    replyFailed();
     return;
   }
     
@@ -276,64 +266,64 @@ void Command_h()
     //          Return: 0 on failure
     //                  1 on success
     if (!goHome())
-      strcpy(reply, "0");
+      replyFailed();
     else
-      strcpy(reply, "1");
+      replyOk();
     break;
   case 'B':
     //  :hB#   Set the home position
     //          Return: 0 on failure
     //                  1 on success
-    if (!setHome()) strcpy(reply, "0");
-    else strcpy(reply, "1");
+    if (!setHome()) replyFailed();
+    else replyOk();
     break;
   case 'b':
     //  :hb#   Reset the home position
     //          Return: 0 on failure
     //                  1 on success
     homeSaved = false;
-    XEEPROM.write(EE_homeSaved, false);
+    XEEPROM.write(getMountAddress(EE_homeSaved), false);
     initHome();
-    strcpy(reply, "1");
+    replyOk();
     break;
   case 'O':
     // : hO#   Reset telescope at the Park position if Park position is stored.
     //          Return: 0 on failure
     //                  1 on success
     if (!syncAtPark())
-      strcpy(reply, "0");
+      replyFailed();
     else
-      strcpy(reply, "1");
+      replyOk();
     break;
   case 'P':
     // : hP#   Goto the Park Position
     //          Return: 0 on failure
     //                  1 on success
     if (park())
-      strcpy(reply, "0");
+      replyFailed();
     else
-      strcpy(reply, "1");
+      replyOk();
     break;
   case 'Q':
     //  :hQ#   Set the park position
     //          Return: 0 on failure
     //                  1 on success
     if (!setPark())
-      strcpy(reply, "0");
+      replyFailed();
     else
-      strcpy(reply, "1");
+      replyOk();
     break;
   case 'R':
     //  :hR#   Restore parked telescope to operation
     //          Return: 0 on failure
     //                  1 on success
     unpark();
-    strcpy(reply, "1");
+    replyOk();
     break;
 
 
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }
@@ -347,22 +337,22 @@ void Command_Q()
   case 0:
     //  :Q#    Halt all slews, stops goto
     //         Returns: Nothing
-    abortSlew();
+    stopMoving();
     break;
   case 'e':
   case 'w':
     //  :Qe# & Qw#   Halt east/westward Slews
     //         Returns: Nothing
-        mount.mP->StopAxis1();
+        StopAxis1();
     break;
   case 'n':
   case 's':
     //  :Qn# & Qs#   Halt north/southward Slews
     //         Returns: Nothing
-        mount.mP->StopAxis2();
+        StopAxis2();
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }
@@ -401,12 +391,12 @@ void Command_R()
     i = command[1] - '0';
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     return;
   }
   if (!isSlewing() && GuidingState == GuidingOFF)
   {
-    enableGuideRate(i, false);
+    enableGuideRate(i);
   }
 }
 
@@ -471,56 +461,54 @@ void Command_T()
     {
 //      lastSetTrackingEnable = millis();
 //     atHome = false;
-//      siderealTracking = true;
-      mount.mP->startTracking();
+      startTracking();
 //      computeTrackingRate(true);
-      strcpy(reply, "1");
+      replyOk();
     }
     else
-      strcpy(reply, "0");
+      replyFailed();
     break;
   case 'd':
     if (parkStatus == PRK_UNPARKED)
     {
-//      siderealTracking = false;
-      mount.mP->stopTracking();
-      strcpy(reply, "1");
+      stopTracking();
+      replyOk();
     }
     else
-      strcpy(reply, "0");
+      replyFailed();
     break;
 #if 0
   case '0':
     // turn compensation off
     tc = TC_NONE;
     computeTrackingRate(true);
-    XEEPROM.write(EE_TC_Axis, 0);
-    strcpy(reply, "1");
+    XEEPROM.write(getMountAddress(EE_TC_Axis), 0);
+    replyOk();
     break;
   case '1':
     // turn compensation RA only
     tc = TC_RA;
     computeTrackingRate(true);
-    XEEPROM.write(EE_TC_Axis, 0);
-    strcpy(reply, "1");
+    XEEPROM.write(getMountAddress(EE_TC_Axis), 0);
+    replyOk();
     break;
   case '2':
     // turn compensation BOTH
     tc = TC_BOTH;
     computeTrackingRate(true);
-    XEEPROM.write(EE_TC_Axis, 2);
-    strcpy(reply, "1");
+    XEEPROM.write(getMountAddress(EE_TC_Axis), 2);
+    replyOk();
     break;
 #endif
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 
   // Only burn the new rate if changing the sidereal interval
   if (command[1] == '+' || command[1] == '-' || command[1] == 'R')
   {
-    XEEPROM.writeLong(EE_siderealClockSpeed, siderealClockSpeed);
+    XEEPROM.writeLong(getMountAddress(EE_siderealClockSpeed), siderealClockSpeed);
     updateSidereal();
   }
 }
@@ -538,7 +526,7 @@ void Command_U()
     reply[0] = 0;
   }
   else
-    strcpy(reply, "0");
+    replyFailed();
 }
 
 //   W - Site Select/Site get
@@ -554,7 +542,7 @@ void Command_W()
   case '2':
   case '3':
   {
-    uint8_t currentSite = command[1] - '0';
+    currentSite = command[1] - '0';
     XEEPROM.write(EE_currentSite, currentSite);
     localSite.ReadSiteDefinition(currentSite);
     rtk.resetLongitude(*localSite.longitude());
@@ -565,10 +553,10 @@ void Command_W()
     break;
   }
   case '?':
-    sprintf(reply, "%d#", localSite.siteIndex());
+    sprintf(reply, "%d#", currentSite);
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }

@@ -178,6 +178,7 @@ byte EqMount::goTo(Steps *sP)
 {
   if (getEvent(EV_ABORT))
     return ERRGOTO____;
+  enableGuideRate(RXX);
   unsigned msg[CTL_MAX_MESSAGE_SIZE];
   msg[0] = CTL_MSG_GOTO; 
   msg[1] = sP->steps1;
@@ -269,20 +270,6 @@ bool EqMount::withinLimits(long axis1, long axis2)
   return true;
 }
 
-void EqMount::startTracking(void)
-{
-  unsigned msg[CTL_MAX_MESSAGE_SIZE];
-  msg[0] = CTL_MSG_START_TRACKING; 
-  xQueueSend( controlQueue, &msg, 0);
-}
-
-void EqMount::stopTracking(void)
-{
-  unsigned msg[CTL_MAX_MESSAGE_SIZE];
-  msg[0] = CTL_MSG_STOP_TRACKING; 
-  xQueueSend( controlQueue, &msg, 0);
-}
-
 /*
  * setTrackingSpeed
  * speed is expressed as a multiple of sidereal speed 
@@ -295,54 +282,6 @@ void EqMount::setTrackingSpeed(double speed)
 }
 
 
-void EqMount::MoveAxis1(const byte dir)
-{
-  MoveAxis1AtRate(guideRates[activeGuideRate], dir);
-}
-
-void EqMount::MoveAxis1AtRate(double speed, const byte dir)
-{
-  unsigned msg[CTL_MAX_MESSAGE_SIZE];
-
-  msg[0] = CTL_MSG_MOVE_AXIS1; 
-  msg[1] = (dir == 'w' ? geoA1.westDef : geoA1.eastDef);
-  memcpy(&msg[2], &speed, sizeof(double));
-  xQueueSend(controlQueue, &msg, 0);
-}
-
-void EqMount::StopAxis1()
-{
-  unsigned msg[CTL_MAX_MESSAGE_SIZE];
- 
-  msg[0] = CTL_MSG_STOP_AXIS1; 
-  xQueueSend(controlQueue, &msg, 0);
-}
-
-void EqMount::MoveAxis2(const byte dir)
-{
-  MoveAxis2AtRate(guideRates[activeGuideRate], dir);
-}
-
-void EqMount::MoveAxis2AtRate(double speed, const byte dir)
-{
-  unsigned msg[CTL_MAX_MESSAGE_SIZE];
- 	long target;
-
- 	target = poleDir(dir);
-
-  msg[0] = CTL_MSG_MOVE_AXIS2; 
-  msg[1] = target;
-  memcpy(&msg[2], &speed, sizeof(double));
-  xQueueSend(controlQueue, &msg, 0);
-}
-
-void EqMount::StopAxis2()
-{
-  unsigned msg[CTL_MAX_MESSAGE_SIZE];
- 
-  msg[0] = CTL_MSG_STOP_AXIS2; 
-  xQueueSend(controlQueue, &msg, 0);
-}
 
 /*
  * getTrackingSpeeds
@@ -476,4 +415,10 @@ int EqMount::decDirection(void)
     return (sp < 0.0 ? -1:1);
   else 
     return (sp < 0.0 ? 1:-1);
+}
+
+// not used at this time for EQ mounts
+void EqMount::updateRaDec(void)
+{
+
 }

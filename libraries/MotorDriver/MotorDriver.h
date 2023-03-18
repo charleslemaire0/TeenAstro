@@ -52,6 +52,8 @@ public:
     pinMode(CSPin, OUTPUT);
     digitalWrite(CSPin, HIGH);
 
+    drvP->dedge(true);		// enable double edge step impulse 
+
     // StepDir driver
     mcP = new StepDir();
     mcP->initStepDir(DirPin, StepPin, isrP, timerId);
@@ -125,9 +127,9 @@ public:
   {
     return mcP->positionReached(); 
   }
-  bool isSlewing()
+  bool isMoving()
   {
-    return mcP->isSlewing(); 
+    return mcP->isMoving(); 
   }
   void adjustSpeed(double percent)
   {

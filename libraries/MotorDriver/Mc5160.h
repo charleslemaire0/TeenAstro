@@ -14,7 +14,7 @@ public:
 	void adjustSpeed(double percent);
 	void setTargetPos(long targetPos);
 	bool positionReached(void);
-	bool isSlewing(void);
+	bool isMoving(void);
 	void setDir(bool);
 	void abort(void);
 	void resetAbort(void);

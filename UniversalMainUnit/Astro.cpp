@@ -119,7 +119,7 @@ void do_compensation_calc()
  */
 void initMaxSpeed()
 {
-  long maxSlewEEPROM = XEEPROM.readInt(EE_maxRate);     // in multiples of sidereal speed
+  long maxSlewEEPROM = XEEPROM.readInt(getMountAddress(EE_maxRate));     // in multiples of sidereal speed
 
   double maxAxis1Speed = geoA1.stepsPerSecond * maxSlewEEPROM;
   double maxAxis2Speed = geoA2.stepsPerSecond * maxSlewEEPROM;
@@ -130,13 +130,14 @@ void initMaxSpeed()
   // If the speed read from the EEPROM is too high, correct it
   if (maxSlewEEPROM > maxSlewCorrected)
   {
-    XEEPROM.writeInt(EE_maxRate, (int) (maxSlewCorrected));
+    XEEPROM.writeInt(getMountAddress(EE_maxRate), (int) (maxSlewCorrected));
   }
+  
   guideRates[4] = maxSlewEEPROM;
   if (guideRates[3] >= maxSlewEEPROM)   // also correct the next higher speed??
   {
     guideRates[3] = 64;
-    XEEPROM.write(EE_Rate3, guideRates[3]);
+    XEEPROM.write(getMountAddress(EE_Rate3), guideRates[3]);
   }
   SetAcceleration();
 }
@@ -156,12 +157,10 @@ void SetAcceleration()
 }
 
 // calculates the slew speed for move commands
-void enableGuideRate(int g, bool force)
+void enableGuideRate(int g)
 {
   if (g < 0) g = 0;
   if (g > 4) g = 4;
-  if (!force && (guideTimerBaseRate1 == guideRates[g] && guideTimerBaseRate2 == guideTimerBaseRate1)) return;
-
   activeGuideRate = g;  // global variable
 
   unsigned msg[CTL_MAX_MESSAGE_SIZE];

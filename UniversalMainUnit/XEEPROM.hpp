@@ -15,6 +15,8 @@
 #endif
 
 
+
+
 struct extendedEEPROM : EEPROMClass
 {
   void write(int i, int j)
@@ -144,3 +146,4 @@ struct extendedEEPROM : EEPROMClass
 };
 
 static extendedEEPROM XEEPROM;
+

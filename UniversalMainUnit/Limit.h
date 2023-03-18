@@ -10,7 +10,7 @@ typedef struct
 
 
 bool checkAltitude(void);
-void initLimit(void);
+void initLimits(void);
 void initLimitMinAxis1(void);
 void initLimitMaxAxis1(void);
 void initLimitMinAxis2(void);

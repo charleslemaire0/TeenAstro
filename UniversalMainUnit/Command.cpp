@@ -16,9 +16,7 @@ void processCommands()
 {
   Command process_command = COMMAND_NONE;
 
-#ifndef __arm__
   S_USB.update();
-#endif  
   S_SHC.update();
   process_command = COMMAND_NONE;
   S_USB.getCmdPar(command, process_command);
@@ -89,10 +87,32 @@ void processCommands()
   }
   if (strlen(reply) > 0)
   {
-#ifndef __arm__
     S_USB.reply(reply, process_command);
-#endif    
     S_SHC.reply(reply, process_command);
   }
+  if (reboot_unit)
+  {
+    HAL_reboot();
+  }
+}
 
+
+void replyFailed()
+{
+  strcpy(reply, "0");
+}
+void replyOk()
+{
+  strcpy(reply, "1");
+}
+void replyNothing()
+{
+  reply[0] = 0;
+}
+void clearReply()
+{
+  for (int i = 0; i < 50; i++)
+  {
+    reply[i] = 0;
+  }
 }

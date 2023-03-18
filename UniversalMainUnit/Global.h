@@ -58,11 +58,14 @@ enum SID_Mode
 #define DefaultR1 4
 #define DefaultR2 16
 #define DefaultR3 64
-#define DefaultR4 64
+#define DefaultR4 600
 
 #include <math.h>
 #include "FirmwareDef.h"
 #include "HAL_TeenAstro.h"
+#include "XEEPROM.hpp"
+#include "EEPROM_init.h"
+#include "EEPROM_address.h"
 #include "timerLoop.hpp"
 #include "TelTimer.hpp"
 #include "Command.h"
@@ -75,8 +78,6 @@ enum SID_Mode
 #include "MotorDriver.h"
 #include "Axis.hpp"
 #include "Site.hpp"
-#include "EEPROM_adress.h"
-#include "XEEPROM.hpp"
 #include "Refraction.hpp"
 #include "TeenAstroCoordConv.hpp"
 #include "Limit.h"
@@ -88,8 +89,6 @@ enum SID_Mode
 
 
 // TeenAstroMainUnit.h
-void initTransformation(bool);
-void initMount(void);
 void initMotors(bool);
 void readEEPROMmotor(void);
 void writeDefaultEEPROMmotor(void);
@@ -115,8 +114,8 @@ void SafetyCheck(bool);
 #define CTRL_TASK_PRTY    4
 #define CMD_TASK_PRTY     6
 #define MON_TASK_PERIOD 100  // milliseconds
-#define CMD_TASK_PERIOD  10
-#define CTRL_TASK_PERIOD 10 
+#define CMD_TASK_PERIOD  5
+#define CTRL_TASK_PERIOD 5 
 
 GLOBAL QueueHandle_t controlQueue;
 GLOBAL SemaphoreHandle_t hwMutex;       // to prevent concurrent hardware accesses 
@@ -196,4 +195,7 @@ GLOBAL CoordConv           alignment;
 GLOBAL Limits              limits;
 GLOBAL DateTimeTimers      rtk;
 
-GLOBAL uint8_t             midx;
+GLOBAL uint8_t             currentMount;
+GLOBAL uint8_t             currentSite;
+GLOBAL char                mountNames[maxNumMounts][MountNameLen];
+GLOBAL bool                reboot_unit;

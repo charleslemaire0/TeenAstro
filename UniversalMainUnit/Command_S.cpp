@@ -46,9 +46,9 @@ void Command_SX()
       }
     }
     if (ok)
-      strcpy(reply, "1");
+      replyOk();
     else
-      strcpy(reply, "0");
+      replyFailed();
     break;
   }
   case 'r':
@@ -86,9 +86,9 @@ void Command_SX()
       break;
     }
     if (ok)
-      strcpy(reply, "1");
+      replyOk();
     else
-      strcpy(reply, "0");
+      replyFailed();
     break;
   }
   case 'R':
@@ -104,76 +104,76 @@ void Command_SX()
         i = command[3] - '0';
         int val = strtol(&command[5], NULL, 10);
         val = val > 0 && val < 256 ? val : pow(4, i);
-        XEEPROM.write(EE_Rate0 + i, val);
+        XEEPROM.write(getMountAddress(EE_Rate0) + i, val);
         if (i == 0)
           guideRates[0] = (double)val / 100.;
         else
           guideRates[i] = val;
         if (activeGuideRate == i)
-          enableGuideRate(i, true);
-        strcpy(reply, "1");
+          enableGuideRate(i);
+        replyOk();
       }
-      else strcpy(reply, "0");
+      else replyFailed();
       break;
     case 'A':
       // :SXRA,VVV# Set degree for acceleration
       mount.DegreesForAcceleration = min(max(0.1 * (double)strtol(&command[5], NULL, 10), 0.1), 25.0);
-      XEEPROM.write(EE_degAcc, (uint8_t)(mount.DegreesForAcceleration * 10));
+      XEEPROM.write(getMountAddress(EE_degAcc), (uint8_t)(mount.DegreesForAcceleration * 10));
       SetAcceleration();
-      strcpy(reply, "1");
+      replyOk();
       break;
     case 'D':
     {
       // :SXRD,V# define default rate
       int val = strtol(&command[5], NULL, 10);
       val = val > 4 || val < 0 ? 3 : val;
-      XEEPROM.write(EE_DefaultRate, val);
-      strcpy(reply, "1");
+      XEEPROM.write(getMountAddress(EE_DefaultRate), val);
+      replyOk();
       break;
     }
     case 'X':
       // :SXRX,VVVV# Set Rate for max Rate
-      XEEPROM.writeInt(EE_maxRate, (int)strtol(&command[5], NULL, 10));
+      XEEPROM.writeInt(getMountAddress(EE_maxRate), (int)strtol(&command[5], NULL, 10));
       initMaxSpeed();
-      strcpy(reply, "1");
+      replyOk();
       break;
     case 'r':
       // :SXRr,VVVVVVVVVV# Set Rate for RA 
       siderealMode = SIDM_TARGET;
       RequestedTrackingRateHA = 1. - (double)strtol(&command[5], NULL, 10) / 10000.0;
       computeTrackingRate(true);
-      strcpy(reply, "1");
+      replyOk();
       break;
     case 'h':
       // :SXRh,VVVVVVVVVV# Set Rate for HA
       siderealMode = SIDM_TARGET;
       RequestedTrackingRateHA = (double)strtol(&command[5], NULL, 10) / 10000.0;
       computeTrackingRate(true);
-      strcpy(reply, "1");
+      replyOk();
       break;
     case 'd':
       // :SXRd,VVVVVVVVVV# Set Rate for DEC
       siderealMode = SIDM_TARGET;
       RequestedTrackingRateDEC = (double)strtol(&command[5], NULL, 10) / 10000.0;
       computeTrackingRate(true);
-      strcpy(reply, "1");
+      replyOk();
       break;
     case 'e':
       // :SXRe,VVVVVVVVVV# Store Rate for RA
       lval = strtol(&command[5], NULL, 10) ;
       storedTrackingRateRA = lval < -50000 || lval > 50000 ? 0 : lval;
-      XEEPROM.writeLong(EE_RA_Drift, storedTrackingRateRA);
-      strcpy(reply, "1");
+      XEEPROM.writeLong(getMountAddress(EE_RA_Drift), storedTrackingRateRA);
+      replyOk();
       break;
     case 'f':
       // :SXRf,VVVVVVVVVV# Store Rate for DEC
       lval = strtol(&command[5], NULL, 10) ;
       storedTrackingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
-      XEEPROM.writeLong(EE_DEC_Drift, storedTrackingRateDEC);
-      strcpy(reply, "1");
+      XEEPROM.writeLong(getMountAddress(EE_DEC_Drift), storedTrackingRateDEC);
+      replyOk();
       break;
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
     break;
@@ -184,54 +184,54 @@ void Command_SX()
     case 'A':
       // :SXLA,VVVV# set user defined minAXIS1 (always negatif)
       i = (int)strtol(&command[5], NULL, 10);
-      XEEPROM.writeInt(EE_minAxis1, i);
+      XEEPROM.writeInt(getMountAddress(EE_minAxis1), i);
       initLimitMinAxis1();
-      strcpy(reply, "1");
+      replyOk();
       break;
     case 'B':
       // :SXLB,VVVV# set user defined maxAXIS1 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
-      XEEPROM.writeInt(EE_maxAxis1, i);
+      XEEPROM.writeInt(getMountAddress(EE_maxAxis1), i);
       initLimitMaxAxis1();
-      strcpy(reply, "1");
+      replyOk();
       break;
     case 'C':
       // :SXLC,VVVV# set user defined minAXIS2 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
-      XEEPROM.writeInt(EE_minAxis2, i);
+      XEEPROM.writeInt(getMountAddress(EE_minAxis2), i);
       initLimitMinAxis2();
-      strcpy(reply, "1");
+      replyOk();
       break;
     case 'D':
       // :SXLD,VVVV# set user defined maxAXIS2 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
-      XEEPROM.writeInt(EE_maxAxis2, i);
+      XEEPROM.writeInt(getMountAddress(EE_maxAxis2), i);
       initLimitMaxAxis2();
-      strcpy(reply, "1");
+      replyOk();
       break;
     case 'E':
       // :SXLE,sVV.V# set user defined Meridian East Limit
       limits.minutesPastMeridianGOTOE = (double)strtol(&command[5], NULL, 10);
       if (limits.minutesPastMeridianGOTOE > 180) limits.minutesPastMeridianGOTOE = 180;
       if (limits.minutesPastMeridianGOTOE < -180) limits.minutesPastMeridianGOTOE = -180;
-      XEEPROM.write(EE_dpmE, round((limits.minutesPastMeridianGOTOE * 15.0) / 60.0) + 128);
-      strcpy(reply, "1");
+      XEEPROM.write(getMountAddress(EE_dpmE), round((limits.minutesPastMeridianGOTOE * 15.0) / 60.0) + 128);
+      replyOk();
       break;
     case 'W':
       // :SXLW,sVV.V# set user defined Meridian West Limit
       limits.minutesPastMeridianGOTOW = (double)strtol(&command[5], NULL, 10);
       if (limits.minutesPastMeridianGOTOW > 180) limits.minutesPastMeridianGOTOW = 180;
       if (limits.minutesPastMeridianGOTOW < -180) limits.minutesPastMeridianGOTOW = -180;
-      XEEPROM.write(EE_dpmW, round((limits.minutesPastMeridianGOTOW * 15.0) / 60.0) + 128);
-      strcpy(reply, "1");
+      XEEPROM.write(getMountAddress(EE_dpmW), round((limits.minutesPastMeridianGOTOW * 15.0) / 60.0) + 128);
+      replyOk();
       break;
     case 'U':
       // :SXLU,VV# set user defined Under Pole Limit
       limits.underPoleLimitGOTO = (double)strtol(&command[5], NULL, 10) / 10;
       if (limits.underPoleLimitGOTO > 12) limits.underPoleLimitGOTO = 12;
       if (limits.underPoleLimitGOTO < 9) limits.underPoleLimitGOTO = 9;
-      XEEPROM.write(EE_dup, round(limits.underPoleLimitGOTO * 10.0));
-      strcpy(reply, "1");
+      XEEPROM.write(getMountAddress(EE_dup), round(limits.underPoleLimitGOTO * 10.0));
+      replyOk();
       break;
     case 'H':
       // :GXLH,sVV# set user defined horizon Limit
@@ -239,24 +239,30 @@ void Command_SX()
       if ((atoi2(&command[5], &i)) && ((i >= -30) && (i <= 30)))
       {
         limits.minAlt = i;
-        XEEPROM.write(EE_minAlt, limits.minAlt + 128);
-        strcpy(reply, "1");
+        XEEPROM.write(getMountAddress(EE_minAlt), limits.minAlt + 128);
+        replyOk();
       }
       else
-        strcpy(reply, "0");
+      {
+        replyFailed();
+      }
+      break;
     case 'O':
       // :SXLO,VV.VV# set user defined overhead Limit
       // NB: duplicate with :So#
       if ((atoi2(&command[5], &i)) && ((i >= 45) && (i <= 91)))
       {
         limits.maxAlt = i;
-        XEEPROM.write(EE_maxAlt, limits.maxAlt);
-        strcpy(reply, "1");
+        XEEPROM.write(getMountAddress(EE_maxAlt), limits.maxAlt);
+        replyOk();
       }
       else
-        strcpy(reply, "0");
+      {
+        replyFailed();
+      }
+    break;
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
     break;
@@ -272,11 +278,11 @@ void Command_SX()
       highPrecision = true;
       int h1, m1, m2, s1;
       if (!hmsToHms(&h1, &m1, &m2, &s1, &command[4], highPrecision))
-        strcpy(reply, "0");
+        replyFailed();
       else
       {
         rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), 0);
-        strcpy(reply, "1");
+        replyOk();
       }
       highPrecision = i;
       break;
@@ -287,11 +293,11 @@ void Command_SX()
       //                  1 on success
       int y, m, d;
       if (!dateToYYYYMMDD(&y, &m, &d, &command[4]))
-        strcpy(reply, "0");
+        replyFailed();
       else
       {
         rtk.setClock(y, m, d, hour(), minute(), second(), *localSite.longitude(), 0);
-        strcpy(reply, "1");
+        replyOk();
       }
       break;
     case '2':
@@ -303,11 +309,11 @@ void Command_SX()
       char* pEnd;
       unsigned long t = strtoul(&command[5], &pEnd, 10);
       rtk.SetFromTimeStamp(t);
-      strcpy(reply, "1");
+      replyOk();
       break;
     }
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
     break;
@@ -324,22 +330,22 @@ void Command_SX()
         if (command[4] == 'D')
         {
           mount.backlashA2.inSeconds = i;
-          XEEPROM.writeInt(EE_backlashAxis2, mount.backlashA2.inSeconds);
+          XEEPROM.writeInt(getMountAddress(EE_backlashAxis2), mount.backlashA2.inSeconds);
           mount.backlashA2.inSteps = (int)round(((double)mount.backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
           mount.backlashA2.movedSteps = 0;
-          strcpy(reply, "1");
+          replyOk();
         }
         else if (command[4] == 'R')
         {
           mount.backlashA1.inSeconds = i;
-          XEEPROM.writeInt(EE_backlashAxis1, mount.backlashA1.inSeconds);
+          XEEPROM.writeInt(getMountAddress(EE_backlashAxis1), mount.backlashA1.inSeconds);
           mount.backlashA1.inSteps = (int)round(((double)mount.backlashA1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
           mount.backlashA1.movedSteps = 0;
-          strcpy(reply, "1");
+          replyOk();
         }
-        else strcpy(reply, "0");
+        else replyFailed();
       }
-      else strcpy(reply, "0");
+      else replyFailed();
     }
     break;
     case 'G':
@@ -352,24 +358,23 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
-          double fact = (double)i / motorA2.gear;
-          mount.mP->StopAxis2();
+          StopAxis2();
           motorA2.gear = (unsigned int)i;
-          XEEPROM.writeInt(EE_motorA2gear, i);
+          XEEPROM.writeInt(getMountAddress(EE_motorA2gear), i);
         }
         else
         {
-          double fact = (double)i / motorA1.gear;
-          mount.mP->StopAxis1();
+          StopAxis1();
           motorA1.gear = (unsigned int)i;
-          XEEPROM.writeInt(EE_motorA1gear, i);
+          XEEPROM.writeInt(getMountAddress(EE_motorA1gear), i);
         }
         updateRatios(true, true);
-
-        strcpy(reply, "1");
+        replyOk();
       }
       else
-        strcpy(reply, "0");
+      {
+        replyFailed();
+      }
     }
     break;
     case 'S':
@@ -382,24 +387,23 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
-          double fact = (double)i / motorA2.stepRot;
-          mount.mP->StopAxis2();
+          StopAxis2();
           motorA2.stepRot = (unsigned int)i;
-          XEEPROM.writeInt(EE_motorA2stepRot, i);
+          XEEPROM.writeInt(getMountAddress(EE_motorA2stepRot), i);
         }
         else
         {
-          double fact = (double)i / motorA1.stepRot;
-          mount.mP->StopAxis1();
+          StopAxis1();
           motorA1.stepRot = (unsigned int)i;
-          XEEPROM.writeInt(EE_motorA1stepRot, i);
+          XEEPROM.writeInt(getMountAddress(EE_motorA1stepRot), i);
         }
         updateRatios(true, true);
-
-        strcpy(reply, "1");
+        replyOk();
       }
       else
-        strcpy(reply, "0");
+      {
+        replyFailed();
+      }
     }
     break;
     case 'M':
@@ -414,24 +418,25 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
-          double fact = pow(2., i - motorA2.micro);
-          mount.mP->StopAxis2();
+          StopAxis2();
           motorA2.micro = i;
           motorA2.drvP->microsteps(motorA2.micro);;
-          XEEPROM.write(EE_motorA2micro, motorA2.micro);
+          XEEPROM.write(getMountAddress(EE_motorA2micro), motorA2.micro);
         }
         else
         {
-          double fact = pow(2., i - motorA1.micro);
-          mount.mP->StopAxis1();
+          StopAxis1();
           motorA1.micro = i;
           motorA1.drvP->microsteps(motorA1.micro);
-          XEEPROM.write(EE_motorA1micro, motorA1.micro);
+          XEEPROM.write(getMountAddress(EE_motorA1micro), motorA1.micro);
         }
         updateRatios(true, false);
-        strcpy(reply, "1");
+        replyOk();
       }
-      else strcpy(reply, "0");
+      else 
+      {
+        replyFailed();
+      }
     }
     break;
     case 'm':
@@ -446,15 +451,18 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
-          XEEPROM.write(EE_motorA2silent, i);
+          XEEPROM.write(getMountAddress(EE_motorA2silent), i);
         }
         else
         {
-          XEEPROM.write(EE_motorA1silent, i);
+          XEEPROM.write(getMountAddress(EE_motorA1silent), i);
         }
-        strcpy(reply, "1");
+        replyOk();
       }
-      else strcpy(reply, "0");
+      else 
+      {
+        replyFailed();
+      }
     }
     break;
     case 'R':
@@ -467,17 +475,19 @@ void Command_SX()
         if (command[4] == 'D')
         {
           motorA2.reverse = command[6] == '1' ? true : false;
-          XEEPROM.write(EE_motorA2reverse, motorA2.reverse);
+          XEEPROM.write(getMountAddress(EE_motorA2reverse), motorA2.reverse);
         }
         else
         {
           motorA1.reverse = command[6] == '1' ? true : false;
-          XEEPROM.write(EE_motorA1reverse, motorA1.reverse);
+          XEEPROM.write(getMountAddress(EE_motorA1reverse), motorA1.reverse);
         }
-        strcpy(reply, "1");
+        replyOk();
       }
       else
-        strcpy(reply, "0");
+      {
+        replyFailed();
+      }
     }
     break;
     case 'c':
@@ -492,12 +502,12 @@ void Command_SX()
           if (command[3] == 'C')
           {
             motorA2.highCurr = curr;
-            XEEPROM.write(EE_motorA2highCurr, motorA2.highCurr / 100);
+            XEEPROM.write(getMountAddress(EE_motorA2highCurr), motorA2.highCurr / 100);
           }
           else
           {
             motorA2.lowCurr = curr;
-            XEEPROM.write(EE_motorA2lowCurr, motorA2.lowCurr / 100);
+            XEEPROM.write(getMountAddress(EE_motorA2lowCurr), motorA2.lowCurr / 100);
             motorA2.drvP->rms_current((unsigned int)motorA2.lowCurr);
           }
         }
@@ -506,53 +516,73 @@ void Command_SX()
           if (command[3] == 'C')
           {
             motorA1.highCurr = curr;
-            XEEPROM.write(EE_motorA1highCurr, motorA1.highCurr / 100);
+            XEEPROM.write(getMountAddress(EE_motorA1highCurr), motorA1.highCurr / 100);
           }
           else
           {
             motorA1.lowCurr = curr;
-            XEEPROM.write(EE_motorA1lowCurr, motorA1.lowCurr / 100);
+            XEEPROM.write(getMountAddress(EE_motorA1lowCurr), motorA1.lowCurr / 100);
             motorA1.drvP->rms_current((unsigned int)motorA1.lowCurr);
           }
         }
-        strcpy(reply, "1");
+        replyOk();
       }
-      else strcpy(reply, "0");
-    }
-    break;
-    case 'F':
-    {
-      // :SXMRn# Set Stall guard
-      int i;
-      if ((command[4] == 'D' || command[4] == 'R')
-        && (strlen(&command[6]) > 1) && (strlen(&command[6]) < 5)
-        && atoi2((char*)&command[6], &i)
-        && ((i >= 0) && (i <= 127)))
+      else 
       {
-        i = i - 64;
-#if 0
-        if (command[4] == 'D')
-        {
-          motorA2.drvP->setSG(i);
-        }
-        else
-        {
-          motorA1.drvP->setSG(i);
-        }
-#endif        
-        strcpy(reply, "1");
+        replyFailed();
       }
-      else strcpy(reply, "0");
     }
     break;
     default:
-      strcpy(reply, "0");
+      replyFailed();
       break;
     }
     break;
-  default:
-    strcpy(reply, "0");
+  case 'O':
+    // :SXO-,VVVV Options
+    switch (command[3])
+    {
+    case 'I':
+      // :SXOI,V set Mount index
+    {
+      if ((atoi2(&command[5], &i)) && ((i >= 0) && (i < maxNumMounts)))
+      {
+        currentMount = i;
+        XEEPROM.write(EE_currentMount, currentMount);
+        replyOk();
+        reboot_unit = true;
+      }
+      else
+        replyFailed();
+    }
     break;
+    case 'A':
+    case 'B':
+    case 'C':
+      // :SXON,NNNN set Mount Name
+    {
+
+      int i = 0;
+      if (command[3] == 'A')
+        i = currentMount;
+      else if (command[3] == 'C')
+        i = 1;
+      if (strlen(&command[5]) < MountNameLen + 1)
+      {
+        memcpy(mountNames[i], &command[5], MountNameLen * sizeof(char));
+        XEEPROM.writeString(getMountAddress(EE_mountName, i), mountNames[i], MountNameLen);
+        replyOk();
+      }
+      else
+        replyFailed();
+      break;
+    }
+    break;
+    }
+    break;
+  default:
+    replyFailed();
+    break;    
   }
 }
 
@@ -568,22 +598,10 @@ void Command_S(Command& process_command)
     i = (int)(command[2] - '0');
     if (i > 0 && i < 5)
     {
-      XEEPROM.write(EE_mountType, i);
-#if 0
-      Serial.end();
-      Serial1.end();
-      Serial2.end();
-      delay(1000);
-#endif
-#ifdef __arm__      
-      _reboot_Teensyduino_();
-#endif
-#ifdef __ESP32__
-      EEPROM.commit();
-      ESP.restart();
-#endif      
+      XEEPROM.write(getMountAddress(EE_mountType), i);
+      HAL_reboot();
     }
-    else strcpy(reply, "0");
+    else replyFailed();
     break;
   case 'a':
     //  :SasDD*MM#
@@ -591,8 +609,8 @@ void Command_S(Command& process_command)
     //         Native LX200
     //         Returns:
     //         0 if Object is within slew range, 1 otherwise
-    if (dmsToDouble(&newTargetAlt, &command[2], true, highPrecision)) strcpy(reply, "1");
-    else strcpy(reply, "0");
+    if (dmsToDouble(&newTargetAlt, &command[2], true, highPrecision)) replyOk();
+    else replyFailed();
     break;
   case 'B':
     //  :SBn#  Set Baud Rate n for Serial-0, where n is an ASCII digit (1..9) with the following interpertation
@@ -613,9 +631,9 @@ void Command_S(Command& process_command)
         delay(20);
         Serial1.begin(baudRate[i]);
       }
-      strcpy(reply, "1");
+      replyOk();
     }
-    else strcpy(reply, "0");
+    else replyFailed();
     break;
   case 'C':
     //  :SCMM/DD/YY#
@@ -623,11 +641,11 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
     int y, m, d;
-    if (!dateToYYYYMMDD(&y, &m, &d, &command[2])) strcpy(reply, "0");
+    if (!dateToYYYYMMDD(&y, &m, &d, &command[2])) replyFailed();
     else
     {
       rtk.setClock(y, m, d, hour(), minute(), second(), *localSite.longitude(), 0);
-      strcpy(reply, "1");
+      replyOk();
     }
     break;
   case 'e':
@@ -637,18 +655,18 @@ void Command_S(Command& process_command)
     //                  1 on success
     if (atoi2(&command[2], &i))
     {
-      if (localSite.setElev(i)) strcpy(reply, "1");
-      else strcpy(reply, "0");
+      if (localSite.setElev(i)) replyOk();
+      else replyFailed();
     }
-    else strcpy(reply, "0");
+    else replyFailed();
     break;
   case 'd':
     //  :SdsDD*MM#
     //          Set target object declination to sDD*MM or sDD*MM:SS depending on the current precision setting
     //          Return: 0 on failure
     //                  1 on success
-    if (dmsToDouble(&newTargetDec, &command[2], true, highPrecision)) strcpy(reply, "1");
-    else strcpy(reply, "0");
+    if (dmsToDouble(&newTargetDec, &command[2], true, highPrecision)) replyOk();
+    else replyFailed();
     break;
   case 'g':
     //  :SgsDDD*MM# or :SgDDD*MM# or :SgsDDD:MM:SS# or SgDDD:MM:ss#
@@ -665,9 +683,9 @@ void Command_S(Command& process_command)
       if (command[2] == '-') longi = -longi;
       localSite.setLong(longi);
       rtk.resetLongitude(*localSite.longitude());
-      strcpy(reply, "1");
+      replyOk();
     }
-    else strcpy(reply, "0");
+    else replyFailed();
   }
   break;
   //  :SG[sHH.H]#
@@ -681,9 +699,9 @@ void Command_S(Command& process_command)
       (f >= -12 && f <= 12.0))
     {
       localSite.setToff(f);
-      strcpy(reply, "1");
+      replyOk();
     }
-    else strcpy(reply, "0");
+    else replyFailed();
   }
   break;
   case 'h':
@@ -694,17 +712,17 @@ void Command_S(Command& process_command)
   {
     if ((command[2] == 0) || (strlen(&command[2]) > 3))
     {
-      strcpy(reply, "0");
+      replyFailed();
       return;
     }
 
     if ((atoi2(&command[2], &i)) && ((i >= -30) && (i <= 30)))
     {
       limits.minAlt = i;
-      XEEPROM.write(EE_minAlt, limits.minAlt + 128);
-      strcpy(reply, "1");
+      XEEPROM.write(getMountAddress(EE_minAlt), limits.minAlt + 128);
+      replyOk();
     }
-    else strcpy(reply, "0");
+    else replyFailed();
   }
   break;
   case 'L':
@@ -719,9 +737,9 @@ void Command_S(Command& process_command)
     if (hmsToHms(&h1, &m1, &m2, &s1, &command[2], highPrecision))
     {
       rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), *localSite.toff());
-      strcpy(reply, "1");
+      replyOk();
     }
-    else strcpy(reply, "0");
+    else replyFailed();
     highPrecision = i;
   }
   break;
@@ -738,10 +756,10 @@ void Command_S(Command& process_command)
     //                  1 on success
     i = command[1] - 'M';
     if (strlen(&command[2]))
-      XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, &command[2], siteNameLen) ?
-      strcpy(reply, "1") : strcpy(reply, "0");
+      XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, &command[2], SiteNameLen) ?
+      replyOk() : replyFailed();
     else
-      strcpy(reply, "0");
+      replyFailed();
     break;
   case 'm':
     if ((command[2] != 0) && (strlen(&command[2]) < 2))
@@ -749,14 +767,14 @@ void Command_S(Command& process_command)
       if (command[2] == 'N')
       {
         newTargetPierSide = PIER_NOTVALID;
-        strcpy(reply, "1");
+        replyOk();
       }
       else if (command[2] == 'E')
       {
         if (mount.mP->GetPierSide() == PIER_WEST)
         {
           newTargetPierSide = PIER_EAST;
-          strcpy(reply, "1");
+          replyOk();
         }
       }
       else if (command[2] == 'W')
@@ -764,18 +782,18 @@ void Command_S(Command& process_command)
         if (mount.mP->GetPierSide() == PIER_EAST)
         {
           newTargetPierSide = PIER_WEST;
-          strcpy(reply, "1");
+          replyOk();
         }
       }
-      else strcpy(reply, "0");
+      else replyFailed();
     }
-    else strcpy(reply, "0");
+    else replyFailed();
     break;
   case 'n':
     if (strlen(&command[2]))
-      localSite.setSiteName(&command[2]) ? strcpy(reply, "1") : strcpy(reply, "0");
+      localSite.setSiteName(&command[2]) ? replyOk() : replyFailed();
     else
-      strcpy(reply, "0");
+      replyFailed();
     break;
   case 'o':
     //  :SoDD#
@@ -787,12 +805,12 @@ void Command_S(Command& process_command)
       if ((atoi2(&command[2], &i)) && ((i >= 60) && (i <= 91)))
       {
         limits.maxAlt = i;
-        XEEPROM.write(EE_maxAlt, limits.maxAlt);
-        strcpy(reply, "1");
+        XEEPROM.write(getMountAddress(EE_maxAlt), limits.maxAlt);
+        replyOk();
       }
-      else strcpy(reply, "0");
+      else replyFailed();
     }
-    else strcpy(reply, "0");
+    else replyFailed();
     break;
   case 'r':
     //  :SrHH:MM.T#
@@ -803,9 +821,9 @@ void Command_S(Command& process_command)
     if (hmsToDouble(&newTargetRA, &command[2], highPrecision))
     {
       newTargetRA *= 15.0;
-      strcpy(reply, "1");
+      replyOk();
     }
-    else strcpy(reply, "0");
+    else replyFailed();
     break;
   case 't':
     //  :StsDD*MM# or :StsDD:MM:SS#
@@ -823,9 +841,9 @@ void Command_S(Command& process_command)
       initHome();
       initTransformation(true);
       syncAtHome();
-      strcpy(reply, "1");
+      replyOk();
     }
-    else strcpy(reply, "0");
+    else replyFailed();
     highPrecision = i;
     break;
   case 'T':
@@ -840,25 +858,25 @@ void Command_S(Command& process_command)
       {
         if (abs(f) < 0.1)
         {
-          mount.mP->stopTracking();
+          stopTracking();
         }
         else
         {
           RequestedTrackingRateHA = (f / 60.0) / 1.00273790935;
           // todo apply rate
         }
-        strcpy(reply, "1");
+        replyOk();
       }
-      else strcpy(reply, "0");
+      else replyFailed();
     }
-    else strcpy(reply, "0");
+    else replyFailed();
     break;
   case 'U':
     // :SU# store current User defined Position
     mount.mP->getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
-    XEEPROM.writeFloat(EE_RA, (float)f);
-    XEEPROM.writeFloat(EE_DEC, (float)f1);
-    strcpy(reply, "1");
+    XEEPROM.writeFloat(getMountAddress(EE_RA), (float)f);
+    XEEPROM.writeFloat(getMountAddress(EE_DEC), (float)f1);
+    replyOk();
     break;
   case 'X':
   	Command_SX();
@@ -868,11 +886,11 @@ void Command_S(Command& process_command)
     //          Sets the target Object Azimuth
     //          Return: 0 on failure
     //                  1 on success
-    if (dmsToDouble(&newTargetAzm, &command[2], false, highPrecision)) strcpy(reply, "1");
-    else strcpy(reply, "0");// "1" BUGS ELSEWHERE???
+    if (dmsToDouble(&newTargetAzm, &command[2], false, highPrecision)) replyOk();
+    else replyFailed();// "1" BUGS ELSEWHERE???
     break;
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }

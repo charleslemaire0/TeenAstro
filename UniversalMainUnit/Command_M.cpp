@@ -24,17 +24,17 @@ void Command_M()
       if (command[1] == '1')
       {
         dir = (speed >= 0) ? 'w' : 'e'; 
-        mount.mP->MoveAxis1AtRate(speed, dir);
+        MoveAxis1AtRate(speed, dir);
       }
       else
       {
         dir = (speed >= 0) ? 'n' : 's'; 
-        mount.mP->MoveAxis2AtRate(speed, dir);
+        MoveAxis2AtRate(speed, dir);
       }
-      strcpy(reply, "1");
+      replyOk();
     }
     else
-      strcpy(reply, "0");
+      replyFailed();
     break;
   case 'A':
     //  :MA#   Goto the target Alt and Az
@@ -79,7 +79,7 @@ void Command_M()
     //  :Me# & :Mw#      Move Telescope East or West at current slew rate
     //  Returns: Nothing
   {
-    mount.mP->MoveAxis1(command[1]);
+    MoveAxis1(command[1]);
   }
   break;
   case 'n':
@@ -87,7 +87,7 @@ void Command_M()
     //  :Mn# & :Ms#      Move Telescope North or South at current slew rate
     //  Returns: Nothing
   {
-    mount.mP->MoveAxis2(command[1]);
+    MoveAxis2(command[1]);
   }
   break;
 
@@ -117,8 +117,7 @@ void Command_M()
     i = mount.mP->goToEqu(&eq);
     if (i == 0)
     {
-      mount.mP->startTracking();
-//      siderealTracking = true;
+      startTracking();
     }
     reply[0] = i + '0';
     reply[1] = 0;
@@ -129,16 +128,14 @@ void Command_M()
     //  :MU#   Goto the User Defined Target Object
     //         Returns an ERRGOTO
     EqCoords eq;
-    newTargetRA = (double)XEEPROM.readFloat(EE_RA);
-    newTargetDec = (double)XEEPROM.readFloat(EE_DEC);
+    newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
+    newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
     eq.ha = haRange(rtk.LST() * 15.0 - newTargetRA);
     eq.dec = newTargetDec;
     i = mount.mP->goToEqu(&eq);
     if (i == 0)
     {
-      mount.mP->startTracking();
-//      siderealTracking = true;
-//      lastSetTrackingEnable = millis();
+      startTracking();
     }
     reply[0] = i + '0';
     reply[1] = 0;
@@ -149,7 +146,7 @@ void Command_M()
     //  :M?#   Predict side of Pier for the Target Object
     // reply ?# or E# or W#
     // reply !# if failed
-    double Ra, Ha, Dec, azm, alt = 0, axis1angle,axis2angle;
+    double Ra, Ha, Dec, azm, alt = 0;
     PierSide predictedSide = PIER_NOTVALID;
     char rastr[12];
     char decstr[12];
@@ -202,7 +199,7 @@ void Command_M()
     break;
   }
   default:
-    strcpy(reply, "0");
+    replyFailed();
     break;
   }
 }
