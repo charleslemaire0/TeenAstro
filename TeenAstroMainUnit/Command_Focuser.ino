@@ -5,8 +5,8 @@ void Command_F()
 {
   if (!hasFocuser )
   {
-    if (command[1] == '?') strcpy(reply, "0#");
-    else replyFailed();
+    if (command[1] == '?') replyLongFalse();
+    else replyNothing();
     return;
   }
   bool focuserNoResponse = false;
@@ -62,7 +62,7 @@ void Command_F()
     break;
   default:
   {
-    replyFailed();
+    replyNothing();
     return;
     break;
   }
@@ -90,19 +90,19 @@ void Command_F()
       pos++;
       if (pos > 49)
       {
-        replyFailed();
+        replyShortFalse();
         return;
       }
       reply[pos] = 0;
       if (focuserShortResponse)
       {
         if (b != '1')
-          replyFailed();
+          replyShortFalse();
         return;
       }
 
     }
-    replyFailed();
+    replyShortFalse();
   }
   else
   {

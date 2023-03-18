@@ -9,7 +9,7 @@
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "4"
-#define SHCFirmwareVersionPatch  "2"
+#define SHCFirmwareVersionPatch  "3"
 
 #define NUMPAGES 9
 class SmartHandController
@@ -169,6 +169,9 @@ private:
   void menuMeridian(bool east);
   void menuAxis(char mode);
   void menuUnderPole();
+  #ifdef keepTrackingOnWhenFarFromPole
+  void menuFarFromPole();
+  #endif
   bool menuSetReverse(const uint8_t &axis);
   bool menuSetBacklash(const uint8_t &axis);
   bool menuSetTotGear(const uint8_t &axis);

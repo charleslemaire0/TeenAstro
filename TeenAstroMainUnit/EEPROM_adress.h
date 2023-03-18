@@ -64,6 +64,7 @@ uint8_t             midx;
 #define EE_dpmE             52
 #define EE_dpmW             53
 #define EE_dup              54
+#define EE_dpmDistanceFromPole  55
 
 //user defined homeposition
 #define EE_homeSaved        56
@@ -118,10 +119,10 @@ uint8_t             midx;
 
 int getMountAddress(int adress)
 {
-  return EE_Mounts + MountSize * midx + adress;
+  return (int)EE_Mounts + (int)MountSize * (int)midx + adress;
 }
 
 int getMountAddress(int adress, int idx)
 {
-  return EE_Mounts + MountSize * idx + adress;
+  return (int)EE_Mounts + (int)MountSize * (int)idx + adress;
 }
