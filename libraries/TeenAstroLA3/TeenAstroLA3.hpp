@@ -55,11 +55,6 @@ public:
 	// Normalize a 3-vector to unit length 
 	static void normalize(double (&out)[3], const double (&in)[3]);
 
-
-
-
-
-
 	// Calculate cosine direction vector from two given polar angles (in radians)
 	static void toDirCos(double (&dc)[3], double ang1, double ang2);
 

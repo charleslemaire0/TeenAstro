@@ -47,6 +47,10 @@
 // and axis coordinates (axis1 and axis2)
 class CoordConv : public LA3 {
 public:
+
+	double T[3][3];		// Transformation matrix from equatorial angle1/angle2 cosines to axis axis2/axis1 cosines 
+	double Tinv[3][3];		// Inverse of the above 
+
 	enum Err { EQ_AZ, EQ_ALT, POL_W };
 	CoordConv() { reset(); isready = false;}
 
@@ -98,8 +102,7 @@ protected:
 	// Convert axis axis1/axis2 coordinates to  equatorial hour angle/angle2 coordinates (all values in radians) 
 	void toReference(double &angle1,  double &angle2, double axis1, double axis2) const;
 
-	double T   [3][3];		// Transformation matrix from equatorial angle1/angle2 cosines to axis axis2/axis1 cosines 
-  double Tinv[3][3];		// Inverse of the above 
+
 
   double dcAARef[3][3];	// axis1/axis2 direction cosine vectors for the three reference stars, indexed by reference first
   double dcHDRef[3][3];	// angle1/angle2l direction cosine vectors for the three reference stars, indexed by reference first
