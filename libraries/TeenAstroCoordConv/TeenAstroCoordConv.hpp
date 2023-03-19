@@ -43,15 +43,14 @@
 
 #include "TeenAstroLA3.hpp"
 
-// Converts between reference coordinates (angle1/angle2) 
+// Compute a 3x3 Matrix that describes rotaions between reference coordinates (angle1/angle2) 
 // and axis coordinates (axis1 and axis2)
 class CoordConv : public LA3 {
 public:
 
-	double T[3][3];		// Transformation matrix from equatorial angle1/angle2 cosines to axis axis2/axis1 cosines 
+	double T[3][3];		    // Transformation matrix from Horizontal to  intrument axis
 	double Tinv[3][3];		// Inverse of the above 
 
-	enum Err { EQ_AZ, EQ_ALT, POL_W };
 	CoordConv() { reset(); isready = false;}
 
   // resets reference stars
@@ -74,35 +73,16 @@ public:
 
 	void setTinvFromT();
 	
-	// add a user-provided reference star (all values in degrees, except time in seconds). adding more than three has no effect
-	void addReferenceDeg(double angle1, double angle2, double axis1, double axis2);
+	// add a user-provided reference star (all values in radians)
+	void addReference(double angle1, double angle2, double axis1, double axis2);
 
 	// Calculate third reference star from two provided ones. Returns false if more or less than two provided 
 	bool calculateThirdReference();
 
-	// Convert reference angle1/angle2 coordinates to axis axis1/axis2 coordinates (all values in degrees) 
-	void toAxisDeg(double &axis1, double &axis2,  double angle1, double angle2) const;
-
-	// Convert axis axis1/axis2 coordinates to  reference angle1/angle2 coordinates (all values in degrees) 
-	void toReferenceDeg(double &angle1,  double &angle2, double axis1, double axis2) const;
-
-	double polErrorDeg(double lat, Err sel);
-
-
 protected:
-	// add a user-provided reference star (all values in radians)
-	void addReference(double angle1, double angle2, double axis1, double axis2);
 
 	// Build coordinate system transformation matrix
 	void buildTransformations();
-
-	// Convert reference angle1/angle2 coordinates to axis axis1/axis2 coordinates (all values in radians) 
-	void toAxis(double &axis1, double &alt,  double angle1,  double angle2) const;
-
-	// Convert axis axis1/axis2 coordinates to  equatorial hour angle/angle2 coordinates (all values in radians) 
-	void toReference(double &angle1,  double &angle2, double axis1, double axis2) const;
-
-
 
   double dcAARef[3][3];	// axis1/axis2 direction cosine vectors for the three reference stars, indexed by reference first
   double dcHDRef[3][3];	// angle1/angle2l direction cosine vectors for the three reference stars, indexed by reference first

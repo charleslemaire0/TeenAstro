@@ -30,9 +30,6 @@ void CoordConv::getT(float &m11, float &m12, float &m13,float &m21, float &m22, 
 	m33=T[2][2];
 }
 
-
-
-
 // set the transformation from EEPROM
 void CoordConv::setT(float m11, float m12, float m13,float m21, float m22, float m23,float m31, float m32, float m33)
 {
@@ -52,30 +49,6 @@ void CoordConv::setT(float m11, float m12, float m13,float m21, float m22, float
 void CoordConv::setTinvFromT() {
 	invert(Tinv, T);
 }
-
-// add a user-provided reference star (all values in degrees, except time in seconds)
-void CoordConv::addReferenceDeg(double angle1, double angle2, double axis1, double axis2) {
-	addReference(toRad(angle1), toRad(angle2), toRad(axis1), toRad(axis2));
-}
-
-
-// Convert reference angle1/angle2 coordinates to axis axis1/axis2 coordinates (all values in degrees) 
-void CoordConv::toAxisDeg(double &axis1, double &axis2,  double angle1,  double angle2) const {
-	double axis1Rad=0, axis2Rad=0;
-	toAxis(axis1Rad, axis2Rad, toRad(angle1), toRad(angle2));
-	axis1=toDeg(axis1Rad);
-	axis2=toDeg(axis2Rad);
-}
-
-// Convert axis axis1/axis2 coordinates to reference angle1/angle2 coordinates (all values in degrees) 
-void CoordConv::toReferenceDeg(double &angle1,  double &angle2, double axis1, double axis2) const {
-	double angle1Rad=0, angle2Rad=0;
-	toReference(angle1Rad, angle2Rad, toRad(axis1), toRad(axis2));
-    angle1=toDeg(angle1Rad);
-    angle2=toDeg(angle2Rad);
-}
-
-
 
 // add reference star (all values in radians). adding more than three has no effect
 void CoordConv::addReference(double angle1, double angle2, double axis1, double axis2) {
@@ -144,77 +117,4 @@ void CoordConv::buildTransformations() {
 	printV("Tinv", Tinv);
 	multiply(test, T, Tinv);
 	printV("test", test);
-}
-
-// Convert reference angle1/angle2 coordinates to axis axis1/axis2 coordinates (all values in radians) 
-void CoordConv::toAxis(double &axis1, double &axis2,  double angle1,  double angle2) const {
-	#ifdef DEBUG_COUT
-	cout << "angle1 " << angle1 << "r angle2 " << angle2 << "r" << endl;
-	#endif
-	double dcHD[3], dcAA[3];
-	toDirCos(dcHD, angle2, angle1);
-	printV("dcHD ", dcHD);
-	multiply(dcAA, T, dcHD);
-	printV("dcAA ", dcAA);
-	normalize(dcAA, dcAA);
-	printV("dcAAn", dcAA);
-	toAngles(axis2, axis1, dcAA);
-	#ifdef DEBUG_COUT
-	cout << "axis1 " << axis1 << "r axis2 " << axis2 << "r" << endl;
-	#endif
-}
-
-// Convert axis axis1/axis2 coordinates to reference angle1/angle2 coordinates (all values in radians)
-void CoordConv::toReference(double &angle1,  double &angle2, double axis1, double axis2) const {
-	double dcAA[3], dcHD[3];
-	toDirCos(dcAA, axis2, axis1);
-	printV("dcAA ", dcAA);
-	multiply(dcHD, Tinv, dcAA);
-	printV("dcHD ", dcHD);
-	normalize(dcHD, dcHD);
-	printV("dcHDN", dcHD);
-	toAngles(angle2, angle1, dcHD);
-	#ifdef DEBUG_COUT
-	cout << "angle1 " << angle1 << "r angle2 " << angle2 << "r" << endl;
-	#endif
-}
-
-double CoordConv::polErrorDeg(double lat, Err sel)
-{
-// 	lat=(40+49/60+51/3600)*pi/180;x=Tinv*[0;0;1]; x_id=[cos(lat);0;sin(lat)];
-// pol_err=acos(x'/norm(x)*x_id)*180/pi
-// err_az=atan(x(2)/x(1))*180/pi
-// err_alt=(atan(x(3)/x(1))-lat)*pi/180
-
-	//y=[cos(lat);0; sin(lat)]; x=Tinv*[0;0;1];x=x/norm(x);
-	//Polerr=acos(x'*y)*180/pi
-	lat = toRad(lat);
-	double x_id [3]= {cos(lat),0,sin(lat)};
-	double x[3] = {Tinv[0][2], Tinv[1][2], Tinv[2][2]};
-	normalize(x,x);
-	switch (sel)
-	{
-		case EQ_AZ:
-		//err_az
-			if(x[0]==0)			
-			{
-				return x[1] > 0 ?  90.0 :  -90.0;
-			}
-			return toDeg(atan(x[1]/x[0]));
-		break;
-		case EQ_ALT:
-		//err_alt
-			if (x[0] == 0)
-			{
-				return x[2] > 0 ? 90.0 - toDeg(lat) : -90.0 - toDeg(lat);
-			}
-			return toDeg(atan(x[2]/x[0])-lat);
-		break;
-		case POL_W:
-		//err_pol
-			return toDeg(acos(x[0]*x_id[0]+x[1]*x_id[1]+x[2]*x_id[2]));
-		break;
-		default:
-			return 0;
-	}
 }
