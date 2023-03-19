@@ -59,8 +59,8 @@ void loop()
     Coord_EQ EQ2 = HO2.To_Coord_EQ(Lat[k]);
     Coord_IN IN2 = Coord_IN(EQ2.FrE(), EQ2.Dec(), EQ2.Ha());
 
-    virtualEQMount.addReferenceDeg(HO1.Az()*RAD_TO_DEG, HO1.Alt() * RAD_TO_DEG, IN1.Axis1() * RAD_TO_DEG, IN1.Axis2()*RAD_TO_DEG);
-    virtualEQMount.addReferenceDeg(HO2.Az() * RAD_TO_DEG, HO2.Alt() * RAD_TO_DEG, IN2.Axis1() * RAD_TO_DEG, IN2.Axis2() * RAD_TO_DEG);
+    virtualEQMount.addReference(HO1.Az(), HO1.Alt(), IN1.Axis1(), IN1.Axis2());
+    virtualEQMount.addReference(HO2.Az(), HO2.Alt(), IN2.Axis1(), IN2.Axis2());
     virtualEQMount.calculateThirdReference();
 
     PrintGivenHO(Lat[k], T_Az[k], T_Alt[k], 0);
