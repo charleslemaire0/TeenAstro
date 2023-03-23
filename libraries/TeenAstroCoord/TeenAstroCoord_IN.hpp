@@ -44,11 +44,11 @@
 class Coord_HO;
 class Coord_EQ;
 
-class Coord_IN : public Coord {
+class Coord_IN : protected Coord {
 public:
 	Coord_IN(double Axis3, double Axis2, double Axis1);
-	Coord_HO To_Coord_HO(const double(&invmissaligment)[3][3]);
-	Coord_EQ To_Coord_EQ(const double(&invmissaligment)[3][3], double Lat);
+	Coord_HO To_Coord_HO(const double(&invmissaligment)[3][3], RefrOpt Opt);
+	Coord_EQ To_Coord_EQ(const double(&invmissaligment)[3][3], RefrOpt Opt, double Lat);
 	double Axis3();
 	double Axis2();
 	double Axis1();

@@ -310,6 +310,31 @@ void LA3::getEulerRxRyRz(const double(&r)[3][3], double& thetaX, double& thetaY,
   }
 }
 
+// -----------------------------------------------------------------------------------------------------------------------------
+// Coordinate conversion
+//Topocentric Apparent convertions
+// returns the amount of refraction (in arcminutes) at the given true altitude (degrees), pressure (millibars), and temperature (celsius)
+void LA3::Topocentric2Apparent(double& Alt, RefrOpt Opt)
+{
+	double TPC = (Opt.Pressure / 101.) * (283. / (273. + Opt.Temperature));
+	double Beta = Alt + 0.0031375594238031 / (Alt + 0.08918632477691);
+	if (Beta > 0 && Opt.use)
+	{
+		Alt += TPC * 2.96705972839036e-4 / tan(Beta);
+	}
+}
+
+void LA3::Apparent2Topocentric(double& Alt, RefrOpt Opt)
+{
+	double TPC = (Opt.Pressure / 101.) * (283. / (273. + Opt.Temperature));
+	double Beta = Alt + 0.00222675333864084 / (Alt + 0.0767944870877505);
+	if (Beta > 0 && Opt.use)
+	{
+		Alt -= TPC * 2.908882086657216e-4 / tan(Beta);
+	}
+}
+
+
 void LA3::printV(const char *label, const double (&v)[3]) {
 #ifdef DEBUG_COUT
 	cout << label << " =[ " << v[0] << "\t" << v[1] << "\t" << v[2] << " ]" << endl;   

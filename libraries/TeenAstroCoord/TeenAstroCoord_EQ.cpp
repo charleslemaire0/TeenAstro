@@ -5,7 +5,7 @@
 Coord_EQ::Coord_EQ(double FrE, double Dec, double Ha) : Coord({ LA3::RotAxis::ROTAXISX, FrE }, { LA3::RotAxis::ROTAXISY, Dec }, { LA3::RotAxis::ROTAXISZ, Ha })
 {
 };
-Coord_HO Coord_EQ::To_Coord_HO(double Lat)
+Coord_HO Coord_EQ::To_Coord_HO(double Lat, RefrOpt Opt)
 {
   double frh, alt, az;
   double tmp[3][3];
@@ -17,11 +17,15 @@ Coord_HO Coord_EQ::To_Coord_HO(double Lat)
   };
   LA3::getMultipleRotationMatrix(tmp, rots, 4);
   LA3::getEulerRxRyRz(tmp, frh, alt, az);
-  return Coord_HO(frh, alt, az);
+  if (Opt.use)
+  {
+    LA3::Topocentric2Apparent(alt, Opt);
+  }
+  return Coord_HO(frh, alt, az, Opt.use);
 };
-Coord_IN Coord_EQ::To_Coord_IN(double Lat, const double(&missaligment)[3][3])
+Coord_IN Coord_EQ::To_Coord_IN(double Lat, RefrOpt Opt, const double(&missaligment)[3][3])
 {
-  return To_Coord_HO(Lat).To_Coord_IN(missaligment);
+  return To_Coord_HO(Lat, Opt).To_Coord_IN(missaligment);
 };
 double Coord_EQ::FrE()
 {

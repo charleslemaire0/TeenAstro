@@ -44,9 +44,13 @@
 class Coord_EQ;
 class Coord_IN;
 
-class Coord_HO : public Coord {
+class Coord_HO : protected Coord {
+private:
+	bool mIsApparent;
 public:
-	Coord_HO(double FrH, double Alt, double Az);
+	Coord_HO(double FrH, double Alt, double Az, bool IsApparent );
+	Coord_HO ToApparent(RefrOpt opt);
+	Coord_HO ToTopocentric(RefrOpt opt);
 	Coord_EQ To_Coord_EQ(double Lat);
 	Coord_IN To_Coord_IN(const double(&missaligment)[3][3]);
 	double FrH();

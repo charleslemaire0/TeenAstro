@@ -3,9 +3,33 @@
 #include "TeenAstroCoord_EQ.hpp"
 
 
-Coord_HO::Coord_HO(double FrH, double Alt, double Az) : Coord({ LA3::RotAxis::ROTAXISX, FrH }, { LA3::RotAxis::ROTAXISY, Alt }, { LA3::RotAxis::ROTAXISZ, Az })
+
+
+Coord_HO::Coord_HO(double FrH, double Alt, double Az, bool IsApparent) : Coord({ LA3::RotAxis::ROTAXISX, FrH }, { LA3::RotAxis::ROTAXISY, Alt }, { LA3::RotAxis::ROTAXISZ, Az })
 {
+  mIsApparent = IsApparent;
 };
+
+Coord_HO Coord_HO::ToApparent(RefrOpt opt)
+{
+  double alt = m_Eulers[1].angle;
+  if (!mIsApparent)
+  {
+    LA3::Topocentric2Apparent(alt, opt);
+  }
+  return Coord_HO(m_Eulers[0].angle, alt, m_Eulers[2].angle, true);
+}
+
+Coord_HO Coord_HO::ToTopocentric(RefrOpt opt)
+{
+  double alt = m_Eulers[1].angle;
+  if (mIsApparent)
+  {
+    LA3::Apparent2Topocentric(alt, opt);
+  }
+  return Coord_HO(m_Eulers[0].angle, alt, m_Eulers[2].angle, false);
+}
+
 Coord_EQ Coord_HO::To_Coord_EQ(double Lat)
 {
   double fre, dec, ha;
@@ -20,6 +44,7 @@ Coord_EQ Coord_HO::To_Coord_EQ(double Lat)
   LA3::getEulerRxRyRz(tmp, fre, dec, ha);
   return Coord_EQ(fre, dec, ha);
 };
+
 Coord_IN Coord_HO::To_Coord_IN(const double(&missaligment)[3][3])
 {
   double axis3, axis2, axis1;
@@ -35,6 +60,8 @@ Coord_IN Coord_HO::To_Coord_IN(const double(&missaligment)[3][3])
   LA3::getEulerRxRyRz(tmp2, axis3, axis2, axis1);
   return Coord_IN(axis3, axis2, axis1);
 };
+
+
 double Coord_HO::FrH()
 {
   return m_Eulers[0].angle;

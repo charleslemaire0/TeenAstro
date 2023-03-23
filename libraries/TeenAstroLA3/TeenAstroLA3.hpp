@@ -45,6 +45,12 @@ public:
 		RotAxis axis;
     double angle;
   };
+	struct RefrOpt
+	{
+		bool use;
+		double Temperature;
+		double Pressure;
+	};
 
 	// Multiply two 3-vectors
 	static void crossProduct(double (&out)[3], const double (&a)[3], const double (&b)[3]);
@@ -108,6 +114,13 @@ public:
 
 	// Calculate determinant of a 3x3 matrix
 	static double determinant(const double (&m)[3][3]);
+
+
+	// -----------------------------------------------------------------------------------------------------------------------------
+  // Coordinate conversion
+  // Topocentric Apparent convertions
+	static void Topocentric2Apparent(double& Alt, RefrOpt Opt);
+	static void Apparent2Topocentric(double& Alt, RefrOpt Opt);
 
 	// Print a 3-vector to cout, with given label
 	static void printV(const char *label, const double (&v)[3]);

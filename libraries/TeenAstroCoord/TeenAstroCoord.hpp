@@ -43,7 +43,7 @@
 
 // Converts between reference coordinates (angle1/angle2) 
 // and axis coordinates (axis1 and axis2)
-class Coord : public LA3 {
+class Coord : protected LA3 {
 protected:
 	LA3::SingleRotation m_Eulers[3];
 public:

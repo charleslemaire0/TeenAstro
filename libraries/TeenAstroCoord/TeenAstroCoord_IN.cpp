@@ -6,7 +6,7 @@
 Coord_IN::Coord_IN(double Axis3, double Axis2, double Axis1) : Coord({ LA3::RotAxis::ROTAXISX, Axis3 }, { LA3::RotAxis::ROTAXISY, Axis2 }, { LA3::RotAxis::ROTAXISZ, Axis1 })
 {
 };
-Coord_HO Coord_IN::To_Coord_HO(const double(&invmissaligment)[3][3])
+Coord_HO Coord_IN::To_Coord_HO(const double(&invmissaligment)[3][3], RefrOpt Opt)
 {
   double frh, alt, az;
   double tmp1[3][3];
@@ -19,11 +19,15 @@ Coord_HO Coord_IN::To_Coord_HO(const double(&invmissaligment)[3][3])
   LA3::getMultipleRotationMatrix(tmp1, rots, 3);
   LA3::multiply(tmp2, tmp1, invmissaligment);
   LA3::getEulerRxRyRz(tmp2, frh, alt, az);
-  return Coord_HO(frh, alt, az);
+  if (Opt.use)
+  {
+    LA3::Topocentric2Apparent(alt, Opt);
+  }
+  return Coord_HO(frh, alt, az, Opt.use);
 };
-Coord_EQ Coord_IN::To_Coord_EQ(const double(&invmissaligment)[3][3], double Lat)
+Coord_EQ Coord_IN::To_Coord_EQ(const double(&invmissaligment)[3][3], RefrOpt Opt, double Lat)
 {
-  return To_Coord_HO(invmissaligment).To_Coord_EQ(Lat);
+  return To_Coord_HO(invmissaligment, Opt).To_Coord_EQ(Lat);
 };
 double Coord_IN::Axis3()
 {
