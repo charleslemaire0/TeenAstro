@@ -51,17 +51,17 @@ void Command_A()
   case '2':
   {
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    double Azm, Alt;
-    EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
+    Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+    Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude(), RefrOptForGoto());
 
     if (alignment.getRefs() == 0)
     {
-      syncAzAlt(Azm, Alt, GetPierSide());
+      syncAzAlt(&HO_T, GetPierSide());
     }
 
     double Axis1, Axis2, Axis3;
     getInstrDeg(&Axis1, &Axis2, &Axis3);
-    alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
+    alignment.addReference(HO_T.Az(), HO_T.Alt(), Axis1 * DEG_TO_RAD, Axis2 * DEG_TO_RAD);
 
     if (alignment.getRefs() == 2)
     {
@@ -81,17 +81,17 @@ void Command_A()
   case '3':
   {
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    double Azm, Alt;
-    EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
+    Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+    Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude(), RefrOptForGoto());
+
     if (alignment.getRefs() == 0)
     {
-      syncAzAlt(Azm, Alt, GetPierSide());
+      syncAzAlt(&HO_T, GetPierSide());
     }
 
     double Axis1, Axis2, Axis3;
     getInstrDeg(&Axis1, &Axis2, &Axis3);
-    alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
-
+    alignment.addReference(HO_T.Az(), HO_T.Alt(), Axis1 * DEG_TO_RAD, Axis2 * DEG_TO_RAD);
     if (alignment.isReady())
     {
       hasStarAlignment = true;
@@ -179,19 +179,18 @@ void Command_C()
     case 'M':
     case 'S':
     {
-      double newTargetHA;
       if (autoAlignmentBySync) {
-        newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-        double Azm, Alt;
-        EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
+        double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+        Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+        Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude(), RefrOptForGoto());
         if (alignment.getRefs() == 0)
         {
-          syncAzAlt(Azm, Alt, GetPierSide());
+          syncAzAlt(&HO_T, GetPierSide());
         }
 
         double Axis1, Axis2, Axis3;
         getInstrDeg(&Axis1, &Axis2, &Axis3);
-        alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
+        alignment.addReference(HO_T.Az(), HO_T.Alt(), Axis1 * DEG_TO_RAD, Axis2 * DEG_TO_RAD);
 
         if (alignment.isReady())
         {
@@ -205,8 +204,9 @@ void Command_C()
       }
       else
       {
-        newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-        syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
+        double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+        Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+        syncEqu(&EQ_T, targetPierSide, *localSite.latitude() * DEG_TO_RAD);
         syncEwithT();
       }
       if (command[1] == 'M')
@@ -221,16 +221,20 @@ void Command_C()
       newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
       newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-      syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
+      Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+      syncEqu(&EQ_T, targetPierSide, *localSite.latitude() * DEG_TO_RAD);
       syncEwithT();
       strcpy(reply, "N/A#");
       break;
     }
     case 'A':
-      syncAzAlt(newTargetAzm, newTargetAlt, targetPierSide);
+    {
+      Coord_HO HO_T(0, newTargetAlt * DEG_TO_RAD, newTargetAzm * DEG_TO_RAD, true);
+      syncAzAlt(&HO_T, targetPierSide);
       syncEwithT();
       strcpy(reply, "N/A#");
-      break;
+    }
+    break;
     }
   }
 }
@@ -318,14 +322,16 @@ void Command_E()
       case PT_RADEC:
       {
         double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-        syncEqu(newTargetHA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat());
+        Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+        syncEqu(&EQ_T, GetPierSide(), *localSite.latitude() * DEG_TO_RAD);
         syncEwithT();
         replyLongTrue();
       }
       break;
       case PT_ALTAZ:
       {
-        syncAzAlt(newTargetAzm, newTargetAlt, GetPierSide());
+        Coord_HO HO_T(0, newTargetAlt * DEG_TO_RAD, newTargetAzm * DEG_TO_RAD, true);
+        syncAzAlt(&HO_T, GetPierSide());
         syncEwithT();
         replyLongTrue();
       }
@@ -350,13 +356,20 @@ void Command_E()
     switch (PushtoStatus)
     {
     case PT_RADEC:
-      e = PushToEqu(newTargetRA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat(), &delta1, &delta2);
+    {
+      double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+      Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+      e = PushToEqu(EQ_T, GetPierSide(), *localSite.latitude() * DEG_TO_RAD, &delta1, &delta2);
       sprintf(reply, "%d,%+06d,%+06d#", e, (int)(60 * delta1), (int)(60 * delta2));
-      break;
+    }
+    break;
     case PT_ALTAZ:
-      e = PushToHor(&newTargetAzm, &newTargetAlt, GetPierSide(), &delta1, &delta2);
+    {
+      Coord_HO HO_T(0, newTargetAlt * DEG_TO_RAD, newTargetAzm * DEG_TO_RAD, true);
+      e = PushToHor(HO_T, GetPierSide(), &delta1, &delta2);
       sprintf(reply, "%d,%+06d,%+06d#", e, (int)(60 * delta1), (int)(60 * delta2));
-      break;
+    }
+    break;
     default:
       sprintf(reply, "%d,%+06d,%+06d#", 0, 0, 0);
       break;
@@ -370,21 +383,27 @@ void Command_E()
     int e = 0;
     if (command[2] == 'S')
     {
-      e = PushToEqu(newTargetRA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat(), &delta1, &delta2);
+      double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+      Coord_EQ EQ_T(0, newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
+      e = PushToEqu(EQ_T, GetPierSide(), *localSite.latitude() * DEG_TO_RAD, &delta1, &delta2);
       sprintf(reply, "%d", e);
       PushtoStatus = PT_RADEC;
     }
     else if (command[2] == 'A')
     {
-      e = PushToHor(&newTargetAzm, &newTargetAlt, GetPierSide(), &delta1, &delta2);
+      Coord_HO HO_T(0, newTargetAlt* DEG_TO_RAD, newTargetAzm* DEG_TO_RAD, true);
+      e = PushToHor(HO_T, GetPierSide(), &delta1, &delta2);
       sprintf(reply, "%d", e);
       PushtoStatus = PT_ALTAZ;
     }
     else if (command[2] == 'U')
     {
+
       newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
       newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
-      e = PushToEqu(newTargetRA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat(), &delta1, &delta2);
+      double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+      Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+      e = PushToEqu(EQ_T, GetPierSide(), *localSite.latitude() * DEG_TO_RAD, &delta1, &delta2);
       sprintf(reply, "%d", e);
       PushtoStatus = PT_RADEC;
     }

@@ -72,24 +72,23 @@ void computeTrackingRate(bool apply)
   }
 }
 
-void RateFromMovingTarget(const double &HA_prev, const double &Dec_prev,
-  const double &HA_next, const double &Dec_next,
+void RateFromMovingTarget( Coord_EQ &EQprev,  Coord_EQ &EQnext,
   const double &TimeRange, const PierSide &side, const bool &refr, 
   double &A1_trackingRate, double &A2_trackingRate)
 {
-  double Axis1_tmp, Axis2_tmp = 0.;
-  double Azm_tmp, Alt_tmp = 0.;
+  
   long axis1_before, axis1_after = 0;
   long axis2_before, axis2_after = 0;
   double axis1_delta, axis2_delta = 0;
 
-  EquToHor(HA_prev, Dec_prev, refr, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
-  alignment.toAxisDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
-  Angle2Step(Axis1_tmp, Axis2_tmp, side, &axis1_before, &axis2_before);
+  LA3::RefrOpt rop = { doesRefraction.forTracking, 10, 101 };
+  
+  Coord_IN INprev = EQprev.To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, rop, alignment.Tinv);
+  Angle2Step(INprev.Axis1() * RAD_TO_DEG, INprev.Axis2() * RAD_TO_DEG, side, &axis1_before, &axis2_before);
 
-  EquToHor(HA_next, Dec_next, refr, &Azm_tmp, &Alt_tmp, localSite.cosLat(), localSite.sinLat());
-  alignment.toAxisDeg(Axis1_tmp, Axis2_tmp, Azm_tmp, Alt_tmp);
-  Angle2Step(Axis1_tmp, Axis2_tmp, side, &axis1_after, &axis2_after);
+  Coord_IN INnext = EQnext.To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, rop, alignment.Tinv);
+  Angle2Step(INnext.Axis1() * RAD_TO_DEG, INnext.Axis2() * RAD_TO_DEG, side, &axis1_after, &axis2_after);
+
 
   axis1_delta = distStepAxis1(&axis1_before, &axis1_after) / geoA1.stepsPerDegree;
   while (axis1_delta < -180) axis1_delta += 360.;
@@ -110,8 +109,8 @@ void do_compensation_calc()
   // 1 arc-min ahead of and behind the current Equ position, used for rate calculation
 
   const double TimeRange = 60;
-  double HA_prev, HA_next, HA_now = 0.;
-  double Dec_prev, Dec_next, Dec_now = 0.;
+  double HA_now = 0.;
+  double Dec_now = 0.;
   double DriftHA, DriftDEC = 0;
   double RateA1,RateA2 = 0;
 
@@ -131,19 +130,26 @@ void do_compensation_calc()
 
   // if moving to a target select target as reference position if not select current position
   if (movingTo)
-    getEquTarget(&HA_now, &Dec_now, localSite.cosLat(), localSite.sinLat(), true);
+  {
+    Coord_EQ EQ_T = getEquTarget(*localSite.latitude() * DEG_TO_RAD);
+    HA_now = EQ_T.Ha() * RAD_TO_DEG;
+    Dec_now = EQ_T.Dec() * RAD_TO_DEG;
+  }
   else
-    getEqu(&HA_now, &Dec_now, localSite.cosLat(), localSite.sinLat(), true);
+  {
+    Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
+    HA_now = EQ_T.Ha() * RAD_TO_DEG;
+    Dec_now = EQ_T.Dec() * RAD_TO_DEG;
+  }
+
 
   // look ahead of the position
-  HA_prev = HA_now - DriftHA;
-  Dec_prev = Dec_now - DriftDEC;
+  Coord_EQ EQ_prev(0, (Dec_now - DriftDEC) * DEG_TO_RAD, (HA_now - DriftHA) * DEG_TO_RAD);
 
   // look behind the position
-  HA_next = HA_now + DriftHA;
-  Dec_next = Dec_now + DriftDEC;
+  Coord_EQ EQ_next(0, (Dec_now + DriftDEC) * DEG_TO_RAD, (HA_now + DriftHA) * DEG_TO_RAD);
 
-  RateFromMovingTarget(HA_prev, Dec_prev, HA_next, Dec_next,
+  RateFromMovingTarget(EQ_prev, EQ_next,
     TimeRange, side_tmp, doesRefraction.forTracking,
     RateA1, RateA2);
 

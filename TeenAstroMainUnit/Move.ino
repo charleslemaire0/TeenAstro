@@ -149,13 +149,13 @@ void CheckSpiral()
 
   if (!startPointDefined)
   {
-    //compute local sky coordinate system at the start position
+    //compute local sky coordinate system at the start position local sky coordinate are here instrement coordinates
     //we define the local coordinate system in or that the telescop is now at HA_L = 0, and DEC_L =0
-    double HA_ref, Dec_ref;
-    getEqu(&HA_ref, &Dec_ref, localSite.cosLat(), localSite.sinLat(), true);
-    helper.addReferenceDeg(HA_ref, Dec_ref, 0, 0);
-    double shift = Dec_ref > 0 ? -45 : 45;
-    helper.addReferenceDeg(HA_ref, Dec_ref + shift, 0, shift);
+   
+    Coord_EQ EQ_R = getEqu(*localSite.latitude() * DEG_TO_RAD);
+    helper.addReference(EQ_R.Ha(), EQ_R.Dec(), 0, 0);
+    double shift = EQ_R.Dec() > 0 ? -M_PI_4 : M_PI_4;
+    helper.addReference(EQ_R.Ha(), EQ_R.Dec() + shift, 0, shift);
     helper.calculateThirdReference();
     //init time
     clk_ini = millis();
@@ -183,7 +183,6 @@ void CheckSpiral()
     return;
   }
 
-  double HA_prev, HA_next, Dec_prev, Dec_next;
   double SpiraleRateA1, SpiraleRateA2;
 
   double t_prev = 0.001 * (t - dt);
@@ -196,13 +195,13 @@ void CheckSpiral()
   double hl_next = 0.4 * SpiralFOV * sqrt(t_next) * cos(sqrt(t_next));
   double dl_next = 0.4 * SpiralFOV * sqrt(t_next) * sin(sqrt(t_next));
   //now get these position in the sky
-
-  helper.toReferenceDeg(HA_prev, Dec_prev, hl_prev, dl_prev);
-  helper.toReferenceDeg(HA_next, Dec_next, hl_next, dl_next);
+  
+  Coord_EQ EQ_prev = Coord_LO(0, dl_prev * DEG_TO_RAD, hl_prev * DEG_TO_RAD).To_Coord_EQ(helper.T);
+  Coord_EQ EQ_next = Coord_LO(0, dl_next * DEG_TO_RAD, hl_next * DEG_TO_RAD).To_Coord_EQ(helper.T);
 
   PierSide side_tmp = GetPierSide();
 
-  RateFromMovingTarget(HA_prev, Dec_prev, HA_next, Dec_next,
+  RateFromMovingTarget(EQ_prev, EQ_next,
     0.002*dt, side_tmp, doesRefraction.forGoto,
     SpiraleRateA1, SpiraleRateA2);
 

@@ -1048,34 +1048,38 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
   { bool ok = !movingTo;
+  if (ok)
+  {
+    f = strtod(&command[2], &conv_end);
+    bool ok = (&command[2] != conv_end) &&
+      (((f >= 30.0) && (f < 90.0)) || (abs(f) < 0.1));
     if (ok)
     {
-      f = strtod(&command[2], &conv_end);
-      bool ok = (&command[2] != conv_end) &&
-        (((f >= 30.0) && (f < 90.0)) || (abs(f) < 0.1));
-      if (ok)
+      if (abs(f) < 0.1)
       {
-        if (abs(f) < 0.1)
-        {
-          sideralTracking = false;
-        }
-        else
-        {
-          RequestedTrackingRateHA = (f / 60.0) / 1.00273790935;
-          // todo apply rate
-        }
+        sideralTracking = false;
+      }
+      else
+      {
+        RequestedTrackingRateHA = (f / 60.0) / 1.00273790935;
+        // todo apply rate
       }
     }
-    replyValueSetShort(ok);
   }
-    break;
+  replyValueSetShort(ok);
+  }
+  break;
   case 'U':
     // :SU# store current User defined Position
-    getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+  {
+    Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
+    f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
+    f1 = EQ_T.Dec() * RAD_TO_DEG;
     XEEPROM.writeFloat(getMountAddress(EE_RA), (float)f);
     XEEPROM.writeFloat(getMountAddress(EE_DEC), (float)f1);
     replyValueSetShort(true);
-    break;
+  }
+  break;
   case 'X':
     Command_SX();
     break;

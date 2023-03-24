@@ -89,39 +89,39 @@ void Command_GX()
       break;
     case 'a':
     case 'z':
-    case 'w':
-    {
-      // :GXAa#
-      // :GXAz# 
-      // :GXAw#
-      CoordConv::Err request = CoordConv::Err::POL_W;
-      i = 1;
-      switch (command[3])
-      {
-      case'a':
-        request = CoordConv::Err::EQ_ALT;
-        break;
-      case'z':
-        request = CoordConv::Err::EQ_AZ;
-        break;
-      case 'w':
-        request = CoordConv::Err::POL_W;
-        break;
-      default:
-        i = 0;
-      }
-      f1 = alignment.polErrorDeg(*localSite.latitude(), request);
-      if (i == 0)
-      {
-        replyLongUnknow();
-      }
-      else
-      {
-        doubleToDms(reply, &f1, false, true, true);
-        strcat(reply, "#");
-      }
-      break;
-    }
+    //case 'w':
+    //{
+    //  // :GXAa#
+    //  // :GXAz# 
+    //  // :GXAw#
+    //  CoordConv::Err request = CoordConv::Err::POL_W;
+    //  i = 1;
+    //  switch (command[3])
+    //  {
+    //  case'a':
+    //    request = CoordConv::Err::EQ_ALT;
+    //    break;
+    //  case'z':
+    //    request = CoordConv::Err::EQ_AZ;
+    //    break;
+    //  case 'w':
+    //    request = CoordConv::Err::POL_W;
+    //    break;
+    //  default:
+    //    i = 0;
+    //  }
+    //  f1 = alignment.polErrorDeg(*localSite.latitude(), request);
+    //  if (i == 0)
+    //  {
+    //    replyLongUnknow();
+    //  }
+    //  else
+    //  {
+    //    doubleToDms(reply, &f1, false, true, true);
+    //    strcat(reply, "#");
+    //  }
+    //  break;
+    //}
     default:
       replyLongUnknow();
       break;
@@ -149,9 +149,13 @@ void Command_GX()
       // :GXEZ Returns: DDD* MM# or DDD * MM'SS# (based on precision setting)
     {
 #if HASEncoder
-      getHorAppE(&f, &f1);
+      Coord_HO HO_T = getHorAppE();
+      f = HO_T.Az() * RAD_TO_DEG;
+      f1 = HO_T.Alt() * RAD_TO_DEG;
 #else
-      getHorApp(&f, &f1);
+      Coord_HO HO_T = getHorApp();
+      f = HO_T.Az() * RAD_TO_DEG;
+      f1 = HO_T.Alt() * RAD_TO_DEG;
 #endif // HASEncoder
       command[3] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
     }
@@ -164,12 +168,20 @@ void Command_GX()
       //  :GR#   Get Telescope Encoder RA
       //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
 #if HASEncoder
-      getEquE(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+      Coord_EQ EQ_T = getEquE( *localSite.latitude() * DEG_TO_RAD);
 #else
-      getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+      Coord_EQ EQ_T = getEqu( *localSite.latitude() * DEG_TO_RAD);
 #endif
-      f /= 15.0;    
-      command[3] == 'D' ? PrintDec(f1) : PrintRa(f);
+      if (command[3] == 'R')
+      {
+        f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
+        PrintRa(f);
+      }
+      else
+      {
+        f1 = EQ_T.Dec() * RAD_TO_DEG;
+        PrintDec(f1);
+      }
     }
     break;
     case 'O':
@@ -525,8 +537,9 @@ void Command_GX()
       }
       else
       {
-        getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
-        f /= 15.0;
+        Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
+        f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
+        f1 = EQ_T.Dec() * RAD_TO_DEG;
         _ra1 = f;
         _dec1 = f1;
         _coord_t1 = millis();
@@ -922,13 +935,30 @@ void  Command_G()
   {
   case 'A':
   case 'Z':
+  case ')':
     //  :GA#   Get Telescope Altitude, Native LX200 command
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //  :GZ#   Get telescope azimuth, Native LX200 command
     //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
-    getHorAppE(&f, &f1);
-    command[1] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
-    break;
+  {
+    Coord_HO HO_T = getHorApp();
+    if (command[1] == 'A')
+    {
+      f1 = HO_T.Alt() * RAD_TO_DEG;
+      PrintAtitude(f1);
+    }
+    else if (command[1] == 'Z')
+    {
+      f = HO_T.Az() * RAD_TO_DEG;
+      PrintAzimuth(f);
+    }
+    else
+    {
+      f1 = HO_T.FrH() * RAD_TO_DEG;
+      PrintAzimuth(f1);
+    }
+  }
+  break;
   case 'a':
     //  :Ga#   Get Local Time in 12 hour format, Native LX200 command
     //         Returns: HH:MM:SS#
@@ -938,7 +968,6 @@ void  Command_G()
     strcat(reply, "#");
     highPrecision = i;
     break;
-
   case 'C':
     //  :GC#   Get the current date, Native LX200 command
     //         Returns: MM/DD/YY#
@@ -948,8 +977,8 @@ void  Command_G()
     rtk.getULDate(i2, i, i1, i3, i4, i5, localSite.toff());
     i2 = i2 % 100;
     sprintf(reply, "%02d/%02d/%02d#", i, i1, i2);
-    break;
   }
+  break;
   case 'c':
     //  :Gc#   Get the current time format, Native LX200 command
     //         Returns: 24#
@@ -958,16 +987,30 @@ void  Command_G()
     break;
   case 'D':
   case 'R':
+  case '(':
     //  :GD#   Get Telescope Declination, Native LX200 command
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //  :GR#   Get Telescope RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
   {
-    getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
-    f /= 15.0;
-    command[1] == 'D' ? PrintDec(f1) : PrintRa(f);
-    break;
+    Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
+    if (command[1] == 'R')
+    {
+      f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
+      PrintRa(f);
+    }
+    else if(command[1] == 'D')
+    {
+      f1 = EQ_T.Dec() * RAD_TO_DEG;
+      PrintDec(f1);
+    }
+    else
+    {
+      f1 = EQ_T.FrE() * RAD_TO_DEG;
+      PrintAzimuth(f1);
+    }
   }
+  break;
   case 'd':
     //  :Gd#   Get Currently Selected Target Declination, Native LX200 command
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)

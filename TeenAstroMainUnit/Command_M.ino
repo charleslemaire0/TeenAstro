@@ -56,10 +56,13 @@ void Command_M()
     //         2=No object selected
     //         4=Position unreachable
     //         6=Outside limits
-    i = goToHor(&newTargetAzm, &newTargetAlt, GetPierSide());
+  {
+    Coord_HO HO_T(0, newTargetAlt * DEG_TO_RAD, newTargetAzm * DEG_TO_RAD, true);
+    i = goToHor(HO_T, GetPierSide());
     reply[0] = i + '0';
     reply[1] = 0;
-    break;
+  }
+  break;
   case 'F':
   {
     // Flip Mount
@@ -182,7 +185,8 @@ void Command_M()
     //:MS#   Goto the Target Object
     //       Returns an ERRGOTO
     double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    i = goToEqu(newTargetHA, newTargetDec, GetPierSide(), localSite.cosLat(), localSite.sinLat());
+    Coord_EQ EQ_T(0, newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
+    i = goToEqu(EQ_T, GetPierSide(), *localSite.latitude() * DEG_TO_RAD);
     if (i == 0)
     {
       sideralTracking = true;
@@ -201,7 +205,8 @@ void Command_M()
     newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
     newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    i = goToEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
+    Coord_EQ EQ_T(0, newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
+    i = goToEqu(EQ_T, targetPierSide, *localSite.latitude() * DEG_TO_RAD);
     if (i == 0)
     {
       sideralTracking = true;
@@ -217,7 +222,7 @@ void Command_M()
     // :M?#   Predict side of Pier for the Target Object
     // reply ? or E or W
     // reply ! if failed
-    double Ra, Ha, Dec, azm, alt = 0, axis1angle,axis2angle;
+    double Ra, Ha, Dec, alt = 0, axis1angle,axis2angle;
     long axis1step, axis2step;
     PierSide predictedSide = PIER_NOTVALID;
     char rastr[12];
@@ -239,13 +244,17 @@ void Command_M()
       break;
     }
     Ha = haRange(rtk.LST() * 15.0 - Ra * 15);
-    EquToHor(Ha, Dec, doesRefraction.forGoto,&azm, &alt, localSite.cosLat(), localSite.sinLat());
-    if (alt < minAlt || alt > maxAlt)
+
+    Coord_EQ EQ_T(0, Dec * DEG_TO_RAD , Ha * DEG_TO_RAD);
+    Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto());
+    if (HO_T.Alt() < minAlt * DEG_TO_RAD || alt > maxAlt * DEG_TO_RAD)
     {
       strcpy(reply, "!");
       break;
     }
-    alignment.toAxisDeg(axis1angle, axis2angle, azm, alt);
+    Coord_IN instr_T = HO_T.To_Coord_IN(alignment.Tinv);
+    axis1angle = instr_T.Axis1() * RAD_TO_DEG;
+    axis2angle = instr_T.Axis2() * RAD_TO_DEG;
     bool ok = predictTarget(axis1angle, axis2angle, GetPierSide(), axis1step, axis2step,predictedSide);
     if (!ok)
     {
