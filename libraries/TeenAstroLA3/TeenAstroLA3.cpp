@@ -297,16 +297,16 @@ void LA3::getEulerRxRyRz(const double(&r)[3][3], double& thetaX, double& thetaY,
     {
       // Not a unique solution : thetaZ - thetaX = atan2 ( r10 , r11 )
       thetaY = -M_PI / 2;
-      thetaX = -atan2(r[1][0], r[1][1]);
-      thetaZ = 0;
+      thetaX = 0;
+      thetaZ = atan2(r[1][0], r[1][1]);
     }
   }
   else // r02 = +1
   {
     // Not a unique solution : thetaZ + thetaX = atan2 ( r10 , r11 )
     thetaY = +M_PI / 2;
-    thetaX = atan2(r[1][0], r[1][1]);
-    thetaZ = 0;
+    thetaX = 0;
+    thetaZ = atan2(r[1][0], r[1][1]);
   }
 }
 
