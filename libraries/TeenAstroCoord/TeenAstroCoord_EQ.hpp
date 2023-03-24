@@ -48,10 +48,11 @@ class Coord_EQ : protected Coord {
 public:
 	Coord_EQ(double FrE, double Dec, double Ha);
 	Coord_HO To_Coord_HO(double Lat, RefrOpt Opt);
-	Coord_IN To_Coord_IN(double Lat, RefrOpt Opt, const double(&missaligment)[3][3]);
+	Coord_IN To_Coord_IN(double Lat, RefrOpt Opt, const double(&missaligmentinv)[3][3]);
   double FrE();
 	double Dec();
 	double Ha();
+	double Ra(double LST);
 };
 
 

@@ -13,6 +13,7 @@ const double Dec[1] = { 0.14718022 };
 const double RotE[1] = { random(-180, 180) * DEG_TO_RAD };
 const double T_Az[1] = { -0.902320657 };
 const double T_Alt[1] = { 0.63775167 };
+LA3::RefrOpt Opt = { false,10,101 };
 
 int k;
 void setup()
@@ -51,11 +52,11 @@ void loop()
 
   if (k < 1)
   {
-    Coord_HO HO1 = Coord_HO(0, 45 * DEG_TO_RAD, 90 * DEG_TO_RAD);
+    Coord_HO HO1 = Coord_HO(0, 45 * DEG_TO_RAD, 90 * DEG_TO_RAD,true);
     Coord_EQ EQ1 = HO1.To_Coord_EQ(Lat[k]);
     Coord_IN IN1 = Coord_IN(EQ1.FrE(), EQ1.Dec(), EQ1.Ha());
 
-    Coord_HO HO2 = Coord_HO(0, 45 * DEG_TO_RAD, 270 * DEG_TO_RAD);
+    Coord_HO HO2 = Coord_HO(0, 45 * DEG_TO_RAD, 270 * DEG_TO_RAD,true);
     Coord_EQ EQ2 = HO2.To_Coord_EQ(Lat[k]);
     Coord_IN IN2 = Coord_IN(EQ2.FrE(), EQ2.Dec(), EQ2.Ha());
 
@@ -66,7 +67,7 @@ void loop()
     PrintGivenHO(Lat[k], T_Az[k], T_Alt[k], 0);
 
     Coord_IN INtest = Coord_IN(RotE[k], Dec[k], Ha[k]);
-    Coord_HO HOtest = INtest.To_Coord_HO(virtualEQMount.T);
+    Coord_HO HOtest = INtest.To_Coord_HO(virtualEQMount.T, Opt);
 
     PrintComputedHO(HOtest.Az(), HOtest.Alt(), HOtest.FrH());
     k++;

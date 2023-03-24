@@ -23,9 +23,9 @@ Coord_HO Coord_EQ::To_Coord_HO(double Lat, RefrOpt Opt)
   }
   return Coord_HO(frh, alt, az, Opt.use);
 };
-Coord_IN Coord_EQ::To_Coord_IN(double Lat, RefrOpt Opt, const double(&missaligment)[3][3])
+Coord_IN Coord_EQ::To_Coord_IN(double Lat, RefrOpt Opt, const double(&missaligmentinv)[3][3])
 {
-  return To_Coord_HO(Lat, Opt).To_Coord_IN(missaligment);
+  return To_Coord_HO(Lat, Opt).To_Coord_IN(missaligmentinv);
 };
 double Coord_EQ::FrE()
 {
@@ -38,4 +38,12 @@ double Coord_EQ::Dec()
 double Coord_EQ::Ha()
 {
   return m_Eulers[2].angle;
+};
+double Coord_EQ::Ra(double LST)
+{
+  double period = 2 * M_PI;
+  double Ra = LST - Ha();
+  while (Ra >= period) Ra -= period;
+  while (Ra < 0.) Ra += period;
+  return Ra;
 };
