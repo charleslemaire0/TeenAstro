@@ -7,6 +7,7 @@
 
 import PySimpleGUI as sg
 import platform, re, json, sys, math, time
+from datetime import datetime
 from telnetlib import Telnet
 import serial
 import serial.tools.list_ports
@@ -29,10 +30,10 @@ MountDef = { 'mType':['Eq-German', 'Eq-Fork', 'AltAz-Tee', 'AltAz-Fork'],
       'MaxR':[i for i in range(32,4000)],'GuideR':[i/100 for i in range(1,100)],'Acc':[i/10 for i in range(1,251)],
       'SlowR':[i for i in range(1,255)],'MediumR':[i for i in range(1,255)],'FastR':[i for i in range(1,255)],
       'mrot1':['Direct','Reverse'],'mge1':[i for i in range(1,60000)],'mst1':[i for i in range(1,400)],'mmu1':[8,16,32,64,128,256],
-      'mbl1':[i for i in range(0,999)],'mlc1':[i for i in range(100,2000,10)],'mhc1':[i for i in range(100,2000)], 
+      'mbl1':[i for i in range(0,999)],'mlc1':[i for i in range(100,2000,10)],'mhc1':[i for i in range(100,2000, 10)], 
       'msil1':[0,1],
       'mrot2':['Direct','Reverse'],'mge2':[i for i in range(1,60000)],'mst2':[i for i in range(1,400)],'mmu2':[8,16,32,64,128,256],
-      'mbl2':[i for i in range(0,999)],'mlc2':[i for i in range(100,2000,10)],'mhc2':[i for i in range(100,2000)], 
+      'mbl2':[i for i in range(0,999)],'mlc2':[i for i in range(100,2000,10)],'mhc2':[i for i in range(100,2000, 10)], 
       'msil2':[0,1],
       'hl':[i for i in range(-30,30)], 'ol':[i for i in range(60,92)], 'el':[i for i in range(-45,45)], 
       'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)],'poleAlign':['True', 'Apparent'], 'corrTrack':['enabled','disabled'],
@@ -51,8 +52,8 @@ MountReadCmd = {
 MountSetCmd = {
       'mType':'S!','DefaultR':'SXRD:',
       'MaxR':'SXRX:','GuideR':'SXR0:','Acc':'SXRA:', 'SlowR':'SXR1:','MediumR':'SXR2:','FastR':'SXR3:',
-      'mrot1':'SXMRR:','mge1':'SXMGR:','mst1':'SXMSR:','mmu1':'SXMMR:','mbl1':'SXMBR:','mlc1':'SXMCR:','mhc1':'SXMcR:', 'msil1':'SXMmR:',
-      'mrot2':'SXMRD:','mge2':'SXMGD:','mst2':'SXMSD:','mmu2':'SXMMD:','mbl2':'SXMBD:','mlc2':'SXMCD:','mhc2':'SXMcD:', 'msil2':'SXMmD:',
+      'mrot1':'SXMRR:','mge1':'SXMGR:','mst1':'SXMSR:','mmu1':'SXMMR:','mbl1':'SXMBR:','mlc1':'SXMcR:','mhc1':'SXMCR:', 'msil1':'SXMmR:',
+      'mrot2':'SXMRD:','mge2':'SXMGD:','mst2':'SXMSD:','mmu2':'SXMMD:','mbl2':'SXMBD:','mlc2':'SXMcD:','mhc2':'SXMCD:', 'msil2':'SXMmD:',
       'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 'poleAlign':'SXAc:', 'corrTrack':'T',
       'a1min':'SXLA:','a1max':'SXLB:','a2min':'SXLC:','a2max':'SXLD:'      
       } 
@@ -463,7 +464,12 @@ class Site(object):
     self.currentSite = obj['currentSite']
     self.timeZone = obj['timeZone']
 
-
+def setCurrentTime(comm):
+	now = datetime.now()
+	cmdStr = now.strftime(':SL %H:%M:%S#')
+	sendCommand (comm, cmdStr)
+	cmdStr = now.strftime(':SC %m/%d/%y#')
+	sendCommand (comm, cmdStr)
 
 def setCurrentSite(comm, i):
   cmdStr = ':W%d#'%i                # need non-standard write method for this command (???)
@@ -677,7 +683,7 @@ versionFrame = sg.Frame('Versions',
 
 mountTab = [[mountTypeRow],[speedFrame, sg.Column([[limitFrame,gemLimitFrame], [alignmentFrame]])],[motFrame1, motFrame2]]
 siteTab = [[siteFrame]]
-statusTab = [[timeFrame],[coordFrame],[debugFrame],[errorFrame]]
+statusTab = [[timeFrame, sg.Button('Set current Time')],[coordFrame],[debugFrame],[errorFrame]]
 
 # Comment out next line to get the output on the command line
 #bottomRow = sg.Output(key='Log',  size=(80, 4))
@@ -738,6 +744,9 @@ while True:
   
   elif event == 'Set and reboot':
     setMountType()
+
+  elif event == 'Set current Time':
+    setCurrentTime(comm)
 
   elif event == 'Load from File':
     w = sg.Window('Open File', [[sg.Input(), sg.FileBrowse()], [sg.OK(), sg.Cancel()] ])
