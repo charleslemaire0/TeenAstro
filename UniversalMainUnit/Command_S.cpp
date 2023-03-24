@@ -493,8 +493,9 @@ void Command_SX()
     case 'c':
     case 'C':
     {
-      // :SXMRn# Set Current
+      // :SXMCRn# Set Current
       unsigned int curr = (unsigned int)(strtol(&command[6], NULL, 10)/100)*100;
+      bool ok = false;
       if (((curr >= 100) && (curr <= 2800)))
       {
         if (command[4] == 'D')
@@ -503,12 +504,14 @@ void Command_SX()
           {
             motorA2.highCurr = curr;
             XEEPROM.write(getMountAddress(EE_motorA2highCurr), motorA2.highCurr / 100);
+            ok = true;
           }
           else
           {
             motorA2.lowCurr = curr;
             XEEPROM.write(getMountAddress(EE_motorA2lowCurr), motorA2.lowCurr / 100);
             motorA2.drvP->rms_current((unsigned int)motorA2.lowCurr);
+            ok = true;
           }
         }
         else if (command[4] == 'R')
@@ -517,24 +520,29 @@ void Command_SX()
           {
             motorA1.highCurr = curr;
             XEEPROM.write(getMountAddress(EE_motorA1highCurr), motorA1.highCurr / 100);
+            ok = true;
           }
           else
           {
             motorA1.lowCurr = curr;
             XEEPROM.write(getMountAddress(EE_motorA1lowCurr), motorA1.lowCurr / 100);
             motorA1.drvP->rms_current((unsigned int)motorA1.lowCurr);
+            ok = true;
           }
         }
-        replyOk();
+        if (ok)
+        	replyOk();
+        else
+        	replyFailed();
       }
       else 
       {
-        replyFailed();
+        replyNothing();
       }
     }
     break;
     default:
-      replyFailed();
+      replyNothing();
       break;
     }
     break;

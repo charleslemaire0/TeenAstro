@@ -27,7 +27,15 @@ void initMotors(bool deleteAlignment)
   readEEPROMmotor();
 
   pinMode(Axis1CSPin, OUTPUT);
+ 	pinMode(Axis1EnablePin, OUTPUT);
+ 	pinMode(Axis1StepPin, OUTPUT);
+ 	pinMode(Axis1DirPin, OUTPUT);
+
   pinMode(Axis2CSPin, OUTPUT);
+ 	pinMode(Axis2EnablePin, OUTPUT);
+ 	pinMode(Axis2StepPin, OUTPUT);
+ 	pinMode(Axis2DirPin, OUTPUT);
+
   SPI.begin();
 
   // Generic initialization (works for both types)

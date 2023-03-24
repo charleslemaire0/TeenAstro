@@ -65,6 +65,7 @@ public:
 	double speedAdjustment;
 	long targetPos;
 	long stopDistance;
+	bool edgePos = false;
 
 	PositionState posState;
 
@@ -72,6 +73,8 @@ public:
 	LOG_ENTRY logTable[LOG_SIZE];
 	LOG_ENTRY *lP = logTable;
 #endif
+
+
 
 private:
 	// Internal variables

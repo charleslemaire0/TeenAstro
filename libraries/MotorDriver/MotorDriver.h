@@ -8,9 +8,9 @@ public:
   MotionControl *mcP = NULL;
   unsigned int gear;
   unsigned int stepRot;
-  byte micro;
-  bool reverse;
-  bool silent;
+  byte micro = 4;
+  bool reverse = false;
+  bool silent = true;
   unsigned int highCurr=100; //in mA
   unsigned int lowCurr=100; //in mA
   SemaphoreHandle_t mutex = 0;
@@ -27,11 +27,11 @@ public:
     drvP->begin();  
     drvP->reset();
     drvP->push();
-    drvP->tbl(1);
     drvP->TPOWERDOWN(255);
+    drvP->tbl(2);
     drvP->toff(5);
-    drvP->hstrt(0);
-    drvP->hend(2);
+    drvP->hstrt(5);
+    drvP->hend(3);
     drvP->en_pwm_mode(silent);
     drvP->pwm_autoscale(silent);
     drvP->TPWMTHRS(64);
@@ -71,7 +71,7 @@ public:
   {
     if (mutex)
       xSemaphoreTake(mutex, portMAX_DELAY);
-    drvP->rms_current(val / sqrt(2), 0.25);
+    drvP->rms_current(val / sqrt(2));
     if (mutex)
       xSemaphoreGive(mutex);
   }

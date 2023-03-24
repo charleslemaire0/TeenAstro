@@ -79,7 +79,6 @@ void StepDir::logMotion(long pos, double speed)
 // Common interrupt handler code for both motors 
 void StepDirInterruptHandler(StepDir *mcP)
 {
-	static bool edgePos = 0;
   if (mcP->currentSpeed == 0)
     return;
 
@@ -89,8 +88,8 @@ void StepDirInterruptHandler(StepDir *mcP)
   else
     mcP->currentPos++;
   // step the motor
-  digitalWrite(mcP->stepPin, edgePos);
-  edgePos = ! edgePos;
+  digitalWrite(mcP->stepPin, mcP->edgePos);
+  mcP->edgePos = !mcP->edgePos;
 }
 
 

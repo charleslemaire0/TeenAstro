@@ -577,7 +577,7 @@ void Command_GX()
     break;
     case 'c':
     {
-      // :GXMR.#   Get Motor LowCurrent in mA
+      // :GXMc.#   Get Motor LowCurrent in mA
       if (command[4] == 'D')
       {
         sprintf(reply, "%u#", (unsigned int)motorA2.lowCurr);

@@ -20,6 +20,11 @@ void Mc5160::initMc5160(TMC5160Stepper *driverP)
   drvP = driverP;
   setCurrentPos(0);
   setTargetPos(0);
+  // default ramp parameters
+  drvP->VMAX(10000);
+  drvP->AMAX(200);
+  drvP->VSTART(50);
+  drvP->VSTOP(50);
 };
 
 void Mc5160::setCurrentPos(long pos)

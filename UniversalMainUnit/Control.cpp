@@ -56,16 +56,16 @@ void DecayModeTracking()
 {
   if (DecayModeTrack) return;
   DecayModeTrack = true;
-  motorA1.drvP->rms_current((unsigned int)motorA1.lowCurr); 
-  motorA2.drvP->rms_current((unsigned int)motorA2.lowCurr);
+  motorA1.setCurrent((unsigned int)motorA1.lowCurr); 
+  motorA2.setCurrent((unsigned int)motorA2.lowCurr);
 }
 
 void DecayModeGoto()
 {
   if (!DecayModeTrack) return;
   DecayModeTrack = false;
-  motorA1.drvP->rms_current((unsigned int)motorA1.highCurr);
-  motorA2.drvP->rms_current((unsigned int)motorA2.highCurr);
+  motorA1.setCurrent((unsigned int)motorA1.highCurr); 
+  motorA2.setCurrent((unsigned int)motorA2.highCurr);
 }
 
 
@@ -186,6 +186,7 @@ void controlTask(UNUSED(void *arg))
         // wait until motors stopped, reset mode to idle
         if (! (motorA1.isMoving() ||  motorA2.isMoving()))
         {
+          mount.mP->updateRaDec();
           resetAbort();
           resetEvents(EV_SLEWING);
           resetEvents(EV_TRACKING);
