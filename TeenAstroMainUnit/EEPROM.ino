@@ -244,7 +244,7 @@ void initTransformation(bool reset)
     else
     { 
       double Lat = *localSite.latitude() * DEG_TO_RAD;
-      if (doesRefraction.forPole && abs(*localSite.latitude() > 10))
+      if (doesRefraction.forPole && abs(*localSite.latitude()) > 10)
       {
         Lat = abs(Lat);
         LA3::Topocentric2Apparent(Lat, RefrOptForPole());
