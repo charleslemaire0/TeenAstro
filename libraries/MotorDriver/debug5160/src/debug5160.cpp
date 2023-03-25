@@ -128,8 +128,15 @@ void set(char *arg1, char *arg2)
     if (sscanf( arg2, "%d", &val ) == 1)
     {
     	motorA1.drvP->rms_current(val);
-      digitalWrite(Axis1EnablePin, val);
       PORT.printf("set current to %d\n", val);
+    }
+  }
+  if (!strcmp(arg1, "micro"))
+  {
+    if (sscanf( arg2, "%d", &val ) == 1)
+    {
+    	motorA1.drvP->microsteps(val);
+      PORT.printf("set microsteps to %d\n", val);
     }
   }
 }
