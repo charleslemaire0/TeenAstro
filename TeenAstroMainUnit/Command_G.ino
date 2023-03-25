@@ -87,8 +87,8 @@ void Command_GX()
       // :GXAc#
       TrackingCompForAlignment ? sprintf(reply, "y#") : sprintf(reply, "n#");
       break;
-    case 'a':
-    case 'z':
+    //case 'a':
+    //case 'z':
     //case 'w':
     //{
     //  // :GXAa#
