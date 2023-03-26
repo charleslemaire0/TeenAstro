@@ -338,7 +338,7 @@ void motorTask(void *arg)
 }
 
 // not used, needed to keep the linker happy
-void StepDir::initMc5160(TMC5160Stepper *driverP)
+void StepDir::initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t)
 {
 }
 
@@ -441,13 +441,6 @@ double StepDir::getSpeed()
   speed = currentSpeed;
   sei();
   return speed;
-}
-
-double StepDir::getVmax()
-{
-  if (!initialized)
-    return 0;
-  return vMax;
 }
 
 void StepDir::setAmax(long amax)

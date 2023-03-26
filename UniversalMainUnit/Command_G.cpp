@@ -139,7 +139,6 @@ void Command_GX()
         // :GXDR0# RA Monitored tracking rate
         sprintf(reply, "%ld#", (long)((debugv1 / 53333.3333333333) * 15000));
         break;
-#endif
       case '1':
         // :GXDR1# axis1 requested tracking rate in steps/s
         sprintf(reply, "%f#", motorA1.getVmax());
@@ -148,6 +147,7 @@ void Command_GX()
         // :GXDR2# axis2 requested tracking rate in steps/s 
         sprintf(reply, "%f#", motorA2.getVmax());
         break;
+#endif
       case '3':
         sprintf(reply, "%f#", motorA1.getSpeed());
         break;

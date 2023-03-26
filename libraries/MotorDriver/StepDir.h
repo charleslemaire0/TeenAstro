@@ -33,7 +33,6 @@ public:
 	double getSpeed(void);
 	void setAmax(long);	
 	void setVmax(double);	
-	double getVmax(void);
 	void adjustSpeed(double percent);
 	void setTargetPos(long targetPos);
 	bool positionReached(void);
@@ -44,7 +43,7 @@ public:
 	void abort(void);
 	void resetAbort(void);
 	void initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned timerId);
-	void initMc5160(TMC5160Stepper *driverP);
+	void initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t);
 
 	volatile int dirPin, stepPin;
 	double currentSpeed;

@@ -60,11 +60,11 @@ public:
   }
 
   // 5160 MotionController constructor (SPI only)
-  void initMc5160(void)
+  void initMc5160(SemaphoreHandle_t mtx)
   {
     // MotionControl driver
     mcP = new Mc5160();
-    mcP->initMc5160(drvP);
+    mcP->initMc5160(drvP, mtx);
   }
 
   void setCurrent(unsigned int val)
@@ -119,17 +119,15 @@ public:
     double v = mcP->getSpeed(); 
     return (reverse ? -v:v); 
   }
-  double getVmax(void)
-  {
-    return mcP->getVmax(); 
-  }
   bool positionReached()
   {
-    return mcP->positionReached(); 
+    bool p = mcP->positionReached(); 
+    return p;
   }
   bool isMoving()
   {
-    return mcP->isMoving(); 
+    bool p = mcP->isMoving(); 
+    return p;
   }
   void adjustSpeed(double percent)
   {

@@ -141,6 +141,10 @@ void set(char *arg1, char *arg2)
   }
 }
 
+void stop(char *arg1, char *arg2)
+{
+  motorA1.abort();
+}
 
 void init(char *arg1, char *arg2)
 {
@@ -171,7 +175,7 @@ void init(char *arg1, char *arg2)
   	}
 	  else
 	  {
-	    motorA1.initMc5160();  		
+	    motorA1.initMc5160(hwMutex);  		
   		PORT.printf("Initialized Mc5160\n");
 	  }
   }
@@ -192,6 +196,7 @@ CMD_STRUCT Commands[] =
   {"init",   &init,          "Initialize"},
   {"get",    &get,           "Get parameter"},
   {"set",    &set,           "Set parameter"},
+  {"stop",   &stop,          "Stop motor"},
 };
 
 #define NUM_COMMANDS (sizeof(Commands) / sizeof (CMD_STRUCT))

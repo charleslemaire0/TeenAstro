@@ -14,9 +14,8 @@ public:
   virtual bool isMoving(void);
   virtual void adjustSpeed(double);
   virtual void abort(void);
-  virtual double getVmax(void);
   virtual void resetAbort(void);
   virtual void initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned timerId); 
-  virtual void initMc5160(TMC5160Stepper *driverP);
+  virtual void initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t mtx);
 };
 

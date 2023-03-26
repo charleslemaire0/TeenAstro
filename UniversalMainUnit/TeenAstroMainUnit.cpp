@@ -42,21 +42,31 @@ void initMotors(bool deleteAlignment)
   motorA1.init(Axis1CSPin, hwMutex);
   motorA2.init(Axis2CSPin, hwMutex);
 
-#if 0
   // find out if we have StepDir or SPI-only and initialize either type (see SD_MODE in TMC5160 data sheet)
-  if (motorA1.drvP->sd_mode())
+  if (motorA1.drvP->version() == 0) // no TMC5160 found - init a stepdir for debug
+  {
     motorA1.initStepDir(Axis1DirPin, Axis1StepPin, isrStepDir1, 2);
+  }
   else
-    motorA1.initMc5160();
-
-  if (motorA1.drvP->sd_mode())
+  {
+    if (motorA1.drvP->sd_mode())
+      motorA1.initStepDir(Axis1DirPin, Axis1StepPin, isrStepDir1, 2);
+    else
+      motorA1.initMc5160(hwMutex);
+  }
+  
+  if (motorA2.drvP->version() == 0) // no TMC5160 found - init a stepdir for debug
+  {
     motorA2.initStepDir(Axis2DirPin, Axis2StepPin, isrStepDir2, 3);
+  }
   else
-    motorA2.initMc5160();
-#else 
-  motorA1.initStepDir(Axis1DirPin, Axis1StepPin, isrStepDir1, 2);
-  motorA2.initStepDir(Axis2DirPin, Axis2StepPin, isrStepDir2, 3);
-#endif
+  {
+    if (motorA2.drvP->sd_mode())
+      motorA2.initStepDir(Axis2DirPin, Axis2StepPin, isrStepDir2, 3);
+    else
+      motorA2.initMc5160(hwMutex);
+  }
+
 
   // cannot call updateRatios before motors are initialized!
   updateRatios(deleteAlignment,false);
@@ -129,6 +139,16 @@ void setup()
   EEPROM_AutoInit();
   reboot_unit = false;
 
+  // FreeRTOS structures
+  // Mutexes to prevent concurrent accesses 
+  // A task must take the mutex before hw access and release it afterwards
+  hwMutex = xSemaphoreCreateMutex();  // hardware accesses (ie SPI etc.)
+  swMutex = xSemaphoreCreateMutex();  // global variables
+  // queue for receiving messages from other tasks
+  controlQueue = xQueueCreate( CTL_QUEUE_SIZE, CTL_MAX_MESSAGE_SIZE * sizeof(unsigned));
+  // Event group for all mount events
+  mountEvents = xEventGroupCreate();
+
   // get the site information from EEPROM
   currentSite = XEEPROM.read(EE_currentSite);
   localSite.ReadCurrentSiteDefinition(currentSite);
@@ -142,15 +162,6 @@ void setup()
   setSyncInterval(1);
   setTime(rtk.getTime());
 
-  // FreeRTOS structures
-  // Mutexes to prevent concurrent accesses 
-  // A task must take the mutex before hw access and release it afterwards
-  hwMutex = xSemaphoreCreateMutex();  // hardware accesses (ie SPI etc.)
-  swMutex = xSemaphoreCreateMutex();  // global variables
-  // queue for receiving messages from other tasks
-  controlQueue = xQueueCreate( CTL_QUEUE_SIZE, CTL_MAX_MESSAGE_SIZE * sizeof(unsigned));
-  // Event group for all mount events
-  mountEvents = xEventGroupCreate();
 
   // automatic mode switching before/after slews, initialize micro-step mode
 //  DecayModeTracking();

@@ -1,10 +1,11 @@
 #pragma once
-#define Axis1CSPin      20
-#define Axis1DirPin     3
-#define Axis1StepPin    4
-#define Axis2CSPin      21
-#define Axis2DirPin     6 
-#define Axis2StepPin    7 
+#define Axis1CSPin      9
+#define Axis1DirPin     2
+#define Axis1StepPin    22
+#define Axis1EnablePin  3 
 
-// Pin 10 11 12 are used for SPI
+#define Axis2CSPin      10
+#define Axis2DirPin     4
+#define Axis2StepPin    20 
+#define Axis2EnablePin  5
 
