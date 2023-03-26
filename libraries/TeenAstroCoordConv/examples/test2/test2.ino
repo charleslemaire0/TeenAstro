@@ -23,11 +23,9 @@ void setup()
 }
 
 
-void PrintGivenHO(double Lat, double  Az, double Alt, double RotH)
+void PrintGivenHO(double  Az, double Alt, double RotH)
 {
   char text[200];
-  sprintf(text, "Given Lat: %f\n", Lat * RAD_TO_DEG);
-  Serial.print(text);
   sprintf(text, "Given Az: %f\n", Az * RAD_TO_DEG);
   Serial.print(text);
   sprintf(text, "Given Alt: %f\n", Alt * RAD_TO_DEG);
@@ -47,6 +45,29 @@ void PrintComputedHO(double Az, double Alt, double RotH)
   Serial.print(text);
 }
 
+void PrintGivenIn( double axis1, double axis2, double axis3)
+{
+  char text[200];
+  sprintf(text, "Given axis1: %f\n", axis1 * RAD_TO_DEG);
+  Serial.print(text);
+  sprintf(text, "Given axis2: %f\n", axis2 * RAD_TO_DEG);
+  Serial.print(text);
+  sprintf(text, "Given axis3: %f\n", axis3 * RAD_TO_DEG);
+  Serial.print(text);
+}
+
+void PrintComputedIN(double axis1, double axis2, double axis3)
+{
+  char text[200];
+  sprintf(text, "Computed axis1: %f\n", axis1 * RAD_TO_DEG);
+  Serial.print(text);
+  sprintf(text, "Computed axis2: %f\n", axis2 * RAD_TO_DEG);
+  Serial.print(text);
+  sprintf(text, "Computed axis3: %f\n", axis3 * RAD_TO_DEG);
+  Serial.print(text);
+}
+
+
 void loop()
 {
 
@@ -56,7 +77,7 @@ void loop()
     Coord_EQ EQ1 = HO1.To_Coord_EQ(Lat[k]);
     Coord_IN IN1 = Coord_IN(EQ1.FrE(), EQ1.Dec(), EQ1.Ha());
 
-    Coord_HO HO2 = Coord_HO(0, 45 * DEG_TO_RAD, 270 * DEG_TO_RAD,true);
+    Coord_HO HO2 = Coord_HO(0, 45 * DEG_TO_RAD, -90 * DEG_TO_RAD,true);
     Coord_EQ EQ2 = HO2.To_Coord_EQ(Lat[k]);
     Coord_IN IN2 = Coord_IN(EQ2.FrE(), EQ2.Dec(), EQ2.Ha());
     CoordConv virtualEQMount;
@@ -64,12 +85,17 @@ void loop()
     virtualEQMount.addReference(HO2.Az(), HO2.Alt(), IN2.Axis1(), IN2.Axis2());
     virtualEQMount.calculateThirdReference();
 
-    PrintGivenHO(Lat[k], T_Az[k], T_Alt[k], 0);
+    PrintGivenHO( T_Az[k], T_Alt[k], 0);
 
     Coord_IN INtest = Coord_IN(RotE[k], Dec[k], Ha[k]);
     Coord_HO HOtest = INtest.To_Coord_HO(virtualEQMount.T, Opt);
 
     PrintComputedHO(HOtest.Az(), HOtest.Alt(), HOtest.FrH());
+
+    // back to instrument
+    PrintGivenIn(INtest.Axis1(), INtest.Axis2(), INtest.Axis3());
+    Coord_IN INcomputed = HOtest.To_Coord_IN(virtualEQMount.Tinv);
+    PrintComputedIN(INcomputed.Axis1(), INcomputed.Axis2(), INcomputed.Axis3());
     k++;
     delay(1000);
   }
