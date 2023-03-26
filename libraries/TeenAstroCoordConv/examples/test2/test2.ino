@@ -5,14 +5,14 @@
 #include <TeenAstroCoord_HO.hpp>
 #include <TeenAstroCoord_IN.hpp>
 
-CoordConv virtualEQMount;
 
-const double Lat[1] = { 0.88660302 };
-const double Ha[1] = { -0.69112174 };
-const double Dec[1] = { 0.14718022 };
-const double RotE[1] = { random(-180, 180) * DEG_TO_RAD };
-const double T_Az[1] = { -0.902320657 };
-const double T_Alt[1] = { 0.63775167 };
+
+const double Lat[2] = { 0.88660302, -24.6274 * DEG_TO_RAD };
+const double Ha[2] = { -0.69112174, 19.486*15 *DEG_TO_RAD };
+const double Dec[2] = { 0.14718022, -50* DEG_TO_RAD };
+const double RotE[2] = { random(-180, 180) * DEG_TO_RAD,0 };
+const double T_Az[2] = { -0.902320657+M_PI, 135* DEG_TO_RAD };
+const double T_Alt[2] = { 0.63775167,32.74* DEG_TO_RAD };
 LA3::RefrOpt Opt = { false,10,101 };
 
 int k;
@@ -50,7 +50,7 @@ void PrintComputedHO(double Az, double Alt, double RotH)
 void loop()
 {
 
-  if (k < 1)
+  if (k < 2)
   {
     Coord_HO HO1 = Coord_HO(0, 45 * DEG_TO_RAD, 90 * DEG_TO_RAD,true);
     Coord_EQ EQ1 = HO1.To_Coord_EQ(Lat[k]);
@@ -59,7 +59,7 @@ void loop()
     Coord_HO HO2 = Coord_HO(0, 45 * DEG_TO_RAD, 270 * DEG_TO_RAD,true);
     Coord_EQ EQ2 = HO2.To_Coord_EQ(Lat[k]);
     Coord_IN IN2 = Coord_IN(EQ2.FrE(), EQ2.Dec(), EQ2.Ha());
-
+    CoordConv virtualEQMount;
     virtualEQMount.addReference(HO1.Az(), HO1.Alt(), IN1.Axis1(), IN1.Axis2());
     virtualEQMount.addReference(HO2.Az(), HO2.Alt(), IN2.Axis1(), IN2.Axis2());
     virtualEQMount.calculateThirdReference();
@@ -73,4 +73,5 @@ void loop()
     k++;
     delay(1000);
   }
+  delay(1000);
 }
