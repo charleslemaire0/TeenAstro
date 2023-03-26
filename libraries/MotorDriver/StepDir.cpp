@@ -1,5 +1,3 @@
-#include "TMCStepper.h"
-#include "MotionControl.h"
 
 #ifdef __ESP32__
 #include <Arduino.h>
@@ -15,6 +13,7 @@
 #include "avr/pgmspace.h"
 #include "queue.h"
 #include "event_groups.h"
+#include "semphr.h"
 #define ISR(f)  void f(void)
 IntervalTimer  itimer3;
 IntervalTimer  itimer4;
@@ -27,6 +26,8 @@ IntervalTimer  itimer4;
 #endif
 
 
+#include "TMCStepper.h"
+#include "MotionControl.h"
 #include "StepDir.h"
 
 

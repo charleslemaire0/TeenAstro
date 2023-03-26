@@ -4,6 +4,7 @@
 
 #ifdef __arm__
 #include "arduino_freertos.h"
+#include "semphr.h"
 #endif
 
 #include "TMCStepper.h"
