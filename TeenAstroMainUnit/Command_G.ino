@@ -343,12 +343,17 @@ void Command_GX()
       sei();
       doubleToDms(reply, &f1, true, true, highPrecision);
       strcat(reply, "#");
+      break;
     case '2':
       cli();
       f1 = staA2.pos / geoA2.stepsPerDegree;
       sei();
       doubleToDms(reply, &f1, true, true, highPrecision);
       strcat(reply, "#");
+      break;
+    default:
+      replyLongUnknow();
+      break;
     }
     break;
   case 'r':
