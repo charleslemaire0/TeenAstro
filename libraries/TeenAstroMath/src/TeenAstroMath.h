@@ -30,6 +30,7 @@ bool atoi2(char *a, int *i);
 bool atoui2(char* a, unsigned int* i);
 
 double haRange(double d);
+double haRangeRad(double d);
 double AzRange(double d);
 double degRange(double d);
 
