@@ -52,7 +52,7 @@ public:
 	Coord_HO ToApparent(RefrOpt opt);
 	Coord_HO ToTopocentric(RefrOpt opt);
 	Coord_EQ To_Coord_EQ(double Lat);
-	Coord_IN To_Coord_IN(const double(&missaligmentinv)[3][3]);
+	Coord_IN To_Coord_IN(const double(&missaligment)[3][3]);
 	double FrH();
 	double Alt();
 	double Az();

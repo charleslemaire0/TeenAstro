@@ -46,7 +46,7 @@ Coord_EQ Coord_HO::To_Coord_EQ(double Lat)
   return Coord_EQ(fre, dec, ha);
 };
 
-Coord_IN Coord_HO::To_Coord_IN(const double(&missaligmentinv)[3][3])
+Coord_IN Coord_HO::To_Coord_IN(const double(&missaligment)[3][3])
 {
   double axis3, axis2, axis1;
   double tmp1[3][3];
@@ -57,7 +57,7 @@ Coord_IN Coord_HO::To_Coord_IN(const double(&missaligmentinv)[3][3])
     m_Eulers[2]
   };
   LA3::getMultipleRotationMatrix(tmp1, rots, 3);
-  LA3::multiply(tmp2, tmp1, missaligmentinv);
+  LA3::multiply(tmp2, tmp1, missaligment);
   LA3::getEulerRxRyRz(tmp2, axis3, axis2, axis1);
   return Coord_IN(axis3, axis2, axis1);
 };
