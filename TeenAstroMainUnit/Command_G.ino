@@ -573,7 +573,7 @@ void Command_GX()
     const char* parkStatusCh = "pIPF";
     reply[2] = parkStatusCh[parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
     if (atHome) reply[3] = 'H';
-    reply[4] = '0' + activeGuideRate;
+    reply[4] = '0' + recenterGuideRate;
     if (doSpiral) reply[5] = '@';
     else if (GuidingState != GuidingOFF)
     {

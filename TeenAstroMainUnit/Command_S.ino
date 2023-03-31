@@ -601,7 +601,6 @@ void Command_SX()
             XEEPROM.write(getMountAddress(EE_motorA2silent), i);
             ok = true;
           }
-
         }
         else
         {

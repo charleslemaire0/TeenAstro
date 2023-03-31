@@ -55,9 +55,9 @@ void checkST4()
     if (n1 != s1)
     {
       if (n1 == LOW)
-        ST4DE_state = GetPierSide() >= PIER_WEST ? '-' : '+';
+        ST4DE_state = GetPierSide() == PIER_EAST ? '-' : '+';
       if (s1 == LOW)
-        ST4DE_state = GetPierSide() >= PIER_WEST ? '+' : '-';
+        ST4DE_state = GetPierSide() == PIER_EAST ? '+' : '-';
     }
   }
 

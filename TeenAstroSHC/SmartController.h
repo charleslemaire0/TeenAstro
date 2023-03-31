@@ -58,7 +58,7 @@ private:
   bool forceDisplayoff = false;
   bool focuserlocked = false;
   bool telescoplocked = false;
-  pageInfo pages[NUMPAGES] = { {P_RADEC,true},{P_ALTAZ,true}, {P_PUSH,false}, {P_TIME,true}, {P_AXIS_STEP,false}, {P_AXIS_DEG,false}, {P_FOCUSER,true}, {P_ALIGN,false}, {P_HA,false} };
+  pageInfo pages[NUMPAGES] = { {P_RADEC,false},{P_ALTAZ,false}, {P_PUSH,false}, {P_TIME,false}, {P_AXIS_STEP,false}, {P_AXIS_DEG,false}, {P_FOCUSER,false}, {P_ALIGN,false}, {P_HA,false} };
   byte current_page;
   bool exitMenu = false;
   

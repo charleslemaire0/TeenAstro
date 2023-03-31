@@ -810,7 +810,7 @@ Public Class Telescope
     If Not (Double.TryParse(response, speed)) Then
       Throw New ASCOM.InvalidValueException("Retrieve GetGuideRate via :GXR0# has failed: '" & response & "'")
     End If
-    Return speed / 100 * mSiderealRate
+    Return speed * mSiderealRate
   End Function
   Private Sub SetGuideRate(Val As Double)
     Dim speed As Integer = Val / mSiderealRate * 100
