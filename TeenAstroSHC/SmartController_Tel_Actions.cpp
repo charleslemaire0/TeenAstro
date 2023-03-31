@@ -22,6 +22,33 @@ void SmartHandController::menuSpeedRate()
   buttonPad.setControlerMode();
 }
 
+#ifdef NO_SPEED_MENU
+void SmartHandController::increaseSpeed(bool increase)
+{
+  //buttonPad.setMenuMode();
+  char* string_list_Speed = T_GUIDE "\n" T_SLOW "\n" T_MEDIUM "\n" T_FAST "\n" T_MAX;
+  static unsigned char current_speed = 3;
+  ta_MountStatus.updateMount();
+  TeenAstroMountStatus::GuidingRate cur_GR = ta_MountStatus.getGuidingRate();
+  if (cur_GR == TeenAstroMountStatus::GuidingRate::UNKNOW)
+    return;
+  current_speed = static_cast<unsigned char>(cur_GR);
+  char cmd[5] = ":Rn#";
+  if (increase && cur_GR < TeenAstroMountStatus::MAX )
+  {
+    
+    cmd[2] = '0' + current_speed + 1;
+    SetLX200(cmd);
+  }
+  else if (!increase && cur_GR > TeenAstroMountStatus::GUIDING )
+  {
+    cmd[2] = '0' + current_speed - 1;
+    SetLX200(cmd);
+  }
+  //buttonPad.setControlerMode();
+}
+#endif
+
 void SmartHandController::menuTelAction()
 {
   buttonPad.setMenuMode();

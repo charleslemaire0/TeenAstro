@@ -337,8 +337,18 @@ void SmartHandController::update()
     }
     else if (eventbuttons[1] == E_LONGPRESS || eventbuttons[1] == E_CLICK || eventbuttons[1] == E_LONGPRESSTART)
     {
+    #ifdef NO_SPEED_MENU
+      increaseSpeed(true);
+    #else
       menuSpeedRate();
+    #endif
     }
+    #ifdef NO_SPEED_MENU
+    else if (eventbuttons[2] == E_LONGPRESS || eventbuttons[2] == E_CLICK || eventbuttons[2] == E_LONGPRESSTART)
+    {
+      increaseSpeed(false);
+    }
+    #endif
     else if (eventbuttons[4] == E_LONGPRESS || eventbuttons[4] == E_CLICK || eventbuttons[4] == E_LONGPRESSTART)
     {
       menuTelSettings();
