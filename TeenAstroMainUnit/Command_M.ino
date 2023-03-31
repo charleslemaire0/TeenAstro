@@ -149,6 +149,7 @@ void Command_M()
   //  :Mn# & :Ms#      Move Telescope North or South at current slew rate
   //  Returns: Nothing
   case 'n':
+
     if (GetPierSide() >= PIER_WEST)
       MoveAxis2(true, Guiding::GuidingRecenter);
     else

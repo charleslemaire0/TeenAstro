@@ -24,7 +24,19 @@ static void MoveAxis(GuideAxis* guideA, StatusAxis* staA, const bool BW, const G
     }
     else
     {
-      Mode == GuidingST4 ? enableST4GuideRate() : enableGuideRate(activeGuideRate);
+      if (Mode == GuidingST4)
+      {
+        enableST4GuideRate();
+      }
+      else if (Mode == GuidingRecenter)
+      {
+        enableRecenterGuideRate();
+      }
+      else
+      {
+        enableGuideRate(activeGuideRate);
+      }
+
       GuidingState = Mode;
       BW ? guideA->moveBW() : guideA->moveFW();
       atHome = false;

@@ -598,7 +598,8 @@ void Command_R()
   }
   if (!movingTo && GuidingState == GuidingOFF)
   {
-    enableGuideRate(i);
+    recenterGuideRate = i;
+    enableGuideRate(recenterGuideRate);
   }
 }
 

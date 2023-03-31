@@ -219,6 +219,7 @@ double  guideRates[5] =
 };
 
 volatile byte activeGuideRate = GuideRate::RX;
+volatile byte recenterGuideRate = activeGuideRate;
 
 GuideAxis guideA1;
 GuideAxis guideA2;

@@ -214,6 +214,11 @@ void enableST4GuideRate()
   enableGuideRate(0);
 }
 
+void enableRecenterGuideRate()
+{
+  enableGuideRate(recenterGuideRate);
+}
+
 void resetGuideRate()
 {
   enableGuideRate(activeGuideRate);
