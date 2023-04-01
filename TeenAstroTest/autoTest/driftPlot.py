@@ -48,6 +48,7 @@ class driftPlot():
             if self.state == 'IDLE':
                 self.ta.enableTracking()
                 self.log ('tracking enabled')
+                self.reset()
                 self.window['startStopTrack'].update('Stop Tracking')
                 self.state = 'RECORD'
             else:
@@ -56,15 +57,30 @@ class driftPlot():
                 self.window['startStopTrack'].update('Start Tracking')
                 self.state = 'IDLE'
 
-        if (ev == 'resetDrift'):
+        if (ev == 'clearDrift'):
             self.ra = np.zeros(numSamples)
             self.dec =  np.zeros(numSamples)
             self.reset()
-#            self.update(0, 0, 0, 0)
             self.render()
 
         if (ev == 'saveDrift'):
             self.saveCsv()
+
+        if (ev == 'GuideN'):
+            self.ta.guideCmd('n',100)
+            self.render()
+
+        if (ev == 'GuideS'):
+            self.ta.guideCmd('s',100)
+            self.render()
+
+        if (ev == 'GuideE'):
+            self.ta.guideCmd('e',100)
+            self.render()
+
+        if (ev == 'GuideW'):
+            self.ta.guideCmd('w',100)
+            self.render()
 
         if (ev == 'zoomInD'):
             self.yScale = self.yScale / 2

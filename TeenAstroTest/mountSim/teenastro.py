@@ -70,8 +70,11 @@ class TeenAstro(object):
         self.port = serial.Serial(port=self.portName,
                           baudrate=self.baudRate, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE,
                           stopbits=serial.STOPBITS_ONE,
-                          timeout=None, xonxoff=False, rtscts=False, write_timeout=None, dsrdtr=False,
+                          timeout=1, xonxoff=False, rtscts=False, write_timeout=None, dsrdtr=False,
                           inter_byte_timeout=None)
+        v = self.getVersion()
+        if (len(v) == 0):
+        	return None
         return self.port
       except:
         print('Error opening port')

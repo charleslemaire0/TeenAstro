@@ -50,7 +50,7 @@ axisFrame = sg.Frame('Axis Positions (º)', [[sg.T('Axis1:'), sg.T('0', key='axi
 
 stepsFrame = sg.Frame('Axis Positions (steps)', [[sg.T('Axis1:'), sg.T('0', key='axis1_steps')],[sg.T('Axis2:'), sg.T('0', key='axis2_steps')]]) 
 
-speedFrame = sg.Frame('Axis Speeds (steps/S)', [[sg.T('Axis1:'), sg.T('0', key='axis1_speed')],[sg.T('Axis2:'), sg.T('0', key='axis2_speed')]]) 
+speedFrame = sg.Frame('Axis Speeds (x Sidereal)', [[sg.T('Axis1:'), sg.T('0', key='axis1_speed')],[sg.T('Axis2:'), sg.T('0', key='axis2_speed')]]) 
 
 slewFrame = sg.Frame('Slew Rates (arc-sec/S)', [[sg.T('RA:'), sg.T('0', key='ra_rate')],[sg.T('Dec:'), sg.T('0', key='dec_rate')]]) 
 
@@ -71,8 +71,9 @@ pointTestTab = [[sg.Column([
                ]
 
 driftTestTab = [[sg.Column([
-                    [sg.B(button_text = 'Start Tracking', key='startStopTrack'),sg.B(button_text = 'Reset', key='resetDrift'),
-                     sg.B(button_text = 'Save', key='saveDrift'), sg.B(button_text = '+',key='zoomInD'),sg.B(button_text = '-',key='zoomOutD')],
+                    [sg.B(button_text = 'Start Tracking', key='startStopTrack'),sg.B(button_text = 'Clear', key='clearDrift'),
+                     sg.B(button_text = 'Save', key='saveDrift'), sg.B(button_text = '+',key='zoomInD'),sg.B(button_text = '-',key='zoomOutD'),
+                     sg.B(button_text = 'GuideN', key='GuideN'), sg.B(button_text = 'GuideS',key='GuideS'),sg.B(button_text = 'GuideE',key='GuideE'),sg.B(button_text = 'GuideW',key='GuideW')],
                     [sg.Canvas(key='drift_cv', size=(640, 400))]]), sg.Column([[driftFrame], [axisFrame], [stepsFrame], [speedFrame]])]
                 ]
 
