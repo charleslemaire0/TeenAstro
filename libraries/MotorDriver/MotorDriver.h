@@ -27,7 +27,7 @@ public:
     drvP->begin();  
     drvP->reset();
     drvP->push();
-    drvP->TPOWERDOWN(255);
+//    drvP->TPOWERDOWN(255);		// leave at default for faster powerdown
     drvP->tbl(2);
     drvP->toff(5);
     drvP->hstrt(5);

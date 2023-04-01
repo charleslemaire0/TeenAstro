@@ -23,7 +23,7 @@ bool setPark()
     XEEPROM.writeLong(getMountAddress(EE_posAxis1), h);
     XEEPROM.writeLong(getMountAddress(EE_posAxis2), d);
 
-    //// and the align
+    // and the align
     saveAlignModel();
     parkSaved = true;
     XEEPROM.write(getMountAddress(EE_parkSaved), parkSaved);
@@ -170,7 +170,7 @@ byte park()
         steps.steps1 = h;
         steps.steps2 = d;
 
-        mount.mP->goTo(&steps);
+        goTo(&steps);
         return 0;
       }
       else

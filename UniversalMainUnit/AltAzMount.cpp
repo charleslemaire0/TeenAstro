@@ -114,20 +114,6 @@ bool AltAzMount::getHorApp(HorCoords *hP)
   return 0;
 }
 
-byte AltAzMount::goTo(Steps *sP)
-{
-  if (getEvent(EV_ABORT))
-    return ERRGOTO____;
-  enableGuideRate(RXX);
-  unsigned msg[CTL_MAX_MESSAGE_SIZE];
-  msg[0] = CTL_MSG_GOTO; 
-  msg[1] = sP->steps1;
-  msg[2] = sP->steps2;
-  xQueueSend( controlQueue, &msg, 0);
-  waitSlewing();
-  DecayModeGoto();
-  return ERRGOTO_NONE;
-}
 
 bool AltAzMount::syncEqu(double HA, double Dec, UNUSED(PierSide Side), const double *cosLatP, const double *sinLatP)
 {

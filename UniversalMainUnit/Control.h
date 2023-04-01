@@ -43,3 +43,5 @@ void StopAxis1(void);
 void MoveAxis2(const byte dir);
 void MoveAxis2AtRate(double speed, const byte dir);
 void StopAxis2(void);
+byte goTo(Steps *sP);
+

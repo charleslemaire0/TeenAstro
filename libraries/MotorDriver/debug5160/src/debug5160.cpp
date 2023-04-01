@@ -14,10 +14,17 @@
 #define MAX_ARG_SIZE 20
 
 #ifdef __ESP32__
-#define Axis1CSPin      5
-#define Axis1DirPin     26
-#define Axis1StepPin    25
-#define Axis1EnablePin  27
+//#define Axis1CSPin      5
+//#define Axis1DirPin     26
+//#define Axis1StepPin    25
+//#define Axis1EnablePin  27
+
+#define Axis1CSPin      22
+#define Axis1DirPin     17
+#define Axis1StepPin    21
+#define Axis1EnablePin  32
+
+
 #define ISR(f) void IRAM_ATTR f(void) 
 #define PORT Serial2
 #endif
@@ -77,6 +84,26 @@ void get(char *arg1, char *arg2)
   {
     int val = motorA1.drvP->rms_current();
     PORT.printf("current: %d\n", val);
+  }
+  if (!strcmp(arg1, "sw_mode"))
+  {
+    int val = motorA1.drvP->SW_MODE();
+    PORT.printf("sw_mode: %08x\n", val);
+  }
+  if (!strcmp(arg1, "ramp_stat"))
+  {
+    int val = motorA1.drvP->RAMP_STAT();
+    PORT.printf("ramp_stat: %08x\n", val);
+  }
+  if (!strcmp(arg1, "chopconf"))
+  {
+    int val = motorA1.drvP->CHOPCONF();
+    PORT.printf("chopconf: %08x\n", val);
+  }
+  if (!strcmp(arg1, "drv_status"))
+  {
+    int val = motorA1.drvP->DRV_STATUS();
+    PORT.printf("drv_status: %08x\n", val);
   }
 }
 
@@ -139,6 +166,22 @@ void set(char *arg1, char *arg2)
       PORT.printf("set microsteps to %d\n", val);
     }
   }
+  if (!strcmp(arg1, "gstat"))
+  {
+    if (sscanf( arg2, "%x", &val ) == 1)
+    {
+    	motorA1.drvP->GSTAT(val);
+      PORT.printf("set gstat to %x\n", val);
+    }
+  }
+  if (!strcmp(arg1, "gconf"))
+  {
+    if (sscanf( arg2, "%x", &val ) == 1)
+    {
+    	motorA1.drvP->GCONF(val);
+      PORT.printf("set gconf to %x\n", val);
+    }
+  }
 }
 
 void stop(char *arg1, char *arg2)
@@ -151,6 +194,8 @@ void init(char *arg1, char *arg2)
  	pinMode(Axis1CSPin, OUTPUT);
  	pinMode(Axis1EnablePin, OUTPUT);
   SPI.begin();
+
+  hwMutex = xSemaphoreCreateMutex();  // hardware accesses (ie SPI etc.)
 
   // Generic initialization (works for both types)
  	digitalWrite(Axis1EnablePin, 1);

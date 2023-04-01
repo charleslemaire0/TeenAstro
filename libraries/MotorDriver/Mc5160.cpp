@@ -11,6 +11,8 @@
 #include "MotionControl.h"
 #include "Mc5160.h"
 
+#define CLOCK_RATIO (1.39)		// Ratio of expected clock over actual (internal clock is 12Mhz)
+
 // not used, needed to keep the linker happy
 void Mc5160::initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned timerId)
 {
@@ -26,8 +28,8 @@ void Mc5160::initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t mtx)
   drvP->VMAX(10000);
   drvP->AMAX(200);
   drvP->DMAX(200);
-  drvP->VSTART(50);
-  drvP->VSTOP(50);
+  drvP->VSTART(0);
+  drvP->VSTOP(0);
   drvP->d1(50);
 };
 
@@ -57,7 +59,7 @@ long Mc5160::getTargetPos()
 double Mc5160::getSpeed()
 {
   xSemaphoreTake(mutex, portMAX_DELAY);
-  double v = (double) drvP->VACTUAL();
+  double v = ((double) drvP->VACTUAL()) / CLOCK_RATIO;
   xSemaphoreGive(mutex);
   return v;
 }
@@ -73,8 +75,13 @@ void Mc5160::setAmax(long a)
 void Mc5160::setVmax(double v)
 {
   xSemaphoreTake(mutex, portMAX_DELAY);
-  int vint = (int) v;
+  int vint = (int) v * CLOCK_RATIO; 
   drvP->VMAX(vint);
+  if (vint != 0)
+  {
+    drvP->VSTART(50);
+    drvP->VSTOP(50);    
+  }
   xSemaphoreGive(mutex);
 }
 
@@ -115,5 +122,7 @@ void Mc5160::abort(void)
 
 void Mc5160::resetAbort(void)
 {
+  drvP->VSTART(0);
+  drvP->VSTOP(0);
 }
 

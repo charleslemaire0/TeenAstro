@@ -57,7 +57,6 @@ public:
   virtual byte goToHor(HorCoords *);
   virtual bool getEqu(double *HA, double *Dec, const double *cosLat, const double *sinLat, bool returnHA);
   virtual bool getHorApp(HorCoords*);
-  virtual byte goTo(Steps*);
   virtual bool syncEqu(double HA, double Dec, PierSide Side, const double *cosLat, const double *sinLat);
   virtual bool syncAzAlt(double Azm, double Alt, PierSide Side);
   virtual byte Flip();
@@ -82,7 +81,6 @@ class EqMount : public Mnt
 public:
   byte goToEqu(EqCoords*);
   byte goToHor(HorCoords *);
-  byte goTo(Steps*);
   bool eqToAxes(EqCoords*, Axes*, PierSide);
   bool getEqu(double *HA, double *Dec, const double *cosLat, const double *sinLat, bool returnHA);  
   bool getHorApp(HorCoords *hP);
@@ -137,7 +135,6 @@ public:
   byte goToHor(HorCoords *);
   bool getEqu(double *HA, double *Dec, const double *cosLat, const double *sinLat, bool returnHA);
   bool getHorApp(HorCoords *hP);
-  byte goTo(Steps*);
   bool syncEqu(double HA, double Dec, PierSide Side, const double *cosLat, const double *sinLat);
   bool syncAzAlt(double Azm, double Alt, PierSide Side);
   bool withinLimits(long, long);

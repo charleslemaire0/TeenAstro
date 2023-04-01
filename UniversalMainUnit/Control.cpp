@@ -363,4 +363,19 @@ void StopAxis2()
   xQueueSend(controlQueue, &msg, 0);
 }
 
+byte goTo(Steps *sP)
+{
+  if (getEvent(EV_ABORT))
+    return ERRGOTO____;
+  enableGuideRate(RXX);
+  unsigned msg[CTL_MAX_MESSAGE_SIZE];
+  msg[0] = CTL_MSG_GOTO; 
+  msg[1] = sP->steps1;
+  msg[2] = sP->steps2;
+  xQueueSend(controlQueue, &msg, 0);
 
+  waitSlewing();
+
+  DecayModeGoto();
+  return ERRGOTO_NONE;
+}

@@ -114,8 +114,8 @@ bool EqMount::eqToAxes(EqCoords *eP, Axes *aP, PierSide ps)
   }
   else // eq fork
   {
-    aP->axis1 = eP->ha;
-    aP->axis2 = 90 - eP->dec;  
+    aP->axis1 = hemisphere * eP->ha;
+    aP->axis2 = 90 - (hemisphere * eP->dec);  
 
     if (!withinLimits(aP->axis1, aP->axis2))
       return false;
@@ -138,8 +138,8 @@ void EqMount::axesToEqu(Axes *aP, EqCoords *eP)
   }
   else // eq fork
   {
-    eP->ha  = aP->axis1;
-    eP->dec = 90 - aP->axis2;    
+    eP->ha  = hemisphere * aP->axis1;
+    eP->dec = hemisphere * (90 - aP->axis2);    
   }
 }
 
@@ -174,22 +174,7 @@ bool EqMount::getHorApp(HorCoords *hP)
   return true;
 }
 
-byte EqMount::goTo(Steps *sP)
-{
-  if (getEvent(EV_ABORT))
-    return ERRGOTO____;
-  enableGuideRate(RXX);
-  unsigned msg[CTL_MAX_MESSAGE_SIZE];
-  msg[0] = CTL_MSG_GOTO; 
-  msg[1] = sP->steps1;
-  msg[2] = sP->steps2;
-  xQueueSend(controlQueue, &msg, 0);
 
-  waitSlewing();
-
-  DecayModeGoto();
-  return ERRGOTO_NONE;
-}
 
 bool EqMount::syncEqu(double HA, double Dec, PierSide Side, UNUSED(const double *cosLat), UNUSED(const double *sinLat))
 {

@@ -8,16 +8,18 @@ bool setHome()
   {
     lastsiderealTracking = isTracking();
     stopTracking();
-#if 0
-    long h = (staA1.target / 1024L) * 1024L;
-    long d = (staA2.target / 1024L) * 1024L;
+
+    long    h = (motorA1.getTargetPos() / 1024L) * 1024L;
+    long    d = (motorA2.getTargetPos() / 1024L) * 1024L;
+
     h /= pow(2, motorA1.micro);
     d /= pow(2, motorA2.micro);
+    
     // store our position
     XEEPROM.writeLong(getMountAddress(EE_homePosAxis1), h);
     XEEPROM.writeLong(getMountAddress(EE_homePosAxis2), d);
     XEEPROM.write(getMountAddress(EE_homeSaved), 1);
-#endif
+
     initHome();
     if (lastsiderealTracking)
       startTracking();
