@@ -20,3 +20,7 @@
 
 // Uncomment to keep tracking on after meridian when far from Pole
 //#define keepTrackingOnWhenFarFromPole
+
+// Uncomment to enable quick speed change
+// by SHC Shift+N / Shift+S buttons
+//#define NO_SPEED_MENU

@@ -73,6 +73,9 @@ private:
   void resetSHC();
   void menuTelAction();
   void menuSpeedRate();
+  #ifdef NO_SPEED_MENU
+  void increaseSpeed(bool increase);
+  #endif
   void menuReticule();
   void menuTrack();
 
