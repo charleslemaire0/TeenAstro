@@ -36,7 +36,7 @@ MountDef = { 'mType':['Eq-German', 'Eq-Fork', 'AltAz-Tee', 'AltAz-Fork'],
       'mbl2':[i for i in range(0,999)],'mlc2':[i for i in range(100,2000,10)],'mhc2':[i for i in range(100,2000, 10)], 
       'msil2':[0,1],
       'hl':[i for i in range(-30,30)], 'ol':[i for i in range(60,92)], 'el':[i for i in range(-45,45)], 
-      'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)],'poleAlign':['True', 'Apparent'], 'corrTrack':['enabled','disabled'],
+      'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)],
       'a1min':[i for i in range(-360,0)],'a1max':[i for i in range(0,360)],'a2min':[i for i in range(-360,0)],'a2max':[i for i in range(0,360)]
       }
 
@@ -46,7 +46,7 @@ MountReadCmd = {
       'MaxR':'GXRX','GuideR':'GXR0','Acc':'GXRA', 'SlowR':'GXR1','MediumR':'GXR2','FastR':'GXR3',
       'mrot1':'GXMRR','mge1':'GXMGR','mst1':'GXMSR','mmu1':'GXMMR','mbl1':'GXMBR','mlc1':'GXMcR','mhc1':'GXMCR', 'msil1':'GXMmR',
       'mrot2':'GXMRD','mge2':'GXMGD','mst2':'GXMSD','mmu2':'GXMMD','mbl2':'GXMBD','mlc2':'GXMcD','mhc2':'GXMCD', 'msil2':'GXMmD',
-      'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU', 'corrTrack':'GXI',
+      'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU', 
       'a1min':'GXLA','a1max':'GXLB','a2min':'GXLC','a2max':'GXLD'
       } 
 MountSetCmd = {
@@ -54,7 +54,7 @@ MountSetCmd = {
       'MaxR':'SXRX:','GuideR':'SXR0:','Acc':'SXRA:', 'SlowR':'SXR1:','MediumR':'SXR2:','FastR':'SXR3:',
       'mrot1':'SXMRR:','mge1':'SXMGR:','mst1':'SXMSR:','mmu1':'SXMMR:','mbl1':'SXMBR:','mlc1':'SXMcR:','mhc1':'SXMCR:', 'msil1':'SXMmR:',
       'mrot2':'SXMRD:','mge2':'SXMGD:','mst2':'SXMSD:','mmu2':'SXMMD:','mbl2':'SXMBD:','mlc2':'SXMcD:','mhc2':'SXMCD:', 'msil2':'SXMmD:',
-      'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 'poleAlign':'SXAc:', 'corrTrack':'T',
+      'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 
       'a1min':'SXLA:','a1max':'SXLB:','a2min':'SXLC:','a2max':'SXLD:'      
       } 
 
@@ -235,17 +235,17 @@ def writeMountData():
     elif (tag == 'SlowR') or (tag == 'MediumR') or (tag == 'FastR'):
       cmdStr += str(int(Mount[tag]))
 
-    elif (tag == 'poleAlign'):
-      if (Mount[tag] == 'True'):
-        cmdStr += 't'
-      else:
-        cmdStr += 'a'
+#    elif (tag == 'poleAlign'):
+#      if (Mount[tag] == 'True'):
+#        cmdStr += 't'
+#      else:
+#        cmdStr += 'a'
 
-    elif (tag == 'corrTrack'):
-      if (Mount[tag] == 'enabled'):
-        cmdStr += 'c'
-      else:
-        cmdStr += 'n'
+#    elif (tag == 'corrTrack'):
+#      if (Mount[tag] == 'enabled'):
+#        cmdStr += 'c'
+#      else:
+#        cmdStr += 'n'
 
     else:                         # all other cases
       cmdStr += str(Mount[tag])
@@ -370,20 +370,20 @@ def readMountData():
     elif (tag == 'SlowR') or (tag == 'MediumR') or (tag == 'FastR'):  
       Mount[tag] = int(float(resp))
 
-    elif (tag == 'poleAlign'):
-      if (resp == 'a'):
-        Mount[tag] = 'Apparent'
-      else:
-        Mount[tag] = 'True'
+#    elif (tag == 'poleAlign'):
+#      if (resp == 'a'):
+#        Mount[tag] = 'Apparent'
+#      else:
+#        Mount[tag] = 'True'
 
-    elif (tag == 'corrTrack'):
-      ct = resp[10]     # Corrected tracking is byte number 10 in the result string
-      if (ct == 'c'):
-        Mount[tag] = 'enabled'
-      else:  
-        Mount[tag] = 'disabled'
-    else:
-      Mount[tag] = resp
+#    elif (tag == 'corrTrack'):
+#      ct = resp[10]     # Corrected tracking is byte number 10 in the result string
+#      if (ct == 'c'):
+#        Mount[tag] = 'enabled'
+#      else:  
+#        Mount[tag] = 'disabled'
+#    else:
+#      Mount[tag] = resp
 
 
 
@@ -408,8 +408,8 @@ class Site(object):
       self.name = getValue(comm, 'GN')
     elif (i==2):  
       self.name = getValue(comm, 'GO')
-    elif (i==3):  
-      self.name = getValue(comm, 'GP')
+#    elif (i==3):  
+#      self.name = getValue(comm, 'GP')
 
   def write(self, comm, i):
     setCurrentSite(comm, i)
@@ -423,8 +423,8 @@ class Site(object):
       sendCommand(comm,':SN%s#' % self.name)
     elif (i==2):  
       sendCommand(comm,':SO%s#' % self.name)
-    elif (i==3):  
-      sendCommand(comm,':SP%s#' % self.name)
+#    elif (i==3):  
+#      sendCommand(comm,':SP%s#' % self.name)
 
   def setLatitude(self, sign, deg, min):
     if (sign == 'South'):
@@ -638,9 +638,9 @@ gemLimitFrame = sg.Frame('GEM Limits',
         [sgLabel('Past Meridian West'), sgSpin('wl')],
         [sgLabel('Under Pole'), sgSpin('ul')]])
 
-alignmentFrame = sg.Frame('Polar Alignment and Tracking', 
-        [[sgLabel('True / Apparent Pole'), sgSpin('poleAlign')],
-        [sgLabel('Corrected Tracking'), sgSpin('corrTrack')]])
+#alignmentFrame = sg.Frame('Polar Alignment and Tracking', 
+#        [[sgLabel('True / Apparent Pole'), sgSpin('poleAlign')],
+#        [sgLabel('Corrected Tracking'), sgSpin('corrTrack')]])
 
 siteFrame = sg.Frame('Sites', 
           [[sgLabel('Site Number'), siteSpin('siteNum')],
@@ -681,7 +681,7 @@ versionFrame = sg.Frame('Versions',
           [sg.Text('Stepper Driver:'), sg.Text('',key='driverVersion',size=(30,1))]]
           )
 
-mountTab = [[mountTypeRow],[speedFrame, sg.Column([[limitFrame,gemLimitFrame], [alignmentFrame]])],[motFrame1, motFrame2]]
+mountTab = [[mountTypeRow],[speedFrame, sg.Column([[limitFrame,gemLimitFrame]])],[motFrame1, motFrame2]]
 siteTab = [[siteFrame]]
 statusTab = [[timeFrame, sg.Button('Set current Time')],[coordFrame],[debugFrame],[errorFrame]]
 
