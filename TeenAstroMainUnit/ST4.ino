@@ -37,16 +37,16 @@ void checkST4()
   e2 = digitalRead(ST4RAe);
   n2 = digitalRead(ST4DEn);
   s2 = digitalRead(ST4DEs);
-
+  //ST4 correction are reverse when the mount is West side of pier as the image is rotated by 180°
   if ((w1 == w2) && (e1 == e2))
   {
     ST4RA_state = 0;
     if (w1 != e1)
     {
       if (w1 == LOW)
-        ST4RA_state = '+';
+        ST4RA_state = GetPierSide() == PIER_EAST ? '+' : '-';
       if (e1 == LOW)
-        ST4RA_state = '-';
+        ST4RA_state = GetPierSide() == PIER_EAST ? '-' : '+';
     }
   }
   if ((n1 == n2) && (s1 == s2))
@@ -55,9 +55,9 @@ void checkST4()
     if (n1 != s1)
     {
       if (n1 == LOW)
-        ST4DE_state = GetPierSide() == PIER_EAST ? '-' : '+';
+        ST4DE_state = '-';
       if (s1 == LOW)
-        ST4DE_state = GetPierSide() == PIER_EAST ? '+' : '-';
+        ST4DE_state = '+';
     }
   }
 
