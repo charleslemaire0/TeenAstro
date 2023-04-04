@@ -87,38 +87,15 @@ double LA3::determinant(const double (&m)[3][3]) {
 }
 
 // Multiply two 3x3 matrices
-void LA3::multiply(double(&out)[3][3], const double(&a)[3][3], const double(&b)[3][3]) {
-	for (unsigned char i = 0; i < 3; i++)
-		for (unsigned char j = 0; j < 3; j++) {
-			double res = 0;
-			for (unsigned char k = 0; k < 3; k++)
-				res += a[i][k] * b[k][j];
-			out[i][j] = res;
+void LA3::multiply(double (&out)[3][3], const double (&a)[3][3], const double (&b)[3][3]) {
+	for(unsigned char i=0; i<3; i++)
+		for(unsigned char j=0; j<3; j++) {
+			double res=0;
+			for(unsigned char k=0; k<3; k++)
+				res+=a[i][k] * b[k][j];
+			out[i][j]=res;
 		}
 }
-
-// Multiply two 3x3 matrices
-void LA3::scalar(double(&a)[3][3], const double s) {
-	for (unsigned char i = 0; i < 3; i++)
-	{
-		for (unsigned char j = 0; j < 3; j++)
-		{
-			a[i][j] *= s;
-		}
-	}
-}
-
-// Multiply two 3x3 matrices
-void LA3::sum(double(&out)[3][3], const double(&a)[3][3], const double(&b)[3][3]) {
-  for (unsigned char i = 0; i < 3; i++)
-  {
-    for (unsigned char j = 0; j < 3; j++)
-		{
-      out[i][j] = a[i][j] + b[i][j];
-    }
-  }
-}
-
 
 // Multiply 3x3 matrix with 3-vector
 void LA3::multiply(double (&out)[3], const double (&m)[3][3], const double (&v)[3]) {
@@ -129,7 +106,6 @@ void LA3::multiply(double (&out)[3], const double (&m)[3][3], const double (&v)[
 		out[i]=res;
 	}
 }
-
 
 // get getIdentityMatrix
 void LA3::getIdentityMatrix(double(&out)[3][3])
@@ -146,62 +122,6 @@ void LA3::getIdentityMatrix(double(&out)[3][3])
 	out[1][2] = 0;
 	out[2][2] = 1;
 }
-
-void LA3::GetTrace(const double(&m)[3][3], double& trace)
-{
-	trace = m[0][0] + m[1][1] + m[2][2];
-	return;
-}
-
-void LA3::GetEigenValueFromSymetricMatrix(const double(&m)[3][3], double& eig1, double& eig2, double& eig3)
-{
-	double p1 = pow(m[0][1],2.)  + pow(m[0][2],2.) + pow(m[1][2],2.);
-	if (p1 == 0)
-	{
-		eig1 = m[0][0];
-		eig2 = m[1][1];
-		eig3 = m[2][2];
-	}
-	else 
-	{
-		double q = 0;
-		GetTrace(m, q);
-		q /= 3;
-		double p2 = pow(m[0][0] - q, 2.) + pow(m[1][1] - q, 2.) + pow(m[2][2] - q, 2) + 2 * p1;
-		double p = sqrt(p2 / 6);
-		double I[3][3];
-		getIdentityMatrix(I);
-		double B[3][3];
-		for (unsigned char i = 0; i < 3; i++)
-		{
-			for (unsigned char j = 0; j < 3; j++)
-			{
-				B[i][j] = 1. / p * (m[i][j] - q * I[i][j]);
-			}
-		}
-		double r = determinant(B)/2.;
-		// In exact arithmetic for a symmetric matrix - 1 <= r <= 1
-		// but computation error can leave it slightly outside this range.
-		double phi = 0;
-    if (r <= -1)
-    {
-      phi = M_PI / 3.;
-    }
-    else if (r >= 1.)
-    {
-      phi = 0.;
-    }
-    else
-    {
-      phi = acos(r) / 3.;
-    }
-		// the eigenvalues satisfy eig3 <= eig2 <= eig1
-		eig1 = q + 2. * p * cos(phi);
-		eig3 = q + 2. * p * cos(phi + (2. * M_PI / 3.));
-		eig2 = 3. * q - eig1 - eig3; // since trace(A) = eig1 + eig2 + eig3
-	}
-}
-
 
 // get a Matrix after a single rotation
 void LA3::getSingleRotationMatrix(double(&out)[3][3], const LA3::SingleRotation sr)

@@ -85,26 +85,14 @@ public:
 	// Calculate the inverse of a given invertable 3x3 matrix
 	static void invert(double (&out)[3][3], const double (&m)[3][3]);
 
-	// multiply by a scalar
-	static void scalar(double(&a)[3][3], const double s);
-
-	// sum of 2 Matrix
-	static void sum(double(&out)[3][3], const double(&a)[3][3], const double(&b)[3][3]);
-
 	// Multiply two 3x3 matrices
 	static void multiply(double (&out)[3][3], const double (&a)[3][3], const double (&b)[3][3]);
 
 	// Multiply 3x3 matrix with 3-vector
 	static void multiply(double (&out)[3], const double (&m)[3][3], const double (&v)[3]);
 
-	// get Trace
-	static void GetTrace(const double(&r)[3][3], double& trace);
-
 	// get getIdentityMatrix
 	static void getIdentityMatrix(double(&out)[3][3]);
-
-	//get eigen Value from symetric matrix
-	static void GetEigenValueFromSymetricMatrix(const double(&r)[3][3], double& eig1, double& eig2, double& eig3);
 
 	// get a Matrix after a single rotation
 	static void getSingleRotationMatrix(double(&out)[3][3], const LA3::SingleRotation sr);
