@@ -23,7 +23,7 @@ class driftPlot():
             self.dpi = 36
         elif sys.platform == "linux":
             self.dpi = 64
-        elif sys.platform == "win32":
+        else:
             self.dpi = 64
         self.x = np.linspace(0, numSamples-1, numSamples)
         self.ra = np.zeros(numSamples)

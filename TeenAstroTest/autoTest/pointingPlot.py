@@ -25,7 +25,7 @@ class pointingPlot():
             self.dpi = 36
         elif sys.platform == "linux":
             self.dpi = 64
-        elif sys.platform == "win32":
+        else:
             self.dpi = 64
         self.fig, self.ax = plt.subplots(subplot_kw={'projection': 'polar'}, figsize=(10,6), dpi=self.dpi)
         self.line, = self.ax.plot(self.az, self.alt)

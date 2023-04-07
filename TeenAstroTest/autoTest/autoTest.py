@@ -135,7 +135,7 @@ class alignmentPlot():
             self.dpi = 36
         elif sys.platform == "linux":
             self.dpi = 64
-        elif sys.platform == "win32":
+        else:
             self.dpi = 64        
         self.planets = load('de421.bsp')
         # Load star catalog and compute Jnow from J2000 coordinates
