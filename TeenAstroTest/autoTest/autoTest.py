@@ -5,7 +5,7 @@
 # François Desvallées
 #
 
-import math, time, sys, argparse, csv
+import math, time, sys, argparse, csv, sys
 import PySimpleGUI as sg
 import numpy as np  
 from pandas import read_csv
@@ -131,6 +131,12 @@ class alignmentPlot():
         self.window = window
         self.ts = ts
         self.ta = ta
+        if sys.platform == "darwin":
+            self.dpi = 36
+        elif sys.platform == "linux":
+            self.dpi = 64
+        elif sys.platform == "win32":
+            self.dpi = 64        
         self.planets = load('de421.bsp')
         # Load star catalog and compute Jnow from J2000 coordinates
         self.stars = read_csv('stars.csv')
@@ -149,7 +155,7 @@ class alignmentPlot():
         self.field_of_view_degrees = 45.0
         self.limiting_magnitude = 5.0
         self.marker_size = ((self.limiting_magnitude - self.stars.magnitude) ** 2.0) #/ (self.field_of_view_degrees / 10)
-        self.fig, self.ax = plt.subplots(figsize=(6, 6), dpi=40)
+        self.fig, self.ax = plt.subplots(figsize=(6, 6), dpi=self.dpi)
         plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
         self.fig.add_artist(lines.Line2D([0.45, 0.55], [0.5, 0.5], linewidth=1, color='black')) # cursor H
         self.fig.add_artist(lines.Line2D([0.5, 0.5], [0.45, 0.55], linewidth=1, color='black')) # cursor V

@@ -4,6 +4,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from skyfield.api import wgs84, load, position_of_radec, utc, Star
 from teenastro import TeenAstro, deg2dms
 import numpy as np  
+import sys
 
 # Pointing test case
 testCase =  [
@@ -20,7 +21,13 @@ class pointingPlot():
         self.ta = ta
         self.az = []
         self.alt = []
-        self.fig, self.ax = plt.subplots(subplot_kw={'projection': 'polar'}, figsize=(10,6), dpi=36)
+        if sys.platform == "darwin":
+            self.dpi = 36
+        elif sys.platform == "linux":
+            self.dpi = 64
+        elif sys.platform == "win32":
+            self.dpi = 64
+        self.fig, self.ax = plt.subplots(subplot_kw={'projection': 'polar'}, figsize=(10,6), dpi=self.dpi)
         self.line, = self.ax.plot(self.az, self.alt)
         self.ax.set_rmin(90)
         self.ax.set_rmax(-15)

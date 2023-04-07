@@ -4,6 +4,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from skyfield.api import wgs84, load, position_of_radec, utc, Star
 from teenastro import TeenAstro, deg2dms
 import numpy as np  
+import sys
 
 numSamples = 100
 
@@ -18,12 +19,18 @@ class driftPlot():
         self.window = window
         self.ts = ts
         self.ta = ta
+        if sys.platform == "darwin":
+            self.dpi = 36
+        elif sys.platform == "linux":
+            self.dpi = 64
+        elif sys.platform == "win32":
+            self.dpi = 64
         self.x = np.linspace(0, numSamples-1, numSamples)
         self.ra = np.zeros(numSamples)
         self.dec = np.zeros(numSamples)
         self.speed1 = np.zeros(numSamples)
         self.speed2 = np.zeros(numSamples)
-        self.fig, self.axes = plt.subplots(4, sharex=True, sharey=True, figsize=(10,6), dpi=36)
+        self.fig, self.axes = plt.subplots(4, sharex=True, sharey=True, figsize=(10,6), dpi=self.dpi)
         self.yScale = 10
         self.axes[0].set_ylim(-self.yScale,self.yScale)
         self.axes[0].set_xlabel('time (seconds)')
