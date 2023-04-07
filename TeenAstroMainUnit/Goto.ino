@@ -185,17 +185,34 @@ Coord_EQ getEquTarget(double Lat)
 }
 
 // gets the telescopes current Apparent Alt and Azm!
-Coord_HO getHorApp()
+//Coord_HO getHorApp()
+//{
+//  return getInstr().To_Coord_HO(alignment.Tinv, RefrOptForGoto());
+//}
+
+
+//Coord_HO getHorAppE()
+//{
+//#if HASEncoder
+//  return getInstrE().To_Coord_HO(alignment.Tinv, RefrOptForGoto());
+//#else
+//  return getHorApp();
+//#endif
+//}
+
+// gets the telescopes current Topo Alt and Azm!
+Coord_HO getHorTopo()
 {
-  return getInstr().To_Coord_HO(alignment.Tinv, RefrOptForGoto());
+  return getInstr().To_Coord_HO(alignment.Tinv, { false, 10, 110 });
 }
 
-Coord_HO getHorAppE()
+
+Coord_HO getHorETopo()
 {
 #if HASEncoder
-  return getInstrE().To_Coord_HO(alignment.Tinv, RefrOptForGoto());
+  return getInstrE().To_Coord_HO(alignment.Tinv, { false, 10, 110 });
 #else
-  return getHorApp();
+  return getHorTopo();
 #endif
 }
 

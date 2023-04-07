@@ -153,7 +153,7 @@ void Command_GX()
       f = HO_T.Az() * RAD_TO_DEG;
       f1 = HO_T.Alt() * RAD_TO_DEG;
 #else
-      Coord_HO HO_T = getHorApp();
+      Coord_HO HO_T = getHorTopo();
       f = HO_T.Az() * RAD_TO_DEG;
       f1 = HO_T.Alt() * RAD_TO_DEG;
 #endif // HASEncoder
@@ -946,7 +946,7 @@ void  Command_G()
     //  :GZ#   Get telescope azimuth, Native LX200 command
     //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
   {
-    Coord_HO HO_T = getHorApp();
+    Coord_HO HO_T = getHorTopo();
     if (command[1] == 'A')
     {
       f1 = HO_T.Alt() * RAD_TO_DEG;

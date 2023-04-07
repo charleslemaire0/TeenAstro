@@ -21,7 +21,7 @@ Coord_HO Coord_IN::To_Coord_HO(const double(&missaligmentinv)[3][3], RefrOpt Opt
   LA3::getEulerRxRyRz(tmp2, frh, alt, az);
   if (Opt.use)
   {
-    LA3::Topocentric2Apparent(alt, Opt);
+    LA3::Apparent2Topocentric(alt, Opt);
   }
   return Coord_HO(frh, alt, az, Opt.use);
 };
