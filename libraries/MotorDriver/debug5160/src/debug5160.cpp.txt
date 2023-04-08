@@ -14,15 +14,16 @@
 #define MAX_ARG_SIZE 20
 
 #ifdef __ESP32__
-//#define Axis1CSPin      5
-//#define Axis1DirPin     26
-//#define Axis1StepPin    25
-//#define Axis1EnablePin  27
+#define Axis1CSPin      5
+#define Axis1DirPin     26
+#define Axis1StepPin    25
+#define Axis1EnablePin  27
 
-#define Axis1CSPin      22
-#define Axis1DirPin     17
-#define Axis1StepPin    21
-#define Axis1EnablePin  32
+// For debugging axis2
+//#define Axis1CSPin      22
+//#define Axis1DirPin     32
+//#define Axis1StepPin    21
+//#define Axis1EnablePin  17
 
 
 #define ISR(f) void IRAM_ATTR f(void) 
@@ -192,15 +193,13 @@ void stop(char *arg1, char *arg2)
 void init(char *arg1, char *arg2)
 {
  	pinMode(Axis1CSPin, OUTPUT);
- 	pinMode(Axis1EnablePin, OUTPUT);
+// 	pinMode(Axis1EnablePin, OUTPUT);
   SPI.begin();
 
   hwMutex = xSemaphoreCreateMutex();  // hardware accesses (ie SPI etc.)
 
   // Generic initialization (works for both types)
- 	digitalWrite(Axis1EnablePin, 1);
   motorA1.init(Axis1CSPin, hwMutex);
- 	digitalWrite(Axis1EnablePin, 0);
 
   unsigned version = motorA1.drvP->version();
   PORT.printf("TMC version %03x\n", version);

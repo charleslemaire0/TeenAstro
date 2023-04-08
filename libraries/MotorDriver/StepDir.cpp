@@ -3,9 +3,9 @@
 #include <Arduino.h>
 #define ISR(f) void IRAM_ATTR f(void) 
 #define MIN_INTERRUPT_PERIOD 10UL      // µS
-#define MAX_INTERRUPT_PERIOD 200000UL  // 200 mS 
-// the motor task runs every 10mS
-#define TICK_PERIOD_MS 10
+#define MAX_INTERRUPT_PERIOD 1000000UL  // 1S 
+// the motor task runs every mS
+#define TICK_PERIOD_MS 1
 #endif
 
 #ifdef __arm__
@@ -20,9 +20,9 @@ IntervalTimer  itimer4;
 // Periods in µS, speeds in steps/S
 // *** replace by constants from the HAL
 #define MIN_INTERRUPT_PERIOD 5UL        // µS
-#define MAX_INTERRUPT_PERIOD 200000UL  // 200 mS 
-// the motor task runs every 10mS
-#define TICK_PERIOD_MS 10
+#define MAX_INTERRUPT_PERIOD 1000000UL  // 1S
+// the motor task runs every 1mS
+#define TICK_PERIOD_MS 1
 #endif
 
 
@@ -379,7 +379,7 @@ void StepDir::initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned time
   // default parameters 
   aMax = 200.0;
   vSlow = 500.0;                      // while slowing down
-  vStop = 50.0;                     // last steps to reach target
+  vStop = 10.0;                     // last steps to reach target
   vMax = 10000.0;
   stopDistance = (20 * vStop) * ((double) TICK_PERIOD_MS / 1000);   // set stop distance to 20 times the steps in one tick
 

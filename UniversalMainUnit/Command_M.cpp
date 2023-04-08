@@ -70,7 +70,7 @@ void Command_M()
     if ((atoi2((char *)&command[3], &i)) && ((i > 0) && (i <= 16399)))
     {
       char dir = command[2];
-      mount.mP->startGuiding(dir, i); 
+      startGuiding(dir, i); 
     }
   }
   break;

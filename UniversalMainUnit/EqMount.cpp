@@ -275,8 +275,21 @@ void EqMount::setTrackingSpeed(double speed)
  */
 void EqMount::getTrackingSpeeds(Speeds *sP)
 {
-  sP->speed1 = trackingSpeeds.speed1 * geoA1.stepsPerSecond/SIDEREAL_SECOND;
-  sP->speed2 = trackingSpeeds.speed2 * geoA2.stepsPerSecond/SIDEREAL_SECOND;
+  sP->speed1 = trackingSpeeds.speed1;
+  sP->speed2 = trackingSpeeds.speed2;
+
+  if (getEvent(EV_GUIDING_AXIS1 | EV_WEST))
+    sP->speed1 += guideRates[0];
+  if (getEvent(EV_GUIDING_AXIS1 | EV_EAST))
+    sP->speed1 -= guideRates[0];
+
+  if (getEvent(EV_GUIDING_AXIS2 | EV_NORTH))
+    sP->speed2 += guideRates[0];
+  if (getEvent(EV_GUIDING_AXIS2 | EV_SOUTH))
+    sP->speed2 -= guideRates[0];
+
+ sP->speed1 *= (geoA1.stepsPerSecond/SIDEREAL_SECOND);
+ sP->speed2 *= (geoA2.stepsPerSecond/SIDEREAL_SECOND);
 }
 
 void EqMount::initHome(Steps *sP)
@@ -293,73 +306,7 @@ void EqMount::initHome(Steps *sP)
   }
 }
 
-/*
- * startGuiding
- * add guiding speed to tracking speed
- */
-void EqMount::startGuiding(char dir, int milliseconds)
-{
-  if (!isTracking())
-    return;
-  switch(dir)
-  {
-    case 'w':
-      if (!axis1Guiding)
-      {
-        axis1Guiding = true;
-        trackingSpeeds.speed1 = trackingSpeed + guidingSpeed; // multiple of sidereal
-        xTimerChangePeriod(axis1Timer, milliseconds, 0);
-        xTimerStart(axis1Timer, 0);
-        setEvents(EV_GUIDING_W);
-      }
-      break;
-    case 'e':
-      if (!axis1Guiding)
-      {
-        axis1Guiding = true;
-        trackingSpeeds.speed1 = trackingSpeed - guidingSpeed; 
-        xTimerChangePeriod(axis1Timer, milliseconds, 0);
-        xTimerStart(axis1Timer, 0);
-        setEvents(EV_GUIDING_E);
-      }
-      break;
-    case 'n':
-      if (!axis2Guiding)
-      {
-        axis2Guiding = true;
-        trackingSpeeds.speed2 = guidingSpeed; 
-        xTimerChangePeriod(axis2Timer, milliseconds, 0);
-        xTimerStart(axis2Timer, 0);
-        setEvents(EV_GUIDING_N);
-      }
-      break;
-    case 's':
-      if (!axis2Guiding)
-      {
-        axis2Guiding = true;
-        trackingSpeeds.speed2 = -guidingSpeed; 
-        xTimerChangePeriod(axis2Timer, milliseconds, 0);
-        xTimerStart(axis2Timer, 0);
-        setEvents(EV_GUIDING_S);
-      }
-      break;
-  }
-}
 
-// Callbacks for guiding timers - reset tracking speeds to default
-void stopGuidingAxis1(UNUSED(TimerHandle_t xTimer))
-{
-  resetEvents(EV_GUIDING_W | EV_GUIDING_E);
-  mount.mP->axis1Guiding = false;
-  mount.mP->trackingSpeeds.speed1 = mount.mP->trackingSpeed; 
-}
-
-void stopGuidingAxis2(UNUSED(TimerHandle_t xTimer))
-{
-  resetEvents(EV_GUIDING_N | EV_GUIDING_S);
-  mount.mP->axis2Guiding = false;
-  mount.mP->trackingSpeeds.speed2 = 0; 
-}
 
 /*
  * Pole / Antipole direction

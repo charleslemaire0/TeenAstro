@@ -1,5 +1,12 @@
 #include "Global.h"
 
+#if 0
+// useful for tracing commands with debugger
+
+#define BUFFER_SIZE 2000
+char cmdBuffer[BUFFER_SIZE];
+static unsigned long cmdPtr = 0;
+#endif
 
 void processCommandsTask(void *arg)
 {
@@ -25,6 +32,13 @@ void processCommands()
   {
     return;
   }
+
+#if 0
+  strcpy(&cmdBuffer[cmdPtr], command);
+  cmdPtr += strlen(command) + 1;
+  if (cmdPtr >= BUFFER_SIZE)
+    cmdPtr = 0;
+#endif
 
   // Handles empty and one char replies
   reply[0] = 0;

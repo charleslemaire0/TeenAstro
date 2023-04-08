@@ -7,3 +7,5 @@ void SetAcceleration(void);
 void enableGuideRate(int g);
 void initMaxSpeed(void);
 bool isAltAz(void);
+void enableST4GuideRate(void);
+void resetGuideRate(void);

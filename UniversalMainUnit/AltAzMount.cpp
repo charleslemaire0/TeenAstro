@@ -199,11 +199,6 @@ void AltAzMount::setTrackingSpeed(double speed)
   trackingSpeed = speed;
 }
 
-void AltAzMount::startGuiding(char dir, int milliseconds)
-{
-
-}
-
 
 void AltAzMount::initHome(Steps *sP)
 {

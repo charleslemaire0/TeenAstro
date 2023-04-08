@@ -14,6 +14,7 @@ void resetEvents(unsigned ev)
   xEventGroupClearBits(mountEvents, ev);   
 }
 
+// Returns true if all events in a group are set
 bool getEvent(unsigned ev)
 {
   if ((xEventGroupGetBits(mountEvents) & ev) == ev)
@@ -21,6 +22,15 @@ bool getEvent(unsigned ev)
   else 
     return false;      
 }
+
+// Returns true if any of a group of events is set
+bool getEvents(unsigned evSet)
+{
+  unsigned ev;
+  ev = xEventGroupGetBits(mountEvents);
+  return ((ev & evSet) != 0);
+}
+
 
 // block until slewing bit is set
 void waitSlewing(void)
@@ -79,7 +89,6 @@ void controlTask(UNUSED(void *arg))
   CTL_MODE previousMode;
   long axis1Target, axis2Target;
   bool dangerZone=false;
-  long count = 0;
 
   while (1)
   { 
@@ -105,29 +114,28 @@ void controlTask(UNUSED(void *arg))
         break;
 
       case CTL_MODE_TRACKING:
-        // check tracking speed every 100mS
-        if (count % 10 == 0)
         {
           Speeds speeds;
-          mount.mP->getTrackingSpeeds(&speeds);
-          if (speeds.speed1 != 0)
+
+          // Only need to update speed in case of guiding, or for an AltAz mount
+          if (getEvent(EV_SPEED_CHANGE) | isAltAz())
           {
-            motorA1.setVmax(fabs(speeds.speed1));
-            if (speeds.speed1 > 0)
-              motorA1.setTargetPos(geoA1.stepsPerRot);
-            else
-              motorA1.setTargetPos(-geoA1.stepsPerRot);            
+            mount.mP->getTrackingSpeeds(&speeds);
+            resetEvents(EV_SPEED_CHANGE);
           }
-          if (speeds.speed2 != 0)
-          {
-            motorA2.setVmax(fabs(speeds.speed2));
-            if (speeds.speed2 > 0)
-              motorA2.setTargetPos(geoA2.stepsPerRot);
-            else
-              motorA2.setTargetPos(-geoA2.stepsPerRot);
-          }
+          
+          motorA1.setVmax(fabs(speeds.speed1));
+          if (speeds.speed1 > 0)
+            motorA1.setTargetPos(geoA1.stepsPerRot);
+          else
+            motorA1.setTargetPos(-geoA1.stepsPerRot);            
+
+          motorA2.setVmax(fabs(speeds.speed2));
+          if (speeds.speed2 > 0)
+            motorA2.setTargetPos(geoA2.stepsPerRot);
+          else
+            motorA2.setTargetPos(-geoA2.stepsPerRot);
         }
-        count++;
         break;
 
       case CTL_MODE_GOTO:
@@ -136,7 +144,8 @@ void controlTask(UNUSED(void *arg))
         {
           mount.mP->updateRaDec();
           currentMode = CTL_MODE_IDLE;
-          resetEvents(EV_SLEWING);
+          resetEvents(EV_SLEWING | EV_TRACKING | EV_GUIDING_AXIS1 | EV_GUIDING_AXIS2 | EV_CENTERING);
+          resetEvents(EV_SOUTH | EV_NORTH | EV_WEST | EV_EAST);
           if (getEvent(EV_GOING_HOME))
           {
             resetEvents(EV_GOING_HOME);
@@ -188,8 +197,8 @@ void controlTask(UNUSED(void *arg))
         {
           mount.mP->updateRaDec();
           resetAbort();
-          resetEvents(EV_SLEWING);
-          resetEvents(EV_TRACKING);
+          resetEvents(EV_SLEWING | EV_TRACKING | EV_GUIDING_AXIS1 | EV_GUIDING_AXIS2 | EV_CENTERING);
+          resetEvents(EV_SOUTH | EV_NORTH | EV_WEST | EV_EAST);
           currentMode = CTL_MODE_IDLE;
         }
         break;
@@ -261,7 +270,10 @@ void controlTask(UNUSED(void *arg))
           currentMode = CTL_MODE_GOTO;
           motorA1.setVmax(fabs(speed)*geoA1.stepsPerSecond/SIDEREAL_SECOND);
           motorA1.setTargetPos(target);  
-          setEvents(EV_SLEWING);
+          if (target == geoA1.westDef)
+            setEvents(EV_CENTERING | EV_WEST);
+          else
+            setEvents(EV_CENTERING | EV_EAST);
           resetEvents(EV_AT_HOME);
           break;
 
@@ -273,7 +285,10 @@ void controlTask(UNUSED(void *arg))
           currentMode = CTL_MODE_GOTO;
           motorA2.setVmax(fabs(speed)*geoA2.stepsPerSecond/SIDEREAL_SECOND);
           motorA2.setTargetPos(target);  
-          setEvents(EV_SLEWING);
+          if (target == 0)                        // fix this for S hemisphere
+            setEvents(EV_CENTERING | EV_NORTH);   
+          else
+            setEvents(EV_CENTERING | EV_SOUTH);   
           resetEvents(EV_AT_HOME);
           break;
 
@@ -286,10 +301,12 @@ void controlTask(UNUSED(void *arg))
 
         case CTL_MSG_STOP_AXIS1:
           motorA1.abort();
+          resetEvents(EV_CENTERING | EV_WEST | EV_EAST);
           break;
 
         case CTL_MSG_STOP_AXIS2:
           motorA2.abort();
+          resetEvents(EV_CENTERING | EV_NORTH | EV_SOUTH);
           break;
 
         default:

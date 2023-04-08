@@ -86,7 +86,7 @@ enum SID_Mode
 #include "Park.h"
 #include "Control.h"
 #include "Monitor.h"
-
+#include "Guiding.h"
 
 // TeenAstroMainUnit.h
 void initMotors(bool);
@@ -114,8 +114,8 @@ void SafetyCheck(bool);
 #define CTRL_TASK_PRTY    4
 #define CMD_TASK_PRTY     6
 #define MON_TASK_PERIOD 100  // milliseconds
-#define CMD_TASK_PERIOD  5
-#define CTRL_TASK_PERIOD 5 
+#define CMD_TASK_PERIOD  1
+#define CTRL_TASK_PERIOD 1 
 
 GLOBAL QueueHandle_t controlQueue;
 GLOBAL SemaphoreHandle_t hwMutex;       // to prevent concurrent hardware accesses 
@@ -197,5 +197,6 @@ GLOBAL DateTimeTimers      rtk;
 
 GLOBAL uint8_t             currentMount;
 GLOBAL uint8_t             currentSite;
+GLOBAL uint8_t             AxisDriver;
 GLOBAL char                mountNames[maxNumMounts][MountNameLen];
 GLOBAL bool                reboot_unit;

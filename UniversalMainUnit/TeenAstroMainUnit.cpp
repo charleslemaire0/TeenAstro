@@ -42,6 +42,7 @@ void initMotors(bool deleteAlignment)
   motorA1.init(Axis1CSPin, hwMutex);
   motorA2.init(Axis2CSPin, hwMutex);
 
+  AxisDriver = 0;
   // find out if we have StepDir or SPI-only and initialize either type (see SD_MODE in TMC5160 data sheet)
   if (motorA1.drvP->version() == 0) // no TMC5160 found - init a stepdir for debug
   {
@@ -49,10 +50,14 @@ void initMotors(bool deleteAlignment)
   }
   else
   {
+    AxisDriver |= (3<<0);
     if (motorA1.drvP->sd_mode())
       motorA1.initStepDir(Axis1DirPin, Axis1StepPin, isrStepDir1, 2);
     else
+    {
+      AxisDriver |= (8<<0);
       motorA1.initMc5160(hwMutex);
+    }
   }
   
   if (motorA2.drvP->version() == 0) // no TMC5160 found - init a stepdir for debug
@@ -61,12 +66,15 @@ void initMotors(bool deleteAlignment)
   }
   else
   {
+    AxisDriver |= (3<<4);
     if (motorA2.drvP->sd_mode())
       motorA2.initStepDir(Axis2DirPin, Axis2StepPin, isrStepDir2, 3);
     else
+    {
+      AxisDriver |= (8<<4);
       motorA2.initMc5160(hwMutex);
+    }
   }
-
 
   // cannot call updateRatios before motors are initialized!
   updateRatios(deleteAlignment,false);
@@ -126,12 +134,12 @@ void setup()
   Serial.begin(BAUD);
   S_SHC.attach_Stream((Stream *)&Serial, COMMAND_SERIAL1);
 
-  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(LEDPin, OUTPUT);
   for (int k = 0; k < 20; k++)
   {
-    digitalWrite(LED_BUILTIN, HIGH);
+    digitalWrite(LEDPin, HIGH);
     delay(10);
-    digitalWrite(LED_BUILTIN, LOW);
+    digitalWrite(LEDPin, LOW);
     delay(50);
   }
   
@@ -156,6 +164,7 @@ void setup()
   highPrecision = true;
   initMount();
   initMotors(false);
+  initGuiding();
 
   // init time and date
   setSyncProvider(rtk.getTime);
@@ -173,9 +182,15 @@ void setup()
   mount.mP->updateRaDec();
   mount.mP->setTrackingSpeed(TrackingStar);
 
+#ifdef __ESP32__
   Serial2.begin(BAUD);
   S_USB.attach_Stream((Stream *)&Serial2, COMMAND_SERIAL);
-  
+#endif
+#ifdef __arm__
+  Serial1.begin(BAUD);
+  S_USB.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL);
+#endif
+
 
   rtk.resetLongitude(*localSite.longitude());
 

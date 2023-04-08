@@ -17,12 +17,16 @@ enum CTL_MODE {CTL_MODE_IDLE, CTL_MODE_GOTO, CTL_MODE_TRACKING, CTL_MODE_STOPPIN
 #define EV_PARKED           (1<<3)
 #define EV_SLEWING          (1<<4)
 #define EV_TRACKING         (1<<5)
-#define EV_GUIDING_E        (1<<6)
-#define EV_GUIDING_W        (1<<7)
-#define EV_GUIDING_N        (1<<8)
-#define EV_GUIDING_S        (1<<9)
-#define EV_START_TRACKING   (1<<10)
-#define EV_ERROR            (1<<11)
+#define EV_EAST             (1<<6)
+#define EV_WEST             (1<<7)
+#define EV_NORTH            (1<<8)
+#define EV_SOUTH            (1<<9)
+#define EV_GUIDING_AXIS1    (1<<10)
+#define EV_GUIDING_AXIS2    (1<<11)
+#define EV_CENTERING        (1<<12)
+#define EV_START_TRACKING   (1<<13)
+#define EV_SPEED_CHANGE     (1<<14)
+#define EV_ERROR            (1<<15)
 
 
 bool isSlewing(void);     // replaces movingTo global variable
@@ -34,6 +38,7 @@ void DecayModeTracking(void);
 void setEvents(unsigned ev);
 void resetEvents(unsigned ev);
 bool getEvent(unsigned ev);
+bool getEvents(unsigned ev);
 void waitSlewing(void);
 void startTracking(void);
 void stopTracking(void);

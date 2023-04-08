@@ -64,15 +64,12 @@ public:
   virtual void setTrackingSpeed(double speed);
   virtual void getTrackingSpeeds(Speeds *);
   virtual void initHome(Steps *);
-  virtual void startGuiding(char, int);
   virtual bool getTargetPierSide(EqCoords *eP, PierSide *psOutP);
   virtual long poleDir(char);
   virtual int decDirection(void);
   virtual void updateRaDec(void);
-  double  trackingSpeed, guidingSpeed;  // multiple of sidereal speed 
-  Speeds  trackingSpeeds;               // actual tracking speeds including guiding and spiral           
-  bool axis1Guiding=false, axis2Guiding=false;
-  TimerHandle_t axis1Timer, axis2Timer;
+  double  trackingSpeed;            // multiple of sidereal speed 
+  Speeds  trackingSpeeds;           // actual tracking speeds including guiding and spiral           
   double currentRA, currentDec;
 };
 
@@ -99,7 +96,6 @@ public:
   void setTrackingSpeed(double speed);
   void getTrackingSpeeds(Speeds *);
   void initHome(Steps *);
-  void startGuiding(char, int);
   bool getTargetPierSide(EqCoords *eP, PierSide *psOutP);
   long poleDir(char);
   int decDirection(void);
@@ -108,18 +104,6 @@ public:
   EqMount(MountType t)
   {
     type = t;
-    axis1Timer = xTimerCreate
-                 ( "axis1 Guiding Timer",
-                   1000,            
-                   pdFALSE,
-                   NULL,
-                   stopGuidingAxis1);  
-    axis2Timer = xTimerCreate
-                 ( "axis2 Guiding Timer",
-                   1000,            
-                   pdFALSE,
-                   NULL,
-                   stopGuidingAxis2);  
   }
 };
 
@@ -144,7 +128,6 @@ public:
   void setTrackingSpeed(double speed);
   void getTrackingSpeeds(Speeds *);
   void initHome(Steps *);
-  void startGuiding(char, int);
   bool getTargetPierSide(EqCoords *eP, PierSide *psOutP);
   long poleDir(char);
   int decDirection(void);

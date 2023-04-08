@@ -105,6 +105,15 @@ void enableGuideRate(int g)
   xQueueSend( controlQueue, &msg, 0);
 }
 
+void enableST4GuideRate()
+{
+  enableGuideRate(0);
+}
+
+void resetGuideRate()
+{
+  enableGuideRate(activeGuideRate);
+}
 bool isAltAz()
 {
   return mount.mP->type == MOUNT_TYPE_ALTAZM || mount.mP->type == MOUNT_TYPE_FORK_ALT;

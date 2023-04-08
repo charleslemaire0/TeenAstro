@@ -431,14 +431,28 @@ void Command_GX()
     reply[2] = parkStatusCh[parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
     if (atHome()) reply[3] = 'H';
     reply[4] = '0' + activeGuideRate;
-    if (getEvent(EV_GUIDING_E))
+
+    if (getEvents(EV_GUIDING_AXIS1 | EV_GUIDING_AXIS2))
+    {
+      reply[5] = 'G';
+      reply[6] = '*';
+    }
+
+    if (getEvent(EV_CENTERING))
+    {
+      reply[5] = 'G';
+      reply[6] = '+';
+    }
+
+    if (getEvent(EV_EAST))
       reply[7] = '<';
-    else if (getEvent(EV_GUIDING_W))
+    else if (getEvent(EV_WEST))
       reply[7] = '>';
-    if (getEvent(EV_GUIDING_N))
+    if (getEvent(EV_NORTH))
       reply[8] = '^';
-    else if (getEvent(EV_GUIDING_S))
+    else if (getEvent(EV_SOUTH))
       reply[8] = '_';
+
     if (mount.mP->type == MOUNT_TYPE_GEM)
     {
       reply[12] = 'E';
@@ -458,10 +472,11 @@ void Command_GX()
       case PIER_WEST: reply[13] = 'W'; break;
       default: reply[13] = '?'; break;
     }
-
+    reply[14] = 'A';      // no GNSS
     reply[15] = '0' + lastError;
-    reply[16] = '#';
-    reply[17] = 0;
+    reply[16] = 'A';      // no encoder
+    reply[17] = '#';
+    reply[18] = 0;
     i = 17;
   }
   break;
@@ -910,7 +925,7 @@ void  Command_G()
       break;
     case 'b':
       //  :GVb#   Get Firmware Stepper driver board, extended LX200 command
-//      sprintf(reply, "%d", AxisDriver);   // TODO
+      sprintf(reply, "%d", AxisDriver);
       break;
     default:
       replyFailed();

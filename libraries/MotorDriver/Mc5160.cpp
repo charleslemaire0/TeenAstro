@@ -12,6 +12,7 @@
 #include "Mc5160.h"
 
 #define CLOCK_RATIO (1.39)		// Ratio of expected clock over actual (internal clock is 12Mhz)
+#define MIN_SPEED   (1.0)     // min. speed to program in steps per second (below this, program zero)
 
 // not used, needed to keep the linker happy
 void Mc5160::initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned timerId)
@@ -72,15 +73,21 @@ void Mc5160::setAmax(long a)
   xSemaphoreGive(mutex);
 }
 
+// v is always positive
 void Mc5160::setVmax(double v)
 {
   xSemaphoreTake(mutex, portMAX_DELAY);
-  int vint = (int) v * CLOCK_RATIO; 
+  int vint = (int) (v * CLOCK_RATIO); 
   drvP->VMAX(vint);
-  if (vint != 0)
+  if (vint > MIN_SPEED)
   {
     drvP->VSTART(50);
     drvP->VSTOP(50);    
+  }
+  else
+  {
+    drvP->VSTART(0);
+    drvP->VSTOP(0);    
   }
   xSemaphoreGive(mutex);
 }
