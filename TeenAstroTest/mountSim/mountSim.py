@@ -416,9 +416,18 @@ class Application:
             elif (ch == 'h'):
                 self.ta.goHome()
                 print ('go home')
+            elif (ch == 'P'):
+              self.ta.park()
+              print ('parking')
+            elif (ch == 'p'):
+              self.ta.unpark()
+              print ('unparking')              
             elif (ch == 'z'):
                 self.ta.gotoAzAlt(0, 90)
                 print ('go to Zenith')
+            elif (ch == 'x'):
+              self.ta.readStatus()
+              print (self.ta.status)              
 
         return window
 

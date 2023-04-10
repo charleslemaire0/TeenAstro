@@ -257,6 +257,12 @@ class TeenAstro(object):
   def goHome(self):
     self.sendCommand(":hC#")
 
+  def park(self):
+    self.sendCommand(":hP#")
+
+  def unpark(self):
+    self.sendCommand(":hR#")
+
   def flipMount(self):
     self.sendCommand(":MF#")
 

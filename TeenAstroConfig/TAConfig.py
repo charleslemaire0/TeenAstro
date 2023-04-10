@@ -27,7 +27,7 @@ SiteDef = {
 
 MountDef = { 'mType':['Eq-German', 'Eq-Fork', 'AltAz-Tee', 'AltAz-Fork'],
       'DefaultR':['Guide', 'Slow', 'Medium','Fast', 'Max'],
-      'MaxR':[i for i in range(32,4000)],'GuideR':[i/100 for i in range(1,100)],'Acc':[i/10 for i in range(1,251)],
+      'MaxR':[i for i in range(32,4000)],'GuideR':[i/100 for i in range(1,201)],'Acc':[i/10 for i in range(1,251)],
       'SlowR':[i for i in range(1,255)],'MediumR':[i for i in range(1,255)],'FastR':[i for i in range(1,255)],
       'mrot1':['Direct','Reverse'],'mge1':[i for i in range(1,60000)],'mst1':[i for i in range(1,400)],'mmu1':[8,16,32,64,128,256],
       'mbl1':[i for i in range(0,999)],'mlc1':[i for i in range(100,2000,10)],'mhc1':[i for i in range(100,2000, 10)], 
@@ -303,7 +303,6 @@ def readMountData():
     return
   for tag in list(MountReadCmd.keys()): 
     resp = getValue(comm, MountReadCmd[tag]) 
-    print (tag)
     if (tag == 'mType'):
       mt = resp[12]     # Mount type is byte number 12 in the result string
       if (mt == 'E'):
@@ -382,8 +381,8 @@ def readMountData():
 #        Mount[tag] = 'enabled'
 #      else:  
 #        Mount[tag] = 'disabled'
-#    else:
-#      Mount[tag] = resp
+    else:
+      Mount[tag] = resp
 
 
 

@@ -74,19 +74,19 @@ class driftPlot():
             self.saveCsv()
 
         if (ev == 'GuideN'):
-            self.ta.guideCmd('n',100)
+            self.ta.guideCmd('n',200)
             self.render()
 
         if (ev == 'GuideS'):
-            self.ta.guideCmd('s',100)
+            self.ta.guideCmd('s',200)
             self.render()
 
         if (ev == 'GuideE'):
-            self.ta.guideCmd('e',100)
+            self.ta.guideCmd('e',200)
             self.render()
 
         if (ev == 'GuideW'):
-            self.ta.guideCmd('w',100)
+            self.ta.guideCmd('w',200)
             self.render()
 
         if (ev == 'zoomInD'):
