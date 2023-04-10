@@ -2,10 +2,29 @@
 // functions related to PRK_PARKING the mount
 #include <Global.h>
 
+static ParkState parkState;  // private variable protected by semaphore
+
+// Uses event group
+ParkState parkStatus(void)
+{
+  ParkState state;
+  xSemaphoreTake(swMutex, portMAX_DELAY); 
+  state = parkState;
+  xSemaphoreGive(swMutex);  
+  return parkState;
+}
+
+void parkStatus(ParkState state)
+{
+  xSemaphoreTake(swMutex, portMAX_DELAY); 
+  parkState = state;
+  xSemaphoreGive(swMutex);  
+}
+
 // sets the park postion as the current position
 bool setPark()
 {
-  if ((parkStatus == PRK_UNPARKED) && !isSlewing())
+  if ((parkStatus() == PRK_UNPARKED) && !isSlewing())
   {
     lastsiderealTracking = isTracking();
     stopTracking();
@@ -141,7 +160,7 @@ bool parkClearBacklash()
 byte park()
 {
   // Gets park position and moves the mount there
-  if (parkStatus == PRK_PARKED)
+  if (parkStatus() == PRK_PARKED)
   {
     return 0;
   }
@@ -151,7 +170,7 @@ byte park()
   }
   if (!isSlewing())
   {
-    if (parkStatus == PRK_UNPARKED)
+    if (parkStatus() == PRK_UNPARKED)
     {
       if (parkSaved)
       {
@@ -165,8 +184,8 @@ byte park()
         lastsiderealTracking = false;
         stopTracking();
         // record our status
-        parkStatus = PRK_PARKING;
-        XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
+        parkStatus(PRK_PARKING);
+        XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus());
         steps.steps1 = h;
         steps.steps2 = d;
 
@@ -214,7 +233,7 @@ bool iniAtPark()
   parkSaved = XEEPROM.read(getMountAddress(EE_parkSaved));
   if (!parkSaved)
   {
-    parkStatus = PRK_UNPARKED;
+    parkStatus(PRK_UNPARKED);
     return false;
   }
   byte parkStatusRead = XEEPROM.read(getMountAddress(EE_parkStatus));
@@ -224,21 +243,21 @@ bool iniAtPark()
   case PRK_PARKED:
     if (syncAtPark())
     {
-      parkStatus = PRK_PARKED;
+      parkStatus(PRK_PARKED);
       ok = true;
     }
     else
     {
-      parkStatus = PRK_UNPARKED;
+      parkStatus(PRK_UNPARKED);
       XEEPROM.write(getMountAddress(EE_parkStatus), PRK_UNPARKED);
     }
     break;
   case PRK_UNPARKED:
-    parkStatus = PRK_UNPARKED;
+    parkStatus(PRK_UNPARKED);
     return false;
     break;
   default:
-    parkStatus = PRK_UNPARKED;
+    parkStatus(PRK_UNPARKED);
     XEEPROM.write(getMountAddress(EE_parkStatus), PRK_UNPARKED);
     break;
   }
@@ -248,11 +267,11 @@ bool iniAtPark()
 // depends on the latitude, longitude, and timeZone; but those are stored and recalled automatically
 void unpark()
 {
-  if (parkStatus == PRK_UNPARKED)
+  if (parkStatus() == PRK_UNPARKED)
     return;
   // update our status, we're not parked anymore
-  parkStatus = PRK_UNPARKED;
-  XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
+  parkStatus(PRK_UNPARKED);
+  XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus());
   // start tracking the sky
   startTracking();
   return;

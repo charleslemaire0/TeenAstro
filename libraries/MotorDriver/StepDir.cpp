@@ -184,7 +184,6 @@ void StepDir::positionMode(void)
       resetEvents(EV_MOT_ABORT);
       break;
     case PS_ACCEL: 
-      speedAdjustment = 1.0;    // reset speed adjustment when starting the Goto
       // Accelerate to VMax
       newSpeed = newSpeed + (aMax * TICK_PERIOD_MS) / 1000;
       if (delta < decelDistance(newSpeed, aMax))
@@ -205,10 +204,6 @@ void StepDir::positionMode(void)
     case PS_CRUISE: 
       // Maintain VMax speed until close to target
       newSpeed = vMax;
-      if (speedAdjustment != 1.0)
-      {
-        newSpeed *= speedAdjustment;
-      }
       programSpeed(sign * newSpeed);
 
       if (delta < decelDistance(newSpeed, aMax))
@@ -315,21 +310,6 @@ void motorTask(void *arg)
           mcP->aMax = msgBuffer[1];
           break;
 
-        case MSG_ADJUST_SPEED:          // used during Goto (positioning mode, cruise state)
-          memcpy(&percent, &msgBuffer[1], sizeof(double));
-          if (percent == 0.0)
-          {
-            mcP->speedAdjustment = 1.0;   // reset adjustment
-          }
-          else
-          {
-            k = (100.0 + percent) / 100.0;
-            if (k > 1.0)
-              k = 1.0;    // cannot go faster than max speed
-            if (mcP->speedAdjustment > 0.1) // do not slow down too much
-              mcP->speedAdjustment = mcP->speedAdjustment * k;    
-          }
-          break;
         default:
           break;
         }     
@@ -459,15 +439,6 @@ void StepDir::setVmax(double vmax)
 
   msg[0] = MSG_SET_VMAX;
   memcpy(&msg[1], &vmax, sizeof(double));
-  xQueueSend( motQueue, &msg, 0);
-}
-
-void StepDir::adjustSpeed(double percent)
-{
-  unsigned msg[SD_MAX_MESSAGE_SIZE];
-
-  msg[0] = MSG_ADJUST_SPEED; 
-  memcpy(&msg[1], &percent, sizeof(double));
   xQueueSend( motQueue, &msg, 0);
 }
 

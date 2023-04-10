@@ -78,6 +78,50 @@ void DecayModeGoto()
   motorA2.setCurrent((unsigned int)motorA2.highCurr);
 }
 
+// Weird algorithm to prevent GEM mounts from pointing below horizon while slewing 
+void adjustSpeeds(void)
+{
+  bool dangerZone=false;
+  int decDir = mount.mP->decDirection();
+  static double adj = 1.0;
+  double k = 1.01;
+
+  if (decDir == 0)
+    return;
+
+  xSemaphoreTake(swMutex, portMAX_DELAY); 
+  deltaAlt = currentAzAlt.alt - prevAzAlt.alt;
+  xSemaphoreGive(swMutex);
+
+  if ((currentAzAlt.alt - limits.minAlt) < 8)  // arbitrary value that works
+  {
+    dangerZone = true;
+    adj = fmin(adj * k, 3.0);                 // speed adjustment coefficient
+
+    if (decDir < 0)  // decreasing declination?
+    {
+      motorA1.setVmax(slewingSpeeds.speed1 * fmin(adj, 1.0));
+      motorA2.setVmax(slewingSpeeds.speed1 / fmax(adj, 0.5));
+    }
+    else
+    {
+      motorA1.setVmax(slewingSpeeds.speed1 / fmin(adj, 1.0));
+      motorA2.setVmax(slewingSpeeds.speed1 * fmax(adj, 0.5));
+    }
+  }
+  else
+  {
+    if (dangerZone)
+    {
+      // well above altitude limit: reset speed to max
+      dangerZone = false;
+      adj = 1.0;
+      motorA1.setVmax(slewingSpeeds.speed1);
+      motorA2.setVmax(slewingSpeeds.speed2);
+    }
+  }  
+}
+
 
 
 
@@ -88,7 +132,6 @@ void controlTask(UNUSED(void *arg))
   CTL_MODE currentMode = CTL_MODE_IDLE;
   CTL_MODE previousMode;
   long axis1Target, axis2Target;
-  bool dangerZone=false;
 
   while (1)
   { 
@@ -151,43 +194,15 @@ void controlTask(UNUSED(void *arg))
             resetEvents(EV_GOING_HOME);
             setEvents(EV_AT_HOME);
           }
-        }          
-        // Weird algorithm to prevent GEM mounts from pointing below horizon while slewing 
+          if (parkStatus() == PRK_PARKING)
+          {
+            parkStatus(PRK_PARKED);
+          }
+        }         
+
         if (!isAltAz())
         {
-          int decDir = mount.mP->decDirection();
-
-          if (decDir == 0)
-            break;
-
-          xSemaphoreTake(swMutex, portMAX_DELAY); 
-          deltaAlt = currentAzAlt.alt - prevAzAlt.alt;
-          xSemaphoreGive(swMutex);
-
-          if ((currentAzAlt.alt - limits.minAlt) < 8)  // arbitrary value that works
-          {
-            dangerZone = true;
-            if (decDir < 0)  // decreasing declination?
-            {
-              motorA1.adjustSpeed(1);
-              motorA2.adjustSpeed(-1);  
-            }
-            else
-            {
-              motorA1.adjustSpeed(-1);
-              motorA2.adjustSpeed(1);  
-            }
-          }
-          else
-          {
-            if (dangerZone)
-            {
-              // well above altitude limit: reset speed to max
-              dangerZone = false;
-              motorA1.adjustSpeed(0);
-              motorA2.adjustSpeed(0);  
-            }
-          }
+          adjustSpeeds(); 
         }
         break;
 

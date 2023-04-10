@@ -2,6 +2,19 @@
 #ifdef __arm__
 #include "Global.h"
 
+
+void HAL_preInit(void)
+{
+  Serial.begin(BAUD);
+  S_USB.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
+}
+
+void HAL_initSerial(void)
+{
+  Serial1.begin(BAUD);
+  S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
+}
+
 void HAL_setRealTimeClock(unsigned long t)
 {
   Teensy3Clock.set(t);

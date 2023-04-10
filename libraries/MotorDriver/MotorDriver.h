@@ -129,10 +129,6 @@ public:
     bool p = mcP->isMoving(); 
     return p;
   }
-  void adjustSpeed(double percent)
-  {
-    mcP->adjustSpeed(percent); 
-  }
   void abort()
   {
     mcP->abort(); 

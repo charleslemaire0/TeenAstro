@@ -428,7 +428,7 @@ void Command_GX()
     reply[0] = '0' + 2 * isSlewing() + isTracking();
     reply[1] = '0' + siderealMode;
     const char* parkStatusCh = "pIPF";
-    reply[2] = parkStatusCh[parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
+    reply[2] = parkStatusCh[parkStatus()];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
     if (atHome()) reply[3] = 'H';
     reply[4] = '0' + activeGuideRate;
 

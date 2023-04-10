@@ -131,9 +131,6 @@ void updateSidereal()
 
 void setup()
 {
-  Serial.begin(BAUD);
-  S_SHC.attach_Stream((Stream *)&Serial, COMMAND_SERIAL1);
-
   pinMode(LEDPin, OUTPUT);
   for (int k = 0; k < 20; k++)
   {
@@ -143,6 +140,7 @@ void setup()
     delay(50);
   }
   
+  HAL_preInit();
   HAL_EEPROM_begin();
   EEPROM_AutoInit();
   reboot_unit = false;
@@ -182,16 +180,6 @@ void setup()
   mount.mP->updateRaDec();
   mount.mP->setTrackingSpeed(TrackingStar);
 
-#ifdef __ESP32__
-  Serial2.begin(BAUD);
-  S_USB.attach_Stream((Stream *)&Serial2, COMMAND_SERIAL);
-#endif
-#ifdef __arm__
-  Serial1.begin(BAUD);
-  S_USB.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL);
-#endif
-
-
   rtk.resetLongitude(*localSite.longitude());
 
   // get the Park status
@@ -214,6 +202,9 @@ void setup()
 
   // prep timers
   rtk.updateTimers();
+
+
+  HAL_initSerial();
 
 
   // Monitor - safety check and heartbeat

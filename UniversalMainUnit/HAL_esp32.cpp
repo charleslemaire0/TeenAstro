@@ -7,6 +7,19 @@
 
 static unsigned long initialSystemTime = (50 * 365.25 * 24 * 3600);
 
+void HAL_preInit(void)
+{
+}
+
+void HAL_initSerial(void)
+{
+  Serial.begin(BAUD);
+  S_SHC.attach_Stream((Stream *)&Serial, COMMAND_SERIAL1);
+
+  Serial2.begin(BAUD);
+  S_USB.attach_Stream((Stream *)&Serial2, COMMAND_SERIAL);
+}
+
  
 void HAL_setRealTimeClock(unsigned long t)
 {

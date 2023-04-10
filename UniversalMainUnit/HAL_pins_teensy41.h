@@ -9,4 +9,4 @@
 #define Axis2StepPin    20 
 #define Axis2EnablePin  5
 
-#define LEDPin          2
+#define LEDPin          23

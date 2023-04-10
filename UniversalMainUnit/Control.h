@@ -11,22 +11,21 @@ enum CTL_MODE {CTL_MODE_IDLE, CTL_MODE_GOTO, CTL_MODE_TRACKING, CTL_MODE_STOPPIN
 
 
 // Global Events
-#define EV_ABORT            (1<<0)
-#define EV_AT_HOME          (1<<1)
-#define EV_GOING_HOME       (1<<2)
-#define EV_PARKED           (1<<3)
-#define EV_SLEWING          (1<<4)
-#define EV_TRACKING         (1<<5)
-#define EV_EAST             (1<<6)
-#define EV_WEST             (1<<7)
-#define EV_NORTH            (1<<8)
-#define EV_SOUTH            (1<<9)
-#define EV_GUIDING_AXIS1    (1<<10)
-#define EV_GUIDING_AXIS2    (1<<11)
-#define EV_CENTERING        (1<<12)
-#define EV_START_TRACKING   (1<<13)
-#define EV_SPEED_CHANGE     (1<<14)
-#define EV_ERROR            (1<<15)
+#define EV_ABORT            (1<<2)
+#define EV_AT_HOME          (1<<3)
+#define EV_GOING_HOME       (1<<4)
+#define EV_SLEWING          (1<<5)
+#define EV_TRACKING         (1<<6)
+#define EV_EAST             (1<<7)
+#define EV_WEST             (1<<8)
+#define EV_NORTH            (1<<9)
+#define EV_SOUTH            (1<<10)
+#define EV_GUIDING_AXIS1    (1<<11)
+#define EV_GUIDING_AXIS2    (1<<12)
+#define EV_CENTERING        (1<<13)
+#define EV_START_TRACKING   (1<<14)
+#define EV_SPEED_CHANGE     (1<<15)
+#define EV_ERROR            (1<<16)
 
 
 bool isSlewing(void);     // replaces movingTo global variable
@@ -49,4 +48,5 @@ void MoveAxis2(const byte dir);
 void MoveAxis2AtRate(double speed, const byte dir);
 void StopAxis2(void);
 byte goTo(Steps *sP);
+void adjustSpeeds(void);
 

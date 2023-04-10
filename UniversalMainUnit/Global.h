@@ -4,7 +4,7 @@
 
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
-enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW };
+enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED};
 enum RateCompensation { RC_UNKOWN = -1, RC_NONE, RC_ALIGN_RA, RC_ALIGN_BOTH, RC_FULL_RA, RC_FULL_BOTH };
 enum TrackingCompensation {TC_NONE, TC_RA, TC_BOTH};
 enum ErrorsGoTo
@@ -142,7 +142,6 @@ GLOBAL MotorDriver motorA2;
 GLOBAL GeoAxis geoA1;
 GLOBAL GeoAxis geoA2;
 
-GLOBAL ParkState           parkStatus;
 GLOBAL Mount               mount;
 GLOBAL PierSide            newTargetPierSide;
 

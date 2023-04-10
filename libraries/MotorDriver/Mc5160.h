@@ -11,7 +11,6 @@ public:
 	double getSpeed(void);
 	void setAmax(long);	
 	void setVmax(double);	
-	void adjustSpeed(double percent);
 	void setTargetPos(long targetPos);
 	bool positionReached(void);
 	bool isMoving(void);

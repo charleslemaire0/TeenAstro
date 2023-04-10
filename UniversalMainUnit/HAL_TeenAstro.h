@@ -24,6 +24,8 @@ struct EE_Site
   char name[16];
 };
 
+void          HAL_preInit(void);
+void          HAL_initSerial(void);
 void          HAL_setRealTimeClock(unsigned long t);
 unsigned long HAL_getRealTimeClock(void);
 void          HAL_reboot(void);

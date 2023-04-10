@@ -158,7 +158,7 @@ void Command_B()
 void Command_C()
 {
   int i;
-  if ((parkStatus == PRK_UNPARKED) &&
+  if ((parkStatus() == PRK_UNPARKED) &&
       !isSlewing() &&
       (command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
   {
@@ -173,7 +173,8 @@ void Command_C()
     case 'M':
     case 'S':
       double newTargetHA;
-      if (autoAlignmentBySync){
+      if (autoAlignmentBySync)
+      {
         newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         double Azm, Alt;
         EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
@@ -457,7 +458,7 @@ void Command_T()
     reply[0] = 0;
     break;
   case 'e':
-    if (parkStatus == PRK_UNPARKED)
+    if (parkStatus() == PRK_UNPARKED)
     {
 //      lastSetTrackingEnable = millis();
 //     atHome = false;
@@ -469,7 +470,7 @@ void Command_T()
       replyFailed();
     break;
   case 'd':
-    if (parkStatus == PRK_UNPARKED)
+    if (parkStatus() == PRK_UNPARKED)
     {
       stopTracking();
       replyOk();

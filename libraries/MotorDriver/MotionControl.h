@@ -12,7 +12,6 @@ public:
   virtual double getSpeed(void);
   virtual bool positionReached(void);
   virtual bool isMoving(void);
-  virtual void adjustSpeed(double);
   virtual void abort(void);
   virtual void resetAbort(void);
   virtual void initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned timerId); 

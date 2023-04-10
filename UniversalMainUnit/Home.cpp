@@ -4,7 +4,7 @@
 
 bool setHome()
 {
-  if ((parkStatus == PRK_UNPARKED) && !isSlewing())
+  if ((parkStatus() == PRK_UNPARKED) && !isSlewing())
   {
     lastsiderealTracking = isTracking();
     stopTracking();
@@ -65,8 +65,8 @@ bool syncAtHome()
   newTargetAzm = 0;
   lastError = ERRT_NONE;
 
-  parkStatus = PRK_UNPARKED;
-  XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
+  parkStatus(PRK_UNPARKED);
+  XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus());
 
   // update starting coordinates to reflect NCP or SCP polar home position
   motorA1.setCurrentPos(geoA1.homeDef);

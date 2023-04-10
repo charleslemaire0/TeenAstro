@@ -115,11 +115,6 @@ bool Mc5160::isMoving(void)
   return b;
 }
 
-// not yet implemented
-void Mc5160::adjustSpeed(double percent)
-{
-}
-
 void Mc5160::abort(void)
 {
   xSemaphoreTake(mutex, portMAX_DELAY);
