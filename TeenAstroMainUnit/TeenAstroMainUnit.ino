@@ -140,7 +140,11 @@ void setup()
   guideRates[2] = val > 0 ? (float)val : DefaultR2;
   val = EEPROM.read(getMountAddress(EE_Rate3));
   guideRates[3] = val > 0 ? (float)val : DefaultR3;
-  enableGuideRate(EEPROM.read(getMountAddress(EE_DefaultRate)));
+ 
+  recenterGuideRate = min(EEPROM.read(getMountAddress(EE_DefaultRate)), 4);
+  activeGuideRate = recenterGuideRate;
+  resetGuideRate();
+
   delay(10);
 
   // prep timers

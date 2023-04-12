@@ -251,7 +251,6 @@
 
     // GNSS
     #define GNSS_Serial     Serial2
-    #define PPS             18
 
     // LED
     #define LEDPin          23 
