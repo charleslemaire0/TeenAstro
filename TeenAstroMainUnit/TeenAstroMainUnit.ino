@@ -142,9 +142,9 @@ void setup()
   guideRates[3] = val > 0 ? (float)val : DefaultR3;
  
   recenterGuideRate = min(EEPROM.read(getMountAddress(EE_DefaultRate)), 4);
-  activeGuideRate = activeGuideRate;
+  activeGuideRate = recenterGuideRate;
+  resetGuideRate();
 
-  enableGuideRate(activeGuideRate);
   delay(10);
 
   // prep timers

@@ -195,11 +195,11 @@ void SetAcceleration()
 }
 
 // calculates the tracking speed for move commands
-void enableGuideRate(int g)
+void enableGuideRate(int g, bool force = false)
 {
   if (g < 0) g = 0;
   if (g > 4) g = 4;
-  if (activeGuideRate != g)
+  if (activeGuideRate != g || force)
   {
     // if we reset the guide rate it cancels the current pulse guiding
     activeGuideRate = g;
@@ -221,7 +221,7 @@ void enableRecenterGuideRate()
 
 void resetGuideRate()
 {
-  enableGuideRate(activeGuideRate);
+  enableGuideRate(activeGuideRate, true);
 }
 
 bool isAltAZ()
