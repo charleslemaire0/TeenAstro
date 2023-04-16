@@ -156,7 +156,6 @@ GLOBAL bool parkSaved ;
 GLOBAL bool homeSaved ;
 GLOBAL bool autoAlignmentBySync ;
 GLOBAL bool TrackingCompForAlignment ;
-GLOBAL bool DecayModeTrack;
 
 GLOBAL TrackingCompensation tc;
 GLOBAL volatile SID_Mode   siderealMode;

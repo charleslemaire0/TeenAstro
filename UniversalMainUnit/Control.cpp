@@ -64,16 +64,12 @@ void resetAbort(void)
 // if stepper drive can switch decay mode, set it here
 void DecayModeTracking()
 {
-  if (DecayModeTrack) return;
-  DecayModeTrack = true;
   motorA1.setCurrent((unsigned int)motorA1.lowCurr); 
   motorA2.setCurrent((unsigned int)motorA2.lowCurr);
 }
 
 void DecayModeGoto()
 {
-  if (!DecayModeTrack) return;
-  DecayModeTrack = false;
   motorA1.setCurrent((unsigned int)motorA1.highCurr); 
   motorA2.setCurrent((unsigned int)motorA2.highCurr);
 }

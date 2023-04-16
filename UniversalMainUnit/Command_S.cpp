@@ -420,14 +420,14 @@ void Command_SX()
         {
           StopAxis2();
           motorA2.micro = i;
-          motorA2.drvP->microsteps(motorA2.micro);;
+          motorA2.setMicrostep(motorA2.micro);;
           XEEPROM.write(getMountAddress(EE_motorA2micro), motorA2.micro);
         }
         else
         {
           StopAxis1();
           motorA1.micro = i;
-          motorA1.drvP->microsteps(motorA1.micro);
+          motorA1.setMicrostep(motorA1.micro);
           XEEPROM.write(getMountAddress(EE_motorA1micro), motorA1.micro);
         }
         updateRatios(true, false);

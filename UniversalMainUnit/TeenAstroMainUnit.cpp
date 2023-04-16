@@ -75,7 +75,6 @@ void initMotors(bool deleteAlignment)
       motorA2.initMc5160(hwMutex);
     }
   }
-
   // cannot call updateRatios before motors are initialized!
   updateRatios(deleteAlignment,false);
 }
@@ -171,7 +170,7 @@ void setup()
 
 
   // automatic mode switching before/after slews, initialize micro-step mode
-//  DecayModeTracking();
+  DecayModeTracking();
 
   siderealClockSpeed = XEEPROM.readLong(getMountAddress(EE_siderealClockSpeed));
   updateSidereal();
