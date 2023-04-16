@@ -4,7 +4,7 @@
 void Command_M()
 {
   int i;
-  double f;
+  double speed;
   bool ok = false;
   char* conv_end;
   switch (command[1])
@@ -13,23 +13,22 @@ void Command_M()
     //  :M2svv.vvv# Move Axis2 at rate (signed value!) in time the sideral speed
   case '1':
   case '2':
-    f = strtod(&command[2], &conv_end);
-    ok = (&command[2] != conv_end) && abs(f) <= guideRates[4];
-    ok &= !isSlewing() && lastError == ERRT_NONE;
+    speed = strtod(&command[2], &conv_end);
+    ok = (&command[2] != conv_end) && abs(speed) <= guideRates[4];
+    ok &= !isSlewing() && lastError() == ERRT_NONE;
     ok &= (GuidingState == GuidingOFF || GuidingState == GuidingAtRate);
     if (ok)
     {
-      double speed = f*geoA1.stepsPerSecond;
       byte dir; 
       if (command[1] == '1')
       {
         dir = (speed >= 0) ? 'w' : 'e'; 
-        MoveAxis1AtRate(speed, dir);
+        MoveAxis1AtRate(fabs(speed), dir);
       }
       else
       {
         dir = (speed >= 0) ? 'n' : 's'; 
-        MoveAxis2AtRate(speed, dir);
+        MoveAxis2AtRate(fabs(speed), dir);
       }
       replyOk();
     }

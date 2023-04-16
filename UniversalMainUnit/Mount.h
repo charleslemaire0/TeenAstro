@@ -57,9 +57,11 @@ public:
   virtual byte goToHor(HorCoords *);
   virtual bool getEqu(double *HA, double *Dec, const double *cosLat, const double *sinLat, bool returnHA);
   virtual bool getHorApp(HorCoords*);
+  virtual void stepsToAxes(Steps*, Axes*);
   virtual bool syncEqu(double HA, double Dec, PierSide Side, const double *cosLat, const double *sinLat);
   virtual bool syncAzAlt(double Azm, double Alt, PierSide Side);
   virtual byte Flip();
+  virtual bool checkMeridian(Axes*, CheckMode, PierSide);
   virtual PierSide GetPierSide();
   virtual void setTrackingSpeed(double speed);
   virtual void getTrackingSpeeds(Speeds *);
@@ -68,6 +70,7 @@ public:
   virtual long poleDir(char);
   virtual int decDirection(void);
   virtual void updateRaDec(void);
+  virtual bool checkPole(double axis1, CheckMode mode);
   double  trackingSpeed;            // multiple of sidereal speed 
   Speeds  trackingSpeeds;           // actual tracking speeds including guiding and spiral           
   double currentRA, currentDec;
@@ -90,9 +93,8 @@ public:
   PierSide GetPierSide(void);
   PierSide otherSide(PierSide ps);
   bool isFlipped(void);
-  bool checkPole(long, CheckMode);
+  bool checkPole(double, CheckMode);
   bool checkMeridian(Axes*, CheckMode, PierSide);
-  bool withinLimits(long, long);
   void setTrackingSpeed(double speed);
   void getTrackingSpeeds(Speeds *);
   void initHome(Steps *);
@@ -121,8 +123,8 @@ public:
   bool getHorApp(HorCoords *hP);
   bool syncEqu(double HA, double Dec, PierSide Side, const double *cosLat, const double *sinLat);
   bool syncAzAlt(double Azm, double Alt, PierSide Side);
-  bool withinLimits(long, long);
   byte Flip(void);
+  bool checkMeridian(Axes*, CheckMode, PierSide);
   PierSide GetPierSide(void);
   PierSide otherSide(PierSide ps);
   void setTrackingSpeed(double speed);
@@ -132,6 +134,7 @@ public:
   long poleDir(char);
   int decDirection(void);
   void updateRaDec(void);
+  bool checkPole(double axis1, CheckMode mode);
   // constructor
   AltAzMount(MountType t)
   {

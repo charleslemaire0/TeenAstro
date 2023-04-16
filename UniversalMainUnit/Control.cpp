@@ -101,12 +101,12 @@ void adjustSpeeds(void)
     if (decDir < 0)  // decreasing declination?
     {
       motorA1.setVmax(slewingSpeeds.speed1 * fmin(adj, 1.0));
-      motorA2.setVmax(slewingSpeeds.speed1 / fmax(adj, 0.5));
+      motorA2.setVmax(slewingSpeeds.speed2 / fmax(adj, 0.5));
     }
     else
     {
-      motorA1.setVmax(slewingSpeeds.speed1 / fmin(adj, 1.0));
-      motorA2.setVmax(slewingSpeeds.speed1 * fmax(adj, 0.5));
+      motorA1.setVmax(slewingSpeeds.speed1 / fmax(adj, 1.0));
+      motorA2.setVmax(slewingSpeeds.speed2 * fmin(adj, 0.5));
     }
   }
   else
@@ -242,7 +242,7 @@ void controlTask(UNUSED(void *arg))
       switch(msgBuffer[0])
       {
         case CTL_MSG_GOTO:
-          if (getEvent(EV_ERROR))
+          if (lastError() != ERRT_NONE)
             break;
           currentMode = CTL_MODE_GOTO;
           axis1Target = msgBuffer[1];
@@ -256,7 +256,7 @@ void controlTask(UNUSED(void *arg))
           break;
 
         case CTL_MSG_GOTO_HOME:
-          if (getEvent(EV_ERROR))
+          if (lastError() != ERRT_NONE)
             break;
           currentMode = CTL_MODE_GOTO;
           motorA1.setVmax(slewingSpeeds.speed1);
@@ -355,6 +355,9 @@ void MoveAxis1AtRate(double speed, const byte dir)
 {
   unsigned msg[CTL_MAX_MESSAGE_SIZE];
 
+  if ((parkStatus() != PRK_UNPARKED) || isSlewing())
+    return;
+
   msg[0] = CTL_MSG_MOVE_AXIS1; 
   msg[1] = (dir == 'w' ? geoA1.westDef : geoA1.eastDef);
   memcpy(&msg[2], &speed, sizeof(double));
@@ -378,6 +381,9 @@ void MoveAxis2AtRate(double speed, const byte dir)
 {
   unsigned msg[CTL_MAX_MESSAGE_SIZE];
   long target;
+
+  if ((parkStatus() != PRK_UNPARKED) || isSlewing())
+    return;
 
   target = mount.mP->poleDir(dir);
 

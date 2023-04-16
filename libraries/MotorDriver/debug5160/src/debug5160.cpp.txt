@@ -1,7 +1,8 @@
 /**
- * Author Teemu Mäntykallio
- * Initializes the library and runs the stepper
- * motor in alternating directions.
+ * Author François Desvallées
+ * 
+ * Used code from Teemu Mäntykallio
+ * Initializes the library and runs motor commands
  */
 
 #include "TMCStepper.h"
@@ -106,6 +107,11 @@ void get(char *arg1, char *arg2)
     int val = motorA1.drvP->DRV_STATUS();
     PORT.printf("drv_status: %08x\n", val);
   }
+  if (!strcmp(arg1, "pwm_auto"))
+  {
+    int val = motorA1.drvP->PWM_AUTO();
+    PORT.printf("pwm_auto: %08x\n", val);
+  }
 }
 
 void set(char *arg1, char *arg2)
@@ -131,15 +137,32 @@ void set(char *arg1, char *arg2)
   {
     if (sscanf( arg2, "%d", &val ) == 1)
     {
-      motorA1.mcP->setVmax(val);
+      motorA1.drvP->VMAX(val);
       PORT.printf("set vmax to %d\n", val);
+    }
+  }
+  if (!strcmp(arg1, "v1"))
+  {
+    if (sscanf( arg2, "%d", &val ) == 1)
+    {
+      motorA1.drvP->v1(val);
+      PORT.printf("set v1 to %d\n", val);
+    }
+  }
+  if (!strcmp(arg1, "a1"))
+  {
+    if (sscanf( arg2, "%d", &val ) == 1)
+    {
+      motorA1.drvP->d1(val);
+      motorA1.drvP->a1(val);
+      PORT.printf("set a1/d1 to %d\n", val);
     }
   }
   if (!strcmp(arg1, "amax"))
   {
     if (sscanf( arg2, "%d", &val ) == 1)
     {
-      motorA1.mcP->setAmax(val);
+      motorA1.drvP->AMAX(val);
       PORT.printf("set amax to %d\n", val);
     }
   }
@@ -184,6 +207,21 @@ void set(char *arg1, char *arg2)
     }
   }
 }
+
+void custom(char *arg1, char *arg2)
+{
+  int current = 800;
+  int micro = 256;
+  int amax=5000;
+  int vmax=500000;
+  motorA1.drvP->rms_current(current);
+  motorA1.drvP->microsteps(micro);
+  motorA1.drvP->AMAX(amax);
+  motorA1.drvP->DMAX(amax);
+  motorA1.drvP->VMAX(vmax);
+  PORT.printf("Initialized custom parameters: current=%d micro=%d amax=%d vmax=%d\n", current, micro, amax, vmax);
+}
+
 
 void stop(char *arg1, char *arg2)
 {
@@ -238,6 +276,7 @@ typedef struct
 CMD_STRUCT Commands[] = 
 {
   {"init",   &init,          "Initialize"},
+  {"custom", &custom,        "Custom"},
   {"get",    &get,           "Get parameter"},
   {"set",    &set,           "Set parameter"},
   {"stop",   &stop,          "Stop motor"},
@@ -356,6 +395,10 @@ void setup()
     1,               // Task priority
     NULL             // Task handle
   );
+#ifdef __arm__  
+  // the ARM version of FreeRTOS needs to start the scheduler explicitly
+  vTaskStartScheduler();
+#endif    
 
 }
 

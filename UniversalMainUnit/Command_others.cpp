@@ -398,6 +398,7 @@ void Command_R()
   if (!isSlewing() && GuidingState == GuidingOFF)
   {
     enableGuideRate(i);
+    XEEPROM.write(getMountAddress(EE_DefaultRate), i);    // also save it to EEPROM
   }
 }
 

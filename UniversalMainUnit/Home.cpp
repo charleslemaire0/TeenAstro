@@ -28,7 +28,6 @@ bool setHome()
 
     return true;
   }
-
   return false;
 }
 
@@ -63,7 +62,7 @@ bool syncAtHome()
   newTargetDec = 0;
   newTargetAlt = 0;
   newTargetAzm = 0;
-  lastError = ERRT_NONE;
+  lastError(ERRT_NONE);
 
   parkStatus(PRK_UNPARKED);
   XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus());

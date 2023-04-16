@@ -19,7 +19,7 @@ void EqMount::stepsToAxes(Steps *sP, Axes *aP)
 bool EqMount::isFlipped()
 {
   long pos = motorA2.getCurrentPos();
- 	return ((pos <= 0) == (*localSite.latitude() >= 0));	
+ 	return ((pos < 0) == (*localSite.latitude() >= 0));	
 }
 
 PierSide EqMount::GetPierSide()
@@ -216,10 +216,22 @@ byte EqMount::Flip()
   return ERRGOTO_NONE;
 }
 
-bool EqMount::checkPole(long axis1, CheckMode mode)
+/*
+ * checkPole
+ * check if the hour angle is within the under pole limits 
+ * min. allowable movement is += 9 decimal hours on either side of the pole
+ * no limit: +- 12 decimal hours
+ */
+bool EqMount::checkPole(double axis1, CheckMode mode)
 {
-  double underPoleLimit = (mode == CHECKMODE_GOTO) ? limits.underPoleLimitGOTO : limits.underPoleLimitGOTO + 5.0 / 60;
-  return (axis1 > (-underPoleLimit * 15.0 * geoA1.stepsPerDegree)) && (axis1 < (underPoleLimit * 15.0 * geoA1.stepsPerDegree));
+  double underPoleLimit;
+
+  if (mode == CHECKMODE_GOTO)
+    underPoleLimit = limits.underPoleLimitGOTO;              // for determining if a GOTO is valid, use exact value
+  else 
+    underPoleLimit = limits.underPoleLimitGOTO + 5.0 / 60;   // for triggering an error, add 5 degrees (1/12 decimal hour)
+
+  return (axis1 > (-underPoleLimit * 15.0)) && (axis1 < (underPoleLimit * 15.0));
 }
 
 
@@ -245,13 +257,6 @@ bool EqMount::checkMeridian(Axes *aP, CheckMode mode, PierSide ps)
         return false;
       break;
   }
-  return true;
-}
-
-bool EqMount::withinLimits(long axis1, long axis2)
-{
-  if (! ((geoA1.withinLimits(axis1) && geoA2.withinLimits(axis2))))
-    return false;
   return true;
 }
 

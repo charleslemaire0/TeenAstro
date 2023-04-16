@@ -14,8 +14,8 @@ public:
   double stepsPerSecond;
   long   halfRot;   //in steps
   long   quarterRot; //in steps
-  long   minAxis;   //in degrees
-  long   maxAxis;   //in degrees
+  long   minAxis;   //in steps
+  long   maxAxis;   //in steps
 private:
   long   m_brakeDist; //in steps
  public:

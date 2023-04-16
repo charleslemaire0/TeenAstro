@@ -6,6 +6,7 @@ uint32_t EEPROMHash;
 #endif
 
 
+static ErrorsTracking lastErr;  // private variable protected by semaphore
 
 
 #ifdef __ESP32__
@@ -34,6 +35,21 @@ void checkEEPROM(void)
 #endif
 
 
+ErrorsTracking lastError(void)
+{
+  ErrorsTracking error;
+  xSemaphoreTake(swMutex, portMAX_DELAY); 
+  error = lastErr;
+  xSemaphoreGive(swMutex);  
+  return error;
+}
+
+void lastError(ErrorsTracking error)
+{
+  xSemaphoreTake(swMutex, portMAX_DELAY); 
+  lastErr = error;
+  xSemaphoreGive(swMutex);  
+}
 
 
 
@@ -45,32 +61,29 @@ void checkEEPROM(void)
  */
 void monitorTask(void *arg)
 {
-  unsigned counter = 0;
+  static unsigned counter = 0;
+  static ErrorsTracking StartLoopError = ERRT_NONE;
   while (1)
   { 
-    bool ledStatus;
+    StartLoopError = lastError();
 
     if (!checkAltitude())
     {
-      setEvents(EV_ERROR);
-      lastError = ERRT_ALT;
+      lastError(ERRT_ALT);
     }
     else
     {
-      if (lastError != ERRT_NONE)
+      if (lastError() == ERRT_ALT)
       {
-        lastError = ERRT_NONE;
-        resetEvents(EV_ERROR);
+        lastError(ERRT_NONE);
       }
     }
     
-    // display hearbeat once per second
+    // once per second
     if (counter % 10 == 0)
     {
-      ledStatus = !ledStatus;
-//      digitalWrite(LED_BUILTIN, ledStatus); // LED not implemented on all platforms
+      SafetyCheck();
     }
-    counter++;
 
 #ifdef __ESP32__ 
     // Check EEPROM once every 10 seconds
@@ -80,99 +93,83 @@ void monitorTask(void *arg)
     }
 #endif
 
+    if (StartLoopError != lastError())
+    {
+      lastError() == ERRT_NONE ? digitalWrite(LEDPin, LOW) : digitalWrite(LEDPin, HIGH);
+    }
+    counter++;
     vTaskDelay(MON_TASK_PERIOD  / portTICK_PERIOD_MS);
   }
-
-
-
-
-
 }
 
-// not yet implemented
-void SafetyCheck(const bool forceTracking)
+void SafetyCheck()
 {
-#if 0  
   // basic check to see if we're not at home
-  PierSide currentSide = GetPierSide();
-  long axis1, axis2;
-  setAtMount(axis1, axis2);
+  PierSide currentSide = mount.mP->GetPierSide();
+  Steps steps;
 
-  if (atHome)
-    atHome = !siderealTracking;
-  if (!geoA1.withinLimits(axis1))
+  steps.steps1 = motorA1.getCurrentPos();
+  steps.steps2 = motorA2.getCurrentPos();
+
+//  if (atHome())
+//    atHome = !siderealTracking;
+
+  if (!geoA1.withinLimits(steps.steps1))
   {
-    lastError = ERRT_AXIS1;
-    if (movingTo)
-      abortSlew = true;
-    else if (!forceTracking)
-      siderealTracking = false;
+    lastError(ERRT_AXIS1);
+    if (isSlewing() || isTracking())
+      stopMoving();
     return;
   }
-  else if (lastError == ERRT_AXIS1)
+  else if (lastError() == ERRT_AXIS1)
   {
-    lastError = ERRT_NONE;
+    lastError(ERRT_NONE);
   }
 
-  if (!geoA2.withinLimits(axis2))
+  if (!geoA2.withinLimits(steps.steps2))
   {
-    lastError = ERRT_AXIS2;
-    if (movingTo)
-      abortSlew = true;
-    else if (!forceTracking)
-      siderealTracking = false;
+    lastError(ERRT_AXIS2);
+    if (isSlewing() || isTracking())
+      stopMoving();
     return;
   }
-  else if (lastError == ERRT_AXIS2)
+  else if (lastError() == ERRT_AXIS2)
   {
-    lastError = ERRT_NONE;
+    lastError(ERRT_NONE);
   }
-  if (mount.type == MOUNT_TYPE_GEM)
+
+  if (mount.mP->type == MOUNT_TYPE_GEM)
   {
-    if (!checkMeridian(axis1, axis2, CHECKMODE_TRACKING))
+    Axes axes;
+    mount.mP->stepsToAxes(&steps, &axes);
+    if (!mount.mP->checkMeridian(&axes, CHECKMODE_TRACKING, currentSide))
     {
-      if ((staA1.dir && currentSide == PIER_WEST) || (!staA2.dir && currentSide == PIER_EAST))
+      lastError(ERRT_MERIDIAN);
+      if (isSlewing() || isTracking())
       {
-        lastError = ERRT_MERIDIAN;
-        if (movingTo)
+        stopMoving();
+      }
+      return;
+    }
+    else if (lastError() == ERRT_MERIDIAN)
+    {
+      lastError(ERRT_NONE);
+    }
+
+    if (!mount.mP->checkPole(axes.axis1, CHECKMODE_TRACKING))
+    {
+        lastError(ERRT_UNDER_POLE);
+        if (isSlewing() || isTracking())
         {
-          abortSlew = true;
+          stopMoving();
         }
-        if (currentSide >= PIER_WEST && !forceTracking)
-          siderealTracking = false;
         return;
-      }
-      else if (lastError == ERRT_MERIDIAN)
-      {
-        lastError = ERRT_NONE;
-      }
     }
-    else if (lastError == ERRT_MERIDIAN)
+    else if (lastError() == ERRT_UNDER_POLE)
     {
-      lastError = ERRT_NONE;
-    }
-    if (!checkPole(axis1, CHECKMODE_TRACKING))
-    {
-      if ((staA1.dir && currentSide == PIER_EAST) || (!staA2.dir && currentSide == PIER_WEST))
-      {
-        lastError = ERRT_UNDER_POLE;
-        if (movingTo)
-          abortSlew = true;
-        if (currentSide == PIER_EAST && !forceTracking)
-          siderealTracking = false;
-        return;
-      }
-      else if (lastError == ERRT_UNDER_POLE)
-      {
-        lastError = ERRT_NONE;
-      }
-    }
-    else if (lastError == ERRT_UNDER_POLE)
-    {
-      lastError = ERRT_NONE;
+      lastError(ERRT_NONE);
     }  
   }
-#endif      
 }
 
 

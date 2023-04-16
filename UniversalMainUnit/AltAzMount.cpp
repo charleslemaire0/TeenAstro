@@ -139,12 +139,6 @@ bool AltAzMount::syncAzAlt(double Azm, double Alt, UNUSED(PierSide Side))
 	return true;
 }
 
-bool AltAzMount::withinLimits(long axis1, long axis2)
-{
-  if (! ((geoA1.withinLimits(axis1) && geoA2.withinLimits(axis2))))
-    return false;
-  return true;
-}
 
 /*
  * getTrackingSpeeds
@@ -243,3 +237,15 @@ PierSide AltAzMount::GetPierSide(void)
 {
   return PIER_NOTVALID;
 }
+
+bool AltAzMount::checkMeridian(Axes *aP, CheckMode mode, PierSide ps)
+{
+  return true;
+}
+
+bool AltAzMount::checkPole(double axis1, CheckMode mode)
+{
+  return true;
+}
+
+

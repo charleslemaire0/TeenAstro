@@ -95,7 +95,7 @@ void writeDefaultEEPROMmotor(void);
 void updateRatios(bool, bool);
 void updateSidereal(void);
 void beginTimers(void);
-void SafetyCheck(bool);
+void SafetyCheck(void);
 
 
 
@@ -161,7 +161,6 @@ GLOBAL bool DecayModeTrack;
 GLOBAL TrackingCompensation tc;
 GLOBAL volatile SID_Mode   siderealMode;
 GLOBAL siteDefinition      localSite;
-GLOBAL ErrorsTracking       lastError;
 
 GLOBAL double              newTargetAlt;
 GLOBAL double              newTargetAzm;

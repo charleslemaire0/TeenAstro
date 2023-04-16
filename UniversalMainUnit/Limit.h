@@ -15,3 +15,4 @@ void initLimitMinAxis1(void);
 void initLimitMaxAxis1(void);
 void initLimitMinAxis2(void);
 void initLimitMaxAxis2(void);
+bool withinLimits(long, long);

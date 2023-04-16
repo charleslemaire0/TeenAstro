@@ -25,7 +25,6 @@ enum CTL_MODE {CTL_MODE_IDLE, CTL_MODE_GOTO, CTL_MODE_TRACKING, CTL_MODE_STOPPIN
 #define EV_CENTERING        (1<<13)
 #define EV_START_TRACKING   (1<<14)
 #define EV_SPEED_CHANGE     (1<<15)
-#define EV_ERROR            (1<<16)
 
 
 bool isSlewing(void);     // replaces movingTo global variable

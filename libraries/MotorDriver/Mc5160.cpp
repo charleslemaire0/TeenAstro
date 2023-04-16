@@ -11,7 +11,14 @@
 #include "MotionControl.h"
 #include "Mc5160.h"
 
-#define CLOCK_RATIO (1.39)		// Ratio of expected clock over actual (internal clock is 12Mhz)
+
+// From 5160 spec, section 12.1, Real-World Unit Conversions
+// These are computed for the 12MHz internal clock - change for 16MHz external clock!
+// v[Hz] = v[5160] * ( fCLK[Hz]/2 / 2^23 )   ~=   0.715 * v[5160]
+#define SPEED_RATIO (0.715)		// Ratio of computed clock to VMAX register value 
+
+// a[Hz/s] = a[5160] * fCLK[Hz]^2 / (512*256) / 2^24 ~= 65 * a[5160]
+#define ACCEL_RATIO (65.0)    // Ratio of computed acceleration (Hz/S) to AMAX register value 
 #define MIN_SPEED   (1.0)     // min. speed to program in steps per second (below this, program zero)
 
 // not used, needed to keep the linker happy
@@ -30,8 +37,9 @@ void Mc5160::initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t mtx)
   drvP->AMAX(200);
   drvP->DMAX(200);
   drvP->VSTART(0);
-  drvP->VSTOP(0);
-  drvP->d1(50);
+  drvP->VSTOP(10);  // must be higher than VSTART
+  drvP->d1(50);     // must not be set to zero
+  drvP->v1(0);      // disable A1 and D1 phases
 };
 
 void Mc5160::setCurrentPos(long pos)
@@ -60,16 +68,18 @@ long Mc5160::getTargetPos()
 double Mc5160::getSpeed()
 {
   xSemaphoreTake(mutex, portMAX_DELAY);
-  double v = ((double) drvP->VACTUAL()) / CLOCK_RATIO;
+  double v = ((double) drvP->VACTUAL()) * SPEED_RATIO;
   xSemaphoreGive(mutex);
   return v;
 }
 
 void Mc5160::setAmax(long a)
 {
+  long regValue;
+  regValue = (int) ((double) a / ACCEL_RATIO);
   xSemaphoreTake(mutex, portMAX_DELAY);
-  drvP->AMAX(a);
-  drvP->DMAX(a);
+  drvP->AMAX(regValue);
+  drvP->DMAX(regValue);
   xSemaphoreGive(mutex);
 }
 
@@ -77,18 +87,8 @@ void Mc5160::setAmax(long a)
 void Mc5160::setVmax(double v)
 {
   xSemaphoreTake(mutex, portMAX_DELAY);
-  int vint = (int) (v * CLOCK_RATIO); 
+  int vint = (int) (v / SPEED_RATIO); 
   drvP->VMAX(vint);
-  if (vint > MIN_SPEED)
-  {
-    drvP->VSTART(50);
-    drvP->VSTOP(50);    
-  }
-  else
-  {
-    drvP->VSTART(0);
-    drvP->VSTOP(0);    
-  }
   xSemaphoreGive(mutex);
 }
 
@@ -124,7 +124,5 @@ void Mc5160::abort(void)
 
 void Mc5160::resetAbort(void)
 {
-  drvP->VSTART(0);
-  drvP->VSTOP(0);
 }
 

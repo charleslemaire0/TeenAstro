@@ -473,7 +473,7 @@ void Command_GX()
       default: reply[13] = '?'; break;
     }
     reply[14] = 'A';      // no GNSS
-    reply[15] = '0' + lastError;
+    reply[15] = '0' + lastError();
     reply[16] = 'A';      // no encoder
     reply[17] = '#';
     reply[18] = 0;

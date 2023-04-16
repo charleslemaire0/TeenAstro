@@ -11,7 +11,7 @@ ParkState parkStatus(void)
   xSemaphoreTake(swMutex, portMAX_DELAY); 
   state = parkState;
   xSemaphoreGive(swMutex);  
-  return parkState;
+  return state;
 }
 
 void parkStatus(ParkState state)
@@ -164,7 +164,7 @@ byte park()
   {
     return 0;
   }
-  if (lastError != ERRT_NONE)
+  if (lastError() != ERRT_NONE)
   {
     return 4;
   }
@@ -272,9 +272,9 @@ void unpark()
   // update our status, we're not parked anymore
   parkStatus(PRK_UNPARKED);
   XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus());
-  // start tracking the sky
-  startTracking();
-  return;
+
+  // start tracking the sky (?)
+//    startTracking();
 }
 
 

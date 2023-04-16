@@ -14,10 +14,10 @@ void HAL_preInit(void)
 void HAL_initSerial(void)
 {
   Serial.begin(BAUD);
-  S_SHC.attach_Stream((Stream *)&Serial, COMMAND_SERIAL1);
+  S_SHC.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
 
   Serial2.begin(BAUD);
-  S_USB.attach_Stream((Stream *)&Serial2, COMMAND_SERIAL);
+  S_USB.attach_Stream((Stream *)&Serial2, COMMAND_SERIAL1);
 }
 
  

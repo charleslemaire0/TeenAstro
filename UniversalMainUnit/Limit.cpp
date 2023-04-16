@@ -1,6 +1,14 @@
 #include "Global.h"
 // Method for checking limits, all checks are done in stepper cooordinates
 
+
+bool withinLimits(long axis1, long axis2)
+{
+  if (! ((geoA1.withinLimits(axis1) && geoA2.withinLimits(axis2))))
+    return false;
+  return true;
+}
+
 /*
  * checkAltitude
  * return false if altitude goes above or below limit
@@ -41,7 +49,7 @@ void initLimitMinAxis1()
     val = 3600;
     XEEPROM.writeInt(getMountAddress(EE_minAxis1), val);
   }
-  geoA1.minAxis = -val / 10.0;
+  geoA1.minAxis = -val * geoA1.stepsPerDegree / 10.0;
 }
 
 void initLimitMaxAxis1()
@@ -52,7 +60,7 @@ void initLimitMaxAxis1()
     val = 3600;
     XEEPROM.writeInt(getMountAddress(EE_maxAxis1), val);
   }
-  geoA1.maxAxis = val / 10.0;
+  geoA1.maxAxis = val * geoA1.stepsPerDegree / 10.0;
 }
 
 void initLimitMinAxis2()
@@ -63,7 +71,7 @@ void initLimitMinAxis2()
     val = 3600;
     XEEPROM.writeInt(getMountAddress(EE_minAxis2), val);
   }
-  geoA2.minAxis = -val / 10.0;
+  geoA2.minAxis = -val * geoA2.stepsPerDegree / 10.0;
 }
 
 void initLimitMaxAxis2()
@@ -74,6 +82,6 @@ void initLimitMaxAxis2()
     val = 3600;
     XEEPROM.writeInt(getMountAddress(EE_maxAxis2), val);
   }
-  geoA2.maxAxis = val / 10.0;
+  geoA2.maxAxis = val * geoA2.stepsPerDegree / 10.0;
 }
 
