@@ -149,7 +149,7 @@ void Command_GX()
       // :GXEZ Returns: DDD* MM# or DDD * MM'SS# (based on precision setting)
     {
 #if HASEncoder
-      Coord_HO HO_T = getHorAppE();
+      Coord_HO HO_T = getHorETopo();
       f = HO_T.Az() * RAD_TO_DEG;
       f1 = HO_T.Alt() * RAD_TO_DEG;
 #else
