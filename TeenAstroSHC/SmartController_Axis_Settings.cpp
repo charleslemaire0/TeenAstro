@@ -135,7 +135,7 @@ bool SmartHandController::menuSetTotGear(const uint8_t &axis)
     return false;
   char text[20];
   sprintf(text, T_GEAR " M%u", axis);
-  if (display->UserInterfaceInputValueFloat(&buttonPad, text, T_RATIO, &totGear, 1, 60000, 5, 0, ""))
+  if (display->UserInterfaceInputValueFloat(&buttonPad, text, "", &totGear, 1, 60000, 8, 3, ""))
   {
     return DisplayMessageLX200(writeTotGearLX200(axis, totGear), false);
   }

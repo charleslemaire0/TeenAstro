@@ -757,11 +757,11 @@ void Command_GX()
       // :GXMG.#   Get Motor Gear
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", motorA2.gear);
+        sprintf(reply, "%lu#", motorA2.gear);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", motorA1.gear);
+        sprintf(reply, "%lu#", motorA1.gear);
       }
       else
         replyLongUnknow();

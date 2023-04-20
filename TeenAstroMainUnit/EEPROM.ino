@@ -396,7 +396,7 @@ void readEEPROMmotor()
   motorA1.gear = D_motorA1gear;
   motorA1.isGearFix = true;
 #else
-  motorA1.gear = XEEPROM.readInt(getMountAddress(EE_motorA1gear));
+  motorA1.gear = XEEPROM.readULong(getMountAddress(EE_motorA1gear));
   motorA1.isGearFix = false;
 #endif
 
@@ -444,7 +444,7 @@ void readEEPROMmotor()
   motorA2.gear = D_motorA2gear;
   motorA2.isGearFix = true;
 #else
-  motorA2.gear = XEEPROM.readInt(getMountAddress(EE_motorA2gear));
+  motorA2.gear = XEEPROM.readULong(getMountAddress(EE_motorA2gear));
   motorA2.isGearFix = false;
 #endif
 
