@@ -445,23 +445,23 @@ void Command_SX()
     case 'G':
     {
       // :SXMGn,VVVV# Set Gear
-      int i;
+      unsigned long i;
       bool ok = false;
       if ((command[4] == 'D' || command[4] == 'R')
-        && strlen(&command[6]) > 1 && strlen(&command[6]) < 11
-        && atoi2(&command[6], &i))
+        && strlen(&command[6]) > 1 && strlen(&command[6]) < 11)
       {
+        i = strtoul(&command[6], NULL, 10);
         if (command[4] == 'D')
         {
           if (!motorA2.isGearFix)
           {
-            double fact = (double)i / motorA2.gear;
+            double fact = (double)(i) / motorA2.gear;
             cli();
             staA2.pos = fact * staA2.pos;
             sei();
             StopAxis2();
-            motorA2.gear = (unsigned int)i;
-            XEEPROM.writeInt(getMountAddress(EE_motorA2gear), i);
+            motorA2.gear = i;
+            XEEPROM.writeULong(getMountAddress(EE_motorA2gear), i);
             ok = true;
           }
         }
@@ -474,8 +474,8 @@ void Command_SX()
             staA1.pos = fact * staA1.pos;
             sei();
             StopAxis1();
-            motorA1.gear = (unsigned int)i;
-            XEEPROM.writeInt(getMountAddress(EE_motorA1gear), i);
+            motorA1.gear = i;
+            XEEPROM.writeULong(getMountAddress(EE_motorA1gear), i);
             ok = true;
           }
         }

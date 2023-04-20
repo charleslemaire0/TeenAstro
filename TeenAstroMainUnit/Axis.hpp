@@ -310,7 +310,7 @@ public:
 class MotorAxis
 {
 public:
-  unsigned int gear;
+  unsigned long gear; //1000 time the gear in order to 3 digits after the comma
   bool isGearFix;
   unsigned int stepRot;
   bool isStepRotFix;
