@@ -177,6 +177,8 @@ public:
   long   quaterRot; //in steps
   long   minAxis;   //in steps
   long   maxAxis;   //in steps
+  float  LimMinAxis; //in deg
+  float  LimMaxAxis; //in deg
 private:
   long   m_breakDist; //in steps
 public:

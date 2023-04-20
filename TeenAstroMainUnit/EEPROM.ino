@@ -268,16 +268,41 @@ void initTransformation(bool reset)
 
 void initCelestialPole()
 {
-
   if (isAltAZ())
   {
     geoA1.poleDef =  0L;
+    geoA1.LimMinAxis = -180;
+    geoA1.LimMaxAxis = 180;
     geoA2.poleDef = geoA2.quaterRot;
+    geoA2.LimMinAxis = -20;
+    geoA2.LimMaxAxis = 90;
   }
   else
   {
-    geoA1.poleDef = mountType == MOUNT_TYPE_GEM ? geoA1.quaterRot : 0L;
-    geoA2.poleDef = (*localSite.latitude() < 0) ? -geoA2.quaterRot : geoA2.quaterRot;
+    if (mountType == MOUNT_TYPE_GEM)
+    {
+      geoA1.poleDef = geoA1.quaterRot;
+      geoA1.LimMinAxis = -90;
+      geoA1.LimMaxAxis = 270;
+    }
+    else
+    {
+      geoA1.poleDef = 0L;
+      geoA1.LimMinAxis = -180;
+      geoA1.LimMaxAxis = 180;
+    }
+    if (*localSite.latitude() < 0)
+    {
+      geoA2.poleDef = -geoA2.quaterRot;
+      geoA2.LimMinAxis = -270;
+      geoA2.LimMaxAxis = 90;
+    }
+    else
+    {
+      geoA2.poleDef = geoA2.quaterRot;
+      geoA2.LimMinAxis = -90;
+      geoA2.LimMaxAxis = 270;
+    }
   }
   HADir = *localSite.latitude() > 0 ? HADirNCPInit : HADirSCPInit;
 }
