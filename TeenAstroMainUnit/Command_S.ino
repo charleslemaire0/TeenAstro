@@ -367,16 +367,13 @@ void Command_SX()
       //                  1 on success 
     case '0':
     {
-      i = highPrecision;
-      highPrecision = true;
       int h1, m1, m2, s1;
-      bool ok = !hmsToHms(&h1, &m1, &m2, &s1, &command[4], highPrecision);
+      bool ok = !hmsToHms(&h1, &m1, &m2, &s1, &command[4], true);
       if (ok)
       {
         rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), 0);
       }
       replyValueSetShort(ok);
-      highPrecision = i;
     }
       break;
     case '1':
@@ -929,16 +926,13 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success  
   {
-    i = highPrecision;
-    highPrecision = true;
     int h1, m1, m2, s1;
-    bool ok = hmsToHms(&h1, &m1, &m2, &s1, &command[2], highPrecision);
+    bool ok = hmsToHms(&h1, &m1, &m2, &s1, &command[2], true);
     if (ok)
     {
       rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), *localSite.toff());
     }
     replyValueSetShort(ok);
-    highPrecision = i;
   }
   break;
   case 'M':
@@ -1024,12 +1018,12 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success     
   {
-    i = highPrecision;
+    bool ishighPrecision;
     if (strlen(&command[7]) > 1)
-      highPrecision = command[8] == ':';
+      ishighPrecision = command[8] == ':';
     else
-      highPrecision = false;
-    bool ok = dmsToDouble(&f, &command[2], true, highPrecision);
+      ishighPrecision = false;
+    bool ok = dmsToDouble(&f, &command[2], true, ishighPrecision);
     if (ok)
     {
       localSite.setLat(f);
@@ -1039,7 +1033,6 @@ void Command_S(Command& process_command)
       syncAtHome();
     }
     replyValueSetShort(ok);
-    highPrecision = i;
   }
   break;
   case 'T':

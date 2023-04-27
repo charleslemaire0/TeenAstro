@@ -967,11 +967,8 @@ void  Command_G()
   case 'a':
     //  :Ga#   Get Local Time in 12 hour format, Native LX200 command
     //         Returns: HH:MM:SS#
-    i = highPrecision;
-    highPrecision = true;
-    doubleToHms(reply, rtk.getLT(localSite.toff()), highPrecision);
+    doubleToHms(reply, rtk.getLT(localSite.toff()), true);
     strcat(reply, "#");
-    highPrecision = i;
     break;
   case 'C':
     //  :GC#   Get the current date, Native LX200 command
@@ -1047,11 +1044,8 @@ void  Command_G()
     //         Returns: sDDD*MM#
     //  :Ggf#  Returns: sDDD*MM'SS#
     //         The current site Longitude. East Longitudes are negative
-    int i = highPrecision;
-    highPrecision = command[2] == 'f';
-    doubleToDms(reply, localSite.longitude(), true, true, highPrecision);
+    doubleToDms(reply, localSite.longitude(), true, true, command[2] == 'f');
     strcat(reply, "#");
-    highPrecision = i;
   }
   break;
   case 'h':
@@ -1066,11 +1060,8 @@ void  Command_G()
   {
     //  :GL#   Get Local Time in 24 hour format, Native LX200 command
     //         Returns: HH:MM:SS#
-    i = highPrecision;
-    highPrecision = true;
-    doubleToHms(reply, rtk.getLT(localSite.toff()), highPrecision);
+    doubleToHms(reply, rtk.getLT(localSite.toff()), true);
     strcat(reply, "#");
-    highPrecision = i;
   }
   break;
   //  :GM#   Get Site 1 Name, Native LX200 command
@@ -1127,12 +1118,9 @@ void  Command_G()
     //  :GS#   Get the Sidereal Time, Native LX200 command
     //         Returns: HH:MM:SS#
     //         The Sidereal Time as an ASCII Sexidecimal value in 24 hour format
-    i = highPrecision;
-    highPrecision = true;
     f = rtk.LST();
-    doubleToHms(reply, &f, highPrecision);
+    doubleToHms(reply, &f, true);
     strcat(reply, "#");
-    highPrecision = i;
     break;
   case 'T':
     //  :GT#   Get tracking rate, Native LX200 command
@@ -1156,11 +1144,8 @@ void  Command_G()
     //         Returns: sDD*MM#
     //  :Gtf#  Returns: sDD*MM'SS#
     //         The latitude of the current site. Positive for North latitudes
-    i = highPrecision;
-    highPrecision = command[2] == 'f';
-    doubleToDms(reply, localSite.latitude(), false, true, highPrecision);
+    doubleToDms(reply, localSite.latitude(), false, true, command[2] == 'f');
     strcat(reply, "#");
-    highPrecision = i;
     break;
   case 'V':
   {
