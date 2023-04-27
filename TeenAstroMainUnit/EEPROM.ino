@@ -231,34 +231,36 @@ void initTransformation(bool reset)
     {
       if (*localSite.latitude() > 0)
       {
-        alignment.addReferenceDeg(0, 0, 180, 0);
-        alignment.addReferenceDeg(0, 90, 180, 90);
+        alignment.addReference(0, 0, M_PI, 0);
+        alignment.addReference(0, M_PI_2, M_PI, M_PI_2);
       }
       else
       {
-        alignment.addReferenceDeg(0, 0, 0, 0);
-        alignment.addReferenceDeg(0, 90, 0, 90);
+        alignment.addReference(0, 0, 0, 0);
+        alignment.addReference(0, M_PI_2, 0, M_PI_2);
       }
       alignment.calculateThirdReference();
     }
     else
-    {
-      double ha, dec;
-      double cosLat = *localSite.cosLat();
-      double sinLat = *localSite.sinLat();
-      if (doesRefraction.forPole && abs(*localSite.latitude() > 10))
+    { 
+      double Lat = *localSite.latitude() * DEG_TO_RAD;
+      if (doesRefraction.forPole && abs(*localSite.latitude()) > 10)
       {
-        double val = abs(*localSite.latitude());
-        Topocentric2Apparent(&val);
+        Lat = abs(Lat);
+        LA3::Topocentric2Apparent(Lat, RefrOptForPole());
         if (*localSite.latitude() < 0)
-          val = -val;
-        cosLat = cos(val / Rad);
-        sinLat = sin(val / Rad);
+          Lat = -Lat;
       }
-      HorTopoToEqu(90., 45., &ha, &dec, &cosLat, &sinLat);
-      alignment.addReferenceDeg(90., 45., ha, dec);
-      HorTopoToEqu(270., 45., &ha, &dec, &cosLat, &sinLat);
-      alignment.addReferenceDeg(270., 45., ha, dec);
+      Coord_HO HO1 = Coord_HO(0, 45 * DEG_TO_RAD, 90 * DEG_TO_RAD, false);
+      Coord_EQ EQ1 = HO1.To_Coord_EQ(Lat);
+      Coord_IN IN1 = Coord_IN(EQ1.FrE(), EQ1.Dec(), EQ1.Ha() );
+
+      Coord_HO HO2 = Coord_HO(0, 45 * DEG_TO_RAD, 270 * DEG_TO_RAD, false);
+      Coord_EQ EQ2 = HO2.To_Coord_EQ(Lat);
+      Coord_IN IN2 = Coord_IN(EQ2.FrE(), EQ2.Dec(), EQ2.Ha());
+
+      alignment.addReference(HO1.Az(), HO1.Alt(), IN1.Axis1(), IN1.Axis2());
+      alignment.addReference(HO2.Az(), HO2.Alt(), IN2.Axis1(), IN2.Axis2());
       alignment.calculateThirdReference();
     }
   }

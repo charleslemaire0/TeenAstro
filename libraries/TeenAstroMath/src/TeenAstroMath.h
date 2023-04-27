@@ -1,6 +1,21 @@
 #pragma once
 #ifndef __TeenAstroMath_h__
 #define __TeenAstroMath_h__
+
+#ifndef DEG_TO_RAD
+#define DEG_TO_RAD 0.017453292519943295769236907684886
+#endif
+#ifndef RAD_TO_DEG
+#define RAD_TO_DEG 57.295779513082320876798154814105
+#endif 
+#ifndef HOUR_TO_RAD
+#define HOUR_TO_RAD 0.26179938779914943653855361527329
+#endif
+#ifndef RAD_TO_HOUR
+#define RAD_TO_HOUR 3.8197186342054880584532103209403
+#endif 
+
+
 #define Rad 57.29577951308232
 
 enum PierSide
@@ -15,6 +30,7 @@ bool atoi2(char *a, int *i);
 bool atoui2(char* a, unsigned int* i);
 
 double haRange(double d);
+double haRangeRad(double d);
 double AzRange(double d);
 double degRange(double d);
 
@@ -24,7 +40,7 @@ double angDist(double h, double d, double h1, double d1);
 // Coordinate conversion
 //Topocentric Apparent convertions
 // returns the amount of refraction (in arcminutes) at the given true altitude (degrees), pressure (millibars), and temperature (celsius)
-
+// !!!obsolete for Main unit!!!
 double trueRefrac(double Alt, double Pressure = 1010., double Temperature = 10.);
 void Topocentric2Apparent(double *Alt, double Pressure = 1010., double Temperature = 10.);
 void Apparent2Topocentric(double *Alt, double Pressure = 1010., double Temperature = 10.);

@@ -235,7 +235,7 @@ void loop()
 
     if (rtk.m_lst % 16 == 0)
     {
-      getHorApp(&currentAzm, &currentAlt);
+      currentAlt = getHorTopo().Alt()*RAD_TO_DEG;
       if (rtk.m_lst % 64 == 0)
       {
         computeTrackingRate(false);

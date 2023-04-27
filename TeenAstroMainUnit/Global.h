@@ -15,6 +15,11 @@
 #include "Refraction.hpp"
 #include "Axis.hpp"
 #include "AxisEncoder.hpp"
+#include "TeenAstroLA3.hpp"
+#include "TeenAstroCoord_LO.hpp"
+#include "TeenAstroCoord_EQ.hpp"
+#include "TeenAstroCoord_HO.hpp"
+#include "TeenAstroCoord_IN.hpp"
 
 TinyGPSPlus gps;
 CoordConv alignment;
@@ -51,7 +56,25 @@ Pushto PushtoStatus = Pushto::PT_OFF;
 bool hasFocuser = false;
 bool hasGNSS = true;
 
+
+double temperature = 10;
+double pressure = 110;
+
 RefractionFlags doesRefraction;
+ 
+LA3::RefrOpt RefrOptForPole()
+{
+  return { doesRefraction.forPole, temperature, pressure };
+}
+LA3::RefrOpt RefrOptForGoto()
+{
+  return { doesRefraction.forGoto, temperature, pressure };
+}
+LA3::RefrOpt RefrOptForTracking()
+{
+  return { doesRefraction.forTracking, temperature, pressure };
+}
+
 TrackingCompensation tc = TrackingCompensation::TC_NONE;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
 double                  siderealClockSpeed = 997269.5625;
