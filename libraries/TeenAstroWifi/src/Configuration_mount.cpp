@@ -490,7 +490,7 @@ void TeenAstroWifi::processConfigurationMountGet()
   v = server.arg("mge1");
   if (v != "")
   {
-    if ((atof2((char*)v.c_str(), &f)) && ((i >= f) && (f <= 60000)))
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 60000)))
     {
       writeTotGearLX200(1, f);
     }
@@ -499,7 +499,7 @@ void TeenAstroWifi::processConfigurationMountGet()
   v = server.arg("mge2");
   if (v != "")
   {
-    if ((atof2((char*)v.c_str(), &f)) && ((i >= f) && (f <= 60000)))
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 60000)))
     {
       writeTotGearLX200(2, f);
     }
