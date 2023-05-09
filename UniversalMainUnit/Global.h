@@ -79,7 +79,7 @@ enum SID_Mode
 #include "Axis.hpp"
 #include "Site.hpp"
 #include "Refraction.hpp"
-#include "TeenAstroCoordConv.hpp"
+#include "CoordConv.hpp"
 #include "Limit.h"
 #include "Astro.h"
 #include "Home.h"
