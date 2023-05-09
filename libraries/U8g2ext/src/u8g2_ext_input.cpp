@@ -52,6 +52,11 @@ static void adaptiveInc(const float incr_ref,const float fact,const float thresh
   }
 }
 
+static float rounddec(double value, int dec)
+{
+  return (float)(round(value * powf(10., dec)) * powf(10., -dec));
+}
+
 uint8_t ext_UserInterfaceInputValueInteger(u8g2_t *u8g2, Pad* extPad, const char *title, const char *pre, uint8_t *value, uint8_t lo, uint8_t hi, uint8_t digits, const char *post)
 {
   u8g2_SetFont(u8g2, u8g2_font_helvR12_te);
@@ -181,6 +186,7 @@ uint8_t ext_UserInterfaceInputValueFloatIncr(u8g2_t *u8g2, Pad* extPad, const ch
   u8g2_uint_t  x, xx;
   float incr = 0;
   float local_value = *value;
+  float rounded = local_value;
   //uint8_t r; /* not used ??? */
   uint8_t event;
 
@@ -237,12 +243,14 @@ uint8_t ext_UserInterfaceInputValueFloatIncr(u8g2_t *u8g2, Pad* extPad, const ch
       yy += line_height / 2;
       xx = x;
       xx += u8g2_DrawUTF8(u8g2, xx, yy, pre);
+      
       if (lo < 0)
       {
-        local_value < 0 ? u8g2_DrawUTF8(u8g2, xx, yy, "-") : u8g2_DrawUTF8(u8g2, xx, yy, "+");
+        rounded < 0 ? u8g2_DrawUTF8(u8g2, xx, yy, "-") : u8g2_DrawUTF8(u8g2, xx, yy, "+");
         xx += u8g2_GetUTF8Width(u8g2, "+");
       }
-      dtostrf(fabs(local_value), len, dec, outstr);
+
+      dtostrf(fabs(rounded), len, dec, outstr);
       xx += u8g2_DrawUTF8(u8g2, xx, yy, outstr);
       u8g2_DrawUTF8(u8g2, xx, yy, post);
     } while (u8g2_NextPage(u8g2));
@@ -256,7 +264,7 @@ uint8_t ext_UserInterfaceInputValueFloatIncr(u8g2_t *u8g2, Pad* extPad, const ch
       event = ext_GetMenuEvent(extPad);
       if (event == U8X8_MSG_GPIO_MENU_SELECT || event == U8X8_MSG_GPIO_MENU_NEXT)
       {
-        *value = local_value;
+        *value = rounded;
         return 1;
       }
       else if (event == U8X8_MSG_GPIO_MENU_HOME || event == U8X8_MSG_GPIO_MENU_PREV)
@@ -268,6 +276,7 @@ uint8_t ext_UserInterfaceInputValueFloatIncr(u8g2_t *u8g2, Pad* extPad, const ch
         if (local_value >= hi)
         {
           local_value = lo;
+          rounded = rounddec(local_value, dec);
           incr = 0;
         }
         else
@@ -275,6 +284,7 @@ uint8_t ext_UserInterfaceInputValueFloatIncr(u8g2_t *u8g2, Pad* extPad, const ch
           adaptiveInc(incr_ref, 1.05, 100, incr);
           local_value += long(incr/ incr_ref )* incr_ref;
           local_value = min(local_value, hi);
+          rounded = rounddec(local_value, dec);
         }
         break;
       }
@@ -284,12 +294,14 @@ uint8_t ext_UserInterfaceInputValueFloatIncr(u8g2_t *u8g2, Pad* extPad, const ch
         {
           local_value = hi;
           incr = 0;
+          rounded = rounddec(local_value, dec);
         }
         else
         {
           adaptiveInc(-incr_ref, 1.05, -100, incr);
           local_value += long(incr / incr_ref) * incr_ref;
           local_value = max(local_value, lo);
+          rounded = rounddec(local_value, dec);
         }
         break;
       }

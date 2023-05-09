@@ -47,6 +47,14 @@ double haRange(double d)
   return d;
 }
 
+double haRangeRad(double d)
+{
+  while (d >= M_PI) d -= M_PI *2;
+  while (d < -M_PI) d += M_PI * 2;
+  return d;
+}
+
+
 double AzRange(double d)
 {
   while (d >= 360.) d -= 360.;

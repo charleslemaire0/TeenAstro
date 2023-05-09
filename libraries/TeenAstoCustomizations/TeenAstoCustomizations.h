@@ -1,5 +1,26 @@
 #pragma once
-// customization file to enable experimental/unofficial features
+// Customization file
+// Leave as is to use default configuration
 
-// to keep tracking on after meridian when far from Pole
-// #define keepTrackingOnWhenFarFromPole
+// SHC PAGEs configuration
+// comment/uncomment to hide/show the corresponding PAGE on display
+
+#define RADEC_PAGE
+#define ALTAZ_PAGE
+//#define PUSH_PAGE
+#define  TIME_PAGE
+//#define AXIS_STEP_PAGE
+//#define AXIS_DEG_PAGE
+#define FOCUSER_PAGE
+//#define ALIGN_PAGE
+//#define HA_PAGE
+
+
+//The following lines are used to enable experimental/unofficial features
+
+// Uncomment to keep tracking on after meridian when far from Pole
+//#define keepTrackingOnWhenFarFromPole
+
+// Uncomment to enable quick speed change
+// by SHC Shift+N / Shift+S buttons
+//#define NO_SPEED_MENU

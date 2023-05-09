@@ -367,16 +367,13 @@ void Command_SX()
       //                  1 on success 
     case '0':
     {
-      i = highPrecision;
-      highPrecision = true;
       int h1, m1, m2, s1;
-      bool ok = !hmsToHms(&h1, &m1, &m2, &s1, &command[4], highPrecision);
+      bool ok = !hmsToHms(&h1, &m1, &m2, &s1, &command[4], true);
       if (ok)
       {
         rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), 0);
       }
       replyValueSetShort(ok);
-      highPrecision = i;
     }
       break;
     case '1':
@@ -445,23 +442,23 @@ void Command_SX()
     case 'G':
     {
       // :SXMGn,VVVV# Set Gear
-      int i;
+      unsigned long i;
       bool ok = false;
       if ((command[4] == 'D' || command[4] == 'R')
-        && strlen(&command[6]) > 1 && strlen(&command[6]) < 11
-        && atoi2(&command[6], &i))
+        && strlen(&command[6]) > 1 && strlen(&command[6]) < 11)
       {
+        i = strtoul(&command[6], NULL, 10);
         if (command[4] == 'D')
         {
           if (!motorA2.isGearFix)
           {
-            double fact = (double)i / motorA2.gear;
+            double fact = (double)(i) / motorA2.gear;
             cli();
             staA2.pos = fact * staA2.pos;
             sei();
             StopAxis2();
-            motorA2.gear = (unsigned int)i;
-            XEEPROM.writeInt(getMountAddress(EE_motorA2gear), i);
+            motorA2.gear = i;
+            XEEPROM.writeULong(getMountAddress(EE_motorA2gear), i);
             ok = true;
           }
         }
@@ -474,8 +471,8 @@ void Command_SX()
             staA1.pos = fact * staA1.pos;
             sei();
             StopAxis1();
-            motorA1.gear = (unsigned int)i;
-            XEEPROM.writeInt(getMountAddress(EE_motorA1gear), i);
+            motorA1.gear = i;
+            XEEPROM.writeULong(getMountAddress(EE_motorA1gear), i);
             ok = true;
           }
         }
@@ -601,7 +598,6 @@ void Command_SX()
             XEEPROM.write(getMountAddress(EE_motorA2silent), i);
             ok = true;
           }
-
         }
         else
         {
@@ -930,16 +926,13 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success  
   {
-    i = highPrecision;
-    highPrecision = true;
     int h1, m1, m2, s1;
-    bool ok = hmsToHms(&h1, &m1, &m2, &s1, &command[2], highPrecision);
+    bool ok = hmsToHms(&h1, &m1, &m2, &s1, &command[2], true);
     if (ok)
     {
       rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), *localSite.toff());
     }
     replyValueSetShort(ok);
-    highPrecision = i;
   }
   break;
   case 'M':
@@ -1025,12 +1018,12 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success     
   {
-    i = highPrecision;
+    bool ishighPrecision;
     if (strlen(&command[7]) > 1)
-      highPrecision = command[8] == ':';
+      ishighPrecision = command[8] == ':';
     else
-      highPrecision = false;
-    bool ok = dmsToDouble(&f, &command[2], true, highPrecision);
+      ishighPrecision = false;
+    bool ok = dmsToDouble(&f, &command[2], true, ishighPrecision);
     if (ok)
     {
       localSite.setLat(f);
@@ -1040,7 +1033,6 @@ void Command_S(Command& process_command)
       syncAtHome();
     }
     replyValueSetShort(ok);
-    highPrecision = i;
   }
   break;
   case 'T':
@@ -1048,34 +1040,38 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
   { bool ok = !movingTo;
+  if (ok)
+  {
+    f = strtod(&command[2], &conv_end);
+    bool ok = (&command[2] != conv_end) &&
+      (((f >= 30.0) && (f < 90.0)) || (abs(f) < 0.1));
     if (ok)
     {
-      f = strtod(&command[2], &conv_end);
-      bool ok = (&command[2] != conv_end) &&
-        (((f >= 30.0) && (f < 90.0)) || (abs(f) < 0.1));
-      if (ok)
+      if (abs(f) < 0.1)
       {
-        if (abs(f) < 0.1)
-        {
-          sideralTracking = false;
-        }
-        else
-        {
-          RequestedTrackingRateHA = (f / 60.0) / 1.00273790935;
-          // todo apply rate
-        }
+        sideralTracking = false;
+      }
+      else
+      {
+        RequestedTrackingRateHA = (f / 60.0) / 1.00273790935;
+        // todo apply rate
       }
     }
-    replyValueSetShort(ok);
   }
-    break;
+  replyValueSetShort(ok);
+  }
+  break;
   case 'U':
     // :SU# store current User defined Position
-    getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
+  {
+    Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
+    f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
+    f1 = EQ_T.Dec() * RAD_TO_DEG;
     XEEPROM.writeFloat(getMountAddress(EE_RA), (float)f);
     XEEPROM.writeFloat(getMountAddress(EE_DEC), (float)f1);
     replyValueSetShort(true);
-    break;
+  }
+  break;
   case 'X':
     Command_SX();
     break;

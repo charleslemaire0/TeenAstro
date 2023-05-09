@@ -231,34 +231,36 @@ void initTransformation(bool reset)
     {
       if (*localSite.latitude() > 0)
       {
-        alignment.addReferenceDeg(0, 0, 180, 0);
-        alignment.addReferenceDeg(0, 90, 180, 90);
+        alignment.addReference(0, 0, M_PI, 0);
+        alignment.addReference(0, M_PI_2, M_PI, M_PI_2);
       }
       else
       {
-        alignment.addReferenceDeg(0, 0, 0, 0);
-        alignment.addReferenceDeg(0, 90, 0, 90);
+        alignment.addReference(0, 0, 0, 0);
+        alignment.addReference(0, M_PI_2, 0, M_PI_2);
       }
       alignment.calculateThirdReference();
     }
     else
-    {
-      double ha, dec;
-      double cosLat = *localSite.cosLat();
-      double sinLat = *localSite.sinLat();
-      if (doesRefraction.forPole && abs(*localSite.latitude() > 10))
+    { 
+      double Lat = *localSite.latitude() * DEG_TO_RAD;
+      if (doesRefraction.forPole && abs(*localSite.latitude()) > 10)
       {
-        double val = abs(*localSite.latitude());
-        Topocentric2Apparent(&val);
+        Lat = abs(Lat);
+        LA3::Topocentric2Apparent(Lat, RefrOptForPole());
         if (*localSite.latitude() < 0)
-          val = -val;
-        cosLat = cos(val / Rad);
-        sinLat = sin(val / Rad);
+          Lat = -Lat;
       }
-      HorTopoToEqu(90., 45., &ha, &dec, &cosLat, &sinLat);
-      alignment.addReferenceDeg(90., 45., ha, dec);
-      HorTopoToEqu(270., 45., &ha, &dec, &cosLat, &sinLat);
-      alignment.addReferenceDeg(270., 45., ha, dec);
+      Coord_HO HO1 = Coord_HO(0, 45 * DEG_TO_RAD, 90 * DEG_TO_RAD, false);
+      Coord_EQ EQ1 = HO1.To_Coord_EQ(Lat);
+      Coord_IN IN1 = Coord_IN(EQ1.FrE(), EQ1.Dec(), EQ1.Ha() );
+
+      Coord_HO HO2 = Coord_HO(0, 45 * DEG_TO_RAD, 270 * DEG_TO_RAD, false);
+      Coord_EQ EQ2 = HO2.To_Coord_EQ(Lat);
+      Coord_IN IN2 = Coord_IN(EQ2.FrE(), EQ2.Dec(), EQ2.Ha());
+
+      alignment.addReference(HO1.Az(), HO1.Alt(), IN1.Axis1(), IN1.Axis2());
+      alignment.addReference(HO2.Az(), HO2.Alt(), IN2.Axis1(), IN2.Axis2());
       alignment.calculateThirdReference();
     }
   }
@@ -266,16 +268,41 @@ void initTransformation(bool reset)
 
 void initCelestialPole()
 {
-
   if (isAltAZ())
   {
     geoA1.poleDef =  0L;
+    geoA1.LimMinAxis = -180;
+    geoA1.LimMaxAxis = 180;
     geoA2.poleDef = geoA2.quaterRot;
+    geoA2.LimMinAxis = -20;
+    geoA2.LimMaxAxis = 90;
   }
   else
   {
-    geoA1.poleDef = mountType == MOUNT_TYPE_GEM ? geoA1.quaterRot : 0L;
-    geoA2.poleDef = (*localSite.latitude() < 0) ? -geoA2.quaterRot : geoA2.quaterRot;
+    if (mountType == MOUNT_TYPE_GEM)
+    {
+      geoA1.poleDef = geoA1.quaterRot;
+      geoA1.LimMinAxis = -90;
+      geoA1.LimMaxAxis = 270;
+    }
+    else
+    {
+      geoA1.poleDef = 0L;
+      geoA1.LimMinAxis = -180;
+      geoA1.LimMaxAxis = 180;
+    }
+    if (*localSite.latitude() < 0)
+    {
+      geoA2.poleDef = -geoA2.quaterRot;
+      geoA2.LimMinAxis = -270;
+      geoA2.LimMaxAxis = 90;
+    }
+    else
+    {
+      geoA2.poleDef = geoA2.quaterRot;
+      geoA2.LimMinAxis = -90;
+      geoA2.LimMaxAxis = 270;
+    }
   }
   HADir = *localSite.latitude() > 0 ? HADirNCPInit : HADirSCPInit;
 }
@@ -369,7 +396,7 @@ void readEEPROMmotor()
   motorA1.gear = D_motorA1gear;
   motorA1.isGearFix = true;
 #else
-  motorA1.gear = XEEPROM.readInt(getMountAddress(EE_motorA1gear));
+  motorA1.gear = XEEPROM.readULong(getMountAddress(EE_motorA1gear));
   motorA1.isGearFix = false;
 #endif
 
@@ -417,7 +444,7 @@ void readEEPROMmotor()
   motorA2.gear = D_motorA2gear;
   motorA2.isGearFix = true;
 #else
-  motorA2.gear = XEEPROM.readInt(getMountAddress(EE_motorA2gear));
+  motorA2.gear = XEEPROM.readULong(getMountAddress(EE_motorA2gear));
   motorA2.isGearFix = false;
 #endif
 

@@ -69,7 +69,7 @@ const char html_configBlAxis[] PROGMEM =
 "\r\n";
 const char html_configGeAxis[] PROGMEM =
 "<form method='get' action='/configuration_mount.htm'>"
-" <input value='%d' type='number' name='mge%d' min='1' max='60000'>"
+" <input value='%.3f' type='number' name='mge%d' min='1' max='60000' step='.001'>"
 "<button type='submit'>Upload</button>"
 " (Gear Axis%d, from 1 to 60000)"
 "</form>"
@@ -237,13 +237,13 @@ void TeenAstroWifi::handleConfigurationMount()
     float gear = 0;
     if (readTotGearLX200(1, gear) == LX200_VALUEGET)
     {
-      sprintf_P(temp, html_configGeAxis, (int)gear, 1, 1);
+      sprintf_P(temp, html_configGeAxis, gear, 1, 1);
       data += temp;
       sendHtml(data);
     }
     if (readTotGearLX200(2, gear) == LX200_VALUEGET)
     {
-      sprintf_P(temp, html_configGeAxis, (int)gear, 2, 2);
+      sprintf_P(temp, html_configGeAxis, gear, 2, 2);
       data += temp;
       sendHtml(data);
     }
@@ -490,18 +490,18 @@ void TeenAstroWifi::processConfigurationMountGet()
   v = server.arg("mge1");
   if (v != "")
   {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 60000)))
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 60000)))
     {
-      writeTotGearLX200(1, (float)i);
+      writeTotGearLX200(1, f);
     }
   }
 
   v = server.arg("mge2");
   if (v != "")
   {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 60000)))
+    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 60000)))
     {
-      writeTotGearLX200(2, (float)i);
+      writeTotGearLX200(2, f);
     }
   }
 
