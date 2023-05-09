@@ -52,7 +52,7 @@ void Command_A()
   {
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-    Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude(), RefrOptForGoto());
+    Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto());
 
     if (alignment.getRefs() == 0)
     {
@@ -82,7 +82,7 @@ void Command_A()
   {
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-    Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude(), RefrOptForGoto());
+    Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto());
 
     if (alignment.getRefs() == 0)
     {
@@ -182,7 +182,7 @@ void Command_C()
       if (autoAlignmentBySync) {
         double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-        Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude(), RefrOptForGoto());
+        Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto());
         if (alignment.getRefs() == 0)
         {
           syncAzAlt(&HO_T, GetPierSide());
