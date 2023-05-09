@@ -135,11 +135,9 @@ class TeenAstro(object):
       self.gear1 = self.getValue(':GXMGR#')
       self.steps1 = self.getValue(':GXMSR#')
       self.microsteps1 = int(self.getValue(':GXMMR#'))
-      self.axis1Gear = int(self.gear1) * int(self.steps1)
       self.gear2 = self.getValue(':GXMGD#')
       self.steps2 = self.getValue(':GXMSD#')
       self.microsteps2 = int(self.getValue(':GXMMD#'))
-      self.axis2Gear = int(self.gear2) * int(self.steps2)
       if self.getValue(':GXMRR#') == '1':
         self.axis1Reverse = True
       else:
@@ -232,6 +230,10 @@ class TeenAstro(object):
     self.readStatus()
     return (int(self.status[0]) & 2 == 2)
 
+  def guideStatus(self):
+    self.readStatus()
+    return (self.status[5:9])
+
   def getPierSide(self):
     self.readStatus()
     return (self.status[13])
@@ -265,6 +267,9 @@ class TeenAstro(object):
 
   def flipMount(self):
     self.sendCommand(":MF#")
+
+  def spiral(self, fov):
+    self.sendCommand(":M@%u#" % fov)
 
   def gotoAzAlt(self, az, alt):
     dmsAz = deg2dms(az)

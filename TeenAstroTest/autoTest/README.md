@@ -2,7 +2,7 @@
 
 
 
-autoTest is a test program that compares the axis positions against values computed with the [skyfield](https://rhodesmill.org/skyfield/) astronomy library. 
+autoTest is a program that compares the axis positions against values computed with the [skyfield](https://rhodesmill.org/skyfield/) astronomy library. 
 
 ```
 python3 autoTest.py --help
@@ -22,29 +22,29 @@ optional arguments:
 ```
 
 
-It currently has 4 test options:
+It currently has 3 test options:
 
-- Pointing Test
+- Slewing
 
-The mount points to a list of positions defined as alt-az pairs. At each position, the program compares the RA / Dec reported by TeenAstro against values computed from the axis positions using Skyfield. Additionally, the positions are recorded in a polar plot.
+The mount points to a list of positions defined as alt-az pairs. At each position, the program compares the horizontal coordinates reported by TeenAstro against values computed from the axis positions using Skyfield. At this time, refraction is not taken into account. The positions can be displayed against time, or in a polar plot.
 
-![](pointing_test.png)
+![](autoTest_slew_polar.png)
 
-- Drift Test 
+![](autoTest_slew_T.png)
 
-The mount is set to track any point in the sky. At regular intervals (typically 1 second), the program reads the axis positions and computes the differences in RA and Dec since the test started. This can be used to verify slow movements like guiding and custom tracking.
+- Tracking 
 
-![](drift_test.png)
+The mount is set to track any point in the sky. At regular intervals, the program reads the axis positions and computes the differences in equatorial coordinates since the test started. This can be used to verify slow movements like guiding and custom tracking. The RA and Dec are displayed either against time, or in an XY plot. Stop and restart tracking to reset the initial position. 
 
-- Slew Test
+![](autoTest_track_T.png)
 
-Allows to slew to several predefined coordinates (East, West, North, South, Zenith) and plot the axis movements against time.
+![](autoTest_track_XY.png)
 
-![](slew_test.png)
+
 
 
 - Align Test
 
 The current TeenAstro position is plotted on top of a simple star map. A dialog box sets "home position" and "pole alignment" errors. This allows running the alignment routine in the hand controller, to view its effect on pointing accuracy.
 
-![](align_test.png)
+![](autoTest_align.png)

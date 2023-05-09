@@ -61,7 +61,7 @@ class Mount:
 # Need to take into account the motor configurations 
 # and also the S hemisphere which inverts the RA axis (for Firmware 2.x only)
         if (a1 != self.axis1Degrees):
-            if (self.name == 'TeenAstroUniversal'):
+            if (self.version == '1.4.0'):
                 if ta.axis1Reverse:
                     dir = 1
                 else:
@@ -240,7 +240,7 @@ class Application:
             self.westLimit = self.ta.getMeridianWestLimit()
 
             self.initialRA = self.ta.readSidTime() + (1.0 + float(self.eastLimit)) / 15.0 # goto "eastLimit" east of south meridian  
-            self.initialDec = 45.5
+            self.initialDec = 10
             self.ta.gotoRaDec(self.initialRA, self.initialDec)
             self.log('goto East Limit')
             self.flipTestState = 'goto1'
@@ -300,12 +300,23 @@ class Application:
 #                pyglet.clock.unschedule(self.runFlipTest) 
 
     def startCoordTest(self,arg):
+        code = self.ta.getErrorCode()
+        if code!= 'ERR_NONE':     
+            self.log(code)
+            return   
+
         self.testStep = 0
         self.testData = []
         pyglet.clock.schedule_interval(self.runCoordTest, 0.5) 
 
     def runCoordTest(self, dt):
         if self.ta.isSlewing():
+            return
+
+        code = self.ta.getErrorCode()
+        if code!= 'ERR_NONE':     
+            self.log(code)
+            pyglet.clock.unschedule(self.runCoordTest) 
             return
 
         if self.testStep == len(testCase):

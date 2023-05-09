@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-#
 # Load and save TeenAstro configuration
 #
-# (C) 2020, François Desvallées
+# (C) 2023, François Desvallées
 # (C) 2020, Lukas Zimmermann, Basel
 
 import PySimpleGUI as sg
@@ -37,7 +37,7 @@ MountDef = { 'mType':['Eq-German', 'Eq-Fork', 'AltAz-Tee', 'AltAz-Fork'],
       'msil2':[0,1],
       'hl':[i for i in range(-30,30)], 'ol':[i for i in range(60,92)], 'el':[i for i in range(-45,45)], 
       'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)],
-      'a1min':[i for i in range(-360,0)],'a1max':[i for i in range(0,360)],'a2min':[i for i in range(-360,0)],'a2max':[i for i in range(0,360)]
+      'a1min':[i for i in range(-380,0)],'a1max':[i for i in range(0,380)],'a2min':[i for i in range(-380,0)],'a2max':[i for i in range(0,380)]
       }
 
 # Commands for getting mount parameters
@@ -197,6 +197,10 @@ def writeMountData():
       # Microsteps are coded as the exponent of 2
       cmdStr += str(int(math.log(int(Mount[tag]), 2)))
 
+    elif ((tag == 'mge1') or (tag == 'mge2')):
+      # Gears are stored as 1000 times the value to allow fractional values
+      cmdStr += str(int(int(Mount[tag]) * 1000))
+
     elif ((tag == 'el') or (tag == 'wl')):    # EL / WL limits are stored in quarters of a degree
       cmdStr += str(int(int(Mount[tag]) * 4))
 
@@ -328,6 +332,9 @@ def readMountData():
 
     elif ((tag == 'mmu1') or (tag == 'mmu2')):  # Microsteps are coded as the exponent of 2
       Mount[tag] = int(math.pow(2, int(resp)))
+
+    elif ((tag == 'mge1') or (tag == 'mge2')):  # Gears are stored as 1000x actual gear
+      Mount[tag] = int(float(resp) / 1000)
 
     elif ((tag == 'el') or (tag == 'wl')):      # EL / WL limits are indicated in quarters of a degree
       Mount[tag] = int(int(resp) / 4)
