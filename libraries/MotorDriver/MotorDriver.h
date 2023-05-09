@@ -6,7 +6,7 @@ class MotorDriver
 public:
   TMC5160Stepper *drvP = NULL;
   MotionControl *mcP = NULL;
-  unsigned int gear;
+  unsigned long gear;         // 1000x the gear to allow 3 digits after the comma
   unsigned int stepRot;
   byte micro = 4;
   bool reverse = false;

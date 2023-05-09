@@ -122,6 +122,7 @@ GLOBAL SemaphoreHandle_t hwMutex;       // to prevent concurrent hardware access
 GLOBAL SemaphoreHandle_t swMutex;       // to prevent concurrent global variable accesses 
 GLOBAL EventGroupHandle_t mountEvents;  // abort etc.
 
+
 // One sidereal day is 86164.09 clock seconds
 // One sidereal second is 86164.09 / 86400 = 0.9972... clock second
 // siderealClockSpeed = number of 1/16µS ticks in one sidereal second = (16 * 1000000 * 0.9972) = 15956313 

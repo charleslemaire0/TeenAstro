@@ -30,10 +30,13 @@ void AltAzMount::axesToHor(Axes *aP, HorCoords *hP)
  */
 bool AltAzMount::horToAxes(HorCoords *hP, Axes *aP)
 {
-  long currentAxis1 = motorA1.getCurrentPos();
+  long currentAxis1 = motorA1.getCurrentPos() / geoA1.stepsPerDegree;
 
 	aP->axis2 = hP->alt;
-  aP->axis1 = hP->az;
+  if (*localSite.latitude() >= 0)
+    aP->axis1 = hP->az - 180;
+  else
+    aP->axis1 = hP->az;
 
   // easiest case
   if (fabs(aP->axis1 - currentAxis1) <= 180)
@@ -42,14 +45,14 @@ bool AltAzMount::horToAxes(HorCoords *hP, Axes *aP)
   // target is more than 180º away - find the shortest movement within axis1 limits
   if (aP->axis1 < currentAxis1)
   {
-    if (withinLimits(aP->axis1+360, aP->axis2))
+    if (withinLimits((aP->axis1+360)*geoA1.stepsPerDegree, (aP->axis2)*geoA2.stepsPerDegree))
     {
       aP->axis1 = aP->axis1+360;
     }
   }
   else
   {
-    if (withinLimits(aP->axis1-360, aP->axis2))
+    if (withinLimits((aP->axis1-360)*geoA1.stepsPerDegree, (aP->axis2)*geoA2.stepsPerDegree))
     {
       aP->axis1 = aP->axis1-360;
     }
@@ -196,7 +199,7 @@ void AltAzMount::setTrackingSpeed(double speed)
 
 void AltAzMount::initHome(Steps *sP)
 {
-  sP->steps1 = (*localSite.latitude()>0) ? geoA2.halfRot : 0;
+  sP->steps1 = 0;
   sP->steps2 = 0;
 }
 
@@ -204,7 +207,7 @@ void AltAzMount::initHome(Steps *sP)
  * For AltAz mounts, 
  * "pole" is really the zenith at +90º, antipole at -90º 
  */
-long AltAzMount::poleDir(char pole)
+long AltAzMount::axis2Target(char pole)
 {
   return ((*localSite.latitude() >= 0) == (pole=='n')) ? geoA2.quarterRot : -geoA2.quarterRot;
 }

@@ -101,7 +101,7 @@ bool EqMount::eqToAxes(EqCoords *eP, Axes *aP, PierSide ps)
     aP->axis1 = hemisphere * eP->ha  - flipSign * 90;
     aP->axis2 = flipSign * (90 - hemisphere * eP->dec);  
 
-    if (!withinLimits(aP->axis1, aP->axis2))
+    if (!withinLimits(aP->axis1 * geoA1.stepsPerDegree, aP->axis2 * geoA2.stepsPerDegree))
       return false;
 
     if (!checkMeridian(aP, CHECKMODE_GOTO, ps))
@@ -117,7 +117,7 @@ bool EqMount::eqToAxes(EqCoords *eP, Axes *aP, PierSide ps)
     aP->axis1 = hemisphere * eP->ha;
     aP->axis2 = 90 - (hemisphere * eP->dec);  
 
-    if (!withinLimits(aP->axis1, aP->axis2))
+    if (!withinLimits(aP->axis1 * geoA1.stepsPerDegree, aP->axis2 * geoA2.stepsPerDegree))
       return false;
 
     if (!checkPole(aP->axis1, CHECKMODE_GOTO))
@@ -206,7 +206,7 @@ byte EqMount::Flip()
   PierSide selectedSide = PIER_NOTVALID;
   PierSide preferedPierSide = (GetPierSide() == PIER_EAST) ? PIER_WEST : PIER_EAST;
   double Axis1 = motorA1.getCurrentPos() / (double)geoA1.stepsPerDegree;
-  double Axis2 = motorA1.getCurrentPos() / (double)geoA2.stepsPerDegree;
+  double Axis2 = motorA2.getCurrentPos() / (double)geoA2.stepsPerDegree;
   if (!predictTarget(Axis1, Axis2, preferedPierSide, axis1Flip, axis2Flip, selectedSide))
   {
     return ERRGOTO_SAMESIDE;
@@ -283,18 +283,35 @@ void EqMount::getTrackingSpeeds(Speeds *sP)
   sP->speed1 = trackingSpeeds.speed1;
   sP->speed2 = trackingSpeeds.speed2;
 
-  if (getEvent(EV_GUIDING_AXIS1 | EV_WEST))
+  if (getEvent(EV_GUIDING_AXIS1 | EV_WEST | EV_SPEED_CHANGE))
+  {
     sP->speed1 += guideRates[0];
-  if (getEvent(EV_GUIDING_AXIS1 | EV_EAST))
+  }
+  if (getEvent(EV_GUIDING_AXIS1 | EV_EAST | EV_SPEED_CHANGE))
+  {
     sP->speed1 -= guideRates[0];
+  }
 
-  if (getEvent(EV_GUIDING_AXIS2 | EV_NORTH))
+  if (getEvent(EV_GUIDING_AXIS2 | EV_NORTH | EV_SPEED_CHANGE))
+  {
     sP->speed2 += guideRates[0];
-  if (getEvent(EV_GUIDING_AXIS2 | EV_SOUTH))
+  }
+  if (getEvent(EV_GUIDING_AXIS2 | EV_SOUTH | EV_SPEED_CHANGE))
+  {
     sP->speed2 -= guideRates[0];
+  }
 
- sP->speed1 *= (geoA1.stepsPerSecond/SIDEREAL_SECOND);
- sP->speed2 *= (geoA2.stepsPerSecond/SIDEREAL_SECOND);
+  if (getEvent(EV_SPIRAL | EV_SPEED_CHANGE))
+  {
+    Speeds v;
+    getSpiralSpeeds(&v);
+    sP->speed1 += v.speed1;
+    sP->speed2 += v.speed2;
+    setEvents(EV_SPEED_CHANGE);
+  }
+
+  sP->speed1 *= (geoA1.stepsPerSecond/SIDEREAL_SECOND);
+  sP->speed2 *= (geoA2.stepsPerSecond/SIDEREAL_SECOND);
 }
 
 void EqMount::initHome(Steps *sP)
@@ -322,7 +339,7 @@ void EqMount::initHome(Steps *sP)
  *   in N hemisphere: +∞ if PierSide=E (not flipped), -∞ if PierSide=W (flipped)
  *   in S hemisphere: reverse
  */
-long EqMount::poleDir(char pole)
+long EqMount::axis2Target(char pole)
 {
   
   if ((*localSite.latitude() >= 0) == (pole == 'n'))	// pole?

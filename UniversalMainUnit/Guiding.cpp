@@ -1,6 +1,11 @@
 #include "Global.h"
 
-TimerHandle_t axis1Timer, axis2Timer;
+TimerHandle_t axis1Timer, axis2Timer, spiralTimer;
+#define SPIRAL_PERIOD     200         // mS
+#define MAX_SPIRAL_TIME   600000      // mS
+static long spiralCount;
+static double SpiralFOV;    // field of view in degrees
+Speeds spiralSpeed;
 
 void initGuiding(void)
 {
@@ -16,6 +21,12 @@ void initGuiding(void)
                  pdFALSE,
                  NULL,
                  stopGuidingAxis2);    
+  spiralTimer = xTimerCreate
+               ( "Spiral Timer",
+                 SPIRAL_PERIOD,           
+                 pdTRUE,
+                 NULL,
+                 spiralTask);    
 }
 
 
@@ -180,3 +191,69 @@ void checkST4()
   }
 }
 #endif
+
+/*
+ * startSpiral
+ *
+ * start a timer that periodically updates the tracking speed on both axes 
+ */
+void startSpiral(double fov)
+{
+  if ((parkStatus() != PRK_UNPARKED) || isSlewing() || !(isTracking()))
+    return;
+
+  spiralCount = 0;
+  SpiralFOV = fov;
+  xTimerStart(spiralTimer, 0);
+  setEvents(EV_SPIRAL);
+}
+
+/*
+ * equation of movement: R = θ = √t
+ * 
+ *  x = √t * cos (√t)
+ *  y = √t * sin (√t)
+ *
+ * equation of speed
+ *
+ * dx/dt = (cos(√t) - √t * sin(√t)) / 2 * √t
+ * dy/dt = (sin(√t) + √t * cos(√t)) / 2 * √t
+ *
+ */
+void spiralTask(UNUSED(TimerHandle_t xTimer))
+{
+  int k = 180;    // magic number to get requested distance between spiral paths 
+  spiralCount++;
+
+  if (spiralCount >= (MAX_SPIRAL_TIME / SPIRAL_PERIOD))
+  {
+    stopSpiral();
+  }
+
+  double T = sqrtf(spiralCount);
+  double sinT = sin(T);
+  double cosT = cos(T);
+
+  xSemaphoreTake(swMutex, portMAX_DELAY); 
+  spiralSpeed.speed1 = k * SpiralFOV * (cosT - T * sinT) / (2 * T);
+  spiralSpeed.speed2 = k * SpiralFOV * (sinT + T * cosT) / (2 * T);
+  xSemaphoreGive(swMutex);
+
+  setEvents(EV_SPEED_CHANGE);
+}
+
+void stopSpiral(void)
+{
+  xTimerStop(spiralTimer, 0);
+  spiralSpeed.speed1 = 0;
+  spiralSpeed.speed2 = 0;
+  resetEvents(EV_SPIRAL);  
+}
+
+void getSpiralSpeeds(Speeds *vP)
+{
+  xSemaphoreTake(swMutex, portMAX_DELAY); 
+  vP->speed1 = spiralSpeed.speed1;
+  vP->speed2 = spiralSpeed.speed2;
+  xSemaphoreGive(swMutex);
+}

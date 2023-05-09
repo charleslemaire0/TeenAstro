@@ -5,7 +5,9 @@
 
 // Messages to Control Task that require an async action
 enum CTL_MESSAGES {CTL_MSG_GOTO, CTL_MSG_GOTO_HOME, CTL_MSG_START_TRACKING, CTL_MSG_STOP_TRACKING,  
-           CTL_MSG_MOVE_AXIS1, CTL_MSG_MOVE_AXIS2, CTL_MSG_STOP_AXIS1, CTL_MSG_STOP_AXIS2, CTL_MSG_SET_SLEW_SPEED};
+                    CTL_MSG_MOVE_AXIS1, CTL_MSG_MOVE_AXIS2, CTL_MSG_STOP_AXIS1, CTL_MSG_STOP_AXIS2, 
+                    CTL_MSG_SET_SLEW_SPEED
+         };
 
 enum CTL_MODE {CTL_MODE_IDLE, CTL_MODE_GOTO, CTL_MODE_TRACKING, CTL_MODE_STOPPING};
 
@@ -25,6 +27,7 @@ enum CTL_MODE {CTL_MODE_IDLE, CTL_MODE_GOTO, CTL_MODE_TRACKING, CTL_MODE_STOPPIN
 #define EV_CENTERING        (1<<13)
 #define EV_START_TRACKING   (1<<14)
 #define EV_SPEED_CHANGE     (1<<15)
+#define EV_SPIRAL           (1<<16)
 
 
 bool isSlewing(void);     // replaces movingTo global variable
@@ -36,7 +39,6 @@ void DecayModeTracking(void);
 void setEvents(unsigned ev);
 void resetEvents(unsigned ev);
 bool getEvent(unsigned ev);
-bool getEvents(unsigned ev);
 void waitSlewing(void);
 void startTracking(void);
 void stopTracking(void);

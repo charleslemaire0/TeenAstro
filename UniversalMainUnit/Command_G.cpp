@@ -432,13 +432,17 @@ void Command_GX()
     if (atHome()) reply[3] = 'H';
     reply[4] = '0' + activeGuideRate;
 
-    if (getEvents(EV_GUIDING_AXIS1 | EV_GUIDING_AXIS2))
+    if (getEvent(EV_GUIDING_AXIS1) || getEvent(EV_GUIDING_AXIS2))
     {
       reply[5] = 'G';
       reply[6] = '*';
     }
 
-    if (getEvent(EV_CENTERING))
+    if (getEvent(EV_SPIRAL))
+    {
+      reply[5] = '@';
+    }
+    else if (getEvent(EV_CENTERING))
     {
       reply[5] = 'G';
       reply[6] = '+';
@@ -505,11 +509,11 @@ void Command_GX()
       // :GXMG.#   Get Motor Gear
       if (command[4] == 'D')
       {
-        sprintf(reply, "%u#", motorA2.gear);
+        sprintf(reply, "%lu#", motorA2.gear);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%u#", motorA1.gear);
+        sprintf(reply, "%lu#", motorA1.gear);
       }
       else
         replyFailed();

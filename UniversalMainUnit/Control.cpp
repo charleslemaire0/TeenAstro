@@ -23,15 +23,6 @@ bool getEvent(unsigned ev)
     return false;      
 }
 
-// Returns true if any of a group of events is set
-bool getEvents(unsigned evSet)
-{
-  unsigned ev;
-  ev = xEventGroupGetBits(mountEvents);
-  return ((ev & evSet) != 0);
-}
-
-
 // block until slewing bit is set
 void waitSlewing(void)
 {
@@ -156,24 +147,24 @@ void controlTask(UNUSED(void *arg))
         {
           Speeds speeds;
 
-          // Only need to update speed in case of guiding, or for an AltAz mount
+          // Only need to update speed in case of guiding/spiral, or for an AltAz mount
           if (getEvent(EV_SPEED_CHANGE) | isAltAz())
           {
             mount.mP->getTrackingSpeeds(&speeds);
             resetEvents(EV_SPEED_CHANGE);
+            motorA1.setVmax(fabs(speeds.speed1));
+            if (speeds.speed1 > 0)
+              motorA1.setTargetPos(geoA1.stepsPerRot);
+            if (speeds.speed1 < 0)
+              motorA1.setTargetPos(-geoA1.stepsPerRot);            
+
+            motorA2.setVmax(fabs(speeds.speed2));
+            if (speeds.speed2 > 0)
+              motorA2.setTargetPos(geoA2.stepsPerRot);
+            if (speeds.speed2 < 0)
+              motorA2.setTargetPos(-geoA2.stepsPerRot);
           }
           
-          motorA1.setVmax(fabs(speeds.speed1));
-          if (speeds.speed1 > 0)
-            motorA1.setTargetPos(geoA1.stepsPerRot);
-          else
-            motorA1.setTargetPos(-geoA1.stepsPerRot);            
-
-          motorA2.setVmax(fabs(speeds.speed2));
-          if (speeds.speed2 > 0)
-            motorA2.setTargetPos(geoA2.stepsPerRot);
-          else
-            motorA2.setTargetPos(-geoA2.stepsPerRot);
         }
         break;
 
@@ -248,7 +239,7 @@ void controlTask(UNUSED(void *arg))
           motorA2.setVmax(slewingSpeeds.speed2);
           motorA2.setTargetPos(axis2Target);
           setEvents(EV_SLEWING);
-          resetEvents(EV_AT_HOME);
+          resetEvents(EV_AT_HOME | EV_TRACKING);
           break;
 
         case CTL_MSG_GOTO_HOME:
@@ -261,7 +252,7 @@ void controlTask(UNUSED(void *arg))
           motorA2.setTargetPos(geoA2.homeDef);
           setEvents(EV_GOING_HOME);
           setEvents(EV_SLEWING);
-          resetEvents(EV_AT_HOME);
+          resetEvents(EV_AT_HOME | EV_TRACKING);
           break;
 
         case CTL_MSG_START_TRACKING:
@@ -381,7 +372,7 @@ void MoveAxis2AtRate(double speed, const byte dir)
   if ((parkStatus() != PRK_UNPARKED) || isSlewing())
     return;
 
-  target = mount.mP->poleDir(dir);
+  target = mount.mP->axis2Target(dir);
 
   msg[0] = CTL_MSG_MOVE_AXIS2; 
   msg[1] = target;
@@ -413,3 +404,4 @@ byte goTo(Steps *sP)
   DecayModeGoto();
   return ERRGOTO_NONE;
 }
+

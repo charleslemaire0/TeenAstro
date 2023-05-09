@@ -1,7 +1,7 @@
 #include "Global.h"
 // Method for checking limits, all checks are done in stepper cooordinates
 
-
+// axis values in steps
 bool withinLimits(long axis1, long axis2)
 {
   if (! ((geoA1.withinLimits(axis1) && geoA2.withinLimits(axis2))))

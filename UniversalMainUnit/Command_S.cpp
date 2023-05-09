@@ -351,23 +351,29 @@ void Command_SX()
     case 'G':
     {
       // :SXMGn,VVVV# Set Gear
-      int i;
+      unsigned long i;
+      bool ok = false;
       if ((command[4] == 'D' || command[4] == 'R')
-        && strlen(&command[6]) > 1 && strlen(&command[6]) < 11
-        && atoi2(&command[6], &i))
+        && strlen(&command[6]) > 1 && strlen(&command[6]) < 11)
       {
+        i = strtoul(&command[6], NULL, 10);
         if (command[4] == 'D')
         {
           StopAxis2();
-          motorA2.gear = (unsigned int)i;
-          XEEPROM.writeInt(getMountAddress(EE_motorA2gear), i);
+          motorA2.gear = i;
+          XEEPROM.writeULong(getMountAddress(EE_motorA2gear), i);
+          ok = true;
         }
         else
         {
           StopAxis1();
-          motorA1.gear = (unsigned int)i;
-          XEEPROM.writeInt(getMountAddress(EE_motorA1gear), i);
+          motorA1.gear = i;
+          XEEPROM.writeULong(getMountAddress(EE_motorA1gear), i);
+          ok = true;
         }
+      }
+      if (ok)
+      {
         updateRatios(true, true);
         replyOk();
       }

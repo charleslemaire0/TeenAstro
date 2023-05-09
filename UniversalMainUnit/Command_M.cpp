@@ -186,19 +186,20 @@ void Command_M()
   }
   case '@':
   {
-    //  :M@#   Start Spiral Search
-    //         Return 0 if failed, i if success
+    //  :M@V#   Start Spiral Search V in arcminutes
+    //         Return 0 if failed, 1 if success
     if (isSlewing() || GuidingState != GuidingOFF)
       strcpy(reply, "0");
     else
     {
+      double fov = (double)strtol(&command[2], NULL, 10) / 60.0;
+      startSpiral(fov);
       strcpy(reply, "1");
-      doSpiral = true;
     }
     break;
   }
   default:
-    replyFailed();
+    replyNothing();
     break;
   }
 }

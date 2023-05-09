@@ -84,8 +84,8 @@ void initMotors(bool deleteAlignment)
 void updateRatios(bool deleteAlignment, bool deleteHP)
 {
   cli();
-  geoA1.setstepsPerRot((long)motorA1.gear * motorA1.stepRot * (int)pow(2, motorA1.micro));
-  geoA2.setstepsPerRot((long)motorA2.gear * motorA2.stepRot * (int)pow(2, motorA2.micro));
+  geoA1.setstepsPerRot((double)motorA1.gear / 1000.0 * motorA1.stepRot * (int)pow(2, motorA1.micro));
+  geoA2.setstepsPerRot((double)motorA2.gear / 1000.0 * motorA2.stepRot * (int)pow(2, motorA2.micro));
   mount.backlashA1.inSteps = (int)round(((double)mount.backlashA1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
   mount.backlashA2.inSteps = (int)round(((double)mount.backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
   sei();

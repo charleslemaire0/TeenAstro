@@ -338,6 +338,7 @@ void Command_Q()
   case 0:
     //  :Q#    Halt all slews, stops goto
     //         Returns: Nothing
+    stopSpiral();
     stopMoving();
     break;
   case 'e':

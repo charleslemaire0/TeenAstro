@@ -219,7 +219,7 @@ void readEEPROMmotor()
 {
   mount.backlashA1.inSeconds = XEEPROM.readInt(getMountAddress(EE_backlashAxis1));
   mount.backlashA1.movedSteps = 0;
-  motorA1.gear = XEEPROM.readInt(getMountAddress(EE_motorA1gear));
+  motorA1.gear = XEEPROM.readULong(getMountAddress(EE_motorA1gear));
   motorA1.stepRot = XEEPROM.readInt(getMountAddress(EE_motorA1stepRot));
 
   motorA1.micro = XEEPROM.read(getMountAddress(EE_motorA1micro));
@@ -248,7 +248,7 @@ void readEEPROMmotor()
   motorA1.silent = XEEPROM.read(getMountAddress(EE_motorA1silent));
   mount.backlashA2.inSeconds = XEEPROM.readInt(getMountAddress(EE_backlashAxis2));
   mount.backlashA2.movedSteps = 0;
-  motorA2.gear = XEEPROM.readInt(getMountAddress(EE_motorA2gear));
+  motorA2.gear = XEEPROM.readULong(getMountAddress(EE_motorA2gear));
   motorA2.stepRot = XEEPROM.readInt(getMountAddress(EE_motorA2stepRot));
   motorA2.micro = XEEPROM.read(getMountAddress(EE_motorA2micro));
 
@@ -282,7 +282,7 @@ void writeDefaultEEPROMmotor()
 {
   // init (clear) the backlash amounts
   XEEPROM.writeInt(getMountAddress(EE_backlashAxis1), 0);
-  XEEPROM.writeInt(getMountAddress(EE_motorA1gear), 1800);
+  XEEPROM.writeLong(getMountAddress(EE_motorA1gear), 1800 * 1000);
   XEEPROM.writeInt(getMountAddress(EE_motorA1stepRot), 200);
   XEEPROM.write(getMountAddress(EE_motorA1micro), 4);
   XEEPROM.write(getMountAddress(EE_motorA1reverse), 0);
