@@ -50,32 +50,29 @@ void Command_A()
     break;
   case '2':
   {
+    bool ok = true;
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+    double Lat = *localSite.latitude();
     Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-    Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto());
-
-    if (alignment.getRefs() == 0)
-    {
-      syncAzAlt(&HO_T, GetPierSide());
-    }
-
-    double Axis1, Axis2, Axis3;
-    getInstrDeg(&Axis1, &Axis2, &Axis3);
-    alignment.addReference(HO_T.Az(), HO_T.Alt(), Axis1 * DEG_TO_RAD, Axis2 * DEG_TO_RAD);
-
+    Coord_HO HO_T = EQ_T.To_Coord_HO( Lat * DEG_TO_RAD, RefrOptForGoto());
+    //if (alignment.getRefs() == 0)
+    //{
+    //  syncAzAlt(&HO_T, GetPierSide());
+    //}
+    Coord_IN IN_T = getInstr();
+    alignment.addReference(HO_T.Az(), HO_T.Alt(), IN_T.Axis1(), IN_T.Axis2());
     if (alignment.getRefs() == 2)
     {
-      alignment.calculateThirdReference();
-      if (alignment.isReady())
+      if ( alignment.calculateThirdReference())
       {
         hasStarAlignment = true;
-        cli();
-        staA1.target = staA1.pos;
-        staA2.target = staA2.pos;
-        sei();
+      }
+      else
+      {
+        ok = false;
       }
     }
-    replyShortTrue();
+    ok ? replyShortTrue() : replyShortFalse();
     break;
   }
   case '3':
@@ -83,22 +80,15 @@ void Command_A()
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
     Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto());
-
-    if (alignment.getRefs() == 0)
-    {
-      syncAzAlt(&HO_T, GetPierSide());
-    }
-
-    double Axis1, Axis2, Axis3;
-    getInstrDeg(&Axis1, &Axis2, &Axis3);
-    alignment.addReference(HO_T.Az(), HO_T.Alt(), Axis1 * DEG_TO_RAD, Axis2 * DEG_TO_RAD);
+    //if (alignment.getRefs() == 0)
+    //{
+    //  syncAzAlt(&HO_T, GetPierSide());
+    //}
+    Coord_IN IN_T = getInstr();
+    alignment.addReference(HO_T.Az(), HO_T.Alt(), IN_T.Axis1(), IN_T.Axis2());
     if (alignment.isReady())
     {
       hasStarAlignment = true;
-      cli();
-      staA1.target = staA1.pos;
-      staA2.target = staA2.pos;
-      sei();
     }
     replyShortTrue();
     break;
@@ -183,22 +173,18 @@ void Command_C()
         double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
         Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto());
-        if (alignment.getRefs() == 0)
-        {
-          syncAzAlt(&HO_T, GetPierSide());
-        }
 
-        double Axis1, Axis2, Axis3;
-        getInstrDeg(&Axis1, &Axis2, &Axis3);
-        alignment.addReference(HO_T.Az(), HO_T.Alt(), Axis1 * DEG_TO_RAD, Axis2 * DEG_TO_RAD);
+        //if (alignment.getRefs() == 0)
+        //{
+        //  syncAzAlt(&HO_T, GetPierSide());
+        //}
+
+        Coord_IN IN_T = getInstr();
+        alignment.addReference(HO_T.Az(), HO_T.Alt(), IN_T.Axis1(), IN_T.Axis2());
 
         if (alignment.isReady())
         {
           hasStarAlignment = true;
-          cli();
-          staA1.target = staA1.pos;
-          staA2.target = staA2.pos;
-          sei();
           autoAlignmentBySync = false;
         }
       }
