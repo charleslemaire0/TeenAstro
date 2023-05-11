@@ -14,6 +14,7 @@ void PrintAtitude(double& val)
 void PrintAzimuth(double& val)
 {
   val = AzRange(val);
+
   doubleToDms(reply, &val, true, false, highPrecision);
   strcat(reply, "#");
 }
@@ -527,34 +528,9 @@ void Command_GX()
     case '3':
     {
       // :GXT3# LHA time
-
-      static unsigned long _coord_t1 = 0;
-      static double _dec1 = 0;
-      static double _ra1 = 0;
-
-      double tmpLST, f, f1;
-      tmpLST = rtk.LST();
-
-      if (millis() - _coord_t1 < 100)
-      {
-        f = _ra1;
-        f1 = _dec1;
-      }
-      else
-      {
-        Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
-        f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
-        f1 = EQ_T.Dec() * RAD_TO_DEG;
-        _ra1 = f;
-        _dec1 = f1;
-        _coord_t1 = millis();
-      }
-
-      tmpLST -= f;
-      if (tmpLST < -12)
-        tmpLST += 24;
-      else if (tmpLST > 12)
-        tmpLST -= 24;
+      double tmpLST;
+      Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
+      tmpLST = EQ_T.Ha()*RAD_TO_HOUR;
       doubleToHms(reply, &tmpLST, true);
       strcat(reply, "#");
     }
