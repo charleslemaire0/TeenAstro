@@ -17,7 +17,7 @@ PierSide getPierSide(const long &axis2)
 bool checkPole(const long &axis1, CheckMode mode)
 {
   double underPoleLimit = (mode == CHECKMODE_GOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;
-  return (axis1 > geoA1.quaterRot - underPoleLimit * 15. * geoA1.stepsPerDegree) && (axis1 < geoA1.quaterRot + underPoleLimit * 15. * geoA1.stepsPerDegree);
+  return (axis1 > geoA1.poleDef - underPoleLimit * 15. * geoA1.stepsPerDegree) && (axis1 < geoA1.poleDef + underPoleLimit * 15. * geoA1.stepsPerDegree);
 }
 
 bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
@@ -52,10 +52,10 @@ bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
   switch (_currPierSide)
   {
   case PIER_WEST:
-    if (axis1 > (12. + MinutesPastMeridianW / 60.)* 15.0 * geoA1.stepsPerDegree) ok = false;
+    if (axis1 > geoA1.poleDef + geoA1.halfRot + (MinutesPastMeridianW / 60.) * 15.0 * geoA1.stepsPerDegree) ok = false;
     break;
   case PIER_EAST:
-    if (axis1 < -MinutesPastMeridianE / 60. * 15.0 * geoA1.stepsPerDegree) ok = false;
+    if (axis1 < geoA1.poleDef - geoA1.halfRot - (MinutesPastMeridianE / 60.) * 15.0 * geoA1.stepsPerDegree) ok = false;
     break;
   default:
     ok = false;
