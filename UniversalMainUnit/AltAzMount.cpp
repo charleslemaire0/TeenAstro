@@ -169,6 +169,17 @@ void AltAzMount::getTrackingSpeeds(Speeds *sP)
 
   equ2.ha = equ.ha + trackingSpeed * (15.0 / 60.0);
   equ2.dec = equ.dec;
+
+  // if guiding, adjust targets by the angle traversed at the guide rate in one minute
+  if (getEvent(EV_GUIDING_AXIS1 | EV_WEST))
+    equ2.ha += guideRates[0];
+  if (getEvent(EV_GUIDING_AXIS1 | EV_EAST))
+    equ2.ha -= guideRates[0];
+  if (getEvent(EV_GUIDING_AXIS2 | EV_NORTH))
+    equ2.dec += guideRates[0];
+  if (getEvent(EV_GUIDING_AXIS2 | EV_SOUTH))
+    equ2.dec -= guideRates[0];
+
   EquToHor(equ2.ha, equ2.dec, false, &hor2.az, &hor2.alt, localSite.cosLat(), localSite.sinLat());
   // convert to steps
   horToAxes(&hor2, &axes2);
@@ -181,6 +192,15 @@ void AltAzMount::getTrackingSpeeds(Speeds *sP)
   // normalize to steps per clock second
   sP->speed1 = ((double) delta.steps1) / (SIDEREAL_SECOND * 60.0 * 2);
   sP->speed2 = ((double) delta.steps2) / (SIDEREAL_SECOND * 60.0 * 2);
+
+  // if needed, add spiral speeds directly to the computed speeds
+  if (getEvent(EV_SPIRAL))
+  {
+    Speeds v;
+    getSpiralSpeeds(&v);
+    sP->speed1 += v.speed1 * (geoA1.stepsPerSecond/SIDEREAL_SECOND);
+    sP->speed2 += v.speed2 * (geoA2.stepsPerSecond/SIDEREAL_SECOND);
+  }
 }
 
 

@@ -30,10 +30,10 @@ void Command_M()
         dir = (speed >= 0) ? 'n' : 's'; 
         MoveAxis2AtRate(fabs(speed), dir);
       }
-      replyOk();
+      replyShortTrue();
     }
     else
-      replyFailed();
+      replyLongUnknown();
     break;
   case 'A':
     //  :MA#   Goto the target Alt and Az
@@ -189,12 +189,12 @@ void Command_M()
     //  :M@V#   Start Spiral Search V in arcminutes
     //         Return 0 if failed, 1 if success
     if (isSlewing() || GuidingState != GuidingOFF)
-      strcpy(reply, "0");
+      replyShortFalse();
     else
     {
       double fov = (double)strtol(&command[2], NULL, 10) / 60.0;
       startSpiral(fov);
-      strcpy(reply, "1");
+      replyShortTrue();
     }
     break;
   }

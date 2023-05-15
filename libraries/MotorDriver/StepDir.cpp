@@ -218,7 +218,7 @@ void StepDir::positionMode(void)
       {
         if (newSpeed > (aMax * TICK_PERIOD_MS) / 1000) 
         {
-          newSpeed = newSpeed - (aMax * TICK_PERIOD_MS) / 1000;
+          newSpeed = newSpeed - ((double) aMax * TICK_PERIOD_MS) / 1000;
         }
         else
         {

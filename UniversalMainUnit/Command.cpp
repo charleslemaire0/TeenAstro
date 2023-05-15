@@ -41,8 +41,7 @@ void processCommands()
 #endif
 
   // Handles empty and one char replies
-  reply[0] = 0;
-  reply[1] = 0;
+  clearReply();
 
   switch (command[0])
   {
@@ -96,7 +95,7 @@ void processCommands()
     Command_W();
     break;
   default:
-    strcpy(reply, "0");
+    replyNothing();
     break;
   }
   if (strlen(reply) > 0)
@@ -111,13 +110,34 @@ void processCommands()
 }
 
 
-void replyFailed()
+void replyShortTrue()
+{
+  strcpy(reply, "1");
+}
+
+void replyLongTrue()
+{
+  strcpy(reply, "1#");
+}
+
+void replyShortFalse()
 {
   strcpy(reply, "0");
 }
-void replyOk()
+
+void replyLongFalse()
 {
-  strcpy(reply, "1");
+  strcpy(reply, "0#");
+}
+
+void replyLongUnknown()
+{
+  strcpy(reply, "#");
+}
+
+void replyValueSetShort(bool set)
+{
+  set ? replyShortTrue() : replyShortFalse();
 }
 void replyNothing()
 {

@@ -46,9 +46,9 @@ void Command_SX()
       }
     }
     if (ok)
-      replyOk();
+      replyShortTrue();
     else
-      replyFailed();
+      replyLongUnknown();
     break;
   }
   case 'r':
@@ -86,9 +86,9 @@ void Command_SX()
       break;
     }
     if (ok)
-      replyOk();
+      replyShortTrue();
     else
-      replyFailed();
+      replyLongUnknown();
     break;
   }
   case 'R':
@@ -111,16 +111,16 @@ void Command_SX()
           guideRates[i] = val;
         if (activeGuideRate == i)
           enableGuideRate(i);
-        replyOk();
+        replyShortTrue();
       }
-      else replyFailed();
+      else replyLongUnknown();
       break;
     case 'A':
       // :SXRA,VVV# Set degree for acceleration
       mount.DegreesForAcceleration = min(max(0.1 * (double)strtol(&command[5], NULL, 10), 0.1), 25.0);
       XEEPROM.write(getMountAddress(EE_degAcc), (uint8_t)(mount.DegreesForAcceleration * 10));
       SetAcceleration();
-      replyOk();
+      replyShortTrue();
       break;
     case 'D':
     {
@@ -128,52 +128,52 @@ void Command_SX()
       int val = strtol(&command[5], NULL, 10);
       val = val > 4 || val < 0 ? 3 : val;
       XEEPROM.write(getMountAddress(EE_DefaultRate), val);
-      replyOk();
+      replyShortTrue();
       break;
     }
     case 'X':
       // :SXRX,VVVV# Set Rate for max Rate
       XEEPROM.writeInt(getMountAddress(EE_maxRate), (int)strtol(&command[5], NULL, 10));
       initMaxSpeed();
-      replyOk();
+      replyShortTrue();
       break;
     case 'r':
       // :SXRr,VVVVVVVVVV# Set Rate for RA 
       siderealMode = SIDM_TARGET;
       RequestedTrackingRateHA = 1. - (double)strtol(&command[5], NULL, 10) / 10000.0;
       computeTrackingRate(true);
-      replyOk();
+      replyShortTrue();
       break;
     case 'h':
       // :SXRh,VVVVVVVVVV# Set Rate for HA
       siderealMode = SIDM_TARGET;
       RequestedTrackingRateHA = (double)strtol(&command[5], NULL, 10) / 10000.0;
       computeTrackingRate(true);
-      replyOk();
+      replyShortTrue();
       break;
     case 'd':
       // :SXRd,VVVVVVVVVV# Set Rate for DEC
       siderealMode = SIDM_TARGET;
       RequestedTrackingRateDEC = (double)strtol(&command[5], NULL, 10) / 10000.0;
       computeTrackingRate(true);
-      replyOk();
+      replyShortTrue();
       break;
     case 'e':
       // :SXRe,VVVVVVVVVV# Store Rate for RA
       lval = strtol(&command[5], NULL, 10) ;
       storedTrackingRateRA = lval < -50000 || lval > 50000 ? 0 : lval;
       XEEPROM.writeLong(getMountAddress(EE_RA_Drift), storedTrackingRateRA);
-      replyOk();
+      replyShortTrue();
       break;
     case 'f':
       // :SXRf,VVVVVVVVVV# Store Rate for DEC
       lval = strtol(&command[5], NULL, 10) ;
       storedTrackingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
       XEEPROM.writeLong(getMountAddress(EE_DEC_Drift), storedTrackingRateDEC);
-      replyOk();
+      replyShortTrue();
       break;
     default:
-      replyFailed();
+      replyLongUnknown();
       break;
     }
     break;
@@ -186,28 +186,28 @@ void Command_SX()
       i = (int)strtol(&command[5], NULL, 10);
       XEEPROM.writeInt(getMountAddress(EE_minAxis1), i);
       initLimitMinAxis1();
-      replyOk();
+      replyShortTrue();
       break;
     case 'B':
       // :SXLB,VVVV# set user defined maxAXIS1 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
       XEEPROM.writeInt(getMountAddress(EE_maxAxis1), i);
       initLimitMaxAxis1();
-      replyOk();
+      replyShortTrue();
       break;
     case 'C':
       // :SXLC,VVVV# set user defined minAXIS2 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
       XEEPROM.writeInt(getMountAddress(EE_minAxis2), i);
       initLimitMinAxis2();
-      replyOk();
+      replyShortTrue();
       break;
     case 'D':
       // :SXLD,VVVV# set user defined maxAXIS2 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
       XEEPROM.writeInt(getMountAddress(EE_maxAxis2), i);
       initLimitMaxAxis2();
-      replyOk();
+      replyShortTrue();
       break;
     case 'E':
       // :SXLE,sVV.V# set user defined Meridian East Limit
@@ -215,7 +215,7 @@ void Command_SX()
       if (limits.minutesPastMeridianGOTOE > 180) limits.minutesPastMeridianGOTOE = 180;
       if (limits.minutesPastMeridianGOTOE < -180) limits.minutesPastMeridianGOTOE = -180;
       XEEPROM.write(getMountAddress(EE_dpmE), round((limits.minutesPastMeridianGOTOE * 15.0) / 60.0) + 128);
-      replyOk();
+      replyShortTrue();
       break;
     case 'W':
       // :SXLW,sVV.V# set user defined Meridian West Limit
@@ -223,7 +223,7 @@ void Command_SX()
       if (limits.minutesPastMeridianGOTOW > 180) limits.minutesPastMeridianGOTOW = 180;
       if (limits.minutesPastMeridianGOTOW < -180) limits.minutesPastMeridianGOTOW = -180;
       XEEPROM.write(getMountAddress(EE_dpmW), round((limits.minutesPastMeridianGOTOW * 15.0) / 60.0) + 128);
-      replyOk();
+      replyShortTrue();
       break;
     case 'U':
       // :SXLU,VV# set user defined Under Pole Limit
@@ -231,7 +231,7 @@ void Command_SX()
       if (limits.underPoleLimitGOTO > 12) limits.underPoleLimitGOTO = 12;
       if (limits.underPoleLimitGOTO < 9) limits.underPoleLimitGOTO = 9;
       XEEPROM.write(getMountAddress(EE_dup), round(limits.underPoleLimitGOTO * 10.0));
-      replyOk();
+      replyShortTrue();
       break;
     case 'H':
       // :GXLH,sVV# set user defined horizon Limit
@@ -240,11 +240,11 @@ void Command_SX()
       {
         limits.minAlt = i;
         XEEPROM.write(getMountAddress(EE_minAlt), limits.minAlt + 128);
-        replyOk();
+        replyShortTrue();
       }
       else
       {
-        replyFailed();
+        replyLongUnknown();
       }
       break;
     case 'O':
@@ -254,15 +254,15 @@ void Command_SX()
       {
         limits.maxAlt = i;
         XEEPROM.write(getMountAddress(EE_maxAlt), limits.maxAlt);
-        replyOk();
+        replyShortTrue();
       }
       else
       {
-        replyFailed();
+        replyLongUnknown();
       }
     break;
     default:
-      replyFailed();
+      replyLongUnknown();
       break;
     }
     break;
@@ -278,11 +278,11 @@ void Command_SX()
       highPrecision = true;
       int h1, m1, m2, s1;
       if (!hmsToHms(&h1, &m1, &m2, &s1, &command[4], highPrecision))
-        replyFailed();
+        replyLongUnknown();
       else
       {
         rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), 0);
-        replyOk();
+        replyShortTrue();
       }
       highPrecision = i;
       break;
@@ -293,11 +293,11 @@ void Command_SX()
       //                  1 on success
       int y, m, d;
       if (!dateToYYYYMMDD(&y, &m, &d, &command[4]))
-        replyFailed();
+        replyLongUnknown();
       else
       {
         rtk.setClock(y, m, d, hour(), minute(), second(), *localSite.longitude(), 0);
-        replyOk();
+        replyShortTrue();
       }
       break;
     case '2':
@@ -309,11 +309,11 @@ void Command_SX()
       char* pEnd;
       unsigned long t = strtoul(&command[5], &pEnd, 10);
       rtk.SetFromTimeStamp(t);
-      replyOk();
+      replyShortTrue();
       break;
     }
     default:
-      replyFailed();
+      replyLongUnknown();
       break;
     }
     break;
@@ -333,7 +333,7 @@ void Command_SX()
           XEEPROM.writeInt(getMountAddress(EE_backlashAxis2), mount.backlashA2.inSeconds);
           mount.backlashA2.inSteps = (int)round(((double)mount.backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
           mount.backlashA2.movedSteps = 0;
-          replyOk();
+          replyShortTrue();
         }
         else if (command[4] == 'R')
         {
@@ -341,11 +341,11 @@ void Command_SX()
           XEEPROM.writeInt(getMountAddress(EE_backlashAxis1), mount.backlashA1.inSeconds);
           mount.backlashA1.inSteps = (int)round(((double)mount.backlashA1.inSeconds * 3600.0) / (double)geoA1.stepsPerDegree);
           mount.backlashA1.movedSteps = 0;
-          replyOk();
+          replyShortTrue();
         }
-        else replyFailed();
+        else replyLongUnknown();
       }
-      else replyFailed();
+      else replyLongUnknown();
     }
     break;
     case 'G':
@@ -375,11 +375,11 @@ void Command_SX()
       if (ok)
       {
         updateRatios(true, true);
-        replyOk();
+        replyShortTrue();
       }
       else
       {
-        replyFailed();
+        replyLongUnknown();
       }
     }
     break;
@@ -404,11 +404,11 @@ void Command_SX()
           XEEPROM.writeInt(getMountAddress(EE_motorA1stepRot), i);
         }
         updateRatios(true, true);
-        replyOk();
+        replyShortTrue();
       }
       else
       {
-        replyFailed();
+        replyLongUnknown();
       }
     }
     break;
@@ -437,11 +437,11 @@ void Command_SX()
           XEEPROM.write(getMountAddress(EE_motorA1micro), motorA1.micro);
         }
         updateRatios(true, false);
-        replyOk();
+        replyShortTrue();
       }
       else 
       {
-        replyFailed();
+        replyLongUnknown();
       }
     }
     break;
@@ -463,11 +463,11 @@ void Command_SX()
         {
           XEEPROM.write(getMountAddress(EE_motorA1silent), i);
         }
-        replyOk();
+        replyShortTrue();
       }
       else 
       {
-        replyFailed();
+        replyLongUnknown();
       }
     }
     break;
@@ -488,11 +488,11 @@ void Command_SX()
           motorA1.reverse = command[6] == '1' ? true : false;
           XEEPROM.write(getMountAddress(EE_motorA1reverse), motorA1.reverse);
         }
-        replyOk();
+        replyShortTrue();
       }
       else
       {
-        replyFailed();
+        replyLongUnknown();
       }
     }
     break;
@@ -537,9 +537,9 @@ void Command_SX()
           }
         }
         if (ok)
-        	replyOk();
+        	replyShortTrue();
         else
-        	replyFailed();
+        	replyLongUnknown();
       }
       else 
       {
@@ -563,11 +563,11 @@ void Command_SX()
       {
         currentMount = i;
         XEEPROM.write(EE_currentMount, currentMount);
-        replyOk();
+        replyShortTrue();
         reboot_unit = true;
       }
       else
-        replyFailed();
+        replyLongUnknown();
     }
     break;
     case 'A':
@@ -585,17 +585,17 @@ void Command_SX()
       {
         memcpy(mountNames[i], &command[5], MountNameLen * sizeof(char));
         XEEPROM.writeString(getMountAddress(EE_mountName, i), mountNames[i], MountNameLen);
-        replyOk();
+        replyShortTrue();
       }
       else
-        replyFailed();
+        replyLongUnknown();
       break;
     }
     break;
     }
     break;
   default:
-    replyFailed();
+    replyLongUnknown();
     break;    
   }
 }
@@ -615,7 +615,7 @@ void Command_S(Command& process_command)
       XEEPROM.write(getMountAddress(EE_mountType), i);
       HAL_reboot();
     }
-    else replyFailed();
+    else replyLongUnknown();
     break;
   case 'a':
     //  :SasDD*MM#
@@ -623,8 +623,8 @@ void Command_S(Command& process_command)
     //         Native LX200
     //         Returns:
     //         0 if Object is within slew range, 1 otherwise
-    if (dmsToDouble(&newTargetAlt, &command[2], true, highPrecision)) replyOk();
-    else replyFailed();
+    if (dmsToDouble(&newTargetAlt, &command[2], true, highPrecision)) replyShortTrue();
+    else replyLongUnknown();
     break;
   case 'B':
     //  :SBn#  Set Baud Rate n for Serial-0, where n is an ASCII digit (1..9) with the following interpertation
@@ -645,9 +645,9 @@ void Command_S(Command& process_command)
         delay(20);
         Serial1.begin(baudRate[i]);
       }
-      replyOk();
+      replyShortTrue();
     }
-    else replyFailed();
+    else replyLongUnknown();
     break;
   case 'C':
     //  :SCMM/DD/YY#
@@ -655,11 +655,11 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
     int y, m, d;
-    if (!dateToYYYYMMDD(&y, &m, &d, &command[2])) replyFailed();
+    if (!dateToYYYYMMDD(&y, &m, &d, &command[2])) replyLongUnknown();
     else
     {
       rtk.setClock(y, m, d, hour(), minute(), second(), *localSite.longitude(), 0);
-      replyOk();
+      replyShortTrue();
     }
     break;
   case 'e':
@@ -669,18 +669,18 @@ void Command_S(Command& process_command)
     //                  1 on success
     if (atoi2(&command[2], &i))
     {
-      if (localSite.setElev(i)) replyOk();
-      else replyFailed();
+      if (localSite.setElev(i)) replyShortTrue();
+      else replyLongUnknown();
     }
-    else replyFailed();
+    else replyLongUnknown();
     break;
   case 'd':
     //  :SdsDD*MM#
     //          Set target object declination to sDD*MM or sDD*MM:SS depending on the current precision setting
     //          Return: 0 on failure
     //                  1 on success
-    if (dmsToDouble(&newTargetDec, &command[2], true, highPrecision)) replyOk();
-    else replyFailed();
+    if (dmsToDouble(&newTargetDec, &command[2], true, highPrecision)) replyShortTrue();
+    else replyLongUnknown();
     break;
   case 'g':
     //  :SgsDDD*MM# or :SgDDD*MM# or :SgsDDD:MM:SS# or SgDDD:MM:ss#
@@ -697,9 +697,9 @@ void Command_S(Command& process_command)
       if (command[2] == '-') longi = -longi;
       localSite.setLong(longi);
       rtk.resetLongitude(*localSite.longitude());
-      replyOk();
+      replyShortTrue();
     }
-    else replyFailed();
+    else replyLongUnknown();
   }
   break;
   //  :SG[sHH.H]#
@@ -713,9 +713,9 @@ void Command_S(Command& process_command)
       (f >= -12 && f <= 12.0))
     {
       localSite.setToff(f);
-      replyOk();
+      replyShortTrue();
     }
-    else replyFailed();
+    else replyLongUnknown();
   }
   break;
   case 'h':
@@ -726,7 +726,7 @@ void Command_S(Command& process_command)
   {
     if ((command[2] == 0) || (strlen(&command[2]) > 3))
     {
-      replyFailed();
+      replyLongUnknown();
       return;
     }
 
@@ -734,9 +734,9 @@ void Command_S(Command& process_command)
     {
       limits.minAlt = i;
       XEEPROM.write(getMountAddress(EE_minAlt), limits.minAlt + 128);
-      replyOk();
+      replyShortTrue();
     }
-    else replyFailed();
+    else replyLongUnknown();
   }
   break;
   case 'L':
@@ -751,9 +751,9 @@ void Command_S(Command& process_command)
     if (hmsToHms(&h1, &m1, &m2, &s1, &command[2], highPrecision))
     {
       rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), *localSite.toff());
-      replyOk();
+      replyShortTrue();
     }
-    else replyFailed();
+    else replyLongUnknown();
     highPrecision = i;
   }
   break;
@@ -771,9 +771,9 @@ void Command_S(Command& process_command)
     i = command[1] - 'M';
     if (strlen(&command[2]))
       XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, &command[2], SiteNameLen) ?
-      replyOk() : replyFailed();
+      replyShortTrue() : replyLongUnknown();
     else
-      replyFailed();
+      replyLongUnknown();
     break;
   case 'm':
     if ((command[2] != 0) && (strlen(&command[2]) < 2))
@@ -781,14 +781,14 @@ void Command_S(Command& process_command)
       if (command[2] == 'N')
       {
         newTargetPierSide = PIER_NOTVALID;
-        replyOk();
+        replyShortTrue();
       }
       else if (command[2] == 'E')
       {
         if (mount.mP->GetPierSide() == PIER_WEST)
         {
           newTargetPierSide = PIER_EAST;
-          replyOk();
+          replyShortTrue();
         }
       }
       else if (command[2] == 'W')
@@ -796,18 +796,18 @@ void Command_S(Command& process_command)
         if (mount.mP->GetPierSide() == PIER_EAST)
         {
           newTargetPierSide = PIER_WEST;
-          replyOk();
+          replyShortTrue();
         }
       }
-      else replyFailed();
+      else replyLongUnknown();
     }
-    else replyFailed();
+    else replyLongUnknown();
     break;
   case 'n':
     if (strlen(&command[2]))
-      localSite.setSiteName(&command[2]) ? replyOk() : replyFailed();
+      localSite.setSiteName(&command[2]) ? replyShortTrue() : replyLongUnknown();
     else
-      replyFailed();
+      replyLongUnknown();
     break;
   case 'o':
     //  :SoDD#
@@ -820,11 +820,11 @@ void Command_S(Command& process_command)
       {
         limits.maxAlt = i;
         XEEPROM.write(getMountAddress(EE_maxAlt), limits.maxAlt);
-        replyOk();
+        replyShortTrue();
       }
-      else replyFailed();
+      else replyLongUnknown();
     }
-    else replyFailed();
+    else replyLongUnknown();
     break;
   case 'r':
     //  :SrHH:MM.T#
@@ -835,9 +835,9 @@ void Command_S(Command& process_command)
     if (hmsToDouble(&newTargetRA, &command[2], highPrecision))
     {
       newTargetRA *= 15.0;
-      replyOk();
+      replyShortTrue();
     }
-    else replyFailed();
+    else replyLongUnknown();
     break;
   case 't':
     //  :StsDD*MM# or :StsDD:MM:SS#
@@ -855,9 +855,9 @@ void Command_S(Command& process_command)
       initHome();
       initTransformation(true);
       syncAtHome();
-      replyOk();
+      replyShortTrue();
     }
-    else replyFailed();
+    else replyLongUnknown();
     highPrecision = i;
     break;
   case 'T':
@@ -879,18 +879,18 @@ void Command_S(Command& process_command)
           RequestedTrackingRateHA = (f / 60.0) / 1.00273790935;
           // todo apply rate
         }
-        replyOk();
+        replyShortTrue();
       }
-      else replyFailed();
+      else replyLongUnknown();
     }
-    else replyFailed();
+    else replyLongUnknown();
     break;
   case 'U':
     // :SU# store current User defined Position
     mount.mP->getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
     XEEPROM.writeFloat(getMountAddress(EE_RA), (float)f);
     XEEPROM.writeFloat(getMountAddress(EE_DEC), (float)f1);
-    replyOk();
+    replyShortTrue();
     break;
   case 'X':
   	Command_SX();
@@ -900,11 +900,11 @@ void Command_S(Command& process_command)
     //          Sets the target Object Azimuth
     //          Return: 0 on failure
     //                  1 on success
-    if (dmsToDouble(&newTargetAzm, &command[2], false, highPrecision)) replyOk();
-    else replyFailed();// "1" BUGS ELSEWHERE???
+    if (dmsToDouble(&newTargetAzm, &command[2], false, highPrecision)) replyShortTrue();
+    else replyLongUnknown();// "1" BUGS ELSEWHERE???
     break;
   default:
-    replyFailed();
+    replyLongUnknown();
     break;
   }
 }

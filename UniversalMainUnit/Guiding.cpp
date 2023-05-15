@@ -250,6 +250,7 @@ void stopSpiral(void)
   resetEvents(EV_SPIRAL);  
 }
 
+// speeds are in multiple of sidereal
 void getSpiralSpeeds(Speeds *vP)
 {
   xSemaphoreTake(swMutex, portMAX_DELAY); 

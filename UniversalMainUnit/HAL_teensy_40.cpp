@@ -7,6 +7,8 @@ void HAL_preInit(void)
 {
   Serial.begin(BAUD);
   S_USB.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
+//  pinMode(SPI_MOSI, OUTPUT);
+//  pinMode(SPI_MISO, INPUT);
 }
 
 void HAL_initSerial(void)

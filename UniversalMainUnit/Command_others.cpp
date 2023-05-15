@@ -12,14 +12,14 @@ void Command_dollar()
     break;
   case '!':
     reboot_unit = true;
-    replyOk();
+    replyShortTrue();
     break;
   case 'X':
     initMotors(true);
-    replyOk();
+    replyShortTrue();
     break;
   default:
-    replyFailed();
+    replyNothing();
     break;
   }
 }
@@ -44,7 +44,7 @@ void Command_A()
     delay(10);
     startTracking();
     lastSetTrackingEnable = millis();
-    replyOk();
+    replyShortTrue();
     break;
   case '2':
   {
@@ -72,7 +72,7 @@ void Command_A()
         motorA2.setTargetPos(motorA2.getCurrentPos());
       }
     }
-    replyOk();
+    replyShortTrue();
     break;
   }
   case '3':
@@ -95,7 +95,7 @@ void Command_A()
       motorA1.setTargetPos(motorA1.getCurrentPos());
       motorA2.setTargetPos(motorA2.getCurrentPos());
     }
-    replyOk();
+    replyShortTrue();
     break;
   }
   case 'C':
@@ -103,14 +103,14 @@ void Command_A()
     initTransformation(true);
     syncAtHome();
     autoAlignmentBySync = command[1] == 'A';
-    replyOk();
+    replyShortTrue();
     break;
   case 'W':
     saveAlignModel();
-    replyOk();
+    replyShortTrue();
     break;
   default:
-    replyFailed();
+    replyLongUnknown();
   }
 }
 
@@ -234,7 +234,7 @@ void Command_D()
 {
   if (command[1] != 0)
   {
-    replyFailed();
+    replyShortFalse();
     return;
   }
     
@@ -245,7 +245,7 @@ void Command_D()
   }
   else
   {
-    reply[0] = 0;
+    replyNothing();
   }
   strcat(reply, "#");
 }
@@ -267,16 +267,16 @@ void Command_h()
     //          Return: 0 on failure
     //                  1 on success
     if (!goHome())
-      replyFailed();
+      replyShortFalse();
     else
-      replyOk();
+      replyShortTrue();
     break;
   case 'B':
     //  :hB#   Set the home position
     //          Return: 0 on failure
     //                  1 on success
-    if (!setHome()) replyFailed();
-    else replyOk();
+    if (!setHome()) replyLongUnknown();
+    else replyShortTrue();
     break;
   case 'b':
     //  :hb#   Reset the home position
@@ -285,46 +285,46 @@ void Command_h()
     homeSaved = false;
     XEEPROM.write(getMountAddress(EE_homeSaved), false);
     initHome();
-    replyOk();
+    replyShortTrue();
     break;
   case 'O':
     // : hO#   Reset telescope at the Park position if Park position is stored.
     //          Return: 0 on failure
     //                  1 on success
     if (!syncAtPark())
-      replyFailed();
+      replyShortFalse();
     else
-      replyOk();
+      replyShortTrue();
     break;
   case 'P':
     // : hP#   Goto the Park Position
     //          Return: 0 on failure
     //                  1 on success
     if (park())
-      replyFailed();
+      replyShortFalse();
     else
-      replyOk();
+      replyShortTrue();
     break;
   case 'Q':
     //  :hQ#   Set the park position
     //          Return: 0 on failure
     //                  1 on success
     if (!setPark())
-      replyFailed();
+      replyShortFalse();
     else
-      replyOk();
+      replyShortTrue();
     break;
   case 'R':
     //  :hR#   Restore parked telescope to operation
     //          Return: 0 on failure
     //                  1 on success
     unpark();
-    replyOk();
+    replyShortTrue();
     break;
 
 
   default:
-    replyFailed();
+    replyLongUnknown();
     break;
   }
 }
@@ -354,7 +354,7 @@ void Command_Q()
         StopAxis2();
     break;
   default:
-    replyFailed();
+    replyLongUnknown();
     break;
   }
 }
@@ -393,7 +393,7 @@ void Command_R()
     i = command[1] - '0';
     break;
   default:
-    replyFailed();
+    replyLongUnknown();
     return;
   }
   if (!isSlewing() && GuidingState == GuidingOFF)
@@ -426,38 +426,38 @@ void Command_T()
   {
   case '+':
     siderealClockSpeed -= HzCf * (0.02);
-    reply[0] = 0;
+    replyNothing();
     break;
   case '-':
     siderealClockSpeed += HzCf * (0.02);
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'S':
     // solar tracking rate 60Hz
     mount.mP->setTrackingSpeed(TrackingSolar);
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'L':
     // lunar tracking rate 57.9Hz
     mount.mP->setTrackingSpeed(TrackingLunar);
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'Q':
     // sidereal tracking rate
     mount.mP->setTrackingSpeed(TrackingStar);
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'R':
     // reset master sidereal clock interval
     siderealClockSpeed = mastersiderealClockSpeed;
     mount.mP->setTrackingSpeed(TrackingStar);
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'T':
     //set Target tracking rate
 //    SetTrackingRate(1.0 - (double)storedTrackingRateRA / 10000.0, (double)storedTrackingRateDEC / 10000.0);
 //    siderealMode = SIDM_TARGET;
-    reply[0] = 0;
+    replyNothing();
     break;
   case 'e':
     if (parkStatus() == PRK_UNPARKED)
@@ -466,19 +466,19 @@ void Command_T()
 //     atHome = false;
       startTracking();
 //      computeTrackingRate(true);
-      replyOk();
+      replyShortTrue();
     }
     else
-      replyFailed();
+      replyLongUnknown();
     break;
   case 'd':
     if (parkStatus() == PRK_UNPARKED)
     {
       stopTracking();
-      replyOk();
+      replyShortTrue();
     }
     else
-      replyFailed();
+      replyLongUnknown();
     break;
 #if 0
   case '0':
@@ -486,25 +486,25 @@ void Command_T()
     tc = TC_NONE;
     computeTrackingRate(true);
     XEEPROM.write(getMountAddress(EE_TC_Axis), 0);
-    replyOk();
+    replyShortTrue();
     break;
   case '1':
     // turn compensation RA only
     tc = TC_RA;
     computeTrackingRate(true);
     XEEPROM.write(getMountAddress(EE_TC_Axis), 0);
-    replyOk();
+    replyShortTrue();
     break;
   case '2':
     // turn compensation BOTH
     tc = TC_BOTH;
     computeTrackingRate(true);
     XEEPROM.write(getMountAddress(EE_TC_Axis), 2);
-    replyOk();
+    replyShortTrue();
     break;
 #endif
   default:
-    replyFailed();
+    replyLongUnknown();
     break;
   }
 
@@ -526,10 +526,10 @@ void Command_U()
   if (command[1] == 0)
   {
     highPrecision = !highPrecision;
-    reply[0] = 0;
+    replyNothing();
   }
   else
-    replyFailed();
+    replyLongUnknown();
 }
 
 //   W - Site Select/Site get
@@ -552,14 +552,14 @@ void Command_W()
     initHome();
     initTransformation(true);
     syncAtHome();
-    reply[0] = 0;
+    replyNothing();
     break;
   }
   case '?':
     sprintf(reply, "%d#", currentSite);
     break;
   default:
-    replyFailed();
+    replyNothing();
     break;
   }
 }

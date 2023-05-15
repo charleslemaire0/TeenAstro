@@ -19,4 +19,6 @@ public:
 	void resetAbort(void);
 	void initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t mtx);
   void initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned timerId); 
+  void setRatios(long f);
+  double speedRatio, accelRatio;
 };
