@@ -65,6 +65,10 @@ void Command_A()
     {
       if ( alignment.calculateThirdReference())
       {
+        //cli();
+        //staA1.target = staA1.pos;
+        //staA2.target = staA2.pos;
+        //sei();
         hasStarAlignment = true;
       }
       else

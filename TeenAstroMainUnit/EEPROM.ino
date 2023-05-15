@@ -253,11 +253,11 @@ void initTransformation(bool reset)
       }
       Coord_HO HO1 = Coord_HO(0, 45 * DEG_TO_RAD, 90 * DEG_TO_RAD, false);
       Coord_EQ EQ1 = HO1.To_Coord_EQ(Lat);
-      Coord_IN IN1 = Coord_IN(EQ1.FrE(), EQ1.Dec(), EQ1.Ha() );
+      Coord_IN IN1 = Coord_IN(0, EQ1.Dec(), EQ1.Ha() + M_PI);
 
       Coord_HO HO2 = Coord_HO(0, 45 * DEG_TO_RAD, 270 * DEG_TO_RAD, false);
       Coord_EQ EQ2 = HO2.To_Coord_EQ(Lat);
-      Coord_IN IN2 = Coord_IN(EQ2.FrE(), EQ2.Dec(), EQ2.Ha());
+      Coord_IN IN2 = Coord_IN(0, EQ2.Dec(), EQ2.Ha() + M_PI);
 
       alignment.addReference(HO1.Az(), HO1.Alt(), IN1.Axis1(), IN1.Axis2());
       alignment.addReference(HO2.Az(), HO2.Alt(), IN2.Axis1(), IN2.Axis2());
@@ -281,9 +281,9 @@ void initCelestialPole()
   {
     if (mountType == MOUNT_TYPE_GEM)
     {
-      geoA1.poleDef = geoA1.quaterRot;
-      geoA1.LimMinAxis = -90;
-      geoA1.LimMaxAxis = 270;
+      geoA1.poleDef = -geoA1.quaterRot;
+      geoA1.LimMinAxis = -270;
+      geoA1.LimMaxAxis = 90;
     }
     else
     {

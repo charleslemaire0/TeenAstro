@@ -151,11 +151,11 @@ void Command_GX()
     {
 #if HASEncoder
       Coord_HO HO_T = getHorETopo();
-      f = HO_T.Az() * RAD_TO_DEG;
+      f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
       f1 = HO_T.Alt() * RAD_TO_DEG;
 #else
       Coord_HO HO_T = getHorTopo();
-      f = HO_T.Az() * RAD_TO_DEG;
+      f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
       f1 = HO_T.Alt() * RAD_TO_DEG;
 #endif // HASEncoder
       command[3] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
@@ -930,7 +930,7 @@ void  Command_G()
     }
     else if (command[1] == 'Z')
     {
-      f = HO_T.Az() * RAD_TO_DEG;
+      f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
       PrintAzimuth(f);
     }
     else

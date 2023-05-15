@@ -8,7 +8,7 @@ const double Lat[1] = { 0.88660302 };
 const double Ha[1] = { -0.69112174 };
 const double Dec[1] = { 0.14718022 };
 const double RotE[1] = { random(-180, 180)*DEG_TO_RAD };
-const double T_Az[1] = { -0.902320657 + M_PI};
+const double T_Az[1] = { -0.902320657 };
 const double T_Alt[1] = { 0.63775167 };
 
 

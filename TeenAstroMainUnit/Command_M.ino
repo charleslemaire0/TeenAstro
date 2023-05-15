@@ -253,7 +253,7 @@ void Command_M()
       strcpy(reply, "!");
       break;
     }
-    Coord_IN instr_T = HO_T.To_Coord_IN(alignment.T);
+    Coord_IN instr_T = HO_T.To_Coord_IN(alignment.Tinv);
     axis1angle = instr_T.Axis1() * RAD_TO_DEG;
     axis2angle = instr_T.Axis2() * RAD_TO_DEG;
     bool ok = predictTarget(axis1angle, axis2angle, GetPierSide(), axis1step, axis2step,predictedSide);

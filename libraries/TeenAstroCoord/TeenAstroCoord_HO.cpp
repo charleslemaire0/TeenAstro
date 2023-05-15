@@ -34,14 +34,13 @@ Coord_EQ Coord_HO::To_Coord_EQ(double Lat)
 {
   double fre, dec, ha;
   double tmp[3][3];
-  LA3::SingleRotation rots[5] = {
+  LA3::SingleRotation rots[4] = {
     m_Eulers[0],
     m_Eulers[1],
     m_Eulers[2],
-    {LA3::RotAxis::ROTAXISZ, M_PI },
     {LA3::RotAxis::ROTAXISY, -(M_PI_2 - Lat)}
   };
-  LA3::getMultipleRotationMatrix(tmp, rots, 5);
+  LA3::getMultipleRotationMatrix(tmp, rots, 4);
   LA3::getEulerRxRyRz(tmp, fre, dec, ha);
   return Coord_EQ(fre, dec, ha);
 };

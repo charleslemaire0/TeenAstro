@@ -14,7 +14,7 @@ byte PushToHor(Coord_HO HO_T, PierSide preferedPierSide, float* deltaA1, float* 
   if (HO_T.Alt() < minAlt * DEG_TO_RAD) return ERRGOTO_BELOWHORIZON;   // fail, below min altitude
   if (HO_T.Alt() > maxAlt * DEG_TO_RAD) return ERRGOTO_ABOVEOVERHEAD;   // fail, above max altitude
 
-  Coord_IN instr_T = HO_T.To_Coord_IN(alignment.T);
+  Coord_IN instr_T = HO_T.To_Coord_IN(alignment.Tinv);
   Axis1_target = instr_T.Axis1() * RAD_TO_DEG;
   Axis2_target = instr_T.Axis2() * RAD_TO_DEG;
 
