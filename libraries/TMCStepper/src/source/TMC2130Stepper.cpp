@@ -114,6 +114,7 @@ uint32_t TMC2130Stepper::read(uint8_t addressByte) {
   }
 
   switchCSpin(HIGH);
+  delayMicroseconds(1);
   switchCSpin(LOW);
 
   // Shift data from target link into the last one...
