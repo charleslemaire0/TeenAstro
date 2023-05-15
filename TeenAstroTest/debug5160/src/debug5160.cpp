@@ -4,16 +4,6 @@
  * Used code from Teemu Mäntykallio
  * Initializes the library and runs motor commands
  */
-
-#include "TMCStepper.h"
-#include "MotionControl.h"
-#include "StepDir.h"
-#include "Mc5160.h"
-#include "MotorDriver.h"
-
-#define MAX_CMD_SIZE 50
-#define MAX_ARG_SIZE 20
-
 #ifdef __ESP32__
 #define Axis1CSPin      5
 #define Axis1DirPin     26
@@ -36,9 +26,31 @@
 #define Axis1DirPin     2
 #define Axis1StepPin    22
 #define Axis1EnablePin  3
+
+#define Axis2CSPin      10
+#define Axis2DirPin     4
+#define Axis2StepPin    20 
+#define Axis2EnablePin  5
+
 #define ISR(f)  void f(void)
 #define PORT Serial
+#include "arduino_freertos.h"
+#include "avr/pgmspace.h"
+#include "queue.h"
+#include "event_groups.h"
+#include "semphr.h"
+#include "timers.h"
 #endif
+
+#include "TMCStepper.h"
+#include "MotionControl.h"
+#include "StepDir.h"
+#include "Mc5160.h"
+#include "MotorDriver.h"
+
+#define MAX_CMD_SIZE 50
+#define MAX_ARG_SIZE 20
+
 
 
 MotorDriver motorA1;
@@ -222,6 +234,12 @@ void custom(char *arg1, char *arg2)
   PORT.printf("Initialized custom parameters: current=%d micro=%d amax=%d vmax=%d\n", current, micro, amax, vmax);
 }
 
+void reset(char *arg1, char *arg2)
+{
+  motorA1.drvP->reset();
+  PORT.printf("Driver reset\n");
+}
+
 
 void stop(char *arg1, char *arg2)
 {
@@ -231,13 +249,29 @@ void stop(char *arg1, char *arg2)
 void init(char *arg1, char *arg2)
 {
  	pinMode(Axis1CSPin, OUTPUT);
-// 	pinMode(Axis1EnablePin, OUTPUT);
+ 	pinMode(Axis1EnablePin, OUTPUT);
+  pinMode(Axis1StepPin, OUTPUT);
+  pinMode(Axis1DirPin, OUTPUT);
+
+//  pinMode(Axis2CSPin, OUTPUT);
+//  pinMode(Axis2EnablePin, OUTPUT);
+//  pinMode(Axis2StepPin, OUTPUT);
+//  pinMode(Axis2DirPin, OUTPUT);
+
+  digitalWrite(Axis1EnablePin, HIGH); //deactivate driver (LOW active)
+
   SPI.begin();
+#ifdef __arm__
+//  pinMode(SPI_MOSI, OUTPUT);
+//  pinMode(MISO, INPUT_PULLUP);
+#endif  
+
 
   hwMutex = xSemaphoreCreateMutex();  // hardware accesses (ie SPI etc.)
 
   // Generic initialization (works for both types)
   motorA1.init(Axis1CSPin, hwMutex);
+  motorA1.drvP->setSPISpeed(4000000);
 
   unsigned version = motorA1.drvP->version();
   PORT.printf("TMC version %03x\n", version);
@@ -276,6 +310,7 @@ typedef struct
 CMD_STRUCT Commands[] = 
 {
   {"init",   &init,          "Initialize"},
+  {"reset",  &reset,         "Reset"},
   {"custom", &custom,        "Custom"},
   {"get",    &get,           "Get parameter"},
   {"set",    &set,           "Set parameter"},
@@ -315,7 +350,7 @@ bool parseCmd(const char *str, CMD_STRUCT **cmdP, char *arg1, char *arg2)
     strcpy(cmd, str);       // copy whole string
   }
 
-  for (int i=0;i<NUM_COMMANDS;i++)
+  for (unsigned i=0;i<NUM_COMMANDS;i++)
   {
     if (!strcmp(cmd, Commands[i].verb))
     {
