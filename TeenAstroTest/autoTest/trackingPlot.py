@@ -164,12 +164,12 @@ class trackingPlot():
         self.sp2 = np.append(self.sp2, sp2)
 
         # update text boxes
-        self.window['axis1_degrees'].Update('{0:4.2f}'.format(axis1)) 
-        self.window['axis2_degrees'].Update('{0:4.2f}'.format(axis2)) 
+        self.window['axis1_degrees'].Update('{0:4.4f}'.format(axis1)) 
+        self.window['axis2_degrees'].Update('{0:4.4f}'.format(axis2)) 
         self.window['axis1_steps'].Update(self.ta.getAxis1Steps()) 
         self.window['axis2_steps'].Update(self.ta.getAxis2Steps()) 
-        self.window['axis1_speed'].Update('{0:4.2f}'.format(sp1)) 
-        self.window['axis2_speed'].Update('{0:4.2f}'.format(sp2)) 
+        self.window['axis1_speed'].Update('{0:4.4f}'.format(sp1)) 
+        self.window['axis2_speed'].Update('{0:4.4f}'.format(sp2)) 
 
         try:
             ra_rate =  (self.ra[-1] - self.ra[-10]) / 10
@@ -223,16 +223,16 @@ class trackingPlot():
                 self.state = 'IDLE'
 
         if (ev == 'GuideN'):
-            self.ta.guideCmd('n',200)
+            self.ta.guideCmd('n',50)
 
         if (ev == 'GuideS'):
-            self.ta.guideCmd('s',200)
+            self.ta.guideCmd('s',50)
 
         if (ev == 'GuideE'):
-            self.ta.guideCmd('e',200)
+            self.ta.guideCmd('e',50)
 
         if (ev == 'GuideW'):
-            self.ta.guideCmd('w',200)
+            self.ta.guideCmd('w',50)
 
         if (ev == 'spiral'):
             self.ta.spiral(10)
