@@ -5,9 +5,9 @@ void StepToAngle(long Axis1, long Axis2, double* AngleAxis1, double* AngleAxis2,
   InsrtAngle2Angle(AngleAxis1, AngleAxis2, Side);
 }
 
-void Angle2Step(double AngleAxis1, double AngleAxis2, PierSide Side, long* Axis1, long* Axis2)
+void Angle2Step(double AngleAxis1, double AngleAxis2, PierSide Side, const double poleAxis1, long* Axis1, long* Axis2)
 {
-  Angle2InsrtAngle(Side, &AngleAxis1, &AngleAxis2, localSite.latitude());
+  Angle2InsrtAngle(Side, &AngleAxis1, &AngleAxis2, localSite.latitude(), poleAxis1);
   *Axis1 = (long)(AngleAxis1 * geoA1.stepsPerDegree);
   *Axis2 = (long)(AngleAxis2 * geoA2.stepsPerDegree);
 }
@@ -20,7 +20,7 @@ void Angle2Step(double AngleAxis1, double AngleAxis2, PierSide Side, long* Axis1
 bool SyncInstr(Coord_IN* instr, PierSide Side)
 {
   long axis1, axis2 = 0;
-  Angle2Step(instr->Axis1() * RAD_TO_DEG, instr->Axis2() * RAD_TO_DEG, Side, &axis1, &axis2);
+  Angle2Step(instr->Axis1() * RAD_TO_DEG, instr->Axis2() * RAD_TO_DEG, Side, geoA1.poleDef, &axis1, &axis2);
   cli();
   staA1.pos = axis1;
   staA2.pos = axis2;
@@ -272,7 +272,7 @@ bool predictTarget(const double& Axis1_in, const double& Axis2_in, const PierSid
   double Axis1 = Axis1_in;
   double Axis2 = Axis2_in;
   outputSide = inputSide;
-  Angle2InsrtAngle(outputSide, &Axis1, &Axis2, localSite.latitude());
+  Angle2InsrtAngle(outputSide, &Axis1, &Axis2, localSite.latitude(), geoA1.poleDef);
   Axis1_out = Axis1 * geoA1.stepsPerDegree;
   Axis2_out = Axis2 * geoA2.stepsPerDegree;
   if (withinLimit(Axis1_out, Axis2_out))
@@ -284,7 +284,7 @@ bool predictTarget(const double& Axis1_in, const double& Axis2_in, const PierSid
     double Axis1 = Axis1_in;
     double Axis2 = Axis2_in;
     if (inputSide == PIER_EAST) outputSide = PIER_WEST; else outputSide = PIER_EAST;
-    Angle2InsrtAngle(outputSide, &Axis1, &Axis2, localSite.latitude());
+    Angle2InsrtAngle(outputSide, &Axis1, &Axis2, localSite.latitude(), geoA1.poleDef);
     Axis1_out = Axis1 * geoA1.stepsPerDegree;
     Axis2_out = Axis2 * geoA2.stepsPerDegree;
     if (withinLimit(Axis1_out, Axis2_out))

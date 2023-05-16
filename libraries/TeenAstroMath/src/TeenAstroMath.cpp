@@ -181,7 +181,7 @@ void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side)
   else
     *Side = PierSide::PIER_EAST;
 }
-void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2, const double *Lat)
+void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2, const double *Lat, const double poleAxis1 )
 {
   if (Side >= PIER_WEST)
   {
@@ -190,8 +190,9 @@ void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2, con
       *AngleAxis2 = (90. - *AngleAxis2) + 90.;
     else
       *AngleAxis2 = (-90. - *AngleAxis2) - 90.;
-    *AngleAxis1 = *AngleAxis1 + 180.;
+    *AngleAxis1 = poleAxis1 < 0  ? *AngleAxis1 - 180. : *AngleAxis1 + 180.;
   }
+
 }
 
 long distStepAxis1(long* start, long* end)
