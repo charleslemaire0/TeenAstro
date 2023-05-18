@@ -55,20 +55,20 @@ void Command_A()
     double Lat = *localSite.latitude();
     Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
     Coord_HO HO_T = EQ_T.To_Coord_HO( Lat * DEG_TO_RAD, RefrOptForGoto());
-    //if (alignment.getRefs() == 0)
-    //{
-    //  syncAzAlt(&HO_T, GetPierSide());
-    //}
+    if (alignment.getRefs() == 0)
+    {
+      syncAzAlt(&HO_T, GetPierSide());
+    }
     Coord_IN IN_T = getInstr();
     alignment.addReference(HO_T.Az(), HO_T.Alt(), IN_T.Axis1(), IN_T.Axis2());
     if (alignment.getRefs() == 2)
     {
       if ( alignment.calculateThirdReference())
       {
-        //cli();
-        //staA1.target = staA1.pos;
-        //staA2.target = staA2.pos;
-        //sei();
+        cli();
+        staA1.target = staA1.pos;
+        staA2.target = staA2.pos;
+        sei();
         hasStarAlignment = true;
       }
       else
@@ -84,14 +84,18 @@ void Command_A()
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
     Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto());
-    //if (alignment.getRefs() == 0)
-    //{
-    //  syncAzAlt(&HO_T, GetPierSide());
-    //}
+    if (alignment.getRefs() == 0)
+    {
+      syncAzAlt(&HO_T, GetPierSide());
+    }
     Coord_IN IN_T = getInstr();
     alignment.addReference(HO_T.Az(), HO_T.Alt(), IN_T.Axis1(), IN_T.Axis2());
     if (alignment.isReady())
     {
+      cli();
+      staA1.target = staA1.pos;
+      staA2.target = staA2.pos;
+      sei();
       hasStarAlignment = true;
     }
     replyShortTrue();
@@ -178,16 +182,20 @@ void Command_C()
         Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
         Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto());
 
-        //if (alignment.getRefs() == 0)
-        //{
-        //  syncAzAlt(&HO_T, GetPierSide());
-        //}
+        if (alignment.getRefs() == 0)
+        {
+          syncAzAlt(&HO_T, GetPierSide());
+        }
 
         Coord_IN IN_T = getInstr();
         alignment.addReference(HO_T.Az(), HO_T.Alt(), IN_T.Axis1(), IN_T.Axis2());
 
         if (alignment.isReady())
         {
+          cli();
+          staA1.target = staA1.pos;
+          staA2.target = staA2.pos;
+          sei();
           hasStarAlignment = true;
           autoAlignmentBySync = false;
         }
