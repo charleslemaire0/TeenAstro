@@ -7,7 +7,7 @@
 enum MT_MESSAGES {MSG_SET_CUR_POS, MSG_SET_TARGET_POS, MSG_SET_AMAX, MSG_SET_VMAX, MSG_ADJUST_SPEED};
 
 // Internal mode
-enum PositionState {PS_IDLE, PS_ACCEL, PS_CRUISE, PS_DECEL};
+enum PositionState {PS_IDLE, PS_ACCEL, PS_CRUISE, PS_DECEL, PS_STOPPING};
 
 // Events describing motor state
 #define EV_MOT_GOTO    			(1 << 0)
@@ -18,8 +18,9 @@ enum PositionState {PS_IDLE, PS_ACCEL, PS_CRUISE, PS_DECEL};
 typedef struct
 {
 	unsigned t;
-	unsigned pos;
-	unsigned speed;
+  uint8_t state;
+	unsigned delta;
+	double speed;
 } LOG_ENTRY;
 #endif
 
@@ -42,17 +43,20 @@ public:
 	void abort(void);
 	void resetAbort(void);
 	void initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned timerId);
-	void initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t);
+	void initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t, long);
+  void setRatios(long fkHz);
+  long decelDistance(double speed, unsigned long aMax);
 
 	volatile int dirPin, stepPin;
 	double currentSpeed;
 	long currentPos, currentPosImage;	
+  long d1;
 
 	void programSpeed(double speed);
 	void positionMode(void);
 	long getDelta(void);
 #ifdef DBG_STEPDIR 
-	void logMotion(long , long);
+	void logMotion(uint8_t, long, double);
 #endif
 	unsigned getEvents(void);
 
@@ -60,9 +64,9 @@ public:
 	EventGroupHandle_t motEvents;
 
 	double aMax, vMax, vStop, vSlow;
-	double speedAdjustment;
-	long targetPos;
-	long stopDistance;
+	double newSpeed, speedAdjustment;
+  long targetPos, delta;
+  unsigned long stopDistance;
 	bool edgePos = false;
 
 	PositionState posState;

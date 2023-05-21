@@ -77,7 +77,7 @@
 #define EE_homePosAxis2     61 // in degree
 
 #define EE_siderealClockSpeed     88
-
+#define EE_clk5160              92
 
 //motor1
 #define EE_motorA1gear          100

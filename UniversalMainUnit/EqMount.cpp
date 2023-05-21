@@ -3,14 +3,14 @@
 
 void EqMount::axesToSteps(Axes *aP, Steps *sP)
 {
-  sP->steps1 = (long)((aP->axis1) * geoA1.stepsPerDegree);
-  sP->steps2 = (long)((aP->axis2) * geoA2.stepsPerDegree);
+  sP->steps1 = (long)((aP->axis1) * geoA1.stepsPerDegree) + axisOffset.steps1;
+  sP->steps2 = (long)((aP->axis2) * geoA2.stepsPerDegree) + axisOffset.steps2;
 }
 
 void EqMount::stepsToAxes(Steps *sP, Axes *aP)
 {
-  aP->axis1 = ((double)(sP->steps1) / geoA1.stepsPerDegree);
-  aP->axis2 = ((double)(sP->steps2) / geoA2.stepsPerDegree);
+  aP->axis1 = ((double)(sP->steps1 - axisOffset.steps1) / geoA1.stepsPerDegree);
+  aP->axis2 = ((double)(sP->steps2 - axisOffset.steps2) / geoA2.stepsPerDegree);
 }
 
 /*
@@ -180,14 +180,20 @@ bool EqMount::syncEqu(double HA, double Dec, PierSide Side, UNUSED(const double 
 {
 	EqCoords eqCoords;
 	Axes axes;
-	Steps steps;
+	Steps oldSteps, newSteps;
+
+  oldSteps.steps1 = motorA1.getCurrentPos();
+  oldSteps.steps2 = motorA2.getCurrentPos();  
 
 	eqCoords.ha = HA;
 	eqCoords.dec = Dec;
 	eqToAxes(&eqCoords, &axes, Side);
-	axesToSteps(&axes, &steps);
-	motorA1.setCurrentPos(steps.steps1); 
-	motorA2.setCurrentPos(steps.steps2); 
+	axesToSteps(&axes, &newSteps);
+
+  // keep track of the new offset for future goto
+  axisOffset.steps1 += (oldSteps.steps1 - newSteps.steps1);
+  axisOffset.steps2 += (oldSteps.steps2 - newSteps.steps2);
+
   return true;
 }
 

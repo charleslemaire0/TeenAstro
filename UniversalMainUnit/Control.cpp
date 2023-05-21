@@ -55,14 +55,14 @@ void resetAbort(void)
 // if stepper drive can switch decay mode, set it here
 void DecayModeTracking()
 {
-  motorA1.setCurrent((unsigned int)motorA1.lowCurr); 
-  motorA2.setCurrent((unsigned int)motorA2.lowCurr);
+//  motorA1.setCurrent((unsigned int)motorA1.lowCurr); 
+//   motorA2.setCurrent((unsigned int)motorA2.lowCurr);
 }
 
 void DecayModeGoto()
 {
-  motorA1.setCurrent((unsigned int)motorA1.highCurr); 
-  motorA2.setCurrent((unsigned int)motorA2.highCurr);
+//  motorA1.setCurrent((unsigned int)motorA1.highCurr); 
+//  motorA2.setCurrent((unsigned int)motorA2.highCurr);
 }
 
 // Weird algorithm to prevent GEM mounts from pointing below horizon while slewing 
@@ -117,7 +117,6 @@ void controlTask(UNUSED(void *arg))
   TickType_t xLastWakeTime;
   const TickType_t xPeriod =  pdMS_TO_TICKS(CTRL_TASK_PERIOD);  // in mS
   CTL_MODE currentMode = CTL_MODE_IDLE;
-  CTL_MODE previousMode;
   long axis1Target, axis2Target;
 
   while (1)
@@ -147,6 +146,9 @@ void controlTask(UNUSED(void *arg))
         {
           Speeds speeds;
 
+          // if we are centering, don't do anything
+          if (getEvent(EV_CENTERING))
+            break;
           // Only need to update speed in case of guiding/spiral, or for an AltAz mount
           if (getEvent(EV_SPEED_CHANGE) | isAltAz())
           {
@@ -164,7 +166,6 @@ void controlTask(UNUSED(void *arg))
             if (speeds.speed2 < 0)
               motorA2.setTargetPos(-geoA2.stepsPerRot);
           }
-          
         }
         break;
 
@@ -194,11 +195,11 @@ void controlTask(UNUSED(void *arg))
         break;
 
       case CTL_MODE_STOPPING:
+        resetAbort();
         // wait until motors stopped, reset mode to idle
         if (! (motorA1.isMoving() ||  motorA2.isMoving()))
         {
           mount.mP->updateRaDec();
-          resetAbort();
           resetEvents(EV_SLEWING | EV_TRACKING | EV_GUIDING_AXIS1 | EV_GUIDING_AXIS2 | EV_CENTERING);
           resetEvents(EV_SOUTH | EV_NORTH | EV_WEST | EV_EAST);
           currentMode = CTL_MODE_IDLE;
@@ -268,8 +269,6 @@ void controlTask(UNUSED(void *arg))
           target = msgBuffer[1];
           memcpy(&speed, &msgBuffer[2], sizeof(double));
           resetEvents(EV_AT_HOME);
-          previousMode = currentMode;
-          currentMode = CTL_MODE_GOTO;
           motorA1.setVmax(fabs(speed)*geoA1.stepsPerSecond/SIDEREAL_SECOND);
           motorA1.setTargetPos(target);  
           if (target == geoA1.westDef)
@@ -283,8 +282,6 @@ void controlTask(UNUSED(void *arg))
           target = msgBuffer[1];
           memcpy(&speed, &msgBuffer[2], sizeof(double));
           resetEvents(EV_AT_HOME);
-          previousMode = currentMode;
-          currentMode = CTL_MODE_GOTO;
           motorA2.setVmax(fabs(speed)*geoA2.stepsPerSecond/SIDEREAL_SECOND);
           motorA2.setTargetPos(target);  
           if (target == 0)                        // fix this for S hemisphere
@@ -392,8 +389,14 @@ byte goTo(Steps *sP)
 {
   if (getEvent(EV_ABORT))
     return ERRGOTO____;
-  enableGuideRate(RXX);
   unsigned msg[CTL_MAX_MESSAGE_SIZE];
+
+  // set max slew speed without updating current guide rate
+  msg[0] = CTL_MSG_SET_SLEW_SPEED;
+  memcpy (&msg[1], &guideRates[RXX], sizeof(double)); 
+  xQueueSend(controlQueue, &msg, 0);
+
+  // initiate the goto
   msg[0] = CTL_MSG_GOTO; 
   msg[1] = sP->steps1;
   msg[2] = sP->steps2;

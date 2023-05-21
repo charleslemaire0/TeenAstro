@@ -215,7 +215,10 @@ class TeenAstro(object):
 
   def isAtHome(self):
     self.readStatus()
-    return (self.status[3] == 'H')
+    try:
+      return (self.status[3] == 'H')
+    except:
+      return (False)
 
   def getErrorCode(self):
     self.readStatus()
@@ -295,11 +298,8 @@ class TeenAstro(object):
     return ("ok")
 
   def syncRaDec(self):  # Sync to the current target
-    res1 = self.sendCommand(":CM#")
-    if (res1 != '0'):
-      return ("error synching")
-    else:
-      return ("ok")
+    res1 = self.getValue(":CM#")
+    return (res1)
 
   def enableTracking(self):
     self.sendCommand(":Te#")

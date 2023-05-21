@@ -36,7 +36,7 @@ struct Steps
   long steps2;
 };
 
-// Axis speeds in steps per second
+// Axis speeds
 struct Speeds
 {
   double speed1;
@@ -74,7 +74,8 @@ public:
   virtual bool checkPole(double axis1, CheckMode mode);
   double  trackingSpeed;            // multiple of sidereal speed 
   Speeds  trackingSpeeds;           // actual tracking speeds including guiding and spiral           
-  double currentRA, currentDec;
+  double  currentRA, currentDec;
+  Steps   axisOffset;     // keeps track of sync
 };
 
 class EqMount : public Mnt 
@@ -108,6 +109,7 @@ public:
   EqMount(MountType t)
   {
     type = t;
+    axisOffset.steps1 = axisOffset.steps2 = 0;
   }
 };
 
@@ -142,6 +144,7 @@ public:
   AltAzMount(MountType t)
   {
     type = t;
+    axisOffset.steps1 = axisOffset.steps2 = 0;
   }
 };
 
@@ -155,6 +158,7 @@ public:
   double    trackingSpeed;          // multiple of sidereal 
   Backlash  backlashA1;
   Backlash  backlashA2;
+  long    clk5160;                  // clock frequency of TMC5160 SPI mode (assume both motors use the same clock frequency)
   Mnt *mP;
   void init(MountType t)
   {

@@ -1,6 +1,10 @@
 // All chip specific stuff
 #ifdef __ESP32__
 #include "Global.h"
+#include <SoftwareSerial.h>
+
+
+EspSoftwareSerial::UART debugOut;
 
 // ESP32 does not have a real-time clock
 // Initial time is Jan 1 1970 + 50 years
@@ -9,6 +13,14 @@ static unsigned long initialSystemTime = (50 * 365.25 * 24 * 3600);
 
 void HAL_preInit(void)
 {
+  pinMode(DebugPin0, OUTPUT);
+  debugOut.begin(57600, SWSERIAL_8N1, DebugPin1, DebugPin0, false);
+}
+
+// currently use only one debug port
+void HAL_debug(uint8_t b)
+{
+  debugOut.write(b);
 }
 
 void HAL_initSerial(void)

@@ -92,7 +92,8 @@ trackingTab = [[sg.Column([
 alignmentTab = [[sg.Column([
                     [sg.B(button_text = '+',key='zoomInA'),sg.B(button_text = '-',key='zoomOutA'),
                       sg.DropDown([], key='alignmentTarget', size=25),
-                      sg.B(button_text='Goto', key='alignmentGoto')],
+                      sg.B(button_text='Goto', key='alignmentGoto'), sg.B(button_text='Sync', key='alignmentSync'),
+                      sg.B(button_text='N', key='alignN'),sg.B(button_text='S', key='alignS'),sg.B(button_text='E', key='alignE'),sg.B(button_text='W', key='alignW')],
                     [sg.Canvas(key='alignment_cv', size=(640, 400))]]), sg.Column([[eqCoordFrame],[homeErrorFrame], [poleErrorFrame]])]
                 ]
 

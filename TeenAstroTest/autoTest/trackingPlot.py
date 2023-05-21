@@ -138,6 +138,7 @@ class trackingPlot():
             self.start()
             return
 
+        self.updateTracking()
         # get parameters 
         axis1 = self.ta.getAxis1()
         axis2 = self.ta.getAxis2()
@@ -258,6 +259,14 @@ class trackingPlot():
         print (message)
 
 
+    def updateTracking(self):
+        if (self.ta.isTracking()):
+            self.state = 'TRACKING'
+            self.window['startStopTrack'].update('Stop Tracking')
+        else:
+            self.state = 'IDLE'
+            self.window['startStopTrack'].update('Start Tracking')
+
 
     def start(self):
         if not self.ta.isConnected():
@@ -272,13 +281,7 @@ class trackingPlot():
             self.log  ('Alt Az Tee')
         elif (self.mountType == 'k'):
             self.log  ('Alt Az Fork')
-        if (self.ta.isTracking()):
-            self.state = 'TRACKING'
-            self.window['startStopTrack'].update('Stop Tracking')
-        else:
-            self.state = 'IDLE'
-            self.window['startStopTrack'].update('Start Tracking')
-
+        self.updateTracking()
 
 
 

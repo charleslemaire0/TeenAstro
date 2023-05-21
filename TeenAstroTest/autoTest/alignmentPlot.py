@@ -4,7 +4,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from skyfield.api import wgs84, load, position_of_radec, utc, Star
 from teenastro import TeenAstro, deg2dms
 import numpy as np  
-import sys
+import sys, time
 from pandas import read_csv
 from skyfield.api import wgs84, load, position_of_radec, utc, Star
 from skyfield.positionlib import Apparent, Barycentric, Astrometric, Distance
@@ -55,6 +55,8 @@ class alignmentPlot():
         self.home_error_axis1 = 0.0
         self.home_error_axis2 = 0.0
         self.state = 'STOP'
+        self.ra = 0
+        self.dec = 0
 
     def connect(self, ta):
         self.ta = ta
@@ -87,11 +89,35 @@ class alignmentPlot():
         if (ev == 'alignmentGoto'):
             bayer, name = self.window['alignmentTarget'].get().split('-')
             star = self.namedStars[self.namedStars.name == name]
-            ra = star.ra_hours.values[0]
-            dec = star.dec_degrees.values[0]
-            self.log('Goto {0} RA:{1:2.2f} Dec:{2:3.2f}'.format (self.window['alignmentTarget'].get(), ra, dec))
-#            self.ta.disableTracking()
-            self.log (self.ta.gotoRaDec(ra,dec))
+            self.ra = star.ra_hours.values[0]
+            self.dec = star.dec_degrees.values[0]
+            self.log('Goto {0} RA:{1:2.2f} Dec:{2:3.2f}'.format (self.window['alignmentTarget'].get(), self.ra, self.dec))
+            self.log (self.ta.gotoRaDec(self.ra, self.dec))
+
+        if (ev == 'alignmentSync'):
+            self.log('Sync {0} RA:{1:2.2f} Dec:{2:3.2f}'.format (self.window['alignmentTarget'].get(), self.ra, self.dec))
+            self.log (self.ta.syncRaDec())
+
+        if (ev == 'alignN'):
+            self.log('Move N')
+            self.ta.moveCmd('n')
+            time.sleep(0.5)
+            self.ta.stopCmd('n')
+        if (ev == 'alignS'):
+            self.log('Move S')
+            self.ta.moveCmd('s')
+            time.sleep(0.5)
+            self.ta.stopCmd('s')
+        if (ev == 'alignE'):
+            self.log('Move E')
+            self.ta.moveCmd('e')
+            time.sleep(0.5)
+            self.ta.stopCmd('e')
+        if (ev == 'alignW'):
+            self.log('Move W')
+            self.ta.moveCmd('w')
+            time.sleep(0.5)
+            self.ta.stopCmd('w')
 
         if (ev =='__TIMEOUT__'):
             if not self.ta.isConnected():

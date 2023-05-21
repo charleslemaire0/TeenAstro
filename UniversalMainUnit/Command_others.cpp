@@ -172,6 +172,7 @@ void Command_C()
     {
     case 'M':
     case 'S':
+    {
       double newTargetHA;
       if (autoAlignmentBySync)
       {
@@ -198,7 +199,12 @@ void Command_C()
         newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         i = mount.mP->syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
       }
-        break;
+      if (command[1] == 'M')
+      {
+        strcpy(reply, "N/A#");
+      }
+    }
+    break;
     case 'U':
     {
       // :CU# sync with the User Defined RA DEC
@@ -206,23 +212,15 @@ void Command_C()
       newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
       i = mount.mP->syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
+      strcpy(reply, "N/A#");
       break;
     }
     case 'A':
-      i = mount.mP->syncAzAlt(newTargetAzm, newTargetAlt, targetPierSide);
-      break;
-    }
-    i = 0;
-    if (command[1] == 'M' || command[1] == 'A' || command[1] == 'U')
     {
-      if (i == 0)
-        strcpy(reply, "N/A#");
-      if (i > 0)
-      {
-        reply[0] = 'E';
-        reply[1] = '0' + i;
-        reply[2] = '#';
-      }
+      i = mount.mP->syncAzAlt(newTargetAzm, newTargetAlt, targetPierSide);
+      strcpy(reply, "N/A#");
+    }
+    break;
     }
   }
 }

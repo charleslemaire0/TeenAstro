@@ -27,20 +27,18 @@ void initMotors(bool deleteAlignment)
   readEEPROMmotor();
 
   pinMode(Axis1CSPin, OUTPUT);
- 	pinMode(Axis1EnablePin, OUTPUT);
  	pinMode(Axis1StepPin, OUTPUT);
  	pinMode(Axis1DirPin, OUTPUT);
 
   pinMode(Axis2CSPin, OUTPUT);
- 	pinMode(Axis2EnablePin, OUTPUT);
  	pinMode(Axis2StepPin, OUTPUT);
  	pinMode(Axis2DirPin, OUTPUT);
 
   SPI.begin();
 
   // Generic initialization (works for both types)
-  motorA1.init(Axis1CSPin, hwMutex);
-  motorA2.init(Axis2CSPin, hwMutex);
+  motorA1.init(Axis1CSPin, Axis1EnablePin, hwMutex);
+  motorA2.init(Axis2CSPin, Axis2EnablePin, hwMutex);
 
   AxisDriver = 0;
   // find out if we have StepDir or SPI-only and initialize either type (see SD_MODE in TMC5160 data sheet)
@@ -59,7 +57,7 @@ void initMotors(bool deleteAlignment)
     }
     else
     {
-      motorA1.initMc5160(hwMutex);
+      motorA1.initMc5160(hwMutex, mount.clk5160);
     }
   }
   
@@ -78,7 +76,7 @@ void initMotors(bool deleteAlignment)
     }
     else
     {
-      motorA2.initMc5160(hwMutex);
+      motorA2.initMc5160(hwMutex, mount.clk5160);
     }
   }
   // cannot call updateRatios before motors are initialized!

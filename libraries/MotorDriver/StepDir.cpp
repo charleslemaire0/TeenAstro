@@ -30,18 +30,29 @@ IntervalTimer  itimer4;
 #include "MotionControl.h"
 #include "StepDir.h"
 
+#ifdef __ESP32__
+void      HAL_debug(uint8_t b);
+
+// hack to debug only axis1 since we only have one debug port 
+void SD_debug(uint8_t b)
+{
+  char *p = pcTaskGetName(NULL);    // task name is 'Motor0x'
+  if (!strcmp(p, "Motor01"))
+    HAL_debug(b);
+}
+#else
+#define SD_debug(b)
+#endif
 
 /*
  * Compute deceleration distance in steps from current speed and max. acceleration
  * speed in steps/sec
  * aMax in steps/sec^2
  */
-long decelDistance(double speed, unsigned long aMax)
+long StepDir::decelDistance(double speed, unsigned long aMax)
 {
-  return (long)((speed * speed) /  (2 * aMax));  
+  return (long)((stopDistance + (speed * speed) /  (2 * aMax)));  
 } 
-
-
 
 
 // Compute period in microseconds from speed in (micro)steps per second 
@@ -64,12 +75,13 @@ unsigned long getPeriod(double V)
   return period;
 }
 
-#ifdef LOG_MOTION
-void StepDir::logMotion(long pos, double speed)
+#ifdef DBG_STEPDIR
+void StepDir::logMotion(uint8_t state, long delta, double speed)
 {
   lP->t = xTaskGetTickCount();
-  lP->pos = pos;
-  lP->speed = (long) speed;
+  lP->state = state;
+  lP->delta = delta;
+  lP->speed = speed;
   lP++;
   if (lP == (logTable + LOG_SIZE))
     lP = logTable;
@@ -150,8 +162,9 @@ long StepDir::getDelta(void)
 void StepDir::positionMode(void)
 {
   int sign;
-  double newSpeed = fabs(currentSpeed);
-  long delta = getDelta();
+  newSpeed = fabs(currentSpeed);
+  
+  delta = getDelta();
 
   if (delta >= 0)
   {
@@ -162,18 +175,28 @@ void StepDir::positionMode(void)
     delta = -delta;
     sign = -1;
   }
-#ifdef DBG_STEPDIR
-    logMotion (currentSpeed, currentPos);
-#endif
   // Check for abort 
   if (xEventGroupGetBits(motEvents) & EV_MOT_ABORT)
   {
     if (posState != PS_IDLE)
     {
+      resetEvents(EV_MOT_ABORT);
       cli();
       targetPos = currentPos + sign * (min(delta, decelDistance(newSpeed, aMax)));
       sei();
-      posState = PS_DECEL;
+      SD_debug(9);
+      if (newSpeed < vStop)
+      {
+        SD_debug(5);
+        programSpeed(0.0);
+        posState = PS_IDLE;
+        resetEvents(EV_MOT_GOTO);
+      }
+      else
+      {
+        d1 = decelDistance(newSpeed, aMax);
+        posState = PS_DECEL;
+      }
     }
   }
 
@@ -186,14 +209,17 @@ void StepDir::positionMode(void)
     case PS_ACCEL: 
       // Accelerate to VMax
       newSpeed = newSpeed + (aMax * TICK_PERIOD_MS) / 1000;
-      if (delta < decelDistance(newSpeed, aMax))
+      d1 = decelDistance(newSpeed, aMax);
+      if (delta < d1)
       {
+        SD_debug(1);
         posState = PS_DECEL;
       }
       else 
       {
         if (newSpeed >= vMax)
         {
+          SD_debug(2);
           newSpeed = vMax;
           posState = PS_CRUISE;
         }
@@ -206,33 +232,37 @@ void StepDir::positionMode(void)
       newSpeed = vMax;
       programSpeed(sign * newSpeed);
 
-      if (delta < decelDistance(newSpeed, aMax))
+      d1 = decelDistance(newSpeed, aMax);
+      if (delta < d1)
       {
+        SD_debug(3);
         posState = PS_DECEL;
       }
       break;
-
     case PS_DECEL:
       // Decelerate then stop when at target
-      if (delta > stopDistance)
+      resetEvents(EV_MOT_ABORT);
+      if (newSpeed > vStop)
       {
-        if (newSpeed > (aMax * TICK_PERIOD_MS) / 1000) 
-        {
-          newSpeed = newSpeed - ((double) aMax * TICK_PERIOD_MS) / 1000;
-        }
-        else
-        {
-          newSpeed = vSlow;
-        }
+        double v;
+        v = (double) delta / (double) d1;
+        newSpeed = vMax * v;
         programSpeed(sign * newSpeed);
       }
       else if (delta != 0)
       {
-        newSpeed = vStop;
-        programSpeed(sign * newSpeed);
+        SD_debug(4);
+        programSpeed(sign * vStop);
+        posState = PS_STOPPING;
       }
-      else    // delta == 0
+#ifdef DBG_STEPDIR
+    logMotion (posState, delta, newSpeed);
+#endif
+      break;
+    case PS_STOPPING:
+      if (delta == 0)
       {
+        SD_debug(5);
         programSpeed(0.0);
         resetEvents(EV_MOT_GOTO);
         posState = PS_IDLE;
@@ -289,6 +319,7 @@ void motorTask(void *arg)
           break;
 
         case MSG_SET_TARGET_POS:
+          SD_debug(0);
           cli();
           mcP->targetPos = msgBuffer[1];
           if (mcP->currentPos != mcP->targetPos)
@@ -319,14 +350,14 @@ void motorTask(void *arg)
 }
 
 // not used, needed to keep the linker happy
-void StepDir::initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t)
+void StepDir::initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t, long)
 {
 }
 
 void StepDir::initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned timerId)
 {
   char taskName[20];
-  snprintf(taskName, 20, "Motor%02d", timerId); // different name for each task
+  snprintf(taskName, 20, "Motor%02d", timerId-1); // different name for each task
 
   // initialize hardware pins
   dirPin = DirPin;
@@ -357,11 +388,10 @@ void StepDir::initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned time
   currentSpeed = 0.0;
 
   // default parameters 
-  aMax = 200.0;
-  vSlow = 500.0;                      // while slowing down
-  vStop = 10.0;                     // last steps to reach target
+  aMax = 2000.0;
+  vStop = 50.0;                       // last steps to reach target
+  stopDistance = (long) vStop / 2;    // steps in half a second
   vMax = 10000.0;
-  stopDistance = (20 * vStop) * ((double) TICK_PERIOD_MS / 1000);   // set stop distance to 20 times the steps in one tick
 
   // queue for receiving messages from other tasks
   motQueue = xQueueCreate( SD_QUEUE_SIZE, SD_MAX_MESSAGE_SIZE * sizeof(unsigned));
@@ -375,7 +405,7 @@ void StepDir::initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned time
       motorTask,          // Function that should be called
       taskName,           // Name of the task (for debugging)
       2000,               // Stack size (bytes)
-      this,               // Parameter to pass
+      this,               // Parameter to pass 
       1,                  // priority
       &motTaskHandle      // Task handle
     );  
@@ -473,5 +503,9 @@ bool StepDir::isMoving(void)
   return((getEvents() & EV_MOT_GOTO) !=0);
 }
 
+// never called
+void StepDir::setRatios(long fkHz)
+{
+}
 
 

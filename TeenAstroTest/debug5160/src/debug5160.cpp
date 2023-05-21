@@ -8,14 +8,16 @@
 #define Axis1CSPin      5
 #define Axis1DirPin     26
 #define Axis1StepPin    25
-#define Axis1EnablePin  27
+#define Axis1EnablePin  0
+
+#define DebugPin0       32
+#define DebugPin1       33
 
 // For debugging axis2
 //#define Axis1CSPin      22
 //#define Axis1DirPin     32
 //#define Axis1StepPin    21
 //#define Axis1EnablePin  17
-
 
 #define ISR(f) void IRAM_ATTR f(void) 
 #define PORT Serial2
@@ -47,14 +49,32 @@
 #include "StepDir.h"
 #include "Mc5160.h"
 #include "MotorDriver.h"
+#include <SoftwareSerial.h>
 
 #define MAX_CMD_SIZE 50
 #define MAX_ARG_SIZE 20
 
-
-
 MotorDriver motorA1;
 SemaphoreHandle_t hwMutex;       // to prevent concurrent hardware accesses 
+#ifdef __ESP32__
+EspSoftwareSerial::UART debugOut;
+#endif
+
+#ifdef DBG_STEPDIR
+void dumpLog(char *arg1, char *arg2)
+{
+  char buf[50];
+  LOG_ENTRY *lP = ((StepDir *) motorA1.mcP)->logTable;
+  for (int i=0;i<3000;i++)
+  {
+    sprintf (buf, "%06d, %02d, %06d, %06.02f\n", lP->t, lP->state, lP->delta, lP->speed);
+    PORT.printf(buf);
+    lP++;
+  }
+}
+#endif
+
+
 
 ISR (isrStepDir1)
 {
@@ -149,10 +169,11 @@ void set(char *arg1, char *arg2)
   {
     if (sscanf( arg2, "%d", &val ) == 1)
     {
-      motorA1.drvP->VMAX(val);
+      motorA1.mcP->setVmax(val);
       PORT.printf("set vmax to %d\n", val);
     }
   }
+  // only for MotionControl
   if (!strcmp(arg1, "v1"))
   {
     if (sscanf( arg2, "%d", &val ) == 1)
@@ -161,6 +182,7 @@ void set(char *arg1, char *arg2)
       PORT.printf("set v1 to %d\n", val);
     }
   }
+  // only for MotionControl
   if (!strcmp(arg1, "a1"))
   {
     if (sscanf( arg2, "%d", &val ) == 1)
@@ -174,7 +196,7 @@ void set(char *arg1, char *arg2)
   {
     if (sscanf( arg2, "%d", &val ) == 1)
     {
-      motorA1.drvP->AMAX(val);
+      motorA1.mcP->setAmax(val);
       PORT.printf("set amax to %d\n", val);
     }
   }
@@ -223,15 +245,14 @@ void set(char *arg1, char *arg2)
 void custom(char *arg1, char *arg2)
 {
   int current = 800;
-  int micro = 256;
-  int amax=5000;
-  int vmax=500000;
+  int micro = 16;
+  long amax=24000;
+  long vmax=37000;
   motorA1.drvP->rms_current(current);
   motorA1.drvP->microsteps(micro);
-  motorA1.drvP->AMAX(amax);
-  motorA1.drvP->DMAX(amax);
-  motorA1.drvP->VMAX(vmax);
-  PORT.printf("Initialized custom parameters: current=%d micro=%d amax=%d vmax=%d\n", current, micro, amax, vmax);
+  motorA1.mcP->setAmax(amax);
+  motorA1.mcP->setVmax(vmax);
+  PORT.printf("Initialized custom parameters: current=%d micro=%d amax=%ld vmax=%ld\n", current, micro, amax, vmax);
 }
 
 void reset(char *arg1, char *arg2)
@@ -244,21 +265,24 @@ void reset(char *arg1, char *arg2)
 void stop(char *arg1, char *arg2)
 {
   motorA1.abort();
+  PORT.printf("Stopping Motor\n");
 }
 
 void init(char *arg1, char *arg2)
 {
  	pinMode(Axis1CSPin, OUTPUT);
- 	pinMode(Axis1EnablePin, OUTPUT);
   pinMode(Axis1StepPin, OUTPUT);
   pinMode(Axis1DirPin, OUTPUT);
-
+#ifdef __ESP32__  
+  pinMode(DebugPin0, OUTPUT);
+  debugOut.begin(57600, SWSERIAL_8N1, DebugPin1, DebugPin0, false);
+#endif
 //  pinMode(Axis2CSPin, OUTPUT);
 //  pinMode(Axis2EnablePin, OUTPUT);
 //  pinMode(Axis2StepPin, OUTPUT);
 //  pinMode(Axis2DirPin, OUTPUT);
 
-  digitalWrite(Axis1EnablePin, HIGH); //deactivate driver (LOW active)
+  digitalWrite(Axis1EnablePin, LOW); 
 
   SPI.begin();
 #ifdef __arm__
@@ -270,8 +294,8 @@ void init(char *arg1, char *arg2)
   hwMutex = xSemaphoreCreateMutex();  // hardware accesses (ie SPI etc.)
 
   // Generic initialization (works for both types)
-  motorA1.init(Axis1CSPin, hwMutex);
-  motorA1.drvP->setSPISpeed(4000000);
+  motorA1.init(Axis1CSPin, Axis1EnablePin, hwMutex);
+//  motorA1.drvP->setSPISpeed(4000000);
 
   unsigned version = motorA1.drvP->version();
   PORT.printf("TMC version %03x\n", version);
@@ -291,7 +315,7 @@ void init(char *arg1, char *arg2)
   	}
 	  else
 	  {
-	    motorA1.initMc5160(hwMutex);  		
+	    motorA1.initMc5160(hwMutex, 16000);  		
   		PORT.printf("Initialized Mc5160\n");
 	  }
   }
@@ -315,10 +339,20 @@ CMD_STRUCT Commands[] =
   {"get",    &get,           "Get parameter"},
   {"set",    &set,           "Set parameter"},
   {"stop",   &stop,          "Stop motor"},
+#ifdef DBG_STEPDIR
+  {"dump",   &dumpLog,       "Dump Log"},
+#endif  
 };
 
 #define NUM_COMMANDS (sizeof(Commands) / sizeof (CMD_STRUCT))
 
+
+#ifdef __ESP32__
+void HAL_debug(uint8_t b)
+{
+  debugOut.write(b);
+}
+#endif
 
 // if string is a known command with up to 2 arguments, return true
 bool parseCmd(const char *str, CMD_STRUCT **cmdP, char *arg1, char *arg2)

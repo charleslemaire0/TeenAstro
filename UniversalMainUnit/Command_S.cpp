@@ -594,6 +594,22 @@ void Command_SX()
     break;
     }
     break;
+  case 'K':
+    {
+      // :SXK,VVVV# External Clock frequency for TMC5160
+      int val = strtol(&command[4], NULL, 10);
+      if (val > 10000 && val < 18000)
+      {
+        mount.clk5160 = val;
+        motorA1.mcP->setRatios(mount.clk5160);
+        motorA2.mcP->setRatios(mount.clk5160);
+        XEEPROM.writeLong(getMountAddress(EE_clk5160), (uint32_t)(mount.clk5160));
+        replyShortTrue();
+      }
+      else
+        replyLongUnknown();
+    }
+    break;
   default:
     replyLongUnknown();
     break;    

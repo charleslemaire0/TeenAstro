@@ -247,6 +247,10 @@ void Command_GX()
       break;
     }
     break;
+  case 'K':
+    // :GXK,vvvv# get frequency of TMC5160 clock 
+    sprintf(reply, "%ld#", (long) mount.clk5160);
+    break;
   case 'R':
     // :GXRn# user defined rates
     switch (command[3])

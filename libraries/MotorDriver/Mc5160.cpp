@@ -19,7 +19,7 @@ void Mc5160::initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned timer
 {
 }
 
-void Mc5160::initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t mtx)
+void Mc5160::initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t mtx, long clkFreq)
 {
   drvP = driverP;
   mutex = mtx;
@@ -33,7 +33,7 @@ void Mc5160::initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t mtx)
   drvP->VSTOP(10);  // must be higher than VSTART
   drvP->d1(50);     // must not be set to zero
   drvP->v1(0);      // disable A1 and D1 phases
-  setRatios(16000L);  // default is 16 Mhz - set to 12 MHz if using 5160 internal clock
+  setRatios(clkFreq);  // default is 16 Mhz - set to 12 MHz if using 5160 internal clock
 };
 
 void Mc5160::setCurrentPos(long pos)

@@ -145,6 +145,7 @@ void initMount()
   storedTrackingRateRA  = lval < -50000 || lval > 50000? 0 :lval;
   lval = XEEPROM.read(EE_DEC_Drift);
   storedTrackingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
+  mount.clk5160 = XEEPROM.readLong(getMountAddress(EE_clk5160));
 }
 
 

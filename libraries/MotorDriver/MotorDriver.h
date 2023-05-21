@@ -14,14 +14,20 @@ public:
   unsigned int highCurr=100; //in mA
   unsigned int lowCurr=100; //in mA
   SemaphoreHandle_t mutex = 0;
-  int CSPin;
+  int CSPin, EnPin;
 
   // generic init - call this one first
-  void init(int cspin, SemaphoreHandle_t mtx)
+  void init(int cspin, int enpin, SemaphoreHandle_t mtx)
   {
     mutex = mtx;
 
     CSPin = cspin;
+    EnPin = enpin;
+    if (EnPin > 0)
+    {
+      pinMode(EnPin, OUTPUT);
+      digitalWrite(EnPin, HIGH);  // deactivate
+    }    
     drvP = new TMC5160Stepper(CSPin);
     // Initialize 5160 through SPI
     drvP->begin();  
@@ -38,6 +44,11 @@ public:
     drvP->intpol(1);
     setCurrent(lowCurr);
     setMicrostep(micro);
+    if (EnPin > 0)
+    {
+      digitalWrite(EnPin, LOW);  // activate
+    }    
+
   }
 
   // StepDir constructor
@@ -60,11 +71,11 @@ public:
   }
 
   // 5160 MotionController constructor (SPI only)
-  void initMc5160(SemaphoreHandle_t mtx)
+  void initMc5160(SemaphoreHandle_t mtx, long clkFreq)
   {
     // MotionControl driver
     mcP = new Mc5160();
-    mcP->initMc5160(drvP, mtx);
+    mcP->initMc5160(drvP, mtx, clkFreq);
   }
 
   void setCurrent(unsigned int val)
@@ -137,6 +148,8 @@ public:
   {
     mcP->resetAbort(); 
   }
-
-
+  void setRatios(long fkHz)
+  {
+    mcP->setRatios(fkHz); 
+  }
 };

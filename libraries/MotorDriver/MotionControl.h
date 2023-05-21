@@ -15,6 +15,7 @@ public:
   virtual void abort(void);
   virtual void resetAbort(void);
   virtual void initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned timerId); 
-  virtual void initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t mtx);
+  virtual void initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t mtx, long);
+  virtual void setRatios(long);
 };
 

@@ -47,6 +47,11 @@ bool atHome(void)
 bool goHome()
 {
   unsigned msg[CTL_MAX_MESSAGE_SIZE];
+  // set max slew speed without updating current guide rate
+  msg[0] = CTL_MSG_SET_SLEW_SPEED;
+  memcpy (&msg[1], &guideRates[RXX], sizeof(double)); 
+  xQueueSend(controlQueue, &msg, 0);
+
   msg[0] = CTL_MSG_GOTO_HOME; 
   xQueueSend( controlQueue, &msg, 0);
 
