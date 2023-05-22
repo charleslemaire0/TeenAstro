@@ -302,7 +302,7 @@ void loop()
     // COMMAND PROCESSING --------------------------------------------------------------------------------
     // acts on commands recieved across Serial0 and Serial1 interfaces
     processCommands();
-    smartDelay(0);
+    UpdateGnss();
   }
 
   if (StartLoopError != lastError)

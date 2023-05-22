@@ -163,7 +163,11 @@ void TeenAstroWifi::handleRoot()
   //GNSS
   if (ta_MountStatus.hasGNSSBoard())
   {
-    if (ta_MountStatus.isGNSSValid())
+    if (!ta_MountStatus.atHome() && ta_MountStatus.getParkState() != TeenAstroMountStatus::PRK_PARKED)
+    {
+      strcpy(temp1, "GNSS board detected, Goto park or home to track satellite");
+    }
+    else if (ta_MountStatus.isGNSSValid() )
     {
       strcpy(temp1, "Tracking Satellite, ");
       ta_MountStatus.isGNSSTimeSync() ? strcpy(temp2, "Time Sync, ") : strcpy(temp2, "Time Not Sync, ");

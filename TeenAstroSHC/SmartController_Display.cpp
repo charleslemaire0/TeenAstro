@@ -407,7 +407,7 @@ void SmartHandController::updateMainDisplay(PAGES page)
       TeenAstroMountStatus::SiderealMode currSM = ta_MountStatus.getSiderealMode();
       TeenAstroMountStatus::PierState curPi = ta_MountStatus.getPierState();
       TeenAstroMountStatus::RateCompensation curC = ta_MountStatus.getRateCompensation();
-      if (ta_MountStatus.hasGNSSBoard())
+      if (ta_MountStatus.hasGNSSBoard() && (ta_MountStatus.atHome() || curP == TeenAstroMountStatus::PRK_PARKED))
       {
         if (ta_MountStatus.isGNSSValid())
         {
