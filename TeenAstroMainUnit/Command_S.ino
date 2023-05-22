@@ -368,7 +368,7 @@ void Command_SX()
     case '0':
     {
       int h1, m1, m2, s1;
-      bool ok = !hmsToHms(&h1, &m1, &m2, &s1, &command[4], true);
+      bool ok = hmsToHms(&h1, &m1, &m2, &s1, &command[4], true);
       if (ok)
       {
         rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), 0);
