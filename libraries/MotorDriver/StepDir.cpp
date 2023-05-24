@@ -246,7 +246,7 @@ void StepDir::positionMode(void)
       {
         double v;
         v = (double) delta / (double) d1;
-        newSpeed = vMax * v;
+        newSpeed = fmin(newSpeed, vMax * v);
         programSpeed(sign * newSpeed);
       }
       else if (delta != 0)

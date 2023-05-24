@@ -6,3 +6,7 @@ void spiralTask(UNUSED(TimerHandle_t xTimer));
 void startSpiral(double);
 void stopSpiral(void);
 void getSpiralSpeeds(Speeds *);
+#ifdef HASST4
+void checkST4(void);
+void setupST4(void);
+#endif

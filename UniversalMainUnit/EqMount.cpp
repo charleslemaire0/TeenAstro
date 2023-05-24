@@ -272,8 +272,7 @@ bool EqMount::checkMeridian(Axes *aP, CheckMode mode, PierSide ps)
  */
 void EqMount::setTrackingSpeed(double speed)
 {
-  trackingSpeed = speed;					// remember to reset it after guiding etc.
-  trackingSpeeds.speed1 = speed;	// multiple of sidereal
+  trackingSpeeds.speed1 = speed * axis1Direction('w');	// multiple of sidereal
   trackingSpeeds.speed2 = 0;
 }
 
@@ -286,25 +285,42 @@ void EqMount::setTrackingSpeed(double speed)
  */
 void EqMount::getTrackingSpeeds(Speeds *sP)
 {
+  int dir;
+  double deltaV;
+
   sP->speed1 = trackingSpeeds.speed1;
   sP->speed2 = trackingSpeeds.speed2;
 
   if (getEvent(EV_GUIDING_AXIS1 | EV_WEST | EV_SPEED_CHANGE))
   {
-    sP->speed1 += guideRates[0];
+    deltaV = guideRates[0] * axis1Direction('w');
+    sP->speed1 += deltaV;
   }
   if (getEvent(EV_GUIDING_AXIS1 | EV_EAST | EV_SPEED_CHANGE))
   {
-    sP->speed1 -= guideRates[0];
+    deltaV = guideRates[0] * axis1Direction('e');
+    sP->speed1 += deltaV;
   }
 
   if (getEvent(EV_GUIDING_AXIS2 | EV_NORTH | EV_SPEED_CHANGE))
   {
-    sP->speed2 += guideRates[0];
+    dir = axis2Direction('n');    // direction is zero for the pole, ie home position. Convert to +1 or -1 depending on our current position
+    if (dir == 0)
+    {
+      dir = (motorA2.getCurrentPos()<0 ? 1:-1);
+    }
+    deltaV = guideRates[0] * dir;
+    sP->speed2 += deltaV;
   }
   if (getEvent(EV_GUIDING_AXIS2 | EV_SOUTH | EV_SPEED_CHANGE))
   {
-    sP->speed2 -= guideRates[0];
+    dir = axis2Direction('s');
+    if (dir == 0)
+    {
+      dir = (motorA2.getCurrentPos()<0 ? 1:-1);
+    }
+    deltaV = guideRates[0] * dir;
+    sP->speed2 += deltaV;
   }
 
   if (getEvent(EV_SPIRAL | EV_SPEED_CHANGE))
@@ -334,27 +350,37 @@ void EqMount::initHome(Steps *sP)
   }
 }
 
+/*
+ * return the axis1 tracking direction
+ * 
+ *   W in N hemisphere: +1 
+ *   W in S hemisphere: -1
+ *   E in N hemisphere: -1 
+ *   E in S hemisphere: +1
+ */
+int EqMount::axis1Direction(char dir)
+{
+  return ((dir == 'w') == (*localSite.latitude() >= 0)) ? 1 : -1;
+}
 
 
 /*
  * Pole / Antipole direction
- * return the axis2 position in steps of the pole / antipole directions
+ * return the axis2 direction of the pole / antipole 
  * 
  * pole: always 0
  * antipole:
- *   in N hemisphere: +∞ if PierSide=E (not flipped), -∞ if PierSide=W (flipped)
+ *   in N hemisphere: +1 if PierSide=E (not flipped), -1 if PierSide=W (flipped)
  *   in S hemisphere: reverse
  */
-long EqMount::axis2Target(char pole)
-{
-  
+int EqMount::axis2Direction(char pole)
+{ 
   if ((*localSite.latitude() >= 0) == (pole == 'n'))	// pole?
   {
  		return 0;
   }	
 
-	long pos = motorA2.getCurrentPos();
- 	return ((pos >= 0) == (*localSite.latitude() >= 0)) ? geoA2.stepsPerRot : -geoA2.stepsPerRot;
+ 	return (isFlipped() == (*localSite.latitude() >= 0)) ? -1 : 1;
 }
 
 

@@ -13,7 +13,7 @@ It already has:
 - Goto
 - Tracking 
 - Guiding 
-- Parking, custom Home position are implemented but not tested
+- Parking, custom Home position 
 - HAL is partly done but there are still some #ifdefs in the code that need to be removed
 - EEPROM support: small change to support the RAM/Flash implementation of ESP32, that also requires a task to commit the changes to flash when needed. 
 - RealTime clock: ESP32 does not have a clock, so it reports a fake time.
@@ -59,13 +59,16 @@ The single MotorDriver class encapsulates:
 
 I chose this for the reasons indicated [here](https://fdesvallees.github.io/teenastro_v3/teenastro_v3/#alignment-equatorial-vs-altaz-mounts). I think it is better to keep the alignment matrix only for alignment and mount errors, plus the sky model (refractions). We need more testing and discussion on both models to decide which works best.
 
-
-
 ### Test and Configuration
 
-I updated TAConfig.py for updating the mount parameters. Testing is based on mountSim.py (useful for visualizing) and autoTest.py (more thorough testing). Both test programs rely on the axis coordinates and steps reported by TeenAstro. See the respective README for more info on both programs.
+**TAConfig.py**  updates the mount parameters. Testing is based on **debug5160** (stand-alone executable that runs commands from a terminal), **mountSim.py** (useful for visualizing) and **autoTest.py** (more thorough testing). Both test programs rely on the axis coordinates and steps reported by TeenAstro. See the respective README for more info on both programs.
 
-Basic Goto, tracking and guiding work, SHC can connect and run basic commands. 
+### Test Status - 22 May 2024
+
+Basic Goto, tracking and guiding work, SHC connects and runs normally. Tests are done first in simulation (both Equatorial and AltAz), then with a real equatorial mount (AP600). No testing under the sky yet, no astrophoto. 
+
+ST4 guiding is not yet tested.
+
 I did a little testing with EKOS through the INDI driver. 
 No ASCOM testing whatsoever.
 

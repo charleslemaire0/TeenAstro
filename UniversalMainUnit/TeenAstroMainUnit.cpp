@@ -165,6 +165,10 @@ void setup()
   highPrecision = true;
   initMount();
   initMotors(false);
+
+  #ifdef HASST4
+  setupST4();
+  #endif
   initGuiding();
 
   // init time and date
@@ -174,7 +178,7 @@ void setup()
 
 
   // automatic mode switching before/after slews, initialize micro-step mode
-  DecayModeTracking();
+  DecayModeGoto();
 
   siderealClockSpeed = XEEPROM.readLong(getMountAddress(EE_siderealClockSpeed));
   updateSidereal();

@@ -7,8 +7,6 @@ class GeoAxis
 {
 public:
   long   homeDef;   //in steps
-  long   westDef;   // infinity on the west side
-  long   eastDef;   // infinity on the east side
   long   stepsPerRot; // calculated as    :  stepper_steps * micro_steps * gear_reduction1 * (gear_reduction2/360)
   double stepsPerDegree;
   double stepsPerSecond;

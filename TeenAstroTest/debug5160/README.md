@@ -3,7 +3,7 @@ It detects the SD_MODE bit (external step and dir source) and initializes either
 
 Refer to the [TMC5160 datasheet](https://tmc-item.chiplinkstech.com/TMC5160A_Datasheet_Rev1.14.pdf) for register description and mode of operation
 
-I renamed it as a text file to avoid build errors in the whole project. Rename it to .cpp, build it with platformio (pio run)
+Like other test programs, it is built it with platformio (pio run -t upload)
 
 Flash it to a board (pio run -t upload), connect a terminal at 57600 bit/s and send commands
 
@@ -19,11 +19,17 @@ The commands are self-explanatory
 | set     | Set parameter                    | pos, target, vmax, amax, current etc.        |
 | stop    | Stop motor                       | none                                         |
 
-
  		
-	
-	
-		
+
+Together with a logic analyzer (Saleae or clone), it can be used to debug motor driver issues.
+
+Examples:
+
+Accelerate
+
+![](accelerate.png)	
+	Decelerate and stop
+	![](decelerate.png)	
 		
 	
 

@@ -55,14 +55,14 @@ void resetAbort(void)
 // if stepper drive can switch decay mode, set it here
 void DecayModeTracking()
 {
-//  motorA1.setCurrent((unsigned int)motorA1.lowCurr); 
-//   motorA2.setCurrent((unsigned int)motorA2.lowCurr);
+  motorA1.setCurrent((unsigned int)motorA1.lowCurr); 
+  motorA2.setCurrent((unsigned int)motorA2.lowCurr);
 }
 
 void DecayModeGoto()
 {
-//  motorA1.setCurrent((unsigned int)motorA1.highCurr); 
-//  motorA2.setCurrent((unsigned int)motorA2.highCurr);
+  motorA1.setCurrent((unsigned int)motorA1.highCurr); 
+  motorA2.setCurrent((unsigned int)motorA2.highCurr);
 }
 
 // Weird algorithm to prevent GEM mounts from pointing below horizon while slewing 
@@ -149,6 +149,9 @@ void controlTask(UNUSED(void *arg))
           // if we are centering, don't do anything
           if (getEvent(EV_CENTERING))
             break;
+#ifdef HASST4           
+          checkST4();
+#endif          
           // Only need to update speed in case of guiding/spiral, or for an AltAz mount
           if (getEvent(EV_SPEED_CHANGE) | isAltAz())
           {
@@ -221,6 +224,7 @@ void controlTask(UNUSED(void *arg))
   unsigned msgBuffer[CTL_MAX_MESSAGE_SIZE];
   double speed;
   long target;
+  byte dir;
 
     // Wait for next message
   BaseType_t res = xQueueReceive( controlQueue, &msgBuffer, 0);
@@ -240,7 +244,7 @@ void controlTask(UNUSED(void *arg))
           motorA2.setVmax(slewingSpeeds.speed2);
           motorA2.setTargetPos(axis2Target);
           setEvents(EV_SLEWING);
-          resetEvents(EV_AT_HOME | EV_TRACKING);
+          resetEvents(EV_AT_HOME | EV_TRACKING | EV_SPIRAL);
           break;
 
         case CTL_MSG_GOTO_HOME:
@@ -253,7 +257,7 @@ void controlTask(UNUSED(void *arg))
           motorA2.setTargetPos(geoA2.homeDef);
           setEvents(EV_GOING_HOME);
           setEvents(EV_SLEWING);
-          resetEvents(EV_AT_HOME | EV_TRACKING);
+          resetEvents(EV_AT_HOME | EV_TRACKING | EV_SPIRAL);
           break;
 
         case CTL_MSG_START_TRACKING:
@@ -266,12 +270,13 @@ void controlTask(UNUSED(void *arg))
           break;
 
         case CTL_MSG_MOVE_AXIS1:
-          target = msgBuffer[1];
+          dir = msgBuffer[1];
+          target = mount.mP->axis1Direction(dir) * geoA1.stepsPerRot;
           memcpy(&speed, &msgBuffer[2], sizeof(double));
           resetEvents(EV_AT_HOME);
           motorA1.setVmax(fabs(speed)*geoA1.stepsPerSecond/SIDEREAL_SECOND);
           motorA1.setTargetPos(target);  
-          if (target == geoA1.westDef)
+          if (dir == 'w')
             setEvents(EV_CENTERING | EV_WEST);
           else
             setEvents(EV_CENTERING | EV_EAST);
@@ -279,12 +284,13 @@ void controlTask(UNUSED(void *arg))
           break;
 
         case CTL_MSG_MOVE_AXIS2:
-          target = msgBuffer[1];
+          dir = msgBuffer[1];
+          target = mount.mP->axis2Direction(dir) * geoA2.stepsPerRot;
           memcpy(&speed, &msgBuffer[2], sizeof(double));
           resetEvents(EV_AT_HOME);
           motorA2.setVmax(fabs(speed)*geoA2.stepsPerSecond/SIDEREAL_SECOND);
           motorA2.setTargetPos(target);  
-          if (target == 0)                        // fix this for S hemisphere
+          if (dir == 'n')
             setEvents(EV_CENTERING | EV_NORTH);   
           else
             setEvents(EV_CENTERING | EV_SOUTH);   
@@ -343,7 +349,7 @@ void MoveAxis1AtRate(double speed, const byte dir)
     return;
 
   msg[0] = CTL_MSG_MOVE_AXIS1; 
-  msg[1] = (dir == 'w' ? geoA1.westDef : geoA1.eastDef);
+  msg[1] = dir;
   memcpy(&msg[2], &speed, sizeof(double));
   xQueueSend(controlQueue, &msg, 0);
 }
@@ -369,10 +375,8 @@ void MoveAxis2AtRate(double speed, const byte dir)
   if ((parkStatus() != PRK_UNPARKED) || isSlewing())
     return;
 
-  target = mount.mP->axis2Target(dir);
-
   msg[0] = CTL_MSG_MOVE_AXIS2; 
-  msg[1] = target;
+  msg[1] = dir;
   memcpy(&msg[2], &speed, sizeof(double));
   xQueueSend(controlQueue, &msg, 0);
 }
@@ -404,7 +408,7 @@ byte goTo(Steps *sP)
 
   waitSlewing();
 
-  DecayModeGoto();
+//  DecayModeGoto();
   return ERRGOTO_NONE;
 }
 

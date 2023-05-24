@@ -67,8 +67,8 @@ public:
   virtual void getTrackingSpeeds(Speeds *);
   virtual void initHome(Steps *);
   virtual bool getTargetPierSide(EqCoords *eP, PierSide *psOutP);
-//  virtual long axis1Target(char);
-  virtual long axis2Target(char);
+  virtual int axis1Direction(char);
+  virtual int axis2Direction(char);
   virtual int decDirection(void);
   virtual void updateRaDec(void);
   virtual bool checkPole(double axis1, CheckMode mode);
@@ -101,8 +101,8 @@ public:
   void getTrackingSpeeds(Speeds *);
   void initHome(Steps *);
   bool getTargetPierSide(EqCoords *eP, PierSide *psOutP);
-//  long axis1Target(char);
-  long axis2Target(char);
+  int axis1Direction(char);
+  int axis2Direction(char);
   int decDirection(void);
   void updateRaDec(void);
   // constructor
@@ -135,8 +135,8 @@ public:
   void getTrackingSpeeds(Speeds *);
   void initHome(Steps *);
   bool getTargetPierSide(EqCoords *eP, PierSide *psOutP);
-//  long axis1Target(char);
-  long axis2Target(char);
+  int axis1Direction(char);
+  int axis2Direction(char);
   int decDirection(void);
   void updateRaDec(void);
   bool checkPole(double axis1, CheckMode mode);

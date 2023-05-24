@@ -230,10 +230,19 @@ void AltAzMount::initHome(Steps *sP)
 }
 
 /*
+ * same as EqMount 
+ */
+int AltAzMount::axis1Direction(char dir)
+{
+  return ((dir == 'w') == (*localSite.latitude() >= 0)) ? geoA1.stepsPerRot : -geoA1.stepsPerRot;
+}
+
+
+/*
  * For AltAz mounts, 
  * "pole" is really the zenith at +90º, antipole at -90º 
  */
-long AltAzMount::axis2Target(char pole)
+int AltAzMount::axis2Direction(char pole)
 {
   return ((*localSite.latitude() >= 0) == (pole=='n')) ? geoA2.quarterRot : -geoA2.quarterRot;
 }

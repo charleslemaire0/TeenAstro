@@ -182,7 +182,7 @@ void checkST4()
     ST4DE_last = ST4DE_state;
     if (ST4DE_state)
     {
-      startGuiding(ST4RA_state, 0);
+      startGuiding(ST4DE_state, 0);
     }
     else
     {

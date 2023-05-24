@@ -79,7 +79,7 @@ bool syncAtHome()
   motorA2.setTargetPos(geoA2.homeDef);
 
   // initialize/disable the stepper drivers
-  DecayModeTracking();
+//  DecayModeTracking();
   stopTracking();
   setEvents(EV_AT_HOME);
   return true;
@@ -102,6 +102,4 @@ void initHome()
     geoA2.homeDef = s.steps2;
   }
   int hemisphere = (*localSite.latitude()>=0? 1 : -1);
-  geoA1.westDef = hemisphere * geoA1.stepsPerRot;
-  geoA1.eastDef = -hemisphere * geoA1.stepsPerRot;
 }
