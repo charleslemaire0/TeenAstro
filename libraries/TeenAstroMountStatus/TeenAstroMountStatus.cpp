@@ -68,6 +68,15 @@ void TeenAstroMountStatus::updateRaDec()
     m_hasInfoRa&& m_hasInfoDec ? m_lastStateRaDec = millis() : m_connectionFailure++;
   }
 };
+void TeenAstroMountStatus::updateHaDec()
+{
+  if (millis() - m_lastStateHaDec > updaterate)
+  {
+    m_hasInfoHa = GetLX200(":GXT3#", m_TempHa, sizeof(m_TempHa)) == LX200_VALUEGET;
+    m_hasInfoDec = GetLX200(":GD#", m_TempDec, sizeof(m_TempDec)) == LX200_VALUEGET;
+    m_hasInfoHa&& m_hasInfoDec ? m_lastStateHaDec = millis() : m_connectionFailure++;
+  }
+};
 void TeenAstroMountStatus::updateRaDecT()
 {
   if (millis() - m_lastStateRaDecT > updaterate)

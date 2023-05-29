@@ -31,10 +31,12 @@ private:
   char            m_TempVb[10] = "?";
   char            m_TempVD[20] = "?";
   char            m_TempRa[15] = "?";
+  char            m_TempHa[15] = "?";
   char            m_TempDec[15] = "?";
   char            m_TempRaT[15] = "?";
   char            m_TempDecT[15] = "?";
   unsigned long   m_lastStateRaDec;
+  unsigned long   m_lastStateHaDec;
   unsigned long   m_lastStateRaDecT;
   char            m_TempAz[15] = "?";
   char            m_TempAlt[15] = "?";
@@ -67,6 +69,7 @@ private:
   bool            m_isValid = false;
   bool            m_hasInfoV = false;
   bool            m_hasInfoRa = false;
+  bool            m_hasInfoHa = false;
   bool            m_hasInfoDec = false;
   bool            m_hasInfoRaT = false;
   bool            m_hasInfoDecT = false;
@@ -108,6 +111,7 @@ public:
 
   bool hasInfoV() { return m_hasInfoV; };
   bool hasInfoRa() { return m_hasInfoRa; };
+  bool hasInfoHa() { return m_hasInfoHa; };
   bool hasInfoDec() { return m_hasInfoDec; };
   bool hasInfoAz() { return m_hasInfoAz; };
   bool hasInfoAlt() { return m_hasInfoAlt; };
@@ -132,6 +136,7 @@ public:
   const char* getVb() { return  m_TempVb; };
   const char* getVD() { return  m_TempVD; };
   const char* getRa() { return  m_TempRa; };
+  const char* getHa() { return  m_TempHa; };
   const char* getDec() { return  m_TempDec; };
   const char* getRaT() { return  m_TempRaT; };
   const char* getDecT() { return  m_TempDecT; };
@@ -160,6 +165,7 @@ public:
 
   void updateV();
   void updateRaDec();
+  void updateHaDec();
   void updateRaDecT();
   void updateAzAlt();
   void updatePush();
