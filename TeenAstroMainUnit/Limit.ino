@@ -16,8 +16,9 @@ PierSide getPierSide(const long &axis2)
 //for GEM
 bool checkPole(const long &axis1, CheckMode mode)
 {
-  double underPoleLimit = (mode == CHECKMODE_GOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;
-  return (axis1 > geoA1.poleDef - (underPoleLimit-6) * 15. * geoA1.stepsPerDegree) && (axis1 < geoA1.poleDef + (underPoleLimit-6) * 15. * geoA1.stepsPerDegree);
+  return true;
+  //double underPoleLimit = (mode == CHECKMODE_GOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;
+  //return (axis1 > geoA1.poleDef - (underPoleLimit-6) * 15. * geoA1.stepsPerDegree) && (axis1 < geoA1.poleDef + (underPoleLimit-6) * 15. * geoA1.stepsPerDegree);
 }
 
 bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
