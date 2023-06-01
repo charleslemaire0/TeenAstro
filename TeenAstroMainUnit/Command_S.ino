@@ -266,6 +266,7 @@ void Command_SX()
     case 'A':
       // :SXLA,VVVV# set user defined minAXIS1 (always negatif)
       i = (int)strtol(&command[5], NULL, 10);
+      i = max(min(i, 10 * abs(geoA1.LimMinAxis)),0);
       XEEPROM.writeInt(getMountAddress(EE_minAxis1), i);
       initLimitMinAxis1();
       replyValueSetShort(true);
@@ -273,6 +274,7 @@ void Command_SX()
     case 'B':
       // :SXLB,VVVV# set user defined maxAXIS1 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
+      i = max(min(i, 10 * abs(geoA1.LimMaxAxis)), 0);
       XEEPROM.writeInt(getMountAddress(EE_maxAxis1), i);
       initLimitMaxAxis1();
       replyValueSetShort(true);
@@ -280,6 +282,7 @@ void Command_SX()
     case 'C':
       // :SXLC,VVVV# set user defined minAXIS2 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
+      i = max(min(i, 10 * abs(geoA2.LimMinAxis)), 0);
       XEEPROM.writeInt(getMountAddress(EE_minAxis2), i);
       initLimitMinAxis2();
       replyValueSetShort(true);
@@ -287,6 +290,7 @@ void Command_SX()
     case 'D':
       // :SXLD,VVVV# set user defined maxAXIS2 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
+      i = max(min(i, 10 * abs(geoA2.LimMaxAxis)), 0);
       XEEPROM.writeInt(getMountAddress(EE_maxAxis2), i);
       initLimitMaxAxis2();
       replyValueSetShort(true);
