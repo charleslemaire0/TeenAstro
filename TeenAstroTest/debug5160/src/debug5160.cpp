@@ -5,25 +5,25 @@
  * Initializes the library and runs motor commands
  */
 #ifdef __ESP32__
-#define Axis1CSPin      5
-#define Axis1DirPin     26
-#define Axis1StepPin    25
+#define Axis1CSPin      32
+#define Axis1DirPin     25
+#define Axis1StepPin    27
 #define Axis1EnablePin  0
 
-#define DebugPin0       32
-#define DebugPin1       33
-
 // For debugging axis2
-//#define Axis1CSPin      22
-//#define Axis1DirPin     32
-//#define Axis1StepPin    21
-//#define Axis1EnablePin  17
+//#define Axis1CSPin      5
+//#define Axis1DirPin     21
+//#define Axis1StepPin    22
+//#define Axis1EnablePin  0
 
 #define ISR(f) void IRAM_ATTR f(void) 
 #define PORT Serial2
+#define DBG Serial1
 #endif
 
 #ifdef __arm__
+
+#ifdef BOARD_250
 #define Axis1CSPin      9
 #define Axis1DirPin     2
 #define Axis1StepPin    22
@@ -33,6 +33,18 @@
 #define Axis2DirPin     4
 #define Axis2StepPin    20 
 #define Axis2EnablePin  5
+#elif BOARD_240
+#define Axis1CSPin      21
+#define Axis1DirPin     2
+#define Axis1StepPin    22
+#define Axis1EnablePin  3 
+
+#define Axis2CSPin      19
+#define Axis2DirPin     4
+#define Axis2StepPin    20 
+#define Axis2EnablePin  5
+#define DBG Serial2
+#endif
 
 #define ISR(f)  void f(void)
 #define PORT Serial
@@ -56,9 +68,6 @@
 
 MotorDriver motorA1;
 SemaphoreHandle_t hwMutex;       // to prevent concurrent hardware accesses 
-#ifdef __ESP32__
-EspSoftwareSerial::UART debugOut;
-#endif
 
 #ifdef DBG_STEPDIR
 void dumpLog(char *arg1, char *arg2)
@@ -274,8 +283,7 @@ void init(char *arg1, char *arg2)
   pinMode(Axis1StepPin, OUTPUT);
   pinMode(Axis1DirPin, OUTPUT);
 #ifdef __ESP32__  
-  pinMode(DebugPin0, OUTPUT);
-  debugOut.begin(57600, SWSERIAL_8N1, DebugPin1, DebugPin0, false);
+  Serial.begin(57600);
 #endif
 //  pinMode(Axis2CSPin, OUTPUT);
 //  pinMode(Axis2EnablePin, OUTPUT);
@@ -347,12 +355,11 @@ CMD_STRUCT Commands[] =
 #define NUM_COMMANDS (sizeof(Commands) / sizeof (CMD_STRUCT))
 
 
-#ifdef __ESP32__
 void HAL_debug(uint8_t b)
 {
-  debugOut.write(b);
+  DBG.write(b);
 }
-#endif
+
 
 // if string is a known command with up to 2 arguments, return true
 bool parseCmd(const char *str, CMD_STRUCT **cmdP, char *arg1, char *arg2)
@@ -453,6 +460,8 @@ void mainLoopTask(void *arg)
 void setup() 
 {
   PORT.begin(57600);
+  DBG.begin(57600);
+
   delay(1000);
   PORT.println("Debug Monitor");
 

@@ -70,7 +70,7 @@ A new command has been added (SXK,vvvv#) to indicate the clock speed of the TMC5
 ### Test Status - 1 June 2023
 
 #### Tested features
-Basic Goto, tracking and guiding work, SHC connects and runs normally. Tests are done first in simulation (both Equatorial and AltAz), then with a real equatorial mount (AP600). No testing under the sky yet, no astrophoto. 
+Basic Goto, sync, tracking and guiding work, SHC connects and runs normally. Tests are done first in simulation (both Equatorial and AltAz), then with a real equatorial mount (AP600). No testing under the sky yet, no astrophoto. 
 Pulse and ST4 guiding
 Spiral
 

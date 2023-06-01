@@ -5,6 +5,7 @@ from skyfield.api import wgs84, load, position_of_radec, utc, Star
 from teenastro import TeenAstro, deg2dms
 import numpy as np  
 import sys
+from datetime import datetime
 
 numSamples = 100
 
@@ -25,8 +26,13 @@ def axesToEqu(axis1, axis2, latitude, lst):
     return (ra, dec)
 
 
-def altazAxesToAltAz(axis1, axis2):
-    az = 180 + axis1
+def altazAxesToAltAz(axis1, axis2, latitude):
+    if (latitude >= 0):
+      az = 180 + axis1
+      if (az > 360):
+        az = az - 360
+    else:
+      az = axis1
     alt = axis2
     return az, alt
 
@@ -117,6 +123,7 @@ class trackingPlot():
         self.xyPlot = trackingPlotXY(self.window, dpi, self.ra, self.dec)
 
     def clear(self):
+        self.t = np.zeros(numSamples)
         self.ra = np.zeros(numSamples)
         self.dec = np.zeros(numSamples)
         self.sp1 = np.zeros(numSamples)
@@ -153,12 +160,13 @@ class trackingPlot():
             pierSide = self.ta.getPierSide()
             ra, dec = axesToEqu(axis1, axis2, self.lat, lst)
         elif (self.mountType in ['A','k']):     
-            az, alt = altazAxesToAltAz(axis1, axis2)
+            az, alt = altazAxesToAltAz(axis1, axis2, self.lat)
             direction = self.site.at(t).from_altaz(az_degrees=az, alt_degrees=alt)
             ra_, dec_, distance_ = direction.radec()
             ra = ra_._degrees
             dec = dec_.degrees
 
+        self.t = np.append(self.t, datetime.now().timestamp())
         self.ra = np.append(self.ra, 3600*(ra-self.initialRA))
         self.dec = np.append(self.dec, 3600*(dec-self.initialDec))
         self.sp1 = np.append(self.sp1, sp1)
@@ -173,12 +181,12 @@ class trackingPlot():
         self.window['axis2_speed'].Update('{0:4.4f}'.format(sp2)) 
 
         try:
-            ra_rate =  (self.ra[-1] - self.ra[-10]) / 10
+            ra_rate =  (self.ra[-1] - self.ra[-11]) / (self.t[-1] - self.t[-11]) 
         except:
             ra_rate = 0
         self.window['ra_rate'].Update('{0:2.2f}'.format(ra_rate)) 
         try:
-            dec_rate = (self.dec[-1] - self.dec[-10]) / 10
+            dec_rate = (self.dec[-1] - self.dec[-11]) / (self.t[-1] - self.t[-11])
         except:
             dec_rate = 0
         self.window['dec_rate'].Update('{0:2.2f}'.format(dec_rate)) 
@@ -198,7 +206,7 @@ class trackingPlot():
         elif (self.mountType in ['A','k']):     
             axis1 = self.ta.getAxis1()
             axis2 = self.ta.getAxis2()
-            az, alt = altazAxesToAltAz(axis1, axis2)
+            az, alt = altazAxesToAltAz(axis1, axis2, self.lat)
             t = self.ts.now()                    # skyfield datetime from computer 
             direction = self.site.at(t).from_altaz(az_degrees=az, alt_degrees=alt)
             ra_, dec_, distance_ = direction.radec()
