@@ -50,4 +50,4 @@ void MoveAxis2AtRate(double speed, const byte dir);
 void StopAxis2(void);
 byte goTo(Steps *sP);
 void adjustSpeeds(void);
-
+void setSlewSpeed(double speed);

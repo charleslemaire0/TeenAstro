@@ -15,9 +15,9 @@ void Command_GX()
     // :GXAn# Align Model values
   {
     float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
-    if (hasStarAlignment)
+    if (mount.mP->hasStarAlignment())
     {
-      alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
+      mount.mP->alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
     }
     switch (command[3])
     {

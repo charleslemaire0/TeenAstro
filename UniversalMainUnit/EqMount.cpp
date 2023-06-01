@@ -93,13 +93,22 @@ bool EqMount::getTargetPierSide(EqCoords *eP, PierSide *psOutP)
  */
 bool EqMount::eqToAxes(EqCoords *eP, Axes *aP, PierSide ps)
 {  
+  EqCoords ref;
+#if 0
+  // Get instrument coordinates from ref. coordinates using alignment matrix
+  alignment.toInstrumentDeg(ref.ha, ref.dec, eP->ha, eP->dec);
+#else
+  ref.ha = eP->ha;
+  ref.dec = eP->dec;
+#endif  
+
   int hemisphere = (*localSite.latitude() >= 0) ? 1 : -1;                     // 1 for Northern Hemisphere
   if (type == MOUNT_TYPE_GEM)
   {
     int flipSign = ((ps==PIER_EAST)==(*localSite.latitude() >= 0)) ? 1 : -1;    // -1 if mount is flipped
 
-    aP->axis1 = hemisphere * eP->ha  - flipSign * 90;
-    aP->axis2 = flipSign * (90 - hemisphere * eP->dec);  
+    aP->axis1 = hemisphere * ref.ha  - flipSign * 90;
+    aP->axis2 = flipSign * (90 - hemisphere * ref.dec);  
 
     if (!withinLimits(aP->axis1 * geoA1.stepsPerDegree, aP->axis2 * geoA2.stepsPerDegree))
       return false;
@@ -129,18 +138,25 @@ bool EqMount::eqToAxes(EqCoords *eP, Axes *aP, PierSide ps)
 
 void EqMount::axesToEqu(Axes *aP, EqCoords *eP)
 {
+  EqCoords instr;
   int hemisphere = (*localSite.latitude() >= 0) ? 1 : -1;
   int flipSign = (aP->axis2 < 0) ? -1 : 1;
   if (type == MOUNT_TYPE_GEM)
   {
-    eP->ha  = hemisphere * (aP->axis1 + flipSign * 90);
-    eP->dec = hemisphere * (90 - (flipSign * aP->axis2));    
+    instr.ha  = hemisphere * (aP->axis1 + flipSign * 90);
+    instr.dec = hemisphere * (90 - (flipSign * aP->axis2));    
   }
   else // eq fork
   {
-    eP->ha  = hemisphere * aP->axis1;
-    eP->dec = hemisphere * (90 - aP->axis2);    
+    instr.ha  = hemisphere * aP->axis1;
+    instr.dec = hemisphere * (90 - aP->axis2);    
   }
+#if 0  
+  alignment.toReferenceDeg(eP->ha, eP->dec, instr.ha, instr.dec);
+#else 
+  eP->ha = instr.ha;
+  eP->dec = instr.dec;
+#endif
 }
 
 bool EqMount::getEqu(double *haP, double *decP, UNUSED(const double *cosLatP), UNUSED(const double *sinLatP), bool returnHA)
@@ -274,6 +290,7 @@ void EqMount::setTrackingSpeed(double speed)
 {
   trackingSpeeds.speed1 = speed * axis1Direction('w');	// multiple of sidereal
   trackingSpeeds.speed2 = 0;
+  setEvents(EV_SPEED_CHANGE);
 }
 
 
@@ -402,6 +419,43 @@ int EqMount::decDirection(void)
   else 
     return (sp < 0.0 ? 1:-1);
 }
+
+void EqMount::initTransformation(bool reset)
+{
+  float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
+  mount.mP->hasStarAlignment(false);
+  mount.mP->alignment.clean();
+  byte TvalidFromEEPROM = XEEPROM.read(getMountAddress(EE_Tvalid));
+
+  if (TvalidFromEEPROM == 1 && reset)
+  {
+    XEEPROM.write(getMountAddress(EE_Tvalid), 0);
+  }
+  if (TvalidFromEEPROM == 1 && !reset)
+  {
+    t11 = XEEPROM.readFloat(getMountAddress(EE_T11));
+    t12 = XEEPROM.readFloat(getMountAddress(EE_T12));
+    t13 = XEEPROM.readFloat(getMountAddress(EE_T13));
+    t21 = XEEPROM.readFloat(getMountAddress(EE_T21));
+    t22 = XEEPROM.readFloat(getMountAddress(EE_T22));
+    t23 = XEEPROM.readFloat(getMountAddress(EE_T23));
+    t31 = XEEPROM.readFloat(getMountAddress(EE_T31));
+    t32 = XEEPROM.readFloat(getMountAddress(EE_T32));
+    t33 = XEEPROM.readFloat(getMountAddress(EE_T33));
+    mount.mP->alignment.setT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
+    mount.mP->alignment.setTinvFromT();
+    mount.mP->hasStarAlignment(true);
+  }
+  else
+  {
+    alignment.addReferenceDeg(90, 0, 90, 0);
+    alignment.addReferenceDeg(180, 0, 180, 0);
+    alignment.calculateThirdReference();
+  }
+}
+
+
+
 
 // not used at this time for EQ mounts
 void EqMount::updateRaDec(void)

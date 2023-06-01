@@ -68,6 +68,8 @@ enum SID_Mode
 #include "EEPROM_address.h"
 #include "timerLoop.hpp"
 #include "TelTimer.hpp"
+#include "Refraction.hpp"
+#include "CoordConv.hpp"
 #include "Command.h"
 #include "ValueToString.h"
 #include "TMCStepper.h"
@@ -78,8 +80,6 @@ enum SID_Mode
 #include "MotorDriver.h"
 #include "Axis.hpp"
 #include "Site.hpp"
-#include "Refraction.hpp"
-#include "CoordConv.hpp"
 #include "Limit.h"
 #include "Astro.h"
 #include "Home.h"
@@ -150,7 +150,6 @@ GLOBAL PierSide            newTargetPierSide;
 GLOBAL bool highPrecision ;
 GLOBAL bool doSpiral ;
 GLOBAL bool lastsiderealTracking ;
-GLOBAL bool hasStarAlignment ;
 GLOBAL RefractionFlags doesRefraction;
 
 GLOBAL bool parkSaved ;
@@ -189,7 +188,6 @@ GLOBAL GuideAxis           guideA1;
 GLOBAL GuideAxis           guideA2;
 
 
-GLOBAL CoordConv           alignment;
 GLOBAL Limits              limits;
 GLOBAL DateTimeTimers      rtk;
 

@@ -14,12 +14,17 @@ void AltAzMount::stepsToAxes(Steps *sP, Axes *aP)
 
 void AltAzMount::axesToHor(Axes *aP, HorCoords *hP)
 {
-	if (*localSite.latitude() >= 0)
-  	hP->az  = AzRange(aP->axis1 + 180);
-  else
-  	hP->az  = AzRange(aP->axis1);
+  HorCoords instr;
 
-  hP->alt = aP->axis2;
+	if (*localSite.latitude() >= 0)
+  	instr.az  = AzRange(aP->axis1 + 180);
+  else
+  	instr.az  = AzRange(aP->axis1);
+
+  instr.alt = aP->axis2;
+//  alignment.toReferenceDeg(hP->az, hP->alt, instr.az, instr.alt);
+  hP->az = instr.az;
+  hP->alt = instr.alt;
 }
 
 
@@ -30,13 +35,20 @@ void AltAzMount::axesToHor(Axes *aP, HorCoords *hP)
  */
 bool AltAzMount::horToAxes(HorCoords *hP, Axes *aP)
 {
+  HorCoords ref;
+
+  // Get instrument coordinates from ref. coordinates using alignment matrix
+//  alignment.toInstrumentDeg(ref.az, ref.alt, hP->az, hP->alt);
+  ref.az = hP->az;
+  ref.alt = hP->alt;
+
   long currentAxis1 = motorA1.getCurrentPos() / geoA1.stepsPerDegree;
 
-	aP->axis2 = hP->alt;
+	aP->axis2 = ref.alt;
   if (*localSite.latitude() >= 0)
-    aP->axis1 = hP->az - 180;
+    aP->axis1 = ref.az - 180;
   else
-    aP->axis1 = hP->az;
+    aP->axis1 = ref.az;
 
   // easiest case
   if (fabs(aP->axis1 - currentAxis1) <= 180)
@@ -160,6 +172,7 @@ void AltAzMount::getTrackingSpeeds(Speeds *sP)
   Axes axes1, axes2;
   EqCoords equ, equ1, equ2;
   Steps s1, s2, delta;
+  double deltaV;
 
   // get current position 
   equ.ha = haRange(rtk.LST() * 15.0 - currentRA);
@@ -178,13 +191,25 @@ void AltAzMount::getTrackingSpeeds(Speeds *sP)
 
   // if guiding, adjust targets by the angle traversed at the guide rate in one minute
   if (getEvent(EV_GUIDING_AXIS1 | EV_WEST))
-    equ2.ha += guideRates[0];
+  {
+    deltaV = guideRates[0] * axis1Direction('w');
+    equ2.ha = haRange(equ2.ha - deltaV);
+  }
   if (getEvent(EV_GUIDING_AXIS1 | EV_EAST))
-    equ2.ha -= guideRates[0];
+  {
+    deltaV = guideRates[0] * axis1Direction('e');
+    equ2.ha = haRange(equ2.ha + deltaV);
+  }
   if (getEvent(EV_GUIDING_AXIS2 | EV_NORTH))
-    equ2.dec += guideRates[0];
+  {
+    deltaV = guideRates[0] * axis2Direction('n');
+    equ2.dec = fmin (90, equ2.dec + deltaV);
+  }
   if (getEvent(EV_GUIDING_AXIS2 | EV_SOUTH))
-    equ2.dec -= guideRates[0];
+  {
+    deltaV = guideRates[0] * axis2Direction('s');
+    equ2.dec = fmax (0, equ2.dec - deltaV);
+  }
 
   EquToHor(equ2.ha, equ2.dec, false, &hor2.az, &hor2.alt, localSite.cosLat(), localSite.sinLat());
   // convert to steps
@@ -199,7 +224,7 @@ void AltAzMount::getTrackingSpeeds(Speeds *sP)
   sP->speed1 = ((double) delta.steps1) / (SIDEREAL_SECOND * 60.0 * 2);
   sP->speed2 = ((double) delta.steps2) / (SIDEREAL_SECOND * 60.0 * 2);
 
-  // if needed, add spiral speeds directly to the computed speeds
+  // if needed, add spiral speeds directly to the computed speeds (or should we add it to the Ha/Dec?)
   if (getEvent(EV_SPIRAL))
   {
     Speeds v;
@@ -234,7 +259,7 @@ void AltAzMount::initHome(Steps *sP)
  */
 int AltAzMount::axis1Direction(char dir)
 {
-  return ((dir == 'w') == (*localSite.latitude() >= 0)) ? geoA1.stepsPerRot : -geoA1.stepsPerRot;
+  return ((dir == 'w') == (*localSite.latitude() >= 0)) ? 1 : -1;
 }
 
 
@@ -244,7 +269,7 @@ int AltAzMount::axis1Direction(char dir)
  */
 int AltAzMount::axis2Direction(char pole)
 {
-  return ((*localSite.latitude() >= 0) == (pole=='n')) ? geoA2.quarterRot : -geoA2.quarterRot;
+  return ((*localSite.latitude() >= 0) == (pole=='n')) ? 1 : -1;
 }
 
 /*
@@ -255,13 +280,48 @@ void AltAzMount::updateRaDec(void)
   getEqu(&currentRA, &currentDec, localSite.cosLat(), localSite.sinLat(), false);
 }
 
+void AltAzMount::initTransformation(bool reset)
+{
+  float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
+  mount.mP->hasStarAlignment(false);
+  mount.mP->alignment.clean();
+  byte TvalidFromEEPROM = XEEPROM.read(getMountAddress(EE_Tvalid));
+
+  if (TvalidFromEEPROM == 1 && reset)
+  {
+    XEEPROM.write(getMountAddress(EE_Tvalid), 0);
+  }
+  if (TvalidFromEEPROM == 1 && !reset)
+  {
+    t11 = XEEPROM.readFloat(getMountAddress(EE_T11));
+    t12 = XEEPROM.readFloat(getMountAddress(EE_T12));
+    t13 = XEEPROM.readFloat(getMountAddress(EE_T13));
+    t21 = XEEPROM.readFloat(getMountAddress(EE_T21));
+    t22 = XEEPROM.readFloat(getMountAddress(EE_T22));
+    t23 = XEEPROM.readFloat(getMountAddress(EE_T23));
+    t31 = XEEPROM.readFloat(getMountAddress(EE_T31));
+    t32 = XEEPROM.readFloat(getMountAddress(EE_T32));
+    t33 = XEEPROM.readFloat(getMountAddress(EE_T33));
+    mount.mP->alignment.setT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
+    mount.mP->alignment.setTinvFromT();
+    mount.mP->hasStarAlignment(true);
+  }
+  else
+  {
+    alignment.addReferenceDeg(90, 0, 90, 0);
+    alignment.addReferenceDeg(180, 0, 180, 0);
+    alignment.calculateThirdReference();
+  }
+}
+
+
 // These functions are never called. They keep the linker happy
 byte AltAzMount::Flip(void)
 {
 	return 0;
 }
 
-bool AltAzMount::getTargetPierSide(EqCoords *eP, PierSide *psOutP)
+bool AltAzMount::getTargetPierSide(UNUSED(EqCoords *eP), UNUSED(PierSide *psOutP))
 {
   return false;
 }
@@ -276,12 +336,12 @@ PierSide AltAzMount::GetPierSide(void)
   return PIER_NOTVALID;
 }
 
-bool AltAzMount::checkMeridian(Axes *aP, CheckMode mode, PierSide ps)
+bool AltAzMount::checkMeridian(UNUSED(Axes *aP), UNUSED(CheckMode mode), UNUSED(PierSide ps))
 {
   return true;
 }
 
-bool AltAzMount::checkPole(double axis1, CheckMode mode)
+bool AltAzMount::checkPole(UNUSED(double axis1), UNUSED(CheckMode mode))
 {
   return true;
 }

@@ -30,7 +30,7 @@ What is does **not** have:
 
 ### Hardware support
 
-The software is tested on an ESP32 development board, and on a Teensy4 (Board 250). It is built with PlatformIO, either with the command line tools or through VSCode. On the ESP32, it is possible to use JTAG with its excellent breakpoint and watch capabilities. 
+The software is tested on an ESP32 development board, a Board 250 (Teensy4) and a modified board 240 (removed the ST4 5V pull-up resistors). It is built with PlatformIO, either with the command line tools or through VSCode. On the ESP32, it is possible to use JTAG with its excellent breakpoint and watch capabilities. 
 
 ### Design choices
 
@@ -59,18 +59,28 @@ The single MotorDriver class encapsulates:
 
 I chose this for the reasons indicated [here](https://fdesvallees.github.io/teenastro_v3/teenastro_v3/#alignment-equatorial-vs-altaz-mounts). I think it is better to keep the alignment matrix only for alignment and mount errors, plus the sky model (refractions). We need more testing and discussion on both models to decide which works best.
 
+#### New commands
+A new command has been added (SXK,vvvv#) to indicate the clock speed of the TMC5160. The freqency (in kHz) is stored in the EEPROM. This allows using the TMC5160 in SPI mode with or without an external clock.
+
+
 ### Test and Configuration
 
 **TAConfig.py**  updates the mount parameters. Testing is based on **debug5160** (stand-alone executable that runs commands from a terminal), **mountSim.py** (useful for visualizing) and **autoTest.py** (more thorough testing). Both test programs rely on the axis coordinates and steps reported by TeenAstro. See the respective README for more info on both programs.
 
-### Test Status - 22 May 2024
+### Test Status - 1 June 2023
 
+#### Tested features
 Basic Goto, tracking and guiding work, SHC connects and runs normally. Tests are done first in simulation (both Equatorial and AltAz), then with a real equatorial mount (AP600). No testing under the sky yet, no astrophoto. 
-
-ST4 guiding is not yet tested.
+Pulse and ST4 guiding
+Spiral
 
 I did a little testing with EKOS through the INDI driver. 
-No ASCOM testing whatsoever.
 
+### Not yet implemented or tested
+No ASCOM testing whatsoever
+Alignment is not working (possible reentrancy problems in CoordConv)
+
+#### Known bugs
+In some cases a goto never stops slewing but stays at very low speed. Difficult to reproduce.
 
 

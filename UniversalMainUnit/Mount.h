@@ -72,11 +72,28 @@ public:
   virtual int decDirection(void);
   virtual void updateRaDec(void);
   virtual bool checkPole(double axis1, CheckMode mode);
+  virtual void initTransformation(bool reset);
+  bool hasStarAlignment(void)
+  {
+    return isAligned;
+  }
+  void hasStarAlignment(bool b)
+  {
+    isAligned = b;
+  }
+  CoordConv alignment;
+protected:
   double  trackingSpeed;            // multiple of sidereal speed 
   Speeds  trackingSpeeds;           // actual tracking speeds including guiding and spiral           
   double  currentRA, currentDec;
   Steps   axisOffset;     // keeps track of sync
+  bool    isAligned;
 };
+
+
+
+
+
 
 class EqMount : public Mnt 
 {
@@ -105,6 +122,7 @@ public:
   int axis2Direction(char);
   int decDirection(void);
   void updateRaDec(void);
+  void initTransformation(bool reset);
   // constructor
   EqMount(MountType t)
   {
@@ -140,6 +158,7 @@ public:
   int decDirection(void);
   void updateRaDec(void);
   bool checkPole(double axis1, CheckMode mode);
+  void initTransformation(bool reset);
   // constructor
   AltAzMount(MountType t)
   {

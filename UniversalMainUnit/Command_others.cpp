@@ -38,7 +38,7 @@ void Command_A()
   {
   case '0':
     // telescope should be set in the polar home for a starting point
-    initTransformation(true);
+    mount.mP->initTransformation(true);
     syncAtHome();
     // enable the stepper drivers
     delay(10);
@@ -48,28 +48,31 @@ void Command_A()
     break;
   case '2':
   {
+    Axes axes;
+    HorCoords hc;
+    Steps steps;
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    double Azm, Alt;
-    EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
+    EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &hc.az, &hc.alt, localSite.cosLat(), localSite.sinLat());
 
-    if (alignment.getRefs() == 0)
+    if (mount.mP->alignment.getRefs() == 0)
     {
-      mount.mP->syncAzAlt(Azm, Alt, mount.mP->GetPierSide());
+      mount.mP->syncAzAlt(hc.az, hc.alt, mount.mP->GetPierSide());
     }
 
-    double Axis1 = motorA1.getCurrentPos() / geoA1.stepsPerDegree;
-    double Axis2 = motorA2.getCurrentPos() / geoA2.stepsPerDegree;
+    steps.steps1 = motorA1.getCurrentPos();
+    steps.steps2 = motorA2.getCurrentPos();
+    mount.mP->stepsToAxes(&steps, &axes);
 
-    alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
-    if (alignment.getRefs() == 2)
+    mount.mP->alignment.addReferenceDeg(hc.az, hc.alt, axes.axis1, axes.axis2);
+    if (mount.mP->alignment.getRefs() == 2)
     {
-      alignment.calculateThirdReference();
-      if (alignment.isReady())
+      mount.mP->alignment.calculateThirdReference();
+      if (mount.mP->alignment.isReady())
       {
-        hasStarAlignment = true;
+        mount.mP->hasStarAlignment(true);
 
-        motorA1.setTargetPos(motorA1.getCurrentPos());
-        motorA2.setTargetPos(motorA2.getCurrentPos());
+//        motorA1.setTargetPos(motorA1.getCurrentPos());
+//        motorA2.setTargetPos(motorA2.getCurrentPos());
       }
     }
     replyShortTrue();
@@ -77,30 +80,33 @@ void Command_A()
   }
   case '3':
   {
+    Axes axes;
+    HorCoords hc;
+    Steps steps;
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    double Azm, Alt;
-    EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-    if (alignment.getRefs() == 0)
+    EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &hc.az, &hc.alt, localSite.cosLat(), localSite.sinLat());
+    if (mount.mP->alignment.getRefs() == 0)
     {
-      mount.mP->syncAzAlt(Azm, Alt, mount.mP->GetPierSide());
+      mount.mP->syncAzAlt(hc.az, hc.alt, mount.mP->GetPierSide());
     }
 
-    double Axis1 = motorA1.getCurrentPos() / geoA1.stepsPerDegree;
-    double Axis2 = motorA2.getCurrentPos() / geoA2.stepsPerDegree;
+    steps.steps1 = motorA1.getCurrentPos();
+    steps.steps2 = motorA2.getCurrentPos();
+    mount.mP->stepsToAxes(&steps, &axes);
 
-    alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
-    if (alignment.isReady())
+    mount.mP->alignment.addReferenceDeg(hc.az, hc.alt, axes.axis1, axes.axis2);
+    if (mount.mP->alignment.isReady())
     {
-      hasStarAlignment = true;
-      motorA1.setTargetPos(motorA1.getCurrentPos());
-      motorA2.setTargetPos(motorA2.getCurrentPos());
+      mount.mP->hasStarAlignment(true);
+//      motorA1.setTargetPos(motorA1.getCurrentPos());
+//      motorA2.setTargetPos(motorA2.getCurrentPos());
     }
     replyShortTrue();
     break;
   }
   case 'C':
   case 'A':
-    initTransformation(true);
+    mount.mP->initTransformation(true);
     syncAtHome();
     autoAlignmentBySync = command[1] == 'A';
     replyShortTrue();
@@ -157,7 +163,6 @@ void Command_B()
 //         Returns: "N/A#" on success, "En#" on failure where n is the error code per the :MS# command
 void Command_C()
 {
-  int i;
   if ((parkStatus() == PRK_UNPARKED) &&
       !isSlewing() &&
       (command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
@@ -179,16 +184,16 @@ void Command_C()
         newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         double Azm, Alt;
         EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &Azm, &Alt, localSite.cosLat(), localSite.sinLat());
-        if (alignment.getRefs() == 0)
+        if (mount.mP->alignment.getRefs() == 0)
         {
           mount.mP->syncAzAlt(Azm, Alt, mount.mP->GetPierSide());
         }
         double Axis1 = motorA1.getCurrentPos() / geoA1.stepsPerDegree;
         double Axis2 = motorA2.getCurrentPos() / geoA2.stepsPerDegree;
-        alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
-        if (alignment.isReady())
+        mount.mP->alignment.addReferenceDeg(Azm, Alt, Axis1, Axis2);
+        if (mount.mP->alignment.isReady())
           {
-            hasStarAlignment = true;
+            mount.mP->hasStarAlignment(true);
             motorA1.setTargetPos(motorA1.getCurrentPos());
             motorA2.setTargetPos(motorA2.getCurrentPos());
             autoAlignmentBySync = false;
@@ -197,7 +202,7 @@ void Command_C()
       else
       {
         newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-        i = mount.mP->syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
+        mount.mP->syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
       }
       if (command[1] == 'M')
       {
@@ -211,13 +216,13 @@ void Command_C()
       newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
       newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-      i = mount.mP->syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
+      mount.mP->syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
       strcpy(reply, "N/A#");
       break;
     }
     case 'A':
     {
-      i = mount.mP->syncAzAlt(newTargetAzm, newTargetAlt, targetPierSide);
+      mount.mP->syncAzAlt(newTargetAzm, newTargetAlt, targetPierSide);
       strcpy(reply, "N/A#");
     }
     break;
@@ -433,22 +438,26 @@ void Command_T()
   case 'S':
     // solar tracking rate 60Hz
     mount.mP->setTrackingSpeed(TrackingSolar);
-    replyNothing();
+    siderealMode = SIDM_SUN;
+     replyNothing();
     break;
   case 'L':
     // lunar tracking rate 57.9Hz
     mount.mP->setTrackingSpeed(TrackingLunar);
+    siderealMode = SIDM_MOON;
     replyNothing();
     break;
   case 'Q':
     // sidereal tracking rate
     mount.mP->setTrackingSpeed(TrackingStar);
+    siderealMode = SIDM_STAR;
     replyNothing();
     break;
   case 'R':
     // reset master sidereal clock interval
     siderealClockSpeed = mastersiderealClockSpeed;
     mount.mP->setTrackingSpeed(TrackingStar);
+    siderealMode = SIDM_STAR;
     replyNothing();
     break;
   case 'T':
@@ -548,7 +557,7 @@ void Command_W()
     localSite.ReadSiteDefinition(currentSite);
     rtk.resetLongitude(*localSite.longitude());
     initHome();
-    initTransformation(true);
+    mount.mP->initTransformation(true);
     syncAtHome();
     replyNothing();
     break;

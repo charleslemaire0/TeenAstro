@@ -107,6 +107,7 @@ void LA3::multiply(double (&out)[3], const double (&m)[3][3], const double (&v)[
 	}
 }
 
+#if 0
 void LA3::printV(const char *label, const double (&v)[3]) {
 #ifdef DEBUG_COUT
 	cout << label << " =[ " << v[0] << "\t" << v[1] << "\t" << v[2] << " ]" << endl;   
@@ -120,7 +121,9 @@ void LA3::printV(const char *label, const double (&m)[3][3]) {
 	              << "\t [ " << m[2][0] << "\t" << m[2][1] << "\t" << m[2][2] << " ]" << endl << endl; 
 #endif
 }
-
+#else 
+  #define printV(a,b)
+#endif
 
 // CoordConv methods
 //
@@ -166,9 +169,9 @@ void CoordConv::addReferenceDeg(double angle1, double angle2, double axis1, doub
 
 
 // Convert reference angle1/angle2 coordinates to axis axis1/axis2 coordinates (all values in degrees) 
-void CoordConv::toAxisDeg(double &axis1, double &axis2,  double angle1,  double angle2) const {
+void CoordConv::toInstrumentDeg(double &axis1, double &axis2,  double angle1,  double angle2) const {
 	double axis1Rad=0, axis2Rad=0;
-	toAxis(axis1Rad, axis2Rad, toRad(angle1), toRad(angle2));
+	toInstrument(axis1Rad, axis2Rad, toRad(angle1), toRad(angle2));
 	axis1=toDeg(axis1Rad);
 	axis2=toDeg(axis2Rad);
 }
@@ -253,7 +256,7 @@ void CoordConv::buildTransformations() {
 }
 
 // Convert reference angle1/angle2 coordinates to axis axis1/axis2 coordinates (all values in radians) 
-void CoordConv::toAxis(double &axis1, double &axis2,  double angle1,  double angle2) const {
+void CoordConv::toInstrument(double &axis1, double &axis2,  double angle1,  double angle2) const {
 	#ifdef DEBUG_COUT
 	cout << "angle1 " << angle1 << "r angle2 " << angle2 << "r" << endl;
 	#endif

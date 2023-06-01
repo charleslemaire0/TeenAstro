@@ -69,13 +69,14 @@ void initMaxSpeed()
   mount.maxSpeed = fmin(maxAxis1Speed, maxAxis2Speed); // steps per second  
 #endif  
 
-  guideRates[4] = maxSlewEEPROM;
-  if (guideRates[3] >= maxSlewEEPROM)   // also correct the next higher speed??
+  guideRates[RXX] = maxSlewEEPROM;
+  if (guideRates[RS] >= maxSlewEEPROM)   // also correct the next higher speed??
   {
-    guideRates[3] = 64;
+    guideRates[RS] = 64;
     XEEPROM.write(getMountAddress(EE_Rate3), guideRates[3]);
   }
-  SetAcceleration();
+ setSlewSpeed(guideRates[RXX]);
+ SetAcceleration();
 }
 
 /*

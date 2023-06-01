@@ -118,10 +118,12 @@ void controlTask(UNUSED(void *arg))
   const TickType_t xPeriod =  pdMS_TO_TICKS(CTRL_TASK_PERIOD);  // in mS
   CTL_MODE currentMode = CTL_MODE_IDLE;
   long axis1Target, axis2Target;
+  long tickCount = 0;
 
   while (1)
   { 
     xLastWakeTime = xTaskGetTickCount();  
+    tickCount++;
     // Perform action according to current mode
     switch (currentMode)
     {
@@ -145,6 +147,7 @@ void controlTask(UNUSED(void *arg))
       case CTL_MODE_TRACKING:
         {
           Speeds speeds;
+          int dir, previousDirAxis1, previousDirAxis2;
 
           // if we are centering, don't do anything
           if (getEvent(EV_CENTERING))
@@ -153,21 +156,25 @@ void controlTask(UNUSED(void *arg))
           checkST4();
 #endif          
           // Only need to update speed in case of guiding/spiral, or for an AltAz mount
-          if (getEvent(EV_SPEED_CHANGE) | isAltAz())
+          if (getEvent(EV_SPEED_CHANGE) | (isAltAz() && (tickCount % 100 == 0)))
           {
             mount.mP->getTrackingSpeeds(&speeds);
             resetEvents(EV_SPEED_CHANGE);
             motorA1.setVmax(fabs(speeds.speed1));
-            if (speeds.speed1 > 0)
-              motorA1.setTargetPos(geoA1.stepsPerRot);
-            if (speeds.speed1 < 0)
-              motorA1.setTargetPos(-geoA1.stepsPerRot);            
-
+            // only set target if direction has changed
+            dir = (speeds.speed1 > 0 ? 1 : -1);
+            if (dir != previousDirAxis1)
+            {
+              motorA1.setTargetPos(dir * geoA1.stepsPerRot);
+              previousDirAxis1 = dir;
+            }
             motorA2.setVmax(fabs(speeds.speed2));
-            if (speeds.speed2 > 0)
-              motorA2.setTargetPos(geoA2.stepsPerRot);
-            if (speeds.speed2 < 0)
-              motorA2.setTargetPos(-geoA2.stepsPerRot);
+            dir = (speeds.speed2 > 0 ? 1 : -1);
+            if (dir != previousDirAxis2)
+            {
+              motorA2.setTargetPos(dir * geoA2.stepsPerRot);
+              previousDirAxis2 = dir;
+            }
           }
         }
         break;
@@ -218,6 +225,7 @@ void controlTask(UNUSED(void *arg))
     {
       motorA1.abort();
       motorA2.abort();
+      resetEvents(EV_START_TRACKING);
       currentMode = CTL_MODE_STOPPING;
     }
   
@@ -257,7 +265,7 @@ void controlTask(UNUSED(void *arg))
           motorA2.setTargetPos(geoA2.homeDef);
           setEvents(EV_GOING_HOME);
           setEvents(EV_SLEWING);
-          resetEvents(EV_AT_HOME | EV_TRACKING | EV_SPIRAL);
+          resetEvents(EV_AT_HOME | EV_TRACKING | EV_START_TRACKING | EV_SPIRAL);
           break;
 
         case CTL_MSG_START_TRACKING:
@@ -395,11 +403,7 @@ byte goTo(Steps *sP)
     return ERRGOTO____;
   unsigned msg[CTL_MAX_MESSAGE_SIZE];
 
-  // set max slew speed without updating current guide rate
-  msg[0] = CTL_MSG_SET_SLEW_SPEED;
-  memcpy (&msg[1], &guideRates[RXX], sizeof(double)); 
-  xQueueSend(controlQueue, &msg, 0);
-
+  setSlewSpeed(guideRates[RXX]);
   // initiate the goto
   msg[0] = CTL_MSG_GOTO; 
   msg[1] = sP->steps1;
@@ -412,3 +416,12 @@ byte goTo(Steps *sP)
   return ERRGOTO_NONE;
 }
 
+void setSlewSpeed(double speed)
+{
+  unsigned msg[CTL_MAX_MESSAGE_SIZE];
+
+  // set max slew speed without updating current guide rate
+  msg[0] = CTL_MSG_SET_SLEW_SPEED;
+  memcpy (&msg[1], &speed, sizeof(double)); 
+  xQueueSend(controlQueue, &msg, 0);  
+}

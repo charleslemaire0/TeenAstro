@@ -7,11 +7,11 @@
 enum MT_MESSAGES {MSG_SET_CUR_POS, MSG_SET_TARGET_POS, MSG_SET_AMAX, MSG_SET_VMAX, MSG_ADJUST_SPEED};
 
 // Internal mode
-enum PositionState {PS_IDLE, PS_ACCEL, PS_CRUISE, PS_DECEL, PS_STOPPING};
+enum PositionState {PS_IDLE, PS_ACCEL, PS_CRUISE, PS_DECEL, PS_DECEL_TARGET, PS_STOPPING};
 
 // Events describing motor state
-#define EV_MOT_GOTO    			(1 << 0)
-#define EV_MOT_ABORT			(1 << 3)
+#define EV_MOT_GOTO    		(1 << 0)
+#define EV_MOT_ABORT			(1 << 1)
 
 #ifdef DBG_STEPDIR 
 #define LOG_SIZE 4000
@@ -47,6 +47,7 @@ public:
   void setRatios(long fkHz);
   long decelDistance(double speed, unsigned long aMax);
 
+
 	volatile int dirPin, stepPin;
 	double currentSpeed;
 	long currentPos, currentPosImage;	
@@ -63,12 +64,14 @@ public:
 	QueueHandle_t motQueue;
 	EventGroupHandle_t motEvents;
 
-	double aMax, vMax, vStop, vSlow;
+	double aMax, dMax, vMax, vStop, vSlow;
 	double newSpeed, speedAdjustment;
   long targetPos, delta;
   unsigned long stopDistance;
 	bool edgePos = false;
 
+  void state(PositionState newState);
+  PositionState state(void);
 	PositionState posState;
 
 #ifdef DBG_STEPDIR 

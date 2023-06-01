@@ -86,11 +86,13 @@ public:
 	// Calculate determinant of a 3x3 matrix
 	static double determinant(const double (&m)[3][3]);
 
+#if 0
 	// Print a 3-vector to cout, with given label
 	static void printV(const char *label, const double (&v)[3]);
 
 	// Print a 3x3 matrix to cout, with given label
 	static void printV(const char *label, const double (&m)[3][3]);
+#endif
 };
 
 
@@ -128,7 +130,7 @@ public:
 	bool calculateThirdReference();
 
 	// Convert reference angle1/angle2 coordinates to axis axis1/axis2 coordinates (all values in degrees) 
-	void toAxisDeg(double &axis1, double &axis2,  double angle1, double angle2) const;
+	void toInstrumentDeg(double &axis1, double &axis2,  double angle1, double angle2) const;
 
 	// Convert axis axis1/axis2 coordinates to  reference angle1/angle2 coordinates (all values in degrees) 
 	void toReferenceDeg(double &angle1,  double &angle2, double axis1, double axis2) const;
@@ -143,8 +145,8 @@ protected:
 	// Build coordinate system transformation matrix
 	void buildTransformations();
 
-	// Convert reference angle1/angle2 coordinates to axis axis1/axis2 coordinates (all values in radians) 
-	void toAxis(double &axis1, double &alt,  double angle1,  double angle2) const;
+	// Convert reference angle1/angle2 coordinates to instrument coordinates (all values in radians) 
+	void toInstrument(double &axis1, double &alt,  double angle1,  double angle2) const;
 
 	// Convert axis axis1/axis2 coordinates to  equatorial hour angle/angle2 coordinates (all values in radians) 
 	void toReference(double &angle1,  double &angle2, double axis1, double axis2) const;

@@ -71,10 +71,10 @@ void saveAlignModel()
 {
   // and store our corrections
   float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
-  XEEPROM.write(EE_Tvalid, hasStarAlignment);
-  if (hasStarAlignment)
+  XEEPROM.write(EE_Tvalid, mount.mP->hasStarAlignment());
+  if (mount.mP->hasStarAlignment())
   {
-    alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
+    mount.mP->alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
   }
   XEEPROM.writeFloat(getMountAddress(EE_T11), t11);
   XEEPROM.writeFloat(getMountAddress(EE_T12), t12);

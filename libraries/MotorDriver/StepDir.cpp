@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #define ISR(f) void IRAM_ATTR f(void) 
 #define MIN_INTERRUPT_PERIOD 10UL      // µS
-#define MAX_INTERRUPT_PERIOD 1000000UL  // 1S 
+#define MAX_INTERRUPT_PERIOD 10000000UL  // 10S 
 // the motor task runs every mS
 #define TICK_PERIOD_MS 1
 #endif
@@ -20,7 +20,7 @@ IntervalTimer  itimer4;
 // Periods in µS, speeds in steps/S
 // *** replace by constants from the HAL
 #define MIN_INTERRUPT_PERIOD 5UL        // µS
-#define MAX_INTERRUPT_PERIOD 1000000UL  // 1S
+#define MAX_INTERRUPT_PERIOD 100000UL  // 100mS
 // the motor task runs every 1mS
 #define TICK_PERIOD_MS 1
 #endif
@@ -30,7 +30,7 @@ IntervalTimer  itimer4;
 #include "MotionControl.h"
 #include "StepDir.h"
 
-#ifdef __ESP32__
+#if defined(ESP32) || defined(BOARD_240)
 void      HAL_debug(uint8_t b);
 
 // hack to debug only axis1 since we only have one debug port 
@@ -43,6 +43,10 @@ void SD_debug(uint8_t b)
 #else
 #define SD_debug(b)
 #endif
+
+
+
+
 
 /*
  * Compute deceleration distance in steps from current speed and max. acceleration
@@ -112,7 +116,8 @@ void StepDirInterruptHandler(StepDir *mcP)
  */
 void StepDir::programSpeed(double V)
 {
-  setDir(V<0.0);
+  if (V !=0)
+    setDir(V<0.0);
 
   long period = getPeriod(fabs(V));
   #ifdef __arm__
@@ -155,6 +160,21 @@ long StepDir::getDelta(void)
   return delta;
 }
 
+// allows logging state changes
+void StepDir::state(PositionState newState)
+{
+  if (newState != posState)
+  {
+    SD_debug(newState);
+    posState = newState;
+  }
+}
+
+PositionState StepDir::state()
+{
+  return posState;
+}
+
 /*
  * Positioning mode
  * Handle movement from start to target positions
@@ -164,6 +184,8 @@ void StepDir::positionMode(void)
   int sign;
   newSpeed = fabs(currentSpeed);
   
+  // check target distance
+  // perform calculations on absolute speed, then apply sign 
   delta = getDelta();
 
   if (delta >= 0)
@@ -175,97 +197,97 @@ void StepDir::positionMode(void)
     delta = -delta;
     sign = -1;
   }
+
+  d1 = decelDistance(newSpeed, aMax);
+
   // Check for abort 
-  if (xEventGroupGetBits(motEvents) & EV_MOT_ABORT)
+  if (getEvents() & EV_MOT_ABORT)
   {
-    if (posState != PS_IDLE)
+    resetEvents(EV_MOT_ABORT | EV_MOT_GOTO);
+    cli();
+    targetPos = currentPos + (currentSpeed >= 0 ? 1:-1) * d1;
+    sei();
+    if (newSpeed < vStop)
     {
-      resetEvents(EV_MOT_ABORT);
-      cli();
-      targetPos = currentPos + sign * (min(delta, decelDistance(newSpeed, aMax)));
-      sei();
-      SD_debug(9);
-      if (newSpeed < vStop)
-      {
-        SD_debug(5);
-        programSpeed(0.0);
-        posState = PS_IDLE;
-        resetEvents(EV_MOT_GOTO);
-      }
-      else
-      {
-        d1 = decelDistance(newSpeed, aMax);
-        posState = PS_DECEL;
-      }
+      state(PS_STOPPING);
+    }
+    else
+    {
+      state(PS_DECEL_TARGET);
     }
   }
 
-  // perform calculations on absolute speed, then apply sign 
-  switch (posState)
+  // check distances
+  if (delta > 0)
+  {
+  // no point in computing acceleration if we are very close
+    if (delta < stopDistance)
+    {
+      programSpeed(sign * fmin (vMax, vStop));
+      state(PS_STOPPING);
+    }
+    else
+    {
+      d1 = decelDistance(newSpeed, aMax);
+      if (delta < d1)
+      {
+        state(PS_DECEL_TARGET);
+      }
+    }
+  }
+ 
+  // perform actions according to current state
+  switch (state())
   {
     case PS_IDLE:
       resetEvents(EV_MOT_ABORT);
       break;
+
     case PS_ACCEL: 
-      // Accelerate to VMax
-      newSpeed = newSpeed + (aMax * TICK_PERIOD_MS) / 1000;
-      d1 = decelDistance(newSpeed, aMax);
-      if (delta < d1)
       {
-        SD_debug(1);
-        posState = PS_DECEL;
+        // Accelerate to VMax
+        newSpeed = fmin(vMax, newSpeed + (aMax * TICK_PERIOD_MS) / 1000);
+        programSpeed(sign * newSpeed); 
+        if (newSpeed == vMax)
+          state(PS_CRUISE);               
       }
-      else 
-      {
-        if (newSpeed >= vMax)
-        {
-          SD_debug(2);
-          newSpeed = vMax;
-          posState = PS_CRUISE;
-        }
-      }
-      programSpeed(sign * newSpeed);        
       break;
 
     case PS_CRUISE: 
-      // Maintain VMax speed until close to target
-      newSpeed = vMax;
-      programSpeed(sign * newSpeed);
+      // check if vMax has changed
+      if (newSpeed > vMax) // check if the speed has changed (ie guiding command)
+      {
+        state(PS_ACCEL);
+      }
+      if (newSpeed < vMax) 
+      {
+        state(PS_DECEL);
+      }
+      break;
 
-      d1 = decelDistance(newSpeed, aMax);
-      if (delta < d1)
-      {
-        SD_debug(3);
-        posState = PS_DECEL;
-      }
-      break;
     case PS_DECEL:
-      // Decelerate then stop when at target
-      resetEvents(EV_MOT_ABORT);
-      if (newSpeed > vStop)
       {
-        double v;
-        v = (double) delta / (double) d1;
-        newSpeed = fmin(newSpeed, vMax * v);
-        programSpeed(sign * newSpeed);
+        // Decelerate at default deceleration aMax
+        newSpeed = fmax(vMax, newSpeed - (aMax * TICK_PERIOD_MS) / 1000);
+        programSpeed(sign * newSpeed);                
       }
-      else if (delta != 0)
-      {
-        SD_debug(4);
-        programSpeed(sign * vStop);
-        posState = PS_STOPPING;
-      }
-#ifdef DBG_STEPDIR
-    logMotion (posState, delta, newSpeed);
-#endif
       break;
+
+    case PS_DECEL_TARGET:
+      {
+        // Decelerate at computed deceleration dMax
+        dMax = newSpeed * newSpeed / (2 * delta);
+        newSpeed = newSpeed - (dMax * TICK_PERIOD_MS) / 1000;
+        programSpeed(sign * newSpeed);                
+      }
+      break;
+
     case PS_STOPPING:
       if (delta == 0)
       {
-        SD_debug(5);
         programSpeed(0.0);
         resetEvents(EV_MOT_GOTO);
-        posState = PS_IDLE;
+        state(PS_IDLE);
       }
       break;
   }
@@ -309,7 +331,7 @@ void motorTask(void *arg)
           mcP->currentPos = msgBuffer[1];
           if (mcP->currentPos != mcP->targetPos)
           {
-            mcP->posState = PS_ACCEL;
+            mcP->state(PS_ACCEL);
           }
           else
           {
@@ -319,22 +341,33 @@ void motorTask(void *arg)
           break;
 
         case MSG_SET_TARGET_POS:
-          SD_debug(0);
           cli();
           mcP->targetPos = msgBuffer[1];
           if (mcP->currentPos != mcP->targetPos)
           {
-            mcP->posState = PS_ACCEL;
+            mcP->state(PS_ACCEL);
           }
           else
           {
             mcP->resetEvents(EV_MOT_GOTO);  // no movement requested
           }
-          sei();            
+          sei(); 
           break;
 
         case MSG_SET_VMAX:
-          memcpy(&mcP->vMax, &msgBuffer[1], sizeof(double));  // always positive 
+          double v;
+          memcpy(&v, &msgBuffer[1], sizeof(double));  // always positive 
+          mcP->vStop = fmin(50, mcP->vMax); 
+          if (v > mcP->vMax)
+          {
+            mcP->vMax = v;
+            mcP->state(PS_ACCEL);
+          }
+          if (v < mcP->vMax)
+          {
+            mcP->vMax = v;
+            mcP->state(PS_DECEL);
+          }
           break;
 
         case MSG_SET_AMAX:
@@ -390,7 +423,7 @@ void StepDir::initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned time
   // default parameters 
   aMax = 2000.0;
   vStop = 50.0;                       // last steps to reach target
-  stopDistance = (long) vStop / 2;    // steps in half a second
+  stopDistance = (long) vStop / 10;    // steps in 100mS
   vMax = 10000.0;
 
   // queue for receiving messages from other tasks

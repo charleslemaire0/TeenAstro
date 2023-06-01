@@ -13,14 +13,13 @@ static unsigned long initialSystemTime = (50 * 365.25 * 24 * 3600);
 
 void HAL_preInit(void)
 {
-  pinMode(DebugPin0, OUTPUT);
-  debugOut.begin(57600, SWSERIAL_8N1, DebugPin1, DebugPin0, false);
+  Serial1.begin(57600);
 }
 
 // currently use only one debug port
 void HAL_debug(uint8_t b)
 {
-  debugOut.write(b);
+  Serial1.write(b);
 }
 
 void HAL_initSerial(void)

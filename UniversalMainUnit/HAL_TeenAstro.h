@@ -4,6 +4,11 @@
 #include "HAL_pins_250.h"    
 #endif
 
+#ifdef BOARD_240        // the old 240 board with Teensy 4.0 and without ST4 interface - debug only!
+#include "HAL_teensy_40.h"   
+#include "HAL_pins_240.h"    
+#endif
+
 #ifdef BOARD_teensy41    	// Standalone teensy41
 #include "HAL_teensy_40.h" 	// same as teensy40  
 #include "HAL_pins_teensy41.h"    

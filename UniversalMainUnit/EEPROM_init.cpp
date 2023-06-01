@@ -150,70 +150,7 @@ void initMount()
 
 
 
-void initTransformation(bool reset)
-{
-  float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
-  hasStarAlignment = false;
-  alignment.clean();
-  byte TvalidFromEEPROM = XEEPROM.read(getMountAddress(EE_Tvalid));
 
-  if (TvalidFromEEPROM == 1 && reset)
-  {
-    XEEPROM.write(getMountAddress(EE_Tvalid), 0);
-  }
-  if (TvalidFromEEPROM == 1 && !reset)
-  {
-    t11 = XEEPROM.readFloat(getMountAddress(EE_T11));
-    t12 = XEEPROM.readFloat(getMountAddress(EE_T12));
-    t13 = XEEPROM.readFloat(getMountAddress(EE_T13));
-    t21 = XEEPROM.readFloat(getMountAddress(EE_T21));
-    t22 = XEEPROM.readFloat(getMountAddress(EE_T22));
-    t23 = XEEPROM.readFloat(getMountAddress(EE_T23));
-    t31 = XEEPROM.readFloat(getMountAddress(EE_T31));
-    t32 = XEEPROM.readFloat(getMountAddress(EE_T32));
-    t33 = XEEPROM.readFloat(getMountAddress(EE_T33));
-    alignment.setT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
-    alignment.setTinvFromT();
-    hasStarAlignment = true;
-  }
-  else
-  {
-    if (isAltAz())
-    {
-      if (*localSite.latitude() > 0)
-      {
-        alignment.addReferenceDeg(0, 0, 180, 0);
-        alignment.addReferenceDeg(0, 90, 180, 90);
-      }
-      else
-      {
-        alignment.addReferenceDeg(0, 0, 0, 0);
-        alignment.addReferenceDeg(0, 90, 0, 90);
-      }
-      alignment.calculateThirdReference();
-    }
-    else
-    {
-      double ha, dec;
-      double cosLat = *localSite.cosLat();
-      double sinLat = *localSite.sinLat();
-      if (doesRefraction.forPole && abs(*localSite.latitude() > 10))
-      {
-        double val = abs(*localSite.latitude());
-        Topocentric2Apparent(&val);
-        if (*localSite.latitude() < 0)
-          val = -val;
-        cosLat = cos(val / Rad);
-        sinLat = sin(val / Rad);
-      }
-      HorTopoToEqu(90., 45., &ha, &dec, &cosLat, &sinLat);
-      alignment.addReferenceDeg(90., 45., ha, dec);
-      HorTopoToEqu(270., 45., &ha, &dec, &cosLat, &sinLat);
-      alignment.addReferenceDeg(270., 45., ha, dec);
-      alignment.calculateThirdReference();
-    }
-  }
-}
 
 
 void readEEPROMmotor()
