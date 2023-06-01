@@ -738,6 +738,16 @@ void SmartHandController::updateMainDisplay(PAGES page)
         u8g2_DrawUTF8(u8g2, 0, y, "Ax2E.");
         display->drawIDeg(x, y, ta_MountStatus.getAxis2EDeg());
       }
+      else
+      {
+        u8g2_DrawUTF8(u8g2, 0, y, "Ax1.");
+        display->drawIDeg(x, y, ta_MountStatus.getAxis1Degc());
+        y += line_height;
+        u8g2_DrawUTF8(u8g2, 0, y, "Ax2.");
+        display->drawIDeg(x, y, ta_MountStatus.getAxis2Degc());
+        y += line_height;
+      }
+
       display->setFont(u8g2_font_helvR12_te);
     }
 

@@ -379,7 +379,7 @@ void SafetyCheck(const bool forceTracking)
       lastError = ERRT_NONE;
     }
 
-    if (!checkPole(axis1, CHECKMODE_TRACKING))
+    if (!checkPole(axis1, axis2, CHECKMODE_TRACKING))
     {
       if ((staA1.dir && currentSide == PIER_EAST) || (!staA1.dir && currentSide == PIER_WEST))
       {

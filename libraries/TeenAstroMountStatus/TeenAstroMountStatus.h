@@ -48,6 +48,8 @@ private:
   unsigned long   m_lastStateAxisStep;
   char            m_TempAxis1Deg[15] = "?";
   char            m_TempAxis2Deg[15] = "?";
+  char            m_TempAxis1Degc[15] = "?";
+  char            m_TempAxis2Degc[15] = "?";
   char            m_TempAxis1EDeg[15] = "?";
   char            m_TempAxis2EDeg[15] = "?";
   unsigned long   m_lastStateAxisDeg;
@@ -80,6 +82,8 @@ private:
   bool            m_hasInfoAxis2Step = false;
   bool            m_hasInfoAxis1Deg = false;
   bool            m_hasInfoAxis2Deg = false;
+  bool            m_hasInfoAxis1Degc = false;
+  bool            m_hasInfoAxis2Degc = false;
   bool            m_hasInfoAxis1EDeg = false;
   bool            m_hasInfoAxis2EDeg = false;
   bool            m_hasInfoUTC = false;
@@ -149,6 +153,8 @@ public:
   const char* getAxis2Step() { return  m_TempAxis2Step; };
   const char* getAxis1Deg() { return  m_TempAxis1Deg; };
   const char* getAxis2Deg() { return  m_TempAxis2Deg; };
+  const char* getAxis1Degc() { return  m_TempAxis1Degc; };
+  const char* getAxis2Degc() { return  m_TempAxis2Degc; };
   const char* getAxis1EDeg() { return  m_TempAxis1EDeg; };
   const char* getAxis2EDeg() { return  m_TempAxis2EDeg; };
 

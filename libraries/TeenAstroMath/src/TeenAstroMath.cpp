@@ -183,6 +183,7 @@ void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side)
 }
 void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2, const double *Lat, const double poleAxis1 )
 {
+  double angle = *AngleAxis1;
   if (Side >= PIER_WEST)
   {
     //TODO Verify for altaz!!
@@ -190,9 +191,11 @@ void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2, con
       *AngleAxis2 = (90. - *AngleAxis2) + 90.;
     else
       *AngleAxis2 = (-90. - *AngleAxis2) - 90.;
-    *AngleAxis1 = poleAxis1 < 0  ? *AngleAxis1 - 180. : *AngleAxis1 + 180.;
+    angle += 180.;
+    while (angle < -180.) angle += 360.;
+    while (angle > 180.) angle -= 360.;
+    *AngleAxis1 = angle;
   }
-
 }
 
 long distStepAxis1(long* start, long* end)

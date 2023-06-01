@@ -129,7 +129,10 @@ void TeenAstroMountStatus::updateAxisDeg()
     }
     else
     {
-      m_hasInfoAxis1Deg&& m_hasInfoAxis2Deg ? m_lastStateAxisDeg = millis() : m_connectionFailure++;
+      m_hasInfoAxis1Degc = GetLX200(":GXP3#", m_TempAxis1Degc, sizeof(m_TempAxis1Degc)) == LX200_VALUEGET;
+      m_hasInfoAxis2Degc = GetLX200(":GXP4#", m_TempAxis2Degc, sizeof(m_TempAxis2Degc)) == LX200_VALUEGET;
+      m_hasInfoAxis1Deg&& m_hasInfoAxis2Deg && m_hasInfoAxis1Degc&& m_hasInfoAxis2Degc ?
+        m_lastStateAxisDeg = millis() : m_connectionFailure++;
     }
   }
 };

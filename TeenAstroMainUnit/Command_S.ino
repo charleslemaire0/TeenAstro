@@ -794,6 +794,7 @@ void Command_S(Command& process_command)
     bool ok = i > 0 && i < 5 && !isMountTypeFix;
     if (ok)
     {
+      reset_EE_Limit();
       XEEPROM.write(getMountAddress(EE_mountType), i);
       reboot_unit = true;
     }
