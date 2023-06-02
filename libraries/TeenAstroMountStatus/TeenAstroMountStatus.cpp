@@ -68,6 +68,15 @@ void TeenAstroMountStatus::updateRaDec()
     m_hasInfoRa&& m_hasInfoDec ? m_lastStateRaDec = millis() : m_connectionFailure++;
   }
 };
+void TeenAstroMountStatus::updateHaDec()
+{
+  if (millis() - m_lastStateHaDec > updaterate)
+  {
+    m_hasInfoHa = GetLX200(":GXT3#", m_TempHa, sizeof(m_TempHa)) == LX200_VALUEGET;
+    m_hasInfoDec = GetLX200(":GD#", m_TempDec, sizeof(m_TempDec)) == LX200_VALUEGET;
+    m_hasInfoHa&& m_hasInfoDec ? m_lastStateHaDec = millis() : m_connectionFailure++;
+  }
+};
 void TeenAstroMountStatus::updateRaDecT()
 {
   if (millis() - m_lastStateRaDecT > updaterate)
@@ -120,7 +129,10 @@ void TeenAstroMountStatus::updateAxisDeg()
     }
     else
     {
-      m_hasInfoAxis1Deg&& m_hasInfoAxis2Deg ? m_lastStateAxisDeg = millis() : m_connectionFailure++;
+      m_hasInfoAxis1Degc = GetLX200(":GXP3#", m_TempAxis1Degc, sizeof(m_TempAxis1Degc)) == LX200_VALUEGET;
+      m_hasInfoAxis2Degc = GetLX200(":GXP4#", m_TempAxis2Degc, sizeof(m_TempAxis2Degc)) == LX200_VALUEGET;
+      m_hasInfoAxis1Deg&& m_hasInfoAxis2Deg && m_hasInfoAxis1Degc&& m_hasInfoAxis2Degc ?
+        m_lastStateAxisDeg = millis() : m_connectionFailure++;
     }
   }
 };

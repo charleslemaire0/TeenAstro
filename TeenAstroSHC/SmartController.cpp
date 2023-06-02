@@ -131,32 +131,33 @@ void SmartHandController::setup(
     }
   }
 #ifdef RADEC_PAGE
-    pages[0].show = true;
-#endif
-#ifdef ALTAZ_PAGE
-    pages[1].show = true;
-#endif
-#ifdef PUSH_PAGE
-    pages[2].show = true;
-#endif
-#ifdef TIME_PAGE
-    pages[3].show = true;
-#endif
-#ifdef AXIS_STEP_PAGE
-    pages[4].show = true;
-#endif
-#ifdef AXIS_DEG_PAGE
-    pages[5].show = true;
-#endif
-#ifdef FOCUSER_PAGE
-    pages[6].show = true;
-#endif
-#ifdef ALIGN_PAGE
-    pages[7].show = true;
+    pages[P_RADEC].show = true;
 #endif
 #ifdef HA_PAGE
-    pages[8].show = true;
+    pages[P_HADEC].show = true;
 #endif
+#ifdef ALTAZ_PAGE
+    pages[P_ALTAZ].show = true;
+#endif
+#ifdef PUSH_PAGE
+    pages[P_PUSH].show = true;
+#endif
+#ifdef TIME_PAGE
+    pages[P_TIME].show = true;
+#endif
+#ifdef AXIS_STEP_PAGE
+    pages[P_AXIS_STEP].show = true;
+#endif
+#ifdef AXIS_DEG_PAGE
+    pages[P_AXIS_DEG].show = true;
+#endif
+#ifdef FOCUSER_PAGE
+    pages[P_FOCUSER].show = true;
+#endif
+#ifdef ALIGN_PAGE
+    pages[P_ALIGN].show = true;
+#endif
+
 }
 
 void SmartHandController::getNextpage()

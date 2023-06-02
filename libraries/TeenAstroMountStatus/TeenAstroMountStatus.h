@@ -31,10 +31,12 @@ private:
   char            m_TempVb[10] = "?";
   char            m_TempVD[20] = "?";
   char            m_TempRa[15] = "?";
+  char            m_TempHa[15] = "?";
   char            m_TempDec[15] = "?";
   char            m_TempRaT[15] = "?";
   char            m_TempDecT[15] = "?";
   unsigned long   m_lastStateRaDec;
+  unsigned long   m_lastStateHaDec;
   unsigned long   m_lastStateRaDecT;
   char            m_TempAz[15] = "?";
   char            m_TempAlt[15] = "?";
@@ -46,6 +48,8 @@ private:
   unsigned long   m_lastStateAxisStep;
   char            m_TempAxis1Deg[15] = "?";
   char            m_TempAxis2Deg[15] = "?";
+  char            m_TempAxis1Degc[15] = "?";
+  char            m_TempAxis2Degc[15] = "?";
   char            m_TempAxis1EDeg[15] = "?";
   char            m_TempAxis2EDeg[15] = "?";
   unsigned long   m_lastStateAxisDeg;
@@ -67,6 +71,7 @@ private:
   bool            m_isValid = false;
   bool            m_hasInfoV = false;
   bool            m_hasInfoRa = false;
+  bool            m_hasInfoHa = false;
   bool            m_hasInfoDec = false;
   bool            m_hasInfoRaT = false;
   bool            m_hasInfoDecT = false;
@@ -77,6 +82,8 @@ private:
   bool            m_hasInfoAxis2Step = false;
   bool            m_hasInfoAxis1Deg = false;
   bool            m_hasInfoAxis2Deg = false;
+  bool            m_hasInfoAxis1Degc = false;
+  bool            m_hasInfoAxis2Degc = false;
   bool            m_hasInfoAxis1EDeg = false;
   bool            m_hasInfoAxis2EDeg = false;
   bool            m_hasInfoUTC = false;
@@ -108,6 +115,7 @@ public:
 
   bool hasInfoV() { return m_hasInfoV; };
   bool hasInfoRa() { return m_hasInfoRa; };
+  bool hasInfoHa() { return m_hasInfoHa; };
   bool hasInfoDec() { return m_hasInfoDec; };
   bool hasInfoAz() { return m_hasInfoAz; };
   bool hasInfoAlt() { return m_hasInfoAlt; };
@@ -132,6 +140,7 @@ public:
   const char* getVb() { return  m_TempVb; };
   const char* getVD() { return  m_TempVD; };
   const char* getRa() { return  m_TempRa; };
+  const char* getHa() { return  m_TempHa; };
   const char* getDec() { return  m_TempDec; };
   const char* getRaT() { return  m_TempRaT; };
   const char* getDecT() { return  m_TempDecT; };
@@ -144,6 +153,8 @@ public:
   const char* getAxis2Step() { return  m_TempAxis2Step; };
   const char* getAxis1Deg() { return  m_TempAxis1Deg; };
   const char* getAxis2Deg() { return  m_TempAxis2Deg; };
+  const char* getAxis1Degc() { return  m_TempAxis1Degc; };
+  const char* getAxis2Degc() { return  m_TempAxis2Degc; };
   const char* getAxis1EDeg() { return  m_TempAxis1EDeg; };
   const char* getAxis2EDeg() { return  m_TempAxis2EDeg; };
 
@@ -160,6 +171,7 @@ public:
 
   void updateV();
   void updateRaDec();
+  void updateHaDec();
   void updateRaDecT();
   void updateAzAlt();
   void updatePush();

@@ -360,6 +360,10 @@ void SmartHandController::updateMainDisplay(PAGES page)
   {
     ta_MountStatus.updateRaDec();
   }
+  else if (page == P_HADEC && !ta_MountStatus.isPulseGuiding())
+  {
+    ta_MountStatus.updateHaDec();
+  }
   else if (page == P_ALTAZ && !ta_MountStatus.isPulseGuiding())
   {
     ta_MountStatus.updateAzAlt();
@@ -371,10 +375,6 @@ void SmartHandController::updateMainDisplay(PAGES page)
   else if (page == P_TIME && !ta_MountStatus.isPulseGuiding())
   {
     ta_MountStatus.updateTime();
-  }
-  else if (page == P_HA && !ta_MountStatus.isPulseGuiding())
-  {
-    ta_MountStatus.updateLHA();
   }
   else if (page == P_FOCUSER && !ta_MountStatus.isPulseGuiding())
   {
@@ -407,7 +407,7 @@ void SmartHandController::updateMainDisplay(PAGES page)
       TeenAstroMountStatus::SiderealMode currSM = ta_MountStatus.getSiderealMode();
       TeenAstroMountStatus::PierState curPi = ta_MountStatus.getPierState();
       TeenAstroMountStatus::RateCompensation curC = ta_MountStatus.getRateCompensation();
-      if (ta_MountStatus.hasGNSSBoard())
+      if (ta_MountStatus.hasGNSSBoard() && (ta_MountStatus.atHome() || curP == TeenAstroMountStatus::PRK_PARKED))
       {
         if (ta_MountStatus.isGNSSValid())
         {
@@ -635,6 +635,19 @@ void SmartHandController::updateMainDisplay(PAGES page)
         display->drawDec(x, y, ta_MountStatus.getDec());
       }
     }
+    else if (page == P_HADEC)
+    {
+      if (ta_MountStatus.hasInfoHa() && ta_MountStatus.hasInfoDec())
+      {
+        u8g2_uint_t y = 36;
+        x = u8g2_GetDisplayWidth(u8g2);
+        display->drawRA(x, y, ta_MountStatus.getHa());
+        u8g2_DrawUTF8(u8g2, 0, y, "HA");
+        y += line_height + 4;
+        u8g2_DrawUTF8(u8g2, 0, y, "Dec");
+        display->drawDec(x, y, ta_MountStatus.getDec());
+      }
+    }
     else if (page == P_ALTAZ)
     {
       if (ta_MountStatus.hasInfoAz() && ta_MountStatus.hasInfoAlt())
@@ -678,19 +691,6 @@ void SmartHandController::updateMainDisplay(PAGES page)
         y += line_height + 4;
         u8g2_DrawUTF8(u8g2, 0, y, "LST");
         display->drawRA(x, y, ta_MountStatus.getSidereal());
-      }
-    }
-    else if (page == P_HA)
-    {
-      if (ta_MountStatus.hasInfoUTC() && ta_MountStatus.hasInfoLHA())
-      {
-        u8g2_uint_t y = 36;
-        x = u8g2_GetDisplayWidth(u8g2);
-        u8g2_DrawUTF8(u8g2, 0, y, "UTC");
-        display->drawRA(x, y, ta_MountStatus.getUTC());
-        y += line_height + 4;
-        u8g2_DrawUTF8(u8g2, 0, y, "LHA");
-        display->drawRA(x, y, ta_MountStatus.getLHA());
       }
     }
     else if (page == P_FOCUSER)
@@ -738,8 +738,19 @@ void SmartHandController::updateMainDisplay(PAGES page)
         u8g2_DrawUTF8(u8g2, 0, y, "Ax2E.");
         display->drawIDeg(x, y, ta_MountStatus.getAxis2EDeg());
       }
+      else
+      {
+        u8g2_DrawUTF8(u8g2, 0, y, "Ax1.");
+        display->drawIDeg(x, y, ta_MountStatus.getAxis1Degc());
+        y += line_height;
+        u8g2_DrawUTF8(u8g2, 0, y, "Ax2.");
+        display->drawIDeg(x, y, ta_MountStatus.getAxis2Degc());
+        y += line_height;
+      }
+
       display->setFont(u8g2_font_helvR12_te);
     }
+
     else if (page == P_ALIGN)
     {
       u8g2_uint_t y = 36;

@@ -266,6 +266,7 @@ void Command_SX()
     case 'A':
       // :SXLA,VVVV# set user defined minAXIS1 (always negatif)
       i = (int)strtol(&command[5], NULL, 10);
+      i = max(min(i, 10 * abs(geoA1.LimMinAxis)),0);
       XEEPROM.writeInt(getMountAddress(EE_minAxis1), i);
       initLimitMinAxis1();
       replyValueSetShort(true);
@@ -273,6 +274,7 @@ void Command_SX()
     case 'B':
       // :SXLB,VVVV# set user defined maxAXIS1 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
+      i = max(min(i, 10 * abs(geoA1.LimMaxAxis)), 0);
       XEEPROM.writeInt(getMountAddress(EE_maxAxis1), i);
       initLimitMaxAxis1();
       replyValueSetShort(true);
@@ -280,6 +282,7 @@ void Command_SX()
     case 'C':
       // :SXLC,VVVV# set user defined minAXIS2 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
+      i = max(min(i, 10 * abs(geoA2.LimMinAxis)), 0);
       XEEPROM.writeInt(getMountAddress(EE_minAxis2), i);
       initLimitMinAxis2();
       replyValueSetShort(true);
@@ -287,6 +290,7 @@ void Command_SX()
     case 'D':
       // :SXLD,VVVV# set user defined maxAXIS2 (always positf)
       i = (int)strtol(&command[5], NULL, 10);
+      i = max(min(i, 10 * abs(geoA2.LimMaxAxis)), 0);
       XEEPROM.writeInt(getMountAddress(EE_maxAxis2), i);
       initLimitMaxAxis2();
       replyValueSetShort(true);
@@ -368,7 +372,7 @@ void Command_SX()
     case '0':
     {
       int h1, m1, m2, s1;
-      bool ok = !hmsToHms(&h1, &m1, &m2, &s1, &command[4], true);
+      bool ok = hmsToHms(&h1, &m1, &m2, &s1, &command[4], true);
       if (ok)
       {
         rtk.setClock(year(), month(), day(), h1, m1, s1, *localSite.longitude(), 0);
@@ -790,6 +794,7 @@ void Command_S(Command& process_command)
     bool ok = i > 0 && i < 5 && !isMountTypeFix;
     if (ok)
     {
+      reset_EE_Limit();
       XEEPROM.write(getMountAddress(EE_mountType), i);
       reboot_unit = true;
     }
@@ -1082,6 +1087,7 @@ void Command_S(Command& process_command)
     //                  1 on success
   {
     bool ok = dmsToDouble(&newTargetAzm, &command[2], false, highPrecision);
+    newTargetAzm = degRange(newTargetAzm + 180.);
     replyValueSetShort(ok);
   }
   break;

@@ -11,7 +11,7 @@ const double Lat[2] = { 0.88660302, -24.6274 * DEG_TO_RAD };
 const double Ha[2] = { -0.69112174, 19.486*15 *DEG_TO_RAD };
 const double Dec[2] = { 0.14718022, -50* DEG_TO_RAD };
 const double RotE[2] = { random(-180, 180) * DEG_TO_RAD,0 };
-const double T_Az[2] = { -0.902320657+M_PI, 135* DEG_TO_RAD };
+const double T_Az[2] = { -0.902320657, 135* DEG_TO_RAD + M_PI };
 const double T_Alt[2] = { 0.63775167,32.74* DEG_TO_RAD };
 LA3::RefrOpt Opt = { false,10,101 };
 

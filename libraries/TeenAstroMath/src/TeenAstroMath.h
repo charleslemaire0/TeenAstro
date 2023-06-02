@@ -48,7 +48,7 @@ void EquToHor(double HA, double Dec, bool refraction, double* Azm, double* Alt, 
 void HorTopoToEqu(double Azm, double Alt, double *HA, double *Dec, const double *cosLat, const double *sinLat);
 void HorAppToEqu(double Azm, double Alt, double *HA, double *Dec, const double *cosLat, const double *sinLat);
 void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side);
-void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2, const double *Lat);
+void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2, const double *Lat, const double poleAxis1);
 
 //steps operations
 long distStepAxis1(long* start, long* end);

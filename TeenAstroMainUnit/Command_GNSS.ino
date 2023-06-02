@@ -17,23 +17,18 @@ void resetDeltaLoc()
 }
 
 
-static void smartDelay(unsigned long ms)
+static void UpdateGnss()
 {
 #if VERSION == 220
   return;
 #endif
-  if (!hasGNSS)
-  {
-    return;
-  }
-  unsigned long start = millis();
-  do
+  if (hasGNSS && (atHome || parkStatus == PRK_PARKED))
   {
     while (GNSS_Serial.available())
     {
       gps.encode(GNSS_Serial.read());
     }
-  } while (millis() - start < ms);
+  }
 }
 
 bool iSGNSSValid()

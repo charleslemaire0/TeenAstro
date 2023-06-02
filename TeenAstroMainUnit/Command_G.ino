@@ -14,6 +14,7 @@ void PrintAtitude(double& val)
 void PrintAzimuth(double& val)
 {
   val = AzRange(val);
+
   doubleToDms(reply, &val, true, false, highPrecision);
   strcat(reply, "#");
 }
@@ -150,11 +151,11 @@ void Command_GX()
     {
 #if HASEncoder
       Coord_HO HO_T = getHorETopo();
-      f = HO_T.Az() * RAD_TO_DEG;
+      f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
       f1 = HO_T.Alt() * RAD_TO_DEG;
 #else
       Coord_HO HO_T = getHorTopo();
-      f = HO_T.Az() * RAD_TO_DEG;
+      f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
       f1 = HO_T.Alt() * RAD_TO_DEG;
 #endif // HASEncoder
       command[3] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
@@ -363,6 +364,17 @@ void Command_GX()
       doubleToDms(reply, &f1, true, true, highPrecision);
       strcat(reply, "#");
       break;
+    case '3':  
+    case '4':
+    {
+      Coord_IN IN_T = getEqu(*localSite.latitude() * DEG_TO_RAD).To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto(), alignment.Tinv);
+      f = IN_T.Axis1() * RAD_TO_DEG;
+      f1 = IN_T.Axis2() * RAD_TO_DEG;
+      Angle2InsrtAngle(GetPierSide(), &f, &f1, localSite.latitude(), geoA1.poleDef);
+      command[3] == '3' ? doubleToDms(reply, &f, true, true, highPrecision) : doubleToDms(reply, &f1, true, true, highPrecision);
+      strcat(reply, "#");
+    }
+      break;
     default:
       replyLongUnknow();
       break;
@@ -527,34 +539,9 @@ void Command_GX()
     case '3':
     {
       // :GXT3# LHA time
-
-      static unsigned long _coord_t1 = 0;
-      static double _dec1 = 0;
-      static double _ra1 = 0;
-
-      double tmpLST, f, f1;
-      tmpLST = rtk.LST();
-
-      if (millis() - _coord_t1 < 100)
-      {
-        f = _ra1;
-        f1 = _dec1;
-      }
-      else
-      {
-        Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
-        f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
-        f1 = EQ_T.Dec() * RAD_TO_DEG;
-        _ra1 = f;
-        _dec1 = f1;
-        _coord_t1 = millis();
-      }
-
-      tmpLST -= f;
-      if (tmpLST < -12)
-        tmpLST += 24;
-      else if (tmpLST > 12)
-        tmpLST -= 24;
+      double tmpLST;
+      Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
+      tmpLST = EQ_T.Ha()*RAD_TO_HOUR;
       doubleToHms(reply, &tmpLST, true);
       strcat(reply, "#");
     }
@@ -954,7 +941,7 @@ void  Command_G()
     }
     else if (command[1] == 'Z')
     {
-      f = HO_T.Az() * RAD_TO_DEG;
+      f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
       PrintAzimuth(f);
     }
     else

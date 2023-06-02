@@ -14,10 +14,24 @@ PierSide getPierSide(const long &axis2)
 }
 
 //for GEM
-bool checkPole(const long &axis1, CheckMode mode)
+bool checkPole(const long &axis1, const long& axis2, CheckMode mode)
 {
+  bool ok = false;
   double underPoleLimit = (mode == CHECKMODE_GOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;
-  return (axis1 > geoA1.quaterRot - underPoleLimit * 15. * geoA1.stepsPerDegree) && (axis1 < geoA1.quaterRot + underPoleLimit * 15. * geoA1.stepsPerDegree);
+  PierSide _currPierSide = getPierSide(axis2);
+  switch (_currPierSide)
+  {
+  case PIER_EAST:
+    ok = (axis1 < geoA1.poleDef + (underPoleLimit - 6) * 15. * geoA1.stepsPerDegree);
+    break;
+  case PIER_WEST:
+    ok = (axis1 > geoA1.poleDef - (underPoleLimit - 6) * 15. * geoA1.stepsPerDegree);
+    break;
+  default:
+    ok = false;
+    break;
+  }
+  return ok ;
 }
 
 bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
@@ -51,11 +65,11 @@ bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
   }
   switch (_currPierSide)
   {
-  case PIER_WEST:
-    if (axis1 > (12. + MinutesPastMeridianW / 60.)* 15.0 * geoA1.stepsPerDegree) ok = false;
-    break;
   case PIER_EAST:
-    if (axis1 < -MinutesPastMeridianE / 60. * 15.0 * geoA1.stepsPerDegree) ok = false;
+    ok = axis1 > geoA1.poleDef - geoA1.quaterRot - (MinutesPastMeridianE / 60.) * 15.0 * geoA1.stepsPerDegree;
+    break;
+  case PIER_WEST:
+    ok = axis1 <  geoA1.poleDef + geoA1.quaterRot + (MinutesPastMeridianW / 60.) * 15.0 * geoA1.stepsPerDegree;
     break;
   default:
     ok = false;
@@ -82,7 +96,7 @@ bool withinLimit(const long &axis1, const long &axis2)
   {
     if (mountType == MOUNT_TYPE_GEM)
     {
-      ok = checkPole(axis1, CHECKMODE_GOTO);
+      ok = checkPole(axis1, axis2, CHECKMODE_GOTO);
       if (!ok)
         return ok;
     }
@@ -102,6 +116,13 @@ void initLimit()
   initLimitMaxAxis2();
 }
 
+void reset_EE_Limit()
+{
+  XEEPROM.writeInt(getMountAddress(EE_minAxis1), 3600);
+  XEEPROM.writeInt(getMountAddress(EE_maxAxis1), 3600);
+  XEEPROM.writeInt(getMountAddress(EE_minAxis2), 3600);
+  XEEPROM.writeInt(getMountAddress(EE_maxAxis2), 3600);
+}
 
 void initLimitMinAxis1()
 {

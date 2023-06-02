@@ -302,7 +302,7 @@ void loop()
     // COMMAND PROCESSING --------------------------------------------------------------------------------
     // acts on commands recieved across Serial0 and Serial1 interfaces
     processCommands();
-    smartDelay(0);
+    UpdateGnss();
   }
 
   if (StartLoopError != lastError)
@@ -379,7 +379,7 @@ void SafetyCheck(const bool forceTracking)
       lastError = ERRT_NONE;
     }
 
-    if (!checkPole(axis1, CHECKMODE_TRACKING))
+    if (!checkPole(axis1, axis2, CHECKMODE_TRACKING))
     {
       if ((staA1.dir && currentSide == PIER_EAST) || (!staA1.dir && currentSide == PIER_WEST))
       {
