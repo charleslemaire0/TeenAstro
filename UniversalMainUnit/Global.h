@@ -111,8 +111,8 @@ void SafetyCheck(void);
 
 // FreeRTOS constants and structures
 #define MON_TASK_PRTY     2
-#define CTRL_TASK_PRTY    4
-#define CMD_TASK_PRTY     6
+#define CTRL_TASK_PRTY    6
+#define CMD_TASK_PRTY     4
 #define MON_TASK_PERIOD 100  // milliseconds
 #define CMD_TASK_PERIOD  1
 #define CTRL_TASK_PERIOD 1 

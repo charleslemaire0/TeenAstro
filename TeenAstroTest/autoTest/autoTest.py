@@ -54,13 +54,23 @@ speedFrame = sg.Frame('Axis Speeds ', [[sg.T('Axis1:'), sg.T('0', key='axis1_spe
 slewFrame = sg.Frame('Slew Rates (arc-sec/S)', [[sg.T('RA:'), sg.T('0', key='ra_rate')],[sg.T('Dec:'), sg.T('0', key='dec_rate')]]) 
 
 def sgSpin(label):
-    return sg.Spin(values = [i for i in range(-100,100,10)], initial_value=0, key=label, readonly=True, background_color='white', size=6)
+    return sg.Spin(values = [i for i in range(-100,100,10)], initial_value=0, key=label, background_color='white', size=6)
 
 homeErrorFrame = sg.Frame('Home Errors - arc-minutes',[[sg.T('Axis1', size=6), sgSpin('home_error_axis1')],
                                                        [sg.T('Axis2', size=6), sgSpin('home_error_axis2')]])
 
 poleErrorFrame = sg.Frame('Pole Errors - arc-minutes',[[sg.T('Azimuth', size=6),  sgSpin('pole_error_az')],
                                                        [sg.T('Altitude', size=6), sgSpin('pole_error_alt')]])
+
+centeringFrame = sg.Frame('Centering',[[sg.B(button_text='N', key='alignN'), sg.B(button_text='S', key='alignS'),
+                                                        sg.B(button_text='E', key='alignE'),sg.B(button_text='W', key='alignW'), 
+                                                        sg.Text('Speed:', size=(6, 1)),
+                      sg.Spin(values = ['0', '1', '2', '3', '4'], initial_value=2, key='CenteringSpeed', background_color='white', enable_events=True, size=6)]])
+
+
+alignmentFrame = sg.Frame('Sync/Alignment',[[sg.B(button_text='Sync', key='alignmentSync'),sg.B(button_text='StartAlign', key='startAlign'),
+                                        sg.B(button_text='ClearAlign', key='clearAlign'),
+                                        sg.B(button_text='Align2', key='align2'),sg.B(button_text='Align3', key='align3')]])
 
 slewingCanvasGroup = sg.TabGroup([[sg.Tab('T',  [[sg.Canvas(key='slew_cv_t', size=(640, 400))]])],
                                    [sg.Tab('Polar', [[sg.Canvas(key='slew_cv_polar', size=(640, 400))]])]
@@ -70,7 +80,8 @@ slewTestTab = [[sg.Column([
                     [sg.B(button_text = 'Home', key='slewHome'),sg.B(button_text = 'North', key='slewNorth'),sg.B(button_text = 'West', key='slewWest'),
                      sg.B(button_text = 'East', key='slewEast'),sg.B(button_text = 'South', key='slewSouth'),sg.B(button_text = 'Zenith', key='slewZenith'),
                      sg.B(button_text = 'AutoSlew', key='autoSlew'),sg.B(button_text = 'Stop', key='stopSlew'),
-                     sg.B(button_text = 'Clear', key='clearSlew'), sg.B(button_text = 'Save', key='saveSlew')],
+                     sg.B(button_text = 'Clear', key='clearSlew'), sg.B(button_text = 'Flip', key='flipMount'), 
+                     sg.B(button_text = 'Park', key='park'), sg.B(button_text = 'Unpark', key='unpark')],
                     [slewingCanvasGroup]]),
                     sg.Column([[horCoordFrame]])
                     ]]
@@ -92,8 +103,8 @@ trackingTab = [[sg.Column([
 alignmentTab = [[sg.Column([
                     [sg.B(button_text = '+',key='zoomInA'),sg.B(button_text = '-',key='zoomOutA'),
                       sg.DropDown([], key='alignmentTarget', size=25),
-                      sg.B(button_text='Goto', key='alignmentGoto'), sg.B(button_text='Sync', key='alignmentSync'),
-                      sg.B(button_text='N', key='alignN'),sg.B(button_text='S', key='alignS'),sg.B(button_text='E', key='alignE'),sg.B(button_text='W', key='alignW')],
+                      sg.B(button_text='Goto', key='alignmentGoto'), 
+                      centeringFrame, alignmentFrame],
                     [sg.Canvas(key='alignment_cv', size=(640, 400))]]), sg.Column([[eqCoordFrame],[homeErrorFrame], [poleErrorFrame]])]
                 ]
 
@@ -233,6 +244,10 @@ class Application:
                     status = 'TRACKING '
                 elif self.ta.isSlewing():
                     status = 'SLEWING '
+                elif self.ta.isParking():
+                    status = 'PARKING '
+                elif self.ta.isParked():
+                    status = 'PARKED '
                 self.window['statusCode'].update(status + self.ta.guideStatus())
                 self.window['errorCode'].update(self.ta.getErrorCode())
         

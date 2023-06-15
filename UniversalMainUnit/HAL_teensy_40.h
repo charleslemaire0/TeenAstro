@@ -15,4 +15,12 @@
 #define BacklashTakeupRate         5 // backlash takeup rate (in multiples of the sidereal rate) - not used at this time
 #define MAX_TEENASTRO_SPEED       (1000000 / MIN_INTERRUPT_PERIOD)  // in µsteps / S
 
+#ifdef BOARD_240
+void      HAL_debug0(uint8_t b);
+void      HAL_debug1(uint8_t b);
+#else
+#define HAL_debug0(b)
+#define HAL_debug1(b)
+#endif
+
 #endif

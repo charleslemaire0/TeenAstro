@@ -19,6 +19,8 @@
 #define ISR(f) void IRAM_ATTR f(void) 
 #define PORT Serial2
 #define DBG Serial1
+#define DBG1 debugOut
+EspSoftwareSerial::UART debugOut(2,4);  // rx, tx pins
 #endif
 
 #ifdef __arm__
@@ -44,6 +46,7 @@
 #define Axis2StepPin    20 
 #define Axis2EnablePin  5
 #define DBG Serial2
+#define debugOut Serial3
 #endif
 
 #define ISR(f)  void f(void)
@@ -62,6 +65,8 @@
 #include "Mc5160.h"
 #include "MotorDriver.h"
 #include <SoftwareSerial.h>
+#include <time.h>
+#include <stdlib.h>
 
 #define MAX_CMD_SIZE 50
 #define MAX_ARG_SIZE 20
@@ -251,6 +256,32 @@ void set(char *arg1, char *arg2)
   }
 }
 
+// perform lots of goto to random positions to test driver
+void random(char *arg1, char *arg2)
+{
+  int iter, maxTarget;
+
+  if ((sscanf( arg1, "%d", &iter ) == 1) && (sscanf( arg2, "%d", &maxTarget ) == 1))
+  {
+    PORT.printf("Random %d goto tests with max target=%d\n", iter, maxTarget);
+    srand(time(NULL));   // Initialization, should only be called once.
+    for (int i=0;i<iter;i++)
+    {
+      int pos = rand() % maxTarget - maxTarget/2;     
+      motorA1.mcP->setTargetPos(pos);
+      PORT.printf("%d: goto %d", i, pos);
+      while(!motorA1.positionReached())
+      {
+        PORT.printf(".");
+        vTaskDelay(1000);
+      }
+      PORT.printf("ok\n");
+      vTaskDelay(1000);
+    }
+  }
+}
+
+
 void custom(char *arg1, char *arg2)
 {
   int current = 800;
@@ -344,6 +375,7 @@ CMD_STRUCT Commands[] =
   {"init",   &init,          "Initialize"},
   {"reset",  &reset,         "Reset"},
   {"custom", &custom,        "Custom"},
+  {"random", &random,        "Random"},
   {"get",    &get,           "Get parameter"},
   {"set",    &set,           "Set parameter"},
   {"stop",   &stop,          "Stop motor"},
@@ -355,9 +387,13 @@ CMD_STRUCT Commands[] =
 #define NUM_COMMANDS (sizeof(Commands) / sizeof (CMD_STRUCT))
 
 
-void HAL_debug(uint8_t b)
+void HAL_debug0(uint8_t b)
 {
   DBG.write(b);
+}
+void HAL_debug1(uint8_t b)
+{
+  debugOut.write(b);
 }
 
 
@@ -461,9 +497,10 @@ void setup()
 {
   PORT.begin(57600);
   DBG.begin(57600);
+  debugOut.begin(57600);
 
   delay(1000);
-  PORT.println("Debug Monitor");
+  PORT.println("\nDebug Monitor");
 
   xTaskCreate(
     mainLoopTask,    // Function that should be called

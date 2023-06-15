@@ -18,7 +18,7 @@ void EqMount::stepsToAxes(Steps *sP, Axes *aP)
  */
 bool EqMount::isFlipped()
 {
-  long pos = motorA2.getCurrentPos();
+  long pos = motorA2.getCurrentPos() - axisOffset.steps2;
  	return ((pos < 0) == (*localSite.latitude() >= 0));	
 }
 
@@ -94,7 +94,7 @@ bool EqMount::getTargetPierSide(EqCoords *eP, PierSide *psOutP)
 bool EqMount::eqToAxes(EqCoords *eP, Axes *aP, PierSide ps)
 {  
   EqCoords ref;
-#if 0
+#if 1
   // Get instrument coordinates from ref. coordinates using alignment matrix
   alignment.toInstrumentDeg(ref.ha, ref.dec, eP->ha, eP->dec);
 #else
@@ -151,7 +151,7 @@ void EqMount::axesToEqu(Axes *aP, EqCoords *eP)
     instr.ha  = hemisphere * aP->axis1;
     instr.dec = hemisphere * (90 - aP->axis2);    
   }
-#if 0  
+#if 1  
   alignment.toReferenceDeg(eP->ha, eP->dec, instr.ha, instr.dec);
 #else 
   eP->ha = instr.ha;
@@ -223,18 +223,21 @@ bool EqMount::syncAzAlt(double Azm, double Alt, PierSide Side)
 
 byte EqMount::Flip()
 {
-#if 0  
-  long axis1Flip, axis2Flip;
-  PierSide selectedSide = PIER_NOTVALID;
-  PierSide preferedPierSide = (GetPierSide() == PIER_EAST) ? PIER_WEST : PIER_EAST;
-  double Axis1 = motorA1.getCurrentPos() / (double)geoA1.stepsPerDegree;
-  double Axis2 = motorA2.getCurrentPos() / (double)geoA2.stepsPerDegree;
-  if (!predictTarget(Axis1, Axis2, preferedPierSide, axis1Flip, axis2Flip, selectedSide))
+  Steps steps;
+  Axes axes;
+  EqCoords eqCoords;
+  PierSide ps = GetPierSide();
+
+  steps.steps1 = motorA1.getCurrentPos();
+  steps.steps2 = motorA2.getCurrentPos();
+
+  stepsToAxes(&steps, &axes);
+  axesToEqu(&axes, &eqCoords);
+  if (eqToAxes(&eqCoords, &axes, otherSide(ps)))
   {
-    return ERRGOTO_SAMESIDE;
+    axesToSteps(&axes, &steps);
+    return goTo(&steps);
   }
-  return goTo(axis1Flip, axis2Flip);
-#endif  
   return ERRGOTO_NONE;
 }
 
@@ -324,7 +327,7 @@ void EqMount::getTrackingSpeeds(Speeds *sP)
     dir = axis2Direction('n');    // direction is zero for the pole, ie home position. Convert to +1 or -1 depending on our current position
     if (dir == 0)
     {
-      dir = (motorA2.getCurrentPos()<0 ? 1:-1);
+      dir = ((motorA2.getCurrentPos() - axisOffset.steps2) < 0 ? 1:-1);
     }
     deltaV = guideRates[0] * dir;
     sP->speed2 += deltaV;
@@ -334,7 +337,7 @@ void EqMount::getTrackingSpeeds(Speeds *sP)
     dir = axis2Direction('s');
     if (dir == 0)
     {
-      dir = (motorA2.getCurrentPos()<0 ? 1:-1);
+      dir = ((motorA2.getCurrentPos() - axisOffset.steps2) < 0 ? 1:-1);
     }
     deltaV = guideRates[0] * dir;
     sP->speed2 += deltaV;
@@ -409,7 +412,7 @@ int EqMount::axis2Direction(char pole)
  */
 int EqMount::decDirection(void)
 {
-  long pos = motorA2.getCurrentPos(); 
+  long pos = motorA2.getCurrentPos()+axisOffset.steps2; 
   double sp = motorA2.getSpeed();
   if (sp == 0.0)
     return 0;

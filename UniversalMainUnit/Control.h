@@ -4,7 +4,7 @@
 #define CTL_QUEUE_SIZE  (10 * CTL_MAX_MESSAGE_SIZE * sizeof(unsigned)) 
 
 // Messages to Control Task that require an async action
-enum CTL_MESSAGES {CTL_MSG_GOTO, CTL_MSG_GOTO_HOME, CTL_MSG_START_TRACKING, CTL_MSG_STOP_TRACKING,  
+enum CTL_MESSAGES {CTL_MSG_GOTO, CTL_MSG_GOTO_HOME,  
                     CTL_MSG_MOVE_AXIS1, CTL_MSG_MOVE_AXIS2, CTL_MSG_STOP_AXIS1, CTL_MSG_STOP_AXIS2, 
                     CTL_MSG_SET_SLEW_SPEED
          };
@@ -28,6 +28,8 @@ enum CTL_MODE {CTL_MODE_IDLE, CTL_MODE_GOTO, CTL_MODE_TRACKING, CTL_MODE_STOPPIN
 #define EV_START_TRACKING   (1<<14)
 #define EV_SPEED_CHANGE     (1<<15)
 #define EV_SPIRAL           (1<<16)
+#define EV_PARK0            (1<<17)
+#define EV_PARK1            (1<<18)
 
 
 bool isSlewing(void);     // replaces movingTo global variable
@@ -51,3 +53,4 @@ void StopAxis2(void);
 byte goTo(Steps *sP);
 void adjustSpeeds(void);
 void setSlewSpeed(double speed);
+

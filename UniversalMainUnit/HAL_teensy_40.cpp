@@ -15,9 +15,12 @@ void HAL_preInit(void)
 
 #ifdef BOARD_240
 // currently use only one debug port
-void HAL_debug(uint8_t b)
+void HAL_debug0(uint8_t b)
 {
   Serial2.write(b);
+}
+void HAL_debug1(uint8_t b)
+{
 }
 #endif
 

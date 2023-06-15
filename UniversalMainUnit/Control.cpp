@@ -109,7 +109,14 @@ void adjustSpeeds(void)
   }  
 }
 
-
+int fsign(double n)
+{
+  if (n > 0.0)
+    return 1;
+  if (n < 0.0)
+    return -1;
+  return 0;
+}
 
 
 void controlTask(UNUSED(void *arg))
@@ -119,6 +126,8 @@ void controlTask(UNUSED(void *arg))
   CTL_MODE currentMode = CTL_MODE_IDLE;
   long axis1Target, axis2Target;
   long tickCount = 0;
+  CTL_MODE prevMode;
+  int dir, previousDirAxis1, previousDirAxis2;
 
   while (1)
   { 
@@ -133,43 +142,37 @@ void controlTask(UNUSED(void *arg))
           Speeds speeds;
           currentMode = CTL_MODE_TRACKING;
           resetEvents(EV_AT_HOME);
-          mount.mP->getTrackingSpeeds(&speeds);
-          motorA1.setVmax(fabs(speeds.speed1));
-          motorA1.setTargetPos(speeds.speed1>0 ? geoA1.stepsPerRot : -geoA1.stepsPerRot);
-
-          motorA2.setVmax(fabs(speeds.speed2));
-          motorA2.setTargetPos(speeds.speed2>0 ? geoA2.stepsPerRot : -geoA2.stepsPerRot);
           resetEvents(EV_START_TRACKING);
-          setEvents(EV_TRACKING);
+          setEvents(EV_TRACKING | EV_SPEED_CHANGE);
+          previousDirAxis1 = previousDirAxis2 = 0;
         }
         break;
 
       case CTL_MODE_TRACKING:
         {
           Speeds speeds;
-          int dir, previousDirAxis1, previousDirAxis2;
 
-          // if we are centering, don't do anything
+          // if we are centering, don't change mode
           if (getEvent(EV_CENTERING))
             break;
 #ifdef HASST4           
           checkST4();
 #endif          
           // Only need to update speed in case of guiding/spiral, or for an AltAz mount
-          if (getEvent(EV_SPEED_CHANGE) | (isAltAz() && (tickCount % 100 == 0)))
+          if (getEvent(EV_SPEED_CHANGE) || (isAltAz() && (tickCount % 100 == 0)))
           {
             mount.mP->getTrackingSpeeds(&speeds);
             resetEvents(EV_SPEED_CHANGE);
             motorA1.setVmax(fabs(speeds.speed1));
             // only set target if direction has changed
-            dir = (speeds.speed1 > 0 ? 1 : -1);
+            dir = fsign(speeds.speed1);
             if (dir != previousDirAxis1)
             {
               motorA1.setTargetPos(dir * geoA1.stepsPerRot);
               previousDirAxis1 = dir;
             }
             motorA2.setVmax(fabs(speeds.speed2));
-            dir = (speeds.speed2 > 0 ? 1 : -1);
+            dir = fsign(speeds.speed2);
             if (dir != previousDirAxis2)
             {
               motorA2.setTargetPos(dir * geoA2.stepsPerRot);
@@ -225,7 +228,7 @@ void controlTask(UNUSED(void *arg))
     {
       motorA1.abort();
       motorA2.abort();
-      resetEvents(EV_START_TRACKING);
+      resetEvents(EV_START_TRACKING | EV_ABORT);
       currentMode = CTL_MODE_STOPPING;
     }
   
@@ -245,6 +248,7 @@ void controlTask(UNUSED(void *arg))
           if (lastError() != ERRT_NONE)
             break;
           currentMode = CTL_MODE_GOTO;
+          resetEvents(EV_AT_HOME | EV_TRACKING | EV_START_TRACKING | EV_SPIRAL);
           axis1Target = msgBuffer[1];
           axis2Target = msgBuffer[2];
           motorA1.setVmax(slewingSpeeds.speed1);
@@ -252,32 +256,23 @@ void controlTask(UNUSED(void *arg))
           motorA2.setVmax(slewingSpeeds.speed2);
           motorA2.setTargetPos(axis2Target);
           setEvents(EV_SLEWING);
-          resetEvents(EV_AT_HOME | EV_TRACKING | EV_SPIRAL);
           break;
 
         case CTL_MSG_GOTO_HOME:
           if (lastError() != ERRT_NONE)
             break;
           currentMode = CTL_MODE_GOTO;
+          resetEvents(EV_AT_HOME | EV_TRACKING | EV_START_TRACKING | EV_SPIRAL);
           motorA1.setVmax(slewingSpeeds.speed1);
           motorA1.setTargetPos(geoA1.homeDef);
           motorA2.setVmax(slewingSpeeds.speed2);
           motorA2.setTargetPos(geoA2.homeDef);
           setEvents(EV_GOING_HOME);
           setEvents(EV_SLEWING);
-          resetEvents(EV_AT_HOME | EV_TRACKING | EV_START_TRACKING | EV_SPIRAL);
-          break;
-
-        case CTL_MSG_START_TRACKING:
-          // set the event to start tracking as soon as we are in idle mode
-          setEvents(EV_START_TRACKING);
-          break;
-
-        case CTL_MSG_STOP_TRACKING:
-          stopMoving();
           break;
 
         case CTL_MSG_MOVE_AXIS1:
+          prevMode = currentMode;
           dir = msgBuffer[1];
           target = mount.mP->axis1Direction(dir) * geoA1.stepsPerRot;
           memcpy(&speed, &msgBuffer[2], sizeof(double));
@@ -315,6 +310,13 @@ void controlTask(UNUSED(void *arg))
         case CTL_MSG_STOP_AXIS1:
           motorA1.abort();
           resetEvents(EV_CENTERING | EV_WEST | EV_EAST);
+          if (prevMode == CTL_MODE_TRACKING)
+          {
+            Speeds speeds;
+            mount.mP->getTrackingSpeeds(&speeds);
+            motorA1.setVmax(fabs(speeds.speed1));
+            motorA1.setTargetPos(speeds.speed1>0 ? geoA1.stepsPerRot : -geoA1.stepsPerRot);
+          }
           break;
 
         case CTL_MSG_STOP_AXIS2:
@@ -332,16 +334,12 @@ void controlTask(UNUSED(void *arg))
 
 void startTracking(void)
 {
-  unsigned msg[CTL_MAX_MESSAGE_SIZE];
-  msg[0] = CTL_MSG_START_TRACKING; 
-  xQueueSend( controlQueue, &msg, 0);
+  setEvents(EV_START_TRACKING | EV_SPEED_CHANGE);  
 }
 
 void stopTracking(void)
 {
-  unsigned msg[CTL_MAX_MESSAGE_SIZE];
-  msg[0] = CTL_MSG_STOP_TRACKING; 
-  xQueueSend( controlQueue, &msg, 0);
+  stopMoving();
 }
 
 void MoveAxis1(const byte dir)
@@ -399,9 +397,10 @@ void StopAxis2()
 
 byte goTo(Steps *sP)
 {
-  if (getEvent(EV_ABORT))
-    return ERRGOTO____;
   unsigned msg[CTL_MAX_MESSAGE_SIZE];
+
+  if (parkStatus() == PRK_PARKED)
+    return(ERRGOTO_PARKED);
 
   setSlewSpeed(guideRates[RXX]);
   // initiate the goto

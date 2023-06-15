@@ -99,6 +99,9 @@ class alignmentPlot():
       self.log('Goto {0} RA:{1:2.2f} Dec:{2:3.2f}'.format (self.window['alignmentTarget'].get(), self.ra, self.dec))
       self.log (self.ta.gotoRaDec(self.ra, self.dec))
 
+    if (ev == 'CenteringSpeed'):
+      self.ta.setRate(int(self.window['CenteringSpeed'].get()))
+
     if (ev == 'alignmentSync'):
       self.log('Sync {0} RA:{1:2.2f} Dec:{2:3.2f}'.format (self.window['alignmentTarget'].get(), self.ra, self.dec))
       self.log (self.ta.syncRaDec())
@@ -106,23 +109,39 @@ class alignmentPlot():
     if (ev == 'alignN'):
       self.log('Move N')
       self.ta.moveCmd('n')
-      time.sleep(0.5)
+      time.sleep(1.0)
       self.ta.stopCmd('n')
     if (ev == 'alignS'):
       self.log('Move S')
       self.ta.moveCmd('s')
-      time.sleep(0.5)
+      time.sleep(1.0)
       self.ta.stopCmd('s')
     if (ev == 'alignE'):
       self.log('Move E')
       self.ta.moveCmd('e')
-      time.sleep(0.5)
+      time.sleep(1.0)
       self.ta.stopCmd('e')
     if (ev == 'alignW'):
       self.log('Move W')
       self.ta.moveCmd('w')
-      time.sleep(0.5)
+      time.sleep(1.0)
       self.ta.stopCmd('w')
+
+    if (ev == 'startAlign'):
+      self.log('Start Alignment')
+      self.log(self.ta.startAlignment())
+    if (ev == 'clearAlign'):
+      self.log('Clear Alignment')
+      self.log(self.ta.clearAlignment())
+    if (ev == 'align2'):
+      self.log('Align 2 stars')
+      self.log(self.ta.align2Stars())
+    if (ev == 'align3'):
+      self.log('Align 3 stars')
+      self.log(self.ta.align3Stars())
+
+
+
 
     if (ev =='__TIMEOUT__'):
       if not self.ta.isConnected():
@@ -181,7 +200,10 @@ class alignmentPlot():
   def update(self):
     ra, dec, lst, ha = self.getAxisCoords()
     ra = ra + self.home_error_axis1 /  15
-    dec = dec + self.home_error_axis2 
+    if (self.ta.getPierSide() == 'W'):
+      dec = dec + self.home_error_axis2 
+    else:
+      dec = dec - self.home_error_axis2 
     Δα, Δδ = self.computePolarError(self.pole_error_az, self.pole_error_alt, dec, lst, ha)
     ra = ra + Δα
     dec = dec + Δδ

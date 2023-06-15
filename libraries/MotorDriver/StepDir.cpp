@@ -30,20 +30,25 @@ IntervalTimer  itimer4;
 #include "MotionControl.h"
 #include "StepDir.h"
 
+#define VSTOP 20 
+  
 #if defined(ESP32) || defined(BOARD_240)
-void      HAL_debug(uint8_t b);
+void      HAL_debug0(uint8_t b);
+void      HAL_debug1(uint8_t b);
 
 // hack to debug only axis1 since we only have one debug port 
-void SD_debug(uint8_t b)
+void SD_debug0(uint8_t b)
 {
   char *p = pcTaskGetName(NULL);    // task name is 'Motor0x'
-  if (!strcmp(p, "Motor01"))
-    HAL_debug(b);
+  if (*(p+6) == '1')
+    HAL_debug0(b);
+  else
+    HAL_debug1(b);    
 }
 #else
-#define SD_debug(b)
+#define SD_debug0(b)
+#define SD_debug1(b)
 #endif
-
 
 
 
@@ -165,7 +170,7 @@ void StepDir::state(PositionState newState)
 {
   if (newState != posState)
   {
-    SD_debug(newState);
+    SD_debug0(newState);
     posState = newState;
   }
 }
@@ -218,9 +223,9 @@ void StepDir::positionMode(void)
   }
 
   // check distances
-  if (delta > 0)
+  if (delta != 0)
   {
-  // no point in computing acceleration if we are very close
+    // no point in computing acceleration if we are very close
     if (delta < stopDistance)
     {
       programSpeed(sign * fmin (vMax, vStop));
@@ -228,7 +233,6 @@ void StepDir::positionMode(void)
     }
     else
     {
-      d1 = decelDistance(newSpeed, aMax);
       if (delta < d1)
       {
         state(PS_DECEL_TARGET);
@@ -303,8 +307,6 @@ void motorTask(void *arg)
   StepDir *mcP = (StepDir*) arg;
   TickType_t xLastWakeTime;
   const TickType_t xPeriod =  pdMS_TO_TICKS(TICK_PERIOD_MS);  // in mS
-  double k;
-  double percent;
 
   while (1)
   { 
@@ -320,7 +322,7 @@ void motorTask(void *arg)
     unsigned msgBuffer[SD_MAX_MESSAGE_SIZE];
 
     // Wait for next message
-  BaseType_t res = xQueueReceive( mcP->motQueue, &msgBuffer, 0);
+    BaseType_t res = xQueueReceive( mcP->motQueue, &msgBuffer, 0);
 
     if (res == pdPASS)                       // received a message?
     {
@@ -329,6 +331,7 @@ void motorTask(void *arg)
         case MSG_SET_CUR_POS:
           cli();
           mcP->currentPos = msgBuffer[1];
+          sei();            
           if (mcP->currentPos != mcP->targetPos)
           {
             mcP->state(PS_ACCEL);
@@ -337,12 +340,12 @@ void motorTask(void *arg)
           {
             mcP->resetEvents(EV_MOT_GOTO);  // no movement requested
           }
-          sei();            
           break;
 
         case MSG_SET_TARGET_POS:
           cli();
           mcP->targetPos = msgBuffer[1];
+          sei(); 
           if (mcP->currentPos != mcP->targetPos)
           {
             mcP->state(PS_ACCEL);
@@ -351,23 +354,13 @@ void motorTask(void *arg)
           {
             mcP->resetEvents(EV_MOT_GOTO);  // no movement requested
           }
-          sei(); 
           break;
 
         case MSG_SET_VMAX:
           double v;
           memcpy(&v, &msgBuffer[1], sizeof(double));  // always positive 
-          mcP->vStop = fmin(50, mcP->vMax); 
-          if (v > mcP->vMax)
-          {
-            mcP->vMax = v;
-            mcP->state(PS_ACCEL);
-          }
-          if (v < mcP->vMax)
-          {
-            mcP->vMax = v;
-            mcP->state(PS_DECEL);
-          }
+          mcP->vMax = v;
+          mcP->vStop = fmin(VSTOP, mcP->vMax); 
           break;
 
         case MSG_SET_AMAX:
@@ -420,9 +413,9 @@ void StepDir::initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned time
   currentPos = targetPos = 0;
   currentSpeed = 0.0;
 
-  // default parameters 
+  // default parameters
   aMax = 2000.0;
-  vStop = 50.0;                       // last steps to reach target
+  vStop = VSTOP;                       // last steps to reach target
   stopDistance = (long) vStop / 10;    // steps in 100mS
   vMax = 10000.0;
 
@@ -439,7 +432,7 @@ void StepDir::initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned time
       taskName,           // Name of the task (for debugging)
       2000,               // Stack size (bytes)
       this,               // Parameter to pass 
-      1,                  // priority
+      timerId+6,                  // priority
       &motTaskHandle      // Task handle
     );  
 

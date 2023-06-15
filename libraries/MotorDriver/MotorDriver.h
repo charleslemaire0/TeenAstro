@@ -1,5 +1,6 @@
 #include "MotionControl.h"
 
+enum DriverType { DRV_UNDEFINED, DRV_STEPDIR, DRV_SPI};
 
 class MotorDriver
 {
@@ -15,6 +16,7 @@ public:
   unsigned int lowCurr=100; //in mA
   SemaphoreHandle_t mutex = 0;
   int CSPin, EnPin;
+  DriverType drvType = DRV_UNDEFINED;
 
   // generic init - call this one first
   void init(int cspin, int enpin, SemaphoreHandle_t mtx)
@@ -48,7 +50,6 @@ public:
     {
       digitalWrite(EnPin, LOW);  // activate
     }    
-
   }
 
   // StepDir constructor
@@ -68,6 +69,7 @@ public:
     // StepDir driver
     mcP = new StepDir();
     mcP->initStepDir(DirPin, StepPin, isrP, timerId);
+    drvType = DRV_STEPDIR;
   }
 
   // 5160 MotionController constructor (SPI only)
@@ -76,6 +78,7 @@ public:
     // MotionControl driver
     mcP = new Mc5160();
     mcP->initMc5160(drvP, mtx, clkFreq);
+    drvType = DRV_SPI;
   }
 
   void setCurrent(unsigned int val)

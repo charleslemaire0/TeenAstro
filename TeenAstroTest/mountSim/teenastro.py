@@ -233,6 +233,14 @@ class TeenAstro(object):
     self.readStatus()
     return (int(self.status[0]) & 2 == 2)
 
+  def isParking(self):
+    self.readStatus()
+    return (self.status[2] == 'I')
+
+  def isParked(self):
+    self.readStatus()
+    return (self.status[2] == 'P')
+
   def guideStatus(self):
     self.readStatus()
     return (self.status[5:9])
@@ -301,6 +309,18 @@ class TeenAstro(object):
     res1 = self.getValue(":CM#")
     return (res1)
 
+  def startAlignment(self):
+    return self.getValue(":A0#")
+
+  def clearAlignment(self):
+    return self.getValue(":AC#")
+
+  def align2Stars(self):
+    return self.getValue(":A2#")
+
+  def align3Stars(self):
+    return self.getValue(":A3#")
+
   def enableTracking(self):
     self.sendCommand(":Te#")
 
@@ -363,7 +383,6 @@ class TeenAstro(object):
     self.port.write((":Mg%1s%04u#" % (dir, ms)).encode('utf-8'))  # does not return a value
 
   def moveCmd(self, dir):
-    self.log(":M%1s#" % (dir))
     self.port.write((":M%1s#" % (dir)).encode('utf-8'))  # does not return a value
 
   def stopCmd(self, dir):
@@ -382,6 +401,8 @@ class TeenAstro(object):
     ts = datetime.datetime.now().timestamp()    
     print(ts, msg)
 
+  def setRate(self, rate):
+    self.port.write((":R%1s#" % (rate)).encode('utf-8'))
 
 
 # Main program

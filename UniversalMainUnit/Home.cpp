@@ -85,7 +85,7 @@ bool syncAtHome()
 // init the telescope home position;  if defined use the user defined home position
 void initHome()
 {
-  homeSaved = XEEPROM.read(EE_homeSaved);
+  homeSaved = XEEPROM.read(getMountAddress(EE_homeSaved));
   if (homeSaved)
   {
     geoA1.homeDef = XEEPROM.readLong(EE_homePosAxis1)*pow(2, motorA1.micro);

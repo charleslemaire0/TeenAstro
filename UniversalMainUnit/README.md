@@ -57,7 +57,7 @@ The single MotorDriver class encapsulates:
 
 #### Separate models for Eq and AltAz mounts
 
-I chose this for the reasons indicated [here](https://fdesvallees.github.io/teenastro_v3/teenastro_v3/#alignment-equatorial-vs-altaz-mounts). I think it is better to keep the alignment matrix only for alignment and mount errors, plus the sky model (refractions). We need more testing and discussion on both models to decide which works best.
+I chose this for the reasons indicated [here](https://fdesvallees.github.io/teenastro_v3/teenastro_v3/#alignment-equatorial-vs-altaz-mounts). I think it is better to keep the alignment matrix only for alignment and mount errors. 
 
 #### New commands
 A new command has been added (SXK,vvvv#) to indicate the clock speed of the TMC5160. The freqency (in kHz) is stored in the EEPROM. This allows using the TMC5160 in SPI mode with or without an external clock.
@@ -67,20 +67,22 @@ A new command has been added (SXK,vvvv#) to indicate the clock speed of the TMC5
 
 **TAConfig.py**  updates the mount parameters. Testing is based on **debug5160** (stand-alone executable that runs commands from a terminal), **mountSim.py** (useful for visualizing) and **autoTest.py** (more thorough testing). Both test programs rely on the axis coordinates and steps reported by TeenAstro. See the respective README for more info on both programs.
 
-### Test Status - 1 June 2023
+### Test Status - 15 June 2023
 
 #### Tested features
-Basic Goto, sync, tracking and guiding work, SHC connects and runs normally. Tests are done first in simulation (both Equatorial and AltAz), then with a real equatorial mount (AP600). No testing under the sky yet, no astrophoto. 
-Pulse and ST4 guiding
-Spiral
+Basic Goto, sync, tracking and guiding work, SHC connects and runs normally. Tests are done first in simulation (both Equatorial and AltAz), then with a real equatorial mount (AP600).  
 
-I did a little testing with EKOS through the INDI driver. 
+Visual observation under the sky works, tested sync.   
+Spiral is ok   
+Pulse and ST4 guiding work, performance not yet measured.      
 
-### Not yet implemented or tested
-No ASCOM testing whatsoever
-Alignment is not working (possible reentrancy problems in CoordConv)
+I did a little testing with EKOS through the INDI driver, but no astrophoto yet.   
+
+### Not yet implemented or tested   
+No ASCOM testing whatsoever   
+Alignment and refraction are not yet implemented  
+
 
 #### Known bugs
-In some cases a goto never stops slewing but stays at very low speed. Difficult to reproduce.
 
 

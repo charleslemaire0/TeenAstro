@@ -108,19 +108,6 @@ class slewPlotT():
         np.savetxt("driftTest.csv", data, delimiter=",", fmt="%3.8f",
                        header="axis1, axis2, slewing", comments="")
 
-        if (ev == 'clearSlew'):
-            self.ra = np.zeros(numSamples)
-            self.dec =  np.zeros(numSamples)
-            self.slewing =  np.zeros(numSamples)
-
-            self.update(0, 0, 0)
-            self.render()
-
-        if (ev == 'saveSlew'):
-            self.saveCsv()
-
-
-
 class slewPlot():
     def __init__(self, window, ts, ta, dpi):
         self.window = window
@@ -218,6 +205,18 @@ class slewPlot():
             self.state = 'AUTO'
             self.testStep = 0
             return
+
+        if (ev == 'flipMount'):
+            self.log('Requesting Flip')
+            self.ta.flipMount()
+
+        if (ev == 'park'):
+            self.log('Park')
+            self.ta.park()
+
+        if (ev == 'unpark'):
+            self.log('Unpark')
+            self.ta.unpark()
 
         if (ev =='__TIMEOUT__'):
             if not self.ta.isConnected():

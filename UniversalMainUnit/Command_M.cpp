@@ -50,7 +50,7 @@ void Command_M()
     reply[0] = i + '0';
     reply[1] = 0;
     break;
-  case 'F': // move this to control task
+  case 'F': 
   {
     // Flip Mount
     //       Returns an ERRGOTO
