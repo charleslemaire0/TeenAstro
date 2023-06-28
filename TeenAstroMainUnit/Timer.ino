@@ -149,7 +149,7 @@ static void UpdateIntervalTrackingGuiding(GuideAxis* guideA, StatusAxis* staA,
       }
     }
   }
-  volatile double sumRateA = fabs(tmp_guideRateA + staA->CurrentTrackingRate);
+  volatile double sumRateA = sideralTracking ? fabs(tmp_guideRateA + staA->CurrentTrackingRate) : fabs(tmp_guideRateA);
   staA->setIntervalfromRate(sumRateA, minInterval, maxInterval);
 }
 

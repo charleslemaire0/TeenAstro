@@ -130,6 +130,34 @@ void SmartHandController::setup(
       DisplayMessage("GNSS", T_CONNECTED, 1500);
     }
   }
+#ifdef RADEC_PAGE
+    pages[P_RADEC].show = true;
+#endif
+#ifdef HA_PAGE
+    pages[P_HADEC].show = true;
+#endif
+#ifdef ALTAZ_PAGE
+    pages[P_ALTAZ].show = true;
+#endif
+#ifdef PUSH_PAGE
+    pages[P_PUSH].show = true;
+#endif
+#ifdef TIME_PAGE
+    pages[P_TIME].show = true;
+#endif
+#ifdef AXIS_STEP_PAGE
+    pages[P_AXIS_STEP].show = true;
+#endif
+#ifdef AXIS_DEG_PAGE
+    pages[P_AXIS_DEG].show = true;
+#endif
+#ifdef FOCUSER_PAGE
+    pages[P_FOCUSER].show = true;
+#endif
+#ifdef ALIGN_PAGE
+    pages[P_ALIGN].show = true;
+#endif
+
 }
 
 void SmartHandController::getNextpage()
@@ -310,8 +338,18 @@ void SmartHandController::update()
     }
     else if (eventbuttons[1] == E_LONGPRESS || eventbuttons[1] == E_CLICK || eventbuttons[1] == E_LONGPRESSTART)
     {
+    #ifdef NO_SPEED_MENU
+      increaseSpeed(true);
+    #else
       menuSpeedRate();
+    #endif
     }
+    #ifdef NO_SPEED_MENU
+    else if (eventbuttons[2] == E_LONGPRESS || eventbuttons[2] == E_CLICK || eventbuttons[2] == E_LONGPRESSTART)
+    {
+      increaseSpeed(false);
+    }
+    #endif
     else if (eventbuttons[4] == E_LONGPRESS || eventbuttons[4] == E_CLICK || eventbuttons[4] == E_LONGPRESSTART)
     {
       menuTelSettings();

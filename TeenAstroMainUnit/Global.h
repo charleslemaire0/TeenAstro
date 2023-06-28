@@ -15,6 +15,11 @@
 #include "Refraction.hpp"
 #include "Axis.hpp"
 #include "AxisEncoder.hpp"
+#include "TeenAstroLA3.hpp"
+#include "TeenAstroCoord_LO.hpp"
+#include "TeenAstroCoord_EQ.hpp"
+#include "TeenAstroCoord_HO.hpp"
+#include "TeenAstroCoord_IN.hpp"
 
 TinyGPSPlus gps;
 CoordConv alignment;
@@ -51,7 +56,25 @@ Pushto PushtoStatus = Pushto::PT_OFF;
 bool hasFocuser = false;
 bool hasGNSS = true;
 
+
+double temperature = 10;
+double pressure = 110;
+
 RefractionFlags doesRefraction;
+ 
+LA3::RefrOpt RefrOptForPole()
+{
+  return { doesRefraction.forPole, temperature, pressure };
+}
+LA3::RefrOpt RefrOptForGoto()
+{
+  return { doesRefraction.forGoto, temperature, pressure };
+}
+LA3::RefrOpt RefrOptForTracking()
+{
+  return { doesRefraction.forTracking, temperature, pressure };
+}
+
 TrackingCompensation tc = TrackingCompensation::TC_NONE;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
 double                  siderealClockSpeed = 997269.5625;
@@ -106,6 +129,7 @@ int                 maxAlt;                                 // the maximum altit
 long                minutesPastMeridianGOTOE;               // for goto's, how far past the meridian to allow before we do a flip (if on the East side of the pier)- one hour of RA is the default = 60.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 long                minutesPastMeridianGOTOW;               // as above, if on the West side of the pier.  If left alone, the mount will stop tracking when it hits the this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
 double              underPoleLimitGOTO;                     // maximum allowed hour angle (+/-) under the celestial pole. Telescop will flip the mount and move the Dec. >90 degrees (+/-) once past this limit.  Sometimes used for Fork mounts in Align mode.  Ignored on Alt/Azm mounts.
+int                 distanceFromPoleToKeepTrackingOn;       // tracking off 6 hours after transit if sistanceFromPole > distanceFromPoleToKeepTrackingOn
 
                                                            
 //                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
@@ -218,6 +242,7 @@ double  guideRates[5] =
 };
 
 volatile byte activeGuideRate = GuideRate::RX;
+volatile byte recenterGuideRate = activeGuideRate;
 
 GuideAxis guideA1;
 GuideAxis guideA2;

@@ -46,6 +46,8 @@ Partial Class Uploader
     Me.Label6 = New System.Windows.Forms.Label()
     Me.ComboBoxFirmwareVersion = New System.Windows.Forms.ComboBox()
     Me.ButtonDownLoad = New System.Windows.Forms.Button()
+        Me.RadioButtonStable = New System.Windows.Forms.RadioButton()
+        Me.RadioButtonLatest = New System.Windows.Forms.RadioButton()
         Me.TabPage3.SuspendLayout()
         Me.TabPage2.SuspendLayout()
         Me.TabPage1.SuspendLayout()
@@ -54,7 +56,6 @@ Partial Class Uploader
         '
         'ComboBoxPCBMainUnitT
         '
-        Me.ComboBoxPCBMainUnitT.FormattingEnabled = True
         Me.ComboBoxPCBMainUnitT.Items.AddRange(New Object() {"2.2 TMC260", "2.3 TMC260", "2.4 TMC2130", "2.4 TMC5160", "2.5 TMC2130", "2.5 TMC5160"})
         Me.ComboBoxPCBMainUnitT.Location = New System.Drawing.Point(71, 17)
         Me.ComboBoxPCBMainUnitT.Name = "ComboBoxPCBMainUnitT"
@@ -100,7 +101,6 @@ Partial Class Uploader
         '
         'ComboBoxLanguage
         '
-        Me.ComboBoxLanguage.FormattingEnabled = True
         Me.ComboBoxLanguage.Items.AddRange(New Object() {"English", "French", "German"})
         Me.ComboBoxLanguage.Location = New System.Drawing.Point(71, 44)
         Me.ComboBoxLanguage.Name = "ComboBoxLanguage"
@@ -134,7 +134,6 @@ Partial Class Uploader
         '
         'ComboBoxCOMSHC
         '
-        Me.ComboBoxCOMSHC.FormattingEnabled = True
         Me.ComboBoxCOMSHC.Location = New System.Drawing.Point(71, 71)
         Me.ComboBoxCOMSHC.Name = "ComboBoxCOMSHC"
         Me.ComboBoxCOMSHC.Size = New System.Drawing.Size(110, 21)
@@ -160,7 +159,6 @@ Partial Class Uploader
         '
         'ComboBoxPCBSHC
         '
-        Me.ComboBoxPCBSHC.FormattingEnabled = True
         Me.ComboBoxPCBSHC.Items.AddRange(New Object() {"0.x"})
         Me.ComboBoxPCBSHC.Location = New System.Drawing.Point(71, 17)
         Me.ComboBoxPCBSHC.Name = "ComboBoxPCBSHC"
@@ -243,7 +241,7 @@ Partial Class Uploader
         Me.TabControlFirmware.Controls.Add(Me.TabPage1)
         Me.TabControlFirmware.Controls.Add(Me.TabPage2)
         Me.TabControlFirmware.Controls.Add(Me.TabPage3)
-        Me.TabControlFirmware.Location = New System.Drawing.Point(12, 52)
+        Me.TabControlFirmware.Location = New System.Drawing.Point(9, 111)
         Me.TabControlFirmware.Name = "TabControlFirmware"
         Me.TabControlFirmware.SelectedIndex = 0
         Me.TabControlFirmware.Size = New System.Drawing.Size(372, 181)
@@ -252,7 +250,7 @@ Partial Class Uploader
         'Label6
         '
         Me.Label6.AutoSize = True
-        Me.Label6.Location = New System.Drawing.Point(13, 20)
+        Me.Label6.Location = New System.Drawing.Point(13, 49)
         Me.Label6.Name = "Label6"
         Me.Label6.Size = New System.Drawing.Size(87, 13)
         Me.Label6.TabIndex = 15
@@ -260,27 +258,50 @@ Partial Class Uploader
         '
         'ComboBoxFirmwareVersion
         '
-        Me.ComboBoxFirmwareVersion.FormattingEnabled = True
         Me.ComboBoxFirmwareVersion.Items.AddRange(New Object() {"1.4"})
-        Me.ComboBoxFirmwareVersion.Location = New System.Drawing.Point(124, 17)
+        Me.ComboBoxFirmwareVersion.Location = New System.Drawing.Point(124, 46)
         Me.ComboBoxFirmwareVersion.Name = "ComboBoxFirmwareVersion"
         Me.ComboBoxFirmwareVersion.Size = New System.Drawing.Size(143, 21)
         Me.ComboBoxFirmwareVersion.TabIndex = 13
         '
         'ButtonDownLoad
         '
-        Me.ButtonDownLoad.Location = New System.Drawing.Point(303, 15)
+        Me.ButtonDownLoad.Location = New System.Drawing.Point(13, 12)
         Me.ButtonDownLoad.Name = "ButtonDownLoad"
-        Me.ButtonDownLoad.Size = New System.Drawing.Size(75, 23)
+        Me.ButtonDownLoad.Size = New System.Drawing.Size(148, 23)
         Me.ButtonDownLoad.TabIndex = 16
-        Me.ButtonDownLoad.Text = "Download!"
+        Me.ButtonDownLoad.Text = "Download all Firmware"
         Me.ButtonDownLoad.UseVisualStyleBackColor = True
+        '
+        'RadioButtonStable
+        '
+        Me.RadioButtonStable.AutoSize = True
+        Me.RadioButtonStable.Checked = True
+        Me.RadioButtonStable.Location = New System.Drawing.Point(16, 79)
+        Me.RadioButtonStable.Name = "RadioButtonStable"
+        Me.RadioButtonStable.Size = New System.Drawing.Size(55, 17)
+        Me.RadioButtonStable.TabIndex = 17
+        Me.RadioButtonStable.TabStop = True
+        Me.RadioButtonStable.Text = "Stable"
+        Me.RadioButtonStable.UseVisualStyleBackColor = True
+        '
+        'RadioButtonLatest
+        '
+        Me.RadioButtonLatest.AutoSize = True
+        Me.RadioButtonLatest.Location = New System.Drawing.Point(77, 79)
+        Me.RadioButtonLatest.Name = "RadioButtonLatest"
+        Me.RadioButtonLatest.Size = New System.Drawing.Size(54, 17)
+        Me.RadioButtonLatest.TabIndex = 18
+        Me.RadioButtonLatest.Text = "Latest"
+        Me.RadioButtonLatest.UseVisualStyleBackColor = True
         '
         'Uploader
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(390, 240)
+        Me.ClientSize = New System.Drawing.Size(390, 301)
+        Me.Controls.Add(Me.RadioButtonLatest)
+        Me.Controls.Add(Me.RadioButtonStable)
         Me.Controls.Add(Me.ButtonDownLoad)
         Me.Controls.Add(Me.ComboBoxFirmwareVersion)
         Me.Controls.Add(Me.Label6)
@@ -326,4 +347,6 @@ Partial Class Uploader
   Friend WithEvents Label7 As Label
   Friend WithEvents ComboBoxLanguage As ComboBox
   Friend WithEvents ButtonDownLoad As Button
+    Friend WithEvents RadioButtonStable As RadioButton
+    Friend WithEvents RadioButtonLatest As RadioButton
 End Class

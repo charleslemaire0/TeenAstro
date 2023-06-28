@@ -1,23 +1,23 @@
 
-byte PushToEqu(const double Ra, const double Dec, PierSide preferedPierSide, const double* cosLat, const double* sinLat,
-  float* deltaA1, float* deltaA2)
+byte PushToEqu(Coord_EQ EQ_T, PierSide preferedPierSide, double Lat, float* deltaA1, float* deltaA2)
 {
-  double azm, alt = 0;
-  double Ha = haRange(rtk.LST() * 15.0 - Ra);
-  EquToHor(Ha, Dec, doesRefraction.forGoto, &azm, &alt, cosLat, sinLat);
-  return PushToHor(&azm, &alt, preferedPierSide, deltaA1, deltaA2);
+  return PushToHor(EQ_T.To_Coord_HO(Lat, RefrOptForGoto()), preferedPierSide, deltaA1, deltaA2);
 }
 
-byte PushToHor(const double* Azm, const double* Alt, PierSide preferedPierSide, float* deltaA1, float* deltaA2)
+byte PushToHor(Coord_HO HO_T, PierSide preferedPierSide, float* deltaA1, float* deltaA2)
 {
   double Axis1_target, Axis2_target = 0;
   long axis1_target, axis2_target = 0;
   PierSide selectedSide = PierSide::PIER_NOTVALID;
 
-  if (*Alt < minAlt) return ERRGOTO_BELOWHORIZON;   // fail, below min altitude
-  if (*Alt > maxAlt) return ERRGOTO_ABOVEOVERHEAD;   // fail, above max altitude
 
-  alignment.toAxisDeg(Axis1_target, Axis2_target, *Azm, *Alt);
+  if (HO_T.Alt() < minAlt * DEG_TO_RAD) return ERRGOTO_BELOWHORIZON;   // fail, below min altitude
+  if (HO_T.Alt() > maxAlt * DEG_TO_RAD) return ERRGOTO_ABOVEOVERHEAD;   // fail, above max altitude
+
+  Coord_IN instr_T = HO_T.To_Coord_IN(alignment.Tinv);
+  Axis1_target = instr_T.Axis1() * RAD_TO_DEG;
+  Axis2_target = instr_T.Axis2() * RAD_TO_DEG;
+
   if (!predictTarget(Axis1_target, Axis2_target, preferedPierSide,
     axis1_target, axis2_target, selectedSide))
   {

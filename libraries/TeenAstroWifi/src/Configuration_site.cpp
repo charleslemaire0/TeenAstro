@@ -162,7 +162,7 @@ void TeenAstroWifi::handleConfigurationSite()
   sendHtml(data);
   data += FPSTR(html_siteQuick1);
   sendHtml(data);
-  if (ta_MountStatus.hasGNSSBoard())
+  if (ta_MountStatus.hasGNSSBoard() && (ta_MountStatus.atHome() || ta_MountStatus.getParkState() == TeenAstroMountStatus::PRK_PARKED))
   {
     data += FPSTR(html_siteGNSS);
     sendHtml(data);

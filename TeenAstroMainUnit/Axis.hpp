@@ -177,6 +177,8 @@ public:
   long   quaterRot; //in steps
   long   minAxis;   //in steps
   long   maxAxis;   //in steps
+  float  LimMinAxis; //in deg
+  float  LimMaxAxis; //in deg
 private:
   long   m_breakDist; //in steps
 public:
@@ -308,7 +310,7 @@ public:
 class MotorAxis
 {
 public:
-  unsigned int gear;
+  unsigned long gear; //1000 time the gear in order to 3 digits after the comma
   bool isGearFix;
   unsigned int stepRot;
   bool isStepRotFix;
