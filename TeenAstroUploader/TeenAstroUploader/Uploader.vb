@@ -9,7 +9,11 @@ Public Class Uploader
       Dim pcb As String = ComboBoxPCBMainUnitT.SelectedItem()
       Dim Hexfile As String = ""
       Dim fwv As String = ComboBoxFirmwareVersion.SelectedItem
-      Dim HexPath = """" & System.IO.Path.GetDirectoryName(Application.ExecutablePath) + "\" + fwv & """"
+      Dim fwvdir As String = fwv
+      If RadioButtonLatest.Checked Then
+        fwvdir += "_latest"
+      End If
+      Dim HexPath = System.IO.Path.GetDirectoryName(Application.ExecutablePath) + "\" + fwvdir
       Select Case pcb
         Case "2.2 TMC260"
           Hexfile = "Teenastro_" + fwv + "_220_TMC260"
@@ -25,11 +29,12 @@ Public Class Uploader
           Hexfile = "Teenastro_" + fwv + "_250_TMC5160"
       End Select
 
-      If Not System.IO.File.Exists(".\" + fwv + "\" + Hexfile + ".hex") Then
+      If Not System.IO.File.Exists(HexPath + "\" + Hexfile + ".hex") Then
         MsgBox(Hexfile + ".hex" + " not found!")
         Return
       End If
       Dim cmd As String = ""
+      HexPath = """" & HexPath & """"
       Select Case pcb
         Case "2.2 TMC260", "2.3 TMC260", "2.4 TMC2130", "2.4 TMC5160"
           cmd = "-file=" & Hexfile & " -path=" & HexPath & " -tools=" & exepath & " -board=TEENSY31"
@@ -68,7 +73,11 @@ Public Class Uploader
       Dim pcb As String = ComboBoxPCBMainUnitF.SelectedItem()
       Dim Hexfile As String = ""
       Dim fwv As String = ComboBoxFirmwareVersion.SelectedItem
-      Dim HexPath = """" & System.IO.Path.GetDirectoryName(Application.ExecutablePath) + "\" + fwv & """"
+      Dim fwvdir As String = fwv
+      If RadioButtonLatest.Checked Then
+        fwvdir += "_latest"
+      End If
+      Dim HexPath = System.IO.Path.GetDirectoryName(Application.ExecutablePath) + "\" + fwvdir
       Select Case pcb
         Case "2.2 TMC2130"
           Hexfile = "TeenAstroFocuser_" + fwv + "_220_TMC2130"
@@ -84,11 +93,12 @@ Public Class Uploader
           Hexfile = "TeenAstroFocuser_" + fwv + "_250_TMC5160"
       End Select
 
-      If Not System.IO.File.Exists(".\" + fwv + "\" + Hexfile + ".hex") Then
+      If Not System.IO.File.Exists(HexPath + "\" + Hexfile + ".hex") Then
         MsgBox(Hexfile + ".hex" + " not found!")
         Return
       End If
       Dim cmd As String = ""
+      HexPath = """" & HexPath & """"
       Select Case pcb
         Case "2.2 TMC2130", "2.3 TMC2130", "2.4 TMC2130", "2.4 TMC5160"
           cmd = "-file=" & Hexfile & " -path=" & HexPath & " -tools=" & exepath & " -board=TEENSY31"
@@ -114,8 +124,12 @@ Public Class Uploader
       pHelp.FileName = "esptool.exe"
       Dim pcb As String = ComboBoxPCBSHC.SelectedItem()
       Dim fwv As String = ComboBoxFirmwareVersion.SelectedItem
+      Dim fwvdir As String = fwv
+      If RadioButtonLatest.Checked Then
+        fwvdir += "_latest"
+      End If
       Dim lg As String = "_" + ComboBoxLanguage.SelectedItem
-      Dim Binfile As String = ".\" + fwv + "\" + "TeenAstroSHC_" + fwv + lg + ".bin"
+      Dim Binfile As String = ".\" + fwvdir + "\" + "TeenAstroSHC_" + fwv + lg + ".bin"
 
       If Not System.IO.File.Exists(Binfile) Then
         MsgBox(Binfile + " Not found!")
@@ -172,9 +186,10 @@ Public Class Uploader
     End Using
     sum += Firmwares.Count.ToString
   End Sub
-  Private Sub downloadVersion14x(ByRef n As Integer, ByRef sum As Integer)
+  Private Sub downloadVersion14x(ByRef n As Integer, ByRef sum As Integer, ByVal ext As String)
     Dim ver As String = "1.4"
-    Dim gitRootAdress As String = "https://github.com/charleslemaire0/TeenAstro/raw/Release_" + ver + "/TeenAstroUploader/TeenAstroUploader/" + ver + "/"
+    Dim verdir As String = ver + ext
+    Dim gitRootAdress As String = "https://github.com/charleslemaire0/TeenAstro/raw/Release_" + ver + "/TeenAstroUploader/TeenAstroUploader/" + verdir + "/"
     Dim Firmwares As New List(Of String)
     Firmwares.Add("TeenAstroFocuser_" + ver + "_220_TMC2130.hex")
     Firmwares.Add("TeenAstroFocuser_" + ver + "_230_TMC2130.hex")
@@ -189,15 +204,15 @@ Public Class Uploader
     Firmwares.Add("TeenAstro_" + ver + "_240_TMC5160.hex")
     Firmwares.Add("TeenAstro_" + ver + "_250_TMC2130.hex")
     Firmwares.Add("TeenAstro_" + ver + "_250_TMC5160.hex")
-    If Not System.IO.Directory.Exists(".\" + ver) Then
-      System.IO.Directory.CreateDirectory(".\" + ver)
+    If Not System.IO.Directory.Exists(".\" + verdir) Then
+      System.IO.Directory.CreateDirectory(".\" + verdir)
     End If
     Using client As New System.Net.WebClient()
       System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12
       client.Headers.Add("user-agent", "Anything")
       For Each firmware In Firmwares
         Try
-          client.DownloadFile(gitRootAdress + firmware, ".\" + ver + "\" + firmware)
+          client.DownloadFile(gitRootAdress + firmware, ".\" + verdir + "\" + firmware)
         Catch ex As Exception
           MsgBox(ex.Message)
           Exit For
@@ -214,7 +229,8 @@ Public Class Uploader
     Dim sum As Integer = 0
     sum = n
     downloadVersion13x(n, sum)
-    downloadVersion14x(n, sum)
+    downloadVersion14x(n, sum, "")
+    downloadVersion14x(n, sum, "_latest")
     MsgBox(n.ToString & "of " & sum.ToString & " successfully downloaded!")
   End Sub
 
