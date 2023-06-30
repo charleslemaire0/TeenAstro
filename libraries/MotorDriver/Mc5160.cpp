@@ -43,6 +43,14 @@ void Mc5160::setCurrentPos(long pos)
   xSemaphoreGive(mutex);
 }
 
+void Mc5160::syncPos(long pos)
+{
+  xSemaphoreTake(mutex, portMAX_DELAY);
+  drvP->XACTUAL(pos);
+  drvP->XTARGET(pos);
+  xSemaphoreGive(mutex);
+}
+
 long Mc5160::getCurrentPos()
 {
   xSemaphoreTake(mutex, portMAX_DELAY);

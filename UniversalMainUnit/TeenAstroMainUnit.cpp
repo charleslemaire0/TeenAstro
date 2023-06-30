@@ -40,23 +40,23 @@ void initMotors(bool deleteAlignment)
   motorA1.init(Axis1CSPin, Axis1EnablePin, hwMutex);
   motorA2.init(Axis2CSPin, Axis2EnablePin, hwMutex);
 
-  AxisDriver = 0;
   // find out if we have StepDir or SPI-only and initialize either type (see SD_MODE in TMC5160 data sheet)
   ulong version1 = motorA1.drvP->version();
   if (version1 == 0) // no TMC5160 found - init a stepdir for debug
   {
+    strcpy(Axis1DriverName,"NONE");
     motorA1.initStepDir(Axis1DirPin, Axis1StepPin, isrStepDir1, 2);
   }
   else
   {
-    AxisDriver += version1;
     if (motorA1.drvP->sd_mode())
     {
-      AxisDriver += 1000;
+      strcpy(Axis1DriverName,"SD");
       motorA1.initStepDir(Axis1DirPin, Axis1StepPin, isrStepDir1, 2);
     }
     else
     {
+      strcpy(Axis1DriverName,"SPI");
       motorA1.initMc5160(hwMutex, mount.clk5160);
     }
   }
@@ -64,18 +64,19 @@ void initMotors(bool deleteAlignment)
   ulong version2 = motorA2.drvP->version();
   if (version2 == 0) // no TMC5160 found - init a stepdir for debug
   {
+    strcpy(Axis2DriverName,"NONE");
     motorA2.initStepDir(Axis2DirPin, Axis2StepPin, isrStepDir2, 3);
   }
   else
   {
-    AxisDriver += version2 * 10000;
     if (motorA2.drvP->sd_mode())
     {
-      AxisDriver += 10000000;
+      strcpy(Axis2DriverName,"SD");
       motorA2.initStepDir(Axis2DirPin, Axis2StepPin, isrStepDir2, 3);
     }
     else
     {
+      strcpy(Axis2DriverName,"SPI");
       motorA2.initMc5160(hwMutex, mount.clk5160);
     }
   }

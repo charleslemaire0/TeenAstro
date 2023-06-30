@@ -4,7 +4,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from skyfield.api import wgs84, load, position_of_radec, utc, Star
 from teenastro import TeenAstro, deg2dms
 import numpy as np  
-import sys
+import sys, random
 from datetime import datetime
 
 numSamples = 100
@@ -242,6 +242,13 @@ class trackingPlot():
 
         if (ev == 'GuideW'):
             self.ta.guideCmd('w',50)
+
+        if (ev == 'Nudge'):
+            ra = self.ta.getRA() + (random.random() - 0.5)    # add or subtract up to a half degree
+            dec = self.ta.getDeclination() + (random.random() - 0.5)
+            self.log('goto ra:{0:2.2f} dec:{1:2.2f}'.format(ra, dec))
+            self.ta.gotoRaDec(ra, dec)
+
 
         if (ev == 'spiral'):
             self.ta.spiral(10)

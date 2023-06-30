@@ -138,7 +138,7 @@ void StepDir::programSpeed(double V)
 
 void StepDir::setDir(bool rev)
 {
-  digitalWrite(dirPin, !rev);
+  digitalWrite(dirPin, rev);
 }
 
 void StepDir::setEvents(unsigned eventBits)
@@ -356,6 +356,13 @@ void motorTask(void *arg)
           }
           break;
 
+        case MSG_SYNC_POS:
+          cli();
+          mcP->currentPos = msgBuffer[1];
+          mcP->targetPos = msgBuffer[1];
+          sei(); 
+          break;
+
         case MSG_SET_VMAX:
           double v;
           memcpy(&v, &msgBuffer[1], sizeof(double));  // always positive 
@@ -506,6 +513,14 @@ void StepDir::setTargetPos(long targetPos)
   msg[1] = targetPos;
   xQueueSend( motQueue, &msg, 0);
   setEvents(EV_MOT_GOTO);
+}
+
+void StepDir::syncPos(long pos)
+{
+  unsigned msg[SD_MAX_MESSAGE_SIZE];
+
+  msg[0] = MSG_SYNC_POS; 
+  msg[1] = pos;
 }
 
 void StepDir::abort(void)

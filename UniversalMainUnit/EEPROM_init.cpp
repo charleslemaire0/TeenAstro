@@ -146,6 +146,10 @@ void initMount()
   lval = XEEPROM.read(EE_DEC_Drift);
   storedTrackingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
   mount.clk5160 = XEEPROM.readLong(getMountAddress(EE_clk5160));
+  if ((mount.clk5160 < 12000) || (mount.clk5160 > 18000)) // check for invalid values
+  {
+    mount.clk5160 = 16000;
+  }
 }
 
 

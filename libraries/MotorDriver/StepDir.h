@@ -4,7 +4,7 @@
 #define SD_QUEUE_SIZE  (10 *	SD_MAX_MESSAGE_SIZE * sizeof(unsigned)) 
 
 // Messages to Motor Task that require an async action
-enum MT_MESSAGES {MSG_SET_CUR_POS, MSG_SET_TARGET_POS, MSG_SET_AMAX, MSG_SET_VMAX};
+enum MT_MESSAGES {MSG_SET_CUR_POS, MSG_SET_TARGET_POS, MSG_SET_AMAX, MSG_SET_VMAX, MSG_SYNC_POS};
 
 // Internal mode
 enum PositionState {PS_IDLE, PS_ACCEL, PS_CRUISE, PS_DECEL, PS_DECEL_TARGET, PS_STOPPING};
@@ -29,6 +29,7 @@ class StepDir : public MotionControl
 {
 public:
 	void setCurrentPos(long);
+  void syncPos(long);
 	long getCurrentPos(void);
 	long getTargetPos(void);
 	double getSpeed(void);

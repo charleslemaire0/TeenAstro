@@ -2,7 +2,7 @@
 #ifdef __ESP32__
 #include "Global.h"
 #include <SoftwareSerial.h>
-
+const char BoardVersion[] = "esp32dev";
 
 EspSoftwareSerial::UART debugOut(2, 4); // rx, tx pins
 
@@ -10,6 +10,11 @@ EspSoftwareSerial::UART debugOut(2, 4); // rx, tx pins
 // Initial time is Jan 1 1970 + 50 years
 
 static unsigned long initialSystemTime = (50 * 365.25 * 24 * 3600);
+
+const char* HAL_getBoardVersion(void)
+{
+  return (BoardVersion);
+}
 
 void HAL_preInit(void)
 {

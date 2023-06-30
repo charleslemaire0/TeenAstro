@@ -3,14 +3,14 @@
 
 void EqMount::axesToSteps(Axes *aP, Steps *sP)
 {
-  sP->steps1 = (long)((aP->axis1) * geoA1.stepsPerDegree) + axisOffset.steps1;
-  sP->steps2 = (long)((aP->axis2) * geoA2.stepsPerDegree) + axisOffset.steps2;
+  sP->steps1 = (long)((aP->axis1) * geoA1.stepsPerDegree);
+  sP->steps2 = (long)((aP->axis2) * geoA2.stepsPerDegree);
 }
 
 void EqMount::stepsToAxes(Steps *sP, Axes *aP)
 {
-  aP->axis1 = ((double)(sP->steps1 - axisOffset.steps1) / geoA1.stepsPerDegree);
-  aP->axis2 = ((double)(sP->steps2 - axisOffset.steps2) / geoA2.stepsPerDegree);
+  aP->axis1 = ((double)(sP->steps1) / geoA1.stepsPerDegree);
+  aP->axis2 = ((double)(sP->steps2) / geoA2.stepsPerDegree);
 }
 
 /*
@@ -18,7 +18,7 @@ void EqMount::stepsToAxes(Steps *sP, Axes *aP)
  */
 bool EqMount::isFlipped()
 {
-  long pos = motorA2.getCurrentPos() - axisOffset.steps2;
+  long pos = motorA2.getCurrentPos();
  	return ((pos < 0) == (*localSite.latitude() >= 0));	
 }
 
@@ -86,6 +86,7 @@ bool EqMount::getTargetPierSide(EqCoords *eP, PierSide *psOutP)
   return true;
 }
 
+#define ALIGNMENT 0
 
 /*
  * eqToAxes: computes axes from equatorial coordinates
@@ -94,7 +95,7 @@ bool EqMount::getTargetPierSide(EqCoords *eP, PierSide *psOutP)
 bool EqMount::eqToAxes(EqCoords *eP, Axes *aP, PierSide ps)
 {  
   EqCoords ref;
-#if 1
+#if ALIGNMENT
   // Get instrument coordinates from ref. coordinates using alignment matrix
   alignment.toInstrumentDeg(ref.ha, ref.dec, eP->ha, eP->dec);
 #else
@@ -151,7 +152,7 @@ void EqMount::axesToEqu(Axes *aP, EqCoords *eP)
     instr.ha  = hemisphere * aP->axis1;
     instr.dec = hemisphere * (90 - aP->axis2);    
   }
-#if 1  
+#if ALIGNMENT  
   alignment.toReferenceDeg(eP->ha, eP->dec, instr.ha, instr.dec);
 #else 
   eP->ha = instr.ha;
@@ -196,20 +197,15 @@ bool EqMount::syncEqu(double HA, double Dec, PierSide Side, UNUSED(const double 
 {
 	EqCoords eqCoords;
 	Axes axes;
-	Steps oldSteps, newSteps;
-
-  oldSteps.steps1 = motorA1.getCurrentPos();
-  oldSteps.steps2 = motorA2.getCurrentPos();  
+	Steps newSteps;
 
 	eqCoords.ha = HA;
 	eqCoords.dec = Dec;
 	eqToAxes(&eqCoords, &axes, Side);
 	axesToSteps(&axes, &newSteps);
 
-  // keep track of the new offset for future goto
-  axisOffset.steps1 += (oldSteps.steps1 - newSteps.steps1);
-  axisOffset.steps2 += (oldSteps.steps2 - newSteps.steps2);
-
+  motorA1.syncPos(newSteps.steps1);
+  motorA2.syncPos(newSteps.steps2);
   return true;
 }
 
@@ -327,7 +323,7 @@ void EqMount::getTrackingSpeeds(Speeds *sP)
     dir = axis2Direction('n');    // direction is zero for the pole, ie home position. Convert to +1 or -1 depending on our current position
     if (dir == 0)
     {
-      dir = ((motorA2.getCurrentPos() - axisOffset.steps2) < 0 ? 1:-1);
+      dir = (motorA2.getCurrentPos() < 0 ? 1:-1);
     }
     deltaV = guideRates[0] * dir;
     sP->speed2 += deltaV;
@@ -337,7 +333,7 @@ void EqMount::getTrackingSpeeds(Speeds *sP)
     dir = axis2Direction('s');
     if (dir == 0)
     {
-      dir = ((motorA2.getCurrentPos() - axisOffset.steps2) < 0 ? 1:-1);
+      dir = (motorA2.getCurrentPos()  < 0 ? 1:-1);
     }
     deltaV = guideRates[0] * dir;
     sP->speed2 += deltaV;
@@ -412,7 +408,7 @@ int EqMount::axis2Direction(char pole)
  */
 int EqMount::decDirection(void)
 {
-  long pos = motorA2.getCurrentPos()+axisOffset.steps2; 
+  long pos = motorA2.getCurrentPos(); 
   double sp = motorA2.getSpeed();
   if (sp == 0.0)
     return 0;

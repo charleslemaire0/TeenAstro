@@ -289,17 +289,14 @@ def readVersions():
     return
   window['mainUnitVersion'].update(getValue(comm, 'GVN')) 
   window['boardVersion'].update(getValue(comm, 'GVB')) 
-  driverVersion = getValue(comm, 'GVb')
-  if driverVersion == '1': driverText = 'TOS100'
-  elif driverVersion == '2': driverText = 'TMC2130'
-  elif driverVersion == '3': driverText = 'TMC5160'
-  else: driverText = 'unknown'
-  window['driverVersion'].update(driverText) 
+  window['firmwareName'].update(getValue(comm, 'GVP') + '/' + getValue(comm, 'GVp')) 
+  window['driverVersion'].update(getValue(comm, 'GVb')) 
     
 def clearVersions():
   window['mainUnitVersion'].update('') 
   window['boardVersion'].update('') 
   window['driverVersion'].update('') 
+  window['firmwareName'].update('') 
 
 
 def readMountData():
@@ -683,6 +680,7 @@ commFrame = sg.Frame('Comm Port',[sgCommTypeSerial,sgCommTypeTCP,[sg.Button('Con
 versionFrame = sg.Frame('Versions',
           [
           [sg.Text('Main Unit:'), sg.Text('', key='mainUnitVersion',size=(30,1))],
+          [sg.Text('Firmware:'), sg.Text('',key='firmwareName',size=(30,1))],
           [sg.Text('Board:'), sg.Text('',key='boardVersion',size=(30,1))],
           [sg.Text('Stepper Driver:'), sg.Text('',key='driverVersion',size=(30,1))]]
           )
@@ -728,6 +726,9 @@ while True:
         window['-Serial-'].update(disabled = True)
         window['-TCPIP-'].update(disabled = True)
         readVersions()
+        readMountData()
+        readSiteData()
+        updateView()
 
     else:
       comm.close()

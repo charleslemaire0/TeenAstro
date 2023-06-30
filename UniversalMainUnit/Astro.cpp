@@ -56,20 +56,18 @@ void initMaxSpeed()
   double maxAxis1Speed = geoA1.stepsPerSecond * maxSlewEEPROM;
   double maxAxis2Speed = geoA2.stepsPerSecond * maxSlewEEPROM;
 
+  mount.maxSpeed = fmin(maxAxis1Speed, maxAxis2Speed); // steps per second  
+
   if ((motorA1.drvType == DRV_STEPDIR) || (motorA2.drvType == DRV_STEPDIR))
   {
-    mount.maxSpeed = fmin(maxAxis1Speed, fmin(maxAxis2Speed, MAX_TEENASTRO_SPEED)); // steps per second
-    long maxSlewCorrected = mount.maxSpeed / geoA1.stepsPerSecond; 
+    mount.maxSpeed = fmin(mount.maxSpeed, MAX_TEENASTRO_SPEED);   // steps per second
+    long maxSlewCorrected = mount.maxSpeed / fmin(geoA1.stepsPerSecond, geoA2.stepsPerSecond); 
     // If the speed read from the EEPROM is too high, correct it
     if (maxSlewEEPROM > maxSlewCorrected)
     {
       XEEPROM.writeInt(getMountAddress(EE_maxRate), (int) (maxSlewCorrected));
     }
   } 
-  else 
-  {
-    mount.maxSpeed = fmin(maxAxis1Speed, maxAxis2Speed); // steps per second  
-  }  
 
   guideRates[RXX] = maxSlewEEPROM;
   if (guideRates[RS] >= maxSlewEEPROM)   // also correct the next higher speed??

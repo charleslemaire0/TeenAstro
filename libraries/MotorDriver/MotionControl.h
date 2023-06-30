@@ -5,6 +5,7 @@ class MotionControl
 public:
   virtual void setCurrentPos(long);
   virtual void setTargetPos(long);
+  virtual void syncPos(long);
   virtual void setVmax(double);
   virtual void setAmax(long);
   virtual long getCurrentPos(void);

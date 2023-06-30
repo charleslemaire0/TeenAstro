@@ -6,6 +6,7 @@ public:
   TMC5160Stepper *drvP;
   SemaphoreHandle_t mutex = 0;
 	void setCurrentPos(long);
+  void syncPos(long);
 	long getCurrentPos(void);
 	long getTargetPos(void);
 	double getSpeed(void);

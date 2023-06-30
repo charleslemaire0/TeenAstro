@@ -60,11 +60,9 @@ void processCommands()
   case 'D':
     Command_D();
     break;
-#if 0    
   case 'F':
     Command_F();
     break;
-#endif
   case 'G':
     Command_G();
     break;

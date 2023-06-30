@@ -117,7 +117,6 @@ byte park()
         steps.steps2 = XEEPROM.readLong(getMountAddress(EE_posAxis2));
 
         lastsiderealTracking = false;
-        stopTracking();
         // record our status
         parkStatus(PRK_PARKING);
 

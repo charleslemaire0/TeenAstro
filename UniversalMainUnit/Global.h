@@ -193,6 +193,7 @@ GLOBAL DateTimeTimers      rtk;
 
 GLOBAL uint8_t             currentMount;
 GLOBAL uint8_t             currentSite;
-GLOBAL uint32_t            AxisDriver;
+GLOBAL char                Axis1DriverName[20];
+GLOBAL char                Axis2DriverName[20];
 GLOBAL char                mountNames[maxNumMounts][MountNameLen];
 GLOBAL bool                reboot_unit;

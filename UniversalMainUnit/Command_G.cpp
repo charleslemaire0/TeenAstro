@@ -747,6 +747,7 @@ void  Command_G()
     static double _dec = 0;
     static double _ra = 0;
 
+    // avoid calling getEqu too often by checking time of last call
     if (millis() - _coord_t < 100)
     {
       f = _ra;
@@ -962,17 +963,21 @@ void  Command_G()
       //  :GVP#   Get Firmware Name, Native LX200 command
       strcpy(reply, FirmwareName);
       break;
+    case 'p':
+      //  :GVp#   Get Firmware SubName
+      strcpy(reply, FirmwareSubName);
+      break;
     case 'T':
       //  :GVT#   Get Firmware Time, Native LX200 command
       strcpy(reply, FirmwareTime);
       break;
     case 'B':
-      //  :GVB#   Get Firmware board version, extended LX200 command
-      sprintf(reply, "%d", VERSION);
+      //  :GVB#   Get Firmware version, extended LX200 command
+      sprintf(reply, "%s", HAL_getBoardVersion());
       break;
     case 'b':
       //  :GVb#   Get Firmware Stepper driver board, extended LX200 command
-      sprintf(reply, "%d", AxisDriver);
+      sprintf(reply, "%s/%s", Axis1DriverName, Axis2DriverName);
       break;
     default:
       replyLongUnknown();

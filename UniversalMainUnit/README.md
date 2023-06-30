@@ -84,5 +84,8 @@ Alignment and refraction are not yet implemented
 
 
 #### Known bugs
+- FreeRTOS startup on Teensy4 is very slow (7 seconds!) which confuses the SHC. I put a work-around that requires a reboot, then it works fine. This does not happen on ESP32. Debugging is ongoing.   
+- Tracking and guiding in StepDir mode for a long time sometimes causes wrong display of coordinates. Not reproduced in SPI mode.   
+
 
 

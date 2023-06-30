@@ -6,8 +6,9 @@
 
 // firmware info, these are returned by the ":GV?#" commands
 #define FirmwareDate    __DATE__
-#define FirmwareNumber  "1.4.0"
+#define FirmwareNumber  "1.4.0"   // to keep compatibility with SHC
 #define FirmwareName    "TeenAstro"
+#define FirmwareSubName "UniversalMainUnit"
 #define FirmwareTime    __TIME__
-// forces initialialization of a host of settings in XEEPROM. OnStep does this automatically, most likely, you will want to leave this alone
+// forces initialization of a host of settings in XEEPROM. 
 #define initKey     0x12345678            // unique identifier for the current initialization format

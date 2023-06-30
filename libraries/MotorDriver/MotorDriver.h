@@ -106,6 +106,10 @@ public:
   {
     mcP->setCurrentPos(reverse ? -p:p);
   }
+  void syncPos(long p)
+  {
+    mcP->syncPos(reverse ? -p:p);
+  }
   void setTargetPos(long p)
   {
     mcP->setTargetPos(reverse ? -p:p);

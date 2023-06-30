@@ -2,15 +2,39 @@
 #ifdef __arm__
 #include "Global.h"
 
+#ifdef BOARD_240
+const char BoardVersion[] = "240";
+#elif BOARD_250
+const char BoardVersion[] = "250";
+#else
+const char BoardVersion[] = "unknown";
+#endif
+
+
+const char* HAL_getBoardVersion(void)
+{
+  return (BoardVersion);
+}
 
 void HAL_preInit(void)
 {
-  Serial.begin(BAUD);
+//  Serial.begin(BAUD); // not needed according to Teensy documentation
   S_USB.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
+  Serial1.begin(BAUD);
+  S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
 
 #ifdef BOARD_240
   Serial2.begin(BAUD);
 #endif
+
+  // process SHC initial commands (GVP etc.) to avoid losing connection 
+  // this is because FreeRTOS initialization is very slow (7sec) for unknown reason
+  for (int j = 0; j<800; j++)
+  {
+    processCommands();
+    delay(1);
+  }
+
 }
 
 #ifdef BOARD_240
@@ -26,8 +50,9 @@ void HAL_debug1(uint8_t b)
 
 void HAL_initSerial(void)
 {
-  Serial1.begin(BAUD);
-  S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
+// has already been done in preInit  
+//  Serial1.begin(BAUD);
+//  S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
 }
 
 void HAL_setRealTimeClock(unsigned long t)

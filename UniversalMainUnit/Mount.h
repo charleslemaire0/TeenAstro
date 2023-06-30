@@ -86,7 +86,6 @@ protected:
   double  trackingSpeed;            // multiple of sidereal speed 
   Speeds  trackingSpeeds;           // actual tracking speeds including guiding and spiral           
   double  currentRA, currentDec;
-  Steps   axisOffset;     // keeps track of sync
   bool    isAligned;
 };
 
@@ -127,7 +126,6 @@ public:
   EqMount(MountType t)
   {
     type = t;
-    axisOffset.steps1 = axisOffset.steps2 = 0;
   }
 };
 
@@ -163,7 +161,6 @@ public:
   AltAzMount(MountType t)
   {
     type = t;
-    axisOffset.steps1 = axisOffset.steps2 = 0;
   }
 };
 

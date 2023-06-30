@@ -19,7 +19,6 @@
 #include "HAL_pins_esp32.h"  
 #endif
 
-
 struct EE_Site
 {
   float lat;
@@ -32,6 +31,7 @@ struct EE_Site
 void          HAL_preInit(void);
 void          HAL_initSerial(void);
 void          HAL_setRealTimeClock(unsigned long t);
+const char*   HAL_getBoardVersion(void);
 unsigned long HAL_getRealTimeClock(void);
 void          HAL_reboot(void);
 void          HAL_beginTimer(void f(void), unsigned long);
