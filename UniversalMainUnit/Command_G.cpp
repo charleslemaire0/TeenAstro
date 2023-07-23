@@ -489,6 +489,83 @@ void Command_GX()
     i = 17;
   }
   break;
+//jma
+  case 'J':
+  {
+    //specific command for ASCOM
+    switch (command[3])
+    {
+    case 'C':
+      // :GXJC# get if connected
+    {
+      replyLongTrue();
+    }
+    break;
+    case 'M':
+      // :GXJMn# get if axis is still moving
+    {
+      
+      if (command[4] == '1')
+      {
+//jma        GuidingState == Guiding::GuidingAtRate && guideA1.isBusy() ? replyLongTrue() : replyLongFalse();
+        replyLongFalse();
+      }
+      else if (command[4] == '2')
+      {
+//jma        GuidingState == Guiding::GuidingAtRate && guideA2.isBusy() ? replyLongTrue() : replyLongFalse();
+        replyLongFalse();
+      }
+      else
+      {
+        replyLongUnknown();
+      }
+      break;
+    }
+    case 'P':
+      // :GXJP# get if pulse guiding
+    {
+      if (GuidingState == GuidingPulse || GuidingState == GuidingST4)
+      {
+        replyLongTrue();
+      }
+      else
+      {
+        replyLongFalse();
+      }
+    }
+    break;
+    case 'S':
+      // :GXJS# get if Slewing
+    {
+      //jma if (GuidingState == GuidingRecenter || GuidingState == GuidingAtRate || movingTo)
+      if (GuidingState == GuidingRecenter || GuidingState == GuidingAtRate || isSlewing())
+      {
+        replyLongTrue();
+      }
+      else
+      {
+        replyLongFalse();
+      }
+    }
+    break;
+    case 'T':
+      // :GXJT# get if tracking
+    {
+//jma      if (sideralTracking)
+      if (1)
+      {
+        replyLongTrue();
+      }
+      else
+      {
+        replyLongFalse();
+      }
+    }
+      break;
+    }
+  }
+  break;
+//jma  
   case 'M':
   {
     // :GXM..#   Get Motor Settings
