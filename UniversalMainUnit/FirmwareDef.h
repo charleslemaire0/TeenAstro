@@ -6,7 +6,7 @@
 
 // firmware info, these are returned by the ":GV?#" commands
 #define FirmwareDate    __DATE__
-#define FirmwareNumber  "1.4.0"   // to keep compatibility with SHC
+#define FirmwareNumber  "1.4"   // to keep compatibility with SHC
 #define FirmwareName    "TeenAstro"
 #define FirmwareSubName "UniversalMainUnit"
 #define FirmwareTime    __TIME__

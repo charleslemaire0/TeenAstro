@@ -219,7 +219,7 @@ void setup()
   xTaskCreate(
     monitorTask,    // Function that should be called
     "Monitor",      // Name of the task (for debugging)
-    2000,           // Stack size (bytes)
+    4096,           // Stack size (bytes)
     NULL,           // Parameter to pass
     MON_TASK_PRTY,  // Task priority
     NULL            // Task handle
@@ -228,7 +228,7 @@ void setup()
   xTaskCreate(
     controlTask, 
     "Control",   
-    2000,        
+    4096,        
     NULL,     
     CTRL_TASK_PRTY,        
     NULL      
@@ -238,7 +238,7 @@ void setup()
   xTaskCreate(
     processCommandsTask,
     "Command",   
-    2000,
+    4096,
     NULL,
     CMD_TASK_PRTY, 
     NULL
