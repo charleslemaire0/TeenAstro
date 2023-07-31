@@ -244,7 +244,7 @@ class trackingPlot():
             self.ta.guideCmd('w',50)
 
         if (ev == 'Nudge'):
-            ra = self.ta.getRA() + (random.random() - 0.5)    # add or subtract up to a half degree
+            ra = self.ta.getRA() + (random.random() - 0.5) / 15.0    # add or subtract up to a half degree
             dec = self.ta.getDeclination() + (random.random() - 0.5)
             self.log('goto ra:{0:2.2f} dec:{1:2.2f}'.format(ra, dec))
             self.ta.gotoRaDec(ra, dec)

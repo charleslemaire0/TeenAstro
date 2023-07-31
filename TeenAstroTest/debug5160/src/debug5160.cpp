@@ -47,6 +47,18 @@ EspSoftwareSerial::UART debugOut(2,4);  // rx, tx pins
 #define Axis2EnablePin  5
 #define DBG Serial2
 #define debugOut Serial3
+#elif BOARD_teensy41
+#define Axis1CSPin      21
+#define Axis1DirPin     2
+#define Axis1StepPin    22
+#define Axis1EnablePin  3 
+
+#define Axis2CSPin      19
+#define Axis2DirPin     4
+#define Axis2StepPin    20 
+#define Axis2EnablePin  5
+#define DBG Serial2
+#define debugOut Serial3
 #endif
 
 #define ISR(f)  void f(void)
@@ -64,7 +76,9 @@ EspSoftwareSerial::UART debugOut(2,4);  // rx, tx pins
 #include "StepDir.h"
 #include "Mc5160.h"
 #include "MotorDriver.h"
+#ifdef __ESP32__
 #include <SoftwareSerial.h>
+#endif
 #include <time.h>
 #include <stdlib.h>
 

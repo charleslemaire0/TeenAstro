@@ -89,7 +89,7 @@ private:
 
 	// Processor-specific variables
 #ifdef __arm__
-	IntervalTimer *timerP;
+	void *timerP;
 #endif
 
 #ifdef __ESP32__

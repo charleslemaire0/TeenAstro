@@ -82,9 +82,9 @@ slewTestTab = [[sg.Column([
                      sg.B(button_text = 'AutoSlew', key='autoSlew'),sg.B(button_text = 'Stop', key='stopSlew'),
                      sg.B(button_text = 'Clear', key='clearSlew'), sg.B(button_text = 'Flip', key='flipMount'), 
                      sg.B(button_text = 'Park', key='park'), sg.B(button_text = 'Unpark', key='unpark')],
-                    [slewingCanvasGroup]]),
-                    sg.Column([[horCoordFrame]])
-                    ]]
+                    [slewingCanvasGroup, horCoordFrame]
+                ])]]
+                    
 
 trackingCanvasGroup = sg.TabGroup([[sg.Tab('T',  [[sg.Canvas(key='tracking_cv_t', size=(640, 400))]])],
                                    [sg.Tab('XY', [[sg.Canvas(key='tracking_cv_xy', size=(640, 400))]])]
@@ -97,17 +97,17 @@ trackingTab = [[sg.Column([
                       sg.B(button_text = 'GuideE',key='GuideE'),sg.B(button_text = 'GuideW',key='GuideW'),
                       sg.B(button_text = 'Nudge',key='Nudge'),
                       sg.B(button_text='Spiral', key='spiral'),sg.B(button_text = 'Clear', key='clearTrack')],
-                    [trackingCanvasGroup]]),
-                    sg.Column([[driftFrame], [axisFrame], [stepsFrame], [speedFrame]])
-                ]]
+                    [trackingCanvasGroup, sg.Column([[driftFrame], [axisFrame], [stepsFrame], [speedFrame]])]
+                ])]]
 
 alignmentTab = [[sg.Column([
                     [sg.B(button_text = '+',key='zoomInA'),sg.B(button_text = '-',key='zoomOutA'),
                       sg.DropDown([], key='alignmentTarget', size=25),
                       sg.B(button_text='Goto', key='alignmentGoto'), 
                       centeringFrame, alignmentFrame],
-                    [sg.Canvas(key='alignment_cv', size=(640, 400))]]), sg.Column([[eqCoordFrame],[homeErrorFrame], [poleErrorFrame]])]
-                ]
+                    [sg.Canvas(key='alignment_cv', size=(640, 400)), 
+                     sg.Column([[eqCoordFrame],[homeErrorFrame], [poleErrorFrame]])]
+                ])]]
 
 
 topRow = [commFrame, sg.B('Exit'), sg.Column([[statusFrame], [errorFrame]])]
@@ -150,7 +150,7 @@ class Application:
     def __init__(self, options):
         self.ts = load.timescale()
 
-        self.window = sg.Window('TeenAstro AutoTest', layout, finalize=True, size=(1024,720))
+        self.window = sg.Window('TeenAstro AutoTest', layout, finalize=True, size=(1200,720))
         if options.portType == 'tcp':
             self.window['-tcp-'].update(value = True)
             self.window['-IPADDR-'].update(disabled = False)

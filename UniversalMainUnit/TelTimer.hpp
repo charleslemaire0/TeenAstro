@@ -1,10 +1,9 @@
 #pragma once
-#ifdef __arm__
-#include <Arduino.h>
-#endif
+//#ifdef __arm__
+//#include <Arduino.h>
+//#endif
 #include <TimeLib.h>
 #include <TeenAstroMath.h>
-time_t getFreeRTOSTimer(void);
 
 
 class DateTimeTimers

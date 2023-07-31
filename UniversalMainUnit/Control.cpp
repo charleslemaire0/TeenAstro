@@ -139,7 +139,6 @@ void controlTask(UNUSED(void *arg))
       case CTL_MODE_IDLE:
         if (getEvent(EV_START_TRACKING))
         {
-          Speeds speeds;
           currentMode = CTL_MODE_TRACKING;
           resetEvents(EV_AT_HOME);
           resetEvents(EV_START_TRACKING);
@@ -312,10 +311,8 @@ void controlTask(UNUSED(void *arg))
           resetEvents(EV_CENTERING | EV_WEST | EV_EAST);
           if (prevMode == CTL_MODE_TRACKING)
           {
-            Speeds speeds;
-            mount.mP->getTrackingSpeeds(&speeds);
-            motorA1.setVmax(fabs(speeds.speed1));
-            motorA1.setTargetPos(speeds.speed1>0 ? geoA1.stepsPerRot : -geoA1.stepsPerRot);
+            currentMode = CTL_MODE_STOPPING;
+            setEvents(EV_START_TRACKING);
           }
           break;
 
@@ -376,7 +373,6 @@ void MoveAxis2(const byte dir)
 void MoveAxis2AtRate(double speed, const byte dir)
 {
   unsigned msg[CTL_MAX_MESSAGE_SIZE];
-  long target;
 
   if ((parkStatus() != PRK_UNPARKED) || isSlewing())
     return;

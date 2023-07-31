@@ -15,8 +15,12 @@
 #include "event_groups.h"
 #include "semphr.h"
 #define ISR(f)  void f(void)
+//#include "IntervalTimer2.h"
+
+
 IntervalTimer  itimer3;
 IntervalTimer  itimer4;
+
 // Periods in µS, speeds in steps/S
 // *** replace by constants from the HAL
 #define MIN_INTERRUPT_PERIOD 5UL        // µS
@@ -126,7 +130,8 @@ void StepDir::programSpeed(double V)
 
   long period = getPeriod(fabs(V));
   #ifdef __arm__
-  timerP->update(period); 
+
+  ((IntervalTimer *) timerP)->update(period); 
   #endif
 
   #ifdef __ESP32__  
@@ -208,17 +213,20 @@ void StepDir::positionMode(void)
   // Check for abort 
   if (getEvents() & EV_MOT_ABORT)
   {
-    resetEvents(EV_MOT_ABORT | EV_MOT_GOTO);
-    cli();
-    targetPos = currentPos + (currentSpeed >= 0 ? 1:-1) * d1;
-    sei();
-    if (newSpeed < vStop)
+    resetEvents(EV_MOT_ABORT);
+    if (newSpeed != 0)
     {
-      state(PS_STOPPING);
-    }
-    else
-    {
-      state(PS_DECEL_TARGET);
+      cli();
+      targetPos = currentPos + (currentSpeed >= 0 ? 1:-1) * d1;
+      sei();
+      if (newSpeed < vStop)
+      {
+        state(PS_STOPPING);
+      }
+      else
+      {
+        state(PS_DECEL_TARGET);
+      }      
     }
   }
 
@@ -405,8 +413,8 @@ void StepDir::initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned time
   else
     timerP = &itimer4;
 
-  timerP->begin(isrP, 1000);  // start at 1mS
-  timerP->priority(1);
+  ((IntervalTimer *) timerP)->begin(isrP, 1000);  // start at 1mS
+  ((IntervalTimer *) timerP)->priority(1);
   #endif
 
   #ifdef __ESP32__  
