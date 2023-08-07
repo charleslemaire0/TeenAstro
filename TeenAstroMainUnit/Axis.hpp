@@ -5,7 +5,7 @@
 // backlash control
 struct backlash
 {
-  int               inSeconds;
+  int               inArcSeconds;
   volatile int      inSteps;
   volatile bool     correcting;
   volatile int      movedSteps;
@@ -25,14 +25,15 @@ public:
   volatile long       deltaStart;
   volatile bool       dir;                             // stepping direction + or -
   double              fstep;                           // amount of steps for Tracking
-  volatile double     interval_Step_Sid;                  // based on the siderealClockSpeed, this is the time between steps for sidereal tracking 
+  volatile double     interval_Step_Sid;               // based on the siderealClockSpeed, this is the time between steps for sidereal tracking 
   volatile double     takeupRate;                      // this is the takeup rate for synchronizing the target and actual positions when needed
   volatile double     takeupInterval;
-  volatile double     interval_Step_Cur = 0;            // this is the time between steps for the current rotation speed
-  volatile double     CurrentTrackingRate = default_tracking_rate; //effective rate tracking in Hour arc-seconds/second
+  volatile double     interval_Step_Cur = 0;                         // this is the time between steps for the current rotation speed
+  volatile double     CurrentTrackingRate = default_tracking_rate;   //effective rate tracking in Hour arc-seconds/second
   double              RequestedTrackingRate = default_tracking_rate; //computed  rate tracking in Hour arc-seconds/second
   long                minstepdist;
   double              ClockSpeed;
+public:
   void updateDeltaTarget()
   {
     cli();
