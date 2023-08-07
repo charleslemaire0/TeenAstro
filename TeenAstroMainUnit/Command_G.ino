@@ -739,6 +739,21 @@ void Command_GX()
         replyLongUnknow();
     }
     break;
+    case 'b':
+    {
+      // :GXMb.#   Get Motor backlash Rate
+      if (command[4] == 'D')
+      {
+        sprintf(reply, "%d#", motorA2.backlashRate);
+      }
+      else if (command[4] == 'R')
+      {
+        sprintf(reply, "%d#", motorA1.backlashRate);
+      }
+      else
+        replyLongUnknow();
+    }
+    break;
     case 'G':
     {
       // :GXMG.#   Get Motor Gear

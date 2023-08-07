@@ -441,6 +441,31 @@ void Command_SX()
       else replyNothing();
     }
     break;
+    case 'b':
+    {
+      // :SXMbn,VVVV# Set BacklashRate
+      int i;
+      if ((atoi2((char*)&command[6], &i)) && ((i >= 16) && (i <= 64)))
+      {
+        if (command[4] == 'D')
+        {
+          motorA2.backlashRate = i;
+          XEEPROM.write(getMountAddress(EE_motorA2backlashRate), motorA2.backlashRate);
+          staA2.SetBacklash_interval_Step(motorA2.backlashRate);
+          replyValueSetShort(true);
+        }
+        else if (command[4] == 'R')
+        {
+          motorA1.backlashRate = i;
+          XEEPROM.write(getMountAddress(EE_motorA1backlashRate), motorA1.backlashRate);
+          staA1.SetBacklash_interval_Step(motorA1.backlashRate);
+          replyValueSetShort(true);
+        }
+        else replyNothing();
+      }
+      else replyNothing();
+    }
+    break;
     case 'G':
     {
       // :SXMGn,VVVV# Set Gear

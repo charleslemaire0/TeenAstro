@@ -62,7 +62,7 @@ public:
     minstepdist = 0.25 * stepsPerSecond;
     takeupRate = 8L;
     takeupInterval = interval_Step_Sid / takeupRate;
-    backlash_interval_Step = interval_Step_Sid / bl_rate;
+    SetBacklash_interval_Step(bl_rate);
     resetToSidereal();
   };
   //double interval2speedfromTime(const double& time)
@@ -176,6 +176,10 @@ public:
     backlash_inSteps = amount * stepsPerArcSecond;
     backlash_movedSteps = 0;
     backlash_correcting = false;
+  }
+  void SetBacklash_interval_Step(int bl_rate)
+  {
+    backlash_interval_Step = interval_Step_Sid / bl_rate;
   }
 private:
   double speedfromDist(const volatile unsigned long& d)

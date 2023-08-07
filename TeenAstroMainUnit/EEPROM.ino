@@ -400,9 +400,32 @@ void readEEPROMmotorCurrent()
 void readEEPROMmotor()
 {
   motorA1.backlashAmount = XEEPROM.readInt(getMountAddress(EE_motorA1backlashAmount));
-  motorA1.backlashRate = XEEPROM.readInt(getMountAddress(EE_motorA1backlashRate));
+  if (motorA1.backlashAmount > 999 || motorA1.backlashAmount < 0)
+  {
+    motorA1.backlashAmount = 0;
+    XEEPROM.writeInt(getMountAddress(EE_motorA1backlashAmount),0);
+  }
+
   motorA2.backlashAmount = XEEPROM.readInt(getMountAddress(EE_motorA2backlashAmount));
-  motorA2.backlashRate = XEEPROM.readInt(getMountAddress(EE_motorA2backlashRate));
+  if (motorA2.backlashAmount > 999 || motorA2.backlashAmount < 0)
+  {
+    motorA2.backlashAmount = 0;
+    XEEPROM.writeInt(getMountAddress(EE_motorA2backlashAmount), 0);
+  }
+
+  motorA1.backlashRate = XEEPROM.read(getMountAddress(EE_motorA1backlashRate));
+  if (motorA1.backlashRate < 16 || motorA1.backlashRate > 64)
+  {
+    motorA1.backlashRate = 16;
+    XEEPROM.write(getMountAddress(EE_motorA1backlashAmount), 16);
+  }
+
+  motorA2.backlashRate = XEEPROM.read(getMountAddress(EE_motorA2backlashRate));
+  if (motorA2.backlashRate < 16 || motorA2.backlashRate > 64)
+  {
+    motorA2.backlashRate = 16;
+    XEEPROM.write(getMountAddress(EE_motorA2backlashAmount), 16);
+  }
 
   //AXIS 1
 #ifdef D_motorA1gear
