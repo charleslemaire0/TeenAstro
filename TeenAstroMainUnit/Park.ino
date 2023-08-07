@@ -79,12 +79,12 @@ bool parkClearBacklash()
   sei();
 
   // figure out how long we'll have to wait for the backlash to clear (+50%)
-  long    t;
-  if (backlashA1.inSteps > backlashA2.inSteps)
-    t = (long)(backlashA1.inSteps * 1500 / geoA1.stepsPerSecond);
-  else
-    t = (long)(backlashA2.inSteps * 1500 / geoA2.stepsPerSecond);
-  t = (t / staA1.takeupRate + 250) / 12;
+  long t,t1,t2;
+  t1 = (long)(backlashA1.inSteps * 1500 / geoA1.stepsPerSecond);
+  t1 = (t1 / staA1.takeupRate + 250) / 12;
+  t2 = (long)(backlashA2.inSteps * 1500 / geoA2.stepsPerSecond);
+  t2 = (t2 / staA2.takeupRate + 250) / 12;
+  t = max(t1, t2);
 
   // start by moving fully into the backlash
   cli();
@@ -95,8 +95,9 @@ bool parkClearBacklash()
   // wait until done or timed out
   for (int i = 0; i < 12; i++)
   {
-    if (backlashA1.movedSteps != backlashA1.inSteps || staA1.pos != staA1.target ||
-        backlashA2.movedSteps != backlashA2.inSteps || staA2.pos != staA2.target)
+    updateDeltaTarget();
+    if (backlashA1.movedSteps != backlashA1.inSteps || (staA1.deltaTarget != 0) ||
+        backlashA2.movedSteps != backlashA2.inSteps || (staA2.deltaTarget != 0))
       delay(t);
   }
 
