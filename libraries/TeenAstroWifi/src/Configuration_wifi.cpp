@@ -196,9 +196,9 @@ void TeenAstroWifi::handleWifi()
   }
 
   data += FPSTR(html_wifiMode1);
-  activeWifiMode == WifiMode::M_Station1 ? data += "<option selected value='0'>StationMode0</option>" : data += "<option value='0'>StationMode1</option>";
-  activeWifiMode == WifiMode::M_Station2 ? data += "<option selected value='1'>StationMode1</option>" : data += "<option value='1'>StationMode2</option>";
-  activeWifiMode == WifiMode::M_Station3 ? data += "<option selected value='2'>StationMode2</option>" : data += "<option value='2'>StationMode3</option>";
+  activeWifiMode == WifiMode::M_Station1 ? data += "<option selected value='0'>StationMode0</option>" : data += "<option value='0'>StationMode0</option>";
+  activeWifiMode == WifiMode::M_Station2 ? data += "<option selected value='1'>StationMode1</option>" : data += "<option value='1'>StationMode1</option>";
+  activeWifiMode == WifiMode::M_Station3 ? data += "<option selected value='2'>StationMode2</option>" : data += "<option value='2'>StationMode2</option>";
   activeWifiMode == WifiMode::M_AcessPoint ? data += "<option selected value='3'>AccessPoint</option>" : data += "<option value='3'>AccessPoint</option>";
   data += FPSTR(html_wifiMode2);
   sendHtml(data);
