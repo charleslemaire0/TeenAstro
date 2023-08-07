@@ -555,7 +555,7 @@ void TeenAstroWifi::processConfigurationMountGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
     {
-      writeBacklashLX200(2, (uint8_t)i);
+      writeBacklashLX200(2, (float)i);
     }
   }
 
@@ -590,24 +590,6 @@ void TeenAstroWifi::processConfigurationMountGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
     {
       writeHighCurrLX200(2, i);
-    }
-  }
-
-  // Backlash Limits
-  v = server.arg("b1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
-    {
-      writeBacklashLX200(1, i);
-    }
-  }
-  v = server.arg("b2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
-    {
-      writeBacklashLX200(2, i);
     }
   }
 
