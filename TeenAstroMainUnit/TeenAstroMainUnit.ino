@@ -433,8 +433,8 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
   cli();
   geoA1.setstepsPerRot((double)motorA1.gear / 1000.0 * motorA1.stepRot * pow(2, motorA1.micro));
   geoA2.setstepsPerRot((double)motorA2.gear / 1000.0 * motorA2.stepRot * pow(2, motorA2.micro));
-  staA1.backlash_inSteps = (int)(motorA1.backlashAmount * geoA1.stepsPerArcSecond);
-  staA2.backlash_inSteps = (int)(motorA2.backlashAmount * geoA2.stepsPerArcSecond);
+  staA1.setBacklash_inSteps(motorA1.backlashAmount , geoA1.stepsPerArcSecond);
+  staA2.setBacklash_inSteps(motorA2.backlashAmount , geoA2.stepsPerArcSecond);
   sei();
 
   guideA1.init(&geoA1.stepsPerCentiSecond, guideRates[activeGuideRate]);
@@ -456,15 +456,11 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
 void updateSideral()
 {
   cli();
-  staA1.setSidereal(siderealClockSpeed, geoA1.stepsPerSecond, masterClockSpeed);
-  staA2.setSidereal(siderealClockSpeed, geoA2.stepsPerSecond, masterClockSpeed);
+  staA1.setSidereal(siderealClockSpeed, geoA1.stepsPerSecond, masterClockSpeed, motorA1.backlashRate);
+  staA2.setSidereal(siderealClockSpeed, geoA2.stepsPerSecond, masterClockSpeed, motorA2.backlashRate);
   sei();
 
   SetTrackingRate(default_tracking_rate,0);
-
-  // backlash takeup rates
-  staA1.backlash_interval_Step = staA1.takeupInterval;
-  staA2.backlash_interval_Step = staA2.takeupInterval;
 
   // initialize the sidereal clock, RA, and Dec
   SetsiderealClockSpeed(siderealClockSpeed);

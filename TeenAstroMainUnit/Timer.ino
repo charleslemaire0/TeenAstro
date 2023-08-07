@@ -262,32 +262,7 @@ ISR(TIMER3_COMPA_vect)
       }
 
       // telescope moves WEST with the sky, blAxis1 is the amount of EAST backlash
-      if (staA1.dir)
-      {
-        if (staA1.backlash_movedSteps < staA1.backlash_inSteps)
-        {
-          staA1.backlash_movedSteps++;
-          staA1.backlash_correcting = true;
-        }
-        else
-        {
-          staA1.backlash_correcting = false;
-          staA1.pos++;
-        }
-      }
-      else
-      {
-        if (staA1.backlash_movedSteps > 0)
-        {
-          staA1.backlash_movedSteps--;
-          staA1.backlash_correcting = true;
-        }
-        else
-        {
-          staA1.backlash_correcting = false;
-          staA1.pos--;
-        }
-      }
+      staA1.move();
       takeStepAxis1 = true;
     }
     clearAxis1 = false;
@@ -327,32 +302,7 @@ ISR(TIMER4_COMPA_vect)
       }
 
       // telescope moving toward celestial pole in the sky, blAxis2 is the amount of opposite backlash
-      if (staA2.dir)
-      {
-        if (staA2.backlash_movedSteps < staA2.backlash_inSteps)
-        {
-          staA2.backlash_movedSteps++;
-          staA2.backlash_correcting = true;
-        }
-        else
-        {
-          staA2.backlash_correcting = false;
-          staA2.pos++;
-        }
-      }
-      else
-      {
-        if (staA2.backlash_movedSteps > 0)
-        {
-          staA2.backlash_movedSteps--;
-          staA2.backlash_correcting = true;
-        }
-        else
-        {
-          staA2.backlash_correcting = false;
-          staA2.pos--;
-        }
-      }
+      staA2.move();
       takeStepAxis2 = true;
     }
     clearAxis2 = false;

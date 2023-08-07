@@ -426,16 +426,14 @@ void Command_SX()
         {
           motorA2.backlashAmount = i;
           XEEPROM.writeInt(getMountAddress(EE_motorA2backlashAmount), motorA2.backlashAmount);
-          staA2.backlash_inSteps = (int)(motorA2.backlashAmount * geoA2.stepsPerArcSecond);
-          staA2.backlash_movedSteps = 0;
+          staA2.setBacklash_inSteps(motorA2.backlashAmount, geoA2.stepsPerArcSecond);
           replyValueSetShort(true);
         }
         else if (command[4] == 'R')
         {
           motorA1.backlashAmount = i;
           XEEPROM.writeInt(getMountAddress(EE_motorA1backlashAmount), motorA1.backlashAmount);
-          staA1.backlash_inSteps = (int)(motorA1.backlashAmount * geoA1.stepsPerArcSecond);
-          staA1.backlash_movedSteps = 0;
+          staA1.setBacklash_inSteps(motorA1.backlashAmount, geoA1.stepsPerArcSecond);
           replyValueSetShort(true);
         }
         else replyNothing();

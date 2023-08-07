@@ -55,13 +55,14 @@ public:
   {
     interval_Step_Cur = interval_Step_Sid;
   };
-  void setSidereal(double siderealClockSpeed, double stepsPerSecond, double cs)
+  void setSidereal(double siderealClockSpeed, double stepsPerSecond, double cs, int bl_rate)
   {
     ClockSpeed = cs;
     interval_Step_Sid = siderealClockSpeed / stepsPerSecond;
     minstepdist = 0.25 * stepsPerSecond;
     takeupRate = 8L;
     takeupInterval = interval_Step_Sid / takeupRate;
+    backlash_interval_Step = interval_Step_Sid / bl_rate;
     resetToSidereal();
   };
   //double interval2speedfromTime(const double& time)
@@ -141,6 +142,41 @@ public:
       interval_Step_Cur = max(min(interval_Step_Sid / rate, maxInterval), minInterval);
     }
   };
+  void move()
+  {
+    if (dir)
+    {
+      if (backlash_movedSteps < backlash_inSteps)
+      {
+        backlash_movedSteps++;
+        backlash_correcting = true;
+      }
+      else
+      {
+        backlash_correcting = false;
+        pos++;
+      }
+    }
+    else
+    {
+      if (backlash_movedSteps > 0)
+      {
+        backlash_movedSteps--;
+        backlash_correcting = true;
+      }
+      else
+      {
+        backlash_correcting = false;
+        pos--;
+      }
+    }
+  }
+  void setBacklash_inSteps(int amount, double stepsPerArcSecond)
+  {
+    backlash_inSteps = amount * stepsPerArcSecond;
+    backlash_movedSteps = 0;
+    backlash_correcting = false;
+  }
 private:
   double speedfromDist(const volatile unsigned long& d)
   {
