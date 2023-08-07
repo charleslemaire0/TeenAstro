@@ -102,6 +102,8 @@ LX200RETURN readReverseLX200(const uint8_t &axis, bool &reverse);
 LX200RETURN writeReverseLX200(const uint8_t &axis, const bool &reverse);
 LX200RETURN readBacklashLX200(const uint8_t &axis, float &backlash);
 LX200RETURN writeBacklashLX200(const uint8_t &axis, const float &backlash);
+LX200RETURN readBacklashRateLX200(const uint8_t& axis, float& backlashRate);
+LX200RETURN writeBacklashRateLX200(const uint8_t& axis, const float& backlashRate);
 LX200RETURN readTotGearLX200(const uint8_t &axis, float &totGear);
 LX200RETURN writeTotGearLX200(const uint8_t &axis, const float &totGear);
 LX200RETURN readStepPerRotLX200(const uint8_t &axis, float &stepPerRot);

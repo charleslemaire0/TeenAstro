@@ -177,6 +177,7 @@ private:
   #endif
   bool menuSetReverse(const uint8_t &axis);
   bool menuSetBacklash(const uint8_t &axis);
+  bool menuSetBacklashRate(const uint8_t& axis);
   bool menuSetTotGear(const uint8_t &axis);
   bool menuSetStepPerRot(const uint8_t &axis);
   bool menuSetMicro(const uint8_t &axis);
