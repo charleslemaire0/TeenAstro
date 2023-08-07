@@ -729,11 +729,11 @@ void Command_GX()
       // :GXMB.#   Get Motor backlash
       if (command[4] == 'D')
       {
-        sprintf(reply, "%d#", staA2.backlash_inArcSeconds);
+        sprintf(reply, "%d#", motorA2.backlashAmount);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%d#", staA1.backlash_inArcSeconds);
+        sprintf(reply, "%d#", motorA1.backlashAmount);
       }
       else
         replyLongUnknow();

@@ -29,7 +29,6 @@ public:
   volatile bool       backlash_correcting;
   volatile int        backlash_movedSteps;
   volatile double     backlash_interval_Step;
-  int                 backlash_inArcSeconds;
   volatile int        backlash_inSteps;
 public:
   void updateDeltaTarget()
@@ -324,6 +323,8 @@ public:
   bool isHighCurrfix;
   unsigned int lowCurr; //in mA
   bool isLowCurrfix;
+  int backlashAmount;
+  int backlashRate;
   Driver driver;
   void initMotor(Driver::MOTORDRIVER useddriver, int EnPin, int CSPin, int DirPin, int StepPin)
   {

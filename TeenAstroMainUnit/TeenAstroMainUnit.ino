@@ -433,8 +433,8 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
   cli();
   geoA1.setstepsPerRot((double)motorA1.gear / 1000.0 * motorA1.stepRot * pow(2, motorA1.micro));
   geoA2.setstepsPerRot((double)motorA2.gear / 1000.0 * motorA2.stepRot * pow(2, motorA2.micro));
-  staA1.backlash_inSteps = (int)(staA1.backlash_inArcSeconds * geoA1.stepsPerArcSecond);
-  staA2.backlash_inSteps = (int)(staA2.backlash_inArcSeconds * geoA2.stepsPerArcSecond);
+  staA1.backlash_inSteps = (int)(motorA1.backlashAmount * geoA1.stepsPerArcSecond);
+  staA2.backlash_inSteps = (int)(motorA2.backlashAmount * geoA2.stepsPerArcSecond);
   sei();
 
   guideA1.init(&geoA1.stepsPerCentiSecond, guideRates[activeGuideRate]);

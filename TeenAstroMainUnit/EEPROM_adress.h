@@ -75,24 +75,26 @@ uint8_t             midx;
 
 
 //motor1
-#define EE_motorA1gear          100
-#define EE_motorA1stepRot       104
-#define EE_motorA1micro         106
-#define EE_motorA1reverse       107
-#define EE_motorA1lowCurr       108
-#define EE_motorA1highCurr      109
-#define EE_backlashAxis1        110
-#define EE_motorA1silent        112
+#define EE_motorA1gear            100
+#define EE_motorA1stepRot         104
+#define EE_motorA1micro           106
+#define EE_motorA1reverse         107
+#define EE_motorA1lowCurr         108
+#define EE_motorA1highCurr        109
+#define EE_motorA1backlashAmount  110
+#define EE_motorA1backlashRate    113
+#define EE_motorA1silent          112
 
 //motor2
-#define EE_motorA2gear          114
-#define EE_motorA2stepRot       118
-#define EE_motorA2micro         120
-#define EE_motorA2reverse       121
-#define EE_motorA2lowCurr       122
-#define EE_motorA2highCurr      123
-#define EE_backlashAxis2        124
-#define EE_motorA2silent        126
+#define EE_motorA2gear            114
+#define EE_motorA2stepRot         118
+#define EE_motorA2micro           120
+#define EE_motorA2reverse         121
+#define EE_motorA2lowCurr         122
+#define EE_motorA2highCurr        123
+#define EE_motorA2backlashAmount  124
+#define EE_motorA2backlashRate    127
+#define EE_motorA2silent          126
 
 //encoder1
 #define EE_encoderA1pulsePerDegree 130
