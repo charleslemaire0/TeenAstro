@@ -424,18 +424,18 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
-          backlashA2.inArcSeconds = i;
-          XEEPROM.writeInt(getMountAddress(EE_backlashAxis2), backlashA2.inArcSeconds);
-          backlashA2.inSteps = (int)(backlashA2.inArcSeconds * geoA2.stepsPerArcSecond);
-          backlashA2.movedSteps = 0;
+          staA2.backlash_inArcSeconds = i;
+          XEEPROM.writeInt(getMountAddress(EE_backlashAxis2), staA2.backlash_inArcSeconds);
+          staA2.backlash_inSteps = (int)(staA2.backlash_inArcSeconds * geoA2.stepsPerArcSecond);
+          staA2.backlash_movedSteps = 0;
           replyValueSetShort(true);
         }
         else if (command[4] == 'R')
         {
-          backlashA1.inArcSeconds = i;
-          XEEPROM.writeInt(getMountAddress(EE_backlashAxis1), backlashA1.inArcSeconds);
-          backlashA1.inSteps = (int)(backlashA1.inArcSeconds * geoA1.stepsPerArcSecond);
-          backlashA1.movedSteps = 0;
+          staA1.backlash_inArcSeconds = i;
+          XEEPROM.writeInt(getMountAddress(EE_backlashAxis1), staA1.backlash_inArcSeconds);
+          staA1.backlash_inSteps = (int)(staA1.backlash_inArcSeconds * geoA1.stepsPerArcSecond);
+          staA1.backlash_movedSteps = 0;
           replyValueSetShort(true);
         }
         else replyNothing();

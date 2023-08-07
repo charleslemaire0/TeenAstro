@@ -81,14 +81,14 @@ static void Timer4SetInterval(interval i)
 }
 
 static void UpdateIntervalTrackingGuiding(GuideAxis* guideA, StatusAxis* staA,
-  backlash* backlashA, GeoAxis* geoA, StatusAxis* staA_other,
+  GeoAxis* geoA, StatusAxis* staA_other,
   volatile double& tmp_guideRateA,
   const double minInterval, const double maxInterval)
 {
   volatile double max_guideRate = staA->takeupRate;
   static volatile double sign;
   // guide rate acceleration/deceleration and control
-  if (!backlashA->correcting && guideA->isBusy())
+  if (!staA->backlash_correcting && guideA->isBusy())
   {
     if ((guideA->absRate < max_guideRate) &&
       (fabs(tmp_guideRateA) < max_guideRate))
@@ -156,29 +156,29 @@ static void UpdateIntervalTrackingGuiding(GuideAxis* guideA, StatusAxis* staA,
 static void UpdateIntervalTrackingGuiding1()
 {
   static volatile double tmp_guideRateA1 = 0;
-  UpdateIntervalTrackingGuiding(&guideA1, &staA1, &backlashA1, &geoA1, &staA2, tmp_guideRateA1, minInterval1, maxInterval1);
+  UpdateIntervalTrackingGuiding(&guideA1, &staA1, &geoA1, &staA2, tmp_guideRateA1, minInterval1, maxInterval1);
 }
 
 static void UpdateIntervalTrackingGuiding2()
 {
   static volatile double tmp_guideRateA2 = 0;
-  UpdateIntervalTrackingGuiding(&guideA2, &staA2, &backlashA2, &geoA2, &staA1, tmp_guideRateA2, minInterval2, maxInterval2);
+  UpdateIntervalTrackingGuiding(&guideA2, &staA2, &geoA2, &staA1, tmp_guideRateA2, minInterval2, maxInterval2);
 }
 
-static void BacklashComp(GuideAxis* guideA, StatusAxis* staA, backlash* backlashA,
+static void BacklashComp(GuideAxis* guideA, StatusAxis* staA,
   volatile double& thisIntervalAxis, volatile bool& wasInbacklashAxis)
 {
   // override rate during backlash compensation
-  if (backlashA->correcting)
+  if (staA->backlash_correcting)
   {
-    thisIntervalAxis = backlashA->interval_Step;
+    thisIntervalAxis = staA->backlash_interval_Step;
     wasInbacklashAxis = true;
   }
   if (sideralTracking && !movingTo)
   {
     // travel through the backlash is done, but we weren't following the target while it was happening!
     // so now get us back to near where we need to be
-    if (!backlashA->correcting && wasInbacklashAxis && !guideA->isBusy())
+    if (!staA->backlash_correcting && wasInbacklashAxis && !guideA->isBusy())
     {
       if (!staA->atTarget(true))
       {
@@ -200,7 +200,7 @@ static void BacklashAndApplyInterval1()
 {
   static volatile bool   wasInbacklashAxis1 = false;
   volatile double thisIntervalAxis1 = staA1.interval_Step_Cur;
-  BacklashComp(&guideA1, &staA1, &backlashA1, thisIntervalAxis1, wasInbacklashAxis1);
+  BacklashComp(&guideA1, &staA1, thisIntervalAxis1, wasInbacklashAxis1);
   if (thisIntervalAxis1 != isrIntervalAxis1)
   {
     Timer3SetInterval(thisIntervalAxis1);
@@ -212,7 +212,7 @@ static void BacklashAndApplyInterval2()
 {
   static volatile bool   wasInbacklashAxis2 = false;
   volatile double thisIntervalAxis2 = staA2.interval_Step_Cur;
-  BacklashComp(&guideA2, &staA2, &backlashA2, thisIntervalAxis2, wasInbacklashAxis2);
+  BacklashComp(&guideA2, &staA2, thisIntervalAxis2, wasInbacklashAxis2);
   if (thisIntervalAxis2 != isrIntervalAxis2)
   {
     Timer4SetInterval(thisIntervalAxis2);
@@ -247,7 +247,7 @@ ISR(TIMER3_COMPA_vect)
   {
     takeStepAxis1 = false;
     staA1.updateDeltaTarget();
-    if (staA1.deltaTarget != 0 || backlashA1.correcting)
+    if (staA1.deltaTarget != 0 || staA1.backlash_correcting)
     {
       // Move the RA stepper to the target
       staA1.dir = 0 < staA1.deltaTarget;
@@ -264,27 +264,27 @@ ISR(TIMER3_COMPA_vect)
       // telescope moves WEST with the sky, blAxis1 is the amount of EAST backlash
       if (staA1.dir)
       {
-        if (backlashA1.movedSteps < backlashA1.inSteps)
+        if (staA1.backlash_movedSteps < staA1.backlash_inSteps)
         {
-          backlashA1.movedSteps++;
-          backlashA1.correcting = true;
+          staA1.backlash_movedSteps++;
+          staA1.backlash_correcting = true;
         }
         else
         {
-          backlashA1.correcting = false;
+          staA1.backlash_correcting = false;
           staA1.pos++;
         }
       }
       else
       {
-        if (backlashA1.movedSteps > 0)
+        if (staA1.backlash_movedSteps > 0)
         {
-          backlashA1.movedSteps--;
-          backlashA1.correcting = true;
+          staA1.backlash_movedSteps--;
+          staA1.backlash_correcting = true;
         }
         else
         {
-          backlashA1.correcting = false;
+          staA1.backlash_correcting = false;
           staA1.pos--;
         }
       }
@@ -311,7 +311,7 @@ ISR(TIMER4_COMPA_vect)
   {
     takeStepAxis2 = false;
     staA2.updateDeltaTarget();
-    if (staA2.deltaTarget != 0 || backlashA2.correcting)
+    if (staA2.deltaTarget != 0 || staA2.backlash_correcting)
     {
       // move the Dec stepper to the target
       // telescope normally starts on the EAST side of the pier looking at the WEST sky
@@ -329,27 +329,27 @@ ISR(TIMER4_COMPA_vect)
       // telescope moving toward celestial pole in the sky, blAxis2 is the amount of opposite backlash
       if (staA2.dir)
       {
-        if (backlashA2.movedSteps < backlashA2.inSteps)
+        if (staA2.backlash_movedSteps < staA2.backlash_inSteps)
         {
-          backlashA2.movedSteps++;
-          backlashA2.correcting = true;
+          staA2.backlash_movedSteps++;
+          staA2.backlash_correcting = true;
         }
         else
         {
-          backlashA2.correcting = false;
+          staA2.backlash_correcting = false;
           staA2.pos++;
         }
       }
       else
       {
-        if (backlashA2.movedSteps > 0)
+        if (staA2.backlash_movedSteps > 0)
         {
-          backlashA2.movedSteps--;
-          backlashA2.correcting = true;
+          staA2.backlash_movedSteps--;
+          staA2.backlash_correcting = true;
         }
         else
         {
-          backlashA2.correcting = false;
+          staA2.backlash_correcting = false;
           staA2.pos--;
         }
       }

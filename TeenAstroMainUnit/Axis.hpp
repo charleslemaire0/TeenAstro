@@ -3,14 +3,7 @@
 #define default_tracking_rate 1
 //geometry Axis
 // backlash control
-struct backlash
-{
-  int               inArcSeconds;
-  volatile int      inSteps;
-  volatile bool     correcting;
-  volatile int      movedSteps;
-  volatile double   interval_Step;
-};
+
 
 class StatusAxis
 {
@@ -33,6 +26,11 @@ public:
   double              RequestedTrackingRate = default_tracking_rate; //computed  rate tracking in Hour arc-seconds/second
   long                minstepdist;
   double              ClockSpeed;
+  volatile bool       backlash_correcting;
+  volatile int        backlash_movedSteps;
+  volatile double     backlash_interval_Step;
+  int                 backlash_inArcSeconds;
+  volatile int        backlash_inSteps;
 public:
   void updateDeltaTarget()
   {
@@ -180,6 +178,7 @@ public:
   long   maxAxis;   //in steps
   float  LimMinAxis; //in deg
   float  LimMaxAxis; //in deg
+
 private:
   long   m_breakDist; //in steps
 public:

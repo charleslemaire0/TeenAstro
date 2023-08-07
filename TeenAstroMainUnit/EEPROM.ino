@@ -399,10 +399,10 @@ void readEEPROMmotorCurrent()
 
 void readEEPROMmotor()
 {
-  backlashA1.inArcSeconds = XEEPROM.readInt(getMountAddress(EE_backlashAxis1));
-  backlashA1.movedSteps = 0;
-  backlashA2.inArcSeconds = XEEPROM.readInt(getMountAddress(EE_backlashAxis2));
-  backlashA2.movedSteps = 0;
+  staA1.backlash_inArcSeconds = XEEPROM.readInt(getMountAddress(EE_backlashAxis1));
+  staA1.backlash_movedSteps = 0;
+  staA2.backlash_inArcSeconds = XEEPROM.readInt(getMountAddress(EE_backlashAxis2));
+  staA2.backlash_movedSteps = 0;
 
   //AXIS 1
 #ifdef D_motorA1gear

@@ -50,7 +50,7 @@ void PerformPulseGuiding()
   {
     if (guideA1.duration > 0)
     {
-      if (!backlashA1.correcting)
+      if (!staA1.backlash_correcting)
       { 
         apply_GuidingA1();
         // for pulse guiding, count down the mS and stop when timed out
@@ -77,7 +77,7 @@ void PerformPulseGuiding()
   {
     if (guideA2.duration > 0 )
     {
-      if (!backlashA2.correcting)
+      if (!staA2.backlash_correcting)
       {
         apply_GuidingA2();
         // for pulse guiding, count down the mS and stop when timed out
@@ -110,14 +110,14 @@ void PerfomST4Guiding()
     return;
   if (guideA1.isMoving())
   {
-    if (!backlashA1.correcting)
+    if (!staA1.backlash_correcting)
     {
       apply_GuidingA1();
     }
   }
   if (guideA2.isMoving())
   {
-    if (!backlashA2.correcting)
+    if (!staA2.backlash_correcting)
     {
       apply_GuidingA2();
     }
@@ -128,14 +128,14 @@ void PerfomGuidingRecenter()
 {
   if (guideA1.isMoving())
   {
-    if (!backlashA1.correcting)
+    if (!staA1.backlash_correcting)
     {
       apply_GuidingA1();
     }
   }
   if (guideA2.isMoving())
   {
-    if (!backlashA2.correcting)
+    if (!staA2.backlash_correcting)
     {
       apply_GuidingA2();
     }
@@ -148,7 +148,7 @@ void PerformGuidingAtRate()
     return;
   if (guideA1.isMoving())
   {
-    if (!backlashA1.correcting)
+    if (!staA1.backlash_correcting)
     {
       cli();
       staA1.target += guideA1.getAmount();
@@ -157,7 +157,7 @@ void PerformGuidingAtRate()
   }
   if (guideA2.isMoving())
   {
-    if (!backlashA2.correcting)
+    if (!staA2.backlash_correcting)
     {
       cli();
       staA2.target += guideA2.getAmount();
