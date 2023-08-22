@@ -96,6 +96,7 @@
 #define T_CONFIG "Config"
 #define T_ROTATION "Rotation"
 #define T_BACKLASH "Backlash"
+#define T_BACKLASHSPEED "Backlash Speed"
 #define T_GEAR "Gear"
 #define T_RATIO "Ratio"
 #define T_MICROSTEP "MicroStep"

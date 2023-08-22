@@ -960,6 +960,23 @@ LX200RETURN writeBacklashLX200(const uint8_t& axis, const float& backlash)
   cmd[5] = axis == 1 ? 'R' : 'D';
   return SetLX200(cmd);
 }
+LX200RETURN readBacklashRateLX200(const uint8_t& axis, float& backlashRate)
+{
+  char out[LX200sbuff];
+  LX200RETURN ok = axis == 1 ? GetLX200(":GXMbR#", out, sizeof(out)) : GetLX200(":GXMbD#", out, sizeof(out));
+  if (ok == LX200_VALUEGET)
+  {
+    backlashRate = (float)strtol(&out[0], NULL, 10);
+  }
+  return ok;
+}
+LX200RETURN writeBacklashRateLX200(const uint8_t& axis, const float& backlashRate)
+{
+  char cmd[LX200sbuff];
+  sprintf(cmd, ":SXMbX,%u#", (unsigned int)backlashRate);
+  cmd[5] = axis == 1 ? 'R' : 'D';
+  return SetLX200(cmd);
+}
 LX200RETURN readTotGearLX200(const uint8_t& axis, float& totGear)
 {
   char out[LX200sbuff];

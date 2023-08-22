@@ -95,6 +95,7 @@
 #define T_CONFIG "Config"
 #define T_ROTATION "Rotation"
 #define T_BACKLASH "Jeu"
+#define T_BACKLASHSPEED "Vitesse Jeu"
 #define T_GEAR "Réduction"
 #define T_RATIO "Rapport"
 #define T_MICROSTEP "Micropas"

@@ -424,18 +424,41 @@ void Command_SX()
       {
         if (command[4] == 'D')
         {
-          backlashA2.inSeconds = i;
-          XEEPROM.writeInt(getMountAddress(EE_backlashAxis2), backlashA2.inSeconds);
-          backlashA2.inSteps = (int)round((double)backlashA2.inSeconds / geoA2.stepsPerArcSecond);
-          backlashA2.movedSteps = 0;
+          motorA2.backlashAmount = i;
+          XEEPROM.writeInt(getMountAddress(EE_motorA2backlashAmount), motorA2.backlashAmount);
+          staA2.setBacklash_inSteps(motorA2.backlashAmount, geoA2.stepsPerArcSecond);
           replyValueSetShort(true);
         }
         else if (command[4] == 'R')
         {
-          backlashA1.inSeconds = i;
-          XEEPROM.writeInt(getMountAddress(EE_backlashAxis1), backlashA1.inSeconds);
-          backlashA1.inSteps = (int)round((double)backlashA1.inSeconds / geoA1.stepsPerArcSecond);
-          backlashA1.movedSteps = 0;
+          motorA1.backlashAmount = i;
+          XEEPROM.writeInt(getMountAddress(EE_motorA1backlashAmount), motorA1.backlashAmount);
+          staA1.setBacklash_inSteps(motorA1.backlashAmount, geoA1.stepsPerArcSecond);
+          replyValueSetShort(true);
+        }
+        else replyNothing();
+      }
+      else replyNothing();
+    }
+    break;
+    case 'b':
+    {
+      // :SXMbn,VVVV# Set BacklashRate
+      int i;
+      if ((atoi2((char*)&command[6], &i)) && ((i >= 16) && (i <= 64)))
+      {
+        if (command[4] == 'D')
+        {
+          motorA2.backlashRate = i;
+          XEEPROM.write(getMountAddress(EE_motorA2backlashRate), motorA2.backlashRate);
+          staA2.SetBacklash_interval_Step(motorA2.backlashRate);
+          replyValueSetShort(true);
+        }
+        else if (command[4] == 'R')
+        {
+          motorA1.backlashRate = i;
+          XEEPROM.write(getMountAddress(EE_motorA1backlashRate), motorA1.backlashRate);
+          staA1.SetBacklash_interval_Step(motorA1.backlashRate);
           replyValueSetShort(true);
         }
         else replyNothing();

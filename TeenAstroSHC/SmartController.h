@@ -9,7 +9,7 @@
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "4"
-#define SHCFirmwareVersionPatch  "7"
+#define SHCFirmwareVersionPatch  "8"
 
 #define NUMPAGES 9
 class SmartHandController
@@ -177,6 +177,7 @@ private:
   #endif
   bool menuSetReverse(const uint8_t &axis);
   bool menuSetBacklash(const uint8_t &axis);
+  bool menuSetBacklashRate(const uint8_t& axis);
   bool menuSetTotGear(const uint8_t &axis);
   bool menuSetStepPerRot(const uint8_t &axis);
   bool menuSetMicro(const uint8_t &axis);

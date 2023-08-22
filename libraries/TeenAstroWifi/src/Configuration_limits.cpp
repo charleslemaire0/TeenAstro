@@ -53,16 +53,16 @@ const char html_configMiDistanceFromPole[] PROGMEM =
 const char html_configMinAxis1[] PROGMEM =
 "<div class='bt'> Limits of Instrument Axis 1: <br/> </div>"
 "<form method='get' action='/configuration_limits.htm'>"
-" <input value='%.1f' type='number' name='mia1' min='-360' max='0' step='0.1'>"
+" <input value='%.1f' type='number' name='mia1' min='-180' max='0' step='0.1'>"
 "<button type='submit'>Upload</button>"
-" (Minimum value for instrument axis 1, in degrees from -360 to 0)"
+" (Minimum value for instrument axis 1, in degrees from -180 to 0)"
 "</form>"
 "\r\n";
 const char html_configMaxAxis1[] PROGMEM =
 "<form method='get' action='/configuration_limits.htm'>"
-" <input value='%.1f' type='number' name='maa1' min='0' max='360' step='0.1'>"
+" <input value='%.1f' type='number' name='maa1' min='0' max='180' step='0.1'>"
 "<button type='submit'>Upload</button>"
-" (Maximum value for instrument axis 1, in degrees from 0 to 360)"
+" (Maximum value for instrument axis 1, in degrees from 0 to 180)"
 "</form>"
 "\r\n";
 const char html_configMinAxis2[] PROGMEM =

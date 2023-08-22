@@ -3,14 +3,7 @@
 #define default_tracking_rate 1
 //geometry Axis
 // backlash control
-struct backlash
-{
-  int               inSeconds;
-  volatile int      inSteps;
-  volatile bool     correcting;
-  volatile int      movedSteps;
-  volatile double   interval_Step;
-};
+
 
 class StatusAxis
 {
@@ -25,14 +18,19 @@ public:
   volatile long       deltaStart;
   volatile bool       dir;                             // stepping direction + or -
   double              fstep;                           // amount of steps for Tracking
-  volatile double     interval_Step_Sid;                  // based on the siderealClockSpeed, this is the time between steps for sidereal tracking 
+  volatile double     interval_Step_Sid;               // based on the siderealClockSpeed, this is the time between steps for sidereal tracking 
   volatile double     takeupRate;                      // this is the takeup rate for synchronizing the target and actual positions when needed
   volatile double     takeupInterval;
-  volatile double     interval_Step_Cur = 0;            // this is the time between steps for the current rotation speed
-  volatile double     CurrentTrackingRate = default_tracking_rate; //effective rate tracking in Hour arc-seconds/second
+  volatile double     interval_Step_Cur = 0;                         // this is the time between steps for the current rotation speed
+  volatile double     CurrentTrackingRate = default_tracking_rate;   //effective rate tracking in Hour arc-seconds/second
   double              RequestedTrackingRate = default_tracking_rate; //computed  rate tracking in Hour arc-seconds/second
   long                minstepdist;
   double              ClockSpeed;
+  volatile bool       backlash_correcting;
+  volatile int        backlash_movedSteps;
+  volatile double     backlash_interval_Step;
+  volatile int        backlash_inSteps;
+public:
   void updateDeltaTarget()
   {
     cli();
@@ -57,13 +55,14 @@ public:
   {
     interval_Step_Cur = interval_Step_Sid;
   };
-  void setSidereal(double siderealClockSpeed, double stepsPerSecond, double cs)
+  void setSidereal(double siderealClockSpeed, double stepsPerSecond, double cs, int bl_rate)
   {
     ClockSpeed = cs;
     interval_Step_Sid = siderealClockSpeed / stepsPerSecond;
     minstepdist = 0.25 * stepsPerSecond;
     takeupRate = 8L;
     takeupInterval = interval_Step_Sid / takeupRate;
+    SetBacklash_interval_Step(bl_rate);
     resetToSidereal();
   };
   //double interval2speedfromTime(const double& time)
@@ -143,6 +142,45 @@ public:
       interval_Step_Cur = max(min(interval_Step_Sid / rate, maxInterval), minInterval);
     }
   };
+  void move()
+  {
+    if (dir)
+    {
+      if (backlash_movedSteps < backlash_inSteps)
+      {
+        backlash_movedSteps++;
+        backlash_correcting = true;
+      }
+      else
+      {
+        backlash_correcting = false;
+        pos++;
+      }
+    }
+    else
+    {
+      if (backlash_movedSteps > 0)
+      {
+        backlash_movedSteps--;
+        backlash_correcting = true;
+      }
+      else
+      {
+        backlash_correcting = false;
+        pos--;
+      }
+    }
+  }
+  void setBacklash_inSteps(int amount, double stepsPerArcSecond)
+  {
+    backlash_inSteps = amount * stepsPerArcSecond;
+    backlash_movedSteps = 0;
+    backlash_correcting = false;
+  }
+  void SetBacklash_interval_Step(int bl_rate)
+  {
+    backlash_interval_Step = interval_Step_Sid / bl_rate;
+  }
 private:
   double speedfromDist(const volatile unsigned long& d)
   {
@@ -179,6 +217,7 @@ public:
   long   maxAxis;   //in steps
   float  LimMinAxis; //in deg
   float  LimMaxAxis; //in deg
+
 private:
   long   m_breakDist; //in steps
 public:
@@ -324,6 +363,8 @@ public:
   bool isHighCurrfix;
   unsigned int lowCurr; //in mA
   bool isLowCurrfix;
+  int backlashAmount;
+  int backlashRate;
   Driver driver;
   void initMotor(Driver::MOTORDRIVER useddriver, int EnPin, int CSPin, int DirPin, int StepPin)
   {

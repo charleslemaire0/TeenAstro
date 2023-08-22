@@ -168,7 +168,6 @@ void CheckSpiral()
     helper.addReference(EQ_R.Ha(), EQ_R.Dec(), 0, 0);
     double shift = EQ_R.Dec() > 0 ? -M_PI_4 : M_PI_4;
     helper.addReference(EQ_R.Ha(), EQ_R.Dec() + shift, 0, shift);
-    helper.calculateThirdReference();
     //init time
     clk_ini = millis();
     clk_last = clk_ini;
