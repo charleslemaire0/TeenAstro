@@ -4,7 +4,7 @@
 #define CTL_QUEUE_SIZE  (10 * CTL_MAX_MESSAGE_SIZE * sizeof(unsigned)) 
 
 // Messages to Control Task that require an async action
-enum CTL_MESSAGES {CTL_MSG_GOTO, CTL_MSG_GOTO_HOME,  
+enum CTL_MESSAGES {CTL_MSG_GOTO, CTL_MSG_GOTO_HOME, CTL_MSG_SYNC,  
                     CTL_MSG_MOVE_AXIS1, CTL_MSG_MOVE_AXIS2, CTL_MSG_STOP_AXIS1, CTL_MSG_STOP_AXIS2, 
                     CTL_MSG_SET_SLEW_SPEED
          };
@@ -51,6 +51,7 @@ void MoveAxis2(const byte dir);
 void MoveAxis2AtRate(double speed, const byte dir);
 void StopAxis2(void);
 byte goTo(Steps *sP);
+byte sync(Steps *sP);
 void adjustSpeeds(void);
 void setSlewSpeed(double speed);
 

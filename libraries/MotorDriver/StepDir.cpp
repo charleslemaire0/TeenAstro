@@ -282,6 +282,8 @@ void StepDir::positionMode(void)
         // Decelerate at default deceleration aMax
         newSpeed = fmax(vMax, newSpeed - (aMax * TICK_PERIOD_MS) / 1000);
         programSpeed(sign * newSpeed);                
+        if (newSpeed == vMax)
+          state(PS_CRUISE);
       }
       break;
 
@@ -338,7 +340,7 @@ void motorTask(void *arg)
       {
         case MSG_SET_CUR_POS:
           cli();
-          mcP->currentPos = msgBuffer[1];
+          mcP->currentPosImage = mcP->currentPos = msgBuffer[1];
           sei();            
           if (mcP->currentPos != mcP->targetPos)
           {
@@ -366,8 +368,7 @@ void motorTask(void *arg)
 
         case MSG_SYNC_POS:
           cli();
-          mcP->currentPos = msgBuffer[1];
-          mcP->targetPos = msgBuffer[1];
+          mcP->currentPosImage = mcP->currentPos = mcP->targetPos = msgBuffer[1];
           sei(); 
           break;
 
@@ -529,6 +530,7 @@ void StepDir::syncPos(long pos)
 
   msg[0] = MSG_SYNC_POS; 
   msg[1] = pos;
+  xQueueSend( motQueue, &msg, 0);
 }
 
 void StepDir::abort(void)

@@ -163,9 +163,9 @@ void controlTask(UNUSED(void *arg))
             mount.mP->getTrackingSpeeds(&speeds);
             resetEvents(EV_SPEED_CHANGE);
             motorA1.setVmax(fabs(speeds.speed1));
-            // only set target if direction has changed
             dir = fsign(speeds.speed1);
-            if (dir != previousDirAxis1)
+            // only set target if direction has changed (no. in some cases this fails)
+//            if (dir != previousDirAxis1)
             {
               motorA1.setTargetPos(dir * geoA1.stepsPerRot);
               previousDirAxis1 = dir;
@@ -235,6 +235,7 @@ void controlTask(UNUSED(void *arg))
   double speed;
   long target;
   byte dir;
+  bool t;
 
     // Wait for next message
   BaseType_t res = xQueueReceive( controlQueue, &msgBuffer, 0);
@@ -250,6 +251,7 @@ void controlTask(UNUSED(void *arg))
           resetEvents(EV_AT_HOME | EV_TRACKING | EV_START_TRACKING | EV_SPIRAL);
           axis1Target = msgBuffer[1];
           axis2Target = msgBuffer[2];
+          DecayModeGoto();
           motorA1.setVmax(slewingSpeeds.speed1);
           motorA1.setTargetPos(axis1Target);
           motorA2.setVmax(slewingSpeeds.speed2);
@@ -262,6 +264,7 @@ void controlTask(UNUSED(void *arg))
             break;
           currentMode = CTL_MODE_GOTO;
           resetEvents(EV_AT_HOME | EV_TRACKING | EV_START_TRACKING | EV_SPIRAL);
+          DecayModeGoto();
           motorA1.setVmax(slewingSpeeds.speed1);
           motorA1.setTargetPos(geoA1.homeDef);
           motorA2.setVmax(slewingSpeeds.speed2);
@@ -270,12 +273,28 @@ void controlTask(UNUSED(void *arg))
           setEvents(EV_SLEWING);
           break;
 
+        case CTL_MSG_SYNC:
+          if (lastError() != ERRT_NONE)
+            break;
+          t = isTracking();
+          axis1Target = msgBuffer[1];
+          axis2Target = msgBuffer[2];
+          motorA1.syncPos(axis1Target);
+          motorA2.syncPos(axis2Target);
+          // After synchronizing the motors, restart tracking if needed
+          if (t)
+          {
+            startTracking();
+          }
+          break;
+
         case CTL_MSG_MOVE_AXIS1:
           prevMode = currentMode;
           dir = msgBuffer[1];
           target = mount.mP->axis1Direction(dir) * geoA1.stepsPerRot;
           memcpy(&speed, &msgBuffer[2], sizeof(double));
           resetEvents(EV_AT_HOME);
+          DecayModeGoto();
           motorA1.setVmax(fabs(speed)*geoA1.stepsPerSecond/SIDEREAL_SECOND);
           motorA1.setTargetPos(target);  
           if (dir == 'w')
@@ -290,6 +309,7 @@ void controlTask(UNUSED(void *arg))
           target = mount.mP->axis2Direction(dir) * geoA2.stepsPerRot;
           memcpy(&speed, &msgBuffer[2], sizeof(double));
           resetEvents(EV_AT_HOME);
+          DecayModeGoto();
           motorA2.setVmax(fabs(speed)*geoA2.stepsPerSecond/SIDEREAL_SECOND);
           motorA2.setTargetPos(target);  
           if (dir == 'n')
@@ -331,6 +351,7 @@ void controlTask(UNUSED(void *arg))
 
 void startTracking(void)
 {
+  DecayModeTracking();
   setEvents(EV_START_TRACKING | EV_SPEED_CHANGE);  
 }
 
@@ -407,9 +428,25 @@ byte goTo(Steps *sP)
 
   waitSlewing();
 
-//  DecayModeGoto();
   return ERRGOTO_NONE;
 }
+
+byte sync(Steps *sP)
+{
+  unsigned msg[CTL_MAX_MESSAGE_SIZE];
+
+  if (parkStatus() == PRK_PARKED)
+    return(ERRGOTO_PARKED);
+
+  msg[0] = CTL_MSG_SYNC; 
+  msg[1] = sP->steps1;
+  msg[2] = sP->steps2;
+  xQueueSend(controlQueue, &msg, 0);
+
+  return ERRGOTO_NONE;
+}
+
+
 
 void setSlewSpeed(double speed)
 {

@@ -74,9 +74,9 @@ Basic Goto, sync, tracking and guiding work, SHC connects and runs normally. Tes
 
 Visual observation under the sky works, tested sync.   
 Spiral is ok   
-Pulse and ST4 guiding work, performance not yet measured.      
+Pulse and ST4 guiding work, performance is good (better than 1 arc-sec RMS - not yet compared against standard version)     
 
-I did a little testing with EKOS through the INDI driver, but no astrophoto yet.   
+I did a little testing with EKOS through the INDI driver, 
 
 ### Not yet implemented or tested   
 No ASCOM testing whatsoever   
@@ -85,7 +85,6 @@ Alignment and refraction are not yet implemented
 
 #### Known bugs
 - FreeRTOS startup on Teensy4 is very slow (7 seconds!) which confuses the SHC. I put a work-around that requires a reboot, then it works fine. This does not happen on ESP32. Debugging is ongoing.   
-- Tracking and guiding in StepDir mode for a long time sometimes causes wrong display of coordinates. Not reproduced in SPI mode.   
 
 
 

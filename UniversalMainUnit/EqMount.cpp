@@ -204,8 +204,7 @@ bool EqMount::syncEqu(double HA, double Dec, PierSide Side, UNUSED(const double 
 	eqToAxes(&eqCoords, &axes, Side);
 	axesToSteps(&axes, &newSteps);
 
-  motorA1.syncPos(newSteps.steps1);
-  motorA2.syncPos(newSteps.steps2);
+  sync(&newSteps);
   return true;
 }
 

@@ -150,8 +150,7 @@ bool AltAzMount::syncAzAlt(double Azm, double Alt, UNUSED(PierSide Side))
 	horToAxes(&horCoords, &axes);
 	axesToSteps(&axes, &newSteps);
   
-  motorA1.syncPos(newSteps.steps1);
-  motorA2.syncPos(newSteps.steps2);
+  sync(&newSteps);
 	return true;
 }
 

@@ -35,15 +35,16 @@ public:
     drvP->begin();  
     drvP->reset();
     drvP->push();
-//    drvP->TPOWERDOWN(255);		// leave at default for faster powerdown
+    drvP->TPOWERDOWN(255);		// leave at default for faster powerdown
     drvP->tbl(2);
     drvP->toff(5);
     drvP->hstrt(5);
     drvP->hend(3);
     drvP->en_pwm_mode(silent);
     drvP->pwm_autoscale(silent);
-    drvP->TPWMTHRS(64);
+    drvP->TPWMTHRS(1024);
     drvP->intpol(1);
+    drvP->hold_multiplier(0.1);
     setCurrent(lowCurr);
     setMicrostep(micro);
     if (EnPin > 0)
