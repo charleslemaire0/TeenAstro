@@ -106,6 +106,26 @@ class alignmentPlot():
       self.log('Sync {0} RA:{1:2.2f} Dec:{2:3.2f}'.format (self.window['alignmentTarget'].get(), self.ra, self.dec))
       self.log (self.ta.syncRaDec())
 
+    # Simulate plate-solve:
+    # Sync to currentPos+1º, then slew to currentPos 
+    if (ev == 'syncSlew'):
+      ra = self.ta.getRA() 
+      dec = self.ta.getDeclination()
+      ra1 = ra + 1 / 15.0 
+      dec1 = dec + 1
+      res = self.ta.setTarget(ra1,dec1)
+      if (res != 'ok'):
+        self.log('Error setting Ra/Dec')
+      else:
+        self.ta.syncRaDec()
+        self.log('Current: {0:2.2f} / {1:3.2f}, Sync to {2:2.2f} / {3:3.2f}'.format (ra, dec, ra1, dec1))
+      time.sleep(0.5)
+      ra2 = self.ta.getRA() 
+      dec2 = self.ta.getDeclination()
+      self.log('Now: {0:2.2f} / {1:3.2f}, Goto {2:2.2f} / {3:3.2f} '.format (ra2, dec2, ra, dec))
+      self.ta.gotoRaDec(ra, dec)
+      self.log('done')
+
     if (ev == 'alignN'):
       self.log('Move N')
       self.ta.moveCmd('n')

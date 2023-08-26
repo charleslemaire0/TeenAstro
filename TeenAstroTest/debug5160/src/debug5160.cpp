@@ -35,6 +35,8 @@ EspSoftwareSerial::UART debugOut(2,4);  // rx, tx pins
 #define Axis2DirPin     4
 #define Axis2StepPin    20 
 #define Axis2EnablePin  5
+#define DBG Serial2
+#define debugOut Serial3
 #elif BOARD_240
 #define Axis1CSPin      21
 #define Axis1DirPin     2
@@ -266,6 +268,14 @@ void set(char *arg1, char *arg2)
     {
     	motorA1.drvP->GCONF(val);
       PORT.printf("set gconf to %x\n", val);
+    }
+  }
+  if (!strcmp(arg1, "tpwmthrs"))
+  {
+    if (sscanf( arg2, "%x", &val ) == 1)
+    {
+      motorA1.drvP->TPWMTHRS(val);
+      PORT.printf("set tpwmthrs to %x\n", val);
     }
   }
 }

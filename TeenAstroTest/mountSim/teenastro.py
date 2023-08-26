@@ -289,7 +289,8 @@ class TeenAstro(object):
     self.sendCommand(":Sa%+02d*%02u:%02u#" % dmsAlt)
     self.sendCommand(":MA#")
 
-  def gotoRaDec(self, ra, dec):
+
+  def setTarget(self, ra, dec):
     dmsRa = deg2dms(ra)
     dmsDec = deg2dms(dec)
     res1 = self.sendCommand(":Sr%02u:%02u:%02u#" % dmsRa)
@@ -299,7 +300,12 @@ class TeenAstro(object):
     res2 = self.sendCommand(":Sd%+03d:%02u:%02u#" % dmsDec)
     if (res2 != '1'):
       return ("error setting Dec")
+    return('ok')  
 
+  def gotoRaDec(self, ra, dec):
+    res = self.setTarget(ra, dec)
+    if (res != 'ok'):
+      return res
     res = self.sendCommand(":MS#")
     if (res != '0'):
       return ("gotoRaDec error %s:" % res)

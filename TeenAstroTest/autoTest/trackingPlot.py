@@ -226,7 +226,7 @@ class trackingPlot():
                 self.window['startStopTrack'].update('Stop Tracking')
                 self.state = 'TRACKING'
             else:
-                self.ta.abort()
+                self.ta.disableTracking()
                 self.log ('tracking disabled')
                 self.window['startStopTrack'].update('Start Tracking')
                 self.state = 'IDLE'
