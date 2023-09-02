@@ -95,6 +95,7 @@
 #define T_CONFIG "Konfiguration"
 #define T_ROTATION "Drehung"
 #define T_BACKLASH "Getr. Spiel"
+#define T_BACKLASHSPEED "Spiel Geschw."
 #define T_GEAR "Getr. Zahl"
 #define T_RATIO "Fraktion"
 #define T_MICROSTEP "Mikroschritt"

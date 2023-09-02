@@ -104,9 +104,6 @@ EncoderSync         EncodeSyncMode = EncoderSync::ES_OFF;
 EncoderAxis         encoderA1;
 EncoderAxis         encoderA2;
 
-backlash            backlashA1 = { 0,0,0,0 };
-backlash            backlashA2 = { 0,0,0,0 };
-
 GeoAxis             geoA1;
 GeoAxis             geoA2;
 

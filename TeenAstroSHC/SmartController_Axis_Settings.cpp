@@ -8,7 +8,7 @@ void SmartHandController::menuMotor(const uint8_t axis)
   while (tmp_sel)
   {
     const char *string_list_Motor = T_SHOWSETTINGS "\n" T_ROTATION "\n" T_GEAR "\n" T_STEPSPERROT "\n"
-      T_MICROSTEP "\n" T_BACKLASH "\n" T_LOWCURR "\n" T_HIGHCURR "\n" "Silent" ;
+      T_MICROSTEP "\n" T_BACKLASH "\n" T_BACKLASHSPEED  "\n" T_LOWCURR "\n" T_HIGHCURR "\n" "Silent" ;
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, axis == 1 ? T_MOTOR " 1" : T_MOTOR " 2", tmp_sel, string_list_Motor);
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
     switch (tmp_sel)
@@ -32,12 +32,15 @@ void SmartHandController::menuMotor(const uint8_t axis)
       menuSetBacklash(axis);
       break;
     case 7:
-      menuSetCurrent(axis,0);
+      menuSetBacklashRate(axis);
       break;
     case 8:
-      menuSetCurrent(axis,1);
+      menuSetCurrent(axis,0);
       break;
     case 9:
+      menuSetCurrent(axis,1);
+      break;
+    case 10:
       menuSetSilentStep(axis);
       break;
     default:
@@ -122,9 +125,22 @@ bool SmartHandController::menuSetBacklash(const uint8_t &axis)
     return false;
   char text[20];
   sprintf(text, T_BACKLASH " M%u", axis);
-  if (display->UserInterfaceInputValueFloat(&buttonPad, text, "", &backlash, 0, 1000, 4, 0, " " T_INSECONDS))
+  if (display->UserInterfaceInputValueFloat(&buttonPad, text, "", &backlash, 0, 999, 4, 0, " " T_INSECONDS))
   {
     return DisplayMessageLX200(writeBacklashLX200(axis, backlash), false);
+  }
+  return true;
+}
+bool SmartHandController::menuSetBacklashRate(const uint8_t& axis)
+{
+  float backlash;
+  if (!DisplayMessageLX200(readBacklashRateLX200(axis, backlash)))
+    return false;
+  char text[20];
+  sprintf(text, T_BACKLASHSPEED " M%u", axis);
+  if (display->UserInterfaceInputValueFloat(&buttonPad, text, "", &backlash, 16, 64, 2, 0, ""))
+  {
+    return DisplayMessageLX200(writeBacklashRateLX200(axis, backlash), false);
   }
   return true;
 }

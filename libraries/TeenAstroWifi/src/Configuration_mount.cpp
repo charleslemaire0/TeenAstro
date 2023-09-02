@@ -67,6 +67,13 @@ const char html_configBlAxis[] PROGMEM =
 " (Backlash Axis%d, in arc-seconds from 0 to 999)"
 "</form>"
 "\r\n";
+const char html_configBlRateAxis[] PROGMEM =
+"<form method='get' action='/configuration_mount.htm'>"
+" <input value='%d' type='number' name='mblr%d' min='16' max='64'>"
+"<button type='submit'>Upload</button>"
+" (Backlash Rate Axis%d, in sideral speed from 16 to 64)"
+"</form>"
+"\r\n";
 const char html_configGeAxis[] PROGMEM =
 "<form method='get' action='/configuration_mount.htm'>"
 " <input value='%.3f' type='number' name='mge%d' min='1' max='60000' step='.001'>"
@@ -284,6 +291,19 @@ void TeenAstroWifi::handleConfigurationMount()
     if (readBacklashLX200(2, backlashAxis) == LX200_VALUEGET)
     {
       sprintf_P(temp, html_configBlAxis, (int)backlashAxis, 2, 2);
+      data += temp;
+      sendHtml(data);
+    }
+    float backlashAxisRate;
+    if (readBacklashRateLX200(1, backlashAxisRate) == LX200_VALUEGET)
+    {
+      sprintf_P(temp, html_configBlRateAxis, (int)backlashAxisRate, 1, 1);
+      data += temp;
+      sendHtml(data);
+    }
+    if (readBacklashRateLX200(2, backlashAxisRate) == LX200_VALUEGET)
+    {
+      sprintf_P(temp, html_configBlRateAxis, (int)backlashAxisRate, 2, 2);
       data += temp;
       sendHtml(data);
     }
@@ -555,7 +575,25 @@ void TeenAstroWifi::processConfigurationMountGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
     {
-      writeBacklashLX200(2, (uint8_t)i);
+      writeBacklashLX200(2, (float)i);
+    }
+  }
+
+  v = server.arg("mblr1");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 64)))
+    {
+      writeBacklashRateLX200(1, (float)i);
+    }
+  }
+
+  v = server.arg("mblr2");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 64)))
+    {
+      writeBacklashRateLX200(2, (float)i);
     }
   }
 
@@ -590,24 +628,6 @@ void TeenAstroWifi::processConfigurationMountGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
     {
       writeHighCurrLX200(2, i);
-    }
-  }
-
-  // Backlash Limits
-  v = server.arg("b1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
-    {
-      writeBacklashLX200(1, i);
-    }
-  }
-  v = server.arg("b2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
-    {
-      writeBacklashLX200(2, i);
     }
   }
 

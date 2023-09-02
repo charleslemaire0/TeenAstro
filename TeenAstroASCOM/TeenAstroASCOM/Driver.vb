@@ -292,14 +292,19 @@ Public Class Telescope
         mobjectSerial.Dispose()
         Return
       Else
+        Dim timeTelescope As DateTime = UTCDate()
+        Dim time As Date = DateTime.UtcNow()
         mconnectedState = True
-      End If
-      If Not mconnectedState Then
-        Throw New ASCOM.NotConnectedException("Connection has failed!")
-      End If
-
-    Else
-      mobjectSerial.Connected = False
+        If Math.Abs((timeTelescope - time).TotalSeconds) > 2 Then
+          Me.UTCDate = DateTime.UtcNow()
+          mTL.LogMessage("Connected Set", "Synced with computer time")
+        End If
+        If Not mconnectedState Then
+            Throw New ASCOM.NotConnectedException("Connection has failed!")
+          End If
+        End If
+        Else
+        mobjectSerial.Connected = False
       mobjectSerial.Dispose()
       mconnectedState = False
       mTL.LogMessage("Connected Set", "Disconnecting from port " + mcomPort)
@@ -319,6 +324,13 @@ Public Class Telescope
       'End If
       If Not mconnectedState Then
         Throw New ASCOM.InvalidValueException("Connection has failed!")
+      Else
+        Dim timeTelescope As DateTime = UTCDate()
+        Dim time As Date = DateTime.UtcNow()
+        If Math.Abs((timeTelescope - time).TotalSeconds) > 2 Then
+          mTL.LogMessage("Connected Set", "Synced with computer time")
+          Me.UTCDate = DateTime.UtcNow()
+        End If
       End If
     Else
       mconnectedState = False
@@ -1343,7 +1355,7 @@ Public Class Telescope
       End Try
     End Get
     Set(value As DateTime)
-      Dim s As Long = (Date.UtcNow() - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds
+      Dim s As Long = (value - New DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds
       If (CommandBoolSingleChar("SXT2," & s)) Then
         mTL.LogMessage("Set UTCDate", "done")
       Else

@@ -67,43 +67,44 @@ void saveAlignModel()
 bool parkClearBacklash()
 {
   // backlash takeup rate
-  if (backlashA1.inSteps == 0 && backlashA2.inSteps == 0)
+  if (staA1.backlash_inSteps == 0 && staA2.backlash_inSteps == 0)
   {
     return true;
   }
   cli();
   long LastIntervalAxis1 = staA1.interval_Step_Cur;
   long LastIntervalAxis2 = staA2.interval_Step_Cur;
-  staA1.interval_Step_Cur = backlashA1.interval_Step;
-  staA2.interval_Step_Cur = backlashA2.interval_Step;
+  staA1.interval_Step_Cur = staA1.backlash_interval_Step;
+  staA2.interval_Step_Cur = staA2.backlash_interval_Step;
   sei();
 
   // figure out how long we'll have to wait for the backlash to clear (+50%)
-  long    t;
-  if (backlashA1.inSteps > backlashA2.inSteps)
-    t = (long)(backlashA1.inSteps * 1500 / geoA1.stepsPerSecond);
-  else
-    t = (long)(backlashA2.inSteps * 1500 / geoA2.stepsPerSecond);
-  t = (t / staA1.takeupRate + 250) / 12;
+  long t,t1,t2;
+  t1 = (long)(staA1.backlash_inSteps * 1500 / geoA1.stepsPerSecond);
+  t1 = (t1 / staA1.takeupRate + 250) / 12;
+  t2 = (long)(staA2.backlash_inSteps * 1500 / geoA2.stepsPerSecond);
+  t2 = (t2 / staA2.takeupRate + 250) / 12;
+  t = max(t1, t2);
 
   // start by moving fully into the backlash
   cli();
-  staA1.target += backlashA1.inSteps;
-  staA2.target += backlashA2.inSteps;
+  staA1.target += staA1.backlash_inSteps;
+  staA2.target += staA2.backlash_inSteps;
   sei();
 
   // wait until done or timed out
   for (int i = 0; i < 12; i++)
   {
-    if (backlashA1.movedSteps != backlashA1.inSteps || staA1.pos != staA1.target ||
-        backlashA2.movedSteps != backlashA2.inSteps || staA2.pos != staA2.target)
+    updateDeltaTarget();
+    if (staA1.backlash_movedSteps != staA1.backlash_inSteps || (staA1.deltaTarget != 0) ||
+        staA2.backlash_movedSteps != staA2.backlash_inSteps || (staA2.deltaTarget != 0))
       delay(t);
   }
 
   // then reverse direction and take it all up
   cli();
-  staA1.target-= backlashA1.inSteps;
-  staA2.target-= backlashA2.inSteps;
+  staA1.target-= staA1.backlash_inSteps;
+  staA2.target-= staA2.backlash_inSteps;
   sei();
 
 
@@ -111,8 +112,8 @@ bool parkClearBacklash()
   for (int i = 0; i < 24; i++)
   {
     updateDeltaTarget();
-    if ((backlashA1.movedSteps != 0) || (staA1.deltaTarget != 0) ||
-      (backlashA2.movedSteps != 0) || (staA2.deltaTarget != 0))
+    if ((staA1.backlash_movedSteps != 0) || (staA1.deltaTarget != 0) ||
+      (staA2.backlash_movedSteps != 0) || (staA2.deltaTarget != 0))
       delay(t);
   }
 
@@ -124,7 +125,7 @@ bool parkClearBacklash()
   sei();
 
   // return true on success
-  if ((backlashA1.movedSteps != 0) || (backlashA2.movedSteps != 0))
+  if ((staA1.backlash_movedSteps != 0) || (staA2.backlash_movedSteps != 0))
     return false;
   else
     return true;

@@ -239,19 +239,19 @@ void Command_GX()
       {
       case '0':
         // :GXDB0# Debug inbacklashAxis1
-        sprintf(reply, "%d#", (int)backlashA1.correcting);
+        sprintf(reply, "%d#", (int)staA1.backlash_correcting);
         break;
       case '1':
         // :GXDB1# Debug inbacklashAxis2
-        sprintf(reply, "%d#", (int)backlashA2.correcting);
+        sprintf(reply, "%d#", (int)staA2.backlash_correcting);
         break;
       case '2':
         // :GXDB2# Debug Backlash blAxis1
-        sprintf(reply, "%d#", (int)backlashA1.movedSteps);
+        sprintf(reply, "%d#", (int)staA1.backlash_movedSteps);
         break;
       case '3':
         // :GXDB3# Debug Backlash blAxis1
-        sprintf(reply, "%d#", (int)backlashA2.movedSteps);
+        sprintf(reply, "%d#", (int)staA2.backlash_movedSteps);
         break;
       default:
         replyLongUnknow();
@@ -729,11 +729,26 @@ void Command_GX()
       // :GXMB.#   Get Motor backlash
       if (command[4] == 'D')
       {
-        sprintf(reply, "%d#", backlashA2.inSeconds);
+        sprintf(reply, "%d#", motorA2.backlashAmount);
       }
       else if (command[4] == 'R')
       {
-        sprintf(reply, "%d#", backlashA1.inSeconds);
+        sprintf(reply, "%d#", motorA1.backlashAmount);
+      }
+      else
+        replyLongUnknow();
+    }
+    break;
+    case 'b':
+    {
+      // :GXMb.#   Get Motor backlash Rate
+      if (command[4] == 'D')
+      {
+        sprintf(reply, "%d#", motorA2.backlashRate);
+      }
+      else if (command[4] == 'R')
+      {
+        sprintf(reply, "%d#", motorA1.backlashRate);
       }
       else
         replyLongUnknow();
