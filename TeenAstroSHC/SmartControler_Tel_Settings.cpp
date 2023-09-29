@@ -231,31 +231,81 @@ void SmartHandController::menuAxis(char mode)
   double fact = 10.;
   double minval = 0;
   double maxval = 360;
-  sprintf(cmd, ":GXLX#");
-
-  cmd[4] = mode;
+  sprintf(cmd, ":GXXX#");
+  cmd[3] = 'l';
   switch (mode)
   {
   case 'A':
     sprintf(menu, T_AXIS1MIN);
-    fact *= -1;
-    minval = -360;
-    maxval = 0;
+    cmd[4] = 'l';
+    cmd[4] = mode;
+    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    {
+      return;
+    }
+    minval = (float)strtol(&out[0], NULL, 10);
+    cmd[3] = 'L';
+    cmd[4] = 'B';
+    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    {
+      return;
+    }
+    maxval = (float)strtol(&out[0], NULL, 10) / fact;
     break;
   case 'B':
     sprintf(menu, T_AXIS1MAX);
+    cmd[4] = 'l';
+    cmd[4] = mode;
+    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    {
+      return;
+    }
+    maxval = (float)strtol(&out[0], NULL, 10);
+    cmd[3] = 'L';
+    cmd[4] = 'A';
+    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    {
+      return;
+    }
+    minval = (float)strtol(&out[0], NULL, 10) / fact;
     break;
   case 'C':
     sprintf(menu, T_AXIS2MIN);
-    fact *= -1;
-    minval = -360;
-    maxval = 0;
+    cmd[4] = 'l';
+    cmd[4] = mode;
+    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    {
+      return;
+    }
+    minval = (float)strtol(&out[0], NULL, 10);
+    cmd[3] = 'L';
+    cmd[4] = 'D';
+    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    {
+      return;
+    }
+    maxval = (float)strtol(&out[0], NULL, 10) / fact;
     break;
   case 'D':
     sprintf(menu, T_AXIS2MAX);
+    cmd[4] = 'l';
+    cmd[4] = mode;
+    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    {
+      return;
+    }
+    maxval = (float)strtol(&out[0], NULL, 10);
+    cmd[3] = 'L';
+    cmd[4] = 'C';
+    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    {
+      return;
+    }
+    minval = (float)strtol(&out[0], NULL, 10) / fact;
     break;
   }
-
+  cmd[3] = 'L';
+  cmd[4] = mode;
   if (DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
   {
     float val = (float)strtol(&out[0], NULL, 10) / fact;

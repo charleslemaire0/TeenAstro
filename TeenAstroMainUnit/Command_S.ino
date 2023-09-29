@@ -215,7 +215,7 @@ void Command_SX()
     }
     case 'X':
       // :SXRX,VVVV# Set Rate for max Rate
-      XEEPROM.writeInt(getMountAddress(EE_maxRate), (int)strtol(&command[5], NULL, 10));
+      XEEPROM.writeUShort(getMountAddress(EE_maxRate), (int)strtol(&command[5], NULL, 10));
       initMaxRate();
       replyValueSetShort(true);
       break;
@@ -263,37 +263,53 @@ void Command_SX()
     // user defined limits
     switch (command[3])
     {
+    case 'R':
+      // :SXLR# reset user defined axis limit
+      reset_EE_Limit();
+      break;
     case 'A':
-      // :SXLA,VVVV# set user defined minAXIS1 (always negatif)
+      // :SXLA,VVVV# set user defined minAXIS1
       i = (int)strtol(&command[5], NULL, 10);
-      i = max(min(i, 10 * abs(geoA1.LimMinAxis)),0);
-      XEEPROM.writeInt(getMountAddress(EE_minAxis1), i);
-      initLimitMinAxis1();
-      replyValueSetShort(true);
+      if (i >= 10 * geoA1.LimMinAxis && i < XEEPROM.readShort(getMountAddress(EE_maxAxis1)))
+      {
+        XEEPROM.writeShort(getMountAddress(EE_minAxis1), i);
+        initLimitMinAxis1();
+        ok = true;
+      }
+      replyValueSetShort(ok);
       break;
     case 'B':
-      // :SXLB,VVVV# set user defined maxAXIS1 (always positf)
+      // :SXLB,VVVV# set user defined maxAXIS1
       i = (int)strtol(&command[5], NULL, 10);
-      i = max(min(i, 10 * abs(geoA1.LimMaxAxis)), 0);
-      XEEPROM.writeInt(getMountAddress(EE_maxAxis1), i);
-      initLimitMaxAxis1();
-      replyValueSetShort(true);
+      if (i <=  10 * geoA1.LimMaxAxis && i > XEEPROM.readShort(getMountAddress(EE_minAxis1)))
+      {
+        XEEPROM.writeShort(getMountAddress(EE_maxAxis1), i);
+        initLimitMaxAxis1();
+        ok = true;
+      }
+      replyValueSetShort(ok);
       break;
     case 'C':
-      // :SXLC,VVVV# set user defined minAXIS2 (always positf)
+      // :SXLC,VVVV# set user defined minAXIS2
       i = (int)strtol(&command[5], NULL, 10);
-      i = max(min(i, 10 * abs(geoA2.LimMinAxis)), 0);
-      XEEPROM.writeInt(getMountAddress(EE_minAxis2), i);
-      initLimitMinAxis2();
-      replyValueSetShort(true);
+      if (i >= 10 * geoA2.LimMinAxis && i < XEEPROM.readShort(getMountAddress(EE_maxAxis2)))
+      {
+        XEEPROM.writeShort(getMountAddress(EE_minAxis2), i);
+        initLimitMinAxis2();
+        ok = true;
+      }
+      replyValueSetShort(ok);
       break;
     case 'D':
-      // :SXLD,VVVV# set user defined maxAXIS2 (always positf)
+      // :SXLD,VVVV# set user defined maxAXIS2
       i = (int)strtol(&command[5], NULL, 10);
-      i = max(min(i, 10 * abs(geoA2.LimMaxAxis)), 0);
-      XEEPROM.writeInt(getMountAddress(EE_maxAxis2), i);
-      initLimitMaxAxis2();
-      replyValueSetShort(true);
+      if (i <=  10 * geoA2.LimMaxAxis && i > XEEPROM.readShort(getMountAddress(EE_minAxis2)))
+      {
+        XEEPROM.writeShort(getMountAddress(EE_maxAxis2), i);
+        initLimitMaxAxis2();
+        ok = true;
+      }
+      replyValueSetShort(ok);
       break;
     case 'E':
       // :SXLE,sVV.V# set user defined Meridian East Limit
@@ -425,14 +441,14 @@ void Command_SX()
         if (command[4] == 'D')
         {
           motorA2.backlashAmount = i;
-          XEEPROM.writeInt(getMountAddress(EE_motorA2backlashAmount), motorA2.backlashAmount);
+          XEEPROM.writeUShort(getMountAddress(EE_motorA2backlashAmount), motorA2.backlashAmount);
           staA2.setBacklash_inSteps(motorA2.backlashAmount, geoA2.stepsPerArcSecond);
           replyValueSetShort(true);
         }
         else if (command[4] == 'R')
         {
           motorA1.backlashAmount = i;
-          XEEPROM.writeInt(getMountAddress(EE_motorA1backlashAmount), motorA1.backlashAmount);
+          XEEPROM.writeUShort(getMountAddress(EE_motorA1backlashAmount), motorA1.backlashAmount);
           staA1.setBacklash_inSteps(motorA1.backlashAmount, geoA1.stepsPerArcSecond);
           replyValueSetShort(true);
         }
@@ -530,7 +546,7 @@ void Command_SX()
             sei();
             StopAxis2();
             motorA2.stepRot = (unsigned int)i;
-            XEEPROM.writeInt(getMountAddress(EE_motorA2stepRot), i);
+            XEEPROM.writeUShort(getMountAddress(EE_motorA2stepRot), i);
             ok = true;
           }
         }
@@ -544,7 +560,7 @@ void Command_SX()
             sei();
             StopAxis1();
             motorA1.stepRot = (unsigned int)i;
-            XEEPROM.writeInt(getMountAddress(EE_motorA1stepRot), i);
+            XEEPROM.writeUShort(getMountAddress(EE_motorA1stepRot), i);
             ok = true;
           }
         }
@@ -817,7 +833,7 @@ void Command_S(Command& process_command)
     bool ok = i > 0 && i < 5 && !isMountTypeFix;
     if (ok)
     {
-      reset_EE_Limit();
+      force_reset_EE_Limit();
       XEEPROM.write(getMountAddress(EE_mountType), i);
       reboot_unit = true;
     }
@@ -1056,6 +1072,7 @@ void Command_S(Command& process_command)
     {
       localSite.setLat(f);
       initCelestialPole();
+      initLimit();
       initHome();
       initTransformation(true);
       syncAtHome();

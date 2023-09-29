@@ -735,6 +735,7 @@ void Command_W()
     localSite.ReadSiteDefinition(currentSite);
     rtk.resetLongitude(*localSite.longitude());
     initCelestialPole();
+    initLimit();
     initHome();
     initTransformation(true);
     syncAtHome();
