@@ -142,6 +142,7 @@ void force_reset_EE_Limit()
 
 bool initLimitMinAxis1()
 {
+  bool ok = true;
   int val = XEEPROM.readShort(getMountAddress(EE_minAxis1));
   int minval = 10 * geoA1.LimMinAxis;
   int maxval = 10 * geoA1.LimMaxAxis;
@@ -149,11 +150,14 @@ bool initLimitMinAxis1()
   {
     val = minval;
     XEEPROM.writeShort(getMountAddress(EE_minAxis1), val);
+    ok = false;
   }
   geoA1.minAxis = val * geoA1.stepsPerDegree / 10.0;
+  return ok;
 }
 bool initLimitMaxAxis1()
 {
+  bool ok = true;
   int val = XEEPROM.readShort(getMountAddress(EE_maxAxis1));
   int minval = 10 * geoA1.LimMinAxis;
   int maxval = 10 * geoA1.LimMaxAxis;;
@@ -161,11 +165,14 @@ bool initLimitMaxAxis1()
   {
     val = maxval;
     XEEPROM.writeShort(getMountAddress(EE_maxAxis1), val);
+    ok = false;
   }
   geoA1.maxAxis = val * geoA1.stepsPerDegree / 10.0;
+  return ok;
 }
 bool initLimitMinAxis2()
 {
+  bool ok = true;
   int val = XEEPROM.readShort(getMountAddress(EE_minAxis2));
   int minval = 10 * geoA2.LimMinAxis;
   int maxval = 10 * geoA2.LimMaxAxis;
@@ -173,11 +180,14 @@ bool initLimitMinAxis2()
   {
     val = minval;
     XEEPROM.writeShort(getMountAddress(EE_minAxis2), val);
+    ok = false;
   }
   geoA2.minAxis = val * geoA2.stepsPerDegree / 10.0;
+  return ok;
 }
 bool initLimitMaxAxis2()
 {
+  bool ok = true;
   int val = XEEPROM.readShort(getMountAddress(EE_maxAxis2));
   int minval = 10 * geoA2.LimMinAxis;
   int maxval = 10 * geoA2.LimMaxAxis;
@@ -185,7 +195,9 @@ bool initLimitMaxAxis2()
   {
     val = maxval;
     XEEPROM.writeShort(getMountAddress(EE_maxAxis2), val);
+    ok = false;
   }
   geoA2.maxAxis = val * geoA2.stepsPerDegree / 10.0;
+  return ok;
 }
 
