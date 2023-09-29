@@ -234,7 +234,7 @@ public:
   }
   bool withinLimit(const long& axis)
   {
-    return !(axis < minAxis || axis > maxAxis);
+    return axis >= minAxis && axis <= maxAxis;
   }
 };
 
