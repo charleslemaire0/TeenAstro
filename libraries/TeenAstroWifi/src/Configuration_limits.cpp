@@ -53,31 +53,31 @@ const char html_configMiDistanceFromPole[] PROGMEM =
 const char html_configMinAxis1[] PROGMEM =
 "<div class='bt'> Limits of Instrument Axis 1: <br/> </div>"
 "<form method='get' action='/configuration_limits.htm'>"
-" <input value='%.1f' type='number' name='mia1' min='-180' max='0' step='0.1'>"
+" <input value='%.1f' type='number' name='mia1' min='%.1f' max='%.1f' step='0.1'>"
 "<button type='submit'>Upload</button>"
-" (Minimum value for instrument axis 1, in degrees from -180 to 0)"
+" (Minimum value for instrument axis 1, in degrees from %.1f to %.1f)"
 "</form>"
 "\r\n";
 const char html_configMaxAxis1[] PROGMEM =
 "<form method='get' action='/configuration_limits.htm'>"
-" <input value='%.1f' type='number' name='maa1' min='0' max='180' step='0.1'>"
+" <input value='%.1f' type='number' name='maa1' min='%.1f' max='%.1f' step='0.1'>"
 "<button type='submit'>Upload</button>"
-" (Maximum value for instrument axis 1, in degrees from 0 to 180)"
+" (Maximum value for instrument axis 1, in degrees from %.1f to %.1f)"
 "</form>"
 "\r\n";
 const char html_configMinAxis2[] PROGMEM =
 "<div class='bt'> Limits of Instrument Axis 2: <br/> </div>"
 "<form method='get' action='/configuration_limits.htm'>"
-" <input value='%.1f' type='number' name='mia2' min='-360' max='0' step='0.1'>"
+" <input value='%.1f' type='number' name='mia2' min='%.1f' max='%.1f' step='0.1'>"
 "<button type='submit'>Upload</button>"
-" (Minimum value for instrument axis 2, in degrees from -360 to 0)"
+" (Minimum value for instrument axis 2, in degrees from %.1f to %.1f)"
 "</form>"
 "\r\n";
 const char html_configMaxAxis2[] PROGMEM =
 "<form method='get' action='/configuration_limits.htm'>"
-" <input value='%.1f' type='number' name='maa2' min='0' max='360' step='0.1'>"
+" <input value='%.1f' type='number' name='maa2' min='%.1f' max='%.1f' step='0.1'>"
 "<button type='submit'>Upload</button>"
-" (Maximum value for instrument axis 2, in degrees from 0 to 360)"
+" (Maximum value for instrument axis 2, in degrees from %.1f to %.1f)"
 "</form>"
 "\r\n";
 
@@ -140,30 +140,35 @@ void TeenAstroWifi::handleConfigurationLimits()
     data += temp;
     #endif
   }
+  sendHtml(data);
 
-  if (GetLX200(":GXLA#", temp1, sizeof(temp1)) == LX200_VALUEGET)
+  bool ok = true;
+  short  anglemin, anglemax, angle_i_min, angle_i_max;
+
+  ok = GetLX200Short(":GXLA#", &anglemin) == LX200_VALUEGET;
+  ok &= GetLX200Short(":GXLB#", &anglemax) == LX200_VALUEGET;
+  ok &= GetLX200Short(":GXlA#", &angle_i_min) == LX200_VALUEGET;
+  ok &= GetLX200Short(":GXlB#", &angle_i_max) == LX200_VALUEGET;
+
+  if (ok)
   {
-    float angle = -(float)strtol(&temp1[0], NULL, 10) / 10;
-    sprintf_P(temp, html_configMinAxis1, angle);
+    sprintf_P(temp, html_configMinAxis1, (float)anglemin / 10.0, (float)angle_i_min, (float)anglemax / 10.0, (float)angle_i_min, (float)anglemax / 10.0);
     data += temp;
+    sprintf_P(temp, html_configMaxAxis1, (float)anglemax / 10.0, (float)anglemin / 10.0, (float)angle_i_max, (float)anglemin / 10.0, (float)angle_i_max);
+    data += temp;
+    sendHtml(data);
   }
-  if (GetLX200(":GXLB#", temp1, sizeof(temp1)) == LX200_VALUEGET)
+  ok = GetLX200Short(":GXLC#", &anglemin) == LX200_VALUEGET;
+  ok &= GetLX200Short(":GXLD#", &anglemax) == LX200_VALUEGET;
+  ok &= GetLX200Short(":GXlC#", &angle_i_min) == LX200_VALUEGET;
+  ok &= GetLX200Short(":GXlD#", &angle_i_max) == LX200_VALUEGET;
+  if (ok)
   {
-    float angle = (float)strtol(&temp1[0], NULL, 10) / 10;
-    sprintf_P(temp, html_configMaxAxis1, angle);
+    sprintf_P(temp, html_configMinAxis2, (float)anglemin / 10.0, (float)angle_i_min , (float)anglemax / 10.0, (float)angle_i_min , (float)anglemax / 10.0);
     data += temp;
-  }
-  if (GetLX200(":GXLC#", temp1, sizeof(temp1)) == LX200_VALUEGET)
-  {
-    float angle = -(float)strtol(&temp1[0], NULL, 10) / 10;
-    sprintf_P(temp, html_configMinAxis2, angle);
+    sprintf_P(temp, html_configMaxAxis2, (float)anglemax / 10.0, (float)anglemin / 10.0, (float)angle_i_max, (float)anglemin / 10.0, (float)angle_i_max);
     data += temp;
-  }
-  if (GetLX200(":GXLD#", temp1, sizeof(temp1)) == LX200_VALUEGET)
-  {
-    float angle = (float)strtol(&temp1[0], NULL, 10) / 10;
-    sprintf_P(temp, html_configMaxAxis2, angle);
-    data += temp;
+    sendHtml(data);
   }
 
   else data += "<br />\r\n";
@@ -245,16 +250,16 @@ void TeenAstroWifi::processConfigurationLimitsGet()
   v = server.arg("mia1");
   if (v != "")
   {
-    if ((atof2((char*)v.c_str(), &f)) && ((-f >= 0) && (-f <= 360)))
+    if (atof2((char*)v.c_str(), &f)) 
     {
-      sprintf(temp, ":SXLA,%04d#", (int)(-f * 10));
+      sprintf(temp, ":SXLA,%04d#", (int)(f * 10));
       SetLX200(temp);
     }
   }
   v = server.arg("maa1");
   if (v != "")
   {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 360)))
+    if (atof2((char*)v.c_str(), &f)) 
     {
       sprintf(temp, ":SXLB,%04d#", (int)(f * 10));
       SetLX200(temp);
@@ -263,16 +268,16 @@ void TeenAstroWifi::processConfigurationLimitsGet()
   v = server.arg("mia2");
   if (v != "")
   {
-    if ((atof2((char*)v.c_str(), &f)) && ((-f >= 0) && (-f <= 360)))
+    if (atof2((char*)v.c_str(), &f))
     {
-      sprintf(temp, ":SXLC,%04d#", (int)(-f * 10));
+      sprintf(temp, ":SXLC,%04d#", (int)(f * 10));
       SetLX200(temp);
     }
   }
   v = server.arg("maa2");
   if (v != "")
   {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 360)))
+    if (atof2((char*)v.c_str(), &f))
     {
       sprintf(temp, ":SXLD,%04d#", (int)(f * 10));
       SetLX200(temp);
