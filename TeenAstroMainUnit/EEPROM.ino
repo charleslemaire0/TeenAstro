@@ -44,7 +44,7 @@ void writeDefaultMount()
   XEEPROM.write(getMountAddress(EE_dpmW), 0);
   XEEPROM.write(getMountAddress(EE_dup), (12 - 9) * 15);
   XEEPROM.write(getMountAddress(EE_dpmDistanceFromPole), 181);
-  reset_EE_Limit();
+  force_reset_EE_Limit();
 
 
   // init the Park/Home status
@@ -62,7 +62,7 @@ void writeDefaultMount()
   XEEPROM.write(getMountAddress(EE_DefaultRate), 3);
 
   // init the default maxRate
-  XEEPROM.writeInt(getMountAddress(EE_maxRate), DefaultR4);
+  XEEPROM.writeUShort(getMountAddress(EE_maxRate), DefaultR4);
 
   // init degree for acceleration 1°
   XEEPROM.write(getMountAddress(EE_degAcc), (uint8_t)(1 * 10));
@@ -399,18 +399,18 @@ void readEEPROMmotorCurrent()
 
 void readEEPROMmotor()
 {
-  motorA1.backlashAmount = XEEPROM.readInt(getMountAddress(EE_motorA1backlashAmount));
+  motorA1.backlashAmount = XEEPROM.readUShort(getMountAddress(EE_motorA1backlashAmount));
   if (motorA1.backlashAmount > 999 || motorA1.backlashAmount < 0)
   {
     motorA1.backlashAmount = 0;
-    XEEPROM.writeInt(getMountAddress(EE_motorA1backlashAmount),0);
+    XEEPROM.writeUShort(getMountAddress(EE_motorA1backlashAmount),0);
   }
 
-  motorA2.backlashAmount = XEEPROM.readInt(getMountAddress(EE_motorA2backlashAmount));
+  motorA2.backlashAmount = XEEPROM.readUShort(getMountAddress(EE_motorA2backlashAmount));
   if (motorA2.backlashAmount > 999 || motorA2.backlashAmount < 0)
   {
     motorA2.backlashAmount = 0;
-    XEEPROM.writeInt(getMountAddress(EE_motorA2backlashAmount), 0);
+    XEEPROM.writeUShort(getMountAddress(EE_motorA2backlashAmount), 0);
   }
 
   motorA1.backlashRate = XEEPROM.read(getMountAddress(EE_motorA1backlashRate));
@@ -440,7 +440,7 @@ void readEEPROMmotor()
   motorA1.stepRot = D_motorA1stepRot;
   motorA1.isStepRotFix = true;
 #else
-  motorA1.stepRot = XEEPROM.readInt(getMountAddress(EE_motorA1stepRot));
+  motorA1.stepRot = XEEPROM.readUShort(getMountAddress(EE_motorA1stepRot));
   motorA1.isStepRotFix = false;
 #endif 
 
@@ -488,7 +488,7 @@ void readEEPROMmotor()
   motorA2.stepRot = D_motorA2stepRot;
   motorA2.isStepRotFix = true;
 #else
-  motorA2.stepRot = XEEPROM.readInt(getMountAddress(EE_motorA2stepRot));
+  motorA2.stepRot = XEEPROM.readUShort(getMountAddress(EE_motorA2stepRot));
   motorA2.isStepRotFix = false;
 #endif 
 
@@ -527,20 +527,20 @@ void readEEPROMmotor()
 void writeDefaultEEPROMmotor()
 {
   // init (clear) the backlash amounts
-  XEEPROM.writeInt(getMountAddress(EE_motorA1backlashAmount), 0);
+  XEEPROM.writeUShort(getMountAddress(EE_motorA1backlashAmount), 0);
   XEEPROM.write(getMountAddress(EE_motorA1backlashRate), 16);
   XEEPROM.writeULong(getMountAddress(EE_motorA1gear), 1800*1000);
-  XEEPROM.writeInt(getMountAddress(EE_motorA1stepRot), 200);
+  XEEPROM.writeUShort(getMountAddress(EE_motorA1stepRot), 200);
   XEEPROM.write(getMountAddress(EE_motorA1micro), 4);
   XEEPROM.write(getMountAddress(EE_motorA1reverse), 0);
   XEEPROM.write(getMountAddress(EE_motorA1highCurr), 10);
   XEEPROM.write(getMountAddress(EE_motorA1lowCurr), 10);
   XEEPROM.write(getMountAddress(EE_motorA1silent), 0);
 
-  XEEPROM.writeInt(getMountAddress(EE_motorA1backlashAmount), 0);
+  XEEPROM.writeUShort(getMountAddress(EE_motorA1backlashAmount), 0);
   XEEPROM.write(getMountAddress(EE_motorA2backlashRate), 16);
   XEEPROM.writeULong(getMountAddress(EE_motorA2gear), 1800*1000);
-  XEEPROM.writeInt(getMountAddress(EE_motorA2stepRot), 200);
+  XEEPROM.writeUShort(getMountAddress(EE_motorA2stepRot), 200);
   XEEPROM.write(getMountAddress(EE_motorA2micro), 4);
   XEEPROM.write(getMountAddress(EE_motorA2reverse), 0);
   XEEPROM.write(getMountAddress(EE_motorA2highCurr), 10);

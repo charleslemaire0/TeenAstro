@@ -59,6 +59,7 @@ enum NAV { NAV_SYNC, NAV_GOTO, NAV_PUSHTO };
 bool isOk(LX200RETURN val);
 bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned long timeOutMs, bool keepHashtag = false);
 LX200RETURN GetLX200(char* command, char* output, int buffersize);
+LX200RETURN GetLX200Short(char* command, short* value);
 LX200RETURN GetLX200Float(char* command, float* value);
 LX200RETURN GetLocalTimeLX200(unsigned int &hour, unsigned int &minute, unsigned int &second);
 LX200RETURN GetLocalTimeLX200(long &value);

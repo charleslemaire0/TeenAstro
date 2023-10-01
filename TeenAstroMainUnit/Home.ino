@@ -110,8 +110,14 @@ void initHome()
   {
     geoA1.homeDef = XEEPROM.readLong(getMountAddress(EE_homePosAxis1))*pow(2, motorA1.micro);
     geoA2.homeDef = XEEPROM.readLong(getMountAddress(EE_homePosAxis2))*pow(2, motorA2.micro);
+    homeSaved  &= withinLimit(geoA1.homeDef, geoA2.homeDef);
+    if (!homeSaved)
+    {
+      XEEPROM.write(getMountAddress(EE_homeSaved), 0);
+    }
   }
-  else
+
+  if(!homeSaved)
   {
     if (isAltAZ())
     {

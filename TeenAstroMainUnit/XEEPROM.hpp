@@ -7,7 +7,7 @@
 
 struct extendedEEPROM : EEPROMClass
 {
-  void writeInt(int i, int j)
+  void writeUShort(int i, ushort j)
   {
     uint8_t *k = (uint8_t *)&j;
     EEPROM.update(i + 0, *k);
@@ -16,10 +16,29 @@ struct extendedEEPROM : EEPROMClass
   }
 
   // read int numbers from EEPROM at position i (2 bytes)
-  int readInt(int i)
+  ushort readUShort(int i)
   {
     uint16_t    j;
     uint8_t     *k = (uint8_t *)&j;
+    *k = EEPROM.read(i + 0);
+    k++;
+    *k = EEPROM.read(i + 1);
+    return j;
+  }
+
+  void writeShort(int i, short j)
+  {
+    uint8_t* k = (uint8_t*)&j;
+    EEPROM.update(i + 0, *k);
+    k++;
+    EEPROM.update(i + 1, *k);
+  }
+
+  // read int numbers from EEPROM at position i (2 bytes)
+  short readShort(int i)
+  {
+    int16_t   j;
+    uint8_t* k = (uint8_t*)&j;
     *k = EEPROM.read(i + 0);
     k++;
     *k = EEPROM.read(i + 1);

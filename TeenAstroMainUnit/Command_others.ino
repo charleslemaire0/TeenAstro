@@ -50,7 +50,6 @@ void Command_A()
     break;
   case '2':
   {
-    bool ok = true;
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     double Lat = *localSite.latitude();
     Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
@@ -735,6 +734,7 @@ void Command_W()
     localSite.ReadSiteDefinition(currentSite);
     rtk.resetLongitude(*localSite.longitude());
     initCelestialPole();
+    initLimit();
     initHome();
     initTransformation(true);
     syncAtHome();
