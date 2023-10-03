@@ -149,6 +149,7 @@ void Command_GNSS()
       localSite.setLat(lat);
       localSite.setElev(h);
       initCelestialPole();
+      initLimit();
       initHome();
       syncAtHome();
       initTransformation(true);

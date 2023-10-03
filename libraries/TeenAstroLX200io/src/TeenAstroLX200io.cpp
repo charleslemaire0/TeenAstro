@@ -357,6 +357,16 @@ LX200RETURN GetLX200(char* command, char* output, int buffersize)
     return LX200_GETVALUEFAILED;
 }
 
+LX200RETURN GetLX200Short(char* command, short* value)
+{
+  char out[LX200sbuff];
+  char* conv_end;
+  if (GetLX200(command, out, sizeof(out)) == LX200_GETVALUEFAILED)
+    return LX200_GETVALUEFAILED;
+  *value = strtol(&out[0], NULL, 10);
+  return LX200_VALUEGET;
+}
+
 LX200RETURN GetLX200Float(char* command, float* value)
 {
   char out[LX200sbuff];

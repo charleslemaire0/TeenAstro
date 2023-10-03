@@ -77,7 +77,7 @@ public:
       return false;
     }
     m_site.elevation = l;
-    XEEPROM.writeInt(EE_sites + m_siteIndex * SiteSize + EE_site_height, l);
+    XEEPROM.writeUShort(EE_sites + m_siteIndex * SiteSize + EE_site_height, l);
     return true;
   }
   bool setToff(float toff)
@@ -122,7 +122,7 @@ public:
       setLong(0);
     }
     adress += 4;
-    m_site.elevation = XEEPROM.readInt(adress);
+    m_site.elevation = XEEPROM.readUShort(adress);
     if (-200 > m_site.elevation || m_site.elevation > 8000)
     {
       setElev(0);
