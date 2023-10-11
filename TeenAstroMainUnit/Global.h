@@ -37,12 +37,16 @@ enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
 enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW };
 enum RateCompensation { RC_UNKOWN = -1, RC_NONE, RC_ALIGN_RA, RC_ALIGN_BOTH, RC_FULL_RA, RC_FULL_BOTH };
 enum TrackingCompensation {TC_NONE, TC_RA, TC_BOTH};
+enum BacklashPhase { INIT, MOVE_IN, MOVE_OUT, DONE };
 
 ParkState parkStatus = ParkState::PRK_UNPARKED;
 bool parkSaved = false;
 bool homeSaved = false;
 bool atHome = true;
 bool homeMount = false;
+
+BacklashPhase backlashStatus = BacklashPhase::DONE;
+
 bool DecayModeTrack = false;
 MeridianFlip meridianFlip = MeridianFlip::FLIP_NEVER;
 Mount mountType = Mount::MOUNT_TYPE_GEM;

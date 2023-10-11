@@ -64,72 +64,99 @@ void saveAlignModel()
 }
 
 // takes up backlash and returns to the current position
-bool parkClearBacklash()
+void parkClearBacklash()
 {
+  static long LastIntervalAxis1, LastIntervalAxis2;
   // backlash takeup rate
-  if (staA1.backlash_inSteps == 0 && staA2.backlash_inSteps == 0)
+  if ((staA1.backlash_inSteps == 0 && staA2.backlash_inSteps == 0))
   {
-    return true;
+    backlashStatus = BacklashPhase::DONE;
+    return;
   }
-  cli();
-  long LastIntervalAxis1 = staA1.interval_Step_Cur;
-  long LastIntervalAxis2 = staA2.interval_Step_Cur;
-  staA1.interval_Step_Cur = staA1.backlash_interval_Step;
-  staA2.interval_Step_Cur = staA2.backlash_interval_Step;
-  sei();
-
-  // figure out how long we'll have to wait for the backlash to clear (+50%)
-  long t,t1,t2;
-  t1 = (long)(staA1.backlash_inSteps * 1500 / geoA1.stepsPerSecond);
-  t1 = (t1 / staA1.takeupRate + 250) / 12;
-  t2 = (long)(staA2.backlash_inSteps * 1500 / geoA2.stepsPerSecond);
-  t2 = (t2 / staA2.takeupRate + 250) / 12;
-  t = max(t1, t2);
-
-  // start by moving fully into the backlash
-  cli();
-  staA1.target += staA1.backlash_inSteps;
-  staA2.target += staA2.backlash_inSteps;
-  sei();
-
-  // wait until done or timed out
-  for (int i = 0; i < 12; i++)
+  switch (backlashStatus)
   {
-    updateDeltaTarget();
-    if (staA1.backlash_movedSteps != staA1.backlash_inSteps || (staA1.deltaTarget != 0) ||
-        staA2.backlash_movedSteps != staA2.backlash_inSteps || (staA2.deltaTarget != 0))
-      delay(t);
+  case BacklashPhase::INIT:
+  {
+    cli();
+    LastIntervalAxis1 = staA1.interval_Step_Cur;
+    LastIntervalAxis2 = staA2.interval_Step_Cur;
+    sei();
+     //start by moving fully into the backlash
+    cli();
+    movingTo = true;
+    SetsiderealClockSpeed(siderealClockSpeed);
+    staA1.start = staA1.target;
+    staA2.start = staA2.target;
+    staA1.target += staA1.backlash_inSteps;
+    staA2.target += staA2.backlash_inSteps;
+    staA1.resetToSidereal();
+    staA2.resetToSidereal();
+    sei();
+    DecayModeGoto();
+    backlashStatus = BacklashPhase::MOVE_IN;
+    return;
   }
-
-  // then reverse direction and take it all up
-  cli();
-  staA1.target-= staA1.backlash_inSteps;
-  staA2.target-= staA2.backlash_inSteps;
-  sei();
-
-
-  // wait until done or timed out, plus a safety margin
-  for (int i = 0; i < 24; i++)
+  break;
+  case BacklashPhase::MOVE_IN:
   {
     updateDeltaTarget();
-    if ((staA1.backlash_movedSteps != 0) || (staA1.deltaTarget != 0) ||
-      (staA2.backlash_movedSteps != 0) || (staA2.deltaTarget != 0))
-      delay(t);
+    if (staA1.backlash_movedSteps == staA1.backlash_inSteps && staA1.deltaTarget == 0 &&
+      staA2.backlash_movedSteps == staA2.backlash_inSteps && staA2.deltaTarget == 0)
+    {
+      // then reverse direction and take it all up
+      cli();
+      movingTo = true;
+      SetsiderealClockSpeed(siderealClockSpeed);
+      staA1.start = staA1.target;
+      staA2.start = staA2.target;
+      staA1.target -= staA1.backlash_inSteps;
+      staA2.target -= staA2.backlash_inSteps;
+      staA1.resetToSidereal();
+      staA2.resetToSidereal();
+      sei();
+      DecayModeGoto();
+      backlashStatus = MOVE_OUT;
+    }
+    return;
   }
-
-  // we arrive back at the exact same position so ftargetAxis1/Dec don't need to be touched
-  // move at the previous speed
-  cli();
-  staA1.interval_Step_Cur = LastIntervalAxis1;
-  staA2.interval_Step_Cur = LastIntervalAxis2;
-  sei();
-
-  // return true on success
-  if ((staA1.backlash_movedSteps != 0) || (staA2.backlash_movedSteps != 0))
-    return false;
-  else
-    return true;
+  break;
+  case  BacklashPhase::MOVE_OUT:
+  {
+    updateDeltaTarget();
+    if (staA1.backlash_movedSteps == 0 && staA1.deltaTarget == 0 &&
+      staA2.backlash_movedSteps == 0 && staA2.deltaTarget == 0)
+    {
+      // we arrive back at the exact same position so ftargetAxis1/Dec don't need to be touched
+      // move at the previous speed
+      cli();
+      staA1.interval_Step_Cur = LastIntervalAxis1;
+      staA2.interval_Step_Cur = LastIntervalAxis2;
+      sei();
+      backlashStatus = DONE;
+    }
+    return;
+  }
+  break;
+  default:
+    break;
+  }
 }
+
+void finalizePark()
+{
+  if (backlashStatus == DONE)
+  {
+    backlashStatus = INIT;
+  }
+  parkClearBacklash();
+  if (backlashStatus == DONE)
+  {
+    parkStatus = PRK_PARKED;// success, we're parked 
+    enable_Axis(false);// disable the stepper drivers
+    XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
+  }
+}
+
 
 // moves the telescope to the park position, stops tracking
 byte park()

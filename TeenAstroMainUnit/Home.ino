@@ -60,6 +60,23 @@ bool goHome()
   return true;
 }
 
+
+void finalizeHome()
+{ 
+  if (backlashStatus == DONE)
+  {
+    backlashStatus = INIT;
+  }
+  parkClearBacklash();
+  if (backlashStatus == DONE)
+  {
+    syncAtHome();
+    homeMount = false;
+    // disable the stepper drivers
+    enable_Axis(false);
+  }
+}
+
 // resets telescope home position; user manually moves home position,
 bool syncAtHome()
 {
