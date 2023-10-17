@@ -290,20 +290,16 @@ void loop()
   m = millis();
   forceTracking = (m - lastSetTrakingEnable < 10000);
   if (!forceTracking) lastSetTrakingEnable = m + 10000;
-  if (rtk.updateclockTimer(m))
-  {
-    // adjust tracking rate for Alt/Azm mounts
-    // adjust tracking rate for refraction
-    ApplyTrackingRate();
-    SafetyCheck(forceTracking);
-  }
-  else
-  {
-    // COMMAND PROCESSING --------------------------------------------------------------------------------
-    // acts on commands recieved across Serial0 and Serial1 interfaces
-    processCommands();
-    UpdateGnss();
-  }
+  SafetyCheck(forceTracking);
+
+  // adjust tracking rate for Alt/Azm mounts
+  // adjust tracking rate for refraction
+  ApplyTrackingRate();
+
+  // COMMAND PROCESSING --------------------------------------------------------------------------------
+  // acts on commands recieved across Serial0 and Serial1 interfaces
+  processCommands();
+  UpdateGnss();  
 
   if (StartLoopError != lastError)
   {
