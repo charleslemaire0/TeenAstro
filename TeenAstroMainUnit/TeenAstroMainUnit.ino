@@ -183,6 +183,7 @@ void loop()
 {
   static bool forceTracking = false;
   static unsigned long m;
+  static long phase;
   static ErrorsTraking StartLoopError = ERRT_NONE;
   StartLoopError = lastError;
   // GUIDING -------------------------------------------------------------------------------------------
@@ -233,13 +234,14 @@ void loop()
       moveTo();
     }
 
-    if (rtk.m_lst % 16 == 0)
+    phase = rtk.m_lst % 100;
+    if (phase % 20 == 0)
     {
       currentAlt = getHorTopo().Alt()*RAD_TO_DEG;
-      if (rtk.m_lst % 64 == 0)
-      {
-        computeTrackingRate(false);
-      }
+    }
+    if (phase == 0)
+    {
+      computeTrackingRate(true);
     }
 
     CheckEndOfMoveAxisAtRate();
@@ -291,10 +293,6 @@ void loop()
   forceTracking = (m - lastSetTrakingEnable < 10000);
   if (!forceTracking) lastSetTrakingEnable = m + 10000;
   SafetyCheck(forceTracking);
-
-  // adjust tracking rate for Alt/Azm mounts
-  // adjust tracking rate for refraction
-  ApplyTrackingRate();
 
   // COMMAND PROCESSING --------------------------------------------------------------------------------
   // acts on commands recieved across Serial0 and Serial1 interfaces
