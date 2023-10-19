@@ -186,9 +186,9 @@ Public Class Telescope
       Command = ":" & Command & "#"
     End If
     If mInterface = "COM" Then
-      Return GetSerial(Command, Mode, buf)
+      Return GetSerial(Command, Mode, buf, 3)
     ElseIf mInterface = "IP" Then
-      Return getStream(Command, Mode, buf)
+      Return getStream(Command, Mode, buf, 3)
     End If
     Return False
   End Function
@@ -366,7 +366,14 @@ Public Class Telescope
 
     End Set
   End Property
-
+  Private Function getStream(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String, ByVal retry As Integer) As Boolean
+    For k = 0 To retry
+      If getStream(Command, Mode, buf) Then
+        Return True
+      End If
+    Next
+    Return False
+  End Function
   Private Function getStream(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
 
     Dim ClientSocket As System.Net.Sockets.TcpClient = New Net.Sockets.TcpClient
@@ -413,24 +420,36 @@ Public Class Telescope
 
       End Select
     Catch ex As Exception
+      mTL.LogMessage("Network error", ex.Message)
       getStream = False
     End Try
     ClientSocket.Close()
   End Function
-
+  Private Function GetSerial(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String, ByVal retry As Integer) As Boolean
+    For k = 0 To retry
+      If GetSerial(Command, Mode, buf) Then
+        Return True
+      End If
+    Next
+    Return False
+  End Function
   Private Function GetSerial(ByVal Command As String, ByVal Mode As Integer, ByRef buf As String) As Boolean
     mobjectSerial.ClearBuffers()
-    mobjectSerial.Transmit(Command)
-    Select Case Mode
-      Case 0
-        GetSerial = True
-      Case 1
-        buf = mobjectSerial.ReceiveCounted(1)
-        GetSerial = buf <> ""
-      Case 2
-        buf = mobjectSerial.ReceiveTerminated("#").TrimEnd("#")
-        GetSerial = buf <> ""
-    End Select
+    Try
+      mobjectSerial.Transmit(Command)
+      Select Case Mode
+        Case 0
+          GetSerial = True
+        Case 1
+          buf = mobjectSerial.ReceiveCounted(1)
+          GetSerial = buf <> ""
+        Case 2
+          buf = mobjectSerial.ReceiveTerminated("#").TrimEnd("#")
+          GetSerial = buf <> ""
+      End Select
+    Catch ex As Exception
+      mTL.LogMessage("Serial connection", ex.Message)
+    End Try
   End Function
 
   Public ReadOnly Property Description As String Implements ITelescopeV3.Description
