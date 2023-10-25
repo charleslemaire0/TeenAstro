@@ -81,18 +81,10 @@ void parkClearBacklash()
     LastIntervalAxis1 = staA1.interval_Step_Cur;
     LastIntervalAxis2 = staA2.interval_Step_Cur;
     sei();
-     //start by moving fully into the backlash
-    cli();
-    movingTo = true;
-    SetsiderealClockSpeed(siderealClockSpeed);
-    staA1.start = staA1.target;
-    staA2.start = staA2.target;
-    staA1.target += staA1.backlash_inSteps;
-    staA2.target += staA2.backlash_inSteps;
-    staA1.resetToSidereal();
-    staA2.resetToSidereal();
-    sei();
-    DecayModeGoto();
+    //start by moving fully into the backlash
+    long axis1Target = staA1.target + staA1.backlash_inSteps;
+    long axis2Target = staA2.target + staA2.backlash_inSteps;
+    GotoAxis(&axis1Target, &axis2Target);
     backlashStatus = BacklashPhase::MOVE_IN;
     return;
   }
@@ -104,17 +96,9 @@ void parkClearBacklash()
       staA2.backlash_movedSteps == staA2.backlash_inSteps && staA2.deltaTarget == 0)
     {
       // then reverse direction and take it all up
-      cli();
-      movingTo = true;
-      SetsiderealClockSpeed(siderealClockSpeed);
-      staA1.start = staA1.target;
-      staA2.start = staA2.target;
-      staA1.target -= staA1.backlash_inSteps;
-      staA2.target -= staA2.backlash_inSteps;
-      staA1.resetToSidereal();
-      staA2.resetToSidereal();
-      sei();
-      DecayModeGoto();
+      long axis1Target = staA1.target - staA1.backlash_inSteps;
+      long axis2Target = staA2.target - staA2.backlash_inSteps;
+      GotoAxis(&axis1Target, &axis2Target);
       backlashStatus = MOVE_OUT;
     }
     return;
@@ -166,38 +150,36 @@ byte park()
   {
     return 0;
   }
+  if (!parkSaved)
+  {
+    return 1;
+  }
+  if (parkStatus != PRK_UNPARKED)
+  {
+    return 2;
+  }
+  if (movingTo || guideA1.isBusy() || guideA2.isBusy())
+  {
+    return 3;
+  }
   if (lastError != ERRT_NONE)
   {
     return 4;
   }
-  if (!movingTo)
-  {
-    if (parkStatus == PRK_UNPARKED)
-    {
-      if (parkSaved)
-      {
-        // get the position we're supposed to park at
-        long    h = XEEPROM.readLong(getMountAddress(EE_posAxis1));
-        long    d = XEEPROM.readLong(getMountAddress(EE_posAxis2));
-        h *= pow(2, motorA1.micro);
-        d *= pow(2, motorA2.micro);
-        // stop tracking
-        lastSideralTracking = false;
-        sideralTracking = false;
-        // record our status
-        parkStatus = PRK_PARKING;
-        XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
-        goTo(h, d);
-        return 0;
-      }
-      else
-        return 1;   // no park position saved
-    }
-    else
-      return 2;    // not parked
-  }
-  else
-    return 3;     // already moving
+
+  // get the position we're supposed to park at
+  long    h = XEEPROM.readLong(getMountAddress(EE_posAxis1));
+  long    d = XEEPROM.readLong(getMountAddress(EE_posAxis2));
+  h *= pow(2, motorA1.micro);
+  d *= pow(2, motorA2.micro);
+  // stop tracking
+  lastSideralTracking = false;
+  sideralTracking = false;
+  // record our status
+  parkStatus = PRK_PARKING;
+  XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
+  GotoAxis(&h, &d);
+  return 0;
 }
 
 // returns a parked telescope to operation, you must set date and time before calling this.  it also
@@ -212,8 +194,6 @@ bool syncAtPark()
   staA1.enable = true;
   staA2.enable = true;
   delay(10);
-  // get corrections
-  //GeoAlign.readCoe();
 
   // get our position
   long axis1, axis2;
@@ -221,12 +201,7 @@ bool syncAtPark()
   axis2 = XEEPROM.readLong(getMountAddress(EE_posAxis2));
   axis1 *= pow(2, motorA1.micro);
   axis2 *= pow(2, motorA2.micro);
-  cli();
-  staA1.pos = axis1;
-  staA1.target = axis1;
-  staA2.pos = axis2;
-  staA2.target = axis2;
-  sei();
+  syncAxis(&axis1, &axis2);
   // set Meridian Flip behaviour to match mount type
   meridianFlip = mountType == MOUNT_TYPE_GEM ? FLIP_ALWAYS : FLIP_NEVER;
   syncEwithT();

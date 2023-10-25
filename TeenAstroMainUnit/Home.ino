@@ -43,20 +43,11 @@ bool goHome()
   if (lastError != ERRT_NONE) return false;                                // fail, cannot move if there are errors
   if (movingTo) return false;                      // fail, moving to home not allowed during a move
   if (guideA1.isBusy() || guideA2.isBusy()) return false;                       // fail, moving to home not allowed while guiding
-  cli();
-
-  staA1.target = geoA1.homeDef;
-  staA2.target = geoA2.homeDef;
-  staA1.start = staA1.pos;
-  staA2.start = staA2.pos;
-  SetsiderealClockSpeed(siderealClockSpeed);
-  sei();
   // stop tracking
   lastSideralTracking = false;
   sideralTracking = false;
-  movingTo = true;
+  GotoAxis(&geoA1.homeDef, &geoA2.homeDef);
   homeMount = true;
-  DecayModeGoto();
   return true;
 }
 
@@ -102,15 +93,7 @@ bool syncAtHome()
   guideA2.duration = 0;
   guideA2.durationLast = 0;
   // update starting coordinates to reflect NCP or SCP polar home position
-
-  staA1.start = geoA1.homeDef;
-  staA2.start = geoA2.homeDef;
-  cli();
-  staA1.target = staA1.start;
-  staA1.pos = staA1.start;
-  staA2.target = staA2.start;
-  staA2.pos = staA2.start;
-  sei();
+  syncAxis(&geoA1.homeDef, &geoA2.homeDef);
   // initialize/disable the stepper drivers
   DecayModeTracking();
   sideralTracking = false;
