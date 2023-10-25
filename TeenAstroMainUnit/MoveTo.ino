@@ -107,7 +107,6 @@ Again:
     staA1.resetToSidereal();
     staA2.resetToSidereal();
     sei();
-    DecayModeTracking();
     if (homeMount)
     {
       finalizeHome();
@@ -116,6 +115,7 @@ Again:
     {
       finalizePark();
     }
+    DecayModeTracking();
   }
 }
 
