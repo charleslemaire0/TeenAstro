@@ -87,11 +87,11 @@ bool syncAtHome()
   XEEPROM.update(getMountAddress(EE_parkStatus), parkStatus);
   // clear pulse-guiding state
   guideA1.setIdle();
-  guideA1.duration = 0;
-  guideA1.durationLast = 0;
+  guideA1.duration = 0UL;
+  guideA1.durationLast = 0UL;
   guideA2.setIdle();
-  guideA2.duration = 0;
-  guideA2.durationLast = 0;
+  guideA2.duration = 0UL;
+  guideA2.durationLast = 0UL;
   // update starting coordinates to reflect NCP or SCP polar home position
   syncAxis(&geoA1.homeDef, &geoA2.homeDef);
   // initialize/disable the stepper drivers

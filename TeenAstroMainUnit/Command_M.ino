@@ -81,7 +81,7 @@ void Command_M()
     //  Returns: Nothing
 
     if ((atoi2((char *)&command[3], &i)) &&
-      ((i > 0) && (i <= 16399)) && !movingTo && lastError == ERRT_NONE &&
+      ((i > 0) && (i <= 30000)) && !movingTo && lastError == ERRT_NONE &&
         (GuidingState != GuidingRecenter || GuidingState != GuidingST4))
     {
       if ((command[2] == 'e') || (command[2] == 'w'))
@@ -96,7 +96,7 @@ void Command_M()
           guideA1.moveFW();
         }
         guideA1.durationLast = micros();
-        guideA1.duration = (long)i * 1000L;
+        guideA1.duration = (unsigned long)(i * 1000UL);
         cli();
         GuidingState = Guiding::GuidingPulse;
         sei();
@@ -129,7 +129,7 @@ void Command_M()
           }
         }
         guideA2.durationLast = micros();
-        guideA2.duration = (long)i * 1000L;
+        guideA2.duration = (unsigned long)(i * 1000UL);
         cli();
         GuidingState = Guiding::GuidingPulse;
         sei();

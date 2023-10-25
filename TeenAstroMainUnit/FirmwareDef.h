@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef VERSION
-#define VERSION 250
+#define VERSION 240
 #endif
 
 // firmware info, these are returned by the ":GV?#" commands
