@@ -205,6 +205,7 @@ bool syncAtPark()
   // set Meridian Flip behaviour to match mount type
   meridianFlip = mountType == MOUNT_TYPE_GEM ? FLIP_ALWAYS : FLIP_NEVER;
   syncEwithT();
+  DecayModeTracking();
   return true;
 }
 
