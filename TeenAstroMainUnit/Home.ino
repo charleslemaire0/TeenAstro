@@ -41,8 +41,7 @@ bool goHome()
 {
   if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return false; // fail, moving to home not allowed if PRK_PARKED
   if (lastError != ERRT_NONE) return false;                                // fail, cannot move if there are errors
-  if (movingTo) return false;                      // fail, moving to home not allowed during a move
-  if (guideA1.isBusy() || guideA2.isBusy()) return false;                       // fail, moving to home not allowed while guiding
+  if (TelescopeBusy()) return false;                     
   // stop tracking
   lastSideralTracking = false;
   sideralTracking = false;
