@@ -426,7 +426,7 @@ void Command_GX()
       break;
     case 'X':
       // :GXRX# return Max Slew rate
-      sprintf(reply, "%d#", XEEPROM.readInt(getMountAddress(EE_maxRate)));
+      sprintf(reply, "%d#", XEEPROM.readUShort(getMountAddress(EE_maxRate)));
       break;
     case 'r':
       // :GXRr# Requested RA traking rate in sideral
@@ -461,23 +461,23 @@ void Command_GX()
     switch (command[3])
     {
     case 'A':
-      // :GXLA# get user defined minAXIS1 (always negatif)
-      i = XEEPROM.readInt(getMountAddress(EE_minAxis1));
+      // :GXLA# get user defined minAXIS1 
+      i = XEEPROM.readShort(getMountAddress(EE_minAxis1));
       sprintf(reply, "%d#", i);
       break;
     case 'B':
-      // :GXLB# get user defined maxAXIS1 (always positf)
-      i = XEEPROM.readInt(getMountAddress(EE_maxAxis1));
+      // :GXLB# get user defined maxAXIS1 
+      i = XEEPROM.readShort(getMountAddress(EE_maxAxis1));
       sprintf(reply, "%d#", i);
       break;
     case 'C':
-      // :GXLC# get user defined minAXIS2 (always positf)
-      i = XEEPROM.readInt(getMountAddress(EE_minAxis2));
+      // :GXLC# get user defined minAXIS2 
+      i = XEEPROM.readShort(getMountAddress(EE_minAxis2));
       sprintf(reply, "%d#", i);
       break;
     case 'D':
-      // :GXLD# get user defined maxAXIS2 (always positf)
-      i = XEEPROM.readInt(getMountAddress(EE_maxAxis2));
+      // :GXLD# get user defined maxAXIS2 
+      i = XEEPROM.readShort(getMountAddress(EE_maxAxis2));
       sprintf(reply, "%d#", i);
       break;
     case 'E':
@@ -505,6 +505,35 @@ void Command_GX()
     case 'S':
       // :GXLS# return user defined minimum distance in degreee from pole to keep tracking on for 6 hours after transit
       sprintf(reply, "%02d*#", distanceFromPoleToKeepTrackingOn);
+      break;
+    default:
+      replyLongUnknow();
+      break;
+    }
+    break;
+  case 'l':
+    // :GXln Mount type defined limits
+    switch (command[3])
+    {
+    case 'A':
+      // :GXlA#  Mount type defined minAXIS1
+      i = geoA1.LimMinAxis;
+      sprintf(reply, "%d#", i);
+      break;
+    case 'B':
+      // :GXlB#  Mount type defined maxAXIS1
+      i = geoA1.LimMaxAxis;
+      sprintf(reply, "%d#", i);
+      break;
+    case 'C':
+      // :GXlC#  Mount type defined minAXIS2
+      i = geoA2.LimMinAxis;
+      sprintf(reply, "%d#", i);
+      break;
+    case 'D':
+      // :GXlD#  Mount type defined maxAXIS2
+      i = geoA2.LimMaxAxis;
+      sprintf(reply, "%d#", i);
       break;
     default:
       replyLongUnknow();

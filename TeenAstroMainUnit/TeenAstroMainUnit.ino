@@ -447,8 +447,8 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
     unsetPark();
     unsetHome();
   }
-  initHome();
   initLimit();
+  initHome();
   updateSideral();
   initMaxRate();
 }
