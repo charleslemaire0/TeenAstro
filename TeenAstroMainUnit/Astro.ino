@@ -25,7 +25,7 @@ PierSide GetPierSide()
 
 bool TelescopeBusy()
 {
-  return movingTo || guideA1.isBusy() || guideA2.isBusy();
+  return movingTo || GuidingState != Guiding::GuidingOFF;
 }
 
 void ApplyTrackingRate()
