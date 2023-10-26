@@ -140,6 +140,7 @@ void controlTask(UNUSED(void *arg))
         if (getEvent(EV_START_TRACKING))
         {
           currentMode = CTL_MODE_TRACKING;
+          DecayModeTracking();
           resetEvents(EV_AT_HOME);
           resetEvents(EV_START_TRACKING);
           setEvents(EV_TRACKING | EV_SPEED_CHANGE);
@@ -248,7 +249,7 @@ void controlTask(UNUSED(void *arg))
           if (lastError() != ERRT_NONE)
             break;
           currentMode = CTL_MODE_GOTO;
-          resetEvents(EV_AT_HOME | EV_TRACKING | EV_START_TRACKING | EV_SPIRAL);
+          resetEvents(EV_AT_HOME | EV_TRACKING | EV_START_TRACKING | EV_SPIRAL | EV_GUIDING_AXIS1 | EV_GUIDING_AXIS2);
           axis1Target = msgBuffer[1];
           axis2Target = msgBuffer[2];
           DecayModeGoto();
@@ -263,7 +264,7 @@ void controlTask(UNUSED(void *arg))
           if (lastError() != ERRT_NONE)
             break;
           currentMode = CTL_MODE_GOTO;
-          resetEvents(EV_AT_HOME | EV_TRACKING | EV_START_TRACKING | EV_SPIRAL);
+          resetEvents(EV_AT_HOME | EV_TRACKING | EV_START_TRACKING | EV_SPIRAL | EV_GUIDING_AXIS1 | EV_GUIDING_AXIS2);
           DecayModeGoto();
           motorA1.setVmax(slewingSpeeds.speed1);
           motorA1.setTargetPos(geoA1.homeDef);
@@ -351,7 +352,6 @@ void controlTask(UNUSED(void *arg))
 
 void startTracking(void)
 {
-  DecayModeTracking();
   setEvents(EV_START_TRACKING | EV_SPEED_CHANGE);  
 }
 

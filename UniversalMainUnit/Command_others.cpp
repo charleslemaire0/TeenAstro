@@ -28,7 +28,6 @@ void Command_dollar()
 //   A - Alignment Commands
 //  :A0#
 //  :A2#
-//  :A3#
 //  :AC#
 //  :AW#
 //  :AA#  Resets alignment as AC# AND activates alignment on next 3 syncs!  (<-> sync modded accordingly)
@@ -41,7 +40,7 @@ void Command_A()
     mount.mP->initTransformation(true);
     syncAtHome();
     // enable the stepper drivers
-    delay(10);
+    vTaskDelay(10);
     startTracking();
     lastSetTrackingEnable = millis();
     replyShortTrue();
@@ -78,32 +77,6 @@ void Command_A()
     replyShortTrue();
     break;
   }
-  case '3':
-  {
-    Axes axes;
-    HorCoords hc;
-    Steps steps;
-    double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &hc.az, &hc.alt, localSite.cosLat(), localSite.sinLat());
-    if (mount.mP->alignment.getRefs() == 0)
-    {
-      mount.mP->syncAzAlt(hc.az, hc.alt, mount.mP->GetPierSide());
-    }
-
-    steps.steps1 = motorA1.getCurrentPos();
-    steps.steps2 = motorA2.getCurrentPos();
-    mount.mP->stepsToAxes(&steps, &axes);
-
-    mount.mP->alignment.addReferenceDeg(hc.az, hc.alt, axes.axis1, axes.axis2);
-    if (mount.mP->alignment.isReady())
-    {
-      mount.mP->hasStarAlignment(true);
-//      motorA1.setTargetPos(motorA1.getCurrentPos());
-//      motorA2.setTargetPos(motorA2.getCurrentPos());
-    }
-    replyShortTrue();
-    break;
-  }
   case 'C':
   case 'A':
     mount.mP->initTransformation(true);
@@ -116,7 +89,7 @@ void Command_A()
     replyShortTrue();
     break;
   default:
-    replyLongUnknown();
+    replyNothing();
   }
 }
 

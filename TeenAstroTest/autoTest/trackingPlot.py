@@ -17,13 +17,13 @@ def sign(val):
     return res
 
 
-def axesToEqu(axis1, axis2, latitude, lst):
+def eqAxesToEqu(axis1, axis2, latitude, lst):
     hemisphere = sign(latitude)
     flipSign = sign(axis2)
-    ha  = hemisphere * (axis1 + flipSign * 90);
-    ra = 15.0 * lst - ha
+    ha  = hemisphere * (axis1 + flipSign * 90) / 15;
+    ra = lst - ha       # in hours
     dec = hemisphere * (90 - (flipSign * axis2));    
-    return (ra, dec)
+    return (ha, ra, dec)
 
 
 def altazAxesToAltAz(axis1, axis2, latitude):
@@ -158,16 +158,16 @@ class trackingPlot():
 
         if (self.mountType in ['E','K']):
             pierSide = self.ta.getPierSide()
-            ra, dec = axesToEqu(axis1, axis2, self.lat, lst)
+            ha, ra, dec = eqAxesToEqu(axis1, axis2, self.lat, lst)
         elif (self.mountType in ['A','k']):     
             az, alt = altazAxesToAltAz(axis1, axis2, self.lat)
             direction = self.site.at(t).from_altaz(az_degrees=az, alt_degrees=alt)
             ra_, dec_, distance_ = direction.radec()
-            ra = ra_._degrees
+            ra = ra_.hours
             dec = dec_.degrees
 
         self.t = np.append(self.t, datetime.now().timestamp())
-        self.ra = np.append(self.ra, 3600*(ra-self.initialRA))
+        self.ra = np.append(self.ra, 3600*(15*ra-self.initialRA)) # convert ra to arc-seconds
         self.dec = np.append(self.dec, 3600*(dec-self.initialDec))
         self.sp1 = np.append(self.sp1, sp1)
         self.sp2 = np.append(self.sp2, sp2)
@@ -202,7 +202,9 @@ class trackingPlot():
             pierSide = self.ta.getPierSide()
             axis1 = self.ta.getAxis1()
             axis2 = self.ta.getAxis2()
-            self.initialRA, self.initialDec = axesToEqu(axis1, axis2, self.lat, lst)
+            ha, ra, dec = eqAxesToEqu(axis1, axis2, self.lat, lst)
+            self.initialRA = 15 * ra  # convert to degrees
+            self.initialDec = dec
         elif (self.mountType in ['A','k']):     
             axis1 = self.ta.getAxis1()
             axis2 = self.ta.getAxis2()

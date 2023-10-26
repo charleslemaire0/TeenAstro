@@ -2,7 +2,7 @@
 #ifdef __ESP32__
 #include <Arduino.h>
 #define ISR(f) void IRAM_ATTR f(void) 
-#define MIN_INTERRUPT_PERIOD 10UL      // µS
+#define MIN_INTERRUPT_PERIOD 5UL      // µS
 #define MAX_INTERRUPT_PERIOD 10000000UL  // 10S 
 // the motor task runs every mS
 #define TICK_PERIOD_MS 1
@@ -23,7 +23,7 @@ IntervalTimer  itimer4;
 
 // Periods in µS, speeds in steps/S
 // *** replace by constants from the HAL
-#define MIN_INTERRUPT_PERIOD 5UL        // µS
+#define MIN_INTERRUPT_PERIOD 1L        // µS
 #define MAX_INTERRUPT_PERIOD 100000UL  // 100mS
 // the motor task runs every 1mS
 #define TICK_PERIOD_MS 1
@@ -36,25 +36,7 @@ IntervalTimer  itimer4;
 
 #define VSTOP 20 
   
-#if defined(ESP32) || defined(BOARD_240)
-void      HAL_debug0(uint8_t b);
-void      HAL_debug1(uint8_t b);
-
-// hack to debug only axis1 since we only have one debug port 
-void SD_debug0(uint8_t b)
-{
-  char *p = pcTaskGetName(NULL);    // task name is 'Motor0x'
-  if (*(p+6) == '1')
-    HAL_debug0(b);
-  else
-    HAL_debug1(b);    
-}
-#else
 #define SD_debug0(b)
-#define SD_debug1(b)
-#endif
-
-
 
 
 /*
@@ -69,12 +51,12 @@ long StepDir::decelDistance(double speed, unsigned long aMax)
 
 
 // Compute period in microseconds from speed in (micro)steps per second 
-unsigned long getPeriod(double V)
+double getPeriod(double V)
 {
   if (V == 0)
     return MAX_INTERRUPT_PERIOD;
 
-  unsigned long period = 1000000UL / fabs(V);
+  double period = 1000000UL / fabs(V);
 
   if (period <= MIN_INTERRUPT_PERIOD)
   {
@@ -128,7 +110,7 @@ void StepDir::programSpeed(double V)
   if (V !=0)
     setDir(V<0.0);
 
-  long period = getPeriod(fabs(V));
+  double period = getPeriod(fabs(V));
   #ifdef __arm__
 
   ((IntervalTimer *) timerP)->update(period); 
@@ -194,6 +176,9 @@ void StepDir::positionMode(void)
   int sign;
   newSpeed = fabs(currentSpeed);
   
+  if (!enabled)
+    return;
+  
   // check target distance
   // perform calculations on absolute speed, then apply sign 
   delta = getDelta();
@@ -258,7 +243,7 @@ void StepDir::positionMode(void)
     case PS_ACCEL: 
       {
         // Accelerate to VMax
-        newSpeed = fmin(vMax, newSpeed + (aMax * TICK_PERIOD_MS) / 1000);
+        newSpeed = fmin(vMax, newSpeed + ((double) (aMax * TICK_PERIOD_MS)) / 1000);
         programSpeed(sign * newSpeed); 
         if (newSpeed == vMax)
           state(PS_CRUISE);               
@@ -280,7 +265,7 @@ void StepDir::positionMode(void)
     case PS_DECEL:
       {
         // Decelerate at default deceleration aMax
-        newSpeed = fmax(vMax, newSpeed - (aMax * TICK_PERIOD_MS) / 1000);
+        newSpeed = fmax(vMax, newSpeed - ((double)(aMax * TICK_PERIOD_MS)) / 1000);
         programSpeed(sign * newSpeed);                
         if (newSpeed == vMax)
           state(PS_CRUISE);
@@ -554,6 +539,14 @@ bool StepDir::isMoving(void)
   return((getEvents() & EV_MOT_GOTO) !=0);
 }
 
+void StepDir::enable(void)
+{
+  enabled = true;
+}
+void StepDir::disable(void)
+{
+  enabled = false;
+}
 // never called
 void StepDir::setRatios(long fkHz)
 {

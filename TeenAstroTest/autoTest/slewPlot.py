@@ -27,7 +27,8 @@ class slewPlotPolar():
         self.line, = self.ax.plot(self.az, self.alt)
         self.ax.set_rmin(90)
         self.ax.set_rmax(-15)
-        self.ax.set_rticks([0,15,30,45,60,75,90],fontsize=20)  # radial ticks
+#        self.ax.set_rticks([0,15,30,45,60,75,90],fontsize=20)  # radial ticks
+        self.ax.set_rticks([0,15,30,45,60,75,90])  # radial ticks
         self.ax.set_rlabel_position(-22.5)  
         self.ax.set_theta_zero_location("N")
         self.ax.grid(True)

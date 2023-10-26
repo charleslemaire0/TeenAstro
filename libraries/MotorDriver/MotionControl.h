@@ -18,5 +18,8 @@ public:
   virtual void initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned timerId); 
   virtual void initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t mtx, long);
   virtual void setRatios(long);
+  virtual void enable(void);
+  virtual void disable(void);
+  bool enabled = true;
 };
 

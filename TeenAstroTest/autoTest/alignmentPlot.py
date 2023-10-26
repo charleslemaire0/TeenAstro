@@ -6,27 +6,10 @@ from teenastro import TeenAstro, deg2dms
 import numpy as np  
 import sys, time
 from pandas import read_csv
-from skyfield.api import wgs84, load, position_of_radec, utc, Star
 from skyfield.positionlib import Apparent, Barycentric, Astrometric, Distance
 from skyfield.earthlib import refraction
 from skyfield.projections import build_stereographic_projection
-
-
-# Utility functions
-
-def eqAxesToHaDec(axis1, axis2, pierSide, latitude):
-  if (latitude < 0):
-    hemisphere = -1
-  else:
-    hemisphere = 1
-  if (axis2 < 0):
-    flipSign = -1
-  else:
-    flipSign = 1
-
-  ha = (hemisphere * (axis1 + flipSign * 90)) / 15
-  dec = (hemisphere * (90 - (flipSign * axis2)))
-  return ha, dec
+from trackingPlot import eqAxesToEqu, sign, altazAxesToAltAz
 
 
 class alignmentPlot():
@@ -65,6 +48,9 @@ class alignmentPlot():
 
   def connect(self, ta):
     self.ta = ta
+    self.lat = self.ta.getLatitude()
+    self.lon = -self.ta.getLongitude()       # LX200 treats west longitudes as positive, Skyfield as negative
+    self.site = self.planets['earth'] + wgs84.latlon(self.lat, self.lon)
     self.start()
 
   def handleEvent(self, ev, v, w):
@@ -188,13 +174,26 @@ class alignmentPlot():
     self.figure_canvas_agg.get_tk_widget().pack(side='right', fill='both', expand=1)
 
   def getAxisCoords(self):
-    pierSide = self.ta.getPierSide()
-    axis1 = self.ta.getAxis1()
-    axis2 = self.ta.getAxis2()   
     lst = self.ta.getLST()            # in hours
-    ha, dec = eqAxesToHaDec(axis1, axis2, pierSide, self.lat)
-    ra = lst - ha                      # in hours
-    return (ra,dec,lst,ha)   
+    if self.mountType in ['E', 'K']:        # Eq mount
+      pierSide = self.ta.getPierSide()
+      axis1 = self.ta.getAxis1()
+      axis2 = self.ta.getAxis2()   
+      ha, ra, dec = eqAxesToEqu(axis1, axis2, self.lat, lst)
+      return (ra, dec, lst, ha) 
+    else:                                   # AltAz mount
+      axis1 = self.ta.getAxis1()
+      axis2 = self.ta.getAxis2()   
+      lst = self.ta.getLST()            # in hours
+      az, alt = altazAxesToAltAz(axis1, axis2, self.lat)
+
+      # use skyfield to find equ coordinates
+      t = self.ts.from_datetime(self.ta.readDateTime())
+      direction = self.site.at(t).from_altaz(alt_degrees=alt, az_degrees=az)
+
+      ra, dec, distance = direction.radec()      
+      ha = lst - ra.hours
+      return (ra.hours, dec.degrees, lst, ha) 
 
   def computePolarError(self, Δa, Δe, dec, lst, ha):    # from Wikipedia
     Φ = np.radians(self.lat)
@@ -244,9 +243,6 @@ class alignmentPlot():
       self.log('Not connected')
       return
     self.mountType = self.ta.readMountType()
-    if not self.mountType in ['E', 'K']:
-      self.log('not yet implemented for Alt Az mounts')
-      return
     self.lat = self.ta.getLatitude()
     self.lon = -self.ta.getLongitude()       # LX200 treats west longitudes as positive, Skyfield as negative
     self.site = self.planets['earth'] + wgs84.latlon(self.lat, self.lon)

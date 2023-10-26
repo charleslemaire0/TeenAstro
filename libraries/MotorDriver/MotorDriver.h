@@ -160,4 +160,13 @@ public:
   {
     mcP->setRatios(fkHz); 
   }
+  void enable(void)
+  {
+    mcP->enable();     
+  }
+  void disable(void)
+  {
+    mcP->disable();     
+  }
+
 };

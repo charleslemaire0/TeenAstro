@@ -156,6 +156,10 @@ void Command_GX()
       case '4':
         sprintf(reply, "%f#", motorA2.getSpeed());
         break;
+      case 'X':
+        // :GXDRX# Mount Max Slew Speed 
+        sprintf(reply, "%f#", mount.maxSpeed);
+        break;
       default:
         replyLongUnknown();
         break;

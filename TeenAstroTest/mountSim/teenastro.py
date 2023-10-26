@@ -227,7 +227,12 @@ class TeenAstro(object):
 
   def isTracking(self):
     self.readStatus()
-    return (int(self.status[0]) & 1 == 1)
+    try:
+      val = self.status
+#    return (int(self.status[0]) & 1 == 1)
+    except:
+      print (val)
+    return (int(val[0]) & 1 == 1)
 
   def isSlewing(self):
     self.readStatus()
@@ -382,7 +387,13 @@ class TeenAstro(object):
     return self.meridianWestLimit
 
   def getTimeZone(self):
-    self.timeZone = -float (self.getValue(':GG#'))
+    try:
+      val = self.getValue(':GG#')
+      self.timeZone = -float(val)      
+#      self.timeZone = -float (self.getValue(':GG#'))
+    except:
+      print (val)
+      self.timeZone = 0      
     return self.timeZone
 
   def guideCmd(self, dir, ms):

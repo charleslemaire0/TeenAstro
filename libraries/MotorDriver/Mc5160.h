@@ -21,5 +21,7 @@ public:
 	void initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t mtx, long clkFreq);
   void initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned timerId); 
   void setRatios(long f);
+  void enable(void);
+  void disable(void);
   double speedRatio, accelRatio;
 };
