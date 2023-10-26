@@ -70,7 +70,7 @@ void finalizeHome()
 // resets telescope home position; user manually moves home position,
 bool syncAtHome()
 {
-  if (movingTo) return false;  // fail, forcing home not allowed during a move
+  if (TelescopeBusy()) return false;  // fail, forcing home not allowed during a move
   // default values for state variables
   staA2.dir = true;
   staA1.dir = true;

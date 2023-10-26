@@ -4,7 +4,7 @@
 // sets the park postion as the current position
 bool setPark()
 {
-  if ((parkStatus == PRK_UNPARKED) && !movingTo)
+  if ((parkStatus == PRK_UNPARKED) && !TelescopeBusy())
   {
     lastSideralTracking = sideralTracking;
     sideralTracking = false;
@@ -158,7 +158,7 @@ byte park()
   {
     return 2;
   }
-  if (movingTo || guideA1.isBusy() || guideA2.isBusy())
+  if (TelescopeBusy())
   {
     return 3;
   }
