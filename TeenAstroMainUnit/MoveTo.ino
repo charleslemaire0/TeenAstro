@@ -100,7 +100,6 @@ Again:
     
   if (atTarget)
   {
-
     movingTo = false;
     SetsiderealClockSpeed(siderealClockSpeed);
     cli();
