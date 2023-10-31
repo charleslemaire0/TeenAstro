@@ -183,6 +183,7 @@ void loop()
 {
   static bool forceTracking = false;
   static unsigned long m;
+  static long phase;
   static ErrorsTraking StartLoopError = ERRT_NONE;
   StartLoopError = lastError;
   // GUIDING -------------------------------------------------------------------------------------------
@@ -198,7 +199,7 @@ void loop()
     encoderA1.delRef();
     encoderA2.delRef();
   }
-  if (!movingTo && GuidingState == GuidingOFF && rtk.m_lst % 10)
+  if (!TelescopeBusy() && rtk.m_lst % 10)
   {
     EncoderSync mode = PushtoStatus == PT_OFF ? EncodeSyncMode : ES_ALWAYS;
     if (autoSyncWithEncoder(mode))
@@ -233,13 +234,14 @@ void loop()
       moveTo();
     }
 
-    if (rtk.m_lst % 16 == 0)
+    phase = rtk.m_lst % 100;
+    if (phase % 20 == 0)
     {
       currentAlt = getHorTopo().Alt()*RAD_TO_DEG;
-      if (rtk.m_lst % 64 == 0)
-      {
-        computeTrackingRate(false);
-      }
+    }
+    if (phase == 0)
+    {
+      computeTrackingRate(true);
     }
 
     CheckEndOfMoveAxisAtRate();
@@ -290,20 +292,12 @@ void loop()
   m = millis();
   forceTracking = (m - lastSetTrakingEnable < 10000);
   if (!forceTracking) lastSetTrakingEnable = m + 10000;
-  if (rtk.updateclockTimer(m))
-  {
-    // adjust tracking rate for Alt/Azm mounts
-    // adjust tracking rate for refraction
-    ApplyTrackingRate();
-    SafetyCheck(forceTracking);
-  }
-  else
-  {
-    // COMMAND PROCESSING --------------------------------------------------------------------------------
-    // acts on commands recieved across Serial0 and Serial1 interfaces
-    processCommands();
-    UpdateGnss();
-  }
+  SafetyCheck(forceTracking);
+
+  // COMMAND PROCESSING --------------------------------------------------------------------------------
+  // acts on commands recieved across Serial0 and Serial1 interfaces
+  processCommands();
+  UpdateGnss();  
 
   if (StartLoopError != lastError)
   {
@@ -313,155 +307,3 @@ void loop()
 
 
 
-// safety checks,
-// keeps mount from tracking past the meridian limit, past the underPoleLimit,
-// below horizon limit, above the overhead limit, or past the Dec limits
-void SafetyCheck(const bool forceTracking)
-{
-  // basic check to see if we're not at home
-  PierSide currentSide = GetPierSide();
-  long axis1, axis2;
-  setAtMount(axis1, axis2);
-
-  if (atHome)
-    atHome = !sideralTracking;
-
-  if (!geoA1.withinLimit(axis1))
-  {
-    lastError = ERRT_AXIS1;
-    if (movingTo)
-      abortSlew = true;
-    else if (!forceTracking)
-      sideralTracking = false;
-    return;
-  }
-  else if (lastError == ERRT_AXIS1)
-  {
-    lastError = ERRT_NONE;
-  }
-
-  if (!geoA2.withinLimit(axis2))
-  {
-    lastError = ERRT_AXIS2;
-    if (movingTo)
-      abortSlew = true;
-    else if (!forceTracking)
-      sideralTracking = false;
-    return;
-  }
-  else if (lastError == ERRT_AXIS2)
-  {
-    lastError = ERRT_NONE;
-  }
-
-  if (mountType == MOUNT_TYPE_GEM)
-  {
-    if (!checkMeridian(axis1, axis2, CHECKMODE_TRACKING))
-    {
-      if ((staA1.dir && currentSide == PIER_WEST) || (!staA1.dir && currentSide == PIER_EAST))
-      {
-        lastError = ERRT_MERIDIAN;
-        if (movingTo)
-        {
-          abortSlew = true;
-        }
-        if (currentSide >= PIER_WEST && !forceTracking)
-          sideralTracking = false;
-        return;
-      }
-      else if (lastError == ERRT_MERIDIAN)
-      {
-        lastError = ERRT_NONE;
-      }
-    }
-    else if (lastError == ERRT_MERIDIAN)
-    {
-      lastError = ERRT_NONE;
-    }
-
-    if (!checkPole(axis1, axis2, CHECKMODE_TRACKING))
-    {
-      if ((staA1.dir && currentSide == PIER_EAST) || (!staA1.dir && currentSide == PIER_WEST))
-      {
-        lastError = ERRT_UNDER_POLE;
-        if (movingTo)
-          abortSlew = true;
-        if (currentSide == PIER_EAST && !forceTracking)
-          sideralTracking = false;
-        return;
-      }
-      else if (lastError == ERRT_UNDER_POLE)
-      {
-        lastError = ERRT_NONE;
-      }
-    }
-    else if (lastError == ERRT_UNDER_POLE)
-    {
-      lastError = ERRT_NONE;
-    }
-  }
-  if (atHome && lastError != ERRT_NONE)
-  {
-    unsetHome();
-    syncAtHome();
-  }
-  if (parkStatus == PRK_PARKED && lastError != ERRT_NONE)
-  {
-    unsetPark();
-    syncAtHome();
-  }
-}
-
-
-//enable Axis 
-void enable_Axis(bool enable)
-{
-  if (enable)
-  {
-    staA1.enable = true;
-    staA2.enable = true;
-  }
-  else
-  {
-    staA1.enable = false;
-    staA2.enable = false;
-  }
-}
-
-void updateRatios(bool deleteAlignment, bool deleteHP)
-{
-  cli();
-  geoA1.setstepsPerRot((double)motorA1.gear / 1000.0 * motorA1.stepRot * pow(2, motorA1.micro));
-  geoA2.setstepsPerRot((double)motorA2.gear / 1000.0 * motorA2.stepRot * pow(2, motorA2.micro));
-  staA1.setBacklash_inSteps(motorA1.backlashAmount , geoA1.stepsPerArcSecond);
-  staA2.setBacklash_inSteps(motorA2.backlashAmount , geoA2.stepsPerArcSecond);
-  sei();
-
-  guideA1.init(&geoA1.stepsPerCentiSecond, guideRates[activeGuideRate]);
-  guideA2.init(&geoA2.stepsPerCentiSecond, guideRates[activeGuideRate]);
-
-  initCelestialPole();
-  initTransformation(deleteAlignment);
-  if (deleteHP)
-  {
-    unsetPark();
-    unsetHome();
-  }
-  initLimit();
-  initHome();
-  updateSideral();
-  initMaxRate();
-}
-
-void updateSideral()
-{
-  cli();
-  staA1.setSidereal(siderealClockSpeed, geoA1.stepsPerSecond, masterClockSpeed, motorA1.backlashRate);
-  staA2.setSidereal(siderealClockSpeed, geoA2.stepsPerSecond, masterClockSpeed, motorA2.backlashRate);
-  sei();
-
-  SetTrackingRate(default_tracking_rate,0);
-
-  // initialize the sidereal clock, RA, and Dec
-  SetsiderealClockSpeed(siderealClockSpeed);
-}

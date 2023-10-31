@@ -10,7 +10,6 @@ public:
 private:
 
   //timers members
-  unsigned long           m_clockTimer = 0;                 // wall time base, one second counter
   long                    m_siderealTimer = 0;          // counter to issue steps during tracking
   long                    m_guideSiderealTimer = 0;     // counter to issue steps during guiding
 //tmp variable
@@ -130,15 +129,6 @@ public:
   }
 
   //TIMERS
-  bool updateclockTimer(unsigned long m)
-  {
-    if (m - m_clockTimer < 1000UL)
-    {
-      return false;
-    }
-    m_clockTimer = m;
-    return true;
-  }
   bool updatesiderealTimer()
   {
     cli();
@@ -169,7 +159,6 @@ public:
     m_siderealTimer = m_lst;
     m_guideSiderealTimer = m_lst;
     sei();
-    m_clockTimer = millis();
   }
 
   //End TIMERS

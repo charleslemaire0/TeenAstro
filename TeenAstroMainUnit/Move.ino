@@ -40,7 +40,7 @@ static void MoveAxis(GuideAxis* guideA, StatusAxis* staA, const bool BW, const G
       GuidingState = Mode;
       BW ? guideA->moveBW() : guideA->moveFW();
       atHome = false;
-      guideA->duration = -1;
+      guideA->duration = 0UL;
     }
   }
 }
@@ -74,7 +74,7 @@ static void MoveAxisAtRate(GuideAxis* guideA, StatusAxis* staA, const double new
       GuidingState = Guiding::GuidingAtRate;
       newrate > 0 ? guideA->moveFW() : guideA->moveBW();
       atHome = false;
-      guideA->duration = -1;
+      guideA->duration = 0UL;
     }
   }
 }

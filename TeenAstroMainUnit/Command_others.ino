@@ -133,7 +133,7 @@ void Command_B()
 void Command_C()
 {
   if ((parkStatus == PRK_UNPARKED) &&
-    !movingTo &&
+    !TelescopeBusy() &&
     (command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
   {
     PierSide targetPierSide = GetPierSide();
@@ -501,7 +501,7 @@ void Command_Q()
     //  :Q#    Halt all slews, stops goto
     //         Returns: Nothing
     doSpiral = false;
-    if ((parkStatus == PRK_UNPARKED) || (parkStatus == PRK_PARKING))
+    if (parkStatus != PRK_PARKED)
     {
       if (movingTo)
       {
@@ -579,7 +579,7 @@ void Command_R()
     replyNothing();
     return;
   }
-  if (!movingTo && GuidingState == GuidingOFF)
+  if (!TelescopeBusy())
   {
     recenterGuideRate = i;
     enableGuideRate(recenterGuideRate);

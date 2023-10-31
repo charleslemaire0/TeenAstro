@@ -10,15 +10,15 @@ void moveTo()
   volatile unsigned long distStartAxis1, distStartAxis2, distDestAxis1, distDestAxis2, d;
   staA1.updateDeltaStart();
   staA2.updateDeltaStart();
-  distStartAxis1 = max(abs(staA1.deltaStart),1L);  // distance from start HA
-  distStartAxis2 = max(abs(staA2.deltaStart),1L);  // distance from start Dec
+  distStartAxis1 = max(abs(staA1.deltaStart), 1L);  // distance from start HA
+  distStartAxis2 = max(abs(staA2.deltaStart), 1L);  // distance from start Dec
 
 Again:
   staA1.updateDeltaTarget();
   staA2.updateDeltaTarget();
 
-  distDestAxis1 = max(abs(staA1.deltaTarget),1L);  // distance from dest HA
-  distDestAxis2 = max(abs(staA2.deltaTarget),1L);  // distance from dest Dec
+  distDestAxis1 = max(abs(staA1.deltaTarget), 1L);  // distance from dest HA
+  distDestAxis2 = max(abs(staA2.deltaTarget), 1L);  // distance from dest Dec
   // adjust rates near the horizon to help keep from exceeding the minAlt limit
   if (!isAltAZ())
   {
@@ -30,13 +30,13 @@ Again:
       bool decreasing = tempPosAxis2 < lastPosAxis2;
       //  Correct according to pier side and latitude
       if ((GetPierSide() == PIER_WEST) == (*localSite.latitude() > 0))
-          decreasing = !decreasing;
+        decreasing = !decreasing;
 
       // if Dec is decreasing, slow down Dec
       if (decreasing)
       {
         cli();
-        unsigned long a = max((currentAlt - minAlt)*geoA2.stepsPerDegree, 1);
+        unsigned long a = max((currentAlt - minAlt) * geoA2.stepsPerDegree, 1);
         if (a < distDestAxis2)
           distDestAxis2 = a;
         sei();
@@ -45,7 +45,7 @@ Again:
         // if Dec is increasing, slow down HA
       {
         cli();
-        unsigned long a = max((currentAlt - minAlt)*geoA1.stepsPerDegree, 1);
+        unsigned long a = max((currentAlt - minAlt) * geoA1.stepsPerDegree, 1);
         if (a < distDestAxis1)
           distDestAxis1 = a;
         sei();
@@ -65,10 +65,12 @@ Again:
     {
       sideralTracking = lastSideralTracking;
       parkStatus = PRK_UNPARKED;
+      backlashStatus = DONE;
       XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
     }
     else if (homeMount)
     {
+      backlashStatus = DONE;
       sideralTracking = lastSideralTracking;
       homeMount = false;
     }
@@ -87,8 +89,16 @@ Again:
   cli();
   staA2.setIntervalfromDist(d, minInterval2, maxInterval2);
   sei();
-  
-  if (staA1.atTarget(false) && staA2.atTarget(false))
+
+
+  bool atTarget = staA1.atTarget(false) && staA2.atTarget(false);
+  if (parkStatus == PRK_PARKING || homeMount)
+  {
+    updateDeltaTarget();
+    atTarget = staA1.deltaTarget == 0 && staA2.deltaTarget == 0;
+  }
+    
+  if (atTarget)
   {
     movingTo = false;
     SetsiderealClockSpeed(siderealClockSpeed);
@@ -96,35 +106,15 @@ Again:
     staA1.resetToSidereal();
     staA2.resetToSidereal();
     sei();
+    if (homeMount)
+    {
+      finalizeHome();
+    }
+    else if(parkStatus == PRK_PARKING)
+    {
+      finalizePark();
+    }
     DecayModeTracking();
-    // other special gotos: for parking the mount and homeing the mount
-    if (parkStatus == PRK_PARKING)
-    {
-      parkStatus = PRK_FAILED;
-      for (int i = 0; i < 12; i++)  // give the drives a moment to settle in
-      {
-        updateDeltaTarget();
-        if (staA1.deltaTarget == 0 && staA2.deltaTarget == 0)
-        {
-          if (parkClearBacklash())
-          {
-            parkStatus = PRK_PARKED;// success, we're parked 
-            enable_Axis(false);// disable the stepper drivers
-          }
-          break;
-        }
-        delay(250);
-      }
-      XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
-    }
-    else if (homeMount)
-    {
-      parkClearBacklash();
-      syncAtHome();
-      homeMount = false;
-      // disable the stepper drivers
-      enable_Axis(false);
-    }
   }
 }
 

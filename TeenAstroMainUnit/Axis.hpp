@@ -242,7 +242,7 @@ class GuideAxis
 {
   
 public:
-  long            duration;
+  unsigned long   duration;
   unsigned long   durationLast;
   double          absRate;
 private:

@@ -34,15 +34,19 @@ enum EncoderSync {ES_OFF, ES_60, ES_30, ES_15, ES_8, ES_4, ES_2, ES_ALWAYS };
 enum Pushto {PT_OFF, PT_RADEC, PT_ALTAZ};
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
-enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED, PRK_UNKNOW };
+enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED };
 enum RateCompensation { RC_UNKOWN = -1, RC_NONE, RC_ALIGN_RA, RC_ALIGN_BOTH, RC_FULL_RA, RC_FULL_BOTH };
 enum TrackingCompensation {TC_NONE, TC_RA, TC_BOTH};
+enum BacklashPhase { INIT, MOVE_IN, MOVE_OUT, DONE };
 
 ParkState parkStatus = ParkState::PRK_UNPARKED;
 bool parkSaved = false;
 bool homeSaved = false;
 bool atHome = true;
 bool homeMount = false;
+
+BacklashPhase backlashStatus = BacklashPhase::DONE;
+
 bool DecayModeTrack = false;
 MeridianFlip meridianFlip = MeridianFlip::FLIP_NEVER;
 Mount mountType = Mount::MOUNT_TYPE_GEM;
