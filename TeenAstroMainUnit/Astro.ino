@@ -20,7 +20,7 @@ PierSide GetPierSide()
 {
   long axis1, axis2;
   setAtMount(axis1, axis2);
-  return -geoA2.quaterRot <= axis2 && axis2 <= geoA2.quaterRot ? PIER_EAST : PIER_WEST;
+  return -geoA2.poleDef <= axis2 && axis2 <= geoA2.poleDef ? PIER_EAST : PIER_WEST;
 }
 
 bool TelescopeBusy()
