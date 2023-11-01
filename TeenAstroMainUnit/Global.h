@@ -114,7 +114,7 @@ GeoAxis             geoA2;
 StatusAxis          staA1;
 StatusAxis          staA2;
 
-PierSide            newTargetPierSide = PIER_NOTVALID;
+PoleSide            newTargetPoleSide = POLE_NOTVALID;
 
 double              newTargetAlt = 0.0;                     // holds the altitude for goTos
 double              newTargetAzm = 0.0;                     // holds the azmiuth for goTos
@@ -134,11 +134,6 @@ int                 distanceFromPoleToKeepTrackingOn;       // tracking off 6 ho
 
                                                            
 //                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
-
-#define HADirNCPInit    false
-#define HADirSCPInit    true
-
-volatile bool   HADir = HADirNCPInit;
 
 // Status ------------------------------------------------------------------------------------------------------------------
 enum ErrorsTraking

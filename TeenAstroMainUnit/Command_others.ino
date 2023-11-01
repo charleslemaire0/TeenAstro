@@ -56,7 +56,7 @@ void Command_A()
     Coord_HO HO_T = EQ_T.To_Coord_HO( Lat * DEG_TO_RAD, RefrOptForGoto());
     if (alignment.getRefs() == 0)
     {
-      syncAzAlt(&HO_T, GetPierSide());
+      syncAzAlt(&HO_T, GetPoleSide());
     }
     Coord_IN IN_T = getInstr();
     alignment.addReference(HO_T.Az(), HO_T.Alt(), IN_T.Axis1(), IN_T.Axis2());
@@ -136,11 +136,11 @@ void Command_C()
     !TelescopeBusy() &&
     (command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
   {
-    PierSide targetPierSide = GetPierSide();
-    if (newTargetPierSide != PIER_NOTVALID)
+    PoleSide targetPoleSide = GetPoleSide();
+    if (newTargetPoleSide != POLE_NOTVALID)
     {
-      targetPierSide = newTargetPierSide;
-      newTargetPierSide = PIER_NOTVALID;
+      targetPoleSide = newTargetPoleSide;
+      newTargetPoleSide = POLE_NOTVALID;
     }
     switch (command[1])
     {
@@ -154,7 +154,7 @@ void Command_C()
 
         if (alignment.getRefs() == 0)
         {
-          syncAzAlt(&HO_T, GetPierSide());
+          syncAzAlt(&HO_T, GetPoleSide());
         }
         Coord_IN IN_T = getInstr();
         alignment.addReference(HO_T.Az(), HO_T.Alt(), IN_T.Axis1(), IN_T.Axis2());
@@ -172,7 +172,7 @@ void Command_C()
       {
         double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-        syncEqu(&EQ_T, targetPierSide, *localSite.latitude() * DEG_TO_RAD);
+        syncEqu(&EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
         syncEwithT();
       }
       if (command[1] == 'M')
@@ -188,7 +188,7 @@ void Command_C()
       newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
       Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-      syncEqu(&EQ_T, targetPierSide, *localSite.latitude() * DEG_TO_RAD);
+      syncEqu(&EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
       syncEwithT();
       strcpy(reply, "N/A#");
       break;
@@ -196,7 +196,7 @@ void Command_C()
     case 'A':
     {
       Coord_HO HO_T(0, newTargetAlt * DEG_TO_RAD, newTargetAzm * DEG_TO_RAD, true);
-      syncAzAlt(&HO_T, targetPierSide);
+      syncAzAlt(&HO_T, targetPoleSide);
       syncEwithT();
       strcpy(reply, "N/A#");
     }
@@ -289,7 +289,7 @@ void Command_E()
       {
         double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-        syncEqu(&EQ_T, GetPierSide(), *localSite.latitude() * DEG_TO_RAD);
+        syncEqu(&EQ_T, GetPoleSide(), *localSite.latitude() * DEG_TO_RAD);
         syncEwithT();
         replyLongTrue();
       }
@@ -297,7 +297,7 @@ void Command_E()
       case PT_ALTAZ:
       {
         Coord_HO HO_T(0, newTargetAlt * DEG_TO_RAD, newTargetAzm * DEG_TO_RAD, true);
-        syncAzAlt(&HO_T, GetPierSide());
+        syncAzAlt(&HO_T, GetPoleSide());
         syncEwithT();
         replyLongTrue();
       }
@@ -325,14 +325,14 @@ void Command_E()
     {
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
       Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-      e = PushToEqu(EQ_T, GetPierSide(), *localSite.latitude() * DEG_TO_RAD, &delta1, &delta2);
+      e = PushToEqu(EQ_T, GetPoleSide(), *localSite.latitude() * DEG_TO_RAD, &delta1, &delta2);
       sprintf(reply, "%d,%+06d,%+06d#", e, (int)(60 * delta1), (int)(60 * delta2));
     }
     break;
     case PT_ALTAZ:
     {
       Coord_HO HO_T(0, newTargetAlt * DEG_TO_RAD, newTargetAzm * DEG_TO_RAD, true);
-      e = PushToHor(HO_T, GetPierSide(), &delta1, &delta2);
+      e = PushToHor(HO_T, GetPoleSide(), &delta1, &delta2);
       sprintf(reply, "%d,%+06d,%+06d#", e, (int)(60 * delta1), (int)(60 * delta2));
     }
     break;
@@ -351,14 +351,14 @@ void Command_E()
     {
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
       Coord_EQ EQ_T(0, newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
-      e = PushToEqu(EQ_T, GetPierSide(), *localSite.latitude() * DEG_TO_RAD, &delta1, &delta2);
+      e = PushToEqu(EQ_T, GetPoleSide(), *localSite.latitude() * DEG_TO_RAD, &delta1, &delta2);
       sprintf(reply, "%d", e);
       PushtoStatus = PT_RADEC;
     }
     else if (command[2] == 'A')
     {
       Coord_HO HO_T(0, newTargetAlt* DEG_TO_RAD, newTargetAzm* DEG_TO_RAD, true);
-      e = PushToHor(HO_T, GetPierSide(), &delta1, &delta2);
+      e = PushToHor(HO_T, GetPoleSide(), &delta1, &delta2);
       sprintf(reply, "%d", e);
       PushtoStatus = PT_ALTAZ;
     }
@@ -369,7 +369,7 @@ void Command_E()
       newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
       Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-      e = PushToEqu(EQ_T, GetPierSide(), *localSite.latitude() * DEG_TO_RAD, &delta1, &delta2);
+      e = PushToEqu(EQ_T, GetPoleSide(), *localSite.latitude() * DEG_TO_RAD, &delta1, &delta2);
       sprintf(reply, "%d", e);
       PushtoStatus = PT_RADEC;
     }

@@ -31,6 +31,10 @@ public:
   {
     return &m_site.latitude;
   }
+  const bool northHemisphere()
+  {
+    return  m_site.latitude >= 0;
+  }
   const double* longitude()
   {
     return &m_site.longitude;
