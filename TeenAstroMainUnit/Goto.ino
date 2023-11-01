@@ -348,6 +348,7 @@ ErrorsGoTo Flip()
   double Angle1, Angle2;
   PierSide selectedSide = PIER_NOTVALID;
   PierSide CurrentSide = PIER_NOTVALID;
+  setAtMount(Axis1, Axis2);
   StepToAngle(Axis1, Axis2, &Angle1, &Angle2, &CurrentSide);
   PierSide preferedPierSide = (CurrentSide == PIER_EAST) ? PIER_WEST : PIER_EAST;
   if (!predictTarget(Angle1, Angle2, preferedPierSide, axis1Flip, axis2Flip, selectedSide))
