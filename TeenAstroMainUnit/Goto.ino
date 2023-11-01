@@ -1,18 +1,37 @@
 void StepToAngle(long Axis1, long Axis2, double* AngleAxis1, double* AngleAxis2, PierSide* Side)
 {
-  *AngleAxis1 = ((double)Axis1) / geoA1.stepsPerDegree;
-  *AngleAxis2 = ((double)Axis2) / geoA2.stepsPerDegree;
-  InsrtAngle2Angle(AngleAxis1, AngleAxis2, Side);
+  if (Axis2 > geoA2.poleDef)
+  {
+    Axis2 = geoA2.poleDef - (Axis2 - geoA2.poleDef);
+    Axis1 -= geoA1.halfRot;
+    *Side = PierSide::PIER_WEST;
+  }
+  else if (Axis2 < -geoA2.poleDef)
+  {
+    Axis2 = -geoA2.poleDef - (Axis2 + geoA2.poleDef);
+    Axis1 -= geoA1.halfRot;
+    *Side = PierSide::PIER_WEST;
+  }
+  else
+  {
+    *Side = PierSide::PIER_EAST;
+  }
+  *AngleAxis1 = Axis1 / geoA1.stepsPerDegree;
+  *AngleAxis2 = Axis2 / geoA2.stepsPerDegree;
 }
 
-void Angle2Step(double AngleAxis1, double AngleAxis2, PierSide Side, const double poleAxis1, long* Axis1, long* Axis2)
+void Angle2Step(double AngleAxis1, double AngleAxis2, PierSide Side, long* Axis1, long* Axis2)
 {
-  Angle2InsrtAngle(Side, &AngleAxis1, &AngleAxis2, localSite.latitude(), poleAxis1);
   *Axis1 = (long)(AngleAxis1 * geoA1.stepsPerDegree);
   *Axis2 = (long)(AngleAxis2 * geoA2.stepsPerDegree);
+  if (Side >= PIER_WEST)
+  {
+    *Axis2 = geoA2.poleDef - (*Axis2 - geoA2.poleDef);
+    *Axis1 += geoA1.halfRot;
+    while (*Axis1 < -geoA1.halfRot) *Axis1 += geoA1.stepsPerRot;
+    while (*Axis1 > geoA1.halfRot) *Axis1 -= geoA1.stepsPerRot;
+  }
 }
-
-
 
 
 //--------------------------------------------------------------------------------------------------
@@ -47,7 +66,7 @@ void GotoAxis(const long* axis1Target, const long* axis2Target )
 bool SyncInstr(Coord_IN* instr, PierSide Side)
 {
   long axis1, axis2 = 0;
-  Angle2Step(instr->Axis1() * RAD_TO_DEG, instr->Axis2() * RAD_TO_DEG, Side, geoA1.poleDef, &axis1, &axis2);
+  Angle2Step(instr->Axis1() * RAD_TO_DEG, instr->Axis2() * RAD_TO_DEG, Side, &axis1, &axis2);
   syncAxis(&axis1, &axis2);
   atHome = false;
   return true;
@@ -275,9 +294,7 @@ bool predictTarget(const double& Axis1_in, const double& Axis2_in, const PierSid
   double Axis1 = Axis1_in;
   double Axis2 = Axis2_in;
   outputSide = inputSide;
-  Angle2InsrtAngle(outputSide, &Axis1, &Axis2, localSite.latitude(), geoA1.poleDef);
-  Axis1_out = Axis1 * geoA1.stepsPerDegree;
-  Axis2_out = Axis2 * geoA2.stepsPerDegree;
+  Angle2Step(Axis1, Axis2, outputSide, &Axis1_out, &Axis2_out);
   if (withinLimit(Axis1_out, Axis2_out))
   {
     return true;
@@ -287,9 +304,7 @@ bool predictTarget(const double& Axis1_in, const double& Axis2_in, const PierSid
     double Axis1 = Axis1_in;
     double Axis2 = Axis2_in;
     if (inputSide == PIER_EAST) outputSide = PIER_WEST; else outputSide = PIER_EAST;
-    Angle2InsrtAngle(outputSide, &Axis1, &Axis2, localSite.latitude(), geoA1.poleDef);
-    Axis1_out = Axis1 * geoA1.stepsPerDegree;
-    Axis2_out = Axis2 * geoA2.stepsPerDegree;
+    Angle2Step(Axis1, Axis2, outputSide, &Axis1_out, &Axis2_out);
     if (withinLimit(Axis1_out, Axis2_out))
     {
       return true;
@@ -329,15 +344,13 @@ ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2)
 
 ErrorsGoTo Flip()
 {
-  long axis1Flip, axis2Flip;
+  long Axis1, Axis2, axis1Flip, axis2Flip;
+  double Angle1, Angle2;
   PierSide selectedSide = PIER_NOTVALID;
-  PierSide preferedPierSide = (GetPierSide() == PIER_EAST) ? PIER_WEST : PIER_EAST;
-
-  double Axis1, Axis2, Axis3;
-  getInstrDeg(&Axis1, &Axis2, &Axis3);
-
-  InsrtAngle2Angle(&Axis1, &Axis2, &selectedSide);
-  if (!predictTarget(Axis1, Axis2, preferedPierSide, axis1Flip, axis2Flip, selectedSide))
+  PierSide CurrentSide = PIER_NOTVALID;
+  StepToAngle(Axis1, Axis2, &Angle1, &Angle2, &CurrentSide);
+  PierSide preferedPierSide = (CurrentSide == PIER_EAST) ? PIER_WEST : PIER_EAST;
+  if (!predictTarget(Angle1, Angle2, preferedPierSide, axis1Flip, axis2Flip, selectedSide))
   {
     return ErrorsGoTo::ERRGOTO_LIMITS;
   }

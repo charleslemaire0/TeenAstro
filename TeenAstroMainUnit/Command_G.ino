@@ -367,10 +367,14 @@ void Command_GX()
     case '3':  
     case '4':
     {
+      //Other way to get intsrument angle to verify the pipeline
       Coord_IN IN_T = getEqu(*localSite.latitude() * DEG_TO_RAD).To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto(), alignment.Tinv);
       f = IN_T.Axis1() * RAD_TO_DEG;
       f1 = IN_T.Axis2() * RAD_TO_DEG;
-      Angle2InsrtAngle(GetPierSide(), &f, &f1, localSite.latitude(), geoA1.poleDef);
+      long Axis1_out, Axis2_out;
+      Angle2Step(f, f1, GetPierSide(), &Axis1_out, &Axis2_out);
+      f = Axis1_out / geoA1.stepsPerDegree;
+      f1 = Axis2_out / geoA2.stepsPerDegree;
       command[3] == '3' ? doubleToDms(reply, &f, true, true, highPrecision) : doubleToDms(reply, &f1, true, true, highPrecision);
       strcat(reply, "#");
     }

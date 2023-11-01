@@ -164,39 +164,6 @@ void HorAppToEqu(double Azm, double Alt, double *HA, double *Dec, const double *
   Apparent2Topocentric(&Alt);
   HorTopoToEqu(Azm, Alt, HA, Dec, cosLat, sinLat);
 }
-void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side)
-{
-  if (*AngleAxis2 > 90.)
-  {
-    *AngleAxis2 = (90. - *AngleAxis2) + 90.;
-    *AngleAxis1 = *AngleAxis1 - 180.;
-    *Side = PierSide::PIER_WEST;
-  }
-  else if (*AngleAxis2 < -90.)
-  {
-    *AngleAxis2 = (-90. - *AngleAxis2) - 90.;
-    *AngleAxis1 = *AngleAxis1 - 180.;
-    *Side = PierSide::PIER_WEST;
-  }
-  else
-    *Side = PierSide::PIER_EAST;
-}
-void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2, const double *Lat, const double poleAxis1 )
-{
-  double angle = *AngleAxis1;
-  if (Side >= PIER_WEST)
-  {
-    //TODO Verify for altaz!!
-    if (*Lat >= 0)
-      *AngleAxis2 = (90. - *AngleAxis2) + 90.;
-    else
-      *AngleAxis2 = (-90. - *AngleAxis2) - 90.;
-    angle += 180.;
-    while (angle < -180.) angle += 360.;
-    while (angle > 180.) angle -= 360.;
-    *AngleAxis1 = angle;
-  }
-}
 
 long distStepAxis1(long* start, long* end)
 {

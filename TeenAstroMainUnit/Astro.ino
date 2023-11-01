@@ -92,10 +92,10 @@ void RateFromMovingTarget( Coord_EQ &EQprev,  Coord_EQ &EQnext,
   LA3::RefrOpt rop = { doesRefraction.forTracking, 10, 101 };
   
   Coord_IN INprev = EQprev.To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, rop, alignment.Tinv);
-  Angle2Step(INprev.Axis1() * RAD_TO_DEG, INprev.Axis2() * RAD_TO_DEG, side, geoA1.poleDef, &axis1_before, &axis2_before);
+  Angle2Step(INprev.Axis1() * RAD_TO_DEG, INprev.Axis2() * RAD_TO_DEG, side, &axis1_before, &axis2_before);
 
   Coord_IN INnext = EQnext.To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, rop, alignment.Tinv);
-  Angle2Step(INnext.Axis1() * RAD_TO_DEG, INnext.Axis2() * RAD_TO_DEG, side, geoA1.poleDef, &axis1_after, &axis2_after);
+  Angle2Step(INnext.Axis1() * RAD_TO_DEG, INnext.Axis2() * RAD_TO_DEG, side, &axis1_after, &axis2_after);
 
 
   axis1_delta = distStepAxis1(&axis1_before, &axis1_after) / geoA1.stepsPerDegree;
