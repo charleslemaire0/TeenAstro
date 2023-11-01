@@ -46,6 +46,8 @@ void SetTrackingRate(double rHA, double rDEC)
 void computeTrackingRate(bool apply)
 {
   //reset SideralMode if it is equal to sideralspeed
+  double sign = localSite.northHemisphere() ? 1 : -1;
+
   if (RequestedTrackingRateHA == 1 && RequestedTrackingRateDEC == 0)
   {
     sideralMode = SIDM_STAR;
@@ -56,7 +58,7 @@ void computeTrackingRate(bool apply)
   }
   else if (tc == TC_NONE)
   {
-    staA1.RequestedTrackingRate = RequestedTrackingRateHA;
+    staA1.RequestedTrackingRate = sign * RequestedTrackingRateHA;
     staA2.RequestedTrackingRate = 0;
   }
   else if (doesRefraction.forTracking || TrackingCompForAlignment)
@@ -69,7 +71,7 @@ void computeTrackingRate(bool apply)
   }
   else
   {
-    staA1.RequestedTrackingRate = RequestedTrackingRateHA;
+    staA1.RequestedTrackingRate = sign * RequestedTrackingRateHA;
     staA2.RequestedTrackingRate = 0;
   }
   if (apply)

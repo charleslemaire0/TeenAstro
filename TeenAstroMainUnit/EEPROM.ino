@@ -227,7 +227,7 @@ void initTransformation(bool reset)
   {
     if (isAltAZ())
     {
-      if (*localSite.latitude() > 0)
+      if (localSite.northHemisphere())
       {
         alignment.addReference(0, 0, 0, 0);
         alignment.addReference(0, M_PI_2, 0, M_PI_2);
@@ -242,13 +242,12 @@ void initTransformation(bool reset)
     else
     {
       double Lat = *localSite.latitude() * DEG_TO_RAD;
-      double sign = *localSite.latitude() >= 0 ? 1 : -1;
+      double sign = localSite.northHemisphere() ? 1 : -1;
       if (doesRefraction.forPole && abs(*localSite.latitude()) > 10)
       {
         Lat = abs(Lat);
         LA3::Topocentric2Apparent(Lat, RefrOptForPole());
-        if (*localSite.latitude() < 0)
-          Lat = -Lat;
+        Lat *= sign;
       }
       if (mountType == MOUNT_TYPE_GEM)
       {
