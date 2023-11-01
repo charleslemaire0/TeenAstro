@@ -254,11 +254,11 @@ ISR(TIMER3_COMPA_vect)
       // Direction control
       if (motorA1.reverse ^ Axis1Reverse)
       {
-        digitalWriteFast(Axis1DirPin, HADir != staA1.dir);
+        digitalWriteFast(Axis1DirPin, !staA1.dir);
       }
       else
       {
-        digitalWriteFast(Axis1DirPin, HADir == staA1.dir);
+        digitalWriteFast(Axis1DirPin, staA1.dir);
       }
 
       // telescope moves WEST with the sky, blAxis1 is the amount of EAST backlash

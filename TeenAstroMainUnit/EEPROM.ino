@@ -299,7 +299,6 @@ void initCelestialPole()
     geoA2.LimMinAxis = -90;
     geoA2.LimMaxAxis = 270;
   }
-  HADir = *localSite.latitude() > 0 ? HADirNCPInit : HADirSCPInit;
 }
 
 void initmotor(bool deleteAlignment)

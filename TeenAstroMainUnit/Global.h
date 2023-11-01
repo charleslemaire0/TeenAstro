@@ -135,11 +135,6 @@ int                 distanceFromPoleToKeepTrackingOn;       // tracking off 6 ho
                                                            
 //                                                          // If left alone, the mount will stop tracking when it hits this limit.  Valid range is 7 to 11 hours.
 
-#define HADirNCPInit    false
-#define HADirSCPInit    true
-
-volatile bool   HADir = HADirNCPInit;
-
 // Status ------------------------------------------------------------------------------------------------------------------
 enum ErrorsTraking
 {
