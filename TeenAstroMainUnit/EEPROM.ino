@@ -225,6 +225,7 @@ void initTransformation(bool reset)
   }
   else
   {
+    double rot = localSite.northHemisphere() ? 0 : M_PI;
     if (isAltAZ())
     {
       if (localSite.northHemisphere())
@@ -253,11 +254,11 @@ void initTransformation(bool reset)
       {
         Coord_HO HO1 = Coord_HO(0, 45 * DEG_TO_RAD, 90 * DEG_TO_RAD, false);
         Coord_EQ EQ1 = HO1.To_Coord_EQ(Lat);
-        Coord_IN IN1 = Coord_IN(0, sign * EQ1.Dec(),  (sign *EQ1.Ha() - M_PI_2));
+        Coord_IN IN1 = Coord_IN(0, sign * EQ1.Dec(), (sign * EQ1.Ha() + rot - M_PI_2));
 
         Coord_HO HO2 = Coord_HO(0, 45 * DEG_TO_RAD, 270 * DEG_TO_RAD, false);
         Coord_EQ EQ2 = HO2.To_Coord_EQ(Lat);
-        Coord_IN IN2 = Coord_IN(0, sign * EQ2.Dec(),  (sign *EQ2.Ha() - M_PI_2));
+        Coord_IN IN2 = Coord_IN(0, sign * EQ2.Dec(), (sign * EQ2.Ha() + rot - M_PI_2));
         alignment.addReference(HO1.Az(), HO1.Alt(), IN1.Axis1(), IN1.Axis2());
         alignment.addReference(HO2.Az(), HO2.Alt(), IN2.Axis1(), IN2.Axis2());
       }
