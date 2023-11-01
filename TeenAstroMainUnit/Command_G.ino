@@ -655,8 +655,9 @@ void Command_GX()
     else
       reply[12] = 'U';
 
-    if (currentSide == POLE_UNDER) reply[13] = 'E';
-    if (currentSide == POLE_OVER) reply[13] = 'W';
+
+    if (currentSide == POLE_UNDER) reply[13] = isAltAZ() || localSite.northHemisphere() ? 'E' : 'W';
+    if (currentSide == POLE_OVER) reply[13] = isAltAZ() || localSite.northHemisphere() ? 'W' : 'E';
 
     char val = 0;
     bitWrite(val, 0, hasGNSS);
@@ -1126,8 +1127,9 @@ void  Command_G()
     //         A # terminated string with the pier side.
     PoleSide currentSide = GetPoleSide();
     strcpy(reply, "?#");
-    if (currentSide == POLE_UNDER) reply[0] = 'E';
-    if (currentSide == POLE_OVER) reply[0] = 'W';
+    if (currentSide == POLE_UNDER) reply[0] = isAltAZ() || localSite.northHemisphere() ? 'E' : 'W';
+    if (currentSide == POLE_OVER) reply[0] = isAltAZ() || localSite.northHemisphere() ? 'W' : 'E';
+    strcat(reply, "#");
     break;
   }
   case 'n':

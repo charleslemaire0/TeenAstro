@@ -1003,6 +1003,9 @@ void Command_S(Command& process_command)
       replyNothing();
     break;
   case 'm':
+    //  :Sm#   Sets the meridian pier-side for the next Target, TeenAstro LX200 command
+    //         Returns: E#, W#, N# (none/parked), ?# (Meridian flip in progress)
+    //         A # terminated string with the pier side.
     if ((command[2] != 0) && (strlen(&command[2]) < 2))
     {
       if (command[2] == 'N')
@@ -1012,12 +1015,12 @@ void Command_S(Command& process_command)
       }
       else if (command[2] == 'E')
       {
-        newTargetPoleSide = POLE_UNDER;
+        newTargetPoleSide = isAltAZ() || localSite.northHemisphere() ? POLE_UNDER : POLE_OVER;
         replyValueSetShort(true);
       }
       else if (command[2] == 'W')
       {
-        newTargetPoleSide = POLE_OVER;
+        newTargetPoleSide = isAltAZ() || localSite.northHemisphere() ? POLE_OVER : POLE_UNDER;
         replyValueSetShort(true);
       }
       else replyNothing();
