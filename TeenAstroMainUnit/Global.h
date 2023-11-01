@@ -114,7 +114,7 @@ GeoAxis             geoA2;
 StatusAxis          staA1;
 StatusAxis          staA2;
 
-PierSide            newTargetPierSide = PIER_NOTVALID;
+PoleSide            newTargetPoleSide = POLE_NOTVALID;
 
 double              newTargetAlt = 0.0;                     // holds the altitude for goTos
 double              newTargetAzm = 0.0;                     // holds the azmiuth for goTos

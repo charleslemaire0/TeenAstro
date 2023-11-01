@@ -44,9 +44,9 @@ void checkST4()
     if (w1 != e1)
     {
       if (w1 == LOW)
-        ST4RA_state = GetPierSide() == PIER_EAST ? '+' : '-';
+        ST4RA_state = GetPoleSide() == POLE_UNDER ? '+' : '-';
       if (e1 == LOW)
-        ST4RA_state = GetPierSide() == PIER_EAST ? '-' : '+';
+        ST4RA_state = GetPoleSide() == POLE_UNDER ? '-' : '+';
     }
   }
   if ((n1 == n2) && (s1 == s2))

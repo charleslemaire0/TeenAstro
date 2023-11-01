@@ -29,7 +29,7 @@ Again:
     {
       bool decreasing = tempPosAxis2 < lastPosAxis2;
       //  Correct according to pier side and latitude
-      if ((GetPierSide() == PIER_WEST) == localSite.northHemisphere())
+      if ((GetPoleSide() == POLE_OVER) == localSite.northHemisphere())
         decreasing = !decreasing;
 
       // if Dec is decreasing, slow down Dec

@@ -16,11 +16,11 @@ void updateDeltaStart()
   staA2.updateDeltaStart();
 }
 
-PierSide GetPierSide()
+PoleSide GetPoleSide()
 {
   long axis1, axis2;
   setAtMount(axis1, axis2);
-  return -geoA2.poleDef <= axis2 && axis2 <= geoA2.poleDef ? PIER_EAST : PIER_WEST;
+  return -geoA2.poleDef <= axis2 && axis2 <= geoA2.poleDef ? POLE_UNDER : POLE_OVER;
 }
 
 bool TelescopeBusy()
@@ -81,7 +81,7 @@ void computeTrackingRate(bool apply)
 }
 
 void RateFromMovingTarget( Coord_EQ &EQprev,  Coord_EQ &EQnext,
-  const double &TimeRange, const PierSide &side, const bool &refr, 
+  const double &TimeRange, const PoleSide &side, const bool &refr, 
   double &A1_trackingRate, double &A2_trackingRate)
 {
   
@@ -130,7 +130,7 @@ void do_compensation_calc()
     return;
   }
 
-  PierSide side_tmp = GetPierSide();
+  PoleSide side_tmp = GetPoleSide();
   DriftHA = RequestedTrackingRateHA * TimeRange * 15;
   DriftHA /= 3600;
   DriftDEC = RequestedTrackingRateDEC * TimeRange;
@@ -249,7 +249,7 @@ bool isAltAZ()
 void SafetyCheck(const bool forceTracking)
 {
   // basic check to see if we're not at home
-  PierSide currentSide = GetPierSide();
+  PoleSide currentSide = GetPoleSide();
   long axis1, axis2;
   setAtMount(axis1, axis2);
 
@@ -288,14 +288,14 @@ void SafetyCheck(const bool forceTracking)
   {
     if (!checkMeridian(axis1, axis2, CHECKMODE_TRACKING))
     {
-      if ((staA1.dir && currentSide == PIER_WEST) || (!staA1.dir && currentSide == PIER_EAST))
+      if ((staA1.dir && currentSide == POLE_OVER) || (!staA1.dir && currentSide == POLE_UNDER))
       {
         lastError = ERRT_MERIDIAN;
         if (movingTo)
         {
           abortSlew = true;
         }
-        if (currentSide >= PIER_WEST && !forceTracking)
+        if (currentSide >= POLE_OVER && !forceTracking)
           sideralTracking = false;
         return;
       }
@@ -311,12 +311,12 @@ void SafetyCheck(const bool forceTracking)
 
     if (!checkPole(axis1, axis2, CHECKMODE_TRACKING))
     {
-      if ((staA1.dir && currentSide == PIER_EAST) || (!staA1.dir && currentSide == PIER_WEST))
+      if ((staA1.dir && currentSide == POLE_UNDER) || (!staA1.dir && currentSide == POLE_OVER))
       {
         lastError = ERRT_UNDER_POLE;
         if (movingTo)
           abortSlew = true;
-        if (currentSide == PIER_EAST && !forceTracking)
+        if (currentSide == POLE_UNDER && !forceTracking)
           sideralTracking = false;
         return;
       }

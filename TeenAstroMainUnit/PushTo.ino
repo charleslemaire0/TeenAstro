@@ -1,14 +1,14 @@
 
-byte PushToEqu(Coord_EQ EQ_T, PierSide preferedPierSide, double Lat, float* deltaA1, float* deltaA2)
+byte PushToEqu(Coord_EQ EQ_T, PoleSide preferedPoleSide, double Lat, float* deltaA1, float* deltaA2)
 {
-  return PushToHor(EQ_T.To_Coord_HO(Lat, RefrOptForGoto()), preferedPierSide, deltaA1, deltaA2);
+  return PushToHor(EQ_T.To_Coord_HO(Lat, RefrOptForGoto()), preferedPoleSide, deltaA1, deltaA2);
 }
 
-byte PushToHor(Coord_HO HO_T, PierSide preferedPierSide, float* deltaA1, float* deltaA2)
+byte PushToHor(Coord_HO HO_T, PoleSide preferedPoleSide, float* deltaA1, float* deltaA2)
 {
   double Axis1_target, Axis2_target = 0;
   long axis1_target, axis2_target = 0;
-  PierSide selectedSide = PierSide::PIER_NOTVALID;
+  PoleSide selectedSide = PoleSide::POLE_NOTVALID;
 
 
   if (HO_T.Alt() < minAlt * DEG_TO_RAD) return ERRGOTO_BELOWHORIZON;   // fail, below min altitude
@@ -18,7 +18,7 @@ byte PushToHor(Coord_HO HO_T, PierSide preferedPierSide, float* deltaA1, float* 
   Axis1_target = instr_T.Axis1() * RAD_TO_DEG;
   Axis2_target = instr_T.Axis2() * RAD_TO_DEG;
 
-  if (!predictTarget(Axis1_target, Axis2_target, preferedPierSide,
+  if (!predictTarget(Axis1_target, Axis2_target, preferedPoleSide,
     axis1_target, axis2_target, selectedSide))
   {
     return ERRGOTO_LIMITS; //fail, outside limit

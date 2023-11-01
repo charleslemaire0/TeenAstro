@@ -18,10 +18,16 @@
 
 #define Rad 57.29577951308232
 
-enum PierSide
+//enum PierSide
+//{
+//  PIER_NOTVALID, PIER_EAST, PIER_WEST
+//};
+
+enum PoleSide
 {
-  PIER_NOTVALID, PIER_EAST, PIER_WEST
+  POLE_NOTVALID, POLE_UNDER, POLE_OVER
 };
+
 
 double frac(double v);
 double cot(double n);

@@ -58,7 +58,7 @@ void Command_M()
     //         6=Outside limits
   {
     Coord_HO HO_T(0, newTargetAlt * DEG_TO_RAD, newTargetAzm * DEG_TO_RAD, true);
-    i = goToHor(HO_T, GetPierSide());
+    i = goToHor(HO_T, GetPoleSide());
     reply[0] = i + '0';
     reply[1] = 0;
   }
@@ -106,7 +106,7 @@ void Command_M()
       else if ((command[2] == 'n') || (command[2] == 's'))
       {
         enableST4GuideRate();
-        if (GetPierSide() == PIER_EAST)
+        if (GetPoleSide() == POLE_UNDER)
         {
           if (command[2] == 'n')
           {
@@ -153,13 +153,13 @@ void Command_M()
   //  Returns: Nothing
   case 'n':
 
-    if (GetPierSide() >= PIER_WEST)
+    if (GetPoleSide() >= POLE_OVER)
       MoveAxis2(true, Guiding::GuidingRecenter);
     else
       MoveAxis2(false, Guiding::GuidingRecenter);
     break;
   case 's':
-    if (GetPierSide() >= PIER_WEST)
+    if (GetPoleSide() >= POLE_OVER)
       MoveAxis2(false, Guiding::GuidingRecenter);
     else
      MoveAxis2(true, Guiding::GuidingRecenter);
@@ -173,7 +173,7 @@ void Command_M()
   //  getEqu(&r, &d, false);
   //  GeoAlign.altCor = 0.0;
   //  GeoAlign.azmCor = 0.0;
-  //  i = goToEqu(r, d, pierSide);
+  //  i = goToEqu(r, d, PoleSide);
   //  reply[0] = i + '0';
   //  reply[1] = 0;
   //  quietReply = true;
@@ -187,7 +187,7 @@ void Command_M()
     //       Returns an ERRGOTO
     double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     Coord_EQ EQ_T(0, newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
-    i = goToEqu(EQ_T, GetPierSide(), *localSite.latitude() * DEG_TO_RAD);
+    i = goToEqu(EQ_T, GetPoleSide(), *localSite.latitude() * DEG_TO_RAD);
     if (i == 0)
     {
       sideralTracking = true;
@@ -202,12 +202,12 @@ void Command_M()
   {
     //  :MU#   Goto the User Defined Target Object
     //         Returns an ERRGOTO
-    PierSide targetPierSide = GetPierSide();
+    PoleSide targetPoleSide = GetPoleSide();
     newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
     newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     Coord_EQ EQ_T(0, newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
-    i = goToEqu(EQ_T, targetPierSide, *localSite.latitude() * DEG_TO_RAD);
+    i = goToEqu(EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
     if (i == 0)
     {
       sideralTracking = true;
@@ -225,7 +225,7 @@ void Command_M()
     // reply ! if failed
     double Ra, Ha, Dec, alt = 0, axis1angle,axis2angle;
     long axis1step, axis2step;
-    PierSide predictedSide = PIER_NOTVALID;
+    PoleSide predictedSide = POLE_NOTVALID;
     char rastr[12];
     char decstr[12];
 
@@ -256,14 +256,14 @@ void Command_M()
     Coord_IN instr_T = HO_T.To_Coord_IN(alignment.Tinv);
     axis1angle = instr_T.Axis1() * RAD_TO_DEG;
     axis2angle = instr_T.Axis2() * RAD_TO_DEG;
-    bool ok = predictTarget(axis1angle, axis2angle, GetPierSide(), axis1step, axis2step,predictedSide);
+    bool ok = predictTarget(axis1angle, axis2angle, GetPoleSide(), axis1step, axis2step,predictedSide);
     if (!ok)
     {
       strcpy(reply, "?");
       break;
     }
-    else if (predictedSide == PIER_EAST) strcpy(reply, "E");
-    else if (predictedSide == PIER_WEST) strcpy(reply, "W");
+    else if (predictedSide == POLE_UNDER) strcpy(reply, "E");
+    else if (predictedSide == POLE_OVER) strcpy(reply, "W");
     break;
   }
   case '@':

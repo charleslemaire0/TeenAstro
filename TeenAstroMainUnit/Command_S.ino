@@ -1007,17 +1007,17 @@ void Command_S(Command& process_command)
     {
       if (command[2] == 'N')
       {
-        newTargetPierSide = PIER_NOTVALID;
+        newTargetPoleSide = POLE_NOTVALID;
         replyValueSetShort(true);
       }
       else if (command[2] == 'E')
       {
-        newTargetPierSide = PIER_EAST;
+        newTargetPoleSide = POLE_UNDER;
         replyValueSetShort(true);
       }
       else if (command[2] == 'W')
       {
-        newTargetPierSide = PIER_WEST;
+        newTargetPoleSide = POLE_OVER;
         replyValueSetShort(true);
       }
       else replyNothing();
