@@ -41,29 +41,36 @@ bool goHome()
 {
   if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return false; // fail, moving to home not allowed if PRK_PARKED
   if (lastError != ERRT_NONE) return false;                                // fail, cannot move if there are errors
-  if (movingTo) return false;                      // fail, moving to home not allowed during a move
-  if (guideA1.isBusy() || guideA2.isBusy()) return false;                       // fail, moving to home not allowed while guiding
-  cli();
-
-  staA1.target = geoA1.homeDef;
-  staA2.target = geoA2.homeDef;
-  staA1.start = staA1.pos;
-  staA2.start = staA2.pos;
-  SetsiderealClockSpeed(siderealClockSpeed);
-  sei();
+  if (TelescopeBusy()) return false;                     
   // stop tracking
   lastSideralTracking = false;
   sideralTracking = false;
-  movingTo = true;
+  GotoAxis(&geoA1.homeDef, &geoA2.homeDef);
   homeMount = true;
-  DecayModeGoto();
   return true;
+}
+
+
+void finalizeHome()
+{ 
+  if (backlashStatus == DONE)
+  {
+    backlashStatus = INIT;
+  }
+  parkClearBacklash();
+  if (backlashStatus == DONE)
+  {
+    syncAtHome();
+    homeMount = false;
+    // disable the stepper drivers
+    enable_Axis(false);
+  }
 }
 
 // resets telescope home position; user manually moves home position,
 bool syncAtHome()
 {
-  if (movingTo) return false;  // fail, forcing home not allowed during a move
+  if (TelescopeBusy()) return false;  // fail, forcing home not allowed during a move
   // default values for state variables
   staA2.dir = true;
   staA1.dir = true;
@@ -79,21 +86,13 @@ bool syncAtHome()
   XEEPROM.update(getMountAddress(EE_parkStatus), parkStatus);
   // clear pulse-guiding state
   guideA1.setIdle();
-  guideA1.duration = 0;
-  guideA1.durationLast = 0;
+  guideA1.duration = 0UL;
+  guideA1.durationLast = 0UL;
   guideA2.setIdle();
-  guideA2.duration = 0;
-  guideA2.durationLast = 0;
+  guideA2.duration = 0UL;
+  guideA2.durationLast = 0UL;
   // update starting coordinates to reflect NCP or SCP polar home position
-
-  staA1.start = geoA1.homeDef;
-  staA2.start = geoA2.homeDef;
-  cli();
-  staA1.target = staA1.start;
-  staA1.pos = staA1.start;
-  staA2.target = staA2.start;
-  staA2.pos = staA2.start;
-  sei();
+  syncAxis(&geoA1.homeDef, &geoA2.homeDef);
   // initialize/disable the stepper drivers
   DecayModeTracking();
   sideralTracking = false;

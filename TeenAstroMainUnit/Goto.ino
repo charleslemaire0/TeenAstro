@@ -17,16 +17,38 @@ void Angle2Step(double AngleAxis1, double AngleAxis2, PierSide Side, const doubl
 
 //--------------------------------------------------------------------------------------------------
 // GoTo, commands to move the telescope to an location or to report the current location
+void syncAxis(const long* axis1, const  long* axis2)
+{
+  cli();
+  staA1.start = *axis1;
+  staA2.start = *axis2;
+  staA1.pos = *axis1;
+  staA2.pos = *axis2;
+  staA1.target = *axis1;
+  staA2.target = *axis2;
+  sei();
+}
+
+void GotoAxis(const long* axis1Target, const long* axis2Target )
+{
+  cli();
+  movingTo = true;
+  SetsiderealClockSpeed(siderealClockSpeed);
+  staA1.resetToSidereal();
+  staA2.resetToSidereal();
+  staA1.start = staA1.pos;
+  staA2.start = staA2.pos;
+  staA1.target = *axis1Target;
+  staA2.target = *axis2Target;
+  sei();
+  DecayModeGoto();
+}
+
 bool SyncInstr(Coord_IN* instr, PierSide Side)
 {
   long axis1, axis2 = 0;
   Angle2Step(instr->Axis1() * RAD_TO_DEG, instr->Axis2() * RAD_TO_DEG, Side, geoA1.poleDef, &axis1, &axis2);
-  cli();
-  staA1.pos = axis1;
-  staA2.pos = axis2;
-  staA1.target = axis1;
-  staA2.target = axis2;
-  sei();
+  syncAxis(&axis1, &axis2);
   atHome = false;
   return true;
 }
@@ -49,12 +71,7 @@ void syncTwithE()
 #if HASEncoder
   long axis1 = (long)(encoderA1.r_deg() * geoA1.stepsPerDegree);
   long axis2 = (long)(encoderA2.r_deg() * geoA2.stepsPerDegree);
-  cli();
-  staA1.pos = axis1;
-  staA2.pos = axis2;
-  staA1.target = staA1.pos;
-  staA2.target = staA2.pos;
-  sei();
+  syncAxis(&axis1, &axis2);
   atHome = false;
 #endif
 }
@@ -184,21 +201,7 @@ Coord_EQ getEquTarget(double Lat)
   return getInstrTarget().To_Coord_EQ(alignment.T, RefrOptForGoto(), Lat);
 }
 
-// gets the telescopes current Apparent Alt and Azm!
-//Coord_HO getHorApp()
-//{
-//  return getInstr().To_Coord_HO(alignment.T, RefrOptForGoto());
-//}
 
-
-//Coord_HO getHorAppE()
-//{
-//#if HASEncoder
-//  return getInstrE().To_Coord_HO(alignment.T, RefrOptForGoto());
-//#else
-//  return getHorApp();
-//#endif
-//}
 
 // gets the telescopes current Topo Alt and Azm!
 Coord_HO getHorTopo()
@@ -316,24 +319,9 @@ ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2)
   {
     return static_cast<ErrorsGoTo>(lastError + 10);   // fail, telescop has Errors State
   }
-  if (staA1.fault || staA2.fault) return ErrorsGoTo::ERRGOTO_MOTOR; // fail, unspecified error
+
   atHome = false;
-  cli();
-  movingTo = true;
-  SetsiderealClockSpeed(siderealClockSpeed);
-
-  staA1.start = staA1.pos;
-  staA2.start = staA2.pos;
-
-  staA1.target = thisTargetAxis1;
-  staA2.target = thisTargetAxis2;
-
-  staA1.resetToSidereal();
-  staA2.resetToSidereal();
-
-  sei();
-
-  DecayModeGoto();
+  GotoAxis(&thisTargetAxis1, &thisTargetAxis2);
 
   return ErrorsGoTo::ERRGOTO_NONE;
 }

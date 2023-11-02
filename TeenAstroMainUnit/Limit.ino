@@ -112,8 +112,10 @@ void initLimit()
 {
   bool ok = initLimitMinAxis1();
   ok &= initLimitMaxAxis1();
+  ok &= geoA1.maxAxis > geoA1.minAxis;
   ok &= initLimitMinAxis2();
   ok &= initLimitMaxAxis2();
+  ok &= geoA2.maxAxis > geoA2.minAxis;
   if (!ok)
   {
     reset_EE_Limit();

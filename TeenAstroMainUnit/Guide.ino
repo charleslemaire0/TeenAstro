@@ -17,8 +17,8 @@ void apply_GuidingA2()
 }
 void StopGuiding()
 {
-  guideA1.duration = -1;
-  guideA2.duration = -1;
+  guideA1.duration = 0UL;
+  guideA2.duration = 0UL;
   cli();
   guideA1.brake();
   guideA2.brake();
@@ -38,7 +38,7 @@ void PerformPulseGuiding()
 {
   if (StopIfMountError())
     return;
-  if (guideA2.duration <= 0 && guideA1.duration <= 0 )
+  if (guideA2.duration == 0 && guideA1.duration == 0 )
   {
     cli();
     guideA1.brake();
@@ -54,7 +54,15 @@ void PerformPulseGuiding()
       { 
         apply_GuidingA1();
         // for pulse guiding, count down the mS and stop when timed out
-        guideA1.duration -= (long)(micros() - guideA1.durationLast);
+        unsigned long elapsedtime = micros() - guideA1.durationLast;
+        if (elapsedtime > guideA1.duration)
+        {
+          guideA1.duration = 0;
+        }
+        else
+        {
+          guideA1.duration -= elapsedtime;
+        }
         guideA1.durationLast = micros();        
       }
       else
@@ -71,7 +79,7 @@ void PerformPulseGuiding()
   }
   else
   {
-    guideA1.duration = -1;
+    guideA1.duration = 0UL;
   }
   if (guideA2.isMoving())
   {
@@ -81,7 +89,15 @@ void PerformPulseGuiding()
       {
         apply_GuidingA2();
         // for pulse guiding, count down the mS and stop when timed out
-        guideA2.duration -= (long)(micros() - guideA2.durationLast);
+        unsigned long elapsedtime = micros() - guideA2.durationLast;
+        if (elapsedtime > guideA2.duration)
+        {
+          guideA2.duration = 0;
+        }
+        else
+        {
+          guideA2.duration -= elapsedtime;
+        }
         guideA2.durationLast = micros();
         
       }
@@ -99,7 +115,7 @@ void PerformPulseGuiding()
   }
   else
   {
-    guideA2.duration = -1;
+    guideA2.duration = 0UL;
   }
 
 }
