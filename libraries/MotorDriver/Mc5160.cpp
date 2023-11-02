@@ -26,7 +26,7 @@ void Mc5160::initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t mtx, long clk
   setCurrentPos(0);
   setTargetPos(0);
   // default ramp parameters
-  drvP->VMAX(10000);
+  drvP->VMAX(100000);
   drvP->AMAX(200);
   drvP->DMAX(200);
   drvP->VSTART(0);
@@ -147,7 +147,7 @@ void Mc5160::setRatios(long fkHz)
 // enable / disable driver to allow changing parameters without moving
 void Mc5160::enable(void)
 {
-  drvP->toff(5);
+  drvP->toff(3);
 }
 void Mc5160::disable(void)
 {

@@ -23,12 +23,11 @@ void HAL_preInit(void)
 }
 
 void HAL_initSerial(void)
-{
-  Serial.begin(BAUD);
-  S_SHC.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
-
-  Serial2.begin(BAUD);
-  S_USB.attach_Stream((Stream *)&Serial2, COMMAND_SERIAL1);
+{ 
+  SHCSerial.begin(BAUD);
+  S_SHC.attach_Stream((Stream *)&SHCSerial, COMMAND_SERIAL);
+  SHC1Serial.begin(BAUD);
+  S_USB.attach_Stream((Stream *)&SHC1Serial, COMMAND_SERIAL1);
 }
 
  
@@ -47,8 +46,9 @@ void HAL_reboot(void)
   Serial.end();
   Serial1.end();
   Serial2.end();
-  delay(1000);
+
   EEPROM.commit();
+  delay(1000);
   ESP.restart();
 }
 

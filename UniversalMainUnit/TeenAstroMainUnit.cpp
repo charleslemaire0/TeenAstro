@@ -213,8 +213,7 @@ void setup()
 
 
   HAL_initSerial();
-
-
+  
   // Monitor - safety check and heartbeat
   xTaskCreate(
     monitorTask,    // Function that should be called
@@ -224,6 +223,7 @@ void setup()
     MON_TASK_PRTY,  // Task priority
     NULL            // Task handle
   );
+
   // Main control task
   xTaskCreate(
     controlTask, 
