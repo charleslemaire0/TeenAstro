@@ -599,7 +599,7 @@ void Command_GX()
     {
       reply[5] = 'G';
     }
-    if (GuidingState == GuidingPulse || GuidingState == GuidingST4) reply[6] = '*';
+    if (isGuidingStar()) reply[6] = '*';
     else if (GuidingState == GuidingRecenter) reply[6] = '+';
     else if (GuidingState == GuidingAtRate) reply[6] = '-';
     if (guideA1.isMFW()) reply[7] = '>';
@@ -714,7 +714,7 @@ void Command_GX()
     case 'P':
       // :GXJP# get if pulse guiding
     {
-      if (GuidingState == GuidingPulse || GuidingState == GuidingST4)
+      if (isGuidingStar())
       {
         replyLongTrue();
       }
