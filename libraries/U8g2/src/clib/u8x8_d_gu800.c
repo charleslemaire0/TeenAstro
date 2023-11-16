@@ -103,7 +103,7 @@ uint8_t u8x8_d_gu800_common(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *ar
 #endif
 #ifdef U8X8_WITH_SET_CONTRAST
     case U8X8_MSG_DISPLAY_SET_CONTRAST:
-      u8x8_cad_SendCmd(u8x8, 0x40 | (arg_int >> 4) );	/* GU800 has range from 0..15 */
+      u8x8_cad_SendCmd(u8x8, 0x4f - ((arg_int >> 4)&0x0f) );	/* GU800 has range from 0..15, max brightness is 0x040  */
       break;
 #endif
     case U8X8_MSG_DISPLAY_DRAW_TILE:
@@ -158,7 +158,7 @@ static const uint8_t u8x8_d_gu800_128x64_init_seq[] = {
   
   U8X8_CA(0x70, 0),                             /* horizontal shift */
   U8X8_C(0xb0),                                 /* vertical shift */  
-  U8X8_C(0x4f),                                 /* max brightness */
+  U8X8_C(0x40),                                 /* min (0x04f) / max (0x040) brightness */
   U8X8_C(0x84),                                 /* x increment */
   
   // U8X8_CA(0x024, 0x040)              /* display on */
@@ -185,7 +185,7 @@ static const u8x8_display_info_t u8x8_d_gu800_128x64_display_info =
   /* data_setup_time_ns = */ 40,    /* GU800: Min 40ns per datasheet */
   /* write_pulse_width_ns = */ 150, /* GU800: Min 150ns per datasheet */
   /* tile_width = */ 16,            /* width of 16*8=128 pixel */
-  /* tile_hight = */ 8,
+  /* tile_height = */ 8,
   /* default_x_offset = */ 0,
   /* flipmode_x_offset = */ 0,
   /* pixel_width = */ 128,
@@ -236,7 +236,7 @@ static const uint8_t u8x8_d_gu800_160x16_init_seq[] = {
   
   U8X8_CA(0x70, 0),                             /* horizontal shift */
   U8X8_C(0xb0),                                 /* vertical shift */  
-  U8X8_C(0x4f),                                 /* max brightness */
+  U8X8_C(0x40),                                 /* min (0x04f) / max (0x040) brightness */
   U8X8_C(0x84),                                 /* x increment */
   
   // U8X8_CA(0x024, 0x040)              /* display on */
@@ -263,7 +263,7 @@ static const u8x8_display_info_t u8x8_d_gu800_160x16_display_info =
   /* data_setup_time_ns = */ 40,    /* GU800: Min 40ns per datasheet */
   /* write_pulse_width_ns = */ 150, /* GU800: Min 150ns per datasheet */
   /* tile_width = */ 20,            /* width of 8*20=160 pixel */
-  /* tile_hight = */ 2,
+  /* tile_height = */ 2,
   /* default_x_offset = */ 0,
   /* flipmode_x_offset = */ 0,
   /* pixel_width = */ 160,
