@@ -274,39 +274,6 @@ void AltAzMount::updateRaDec(void)
   getEqu(&currentRA, &currentDec, localSite.cosLat(), localSite.sinLat(), false);
 }
 
-void AltAzMount::initTransformation(bool reset)
-{
-  float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
-  mount.mP->hasStarAlignment(false);
-  mount.mP->alignment.clean();
-  byte TvalidFromEEPROM = XEEPROM.read(getMountAddress(EE_Tvalid));
-
-  if (TvalidFromEEPROM == 1 && reset)
-  {
-    XEEPROM.write(getMountAddress(EE_Tvalid), 0);
-  }
-  if (TvalidFromEEPROM == 1 && !reset)
-  {
-    t11 = XEEPROM.readFloat(getMountAddress(EE_T11));
-    t12 = XEEPROM.readFloat(getMountAddress(EE_T12));
-    t13 = XEEPROM.readFloat(getMountAddress(EE_T13));
-    t21 = XEEPROM.readFloat(getMountAddress(EE_T21));
-    t22 = XEEPROM.readFloat(getMountAddress(EE_T22));
-    t23 = XEEPROM.readFloat(getMountAddress(EE_T23));
-    t31 = XEEPROM.readFloat(getMountAddress(EE_T31));
-    t32 = XEEPROM.readFloat(getMountAddress(EE_T32));
-    t33 = XEEPROM.readFloat(getMountAddress(EE_T33));
-    mount.mP->alignment.setT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
-    mount.mP->alignment.setTinvFromT();
-    mount.mP->hasStarAlignment(true);
-  }
-  else
-  {
-    alignment.addReferenceDeg(90, 0, 90, 0);
-    alignment.addReferenceDeg(180, 0, 180, 0);
-    alignment.calculateThirdReference();
-  }
-}
 
 
 // These functions are never called. They keep the linker happy
@@ -340,4 +307,19 @@ bool AltAzMount::checkPole(UNUSED(double axis1), UNUSED(CheckMode mode))
   return true;
 }
 
+/*
+ * eqToAxes - used by pointing model
+ *
+ * from the Eq coordinates of a star, find the mount's axis positions 
+ * pierSide is not applicable for AltAz mount
+ */
 
+bool AltAzMount::eqToAxes(EqCoords *eP, Axes *aP, UNUSED (PierSide ps))
+{
+  HorCoords hor;
+  bool refraction = false;
+
+  EquToHor(eP->ha, eP->dec, refraction, &hor.az, &hor.alt, localSite.cosLat(), localSite.sinLat());
+  horToAxes(&hor, aP);
+  return true;
+}

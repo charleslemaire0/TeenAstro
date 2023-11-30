@@ -326,11 +326,8 @@ class TeenAstro(object):
   def clearAlignment(self):
     return self.getValue(":AC#")
 
-  def align2Stars(self):
+  def addStar(self):
     return self.getValue(":A2#")
-
-  def align3Stars(self):
-    return self.getValue(":A3#")
 
   def enableTracking(self):
     self.sendCommand(":Te#")
@@ -395,6 +392,12 @@ class TeenAstro(object):
       print (val)
       self.timeZone = 0      
     return self.timeZone
+
+  def alignStatus(self):
+    return(self.getValue(':GXAs#'))
+    
+  def alignNumStars(self):
+    return(self.getValue(':GXAn#'))
 
   def guideCmd(self, dir, ms):
     self.port.write((":Mg%1s%04u#" % (dir, ms)).encode('utf-8'))  # does not return a value

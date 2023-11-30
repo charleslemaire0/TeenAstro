@@ -1,6 +1,5 @@
 bool setPark();
 void unsetPark();
-void saveAlignModel();
 byte park();
 bool syncAtPark();
 bool iniAtPark();

@@ -15,9 +15,9 @@ void Command_GX()
     // :GXAn# Align Model values
   {
     float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
-    if (mount.mP->hasStarAlignment())
+    if (mount.mP->pm.alignment.isReady())
     {
-      mount.mP->alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
+      mount.mP->pm.alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
     }
     switch (command[3])
     {
@@ -60,6 +60,14 @@ void Command_GX()
     case 'c':
       // :GXAc#
       TrackingCompForAlignment ? sprintf(reply, "y#") : sprintf(reply, "n#");
+      break;
+    case 's': // status of pointing model (enabled / disabled)
+      // :GXAs#
+      sprintf(reply, "%d#", mount.mP->pm.isReady());
+      break;
+    case 'n': // number of stars in pointing model
+      // :GXAn#
+      sprintf(reply, "%d#", mount.mP->pm.numStars());
       break;
 #if 0      
     case 'a':

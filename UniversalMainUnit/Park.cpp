@@ -48,7 +48,7 @@ bool setPark()
     XEEPROM.writeLong(getMountAddress(EE_posAxis2), d);
 
     // and the align
-    saveAlignModel();
+    mount.mP->pm.save();
     parkSaved = true;
     XEEPROM.write(getMountAddress(EE_parkSaved), parkSaved);
     if (lastsiderealTracking)
@@ -71,26 +71,6 @@ void unsetPark()
   }
 }
 
-void saveAlignModel()
-{
-  // and store our corrections
-  float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
-  XEEPROM.write(getMountAddress(EE_Tvalid), mount.mP->hasStarAlignment());
-  if (mount.mP->hasStarAlignment())
-  {
-    mount.mP->alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
-  }
-  XEEPROM.writeFloat(getMountAddress(EE_T11), t11);
-  XEEPROM.writeFloat(getMountAddress(EE_T12), t12);
-  XEEPROM.writeFloat(getMountAddress(EE_T13), t13);
-  XEEPROM.writeFloat(getMountAddress(EE_T21), t21);
-  XEEPROM.writeFloat(getMountAddress(EE_T22), t22);
-  XEEPROM.writeFloat(getMountAddress(EE_T23), t23);
-  XEEPROM.writeFloat(getMountAddress(EE_T31), t31);
-  XEEPROM.writeFloat(getMountAddress(EE_T32), t32);
-  XEEPROM.writeFloat(getMountAddress(EE_T33), t33);
-  return;
-}
 
 
 // moves the telescope to the park position, stops tracking

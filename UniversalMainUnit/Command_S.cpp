@@ -62,7 +62,7 @@ void Command_SX()
       {
         if (doesRefraction.setPole(i))
         {
-          mount.mP->initTransformation(true);
+          mount.mP->initModel(true);
           syncAtHome();
         }
         ok = true;
@@ -869,7 +869,7 @@ void Command_S(Command& process_command)
     {
       localSite.setLat(f);
       initHome();
-      mount.mP->initTransformation(true);
+      mount.mP->initModel(true);
       syncAtHome();
       replyShortTrue();
     }

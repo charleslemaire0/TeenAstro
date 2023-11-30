@@ -95,7 +95,7 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
   mount.backlashA2.inSteps = (int)round(((double)mount.backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
   sei();
 
-  mount.mP->initTransformation(deleteAlignment);
+  mount.mP->initModel(deleteAlignment);
   if (deleteHP)
   {
     unsetPark();

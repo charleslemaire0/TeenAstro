@@ -62,6 +62,7 @@ enum SID_Mode
 
 #include <math.h>
 #include "FirmwareDef.h"
+#include "TATypes.h"
 #include "HAL_TeenAstro.h"
 #include "XEEPROM.hpp"
 #include "EEPROM_init.h"
@@ -70,6 +71,7 @@ enum SID_Mode
 #include "TelTimer.hpp"
 #include "Refraction.hpp"
 #include "CoordConv.hpp"
+#include "PointingModel.h"
 #include "Command.h"
 #include "ValueToString.h"
 #include "TMCStepper.h"
@@ -116,6 +118,7 @@ void SafetyCheck(void);
 #define MON_TASK_PERIOD 100  // milliseconds
 #define CMD_TASK_PERIOD  1
 #define CTRL_TASK_PERIOD 1 
+
 
 GLOBAL QueueHandle_t controlQueue;
 GLOBAL SemaphoreHandle_t hwMutex;       // to prevent concurrent hardware accesses 
@@ -175,7 +178,6 @@ GLOBAL double              RequestedTrackingRateHA; // in RA seconds per siderea
 GLOBAL double              RequestedTrackingRateDEC; // in DEC seconds per sidereal second
 GLOBAL long                storedTrackingRateRA;
 GLOBAL long                storedTrackingRateDEC;
-GLOBAL unsigned long       lastSetTrackingEnable;
 
 //Guiding
 GLOBAL volatile Guiding    GuidingState;

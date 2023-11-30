@@ -36,56 +36,30 @@ void Command_A()
   switch (command[1])
   {
   case '0':
-    // telescope should be set in the polar home for a starting point
-    mount.mP->initTransformation(true);
-    syncAtHome();
-    // enable the stepper drivers
+    mount.mP->pm.init(false);
     vTaskDelay(10);
-    startTracking();
-    lastSetTrackingEnable = millis();
     replyShortTrue();
     break;
   case '2':
   {
-    Axes axes;
-    HorCoords hc;
-    Steps steps;
-    double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    EquToHor(newTargetHA, newTargetDec, doesRefraction.forGoto, &hc.az, &hc.alt, localSite.cosLat(), localSite.sinLat());
+    EqCoords eq;
+    eq.ha = haRange(rtk.LST() * 15.0 - newTargetRA);
+    eq.dec = newTargetDec;
 
-    if (mount.mP->alignment.getRefs() == 0)
-    {
-      mount.mP->syncAzAlt(hc.az, hc.alt, mount.mP->GetPierSide());
-    }
+    mount.mP->pm.addStar(&eq);
 
-    steps.steps1 = motorA1.getCurrentPos();
-    steps.steps2 = motorA2.getCurrentPos();
-    mount.mP->stepsToAxes(&steps, &axes);
-
-    mount.mP->alignment.addReferenceDeg(hc.az, hc.alt, axes.axis1, axes.axis2);
-    if (mount.mP->alignment.getRefs() == 2)
-    {
-      mount.mP->alignment.calculateThirdReference();
-      if (mount.mP->alignment.isReady())
-      {
-        mount.mP->hasStarAlignment(true);
-
-//        motorA1.setTargetPos(motorA1.getCurrentPos());
-//        motorA2.setTargetPos(motorA2.getCurrentPos());
-      }
-    }
     replyShortTrue();
     break;
   }
   case 'C':
   case 'A':
-    mount.mP->initTransformation(true);
+    mount.mP->initModel(false);
     syncAtHome();
     autoAlignmentBySync = command[1] == 'A';
     replyShortTrue();
     break;
   case 'W':
-    saveAlignModel();
+    mount.mP->pm.save();
     replyShortTrue();
     break;
   default:
@@ -152,6 +126,7 @@ void Command_C()
     case 'S':
     {
       double newTargetHA;
+#if 0      
       if (autoAlignmentBySync)
       {
         newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
@@ -171,8 +146,9 @@ void Command_C()
             motorA2.setTargetPos(motorA2.getCurrentPos());
             autoAlignmentBySync = false;
           }
-      }
+      }      
       else
+#endif      
       {
         newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         mount.mP->syncEqu(newTargetHA, newTargetDec, targetPierSide, localSite.cosLat(), localSite.sinLat());
@@ -442,10 +418,7 @@ void Command_T()
   case 'e':
     if (parkStatus() == PRK_UNPARKED)
     {
-//      lastSetTrackingEnable = millis();
-//     atHome = false;
       startTracking();
-//      computeTrackingRate(true);
       replyShortTrue();
     }
     else
@@ -530,7 +503,7 @@ void Command_W()
     localSite.ReadSiteDefinition(currentSite);
     rtk.resetLongitude(*localSite.longitude());
     initHome();
-    mount.mP->initTransformation(true);
+    mount.mP->initModel(true);
     syncAtHome();
     replyNothing();
     break;

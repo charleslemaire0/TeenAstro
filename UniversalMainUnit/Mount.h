@@ -3,45 +3,6 @@
 
 enum MountType { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
 
-struct Backlash
-{
-  int             inSeconds;
-  volatile int    inSteps;
-  volatile bool   correcting;
-  volatile int    movedSteps;
-  volatile double timerRate;
-};
-
-struct EqCoords
-{
-  double ha;
-  double dec;
-};
-
-struct HorCoords
-{
-  double az;
-  double alt;
-};
-
-struct Axes
-{
-  double axis1;
-  double axis2;
-};
-
-struct Steps
-{
-  long steps1;
-  long steps2;
-};
-
-// Axis speeds
-struct Speeds
-{
-  double speed1;
-  double speed2;
-};
 
 // Callbacks for guiding timers
 void stopGuidingAxis1(TimerHandle_t xTimer);
@@ -58,6 +19,7 @@ public:
   virtual bool getEqu(double *HA, double *Dec, const double *cosLat, const double *sinLat, bool returnHA);
   virtual bool getHorApp(HorCoords*);
   virtual void stepsToAxes(Steps*, Axes*);
+  virtual bool eqToAxes(EqCoords *eP, Axes *aP, PierSide ps);
   virtual bool syncEqu(double HA, double Dec, PierSide Side, const double *cosLat, const double *sinLat);
   virtual bool syncAzAlt(double Azm, double Alt, PierSide Side);
   virtual byte Flip();
@@ -72,21 +34,16 @@ public:
   virtual int decDirection(void);
   virtual void updateRaDec(void);
   virtual bool checkPole(double axis1, CheckMode mode);
-  virtual void initTransformation(bool reset);
-  bool hasStarAlignment(void)
+  void initModel(bool reset)
   {
-    return isAligned;
+    pm.init(reset);
   }
-  void hasStarAlignment(bool b)
-  {
-    isAligned = b;
-  }
-  CoordConv alignment;
+  PointingModel pm;
+//  CoordConv alignment;
 protected:
   double  trackingSpeed;            // multiple of sidereal speed 
   Speeds  trackingSpeeds;           // actual tracking speeds including guiding and spiral           
   double  currentRA, currentDec;
-  bool    isAligned;
 };
 
 
@@ -137,6 +94,7 @@ public:
   void stepsToAxes(Steps *, Axes *);
   bool horToAxes(HorCoords *, Axes *);
   void axesToHor(Axes *, HorCoords *);
+  bool eqToAxes(EqCoords*, Axes*, PierSide);  // REMOVE
   byte goToEqu(EqCoords*);
   byte goToHor(HorCoords *);
   bool getEqu(double *HA, double *Dec, const double *cosLat, const double *sinLat, bool returnHA);

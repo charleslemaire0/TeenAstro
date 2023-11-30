@@ -139,13 +139,9 @@ class alignmentPlot():
     if (ev == 'clearAlign'):
       self.log('Clear Alignment')
       self.log(self.ta.clearAlignment())
-    if (ev == 'align2'):
-      self.log('Align 2 stars')
-      self.log(self.ta.align2Stars())
-    if (ev == 'align3'):
-      self.log('Align 3 stars')
-      self.log(self.ta.align3Stars())
-
+    if (ev == 'addStar'):
+      self.log('Add Star')
+      self.log(self.ta.addStar())
 
 
 
@@ -211,6 +207,9 @@ class alignmentPlot():
 
     self.window['ra_disp'].Update(self.ra2string(deg2dms(self.ta.getRA())))
     self.window['dec_disp'].Update(self.dec2string(deg2dms(self.ta.getDeclination())))
+
+    self.window['align_status'].Update(self.ta.alignStatus())
+    self.window['align_stars'].Update(self.ta.alignNumStars())   
 
     projection = build_stereographic_projection(center)
     star_positions = self.site.at(t).observe(Star(ra_hours=self.stars.ra_hours, dec_degrees=self.stars.dec_degrees)) 
