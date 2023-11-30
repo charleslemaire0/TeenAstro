@@ -4,7 +4,7 @@
  * Used code from Teemu Mäntykallio
  * Initializes the library and runs motor commands
  */
-#ifdef __ESP32__
+#ifdef BOARD_esp32dev
 #define Axis1CSPin      32
 #define Axis1DirPin     25
 #define Axis1StepPin    27
@@ -19,9 +19,25 @@
 #define ISR(f) void IRAM_ATTR f(void) 
 #define PORT Serial2
 #define DBG Serial1
-#define DBG1 debugOut
 EspSoftwareSerial::UART debugOut(2,4);  // rx, tx pins
 #endif
+
+
+#ifdef BOARD_esp32s3_norm
+#define Axis1CSPin      10
+#define Axis1DirPin     3
+#define Axis1StepPin    17
+#define Axis1EnablePin  0
+
+#define ISR(f) void IRAM_ATTR f(void) 
+#define PORT Serial
+#endif
+
+
+
+
+
+
 
 #ifdef __arm__
 
@@ -337,22 +353,9 @@ void init(char *arg1, char *arg2)
  	pinMode(Axis1CSPin, OUTPUT);
   pinMode(Axis1StepPin, OUTPUT);
   pinMode(Axis1DirPin, OUTPUT);
-#ifdef __ESP32__  
-  Serial.begin(57600);
-#endif
-//  pinMode(Axis2CSPin, OUTPUT);
-//  pinMode(Axis2EnablePin, OUTPUT);
-//  pinMode(Axis2StepPin, OUTPUT);
-//  pinMode(Axis2DirPin, OUTPUT);
-
   digitalWrite(Axis1EnablePin, LOW); 
 
   SPI.begin();
-#ifdef __arm__
-//  pinMode(SPI_MOSI, OUTPUT);
-//  pinMode(MISO, INPUT_PULLUP);
-#endif  
-
 
   hwMutex = xSemaphoreCreateMutex();  // hardware accesses (ie SPI etc.)
 
@@ -410,15 +413,6 @@ CMD_STRUCT Commands[] =
 
 #define NUM_COMMANDS (sizeof(Commands) / sizeof (CMD_STRUCT))
 
-
-void HAL_debug0(uint8_t b)
-{
-  DBG.write(b);
-}
-void HAL_debug1(uint8_t b)
-{
-  debugOut.write(b);
-}
 
 
 // if string is a known command with up to 2 arguments, return true
@@ -520,8 +514,6 @@ void mainLoopTask(void *arg)
 void setup() 
 {
   PORT.begin(57600);
-  DBG.begin(57600);
-  debugOut.begin(57600);
 
   delay(1000);
   PORT.println("\nDebug Monitor");

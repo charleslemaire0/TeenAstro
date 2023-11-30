@@ -19,16 +19,14 @@ const char* HAL_getBoardVersion(void)
 
 void HAL_preInit(void)
 {
-  Serial1.begin(57600);
+  Serial.begin(BAUD);
+  Serial1.begin(BAUD, SERIAL_8N1, SHCRx, SHCTx);
 }
 
 void HAL_initSerial(void)
 {
-  Serial.begin(BAUD);
-  S_SHC.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
-
-  Serial2.begin(BAUD);
-  S_USB.attach_Stream((Stream *)&Serial2, COMMAND_SERIAL1);
+  S_USB.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
+  S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
 }
 
  
