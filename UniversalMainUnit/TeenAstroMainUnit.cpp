@@ -211,7 +211,6 @@ void setup()
   // prep timers
   rtk.updateTimers();
 
-
   HAL_initSerial();
   
   // Monitor - safety check and heartbeat

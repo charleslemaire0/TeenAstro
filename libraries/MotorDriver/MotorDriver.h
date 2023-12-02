@@ -39,12 +39,12 @@ public:
     drvP->tbl(2);
     drvP->toff(3);
     drvP->hstrt(0);
-    drvP->hend(3);
-    drvP->irun(31);
+    drvP->hend(0);
+    drvP->irun(18);
     drvP->ihold(5);
-    drvP->pwm_ofs(78);
+    drvP->pwm_ofs(91);
     drvP->pwm_grad(30);
-    drvP->GLOBAL_SCALER(0);
+    drvP->GLOBAL_SCALER(104);
     drvP->en_pwm_mode(silent);
     drvP->pwm_autoscale(silent);
     drvP->TPWMTHRS(1024);

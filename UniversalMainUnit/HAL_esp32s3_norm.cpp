@@ -28,6 +28,7 @@ void HAL_initSerial(void)
   S_SHC.attach_Stream((Stream *)&SHCSerial, COMMAND_SERIAL);
   SHC1Serial.begin(BAUD);
   S_USB.attach_Stream((Stream *)&SHC1Serial, COMMAND_SERIAL1);
+  GNSSSerial.begin(9600);
 }
 
  
@@ -46,6 +47,7 @@ void HAL_reboot(void)
   Serial.end();
   Serial1.end();
   Serial2.end();
+  GNSSSerial.end();
 
   EEPROM.commit();
   delay(1000);

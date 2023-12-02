@@ -256,12 +256,17 @@ public:
       m_tmc5160->push();
       m_tmc5160->TPOWERDOWN(255);
       m_tmc5160->tbl(2);
-      m_tmc5160->toff(5);
-      m_tmc5160->hstrt(5);
-      m_tmc5160->hend(3);
+      m_tmc5160->toff(3);
+      m_tmc5160->hstrt(0);
+      m_tmc5160->hend(0);
+      m_tmc5160->irun(18);
+      m_tmc5160->ihold(5);
+      m_tmc5160->pwm_ofs(91);
+      m_tmc5160->pwm_grad(30);
+      m_tmc5160->GLOBAL_SCALER(104);
       m_tmc5160->en_pwm_mode(silent);
       m_tmc5160->pwm_autoscale(silent);
-      m_tmc5160->TPWMTHRS(64);
+      m_tmc5160->TPWMTHRS(1024);
       m_tmc5160->intpol(1);
 
       setCurrent(Curr); // mA

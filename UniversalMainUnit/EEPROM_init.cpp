@@ -42,7 +42,7 @@ void writeDefaultMount()
   // init the default maxRate
   XEEPROM.writeInt(getMountAddress(EE_maxRate), DefaultR4);
 
-  // init degree for acceleration 1�
+  // init degree for acceleration 1°
   XEEPROM.write(getMountAddress(EE_degAcc), (uint8_t)(1 * 10));
 
   // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
@@ -231,8 +231,8 @@ void writeDefaultEEPROMmotor()
   XEEPROM.writeInt(getMountAddress(EE_motorA1stepRot), 200);
   XEEPROM.write(getMountAddress(EE_motorA1micro), 7);
   XEEPROM.write(getMountAddress(EE_motorA1reverse), 0);
-  XEEPROM.write(getMountAddress(EE_motorA1highCurr), 15);
-  XEEPROM.write(getMountAddress(EE_motorA1lowCurr), 15);
+  XEEPROM.write(getMountAddress(EE_motorA1highCurr), 20);
+  XEEPROM.write(getMountAddress(EE_motorA1lowCurr), 10);
   XEEPROM.write(getMountAddress(EE_motorA1silent), 1);
 
   XEEPROM.writeInt(getMountAddress(EE_backlashAxis2), 0);
@@ -240,8 +240,8 @@ void writeDefaultEEPROMmotor()
   XEEPROM.writeInt(getMountAddress(EE_motorA2stepRot), 200);
   XEEPROM.write(getMountAddress(EE_motorA2micro), 7);
   XEEPROM.write(getMountAddress(EE_motorA2reverse), 0);
-  XEEPROM.write(getMountAddress(EE_motorA2highCurr), 15);
-  XEEPROM.write(getMountAddress(EE_motorA2lowCurr), 15);
+  XEEPROM.write(getMountAddress(EE_motorA2highCurr), 20);
+  XEEPROM.write(getMountAddress(EE_motorA2lowCurr), 10);
   XEEPROM.write(getMountAddress(EE_motorA2silent), 1);
 }
 

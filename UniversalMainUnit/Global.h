@@ -58,7 +58,7 @@ enum SID_Mode
 #define DefaultR1 4
 #define DefaultR2 16
 #define DefaultR3 64
-#define DefaultR4 600
+#define DefaultR4 1000
 
 #include <math.h>
 #include "FirmwareDef.h"
@@ -87,6 +87,7 @@ enum SID_Mode
 #include "Control.h"
 #include "Monitor.h"
 #include "Guiding.h"
+#include <TinyGPS++.h>
 
 // TeenAstroMainUnit.h
 void initMotors(bool);
@@ -183,7 +184,7 @@ GLOBAL Guiding             lastGuidingState;
 GLOBAL volatile byte       activeGuideRate;
 GLOBAL double              guideTimerBaseRate1;
 GLOBAL double              guideTimerBaseRate2;
-GLOBAL double  guideRates[5];
+GLOBAL double              guideRates[5];
 GLOBAL GuideAxis           guideA1;
 GLOBAL GuideAxis           guideA2;
 
@@ -197,3 +198,8 @@ GLOBAL char                Axis1DriverName[20];
 GLOBAL char                Axis2DriverName[20];
 GLOBAL char                mountNames[maxNumMounts][MountNameLen];
 GLOBAL bool                reboot_unit;
+
+//GNSS - GPS
+//GLOBAL bool                hasGNSS = true;
+#define hasGNSS true
+GLOBAL TinyGPSPlus         gps;
