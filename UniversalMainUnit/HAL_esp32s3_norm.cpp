@@ -19,7 +19,11 @@ const char* HAL_getBoardVersion(void)
 
 void HAL_preInit(void)
 {
-  Serial1.begin(57600);
+  #ifdef TESTING
+    Serial1.begin(57600);
+    #else
+
+  #endif // TESTING
 }
 
 void HAL_initSerial(void)
