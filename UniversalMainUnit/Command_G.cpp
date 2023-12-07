@@ -1,4 +1,5 @@
 #include "Global.h"
+#include "Command_GNSS.h"
 //----------------------------------------------------------------------------------
 // :GXnn#  Get TeenAstro value
 //         Returns: value
@@ -493,7 +494,16 @@ void Command_GX()
       case PIER_WEST: reply[13] = 'W'; break;
       default: reply[13] = '?'; break;
     }
-    reply[14] = 'A';      // no GNSS
+    char val = 0;
+    bitWrite(val, 0, hasGNSS);
+    if (iSGNSSValid())
+    {
+      bitWrite(val, 1, true);
+      bitWrite(val, 2, isTimeSyncWithGNSS());
+      bitWrite(val, 3, isLocationSyncWithGNSS());
+      bitWrite(val, 4, isHdopSmall());
+    }
+    reply[14] = 'A' + val;      // GNSS
     reply[15] = '0' + lastError();
     reply[16] = 'A';      // no encoder
     reply[17] = '#';

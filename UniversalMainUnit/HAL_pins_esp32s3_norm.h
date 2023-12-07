@@ -11,6 +11,10 @@
 #define Axis2CSPin      45
 #define FocusCSPin       2
 
+#define AxisSDIPin      11
+#define AxisSDOPin      13
+#define AxisSCKPin      12
+
 // Serial interfaces
 // Serial (SHC1)
 #define USBRx           19  //USB-

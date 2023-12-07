@@ -37,9 +37,14 @@ public:
     drvP->push();
     drvP->TPOWERDOWN(255);		// leave at default for faster powerdown
     drvP->tbl(2);
-    drvP->toff(5);
-    drvP->hstrt(5);
-    drvP->hend(3);
+    drvP->toff(3);
+    drvP->hstrt(0);
+    drvP->hend(0);
+    drvP->irun(18);
+    drvP->ihold(5);
+    drvP->pwm_ofs(91);
+    drvP->pwm_grad(30);
+    drvP->GLOBAL_SCALER(104);
     drvP->en_pwm_mode(silent);
     drvP->pwm_autoscale(silent);
     drvP->TPWMTHRS(1024);

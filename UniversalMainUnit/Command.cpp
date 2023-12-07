@@ -1,4 +1,5 @@
 #include "Global.h"
+#include "Command_GNSS.h"
 
 #if 0
 // useful for tracing commands with debugger
@@ -13,6 +14,7 @@ void processCommandsTask(void *arg)
   while(1)
   { 
     processCommands();
+    UpdateGnss();
     vTaskDelay(CMD_TASK_PERIOD  / portTICK_PERIOD_MS);
   }
 }
@@ -25,6 +27,7 @@ void processCommands()
 
   S_USB.update();
   S_SHC.update();
+
   process_command = COMMAND_NONE;
   S_USB.getCmdPar(command, process_command);
   S_SHC.getCmdPar(command, process_command);
@@ -66,11 +69,9 @@ void processCommands()
   case 'G':
     Command_G();
     break;
-#if 0
   case 'g':
     Command_GNSS();
     break;
-#endif
   case 'h':
     Command_h();
     break;

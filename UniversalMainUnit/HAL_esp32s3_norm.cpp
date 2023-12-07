@@ -27,6 +27,7 @@ void HAL_initSerial(void)
 {
   S_USB.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
   S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
+  GNSSSerial.begin(9600);
 }
 
  
