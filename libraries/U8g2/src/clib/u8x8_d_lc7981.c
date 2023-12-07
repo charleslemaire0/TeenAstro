@@ -203,7 +203,7 @@ static const u8x8_display_info_t u8x8_lc7981_160x80_display_info =
   /* data_setup_time_ns = */ 220,	
   /* write_pulse_width_ns = */ 20,	
   /* tile_width = */ 20,		/* width of 20*8=160 pixel */
-  /* tile_hight = */ 10,
+  /* tile_height = */ 10,
   /* default_x_offset = */ 0,	
   /* flipmode_x_offset = */ 0,	
   /* pixel_width = */ 160,
@@ -275,7 +275,7 @@ static const u8x8_display_info_t u8x8_lc7981_160x160_display_info =
   /* data_setup_time_ns = */ 220,	
   /* write_pulse_width_ns = */ 20,	
   /* tile_width = */ 20,		/* width of 20*8=160 pixel */
-  /* tile_hight = */ 20,
+  /* tile_height = */ 20,
   /* default_x_offset = */ 0,	
   /* flipmode_x_offset = */ 0,	
   /* pixel_width = */ 160,
@@ -347,7 +347,7 @@ static const u8x8_display_info_t u8x8_lc7981_240x128_display_info =
   /* data_setup_time_ns = */ 220,	
   /* write_pulse_width_ns = */ 20,	
   /* tile_width = */ 30,		/* width of 30*8=240 pixel */
-  /* tile_hight = */ 16,
+  /* tile_height = */ 16,
   /* default_x_offset = */ 0,	
   /* flipmode_x_offset = */ 0,	
   /* pixel_width = */ 240,
@@ -363,7 +363,7 @@ static const uint8_t u8x8_d_lc7981_240x128_init_seq[] = {
   U8X8_CA(0x00, 0x32),			/* display on (bit 5), master mode on (bit 4), graphics mode on (bit 1) */
   U8X8_CA(0x01, 0x07),			/* character/bits per pixel pitch */
   U8X8_CA(0x02, 240/8-1),		/* number of chars/byte width of the screen */
-  U8X8_CA(0x03, 128),			/* time division, issue https://github.com/olikraus/u8g2/issues/1581 */
+  U8X8_CA(0x03, 16*8-1),			/* time division */
   U8X8_CA(0x08, 0x00),			/* display start low */
   U8X8_CA(0x09, 0x00),			/* display start high */
 
@@ -420,7 +420,7 @@ static const u8x8_display_info_t u8x8_lc7981_240x64_display_info =
   /* data_setup_time_ns = */ 220,	
   /* write_pulse_width_ns = */ 20,	
   /* tile_width = */ 30,		/* width of 30*8=240 pixel */
-  /* tile_hight = */ 8,
+  /* tile_height = */ 8,
   /* default_x_offset = */ 0,	
   /* flipmode_x_offset = */ 0,	
   /* pixel_width = */ 240,
@@ -492,7 +492,7 @@ static const u8x8_display_info_t u8x8_lc7981_128x128_display_info =
   /* data_setup_time_ns = */ 220,	
   /* write_pulse_width_ns = */ 20,	
   /* tile_width = */ 16,		/* width of 16*8=128 pixel */
-  /* tile_hight = */ 16,
+  /* tile_height = */ 16,
   /* default_x_offset = */ 0,	
   /* flipmode_x_offset = */ 0,	
   /* pixel_width = */ 128,

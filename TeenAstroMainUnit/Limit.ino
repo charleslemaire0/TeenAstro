@@ -8,9 +8,9 @@ void setAtMount(long &axis1, long &axis2)
   sei();
 }
 
-PierSide getPierSide(const long &axis2)
+PoleSide getPoleSide(const long &axis2)
 {
-  return -geoA2.quaterRot <= axis2 && axis2 <= geoA2.quaterRot ? PIER_EAST : PIER_WEST;
+  return -geoA2.quaterRot <= axis2 && axis2 <= geoA2.quaterRot ? POLE_UNDER : POLE_OVER;
 }
 
 //for GEM
@@ -18,13 +18,13 @@ bool checkPole(const long &axis1, const long& axis2, CheckMode mode)
 {
   bool ok = false;
   double underPoleLimit = (mode == CHECKMODE_GOTO) ? underPoleLimitGOTO : underPoleLimitGOTO + 5.0 / 60;
-  PierSide _currPierSide = getPierSide(axis2);
-  switch (_currPierSide)
+  PoleSide _currPoleSide = getPoleSide(axis2);
+  switch (_currPoleSide)
   {
-  case PIER_EAST:
+  case POLE_UNDER:
     ok = (axis1 < geoA1.poleDef + (underPoleLimit - 6) * 15. * geoA1.stepsPerDegree);
     break;
-  case PIER_WEST:
+  case POLE_OVER:
     ok = (axis1 > geoA1.poleDef - (underPoleLimit - 6) * 15. * geoA1.stepsPerDegree);
     break;
   default:
@@ -38,7 +38,7 @@ bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
 {
   bool ok = true;
   double MinutesPastMeridianW, MinutesPastMeridianE;
-  PierSide _currPierSide = getPierSide(axis2);
+  PoleSide _currPoleSide = getPoleSide(axis2);
   if (mode == CHECKMODE_GOTO)
   {
     MinutesPastMeridianW = minutesPastMeridianGOTOW;
@@ -51,24 +51,24 @@ bool checkMeridian(const long &axis1, const long &axis2, CheckMode mode)
     MinutesPastMeridianE = minutesPastMeridianGOTOE + 5;
     if (distanceFromPoleToKeepTrackingOn < 180) // false if keepTrackingOnWhenFarFromPole (customization) is not defined
     {
-      if (_currPierSide == PIER_EAST)
+      if (_currPoleSide == POLE_UNDER)
       {
         if (axis2 < (90 - distanceFromPoleToKeepTrackingOn) * geoA2.stepsPerDegree)
           MinutesPastMeridianW = MinutesPastMeridianE = 360;
       }
-      else if (_currPierSide == PIER_WEST)
+      else if (_currPoleSide == POLE_OVER)
       {
         if (axis2 > (90 + distanceFromPoleToKeepTrackingOn) * geoA2.stepsPerDegree)
           MinutesPastMeridianW = MinutesPastMeridianE = 360;
       }
     }
   }
-  switch (_currPierSide)
+  switch (_currPoleSide)
   {
-  case PIER_EAST:
+  case POLE_UNDER:
     ok = axis1 > geoA1.poleDef - geoA1.quaterRot - (MinutesPastMeridianE / 60.) * 15.0 * geoA1.stepsPerDegree;
     break;
-  case PIER_WEST:
+  case POLE_OVER:
     ok = axis1 <  geoA1.poleDef + geoA1.quaterRot + (MinutesPastMeridianW / 60.) * 15.0 * geoA1.stepsPerDegree;
     break;
   default:

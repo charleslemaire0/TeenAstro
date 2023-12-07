@@ -182,6 +182,11 @@ void PerformGuidingAtRate()
   }
 }
 
+bool isGuidingStar()
+{
+  return GuidingState == GuidingPulse || GuidingState == GuidingST4;
+}
+
 void Guide()
 {
   // 1/100 second sidereal timer, controls issue of steps at the selected RA and/or Dec rate(s)

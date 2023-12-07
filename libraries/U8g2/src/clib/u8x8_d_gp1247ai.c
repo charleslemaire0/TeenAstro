@@ -2,6 +2,8 @@
 
   u8x8_d_gp1247ai.c
   
+  252x64
+  
   https://github.com/olikraus/u8g2/issues/1907
   https://github.com/olikraus/u8g2/pull/1892  
 
@@ -57,7 +59,7 @@ static const u8x8_display_info_t u8x8_gp1247ai_display_info = {
     /* data_setup_time_ns = */ 60,        /* tsu     */
     /* write_pulse_width_ns = */ 120,     /* tcyc/2  */
     /* tile_width = */ 32,                /* 32*8=256 memory size */
-    /* tile_hight = */ 8,                 /* 8*8=64 memory size */
+    /* tile_height = */ 8,                 /* 8*8=64 memory size */
     /* default_x_offset = */ 0,           /*         */
     /* flipmode_x_offset = */ 0,          /*         */
     /* pixel_width = */ 253,              /* display size */

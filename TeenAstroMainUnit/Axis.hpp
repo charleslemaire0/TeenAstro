@@ -142,30 +142,32 @@ public:
       interval_Step_Cur = max(min(interval_Step_Sid / rate, maxInterval), minInterval);
     }
   };
-  void move()
+  void move(bool backlashComp)
   {
     if (dir)
     {
-      if (backlash_movedSteps < backlash_inSteps)
+      if (backlash_movedSteps < backlash_inSteps && backlashComp)
       {
         backlash_movedSteps++;
         backlash_correcting = true;
       }
       else
       {
+        backlash_movedSteps = backlash_inSteps;
         backlash_correcting = false;
         pos++;
       }
     }
     else
     {
-      if (backlash_movedSteps > 0)
+      if (backlash_movedSteps > 0 && backlashComp)
       {
         backlash_movedSteps--;
         backlash_correcting = true;
       }
       else
       {
+        backlash_movedSteps = 0;
         backlash_correcting = false;
         pos--;
       }
