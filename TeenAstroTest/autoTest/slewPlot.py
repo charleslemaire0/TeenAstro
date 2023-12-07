@@ -219,6 +219,10 @@ class slewPlot():
             self.log('Unpark')
             self.ta.unpark()
 
+        if (ev == 'setPark'):
+            self.log('Set Park')
+            self.ta.setPark()
+
         if (ev =='__TIMEOUT__'):
             if not self.ta.isConnected():
                 return

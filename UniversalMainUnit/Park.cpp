@@ -130,6 +130,8 @@ bool syncAtPark()
   axis1 = XEEPROM.readLong(getMountAddress(EE_posAxis1));
   axis2 = XEEPROM.readLong(getMountAddress(EE_posAxis2));
  
+  motorA1.setCurrentPos(axis1);
+  motorA2.setCurrentPos(axis2);
   motorA1.setTargetPos(axis1);
   motorA2.setTargetPos(axis2);
 

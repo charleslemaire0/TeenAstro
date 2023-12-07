@@ -83,7 +83,7 @@ slewTestTab = [[sg.Column([
                      sg.B(button_text = 'East', key='slewEast'),sg.B(button_text = 'South', key='slewSouth'),sg.B(button_text = 'Zenith', key='slewZenith'),
                      sg.B(button_text = 'AutoSlew', key='autoSlew'),sg.B(button_text = 'Stop', key='stopSlew'),
                      sg.B(button_text = 'Clear', key='clearSlew'), sg.B(button_text = 'Flip', key='flipMount'), 
-                     sg.B(button_text = 'Park', key='park'), sg.B(button_text = 'Unpark', key='unpark')],
+                     sg.B(button_text = 'Park', key='park'), sg.B(button_text = 'Unpark', key='unpark'), sg.B(button_text = 'Set Park', key='setPark')],
                     [slewingCanvasGroup, horCoordFrame]
                 ])]]
                     
@@ -247,10 +247,10 @@ class Application:
                     status = 'TRACKING '
                 elif self.ta.isSlewing():
                     status = 'SLEWING '
-                elif self.ta.isParking():
-                    status = 'PARKING '
-                elif self.ta.isParked():
-                    status = 'PARKED '
+                if self.ta.isParking():
+                    status += 'PARKING '
+                if self.ta.isParked():
+                    status += 'PARKED '
                 self.window['statusCode'].update(status + self.ta.guideStatus())
                 self.window['errorCode'].update(self.ta.getErrorCode())
         

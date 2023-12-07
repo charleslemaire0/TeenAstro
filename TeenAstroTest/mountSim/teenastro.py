@@ -281,6 +281,9 @@ class TeenAstro(object):
   def unpark(self):
     self.sendCommand(":hR#")
 
+  def setPark(self):
+    self.sendCommand(":hQ#")
+
   def flipMount(self):
     self.sendCommand(":MF#")
 
