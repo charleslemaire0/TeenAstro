@@ -1,18 +1,37 @@
-void StepToAngle(long Axis1, long Axis2, double* AngleAxis1, double* AngleAxis2, PierSide* Side)
+void StepToAngle(long Axis1, long Axis2, double* AngleAxis1, double* AngleAxis2, PoleSide* Side)
 {
-  *AngleAxis1 = ((double)Axis1) / geoA1.stepsPerDegree;
-  *AngleAxis2 = ((double)Axis2) / geoA2.stepsPerDegree;
-  InsrtAngle2Angle(AngleAxis1, AngleAxis2, Side);
+  if (Axis2 > geoA2.poleDef)
+  {
+    Axis2 = geoA2.poleDef - (Axis2 - geoA2.poleDef);
+    Axis1 -= geoA1.halfRot;
+    *Side = PoleSide::POLE_OVER;
+  }
+  else if (Axis2 < -geoA2.poleDef)
+  {
+    Axis2 = -geoA2.poleDef - (Axis2 + geoA2.poleDef);
+    Axis1 -= geoA1.halfRot;
+    *Side = PoleSide::POLE_OVER;
+  }
+  else
+  {
+    *Side = PoleSide::POLE_UNDER;
+  }
+  *AngleAxis1 = Axis1 / geoA1.stepsPerDegree;
+  *AngleAxis2 = Axis2 / geoA2.stepsPerDegree;
 }
 
-void Angle2Step(double AngleAxis1, double AngleAxis2, PierSide Side, const double poleAxis1, long* Axis1, long* Axis2)
+void Angle2Step(double AngleAxis1, double AngleAxis2, PoleSide Side, long* Axis1, long* Axis2)
 {
-  Angle2InsrtAngle(Side, &AngleAxis1, &AngleAxis2, localSite.latitude(), poleAxis1);
   *Axis1 = (long)(AngleAxis1 * geoA1.stepsPerDegree);
   *Axis2 = (long)(AngleAxis2 * geoA2.stepsPerDegree);
+  if (Side >= POLE_OVER)
+  {
+    *Axis2 = geoA2.poleDef - (*Axis2 - geoA2.poleDef);
+    *Axis1 += geoA1.halfRot;
+    while (*Axis1 < -geoA1.halfRot) *Axis1 += geoA1.stepsPerRot;
+    while (*Axis1 > geoA1.halfRot) *Axis1 -= geoA1.stepsPerRot;
+  }
 }
-
-
 
 
 //--------------------------------------------------------------------------------------------------
@@ -44,23 +63,23 @@ void GotoAxis(const long* axis1Target, const long* axis2Target )
   DecayModeGoto();
 }
 
-bool SyncInstr(Coord_IN* instr, PierSide Side)
+bool SyncInstr(Coord_IN* instr, PoleSide Side)
 {
   long axis1, axis2 = 0;
-  Angle2Step(instr->Axis1() * RAD_TO_DEG, instr->Axis2() * RAD_TO_DEG, Side, geoA1.poleDef, &axis1, &axis2);
+  Angle2Step(instr->Axis1() * RAD_TO_DEG, instr->Axis2() * RAD_TO_DEG, Side, &axis1, &axis2);
   syncAxis(&axis1, &axis2);
   atHome = false;
   return true;
 }
 
-bool syncEqu(Coord_EQ *EQ_T, PierSide Side, double Lat)
+bool syncEqu(Coord_EQ *EQ_T, PoleSide Side, double Lat)
 {
   Coord_IN instr = EQ_T->To_Coord_IN(Lat, RefrOptForGoto(), alignment.Tinv);
   return SyncInstr(&instr, Side);
 }
 
 // syncs the telescope/mount to the sky
-bool syncAzAlt(Coord_HO *HO_T, PierSide Side)
+bool syncAzAlt(Coord_HO *HO_T, PoleSide Side)
 {
   Coord_IN instr = HO_T->To_Coord_IN(alignment.Tinv);
   return SyncInstr(&instr, Side);
@@ -237,17 +256,17 @@ Coord_HO getHorAppTarget()
 
 
 // moves the mount to a new Right Ascension and Declination (RA,Dec) in degrees
-byte goToEqu(Coord_EQ EQ_T, PierSide preferedPierSide, double Lat)
+byte goToEqu(Coord_EQ EQ_T, PoleSide preferedPoleSide, double Lat)
 {
-  return goToHor(EQ_T.To_Coord_HO(Lat,RefrOptForGoto()), preferedPierSide);
+  return goToHor(EQ_T.To_Coord_HO(Lat,RefrOptForGoto()), preferedPoleSide);
 }
 
 // moves the mount to a new Altitude and Azmiuth (Alt,Azm) in degrees
-byte goToHor(Coord_HO HO_T, PierSide preferedPierSide)
+byte goToHor(Coord_HO HO_T, PoleSide preferedPoleSide)
 {
   double Axis1_target, Axis2_target = 0;
   long axis1_target, axis2_target = 0;
-  PierSide selectedSide = PierSide::PIER_NOTVALID;
+  PoleSide selectedSide = PoleSide::POLE_NOTVALID;
 
   if (HO_T.Alt() * RAD_TO_DEG < minAlt) return ERRGOTO_BELOWHORIZON;   // fail, below min altitude
   if (HO_T.Alt() * RAD_TO_DEG > maxAlt) return ERRGOTO_ABOVEOVERHEAD;   // fail, above max altitude
@@ -255,7 +274,7 @@ byte goToHor(Coord_HO HO_T, PierSide preferedPierSide)
   Coord_IN instr_T = HO_T.To_Coord_IN(alignment.Tinv);
   Axis1_target = instr_T.Axis1() * RAD_TO_DEG;
   Axis2_target = instr_T.Axis2() * RAD_TO_DEG;
-  if (!predictTarget(Axis1_target, Axis2_target, preferedPierSide,
+  if (!predictTarget(Axis1_target, Axis2_target, preferedPoleSide,
     axis1_target, axis2_target, selectedSide))
   {
     return ERRGOTO_LIMITS; //fail, outside limit
@@ -269,15 +288,13 @@ byte goToHor(Coord_HO HO_T, PierSide preferedPierSide)
 // Predict Target
 // return 0 if no side can reach the given position
 // Axis1_in and Axis2_in are angle coordinates not instr angle coordinates
-bool predictTarget(const double& Axis1_in, const double& Axis2_in, const PierSide& inputSide,
-  long& Axis1_out, long& Axis2_out, PierSide& outputSide)
+bool predictTarget(const double& Axis1_in, const double& Axis2_in, const PoleSide& inputSide,
+  long& Axis1_out, long& Axis2_out, PoleSide& outputSide)
 {
   double Axis1 = Axis1_in;
   double Axis2 = Axis2_in;
   outputSide = inputSide;
-  Angle2InsrtAngle(outputSide, &Axis1, &Axis2, localSite.latitude(), geoA1.poleDef);
-  Axis1_out = Axis1 * geoA1.stepsPerDegree;
-  Axis2_out = Axis2 * geoA2.stepsPerDegree;
+  Angle2Step(Axis1, Axis2, outputSide, &Axis1_out, &Axis2_out);
   if (withinLimit(Axis1_out, Axis2_out))
   {
     return true;
@@ -286,10 +303,8 @@ bool predictTarget(const double& Axis1_in, const double& Axis2_in, const PierSid
   {
     double Axis1 = Axis1_in;
     double Axis2 = Axis2_in;
-    if (inputSide == PIER_EAST) outputSide = PIER_WEST; else outputSide = PIER_EAST;
-    Angle2InsrtAngle(outputSide, &Axis1, &Axis2, localSite.latitude(), geoA1.poleDef);
-    Axis1_out = Axis1 * geoA1.stepsPerDegree;
-    Axis2_out = Axis2 * geoA2.stepsPerDegree;
+    if (inputSide == POLE_UNDER) outputSide = POLE_OVER; else outputSide = POLE_UNDER;
+    Angle2Step(Axis1, Axis2, outputSide, &Axis1_out, &Axis2_out);
     if (withinLimit(Axis1_out, Axis2_out))
     {
       return true;
@@ -329,19 +344,18 @@ ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2)
 
 ErrorsGoTo Flip()
 {
-  long axis1Flip, axis2Flip;
-  PierSide selectedSide = PIER_NOTVALID;
-  PierSide preferedPierSide = (GetPierSide() == PIER_EAST) ? PIER_WEST : PIER_EAST;
-
-  double Axis1, Axis2, Axis3;
-  getInstrDeg(&Axis1, &Axis2, &Axis3);
-
-  InsrtAngle2Angle(&Axis1, &Axis2, &selectedSide);
-  if (!predictTarget(Axis1, Axis2, preferedPierSide, axis1Flip, axis2Flip, selectedSide))
+  long Axis1, Axis2, axis1Flip, axis2Flip;
+  double Angle1, Angle2;
+  PoleSide selectedSide = POLE_NOTVALID;
+  PoleSide CurrentSide = POLE_NOTVALID;
+  setAtMount(Axis1, Axis2);
+  StepToAngle(Axis1, Axis2, &Angle1, &Angle2, &CurrentSide);
+  PoleSide preferedPoleSide = (CurrentSide == POLE_UNDER) ? POLE_OVER : POLE_UNDER;
+  if (!predictTarget(Angle1, Angle2, preferedPoleSide, axis1Flip, axis2Flip, selectedSide))
   {
     return ErrorsGoTo::ERRGOTO_LIMITS;
   }
-  if (selectedSide == GetPierSide())
+  if (selectedSide == GetPoleSide())
   {
     return ErrorsGoTo::ERRGOTO_SAMESIDE;
   }

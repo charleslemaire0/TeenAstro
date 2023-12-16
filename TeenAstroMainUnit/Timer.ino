@@ -254,15 +254,15 @@ ISR(TIMER3_COMPA_vect)
       // Direction control
       if (motorA1.reverse ^ Axis1Reverse)
       {
-        digitalWriteFast(Axis1DirPin, HADir != staA1.dir);
+        digitalWriteFast(Axis1DirPin, !staA1.dir);
       }
       else
       {
-        digitalWriteFast(Axis1DirPin, HADir == staA1.dir);
+        digitalWriteFast(Axis1DirPin, staA1.dir);
       }
 
       // telescope moves WEST with the sky, blAxis1 is the amount of EAST backlash
-      staA1.move();
+      staA1.move(!isGuidingStar());
       takeStepAxis1 = true;
     }
     clearAxis1 = false;
@@ -302,7 +302,7 @@ ISR(TIMER4_COMPA_vect)
       }
 
       // telescope moving toward celestial pole in the sky, blAxis2 is the amount of opposite backlash
-      staA2.move();
+      staA2.move(!isGuidingStar());
       takeStepAxis2 = true;
     }
     clearAxis2 = false;

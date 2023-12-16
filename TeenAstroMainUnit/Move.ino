@@ -210,7 +210,7 @@ void CheckSpiral()
   Coord_EQ EQ_prev = Coord_LO(0, dl_prev * DEG_TO_RAD, hl_prev * DEG_TO_RAD).To_Coord_EQ(helper.T);
   Coord_EQ EQ_next = Coord_LO(0, dl_next * DEG_TO_RAD, hl_next * DEG_TO_RAD).To_Coord_EQ(helper.T);
 
-  PierSide side_tmp = GetPierSide();
+  PoleSide side_tmp = GetPoleSide();
 
   RateFromMovingTarget(EQ_prev, EQ_next,
     0.002*dt, side_tmp, doesRefraction.forGoto,

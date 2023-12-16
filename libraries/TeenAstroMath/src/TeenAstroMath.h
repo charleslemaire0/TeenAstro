@@ -18,10 +18,16 @@
 
 #define Rad 57.29577951308232
 
-enum PierSide
+//enum PierSide
+//{
+//  PIER_NOTVALID, PIER_EAST, PIER_WEST
+//};
+
+enum PoleSide
 {
-  PIER_NOTVALID, PIER_EAST, PIER_WEST
+  POLE_NOTVALID, POLE_UNDER, POLE_OVER
 };
+
 
 double frac(double v);
 double cot(double n);
@@ -47,8 +53,7 @@ void Apparent2Topocentric(double *Alt, double Pressure = 1010., double Temperatu
 void EquToHor(double HA, double Dec, bool refraction, double* Azm, double* Alt, const double* cosLat, const double* sinLat);
 void HorTopoToEqu(double Azm, double Alt, double *HA, double *Dec, const double *cosLat, const double *sinLat);
 void HorAppToEqu(double Azm, double Alt, double *HA, double *Dec, const double *cosLat, const double *sinLat);
-void InsrtAngle2Angle(double *AngleAxis1, double *AngleAxis2, PierSide *Side);
-void Angle2InsrtAngle(PierSide Side, double *AngleAxis1, double *AngleAxis2, const double *Lat, const double poleAxis1);
+
 
 //steps operations
 long distStepAxis1(long* start, long* end);

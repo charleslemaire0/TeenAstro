@@ -16,11 +16,11 @@ void updateDeltaStart()
   staA2.updateDeltaStart();
 }
 
-PierSide GetPierSide()
+PoleSide GetPoleSide()
 {
   long axis1, axis2;
   setAtMount(axis1, axis2);
-  return -geoA2.quaterRot <= axis2 && axis2 <= geoA2.quaterRot ? PIER_EAST : PIER_WEST;
+  return -geoA2.poleDef <= axis2 && axis2 <= geoA2.poleDef ? POLE_UNDER : POLE_OVER;
 }
 
 bool TelescopeBusy()
@@ -46,6 +46,8 @@ void SetTrackingRate(double rHA, double rDEC)
 void computeTrackingRate(bool apply)
 {
   //reset SideralMode if it is equal to sideralspeed
+  double sign = localSite.northHemisphere() ? 1 : -1;
+
   if (RequestedTrackingRateHA == 1 && RequestedTrackingRateDEC == 0)
   {
     sideralMode = SIDM_STAR;
@@ -56,7 +58,7 @@ void computeTrackingRate(bool apply)
   }
   else if (tc == TC_NONE)
   {
-    staA1.RequestedTrackingRate = RequestedTrackingRateHA;
+    staA1.RequestedTrackingRate = sign * RequestedTrackingRateHA;
     staA2.RequestedTrackingRate = 0;
   }
   else if (doesRefraction.forTracking || TrackingCompForAlignment)
@@ -69,7 +71,7 @@ void computeTrackingRate(bool apply)
   }
   else
   {
-    staA1.RequestedTrackingRate = RequestedTrackingRateHA;
+    staA1.RequestedTrackingRate = sign * RequestedTrackingRateHA;
     staA2.RequestedTrackingRate = 0;
   }
   if (apply)
@@ -79,7 +81,7 @@ void computeTrackingRate(bool apply)
 }
 
 void RateFromMovingTarget( Coord_EQ &EQprev,  Coord_EQ &EQnext,
-  const double &TimeRange, const PierSide &side, const bool &refr, 
+  const double &TimeRange, const PoleSide &side, const bool &refr, 
   double &A1_trackingRate, double &A2_trackingRate)
 {
   
@@ -90,10 +92,10 @@ void RateFromMovingTarget( Coord_EQ &EQprev,  Coord_EQ &EQnext,
   LA3::RefrOpt rop = { doesRefraction.forTracking, 10, 101 };
   
   Coord_IN INprev = EQprev.To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, rop, alignment.Tinv);
-  Angle2Step(INprev.Axis1() * RAD_TO_DEG, INprev.Axis2() * RAD_TO_DEG, side, geoA1.poleDef, &axis1_before, &axis2_before);
+  Angle2Step(INprev.Axis1() * RAD_TO_DEG, INprev.Axis2() * RAD_TO_DEG, side, &axis1_before, &axis2_before);
 
   Coord_IN INnext = EQnext.To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, rop, alignment.Tinv);
-  Angle2Step(INnext.Axis1() * RAD_TO_DEG, INnext.Axis2() * RAD_TO_DEG, side, geoA1.poleDef, &axis1_after, &axis2_after);
+  Angle2Step(INnext.Axis1() * RAD_TO_DEG, INnext.Axis2() * RAD_TO_DEG, side, &axis1_after, &axis2_after);
 
 
   axis1_delta = distStepAxis1(&axis1_before, &axis1_after) / geoA1.stepsPerDegree;
@@ -128,7 +130,7 @@ void do_compensation_calc()
     return;
   }
 
-  PierSide side_tmp = GetPierSide();
+  PoleSide side_tmp = GetPoleSide();
   DriftHA = RequestedTrackingRateHA * TimeRange * 15;
   DriftHA /= 3600;
   DriftDEC = RequestedTrackingRateDEC * TimeRange;
@@ -247,7 +249,7 @@ bool isAltAZ()
 void SafetyCheck(const bool forceTracking)
 {
   // basic check to see if we're not at home
-  PierSide currentSide = GetPierSide();
+  PoleSide currentSide = GetPoleSide();
   long axis1, axis2;
   setAtMount(axis1, axis2);
 
@@ -286,14 +288,14 @@ void SafetyCheck(const bool forceTracking)
   {
     if (!checkMeridian(axis1, axis2, CHECKMODE_TRACKING))
     {
-      if ((staA1.dir && currentSide == PIER_WEST) || (!staA1.dir && currentSide == PIER_EAST))
+      if ((staA1.dir && currentSide == POLE_OVER) || (!staA1.dir && currentSide == POLE_UNDER))
       {
         lastError = ERRT_MERIDIAN;
         if (movingTo)
         {
           abortSlew = true;
         }
-        if (currentSide >= PIER_WEST && !forceTracking)
+        if (currentSide >= POLE_OVER && !forceTracking)
           sideralTracking = false;
         return;
       }
@@ -309,12 +311,12 @@ void SafetyCheck(const bool forceTracking)
 
     if (!checkPole(axis1, axis2, CHECKMODE_TRACKING))
     {
-      if ((staA1.dir && currentSide == PIER_EAST) || (!staA1.dir && currentSide == PIER_WEST))
+      if ((staA1.dir && currentSide == POLE_UNDER) || (!staA1.dir && currentSide == POLE_OVER))
       {
         lastError = ERRT_UNDER_POLE;
         if (movingTo)
           abortSlew = true;
-        if (currentSide == PIER_EAST && !forceTracking)
+        if (currentSide == POLE_UNDER && !forceTracking)
           sideralTracking = false;
         return;
       }
