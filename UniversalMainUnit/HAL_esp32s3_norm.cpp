@@ -2,7 +2,7 @@
 #ifdef __ESP32__
 #include "Global.h"
 #include <SoftwareSerial.h>
-
+#include <HardwareSerial.h>
 
 #ifdef BOARD_esp32s3_norm
 const char BoardVersion[] = "esp32s3_norm";
@@ -20,13 +20,13 @@ const char* HAL_getBoardVersion(void)
 void HAL_preInit(void)
 {
   Serial.begin(BAUD);
-  Serial1.begin(BAUD, SERIAL_8N1, SHCRx, SHCTx);
+  Serial0.begin(BAUD, SERIAL_8N1, SHCRx, SHCTx);
 }
 
 void HAL_initSerial(void)
 {
   S_USB.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
-  S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
+  S_SHC.attach_Stream((Stream *)&Serial0, COMMAND_SERIAL1);
   GNSSSerial.begin(9600);
 }
 

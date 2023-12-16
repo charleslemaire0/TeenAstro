@@ -42,7 +42,7 @@ void writeDefaultMount()
   // init the default maxRate
   XEEPROM.writeInt(getMountAddress(EE_maxRate), DefaultR4);
 
-  // init degree for acceleration 1°
+  // init degree for acceleration 1º
   XEEPROM.write(getMountAddress(EE_degAcc), (uint8_t)(1 * 10));
 
   // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
@@ -73,6 +73,7 @@ void writeDefaultMounts()
     writeDefaultMount();
   }
   currentMount = 0;
+  XEEPROM.write(EE_currentMount, 0);
 }
 
 
