@@ -44,10 +44,10 @@ unsigned long HAL_getRealTimeClock()
 void HAL_reboot(void)
 {
   Serial.end();
-  Serial1.end();
-  Serial2.end();
-  delay(1000);
+  Serial0.end();
+  GNSSSerial.end();
   EEPROM.commit();
+  delay(1000);
   ESP.restart();
 }
 

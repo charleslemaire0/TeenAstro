@@ -150,6 +150,7 @@ void initMount()
   if ((mount.clk5160 < 12000) || (mount.clk5160 > 18000)) // check for invalid values
   {
     mount.clk5160 = 16000;
+    XEEPROM.writeLong(getMountAddress(EE_clk5160), 16000);
   }
 }
 
@@ -234,7 +235,7 @@ void writeDefaultEEPROMmotor()
   XEEPROM.write(getMountAddress(EE_motorA1silent), 0);
 
   XEEPROM.writeInt(getMountAddress(EE_backlashAxis2), 0);
-  XEEPROM.writeInt(getMountAddress(EE_motorA2gear), 1800 * 1000);
+  XEEPROM.writeLong(getMountAddress(EE_motorA2gear), 1800 * 1000);
   XEEPROM.writeInt(getMountAddress(EE_motorA2stepRot), 200);
   XEEPROM.write(getMountAddress(EE_motorA2micro), 4);
   XEEPROM.write(getMountAddress(EE_motorA2reverse), 0);
