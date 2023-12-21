@@ -48,6 +48,10 @@ enum SID_Mode
   SIDM_MOON,
   SIDM_TARGET
 };
+enum PierSide
+{
+  PIER_NOTVALID, PIER_EAST, PIER_WEST
+};
 
 // Tracking
 #define TrackingStar  1
@@ -202,6 +206,5 @@ GLOBAL char                mountNames[maxNumMounts][MountNameLen];
 GLOBAL bool                reboot_unit;
 
 //GNSS - GPS
-//GLOBAL bool                hasGNSS = true;
-#define hasGNSS true
+GLOBAL bool                hasGNSS;
 GLOBAL TinyGPSPlus         gps;

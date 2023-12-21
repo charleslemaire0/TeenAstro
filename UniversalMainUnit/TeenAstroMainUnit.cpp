@@ -212,7 +212,10 @@ void setup()
   rtk.updateTimers();
 
   HAL_initSerial();
-  
+  delay(500);  
+  hasGNSS = GNSSSerial.available() > 0;
+
+
   // Monitor - safety check and heartbeat
   xTaskCreate(
     monitorTask,    // Function that should be called
