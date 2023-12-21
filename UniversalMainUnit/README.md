@@ -2,7 +2,7 @@ UniversalMainUnit
 ======  
 ### Introduction
 
-This is an early release of the TeenAstro redesign documented [here](https://fdesvallees.github.io/teenastro_v3/teenastro_v3/)
+This is an early release of the TeenAstro redesign documented [here](https://fdesvallees.github.io/teenastro/swDesign/UniversalMainUnit/)
 
 It dynamically supports both step/dir and position/velocity interface. It is possible to run each motor with a different interface.
 
@@ -14,23 +14,23 @@ It already has:
 - Tracking 
 - Guiding 
 - Parking, custom Home position 
-- HAL is partly done but there are still some #ifdefs in the code that need to be removed
+- 2-star alignment
+- GNSS
 - EEPROM support: small change to support the RAM/Flash implementation of ESP32, that also requires a task to commit the changes to flash when needed. 
-- RealTime clock: ESP32 does not have a clock, so it reports a fake time.
-
+- RealTime clock: This driver needs work.
 
 
 What is does **not** have:
 
-- Alignment
 - Backlash
-- GPS, Focuser
+- Refraction
+- Focuser
 - Encoder support
 
 
 ### Hardware support
 
-The software is tested on an ESP32 development board, a Board 250 (Teensy4) and a modified board 240 (removed the ST4 5V pull-up resistors). It is built with PlatformIO, either with the command line tools or through VSCode. On the ESP32, it is possible to use JTAG with its excellent breakpoint and watch capabilities. 
+The software is tested on Norman Cleesattel's ESP32S3 development board, a Board 250 (Teensy4) and a modified board 240 (removed the ST4 5V pull-up resistors). It is built with PlatformIO, either with the command line tools or through VSCode. On the ESP32, it is possible to use JTAG with its excellent breakpoint and watch capabilities. 
 
 ### Design choices
 
@@ -57,7 +57,7 @@ The single MotorDriver class encapsulates:
 
 #### Separate models for Eq and AltAz mounts
 
-I chose this for the reasons indicated [here](https://fdesvallees.github.io/teenastro_v3/teenastro_v3/#alignment-equatorial-vs-altaz-mounts). I think it is better to keep the alignment matrix only for alignment and mount errors. 
+I chose this for the reasons indicated [here](https://fdesvallees.github.io/teenastro/swDesign/UniversalMainUnit/#equatorial-vs-altaz-mounts). I think it is better to keep the alignment matrix only for alignment and mount errors. 
 
 #### New commands
 A new command has been added (SXK,vvvv#) to indicate the clock speed of the TMC5160. The freqency (in kHz) is stored in the EEPROM. This allows using the TMC5160 in SPI mode with or without an external clock.
@@ -67,7 +67,7 @@ A new command has been added (SXK,vvvv#) to indicate the clock speed of the TMC5
 
 **TAConfig.py**  updates the mount parameters. Testing is based on **debug5160** (stand-alone executable that runs commands from a terminal), **mountSim.py** (useful for visualizing) and **autoTest.py** (more thorough testing). Both test programs rely on the axis coordinates and steps reported by TeenAstro. See the respective README for more info on both programs.
 
-### Test Status - 15 June 2023
+### Test Status - 21 Dec 2023
 
 #### Tested features
 Basic Goto, sync, tracking and guiding work, SHC connects and runs normally. Tests are done first in simulation (both Equatorial and AltAz), then with a real equatorial mount (AP600).  
@@ -80,7 +80,7 @@ I did a little testing with EKOS through the INDI driver,
 
 ### Not yet implemented or tested   
 No ASCOM testing whatsoever   
-Alignment and refraction are not yet implemented  
+Refraction is not yet implemented  
 
 
 #### Known bugs
