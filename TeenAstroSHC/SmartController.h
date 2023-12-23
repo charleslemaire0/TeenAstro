@@ -8,8 +8,8 @@
 #define SHCFirmwareDate          __DATE__
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
-#define SHCFirmwareVersionMinor  "4"
-#define SHCFirmwareVersionPatch  "10"
+#define SHCFirmwareVersionMinor  "5"
+#define SHCFirmwareVersionPatch  "0"
 
 #define NUMPAGES 9
 class SmartHandController
@@ -71,7 +71,9 @@ private:
   bool buttonPressed();
   bool isSleeping();
   void resetSHC();
-  void menuTelAction();
+  void menuTelActionGoto();
+  void menuTelActionPushTo();
+  void menuTelActionPushToGoto();
   void menuSpeedRate();
   #ifdef NO_SPEED_MENU
   void increaseSpeed(bool increase);
@@ -97,7 +99,7 @@ private:
   MENU_RESULT menuSpirale();
   MENU_RESULT subMenuSyncGoto(NAV mode, int subMenuNum);
   MENU_RESULT menuCatalog(NAV mode, int number);
-  MENU_RESULT menuCatalogAlign();
+  MENU_RESULT menuCatalogAlign(NAV mode);
   MENU_RESULT menuCatalogs(NAV mode);
   MENU_RESULT menuSolarSys(NAV mode);
   MENU_RESULT menuFilters();
@@ -122,6 +124,7 @@ private:
   void menuTimeAndSite();
   void menuDateAndTime();
   void menuMount();
+  void menuMotors();
   void MenuRates();
   void MenuDefaultSpeed();
 

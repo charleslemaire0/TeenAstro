@@ -45,6 +45,7 @@ bool homeSaved = false;
 bool atHome = true;
 bool homeMount = false;
 
+
 BacklashPhase backlashStatus = BacklashPhase::DONE;
 
 bool DecayModeTrack = false;
@@ -101,8 +102,12 @@ interval                maxInterval2 = StepsMaxInterval;
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
 
+bool                enableMotor;
+
 MotorAxis           motorA1;
 MotorAxis           motorA2;
+
+bool                enableEncoder;
 
 EncoderSync         EncodeSyncMode = EncoderSync::ES_OFF;
 EncoderAxis         encoderA1;

@@ -14,6 +14,7 @@ void Command_dollar()
     replyShortTrue();
     break;
   case 'X':
+    initencoder();
     initmotor(true);
     replyShortTrue();
     break;
@@ -44,8 +45,11 @@ void Command_A()
     enable_Axis(true);
     delay(10);
     // start tracking
-    sideralTracking = true;
-    lastSetTrakingEnable = millis();
+    if (enableMotor)
+    {
+      sideralTracking = true;
+      lastSetTrakingEnable = millis();
+    }
     replyShortTrue();
     break;
   case '2':
@@ -651,9 +655,16 @@ void Command_T()
     {
       lastSetTrakingEnable = millis();
       atHome = false;
-      sideralTracking = true;
-      computeTrackingRate(true);
-      replyShortTrue();
+      if (enableMotor)
+      {
+        sideralTracking = true;
+        computeTrackingRate(true);
+        replyShortTrue();
+      }
+      else
+      {
+        replyShortFalse();
+      }
     }
     else
       replyShortFalse();

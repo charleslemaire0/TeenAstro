@@ -94,7 +94,8 @@ private:
   bool            m_hasInfoMount = false;
   bool            m_hasInfoFocuser = false;
   bool            m_hasFocuser = false;
-  bool            m_hasEncoder = true;
+  bool            m_encoderEnable = true;
+  bool            m_motorEnable = true;
 public:
   //Alignment Stuff
   bool            isAligning()  { return m_align != ALI_OFF; }
@@ -206,6 +207,7 @@ public:
   bool Parking();
   bool Parked();
   bool isPushingto();
+  bool isPushTo();
   bool isSpiralRunning();
   bool isPulseGuiding();
   bool isGuidingN();
@@ -219,7 +221,8 @@ public:
   bool isGNSSLocationSync();
   bool isHdopSmall();
   bool findFocuser();
-  bool hasEncoder();
+  bool encodersEnable();
+  bool motorsEnable();
   bool CalibratingEncoder();
 
   //Connection Errors

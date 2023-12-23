@@ -3,10 +3,12 @@
 
 void SmartHandController::menuSpeedRate()
 {
+  ta_MountStatus.updateMount();
+  if (ta_MountStatus.isPushTo())
+    return;
   buttonPad.setMenuMode();
   char* string_list_Speed = T_GUIDE "\n" T_SLOW "\n" T_MEDIUM "\n" T_FAST "\n" T_MAX;
   static unsigned char current_selection_speed = 3;
-  ta_MountStatus.updateMount();
   TeenAstroMountStatus::GuidingRate cur_GR = ta_MountStatus.getGuidingRate();
   if (cur_GR == TeenAstroMountStatus::GuidingRate::UNKNOW)
     return;
@@ -25,18 +27,18 @@ void SmartHandController::menuSpeedRate()
 #ifdef NO_SPEED_MENU
 void SmartHandController::increaseSpeed(bool increase)
 {
-  //buttonPad.setMenuMode();
+  ta_MountStatus.updateMount();
+  if (ta_MountStatus.isPushTo())
+    return;
   char* string_list_Speed = T_GUIDE "\n" T_SLOW "\n" T_MEDIUM "\n" T_FAST "\n" T_MAX;
   static unsigned char current_speed = 3;
-  ta_MountStatus.updateMount();
   TeenAstroMountStatus::GuidingRate cur_GR = ta_MountStatus.getGuidingRate();
   if (cur_GR == TeenAstroMountStatus::GuidingRate::UNKNOW)
     return;
   current_speed = static_cast<unsigned char>(cur_GR);
   char cmd[5] = ":Rn#";
   if (increase && cur_GR < TeenAstroMountStatus::MAX )
-  {
-    
+  {    
     cmd[2] = '0' + current_speed + 1;
     SetLX200(cmd);
   }
@@ -45,11 +47,64 @@ void SmartHandController::increaseSpeed(bool increase)
     cmd[2] = '0' + current_speed - 1;
     SetLX200(cmd);
   }
-  //buttonPad.setControlerMode();
 }
 #endif
 
-void SmartHandController::menuTelAction()
+void SmartHandController::menuTelActionPushTo()
+{
+  buttonPad.setMenuMode();
+  telescoplocked = false;
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
+  while (!exitMenu)
+  {
+    ta_MountStatus.updateMount();
+    const char* string_list = T_PUSHTO "\n" T_SYNC "\n" T_ALIGN "\n" T_SIDEOFPIER "\n" T_SAVE " RADEC";
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPEACTION, s_sel, string_list);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    MENU_RESULT answer = MR_CANCEL;
+    switch (tmp_sel)
+    {
+    case 0:
+      exitMenu = true;
+      break;
+    case 1:
+      answer = menuSyncGoto(NAV_PUSHTO);
+      answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
+      break;
+    case 2:
+      answer = menuSyncGoto(NAV_SYNC);
+      answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
+      break;
+    case 3:
+      answer = menuAlignment();
+      answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
+      break;
+    case 4:
+      menuPier();
+      break;
+    case 5:
+      if (SetLX200(":SU#") == LX200_VALUESET)
+      {
+        DisplayMessage("RA DEC", T_SAVED, 500);
+      }
+      else
+      {
+        DisplayMessage(T_LX200COMMAND, T_FAILED, 1000);
+      }
+      break;
+    default:
+      break;
+    }
+  }
+  if (!sleepDisplay)
+  {
+    buttonPad.setControlerMode();
+  }
+
+}
+
+void SmartHandController::menuTelActionPushToGoto()
 {
   buttonPad.setMenuMode();
 
@@ -143,6 +198,112 @@ void SmartHandController::menuTelAction()
           exitMenu = true;
           break;
         case 9:
+        {
+          menuSpirale();
+          break;
+        }
+        default:
+          break;
+        }
+      }
+    }
+  }
+  if (!sleepDisplay)
+  {
+    buttonPad.setControlerMode();
+  }
+}
+
+void SmartHandController::menuTelActionGoto()
+{
+  buttonPad.setMenuMode();
+
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
+  while (!exitMenu)
+  {
+    ta_MountStatus.updateMount();
+    TeenAstroMountStatus::ParkState currentstate = ta_MountStatus.getParkState();
+
+    if (currentstate == TeenAstroMountStatus::PRK_PARKED)
+    {
+      const char* string_list_main_ParkedL0 = T_UNPARK;
+      tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPEACTION, s_sel, string_list_main_ParkedL0);
+      s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+      switch (tmp_sel)
+      {
+      case 0:
+        exitMenu = true;
+        break;
+      case 1:
+        SetLX200(":hR#");
+        exitMenu = true;
+        break;
+      default:
+        break;
+      }
+    }
+    else if (currentstate == TeenAstroMountStatus::PRK_UNPARKED)
+    {
+      const char* string_list_main_UnParkedL0 = telescoplocked ? T_UNLOCK : T_GOTO "\n" T_SYNC "\n" T_ALIGN "\n" T_TRACKING "\n" T_SIDEOFPIER "\n" T_SAVE " RADEC\n" T_LOCK "\n" T_SPIRAL;
+      tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPEACTION, s_sel, string_list_main_UnParkedL0);
+      s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+      MENU_RESULT answer = MR_CANCEL;
+      if (telescoplocked)
+      {
+        switch (tmp_sel)
+        {
+        case 0:
+          exitMenu = true;
+          break;
+        case 1:
+          telescoplocked = false;
+          exitMenu = true;
+          break;
+        default:
+          break;
+        }
+      }
+      else
+      {
+        switch (tmp_sel)
+        {
+        case 0:
+          exitMenu = true;
+          break;
+        case 1:
+          answer = menuSyncGoto(NAV_GOTO);
+          answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
+          break;
+        case 2:
+          answer = menuSyncGoto(NAV_SYNC);
+          answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
+          break;
+        case 3:
+          answer = menuAlignment();
+          answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
+          break;
+        case 4:
+          menuTrack();
+          break;
+        case 5:
+          menuPier();
+          break;
+        case 6:
+          if (SetLX200(":SU#") == LX200_VALUESET)
+          {
+            DisplayMessage("RA DEC", T_SAVED, 500);
+          }
+          else
+          {
+            DisplayMessage(T_LX200COMMAND, T_FAILED, 1000);
+          }
+          break;
+        case 7:
+          telescoplocked = true;
+          exitMenu = true;
+          break;
+        case 8:
         {
           menuSpirale();
           break;
@@ -341,7 +502,7 @@ bool SmartHandController::SelectStarAlign()
   }
   cat_mgr.setLat(lat);
   cat_mgr.setLstT0(LT0);
-  bool ok = menuCatalogAlign() != SmartHandController::MENU_RESULT::MR_CANCEL;
+  bool ok = menuCatalogAlign(ta_MountStatus.isPushTo()?NAV_PUSHTO: NAV_GOTO) != SmartHandController::MENU_RESULT::MR_CANCEL;
   buttonPad.setControlerMode();
   return ok;
 }

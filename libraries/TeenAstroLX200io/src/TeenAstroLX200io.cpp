@@ -223,7 +223,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
         break;
       }
     }
-    return recvBuffer[0] != 0;
+    return recvBuffer[0] == '1';
     break;
   }
   case CMDR_LONG:

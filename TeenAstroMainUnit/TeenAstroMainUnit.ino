@@ -3,7 +3,7 @@
  * by          Howard Dutton, Charles Lemaire, Markus Noga, Francois Desvall�e
  *
  * Copyright (C) 2012 to 2016 On-Step by Howard Dutton
- * Copyright (C) 2016 to 2022 TeenAstro by Charles Lemaire, Markus Noga, Francois Desvall�e
+ * Copyright (C) 2016 to 2024 TeenAstro by Charles Lemaire, Markus Noga, Francois Desvall�e
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -187,7 +187,7 @@ void loop()
   static ErrorsTraking StartLoopError = ERRT_NONE;
   StartLoopError = lastError;
   // GUIDING -------------------------------------------------------------------------------------------
-  if (!movingTo)
+  if (!movingTo && enableMotor)
   {
     checkST4();
     CheckSpiral();

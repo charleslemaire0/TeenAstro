@@ -208,7 +208,7 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   {
     page = ServerPage::Index;
   }
-  else if (!ta_MountStatus.hasEncoder() && page == ServerPage::Encoders)
+  else if (!ta_MountStatus.encodersEnable() && page == ServerPage::Encoders)
   {
     page = ServerPage::Index;
   }
@@ -279,7 +279,7 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   data += page == ServerPage::Site ? FPSTR(html_links5S) : FPSTR(html_links5N);
   data += page == ServerPage::Mount ? FPSTR(html_links6S) : FPSTR(html_links6N);
   data += page == ServerPage::Limits ? FPSTR(html_links7S) : FPSTR(html_links7N);
-  if (ta_MountStatus.hasEncoder())
+  if (ta_MountStatus.encodersEnable())
   {
     data += page == ServerPage::Encoders ? FPSTR(html_links8S) : FPSTR(html_links8N);
   }
@@ -548,6 +548,7 @@ void TeenAstroWifi::update()
     return;
   }
   server.handleClient();
+
   ArduinoOTA.handle();
 
   // disconnect client

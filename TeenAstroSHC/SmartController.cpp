@@ -101,7 +101,14 @@ void SmartHandController::setup(
   {
     return;
   }
-  DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
+  char line[32]="";
+  char drivername[10] = "";
+  ta_MountStatus.getDriverName(drivername);
+  strcat(line, ta_MountStatus.getVN());
+  strcat(line, " ");
+  strcat(line, drivername);
+
+  DisplayMessage("Main Unit " T_VERSION, line, 1500);
   if (ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor))
   {    
     if (ta_MountStatus.findFocuser())
@@ -317,7 +324,6 @@ void SmartHandController::update()
 
   if (top - lastpageupdate > 200)
   {
-
     updateMainDisplay(pages[current_page].p);
   }
 
@@ -334,7 +340,9 @@ void SmartHandController::update()
   {
     if (eventbuttons[3] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
     {
-      menuTelAction();
+      ta_MountStatus.isPushTo() ? menuTelActionPushTo() :
+        ta_MountStatus.encodersEnable() ? menuTelActionPushToGoto() :
+        menuTelActionGoto();
     }
     else if (eventbuttons[1] == E_LONGPRESS || eventbuttons[1] == E_CLICK || eventbuttons[1] == E_LONGPRESSTART)
     {
@@ -434,6 +442,8 @@ bool SmartHandController::isSleeping()
 
 void SmartHandController::manualMove(bool &moving)
 {
+  if (ta_MountStatus.isPushTo())
+    return;
   moving = ta_MountStatus.getTrackingState() == TeenAstroMountStatus::TRK_SLEWING ||
     ta_MountStatus.getParkState() == TeenAstroMountStatus::PRK_PARKING ||
     ta_MountStatus.isSpiralRunning();

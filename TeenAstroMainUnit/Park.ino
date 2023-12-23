@@ -166,6 +166,10 @@ byte park()
   {
     return 4;
   }
+  if (!enableMotor)
+  {
+    return 5;
+  }
 
   // get the position we're supposed to park at
   long    h = XEEPROM.readLong(getMountAddress(EE_posAxis1));
@@ -255,7 +259,10 @@ void unpark()
   parkStatus = PRK_UNPARKED;
   XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
   // start tracking the sky
-  sideralTracking = true;
+  if (enableMotor)
+  {
+    sideralTracking = true;
+  }
   return;
 }
 

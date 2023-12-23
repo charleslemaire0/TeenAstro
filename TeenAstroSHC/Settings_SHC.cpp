@@ -175,7 +175,8 @@ void SmartHandController::menuButtonSpeed()
     buttonPad.setMenuMode();
     break;
   }
-
+  default:
+    return;
   }
 }
 

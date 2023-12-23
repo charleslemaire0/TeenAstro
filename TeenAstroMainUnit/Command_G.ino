@@ -149,15 +149,18 @@ void Command_GX()
       // :GXEA Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
       // :GXEZ Returns: DDD* MM# or DDD * MM'SS# (based on precision setting)
     {
-#if HASEncoder
-      Coord_HO HO_T = getHorETopo();
-      f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
-      f1 = HO_T.Alt() * RAD_TO_DEG;
-#else
-      Coord_HO HO_T = getHorTopo();
-      f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
-      f1 = HO_T.Alt() * RAD_TO_DEG;
-#endif // HASEncoder
+      if (enableEncoder)
+      {
+        Coord_HO HO_T = getHorETopo();
+        f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
+        f1 = HO_T.Alt() * RAD_TO_DEG;
+      }
+      else
+      {
+        Coord_HO HO_T = getHorTopo();
+        f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
+        f1 = HO_T.Alt() * RAD_TO_DEG;
+      }
       command[3] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
     }
     break;
@@ -168,11 +171,10 @@ void Command_GX()
       //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
       //  :GR#   Get Telescope Encoder RA
       //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
-#if HASEncoder
-      Coord_EQ EQ_T = getEquE( *localSite.latitude() * DEG_TO_RAD);
-#else
-      Coord_EQ EQ_T = getEqu( *localSite.latitude() * DEG_TO_RAD);
-#endif
+      Coord_EQ EQ_T = enableEncoder ?
+        getEquE(*localSite.latitude() * DEG_TO_RAD) :
+        getEqu(*localSite.latitude() * DEG_TO_RAD);
+
       if (command[3] == 'R')
       {
         f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
@@ -671,11 +673,12 @@ void Command_GX()
     reply[14] = 'A' + val;
     reply[15] = '0' + lastError;
     val = 0;
-#if HASEncoder
-    bitWrite(val, 0, 1);
+
+    bitWrite(val, 0, enableEncoder);
     bitWrite(val, 1, encoderA1.calibrating() && encoderA2.calibrating());
     bitWrite(val, 2, PushtoStatus != PT_OFF);
-#endif
+    bitWrite(val, 3, enableMotor);
+
     reply[16] = 'A' + val;
     reply[17] = '#';
     reply[18] = 0;

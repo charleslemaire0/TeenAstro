@@ -1,6 +1,7 @@
 #include "SmartController.h"
 #include "SHC_text.h"
 
+
 void SmartHandController::menuMotor(const uint8_t axis)
 {
   static uint8_t s_sel = 1;

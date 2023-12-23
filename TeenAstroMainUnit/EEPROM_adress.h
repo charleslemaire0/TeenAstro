@@ -73,6 +73,8 @@ uint8_t             midx;
 
 #define EE_siderealClockSpeed     88
 
+//
+#define EE_enableEncoderMotor     99
 
 //motor1
 #define EE_motorA1gear            100

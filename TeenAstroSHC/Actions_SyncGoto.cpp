@@ -29,7 +29,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(NAV mode)
 {
   static int current_selection = 1;
 
-  if (mode == NAV_PUSHTO && !ta_MountStatus.hasEncoder())
+  if (mode == NAV_PUSHTO && !ta_MountStatus.encodersEnable())
   {
     DisplayMessage(T_ENCODERS, T_NOT_CONNECTED,-1);
     return MR_OK;
@@ -258,14 +258,19 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalog(NAV mode, int 
   return MR_CANCEL;
 }
 
-SmartHandController::MENU_RESULT SmartHandController::menuCatalogAlign()
+SmartHandController::MENU_RESULT SmartHandController::menuCatalogAlign(NAV mode)
 {
   cat_mgr.select(0);
   char title[20] = "";
   cat_mgr.filtersClear();
   cat_mgr.filterAdd(FM_OBJ_HAS_NAME);
   cat_mgr.filterAdd(FM_ABOVE_HORIZON, 1);
-  strcat(title, "Goto ");
+  if (mode== NAV_PUSHTO)
+    strcat(title, "PushTo ");
+  else if (mode == NAV_GOTO)
+    strcat(title, "Goto ");
+  else
+    return MR_CANCEL;
   strcat(title, cat_mgr.catalogTitle());
   if (cat_mgr.isInitialized())
   {
@@ -273,7 +278,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalogAlign()
     {
       if (display->UserInterfaceCatalog(&buttonPad, title))
       {
-        if (DisplayMessageLX200(SyncGotoCatLX200(NAV_GOTO), false))
+        if (DisplayMessageLX200(SyncGotoCatLX200(mode), false))
         {
           cat_mgr.filtersClear();
           return MR_QUIT;

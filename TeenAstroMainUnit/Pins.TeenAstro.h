@@ -96,7 +96,7 @@
 #if VERSION == 240                      // Teensy 3.2
 
     #ifndef AxisDriver
-        #define AxisDriver  3               // Select your driver 2 for the TMC2130, 3 for the TMC5160, 4 for the TMC2160
+        #define AxisDriver  3               // Select your driver 0 for STEPDIR 2 for the TMC2130, 3 for the TMC5160, 4 for the TMC2160
     #endif
 
     // Motor 1 : RA / AZ
@@ -213,7 +213,7 @@
 #if VERSION == 250                      // Teensy 4.0
     
     #ifndef AxisDriver
-        #define AxisDriver  3               // Select your driver 2 for the TMC2130, 3 for the TMC5160, 4 for the TMC2160
+        #define AxisDriver  3               // Select your driver 0 for STEPDIR 2 for the TMC2130, 3 for the TMC5160, 4 for the TMC2160
     #endif
 
     // Motor 1 : RA / AZ
@@ -369,5 +369,5 @@
 
 #endif
 
-#define HASST4 (defined ST4RAw && defined ST4RAe && defined ST4DEn && defined ST4DEs)
+#define HASST4 (defined ST4RAw && defined ST4RAe && defined ST4DEn && defined ST4DEs && defined TTR)
 #define HASEncoder (defined EA1A && defined EA1B && defined EA2A && defined EA2B)
