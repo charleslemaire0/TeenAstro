@@ -38,7 +38,7 @@ void SmartHandController::menuMotors()
       case 7:
         if (display->UserInterfaceMessage(&buttonPad, T_DISABLE, T_MOTORS, "", T_NO "\n" T_YES) == 2)
         {
-          if (SetLX200(":SXMD#") == LX200_VALUESET)
+          if (SetLX200(":SXME,n#") == LX200_VALUESET)
           {
             DisplayMessage(T_TELESCOPE, T_REBOOT, 500);
             powerCycleRequired = true;
@@ -71,7 +71,7 @@ void SmartHandController::menuMotors()
       case 1:
         if (display->UserInterfaceMessage(&buttonPad, T_ENABLE, T_MOTORS, "", T_NO "\n" T_YES) == 2)
         {
-          if (SetLX200(":SXME#") == LX200_VALUESET)
+          if (SetLX200(":SXME,y#") == LX200_VALUESET)
           {
             DisplayMessage(T_TELESCOPE, T_REBOOT, 500);
             powerCycleRequired = true;

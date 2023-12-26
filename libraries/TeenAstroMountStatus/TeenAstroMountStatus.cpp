@@ -456,24 +456,14 @@ bool TeenAstroMountStatus::hasFocuser()
 }
 bool TeenAstroMountStatus::encodersEnable()
 {
-  static bool firstime = true;
-  if (firstime)
-  {
-    updateMount();
-    m_encoderEnable = bitRead(m_TempMount[16] - 'A', 0);
-    firstime = false;
-  }
+  updateMount();
+  m_encoderEnable = bitRead(m_TempMount[16] - 'A', 0);
   return m_encoderEnable;
 }
 bool TeenAstroMountStatus::motorsEnable()
 {
-  static bool firstime = true;
-  if (firstime)
-  {
-    updateMount();
-    m_motorEnable = bitRead(m_TempMount[16] - 'A', 3);
-    firstime = false;
-  }
+  updateMount();
+  m_motorEnable = bitRead(m_TempMount[16] - 'A', 3);
   return m_motorEnable;
 }
 bool TeenAstroMountStatus::CalibratingEncoder()

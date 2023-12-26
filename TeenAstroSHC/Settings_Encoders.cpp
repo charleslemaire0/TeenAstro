@@ -40,7 +40,7 @@ void SmartHandController::menuEncoders()
       case 7:
         if (display->UserInterfaceMessage(&buttonPad, T_DISABLE, T_ENCODERS, "", T_NO "\n" T_YES) == 2)
         {
-          if (SetLX200(":SXED#") == LX200_VALUESET)
+          if (SetLX200(":SXEE,n#") == LX200_VALUESET)
           {
             DisplayMessage(T_TELESCOPE, T_REBOOT, 500);
             powerCycleRequired = true;
@@ -74,7 +74,7 @@ void SmartHandController::menuEncoders()
       case 1:
         if (display->UserInterfaceMessage(&buttonPad, T_ENABLE, T_ENCODERS, "", T_NO "\n" T_YES) == 2)
         {
-          if (SetLX200(":SXEE#") == LX200_VALUESET)
+          if (SetLX200(":SXEE,y#") == LX200_VALUESET)
           {
             DisplayMessage(T_TELESCOPE, T_REBOOT, 500);
             powerCycleRequired = true;

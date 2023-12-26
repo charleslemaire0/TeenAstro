@@ -23,11 +23,10 @@ const char html_configMountName3[] PROGMEM =
 " (Edit the name of the selected mount)"
 "</form>"
 "<br/>\r\n";
-
 const char html_configMount_1[] PROGMEM =
-"<div class='bt'> Equatorial Mount Type: <br/> </div>"
+"<div class='bt'>Mount Type: <br/> </div>"
 "<form action='/configuration_mount.htm'>"
-"<select name='mount' onchange='this.form.submit()' >";
+"<select onchange='this.form.submit()' style='width:11em' name='mount'>";
 const char html_configMount_2[] PROGMEM =
 "</select>"
 "</form>"
@@ -43,8 +42,6 @@ const char html_on_1[] PROGMEM = "<option selected value='1'>On</option>";
 const char html_on_2[] PROGMEM = "<option value='1'>On</option>";
 const char html_off_1[] PROGMEM = "<option selected value='2'>Off</option>";
 const char html_off_2[] PROGMEM = "<option value='2'>Off</option>";
-
-
 
 const char html_reboot_t[] PROGMEM =
 "<br/><form method='get' action='/configuration_mount.htm'>"
@@ -106,11 +103,24 @@ void TeenAstroWifi::handleConfigurationMount()
     ta_MountStatus.updateMount();
 
     data += FPSTR(html_configMount_1);
-    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_GEM ? data += "<option selected value='1'>German</option>" : data += "<option value='1'>German</option>";
-    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK ? data += "<option selected value='2'>Fork</option>" : data += "<option value='2'>Fork</option>";
-    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_ALTAZM ? data += "<option selected value='3'>Alt Az</option>" : data += "<option value='3'>Alt Az</option>";
-    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK_ALT ? data += "<option selected value='4'>Alt Az Fork</option>" : data += "<option value='4'>Alt Az Fork</option>";
+    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_GEM ? data += "<option selected value='1'>German Eq</option>" : data += "<option value='1'>German Eq</option>";
+    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK ? data += "<option selected value='2'>Fork Eq</option>" : data += "<option value='2'>Fork Eq</option>";
+    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_ALTAZM ? data += "<option selected value='3'>German Alt Az</option>" : data += "<option value='3'>German Alt Az</option>";
+    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK_ALT ? data += "<option selected value='4'>Fork Alt Az</option>" : data += "<option value='4'>Fork Alt Az</option>";
     data += FPSTR(html_configMount_2);
+
+    sprintf_P(temp, html_Opt_1, "motors");
+    data += temp;
+    ta_MountStatus.motorsEnable() ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
+    !ta_MountStatus.motorsEnable() ? data += FPSTR(html_off_1)  : data += FPSTR(html_off_2);
+    data += "</select> Enable Motors</form><br/>\r\n";
+    sendHtml(data);
+
+    sprintf_P(temp, html_Opt_1, "encoders");
+    data += temp;
+    ta_MountStatus.encodersEnable() ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
+    !ta_MountStatus.encodersEnable() ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
+    data += "</select> Enable Encoders</form><br/>\r\n";
     sendHtml(data);
 
     data += FPSTR(html_configRefraction);
@@ -155,8 +165,8 @@ void TeenAstroWifi::processConfigurationMountGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
-      SetMountLX200(i);
-      restartRequired_t = true;
+      if (SetMountLX200(i) == LX200_VALUESET)
+        restartRequired_t = true;
     }
   }
   // name
@@ -174,8 +184,32 @@ void TeenAstroWifi::processConfigurationMountGet()
     {
       sprintf(temp, ":S!X#");
       temp[3] = '0' + i;
-      SetLX200(temp);
-      restartRequired_t = true;
+      if (SetLX200(temp) == LX200_VALUESET)
+        restartRequired_t = true;
+    }
+  }
+
+  v = server.arg("motors");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
+    {
+      if ((i == 1 ? SetLX200(":SXME,y#") : SetLX200(":SXME,n#")) == LX200_VALUESET)
+      {
+        restartRequired_t = true;
+      }
+    }
+  }
+
+  v = server.arg("encoders");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
+    {
+      if ((i == 1 ? SetLX200(":SXEE,y#") : SetLX200(":SXEE,n#")) == LX200_VALUESET)
+      {
+        restartRequired_t = true;
+      }
     }
   }
 

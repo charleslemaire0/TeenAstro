@@ -50,37 +50,32 @@ void Command_SX()
     switch (command[3])
     {
     case 'E':
-      // :SXEE#  enable encoder
+      // :SXEE,y#  enable encoders
     {
-#ifdef HASEncoder
-      if (!enableEncoder)
+#if HASEncoder
+      i = command[5] == 'y' ? 1 : (command[5] == 'n' ? 0 : -1);
+      if (i != -1)
       {
-        enableEncoder = true;
-        WriteEEPROMEncoderMotorMode();
-        reboot_unit = true;
+        if (VERSION < 250)
+          replyShortFalse();
+        else
+        {
+          if (enableEncoder != (bool)i)
+          {
+            enableEncoder = (bool)i;
+            WriteEEPROMEncoderMotorMode();
+            reboot_unit = true;
+          }
+          replyShortTrue();
+        }
       }
-      replyValueSetShort(true);
-#else
-      replyValueSetShort(false);
-#endif // HASEncoder
-
-    }
-    break;
-    case 'D':
-      // :SXED#  disable encoder
-    {
-      if (VERSION < 250)
-        replyShortFalse();
       else
       {
-        if (enableEncoder)
-        {
-          enableEncoder = false;
-          WriteEEPROMEncoderMotorMode();
-          reboot_unit = true;
-        }
-        replyValueSetShort(true);
+        replyShortFalse();
       }
+#else
+      replyShortFalse();
+#endif // HASEncoder
     }
     break;
     case 'O':
@@ -471,40 +466,34 @@ void Command_SX()
     switch (command[3])
     {
     case 'E':
-      // :SXME#  enable motors
+      // :SXME,y#  enable motors
     {
-      if (VERSION < 250)
-        replyShortFalse();
+#if HASEncoder
+      i = command[5] == 'y' ? 1 : (command[5] == 'n' ? 0 : -1);
+      if (i != -1)
+      {
+        if (VERSION < 250)
+          replyShortFalse();
+        else
+        {
+          if (enableMotor != (bool)i)
+          {
+            enableMotor = i;
+            WriteEEPROMEncoderMotorMode();
+            reboot_unit = true;
+          }
+          replyShortTrue();
+        }
+      }
       else
       {
-        if (!enableMotor)
-        {
-          enableMotor = true;
-          WriteEEPROMEncoderMotorMode();
-          reboot_unit = true;
-        }
-        replyShortTrue();
-      }
-    }
-    break;
-    case 'D':
-      // :SXMD#  disable motor
-    {
-      if (VERSION < 250)
         replyShortFalse();
-      else
-      {
-        if (enableMotor)
-        {
-          enableMotor = false;
-          WriteEEPROMEncoderMotorMode();
-          reboot_unit = true;
-        }
-        replyShortTrue();
       }
+#else
+      replyShortFalse();
+#endif
     }
-    break;
-     
+    break;     
     case 'B':
     {
       // :SXMBn,VVVV# Set Backlash
