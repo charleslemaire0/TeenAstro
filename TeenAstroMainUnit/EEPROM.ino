@@ -309,7 +309,7 @@ void initmotor(bool deleteAlignment)
 
 void ReadEEPROMEncoderMotorMode()
 {
-#ifdef HASEncoder
+#if HASEncoder
   byte val = XEEPROM.read(getMountAddress(EE_enableEncoderMotor));
   enableMotor = bitRead(val, 0);
   enableEncoder = bitRead(val, 1);
@@ -320,7 +320,7 @@ void ReadEEPROMEncoderMotorMode()
 }
 void WriteEEPROMEncoderMotorMode()
 {
-#ifdef HASEncoder
+#if HASEncoder
   byte val = 0;
   bitWrite(val, 0, enableMotor);
   bitWrite(val, 1, enableEncoder);
@@ -330,7 +330,7 @@ void WriteEEPROMEncoderMotorMode()
 
 void initencoder()
 {
-#ifdef HASEncoder
+#if HASEncoder
   if (enableEncoder)
   {
     readEEPROMencoder();
