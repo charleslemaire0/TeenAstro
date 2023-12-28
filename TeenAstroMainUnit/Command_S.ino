@@ -602,11 +602,11 @@ void Command_SX()
     case 'S':
     {
       // :SXMBn,VVVV# Set Step per Rotation
-      int i;
+      unsigned int i;
       bool ok = !TelescopeBusy();
       ok &= (command[4] == 'D' || command[4] == 'R');
       ok &= (strlen(&command[6]) > 1) && (strlen(&command[6]) < 11);
-      ok &= atoi2((char*)&command[6], &i);
+      ok &= atoui2((char*)&command[6], &i);
       if (ok)
       {
         ok = false;
@@ -618,7 +618,7 @@ void Command_SX()
             cli();
             staA2.pos = fact * staA2.pos;
             sei();
-            motorA2.stepRot = (unsigned int)i;
+            motorA2.stepRot = i;
             XEEPROM.writeUShort(getMountAddress(EE_motorA2stepRot), i);
             ok = true;
           }
@@ -631,7 +631,7 @@ void Command_SX()
             cli();
             staA1.pos = fact * staA1.pos;
             sei();
-            motorA1.stepRot = (unsigned int)i;
+            motorA1.stepRot = i;
             XEEPROM.writeUShort(getMountAddress(EE_motorA1stepRot), i);
             ok = true;
           }
@@ -760,8 +760,8 @@ void Command_SX()
     case 'C':
     {
       // :SXMRn# Set Current
-      unsigned int curr = (unsigned int)(strtol(&command[6], NULL, 10) / 100) * 100;
       bool ok = false;
+      unsigned int curr = (strtoul(&command[6], NULL, 10) / 100) * 100;
       if (curr >= 100)
       {
         if (command[4] == 'D' && curr <= motorA2.driver.getMaxCurrent())
@@ -781,7 +781,7 @@ void Command_SX()
             {
               motorA2.lowCurr = curr;
               XEEPROM.write(getMountAddress(EE_motorA2lowCurr), motorA2.lowCurr / 100);
-              motorA2.driver.setCurrent((unsigned int)motorA2.lowCurr);
+              motorA2.driver.setCurrent(motorA2.lowCurr);
               ok = true;
             }
           }
@@ -803,7 +803,7 @@ void Command_SX()
             {
               motorA1.lowCurr = curr;
               XEEPROM.write(getMountAddress(EE_motorA1lowCurr), motorA1.lowCurr / 100);
-              motorA1.driver.setCurrent((unsigned int)motorA1.lowCurr);
+              motorA1.driver.setCurrent(motorA1.lowCurr);
               ok = true;
             }
           }
@@ -824,7 +824,6 @@ void Command_SX()
       if (ok)
       {
         i = i - 64;
-
         if (command[4] == 'D')
         {
           motorA2.driver.setSG(i);
@@ -890,10 +889,6 @@ void Command_SX()
 
 void Command_S(Command& process_command)
 {
-  char* conv_end;
-  int i, j;
-  double f, f1;
-
   switch (command[1])
   {
     //  :S!n#
@@ -901,7 +896,7 @@ void Command_S(Command& process_command)
     //         Return Nothing As it force a reboot
   case '!':
   {
-    i = (int)(command[2] - '0');
+    int i = (int)(command[2] - '0');
     bool ok = i > 0 && i < 5 && !isMountTypeFix;
     if (ok)
     {
@@ -928,7 +923,7 @@ void Command_S(Command& process_command)
         //         0=115.2K, 1=56.7K, 2=38.4K, 3=28.8K, 4=19.2K, 5=14.4K, 6=9600, 7=4800, 8=2400, 9=1200
         //         Returns: "1" At the current baud rate and then changes to the new rate for further communication
   {
-    i = (int)(command[2] - '0');
+    int i = (int)(command[2] - '0');
     bool ok = (i >= 0) && (i < 10);
     if (ok)
     {
@@ -969,6 +964,7 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
   {
+    int i;
     bool ok = atoi2(&command[2], &i) && localSite.setElev(i);
     replyValueSetShort(ok);
   }
@@ -990,9 +986,9 @@ void Command_S(Command& process_command)
     //                  1 on success
   {
     double longi = 0;
-    if ((command[2] == '-') || (command[2] == '+')) i = 1;
-    else i = 0;
-    j = strlen(&command[7 + i]) > 1 ? (command[8 + i] == ':') : 0;
+
+    int i = (command[2] == '-') || (command[2] == '+') ? 1 : 0;
+    int j = strlen(&command[7 + i]) > 1 ? (command[8 + i] == ':') : 0;
     bool ok = dmsToDouble(&longi, &command[2 + i], false, j);
     if (ok)
     {
@@ -1009,7 +1005,8 @@ void Command_S(Command& process_command)
 //                    1 on success
   case 'G':
   {
-    f = strtod(&command[2], &conv_end);
+    char* conv_end;
+    double f = strtod(&command[2], &conv_end);
     bool ok = (&command[2] != conv_end) && (f >= -12 && f <= 12.0);
     if (ok)
     {
@@ -1024,6 +1021,7 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
   {
+    int i;
     bool ok = (command[2] != 0);
     ok &= !(strlen(&command[2]) > 3);
     ok &= atoi2(&command[2], &i);
@@ -1060,7 +1058,8 @@ void Command_S(Command& process_command)
     //          Set site name to be <string>, up to 14 characters.
     //          Return: 0 on failure
     //                  1 on success
-    i = command[1] - 'M';
+  {
+    int i = command[1] - 'M';
     if (strlen(&command[2]))
     {
       bool ok = XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, &command[2], siteNameLen);
@@ -1068,7 +1067,8 @@ void Command_S(Command& process_command)
     }
     else
       replyNothing();
-    break;
+  }
+  break;
   case 'm':
     //  :Sm#   Sets the meridian pier-side for the next Target, TeenAstro LX200 command
     //         Returns: E#, W#, N# (none/parked), ?# (Meridian flip in progress)
@@ -1106,6 +1106,7 @@ void Command_S(Command& process_command)
     //          Return: 0 on failure
     //                  1 on success
   {
+    int i;
     bool ok = (command[2] != 0) && (strlen(&command[2]) < 3);
     ok &= (atoi2(&command[2], &i)) && ((i >= 60) && (i <= 91));
     if (ok)
@@ -1138,6 +1139,7 @@ void Command_S(Command& process_command)
     //                  1 on success     
   {
     bool ishighPrecision;
+    double f;
     if (strlen(&command[7]) > 1)
       ishighPrecision = command[8] == ':';
     else
@@ -1159,34 +1161,36 @@ void Command_S(Command& process_command)
     //  :STdd.ddddd#
     //          Return: 0 on failure
     //                  1 on success
-  { bool ok = !movingTo;
-  if (ok)
   {
-    f = strtod(&command[2], &conv_end);
-    bool ok = (&command[2] != conv_end) &&
-      (((f >= 30.0) && (f < 90.0)) || (abs(f) < 0.1));
+    bool ok = !movingTo;
     if (ok)
     {
-      if (abs(f) < 0.1)
+      char* conv_end;
+      double f = strtod(&command[2], &conv_end);
+      bool ok = (&command[2] != conv_end) &&
+        (((f >= 30.0) && (f < 90.0)) || (abs(f) < 0.1));
+      if (ok)
       {
-        sideralTracking = false;
-      }
-      else
-      {
-        RequestedTrackingRateHA = (f / 60.0) / 1.00273790935;
-        // todo apply rate
+        if (abs(f) < 0.1)
+        {
+          sideralTracking = false;
+        }
+        else
+        {
+          RequestedTrackingRateHA = (f / 60.0) / 1.00273790935;
+          // todo apply rate
+        }
       }
     }
-  }
-  replyValueSetShort(ok);
+    replyValueSetShort(ok);
   }
   break;
   case 'U':
     // :SU# store current User defined Position
   {
     Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
-    f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
-    f1 = EQ_T.Dec() * RAD_TO_DEG;
+    double f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
+    double f1 = EQ_T.Dec() * RAD_TO_DEG;
     XEEPROM.writeFloat(getMountAddress(EE_RA), (float)f);
     XEEPROM.writeFloat(getMountAddress(EE_DEC), (float)f1);
     replyValueSetShort(true);
