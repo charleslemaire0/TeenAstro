@@ -8,12 +8,13 @@ void Command_SX()
   //                  1 on success
   int i;
   long lval;
-  bool ok = false;
+
   switch (command[2])
   {
   case 'A':
     // :SXAn,VVVVVV# Align Model values
   {
+    bool ok = false;
     switch (command[3])
     {
     case '0':
@@ -82,6 +83,7 @@ void Command_SX()
       // :SXEO#  set encoder Sync Option
     {
       unsigned int i;
+      bool ok = false;
       if (atoui2(&command[5], &i) && i <= (unsigned int)(EncoderSync::ES_ALWAYS))
       {
         ok = true;
@@ -170,6 +172,7 @@ void Command_SX()
   case 'r':
     // :SXrn,V# refraction Settings
   {
+    bool ok = false;
     i = command[5] == 'y' ? 1 : (command[5] == 'n' ? 0 : -1);
     switch (command[3])
     {
@@ -302,6 +305,8 @@ void Command_SX()
       break;
     case 'A':
       // :SXLA,VVVV# set user defined minAXIS1
+    {
+      bool ok = false;
       i = (int)strtol(&command[5], NULL, 10);
       if (i >= 10 * geoA1.LimMinAxis && i < XEEPROM.readShort(getMountAddress(EE_maxAxis1)))
       {
@@ -310,9 +315,12 @@ void Command_SX()
         ok = true;
       }
       replyValueSetShort(ok);
-      break;
+    }
+    break;
     case 'B':
       // :SXLB,VVVV# set user defined maxAXIS1
+    {
+      bool ok = false;
       i = (int)strtol(&command[5], NULL, 10);
       if (i <= 10 * geoA1.LimMaxAxis && i > XEEPROM.readShort(getMountAddress(EE_minAxis1)))
       {
@@ -321,9 +329,12 @@ void Command_SX()
         ok = true;
       }
       replyValueSetShort(ok);
-      break;
+    }
+    break;
     case 'C':
       // :SXLC,VVVV# set user defined minAXIS2
+    {
+      bool ok = false;
       i = (int)strtol(&command[5], NULL, 10);
       if (i >= 10 * geoA2.LimMinAxis && i < XEEPROM.readShort(getMountAddress(EE_maxAxis2)))
       {
@@ -332,9 +343,12 @@ void Command_SX()
         ok = true;
       }
       replyValueSetShort(ok);
-      break;
+    }
+    break;
     case 'D':
       // :SXLD,VVVV# set user defined maxAXIS2
+    {
+      bool ok = false;
       i = (int)strtol(&command[5], NULL, 10);
       if (i <= 10 * geoA2.LimMaxAxis && i > XEEPROM.readShort(getMountAddress(EE_minAxis2)))
       {
@@ -343,7 +357,8 @@ void Command_SX()
         ok = true;
       }
       replyValueSetShort(ok);
-      break;
+    }
+    break;
     case 'E':
       // :SXLE,sVV.V# set user defined Meridian East Limit
       minutesPastMeridianGOTOE = (double)strtol(&command[5], NULL, 10);
