@@ -368,6 +368,8 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
     geoA2.setstepsPerRot((double)motorA2.gear / 1000.0 * motorA2.stepRot * pow(2, motorA2.micro));
     staA1.setBacklash_inSteps(motorA1.backlashAmount, geoA1.stepsPerArcSecond);
     staA2.setBacklash_inSteps(motorA2.backlashAmount, geoA2.stepsPerArcSecond);
+    staA1.target = staA1.pos;
+    staA2.target = staA2.pos;
     sei();
   }
   else
@@ -377,6 +379,8 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
     geoA2.setstepsPerRot(encoderA2.pulsePerDegree * 360);
     staA1.setBacklash_inSteps(motorA1.backlashAmount, geoA1.stepsPerArcSecond);
     staA2.setBacklash_inSteps(motorA2.backlashAmount, geoA2.stepsPerArcSecond);
+    staA1.target = staA1.pos;
+    staA2.target = staA2.pos;
     sei();
   }
 
