@@ -1056,17 +1056,37 @@ void  Command_G()
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //  :GR#   Get Telescope RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
+    //  :GDL#   Get Telescope Declination, TeenAstro LX200 command
+    //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
+    //  :GRL#   Get Telescope RA, TeenAstro LX200 command
+    //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
   {
     Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
     if (command[1] == 'R')
     {
-      double f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
-      PrintRa(f);
+      
+      if (command[2] == 'L')
+      {
+        double f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_DEG;
+        sprintf(reply, "%08.5f#", f);
+      }
+      else
+      {
+        double f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
+        PrintRa(f);
+      }
     }
     else if (command[1] == 'D')
     {
       double f1 = EQ_T.Dec() * RAD_TO_DEG;
-      PrintDec(f1);
+      if (command[2] == 'L')
+      {
+        sprintf(reply, "%+08.5f#", f1);
+      }
+      else
+      {
+        PrintDec(f1);
+      }
     }
     else
     {
