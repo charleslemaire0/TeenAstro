@@ -32,7 +32,6 @@ void PrintRa(double& val)
 
 void Command_GX()
 {
-  int i;
   double f, f1;
   long   l1;
   //  :GXnn#   Get TeenAstro Specific value
@@ -412,11 +411,13 @@ void Command_GX()
     case '1':
     case '2':
     case '3':
-      i = command[3] - '0';
+    {
+      int i = command[3] - '0';
       // :GXRn# return user defined rate
       dtostrf(guideRates[i], 2, 2, reply);
       strcat(reply, "#");
-      break;
+    }
+    break;
     case 'A':
       // :GXRA# returns the Degrees For Acceleration
       dtostrf(DegreesForAcceleration, 2, 1, reply);
@@ -468,24 +469,32 @@ void Command_GX()
     {
     case 'A':
       // :GXLA# get user defined minAXIS1 
-      i = XEEPROM.readShort(getMountAddress(EE_minAxis1));
+    {
+      int i = XEEPROM.readShort(getMountAddress(EE_minAxis1));
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     case 'B':
       // :GXLB# get user defined maxAXIS1 
-      i = XEEPROM.readShort(getMountAddress(EE_maxAxis1));
+    {
+      int i = XEEPROM.readShort(getMountAddress(EE_maxAxis1));
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     case 'C':
-      // :GXLC# get user defined minAXIS2 
-      i = XEEPROM.readShort(getMountAddress(EE_minAxis2));
+      // :GXLC# get user defined minAXIS2
+    {
+      int i = XEEPROM.readShort(getMountAddress(EE_minAxis2));
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     case 'D':
-      // :GXLD# get user defined maxAXIS2 
-      i = XEEPROM.readShort(getMountAddress(EE_maxAxis2));
+      // :GXLD# get user defined maxAXIS2
+    {
+      int i = XEEPROM.readShort(getMountAddress(EE_maxAxis2));
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     case 'E':
       // :GXLE# return user defined Meridian East Limit
       sprintf(reply, "%ld#", (long)round(minutesPastMeridianGOTOE));
@@ -523,24 +532,32 @@ void Command_GX()
     {
     case 'A':
       // :GXlA#  Mount type defined minAXIS1
-      i = geoA1.LimMinAxis;
+    {
+      int i = geoA1.LimMinAxis;
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     case 'B':
       // :GXlB#  Mount type defined maxAXIS1
-      i = geoA1.LimMaxAxis;
+    {
+      int i = geoA1.LimMaxAxis;
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     case 'C':
       // :GXlC#  Mount type defined minAXIS2
-      i = geoA2.LimMinAxis;
+    {
+      int i = geoA2.LimMinAxis;
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     case 'D':
       // :GXlD#  Mount type defined maxAXIS2
-      i = geoA2.LimMaxAxis;
+    {
+      int i = geoA2.LimMaxAxis;
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     default:
       replyLongUnknow();
       break;
@@ -558,7 +575,7 @@ void Command_GX()
     case '1':
       // :GXT1# UTC date 
     {
-      int i1, i2, i3, i4, i5;
+      int i, i1, i2, i3, i4, i5;
       rtk.getUTDate(i, i1, i2, i3, i4, i5);
       i = i % 100;
       sprintf(reply, "%02d/%02d/%02d#", i1, i2, i);
@@ -587,9 +604,8 @@ void Command_GX()
   {
     // :GXI#   Get telescope Status
     PoleSide currentSide = GetPoleSide();
-    for (i = 0; i < 50; i++)
+    for (int i = 0; i < 50; i++)
       reply[i] = ' ';
-    i = 0;
     reply[0] = '0' + 2 * movingTo + sideralTracking;
     reply[1] = '0' + sideralMode;
     const char* parkStatusCh = "pIPF";
@@ -682,7 +698,6 @@ void Command_GX()
     reply[16] = 'A' + val;
     reply[17] = '#';
     reply[18] = 0;
-    i = 17;
   }
   break;
   case 'J':
