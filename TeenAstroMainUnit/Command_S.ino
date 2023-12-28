@@ -1,14 +1,27 @@
 #include "Command.h"
 #include "ValueToString.h"
 //   S - Telescope Set Commands
+bool yesno(char l, bool& val)
+{
+  switch (l)
+  {
+  case 'y':
+    val = true;
+    return true;
+  case 'n':
+    val = false;
+    return true;
+  default:
+    break;
+  }
+  return false;
+}
+
 void Command_SX()
 {
   //  :SXnnn,VVVVVV...#   Set TeenAstro value
   //          Return: 0 on failure
   //                  1 on success
-  int i;
-  long lval;
-
   switch (command[2])
   {
   case 'A':
@@ -34,12 +47,7 @@ void Command_SX()
       //GeoAlign.writeCoe();
       break;
     case 'c':
-      i = command[5] == 'y' ? 1 : (command[5] == 'n' ? 0 : -1);
-      if (i != -1)
-      {
-        ok = 1;
-        TrackingCompForAlignment = i;
-      }
+      ok = yesno(command[5], TrackingCompForAlignment);
     }
     replyValueSetShort(ok);
     break;
@@ -54,26 +62,15 @@ void Command_SX()
       // :SXEE,y#  enable encoders
     {
 #if HASEncoder
-      i = command[5] == 'y' ? 1 : (command[5] == 'n' ? 0 : -1);
-      if (i != -1)
+      bool val;
+      bool ok = yesno(command[5], val);
+      if (ok && enableEncoder != val)
       {
-        if (VERSION < 250)
-          replyShortFalse();
-        else
-        {
-          if (enableEncoder != (bool)i)
-          {
-            enableEncoder = (bool)i;
-            WriteEEPROMEncoderMotorMode();
-            reboot_unit = true;
-          }
-          replyShortTrue();
-        }
+        enableEncoder = val;
+        WriteEEPROMEncoderMotorMode();
+        reboot_unit = true;
       }
-      else
-      {
-        replyShortFalse();
-      }
+      replyValueSetShort(ok);
 #else
       replyShortFalse();
 #endif // HASEncoder
@@ -172,37 +169,33 @@ void Command_SX()
   case 'r':
     // :SXrn,V# refraction Settings
   {
-    bool ok = false;
-    i = command[5] == 'y' ? 1 : (command[5] == 'n' ? 0 : -1);
-    switch (command[3])
+    bool val;
+    bool ok = yesno(command[5], val);
+    if (ok)
     {
-    case 'p':
-      if (i != -1)
+      switch (command[3])
       {
-        if (doesRefraction.setPole(i))
+      case 'p':
+        if (doesRefraction.setPole(val))
         {
           initTransformation(true);
           syncAtHome();
         }
-        ok = true;
-      }
-      break;
-    case 'g':
-      if (i != -1)
+        break;
+      case 'g':
       {
-        doesRefraction.setGoto(i);
-        ok = true;
+        doesRefraction.setGoto(val);
       }
       break;
-    case 't':
-      if (i != -1)
+      case 't':
       {
-        doesRefraction.setTracking(i);
-        ok = true;
+        doesRefraction.setTracking(val);
       }
       break;
-    default:
-      break;
+      default:
+        ok = false;
+        break;
+      }
     }
     replyValueSetShort(ok);
     break;
@@ -219,7 +212,7 @@ void Command_SX()
       bool ok = GuidingState == GuidingOFF;
       if (ok)
       {
-        i = command[3] - '0';
+        int i = command[3] - '0';
         int val = strtol(&command[5], NULL, 10);
         val = val > 0 && val < 256 ? val : pow(4, i);
         XEEPROM.write(getMountAddress(EE_Rate0 + i), val);
@@ -278,18 +271,22 @@ void Command_SX()
       break;
     case 'e':
       // :SXRe,VVVVVVVVVV# Store Rate for RA
-      lval = strtol(&command[5], NULL, 10);
+    {
+      long lval = strtol(&command[5], NULL, 10);
       storedTrakingRateRA = lval < -50000 || lval > 50000 ? 0 : lval;
       XEEPROM.writeLong(getMountAddress(EE_RA_Drift), storedTrakingRateRA);
       replyValueSetShort(true);
-      break;
+    }
+    break;
     case 'f':
       // :SXRf,VVVVVVVVVV# Store Rate for DEC
-      lval = strtol(&command[5], NULL, 10);
+    {
+      long lval = strtol(&command[5], NULL, 10);
       storedTrakingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
       XEEPROM.writeLong(getMountAddress(EE_DEC_Drift), storedTrakingRateDEC);
       replyValueSetShort(true);
-      break;
+    }
+    break;
     default:
       replyNothing();
       break;
@@ -307,7 +304,7 @@ void Command_SX()
       // :SXLA,VVVV# set user defined minAXIS1
     {
       bool ok = false;
-      i = (int)strtol(&command[5], NULL, 10);
+      int i = (int)strtol(&command[5], NULL, 10);
       if (i >= 10 * geoA1.LimMinAxis && i < XEEPROM.readShort(getMountAddress(EE_maxAxis1)))
       {
         XEEPROM.writeShort(getMountAddress(EE_minAxis1), i);
@@ -321,7 +318,7 @@ void Command_SX()
       // :SXLB,VVVV# set user defined maxAXIS1
     {
       bool ok = false;
-      i = (int)strtol(&command[5], NULL, 10);
+      int i = (int)strtol(&command[5], NULL, 10);
       if (i <= 10 * geoA1.LimMaxAxis && i > XEEPROM.readShort(getMountAddress(EE_minAxis1)))
       {
         XEEPROM.writeShort(getMountAddress(EE_maxAxis1), i);
@@ -335,7 +332,7 @@ void Command_SX()
       // :SXLC,VVVV# set user defined minAXIS2
     {
       bool ok = false;
-      i = (int)strtol(&command[5], NULL, 10);
+      int i = (int)strtol(&command[5], NULL, 10);
       if (i >= 10 * geoA2.LimMinAxis && i < XEEPROM.readShort(getMountAddress(EE_maxAxis2)))
       {
         XEEPROM.writeShort(getMountAddress(EE_minAxis2), i);
@@ -349,7 +346,7 @@ void Command_SX()
       // :SXLD,VVVV# set user defined maxAXIS2
     {
       bool ok = false;
-      i = (int)strtol(&command[5], NULL, 10);
+      int i = (int)strtol(&command[5], NULL, 10);
       if (i <= 10 * geoA2.LimMaxAxis && i > XEEPROM.readShort(getMountAddress(EE_minAxis2)))
       {
         XEEPROM.writeShort(getMountAddress(EE_maxAxis2), i);
@@ -387,6 +384,7 @@ void Command_SX()
       // :SXLH,sVV# set user defined horizon Limit
       // NB: duplicate with :Sh#
     {
+      int i;
       bool ok = (atoi2(&command[5], &i)) && ((i >= -30) && (i <= 30));
       if (ok)
       {
@@ -400,6 +398,7 @@ void Command_SX()
       // :SXLO,VV.VV# set user defined overhead Limit
       // NB: duplicate with :So#
     {
+      int i;
       bool ok = (atoi2(&command[5], &i)) && ((i >= 45) && (i <= 91));
       if (ok)
       {
@@ -412,6 +411,7 @@ void Command_SX()
     case 'S':
       // :SXLS,sVV# set user defined distance from Pole to keep tracking on for 6 hours after transit, in degrees
     {
+      int i;
       bool ok = (atoi2(&command[5], &i)) && ((i >= 0) && (i <= 181));
       if (ok)
       {
@@ -484,31 +484,20 @@ void Command_SX()
       // :SXME,y#  enable motors
     {
 #if HASEncoder
-      i = command[5] == 'y' ? 1 : (command[5] == 'n' ? 0 : -1);
-      if (i != -1)
+      bool val;
+      bool ok = yesno(command[5], val);
+      if (ok && enableMotor != val)
       {
-        if (VERSION < 250)
-          replyShortFalse();
-        else
-        {
-          if (enableMotor != (bool)i)
-          {
-            enableMotor = i;
-            WriteEEPROMEncoderMotorMode();
-            reboot_unit = true;
-          }
-          replyShortTrue();
-        }
+        enableMotor = val;
+        WriteEEPROMEncoderMotorMode();
+        reboot_unit = true;
       }
-      else
-      {
-        replyShortFalse();
-      }
+      replyValueSetShort(ok);
 #else
       replyShortFalse();
 #endif
     }
-    break;     
+    break;
     case 'B':
     {
       // :SXMBn,VVVV# Set Backlash
@@ -860,6 +849,7 @@ void Command_SX()
     case 'I':
       // :SXOI,V set Mount index
     {
+      int i;
       bool ok = (atoi2(&command[5], &i)) && ((i >= 0) && (i < maxNumMount));
       if (ok)
       {
