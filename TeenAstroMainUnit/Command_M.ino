@@ -109,22 +109,22 @@ void Command_M()
         {
           if (command[2] == 'n')
           {
-            guideA2.moveBW();
+            guideA2.moveFW();
           }
           else if (command[2] == 's')
           {
-            guideA2.moveFW();
+            guideA2.moveBW();
           }
         }
         else
         {
           if (command[2] == 'n')
           {
-            guideA2.moveFW();
+            guideA2.moveBW();
           }
           else if (command[2] == 's')
           {
-            guideA2.moveBW();
+            guideA2.moveFW();
           }
         }
         guideA2.durationLast = micros();
