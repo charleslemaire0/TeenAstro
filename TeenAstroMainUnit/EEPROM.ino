@@ -80,6 +80,8 @@ void writeDefaultMount()
   XEEPROM.writeLong(getMountAddress(EE_RA_Drift), 0);
   XEEPROM.writeLong(getMountAddress(EE_DEC_Drift), 0);
 
+  XEEPROM.write(getMountAddress(EE_SlewSettleDuration), 0);
+
   XEEPROM.write(getMountAddress(EE_enableEncoderMotor), 2);
   writeDefaultEEPROMmotor();
   doesRefraction.writeDefaultToEEPROM();
@@ -197,6 +199,14 @@ void initMount()
 #ifndef keepTrackingOnWhenFarFromPole
   distanceFromPoleToKeepTrackingOn = 181;
 #endif
+  
+  val = XEEPROM.read(getMountAddress(EE_SlewSettleDuration));
+  if (val > 200)
+  {
+    val = 0;
+    XEEPROM.write(getMountAddress(EE_SlewSettleDuration), val);
+  }
+  slewSettleDuration = val;
 
 }
 

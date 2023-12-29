@@ -61,8 +61,9 @@ void finalizeHome()
   parkClearBacklash();
   if (backlashStatus == DONE)
   {
-    syncAtHome();
     homeMount = false;
+    movingTo = false;
+    syncAtHome();
     // disable the stepper drivers
     enable_Axis(false);
   }

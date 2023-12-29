@@ -983,6 +983,13 @@ void Command_GX()
       // :GXOC# second Mount Name
       sprintf(reply, "%s#", mountName[1]);
       break;
+    case 'S':
+      // :GXOS# get Slew Settle Duration in teenth of seconds 
+    {
+      int i = XEEPROM.readShort(getMountAddress(EE_SlewSettleDuration));
+      sprintf(reply, "%d#", i);
+    }
+    break;
     }
   }
   break;

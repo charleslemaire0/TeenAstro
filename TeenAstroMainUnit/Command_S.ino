@@ -876,9 +876,25 @@ void Command_SX()
         XEEPROM.writeString(getMountAddress(EE_mountName, i), mountName[i], MountNameLen);
       }
       replyValueSetShort(ok);
-      break;
     }
     break;
+    case 'S':
+      // :SXOS,NNN set Mount settle duration in tenth of seconds
+    {
+      unsigned int i;
+      bool ok = atoui2((char*)&command[5], &i);
+      ok &= i < 200;
+      if (ok && slewSettleDuration != i)
+      {
+        slewSettleDuration = i;
+        XEEPROM.write(getMountAddress(EE_SlewSettleDuration), slewSettleDuration);
+      }
+      replyValueSetShort(ok);
+    }
+    break;
+    default:
+      replyNothing();
+      break;
     }
     break;
   default:

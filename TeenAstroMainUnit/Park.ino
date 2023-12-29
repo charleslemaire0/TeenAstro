@@ -135,6 +135,7 @@ void finalizePark()
   parkClearBacklash();
   if (backlashStatus == DONE)
   {
+    movingTo = false;
     parkStatus = PRK_PARKED;// success, we're parked 
     enable_Axis(false);// disable the stepper drivers
     XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);

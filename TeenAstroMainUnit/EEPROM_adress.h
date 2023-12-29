@@ -71,6 +71,9 @@ uint8_t             midx;
 #define EE_homePosAxis1     57 // in degree
 #define EE_homePosAxis2     61 // in degree
 
+//Slew Settle Time
+#define EE_SlewSettleDuration   65
+
 #define EE_siderealClockSpeed     88
 
 //

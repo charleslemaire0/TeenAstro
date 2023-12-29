@@ -45,6 +45,9 @@ bool homeSaved = false;
 bool atHome = true;
 bool homeMount = false;
 
+unsigned int slewSettleDuration = 0U;
+unsigned long lastSettleTime = 0U;
+bool settling = false;
 
 BacklashPhase backlashStatus = BacklashPhase::DONE;
 
