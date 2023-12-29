@@ -879,11 +879,11 @@ void Command_SX()
     }
     break;
     case 'S':
-      // :SXOS,NNN set Mount settle duration in tenth of seconds
+      // :SXOS,NNN set Mount settle duration in seconds
     {
       unsigned int i;
       bool ok = atoui2((char*)&command[5], &i);
-      ok &= i < 200;
+      ok &= i < 20;
       if (ok && slewSettleDuration != i)
       {
         slewSettleDuration = i;

@@ -201,7 +201,7 @@ void initMount()
 #endif
   
   val = XEEPROM.read(getMountAddress(EE_SlewSettleDuration));
-  if (val > 200)
+  if (val > 20)
   {
     val = 0;
     XEEPROM.write(getMountAddress(EE_SlewSettleDuration), val);

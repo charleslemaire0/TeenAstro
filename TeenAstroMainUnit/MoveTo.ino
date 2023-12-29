@@ -133,7 +133,7 @@ Again:
     else
     {
       unsigned long elapsedTime = millis() - lastSettleTime;
-      if (elapsedTime > slewSettleDuration * 100 )
+      if (elapsedTime > slewSettleDuration * 1000 )
       {
         settling = false;
         movingTo = false;

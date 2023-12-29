@@ -984,7 +984,7 @@ void Command_GX()
       sprintf(reply, "%s#", mountName[1]);
       break;
     case 'S':
-      // :GXOS# get Slew Settle Duration in teenth of seconds 
+      // :GXOS# get Slew Settle Duration in seconds 
     {
       int i = XEEPROM.readShort(getMountAddress(EE_SlewSettleDuration));
       sprintf(reply, "%d#", i);
