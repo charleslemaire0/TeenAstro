@@ -482,6 +482,11 @@ void Command_h()
     else
       replyShortTrue();
     break;
+  case 'S':
+    //  :hS#   Get if the park position is saved
+    //          Return: 0 or 1
+    parkSaved ? replyShortTrue() : replyShortFalse();
+    break;
   case 'R':
     //  :hR#   Restore parked telescope to operation
     //          Return: 0 on failure
