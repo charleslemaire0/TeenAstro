@@ -369,5 +369,5 @@
 
 #endif
 
-#define HASST4 (defined ST4RAw && defined ST4RAe && defined ST4DEn && defined ST4DEs && defined TTR)
+#define HASST4 (defined ST4RAw && defined ST4RAe && defined ST4DEn && defined ST4DEs)
 #define HASEncoder (defined EA1A && defined EA1B && defined EA2A && defined EA2B)
