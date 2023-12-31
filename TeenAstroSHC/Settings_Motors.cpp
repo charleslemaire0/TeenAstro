@@ -208,31 +208,56 @@ void SmartHandController::MenuTracking()
 {
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
-  while (!exitMenu)
+
+  if (ta_MountStatus.isAltAz())
   {
-    ta_MountStatus.updateMount();
-    const char* string_list_tracking = ta_MountStatus.isAltAz() ?
-      T_DRIFTSPEED "\n" T_REFRACTION : T_DRIFTSPEED "\n" T_REFRACTION  "\n"  T_ALIGNMENT "\n" T_TRACKINGCORRECTION;
-    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGOPTIONS, s_sel, string_list_tracking);
-    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
-    switch (tmp_sel)
+    while (!exitMenu)
     {
-    case 0:
-      return;
-    case 1:
-      menuTrackRate();
-      break;
-    case 2:
-      MenuTrackingRefraction();
-      break;
-    case 3:
-      MenuTrackingAlignment();
-      break;
-    case 4:
-      MenuTrackingCorrection();
-      break;
-    default:
-      break;
+      ta_MountStatus.updateMount();
+      const char* string_list_tracking = ta_MountStatus.isAltAz() ?
+        T_DRIFTSPEED "\n" T_REFRACTION : T_DRIFTSPEED "\n" T_REFRACTION;
+      tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGOPTIONS, s_sel, string_list_tracking);
+      s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+      switch (tmp_sel)
+      {
+      case 0:
+        return;
+      case 1:
+        menuTrackRate();
+        break;
+      case 2:
+        MenuTrackingRefraction();
+        break;
+      default:
+        break;
+      }
+    }
+  }
+  else
+  {
+    while (!exitMenu)
+    {
+      ta_MountStatus.updateMount();
+      const char* string_list_tracking = ta_MountStatus.isAltAz() ?
+        T_DRIFTSPEED "\n" T_REFRACTION : T_DRIFTSPEED "\n" T_REFRACTION  "\n" T_TRACKINGCORRECTION;
+      tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGOPTIONS, s_sel, string_list_tracking);
+      s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+      switch (tmp_sel)
+      {
+      case 0:
+        return;
+      case 1:
+        menuTrackRate();
+        break;
+      case 2:
+        MenuTrackingRefraction();
+        break;
+      case 3:
+        MenuTrackingCorrection();
+        break;
+      default:
+        break;
+      }
     }
   }
 }
@@ -246,32 +271,23 @@ void SmartHandController::MenuTrackingCorrection()
     TeenAstroMountStatus::RateCompensation comp = ta_MountStatus.getRateCompensation();
     switch (comp)
     {
-    case TeenAstroMountStatus::RC_UNKNOWN:
-    case TeenAstroMountStatus::RC_NONE:
+    case TeenAstroMountStatus::RC_RA:
       tmp_sel = 1;
       break;
-    case TeenAstroMountStatus::RC_ALIGN_RA:
-    case TeenAstroMountStatus::RC_FULL_RA:
+    case TeenAstroMountStatus::RC_BOTH:
       tmp_sel = 2;
       break;
-    case TeenAstroMountStatus::RC_ALIGN_BOTH:
-    case TeenAstroMountStatus::RC_FULL_BOTH:
-      tmp_sel = 3;
-      break;
     }
-    const char* string_list_tracking = T_NONE "\n" T_RIGHTASC "\n" T_BOTH;
+    const char* string_list_tracking = T_RIGHTASC "\n" T_BOTH;
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGCORRECTION, tmp_sel, string_list_tracking);
     switch (tmp_sel)
     {
     case 0:
       return;
     case 1:
-      DisplayMessageLX200(SetLX200(":T0#"), false);
-      break;
-    case 2:
       DisplayMessageLX200(SetLX200(":T1#"), false);
       break;
-    case 3:
+    case 2:
       DisplayMessageLX200(SetLX200(":T2#"), false);
       break;
     default:

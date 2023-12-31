@@ -73,36 +73,6 @@ void SmartHandController::MenuTrackingRefraction()
   }
 }
 
-
-void SmartHandController::MenuTrackingAlignment()
-{
-  char out[10];
-  uint8_t tmp_sel;
-  if (GetLX200(":GXAc#", out, sizeof(out)) == LX200_GETVALUEFAILED) strcpy(out, "n");
-  bool corr_on = out[0] == 'y';
-  const char* string_list_tracking = corr_on ? T_OFF : T_ON;
-  tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_ALIGNMENT, 0, string_list_tracking);
-  switch (tmp_sel)
-  {
-  case 1:
-  {
-    char out[20];
-    memset(out, 0, sizeof(out));
-    if ((corr_on ? SetLX200(":SXAc,n#") : SetLX200(":SXAc,y#")) == LX200_VALUESET)
-    {
-      DisplayMessage(T_ALIGNMENT, corr_on ? T_OFF : T_ON, 500);
-    }
-    else
-    {
-      DisplayMessage(T_LX200COMMAND, T_FAILED, 1000);
-    }
-    break;
-  }
-  default:
-    break;
-  }
-}
-
 void SmartHandController::menuMounts()
 {
   int val;

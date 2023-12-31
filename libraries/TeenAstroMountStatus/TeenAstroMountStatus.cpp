@@ -230,9 +230,9 @@ bool TeenAstroMountStatus::updateStoredTrackingRate()
   return ok;
 };
 
-void TeenAstroMountStatus::updateMount()
+void TeenAstroMountStatus::updateMount(bool force )
 {
-  if (millis() - m_lastStateMount > updaterate)
+  if (millis() - m_lastStateMount > updaterate || force)
   {
     m_hasInfoMount = GetLX200(":GXI#", m_TempMount, sizeof(m_TempMount)) == LX200_VALUEGET;
     m_hasInfoMount ? m_lastStateMount = millis() : m_connectionFailure++;
@@ -400,7 +400,7 @@ TeenAstroMountStatus::RateCompensation TeenAstroMountStatus::getRateCompensation
 {
   int val = m_TempMount[10] - '0';
 
-  return (val > -1 && val < 5) ? static_cast<RateCompensation>(val) : RateCompensation::RC_UNKNOWN;
+  return (val > 0 && val < 3) ? static_cast<RateCompensation>(val) : RateCompensation::RC_UNKNOWN;
 }
 bool TeenAstroMountStatus::isSpiralRunning()
 {

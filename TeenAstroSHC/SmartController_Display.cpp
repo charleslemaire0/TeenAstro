@@ -500,12 +500,10 @@ void SmartHandController::updateMainDisplay(PAGES page)
           }
           switch (curC)
           {
-          case TeenAstroMountStatus::RC_ALIGN_RA:
-          case TeenAstroMountStatus::RC_FULL_RA:
+          case TeenAstroMountStatus::RC_RA:
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_1_bits);
             break;
-          case TeenAstroMountStatus::RC_ALIGN_BOTH:
-          case TeenAstroMountStatus::RC_FULL_BOTH:
+          case TeenAstroMountStatus::RC_BOTH:
             display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_2_bits);
             break;
           default:

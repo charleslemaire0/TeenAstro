@@ -63,14 +63,6 @@ const char html_controlTrack[] PROGMEM =
 //"<button type='button' class='bbh' onpointerdown=\"g('r')\" type='submit'>Reset</button>""</div>"
 "<br class='clear' />\r\n\n";
 
-const char html_compTrack[] PROGMEM =
-"<div class='b1' style='width: 27em'>\n"
-"<div class='bct' align='left'>Tracking Compensation:</div>\n"
-"<button type='button' class='bbh' onpointerdown=\"g('T0')\" type='submit'>NONE</button>\n"
-"<button type='button' class='bbh' onpointerdown=\"g('T1')\" type='submit'>RA AXIS</button>\n"
-"<button type='button' class='bbh' onpointerdown=\"g('T2')\" type='submit'>BOTH</button><br/></div>\n"
-"<br class='clear' />\r\n";
-
 const char html_configRefraction[] PROGMEM =
 "<div class='bt'> Refraction Options: <br/> </div>\n";
 
@@ -121,24 +113,23 @@ void TeenAstroWifi::handleConfigurationTracking()
   data += "</select> Consider Refraction for Tracking</form><br/>\r\n";;
   sendHtml(data);
 
-  if (!ta_MountStatus.isAltAz())
+  if (!ta_MountStatus.isAltAz() && ta_MountStatus.getRateCompensation() != TeenAstroMountStatus::RC_UNKNOWN)
   {
-    sprintf_P(temp, html_Opt_1, "alignr");
+    sprintf_P(temp, html_Opt_1, "trackboth");
     data += temp;
-    if (GetLX200(":GXAc#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "n");
-    temp1[0] == 'y' ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
-    temp1[0] == 'n' ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
-    data += "</select> Consider Alignment for Tracking</form><br/>\r\n";;
+    ta_MountStatus.getRateCompensation() == TeenAstroMountStatus::RC_BOTH ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
+    ta_MountStatus.getRateCompensation() != TeenAstroMountStatus::RC_BOTH ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
+    data += "</select> Appply Tracking on both Axis</form><br/>\r\n";;
     sendHtml(data);
   }
   if (ta_MountStatus.updateStoredTrackingRate())
   {
     data += FPSTR(html_configTrackingDrift);
-    float Rate = ((float)ta_MountStatus.getStoredTrackingRateRa()) / 10000.0;
+    double Rate = ((double)ta_MountStatus.getStoredTrackingRateRa()) / 10000.0;
     sprintf_P(temp, html_configRateRA, Rate);
     data += temp;
     sendHtml(data);
-    Rate = ((float)ta_MountStatus.getStoredTrackingRateDec()) / 10000.0;
+    Rate = ((double)ta_MountStatus.getStoredTrackingRateDec()) / 10000.0;
     sprintf_P(temp, html_configRateDEC, Rate);
     data += temp;
     sendHtml(data);
@@ -148,7 +139,6 @@ void TeenAstroWifi::handleConfigurationTracking()
   data += FPSTR(html_controlTrack);
   sendHtml(data);
 
-  data += FPSTR(html_compTrack);
   strcpy(temp, "</div></body></html>");
   data += temp;
   sendHtml(data);
@@ -170,12 +160,13 @@ void TeenAstroWifi::processConfigurationTrackingGet()
       i == 1 ? SetLX200(":SXrt,y#") : SetLX200(":SXrt,n#");
     }
   }
-  v = server.arg("alignr");
+  v = server.arg("trackboth");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
     {
-      i == 1 ? SetLX200(":SXAc,y#") : SetLX200(":SXAc,n#");
+      i == 1 ? SetLX200(":T2#") : SetLX200(":T1#");
+      ta_MountStatus.updateMount(true);
     }
   }
   v = server.arg("RRA");
@@ -211,9 +202,7 @@ void TeenAstroWifi::processConfigurationTrackingGet()
     else if (v == "Th") SetLX200(":TS#"); // solar
     else if (v == "Tt") SetLX200(":TT#"); // user defined
 
-    else if (v == "T0") SetLX200(":T0#"); // None
-    else if (v == "T1") SetLX200(":T1#"); // RA
-    else if (v == "T2") SetLX200(":T2#"); // BOTH
+
   }
 
 }
