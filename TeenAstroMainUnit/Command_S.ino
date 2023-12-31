@@ -984,11 +984,27 @@ void Command_S(Command& process_command)
   break;
   case 'd':
     //  :SdsDD*MM#
+    //  :SdsDD*MM:SS#
+    //  :SdLsVV,VVVVV#
     //          Set target object declination to sDD*MM or sDD*MM:SS depending on the current precision setting
     //          Return: 0 on failure
     //                  1 on success
   {
-    bool ok = dmsToDouble(&newTargetDec, &command[2], true, highPrecision);
+    bool ok = false;
+    if (command[2] == 'L')
+    {
+      char* conv_end;
+      double f = strtod(&command[3], &conv_end);
+      ok = -90 <= f && f <= 90;
+      if (ok)
+      {
+        newTargetRA = f;
+      }
+    }
+    else
+    {
+      ok = dmsToDouble(&newTargetDec, &command[2], true, highPrecision);
+    }
     replyValueSetShort(ok);
   }
   break;
@@ -1133,16 +1149,34 @@ void Command_S(Command& process_command)
   case 'r':
     //  :SrHH:MM.T#
     //  :SrHH:MM:SS#
+    //  :SrL,VVV,VVVVV#
     //          Set target object RA to HH:MM.T or HH:MM:SS (based on precision setting)
     //          Return: 0 on failure
     //                  1 on success
   {
-    bool ok = hmsToDouble(&newTargetRA, &command[2], highPrecision);
-    if (ok)
+    bool ok = false;
+    if (command[2] == 'L')
     {
-      newTargetRA *= 15.0;
+      char* conv_end;
+      double f = strtod(&command[3], &conv_end);
+      ok = 0 <= f && f <= 360;
+      if (ok)
+      {
+        newTargetRA = f;
+      }
+    }
+    else
+    {
+      ok = hmsToDouble(&newTargetRA, &command[2], highPrecision);
+      if (ok)
+      {
+        newTargetRA *= 15.0;
+      }
+
     }
     replyValueSetShort(ok);
+
+
   }
   break;
   case 't':
