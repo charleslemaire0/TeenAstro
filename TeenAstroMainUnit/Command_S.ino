@@ -179,7 +179,6 @@ void Command_SX()
         if (doesRefraction.setPole(val))
         {
           initTransformation(true);
-          syncAtHome();
         }
         break;
       case 'g':
