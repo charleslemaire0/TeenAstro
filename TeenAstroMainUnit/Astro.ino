@@ -23,6 +23,15 @@ PoleSide GetPoleSide()
   return -geoA2.poleDef <= axis2 && axis2 <= geoA2.poleDef ? POLE_UNDER : POLE_OVER;
 }
 
+PoleSide GetTargetPoleSide()
+{
+  long axis2;
+  cli();
+  axis2 = staA2.target;
+  sei();
+  return getPoleSide(axis2);
+}
+
 bool TelescopeBusy()
 {
   return movingTo || GuidingState != Guiding::GuidingOFF;
@@ -30,10 +39,12 @@ bool TelescopeBusy()
 
 void ApplyTrackingRate()
 {
+  cli();
   staA1.CurrentTrackingRate = staA1.RequestedTrackingRate;
   staA2.CurrentTrackingRate = staA2.RequestedTrackingRate;
   staA1.fstep = geoA1.stepsPerCentiSecond * staA1.CurrentTrackingRate;
   staA2.fstep = geoA2.stepsPerCentiSecond * staA2.CurrentTrackingRate;
+  sei();
 }
 
 void SetTrackingRate(double rHA, double rDEC)
@@ -46,33 +57,34 @@ void SetTrackingRate(double rHA, double rDEC)
 void computeTrackingRate(bool apply)
 {
   //reset SideralMode if it is equal to sideralspeed
-  double sign = localSite.northHemisphere() ? 1 : -1;
+  
 
   if (RequestedTrackingRateHA == 1 && RequestedTrackingRateDEC == 0)
   {
     sideralMode = SIDM_STAR;
   }
-  if (isAltAZ() || sideralMode == SIDM_TARGET)
+  if (isAltAZ())
   {
     do_compensation_calc();
   }
-  else if (tc == TC_NONE)
-  {
-    staA1.RequestedTrackingRate = sign * RequestedTrackingRateHA;
-    staA2.RequestedTrackingRate = 0;
-  }
-  else if (doesRefraction.forTracking || TrackingCompForAlignment)
+  else if (doesRefraction.forTracking || hasStarAlignment )
   {
     do_compensation_calc();
-    if (tc == TC_RA)
+    if (trackComp == TC_RA)
     {
       staA2.RequestedTrackingRate = 0;
     }
   }
   else
   {
+    double sign = localSite.northHemisphere() ? 1 : -1;
     staA1.RequestedTrackingRate = sign * RequestedTrackingRateHA;
-    staA2.RequestedTrackingRate = 0;
+    sign = GetTargetPoleSide() == POLE_UNDER ? 1 : -1;
+    staA2.RequestedTrackingRate = sign * RequestedTrackingRateDEC/15;
+    if (trackComp == TC_RA)
+    {
+      staA2.RequestedTrackingRate = 0;
+    }
   }
   if (apply)
   {
@@ -130,10 +142,10 @@ void do_compensation_calc()
     return;
   }
 
-  PoleSide side_tmp = GetPoleSide();
+  PoleSide side_tmp;
   DriftHA = RequestedTrackingRateHA * TimeRange * 15;
   DriftHA /= 3600;
-  DriftDEC = RequestedTrackingRateDEC * TimeRange;
+  DriftDEC = RequestedTrackingRateDEC * TimeRange ;
   DriftDEC /= 3600;
 
   // if moving to a target select target as reference position if not select current position
@@ -142,12 +154,14 @@ void do_compensation_calc()
     Coord_EQ EQ_T = getEquTarget(*localSite.latitude() * DEG_TO_RAD);
     HA_now = EQ_T.Ha() * RAD_TO_DEG;
     Dec_now = EQ_T.Dec() * RAD_TO_DEG;
+    side_tmp = GetTargetPoleSide();
   }
   else
   {
     Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
     HA_now = EQ_T.Ha() * RAD_TO_DEG;
     Dec_now = EQ_T.Dec() * RAD_TO_DEG;
+    side_tmp = GetPoleSide();
   }
 
 

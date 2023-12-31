@@ -683,26 +683,33 @@ void Command_T()
     else
       replyShortFalse();
     break;
-  case '0':
-    // turn compensation off
-    tc = TC_NONE;
-    computeTrackingRate(true);
-    XEEPROM.update(getMountAddress(EE_TC_Axis), 0);
-    replyShortTrue();
-    break;
   case '1':
     // turn compensation RA only
-    tc = TC_RA;
-    computeTrackingRate(true);
-    XEEPROM.update(getMountAddress(EE_TC_Axis), 0);
-    replyShortTrue();
+    if (isAltAZ())
+    {
+      replyShortFalse();
+    }
+    else
+    {
+      trackComp = TC_RA;
+      computeTrackingRate(true);
+      XEEPROM.update(getMountAddress(EE_TC_Axis), 1);
+      replyShortTrue();
+    }
     break;
   case '2':
     // turn compensation BOTH
-    tc = TC_BOTH;
-    computeTrackingRate(true);
-    XEEPROM.update(getMountAddress(EE_TC_Axis), 2);
-    replyShortTrue();
+    if (isAltAZ())
+    {
+      replyShortFalse();
+    }
+    else
+    {
+      trackComp = TC_BOTH;
+      computeTrackingRate(true);
+      XEEPROM.update(getMountAddress(EE_TC_Axis), 2);
+      replyShortTrue();
+    }
     break;
   default:
     replyNothing();

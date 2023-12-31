@@ -81,10 +81,6 @@ void Command_GX()
       // :GXA8#
       sprintf(reply, "%f#", t33);
       break;
-    case 'c':
-      // :GXAc#
-      TrackingCompForAlignment ? sprintf(reply, "y#") : sprintf(reply, "n#");
-      break;
       //case 'a':
       //case 'z':
       //case 'w':
@@ -647,26 +643,7 @@ void Command_GX()
     }
 
     if (staA1.fault || staA2.fault) reply[9] = 'f';
-    reply[10] = '0';
-    if (isAltAZ())
-      reply[10] += doesRefraction.forTracking ? RC_FULL_BOTH : RC_ALIGN_BOTH;
-    else if (tc == TC_NONE || (!doesRefraction.forTracking && !TrackingCompForAlignment))
-    {
-      reply[10] += RC_NONE;
-    }
-    else
-    {
-      if (doesRefraction.forTracking)
-      {
-        reply[10] += RC_FULL_RA;
-      }
-      else if (TrackingCompForAlignment)
-      {
-        reply[10] += RC_ALIGN_RA;
-      }
-      if (tc == TC_BOTH)
-        reply[10] += 1;
-    }
+    reply[10] = '0' + trackComp;
     reply[11] = hasStarAlignment ? '1' : '0';
     // provide mount type
     if (mountType == MOUNT_TYPE_GEM)

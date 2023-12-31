@@ -46,8 +46,6 @@ void Command_SX()
       //GeoAlign.init();
       //GeoAlign.writeCoe();
       break;
-    case 'c':
-      ok = yesno(command[5], TrackingCompForAlignment);
     }
     replyValueSetShort(ok);
     break;

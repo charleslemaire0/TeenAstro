@@ -178,8 +178,15 @@ void initMount()
   staA2.target = geoA2.quaterRot;
   staA1.fstep = geoA1.stepsPerCentiSecond;
   // Tracking and rate control
-  val = XEEPROM.read(getMountAddress(EE_TC_Axis));
-  tc = val < 0 || val >  2 ? TC_NONE : static_cast<TrackingCompensation>(val);
+  if (isAltAZ())
+  {
+    trackComp = TC_BOTH;
+  }
+  else
+  {
+    val = XEEPROM.read(getMountAddress(EE_TC_Axis));
+    trackComp = val < 1 || val >  2 ? TC_RA : static_cast<TrackingCompensation>(val);
+  }
   lval = XEEPROM.read(getMountAddress(EE_RA_Drift));
   storedTrakingRateRA = lval < -50000 || lval > 50000 ? 0 : lval;
   lval = XEEPROM.read(getMountAddress(EE_DEC_Drift));
