@@ -1187,10 +1187,19 @@ void  Command_G()
     //  :GS#   Get the Sidereal Time, Native LX200 command
     //         Returns: HH:MM:SS#
     //         The Sidereal Time as an ASCII Sexidecimal value in 24 hour format
+    //  :GSL#  Get the Sidereal Time, TeenAstro LX200 command
+    //         Returns: HH.VVVVVV#
   {
     double f = rtk.LST();
-    doubleToHms(reply, &f, true);
-    strcat(reply, "#");
+    if (command[2] == 'L')
+    {
+      sprintf(reply, "%+08.6f#", f);
+    }
+    else
+    {
+      doubleToHms(reply, &f, true);
+      strcat(reply, "#");
+    }
   }
   break;
   case 'T':
