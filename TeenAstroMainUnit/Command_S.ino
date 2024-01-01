@@ -998,7 +998,7 @@ void Command_S(Command& process_command)
       ok = -90 <= f && f <= 90;
       if (ok)
       {
-        newTargetRA = f;
+        newTargetDec = f;
       }
     }
     else
