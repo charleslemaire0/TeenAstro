@@ -1041,9 +1041,9 @@ void  Command_G()
     //  :GR#   Get Telescope RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
     //  :GDL#   Get Telescope Declination, TeenAstro LX200 command
-    //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
+    //         Returns: sDD,VVVVV#
     //  :GRL#   Get Telescope RA, TeenAstro LX200 command
-    //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
+    //         Returns: DDD,VVVVV#
   {
     Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
     if (command[1] == 'R')
@@ -1082,8 +1082,17 @@ void  Command_G()
   case 'd':
     //  :Gd#   Get Currently Selected Target Declination, Native LX200 command
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
-    doubleToDms(reply, &newTargetDec, false, true, highPrecision);
-    strcat(reply, "#");
+    //  :GdL#   Get Currently Selected Target Declination, TeenAstro LX200 command
+    //          Returns: sDD, VVVVV#
+    if (command[2] == 'L')
+    {
+      sprintf(reply, "%+08.5f#", newTargetDec);
+    }
+    else
+    {
+      doubleToDms(reply, &newTargetDec, false, true, highPrecision);
+      strcat(reply, "#");
+    }
     break;
   case 'e':
     //  :Ge#   Get Current Site Elevation above see level in meter, TeenAstro LX200 command
@@ -1176,12 +1185,19 @@ void  Command_G()
   case 'r':
     //  :Gr#   Get current/target object RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
-  {
-    double f = newTargetRA;
-    f /= 15.0;
-    doubleToHms(reply, &f, highPrecision);
-    strcat(reply, "#");
-  }
+    //  :GrL#  Get current/target object Ra, TeenAstro LX200 command
+    //         Returns: sDD, VVVVV#
+    if (command[2] == 'L')
+    {
+      sprintf(reply, "%+08.5f#", newTargetRA);
+    }
+    else
+    {
+      double f = newTargetRA;
+      f /= 15.0;
+      doubleToHms(reply, &f, highPrecision);
+      strcat(reply, "#");
+    }
   break;
   case 'S':
     //  :GS#   Get the Sidereal Time, Native LX200 command
