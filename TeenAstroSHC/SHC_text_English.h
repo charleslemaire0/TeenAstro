@@ -186,6 +186,7 @@
 #define T_PC "PC"
 #define T_TRACKING "Tracking"
 #define T_TRACKINGOPTIONS "Tracking Options"
+#define T_SETTLETIME "Settle Time"
 #define T_REFRACTION "Refraction"
 #define T_ALIGNMENT "Alignment"
 #define T_STARTTRACKING "Start Tracking"

@@ -185,6 +185,7 @@
 #define T_PC "Computer"
 #define T_TRACKING "Nachführung"
 #define T_TRACKINGOPTIONS "Nachführung Opt."
+#define T_SETTLETIME "Warte Zeit"
 #define T_REFRACTION "Refraktion"
 #define T_ALIGNMENT "Ausrichtung"
 #define T_STARTTRACKING "Nachführ. starten"

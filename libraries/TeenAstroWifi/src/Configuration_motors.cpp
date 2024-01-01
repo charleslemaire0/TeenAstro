@@ -26,6 +26,14 @@ const char html_configRotAxis_2[] PROGMEM =
 "</form>"
 "\r\n";
 
+
+const char html_configSettleTime[] PROGMEM =
+"<form method='get' action='/configuration_motors.htm'>"
+" <input value='%d' type='number' name='mw' min='0' max='20'>"
+"<button type='submit'>Upload</button>"
+" (Settle Time, in seconds from 0 to 20)"
+"</form>"
+"\r\n";
 const char html_configBlAxis[] PROGMEM =
 "<form method='get' action='/configuration_motors.htm'>"
 " <input value='%d' type='number' name='mbl%d' min='0' max='999'>"
@@ -131,6 +139,14 @@ void TeenAstroWifi::handleConfigurationMotors()
 
     //Axis1
   data += "<div class='bt'> Motor: <br/> </div>";
+
+  if (GetLX200(":GXOS#", temp2, sizeof(temp2)) == LX200_VALUEGET)
+  {
+    long wt = (long)strtol(&temp2[0], NULL, 10);
+    sprintf_P(temp, html_configSettleTime, wt);
+    data += temp;
+    sendHtml(data);
+  }
   bool reverse = false;
   uint8_t silent = false;
   if (readReverseLX200(1, reverse) == LX200_VALUEGET)
@@ -280,6 +296,17 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   int i;
   float f;
   char temp[20] = "";
+
+
+  v = server.arg("mw");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 20)))
+    {
+      sprintf(temp, ":SXOS,%02d#", i);
+      SetLX200(temp);
+    }
+  }
 
   v = server.arg("MaxR");
   if (v != "")

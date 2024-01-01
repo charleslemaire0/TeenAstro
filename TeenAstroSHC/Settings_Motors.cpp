@@ -6,7 +6,7 @@ void SmartHandController::menuMotors()
   if (ta_MountStatus.motorsEnable())
   {
     const char* string_list = T_SHOWSETTINGS "\n" T_MOTOR " 1\n" T_MOTOR " 2\n"
-      T_ACCELERATION "\n" T_SPEED "\n" T_TRACKING "\n" T_DISABLE;
+      T_ACCELERATION "\n" T_SPEED "\n" T_TRACKING "\n"  T_SETTLETIME "\n" T_DISABLE;
     static uint8_t s_sel = 1;
     uint8_t tmp_sel;
     while (!exitMenu)
@@ -36,6 +36,9 @@ void SmartHandController::menuMotors()
         MenuTracking();
         break;
       case 7:
+        menuSettleTime();
+        break;
+      case 8:
         if (display->UserInterfaceMessage(&buttonPad, T_DISABLE, T_MOTORS, "", T_NO "\n" T_YES) == 2)
         {
           if (SetLX200(":SXME,n#") == LX200_VALUESET)
@@ -50,6 +53,7 @@ void SmartHandController::menuMotors()
           }
         }
         break;
+
       default:
         break;
       }
@@ -209,57 +213,32 @@ void SmartHandController::MenuTracking()
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
 
-  if (ta_MountStatus.isAltAz())
+
+  while (!exitMenu)
   {
-    while (!exitMenu)
+    ta_MountStatus.updateMount();
+    const char* string_list_tracking = ta_MountStatus.isAltAz() ?
+      T_DRIFTSPEED "\n" T_REFRACTION : T_DRIFTSPEED "\n" T_REFRACTION  "\n" T_TRACKINGCORRECTION;
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGOPTIONS, s_sel, string_list_tracking);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
     {
-      ta_MountStatus.updateMount();
-      const char* string_list_tracking = ta_MountStatus.isAltAz() ?
-        T_DRIFTSPEED "\n" T_REFRACTION : T_DRIFTSPEED "\n" T_REFRACTION;
-      tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGOPTIONS, s_sel, string_list_tracking);
-      s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
-      switch (tmp_sel)
-      {
-      case 0:
-        return;
-      case 1:
-        menuTrackRate();
-        break;
-      case 2:
-        MenuTrackingRefraction();
-        break;
-      default:
-        break;
-      }
+    case 0:
+      return;
+    case 1:
+      menuTrackRate();
+      break;
+    case 2:
+      MenuTrackingRefraction();
+      break;
+    case 3:
+      MenuTrackingCorrection();
+      break;
+    default:
+      break;
     }
   }
-  else
-  {
-    while (!exitMenu)
-    {
-      ta_MountStatus.updateMount();
-      const char* string_list_tracking = ta_MountStatus.isAltAz() ?
-        T_DRIFTSPEED "\n" T_REFRACTION : T_DRIFTSPEED "\n" T_REFRACTION  "\n" T_TRACKINGCORRECTION;
-      tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGOPTIONS, s_sel, string_list_tracking);
-      s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
-      switch (tmp_sel)
-      {
-      case 0:
-        return;
-      case 1:
-        menuTrackRate();
-        break;
-      case 2:
-        MenuTrackingRefraction();
-        break;
-      case 3:
-        MenuTrackingCorrection();
-        break;
-      default:
-        break;
-      }
-    }
-  }
+  
 }
 
 void SmartHandController::MenuTrackingCorrection()
@@ -292,6 +271,21 @@ void SmartHandController::MenuTrackingCorrection()
       break;
     default:
       break;
+    }
+  }
+}
+
+void SmartHandController::menuSettleTime()
+{
+  char outval[20];
+  char cmd[20];
+  if (DisplayMessageLX200(GetLX200(":GXOS#", outval, sizeof(outval))))
+  {
+    float val = atof(&outval[0]);
+    if (display->UserInterfaceInputValueFloat(&buttonPad, T_SETTLETIME, "", &val, 0.0f, 20.f, 1u, 0u, " sec."))
+    {
+      sprintf(cmd, ":SXOS,%02d#", (int)(val));
+      DisplayMessageLX200(SetLX200(cmd), false);
     }
   }
 }

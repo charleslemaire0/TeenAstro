@@ -185,6 +185,7 @@
 #define T_PC "Ordinateur"
 #define T_TRACKING "Suivi"
 #define T_TRACKINGOPTIONS "Options du suivi"
+#define T_SETTLETIME "Tps. Attente"
 #define T_REFRACTION "Refraction"
 #define T_ALIGNMENT "Alignement"
 #define T_STARTTRACKING "Démarrer le Suivi"

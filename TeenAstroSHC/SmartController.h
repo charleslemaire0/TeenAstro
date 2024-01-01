@@ -140,6 +140,7 @@ private:
   void menuAcceleration();
   void menuMaxRate();
   void menuGuideRate();
+  void menuSettleTime();
   void menuRate(int r);
   void menuTrackRate();
   void menuSetDriftRate(int axis);
