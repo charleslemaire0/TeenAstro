@@ -650,7 +650,7 @@ void Command_T()
     replyNothing();
     break;
   case 'T':
-    //set Target tracking rate
+    // set user defined Target tracking rate
     SetTrackingRate(1.0 - (double)storedTrakingRateRA / 10000.0, (double)storedTrakingRateDEC / 10000.0);
     sideralMode = SIDM_TARGET;
     replyNothing();
