@@ -691,6 +691,12 @@ void Command_GX()
     //specific command for ASCOM
     switch (command[3])
     {
+    case 'B':
+      // :GXJB# get if Both rate Axis are ennable
+    {
+      trackComp == TC_BOTH ? replyLongTrue(): replyLongFalse();
+    }
+    break;
     case 'C':
       // :GXJC# get if connected
     {
