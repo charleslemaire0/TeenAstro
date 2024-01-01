@@ -261,10 +261,17 @@ void Command_SX()
       break;
     case 'd':
       // :SXRd,VVVVVVVVVV# Set Rate for DEC
-      sideralMode = SIDM_TARGET;
-      RequestedTrackingRateDEC = (double)strtol(&command[5], NULL, 10) / 10000.0;
-      computeTrackingRate(true);
-      replyValueSetShort(true);
+      if (trackComp == TC_BOTH)
+      {
+        sideralMode = SIDM_TARGET;
+        RequestedTrackingRateDEC = (double)strtol(&command[5], NULL, 10) / 10000.0;
+        computeTrackingRate(true);
+        replyValueSetShort(true);
+      }
+      else
+      {
+        replyValueSetShort(false);
+      }
       break;
     case 'e':
       // :SXRe,VVVVVVVVVV# Store Rate for RA
