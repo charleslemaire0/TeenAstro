@@ -9,8 +9,9 @@ const char BoardVersion[] = "esp32s3_norm";
 
 // real-time clock not yet implemented
 // Initial time is Jan 1 1970 + 50 years
-
 static unsigned long initialSystemTime = (50 * 365.25 * 24 * 3600);
+#include "ESP32time.h"
+ESP32Time rtc;
 
 const char* HAL_getBoardVersion(void)
 {
@@ -21,6 +22,7 @@ void HAL_preInit(void)
 {
   Serial.begin(BAUD);
   Serial0.begin(BAUD, SERIAL_8N1, SHCRx, SHCTx);
+  rtc.setTime(initialSystemTime);
 }
 
 void HAL_initSerial(void)
@@ -33,12 +35,13 @@ void HAL_initSerial(void)
  
 void HAL_setRealTimeClock(unsigned long t)
 {
-  initialSystemTime = t - ((double) xTaskGetTickCount() / 1000.0);
+  rtc.setTime(t - ((double) xTaskGetTickCount() / 1000.0));
 }
 
 unsigned long HAL_getRealTimeClock()
 {
-  return initialSystemTime + ((double) xTaskGetTickCount() / 1000.0);
+  //return initialSystemTime + ((double) xTaskGetTickCount() / 1000.0);
+  return rtc.getEpoch();
 }
 
 void HAL_reboot(void)
