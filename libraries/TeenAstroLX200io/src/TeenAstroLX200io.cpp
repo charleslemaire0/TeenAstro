@@ -214,6 +214,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
   case CMDR_SHORT_BOOL:
   {
     unsigned long start = millis();
+    recvBuffer[0] = '\0';
     while (millis() - start < timeOutMs)
     {
       if (Ser.available())
@@ -223,7 +224,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
         break;
       }
     }
-    return recvBuffer[0] == '1';
+    return recvBuffer[0] != '\0';
     break;
   }
   case CMDR_LONG:
