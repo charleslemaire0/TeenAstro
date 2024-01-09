@@ -224,8 +224,15 @@ void SmartHandController::updateAlign(bool moving)
       DisplayMessage(T_ALIGNMENT, T_WRONG"!", -1);
       break;
     case TeenAstroMountStatus::AlignReply::ALIR_DONE:
-      DisplayMessage(T_ALIGNMENT, T_SUCESS"!", -1);
-      break;
+    {
+      char text[20];
+  
+      DisplayMessage(T_ALIGNMENT, T_SUCESS"!", 1.0);
+      GetLX200(":AE#", text, sizeof(text));
+      strcat(text, " " T_DEG);
+      DisplayMessage(T_ERROR, text, -1);
+    }
+    break;
     case TeenAstroMountStatus::AlignReply::ALIR_ADDED:
       DisplayMessage(T_STARADDED, "=>", 1000);
       break;

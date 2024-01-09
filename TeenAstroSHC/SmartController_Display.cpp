@@ -470,56 +470,58 @@ void SmartHandController::updateMainDisplay(PAGES page)
       }
       else
       {
-        if (curT == TeenAstroMountStatus::TRK_SLEWING)
+        if (ta_MountStatus.motorsEnable())
         {
-          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, sleewing_bits);
-          x -= icon_width + 1;
-        }
-        else if (curT == TeenAstroMountStatus::TRK_ON)
-        {
-          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_bits);
-          display->setBitmapMode(1);
-          switch (currSM)
+          if (curT == TeenAstroMountStatus::TRK_SLEWING)
           {
-          case TeenAstroMountStatus::SID_UNKNOWN:
-            break;
-          case TeenAstroMountStatus::SID_STAR:
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_star_bits);
-            break;
-          case TeenAstroMountStatus::SID_SUN:
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_sun_bits);
-            break;
-          case TeenAstroMountStatus::SID_MOON:
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_moon_bits);
-            break;
-          case TeenAstroMountStatus::SID_TARGET:
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_target_bits);
-            break;
-          default:
-            break;
+            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, sleewing_bits);
+            x -= icon_width + 1;
           }
-          switch (curC)
+          else if (curT == TeenAstroMountStatus::TRK_ON)
           {
-          case TeenAstroMountStatus::RC_RA:
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_1_bits);
-            break;
-          case TeenAstroMountStatus::RC_BOTH:
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_2_bits);
-            break;
-          default:
-            break;
+            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_bits);
+            display->setBitmapMode(1);
+            switch (currSM)
+            {
+            case TeenAstroMountStatus::SID_UNKNOWN:
+              break;
+            case TeenAstroMountStatus::SID_STAR:
+              display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_star_bits);
+              break;
+            case TeenAstroMountStatus::SID_SUN:
+              display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_sun_bits);
+              break;
+            case TeenAstroMountStatus::SID_MOON:
+              display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_moon_bits);
+              break;
+            case TeenAstroMountStatus::SID_TARGET:
+              display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_target_bits);
+              break;
+            default:
+              break;
+            }
+            switch (curC)
+            {
+            case TeenAstroMountStatus::RC_RA:
+              display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_1_bits);
+              break;
+            case TeenAstroMountStatus::RC_BOTH:
+              display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_2_bits);
+              break;
+            default:
+              break;
+            }
+
+            display->setBitmapMode(0);
+
+            x -= icon_width + 1;
           }
-
-          display->setBitmapMode(0);
-
-          x -= icon_width + 1;
+          else if (curT == TeenAstroMountStatus::TRK_OFF)
+          {
+            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, no_tracking_bits);
+            x -= icon_width + 1;
+          }
         }
-        else if (curT == TeenAstroMountStatus::TRK_OFF)
-        {
-          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, no_tracking_bits);
-          x -= icon_width + 1;
-        }
-
         if (curP == TeenAstroMountStatus::PRK_FAILED)
         {
           display->drawXBMP(x - icon_width, 0, icon_width, icon_height, parkingFailed_bits);

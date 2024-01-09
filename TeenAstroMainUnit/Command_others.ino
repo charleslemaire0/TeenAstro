@@ -75,6 +75,13 @@ void Command_A()
     replyShortTrue();
     break;
   }
+  case 'E':
+  {
+    double val = alignment.getError() * RAD_TO_DEG;
+    sprintf(reply, "%+05.4f", val);
+    strcat(reply, "#");
+  }
+  break;
   case 'C':
   case 'A':
     initTransformation(true);
@@ -468,10 +475,10 @@ void Command_h()
     // : hP#   Goto the Park Position
     //          Return: 0 on failure
     //                  1 on success
-    if (park())
-      replyShortFalse();
-    else
+    if (park()==0)
       replyShortTrue();
+    else
+      replyShortFalse();
     break;
   case 'Q':
     //  :hQ#   Set the park position
