@@ -471,7 +471,18 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       }
       break;
     case 5:
-      char err_az[15] = { "?" };
+      char text[20];
+      if (GetLX200(":AE#", text, sizeof(text)) == LX200_VALUEGET)
+      {
+        strcat(text, " " T_DEG);
+        DisplayMessage("Alignment error:", text, -1);
+      }
+      else
+        DisplayMessage("Alignment error:", "?", -1);
+      break;
+        
+    
+/*      char err_az[15] = { "?" };
       char err_alt[15] = { "?" };
       char err_pol[15] = { "?" };
       if (
@@ -486,6 +497,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       else
         DisplayMessage("Alignment error:", "?", -1);
       break;
+*/
     }
   }
 }
