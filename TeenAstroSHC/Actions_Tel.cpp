@@ -474,11 +474,14 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       char text[20];
       if (GetLX200(":AE#", text, sizeof(text)) == LX200_VALUEGET)
       {
-        strcat(text, " " T_DEG);
-        DisplayMessage("Alignment error:", text, -1);
+        text[3]='°';
+        text[6]='\'';
+        text[9]='\"';
+        //DisplayLongMessage("Alignment error:", "", "sDD*mm:ss", text, -1);
+        DisplayMessage(T_ERROR, text, -1);
       }
       else
-        DisplayMessage("Alignment error:", "?", -1);
+        DisplayMessage(T_ERROR, "?", -1);
       break;
         
     
