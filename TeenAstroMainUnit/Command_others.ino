@@ -1,4 +1,5 @@
 #include "Command.h"
+#include "ValueToString.h"
 
 void Command_dollar()
 {
@@ -78,7 +79,8 @@ void Command_A()
   case 'E':
   {
     double val = alignment.getError() * RAD_TO_DEG;
-    sprintf(reply, "%+05.4f", val);
+    doubleToDms(reply, &val, false, true, true);
+    //sprintf(reply, "%+05.4f", val);
     strcat(reply, "#");
   }
   break;

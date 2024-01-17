@@ -229,7 +229,10 @@ void SmartHandController::updateAlign(bool moving)
   
       DisplayMessage(T_ALIGNMENT, T_SUCESS"!", 1.0);
       GetLX200(":AE#", text, sizeof(text));
-      strcat(text, " " T_DEG);
+      text[3]='°';
+      text[6]='\'';
+      text[9]='\"';
+      //strcat(text, " " T_DEG);
       DisplayMessage(T_ERROR, text, -1);
     }
     break;
