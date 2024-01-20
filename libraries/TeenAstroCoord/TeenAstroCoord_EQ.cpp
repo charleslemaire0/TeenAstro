@@ -2,7 +2,7 @@
 #include "TeenAstroCoord_HO.hpp"
 #include "TeenAstroCoord_IN.hpp"
 
-Coord_EQ::Coord_EQ(double FrE, double Dec, double Ha) : Coord({ LA3::RotAxis::ROTAXISX, FrE }, { LA3::RotAxis::ROTAXISY, Dec }, { LA3::RotAxis::ROTAXISZ, Ha })
+Coord_EQ::Coord_EQ(double FrE, double Dec, double Ha) : Coord3R({ LA3::RotAxis::ROTAXISX, FrE }, { LA3::RotAxis::ROTAXISY, Dec }, { LA3::RotAxis::ROTAXISZ, Ha })
 {
 };
 Coord_HO Coord_EQ::To_Coord_HO(double Lat, RefrOpt Opt)

@@ -44,7 +44,7 @@
 class Coord_EQ;
 class Coord_IN;
 
-class Coord_HO : protected Coord {
+class Coord_HO : protected Coord3R {
 private:
 	bool mIsApparent;
 public:
