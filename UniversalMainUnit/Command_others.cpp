@@ -51,6 +51,15 @@ void Command_A()
     replyShortTrue();
     break;
   }
+  case 'E':
+  {
+//    double val = mount.mP->pm.alignment.getError() * RAD_TO_DEG;
+    double val = 0; // not yet implemented 
+    doubleToDms(reply, &val, false, true, true);
+    //sprintf(reply, "%+05.4f", val);
+    strcat(reply, "#");
+  }
+  break;
   case 'C':
   case 'A':
     mount.mP->initModel(false);
@@ -272,6 +281,11 @@ void Command_h()
     //                  1 on success
     unpark();
     replyShortTrue();
+    break;
+  case 'S':
+    //  :hS#   return true if the park position is saved
+    //          Return: 0 or 1
+    parkSaved ? replyShortTrue() : replyShortFalse();
     break;
 
 

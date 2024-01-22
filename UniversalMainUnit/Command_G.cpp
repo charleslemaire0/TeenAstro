@@ -517,6 +517,13 @@ void Command_GX()
     //specific command for ASCOM
     switch (command[3])
     {
+      case 'B':
+      // :GXJB# get if Both rate Axis are enabled
+      {
+//        trackComp == TC_BOTH ? replyLongTrue(): replyLongFalse();
+        replyLongTrue();
+      }
+      break;
       case 'C':
         // :GXJC# get if connected
       {
@@ -775,6 +782,13 @@ void Command_GX()
     case 'C':
       // :GXOC# second Mount Name
       sprintf(reply, "%s#", mountNames[1]);
+      break;
+    case 'S':
+      // :GXOS# get Slew Settle Duration in seconds 
+      {
+        int i = XEEPROM.read(getMountAddress(EE_SlewSettleDuration));
+        sprintf(reply, "%d#", i);
+      }
       break;
     }
   }

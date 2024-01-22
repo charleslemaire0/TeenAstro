@@ -556,44 +556,54 @@ void Command_SX()
     // :SXO-,VVVV Options
     switch (command[3])
     {
-    case 'I':
-      // :SXOI,V set Mount index
-    {
-      if ((atoi2(&command[5], &i)) && ((i >= 0) && (i < maxNumMounts)))
+      case 'I':
+        // :SXOI,V set Mount index
       {
-        currentMount = i;
-        XEEPROM.write(EE_currentMount, currentMount);
-        replyShortTrue();
-        reboot_unit = true;
+        if ((atoi2(&command[5], &i)) && ((i >= 0) && (i < maxNumMounts)))
+        {
+          currentMount = i;
+          XEEPROM.write(EE_currentMount, currentMount);
+          replyShortTrue();
+          reboot_unit = true;
+        }
+        else
+          replyLongUnknown();
       }
-      else
-        replyLongUnknown();
-    }
-    break;
-    case 'A':
-    case 'B':
-    case 'C':
-      // :SXON,NNNN set Mount Name
-    {
-
-      int i = 0;
-      if (command[3] == 'A')
-        i = currentMount;
-      else if (command[3] == 'C')
-        i = 1;
-      if (strlen(&command[5]) < MountNameLen + 1)
+      break;
+      case 'A':
+      case 'B':
+      case 'C':
+        // :SXON,NNNN set Mount Name
       {
-        memcpy(mountNames[i], &command[5], MountNameLen * sizeof(char));
-        XEEPROM.writeString(getMountAddress(EE_mountName, i), mountNames[i], MountNameLen);
-        replyShortTrue();
+        int i = 0;
+        if (command[3] == 'A')
+          i = currentMount;
+        else if (command[3] == 'C')
+          i = 1;
+        bool ok = strlen(&command[5]) < MountNameLen + 1;
+        if (ok)
+        {
+          memcpy(mountNames[i], &command[5], MountNameLen * sizeof(char));
+          XEEPROM.writeString(getMountAddress(EE_mountName, i), mountNames[i], MountNameLen);
+        }
+        replyValueSetShort(ok);  
       }
-      else
-        replyLongUnknown();
+      break;
+      case 'S':
+        // :SXOS,NNN set Mount settle duration in seconds
+      {
+        unsigned int i;
+        bool ok = atoui2((char*)&command[5], &i);
+        ok &= i < 20;
+        if (ok && slewSettleDuration != i)
+        {
+          slewSettleDuration = i;
+          XEEPROM.write(getMountAddress(EE_SlewSettleDuration), slewSettleDuration);
+        }
+        replyValueSetShort(ok);
+      }
       break;
     }
-    break;
-    }
-    break;
   case 'K':
     {
       // :SXK,VVVV# External Clock frequency for TMC5160
@@ -611,7 +621,7 @@ void Command_SX()
     }
     break;
   default:
-    replyLongUnknown();
+    replyNothing();
     break;    
   }
 }

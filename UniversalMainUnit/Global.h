@@ -205,6 +205,12 @@ GLOBAL char                Axis2DriverName[20];
 GLOBAL char                mountNames[maxNumMounts][MountNameLen];
 GLOBAL bool                reboot_unit;
 
+
+GLOBAL unsigned int slewSettleDuration;
+GLOBAL unsigned long lastSettleTime;
+GLOBAL bool settling;
+
+
 //GNSS - GPS
 GLOBAL bool                hasGNSS;
 GLOBAL TinyGPSPlus         gps;

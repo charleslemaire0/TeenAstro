@@ -117,3 +117,4 @@ void replyLongFalse();
 void replyLongUnknown();
 void replyNothing(void);
 void clearReply(void);
+void replyValueSetShort(bool set);
