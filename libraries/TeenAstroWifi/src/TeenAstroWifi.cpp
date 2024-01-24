@@ -553,9 +553,9 @@ void TeenAstroWifi::update()
   if (wifiOn == false)
     return;
   if ((activeWifiMode == WifiMode::M_Station1 ||
-       activeWifiMode == WifiMode::M_Station2 ||
-       activeWifiMode == WifiMode::M_Station3)
-        && WiFi.status() != WL_CONNECTED)
+    activeWifiMode == WifiMode::M_Station2 ||
+    activeWifiMode == WifiMode::M_Station3)
+    && WiFi.status() != WL_CONNECTED)
   {
     return;
   }
@@ -602,19 +602,48 @@ void TeenAstroWifi::update()
     {
       // get the data
       byte b = cmdSvrClient.read();
-      if (writeBufferPos == 0 && b != ':')
-        continue;
-      writeBuffer[writeBufferPos] = b;
-      writeBufferPos++;
-      if (writeBufferPos > 49)
+      if (writeBufferPos == 0)
       {
-        writeBufferPos = 0;
-        writeBuffer[writeBufferPos] = 0;
+        if (b == (char)6)
+        {
+          writeBuffer[0] = b;
+          writeBuffer[1] = 0;
+        }
+        else if (b == ':')
+        {
+          writeBuffer[0] = b;
+          writeBuffer[1] = 0;
+          writeBufferPos++;
+          server.handleClient();
+          continue;
+        }
+        else
+        {
+          server.handleClient();
+          continue;
+        }
+      }
+      else if ((b == (char)32) || (b == (char)10) || (b == (char)13) || (b == (char)6))
+      {
+        server.handleClient();
         continue;
       }
-      writeBuffer[writeBufferPos] = 0;
+      else
+      {
+        writeBuffer[writeBufferPos] = b;
+        writeBufferPos++;
+        if (writeBufferPos > 49)
+        {
+          writeBufferPos = 0;
+          writeBuffer[writeBufferPos] = 0;
+          server.handleClient();
+          continue;
+        }
+        writeBuffer[writeBufferPos] = 0;
+      }
+
       // send cmd and pickup the response
-      if ((b == '#') || ((strlen(writeBuffer) == 1) && (b == (char)6)))
+      if ((b == '#') || (b == (char)6))
       {
         char readBuffer[50] = "";
         if (readLX200Bytes(writeBuffer, readBuffer, sizeof(readBuffer), CmdTimeout, true))

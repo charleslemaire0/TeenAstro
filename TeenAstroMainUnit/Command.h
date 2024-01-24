@@ -31,15 +31,19 @@ public:
   {
     if (m_serial->available() > 0 && !m_ready)
     {
-      // (chr)6 is a special status command for the LX200 protocol
+      // (chr)6 ACK is a special status command for the LX200 protocol
       char c = m_serial->read();
-      //!!!!TODO!!!!!
-      //if ((c == (char)6) && (m_bufferPtr == 0))
-      //{
-      //  mountType == isAltAZ() ? m_serial->print("A") : m_serial->print("P");
-      //}
+     
+      if ((c == (char)6) && (m_bufferPtr == 0))
+      {
+        m_command[0] = c;
+        m_command[1] = 0;
+        m_ready = true;
+        return;
+      }
 
       // ignore spaces/lf/cr, dropping spaces is another tweek to allow compatibility with LX200 protocol
+
       if ((c != (char)32) && (c != (char)10) && (c != (char)13) && (c != (char)6))
       {
         m_command[m_bufferPtr] = c;
@@ -58,15 +62,15 @@ public:
           (m_command[m_bufferPtr - 1] == '#'))
         {
           m_command[m_bufferPtr - 1] = 0;
+          memmove(m_command, (char*)&m_command[1], strlen(&m_command[1]));
+          m_command[strlen(m_command) - 1] = 0;
+          m_ready = true;
         }
         else
         {
           clearCommand();
           m_ready = false;
         }
-        memmove(m_command, (char *)&m_command[1], strlen(&m_command[1]));
-        m_command[strlen(m_command) - 1] = 0;
-        m_ready = true;
       }
       else
       {
@@ -98,6 +102,7 @@ T_Serial S_USB;
 void processCommands();
 void Command_GNSS();
 void Command_dollar();
+void Command_ACK();
 void Command_A();
 void Command_B();
 void Command_C();

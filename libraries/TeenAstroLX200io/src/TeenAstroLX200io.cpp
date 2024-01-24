@@ -104,7 +104,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
   // send the command
 
   if ((command[0] == (char)6) && (command[1] == 0)) cmdreply = CMDR_SHORT;
-  if (command[0] == ':')
+  else if (command[0] == ':')
   {
     switch (command[1])
     {
@@ -142,7 +142,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       else cmdreply = CMDR_INVALID;
       break;
     case 'G':
-      if (strchr("AaCcDdefgGhLMNOPmnoRrSTtVXZ", command[2]))
+      if (strchr("AaCcDdefgGhLMNOPmnoRrSTtVXWZ", command[2]))
       {
         timeOutMs *= 2;
         cmdreply = CMDR_LONG;

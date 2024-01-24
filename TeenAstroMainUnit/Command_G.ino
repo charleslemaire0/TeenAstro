@@ -1292,6 +1292,48 @@ void  Command_G()
     }
   }
   break;
+  case 'W':
+  {
+    switch (mountType)
+    {
+    case MOUNT_TYPE_ALTAZM:
+    case MOUNT_TYPE_FORK_ALT:
+      strcat(reply, "A");
+      break;
+    case MOUNT_TYPE_FORK:
+      strcat(reply, "P");
+      break;
+    case MOUNT_TYPE_GEM:
+      strcat(reply, "G");
+      break;
+    case MOUNT_UNDEFINED:
+    default:
+      strcat(reply, "L");
+      break;
+    }
+    sideralTracking ? strcat(reply, "T") : strcat(reply, "N");
+    if (atHome)
+    {
+      strcat(reply, "H");
+    }
+    else if (parkStatus == PRK_PARKED)
+    {
+      strcat(reply, "P");
+    }
+    else if (hasStarAlignment)
+    {
+      strcat(reply, "2");
+    }
+    else
+    {
+      strcat(reply, "1");
+    }
+    strcat(reply, "#");
+  }
+
+
+  break;
+
   case 'X':
     Command_GX();
     break;
