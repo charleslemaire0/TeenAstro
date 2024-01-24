@@ -264,7 +264,6 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     }
     ok &= (recvBuffer[0] != 0);
     ok &= Hashtagfound;
-    ok &= keepHashtag ? recvBufferPos > 1 : recvBufferPos > 0;
     return ok;
     break;
   }
