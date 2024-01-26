@@ -95,6 +95,7 @@ public:
 void processCommandsTask(void *);
 void processCommands(void);
 void Command_dollar(void);
+void Command_ACK(void);
 void Command_A(void);
 void Command_B(void);
 void Command_C(void);

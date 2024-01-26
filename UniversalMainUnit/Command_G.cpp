@@ -1097,6 +1097,51 @@ void  Command_G()
     strcat(reply, "#");
   }
   break;
+
+  // :GW# return status of mount
+  case 'W':
+  {
+    switch (mount.mP->type)
+    {
+      case MOUNT_TYPE_ALTAZM:
+      case MOUNT_TYPE_FORK_ALT:
+        strcat(reply, "A");
+      break;
+      case MOUNT_TYPE_FORK:
+        strcat(reply, "P");
+      break;
+      case MOUNT_TYPE_GEM:
+        strcat(reply, "G");
+      break;
+      case MOUNT_UNDEFINED:
+      default:
+        strcat(reply, "L");
+      break;
+    }
+    if (isTracking())  
+      strcat(reply, "T");
+    else 
+      strcat(reply, "N");
+    if (atHome())
+    {
+      strcat(reply, "H");
+    }
+    else if (parkStatus() == PRK_PARKED)
+    {
+      strcat(reply, "P");
+    }
+    else if (mount.mP->pm.isReady())
+    {
+      strcat(reply, "2");
+    }
+    else
+    {
+      strcat(reply, "1");
+    }
+    strcat(reply, "#");
+  }
+  break;
+
   case 'X':
     Command_GX();
     break;

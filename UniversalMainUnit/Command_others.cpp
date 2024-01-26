@@ -23,6 +23,26 @@ void Command_dollar()
     break;
   }
 }
+void Command_ACK()
+{
+  switch (mount.mP->type)
+  {
+  case MOUNT_TYPE_ALTAZM:
+  case MOUNT_TYPE_FORK_ALT:
+    strcpy(reply, "A");
+    break;
+  case MOUNT_TYPE_FORK:
+    strcpy(reply, "P");
+    break;
+  case MOUNT_TYPE_GEM:
+    strcpy(reply, "G");
+    break;
+  case MOUNT_UNDEFINED:
+  default:
+    strcpy(reply, "L");
+    break;
+  }
+}
 
 //----------------------------------------------------------------------------------
 //   A - Alignment Commands
@@ -195,7 +215,6 @@ void Command_D()
 {
   if (command[1] != 0)
   {
-    replyShortFalse();
     return;
   }
     
@@ -206,7 +225,7 @@ void Command_D()
   }
   else
   {
-    replyNothing();
+    reply[0] = 0;
   }
   strcat(reply, "#");
 }
