@@ -114,7 +114,7 @@ Public Class Telescope
   ' Constructor - Must be public for COM registration!
   '
   Public Sub New()
-
+    CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture
     ReadProfile() ' Read device configuration from the ASCOM Profile store
     mTL = New TraceLogger("", "TeenAstro")
     mTL.Enabled = mtraceState
