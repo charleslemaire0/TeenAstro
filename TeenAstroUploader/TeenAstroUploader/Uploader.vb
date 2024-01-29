@@ -1,7 +1,12 @@
 ﻿Imports System.IO
-
+Imports System.Globalization
+Imports System.Threading
+Imports System.Runtime.InteropServices
 Public Class Uploader
   Private Sub ButtonUploadT_Click(sender As Object, e As EventArgs) Handles ButtonUploadT.Click
+
+
+
     Try
       Dim pHelp As New ProcessStartInfo
       Dim exepath As String = """" & System.IO.Path.GetDirectoryName(Application.ExecutablePath) & """"
@@ -54,6 +59,7 @@ Public Class Uploader
   End Sub
 
   Private Sub Uploader_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+    CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture
     Dim assembly As System.Reflection.Assembly = System.Reflection.Assembly.GetExecutingAssembly()
     Dim fvi As FileVersionInfo = FileVersionInfo.GetVersionInfo(assembly.Location)
     Dim version As String = fvi.FileVersion
