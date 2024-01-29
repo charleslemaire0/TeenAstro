@@ -4,9 +4,6 @@ Imports System.Threading
 Imports System.Runtime.InteropServices
 Public Class Uploader
   Private Sub ButtonUploadT_Click(sender As Object, e As EventArgs) Handles ButtonUploadT.Click
-
-
-
     Try
       Dim pHelp As New ProcessStartInfo
       Dim exepath As String = """" & System.IO.Path.GetDirectoryName(Application.ExecutablePath) & """"
