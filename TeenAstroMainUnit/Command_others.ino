@@ -1,4 +1,5 @@
 #include "Command.h"
+#include "ValueToString.h"
 
 void Command_dollar()
 {
@@ -14,6 +15,7 @@ void Command_dollar()
     replyShortTrue();
     break;
   case 'X':
+    initencoder();
     initmotor(true);
     replyShortTrue();
     break;
@@ -22,7 +24,26 @@ void Command_dollar()
     break;
   }
 }
-
+void Command_ACK()
+{
+  switch (mountType)
+  {
+  case MOUNT_TYPE_ALTAZM:
+  case MOUNT_TYPE_FORK_ALT:
+    strcpy(reply, "A");
+    break;
+  case MOUNT_TYPE_FORK:
+    strcpy(reply, "P");
+    break;
+  case MOUNT_TYPE_GEM:
+    strcpy(reply, "G");
+    break;
+  case MOUNT_UNDEFINED:
+  default:
+    strcpy(reply, "L");
+    break;
+  }
+}
 //----------------------------------------------------------------------------------
 //   A - Alignment Commands
 //  :A0#
@@ -44,8 +65,11 @@ void Command_A()
     enable_Axis(true);
     delay(10);
     // start tracking
-    sideralTracking = true;
-    lastSetTrakingEnable = millis();
+    if (enableMotor)
+    {
+      sideralTracking = true;
+      lastSetTrakingEnable = millis();
+    }
     replyShortTrue();
     break;
   case '2':
@@ -71,6 +95,14 @@ void Command_A()
     replyShortTrue();
     break;
   }
+  case 'E':
+  {
+    double val = alignment.getError() * RAD_TO_DEG;
+    doubleToDms(reply, &val, false, true, true);
+    //sprintf(reply, "%+05.4f", val);
+    strcat(reply, "#");
+  }
+  break;
   case 'C':
   case 'A':
     initTransformation(true);
@@ -398,10 +430,8 @@ void Command_D()
 {
   if (command[1] != 0)
   {
-    replyShortFalse();
     return;
   }
-
   if (movingTo)
   {
     reply[0] = (char)127;
@@ -464,10 +494,10 @@ void Command_h()
     // : hP#   Goto the Park Position
     //          Return: 0 on failure
     //                  1 on success
-    if (park())
-      replyShortFalse();
-    else
+    if (park()==0)
       replyShortTrue();
+    else
+      replyShortFalse();
     break;
   case 'Q':
     //  :hQ#   Set the park position
@@ -477,6 +507,11 @@ void Command_h()
       replyShortFalse();
     else
       replyShortTrue();
+    break;
+  case 'S':
+    //  :hS#   Get if the park position is saved
+    //          Return: 0 or 1
+    parkSaved ? replyShortTrue() : replyShortFalse();
     break;
   case 'R':
     //  :hR#   Restore parked telescope to operation
@@ -641,7 +676,7 @@ void Command_T()
     replyNothing();
     break;
   case 'T':
-    //set Target tracking rate
+    // set user defined Target tracking rate
     SetTrackingRate(1.0 - (double)storedTrakingRateRA / 10000.0, (double)storedTrakingRateDEC / 10000.0);
     sideralMode = SIDM_TARGET;
     replyNothing();
@@ -651,9 +686,16 @@ void Command_T()
     {
       lastSetTrakingEnable = millis();
       atHome = false;
-      sideralTracking = true;
-      computeTrackingRate(true);
-      replyShortTrue();
+      if (enableMotor)
+      {
+        sideralTracking = true;
+        computeTrackingRate(true);
+        replyShortTrue();
+      }
+      else
+      {
+        replyShortFalse();
+      }
     }
     else
       replyShortFalse();
@@ -667,26 +709,33 @@ void Command_T()
     else
       replyShortFalse();
     break;
-  case '0':
-    // turn compensation off
-    tc = TC_NONE;
-    computeTrackingRate(true);
-    XEEPROM.update(getMountAddress(EE_TC_Axis), 0);
-    replyShortTrue();
-    break;
   case '1':
     // turn compensation RA only
-    tc = TC_RA;
-    computeTrackingRate(true);
-    XEEPROM.update(getMountAddress(EE_TC_Axis), 0);
-    replyShortTrue();
+    if (isAltAZ())
+    {
+      replyShortFalse();
+    }
+    else
+    {
+      trackComp = TC_RA;
+      computeTrackingRate(true);
+      XEEPROM.update(getMountAddress(EE_TC_Axis), 1);
+      replyShortTrue();
+    }
     break;
   case '2':
     // turn compensation BOTH
-    tc = TC_BOTH;
-    computeTrackingRate(true);
-    XEEPROM.update(getMountAddress(EE_TC_Axis), 2);
-    replyShortTrue();
+    if (isAltAZ())
+    {
+      replyShortFalse();
+    }
+    else
+    {
+      trackComp = TC_BOTH;
+      computeTrackingRate(true);
+      XEEPROM.update(getMountAddress(EE_TC_Axis), 2);
+      replyShortTrue();
+    }
     break;
   default:
     replyNothing();

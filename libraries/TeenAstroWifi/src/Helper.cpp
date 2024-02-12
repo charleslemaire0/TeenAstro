@@ -34,20 +34,14 @@ void TeenAstroWifi::addTrackingInfo(String &data )
 
   switch (ta_MountStatus.getRateCompensation())
   {
-  case TeenAstroMountStatus::RateCompensation::RC_ALIGN_RA:
-    strcpy(temp1, "Align Comp RA Axis");
+  case TeenAstroMountStatus::RateCompensation::RC_RA:
+    strcpy(temp1, "Comp RA Axis");
     break;
-  case TeenAstroMountStatus::RateCompensation::RC_ALIGN_BOTH:
-    strcpy(temp1, "Align Comp Both Axis");
-    break;
-  case TeenAstroMountStatus::RateCompensation::RC_FULL_RA:
-    strcpy(temp1, "Full Comp RA Axis");
-    break;
-  case TeenAstroMountStatus::RateCompensation::RC_FULL_BOTH:
-    strcpy(temp1, "Full Comp Both Axis");
+  case TeenAstroMountStatus::RateCompensation::RC_BOTH:
+    strcpy(temp1, "Comp Both Axis");
     break;
   default:
-    strcpy(temp1, "No Comp Axis");
+    strcpy(temp1, "get Comp Axis failed");
     break;
   }
   sprintf_P(temp, html_TrackingCorrections, temp1);

@@ -96,25 +96,49 @@ Again:
   {
     updateDeltaTarget();
     atTarget = staA1.deltaTarget == 0 && staA2.deltaTarget == 0;
+    if (atTarget)
+    {
+      if (homeMount)
+      {
+        finalizeHome();
+      }
+      else if (parkStatus == PRK_PARKING)
+      {
+        finalizePark();
+      }
+      if (atHome || parkStatus == PRK_PARKED)
+      {
+        SetsiderealClockSpeed(siderealClockSpeed);
+        cli();
+        staA1.resetToSidereal();
+        staA2.resetToSidereal();
+        sei();
+        DecayModeTracking();
+      }
+    }
   }
-    
-  if (atTarget)
+  else if (atTarget)
   {
-    movingTo = false;
-    SetsiderealClockSpeed(siderealClockSpeed);
-    cli();
-    staA1.resetToSidereal();
-    staA2.resetToSidereal();
-    sei();
-    if (homeMount)
+    if (!settling)
     {
-      finalizeHome();
+      settling = true;
+      lastSettleTime = millis();
+      SetsiderealClockSpeed(siderealClockSpeed);
+      cli();
+      staA1.resetToSidereal();
+      staA2.resetToSidereal();
+      sei();
+      DecayModeTracking();
     }
-    else if(parkStatus == PRK_PARKING)
+    else
     {
-      finalizePark();
+      unsigned long elapsedTime = millis() - lastSettleTime;
+      if (elapsedTime > slewSettleDuration * 1000 )
+      {
+        settling = false;
+        movingTo = false;
+      }
     }
-    DecayModeTracking();
   }
 }
 

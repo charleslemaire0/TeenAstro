@@ -90,7 +90,8 @@ Public Class Telescope
 
   Private mTelStatus As String
 
-
+  Private DECstringFormat As String = "+00.00000;-00.00000"
+  Private RAstringFormat As String = "000.00000"
   Private mConnectionStatusDate As Date
 
   Private mtgtRa As Double = -999
@@ -113,7 +114,7 @@ Public Class Telescope
   ' Constructor - Must be public for COM registration!
   '
   Public Sub New()
-
+    CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture
     ReadProfile() ' Read device configuration from the ASCOM Profile store
     mTL = New TraceLogger("", "TeenAstro")
     mTL.Enabled = mtraceState
@@ -613,7 +614,7 @@ Public Class Telescope
 
   Public ReadOnly Property CanPark() As Boolean Implements ITelescopeV3.CanPark
     Get
-      Dim value As Boolean = True
+      Dim value As Boolean = Me.CommandBool("hS")
       mTL.LogMessage("Get CanPark", value.ToString())
       Return value
     End Get
@@ -628,8 +629,9 @@ Public Class Telescope
 
   Public ReadOnly Property CanSetDeclinationRate() As Boolean Implements ITelescopeV3.CanSetDeclinationRate
     Get
-      mTL.LogMessage("Get CanSetDeclinationRate", True.ToString())
-      Return True
+      Dim value As Boolean = Me.CommandBoolString("GXJB")
+      mTL.LogMessage("Get CanSetDeclinationRate", value.ToString())
+      Return value
     End Get
   End Property
 
@@ -715,16 +717,23 @@ Public Class Telescope
 
   Public ReadOnly Property CanUnpark() As Boolean Implements ITelescopeV3.CanUnpark
     Get
-      mTL.LogMessage("Get CanUnpark", True.ToString())
-      Return True
+      Dim value As Boolean = Me.CommandBool("hS")
+      mTL.LogMessage("Get CanUnpark", value.ToString())
+      Return value
     End Get
   End Property
 
   Public ReadOnly Property Declination() As Double Implements ITelescopeV3.Declination
     Get
-      Dim Dec As Double = mutilities.DMSToDegrees(Me.CommandString("GD"))
-      mTL.LogMessage("Get Declination", mutilities.DegreesToDMS(Dec))
-      Return Dec
+      Try
+        Dim Dec As Double = CDbl(Me.CommandString("GDL"))
+        mTL.LogMessage("Get Declination", mutilities.DegreesToDMS(Dec))
+        Return Dec
+      Catch ex As Exception
+        Throw New ASCOM.DriverException("get Dec has failed")
+        mTL.LogMessage("Declination", ex.Message)
+      End Try
+      Return 0
     End Get
   End Property
 
@@ -962,9 +971,16 @@ Public Class Telescope
 
   Public ReadOnly Property RightAscension() As Double Implements ITelescopeV3.RightAscension
     Get
-      Dim Ra As Double = mutilities.HMSToHours(Me.CommandString("GR"))
-      mTL.LogMessage("Get RightAscension", mutilities.HoursToHMS(Ra))
-      Return Ra
+      Try
+        Dim Ra As Double = CDbl(Me.CommandString("GRL")) / 15
+        mTL.LogMessage("Get RightAscension", mutilities.HoursToHMS(Ra))
+        Return Ra
+      Catch ex As Exception
+        Throw New ASCOM.DriverException("get Ra has failed")
+        mTL.LogMessage("RightAscension", ex.Message)
+      End Try
+
+      Return 0
     End Get
   End Property
 
@@ -1044,7 +1060,7 @@ Public Class Telescope
 
   Public ReadOnly Property SiderealTime() As Double Implements ITelescopeV3.SiderealTime
     Get
-      Dim lst As Double = mutilities.DMSToDegrees(Me.CommandString("GS"))
+      Dim lst As Double = CDbl(Me.CommandString("GSL"))
       mTL.LogMessage("Get SiderealTime", lst.ToString("+0.000000"))
       Return lst
     End Get
@@ -1127,12 +1143,19 @@ Public Class Telescope
 
   Public Property SlewSettleTime() As Short Implements ITelescopeV3.SlewSettleTime
     Get
-      mTL.LogMessage("Get SlewSettleTime", "Not implemented")
-      Throw New ASCOM.PropertyNotImplementedException("SlewSettleTime", False)
+      Dim time As Double = CShort(Me.CommandString("GXOS"))
+      mTL.LogMessage("Get SlewSettleTime", time)
+      Return time
     End Get
     Set(value As Short)
-      mTL.LogMessage("Set SlewSettleTime", "Not implemented")
-      Throw New ASCOM.PropertyNotImplementedException("SlewSettleTime", True)
+      If value > 21 Or value < 0 Then
+        Throw New ASCOM.InvalidValueException
+      End If
+      Dim cmd As String = "SXOS," + value.ToString
+      mTL.LogMessage("Set SlewSettleTime", value)
+      If Not CommandBoolSingleChar(cmd) Then
+        Throw New ASCOM.InvalidOperationException
+      End If
     End Set
   End Property
 
@@ -1226,13 +1249,21 @@ Public Class Telescope
       If mtgtDec = -999 Then
         Throw New ASCOM.ValueNotSetException
       End If
+      Try
+        Dim mtgtDec As Double = CDbl(Me.CommandString("GdL"))
+      Catch ex As Exception
+        Throw New ASCOM.DriverException("get TargetDeclination has failed")
+        mTL.LogMessage("Get TargetDeclination", ex.Message)
+      End Try
       mTL.LogMessage("Get TargetDeclination", mtgtDec.ToString)
       Return mtgtDec
     End Get
     Set(value As Double)
-      mTL.LogMessage("Set TargetDeclination", value.ToString)
-      Dim sexa As String = DecToString(value)
-      Dim cmd As String = "Sd" & sexa
+      mTL.LogMessage("Set TargetDeclination", value.ToString())
+      If value < -90 Or value > 90 Then
+        Throw New ASCOM.InvalidValueException
+      End If
+      Dim cmd As String = "SdL" & value.ToString(DECstringFormat)
       If Not CommandBoolSingleChar(cmd) Then
         Throw New ASCOM.InvalidOperationException("Set Target Declination " & cmd & " has failed")
       End If
@@ -1278,13 +1309,22 @@ Public Class Telescope
       If mtgtRa = -999 Then
         Throw New ASCOM.ValueNotSetException
       End If
+      Try
+        Dim mtgtRa As Double = CDbl(Me.CommandString("GrL")) / 15
+      Catch ex As Exception
+        Throw New ASCOM.DriverException("get TargetRightAscension has failed")
+        mTL.LogMessage("Get TargetRightAscension", ex.Message)
+      End Try
       mTL.LogMessage("Get TargetRightAscension", mtgtRa.ToString)
       Return mtgtRa
     End Get
     Set(value As Double)
-      mTL.LogMessage("Set TargetRightAscension", value.ToString)
-      Dim sexa As String = RaToString(value)   ' Long format, whole seconds
-      Dim cmd As String = "Sr" & sexa
+      mTL.LogMessage("Set TargetRightAscension", value.ToString())
+      If value < 0 Or value > 24 Then
+        Throw New ASCOM.InvalidValueException
+      End If
+
+      Dim cmd As String = "SrL" & (15 * value).ToString(RAstringFormat)
       If Not CommandBoolSingleChar(cmd) Then
         Throw New ASCOM.InvalidOperationException("Set Target RightAscension " & cmd & " has failed")
       End If
@@ -1497,17 +1537,17 @@ Public Class Telescope
     If mtgtDec = -999 Or mtgtRa = -999 Then
       Throw New ASCOM.ValueNotSetException
     End If
-    If Me.AtPark Then
+    If Me.AtPark() Then
       Throw New ASCOM.ParkedException
     End If
-    If Not Me.Tracking Then
+    If Not Me.Tracking() Then
       Throw New ASCOM.InvalidOperationException
     End If
-    While Me.Slewing
+    While Me.Slewing()
       Me.AbortSlew()
       Threading.Thread.Sleep(200)
     End While
-    While Me.IsPulseGuiding
+    While Me.IsPulseGuiding()
       Me.AbortSlew()
       Threading.Thread.Sleep(200)
     End While

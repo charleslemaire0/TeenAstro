@@ -26,6 +26,9 @@ void processCommands()
   case '$':
     Command_dollar();
     break;
+  case 6:
+    Command_ACK();
+    break;
   case 'A':
     Command_A();
     break;

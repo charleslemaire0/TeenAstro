@@ -12,7 +12,7 @@ public:
   enum AlignReply { ALIR_FAILED1, ALIR_FAILED2, ALIR_DONE, ALIR_ADDED};
   enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
   enum TrackState { TRK_OFF, TRK_ON, TRK_SLEWING, TRK_UNKNOW };
-  enum RateCompensation { RC_UNKNOWN = -1, RC_NONE, RC_ALIGN_RA, RC_ALIGN_BOTH, RC_FULL_RA, RC_FULL_BOTH };
+  enum RateCompensation { RC_UNKNOWN = -1, RC_RA = 1, RC_BOTH };
   enum SiderealMode { SID_UNKNOWN = -1, SID_STAR, SID_SUN, SID_MOON, SID_TARGET };
   enum ParkState { PRK_UNPARKED, PRK_PARKED, PRK_FAILED, PRK_PARKING, PRK_UNKNOW };
   enum PierState { PIER_E, PIER_W, PIER_UNKNOW };
@@ -94,7 +94,8 @@ private:
   bool            m_hasInfoMount = false;
   bool            m_hasInfoFocuser = false;
   bool            m_hasFocuser = false;
-  bool            m_hasEncoder = true;
+  bool            m_encoderEnable = true;
+  bool            m_motorEnable = true;
 public:
   //Alignment Stuff
   bool            isAligning()  { return m_align != ALI_OFF; }
@@ -182,7 +183,7 @@ public:
   void updateFocuser();
   void updateTrackingRate();
   bool updateStoredTrackingRate();
-  void updateMount();
+  void updateMount(bool force=false);
 
   Mount             getMount();
   bool              isAltAz();
@@ -206,6 +207,7 @@ public:
   bool Parking();
   bool Parked();
   bool isPushingto();
+  bool isPushTo();
   bool isSpiralRunning();
   bool isPulseGuiding();
   bool isGuidingN();
@@ -219,7 +221,8 @@ public:
   bool isGNSSLocationSync();
   bool isHdopSmall();
   bool findFocuser();
-  bool hasEncoder();
+  bool encodersEnable();
+  bool motorsEnable();
   bool CalibratingEncoder();
 
   //Connection Errors

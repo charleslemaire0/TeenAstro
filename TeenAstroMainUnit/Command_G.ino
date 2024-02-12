@@ -32,9 +32,6 @@ void PrintRa(double& val)
 
 void Command_GX()
 {
-  int i;
-  double f, f1;
-  long   l1;
   //  :GXnn#   Get TeenAstro Specific value
   switch (command[2])
   {
@@ -84,45 +81,41 @@ void Command_GX()
       // :GXA8#
       sprintf(reply, "%f#", t33);
       break;
-    case 'c':
-      // :GXAc#
-      TrackingCompForAlignment ? sprintf(reply, "y#") : sprintf(reply, "n#");
-      break;
-    //case 'a':
-    //case 'z':
-    //case 'w':
-    //{
-    //  // :GXAa#
-    //  // :GXAz# 
-    //  // :GXAw#
-    //  CoordConv::Err request = CoordConv::Err::POL_W;
-    //  i = 1;
-    //  switch (command[3])
-    //  {
-    //  case'a':
-    //    request = CoordConv::Err::EQ_ALT;
-    //    break;
-    //  case'z':
-    //    request = CoordConv::Err::EQ_AZ;
-    //    break;
-    //  case 'w':
-    //    request = CoordConv::Err::POL_W;
-    //    break;
-    //  default:
-    //    i = 0;
-    //  }
-    //  f1 = alignment.polErrorDeg(*localSite.latitude(), request);
-    //  if (i == 0)
-    //  {
-    //    replyLongUnknow();
-    //  }
-    //  else
-    //  {
-    //    doubleToDms(reply, &f1, false, true, true);
-    //    strcat(reply, "#");
-    //  }
-    //  break;
-    //}
+      //case 'a':
+      //case 'z':
+      //case 'w':
+      //{
+      //  // :GXAa#
+      //  // :GXAz# 
+      //  // :GXAw#
+      //  CoordConv::Err request = CoordConv::Err::POL_W;
+      //  i = 1;
+      //  switch (command[3])
+      //  {
+      //  case'a':
+      //    request = CoordConv::Err::EQ_ALT;
+      //    break;
+      //  case'z':
+      //    request = CoordConv::Err::EQ_AZ;
+      //    break;
+      //  case 'w':
+      //    request = CoordConv::Err::POL_W;
+      //    break;
+      //  default:
+      //    i = 0;
+      //  }
+      //  f1 = alignment.polErrorDeg(*localSite.latitude(), request);
+      //  if (i == 0)
+      //  {
+      //    replyLongUnknow();
+      //  }
+      //  else
+      //  {
+      //    doubleToDms(reply, &f1, false, true, true);
+      //    strcat(reply, "#");
+      //  }
+      //  break;
+      //}
     default:
       replyLongUnknow();
       break;
@@ -138,7 +131,7 @@ void Command_GX()
     case '2':
       // :GXE1# get degree encoder 1
     {
-      f1 = command[3] == '1' ? encoderA1.r_deg() : encoderA2.r_deg();
+      double f1 = command[3] == '1' ? encoderA1.r_deg() : encoderA2.r_deg();
       doubleToDms(reply, &f1, true, true, highPrecision);
       strcat(reply, "#");
     }
@@ -149,15 +142,19 @@ void Command_GX()
       // :GXEA Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
       // :GXEZ Returns: DDD* MM# or DDD * MM'SS# (based on precision setting)
     {
-#if HASEncoder
-      Coord_HO HO_T = getHorETopo();
-      f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
-      f1 = HO_T.Alt() * RAD_TO_DEG;
-#else
-      Coord_HO HO_T = getHorTopo();
-      f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
-      f1 = HO_T.Alt() * RAD_TO_DEG;
-#endif // HASEncoder
+      double f, f1;
+      if (enableEncoder)
+      {
+        Coord_HO HO_T = getHorETopo();
+        f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
+        f1 = HO_T.Alt() * RAD_TO_DEG;
+      }
+      else
+      {
+        Coord_HO HO_T = getHorTopo();
+        f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
+        f1 = HO_T.Alt() * RAD_TO_DEG;
+      }
       command[3] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
     }
     break;
@@ -168,19 +165,18 @@ void Command_GX()
       //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
       //  :GR#   Get Telescope Encoder RA
       //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
-#if HASEncoder
-      Coord_EQ EQ_T = getEquE( *localSite.latitude() * DEG_TO_RAD);
-#else
-      Coord_EQ EQ_T = getEqu( *localSite.latitude() * DEG_TO_RAD);
-#endif
+      Coord_EQ EQ_T = enableEncoder ?
+        getEquE(*localSite.latitude() * DEG_TO_RAD) :
+        getEqu(*localSite.latitude() * DEG_TO_RAD);
+
       if (command[3] == 'R')
       {
-        f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
+        double f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
         PrintRa(f);
       }
       else
       {
-        f1 = EQ_T.Dec() * RAD_TO_DEG;
+        double f1 = EQ_T.Dec() * RAD_TO_DEG;
         PrintDec(f1);
       }
     }
@@ -351,26 +347,30 @@ void Command_GX()
     switch (command[3])
     {
     case '1':
+    {
       cli();
-      f1 = staA1.pos / geoA1.stepsPerDegree;
+      double f1 = staA1.pos / geoA1.stepsPerDegree;
       sei();
       doubleToDms(reply, &f1, true, true, highPrecision);
       strcat(reply, "#");
-      break;
+    }
+    break;
     case '2':
+    {
       cli();
-      f1 = staA2.pos / geoA2.stepsPerDegree;
+      double f1 = staA2.pos / geoA2.stepsPerDegree;
       sei();
       doubleToDms(reply, &f1, true, true, highPrecision);
       strcat(reply, "#");
-      break;
-    case '3':  
+    }
+    break;
+    case '3':
     case '4':
     {
       //Other way to get intsrument angle to verify the pipeline
       Coord_IN IN_T = getEqu(*localSite.latitude() * DEG_TO_RAD).To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto(), alignment.Tinv);
-      f = IN_T.Axis1() * RAD_TO_DEG;
-      f1 = IN_T.Axis2() * RAD_TO_DEG;
+      double f = IN_T.Axis1() * RAD_TO_DEG;
+      double f1 = IN_T.Axis2() * RAD_TO_DEG;
       long Axis1_out, Axis2_out;
       Angle2Step(f, f1, GetPoleSide(), &Axis1_out, &Axis2_out);
       f = Axis1_out / geoA1.stepsPerDegree;
@@ -378,7 +378,7 @@ void Command_GX()
       command[3] == '3' ? doubleToDms(reply, &f, true, true, highPrecision) : doubleToDms(reply, &f1, true, true, highPrecision);
       strcat(reply, "#");
     }
-      break;
+    break;
     default:
       replyLongUnknow();
       break;
@@ -410,11 +410,13 @@ void Command_GX()
     case '1':
     case '2':
     case '3':
-      i = command[3] - '0';
+    {
+      int i = command[3] - '0';
       // :GXRn# return user defined rate
       dtostrf(guideRates[i], 2, 2, reply);
       strcat(reply, "#");
-      break;
+    }
+    break;
     case 'A':
       // :GXRA# returns the Degrees For Acceleration
       dtostrf(DegreesForAcceleration, 2, 1, reply);
@@ -434,19 +436,25 @@ void Command_GX()
       break;
     case 'r':
       // :GXRr# Requested RA traking rate in sideral
-      l1 = 10000l - (long)(RequestedTrackingRateHA * 10000.0);
+    {
+      long l1 = 10000l - (long)(RequestedTrackingRateHA * 10000.0);
       sprintf(reply, "%ld#", l1);
-      break;
+    }
+    break;
     case 'h':
-      l1 = RequestedTrackingRateHA * 10000.0;
       // :GXRh# Requested HA traking rate in sideral
+    {
+      long l1 = RequestedTrackingRateHA * 10000.0;
       sprintf(reply, "%ld#", l1);
-      break;
+    }
+    break;
     case 'd':
       // :GXRd# Requested DEC traking rate in sideral
-      l1 = RequestedTrackingRateDEC * 10000.0;
+    {
+      long l1 = RequestedTrackingRateDEC * 10000.0;
       sprintf(reply, "%ld#", l1);
-      break;
+    }
+    break;
     case 'e':
       // :GXRe,VVVVVVVVVV# get stored Rate for RA
       sprintf(reply, "%ld#", storedTrakingRateRA);
@@ -466,24 +474,32 @@ void Command_GX()
     {
     case 'A':
       // :GXLA# get user defined minAXIS1 
-      i = XEEPROM.readShort(getMountAddress(EE_minAxis1));
+    {
+      int i = XEEPROM.readShort(getMountAddress(EE_minAxis1));
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     case 'B':
       // :GXLB# get user defined maxAXIS1 
-      i = XEEPROM.readShort(getMountAddress(EE_maxAxis1));
+    {
+      int i = XEEPROM.readShort(getMountAddress(EE_maxAxis1));
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     case 'C':
-      // :GXLC# get user defined minAXIS2 
-      i = XEEPROM.readShort(getMountAddress(EE_minAxis2));
+      // :GXLC# get user defined minAXIS2
+    {
+      int i = XEEPROM.readShort(getMountAddress(EE_minAxis2));
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     case 'D':
-      // :GXLD# get user defined maxAXIS2 
-      i = XEEPROM.readShort(getMountAddress(EE_maxAxis2));
+      // :GXLD# get user defined maxAXIS2
+    {
+      int i = XEEPROM.readShort(getMountAddress(EE_maxAxis2));
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     case 'E':
       // :GXLE# return user defined Meridian East Limit
       sprintf(reply, "%ld#", (long)round(minutesPastMeridianGOTOE));
@@ -521,24 +537,32 @@ void Command_GX()
     {
     case 'A':
       // :GXlA#  Mount type defined minAXIS1
-      i = geoA1.LimMinAxis;
+    {
+      int i = geoA1.LimMinAxis;
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     case 'B':
       // :GXlB#  Mount type defined maxAXIS1
-      i = geoA1.LimMaxAxis;
+    {
+      int i = geoA1.LimMaxAxis;
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     case 'C':
       // :GXlC#  Mount type defined minAXIS2
-      i = geoA2.LimMinAxis;
+    {
+      int i = geoA2.LimMinAxis;
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     case 'D':
       // :GXlD#  Mount type defined maxAXIS2
-      i = geoA2.LimMaxAxis;
+    {
+      int i = geoA2.LimMaxAxis;
       sprintf(reply, "%d#", i);
-      break;
+    }
+    break;
     default:
       replyLongUnknow();
       break;
@@ -556,7 +580,7 @@ void Command_GX()
     case '1':
       // :GXT1# UTC date 
     {
-      int i1, i2, i3, i4, i5;
+      int i, i1, i2, i3, i4, i5;
       rtk.getUTDate(i, i1, i2, i3, i4, i5);
       i = i % 100;
       sprintf(reply, "%02d/%02d/%02d#", i1, i2, i);
@@ -574,7 +598,7 @@ void Command_GX()
       // :GXT3# LHA time
       double tmpLST;
       Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
-      tmpLST = EQ_T.Ha()*RAD_TO_HOUR;
+      tmpLST = EQ_T.Ha() * RAD_TO_HOUR;
       doubleToHms(reply, &tmpLST, true);
       strcat(reply, "#");
     }
@@ -585,9 +609,8 @@ void Command_GX()
   {
     // :GXI#   Get telescope Status
     PoleSide currentSide = GetPoleSide();
-    for (i = 0; i < 50; i++)
+    for (int i = 0; i < 50; i++)
       reply[i] = ' ';
-    i = 0;
     reply[0] = '0' + 2 * movingTo + sideralTracking;
     reply[1] = '0' + sideralMode;
     const char* parkStatusCh = "pIPF";
@@ -620,26 +643,7 @@ void Command_GX()
     }
 
     if (staA1.fault || staA2.fault) reply[9] = 'f';
-    reply[10] = '0';
-    if (isAltAZ())
-      reply[10] += doesRefraction.forTracking ? RC_FULL_BOTH : RC_ALIGN_BOTH;
-    else if (tc == TC_NONE || (!doesRefraction.forTracking && !TrackingCompForAlignment))
-    {
-      reply[10] += RC_NONE;
-    }
-    else
-    {
-      if (doesRefraction.forTracking)
-      {
-        reply[10] += RC_FULL_RA;
-      }
-      else if (TrackingCompForAlignment)
-      {
-        reply[10] += RC_ALIGN_RA;
-      }
-      if (tc == TC_BOTH)
-        reply[10] += 1;
-    }
+    reply[10] = '0' + trackComp;
     reply[11] = hasStarAlignment ? '1' : '0';
     // provide mount type
     if (mountType == MOUNT_TYPE_GEM)
@@ -671,15 +675,15 @@ void Command_GX()
     reply[14] = 'A' + val;
     reply[15] = '0' + lastError;
     val = 0;
-#if HASEncoder
-    bitWrite(val, 0, 1);
+
+    bitWrite(val, 0, enableEncoder);
     bitWrite(val, 1, encoderA1.calibrating() && encoderA2.calibrating());
     bitWrite(val, 2, PushtoStatus != PT_OFF);
-#endif
+    bitWrite(val, 3, enableMotor);
+
     reply[16] = 'A' + val;
     reply[17] = '#';
     reply[18] = 0;
-    i = 17;
   }
   break;
   case 'J':
@@ -687,6 +691,12 @@ void Command_GX()
     //specific command for ASCOM
     switch (command[3])
     {
+    case 'B':
+      // :GXJB# get if Both rate Axis are ennable
+    {
+      trackComp == TC_BOTH ? replyLongTrue(): replyLongFalse();
+    }
+    break;
     case 'C':
       // :GXJC# get if connected
     {
@@ -696,7 +706,7 @@ void Command_GX()
     case 'M':
       // :GXJMn# get if axis is still moving
     {
-      
+
       if (command[4] == '1')
       {
         GuidingState == Guiding::GuidingAtRate && guideA1.isBusy() ? replyLongTrue() : replyLongFalse();
@@ -749,10 +759,10 @@ void Command_GX()
         replyLongFalse();
       }
     }
-      break;
+    break;
     }
   }
-    break;
+  break;
   case 'M':
   {
     // :GXM..#   Get Motor Settings
@@ -956,6 +966,13 @@ void Command_GX()
       // :GXOC# second Mount Name
       sprintf(reply, "%s#", mountName[1]);
       break;
+    case 'S':
+      // :GXOS# get Slew Settle Duration in seconds 
+    {
+      int i = XEEPROM.read(getMountAddress(EE_SlewSettleDuration));
+      sprintf(reply, "%d#", i);
+    }
+    break;
     }
   }
   break;
@@ -969,7 +986,6 @@ void Command_GX()
 //   G - Get Telescope Information
 void  Command_G()
 {
-  double f, f1;
   int i;
 
   switch (command[1])
@@ -985,17 +1001,17 @@ void  Command_G()
     Coord_HO HO_T = getHorTopo();
     if (command[1] == 'A')
     {
-      f1 = HO_T.Alt() * RAD_TO_DEG;
+      double f1 = HO_T.Alt() * RAD_TO_DEG;
       PrintAtitude(f1);
     }
     else if (command[1] == 'Z')
     {
-      f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
+      double f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
       PrintAzimuth(f);
     }
     else
     {
-      f1 = HO_T.FrH() * RAD_TO_DEG;
+      double f1 = HO_T.FrH() * RAD_TO_DEG;
       PrintAzimuth(f1);
     }
   }
@@ -1030,21 +1046,41 @@ void  Command_G()
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //  :GR#   Get Telescope RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
+    //  :GDL#   Get Telescope Declination, TeenAstro LX200 command
+    //         Returns: sDD,VVVVV#
+    //  :GRL#   Get Telescope RA, TeenAstro LX200 command
+    //         Returns: DDD,VVVVV#
   {
     Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
     if (command[1] == 'R')
     {
-      f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
-      PrintRa(f);
+      
+      if (command[2] == 'L')
+      {
+        double f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_DEG;
+        sprintf(reply, "%08.5f#", f);
+      }
+      else
+      {
+        double f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
+        PrintRa(f);
+      }
     }
-    else if(command[1] == 'D')
+    else if (command[1] == 'D')
     {
-      f1 = EQ_T.Dec() * RAD_TO_DEG;
-      PrintDec(f1);
+      double f1 = EQ_T.Dec() * RAD_TO_DEG;
+      if (command[2] == 'L')
+      {
+        sprintf(reply, "%+08.5f#", f1);
+      }
+      else
+      {
+        PrintDec(f1);
+      }
     }
     else
     {
-      f1 = EQ_T.FrE() * RAD_TO_DEG;
+      double f1 = EQ_T.FrE() * RAD_TO_DEG;
       PrintAzimuth(f1);
     }
   }
@@ -1052,8 +1088,17 @@ void  Command_G()
   case 'd':
     //  :Gd#   Get Currently Selected Target Declination, Native LX200 command
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
-    doubleToDms(reply, &newTargetDec, false, true, highPrecision);
-    strcat(reply, "#");
+    //  :GdL#   Get Currently Selected Target Declination, TeenAstro LX200 command
+    //          Returns: sDD, VVVVV#
+    if (command[2] == 'L')
+    {
+      sprintf(reply, "%+08.5f#", newTargetDec);
+    }
+    else
+    {
+      doubleToDms(reply, &newTargetDec, false, true, highPrecision);
+      strcat(reply, "#");
+    }
     break;
   case 'e':
     //  :Ge#   Get Current Site Elevation above see level in meter, TeenAstro LX200 command
@@ -1146,36 +1191,56 @@ void  Command_G()
   case 'r':
     //  :Gr#   Get current/target object RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
-    f = newTargetRA;
-    f /= 15.0;
-    doubleToHms(reply, &f, highPrecision);
-    strcat(reply, "#");
-    break;
+    //  :GrL#  Get current/target object Ra, TeenAstro LX200 command
+    //         Returns: sDD, VVVVV#
+    if (command[2] == 'L')
+    {
+      sprintf(reply, "%+08.5f#", newTargetRA);
+    }
+    else
+    {
+      double f = newTargetRA;
+      f /= 15.0;
+      doubleToHms(reply, &f, highPrecision);
+      strcat(reply, "#");
+    }
+  break;
   case 'S':
     //  :GS#   Get the Sidereal Time, Native LX200 command
     //         Returns: HH:MM:SS#
     //         The Sidereal Time as an ASCII Sexidecimal value in 24 hour format
-    f = rtk.LST();
-    doubleToHms(reply, &f, true);
-    strcat(reply, "#");
-    break;
+    //  :GSL#  Get the Sidereal Time, TeenAstro LX200 command
+    //         Returns: HH.VVVVVV#
+  {
+    double f = rtk.LST();
+    if (command[2] == 'L')
+    {
+      sprintf(reply, "%+08.6f#", f);
+    }
+    else
+    {
+      doubleToHms(reply, &f, true);
+      strcat(reply, "#");
+    }
+  }
+  break;
   case 'T':
     //  :GT#   Get tracking rate, Native LX200 command
     //         Returns: dd.ddddd#
     //         Returns the tracking rate if siderealTracking, 0.0 otherwise
+  {
+    double f = 0.0;
     if (sideralTracking && !movingTo)
     {
       f = RequestedTrackingRateHA;
       f *= 60 * 1.00273790935;
     }
-    else
-      f = 0.0;
-
     char    temp[10];
     dtostrf(f, 0, 5, temp);
     strcpy(reply, temp);
     strcat(reply, "#");
-    break;
+  }
+  break;
   case 't':
     //  :Gt#   Get Current Site Latitude, Native LX200 command
     //         Returns: sDD*MM#
@@ -1227,6 +1292,48 @@ void  Command_G()
     }
   }
   break;
+  case 'W':
+  {
+    switch (mountType)
+    {
+    case MOUNT_TYPE_ALTAZM:
+    case MOUNT_TYPE_FORK_ALT:
+      strcat(reply, "A");
+      break;
+    case MOUNT_TYPE_FORK:
+      strcat(reply, "P");
+      break;
+    case MOUNT_TYPE_GEM:
+      strcat(reply, "G");
+      break;
+    case MOUNT_UNDEFINED:
+    default:
+      strcat(reply, "L");
+      break;
+    }
+    sideralTracking ? strcat(reply, "T") : strcat(reply, "N");
+    if (atHome)
+    {
+      strcat(reply, "H");
+    }
+    else if (parkStatus == PRK_PARKED)
+    {
+      strcat(reply, "P");
+    }
+    else if (hasStarAlignment)
+    {
+      strcat(reply, "2");
+    }
+    else
+    {
+      strcat(reply, "1");
+    }
+    strcat(reply, "#");
+  }
+
+
+  break;
+
   case 'X':
     Command_GX();
     break;

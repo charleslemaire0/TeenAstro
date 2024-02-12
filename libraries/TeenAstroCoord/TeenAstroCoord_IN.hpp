@@ -44,7 +44,7 @@
 class Coord_HO;
 class Coord_EQ;
 
-class Coord_IN : protected Coord {
+class Coord_IN : protected Coord3R {
 public:
 	Coord_IN(double Axis3, double Axis2, double Axis1);
 	Coord_HO To_Coord_HO(const double(&missaligmentinv)[3][3], RefrOpt Opt);

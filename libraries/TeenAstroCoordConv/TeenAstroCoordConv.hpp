@@ -62,6 +62,8 @@ public:
 	// returns true if all required reference stars are set (need three)
 	bool isReady() const { return isready; }
 
+	double getError() const { return isready ? anglediff : 0; }
+
   // return the number of currently measured refs
   unsigned char getRefs() const { return refs; }
 
@@ -88,7 +90,8 @@ protected:
   double dcHDRef[3][3];	// angle1/angle2l direction cosine vectors for the three reference stars, indexed by reference first
 
   unsigned char refs=0;	// number of reference stars
-  bool isready=false;
+  bool isready = false;
+	double anglediff = 0;
 };
 
 

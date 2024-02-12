@@ -43,11 +43,11 @@
 
 // Converts between reference coordinates (angle1/angle2) 
 // and axis coordinates (axis1 and axis2)
-class Coord : protected LA3 {
+class Coord3R : protected LA3 {
 protected:
 	LA3::SingleRotation m_Eulers[3];
 public:
-	Coord(LA3::SingleRotation R0, LA3::SingleRotation R1, LA3::SingleRotation R2)
+	Coord3R(LA3::SingleRotation R0, LA3::SingleRotation R1, LA3::SingleRotation R2)
 	{
 		m_Eulers[0] = R0;
 		m_Eulers[1] = R1;
@@ -68,32 +68,37 @@ public:
 	};
 };
 
-//class Coord_EQ : public Coord {
-//	Coord_EQ(double FrE, double Dec, double Ha);
-//	Coord_HO To_Coord_HO(double Lat);
-//	Coord_IN To_Coord_IN(double Lat, double missaligment[3][3]);
-//  double FrE();
-//	double Dec();
-//	double Ha();
-//};
-//
-//class Coord_HO : public Coord {
-//	Coord_HO(double FrH, double Alt, double Az);
-//	Coord_EQ To_Coord_EQ(double Lat);
-//	Coord_IN To_Coord_IN(double missaligment[3][3]);
-//	double FrH();
-//	double Alt();
-//	double Az();
-//};
-//
-//class Coord_IN : public Coord {
-//	Coord_IN(double Axis3, double Axis2, double Axis1);
-//	Coord_HO To_Coord_HO(double invmissaligment[3][3]);
-//	Coord_EQ To_Coord_EQ(double invmissaligment[3][3], double Lat);
-//	double Axis3();
-//	double Axis2();
-//	double Axis1();
-//};
+class Coord4R : protected LA3 {
+protected:
+	LA3::SingleRotation m_Eulers[4];
+public:
+	Coord4R(LA3::SingleRotation R0, LA3::SingleRotation R1, LA3::SingleRotation R2, LA3::SingleRotation R3)
+	{
+		m_Eulers[0] = R0;
+		m_Eulers[1] = R1;
+		m_Eulers[2] = R2;
+		m_Eulers[3] = R3;
+	};
+
+	LA3::SingleRotation getE0()
+	{
+		return m_Eulers[0];
+	};
+	LA3::SingleRotation getE1()
+	{
+		return m_Eulers[1];
+	};
+	LA3::SingleRotation getE2()
+	{
+		return m_Eulers[2];
+	};
+	LA3::SingleRotation getE3()
+	{
+		return m_Eulers[3];
+	};
+};
+
+
 
 
 #endif // __TeenAstroCoord_hpp__

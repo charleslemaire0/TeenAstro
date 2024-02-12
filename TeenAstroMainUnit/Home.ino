@@ -39,6 +39,7 @@ void unsetHome()
 // moves telescope to the home position, then stops tracking
 bool goHome()
 {
+  if (!enableMotor) return false;
   if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return false; // fail, moving to home not allowed if PRK_PARKED
   if (lastError != ERRT_NONE) return false;                                // fail, cannot move if there are errors
   if (TelescopeBusy()) return false;                     
@@ -60,8 +61,9 @@ void finalizeHome()
   parkClearBacklash();
   if (backlashStatus == DONE)
   {
-    syncAtHome();
     homeMount = false;
+    movingTo = false;
+    syncAtHome();
     // disable the stepper drivers
     enable_Axis(false);
   }

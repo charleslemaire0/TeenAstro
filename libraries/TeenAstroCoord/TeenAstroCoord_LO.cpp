@@ -2,7 +2,7 @@
 #include "TeenAstroCoord_LO.hpp"
 
 
-Coord_LO::Coord_LO(double Axis3, double Axis2, double Axis1) : Coord({ LA3::RotAxis::ROTAXISX, Axis3 }, { LA3::RotAxis::ROTAXISY, Axis2 }, { LA3::RotAxis::ROTAXISZ, Axis1 })
+Coord_LO::Coord_LO(double Axis3, double Axis2, double Axis1) : Coord3R({ LA3::RotAxis::ROTAXISX, Axis3 }, { LA3::RotAxis::ROTAXISY, Axis2 }, { LA3::RotAxis::ROTAXISZ, Axis1 })
 {
 };
 Coord_EQ Coord_LO::To_Coord_EQ(const double(&trafoinv)[3][3])

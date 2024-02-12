@@ -24,7 +24,6 @@
 TinyGPSPlus gps;
 CoordConv alignment;
 bool hasStarAlignment = false;
-bool TrackingCompForAlignment = false;
 
 typedef double interval;
 typedef double speed;
@@ -35,8 +34,7 @@ enum Pushto {PT_OFF, PT_RADEC, PT_ALTAZ};
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
 enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
 enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED };
-enum RateCompensation { RC_UNKOWN = -1, RC_NONE, RC_ALIGN_RA, RC_ALIGN_BOTH, RC_FULL_RA, RC_FULL_BOTH };
-enum TrackingCompensation {TC_NONE, TC_RA, TC_BOTH};
+enum TrackingCompensation {TC_UNKOWN = -1, TC_RA = 1, TC_BOTH};
 enum BacklashPhase { INIT, MOVE_IN, MOVE_OUT, DONE };
 
 ParkState parkStatus = ParkState::PRK_UNPARKED;
@@ -44,6 +42,10 @@ bool parkSaved = false;
 bool homeSaved = false;
 bool atHome = true;
 bool homeMount = false;
+
+unsigned int slewSettleDuration = 0U;
+unsigned long lastSettleTime = 0U;
+bool settling = false;
 
 BacklashPhase backlashStatus = BacklashPhase::DONE;
 
@@ -79,7 +81,7 @@ LA3::RefrOpt RefrOptForTracking()
   return { doesRefraction.forTracking, temperature, pressure };
 }
 
-TrackingCompensation tc = TrackingCompensation::TC_NONE;
+TrackingCompensation trackComp = TrackingCompensation::TC_BOTH;
 // 86164.09 sidereal seconds = 1.00273 clock seconds per sidereal second)
 double                  siderealClockSpeed = 997269.5625;
 const double            mastersiderealClockSpeed = 997269.5625;
@@ -101,8 +103,12 @@ interval                maxInterval2 = StepsMaxInterval;
 float                   pulseGuideRate = 0.25; //in sideral Speed
 double                  DegreesForAcceleration = 3;
 
+bool                enableMotor;
+
 MotorAxis           motorA1;
 MotorAxis           motorA2;
+
+bool                enableEncoder;
 
 EncoderSync         EncodeSyncMode = EncoderSync::ES_OFF;
 EncoderAxis         encoderA1;

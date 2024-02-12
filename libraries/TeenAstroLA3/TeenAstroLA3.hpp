@@ -52,6 +52,12 @@ public:
 		double Pressure;
 	};
 
+	// dot product two 3-vectors
+	static double dotProduct(const double(&a)[3], const double(&b)[3]);
+
+  // angle between two 3-vectors in (radians)
+	static double angle2Vectors(const double(&a)[3], const double(&b)[3]);
+
 	// Multiply two 3-vectors
 	static void crossProduct(double (&out)[3], const double (&a)[3], const double (&b)[3]);
 

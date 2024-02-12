@@ -3,7 +3,7 @@
 #include "TeenAstroCoord_HO.hpp"
 
 
-Coord_IN::Coord_IN(double Axis3, double Axis2, double Axis1) : Coord({ LA3::RotAxis::ROTAXISX, Axis3 }, { LA3::RotAxis::ROTAXISY, Axis2 }, { LA3::RotAxis::ROTAXISZ, Axis1 })
+Coord_IN::Coord_IN(double Axis3, double Axis2, double Axis1) : Coord3R({ LA3::RotAxis::ROTAXISX, Axis3 }, { LA3::RotAxis::ROTAXISY, Axis2 }, { LA3::RotAxis::ROTAXISZ, Axis1 })
 {
 };
 Coord_HO Coord_IN::To_Coord_HO(const double(&missaligmentinv)[3][3], RefrOpt Opt)

@@ -101,7 +101,14 @@ void SmartHandController::setup(
   {
     return;
   }
-  DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1500);
+  char line[32]="";
+  char drivername[10] = "";
+  ta_MountStatus.getDriverName(drivername);
+  strcat(line, ta_MountStatus.getVN());
+  strcat(line, " ");
+  strcat(line, drivername);
+
+  DisplayMessage("Main Unit " T_VERSION, line, 1500);
   if (ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor))
   {    
     if (ta_MountStatus.findFocuser())
@@ -217,8 +224,18 @@ void SmartHandController::updateAlign(bool moving)
       DisplayMessage(T_ALIGNMENT, T_WRONG"!", -1);
       break;
     case TeenAstroMountStatus::AlignReply::ALIR_DONE:
-      DisplayMessage(T_ALIGNMENT, T_SUCESS"!", -1);
-      break;
+    {
+      char text[20];
+  
+      DisplayMessage(T_ALIGNMENT, T_SUCESS"!", 1.0);
+      GetLX200(":AE#", text, sizeof(text));
+      text[3]='°';
+      text[6]='\'';
+      text[9]='\"';
+      //strcat(text, " " T_DEG);
+      DisplayMessage(T_ERROR, text, -1);
+    }
+    break;
     case TeenAstroMountStatus::AlignReply::ALIR_ADDED:
       DisplayMessage(T_STARADDED, "=>", 1000);
       break;
@@ -317,7 +334,6 @@ void SmartHandController::update()
 
   if (top - lastpageupdate > 200)
   {
-
     updateMainDisplay(pages[current_page].p);
   }
 
@@ -334,7 +350,9 @@ void SmartHandController::update()
   {
     if (eventbuttons[3] == E_LONGPRESS || eventbuttons[3] == E_CLICK || eventbuttons[3] == E_LONGPRESSTART)
     {
-      menuTelAction();
+      ta_MountStatus.isPushTo() ? menuTelActionPushTo() :
+        ta_MountStatus.encodersEnable() ? menuTelActionPushToGoto() :
+        menuTelActionGoto();
     }
     else if (eventbuttons[1] == E_LONGPRESS || eventbuttons[1] == E_CLICK || eventbuttons[1] == E_LONGPRESSTART)
     {
@@ -434,6 +452,8 @@ bool SmartHandController::isSleeping()
 
 void SmartHandController::manualMove(bool &moving)
 {
+  if (ta_MountStatus.isPushTo())
+    return;
   moving = ta_MountStatus.getTrackingState() == TeenAstroMountStatus::TRK_SLEWING ||
     ta_MountStatus.getParkState() == TeenAstroMountStatus::PRK_PARKING ||
     ta_MountStatus.isSpiralRunning();

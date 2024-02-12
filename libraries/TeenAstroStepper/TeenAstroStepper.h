@@ -7,7 +7,7 @@ class Driver
 public:
   enum MOTORDRIVER
   {
-    NODRIVER, TMC26X, TMC2130, TMC5160, TMC2660
+    NODRIVER=-1,STEPDIR, TMC26X, TMC2130, TMC5160, TMC2660
   };
 private:
   MOTORDRIVER m_driver = NODRIVER;
@@ -27,9 +27,7 @@ public:
       return  m_tmc2130->en_pwm_mode();
     case TMC5160:
       return  m_tmc5160->en_pwm_mode();
-    case TMC2660:
-      break;
-    case NODRIVER:
+    default:
       break;
     }
     return 0;
@@ -41,13 +39,7 @@ public:
     {
     case TMC26X:
       return m_tmc26x->getCurrentCurrent();
-    case TMC2130:
-      break;
-    case TMC5160:
-      break;
-    case TMC2660:
-      break;
-    case NODRIVER:
+    default:
       break;
     }
     return 0;
@@ -59,16 +51,10 @@ public:
     {
     case TMC26X:
       return m_tmc26x->getCurrentStallGuardReading();
-    case TMC2130:
-      break;
-    case TMC5160:
-      break;
-    case TMC2660:
-      break;
-    case NODRIVER:
+    default:
       break;
     }
-    return 0;
+    return 0u;
   };
 
   void setSG(int i)
@@ -76,14 +62,9 @@ public:
     switch (m_driver)
     {
     case TMC26X:
-      return m_tmc26x->setStallGuardThreshold((char)i, 0);
-    case TMC2130:
+      m_tmc26x->setStallGuardThreshold((char)i, 0);
       return;
-    case TMC5160:
-      break;
-    case TMC2660:
-      return;
-    case NODRIVER:
+    default:
       break;
     }
     return;
@@ -102,9 +83,7 @@ public:
     case TMC5160:
       m_tmc5160->en_pwm_mode(i);
       break;
-    case TMC2660:
-      break;
-    case NODRIVER:
+    default:
       break;
     }
     return;
@@ -127,7 +106,7 @@ public:
     case TMC2660:
       val = 3000u;
       break;
-    case NODRIVER:
+    default:
       break;
     };
     return val;
@@ -150,7 +129,7 @@ public:
     case TMC2660:
       m_tmc2660->rms_current(val / sqrt(2));
       break;
-    case NODRIVER:
+    default:
       break;
     };
   };
@@ -172,7 +151,7 @@ public:
     case TMC2660:
       m_tmc2660->microsteps(val);
       break;
-    case NODRIVER:
+    default:
       break;
     }
     return;
@@ -184,6 +163,13 @@ public:
     m_driver = useddriver;
     switch (m_driver)
     {
+    case STEPDIR:
+      if (EnPin > 0)
+      {
+        pinMode(EnPin, OUTPUT);
+        digitalWrite(EnPin, HIGH);
+      }
+      break;
     case TMC26X:
       if (EnPin > 0)
       {

@@ -67,6 +67,8 @@ void CoordConv::addReference(double angle1, double angle2, double axis1, double 
   refs++;
   if (refs == 2)
   {
+    //check angle between the input observation
+    anglediff = angle2Vectors(dcHDRef[0], dcHDRef[1]) - angle2Vectors(dcAARef[0], dcAARef[1]);
     calculateThirdReference();
   }
   else

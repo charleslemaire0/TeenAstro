@@ -80,7 +80,9 @@ void writeDefaultMount()
   XEEPROM.writeLong(getMountAddress(EE_RA_Drift), 0);
   XEEPROM.writeLong(getMountAddress(EE_DEC_Drift), 0);
 
-  // reset flag for Apparent Pole
+  XEEPROM.write(getMountAddress(EE_SlewSettleDuration), 0);
+
+  XEEPROM.write(getMountAddress(EE_enableEncoderMotor), 2);
   writeDefaultEEPROMmotor();
   doesRefraction.writeDefaultToEEPROM();
 }
@@ -176,8 +178,15 @@ void initMount()
   staA2.target = geoA2.quaterRot;
   staA1.fstep = geoA1.stepsPerCentiSecond;
   // Tracking and rate control
-  val = XEEPROM.read(getMountAddress(EE_TC_Axis));
-  tc = val < 0 || val >  2 ? TC_NONE : static_cast<TrackingCompensation>(val);
+  if (isAltAZ())
+  {
+    trackComp = TC_BOTH;
+  }
+  else
+  {
+    val = XEEPROM.read(getMountAddress(EE_TC_Axis));
+    trackComp = val < 1 || val >  2 ? TC_RA : static_cast<TrackingCompensation>(val);
+  }
   lval = XEEPROM.read(getMountAddress(EE_RA_Drift));
   storedTrakingRateRA = lval < -50000 || lval > 50000 ? 0 : lval;
   lval = XEEPROM.read(getMountAddress(EE_DEC_Drift));
@@ -187,13 +196,24 @@ void initMount()
 
   // get the site information from EEPROM
   localSite.ReadCurrentSiteDefinition();
-  initmotor(false);
+
+  ReadEEPROMEncoderMotorMode();
+
   initencoder();
+  initmotor(false);
   syncEwithT();
 
 #ifndef keepTrackingOnWhenFarFromPole
   distanceFromPoleToKeepTrackingOn = 181;
 #endif
+  
+  val = XEEPROM.read(getMountAddress(EE_SlewSettleDuration));
+  if (val > 20)
+  {
+    val = 0;
+    XEEPROM.write(getMountAddress(EE_SlewSettleDuration), val);
+  }
+  slewSettleDuration = val;
 
 }
 
@@ -304,12 +324,36 @@ void initmotor(bool deleteAlignment)
   motorA2.driver.setCurrent((unsigned int)motorA2.lowCurr);
 }
 
+void ReadEEPROMEncoderMotorMode()
+{
+#if HASEncoder
+  byte val = XEEPROM.read(getMountAddress(EE_enableEncoderMotor));
+  enableMotor = bitRead(val, 0);
+  enableEncoder = bitRead(val, 1);
+#else
+  enableEncoder = false;
+  enableMotor = true;
+#endif // HASEncoder
+}
+void WriteEEPROMEncoderMotorMode()
+{
+#if HASEncoder
+  byte val = 0;
+  bitWrite(val, 0, enableMotor);
+  bitWrite(val, 1, enableEncoder);
+  XEEPROM.write(getMountAddress(EE_enableEncoderMotor), val);
+#endif // HASEncoder
+}
+
 void initencoder()
 {
-  readEEPROMencoder();
 #if HASEncoder
-  encoderA1.init(EA1A, EA1B);
-  encoderA2.init(EA2A, EA2B);
+  if (enableEncoder)
+  {
+    readEEPROMencoder();
+    encoderA1.init(EA1A, EA1B);
+    encoderA2.init(EA2A, EA2B);
+  }
 #endif
 }
 

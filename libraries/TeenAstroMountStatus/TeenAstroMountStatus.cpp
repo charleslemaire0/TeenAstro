@@ -97,7 +97,7 @@ void TeenAstroMountStatus::updateAzAlt()
 }
 void TeenAstroMountStatus::updatePush()
 {
-  if (m_hasEncoder && millis() - m_lastStatePush > updaterate)
+  if (encodersEnable() && millis() - m_lastStatePush > updaterate)
   {
     m_hasInfoPush = GetLX200(":ED#", m_TempPush, sizeof(m_TempPush)) == LX200_VALUEGET;
     m_TempPush[1] = 0;
@@ -120,7 +120,7 @@ void TeenAstroMountStatus::updateAxisDeg()
   {
     m_hasInfoAxis1Deg = GetLX200(":GXP1#", m_TempAxis1Deg, sizeof(m_TempAxis1Deg)) == LX200_VALUEGET;
     m_hasInfoAxis2Deg = GetLX200(":GXP2#", m_TempAxis2Deg, sizeof(m_TempAxis2Deg)) == LX200_VALUEGET;
-    if (hasEncoder())
+    if (encodersEnable())
     {
       m_hasInfoAxis1EDeg = GetLX200(":GXE1#", m_TempAxis1EDeg, sizeof(m_TempAxis1EDeg)) == LX200_VALUEGET;
       m_hasInfoAxis2EDeg = GetLX200(":GXE2#", m_TempAxis2EDeg, sizeof(m_TempAxis2EDeg)) == LX200_VALUEGET;
@@ -230,9 +230,9 @@ bool TeenAstroMountStatus::updateStoredTrackingRate()
   return ok;
 };
 
-void TeenAstroMountStatus::updateMount()
+void TeenAstroMountStatus::updateMount(bool force )
 {
-  if (millis() - m_lastStateMount > updaterate)
+  if (millis() - m_lastStateMount > updaterate || force)
   {
     m_hasInfoMount = GetLX200(":GXI#", m_TempMount, sizeof(m_TempMount)) == LX200_VALUEGET;
     m_hasInfoMount ? m_lastStateMount = millis() : m_connectionFailure++;
@@ -349,35 +349,35 @@ bool TeenAstroMountStatus::checkConnection(char* major, char* minor)
   }
   return m_isValid;
 };
+
 bool TeenAstroMountStatus::getDriverName(char* name)
 {
-  if (!m_isValid)
+  updateV();
+  if (hasInfoV())
   {
-    updateV();
-    if (m_isValid)
+    switch (m_TempVb[0]-'0')
     {
-      switch (m_TempVb[0])
-      {
-      default:
-      case '0':
-        strcpy(name, "unknown");
-        break;
-      case '1':
-        strcpy(name, "TOS100");
-        break;
-      case '2':
-        strcpy(name, "TMC2130");
-        break;
-      case '3':
-        strcpy(name, "TMC5160");
-        break;
-      case '4':
-        strcpy(name, "TMC2660");
-        break;
-      }
+    case 0:
+      strcpy(name, "StepDir");
+      break;
+    case 1:
+      strcpy(name, "TOS100");
+      break;
+    case 2:
+      strcpy(name, "TMC2130");
+      break;
+    case 3:
+      strcpy(name, "TMC5160");
+      break;
+    case 4:
+      strcpy(name, "TMC2660");
+      break;
+    default:
+      strcpy(name, "unknown");
+      break;
     }
   }
-  return m_isValid;
+  return m_hasInfoV;
 }
 bool TeenAstroMountStatus::atHome()
 {
@@ -400,7 +400,7 @@ TeenAstroMountStatus::RateCompensation TeenAstroMountStatus::getRateCompensation
 {
   int val = m_TempMount[10] - '0';
 
-  return (val > -1 && val < 5) ? static_cast<RateCompensation>(val) : RateCompensation::RC_UNKNOWN;
+  return (val > 0 && val < 3) ? static_cast<RateCompensation>(val) : RateCompensation::RC_UNKNOWN;
 }
 bool TeenAstroMountStatus::isSpiralRunning()
 {
@@ -454,15 +454,17 @@ bool TeenAstroMountStatus::hasFocuser()
 {
   return m_hasFocuser;
 }
-bool TeenAstroMountStatus::hasEncoder()
+bool TeenAstroMountStatus::encodersEnable()
 {
-  static bool firstime = m_hasEncoder;
-  if (firstime)
-  {
-    updateMount();
-    m_hasEncoder = bitRead(m_TempMount[16] - 'A', 0);
-  }
-  return m_hasEncoder;
+  updateMount();
+  m_encoderEnable = bitRead(m_TempMount[16] - 'A', 0);
+  return m_encoderEnable;
+}
+bool TeenAstroMountStatus::motorsEnable()
+{
+  updateMount();
+  m_motorEnable = bitRead(m_TempMount[16] - 'A', 3);
+  return m_motorEnable;
 }
 bool TeenAstroMountStatus::CalibratingEncoder()
 {
@@ -471,6 +473,10 @@ bool TeenAstroMountStatus::CalibratingEncoder()
 bool TeenAstroMountStatus::isPushingto()
 {
   return bitRead(m_TempMount[16] - 'A', 2);
+}
+bool TeenAstroMountStatus::isPushTo()
+{
+  return !motorsEnable()&&encodersEnable();
 }
 
 TeenAstroMountStatus::PierState TeenAstroMountStatus::getPierState()

@@ -1,6 +1,7 @@
 //#pragma once
 static void MoveAxis(GuideAxis* guideA, StatusAxis* staA, const bool BW, const Guiding Mode)
 {
+  if (!enableMotor) return;
   bool canMove = parkStatus == PRK_UNPARKED;
   canMove &= (Mode == GuidingRecenter || lastError == ERRT_NONE);
   canMove &= !movingTo;
@@ -47,6 +48,7 @@ static void MoveAxis(GuideAxis* guideA, StatusAxis* staA, const bool BW, const G
 
 static void MoveAxisAtRate(GuideAxis* guideA, StatusAxis* staA, const double newrate)
 {
+  if (!enableMotor) return;
   bool canMove = parkStatus == PRK_UNPARKED;
   canMove &= lastError == ERRT_NONE;
   canMove &= !movingTo;
@@ -81,6 +83,7 @@ static void MoveAxisAtRate(GuideAxis* guideA, StatusAxis* staA, const double new
 
 static void StopAxis(GuideAxis* guideA, StatusAxis* staA)
 {
+  if (!enableMotor) return;
   if (!guideA->isMoving())
     return;
   guideA->brake();
@@ -121,6 +124,7 @@ void StopAxis2()
 
 void CheckEndOfMoveAxisAtRate()
 {
+  if (!enableMotor) return;
   if (lastGuidingState == GuidingAtRate && GuidingState == GuidingOFF)
   {
     if (lastSideralTracking)

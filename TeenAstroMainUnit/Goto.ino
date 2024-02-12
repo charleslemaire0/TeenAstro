@@ -87,94 +87,97 @@ bool syncAzAlt(Coord_HO *HO_T, PoleSide Side)
 
 void syncTwithE()
 {
-#if HASEncoder
-  long axis1 = (long)(encoderA1.r_deg() * geoA1.stepsPerDegree);
-  long axis2 = (long)(encoderA2.r_deg() * geoA2.stepsPerDegree);
-  syncAxis(&axis1, &axis2);
-  atHome = false;
-#endif
+  if (enableEncoder)
+  {
+    long axis1 = (long)(encoderA1.r_deg() * geoA1.stepsPerDegree);
+    long axis2 = (long)(encoderA2.r_deg() * geoA2.stepsPerDegree);
+    syncAxis(&axis1, &axis2);
+    atHome = false;
+  }
 }
 
 void syncEwithT()
 {
-#if HASEncoder
-  long axis1, axis2;
-  cli();
-  axis1 = staA1.pos;
-  axis2 = staA2.pos;
-  sei();
-  encoderA1.w_deg(axis1 / geoA1.stepsPerDegree);
-  encoderA2.w_deg(axis2 / geoA2.stepsPerDegree);
-#endif
+  if (enableEncoder)
+  {
+    long axis1, axis2;
+    cli();
+    axis1 = staA1.pos;
+    axis2 = staA2.pos;
+    sei();
+    encoderA1.w_deg(axis1 / geoA1.stepsPerDegree);
+    encoderA2.w_deg(axis2 / geoA2.stepsPerDegree);
+  }
 }
 
 bool autoSyncWithEncoder(EncoderSync mode)
 {
   bool synced = false;
-#if HASEncoder
-  static EncoderSync lastmode = ES_OFF;
-  static double tol = 0;
+  if (enableEncoder)
+  {
+    static EncoderSync lastmode = ES_OFF;
+    static double tol = 0;
 
-  if (lastmode != mode)
-  {
-    switch (mode)
+    if (lastmode != mode)
     {
-    case ES_60:
-      tol = 1;
-      break;
-    case ES_30:
-      tol = 0.5;
-      break;
-    case ES_15:
-      tol = 0.25;
-      break;
-    case ES_8:
-      tol = 8. / 60.;
-      break;
-    case ES_4:
-      tol = 4. / 60.;
-      break;
-    case ES_2:
-      tol = 2. / 60.;
-      break;
-    case ES_ALWAYS:
-      tol = 0.;
-      break;
-    case ES_OFF:
-      break;
-    default:
-      break;
+      switch (mode)
+      {
+      case ES_60:
+        tol = 1;
+        break;
+      case ES_30:
+        tol = 0.5;
+        break;
+      case ES_15:
+        tol = 0.25;
+        break;
+      case ES_8:
+        tol = 8. / 60.;
+        break;
+      case ES_4:
+        tol = 4. / 60.;
+        break;
+      case ES_2:
+        tol = 2. / 60.;
+        break;
+      case ES_ALWAYS:
+        tol = 0.;
+        break;
+      case ES_OFF:
+        break;
+      default:
+        break;
+      }
+      lastmode = mode;
     }
-    lastmode = mode;
-  }
-  if (mode == ES_OFF)
-  {
-    return false;
-  }
-  long axis1T, axis2T;
-  cli();
-  axis1T = staA1.pos;
-  axis2T = staA2.pos;
-  sei();
-  long axis1E = (long)(encoderA1.r_deg() * geoA1.stepsPerDegree);
-  long axis2E = (long)(encoderA2.r_deg() * geoA2.stepsPerDegree);
-  if (abs(axis1T - axis1E) > tol * geoA1.stepsPerDegree)
-  {
+    if (mode == ES_OFF)
+    {
+      return false;
+    }
+    long axis1T, axis2T;
     cli();
-    staA1.pos = axis1E;
-    staA1.target = staA1.pos;
+    axis1T = staA1.pos;
+    axis2T = staA2.pos;
     sei();
-    synced = true;
+    long axis1E = (long)(encoderA1.r_deg() * geoA1.stepsPerDegree);
+    long axis2E = (long)(encoderA2.r_deg() * geoA2.stepsPerDegree);
+    if (abs(axis1T - axis1E) > tol * geoA1.stepsPerDegree)
+    {
+      cli();
+      staA1.pos = axis1E;
+      staA1.target = staA1.pos;
+      sei();
+      synced = true;
+    }
+    if (abs(axis2T - axis2E) > tol * geoA2.stepsPerDegree)
+    {
+      cli();
+      staA2.pos = axis2E;
+      staA2.target = staA2.pos;
+      sei();
+      synced = true;
+    }
   }
-  if (abs(axis2T - axis2E) > tol * geoA2.stepsPerDegree)
-  {
-    cli();
-    staA2.pos = axis2E;
-    staA2.target = staA2.pos;
-    sei();
-    synced = true;
-  }
-#endif
   return synced;
 }
 
@@ -231,11 +234,10 @@ Coord_HO getHorTopo()
 
 Coord_HO getHorETopo()
 {
-#if HASEncoder
-  return getInstrE().To_Coord_HO(alignment.T, { false, 10, 110 });
-#else
-  return getHorTopo();
-#endif
+  if (enableEncoder)
+    return getInstrE().To_Coord_HO(alignment.T, { false, 10, 110 });
+  else
+    return getHorTopo();
 }
 
 Coord_IN getInstrTarget()
@@ -319,7 +321,7 @@ ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2)
 {
   // HA goes from +90...0..-90
   //                W   .   E
-
+  if (!enableMotor) return ErrorsGoTo::ERRGOTO_MOTOR_FAULT;
   if (movingTo)
   {
     abortSlew = true;

@@ -104,12 +104,13 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
   // send the command
 
   if ((command[0] == (char)6) && (command[1] == 0)) cmdreply = CMDR_SHORT;
-  if (command[0] == ':')
+  else if (command[0] == ':')
   {
     switch (command[1])
     {
     case 'A':
       if (strchr("023CWA", command[2])) cmdreply = CMDR_SHORT_BOOL;
+      else if (strchr("E", command[2])) cmdreply = CMDR_LONG;
       else cmdreply = CMDR_INVALID;
       break;
     case 'B':
@@ -141,7 +142,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       else cmdreply = CMDR_INVALID;
       break;
     case 'G':
-      if (strchr("AaCcDdefgGhLMNOPmnoRrSTtVXZ", command[2]))
+      if (strchr("AaCcDdefgGhLMNOPmnoRrSTtVXWZ", command[2]))
       {
         timeOutMs *= 2;
         cmdreply = CMDR_LONG;
@@ -150,7 +151,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
       break;
     case 'h':
       if (strchr("F", command[2])) cmdreply = CMDR_NO;
-      else if (strchr("BbCOPQR", command[2]))
+      else if (strchr("BbCOPQRS", command[2]))
       {
         cmdreply = CMDR_SHORT_BOOL;
       }
@@ -214,6 +215,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
   case CMDR_SHORT_BOOL:
   {
     unsigned long start = millis();
+    recvBuffer[0] = '\0';
     while (millis() - start < timeOutMs)
     {
       if (Ser.available())
@@ -223,7 +225,7 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
         break;
       }
     }
-    return recvBuffer[0] != 0;
+    return recvBuffer[0] != '\0';
     break;
   }
   case CMDR_LONG:
@@ -262,7 +264,6 @@ bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned lo
     }
     ok &= (recvBuffer[0] != 0);
     ok &= Hashtagfound;
-    ok &= keepHashtag ? recvBufferPos > 1 : recvBufferPos > 0;
     return ok;
     break;
   }

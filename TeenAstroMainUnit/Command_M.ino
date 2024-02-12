@@ -3,18 +3,16 @@
 //   M - Telescope Movement Commands
 void Command_M()
 {
-  int i;
-  double f;
-  bool ok = false;
-  char* conv_end;
   switch (command[1])
   {
     //  :M1svv.vvv# Move Axis1 at rate (signed value!) in time the sideral speed
     //  :M2svv.vvv# Move Axis2 at rate (signed value!) in time the sideral speed
   case '1':
   case '2':
-    f = strtod(&command[2], &conv_end);
-    ok = (&command[2] != conv_end);
+  {
+    char* conv_end;
+    double f = strtod(&command[2], &conv_end);
+    bool ok = (&command[2] != conv_end);
     if (!ok)
     {
       strcpy(reply, "i");
@@ -47,6 +45,7 @@ void Command_M()
       }
       replyShortTrue();
     }
+  }
     break;
   case 'A':
     //  :MA#   Goto the target Alt and Az
@@ -58,7 +57,7 @@ void Command_M()
     //         6=Outside limits
   {
     Coord_HO HO_T(0, newTargetAlt * DEG_TO_RAD, newTargetAzm * DEG_TO_RAD, true);
-    i = goToHor(HO_T, GetPoleSide());
+    byte i = goToHor(HO_T, GetPoleSide());
     reply[0] = i + '0';
     reply[1] = 0;
   }
@@ -69,7 +68,7 @@ void Command_M()
     //       Returns an ERRGOTO
     if (mountType == MOUNT_TYPE_GEM)
     {
-      i = Flip();
+      int i = Flip();
       reply[0] = i + '0';
       reply[1] = 0;
     }
@@ -79,7 +78,7 @@ void Command_M()
   {
     //  :Mgdnnnn# Pulse guide command
     //  Returns: Nothing
-
+    int i;
     if ((atoi2((char *)&command[3], &i)) &&
       ((i > 0) && (i <= 30000)) && !movingTo && lastError == ERRT_NONE &&
         (GuidingState != GuidingRecenter || GuidingState != GuidingST4))
@@ -110,22 +109,22 @@ void Command_M()
         {
           if (command[2] == 'n')
           {
-            guideA2.moveBW();
+            guideA2.moveFW();
           }
           else if (command[2] == 's')
           {
-            guideA2.moveFW();
+            guideA2.moveBW();
           }
         }
         else
         {
           if (command[2] == 'n')
           {
-            guideA2.moveFW();
+            guideA2.moveBW();
           }
           else if (command[2] == 's')
           {
-            guideA2.moveBW();
+            guideA2.moveFW();
           }
         }
         guideA2.durationLast = micros();
@@ -187,7 +186,7 @@ void Command_M()
     //       Returns an ERRGOTO
     double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     Coord_EQ EQ_T(0, newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
-    i = goToEqu(EQ_T, GetPoleSide(), *localSite.latitude() * DEG_TO_RAD);
+    byte i = goToEqu(EQ_T, GetPoleSide(), *localSite.latitude() * DEG_TO_RAD);
     if (i == 0)
     {
       sideralTracking = true;
@@ -207,7 +206,7 @@ void Command_M()
     newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
     Coord_EQ EQ_T(0, newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
-    i = goToEqu(EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
+    byte i = goToEqu(EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
     if (i == 0)
     {
       sideralTracking = true;

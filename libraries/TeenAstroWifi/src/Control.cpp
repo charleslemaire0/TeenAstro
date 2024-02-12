@@ -124,37 +124,41 @@ void TeenAstroWifi::handleControl()
   data += "<script>var ajaxPage='control.txt';</script>\n";
   data += FPSTR(html_ajax_active);
   sendHtml(data);
-
-
   data += FPSTR(html_controlQuick0);
   sendHtml(data);
-  // Quick controls ------------------------------------------
-  if (!ta_MountStatus.Parking())
+  if (ta_MountStatus.motorsEnable())
   {
-    if (ta_MountStatus.Parked() || ta_MountStatus.atHome())
+    // Quick controls ------------------------------------------
+    if (!ta_MountStatus.Parking())
     {
-      if (ta_MountStatus.Parked())
+      if (ta_MountStatus.Parked() || ta_MountStatus.atHome())
       {
-        data += FPSTR(html_controlQuick2);
+        if (ta_MountStatus.Parked())
+        {
+          data += FPSTR(html_controlQuick2);
+          data += "</form>";
+          data += FPSTR(html_controlQuick3);
+          data += html_controlEnd;
+          data += "</div></body></html>";
+
+          sendHtml(data);
+          sendHtmlDone(data);
+
+          return;
+        }
         data += "</form>";
-        data += FPSTR(html_controlQuick3);
-        data += html_controlEnd;
-        data += "</div></body></html>";
-
-        sendHtml(data);
-        sendHtmlDone(data);
-
-        return;
       }
-      data += "</form>";
     }
+    data += FPSTR(html_controlQuick3);
+    sendHtml(data);
+
+    // Guiding -------------------------------------------------
+    data += FPSTR(html_controlGuide);
   }
-  data += FPSTR(html_controlQuick3);
-  sendHtml(data);
-
-  // Guiding -------------------------------------------------
-  data += FPSTR(html_controlGuide);
-
+  else
+  {
+    data += FPSTR(html_controlQuick3);
+  }
   if (ta_MountStatus.hasFocuser())
   {
     data += FPSTR(html_controlFocus1);

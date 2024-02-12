@@ -23,11 +23,10 @@ const char html_configMountName3[] PROGMEM =
 " (Edit the name of the selected mount)"
 "</form>"
 "<br/>\r\n";
-
 const char html_configMount_1[] PROGMEM =
-"<div class='bt'> Equatorial Mount Type: <br/> </div>"
+"<div class='bt'>Mount Type: <br/> </div>"
 "<form action='/configuration_mount.htm'>"
-"<select name='mount' onchange='this.form.submit()' >";
+"<select onchange='this.form.submit()' style='width:11em' name='mount'>";
 const char html_configMount_2[] PROGMEM =
 "</select>"
 "</form>"
@@ -43,89 +42,6 @@ const char html_on_1[] PROGMEM = "<option selected value='1'>On</option>";
 const char html_on_2[] PROGMEM = "<option value='1'>On</option>";
 const char html_off_1[] PROGMEM = "<option selected value='2'>Off</option>";
 const char html_off_2[] PROGMEM = "<option value='2'>Off</option>";
-
-const char html_configRotAxis_1[] PROGMEM =
-"<form action='/configuration_mount.htm'>"
-"<select name='mrot%d'>";
-const char html_configRotAxis_r[] PROGMEM =
-"<option value ='0'>Direct</option>"
-"<option selected value='1'>Reverse</option>";
-const char html_configRotAxis_d[] PROGMEM =
-"<option selected value ='0'>Direct</option>"
-"<option value='1'>Reverse</option>";
-const char html_configRotAxis_2[] PROGMEM =
-"</select>"
-"<button type='submit'>Upload</button>"
-" (Rotation Axis%d)"
-"</form>"
-"\r\n";
-
-const char html_configBlAxis[] PROGMEM =
-"<form method='get' action='/configuration_mount.htm'>"
-" <input value='%d' type='number' name='mbl%d' min='0' max='999'>"
-"<button type='submit'>Upload</button>"
-" (Backlash Axis%d, in arc-seconds from 0 to 999)"
-"</form>"
-"\r\n";
-const char html_configBlRateAxis[] PROGMEM =
-"<form method='get' action='/configuration_mount.htm'>"
-" <input value='%d' type='number' name='mblr%d' min='16' max='64'>"
-"<button type='submit'>Upload</button>"
-" (Backlash Rate Axis%d, in sideral speed from 16 to 64)"
-"</form>"
-"\r\n";
-const char html_configGeAxis[] PROGMEM =
-"<form method='get' action='/configuration_mount.htm'>"
-" <input value='%.3f' type='number' name='mge%d' min='1' max='60000' step='.001'>"
-"<button type='submit'>Upload</button>"
-" (Gear Axis%d, from 1 to 60000)"
-"</form>"
-"\r\n";
-const char html_configStAxis[] PROGMEM =
-"<form method='get' action='/configuration_mount.htm'>"
-" <input value='%d' type='number' name='mst%d' min='1' max='400'>"
-"<button type='submit'>Upload</button>"
-" (Steps per Rotation Axis%d, from 1 to 400)"
-"</form>"
-"\r\n";
-const char html_configMuAxis[] PROGMEM =
-"<form method='get' action='/configuration_mount.htm'>"
-" <input value='%d' type='number' name='mmu%d' min='8' max='256'>"
-"<button type='submit'>Upload</button>"
-" (Microsteps Axis%d, valid value are 8, 16, 32, 64, 128, 256)"
-"</form>"
-"\r\n";
-const char html_configLCAxis[] PROGMEM =
-"<form method='get' action='/configuration_mount.htm'>"
-" <input value='%u' type='number' name='mlc%d' min='200' max='2800' step='200'>"
-"<button type='submit'>Upload</button>"
-" (Low Current Axis%d, from 200mA to 2800mA)"
-"</form>"
-"\r\n";
-const char html_configHCAxis[] PROGMEM =
-"<form method='get' action='/configuration_mount.htm'>"
-" <input value='%u' type='number' name='mhc%d' min='200' max='2800' step='200'>"
-"<button type='submit'>Upload</button>"
-" (High Current Axis%d, from 200mA to 2800mA)"
-"</form>"
-"\r\n";
-
-const char html_configSilentAxis_1[] PROGMEM =
-"<form action='/configuration_mount.htm'>"
-"<select name='ms%d'>";
-const char html_configSilentAxis_r[] PROGMEM =
-"<option value ='0'>Off</option>"
-"<option selected value='1'>On</option>";
-const char html_configSilentAxis_d[] PROGMEM =
-"<option selected value ='0'>Off</option>"
-"<option value='1'>On</option>";
-
-const char html_configSilentAxis_2[] PROGMEM =
-"</select>"
-"<button type='submit'>Upload</button>"
-" (Silent Axis%d)"
-"</form>"
-"\r\n";
 
 const char html_reboot_t[] PROGMEM =
 "<br/><form method='get' action='/configuration_mount.htm'>"
@@ -187,11 +103,24 @@ void TeenAstroWifi::handleConfigurationMount()
     ta_MountStatus.updateMount();
 
     data += FPSTR(html_configMount_1);
-    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_GEM ? data += "<option selected value='1'>German</option>" : data += "<option value='1'>German</option>";
-    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK ? data += "<option selected value='2'>Fork</option>" : data += "<option value='2'>Fork</option>";
-    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_ALTAZM ? data += "<option selected value='3'>Alt Az</option>" : data += "<option value='3'>Alt Az</option>";
-    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK_ALT ? data += "<option selected value='4'>Alt Az Fork</option>" : data += "<option value='4'>Alt Az Fork</option>";
+    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_GEM ? data += "<option selected value='1'>German Eq</option>" : data += "<option value='1'>German Eq</option>";
+    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK ? data += "<option selected value='2'>Fork Eq</option>" : data += "<option value='2'>Fork Eq</option>";
+    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_ALTAZM ? data += "<option selected value='3'>German Alt Az</option>" : data += "<option value='3'>German Alt Az</option>";
+    ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK_ALT ? data += "<option selected value='4'>Fork Alt Az</option>" : data += "<option value='4'>Fork Alt Az</option>";
     data += FPSTR(html_configMount_2);
+
+    sprintf_P(temp, html_Opt_1, "motors");
+    data += temp;
+    ta_MountStatus.motorsEnable() ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
+    !ta_MountStatus.motorsEnable() ? data += FPSTR(html_off_1)  : data += FPSTR(html_off_2);
+    data += "</select> Enable Motors</form><br/>\r\n";
+    sendHtml(data);
+
+    sprintf_P(temp, html_Opt_1, "encoders");
+    data += temp;
+    ta_MountStatus.encodersEnable() ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
+    !ta_MountStatus.encodersEnable() ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
+    data += "</select> Enable Encoders</form><br/>\r\n";
     sendHtml(data);
 
     data += FPSTR(html_configRefraction);
@@ -216,146 +145,6 @@ void TeenAstroWifi::handleConfigurationMount()
       data += "</select> Consider Refraction for Goto and Sync</form><br/>\r\n";
       sendHtml(data);
     }
-
-
-    //Axis1
-    data += "<div class='bt'> Motor: <br/> </div>";
-    bool reverse = false;
-    uint8_t silent = false;
-    if (readReverseLX200(1, reverse) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configRotAxis_1, 1);
-      data += temp;
-      data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
-      sprintf_P(temp, html_configRotAxis_2, 1);
-      data += temp;
-      sendHtml(data);
-    }
-    reverse = false;
-    if (readReverseLX200(2, reverse) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configRotAxis_1, 2);
-      data += temp;
-      data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
-      sprintf_P(temp, html_configRotAxis_2, 2);
-      data += temp;
-      sendHtml(data);
-    }
-    float gear = 0;
-    if (readTotGearLX200(1, gear) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configGeAxis, gear, 1, 1);
-      data += temp;
-      sendHtml(data);
-    }
-    if (readTotGearLX200(2, gear) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configGeAxis, gear, 2, 2);
-      data += temp;
-      sendHtml(data);
-    }
-    float step;
-
-    if (readStepPerRotLX200(1, step) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configStAxis, (int)step, 1, 1);
-      data += temp;
-      sendHtml(data);
-    }
-    if (readStepPerRotLX200(2, step) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configStAxis, (int)step, 2, 2);
-      data += temp;
-      sendHtml(data);
-    }
-    uint8_t micro;
-    if (readMicroLX200(1, micro) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 1, 1);
-      data += temp;
-      sendHtml(data);
-    }
-    if (readMicroLX200(2, micro) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 2, 2);
-      data += temp;
-      sendHtml(data);
-    }
-    float backlashAxis;
-    if (readBacklashLX200(1, backlashAxis) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configBlAxis, (int)backlashAxis, 1, 1);
-      data += temp;
-      sendHtml(data);
-    }
-    if (readBacklashLX200(2, backlashAxis) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configBlAxis, (int)backlashAxis, 2, 2);
-      data += temp;
-      sendHtml(data);
-    }
-    float backlashAxisRate;
-    if (readBacklashRateLX200(1, backlashAxisRate) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configBlRateAxis, (int)backlashAxisRate, 1, 1);
-      data += temp;
-      sendHtml(data);
-    }
-    if (readBacklashRateLX200(2, backlashAxisRate) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configBlRateAxis, (int)backlashAxisRate, 2, 2);
-      data += temp;
-      sendHtml(data);
-    }
-    unsigned int lowC;
-    if (readLowCurrLX200(1, lowC) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configLCAxis, lowC, 1, 1);
-      data += temp;
-      sendHtml(data);
-    }
-
-    if (readLowCurrLX200(2, lowC) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configLCAxis, lowC, 2, 2);
-      data += temp;
-      sendHtml(data);
-    }
-    unsigned int highC;
-    if (readHighCurrLX200(1, highC) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configHCAxis, highC, 1, 1);
-      data += temp;
-      sendHtml(data);
-    }
-    if (readHighCurrLX200(2, highC) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configHCAxis, highC, 2, 2);
-      data += temp;
-      sendHtml(data);
-    }
-    const char* board = ta_MountStatus.getVb();
-    if (board[0] - '0' > 1)
-    {
-      if (readSilentStepLX200(1, silent) == LX200_VALUEGET)
-      {
-        sprintf_P(temp, html_configSilentAxis_1, 1);
-        data += temp;
-        data += silent ? FPSTR(html_configSilentAxis_r) : FPSTR(html_configSilentAxis_d);
-        sprintf_P(temp, html_configSilentAxis_2, 1);
-        data += temp;
-        sendHtml(data);
-      }
-      if (readSilentStepLX200(2, silent) == LX200_VALUEGET)
-      {
-        sprintf_P(temp, html_configSilentAxis_1, 2);
-        data += temp;
-        data += silent ? FPSTR(html_configSilentAxis_r) : FPSTR(html_configSilentAxis_d);
-        sprintf_P(temp, html_configSilentAxis_2, 2);
-        data += temp;
-        sendHtml(data);
-      }
-    }
   }
   strcpy(temp, "</div></body></html>");
   data += temp;
@@ -376,8 +165,8 @@ void TeenAstroWifi::processConfigurationMountGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
-      SetMountLX200(i);
-      restartRequired_t = true;
+      if (SetMountLX200(i) == LX200_VALUESET)
+        restartRequired_t = true;
     }
   }
   // name
@@ -395,8 +184,32 @@ void TeenAstroWifi::processConfigurationMountGet()
     {
       sprintf(temp, ":S!X#");
       temp[3] = '0' + i;
-      SetLX200(temp);
-      restartRequired_t = true;
+      if (SetLX200(temp) == LX200_VALUESET)
+        restartRequired_t = true;
+    }
+  }
+
+  v = server.arg("motors");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
+    {
+      if ((i == 1 ? SetLX200(":SXME,y#") : SetLX200(":SXME,n#")) == LX200_VALUESET)
+      {
+        restartRequired_t = true;
+      }
+    }
+  }
+
+  v = server.arg("encoders");
+  if (v != "")
+  {
+    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
+    {
+      if ((i == 1 ? SetLX200(":SXEE,y#") : SetLX200(":SXEE,n#")) == LX200_VALUESET)
+      {
+        restartRequired_t = true;
+      }
     }
   }
 
@@ -415,259 +228,6 @@ void TeenAstroWifi::processConfigurationMountGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
     {
       i == 1 ? SetLX200(":SXrg,y#") : SetLX200(":SXrg,n#");
-    }
-  }
-
-  v = server.arg("MaxR");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4000)))
-    {
-      sprintf(temp, ":SXRX,%04d#", i);
-      SetLX200(temp);
-    }
-  }
-
-  v = server.arg("Acc");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.1) && (f <= 25)))
-    {
-      sprintf(temp, ":SXRA,%04d#", (int)(f * 10));
-      SetLX200(temp);
-    }
-  }
-
-  v = server.arg("R3");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
-    {
-      sprintf(temp, ":SXR3,%03d#", (int)f);
-      SetLX200(temp);
-    }
-  }
-
-  v = server.arg("R2");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
-    {
-      sprintf(temp, ":SXR2,%03d#", (int)f);
-      SetLX200(temp);
-    }
-  }
-
-  v = server.arg("R1");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
-    {
-      sprintf(temp, ":SXR1,%03d#", (int)f);
-      SetLX200(temp);
-    }
-  }
-
-  v = server.arg("R0");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.01) && (f <= 100)))
-    {
-      sprintf(temp, ":SXR0,%03d#", (int)(f * 100));
-      SetLX200(temp);
-    }
-  }
-
-  v = server.arg("RD");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4)))
-    {
-      sprintf(temp, ":SXRD,X#");
-      temp[6] = '0' + i;
-      SetLX200(temp);
-    }
-  }
-
-  v = server.arg("mrot1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
-    {
-      writeReverseLX200(1, i);
-    }
-  }
-
-  v = server.arg("mrot2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
-    {
-      writeReverseLX200(2, i);
-    }
-  }
-
-  v = server.arg("mge1");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 60000)))
-    {
-      writeTotGearLX200(1, f);
-    }
-  }
-
-  v = server.arg("mge2");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 60000)))
-    {
-      writeTotGearLX200(2, f);
-    }
-  }
-
-  v = server.arg("mst1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400)))
-    {
-      writeStepPerRotLX200(1, i);
-    }
-  }
-
-  v = server.arg("mst2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400)))
-    {
-      writeStepPerRotLX200(2, i);
-    }
-  }
-
-  v = server.arg("mmu1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256)))
-    {
-      writeMicroLX200(1, (float)((int)log2(i)));
-    }
-  }
-
-  v = server.arg("mmu2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256)))
-    {
-      writeMicroLX200(2, (float)((int)log2(i)));
-    }
-  }
-
-  v = server.arg("mbl1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
-    {
-      writeBacklashLX200(1, (float)i);
-    }
-  }
-
-  v = server.arg("mbl2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
-    {
-      writeBacklashLX200(2, (float)i);
-    }
-  }
-
-  v = server.arg("mblr1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 64)))
-    {
-      writeBacklashRateLX200(1, (float)i);
-    }
-  }
-
-  v = server.arg("mblr2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 64)))
-    {
-      writeBacklashRateLX200(2, (float)i);
-    }
-  }
-
-  v = server.arg("mlc1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
-    {
-      writeLowCurrLX200(1, i);
-    }
-  }
-  v = server.arg("mlc2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
-    {
-      writeLowCurrLX200(2, i);
-    }
-  }
-
-  v = server.arg("mhc1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
-    {
-      writeHighCurrLX200(1, i);
-    }
-  }
-  v = server.arg("mhc2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
-    {
-      writeHighCurrLX200(2, i);
-    }
-  }
-
-  //silent mode
-  v = server.arg("ms1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
-    {
-      writeSilentStepLX200(1, i);
-    }
-  }
-  v = server.arg("ms2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
-    {
-      writeSilentStepLX200(2, i);
-    }
-  }
-
-  int ut_hrs = -999;
-  v = server.arg("u1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -13) && (i <= 13)))
-    {
-      ut_hrs = i;
-    }
-  }
-  v = server.arg("u2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i == 00) || (i == 30) || (i == 45)))
-    {
-      if ((ut_hrs >= -13) && (ut_hrs <= 13))
-      {
-        sprintf(temp, ":SG%+03d:%02d#", ut_hrs, i);
-        SetLX200(temp);
-      }
     }
   }
 }

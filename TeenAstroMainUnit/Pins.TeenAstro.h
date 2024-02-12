@@ -96,7 +96,7 @@
 #if VERSION == 240                      // Teensy 3.2
 
     #ifndef AxisDriver
-        #define AxisDriver  3               // Select your driver 2 for the TMC2130, 3 for the TMC5160, 4 for the TMC2160
+        #define AxisDriver  3               // Select your driver 0 for STEPDIR 2 for the TMC2130, 3 for the TMC5160, 4 for the TMC2160
     #endif
 
     // Motor 1 : RA / AZ
@@ -213,7 +213,7 @@
 #if VERSION == 250                      // Teensy 4.0
     
     #ifndef AxisDriver
-        #define AxisDriver  3               // Select your driver 2 for the TMC2130, 3 for the TMC5160, 4 for the TMC2160
+        #define AxisDriver  3               // Select your driver 0 for STEPDIR 2 for the TMC2130, 3 for the TMC5160, 4 for the TMC2160
     #endif
 
     // Motor 1 : RA / AZ

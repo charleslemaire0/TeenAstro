@@ -44,7 +44,7 @@
 class Coord_HO;
 class Coord_IN;
 
-class Coord_EQ : protected Coord {
+class Coord_EQ : protected Coord3R {
 public:
 	Coord_EQ(double FrE, double Dec, double Ha);
 	Coord_HO To_Coord_HO(double Lat, RefrOpt Opt);

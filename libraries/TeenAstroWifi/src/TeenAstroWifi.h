@@ -40,7 +40,7 @@
 #define ServerFirmwareDate          __DATE__
 #define ServerFirmwareTime          __TIME__
 #define ServerFirmwareVersionMajor  "1"
-#define ServerFirmwareVersionMinor  "4"
+#define ServerFirmwareVersionMinor  "5"
 #define ServerFirmwareVersionPatch  "0"
 
 
@@ -104,7 +104,7 @@ class TeenAstroWifi
   };
   enum ServerPage
   {
-    Index=1, Control, Speed, Tracking, Mount, Limits, Encoders, Site, Focuser, Wifi
+    Index=1, Control, Speed, Tracking, Mount, Motors, Limits, Encoders, Site, Focuser, Wifi
   };
   static bool wifiOn;
   static int WebTimeout;
@@ -150,6 +150,8 @@ class TeenAstroWifi
   static void handleConfigurationTracking();
   static void processConfigurationMountGet();
   static void handleConfigurationMount();
+  static void processConfigurationMotorsGet();
+  static void handleConfigurationMotors();
   static void processConfigurationLimitsGet();
   static void handleConfigurationLimits();
   static void processConfigurationEncodersGet();

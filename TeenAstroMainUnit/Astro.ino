@@ -23,6 +23,15 @@ PoleSide GetPoleSide()
   return -geoA2.poleDef <= axis2 && axis2 <= geoA2.poleDef ? POLE_UNDER : POLE_OVER;
 }
 
+PoleSide GetTargetPoleSide()
+{
+  long axis2;
+  cli();
+  axis2 = staA2.target;
+  sei();
+  return getPoleSide(axis2);
+}
+
 bool TelescopeBusy()
 {
   return movingTo || GuidingState != Guiding::GuidingOFF;
@@ -30,10 +39,12 @@ bool TelescopeBusy()
 
 void ApplyTrackingRate()
 {
+  cli();
   staA1.CurrentTrackingRate = staA1.RequestedTrackingRate;
   staA2.CurrentTrackingRate = staA2.RequestedTrackingRate;
   staA1.fstep = geoA1.stepsPerCentiSecond * staA1.CurrentTrackingRate;
   staA2.fstep = geoA2.stepsPerCentiSecond * staA2.CurrentTrackingRate;
+  sei();
 }
 
 void SetTrackingRate(double rHA, double rDEC)
@@ -46,33 +57,34 @@ void SetTrackingRate(double rHA, double rDEC)
 void computeTrackingRate(bool apply)
 {
   //reset SideralMode if it is equal to sideralspeed
-  double sign = localSite.northHemisphere() ? 1 : -1;
+  
 
   if (RequestedTrackingRateHA == 1 && RequestedTrackingRateDEC == 0)
   {
     sideralMode = SIDM_STAR;
   }
-  if (isAltAZ() || sideralMode == SIDM_TARGET)
+  if (isAltAZ())
   {
     do_compensation_calc();
   }
-  else if (tc == TC_NONE)
-  {
-    staA1.RequestedTrackingRate = sign * RequestedTrackingRateHA;
-    staA2.RequestedTrackingRate = 0;
-  }
-  else if (doesRefraction.forTracking || TrackingCompForAlignment)
+  else if (doesRefraction.forTracking || hasStarAlignment )
   {
     do_compensation_calc();
-    if (tc == TC_RA)
+    if (trackComp == TC_RA)
     {
       staA2.RequestedTrackingRate = 0;
     }
   }
   else
   {
+    double sign = localSite.northHemisphere() ? 1 : -1;
     staA1.RequestedTrackingRate = sign * RequestedTrackingRateHA;
-    staA2.RequestedTrackingRate = 0;
+    sign = GetTargetPoleSide() == POLE_UNDER ? 1 : -1;
+    staA2.RequestedTrackingRate = sign * RequestedTrackingRateDEC/15;
+    if (trackComp == TC_RA)
+    {
+      staA2.RequestedTrackingRate = 0;
+    }
   }
   if (apply)
   {
@@ -130,10 +142,10 @@ void do_compensation_calc()
     return;
   }
 
-  PoleSide side_tmp = GetPoleSide();
+  PoleSide side_tmp;
   DriftHA = RequestedTrackingRateHA * TimeRange * 15;
   DriftHA /= 3600;
-  DriftDEC = RequestedTrackingRateDEC * TimeRange;
+  DriftDEC = RequestedTrackingRateDEC * TimeRange ;
   DriftDEC /= 3600;
 
   // if moving to a target select target as reference position if not select current position
@@ -142,12 +154,14 @@ void do_compensation_calc()
     Coord_EQ EQ_T = getEquTarget(*localSite.latitude() * DEG_TO_RAD);
     HA_now = EQ_T.Ha() * RAD_TO_DEG;
     Dec_now = EQ_T.Dec() * RAD_TO_DEG;
+    side_tmp = GetTargetPoleSide();
   }
   else
   {
     Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
     HA_now = EQ_T.Ha() * RAD_TO_DEG;
     Dec_now = EQ_T.Dec() * RAD_TO_DEG;
+    side_tmp = GetPoleSide();
   }
 
 
@@ -360,12 +374,30 @@ void enable_Axis(bool enable)
 
 void updateRatios(bool deleteAlignment, bool deleteHP)
 {
-  cli();
-  geoA1.setstepsPerRot((double)motorA1.gear / 1000.0 * motorA1.stepRot * pow(2, motorA1.micro));
-  geoA2.setstepsPerRot((double)motorA2.gear / 1000.0 * motorA2.stepRot * pow(2, motorA2.micro));
-  staA1.setBacklash_inSteps(motorA1.backlashAmount, geoA1.stepsPerArcSecond);
-  staA2.setBacklash_inSteps(motorA2.backlashAmount, geoA2.stepsPerArcSecond);
-  sei();
+
+  if (enableMotor)
+  {
+    cli();
+    geoA1.setstepsPerRot((double)motorA1.gear / 1000.0 * motorA1.stepRot * pow(2, motorA1.micro));
+    geoA2.setstepsPerRot((double)motorA2.gear / 1000.0 * motorA2.stepRot * pow(2, motorA2.micro));
+    staA1.setBacklash_inSteps(motorA1.backlashAmount, geoA1.stepsPerArcSecond);
+    staA2.setBacklash_inSteps(motorA2.backlashAmount, geoA2.stepsPerArcSecond);
+    staA1.target = staA1.pos;
+    staA2.target = staA2.pos;
+    sei();
+  }
+  else
+  {
+    cli();
+    geoA1.setstepsPerRot(encoderA1.pulsePerDegree * 360);
+    geoA2.setstepsPerRot(encoderA2.pulsePerDegree * 360);
+    staA1.setBacklash_inSteps(motorA1.backlashAmount, geoA1.stepsPerArcSecond);
+    staA2.setBacklash_inSteps(motorA2.backlashAmount, geoA2.stepsPerArcSecond);
+    staA1.target = staA1.pos;
+    staA2.target = staA2.pos;
+    sei();
+  }
+
 
   guideA1.init(&geoA1.stepsPerCentiSecond, guideRates[activeGuideRate]);
   guideA2.init(&geoA2.stepsPerCentiSecond, guideRates[activeGuideRate]);

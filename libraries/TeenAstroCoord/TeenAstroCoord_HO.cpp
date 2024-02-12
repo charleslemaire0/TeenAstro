@@ -5,7 +5,7 @@
 
 
 
-Coord_HO::Coord_HO(double FrH, double Alt, double Az, bool IsApparent) : Coord({ LA3::RotAxis::ROTAXISX, FrH }, { LA3::RotAxis::ROTAXISY, Alt }, { LA3::RotAxis::ROTAXISZ, Az })
+Coord_HO::Coord_HO(double FrH, double Alt, double Az, bool IsApparent) : Coord3R({ LA3::RotAxis::ROTAXISX, FrH }, { LA3::RotAxis::ROTAXISY, Alt }, { LA3::RotAxis::ROTAXISZ, Az })
 {
   mIsApparent = IsApparent;
 };

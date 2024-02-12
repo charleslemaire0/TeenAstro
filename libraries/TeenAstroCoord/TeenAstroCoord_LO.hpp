@@ -43,7 +43,7 @@
 
 class Coord_EQ;
 
-class Coord_LO : protected Coord {
+class Coord_LO : protected Coord3R {
 public:
 	Coord_LO(double Axis3, double Axis2, double Axis1);
 	Coord_EQ To_Coord_EQ(const double(&trafoinv)[3][3]);
