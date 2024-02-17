@@ -161,7 +161,8 @@ bool autoSyncWithEncoder(EncoderSync mode)
     sei();
     long axis1E = (long)(encoderA1.r_deg() * geoA1.stepsPerDegree);
     long axis2E = (long)(encoderA2.r_deg() * geoA2.stepsPerDegree);
-    if (abs(axis1T - axis1E) > tol * geoA1.stepsPerDegree)
+    double tol1 = max(tol, encoderA1.r_deg() / 60);
+    if (abs(axis1T - axis1E) > tol1 * geoA1.stepsPerDegree)
     {
       cli();
       staA1.pos = axis1E;
@@ -169,7 +170,8 @@ bool autoSyncWithEncoder(EncoderSync mode)
       sei();
       synced = true;
     }
-    if (abs(axis2T - axis2E) > tol * geoA2.stepsPerDegree)
+    double tol2 = max(tol, encoderA2.r_deg() / 60);
+    if (abs(axis2T - axis2E) > tol2 * geoA2.stepsPerDegree)
     {
       cli();
       staA2.pos = axis2E;
