@@ -96,6 +96,7 @@ Public Class Telescope
 
   Private mtgtRa As Double = -999
   Private mtgtDec As Double = -999
+  Private mHasMotors As Boolean = True
 
 
 
@@ -258,12 +259,15 @@ Public Class Telescope
 
   Private Function MyDevice() As Boolean
     MyDevice = False
-    '        mConnectionStatusDate = Date.UtcNow
     Try
       MyDevice = CommandString("GVP") = "TeenAstro"
     Catch ex As Exception
       Throw New ASCOM.DriverException(ex.Message)
     End Try
+  End Function
+
+  Private Function HasMotors() As Boolean
+    Return mHasMotors
   End Function
 
   Private Sub ConnectSerial(value As Boolean)
@@ -300,12 +304,20 @@ Public Class Telescope
           Me.UTCDate = DateTime.UtcNow()
           mTL.LogMessage("Connected Set", "Synced with computer time")
         End If
+        Try
+          mHasMotors = CommandBoolString("GXJm")
+        Catch ex As Exception
+          mobjectSerial.Connected = False
+          mconnectedState = False
+          mobjectSerial.Dispose()
+          Throw New ASCOM.DriverException(ex.Message)
+        End Try
         If Not mconnectedState Then
-            Throw New ASCOM.NotConnectedException("Connection has failed!")
-          End If
+          Throw New ASCOM.NotConnectedException("Connection has failed!")
         End If
-        Else
-        mobjectSerial.Connected = False
+      End If
+    Else
+      mobjectSerial.Connected = False
       mobjectSerial.Dispose()
       mconnectedState = False
       mTL.LogMessage("Connected Set", "Disconnecting from port " + mcomPort)
@@ -319,6 +331,12 @@ Public Class Telescope
         Return
       End If
       mconnectedState = MyDevice()
+      Try
+        mHasMotors = CommandBoolString("GXJm")
+      Catch ex As Exception
+        mconnectedState = False
+        Throw New ASCOM.DriverException(ex.Message)
+      End Try
       'mformcontrol = New FormControl(Me)
       'If My.Settings.ShowII Then
       '    mformcontrol.Show()
@@ -332,6 +350,7 @@ Public Class Telescope
           mTL.LogMessage("Connected Set", "Synced with computer time")
           Me.UTCDate = DateTime.UtcNow()
         End If
+
       End If
     Else
       mconnectedState = False
@@ -509,11 +528,15 @@ Public Class Telescope
 
 #Region "ITelescope Implementation"
   Public Sub AbortSlew() Implements ITelescopeV3.AbortSlew
-    If Me.AtPark Then
-      Throw New ASCOM.ParkedException
+    If CanSlew Then
+      If Me.AtPark Then
+        Throw New ASCOM.ParkedException
+      End If
+      CommandBlind("Q")
+      mTL.LogMessage("AbortSlew", "done")
+    Else
+      Throw New ASCOM.ActionNotImplementedException
     End If
-    CommandBlind("Q")
-    mTL.LogMessage("AbortSlew", "done")
   End Sub
 
   Public ReadOnly Property AlignmentMode() As AlignmentModes Implements ITelescopeV3.AlignmentMode
@@ -594,7 +617,7 @@ Public Class Telescope
 
   Public ReadOnly Property CanFindHome() As Boolean Implements ITelescopeV3.CanFindHome
     Get
-      Return True
+      Return HasMotors()
     End Get
   End Property
 
@@ -602,9 +625,9 @@ Public Class Telescope
     mTL.LogMessage("Get CanMoveAxis", Axis.ToString())
     Select Case Axis
       Case TelescopeAxes.axisPrimary
-        Return True
+        Return HasMotors()
       Case TelescopeAxes.axisSecondary
-        Return True
+        Return HasMotors()
       Case TelescopeAxes.axisTertiary
         Return False
       Case Else
@@ -614,7 +637,7 @@ Public Class Telescope
 
   Public ReadOnly Property CanPark() As Boolean Implements ITelescopeV3.CanPark
     Get
-      Dim value As Boolean = Me.CommandBool("hS")
+      Dim value As Boolean = Me.CommandBool("hS") And HasMotors()
       mTL.LogMessage("Get CanPark", value.ToString())
       Return value
     End Get
@@ -622,8 +645,9 @@ Public Class Telescope
 
   Public ReadOnly Property CanPulseGuide() As Boolean Implements ITelescopeV3.CanPulseGuide
     Get
-      mTL.LogMessage("Get CanPulseGuide", True.ToString())
-      Return True
+      Dim value As Boolean = HasMotors()
+      mTL.LogMessage("Get CanPulseGuide", value.ToString())
+      Return value
     End Get
   End Property
 
@@ -637,14 +661,15 @@ Public Class Telescope
 
   Public ReadOnly Property CanSetGuideRates() As Boolean Implements ITelescopeV3.CanSetGuideRates
     Get
-      mTL.LogMessage("Get CanSetGuideRates", True.ToString())
-      Return True
+      Dim value As Boolean = HasMotors()
+      mTL.LogMessage("Get CanSetGuideRates", value.ToString())
+      Return value
     End Get
   End Property
 
   Public ReadOnly Property CanSetPark() As Boolean Implements ITelescopeV3.CanSetPark
     Get
-      Dim value As Boolean = True
+      Dim value As Boolean = HasMotors()
       mTL.LogMessage("Get CanSetPark", value.ToString())
       Return value
     End Get
@@ -660,14 +685,15 @@ Public Class Telescope
 
   Public ReadOnly Property CanSetRightAscensionRate() As Boolean Implements ITelescopeV3.CanSetRightAscensionRate
     Get
-      mTL.LogMessage("Get CanSetRightAscensionRate", True.ToString())
-      Return True
+      Dim value As Boolean = HasMotors()
+      mTL.LogMessage("Get CanSetRightAscensionRate", value.ToString())
+      Return value
     End Get
   End Property
 
   Public ReadOnly Property CanSetTracking() As Boolean Implements ITelescopeV3.CanSetTracking
     Get
-      Dim value As Boolean = True
+      Dim value As Boolean = HasMotors()
       mTL.LogMessage("Get CanSetTracking", value.ToString())
       Return value
     End Get
@@ -675,29 +701,33 @@ Public Class Telescope
 
   Public ReadOnly Property CanSlew() As Boolean Implements ITelescopeV3.CanSlew
     Get
-      mTL.LogMessage("Get CanSlew", True.ToString())
-      Return True
+      Dim value As Boolean = HasMotors()
+      mTL.LogMessage("Get CanSlew", value.ToString())
+      Return value
     End Get
   End Property
 
   Public ReadOnly Property CanSlewAltAz() As Boolean Implements ITelescopeV3.CanSlewAltAz
     Get
-      mTL.LogMessage("Get CanSlewAltAz", True.ToString())
-      Return True
+      Dim value As Boolean = HasMotors()
+      mTL.LogMessage("Get CanSlewAltAz", value.ToString())
+      Return value
     End Get
   End Property
 
   Public ReadOnly Property CanSlewAltAzAsync() As Boolean Implements ITelescopeV3.CanSlewAltAzAsync
     Get
-      mTL.LogMessage("Get CanSlewAltAzAsync", True.ToString())
-      Return True
+      Dim value As Boolean = HasMotors()
+      mTL.LogMessage("Get CanSlewAltAzAsync", value.ToString())
+      Return value
     End Get
   End Property
 
   Public ReadOnly Property CanSlewAsync() As Boolean Implements ITelescopeV3.CanSlewAsync
     Get
-      mTL.LogMessage("Get CanSlewAsync", True.ToString())
-      Return True
+      Dim value As Boolean = HasMotors()
+      mTL.LogMessage("Get CanSlewAsync", value.ToString())
+      Return value
     End Get
   End Property
 
@@ -717,7 +747,7 @@ Public Class Telescope
 
   Public ReadOnly Property CanUnpark() As Boolean Implements ITelescopeV3.CanUnpark
     Get
-      Dim value As Boolean = Me.CommandBool("hS")
+      Dim value As Boolean = Me.CommandBool("hS") And HasMotors()
       mTL.LogMessage("Get CanUnpark", value.ToString())
       Return value
     End Get
@@ -748,12 +778,17 @@ Public Class Telescope
       Return (rate) / 10000
     End Get
     Set(value As Double)
-      Dim rate As Integer = value * 10000
-      Dim cmd As String = "SXRd," & rate.ToString()
-      mTL.LogMessage("Set DeclinationRate", "value: " & cmd)
-      If Not CommandBoolSingleChar(cmd) Then
-        Throw New ASCOM.InvalidValueException("Set DeclinationRate via :" & cmd & " has failed")
+      If (CanSetDeclinationRate) Then
+        Dim rate As Integer = value * 10000
+        Dim cmd As String = "SXRd," & rate.ToString()
+        mTL.LogMessage("Set DeclinationRate", "value: " & cmd)
+        If Not CommandBoolSingleChar(cmd) Then
+          Throw New ASCOM.InvalidValueException("Set DeclinationRate via :" & cmd & " has failed")
+        End If
+      Else
+        Throw New ASCOM.MethodNotImplementedException()
       End If
+
     End Set
   End Property
 
@@ -817,22 +852,27 @@ Public Class Telescope
   End Property
 
   Public Sub FindHome() Implements ITelescopeV3.FindHome
-    If AtPark Then
-      Throw New ASCOM.InvalidOperationException("Telescope is parked")
-    End If
-    If Not AtHome Then
-      If CommandBoolSingleChar("hC") Then
-        Threading.Thread.Sleep(1000)
-        While Me.Slewing
-          Threading.Thread.Sleep(1000)
-        End While
-      Else
-        Throw New ASCOM.DriverException("Homing failed")
+    If CanFindHome Then
+      If AtPark Then
+        Throw New ASCOM.InvalidOperationException("Telescope is parked")
       End If
       If Not AtHome Then
-        Throw New ASCOM.DriverException("Homing failed")
+        If CommandBoolSingleChar("hC") Then
+          Threading.Thread.Sleep(1000)
+          While Me.Slewing
+            Threading.Thread.Sleep(1000)
+          End While
+        Else
+          Throw New ASCOM.DriverException("Homing failed")
+        End If
+        If Not AtHome Then
+          Throw New ASCOM.DriverException("Homing failed")
+        End If
       End If
+    Else
+      Throw New ASCOM.MethodNotImplementedException
     End If
+
   End Sub
 
   Public ReadOnly Property FocalLength() As Double Implements ITelescopeV3.FocalLength
@@ -866,7 +906,11 @@ Public Class Telescope
       Return GetGuideRate()
     End Get
     Set(value As Double)
-      SetGuideRate(value)
+      If CanSetGuideRates() Then
+        SetGuideRate(value)
+      Else
+        Throw New ASCOM.MethodNotImplementedException()
+      End If
     End Set
   End Property
   Public Property GuideRateRightAscension() As Double Implements ITelescopeV3.GuideRateRightAscension
@@ -874,99 +918,119 @@ Public Class Telescope
       Return GetGuideRate()
     End Get
     Set(value As Double)
-      SetGuideRate(value)
+      If CanSetGuideRates() Then
+        SetGuideRate(value)
+      Else
+        Throw New ASCOM.MethodNotImplementedException()
+      End If
     End Set
   End Property
 
   Public ReadOnly Property IsPulseGuiding() As Boolean Implements ITelescopeV3.IsPulseGuiding
     Get
-      IsPulseGuiding = CommandBoolString("GXJP")
-      mTL.LogMessage("Get IsPulseGuiding", IsPulseGuiding.ToString)
-      Return IsPulseGuiding
+      If CanPulseGuide() Then
+        IsPulseGuiding = CommandBoolString("GXJP")
+        mTL.LogMessage("Get IsPulseGuiding", IsPulseGuiding.ToString)
+        Return IsPulseGuiding
+      Else
+        Throw New ASCOM.MethodNotImplementedException()
+      End If
     End Get
   End Property
 
   Public Sub MoveAxis(Axis As TelescopeAxes, Rate As Double) Implements ITelescopeV3.MoveAxis
-    mTL.LogMessage("Set MoveAxis", Axis.ToString() & ":" & Rate.ToString())
-    Dim cmd As String
-    Dim waitStopM1 As Boolean = False
-    Dim waitStopM2 As Boolean = False
-    If Me.AtPark Then
-      Throw New ASCOM.ParkedException
-    End If
-    Rate = Rate / mSiderealRate
-    If (Axis = TelescopeAxes.axisPrimary) Then
-      cmd = "M1" & Rate.ToString("+0.0000000;-0.0000000")
-      If Rate = 0 Then
-        waitStopM1 = True
+    If CanMoveAxis(Axis) Then
+      mTL.LogMessage("Set MoveAxis", Axis.ToString() & ":" & Rate.ToString())
+      Dim cmd As String
+      Dim waitStopM1 As Boolean = False
+      Dim waitStopM2 As Boolean = False
+      If Me.AtPark Then
+        Throw New ASCOM.ParkedException
       End If
-    ElseIf (Axis = TelescopeAxes.axisSecondary) Then
-      cmd = "M2" & Rate.ToString("+0.0000000;-0.0000000")
-      If Rate = 0 Then
-        waitStopM2 = True
+      Rate = Rate / mSiderealRate
+      If (Axis = TelescopeAxes.axisPrimary) Then
+
+        cmd = "M1" & Rate.ToString("+0.0000000;-0.0000000")
+        If Rate = 0 Then
+          waitStopM1 = True
+        End If
+      ElseIf (Axis = TelescopeAxes.axisSecondary) Then
+        cmd = "M2" & Rate.ToString("+0.0000000;-0.0000000")
+        If Rate = 0 Then
+          waitStopM2 = True
+        End If
+      Else
+        Throw New ASCOM.InvalidValueException("MoveAxis", Axis.ToString(), "0 To 1")
+      End If
+      Dim ret As String = Me.CommandSingleChar(cmd)
+      If ret = "0" Or ret = "i" Then
+        Throw New ASCOM.InvalidValueException("MoveAxis via :" & cmd & " has failed")
+      ElseIf ret = "e" Then
+        Throw New ASCOM.DriverException("MoveAxis is ignored, the telescop has already an error")
+      ElseIf ret = "h" Then
+        Throw New ASCOM.InvalidValueException("MoveAxis via :" & cmd & " has failed, the requested rate is not supported")
+      ElseIf ret = "s" Then
+        Throw New ASCOM.DriverException("MoveAxis is ignored, the telescop is slewing")
+      ElseIf ret = "g" Then
+        Throw New ASCOM.DriverException("MoveAxis is ignored, the telescop is guiding")
+      End If
+      If waitStopM1 Then
+        While CommandBoolString("GXJM1")
+          Threading.Thread.Sleep(500)
+        End While
+      End If
+      If waitStopM2 Then
+        While CommandBoolString("GXJM2")
+          Threading.Thread.Sleep(500)
+        End While
       End If
     Else
-      Throw New ASCOM.InvalidValueException("MoveAxis", Axis.ToString(), "0 To 1")
-    End If
-    Dim ret As String = Me.CommandSingleChar(cmd)
-    If ret = "0" Or ret = "i" Then
-      Throw New ASCOM.InvalidValueException("MoveAxis via :" & cmd & " has failed")
-    ElseIf ret = "e" Then
-      Throw New ASCOM.DriverException("MoveAxis is ignored, the telescop has already an error")
-    ElseIf ret = "h" Then
-      Throw New ASCOM.InvalidValueException("MoveAxis via :" & cmd & " has failed, the requested rate is not supported")
-    ElseIf ret = "s" Then
-      Throw New ASCOM.DriverException("MoveAxis is ignored, the telescop is slewing")
-    ElseIf ret = "g" Then
-      Throw New ASCOM.DriverException("MoveAxis is ignored, the telescop is guiding")
-    End If
-    If waitStopM1 Then
-      While CommandBoolString("GXJM1")
-        Threading.Thread.Sleep(500)
-      End While
-    End If
-    If waitStopM2 Then
-      While CommandBoolString("GXJM2")
-        Threading.Thread.Sleep(500)
-      End While
+      Throw New ASCOM.MethodNotImplementedException
     End If
 
   End Sub
 
   Public Sub Park() Implements ITelescopeV3.Park
-    Dim cmd As String = "hP"
-    If CommandBoolSingleChar(cmd) Then
-      mTL.LogMessage("Park", "done")
-      Threading.Thread.Sleep(3000)
+    If CanPark() Then
+      Dim cmd As String = "hP"
+      If CommandBoolSingleChar(cmd) Then
+        mTL.LogMessage("Park", "done")
+        Threading.Thread.Sleep(3000)
+      Else
+        mTL.LogMessage("Park", "failed")
+        Throw New ASCOM.DriverException("Park has failed")
+      End If
     Else
-      mTL.LogMessage("Park", "failed")
-      Throw New ASCOM.DriverException("Park has failed")
+      Throw New ASCOM.MethodNotImplementedException
     End If
+
   End Sub
 
   Public Sub PulseGuide(Direction As GuideDirections, Duration As Integer) Implements ITelescopeV3.PulseGuide
+    If (CanPulseGuide) Then
+      Dim ok As Boolean = Not AtPark And Not Slewing
+      If ok Then
+        Dim dir As String = ""
+        Select Case Direction
+          Case GuideDirections.guideNorth
+            dir = "Mgn"
+          Case GuideDirections.guideSouth
+            dir = "Mgs"
+          Case GuideDirections.guideEast
+            dir = "Mge"
+          Case GuideDirections.guideWest
+            dir = "Mgw"
+        End Select
+        CommandBlind(dir & Duration)
 
-    Dim ok As Boolean = Not AtPark And Not Slewing
-    If ok Then
-      Dim dir As String = ""
-      Select Case Direction
-        Case GuideDirections.guideNorth
-          dir = "Mgn"
-        Case GuideDirections.guideSouth
-          dir = "Mgs"
-        Case GuideDirections.guideEast
-          dir = "Mge"
-        Case GuideDirections.guideWest
-          dir = "Mgw"
-      End Select
-      CommandBlind(dir & Duration)
-
-      mTL.LogMessage("PulseGuide", dir & Duration & " done ")
+        mTL.LogMessage("PulseGuide", dir & Duration & " done ")
+      Else
+        Throw New ASCOM.DriverException("Pulse guiding failed")
+        mTL.LogMessage("PulseGuide", Dir() & Duration & " has failed ")
+      End If
     Else
-      Throw New ASCOM.DriverException("Pulse guiding failed")
-      mTL.LogMessage("PulseGuide", dir & Duration & " has failed ")
+      Throw New ASCOM.MethodNotImplementedException()
     End If
-
   End Sub
 
   Public ReadOnly Property RightAscension() As Double Implements ITelescopeV3.RightAscension
@@ -995,12 +1059,17 @@ Public Class Telescope
       Return rate / 10000
     End Get
     Set(value As Double)
-      Dim rate As Integer = value * 10000
-      Dim cmd As String = "SXRr," & rate.ToString()
-      mTL.LogMessage("Set RightAscensionRate", "value: " & cmd)
-      If Not CommandBoolSingleChar(cmd) Then
-        Throw New ASCOM.InvalidValueException("Set RightAscensionRate via :" & cmd & " has failed")
+      If (CanSetRightAscensionRate) Then
+        Dim rate As Integer = value * 10000
+        Dim cmd As String = "SXRr," & rate.ToString()
+        mTL.LogMessage("Set RightAscensionRate", "value: " & cmd)
+        If Not CommandBoolSingleChar(cmd) Then
+          Throw New ASCOM.InvalidValueException("Set RightAscensionRate via :" & cmd & " has failed")
+        End If
+      Else
+        Throw New ASCOM.MethodNotImplementedException("RightAscensionRate can not be set!")
       End If
+
     End Set
   End Property
 
@@ -1160,43 +1229,67 @@ Public Class Telescope
   End Property
 
   Public Sub SlewToAltAz(Azimuth As Double, Altitude As Double) Implements ITelescopeV3.SlewToAltAz
-    setAzalt(Azimuth, Altitude)
-    checkslewALTAZ()
-    doslew(False, True)
-    mTL.LogMessage("SlewToAltAzAz", "done")
+    If CanSlewAltAz Then
+      setAzalt(Azimuth, Altitude)
+      checkslewALTAZ()
+      doslew(False, True)
+      mTL.LogMessage("SlewToAltAzAz", "done")
+    Else
+      Throw New ASCOM.MethodNotImplementedException
+    End If
   End Sub
 
   Public Sub SlewToAltAzAsync(Azimuth As Double, Altitude As Double) Implements ITelescopeV3.SlewToAltAzAsync
-    setAzalt(Azimuth, Altitude)
-    checkslewALTAZ()
-    doslew(True, True)
-    mTL.LogMessage("SlewToAltAzAsync", "done")
+    If CanSlewAltAzAsync Then
+      setAzalt(Azimuth, Altitude)
+      checkslewALTAZ()
+      doslew(True, True)
+      mTL.LogMessage("SlewToAltAzAsync", "done")
+    Else
+      Throw New ASCOM.MethodNotImplementedException
+    End If
   End Sub
 
   Public Sub SlewToCoordinates(RightAscension As Double, Declination As Double) Implements ITelescopeV3.SlewToCoordinates
-    mTL.LogMessage("SlewToCoordinates", "done")
-    Me.TargetDeclination = Declination
-    Me.TargetRightAscension = RightAscension
-    Me.SlewToTarget()
+    If CanSlew Then
+      mTL.LogMessage("SlewToCoordinates", "done")
+      Me.TargetDeclination = Declination
+      Me.TargetRightAscension = RightAscension
+      Me.SlewToTarget()
+    Else
+      Throw New ASCOM.MethodNotImplementedException
+    End If
   End Sub
 
   Public Sub SlewToCoordinatesAsync(RightAscension As Double, Declination As Double) Implements ITelescopeV3.SlewToCoordinatesAsync
-    mTL.LogMessage("SlewToCoordinatesAsync", "done")
-    Me.TargetDeclination = Declination
-    Me.TargetRightAscension = RightAscension
-    Me.SlewToTargetAsync()
+    If CanSlewAsync Then
+      mTL.LogMessage("SlewToCoordinatesAsync", "done")
+      Me.TargetDeclination = Declination
+      Me.TargetRightAscension = RightAscension
+      Me.SlewToTargetAsync()
+    Else
+      Throw New ASCOM.MethodNotImplementedException
+    End If
   End Sub
 
   Public Sub SlewToTarget() Implements ITelescopeV3.SlewToTarget
-    checkslewRADEC()
-    doslew(False)
-    mTL.LogMessage("SlewToTarget", "done")
+    If CanSlew Then
+      checkslewRADEC()
+      doslew(False)
+      mTL.LogMessage("SlewToTarget", "done")
+    Else
+      Throw New ASCOM.MethodNotImplementedException
+    End If
   End Sub
 
   Public Sub SlewToTargetAsync() Implements ITelescopeV3.SlewToTargetAsync
-    checkslewRADEC()
-    doslew(True)
-    mTL.LogMessage("SlewToTarget", "done")
+    If CanSlewAsync Then
+      checkslewRADEC()
+      doslew(True)
+      mTL.LogMessage("SlewToTarget", "done")
+    Else
+      Throw New ASCOM.MethodNotImplementedException
+    End If
   End Sub
 
   Public ReadOnly Property Slewing() As Boolean Implements ITelescopeV3.Slewing
@@ -1233,8 +1326,10 @@ Public Class Telescope
     If Me.AtPark Then
       Throw New ASCOM.InvalidOperationException(ErrorCodes.InvalidWhileParked)
     End If
-    If Not Me.Tracking Then
-      Throw New ASCOM.InvalidOperationException
+    If CanSetTracking Then
+      If Not Me.Tracking Then
+        Throw New ASCOM.InvalidOperationException
+      End If
     End If
     If CommandString("CM") = "N/A" Then
       mTL.LogMessage("SyncToTarget", "done")
@@ -1348,16 +1443,22 @@ Public Class Telescope
       Return trk
     End Get
     Set(value As Boolean)
-      If value Then
-        If Not CommandBoolSingleChar("Te") Then
-          Throw New ASCOM.InvalidValueException
+      If CanSetTracking Then
+        If value Then
+          If Not CommandBoolSingleChar("Te") Then
+            Throw New ASCOM.InvalidValueException
+          End If
+        Else
+          If Not CommandBoolSingleChar("Td") Then
+            Throw New ASCOM.InvalidOperationException
+          End If
         End If
+        mTL.LogMessage("Set Tracking", value.ToString)
       Else
-        If Not CommandBoolSingleChar("Td") Then
-          Throw New ASCOM.InvalidOperationException
-        End If
+        Throw New ASCOM.MethodNotImplementedException()
+
       End If
-      mTL.LogMessage("Set Tracking", value.ToString)
+
     End Set
   End Property
 
@@ -1425,11 +1526,15 @@ Public Class Telescope
   End Property
 
   Public Sub Unpark() Implements ITelescopeV3.Unpark
-    If CommandBoolSingleChar("hR") Then
-      mTL.LogMessage("Unpark", "done")
+    If CanPark() Then
+      If CommandBoolSingleChar("hR") Then
+        mTL.LogMessage("Unpark", "done")
+      Else
+        mTL.LogMessage("Unpark", "failed")
+        Throw New ASCOM.InvalidOperationException()
+      End If
     Else
-      mTL.LogMessage("Unpark", "failed")
-      Throw New ASCOM.InvalidOperationException()
+      Throw New ASCOM.MethodNotImplementedException()
     End If
   End Sub
 
