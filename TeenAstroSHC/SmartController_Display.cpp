@@ -8,6 +8,12 @@
 #define teenastro_width 128
 #define teenastro_height 68
 
+
+static unsigned char shift_bits[] U8X8_PROGMEM = {
+   0x00, 0x00, 0x00, 0x00, 0x80, 0x01, 0x40, 0x02, 0x20, 0x04, 0x10, 0x08,
+   0x08, 0x10, 0x04, 0x20, 0x1c, 0x38, 0x10, 0x08, 0x10, 0x08, 0x10, 0x08,
+   0x10, 0x08, 0x10, 0x08, 0xf0, 0x0f, 0x00, 0x00 };
+
 static unsigned char wifi_bits[] U8X8_PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x80, 0x20, 0x40, 0x4e, 0x00, 0x11,
     0x00, 0x04, 0x00, 0x04, 0x00, 0x04, 0xfe, 0x7f, 0x02, 0x40, 0xda, 0x5f,
@@ -397,7 +403,7 @@ void SmartHandController::updateMainDisplay(PAGES page)
     int k = 0;
     if (buttonPad.isWifiOn())
     {
-      buttonPad.isWifiRunning() ? display->drawXBMP(0, 0, icon_width, icon_height, wifi_bits) : display->drawXBMP(0, 0, icon_width, icon_height, wifi_not_connected_bits);
+      buttonPad.isWifiRunning() ? display->drawXBMP(xl, 0, icon_width, icon_height, wifi_bits) : display->drawXBMP(0, 0, icon_width, icon_height, wifi_not_connected_bits);
       xl += icon_width + 1;
     }
     if (ta_MountStatus.hasInfoMount())
@@ -612,6 +618,11 @@ void SmartHandController::updateMainDisplay(PAGES page)
       default:
         break;
       }
+    }
+    if (buttonPad.shiftPressed())
+    {
+      display->drawXBMP(xl, 0, icon_width, icon_height, shift_bits);
+      xl += icon_width + 1;
     }
     if (focuserlocked || telescoplocked)
     {
