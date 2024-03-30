@@ -286,7 +286,7 @@ LX200RETURN SetLX200(char* command)
     if (cmdreply == CMDR_SHORT_BOOL)
       return out[0] == '1' ? LX200_VALUESET : LX200_SETVALUEFAILED;
     else
-      LX200_VALUESET;
+      return LX200_VALUESET;
   }
   else
   {
