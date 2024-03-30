@@ -1027,7 +1027,7 @@ void Command_S(Command& process_command)
       double longi = 0;
       int i = (command[2] == '-') || (command[2] == '+') ? 1 : 0;
       int j = strlen(&command[7 + i]) > 1 ? (command[8 + i] == ':') : 0;
-      bool ok = dmsToDouble(&longi, &command[2 + i], false, j);
+      ok = dmsToDouble(&longi, &command[2 + i], false, j);
       if (ok)
       {
         if (command[2] == '-') longi = -longi;
@@ -1204,7 +1204,7 @@ void Command_S(Command& process_command)
         ishighPrecision = command[8] == ':';
       else
         ishighPrecision = false;
-      bool ok = dmsToDouble(&f, &command[2], true, ishighPrecision);
+      ok = dmsToDouble(&f, &command[2], true, ishighPrecision);
       if (ok)
       {
         localSite.setLat(f);
@@ -1236,7 +1236,7 @@ void Command_S(Command& process_command)
     {
       char* conv_end;
       double f = strtod(&command[2], &conv_end);
-      bool ok = (&command[2] != conv_end) &&
+      ok = (&command[2] != conv_end) &&
         (((f >= 30.0) && (f < 90.0)) || (abs(f) < 0.1));
       if (ok)
       {
