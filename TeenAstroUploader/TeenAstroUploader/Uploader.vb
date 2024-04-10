@@ -197,8 +197,8 @@ Public Class Uploader
     Dim sum As Integer = 0
     sum = n
     'downloadVersion13x(n, sum)
-    downloadVersionx(n, sum, "", 1.4)
-    downloadVersionx(n, sum, "_latest", 1.4)
+    'downloadVersionx(n, sum, "", 1.4)
+    'downloadVersionx(n, sum, "_latest", 1.4)
     downloadVersionx(n, sum, "", 1.5)
     downloadVersionx(n, sum, "_latest", 1.5)
     MsgBox(n.ToString & "of " & sum.ToString & " successfully downloaded!")

@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file starting 2021.
 
+## [2.5.0] - 2023-12-02
+
+This release is a minor update including som smaller fixes.
+
+* Functions marked with deprecated will be removed in version 3.x
+* Formatting of source code conformint the standard Arduino IDE 2.0 formatting using .clang-format
+* Version for platform.io in sync with version for Arduino
+* Introducing the `OneButtonTiny` class for small environments with limited program space and memory.
+
+
+## [2.1.0] - 2023-05-10
+
+This release is a minor update as there is new internal functionality and
+some functions have been renamed.
+
+The former functions `setDebounceTicks`, `setClickTicks` and `setPressTicks` are marked deprecated.
+The term `Ticks` in these functions where confusing. Replace them with the ...Ms function calls.
+There is no functional change on them.
+
+* CPP Checks added in Github actions. Thanks to @mkinney
+* Debouncing input levels implemented in a central place. Thanks to @IhorNehrutsa
+* Docu for using lamda functions as callbacks, Thanks to @gergovari
+* .clang-format file added to support code formatting in IDE 2.x (and others)
+* Fixing examples for ESP8266 and ESP32.
+* GitHub Action extended to compile for ESP8266 and ESP32
+
+Many thanks to the improvements included by (**@IhorNehrutsa**)
+
 ## [2.0.4] - 2022-01-22
 
 * checked for ESP32 (SimpleOneButton, InterruptOneButton, BlinkMachine)
@@ -17,7 +45,7 @@ and included example PIN definitions for ESP32
 * Compiler warning removed
 * Documentation
 
-## [2.0.0] - 2021-01-22 
+## [2.0.0] - 2021-01-22
 
 * CHANGELOG created.
 * Many thanks to the improvements included from #27 (**@aslobodyanuk**), #59 (**@ShaggyDog18**) and #73 (**@geeksville**).
@@ -46,13 +74,11 @@ The function **isIdle()** was added to allow detect a current interaction.
 
 The library now supports to detect multiple (>2) clicks in a row using **attachMultiClick()** .
 
-
 * The internal _state is using enum instead of plain numbers to make the library more readable.
 * functions that had been marked deprecated are now removed. (attachPress->attachLongPressXXX)
 * added const to constant parameters to enable meaningful compiler warnings.
 * added code for de-bouncing double clicks from pull 27.
-* added isIdle() function to find out that the internal state is `init`. 
-
+* added isIdle() function to find out that the internal state is `init`.
 
 ### Examples
 
@@ -62,4 +88,4 @@ The library now supports to detect multiple (>2) clicks in a row using **attachM
 
 * The **InterruptOneButton.ino** example now is using attachInterrupt instead of UNO specific register modifications.
 
-* The **SpecialInput.ino** example was added to shpow how to use the OneButton algorythm and input pattern recognition with your own source of input.
+* The **SpecialInput.ino** example was added to show how to use the OneButton algorithm and input pattern recognition with your own source of input.

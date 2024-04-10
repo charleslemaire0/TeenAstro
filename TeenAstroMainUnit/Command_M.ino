@@ -137,6 +137,7 @@ void Command_M()
         //reply[1] = 0;
       }
     }
+    replyNothing();
     break;
   }
     //  :Me# & :Mw#      Move Telescope East or West at current slew rate

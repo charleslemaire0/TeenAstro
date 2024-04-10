@@ -89,13 +89,10 @@ byte readBytesUntil2(char character, char buffer[], int length, boolean* charact
 
 
 // smart LX200 aware command and response over serial
-bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned long timeOutMs, bool keepHashtag)
+bool readLX200Bytes(char* command, CMDREPLY& cmdreply, char* recvBuffer, int bufferSize, unsigned long timeOutMs, bool keepHashtag)
 {
-  enum CMDREPLY
-  {
-    CMDR_NO, CMDR_SHORT, CMDR_SHORT_BOOL, CMDR_LONG, CMDR_INVALID
-  };
-  CMDREPLY cmdreply = CMDR_NO;
+
+  cmdreply = CMDR_INVALID;
   Ser.setTimeout(timeOutMs);
   memset(recvBuffer, 0, bufferSize);
   // clear the read/write buffers
@@ -282,10 +279,19 @@ bool isOk(LX200RETURN val)
 LX200RETURN SetLX200(char* command)
 {
   char out[LX200sbuff];
-  if (readLX200Bytes(command, out, sizeof(out), TIMEOUT_CMD))
-    return  LX200_VALUESET;
+  CMDREPLY cmdreply;
+  bool ok = readLX200Bytes(command, cmdreply, out, sizeof(out), TIMEOUT_CMD);
+  if (ok)
+  {
+    if (cmdreply == CMDR_SHORT_BOOL)
+      return out[0] == '1' ? LX200_VALUESET : LX200_SETVALUEFAILED;
+    else
+      return LX200_VALUESET;
+  }
   else
-    return LX200_SETVALUEFAILED;
+  {
+    return cmdreply == CMDR_INVALID ? LX200_INVALIDCOMMAND : LX200_INVALIDREPLY;
+  }
 }
 
 LX200RETURN SyncGoHomeLX200(NAV mode)
@@ -299,7 +305,8 @@ LX200RETURN SyncGoHomeLX200(NAV mode)
   cmd[2] = selectLetter(mode, 'F', 'C', 0);
 
   char out[LX200sbuff];
-  bool ok = readLX200Bytes(cmd, out, sizeof(out), TIMEOUT_CMD);
+  CMDREPLY cmdreply;
+  bool ok = readLX200Bytes(cmd, cmdreply, out, sizeof(out), TIMEOUT_CMD);
   if (!ok)
   {
     return LX200_SETVALUEFAILED;
@@ -330,7 +337,8 @@ LX200RETURN SyncGoParkLX200(NAV mode)
   cmd[2] = selectLetter(mode, 'O', 'P', 0);
 
   char out[LX200sbuff];
-  bool ok = readLX200Bytes(cmd, out, sizeof(out), TIMEOUT_CMD);
+  CMDREPLY cmdreply;
+  bool ok = readLX200Bytes(cmd, cmdreply, out, sizeof(out), TIMEOUT_CMD);
   if (!ok)
   {
     return LX200_SETVALUEFAILED;
@@ -352,18 +360,21 @@ LX200RETURN SyncGoParkLX200(NAV mode)
 
 LX200RETURN GetLX200(char* command, char* output, int buffersize)
 {
-  if (readLX200Bytes(command, output, buffersize, TIMEOUT_CMD))
+  CMDREPLY cmdreply;
+  bool ok = readLX200Bytes(command, cmdreply, output, buffersize, TIMEOUT_CMD);
+  if (ok)
     return LX200_VALUEGET;
   else
-    return LX200_GETVALUEFAILED;
+    return cmdreply == CMDR_INVALID ? LX200_INVALIDCOMMAND : LX200_GETVALUEFAILED;
 }
 
 LX200RETURN GetLX200Short(char* command, short* value)
 {
   char out[LX200sbuff];
   char* conv_end;
-  if (GetLX200(command, out, sizeof(out)) == LX200_GETVALUEFAILED)
-    return LX200_GETVALUEFAILED;
+  LX200RETURN ret = GetLX200(command, out, sizeof(out));
+  if (ret != LX200_VALUEGET)
+    return ret;
   *value = strtol(&out[0], NULL, 10);
   return LX200_VALUEGET;
 }
@@ -372,8 +383,9 @@ LX200RETURN GetLX200Float(char* command, float* value)
 {
   char out[LX200sbuff];
   char* conv_end;
-  if (GetLX200(command, out, sizeof(out)) == LX200_GETVALUEFAILED)
-    return LX200_GETVALUEFAILED;
+  LX200RETURN ret = GetLX200(command, out, sizeof(out));
+  if (ret != LX200_VALUEGET)
+    return ret;
   float f = strtod(out, &conv_end);
   if ((&out[0] != conv_end) && (f >= -12 && f <= 12.0))
   {
@@ -386,8 +398,9 @@ LX200RETURN GetLX200Float(char* command, float* value)
 LX200RETURN GetLocalTimeLX200(unsigned int& hour, unsigned int& minute, unsigned int& second)
 {
   char out[LX200sbuff];
-  if (GetLX200(":GL#", out, sizeof(out)) == LX200_GETVALUEFAILED)
-    return LX200_GETVALUEFAILED;
+  LX200RETURN ret = GetLX200(":GL#", out, sizeof(out));
+  if (ret != LX200_VALUEGET)
+    return ret;
   char2RA(out, hour, minute, second);
   return LX200_VALUEGET;
 }
@@ -395,8 +408,9 @@ LX200RETURN GetLocalTimeLX200(unsigned int& hour, unsigned int& minute, unsigned
 LX200RETURN GetUTCTimeLX200(unsigned int& hour, unsigned int& minute, unsigned int& second)
 {
   char out[LX200sbuff];
-  if (GetLX200(":GXT0#", out, sizeof(out)) == LX200_GETVALUEFAILED)
-    return LX200_GETVALUEFAILED;
+  LX200RETURN ret = GetLX200(":GXT0#", out, sizeof(out));
+  if (ret != LX200_VALUEGET)
+    return ret;
   char2RA(out, hour, minute, second);
   return LX200_VALUEGET;
 }
@@ -404,8 +418,9 @@ LX200RETURN GetUTCTimeLX200(unsigned int& hour, unsigned int& minute, unsigned i
 LX200RETURN GetRALX200(unsigned int& hour, unsigned int& minute, unsigned int& second)
 {
   char out[LX200sbuff];
-  if (GetLX200(":GR#", out, sizeof(out)) == LX200_GETVALUEFAILED)
-    return LX200_GETVALUEFAILED;
+  LX200RETURN ret = GetLX200(":GR#", out, sizeof(out));
+  if (ret != LX200_VALUEGET)
+    return ret;
   char2RA(out, hour, minute, second);
   return LX200_VALUEGET;
 }
@@ -413,8 +428,9 @@ LX200RETURN GetRALX200(unsigned int& hour, unsigned int& minute, unsigned int& s
 LX200RETURN GetLocalTimeLX200(long& value)
 {
   unsigned int hour, minute, second;
-  if (GetLocalTimeLX200(hour, minute, second) == LX200_GETVALUEFAILED)
-    return LX200_GETVALUEFAILED;
+  LX200RETURN ret = GetLocalTimeLX200(hour, minute, second);
+  if (ret != LX200_VALUEGET)
+    return ret;
   value = hour * 60 + minute;
   value *= 60;
   value += second;
@@ -424,8 +440,9 @@ LX200RETURN GetLocalTimeLX200(long& value)
 LX200RETURN GetUTCTimeLX200(long& value)
 {
   unsigned int hour, minute, second;
-  if (GetUTCTimeLX200(hour, minute, second) == LX200_GETVALUEFAILED)
-    return LX200_GETVALUEFAILED;
+  LX200RETURN ret = GetUTCTimeLX200(hour, minute, second);
+  if (ret != LX200_VALUEGET)
+    return ret;
   value = hour * 60 + minute;
   value *= 60;
   value += second;
@@ -461,12 +478,11 @@ LX200RETURN SetUTCTimeLX200(long& value)
 LX200RETURN GetSiteLX200(int& value)
 {
   char out[LX200sbuff];
-  if (GetLX200(":W?#", out, sizeof(out)) == LX200_VALUEGET)
-  {
-    value = (int)strtol(&out[0], NULL, 10);
-    return LX200_VALUEGET;
-  }
-  return LX200_GETVALUEFAILED;
+  LX200RETURN ret = GetLX200(":W?#", out, sizeof(out));
+  if (ret != LX200_VALUEGET)
+    return ret;
+  value = (int)strtol(&out[0], NULL, 10);
+  return LX200_VALUEGET;
 }
 
 LX200RETURN GetSiteNameLX200(int idx, char* name, int len)
@@ -480,12 +496,11 @@ LX200RETURN GetSiteNameLX200(int idx, char* name, int len)
 LX200RETURN GetMountIdxLX200(int& value)
 {
   char out[LX200sbuff];
-  if (GetLX200(":GXOI#", out, sizeof(out)) == LX200_VALUEGET)
-  {
-    value = (int)strtol(&out[0], NULL, 10);
-    return LX200_VALUEGET;
-  }
-  return LX200_GETVALUEFAILED;
+  LX200RETURN ret = GetLX200(":GXOI#", out, sizeof(out));
+  if (ret != LX200_VALUEGET)
+    return ret;
+  value = (int)strtol(&out[0], NULL, 10);
+  return LX200_VALUEGET;
 }
 
 LX200RETURN GetMountNameLX200(int idx, char* name, int len)
@@ -499,36 +514,37 @@ LX200RETURN GetMountNameLX200(int idx, char* name, int len)
 LX200RETURN GetLatitudeLX200(double& degree)
 {
   char out[LX200sbuff];
-  if (GetLX200(":Gtf#", out, sizeof(out)) == LX200_VALUEGET)
-  {
-    if (dmsToDouble(&degree, out, true, true))
-      return LX200_VALUEGET;
-  }
+  LX200RETURN ret = GetLX200(":Gtf#", out, sizeof(out));
+  if (ret != LX200_VALUEGET)
+    return ret;
+  if (dmsToDouble(&degree, out, true, true))
+    return LX200_VALUEGET;
   return LX200_GETVALUEFAILED;
 }
 LX200RETURN GetLstT0LX200(double& T0)
 {
   char out[LX200sbuff];
-  if (GetLX200(":GS#", out, sizeof(out)) == LX200_VALUEGET)
-  {
-    if (hmsToDouble(&T0, out))
-      return LX200_VALUEGET;
-  }
+  LX200RETURN ret = GetLX200(":GS#", out, sizeof(out));
+  if (ret != LX200_VALUEGET)
+    return ret;
+  if (hmsToDouble(&T0, out))
+    return LX200_VALUEGET;
   return LX200_GETVALUEFAILED;
 }
 LX200RETURN GetLongitudeLX200(double& degree)
 {
   char out[LX200sbuff];
-  if (GetLX200(":Ggf#", out, sizeof(out)) == LX200_VALUEGET)
+  LX200RETURN ret = GetLX200(":Ggf#", out, sizeof(out));
+  if (ret != LX200_VALUEGET)
+    return ret;
+
+  double longi = 0;
+  if ((out[0] == '-') || (out[0] == '+'))
   {
-    double longi = 0;
-    if ((out[0] == '-') || (out[0] == '+'))
+    if (dmsToDouble(&longi, (char*)&out[1], false, true))
     {
-      if (dmsToDouble(&longi, (char*)&out[1], false, true))
-      {
-        degree = out[0] == '-' ? -longi : longi;
-        return LX200_VALUEGET;
-      }
+      degree = out[0] == '-' ? -longi : longi;
+      return LX200_VALUEGET;
     }
   }
   return LX200_GETVALUEFAILED;
@@ -537,11 +553,11 @@ LX200RETURN GetLongitudeLX200(double& degree)
 LX200RETURN GetDeclinationLX200(double& degree)
 {
   char out[LX200sbuff];
-  if (GetLX200(":GD#", out, sizeof(out)) == LX200_VALUEGET)
-  {
-    if (dmsToDouble(&degree, out, true, false))
-      return LX200_VALUEGET;
-  }
+  LX200RETURN ret = GetLX200(":GD#", out, sizeof(out));
+  if (ret != LX200_VALUEGET)
+    return ret;
+  if (dmsToDouble(&degree, out, true, false))
+    return LX200_VALUEGET;
   return LX200_GETVALUEFAILED;
 }
 
@@ -638,18 +654,19 @@ LX200RETURN Err2LX200(ErrorsGoTo err, bool isgoto)
 LX200RETURN Move2TargetLX200(TARGETTYPE target)
 {
   char out[LX200sbuff];
+  CMDREPLY cmdreply;
   int val;
 
   switch (target)
   {
   case T_RADEC:
-    val = readLX200Bytes(":MS#", out, sizeof(out), TIMEOUT_CMD);
+    val = readLX200Bytes(":MS#", cmdreply, out, sizeof(out), TIMEOUT_CMD);
     break;
   case T_AZALT:
-    val = readLX200Bytes(":MA#", out, sizeof(out), TIMEOUT_CMD);
+    val = readLX200Bytes(":MA#", cmdreply, out, sizeof(out), TIMEOUT_CMD);
     break;
   case T_USERRADEC:
-    val = readLX200Bytes(":MU#", out, sizeof(out), TIMEOUT_CMD);
+    val = readLX200Bytes(":MU#", cmdreply, out, sizeof(out), TIMEOUT_CMD);
   }
   LX200RETURN response;
   ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
@@ -659,21 +676,22 @@ LX200RETURN Move2TargetLX200(TARGETTYPE target)
 LX200RETURN Push2TargetLX200(TARGETTYPE target)
 {
   char out[LX200sbuff];
+  CMDREPLY cmdreply;
   int val;
   switch (target)
   {
   case T_RADEC:
-    val = readLX200Bytes(":EMS#", out, sizeof(out), TIMEOUT_CMD);
+    val = readLX200Bytes(":EMS#", cmdreply, out, sizeof(out), TIMEOUT_CMD);
     break;
   case T_AZALT:
-    val = readLX200Bytes(":EMA#", out, sizeof(out), TIMEOUT_CMD);
+    val = readLX200Bytes(":EMA#", cmdreply, out, sizeof(out), TIMEOUT_CMD);
     break;
   case T_USERRADEC:
-    val = readLX200Bytes(":EMU#", out, sizeof(out), TIMEOUT_CMD);
+    val = readLX200Bytes(":EMU#", cmdreply, out, sizeof(out), TIMEOUT_CMD);
   }
   LX200RETURN response;
   ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
-  return Err2LX200(err,false);
+  return Err2LX200(err, false);
 }
 
 LX200RETURN SetTargetRaLX200(uint8_t& vr1, uint8_t& vr2, uint8_t& vr3)
@@ -785,7 +803,7 @@ LX200RETURN SyncGotoLX200AltAz(NAV mode, uint16_t& vz1, uint8_t& vz2, uint8_t& v
       else
         return LX200_SYNCFAILED;
     }
-    else if(mode == NAV_GOTO)
+    else if (mode == NAV_GOTO)
     {
       return Move2TargetLX200(T_AZALT);
     }
@@ -994,14 +1012,14 @@ LX200RETURN readTotGearLX200(const uint8_t& axis, float& totGear)
   LX200RETURN ok = axis == 1 ? GetLX200(":GXMGR#", out, sizeof(out)) : GetLX200(":GXMGD#", out, sizeof(out));
   if (ok == LX200_VALUEGET)
   {
-    totGear = (float)((double)strtol(&out[0], NULL, 10)/1000.0);
+    totGear = (float)((double)strtol(&out[0], NULL, 10) / 1000.0);
   }
   return ok;
 }
 LX200RETURN writeTotGearLX200(const uint8_t& axis, const float& totGear)
 {
   char cmd[LX200sbuff];
-  sprintf(cmd, ":SXMGX,%lu#", (unsigned long)((double)totGear*1000));
+  sprintf(cmd, ":SXMGX,%lu#", (unsigned long)((double)totGear * 1000));
   cmd[5] = axis == 1 ? 'R' : 'D';
   return SetLX200(cmd);
 }

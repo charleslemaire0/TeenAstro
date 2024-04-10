@@ -258,7 +258,7 @@ Partial Class Uploader
         '
         'ComboBoxFirmwareVersion
         '
-        Me.ComboBoxFirmwareVersion.Items.AddRange(New Object() {"1.5", "1.4"})
+        Me.ComboBoxFirmwareVersion.Items.AddRange(New Object() {"1.5"})
         Me.ComboBoxFirmwareVersion.Location = New System.Drawing.Point(124, 46)
         Me.ComboBoxFirmwareVersion.Name = "ComboBoxFirmwareVersion"
         Me.ComboBoxFirmwareVersion.Size = New System.Drawing.Size(143, 21)

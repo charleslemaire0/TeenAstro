@@ -100,15 +100,20 @@ void SmartHandController::setup(
   if (k == 10)
   {
     return;
-  }
-  char line[32]="";
+  } 
+  
+  DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1200);
+  char line[32] = "";
+
   char drivername[10] = "";
   ta_MountStatus.getDriverName(drivername);
-  strcat(line, ta_MountStatus.getVN());
-  strcat(line, " ");
+  strcat(line, ta_MountStatus.getVB());
+  strcat(line, " - ");
   strcat(line, drivername);
 
-  DisplayMessage("Main Unit " T_VERSION, line, 1500);
+ 
+  DisplayMessage("PCB", line, 1200);
+
   if (ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor))
   {    
     if (ta_MountStatus.findFocuser())
@@ -117,7 +122,7 @@ void SmartHandController::setup(
       if (DisplayMessageLX200(GetLX200(":FV#", out, sizeof(out))))
       {
         out[31] = 0;
-        DisplayMessage("Focuser " T_VERSION, &out[26], 1500);
+        DisplayMessage("Focuser " T_VERSION, &out[26], 1200);
       }
     }
     ta_MountStatus.updateMount();
@@ -134,7 +139,7 @@ void SmartHandController::setup(
     }
     else
     {
-      DisplayMessage("GNSS", T_CONNECTED, 1500);
+      DisplayMessage("GNSS", T_CONNECTED, 1200);
     }
   }
 #ifdef RADEC_PAGE
