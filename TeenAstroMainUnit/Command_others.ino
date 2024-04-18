@@ -185,7 +185,7 @@ void Command_C()
 
         if (alignment.getRefs() == 0)
         {
-          syncAzAlt(&HO_T, GetPoleSide());
+          syncAzAlt(&HO_T, targetPoleSide);
         }
         Coord_IN IN_T = getInstr();
         alignment.addReference(HO_T.Az(), HO_T.Alt(), IN_T.Axis1(), IN_T.Axis2());
