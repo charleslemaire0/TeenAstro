@@ -67,8 +67,7 @@ void Command_A()
     // start tracking
     if (enableMotor)
     {
-      sideralTracking = true;
-      lastSetTrakingEnable = millis();
+      StartSideralTracking();
     }
     replyShortTrue();
     break;
@@ -211,6 +210,7 @@ void Command_C()
       {
         strcpy(reply, "N/A#");
       }
+      StartSideralTracking();
     }
     break;
     case 'U':
@@ -688,8 +688,7 @@ void Command_T()
       atHome = false;
       if (enableMotor)
       {
-        sideralTracking = true;
-        computeTrackingRate(true);
+        StartSideralTracking();
         replyShortTrue();
       }
       else
