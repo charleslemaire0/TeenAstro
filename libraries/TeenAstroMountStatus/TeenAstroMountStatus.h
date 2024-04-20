@@ -103,7 +103,8 @@ public:
   bool            isAlignSelect() { return m_align == ALI_SELECT; };
   bool            isAlignRecenter() { return m_align == ALI_RECENTER; };
   void            stopAlign() { m_align = ALI_OFF; m_alignStar = 0; };
-  void            startAlign(AlignMode in) { m_aliMode = in;  m_align = ALI_SELECT; m_alignStar; m_alignStar = 1; };
+  void            startAlign(AlignMode in) { m_aliMode = in;  m_align = ALI_SELECT;  m_alignStar = 1; };
+  void            startAlignSecondStar(AlignMode in) { m_aliMode = in;  m_align = ALI_SELECT; m_alignStar = 2; };
   void            nextStepAlign();
   void            backStepAlign();
   bool            isLastStarAlign() { return (int)m_aliMode == m_alignStar;  };

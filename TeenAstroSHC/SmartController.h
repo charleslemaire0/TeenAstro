@@ -47,6 +47,7 @@ private:
   bool buttonCommand = false;
   bool Move[6] = { false, false, false, false, false, false };
   bool SHCrotated = false;
+  bool SHCvisitor = false;
   uint8_t displayT1;
   uint8_t displayT2;
   uint8_t maxContrast;
@@ -153,7 +154,8 @@ private:
   void menuFocuserConfig();
   void menuFocuserMotor();
   void menuFocuserInfo();
-  void menuDisplay();
+  void menuDisplaySettings();
+  void menuDisplayActions();
   void menuContrast();
   void menuErgonomy();
   void menuButtonSpeed();
@@ -163,6 +165,7 @@ private:
   void menuElevation();
   void menuMainUnitInfo();
   void menuParkAndHome();
+  void menuVisitor();
   void menuLimits();
   void menuEncoders();
   void menuAutoSyncEncoder();

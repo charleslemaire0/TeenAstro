@@ -57,6 +57,8 @@ void Command_A()
 {
   switch (command[1])
   {
+
+
   case '0':
     // telescope should be set in the polar home for a starting point
     initTransformation(true);
@@ -71,6 +73,36 @@ void Command_A()
     }
     replyShortTrue();
     break;
+  case'*':
+    // telescope should be set in the polar home for a starting point
+  {
+    initTransformation(true);
+    enable_Axis(true);
+    delay(10);
+    // start tracking
+    if (enableMotor)
+    {
+      StartSideralTracking();
+    }
+    PoleSide targetPoleSide = GetPoleSide();
+    if (newTargetPoleSide != POLE_NOTVALID)
+    {
+      targetPoleSide = newTargetPoleSide;
+      newTargetPoleSide = POLE_NOTVALID;
+    }
+    double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+    double Lat = *localSite.latitude();
+    Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+    Coord_HO HO_T = EQ_T.To_Coord_HO(Lat * DEG_TO_RAD, RefrOptForGoto());
+
+    syncAzAlt(&HO_T, targetPoleSide);
+    
+    Coord_IN IN_T = getInstr();
+    alignment.addReference(HO_T.Az(), HO_T.Alt(), IN_T.Axis1(), IN_T.Axis2());
+    replyShortTrue();
+    break;
+  }
+
   case '2':
   {
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
