@@ -703,6 +703,12 @@ void Command_GX()
       replyLongTrue();
     }
     break;
+    case 'm':
+      // :GXJm# get if mount has motor and can slew track etc...
+    {
+      enableMotor ? replyLongTrue() : replyLongFalse();
+    }
+    break;
     case 'M':
       // :GXJMn# get if axis is still moving
     {

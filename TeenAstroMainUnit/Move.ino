@@ -129,9 +129,7 @@ void CheckEndOfMoveAxisAtRate()
   {
     if (lastSideralTracking)
     {
-      lastSetTrakingEnable = millis();
-      sideralTracking = true;
-      computeTrackingRate(true);
+      StartSideralTracking();
     }
     resetGuideRate();
   }
@@ -233,4 +231,13 @@ void CheckSpiral()
   clk_last = clk_now;
 }
 
-
+void StartSideralTracking()
+{
+  if (!sideralTracking)
+  {
+    sideralTracking = true;
+    computeTrackingRate(true);
+    lastSetTrakingEnable = millis();
+    atHome = false;
+  }
+}

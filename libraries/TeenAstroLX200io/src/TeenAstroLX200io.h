@@ -17,6 +17,7 @@
 enum LX200RETURN
 {
   LX200_NOTOK,
+  LX200_INVALIDCOMMAND, LX200_INVALIDREPLY,
   LX200_SETVALUEFAILED, LX200_GETVALUEFAILED, LX200_SYNCFAILED,
   LX200_SETTARGETFAILED, LX200_TARGETBELOWHORIZON, LX200_TARGETABOVEOVERHEAD,
   LX200_GOHOME_FAILED, LX200_GOPARK_FAILED,
@@ -26,6 +27,11 @@ enum LX200RETURN
   LX200_OK,
   LX200_VALUESET, LX200_VALUEGET, LX200_SYNCED, LX200_GOTO_TARGET, LX200_GOHOME, LX200_GOPARK,
   LX200_PUSHTO_TARGET
+};
+
+enum CMDREPLY
+{
+  CMDR_NO, CMDR_SHORT, CMDR_SHORT_BOOL, CMDR_LONG, CMDR_INVALID
 };
 
 enum ErrorsGoTo
@@ -57,7 +63,7 @@ enum TARGETTYPE
 enum NAV { NAV_SYNC, NAV_GOTO, NAV_PUSHTO };
 
 bool isOk(LX200RETURN val);
-bool readLX200Bytes(char* command, char* recvBuffer, int bufferSize, unsigned long timeOutMs, bool keepHashtag = false);
+bool readLX200Bytes(char* command, CMDREPLY& cmdreply, char* recvBuffer, int bufferSize, unsigned long timeOutMs, bool keepHashtag = false);
 LX200RETURN GetLX200(char* command, char* output, int buffersize);
 LX200RETURN GetLX200Short(char* command, short* value);
 LX200RETURN GetLX200Float(char* command, float* value);

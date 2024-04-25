@@ -7,13 +7,15 @@
  *
  * Setup a test circuit:
  * * Connect a pushbutton to pin 2 (ButtonPin) and ground.
- *   
+ *
  * The sketch shows how to setup the library and bind the functions (singleClick, doubleClick) to the events.
  * In the loop function the button.tick function must be called as often as you like.
  *
  * * 22.01.2021 created by Matthias Hertel
-*/
+ * * 07.02.2023 ESP32 Support added.
+ */
 
+#include "Arduino.h"
 #include "OneButton.h"
 
 // This is an example on how to use the OneClick library on other input sources than standard digital pins.
@@ -26,8 +28,13 @@
 #if defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_NANO_EVERY)
 #define PIN_INPUT 2
 
-#else if defined(ESP8266)
+#elif defined(ESP8266)
 #define PIN_INPUT D3
+
+#elif defined(ESP32)
+// Example pin assignments for a ESP32 board
+// Some boards have a BOOT switch using GPIO 0.
+#define PIN_INPUT 0
 
 #endif
 
@@ -35,36 +42,44 @@
 // OneButton instance will be created in setup.
 OneButton *button;
 
-void fClicked(void *s)
-{
+void fClicked(void *s) {
   Serial.print("Click:");
   Serial.println((char *)s);
 }
 
-void setup()
-{
+static void fDoubleClicked(void *oneButton) {
+  OneButton *button = (OneButton *)oneButton;
+  Serial.print("pin=");
+  Serial.print(button->pin());
+  Serial.print(" state=");
+  Serial.println(button->state());
+}
+
+void setup() {
   Serial.begin(115200);
   Serial.println("One Button Example with custom input.");
 
-// create the OneButton instance without a pin.
+  // create the OneButton instance without a pin.
   button = new OneButton();
 
-  // Here is an example on how to use a parameter to the registered function:
-  button->attachClick(fClicked, "me");
+  // Here is an example on how to use a parameter to the registered functions:
+  button->attachClick(fClicked, (void *)"me");
+  button->attachDoubleClick(fDoubleClicked, &button);
 
   // Here is an example on how to use an inline function:
-  button->attachDoubleClick([]() { Serial.println("DoubleClick"); });
+  button->attachDoubleClick([]() {
+    Serial.println("DoubleClick");
+  });
 
   // setup your own source of input:
   pinMode(PIN_INPUT, INPUT_PULLUP);
 
-} // setup()
+}  // setup()
 
-void loop()
-{
+void loop() {
   // read your own source of input:
   bool isPressed = (digitalRead(PIN_INPUT) == LOW);
 
   // call tick frequently with current push-state of the input
   button->tick(isPressed);
-} // loop()
+}  // loop()

@@ -137,6 +137,7 @@ void Command_M()
         //reply[1] = 0;
       }
     }
+    replyNothing();
     break;
   }
     //  :Me# & :Mw#      Move Telescope East or West at current slew rate
@@ -189,9 +190,7 @@ void Command_M()
     byte i = goToEqu(EQ_T, GetPoleSide(), *localSite.latitude() * DEG_TO_RAD);
     if (i == 0)
     {
-      sideralTracking = true;
-      lastSetTrakingEnable = millis();
-      atHome = false;
+      StartSideralTracking();
     }
     reply[0] = i + '0';
     reply[1] = 0;
@@ -209,9 +208,7 @@ void Command_M()
     byte i = goToEqu(EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
     if (i == 0)
     {
-      sideralTracking = true;
-      lastSetTrakingEnable = millis();
-      atHome = false;
+      StartSideralTracking();
     }
     reply[0] = i + '0';
     reply[1] = 0;

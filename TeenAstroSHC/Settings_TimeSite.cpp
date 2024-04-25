@@ -22,10 +22,12 @@ void SmartHandController::menuTimeAndSite()
       menuSite();
       break;
     case 3:
-      if (ta_MountStatus.isGNSSValid())
-        DisplayMessageLX200(SetLX200(":gs#"), false);
-      else
+      if (!ta_MountStatus.atHome() && !ta_MountStatus.Parked())
+        DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
+      else if (!ta_MountStatus.isGNSSValid())
         DisplayMessage(T_NOGNSS, T_SIGNAL, -1);
+      else
+        DisplayMessageLX200(SetLX200(":gs#"), false);
       break;
     }
   }
@@ -67,30 +69,38 @@ void SmartHandController::menuDateAndTime()
 
 void SmartHandController::menuSite()
 {
-  static uint8_t s_sel = 1;
-  uint8_t tmp_sel = s_sel;
-  while (tmp_sel)
+  ta_MountStatus.updateMount();
+  if (ta_MountStatus.hasInfoMount() && (ta_MountStatus.atHome() || ta_MountStatus.Parked()))
   {
-    const char* string_list_Site = T_LATITUDE "\n" T_LONGITUDE "\n" T_SITEELEVATION "\n" T_SELECTSITE;
-    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, "Menu Site", s_sel, string_list_Site);
-    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
-    switch (tmp_sel)
+    static uint8_t s_sel = 1;
+    uint8_t tmp_sel = s_sel;
+    while (tmp_sel)
     {
-    case 1:
-      menuLatitude();
-      break;
-    case 2:
-      menuLongitude();
-      break;
-    case 3:
-      menuElevation();
-      break;
-    case 4:
-      menuSites();
-      break;
-    default:
-      break;
+      const char* string_list_Site = T_LATITUDE "\n" T_LONGITUDE "\n" T_SITEELEVATION "\n" T_SELECTSITE;
+      tmp_sel = display->UserInterfaceSelectionList(&buttonPad, "Menu Site", s_sel, string_list_Site);
+      s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+      switch (tmp_sel)
+      {
+      case 1:
+        menuLatitude();
+        break;
+      case 2:
+        menuLongitude();
+        break;
+      case 3:
+        menuElevation();
+        break;
+      case 4:
+        menuSites();
+        break;
+      default:
+        break;
+      }
     }
+  }
+  else
+  {
+    DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
   }
 }
 

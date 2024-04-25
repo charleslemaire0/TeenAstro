@@ -192,3 +192,8 @@ UINO.ipch
 /TeenAstroUploader/TeenAstroUploader/builder/log_Foc_TMC2130_230.txt
 /TeenAstroUploader/TeenAstroUploader/builder/log_Foc_TMC2130_240.txt
 /TeenAstroUploader/TeenAstroUploader/builder/log_Foc_TMC5160_240.txt
+/TeenAstroUploader/TeenAstroUploader/builder/MainUnit_Build/TeenAstroMainUnit.ino.lst
+/TeenAstroUploader/TeenAstroUploader/builder/TeenAstroSHC_1.5/
+/TeenAstroASCOM/.vs/
+/TeenAstroUploader/.vs/
+/TeenAstroUploader/TeenAstroUploader/builder/Focuser_Build

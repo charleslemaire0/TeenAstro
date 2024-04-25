@@ -646,7 +646,8 @@ void TeenAstroWifi::update()
       if ((b == '#') || (b == (char)6))
       {
         char readBuffer[50] = "";
-        if (readLX200Bytes(writeBuffer, readBuffer, sizeof(readBuffer), CmdTimeout, true))
+        CMDREPLY cmdreply;
+        if (readLX200Bytes(writeBuffer, cmdreply, readBuffer, sizeof(readBuffer), CmdTimeout, true))
         {
           // return the response, if we have one
           if (strlen(readBuffer) > 0)

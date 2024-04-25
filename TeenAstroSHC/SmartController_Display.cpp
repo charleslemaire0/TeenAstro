@@ -8,6 +8,12 @@
 #define teenastro_width 128
 #define teenastro_height 68
 
+
+static unsigned char shift_bits[] U8X8_PROGMEM = {
+   0x00, 0x00, 0x00, 0x00, 0x80, 0x01, 0x40, 0x02, 0x20, 0x04, 0x10, 0x08,
+   0x08, 0x10, 0x04, 0x20, 0x1c, 0x38, 0x10, 0x08, 0x10, 0x08, 0x10, 0x08,
+   0x10, 0x08, 0x10, 0x08, 0xf0, 0x0f, 0x00, 0x00 };
+
 static unsigned char wifi_bits[] U8X8_PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x80, 0x20, 0x40, 0x4e, 0x00, 0x11,
     0x00, 0x04, 0x00, 0x04, 0x00, 0x04, 0xfe, 0x7f, 0x02, 0x40, 0xda, 0x5f,
@@ -392,12 +398,12 @@ void SmartHandController::updateMainDisplay(PAGES page)
 
   do
   {
-    u8g2_uint_t x = u8g2_GetDisplayWidth(u8g2);
+    u8g2_uint_t xr = u8g2_GetDisplayWidth(u8g2);
     u8g2_uint_t xl = 0;
     int k = 0;
     if (buttonPad.isWifiOn())
     {
-      buttonPad.isWifiRunning() ? display->drawXBMP(0, 0, icon_width, icon_height, wifi_bits) : display->drawXBMP(0, 0, icon_width, icon_height, wifi_not_connected_bits);
+      buttonPad.isWifiRunning() ? display->drawXBMP(xl, 0, icon_width, icon_height, wifi_bits) : display->drawXBMP(0, 0, icon_width, icon_height, wifi_not_connected_bits);
       xl += icon_width + 1;
     }
     if (ta_MountStatus.hasInfoMount())
@@ -451,22 +457,23 @@ void SmartHandController::updateMainDisplay(PAGES page)
         default:
           break;
         }
+        xl += icon_width + 1;
       }
 
       if (curP == TeenAstroMountStatus::PRK_PARKED)
       {
-        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, parked_bits);
-        x -= icon_width + 1;
+        display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, parked_bits);
+        xr -= icon_width + 1;
       }
       else if (curP == TeenAstroMountStatus::PRK_PARKING)
       {
-        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, parking_bits);
-        x -= icon_width + 1;
+        display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, parking_bits);
+        xr -= icon_width + 1;
       }
       else if (ta_MountStatus.atHome())
       {
-        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, home_bits);
-        x -= icon_width + 1;
+        display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, home_bits);
+        xr -= icon_width + 1;
       }
       else
       {
@@ -474,28 +481,28 @@ void SmartHandController::updateMainDisplay(PAGES page)
         {
           if (curT == TeenAstroMountStatus::TRK_SLEWING)
           {
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, sleewing_bits);
-            x -= icon_width + 1;
+            display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, sleewing_bits);
+            xr -= icon_width + 1;
           }
           else if (curT == TeenAstroMountStatus::TRK_ON)
           {
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_bits);
+            display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, tracking_bits);
             display->setBitmapMode(1);
             switch (currSM)
             {
             case TeenAstroMountStatus::SID_UNKNOWN:
               break;
             case TeenAstroMountStatus::SID_STAR:
-              display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_star_bits);
+              display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, tracking_star_bits);
               break;
             case TeenAstroMountStatus::SID_SUN:
-              display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_sun_bits);
+              display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, tracking_sun_bits);
               break;
             case TeenAstroMountStatus::SID_MOON:
-              display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_moon_bits);
+              display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, tracking_moon_bits);
               break;
             case TeenAstroMountStatus::SID_TARGET:
-              display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_target_bits);
+              display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, tracking_target_bits);
               break;
             default:
               break;
@@ -503,10 +510,10 @@ void SmartHandController::updateMainDisplay(PAGES page)
             switch (curC)
             {
             case TeenAstroMountStatus::RC_RA:
-              display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_1_bits);
+              display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, tracking_1_bits);
               break;
             case TeenAstroMountStatus::RC_BOTH:
-              display->drawXBMP(x - icon_width, 0, icon_width, icon_height, tracking_2_bits);
+              display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, tracking_2_bits);
               break;
             default:
               break;
@@ -514,116 +521,122 @@ void SmartHandController::updateMainDisplay(PAGES page)
 
             display->setBitmapMode(0);
 
-            x -= icon_width + 1;
+            xr -= icon_width + 1;
           }
           else if (curT == TeenAstroMountStatus::TRK_OFF)
           {
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, no_tracking_bits);
-            x -= icon_width + 1;
+            display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, no_tracking_bits);
+            xr -= icon_width + 1;
           }
         }
         if (curP == TeenAstroMountStatus::PRK_FAILED)
         {
-          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, parkingFailed_bits);
-          x -= icon_width + 1;
+          display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, parkingFailed_bits);
+          xr -= icon_width + 1;
         }
 
         if (curPi == TeenAstroMountStatus::PIER_E)
         {
-          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, E_bits);
-          x -= icon_width + 1;
+          display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, E_bits);
+          xr -= icon_width + 1;
         }
         else if (curPi == TeenAstroMountStatus::PIER_W)
         {
-          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, W_bits);
-          x -= icon_width + 1;
+          display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, W_bits);
+          xr -= icon_width + 1;
         }
 
         if (ta_MountStatus.isAligning())
         {
           if (ta_MountStatus.getAlignMode() == TeenAstroMountStatus::ALIM_ONE)
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, align1_bits);
+            display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, align1_bits);
           else if (ta_MountStatus.getAlignMode() == TeenAstroMountStatus::ALIM_TWO)
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, align2_bits);
+            display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, align2_bits);
           else if (ta_MountStatus.getAlignMode() == TeenAstroMountStatus::ALIM_THREE)
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, align3_bits);
-          x -= icon_width + 1;
+            display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, align3_bits);
+          xr -= icon_width + 1;
         }
         else if (ta_MountStatus.isSpiralRunning())
         {
-          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Spiral_bits);
-          x -= icon_width + 1;
+          display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, Spiral_bits);
+          xr -= icon_width + 1;
         }
         else if (ta_MountStatus.isPulseGuiding())
         {
-          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, guiding__bits);
+          display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, guiding__bits);
           display->setBitmapMode(1);
           if (ta_MountStatus.isGuidingN())
           {
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, guiding_N_bits);
+            display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, guiding_N_bits);
           }
           else if (ta_MountStatus.isGuidingS())
           {
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, guiding_S_bits);
+            display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, guiding_S_bits);
           }
           if (ta_MountStatus.isGuidingE())
           {
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, guiding_E_bits);
+            display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, guiding_E_bits);
           }
           else if (ta_MountStatus.isGuidingW())
           {
-            display->drawXBMP(x - icon_width, 0, icon_width, icon_height, guiding_W_bits);
+            display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, guiding_W_bits);
           }
           display->setBitmapMode(0);
-          x -= icon_width + 1;
+          xr -= icon_width + 1;
         }
         else if (ta_MountStatus.isAligned())
         {
-          display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Aligned_bits);
-          x -= icon_width + 1;
+          display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, Aligned_bits);
+          xr -= icon_width + 1;
         }
       }
       switch (ta_MountStatus.getError())
       {
       case TeenAstroMountStatus::ERR_MOTOR_FAULT:
-        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrMf_bits);
-        x -= icon_width + 1;
+        display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, ErrMf_bits);
+        xr -= icon_width + 1;
         break;
       case TeenAstroMountStatus::ERR_ALT:
-        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrHo_bits);
-        x -= icon_width + 1;
+        display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, ErrHo_bits);
+        xr -= icon_width + 1;
         break;
       case TeenAstroMountStatus::ERR_LIMIT_A1:
-        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrA1_bits);
-        x -= icon_width + 1;
+        display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, ErrA1_bits);
+        xr -= icon_width + 1;
         break;
       case TeenAstroMountStatus::ERR_LIMIT_A2:
-        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrA2_bits);
-        x -= icon_width + 1;
+        display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, ErrA2_bits);
+        xr -= icon_width + 1;
         break;
       case TeenAstroMountStatus::ERR_UNDER_POLE:
-        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrUp_bits);
-        x -= icon_width + 1;
+        display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, ErrUp_bits);
+        xr -= icon_width + 1;
         break;
       case TeenAstroMountStatus::ERR_MERIDIAN:
-        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, ErrMe_bits);
-        x -= icon_width + 1;
+        display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, ErrMe_bits);
+        xr -= icon_width + 1;
         break;
       default:
         break;
       }
     }
+    if (buttonPad.shiftPressed())
+    {
+      display->drawXBMP(xl, 0, icon_width, icon_height, shift_bits);
+      xl += icon_width + 1;
+    }
     if (focuserlocked || telescoplocked)
     {
-      display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Lock___bits);
+      display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, Lock___bits);
       display->setBitmapMode(1);
       if (focuserlocked)
-        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Lock_F_bits);
+        display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, Lock_F_bits);
       if (telescoplocked)
-        display->drawXBMP(x - icon_width, 0, icon_width, icon_height, Lock_T_bits);
+        display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, Lock_T_bits);
       display->setBitmapMode(0);
-      x -= icon_width + 1;
+      xr -= icon_width + 1;
     }
+    double x=0;
     if (page == P_RADEC)
     {
       if (ta_MountStatus.hasInfoRa() && ta_MountStatus.hasInfoDec())

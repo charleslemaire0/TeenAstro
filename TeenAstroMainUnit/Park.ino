@@ -262,7 +262,7 @@ void unpark()
   // start tracking the sky
   if (enableMotor)
   {
-    sideralTracking = true;
+    StartSideralTracking();
   }
   return;
 }

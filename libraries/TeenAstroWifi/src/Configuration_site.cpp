@@ -55,6 +55,8 @@ const char html_BrowserTimeScript1[] PROGMEM =
 "else if ( value == 2 ){ document.getElementById('GNSSS').value = 1;}\n"
 "}\r\n"
 "</script>\r\n";
+const char html_siteInfo[] PROGMEM =
+"<div class='bt' align='left'> Site definition can be modified only at Home or at Park position!<br/><br/> </div>";
 
 const char html_siteQuick0[] PROGMEM =
 "<div class='b1' style='width: 35em'>\n"
@@ -113,8 +115,9 @@ const char html_configLongMin[] PROGMEM =
 " <input value='%d' type='number' name='site_g2' min='0' max='59'>&nbsp;'&nbsp;&nbsp;";
 const char html_configLongSec[] PROGMEM =
 " <input value='%d' type='number' name='site_g3' min='0' max='59'>&nbsp;\"&nbsp;&nbsp;";
-const char html_uploadLong[] PROGMEM =
-"<button type='submit'>Upload</button>"
+const char html_uploadLong1[] PROGMEM =
+"<button type='submit'>Upload</button>";
+const char html_uploadLong2[] PROGMEM =
 " (Longitude, in degree and minute)"
 "</form>"
 "\r\n";
@@ -129,8 +132,9 @@ const char html_configLatMin[] PROGMEM =
 " <input value='%d' type='number' name='site_t2' min='0' max='59'>&nbsp;'&nbsp;&nbsp;";
 const char html_configLatSec[] PROGMEM =
 " <input value='%d' type='number' name='site_t3' min='0' max='59'>&nbsp;\"&nbsp;&nbsp;";
-const char html_uploadLat[] PROGMEM =
-"<button type='submit'>Upload</button>"
+const char html_uploadLat1[] PROGMEM =
+"<button type='submit'>Upload</button>";
+const char html_uploadLat2[] PROGMEM =
 " (Latitude, in degree and minute)"
 "</form>"
 "\r\n";
@@ -139,7 +143,8 @@ const char html_configElev1[] PROGMEM =
 const char html_configElev2[] PROGMEM =
 " <input value='%s' type='number' name='site_e' min='-200' max='8000'>";
 const char html_configElev3[] PROGMEM =
-"<button type='submit'>Upload</button>"
+"<button type='submit'>Upload</button>";
+const char html_configElev4[] PROGMEM =
 " (Elevation, in meter min -200m max 8000m)"
 "</form>"
 "<br />\r\n";
@@ -158,17 +163,22 @@ void TeenAstroWifi::handleConfigurationSite()
   sendHtml(data);
   data += FPSTR(html_BrowserTimeScript1);
   sendHtml(data);
+  data += FPSTR(html_siteInfo);
+  sendHtml(data);
   data += FPSTR(html_siteQuick0);
   sendHtml(data);
   data += FPSTR(html_siteQuick1);
   sendHtml(data);
-  if (ta_MountStatus.hasGNSSBoard() && (ta_MountStatus.atHome() || ta_MountStatus.getParkState() == TeenAstroMountStatus::PRK_PARKED))
+ 
+  bool allowchange = (ta_MountStatus.atHome() || ta_MountStatus.getParkState() == TeenAstroMountStatus::PRK_PARKED);
+  if (ta_MountStatus.hasGNSSBoard() && allowchange)
   {
     data += FPSTR(html_siteGNSS);
     sendHtml(data);
   }
   data += FPSTR(html_siteQuick1a);
   sendHtml(data);
+
   if (GetLX200(":W?#", temp1, sizeof(temp1)) == LX200_VALUEGET)
   {
     int selectedsite = 0;
@@ -178,20 +188,22 @@ void TeenAstroWifi::handleConfigurationSite()
       GetLX200(":GM#", m, sizeof(m));
       GetLX200(":GN#", n, sizeof(n));
       GetLX200(":GO#", o, sizeof(o));
-      data += FPSTR(html_configSiteSelect1);
-      sendHtml(data);
-      selectedsite == 0 ? data += "<option selected value='0'>" : data += "<option value='0'>";
-      sprintf(temp, "%s</option>", m);
-      data += temp;
-      selectedsite == 1 ? data += "<option selected value='1'>" : data += "<option value='1'>";
-      sprintf(temp, "%s</option>", n);
-      data += temp;
-      selectedsite == 2 ? data += "<option selected value='2'>" : data += "<option value='2'>";
-      sprintf(temp, "%s</option>", o);
-      data += temp;
-      data += FPSTR(html_configSiteSelect2);
-      sendHtml(data);
-
+      if (allowchange)
+      {
+        data += FPSTR(html_configSiteSelect1);
+        sendHtml(data);
+        selectedsite == 0 ? data += "<option selected value='0'>" : data += "<option value='0'>";
+        sprintf(temp, "%s</option>", m);
+        data += temp;
+        selectedsite == 1 ? data += "<option selected value='1'>" : data += "<option value='1'>";
+        sprintf(temp, "%s</option>", n);
+        data += temp;
+        selectedsite == 2 ? data += "<option selected value='2'>" : data += "<option value='2'>";
+        sprintf(temp, "%s</option>", o);
+        data += temp;
+        data += FPSTR(html_configSiteSelect2);
+        sendHtml(data);
+      }
       // Name
       if (GetLX200(":Gn#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "error!");
       data += FPSTR(html_configSiteName1);
@@ -226,7 +238,11 @@ void TeenAstroWifi::handleConfigurationSite()
       tmp = (int)strtol(&temp1[7], NULL, 10);
       sprintf_P(temp, html_configLatSec, tmp);
       data += temp;
-      data += FPSTR(html_uploadLat);
+      if (allowchange)
+      {
+        data += FPSTR(html_uploadLat1);
+      }
+      data += FPSTR(html_uploadLat2);
       sendHtml(data);
       // Longitude
       if (GetLX200(":Ggf#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "+000*00*00");
@@ -247,7 +263,11 @@ void TeenAstroWifi::handleConfigurationSite()
       tmp = (int)strtol(&temp1[8], NULL, 10);
       sprintf_P(temp, html_configLongSec, tmp);
       data += temp;
-      data += FPSTR(html_uploadLong);
+      if (allowchange)
+      {
+        data += FPSTR(html_uploadLong1);
+      }
+      data += FPSTR(html_uploadLong2);
       sendHtml(data);
       // Elevation
       if (GetLX200(":Ge#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "+000");
@@ -255,7 +275,11 @@ void TeenAstroWifi::handleConfigurationSite()
       data += FPSTR(html_configElev1);
       sprintf_P(temp, html_configElev2, temp1);
       data += temp;
-      data += FPSTR(html_configElev3);
+      if (allowchange)
+      {
+        data += FPSTR(html_configElev3);
+      }
+      data += FPSTR(html_configElev4);
       sendHtml(data);
 
     }
