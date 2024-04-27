@@ -39,6 +39,7 @@ class slewPlotPolar():
 
     def connect(self, ta):
         self.ta = ta
+        self.subName = self.ta.getSubName()
 
     def clear(self):
         self.az = []
@@ -175,16 +176,16 @@ class slewPlot():
             self.slewHome()
 
         if (ev == 'slewNorth'):
-            self.slewDir(0, 45)
+            self.slewDir(0, 0)
 
         if (ev == 'slewWest'):
-            self.slewDir(270, 45)
+            self.slewDir(270, 0)
 
         if (ev == 'slewEast'):
-            self.slewDir(90, 45)
+            self.slewDir(90, 0)
 
         if (ev == 'slewSouth'):
-            self.slewDir(180, 45)
+            self.slewDir(180, 0)
 
         if (ev == 'slewZenith'):
             self.slewDir(180, 90)

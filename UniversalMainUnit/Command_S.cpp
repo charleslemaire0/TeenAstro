@@ -321,6 +321,13 @@ void Command_SX()
     // :SXMnn# Mount Settings
     switch (command[3])
     {   
+    case 'E':
+      // :SXME,y#  enable motors
+    {
+      replyShortFalse();
+    }
+    break;
+
     case 'B':
     {
       // :SXMBn,VVVV# Set Backlash
@@ -604,6 +611,7 @@ void Command_SX()
       }
       break;
     }
+    break;
   case 'K':
     {
       // :SXK,VVVV# External Clock frequency for TMC5160

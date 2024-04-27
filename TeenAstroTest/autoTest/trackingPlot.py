@@ -17,12 +17,25 @@ def sign(val):
     return res
 
 
-def eqAxesToEqu(axis1, axis2, latitude, lst):
-    hemisphere = sign(latitude)
-    flipSign = sign(axis2)
-    ha  = hemisphere * (axis1 + flipSign * 90) / 15;
-    ra = lst - ha       # in hours
-    dec = hemisphere * (90 - (flipSign * axis2));    
+def eqAxesToEqu(subName, pierSide, axis1, axis2, latitude, lst):
+  # different methods for UniversalMainUnit and standard version
+    if (subName == 'UniversalMainUnit'):
+      hemisphere = sign(latitude)
+      flipSign = sign(axis2)
+      ha  = hemisphere * (axis1 + flipSign * 90) / 15;
+      ra = lst - ha       # in hours
+      dec = hemisphere * (90 - (flipSign * axis2));    
+    else:
+      # not sure about the hemisphere - check later
+      hemisphere = sign(latitude)
+      if (pierSide) == 'E': 
+        ha = (axis1 + 90) / 15
+        dec = axis2 
+      else:
+        ha = (axis1 - 90) / 15
+        dec = 180 - axis2 
+      ra = lst - ha       # in hours
+
     return (ha, ra, dec)
 
 
@@ -136,6 +149,7 @@ class trackingPlot():
         self.lon = -self.ta.getLongitude()       # LX200 treats west longitudes as positive, Skyfield as negative
         self.site = self.planets['earth'] + wgs84.latlon(self.lat, self.lon)
         self.mountType = self.ta.readMountType()
+        self.subName = self.ta.getSubName()
         self.reset()
 
     def run(self):
@@ -158,7 +172,7 @@ class trackingPlot():
 
         if (self.mountType in ['E','K']):
             pierSide = self.ta.getPierSide()
-            ha, ra, dec = eqAxesToEqu(axis1, axis2, self.lat, lst)
+            ha, ra, dec = eqAxesToEqu(self.subName, pierSide, axis1, axis2, self.lat, lst)
         elif (self.mountType in ['A','k']):     
             az, alt = altazAxesToAltAz(axis1, axis2, self.lat)
             direction = self.site.at(t).from_altaz(az_degrees=az, alt_degrees=alt)
@@ -202,7 +216,7 @@ class trackingPlot():
             pierSide = self.ta.getPierSide()
             axis1 = self.ta.getAxis1()
             axis2 = self.ta.getAxis2()
-            ha, ra, dec = eqAxesToEqu(axis1, axis2, self.lat, lst)
+            ha, ra, dec = eqAxesToEqu(self.subName, pierSide, axis1, axis2, self.lat, lst)
             self.initialRA = 15 * ra  # convert to degrees
             self.initialDec = dec
         elif (self.mountType in ['A','k']):     

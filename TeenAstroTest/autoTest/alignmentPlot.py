@@ -51,6 +51,7 @@ class alignmentPlot():
     self.lat = self.ta.getLatitude()
     self.lon = -self.ta.getLongitude()       # LX200 treats west longitudes as positive, Skyfield as negative
     self.site = self.planets['earth'] + wgs84.latlon(self.lat, self.lon)
+    self.subName = self.ta.getSubName()
     self.start()
 
   def handleEvent(self, ev, v, w):
@@ -175,7 +176,7 @@ class alignmentPlot():
       pierSide = self.ta.getPierSide()
       axis1 = self.ta.getAxis1()
       axis2 = self.ta.getAxis2()   
-      ha, ra, dec = eqAxesToEqu(axis1, axis2, self.lat, lst)
+      ha, ra, dec = eqAxesToEqu(self.subName, pierSide, axis1, axis2, self.lat, lst)
       return (ra, dec, lst, ha) 
     else:                                   # AltAz mount
       axis1 = self.ta.getAxis1()

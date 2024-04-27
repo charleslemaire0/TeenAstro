@@ -4,6 +4,29 @@
 // :GXnn#  Get TeenAstro value
 //         Returns: value
 //         All these commands are not part of the LX200 Standard.
+void PrintAltitude(double val)
+{
+  doubleToDms(reply, &val, false, true, highPrecision);
+  strcat(reply, "#");
+}
+void PrintAzimuth(double val)
+{
+  val = AzRange(val);
+
+  doubleToDms(reply, &val, true, false, highPrecision);
+  strcat(reply, "#");
+}
+void PrintDec(double val)
+{
+  doubleToDms(reply, &val, false, true, highPrecision);
+  strcat(reply, "#");
+}
+void PrintRa(double val)
+{
+  doubleToHms(reply, &val, highPrecision);
+  strcat(reply, "#");
+}
+
 void Command_GX()
 {
   int i;
@@ -505,7 +528,14 @@ void Command_GX()
     }
     reply[14] = 'A' + val;      // GNSS
     reply[15] = '0' + lastError();
-    reply[16] = 'A';      // no encoder
+
+    val = 0;
+    bitWrite(val, 0, 0);    // no encoders
+    bitWrite(val, 1, 0);    // not calibrating
+    bitWrite(val, 2, 0);    // no pushto
+    bitWrite(val, 3, 1);    // motors enabled
+
+    reply[16] = 'A' + val;  
     reply[17] = '#';
     reply[18] = 0;
     i = 17;
@@ -802,7 +832,7 @@ void Command_GX()
 //   G - Get Telescope Information
 void  Command_G()
 {
-  double f, f1;
+  double f;
   HorCoords horCoords;
   int i;
 
@@ -849,42 +879,42 @@ void  Command_G()
     break;
   case 'D':
   case 'R':
+  case '(':
     //  :GD#   Get Telescope Declination, Native LX200 command
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //  :GR#   Get Telescope RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
+    //  :GDL#   Get Telescope Declination, TeenAstro LX200 command
+    //         Returns: sDD,VVVVV#
+    //  :GRL#   Get Telescope RA, TeenAstro LX200 command
+    //         Returns: DDD,VVVVV#
   {
-    static unsigned long _coord_t = 0;
     static double _dec = 0;
     static double _ra = 0;
 
-    // avoid calling getEqu too often by checking time of last call
-    if (millis() - _coord_t < 100)
+    mount.mP->getEqu(&_ra, &_dec, localSite.cosLat(), localSite.sinLat(), false);
+
+    if (command[1] == 'R')
     {
-      f = _ra;
-      f1 = _dec;
-    }
-    else
-    {
-      mount.mP->getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
-      f /= 15.0;
-      _ra = f;
-      _dec = f1;
-      _coord_t = millis();
-    }
-    if (command[1] == 'D')
-    {
-      if (!doubleToDms(reply, &f1, false, true, highPrecision))
-        replyLongUnknown();
+      if (command[2] == 'L')
+      {
+         sprintf(reply, "%08.5f#", _ra);
+      }
       else
-        strcat(reply, "#");
+      {
+        PrintRa(_ra / 15.0);
+      }
     }
-    else
+    else if (command[1] == 'D')
     {
-      if (!doubleToHms(reply, &f, highPrecision))
-        replyLongUnknown();
+      if (command[2] == 'L')
+      {
+         sprintf(reply, "%08.5f#", _dec);
+      }
       else
-        strcat(reply, "#");
+      {
+        PrintDec(_dec);
+      }
     }
     break;
   }
@@ -1087,7 +1117,11 @@ void  Command_G()
       sprintf(reply, "%s", HAL_getBoardVersion());
       break;
     case 'b':
-      //  :GVb#   Get Firmware Stepper driver board, extended LX200 command
+      //  :GVb#   re-implemented for compatibility with SHC that expects a "3" for 5160
+      sprintf(reply, "%d", 3);
+      break;
+    case 'x':
+      //  :GVx#   Get Firmware Stepper driver board, extended LX200 command
       sprintf(reply, "%s/%s", Axis1DriverName, Axis2DriverName);
       break;
     default:

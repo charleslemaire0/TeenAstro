@@ -22,13 +22,27 @@ void Command_M()
       byte dir; 
       if (command[1] == '1')
       {
-        dir = (speed >= 0) ? 'w' : 'e'; 
-        MoveAxis1AtRate(fabs(speed), dir);
+        if (speed == 0)
+        {
+          StopAxis1();
+        }
+        else
+        {
+          dir = (speed > 0) ? 'w' : 'e'; 
+          MoveAxis1AtRate(fabs(speed), dir);
+        }
       }
       else
       {
-        dir = (speed >= 0) ? 'n' : 's'; 
-        MoveAxis2AtRate(fabs(speed), dir);
+        if (speed == 0)
+        {
+          StopAxis2();
+        }
+        else
+        {
+          dir = (speed >= 0) ? 'n' : 's'; 
+          MoveAxis2AtRate(fabs(speed), dir);
+        }
       }
       replyShortTrue();
     }

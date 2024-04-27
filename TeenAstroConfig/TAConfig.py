@@ -290,7 +290,7 @@ def readVersions():
   window['mainUnitVersion'].update(getValue(comm, 'GVN')) 
   window['boardVersion'].update(getValue(comm, 'GVB')) 
   window['firmwareName'].update(getValue(comm, 'GVP') + '/' + getValue(comm, 'GVp')) 
-  window['driverVersion'].update(getValue(comm, 'GVb')) 
+  window['driverVersion'].update(getValue(comm, 'GVx')) # GVb is reserved for compatibility with SHC version 1.5 and above
     
 def clearVersions():
   window['mainUnitVersion'].update('') 

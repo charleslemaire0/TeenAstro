@@ -420,6 +420,9 @@ class TeenAstro(object):
   def getName(self):
     return self.getValue(':GVP#')
 
+  def getSubName(self):
+    return self.getValue(':GVp#')
+
   def log(self, msg):
     ts = datetime.datetime.now().timestamp()    
     print(ts, msg)

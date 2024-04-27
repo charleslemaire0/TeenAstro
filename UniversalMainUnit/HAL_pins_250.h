@@ -10,7 +10,7 @@
 #define Axis2EnablePin  5
 
 // ST4 interface
-//#define HASST4          1 
+#define HASST4          1 
 #define ST4RAe          16
 #define ST4DEs          17
 #define ST4DEn          18
