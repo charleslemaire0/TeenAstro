@@ -129,7 +129,10 @@ void Command_T()
     switch (command[2])
     {
     case 'A':
-    {  
+    { 
+      //Taki's observation for more explanation take a look to
+      // ..\libraries\TeenAstroCoordConv\matrix_method_rev_e.pdf
+      // pages 37 to 41
       double k = 1.002737908;
       double t_0 = 5.497787;
       // alpha And
@@ -264,8 +267,6 @@ void Command_T()
       default:
         replyNothing();
       }
-
-   
     }
     break;
     default:
