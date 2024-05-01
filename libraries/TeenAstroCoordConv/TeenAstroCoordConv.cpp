@@ -56,7 +56,7 @@ void CoordConv::addReference(double angle1, double angle2, double axis1, double 
     return;
 
 #ifdef DEBUG_COUT
-  cout << "adding ref star: angle1 " << angle1 << "r angle2 " << angle2 << "r axis1 " << axis1 << "r axis2 " << axis2 << "r" << endl;
+  //cout << "adding ref star: angle1 " << angle1 << "r angle2 " << angle2 << "r axis1 " << axis1 << "r axis2 " << axis2 << "r" << endl;
 #endif
 
   toDirCos(dcHDRef[refs], angle2, angle1);
@@ -86,7 +86,7 @@ bool CoordConv::calculateThirdReference() {
   }
 
 #ifdef DEBUG_COUT
-  cout << "adding artificial 3rd ref star" << endl;
+  //cout << "adding artificial 3rd ref star" << endl;
 #endif
   crossProduct(dcHDRef[2], dcHDRef[0], dcHDRef[1]);
   normalize(dcHDRef[2], dcHDRef[2]);
@@ -120,6 +120,26 @@ void CoordConv::buildTransformations() {
   printV("T", T);
   invert(Tinv, T);
   printV("Tinv", Tinv);
+  multiply(test, T, Tinv);
+  printV("test", test);
+  getsvd(Tinv, u, v);
+  printV("u", u);
+  printV("v", v);
+  double du = determinant(u);
+  double dv = determinant(v);
+
+  double tmp[3][3];
+  double vt[3][3];
+  double diag[3][3];
+  transpose(vt, v);
+  getIdentityMatrix(diag);
+
+  diag[2][2] = du * dv;
+  printV("diag", diag);
+  multiply(tmp, diag, vt);
+  multiply(Tinv, u, tmp);
+  printV("Tinv", Tinv);
+  transpose(T, Tinv);
   multiply(test, T, Tinv);
   printV("test", test);
 }

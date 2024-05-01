@@ -68,6 +68,7 @@ bool SyncInstr(Coord_IN* instr, PoleSide Side)
   long axis1, axis2 = 0;
   Angle2Step(instr->Axis1() * RAD_TO_DEG, instr->Axis2() * RAD_TO_DEG, Side, &axis1, &axis2);
   syncAxis(&axis1, &axis2);
+  syncEwithT();
   atHome = false;
   return true;
 }

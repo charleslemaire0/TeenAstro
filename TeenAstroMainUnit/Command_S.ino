@@ -1275,7 +1275,6 @@ void Command_S(Command& process_command)
     //                  1 on success
   {
     bool ok = dmsToDouble(&newTargetAzm, &command[2], false, highPrecision);
-    newTargetAzm = degRange(newTargetAzm + 180.);
     replyValueSetShort(ok);
   }
   break;

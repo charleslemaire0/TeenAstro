@@ -52,6 +52,7 @@ public:
 	double Axis3();
 	double Axis2();
 	double Axis1();
+	double Axis1_direct();
 };
 
 

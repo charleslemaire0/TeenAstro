@@ -9,12 +9,16 @@
 // Cosine direction vectors
 
 #include "TeenAstroLA3.hpp"
-
-using namespace std;
+#include <svd3.h>
+#include "arduino.h"
 
 // LA3 methods
 //
 
+static double LA3::modRad(double angle)
+{
+	return remainder(angle, 2 * M_PI);
+}
 // Multiply two 3-vectors
 void LA3::crossProduct(double (&out)[3], const double (&a)[3], const double (&b)[3]) {
 	out[0]=a[1]*b[2] - a[2]*b[1];
@@ -345,14 +349,55 @@ void LA3::Apparent2Topocentric(double& Alt, RefrOpt Opt)
 
 void LA3::printV(const char *label, const double (&v)[3]) {
 #ifdef DEBUG_COUT
-	cout << label << " =[ " << v[0] << "\t" << v[1] << "\t" << v[2] << " ]" << endl;   
+	char txt[256];
+		sprintf(txt, "%s [%f, %f, %f]", label, v[0], v[1], v[2]);
+	Serial.println(txt);
 #endif
 }
 
 void LA3::printV(const char *label, const double (&m)[3][3]) {
 #ifdef DEBUG_COUT
-	cout << label << "\t=[ " << m[0][0] << "\t" << m[0][1] << "\t" << m[0][2] << " ]" << endl   
-	              << "\t [ " << m[1][0] << "\t" << m[1][1] << "\t" << m[1][2] << " ]" << endl 
-	              << "\t [ " << m[2][0] << "\t" << m[2][1] << "\t" << m[2][2] << " ]" << endl << endl; 
+	char txt[256];
+  sprintf(txt, "%s \t [%f, %f, %f]", label, m[0][0], m[0][1], m[0][2]);
+	Serial.println(txt);
+	sprintf(txt, "\t [%f, %f, %f]", m[1][0], m[1][1], m[1][2]);
+	Serial.println(txt);
+	sprintf(txt, "\t [%f, %f, %f]", m[2][0], m[2][1], m[2][2]);
+	Serial.println(txt);
 #endif
+}
+
+void LA3::getsvd(const double(&m)[3][3], double(&u)[3][3], double(&v)[3][3] )
+{
+	float a11, a12, a13, a21, a22, a23, a31, a32, a33;
+
+	a11 = m[0][0]; a12 = m[0][1]; a13 = m[0][2];
+	a21 = m[1][0]; a22 = m[1][1]; a23 = m[1][2];
+	a31 = m[2][0]; a32 = m[2][1]; a33 = m[2][2];;
+
+	float   u11, u12, u13,
+		u21, u22, u23,
+		u31, u32, u33;
+
+	float   s11, s12, s13,
+		s21, s22, s23,
+		s31, s32, s33;
+
+	float   v11, v12, v13,
+		v21, v22, v23,
+		v31, v32, v33;
+
+	svd(a11, a12, a13, a21, a22, a23, a31, a32, a33,
+		u11, u12, u13, u21, u22, u23, u31, u32, u33,
+		s11, s12, s13, s21, s22, s23, s31, s32, s33,
+		v11, v12, v13, v21, v22, v23, v31, v32, v33);
+
+	u[0][0] = u11; u[0][1] = u12; u[0][2] = u13;
+	u[1][0] = u21; u[1][1] = u22; u[1][2] = u23;
+	u[2][0] = u31; u[2][1] = u32; u[2][2] = u33;
+
+	v[0][0] = v11; v[0][1] = v12; v[0][2] = v13;
+	v[1][0] = v21; v[1][1] = v22; v[1][2] = v23;
+	v[2][0] = v31; v[2][1] = v32; v[2][2] = v33;
+
 }

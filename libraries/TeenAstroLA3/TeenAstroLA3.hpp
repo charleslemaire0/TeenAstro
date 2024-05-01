@@ -51,7 +51,7 @@ public:
 		double Temperature;
 		double Pressure;
 	};
-
+	static double modRad(double angle);
 	// dot product two 3-vectors
 	static double dotProduct(const double(&a)[3], const double(&b)[3]);
 
@@ -133,6 +133,7 @@ public:
 
 	// Print a 3x3 matrix to cout, with given label
 	static void printV(const char *label, const double (&m)[3][3]);
+	static void getsvd(const double(&m)[3][3], double(&u)[3][3], double(&v)[3][3]);
 };
 
 #endif // __TeenAstroLA3_hpp__

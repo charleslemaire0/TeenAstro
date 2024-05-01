@@ -50,14 +50,17 @@ public:
 
 	double T[3][3];		    // Transformation matrix from Horizontal to  intrument axis
 	double Tinv[3][3];		// Inverse of the above 
-
+	double u[3][3];
+	double v[3][3];
 	CoordConv() { reset(); isready = false;}
 
   // resets reference stars
   void reset() { refs = 0; }
 
   // clean
-  void clean() { setT(0, 0, 0, 0, 0, 0, 0, 0, 0); isready = false; }
+	void clean() {
+		setT(0, 0, 0, 0, 0, 0, 0, 0, 0); isready = false; anglediff = 0;
+	}
 	
 	// returns true if all required reference stars are set (need three)
 	bool isReady() const { return isready; }
