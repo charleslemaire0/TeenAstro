@@ -219,16 +219,16 @@ rem    Process Now
 rem
 if /i [!hwvers!] == [220]  ( 
   set BOARD="teensy:avr:teensy31:usb=serial,speed=96,opt=o2std,keys=en-us"
-  set OPTION=--build-property compiler.cpp.extra_flags=-D__MK20DX256__ -DTEENSYDUINO=157 -DVERSION=!hwvers! -DAxisDriver=!AxisDriver!
+  set OPTION=--build-property compiler.cpp.extra_flags=-D__MK20DX256__,-DTEENSYDUINO=157,-DVERSION=!hwvers!,-DAxisDriver=!AxisDriver!
 ) else if /i [!hwvers!] == [230]  ( 
   set BOARD="teensy:avr:teensy31:usb=serial,speed=96,opt=o2std,keys=en-us"
-  set OPTION=--build-property compiler.cpp.extra_flags=-D__MK20DX256__ -DTEENSYDUINO=157 -DVERSION=!hwvers! -DAxisDriver=!AxisDriver!
+  set OPTION=--build-property compiler.cpp.extra_flags=-D__MK20DX256__,-DTEENSYDUINO=157,-DVERSION=!hwvers!,-DAxisDriver=!AxisDriver!
 ) else if /i [!hwvers!] == [240]  ( 
   set BOARD="teensy:avr:teensy31:usb=serial,speed=96,opt=o2std,keys=en-us"
-  set OPTION=--build-property compiler.cpp.extra_flags=-D__MK20DX256__ -DTEENSYDUINO=157 -DVERSION=!hwvers! -DAxisDriver=!AxisDriver!
+  set OPTION=--build-property compiler.cpp.extra_flags=-D__MK20DX256__,-DTEENSYDUINO=157,-DVERSION=!hwvers!,-DAxisDriver=!AxisDriver!
 ) else if /i [!hwvers!] == [250]  ( 
   set BOARD="teensy:avr:teensy40:usb=serial,speed=450,opt=o2std,keys=en-us"
-  set OPTION=--build-property compiler.cpp.extra_flags=-D__IMXRT1062__ -DTEENSYDUINO=157 -DVERSION=!hwvers! -DAxisDriver=!AxisDriver!
+  set OPTION=--build-property compiler.cpp.extra_flags=-D__IMXRT1062__,-DTEENSYDUINO=157,-DVERSION=!hwvers!,-DAxisDriver=!AxisDriver!
 )
 
 if /i [!target!] == [MainUnit] ( 
@@ -256,8 +256,7 @@ if /i !verbose!==[y] (
   set verb="--verbose"
   echo on 
   )
-
-..\..\..\ArduinoCli\arduino-cli.exe compile --clean --libraries ..\..\..\libraries %verb% -b %BOARD% --output-dir %BUILD_PATH% %OPTIONS% %SKETCH%
+..\..\..\ArduinoCli\arduino-cli.exe compile --clean --libraries ..\..\..\libraries %verb% -b %BOARD% --output-dir %BUILD_PATH% %OPTION% %SKETCH%
 echo on
 
 move /Y !BUILD_PATH!\!Buid_File!.elf !RELEASE_PATH!_latest\!Target_File!.elf
