@@ -369,5 +369,65 @@
 
 #endif
 
+#if VERSION == 264                          // teensy micromod, released board - lordzurp
+
+    #ifndef AxisDriver
+        #define AxisDriver  4               // Select your driver 2 for the TMC2130, 3 for the TMC5160, 4 for the TMC2660
+    #endif
+
+    // Motor 1 : RA / AZ
+    #define Axis1Reverse    1
+
+    #define Axis1StepPin    22              // Pin 35 (Motor 1 Step)
+    #define Axis1DirPin     25              // Pin 34 (Motor 1 Dir)
+    #define Axis1CSPin      10               // Pin 6 (Motor 1 CS)
+    #define Axis1EnablePin  24               // Pin 9 (Motor 1 Enable)
+
+    // Motor 2 : Dec / Alt
+    #define Axis2Reverse    1
+
+    #define Axis2StepPin    40              // Pin 38 (Motor 2 Step)
+    #define Axis2DirPin     41              // Pin 37 (Motor 2 Dir)
+    #define Axis2CSPin      43              // Pin 32 (Motor 2 CS)
+    #define Axis2EnablePin  42              // Pin 26 (Motor 2 Enable)
+
+    // Focuser
+    #define Focus_Serial    Serial3
+    #define FocuserRX       15
+    #define FocuserTX       14
+
+    // GNSS
+    #define GNSS_Serial     Serial2
+    #define PPS             5
+
+    // LED
+    #define LEDPin          37
+
+    // SHC
+    #define Remote          Serial1
+
+    // encoder interface
+    #define EA1A            2               // Motor 1 Encoder A
+    #define EA1B            30              // Motor 1 Encoder B
+    #define EA2A            33              // Motor 2 Encoder A
+    #define EA2B            31              // Motor 2 Encoder B
+
+    /* ==============
+    // =   UNUSED   =
+    // ==============
+        
+    // ST4 interface
+    #define ST4RAe          xx              // ST4 REast
+    #define ST4DEs          xx              // ST4 South
+    #define ST4DEn          xx              // ST4 North
+    #define ST4RAw          xx              // ST4 West
+
+    // LED
+    #define RETICULE_LED_PINS 28
+    #define MaxLED          16
+    */
+
+#endif
+
 #define HASST4 (defined ST4RAw && defined ST4RAe && defined ST4DEn && defined ST4DEs)
 #define HASEncoder (defined EA1A && defined EA1B && defined EA2A && defined EA2B)
