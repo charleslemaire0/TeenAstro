@@ -11,6 +11,8 @@
 
 #include "TeenAstroCoordConv.hpp"
 
+#include <arduino.h>
+
 using namespace std;
 
 // CoordConv methods
@@ -59,11 +61,12 @@ void CoordConv::addReference(double angle1, double angle2, double axis1, double 
   //cout << "adding ref star: angle1 " << angle1 << "r angle2 " << angle2 << "r axis1 " << axis1 << "r axis2 " << axis2 << "r" << endl;
 #endif
 
-  toDirCos(dcHDRef[refs], angle2, angle1);
+  toDirCos(dcHDRef[refs], angle1, angle2);
   printV("dcHD", dcHDRef[refs]);
-  toDirCos(dcAARef[refs], axis2, axis1);
+  toDirCos(dcAARef[refs], axis1, axis2);
   printV("dcAA", dcAARef[refs]);
-
+  ax1[refs] = axis1;
+  ax2[refs] = axis2;
   refs++;
   if (refs == 2)
   {
@@ -75,6 +78,60 @@ void CoordConv::addReference(double angle1, double angle2, double axis1, double 
   {
     isready = false;
   }
+}
+
+void CoordConv::minimizeAxis1()
+{
+  double axis3, axis2, direct_axis1;
+  LA3::getEulerRxRyRz(Tinv, axis3, axis2, direct_axis1);
+#ifdef DEBUG_COUT
+  char txt[512];
+  sprintf(txt, "%s \t [%f, %f, %f]", "rotations", axis3 * 180. / PI, axis2 * 180. / PI, direct_axis1 * 180. / PI);
+  Serial.println(txt);
+#endif
+  ax1[0] -= direct_axis1;
+  ax1[1] -= direct_axis1;
+  toDirCos(dcAARef[0], ax1[0], ax2[0]);
+  toDirCos(dcAARef[1], ax1[1], ax2[1]);
+  anglediff = angle2Vectors(dcHDRef[0], dcHDRef[1]) - angle2Vectors(dcAARef[0], dcAARef[1]);
+  refs = 2;
+  calculateThirdReference();
+}
+
+void CoordConv::minimizeAxis2()
+{
+  double delta = 0;
+  double ax2init[2] = { ax2[0] , ax2[1] };
+  #ifdef DEBUG_COUT
+  char txt[512];
+  Serial.println("minimizeSync");
+  #endif
+  for (int k = 0; k < 5; k++)
+  {
+    double denom = 0;
+    ax2[0] += 0.8*delta;
+    ax2[1] += 0.8*delta;
+
+    toDirCos(dcAARef[0], ax1[0], ax2[0]);
+    toDirCos(dcAARef[1], ax1[1], ax2[1]);
+    anglediff = angle2Vectors(dcAARef[0], dcAARef[1]) - angle2Vectors(dcHDRef[0], dcHDRef[1]);
+
+    denom += -dcAARef[0][0] * sin(ax2[1]) * cos(-ax1[1]);
+    denom += -dcAARef[1][0] * sin(ax2[0]) * cos(-ax1[0]);
+    denom += -dcAARef[0][1] * sin(ax2[1]) * sin(-ax1[1]);
+    denom += -dcAARef[1][1] * sin(ax2[0]) * sin(-ax1[0]);
+    denom += +dcAARef[0][2] * cos(ax2[1]);
+    denom += +dcAARef[1][2] * cos(ax2[0]);
+
+    delta = anglediff / denom;
+#ifdef DEBUG_COUT
+    sprintf(txt, "interartion %d: \t anglediff %f arcmin,delta = %f arcmin]", k, anglediff * 180. / PI * 60, delta * 180. / PI * 60);
+    Serial.println(txt);
+#endif
+ 
+  }
+  refs = 2;
+  calculateThirdReference();
 }
 
 // Calculate third reference star from two provided ones. Returns false if more or less than two provided 
@@ -122,9 +179,12 @@ void CoordConv::buildTransformations() {
   printV("Tinv", Tinv);
   multiply(test, T, Tinv);
   printV("test", test);
+
+  // now compute the optimal rotation matrix:
   getsvd(Tinv, u, v);
   printV("u", u);
   printV("v", v);
+
   double du = determinant(u);
   double dv = determinant(v);
 
@@ -143,3 +203,4 @@ void CoordConv::buildTransformations() {
   multiply(test, T, Tinv);
   printV("test", test);
 }
+

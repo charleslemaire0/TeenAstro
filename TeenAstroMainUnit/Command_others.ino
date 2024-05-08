@@ -74,7 +74,7 @@ void Command_A()
     replyShortTrue();
     break;
   case'*':
-    // telescope should be set in the polar home for a starting point
+    // telescope should at target position for this command
   {
     initTransformation(true);
     enable_Axis(true);
@@ -112,16 +112,14 @@ void Command_A()
     if (alignment.getRefs() == 0)
     {
       syncAzAlt(&HO_T, GetPoleSide());
-
     }
     Coord_IN IN_T = getInstr();
     alignment.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
     if (alignment.isReady())
     {
-      cli();
-      staA1.target = staA1.pos;
-      staA2.target = staA2.pos;
-      sei();
+      alignment.minimizeAxis2();
+      alignment.minimizeAxis1();
+      syncAzAlt(&HO_T, GetPoleSide());
       hasStarAlignment = true;
     }
     PushtoStatus = PT_OFF;
@@ -225,10 +223,9 @@ void Command_C()
         alignment.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
         if (alignment.isReady())
         {
-          cli();
-          staA1.target = staA1.pos;
-          staA2.target = staA2.pos;
-          sei();
+          alignment.minimizeAxis2();
+          alignment.minimizeAxis1();
+          syncAzAlt(&HO_T, GetPoleSide());
           hasStarAlignment = true;
           autoAlignmentBySync = false;
         }

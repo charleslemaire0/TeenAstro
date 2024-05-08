@@ -47,7 +47,7 @@
 // and axis coordinates (axis1 and axis2)
 class CoordConv : public LA3 {
 public:
-
+	double ax1[2],ax2[2];
 	double T[3][3];		    // Transformation matrix from Horizontal to  intrument axis
 	double Tinv[3][3];		// Inverse of the above 
 	double u[3][3];
@@ -83,7 +83,8 @@ public:
 
 	// Calculate third reference star from two provided ones. Returns false if more or less than two provided 
 	bool calculateThirdReference();
-
+	void minimizeAxis1();
+	void minimizeAxis2();
 protected:
 
 	// Build coordinate system transformation matrix

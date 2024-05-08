@@ -31,6 +31,7 @@
 
 #ifndef __TeenAstroLA3_hpp__
 #define __TeenAstroLA3_hpp__
+//#define DEBUG_COUT
 
 #ifndef M_PI
 #include <math.h> // for M_PI
@@ -69,9 +70,6 @@ public:
 
 	// Calculate cosine direction vector from two given polar angles (in radians)
 	static void toDirCos(double (&dc)[3], double ang1, double ang2);
-
-	// Calculate polar angles (in radians) from given cosine direction vector
-	static void toAngles(double &ang1, double &ang2, const double (&dc)[3]);
 
 	// Convert degrees to radians
 	static double toRad(double degrees) { return degrees*M_PI/180; }

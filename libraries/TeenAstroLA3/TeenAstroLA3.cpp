@@ -49,18 +49,11 @@ void LA3::normalize(double (&out)[3], const double (&in)[3]) {
 
 // Calculate cosine direction vector from two given polar angles (in radians)
 void LA3::toDirCos(double (&dc)[3], double ang1, double ang2) {
-	dc[0]= cos(ang1)*cos(-ang2);
-	dc[1]= cos(ang1)*sin(-ang2);
-	dc[2]= sin(ang1);
+	dc[0]= cos(ang2)*cos(-ang1);
+	dc[1]= cos(ang2)*sin(-ang1);
+	dc[2]= sin(ang2);
 }
 
-// Calculate polar angles (in radians) from given cosine direction vector
-void LA3::toAngles(double &ang1, double &ang2, const double (&dc)[3]) {
-	ang1= asin( dc[2]);
-	ang2=-atan2(dc[1], dc[0]);
-  // 	if(ang2<0)
-		//ang2+=2*M_PI;
-}
 
 // Copy a 3x3 matrix 
 void LA3::copy(double (&out)[3][3], const double (&in)[3][3]) {

@@ -167,19 +167,26 @@ void Command_T()
       case '1':
         //TXA1 Test the 2 stars alignment
       {
-
+        char txt[512];
         CoordConv test_alignment;
-        test_alignment.addReference(-(k * (t_1 - t_0) - Ra_1), Dec_1, Ia1_1, Ia2_1);
-        test_alignment.addReference(-(k * (t_2 - t_0) - Ra_2), Dec_2, Ia1_2, Ia2_2);
-        Coord_EQ EQ3(0, Dec_3, -(k * (t_3 - t_0) - Ra_3));
+        Coord_EQ EQ1(0, Dec_1, (k * (t_1 - t_0) - Ra_1));
+        Coord_EQ EQ2(0, Dec_2, (k * (t_2 - t_0) - Ra_2));
+        Coord_LO LO1(0, Ia2_1, Ia1_1);
+        Coord_LO LO2(0, Ia2_2, Ia1_2);
+        sprintf(txt, "%s \t [%f, %f]", "point 1", EQ1.Ha() * 180. / PI, EQ1.Dec() * 180. / PI);
+        Serial.println(txt);
+        sprintf(txt, "%s \t [%f, %f]", "point 2", EQ2.Ha() * 180. / PI, EQ2.Dec() * 180. / PI);
+        Serial.println(txt);
+        test_alignment.addReference(EQ1.direct_Ha(), EQ1.Dec(), LO1.Axis1(), LO1.Axis2());
+        test_alignment.addReference(EQ2.direct_Ha(), EQ2.Dec(), LO2.Axis1(), LO2.Axis2());
+             
+  
+        Coord_EQ EQ3(0, Dec_3, (k * (t_3 - t_0) - Ra_3));
         Coord_LO LO3 = EQ3.To_Coord_LO(test_alignment.Tinv);
         Serial.println(LO3.Axis1() * 180 / PI);
         Serial.println(LO3.Axis2() * 180 / PI);
         Serial.println(LO3.Axis3() * 180 / PI);
-        Coord_EQ EQ3_test = LO3.To_Coord_EQ(test_alignment.T);
 
-        //Serial.println((k * (t_3 - t_0) - EQ3_test.Ha() - Ra_3) * 180 / PI * 60);
-        //Serial.println((EQ3_test.Dec() - Dec_3) * 180 / PI * 60);
         
       }
       break;
@@ -190,13 +197,14 @@ void Command_T()
         Coord_HO HO1 = Coord_EQ(0., Dec_1, (k * (t_1 - t_0) - Ra_1)).To_Coord_HO(Lat, refraction);
         Coord_HO HO2 = Coord_EQ(0., Dec_2, (k * (t_2 - t_0) - Ra_2)).To_Coord_HO(Lat, refraction);
         Coord_HO HO3 = Coord_EQ(0., Dec_3, (k * (t_3 - t_0) - Ra_3)).To_Coord_HO(Lat, refraction);
+        
         CoordConv test_alignment;
         
         test_alignment.addReference(HO1.direct_Az_S(), HO1.Alt(), Ia1_1, Ia2_1);
-        test_alignment.addReference(HO2.direct_Az_S(), HO2.Alt(),  Ia1_2, Ia2_2);
+        test_alignment.addReference(HO2.direct_Az_S(), HO2.Alt(), Ia1_2, Ia2_2);
 
         Serial.println("error");
-        Serial.println(test_alignment.getError() * 180. / PI * 3600.);
+        Serial.println(test_alignment.getError() * 180. / PI);
 
         Coord_IN IN3 = HO3.To_Coord_IN(test_alignment.Tinv);
  
@@ -210,27 +218,34 @@ void Command_T()
       break;
       case '3':
       {
-        double offset1 = random(-10, 10) * PI / 180;
         double offset2 = random(-10, 10) * PI / 180;
+        double offset1 = random(-10, 10) * PI / 180;
         Ia1_1 += offset1;
+        Ia1_2 += offset1;
+        Ia2_1 += offset2;
+        Ia2_2 += offset2;
 
+        double Lat = random(10,80) * PI / 180;
 
-        double Lat = random(0, 90) * PI / 180;
         LA3::RefrOpt refraction = { false,10,101 };
         Coord_HO HO1 = Coord_EQ(0., Dec_1, k * (t_1 - t_0) - Ra_1).To_Coord_HO(Lat, refraction);
         Coord_HO HO2 = Coord_EQ(0., Dec_2, k * (t_2 - t_0) - Ra_2).To_Coord_HO(Lat, refraction);
         Coord_HO HO3 = Coord_EQ(0., Dec_3, k * (t_3 - t_0) - Ra_3).To_Coord_HO(Lat, refraction);
         CoordConv test_alignment;
-
+        Serial.print("Azimuth Pt3: ");
+        Serial.println(HO3.Az());
         test_alignment.addReference(HO1.direct_Az_S(), HO1.Alt(), Ia1_1, Ia2_1);
         test_alignment.addReference(HO2.direct_Az_S(), HO2.Alt(), Ia1_2, Ia2_2);
+        test_alignment.minimizeAxis2();
+        test_alignment.minimizeAxis1();
 
         Serial.println("error");
         Serial.println(test_alignment.getError() * 180. / PI * 60.);
 
         Coord_IN IN3 = HO3.To_Coord_IN(test_alignment.Tinv);
 
-        Serial.println((IN3.Axis1()) * 180. / PI);
+
+        Serial.println((IN3.Axis1_direct()) * 180. / PI );
         Serial.println((IN3.Axis2()) * 180. / PI);
         Serial.println((IN3.Axis3()) * 180. / PI);
         //Coord_EQ EQ3_test = IN3.To_Coord_EQ(test_alignment.T, refraction, Lat);
