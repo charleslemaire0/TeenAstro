@@ -416,19 +416,15 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         if (ret == 1)
         {
           DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
-
-          if (display->UserInterfaceMessage(&buttonPad, T_READYFOR, "2 " T_STAR, T_ALIGNMENT "?",T_YES "\n" T_NO  ) == 1)
+          if (SetLX200(":A0#") == LX200_VALUESET)
           {
-            if (SetLX200(":A0#") == LX200_VALUESET)
-            {
-              ta_MountStatus.startAlign(TeenAstroMountStatus::AlignMode::ALIM_TWO);
-              return MR_QUIT;
-            }
-            else
-            {
-              DisplayMessage(T_INITIALISATION, T_FAILED, -1);
-            }
+            ta_MountStatus.startAlign(TeenAstroMountStatus::AlignMode::ALIM_TWO);
+            return MR_QUIT;
           }
+          else
+          {
+            DisplayMessage(T_INITIALISATION, T_FAILED, -1);
+          }   
         }
         else if (ret == 2)
         {
