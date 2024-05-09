@@ -68,6 +68,7 @@ bool SyncInstr(Coord_IN* instr, PoleSide Side)
   long axis1, axis2 = 0;
   Angle2Step(instr->Axis1() * RAD_TO_DEG, instr->Axis2() * RAD_TO_DEG, Side, &axis1, &axis2);
   syncAxis(&axis1, &axis2);
+  syncEwithT();
   atHome = false;
   return true;
 }
@@ -161,8 +162,8 @@ bool autoSyncWithEncoder(EncoderSync mode)
     sei();
     long axis1E = (long)(encoderA1.r_deg() * geoA1.stepsPerDegree);
     long axis2E = (long)(encoderA2.r_deg() * geoA2.stepsPerDegree);
-    double tol1 = max(tol, encoderA1.r_deg() / 60);
-    if (abs(axis1T - axis1E) > tol1 * geoA1.stepsPerDegree)
+    double tol1 = max(tol, 1. / encoderA1.pulsePerDegree);
+    if (abs(axis1T - axis1E) >= tol1 * geoA1.stepsPerDegree)
     {
       cli();
       staA1.pos = axis1E;
@@ -170,8 +171,8 @@ bool autoSyncWithEncoder(EncoderSync mode)
       sei();
       synced = true;
     }
-    double tol2 = max(tol, encoderA2.r_deg() / 60);
-    if (abs(axis2T - axis2E) > tol2 * geoA2.stepsPerDegree)
+    double tol2 = max(tol, 1. / encoderA2.pulsePerDegree);
+    if (abs(axis2T - axis2E) >= tol2 * geoA2.stepsPerDegree)
     {
       cli();
       staA2.pos = axis2E;

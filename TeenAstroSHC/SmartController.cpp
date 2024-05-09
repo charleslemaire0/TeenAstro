@@ -56,7 +56,7 @@ void SmartHandController::setup(
     break;
   }
   SHCrotated = EEPROM.read(EEPROM_DISPLAY180) == 255;
-  
+  SHCvisitor = EEPROM.read(EEPROM_VISITOR) == 255;
   if (SHCrotated)
   {
     display->setDisplayRotation(U8G2_R2);
@@ -367,12 +367,14 @@ void SmartHandController::update()
       menuSpeedRate();
     #endif
     }
-    #ifdef NO_SPEED_MENU
     else if (eventbuttons[2] == E_LONGPRESS || eventbuttons[2] == E_CLICK || eventbuttons[2] == E_LONGPRESSTART)
     {
+    #ifdef NO_SPEED_MENU
       increaseSpeed(false);
-    }
+    #else
+      menuDisplayActions();
     #endif
+    }
     else if (eventbuttons[4] == E_LONGPRESS || eventbuttons[4] == E_CLICK || eventbuttons[4] == E_LONGPRESSTART)
     {
       menuTelSettings();

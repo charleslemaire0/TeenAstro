@@ -7,7 +7,7 @@ Coord_LO::Coord_LO(double Axis3, double Axis2, double Axis1) : Coord3R({ LA3::Ro
 };
 Coord_EQ Coord_LO::To_Coord_EQ(const double(&trafoinv)[3][3])
 {
-  double fre, ha, dec;
+  double fre, direct_ha, dec;
   double tmp1[3][3];
   double tmp2[3][3];
   LA3::SingleRotation rots[3] = {
@@ -17,8 +17,8 @@ Coord_EQ Coord_LO::To_Coord_EQ(const double(&trafoinv)[3][3])
   };
   LA3::getMultipleRotationMatrix(tmp1, rots, 3);
   LA3::multiply(tmp2, tmp1, trafoinv);
-  LA3::getEulerRxRyRz(tmp2, fre, dec, ha);
-  return Coord_EQ(fre, dec, ha );
+  LA3::getEulerRxRyRz(tmp2, fre, dec, direct_ha);
+  return Coord_EQ(fre, dec, -direct_ha);
 };
 double Coord_LO::Axis3()
 {

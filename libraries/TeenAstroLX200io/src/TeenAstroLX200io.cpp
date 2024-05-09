@@ -106,7 +106,7 @@ bool readLX200Bytes(char* command, CMDREPLY& cmdreply, char* recvBuffer, int buf
     switch (command[1])
     {
     case 'A':
-      if (strchr("023CWA", command[2])) cmdreply = CMDR_SHORT_BOOL;
+      if (strchr("*023CWA", command[2])) cmdreply = CMDR_SHORT_BOOL;
       else if (strchr("E", command[2])) cmdreply = CMDR_LONG;
       else cmdreply = CMDR_INVALID;
       break;

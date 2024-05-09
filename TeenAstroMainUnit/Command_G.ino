@@ -146,13 +146,13 @@ void Command_GX()
       if (enableEncoder)
       {
         Coord_HO HO_T = getHorETopo();
-        f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
+        f = degRange(HO_T.Az() * RAD_TO_DEG);
         f1 = HO_T.Alt() * RAD_TO_DEG;
       }
       else
       {
         Coord_HO HO_T = getHorTopo();
-        f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
+        f = degRange(HO_T.Az() * RAD_TO_DEG);
         f1 = HO_T.Alt() * RAD_TO_DEG;
       }
       command[3] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
@@ -1012,7 +1012,7 @@ void  Command_G()
     }
     else if (command[1] == 'Z')
     {
-      double f = degRange(HO_T.Az() * RAD_TO_DEG - 180.);
+      double f = degRange(HO_T.Az() * RAD_TO_DEG);
       PrintAzimuth(f);
     }
     else

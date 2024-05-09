@@ -412,9 +412,10 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       }
       else
       {
-        DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
-        if (display->UserInterfaceMessage(&buttonPad, T_READYFOR, "2 " T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
+        int ret = display->UserInterfaceMessage(&buttonPad, T_SELECTMODE, "2 " T_STAR, T_ALIGNMENT , T_HOME "\n" T_STAR);
+        if (ret == 1)
         {
+          DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
           if (SetLX200(":A0#") == LX200_VALUESET)
           {
             ta_MountStatus.startAlign(TeenAstroMountStatus::AlignMode::ALIM_TWO);
@@ -423,6 +424,66 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
           else
           {
             DisplayMessage(T_INITIALISATION, T_FAILED, -1);
+          }   
+        }
+        else if (ret == 2)
+        {
+          ta_MountStatus.updateMount();
+          uint8_t choice = ((uint8_t)ta_MountStatus.getPierState());
+          choice = display->UserInterfaceSelectionList(&buttonPad, T_SETSIDEOFPIER, choice, T_EAST "\n" T_WEST);
+          bool ok = false;
+          if (choice)
+          {
+            if (choice == 1)
+              ok = DisplayMessageLX200(SetLX200(":SmE#"));
+            else
+              ok = DisplayMessageLX200(SetLX200(":SmW#"));
+            if (ok)
+            {
+              DisplayMessage("Please Sync", "with a Target", 1000);
+              cat_mgr.select(0);
+              char title[20] = "";
+              cat_mgr.filtersClear();
+              cat_mgr.filterAdd(FM_OBJ_HAS_NAME);
+              cat_mgr.filterAdd(FM_ABOVE_HORIZON, 1);
+
+              strcat(title, cat_mgr.catalogTitle());
+              double lat, LT0;
+              while (!ta_MountStatus.getLat(lat))
+              {
+              }
+              while (!ta_MountStatus.getLstT0(LT0))
+              {
+              }
+              cat_mgr.setLat(lat);
+              cat_mgr.setLstT0(LT0);
+              if (cat_mgr.isInitialized())
+              {
+                if (cat_mgr.setIndex(cat_mgr.getIndex()))
+                {
+                  if (display->UserInterfaceCatalog(&buttonPad, title))
+                  {
+                    LX200RETURN out = SyncGotoCatLX200(NAV_SYNC);
+                    if (out == LX200_SYNCED)
+                    {
+                      DisplayMessageLX200(SetLX200(":A*#"));
+                      ta_MountStatus.startAlignSecondStar(TeenAstroMountStatus::AlignMode::ALIM_TWO);           
+                      return MR_QUIT;
+                    }
+                    else
+                    {
+                      DisplayMessageLX200(out);
+                    }
+                  }
+                }
+                else DisplayMessage(cat_mgr.catalogTitle(), "No Object", -1);
+              }
+              else DisplayMessage(cat_mgr.catalogTitle(), "Not Init'd?", -1);
+              cat_mgr.filtersClear();
+
+              DisplayMessageLX200(SetLX200(":SmN#"));
+       
+            }
           }
         }
       }

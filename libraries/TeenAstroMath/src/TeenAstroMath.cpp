@@ -42,30 +42,26 @@ bool atoui2(char* a, unsigned int* i)
 
 double haRange(double d)
 {
-  while (d >= 180.) d -= 360.;
-  while (d < -180.) d += 360.;
-  return d;
+  return remainder(d, 360);
 }
 
 double haRangeRad(double d)
 {
-  while (d >= M_PI) d -= M_PI *2;
-  while (d < -M_PI) d += M_PI * 2;
-  return d;
+  return remainder(d, 2 * M_PI);
 }
 
 
 double AzRange(double d)
 {
-  while (d >= 360.) d -= 360.;
-  while (d < 0.) d += 360.;
+  d = remainder(d, 360);
+  if (d < 0.) d += 360.;
   return d;
 }
 
 double degRange(double d)
 {
-  while (d >= 360.) d -= 360.;
-  while (d < 0.) d += 360.;
+  d = remainder(d, 360);
+  if (d < 0.) d += 360.;
   return d;
 }
 

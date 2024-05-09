@@ -9,37 +9,60 @@ void SmartHandController::menuTelSettings()
 
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
-  while (!exitMenu)
+  if (!SHCvisitor)
   {
-    const char* string_list_TelSettings = T_HANDCONTROLLER "\n" T_TIME " & " T_SITE "\n" T_PARKANDHOME "\n" T_MOUNT "\n" T_MAINUNITINFO "\nWifi";
-    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPESETTINGS, s_sel, string_list_TelSettings);
-    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
-    switch (tmp_sel)
+    while (!exitMenu)
     {
-    case 0:
-      exitMenu = true;
-    case 1:
-      menuSHCSettings();
-      break;
-    case 2:
-      menuTimeAndSite();
-      break;
-    case 3:
-      menuParkAndHome();
-      break;
-    case 4:
-      menuMount();
-      break;
-    case 5:
-      menuMainUnitInfo();
-      break;
-    case 6:
-      menuWifi();
-      break;
-    default:
-      break;
+      const char* string_list_TelSettings = T_HANDCONTROLLER "\n" T_TIME " & " T_SITE "\n" T_PARKANDHOME "\n" T_MOUNT "\n" T_MAINUNITINFO "\nWifi";
+      tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPESETTINGS, s_sel, string_list_TelSettings);
+      s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+      switch (tmp_sel)
+      {
+      case 0:
+        exitMenu = true;
+      case 1:
+        menuSHCSettings();
+        break;
+      case 2:
+        menuTimeAndSite();
+        break;
+      case 3:
+        menuParkAndHome();
+        break;
+      case 4:
+        menuMount();
+        break;
+      case 5:
+        menuMainUnitInfo();
+        break;
+      case 6:
+        menuWifi();
+        break;
+      default:
+        break;
+      }
     }
   }
+  else
+  {
+    while (!exitMenu)
+    {
+      const char* string_list_TelSettings = T_RIGHTS ;
+      tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPESETTINGS, s_sel, string_list_TelSettings);
+      s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+      switch (tmp_sel)
+      {
+      case 0:
+        exitMenu = true;
+      case 1:
+        menuVisitor();
+        break;;
+      default:
+        break;
+      }
+    }
+  }
+
   buttonPad.setControlerMode();
 }
 void SmartHandController::menuMainUnitInfo()
@@ -107,4 +130,30 @@ void SmartHandController::menuParkAndHome()
       break;
     }
   }
+}
+
+void SmartHandController::menuVisitor()
+{
+  const char* string_list_Display = T_ADMIN "\n" T_VISITOR;
+  uint8_t s_sel = SHCvisitor ? 2 : 1;
+  uint8_t tmp_sel;
+  tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_RIGHTS, s_sel, string_list_Display);
+  if (tmp_sel == s_sel || tmp_sel == 0)
+    return;
+
+  switch (tmp_sel)
+  {
+  case 1:
+    EEPROM.write(EEPROM_VISITOR, 0);
+    SHCvisitor = false;
+    break;
+  case 2:
+    EEPROM.write(EEPROM_VISITOR, 255);
+    SHCvisitor = true;
+    break;
+  default:
+    break;
+  }
+  EEPROM.commit();
+  exitMenu = true;
 }

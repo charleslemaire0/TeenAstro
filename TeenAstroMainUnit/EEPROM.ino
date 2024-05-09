@@ -249,7 +249,7 @@ void initTransformation(bool reset)
     {
       double rot = localSite.northHemisphere() ? 0 : M_PI;
       alignment.addReference(0, 0, rot, 0);
-      alignment.addReference(0, M_PI_2, rot, M_PI_2);
+      alignment.addReference(M_PI_2, 0, rot + M_PI_2, 0);
       alignment.calculateThirdReference();
     }
     else
@@ -271,8 +271,9 @@ void initTransformation(bool reset)
         Coord_HO HO2 = Coord_HO(0, 45 * DEG_TO_RAD, 270 * DEG_TO_RAD, false);
         Coord_EQ EQ2 = HO2.To_Coord_EQ(Lat);
         Coord_IN IN2 = Coord_IN(0, sign * EQ2.Dec(), sign * EQ2.Ha() - M_PI_2);
-        alignment.addReference(HO1.Az(), HO1.Alt(), IN1.Axis1(), IN1.Axis2());
-        alignment.addReference(HO2.Az(), HO2.Alt(), IN2.Axis1(), IN2.Axis2());
+
+        alignment.addReference(HO1.direct_Az_S(), HO1.Alt(), IN1.Axis1_direct(), IN1.Axis2());
+        alignment.addReference(HO2.direct_Az_S(), HO2.Alt(), IN2.Axis1_direct(), IN2.Axis2());
       }
       else
       {
@@ -283,8 +284,9 @@ void initTransformation(bool reset)
         Coord_HO HO2 = Coord_HO(0, 45 * DEG_TO_RAD, 270 * DEG_TO_RAD, false);
         Coord_EQ EQ2 = HO2.To_Coord_EQ(Lat);
         Coord_IN IN2 = Coord_IN(0, sign * EQ2.Dec(), sign * EQ2.Ha());
-        alignment.addReference(HO1.Az(), HO1.Alt(), IN1.Axis1(), IN1.Axis2());
-        alignment.addReference(HO2.Az(), HO2.Alt(), IN2.Axis1(), IN2.Axis2());
+
+        alignment.addReference(HO1.direct_Az_S(), HO1.Alt(), IN1.Axis1_direct(), IN1.Axis2());
+        alignment.addReference(HO2.direct_Az_S(), HO2.Alt(), IN2.Axis1_direct(), IN2.Axis2());
       }
 
 
