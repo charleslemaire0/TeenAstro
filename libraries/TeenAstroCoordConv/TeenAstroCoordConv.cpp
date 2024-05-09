@@ -80,7 +80,7 @@ void CoordConv::addReference(double angle1, double angle2, double axis1, double 
   }
 }
 
-void CoordConv::minimizeAxis1()
+void CoordConv::minimizeAxis1(double Offset)
 {
   double axis3, axis2, direct_axis1;
   LA3::getEulerRxRyRz(Tinv, axis3, axis2, direct_axis1);
@@ -89,8 +89,11 @@ void CoordConv::minimizeAxis1()
   sprintf(txt, "%s \t [%f, %f, %f]", "rotations", axis3 * 180. / PI, axis2 * 180. / PI, direct_axis1 * 180. / PI);
   Serial.println(txt);
 #endif
-  ax1[0] -= direct_axis1;
-  ax1[1] -= direct_axis1;
+
+
+  ax1[0] -= direct_axis1 - Offset ;
+  ax1[1] -= direct_axis1 - Offset ;
+
   toDirCos(dcAARef[0], ax1[0], ax2[0]);
   toDirCos(dcAARef[1], ax1[1], ax2[1]);
   anglediff = angle2Vectors(dcHDRef[0], dcHDRef[1]) - angle2Vectors(dcAARef[0], dcAARef[1]);

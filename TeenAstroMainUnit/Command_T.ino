@@ -237,7 +237,7 @@ void Command_T()
         test_alignment.addReference(HO1.direct_Az_S(), HO1.Alt(), Ia1_1, Ia2_1);
         test_alignment.addReference(HO2.direct_Az_S(), HO2.Alt(), Ia1_2, Ia2_2);
         test_alignment.minimizeAxis2();
-        test_alignment.minimizeAxis1();
+        test_alignment.minimizeAxis1(mountType == MOUNT_TYPE_GEM ? (Lat >= 0 ? M_PI_2 : -M_PI_2) : 0);
 
         Serial.println("error");
         Serial.println(test_alignment.getError() * 180. / PI * 60.);

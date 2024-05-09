@@ -83,7 +83,7 @@ public:
 
 	// Calculate third reference star from two provided ones. Returns false if more or less than two provided 
 	bool calculateThirdReference();
-	void minimizeAxis1();
+	void minimizeAxis1(double offset);
 	void minimizeAxis2();
 protected:
 

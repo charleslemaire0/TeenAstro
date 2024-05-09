@@ -118,7 +118,7 @@ void Command_A()
     if (alignment.isReady())
     {
       alignment.minimizeAxis2();
-      alignment.minimizeAxis1();
+      alignment.minimizeAxis1(mountType == MOUNT_TYPE_GEM ? (Lat >= 0 ? M_PI_2 : -M_PI_2) : 0);
       syncAzAlt(&HO_T, GetPoleSide());
       hasStarAlignment = true;
     }
@@ -224,7 +224,7 @@ void Command_C()
         if (alignment.isReady())
         {
           alignment.minimizeAxis2();
-          alignment.minimizeAxis1();
+          alignment.minimizeAxis1(mountType == MOUNT_TYPE_GEM ? (*localSite.latitude() >= 0 ? M_PI_2 : -M_PI_2) : 0);
           syncAzAlt(&HO_T, GetPoleSide());
           hasStarAlignment = true;
           autoAlignmentBySync = false;
