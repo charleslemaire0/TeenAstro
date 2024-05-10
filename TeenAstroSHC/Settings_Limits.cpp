@@ -160,8 +160,7 @@ void SmartHandController::menuLimitAxis()
     switch (tmp_sel)
     {
     case 1:
-      pages[P_AXIS_DEG].show =
-        display->UserInterfaceMessage(&buttonPad, T_DISPLAY, T_AXIS, T_COORDINATES"?", T_YES "\n" T_NO) == 1;
+      pages[P_AXIS_DEG].show = true;
       current_page = P_AXIS_DEG;
       exitMenu = true;
       return;

@@ -57,6 +57,8 @@ void Command_A()
 {
   switch (command[1])
   {
+
+
   case '0':
     // telescope should be set in the polar home for a starting point
     initTransformation(true);
@@ -71,6 +73,36 @@ void Command_A()
     }
     replyShortTrue();
     break;
+  case'*':
+    // telescope should at target position for this command
+  {
+    initTransformation(true);
+    enable_Axis(true);
+    delay(10);
+    // start tracking
+    if (enableMotor)
+    {
+      StartSideralTracking();
+    }
+    PoleSide targetPoleSide = GetPoleSide();
+    if (newTargetPoleSide != POLE_NOTVALID)
+    {
+      targetPoleSide = newTargetPoleSide;
+      newTargetPoleSide = POLE_NOTVALID;
+    }
+    double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
+    double Lat = *localSite.latitude();
+    Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+    Coord_HO HO_T = EQ_T.To_Coord_HO(Lat * DEG_TO_RAD, RefrOptForGoto());
+
+    syncAzAlt(&HO_T, targetPoleSide);
+
+    Coord_IN IN_T = getInstr();
+    alignment.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
+    replyShortTrue();
+    break;
+  }
+
   case '2':
   {
     double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
@@ -82,15 +114,15 @@ void Command_A()
       syncAzAlt(&HO_T, GetPoleSide());
     }
     Coord_IN IN_T = getInstr();
-    alignment.addReference(HO_T.Az(), HO_T.Alt(), IN_T.Axis1(), IN_T.Axis2());
+    alignment.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
     if (alignment.isReady())
     {
-      cli();
-      staA1.target = staA1.pos;
-      staA2.target = staA2.pos;
-      sei();
+      alignment.minimizeAxis2();
+      alignment.minimizeAxis1(mountType == MOUNT_TYPE_GEM ? (Lat >= 0 ? M_PI_2 : -M_PI_2) : 0);
+      syncAzAlt(&HO_T, GetPoleSide());
       hasStarAlignment = true;
     }
+    PushtoStatus = PT_OFF;
     replyShortTrue();
     break;
   }
@@ -185,16 +217,15 @@ void Command_C()
 
         if (alignment.getRefs() == 0)
         {
-          syncAzAlt(&HO_T, GetPoleSide());
+          syncAzAlt(&HO_T, targetPoleSide);
         }
         Coord_IN IN_T = getInstr();
-        alignment.addReference(HO_T.Az(), HO_T.Alt(), IN_T.Axis1(), IN_T.Axis2());
+        alignment.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
         if (alignment.isReady())
         {
-          cli();
-          staA1.target = staA1.pos;
-          staA2.target = staA2.pos;
-          sei();
+          alignment.minimizeAxis2();
+          alignment.minimizeAxis1(mountType == MOUNT_TYPE_GEM ? (*localSite.latitude() >= 0 ? M_PI_2 : -M_PI_2) : 0);
+          syncAzAlt(&HO_T, GetPoleSide());
           hasStarAlignment = true;
           autoAlignmentBySync = false;
         }
@@ -204,7 +235,6 @@ void Command_C()
         double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
         syncEqu(&EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
-        syncEwithT();
       }
       if (command[1] == 'M')
       {
@@ -221,7 +251,6 @@ void Command_C()
       double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
       Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
       syncEqu(&EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
-      syncEwithT();
       strcpy(reply, "N/A#");
       break;
     }
@@ -229,7 +258,6 @@ void Command_C()
     {
       Coord_HO HO_T(0, newTargetAlt * DEG_TO_RAD, newTargetAzm * DEG_TO_RAD, true);
       syncAzAlt(&HO_T, targetPoleSide);
-      syncEwithT();
       strcpy(reply, "N/A#");
     }
     break;
@@ -322,7 +350,6 @@ void Command_E()
         double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
         Coord_EQ EQ_T(0, newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
         syncEqu(&EQ_T, GetPoleSide(), *localSite.latitude() * DEG_TO_RAD);
-        syncEwithT();
         replyLongTrue();
       }
       break;
@@ -330,7 +357,6 @@ void Command_E()
       {
         Coord_HO HO_T(0, newTargetAlt * DEG_TO_RAD, newTargetAzm * DEG_TO_RAD, true);
         syncAzAlt(&HO_T, GetPoleSide());
-        syncEwithT();
         replyLongTrue();
       }
       break;
@@ -621,133 +647,7 @@ void Command_R()
   }
 }
 
-//----------------------------------------------------------------------------------
-//   T - Tracking Commands
-//  :T+#   Master sidereal clock faster by 0.1 Hertz (I use a fifth of the LX200 standard, stored in XEEPROM) Returns: Nothing
-//  :T-#   Master sidereal clock slower by 0.1 Hertz (stored in XEEPROM) Returns: Nothing
-//  :TS#   Track rate solar Returns: Nothing
-//  :TL#   Track rate lunar Returns: Nothing
-//  :TQ#   Track rate sidereal Returns: Nothing
-//  :TT#   Track rate target Returns: Nothing
-//  :TR#   Master sidereal clock reset (to calculated sidereal rate, stored in EEPROM) Returns: Nothing
-//  :Te#   Tracking enable  (replies 0/1)
-//  :Td#   Tracking disable (replies 0/1)
 
-//  :T0#   Track compensation disable (replies 0/1)
-//  :T1#   Track compensation only in RA (replies 0/1)
-//  :T2#   Track compensation BOTH (replies 0/1)
-void Command_T()
-{
-
-  switch (command[1])
-
-  {
-  case '+':
-    siderealClockSpeed -= HzCf * (0.02);
-    replyNothing();
-    break;
-  case '-':
-    siderealClockSpeed += HzCf * (0.02);
-    replyNothing();
-    break;
-  case 'S':
-    // solar tracking rate 60Hz
-    SetTrackingRate(TrackingSolar, 0);
-    sideralMode = SIDM_SUN;
-    replyNothing();
-    break;
-  case 'L':
-    // lunar tracking rate 57.9Hz
-    SetTrackingRate(TrackingLunar, 0);
-    sideralMode = SIDM_MOON;
-    replyNothing();
-    break;
-  case 'Q':
-    // sidereal tracking rate
-    SetTrackingRate(TrackingStar, 0);
-    sideralMode = SIDM_STAR;
-    replyNothing();
-    break;
-  case 'R':
-    // reset master sidereal clock interval
-    siderealClockSpeed = mastersiderealClockSpeed;
-    SetTrackingRate(TrackingStar, 0);
-    sideralMode = SIDM_STAR;
-    replyNothing();
-    break;
-  case 'T':
-    // set user defined Target tracking rate
-    SetTrackingRate(1.0 - (double)storedTrakingRateRA / 10000.0, (double)storedTrakingRateDEC / 10000.0);
-    sideralMode = SIDM_TARGET;
-    replyNothing();
-    break;
-  case 'e':
-    if (parkStatus == PRK_UNPARKED)
-    {
-      lastSetTrakingEnable = millis();
-      atHome = false;
-      if (enableMotor)
-      {
-        StartSideralTracking();
-        replyShortTrue();
-      }
-      else
-      {
-        replyShortFalse();
-      }
-    }
-    else
-      replyShortFalse();
-    break;
-  case 'd':
-    if (parkStatus == PRK_UNPARKED)
-    {
-      sideralTracking = false;
-      replyShortTrue();
-    }
-    else
-      replyShortFalse();
-    break;
-  case '1':
-    // turn compensation RA only
-    if (isAltAZ())
-    {
-      replyShortFalse();
-    }
-    else
-    {
-      trackComp = TC_RA;
-      computeTrackingRate(true);
-      XEEPROM.update(getMountAddress(EE_TC_Axis), 1);
-      replyShortTrue();
-    }
-    break;
-  case '2':
-    // turn compensation BOTH
-    if (isAltAZ())
-    {
-      replyShortFalse();
-    }
-    else
-    {
-      trackComp = TC_BOTH;
-      computeTrackingRate(true);
-      XEEPROM.update(getMountAddress(EE_TC_Axis), 2);
-      replyShortTrue();
-    }
-    break;
-  default:
-    replyNothing();
-    break;
-  }
-
-  // Only burn the new rate if changing the sidereal interval
-  if (command[1] == '+' || command[1] == '-' || command[1] == 'R')
-  {
-    XEEPROM.writeLong(getMountAddress(EE_siderealClockSpeed), siderealClockSpeed * 16);
-    updateSideral();
-  }
-}
 
 //   U - Precision Toggle
 //  :U#    Toggle between low/hi precision positions

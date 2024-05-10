@@ -35,9 +35,7 @@
 #ifndef __TeenAstroCoord_HO_hpp__
 #define __TeenAstroCoord_HO_hpp__
 
-#ifndef M_PI
-#include <math.h> // for M_PI
-#endif
+
 
 #include "TeenAstroCoord.hpp"
 
@@ -56,6 +54,7 @@ public:
 	double FrH();
 	double Alt();
 	double Az();
+	double direct_Az_S();
 };
 
 #endif // __TeenAstroCoord_hpp__

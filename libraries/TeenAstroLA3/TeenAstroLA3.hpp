@@ -31,6 +31,7 @@
 
 #ifndef __TeenAstroLA3_hpp__
 #define __TeenAstroLA3_hpp__
+//#define DEBUG_COUT
 
 #ifndef M_PI
 #include <math.h> // for M_PI
@@ -51,7 +52,7 @@ public:
 		double Temperature;
 		double Pressure;
 	};
-
+	static double modRad(double angle);
 	// dot product two 3-vectors
 	static double dotProduct(const double(&a)[3], const double(&b)[3]);
 
@@ -69,9 +70,6 @@ public:
 
 	// Calculate cosine direction vector from two given polar angles (in radians)
 	static void toDirCos(double (&dc)[3], double ang1, double ang2);
-
-	// Calculate polar angles (in radians) from given cosine direction vector
-	static void toAngles(double &ang1, double &ang2, const double (&dc)[3]);
 
 	// Convert degrees to radians
 	static double toRad(double degrees) { return degrees*M_PI/180; }
@@ -133,6 +131,7 @@ public:
 
 	// Print a 3x3 matrix to cout, with given label
 	static void printV(const char *label, const double (&m)[3][3]);
+	static void getsvd(const double(&m)[3][3], double(&u)[3][3], double(&v)[3][3]);
 };
 
 #endif // __TeenAstroLA3_hpp__

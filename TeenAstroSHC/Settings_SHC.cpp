@@ -5,7 +5,7 @@ void SmartHandController::menuSHCSettings()
 {
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
-  const char *string_list_SettingsL3 = T_DISPLAY "\n" T_BUTTONSPEED "\n" T_ERGONOMICS "\n" T_RESET;
+  const char *string_list_SettingsL3 = T_RIGHTS "\n" T_DISPLAY "\n" T_BUTTONSPEED "\n" T_ERGONOMICS "\n" T_RESET;
   while (!exitMenu)
   {
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_SHCSETTINGS, s_sel, string_list_SettingsL3);
@@ -15,26 +15,30 @@ void SmartHandController::menuSHCSettings()
     case 0:
       return;
     case 1:
-      menuDisplay();
+      menuVisitor();
       break;
     case 2:
-      menuButtonSpeed();
+      menuDisplaySettings();
       break;
     case 3:
-      menuErgonomy();
+      menuButtonSpeed();
       break;
     case 4:
+      menuErgonomy();
+      break;
+    case 5:
       resetSHC();
       break;
     }
   }
 }
 
-void SmartHandController::menuDisplay()
+void SmartHandController::menuDisplayActions()
 {
-  const char *string_list_Display = T_TURNOFF "\n" T_CONTRAST "\n" T_SLEEP "\n" T_DEEPSLEEP "\n" T_SUBMODEL;
+  const char *string_list_Display = T_TURNOFF "\n" T_CONTRAST;
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
+  buttonPad.setMenuMode();
   while (!exitMenu)
   {
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_DISPLAY, s_sel, string_list_Display);
@@ -53,7 +57,28 @@ void SmartHandController::menuDisplay()
     case 2:
       menuContrast();
       break;
-    case 3:
+    default:
+      break;
+    }
+  }
+  exitMenu = false;
+  buttonPad.setControlerMode();
+}
+
+void SmartHandController::menuDisplaySettings()
+{
+  const char* string_list_Display = T_SLEEP "\n" T_DEEPSLEEP "\n" T_SUBMODEL;
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
+  while (!exitMenu)
+  {
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_DISPLAY, s_sel, string_list_Display);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
+    {
+    case 0:
+      return;
+    case 1:
     {
       if (display->UserInterfaceInputValueInteger(&buttonPad, T_LOWCONTRAST, T_AFTER " ", &displayT1, 3, 255, 3, "0 s"))
       {
@@ -62,7 +87,7 @@ void SmartHandController::menuDisplay()
       }
       break;
     }
-    case 4:
+    case 2:
     {
       if (display->UserInterfaceInputValueInteger(&buttonPad, T_TURNDISPLAYOFF, T_AFTER " ", &displayT2, displayT1, 255, 3, "0 s"))
       {
@@ -71,7 +96,7 @@ void SmartHandController::menuDisplay()
       }
       break;
     }
-    case 5:
+    case 3:
     {
       uint8_t val = EEPROM.read(EEPROM_DISPLAYSUBMODEL);
       if (display->UserInterfaceInputValueInteger(&buttonPad, T_SUBMODEL, "OLED ", &val, 0, num_supported_display - 1, 1, ""))

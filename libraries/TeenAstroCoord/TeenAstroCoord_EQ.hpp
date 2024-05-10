@@ -43,15 +43,20 @@
 
 class Coord_HO;
 class Coord_IN;
+class Coord_LO;
+
+
 
 class Coord_EQ : protected Coord3R {
 public:
 	Coord_EQ(double FrE, double Dec, double Ha);
+	Coord_LO To_Coord_LO(const double(&trafo)[3][3]);
 	Coord_HO To_Coord_HO(double Lat, RefrOpt Opt);
 	Coord_IN To_Coord_IN(double Lat, RefrOpt Opt, const double(&missaligment)[3][3]);
   double FrE();
 	double Dec();
 	double Ha();
+	double direct_Ha();
 	double Ra(double LST);
 };
 

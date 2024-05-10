@@ -11,27 +11,27 @@ set LANG=_French
 del %OUTPUT%\TeenAstroSHC.ino.bin
 del %OUTPUT%\TeenAstroSHC.ino.elf
 del %OUTPUT%\TeenAstroSHC.ino.map
-..\..\..\ArduinoCli\arduino-cli.exe compile --clean --libraries ..\..\..\libraries -v -b %BOARD% --output-dir %OUTPUT% %OPTIONS%=FRENCH %SKETCH%
-move /Y %OUTPUT%\TeenAstroSHC.ino.bin ..\%VER%\%SHCNAME%%LANG%.bin
-move /Y %OUTPUT%\TeenAstroSHC.ino.elf ..\%VER%\%SHCNAME%%LANG%.elf
-move /Y %OUTPUT%\TeenAstroSHC.ino.map ..\%VER%\%SHCNAME%%LANG%.map
+..\..\..\ArduinoCli\arduino-cli.exe compile --clean --libraries ..\..\..\libraries -b %BOARD% --output-dir %OUTPUT% %OPTIONS%=FRENCH %SKETCH%
+move /Y %OUTPUT%\TeenAstroSHC.ino.bin ..\%VER%_latest\%SHCNAME%%LANG%.bin
+move /Y %OUTPUT%\TeenAstroSHC.ino.elf ..\%VER%_latest\%SHCNAME%%LANG%.elf
+move /Y %OUTPUT%\TeenAstroSHC.ino.map ..\%VER%_latest\%SHCNAME%%LANG%.map
 
 
 set LANG=_German
 del %OUTPUT%\TeenAstroSHC.ino.bin
 del %OUTPUT%\TeenAstroSHC.ino.elf
 del %OUTPUT%\TeenAstroSHC.ino.map
-..\..\..\ArduinoCli\arduino-cli.exe --clean compile --libraries ..\..\..\libraries -v -b %BOARD% --output-dir %OUTPUT% %OPTIONS%=GERMAN %SKETCH%
-move /Y %OUTPUT%\TeenAstroSHC.ino.bin ..\%VER%\%SHCNAME%%LANG%.bin
-move /Y %OUTPUT%\TeenAstroSHC.ino.elf ..\%VER%\%SHCNAME%%LANG%.elf
-move /Y %OUTPUT%\TeenAstroSHC.ino.map ..\%VER%\%SHCNAME%%LANG%.map
+..\..\..\ArduinoCli\arduino-cli.exe compile --clean  --libraries ..\..\..\libraries -b %BOARD% --output-dir %OUTPUT% %OPTIONS%=GERMAN %SKETCH%
+move /Y %OUTPUT%\TeenAstroSHC.ino.bin ..\%VER%_latest\%SHCNAME%%LANG%.bin
+move /Y %OUTPUT%\TeenAstroSHC.ino.elf ..\%VER%_latest\%SHCNAME%%LANG%.elf
+move /Y %OUTPUT%\TeenAstroSHC.ino.map ..\%VER%_latest\%SHCNAME%%LANG%.map
 
 
 set LANG=_English
 del %OUTPUT%\TeenAstroSHC.ino.bin
 del %OUTPUT%\TeenAstroSHC.ino.elf
 del %OUTPUT%\TeenAstroSHC.ino.map
-..\..\..\ArduinoCli\arduino-cli.exe --clean compile --libraries ..\..\..\libraries -v -b %BOARD% --output-dir %OUTPUT% %OPTIONS%=ENGLISH %SKETCH%
+..\..\..\ArduinoCli\arduino-cli.exe compile --clean --libraries ..\..\..\libraries -b %BOARD% --output-dir %OUTPUT% %OPTIONS%=ENGLISH %SKETCH%
 move /Y %OUTPUT%\TeenAstroSHC.ino.bin ..\%VER%_latest\%SHCNAME%%LANG%.bin
 move /Y %OUTPUT%\TeenAstroSHC.ino.elf ..\%VER%_latest\%SHCNAME%%LANG%.elf
 move /Y %OUTPUT%\TeenAstroSHC.ino.map ..\%VER%_latest\%SHCNAME%%LANG%.map
