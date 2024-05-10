@@ -357,6 +357,7 @@ void startTracking(void)
 
 void stopTracking(void)
 {
+  stopSpiral();
   stopMoving();
 }
 

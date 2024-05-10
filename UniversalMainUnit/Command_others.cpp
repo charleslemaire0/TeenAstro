@@ -56,7 +56,7 @@ void Command_A()
   switch (command[1])
   {
   case '0':
-    mount.mP->pm.init(false);
+    mount.mP->initModel(true);
     vTaskDelay(10);
     replyShortTrue();
     break;
@@ -73,16 +73,14 @@ void Command_A()
   }
   case 'E':
   {
-//    double val = mount.mP->pm.alignment.getError() * RAD_TO_DEG;
-    double val = 0; // not yet implemented 
+    double val = mount.mP->pm.getError()* RAD_TO_DEG;
     doubleToDms(reply, &val, false, true, true);
-    //sprintf(reply, "%+05.4f", val);
     strcat(reply, "#");
   }
   break;
   case 'C':
   case 'A':
-    mount.mP->initModel(false);
+    mount.mP->initModel(true);
     syncAtHome();
     autoAlignmentBySync = command[1] == 'A';
     replyShortTrue();

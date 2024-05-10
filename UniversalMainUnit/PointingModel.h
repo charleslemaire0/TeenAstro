@@ -12,5 +12,7 @@ public:
   void sky(Axes*, Axes*);     // get sky coordinates from instrument 
   bool isReady(void);
   int numStars(void);
+  float getError(void);
   CoordConv alignment;
+  float alignError;
 };

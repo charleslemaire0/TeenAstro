@@ -22,6 +22,7 @@ void PointingModel::addStar(EqCoords *sP)
   if (alignment.getRefs() == 2)
   {
     alignment.calculateThirdReference();
+    alignError = alignment.getError(); 
     if (alignment.isReady())
     {
       motorA1.setTargetPos(motorA1.getCurrentPos());
@@ -32,6 +33,7 @@ void PointingModel::addStar(EqCoords *sP)
 
 void PointingModel::reset(void)
 {
+  alignment.clean();
   alignment.reset();
 }
 
@@ -41,11 +43,16 @@ void PointingModel::init(bool reset)
 
   byte TvalidFromEEPROM = XEEPROM.read(getMountAddress(EE_Tvalid));
 
-  if (TvalidFromEEPROM == 1 && reset)
+  if (reset || TvalidFromEEPROM == 0)
   {
+    alignment.clean();
+    alignment.reset();
+    alignError = 0.0;
+    motorA1.setTargetPos(motorA1.getCurrentPos());
+    motorA2.setTargetPos(motorA2.getCurrentPos());
     XEEPROM.write(getMountAddress(EE_Tvalid), 0);
   }
-  if (TvalidFromEEPROM == 1 && !reset)
+  else
   {
     t11 = XEEPROM.readFloat(getMountAddress(EE_T11));
     t12 = XEEPROM.readFloat(getMountAddress(EE_T12));
@@ -56,14 +63,9 @@ void PointingModel::init(bool reset)
     t31 = XEEPROM.readFloat(getMountAddress(EE_T31));
     t32 = XEEPROM.readFloat(getMountAddress(EE_T32));
     t33 = XEEPROM.readFloat(getMountAddress(EE_T33));
+    alignError = XEEPROM.readFloat(getMountAddress(EE_AlignError));
     alignment.setT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
     alignment.setTinvFromT();
-  }
-  else
-  {
-    alignment.clean();
-    motorA1.setTargetPos(motorA1.getCurrentPos());
-    motorA2.setTargetPos(motorA2.getCurrentPos());
   }
 }
 
@@ -86,6 +88,7 @@ void PointingModel::save(void)
   XEEPROM.writeFloat(getMountAddress(EE_T31), t31);
   XEEPROM.writeFloat(getMountAddress(EE_T32), t32);
   XEEPROM.writeFloat(getMountAddress(EE_T33), t33);
+  XEEPROM.writeFloat(getMountAddress(EE_AlignError), alignError);  
 }
 
 // get instrument coordinates from sky 
@@ -120,4 +123,10 @@ bool PointingModel::isReady(void)
 int PointingModel::numStars(void)
 {
   return alignment.getRefs();
+}
+
+// return the stored alignment error since this cannot be computed from the restored alignment matrix
+float PointingModel::getError(void)
+{
+  return alignError;
 }

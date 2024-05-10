@@ -124,6 +124,7 @@
 #define EE_T32              EE_T11 + 28
 #define EE_T33              EE_T11 + 32
 #define EE_Tvalid           EE_T11 + 36
+#define EE_AlignError       EE_T11 + 40
 
 int getMountAddress(int adress);
 int getMountAddress(int adress, int ndx);

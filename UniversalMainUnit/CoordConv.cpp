@@ -22,6 +22,14 @@ void LA3::crossProduct(double (&out)[3], const double (&a)[3], const double (&b)
 	out[2]=a[0]*b[1] - a[1]*b[0];
 }
 
+double LA3::dotProduct(const double(&a)[3], const double(&b)[3]) {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+double LA3::angle2Vectors(const double(&a)[3], const double(&b)[3]) {
+  return acos(dotProduct(a,b) / (norm(a) * norm(b)));
+}
+
 // Calculate the 2-norm of a 3-vector, i.e. its Euclidean length
 double LA3::norm(const double (&in)[3]) {
 	return sqrt(in[0]*in[0] + in[1]*in[1] + in[2]*in[2]);
@@ -154,7 +162,7 @@ void CoordConv::setT(float m11, float m12, float m13,float m21, float m22, float
 	T[2][0]=m31;
 	T[2][1]=m32;
 	T[2][2]=m33;
-	refs = 0;
+	refs = 3;
   isready = true;
 }
 
@@ -326,3 +334,17 @@ double CoordConv::polErrorDeg(double lat, Err sel)
 			return 0;
 	}
 }
+
+// Find the angle of the rotation matrix
+double CoordConv::getError(void)
+{
+  double theta;
+  if (isready)
+  {
+    theta = angle2Vectors(dcHDRef[0], dcHDRef[1]) - angle2Vectors(dcAARef[0], dcAARef[1]);
+    return theta;
+  }
+  else
+    return 0.0;
+}
+

@@ -50,6 +50,10 @@ public:
 	// Calculate the 2-norm of a 3-vector, i.e. its Euclidean length
 	static double norm(const double (&in)[3]);
 
+  static double dotProduct(const double(&a)[3], const double(&b)[3]);
+
+  static double angle2Vectors(const double(&a)[3], const double(&b)[3]);
+
 	// Normalize a 3-vector to unit length 
 	static void normalize(double (&out)[3], const double (&in)[3]);
 
@@ -136,7 +140,7 @@ public:
 	void toReferenceDeg(double &angle1,  double &angle2, double axis1, double axis2) const;
 
 	double polErrorDeg(double lat, Err sel);
-
+  double getError(void);
 
 protected:
 	// add a user-provided reference star (all values in radians)

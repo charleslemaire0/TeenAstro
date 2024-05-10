@@ -498,6 +498,7 @@ void Command_GX()
     else if (getEvent(EV_SOUTH))
       reply[8] = '_';
 
+    reply[11] = mount.mP->pm.alignment.isReady()? '1' : '0';
     if (mount.mP->type == MOUNT_TYPE_GEM)
     {
       reply[12] = 'E';
