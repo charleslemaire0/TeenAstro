@@ -17,13 +17,20 @@ def sign(val):
     return res
 
 
+def raRange(ra):
+  while (ra < 0):
+    ra += 24
+  while (ra >= 24):
+    ra -= 24
+  return ra
+
 def eqAxesToEqu(subName, pierSide, axis1, axis2, latitude, lst):
   # different methods for UniversalMainUnit and standard version
     if (subName == 'UniversalMainUnit'):
       hemisphere = sign(latitude)
       flipSign = sign(axis2)
       ha  = hemisphere * (axis1 + flipSign * 90) / 15;
-      ra = lst - ha       # in hours
+      ra = raRange(lst - ha)       # in hours
       dec = hemisphere * (90 - (flipSign * axis2));    
     else:
       # not sure about the hemisphere - check later

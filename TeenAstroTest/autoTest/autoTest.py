@@ -69,10 +69,12 @@ centeringFrame = sg.Frame('Centering',[[sg.B(button_text='N', key='alignN'), sg.
 
 
 alignmentFrame = sg.Frame('Sync/Alignment',[[sg.B(button_text='Sync', key='alignmentSync'),
-                                        sg.B(button_text='StartAlign', key='startAlign'),sg.B(button_text='ClearAlign', key='clearAlign'),
-                                        sg.B(button_text='AddStar', key='addStar')], 
+                                        sg.B(button_text='StartAlign', key='startAlign'),sg.B(button_text='AddStar', key='addStar'),
+                                        sg.B(button_text='ClearAlign', key='clearAlign'),sg.B(button_text='SaveAlign', key='saveAlign')], 
                                         [sg.T('Align Status: '),sg.T('Disabled', key='align_status'),
-                                         sg.T('Num Stars: '),   sg.T('0', key='align_stars')]])
+                                         sg.T('Num Stars: '),   sg.T('0', key='align_stars'), 
+                                         sg.T('Align Error: '), sg.T('0', key='align_error'), 
+                                         ]])
 
 slewingCanvasGroup = sg.TabGroup([[sg.Tab('T',  [[sg.Canvas(key='slew_cv_t', size=(640, 400))]])],
                                    [sg.Tab('Polar', [[sg.Canvas(key='slew_cv_polar', size=(640, 400))]])]

@@ -329,6 +329,9 @@ class TeenAstro(object):
   def clearAlignment(self):
     return self.getValue(":AC#")
 
+  def saveAlignment(self):
+    return self.getValue(":AW#")
+
   def addStar(self):
     return self.getValue(":A2#")
 
@@ -401,6 +404,9 @@ class TeenAstro(object):
     
   def alignNumStars(self):
     return(self.getValue(':GXAn#'))
+
+  def alignError(self):
+    return(self.getValue(':AE#'))
 
   def guideCmd(self, dir, ms):
     self.port.write((":Mg%1s%04u#" % (dir, ms)).encode('utf-8'))  # does not return a value
