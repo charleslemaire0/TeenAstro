@@ -22,7 +22,7 @@ void HAL_preInit(void)
 {
   Serial.begin(BAUD);
   Serial0.begin(BAUD, SERIAL_8N1, SHCRx, SHCTx);
-  rtc.setTime(initialSystemTime);
+//  rtc.setTime(initialSystemTime);   // removed because it messes up EEPROM reading
 }
 
 void HAL_initSerial(void)
@@ -35,13 +35,13 @@ void HAL_initSerial(void)
  
 void HAL_setRealTimeClock(unsigned long t)
 {
-  rtc.setTime(t - ((double) xTaskGetTickCount() / 1000.0));
+  initialSystemTime = t - ((double) xTaskGetTickCount() / 1000.0);
 }
 
 unsigned long HAL_getRealTimeClock()
 {
-  //return initialSystemTime + ((double) xTaskGetTickCount() / 1000.0);
-  return rtc.getEpoch();
+  return initialSystemTime + ((double) xTaskGetTickCount() / 1000.0);
+//  return rtc.getEpoch();
 }
 
 void HAL_reboot(void)
@@ -70,6 +70,7 @@ void HAL_EEPROM_begin(void)
 {
   #define EEPROM_SIZE 1024  
   EEPROM.begin(EEPROM_SIZE);
+  delay(10);
 }
 #endif // BOARD_esp32s3_norm
 
