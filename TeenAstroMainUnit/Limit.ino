@@ -137,9 +137,9 @@ void reset_EE_Limit()
 void force_reset_EE_Limit()
 {
   XEEPROM.writeShort(getMountAddress(EE_minAxis1), 9999);
-  XEEPROM.writeShort(getMountAddress(EE_maxAxis1), 9999);
+  XEEPROM.writeShort(getMountAddress(EE_maxAxis1), -9999);
   XEEPROM.writeShort(getMountAddress(EE_minAxis2), 9999);
-  XEEPROM.writeShort(getMountAddress(EE_maxAxis2), 9999);
+  XEEPROM.writeShort(getMountAddress(EE_maxAxis2), -9999);
 }
 
 bool initLimitMinAxis1()
