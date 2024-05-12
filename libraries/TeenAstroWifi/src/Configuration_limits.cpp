@@ -139,8 +139,9 @@ void TeenAstroWifi::handleConfigurationLimits()
     sprintf_P(temp, html_configMiDistanceFromPole, miDistanceFromPole);
     data += temp;
     #endif
+    sendHtml(data);
   }
-  sendHtml(data);
+
 
   bool ok = true;
   short  anglemin, anglemax, angle_i_min, angle_i_max;
