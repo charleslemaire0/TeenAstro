@@ -27,7 +27,7 @@
 #define BUTTON_Stop "stop"
 #define BUTTON_SYNC "@"
 
-const char  html_controlScript1[] = "<script>\n"
+const char  html_controlScript1[] PROGMEM = "<script>\n"
 "function s(key,v1) {\n"
 "var xhttp = new XMLHttpRequest();\n"
 "xhttp.open('GET', 'guide.txt?'+key+'='+v1+'&x='+new Date().getTime(), true);\n"
@@ -47,7 +47,7 @@ const char html_controlQuick2[] PROGMEM =
 "&nbsp;&nbsp;"
 "<button type='button' class='bb' onpointerdown=\"g('pu')\">Unpark</button>";
 
-const char html_controlQuick3[]  PROGMEM =
+const char html_controlQuick3[] PROGMEM =
 "</div><br class='clear' />\r\n";
 
 
