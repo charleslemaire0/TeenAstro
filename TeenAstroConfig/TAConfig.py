@@ -29,10 +29,12 @@ MountDef = { 'mType':['Eq-German', 'Eq-Fork', 'AltAz-Tee', 'AltAz-Fork'],
       'DefaultR':['Guide', 'Slow', 'Medium','Fast', 'Max'],
       'MaxR':[i for i in range(32,4000)],'GuideR':[i/100 for i in range(1,201)],'Acc':[i/10 for i in range(1,251)],
       'SlowR':[i for i in range(1,255)],'MediumR':[i for i in range(1,255)],'FastR':[i for i in range(1,255)],
-      'mrot1':['Direct','Reverse'],'mge1':[i for i in range(1,60000)],'mst1':[i for i in range(1,400)],'mmu1':[8,16,32,64,128,256],
+      'mrot1':['Direct','Reverse'],'mge1':[i for i in range(1,60000)],'mge1f':[i for i in range(0,999)],
+      'mst1':[i for i in range(1,400)],'mmu1':[8,16,32,64,128,256],
       'mbl1':[i for i in range(0,999)],'mlc1':[i for i in range(100,2000,10)],'mhc1':[i for i in range(100,2000, 10)], 
       'msil1':[0,1],
-      'mrot2':['Direct','Reverse'],'mge2':[i for i in range(1,60000)],'mst2':[i for i in range(1,400)],'mmu2':[8,16,32,64,128,256],
+      'mrot2':['Direct','Reverse'],'mge2':[i for i in range(1,60000)],'mge2f':[i for i in range(0,999)],
+      'mst2':[i for i in range(1,400)],'mmu2':[8,16,32,64,128,256],
       'mbl2':[i for i in range(0,999)],'mlc2':[i for i in range(100,2000,10)],'mhc2':[i for i in range(100,2000, 10)], 
       'msil2':[0,1],
       'hl':[i for i in range(-30,30)], 'ol':[i for i in range(60,92)], 'el':[i for i in range(-45,45)], 
@@ -197,9 +199,13 @@ def writeMountData():
       # Microsteps are coded as the exponent of 2
       cmdStr += str(int(math.log(int(Mount[tag]), 2)))
 
-    elif ((tag == 'mge1') or (tag == 'mge2')):
+    elif ((tag == 'mge1') or (tag == 'mge1f')):
       # Gears are stored as 1000 times the value to allow fractional values
-      cmdStr += str(int(int(Mount[tag]) * 1000))
+      cmdStr += str(int(int(Mount['mge1']) * 1000) + int(Mount['mge1f']) )
+
+    elif ((tag == 'mge2') or (tag == 'mge2f')):
+      # Gears are stored as 1000 times the value to allow fractional values
+      cmdStr += str(int(int(Mount['mge2']) * 1000) + int(Mount['mge2f']) )
 
     elif ((tag == 'el') or (tag == 'wl')):    # EL / WL limits are stored in quarters of a degree
       cmdStr += str(int(int(Mount[tag]) * 4))
@@ -330,8 +336,13 @@ def readMountData():
     elif ((tag == 'mmu1') or (tag == 'mmu2')):  # Microsteps are coded as the exponent of 2
       Mount[tag] = int(math.pow(2, int(resp)))
 
-    elif ((tag == 'mge1') or (tag == 'mge2')):  # Gears are stored as 1000x actual gear
-      Mount[tag] = int(float(resp) / 1000)
+    elif ((tag == 'mge1') or (tag == 'mge1f')):  # Gears are stored as 1000x actual gear
+      Mount['mge1']  = int(float(resp) / 1000) 
+      Mount['mge1f'] = int(float(resp) % 1000)
+
+    elif ((tag == 'mge2') or (tag == 'mge2f')):  # Gears are stored as 1000x actual gear
+      Mount['mge2']  = int(float(resp) / 1000)
+      Mount['mge2f'] = int(float(resp) % 1000)
 
     elif ((tag == 'el') or (tag == 'wl')):      # EL / WL limits are indicated in quarters of a degree
       Mount[tag] = int(int(resp) / 4)
@@ -615,14 +626,14 @@ speedFrame = sg.Frame('Speeds',
           [sgLabel('Acceleration'), sgSpin('Acc')]])
 
 motFrame1 = sg.Frame('RA Motor', [[sgLabel('Rotation'), sgSpin('mrot1', width=8)],
-          [sgLabel('Gear'), sgSpin('mge1')],
+          [sgLabel('Gear(integer/fractional)'), sgSpin('mge1'), sgSpin('mge1f', width=5)],
           [sgLabel('Steps'), sgSpin('mst1')],
           [sgLabel('Microsteps'), sgSpin('mmu1')],
           [sgLabel('Backlash'), sgSpin('mbl1')],
           [sgLabel('Low/High current, Silent'), sgSpin( 'mlc1'), sgSpin('mhc1'), sgSpin('msil1')]])
 
 motFrame2 = sg.Frame('Dec Motor', [[sgLabel('Rotation'), sgSpin('mrot2', width=8)],
-          [sgLabel('Gear'), sgSpin('mge2')],
+          [sgLabel('Gear(integer/fractional)'), sgSpin('mge2'), sgSpin('mge2f', width=5)],
           [sgLabel('Steps'), sgSpin('mst2')],
           [sgLabel('Microsteps'), sgSpin('mmu2')],
           [sgLabel('Backlash'), sgSpin('mbl2')],
