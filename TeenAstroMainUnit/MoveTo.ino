@@ -7,7 +7,8 @@ void moveTo()
   // HA goes from +90...0..-90
   //                W   .   E
   static long lastPosAxis2 = 0;
-  volatile unsigned long distStartAxis1, distStartAxis2, distDestAxis1, distDestAxis2, d;
+  volatile unsigned long distStartAxis1, distStartAxis2, distDestAxis1, distDestAxis2;
+
   staA1.updateDeltaStart();
   staA2.updateDeltaStart();
   distStartAxis1 = max(abs(staA1.deltaStart), 1L);  // distance from start HA
@@ -79,15 +80,21 @@ Again:
   }
 
   // First, for Right Ascension
-  d = distStartAxis1 < distDestAxis1 ? distStartAxis1 : distDestAxis1;
+  volatile long d = distStartAxis1 < distDestAxis1 ? distStartAxis1 : distDestAxis1;
+  if (staA1.deltaTarget < 0)
+    d = -d;
+
   cli();
-  staA1.setIntervalfromDist(d, minInterval1, maxInterval1);
+  staA1.setIntervalfromDist(d, sideralTracking, minInterval1, maxInterval1);
   sei();
 
   // Now, for Declination
   d = distStartAxis2 < distDestAxis2 ? distStartAxis2 : distDestAxis2;
+  if (staA2.deltaTarget < 0)
+    d = -d;
+ 
   cli();
-  staA2.setIntervalfromDist(d, minInterval2, maxInterval2);
+  staA2.setIntervalfromDist(d, sideralTracking, minInterval2, maxInterval2);
   sei();
 
 
