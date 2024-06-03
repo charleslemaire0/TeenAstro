@@ -1,5 +1,5 @@
 @echo off
-rem usage : TeenAstroBuilder -target MainUnit|Focuser -driver TMC260|TMC2130|TMC5160|TMC2160 -hwvers 240 -release x.y -v
+rem usage : TeenAstroBuilder -target MainUnit|Focuser -driver TMC260|TMC2130|TMC5160|TMC2660 -hwvers 240 -release x.y -v
 
 setlocal enableDelayedExpansion
 
@@ -70,12 +70,12 @@ rem
 				  set AxisDriver=2
 				) else if /i [!driver!] == [TMC5160] (
 				  set AxisDriver=3
-				) else if /i [!driver!] == [TMC2160] (
+				) else if /i [!driver!] == [TMC2660] (
 				  set AxisDriver=4
 				) else if /i [!driver!] == [TMC260] (
 				  set AxisDriver=1
 				) else (
-				  echo driver must be  TMC2130, TMC5160, or TMC2160
+				  echo driver must be  TMC2130, TMC5160, or TMC2660
 				  exit /b		
 				) 
               shift & shift
@@ -88,15 +88,17 @@ rem
 
            if not [%2] == [] (
               set hwvers=%~2
-				if /i [!hwvers!] NEQ [250] ( 
-					if /i [!hwvers!] NEQ [240] ( 
-						if /i [!hwvers!] NEQ [230] (
-							if /i [!hwvers!] NEQ [220] (
-								echo hwvers must be  220, 230, 240 or 250
-								exit /b
-							)
-						)
-					)
+				if /i [!hwvers!] NEQ [260] ( 
+		  		if /i [!hwvers!] NEQ [250] ( 
+            if /i [!hwvers!] NEQ [240] ( 
+              if /i [!hwvers!] NEQ [230] (
+                if /i [!hwvers!] NEQ [220] (
+                  echo hwvers must be  220, 230, 240, 250 or 260
+                  exit /b
+                )
+              )
+            )
+          )
 				) 
               shift & shift
            ) else (
@@ -227,6 +229,9 @@ if /i [!hwvers!] == [220]  (
   set BOARD="teensy:avr:teensy31:usb=serial,speed=96,opt=o2std,keys=en-us"
   set OPTION=--build-property "compiler.cpp.extra_flags=-DVERSION=!hwvers! -DAxisDriver=!AxisDriver!"
 ) else if /i [!hwvers!] == [250]  ( 
+  set BOARD="teensy:avr:teensy40:usb=serial,speed=450,opt=o2std,keys=en-us"
+  set OPTION=--build-property "compiler.cpp.extra_flags=-DVERSION=!hwvers! -DAxisDriver=!AxisDriver!"
+) else if /i [!hwvers!] == [260]  ( 
   set BOARD="teensy:avr:teensy40:usb=serial,speed=450,opt=o2std,keys=en-us"
   set OPTION=--build-property "compiler.cpp.extra_flags=-DVERSION=!hwvers! -DAxisDriver=!AxisDriver!"
 )
