@@ -1,3 +1,4 @@
+call TeenAstroBuilder.bat -target MainUnit -driver TMC2660 -hwvers 260 -release 1.5 -v > log_Main_TMC2660_260.txt
 call TeenAstroBuilder.bat -target MainUnit -driver TMC5160 -hwvers 250 -release 1.5 -v > log_Main_TMC5160_250.txt
 call TeenAstroBuilder.bat -target MainUnit -driver TMC2130 -hwvers 250 -release 1.5 -v > log_Main_TMC2130_250.txt
 call TeenAstroBuilder.bat -target MainUnit -driver TMC5160 -hwvers 240 -release 1.5 -v > log_Main_TMC5160_240.txt
