@@ -232,7 +232,7 @@ if /i [!hwvers!] == [220]  (
   set BOARD="teensy:avr:teensy40:usb=serial,speed=450,opt=o2std,keys=en-us"
   set OPTION=--build-property "compiler.cpp.extra_flags=-DVERSION=!hwvers! -DAxisDriver=!AxisDriver!"
 ) else if /i [!hwvers!] == [260]  ( 
-  set BOARD="teensy:avr:teensy40:usb=serial,speed=450,opt=o2std,keys=en-us"
+  set BOARD="teensy:avr:teensyMM:usb=serial,speed=450,opt=o2std,keys=en-us"
   set OPTION=--build-property "compiler.cpp.extra_flags=-DVERSION=!hwvers! -DAxisDriver=!AxisDriver!"
 )
 
