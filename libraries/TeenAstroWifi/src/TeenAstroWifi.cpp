@@ -510,6 +510,7 @@ void TeenAstroWifi::setup()
 #ifdef ARDUINO_LOLIN_C3_MINI
     WiFi.setTxPower(WIFI_POWER_8_5dBm);
 #endif // ARDUINO_LOLIN_C3_MINI
+    break;
   default:
     break;
   }

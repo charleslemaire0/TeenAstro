@@ -49,8 +49,9 @@ public:
     {
       updateDeltaTarget();
     }
-    return abs(deltaTarget) < max(minstepdist * RequestedTrackingRate, 1);
+    return abs(deltaTarget) < max(minstepdist * abs(RequestedTrackingRate), 1);
   };
+  
   void resetToSidereal()
   {
     interval_Step_Cur = interval_Step_Sid;
@@ -59,7 +60,7 @@ public:
   {
     ClockSpeed = cs;
     interval_Step_Sid = siderealClockSpeed / stepsPerSecond;
-    minstepdist = 0.25 * stepsPerSecond;
+    minstepdist = 0.05 * stepsPerSecond;
     takeupRate = 8L;
     takeupInterval = interval_Step_Sid / takeupRate;
     SetBacklash_interval_Step(bl_rate);
@@ -127,10 +128,16 @@ public:
     deltaTarget = a;
     sei();
   };
-  void setIntervalfromDist(const volatile unsigned long& d, double minInterval, double maxInterval)
+
+  void setIntervalfromDist(const volatile long& d, bool tracking, double minInterval, double maxInterval)
   {
-    interval_Step_Cur = max(speed2interval(speedfromDist(d), maxInterval), minInterval);
+    double rate = ratefromSpeed(speedfromDist(d));
+    if (tracking)
+      rate += CurrentTrackingRate;
+    setIntervalfromRate(fabs(rate), minInterval, maxInterval);
   };
+
+
   void setIntervalfromRate(double rate, double minInterval, double maxInterval)
   {
     if (rate == 0)
@@ -184,10 +191,18 @@ public:
     backlash_interval_Step = interval_Step_Sid / bl_rate;
   }
 private:
-  double speedfromDist(const volatile unsigned long& d)
+  double speedfromDist(const volatile long& d)
   {
-    return sqrt((long double)d * 2. * acc);
+    if (d < 0)
+      return -sqrt((long double)(-d) * 2. * acc);
+    else
+      return sqrt((long double)d * 2. * acc);
   };
+
+  double ratefromSpeed(double V)
+  {
+    return V * interval_Step_Sid/ClockSpeed;
+  }
   long double interval2speed(double interval)
   {
     return ClockSpeed / interval;

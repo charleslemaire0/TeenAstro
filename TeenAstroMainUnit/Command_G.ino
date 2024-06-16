@@ -272,7 +272,13 @@ void Command_GX()
         sprintf(reply, "%f#", (double)staA1.CurrentTrackingRate);
         break;
       case '4':
+        sprintf(reply, "%f#", (double)staA2.CurrentTrackingRate);
+        break;
+      case '5':
         sprintf(reply, "%f#", (double)staA1.fstep);
+        break;
+      case '6':
+        sprintf(reply, "%f#", (double)staA2.fstep);
         break;
       default:
         replyLongUnknow();

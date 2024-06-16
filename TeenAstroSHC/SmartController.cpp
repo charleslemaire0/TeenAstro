@@ -283,14 +283,7 @@ void SmartHandController::update()
   if (!ta_MountStatus.isConnectionValid() && ta_MountStatus.hasInfoV())
   {
     display->sleepOff();
-    buttonPad.setMenuMode();
-    DisplayMessage("!! " T_ERROR " !!", T_VERSION, -1);
-#ifdef ARDUINO_D1_MINI32
-    ESP.restart();
-#endif
-#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
-    ESP.reset();
-#endif
+    DisplayMessage("!! " T_ERROR " !!", T_VERSION, 100);
     return;
   }
 
