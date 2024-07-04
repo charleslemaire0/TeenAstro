@@ -7,7 +7,7 @@
 #define DEFAULT_FAST_AJAX_RATE "1"   // fast update is 1 second/update
 #define DEFAULT_AJAX_SHED_TIME "15"  // time before return to normal update rate
 
-const char html_ajax_active[] =
+const char html_ajax_active[] PROGMEM =
 "<script>\n"
 "var auto1Tick=0;\n"
 "var auto2Tick=0;\n"
