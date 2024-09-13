@@ -25,7 +25,7 @@ void UpdateGnss()
 #if VERSION == 220
   return;
 #endif
-  if (hasGNSS && (atHome || parkStatus() == PRK_PARKED))
+  if (hasGNSS && (atHome() || parkStatus() == PRK_PARKED))
   {
     while (GNSSSerial.available())
     {

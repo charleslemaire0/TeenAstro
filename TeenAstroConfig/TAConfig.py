@@ -39,7 +39,8 @@ MountDef = { 'mType':['Eq-German', 'Eq-Fork', 'AltAz-Tee', 'AltAz-Fork'],
       'msil2':[0,1],
       'hl':[i for i in range(-30,30)], 'ol':[i for i in range(60,92)], 'el':[i for i in range(-45,45)], 
       'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)],
-      'a1min':[i for i in range(-380,0)],'a1max':[i for i in range(0,380)],'a2min':[i for i in range(-380,0)],'a2max':[i for i in range(0,380)]
+      'a1min':[i for i in range(-380,0)],'a1max':[i for i in range(0,380)],'a2min':[i for i in range(-380,0)],'a2max':[i for i in range(0,380)],
+      'mEn': [False]
       }
 
 # Commands for getting mount parameters
@@ -49,7 +50,7 @@ MountReadCmd = {
       'mrot1':'GXMRR','mge1':'GXMGR','mst1':'GXMSR','mmu1':'GXMMR','mbl1':'GXMBR','mlc1':'GXMcR','mhc1':'GXMCR', 'msil1':'GXMmR',
       'mrot2':'GXMRD','mge2':'GXMGD','mst2':'GXMSD','mmu2':'GXMMD','mbl2':'GXMBD','mlc2':'GXMcD','mhc2':'GXMCD', 'msil2':'GXMmD',
       'hl':'GXLH', 'ol':'GXLO', 'el':'GXLE', 'wl':'GXLW','ul':'GXLU', 
-      'a1min':'GXLA','a1max':'GXLB','a2min':'GXLC','a2max':'GXLD'
+      'a1min':'GXLA','a1max':'GXLB','a2min':'GXLC','a2max':'GXLD', 'mEn': 'GXJm'
       } 
 MountSetCmd = {
       'mType':'S!','DefaultR':'SXRD:',
@@ -57,7 +58,7 @@ MountSetCmd = {
       'mrot1':'SXMRR:','mge1':'SXMGR:','mst1':'SXMSR:','mmu1':'SXMMR:','mbl1':'SXMBR:','mlc1':'SXMcR:','mhc1':'SXMCR:', 'msil1':'SXMmR:',
       'mrot2':'SXMRD:','mge2':'SXMGD:','mst2':'SXMSD:','mmu2':'SXMMD:','mbl2':'SXMBD:','mlc2':'SXMcD:','mhc2':'SXMCD:', 'msil2':'SXMmD:',
       'hl':'SXLH:', 'ol':'SXLO:', 'el':'SXLE:', 'wl':'SXLW:','ul':'SXLU:', 
-      'a1min':'SXLA:','a1max':'SXLB:','a2min':'SXLC:','a2max':'SXLD:'      
+      'a1min':'SXLA:','a1max':'SXLB:','a2min':'SXLC:','a2max':'SXLD:', 'mEn':'SXME'      
       } 
 
 
@@ -88,11 +89,11 @@ def loadFile(Filename):
 
 def sgSpin(tag, width=5):
   r = MountDef[tag]
-  return ( sg.Spin(values=r, initial_value=r[0], key=tag,size=(width,1), enable_events=True, change_submits=True))
+  return ( sg.Spin(values=r, initial_value=r[0], key=tag, size=(width,1), enable_events=True, change_submits=True))
 
 def siteSpin(tag, width=5):
   r = SiteDef[tag]
-  return ( sg.Spin(values=r, initial_value=r[0], key=tag,size=(width,1), enable_events=True, change_submits=True))
+  return ( sg.Spin(values=r, initial_value=r[0], key=tag, size=(width,1), enable_events=True, change_submits=True))
 
 
 def sgLabel(text):
@@ -151,6 +152,13 @@ def sendCommand(comm, cmdStr):
 def setMountType():
   if (comm == None):
     return
+
+  if (Mount['mEn']):
+    cmdStr = ':SXME,y#'
+  else: 
+    cmdStr = ':SXME,n#'
+  comm.write(cmdStr.encode('utf-8'))
+
   cmdStr = ':' + MountSetCmd['mType']
   if (Mount['mType'] == 'Eq-German'):
     cmdStr +=  '1#'
@@ -172,9 +180,8 @@ def writeMountData():
   for tag in list(MountSetCmd.keys()):
     cmdStr = ":" + MountSetCmd[tag]
 
-    if tag == 'mType':
-      # Mount type
-      # skip this - use special button instead
+    if tag == 'mType' or (tag == 'mEn'):
+      # don't send global commands now - use reboot button instead
       continue
 
     elif ((tag == 'mlc1') or (tag == 'mlc2')
@@ -244,6 +251,8 @@ def writeMountData():
 
     elif (tag == 'SlowR') or (tag == 'MediumR') or (tag == 'FastR'):
       cmdStr += str(int(Mount[tag]))
+
+
 
 #    elif (tag == 'poleAlign'):
 #      if (Mount[tag] == 'True'):
@@ -382,7 +391,16 @@ def readMountData():
         Mount[tag] = 'Max'
 
     elif (tag == 'SlowR') or (tag == 'MediumR') or (tag == 'FastR'):  
+      print (tag, int(float(resp)))
       Mount[tag] = int(float(resp))
+
+    elif (tag == 'mEn'):
+      if (resp == '1'):
+        Mount[tag] = True
+      else:
+        Mount[tag] = False
+
+
 
 #    elif (tag == 'poleAlign'):
 #      if (resp == 'a'):
@@ -593,12 +611,6 @@ sg.SetOptions(
        progress_meter_color = ('green', 'blue'),
        button_color=('black','lightgray'))
 
-readWriteRow = sg.Column([[sg.Button('Read from TeenAstro'), sg.Button('Write to TeenAstro'),
-               sg.Button('Load from File', pad=((15,5),(5,5))), sg.Button('Save to File')]])
-
-mountTypeRow = sg.Column([[sg.Text('Mount Type'), sgSpin('mType', width=12),
-                           sg.Button('Set and reboot')]])
-
 sites = initSites()
 
 # Initialize the default mount parameters
@@ -696,6 +708,16 @@ versionFrame = sg.Frame('Versions',
           [sg.Text('Stepper Driver:'), sg.Text('',key='driverVersion',size=(30,1))]]
           )
 
+readWriteRow = sg.Column([[sg.Button('Read from TeenAstro'), sg.Button('Write to TeenAstro'),
+               sg.Button('Load from File', pad=((15,5),(5,5))), sg.Button('Save to File')]])
+
+enableFrame = sg.Frame('Global Config',
+          [[sg.Text('Mount Type'), sgSpin('mType', width=12),
+          sg.Checkbox('Enable Motors', key ='mEn', enable_events=True),
+          sg.Button('Set and reboot')]])  
+
+mountTypeRow = sg.Column([[enableFrame]])
+
 mountTab = [[mountTypeRow],[speedFrame, sg.Column([[limitFrame,gemLimitFrame]])],[motFrame1, motFrame2]]
 siteTab = [[siteFrame]]
 statusTab = [[timeFrame, sg.Button('Set current Time')],[coordFrame],[debugFrame],[errorFrame]]
@@ -715,7 +737,7 @@ layout = [ topRow,
          ]
 
 
-window = sg.Window('TAConfig 1.5', layout)
+window = sg.Window('TAConfig 1.6', layout)
 
 comm = None
 
@@ -786,9 +808,13 @@ while True:
       logText(val)
     w.Close()
 
+  elif event == 'mEn':
+    Mount['mEn'] = window[event].Get()
+
   elif event != None:                 # handle changes on spin boxes
     tag = event
     value = window[tag].Get()
+    print (event, value)
     if (tag in list(SiteDef.keys())):
       if (tag == 'siteNum'):          # changed site number?
         updateSiteTab()               # update UI

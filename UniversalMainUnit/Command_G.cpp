@@ -551,7 +551,6 @@ void Command_GX()
       case 'B':
       // :GXJB# get if Both rate Axis are enabled
       {
-//        trackComp == TC_BOTH ? replyLongTrue(): replyLongFalse();
         replyLongTrue();
       }
       break;
@@ -561,18 +560,28 @@ void Command_GX()
         replyLongTrue();
       }
       break;
+      case 'm':
+        // :GXJm# get if mount has motor and can slew track etc...
+      {
+        replyLongTrue();  
+      }
+      break;
       case 'M':
         // :GXJMn# get if axis is still moving
       {
         if (command[4] == '1')
         {
-  //jma        GuidingState == Guiding::GuidingAtRate && guideA1.isBusy() ? replyLongTrue() : replyLongFalse();
-          replyLongFalse();
+          if (motorA1.isMoving())
+            replyLongTrue();
+          else
+            replyLongFalse();
         }
         else if (command[4] == '2')
         {
-  //jma        GuidingState == Guiding::GuidingAtRate && guideA2.isBusy() ? replyLongTrue() : replyLongFalse();
-          replyLongFalse();
+          if (motorA2.isMoving())
+            replyLongTrue();
+          else
+            replyLongFalse();
         }
         else
         {
@@ -623,7 +632,6 @@ void Command_GX()
     }
   }
   break;
-//jma  
   case 'M':
   {
     // :GXM..#   Get Motor Settings

@@ -127,7 +127,7 @@ void controlTask(UNUSED(void *arg))
   long axis1Target, axis2Target;
   long tickCount = 0;
   CTL_MODE prevMode;
-  int dir, previousDirAxis1, previousDirAxis2;
+  int dir, previousDirAxis2;
 
   while (1)
   { 
@@ -144,7 +144,7 @@ void controlTask(UNUSED(void *arg))
           resetEvents(EV_AT_HOME);
           resetEvents(EV_START_TRACKING);
           setEvents(EV_TRACKING | EV_SPEED_CHANGE);
-          previousDirAxis1 = previousDirAxis2 = 0;
+          previousDirAxis2 = 0;
         }
         break;
 
@@ -169,7 +169,7 @@ void controlTask(UNUSED(void *arg))
 //            if (dir != previousDirAxis1)
             {
               motorA1.setTargetPos(dir * geoA1.stepsPerRot);
-              previousDirAxis1 = dir;
+//              previousDirAxis1 = dir;
             }
             motorA2.setVmax(fabs(speeds.speed2));
             dir = fsign(speeds.speed2);
@@ -229,6 +229,7 @@ void controlTask(UNUSED(void *arg))
       motorA1.abort();
       motorA2.abort();
       resetEvents(EV_START_TRACKING | EV_ABORT);
+      parkStatus(PRK_UNPARKED);
       currentMode = CTL_MODE_STOPPING;
     }
   

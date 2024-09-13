@@ -9,7 +9,7 @@
 class DateTimeTimers
 {
 public:
-  volatile long           m_lst = 0;                    // this is the local (apparent) sidereal time in 1/100 seconds (23h 56m 4.1s per day = 86400 clock seconds/
+  long           m_lst = 0;                    // this is the local (apparent) sidereal time in 1/100 seconds (23h 56m 4.1s per day = 86400 clock seconds/
 private:
 
   //timers members

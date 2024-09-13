@@ -5,7 +5,7 @@
 
 
 
-void computeTrackingRate(bool apply)
+void computeTrackingRate(UNUSED(bool apply))
 {  
 #if 0  
   //reset SideralMode if it is equal to sideralspeed

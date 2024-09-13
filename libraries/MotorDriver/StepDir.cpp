@@ -260,6 +260,12 @@ void StepDir::positionMode(void)
       {
         state(PS_DECEL);
       }
+      if (newSpeed == 0.0)
+      {
+        programSpeed(0.0);
+        resetEvents(EV_MOT_GOTO);
+        state(PS_IDLE);
+      }
       break;
 
     case PS_DECEL:
