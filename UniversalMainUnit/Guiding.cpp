@@ -245,9 +245,12 @@ void spiralTask(UNUSED(TimerHandle_t xTimer))
 void stopSpiral(void)
 {
   xTimerStop(spiralTimer, 0);
+  xSemaphoreTake(swMutex, portMAX_DELAY); 
   spiralSpeed.speed1 = 0;
   spiralSpeed.speed2 = 0;
+  xSemaphoreGive(swMutex);
   resetEvents(EV_SPIRAL);  
+  setEvents(EV_SPEED_CHANGE);
 }
 
 // speeds are in multiple of sidereal

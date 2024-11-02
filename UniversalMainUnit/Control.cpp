@@ -358,7 +358,8 @@ void startTracking(void)
 
 void stopTracking(void)
 {
-  stopSpiral();
+  if (getEvent(EV_SPIRAL))
+    stopSpiral();
   stopMoving();
 }
 

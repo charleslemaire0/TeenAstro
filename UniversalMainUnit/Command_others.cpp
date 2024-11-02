@@ -320,9 +320,17 @@ void Command_Q()
   {
   case 0:
     //  :Q#    Halt all slews, stops goto
+    //         has no effect when tracking, but stops spiral
     //         Returns: Nothing
-    stopSpiral();
-    stopMoving();
+    if (isTracking())
+    {
+      if (getEvent(EV_SPIRAL))
+      {
+        stopSpiral();
+      }
+    }
+    else
+      stopMoving();
     break;
   case 'e':
   case 'w':

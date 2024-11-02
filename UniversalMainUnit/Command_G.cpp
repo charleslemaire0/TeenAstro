@@ -346,13 +346,13 @@ void Command_GX()
     }
     break;
   case 'L':
-    // :GXLn user defined limits
+    // :GXLn user defined limits 
     switch (command[3])
     {
     case 'A':
-      // :GXLA# get user defined minAXIS1 (always negative)
+      // :GXLA# get user defined minAXIS1 (always negative, store absolute value)
       i = XEEPROM.readInt(getMountAddress(EE_minAxis1));
-      sprintf(reply, "%d#", i);
+      sprintf(reply, "%d#", -i);
       break;
     case 'B':
       // :GXLB# get user defined maxAXIS1 (always positive)
@@ -362,7 +362,7 @@ void Command_GX()
     case 'C':
       // :GXLC# get user defined minAXIS2 (always negative)
       i = XEEPROM.readInt(getMountAddress(EE_minAxis2));
-      sprintf(reply, "%d#", i);
+      sprintf(reply, "%d#", -i);
       break;
     case 'D':
       // :GXLD# get user defined maxAXIS2 (always positive)
@@ -390,6 +390,31 @@ void Command_GX()
       // :GXLH# return user defined horizon Limit
       // NB: duplicate with :Gh#
       sprintf(reply, "%+02d*#", limits.minAlt);
+      break;
+    default:
+        replyLongUnknown();
+      break;
+    }
+    break;
+  case 'l':
+    // :GXln mount limits - temporary fix - need to move this to the mount headers
+    switch (command[3])
+    {
+    case 'A':
+      i = -360;
+      sprintf(reply, "%d#", i);
+      break;
+    case 'B':
+      i = 360;
+      sprintf(reply, "%d#", i);
+      break;
+    case 'C':
+      i = -360;
+      sprintf(reply, "%d#", i);
+      break;
+    case 'D':
+      i = 360;
+      sprintf(reply, "%d#", i);
       break;
     default:
         replyLongUnknown();

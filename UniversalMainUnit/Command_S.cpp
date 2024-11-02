@@ -182,28 +182,28 @@ void Command_SX()
     switch (command[3])
     {
     case 'A':
-      // :SXLA,VVVV# set user defined minAXIS1 (always negatif)
+      // :SXLA,VVVV# set user defined minAXIS1 (always negative)
       i = (int)strtol(&command[5], NULL, 10);
       XEEPROM.writeInt(getMountAddress(EE_minAxis1), i);
       initLimitMinAxis1();
       replyShortTrue();
       break;
     case 'B':
-      // :SXLB,VVVV# set user defined maxAXIS1 (always positf)
+      // :SXLB,VVVV# set user defined maxAXIS1 (always positive)
       i = (int)strtol(&command[5], NULL, 10);
       XEEPROM.writeInt(getMountAddress(EE_maxAxis1), i);
       initLimitMaxAxis1();
       replyShortTrue();
       break;
     case 'C':
-      // :SXLC,VVVV# set user defined minAXIS2 (always positf)
+      // :SXLC,VVVV# set user defined minAXIS2 (always positive)
       i = (int)strtol(&command[5], NULL, 10);
       XEEPROM.writeInt(getMountAddress(EE_minAxis2), i);
       initLimitMinAxis2();
       replyShortTrue();
       break;
     case 'D':
-      // :SXLD,VVVV# set user defined maxAXIS2 (always positf)
+      // :SXLD,VVVV# set user defined maxAXIS2 (always positive)
       i = (int)strtol(&command[5], NULL, 10);
       XEEPROM.writeInt(getMountAddress(EE_maxAxis2), i);
       initLimitMaxAxis2();
