@@ -1,0 +1,23 @@
+#pragma once
+// This data is machine generated from the Open NGC database with the script convertIc.py.
+// Contains all NGC objects except for those designated NEDSxx and those
+// with a visual magnitude > 16.0 AND with a surface brightness >= 22.5m/arc-sec^2.
+// Do NOT edit this data manually. Rather, fix the import programs and rerun.
+#define Cat_IC_Title "IC"
+#define Cat_IC_Prefix "IC"
+#define NUM_IC {{numObjects}}
+
+const char Cat_IC_Names[] PROGMEM ="";
+
+const char Cat_IC_SubId[] PROGMEM ="A;B;C;D;N";
+
+CAT_TYPES Cat_IC_Type=CAT_DSO_COMP;
+const dso_comp_t Cat_IC[NUM_IC] PROGMEM = {
+//  Name  Constellation Object_type subId Obj_id  Mag RA DE 
+
+  {% for object in objects %} { {{0}}, {{object.constellation}},  {{object.type}}, {{object.subId}}, {{object.id}}, {{object.mag}},   {{object.ra}},   {{object.dec}} }, 
+  {% endfor %}
+
+};
+
+
