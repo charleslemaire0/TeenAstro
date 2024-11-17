@@ -5,6 +5,11 @@ void Command_dollar()
 {
   switch (command[1])
   {
+  //----------------------------------------------------------------------------------
+  //   $ - Reset Commands
+  //  :$$# Clean EEPROM
+  //  :$!# Reboot Main Unit Unit
+  //  :$X# Reinit encoder and motors
   case '$':
     for (int i = 0; i < XEEPROM.length(); i++)
     {
@@ -185,7 +190,7 @@ void Command_B()
 
 //   C - Sync Control
 //  :CA#   Synchonize the telescope with the current Target Azimuth and Altitude coordinates
-//         Returns: "N/A#" 
+//         Returns: Nothing
 //  :CM#   Synchonize the telescope with the current database object (as above)
 //         Returns: "N/A#"  
 //  :CS#   Synchonize the telescope with the current Target right ascension and declination coordinates
@@ -611,7 +616,7 @@ void Command_R()
   //  :RC#   Set Slew rate to Centering rate (2nd slowest) 4X
   //  :RM#   Set Slew rate to Find Rate (2nd Fastest) 32X
   //  :RS#   Set Slew rate to max (fastest) ?X (MaxRate)
-  //  :Rn#   Set Slew rate to n, where n=0..9
+  //  :Rn#   Set Slew rate to n, where n=0..4
   //         Returns: Nothing
 
   int i = 5;

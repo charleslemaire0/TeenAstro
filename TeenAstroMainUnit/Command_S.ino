@@ -178,15 +178,18 @@ void Command_SX()
         {
           initTransformation(true);
         }
+        ok = true;
         break;
       case 'g':
       {
         doesRefraction.setGoto(val);
+        ok = true;
       }
       break;
       case 't':
       {
         doesRefraction.setTracking(val);
+        ok = true;
       }
       break;
       default:
@@ -399,7 +402,7 @@ void Command_SX()
     }
     break;
     case 'O':
-      // :SXLO,VV.VV# set user defined overhead Limit
+      // :SXLO,VV# set user defined overhead Limit
       // NB: duplicate with :So#
     {
       int i;
@@ -651,7 +654,7 @@ void Command_SX()
     case 'M':
     {
       // :SXMMn,V# Set Microstep
-      // for example :GRXMMR3# for 1/8 microstep on the first axis 
+      // for example :GXMMR3# for 1/8 microstep on the first axis 
       int i;
       bool ok = !TelescopeBusy();
       ok &= (command[4] == 'D' || command[4] == 'R');
@@ -700,7 +703,7 @@ void Command_SX()
     case 'm':
     {
       // :SXMmn,V# Set coolstep Stepper Mode
-     // for example :GRXMmR1# for cool step on the first axis 
+     // for example :GXMmR1# for cool step on the first axis 
       int i;
       bool ok = false;
       if ((command[4] == 'D' || command[4] == 'R')
@@ -1159,7 +1162,7 @@ void Command_S(Command& process_command)
   case 'r':
     //  :SrHH:MM.T#
     //  :SrHH:MM:SS#
-    //  :SrL,VVV,VVVVV#
+    //  :SrL,VVV.VVVVV#
     //          Set target object RA to HH:MM.T or HH:MM:SS (based on precision setting)
     //          Return: 0 on failure
     //                  1 on success

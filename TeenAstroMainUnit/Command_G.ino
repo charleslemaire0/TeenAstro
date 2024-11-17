@@ -1204,7 +1204,7 @@ void  Command_G()
     //  :Gr#   Get current/target object RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
     //  :GrL#  Get current/target object Ra, TeenAstro LX200 command
-    //         Returns: sDD, VVVVV#
+    //         Returns: sDDD.VVVVV#
     if (command[2] == 'L')
     {
       sprintf(reply, "%+08.5f#", newTargetRA);
