@@ -608,7 +608,7 @@ void Command_SX()
     break;
     case 'S':
     {
-      // :SXMBn,VVVV# Set Step per Rotation
+      // :SXMSn,VVVV# Set Step per Rotation
       unsigned int i;
       bool ok = !TelescopeBusy();
       ok &= (command[4] == 'D' || command[4] == 'R');
@@ -822,7 +822,7 @@ void Command_SX()
     break;
     case 'F':
     {
-      // :SXMRn# Set Stall guard
+      // :SXMFn# Set Stall guard
       int i;
       bool ok = (command[4] == 'D' || command[4] == 'R')
         && (strlen(&command[6]) > 1) && (strlen(&command[6]) < 5)
@@ -874,6 +874,8 @@ void Command_SX()
       int i = 0;
       if (command[3] == 'A')
         i = midx;
+      else if (command[3] == 'B')
+        i = 0;
       else if (command[3] == 'C')
         i = 1;
       bool ok = strlen(&command[5]) < MountNameLen + 1;
