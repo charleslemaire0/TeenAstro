@@ -324,6 +324,12 @@ void Command_GX()
         staA2.updateDeltaTarget();
         sprintf(reply, "%ld#", staA2.deltaTarget);
         break;
+      case '6':
+        sprintf(reply, "%lf#", staA1.interval_Step_Sid);
+        break;
+      case '7':
+        sprintf(reply, "%lf#", staA2.interval_Step_Sid);
+        break;
       default:
         replyLongUnknow();
         break;
@@ -698,7 +704,7 @@ void Command_GX()
     switch (command[3])
     {
     case 'B':
-      // :GXJB# get if Both rate Axis are ennable
+      // :GXJB# get if Both rate Axis are enable
     {
       trackComp == TC_BOTH ? replyLongTrue(): replyLongFalse();
     }
