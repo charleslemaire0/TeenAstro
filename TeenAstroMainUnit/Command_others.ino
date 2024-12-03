@@ -9,7 +9,7 @@ void Command_dollar()
   //   $ - Reset Commands
   //  :$$# Clean EEPROM
   //  :$!# Reboot Main Unit Unit
-  //  :$X# Reinit encoder and motors
+  //  :$X# fReinit encoder and motors
   case '$':
     for (int i = 0; i < XEEPROM.length(); i++)
     {
@@ -53,7 +53,6 @@ void Command_ACK()
 //   A - Alignment Commands
 //  :A0#
 //  :A2#
-//  :A3#
 //  :AC#
 //  :AW#
 //  :AA#  Resets alignment as AC# AND activates alignment on next 3 syncs!  (<-> sync modded accordingly)
@@ -278,10 +277,10 @@ void Command_C()
 //  :ECE#   Synchonize the Encoders with the telescope Returns 1# or 0#
 //  :ECS#   Synchronise at the end of a pushto to Target Returns 1# or 0#
 //  :ED#   Distance to target axis Returns long#
-//  :EMS#   Set pushTo sidereal Target
-//  :EMU#   Set pushTo sidereal User defined Target
-//  :EMA#   Set pushTo altaz Target
-//  :EMQ#   Set pushTo altaz Target
+//  :EMS#   Start pushTo EQ Target
+//  :EMU#   Start pushTo EQ User defined Target
+//  :EMA#   Start pushTo altaz Target
+//  :EMQ#   Stop Push
 
 void Command_E()
 {
