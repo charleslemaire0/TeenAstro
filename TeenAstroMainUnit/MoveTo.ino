@@ -6,8 +6,19 @@ void moveTo()
 {
   // HA goes from +90...0..-90
   //                W   .   E
+
+  if (settling)
+  {
+    unsigned long elapsedTime = millis() - lastSettleTime;
+    if (elapsedTime > slewSettleDuration * 1000)
+    {
+      settling = false;
+      movingTo = false;
+    }
+    return;
+  }
   static long lastPosAxis2 = 0;
-  volatile unsigned long distStartAxis1, distStartAxis2, distDestAxis1, distDestAxis2;
+  volatile long distStartAxis1, distStartAxis2, distDestAxis1, distDestAxis2;
 
   staA1.updateDeltaStart();
   staA2.updateDeltaStart();
@@ -37,7 +48,7 @@ Again:
       if (decreasing)
       {
         cli();
-        unsigned long a = max((currentAlt - minAlt) * geoA2.stepsPerDegree, 1);
+        long a = max((currentAlt - minAlt) * geoA2.stepsPerDegree, 1);
         if (a < distDestAxis2)
           distDestAxis2 = a;
         sei();
@@ -46,7 +57,7 @@ Again:
         // if Dec is increasing, slow down HA
       {
         cli();
-        unsigned long a = max((currentAlt - minAlt) * geoA1.stepsPerDegree, 1);
+        long a = max((currentAlt - minAlt) * geoA1.stepsPerDegree, 1);
         if (a < distDestAxis1)
           distDestAxis1 = a;
         sei();
@@ -79,11 +90,11 @@ Again:
     goto Again;
   }
 
+
   // First, for Right Ascension
   volatile long d = distStartAxis1 < distDestAxis1 ? distStartAxis1 : distDestAxis1;
   if (staA1.deltaTarget < 0)
     d = -d;
-
   cli();
   staA1.setIntervalfromDist(d, sideralTracking, minInterval1, maxInterval1);
   sei();
@@ -92,18 +103,14 @@ Again:
   d = distStartAxis2 < distDestAxis2 ? distStartAxis2 : distDestAxis2;
   if (staA2.deltaTarget < 0)
     d = -d;
- 
   cli();
   staA2.setIntervalfromDist(d, sideralTracking, minInterval2, maxInterval2);
   sei();
 
 
-  bool atTarget = staA1.atTarget(false) && staA2.atTarget(false);
   if (parkStatus == PRK_PARKING || homeMount)
   {
-    updateDeltaTarget();
-    atTarget = staA1.deltaTarget == 0 && staA2.deltaTarget == 0;
-    if (atTarget)
+    if (staA1.deltaTarget == 0 && staA2.deltaTarget == 0)
     {
       if (homeMount)
       {
@@ -124,28 +131,16 @@ Again:
       }
     }
   }
-  else if (atTarget)
+  else if (staA1.atTarget(false) && staA2.atTarget(false))
   {
-    if (!settling)
-    {
-      settling = true;
-      lastSettleTime = millis();
-      SetsiderealClockSpeed(siderealClockSpeed);
-      cli();
-      staA1.resetToSidereal();
-      staA2.resetToSidereal();
-      sei();
-      DecayModeTracking();
-    }
-    else
-    {
-      unsigned long elapsedTime = millis() - lastSettleTime;
-      if (elapsedTime > slewSettleDuration * 1000 )
-      {
-        settling = false;
-        movingTo = false;
-      }
-    }
+    settling = true;
+    lastSettleTime = millis();
+    SetsiderealClockSpeed(siderealClockSpeed);
+    cli();
+    staA1.resetToSidereal();
+    staA2.resetToSidereal();
+    sei();
+    DecayModeTracking();
   }
 }
 
