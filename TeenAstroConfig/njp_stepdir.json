@@ -2,24 +2,26 @@
     {
         "mType": "Eq-German",
         "DefaultR": "Max",
-        "MaxR": 1000,
-        "GuideR": 0.5,
-        "Acc": "3.7",
+        "MaxR": 356,
+        "GuideR": 0.4,
+        "Acc": "2.0",
         "SlowR": 4,
-        "MediumR": 16,
+        "MediumR": 63,
         "FastR": 64,
         "mrot1": "Direct",
-        "mge1": "1000",
+        "mge1": 10800,
+        "mge1f": 0,
         "mst1": "200",
         "mmu1": 16,
         "mbl1": "0",
         "mlc1": 1000,
         "mhc1": 1000,
         "msil1": "0",
-        "mrot2": "Direct",
-        "mge2": "1000",
+        "mrot2": "Reverse",
+        "mge2": 6480,
+        "mge2f": 0,
         "mst2": "200",
-        "mmu2": 16,
+        "mmu2": 32,
         "mbl2": "0",
         "mlc2": 1000,
         "mhc2": 1000,
@@ -29,14 +31,11 @@
         "el": 10,
         "wl": 10,
         "ul": 12,
-        "poleAlign": "True",
-        "corrTrack": "disabled",
         "a1min": -360,
         "a1max": 360,
         "a2min": -360,
         "a2max": 360,
-        "mge1f": 8,
-        "mge2f": 10
+        "mEn": true
     },
     [
         {
@@ -49,9 +48,9 @@
                 -5,
                 46
             ],
-            "elevation": 800,
+            "elevation": 769,
             "currentSite": 0,
-            "timeZone": 2.0
+            "timeZone": 1.0
         },
         {
             "name": "Site1",
@@ -65,7 +64,7 @@
             ],
             "elevation": 0,
             "currentSite": 0,
-            "timeZone": -0.0
+            "timeZone": 12.0
         },
         {
             "name": "Site2",
@@ -79,10 +78,10 @@
             ],
             "elevation": 0,
             "currentSite": 0,
-            "timeZone": -0.0
+            "timeZone": 12.0
         },
         {
-            "name": "Site3",
+            "name": "",
             "latitude": [
                 0,
                 0
@@ -93,7 +92,7 @@
             ],
             "elevation": 0,
             "currentSite": 0,
-            "timeZone": -0.0
+            "timeZone": 0.0
         }
     ]
 ]

@@ -236,9 +236,10 @@ void AltAzMount::getTrackingSpeeds(Speeds *sP)
  * setTrackingSpeed
  * speed is expressed as a multiple of sidereal speed 
  */
-void AltAzMount::setTrackingSpeed(double speed)
+void AltAzMount::setTrackingSpeed(double speed1, double speed2)
 {
-  trackingSpeed = speed;
+  trackingSpeed = speed1;
+  // ignore speed2 at this time
 }
 
 

@@ -5,6 +5,23 @@ unsigned long   baudRate[10] =
   115200, 56700, 38400, 28800, 19200, 14400, 9600, 4800, 2400, 1200
 };
 
+bool yesno(char l, bool& val)
+{
+  switch (l)
+  {
+  case 'y':
+    val = true;
+    return true;
+  case 'n':
+    val = false;
+    return true;
+  default:
+    break;
+  }
+  return false;
+}
+
+
 //   S - Telescope Set Commands
 void Command_SX()
 {
@@ -54,41 +71,34 @@ void Command_SX()
   case 'r':
     // :SXrn,V# refraction Settings
   {
-    i = command[5] == 'y' ? 1 : (command[5] == 'n' ? 0 : -1);
-    switch (command[3])
-    {
-    case 'p':
-      if (i != -1)
-      {
-        if (doesRefraction.setPole(i))
-        {
-          mount.mP->initModel(true);
-          syncAtHome();
-        }
-        ok = true;
-      }
-      break;
-    case 'g':
-      if (i != -1)
-      {
-        doesRefraction.setGoto(i);
-        ok = true;
-      }
-      break;
-    case 't':
-      if (i != -1)
-      {
-        doesRefraction.setTracking(i);
-        ok = true;
-      }
-      break;
-    default:
-      break;
-    }
+    bool val;
+    bool ok = yesno(command[5], val);
     if (ok)
-      replyShortTrue();
-    else
-      replyLongUnknown();
+    {
+      switch (command[3])
+      {
+      case 'p':
+        if (doesRefraction.setPole(val))
+        {
+//          initTransformation(true);
+        }
+        break;
+      case 'g':
+      {
+        doesRefraction.setGoto(val);
+      }
+      break;
+      case 't':
+      {
+        doesRefraction.setTracking(val);
+      }
+      break;
+      default:
+        ok = false;
+        break;
+      }
+    }
+    replyValueSetShort(ok);
     break;
   }
   case 'R':
@@ -140,40 +150,59 @@ void Command_SX()
     case 'r':
       // :SXRr,VVVVVVVVVV# Set Rate for RA 
       siderealMode = SIDM_TARGET;
-      RequestedTrackingRateHA = 1. - (double)strtol(&command[5], NULL, 10) / 10000.0;
-      computeTrackingRate(true);
-      replyShortTrue();
+      RequestedTrackingRateHA = (double)(10000l - strtol(&command[5], NULL, 10)) / 10000.;
+      if (isTracking())
+      {
+        mount.mP->setTrackingSpeed(RequestedTrackingRateHA, RequestedTrackingRateDEC);
+        setEvents(EV_SPEED_CHANGE);
+      }       
+      replyValueSetShort(true);
       break;
     case 'h':
       // :SXRh,VVVVVVVVVV# Set Rate for HA
       siderealMode = SIDM_TARGET;
       RequestedTrackingRateHA = (double)strtol(&command[5], NULL, 10) / 10000.0;
-      computeTrackingRate(true);
-      replyShortTrue();
+      if (isTracking())
+      {
+        mount.mP->setTrackingSpeed(RequestedTrackingRateHA, RequestedTrackingRateDEC);
+        setEvents(EV_SPEED_CHANGE);
+      }
+      replyValueSetShort(true);
       break;
     case 'd':
       // :SXRd,VVVVVVVVVV# Set Rate for DEC
-      siderealMode = SIDM_TARGET;
-      RequestedTrackingRateDEC = (double)strtol(&command[5], NULL, 10) / 10000.0;
-      computeTrackingRate(true);
-      replyShortTrue();
+      if (trackComp == TC_BOTH)
+      {
+        siderealMode = SIDM_TARGET;
+        RequestedTrackingRateDEC = (double)strtol(&command[5], NULL, 10) / 10000.0;
+        if (isTracking())
+        {
+          mount.mP->setTrackingSpeed(1.0 - RequestedTrackingRateHA, RequestedTrackingRateDEC);
+          setEvents(EV_SPEED_CHANGE);
+        }
+        replyValueSetShort(true);
+      }
+      else
+      {
+        replyValueSetShort(false);
+      }
       break;
     case 'e':
       // :SXRe,VVVVVVVVVV# Store Rate for RA
       lval = strtol(&command[5], NULL, 10) ;
       storedTrackingRateRA = lval < -50000 || lval > 50000 ? 0 : lval;
       XEEPROM.writeLong(getMountAddress(EE_RA_Drift), storedTrackingRateRA);
-      replyShortTrue();
+      replyValueSetShort(true);
       break;
     case 'f':
       // :SXRf,VVVVVVVVVV# Store Rate for DEC
       lval = strtol(&command[5], NULL, 10) ;
       storedTrackingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
       XEEPROM.writeLong(getMountAddress(EE_DEC_Drift), storedTrackingRateDEC);
-      replyShortTrue();
+      replyValueSetShort(true);
       break;
     default:
-      replyLongUnknown();
+      replyNothing();
       break;
     }
     break;
@@ -181,6 +210,10 @@ void Command_SX()
     // user defined limits
     switch (command[3])
     {
+    case 'R':
+      // :SXLR# reset user defined axis limit
+      reset_EE_Limit();
+      break;
     case 'A':
       // :SXLA,VVVV# set user defined minAXIS1 (always negative)
       i = (int)strtol(&command[5], NULL, 10);
@@ -710,12 +743,30 @@ void Command_S(Command& process_command)
     break;
   case 'd':
     //  :SdsDD*MM#
+    //  :SdsDD*MM:SS#
+    //  :SdLsVV,VVVVV#
     //          Set target object declination to sDD*MM or sDD*MM:SS depending on the current precision setting
     //          Return: 0 on failure
     //                  1 on success
-    if (dmsToDouble(&newTargetDec, &command[2], true, highPrecision)) replyShortTrue();
-    else replyLongUnknown();
-    break;
+  {
+    bool ok = false;
+    if (command[2] == 'L')
+    {
+      char* conv_end;
+      double f = strtod(&command[3], &conv_end);
+      ok = -90 <= f && f <= 90;
+      if (ok)
+      {
+        newTargetDec = f;
+      }
+    }
+    else
+    {
+      ok = dmsToDouble(&newTargetDec, &command[2], true, highPrecision);
+    }
+    replyValueSetShort(ok);
+  }
+  break;
   case 'g':
     //  :SgsDDD*MM# or :SgDDD*MM# or :SgsDDD:MM:SS# or SgDDD:MM:ss#
     //          Set current sites longitude to sDDD*MM an ASCII position string, East longitudes can be as negative or >180 degrees
@@ -861,18 +912,34 @@ void Command_S(Command& process_command)
     else replyLongUnknown();
     break;
   case 'r':
-    //  :SrHH:MM.T#
-    //  :SrHH:MM:SS#
+  //  :SrL,VVV,VVVVV#
     //          Set target object RA to HH:MM.T or HH:MM:SS (based on precision setting)
     //          Return: 0 on failure
     //                  1 on success
-    if (hmsToDouble(&newTargetRA, &command[2], highPrecision))
+  {
+    bool ok = false;
+    if (command[2] == 'L')
     {
-      newTargetRA *= 15.0;
-      replyShortTrue();
+      char* conv_end;
+      double f = strtod(&command[3], &conv_end);
+      ok = 0 <= f && f <= 360;
+      if (ok)
+      {
+        newTargetRA = f;
+      }
     }
-    else replyLongUnknown();
-    break;
+    else
+    {
+      ok = hmsToDouble(&newTargetRA, &command[2], highPrecision);
+      if (ok)
+      {
+        newTargetRA *= 15.0;
+      }
+
+    }
+    replyValueSetShort(ok);
+  }
+  break;
   case 't':
     //  :StsDD*MM# or :StsDD:MM:SS#
     //          Sets the current site latitude to sDD*MM#

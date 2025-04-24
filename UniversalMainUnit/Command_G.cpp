@@ -523,6 +523,8 @@ void Command_GX()
     else if (getEvent(EV_SOUTH))
       reply[8] = '_';
 
+    reply[10] = '0' + trackComp;
+
     reply[11] = mount.mP->pm.alignment.isReady()? '1' : '0';
     if (mount.mP->type == MOUNT_TYPE_GEM)
     {
@@ -1078,15 +1080,21 @@ void  Command_G()
     //  :GS#   Get the Sidereal Time, Native LX200 command
     //         Returns: HH:MM:SS#
     //         The Sidereal Time as an ASCII Sexidecimal value in 24 hour format
-    i = highPrecision;
-    highPrecision = true;
-    f = rtk.LST();
-    if (!doubleToHms(reply, &f, highPrecision))
-      replyLongUnknown();
+    //  :GSL#  Get the Sidereal Time, TeenAstro LX200 command
+    //         Returns: HH.VVVVVV#
+  {
+    double f = rtk.LST();
+    if (command[2] == 'L')
+    {
+      sprintf(reply, "%+08.6f#", f);
+    }
     else
+    {
+      doubleToHms(reply, &f, true);
       strcat(reply, "#");
-    highPrecision = i;
-    break;
+    }
+  }
+  break;
   case 'T':
     //  :GT#   Get tracking rate, Native LX200 command
     //         Returns: dd.ddddd#

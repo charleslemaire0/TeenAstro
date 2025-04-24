@@ -140,11 +140,18 @@ void initMount()
   guideA2.amount = 0;
 
   // Tracking and rate control
-  val = XEEPROM.read(EE_TC_Axis);
-//  tc = val < 0 || val >  2 ? TC_NONE : static_cast<TrackingCompensation>(val);
-  lval = XEEPROM.read(EE_RA_Drift);
+  if (isAltAz())
+  {
+    trackComp = TC_BOTH;
+  }
+  else
+  {
+    val = XEEPROM.read(getMountAddress(EE_TC_Axis));
+    trackComp = val < 1 || val >  2 ? TC_RA : static_cast<TrackingCompensation>(val);
+  }
+  lval = XEEPROM.read(getMountAddress(EE_RA_Drift));
   storedTrackingRateRA  = lval < -50000 || lval > 50000? 0 :lval;
-  lval = XEEPROM.read(EE_DEC_Drift);
+  lval = XEEPROM.read(getMountAddress(EE_DEC_Drift));
   storedTrackingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
   mount.clk5160 = XEEPROM.readLong(getMountAddress(EE_clk5160));
   if ((mount.clk5160 < 12000) || (mount.clk5160 > 18000)) // check for invalid values

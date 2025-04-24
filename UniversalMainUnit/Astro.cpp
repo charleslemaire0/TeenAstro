@@ -5,45 +5,6 @@
 
 
 
-void computeTrackingRate(UNUSED(bool apply))
-{  
-#if 0  
-  //reset SideralMode if it is equal to sideralspeed
-  if (RequestedTrackingRateHA == 1 && RequestedTrackingRateDEC == 0)
-  {
-    sideralMode = SIDM_STAR;
-  }
-  if (isAltAZ() || sideralMode == SIDM_TARGET)
-  {
-    do_compensation_calc();
-  }
-  else if (tc == TC_NONE)
-  {
-    staA1.RequestedTrackingRate = RequestedTrackingRateHA;
-    staA2.RequestedTrackingRate = 0;
-  }
-  else if (doesRefraction.forTracking || TrackingCompForAlignment)
-  {
-    do_compensation_calc();
-    if (tc == TC_RA)
-    {
-      staA2.RequestedTrackingRate = 0;
-    }
-  }
-  else
-  {
-    staA1.RequestedTrackingRate = RequestedTrackingRateHA;
-    staA2.RequestedTrackingRate = 0;
-  }
-  if (apply)
-  {
-    ApplyTrackingRate();
-  }
-#endif  
-}
-
-
-
 /*
  * initMaxSpeed
  * Read max speed from EEPROM, correct if it exceeds processor capability

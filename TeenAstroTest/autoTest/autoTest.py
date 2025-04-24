@@ -100,7 +100,12 @@ trackingTab = [[sg.Column([
                       sg.B(button_text = 'GuideN', key='GuideN'), sg.B(button_text = 'GuideS',key='GuideS'),
                       sg.B(button_text = 'GuideE',key='GuideE'),sg.B(button_text = 'GuideW',key='GuideW'),
                       sg.B(button_text = 'Nudge',key='Nudge'),
-                      sg.B(button_text='Spiral', key='spiral'),sg.B(button_text = 'Clear', key='clearTrack')],
+                      sg.B(button_text = 'Sidereal',key='siderealTracking'),
+                      sg.B(button_text = 'Lunar',key='lunarTracking'),
+                      sg.B(button_text = 'Solar',key='solarTracking'),
+                      sg.B(button_text = 'Target',key='targetTracking'),
+                      sg.B(button_text='Spiral', key='spiral'),sg.B(button_text = 'Clear', key='clearTrack')
+                      ],
                     [trackingCanvasGroup, sg.Column([[driftFrame], [axisFrame], [stepsFrame], [speedFrame]])]
                 ])]]
 

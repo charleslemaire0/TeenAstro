@@ -276,10 +276,10 @@ bool EqMount::checkMeridian(Axes *aP, CheckMode mode, PierSide ps)
  * setTrackingSpeed
  * speed is expressed as a multiple of sidereal speed 
  */
-void EqMount::setTrackingSpeed(double speed)
+void EqMount::setTrackingSpeed(double speed1, double speed2)
 {
-  trackingSpeeds.speed1 = speed * axis1Direction('w');	// multiple of sidereal
-  trackingSpeeds.speed2 = 0;
+  trackingSpeeds.speed1 = speed1 * axis1Direction('w');	// multiple of sidereal
+  trackingSpeeds.speed2 = speed2;
   setEvents(EV_SPEED_CHANGE);
 }
 

@@ -186,7 +186,7 @@ void setup()
   HAL_beginTimer(siderealTimer, siderealTickCount);
 
   mount.mP->updateRaDec();
-  mount.mP->setTrackingSpeed(TrackingStar);
+  mount.mP->setTrackingSpeed(TrackingStar, 0);
 
   rtk.resetLongitude(*localSite.longitude());
 

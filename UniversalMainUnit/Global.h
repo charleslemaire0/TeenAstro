@@ -165,7 +165,7 @@ GLOBAL bool homeSaved ;
 GLOBAL bool autoAlignmentBySync ;
 GLOBAL bool TrackingCompForAlignment ;
 
-GLOBAL TrackingCompensation tc;
+GLOBAL TrackingCompensation trackComp;
 GLOBAL volatile SID_Mode   siderealMode;
 GLOBAL siteDefinition      localSite;
 

@@ -272,6 +272,17 @@ class trackingPlot():
             self.log('goto ra:{0:2.2f} dec:{1:2.2f}'.format(ra, dec))
             self.ta.gotoRaDec(ra, dec)
 
+        if (ev == 'siderealTracking'):
+            self.ta.siderealTracking()
+
+        if (ev == 'lunarTracking'):
+            self.ta.lunarTracking()
+
+        if (ev == 'solarTracking'):
+            self.ta.solarTracking()
+
+        if (ev == 'targetTracking'):
+            self.ta.targetTracking()
 
         if (ev == 'spiral'):
             self.ta.spiral(10)

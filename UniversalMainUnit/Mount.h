@@ -25,7 +25,7 @@ public:
   virtual byte Flip();
   virtual bool checkMeridian(Axes*, CheckMode, PierSide);
   virtual PierSide GetPierSide();
-  virtual void setTrackingSpeed(double speed);
+  virtual void setTrackingSpeed(double speed1, double speed2);
   virtual void getTrackingSpeeds(Speeds *);
   virtual void initHome(Steps *);
   virtual bool getTargetPierSide(EqCoords *eP, PierSide *psOutP);
@@ -70,7 +70,7 @@ public:
   bool isFlipped(void);
   bool checkPole(double, CheckMode);
   bool checkMeridian(Axes*, CheckMode, PierSide);
-  void setTrackingSpeed(double speed);
+  void setTrackingSpeed(double speed1, double speed2);
   void getTrackingSpeeds(Speeds *);
   void initHome(Steps *);
   bool getTargetPierSide(EqCoords *eP, PierSide *psOutP);
@@ -105,7 +105,7 @@ public:
   bool checkMeridian(Axes*, CheckMode, PierSide);
   PierSide GetPierSide(void);
   PierSide otherSide(PierSide ps);
-  void setTrackingSpeed(double speed);
+  void setTrackingSpeed(double speed1, double speed2);
   void getTrackingSpeeds(Speeds *);
   void initHome(Steps *);
   bool getTargetPierSide(EqCoords *eP, PierSide *psOutP);

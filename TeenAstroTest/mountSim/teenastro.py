@@ -344,6 +344,18 @@ class TeenAstro(object):
   def enableTrackingCompensation(self):
     self.sendCommand(":Tr#")
 
+  def siderealTracking(self):
+    self.sendCommand(":TQ#")
+
+  def lunarTracking(self):
+    self.sendCommand(":TL#")
+
+  def solarTracking(self):
+    self.sendCommand(":TS#")
+
+  def targetTracking(self):
+    self.sendCommand(":TT#")
+
   def disableTrackingCompensation(self):
     self.sendCommand(":Tn#")
 
