@@ -70,7 +70,12 @@ void Command_M()
     //       Returns an ERRGOTO
     if (mount.mP->type == MOUNT_TYPE_GEM)
     {
+      bool t = isTracking();
       i = mount.mP->Flip();
+      if (t & (i == 0))
+      {
+        startTracking();
+      }
       reply[0] = i + '0';
       reply[1] = 0;
     }
