@@ -89,7 +89,7 @@ double std_dev(double* val, int nval)
   {
     s += pow(val[i] - m, 2);
   }
-  return sqrt(s / (nval - 1));
+  return sqrt(s / nval));
 }
 
 bool isLocationSyncWithGNSS()
