@@ -112,7 +112,7 @@ bool EqMount::eqToAxes(EqCoords *eP, Axes *aP, PierSide ps)
     if (!checkMeridian(aP, CHECKMODE_GOTO, ps))
       return false;
 
-    if (!checkPole(aP->axis1, CHECKMODE_GOTO))
+    if (!checkPole(aP->axis1, CHECKMODE_GOTO, ps))
       return false;
 
     return true;    
@@ -125,7 +125,7 @@ bool EqMount::eqToAxes(EqCoords *eP, Axes *aP, PierSide ps)
     if (!withinLimits(aP->axis1 * geoA1.stepsPerDegree, aP->axis2 * geoA2.stepsPerDegree))
       return false;
 
-    if (!checkPole(aP->axis1, CHECKMODE_GOTO))
+    if (!checkPole(aP->axis1, CHECKMODE_GOTO, ps))
       return false;
 
     return true;    
@@ -191,6 +191,7 @@ bool EqMount::syncEqu(double HA, double Dec, PierSide Side, UNUSED(const double 
 	Axes axes;
 	Steps newSteps;
 
+  resetEvents(EV_AT_HOME);
 	eqCoords.ha = HA;
 	eqCoords.dec = Dec;
 	eqToAxes(&eqCoords, &axes, Side);
@@ -204,8 +205,9 @@ bool EqMount::syncAzAlt(double Azm, double Alt, PierSide Side)
 {
 	EqCoords eq;
 	
+  resetEvents(EV_AT_HOME);
 	HorTopoToEqu(Azm, Alt, &eq.ha, &eq.dec, localSite.cosLat(), localSite.sinLat());
-	return syncEqu(eq.ha, eq.dec, Side, localSite.cosLat(), localSite.sinLat());
+	return syncEqu(haRange(eq.ha), eq.dec, Side, localSite.cosLat(), localSite.sinLat());
 }
 
 byte EqMount::Flip()
@@ -231,19 +233,30 @@ byte EqMount::Flip()
 /*
  * checkPole
  * check if the hour angle is within the under pole limits 
- * min. allowable movement is += 9 decimal hours on either side of the pole
+ * min. allowable movement is += 9 decimal hours on either side of the meridian
  * no limit: +- 12 decimal hours
  */
-bool EqMount::checkPole(double axis1, CheckMode mode)
+bool EqMount::checkPole(double axis1, CheckMode mode, PierSide ps)
 {
   double underPoleLimit;
+
+  if (limits.underPoleLimitGOTO == 12.0)
+    return true;
 
   if (mode == CHECKMODE_GOTO)
     underPoleLimit = limits.underPoleLimitGOTO;              // for determining if a GOTO is valid, use exact value
   else 
     underPoleLimit = limits.underPoleLimitGOTO + 5.0 / 60;   // for triggering an error, add 5 degrees (1/12 decimal hour)
 
-  return (axis1 > (-underPoleLimit * 15.0)) && (axis1 < (underPoleLimit * 15.0));
+  if (ps == PIER_EAST)
+  {
+    return (axis1 < (90 - (12 - underPoleLimit) * 15.0));
+  }
+  else
+  {
+    return (axis1 > - (90 - (12 - underPoleLimit) * 15.0));
+  }
+
 }
 
 

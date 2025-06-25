@@ -198,6 +198,12 @@ void Command_C()
     }
     case 'A':
     {
+      // Guess pier side from Azimuth
+      if (newTargetAzm > 0 && newTargetAzm < 180)
+        targetPierSide = PIER_WEST;
+      else
+        targetPierSide = PIER_EAST;
+
       mount.mP->syncAzAlt(newTargetAzm, newTargetAlt, targetPierSide);
       strcpy(reply, "N/A#");
     }

@@ -146,6 +146,14 @@ class TeenAstro(object):
         self.axis2Reverse = True
       else:
         self.axis2Reverse = False
+      self.Gear1 = (float(self.gear1) / 1000 ) * float(self.steps1) * pow (2 , float (self.microsteps1))
+      self.Gear2 = (float(self.gear2) / 1000) * float(self.steps2) * pow(2, float (self.microsteps2))
+
+  def getGear1(self):
+    return self.Gear1
+
+  def getGear2(self):
+    return self.Gear2
 
   def readSite(self):
     if (self.port != None):
@@ -294,7 +302,7 @@ class TeenAstro(object):
     dmsAz = deg2dms(az)
     dmsAlt = deg2dms(alt)
     self.sendCommand(":Sz%03u*%02u:%02u#" % dmsAz)
-    self.sendCommand(":Sa%+02d*%02u:%02u#" % dmsAlt)
+    self.sendCommand(":Sa%0+3d*%02u'%02u#" % dmsAlt)
     self.sendCommand(":MA#")
 
 

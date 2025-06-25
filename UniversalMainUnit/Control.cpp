@@ -68,46 +68,47 @@ void DecayModeGoto()
 // Weird algorithm to prevent GEM mounts from pointing below horizon while slewing 
 void adjustSpeeds(void)
 {
-  bool dangerZone=false;
+  static int n = 0;                       // counter to only run once every 100mS
+  enum adjAxis {NONE, AXIS1, AXIS2};
+  static adjAxis ajx = NONE;
   int decDir = mount.mP->decDirection();
-  static double adj = 1.0;
-  double k = 1.01;
+  double k;
+
+  n++;
+  if ((n % 100) != 0)
+    return;
 
   if (decDir == 0)
     return;
 
-  xSemaphoreTake(swMutex, portMAX_DELAY); 
-  deltaAlt = currentAzAlt.alt - prevAzAlt.alt;
-  xSemaphoreGive(swMutex);
+  float aboveLimit = currentAzAlt.alt - limits.minAlt;
 
-  if ((currentAzAlt.alt - limits.minAlt) < 8)  // arbitrary value that works
+  if (aboveLimit < mount.DegreesForAcceleration)  
   {
-    dangerZone = true;
-    adj = fmin(adj * k, 3.0);                 // speed adjustment coefficient
-
-    if (decDir < 0)  // decreasing declination?
+    k = fmax(0.3, (aboveLimit < 0 ? 0 : aboveLimit / mount.DegreesForAcceleration));
+    if (decDir > 0)
     {
-      motorA1.setVmax(slewingSpeeds.speed1 * fmin(adj, 1.0));
-      motorA2.setVmax(slewingSpeeds.speed2 / fmax(adj, 0.5));
+      ajx = AXIS1;
+      motorA1.setVmax(slewingSpeeds.speed1 * k);      
     }
     else
     {
-      motorA1.setVmax(slewingSpeeds.speed1 / fmax(adj, 1.0));
-      motorA2.setVmax(slewingSpeeds.speed2 * fmin(adj, 0.5));
+      ajx = AXIS2;
+      motorA2.setVmax(slewingSpeeds.speed2 * k);      
     }
   }
-  else
+  else // above limit: reset speed to max
   {
-    if (dangerZone)
+    switch (ajx)
     {
-      // well above altitude limit: reset speed to max
-      dangerZone = false;
-      adj = 1.0;
-      motorA1.setVmax(slewingSpeeds.speed1);
-      motorA2.setVmax(slewingSpeeds.speed2);
+      case AXIS1: motorA1.setVmax(slewingSpeeds.speed1); ajx = NONE; break;    
+      case AXIS2: motorA2.setVmax(slewingSpeeds.speed2); ajx = NONE; break;
+      case NONE: break;    
     }
   }  
 }
+
+
 
 int fsign(double n)
 {

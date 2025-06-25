@@ -303,7 +303,7 @@ bool AltAzMount::checkMeridian(UNUSED(Axes *aP), UNUSED(CheckMode mode), UNUSED(
   return true;
 }
 
-bool AltAzMount::checkPole(UNUSED(double axis1), UNUSED(CheckMode mode))
+bool AltAzMount::checkPole(UNUSED(double axis1), UNUSED(CheckMode mode), UNUSED(PierSide ps))
 {
   return true;
 }

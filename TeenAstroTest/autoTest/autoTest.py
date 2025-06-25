@@ -47,9 +47,13 @@ driftFrame = sg.Frame('Drift Rates (arc-sec/S)', [[sg.T('RA:'), sg.T('0', key='r
 
 axisFrame = sg.Frame('Axis Positions (º)', [[sg.T('Axis1:'), sg.T('0', key='axis1_degrees')],[sg.T('Axis2:'), sg.T('0', key='axis2_degrees')]]) 
 
+slewPosFrame = sg.Frame('Axis Positions (º)', [[sg.T('Axis1:'), sg.T('0', key='axis1_slew_degrees')],[sg.T('Axis2:'), sg.T('0', key='axis2_slew_degrees')]]) 
+
 stepsFrame = sg.Frame('Axis Positions (steps)', [[sg.T('Axis1:'), sg.T('0', key='axis1_steps')],[sg.T('Axis2:'), sg.T('0', key='axis2_steps')]]) 
 
 speedFrame = sg.Frame('Axis Speeds ', [[sg.T('Axis1:'), sg.T('0', key='axis1_speed')],[sg.T('Axis2:'), sg.T('0', key='axis2_speed')]]) 
+
+slewSpeedFrame = sg.Frame('Axis Speeds (º/S)', [[sg.T('Axis1:'), sg.T('0', key='axis1_slew_speed')],[sg.T('Axis2:'), sg.T('0', key='axis2_slew_speed')]]) 
 
 slewFrame = sg.Frame('Slew Rates (arc-sec/S)', [[sg.T('RA:'), sg.T('0', key='ra_rate')],[sg.T('Dec:'), sg.T('0', key='dec_rate')]]) 
 
@@ -86,7 +90,7 @@ slewTestTab = [[sg.Column([
                      sg.B(button_text = 'AutoSlew', key='autoSlew'),sg.B(button_text = 'Stop', key='stopSlew'),
                      sg.B(button_text = 'Clear', key='clearSlew'), sg.B(button_text = 'Flip', key='flipMount'), 
                      sg.B(button_text = 'Park', key='park'), sg.B(button_text = 'Unpark', key='unpark'), sg.B(button_text = 'Set Park', key='setPark')],
-                    [slewingCanvasGroup, horCoordFrame]
+                    [slewingCanvasGroup, sg.Column([[horCoordFrame],[slewPosFrame], [slewSpeedFrame]])]
                 ])]]
                     
 

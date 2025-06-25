@@ -10,8 +10,8 @@ numSamples = 100
 
 # Pointing test case
 testCase =  [
-                {'az':0,'alt':10}, {'az':20,'alt':10},{'az':40,'alt':10},{'az':60,'alt':10},{'az':180,'alt':10},
-                {'az':200,'alt':10},{'az':240,'alt':10}, {'az':300,'alt':10}, {'az':320,'alt':10},{'az':360,'alt':10}
+                {'az':0,'alt':0}, {'az':20,'alt':0},{'az':40,'alt':0},{'az':60,'alt':0},{'az':180,'alt':0},
+                {'az':200,'alt':0},{'az':240,'alt':0}, {'az':300,'alt':0}, {'az':320,'alt':0},{'az':360,'alt':0}
             ]
 
 
@@ -68,18 +68,22 @@ class slewPlotT():
         self.x = np.linspace(0, numSamples-1, numSamples)
         self.axis1 = np.zeros(numSamples)
         self.axis2 = np.zeros(numSamples)
-        self.slewing = np.zeros(numSamples)
-        self.fig, self.axes = plt.subplots(3, sharex=True, figsize=(10,6), dpi=dpi)
-        self.axes[0].set_xlabel('time (seconds)')
-        self.axes[0].set_ylabel('Axis1 (degrees)')
+        self.axis1Speed = np.zeros(numSamples)
+        self.axis2Speed = np.zeros(numSamples)
+        self.fig, self.axes = plt.subplots(4, sharex=True, figsize=(10,6), dpi=dpi)
+        self.axes[0].set_ylabel('Axis1')
         self.axes[0].set_ylim(-100, 300)
-        self.axes[1].set_ylabel('Axis2 (degrees)')
-        self.axes[1].set_ylim(-100, 300)
-        self.axes[2].set_ylabel('slewing')
-        self.axes[2].set_ylim(-1, 2)
+        self.axes[1].set_ylabel('Axis1 Speed')
+        self.axes[1].set_ylim(-10, 10)
+        self.axes[2].set_ylabel('Axis2')
+        self.axes[2].set_ylim(-1000, 300)
+        self.axes[3].set_ylabel('Axis2 Speed')
+        self.axes[3].set_ylim(-10, 10)
+        self.axes[3].set_xlabel('time (seconds)')
         self.line1, = self.axes[0].plot(self.x,self.axis1,'green')
-        self.line2, = self.axes[1].plot(self.x,self.axis2,'red')
-        self.line3, = self.axes[2].plot(self.x,self.slewing,'blue')
+        self.line2, = self.axes[1].plot(self.x,self.axis2,'blue')
+        self.line3, = self.axes[2].plot(self.x,self.axis1Speed,'red')
+        self.line4, = self.axes[3].plot(self.x,self.axis2Speed,'orange')
         self.figure_canvas_agg = FigureCanvasTkAgg(self.fig, master=window['slew_cv_t'].TKCanvas)
 
     def connect(self, ta):
@@ -88,19 +92,24 @@ class slewPlotT():
     def clear(self):
         self.axis1 = np.zeros(numSamples)
         self.axis2 = np.zeros(numSamples)
-        self.slewing = np.zeros(numSamples)
+        self.axis1Speed = np.zeros(numSamples)
+        self.axis2Speed = np.zeros(numSamples)
 
     def render(self):
         self.figure_canvas_agg.draw()
         self.figure_canvas_agg.get_tk_widget().pack(side='right', fill='both', expand=1)
 
-    def update(self, axis1, axis2, slewing):
+    def update(self, axis1, axis2, axis1Speed, axis2Speed):
         self.axis1 = np.append(self.axis1, axis1)
         self.line1.set_ydata(self.axis1[-100:])   # degrees
+        self.axis1Speed = np.append(self.axis1Speed, axis1Speed)
+        self.line2.set_ydata(self.axis1Speed[-100:])   # degrees
+
         self.axis2 = np.append(self.axis2, axis2)
-        self.slewing = np.append(self.slewing, slewing)
-        self.line2.set_ydata(self.axis2[-100:])
-        self.line3.set_ydata(self.slewing[-100:])
+        self.line3.set_ydata(self.axis2[-100:])
+        self.axis2Speed = np.append(self.axis2Speed, axis2Speed)
+        self.line4.set_ydata(self.axis2Speed[-100:])
+
         self.render()
 
 
@@ -122,6 +131,7 @@ class slewPlot():
 
     def connect(self, ta):
         self.ta = ta
+        self.ta.readGears()
         self.tPlot.connect(ta)
         self.pPlot.connect(ta)
         self.lat = self.ta.getLatitude()
@@ -147,10 +157,17 @@ class slewPlot():
         self.ta.gotoAzAlt(az, alt)
 
     def run(self):
-        slew = self.ta.isSlewing()
         axis1 = self.ta.getAxis1() 
         axis2 = self.ta.getAxis2()
-        self.tPlot.update(axis1, axis2, slew)
+        try:
+          axis1Speed = self.ta.getAxis1Speed() / (self.ta.getGear1() / 360)
+        except:
+          axis1Speed = 0
+        try:
+          axis2Speed = self.ta.getAxis2Speed() / (self.ta.getGear2() / 360)
+        except:
+          axis2Speed = 0
+        self.tPlot.update(axis1, axis2, axis1Speed, axis2Speed)
 
         az = self.ta.getAzimuth()
         alt = self.ta.getAltitude()        
@@ -168,6 +185,11 @@ class slewPlot():
 
         self.window['az_disp'].Update(self.az2string(deg2dms(az)))
         self.window['alt_disp'].Update(self.alt2string(deg2dms(alt)))
+
+        self.window['axis1_slew_degrees'].Update('{0:4.4f}'.format(axis1)) 
+        self.window['axis2_slew_degrees'].Update('{0:4.4f}'.format(axis2)) 
+        self.window['axis1_slew_speed'].Update('{0:4.4f}'.format(axis1Speed)) 
+        self.window['axis2_slew_speed'].Update('{0:4.4f}'.format(axis2Speed)) 
 
 
 

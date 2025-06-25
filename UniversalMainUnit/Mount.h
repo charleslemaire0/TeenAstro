@@ -33,7 +33,7 @@ public:
   virtual int axis2Direction(char);
   virtual int decDirection(void);
   virtual void updateRaDec(void);
-  virtual bool checkPole(double axis1, CheckMode mode);
+  virtual bool checkPole(double axis1, CheckMode mode, PierSide);
   void initModel(bool reset)
   {
     pm.init(reset);
@@ -68,7 +68,7 @@ public:
   PierSide GetPierSide(void);
   PierSide otherSide(PierSide ps);
   bool isFlipped(void);
-  bool checkPole(double, CheckMode);
+  bool checkPole(double, CheckMode, PierSide);
   bool checkMeridian(Axes*, CheckMode, PierSide);
   void setTrackingSpeed(double speed1, double speed2);
   void getTrackingSpeeds(Speeds *);
@@ -113,7 +113,7 @@ public:
   int axis2Direction(char);
   int decDirection(void);
   void updateRaDec(void);
-  bool checkPole(double axis1, CheckMode mode);
+  bool checkPole(double axis1, CheckMode mode, PierSide);
   void initTransformation(bool reset);
   // constructor
   AltAzMount(MountType t)

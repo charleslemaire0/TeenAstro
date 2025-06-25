@@ -38,7 +38,7 @@ MountDef = { 'mType':['Eq-German', 'Eq-Fork', 'AltAz-Tee', 'AltAz-Fork'],
       'mbl2':[i for i in range(0,999)],'mlc2':[i for i in range(100,2000,10)],'mhc2':[i for i in range(100,2000, 10)], 
       'msil2':[0,1],
       'hl':[i for i in range(-30,30)], 'ol':[i for i in range(60,92)], 'el':[i for i in range(-45,45)], 
-      'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,12)],
+      'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,13)],
       'a1min':[i for i in range(-380,0)],'a1max':[i for i in range(0,380)],'a2min':[i for i in range(-380,0)],'a2max':[i for i in range(0,380)],
       'mEn': [False]
       }

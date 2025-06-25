@@ -364,6 +364,8 @@ void motorTask(void *arg)
           break;
 
         case MSG_SET_VMAX:
+          if ((mcP->state() != PS_CRUISE) && (mcP->state() != PS_IDLE))  // ignore speed change when accelerating etc. 
+            break;
           double v;
           memcpy(&v, &msgBuffer[1], sizeof(double));  // always positive 
           mcP->vMax = v;
