@@ -72,7 +72,7 @@ void Command_M()
     {
       bool t = isTracking();
       i = mount.mP->Flip();
-      if (t & (i == 0))
+      if (t && (i == ERRGOTO_NONE))
       {
         startTracking();
       }

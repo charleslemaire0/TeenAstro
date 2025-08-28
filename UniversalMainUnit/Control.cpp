@@ -174,10 +174,10 @@ void controlTask(UNUSED(void *arg))
             }
             motorA2.setVmax(fabs(speeds.speed2));
             dir = fsign(speeds.speed2);
-            if (dir != previousDirAxis2)
+//            if (dir != previousDirAxis2)
             {
               motorA2.setTargetPos(dir * geoA2.stepsPerRot);
-              previousDirAxis2 = dir;
+//              previousDirAxis2 = dir;
             }
           }
         }

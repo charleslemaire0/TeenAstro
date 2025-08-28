@@ -54,7 +54,9 @@ long StepDir::decelDistance(double speed, unsigned long aMax)
 double getPeriod(double V)
 {
   if (V == 0)
-    return MAX_INTERRUPT_PERIOD;
+  {
+    return 1000;  // when stopped, keep interrupting once per millisecond
+  }
 
   double period = 1000000UL / fabs(V);
 
