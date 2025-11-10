@@ -3,8 +3,8 @@
 
 //----------------------------------------------------------------------------------
 //   T - Tracking Commands
-//  :T+#   Master sidereal clock faster by 0.1 Hertz (I use a fifth of the LX200 standard, stored in XEEPROM) Returns: Nothing
-//  :T-#   Master sidereal clock slower by 0.1 Hertz (stored in XEEPROM) Returns: Nothing
+//  :T+#   Master sidereal clock faster by 0.02 Hertz (I use a fifth of the LX200 standard, stored in XEEPROM) Returns: Nothing
+//  :T-#   Master sidereal clock slower by 0.02 Hertz (stored in XEEPROM) Returns: Nothing
 //  :TS#   Track rate solar Returns: Nothing
 //  :TL#   Track rate lunar Returns: Nothing
 //  :TQ#   Track rate sidereal Returns: Nothing

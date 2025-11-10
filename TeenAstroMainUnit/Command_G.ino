@@ -140,7 +140,7 @@ void Command_GX()
     case 'Z':
       // :GXEA#,:GXEZ#  get encoder altitude and azimuth
       // :GXEA Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
-      // :GXEZ Returns: DDD* MM# or DDD * MM'SS# (based on precision setting)
+      // :GXEZ Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
     {
       double f, f1;
       if (enableEncoder)
@@ -323,6 +323,12 @@ void Command_GX()
       case '5':
         staA2.updateDeltaTarget();
         sprintf(reply, "%ld#", staA2.deltaTarget);
+        break;
+      case '6':
+        sprintf(reply, "%lf#", staA1.interval_Step_Sid);
+        break;
+      case '7':
+        sprintf(reply, "%lf#", staA2.interval_Step_Sid);
         break;
       default:
         replyLongUnknow();
@@ -698,7 +704,7 @@ void Command_GX()
     switch (command[3])
     {
     case 'B':
-      // :GXJB# get if Both rate Axis are ennable
+      // :GXJB# get if Both rate Axis are enable
     {
       trackComp == TC_BOTH ? replyLongTrue(): replyLongFalse();
     }
@@ -1009,6 +1015,8 @@ void  Command_G()
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //  :GZ#   Get telescope azimuth, Native LX200 command
     //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
+    //  :G)#   Get Telescope Field in horizontal system rotation, TeenAstro LX200 command
+    //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
   {
     Coord_HO HO_T = getHorTopo();
     if (command[1] == 'A')
@@ -1021,7 +1029,7 @@ void  Command_G()
       double f = degRange(HO_T.Az() * RAD_TO_DEG);
       PrintAzimuth(f);
     }
-    else
+    else if (command[1] == ')')
     {
       double f1 = HO_T.FrH() * RAD_TO_DEG;
       PrintAzimuth(f1);
@@ -1058,6 +1066,8 @@ void  Command_G()
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //  :GR#   Get Telescope RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
+    //  :G(#   Get Telescope Field rotation in EQ system, TeenAstro LX200 command
+    //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
     //  :GDL#   Get Telescope Declination, TeenAstro LX200 command
     //         Returns: sDD,VVVVV#
     //  :GRL#   Get Telescope RA, TeenAstro LX200 command
@@ -1090,7 +1100,7 @@ void  Command_G()
         PrintDec(f1);
       }
     }
-    else
+    else if (command[1] == '(')
     {
       double f1 = EQ_T.FrE() * RAD_TO_DEG;
       PrintAzimuth(f1);
@@ -1204,7 +1214,7 @@ void  Command_G()
     //  :Gr#   Get current/target object RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
     //  :GrL#  Get current/target object Ra, TeenAstro LX200 command
-    //         Returns: sDD, VVVVV#
+    //         Returns: sDDD.VVVVV#
     if (command[2] == 'L')
     {
       sprintf(reply, "%+08.5f#", newTargetRA);

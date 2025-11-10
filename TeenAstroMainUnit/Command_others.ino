@@ -5,6 +5,11 @@ void Command_dollar()
 {
   switch (command[1])
   {
+  //----------------------------------------------------------------------------------
+  //   $ - Reset Commands
+  //  :$$# Clean EEPROM
+  //  :$!# Reboot Main Unit Unit
+  //  :$X# fReinit encoder and motors
   case '$':
     for (int i = 0; i < XEEPROM.length(); i++)
     {
@@ -48,7 +53,6 @@ void Command_ACK()
 //   A - Alignment Commands
 //  :A0#
 //  :A2#
-//  :A3#
 //  :AC#
 //  :AW#
 //  :AA#  Resets alignment as AC# AND activates alignment on next 3 syncs!  (<-> sync modded accordingly)
@@ -185,7 +189,7 @@ void Command_B()
 
 //   C - Sync Control
 //  :CA#   Synchonize the telescope with the current Target Azimuth and Altitude coordinates
-//         Returns: "N/A#" 
+//         Returns: Nothing
 //  :CM#   Synchonize the telescope with the current database object (as above)
 //         Returns: "N/A#"  
 //  :CS#   Synchonize the telescope with the current Target right ascension and declination coordinates
@@ -273,10 +277,10 @@ void Command_C()
 //  :ECE#   Synchonize the Encoders with the telescope Returns 1# or 0#
 //  :ECS#   Synchronise at the end of a pushto to Target Returns 1# or 0#
 //  :ED#   Distance to target axis Returns long#
-//  :EMS#   Set pushTo sidereal Target
-//  :EMU#   Set pushTo sidereal User defined Target
-//  :EMA#   Set pushTo altaz Target
-//  :EMQ#   Set pushTo altaz Target
+//  :EMS#   Start pushTo EQ Target
+//  :EMU#   Start pushTo EQ User defined Target
+//  :EMA#   Start pushTo altaz Target
+//  :EMQ#   Stop Push
 
 void Command_E()
 {
@@ -611,7 +615,7 @@ void Command_R()
   //  :RC#   Set Slew rate to Centering rate (2nd slowest) 4X
   //  :RM#   Set Slew rate to Find Rate (2nd Fastest) 32X
   //  :RS#   Set Slew rate to max (fastest) ?X (MaxRate)
-  //  :Rn#   Set Slew rate to n, where n=0..9
+  //  :Rn#   Set Slew rate to n, where n=0..4
   //         Returns: Nothing
 
   int i = 5;

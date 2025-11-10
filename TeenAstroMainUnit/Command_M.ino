@@ -64,7 +64,7 @@ void Command_M()
   break;
   case 'F':
   {
-    // Flip Mount
+    // :MF# Flip Mount
     //       Returns an ERRGOTO
     if (mountType == MOUNT_TYPE_GEM)
     {

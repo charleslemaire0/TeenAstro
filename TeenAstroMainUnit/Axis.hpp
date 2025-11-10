@@ -24,7 +24,6 @@ public:
   volatile double     interval_Step_Cur = 0;                         // this is the time between steps for the current rotation speed
   volatile double     CurrentTrackingRate = default_tracking_rate;   //effective rate tracking in Hour arc-seconds/second
   double              RequestedTrackingRate = default_tracking_rate; //computed  rate tracking in Hour arc-seconds/second
-  long                minstepdist;
   double              ClockSpeed;
   volatile bool       backlash_correcting;
   volatile int        backlash_movedSteps;
@@ -49,7 +48,7 @@ public:
     {
       updateDeltaTarget();
     }
-    return abs(deltaTarget) < max(minstepdist * abs(RequestedTrackingRate), 1);
+    return abs(deltaTarget) <= max((long)abs(fstep),1);
   };
   
   void resetToSidereal()
@@ -60,7 +59,6 @@ public:
   {
     ClockSpeed = cs;
     interval_Step_Sid = siderealClockSpeed / stepsPerSecond;
-    minstepdist = 0.05 * stepsPerSecond;
     takeupRate = 8L;
     takeupInterval = interval_Step_Sid / takeupRate;
     SetBacklash_interval_Step(bl_rate);
