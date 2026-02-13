@@ -3,36 +3,36 @@
 
 void StepToAngle(long Axis1, long Axis2, double* AngleAxis1, double* AngleAxis2, PoleSide* Side)
 {
-  if (Axis2 > geoA2.poleDef)
+  if (Axis2 > mount.geoA2.poleDef)
   {
-    Axis2 = geoA2.poleDef - (Axis2 - geoA2.poleDef);
-    Axis1 -= geoA1.halfRot;
+    Axis2 = mount.geoA2.poleDef - (Axis2 - mount.geoA2.poleDef);
+    Axis1 -= mount.geoA1.halfRot;
     *Side = PoleSide::POLE_OVER;
   }
-  else if (Axis2 < -geoA2.poleDef)
+  else if (Axis2 < -mount.geoA2.poleDef)
   {
-    Axis2 = -geoA2.poleDef - (Axis2 + geoA2.poleDef);
-    Axis1 -= geoA1.halfRot;
+    Axis2 = -mount.geoA2.poleDef - (Axis2 + mount.geoA2.poleDef);
+    Axis1 -= mount.geoA1.halfRot;
     *Side = PoleSide::POLE_OVER;
   }
   else
   {
     *Side = PoleSide::POLE_UNDER;
   }
-  *AngleAxis1 = Axis1 / geoA1.stepsPerDegree;
-  *AngleAxis2 = Axis2 / geoA2.stepsPerDegree;
+  *AngleAxis1 = Axis1 / mount.geoA1.stepsPerDegree;
+  *AngleAxis2 = Axis2 / mount.geoA2.stepsPerDegree;
 }
 
 void Angle2Step(double AngleAxis1, double AngleAxis2, PoleSide Side, long* Axis1, long* Axis2)
 {
-  *Axis1 = (long)(AngleAxis1 * geoA1.stepsPerDegree);
-  *Axis2 = (long)(AngleAxis2 * geoA2.stepsPerDegree);
+  *Axis1 = (long)(AngleAxis1 * mount.geoA1.stepsPerDegree);
+  *Axis2 = (long)(AngleAxis2 * mount.geoA2.stepsPerDegree);
   if (Side >= POLE_OVER)
   {
-    *Axis2 = geoA2.poleDef - (*Axis2 - geoA2.poleDef);
-    *Axis1 += geoA1.halfRot;
-    while (*Axis1 < -geoA1.halfRot) *Axis1 += geoA1.stepsPerRot;
-    while (*Axis1 > geoA1.halfRot) *Axis1 -= geoA1.stepsPerRot;
+    *Axis2 = mount.geoA2.poleDef - (*Axis2 - mount.geoA2.poleDef);
+    *Axis1 += mount.geoA1.halfRot;
+    while (*Axis1 < -mount.geoA1.halfRot) *Axis1 += mount.geoA1.stepsPerRot;
+    while (*Axis1 > mount.geoA1.halfRot) *Axis1 -= mount.geoA1.stepsPerRot;
   }
 }
 
@@ -42,26 +42,26 @@ void Angle2Step(double AngleAxis1, double AngleAxis2, PoleSide Side, long* Axis1
 void syncAxis(const long* axis1, const  long* axis2)
 {
   cli();
-  staA1.start = *axis1;
-  staA2.start = *axis2;
-  staA1.pos = *axis1;
-  staA2.pos = *axis2;
-  staA1.target = *axis1;
-  staA2.target = *axis2;
+  mount.staA1.start = *axis1;
+  mount.staA2.start = *axis2;
+  mount.staA1.pos = *axis1;
+  mount.staA2.pos = *axis2;
+  mount.staA1.target = *axis1;
+  mount.staA2.target = *axis2;
   sei();
 }
 
 void GotoAxis(const long* axis1Target, const long* axis2Target )
 {
   cli();
-  movingTo = true;
-  SetsiderealClockSpeed(siderealClockSpeed);
-  staA1.resetToSidereal();
-  staA2.resetToSidereal();
-  staA1.start = staA1.pos;
-  staA2.start = staA2.pos;
-  staA1.target = *axis1Target;
-  staA2.target = *axis2Target;
+  mount.movingTo = true;
+  SetsiderealClockSpeed(mount.siderealClockSpeed);
+  mount.staA1.resetToSidereal();
+  mount.staA2.resetToSidereal();
+  mount.staA1.start = mount.staA1.pos;
+  mount.staA2.start = mount.staA2.pos;
+  mount.staA1.target = *axis1Target;
+  mount.staA2.target = *axis2Target;
   sei();
   DecayModeGoto();
 }
@@ -72,7 +72,7 @@ bool SyncInstr(Coord_IN* instr, PoleSide Side)
   Angle2Step(instr->Axis1() * RAD_TO_DEG, instr->Axis2() * RAD_TO_DEG, Side, &axis1, &axis2);
   syncAxis(&axis1, &axis2);
   syncEwithT();
-  atHome = false;
+  mount.atHome = false;
   return true;
 }
 
@@ -91,33 +91,33 @@ bool syncAzAlt(Coord_HO *HO_T, PoleSide Side)
 
 void syncTwithE()
 {
-  if (enableEncoder)
+  if (mount.enableEncoder)
   {
-    long axis1 = (long)(encoderA1.r_deg() * geoA1.stepsPerDegree);
-    long axis2 = (long)(encoderA2.r_deg() * geoA2.stepsPerDegree);
+    long axis1 = (long)(mount.encoderA1.r_deg() * mount.geoA1.stepsPerDegree);
+    long axis2 = (long)(mount.encoderA2.r_deg() * mount.geoA2.stepsPerDegree);
     syncAxis(&axis1, &axis2);
-    atHome = false;
+    mount.atHome = false;
   }
 }
 
 void syncEwithT()
 {
-  if (enableEncoder)
+  if (mount.enableEncoder)
   {
     long axis1, axis2;
     cli();
-    axis1 = staA1.pos;
-    axis2 = staA2.pos;
+    axis1 = mount.staA1.pos;
+    axis2 = mount.staA2.pos;
     sei();
-    encoderA1.w_deg(axis1 / geoA1.stepsPerDegree);
-    encoderA2.w_deg(axis2 / geoA2.stepsPerDegree);
+    mount.encoderA1.w_deg(axis1 / mount.geoA1.stepsPerDegree);
+    mount.encoderA2.w_deg(axis2 / mount.geoA2.stepsPerDegree);
   }
 }
 
 bool autoSyncWithEncoder(EncoderSync mode)
 {
   bool synced = false;
-  if (enableEncoder)
+  if (mount.enableEncoder)
   {
     static EncoderSync lastmode = ES_OFF;
     static double tol = 0;
@@ -160,26 +160,26 @@ bool autoSyncWithEncoder(EncoderSync mode)
     }
     long axis1T, axis2T;
     cli();
-    axis1T = staA1.pos;
-    axis2T = staA2.pos;
+    axis1T = mount.staA1.pos;
+    axis2T = mount.staA2.pos;
     sei();
-    long axis1E = (long)(encoderA1.r_deg() * geoA1.stepsPerDegree);
-    long axis2E = (long)(encoderA2.r_deg() * geoA2.stepsPerDegree);
-    double tol1 = max(tol, 1. / encoderA1.pulsePerDegree);
-    if (abs(axis1T - axis1E) >= tol1 * geoA1.stepsPerDegree)
+    long axis1E = (long)(mount.encoderA1.r_deg() * mount.geoA1.stepsPerDegree);
+    long axis2E = (long)(mount.encoderA2.r_deg() * mount.geoA2.stepsPerDegree);
+    double tol1 = max(tol, 1. / mount.encoderA1.pulsePerDegree);
+    if (abs(axis1T - axis1E) >= tol1 * mount.geoA1.stepsPerDegree)
     {
       cli();
-      staA1.pos = axis1E;
-      staA1.target = staA1.pos;
+      mount.staA1.pos = axis1E;
+      mount.staA1.target = mount.staA1.pos;
       sei();
       synced = true;
     }
-    double tol2 = max(tol, 1. / encoderA2.pulsePerDegree);
-    if (abs(axis2T - axis2E) >= tol2 * geoA2.stepsPerDegree)
+    double tol2 = max(tol, 1. / mount.encoderA2.pulsePerDegree);
+    if (abs(axis2T - axis2E) >= tol2 * mount.geoA2.stepsPerDegree)
     {
       cli();
-      staA2.pos = axis2E;
-      staA2.target = staA2.pos;
+      mount.staA2.pos = axis2E;
+      mount.staA2.target = mount.staA2.pos;
       sei();
       synced = true;
     }
@@ -191,11 +191,11 @@ void getInstrDeg(double* A1, double* A2, double* A3)
 {
   long axis1, axis2;
   cli();
-  axis1 = staA1.pos;
-  axis2 = staA2.pos;
+  axis1 = mount.staA1.pos;
+  axis2 = mount.staA2.pos;
   sei();
-  *A1 = axis1 / geoA1.stepsPerDegree;
-  *A2 = axis2 / geoA2.stepsPerDegree;
+  *A1 = axis1 / mount.geoA1.stepsPerDegree;
+  *A2 = axis2 / mount.geoA2.stepsPerDegree;
   *A3 = 0;
 }
 
@@ -208,7 +208,7 @@ Coord_IN getInstr()
 
 Coord_IN getInstrE()
 {
-  return Coord_IN(0, encoderA2.r_deg() * DEG_TO_RAD, encoderA1.r_deg() * DEG_TO_RAD);
+  return Coord_IN(0, mount.encoderA2.r_deg() * DEG_TO_RAD, mount.encoderA1.r_deg() * DEG_TO_RAD);
 }
 
 // gets the telescopes current Topocentric HA and Dec
@@ -240,7 +240,7 @@ Coord_HO getHorTopo()
 
 Coord_HO getHorETopo()
 {
-  if (enableEncoder)
+  if (mount.enableEncoder)
     return getInstrE().To_Coord_HO(alignment.T, { false, 10, 110 });
   else
     return getHorTopo();
@@ -249,8 +249,8 @@ Coord_HO getHorETopo()
 Coord_IN getInstrTarget()
 {
   cli();
-  double Axis1 = staA1.target / geoA1.stepsPerDegree;
-  double Axis2 = staA2.target / geoA2.stepsPerDegree;
+  double Axis1 = mount.staA1.target / mount.geoA1.stepsPerDegree;
+  double Axis2 = mount.staA2.target / mount.geoA2.stepsPerDegree;
   double Axis3 = 0;
   sei();
   return Coord_IN(Axis3 * DEG_TO_RAD, Axis2 * DEG_TO_RAD, Axis1 * DEG_TO_RAD);
@@ -276,8 +276,8 @@ byte goToHor(Coord_HO HO_T, PoleSide preferedPoleSide)
   long axis1_target, axis2_target = 0;
   PoleSide selectedSide = PoleSide::POLE_NOTVALID;
 
-  if (HO_T.Alt() * RAD_TO_DEG < minAlt) return ERRGOTO_BELOWHORIZON;   // fail, below min altitude
-  if (HO_T.Alt() * RAD_TO_DEG > maxAlt) return ERRGOTO_ABOVEOVERHEAD;   // fail, above max altitude
+  if (HO_T.Alt() * RAD_TO_DEG < mount.minAlt) return ERRGOTO_BELOWHORIZON;   // fail, below min altitude
+  if (HO_T.Alt() * RAD_TO_DEG > mount.maxAlt) return ERRGOTO_ABOVEOVERHEAD;   // fail, above max altitude
 
   Coord_IN instr_T = HO_T.To_Coord_IN(alignment.Tinv);
   Axis1_target = instr_T.Axis1() * RAD_TO_DEG;
@@ -307,7 +307,7 @@ bool predictTarget(const double& Axis1_in, const double& Axis2_in, const PoleSid
   {
     return true;
   }
-  else if (meridianFlip == FLIP_ALWAYS)
+  else if (mount.meridianFlip == FLIP_ALWAYS)
   {
     double Axis1 = Axis1_in;
     double Axis2 = Axis2_in;
@@ -327,23 +327,23 @@ ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2)
 {
   // HA goes from +90...0..-90
   //                W   .   E
-  if (!enableMotor) return ErrorsGoTo::ERRGOTO_MOTOR_FAULT;
-  if (movingTo)
+  if (!mount.enableMotor) return ErrorsGoTo::ERRGOTO_MOTOR_FAULT;
+  if (mount.movingTo)
   {
-    abortSlew = true;
+    mount.abortSlew = true;
     return ErrorsGoTo::ERRGOTO_SLEWING;
   }   // fail, prior goto cancelled
-  if (guideA1.isBusy() || guideA2.isBusy()) return ErrorsGoTo::ERRGOTO_GUIDINGBUSY;   // fail, unspecified error
+  if (mount.guideA1.isBusy() || mount.guideA2.isBusy()) return ErrorsGoTo::ERRGOTO_GUIDINGBUSY;   // fail, unspecified error
 
   //z = AzRange(z);
   // Check to see if this goto is valid
-  if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return ErrorsGoTo::ERRGOTO_PARKED; // fail, PRK_PARKED
-  if (lastError != ERRT_NONE)
+  if ((mount.parkStatus != PRK_UNPARKED) && (mount.parkStatus != PRK_PARKING)) return ErrorsGoTo::ERRGOTO_PARKED; // fail, PRK_PARKED
+  if (mount.lastError != ERRT_NONE)
   {
-    return static_cast<ErrorsGoTo>(lastError + 10);   // fail, telescop has Errors State
+    return static_cast<ErrorsGoTo>(mount.lastError + 10);   // fail, telescop has Errors State
   }
 
-  atHome = false;
+  mount.atHome = false;
   GotoAxis(&thisTargetAxis1, &thisTargetAxis2);
 
   return ErrorsGoTo::ERRGOTO_NONE;

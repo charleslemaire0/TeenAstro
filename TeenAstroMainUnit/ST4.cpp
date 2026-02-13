@@ -21,9 +21,9 @@ void checkST4()
   static char ST4DE_state = 0;
   static char ST4DE_last = 0;
   // ST4 port is active only if there is no mount Error
-  if (lastError != ERRT_NONE)
+  if (mount.lastError != ERRT_NONE)
   {
-    if (GuidingState == GuidingST4)
+    if (mount.GuidingState == GuidingST4)
     {
       StopAxis1();
       StopAxis2();

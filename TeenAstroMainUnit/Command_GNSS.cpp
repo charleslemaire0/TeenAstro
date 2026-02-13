@@ -24,7 +24,7 @@ void UpdateGnss()
 #if VERSION == 220
   return;
 #endif
-  if (hasGNSS && (atHome || parkStatus == PRK_PARKED))
+  if (mount.hasGNSS && (mount.atHome || mount.parkStatus == PRK_PARKED))
   {
     while (GNSS_Serial.available())
     {
@@ -35,7 +35,7 @@ void UpdateGnss()
 
 bool iSGNSSValid()
 {
-  if (!hasGNSS)
+  if (!mount.hasGNSS)
   {
     return false;
   }

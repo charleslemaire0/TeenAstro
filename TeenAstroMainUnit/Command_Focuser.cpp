@@ -7,7 +7,7 @@
 //   F - Focuser  :F+# :F-# :F?# etc. (passthrough to focuser hardware)
 // -----------------------------------------------------------------------------
 void Command_F() {
-  if (!hasFocuser) {
+  if (!mount.hasFocuser) {
     if (command[1] == '?') replyLongFalse();
     else replyNothing();
     return;

@@ -19,19 +19,19 @@ void Command_M() {
     {
       strcpy(reply, "i");
     }
-    else if (abs(f) > guideRates[4])
+    else if (abs(f) > mount.guideRates[4])
     {
       strcpy(reply, "h");
     }
-    else if (movingTo)
+    else if (mount.movingTo)
     {
       strcpy(reply, "s");
     }
-    else if (lastError != ErrorsTraking::ERRT_NONE)
+    else if (mount.lastError != ErrorsTraking::ERRT_NONE)
     {
       strcpy(reply, "e");
     }
-    else if (!(GuidingState == Guiding::GuidingOFF || GuidingState == Guiding::GuidingAtRate))
+    else if (!(mount.GuidingState == Guiding::GuidingOFF || mount.GuidingState == Guiding::GuidingAtRate))
     {
       strcpy(reply, "g");
     }
@@ -58,7 +58,7 @@ void Command_M() {
     //         4=Position unreachable
     //         6=Outside limits
   {
-    Coord_HO HO_T(0, newTargetAlt * DEG_TO_RAD, newTargetAzm * DEG_TO_RAD, true);
+    Coord_HO HO_T(0, mount.newTargetAlt * DEG_TO_RAD, mount.newTargetAzm * DEG_TO_RAD, true);
     byte i = goToHor(HO_T, GetPoleSide());
     reply[0] = i + '0';
     reply[1] = 0;
@@ -68,7 +68,7 @@ void Command_M() {
   {
     // :MF# Flip Mount
     //       Returns an ERRGOTO
-    if (mountType == MOUNT_TYPE_GEM)
+    if (mount.mountType == MOUNT_TYPE_GEM)
     {
       int i = Flip();
       reply[0] = i + '0';
@@ -82,24 +82,24 @@ void Command_M() {
     //  Returns: Nothing
     int i;
     if ((atoi2((char *)&command[3], &i)) &&
-      ((i > 0) && (i <= 30000)) && !movingTo && lastError == ERRT_NONE &&
-        (GuidingState != GuidingRecenter || GuidingState != GuidingST4))
+      ((i > 0) && (i <= 30000)) && !mount.movingTo && mount.lastError == ERRT_NONE &&
+        (mount.GuidingState != GuidingRecenter || mount.GuidingState != GuidingST4))
     {
       if ((command[2] == 'e') || (command[2] == 'w'))
       {
         enableST4GuideRate();
         if (command[2] == 'e')
         {
-          guideA1.moveBW();
+          mount.guideA1.moveBW();
         }
         else if (command[2] == 'w')
         {
-          guideA1.moveFW();
+          mount.guideA1.moveFW();
         }
-        guideA1.durationLast = micros();
-        guideA1.duration = (unsigned long)(i * 1000UL);
+        mount.guideA1.durationLast = micros();
+        mount.guideA1.duration = (unsigned long)(i * 1000UL);
         cli();
-        GuidingState = Guiding::GuidingPulse;
+        mount.GuidingState = Guiding::GuidingPulse;
         sei();
         //reply[0] = '1';
         //reply[1] = 0;
@@ -111,28 +111,28 @@ void Command_M() {
         {
           if (command[2] == 'n')
           {
-            guideA2.moveFW();
+            mount.guideA2.moveFW();
           }
           else if (command[2] == 's')
           {
-            guideA2.moveBW();
+            mount.guideA2.moveBW();
           }
         }
         else
         {
           if (command[2] == 'n')
           {
-            guideA2.moveBW();
+            mount.guideA2.moveBW();
           }
           else if (command[2] == 's')
           {
-            guideA2.moveFW();
+            mount.guideA2.moveFW();
           }
         }
-        guideA2.durationLast = micros();
-        guideA2.duration = (unsigned long)(i * 1000UL);
+        mount.guideA2.durationLast = micros();
+        mount.guideA2.duration = (unsigned long)(i * 1000UL);
         cli();
-        GuidingState = Guiding::GuidingPulse;
+        mount.GuidingState = Guiding::GuidingPulse;
         sei();
         
         //reply[0] = '1';
@@ -187,8 +187,8 @@ void Command_M() {
   {
     //:MS#   Goto the Target Object
     //       Returns an ERRGOTO
-    double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    Coord_EQ EQ_T(0, newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
+    double  newTargetHA = haRange(rtk.LST() * 15.0 - mount.newTargetRA);
+    Coord_EQ EQ_T(0, mount.newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
     byte i = goToEqu(EQ_T, GetPoleSide(), *localSite.latitude() * DEG_TO_RAD);
     if (i == 0)
     {
@@ -203,10 +203,10 @@ void Command_M() {
     //  :MU#   Goto the User Defined Target Object
     //         Returns an ERRGOTO
     PoleSide targetPoleSide = GetPoleSide();
-    newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
-    newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
-    double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    Coord_EQ EQ_T(0, newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
+    mount.newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
+    mount.newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
+    double newTargetHA = haRange(rtk.LST() * 15.0 - mount.newTargetRA);
+    Coord_EQ EQ_T(0, mount.newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
     byte i = goToEqu(EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
     if (i == 0)
     {
@@ -246,7 +246,7 @@ void Command_M() {
 
     Coord_EQ EQ_T(0, Dec * DEG_TO_RAD , Ha * DEG_TO_RAD);
     Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto());
-    if (HO_T.Alt() < minAlt * DEG_TO_RAD || alt > maxAlt * DEG_TO_RAD)
+    if (HO_T.Alt() < mount.minAlt * DEG_TO_RAD || alt > mount.maxAlt * DEG_TO_RAD)
     {
       strcpy(reply, "!");
       break;
@@ -268,14 +268,14 @@ void Command_M() {
   {
     //  :M@V#   Start Spiral Search V in arcminutes
     //         Return 0 if failed, i if success
-    if (movingTo || GuidingState != Guiding::GuidingOFF)
+    if (mount.movingTo || mount.GuidingState != Guiding::GuidingOFF)
       replyShortFalse();
     else
     {
-      SpiralFOV = (double)strtol(&command[2], NULL, 10) / 60.0;
+      mount.SpiralFOV = (double)strtol(&command[2], NULL, 10) / 60.0;
       replyShortTrue();
-      atHome = false;
-      doSpiral = true;
+      mount.atHome = false;
+      mount.doSpiral = true;
     }
     break;
   }

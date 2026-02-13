@@ -11,56 +11,56 @@
 void Command_T() {
   switch (command[1]) {
   case '+':
-    siderealClockSpeed -= HzCf * (0.02);
-    XEEPROM.writeLong(getMountAddress(EE_siderealClockSpeed), siderealClockSpeed * 16);
+    mount.siderealClockSpeed -= HzCf * (0.02);
+    XEEPROM.writeLong(getMountAddress(EE_siderealClockSpeed), mount.siderealClockSpeed * 16);
     updateSideral();
     replyNothing();
     break;
   case '-':
-    siderealClockSpeed += HzCf * (0.02);
-    XEEPROM.writeLong(getMountAddress(EE_siderealClockSpeed), siderealClockSpeed * 16);
+    mount.siderealClockSpeed += HzCf * (0.02);
+    XEEPROM.writeLong(getMountAddress(EE_siderealClockSpeed), mount.siderealClockSpeed * 16);
     updateSideral();
     replyNothing();
     break;
   case 'S':
     // solar tracking rate 60Hz
     SetTrackingRate(TrackingSolar, 0);
-    sideralMode = SIDM_SUN;
+    mount.sideralMode = SIDM_SUN;
     replyNothing();
     break;
   case 'L':
     // lunar tracking rate 57.9Hz
     SetTrackingRate(TrackingLunar, 0);
-    sideralMode = SIDM_MOON;
+    mount.sideralMode = SIDM_MOON;
     replyNothing();
     break;
   case 'Q':
     // sidereal tracking rate
     SetTrackingRate(TrackingStar, 0);
-    sideralMode = SIDM_STAR;
+    mount.sideralMode = SIDM_STAR;
     replyNothing();
     break;
   case 'R':
     // reset master sidereal clock interval
-    siderealClockSpeed = mastersiderealClockSpeed;
+    mount.siderealClockSpeed = mastersiderealClockSpeed;
     SetTrackingRate(TrackingStar, 0);
-    sideralMode = SIDM_STAR;
-    XEEPROM.writeLong(getMountAddress(EE_siderealClockSpeed), siderealClockSpeed * 16);
+    mount.sideralMode = SIDM_STAR;
+    XEEPROM.writeLong(getMountAddress(EE_siderealClockSpeed), mount.siderealClockSpeed * 16);
     updateSideral();
     replyNothing();
     break;
   case 'T':
     // set user defined Target tracking rate
-    SetTrackingRate(1.0 - (double)storedTrakingRateRA / 10000.0, (double)storedTrakingRateDEC / 10000.0);
-    sideralMode = SIDM_TARGET;
+    SetTrackingRate(1.0 - (double)mount.storedTrakingRateRA / 10000.0, (double)mount.storedTrakingRateDEC / 10000.0);
+    mount.sideralMode = SIDM_TARGET;
     replyNothing();
     break;
   case 'e':
-    if (parkStatus == PRK_UNPARKED)
+    if (mount.parkStatus == PRK_UNPARKED)
     {
-      lastSetTrakingEnable = millis();
-      atHome = false;
-      if (enableMotor)
+      mount.lastSetTrakingEnable = millis();
+      mount.atHome = false;
+      if (mount.enableMotor)
       {
         StartSideralTracking();
         replyShortTrue();
@@ -74,9 +74,9 @@ void Command_T() {
       replyShortFalse();
     break;
   case 'd':
-    if (parkStatus == PRK_UNPARKED)
+    if (mount.parkStatus == PRK_UNPARKED)
     {
-      sideralTracking = false;
+      mount.sideralTracking = false;
       replyShortTrue();
     }
     else
@@ -90,7 +90,7 @@ void Command_T() {
     }
     else
     {
-      trackComp = TC_RA;
+      mount.trackComp = TC_RA;
       computeTrackingRate(true);
       XEEPROM.update(getMountAddress(EE_TC_Axis), 1);
       replyShortTrue();
@@ -104,7 +104,7 @@ void Command_T() {
     }
     else
     {
-      trackComp = TC_BOTH;
+      mount.trackComp = TC_BOTH;
       computeTrackingRate(true);
       XEEPROM.update(getMountAddress(EE_TC_Axis), 2);
       replyShortTrue();
@@ -225,7 +225,7 @@ void Command_T() {
         test_alignment.addReference(HO1.direct_Az_S(), HO1.Alt(), Ia1_1, Ia2_1);
         test_alignment.addReference(HO2.direct_Az_S(), HO2.Alt(), Ia1_2, Ia2_2);
         test_alignment.minimizeAxis2();
-        test_alignment.minimizeAxis1(mountType == MOUNT_TYPE_GEM ? (Lat >= 0 ? M_PI_2 : -M_PI_2) : 0);
+        test_alignment.minimizeAxis1(mount.mountType == MOUNT_TYPE_GEM ? (Lat >= 0 ? M_PI_2 : -M_PI_2) : 0);
 
         Serial.println("error");
         Serial.println(test_alignment.getError() * 180. / PI * 60.);

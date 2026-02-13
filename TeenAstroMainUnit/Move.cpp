@@ -5,11 +5,11 @@ static void StopAxis(GuideAxis* guideA, StatusAxis* staA);
 
 static void MoveAxis(GuideAxis* guideA, StatusAxis* staA, const bool BW, const Guiding Mode)
 {
-  if (!enableMotor) return;
-  bool canMove = parkStatus == PRK_UNPARKED;
-  canMove &= (Mode == GuidingRecenter || lastError == ERRT_NONE);
-  canMove &= !movingTo;
-  canMove &= (GuidingState == GuidingOFF || GuidingState == Mode);
+  if (!mount.enableMotor) return;
+  bool canMove = mount.parkStatus == PRK_UNPARKED;
+  canMove &= (Mode == GuidingRecenter || mount.lastError == ERRT_NONE);
+  canMove &= !mount.movingTo;
+  canMove &= (mount.GuidingState == GuidingOFF || mount.GuidingState == Mode);
   if (canMove)
   {
     // block user from changing direction at high rates, just stop the guide instead
@@ -39,12 +39,12 @@ static void MoveAxis(GuideAxis* guideA, StatusAxis* staA, const bool BW, const G
       }
       else
       {
-        enableGuideRate(activeGuideRate);
+        enableGuideRate(mount.activeGuideRate);
       }
 
-      GuidingState = Mode;
+      mount.GuidingState = Mode;
       BW ? guideA->moveBW() : guideA->moveFW();
-      atHome = false;
+      mount.atHome = false;
       guideA->duration = 0UL;
     }
   }
@@ -52,11 +52,11 @@ static void MoveAxis(GuideAxis* guideA, StatusAxis* staA, const bool BW, const G
 
 static void MoveAxisAtRate(GuideAxis* guideA, StatusAxis* staA, const double newrate)
 {
-  if (!enableMotor) return;
-  bool canMove = parkStatus == PRK_UNPARKED;
-  canMove &= lastError == ERRT_NONE;
-  canMove &= !movingTo;
-  canMove &= (GuidingState == GuidingOFF || GuidingState == GuidingAtRate ) ;
+  if (!mount.enableMotor) return;
+  bool canMove = mount.parkStatus == PRK_UNPARKED;
+  canMove &= mount.lastError == ERRT_NONE;
+  canMove &= !mount.movingTo;
+  canMove &= (mount.GuidingState == GuidingOFF || mount.GuidingState == GuidingAtRate ) ;
   if (canMove)
   {
     if (newrate == 0)
@@ -64,10 +64,10 @@ static void MoveAxisAtRate(GuideAxis* guideA, StatusAxis* staA, const double new
       StopAxis(guideA, staA);
       return;
     }
-    if (GuidingState != GuidingAtRate)
+    if (mount.GuidingState != GuidingAtRate)
     {
-      lastSideralTracking = sideralTracking;
-      sideralTracking = false;
+      mount.lastSideralTracking = mount.sideralTracking;
+      mount.sideralTracking = false;
     }
     bool samedirection = ((newrate > 0) == (guideA->getRate() >= 0));
     if (guideA->isBusy() && !samedirection && guideA->absRate > 2)
@@ -77,9 +77,9 @@ static void MoveAxisAtRate(GuideAxis* guideA, StatusAxis* staA, const double new
     else
     {
       guideA->enableAtRate(abs(newrate));
-      GuidingState = Guiding::GuidingAtRate;
+      mount.GuidingState = Guiding::GuidingAtRate;
       newrate > 0 ? guideA->moveFW() : guideA->moveBW();
-      atHome = false;
+      mount.atHome = false;
       guideA->duration = 0UL;
     }
   }
@@ -87,7 +87,7 @@ static void MoveAxisAtRate(GuideAxis* guideA, StatusAxis* staA, const double new
 
 static void StopAxis(GuideAxis* guideA, StatusAxis* staA)
 {
-  if (!enableMotor) return;
+  if (!mount.enableMotor) return;
   if (!guideA->isMoving())
     return;
   guideA->brake();
@@ -96,48 +96,48 @@ static void StopAxis(GuideAxis* guideA, StatusAxis* staA)
 
 void MoveAxis1(const bool BW, const Guiding Mode)
 {
-  MoveAxis(&guideA1, &staA1, BW, Mode);
+  MoveAxis(&mount.guideA1, &mount.staA1, BW, Mode);
 }
 
 void MoveAxisAtRate1(const double newrate)
 {
-  MoveAxisAtRate(&guideA1, &staA1, newrate);
+  MoveAxisAtRate(&mount.guideA1, &mount.staA1, newrate);
 }
 
 void StopAxis1()
 {
-  StopAxis(&guideA1, &staA1);
+  StopAxis(&mount.guideA1, &mount.staA1);
 }
 
 void MoveAxis2(const bool BW, const Guiding Mode)
 {
-  MoveAxis(&guideA2, &staA2, BW, Mode);
+  MoveAxis(&mount.guideA2, &mount.staA2, BW, Mode);
 }
 
 void MoveAxisAtRate2(const double newrate)
 {
-  MoveAxisAtRate(&guideA2, &staA2, newrate);
+  MoveAxisAtRate(&mount.guideA2, &mount.staA2, newrate);
 }
 
 void StopAxis2()
 {
-  StopAxis(&guideA2, &staA2);
+  StopAxis(&mount.guideA2, &mount.staA2);
 }
 
 
 
 void CheckEndOfMoveAxisAtRate()
 {
-  if (!enableMotor) return;
-  if (lastGuidingState == GuidingAtRate && GuidingState == GuidingOFF)
+  if (!mount.enableMotor) return;
+  if (mount.lastGuidingState == GuidingAtRate && mount.GuidingState == GuidingOFF)
   {
-    if (lastSideralTracking)
+    if (mount.lastSideralTracking)
     {
       StartSideralTracking();
     }
     resetGuideRate();
   }
-  lastGuidingState = GuidingState;
+  mount.lastGuidingState = mount.GuidingState;
 }
 
 void CheckSpiral()
@@ -147,7 +147,7 @@ void CheckSpiral()
   static CoordConv helper;
   static unsigned long clk_ini, clk_last, clk_now;
 
-  if (!doSpiral)
+  if (!mount.doSpiral)
   {
     //reset startPointDefined
     if (startPointDefined )
@@ -157,11 +157,11 @@ void CheckSpiral()
     return;
   }
 
-  if (lastError != ERRT_NONE)
+  if (mount.lastError != ERRT_NONE)
   {
     StopAxis1();
     StopAxis2();
-    doSpiral = false;
+    mount.doSpiral = false;
     return;
   }
 
@@ -190,7 +190,7 @@ void CheckSpiral()
   {
     StopAxis1();
     StopAxis2();
-    doSpiral = false;
+    mount.doSpiral = false;
     return;
   }
 
@@ -206,11 +206,11 @@ void CheckSpiral()
   double t_next = 0.001 * (t + dt);
 
   //compute local position along the spiral before
-  double hl_prev = 0.4 * SpiralFOV * sqrt(t_prev) * cos(sqrt(t_prev));
-  double dl_prev = 0.4 * SpiralFOV * sqrt(t_prev) * sin(sqrt(t_prev));
+  double hl_prev = 0.4 * mount.SpiralFOV * sqrt(t_prev) * cos(sqrt(t_prev));
+  double dl_prev = 0.4 * mount.SpiralFOV * sqrt(t_prev) * sin(sqrt(t_prev));
   //compute local position along the spiral after
-  double hl_next = 0.4 * SpiralFOV * sqrt(t_next) * cos(sqrt(t_next));
-  double dl_next = 0.4 * SpiralFOV * sqrt(t_next) * sin(sqrt(t_next));
+  double hl_next = 0.4 * mount.SpiralFOV * sqrt(t_next) * cos(sqrt(t_next));
+  double dl_next = 0.4 * mount.SpiralFOV * sqrt(t_next) * sin(sqrt(t_next));
   //now get these position in the sky
   
   Coord_EQ EQ_prev = Coord_LO(0, dl_prev * DEG_TO_RAD, hl_prev * DEG_TO_RAD).To_Coord_EQ(helper.T);
@@ -219,14 +219,14 @@ void CheckSpiral()
   PoleSide side_tmp = GetPoleSide();
 
   RateFromMovingTarget(EQ_prev, EQ_next,
-    0.002*dt, side_tmp, doesRefraction.forGoto,
+    0.002*dt, side_tmp, environment.doesRefraction.forGoto,
     SpiraleRateA1, SpiraleRateA2);
 
-  if (abs(SpiraleRateA1) > guideRates[4] || abs(SpiraleRateA2) > guideRates[4])
+  if (abs(SpiraleRateA1) > mount.guideRates[4] || abs(SpiraleRateA2) > mount.guideRates[4])
   {
     StopAxis1();
     StopAxis2();
-    doSpiral = false;
+    mount.doSpiral = false;
     return;
   }
 
@@ -237,11 +237,11 @@ void CheckSpiral()
 
 void StartSideralTracking()
 {
-  if (!sideralTracking)
+  if (!mount.sideralTracking)
   {
-    sideralTracking = true;
+    mount.sideralTracking = true;
     computeTrackingRate(true);
-    lastSetTrakingEnable = millis();
-    atHome = false;
+    mount.lastSetTrakingEnable = millis();
+    mount.atHome = false;
   }
 }

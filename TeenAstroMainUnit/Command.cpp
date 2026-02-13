@@ -1,6 +1,6 @@
 /**
  * Command dispatcher and reply helpers.
- * processCommands() reads from S_USB/S_SHC, dispatches by lead character, sends reply.
+ * processCommands() reads from commandState.S_USB_/commandState.S_SHC_, dispatches by lead character, sends reply.
  */
 #include "Command.h"
 
@@ -10,11 +10,11 @@
 void processCommands() {
   Command process_command = COMMAND_NONE;
 
-  S_USB.update();
-  S_SHC.update();
+  commandState.S_USB_.update();
+  commandState.S_SHC_.update();
 
-  S_USB.getCmdPar(command, process_command);
-  S_SHC.getCmdPar(command, process_command);
+  commandState.S_USB_.getCmdPar(command, process_command);
+  commandState.S_SHC_.getCmdPar(command, process_command);
 
   if (process_command == COMMAND_NONE)
     return;
@@ -44,10 +44,10 @@ void processCommands() {
   }
 
   if (strlen(reply) > 0) {
-    S_USB.reply(reply, process_command);
-    S_SHC.reply(reply, process_command);
+    commandState.S_USB_.reply(reply, process_command);
+    commandState.S_SHC_.reply(reply, process_command);
   }
-  if (reboot_unit)
+  if (mount.reboot_unit)
     reboot();
 }
 

@@ -67,7 +67,7 @@ void setup()
 
 #ifdef RETICULE_LED_PINS
   pinMode(RETICULE_LED_PINS, OUTPUT);
-  analogWrite(RETICULE_LED_PINS, reticuleBrightness);
+  analogWrite(RETICULE_LED_PINS, mount.reticuleBrightness);
 #endif
 
   setupST4();
@@ -100,7 +100,7 @@ void setup()
   enable_Axis(false);
   DecayModeTracking();
 
-  siderealClockSpeed = (double)XEEPROM.readLong(getMountAddress(EE_siderealClockSpeed))/16.0;
+  mount.siderealClockSpeed = (double)XEEPROM.readLong(getMountAddress(EE_siderealClockSpeed))/16.0;
   updateSideral();
   beginTimers();
 
@@ -111,23 +111,23 @@ void setup()
   }
 
   int val = EEPROM.read(getMountAddress(EE_Rate0));
-  guideRates[0] = val > 0 ? (float)val / 100 : DefaultR0;
+  mount.guideRates[0] = val > 0 ? (float)val / 100 : DefaultR0;
   val = EEPROM.read(getMountAddress(EE_Rate1));
-  guideRates[1] = val > 0 ? (float)val : DefaultR1;
+  mount.guideRates[1] = val > 0 ? (float)val : DefaultR1;
   val = EEPROM.read(getMountAddress(EE_Rate2));
-  guideRates[2] = val > 0 ? (float)val : DefaultR2;
+  mount.guideRates[2] = val > 0 ? (float)val : DefaultR2;
   val = EEPROM.read(getMountAddress(EE_Rate3));
-  guideRates[3] = val > 0 ? (float)val : DefaultR3;
+  mount.guideRates[3] = val > 0 ? (float)val : DefaultR3;
 
-  recenterGuideRate = min(EEPROM.read(getMountAddress(EE_DefaultRate)), 4);
-  activeGuideRate = recenterGuideRate;
+  mount.recenterGuideRate = min(EEPROM.read(getMountAddress(EE_DefaultRate)), 4);
+  mount.activeGuideRate = mount.recenterGuideRate;
   resetGuideRate();
 
   delay(10);
 
   rtk.updateTimers();
   delay(2000);
-  hasGNSS = GNSS_Serial.available() > 0;
+  mount.hasGNSS = GNSS_Serial.available() > 0;
 
   Focus_Serial.setRX(FocuserRX);
   Focus_Serial.setTX(FocuserTX);
@@ -142,14 +142,14 @@ void setup()
     ret = Focus_Serial.read();
     if (ret == '?')
     {
-      hasFocuser = true;
+      mount.hasFocuser = true;
     }
   }
 
   Serial.begin(BAUD);
-  S_USB.attach_Stream((Stream*)&Serial, COMMAND_SERIAL);
+  commandState.S_USB_.attach_Stream((Stream*)&Serial, COMMAND_SERIAL);
   Serial1.begin(57600);
-  S_SHC.attach_Stream((Stream*)&Serial1, COMMAND_SERIAL1);
+  commandState.S_SHC_.attach_Stream((Stream*)&Serial1, COMMAND_SERIAL1);
 
   digitalWrite(LEDPin, LOW);
 }
@@ -160,46 +160,46 @@ void loop()
   static unsigned long m;
   static long phase;
   static ErrorsTraking StartLoopError = ERRT_NONE;
-  StartLoopError = lastError;
+  StartLoopError = mount.lastError;
 
-  if (!movingTo && enableMotor)
+  if (!mount.movingTo && mount.enableMotor)
   {
     checkST4();
     CheckSpiral();
     Guide();
   }
 
-  if (encoderA1.calibrating() != encoderA2.calibrating())
+  if (mount.encoderA1.calibrating() != mount.encoderA2.calibrating())
   {
-    encoderA1.delRef();
-    encoderA2.delRef();
+    mount.encoderA1.delRef();
+    mount.encoderA2.delRef();
   }
   if (!TelescopeBusy() && rtk.m_lst % 10)
   {
-    EncoderSync mode = PushtoStatus == PT_OFF ? EncodeSyncMode : ES_ALWAYS;
+    EncoderSync mode = mount.PushtoStatus == PT_OFF ? mount.EncodeSyncMode : ES_ALWAYS;
     if (autoSyncWithEncoder(mode))
     {
-      if (atHome) atHome = false;
-      if (parkStatus != PRK_UNPARKED) parkStatus = PRK_UNPARKED;
+      if (mount.atHome) mount.atHome = false;
+      if (mount.parkStatus != PRK_UNPARKED) mount.parkStatus = PRK_UNPARKED;
     }
   }
 
   if (rtk.updatesiderealTimer())
   {
-    if (sideralTracking)
+    if (mount.sideralTracking)
     {
       cli();
-      if (!staA1.backlash_correcting)
+      if (!mount.staA1.backlash_correcting)
       {
-        staA1.target += staA1.fstep;
+        mount.staA1.target += mount.staA1.fstep;
       }
-      if (!staA2.backlash_correcting)
+      if (!mount.staA2.backlash_correcting)
       {
-        staA2.target += staA2.fstep;
+        mount.staA2.target += mount.staA2.fstep;
       }
       sei();
     }
-    if (movingTo)
+    if (mount.movingTo)
     {
       moveTo();
     }
@@ -207,7 +207,7 @@ void loop()
     phase = rtk.m_lst % 100;
     if (phase % 20 == 0)
     {
-      currentAlt = getHorTopo().Alt()*RAD_TO_DEG;
+      mount.currentAlt = getHorTopo().Alt()*RAD_TO_DEG;
     }
     if (phase == 0)
     {
@@ -216,54 +216,54 @@ void loop()
 
     CheckEndOfMoveAxisAtRate();
 
-    if (staA1.fault || staA2.fault)
+    if (mount.staA1.fault || mount.staA2.fault)
     {
-      lastError = ERRT_MOTOR_FAULT;
+      mount.lastError = ERRT_MOTOR_FAULT;
       if (!forceTracking)
       {
-        if (movingTo)
-          abortSlew = true;
+        if (mount.movingTo)
+          mount.abortSlew = true;
         else
         {
-          sideralTracking = false;
-          guideA1.brake();
-          guideA2.brake();
+          mount.sideralTracking = false;
+          mount.guideA1.brake();
+          mount.guideA2.brake();
         }
       }
     }
-    else if (lastError == ERRT_MOTOR_FAULT)
+    else if (mount.lastError == ERRT_MOTOR_FAULT)
     {
-      lastError = ERRT_NONE;
+      mount.lastError = ERRT_NONE;
     }
-    if (currentAlt < minAlt || currentAlt > maxAlt)
+    if (mount.currentAlt < mount.minAlt || mount.currentAlt > mount.maxAlt)
     {
       if (!forceTracking)
       {
-        lastError = ERRT_ALT;
-        if (movingTo)
-          abortSlew = true;
+        mount.lastError = ERRT_ALT;
+        if (mount.movingTo)
+          mount.abortSlew = true;
         else
-          sideralTracking = false;
+          mount.sideralTracking = false;
       }
     }
-    else if (lastError == ERRT_ALT)
+    else if (mount.lastError == ERRT_ALT)
     {
-      lastError = ERRT_NONE;
+      mount.lastError = ERRT_NONE;
     }
   }
 
   tlp.monitor();
 
   m = millis();
-  forceTracking = (m - lastSetTrakingEnable < 10000);
-  if (!forceTracking) lastSetTrakingEnable = m + 10000;
+  forceTracking = (m - mount.lastSetTrakingEnable < 10000);
+  if (!forceTracking) mount.lastSetTrakingEnable = m + 10000;
   SafetyCheck(forceTracking);
 
   processCommands();
   UpdateGnss();
 
-  if (StartLoopError != lastError)
+  if (StartLoopError != mount.lastError)
   {
-    lastError == ERRT_NONE ? digitalWrite(LEDPin, LOW) : digitalWrite(LEDPin, HIGH);
+    mount.lastError == ERRT_NONE ? digitalWrite(LEDPin, LOW) : digitalWrite(LEDPin, HIGH);
   }
 }

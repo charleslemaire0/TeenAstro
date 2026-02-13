@@ -8,35 +8,35 @@ void moveTo()
   // HA goes from +90...0..-90
   //                W   .   E
 
-  if (settling)
+  if (mount.settling)
   {
-    unsigned long elapsedTime = millis() - lastSettleTime;
-    if (elapsedTime > slewSettleDuration * 1000)
+    unsigned long elapsedTime = millis() - mount.lastSettleTime;
+    if (elapsedTime > mount.slewSettleDuration * 1000)
     {
-      settling = false;
-      movingTo = false;
+      mount.settling = false;
+      mount.movingTo = false;
     }
     return;
   }
   static long lastPosAxis2 = 0;
   volatile long distStartAxis1, distStartAxis2, distDestAxis1, distDestAxis2;
 
-  staA1.updateDeltaStart();
-  staA2.updateDeltaStart();
-  distStartAxis1 = max(abs(staA1.deltaStart), 1L);  // distance from start HA
-  distStartAxis2 = max(abs(staA2.deltaStart), 1L);  // distance from start Dec
+  mount.staA1.updateDeltaStart();
+  mount.staA2.updateDeltaStart();
+  distStartAxis1 = max(abs(mount.staA1.deltaStart), 1L);  // distance from start HA
+  distStartAxis2 = max(abs(mount.staA2.deltaStart), 1L);  // distance from start Dec
 
 Again:
-  staA1.updateDeltaTarget();
-  staA2.updateDeltaTarget();
+  mount.staA1.updateDeltaTarget();
+  mount.staA2.updateDeltaTarget();
 
-  distDestAxis1 = max(abs(staA1.deltaTarget), 1L);  // distance from dest HA
-  distDestAxis2 = max(abs(staA2.deltaTarget), 1L);  // distance from dest Dec
-  // adjust rates near the horizon to help keep from exceeding the minAlt limit
+  distDestAxis1 = max(abs(mount.staA1.deltaTarget), 1L);  // distance from dest HA
+  distDestAxis2 = max(abs(mount.staA2.deltaTarget), 1L);  // distance from dest Dec
+  // adjust rates near the horizon to help keep from exceeding the mount.minAlt limit
   if (!isAltAZ())
   {
     cli();
-    volatile long tempPosAxis2 = staA2.pos;
+    volatile long tempPosAxis2 = mount.staA2.pos;
     sei();
     if (tempPosAxis2 != lastPosAxis2)
     {
@@ -49,7 +49,7 @@ Again:
       if (decreasing)
       {
         cli();
-        long a = max((currentAlt - minAlt) * geoA2.stepsPerDegree, 1);
+        long a = max((mount.currentAlt - mount.minAlt) * mount.geoA2.stepsPerDegree, 1);
         if (a < distDestAxis2)
           distDestAxis2 = a;
         sei();
@@ -58,7 +58,7 @@ Again:
         // if Dec is increasing, slow down HA
       {
         cli();
-        long a = max((currentAlt - minAlt) * geoA1.stepsPerDegree, 1);
+        long a = max((mount.currentAlt - mount.minAlt) * mount.geoA1.stepsPerDegree, 1);
         if (a < distDestAxis1)
           distDestAxis1 = a;
         sei();
@@ -68,78 +68,78 @@ Again:
   }
 
   // quickly slow the motors and stop in 1 degree
-  if (abortSlew)
+  if (mount.abortSlew)
   {
-    staA1.breakMoveLowRate();
-    guideA1.brake();
-    staA2.breakMoveLowRate();
-    guideA2.brake();
-    if (parkStatus == PRK_PARKING)
+    mount.staA1.breakMoveLowRate();
+    mount.guideA1.brake();
+    mount.staA2.breakMoveLowRate();
+    mount.guideA2.brake();
+    if (mount.parkStatus == PRK_PARKING)
     {
-      sideralTracking = lastSideralTracking;
-      parkStatus = PRK_UNPARKED;
-      backlashStatus = DONE;
-      XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
+      mount.sideralTracking = mount.lastSideralTracking;
+      mount.parkStatus = PRK_UNPARKED;
+      mount.backlashStatus = DONE;
+      XEEPROM.write(getMountAddress(EE_parkStatus), mount.parkStatus);
     }
-    else if (homeMount)
+    else if (mount.homeMount)
     {
-      backlashStatus = DONE;
-      sideralTracking = lastSideralTracking;
-      homeMount = false;
+      mount.backlashStatus = DONE;
+      mount.sideralTracking = mount.lastSideralTracking;
+      mount.homeMount = false;
     }
-    abortSlew = false;
+    mount.abortSlew = false;
     goto Again;
   }
 
 
   // First, for Right Ascension
   volatile long d = distStartAxis1 < distDestAxis1 ? distStartAxis1 : distDestAxis1;
-  if (staA1.deltaTarget < 0)
+  if (mount.staA1.deltaTarget < 0)
     d = -d;
   cli();
-  staA1.setIntervalfromDist(d, sideralTracking, minInterval1, maxInterval1);
+  mount.staA1.setIntervalfromDist(d, mount.sideralTracking, mount.minInterval1, mount.maxInterval1);
   sei();
 
   // Now, for Declination
   d = distStartAxis2 < distDestAxis2 ? distStartAxis2 : distDestAxis2;
-  if (staA2.deltaTarget < 0)
+  if (mount.staA2.deltaTarget < 0)
     d = -d;
   cli();
-  staA2.setIntervalfromDist(d, sideralTracking, minInterval2, maxInterval2);
+  mount.staA2.setIntervalfromDist(d, mount.sideralTracking, mount.minInterval2, mount.maxInterval2);
   sei();
 
 
-  if (parkStatus == PRK_PARKING || homeMount)
+  if (mount.parkStatus == PRK_PARKING || mount.homeMount)
   {
-    if (staA1.deltaTarget == 0 && staA2.deltaTarget == 0)
+    if (mount.staA1.deltaTarget == 0 && mount.staA2.deltaTarget == 0)
     {
-      if (homeMount)
+      if (mount.homeMount)
       {
         finalizeHome();
       }
-      else if (parkStatus == PRK_PARKING)
+      else if (mount.parkStatus == PRK_PARKING)
       {
         finalizePark();
       }
-      if (atHome || parkStatus == PRK_PARKED)
+      if (mount.atHome || mount.parkStatus == PRK_PARKED)
       {
-        SetsiderealClockSpeed(siderealClockSpeed);
+        SetsiderealClockSpeed(mount.siderealClockSpeed);
         cli();
-        staA1.resetToSidereal();
-        staA2.resetToSidereal();
+        mount.staA1.resetToSidereal();
+        mount.staA2.resetToSidereal();
         sei();
         DecayModeTracking();
       }
     }
   }
-  else if (staA1.atTarget(false) && staA2.atTarget(false))
+  else if (mount.staA1.atTarget(false) && mount.staA2.atTarget(false))
   {
-    settling = true;
-    lastSettleTime = millis();
-    SetsiderealClockSpeed(siderealClockSpeed);
+    mount.settling = true;
+    mount.lastSettleTime = millis();
+    SetsiderealClockSpeed(mount.siderealClockSpeed);
     cli();
-    staA1.resetToSidereal();
-    staA2.resetToSidereal();
+    mount.staA1.resetToSidereal();
+    mount.staA2.resetToSidereal();
     sei();
     DecayModeTracking();
   }
@@ -148,16 +148,16 @@ Again:
 // if stepper drive can switch decay mode, set it here
 void DecayModeTracking()
 {
-  if (DecayModeTrack) return;
-  DecayModeTrack = true;
-  motorA1.driver.setCurrent((unsigned int)motorA1.lowCurr);
-  motorA2.driver.setCurrent((unsigned int)motorA2.lowCurr);
+  if (mount.DecayModeTrack) return;
+  mount.DecayModeTrack = true;
+  mount.motorA1.driver.setCurrent((unsigned int)mount.motorA1.lowCurr);
+  mount.motorA2.driver.setCurrent((unsigned int)mount.motorA2.lowCurr);
 }
 
 void DecayModeGoto()
 {
-  if (!DecayModeTrack) return;
-  DecayModeTrack = false;
-  motorA1.driver.setCurrent((unsigned int)motorA1.highCurr);
-  motorA2.driver.setCurrent((unsigned int)motorA2.highCurr);
+  if (!mount.DecayModeTrack) return;
+  mount.DecayModeTrack = false;
+  mount.motorA1.driver.setCurrent((unsigned int)mount.motorA1.highCurr);
+  mount.motorA2.driver.setCurrent((unsigned int)mount.motorA2.highCurr);
 }

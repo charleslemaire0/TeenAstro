@@ -5,28 +5,28 @@
 // sets the park postion as the current position
 bool setPark()
 {
-  if ((parkStatus == PRK_UNPARKED) && !TelescopeBusy())
+  if ((mount.parkStatus == PRK_UNPARKED) && !TelescopeBusy())
   {
-    lastSideralTracking = sideralTracking;
-    sideralTracking = false;
+    mount.lastSideralTracking = mount.sideralTracking;
+    mount.sideralTracking = false;
 
-    // don't worry about moving around: during parking pec is turned off and backlash is cleared (0) so that staA1.target/targetAxis2=staA1.pos/staA2.pos
+    // don't worry about moving around: during parking pec is turned off and backlash is cleared (0) so that mount.staA1.target/targetAxis2=mount.staA1.pos/mount.staA2.pos
     // this should handle getting us back to the home position for micro-step modes up to 256X
     // if sync anywhere is enabled use the corrected location
 
-    long    h = (staA1.target / 1024L) * 1024L;
-    long    d = (staA2.target / 1024L) * 1024L;
-    h /= pow(2, motorA1.micro);
-    d /= pow(2, motorA2.micro);
+    long    h = (mount.staA1.target / 1024L) * 1024L;
+    long    d = (mount.staA2.target / 1024L) * 1024L;
+    h /= pow(2, mount.motorA1.micro);
+    d /= pow(2, mount.motorA2.micro);
     // store our position
     XEEPROM.writeLong(getMountAddress(EE_posAxis1), h);
     XEEPROM.writeLong(getMountAddress(EE_posAxis2), d);
 
     //// and the align
     saveAlignModel();
-    parkSaved = true;
-    XEEPROM.write(getMountAddress(EE_parkSaved), parkSaved);
-    sideralTracking = lastSideralTracking;
+    mount.parkSaved = true;
+    XEEPROM.write(getMountAddress(EE_parkSaved), mount.parkSaved);
+    mount.sideralTracking = mount.lastSideralTracking;
     return true;
   }
 
@@ -36,10 +36,10 @@ bool setPark()
 // unset parkposition flag
 void unsetPark()
 {
-  if (parkSaved)
+  if (mount.parkSaved)
   {
-    parkSaved = false;
-    XEEPROM.write(getMountAddress(EE_parkSaved), parkSaved);
+    mount.parkSaved = false;
+    XEEPROM.write(getMountAddress(EE_parkSaved), mount.parkSaved);
   }
 }
 
@@ -69,38 +69,38 @@ void parkClearBacklash()
 {
   static long LastIntervalAxis1, LastIntervalAxis2;
   // backlash takeup rate
-  if ((staA1.backlash_inSteps == 0 && staA2.backlash_inSteps == 0))
+  if ((mount.staA1.backlash_inSteps == 0 && mount.staA2.backlash_inSteps == 0))
   {
-    backlashStatus = BacklashPhase::DONE;
+    mount.backlashStatus = BacklashPhase::DONE;
     return;
   }
-  switch (backlashStatus)
+  switch (mount.backlashStatus)
   {
   case BacklashPhase::INIT:
   {
     cli();
-    LastIntervalAxis1 = staA1.interval_Step_Cur;
-    LastIntervalAxis2 = staA2.interval_Step_Cur;
+    LastIntervalAxis1 = mount.staA1.interval_Step_Cur;
+    LastIntervalAxis2 = mount.staA2.interval_Step_Cur;
     sei();
     //start by moving fully into the backlash
-    long axis1Target = staA1.target + staA1.backlash_inSteps;
-    long axis2Target = staA2.target + staA2.backlash_inSteps;
+    long axis1Target = mount.staA1.target + mount.staA1.backlash_inSteps;
+    long axis2Target = mount.staA2.target + mount.staA2.backlash_inSteps;
     GotoAxis(&axis1Target, &axis2Target);
-    backlashStatus = BacklashPhase::MOVE_IN;
+    mount.backlashStatus = BacklashPhase::MOVE_IN;
     return;
   }
   break;
   case BacklashPhase::MOVE_IN:
   {
     updateDeltaTarget();
-    if (staA1.backlash_movedSteps == staA1.backlash_inSteps && staA1.deltaTarget == 0 &&
-      staA2.backlash_movedSteps == staA2.backlash_inSteps && staA2.deltaTarget == 0)
+    if (mount.staA1.backlash_movedSteps == mount.staA1.backlash_inSteps && mount.staA1.deltaTarget == 0 &&
+      mount.staA2.backlash_movedSteps == mount.staA2.backlash_inSteps && mount.staA2.deltaTarget == 0)
     {
       // then reverse direction and take it all up
-      long axis1Target = staA1.target - staA1.backlash_inSteps;
-      long axis2Target = staA2.target - staA2.backlash_inSteps;
+      long axis1Target = mount.staA1.target - mount.staA1.backlash_inSteps;
+      long axis2Target = mount.staA2.target - mount.staA2.backlash_inSteps;
       GotoAxis(&axis1Target, &axis2Target);
-      backlashStatus = MOVE_OUT;
+      mount.backlashStatus = MOVE_OUT;
     }
     return;
   }
@@ -108,16 +108,16 @@ void parkClearBacklash()
   case  BacklashPhase::MOVE_OUT:
   {
     updateDeltaTarget();
-    if (staA1.backlash_movedSteps == 0 && staA1.deltaTarget == 0 &&
-      staA2.backlash_movedSteps == 0 && staA2.deltaTarget == 0)
+    if (mount.staA1.backlash_movedSteps == 0 && mount.staA1.deltaTarget == 0 &&
+      mount.staA2.backlash_movedSteps == 0 && mount.staA2.deltaTarget == 0)
     {
       // we arrive back at the exact same position so ftargetAxis1/Dec don't need to be touched
       // move at the previous speed
       cli();
-      staA1.interval_Step_Cur = LastIntervalAxis1;
-      staA2.interval_Step_Cur = LastIntervalAxis2;
+      mount.staA1.interval_Step_Cur = LastIntervalAxis1;
+      mount.staA2.interval_Step_Cur = LastIntervalAxis2;
       sei();
-      backlashStatus = DONE;
+      mount.backlashStatus = DONE;
     }
     return;
   }
@@ -129,17 +129,17 @@ void parkClearBacklash()
 
 void finalizePark()
 {
-  if (backlashStatus == DONE)
+  if (mount.backlashStatus == DONE)
   {
-    backlashStatus = INIT;
+    mount.backlashStatus = INIT;
   }
   parkClearBacklash();
-  if (backlashStatus == DONE)
+  if (mount.backlashStatus == DONE)
   {
-    movingTo = false;
-    parkStatus = PRK_PARKED;// success, we're parked 
+    mount.movingTo = false;
+    mount.parkStatus = PRK_PARKED;// success, we're parked 
     enable_Axis(false);// disable the stepper drivers
-    XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
+    XEEPROM.write(getMountAddress(EE_parkStatus), mount.parkStatus);
   }
 }
 
@@ -148,15 +148,15 @@ void finalizePark()
 byte park()
 {
   // Gets park position and moves the mount there
-  if (parkStatus == PRK_PARKED)
+  if (mount.parkStatus == PRK_PARKED)
   {
     return 0;
   }
-  if (!parkSaved)
+  if (!mount.parkSaved)
   {
     return 1;
   }
-  if (parkStatus != PRK_UNPARKED)
+  if (mount.parkStatus != PRK_UNPARKED)
   {
     return 2;
   }
@@ -164,11 +164,11 @@ byte park()
   {
     return 3;
   }
-  if (lastError != ERRT_NONE)
+  if (mount.lastError != ERRT_NONE)
   {
     return 4;
   }
-  if (!enableMotor)
+  if (!mount.enableMotor)
   {
     return 5;
   }
@@ -176,14 +176,14 @@ byte park()
   // get the position we're supposed to park at
   long    h = XEEPROM.readLong(getMountAddress(EE_posAxis1));
   long    d = XEEPROM.readLong(getMountAddress(EE_posAxis2));
-  h *= pow(2, motorA1.micro);
-  d *= pow(2, motorA2.micro);
+  h *= pow(2, mount.motorA1.micro);
+  d *= pow(2, mount.motorA2.micro);
   // stop tracking
-  lastSideralTracking = false;
-  sideralTracking = false;
+  mount.lastSideralTracking = false;
+  mount.sideralTracking = false;
   // record our status
-  parkStatus = PRK_PARKING;
-  XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
+  mount.parkStatus = PRK_PARKING;
+  XEEPROM.write(getMountAddress(EE_parkStatus), mount.parkStatus);
   GotoAxis(&h, &d);
   return 0;
 }
@@ -191,25 +191,25 @@ byte park()
 // returns a parked telescope to operation, you must set date and time before calling this.  it also
 bool syncAtPark()
 {
-  if (!parkSaved)
+  if (!mount.parkSaved)
   {
     return false;
   }
-  atHome = false;
+  mount.atHome = false;
   // enable the stepper drivers
-  staA1.enable = true;
-  staA2.enable = true;
+  mount.staA1.enable = true;
+  mount.staA2.enable = true;
   delay(10);
 
   // get our position
   long axis1, axis2;
   axis1 = XEEPROM.readLong(getMountAddress(EE_posAxis1));
   axis2 = XEEPROM.readLong(getMountAddress(EE_posAxis2));
-  axis1 *= pow(2, motorA1.micro);
-  axis2 *= pow(2, motorA2.micro);
+  axis1 *= pow(2, mount.motorA1.micro);
+  axis2 *= pow(2, mount.motorA2.micro);
   syncAxis(&axis1, &axis2);
   // set Meridian Flip behaviour to match mount type
-  meridianFlip = mountType == MOUNT_TYPE_GEM ? FLIP_ALWAYS : FLIP_NEVER;
+  mount.meridianFlip = mount.mountType == MOUNT_TYPE_GEM ? FLIP_ALWAYS : FLIP_NEVER;
   syncEwithT();
   DecayModeTracking();
   return true;
@@ -218,10 +218,10 @@ bool syncAtPark()
 //initialisation at park
 bool iniAtPark()
 {
-  parkSaved = XEEPROM.read(getMountAddress(EE_parkSaved));
-  if (!parkSaved)
+  mount.parkSaved = XEEPROM.read(getMountAddress(EE_parkSaved));
+  if (!mount.parkSaved)
   {
-    parkStatus = PRK_UNPARKED;
+    mount.parkStatus = PRK_UNPARKED;
     return false;
   }
   byte parkStatusRead = XEEPROM.read(getMountAddress(EE_parkStatus));
@@ -231,21 +231,21 @@ bool iniAtPark()
   case PRK_PARKED:
     if (syncAtPark())
     {
-      parkStatus = PRK_PARKED;
+      mount.parkStatus = PRK_PARKED;
       ok = true;
     }
     else
     {
-      parkStatus = PRK_UNPARKED;
+      mount.parkStatus = PRK_UNPARKED;
       XEEPROM.write(getMountAddress(EE_parkStatus), PRK_UNPARKED);
     }
     break;
   case PRK_UNPARKED:
-    parkStatus = PRK_UNPARKED;
+    mount.parkStatus = PRK_UNPARKED;
     return false;
     break;
   default:
-    parkStatus = PRK_UNPARKED;
+    mount.parkStatus = PRK_UNPARKED;
     XEEPROM.write(getMountAddress(EE_parkStatus), PRK_UNPARKED);
     break;
   }
@@ -255,13 +255,13 @@ bool iniAtPark()
 // depends on the latitude, longitude, and timeZone; but those are stored and recalled automatically
 void unpark()
 {
-  if (parkStatus == PRK_UNPARKED)
+  if (mount.parkStatus == PRK_UNPARKED)
     return;
   // update our status, we're not parked anymore
-  parkStatus = PRK_UNPARKED;
-  XEEPROM.write(getMountAddress(EE_parkStatus), parkStatus);
+  mount.parkStatus = PRK_UNPARKED;
+  XEEPROM.write(getMountAddress(EE_parkStatus), mount.parkStatus);
   // start tracking the sky
-  if (enableMotor)
+  if (mount.enableMotor)
   {
     StartSideralTracking();
   }

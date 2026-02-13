@@ -4,26 +4,26 @@
 
 bool setHome()
 {
-  if ((parkStatus == PRK_UNPARKED) && !movingTo)
+  if ((mount.parkStatus == PRK_UNPARKED) && !mount.movingTo)
   {
-    lastSideralTracking = sideralTracking;
-    sideralTracking = false;
+    mount.lastSideralTracking = mount.sideralTracking;
+    mount.sideralTracking = false;
 
-    // don't worry about moving around: during parking pec is turned off and backlash is cleared (0) so that staA1.target/targetAxis2=staA1.pos/staA2.pos
+    // don't worry about moving around: during parking pec is turned off and backlash is cleared (0) so that mount.staA1.target/targetAxis2=mount.staA1.pos/mount.staA2.pos
     // this should handle getting us back to the home position for micro-step modes up to 256X
     // if sync anywhere is enabled use the corrected location
 
-    long h = (staA1.target / 1024L) * 1024L;
-    long d = (staA2.target / 1024L) * 1024L;
+    long h = (mount.staA1.target / 1024L) * 1024L;
+    long d = (mount.staA2.target / 1024L) * 1024L;
 
-    h /= pow(2, motorA1.micro);
-    d /= pow(2, motorA2.micro);
+    h /= pow(2, mount.motorA1.micro);
+    d /= pow(2, mount.motorA2.micro);
     // store our position
     XEEPROM.writeLong(getMountAddress(EE_homePosAxis1), h);
     XEEPROM.writeLong(getMountAddress(EE_homePosAxis2), d);
     XEEPROM.write(getMountAddress(EE_homeSaved), 1);
     initHome();
-    sideralTracking = lastSideralTracking;
+    mount.sideralTracking = mount.lastSideralTracking;
     return true;
   }
 
@@ -40,30 +40,30 @@ void unsetHome()
 // moves telescope to the home position, then stops tracking
 bool goHome()
 {
-  if (!enableMotor) return false;
-  if ((parkStatus != PRK_UNPARKED) && (parkStatus != PRK_PARKING)) return false; // fail, moving to home not allowed if PRK_PARKED
-  if (lastError != ERRT_NONE) return false;                                // fail, cannot move if there are errors
+  if (!mount.enableMotor) return false;
+  if ((mount.parkStatus != PRK_UNPARKED) && (mount.parkStatus != PRK_PARKING)) return false; // fail, moving to home not allowed if PRK_PARKED
+  if (mount.lastError != ERRT_NONE) return false;                                // fail, cannot move if there are errors
   if (TelescopeBusy()) return false;                     
   // stop tracking
-  lastSideralTracking = false;
-  sideralTracking = false;
-  GotoAxis(&geoA1.homeDef, &geoA2.homeDef);
-  homeMount = true;
+  mount.lastSideralTracking = false;
+  mount.sideralTracking = false;
+  GotoAxis(&mount.geoA1.homeDef, &mount.geoA2.homeDef);
+  mount.homeMount = true;
   return true;
 }
 
 
 void finalizeHome()
 { 
-  if (backlashStatus == DONE)
+  if (mount.backlashStatus == DONE)
   {
-    backlashStatus = INIT;
+    mount.backlashStatus = INIT;
   }
   parkClearBacklash();
-  if (backlashStatus == DONE)
+  if (mount.backlashStatus == DONE)
   {
-    homeMount = false;
-    movingTo = false;
+    mount.homeMount = false;
+    mount.movingTo = false;
     syncAtHome();
     // disable the stepper drivers
     enable_Axis(false);
@@ -75,31 +75,31 @@ bool syncAtHome()
 {
   if (TelescopeBusy()) return false;  // fail, forcing home not allowed during a move
   // default values for state variables
-  staA2.dir = true;
-  staA1.dir = true;
-  newTargetRA = 0;
-  newTargetDec = 0;
-  newTargetAlt = 0;
-  newTargetAzm = 0;
-  lastError = ErrorsTraking::ERRT_NONE;
+  mount.staA2.dir = true;
+  mount.staA1.dir = true;
+  mount.newTargetRA = 0;
+  mount.newTargetDec = 0;
+  mount.newTargetAlt = 0;
+  mount.newTargetAzm = 0;
+  mount.lastError = ErrorsTraking::ERRT_NONE;
   // reset tracking and rates
-  staA1.resetToSidereal();
-  staA2.resetToSidereal();
-  parkStatus = ParkState::PRK_UNPARKED;
-  XEEPROM.update(getMountAddress(EE_parkStatus), parkStatus);
+  mount.staA1.resetToSidereal();
+  mount.staA2.resetToSidereal();
+  mount.parkStatus = ParkState::PRK_UNPARKED;
+  XEEPROM.update(getMountAddress(EE_parkStatus), mount.parkStatus);
   // clear pulse-guiding state
-  guideA1.setIdle();
-  guideA1.duration = 0UL;
-  guideA1.durationLast = 0UL;
-  guideA2.setIdle();
-  guideA2.duration = 0UL;
-  guideA2.durationLast = 0UL;
+  mount.guideA1.setIdle();
+  mount.guideA1.duration = 0UL;
+  mount.guideA1.durationLast = 0UL;
+  mount.guideA2.setIdle();
+  mount.guideA2.duration = 0UL;
+  mount.guideA2.durationLast = 0UL;
   // update starting coordinates to reflect NCP or SCP polar home position
-  syncAxis(&geoA1.homeDef, &geoA2.homeDef);
+  syncAxis(&mount.geoA1.homeDef, &mount.geoA2.homeDef);
   // initialize/disable the stepper drivers
   DecayModeTracking();
-  sideralTracking = false;
-  atHome = true;
+  mount.sideralTracking = false;
+  mount.atHome = true;
   syncEwithT();
   return true;
 }
@@ -107,29 +107,29 @@ bool syncAtHome()
 // init the telescope home position;  if defined use the user defined home position
 void initHome()
 {
-  homeSaved = XEEPROM.read(getMountAddress(EE_homeSaved));
-  if (homeSaved)
+  mount.homeSaved = XEEPROM.read(getMountAddress(EE_homeSaved));
+  if (mount.homeSaved)
   {
-    geoA1.homeDef = XEEPROM.readLong(getMountAddress(EE_homePosAxis1))*pow(2, motorA1.micro);
-    geoA2.homeDef = XEEPROM.readLong(getMountAddress(EE_homePosAxis2))*pow(2, motorA2.micro);
-    homeSaved  &= withinLimit(geoA1.homeDef, geoA2.homeDef);
-    if (!homeSaved)
+    mount.geoA1.homeDef = XEEPROM.readLong(getMountAddress(EE_homePosAxis1))*pow(2, mount.motorA1.micro);
+    mount.geoA2.homeDef = XEEPROM.readLong(getMountAddress(EE_homePosAxis2))*pow(2, mount.motorA2.micro);
+    mount.homeSaved  &= withinLimit(mount.geoA1.homeDef, mount.geoA2.homeDef);
+    if (!mount.homeSaved)
     {
       XEEPROM.write(getMountAddress(EE_homeSaved), 0);
     }
   }
 
-  if(!homeSaved)
+  if(!mount.homeSaved)
   {
     if (isAltAZ())
     {
-      geoA1.homeDef = geoA1.poleDef;
-      geoA2.homeDef = 0;
+      mount.geoA1.homeDef = mount.geoA1.poleDef;
+      mount.geoA2.homeDef = 0;
     }
     else
     {
-      geoA1.homeDef = geoA1.poleDef;
-      geoA2.homeDef = geoA2.poleDef;
+      mount.geoA1.homeDef = mount.geoA1.poleDef;
+      mount.geoA2.homeDef = mount.geoA2.poleDef;
     }
   }
 }
