@@ -1,7 +1,6 @@
 // Guide ---------------------------------------------------------------------------------------------
-
 // Guide, commands to move the mount in any direction at a series of fixed rates
-
+#include "Global.h"
 
 void apply_GuidingA1()
 {
@@ -216,4 +215,3 @@ void Guide()
     }
   }
 }
-

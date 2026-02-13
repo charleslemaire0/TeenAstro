@@ -1,4 +1,19 @@
+/** EEPROM and mount init: AutoinitEEPROM, initMount, initTransformation, motors/encoders. */
+#include "Global.h"
 #include "TeenAstoCustomizations.h"
+#include "EEPROM_address.h"
+
+uint8_t midx;
+
+int getMountAddress(int address)
+{
+  return (int)EE_Mounts + (int)MountSize * (int)midx + address;
+}
+
+int getMountAddress(int address, int idx)
+{
+  return (int)EE_Mounts + (int)MountSize * (int)idx + address;
+}
 
 static const float pulsePerDegreedefault = 15;
 static const EncoderSync EncoderSyncDefault = EncoderSync::ES_OFF;
@@ -168,9 +183,6 @@ void initMount()
     underPoleLimitGOTO = 12;
 
   // initialize some fixed-point values
-  //guideA1.amount = 0;
-  //guideA2.amount = 0;
-
   staA1.fstep = 0;
   staA2.fstep = 0;
 

@@ -1,10 +1,13 @@
+/**
+ * Focuser commands: F (forward focuser protocol to Focus_Serial).
+ */
 #include "Command.h"
-//----------------------------------------------------------------------------------
-//   F - Focuser
-void Command_F()
-{
-  if (!hasFocuser )
-  {
+
+// -----------------------------------------------------------------------------
+//   F - Focuser  :F+# :F-# :F?# etc. (passthrough to focuser hardware)
+// -----------------------------------------------------------------------------
+void Command_F() {
+  if (!hasFocuser) {
     if (command[1] == '?') replyLongFalse();
     else replyNothing();
     return;

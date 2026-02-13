@@ -1,3 +1,5 @@
+/** Push-to: PushToEqu, PushToHor (encoder delta for alignment). */
+#include "Global.h"
 
 byte PushToEqu(Coord_EQ EQ_T, PoleSide preferedPoleSide, double Lat, float* deltaA1, float* deltaA2)
 {

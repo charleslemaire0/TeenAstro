@@ -1,27 +1,19 @@
+/**
+ * Set commands: S (LX200 set) and SX (TeenAstro-specific set).
+ */
 #include "Command.h"
 #include "ValueToString.h"
-//   S - Telescope Set Commands
-bool yesno(char l, bool& val)
-{
-  switch (l)
-  {
-  case 'y':
-    val = true;
-    return true;
-  case 'n':
-    val = false;
-    return true;
-  default:
-    break;
-  }
+
+static bool parseYesNo(char c, bool& out) {
+  if (c == 'y') { out = true;  return true; }
+  if (c == 'n') { out = false; return true; }
   return false;
 }
 
-void Command_SX()
-{
-  //  :SXnnn,VVVVVV...#   Set TeenAstro value
-  //          Return: 0 on failure
-  //                  1 on success
+// -----------------------------------------------------------------------------
+//   SX - TeenAstro set  :SXnnn,V...#  (0/1 on failure/success)
+// -----------------------------------------------------------------------------
+void Command_SX() {
   switch (command[2])
   {
   case 'A':
@@ -61,7 +53,7 @@ void Command_SX()
     {
 #if HASEncoder
       bool val;
-      bool ok = yesno(command[5], val);
+      bool ok = parseYesNo(command[5], val);
       if (ok && enableEncoder != val)
       {
         enableEncoder = val;
@@ -168,7 +160,7 @@ void Command_SX()
     // :SXrn,V# refraction Settings
   {
     bool val;
-    bool ok = yesno(command[5], val);
+    bool ok = parseYesNo(command[5], val);
     if (ok)
     {
       switch (command[3])
@@ -492,7 +484,7 @@ void Command_SX()
     {
 #if HASEncoder
       bool val;
-      bool ok = yesno(command[5], val);
+      bool ok = parseYesNo(command[5], val);
       if (ok && enableMotor != val)
       {
         enableMotor = val;

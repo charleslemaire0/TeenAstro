@@ -1,10 +1,12 @@
+/**
+ * GNSS commands and helpers: :gs# (full sync), :gt# (time sync).
+ */
 #include "Command.h"
-// This custom version of delay() ensures that the gps object
-// is being "fed".
+
 #define N_GNSS_OBS 3
-static double dlat[N_GNSS_OBS];//*localSite.latitude();
-static double dlng[N_GNSS_OBS];//*localSite.longitude(); 
-static double dele[N_GNSS_OBS];//*localSite.elevation();
+static double dlat[N_GNSS_OBS];
+static double dlng[N_GNSS_OBS];
+static double dele[N_GNSS_OBS];
 
 void resetDeltaLoc()
 {
@@ -17,7 +19,7 @@ void resetDeltaLoc()
 }
 
 
-static void UpdateGnss()
+void UpdateGnss()
 {
 #if VERSION == 220
   return;
@@ -118,27 +120,20 @@ bool isLocationSyncWithGNSS()
     if (i == N_GNSS_OBS)
       i = 0;
     t1 = millis();
-
-
-    //sprintf(text, "lng= %+01.5f, lat=%+01.5f, ele= %+01.5f\n", dlng[i], dlat[i], dele[i]);
-    //Serial.print(text);
-
-    //sprintf(text, "lng_s= %+01.5f, lat_s=%+01.5f, ele_s= %+01.5f\n", dlng_s, dlat_s, dele_s);
-    //Serial.print(text);
   }
   return lastreply;
 }
 
-void Command_GNSS()
-{
+// -----------------------------------------------------------------------------
+//   g - GNSS  :gs#  full sync  :gt#  time sync
+// -----------------------------------------------------------------------------
+void Command_GNSS() {
   TinyGPSDate d = gps.date;
   TinyGPSTime t = gps.time;
   TinyGPSLocation l = gps.location;
   TinyGPSAltitude a = gps.altitude;
 
-  switch (command[1])
-  {
-    // :gs# full sync with GNSS
+  switch (command[1]) {
   case 's':
     if (iSGNSSValid())
     {

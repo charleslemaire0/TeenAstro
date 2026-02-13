@@ -3,7 +3,7 @@
 // 0-1023 bytes
 // general purpose storage 0..99
 
-uint8_t             midx;
+extern uint8_t midx;
 
 #define EE_autoInitKey      0
 #define EE_currentMount     4
@@ -124,12 +124,5 @@ uint8_t             midx;
 #define EE_T33              EE_T11 + 32
 #define EE_Tvalid           EE_T11 + 36
 
-int getMountAddress(int adress)
-{
-  return (int)EE_Mounts + (int)MountSize * (int)midx + adress;
-}
-
-int getMountAddress(int adress, int idx)
-{
-  return (int)EE_Mounts + (int)MountSize * (int)idx + adress;
-}
+int getMountAddress(int address);
+int getMountAddress(int address, int idx);

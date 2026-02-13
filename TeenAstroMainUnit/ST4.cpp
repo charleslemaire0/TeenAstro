@@ -1,3 +1,6 @@
+/** ST4 guide port: setup and checkST4 for manual guiding. */
+#include "Global.h"
+
 void setupST4()
 {
 #if HASST4
@@ -37,7 +40,7 @@ void checkST4()
   e2 = digitalRead(ST4RAe);
   n2 = digitalRead(ST4DEn);
   s2 = digitalRead(ST4DEs);
-  //ST4 correction are reverse when the mount is West side of pier as the image is rotated by 180°
+  //ST4 correction are reverse when the mount is West side of pier as the image is rotated by 180Â°
   if ((w1 == w2) && (e1 == e2))
   {
     ST4RA_state = 0;
@@ -90,5 +93,3 @@ void checkST4()
   }
 #endif
 }
-
-

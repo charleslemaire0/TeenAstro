@@ -1,20 +1,23 @@
+/**
+ * Command handlers: $ (reset), ACK, A (alignment), B (reticule), C (sync),
+ * D (distance), E (encoder), h (home/park), Q (halt), R (rate), U (precision), W (site).
+ */
 #include "Command.h"
 #include "ValueToString.h"
 
-void Command_dollar()
-{
-  switch (command[1])
-  {
-  //----------------------------------------------------------------------------------
-  //   $ - Reset Commands
-  //  :$$# Clean EEPROM
-  //  :$!# Reboot Main Unit Unit
-  //  :$X# fReinit encoder and motors
+// -----------------------------------------------------------------------------
+//   $ - Reset / reboot / reinit
+//   :$$#  Clean EEPROM
+//   :$!#  Reboot main unit
+//   :$X#  Reinit encoder and motors
+// -----------------------------------------------------------------------------
+void Command_dollar() {
+  switch (command[1]) {
   case '$':
     for (int i = 0; i < XEEPROM.length(); i++)
-    {
       XEEPROM.write(i, 0);
-    }
+    replyShortTrue();
+    break;
   case '!':
     reboot_unit = true;
     replyShortTrue();
@@ -29,6 +32,10 @@ void Command_dollar()
     break;
   }
 }
+
+// -----------------------------------------------------------------------------
+//   <ACK> - Mount type (LX200)
+// -----------------------------------------------------------------------------
 void Command_ACK()
 {
   switch (mountType)
@@ -49,20 +56,12 @@ void Command_ACK()
     break;
   }
 }
-//----------------------------------------------------------------------------------
-//   A - Alignment Commands
-//  :A0#
-//  :A2#
-//  :AC#
-//  :AW#
-//  :AA#  Resets alignment as AC# AND activates alignment on next 3 syncs!  (<-> sync modded accordingly)
-
-void Command_A()
-{
-  switch (command[1])
-  {
-
-
+// -----------------------------------------------------------------------------
+//   A - Alignment
+//   :A0# :A*# :A2# :AE# :AC# :AA# :AW#
+// -----------------------------------------------------------------------------
+void Command_A() {
+  switch (command[1]) {
   case '0':
     // telescope should be set in the polar home for a starting point
     initTransformation(true);
@@ -77,9 +76,8 @@ void Command_A()
     }
     replyShortTrue();
     break;
-  case'*':
-    // telescope should at target position for this command
-  {
+  case '*': {
+    // Telescope at target position
     initTransformation(true);
     enable_Axis(true);
     delay(10);
@@ -156,14 +154,10 @@ void Command_A()
 }
 
 
-//----------------------------------------------------------------------------------
-//   B - Reticule/Accessory Control
-//  :B+#   Increase reticule Brightness
-//         Returns: Nothing
-//  :B-#   Decrease Reticule Brightness
-//         Returns: Nothing
-void Command_B()
-{
+// -----------------------------------------------------------------------------
+//   B - Reticule brightness  :B+# :B-#
+// -----------------------------------------------------------------------------
+void Command_B() {
   if (command[1] != '+' && command[1] != '-')
     return;
 #ifdef RETICULE_LED_PINS
@@ -187,18 +181,10 @@ void Command_B()
   replyNothing();
 }
 
-//   C - Sync Control
-//  :CA#   Synchonize the telescope with the current Target Azimuth and Altitude coordinates
-//         Returns: Nothing
-//  :CM#   Synchonize the telescope with the current database object (as above)
-//         Returns: "N/A#"  
-//  :CS#   Synchonize the telescope with the current Target right ascension and declination coordinates
-//         Returns: "N/A#" 
-//  :CU#   Synchonize the telescope with the User defined object
-//         Returns: "N/A#"
-
-void Command_C()
-{
+// -----------------------------------------------------------------------------
+//   C - Sync  :CA# :CM# :CS# :CU#
+// -----------------------------------------------------------------------------
+void Command_C() {
   if ((parkStatus == PRK_UNPARKED) &&
     !TelescopeBusy() &&
     (command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
@@ -268,22 +254,10 @@ void Command_C()
     }
   }
 }
-//----------------------------------------------------------------------------------
-//    E - encoder commands
-//  :EAS#   Align Encoder Start Returns 1# or 0#
-//  :EAE#   Align Encoder End Returns 1# or 0#
-//  :EAQ#   Align Encoder Quit Returns 1# or 0#
-//  :ECT#   Synchonize the telescope with the Encoders Returns 1# or 0#
-//  :ECE#   Synchonize the Encoders with the telescope Returns 1# or 0#
-//  :ECS#   Synchronise at the end of a pushto to Target Returns 1# or 0#
-//  :ED#   Distance to target axis Returns long#
-//  :EMS#   Start pushTo EQ Target
-//  :EMU#   Start pushTo EQ User defined Target
-//  :EMA#   Start pushTo altaz Target
-//  :EMQ#   Stop Push
-
-void Command_E()
-{
+// -----------------------------------------------------------------------------
+//   E - Encoder / push-to  :EAS# :EAE# :EAQ# :ECT# :ECE# :ECS# :ED# :EMS# :EMU# :EMA# :EMQ#
+// -----------------------------------------------------------------------------
+void Command_E() {
   switch (command[1])
   {
   case 'A':
@@ -453,11 +427,10 @@ void Command_E()
 }
 
 
-//----------------------------------------------------------------------------------
-//   D - Distance Bars
-//  :D#    returns an "\0x7f#" if the mount is moving, otherwise returns "#".
-void Command_D()
-{
+// -----------------------------------------------------------------------------
+//   D - Distance bars  :D#  (0x7f# if moving, else #)
+// -----------------------------------------------------------------------------
+void Command_D() {
   if (command[1] != 0)
   {
     return;
@@ -474,10 +447,10 @@ void Command_D()
   strcat(reply, "#");
 }
 
-//----------------------------------------------------------------------------------
-//  h - Home Position Commands
-void Command_h()
-{
+// -----------------------------------------------------------------------------
+//   h - Home / park  :hF# :hC# :hB# :hb# :hO# :hP# :hQ# :hS# :hR#
+// -----------------------------------------------------------------------------
+void Command_h() {
   switch (command[1])
   {
   case 'F':
@@ -556,10 +529,10 @@ void Command_h()
   }
 }
 
-//----------------------------------------------------------------------------------
-//   Q - Halt Movement Commands
-void Command_Q()
-{
+// -----------------------------------------------------------------------------
+//   Q - Halt  :Q# :Qe# :Qw# :Qn# :Qs#
+// -----------------------------------------------------------------------------
+void Command_Q() {
   switch (command[1])
   {
   case 0:
@@ -607,17 +580,10 @@ void Command_Q()
   }
 }
 
-//----------------------------------------------------------------------------------
-//   R - Slew Rate Commands
-void Command_R()
-{
-  //  :RG#   Set Slew rate to Guiding Rate (slowest) user defined
-  //  :RC#   Set Slew rate to Centering rate (2nd slowest) 4X
-  //  :RM#   Set Slew rate to Find Rate (2nd Fastest) 32X
-  //  :RS#   Set Slew rate to max (fastest) ?X (MaxRate)
-  //  :Rn#   Set Slew rate to n, where n=0..4
-  //         Returns: Nothing
-
+// -----------------------------------------------------------------------------
+//   R - Slew rate  :RG# :RC# :RM# :RS# :R0#..:R4#
+// -----------------------------------------------------------------------------
+void Command_R() {
   int i = 5;
   switch (command[1])
   {
@@ -653,28 +619,20 @@ void Command_R()
 
 
 
-//   U - Precision Toggle
-//  :U#    Toggle between low/hi precision positions
-//         Low -  RA/Dec/etc. displays and accepts HH:MM.M sDD*MM
-//         High - RA/Dec/etc. displays and accepts HH:MM:SS sDD*MM:SS
-//         Returns Nothing
-void Command_U()
-{
-  if (command[1] == 0)
-  {
+// -----------------------------------------------------------------------------
+//   U - Precision toggle  :U#  (low/high precision)
+// -----------------------------------------------------------------------------
+void Command_U() {
+  if (command[1] == 0) {
     highPrecision = !highPrecision;
-    replyNothing();
   }
-  else
-    replyNothing();
+  replyNothing();
 }
 
-//   W - Site Select/Site get
-//  :Wn#
-//         Sets current site to n, 0..2 or queries site with ?
-//         Returns: Nothing or current site ?#
-void Command_W()
-{
+// -----------------------------------------------------------------------------
+//   W - Site  :W0# :W1# :W2# :W?#
+// -----------------------------------------------------------------------------
+void Command_W() {
   switch (command[1])
   {
   case '0':

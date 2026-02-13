@@ -1,122 +1,82 @@
 #pragma once
+/**
+ * TeenAstro serial command interface (LX200-style protocol).
+ * - T_Serial: per-port command buffer and reply handling
+ * - processCommands(): main dispatcher (called from loop)
+ * - Command_*(): handlers for each command letter
+ */
 #include "Global.h"
-enum Command { COMMAND_NONE, COMMAND_SERIAL, COMMAND_SERIAL1 };
-class T_Serial
-{
+#include "CommandConstants.h"
+
+// -----------------------------------------------------------------------------
+// Serial channel identification
+// -----------------------------------------------------------------------------
+enum Command {
+  COMMAND_NONE,
+  COMMAND_SERIAL,
+  COMMAND_SERIAL1
+};
+
+// -----------------------------------------------------------------------------
+// Serial command buffer (one per port: USB, SHC)
+// -----------------------------------------------------------------------------
+class T_Serial {
 public:
-  Stream* m_serial = NULL;
+  Stream* m_serial = nullptr;
+
+  void attach_Stream(Stream* serial, Command cmdSerial);
+  Command getcmdSerial();
+  void update();
+  void getCmdPar(char* cmd, Command& pcmd);
+  void reply(char* reply, const Command pcmd);
+
 private:
   Command m_cmdSerial = Command::COMMAND_NONE;
   bool m_ready = false;
-  char m_command[28] = "";
+  char m_command[CMD_BUFFER_LEN] = "";
   byte m_bufferPtr = 0;
-  bool clearCommand()
-  {
-    m_bufferPtr = 0;
-    m_command[m_bufferPtr] = (char)0;
-    return true;
-  }
-public:
-  void attach_Stream(Stream* serial, Command cmdSerial)
-  {
-    m_serial = serial;
-    m_cmdSerial = cmdSerial;
-    return;
-  }
-  Command getcmdSerial()
-  {
-    return m_cmdSerial;
-  }
-  void update()
-  {
-    if (m_serial->available() > 0 && !m_ready)
-    {
-      // (chr)6 ACK is a special status command for the LX200 protocol
-      char c = m_serial->read();
-     
-      if ((c == (char)6) && (m_bufferPtr == 0))
-      {
-        m_command[0] = c;
-        m_command[1] = 0;
-        m_ready = true;
-        return;
-      }
 
-      // ignore spaces/lf/cr, dropping spaces is another tweek to allow compatibility with LX200 protocol
-
-      if ((c != (char)32) && (c != (char)10) && (c != (char)13) && (c != (char)6))
-      {
-        m_command[m_bufferPtr] = c;
-        m_bufferPtr++;
-        m_command[m_bufferPtr] = (char)0;
-        if (m_bufferPtr > 22)
-        {
-          m_bufferPtr = 22;
-        }   // limit maximum command length to avoid overflow, c2+p16+cc2+eol2+eos1=23 bytes max ranging from 0..22
-      }
-
-      if (c == '#')
-      {
-        // validate the command frame, normal command
-        if ((m_bufferPtr > 1) && (m_command[0] == ':') &&
-          (m_command[m_bufferPtr - 1] == '#'))
-        {
-          m_command[m_bufferPtr - 1] = 0;
-          memmove(m_command, (char*)&m_command[1], strlen(&m_command[1]));
-          m_command[strlen(m_command) - 1] = 0;
-          m_ready = true;
-        }
-        else
-        {
-          clearCommand();
-          m_ready = false;
-        }
-      }
-      else
-      {
-        m_ready = false;
-      }
-    }
-  }
-  void getCmdPar(char* cmd, Command& pcmd)
-  {
-    if (!m_ready || pcmd != COMMAND_NONE)
-      return;
-    strcpy(cmd, m_command);
-    m_ready = false;
-    clearCommand();
-    pcmd = m_cmdSerial;
-  }
-  void reply(char* reply, const Command pcmd)
-  {
-    if (m_cmdSerial == pcmd)
-    {
-      m_serial->print(reply);
-    }
-  }
+  void clearCommand();
 };
 
-T_Serial S_SHC;
-T_Serial S_USB;
+// -----------------------------------------------------------------------------
+// Command/serial state (S_SHC, S_USB live here; reply/command/highPrecision in Global.h)
+// -----------------------------------------------------------------------------
+struct CommandState {
+  CommandState();
+  unsigned long baudRate_[10];
+  T_Serial S_SHC_;
+  T_Serial S_USB_;
+};
+extern CommandState commandState;
 
+// -----------------------------------------------------------------------------
+// Command dispatcher
+// -----------------------------------------------------------------------------
 void processCommands();
-void Command_GNSS();
-void Command_dollar();
-void Command_ACK();
-void Command_A();
-void Command_B();
-void Command_C();
-void Command_D();
-void Command_F();
-void Command_h();
-void Command_M();
-void Command_Q();
-void Command_R();
-void Command_T();
-void Command_U();
-void Command_W();
-void Command_G();
-void Command_GX();
-void Command_S(Command& process_command);
-void Command_SX();
+
+// -----------------------------------------------------------------------------
+// Command handlers (by lead character)
+// -----------------------------------------------------------------------------
+void Command_dollar();   // $
+void Command_ACK();      // <ACK>
+void Command_A();       // A  Alignment
+void Command_B();       // B  Reticule
+void Command_C();       // C  Sync
+void Command_D();       // D  Distance bars
+void Command_E();       // E  Encoder / push-to
+void Command_F();       // F  Focuser
+void Command_G();       // G  Get (LX200)
+void Command_GX();      // GX TeenAstro get
+void Command_GNSS();    // g  GNSS
+void Command_h();      // h  Home / park
+void Command_M();      // M  Move / slew
+void Command_Q();      // Q  Halt
+void Command_R();      // R  Slew rate
+void Command_S(Command& process_command);  // S  Set (LX200)
+void Command_SX();     // SX TeenAstro set
+void Command_T();      // T  Tracking
+void Command_U();      // U  Precision
+void Command_W();      // W  Site
+
 bool iSGNSSValid();

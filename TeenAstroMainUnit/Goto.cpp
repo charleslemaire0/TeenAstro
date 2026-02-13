@@ -1,3 +1,6 @@
+/** GoTo and sync: coordinate conversion, GotoAxis, goTo, predictTarget, getEqu, getHorTopo. */
+#include "Global.h"
+
 void StepToAngle(long Axis1, long Axis2, double* AngleAxis1, double* AngleAxis2, PoleSide* Side)
 {
   if (Axis2 > geoA2.poleDef)
@@ -366,4 +369,3 @@ ErrorsGoTo Flip()
   }
   return goTo(axis1Flip, axis2Flip);
 }
-

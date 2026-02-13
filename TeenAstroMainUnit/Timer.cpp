@@ -1,11 +1,14 @@
-// -----------------------------------------------------------------------------------
-// Timers and interrupt handling
+/** Sidereal and axis timers, ISRs for step generation and sidereal clock. */
+#include "Global.h"
+
 #define clockRatio 0.01
 
 #define ISR(f)  void f (void)
 void TIMER1_COMPA_vect(void);
 void TIMER3_COMPA_vect(void);
 void TIMER4_COMPA_vect(void);
+
+static void Timer1SetInterval(interval i);
 
 static IntervalTimer  itimer1;
 static IntervalTimer  itimer3;
