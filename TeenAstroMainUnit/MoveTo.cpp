@@ -1,5 +1,6 @@
 // -----------------------------------------------------------------------------------
 // functions to move the mount to the a new position
+#include "Global.h"
 
 // moves the mount
 void moveTo()
@@ -160,4 +161,3 @@ void DecayModeGoto()
   motorA1.driver.setCurrent((unsigned int)motorA1.highCurr);
   motorA2.driver.setCurrent((unsigned int)motorA2.highCurr);
 }
-

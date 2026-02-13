@@ -1,9 +1,9 @@
 /*
  * Title       TeenAstro
- * by          Howard Dutton, Charles Lemaire, Markus Noga, Francois Desvall�e
+ * by          Howard Dutton, Charles Lemaire, Markus Noga, Francois Desvallee
  *
  * Copyright (C) 2012 to 2016 On-Step by Howard Dutton
- * Copyright (C) 2016 to 2024 TeenAstro by Charles Lemaire, Markus Noga, Francois Desvall�e
+ * Copyright (C) 2016 to 2024 TeenAstro by Charles Lemaire, Markus Noga, Francois Desvallee
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,18 +18,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- *
- *
  * Revision History, see GitHub
- *
  *
  * Author: Howard Dutton, Charles Lemaire
  *
- * Description
- *
- * Arduino Stepper motor controller for Telescop mounts
+ * Description: Arduino Stepper motor controller for Telescope mounts
  * with LX200 derived command set.
- *
+ * Main entry (setup/loop) - C++ build.
  */
 #include "Global.h"
 
@@ -46,14 +41,11 @@ void reboot()
 #define CPU_RESTART (*CPU_RESTART_ADDR = CPU_RESTART_VAL);
   CPU_RESTART;
 #endif
-
-
 }
 
 void setup()
 {
   pinMode(LEDPin, OUTPUT);
-  //GNSS connection
 #if VERSION != 220
   GNSS_Serial.begin(9600);
 #endif
@@ -66,28 +58,20 @@ void setup()
   }
   digitalWrite(LEDPin, HIGH);
 
-
-  // Check that EEPROM is ok
   AutoinitEEPROM();
-  
-  // get the mount ready
   initMount();
-  
-  // init the date and time January 1, 2013. 0 hours LMT
+
   setSyncProvider(rtk.getTime);
   setSyncInterval(1);
   setTime(rtk.getTime());
 
-  // light reticule LED
 #ifdef RETICULE_LED_PINS
   pinMode(RETICULE_LED_PINS, OUTPUT);
   analogWrite(RETICULE_LED_PINS, reticuleBrightness);
 #endif
 
-  // ST4 interface
   setupST4();
 
-  // inputs for stepper drivers fault signal
 #ifndef AXIS1_FAULT_OFF
 #if defined(__arm__) && defined(TEENSYDUINO) && defined(ALTERNATE_PINMAP_ON)
 #ifdef AXIS1_FAULT_LOW
@@ -113,25 +97,19 @@ void setup()
 #endif
 #endif
 
-  // disable the stepper drivers for now, if the enable lines are connected
   enable_Axis(false);
-
-  // automatic mode switching before/after slews, initialize micro-step mode
   DecayModeTracking();
 
-  // this sets the sidereal clock speed, controls the tracking speed so that the mount moves precisely with the stars
   siderealClockSpeed = (double)XEEPROM.readLong(getMountAddress(EE_siderealClockSpeed))/16.0;
   updateSideral();
   beginTimers();
 
   rtk.resetLongitude(*localSite.longitude());
-  // get the Park status
   if (!iniAtPark())
   {
     syncAtHome();
   }
 
-  // get the pulse-guide rate
   int val = EEPROM.read(getMountAddress(EE_Rate0));
   guideRates[0] = val > 0 ? (float)val / 100 : DefaultR0;
   val = EEPROM.read(getMountAddress(EE_Rate1));
@@ -140,19 +118,17 @@ void setup()
   guideRates[2] = val > 0 ? (float)val : DefaultR2;
   val = EEPROM.read(getMountAddress(EE_Rate3));
   guideRates[3] = val > 0 ? (float)val : DefaultR3;
- 
+
   recenterGuideRate = min(EEPROM.read(getMountAddress(EE_DefaultRate)), 4);
   activeGuideRate = recenterGuideRate;
   resetGuideRate();
 
   delay(10);
 
-  // prep timers
   rtk.updateTimers();
   delay(2000);
   hasGNSS = GNSS_Serial.available() > 0;
 
-  //Focuser connection
   Focus_Serial.setRX(FocuserRX);
   Focus_Serial.setTX(FocuserTX);
   Focus_Serial.begin(56000);
@@ -170,7 +146,6 @@ void setup()
     }
   }
 
-  // get ready for serial communications
   Serial.begin(BAUD);
   S_USB.attach_Stream((Stream*)&Serial, COMMAND_SERIAL);
   Serial1.begin(57600);
@@ -186,14 +161,14 @@ void loop()
   static long phase;
   static ErrorsTraking StartLoopError = ERRT_NONE;
   StartLoopError = lastError;
-  // GUIDING -------------------------------------------------------------------------------------------
+
   if (!movingTo && enableMotor)
   {
     checkST4();
     CheckSpiral();
     Guide();
   }
-  // ENCODER -------------------------------------------------------------------------------------------
+
   if (encoderA1.calibrating() != encoderA2.calibrating())
   {
     encoderA1.delRef();
@@ -209,12 +184,8 @@ void loop()
     }
   }
 
-
-  // 0.01 SECOND TIMED ---------------------------------------------------------------------------------
-
   if (rtk.updatesiderealTimer())
   {
-    // update Target position
     if (sideralTracking)
     {
       cli();
@@ -228,7 +199,6 @@ void loop()
       }
       sei();
     }
-    // Goto Target
     if (movingTo)
     {
       moveTo();
@@ -246,7 +216,6 @@ void loop()
 
     CheckEndOfMoveAxisAtRate();
 
-    // check for fault signal, stop any slew or guide and turn tracking off
     if (staA1.fault || staA2.fault)
     {
       lastError = ERRT_MOTOR_FAULT;
@@ -266,7 +235,6 @@ void loop()
     {
       lastError = ERRT_NONE;
     }
-    // check altitude overhead limit and horizon limit
     if (currentAlt < minAlt || currentAlt > maxAlt)
     {
       if (!forceTracking)
@@ -284,26 +252,18 @@ void loop()
     }
   }
 
-  // WORKLOAD MONITORING -------------------------------------------------------------------------------
   tlp.monitor();
 
-  // HOUSEKEEPING --------------------------------------------------------------------------------------
-  // timer... falls in once a second, keeps the universal time clock ticking,
   m = millis();
   forceTracking = (m - lastSetTrakingEnable < 10000);
   if (!forceTracking) lastSetTrakingEnable = m + 10000;
   SafetyCheck(forceTracking);
 
-  // COMMAND PROCESSING --------------------------------------------------------------------------------
-  // acts on commands recieved across Serial0 and Serial1 interfaces
   processCommands();
-  UpdateGnss();  
+  UpdateGnss();
 
   if (StartLoopError != lastError)
   {
     lastError == ERRT_NONE ? digitalWrite(LEDPin, LOW) : digitalWrite(LEDPin, HIGH);
   }
 }
-
-
-

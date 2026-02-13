@@ -1,5 +1,6 @@
 // -----------------------------------------------------------------------------------
 // functions related to PRK_PARKING the mount
+#include "Global.h"
 
 // sets the park postion as the current position
 bool setPark()
@@ -266,5 +267,3 @@ void unpark()
   }
   return;
 }
-
-

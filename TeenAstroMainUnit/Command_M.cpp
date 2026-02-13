@@ -1,12 +1,14 @@
-#include "ValueToString.h"
+/**
+ * Move commands: M (slew at rate, goto Alt/Az, flip, pulse guide).
+ */
 #include "Command.h"
-//   M - Telescope Movement Commands
-void Command_M()
-{
-  switch (command[1])
-  {
-    //  :M1svv.vvv# Move Axis1 at rate (signed value!) in time the sideral speed
-    //  :M2svv.vvv# Move Axis2 at rate (signed value!) in time the sideral speed
+#include "ValueToString.h"
+
+// -----------------------------------------------------------------------------
+//   M - Move / slew  :M1# :M2# :MA# :MF# :Mg# etc.
+// -----------------------------------------------------------------------------
+void Command_M() {
+  switch (command[1]) {
   case '1':
   case '2':
   {

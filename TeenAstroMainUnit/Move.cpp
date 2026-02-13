@@ -1,4 +1,8 @@
-//#pragma once
+/** Axis motion: MoveAxis1/2, MoveAxisAtRate, StopAxis, CheckSpiral, StartSideralTracking. */
+#include "Global.h"
+
+static void StopAxis(GuideAxis* guideA, StatusAxis* staA);
+
 static void MoveAxis(GuideAxis* guideA, StatusAxis* staA, const bool BW, const Guiding Mode)
 {
   if (!enableMotor) return;

@@ -1,38 +1,35 @@
-#include "ValueToString.h"
+/**
+ * Get commands: G (LX200 get) and GX (TeenAstro-specific get).
+ */
 #include "Command.h"
+#include "ValueToString.h"
 
-//----------------------------------------------------------------------------------
-// :GXnn#  Get TeenAstro value
-//         Returns: value
-//         All these command are not part of the LX200 Standard.
-
-void PrintAtitude(double& val)
+// ----- Reply formatters for coordinates -----
+static void PrintAtitude(double& val)
 {
   doubleToDms(reply, &val, false, true, highPrecision);
   strcat(reply, "#");
 }
-void PrintAzimuth(double& val)
-{
+static void PrintAzimuth(double& val) {
   val = AzRange(val);
-
   doubleToDms(reply, &val, true, false, highPrecision);
   strcat(reply, "#");
 }
-void PrintDec(double& val)
-{
+
+static void PrintDec(double& val) {
   doubleToDms(reply, &val, false, true, highPrecision);
   strcat(reply, "#");
 }
-void PrintRa(double& val)
-{
+
+static void PrintRa(double& val) {
   doubleToHms(reply, &val, highPrecision);
   strcat(reply, "#");
 }
 
-
-void Command_GX()
-{
-  //  :GXnn#   Get TeenAstro Specific value
+// -----------------------------------------------------------------------------
+//   GX - TeenAstro get  :GXnn#  (not LX200 standard)
+// -----------------------------------------------------------------------------
+void Command_GX() {
   switch (command[2])
   {
   case 'A':
@@ -621,7 +618,7 @@ void Command_GX()
   {
     // :GXI#   Get telescope Status
     PoleSide currentSide = GetPoleSide();
-    for (int i = 0; i < 50; i++)
+    for (int i = 0; i < REPLY_BUFFER_LEN; i++)
       reply[i] = ' ';
     reply[0] = '0' + 2 * movingTo + sideralTracking;
     reply[1] = '0' + sideralMode;

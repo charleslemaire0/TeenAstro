@@ -1,5 +1,5 @@
 #pragma once
-#include "EEPROM_adress.h"
+#include "EEPROM_address.h"
 #include "XEEPROM.hpp"
 class RefractionFlags
 {

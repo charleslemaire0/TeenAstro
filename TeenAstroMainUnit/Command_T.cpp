@@ -1,27 +1,15 @@
+/**
+ * Tracking commands: T (sidereal rate, solar/lunar/target, enable/disable, compensation).
+ */
+#include "Global.h"
 
 #define EnableTest
 
-//----------------------------------------------------------------------------------
-//   T - Tracking Commands
-//  :T+#   Master sidereal clock faster by 0.02 Hertz (I use a fifth of the LX200 standard, stored in XEEPROM) Returns: Nothing
-//  :T-#   Master sidereal clock slower by 0.02 Hertz (stored in XEEPROM) Returns: Nothing
-//  :TS#   Track rate solar Returns: Nothing
-//  :TL#   Track rate lunar Returns: Nothing
-//  :TQ#   Track rate sidereal Returns: Nothing
-//  :TT#   Track rate target Returns: Nothing
-//  :TR#   Master sidereal clock reset (to calculated sidereal rate, stored in EEPROM) Returns: Nothing
-//  :Te#   Tracking enable  (replies 0/1)
-//  :Td#   Tracking disable (replies 0/1)
-
-//  :T0#   Track compensation disable (replies 0/1)
-//  :T1#   Track compensation only in RA (replies 0/1)
-//  :T2#   Track compensation BOTH (replies 0/1)
-void Command_T()
-{
-
-  switch (command[1])
-
-  {
+// -----------------------------------------------------------------------------
+//   T - Tracking  :T+# :T-# :TS# :TL# :TQ# :TT# :TR# :Te# :Td# :T0# :T1# :T2#
+// -----------------------------------------------------------------------------
+void Command_T() {
+  switch (command[1]) {
   case '+':
     siderealClockSpeed -= HzCf * (0.02);
     XEEPROM.writeLong(getMountAddress(EE_siderealClockSpeed), siderealClockSpeed * 16);

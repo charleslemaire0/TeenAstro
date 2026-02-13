@@ -1,4 +1,5 @@
-//Methode for limit checks, all checks are done in stepper cooordinates
+// Methode for limit checks, all checks are done in stepper cooordinates
+#include "Global.h"
 
 void setAtMount(long &axis1, long &axis2)
 {
@@ -202,4 +203,3 @@ bool initLimitMaxAxis2()
   geoA2.maxAxis = val * geoA2.stepsPerDegree / 10.0;
   return ok;
 }
-

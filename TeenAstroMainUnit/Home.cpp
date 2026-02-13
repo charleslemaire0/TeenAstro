@@ -1,5 +1,6 @@
 // -----------------------------------------------------------------------------------
 // functions related to Homing the mount
+#include "Global.h"
 
 bool setHome()
 {
