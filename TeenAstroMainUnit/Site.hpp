@@ -1,5 +1,5 @@
 #pragma once
-#include "EEPROM_adress.h"
+#include "EEPROM_address.h"
 #include "XEEPROM.hpp"
 
 class siteDefinition
@@ -113,32 +113,32 @@ public:
     if (siteIndex > maxNumSite)
       return;
     m_siteIndex = siteIndex;
-    int adress = EE_sites + m_siteIndex * SiteSize;
-    m_site.latitude = XEEPROM.readFloat(adress);
+    int address = EE_sites + m_siteIndex * SiteSize;
+    m_site.latitude = XEEPROM.readFloat(address);
     if (-90 > m_site.latitude || m_site.latitude > 90)
     {
       setLat(0);
     }
-    adress += 4;
-    m_site.longitude = XEEPROM.readFloat(adress);
+    address += 4;
+    m_site.longitude = XEEPROM.readFloat(address);
     if (-360 >= m_site.longitude || m_site.longitude >= 360)
     {
       setLong(0);
     }
-    adress += 4;
-    m_site.elevation = XEEPROM.readUShort(adress);
+    address += 4;
+    m_site.elevation = XEEPROM.readUShort(address);
     if (-200 > m_site.elevation || m_site.elevation > 8000)
     {
       setElev(0);
     }
-    adress += 2;
-    m_site.toff = (float)EEPROM.read(adress) / 10.0 - 12.0;
+    address += 2;
+    m_site.toff = (float)EEPROM.read(address) / 10.0 - 12.0;
     if (m_site.toff < -12 && m_site.toff >12)
     {
       setToff(0);
     }
-    adress++;
-    bool ok = XEEPROM.readString(adress, m_site.siteName, siteNameLen);
+    address++;
+    bool ok = XEEPROM.readString(address, m_site.siteName, siteNameLen);
     if (!ok || strlen(m_site.siteName) == 0)
     {
       char txt[10];
