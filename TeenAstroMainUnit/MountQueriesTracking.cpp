@@ -23,6 +23,7 @@
  * Description: Mount queries, tracking rates, safety, updateRatios, spiral. See Mount.h.
  */
 #include "MainUnit.h"
+#include "TelTimer.hpp"  // rtk (for m_lst in onSiderealTick)
 #include "Site.hpp"
 #include "TeenAstroCoord_LO.hpp"
 
@@ -173,7 +174,7 @@ void Mount::computeTrackingRate(bool apply)
     tracking.sideralMode = SIDM_STAR;
   if (isAltAZ())
     doCompensationCalc();
-  else if (refraction.forTracking || alignment.hasValid)
+  else if ((refraction.forTracking || alignment.hasValid) && tracking.sideralMode != SIDM_STAR)
   {
     doCompensationCalc();
     if (tracking.trackComp == TC_RA)
@@ -318,13 +319,39 @@ void Mount::safetyCheck(bool forceTracking)
 
 void Mount::onSiderealTick(long phase, bool forceTracking)
 {
-  if (tracking.sideralTracking)
+  static long lastLst = -1;
+
+  if (!tracking.sideralTracking)
   {
+    lastLst = -1;   // reset when not tracking so first tick after enable doesn't jump
+  }
+  else
+  {
+    // Compute how many sidereal centi-second ticks elapsed since last call.
+    // The main loop may be slower than the 100 Hz sidereal clock, so we must
+    // catch up missed ticks to keep the target advancing at the correct rate.
+    cli();
+    long currentLst = rtk.m_lst;
+    sei();
+
+    long nTicks = 1;
+    if (lastLst >= 0)
+    {
+      nTicks = currentLst - lastLst;
+      if (nTicks < 0)
+        nTicks += 8640000;        // LST wrapped around midnight
+      if (nTicks > 100)
+        nTicks = 100;             // cap to avoid huge jumps on first tick or glitch
+      if (nTicks < 1)
+        nTicks = 1;
+    }
+    lastLst = currentLst;
+
     cli();
     if (!axes.staA1.backlash_correcting)
-      axes.staA1.target += axes.staA1.fstep;
+      axes.staA1.target += axes.staA1.fstep * (double)nTicks;
     if (!axes.staA2.backlash_correcting)
-      axes.staA2.target += axes.staA2.fstep;
+      axes.staA2.target += axes.staA2.fstep * (double)nTicks;
     sei();
   }
   if (tracking.movingTo)

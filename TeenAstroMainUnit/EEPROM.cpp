@@ -5,6 +5,7 @@
 #include "EEPROM_address.h"
 
 uint8_t midx;
+siteDefinition localSite;  // single definition — declared extern in Site.hpp
 
 int getMountAddress(int address)
 {
