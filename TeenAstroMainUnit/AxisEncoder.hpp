@@ -21,7 +21,7 @@ public:
 
 	 Encoder* m_ecd = NULL;
  public:
-	 bool connected()
+	 bool connected() const
 	 {
 		 return m_ecd != NULL;
 	 }
@@ -29,11 +29,11 @@ public:
 	 {
 		 m_ecd = new Encoder(pinA, pinB);
 	 };
-	 long readencoder()
+	 long readencoder() const
 	 {
 		 return m_ecd->read();
 	 }
-	 double r_deg()
+	 double r_deg() const
 	 {
 		 double deg = 0.0;
 		 if (!connected())

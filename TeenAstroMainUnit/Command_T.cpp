@@ -139,8 +139,6 @@ void Command_T() {
       double t_3 = 5.725553;
       double Ra_3 = 0.188132;
       double Dec_3 = -0.314822;
-      double Ia1_3 = 2.272546;
-      double Ia2_3 = 0.656449;
       switch (commandState.command[3])
       {
 
