@@ -10,7 +10,7 @@ class StatusAxis
 public:
   bool                enable = false;
   bool                fault = false;
-  volatile double     acc = 0;                         // acceleration in steps per second square
+  volatile double     acc = 0.0;                         // acceleration in steps per second square
   volatile long       pos;                             // angle position in steps
   volatile long       start;                           // angle of goto start position in steps
   volatile double     target;                          // angle of goto end   position in steps
@@ -21,7 +21,7 @@ public:
   volatile double     interval_Step_Sid;               // based on the siderealClockSpeed, this is the time between steps for sidereal tracking 
   volatile double     takeupRate;                      // this is the takeup rate for synchronizing the target and actual positions when needed
   volatile double     takeupInterval;
-  volatile double     interval_Step_Cur = 0;                         // this is the time between steps for the current rotation speed
+  volatile double     interval_Step_Cur = 0.0;                         // this is the time between steps for the current rotation speed
   volatile double     CurrentTrackingRate = default_tracking_rate;   //effective rate tracking in Hour arc-seconds/second
   double              RequestedTrackingRate = default_tracking_rate; //computed  rate tracking in Hour arc-seconds/second
   double              ClockSpeed;

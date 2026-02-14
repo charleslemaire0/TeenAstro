@@ -1,7 +1,7 @@
 #pragma once
 /**
  * Mount and command protocol types and constants.
- * Shared enums, typedefs, and numeric constants used across Global.h and the firmware.
+ * Shared enums, typedefs, and numeric constants used across Mount.h and the firmware.
  */
 #include <Arduino.h>
 
@@ -14,7 +14,7 @@ typedef double speed;
 // -----------------------------------------------------------------------------
 // Mount and behaviour enums
 // -----------------------------------------------------------------------------
-enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
+enum MountType { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
 enum EncoderSync { ES_OFF, ES_60, ES_30, ES_15, ES_8, ES_4, ES_2, ES_ALWAYS };
 enum Pushto { PT_OFF, PT_RADEC, PT_ALTAZ };
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
@@ -34,6 +34,8 @@ enum ErrorsTraking {
   ERRT_MERIDIAN
 };
 
+// When goTo() returns a tracking-style error, it uses lastError + 10 (ERRGOTO_* from ERRT_*).
+// Do not reorder ErrorsTraking or ErrorsGoTo without updating Mount::goTo().
 enum ErrorsGoTo {
   ERRGOTO_NONE,
   ERRGOTO_BELOWHORIZON,
@@ -79,5 +81,5 @@ enum GuideRate { RG, RC, RM, RS, RX };
 #endif
 
 const double mastersiderealClockSpeed = 997269.5625;
-const double masterClockSpeed = 1000000;  // reference frequency for tick
+const double masterClockSpeed = 1000000.0;  // reference frequency for tick
 const double HzCf = masterClockSpeed / 60.0;

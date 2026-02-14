@@ -35,7 +35,7 @@ public:
 	 }
 	 double r_deg()
 	 {
-		 double deg = 0;
+		 double deg = 0.0;
 		 if (!connected())
 			 return deg;
 		 deg = readencoder() / (double)pulsePerDegree;

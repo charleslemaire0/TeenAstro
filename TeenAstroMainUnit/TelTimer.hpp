@@ -334,5 +334,5 @@ private:
 
 };
 
-static DateTimeTimers rtk;
+extern DateTimeTimers rtk;
 

@@ -7,76 +7,76 @@
 // ----- Reply formatters for coordinates -----
 static void PrintAtitude(double& val)
 {
-  doubleToDms(reply, &val, false, true, highPrecision);
-  strcat(reply, "#");
+  doubleToDms(commandState.reply, &val, false, true, commandState.highPrecision);
+  strcat(commandState.reply, "#");
 }
 static void PrintAzimuth(double& val) {
   val = AzRange(val);
-  doubleToDms(reply, &val, true, false, highPrecision);
-  strcat(reply, "#");
+  doubleToDms(commandState.reply, &val, true, false, commandState.highPrecision);
+  strcat(commandState.reply, "#");
 }
 
 static void PrintDec(double& val) {
-  doubleToDms(reply, &val, false, true, highPrecision);
-  strcat(reply, "#");
+  doubleToDms(commandState.reply, &val, false, true, commandState.highPrecision);
+  strcat(commandState.reply, "#");
 }
 
 static void PrintRa(double& val) {
-  doubleToHms(reply, &val, highPrecision);
-  strcat(reply, "#");
+  doubleToHms(commandState.reply, &val, commandState.highPrecision);
+  strcat(commandState.reply, "#");
 }
 
 // -----------------------------------------------------------------------------
 //   GX - TeenAstro get  :GXnn#  (not LX200 standard)
 // -----------------------------------------------------------------------------
 void Command_GX() {
-  switch (command[2])
+  switch (commandState.command[2])
   {
   case 'A':
     // :GXAn# Align Model values
   {
-    float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
-    if (hasStarAlignment)
+    float t11 = 0.f, t12 = 0.f, t13 = 0.f, t21 = 0.f, t22 = 0.f, t23 = 0.f, t31 = 0.f, t32 = 0.f, t33 = 0.f;
+    if (mount.alignment.hasValid)
     {
-      alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
+      mount.alignment.conv.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
     }
-    switch (command[3])
+    switch (commandState.command[3])
     {
     case '0':
       // :GXA0#
-      sprintf(reply, "%f#", t11);
+      sprintf(commandState.reply, "%f#", t11);
       break;
     case '1':
       // :GXA1#
-      sprintf(reply, "%f#", t12);
+      sprintf(commandState.reply, "%f#", t12);
       break;
     case '2':
       // :GXA2#
-      sprintf(reply, "%f#", t13);
+      sprintf(commandState.reply, "%f#", t13);
       break;
     case '3':
       // :GXA3#
-      sprintf(reply, "%f#", t21);
+      sprintf(commandState.reply, "%f#", t21);
       break;
     case '4':
       // :GXA4#
-      sprintf(reply, "%f#", t22);
+      sprintf(commandState.reply, "%f#", t22);
       break;
     case '5':
       // :GXA5#
-      sprintf(reply, "%f#", t23);
+      sprintf(commandState.reply, "%f#", t23);
       break;
     case '6':
       // :GXA6#
-      sprintf(reply, "%f#", t31);
+      sprintf(commandState.reply, "%f#", t31);
       break;
     case '7':
       // :GXA7#
-      sprintf(reply, "%f#", t32);
+      sprintf(commandState.reply, "%f#", t32);
       break;
     case '8':
       // :GXA8#
-      sprintf(reply, "%f#", t33);
+      sprintf(commandState.reply, "%f#", t33);
       break;
       //case 'a':
       //case 'z':
@@ -87,7 +87,7 @@ void Command_GX() {
       //  // :GXAw#
       //  CoordConv::Err request = CoordConv::Err::POL_W;
       //  i = 1;
-      //  switch (command[3])
+      //  switch (commandState.command[3])
       //  {
       //  case'a':
       //    request = CoordConv::Err::EQ_ALT;
@@ -108,8 +108,8 @@ void Command_GX() {
       //  }
       //  else
       //  {
-      //    doubleToDms(reply, &f1, false, true, true);
-      //    strcat(reply, "#");
+      //    doubleToDms(commandState.reply, &f1, false, true, true);
+      //    strcat(commandState.reply, "#");
       //  }
       //  break;
       //}
@@ -122,15 +122,15 @@ void Command_GX() {
   case 'E':
     // :GXEnn# get encoder commands
   {
-    switch (command[3])
+    switch (commandState.command[3])
     {
     case '1':
     case '2':
       // :GXE1# get degree encoder 1
     {
-      double f1 = command[3] == '1' ? mount.encoderA1.r_deg() : mount.encoderA2.r_deg();
-      doubleToDms(reply, &f1, true, true, highPrecision);
-      strcat(reply, "#");
+      double f1 = commandState.command[3] == '1' ? mount.motorsEncoders.encoderA1.r_deg() : mount.motorsEncoders.encoderA2.r_deg();
+      doubleToDms(commandState.reply, &f1, true, true, commandState.highPrecision);
+      strcat(commandState.reply, "#");
     }
     break;
     case 'A':
@@ -140,19 +140,19 @@ void Command_GX() {
       // :GXEZ Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
     {
       double f, f1;
-      if (mount.enableEncoder)
+      if (mount.motorsEncoders.enableEncoder)
       {
-        Coord_HO HO_T = getHorETopo();
+        Coord_HO HO_T = mount.getHorETopo();
         f = degRange(HO_T.Az() * RAD_TO_DEG);
         f1 = HO_T.Alt() * RAD_TO_DEG;
       }
       else
       {
-        Coord_HO HO_T = getHorTopo();
+        Coord_HO HO_T = mount.getHorTopo();
         f = degRange(HO_T.Az() * RAD_TO_DEG);
         f1 = HO_T.Alt() * RAD_TO_DEG;
       }
-      command[3] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
+      commandState.command[3] == 'A' ? PrintAtitude(f1) : PrintAzimuth(f);
     }
     break;
     case 'D':
@@ -162,11 +162,11 @@ void Command_GX() {
       //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
       //  :GR#   Get Telescope Encoder RA
       //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
-      Coord_EQ EQ_T = mount.enableEncoder ?
-        getEquE(*localSite.latitude() * DEG_TO_RAD) :
-        getEqu(*localSite.latitude() * DEG_TO_RAD);
+      Coord_EQ EQ_T = mount.motorsEncoders.enableEncoder ?
+        mount.getEquE(*localSite.latitude() * DEG_TO_RAD) :
+        mount.getEqu(*localSite.latitude() * DEG_TO_RAD);
 
-      if (command[3] == 'R')
+      if (commandState.command[3] == 'R')
       {
         double f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
         PrintRa(f);
@@ -181,19 +181,19 @@ void Command_GX() {
     case 'O':
       // :GXEO#  get encoder Sync Option
     {
-      sprintf(reply, "%u#", mount.EncodeSyncMode);
+      sprintf(commandState.reply, "%u#", mount.motorsEncoders.EncodeSyncMode);
     }
     break;
     case 'P':
     {
       // :GXEP.#   Get Encoder pulse per 100 deg
-      if (command[4] == 'D')
+      if (commandState.command[4] == 'D')
       {
-        sprintf(reply, "%lu#", (unsigned long)(100.0 * mount.encoderA2.pulsePerDegree));
+        sprintf(commandState.reply, "%lu#", (unsigned long)(100.0 * mount.motorsEncoders.encoderA2.pulsePerDegree));
       }
-      else if (command[4] == 'R')
+      else if (commandState.command[4] == 'R')
       {
-        sprintf(reply, "%lu#", (unsigned long)(100.0 * mount.encoderA1.pulsePerDegree));
+        sprintf(commandState.reply, "%lu#", (unsigned long)(100.0 * mount.motorsEncoders.encoderA1.pulsePerDegree));
       }
       else
         replyLongUnknow();
@@ -203,13 +203,13 @@ void Command_GX() {
     case 'r':
     {
       // :GXEr.#   Get Encoder reverse Rotation on/off
-      if (command[4] == 'D')
+      if (commandState.command[4] == 'D')
       {
-        sprintf(reply, "%u#", (unsigned  int)mount.encoderA2.reverse);
+        sprintf(commandState.reply, "%u#", (unsigned  int)mount.motorsEncoders.encoderA2.reverse);
       }
-      else if (command[4] == 'R')
+      else if (commandState.command[4] == 'R')
       {
-        sprintf(reply, "%u#", (unsigned  int)mount.encoderA1.reverse);
+        sprintf(commandState.reply, "%u#", (unsigned  int)mount.motorsEncoders.encoderA1.reverse);
       }
       else
         replyLongUnknow();
@@ -223,28 +223,28 @@ void Command_GX() {
   break;
   case 'D':
     // :GXDnn# for Debug commands
-    switch (command[3])
+    switch (commandState.command[3])
     {
     case'B':
     {
       // :GXDBn# Debug Backlash
-      switch (command[4])
+      switch (commandState.command[4])
       {
       case '0':
         // :GXDB0# Debug inbacklashAxis1
-        sprintf(reply, "%d#", (int)mount.staA1.backlash_correcting);
+        sprintf(commandState.reply, "%d#", (int)mount.axes.staA1.backlash_correcting);
         break;
       case '1':
         // :GXDB1# Debug inbacklashAxis2
-        sprintf(reply, "%d#", (int)mount.staA2.backlash_correcting);
+        sprintf(commandState.reply, "%d#", (int)mount.axes.staA2.backlash_correcting);
         break;
       case '2':
         // :GXDB2# Debug Backlash blAxis1
-        sprintf(reply, "%d#", (int)mount.staA1.backlash_movedSteps);
+        sprintf(commandState.reply, "%d#", (int)mount.axes.staA1.backlash_movedSteps);
         break;
       case '3':
         // :GXDB3# Debug Backlash blAxis1
-        sprintf(reply, "%d#", (int)mount.staA2.backlash_movedSteps);
+        sprintf(commandState.reply, "%d#", (int)mount.axes.staA2.backlash_movedSteps);
         break;
       default:
         replyLongUnknow();
@@ -255,27 +255,27 @@ void Command_GX() {
     case 'R':
     {
       // :GXDRn# Debug Rates
-      switch (command[4])
+      switch (commandState.command[4])
       {
       case '1':
         // :GXDR1# axis1 requested tracking rate in sideral
-        sprintf(reply, "%f#", mount.staA1.RequestedTrackingRate);
+        sprintf(commandState.reply, "%f#", mount.axes.staA1.RequestedTrackingRate);
         break;
       case '2':
         // :GXDR2# axis2 requested tracking rate in sideral 
-        sprintf(reply, "%f#", mount.staA2.RequestedTrackingRate);
+        sprintf(commandState.reply, "%f#", mount.axes.staA2.RequestedTrackingRate);
         break;
       case '3':
-        sprintf(reply, "%f#", (double)mount.staA1.CurrentTrackingRate);
+        sprintf(commandState.reply, "%f#", (double)mount.axes.staA1.CurrentTrackingRate);
         break;
       case '4':
-        sprintf(reply, "%f#", (double)mount.staA2.CurrentTrackingRate);
+        sprintf(commandState.reply, "%f#", (double)mount.axes.staA2.CurrentTrackingRate);
         break;
       case '5':
-        sprintf(reply, "%f#", (double)mount.staA1.fstep);
+        sprintf(commandState.reply, "%f#", (double)mount.axes.staA1.fstep);
         break;
       case '6':
-        sprintf(reply, "%f#", (double)mount.staA2.fstep);
+        sprintf(commandState.reply, "%f#", (double)mount.axes.staA2.fstep);
         break;
       default:
         replyLongUnknow();
@@ -287,45 +287,45 @@ void Command_GX() {
     {
       // :GXDPn# Debug Position and Target
       long    temp;
-      switch (command[4])
+      switch (commandState.command[4])
       {
       case '0':
         cli();
-        temp = mount.staA1.pos;
+        temp = mount.axes.staA1.pos;
         sei();
-        sprintf(reply, "%ld#", temp);
+        sprintf(commandState.reply, "%ld#", temp);
         break;  // Debug8, HA motor position
       case '1':
         cli();
-        temp = mount.staA2.pos;
+        temp = mount.axes.staA2.pos;
         sei();
-        sprintf(reply, "%ld#", temp);
+        sprintf(commandState.reply, "%ld#", temp);
         break;  // Debug9, Dec motor position
       case '2':
         cli();
-        temp = mount.staA1.target;
+        temp = mount.axes.staA1.target;
         sei();
-        sprintf(reply, "%ld#", temp);
+        sprintf(commandState.reply, "%ld#", temp);
         break;  // Debug6, HA target position
       case '3':
         cli();
-        temp = mount.staA2.target;
+        temp = mount.axes.staA2.target;
         sei();
-        sprintf(reply, "%ld#", temp);
+        sprintf(commandState.reply, "%ld#", temp);
         break;  // Debug7, Dec target position
       case '4':
-        mount.staA1.updateDeltaTarget();
-        sprintf(reply, "%ld#", mount.staA1.deltaTarget);
+        mount.axes.staA1.updateDeltaTarget();
+        sprintf(commandState.reply, "%ld#", mount.axes.staA1.deltaTarget);
         break;  // Debug0, true vs. target RA position
       case '5':
-        mount.staA2.updateDeltaTarget();
-        sprintf(reply, "%ld#", mount.staA2.deltaTarget);
+        mount.axes.staA2.updateDeltaTarget();
+        sprintf(commandState.reply, "%ld#", mount.axes.staA2.deltaTarget);
         break;
       case '6':
-        sprintf(reply, "%lf#", mount.staA1.interval_Step_Sid);
+        sprintf(commandState.reply, "%lf#", mount.axes.staA1.interval_Step_Sid);
         break;
       case '7':
-        sprintf(reply, "%lf#", mount.staA2.interval_Step_Sid);
+        sprintf(commandState.reply, "%lf#", mount.axes.staA2.interval_Step_Sid);
         break;
       default:
         replyLongUnknow();
@@ -336,9 +336,9 @@ void Command_GX() {
     case 'W':
     {
       // :GXDW# Get workload
-      if (command[4] == 0)
+      if (commandState.command[4] == 0)
       {
-        sprintf(reply, "%ld%%#", (tlp.getWorstTime() * 100L) / 9970L);
+        sprintf(commandState.reply, "%ld%%#", (tlp.getWorstTime() * 100L) / 9970L);
         tlp.resetWorstTime();
       }
       else
@@ -353,39 +353,39 @@ void Command_GX() {
     break;
   case 'P':
     // :GXPn# Intrument position
-    switch (command[3])
+    switch (commandState.command[3])
     {
     case '1':
     {
       cli();
-      double f1 = mount.staA1.pos / mount.geoA1.stepsPerDegree;
+      double f1 = mount.axes.staA1.pos / mount.axes.geoA1.stepsPerDegree;
       sei();
-      doubleToDms(reply, &f1, true, true, highPrecision);
-      strcat(reply, "#");
+      doubleToDms(commandState.reply, &f1, true, true, commandState.highPrecision);
+      strcat(commandState.reply, "#");
     }
     break;
     case '2':
     {
       cli();
-      double f1 = mount.staA2.pos / mount.geoA2.stepsPerDegree;
+      double f1 = mount.axes.staA2.pos / mount.axes.geoA2.stepsPerDegree;
       sei();
-      doubleToDms(reply, &f1, true, true, highPrecision);
-      strcat(reply, "#");
+      doubleToDms(commandState.reply, &f1, true, true, commandState.highPrecision);
+      strcat(commandState.reply, "#");
     }
     break;
     case '3':
     case '4':
     {
       //Other way to get intsrument angle to verify the pipeline
-      Coord_IN IN_T = getEqu(*localSite.latitude() * DEG_TO_RAD).To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto(), alignment.Tinv);
+      Coord_IN IN_T = mount.getEqu(*localSite.latitude() * DEG_TO_RAD).To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, mount.refrOptForGoto(), mount.alignment.conv.Tinv);
       double f = IN_T.Axis1() * RAD_TO_DEG;
       double f1 = IN_T.Axis2() * RAD_TO_DEG;
       long Axis1_out, Axis2_out;
-      Angle2Step(f, f1, GetPoleSide(), &Axis1_out, &Axis2_out);
-      f = Axis1_out / mount.geoA1.stepsPerDegree;
-      f1 = Axis2_out / mount.geoA2.stepsPerDegree;
-      command[3] == '3' ? doubleToDms(reply, &f, true, true, highPrecision) : doubleToDms(reply, &f1, true, true, highPrecision);
-      strcat(reply, "#");
+      mount.angle2Step(f, f1, mount.getPoleSide(), &Axis1_out, &Axis2_out);
+      f = Axis1_out / mount.axes.geoA1.stepsPerDegree;
+      f1 = Axis2_out / mount.axes.geoA2.stepsPerDegree;
+      commandState.command[3] == '3' ? doubleToDms(commandState.reply, &f, true, true, commandState.highPrecision) : doubleToDms(commandState.reply, &f1, true, true, commandState.highPrecision);
+      strcat(commandState.reply, "#");
     }
     break;
     default:
@@ -395,16 +395,16 @@ void Command_GX() {
     break;
   case 'r':
     // :GXrn# user defined refraction settings
-    switch (command[3])
+    switch (commandState.command[3])
     {
     case 'p':
-      environment.doesRefraction.forPole ? sprintf(reply, "y#") : sprintf(reply, "n#");
+      mount.refraction.forPole ? sprintf(commandState.reply, "y#") : sprintf(commandState.reply, "n#");
       break;
     case 'g':
-      environment.doesRefraction.forGoto ? sprintf(reply, "y#") : sprintf(reply, "n#");
+      mount.refraction.forGoto ? sprintf(commandState.reply, "y#") : sprintf(commandState.reply, "n#");
       break;
     case 't':
-      environment.doesRefraction.forTracking ? sprintf(reply, "y#") : sprintf(reply, "n#");
+      mount.refraction.forTracking ? sprintf(commandState.reply, "y#") : sprintf(commandState.reply, "n#");
       break;
     default:
       replyLongUnknow();
@@ -413,64 +413,64 @@ void Command_GX() {
     break;
   case 'R':
     // :GXRn# user defined rates
-    switch (command[3])
+    switch (commandState.command[3])
     {
     case '0':
     case '1':
     case '2':
     case '3':
     {
-      int i = command[3] - '0';
+      int i = commandState.command[3] - '0';
       // :GXRn# return user defined rate
-      dtostrf(mount.guideRates[i], 2, 2, reply);
-      strcat(reply, "#");
+      dtostrf(mount.guiding.guideRates[i], 2, 2, commandState.reply);
+      strcat(commandState.reply, "#");
     }
     break;
     case 'A':
       // :GXRA# returns the Degrees For Acceleration
-      dtostrf(mount.DegreesForAcceleration, 2, 1, reply);
-      strcat(reply, "#");
+      dtostrf(mount.guiding.DegreesForAcceleration, 2, 1, commandState.reply);
+      strcat(commandState.reply, "#");
       break;
     case 'B':
       // :GXRB# returns the Backlash Take up Rate
-      sprintf(reply, "%ld#", (long)round(mount.staA1.takeupRate));
+      sprintf(commandState.reply, "%ld#", (long)round(mount.axes.staA1.takeupRate));
       break;
     case 'D':
       // :GXRD# returns the Default Rate
-      sprintf(reply, "%d#", XEEPROM.read(getMountAddress(EE_DefaultRate)));
+      sprintf(commandState.reply, "%d#", XEEPROM.read(getMountAddress(EE_DefaultRate)));
       break;
     case 'X':
       // :GXRX# return Max Slew rate
-      sprintf(reply, "%d#", XEEPROM.readUShort(getMountAddress(EE_maxRate)));
+      sprintf(commandState.reply, "%d#", XEEPROM.readUShort(getMountAddress(EE_maxRate)));
       break;
     case 'r':
       // :GXRr# Requested RA traking rate in sideral
     {
-      long l1 = 10000l - (long)(mount.RequestedTrackingRateHA * 10000.0);
-      sprintf(reply, "%ld#", l1);
+      long l1 = 10000l - (long)(mount.tracking.RequestedTrackingRateHA * 10000.0);
+      sprintf(commandState.reply, "%ld#", l1);
     }
     break;
     case 'h':
       // :GXRh# Requested HA traking rate in sideral
     {
-      long l1 = mount.RequestedTrackingRateHA * 10000.0;
-      sprintf(reply, "%ld#", l1);
+      long l1 = mount.tracking.RequestedTrackingRateHA * 10000.0;
+      sprintf(commandState.reply, "%ld#", l1);
     }
     break;
     case 'd':
       // :GXRd# Requested DEC traking rate in sideral
     {
-      long l1 = mount.RequestedTrackingRateDEC * 10000.0;
-      sprintf(reply, "%ld#", l1);
+      long l1 = mount.tracking.RequestedTrackingRateDEC * 10000.0;
+      sprintf(commandState.reply, "%ld#", l1);
     }
     break;
     case 'e':
       // :GXRe,VVVVVVVVVV# get stored Rate for RA
-      sprintf(reply, "%ld#", mount.storedTrakingRateRA);
+      sprintf(commandState.reply, "%ld#", mount.tracking.storedTrakingRateRA);
       break;
     case 'f':
       // :GXRf,VVVVVVVVVV# get stored Rate for DEC
-      sprintf(reply, "%ld#", mount.storedTrakingRateDEC);
+      sprintf(commandState.reply, "%ld#", mount.tracking.storedTrakingRateDEC);
       break;
     default:
       replyLongUnknow();
@@ -479,61 +479,61 @@ void Command_GX() {
     break;
   case 'L':
     // :GXLn user defined limits
-    switch (command[3])
+    switch (commandState.command[3])
     {
     case 'A':
       // :GXLA# get user defined minAXIS1 
     {
       int i = XEEPROM.readShort(getMountAddress(EE_minAxis1));
-      sprintf(reply, "%d#", i);
+      sprintf(commandState.reply, "%d#", i);
     }
     break;
     case 'B':
       // :GXLB# get user defined maxAXIS1 
     {
       int i = XEEPROM.readShort(getMountAddress(EE_maxAxis1));
-      sprintf(reply, "%d#", i);
+      sprintf(commandState.reply, "%d#", i);
     }
     break;
     case 'C':
       // :GXLC# get user defined minAXIS2
     {
       int i = XEEPROM.readShort(getMountAddress(EE_minAxis2));
-      sprintf(reply, "%d#", i);
+      sprintf(commandState.reply, "%d#", i);
     }
     break;
     case 'D':
       // :GXLD# get user defined maxAXIS2
     {
       int i = XEEPROM.readShort(getMountAddress(EE_maxAxis2));
-      sprintf(reply, "%d#", i);
+      sprintf(commandState.reply, "%d#", i);
     }
     break;
     case 'E':
       // :GXLE# return user defined Meridian East Limit
-      sprintf(reply, "%ld#", (long)round(mount.minutesPastMeridianGOTOE));
+      sprintf(commandState.reply, "%ld#", (long)round(mount.limits.getMeridianEastLimit()));
       break;
     case 'W':
       // :GXLW# return user defined Meridian West Limit
-      sprintf(reply, "%ld#", (long)round(mount.minutesPastMeridianGOTOW));
+      sprintf(commandState.reply, "%ld#", (long)round(mount.limits.getMeridianWestLimit()));
       break;
     case 'U':
       // :GXLU# return user defined Under pole Limit
-      sprintf(reply, "%ld#", (long)round(mount.underPoleLimitGOTO * 10));
+      sprintf(commandState.reply, "%ld#", (long)round(mount.limits.underPoleLimitGOTO * 10));
       break;
     case 'O':
       // :GXLO# return user defined horizon Limit
       // NB: duplicate with :Go#
-      sprintf(reply, "%+02d*#", mount.maxAlt);
+      sprintf(commandState.reply, "%+02d*#", mount.limits.maxAlt);
       break;
     case 'H':
       // :GXLH# return user defined horizon Limit
       // NB: duplicate with :Gh#
-      sprintf(reply, "%+02d*#", mount.minAlt);
+      sprintf(commandState.reply, "%+02d*#", mount.limits.minAlt);
       break;
     case 'S':
       // :GXLS# return user defined minimum distance in degreee from pole to keep tracking on for 6 hours after transit
-      sprintf(reply, "%02d*#", mount.distanceFromPoleToKeepTrackingOn);
+      sprintf(commandState.reply, "%02d*#", mount.limits.distanceFromPoleToKeepTrackingOn);
       break;
     default:
       replyLongUnknow();
@@ -542,34 +542,34 @@ void Command_GX() {
     break;
   case 'l':
     // :GXln Mount type defined limits
-    switch (command[3])
+    switch (commandState.command[3])
     {
     case 'A':
       // :GXlA#  Mount type defined minAXIS1
     {
-      int i = mount.geoA1.LimMinAxis;
-      sprintf(reply, "%d#", i);
+      int i = mount.axes.geoA1.LimMinAxis;
+      sprintf(commandState.reply, "%d#", i);
     }
     break;
     case 'B':
       // :GXlB#  Mount type defined maxAXIS1
     {
-      int i = mount.geoA1.LimMaxAxis;
-      sprintf(reply, "%d#", i);
+      int i = mount.axes.geoA1.LimMaxAxis;
+      sprintf(commandState.reply, "%d#", i);
     }
     break;
     case 'C':
       // :GXlC#  Mount type defined minAXIS2
     {
-      int i = mount.geoA2.LimMinAxis;
-      sprintf(reply, "%d#", i);
+      int i = mount.axes.geoA2.LimMinAxis;
+      sprintf(commandState.reply, "%d#", i);
     }
     break;
     case 'D':
       // :GXlD#  Mount type defined maxAXIS2
     {
-      int i = mount.geoA2.LimMaxAxis;
-      sprintf(reply, "%d#", i);
+      int i = mount.axes.geoA2.LimMaxAxis;
+      sprintf(commandState.reply, "%d#", i);
     }
     break;
     default:
@@ -579,12 +579,12 @@ void Command_GX() {
     break;
   case 'T':
     // :GXTn# Date/Time definition
-    switch (command[3])
+    switch (commandState.command[3])
     {
     case '0':
       // :GXT0# UTC time
-      doubleToHms(reply, rtk.getUT(), true);
-      strcat(reply, "#");
+      doubleToHms(commandState.reply, rtk.getUT(), true);
+      strcat(commandState.reply, "#");
       break;
     case '1':
       // :GXT1# UTC date 
@@ -592,24 +592,24 @@ void Command_GX() {
       int i, i1, i2, i3, i4, i5;
       rtk.getUTDate(i, i1, i2, i3, i4, i5);
       i = i % 100;
-      sprintf(reply, "%02d/%02d/%02d#", i1, i2, i);
+      sprintf(commandState.reply, "%02d/%02d/%02d#", i1, i2, i);
       break;
     }
     // :GXT2# return seconds since 01/01/1970/00:00:00
     case '2':
     {
       unsigned long t = rtk.getTimeStamp();
-      sprintf(reply, "%lu#", t);
+      sprintf(commandState.reply, "%lu#", t);
     }
     break;
     case '3':
     {
       // :GXT3# LHA time
       double tmpLST;
-      Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
+      Coord_EQ EQ_T = mount.getEqu(*localSite.latitude() * DEG_TO_RAD);
       tmpLST = EQ_T.Ha() * RAD_TO_HOUR;
-      doubleToHms(reply, &tmpLST, true);
-      strcat(reply, "#");
+      doubleToHms(commandState.reply, &tmpLST, true);
+      strcat(commandState.reply, "#");
     }
     break;
     }
@@ -617,63 +617,63 @@ void Command_GX() {
   case 'I':
   {
     // :GXI#   Get telescope Status
-    PoleSide currentSide = GetPoleSide();
+    PoleSide currentSide = mount.getPoleSide();
     for (int i = 0; i < REPLY_BUFFER_LEN; i++)
-      reply[i] = ' ';
-    reply[0] = '0' + 2 * mount.movingTo + mount.sideralTracking;
-    reply[1] = '0' + mount.sideralMode;
+      commandState.reply[i] = ' ';
+    commandState.reply[0] = '0' + 2 * mount.tracking.movingTo + mount.tracking.sideralTracking;
+    commandState.reply[1] = '0' + mount.tracking.sideralMode;
     const char* parkStatusCh = "pIPF";
-    reply[2] = parkStatusCh[mount.parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
-    if (mount.atHome) reply[3] = 'H';
-    reply[4] = '0' + mount.recenterGuideRate;
-    if (mount.doSpiral) reply[5] = '@';
-    else if (mount.GuidingState != GuidingOFF)
+    commandState.reply[2] = parkStatusCh[mount.parkHome.parkStatus];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
+    if (mount.isAtHome()) commandState.reply[3] = 'H';
+    commandState.reply[4] = '0' + mount.guiding.recenterGuideRate;
+    if (mount.tracking.doSpiral) commandState.reply[5] = '@';
+    else if (mount.guiding.GuidingState != GuidingOFF)
     {
-      reply[5] = 'G';
+      commandState.reply[5] = 'G';
     }
-    if (isGuidingStar()) reply[6] = '*';
-    else if (mount.GuidingState == GuidingRecenter) reply[6] = '+';
-    else if (mount.GuidingState == GuidingAtRate) reply[6] = '-';
-    if (mount.guideA1.isMFW()) reply[7] = '>';
-    else if (mount.guideA1.isMBW()) reply[7] = '<';
-    else if (mount.guideA1.isBraking()) reply[7] = 'b';
+    if (mount.isGuidingStar()) commandState.reply[6] = '*';
+    else if (mount.guiding.GuidingState == GuidingRecenter) commandState.reply[6] = '+';
+    else if (mount.guiding.GuidingState == GuidingAtRate) commandState.reply[6] = '-';
+    if (mount.guiding.guideA1.isMFW()) commandState.reply[7] = '>';
+    else if (mount.guiding.guideA1.isMBW()) commandState.reply[7] = '<';
+    else if (mount.guiding.guideA1.isBraking()) commandState.reply[7] = 'b';
 
     if (currentSide == POLE_OVER)
     {
-      if (mount.guideA2.isMBW()) reply[8] = '^';
-      else if (mount.guideA2.isMFW()) reply[8] = '_';
-      else if (mount.guideA2.isBraking()) reply[8] = 'b';
+      if (mount.guiding.guideA2.isMBW()) commandState.reply[8] = '^';
+      else if (mount.guiding.guideA2.isMFW()) commandState.reply[8] = '_';
+      else if (mount.guiding.guideA2.isBraking()) commandState.reply[8] = 'b';
     }
     else
     {
-      if (mount.guideA2.isMFW()) reply[8] = '^';
-      else if (mount.guideA2.isMBW()) reply[8] = '_';
-      else if (mount.guideA2.isBraking()) reply[8] = 'b';
+      if (mount.guiding.guideA2.isMFW()) commandState.reply[8] = '^';
+      else if (mount.guiding.guideA2.isMBW()) commandState.reply[8] = '_';
+      else if (mount.guiding.guideA2.isBraking()) commandState.reply[8] = 'b';
     }
 
-    if (mount.staA1.fault || mount.staA2.fault) reply[9] = 'f';
-    reply[10] = '0' + mount.trackComp;
-    reply[11] = hasStarAlignment ? '1' : '0';
+    if (mount.axes.staA1.fault || mount.axes.staA2.fault) commandState.reply[9] = 'f';
+    commandState.reply[10] = '0' + mount.tracking.trackComp;
+    commandState.reply[11] = mount.alignment.hasValid ? '1' : '0';
     // provide mount type
-    if (mount.mountType == MOUNT_TYPE_GEM)
+    if (mount.config.identity.mountType == MOUNT_TYPE_GEM)
     {
-      reply[12] = 'E';
+      commandState.reply[12] = 'E';
     }
-    else if (mount.mountType == MOUNT_TYPE_FORK)
-      reply[12] = 'K';
-    else if (mount.mountType == MOUNT_TYPE_FORK_ALT)
-      reply[12] = 'k';
-    else if (mount.mountType == MOUNT_TYPE_ALTAZM)
-      reply[12] = 'A';
+    else if (mount.config.identity.mountType == MOUNT_TYPE_FORK)
+      commandState.reply[12] = 'K';
+    else if (mount.config.identity.mountType == MOUNT_TYPE_FORK_ALT)
+      commandState.reply[12] = 'k';
+    else if (mount.config.identity.mountType == MOUNT_TYPE_ALTAZM)
+      commandState.reply[12] = 'A';
     else
-      reply[12] = 'U';
+      commandState.reply[12] = 'U';
 
 
-    if (currentSide == POLE_UNDER) reply[13] = isAltAZ() || localSite.northHemisphere() ? 'E' : 'W';
-    if (currentSide == POLE_OVER) reply[13] = isAltAZ() || localSite.northHemisphere() ? 'W' : 'E';
+    if (currentSide == POLE_UNDER) commandState.reply[13] = mount.isAltAZ() || localSite.northHemisphere() ? 'E' : 'W';
+    if (currentSide == POLE_OVER) commandState.reply[13] = mount.isAltAZ() || localSite.northHemisphere() ? 'W' : 'E';
 
     char val = 0;
-    bitWrite(val, 0, mount.hasGNSS);
+    bitWrite(val, 0, mount.config.peripherals.hasGNSS);
     if (iSGNSSValid())
     {
       bitWrite(val, 1, true);
@@ -681,29 +681,29 @@ void Command_GX() {
       bitWrite(val, 3, isLocationSyncWithGNSS());
       bitWrite(val, 4, isHdopSmall());
     }
-    reply[14] = 'A' + val;
-    reply[15] = '0' + mount.lastError;
+    commandState.reply[14] = 'A' + val;
+    commandState.reply[15] = '0' + mount.errors.lastError;
     val = 0;
 
-    bitWrite(val, 0, mount.enableEncoder);
-    bitWrite(val, 1, mount.encoderA1.calibrating() && mount.encoderA2.calibrating());
-    bitWrite(val, 2, mount.PushtoStatus != PT_OFF);
-    bitWrite(val, 3, mount.enableMotor);
+    bitWrite(val, 0, mount.motorsEncoders.enableEncoder);
+    bitWrite(val, 1, mount.motorsEncoders.encoderA1.calibrating() && mount.motorsEncoders.encoderA2.calibrating());
+    bitWrite(val, 2, mount.config.peripherals.PushtoStatus != PT_OFF);
+    bitWrite(val, 3, mount.motorsEncoders.enableMotor);
 
-    reply[16] = 'A' + val;
-    reply[17] = '#';
-    reply[18] = 0;
+    commandState.reply[16] = 'A' + val;
+    commandState.reply[17] = '#';
+    commandState.reply[18] = 0;
   }
   break;
   case 'J':
   {
     //specific command for ASCOM
-    switch (command[3])
+    switch (commandState.command[3])
     {
     case 'B':
       // :GXJB# get if Both rate Axis are enable
     {
-      mount.trackComp == TC_BOTH ? replyLongTrue(): replyLongFalse();
+      mount.tracking.trackComp == TC_BOTH ? replyLongTrue(): replyLongFalse();
     }
     break;
     case 'C':
@@ -715,20 +715,20 @@ void Command_GX() {
     case 'm':
       // :GXJm# get if mount has motor and can slew track etc...
     {
-      mount.enableMotor ? replyLongTrue() : replyLongFalse();
+      mount.motorsEncoders.enableMotor ? replyLongTrue() : replyLongFalse();
     }
     break;
     case 'M':
       // :GXJMn# get if axis is still moving
     {
 
-      if (command[4] == '1')
+      if (commandState.command[4] == '1')
       {
-        mount.GuidingState == Guiding::GuidingAtRate && mount.guideA1.isBusy() ? replyLongTrue() : replyLongFalse();
+        mount.guiding.GuidingState == Guiding::GuidingAtRate && mount.guiding.guideA1.isBusy() ? replyLongTrue() : replyLongFalse();
       }
-      else if (command[4] == '2')
+      else if (commandState.command[4] == '2')
       {
-        mount.GuidingState == Guiding::GuidingAtRate && mount.guideA2.isBusy() ? replyLongTrue() : replyLongFalse();
+        mount.guiding.GuidingState == Guiding::GuidingAtRate && mount.guiding.guideA2.isBusy() ? replyLongTrue() : replyLongFalse();
       }
       else
       {
@@ -739,7 +739,7 @@ void Command_GX() {
     case 'P':
       // :GXJP# get if pulse guiding
     {
-      if (isGuidingStar())
+      if (mount.isGuidingStar())
       {
         replyLongTrue();
       }
@@ -752,7 +752,7 @@ void Command_GX() {
     case 'S':
       // :GXJS# get if Slewing
     {
-      if (mount.GuidingState == GuidingRecenter || mount.GuidingState == GuidingAtRate || mount.movingTo)
+      if (mount.guiding.GuidingState == GuidingRecenter || mount.guiding.GuidingState == GuidingAtRate || mount.tracking.movingTo)
       {
         replyLongTrue();
       }
@@ -765,7 +765,7 @@ void Command_GX() {
     case 'T':
       // :GXJT# get if tracking
     {
-      if (mount.sideralTracking)
+      if (mount.tracking.sideralTracking)
       {
         replyLongTrue();
       }
@@ -781,18 +781,18 @@ void Command_GX() {
   case 'M':
   {
     // :GXM..#   Get Motor Settings
-    switch (command[3])
+    switch (commandState.command[3])
     {
     case 'B':
     {
       // :GXMB.#   Get Motor backlash
-      if (command[4] == 'D')
+      if (commandState.command[4] == 'D')
       {
-        sprintf(reply, "%d#", mount.motorA2.backlashAmount);
+        sprintf(commandState.reply, "%d#", mount.motorsEncoders.motorA2.backlashAmount);
       }
-      else if (command[4] == 'R')
+      else if (commandState.command[4] == 'R')
       {
-        sprintf(reply, "%d#", mount.motorA1.backlashAmount);
+        sprintf(commandState.reply, "%d#", mount.motorsEncoders.motorA1.backlashAmount);
       }
       else
         replyLongUnknow();
@@ -801,13 +801,13 @@ void Command_GX() {
     case 'b':
     {
       // :GXMb.#   Get Motor backlash Rate
-      if (command[4] == 'D')
+      if (commandState.command[4] == 'D')
       {
-        sprintf(reply, "%d#", mount.motorA2.backlashRate);
+        sprintf(commandState.reply, "%d#", mount.motorsEncoders.motorA2.backlashRate);
       }
-      else if (command[4] == 'R')
+      else if (commandState.command[4] == 'R')
       {
-        sprintf(reply, "%d#", mount.motorA1.backlashRate);
+        sprintf(commandState.reply, "%d#", mount.motorsEncoders.motorA1.backlashRate);
       }
       else
         replyLongUnknow();
@@ -816,13 +816,13 @@ void Command_GX() {
     case 'G':
     {
       // :GXMG.#   Get Motor Gear
-      if (command[4] == 'D')
+      if (commandState.command[4] == 'D')
       {
-        sprintf(reply, "%lu#", mount.motorA2.gear);
+        sprintf(commandState.reply, "%lu#", mount.motorsEncoders.motorA2.gear);
       }
-      else if (command[4] == 'R')
+      else if (commandState.command[4] == 'R')
       {
-        sprintf(reply, "%lu#", mount.motorA1.gear);
+        sprintf(commandState.reply, "%lu#", mount.motorsEncoders.motorA1.gear);
       }
       else
         replyLongUnknow();
@@ -831,13 +831,13 @@ void Command_GX() {
     case 'S':
     {
       // :GXMS.#   Get Stepper Step per Rotation
-      if (command[4] == 'D')
+      if (commandState.command[4] == 'D')
       {
-        sprintf(reply, "%u#", mount.motorA2.stepRot);
+        sprintf(commandState.reply, "%u#", mount.motorsEncoders.motorA2.stepRot);
       }
-      else if (command[4] == 'R')
+      else if (commandState.command[4] == 'R')
       {
-        sprintf(reply, "%u#", mount.motorA1.stepRot);
+        sprintf(commandState.reply, "%u#", mount.motorsEncoders.motorA1.stepRot);
       }
       else
         replyLongUnknow();
@@ -846,13 +846,13 @@ void Command_GX() {
     case 'M':
     {
       // :GXMM.#   Get Stepper MicroStep per step
-      if (command[4] == 'D')
+      if (commandState.command[4] == 'D')
       {
-        sprintf(reply, "%u#", (unsigned  int)mount.motorA2.micro);
+        sprintf(commandState.reply, "%u#", (unsigned  int)mount.motorsEncoders.motorA2.micro);
       }
-      else if (command[4] == 'R')
+      else if (commandState.command[4] == 'R')
       {
-        sprintf(reply, "%u#", (unsigned  int)mount.motorA1.micro);
+        sprintf(commandState.reply, "%u#", (unsigned  int)mount.motorsEncoders.motorA1.micro);
       }
       else
         replyLongUnknow();
@@ -861,13 +861,13 @@ void Command_GX() {
     case 'm':
     {
       // :GXMm.#   Get Stepper Silent mode on/off
-      if (command[4] == 'D')
+      if (commandState.command[4] == 'D')
       {
-        sprintf(reply, "%u#", (unsigned  int)mount.motorA2.silent);
+        sprintf(commandState.reply, "%u#", (unsigned  int)mount.motorsEncoders.motorA2.silent);
       }
-      else if (command[4] == 'R')
+      else if (commandState.command[4] == 'R')
       {
-        sprintf(reply, "%u#", (unsigned  int)mount.motorA1.silent);
+        sprintf(commandState.reply, "%u#", (unsigned  int)mount.motorsEncoders.motorA1.silent);
       }
       else
         replyLongUnknow();
@@ -876,13 +876,13 @@ void Command_GX() {
     case 'R':
     {
       // :GXMR.#   Get Motor Reverse Rotation on/off
-      if (command[4] == 'D')
+      if (commandState.command[4] == 'D')
       {
-        sprintf(reply, "%u#", (unsigned  int)mount.motorA2.reverse);
+        sprintf(commandState.reply, "%u#", (unsigned  int)mount.motorsEncoders.motorA2.reverse);
       }
-      else if (command[4] == 'R')
+      else if (commandState.command[4] == 'R')
       {
-        sprintf(reply, "%u#", (unsigned  int)mount.motorA1.reverse);
+        sprintf(commandState.reply, "%u#", (unsigned  int)mount.motorsEncoders.motorA1.reverse);
       }
       else
         replyLongUnknow();
@@ -891,13 +891,13 @@ void Command_GX() {
     case 'C':
     {
       // :GXMC.#   Get Motor HighCurrent in mA
-      if (command[4] == 'D')
+      if (commandState.command[4] == 'D')
       {
-        sprintf(reply, "%u#", mount.motorA2.highCurr);
+        sprintf(commandState.reply, "%u#", mount.motorsEncoders.motorA2.highCurr);
       }
-      else if (command[4] == 'R')
+      else if (commandState.command[4] == 'R')
       {
-        sprintf(reply, "%u#", mount.motorA1.highCurr);
+        sprintf(commandState.reply, "%u#", mount.motorsEncoders.motorA1.highCurr);
       }
       else
         replyLongUnknow();
@@ -906,13 +906,13 @@ void Command_GX() {
     case 'c':
     {
       // :GXMR.#   Get Motor LowCurrent in mA
-      if (command[4] == 'D')
+      if (commandState.command[4] == 'D')
       {
-        sprintf(reply, "%u#", (unsigned int)mount.motorA2.lowCurr);
+        sprintf(commandState.reply, "%u#", (unsigned int)mount.motorsEncoders.motorA2.lowCurr);
       }
-      else if (command[4] == 'R')
+      else if (commandState.command[4] == 'R')
       {
-        sprintf(reply, "%u#", (unsigned int)mount.motorA1.lowCurr);
+        sprintf(commandState.reply, "%u#", (unsigned int)mount.motorsEncoders.motorA1.lowCurr);
       }
       else
         replyLongUnknow();
@@ -920,15 +920,15 @@ void Command_GX() {
     break;
     case 'L':
     {
-      if ((command[4] == 'D' || command[4] == 'R'))
+      if ((commandState.command[4] == 'D' || commandState.command[4] == 'R'))
       {
-        if (command[4] == 'D')
+        if (commandState.command[4] == 'D')
         {
-          sprintf(reply, "%d#", mount.motorA2.driver.getSG());
+          sprintf(commandState.reply, "%d#", mount.motorsEncoders.motorA2.driver.getSG());
         }
-        else if (command[4] == 'R')
+        else if (commandState.command[4] == 'R')
         {
-          sprintf(reply, "%d#", mount.motorA1.driver.getSG());
+          sprintf(commandState.reply, "%d#", mount.motorsEncoders.motorA1.driver.getSG());
         }
         else
           replyLongUnknow();
@@ -939,15 +939,15 @@ void Command_GX() {
     break;
     case 'I':
     {
-      if ((command[4] == 'D' || command[4] == 'R'))
+      if ((commandState.command[4] == 'D' || commandState.command[4] == 'R'))
       {
-        if (command[4] == 'D')
+        if (commandState.command[4] == 'D')
         {
-          sprintf(reply, "%u#", mount.motorA1.driver.getCurrent());
+          sprintf(commandState.reply, "%u#", mount.motorsEncoders.motorA1.driver.getCurrent());
         }
-        else if (command[4] == 'R')
+        else if (commandState.command[4] == 'R')
         {
-          sprintf(reply, "%u#", mount.motorA2.driver.getCurrent());
+          sprintf(commandState.reply, "%u#", mount.motorsEncoders.motorA2.driver.getCurrent());
         }
         else replyLongUnknow();
       }
@@ -963,29 +963,29 @@ void Command_GX() {
   case 'O':
     // :GXOn# Options
   {
-    switch (command[3])
+    switch (commandState.command[3])
     {
     case 'I':
       // :GXOI# Mount idx
-      sprintf(reply, "%d#", midx);
+      sprintf(commandState.reply, "%d#", midx);
       break;
     case 'A':
       // :GXOA# Mount Name
-      sprintf(reply, "%s#", mount.mountName[midx]);
+      sprintf(commandState.reply, "%s#", mount.config.identity.mountName[midx]);
       break;
     case 'B':
       // :GXOB# first Mount Name
-      sprintf(reply, "%s#", mount.mountName[0]);
+      sprintf(commandState.reply, "%s#", mount.config.identity.mountName[0]);
       break;
     case 'C':
       // :GXOC# second Mount Name
-      sprintf(reply, "%s#", mount.mountName[1]);
+      sprintf(commandState.reply, "%s#", mount.config.identity.mountName[1]);
       break;
     case 'S':
       // :GXOS# get Slew Settle Duration in seconds 
     {
       int i = XEEPROM.read(getMountAddress(EE_SlewSettleDuration));
-      sprintf(reply, "%d#", i);
+      sprintf(commandState.reply, "%d#", i);
     }
     break;
     }
@@ -999,11 +999,12 @@ void Command_GX() {
 
 //----------------------------------------------------------------------------------
 //   G - Get Telescope Information
+// Intentionally long: central handler for Get (LX200) command variants.
 void  Command_G()
 {
   int i;
 
-  switch (command[1])
+  switch (commandState.command[1])
   {
   case 'A':
   case 'Z':
@@ -1015,18 +1016,18 @@ void  Command_G()
     //  :G)#   Get Telescope Field in horizontal system rotation, TeenAstro LX200 command
     //         Returns: DDD*MM# or DDD*MM'SS# (based on precision setting)
   {
-    Coord_HO HO_T = getHorTopo();
-    if (command[1] == 'A')
+    Coord_HO HO_T = mount.getHorTopo();
+    if (commandState.command[1] == 'A')
     {
       double f1 = HO_T.Alt() * RAD_TO_DEG;
       PrintAtitude(f1);
     }
-    else if (command[1] == 'Z')
+    else if (commandState.command[1] == 'Z')
     {
       double f = degRange(HO_T.Az() * RAD_TO_DEG);
       PrintAzimuth(f);
     }
-    else if (command[1] == ')')
+    else if (commandState.command[1] == ')')
     {
       double f1 = HO_T.FrH() * RAD_TO_DEG;
       PrintAzimuth(f1);
@@ -1036,8 +1037,8 @@ void  Command_G()
   case 'a':
     //  :Ga#   Get Local Time in 12 hour format, Native LX200 command
     //         Returns: HH:MM:SS#
-    doubleToHms(reply, rtk.getLT(localSite.toff()), true);
-    strcat(reply, "#");
+    doubleToHms(commandState.reply, rtk.getLT(localSite.toff()), true);
+    strcat(commandState.reply, "#");
     break;
   case 'C':
     //  :GC#   Get the current date, Native LX200 command
@@ -1047,14 +1048,14 @@ void  Command_G()
     int i1, i2, i3, i4, i5;
     rtk.getULDate(i2, i, i1, i3, i4, i5, localSite.toff());
     i2 = i2 % 100;
-    sprintf(reply, "%02d/%02d/%02d#", i, i1, i2);
+    sprintf(commandState.reply, "%02d/%02d/%02d#", i, i1, i2);
   }
   break;
   case 'c':
     //  :Gc#   Get the current time format, Native LX200 command
     //         Returns: 24#
     //         The current local time format
-    strcpy(reply, "24#");
+    strcpy(commandState.reply, "24#");
     break;
   case 'D':
   case 'R':
@@ -1070,14 +1071,14 @@ void  Command_G()
     //  :GRL#   Get Telescope RA, TeenAstro LX200 command
     //         Returns: DDD,VVVVV#
   {
-    Coord_EQ EQ_T = getEqu(*localSite.latitude() * DEG_TO_RAD);
-    if (command[1] == 'R')
+    Coord_EQ EQ_T = mount.getEqu(*localSite.latitude() * DEG_TO_RAD);
+    if (commandState.command[1] == 'R')
     {
       
-      if (command[2] == 'L')
+      if (commandState.command[2] == 'L')
       {
         double f = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_DEG;
-        sprintf(reply, "%08.5f#", f);
+        sprintf(commandState.reply, "%08.5f#", f);
       }
       else
       {
@@ -1085,19 +1086,19 @@ void  Command_G()
         PrintRa(f);
       }
     }
-    else if (command[1] == 'D')
+    else if (commandState.command[1] == 'D')
     {
       double f1 = EQ_T.Dec() * RAD_TO_DEG;
-      if (command[2] == 'L')
+      if (commandState.command[2] == 'L')
       {
-        sprintf(reply, "%+08.5f#", f1);
+        sprintf(commandState.reply, "%+08.5f#", f1);
       }
       else
       {
         PrintDec(f1);
       }
     }
-    else if (command[1] == '(')
+    else if (commandState.command[1] == '(')
     {
       double f1 = EQ_T.FrE() * RAD_TO_DEG;
       PrintAzimuth(f1);
@@ -1109,34 +1110,34 @@ void  Command_G()
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //  :GdL#   Get Currently Selected Target Declination, TeenAstro LX200 command
     //          Returns: sDD, VVVVV#
-    if (command[2] == 'L')
+    if (commandState.command[2] == 'L')
     {
-      sprintf(reply, "%+08.5f#", mount.newTargetDec);
+      sprintf(commandState.reply, "%+08.5f#", mount.targetCurrent.newTargetDec);
     }
     else
     {
-      doubleToDms(reply, &mount.newTargetDec, false, true, highPrecision);
-      strcat(reply, "#");
+      doubleToDms(commandState.reply, &mount.targetCurrent.newTargetDec, false, true, commandState.highPrecision);
+      strcat(commandState.reply, "#");
     }
     break;
   case 'e':
     //  :Ge#   Get Current Site Elevation above see level in meter, TeenAstro LX200 command
     //         Returns: sDDDD#
-    sprintf(reply, "%+04d#", *localSite.elevation());
+    sprintf(commandState.reply, "%+04d#", *localSite.elevation());
     break;
   case 'f':
     //  :Gf#   Get master sidereal clock (tunable by :T+# and :T-# / reset by :TR#)
     //         Returns: dd#
     char    tmp[10];
-    dtostrf(mount.siderealClockSpeed, 0, 0, tmp);
-    strcpy(reply, tmp);
-    strcat(reply, "#");
+    dtostrf(mount.tracking.siderealClockSpeed, 0, 0, tmp);
+    strcpy(commandState.reply, tmp);
+    strcat(commandState.reply, "#");
     break;
   case 'G':
     //  :GG#   Get UTC offset time, Native LX200 command
     //         Returns: sHH.H#
     //         The number of decimal hours to add to local time to convert it to UTC 
-    sprintf(reply, "%+05.1f#", *localSite.toff());
+    sprintf(commandState.reply, "%+05.1f#", *localSite.toff());
     break;
   case 'g':
   {
@@ -1144,8 +1145,8 @@ void  Command_G()
     //         Returns: sDDD*MM#
     //  :Ggf#  Returns: sDDD*MM'SS#
     //         The current site Longitude. East Longitudes are negative
-    doubleToDms(reply, localSite.longitude(), true, true, command[2] == 'f');
-    strcat(reply, "#");
+    doubleToDms(commandState.reply, localSite.longitude(), true, true, commandState.command[2] == 'f');
+    strcat(commandState.reply, "#");
   }
   break;
   case 'h':
@@ -1153,15 +1154,15 @@ void  Command_G()
     //  :Gh#   Get Horizon Limit, Native LX200 command
     //         Returns: sDD*#
     //         The minimum elevation of an object above the horizon required for a mount goto
-    sprintf(reply, "%+02d*#", mount.minAlt);
+    sprintf(commandState.reply, "%+02d*#", mount.limits.minAlt);
   }
   break;
   case 'L':
   {
     //  :GL#   Get Local Time in 24 hour format, Native LX200 command
     //         Returns: HH:MM:SS#
-    doubleToHms(reply, rtk.getLT(localSite.toff()), true);
-    strcat(reply, "#");
+    doubleToHms(commandState.reply, rtk.getLT(localSite.toff()), true);
+    strcat(commandState.reply, "#");
   }
   break;
   //  :GM#   Get Site 1 Name, Native LX200 command
@@ -1173,15 +1174,15 @@ void  Command_G()
   case 'N':
   case 'O':
   {
-    i = command[1] - 'M';
-    bool ok = XEEPROM.readString(EE_sites + i * SiteSize + EE_site_name, reply, siteNameLen);
-    ok = ok && reply[0] != 0;
+    i = commandState.command[1] - 'M';
+    bool ok = XEEPROM.readString(EE_sites + i * SiteSize + EE_site_name, commandState.reply, siteNameLen);
+    ok = ok && commandState.reply[0] != 0;
     if (!ok)
     {
-      sprintf(reply, "Site %d", i);
-      XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, reply, siteNameLen);
+      sprintf(commandState.reply, "Site %d", i);
+      XEEPROM.writeString(EE_sites + i * SiteSize + EE_site_name, commandState.reply, siteNameLen);
     }
-    strcat(reply, "#");
+    strcat(commandState.reply, "#");
     break;
   }
   case 'm':
@@ -1189,39 +1190,39 @@ void  Command_G()
     //  :Gm#   Gets the meridian pier-side, TeenAstro LX200 command
     //         Returns: E#, W#, N# (none/parked), ?# (Meridian flip in progress)
     //         A # terminated string with the pier side.
-    PoleSide currentSide = GetPoleSide();
-    strcpy(reply, "?#");
-    if (currentSide == POLE_UNDER) reply[0] = isAltAZ() || localSite.northHemisphere() ? 'E' : 'W';
-    if (currentSide == POLE_OVER) reply[0] = isAltAZ() || localSite.northHemisphere() ? 'W' : 'E';
-    strcat(reply, "#");
+    PoleSide currentSide = mount.getPoleSide();
+    strcpy(commandState.reply, "?#");
+    if (currentSide == POLE_UNDER) commandState.reply[0] = mount.isAltAZ() || localSite.northHemisphere() ? 'E' : 'W';
+    if (currentSide == POLE_OVER) commandState.reply[0] = mount.isAltAZ() || localSite.northHemisphere() ? 'W' : 'E';
+    strcat(commandState.reply, "#");
     break;
   }
   case 'n':
     //  :Gn#   Get Current Site name, TeenAstro LX200 command
     //         Returns: <string>#
-    sprintf(reply, "%s#", localSite.siteName());
+    sprintf(commandState.reply, "%s#", localSite.siteName());
     break;
   case 'o':
     //  :Go#   Get Overhead Limit, TeenAstro LX200 command
     //         Returns: DD*#
     //         The highest elevation above the horizon that the telescope will goto
-    sprintf(reply, "%02d*#", mount.maxAlt);
+    sprintf(commandState.reply, "%02d*#", mount.limits.maxAlt);
     break;
   case 'r':
     //  :Gr#   Get current/target object RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS (based on precision setting)
     //  :GrL#  Get current/target object Ra, TeenAstro LX200 command
     //         Returns: sDDD.VVVVV#
-    if (command[2] == 'L')
+    if (commandState.command[2] == 'L')
     {
-      sprintf(reply, "%+08.5f#", mount.newTargetRA);
+      sprintf(commandState.reply, "%+08.5f#", mount.targetCurrent.newTargetRA);
     }
     else
     {
-      double f = mount.newTargetRA;
+      double f = mount.targetCurrent.newTargetRA;
       f /= 15.0;
-      doubleToHms(reply, &f, highPrecision);
-      strcat(reply, "#");
+      doubleToHms(commandState.reply, &f, commandState.highPrecision);
+      strcat(commandState.reply, "#");
     }
   break;
   case 'S':
@@ -1232,14 +1233,14 @@ void  Command_G()
     //         Returns: HH.VVVVVV#
   {
     double f = rtk.LST();
-    if (command[2] == 'L')
+    if (commandState.command[2] == 'L')
     {
-      sprintf(reply, "%+08.6f#", f);
+      sprintf(commandState.reply, "%+08.6f#", f);
     }
     else
     {
-      doubleToHms(reply, &f, true);
-      strcat(reply, "#");
+      doubleToHms(commandState.reply, &f, true);
+      strcat(commandState.reply, "#");
     }
   }
   break;
@@ -1249,15 +1250,15 @@ void  Command_G()
     //         Returns the tracking rate if siderealTracking, 0.0 otherwise
   {
     double f = 0.0;
-    if (mount.sideralTracking && !mount.movingTo)
+    if (mount.tracking.sideralTracking && !mount.tracking.movingTo)
     {
-      f = mount.RequestedTrackingRateHA;
+      f = mount.tracking.RequestedTrackingRateHA;
       f *= 60 * 1.00273790935;
     }
     char    temp[10];
     dtostrf(f, 0, 5, temp);
-    strcpy(reply, temp);
-    strcat(reply, "#");
+    strcpy(commandState.reply, temp);
+    strcat(commandState.reply, "#");
   }
   break;
   case 't':
@@ -1265,45 +1266,45 @@ void  Command_G()
     //         Returns: sDD*MM#
     //  :Gtf#  Returns: sDD*MM'SS#
     //         The latitude of the current site. Positive for North latitudes
-    doubleToDms(reply, localSite.latitude(), false, true, command[2] == 'f');
-    strcat(reply, "#");
+    doubleToDms(commandState.reply, localSite.latitude(), false, true, commandState.command[2] == 'f');
+    strcat(commandState.reply, "#");
     break;
   case 'V':
   {
-    switch (command[2])
+    switch (commandState.command[2])
     {
     case 'D':
       //  :GVD#   Get Firmware Date, Native LX200 command
-      strcpy(reply, FirmwareDate);
-      strcat(reply, "#");
+      strcpy(commandState.reply, FirmwareDate);
+      strcat(commandState.reply, "#");
       break;
     case 'N':
       //  :GVN#   Get Firmware number, Native LX200 command
-      strcpy(reply, FirmwareNumber);
-      strcat(reply, "#");
+      strcpy(commandState.reply, FirmwareNumber);
+      strcat(commandState.reply, "#");
       break;
     case 'P':
       //  :GVP#   Get Firmware Name, Native LX200 command
-      strcpy(reply, FirmwareName);
-      strcat(reply, "#");
+      strcpy(commandState.reply, FirmwareName);
+      strcat(commandState.reply, "#");
       break;
     case 'p':
       //  :GVp#   Get Firmware SubName
-      strcpy(reply, FirmwareSubName);
-      strcat(reply, "#");
+      strcpy(commandState.reply, FirmwareSubName);
+      strcat(commandState.reply, "#");
       break;
     case 'T':
       //  :GVT#   Get Firmware Time, Native LX200 command
-      strcpy(reply, FirmwareTime);
-      strcat(reply, "#");
+      strcpy(commandState.reply, FirmwareTime);
+      strcat(commandState.reply, "#");
       break;
     case 'B':
       //  :GVB#   Get Firmware board version, extended LX200 command
-      sprintf(reply, "%d#", VERSION);
+      sprintf(commandState.reply, "%d#", VERSION);
       break;
     case 'b':
       //  :GVb#   Get Firmware Stepper driver board, extended LX200 command
-      sprintf(reply, "%d#", AxisDriver);
+      sprintf(commandState.reply, "%d#", AxisDriver);
       break;
     default:
       replyLongUnknow();
@@ -1313,41 +1314,41 @@ void  Command_G()
   break;
   case 'W':
   {
-    switch (mount.mountType)
+    switch (mount.config.identity.mountType)
     {
     case MOUNT_TYPE_ALTAZM:
     case MOUNT_TYPE_FORK_ALT:
-      strcat(reply, "A");
+      strcat(commandState.reply, "A");
       break;
     case MOUNT_TYPE_FORK:
-      strcat(reply, "P");
+      strcat(commandState.reply, "P");
       break;
     case MOUNT_TYPE_GEM:
-      strcat(reply, "G");
+      strcat(commandState.reply, "G");
       break;
     case MOUNT_UNDEFINED:
     default:
-      strcat(reply, "L");
+      strcat(commandState.reply, "L");
       break;
     }
-    mount.sideralTracking ? strcat(reply, "T") : strcat(reply, "N");
-    if (mount.atHome)
+    mount.tracking.sideralTracking ? strcat(commandState.reply, "T") : strcat(commandState.reply, "N");
+    if (mount.isAtHome())
     {
-      strcat(reply, "H");
+      strcat(commandState.reply, "H");
     }
-    else if (mount.parkStatus == PRK_PARKED)
+    else if (mount.isParked())
     {
-      strcat(reply, "P");
+      strcat(commandState.reply, "P");
     }
-    else if (hasStarAlignment)
+    else if (mount.alignment.hasValid)
     {
-      strcat(reply, "2");
+      strcat(commandState.reply, "2");
     }
     else
     {
-      strcat(reply, "1");
+      strcat(commandState.reply, "1");
     }
-    strcat(reply, "#");
+    strcat(commandState.reply, "#");
   }
 
 

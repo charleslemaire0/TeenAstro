@@ -12,14 +12,14 @@
 //   :$X#  Reinit encoder and motors
 // -----------------------------------------------------------------------------
 void Command_dollar() {
-  switch (command[1]) {
+  switch (commandState.command[1]) {
   case '$':
     for (int i = 0; i < XEEPROM.length(); i++)
       XEEPROM.write(i, 0);
     replyShortTrue();
     break;
   case '!':
-    mount.reboot_unit = true;
+    mount.motorsEncoders.reboot_unit = true;
     replyShortTrue();
     break;
   case 'X':
@@ -38,21 +38,21 @@ void Command_dollar() {
 // -----------------------------------------------------------------------------
 void Command_ACK()
 {
-  switch (mount.mountType)
+  switch (mount.config.identity.mountType)
   {
   case MOUNT_TYPE_ALTAZM:
   case MOUNT_TYPE_FORK_ALT:
-    strcpy(reply, "A");
+    strcpy(commandState.reply, "A");
     break;
   case MOUNT_TYPE_FORK:
-    strcpy(reply, "P");
+    strcpy(commandState.reply, "P");
     break;
   case MOUNT_TYPE_GEM:
-    strcpy(reply, "G");
+    strcpy(commandState.reply, "G");
     break;
   case MOUNT_UNDEFINED:
   default:
-    strcpy(reply, "L");
+    strcpy(commandState.reply, "L");
     break;
   }
 }
@@ -61,86 +61,86 @@ void Command_ACK()
 //   :A0# :A*# :A2# :AE# :AC# :AA# :AW#
 // -----------------------------------------------------------------------------
 void Command_A() {
-  switch (command[1]) {
+  switch (commandState.command[1]) {
   case '0':
     // telescope should be set in the polar home for a starting point
     initTransformation(true);
-    syncAtHome();
+    mount.syncAtHome();
     // enable the stepper drivers
-    enable_Axis(true);
+    mount.axes.enable(true);
     delay(10);
     // start tracking
-    if (mount.enableMotor)
+    if (mount.motorsEncoders.enableMotor)
     {
-      StartSideralTracking();
+      mount.startSideralTracking();
     }
     replyShortTrue();
     break;
   case '*': {
     // Telescope at target position
     initTransformation(true);
-    enable_Axis(true);
+    mount.axes.enable(true);
     delay(10);
     // start tracking
-    if (mount.enableMotor)
+    if (mount.motorsEncoders.enableMotor)
     {
-      StartSideralTracking();
+      mount.startSideralTracking();
     }
-    PoleSide targetPoleSide = GetPoleSide();
-    if (mount.newTargetPoleSide != POLE_NOTVALID)
+    PoleSide targetPoleSide = mount.getPoleSide();
+    if (mount.targetCurrent.newTargetPoleSide != POLE_NOTVALID)
     {
-      targetPoleSide = mount.newTargetPoleSide;
-      mount.newTargetPoleSide = POLE_NOTVALID;
+      targetPoleSide = mount.targetCurrent.newTargetPoleSide;
+      mount.targetCurrent.newTargetPoleSide = POLE_NOTVALID;
     }
-    double newTargetHA = haRange(rtk.LST() * 15.0 - mount.newTargetRA);
+    double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
     double Lat = *localSite.latitude();
-    Coord_EQ EQ_T(0, mount.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-    Coord_HO HO_T = EQ_T.To_Coord_HO(Lat * DEG_TO_RAD, RefrOptForGoto());
+    Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+    Coord_HO HO_T = EQ_T.To_Coord_HO(Lat * DEG_TO_RAD, mount.refrOptForGoto());
 
-    syncAzAlt(&HO_T, targetPoleSide);
+    mount.syncAzAlt(&HO_T, targetPoleSide);
 
-    Coord_IN IN_T = getInstr();
-    alignment.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
+    Coord_IN IN_T = mount.getInstr();
+    mount.alignment.conv.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
     replyShortTrue();
     break;
   }
 
   case '2':
   {
-    double newTargetHA = haRange(rtk.LST() * 15.0 - mount.newTargetRA);
+    double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
     double Lat = *localSite.latitude();
-    Coord_EQ EQ_T(0, mount.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-    Coord_HO HO_T = EQ_T.To_Coord_HO( Lat * DEG_TO_RAD, RefrOptForGoto());
-    if (alignment.getRefs() == 0)
+    Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+    Coord_HO HO_T = EQ_T.To_Coord_HO( Lat * DEG_TO_RAD, mount.refrOptForGoto());
+    if (mount.alignment.conv.getRefs() == 0)
     {
-      syncAzAlt(&HO_T, GetPoleSide());
+      mount.syncAzAlt(&HO_T, mount.getPoleSide());
     }
-    Coord_IN IN_T = getInstr();
-    alignment.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
-    if (alignment.isReady())
+    Coord_IN IN_T = mount.getInstr();
+    mount.alignment.conv.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
+    if (mount.alignment.conv.isReady())
     {
-      alignment.minimizeAxis2();
-      alignment.minimizeAxis1(mount.mountType == MOUNT_TYPE_GEM ? (Lat >= 0 ? M_PI_2 : -M_PI_2) : 0);
-      syncAzAlt(&HO_T, GetPoleSide());
-      hasStarAlignment = true;
+      mount.alignment.conv.minimizeAxis2();
+      mount.alignment.conv.minimizeAxis1(mount.config.identity.mountType == MOUNT_TYPE_GEM ? (Lat >= 0 ? M_PI_2 : -M_PI_2) : 0);
+      mount.syncAzAlt(&HO_T, mount.getPoleSide());
+      mount.alignment.hasValid = true;
     }
-    mount.PushtoStatus = PT_OFF;
+    mount.config.peripherals.PushtoStatus = PT_OFF;
     replyShortTrue();
     break;
   }
   case 'E':
   {
-    double val = alignment.getError() * RAD_TO_DEG;
-    doubleToDms(reply, &val, false, true, true);
-    //sprintf(reply, "%+05.4f", val);
-    strcat(reply, "#");
+    double val = mount.alignment.conv.getError() * RAD_TO_DEG;
+    doubleToDms(commandState.reply, &val, false, true, true);
+    //sprintf(commandState.reply, "%+05.4f", val);
+    strcat(commandState.reply, "#");
   }
   break;
   case 'C':
   case 'A':
     initTransformation(true);
-    syncAtHome();
-    mount.autoAlignmentBySync = command[1] == 'A';
+    mount.syncAtHome();
+    mount.alignment.autoAlignmentBySync = commandState.command[1] == 'A';
     replyShortTrue();
     break;
   case 'W':
@@ -158,25 +158,26 @@ void Command_A() {
 //   B - Reticule brightness  :B+# :B-#
 // -----------------------------------------------------------------------------
 void Command_B() {
-  if (command[1] != '+' && command[1] != '-')
+  if (commandState.command[1] != '+' && commandState.command[1] != '-')
     return;
 #ifdef RETICULE_LED_PINS
-  if (mount.reticuleBrightness > 255)
-    mount.reticuleBrightness = 255;
-  if (mount.reticuleBrightness < 31)
-    mount.reticuleBrightness = 31;
+  // Reticule: direct member access (see Mount access convention).
+  if (mount.reticule.reticuleBrightness > 255)
+    mount.reticule.reticuleBrightness = 255;
+  if (mount.reticule.reticuleBrightness < 31)
+    mount.reticule.reticuleBrightness = 31;
 
-  if (command[1] == '-')
-    mount.reticuleBrightness /= 1.4;
-  if (command[1] == '+')
-    mount.reticuleBrightness *= 1.4;
+  if (commandState.command[1] == '-')
+    mount.reticule.reticuleBrightness /= 1.4;
+  if (commandState.command[1] == '+')
+    mount.reticule.reticuleBrightness *= 1.4;
 
-  if (mount.reticuleBrightness > 255)
-    mount.reticuleBrightness = 255;
-  if (mount.reticuleBrightness < 31)
-    mount.reticuleBrightness = 31;
+  if (mount.reticule.reticuleBrightness > 255)
+    mount.reticule.reticuleBrightness = 255;
+  if (mount.reticule.reticuleBrightness < 31)
+    mount.reticule.reticuleBrightness = 31;
 
-  analogWrite(RETICULE_LED_PINS, mount.reticuleBrightness);
+  analogWrite(RETICULE_LED_PINS, mount.reticule.reticuleBrightness);
 #endif
   replyNothing();
 }
@@ -185,70 +186,70 @@ void Command_B() {
 //   C - Sync  :CA# :CM# :CS# :CU#
 // -----------------------------------------------------------------------------
 void Command_C() {
-  if ((mount.parkStatus == PRK_UNPARKED) &&
-    !TelescopeBusy() &&
-    (command[1] == 'A' || command[1] == 'M' || command[1] == 'S' || command[1] == 'U'))
+  if ((!mount.isParked()) &&
+    !mount.isSlewing() &&
+    (commandState.command[1] == 'A' || commandState.command[1] == 'M' || commandState.command[1] == 'S' || commandState.command[1] == 'U'))
   {
-    PoleSide targetPoleSide = GetPoleSide();
-    if (mount.newTargetPoleSide != POLE_NOTVALID)
+    PoleSide targetPoleSide = mount.getPoleSide();
+    if (mount.targetCurrent.newTargetPoleSide != POLE_NOTVALID)
     {
-      targetPoleSide = mount.newTargetPoleSide;
-      mount.newTargetPoleSide = POLE_NOTVALID;
+      targetPoleSide = mount.targetCurrent.newTargetPoleSide;
+      mount.targetCurrent.newTargetPoleSide = POLE_NOTVALID;
     }
-    switch (command[1])
+    switch (commandState.command[1])
     {
     case 'M':
     case 'S':
     {
-      if (mount.autoAlignmentBySync) {
-        double newTargetHA = haRange(rtk.LST() * 15.0 - mount.newTargetRA);
-        Coord_EQ EQ_T(0, mount.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-        Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto());
+      if (mount.alignment.autoAlignmentBySync) {
+        double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
+        Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+        Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, mount.refrOptForGoto());
 
-        if (alignment.getRefs() == 0)
+        if (mount.alignment.conv.getRefs() == 0)
         {
-          syncAzAlt(&HO_T, targetPoleSide);
+          mount.syncAzAlt(&HO_T, targetPoleSide);
         }
-        Coord_IN IN_T = getInstr();
-        alignment.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
-        if (alignment.isReady())
+        Coord_IN IN_T = mount.getInstr();
+        mount.alignment.conv.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
+        if (mount.alignment.conv.isReady())
         {
-          alignment.minimizeAxis2();
-          alignment.minimizeAxis1(mount.mountType == MOUNT_TYPE_GEM ? (*localSite.latitude() >= 0 ? M_PI_2 : -M_PI_2) : 0);
-          syncAzAlt(&HO_T, GetPoleSide());
-          hasStarAlignment = true;
-          mount.autoAlignmentBySync = false;
+          mount.alignment.conv.minimizeAxis2();
+          mount.alignment.conv.minimizeAxis1(mount.config.identity.mountType == MOUNT_TYPE_GEM ? (*localSite.latitude() >= 0 ? M_PI_2 : -M_PI_2) : 0);
+          mount.syncAzAlt(&HO_T, mount.getPoleSide());
+          mount.alignment.hasValid = true;
+          mount.alignment.autoAlignmentBySync = false;
         }
       }
       else
       {
-        double newTargetHA = haRange(rtk.LST() * 15.0 - mount.newTargetRA);
-        Coord_EQ EQ_T(0, mount.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-        syncEqu(&EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
+        double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
+        Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+        mount.syncEqu(&EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
       }
-      if (command[1] == 'M')
+      if (commandState.command[1] == 'M')
       {
-        strcpy(reply, "N/A#");
+        strcpy(commandState.reply, "N/A#");
       }
-      StartSideralTracking();
+      mount.startSideralTracking();
     }
     break;
     case 'U':
     {
       // :CU# sync with the User Defined RA DEC
-      mount.newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
-      mount.newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
-      double newTargetHA = haRange(rtk.LST() * 15.0 - mount.newTargetRA);
-      Coord_EQ EQ_T(0, mount.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-      syncEqu(&EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
-      strcpy(reply, "N/A#");
+      mount.targetCurrent.newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
+      mount.targetCurrent.newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
+      double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
+      Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+      mount.syncEqu(&EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
+      strcpy(commandState.reply, "N/A#");
       break;
     }
     case 'A':
     {
-      Coord_HO HO_T(0, mount.newTargetAlt * DEG_TO_RAD, mount.newTargetAzm * DEG_TO_RAD, true);
-      syncAzAlt(&HO_T, targetPoleSide);
-      strcpy(reply, "N/A#");
+      Coord_HO HO_T(0, mount.targetCurrent.newTargetAlt * DEG_TO_RAD, mount.targetCurrent.newTargetAzm * DEG_TO_RAD, true);
+      mount.syncAzAlt(&HO_T, targetPoleSide);
+      strcpy(commandState.reply, "N/A#");
     }
     break;
     }
@@ -258,21 +259,21 @@ void Command_C() {
 //   E - Encoder / push-to  :EAS# :EAE# :EAQ# :ECT# :ECE# :ECS# :ED# :EMS# :EMU# :EMA# :EMQ#
 // -----------------------------------------------------------------------------
 void Command_E() {
-  switch (command[1])
+  switch (commandState.command[1])
   {
   case 'A':
   {
-    switch (command[2])
+    switch (commandState.command[2])
     {
     case 'S':
     {
       //  :EAS#  Align Encoder Start
       double A1, A2, A3;
-      mount.EncodeSyncMode = ES_OFF;
-      syncEwithT();
-      getInstrDeg(&A1, &A2, &A3);
-      mount.encoderA1.setRef(A1);
-      mount.encoderA2.setRef(A2);
+      mount.motorsEncoders.EncodeSyncMode = ES_OFF;
+      mount.syncEwithT();
+      mount.getInstrDeg(&A1, &A2, &A3);
+      mount.motorsEncoders.encoderA1.setRef(A1);
+      mount.motorsEncoders.encoderA2.setRef(A2);
       replyLongTrue();
     }
     break;
@@ -280,17 +281,17 @@ void Command_E() {
     {
       //  :EAE#  Align Encoder End
       double A1, A2, A3;
-      getInstrDeg(&A1, &A2, &A3);
-      bool ok = mount.encoderA1.calibrate(A1);
-      ok &= mount.encoderA1.calibrate(A2);
+      mount.getInstrDeg(&A1, &A2, &A3);
+      bool ok = mount.motorsEncoders.encoderA1.calibrate(A1);
+      ok &= mount.motorsEncoders.encoderA1.calibrate(A2);
       ok ? replyLongTrue() : replyLongFalse();
     }
     break;
     case 'Q':
     {
       //  :EAQ#  Align Encoder Quit
-      mount.encoderA1.delRef();
-      mount.encoderA2.delRef();
+      mount.motorsEncoders.encoderA1.delRef();
+      mount.motorsEncoders.encoderA2.delRef();
       replyLongTrue();
     }
     break;
@@ -302,39 +303,39 @@ void Command_E() {
   break;
   case 'C':
   {
-    switch (command[2])
+    switch (commandState.command[2])
     {
     case 'T':
     {
       //  :ECT#   Synchonize the telescope with the Encoders
-      syncTwithE();
+      mount.syncTwithE();
       replyLongTrue();
     }
     break;
     case 'E':
     {
       //  :ECE#   Synchonize the Encoders with the telescope
-      syncEwithT();
+      mount.syncEwithT();
       replyLongTrue();
     }
     break;
     case 'S':
     {
       //  :ECS#   Synchonize the Telescope and Encoder to Target
-      switch (mount.PushtoStatus)
+      switch (mount.config.peripherals.PushtoStatus)
       {
       case PT_RADEC:
       {
-        double newTargetHA = haRange(rtk.LST() * 15.0 - mount.newTargetRA);
-        Coord_EQ EQ_T(0, mount.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-        syncEqu(&EQ_T, GetPoleSide(), *localSite.latitude() * DEG_TO_RAD);
+        double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
+        Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+        mount.syncEqu(&EQ_T, mount.getPoleSide(), *localSite.latitude() * DEG_TO_RAD);
         replyLongTrue();
       }
       break;
       case PT_ALTAZ:
       {
-        Coord_HO HO_T(0, mount.newTargetAlt * DEG_TO_RAD, mount.newTargetAzm * DEG_TO_RAD, true);
-        syncAzAlt(&HO_T, GetPoleSide());
+        Coord_HO HO_T(0, mount.targetCurrent.newTargetAlt * DEG_TO_RAD, mount.targetCurrent.newTargetAzm * DEG_TO_RAD, true);
+        mount.syncAzAlt(&HO_T, mount.getPoleSide());
         replyLongTrue();
       }
       break;
@@ -355,25 +356,25 @@ void Command_E() {
     float delta1;
     float delta2;
     int e = 0;
-    switch (mount.PushtoStatus)
+    switch (mount.config.peripherals.PushtoStatus)
     {
     case PT_RADEC:
     {
-      double newTargetHA = haRange(rtk.LST() * 15.0 - mount.newTargetRA);
-      Coord_EQ EQ_T(0, mount.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-      e = PushToEqu(EQ_T, GetPoleSide(), *localSite.latitude() * DEG_TO_RAD, &delta1, &delta2);
-      sprintf(reply, "%d,%+06d,%+06d#", e, (int)(60 * delta1), (int)(60 * delta2));
+      double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
+      Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+      e = PushToEqu(EQ_T, mount.getPoleSide(), *localSite.latitude() * DEG_TO_RAD, &delta1, &delta2);
+      sprintf(commandState.reply, "%d,%+06d,%+06d#", e, (int)(60 * delta1), (int)(60 * delta2));
     }
     break;
     case PT_ALTAZ:
     {
-      Coord_HO HO_T(0, mount.newTargetAlt * DEG_TO_RAD, mount.newTargetAzm * DEG_TO_RAD, true);
-      e = PushToHor(HO_T, GetPoleSide(), &delta1, &delta2);
-      sprintf(reply, "%d,%+06d,%+06d#", e, (int)(60 * delta1), (int)(60 * delta2));
+      Coord_HO HO_T(0, mount.targetCurrent.newTargetAlt * DEG_TO_RAD, mount.targetCurrent.newTargetAzm * DEG_TO_RAD, true);
+      e = PushToHor(HO_T, mount.getPoleSide(), &delta1, &delta2);
+      sprintf(commandState.reply, "%d,%+06d,%+06d#", e, (int)(60 * delta1), (int)(60 * delta2));
     }
     break;
     default:
-      sprintf(reply, "%d,%+06d,%+06d#", 0, 0, 0);
+      sprintf(commandState.reply, "%d,%+06d,%+06d#", 0, 0, 0);
       break;
     }
   }
@@ -383,35 +384,35 @@ void Command_E() {
     float delta1;
     float delta2;
     int e = 0;
-    if (command[2] == 'S')
+    if (commandState.command[2] == 'S')
     {
-      double newTargetHA = haRange(rtk.LST() * 15.0 - mount.newTargetRA);
-      Coord_EQ EQ_T(0, mount.newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
-      e = PushToEqu(EQ_T, GetPoleSide(), *localSite.latitude() * DEG_TO_RAD, &delta1, &delta2);
-      sprintf(reply, "%d", e);
-      mount.PushtoStatus = PT_RADEC;
+      double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
+      Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
+      e = PushToEqu(EQ_T, mount.getPoleSide(), *localSite.latitude() * DEG_TO_RAD, &delta1, &delta2);
+      sprintf(commandState.reply, "%d", e);
+      mount.config.peripherals.PushtoStatus = PT_RADEC;
     }
-    else if (command[2] == 'A')
+    else if (commandState.command[2] == 'A')
     {
-      Coord_HO HO_T(0, mount.newTargetAlt* DEG_TO_RAD, mount.newTargetAzm* DEG_TO_RAD, true);
-      e = PushToHor(HO_T, GetPoleSide(), &delta1, &delta2);
-      sprintf(reply, "%d", e);
-      mount.PushtoStatus = PT_ALTAZ;
+      Coord_HO HO_T(0, mount.targetCurrent.newTargetAlt* DEG_TO_RAD, mount.targetCurrent.newTargetAzm* DEG_TO_RAD, true);
+      e = PushToHor(HO_T, mount.getPoleSide(), &delta1, &delta2);
+      sprintf(commandState.reply, "%d", e);
+      mount.config.peripherals.PushtoStatus = PT_ALTAZ;
     }
-    else if (command[2] == 'U')
+    else if (commandState.command[2] == 'U')
     {
 
-      mount.newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
-      mount.newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
-      double newTargetHA = haRange(rtk.LST() * 15.0 - mount.newTargetRA);
-      Coord_EQ EQ_T(0, mount.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
-      e = PushToEqu(EQ_T, GetPoleSide(), *localSite.latitude() * DEG_TO_RAD, &delta1, &delta2);
-      sprintf(reply, "%d", e);
-      mount.PushtoStatus = PT_RADEC;
+      mount.targetCurrent.newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
+      mount.targetCurrent.newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
+      double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
+      Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+      e = PushToEqu(EQ_T, mount.getPoleSide(), *localSite.latitude() * DEG_TO_RAD, &delta1, &delta2);
+      sprintf(commandState.reply, "%d", e);
+      mount.config.peripherals.PushtoStatus = PT_RADEC;
     }
-    else if (command[2] == 'Q')
+    else if (commandState.command[2] == 'Q')
     {
-      mount.PushtoStatus = PT_OFF;
+      mount.config.peripherals.PushtoStatus = PT_OFF;
       replyShortTrue();
     }
     else
@@ -431,39 +432,39 @@ void Command_E() {
 //   D - Distance bars  :D#  (0x7f# if moving, else #)
 // -----------------------------------------------------------------------------
 void Command_D() {
-  if (command[1] != 0)
+  if (commandState.command[1] != 0)
   {
     return;
   }
-  if (mount.movingTo)
+  if (mount.tracking.movingTo)
   {
-    reply[0] = (char)127;
-    reply[1] = 0;
+    commandState.reply[0] = (char)127;
+    commandState.reply[1] = 0;
   }
   else
   {
-    reply[0] = 0;
+    commandState.reply[0] = 0;
   }
-  strcat(reply, "#");
+  strcat(commandState.reply, "#");
 }
 
 // -----------------------------------------------------------------------------
 //   h - Home / park  :hF# :hC# :hB# :hb# :hO# :hP# :hQ# :hS# :hR#
 // -----------------------------------------------------------------------------
 void Command_h() {
-  switch (command[1])
+  switch (commandState.command[1])
   {
   case 'F':
     //  :hF#   Reset telescope at the home position.  This position is required for a Cold Start.
     //         Point to the celestial pole with the counterweight pointing downwards (CWD position).
     //         Return: Nothing
-    syncAtHome();
+    mount.syncAtHome();
     break;
   case 'C':
     //  :hC#   Moves telescope to the home position
     //          Return: 0 on failure
     //                  1 on success
-    if (!goHome())
+    if (!mount.goHome())
       replyShortFalse();
     else
       replyShortTrue();
@@ -472,23 +473,23 @@ void Command_h() {
     //  :hB#   Set the home position
     //          Return: 0 on failure
     //                  1 on success
-    if (!setHome()) replyShortFalse();
+    if (!mount.setHome()) replyShortFalse();
     else replyShortTrue();
     break;
   case 'b':
     //  :hb#   Reset the home position
     //          Return: 0 on failure
     //                  1 on success
-    mount.homeSaved = false;
+    mount.parkHome.homeSaved = false;
     XEEPROM.write(getMountAddress(EE_homeSaved), false);
-    initHome();
+    mount.initHome();
     replyShortTrue();
     break;
   case 'O':
     // : hO#   Reset telescope at the Park position if Park position is stored.
     //          Return: 0 on failure
     //                  1 on success
-    if (!syncAtPark())
+    if (!mount.syncAtPark())
       replyShortFalse();
     else
       replyShortTrue();
@@ -497,7 +498,7 @@ void Command_h() {
     // : hP#   Goto the Park Position
     //          Return: 0 on failure
     //                  1 on success
-    if (park()==0)
+    if (mount.park()==0)
       replyShortTrue();
     else
       replyShortFalse();
@@ -506,7 +507,7 @@ void Command_h() {
     //  :hQ#   Set the park position
     //          Return: 0 on failure
     //                  1 on success
-    if (!setPark())
+    if (!mount.setPark())
       replyShortFalse();
     else
       replyShortTrue();
@@ -514,13 +515,13 @@ void Command_h() {
   case 'S':
     //  :hS#   Get if the park position is saved
     //          Return: 0 or 1
-    mount.parkSaved ? replyShortTrue() : replyShortFalse();
+    mount.parkHome.parkSaved ? replyShortTrue() : replyShortFalse();
     break;
   case 'R':
     //  :hR#   Restore parked telescope to operation
     //          Return: 0 on failure
     //                  1 on success
-    unpark();
+    mount.unpark();
     replyShortTrue();
     break;
   default:
@@ -533,22 +534,22 @@ void Command_h() {
 //   Q - Halt  :Q# :Qe# :Qw# :Qn# :Qs#
 // -----------------------------------------------------------------------------
 void Command_Q() {
-  switch (command[1])
+  switch (commandState.command[1])
   {
   case 0:
     //  :Q#    Halt all slews, stops goto
     //         Returns: Nothing
-    mount.doSpiral = false;
-    if (mount.parkStatus != PRK_PARKED)
+    mount.tracking.doSpiral = false;
+    if (!mount.isParked())
     {
-      if (mount.movingTo)
+      if (mount.tracking.movingTo)
       {
-        mount.abortSlew = true;
+        mount.abortSlew();
       }
       else
       {
-        StopAxis1();
-        StopAxis2();
+        mount.stopAxis1();
+        mount.stopAxis2();
       }
     }
     break;
@@ -557,9 +558,9 @@ void Command_Q() {
     //  :Qe# & Qw#   Halt east/westward Slews
     //         Returns: Nothing
   {
-    if ((mount.parkStatus == PRK_UNPARKED) && !mount.movingTo)
+    if ((!mount.isParked()) && !mount.tracking.movingTo)
     {
-      StopAxis1();
+      mount.stopAxis1();
     }
   }
   break;
@@ -568,9 +569,9 @@ void Command_Q() {
     //  :Qn# & Qs#   Halt north/southward Slews
     //         Returns: Nothing
   {
-    if ((mount.parkStatus == PRK_UNPARKED) && !mount.movingTo)
+    if ((!mount.isParked()) && !mount.tracking.movingTo)
     {
-      StopAxis2();
+      mount.stopAxis2();
     }
   }
   break;
@@ -585,7 +586,7 @@ void Command_Q() {
 // -----------------------------------------------------------------------------
 void Command_R() {
   int i = 5;
-  switch (command[1])
+  switch (commandState.command[1])
   {
   case 'G':
     i = RG;
@@ -604,16 +605,16 @@ void Command_R() {
   case '2':
   case '3':
   case '4':
-    i = command[1] - '0';
+    i = commandState.command[1] - '0';
     break;
   default:
     replyNothing();
     return;
   }
-  if (!TelescopeBusy())
+  if (!mount.isSlewing())
   {
-    mount.recenterGuideRate = i;
-    enableGuideRate(mount.recenterGuideRate);
+    mount.guiding.recenterGuideRate = i;
+    mount.enableGuideRate(mount.guiding.recenterGuideRate);
   }
 }
 
@@ -623,8 +624,8 @@ void Command_R() {
 //   U - Precision toggle  :U#  (low/high precision)
 // -----------------------------------------------------------------------------
 void Command_U() {
-  if (command[1] == 0) {
-    highPrecision = !highPrecision;
+  if (commandState.command[1] == 0) {
+    commandState.highPrecision = !commandState.highPrecision;
   }
   replyNothing();
 }
@@ -633,26 +634,26 @@ void Command_U() {
 //   W - Site  :W0# :W1# :W2# :W?#
 // -----------------------------------------------------------------------------
 void Command_W() {
-  switch (command[1])
+  switch (commandState.command[1])
   {
   case '0':
   case '1':
   case '2':
   {
-    uint8_t currentSite = command[1] - '0';
+    uint8_t currentSite = commandState.command[1] - '0';
     XEEPROM.write(getMountAddress(EE_currentSite), currentSite);
     localSite.ReadSiteDefinition(currentSite);
     rtk.resetLongitude(*localSite.longitude());
     initCelestialPole();
-    initLimit();
-    initHome();
+    mount.limits.initLimit();
+    mount.initHome();
     initTransformation(true);
-    syncAtHome();
+    mount.syncAtHome();
     replyNothing();
     break;
   }
   case '?':
-    sprintf(reply, "%d#", localSite.siteIndex());
+    sprintf(commandState.reply, "%d#", localSite.siteIndex());
     break;
   default:
     replyNothing();
