@@ -1,5 +1,6 @@
 /**
  * Focuser commands: F (forward focuser protocol to Focus_Serial).
+ * One file per letter (plan). :F+# :F-# :FQ# :FF# :FS# LX200 standard.
  */
 #include "Command.h"
 

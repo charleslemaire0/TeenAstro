@@ -1,5 +1,6 @@
 /**
  * Get commands: G (LX200 get) and GX (TeenAstro-specific get).
+ * One file per letter (plan). Each :Gx# / :GXnn# documented as LX200 standard or TeenAstro specific.
  */
 #include "Command.h"
 #include "ValueToString.h"

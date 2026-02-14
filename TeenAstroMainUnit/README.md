@@ -15,6 +15,10 @@ Firmware for the TeenAstro telescope mount controller. It drives stepper motors 
 - **Config** – `Config.TeenAstro.h`, `Pins.TeenAstro.h`, `Config.Mount.*.h` (board/mount variants), `FirmwareDef.h` (version, init key).
 - **Entry** – `TeenAstroMainUnit.cpp` provides `setup()` and `loop()`, which delegate to `Application::setup()` and `Application::loop()`.
 
+## Serial protocol
+
+See [Commands.md](Commands.md) for the full list of serial commands: syntax, description, return values, and whether each command is **LX200 standard** (Meade Autostar/LX200) or a **TeenAstro extension**.
+
 ## Build
 
 Requires [PlatformIO](https://platformio.org/) (CLI or IDE).

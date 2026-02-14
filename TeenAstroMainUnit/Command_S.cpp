@@ -1,5 +1,6 @@
 /**
  * Set commands: S (LX200 set) and SX (TeenAstro-specific set).
+ * One file per letter (plan). Each :Sx# / :SXnnn# documented as LX200 standard or TeenAstro specific.
  */
 #include "Command.h"
 #include "ValueToString.h"

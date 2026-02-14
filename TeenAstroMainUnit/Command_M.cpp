@@ -1,5 +1,6 @@
 /**
  * Move commands: M (slew at rate, goto Alt/Az, flip, pulse guide).
+ * One file per letter (plan). :Me# :Mw# :Mn# :Ms# :MS# :MA# LX200 standard; :MF# :Mg# etc. TeenAstro specific.
  */
 #include "Command.h"
 #include "ValueToString.h"
