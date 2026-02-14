@@ -20,7 +20,7 @@
  *
  * Revision History, see GitHub
  *
- * Description: Mount moveTo (slew loop) and decay mode. See Mount.h and MountClassDesign.md.
+ * Description: Mount moveTo (slew loop) and decay mode. See Mount.h.
  */
 #include "MainUnit.h"
 #include "Site.hpp"

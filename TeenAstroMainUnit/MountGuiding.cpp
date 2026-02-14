@@ -1,6 +1,6 @@
 /**
  * MountGuiding: state and guiding behaviour (pulse, ST4, recenter, at-rate).
- * See MountGuiding.h and MountClassDesign.md.
+ * See MountGuiding.h.
  */
 #include "MountGuiding.h"
 #include "TelTimer.hpp"  // rtk

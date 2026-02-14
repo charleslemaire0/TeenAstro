@@ -1,7 +1,7 @@
 #pragma once
 /**
  * Mount.h - Mount class and sub-objects (ParkHome, Identity, Limits, etc.).
- * See MountClassDesign.md. Include this for Mount type and mount instance.
+ * Include this for Mount type and mount instance.
  */
 #include "MountTypes.h"
 #include "Config.TeenAstro.h"
