@@ -53,6 +53,8 @@ void MountGuiding::performPulseGuiding()
     cli();
     guideA1.brake();
     guideA2.brake();
+    guideA1.speedMultiplier = 1.0;
+    guideA2.speedMultiplier = 1.0;
     sei();
     return;
   }
@@ -77,11 +79,15 @@ void MountGuiding::performPulseGuiding()
     {
       cli();
       guideA1.brake();
+      guideA1.speedMultiplier = 1.0;
       sei();
     }
   }
   else
+  {
     guideA1.duration = 0UL;
+    guideA1.speedMultiplier = 1.0;
+  }
   if (guideA2.isMoving())
   {
     if (guideA2.duration > 0)
@@ -103,11 +109,15 @@ void MountGuiding::performPulseGuiding()
     {
       cli();
       guideA2.brake();
+      guideA2.speedMultiplier = 1.0;
       sei();
     }
   }
   else
+  {
     guideA2.duration = 0UL;
+    guideA2.speedMultiplier = 1.0;
+  }
 }
 
 void MountGuiding::performST4Guiding()

@@ -89,6 +89,7 @@ void Command_M() {
       if ((commandState.command[2] == 'e') || (commandState.command[2] == 'w'))
       {
         mount.enableST4GuideRate();
+        mount.guiding.guideA1.speedMultiplier = (i > 50) ? ((double)i / 50.0) : 1.0;
         if (commandState.command[2] == 'e')
         {
           mount.guiding.guideA1.moveBW();
@@ -108,6 +109,7 @@ void Command_M() {
       else if ((commandState.command[2] == 'n') || (commandState.command[2] == 's'))
       {
         mount.enableST4GuideRate();
+        mount.guiding.guideA2.speedMultiplier = (i > 50) ? ((double)i / 50.0) : 1.0;
         if (mount.getPoleSide() == POLE_UNDER)
         {
           if (commandState.command[2] == 'n')
