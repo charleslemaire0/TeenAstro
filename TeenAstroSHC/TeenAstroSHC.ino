@@ -40,6 +40,7 @@ TeenAstroMountStatus ta_MountStatus;
 void setup(void)
 {
   ta_MountStatus.setClient(lx200);
+  TeenAstroWifi::setClient(lx200);
   HdCrtlr.setClient(lx200);
 #ifdef ARDUINO_TTGO_LoRa32_V1
   HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309, 2);
