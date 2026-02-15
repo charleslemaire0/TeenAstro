@@ -10,7 +10,7 @@
 #include <Arduino.h>
 #include <Ephemeris.h>
 #include <TeenAstroCatalog.h>
-#include <TeenAstroFunction.h>
+#include <TeenAstroMath.h>
 #include "LX200Navigation.h"
 
 // ---------------------------------------------------------------------------

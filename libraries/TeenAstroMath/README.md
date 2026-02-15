@@ -1,52 +1,51 @@
 # TeenAstroMath
 
-Math utility library for the TeenAstro telescope controller. Provides astronomical coordinate conversions, atmospheric refraction, angle normalization, and step-distance calculations.
+Math and coordinate-formatting utility library for the TeenAstro telescope controller. This library merges the former **TeenAstroFunction** (HMS/DMS formatting) into a single place alongside angle normalization, atmospheric refraction, coordinate conversion, and step-distance helpers.
 
-## Functions
-
-### Coordinate conversion
+## Coordinate formatting (from TeenAstroFunction)
 
 | Function | Description |
 |----------|-------------|
-| `EquToHor(HA, Dec, refr, Az, Alt, cosLat, sinLat)` | Equatorial -> horizontal (with optional refraction) |
-| `HorTopoToEqu(Az, Alt, HA, Dec, cosLat, sinLat)` | Topocentric horizontal -> equatorial |
-| `HorAppToEqu(Az, Alt, HA, Dec, cosLat, sinLat)` | Apparent horizontal -> equatorial |
+| `gethms(v, h, m, s)` | Split total arc-seconds into hours, minutes, seconds |
+| `getdms(v, ispos, d, m, s)` | Split signed arc-seconds into sign, degrees, arcmin, arcsec |
 
-### Atmospheric refraction
-
-| Function | Description |
-|----------|-------------|
-| `trueRefrac(Alt, P, T)` | Refraction in arcminutes for a given true altitude |
-| `Topocentric2Apparent(Alt, ...)` | True -> apparent altitude |
-| `Apparent2Topocentric(Alt, ...)` | Apparent -> true altitude |
-
-### Angle normalization
+## String-to-integer parsing
 
 | Function | Description |
 |----------|-------------|
-| `haRange(d)` | Hour angle to [-180, 180] degrees |
-| `haRangeRad(d)` | Hour angle to [-PI, PI] radians |
+| `atoi2(a, i)` | Parse string to int16 with bounds check |
+| `atoui2(a, i)` | Parse string to uint16 with bounds check |
+
+## Basic math helpers
+
+| Function | Description |
+|----------|-------------|
+| `frac(v)` | Fractional part (v - floor(v)) |
+| `cot(n)` | Cotangent (1 / tan(n)) |
+
+## Angle normalization
+
+| Function | Description |
+|----------|-------------|
+| `haRange(d)` | Hour angle to [-180, +180] degrees |
+| `haRangeRad(d)` | Hour angle to [-PI, +PI] radians |
 | `AzRange(d)` | Azimuth to [0, 360) degrees |
-| `degRange(d)` | Degrees to [0, 360) |
+| `degRange(d)` | Arbitrary angle to [0, 360) degrees |
 
-### Step distance
-
-| Function | Description |
-|----------|-------------|
-| `distStepAxis1(start, end)` | Step difference for axis 1 (RA), handling wraparound |
-| `distStepAxis2(start, end)` | Step difference for axis 2 (Dec) |
-
-### Utilities
+## Angular distance
 
 | Function | Description |
 |----------|-------------|
-| `frac(v)` | Fractional part |
-| `cot(n)` | Cotangent |
-| `angDist(h, d, h1, d1)` | Angular distance between two equatorial positions (degrees) |
-| `atoi2(a, i)` | Safe string-to-int16 parse |
-| `atoui2(a, i)` | Safe string-to-uint16 parse |
+| `angDist(h, d, h1, d1)` | Great-circle distance between two equatorial positions (degrees) |
 
-### Constants
+## Step-distance helpers
+
+| Function | Description |
+|----------|-------------|
+| `distStepAxis1(start, end)` | Step difference for axis 1 (RA / Azimuth) |
+| `distStepAxis2(start, end)` | Step difference for axis 2 (Dec / Altitude) |
+
+## Constants
 
 | Macro | Value | Description |
 |-------|-------|-------------|
@@ -54,6 +53,37 @@ Math utility library for the TeenAstro telescope controller. Provides astronomic
 | `RAD_TO_DEG` | 57.2957... | Radians to degrees |
 | `HOUR_TO_RAD` | 0.26179... | Hours to radians |
 | `RAD_TO_HOUR` | 3.81971... | Radians to hours |
+| `Rad` | 57.2957... | Legacy alias for RAD_TO_DEG |
+
+## Types
+
+| Type | Description |
+|------|-------------|
+| `PoleSide` | Enum: `POLE_NOTVALID`, `POLE_UNDER`, `POLE_OVER` |
+
+## Deprecated / Legacy functions
+
+The following functions are kept for **UniversalMainUnit** compatibility but should not be used in new code:
+
+### Atmospheric refraction [DEPRECATED]
+
+Use `LA3::Topocentric2Apparent` / `LA3::Apparent2Topocentric` (radian-based Meeus formulas in TeenAstroLA3) instead.
+
+| Function | Description |
+|----------|-------------|
+| `trueRefrac(Alt, P, T)` | Refraction in arcminutes at true altitude (degrees) |
+| `Topocentric2Apparent(Alt, P, T)` | Add refraction to topocentric altitude (degrees) |
+| `Apparent2Topocentric(Alt, P, T)` | Remove refraction from apparent altitude (degrees) |
+
+### Coordinate conversion [LEGACY]
+
+Use `TeenAstroCoord` classes (`Coord_EQ`, `Coord_HO`) instead.
+
+| Function | Description |
+|----------|-------------|
+| `EquToHor(HA, Dec, refr, Az, Alt, cosLat, sinLat)` | Equatorial to horizontal (degrees) |
+| `HorTopoToEqu(Az, Alt, HA, Dec, cosLat, sinLat)` | Topocentric horizontal to equatorial |
+| `HorAppToEqu(Az, Alt, HA, Dec, cosLat, sinLat)` | Apparent horizontal to equatorial |
 
 ## Dependencies
 

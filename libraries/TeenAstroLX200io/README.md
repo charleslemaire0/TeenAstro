@@ -57,6 +57,6 @@ Free functions that combine `LX200Client` with the Ephemeris and Catalog librari
 ## Dependencies
 
 - **TeenAstroCommandDef** — enums, reply types, codec functions
-- **TeenAstroFunction** — `gethms()`, `getdms()` for coordinate formatting
+- **TeenAstroMath** — `gethms()`, `getdms()` for coordinate formatting
 - **Ephemeris** — equinox precession (LX200Navigation only)
 - **TeenAstroCatalog** — catalog object access (LX200Navigation only)

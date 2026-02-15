@@ -5,7 +5,7 @@
  * GNU General Public License v3
  */
 #include "LX200Client.h"
-#include <TeenAstroFunction.h>
+#include <TeenAstroMath.h>
 
 // ===========================================================================
 //  Construction
