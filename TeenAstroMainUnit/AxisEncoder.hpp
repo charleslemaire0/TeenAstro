@@ -92,6 +92,27 @@ public:
 };
 
 
+#else
+// Stub for platforms without hardware encoder support (e.g. Teensy 3.1)
+class EncoderAxis
+{
+public:
+	double pulsePerDegree = 0;
+	bool isPulsePerDegreeFix = false;
+	bool reverse = false;
+	bool isReverseFix = false;
+	bool connected() const { return false; }
+	void init(int, int) {}
+	long readencoder() const { return 0; }
+	double r_deg() const { return 0.0; }
+	void w_deg(const double) {}
+	void setRef(const double) {}
+	void delRef() {}
+	bool calibrating() { return false; }
+	bool calibrate(const double) { return false; }
+	double deltaTarget(const double) { return 0.0; }
+};
+
 #endif
 
 #endif
