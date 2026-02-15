@@ -50,7 +50,7 @@
 #define ServerFirmwareTime          __TIME__
 #define ServerFirmwareVersionMajor  "1"
 #define ServerFirmwareVersionMinor  "5"
-#define ServerFirmwareVersionPatch  "0"
+#define ServerFirmwareVersionPatch  "1"
 
 
 // -----------------------------------------------------------------------------------
