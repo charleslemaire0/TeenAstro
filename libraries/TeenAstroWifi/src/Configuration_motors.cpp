@@ -1,4 +1,3 @@
-#include <TeenAstroLX200io.h>
 #include "TeenAstroWifi.h"
 // -----------------------------------------------------------------------------------
 // configuration_motors
@@ -114,7 +113,7 @@ bool restartRequired_t1 = false;
 
 void TeenAstroWifi::handleConfigurationMotors()
 {
-  Ser.setTimeout(WebTimeout);
+  s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320] = "";
   char temp1[50] = "";
@@ -140,7 +139,7 @@ void TeenAstroWifi::handleConfigurationMotors()
     //Axis1
   data += "<div class='bt'> Motor: <br/> </div>";
 
-  if (GetLX200(":GXOS#", temp2, sizeof(temp2)) == LX200_VALUEGET)
+  if (s_client->getStepsPerSecond(temp2, sizeof(temp2)) == LX200_VALUEGET)
   {
     long wt = (long)strtol(&temp2[0], NULL, 10);
     sprintf_P(temp, html_configSettleTime, wt);
@@ -149,7 +148,7 @@ void TeenAstroWifi::handleConfigurationMotors()
   }
   bool reverse = false;
   uint8_t silent = false;
-  if (readReverseLX200(1, reverse) == LX200_VALUEGET)
+  if (s_client->readReverse(1, reverse) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configRotAxis_1, 1);
     data += temp;
@@ -159,7 +158,7 @@ void TeenAstroWifi::handleConfigurationMotors()
     sendHtml(data);
   }
   reverse = false;
-  if (readReverseLX200(2, reverse) == LX200_VALUEGET)
+  if (s_client->readReverse(2, reverse) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configRotAxis_1, 2);
     data += temp;
@@ -169,13 +168,13 @@ void TeenAstroWifi::handleConfigurationMotors()
     sendHtml(data);
   }
   float gear = 0;
-  if (readTotGearLX200(1, gear) == LX200_VALUEGET)
+  if (s_client->readTotGear(1, gear) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configGeAxis, gear, 1, 1);
     data += temp;
     sendHtml(data);
   }
-  if (readTotGearLX200(2, gear) == LX200_VALUEGET)
+  if (s_client->readTotGear(2, gear) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configGeAxis, gear, 2, 2);
     data += temp;
@@ -183,79 +182,79 @@ void TeenAstroWifi::handleConfigurationMotors()
   }
   float step;
 
-  if (readStepPerRotLX200(1, step) == LX200_VALUEGET)
+  if (s_client->readStepPerRot(1, step) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configStAxis, (int)step, 1, 1);
     data += temp;
     sendHtml(data);
   }
-  if (readStepPerRotLX200(2, step) == LX200_VALUEGET)
+  if (s_client->readStepPerRot(2, step) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configStAxis, (int)step, 2, 2);
     data += temp;
     sendHtml(data);
   }
   uint8_t micro;
-  if (readMicroLX200(1, micro) == LX200_VALUEGET)
+  if (s_client->readMicro(1, micro) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 1, 1);
     data += temp;
     sendHtml(data);
   }
-  if (readMicroLX200(2, micro) == LX200_VALUEGET)
+  if (s_client->readMicro(2, micro) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 2, 2);
     data += temp;
     sendHtml(data);
   }
   float backlashAxis;
-  if (readBacklashLX200(1, backlashAxis) == LX200_VALUEGET)
+  if (s_client->readBacklash(1, backlashAxis) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configBlAxis, (int)backlashAxis, 1, 1);
     data += temp;
     sendHtml(data);
   }
-  if (readBacklashLX200(2, backlashAxis) == LX200_VALUEGET)
+  if (s_client->readBacklash(2, backlashAxis) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configBlAxis, (int)backlashAxis, 2, 2);
     data += temp;
     sendHtml(data);
   }
   float backlashAxisRate;
-  if (readBacklashRateLX200(1, backlashAxisRate) == LX200_VALUEGET)
+  if (s_client->readBacklashRate(1, backlashAxisRate) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configBlRateAxis, (int)backlashAxisRate, 1, 1);
     data += temp;
     sendHtml(data);
   }
-  if (readBacklashRateLX200(2, backlashAxisRate) == LX200_VALUEGET)
+  if (s_client->readBacklashRate(2, backlashAxisRate) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configBlRateAxis, (int)backlashAxisRate, 2, 2);
     data += temp;
     sendHtml(data);
   }
   unsigned int lowC;
-  if (readLowCurrLX200(1, lowC) == LX200_VALUEGET)
+  if (s_client->readLowCurr(1, lowC) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configLCAxis, lowC, 1, 1);
     data += temp;
     sendHtml(data);
   }
 
-  if (readLowCurrLX200(2, lowC) == LX200_VALUEGET)
+  if (s_client->readLowCurr(2, lowC) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configLCAxis, lowC, 2, 2);
     data += temp;
     sendHtml(data);
   }
   unsigned int highC;
-  if (readHighCurrLX200(1, highC) == LX200_VALUEGET)
+  if (s_client->readHighCurr(1, highC) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configHCAxis, highC, 1, 1);
     data += temp;
     sendHtml(data);
   }
-  if (readHighCurrLX200(2, highC) == LX200_VALUEGET)
+  if (s_client->readHighCurr(2, highC) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configHCAxis, highC, 2, 2);
     data += temp;
@@ -264,7 +263,7 @@ void TeenAstroWifi::handleConfigurationMotors()
   const char* board = ta_MountStatus.getVb();
   if (board[0] - '0' > 1)
   {
-    if (readSilentStepLX200(1, silent) == LX200_VALUEGET)
+    if (s_client->readSilentStep(1, silent) == LX200_VALUEGET)
     {
       sprintf_P(temp, html_configSilentAxis_1, 1);
       data += temp;
@@ -273,7 +272,7 @@ void TeenAstroWifi::handleConfigurationMotors()
       data += temp;
       sendHtml(data);
     }
-    if (readSilentStepLX200(2, silent) == LX200_VALUEGET)
+    if (s_client->readSilentStep(2, silent) == LX200_VALUEGET)
     {
       sprintf_P(temp, html_configSilentAxis_1, 2);
       data += temp;
@@ -304,7 +303,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 20)))
     {
       sprintf(temp, ":SXOS,%02d#", i);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
@@ -314,7 +313,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4000)))
     {
       sprintf(temp, ":SXRX,%04d#", i);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
@@ -324,7 +323,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.1) && (f <= 25)))
     {
       sprintf(temp, ":SXRA,%04d#", (int)(f * 10));
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
@@ -334,7 +333,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
     {
       sprintf(temp, ":SXR3,%03d#", (int)f);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
@@ -344,7 +343,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
     {
       sprintf(temp, ":SXR2,%03d#", (int)f);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
@@ -354,7 +353,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
     {
       sprintf(temp, ":SXR1,%03d#", (int)f);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
@@ -364,7 +363,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.01) && (f <= 100)))
     {
       sprintf(temp, ":SXR0,%03d#", (int)(f * 100));
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
@@ -375,7 +374,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
     {
       sprintf(temp, ":SXRD,X#");
       temp[6] = '0' + i;
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
@@ -384,7 +383,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
-      writeReverseLX200(1, i);
+      s_client->writeReverse(1, i);
     }
   }
 
@@ -393,7 +392,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
-      writeReverseLX200(2, i);
+      s_client->writeReverse(2, i);
     }
   }
 
@@ -402,7 +401,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 60000)))
     {
-      writeTotGearLX200(1, f);
+      s_client->writeTotGear(1, f);
     }
   }
 
@@ -411,7 +410,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 60000)))
     {
-      writeTotGearLX200(2, f);
+      s_client->writeTotGear(2, f);
     }
   }
 
@@ -420,7 +419,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400)))
     {
-      writeStepPerRotLX200(1, i);
+      s_client->writeStepPerRot(1, i);
     }
   }
 
@@ -429,7 +428,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400)))
     {
-      writeStepPerRotLX200(2, i);
+      s_client->writeStepPerRot(2, i);
     }
   }
 
@@ -438,7 +437,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256)))
     {
-      writeMicroLX200(1, (float)((int)log2(i)));
+      s_client->writeMicro(1, (float)((int)log2(i)));
     }
   }
 
@@ -447,7 +446,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256)))
     {
-      writeMicroLX200(2, (float)((int)log2(i)));
+      s_client->writeMicro(2, (float)((int)log2(i)));
     }
   }
 
@@ -456,7 +455,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
     {
-      writeBacklashLX200(1, (float)i);
+      s_client->writeBacklash(1, (float)i);
     }
   }
 
@@ -465,7 +464,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
     {
-      writeBacklashLX200(2, (float)i);
+      s_client->writeBacklash(2, (float)i);
     }
   }
 
@@ -474,7 +473,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 64)))
     {
-      writeBacklashRateLX200(1, (float)i);
+      s_client->writeBacklashRate(1, (float)i);
     }
   }
 
@@ -483,7 +482,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 64)))
     {
-      writeBacklashRateLX200(2, (float)i);
+      s_client->writeBacklashRate(2, (float)i);
     }
   }
 
@@ -492,7 +491,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
     {
-      writeLowCurrLX200(1, i);
+      s_client->writeLowCurr(1, i);
     }
   }
   v = server.arg("mlc2");
@@ -500,7 +499,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
     {
-      writeLowCurrLX200(2, i);
+      s_client->writeLowCurr(2, i);
     }
   }
 
@@ -509,7 +508,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
     {
-      writeHighCurrLX200(1, i);
+      s_client->writeHighCurr(1, i);
     }
   }
   v = server.arg("mhc2");
@@ -517,7 +516,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
     {
-      writeHighCurrLX200(2, i);
+      s_client->writeHighCurr(2, i);
     }
   }
 
@@ -527,7 +526,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
-      writeSilentStepLX200(1, i);
+      s_client->writeSilentStep(1, i);
     }
   }
   v = server.arg("ms2");
@@ -535,7 +534,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
-      writeSilentStepLX200(2, i);
+      s_client->writeSilentStep(2, i);
     }
   }
 
@@ -556,7 +555,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
       if ((ut_hrs >= -13) && (ut_hrs <= 13))
       {
         sprintf(temp, ":SG%+03d:%02d#", ut_hrs, i);
-        SetLX200(temp);
+        s_client->set(temp);
       }
     }
   }

@@ -1,10 +1,15 @@
 #pragma once
 #include <Arduino.h>
+#include <LX200Client.h>
 #include "TeenAstoCustomizations.h"
 
 class TeenAstroMountStatus
 {
 public:
+  /// Bind an LX200Client for all serial communication.
+  /// Must be called before any update/query methods.
+  void setClient(LX200Client& client) { m_client = &client; }
+  LX200Client& client() { return *m_client; }
 
   enum Errors { ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT, ERR_LIMIT_SENSE, ERR_LIMIT_A1, ERR_LIMIT_A2, ERR_UNDER_POLE, ERR_MERIDIAN, ERR_SYNC };
   enum AlignMode { ALIM_OFF, ALIM_ONE, ALIM_TWO, ALIM_THREE };
@@ -18,6 +23,8 @@ public:
   enum PierState { PIER_E, PIER_W, PIER_UNKNOW };
   enum GuidingRate { UNKNOW = -1, GUIDING, SLOW, MEDIUM, FAST, MAX };
 private:
+  LX200Client*    m_client = nullptr;
+
   //Align 
   AlignState      m_align = ALI_OFF;
   AlignMode       m_aliMode = ALIM_ONE;

@@ -1,4 +1,3 @@
-#include <TeenAstroLX200io.h>
 #include "TeenAstroWifi.h"
 // -----------------------------------------------------------------------------------
 // configuration_telescope
@@ -48,7 +47,7 @@ const char html_configRotEAxis_2[] PROGMEM =
 
 void TeenAstroWifi::handleConfigurationEncoders()
 {
-  Ser.setTimeout(WebTimeout);
+  s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320] = "";
   char temp1[50] = "";
@@ -60,7 +59,7 @@ void TeenAstroWifi::handleConfigurationEncoders()
   sendHtml(data);
   ta_MountStatus.updateMount();
   uint8_t EncodersyncMode = 0;
-  if (readEncoderAutoSync(EncodersyncMode) == LX200_VALUEGET)
+  if (s_client->readEncoderAutoSync(EncodersyncMode) == LX200_VALUEGET)
   {
     data += FPSTR(html_configEncoders_1);
     EncodersyncMode == 0 ? data += PSTR("<option selected value='0'>OFF</option>") : data += PSTR("<option value='0'>OFF</option>");
@@ -78,13 +77,13 @@ void TeenAstroWifi::handleConfigurationEncoders()
   float ppd = 0;
   bool reverse = false;
 
-  if (readPulsePerDegreeLX200(1, ppd) == LX200_VALUEGET)
+  if (s_client->readPulsePerDegree(1, ppd) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configPPDAxis1, ppd/100.0);
     data += temp;
     sendHtml(data);
   }
-  if (readEncoderReverseLX200(1, reverse) == LX200_VALUEGET)
+  if (s_client->readEncoderReverse(1, reverse) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configRotEAxis_1, 1);
     data += temp;
@@ -94,13 +93,13 @@ void TeenAstroWifi::handleConfigurationEncoders()
     sendHtml(data);
   }
 
-  if (readPulsePerDegreeLX200(2, ppd) == LX200_VALUEGET)
+  if (s_client->readPulsePerDegree(2, ppd) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configPPDAxis2, ppd/100.0);
     data += temp;
     sendHtml(data);
   }
-  if (readEncoderReverseLX200(2, reverse) == LX200_VALUEGET)
+  if (s_client->readEncoderReverse(2, reverse) == LX200_VALUEGET)
   {
     sprintf_P(temp, html_configRotEAxis_1, 2);
     data += temp;
@@ -127,7 +126,7 @@ void TeenAstroWifi::processConfigurationEncodersGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 7)))
     {
-      writeEncoderAutoSync(i);
+      s_client->writeEncoderAutoSync(i);
     }
   }
   v = server.arg("ppdEa1");
@@ -135,7 +134,7 @@ void TeenAstroWifi::processConfigurationEncodersGet()
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f > 0) && (f <= 3600)))
     {
-      writePulsePerDegreeLX200(1, f*100);
+      s_client->writePulsePerDegree(1, f*100);
     }
   }
   v = server.arg("ppdEa2");
@@ -143,7 +142,7 @@ void TeenAstroWifi::processConfigurationEncodersGet()
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f > 0) && (f <= 3600)))
     {
-      writePulsePerDegreeLX200(2, f*100);
+      s_client->writePulsePerDegree(2, f*100);
     }
   }
   v = server.arg("mrotE1");
@@ -151,7 +150,7 @@ void TeenAstroWifi::processConfigurationEncodersGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
-      writeEncoderReverseLX200(1, i);
+      s_client->writeEncoderReverse(1, i);
     }
   }
   v = server.arg("mrotE2");
@@ -159,7 +158,7 @@ void TeenAstroWifi::processConfigurationEncodersGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
-      writeEncoderReverseLX200(2, i);
+      s_client->writeEncoderReverse(2, i);
     }
   }
 }

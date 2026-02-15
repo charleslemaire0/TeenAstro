@@ -35,15 +35,16 @@
 #define TIMEOUT_WEB 15
 
 // ---------------------------------------------------------------------------
-//  Global LX200Client instance (uses the platform Ser)
+//  DEPRECATED -- Global LX200Client singleton
 // ---------------------------------------------------------------------------
-/// Access the global LX200Client bound to the platform serial port.
-/// Lazily constructed on first call.
+/// @deprecated Create an LX200Client explicitly and inject it instead.
 LX200Client& lx200client();
 
 // ---------------------------------------------------------------------------
-//  Backward-compatible free functions
-//  These delegate to the global LX200Client; prefer LX200Client directly.
+//  DEPRECATED free-function wrappers
+//  All consumers have been migrated to LX200Client.  These remain only for
+//  third-party or user sketch backward compatibility and will be removed in
+//  a future release.  New code must use LX200Client directly.
 // ---------------------------------------------------------------------------
 
 // --- Core I/O ---
@@ -96,10 +97,10 @@ LX200RETURN SyncGotoLX200(NAV mode, uint8_t& vr1, uint8_t& vr2, uint8_t& vr3,
 LX200RETURN SyncGotoLX200(NAV mode, float &Ra, float &Dec);
 LX200RETURN SyncGotoLX200AltAz(NAV mode, float &Az, float &Alt);
 LX200RETURN SyncGotoUserLX200(NAV mode);
-LX200RETURN SyncGotoLX200(NAV mode, float &Ra, float &Dec, double epoch);
-LX200RETURN SyncSelectedStarLX200(unsigned short alignSelectedStar);
-LX200RETURN SyncGotoCatLX200(NAV mode);
-LX200RETURN SyncGotoPlanetLX200(NAV mode, unsigned short obj);
+LX200RETURN SyncGotoLX200(LX200Client& client, NAV mode, float &Ra, float &Dec, double epoch);
+LX200RETURN SyncSelectedStarLX200(LX200Client& client, unsigned short alignSelectedStar);
+LX200RETURN SyncGotoCatLX200(LX200Client& client, NAV mode);
+LX200RETURN SyncGotoPlanetLX200(LX200Client& client, NAV mode, unsigned short obj);
 
 // --- Motor ---
 LX200RETURN readReverseLX200(const uint8_t &axis, bool &reverse);

@@ -1,5 +1,4 @@
 #include <ArduinoOTA.h>
-#include <TeenAstroLX200io.h>
 #include "TeenAstroWifi.h"
 
 
@@ -52,6 +51,7 @@ const char html_links10N[] PROGMEM = "<a href='/configuration_focuser.htm'>Focus
 const char html_links11S[] PROGMEM = "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />\n";
 const char html_links11N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />\n";
 
+LX200Client* TeenAstroWifi::s_client = nullptr;
 bool TeenAstroWifi::wifiOn = true;
 
 int TeenAstroWifi::WebTimeout = TIMEOUT_WEB;
@@ -648,7 +648,7 @@ void TeenAstroWifi::update()
       {
         char readBuffer[50] = "";
         CMDREPLY cmdreply;
-        if (readLX200Bytes(writeBuffer, cmdreply, readBuffer, sizeof(readBuffer), CmdTimeout, true))
+        if (s_client->sendReceiveAuto(writeBuffer, cmdreply, readBuffer, sizeof(readBuffer), CmdTimeout, true))
         {
           // return the response, if we have one
           if (strlen(readBuffer) > 0)

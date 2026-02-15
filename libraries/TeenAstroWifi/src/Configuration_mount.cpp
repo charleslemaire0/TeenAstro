@@ -1,4 +1,3 @@
-#include <TeenAstroLX200io.h>
 #include "TeenAstroWifi.h"
 // -----------------------------------------------------------------------------------
 // configuration_telescope
@@ -56,7 +55,7 @@ bool restartRequired_t = false;
 
 void TeenAstroWifi::handleConfigurationMount()
 {
-  Ser.setTimeout(WebTimeout);
+  s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320] = "";
   char temp1[50] = "";
@@ -78,11 +77,11 @@ void TeenAstroWifi::handleConfigurationMount()
   }
   //update
 
-  if (GetMountIdxLX200(selectedmount) == LX200_VALUEGET)
+  if (s_client->getMountIdx(selectedmount) == LX200_VALUEGET)
   {
     char mount0[32]; char mount1[32];
-    GetMountNameLX200(0, mount0, sizeof(mount0));
-    GetMountNameLX200(1, mount1, sizeof(mount1));
+    s_client->getMountName(0, mount0, sizeof(mount0));
+    s_client->getMountName(1, mount1, sizeof(mount1));
     data += FPSTR(html_configMountSelect1);
     sendHtml(data);
     selectedmount == 0 ? data += "<option selected value='0'>" : data += "<option value='0'>";
@@ -126,7 +125,7 @@ void TeenAstroWifi::handleConfigurationMount()
     data += FPSTR(html_configRefraction);
     if (!ta_MountStatus.isAltAz())
     {
-      if (GetLX200(":GXrp#", temp1, sizeof(temp1)) != LX200_GETVALUEFAILED) ;
+      if (s_client->getPolarAlignEnabled(temp1, sizeof(temp1)) != LX200_GETVALUEFAILED) ;
       {
         sprintf_P(temp, html_Opt_1, "polar");
         data += temp;
@@ -136,7 +135,7 @@ void TeenAstroWifi::handleConfigurationMount()
         sendHtml(data);
       }
     }
-    if (GetLX200(":GXrg#", temp1, sizeof(temp1)) != LX200_GETVALUEFAILED)
+    if (s_client->getGoToEnabled(temp1, sizeof(temp1)) != LX200_GETVALUEFAILED)
     {
       sprintf_P(temp, html_Opt_1, "gotor");
       data += temp;
@@ -165,7 +164,7 @@ void TeenAstroWifi::processConfigurationMountGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
-      if (SetMountLX200(i) == LX200_VALUESET)
+      if (s_client->setMount(i) == LX200_VALUESET)
         restartRequired_t = true;
     }
   }
@@ -174,7 +173,7 @@ void TeenAstroWifi::processConfigurationMountGet()
   if (v != "")
   {
     sprintf(temp, ":SXOA,%s#", (char*)v.c_str());
-    SetLX200(temp);
+    s_client->set(temp);
   }
 
   v = server.arg("mount");
@@ -184,7 +183,7 @@ void TeenAstroWifi::processConfigurationMountGet()
     {
       sprintf(temp, ":S!X#");
       temp[3] = '0' + i;
-      if (SetLX200(temp) == LX200_VALUESET)
+      if (s_client->set(temp) == LX200_VALUESET)
         restartRequired_t = true;
     }
   }
@@ -194,7 +193,7 @@ void TeenAstroWifi::processConfigurationMountGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
     {
-      if ((i == 1 ? SetLX200(":SXME,y#") : SetLX200(":SXME,n#")) == LX200_VALUESET)
+      if ((i == 1 ? s_client->enableMotors(true) : s_client->enableMotors(false)) == LX200_VALUESET)
       {
         restartRequired_t = true;
       }
@@ -206,7 +205,7 @@ void TeenAstroWifi::processConfigurationMountGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
     {
-      if ((i == 1 ? SetLX200(":SXEE,y#") : SetLX200(":SXEE,n#")) == LX200_VALUESET)
+      if ((i == 1 ? s_client->enableEncoders(true) : s_client->enableEncoders(false)) == LX200_VALUESET)
       {
         restartRequired_t = true;
       }
@@ -218,7 +217,7 @@ void TeenAstroWifi::processConfigurationMountGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
     {
-      i == 1 ? SetLX200(":SXrp,y#") : SetLX200(":SXrp,n#");
+      i == 1 ? s_client->enablePolarAlign(true) : s_client->enablePolarAlign(false);
     }
   }
 
@@ -227,7 +226,7 @@ void TeenAstroWifi::processConfigurationMountGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
     {
-      i == 1 ? SetLX200(":SXrg,y#") : SetLX200(":SXrg,n#");
+      i == 1 ? s_client->enableGoTo(true) : s_client->enableGoTo(false);
     }
   }
 }

@@ -19,9 +19,12 @@ public:
   {
     OLED_SH1106, OLED_SSD1306, OLED_SSD1309
   };
+  void setClient(LX200Client& client) { m_client = &client; }
+  LX200Client& client() { return *m_client; }
   void setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model, const uint8_t nSubmodel);
   void update();
 private:
+  LX200Client* m_client = nullptr;
   void getNextpage();
   void updateAlign(bool moving);
   void updatePushing(bool moving);

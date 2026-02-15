@@ -198,10 +198,10 @@ LX200RETURN SyncGotoUserLX200(NAV mode)
 //  Higher-level convenience functions (depend on Ephemeris / Catalog)
 // ===========================================================================
 
-LX200RETURN SyncGotoLX200(NAV mode, float& Ra, float& Dec, double epoch)
+LX200RETURN SyncGotoLX200(LX200Client& client, NAV mode, float& Ra, float& Dec, double epoch)
 {
   unsigned int day, month, year;
-  if (GetUTCDateLX200(day, month, year) != LX200_VALUEGET)
+  if (client.getUTCDate(day, month, year) != LX200_VALUEGET)
     return LX200_GETVALUEFAILED;
   EquatorialCoordinates coo;
   coo.ra = Ra;
@@ -209,14 +209,14 @@ LX200RETURN SyncGotoLX200(NAV mode, float& Ra, float& Dec, double epoch)
   EquatorialCoordinates cooNow;
   cooNow = Ephemeris::equatorialEquinoxToEquatorialJNowAtDateAndTime(
     coo, epoch, day, month, year, 0, 0, 0);
-  return SyncGotoLX200(mode, cooNow.ra, cooNow.dec);
+  return client.syncGoto(mode, cooNow.ra, cooNow.dec);
 }
 
-LX200RETURN SyncGotoCatLX200(NAV mode)
+LX200RETURN SyncGotoCatLX200(LX200Client& client, NAV mode)
 {
   int epoch;
   unsigned int day, month, year;
-  if (GetUTCDateLX200(day, month, year) == LX200_GETVALUEFAILED)
+  if (client.getUTCDate(day, month, year) == LX200_GETVALUEFAILED)
     return LX200_GETVALUEFAILED;
   if (!cat_mgr.isStarCatalog() && !cat_mgr.isDsoCatalog())
     return LX200_ERRGOTO_UNKOWN;
@@ -228,21 +228,21 @@ LX200RETURN SyncGotoCatLX200(NAV mode)
   EquatorialCoordinates cooNow;
   cooNow = Ephemeris::equatorialEquinoxToEquatorialJNowAtDateAndTime(
     coo, epoch, day, month, year, 0, 0, 0);
-  return SyncGotoLX200(mode, cooNow.ra, cooNow.dec);
+  return client.syncGoto(mode, cooNow.ra, cooNow.dec);
 }
 
-LX200RETURN SyncGotoPlanetLX200(NAV mode, unsigned short objSys)
+LX200RETURN SyncGotoPlanetLX200(LX200Client& client, NAV mode, unsigned short objSys)
 {
   unsigned int day, month, year, hour, minute, second;
   double degreeLat, degreeLong;
 
-  if (GetUTCDateLX200(day, month, year) == LX200_GETVALUEFAILED)
+  if (client.getUTCDate(day, month, year) == LX200_GETVALUEFAILED)
     return LX200_GETVALUEFAILED;
-  if (GetUTCTimeLX200(hour, minute, second) == LX200_GETVALUEFAILED)
+  if (client.getUTCTime(hour, minute, second) == LX200_GETVALUEFAILED)
     return LX200_GETVALUEFAILED;
-  if (GetLongitudeLX200(degreeLong) == LX200_GETVALUEFAILED)
+  if (client.getLongitude(degreeLong) == LX200_GETVALUEFAILED)
     return LX200_GETVALUEFAILED;
-  if (GetLatitudeLX200(degreeLat) == LX200_GETVALUEFAILED)
+  if (client.getLatitude(degreeLat) == LX200_GETVALUEFAILED)
     return LX200_GETVALUEFAILED;
 
   Ephemeris Eph;
@@ -251,13 +251,13 @@ LX200RETURN SyncGotoPlanetLX200(NAV mode, unsigned short objSys)
   SolarSystemObjectIndex objI = static_cast<SolarSystemObjectIndex>(objSys);
   SolarSystemObject obj = Eph.solarSystemObjectAtDateAndTime(
     objI, day, month, year, hour, minute, second);
-  return SyncGotoLX200(mode, obj.equaCoordinates.ra, obj.equaCoordinates.dec);
+  return client.syncGoto(mode, obj.equaCoordinates.ra, obj.equaCoordinates.dec);
 }
 
-LX200RETURN SyncSelectedStarLX200(unsigned short alignSelectedStar)
+LX200RETURN SyncSelectedStarLX200(LX200Client& client, unsigned short alignSelectedStar)
 {
   if (alignSelectedStar >= 0)
-    return SyncGotoCatLX200(NAV_GOTO);
+    return SyncGotoCatLX200(client, NAV_GOTO);
   return LX200_ERRGOTO_UNKOWN;
 }
 

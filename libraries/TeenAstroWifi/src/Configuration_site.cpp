@@ -1,4 +1,3 @@
-#include <TeenAstroLX200io.h>
 #include "TeenAstroWifi.h"
 // -----------------------------------------------------------------------------------
 // configuration_Site
@@ -152,7 +151,7 @@ const char html_configElev4[] PROGMEM =
 
 void TeenAstroWifi::handleConfigurationSite()
 {
-  Ser.setTimeout(WebTimeout);
+  s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[150] = "";
   char temp1[50] = "";
@@ -179,15 +178,15 @@ void TeenAstroWifi::handleConfigurationSite()
   data += FPSTR(html_siteQuick1a);
   sendHtml(data);
 
-  if (GetLX200(":W?#", temp1, sizeof(temp1)) == LX200_VALUEGET)
+  if (s_client->get(":W?#", temp1, sizeof(temp1)) == LX200_VALUEGET)
   {
     int selectedsite = 0;
     if ((atoi2(temp1, &selectedsite)) && ((selectedsite >= 0) && (selectedsite <= 3)))
     {
       char m[32]; char n[32]; char o[32];
-      GetLX200(":GM#", m, sizeof(m));
-      GetLX200(":GN#", n, sizeof(n));
-      GetLX200(":GO#", o, sizeof(o));
+      s_client->getSiteName(0, m, sizeof(m));
+      s_client->getSiteName(1, n, sizeof(n));
+      s_client->getSiteName(2, o, sizeof(o));
       if (allowchange)
       {
         data += FPSTR(html_configSiteSelect1);
@@ -205,7 +204,7 @@ void TeenAstroWifi::handleConfigurationSite()
         sendHtml(data);
       }
       // Name
-      if (GetLX200(":Gn#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "error!");
+      if (s_client->get(":Gn#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "error!");
       data += FPSTR(html_configSiteName1);
       sprintf_P(temp, html_configSiteName2, temp1);
       data += temp;
@@ -213,13 +212,13 @@ void TeenAstroWifi::handleConfigurationSite()
       sendHtml(data);
 
       // Time Zone
-      if (GetLX200(":GG#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); float TShift = -(float)strtof(&temp1[0], NULL);
+      if (s_client->get(":GG#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); float TShift = -(float)strtof(&temp1[0], NULL);
       sprintf_P(temp, html_configTimeZone, TShift);
       data += temp;
       sendHtml(data);
 
       // Latitude
-      if (GetLX200(":Gtf#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "+00*00*00");
+      if (s_client->get(":Gtf#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "+00*00*00");
       data += FPSTR(html_configLatNS1);
       sendHtml(data);
       temp1[0] == '+' ? data += "<option selected value='0'>North</option>" : data += "<option value='0'>North</option>";
@@ -245,7 +244,7 @@ void TeenAstroWifi::handleConfigurationSite()
       data += FPSTR(html_uploadLat2);
       sendHtml(data);
       // Longitude
-      if (GetLX200(":Ggf#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "+000*00*00");
+      if (s_client->get(":Ggf#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "+000*00*00");
       data += FPSTR(html_configLongWE1);
       temp1[0] == '+' ? data += "<option selected value='0'>West</option>" : data += "<option value='0'>West</option>";
       temp1[0] == '-' ? data += "<option selected value='1'>East</option>" : data += "<option value='1'>East</option>";
@@ -270,7 +269,7 @@ void TeenAstroWifi::handleConfigurationSite()
       data += FPSTR(html_uploadLong2);
       sendHtml(data);
       // Elevation
-      if (GetLX200(":Ge#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "+000");
+      if (s_client->getElevation(temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "+000");
       if (temp1[0] == '+') temp1[0] = '0';
       data += FPSTR(html_configElev1);
       sprintf_P(temp, html_configElev2, temp1);
@@ -308,14 +307,14 @@ void TeenAstroWifi::processConfigurationSiteGet()
   if (v != "")
   {
     sprintf(temp, ":W%s#", (char*)v.c_str());
-    SetLX200(temp);
+    s_client->set(temp);
   }
   // name
   v = server.arg("site_n");
   if (v != "")
   {
     sprintf(temp, ":Sn%s#", (char*)v.c_str());
-    SetLX200(temp);
+    s_client->set(temp);
   }
   //Time Zone
   v = server.arg("TimeZ");
@@ -324,7 +323,7 @@ void TeenAstroWifi::processConfigurationSiteGet()
     if ((atof2((char*)v.c_str(), &f)) && ((f >= -12) && (f <= 12)))
     {
       sprintf(temp, ":SG%+05.1f#", -f);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
@@ -353,7 +352,7 @@ void TeenAstroWifi::processConfigurationSiteGet()
       get_temp_year = i - 2000;
       char temp[10];
       sprintf(temp, ":SXT1%02d/%02d/%02d#", get_temp_month, get_temp_day, get_temp_year);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
   v = server.arg("th");
@@ -380,7 +379,7 @@ void TeenAstroWifi::processConfigurationSiteGet()
       get_temp_second = i;
       char temp[10];
       sprintf(temp, ":SXT0%02d:%02d:%02d#", get_temp_hour, get_temp_minute, get_temp_second);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
@@ -422,7 +421,7 @@ void TeenAstroWifi::processConfigurationSiteGet()
         sprintf(temp, ":Sg%+04d:%02d:%02d#", long_deg, long_min, i);
         if (sign)
           temp[3] = '-';
-        SetLX200(temp);
+        s_client->set(temp);
       }
     }
   }
@@ -463,7 +462,7 @@ void TeenAstroWifi::processConfigurationSiteGet()
         sprintf(temp, ":St%+03d:%02d:%02d#", lat_deg, lat_min, i);
         if (sign)
           temp[3] = '-';
-        SetLX200(temp);
+        s_client->set(temp);
       }
     }
   }
@@ -473,19 +472,19 @@ void TeenAstroWifi::processConfigurationSiteGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -200) && (i <= 8000)))
     {
       sprintf(temp, ":Se%+04d#", i);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
   v = server.arg("GNSSS");
   if (v != "")
   {
-    SetLX200(":gs#");
+    s_client->syncTime();
   }
   v = server.arg("GNSST");
   if (v != "")
   {
-    SetLX200(":gt#");
+    s_client->syncLocation();
   }
 
 }

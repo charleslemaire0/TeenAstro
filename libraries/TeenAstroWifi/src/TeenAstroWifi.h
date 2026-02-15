@@ -34,6 +34,7 @@
 
 #include <EEPROM.h>
 #include <WiFiClient.h>
+#include <LX200Client.h>
 #include <TeenAstroMountStatus.h>
 
 #define Product "TeenAstro Server"
@@ -111,6 +112,7 @@ class TeenAstroWifi
   static int WebTimeout;
   static int CmdTimeout;
   static WifiConnectMode activeWifiConnectMode;
+  static LX200Client* s_client;
 
 #define Default_Password "password"
   static char masterPassword[40];
@@ -201,6 +203,10 @@ class TeenAstroWifi
   // read 4 byte long from EEPROM at position i (4 bytes)
   static long EEPROM_readLong(int i);
 public:
+  /// Bind an LX200Client for all serial communication.
+  static void setClient(LX200Client& client) { s_client = &client; }
+  static LX200Client& client() { return *s_client; }
+
   static bool isWifiOn();
   static bool isWifiRunning();
   static void turnWifiOn(bool turnOn);

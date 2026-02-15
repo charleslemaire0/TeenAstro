@@ -1,4 +1,3 @@
-#include <TeenAstroLX200io.h>
 #include "TeenAstroWifi.h"
 // -----------------------------------------------------------------------------------
 // configuration_tracking
@@ -85,7 +84,7 @@ void TeenAstroWifi::handleConfigurationTracking()
   //update mount
   ta_MountStatus.updateMount();
 
-  Ser.setTimeout(WebTimeout);
+  s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320] = "";
   char temp1[50] = "";
@@ -107,7 +106,7 @@ void TeenAstroWifi::handleConfigurationTracking()
   data += FPSTR(html_configTrackingOptions);
   sprintf_P(temp, html_Opt_1, "trackr");
   data += temp;
-  if (GetLX200(":GXrt#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "n");
+  if (s_client->getRefractionEnabled(temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "n");
   temp1[0] == 'y' ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
   temp1[0] == 'n' ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
   data += "</select> Consider Refraction for Tracking</form><br/>\r\n";;
@@ -157,7 +156,7 @@ void TeenAstroWifi::processConfigurationTrackingGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
     {
-      i == 1 ? SetLX200(":SXrt,y#") : SetLX200(":SXrt,n#");
+      i == 1 ? s_client->enableRefraction(true) : s_client->enableRefraction(false);
     }
   }
   v = server.arg("trackboth");
@@ -165,7 +164,7 @@ void TeenAstroWifi::processConfigurationTrackingGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
     {
-      i == 1 ? SetLX200(":T2#") : SetLX200(":T1#");
+      i == 1 ? s_client->setStepperMode(2) : s_client->setStepperMode(1);
       ta_MountStatus.updateMount(true);
     }
   }
@@ -175,7 +174,7 @@ void TeenAstroWifi::processConfigurationTrackingGet()
     if ((atof2((char*)v.c_str(), &f)) && ((f >= -5) && (f <= 5)))
     {
       sprintf(temp, ":SXRe,%05ld#", (long)(f * 10000));
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
   v = server.arg("RDEC");
@@ -184,23 +183,23 @@ void TeenAstroWifi::processConfigurationTrackingGet()
     if ((atof2((char*)v.c_str(), &f)) && ((f >= -5) && (f <= 5)))
     {
       sprintf(temp, ":SXRf,%05ld#", (long)(f * 10000));
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
   v = server.arg("dt");
   if (v != "")
   {
     // Tracking control
-    if (v == "on") SetLX200(":Te#");
-    else if (v == "off") SetLX200(":Td#");
-    else if (v == "f") SetLX200(":T+#"); // 0.02hz faster
-    else if (v == "-") SetLX200(":T-#"); // 0.02hz slower
-    else if (v == "r") SetLX200(":TR#"); // reset
+    if (v == "on") s_client->enableTracking(true);
+    else if (v == "off") s_client->enableTracking(false);
+    else if (v == "f") s_client->incrementTrackRate(); // 0.02hz faster
+    else if (v == "-") s_client->decrementTrackRate(); // 0.02hz slower
+    else if (v == "r") s_client->resetTrackRate(); // reset
 
-    else if (v == "Ts") SetLX200(":TQ#"); // sidereal
-    else if (v == "Tl") SetLX200(":TL#"); // lunar
-    else if (v == "Th") SetLX200(":TS#"); // solar
-    else if (v == "Tt") SetLX200(":TT#"); // user defined
+    else if (v == "Ts") s_client->setTrackRateSidereal(); // sidereal
+    else if (v == "Tl") s_client->setTrackRateLunar(); // lunar
+    else if (v == "Th") s_client->setTrackRateSolar(); // solar
+    else if (v == "Tt") s_client->setTrackRateUser(); // user defined
 
 
   }

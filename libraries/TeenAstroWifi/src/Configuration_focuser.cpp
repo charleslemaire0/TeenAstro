@@ -1,4 +1,3 @@
-#include <TeenAstroLX200io.h>
 #include "TeenAstroWifi.h"
 // -----------------------------------------------------------------------------------
 // configuration_focuser
@@ -126,7 +125,7 @@ void TeenAstroWifi::handleConfigurationFocuser()
   preparePage(data, ServerPage::Focuser);
   sendHtml(data);
 
-  if (GetLX200(":F~#", temp1, sizeof(temp1)) == LX200_VALUEGET && temp1[0] == '~')
+  if (s_client->get(":F~#", temp1, sizeof(temp1)) == LX200_VALUEGET && temp1[0] == '~')
   {
     int park = (int)strtol(&temp1[1], NULL, 10);
     int maxPos = (int)strtol(&temp1[7], NULL, 10);
@@ -161,7 +160,7 @@ void TeenAstroWifi::handleConfigurationFocuser()
   unsigned int resolution = 100;
   unsigned int curr = 100;
   unsigned int steprot = 100;
-  if (readFocuserMotor(reverse, micro, resolution, curr, steprot))
+  if (s_client->readFocuserMotor(reverse, micro, resolution, curr, steprot))
   {
     data += "Resolution: <br />";
     sprintf_P(temp, html_configResolutionFocuser, resolution);
@@ -186,7 +185,7 @@ void TeenAstroWifi::handleConfigurationFocuser()
   for (int k = 0; k < 10; k++)
   {
     sprintf(temp, ":Fx%d#", k);
-    GetLX200(temp, temp1, sizeof(temp1));
+    s_client->get(temp, temp1, sizeof(temp1));
     if (temp1[0] != 0)
     {
       if (temp1[0] == '0')
@@ -227,7 +226,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535)))
     {
       sprintf(temp, ":F0,%05d#", (int)f);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
@@ -237,7 +236,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535)))
     {
       sprintf(temp, ":F1,%05d#", (int)f);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
@@ -247,7 +246,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 999)))
     {
       sprintf(temp, ":F2,%d#", i);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
@@ -257,7 +256,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 999)))
     {
       sprintf(temp, ":F3,%d#", i);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
@@ -267,7 +266,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99)))
     {
       sprintf(temp, ":F4,%d#", i);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
   v = server.arg("ManAcc");
@@ -276,7 +275,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99)))
     {
       sprintf(temp, ":F5,%d#", i);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
   v = server.arg("Dcc");
@@ -285,7 +284,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99)))
     {
       sprintf(temp, ":F6,%d#", i);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
   v = server.arg("Rot");
@@ -294,7 +293,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
       sprintf(temp, ":F7,%d#", i);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
   v = server.arg("Res");
@@ -303,7 +302,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 512)))
     {
       sprintf(temp, ":F8,%d#", i);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
   v = server.arg("StepRot");
@@ -312,7 +311,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 10) && (i <= 800)))
     {
       sprintf(temp, ":Fr,%d#", i);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
   v = server.arg("MuF");
@@ -321,7 +320,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 4) && (i <= 128)))
     {
       sprintf(temp, ":Fm,%d#", (int)log2(i));
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
 
@@ -331,7 +330,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 1600)))
     {
       sprintf(temp, ":Fc,%d#", i / 10);
-      SetLX200(temp);
+      s_client->set(temp);
     }
   }
   for (int k = 0; k < 10; k++)
@@ -345,7 +344,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
         sprintf(temp, "Fn%d", k);
         v = server.arg(temp);
         sprintf(temp, ":Fs%d,%05d_%s#", k, (int)f, (char*)v.c_str());
-        SetLX200(temp);
+        s_client->set(temp);
       }
     }
   }

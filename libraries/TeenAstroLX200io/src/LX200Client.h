@@ -23,6 +23,14 @@
 #define LX200_LBUF 50
 #define LX200_DEFAULT_TIMEOUT 30   // ms
 
+// Semantic timeout presets for consumers
+#ifndef TIMEOUT_CMD
+#define TIMEOUT_CMD 30
+#endif
+#ifndef TIMEOUT_WEB
+#define TIMEOUT_WEB 15
+#endif
+
 class LX200Client
 {
 public:
@@ -133,6 +141,148 @@ public:
 
   /// Sync/Goto/Pushto to user-defined stored target.
   LX200RETURN syncGotoUser(NAV mode);
+
+  // -----------------------------------------------------------------------
+  //  Tracking
+  // -----------------------------------------------------------------------
+  LX200RETURN enableTracking(bool on);          // :Te# / :Td#
+  LX200RETURN setTrackRateSidereal();            // :TQ#
+  LX200RETURN setTrackRateLunar();               // :TL#
+  LX200RETURN setTrackRateSolar();               // :TS#
+  LX200RETURN setTrackRateUser();                // :TT#
+  LX200RETURN incrementTrackRate();              // :T+#
+  LX200RETURN decrementTrackRate();              // :T-#
+  LX200RETURN resetTrackRate();                  // :TR#
+  LX200RETURN setStepperMode(uint8_t mode);      // :T1# / :T2#
+
+  // -----------------------------------------------------------------------
+  //  Movement / Slew
+  // -----------------------------------------------------------------------
+  LX200RETURN startMoveNorth();                  // :Mn#
+  LX200RETURN startMoveSouth();                  // :Ms#
+  LX200RETURN startMoveEast();                   // :Me#
+  LX200RETURN startMoveWest();                   // :Mw#
+  LX200RETURN stopMoveNorth();                   // :Qn#
+  LX200RETURN stopMoveSouth();                   // :Qs#
+  LX200RETURN stopMoveEast();                    // :Qe#
+  LX200RETURN stopMoveWest();                    // :Qw#
+  LX200RETURN stopSlew();                        // :Q#
+  LX200RETURN meridianFlip();                    // :MF#
+  LX200RETURN setSpeed(uint8_t level);           // :R0# .. :R4#
+
+  // -----------------------------------------------------------------------
+  //  Home / Park
+  // -----------------------------------------------------------------------
+  LX200RETURN homeReset();                       // :hF#
+  LX200RETURN homeGoto();                        // :hC#
+  LX200RETURN park();                            // :hP#
+  LX200RETURN unpark();                          // :hR#
+  LX200RETURN setPark();                         // :hQ#
+  LX200RETURN parkReset();                       // :hO#
+  LX200RETURN setHomeCurrent();                  // :hB#
+  LX200RETURN resetHomeCurrent();                // :hb#
+
+  // -----------------------------------------------------------------------
+  //  Alignment
+  // -----------------------------------------------------------------------
+  LX200RETURN alignStart();                      // :A0#
+  LX200RETURN alignAcceptStar();                 // :A*#
+  LX200RETURN alignAtHome();                     // :AA#
+  LX200RETURN alignSave();                       // :AW#
+  LX200RETURN alignClear();                      // :AC#
+  LX200RETURN getAlignError(char* out, int len); // :AE#
+  LX200RETURN alignSelectStar(uint8_t n);        // :A1# .. :A9#
+  LX200RETURN alignNextStar();                   // :A+#
+  LX200RETURN setPierSideEast();                 // :SmE#
+  LX200RETURN setPierSideWest();                 // :SmW#
+  LX200RETURN setPierSideNone();                 // :SmN#
+  LX200RETURN getAlignErrorPolar(char* out, int len);  // :GXAw#
+  LX200RETURN getAlignErrorAz(char* out, int len);     // :GXAz#
+  LX200RETURN getAlignErrorAlt(char* out, int len);    // :GXAa#
+
+  // -----------------------------------------------------------------------
+  //  Focuser actions
+  // -----------------------------------------------------------------------
+  LX200RETURN focuserSetZero();                  // :FP#
+  LX200RETURN focuserStop();                     // :FQ#
+  LX200RETURN focuserMoveOut();                  // :F+#
+  LX200RETURN focuserMoveIn();                   // :F-#
+  LX200RETURN getFocuserVersion(char* out, int len); // :FV#
+  LX200RETURN focuserResetConfig();              // :F!#
+  LX200RETURN focuserSaveConfig();               // :F$#
+  LX200RETURN focuserGotoHome();                 // :FS,0#
+  LX200RETURN focuserIsConnected(bool& connected); // :F~#
+
+  // -----------------------------------------------------------------------
+  //  Rotator
+  // -----------------------------------------------------------------------
+  LX200RETURN rotatorCenter();                   // :rC#
+  LX200RETURN rotatorReset();                    // :rF#
+  LX200RETURN rotatorIncrDeRotate();             // :r+#
+  LX200RETURN rotatorDecrDeRotate();             // :r-#
+  LX200RETURN rotatorReverse();                  // :rR#
+  LX200RETURN rotatorDeRotateToggle();           // :rP#
+  LX200RETURN rotatorMove(uint8_t speed, bool forward); // :rN#:r>|<#
+
+  // -----------------------------------------------------------------------
+  //  Extended GX/SX config — Rates & Acceleration
+  // -----------------------------------------------------------------------
+  LX200RETURN getAcceleration(float& val);       // :GXRA#
+  LX200RETURN setAcceleration(float val);        // :SXRA,val#
+  LX200RETURN getMaxRate(int& val);              // :GXRX#
+  LX200RETURN setMaxRate(int val);               // :SXRX,val#
+  LX200RETURN getDeadband(int& val);             // :GXRD#
+  LX200RETURN setDeadband(int val);              // :SXRD,val#
+  LX200RETURN getSpeedRate(uint8_t idx, float& val);   // :GXRn#
+  LX200RETURN setSpeedRate(uint8_t idx, float val);    // :SXRn,val#
+
+  // -----------------------------------------------------------------------
+  //  Extended GX/SX config — Limits
+  // -----------------------------------------------------------------------
+  LX200RETURN getMinAltitude(int& val);          // :GXLH#
+  LX200RETURN setMinAltitude(int val);           // :SXLH,val#
+  LX200RETURN getMaxAltitude(int& val);          // :GXLO#
+  LX200RETURN setMaxAltitude(int val);           // :SXLO,val#
+  LX200RETURN getUnderPoleLimit(char* out, int len);   // :GXLU#
+  LX200RETURN setUnderPoleLimit(float val);      // :SXLU,val#
+  LX200RETURN getMinDistFromPole(int& val);      // :GXLS#
+  LX200RETURN setMinDistFromPole(int val);       // :SXLS,val#
+  LX200RETURN getLimitEast(char* out, int len);  // :GXLE#
+  LX200RETURN getLimitWest(char* out, int len);  // :GXLW#
+  LX200RETURN getAxisLimit(char mode, char* out, int len);   // :GXlA#..D# or :GXLA#..D#
+  LX200RETURN setAxisLimit(char mode, float val);             // :SXLx,val#
+
+  // -----------------------------------------------------------------------
+  //  Extended GX/SX config — Mount flags
+  // -----------------------------------------------------------------------
+  LX200RETURN getRefractionEnabled(char* out, int len);   // :GXrt#
+  LX200RETURN enableRefraction(bool on);                    // :SXrt,y/n#
+  LX200RETURN getPolarAlignEnabled(char* out, int len);   // :GXrp#
+  LX200RETURN enablePolarAlign(bool on);                    // :SXrp,y/n#
+  LX200RETURN getGoToEnabled(char* out, int len);          // :GXrg#
+  LX200RETURN enableGoTo(bool on);                          // :SXrg,y/n#
+  LX200RETURN enableMotors(bool on);                        // :SXME,y/n#
+  LX200RETURN enableEncoders(bool on);                      // :SXEE,y/n#
+
+  // -----------------------------------------------------------------------
+  //  Extended GX/SX config — Other
+  // -----------------------------------------------------------------------
+  LX200RETURN getMountDescription(char* out, int len);      // :GXOA#
+  LX200RETURN getStepsPerSecond(char* out, int len);        // :GXOS#
+  LX200RETURN setStepsPerSecond(int val);                    // :SXOS,val#
+
+  // -----------------------------------------------------------------------
+  //  Miscellaneous
+  // -----------------------------------------------------------------------
+  LX200RETURN saveUserPosition();                // :SU#
+  LX200RETURN getDate(char* out, int len);       // :GC#
+  LX200RETURN getElevation(char* out, int len);  // :Ge#
+  LX200RETURN syncTime();                        // :gs#
+  LX200RETURN syncLocation();                    // :gt#
+  LX200RETURN reboot();                          // :$!#
+  LX200RETURN factoryReset();                    // :$$#
+  LX200RETURN encoderSync();                     // :ECS#
+  LX200RETURN encoderStopMotion();               // :EMQ#
 
   // -----------------------------------------------------------------------
   //  Motor configuration (per-axis: 1 = RA/Az, 2 = Dec/Alt)

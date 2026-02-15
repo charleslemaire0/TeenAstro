@@ -1,4 +1,4 @@
-#include <TeenAstroLX200io.h>
+#include "TeenAstroWifi.h"
 #include "TeenAstroWifi.h"
 
 // -----------------------------------------------------------------------------------
@@ -42,7 +42,7 @@ const char* html_indexWorkload PROGMEM = "&nbsp;&nbsp;Workload: <font class='c'>
 
 void TeenAstroWifi::handleRoot()
 {
-  Ser.setTimeout(WebTimeout);
+  s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[300] = "";
   char temp1[80] = "";

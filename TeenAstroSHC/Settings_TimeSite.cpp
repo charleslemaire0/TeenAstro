@@ -1,4 +1,3 @@
-#include <TeenAstroLX200io.h>
 #include "SmartController.h"
 #include "SHC_text.h"
 
@@ -27,7 +26,7 @@ void SmartHandController::menuTimeAndSite()
       else if (!ta_MountStatus.isGNSSValid())
         DisplayMessage(T_NOGNSS, T_SIGNAL, -1);
       else
-        DisplayMessageLX200(SetLX200(":gs#"), false);
+        DisplayMessageLX200(m_client->syncTime(), false);
       break;
     }
   }
@@ -57,7 +56,7 @@ void SmartHandController::menuDateAndTime()
       break;
     case 4:
       if (ta_MountStatus.isGNSSValid())
-        DisplayMessageLX200(SetLX200(":gt#"), false);
+        DisplayMessageLX200(m_client->syncLocation(), false);
       else
         DisplayMessage(T_NOGNSS, T_SIGNAL, -1);
       break;
@@ -111,7 +110,7 @@ void SmartHandController::menuSites()
   char txt[70] = "";
   for (int i = 0; i < 3; i++)
   {
-    GetSiteNameLX200(i, sitename, sizeof(sitename));
+    m_client->getSiteName(i, sitename, sizeof(sitename));
     strcat(txt, sitename);
     if (i != 2)
     {
@@ -119,7 +118,7 @@ void SmartHandController::menuSites()
     }
   }
 
-  if (DisplayMessageLX200(GetSiteLX200(val)))
+  if (DisplayMessageLX200(m_client->getSite(val)))
   {
     uint8_t tmp_in = val + 1;
     uint8_t tmp_sel = display->UserInterfaceSelectionList(&buttonPad, "Menu Sites", tmp_in, txt);
@@ -128,7 +127,7 @@ void SmartHandController::menuSites()
       if (tmp_sel != tmp_in)
       {
         val = (int)tmp_sel - 1;
-        DisplayMessageLX200(SetSiteLX200(val),false);
+        DisplayMessageLX200(m_client->setSite(val),false);
       }
     }
   }
@@ -137,11 +136,11 @@ void SmartHandController::menuSites()
 void SmartHandController::menuLocalTime()
 {
   long value;
-  if (DisplayMessageLX200(GetLocalTimeLX200(value)))
+  if (DisplayMessageLX200(m_client->getLocalTime(value)))
   {
     if (display->UserInterfaceInputValueLocalTime(&buttonPad, T_LOCALTIME, &value))
     {
-      DisplayMessageLX200(SetLocalTimeLX200(value), false);
+      DisplayMessageLX200(m_client->setLocalTime(value), false);
     }
   }
 }
@@ -149,14 +148,14 @@ void SmartHandController::menuLocalTime()
 void SmartHandController::menuLocalTimeZone()
 {
   float val = 0;
-  if (DisplayMessageLX200(GetLX200Float(":GG#", &val)))
+  if (DisplayMessageLX200(m_client->getFloat(":GG#", &val)))
   {
     val *= -1;
     if (display->UserInterfaceInputValueFloatIncr(&buttonPad, T_TIMEZONE, "UTC ", &val, -12, 12, 3, 1, 0.5, " " T_HOUR))
     {
       char cmd[15];
       sprintf(cmd, ":SG%+05.1f#", -val);
-      if (DisplayMessageLX200(SetLX200(cmd),false))
+      if (DisplayMessageLX200(m_client->set(cmd),false))
         exitMenu = true;
     }
   }
@@ -165,7 +164,7 @@ void SmartHandController::menuLocalTimeZone()
 void SmartHandController::menuLocalDate()
 {
   char out[20];
-  if (DisplayMessageLX200(GetLX200(":GC#", out, sizeof(out))))
+  if (DisplayMessageLX200(m_client->getDate(out, sizeof(out))))
   {
     char* pEnd;
     uint8_t month = strtol(&out[0], &pEnd, 10);
@@ -174,7 +173,7 @@ void SmartHandController::menuLocalDate()
     if (display->UserInterfaceInputValueDate(&buttonPad, T_DATE, year, month, day))
     {
       sprintf(out, ":SC%02d/%02d/%02d#", month, day, year);
-      DisplayMessageLX200(SetLX200(out), false);
+      DisplayMessageLX200(m_client->set(out), false);
     }
   }
 }
@@ -183,7 +182,7 @@ void SmartHandController::menuLatitude()
 {
   double degree_d;
   int degree, minute, seconds;
-  if (DisplayMessageLX200(GetLatitudeLX200(degree_d)))
+  if (DisplayMessageLX200(m_client->getLatitude(degree_d)))
   {
     long angle = degree_d * 3600;
     if (display->UserInterfaceInputValueLatitude(&buttonPad, T_LATITUDE, T_N " ", T_S " ", &angle))
@@ -200,7 +199,7 @@ void SmartHandController::menuLatitude()
       sprintf(cmd, ":St%+03d:%02d:%02d#", degree, minute, seconds);
       //sprintf(cmd, ":St%+03d*%02d#", degree, minute);
       cmd[3] = sign;
-      DisplayMessageLX200(SetLX200(cmd), false);
+      DisplayMessageLX200(m_client->set(cmd), false);
     }
   }
 }
@@ -209,7 +208,7 @@ void SmartHandController::menuLongitude()
 {
   double degree_d;
   int degree, minute, seconds;
-  if (DisplayMessageLX200(GetLongitudeLX200(degree_d)))
+  if (DisplayMessageLX200(m_client->getLongitude(degree_d)))
   {
     long angle = degree_d * 3600;
     if (display->UserInterfaceInputValueLongitude(&buttonPad, T_LONGITUDE, T_W " ", T_E " ", &angle))
@@ -225,7 +224,7 @@ void SmartHandController::menuLongitude()
       sprintf(cmd, ":Sg%+04d:%02d:%02d#", degree, minute, seconds);
       //sprintf(cmd, ":Sg%+04d*%02d#", degree, minute);
       cmd[3] = sign;
-      DisplayMessageLX200(SetLX200(cmd), false);
+      DisplayMessageLX200(m_client->set(cmd), false);
     }
   }
 }
@@ -233,13 +232,13 @@ void SmartHandController::menuLongitude()
 void SmartHandController::menuElevation()
 {
   char out[20];
-  if (DisplayMessageLX200(GetLX200(":Ge#", out, sizeof(out))))
+  if (DisplayMessageLX200(m_client->getElevation(out, sizeof(out))))
   {
     float alt = (float)strtol(&out[0], NULL, 10);
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_SITEELEVATION, "", &alt, -200, 8000, 2, 0, " meters"))
     {
       sprintf(out, ":Se%+04d#", (int)alt);
-      DisplayMessageLX200(SetLX200(out), false);
+      DisplayMessageLX200(m_client->set(out), false);
     }
   }
 }

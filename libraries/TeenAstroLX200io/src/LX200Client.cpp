@@ -552,6 +552,332 @@ LX200RETURN LX200Client::syncGotoUser(NAV mode)
 }
 
 // ===========================================================================
+//  Tracking
+// ===========================================================================
+
+LX200RETURN LX200Client::enableTracking(bool on)       { return set(on ? ":Te#" : ":Td#"); }
+LX200RETURN LX200Client::setTrackRateSidereal()         { return set(":TQ#"); }
+LX200RETURN LX200Client::setTrackRateLunar()            { return set(":TL#"); }
+LX200RETURN LX200Client::setTrackRateSolar()            { return set(":TS#"); }
+LX200RETURN LX200Client::setTrackRateUser()             { return set(":TT#"); }
+LX200RETURN LX200Client::incrementTrackRate()           { return set(":T+#"); }
+LX200RETURN LX200Client::decrementTrackRate()           { return set(":T-#"); }
+LX200RETURN LX200Client::resetTrackRate()               { return set(":TR#"); }
+
+LX200RETURN LX200Client::setStepperMode(uint8_t mode)
+{
+  char cmd[5] = ":T0#";
+  cmd[2] = '0' + mode;
+  return set(cmd);
+}
+
+// ===========================================================================
+//  Movement / Slew
+// ===========================================================================
+
+LX200RETURN LX200Client::startMoveNorth()  { return set(":Mn#"); }
+LX200RETURN LX200Client::startMoveSouth()  { return set(":Ms#"); }
+LX200RETURN LX200Client::startMoveEast()   { return set(":Me#"); }
+LX200RETURN LX200Client::startMoveWest()   { return set(":Mw#"); }
+LX200RETURN LX200Client::stopMoveNorth()   { return set(":Qn#"); }
+LX200RETURN LX200Client::stopMoveSouth()   { return set(":Qs#"); }
+LX200RETURN LX200Client::stopMoveEast()    { return set(":Qe#"); }
+LX200RETURN LX200Client::stopMoveWest()    { return set(":Qw#"); }
+LX200RETURN LX200Client::stopSlew()        { return set(":Q#"); }
+LX200RETURN LX200Client::meridianFlip()    { return set(":MF#"); }
+
+LX200RETURN LX200Client::setSpeed(uint8_t level)
+{
+  char cmd[5] = ":R0#";
+  cmd[2] = '0' + level;
+  return set(cmd);
+}
+
+// ===========================================================================
+//  Home / Park
+// ===========================================================================
+
+LX200RETURN LX200Client::homeReset()        { return set(":hF#"); }
+LX200RETURN LX200Client::homeGoto()         { return set(":hC#"); }
+LX200RETURN LX200Client::park()             { return set(":hP#"); }
+LX200RETURN LX200Client::unpark()           { return set(":hR#"); }
+LX200RETURN LX200Client::setPark()          { return set(":hQ#"); }
+LX200RETURN LX200Client::parkReset()        { return set(":hO#"); }
+LX200RETURN LX200Client::setHomeCurrent()   { return set(":hB#"); }
+LX200RETURN LX200Client::resetHomeCurrent() { return set(":hb#"); }
+
+// ===========================================================================
+//  Alignment
+// ===========================================================================
+
+LX200RETURN LX200Client::alignStart()       { return set(":A0#"); }
+LX200RETURN LX200Client::alignAcceptStar()  { return set(":A*#"); }
+LX200RETURN LX200Client::alignAtHome()      { return set(":AA#"); }
+LX200RETURN LX200Client::alignSave()        { return set(":AW#"); }
+LX200RETURN LX200Client::alignClear()       { return set(":AC#"); }
+LX200RETURN LX200Client::getAlignError(char* out, int len) { return get(":AE#", out, len); }
+LX200RETURN LX200Client::alignNextStar()    { return set(":A+#"); }
+LX200RETURN LX200Client::setPierSideEast()  { return set(":SmE#"); }
+LX200RETURN LX200Client::setPierSideWest()  { return set(":SmW#"); }
+LX200RETURN LX200Client::setPierSideNone()  { return set(":SmN#"); }
+
+LX200RETURN LX200Client::alignSelectStar(uint8_t n)
+{
+  char cmd[5] = ":A0#";
+  cmd[2] = '0' + n;
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::getAlignErrorPolar(char* out, int len) { return get(":GXAw#", out, len); }
+LX200RETURN LX200Client::getAlignErrorAz(char* out, int len)    { return get(":GXAz#", out, len); }
+LX200RETURN LX200Client::getAlignErrorAlt(char* out, int len)   { return get(":GXAa#", out, len); }
+
+// ===========================================================================
+//  Focuser actions
+// ===========================================================================
+
+LX200RETURN LX200Client::focuserSetZero()    { return set(":FP#"); }
+LX200RETURN LX200Client::focuserStop()       { return set(":FQ#"); }
+LX200RETURN LX200Client::focuserMoveOut()    { return set(":F+#"); }
+LX200RETURN LX200Client::focuserMoveIn()     { return set(":F-#"); }
+LX200RETURN LX200Client::getFocuserVersion(char* out, int len) { return get(":FV#", out, len); }
+LX200RETURN LX200Client::focuserResetConfig() { return set(":F!#"); }
+LX200RETURN LX200Client::focuserSaveConfig() { return set(":F$#"); }
+LX200RETURN LX200Client::focuserGotoHome()   { return set(":FS,0#"); }
+
+LX200RETURN LX200Client::focuserIsConnected(bool& connected)
+{
+  char out[LX200_SBUF];
+  LX200RETURN ret = get(":F~#", out, sizeof(out));
+  if (ret == LX200_VALUEGET)
+    connected = (out[0] == '~');
+  return ret;
+}
+
+// ===========================================================================
+//  Rotator
+// ===========================================================================
+
+LX200RETURN LX200Client::rotatorCenter()          { return set(":rC#"); }
+LX200RETURN LX200Client::rotatorReset()            { return set(":rF#"); }
+LX200RETURN LX200Client::rotatorIncrDeRotate()     { return set(":r+#"); }
+LX200RETURN LX200Client::rotatorDecrDeRotate()     { return set(":r-#"); }
+LX200RETURN LX200Client::rotatorReverse()          { return set(":rR#"); }
+LX200RETURN LX200Client::rotatorDeRotateToggle()   { return set(":rP#"); }
+
+LX200RETURN LX200Client::rotatorMove(uint8_t speed, bool forward)
+{
+  char cmd1[5] = ":r0#";
+  cmd1[2] = '0' + speed;
+  LX200RETURN ret = set(cmd1);
+  if (ret != LX200_VALUESET) return ret;
+  return set(forward ? ":r>#" : ":r<#");
+}
+
+// ===========================================================================
+//  Extended GX/SX — Rates & Acceleration
+// ===========================================================================
+
+LX200RETURN LX200Client::getAcceleration(float& val)
+{
+  char out[LX200_SBUF];
+  LX200RETURN ret = get(":GXRA#", out, sizeof(out));
+  if (ret == LX200_VALUEGET) val = (float)strtof(out, NULL);
+  return ret;
+}
+
+LX200RETURN LX200Client::setAcceleration(float val)
+{
+  char cmd[LX200_SBUF];
+  sprintf(cmd, ":SXRA,%d#", (int)val);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::getMaxRate(int& val)
+{
+  char out[LX200_SBUF];
+  LX200RETURN ret = get(":GXRX#", out, sizeof(out));
+  if (ret == LX200_VALUEGET) val = (int)strtol(out, NULL, 10);
+  return ret;
+}
+
+LX200RETURN LX200Client::setMaxRate(int val)
+{
+  char cmd[LX200_SBUF];
+  sprintf(cmd, ":SXRX,%d#", val);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::getDeadband(int& val)
+{
+  char out[LX200_SBUF];
+  LX200RETURN ret = get(":GXRD#", out, sizeof(out));
+  if (ret == LX200_VALUEGET) val = (int)strtol(out, NULL, 10);
+  return ret;
+}
+
+LX200RETURN LX200Client::setDeadband(int val)
+{
+  char cmd[LX200_SBUF];
+  sprintf(cmd, ":SXRD,%d#", val);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::getSpeedRate(uint8_t idx, float& val)
+{
+  char cmd[LX200_SBUF];
+  sprintf(cmd, ":GXR%c#", '0' + idx);
+  char out[LX200_SBUF];
+  LX200RETURN ret = get(cmd, out, sizeof(out));
+  if (ret == LX200_VALUEGET) val = (float)strtof(out, NULL);
+  return ret;
+}
+
+LX200RETURN LX200Client::setSpeedRate(uint8_t idx, float val)
+{
+  char cmd[LX200_SBUF];
+  sprintf(cmd, ":SXR%c,%d#", '0' + idx, (int)val);
+  return set(cmd);
+}
+
+// ===========================================================================
+//  Extended GX/SX — Limits
+// ===========================================================================
+
+LX200RETURN LX200Client::getMinAltitude(int& val)
+{
+  char out[LX200_SBUF];
+  LX200RETURN ret = get(":GXLH#", out, sizeof(out));
+  if (ret == LX200_VALUEGET) val = (int)strtol(out, NULL, 10);
+  return ret;
+}
+
+LX200RETURN LX200Client::setMinAltitude(int val)
+{
+  char cmd[LX200_SBUF];
+  sprintf(cmd, ":SXLH,%d#", val);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::getMaxAltitude(int& val)
+{
+  char out[LX200_SBUF];
+  LX200RETURN ret = get(":GXLO#", out, sizeof(out));
+  if (ret == LX200_VALUEGET) val = (int)strtol(out, NULL, 10);
+  return ret;
+}
+
+LX200RETURN LX200Client::setMaxAltitude(int val)
+{
+  char cmd[LX200_SBUF];
+  sprintf(cmd, ":SXLO,%d#", val);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::getUnderPoleLimit(char* out, int len) { return get(":GXLU#", out, len); }
+
+LX200RETURN LX200Client::setUnderPoleLimit(float val)
+{
+  char cmd[LX200_SBUF];
+  sprintf(cmd, ":SXLU,%d#", (int)(val * 10));
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::getMinDistFromPole(int& val)
+{
+  char out[LX200_SBUF];
+  LX200RETURN ret = get(":GXLS#", out, sizeof(out));
+  if (ret == LX200_VALUEGET) val = (int)strtol(out, NULL, 10);
+  return ret;
+}
+
+LX200RETURN LX200Client::setMinDistFromPole(int val)
+{
+  char cmd[LX200_SBUF];
+  sprintf(cmd, ":SXLS,%d#", val);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::getLimitEast(char* out, int len)  { return get(":GXLE#", out, len); }
+LX200RETURN LX200Client::getLimitWest(char* out, int len)  { return get(":GXLW#", out, len); }
+
+LX200RETURN LX200Client::getAxisLimit(char mode, char* out, int len)
+{
+  char cmd[10] = ":GXlX#";
+  cmd[4] = mode;
+  return get(cmd, out, len);
+}
+
+LX200RETURN LX200Client::setAxisLimit(char mode, float val)
+{
+  char cmd[LX200_SBUF];
+  sprintf(cmd, ":SXLX,%d#", (int)(val * 10));
+  cmd[4] = mode;
+  return set(cmd);
+}
+
+// ===========================================================================
+//  Extended GX/SX — Mount flags
+// ===========================================================================
+
+LX200RETURN LX200Client::getRefractionEnabled(char* out, int len)   { return get(":GXrt#", out, len); }
+LX200RETURN LX200Client::enableRefraction(bool on)
+{
+  return set(on ? ":SXrt,y#" : ":SXrt,n#");
+}
+
+LX200RETURN LX200Client::getPolarAlignEnabled(char* out, int len)   { return get(":GXrp#", out, len); }
+LX200RETURN LX200Client::enablePolarAlign(bool on)
+{
+  return set(on ? ":SXrp,y#" : ":SXrp,n#");
+}
+
+LX200RETURN LX200Client::getGoToEnabled(char* out, int len)         { return get(":GXrg#", out, len); }
+LX200RETURN LX200Client::enableGoTo(bool on)
+{
+  return set(on ? ":SXrg,y#" : ":SXrg,n#");
+}
+
+LX200RETURN LX200Client::enableMotors(bool on)
+{
+  return set(on ? ":SXME,y#" : ":SXME,n#");
+}
+
+LX200RETURN LX200Client::enableEncoders(bool on)
+{
+  return set(on ? ":SXEE,y#" : ":SXEE,n#");
+}
+
+// ===========================================================================
+//  Extended GX/SX — Other
+// ===========================================================================
+
+LX200RETURN LX200Client::getMountDescription(char* out, int len)    { return get(":GXOA#", out, len); }
+
+LX200RETURN LX200Client::getStepsPerSecond(char* out, int len)      { return get(":GXOS#", out, len); }
+
+LX200RETURN LX200Client::setStepsPerSecond(int val)
+{
+  char cmd[LX200_SBUF];
+  sprintf(cmd, ":SXOS,%d#", val);
+  return set(cmd);
+}
+
+// ===========================================================================
+//  Miscellaneous
+// ===========================================================================
+
+LX200RETURN LX200Client::saveUserPosition()   { return set(":SU#"); }
+LX200RETURN LX200Client::getDate(char* out, int len) { return get(":GC#", out, len); }
+LX200RETURN LX200Client::getElevation(char* out, int len) { return get(":Ge#", out, len); }
+LX200RETURN LX200Client::syncTime()           { return set(":gs#"); }
+LX200RETURN LX200Client::syncLocation()       { return set(":gt#"); }
+LX200RETURN LX200Client::reboot()             { return set(":$!#"); }
+LX200RETURN LX200Client::factoryReset()       { return set(":$$#"); }
+LX200RETURN LX200Client::encoderSync()        { return set(":ECS#"); }
+LX200RETURN LX200Client::encoderStopMotion()  { return set(":EMQ#"); }
+
+// ===========================================================================
 //  Motor configuration
 // ===========================================================================
 

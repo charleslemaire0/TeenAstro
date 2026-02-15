@@ -86,14 +86,14 @@ void SmartHandController::menuMainUnitInfo()
       }
       break;
     case 2:
-      DisplayMessageLX200(SetLX200(":$!#"), false);
+      DisplayMessageLX200(m_client->reboot(), false);
       delay(500);
       powerCycleRequired = true;
       return;
     case 3:
       if (display->UserInterfaceMessage(&buttonPad, "Reset", "To", "Factory?", "NO\nYES") == 2)
       {
-        DisplayMessageLX200(SetLX200(":$$#"), false);
+        DisplayMessageLX200(m_client->factoryReset(), false);
         delay(500);
         powerCycleRequired = true;
         return;
@@ -118,13 +118,13 @@ void SmartHandController::menuParkAndHome()
     case 0:
       return;
     case 1:
-      DisplayMessageLX200(SetLX200(":hQ#"), false);
+      DisplayMessageLX200(m_client->setPark(), false);
       return;
     case 2:
-      DisplayMessageLX200(SetLX200(":hB#"), false);
+      DisplayMessageLX200(m_client->setHomeCurrent(), false);
       return;
     case 3:
-      DisplayMessageLX200(SetLX200(":hb#"), false);
+      DisplayMessageLX200(m_client->resetHomeCurrent(), false);
       return;
     default:
       break;

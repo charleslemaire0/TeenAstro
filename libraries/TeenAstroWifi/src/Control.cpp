@@ -1,4 +1,3 @@
-#include <TeenAstroLX200io.h>
 #include "TeenAstroWifi.h"
 #include "Ajax.h"
 // -----------------------------------------------------------------------------------
@@ -110,7 +109,7 @@ const char html_controlEnd[] =
 
 void TeenAstroWifi::handleControl()
 {
-  Ser.setTimeout(WebTimeout);
+  s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp1[80] = "";
   String data;
@@ -210,17 +209,17 @@ void TeenAstroWifi::processControlGet()
   v = server.arg("al");
   if (v != "")
   {
-    if (v == "1") SetLX200(":A1#");
-    if (v == "2") SetLX200(":A2#");
-    if (v == "3") SetLX200(":A3#");
-    if (v == "4") SetLX200(":A4#");
-    if (v == "5") SetLX200(":A5#");
-    if (v == "6") SetLX200(":A6#");
-    if (v == "7") SetLX200(":A7#");
-    if (v == "8") SetLX200(":A8#");
-    if (v == "9") SetLX200(":A9#");
-    if (v == "n") SetLX200(":A+#");
-    if (v == "q") SetLX200(":Q#");
+    if (v == "1") s_client->alignSelectStar(1);
+    if (v == "2") s_client->alignSelectStar(2);
+    if (v == "3") s_client->alignSelectStar(3);
+    if (v == "4") s_client->alignSelectStar(4);
+    if (v == "5") s_client->alignSelectStar(5);
+    if (v == "6") s_client->alignSelectStar(6);
+    if (v == "7") s_client->alignSelectStar(7);
+    if (v == "8") s_client->alignSelectStar(8);
+    if (v == "9") s_client->alignSelectStar(9);
+    if (v == "n") s_client->alignNextStar();
+    if (v == "q") s_client->stopSlew();
   }
 #endif
 
@@ -230,52 +229,52 @@ void TeenAstroWifi::processControlGet()
   {
 
     // quick
-    if (v == "qc") SetLX200(":MF#");  // meridian flip
-    else if (v == "qr") SetLX200(":hF#");  // home, reset
-    else if (v == "qh") SetLX200(":hC#");  // home, goto
-    else if (v == "pr") SetLX200(":hO#");  // park, reset
-    else if (v == "ps") SetLX200(":hQ#");  // set park
-    else if (v == "pk") SetLX200(":hP#");  // park
-    else if (v == "pu") SetLX200(":hR#");  // un-park
+    if (v == "qc") s_client->meridianFlip();  // meridian flip
+    else if (v == "qr") s_client->homeReset();  // home, reset
+    else if (v == "qh") s_client->homeGoto();  // home, goto
+    else if (v == "pr") s_client->parkReset();  // park, reset
+    else if (v == "ps") s_client->setPark();  // set park
+    else if (v == "pk") s_client->park();  // park
+    else if (v == "pu") s_client->unpark();  // un-park
 
 
 // GUIDE control direction
-    else if (v == "n1") SetLX200(":Mn#");
-    else if (v == "s1") SetLX200(":Ms#");
-    else if (v == "e1") SetLX200(":Me#");
-    else if (v == "w1") SetLX200(":Mw#");
-    else if (v == "q1") SetLX200(":Q#");
+    else if (v == "n1") s_client->startMoveNorth();
+    else if (v == "s1") s_client->startMoveSouth();
+    else if (v == "e1") s_client->startMoveEast();
+    else if (v == "w1") s_client->startMoveWest();
+    else if (v == "q1") s_client->stopSlew();
 
-    else if (v == "n0") SetLX200(":Qn#");
-    else if (v == "s0") SetLX200(":Qs#");
-    else if (v == "e0") SetLX200(":Qe#");
-    else if (v == "w0") SetLX200(":Qw#");
+    else if (v == "n0") s_client->stopMoveNorth();
+    else if (v == "s0") s_client->stopMoveSouth();
+    else if (v == "e0") s_client->stopMoveEast();
+    else if (v == "w0") s_client->stopMoveWest();
 
     // GUIDE control rate
-    else if (v == "R0") SetLX200(":R0#");
-    else if (v == "R1") SetLX200(":R1#");
-    else if (v == "R2") SetLX200(":R2#");
-    else if (v == "R3") SetLX200(":R3#");
-    else if (v == "R4") SetLX200(":R4#");
+    else if (v == "R0") s_client->setSpeed(0);
+    else if (v == "R1") s_client->setSpeed(1);
+    else if (v == "R2") s_client->setSpeed(2);
+    else if (v == "R3") s_client->setSpeed(3);
+    else if (v == "R4") s_client->setSpeed(4);
 
     // Focuser
-    else if (v == "Fz") SetLX200(":FP#");
-    else if (v == "Fh") SetLX200(":FS,0#");
-    else if (v == "Fi") SetLX200(":F-#");
-    else if (v == "Fo") SetLX200(":F+#");
-    else if (v == "Fq") SetLX200(":FQ#");
+    else if (v == "Fz") s_client->focuserSetZero();
+    else if (v == "Fh") s_client->focuserGotoHome();
+    else if (v == "Fi") s_client->focuserMoveIn();
+    else if (v == "Fo") s_client->focuserMoveOut();
+    else if (v == "Fq") s_client->focuserStop();
 
     // Rotate/De-Rotate
-    else if (v == "b2") SetLX200(":r3#:r<#");
-    else if (v == "b1") SetLX200(":r1#:r<#");
-    else if (v == "f1") SetLX200(":r1#:r>#");
-    else if (v == "f2") SetLX200(":r3#:r>#");
-    else if (v == "ho") SetLX200(":rC#");
-    else if (v == "re") SetLX200(":rF#");
-    else if (v == "d0") SetLX200(":r-#");
-    else if (v == "d1") SetLX200(":r+#");
-    else if (v == "dr") SetLX200(":rR#");
-    else if (v == "dp") SetLX200(":rP#");
+    else if (v == "b2") s_client->rotatorMove(3, false);
+    else if (v == "b1") s_client->rotatorMove(1, false);
+    else if (v == "f1") s_client->rotatorMove(1, true);
+    else if (v == "f2") s_client->rotatorMove(3, true);
+    else if (v == "ho") s_client->rotatorCenter();
+    else if (v == "re") s_client->rotatorReset();
+    else if (v == "d0") s_client->rotatorDecrDeRotate();
+    else if (v == "d1") s_client->rotatorIncrDeRotate();
+    else if (v == "dr") s_client->rotatorReverse();
+    else if (v == "dp") s_client->rotatorDeRotateToggle();
   }
 }
 

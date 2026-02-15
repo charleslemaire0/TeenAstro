@@ -21,7 +21,7 @@ void SmartHandController::menuFocuserAction()
   for (int k = 0; k < 10; k++)
   {
     sprintf(temp, ":Fx%d#", k);
-    GetLX200(temp, out, 20);
+    m_client->get(temp, out, 20);
     if (out[0] == 'P')
     {
       strcat(txt, &out[7]);
@@ -78,7 +78,7 @@ void SmartHandController::menuFocuserAction()
         char cmd[15];
         sprintf(cmd, ":Fg%d#", idxs[choice - 1]);
         DisplayMessage(T_GOTO, T_POSITION, 1000);
-        SetLX200(cmd);
+        m_client->set(cmd);
         exitMenu = true;
       }
       else
@@ -92,7 +92,7 @@ void SmartHandController::menuFocuserAction()
             char cmd[15];
             sprintf(cmd, ":FG,%05d#", (int)(FocuserPos));
             DisplayMessage(T_GOTO, T_POSITION, 1000);
-            SetLX200(cmd);
+            m_client->set(cmd);
             exitMenu = true;
           }
           break;
@@ -104,14 +104,14 @@ void SmartHandController::menuFocuserAction()
             char cmd[15];
             sprintf(cmd, ":FS,%05d#", (int)(FocuserPos));
             DisplayMessage(T_SYNCEDAT, T_POSITION, 1000);
-            SetLX200(cmd);
+            m_client->set(cmd);
             exitMenu = true;
           }
           break;
         }
         case 3:
         {
-          SetLX200(":FP#");
+          m_client->focuserSetZero();
           exitMenu = true;
           break;
         }
