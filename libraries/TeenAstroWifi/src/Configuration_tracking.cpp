@@ -50,20 +50,20 @@ const char html_configRateDEC[] PROGMEM =
 "\r\n";
 
 const char html_controlTrack[] PROGMEM =
-"<div class='b1' style='width: 27em'>\n"
-"<div class='bct' align='left'>Tracking:</div>\n"
-"<button type='button' class='bbh' onpointerdown=\"g('Ts')\" type='submit'>" SIDEREAL_CH "</button>\n"
-"<button type='button' class='bbh' onpointerdown=\"g('Tl')\" type='submit'>" LUNAR_CH "</button>\n"
-"<button type='button' class='bbh' onpointerdown=\"g('Th')\" type='submit'>" SOLAR_CH "</button>\n"
-"<button type='button' class='bbh' onpointerdown=\"g('Tt')\" type='submit'>" USER_CH "</button>\n"
-"<button type='button' class='bbh' onpointerdown=\"g('on')\" type='submit'>On</button>\n"
-"<button type='button' class='bbh' onpointerdown=\"g('off')\" type='submit'>Off</button><br/></div>\n"
-"<br class='clear' />\r\n\n";
+"<div class='panel' style='width:100%;max-width:27em'>\n"
+"<div class='panel-title'>Tracking:</div>\n"
+"<button type='button' class='bbh' onpointerdown=\"g('Ts')\">" SIDEREAL_CH "</button>\n"
+"<button type='button' class='bbh' onpointerdown=\"g('Tl')\">" LUNAR_CH "</button>\n"
+"<button type='button' class='bbh' onpointerdown=\"g('Th')\">" SOLAR_CH "</button>\n"
+"<button type='button' class='bbh' onpointerdown=\"g('Tt')\">" USER_CH "</button>\n"
+"<button type='button' class='bbh' onpointerdown=\"g('on')\">On</button>\n"
+"<button type='button' class='bbh' onpointerdown=\"g('off')\">Off</button><br/></div>\n"
+"\r\n\n";
 
 const char html_configTrackingOptions[] PROGMEM =
-"<div class='bt'> Tracking Options: <br/> </div>\n";
+"<div class='bt'>Tracking Options</div>\n";
 const char html_configTrackingDrift[] PROGMEM =
-"<div class='bt'> Tracking Drift Options " USER_CH " : <br/> </div>\n";
+"<div class='bt'>Tracking Drift Options " USER_CH "</div>\n";
 
 const char html_Opt_1[] PROGMEM =
 "<form action='/configuration_tracking.htm'>\n"
@@ -90,6 +90,7 @@ void TeenAstroWifi::handleConfigurationTracking()
 
   data += FPSTR(html_indexTrackingInfo);
   sendHtml(data);
+  data += "<div class='card'>";
 
   // Refraction tracking option
   data += FPSTR(html_configTrackingOptions);
@@ -126,6 +127,7 @@ void TeenAstroWifi::handleConfigurationTracking()
     sendHtml(data);
   }
 
+  data += "</div>"; // close card
   data += FPSTR(html_controlTrack);
   sendHtml(data);
 

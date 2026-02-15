@@ -4,7 +4,7 @@
 // configuration_speed
 
 const char html_configRateD_0[] PROGMEM =
-"<div class='bt'> Speed & Acceleration: <br/> </div>"
+"<div class='bt'>Speed &amp; Acceleration</div>"
 "<form action='/configuration_speed.htm'>"
 "<select name='RD'>";
 const char html_configRateD_1[] PROGMEM =
@@ -71,6 +71,7 @@ void TeenAstroWifi::handleConfigurationSpeed()
   sendHtml(data);
 
   ta_MountStatus.updateMount();
+  data += "<div class='card'>";
 
   // Default speed after start
   int deadband = 4;
@@ -111,6 +112,9 @@ void TeenAstroWifi::handleConfigurationSpeed()
   s_client->getAcceleration(acc);
   sprintf_P(temp, html_configAcceleration, acc);
   data += temp;
+  data += "</div>"; // close card
+  sendHtml(data);
+  data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
 }

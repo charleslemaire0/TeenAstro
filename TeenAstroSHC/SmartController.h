@@ -1,8 +1,17 @@
 #pragma once
 #include <Arduino.h>
-#include <TeenAstroLX200io.h>
+#include <LX200Client.h>
+#include <LX200Navigation.h>
 #include <u8g2_ext.h>
 #include <TeenAstroPad.h>
+
+// Platform-specific serial port alias
+#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
+#define Ser Serial
+#endif
+#ifdef ARDUINO_LOLIN_C3_MINI
+#define Ser Serial1
+#endif
 
 #define Product "Teenastro SHC"
 #define SHCFirmwareDate          __DATE__

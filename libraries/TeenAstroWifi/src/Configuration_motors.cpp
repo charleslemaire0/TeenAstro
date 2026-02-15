@@ -119,7 +119,7 @@ void TeenAstroWifi::handleConfigurationMotors()
   if (restartRequired_t1)
   {
     data += FPSTR(html_reboot_t);
-    data += FPSTR(html_pageFooterNested);
+    data += FPSTR(html_pageFooter);
     sendHtml(data);
     sendHtmlDone(data);
     restartRequired_t1 = false;
@@ -127,7 +127,7 @@ void TeenAstroWifi::handleConfigurationMotors()
     return;
   }
 
-  data += "<div class='bt'> Motor: <br/> </div>";
+  data += "<div class='card'>";
 
   // Settle time
   if (s_client->getStepsPerSecond(temp2, sizeof(temp2)) == LX200_VALUEGET)
@@ -249,6 +249,7 @@ void TeenAstroWifi::handleConfigurationMotors()
     }
   }
 
+  data += "</div>"; // close card
   data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);

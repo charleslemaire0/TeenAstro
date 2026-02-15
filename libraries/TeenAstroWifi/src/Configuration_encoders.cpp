@@ -4,7 +4,7 @@
 // configuration_encoders
 
 const char html_configEncoders_1[] PROGMEM =
-"<div class='bt'> Encoders Sync Mode: <br/> </div>"
+"<div class='bt'>Encoders Sync Mode</div>"
 "<form action='/configuration_encoders.htm'>"
 "<select name='smE' onchange='this.form.submit()' >";
 const char html_configEncoders_2[] PROGMEM =
@@ -13,7 +13,7 @@ const char html_configEncoders_2[] PROGMEM =
 "<br/>\r\n";
 
 const char html_configPPDAxis[] PROGMEM =
-"<div class='bt'> Encoders of Instrument Axis %d: <br/> </div>"
+"<div class='bt'>Encoders of Instrument Axis %d</div>"
 "<form method='get' action='/configuration_encoders.htm'>"
 " <input value='%.2f' type='number' name='ppdEa%d' min='0' max='3600' step='0.01'>"
 "<button type='submit'>Upload</button>"
@@ -48,6 +48,7 @@ void TeenAstroWifi::handleConfigurationEncoders()
   preparePage(data, ServerPage::Encoders);
   sendHtml(data);
   ta_MountStatus.updateMount();
+  data += "<div class='card'>";
 
   // Sync mode selector
   uint8_t syncMode = 0;
@@ -87,6 +88,7 @@ void TeenAstroWifi::handleConfigurationEncoders()
     }
   }
 
+  data += "</div>"; // close card
   data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);

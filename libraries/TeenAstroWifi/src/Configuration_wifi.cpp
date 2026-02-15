@@ -1,5 +1,5 @@
 #include "TeenAstroWifi.h"
-
+#include "HtmlCommon.h"
 
 // -----------------------------------------------------------------------------------
 // Wifi setup
@@ -173,12 +173,13 @@ void TeenAstroWifi::handleWifi()
   processWifiGet();
   preparePage(data, ServerPage::Wifi);
   sendHtml(data);
-  data += "<div style='width: 40em;'>";
+  data += "<div class='card'>";
 
   if (restartRequired)
   {
     data += FPSTR(html_reboot);
-    data += "</div></div></body></html>";
+    data += "</div>";
+    data += FPSTR(html_pageFooter);
     sendHtml(data);
     sendHtmlDone(data);
     restartRequired = false;
@@ -189,7 +190,8 @@ void TeenAstroWifi::handleWifi()
   if (loginRequired)
   {
     data += FPSTR(html_login);
-    data += "</div></div></body></html>";
+    data += "</div>";
+    data += FPSTR(html_pageFooter);
     sendHtml(data);
     sendHtmlDone(data);
     return;
@@ -245,8 +247,8 @@ void TeenAstroWifi::handleWifi()
   data += FPSTR(html_update);
   sendHtml(data);
 
-  strcpy(temp, "</div></div></body></html>");
-  data += temp;
+  data += "</div>"; // close card
+  data += FPSTR(html_pageFooter);
 
   sendHtml(data);
   sendHtmlDone(data);

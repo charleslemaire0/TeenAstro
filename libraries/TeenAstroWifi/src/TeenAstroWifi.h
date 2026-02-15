@@ -37,6 +37,14 @@
 #include <LX200Client.h>
 #include <TeenAstroMountStatus.h>
 
+// Default timeouts (seconds) for serial commands and web requests
+#ifndef TIMEOUT_CMD
+#define TIMEOUT_CMD 30
+#endif
+#ifndef TIMEOUT_WEB
+#define TIMEOUT_WEB 15
+#endif
+
 #define Product "TeenAstro Server"
 #define ServerFirmwareDate          __DATE__
 #define ServerFirmwareTime          __TIME__

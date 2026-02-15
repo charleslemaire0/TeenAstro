@@ -2,54 +2,128 @@
 #include "TeenAstroWifi.h"
 
 
-const char html_headB[] PROGMEM = "<!DOCTYPE HTML>\r\n<html>\r\n<head>\r\n";
+const char html_headB[] PROGMEM = "<!DOCTYPE HTML>\r\n<html lang='en'>\r\n<head>\r\n"
+"<meta charset='UTF-8'>\r\n"
+"<meta name='viewport' content='width=device-width,initial-scale=1'>\r\n";
 const char html_headerIdx[] PROGMEM = "<meta http-equiv=\"refresh\" content=\"5; URL=/index.htm\">\r\n";
 const char html_headE[] PROGMEM = "</head>\r\n";
-const char html_bodyB[] PROGMEM = "<body bgcolor='#26262A'>\r\n";
+const char html_bodyB[] PROGMEM = "<body>\r\n";
 
-const char html_main_cssB[] PROGMEM = "<STYLE>\n";
-const char html_main_css1[] PROGMEM = ".clear { clear: both; } .a {  font-family: Helvetica; background-color: #111111; } .t { font-family: Helvetica; padding: 10px 10px 20px 10px; border: 5px solid #551111;\n";
-const char html_main_css2[] PROGMEM = " margin: 25px 25px 0px 25px; color: #999999; background-color: #111111; min-width: 10em; } input {font-family: Helvetica; font-weight: bold; width:6em; background-color: #A01010; padding: 2px 2px; }\n";
-const char html_main_css3[] PROGMEM = " .b { font-family: Helvetica; font-size: 75%; padding: 10px; border-left: 5px solid #551111; border-right: 5px solid #551111; border-bottom: 5px solid #551111; margin: 0px 25px 25px 25px; color: #999999; background-color: #111111; min-width: 10em; }\n";
-const char html_main_css4[] PROGMEM = " .bt { font-size: 125%; }\n";
-const char html_main_css5[] PROGMEM = " select { width:7em; font-weight: bold; font-family: Helvetica; background-color: #A01010; padding: 2px 2px; } .c { color: #A01010; font-weight: bold}\n";
-const char html_main_css6[] PROGMEM = "h1 { text-align: right; } a:hover, a:active { background-color: red; } .y { color: #FFFF00; font-weight: bold; font-family: Helvetica;}\n";
-const char html_main_css7[] PROGMEM = "a:link, a:visited { background-color: #332222; color: #a07070;  font-family: Helvetica; border:1px solid red; padding: 5px 10px;\n";
-const char html_main_css8[] PROGMEM = " margin: none; text-align: center; text-decoration: none; display: inline-block;}\n";
-const char html_main_css9[] PROGMEM = "button { background-color: #A01010; font-weight: bold; border-radius: 5px; margin: 2px; padding: 4px 8px; }\n";
-const char html_main_css_control1[] PROGMEM = ".b1 { font-family: Helvetica; float: left; border: 2px solid #551111; background-color: #181818; text-align: center; margin: 5px; padding: 15px; padding-top: 3px; }\n";
-const char html_main_css_control2[] PROGMEM = ".gb { width: 60px; height: 50px; padding: 0px; }\n";
-const char html_main_css_control3[] PROGMEM = ".bb { height: 2.5em; width: 8em;} .bbh {   height: 2.5em; width: 6em;}\n";
-const char html_main_css_control4[] PROGMEM = ".bct { font-family: Helvetica; font-size: 125% }\n";
-const char html_main_cssE[] PROGMEM = "</STYLE>\n";
+// ---- Modern consolidated CSS with CSS custom properties ----
+const char html_main_css1[] PROGMEM = "<style>\n"
+":root{"
+"--bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--border:#30363d;"
+"--accent:#c9453a;--accent-h:#e05544;--accent-bg:rgba(201,69,58,.12);"
+"--text:#c9d1d9;--text2:#8b949e;--text-hi:#f0f6fc;"
+"--nav:#21262d;--nav-sel:#c9453a;--nav-text:#c9d1d9;"
+"--card:#161b22;--card-bd:#30363d;"
+"--radius:8px;--shadow:0 2px 8px rgba(0,0,0,.3);"
+"}\n";
 
-const char html_header1[] PROGMEM = "<div class='t'><table width='100%%'><tr><td><b><font size='5'>\n";
-const char html_header2[] PROGMEM = "</font></b></td><td align='right'><b>" Product " " ServerFirmwareVersionMajor "." ServerFirmwareVersionMinor "." ServerFirmwareVersionPatch ", Main Unit \n";
-const char html_header3[] PROGMEM = "</b></td></tr></table>\n";
-const char html_header4[] PROGMEM = "</div><div class='b'>\r\n";
+const char html_main_css2[] PROGMEM =
+"*{box-sizing:border-box;margin:0;padding:0}"
+"body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;"
+"background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;padding:0}\n";
 
-const char html_links1S[] PROGMEM = "<a href='/index.htm' style='background-color: #552222;'>Status</a>\n";
+const char html_main_css3[] PROGMEM =
+".hdr{background:var(--bg2);border-bottom:1px solid var(--border);"
+"padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}\n"
+".hdr-title{font-size:1.3em;font-weight:700;color:var(--text-hi)}\n"
+".hdr-info{font-size:.85em;color:var(--text2);text-align:right}\n";
+
+const char html_main_css4[] PROGMEM =
+"nav{background:var(--nav);padding:6px 12px;display:flex;flex-wrap:wrap;gap:4px;"
+"border-bottom:1px solid var(--border)}\n"
+"nav a{color:var(--nav-text);text-decoration:none;padding:6px 14px;border-radius:6px;"
+"font-size:.85em;font-weight:500;transition:background .15s,color .15s}\n"
+"nav a:link,nav a:visited{color:var(--nav-text);background:transparent;border:none;"
+"display:inline-block;text-align:center}\n"
+"nav a:hover,nav a:active{background:var(--accent-bg);color:var(--accent-h)}\n"
+"nav a.sel{background:var(--nav-sel);color:#fff;font-weight:600}\n";
+
+const char html_main_css5[] PROGMEM =
+".content{max-width:900px;margin:20px auto;padding:0 16px}\n"
+".bt{font-size:1.1em;font-weight:600;color:var(--text-hi);margin:18px 0 8px;padding-bottom:4px;"
+"border-bottom:1px solid var(--border)}\n"
+".card{background:var(--card);border:1px solid var(--card-bd);border-radius:var(--radius);"
+"padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}\n";
+
+const char html_main_css6[] PROGMEM =
+"form{margin:6px 0}"
+"input[type=number],input[type=text]{background:var(--bg3);border:1px solid var(--border);"
+"color:var(--text-hi);padding:6px 10px;border-radius:var(--radius);font-size:.9em;"
+"width:7em;font-weight:600;outline:none;transition:border-color .15s}\n"
+"input:focus{border-color:var(--accent)}\n"
+"select{background:var(--bg3);border:1px solid var(--border);color:var(--text-hi);"
+"padding:6px 10px;border-radius:var(--radius);font-size:.9em;font-weight:600;"
+"width:auto;min-width:7em;outline:none}\n"
+"select:focus{border-color:var(--accent)}\n";
+
+const char html_main_css7[] PROGMEM =
+"button{background:var(--accent);color:#fff;font-weight:600;border:none;"
+"border-radius:var(--radius);padding:7px 16px;font-size:.85em;cursor:pointer;"
+"transition:background .15s,transform .1s}\n"
+"button:hover{background:var(--accent-h)}\n"
+"button:active{transform:scale(.97)}\n"
+".c{color:var(--accent-h);font-weight:700}\n"
+".y{color:#f0c040;font-weight:700}\n";
+
+const char html_main_css_control1[] PROGMEM =
+".panel{background:var(--card);border:1px solid var(--card-bd);"
+"border-radius:var(--radius);padding:16px;margin:8px;box-shadow:var(--shadow);"
+"display:inline-block;vertical-align:top;text-align:center}\n"
+".panels{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}\n"
+".panel-title{font-size:1.1em;font-weight:600;color:var(--text-hi);margin-bottom:10px;"
+"text-align:left;padding-bottom:6px;border-bottom:1px solid var(--border)}\n";
+
+const char html_main_css_control2[] PROGMEM =
+".gb{width:64px;height:52px;font-size:1.1em;padding:0;margin:3px;"
+"background:var(--bg3);color:var(--text-hi);border:1px solid var(--border);"
+"border-radius:var(--radius);cursor:pointer;transition:background .15s}\n"
+".gb:hover{background:var(--accent-bg);border-color:var(--accent)}\n"
+".gb:active{background:var(--accent);color:#fff}\n";
+
+const char html_main_css_control3[] PROGMEM =
+".bb{height:2.5em;min-width:8em;margin:3px}\n"
+".bbh{height:2.5em;min-width:6em;margin:3px}\n";
+
+const char html_main_css_control4[] PROGMEM =
+"@media(max-width:600px){"
+".content{padding:0 8px;margin:10px auto}"
+".hdr{padding:8px 12px}"
+"nav{padding:4px 8px;gap:2px}"
+"nav a{padding:5px 10px;font-size:.8em}"
+".panel{margin:4px;padding:12px;min-width:0;width:100%}"
+".gb{width:56px;height:46px}"
+"}\n</style>\n";
+
+const char html_header1[] PROGMEM = "<div class='hdr'><span class='hdr-title'>\n";
+const char html_header2[] PROGMEM = "</span><span class='hdr-info'>" Product " " ServerFirmwareVersionMajor "." ServerFirmwareVersionMinor "." ServerFirmwareVersionPatch "<br>Main Unit \n";
+const char html_header3[] PROGMEM = "</span></div>\n";
+const char html_header4[] PROGMEM = "</nav><div class='content'>\r\n";
+
+const char html_links1S[] PROGMEM = "<a class='sel' href='/index.htm'>Status</a>\n";
 const char html_links1N[] PROGMEM = "<a href='/index.htm'>Status</a>\n";
-const char html_links2S[] PROGMEM = "<a href='/control.htm' style='background-color: #552222;'>Control</a>\n";
+const char html_links2S[] PROGMEM = "<a class='sel' href='/control.htm'>Control</a>\n";
 const char html_links2N[] PROGMEM = "<a href='/control.htm'>Control</a>\n";
-const char html_links3S[] PROGMEM = "<a href='/configuration_speed.htm' style='background-color: #552222;'>Speed</a>\n";
+const char html_links3S[] PROGMEM = "<a class='sel' href='/configuration_speed.htm'>Speed</a>\n";
 const char html_links3N[] PROGMEM = "<a href='/configuration_speed.htm'>Speed</a>\n";
-const char html_links4S[] PROGMEM = "<a href='/configuration_tracking.htm' style='background-color: #552222;'>Tracking</a>\n";
+const char html_links4S[] PROGMEM = "<a class='sel' href='/configuration_tracking.htm'>Tracking</a>\n";
 const char html_links4N[] PROGMEM = "<a href='/configuration_tracking.htm'>Tracking</a>\n";
-const char html_links5S[] PROGMEM = "<a href='/configuration_site.htm' style='background-color: #552222;'>Site</a>\n";
+const char html_links5S[] PROGMEM = "<a class='sel' href='/configuration_site.htm'>Site</a>\n";
 const char html_links5N[] PROGMEM = "<a href='/configuration_site.htm'>Site</a>\n";
-const char html_links6S[] PROGMEM = "<a href='/configuration_mount.htm' style='background-color: #552222;'>Mount</a>\n";
+const char html_links6S[] PROGMEM = "<a class='sel' href='/configuration_mount.htm'>Mount</a>\n";
 const char html_links6N[] PROGMEM = "<a href='/configuration_mount.htm'>Mount</a>\n";
-const char html_links7S[] PROGMEM = "<a href='/configuration_motors.htm' style='background-color: #552222;'>Motors</a>\n";
+const char html_links7S[] PROGMEM = "<a class='sel' href='/configuration_motors.htm'>Motors</a>\n";
 const char html_links7N[] PROGMEM = "<a href='/configuration_motors.htm'>Motors</a>\n";
-const char html_links8S[] PROGMEM = "<a href='/configuration_limits.htm' style='background-color: #552222;'>Limits</a>\n";
+const char html_links8S[] PROGMEM = "<a class='sel' href='/configuration_limits.htm'>Limits</a>\n";
 const char html_links8N[] PROGMEM = "<a href='/configuration_limits.htm'>Limits</a>\n";
-const char html_links9S[] PROGMEM = "<a href='/configuration_encoders.htm' style='background-color: #552222;'>Encoders</a>\n";
+const char html_links9S[] PROGMEM = "<a class='sel' href='/configuration_encoders.htm'>Encoders</a>\n";
 const char html_links9N[] PROGMEM = "<a href='/configuration_encoders.htm'>Encoders</a>\n";
-const char html_links10S[] PROGMEM = "<a href='/configuration_focuser.htm' style='background-color: #552222;'>Focuser</a>\n";
+const char html_links10S[] PROGMEM = "<a class='sel' href='/configuration_focuser.htm'>Focuser</a>\n";
 const char html_links10N[] PROGMEM = "<a href='/configuration_focuser.htm'>Focuser</a>\n";
-const char html_links11S[] PROGMEM = "<a href='/wifi.htm' style='background-color: #552222;'>WiFi</a><br />\n";
-const char html_links11N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a><br />\n";
+const char html_links11S[] PROGMEM = "<a class='sel' href='/wifi.htm'>WiFi</a>\n";
+const char html_links11N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a>\n";
 
 LX200Client* TeenAstroWifi::s_client = nullptr;
 bool TeenAstroWifi::wifiOn = true;
@@ -204,30 +278,24 @@ void TeenAstroWifi::handleNotFound()
 
 void TeenAstroWifi::preparePage(String &data, ServerPage page)
 {
-  char temp1[80] = "";
   data = FPSTR(html_headB);
   if (!ta_MountStatus.hasFocuser() && page == ServerPage::Focuser)
-  {
     page = ServerPage::Index;
-  }
   else if (!ta_MountStatus.encodersEnable() && page == ServerPage::Encoders)
-  {
     page = ServerPage::Index;
-  }
 
   if (page == ServerPage::Index)
     data += FPSTR(html_headerIdx);
-  data += FPSTR(html_main_cssB);
+
+  // CSS
   data += FPSTR(html_main_css1);
   data += FPSTR(html_main_css2);
   data += FPSTR(html_main_css3);
   data += FPSTR(html_main_css4);
   data += FPSTR(html_main_css5);
+  sendHtml(data);
   data += FPSTR(html_main_css6);
   data += FPSTR(html_main_css7);
-  data += FPSTR(html_main_css8);
-  data += FPSTR(html_main_css9);
-  sendHtml(data);
   if (page == ServerPage::Control ||
       page == ServerPage::Tracking ||
       page == ServerPage::Site)
@@ -235,68 +303,53 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
     data += FPSTR(html_main_css_control1);
     data += FPSTR(html_main_css_control2);
     data += FPSTR(html_main_css_control3);
-    data += FPSTR(html_main_css_control4);
-    sendHtml(data);
   }
-  data += FPSTR(html_main_cssE);
+  data += FPSTR(html_main_css_control4);  // responsive rules (always)
+  sendHtml(data);
   data += FPSTR(html_headE);
   data += FPSTR(html_bodyB);
- 
-  // finish the standard http response header
+
+  // Header bar
   data += FPSTR(html_header1);
-  if (ta_MountStatus.hasInfoV()) data += ta_MountStatus.getVP(); else data += "Connection to TeenAstro Main unit is lost";
+  if (ta_MountStatus.hasInfoV()) data += ta_MountStatus.getVP(); else data += "Connection lost";
   data += FPSTR(html_header2);
   if (ta_MountStatus.hasInfoV())
   {
     data += ta_MountStatus.getVN();
-    data += " Board ";
+    data += " &middot; Board ";
     data += ta_MountStatus.getVB();
-    data += " Driver ";
+    data += " &middot; ";
     switch (ta_MountStatus.getVb()[0])
     {
     default:
-    case '0':
-      data += "Generic";
-      break;
-    case '1':
-      data += "TOS100";
-      break;
-    case '2':
-      data += "TMC2130";
-      break;
-    case '3':
-      data += "TMC5160";
-      break;
-    case '4':
-      data += "TMC2160";
-      break;
+    case '0': data += "Generic"; break;
+    case '1': data += "TOS100"; break;
+    case '2': data += "TMC2130"; break;
+    case '3': data += "TMC5160"; break;
+    case '4': data += "TMC2160"; break;
     }
   }
   else data += "?";
   data += FPSTR(html_header3);
+
+  // Navigation
+  data += "<nav>\n";
   data += page == ServerPage::Index ? FPSTR(html_links1S) : FPSTR(html_links1N);
   data += page == ServerPage::Control ? FPSTR(html_links2S) : FPSTR(html_links2N);
   if (ta_MountStatus.motorsEnable())
   {
     data += page == ServerPage::Speed ? FPSTR(html_links3S) : FPSTR(html_links3N);
     data += page == ServerPage::Tracking ? FPSTR(html_links4S) : FPSTR(html_links4N);
-
   }
   data += page == ServerPage::Site ? FPSTR(html_links5S) : FPSTR(html_links5N);
   data += page == ServerPage::Mount ? FPSTR(html_links6S) : FPSTR(html_links6N);
   if (ta_MountStatus.motorsEnable())
-  {
     data += page == ServerPage::Motors ? FPSTR(html_links7S) : FPSTR(html_links7N);
-  }
   data += page == ServerPage::Limits ? FPSTR(html_links8S) : FPSTR(html_links8N);
   if (ta_MountStatus.encodersEnable())
-  {
     data += page == ServerPage::Encoders ? FPSTR(html_links9S) : FPSTR(html_links9N);
-  }
   if (ta_MountStatus.hasFocuser())
-  {
     data += page == ServerPage::Focuser ? FPSTR(html_links10S) : FPSTR(html_links10N);
-  }
 #ifndef OETHS
   data += page == ServerPage::Wifi ? FPSTR(html_links11S) : FPSTR(html_links11N);
 #endif

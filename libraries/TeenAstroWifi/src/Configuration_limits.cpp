@@ -4,7 +4,7 @@
 // configuration_limits
 
 const char html_configMinAlt[] PROGMEM =
-"<div class='bt'> Limits Altitude: <br/> </div>"
+"<div class='bt'>Limits Altitude</div>"
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%d' type='number' name='hl' min='-30' max='30'>"
 "<button type='submit'>Upload</button>"
@@ -19,7 +19,7 @@ const char html_configMaxAlt[] PROGMEM =
 "</form>"
 "\r\n";
 const char html_configUnderPole[] PROGMEM =
-"<div class='bt'> Limits German Equatorial Mount: <br/> </div>"
+"<div class='bt'>Limits German Equatorial Mount</div>"
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%.1f' type='number' name='up' min='9' max='12' step='0.1'>"
 "<button type='submit'>Upload</button>"
@@ -42,7 +42,7 @@ const char html_configPastMerW[] PROGMEM =
 "\r\n";
 #ifdef keepTrackingOnWhenFarFromPole
 const char html_configMiDistanceFromPole[] PROGMEM =
-"<div class='bt'> Tracking safety override when far from Pole: <br/> </div>"
+"<div class='bt'>Tracking Safety Override (Far from Pole)</div>"
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%d' type='number' name='miDistanceFromPole' min='0' max='181'>"
 "<button type='submit'>Upload</button>"
@@ -51,7 +51,7 @@ const char html_configMiDistanceFromPole[] PROGMEM =
 "<br />\r\n";
 #endif
 const char html_configMinAxis1[] PROGMEM =
-"<div class='bt'> Limits of Instrument Axis 1: <br/> </div>"
+"<div class='bt'>Limits of Instrument Axis 1</div>"
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%.1f' type='number' name='mia1' min='%.1f' max='%.1f' step='0.1'>"
 "<button type='submit'>Upload</button>"
@@ -66,7 +66,7 @@ const char html_configMaxAxis1[] PROGMEM =
 "</form>"
 "\r\n";
 const char html_configMinAxis2[] PROGMEM =
-"<div class='bt'> Limits of Instrument Axis 2: <br/> </div>"
+"<div class='bt'>Limits of Instrument Axis 2</div>"
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%.1f' type='number' name='mia2' min='%.1f' max='%.1f' step='0.1'>"
 "<button type='submit'>Upload</button>"
@@ -93,6 +93,7 @@ void TeenAstroWifi::handleConfigurationLimits()
   preparePage(data, ServerPage::Limits);
   sendHtml(data);
   ta_MountStatus.updateMount();
+  data += "<div class='card'>";
 
   // Overhead and Horizon Limits
   int minAlt = 0;
@@ -171,6 +172,7 @@ void TeenAstroWifi::handleConfigurationLimits()
   else
     data += "<br />\r\n";
 
+  data += "</div>"; // close card
   data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);

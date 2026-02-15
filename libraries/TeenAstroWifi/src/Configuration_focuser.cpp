@@ -123,6 +123,7 @@ void TeenAstroWifi::handleConfigurationFocuser()
   processConfigurationFocuserGet();
   preparePage(data, ServerPage::Focuser);
   sendHtml(data);
+  data += "<div class='card'>";
 
   // Read focuser config via named method
   if (s_client->getFocuserConfigRaw(temp1, sizeof(temp1)) == LX200_VALUEGET && temp1[0] == '~')
@@ -195,7 +196,8 @@ void TeenAstroWifi::handleConfigurationFocuser()
     }
   }
 
-  data += FPSTR(html_pageFooterNested);
+  data += "</div>"; // close card
+  data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
 }

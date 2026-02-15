@@ -12,4 +12,3 @@ const char html_optOffUnsel[] PROGMEM = "<option value='2'>Off</option>";
 
 // Page footer
 const char html_pageFooter[] PROGMEM = "</div></body></html>";
-const char html_pageFooterNested[] PROGMEM = "</div></div></body></html>";

@@ -23,11 +23,11 @@ const char html_BrowserTimeScript1[] PROGMEM =
 "}\r\n"
 "</script>\r\n";
 const char html_siteInfo[] PROGMEM =
-"<div class='bt' align='left'> Site definition can be modified only at Home or at Park position!<br/><br/> </div>";
+"<div class='bt'>Site definition can be modified only at Home or at Park position!</div>";
 
 const char html_siteQuick0[] PROGMEM =
-"<div class='b1' style='width: 35em'>\n"
-"<div class='bct' align='left'>Get Time and Location:</div>\n"
+"<div class='panel' style='width:100%;max-width:35em'>\n"
+"<div class='panel-title'>Get Time and Location:</div>\n"
 "<form style='display: inline;' method='get' action='/configuration_site.htm'>\n";
 const char html_siteQuick1[] PROGMEM =
 "<button name='b1' class='bb' value='st' type='submit' onpointerdown='SetDateTime(0);'> Browser " CLOCK_CH "</button>\n";
@@ -44,9 +44,9 @@ const char html_siteQuick1a[] PROGMEM =
 "<input id='GNSST' type='hidden' name='GNSST'>\n"
 "<input id='GNSSS' type='hidden' name='GNSSS'>\n"
 "</form></div>\n"
-"<br class='clear' />\r\n\n";
+"\r\n\n";
 const char html_configSiteSelect1[] PROGMEM =
-"<div class='bt' align='left'> Selected Site :<br/> </div>"
+"<div class='bt'>Selected Site</div>"
 "<form method='post' action='/configuration_site.htm'>"
 "<select onchange='this.form.submit()' style='width:11em' name='site_select'>";
 const char html_configSiteSelect2[] PROGMEM =
@@ -55,7 +55,7 @@ const char html_configSiteSelect2[] PROGMEM =
 "</form>"
 "<br/>\r\n";
 const char html_configSiteName1[] PROGMEM =
-"<div class='bt' align='left'> Selected Site definition: <br/> </div>"
+"<div class='bt'>Selected Site Definition</div>"
 "<form method='get' action='/configuration_site.htm'>";
 const char html_configSiteName2[] PROGMEM =
 " <input value='%s' style='width:10.25em' type='text' name='site_n' maxlength='14'>";
@@ -131,6 +131,7 @@ void TeenAstroWifi::handleConfigurationSite()
   data += FPSTR(html_BrowserTimeScript1);
   sendHtml(data);
   data += FPSTR(html_siteInfo);
+  data += "<div class='card'>";
   sendHtml(data);
   data += FPSTR(html_siteQuick0);
   sendHtml(data);
@@ -242,7 +243,8 @@ void TeenAstroWifi::handleConfigurationSite()
     data += FPSTR(html_configElev4);
     sendHtml(data);
   }
-  data += FPSTR(html_pageFooterNested);
+  data += "</div>"; // close card
+  data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
 }

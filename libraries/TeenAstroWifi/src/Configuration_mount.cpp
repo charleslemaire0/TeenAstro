@@ -4,7 +4,7 @@
 // configuration_telescope
 
 const char html_configMountSelect1[] PROGMEM =
-"<div class='bt' align='left'> Selected Mount :<br/> </div>"
+"<div class='bt'>Selected Mount</div>"
 "<form method='post' action='/configuration_mount.htm'>"
 "<select onchange='this.form.submit()' style='width:11em' name='mount_select'>";
 const char html_configMountSelect2[] PROGMEM =
@@ -14,7 +14,7 @@ const char html_configMountSelect2[] PROGMEM =
 "<br/>\r\n";
 
 const char html_configMountName1[] PROGMEM =
-"<div class='bt' align='left'> Selected Mount definition: <br/> </div>"
+"<div class='bt'>Selected Mount Definition</div>"
 "<form method='get' action='/configuration_mount.htm'>";
 const char html_configMountName2[] PROGMEM =
 " <input value='%s' style='width:10.25em' type='text' name='mount_n' maxlength='14'>";
@@ -24,7 +24,7 @@ const char html_configMountName3[] PROGMEM =
 "</form>"
 "<br/>\r\n";
 const char html_configMount_1[] PROGMEM =
-"<div class='bt'>Mount Type: <br/> </div>"
+"<div class='bt'>Mount Type</div>"
 "<form action='/configuration_mount.htm'>"
 "<select onchange='this.form.submit()' style='width:11em' name='mount'>";
 const char html_configMount_2[] PROGMEM =
@@ -33,7 +33,7 @@ const char html_configMount_2[] PROGMEM =
 "<br/>\r\n";
 
 const char html_configRefraction[] PROGMEM =
-"<div class='bt'> Refraction Options: <br/> </div>";
+"<div class='bt'>Refraction Options</div>";
 const char html_Opt_1[] PROGMEM =
 "<form action='/configuration_mount.htm'>"
 "<select name='%s' onchange='this.form.submit()' >";
@@ -62,7 +62,7 @@ void TeenAstroWifi::handleConfigurationMount()
   if (restartRequired_t)
   {
     data += FPSTR(html_reboot_t);
-    data += FPSTR(html_pageFooterNested);
+    data += FPSTR(html_pageFooter);
     sendHtml(data);
     sendHtmlDone(data);
     restartRequired_t = false;
@@ -70,6 +70,7 @@ void TeenAstroWifi::handleConfigurationMount()
     return;
   }
 
+  data += "<div class='card'>";
   if (s_client->getMountIdx(selectedmount) == LX200_VALUEGET)
   {
     char mount0[32]; char mount1[32];
@@ -138,6 +139,7 @@ void TeenAstroWifi::handleConfigurationMount()
       sendHtml(data);
     }
   }
+  data += "</div>"; // close card
   data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
