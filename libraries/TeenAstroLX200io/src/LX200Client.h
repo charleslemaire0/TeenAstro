@@ -76,7 +76,43 @@ public:
   LX200RETURN set(const char* command);
 
   // -----------------------------------------------------------------------
-  //  Time / Date
+  //  Firmware version
+  // -----------------------------------------------------------------------
+  LX200RETURN getProductName(char* out, int len);      // :GVP#
+  LX200RETURN getVersionNumber(char* out, int len);    // :GVN#
+  LX200RETURN getVersionDate(char* out, int len);      // :GVD#
+  LX200RETURN getBoardVersion(char* out, int len);     // :GVB#
+  LX200RETURN getDriverType(char* out, int len);       // :GVb#
+
+  // -----------------------------------------------------------------------
+  //  Position (string form for display)
+  // -----------------------------------------------------------------------
+  LX200RETURN getRaStr(char* out, int len);            // :GR#
+  LX200RETURN getDecStr(char* out, int len);           // :GD#
+  LX200RETURN getHaStr(char* out, int len);            // :GXT3#
+  LX200RETURN getTargetRaStr(char* out, int len);      // :Gr#
+  LX200RETURN getTargetDecStr(char* out, int len);     // :Gd#
+  LX200RETURN getAzStr(char* out, int len);            // :GZ#
+  LX200RETURN getAltStr(char* out, int len);           // :GA#
+
+  // -----------------------------------------------------------------------
+  //  Axis position (string form)
+  // -----------------------------------------------------------------------
+  LX200RETURN getAxisSteps(uint8_t axis, char* out, int len);       // :GXDP1# / :GXDP2#
+  LX200RETURN getAxisDegrees(uint8_t axis, char* out, int len);     // :GXP1# / :GXP2#
+  LX200RETURN getAxisDegreesCorr(uint8_t axis, char* out, int len); // :GXP3# / :GXP4#
+  LX200RETURN getEncoderDegrees(uint8_t axis, char* out, int len);  // :GXE1# / :GXE2#
+  LX200RETURN getEncoderDelta(char* out, int len);                  // :ED#
+
+  // -----------------------------------------------------------------------
+  //  Time / Date (string form for display)
+  // -----------------------------------------------------------------------
+  LX200RETURN getUTCTimeStr(char* out, int len);       // :GXT0#
+  LX200RETURN getUTCDateStr(char* out, int len);       // :GXT1#
+  LX200RETURN getSiderealStr(char* out, int len);      // :GS#
+
+  // -----------------------------------------------------------------------
+  //  Time / Date (typed)
   // -----------------------------------------------------------------------
   LX200RETURN getLocalTime(unsigned int& hour, unsigned int& minute, unsigned int& second);
   LX200RETURN getLocalTime(long& totalSeconds);
@@ -88,6 +124,20 @@ public:
 
   LX200RETURN getLocalDate(unsigned int& day, unsigned int& month, unsigned int& year);
   LX200RETURN getUTCDate(unsigned int& day, unsigned int& month, unsigned int& year);
+
+  // -----------------------------------------------------------------------
+  //  Mount state & diagnostics
+  // -----------------------------------------------------------------------
+  LX200RETURN getMountStateRaw(char* out, int len);    // :GXI#
+  LX200RETURN getFocuserStatus(char* out, int len);    // :F?#
+
+  // -----------------------------------------------------------------------
+  //  Tracking rates (typed)
+  // -----------------------------------------------------------------------
+  LX200RETURN getTrackRateRA(long& value);             // :GXRr#
+  LX200RETURN getTrackRateDec(long& value);            // :GXRd#
+  LX200RETURN getStoredTrackRateRA(long& value);       // :GXRe#
+  LX200RETURN getStoredTrackRateDec(long& value);      // :GXRf#
 
   // -----------------------------------------------------------------------
   //  Location / Observatory
@@ -248,7 +298,9 @@ public:
   LX200RETURN getMinDistFromPole(int& val);      // :GXLS#
   LX200RETURN setMinDistFromPole(int val);       // :SXLS,val#
   LX200RETURN getLimitEast(char* out, int len);  // :GXLE#
+  LX200RETURN setLimitEast(int val);             // :SXLE,val#
   LX200RETURN getLimitWest(char* out, int len);  // :GXLW#
+  LX200RETURN setLimitWest(int val);             // :SXLW,val#
   LX200RETURN getAxisLimit(char mode, char* out, int len);   // :GXlA#..D# or :GXLA#..D#
   LX200RETURN setAxisLimit(char mode, float val);             // :SXLx,val#
 
@@ -268,8 +320,51 @@ public:
   //  Extended GX/SX config — Other
   // -----------------------------------------------------------------------
   LX200RETURN getMountDescription(char* out, int len);      // :GXOA#
+  LX200RETURN setMountDescription(const char* name);         // :SXOA,name#
   LX200RETURN getStepsPerSecond(char* out, int len);        // :GXOS#
   LX200RETURN setStepsPerSecond(int val);                    // :SXOS,val#
+
+  // -----------------------------------------------------------------------
+  //  Site — additional
+  // -----------------------------------------------------------------------
+  LX200RETURN getSelectedSite(int& val);                    // :W?#
+  LX200RETURN setSelectedSite(int val);                     // :W0#..:W3#
+  LX200RETURN setSiteName(const char* name);                // :Sn name#
+  LX200RETURN getTimeZoneStr(char* out, int len);           // :GG#
+  LX200RETURN setTimeZone(float tz);                        // :SG+NN:MM#
+  LX200RETURN getLatitudeStr(char* out, int len);           // :Gtf#
+  LX200RETURN getLongitudeStr(char* out, int len);          // :Ggf#
+  LX200RETURN setLatitudeDMS(int sign, int deg, int min, int sec);   // :St+DD:MM:SS#
+  LX200RETURN setLongitudeDMS(int sign, int deg, int min, int sec);  // :Sg+DDD:MM:SS#
+  LX200RETURN setElevation(int val);                        // :Se+NNNN#
+  LX200RETURN setUTCDateRaw(int month, int day, int year);  // :SXT1MM/DD/YY#
+  LX200RETURN setUTCTimeRaw(int h, int m, int s);           // :SXT0HH:MM:SS#
+  LX200RETURN setMountType(int type);                       // :S!1#..:S!4#
+
+  // -----------------------------------------------------------------------
+  //  Tracking rates — stored (write)
+  // -----------------------------------------------------------------------
+  LX200RETURN setStoredTrackRateRA(long val);               // :SXRe,val#
+  LX200RETURN setStoredTrackRateDec(long val);              // :SXRf,val#
+
+  // -----------------------------------------------------------------------
+  //  Focuser config (write)
+  // -----------------------------------------------------------------------
+  LX200RETURN getFocuserConfigRaw(char* out, int len);      // :F~#
+  LX200RETURN setFocuserPark(int val);                      // :F0,val#
+  LX200RETURN setFocuserMaxPos(int val);                    // :F1,val#
+  LX200RETURN setFocuserLowSpeed(int val);                  // :F2,val#
+  LX200RETURN setFocuserHighSpeed(int val);                 // :F3,val#
+  LX200RETURN setFocuserGotoAcc(int val);                   // :F4,val#
+  LX200RETURN setFocuserManAcc(int val);                    // :F5,val#
+  LX200RETURN setFocuserDecel(int val);                     // :F6,val#
+  LX200RETURN setFocuserRotation(int val);                  // :F7,val#
+  LX200RETURN setFocuserResolution(int val);                // :F8,val#
+  LX200RETURN setFocuserStepPerRot(int val);                // :Fr,val#
+  LX200RETURN setFocuserMicro(int val);                     // :Fm,val#
+  LX200RETURN setFocuserCurrent(int val);                   // :Fc,val#
+  LX200RETURN getFocuserUserPos(int idx, char* out, int len);                 // :Fx0#..:Fx9#
+  LX200RETURN setFocuserUserPos(int idx, int pos, const char* name);          // :Fs0,NNNNN_name#
 
   // -----------------------------------------------------------------------
   //  Miscellaneous

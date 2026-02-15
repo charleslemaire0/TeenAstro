@@ -1,4 +1,5 @@
 #include "TeenAstroWifi.h"
+#include "HtmlCommon.h"
 // -----------------------------------------------------------------------------------
 // configuration_telescope
 
@@ -37,18 +38,12 @@ const char html_Opt_1[] PROGMEM =
 "<form action='/configuration_mount.htm'>"
 "<select name='%s' onchange='this.form.submit()' >";
 
-const char html_on_1[] PROGMEM = "<option selected value='1'>On</option>";
-const char html_on_2[] PROGMEM = "<option value='1'>On</option>";
-const char html_off_1[] PROGMEM = "<option selected value='2'>Off</option>";
-const char html_off_2[] PROGMEM = "<option value='2'>Off</option>";
-
 const char html_reboot_t[] PROGMEM =
 "<br/><form method='get' action='/configuration_mount.htm'>"
 "<b>The main unit will now restart please wait some seconds and then press continue.</b><br/><br/>"
 "<button type='submit'>Continue</button>"
 "</form><br/><br/><br/><br/>"
 "\r\n";
-
 
 
 bool restartRequired_t = false;
@@ -59,7 +54,6 @@ void TeenAstroWifi::handleConfigurationMount()
   sendHtmlStart();
   char temp[320] = "";
   char temp1[50] = "";
-  char temp2[50] = "";
   String data;
   int selectedmount = 0;
   processConfigurationMountGet();
@@ -68,14 +62,13 @@ void TeenAstroWifi::handleConfigurationMount()
   if (restartRequired_t)
   {
     data += FPSTR(html_reboot_t);
-    data += "</div></div></body></html>";
+    data += FPSTR(html_pageFooterNested);
     sendHtml(data);
     sendHtmlDone(data);
     restartRequired_t = false;
     delay(1000);
     return;
   }
-  //update
 
   if (s_client->getMountIdx(selectedmount) == LX200_VALUEGET)
   {
@@ -110,27 +103,27 @@ void TeenAstroWifi::handleConfigurationMount()
 
     sprintf_P(temp, html_Opt_1, "motors");
     data += temp;
-    ta_MountStatus.motorsEnable() ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
-    !ta_MountStatus.motorsEnable() ? data += FPSTR(html_off_1)  : data += FPSTR(html_off_2);
+    ta_MountStatus.motorsEnable() ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
+    !ta_MountStatus.motorsEnable() ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
     data += "</select> Enable Motors</form><br/>\r\n";
     sendHtml(data);
 
     sprintf_P(temp, html_Opt_1, "encoders");
     data += temp;
-    ta_MountStatus.encodersEnable() ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
-    !ta_MountStatus.encodersEnable() ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
+    ta_MountStatus.encodersEnable() ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
+    !ta_MountStatus.encodersEnable() ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
     data += "</select> Enable Encoders</form><br/>\r\n";
     sendHtml(data);
 
     data += FPSTR(html_configRefraction);
     if (!ta_MountStatus.isAltAz())
     {
-      if (s_client->getPolarAlignEnabled(temp1, sizeof(temp1)) != LX200_GETVALUEFAILED) ;
+      if (s_client->getPolarAlignEnabled(temp1, sizeof(temp1)) != LX200_GETVALUEFAILED)
       {
         sprintf_P(temp, html_Opt_1, "polar");
         data += temp;
-        temp1[0] == 'y' ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
-        temp1[0] == 'n' ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
+        temp1[0] == 'y' ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
+        temp1[0] == 'n' ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
         data += "</select> Consider Refraction for Pole definition</form><br/>\r\n";
         sendHtml(data);
       }
@@ -139,14 +132,13 @@ void TeenAstroWifi::handleConfigurationMount()
     {
       sprintf_P(temp, html_Opt_1, "gotor");
       data += temp;
-      temp1[0] == 'y' ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
-      temp1[0] == 'n' ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
+      temp1[0] == 'y' ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
+      temp1[0] == 'n' ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
       data += "</select> Consider Refraction for Goto and Sync</form><br/>\r\n";
       sendHtml(data);
     }
   }
-  strcpy(temp, "</div></body></html>");
-  data += temp;
+  data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
 }
@@ -155,8 +147,6 @@ void TeenAstroWifi::processConfigurationMountGet()
 {
   String v;
   int i;
-  float f;
-  char temp[20] = "";
 
   // selected Mount
   v = server.arg("mount_select");
@@ -171,19 +161,15 @@ void TeenAstroWifi::processConfigurationMountGet()
   // name
   v = server.arg("mount_n");
   if (v != "")
-  {
-    sprintf(temp, ":SXOA,%s#", (char*)v.c_str());
-    s_client->set(temp);
-  }
+    s_client->setMountDescription(v.c_str());
 
+  // mount type
   v = server.arg("mount");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 4)))
     {
-      sprintf(temp, ":S!X#");
-      temp[3] = '0' + i;
-      if (s_client->set(temp) == LX200_VALUESET)
+      if (s_client->setMountType(i) == LX200_VALUESET)
         restartRequired_t = true;
     }
   }
@@ -194,9 +180,7 @@ void TeenAstroWifi::processConfigurationMountGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
     {
       if ((i == 1 ? s_client->enableMotors(true) : s_client->enableMotors(false)) == LX200_VALUESET)
-      {
         restartRequired_t = true;
-      }
     }
   }
 
@@ -206,9 +190,7 @@ void TeenAstroWifi::processConfigurationMountGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
     {
       if ((i == 1 ? s_client->enableEncoders(true) : s_client->enableEncoders(false)) == LX200_VALUESET)
-      {
         restartRequired_t = true;
-      }
     }
   }
 
@@ -216,18 +198,13 @@ void TeenAstroWifi::processConfigurationMountGet()
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
-    {
       i == 1 ? s_client->enablePolarAlign(true) : s_client->enablePolarAlign(false);
-    }
   }
 
   v = server.arg("gotor");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
-    {
       i == 1 ? s_client->enableGoTo(true) : s_client->enableGoTo(false);
-    }
   }
 }
-

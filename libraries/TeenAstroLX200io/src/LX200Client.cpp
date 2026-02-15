@@ -171,7 +171,96 @@ LX200RETURN LX200Client::set(const char* command)
 }
 
 // ===========================================================================
-//  Time / Date
+//  Firmware version
+// ===========================================================================
+
+LX200RETURN LX200Client::getProductName(char* out, int len)    { return get(":GVP#", out, len); }
+LX200RETURN LX200Client::getVersionNumber(char* out, int len)  { return get(":GVN#", out, len); }
+LX200RETURN LX200Client::getVersionDate(char* out, int len)    { return get(":GVD#", out, len); }
+LX200RETURN LX200Client::getBoardVersion(char* out, int len)   { return get(":GVB#", out, len); }
+LX200RETURN LX200Client::getDriverType(char* out, int len)     { return get(":GVb#", out, len); }
+
+// ===========================================================================
+//  Position (string form)
+// ===========================================================================
+
+LX200RETURN LX200Client::getRaStr(char* out, int len)        { return get(":GR#", out, len); }
+LX200RETURN LX200Client::getDecStr(char* out, int len)       { return get(":GD#", out, len); }
+LX200RETURN LX200Client::getHaStr(char* out, int len)        { return get(":GXT3#", out, len); }
+LX200RETURN LX200Client::getTargetRaStr(char* out, int len)  { return get(":Gr#", out, len); }
+LX200RETURN LX200Client::getTargetDecStr(char* out, int len) { return get(":Gd#", out, len); }
+LX200RETURN LX200Client::getAzStr(char* out, int len)        { return get(":GZ#", out, len); }
+LX200RETURN LX200Client::getAltStr(char* out, int len)       { return get(":GA#", out, len); }
+
+// ===========================================================================
+//  Axis position (string form)
+// ===========================================================================
+
+LX200RETURN LX200Client::getAxisSteps(uint8_t axis, char* out, int len)
+{
+  char cmd[10] = ":GXDP0#";
+  cmd[5] = '0' + axis;
+  return get(cmd, out, len);
+}
+
+LX200RETURN LX200Client::getAxisDegrees(uint8_t axis, char* out, int len)
+{
+  char cmd[10] = ":GXP0#";
+  cmd[4] = '0' + axis;
+  return get(cmd, out, len);
+}
+
+LX200RETURN LX200Client::getAxisDegreesCorr(uint8_t axis, char* out, int len)
+{
+  char cmd[10] = ":GXP0#";
+  cmd[4] = '0' + axis + 2;  // axis 1→P3, axis 2→P4
+  return get(cmd, out, len);
+}
+
+LX200RETURN LX200Client::getEncoderDegrees(uint8_t axis, char* out, int len)
+{
+  char cmd[10] = ":GXE0#";
+  cmd[4] = '0' + axis;
+  return get(cmd, out, len);
+}
+
+LX200RETURN LX200Client::getEncoderDelta(char* out, int len) { return get(":ED#", out, len); }
+
+// ===========================================================================
+//  Time / Date (string form)
+// ===========================================================================
+
+LX200RETURN LX200Client::getUTCTimeStr(char* out, int len)   { return get(":GXT0#", out, len); }
+LX200RETURN LX200Client::getUTCDateStr(char* out, int len)   { return get(":GXT1#", out, len); }
+LX200RETURN LX200Client::getSiderealStr(char* out, int len)  { return get(":GS#", out, len); }
+
+// ===========================================================================
+//  Mount state & diagnostics
+// ===========================================================================
+
+LX200RETURN LX200Client::getMountStateRaw(char* out, int len) { return get(":GXI#", out, len); }
+LX200RETURN LX200Client::getFocuserStatus(char* out, int len) { return get(":F?#", out, len); }
+
+// ===========================================================================
+//  Tracking rates (typed)
+// ===========================================================================
+
+static LX200RETURN getTypedLong(LX200Client& c, const char* cmd, long& value)
+{
+  char out[20];
+  LX200RETURN ret = c.get(cmd, out, sizeof(out));
+  if (ret == LX200_VALUEGET)
+    value = strtol(out, NULL, 10);
+  return ret;
+}
+
+LX200RETURN LX200Client::getTrackRateRA(long& value)        { return getTypedLong(*this, ":GXRr#", value); }
+LX200RETURN LX200Client::getTrackRateDec(long& value)       { return getTypedLong(*this, ":GXRd#", value); }
+LX200RETURN LX200Client::getStoredTrackRateRA(long& value)   { return getTypedLong(*this, ":GXRe#", value); }
+LX200RETURN LX200Client::getStoredTrackRateDec(long& value)  { return getTypedLong(*this, ":GXRf#", value); }
+
+// ===========================================================================
+//  Time / Date (typed)
 // ===========================================================================
 
 LX200RETURN LX200Client::getLocalTime(unsigned int& hour, unsigned int& minute, unsigned int& second)
@@ -865,6 +954,151 @@ LX200RETURN LX200Client::setStepsPerSecond(int val)
 
 // ===========================================================================
 //  Miscellaneous
+// ===========================================================================
+
+// ===========================================================================
+//  Limits — additional writes
+// ===========================================================================
+
+LX200RETURN LX200Client::setLimitEast(int val)
+{
+  char cmd[16]; sprintf(cmd, ":SXLE,%d#", val); return set(cmd);
+}
+LX200RETURN LX200Client::setLimitWest(int val)
+{
+  char cmd[16]; sprintf(cmd, ":SXLW,%d#", val); return set(cmd);
+}
+
+// ===========================================================================
+//  Mount description (write)
+// ===========================================================================
+
+LX200RETURN LX200Client::setMountDescription(const char* name)
+{
+  char cmd[40]; sprintf(cmd, ":SXOA,%s#", name); return set(cmd);
+}
+
+// ===========================================================================
+//  Site — additional
+// ===========================================================================
+
+LX200RETURN LX200Client::getSelectedSite(int& val)
+{
+  char out[10];
+  LX200RETURN ret = get(":W?#", out, sizeof(out));
+  if (ret == LX200_VALUEGET) val = atoi(out);
+  return ret;
+}
+
+LX200RETURN LX200Client::setSelectedSite(int val)
+{
+  char cmd[6]; sprintf(cmd, ":W%d#", val); return set(cmd);
+}
+
+LX200RETURN LX200Client::setSiteName(const char* name)
+{
+  char cmd[30]; sprintf(cmd, ":Sn%s#", name); return set(cmd);
+}
+
+LX200RETURN LX200Client::getTimeZoneStr(char* out, int len) { return get(":GG#", out, len); }
+
+LX200RETURN LX200Client::setTimeZone(float tz)
+{
+  char cmd[16]; sprintf(cmd, ":SG%+05.1f#", tz); return set(cmd);
+}
+
+LX200RETURN LX200Client::getLatitudeStr(char* out, int len) { return get(":Gtf#", out, len); }
+LX200RETURN LX200Client::getLongitudeStr(char* out, int len) { return get(":Ggf#", out, len); }
+
+LX200RETURN LX200Client::setLatitudeDMS(int sign, int deg, int min, int sec)
+{
+  char cmd[20]; sprintf(cmd, ":St%c%02d:%02d:%02d#", sign ? '-' : '+', deg, min, sec);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::setLongitudeDMS(int sign, int deg, int min, int sec)
+{
+  char cmd[20]; sprintf(cmd, ":Sg%c%03d:%02d:%02d#", sign ? '-' : '+', deg, min, sec);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::setElevation(int val)
+{
+  char cmd[16]; sprintf(cmd, ":Se%+04d#", val); return set(cmd);
+}
+
+LX200RETURN LX200Client::setUTCDateRaw(int month, int day, int year)
+{
+  char cmd[20]; sprintf(cmd, ":SXT1%02d/%02d/%02d#", month, day, year); return set(cmd);
+}
+
+LX200RETURN LX200Client::setUTCTimeRaw(int h, int m, int s)
+{
+  char cmd[20]; sprintf(cmd, ":SXT0%02d:%02d:%02d#", h, m, s); return set(cmd);
+}
+
+LX200RETURN LX200Client::setMountType(int type)
+{
+  char cmd[8]; sprintf(cmd, ":S!%d#", type); return set(cmd);
+}
+
+// ===========================================================================
+//  Tracking rates — stored (write)
+// ===========================================================================
+
+LX200RETURN LX200Client::setStoredTrackRateRA(long val)
+{
+  char cmd[20]; sprintf(cmd, ":SXRe,%05ld#", val); return set(cmd);
+}
+LX200RETURN LX200Client::setStoredTrackRateDec(long val)
+{
+  char cmd[20]; sprintf(cmd, ":SXRf,%05ld#", val); return set(cmd);
+}
+
+// ===========================================================================
+//  Focuser config (write)
+// ===========================================================================
+
+LX200RETURN LX200Client::getFocuserConfigRaw(char* out, int len) { return get(":F~#", out, len); }
+
+static LX200RETURN setFocuserParam(LX200Client& c, char code, int val)
+{
+  char cmd[16]; sprintf(cmd, ":F%c,%d#", code, val); return c.set(cmd);
+}
+
+LX200RETURN LX200Client::setFocuserPark(int val)      { char cmd[16]; sprintf(cmd, ":F0,%05d#", val); return set(cmd); }
+LX200RETURN LX200Client::setFocuserMaxPos(int val)    { char cmd[16]; sprintf(cmd, ":F1,%05d#", val); return set(cmd); }
+LX200RETURN LX200Client::setFocuserLowSpeed(int val)  { return setFocuserParam(*this, '2', val); }
+LX200RETURN LX200Client::setFocuserHighSpeed(int val) { return setFocuserParam(*this, '3', val); }
+LX200RETURN LX200Client::setFocuserGotoAcc(int val)   { return setFocuserParam(*this, '4', val); }
+LX200RETURN LX200Client::setFocuserManAcc(int val)    { return setFocuserParam(*this, '5', val); }
+LX200RETURN LX200Client::setFocuserDecel(int val)     { return setFocuserParam(*this, '6', val); }
+LX200RETURN LX200Client::setFocuserRotation(int val)  { return setFocuserParam(*this, '7', val); }
+LX200RETURN LX200Client::setFocuserResolution(int val) { return setFocuserParam(*this, '8', val); }
+
+LX200RETURN LX200Client::setFocuserStepPerRot(int val)
+{
+  char cmd[16]; sprintf(cmd, ":Fr,%d#", val); return set(cmd);
+}
+LX200RETURN LX200Client::setFocuserMicro(int val)
+{
+  char cmd[16]; sprintf(cmd, ":Fm,%d#", val); return set(cmd);
+}
+LX200RETURN LX200Client::setFocuserCurrent(int val)
+{
+  char cmd[16]; sprintf(cmd, ":Fc,%d#", val); return set(cmd);
+}
+
+LX200RETURN LX200Client::getFocuserUserPos(int idx, char* out, int len)
+{
+  char cmd[8]; sprintf(cmd, ":Fx%d#", idx); return get(cmd, out, len);
+}
+
+LX200RETURN LX200Client::setFocuserUserPos(int idx, int pos, const char* name)
+{
+  char cmd[40]; sprintf(cmd, ":Fs%d,%05d_%s#", idx, pos, name); return set(cmd);
+}
+
 // ===========================================================================
 
 LX200RETURN LX200Client::saveUserPosition()   { return set(":SU#"); }

@@ -1,4 +1,5 @@
 #include "TeenAstroWifi.h"
+#include "HtmlCommon.h"
 // -----------------------------------------------------------------------------------
 // configuration_tracking
 #define SIDEREAL_CH "&#9733;"
@@ -57,43 +58,30 @@ const char html_controlTrack[] PROGMEM =
 "<button type='button' class='bbh' onpointerdown=\"g('Tt')\" type='submit'>" USER_CH "</button>\n"
 "<button type='button' class='bbh' onpointerdown=\"g('on')\" type='submit'>On</button>\n"
 "<button type='button' class='bbh' onpointerdown=\"g('off')\" type='submit'>Off</button><br/></div>\n"
-//"<button type='button' class='bbh' style='width: 2.6em' onpointerdown=\"g('-')\" type='submit'>" MINUS_CH "</button>"
-//"<button type='button' class='bbh' style='width: 2.6em' onpointerdown=\"g('f')\" type='submit'>" PLUS_CH " </button>"
-//"<button type='button' class='bbh' onpointerdown=\"g('r')\" type='submit'>Reset</button>""</div>"
 "<br class='clear' />\r\n\n";
-
-const char html_configRefraction[] PROGMEM =
-"<div class='bt'> Refraction Options: <br/> </div>\n";
-
-const char html_Opt_1[] PROGMEM =
-"<form action='/configuration_tracking.htm'>\n"
-"<select name='%s' onchange='this.form.submit()' >\n";
 
 const char html_configTrackingOptions[] PROGMEM =
 "<div class='bt'> Tracking Options: <br/> </div>\n";
 const char html_configTrackingDrift[] PROGMEM =
 "<div class='bt'> Tracking Drift Options " USER_CH " : <br/> </div>\n";
 
-const char html_on_1[] PROGMEM = "<option selected value='1'>On</option>";
-const char html_on_2[] PROGMEM = "<option value='1'>On</option>\n";
-const char html_off_1[] PROGMEM = "<option selected value='2'>Off</option>";
-const char html_off_2[] PROGMEM = "<option value='2'>Off</option>\n";
+const char html_Opt_1[] PROGMEM =
+"<form action='/configuration_tracking.htm'>\n"
+"<select name='%s' onchange='this.form.submit()' >\n";
 
 void TeenAstroWifi::handleConfigurationTracking()
 {
-  //update mount
   ta_MountStatus.updateMount();
 
   s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320] = "";
   char temp1[50] = "";
-  char temp2[50] = "";
   String data;
   processConfigurationTrackingGet();
   preparePage(data, ServerPage::Tracking);
   sendHtml(data);
-  // button handling script
+
   data += FPSTR(html_trackButton);
   sendHtml(data);
 
@@ -103,24 +91,28 @@ void TeenAstroWifi::handleConfigurationTracking()
   data += FPSTR(html_indexTrackingInfo);
   sendHtml(data);
 
+  // Refraction tracking option
   data += FPSTR(html_configTrackingOptions);
   sprintf_P(temp, html_Opt_1, "trackr");
   data += temp;
   if (s_client->getRefractionEnabled(temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "n");
-  temp1[0] == 'y' ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
-  temp1[0] == 'n' ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
-  data += "</select> Consider Refraction for Tracking</form><br/>\r\n";;
+  temp1[0] == 'y' ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
+  temp1[0] == 'n' ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
+  data += "</select> Consider Refraction for Tracking</form><br/>\r\n";
   sendHtml(data);
 
+  // Dual-axis tracking option
   if (!ta_MountStatus.isAltAz() && ta_MountStatus.getRateCompensation() != TeenAstroMountStatus::RC_UNKNOWN)
   {
     sprintf_P(temp, html_Opt_1, "trackboth");
     data += temp;
-    ta_MountStatus.getRateCompensation() == TeenAstroMountStatus::RC_BOTH ? data += FPSTR(html_on_1) : data += FPSTR(html_on_2);
-    ta_MountStatus.getRateCompensation() != TeenAstroMountStatus::RC_BOTH ? data += FPSTR(html_off_1) : data += FPSTR(html_off_2);
-    data += "</select> Appply Tracking on both Axis</form><br/>\r\n";;
+    ta_MountStatus.getRateCompensation() == TeenAstroMountStatus::RC_BOTH ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
+    ta_MountStatus.getRateCompensation() != TeenAstroMountStatus::RC_BOTH ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
+    data += "</select> Appply Tracking on both Axis</form><br/>\r\n";
     sendHtml(data);
   }
+
+  // Drift rates
   if (ta_MountStatus.updateStoredTrackingRate())
   {
     data += FPSTR(html_configTrackingDrift);
@@ -134,12 +126,10 @@ void TeenAstroWifi::handleConfigurationTracking()
     sendHtml(data);
   }
 
-  // Tracking control ----------------------------------------
   data += FPSTR(html_controlTrack);
   sendHtml(data);
 
-  strcpy(temp, "</div></body></html>");
-  data += temp;
+  data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
 }
@@ -149,15 +139,12 @@ void TeenAstroWifi::processConfigurationTrackingGet()
   String v;
   int i;
   float f;
-  char temp[20] = "";
 
   v = server.arg("trackr");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
-    {
       i == 1 ? s_client->enableRefraction(true) : s_client->enableRefraction(false);
-    }
   }
   v = server.arg("trackboth");
   if (v != "")
@@ -172,38 +159,27 @@ void TeenAstroWifi::processConfigurationTrackingGet()
   if (v != "")
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= -5) && (f <= 5)))
-    {
-      sprintf(temp, ":SXRe,%05ld#", (long)(f * 10000));
-      s_client->set(temp);
-    }
+      s_client->setStoredTrackRateRA((long)(f * 10000));
   }
   v = server.arg("RDEC");
   if (v != "")
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= -5) && (f <= 5)))
-    {
-      sprintf(temp, ":SXRf,%05ld#", (long)(f * 10000));
-      s_client->set(temp);
-    }
+      s_client->setStoredTrackRateDec((long)(f * 10000));
   }
   v = server.arg("dt");
   if (v != "")
   {
-    // Tracking control
     if (v == "on") s_client->enableTracking(true);
     else if (v == "off") s_client->enableTracking(false);
-    else if (v == "f") s_client->incrementTrackRate(); // 0.02hz faster
-    else if (v == "-") s_client->decrementTrackRate(); // 0.02hz slower
-    else if (v == "r") s_client->resetTrackRate(); // reset
-
-    else if (v == "Ts") s_client->setTrackRateSidereal(); // sidereal
-    else if (v == "Tl") s_client->setTrackRateLunar(); // lunar
-    else if (v == "Th") s_client->setTrackRateSolar(); // solar
-    else if (v == "Tt") s_client->setTrackRateUser(); // user defined
-
-
+    else if (v == "f") s_client->incrementTrackRate();
+    else if (v == "-") s_client->decrementTrackRate();
+    else if (v == "r") s_client->resetTrackRate();
+    else if (v == "Ts") s_client->setTrackRateSidereal();
+    else if (v == "Tl") s_client->setTrackRateLunar();
+    else if (v == "Th") s_client->setTrackRateSolar();
+    else if (v == "Tt") s_client->setTrackRateUser();
   }
-
 }
 
 void TeenAstroWifi::trackAjax()
@@ -217,5 +193,3 @@ void TeenAstroWifi::trackinfoAjax()
   addTrackingInfo(data);
   server.send(200, "text/plain", data);
 }
-
-

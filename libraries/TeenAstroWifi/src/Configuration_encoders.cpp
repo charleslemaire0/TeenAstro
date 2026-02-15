@@ -1,6 +1,7 @@
 #include "TeenAstroWifi.h"
+#include "HtmlCommon.h"
 // -----------------------------------------------------------------------------------
-// configuration_telescope
+// configuration_encoders
 
 const char html_configEncoders_1[] PROGMEM =
 "<div class='bt'> Encoders Sync Mode: <br/> </div>"
@@ -11,21 +12,12 @@ const char html_configEncoders_2[] PROGMEM =
 "</form>"
 "<br/>\r\n";
 
-const char html_configPPDAxis1[] PROGMEM =
-"<div class='bt'> Encoders of Instrument Axis 1: <br/> </div>"
+const char html_configPPDAxis[] PROGMEM =
+"<div class='bt'> Encoders of Instrument Axis %d: <br/> </div>"
 "<form method='get' action='/configuration_encoders.htm'>"
-" <input value='%.2f' type='number' name='ppdEa1' min='0' max='3600' step='0.01'>"
+" <input value='%.2f' type='number' name='ppdEa%d' min='0' max='3600' step='0.01'>"
 "<button type='submit'>Upload</button>"
-" (Pulse per degree axis 1 from 0 to 3600)"
-"</form>"
-"\r\n";
-
-const char html_configPPDAxis2[] PROGMEM =
-"<div class='bt'> Encoders of Instrument Axis 2: <br/> </div>"
-"<form method='get' action='/configuration_encoders.htm'>"
-" <input value='%.2f' type='number' name='ppdEa2' min='0' max='3600' step='0.01'>"
-"<button type='submit'>Upload</button>"
-" (Pulse per degree axis 2 from 0 to 3600)"
+" (Pulse per degree axis %d from 0 to 3600)"
 "</form>"
 "\r\n";
 
@@ -50,67 +42,52 @@ void TeenAstroWifi::handleConfigurationEncoders()
   s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320] = "";
-  char temp1[50] = "";
-  char temp2[50] = "";
   String data;
 
   processConfigurationEncodersGet();
   preparePage(data, ServerPage::Encoders);
   sendHtml(data);
   ta_MountStatus.updateMount();
-  uint8_t EncodersyncMode = 0;
-  if (s_client->readEncoderAutoSync(EncodersyncMode) == LX200_VALUEGET)
+
+  // Sync mode selector
+  uint8_t syncMode = 0;
+  if (s_client->readEncoderAutoSync(syncMode) == LX200_VALUEGET)
   {
     data += FPSTR(html_configEncoders_1);
-    EncodersyncMode == 0 ? data += PSTR("<option selected value='0'>OFF</option>") : data += PSTR("<option value='0'>OFF</option>");
-    EncodersyncMode == 1 ? data += PSTR("<option selected value='1'>60'</option>") : data += PSTR("<option value='1'>60'</option>");
-    EncodersyncMode == 2 ? data += PSTR("<option selected value='2'>30'</option>") : data += PSTR("<option value='2'>30'</option>");
-    EncodersyncMode == 3 ? data += PSTR("<option selected value='3'>15'</option>") : data += PSTR("<option value='3'>15'</option>");
-    EncodersyncMode == 4 ? data += PSTR("<option selected value='4'>8'</option>") : data += PSTR("<option value='4'>8'</option>");
-    EncodersyncMode == 5 ? data += PSTR("<option selected value='5'>4'</option>") : data += PSTR("<option value='5'>4'</option>");
-    EncodersyncMode == 6 ? data += PSTR("<option selected value='6'>2'</option>") : data += PSTR("<option value='6'>2'</option>");
-    EncodersyncMode == 7 ? data += PSTR("<option selected value='7'>ON</option>") : data += PSTR("<option value='7'>ON</option>");
+    const char* modeLabels[] = { "OFF", "60'", "30'", "15'", "8'", "4'", "2'", "ON" };
+    for (uint8_t k = 0; k < 8; k++)
+    {
+      char opt[60];
+      sprintf(opt, "<option %svalue='%d'>%s</option>", (k == syncMode) ? "selected " : "", k, modeLabels[k]);
+      data += opt;
+    }
     data += FPSTR(html_configEncoders_2);
     sendHtml(data);
   }
-  // PPD and Roatio Encoders
-  float ppd = 0;
-  bool reverse = false;
 
-  if (s_client->readPulsePerDegree(1, ppd) == LX200_VALUEGET)
+  // Per-axis: PPD + rotation
+  for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    sprintf_P(temp, html_configPPDAxis1, ppd/100.0);
-    data += temp;
-    sendHtml(data);
-  }
-  if (s_client->readEncoderReverse(1, reverse) == LX200_VALUEGET)
-  {
-    sprintf_P(temp, html_configRotEAxis_1, 1);
-    data += temp;
-    data += reverse ? FPSTR(html_configRotEAxis_r) : FPSTR(html_configRotEAxis_d);
-    sprintf_P(temp, html_configRotEAxis_2, 1);
-    data += temp;
-    sendHtml(data);
-  }
-
-  if (s_client->readPulsePerDegree(2, ppd) == LX200_VALUEGET)
-  {
-    sprintf_P(temp, html_configPPDAxis2, ppd/100.0);
-    data += temp;
-    sendHtml(data);
-  }
-  if (s_client->readEncoderReverse(2, reverse) == LX200_VALUEGET)
-  {
-    sprintf_P(temp, html_configRotEAxis_1, 2);
-    data += temp;
-    data += reverse ? FPSTR(html_configRotEAxis_r) : FPSTR(html_configRotEAxis_d);
-    sprintf_P(temp, html_configRotEAxis_2, 2);
-    data += temp;
-    sendHtml(data);
+    float ppd = 0;
+    if (s_client->readPulsePerDegree(ax, ppd) == LX200_VALUEGET)
+    {
+      sprintf_P(temp, html_configPPDAxis, ax, ppd / 100.0, ax, ax);
+      data += temp;
+      sendHtml(data);
+    }
+    bool reverse = false;
+    if (s_client->readEncoderReverse(ax, reverse) == LX200_VALUEGET)
+    {
+      sprintf_P(temp, html_configRotEAxis_1, ax);
+      data += temp;
+      data += reverse ? FPSTR(html_configRotEAxis_r) : FPSTR(html_configRotEAxis_d);
+      sprintf_P(temp, html_configRotEAxis_2, ax);
+      data += temp;
+      sendHtml(data);
+    }
   }
 
-  strcpy(temp, "</div></body></html>");
-  data += temp;
+  data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
 }
@@ -125,41 +102,27 @@ void TeenAstroWifi::processConfigurationEncodersGet()
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 7)))
-    {
       s_client->writeEncoderAutoSync(i);
-    }
   }
-  v = server.arg("ppdEa1");
-  if (v != "")
+
+  // Per-axis PPD and rotation
+  for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    if ((atof2((char*)v.c_str(), &f)) && ((f > 0) && (f <= 3600)))
+    char argPPD[10], argRot[10];
+    sprintf(argPPD, "ppdEa%d", ax);
+    sprintf(argRot, "mrotE%d", ax);
+
+    v = server.arg(argPPD);
+    if (v != "")
     {
-      s_client->writePulsePerDegree(1, f*100);
+      if ((atof2((char*)v.c_str(), &f)) && ((f > 0) && (f <= 3600)))
+        s_client->writePulsePerDegree(ax, f * 100);
     }
-  }
-  v = server.arg("ppdEa2");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f > 0) && (f <= 3600)))
+    v = server.arg(argRot);
+    if (v != "")
     {
-      s_client->writePulsePerDegree(2, f*100);
-    }
-  }
-  v = server.arg("mrotE1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
-    {
-      s_client->writeEncoderReverse(1, i);
-    }
-  }
-  v = server.arg("mrotE2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
-    {
-      s_client->writeEncoderReverse(2, i);
+      if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
+        s_client->writeEncoderReverse(ax, i);
     }
   }
 }
-

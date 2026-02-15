@@ -239,7 +239,7 @@ void TeenAstroWifi::handleWifi()
   sprintf_P(temp, html_wifiSSID4, wifi_ap_ip[0], wifi_ap_ip[1], wifi_ap_ip[2], wifi_ap_ip[3]); data += temp;
   sprintf_P(temp, html_wifiSSID5, wifi_ap_gw[0], wifi_ap_gw[1], wifi_ap_gw[2], wifi_ap_gw[3]); data += temp;
   sprintf_P(temp, html_wifiSSID6, wifi_ap_sn[0], wifi_ap_sn[1], wifi_ap_sn[2], wifi_ap_sn[3]); data += temp;
-  sprintf_P(temp, html_wifiSSID7, activeWifiMode == WifiMode::M_AcessPoint ? "checked" : ""); data += temp;
+  data += FPSTR(html_wifiSSID7);
   data += FPSTR(html_logout);
   sendHtml(data);
   data += FPSTR(html_update);

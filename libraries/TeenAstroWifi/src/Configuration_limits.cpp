@@ -1,6 +1,7 @@
 #include "TeenAstroWifi.h"
+#include "HtmlCommon.h"
 // -----------------------------------------------------------------------------------
-// configuration_telescope
+// configuration_limits
 
 const char html_configMinAlt[] PROGMEM =
 "<div class='bt'> Limits Altitude: <br/> </div>"
@@ -81,22 +82,11 @@ const char html_configMaxAxis2[] PROGMEM =
 "\r\n";
 
 
-
-//const char html_reboot_t[] PROGMEM =
-//"<br/><form method='get' action='/configuration_mount.htm'>"
-//"<b>The main unit will now restart please wait some seconds and then press continue.</b><br/><br/>"
-//"<button type='submit'>Continue</button>"
-//"</form><br/><br/><br/><br/>"
-//"\r\n";
-//bool restartRequired_t = false;
-
 void TeenAstroWifi::handleConfigurationLimits()
 {
   s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[350] = "";
-  char temp1[50] = "";
-  char temp2[50] = "";
   String data;
 
   processConfigurationLimitsGet();
@@ -105,48 +95,54 @@ void TeenAstroWifi::handleConfigurationLimits()
   ta_MountStatus.updateMount();
 
   // Overhead and Horizon Limits
-  if (s_client->get(":GXLH#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); int minAlt = (int)strtol(&temp1[0], NULL, 10);
+  int minAlt = 0;
+  if (s_client->getMinAltitude(minAlt) != LX200_VALUEGET) minAlt = 0;
   sprintf_P(temp, html_configMinAlt, minAlt);
   data += temp;
   sendHtml(data);
-  if (s_client->get(":GXLO#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); int maxAlt = (int)strtol(&temp1[0], NULL, 10);
+
+  int maxAlt = 0;
+  if (s_client->getMaxAltitude(maxAlt) != LX200_VALUEGET) maxAlt = 0;
   sprintf_P(temp, html_configMaxAlt, maxAlt);
   data += temp;
   sendHtml(data);
-  // Meridian Limits
+
+  // Meridian Limits (GEM only)
   if (ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_GEM)
   {
-    if (s_client->get(":GXLU#", temp1, sizeof(temp1)) == LX200_VALUEGET)
+    char underPole[20];
+    if (s_client->getUnderPoleLimit(underPole, sizeof(underPole)) == LX200_VALUEGET)
     {
-      float angle = (float)strtol(&temp1[0], NULL, 10) / 10;
+      float angle = (float)strtol(underPole, NULL, 10) / 10;
       sprintf_P(temp, html_configUnderPole, angle);
       data += temp;
     }
-    if (s_client->get(":GXLE#", temp1, sizeof(temp1)) == LX200_VALUEGET && s_client->get(":GXLW#", temp2, sizeof(temp2)) == LX200_VALUEGET)
+    char merE[20], merW[20];
+    if (s_client->getLimitEast(merE, sizeof(merE)) == LX200_VALUEGET &&
+        s_client->getLimitWest(merW, sizeof(merW)) == LX200_VALUEGET)
     {
-      int degPastMerE = (int)strtol(&temp1[0], NULL, 10);
-      degPastMerE = round((degPastMerE * 15.0) / 60.0);
+      int degPastMerE = (int)round(strtol(merE, NULL, 10) * 15.0 / 60.0);
       sprintf_P(temp, html_configPastMerE, degPastMerE);
       data += temp;
-      int degPastMerW = (int)strtol(&temp2[0], NULL, 10);
-      degPastMerW = round((degPastMerW * 15.0) / 60.0);
+      int degPastMerW = (int)round(strtol(merW, NULL, 10) * 15.0 / 60.0);
       sprintf_P(temp, html_configPastMerW, degPastMerW);
       data += temp;
     }
     #ifdef keepTrackingOnWhenFarFromPole
-    if (s_client->get(":GXLS#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "181"); int miDistanceFromPole = (int)strtol(&temp1[0], NULL, 10);
-    sprintf_P(temp, html_configMiDistanceFromPole, miDistanceFromPole);
+    int miDist = 181;
+    if (s_client->getMinDistFromPole(miDist) != LX200_VALUEGET) miDist = 181;
+    sprintf_P(temp, html_configMiDistanceFromPole, miDist);
     data += temp;
     #endif
     sendHtml(data);
   }
 
-
+  // Axis limits
   bool ok = true;
-  short  anglemin, anglemax, angle_i_min, angle_i_max;
+  short anglemin, anglemax, angle_i_min, angle_i_max;
 
-  ok = s_client->getShort(":GXLA#", &anglemin) == LX200_VALUEGET;
-  ok &= s_client->getShort(":GXLB#", &anglemax) == LX200_VALUEGET;
+  ok =  s_client->getShort(":GXLA#", &anglemin)  == LX200_VALUEGET;
+  ok &= s_client->getShort(":GXLB#", &anglemax)  == LX200_VALUEGET;
   ok &= s_client->getShort(":GXlA#", &angle_i_min) == LX200_VALUEGET;
   ok &= s_client->getShort(":GXlB#", &angle_i_max) == LX200_VALUEGET;
 
@@ -158,22 +154,24 @@ void TeenAstroWifi::handleConfigurationLimits()
     data += temp;
     sendHtml(data);
   }
-  ok = s_client->getShort(":GXLC#", &anglemin) == LX200_VALUEGET;
-  ok &= s_client->getShort(":GXLD#", &anglemax) == LX200_VALUEGET;
+
+  ok =  s_client->getShort(":GXLC#", &anglemin)  == LX200_VALUEGET;
+  ok &= s_client->getShort(":GXLD#", &anglemax)  == LX200_VALUEGET;
   ok &= s_client->getShort(":GXlC#", &angle_i_min) == LX200_VALUEGET;
   ok &= s_client->getShort(":GXlD#", &angle_i_max) == LX200_VALUEGET;
+
   if (ok)
   {
-    sprintf_P(temp, html_configMinAxis2, (float)anglemin / 10.0, (float)angle_i_min , (float)anglemax / 10.0, (float)angle_i_min , (float)anglemax / 10.0);
+    sprintf_P(temp, html_configMinAxis2, (float)anglemin / 10.0, (float)angle_i_min, (float)anglemax / 10.0, (float)angle_i_min, (float)anglemax / 10.0);
     data += temp;
     sprintf_P(temp, html_configMaxAxis2, (float)anglemax / 10.0, (float)anglemin / 10.0, (float)angle_i_max, (float)anglemin / 10.0, (float)angle_i_max);
     data += temp;
     sendHtml(data);
   }
+  else
+    data += "<br />\r\n";
 
-  else data += "<br />\r\n";
-  strcpy(temp, "</div></body></html>");
-  data += temp;
+  data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
 }
@@ -183,27 +181,19 @@ void TeenAstroWifi::processConfigurationLimitsGet()
   String v;
   int i;
   float f;
-  char temp[20] = "";
 
- 
   // Overhead and Horizon Limits
   v = server.arg("ol");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 60) && (i <= 91)))
-    {
-      sprintf(temp, ":SXLO,%d#", i);
-      s_client->set(temp);
-    }
+      s_client->setMaxAltitude(i);
   }
   v = server.arg("hl");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -30) && (i <= 30)))
-    {
-      sprintf(temp, ":SXLH,%d#", i);
-      s_client->set(temp);
-    }
+      s_client->setMinAltitude(i);
   }
 
   // Meridian Limits
@@ -212,9 +202,8 @@ void TeenAstroWifi::processConfigurationLimitsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
     {
-      i = round((i*60.0) / 15.0);
-      sprintf(temp, ":SXLE,%d#", i);
-      s_client->set(temp);
+      i = (int)round((i * 60.0) / 15.0);
+      s_client->setLimitEast(i);
     }
   }
   v = server.arg("wl");
@@ -222,77 +211,58 @@ void TeenAstroWifi::processConfigurationLimitsGet()
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
     {
-      i = round((i*60.0) / 15.0);
-      sprintf(temp, ":SXLW,%d#", i);
-      s_client->set(temp);
+      i = (int)round((i * 60.0) / 15.0);
+      s_client->setLimitWest(i);
     }
   }
   v = server.arg("up");
   if (v != "")
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 9) && (f <= 12)))
-    {
-      sprintf(temp, ":SXLU,%03d#", (int)(f * 10));
-      s_client->set(temp);
-    }
+      s_client->setUnderPoleLimit(f);
   }
   #ifdef keepTrackingOnWhenFarFromPole
   v = server.arg("miDistanceFromPole");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 181)))
-    {
-      sprintf(temp, ":SXLS,%d#", i);
-      s_client->set(temp);
-    }
+      s_client->setMinDistFromPole(i);
   }
   #endif
+
+  // Axis limits
   v = server.arg("mia1");
   if (v != "")
   {
-    if (atof2((char*)v.c_str(), &f)) 
-    {
-      sprintf(temp, ":SXLA,%04d#", (int)(f * 10));
-      s_client->set(temp);
-    }
+    if (atof2((char*)v.c_str(), &f))
+      s_client->setAxisLimit('A', f);
   }
   v = server.arg("maa1");
   if (v != "")
   {
-    if (atof2((char*)v.c_str(), &f)) 
-    {
-      sprintf(temp, ":SXLB,%04d#", (int)(f * 10));
-      s_client->set(temp);
-    }
+    if (atof2((char*)v.c_str(), &f))
+      s_client->setAxisLimit('B', f);
   }
   v = server.arg("mia2");
   if (v != "")
   {
     if (atof2((char*)v.c_str(), &f))
-    {
-      sprintf(temp, ":SXLC,%04d#", (int)(f * 10));
-      s_client->set(temp);
-    }
+      s_client->setAxisLimit('C', f);
   }
   v = server.arg("maa2");
   if (v != "")
   {
     if (atof2((char*)v.c_str(), &f))
-    {
-      sprintf(temp, ":SXLD,%04d#", (int)(f * 10));
-      s_client->set(temp);
-    }
+      s_client->setAxisLimit('D', f);
   }
 
-
+  // Time zone (shared handler)
   int ut_hrs = -999;
   v = server.arg("u1");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -13) && (i <= 13)))
-    {
       ut_hrs = i;
-    }
   }
   v = server.arg("u2");
   if (v != "")
@@ -300,11 +270,7 @@ void TeenAstroWifi::processConfigurationLimitsGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i == 00) || (i == 30) || (i == 45)))
     {
       if ((ut_hrs >= -13) && (ut_hrs <= 13))
-      {
-        sprintf(temp, ":SG%+03d:%02d#", ut_hrs, i);
-        s_client->set(temp);
-      }
+        s_client->setTimeZone((float)(-(ut_hrs * 60 + i) / 60.0));
     }
   }
 }
-

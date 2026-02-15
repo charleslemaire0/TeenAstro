@@ -172,9 +172,9 @@ void TeenAstroWifi::handleControl()
 #ifdef ALIGN_ON
   // Get the align mode --------------------------------------
   data += FPSTR(html_controlAlign1);
-  if (mountStatus.alignMaxStars() <= 3)
+  if (ta_MountStatus.alignMaxStars() <= 3)
   {
-    for (int i = 1; i <= mountStatus.alignMaxStars(); i++)
+    for (int i = 1; i <= ta_MountStatus.alignMaxStars(); i++)
     {
       char temp2[120] = ""; sprintf_P(temp2, html_controlAlign2, i, i, SIDEREAL_CH); data += temp2;
     }

@@ -1,4 +1,5 @@
 #include "TeenAstroWifi.h"
+#include "HtmlCommon.h"
 // -----------------------------------------------------------------------------------
 // configuration_focuser
 const char html_configParkFocuser[] PROGMEM =
@@ -115,78 +116,67 @@ const char html_configPosFocuser[] PROGMEM =
 
 void TeenAstroWifi::handleConfigurationFocuser()
 {
-
   char temp[320] = "";
   char temp1[80] = "";
-  char temp2[80] = "";
   String data;
   sendHtmlStart();
   processConfigurationFocuserGet();
   preparePage(data, ServerPage::Focuser);
   sendHtml(data);
 
-  if (s_client->get(":F~#", temp1, sizeof(temp1)) == LX200_VALUEGET && temp1[0] == '~')
+  // Read focuser config via named method
+  if (s_client->getFocuserConfigRaw(temp1, sizeof(temp1)) == LX200_VALUEGET && temp1[0] == '~')
   {
-    int park = (int)strtol(&temp1[1], NULL, 10);
-    int maxPos = (int)strtol(&temp1[7], NULL, 10);
-    int lowSpeed = (int)strtol(&temp1[13], NULL, 10);
+    int park      = (int)strtol(&temp1[1], NULL, 10);
+    int maxPos    = (int)strtol(&temp1[7], NULL, 10);
+    int lowSpeed  = (int)strtol(&temp1[13], NULL, 10);
     int highSpeed = (int)strtol(&temp1[17], NULL, 10);
-    int gotoAcc = (int)strtol(&temp1[21], NULL, 10);
-    int manAcc = (int)strtol(&temp1[25], NULL, 10);
-    int dec = (int)strtol(&temp1[29], NULL, 10);
+    int gotoAcc   = (int)strtol(&temp1[21], NULL, 10);
+    int manAcc    = (int)strtol(&temp1[25], NULL, 10);
+
     sprintf_P(temp, html_configParkFocuser, park);
-    data += temp;
-    sendHtml(data);
+    data += temp; sendHtml(data);
     sprintf_P(temp, html_configMaxPositionFocuser, maxPos);
-    data += temp;
-    sendHtml(data);
+    data += temp; sendHtml(data);
     sprintf_P(temp, html_configLowSpeedFocuser, lowSpeed);
-    data += temp;
-    sendHtml(data);
+    data += temp; sendHtml(data);
     sprintf_P(temp, html_configHighSpeedFocuser, highSpeed);
-    data += temp;
-    sendHtml(data);
+    data += temp; sendHtml(data);
     sprintf_P(temp, html_configGotoAccFocuser, gotoAcc);
-    data += temp;
-    sendHtml(data);
+    data += temp; sendHtml(data);
     sprintf_P(temp, html_configManAccFocuser, manAcc);
-    data += temp;
-    sendHtml(data);
-    //sprintf_P(temp, html_configManDecFocuser, dec);
-    //data += temp;
+    data += temp; sendHtml(data);
   }
+
   bool reverse = false;
-  unsigned int micro = 3;
-  unsigned int resolution = 100;
-  unsigned int curr = 100;
-  unsigned int steprot = 100;
+  unsigned int micro = 3, resolution = 100, curr = 100, steprot = 100;
   if (s_client->readFocuserMotor(reverse, micro, resolution, curr, steprot))
   {
-    data += "Resolution: <br />";
+    data += PSTR("Resolution: <br />");
     sprintf_P(temp, html_configResolutionFocuser, resolution);
-    data += temp;
-    sendHtml(data);
-    data += "Rotation: <br />";
+    data += temp; sendHtml(data);
+
+    data += PSTR("Rotation: <br />");
     data += FPSTR(html_configRotFocuser_1);
     data += reverse ? FPSTR(html_configRotFocuser_r) : FPSTR(html_configRotFocuser_d);
     data += FPSTR(html_configRotFocuser_2);
     sendHtml(data);
-    data += "Motor: <br />";
+
+    data += PSTR("Motor: <br />");
     sprintf_P(temp, html_configStepRotFocuser, steprot);
     data += temp;
     sprintf_P(temp, html_configMuFocuser, (int)pow(2., micro));
     data += temp;
-    sprintf_P(temp, html_configHCFocuser, curr*10);
-    data += temp;
-    sendHtml(data);
+    sprintf_P(temp, html_configHCFocuser, curr * 10);
+    data += temp; sendHtml(data);
   }
-  data += "Userdefined Position: <br />";
-  data += "to remove a position set an empty name <br />";
+
+  // User-defined positions
+  data += PSTR("Userdefined Position: <br />");
+  data += PSTR("to remove a position set an empty name <br />");
   for (int k = 0; k < 10; k++)
   {
-    sprintf(temp, ":Fx%d#", k);
-    s_client->get(temp, temp1, sizeof(temp1));
-    if (temp1[0] != 0)
+    if (s_client->getFocuserUserPos(k, temp1, sizeof(temp1)) == LX200_VALUEGET && temp1[0] != 0)
     {
       if (temp1[0] == '0')
       {
@@ -205,12 +195,9 @@ void TeenAstroWifi::handleConfigurationFocuser()
     }
   }
 
-  strcpy(temp, "</div></div></body></html>");
-  data += temp;
-
+  data += FPSTR(html_pageFooterNested);
   sendHtml(data);
   sendHtmlDone(data);
-
 }
 
 void TeenAstroWifi::processConfigurationFocuserGet()
@@ -218,137 +205,105 @@ void TeenAstroWifi::processConfigurationFocuserGet()
   String v;
   int i;
   float f;
-  char temp[50] = "";
 
   v = server.arg("Park");
   if (v != "")
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535)))
-    {
-      sprintf(temp, ":F0,%05d#", (int)f);
-      s_client->set(temp);
-    }
+      s_client->setFocuserPark((int)f);
   }
 
   v = server.arg("MaxPos");
   if (v != "")
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535)))
-    {
-      sprintf(temp, ":F1,%05d#", (int)f);
-      s_client->set(temp);
-    }
+      s_client->setFocuserMaxPos((int)f);
   }
 
   v = server.arg("LowSpeed");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 999)))
-    {
-      sprintf(temp, ":F2,%d#", i);
-      s_client->set(temp);
-    }
+      s_client->setFocuserLowSpeed(i);
   }
 
   v = server.arg("HighSpeed");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 999)))
-    {
-      sprintf(temp, ":F3,%d#", i);
-      s_client->set(temp);
-    }
+      s_client->setFocuserHighSpeed(i);
   }
 
   v = server.arg("GotoAcc");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99)))
-    {
-      sprintf(temp, ":F4,%d#", i);
-      s_client->set(temp);
-    }
+      s_client->setFocuserGotoAcc(i);
   }
+
   v = server.arg("ManAcc");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99)))
-    {
-      sprintf(temp, ":F5,%d#", i);
-      s_client->set(temp);
-    }
+      s_client->setFocuserManAcc(i);
   }
+
   v = server.arg("Dcc");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99)))
-    {
-      sprintf(temp, ":F6,%d#", i);
-      s_client->set(temp);
-    }
+      s_client->setFocuserDecel(i);
   }
+
   v = server.arg("Rot");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
-    {
-      sprintf(temp, ":F7,%d#", i);
-      s_client->set(temp);
-    }
+      s_client->setFocuserRotation(i);
   }
+
   v = server.arg("Res");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 512)))
-    {
-      sprintf(temp, ":F8,%d#", i);
-      s_client->set(temp);
-    }
+      s_client->setFocuserResolution(i);
   }
+
   v = server.arg("StepRot");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 10) && (i <= 800)))
-    {
-      sprintf(temp, ":Fr,%d#", i);
-      s_client->set(temp);
-    }
+      s_client->setFocuserStepPerRot(i);
   }
+
   v = server.arg("MuF");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 4) && (i <= 128)))
-    {
-      sprintf(temp, ":Fm,%d#", (int)log2(i));
-      s_client->set(temp);
-    }
+      s_client->setFocuserMicro((int)log2(i));
   }
 
   v = server.arg("HcF");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 1600)))
-    {
-      sprintf(temp, ":Fc,%d#", i / 10);
-      s_client->set(temp);
-    }
+      s_client->setFocuserCurrent(i / 10);
   }
+
+  // User positions
   for (int k = 0; k < 10; k++)
   {
-    sprintf(temp, "Fp%d", k);
-    v = server.arg(temp);
+    char argPos[6], argName[6];
+    sprintf(argPos, "Fp%d", k);
+    v = server.arg(argPos);
     if (v != "")
     {
       if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535)))
       {
-        sprintf(temp, "Fn%d", k);
-        v = server.arg(temp);
-        sprintf(temp, ":Fs%d,%05d_%s#", k, (int)f, (char*)v.c_str());
-        s_client->set(temp);
+        sprintf(argName, "Fn%d", k);
+        String nameVal = server.arg(argName);
+        s_client->setFocuserUserPos(k, (int)f, nameVal.c_str());
       }
     }
   }
-  //Ser.flush();
-  //serialRecvFlush();
 }
-

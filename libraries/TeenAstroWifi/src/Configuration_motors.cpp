@@ -1,13 +1,7 @@
 #include "TeenAstroWifi.h"
+#include "HtmlCommon.h"
 // -----------------------------------------------------------------------------------
 // configuration_motors
-
-
-
-const char html_on_1[] PROGMEM = "<option selected value='1'>On</option>";
-const char html_on_2[] PROGMEM = "<option value='1'>On</option>";
-const char html_off_1[] PROGMEM = "<option selected value='2'>Off</option>";
-const char html_off_2[] PROGMEM = "<option value='2'>Off</option>";
 
 const char html_configRotAxis_1[] PROGMEM =
 "<form action='/configuration_motors.htm'>"
@@ -116,7 +110,6 @@ void TeenAstroWifi::handleConfigurationMotors()
   s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320] = "";
-  char temp1[50] = "";
   char temp2[50] = "";
   String data;
 
@@ -126,165 +119,137 @@ void TeenAstroWifi::handleConfigurationMotors()
   if (restartRequired_t1)
   {
     data += FPSTR(html_reboot_t);
-    data += "</div></div></body></html>";
+    data += FPSTR(html_pageFooterNested);
     sendHtml(data);
     sendHtmlDone(data);
     restartRequired_t1 = false;
     delay(1000);
     return;
   }
-  //update
 
-
-    //Axis1
   data += "<div class='bt'> Motor: <br/> </div>";
 
+  // Settle time
   if (s_client->getStepsPerSecond(temp2, sizeof(temp2)) == LX200_VALUEGET)
   {
-    long wt = (long)strtol(&temp2[0], NULL, 10);
+    int wt = (int)strtol(temp2, NULL, 10);
     sprintf_P(temp, html_configSettleTime, wt);
     data += temp;
     sendHtml(data);
   }
-  bool reverse = false;
-  uint8_t silent = false;
-  if (s_client->readReverse(1, reverse) == LX200_VALUEGET)
-  {
-    sprintf_P(temp, html_configRotAxis_1, 1);
-    data += temp;
-    data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
-    sprintf_P(temp, html_configRotAxis_2, 1);
-    data += temp;
-    sendHtml(data);
-  }
-  reverse = false;
-  if (s_client->readReverse(2, reverse) == LX200_VALUEGET)
-  {
-    sprintf_P(temp, html_configRotAxis_1, 2);
-    data += temp;
-    data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
-    sprintf_P(temp, html_configRotAxis_2, 2);
-    data += temp;
-    sendHtml(data);
-  }
-  float gear = 0;
-  if (s_client->readTotGear(1, gear) == LX200_VALUEGET)
-  {
-    sprintf_P(temp, html_configGeAxis, gear, 1, 1);
-    data += temp;
-    sendHtml(data);
-  }
-  if (s_client->readTotGear(2, gear) == LX200_VALUEGET)
-  {
-    sprintf_P(temp, html_configGeAxis, gear, 2, 2);
-    data += temp;
-    sendHtml(data);
-  }
-  float step;
 
-  if (s_client->readStepPerRot(1, step) == LX200_VALUEGET)
+  // Per-axis parameters using loops
+  for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    sprintf_P(temp, html_configStAxis, (int)step, 1, 1);
-    data += temp;
-    sendHtml(data);
-  }
-  if (s_client->readStepPerRot(2, step) == LX200_VALUEGET)
-  {
-    sprintf_P(temp, html_configStAxis, (int)step, 2, 2);
-    data += temp;
-    sendHtml(data);
-  }
-  uint8_t micro;
-  if (s_client->readMicro(1, micro) == LX200_VALUEGET)
-  {
-    sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 1, 1);
-    data += temp;
-    sendHtml(data);
-  }
-  if (s_client->readMicro(2, micro) == LX200_VALUEGET)
-  {
-    sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), 2, 2);
-    data += temp;
-    sendHtml(data);
-  }
-  float backlashAxis;
-  if (s_client->readBacklash(1, backlashAxis) == LX200_VALUEGET)
-  {
-    sprintf_P(temp, html_configBlAxis, (int)backlashAxis, 1, 1);
-    data += temp;
-    sendHtml(data);
-  }
-  if (s_client->readBacklash(2, backlashAxis) == LX200_VALUEGET)
-  {
-    sprintf_P(temp, html_configBlAxis, (int)backlashAxis, 2, 2);
-    data += temp;
-    sendHtml(data);
-  }
-  float backlashAxisRate;
-  if (s_client->readBacklashRate(1, backlashAxisRate) == LX200_VALUEGET)
-  {
-    sprintf_P(temp, html_configBlRateAxis, (int)backlashAxisRate, 1, 1);
-    data += temp;
-    sendHtml(data);
-  }
-  if (s_client->readBacklashRate(2, backlashAxisRate) == LX200_VALUEGET)
-  {
-    sprintf_P(temp, html_configBlRateAxis, (int)backlashAxisRate, 2, 2);
-    data += temp;
-    sendHtml(data);
-  }
-  unsigned int lowC;
-  if (s_client->readLowCurr(1, lowC) == LX200_VALUEGET)
-  {
-    sprintf_P(temp, html_configLCAxis, lowC, 1, 1);
-    data += temp;
-    sendHtml(data);
+    bool reverse = false;
+    if (s_client->readReverse(ax, reverse) == LX200_VALUEGET)
+    {
+      sprintf_P(temp, html_configRotAxis_1, ax);
+      data += temp;
+      data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
+      sprintf_P(temp, html_configRotAxis_2, ax);
+      data += temp;
+      sendHtml(data);
+    }
   }
 
-  if (s_client->readLowCurr(2, lowC) == LX200_VALUEGET)
+  for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    sprintf_P(temp, html_configLCAxis, lowC, 2, 2);
-    data += temp;
-    sendHtml(data);
+    float gear = 0;
+    if (s_client->readTotGear(ax, gear) == LX200_VALUEGET)
+    {
+      sprintf_P(temp, html_configGeAxis, gear, ax, ax);
+      data += temp;
+      sendHtml(data);
+    }
   }
-  unsigned int highC;
-  if (s_client->readHighCurr(1, highC) == LX200_VALUEGET)
+
+  for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    sprintf_P(temp, html_configHCAxis, highC, 1, 1);
-    data += temp;
-    sendHtml(data);
+    float step;
+    if (s_client->readStepPerRot(ax, step) == LX200_VALUEGET)
+    {
+      sprintf_P(temp, html_configStAxis, (int)step, ax, ax);
+      data += temp;
+      sendHtml(data);
+    }
   }
-  if (s_client->readHighCurr(2, highC) == LX200_VALUEGET)
+
+  for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    sprintf_P(temp, html_configHCAxis, highC, 2, 2);
-    data += temp;
-    sendHtml(data);
+    uint8_t micro;
+    if (s_client->readMicro(ax, micro) == LX200_VALUEGET)
+    {
+      sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), ax, ax);
+      data += temp;
+      sendHtml(data);
+    }
   }
+
+  for (uint8_t ax = 1; ax <= 2; ax++)
+  {
+    float backlash;
+    if (s_client->readBacklash(ax, backlash) == LX200_VALUEGET)
+    {
+      sprintf_P(temp, html_configBlAxis, (int)backlash, ax, ax);
+      data += temp;
+      sendHtml(data);
+    }
+  }
+
+  for (uint8_t ax = 1; ax <= 2; ax++)
+  {
+    float blRate;
+    if (s_client->readBacklashRate(ax, blRate) == LX200_VALUEGET)
+    {
+      sprintf_P(temp, html_configBlRateAxis, (int)blRate, ax, ax);
+      data += temp;
+      sendHtml(data);
+    }
+  }
+
+  for (uint8_t ax = 1; ax <= 2; ax++)
+  {
+    unsigned int lowC;
+    if (s_client->readLowCurr(ax, lowC) == LX200_VALUEGET)
+    {
+      sprintf_P(temp, html_configLCAxis, lowC, ax, ax);
+      data += temp;
+      sendHtml(data);
+    }
+  }
+
+  for (uint8_t ax = 1; ax <= 2; ax++)
+  {
+    unsigned int highC;
+    if (s_client->readHighCurr(ax, highC) == LX200_VALUEGET)
+    {
+      sprintf_P(temp, html_configHCAxis, highC, ax, ax);
+      data += temp;
+      sendHtml(data);
+    }
+  }
+
+  // Silent mode (only for advanced drivers)
   const char* board = ta_MountStatus.getVb();
   if (board[0] - '0' > 1)
   {
-    if (s_client->readSilentStep(1, silent) == LX200_VALUEGET)
+    for (uint8_t ax = 1; ax <= 2; ax++)
     {
-      sprintf_P(temp, html_configSilentAxis_1, 1);
-      data += temp;
-      data += silent ? FPSTR(html_configSilentAxis_r) : FPSTR(html_configSilentAxis_d);
-      sprintf_P(temp, html_configSilentAxis_2, 1);
-      data += temp;
-      sendHtml(data);
-    }
-    if (s_client->readSilentStep(2, silent) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configSilentAxis_1, 2);
-      data += temp;
-      data += silent ? FPSTR(html_configSilentAxis_r) : FPSTR(html_configSilentAxis_d);
-      sprintf_P(temp, html_configSilentAxis_2, 2);
-      data += temp;
-      sendHtml(data);
+      uint8_t silent;
+      if (s_client->readSilentStep(ax, silent) == LX200_VALUEGET)
+      {
+        sprintf_P(temp, html_configSilentAxis_1, ax);
+        data += temp;
+        data += silent ? FPSTR(html_configSilentAxis_r) : FPSTR(html_configSilentAxis_d);
+        sprintf_P(temp, html_configSilentAxis_2, ax);
+        data += temp;
+        sendHtml(data);
+      }
     }
   }
-  
-  strcpy(temp, "</div></body></html>");
-  data += temp;
+
+  data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
 }
@@ -294,258 +259,104 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   String v;
   int i;
   float f;
-  char temp[20] = "";
 
-
+  // Settle time
   v = server.arg("mw");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 20)))
-    {
-      sprintf(temp, ":SXOS,%02d#", i);
-      s_client->set(temp);
-    }
+      s_client->setStepsPerSecond(i);
   }
 
+  // Speed: MaxR, Acc, R0-R3, RD
   v = server.arg("MaxR");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4000)))
-    {
-      sprintf(temp, ":SXRX,%04d#", i);
-      s_client->set(temp);
-    }
+      s_client->setMaxRate(i);
   }
-
   v = server.arg("Acc");
   if (v != "")
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.1) && (f <= 25)))
-    {
-      sprintf(temp, ":SXRA,%04d#", (int)(f * 10));
-      s_client->set(temp);
-    }
+      s_client->setAcceleration(f);
   }
-
-  v = server.arg("R3");
-  if (v != "")
+  for (uint8_t idx = 0; idx <= 3; idx++)
   {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
+    char argName[4];
+    sprintf(argName, "R%d", idx);
+    v = server.arg(argName);
+    if (v != "")
     {
-      sprintf(temp, ":SXR3,%03d#", (int)f);
-      s_client->set(temp);
+      if (atof2((char*)v.c_str(), &f))
+        s_client->setSpeedRate(idx, f);
     }
   }
-
-  v = server.arg("R2");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
-    {
-      sprintf(temp, ":SXR2,%03d#", (int)f);
-      s_client->set(temp);
-    }
-  }
-
-  v = server.arg("R1");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
-    {
-      sprintf(temp, ":SXR1,%03d#", (int)f);
-      s_client->set(temp);
-    }
-  }
-
-  v = server.arg("R0");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.01) && (f <= 100)))
-    {
-      sprintf(temp, ":SXR0,%03d#", (int)(f * 100));
-      s_client->set(temp);
-    }
-  }
-
   v = server.arg("RD");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4)))
-    {
-      sprintf(temp, ":SXRD,X#");
-      temp[6] = '0' + i;
-      s_client->set(temp);
-    }
+      s_client->setDeadband(i);
   }
 
-  v = server.arg("mrot1");
-  if (v != "")
+  // Per-axis motor params
+  for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
-    {
-      s_client->writeReverse(1, i);
-    }
+    char argName[8];
+
+    // Rotation
+    sprintf(argName, "mrot%d", ax);
+    v = server.arg(argName);
+    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) s_client->writeReverse(ax, i); }
+
+    // Gear
+    sprintf(argName, "mge%d", ax);
+    v = server.arg(argName);
+    if (v != "") { if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 60000))) s_client->writeTotGear(ax, f); }
+
+    // Steps per rotation
+    sprintf(argName, "mst%d", ax);
+    v = server.arg(argName);
+    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400))) s_client->writeStepPerRot(ax, i); }
+
+    // Microsteps
+    sprintf(argName, "mmu%d", ax);
+    v = server.arg(argName);
+    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256))) s_client->writeMicro(ax, (float)((int)log2(i))); }
+
+    // Backlash
+    sprintf(argName, "mbl%d", ax);
+    v = server.arg(argName);
+    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999))) s_client->writeBacklash(ax, (float)i); }
+
+    // Backlash rate
+    sprintf(argName, "mblr%d", ax);
+    v = server.arg(argName);
+    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 64))) s_client->writeBacklashRate(ax, (float)i); }
+
+    // Low current
+    sprintf(argName, "mlc%d", ax);
+    v = server.arg(argName);
+    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800))) s_client->writeLowCurr(ax, i); }
+
+    // High current
+    sprintf(argName, "mhc%d", ax);
+    v = server.arg(argName);
+    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800))) s_client->writeHighCurr(ax, i); }
+
+    // Silent mode
+    sprintf(argName, "ms%d", ax);
+    v = server.arg(argName);
+    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) s_client->writeSilentStep(ax, i); }
   }
 
-  v = server.arg("mrot2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
-    {
-      s_client->writeReverse(2, i);
-    }
-  }
-
-  v = server.arg("mge1");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 60000)))
-    {
-      s_client->writeTotGear(1, f);
-    }
-  }
-
-  v = server.arg("mge2");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 60000)))
-    {
-      s_client->writeTotGear(2, f);
-    }
-  }
-
-  v = server.arg("mst1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400)))
-    {
-      s_client->writeStepPerRot(1, i);
-    }
-  }
-
-  v = server.arg("mst2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400)))
-    {
-      s_client->writeStepPerRot(2, i);
-    }
-  }
-
-  v = server.arg("mmu1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256)))
-    {
-      s_client->writeMicro(1, (float)((int)log2(i)));
-    }
-  }
-
-  v = server.arg("mmu2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256)))
-    {
-      s_client->writeMicro(2, (float)((int)log2(i)));
-    }
-  }
-
-  v = server.arg("mbl1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
-    {
-      s_client->writeBacklash(1, (float)i);
-    }
-  }
-
-  v = server.arg("mbl2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999)))
-    {
-      s_client->writeBacklash(2, (float)i);
-    }
-  }
-
-  v = server.arg("mblr1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 64)))
-    {
-      s_client->writeBacklashRate(1, (float)i);
-    }
-  }
-
-  v = server.arg("mblr2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 64)))
-    {
-      s_client->writeBacklashRate(2, (float)i);
-    }
-  }
-
-  v = server.arg("mlc1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
-    {
-      s_client->writeLowCurr(1, i);
-    }
-  }
-  v = server.arg("mlc2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
-    {
-      s_client->writeLowCurr(2, i);
-    }
-  }
-
-  v = server.arg("mhc1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
-    {
-      s_client->writeHighCurr(1, i);
-    }
-  }
-  v = server.arg("mhc2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800)))
-    {
-      s_client->writeHighCurr(2, i);
-    }
-  }
-
-  //silent mode
-  v = server.arg("ms1");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
-    {
-      s_client->writeSilentStep(1, i);
-    }
-  }
-  v = server.arg("ms2");
-  if (v != "")
-  {
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
-    {
-      s_client->writeSilentStep(2, i);
-    }
-  }
-
+  // Time zone
   int ut_hrs = -999;
   v = server.arg("u1");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -13) && (i <= 13)))
-    {
       ut_hrs = i;
-    }
   }
   v = server.arg("u2");
   if (v != "")
@@ -553,11 +364,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
     if ((atoi2((char*)v.c_str(), &i)) && ((i == 00) || (i == 30) || (i == 45)))
     {
       if ((ut_hrs >= -13) && (ut_hrs <= 13))
-      {
-        sprintf(temp, ":SG%+03d:%02d#", ut_hrs, i);
-        s_client->set(temp);
-      }
+        s_client->setTimeZone((float)(-(ut_hrs * 60 + i) / 60.0));
     }
   }
 }
-

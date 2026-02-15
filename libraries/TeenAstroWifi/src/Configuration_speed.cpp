@@ -1,7 +1,7 @@
 #include "TeenAstroWifi.h"
+#include "HtmlCommon.h"
 // -----------------------------------------------------------------------------------
 // configuration_speed
-
 
 const char html_configRateD_0[] PROGMEM =
 "<div class='bt'> Speed & Acceleration: <br/> </div>"
@@ -64,54 +64,51 @@ void TeenAstroWifi::handleConfigurationSpeed()
   s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320] = "";
-  char temp1[50] = "";
-  char temp2[50] = "";
   String data;
 
   processConfigurationSpeedGet();
   preparePage(data, ServerPage::Speed);
   sendHtml(data);
 
-  //update
   ta_MountStatus.updateMount();
 
-  if (s_client->get(":GXRD#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "4"); int val = temp1[0] - '0';
-  val = min(max(val, 0), 4);
+  // Default speed after start
+  int deadband = 4;
+  s_client->getDeadband(deadband);
+  deadband = min(max(deadband, 0), 4);
   data += FPSTR(html_configRateD_0);
-  val == 0 ? data += "<option selected value='0'>Guiding</option>" : data += "<option value='0'>Guiding</option>";
-  val == 1 ? data += "<option selected value='1'>Slow</option>" : data += "<option value='1'>Slow</option>";
-  val == 2 ? data += "<option selected value='2'>Medium</option>" : data += "<option value='2'>Medium</option>";
-  val == 3 ? data += "<option selected value='3'>Fast</option>" : data += "<option value='3'>Fast</option>";
-  val == 4 ? data += "<option selected value='4'>Max</option>" : data += "<option value='4'>Max</option>";
+  const char* speedNames[] = { "Guiding", "Slow", "Medium", "Fast", "Max" };
+  for (int k = 0; k < 5; k++)
+  {
+    char opt[60];
+    sprintf(opt, "<option %svalue='%d'>%s</option>", (k == deadband) ? "selected " : "", k, speedNames[k]);
+    data += opt;
+  }
   data += FPSTR(html_configRateD_1);
   sendHtml(data);
 
-  if (s_client->get(":GXRX#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); int maxRate = (int)strtol(&temp1[0], NULL, 10);
+  // Max rate
+  int maxRate = 0;
+  s_client->getMaxRate(maxRate);
   sprintf_P(temp, html_configMaxRate, maxRate);
   data += temp;
   sendHtml(data);
 
-  if (s_client->get(":GXR3#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); float Rate3 = (float)strtof(&temp1[0], NULL);
-  sprintf_P(temp, html_configRate3, Rate3);
-  data += temp;
-  sendHtml(data);
+  // Speed rates 3..0
+  float rate;
+  const char* rateFmts[] = { html_configRate0, html_configRate1, html_configRate2, html_configRate3 };
+  for (int idx = 3; idx >= 0; idx--)
+  {
+    rate = 0;
+    s_client->getSpeedRate(idx, rate);
+    sprintf_P(temp, rateFmts[idx], rate);
+    data += temp;
+    sendHtml(data);
+  }
 
-  if (s_client->get(":GXR2#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); float Rate2 = (float)strtof(&temp1[0], NULL);
-  sprintf_P(temp, html_configRate2, Rate2);
-  data += temp;
-  sendHtml(data);
-
-  if (s_client->get(":GXR1#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); float Rate1 = (float)strtof(&temp1[0], NULL);
-  sprintf_P(temp, html_configRate1, Rate1);
-  data += temp;
-  sendHtml(data);
-
-  if (s_client->get(":GXR0#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); float Rate0 = (float)strtof(&temp1[0], NULL);
-  sprintf_P(temp, html_configRate0, Rate0);
-  data += temp;
-  sendHtml(data);
-
-  if (s_client->get(":GXRA#", temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "0"); float acc = (float)strtof(&temp1[0], NULL);
+  // Acceleration
+  float acc = 0;
+  s_client->getAcceleration(acc);
   sprintf_P(temp, html_configAcceleration, acc);
   data += temp;
   sendHtml(data);
@@ -123,65 +120,31 @@ void TeenAstroWifi::processConfigurationSpeedGet()
   String v;
   int i;
   float f;
-  char temp[20] = "";
 
   v = server.arg("MaxR");
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4000)))
-    {
-      sprintf(temp, ":SXRX,%04d#", i);
-      s_client->set(temp);
-    }
+      s_client->setMaxRate(i);
   }
 
   v = server.arg("Acc");
   if (v != "")
   {
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.1) && (f <= 25)))
-    {
-      sprintf(temp, ":SXRA,%04d#", (int)(f * 10));
-      s_client->set(temp);
-    }
+      s_client->setAcceleration(f);
   }
 
-  v = server.arg("R3");
-  if (v != "")
+  // Speed rates R0..R3
+  for (uint8_t idx = 0; idx <= 3; idx++)
   {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
+    char argName[4];
+    sprintf(argName, "R%d", idx);
+    v = server.arg(argName);
+    if (v != "")
     {
-      sprintf(temp, ":SXR3,%03d#", (int)f);
-      s_client->set(temp);
-    }
-  }
-
-  v = server.arg("R2");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
-    {
-      sprintf(temp, ":SXR2,%03d#", (int)f);
-      s_client->set(temp);
-    }
-  }
-
-  v = server.arg("R1");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 255)))
-    {
-      sprintf(temp, ":SXR1,%03d#", (int)f);
-      s_client->set(temp);
-    }
-  }
-
-  v = server.arg("R0");
-  if (v != "")
-  {
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.01) && (f <= 100)))
-    {
-      sprintf(temp, ":SXR0,%03d#", (int)(f * 100));
-      s_client->set(temp);
+      if (atof2((char*)v.c_str(), &f))
+        s_client->setSpeedRate(idx, f);
     }
   }
 
@@ -189,11 +152,6 @@ void TeenAstroWifi::processConfigurationSpeedGet()
   if (v != "")
   {
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4)))
-    {
-      sprintf(temp, ":SXRD,X#");
-      temp[6] = '0' + i;
-      s_client->set(temp);
-    }
+      s_client->setDeadband(i);
   }
 }
-
