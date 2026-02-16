@@ -71,6 +71,7 @@ const char html_Opt_1[] PROGMEM =
 
 void TeenAstroWifi::handleConfigurationTracking()
 {
+  if (busyGuard()) return;
   ta_MountStatus.updateMount();
 
   s_client->setTimeout(WebTimeout);
@@ -134,6 +135,7 @@ void TeenAstroWifi::handleConfigurationTracking()
   data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
+  s_handlerBusy = false;
 }
 
 void TeenAstroWifi::processConfigurationTrackingGet()

@@ -84,6 +84,7 @@ const char html_configMaxAxis2[] PROGMEM =
 
 void TeenAstroWifi::handleConfigurationLimits()
 {
+  if (busyGuard()) return;
   s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[350] = "";
@@ -176,6 +177,7 @@ void TeenAstroWifi::handleConfigurationLimits()
   data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
+  s_handlerBusy = false;
 }
 
 void TeenAstroWifi::processConfigurationLimitsGet()

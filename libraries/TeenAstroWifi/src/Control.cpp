@@ -88,6 +88,7 @@ const char html_controlFocus6[] PROGMEM =
 
 void TeenAstroWifi::handleControl()
 {
+  if (busyGuard()) return;
   s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   String data;
@@ -116,6 +117,7 @@ void TeenAstroWifi::handleControl()
           data += FPSTR(html_pageFooter);
           sendHtml(data);
           sendHtmlDone(data);
+          s_handlerBusy = false;
           return;
         }
         data += "</form>";
@@ -176,6 +178,7 @@ void TeenAstroWifi::handleControl()
   data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
+  s_handlerBusy = false;
 }
 
 

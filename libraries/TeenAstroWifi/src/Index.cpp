@@ -40,6 +40,7 @@ const char* html_indexWorkload PROGMEM = "Workload: <span class='c'>%s</span><br
 
 void TeenAstroWifi::handleRoot()
 {
+  if (busyGuard()) return;
   s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[300] = "";
@@ -164,4 +165,5 @@ void TeenAstroWifi::handleRoot()
   data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
+  s_handlerBusy = false;
 }

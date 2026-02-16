@@ -8,6 +8,20 @@ const char html_headerIdx[] PROGMEM = "<meta http-equiv=\"refresh\" content=\"5;
 const char html_headE[] PROGMEM = "</head>\r\n";
 const char html_bodyB[] PROGMEM = "<body>\r\n";
 
+// Navigation guard: disables nav links after a click to prevent rapid page loads
+const char html_navGuard[] PROGMEM =
+"<script>\n"
+"document.addEventListener('click',function(e){\n"
+"var a=e.target.closest('nav a');\n"
+"if(!a||a.classList.contains('sel'))return;\n"
+"if(window._navBusy){e.preventDefault();return;}\n"
+"window._navBusy=true;\n"
+"var links=document.querySelectorAll('nav a');\n"
+"for(var i=0;i<links.length;i++){links[i].style.opacity='0.4';links[i].style.pointerEvents='none';}\n"
+"a.textContent=a.textContent+' ...';\n"
+"});\n"
+"</script>\n";
+
 // ---- Modern consolidated CSS with CSS custom properties ----
 const char html_main_css1[] PROGMEM = "<style>\n"
 ":root{"
@@ -32,13 +46,17 @@ const char html_main_css3[] PROGMEM =
 
 const char html_main_css4[] PROGMEM =
 "nav{background:var(--nav);padding:6px 12px;display:flex;flex-wrap:wrap;gap:4px;"
-"border-bottom:1px solid var(--border)}\n"
-"nav a{color:var(--nav-text);text-decoration:none;padding:6px 14px;border-radius:6px;"
-"font-size:.85em;font-weight:500;transition:background .15s,color .15s}\n"
+"border-bottom:1px solid var(--border);align-items:center}\n"
+"nav a{color:var(--nav-text);text-decoration:none;padding:8px 14px;border-radius:6px;"
+"font-size:.85em;font-weight:500;transition:background .15s,color .15s;"
+"min-height:44px;display:inline-flex;align-items:center}\n"
 "nav a:link,nav a:visited{color:var(--nav-text);background:transparent;border:none;"
-"display:inline-block;text-align:center}\n"
+"text-align:center}\n"
 "nav a:hover,nav a:active{background:var(--accent-bg);color:var(--accent-h)}\n"
-"nav a.sel{background:var(--nav-sel);color:#fff;font-weight:600}\n";
+"nav a.sel{background:var(--nav-sel);color:#fff;font-weight:600}\n"
+"#navtog{display:none}\n"
+".hamburger{display:none;cursor:pointer;padding:8px;font-size:1.5em;color:var(--nav-text);"
+"min-height:44px;align-items:center}\n";
 
 const char html_main_css5[] PROGMEM =
 ".content{max-width:900px;margin:20px auto;padding:0 16px}\n"
@@ -50,18 +68,18 @@ const char html_main_css5[] PROGMEM =
 const char html_main_css6[] PROGMEM =
 "form{margin:6px 0}"
 "input[type=number],input[type=text]{background:var(--bg3);border:1px solid var(--border);"
-"color:var(--text-hi);padding:6px 10px;border-radius:var(--radius);font-size:.9em;"
-"width:7em;font-weight:600;outline:none;transition:border-color .15s}\n"
+"color:var(--text-hi);padding:8px 10px;border-radius:var(--radius);font-size:16px;"
+"width:7em;font-weight:600;outline:none;transition:border-color .15s;min-height:44px}\n"
 "input:focus{border-color:var(--accent)}\n"
 "select{background:var(--bg3);border:1px solid var(--border);color:var(--text-hi);"
-"padding:6px 10px;border-radius:var(--radius);font-size:.9em;font-weight:600;"
-"width:auto;min-width:7em;outline:none}\n"
+"padding:8px 10px;border-radius:var(--radius);font-size:16px;font-weight:600;"
+"width:auto;min-width:7em;outline:none;min-height:44px}\n"
 "select:focus{border-color:var(--accent)}\n";
 
 const char html_main_css7[] PROGMEM =
 "button{background:var(--accent);color:#fff;font-weight:600;border:none;"
-"border-radius:var(--radius);padding:7px 16px;font-size:.85em;cursor:pointer;"
-"transition:background .15s,transform .1s}\n"
+"border-radius:var(--radius);padding:8px 16px;font-size:.9em;cursor:pointer;"
+"transition:background .15s,transform .1s;min-height:44px}\n"
 "button:hover{background:var(--accent-h)}\n"
 "button:active{transform:scale(.97)}\n"
 ".c{color:var(--accent-h);font-weight:700}\n"
@@ -83,16 +101,24 @@ const char html_main_css_control2[] PROGMEM =
 ".gb:active{background:var(--accent);color:#fff}\n";
 
 const char html_main_css_control3[] PROGMEM =
-".bb{height:2.5em;min-width:8em;margin:3px}\n"
-".bbh{height:2.5em;min-width:6em;margin:3px}\n";
+".bb{min-height:44px;min-width:8em;margin:3px}\n"
+".bbh{min-height:44px;min-width:6em;margin:3px}\n";
 
 const char html_main_css_control4[] PROGMEM =
 "@media(max-width:600px){"
 ".content{padding:0 8px;margin:10px auto}"
-".hdr{padding:8px 12px}"
-"nav{padding:4px 8px;gap:2px}"
-"nav a{padding:5px 10px;font-size:.8em}"
+".hdr{padding:8px 12px;flex-direction:column;text-align:center}"
+".hdr-info{text-align:center}"
+".hamburger{display:flex}"
+"nav{padding:0;flex-direction:column;gap:0}"
+"nav a{display:none;padding:10px 16px;font-size:.95em;width:100%;"
+"border-radius:0;border-bottom:1px solid var(--border)}"
+"#navtog:checked~a{display:flex}"
+"nav a.sel{display:flex}"
+"input[type=number],input[type=text]{width:100%;max-width:100%}"
+"select{width:100%;max-width:100%}"
 ".panel{margin:4px;padding:12px;min-width:0;width:100%}"
+".bb,.bbh{width:100%;min-height:48px}"
 ".gb{width:56px;height:46px}"
 "}\n</style>\n";
 
@@ -126,6 +152,36 @@ const char html_links11N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a>\n";
 
 LX200Client* TeenAstroWifi::s_client = nullptr;
 bool TeenAstroWifi::wifiOn = true;
+bool TeenAstroWifi::s_handlerBusy = false;
+unsigned long TeenAstroWifi::s_lastPageMs = 0;
+
+// Minimum interval between full page loads (ms).
+// If a new page is requested within this cooldown, return a lightweight
+// "please wait" that auto-retries after 1 second.  This prevents rapid
+// clicks from queueing heavy serial-IO handlers back to back.
+#define PAGE_COOLDOWN_MS 800
+
+bool TeenAstroWifi::busyGuard()
+{
+  unsigned long now = millis();
+  if (s_handlerBusy || (now - s_lastPageMs < PAGE_COOLDOWN_MS))
+  {
+    server.send(200, "text/html",
+      "<!DOCTYPE HTML><html><head>"
+      "<meta http-equiv='refresh' content='1'>"
+      "</head><body style='background:#0d1117;color:#c9d1d9;"
+      "display:flex;justify-content:center;align-items:center;height:90vh;"
+      "font-family:sans-serif'>"
+      "<div style='text-align:center'>"
+      "<div style='font-size:1.5em;margin-bottom:8px'>&#8987;</div>"
+      "Loading, please wait..."
+      "</div></body></html>");
+    return true;
+  }
+  s_handlerBusy = true;
+  s_lastPageMs = now;
+  return false;
+}
 
 int TeenAstroWifi::WebTimeout = TIMEOUT_WEB;
 int TeenAstroWifi::CmdTimeout = TIMEOUT_CMD;
@@ -303,6 +359,7 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   }
   data += FPSTR(html_main_css_control4);  // responsive rules (always)
   sendHtml(data);
+  data += FPSTR(html_navGuard);
   data += FPSTR(html_headE);
   data += FPSTR(html_bodyB);
 
@@ -329,8 +386,10 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   else data += "?";
   data += FPSTR(html_header3);
 
-  // Navigation
+  // Navigation with hamburger toggle for mobile
   data += "<nav>\n";
+  data += "<label class='hamburger' for='navtog'>&#9776;</label>\n";
+  data += "<input type='checkbox' id='navtog'>\n";
   data += page == ServerPage::Index ? FPSTR(html_links1S) : FPSTR(html_links1N);
   data += page == ServerPage::Control ? FPSTR(html_links2S) : FPSTR(html_links2N);
   if (ta_MountStatus.motorsEnable())

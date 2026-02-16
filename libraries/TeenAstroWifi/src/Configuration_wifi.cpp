@@ -8,13 +8,13 @@
 const char html_wifiSerial1[] PROGMEM =
 "<b>Performance and compatibility:</b><br/>"
 "<form method='post' action='/wifi.htm'>"
-"Command channel serial read time-out: <input style='width:4em' name='ccto' value='%d' type='number' min='5' max='100'> ms<br/>"
-"Web channel serial read time-out: <input style='width:4em' name='wcto' value='%d' type='number' min='5' max='100'> ms<br/>"
+"Command channel serial read time-out: <input style='width:100%%;max-width:4em' name='ccto' value='%d' type='number' min='5' max='100'> ms<br/>"
+"Web channel serial read time-out: <input style='width:100%%;max-width:4em' name='wcto' value='%d' type='number' min='5' max='100'> ms<br/>"
 "<button type='submit'>Upload</button></form><br />\r\n";
 const char html_wifiMode1[] PROGMEM =
 "<br/><b>Wifi Mode:</b><br/>"
 "<form method='post' action='/wifi.htm'>"
-"<select style='width:10em' name='wifimode'>";
+"<select style='width:100%;max-width:10em' name='wifimode'>";
 const char html_wifiMode2[] PROGMEM =
 "</select>"
 "<button type='submit'>Upload</button>"
@@ -23,7 +23,7 @@ const char html_wifiMode2[] PROGMEM =
 const char html_wifiConnectMode1[] PROGMEM =
 "<br/><b>Wifi connection Mode:</b><br/>"
 "<form method='post' action='/wifi.htm'>"
-"<select style='width:10em' name='wificonnectionmode'>";
+"<select style='width:100%;max-width:10em' name='wificonnectionmode'>";
 const char html_wifiConnectMode2[] PROGMEM =
 "</select>"
 "<button type='submit'>Upload</button>"
@@ -34,15 +34,15 @@ const char html_wifiSSID1A[] PROGMEM =
 "<br/><b>Station mode %d (connect to an Access-Point):</b><br/>"
 "<form method='post' action='/wifi.htm'>";
 const char html_wifiSSID1B[] PROGMEM =
-"SSID: <input style='width:10em' name='stssid%d' type='text' value='%s' maxlength='32'>&nbsp;&nbsp;&nbsp;";
+"SSID: <input style='width:100%%;max-width:10em' name='stssid%d' type='text' value='%s' maxlength='32'>&nbsp;&nbsp;&nbsp;";
 const char html_wifiSSID1C[] PROGMEM =
-"Password: <input style='width:10em' name='stpwd%d' type='password' value='%s' maxlength='39'><br/>";
+"Password: <input style='width:100%%;max-width:10em' name='stpwd%d' type='password' value='%s' maxlength='39'><br/>";
 const char html_wifiSSID2[] PROGMEM =
 "Enable DHCP: <input type='checkbox' name='stadhcp%d' value='1' %s> (Note: above addresses are ignored if DHCP is enabled)<br/>"
 "<button type='submit'>Upload</button></form><br />\r\n";
 
 const char html_wifiMAC[] PROGMEM =
-"MAC: <input style='width:10em' name='stmac%d' type='text' value='%s' maxlength='17' disabled><br/>";
+"MAC: <input style='width:100%%;max-width:10em' name='stmac%d' type='text' value='%s' maxlength='17' disabled><br/>";
 
 const char html_wifiSTAIP[] PROGMEM =
 "<table><tr><td>IP Address: </td><td>"
@@ -66,12 +66,12 @@ const char html_wifiSTASN[] PROGMEM =
 const char html_wifiSSID3[] PROGMEM =
 "<br/><b>Access-Point mode:</b><br/>"
 "<form method='post' action='/wifi.htm'>"
-"SSID: <input style='width:6em' name='apssid' type='text' value='%s' maxlength='32'>&nbsp;&nbsp;&nbsp;"
-"Password: <input style='width:8em' name='appwd' type='password' value='%s' maxlength='39'>&nbsp;&nbsp;&nbsp;"
-"Channel: <input style='width:2em' name='apch' value='%d' type='number' min='1' max='11'><br/>";
+"SSID: <input style='width:100%%;max-width:6em' name='apssid' type='text' value='%s' maxlength='32'>&nbsp;&nbsp;&nbsp;"
+"Password: <input style='width:100%%;max-width:8em' name='appwd' type='password' value='%s' maxlength='39'>&nbsp;&nbsp;&nbsp;"
+"Channel: <input style='width:100%%;max-width:3em' name='apch' value='%d' type='number' min='1' max='11'><br/>";
 
 const char html_wifiApMAC[] PROGMEM =
-"MAC: <input style='width:10em' name='apmac' type='text' value='%s' maxlength='17' disabled><br/>";
+"MAC: <input style='width:100%%;max-width:10em' name='apmac' type='text' value='%s' maxlength='17' disabled><br/>";
 
 const char html_wifiSSID4[] PROGMEM =
 "<table><tr><td>IP Address: </td><td>"
@@ -98,7 +98,7 @@ const char html_wifiSSID7[] PROGMEM =
 const char html_logout[] =
 "<br/><b>WiFi configuration_telescope Security:</b><br/>"
 "<form method='post' action='/wifi.htm'>"
-"Password: <input style='width:8em' name='webpwd' type='password' maxlength='39'> "
+"Password: <input style='width:100%;max-width:8em' name='webpwd' type='password' maxlength='39'> "
 "<button type='submit'>Upload</button></form>"
 "<form method='post' action='/wifi.htm'>"
 "<button type='submit' name='logout' value='1'>Logout</button></form><br />\r\n";
@@ -113,7 +113,7 @@ const char html_reboot[] PROGMEM =
 const char html_login[] PROGMEM =
 "<br/><form method='post' action='/wifi.htm'>"
 "<br/>Enter password to change WiFi configuration_telescope:<br />"
-"<input style='width:8em' name='login' type='password' maxlength='39'>"
+"<input style='width:100%;max-width:8em' name='login' type='password' maxlength='39'>"
 "<button type='submit'>Ok</button>"
 "</form><br/><br/><br/>"
 "\r\n";
@@ -122,7 +122,7 @@ const char html_update[] PROGMEM =
 
 "<br/><form>"
 "<br/><b>Smart Hand Controller Firmware Update:</b><br />"
-"<input type='button' style='width:12em' value='Update Firmware' onclick = ""Javascript:location.href='/update'"" ></form>"
+"<input type='button' style='width:100%;max-width:12em;min-height:44px' value='Update Firmware' onclick = ""Javascript:location.href='/update'"" ></form>"
 "Firmware extention is *.bin and can be found in the TeenAstroLoader.exe directory<br/><br/>"
 "\r\n";
 
@@ -166,6 +166,7 @@ int TeenAstroWifi::hexToInt(String s)
 
 void TeenAstroWifi::handleWifi()
 {
+  if (busyGuard()) return;
   char temp[300] = "";
   char temp1[80] = "";
   String data;
@@ -182,6 +183,7 @@ void TeenAstroWifi::handleWifi()
     data += FPSTR(html_pageFooter);
     sendHtml(data);
     sendHtmlDone(data);
+    s_handlerBusy = false;
     restartRequired = false;
     delay(1000);
     return;
@@ -194,6 +196,7 @@ void TeenAstroWifi::handleWifi()
     data += FPSTR(html_pageFooter);
     sendHtml(data);
     sendHtmlDone(data);
+    s_handlerBusy = false;
     return;
   }
 
@@ -252,6 +255,7 @@ void TeenAstroWifi::handleWifi()
 
   sendHtml(data);
   sendHtmlDone(data);
+  s_handlerBusy = false;
 }
 
 void TeenAstroWifi::processWifiGet()

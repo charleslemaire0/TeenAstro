@@ -39,10 +39,10 @@
 
 // Default timeouts (seconds) for serial commands and web requests
 #ifndef TIMEOUT_CMD
-#define TIMEOUT_CMD 30
+#define TIMEOUT_CMD 8
 #endif
 #ifndef TIMEOUT_WEB
-#define TIMEOUT_WEB 15
+#define TIMEOUT_WEB 4
 #endif
 
 #define Product "TeenAstro Server"
@@ -117,6 +117,9 @@ class TeenAstroWifi
     Index=1, Control, Speed, Tracking, Mount, Motors, Limits, Encoders, Site, Focuser, Wifi
   };
   static bool wifiOn;
+  static bool s_handlerBusy;
+  static unsigned long s_lastPageMs;
+  static bool busyGuard();
   static int WebTimeout;
   static int CmdTimeout;
   static WifiConnectMode activeWifiConnectMode;

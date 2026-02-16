@@ -48,7 +48,7 @@ const char html_siteQuick1a[] PROGMEM =
 const char html_configSiteSelect1[] PROGMEM =
 "<div class='bt'>Selected Site</div>"
 "<form method='post' action='/configuration_site.htm'>"
-"<select onchange='this.form.submit()' style='width:11em' name='site_select'>";
+"<select onchange='this.form.submit()' style='width:100%;max-width:11em' name='site_select'>";
 const char html_configSiteSelect2[] PROGMEM =
 "</select>"
 " (Select your predefined site)"
@@ -58,7 +58,7 @@ const char html_configSiteName1[] PROGMEM =
 "<div class='bt'>Selected Site Definition</div>"
 "<form method='get' action='/configuration_site.htm'>";
 const char html_configSiteName2[] PROGMEM =
-" <input value='%s' style='width:10.25em' type='text' name='site_n' maxlength='14'>";
+" <input value='%s' style='width:100%%;max-width:10.25em' type='text' name='site_n' maxlength='14'>";
 const char html_configSiteName3[] PROGMEM =
 "<button type='submit'>Upload</button>"
 " (Edit the name of the selected site)"
@@ -73,7 +73,7 @@ const char html_configTimeZone[] PROGMEM =
 "\r\n";
 const char html_configLongWE1[] PROGMEM =
 "<form method='get' action='/configuration_site.htm'>"
-"<select style='width:5em' name='site_g0'>";
+"<select style='width:100%;max-width:5em' name='site_g0'>";
 const char html_configLongWE2[] PROGMEM =
 "</select>";
 const char html_configLongDeg[] PROGMEM =
@@ -90,7 +90,7 @@ const char html_uploadLong2[] PROGMEM =
 "\r\n";
 const char html_configLatNS1[] PROGMEM =
 "<form method='get' action='/configuration_site.htm'>"
-"<select style='width:5em' name='site_t0'>";
+"<select style='width:100%;max-width:5em' name='site_t0'>";
 const char html_configLatNS2[] PROGMEM =
 "</select>";
 const char html_configLatDeg[] PROGMEM =
@@ -119,6 +119,7 @@ const char html_configElev4[] PROGMEM =
 
 void TeenAstroWifi::handleConfigurationSite()
 {
+  if (busyGuard()) return;
   s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[150] = "";
@@ -247,6 +248,7 @@ void TeenAstroWifi::handleConfigurationSite()
   data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
+  s_handlerBusy = false;
 }
 
 int get_temp_month;

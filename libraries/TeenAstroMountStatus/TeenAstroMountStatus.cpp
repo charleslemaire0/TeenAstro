@@ -1,6 +1,6 @@
 #include <TeenAstroMountStatus.h>
 
-#define UPDATERATE 200
+#define UPDATERATE 500
 
 // ===========================================================================
 //  MountState — parse from raw :GXI# string

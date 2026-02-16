@@ -39,6 +39,7 @@ const char html_configRotEAxis_2[] PROGMEM =
 
 void TeenAstroWifi::handleConfigurationEncoders()
 {
+  if (busyGuard()) return;
   s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320] = "";
@@ -92,6 +93,7 @@ void TeenAstroWifi::handleConfigurationEncoders()
   data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
+  s_handlerBusy = false;
 }
 
 void TeenAstroWifi::processConfigurationEncodersGet()

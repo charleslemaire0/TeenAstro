@@ -107,6 +107,7 @@ bool restartRequired_t1 = false;
 
 void TeenAstroWifi::handleConfigurationMotors()
 {
+  if (busyGuard()) return;
   s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320] = "";
@@ -122,6 +123,7 @@ void TeenAstroWifi::handleConfigurationMotors()
     data += FPSTR(html_pageFooter);
     sendHtml(data);
     sendHtmlDone(data);
+    s_handlerBusy = false;
     restartRequired_t1 = false;
     delay(1000);
     return;
@@ -253,6 +255,7 @@ void TeenAstroWifi::handleConfigurationMotors()
   data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
+  s_handlerBusy = false;
 }
 
 void TeenAstroWifi::processConfigurationMotorsGet()

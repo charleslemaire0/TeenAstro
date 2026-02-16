@@ -116,6 +116,7 @@ const char html_configPosFocuser[] PROGMEM =
 
 void TeenAstroWifi::handleConfigurationFocuser()
 {
+  if (busyGuard()) return;
   char temp[320] = "";
   char temp1[80] = "";
   String data;
@@ -200,6 +201,7 @@ void TeenAstroWifi::handleConfigurationFocuser()
   data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
+  s_handlerBusy = false;
 }
 
 void TeenAstroWifi::processConfigurationFocuserGet()

@@ -61,6 +61,7 @@ const char html_configAcceleration[] PROGMEM =
 
 void TeenAstroWifi::handleConfigurationSpeed()
 {
+  if (busyGuard()) return;
   s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320] = "";
@@ -117,6 +118,7 @@ void TeenAstroWifi::handleConfigurationSpeed()
   data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
+  s_handlerBusy = false;
 }
 
 void TeenAstroWifi::processConfigurationSpeedGet()

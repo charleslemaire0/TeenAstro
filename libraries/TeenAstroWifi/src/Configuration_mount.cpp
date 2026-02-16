@@ -6,7 +6,7 @@
 const char html_configMountSelect1[] PROGMEM =
 "<div class='bt'>Selected Mount</div>"
 "<form method='post' action='/configuration_mount.htm'>"
-"<select onchange='this.form.submit()' style='width:11em' name='mount_select'>";
+"<select onchange='this.form.submit()' style='width:100%;max-width:11em' name='mount_select'>";
 const char html_configMountSelect2[] PROGMEM =
 "</select>"
 " (Select your predefined mount)"
@@ -17,7 +17,7 @@ const char html_configMountName1[] PROGMEM =
 "<div class='bt'>Selected Mount Definition</div>"
 "<form method='get' action='/configuration_mount.htm'>";
 const char html_configMountName2[] PROGMEM =
-" <input value='%s' style='width:10.25em' type='text' name='mount_n' maxlength='14'>";
+" <input value='%s' style='width:100%%;max-width:10.25em' type='text' name='mount_n' maxlength='14'>";
 const char html_configMountName3[] PROGMEM =
 "<button type='submit'>Upload</button>"
 " (Edit the name of the selected mount)"
@@ -26,7 +26,7 @@ const char html_configMountName3[] PROGMEM =
 const char html_configMount_1[] PROGMEM =
 "<div class='bt'>Mount Type</div>"
 "<form action='/configuration_mount.htm'>"
-"<select onchange='this.form.submit()' style='width:11em' name='mount'>";
+"<select onchange='this.form.submit()' style='width:100%;max-width:11em' name='mount'>";
 const char html_configMount_2[] PROGMEM =
 "</select>"
 "</form>"
@@ -50,6 +50,7 @@ bool restartRequired_t = false;
 
 void TeenAstroWifi::handleConfigurationMount()
 {
+  if (busyGuard()) return;
   s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320] = "";
@@ -65,6 +66,7 @@ void TeenAstroWifi::handleConfigurationMount()
     data += FPSTR(html_pageFooter);
     sendHtml(data);
     sendHtmlDone(data);
+    s_handlerBusy = false;
     restartRequired_t = false;
     delay(1000);
     return;
@@ -143,6 +145,7 @@ void TeenAstroWifi::handleConfigurationMount()
   data += FPSTR(html_pageFooter);
   sendHtml(data);
   sendHtmlDone(data);
+  s_handlerBusy = false;
 }
 
 void TeenAstroWifi::processConfigurationMountGet()
