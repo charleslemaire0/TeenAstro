@@ -697,14 +697,18 @@ void TeenAstroWifi::update()
   }
 
 
-  // check clients for data, if found get the command, send cmd and pickup the response, then return the response
-  while (cmdSvrClient.connected() && cmdSvrClient.available())
+  // Process at most ONE complete command from the TCP client per update() cycle.
+  // This prevents the TCP channel from monopolising the serial port and ensures
+  // the SHC display, buttons, and HTTP server all get their turns.
+  // IMPORTANT: server.handleClient() must NOT be called from inside this loop
+  // to avoid re-entrant serial access (HTTP handlers also use s_client).
   {
     static char writeBuffer[50] = "";
     static int writeBufferPos = 0;
-    while (cmdSvrClient.available())
+    bool cmdDone = false;
+
+    while (cmdSvrClient.connected() && cmdSvrClient.available() && !cmdDone)
     {
-      // get the data
       byte b = cmdSvrClient.read();
       if (writeBufferPos == 0)
       {
@@ -718,18 +722,15 @@ void TeenAstroWifi::update()
           writeBuffer[0] = b;
           writeBuffer[1] = 0;
           writeBufferPos++;
-          server.handleClient();
           continue;
         }
         else
         {
-          server.handleClient();
           continue;
         }
       }
       else if ((b == (char)32) || (b == (char)10) || (b == (char)13) || (b == (char)6))
       {
-        server.handleClient();
         continue;
       }
       else
@@ -740,7 +741,6 @@ void TeenAstroWifi::update()
         {
           writeBufferPos = 0;
           writeBuffer[writeBufferPos] = 0;
-          server.handleClient();
           continue;
         }
         writeBuffer[writeBufferPos] = 0;
@@ -753,7 +753,6 @@ void TeenAstroWifi::update()
         CMDREPLY cmdreply;
         if (s_client->sendReceiveAuto(writeBuffer, cmdreply, readBuffer, sizeof(readBuffer), CmdTimeout, true))
         {
-          // return the response, if we have one
           if (strlen(readBuffer) > 0)
           {
             if (cmdSvrClient.connected())
@@ -764,8 +763,8 @@ void TeenAstroWifi::update()
         }
         writeBuffer[0] = 0;
         writeBufferPos = 0;
+        cmdDone = true;  // exit after one complete command
       }
-      else server.handleClient();
     }
   }
 }
