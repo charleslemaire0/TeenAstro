@@ -14,6 +14,9 @@
 #include <cstdint>
 #include <cstring>
 #include <cstdlib>
+#include <chrono>
+
+typedef uint8_t byte;
 
 /* ------------------------------------------------------------------ */
 /*  Constants that Arduino.h normally provides                         */
@@ -35,14 +38,92 @@
 #endif
 
 /* ------------------------------------------------------------------ */
-/*  Stub Serial object                                                 */
-/*  (printV is gated by #ifdef DEBUG_COUT which we never define)       */
+/*  millis() stub using std::chrono                                    */
 /* ------------------------------------------------------------------ */
-struct SerialStub {
+inline unsigned long millis()
+{
+    static auto start = std::chrono::steady_clock::now();
+    auto now = std::chrono::steady_clock::now();
+    return (unsigned long)std::chrono::duration_cast<std::chrono::milliseconds>(
+        now - start).count();
+}
+
+/* ------------------------------------------------------------------ */
+/*  Stream base class (minimal Arduino-compatible interface)            */
+/* ------------------------------------------------------------------ */
+class Stream {
+public:
+    virtual ~Stream() {}
+
+    virtual int available() = 0;
+    virtual int read() = 0;
+    virtual int peek() = 0;
+    virtual size_t write(uint8_t b) = 0;
+    virtual void flush() {}
+
+    void setTimeout(unsigned long ms) { m_timeout = ms; }
+    unsigned long getTimeout() const { return m_timeout; }
+
+    size_t print(const char* s) {
+        size_t n = 0;
+        while (*s) { write((uint8_t)*s++); n++; }
+        return n;
+    }
+
+    size_t print(int val) {
+        char buf[16];
+        sprintf(buf, "%d", val);
+        return print(buf);
+    }
+
+    size_t print(unsigned int val) {
+        char buf[16];
+        sprintf(buf, "%u", val);
+        return print(buf);
+    }
+
+    size_t print(long val) {
+        char buf[24];
+        sprintf(buf, "%ld", val);
+        return print(buf);
+    }
+
+    size_t print(unsigned long val) {
+        char buf[24];
+        sprintf(buf, "%lu", val);
+        return print(buf);
+    }
+
+    size_t print(double val) {
+        char buf[24];
+        sprintf(buf, "%f", val);
+        return print(buf);
+    }
+
+    size_t println(const char* s) {
+        size_t n = print(s);
+        n += write('\n');
+        return n;
+    }
+
+    size_t println(int val) {
+        size_t n = print(val);
+        n += write('\n');
+        return n;
+    }
+
+protected:
+    unsigned long m_timeout = 1000;
+};
+
+/* ------------------------------------------------------------------ */
+/*  Stub Serial object (backward-compatible with existing tests)       */
+/* ------------------------------------------------------------------ */
+struct SerialStub : public Stream {
     void begin(unsigned long) {}
-    void print(const char*) {}
-    void println(const char*) {}
-    void print(int) {}
-    void println(int) {}
+    int available() override { return 0; }
+    int read() override { return -1; }
+    int peek() override { return -1; }
+    size_t write(uint8_t) override { return 1; }
 };
 static SerialStub Serial;
