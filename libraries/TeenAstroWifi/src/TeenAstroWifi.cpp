@@ -22,6 +22,20 @@ const char html_navGuard[] PROGMEM =
 "});\n"
 "</script>\n";
 
+// #region agent log
+const char html_debugPageLog[] PROGMEM =
+  "<script>document.addEventListener('DOMContentLoaded',function(){"
+  "var h=document.getElementById('_dbg');"
+  "var hp=h?parseInt(h.textContent):0;"
+  "var l=document.body?document.body.innerHTML.length:0;"
+  "fetch('http://127.0.0.1:7242/ingest/22318eea-23d2-4990-b49b-089aaf334f55',"
+  "{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},"
+  "body:JSON.stringify({location:'page',message:'loaded',"
+  "data:{url:location.href,bodyLen:l,heap:hp},"
+  "timestamp:Date.now(),hypothesisId:'B'})}).catch(function(){});"
+  "});</script>\n";
+// #endregion
+
 // ---- Modern consolidated CSS with CSS custom properties ----
 const char html_main_css1[] PROGMEM = "<style>\n"
 ":root{"
@@ -166,16 +180,38 @@ bool TeenAstroWifi::busyGuard()
   unsigned long now = millis();
   if (s_handlerBusy || (now - s_lastPageMs < PAGE_COOLDOWN_MS))
   {
-    server.send(200, "text/html",
-      "<!DOCTYPE HTML><html><head>"
+    // #region agent log
+    unsigned long cd = now - s_lastPageMs;
+    uint32_t heap = ESP.getFreeHeap();
+    String html;
+    html.reserve(750);
+    html = F("<!DOCTYPE HTML><html><head>"
       "<meta http-equiv='refresh' content='1'>"
       "</head><body style='background:#0d1117;color:#c9d1d9;"
       "display:flex;justify-content:center;align-items:center;height:90vh;"
       "font-family:sans-serif'>"
       "<div style='text-align:center'>"
       "<div style='font-size:1.5em;margin-bottom:8px'>&#8987;</div>"
-      "Loading, please wait..."
-      "</div></body></html>");
+      "Loading...<br><small style='color:#8b949e'>heap:");
+    html += heap;
+    html += F(" busy:");
+    html += (int)s_handlerBusy;
+    html += F(" cd:");
+    html += cd;
+    html += F("ms</small></div>"
+      "<script>fetch('http://127.0.0.1:7242/ingest/22318eea-23d2-4990-b49b-089aaf334f55',"
+      "{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},"
+      "body:JSON.stringify({location:'busyGuard',message:'wait_page',"
+      "data:{url:location.href,heap:");
+    html += heap;
+    html += F(",busy:");
+    html += (int)s_handlerBusy;
+    html += F(",cd:");
+    html += cd;
+    html += F("},timestamp:Date.now(),hypothesisId:'A'})}).catch(function(){});</script>"
+      "</body></html>");
+    server.send(200, "text/html", html);
+    // #endregion
     return true;
   }
   s_handlerBusy = true;
@@ -360,8 +396,16 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   data += FPSTR(html_main_css_control4);  // responsive rules (always)
   sendHtml(data);
   data += FPSTR(html_navGuard);
+  // #region agent log
+  data += FPSTR(html_debugPageLog);
+  // #endregion
   data += FPSTR(html_headE);
   data += FPSTR(html_bodyB);
+  // #region agent log
+  data += "<span id='_dbg' style='display:none'>";
+  data += ESP.getFreeHeap();
+  data += "</span>";
+  // #endregion
 
   // Header bar
   data += FPSTR(html_header1);
