@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/mount_state.dart';
 import '../models/lx200_commands.dart';
 import 'lx200_tcp_client.dart';
+import 'debug_agent_log.dart';
 
 /// Notifier that polls the mount and updates state.
 /// Paces commands to avoid overwhelming the embedded system.
@@ -42,8 +43,12 @@ class MountStateNotifier extends StateNotifier<MountState> {
       if (!_client.isConnected) {
         // #region agent log
         DebugLog.add('connection lost, attempting reconnect...');
+        agentLog('mount_state_provider.dart:_pollLoop', 'connection lost, attempting reconnect', {'clientState': _client.state.name}, 'H5');
         // #endregion
         final ok = await _client.reconnect();
+        // #region agent log
+        agentLog('mount_state_provider.dart:_pollLoop', 'reconnect result', {'ok': ok, 'clientState': _client.state.name}, 'H5');
+        // #endregion
         if (!ok) {
           // #region agent log
           DebugLog.add('reconnect failed, retrying in 5s');

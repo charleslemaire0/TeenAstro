@@ -52,7 +52,7 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: child,
+      body: SafeArea(child: child),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex(location),
         onDestinationSelected: (i) => _navigate(context, i),

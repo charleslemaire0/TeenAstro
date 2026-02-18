@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/lx200_commands.dart';
+import 'debug_agent_log.dart';
 
 enum TcpState { disconnected, connecting, connected, error }
 
@@ -51,6 +52,9 @@ class LX200TcpClient {
       _socket = await Socket.connect(ip, port, timeout: timeout);
       _state = TcpState.connected;
       _lastError = '';
+      // #region agent log
+      agentLog('lx200_tcp_client.dart:connect', 'socket connected', {'ip': ip, 'port': port}, 'H1');
+      // #endregion
       // Single listener: accumulate all incoming data into _rxBuffer
       _subscription = _socket!.listen(
         (data) {
@@ -61,11 +65,17 @@ class LX200TcpClient {
           DebugLog.add('socket error: $e');
           _lastError = e.toString();
           _state = TcpState.error;
+          // #region agent log
+          agentLog('lx200_tcp_client.dart:onError', 'socket error', {'error': e.toString(), 'state': _state.name}, 'H2');
+          // #endregion
         },
         onDone: () {
           DebugLog.add('socket closed');
           _state = TcpState.disconnected;
           _socket = null;
+          // #region agent log
+          agentLog('lx200_tcp_client.dart:onDone', 'socket closed', {'state': 'disconnected'}, 'H1');
+          // #endregion
         },
       );
       DebugLog.add('connected OK');
@@ -86,6 +96,9 @@ class LX200TcpClient {
   }
 
   Future<void> disconnect() async {
+    // #region agent log
+    agentLog('lx200_tcp_client.dart:disconnect', 'disconnect() called', {'wasConnected': _state == TcpState.connected}, 'H4');
+    // #endregion
     await _subscription?.cancel();
     _subscription = null;
     try {
@@ -161,6 +174,9 @@ class LX200TcpClient {
     } catch (e) {
       DebugLog.add('$cmd -> EXCEPTION: $e');
       _lastError = e.toString();
+      // #region agent log
+      agentLog('lx200_tcp_client.dart:sendCommand', 'sendCommand exception', {'cmd': cmd, 'error': e.toString(), 'state': _state.name}, 'H3');
+      // #endregion
       return null;
     } finally {
       _busy = false;
