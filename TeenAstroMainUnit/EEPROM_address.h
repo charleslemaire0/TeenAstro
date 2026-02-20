@@ -124,5 +124,6 @@ extern uint8_t midx;
 #define EE_T33              EE_T11 + 32
 #define EE_Tvalid           EE_T11 + 36
 
+// address: one of the EE_* offsets above; idx (if used): within mount count.
 int getMountAddress(int address);
 int getMountAddress(int address, int idx);

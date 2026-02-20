@@ -40,7 +40,7 @@ void SmartHandController::menuEncoders()
       case 7:
         if (display->UserInterfaceMessage(&buttonPad, T_DISABLE, T_ENCODERS, "", T_NO "\n" T_YES) == 2)
         {
-          if (SetLX200(":SXEE,n#") == LX200_VALUESET)
+          if (m_client->enableEncoders(false) == LX200_VALUESET)
           {
             DisplayMessage(T_TELESCOPE, T_REBOOT, 500);
             powerCycleRequired = true;
@@ -74,7 +74,7 @@ void SmartHandController::menuEncoders()
       case 1:
         if (display->UserInterfaceMessage(&buttonPad, T_ENABLE, T_ENCODERS, "", T_NO "\n" T_YES) == 2)
         {
-          if (SetLX200(":SXEE,y#") == LX200_VALUESET)
+          if (m_client->enableEncoders(true) == LX200_VALUESET)
           {
             DisplayMessage(T_TELESCOPE, T_REBOOT, 500);
             powerCycleRequired = true;
@@ -97,14 +97,14 @@ void SmartHandController::menuAutoSyncEncoder()
 {
   const char* string_list = T_OFF "\n60'\n30'\n15'\n8'\n4'\n2'\n" T_ON;
   static uint8_t s_sel = 1;
-  DisplayMessageLX200(readEncoderAutoSync(s_sel), true);
+  DisplayMessageLX200(m_client->readEncoderAutoSync(s_sel), true);
   uint8_t tmp_sel = s_sel + 1;
   while (tmp_sel)
   {
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_AUTO_SYNC, tmp_sel, string_list);
     if (tmp_sel && tmp_sel != s_sel + 1)
     {
-      DisplayMessageLX200(writeEncoderAutoSync(tmp_sel - 1), false);
+      DisplayMessageLX200(m_client->writeEncoderAutoSync(tmp_sel - 1), false);
       return;
     }
   }
@@ -122,15 +122,15 @@ void SmartHandController::menuCalibrationEncoder()
     switch (tmp_sel)
     {
     case 1:
-      DisplayMessageLX200(StartEncoderCalibration(), false);
+      DisplayMessageLX200(m_client->startEncoderCalibration(), false);
       exitMenu = true;
       break;
     case 2:
-      DisplayMessageLX200(CancelEncoderCalibration(), false);
+      DisplayMessageLX200(m_client->cancelEncoderCalibration(), false);
       exitMenu = true;
       break;
     case 3:
-      DisplayMessageLX200(CompleteEncoderCalibration(), false);
+      DisplayMessageLX200(m_client->completeEncoderCalibration(), false);
       exitMenu = true;
       break;
     default:

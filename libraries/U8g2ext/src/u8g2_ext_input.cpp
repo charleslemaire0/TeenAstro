@@ -1,4 +1,4 @@
-#include <TeenAstroFunction.h>
+#include <TeenAstroMath.h>
 #include "u8g2_ext_input.h"
 #include "u8g2_ext_event.h"
 

@@ -1,15 +1,24 @@
 #pragma once
 #include <Arduino.h>
-#include <TeenAstroLX200io.h>
+#include <LX200Client.h>
+#include <LX200Navigation.h>
 #include <u8g2_ext.h>
 #include <TeenAstroPad.h>
+
+// Platform-specific serial port alias
+#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
+#define Ser Serial
+#endif
+#ifdef ARDUINO_LOLIN_C3_MINI
+#define Ser Serial1
+#endif
 
 #define Product "Teenastro SHC"
 #define SHCFirmwareDate          __DATE__
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "5"
-#define SHCFirmwareVersionPatch  "5"
+#define SHCFirmwareVersionPatch  "6"
 
 #define NUMPAGES 9
 class SmartHandController
@@ -19,9 +28,12 @@ public:
   {
     OLED_SH1106, OLED_SSD1306, OLED_SSD1309
   };
+  void setClient(LX200Client& client) { m_client = &client; }
+  LX200Client& client() { return *m_client; }
   void setup(const char version[], const int pin[7], const bool active[7], const int SerialBaud, const OLED model, const uint8_t nSubmodel);
   void update();
 private:
+  LX200Client* m_client = nullptr;
   void getNextpage();
   void updateAlign(bool moving);
   void updatePushing(bool moving);

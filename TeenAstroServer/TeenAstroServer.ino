@@ -25,14 +25,19 @@
 *
 *
 */
+#include <LX200Client.h>
 #include <TeenAstroMountStatus.h>
 #include <TeenAstroWifi.h>
+
 TeenAstroWifi m_wbt;
 TeenAstroMountStatus ta_MountStatus;
+LX200Client lx200(Serial);
 
 void setup(void)
 {
   Serial.begin(115200);
+  ta_MountStatus.setClient(lx200);
+  TeenAstroWifi::setClient(lx200);
   m_wbt.setup();
 }
 

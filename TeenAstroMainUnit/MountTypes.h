@@ -1,9 +1,13 @@
 #pragma once
 /**
  * Mount and command protocol types and constants.
- * Shared enums, typedefs, and numeric constants used across Global.h and the firmware.
+ * Shared enums, typedefs, and numeric constants used across Mount.h and the firmware.
+ *
+ * ErrorsGoTo is now defined in the shared TeenAstroCommandDef library
+ * (CommandEnums.h) so that client and server stay in sync.
  */
 #include <Arduino.h>
+#include <CommandEnums.h>
 
 // -----------------------------------------------------------------------------
 // Type aliases
@@ -14,7 +18,7 @@ typedef double speed;
 // -----------------------------------------------------------------------------
 // Mount and behaviour enums
 // -----------------------------------------------------------------------------
-enum Mount { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
+enum MountType { MOUNT_UNDEFINED, MOUNT_TYPE_GEM, MOUNT_TYPE_FORK, MOUNT_TYPE_ALTAZM, MOUNT_TYPE_FORK_ALT };
 enum EncoderSync { ES_OFF, ES_60, ES_30, ES_15, ES_8, ES_4, ES_2, ES_ALWAYS };
 enum Pushto { PT_OFF, PT_RADEC, PT_ALTAZ };
 enum MeridianFlip { FLIP_NEVER, FLIP_ALIGN, FLIP_ALWAYS };
@@ -34,26 +38,9 @@ enum ErrorsTraking {
   ERRT_MERIDIAN
 };
 
-enum ErrorsGoTo {
-  ERRGOTO_NONE,
-  ERRGOTO_BELOWHORIZON,
-  ERRGOTO_NOOBJECTSELECTED,
-  ERRGOTO_SAMESIDE,
-  ERRGOTO_PARKED,
-  ERRGOTO_SLEWING,
-  ERRGOTO_LIMITS,
-  ERRGOTO_GUIDINGBUSY,
-  ERRGOTO_ABOVEOVERHEAD,
-  ERRGOTO_MOTOR,
-  ERRGOTO____,
-  ERRGOTO_MOTOR_FAULT,
-  ERRGOTO_ALT,
-  ERRGOTO_LIMIT_SENSE,
-  ERRGOTO_AXIS1,
-  ERRGOTO_AXIS2,
-  ERRGOTO_UNDER_POLE,
-  ERRGOTO_MERIDIAN
-};
+// When goTo() returns a tracking-style error, it uses lastError + 10 (ERRGOTO_* from ERRT_*).
+// Do not reorder ErrorsTraking or ErrorsGoTo without updating Mount::goTo().
+// ErrorsGoTo is now defined in CommandEnums.h (TeenAstroCommandDef library).
 
 enum SID_Mode { SIDM_STAR, SIDM_SUN, SIDM_MOON, SIDM_TARGET };
 
@@ -79,5 +66,5 @@ enum GuideRate { RG, RC, RM, RS, RX };
 #endif
 
 const double mastersiderealClockSpeed = 997269.5625;
-const double masterClockSpeed = 1000000;  // reference frequency for tick
+const double masterClockSpeed = 1000000.0;  // reference frequency for tick
 const double HzCf = masterClockSpeed / 60.0;

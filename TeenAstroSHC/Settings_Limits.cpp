@@ -36,26 +36,26 @@ void SmartHandController::menuLimits()
 void SmartHandController::menuHorizon()
 {
   char out[20];
-  if (DisplayMessageLX200(GetLX200(":GXLH#", out, sizeof(out))))
+  if (DisplayMessageLX200(m_client->get(":GXLH#", out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10);
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_HORIZONLIMIT, "", &angle, -10, 20, 2, 0, " " T_DEGREE))
     {
       sprintf(out, ":SXLH,%+03d#", (int)angle);
-      DisplayMessageLX200(SetLX200(out), false);
+      DisplayMessageLX200(m_client->set(out), false);
     }
   }
 }
 void SmartHandController::menuOverhead()
 {
   char out[20];
-  if (DisplayMessageLX200(GetLX200(":GXLO#", out, sizeof(out))))
+  if (DisplayMessageLX200(m_client->get(":GXLO#", out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10);
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_OVERHEADLIMIT, "", &angle, 60, 91, 2, 0, " " T_DEGREE))
     {
       sprintf(out, ":SXLO,%02d#", (int)angle);
-      DisplayMessageLX200(SetLX200(out), false);
+      DisplayMessageLX200(m_client->set(out), false);
     }
   }
 }
@@ -63,13 +63,13 @@ void SmartHandController::menuUnderPole()
 {
   char out[20];
   char cmd[15];
-  if (DisplayMessageLX200(GetLX200(":GXLU#", out, sizeof(out))))
+  if (DisplayMessageLX200(m_client->get(":GXLU#", out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10) / 10;
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_MAXHOURANGLE, "+-", &angle, 9, 12, 2, 1, " " T_HOURS))
     {
       sprintf(cmd, ":SXLU,%03d#", (int)(angle * 10));
-      DisplayMessageLX200(SetLX200(cmd), false);
+      DisplayMessageLX200(m_client->set(cmd), false);
     }
   }
 }
@@ -78,13 +78,13 @@ void SmartHandController::menuUnderPole()
 void SmartHandController::menuFarFromPole()
 {
   char out[20];
-  if (DisplayMessageLX200(GetLX200(":GXLS#", out, sizeof(out))))
+  if (DisplayMessageLX200(m_client->get(":GXLS#", out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10);
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_DISTANCE, "", &angle, 0, 181, 2, 0, " " T_DEGREE))
     {
       sprintf(out, ":SXLS,%03d#", (int)angle);
-      DisplayMessageLX200(SetLX200(out), false);
+      DisplayMessageLX200(m_client->set(out), false);
     }
   }
 }
@@ -97,14 +97,14 @@ void SmartHandController::menuMeridian(bool east)
   sprintf(cmd, ":GXLX#");
   cmd[4] = east ? 'E' : 'W';
 
-  if (DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+  if (DisplayMessageLX200(m_client->get(cmd, out, sizeof(out))))
   {
     float angle = (float)strtol(&out[0], NULL, 10) / 4.0;
     if (display->UserInterfaceInputValueFloat(&buttonPad, east ? T_MERIDIANLIMITE : T_MERIDIANLIMITW, "", &angle, -45, 45, 2, 0, " " T_DEGREE))
     {
       sprintf(cmd, ":SXLX,%+03d#", (int)(angle * 4.0));
       cmd[4] = east ? 'E' : 'W';
-      DisplayMessageLX200(SetLX200(cmd), false);
+      DisplayMessageLX200(m_client->set(cmd), false);
     }
   }
 }
@@ -200,14 +200,14 @@ void SmartHandController::menuAxis(char mode)
     sprintf(menu, T_AXIS1MIN);
     cmd[4] = 'l';
     cmd[4] = mode;
-    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    if (!DisplayMessageLX200(m_client->get(cmd, out, sizeof(out))))
     {
       return;
     }
     minval = (float)strtol(&out[0], NULL, 10);
     cmd[3] = 'L';
     cmd[4] = 'B';
-    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    if (!DisplayMessageLX200(m_client->get(cmd, out, sizeof(out))))
     {
       return;
     }
@@ -217,14 +217,14 @@ void SmartHandController::menuAxis(char mode)
     sprintf(menu, T_AXIS1MAX);
     cmd[4] = 'l';
     cmd[4] = mode;
-    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    if (!DisplayMessageLX200(m_client->get(cmd, out, sizeof(out))))
     {
       return;
     }
     maxval = (float)strtol(&out[0], NULL, 10);
     cmd[3] = 'L';
     cmd[4] = 'A';
-    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    if (!DisplayMessageLX200(m_client->get(cmd, out, sizeof(out))))
     {
       return;
     }
@@ -234,14 +234,14 @@ void SmartHandController::menuAxis(char mode)
     sprintf(menu, T_AXIS2MIN);
     cmd[4] = 'l';
     cmd[4] = mode;
-    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    if (!DisplayMessageLX200(m_client->get(cmd, out, sizeof(out))))
     {
       return;
     }
     minval = (float)strtol(&out[0], NULL, 10);
     cmd[3] = 'L';
     cmd[4] = 'D';
-    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    if (!DisplayMessageLX200(m_client->get(cmd, out, sizeof(out))))
     {
       return;
     }
@@ -251,14 +251,14 @@ void SmartHandController::menuAxis(char mode)
     sprintf(menu, T_AXIS2MAX);
     cmd[4] = 'l';
     cmd[4] = mode;
-    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    if (!DisplayMessageLX200(m_client->get(cmd, out, sizeof(out))))
     {
       return;
     }
     maxval = (float)strtol(&out[0], NULL, 10);
     cmd[3] = 'L';
     cmd[4] = 'C';
-    if (!DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+    if (!DisplayMessageLX200(m_client->get(cmd, out, sizeof(out))))
     {
       return;
     }
@@ -267,14 +267,14 @@ void SmartHandController::menuAxis(char mode)
   }
   cmd[3] = 'L';
   cmd[4] = mode;
-  if (DisplayMessageLX200(GetLX200(cmd, out, sizeof(out))))
+  if (DisplayMessageLX200(m_client->get(cmd, out, sizeof(out))))
   {
     float val = (float)strtol(&out[0], NULL, 10) / fact;
     if (display->UserInterfaceInputValueFloat(&buttonPad, menu, "", &val, minval, maxval, 3, 1, " " T_DEGREE))
     {
       sprintf(cmd, ":SXLX,%+03d#", (int)(val * fact));
       cmd[4] = mode;
-      DisplayMessageLX200(SetLX200(cmd), false);
+      DisplayMessageLX200(m_client->set(cmd), false);
     }
   }
 }

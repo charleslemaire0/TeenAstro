@@ -1,9 +1,11 @@
 /** EEPROM and mount init: AutoinitEEPROM, initMount, initTransformation, motors/encoders. */
-#include "Global.h"
+#include "MainUnit.h"
+#include "Site.hpp"
 #include "TeenAstoCustomizations.h"
 #include "EEPROM_address.h"
 
 uint8_t midx;
+siteDefinition localSite;  // single definition — declared extern in Site.hpp
 
 int getMountAddress(int address)
 {
@@ -15,7 +17,7 @@ int getMountAddress(int address, int idx)
   return (int)EE_Mounts + (int)MountSize * (int)idx + address;
 }
 
-static const float pulsePerDegreedefault = 15;
+static const float pulsePerDegreedefault = 15.f;
 static const EncoderSync EncoderSyncDefault = EncoderSync::ES_OFF;
 
 void AutoinitEEPROM()
@@ -51,15 +53,15 @@ void writeDefaultMount()
   writeDefaultMountName(midx);
   XEEPROM.write(getMountAddress(EE_mountType), MOUNT_TYPE_GEM);
   // init the min and max altitude
-  minAlt = -10;
-  maxAlt = 91;
-  XEEPROM.write(getMountAddress(EE_minAlt), minAlt + 128);
-  XEEPROM.write(getMountAddress(EE_maxAlt), maxAlt);
+  mount.limits.minAlt = -10;
+  mount.limits.maxAlt = 91;
+  XEEPROM.write(getMountAddress(EE_minAlt), mount.limits.minAlt + 128);
+  XEEPROM.write(getMountAddress(EE_maxAlt), mount.limits.maxAlt);
   XEEPROM.write(getMountAddress(EE_dpmE), 0);
   XEEPROM.write(getMountAddress(EE_dpmW), 0);
   XEEPROM.write(getMountAddress(EE_dup), (12 - 9) * 15);
   XEEPROM.write(getMountAddress(EE_dpmDistanceFromPole), 181);
-  force_reset_EE_Limit();
+  mount.limits.forceResetEELimit();
 
 
   // init the Park/Home status
@@ -99,13 +101,13 @@ void writeDefaultMount()
 
   XEEPROM.write(getMountAddress(EE_enableEncoderMotor), 2);
   writeDefaultEEPROMmotor();
-  doesRefraction.writeDefaultToEEPROM();
+  mount.refraction.writeDefaultToEEPROM();
 }
 
 void writeDefaultMountName(int i)
 {
-  sprintf(mountName[i], "Mount %d", i);
-  XEEPROM.writeString(getMountAddress(EE_mountName), mountName[i], MountNameLen);
+  sprintf(mount.config.identity.mountName[i], "Mount %d", i);
+  XEEPROM.writeString(getMountAddress(EE_mountName), mount.config.identity.mountName[i], MountNameLen);
 }
 
 void initMount()
@@ -122,89 +124,89 @@ void initMount()
 
   for (int i = 0; i < maxNumMount; i++)
   {
-    bool ok = XEEPROM.readString(getMountAddress(EE_mountName, i), mountName[i], MountNameLen);
-    if (!ok || strlen(mountName[i]) == 0)
+    bool ok = XEEPROM.readString(getMountAddress(EE_mountName, i), mount.config.identity.mountName[i], MountNameLen);
+    if (!ok || strlen(mount.config.identity.mountName[i]) == 0)
     {
       writeDefaultMountName(i);
     }
   }
 
 #ifdef D_mountType
-  mountType = static_cast<Mount>(D_mountType);
-  isMountTypeFix = true;
+  mount.config.identity.mountType = static_cast<MountType>(D_mountType);
+  mount.config.identity.isMountTypeFix = true;
 #else
   val = XEEPROM.read(getMountAddress(EE_mountType));
   if (val < 1 || val >  4)
   {
     XEEPROM.write(getMountAddress(EE_mountType), MOUNT_TYPE_GEM);
-    mountType = MOUNT_TYPE_GEM;
+    mount.config.identity.mountType = MOUNT_TYPE_GEM;
   }
   else
   {
-    mountType = static_cast<Mount>(val);
+    mount.config.identity.mountType = static_cast<MountType>(val);
   }
-  isMountTypeFix = false;
+  mount.config.identity.isMountTypeFix = false;
 #endif
-  if (mountType == MOUNT_TYPE_GEM)
-    meridianFlip = FLIP_ALWAYS;
-  else if (mountType == MOUNT_TYPE_FORK)
-    meridianFlip = FLIP_NEVER;
-  else if (mountType == MOUNT_TYPE_FORK_ALT)
-    meridianFlip = FLIP_NEVER;
-  else if (mountType == MOUNT_TYPE_ALTAZM)
-    meridianFlip = FLIP_NEVER;
+  if (mount.config.identity.mountType == MOUNT_TYPE_GEM)
+    mount.config.identity.meridianFlip = FLIP_ALWAYS;
+  else if (mount.config.identity.mountType == MOUNT_TYPE_FORK)
+    mount.config.identity.meridianFlip = FLIP_NEVER;
+  else if (mount.config.identity.mountType == MOUNT_TYPE_FORK_ALT)
+    mount.config.identity.meridianFlip = FLIP_NEVER;
+  else if (mount.config.identity.mountType == MOUNT_TYPE_ALTAZM)
+    mount.config.identity.meridianFlip = FLIP_NEVER;
   // align
-  if (mountType == MOUNT_TYPE_GEM)
-    maxAlignNumStar = 3;
-  else if (mountType == MOUNT_TYPE_FORK)
-    maxAlignNumStar = 3;
-  else if (mountType == MOUNT_TYPE_FORK_ALT)
-    maxAlignNumStar = 1;
-  else if (mountType == MOUNT_TYPE_ALTAZM)
-    maxAlignNumStar = 3;
-  DegreesForAcceleration = 0.1 * EEPROM.read(getMountAddress(EE_degAcc));
-  if (DegreesForAcceleration == 0 || DegreesForAcceleration > 25)
+  if (mount.config.identity.mountType == MOUNT_TYPE_GEM)
+    mount.alignment.maxAlignNumStar = 3;
+  else if (mount.config.identity.mountType == MOUNT_TYPE_FORK)
+    mount.alignment.maxAlignNumStar = 3;
+  else if (mount.config.identity.mountType == MOUNT_TYPE_FORK_ALT)
+    mount.alignment.maxAlignNumStar = 1;
+  else if (mount.config.identity.mountType == MOUNT_TYPE_ALTAZM)
+    mount.alignment.maxAlignNumStar = 3;
+  mount.guiding.DegreesForAcceleration = 0.1 * EEPROM.read(getMountAddress(EE_degAcc));
+  if (mount.guiding.DegreesForAcceleration == 0 || mount.guiding.DegreesForAcceleration > 25)
   {
-    DegreesForAcceleration = 3.0;
-    XEEPROM.write(getMountAddress(EE_degAcc), (uint8_t)(DegreesForAcceleration * 10));
+    mount.guiding.DegreesForAcceleration = 3.0;
+    XEEPROM.write(getMountAddress(EE_degAcc), (uint8_t)(mount.guiding.DegreesForAcceleration * 10));
   }
   // get the min. and max altitude
-  minAlt = XEEPROM.read(getMountAddress(EE_minAlt)) - 128;
-  maxAlt = XEEPROM.read(getMountAddress(EE_maxAlt));
-  distanceFromPoleToKeepTrackingOn = XEEPROM.read(getMountAddress(EE_dpmDistanceFromPole));
-  minutesPastMeridianGOTOE = round(((EEPROM.read(getMountAddress(EE_dpmE)) - 128) * 60.0) / 15.0);
-  if (abs(minutesPastMeridianGOTOE) > 180)
-    minutesPastMeridianGOTOE = 60;
-  minutesPastMeridianGOTOW = round(((EEPROM.read(getMountAddress(EE_dpmW)) - 128) * 60.0) / 15.0);
-  if (abs(minutesPastMeridianGOTOW) > 180)
-    minutesPastMeridianGOTOW = 60;
-  underPoleLimitGOTO = (double)EEPROM.read(getMountAddress(EE_dup)) / 10;
-  if (underPoleLimitGOTO < 9 || underPoleLimitGOTO>12)
-    underPoleLimitGOTO = 12;
+  mount.limits.minAlt = XEEPROM.read(getMountAddress(EE_minAlt)) - 128;
+  mount.limits.maxAlt = XEEPROM.read(getMountAddress(EE_maxAlt));
+  mount.limits.distanceFromPoleToKeepTrackingOn = XEEPROM.read(getMountAddress(EE_dpmDistanceFromPole));
+  mount.limits.minutesPastMeridianGOTOE = round(((EEPROM.read(getMountAddress(EE_dpmE)) - 128) * 60.0) / 15.0);
+  if (abs(mount.limits.minutesPastMeridianGOTOE) > 180)
+    mount.limits.minutesPastMeridianGOTOE = 60;
+  mount.limits.minutesPastMeridianGOTOW = round(((EEPROM.read(getMountAddress(EE_dpmW)) - 128) * 60.0) / 15.0);
+  if (abs(mount.limits.minutesPastMeridianGOTOW) > 180)
+    mount.limits.minutesPastMeridianGOTOW = 60;
+  mount.limits.underPoleLimitGOTO = (double)EEPROM.read(getMountAddress(EE_dup)) / 10;
+  if (mount.limits.underPoleLimitGOTO < 9 || mount.limits.underPoleLimitGOTO>12)
+    mount.limits.underPoleLimitGOTO = 12;
 
   // initialize some fixed-point values
-  staA1.fstep = 0;
-  staA2.fstep = 0;
+  mount.axes.staA1.fstep = 0.0;
+  mount.axes.staA2.fstep = 0.0;
 
-  staA1.target = geoA1.quaterRot;
-  staA2.target = geoA2.quaterRot;
-  staA1.fstep = geoA1.stepsPerCentiSecond;
+  mount.axes.staA1.target = mount.axes.geoA1.quaterRot;
+  mount.axes.staA2.target = mount.axes.geoA2.quaterRot;
+  mount.axes.staA1.fstep = mount.axes.geoA1.stepsPerCentiSecond;
   // Tracking and rate control
-  if (isAltAZ())
+  if (mount.isAltAZ())
   {
-    trackComp = TC_BOTH;
+    mount.tracking.trackComp = TC_BOTH;
   }
   else
   {
     val = XEEPROM.read(getMountAddress(EE_TC_Axis));
-    trackComp = val < 1 || val >  2 ? TC_RA : static_cast<TrackingCompensation>(val);
+    mount.tracking.trackComp = val < 1 || val >  2 ? TC_RA : static_cast<TrackingCompensation>(val);
   }
   lval = XEEPROM.read(getMountAddress(EE_RA_Drift));
-  storedTrakingRateRA = lval < -50000 || lval > 50000 ? 0 : lval;
+  mount.tracking.storedTrakingRateRA = lval < -50000 || lval > 50000 ? 0 : lval;
   lval = XEEPROM.read(getMountAddress(EE_DEC_Drift));
-  storedTrakingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
+  mount.tracking.storedTrakingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
 
-  doesRefraction.readFromEEPROM();
+  mount.refraction.readFromEEPROM();
 
   // get the site information from EEPROM
   localSite.ReadCurrentSiteDefinition();
@@ -213,10 +215,10 @@ void initMount()
 
   initencoder();
   initmotor(false);
-  syncEwithT();
+  mount.syncEwithT();
 
 #ifndef keepTrackingOnWhenFarFromPole
-  distanceFromPoleToKeepTrackingOn = 181;
+  mount.limits.distanceFromPoleToKeepTrackingOn = 181;
 #endif
   
   val = XEEPROM.read(getMountAddress(EE_SlewSettleDuration));
@@ -225,15 +227,15 @@ void initMount()
     val = 0;
     XEEPROM.write(getMountAddress(EE_SlewSettleDuration), val);
   }
-  slewSettleDuration = val;
+  mount.parkHome.slewSettleDuration = val;
 
 }
 
 void initTransformation(bool reset)
 {
-  float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
-  hasStarAlignment = false;
-  alignment.clean();
+  float t11 = 0.f, t12 = 0.f, t13 = 0.f, t21 = 0.f, t22 = 0.f, t23 = 0.f, t31 = 0.f, t32 = 0.f, t33 = 0.f;
+  mount.alignment.hasValid = false;
+  mount.alignment.conv.clean();
   byte TvalidFromEEPROM = XEEPROM.read(getMountAddress(EE_Tvalid));
 
   if (TvalidFromEEPROM == 1 && reset)
@@ -251,30 +253,30 @@ void initTransformation(bool reset)
     t31 = XEEPROM.readFloat(getMountAddress(EE_T31));
     t32 = XEEPROM.readFloat(getMountAddress(EE_T32));
     t33 = XEEPROM.readFloat(getMountAddress(EE_T33));
-    alignment.setT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
-    alignment.setTinvFromT();
-    hasStarAlignment = true;
+    mount.alignment.conv.setT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
+    mount.alignment.conv.setTinvFromT();
+    mount.alignment.hasValid = true;
   }
   else
   {
-    if (isAltAZ())
+    if (mount.isAltAZ())
     {
       double rot = localSite.northHemisphere() ? 0 : M_PI;
-      alignment.addReference(0, 0, rot, 0);
-      alignment.addReference(M_PI_2, 0, rot + M_PI_2, 0);
-      alignment.calculateThirdReference();
+      mount.alignment.conv.addReference(0, 0, rot, 0);
+      mount.alignment.conv.addReference(M_PI_2, 0, rot + M_PI_2, 0);
+      mount.alignment.conv.calculateThirdReference();
     }
     else
     {
       double Lat = *localSite.latitude() * DEG_TO_RAD;
       double sign = localSite.northHemisphere() ? 1 : -1;
-      if (doesRefraction.forPole && abs(*localSite.latitude()) > 10)
+      if (mount.refraction.forPole && abs(*localSite.latitude()) > 10)
       {
         Lat = abs(Lat);
-        LA3::Topocentric2Apparent(Lat, RefrOptForPole());
+        LA3::Topocentric2Apparent(Lat, mount.refrOptForPole());
         Lat *= sign;
       }
-      if (mountType == MOUNT_TYPE_GEM)
+      if (mount.config.identity.mountType == MOUNT_TYPE_GEM)
       {
         Coord_HO HO1 = Coord_HO(0, 45 * DEG_TO_RAD, 90 * DEG_TO_RAD, false);
         Coord_EQ EQ1 = HO1.To_Coord_EQ(Lat);
@@ -284,8 +286,8 @@ void initTransformation(bool reset)
         Coord_EQ EQ2 = HO2.To_Coord_EQ(Lat);
         Coord_IN IN2 = Coord_IN(0, sign * EQ2.Dec(), sign * EQ2.Ha() - M_PI_2);
 
-        alignment.addReference(HO1.direct_Az_S(), HO1.Alt(), IN1.Axis1_direct(), IN1.Axis2());
-        alignment.addReference(HO2.direct_Az_S(), HO2.Alt(), IN2.Axis1_direct(), IN2.Axis2());
+        mount.alignment.conv.addReference(HO1.direct_Az_S(), HO1.Alt(), IN1.Axis1_direct(), IN1.Axis2());
+        mount.alignment.conv.addReference(HO2.direct_Az_S(), HO2.Alt(), IN2.Axis1_direct(), IN2.Axis2());
       }
       else
       {
@@ -297,64 +299,83 @@ void initTransformation(bool reset)
         Coord_EQ EQ2 = HO2.To_Coord_EQ(Lat);
         Coord_IN IN2 = Coord_IN(0, sign * EQ2.Dec(), sign * EQ2.Ha());
 
-        alignment.addReference(HO1.direct_Az_S(), HO1.Alt(), IN1.Axis1_direct(), IN1.Axis2());
-        alignment.addReference(HO2.direct_Az_S(), HO2.Alt(), IN2.Axis1_direct(), IN2.Axis2());
+        mount.alignment.conv.addReference(HO1.direct_Az_S(), HO1.Alt(), IN1.Axis1_direct(), IN1.Axis2());
+        mount.alignment.conv.addReference(HO2.direct_Az_S(), HO2.Alt(), IN2.Axis1_direct(), IN2.Axis2());
       }
 
 
-      alignment.calculateThirdReference();
+      mount.alignment.conv.calculateThirdReference();
     }
   }
 }
 
+void saveAlignModel()
+{
+  float t11 = 0.f, t12 = 0.f, t13 = 0.f, t21 = 0.f, t22 = 0.f, t23 = 0.f, t31 = 0.f, t32 = 0.f, t33 = 0.f;
+  XEEPROM.write(getMountAddress(EE_Tvalid), mount.alignment.hasValid);
+  if (mount.alignment.hasValid)
+  {
+    mount.alignment.conv.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
+  }
+  XEEPROM.writeFloat(getMountAddress(EE_T11), t11);
+  XEEPROM.writeFloat(getMountAddress(EE_T12), t12);
+  XEEPROM.writeFloat(getMountAddress(EE_T13), t13);
+  XEEPROM.writeFloat(getMountAddress(EE_T21), t21);
+  XEEPROM.writeFloat(getMountAddress(EE_T22), t22);
+  XEEPROM.writeFloat(getMountAddress(EE_T23), t23);
+  XEEPROM.writeFloat(getMountAddress(EE_T31), t31);
+  XEEPROM.writeFloat(getMountAddress(EE_T32), t32);
+  XEEPROM.writeFloat(getMountAddress(EE_T33), t33);
+}
+
 void initCelestialPole()
 {
-  geoA1.poleDef = 0L;
-  geoA2.poleDef = geoA2.quaterRot;
-  if (isAltAZ())
+  mount.axes.geoA1.poleDef = 0L;
+  mount.axes.geoA2.poleDef = mount.axes.geoA2.quaterRot;
+  if (mount.isAltAZ())
   {
-    geoA1.LimMinAxis = -180;
-    geoA1.LimMaxAxis = 180;
-    geoA2.LimMinAxis = -20;
-    geoA2.LimMaxAxis = 90;
+    mount.axes.geoA1.LimMinAxis = -180;
+    mount.axes.geoA1.LimMaxAxis = 180;
+    mount.axes.geoA2.LimMinAxis = -20;
+    mount.axes.geoA2.LimMaxAxis = 90;
   }
   else
   {
-    geoA1.LimMinAxis = -180;
-    geoA1.LimMaxAxis = 180;
-    geoA2.LimMinAxis = -90;
-    geoA2.LimMaxAxis = 270;
+    mount.axes.geoA1.LimMinAxis = -180;
+    mount.axes.geoA1.LimMaxAxis = 180;
+    mount.axes.geoA2.LimMinAxis = -90;
+    mount.axes.geoA2.LimMaxAxis = 270;
   }
 }
 
 void initmotor(bool deleteAlignment)
 {
   readEEPROMmotor();
-  updateRatios(deleteAlignment, false);
-  motorA1.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin);
-  motorA2.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin);
+  mount.updateRatios(deleteAlignment, false);
+  mount.motorsEncoders.motorA1.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), Axis1EnablePin, Axis1CSPin, Axis1DirPin, Axis1StepPin);
+  mount.motorsEncoders.motorA2.initMotor(static_cast<Driver::MOTORDRIVER>(AxisDriver), Axis2EnablePin, Axis2CSPin, Axis2DirPin, Axis2StepPin);
   readEEPROMmotorCurrent();
-  motorA1.driver.setCurrent((unsigned int)motorA1.lowCurr);
-  motorA2.driver.setCurrent((unsigned int)motorA2.lowCurr);
+  mount.motorsEncoders.motorA1.driver.setCurrent((unsigned int)mount.motorsEncoders.motorA1.lowCurr);
+  mount.motorsEncoders.motorA2.driver.setCurrent((unsigned int)mount.motorsEncoders.motorA2.lowCurr);
 }
 
 void ReadEEPROMEncoderMotorMode()
 {
 #if HASEncoder
   byte val = XEEPROM.read(getMountAddress(EE_enableEncoderMotor));
-  enableMotor = bitRead(val, 0);
-  enableEncoder = bitRead(val, 1);
+  mount.motorsEncoders.enableMotor = bitRead(val, 0);
+  mount.motorsEncoders.enableEncoder = bitRead(val, 1);
 #else
-  enableEncoder = false;
-  enableMotor = true;
+  mount.motorsEncoders.enableEncoder = false;
+  mount.motorsEncoders.enableMotor = true;
 #endif // HASEncoder
 }
 void WriteEEPROMEncoderMotorMode()
 {
 #if HASEncoder
   byte val = 0;
-  bitWrite(val, 0, enableMotor);
-  bitWrite(val, 1, enableEncoder);
+  bitWrite(val, 0, mount.motorsEncoders.enableMotor);
+  bitWrite(val, 1, mount.motorsEncoders.enableEncoder);
   XEEPROM.write(getMountAddress(EE_enableEncoderMotor), val);
 #endif // HASEncoder
 }
@@ -362,11 +383,11 @@ void WriteEEPROMEncoderMotorMode()
 void initencoder()
 {
 #if HASEncoder
-  if (enableEncoder)
+  if (mount.motorsEncoders.enableEncoder)
   {
     readEEPROMencoder();
-    encoderA1.init(EA1A, EA1B);
-    encoderA2.init(EA2A, EA2B);
+    mount.motorsEncoders.encoderA1.init(EA1A, EA1B);
+    mount.motorsEncoders.encoderA2.init(EA2A, EA2B);
   }
 #endif
 }
@@ -374,183 +395,183 @@ void initencoder()
 void readEEPROMmotorCurrent()
 {
 #ifdef D_motorA1lowCurr
-  motorA1.lowCurr = D_motorA1lowCurr;
-  motorA1.isLowCurrfix = true;
+  mount.motorsEncoders.motorA1.lowCurr = D_motorA1lowCurr;
+  mount.motorsEncoders.motorA1.isLowCurrfix = true;
 #else
-  motorA1.lowCurr = (unsigned int)XEEPROM.read(getMountAddress(EE_motorA1lowCurr)) * 100;
-  if (motorA1.lowCurr > motorA1.driver.getMaxCurrent() || motorA1.lowCurr < 200u)
+  mount.motorsEncoders.motorA1.lowCurr = (unsigned int)XEEPROM.read(getMountAddress(EE_motorA1lowCurr)) * 100;
+  if (mount.motorsEncoders.motorA1.lowCurr > mount.motorsEncoders.motorA1.driver.getMaxCurrent() || mount.motorsEncoders.motorA1.lowCurr < 200u)
   {
-    motorA1.lowCurr = 1000u;
+    mount.motorsEncoders.motorA1.lowCurr = 1000u;
     XEEPROM.write(getMountAddress(EE_motorA1lowCurr), 10u);
   }
-  motorA1.isLowCurrfix = false;
+  mount.motorsEncoders.motorA1.isLowCurrfix = false;
 #endif 
 
 #ifdef D_motorA1highCurr
-  motorA1.highCurr = D_motorA1highCurr;
-  motorA1.isHighCurrfix = true;
+  mount.motorsEncoders.motorA1.highCurr = D_motorA1highCurr;
+  mount.motorsEncoders.motorA1.isHighCurrfix = true;
 #else
-  motorA1.highCurr = (unsigned int)XEEPROM.read(getMountAddress(EE_motorA1highCurr)) * 100;
-  if (motorA1.highCurr > motorA1.driver.getMaxCurrent() || motorA1.highCurr < 200u)
+  mount.motorsEncoders.motorA1.highCurr = (unsigned int)XEEPROM.read(getMountAddress(EE_motorA1highCurr)) * 100;
+  if (mount.motorsEncoders.motorA1.highCurr > mount.motorsEncoders.motorA1.driver.getMaxCurrent() || mount.motorsEncoders.motorA1.highCurr < 200u)
   {
-    motorA1.highCurr = 1000u;
+    mount.motorsEncoders.motorA1.highCurr = 1000u;
     XEEPROM.write(getMountAddress(EE_motorA1highCurr), 10u);
   }
-  motorA1.isHighCurrfix = false;
+  mount.motorsEncoders.motorA1.isHighCurrfix = false;
 #endif
 
 
 #ifdef D_motorA2lowCurr
-  motorA2.lowCurr = D_motorA2lowCurr;
-  motorA2.isLowCurrfix = true;
+  mount.motorsEncoders.motorA2.lowCurr = D_motorA2lowCurr;
+  mount.motorsEncoders.motorA2.isLowCurrfix = true;
 #else
-  motorA2.lowCurr = (unsigned int)XEEPROM.read(getMountAddress(EE_motorA2lowCurr)) * 100;
-  if (motorA2.lowCurr > motorA2.driver.getMaxCurrent() || motorA2.lowCurr < 200u)
+  mount.motorsEncoders.motorA2.lowCurr = (unsigned int)XEEPROM.read(getMountAddress(EE_motorA2lowCurr)) * 100;
+  if (mount.motorsEncoders.motorA2.lowCurr > mount.motorsEncoders.motorA2.driver.getMaxCurrent() || mount.motorsEncoders.motorA2.lowCurr < 200u)
   {
-    motorA2.lowCurr = 1000u;
+    mount.motorsEncoders.motorA2.lowCurr = 1000u;
     XEEPROM.write(getMountAddress(EE_motorA2lowCurr), 10u);
   }
-  motorA2.isLowCurrfix = false;
+  mount.motorsEncoders.motorA2.isLowCurrfix = false;
 #endif 
 
 #ifdef D_motorA2highCurr
-  motorA2.highCurr = D_motorA2highCurr;
-  motorA2.isHighCurrfix = true;
+  mount.motorsEncoders.motorA2.highCurr = D_motorA2highCurr;
+  mount.motorsEncoders.motorA2.isHighCurrfix = true;
 #else
-  motorA2.highCurr = (unsigned int)XEEPROM.read(getMountAddress(EE_motorA2highCurr)) * 100;
-  if (motorA2.highCurr > motorA2.driver.getMaxCurrent() || motorA2.highCurr < 200u)
+  mount.motorsEncoders.motorA2.highCurr = (unsigned int)XEEPROM.read(getMountAddress(EE_motorA2highCurr)) * 100;
+  if (mount.motorsEncoders.motorA2.highCurr > mount.motorsEncoders.motorA2.driver.getMaxCurrent() || mount.motorsEncoders.motorA2.highCurr < 200u)
   {
-    motorA2.highCurr = 1000u;
+    mount.motorsEncoders.motorA2.highCurr = 1000u;
     XEEPROM.write(getMountAddress(EE_motorA2highCurr), 10u);
   }
-  motorA2.isHighCurrfix = false;
+  mount.motorsEncoders.motorA2.isHighCurrfix = false;
 #endif
 
 }
 
 void readEEPROMmotor()
 {
-  motorA1.backlashAmount = XEEPROM.readUShort(getMountAddress(EE_motorA1backlashAmount));
-  if (motorA1.backlashAmount > 999 || motorA1.backlashAmount < 0)
+  mount.motorsEncoders.motorA1.backlashAmount = XEEPROM.readUShort(getMountAddress(EE_motorA1backlashAmount));
+  if (mount.motorsEncoders.motorA1.backlashAmount > 999 || mount.motorsEncoders.motorA1.backlashAmount < 0)
   {
-    motorA1.backlashAmount = 0;
+    mount.motorsEncoders.motorA1.backlashAmount = 0;
     XEEPROM.writeUShort(getMountAddress(EE_motorA1backlashAmount), 0);
   }
 
-  motorA2.backlashAmount = XEEPROM.readUShort(getMountAddress(EE_motorA2backlashAmount));
-  if (motorA2.backlashAmount > 999 || motorA2.backlashAmount < 0)
+  mount.motorsEncoders.motorA2.backlashAmount = XEEPROM.readUShort(getMountAddress(EE_motorA2backlashAmount));
+  if (mount.motorsEncoders.motorA2.backlashAmount > 999 || mount.motorsEncoders.motorA2.backlashAmount < 0)
   {
-    motorA2.backlashAmount = 0;
+    mount.motorsEncoders.motorA2.backlashAmount = 0;
     XEEPROM.writeUShort(getMountAddress(EE_motorA2backlashAmount), 0);
   }
 
-  motorA1.backlashRate = XEEPROM.read(getMountAddress(EE_motorA1backlashRate));
-  if (motorA1.backlashRate < 16 || motorA1.backlashRate > 64)
+  mount.motorsEncoders.motorA1.backlashRate = XEEPROM.read(getMountAddress(EE_motorA1backlashRate));
+  if (mount.motorsEncoders.motorA1.backlashRate < 16 || mount.motorsEncoders.motorA1.backlashRate > 64)
   {
-    motorA1.backlashRate = 16;
+    mount.motorsEncoders.motorA1.backlashRate = 16;
     XEEPROM.write(getMountAddress(EE_motorA1backlashAmount), 16);
   }
 
-  motorA2.backlashRate = XEEPROM.read(getMountAddress(EE_motorA2backlashRate));
-  if (motorA2.backlashRate < 16 || motorA2.backlashRate > 64)
+  mount.motorsEncoders.motorA2.backlashRate = XEEPROM.read(getMountAddress(EE_motorA2backlashRate));
+  if (mount.motorsEncoders.motorA2.backlashRate < 16 || mount.motorsEncoders.motorA2.backlashRate > 64)
   {
-    motorA2.backlashRate = 16;
+    mount.motorsEncoders.motorA2.backlashRate = 16;
     XEEPROM.write(getMountAddress(EE_motorA2backlashAmount), 16);
   }
 
   //AXIS 1
 #ifdef D_motorA1gear
-  motorA1.gear = D_motorA1gear;
-  motorA1.isGearFix = true;
+  mount.motorsEncoders.motorA1.gear = D_motorA1gear;
+  mount.motorsEncoders.motorA1.isGearFix = true;
 #else
-  motorA1.gear = XEEPROM.readULong(getMountAddress(EE_motorA1gear));
-  motorA1.isGearFix = false;
+  mount.motorsEncoders.motorA1.gear = XEEPROM.readULong(getMountAddress(EE_motorA1gear));
+  mount.motorsEncoders.motorA1.isGearFix = false;
 #endif
 
 #ifdef D_motorA1stepRot
-  motorA1.stepRot = D_motorA1stepRot;
-  motorA1.isStepRotFix = true;
+  mount.motorsEncoders.motorA1.stepRot = D_motorA1stepRot;
+  mount.motorsEncoders.motorA1.isStepRotFix = true;
 #else
-  motorA1.stepRot = XEEPROM.readUShort(getMountAddress(EE_motorA1stepRot));
-  motorA1.isStepRotFix = false;
+  mount.motorsEncoders.motorA1.stepRot = XEEPROM.readUShort(getMountAddress(EE_motorA1stepRot));
+  mount.motorsEncoders.motorA1.isStepRotFix = false;
 #endif 
 
 #ifdef D_motorA1micro
-  motorA1.micro = D_motorA1micro;
-  motorA1.isMicroFix = true;
+  mount.motorsEncoders.motorA1.micro = D_motorA1micro;
+  mount.motorsEncoders.motorA1.isMicroFix = true;
 #else
-  motorA1.micro = XEEPROM.read(getMountAddress(EE_motorA1micro));
-  if (motorA1.micro > 8 || motorA1.micro < 1)
+  mount.motorsEncoders.motorA1.micro = XEEPROM.read(getMountAddress(EE_motorA1micro));
+  if (mount.motorsEncoders.motorA1.micro > 8 || mount.motorsEncoders.motorA1.micro < 1)
   {
-    motorA1.micro = 4;
+    mount.motorsEncoders.motorA1.micro = 4;
     XEEPROM.update(getMountAddress(EE_motorA1micro), 4u);
   }
-  motorA1.isMicroFix = false;
+  mount.motorsEncoders.motorA1.isMicroFix = false;
 #endif
 
 #ifdef D_motorA1reverse
-  motorA1.reverse = D_motorA1reverse;
-  motorA1.isReverseFix = true;
+  mount.motorsEncoders.motorA1.reverse = D_motorA1reverse;
+  mount.motorsEncoders.motorA1.isReverseFix = true;
 #else
-  motorA1.reverse = XEEPROM.read(getMountAddress(EE_motorA1reverse));
-  motorA1.isReverseFix = false;
+  mount.motorsEncoders.motorA1.reverse = XEEPROM.read(getMountAddress(EE_motorA1reverse));
+  mount.motorsEncoders.motorA1.isReverseFix = false;
 #endif 
 
 
 
 #ifdef D_motorA1silent
-  motorA1.silent = D_motorA1silent;
-  motorA1.isSilentFix = true;
+  mount.motorsEncoders.motorA1.silent = D_motorA1silent;
+  mount.motorsEncoders.motorA1.isSilentFix = true;
 #else
-  motorA1.silent = XEEPROM.read(getMountAddress(EE_motorA1silent));
-  motorA1.isSilentFix = false;
+  mount.motorsEncoders.motorA1.silent = XEEPROM.read(getMountAddress(EE_motorA1silent));
+  mount.motorsEncoders.motorA1.isSilentFix = false;
 #endif
 
   //AXIS 2
 #ifdef D_motorA2gear
-  motorA2.gear = D_motorA2gear;
-  motorA2.isGearFix = true;
+  mount.motorsEncoders.motorA2.gear = D_motorA2gear;
+  mount.motorsEncoders.motorA2.isGearFix = true;
 #else
-  motorA2.gear = XEEPROM.readULong(getMountAddress(EE_motorA2gear));
-  motorA2.isGearFix = false;
+  mount.motorsEncoders.motorA2.gear = XEEPROM.readULong(getMountAddress(EE_motorA2gear));
+  mount.motorsEncoders.motorA2.isGearFix = false;
 #endif
 
 #ifdef D_motorA2stepRot
-  motorA2.stepRot = D_motorA2stepRot;
-  motorA2.isStepRotFix = true;
+  mount.motorsEncoders.motorA2.stepRot = D_motorA2stepRot;
+  mount.motorsEncoders.motorA2.isStepRotFix = true;
 #else
-  motorA2.stepRot = XEEPROM.readUShort(getMountAddress(EE_motorA2stepRot));
-  motorA2.isStepRotFix = false;
+  mount.motorsEncoders.motorA2.stepRot = XEEPROM.readUShort(getMountAddress(EE_motorA2stepRot));
+  mount.motorsEncoders.motorA2.isStepRotFix = false;
 #endif 
 
 #ifdef D_motorA2micro
-  motorA2.micro = D_motorA2micro;
-  motorA2.isMicroFix = true;
+  mount.motorsEncoders.motorA2.micro = D_motorA2micro;
+  mount.motorsEncoders.motorA2.isMicroFix = true;
 #else
-  motorA2.micro = XEEPROM.read(getMountAddress(EE_motorA2micro));
-  if (motorA2.micro > 8 || motorA2.micro < 1)
+  mount.motorsEncoders.motorA2.micro = XEEPROM.read(getMountAddress(EE_motorA2micro));
+  if (mount.motorsEncoders.motorA2.micro > 8 || mount.motorsEncoders.motorA2.micro < 1)
   {
-    motorA2.micro = 4;
+    mount.motorsEncoders.motorA2.micro = 4;
     XEEPROM.update(getMountAddress(EE_motorA2micro), 4u);
   }
-  motorA2.isMicroFix = false;
+  mount.motorsEncoders.motorA2.isMicroFix = false;
 #endif
 
 #ifdef D_motorA2reverse
-  motorA2.reverse = D_motorA2reverse;
-  motorA2.isReverseFix = true;
+  mount.motorsEncoders.motorA2.reverse = D_motorA2reverse;
+  mount.motorsEncoders.motorA2.isReverseFix = true;
 #else
-  motorA2.reverse = XEEPROM.read(getMountAddress(EE_motorA2reverse));
-  motorA2.isReverseFix = false;
+  mount.motorsEncoders.motorA2.reverse = XEEPROM.read(getMountAddress(EE_motorA2reverse));
+  mount.motorsEncoders.motorA2.isReverseFix = false;
 #endif 
 
 
 #ifdef D_motorA2silent
-  motorA2.silent = D_motorA2silent;
-  motorA2.isSilentFix = true;
+  mount.motorsEncoders.motorA2.silent = D_motorA2silent;
+  mount.motorsEncoders.motorA2.isSilentFix = true;
 #else
-  motorA2.silent = XEEPROM.read(getMountAddress(EE_motorA2silent));
-  motorA2.isSilentFix = false;
+  mount.motorsEncoders.motorA2.silent = XEEPROM.read(getMountAddress(EE_motorA2silent));
+  mount.motorsEncoders.motorA2.isSilentFix = false;
 #endif
 
 }
@@ -586,53 +607,53 @@ void readEEPROMencoder()
 
   //EncoderSync
   int val = XEEPROM.read(getMountAddress(EE_encoderSync));
-  EncodeSyncMode = static_cast<EncoderSync>(val);
+  mount.motorsEncoders.EncodeSyncMode = static_cast<EncoderSync>(val);
 
   //AXIS 1
 
 #ifdef D_encoderA1pulsePerDegree
-  encoderA1.pulseRot = D_encoderA1pulseRot;
-  encoderA1.isStepRotFix = true;
+  mount.motorsEncoders.encoderA1.pulseRot = D_encoderA1pulseRot;
+  mount.motorsEncoders.encoderA1.isStepRotFix = true;
 #else
-  encoderA1.pulsePerDegree = 0.01 * XEEPROM.readLong(getMountAddress(EE_encoderA1pulsePerDegree));
-  if (encoderA1.pulsePerDegree <= 0 || encoderA1.pulsePerDegree > 3600)
+  mount.motorsEncoders.encoderA1.pulsePerDegree = 0.01 * XEEPROM.readLong(getMountAddress(EE_encoderA1pulsePerDegree));
+  if (mount.motorsEncoders.encoderA1.pulsePerDegree <= 0 || mount.motorsEncoders.encoderA1.pulsePerDegree > 3600)
   {
     XEEPROM.writeLong(getMountAddress(EE_encoderA1pulsePerDegree), 100 * pulsePerDegreedefault);
-    encoderA1.pulsePerDegree = pulsePerDegreedefault;
+    mount.motorsEncoders.encoderA1.pulsePerDegree = pulsePerDegreedefault;
   }
-  encoderA1.isPulsePerDegreeFix = false;
+  mount.motorsEncoders.encoderA1.isPulsePerDegreeFix = false;
 #endif 
 
 
 #ifdef D_encoderA1reverse
-  encoderA1.reverse = D_encoderA1reverse;
-  encoderA1.isReverseFix = true;
+  mount.motorsEncoders.encoderA1.reverse = D_encoderA1reverse;
+  mount.motorsEncoders.encoderA1.isReverseFix = true;
 #else
-  encoderA1.reverse = XEEPROM.read(getMountAddress(EE_encoderA1reverse));
-  encoderA1.isReverseFix = false;
+  mount.motorsEncoders.encoderA1.reverse = XEEPROM.read(getMountAddress(EE_encoderA1reverse));
+  mount.motorsEncoders.encoderA1.isReverseFix = false;
 #endif 
 
   //AXIS 2
 
 #ifdef D_encoderA2pulsePerDegree
-  encoderA2.pulseRot = D_encoderA2pulseRot;
-  encoderA2.isStepRotFix = true;
+  mount.motorsEncoders.encoderA2.pulseRot = D_encoderA2pulseRot;
+  mount.motorsEncoders.encoderA2.isStepRotFix = true;
 #else
-  encoderA2.pulsePerDegree = 0.01 * XEEPROM.readLong(getMountAddress(EE_encoderA2pulsePerDegree));
-  if (encoderA2.pulsePerDegree <= 0 || encoderA2.pulsePerDegree > 3600)
+  mount.motorsEncoders.encoderA2.pulsePerDegree = 0.01 * XEEPROM.readLong(getMountAddress(EE_encoderA2pulsePerDegree));
+  if (mount.motorsEncoders.encoderA2.pulsePerDegree <= 0 || mount.motorsEncoders.encoderA2.pulsePerDegree > 3600)
   {
     XEEPROM.writeLong(getMountAddress(EE_encoderA2pulsePerDegree), 100 * pulsePerDegreedefault);
-    encoderA2.pulsePerDegree = pulsePerDegreedefault;
+    mount.motorsEncoders.encoderA2.pulsePerDegree = pulsePerDegreedefault;
   }
-  encoderA2.isPulsePerDegreeFix = false;
+  mount.motorsEncoders.encoderA2.isPulsePerDegreeFix = false;
 #endif 
 
 #ifdef D_encoderA2reverse
-  encoderA2.reverse = D_encoderA2reverse;
-  encoderA2.isReverseFix = true;
+  mount.motorsEncoders.encoderA2.reverse = D_encoderA2reverse;
+  mount.motorsEncoders.encoderA2.isReverseFix = true;
 #else
-  encoderA2.reverse = XEEPROM.read(getMountAddress(EE_encoderA2reverse));
-  encoderA2.isReverseFix = false;
+  mount.motorsEncoders.encoderA2.reverse = XEEPROM.read(getMountAddress(EE_encoderA2reverse));
+  mount.motorsEncoders.encoderA2.isReverseFix = false;
 #endif 
 
 }

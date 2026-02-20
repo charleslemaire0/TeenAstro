@@ -29,17 +29,19 @@
 #include "SmartController.h"
 #include <TeenAstroMountStatus.h>
 
-
-
 const char SHCVersion[] = SHCFirmwareVersionMajor "." SHCFirmwareVersionMinor "." SHCFirmwareVersionPatch;
 const int pin[7] = { B_PIN0,B_PIN1,B_PIN2,B_PIN3,B_PIN4,B_PIN5,B_PIN6 };
 const bool active[7] = { B_PIN_UP_0,B_PIN_UP_1,B_PIN_UP_2,B_PIN_UP_3,B_PIN_UP_4,B_PIN_UP_5,B_PIN_UP_6 };
 
+LX200Client lx200(Ser);
 SmartHandController HdCrtlr;
 TeenAstroMountStatus ta_MountStatus;
 
 void setup(void)
 {
+  ta_MountStatus.setClient(lx200);
+  TeenAstroWifi::setClient(lx200);
+  HdCrtlr.setClient(lx200);
 #ifdef ARDUINO_TTGO_LoRa32_V1
   HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309, 2);
   return;

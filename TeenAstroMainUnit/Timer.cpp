@@ -1,5 +1,6 @@
 /** Sidereal and axis timers, ISRs for step generation and sidereal clock. */
-#include "Global.h"
+#include "MainUnit.h"
+#include "TelTimer.hpp"  // rtk
 
 #define clockRatio 0.01
 
@@ -14,8 +15,8 @@ static IntervalTimer  itimer1;
 static IntervalTimer  itimer3;
 static IntervalTimer  itimer4;
 
-static volatile double isrIntervalAxis1 = 0;
-static volatile double isrIntervalAxis2 = 0;
+static volatile double isrIntervalAxis1 = 0.0;
+  static volatile double isrIntervalAxis2 = 0.0;
 
 speed interval2speed(interval i) //Speed in step per second
 {
@@ -35,8 +36,8 @@ interval speed2interval(speed V, interval maxInterval)
 void SetsiderealClockSpeed(double cs)
 {
   Timer1SetInterval(cs * clockRatio);
-  isrIntervalAxis1 = 0;
-  isrIntervalAxis2 = 0;
+  isrIntervalAxis1 = 0.0;
+  isrIntervalAxis2 = 0.0;
 }
 
 #if defined(ARDUINO_TEENSY40) || defined(ARDUINO_TEENSY_MICROMOD) 
@@ -101,7 +102,7 @@ static void UpdateIntervalTrackingGuiding(GuideAxis* guideA, StatusAxis* staA,
     }
     else
     {
-      DecayModeGoto();
+      mount.decayModeGoto();
       // for acceleration, we know run this routine this a fix amount of time "clockRatio" of a sideral second
       sign = guideA->isDirBW() ? -1 : 1;
       if (guideA->isBraking())
@@ -145,27 +146,27 @@ static void UpdateIntervalTrackingGuiding(GuideAxis* guideA, StatusAxis* staA,
       if (staA->atTarget(false))
       {
         guideA->setIdle();
-        tmp_guideRateA = 0;
+        tmp_guideRateA = 0.0;
         staA_other->updateDeltaTarget();
         if (staA_other->atTarget(false))
-          DecayModeTracking();
+          mount.decayModeTracking();
       }
     }
   }
-  volatile double sumRateA = sideralTracking ? fabs(tmp_guideRateA + staA->CurrentTrackingRate) : fabs(tmp_guideRateA);
+  volatile double sumRateA = mount.tracking.sideralTracking ? fabs(tmp_guideRateA + staA->CurrentTrackingRate) : fabs(tmp_guideRateA);
   staA->setIntervalfromRate(sumRateA, minInterval, maxInterval);
 }
 
 static void UpdateIntervalTrackingGuiding1()
 {
-  static volatile double tmp_guideRateA1 = 0;
-  UpdateIntervalTrackingGuiding(&guideA1, &staA1, &geoA1, &staA2, tmp_guideRateA1, minInterval1, maxInterval1);
+  static volatile double tmp_guideRateA1 = 0.0;
+  UpdateIntervalTrackingGuiding(&mount.guiding.guideA1, &mount.axes.staA1, &mount.axes.geoA1, &mount.axes.staA2, tmp_guideRateA1, mount.motorsEncoders.minInterval1, mount.motorsEncoders.maxInterval1);
 }
 
 static void UpdateIntervalTrackingGuiding2()
 {
-  static volatile double tmp_guideRateA2 = 0;
-  UpdateIntervalTrackingGuiding(&guideA2, &staA2, &geoA2, &staA1, tmp_guideRateA2, minInterval2, maxInterval2);
+  static volatile double tmp_guideRateA2 = 0.0;
+  UpdateIntervalTrackingGuiding(&mount.guiding.guideA2, &mount.axes.staA2, &mount.axes.geoA2, &mount.axes.staA1, tmp_guideRateA2, mount.motorsEncoders.minInterval2, mount.motorsEncoders.maxInterval2);
 }
 
 static void BacklashComp(GuideAxis* guideA, StatusAxis* staA,
@@ -177,7 +178,7 @@ static void BacklashComp(GuideAxis* guideA, StatusAxis* staA,
     thisIntervalAxis = staA->backlash_interval_Step;
     wasInbacklashAxis = true;
   }
-  if (sideralTracking && !movingTo)
+  if (mount.tracking.sideralTracking && !mount.tracking.movingTo)
   {
     // travel through the backlash is done, but we weren't following the target while it was happening!
     // so now get us back to near where we need to be
@@ -202,8 +203,8 @@ static void BacklashComp(GuideAxis* guideA, StatusAxis* staA,
 static void BacklashAndApplyInterval1()
 {
   static volatile bool   wasInbacklashAxis1 = false;
-  volatile double thisIntervalAxis1 = staA1.interval_Step_Cur;
-  BacklashComp(&guideA1, &staA1, thisIntervalAxis1, wasInbacklashAxis1);
+  volatile double thisIntervalAxis1 = mount.axes.staA1.interval_Step_Cur;
+  BacklashComp(&mount.guiding.guideA1, &mount.axes.staA1, thisIntervalAxis1, wasInbacklashAxis1);
   if (thisIntervalAxis1 != isrIntervalAxis1)
   {
     Timer3SetInterval(thisIntervalAxis1);
@@ -214,8 +215,8 @@ static void BacklashAndApplyInterval1()
 static void BacklashAndApplyInterval2()
 {
   static volatile bool   wasInbacklashAxis2 = false;
-  volatile double thisIntervalAxis2 = staA2.interval_Step_Cur;
-  BacklashComp(&guideA2, &staA2, thisIntervalAxis2, wasInbacklashAxis2);
+  volatile double thisIntervalAxis2 = mount.axes.staA2.interval_Step_Cur;
+  BacklashComp(&mount.guiding.guideA2, &mount.axes.staA2, thisIntervalAxis2, wasInbacklashAxis2);
   if (thisIntervalAxis2 != isrIntervalAxis2)
   {
     Timer4SetInterval(thisIntervalAxis2);
@@ -227,14 +228,14 @@ ISR(TIMER1_COMPA_vect)
 { 
   rtk.m_lst++;
   // in this mode the target is always a bit faster than the scope because we move first the target!!
-  if (!movingTo)
+  if (!mount.tracking.movingTo)
   {
     // guide rate acceleration/deceleration
     UpdateIntervalTrackingGuiding1();
     UpdateIntervalTrackingGuiding2();
-    if (!guideA1.isBusy() && !guideA2.isBusy())
+    if (!mount.guiding.guideA1.isBusy() && !mount.guiding.guideA2.isBusy())
     {
-      GuidingState = Guiding::GuidingOFF;
+      mount.guiding.GuidingState = Guiding::GuidingOFF;
     }
   }
   BacklashAndApplyInterval1();
@@ -249,23 +250,23 @@ ISR(TIMER3_COMPA_vect)
   if (clearAxis1)
   {
     takeStepAxis1 = false;
-    staA1.updateDeltaTarget();
-    if (staA1.deltaTarget != 0 || staA1.backlash_correcting)
+    mount.axes.staA1.updateDeltaTarget();
+    if (mount.axes.staA1.deltaTarget != 0 || mount.axes.staA1.backlash_correcting)
     {
       // Move the RA stepper to the target
-      staA1.dir = 0 < staA1.deltaTarget;
+      mount.axes.staA1.dir = 0 < mount.axes.staA1.deltaTarget;
       // Direction control
-      if (motorA1.reverse ^ Axis1Reverse)
+      if (mount.motorsEncoders.motorA1.reverse ^ Axis1Reverse)
       {
-        digitalWriteFast(Axis1DirPin, !staA1.dir);
+        digitalWriteFast(Axis1DirPin, !mount.axes.staA1.dir);
       }
       else
       {
-        digitalWriteFast(Axis1DirPin, staA1.dir);
+        digitalWriteFast(Axis1DirPin, mount.axes.staA1.dir);
       }
 
       // telescope moves WEST with the sky, blAxis1 is the amount of EAST backlash
-      staA1.move(!isGuidingStar());
+      mount.axes.staA1.move(!mount.isGuidingStar());
       takeStepAxis1 = true;
     }
     clearAxis1 = false;
@@ -288,24 +289,24 @@ ISR(TIMER4_COMPA_vect)
   if (clearAxis2)
   {
     takeStepAxis2 = false;
-    staA2.updateDeltaTarget();
-    if (staA2.deltaTarget != 0 || staA2.backlash_correcting)
+    mount.axes.staA2.updateDeltaTarget();
+    if (mount.axes.staA2.deltaTarget != 0 || mount.axes.staA2.backlash_correcting)
     {
       // move the Dec stepper to the target
       // telescope normally starts on the EAST side of the pier looking at the WEST sky
-      staA2.dir = 0 < staA2.deltaTarget;
+      mount.axes.staA2.dir = 0 < mount.axes.staA2.deltaTarget;
       // Direction control
-      if (motorA2.reverse ^ Axis2Reverse)
+      if (mount.motorsEncoders.motorA2.reverse ^ Axis2Reverse)
       {
-        digitalWriteFast(Axis2DirPin, !staA2.dir);
+        digitalWriteFast(Axis2DirPin, !mount.axes.staA2.dir);
       }
       else
       {
-        digitalWriteFast(Axis2DirPin, staA2.dir);
+        digitalWriteFast(Axis2DirPin, mount.axes.staA2.dir);
       }
 
       // telescope moving toward celestial pole in the sky, blAxis2 is the amount of opposite backlash
-      staA2.move(!isGuidingStar());
+      mount.axes.staA2.move(!mount.isGuidingStar());
       takeStepAxis2 = true;
     }
     clearAxis2 = false;
