@@ -1,5 +1,6 @@
 /**
  * GNSS commands and helpers: :gs# (full sync), :gt# (time sync).
+ * One file per letter (plan). All :gx# TeenAstro specific (not in Meade LX200).
  */
 #include "Command.h"
 
@@ -24,18 +25,18 @@ void UpdateGnss()
 #if VERSION == 220
   return;
 #endif
-  if (hasGNSS && (atHome || parkStatus == PRK_PARKED))
+  if (mount.config.peripherals.hasGNSS && (mount.isAtHome() || mount.isParked()))
   {
     while (GNSS_Serial.available())
     {
-      gps.encode(GNSS_Serial.read());
+      mount.gnss.encode(GNSS_Serial.read());
     }
   }
 }
 
 bool iSGNSSValid()
 {
-  if (!hasGNSS)
+  if (!mount.config.peripherals.hasGNSS)
   {
     return false;
   }
@@ -47,18 +48,18 @@ bool iSGNSSValid()
 
 bool GNSSTimeIsValid()
 {
-  return gps.time.isValid() && gps.time.age() < 5000 &&  gps.date.isValid() && gps.date.age() < 5000;
+  return mount.gnss.time.isValid() && mount.gnss.time.age() < 5000 &&  mount.gnss.date.isValid() && mount.gnss.date.age() < 5000;
 }
 
 bool GNSSLocationIsValid()
 {
-  return gps.location.isValid() && gps.location.age() < 5000 &&
-    gps.altitude.isValid() && gps.altitude.age() < 5000;
+  return mount.gnss.location.isValid() && mount.gnss.location.age() < 5000 &&
+    mount.gnss.altitude.isValid() && mount.gnss.altitude.age() < 5000;
 }
 
 bool isHdopSmall()
 {
-  return gps.hdop.isValid() && gps.hdop.age() < 5000 && gps.hdop.hdop() < 2.0;
+  return mount.gnss.hdop.isValid() && mount.gnss.hdop.age() < 5000 && mount.gnss.hdop.hdop() < 2.0;
 }
 
 bool isTimeSyncWithGNSS()
@@ -67,8 +68,8 @@ bool isTimeSyncWithGNSS()
   static bool lastreply = false;
   if (millis() - t1 > 5000)
   {
-    TinyGPSDate d = gps.date;
-    TinyGPSTime t = gps.time;
+    TinyGPSDate d = mount.gnss.date;
+    TinyGPSTime t = mount.gnss.time;
     long delta = rtk.GetDeltaUTC(d.year(), d.month(), d.day(),
       t.hour(), t.minute(), t.second());
     lastreply = abs(delta) < 5;
@@ -80,8 +81,8 @@ bool isTimeSyncWithGNSS()
 
 double std_dev(double* val, int nval)
 {
-  double s = 0;
-  double m = 0;
+  double s = 0.0;
+  double m = 0.0;
   for (int i = 0; i < nval; i++)
   {
     m += val[i];
@@ -101,8 +102,8 @@ bool isLocationSyncWithGNSS()
   static bool lastreply = false;
   if (millis() - t1 > 5000)
   {
-    TinyGPSLocation l = gps.location;
-    TinyGPSAltitude a = gps.altitude;
+    TinyGPSLocation l = mount.gnss.location;
+    TinyGPSAltitude a = mount.gnss.altitude;
 
     dlng[i] = 3600*fabs(haRange(*localSite.longitude() - (-l.lng())));
     dlat[i] = 3600*fabs(*localSite.latitude() - l.lat());
@@ -128,13 +129,14 @@ bool isLocationSyncWithGNSS()
 //   g - GNSS  :gs#  full sync  :gt#  time sync
 // -----------------------------------------------------------------------------
 void Command_GNSS() {
-  TinyGPSDate d = gps.date;
-  TinyGPSTime t = gps.time;
-  TinyGPSLocation l = gps.location;
-  TinyGPSAltitude a = gps.altitude;
+  TinyGPSDate d = mount.gnss.date;
+  TinyGPSTime t = mount.gnss.time;
+  TinyGPSLocation l = mount.gnss.location;
+  TinyGPSAltitude a = mount.gnss.altitude;
 
-  switch (command[1]) {
+  switch (commandState.command[1]) {
   case 's':
+    // :gs#  Full GNSS sync (site + time)  TeenAstro specific
     if (iSGNSSValid())
     {
       double lat = l.lat();
@@ -144,9 +146,9 @@ void Command_GNSS() {
       localSite.setLat(lat);
       localSite.setElev(h);
       initCelestialPole();
-      initLimit();
-      initHome();
-      syncAtHome();
+      mount.limits.initLimit();
+      mount.initHome();
+      mount.syncAtHome();
       initTransformation(true);
       rtk.setClock(d.year(), d.month(), d.day(),
         t.hour(), t.minute(), t.second(),
@@ -157,8 +159,8 @@ void Command_GNSS() {
     else
       replyShortFalse();
     break;
-    // :gt# time sync with GNSS
   case 't':
+    // :gt#  Time sync from GNSS  TeenAstro specific
     if (iSGNSSValid())
     {
       rtk.setClock(d.year(), d.month(), d.day(),

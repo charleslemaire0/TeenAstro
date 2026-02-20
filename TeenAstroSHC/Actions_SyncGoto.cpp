@@ -61,16 +61,16 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(NAV mode)
       if (menuCoordinates(mode) == MR_QUIT) return MR_QUIT;
       break;
     case 4:
-      if (DisplayMessageLX200(SyncGotoUserLX200(mode), false)) return MR_QUIT;
+      if (DisplayMessageLX200(m_client->syncGotoUser(mode), false)) return MR_QUIT;
       break;
     case 5:
-      if (DisplayMessageLX200(SyncGoHomeLX200(mode), false)) return MR_QUIT;
+      if (DisplayMessageLX200(m_client->syncGoHome(mode), false)) return MR_QUIT;
       break;
     case 6:
-      if (DisplayMessageLX200(SyncGoParkLX200(mode), false)) return MR_QUIT;
+      if (DisplayMessageLX200(m_client->syncGoPark(mode), false)) return MR_QUIT;
       break;
     case 7:
-      if (DisplayMessageLX200(SetLX200(":MF#")))
+      if (DisplayMessageLX200(m_client->meridianFlip()))
         return MR_QUIT;
       break;
     }
@@ -107,22 +107,22 @@ SmartHandController::MENU_RESULT SmartHandController::menuCoordinates(NAV mode)
     case 4:
       azm = 0;
       alt = 0;
-      if (DisplayMessageLX200(SyncGotoLX200AltAz(mode, azm, alt))) return MR_QUIT;
+      if (DisplayMessageLX200(m_client->syncGotoAltAz(mode, azm, alt))) return MR_QUIT;
       break;
     case 5:
       azm = 180;
       alt = 0;
-      if (DisplayMessageLX200(SyncGotoLX200AltAz(mode, azm, alt))) return MR_QUIT;
+      if (DisplayMessageLX200(m_client->syncGotoAltAz(mode, azm, alt))) return MR_QUIT;
       break;
     case 6:
       azm = 90;
       alt = 0;
-      if (DisplayMessageLX200(SyncGotoLX200AltAz(mode, azm, alt))) return MR_QUIT;
+      if (DisplayMessageLX200(m_client->syncGotoAltAz(mode, azm, alt))) return MR_QUIT;
       break;
     case 7:
       azm = 270;
       alt = 0;
-      if (DisplayMessageLX200(SyncGotoLX200AltAz(mode, azm, alt))) return MR_QUIT;
+      if (DisplayMessageLX200(m_client->syncGotoAltAz(mode, azm, alt))) return MR_QUIT;
       break;
     }
   }
@@ -138,14 +138,14 @@ SmartHandController::MENU_RESULT SmartHandController::menuPier()
   if (choice)
   {
     if (choice == 1)
-      ok = DisplayMessageLX200(SetLX200(":SmE#"));
+      ok = DisplayMessageLX200(m_client->setPierSideEast());
     else
-      ok = DisplayMessageLX200(SetLX200(":SmW#"));
+      ok = DisplayMessageLX200(m_client->setPierSideWest());
     if (ok)
     {
       DisplayMessage("Please Sync", "with a Target", 1000);
       answer = menuSyncGoto(NAV_SYNC);
-      DisplayMessageLX200(SetLX200(":SmN#"));
+      DisplayMessageLX200(m_client->setPierSideNone());
     }
   }
   return answer;
@@ -160,7 +160,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuSpirale()
   {
     char out[32];
     sprintf(out, ":M@%03d#", (int)(angle / 60));
-    if (SetLX200(out) == LX200_VALUESET)
+    if (m_client->set(out) == LX200_VALUESET)
     {
       answer = MR_OK;
       DisplayMessage(T_SPIRAL, T_STARTED, 500);
@@ -249,7 +249,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalog(NAV mode, int 
     {
       if (display->UserInterfaceCatalog(&buttonPad, title))
       {
-        if (DisplayMessageLX200(SyncGotoCatLX200(mode), false)) return MR_QUIT;
+        if (DisplayMessageLX200(SyncGotoCatLX200(*m_client, mode), false)) return MR_QUIT;
       }
     }
     else DisplayMessage(cat_mgr.catalogTitle(), "No Object", -1);
@@ -278,7 +278,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalogAlign(NAV mode)
     {
       if (display->UserInterfaceCatalog(&buttonPad, title))
       {
-        if (DisplayMessageLX200(SyncGotoCatLX200(mode), false))
+        if (DisplayMessageLX200(SyncGotoCatLX200(*m_client, mode), false))
         {
           cat_mgr.filtersClear();
           return MR_QUIT;
@@ -388,7 +388,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuSolarSys(NAV mode)
   //  if (display->UserInterfaceInputValueBoolean(&buttonPad, "Goto Sun?", &GotoSun)) { if (!GotoSun) return MR_CANCEL; } else return MR_CANCEL;
   //}
 
-  if (DisplayMessageLX200(SyncGotoPlanetLX200(mode, selected_planet - 1), false)) return MR_QUIT;
+  if (DisplayMessageLX200(SyncGotoPlanetLX200(*m_client, mode, selected_planet - 1), false)) return MR_QUIT;
   return MR_CANCEL;
 }
 
@@ -402,7 +402,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuRADecNow(NAV mode)
     {
       float fD;
       secondsToFloat(angleDEC, fD);
-      if (DisplayMessageLX200(SyncGotoLX200(mode, fR, fD))) return MR_QUIT;
+      if (DisplayMessageLX200(m_client->syncGoto(mode, fR, fD))) return MR_QUIT;
     }
   }
   return MR_CANCEL;
@@ -418,7 +418,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuRADecJ2000(NAV mode)
     {
       float fD;
       secondsToFloat(angleDEC, fD);
-      if (DisplayMessageLX200(SyncGotoLX200(mode, fR, fD, 2000))) return MR_QUIT;
+      if (DisplayMessageLX200(SyncGotoLX200(*m_client, mode, fR, fD, 2000))) return MR_QUIT;
     }
   }
   return MR_CANCEL;
@@ -434,7 +434,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAltAz(NAV mode)
     {
       float fAlt;
       secondsToFloat(angleDEC, fAlt);
-      if (DisplayMessageLX200(SyncGotoLX200AltAz(mode, fAz, fAlt))) return MR_QUIT;
+      if (DisplayMessageLX200(m_client->syncGotoAltAz(mode, fAz, fAlt))) return MR_QUIT;
     }
   }
   return MR_CANCEL;

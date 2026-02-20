@@ -34,14 +34,23 @@
 
 #include <EEPROM.h>
 #include <WiFiClient.h>
+#include <LX200Client.h>
 #include <TeenAstroMountStatus.h>
+
+// Default timeouts (seconds) for serial commands and web requests
+#ifndef TIMEOUT_CMD
+#define TIMEOUT_CMD 8
+#endif
+#ifndef TIMEOUT_WEB
+#define TIMEOUT_WEB 4
+#endif
 
 #define Product "TeenAstro Server"
 #define ServerFirmwareDate          __DATE__
 #define ServerFirmwareTime          __TIME__
 #define ServerFirmwareVersionMajor  "1"
 #define ServerFirmwareVersionMinor  "5"
-#define ServerFirmwareVersionPatch  "0"
+#define ServerFirmwareVersionPatch  "1"
 
 
 // -----------------------------------------------------------------------------------
@@ -108,9 +117,13 @@ class TeenAstroWifi
     Index=1, Control, Speed, Tracking, Mount, Motors, Limits, Encoders, Site, Focuser, Wifi
   };
   static bool wifiOn;
+  static bool s_handlerBusy;
+  static unsigned long s_lastPageMs;
+  static bool busyGuard();
   static int WebTimeout;
   static int CmdTimeout;
   static WifiConnectMode activeWifiConnectMode;
+  static LX200Client* s_client;
 
 #define Default_Password "password"
   static char masterPassword[40];
@@ -201,6 +214,10 @@ class TeenAstroWifi
   // read 4 byte long from EEPROM at position i (4 bytes)
   static long EEPROM_readLong(int i);
 public:
+  /// Bind an LX200Client for all serial communication.
+  static void setClient(LX200Client& client) { s_client = &client; }
+  static LX200Client& client() { return *s_client; }
+
   static bool isWifiOn();
   static bool isWifiRunning();
   static void turnWifiOn(bool turnOn);
@@ -211,5 +228,4 @@ public:
   static const char* getPassword();
   static bool setWifiMode(int k);
   static void getStationName(int k, char* SSID);
-  static void initOTA();
 };

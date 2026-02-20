@@ -1,5 +1,6 @@
 /**
  * Focuser commands: F (forward focuser protocol to Focus_Serial).
+ * One file per letter (plan). :F+# :F-# :FQ# :FF# :FS# LX200 standard.
  */
 #include "Command.h"
 
@@ -7,8 +8,8 @@
 //   F - Focuser  :F+# :F-# :F?# etc. (passthrough to focuser hardware)
 // -----------------------------------------------------------------------------
 void Command_F() {
-  if (!hasFocuser) {
-    if (command[1] == '?') replyLongFalse();
+  if (!mount.config.peripherals.hasFocuser) {
+    if (commandState.command[1] == '?') replyLongFalse();
     else replyNothing();
     return;
   }
@@ -17,10 +18,10 @@ void Command_F() {
   char command_out[30] = ":";
   Focus_Serial.flush();
   while (Focus_Serial.available() > 0) Focus_Serial.read();
-  strcat(command_out, command);
+  strcat(command_out, commandState.command);
   strcat(command_out, "#");
 
-  switch (command[1])
+  switch (commandState.command[1])
   {
   case '+':
   case '-':
@@ -85,18 +86,18 @@ void Command_F() {
       b = Focus_Serial.read();
       if (b == '#' && !focuserShortResponse)
       {
-        reply[pos] = b;
-        reply[pos + 1] = 0;
+        commandState.reply[pos] = b;
+        commandState.reply[pos + 1] = 0;
         return;
       }
-      reply[pos] = b;
+      commandState.reply[pos] = b;
       pos++;
       if (pos > 49)
       {
         replyShortFalse();
         return;
       }
-      reply[pos] = 0;
+      commandState.reply[pos] = 0;
       if (focuserShortResponse)
       {
         if (b != '1')

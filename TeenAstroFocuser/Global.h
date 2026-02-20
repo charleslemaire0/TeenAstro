@@ -9,7 +9,7 @@
 #include "WProgram.h"
 #endif
 #define PROJECT "TeenAstro Focuser"
-#define FirmwareVersion "1.5.0"
+#define FirmwareVersion "1.5.1"
 
 
 #ifndef VERSION

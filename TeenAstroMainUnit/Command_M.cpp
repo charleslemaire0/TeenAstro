@@ -1,5 +1,6 @@
 /**
  * Move commands: M (slew at rate, goto Alt/Az, flip, pulse guide).
+ * One file per letter (plan). :Me# :Mw# :Mn# :Ms# :MS# :MA# LX200 standard; :MF# :Mg# etc. TeenAstro specific.
  */
 #include "Command.h"
 #include "ValueToString.h"
@@ -8,42 +9,42 @@
 //   M - Move / slew  :M1# :M2# :MA# :MF# :Mg# etc.
 // -----------------------------------------------------------------------------
 void Command_M() {
-  switch (command[1]) {
+  switch (commandState.command[1]) {
   case '1':
   case '2':
   {
     char* conv_end;
-    double f = strtod(&command[2], &conv_end);
-    bool ok = (&command[2] != conv_end);
+    double f = strtod(&commandState.command[2], &conv_end);
+    bool ok = (&commandState.command[2] != conv_end);
     if (!ok)
     {
-      strcpy(reply, "i");
+      strcpy(commandState.reply, "i");
     }
-    else if (abs(f) > guideRates[4])
+    else if (abs(f) > mount.guiding.guideRates[4])
     {
-      strcpy(reply, "h");
+      strcpy(commandState.reply, "h");
     }
-    else if (movingTo)
+    else if (mount.tracking.movingTo)
     {
-      strcpy(reply, "s");
+      strcpy(commandState.reply, "s");
     }
-    else if (lastError != ErrorsTraking::ERRT_NONE)
+    else if (mount.errors.lastError != ErrorsTraking::ERRT_NONE)
     {
-      strcpy(reply, "e");
+      strcpy(commandState.reply, "e");
     }
-    else if (!(GuidingState == Guiding::GuidingOFF || GuidingState == Guiding::GuidingAtRate))
+    else if (!(mount.guiding.GuidingState == Guiding::GuidingOFF || mount.guiding.GuidingState == Guiding::GuidingAtRate))
     {
-      strcpy(reply, "g");
+      strcpy(commandState.reply, "g");
     }
     else
     {
-      if (command[1] == '1')
+      if (commandState.command[1] == '1')
       {
-        MoveAxisAtRate1(f);
+        mount.moveAxisAtRate1(f);
       }
       else
       {
-        MoveAxisAtRate2(f);
+        mount.moveAxisAtRate2(f);
       }
       replyShortTrue();
     }
@@ -58,21 +59,21 @@ void Command_M() {
     //         4=Position unreachable
     //         6=Outside limits
   {
-    Coord_HO HO_T(0, newTargetAlt * DEG_TO_RAD, newTargetAzm * DEG_TO_RAD, true);
-    byte i = goToHor(HO_T, GetPoleSide());
-    reply[0] = i + '0';
-    reply[1] = 0;
+    Coord_HO HO_T(0, mount.targetCurrent.newTargetAlt * DEG_TO_RAD, mount.targetCurrent.newTargetAzm * DEG_TO_RAD, true);
+    byte i = mount.goToHor(HO_T, mount.getPoleSide());
+    commandState.reply[0] = i + '0';
+    commandState.reply[1] = 0;
   }
   break;
   case 'F':
   {
     // :MF# Flip Mount
     //       Returns an ERRGOTO
-    if (mountType == MOUNT_TYPE_GEM)
+    if (mount.config.identity.mountType == MOUNT_TYPE_GEM)
     {
-      int i = Flip();
-      reply[0] = i + '0';
-      reply[1] = 0;
+      int i = mount.flip();
+      commandState.reply[0] = i + '0';
+      commandState.reply[1] = 0;
     }
     break;
   }
@@ -81,62 +82,64 @@ void Command_M() {
     //  :Mgdnnnn# Pulse guide command
     //  Returns: Nothing
     int i;
-    if ((atoi2((char *)&command[3], &i)) &&
-      ((i > 0) && (i <= 30000)) && !movingTo && lastError == ERRT_NONE &&
-        (GuidingState != GuidingRecenter || GuidingState != GuidingST4))
+    if ((atoi2((char *)&commandState.command[3], &i)) &&
+      ((i > 0) && (i <= 30000)) && !mount.tracking.movingTo && mount.errors.lastError == ERRT_NONE &&
+        (mount.guiding.GuidingState != GuidingRecenter || mount.guiding.GuidingState != GuidingST4))
     {
-      if ((command[2] == 'e') || (command[2] == 'w'))
+      if ((commandState.command[2] == 'e') || (commandState.command[2] == 'w'))
       {
-        enableST4GuideRate();
-        if (command[2] == 'e')
+        mount.enableST4GuideRate();
+        mount.guiding.guideA1.speedMultiplier = (i > 50) ? ((double)i / 50.0) : 1.0;
+        if (commandState.command[2] == 'e')
         {
-          guideA1.moveBW();
+          mount.guiding.guideA1.moveBW();
         }
-        else if (command[2] == 'w')
+        else if (commandState.command[2] == 'w')
         {
-          guideA1.moveFW();
+          mount.guiding.guideA1.moveFW();
         }
-        guideA1.durationLast = micros();
-        guideA1.duration = (unsigned long)(i * 1000UL);
+        mount.guiding.guideA1.durationLast = micros();
+        mount.guiding.guideA1.duration = (unsigned long)(i * 1000UL);
         cli();
-        GuidingState = Guiding::GuidingPulse;
+        mount.guiding.GuidingState = Guiding::GuidingPulse;
         sei();
-        //reply[0] = '1';
-        //reply[1] = 0;
+        //commandState.reply[0] = '1';
+        //commandState.reply[1] = 0;
       }
-      else if ((command[2] == 'n') || (command[2] == 's'))
+      else if ((commandState.command[2] == 'n') || (commandState.command[2] == 's'))
       {
-        enableST4GuideRate();
-        if (GetPoleSide() == POLE_UNDER)
+        mount.enableST4GuideRate();
+        mount.guiding.guideA2.speedMultiplier = (i > 50) ? ((double)i / 50.0) : 1.0;
+        if (mount.getPoleSide() == POLE_UNDER)
         {
-          if (command[2] == 'n')
+          if (commandState.command[2] == 'n')
           {
-            guideA2.moveFW();
+            mount.guiding.guideA2.moveFW();
           }
-          else if (command[2] == 's')
+          else if (commandState.command[2] == 's')
           {
-            guideA2.moveBW();
+            mount.guiding.guideA2.moveBW();
           }
         }
         else
         {
-          if (command[2] == 'n')
+          if (commandState.command[2] == 'n')
           {
-            guideA2.moveBW();
+            mount.guiding.guideA2.moveBW();
           }
-          else if (command[2] == 's')
+          else if (commandState.command[2] == 's')
           {
-            guideA2.moveFW();
+            mount.guiding.guideA2.moveFW();
           }
         }
-        guideA2.durationLast = micros();
-        guideA2.duration = (unsigned long)(i * 1000UL);
+        mount.guiding.guideA2.durationLast = micros();
+        mount.guiding.guideA2.duration = (unsigned long)(i * 1000UL);
         cli();
-        GuidingState = Guiding::GuidingPulse;
+        mount.guiding.GuidingState = Guiding::GuidingPulse;
         sei();
         
-        //reply[0] = '1';
-        //reply[1] = 0;
+        //commandState.reply[0] = '1';
+        //commandState.reply[1] = 0;
       }
     }
     replyNothing();
@@ -145,26 +148,26 @@ void Command_M() {
     //  :Me# & :Mw#      Move Telescope East or West at current slew rate
     //  Returns: Nothing
   case 'e':
-    MoveAxis1(true, Guiding::GuidingRecenter);
+    mount.moveAxis1(true, Guiding::GuidingRecenter);
     break;
   case 'w':
-    MoveAxis1(false, Guiding::GuidingRecenter);
+    mount.moveAxis1(false, Guiding::GuidingRecenter);
     break;
   break;
   //  :Mn# & :Ms#      Move Telescope North or South at current slew rate
   //  Returns: Nothing
   case 'n':
 
-    if (GetPoleSide() >= POLE_OVER)
-      MoveAxis2(true, Guiding::GuidingRecenter);
+    if (mount.getPoleSide() >= POLE_OVER)
+      mount.moveAxis2(true, Guiding::GuidingRecenter);
     else
-      MoveAxis2(false, Guiding::GuidingRecenter);
+      mount.moveAxis2(false, Guiding::GuidingRecenter);
     break;
   case 's':
-    if (GetPoleSide() >= POLE_OVER)
-      MoveAxis2(false, Guiding::GuidingRecenter);
+    if (mount.getPoleSide() >= POLE_OVER)
+      mount.moveAxis2(false, Guiding::GuidingRecenter);
     else
-     MoveAxis2(true, Guiding::GuidingRecenter);
+     mount.moveAxis2(true, Guiding::GuidingRecenter);
   break;
 
   case 'P':
@@ -176,8 +179,8 @@ void Command_M() {
   //  GeoAlign.altCor = 0.0;
   //  GeoAlign.azmCor = 0.0;
   //  i = goToEqu(r, d, PoleSide);
-  //  reply[0] = i + '0';
-  //  reply[1] = 0;
+  //  commandState.reply[0] = i + '0';
+  //  commandState.reply[1] = 0;
   //  quietReply = true;
   //  supress_frame = true;
   //}
@@ -187,33 +190,33 @@ void Command_M() {
   {
     //:MS#   Goto the Target Object
     //       Returns an ERRGOTO
-    double  newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    Coord_EQ EQ_T(0, newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
-    byte i = goToEqu(EQ_T, GetPoleSide(), *localSite.latitude() * DEG_TO_RAD);
+    double  newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
+    Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
+    byte i = mount.goToEqu(EQ_T, mount.getPoleSide(), *localSite.latitude() * DEG_TO_RAD);
     if (i == 0)
     {
-      StartSideralTracking();
+      mount.startSideralTracking();
     }
-    reply[0] = i + '0';
-    reply[1] = 0;
+    commandState.reply[0] = i + '0';
+    commandState.reply[1] = 0;
     break;
   }
   case 'U':
   {
     //  :MU#   Goto the User Defined Target Object
     //         Returns an ERRGOTO
-    PoleSide targetPoleSide = GetPoleSide();
-    newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
-    newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
-    double newTargetHA = haRange(rtk.LST() * 15.0 - newTargetRA);
-    Coord_EQ EQ_T(0, newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
-    byte i = goToEqu(EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
+    PoleSide targetPoleSide = mount.getPoleSide();
+    mount.targetCurrent.newTargetRA = (double)XEEPROM.readFloat(getMountAddress(EE_RA));
+    mount.targetCurrent.newTargetDec = (double)XEEPROM.readFloat(getMountAddress(EE_DEC));
+    double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
+    Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec* DEG_TO_RAD, newTargetHA* DEG_TO_RAD);
+    byte i = mount.goToEqu(EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);
     if (i == 0)
     {
-      StartSideralTracking();
+      mount.startSideralTracking();
     }
-    reply[0] = i + '0';
-    reply[1] = 0;
+    commandState.reply[0] = i + '0';
+    commandState.reply[1] = 0;
     break;
   }
   case '?':
@@ -221,61 +224,61 @@ void Command_M() {
     // :M?#   Predict side of Pier for the Target Object
     // reply ? or E or W
     // reply ! if failed
-    double Ra, Ha, Dec, alt = 0, axis1angle,axis2angle;
+    double Ra, Ha, Dec, alt = 0.0, axis1angle, axis2angle;
     long axis1step, axis2step;
     PoleSide predictedSide = POLE_NOTVALID;
     char rastr[12];
     char decstr[12];
 
-    strncpy(rastr, &command[2], 8 * sizeof(char));
+    strncpy(rastr, &commandState.command[2], 8 * sizeof(char));
     rastr[8] = 0;
-    strncpy(decstr, &command[10], 9 * sizeof(char));
+    strncpy(decstr, &commandState.command[10], 9 * sizeof(char));
     decstr[9] = 0;
 
-    if (!hmsToDouble(&Ra, rastr, highPrecision))
+    if (!hmsToDouble(&Ra, rastr, commandState.highPrecision))
     {
-      strcpy(reply, "!");
+      strcpy(commandState.reply, "!");
       break;
     }
-    if (!dmsToDouble(&Dec, decstr, true, highPrecision))
+    if (!dmsToDouble(&Dec, decstr, true, commandState.highPrecision))
     {
-      strcpy(reply, "!");
+      strcpy(commandState.reply, "!");
       break;
     }
     Ha = haRange(rtk.LST() * 15.0 - Ra * 15);
 
     Coord_EQ EQ_T(0, Dec * DEG_TO_RAD , Ha * DEG_TO_RAD);
-    Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, RefrOptForGoto());
-    if (HO_T.Alt() < minAlt * DEG_TO_RAD || alt > maxAlt * DEG_TO_RAD)
+    Coord_HO HO_T = EQ_T.To_Coord_HO(*localSite.latitude() * DEG_TO_RAD, mount.refrOptForGoto());
+    if (HO_T.Alt() < mount.limits.minAlt * DEG_TO_RAD || alt > mount.limits.maxAlt * DEG_TO_RAD)
     {
-      strcpy(reply, "!");
+      strcpy(commandState.reply, "!");
       break;
     }
-    Coord_IN instr_T = HO_T.To_Coord_IN(alignment.Tinv);
+    Coord_IN instr_T = HO_T.To_Coord_IN(mount.alignment.conv.Tinv);
     axis1angle = instr_T.Axis1() * RAD_TO_DEG;
     axis2angle = instr_T.Axis2() * RAD_TO_DEG;
-    bool ok = predictTarget(axis1angle, axis2angle, GetPoleSide(), axis1step, axis2step,predictedSide);
+    bool ok = mount.predictTarget(axis1angle, axis2angle, mount.getPoleSide(), axis1step, axis2step,predictedSide);
     if (!ok)
     {
-      strcpy(reply, "?");
+      strcpy(commandState.reply, "?");
       break;
     }
-    else if (predictedSide == POLE_UNDER) strcpy(reply, "E");
-    else if (predictedSide == POLE_OVER) strcpy(reply, "W");
+    else if (predictedSide == POLE_UNDER) strcpy(commandState.reply, "E");
+    else if (predictedSide == POLE_OVER) strcpy(commandState.reply, "W");
     break;
   }
   case '@':
   {
     //  :M@V#   Start Spiral Search V in arcminutes
     //         Return 0 if failed, i if success
-    if (movingTo || GuidingState != Guiding::GuidingOFF)
+    if (mount.tracking.movingTo || mount.guiding.GuidingState != Guiding::GuidingOFF)
       replyShortFalse();
     else
     {
-      SpiralFOV = (double)strtol(&command[2], NULL, 10) / 60.0;
+      mount.tracking.SpiralFOV = (double)strtol(&commandState.command[2], NULL, 10) / 60.0;
       replyShortTrue();
-      atHome = false;
-      doSpiral = true;
+      mount.parkHome.atHome = false;
+      mount.tracking.doSpiral = true;
     }
     break;
   }

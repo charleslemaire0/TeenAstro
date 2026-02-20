@@ -175,4 +175,4 @@ public:
     }
   }
 };
-static siteDefinition localSite;
+extern siteDefinition localSite;

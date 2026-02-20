@@ -5,7 +5,7 @@
  * - processCommands(): main dispatcher (called from loop)
  * - Command_*(): handlers for each command letter
  */
-#include "Global.h"
+#include "CommandGlobals.h"
 #include "CommandConstants.h"
 
 // -----------------------------------------------------------------------------
@@ -40,13 +40,16 @@ private:
 };
 
 // -----------------------------------------------------------------------------
-// Command/serial state (S_SHC, S_USB live here; reply/command/highPrecision in Global.h)
+// Command/serial state: current command/reply buffers and precision (no globals)
 // -----------------------------------------------------------------------------
 struct CommandState {
   CommandState();
   unsigned long baudRate_[10];
   T_Serial S_SHC_;
   T_Serial S_USB_;
+  char reply[REPLY_BUFFER_LEN];
+  char command[CMD_BUFFER_LEN];
+  bool highPrecision;
 };
 extern CommandState commandState;
 

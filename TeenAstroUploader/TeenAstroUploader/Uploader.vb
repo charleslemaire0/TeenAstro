@@ -1,4 +1,4 @@
-﻿Imports System.IO
+Imports System.IO
 Imports System.Globalization
 Imports System.Threading
 Imports System.Runtime.InteropServices
@@ -18,17 +18,17 @@ Public Class Uploader
       Dim HexPath = System.IO.Path.GetDirectoryName(Application.ExecutablePath) + "\" + fwvdir
       Select Case pcb
         Case "2.2 TMC260"
-          Hexfile = "Teenastro_" + fwv + "_220_TMC260"
+          Hexfile = "TeenAstro_" + fwv + "_220_TMC260"
         Case "2.3 TMC260"
-          Hexfile = "Teenastro_" + fwv + "_230_TMC260"
+          Hexfile = "TeenAstro_" + fwv + "_230_TMC260"
         Case "2.4 TMC2130"
-          Hexfile = "Teenastro_" + fwv + "_240_TMC2130"
+          Hexfile = "TeenAstro_" + fwv + "_240_TMC2130"
         Case "2.4 TMC5160"
-          Hexfile = "Teenastro_" + fwv + "_240_TMC5160"
+          Hexfile = "TeenAstro_" + fwv + "_240_TMC5160"
         Case "2.5 TMC2130"
-          Hexfile = "Teenastro_" + fwv + "_250_TMC2130"
+          Hexfile = "TeenAstro_" + fwv + "_250_TMC2130"
         Case "2.5 TMC5160"
-          Hexfile = "Teenastro_" + fwv + "_250_TMC5160"
+          Hexfile = "TeenAstro_" + fwv + "_250_TMC5160"
       End Select
 
       If Not System.IO.File.Exists(HexPath + "\" + Hexfile + ".hex") Then
@@ -90,10 +90,6 @@ Public Class Uploader
           Hexfile = "TeenAstroFocuser_" + fwv + "_240_TMC2130"
         Case "2.4 TMC5160"
           Hexfile = "TeenAstroFocuser_" + fwv + "_240_TMC5160"
-        Case "2.5 TMC2130"
-          Hexfile = "TeenAstroFocuser_" + fwv + "_250_TMC2130"
-        Case "2.5 TMC5160"
-          Hexfile = "TeenAstroFocuser_" + fwv + "_250_TMC5160"
       End Select
 
       If Not System.IO.File.Exists(HexPath + "\" + Hexfile + ".hex") Then
@@ -105,8 +101,6 @@ Public Class Uploader
       Select Case pcb
         Case "2.2 TMC2130", "2.3 TMC2130", "2.4 TMC2130", "2.4 TMC5160"
           cmd = "-file=" & Hexfile & " -path=" & HexPath & " -tools=" & exepath & " -board=TEENSY31"
-        Case "2.5 TMC2130", "2.5 TMC5160"
-          cmd = "-file=" & Hexfile & " -path=" & HexPath & " -tools=" & exepath & " -board=TEENSY40"
       End Select
       pHelp.Arguments = cmd
       pHelp.WindowStyle = ProcessWindowStyle.Normal
@@ -201,7 +195,7 @@ Public Class Uploader
     'downloadVersionx(n, sum, "_latest", 1.4)
     downloadVersionx(n, sum, "", 1.5)
     downloadVersionx(n, sum, "_latest", 1.5)
-    MsgBox(n.ToString & "of " & sum.ToString & " successfully downloaded!")
+    MsgBox(n.ToString & " of " & sum.ToString & " successfully downloaded!")
   End Sub
 
   Private Sub ComboBoxCOMSHC_Click(sender As Object, e As EventArgs) Handles ComboBoxCOMSHC.Click

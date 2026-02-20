@@ -62,7 +62,7 @@ void SmartHandController::menuFocuserInfo()
     case 0:
       return;
     case 1:
-      if (DisplayMessageLX200(GetLX200(":FV#", out,sizeof(out))))
+      if (DisplayMessageLX200(m_client->getFocuserVersion(out, sizeof(out))))
       {
         out[31] = 0;
         DisplayMessage(T_FIRMWAREVERSION, &out[26], -1);
@@ -70,7 +70,7 @@ void SmartHandController::menuFocuserInfo()
       return;
       break;
     case 2:
-      DisplayMessageLX200(SetLX200(":F!#"));
+      DisplayMessageLX200(m_client->focuserResetConfig());
       DisplayMessage(T_FOCUSER, T_REBOOT, -1);
       delay(500);
       powerCycleRequired = true;
@@ -79,7 +79,7 @@ void SmartHandController::menuFocuserInfo()
     case 3:
       if (display->UserInterfaceMessage(&buttonPad, "Reset", "To", "Factory?", "NO\nYES") == 2)
       {
-        DisplayMessageLX200(SetLX200(":F$#"), false);
+        DisplayMessageLX200(m_client->focuserSaveConfig(), false);
         DisplayMessage(T_FOCUSER, T_RESET, -1);
         delay(500);
         powerCycleRequired = true;
@@ -102,7 +102,7 @@ void SmartHandController::menuFocuserConfig()
   float value;
   while (!exitMenu)
   {
-    if (DisplayMessageLX200(readFocuserConfig(sP, maxP, minS, maxS, cmdAcc, manAcc, manDec)))
+    if (DisplayMessageLX200(m_client->readFocuserConfig(sP, maxP, minS, maxS, cmdAcc, manAcc, manDec)))
     {
       tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_FOCUSERSETTINGS, s_sel, string_list_Focuser);
       s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
@@ -186,7 +186,7 @@ void SmartHandController::menuFocuserConfig()
       }
       if (ValueSetRequested)
       {
-        DisplayMessageLX200(SetLX200(cmd), false);
+        DisplayMessageLX200(m_client->set(cmd), false);
       }
     }
     else
@@ -204,7 +204,7 @@ void SmartHandController::menuFocuserMotor()
   uint8_t tmp_sel;
   while (!exitMenu)
   {
-    if (DisplayMessageLX200(readFocuserMotor(rev, mu, res, curr, steprot)))
+    if (DisplayMessageLX200(m_client->readFocuserMotor(rev, mu, res, curr, steprot)))
     {
       tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_FOCUSERSETTINGS, s_sel, string_list_Focuser);
       s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
@@ -282,7 +282,7 @@ void SmartHandController::menuFocuserMotor()
       }
       if (ValueSetRequested)
       {
-        DisplayMessageLX200(SetLX200(cmd), false);
+        DisplayMessageLX200(m_client->set(cmd), false);
         delay(250);
       }
     }
