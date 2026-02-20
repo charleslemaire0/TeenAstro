@@ -175,4 +175,4 @@ public:
     }
   }
 };
-[[maybe_unused]] static siteDefinition localSite;
+extern siteDefinition localSite;

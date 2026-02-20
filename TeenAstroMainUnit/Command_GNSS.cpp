@@ -1,5 +1,6 @@
 /**
  * GNSS commands and helpers: :gs# (full sync), :gt# (time sync).
+ * One file per letter (plan). All :gx# TeenAstro specific (not in Meade LX200).
  */
 #include "Command.h"
 
@@ -135,6 +136,7 @@ void Command_GNSS() {
 
   switch (commandState.command[1]) {
   case 's':
+    // :gs#  Full GNSS sync (site + time)  TeenAstro specific
     if (iSGNSSValid())
     {
       double lat = l.lat();
@@ -157,8 +159,8 @@ void Command_GNSS() {
     else
       replyShortFalse();
     break;
-    // :gt# time sync with GNSS
   case 't':
+    // :gt#  Time sync from GNSS  TeenAstro specific
     if (iSGNSSValid())
     {
       rtk.setClock(d.year(), d.month(), d.day(),

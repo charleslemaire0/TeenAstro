@@ -119,7 +119,7 @@ void SmartHandController::setup(
     if (ta_MountStatus.findFocuser())
     {
       char out[50];
-      if (DisplayMessageLX200(GetLX200(":FV#", out, sizeof(out))))
+      if (DisplayMessageLX200(m_client->getFocuserVersion(out, sizeof(out))))
       {
         out[31] = 0;
         DisplayMessage("Focuser " T_VERSION, &out[26], 1200);
@@ -130,7 +130,7 @@ void SmartHandController::setup(
     {
       ta_MountStatus.updateTime();
       unsigned int hour = 0, minute = 0, second = 0;
-      GetLocalTimeLX200(hour, minute, second);
+      m_client->getLocalTime(hour, minute, second);
       char date_time[40];
       sprintf(date_time, "%s : %.2d:%.2d:%.2d", T_TIME, hour, minute, second);
       char date_time2[40];
@@ -233,7 +233,7 @@ void SmartHandController::updateAlign(bool moving)
       char text[20];
   
       DisplayMessage(T_ALIGNMENT, T_SUCESS"!", 1.0);
-      GetLX200(":AE#", text, sizeof(text));
+      m_client->getAlignError(text, sizeof(text));
       text[3]='°';
       text[6]='\'';
       text[9]='\"';
@@ -264,10 +264,10 @@ void SmartHandController::updatePushing(bool moving)
     buttonPad.setMenuMode();
     if (display->UserInterfaceMessage(&buttonPad, T_SYNCEDAT, T_TARGET, "", T_YES "\n" T_NO) == 1)
     {
-      DisplayMessageLX200(SetLX200(":ECS#"), 0.5);
+      DisplayMessageLX200(m_client->encoderSync(), 0.5);
     }
     buttonPad.setControlerMode();
-    DisplayMessageLX200(SetLX200(":EMQ#"));
+    DisplayMessageLX200(m_client->encoderStopMotion());
   }
 }
 
@@ -486,9 +486,9 @@ void SmartHandController::manualMove(bool &moving)
         buttonCommand = true;
         Move[k - 1] = false;
         if (k < 5)
-          SetLX200(BreakRC[k - 1]);
+          m_client->set(BreakRC[k - 1]);
         else
-          Move[k - 1] = !(SetLX200(BreakRC[k - 1]) == LX200_VALUESET);
+          Move[k - 1] = !(m_client->set(BreakRC[k - 1]) == LX200_VALUESET);
         continue;
       }
       else if (eventbuttons[0] == E_NONE && !Move[k - 1] && (eventbuttons[k] == E_LONGPRESS || eventbuttons[k] == E_CLICK || eventbuttons[k] == E_LONGPRESSTART))
@@ -500,11 +500,11 @@ void SmartHandController::manualMove(bool &moving)
           if (!telescoplocked)
           {
             Move[k - 1] = true;
-            SetLX200(RC[k - 1]);
+            m_client->set(RC[k - 1]);
           }
         }
         else if (!focuserlocked)
-          Move[k - 1] = (SetLX200(RC[k - 1]) == LX200_VALUESET);
+          Move[k - 1] = (m_client->set(RC[k - 1]) == LX200_VALUESET);
         continue;
       }
       moving = moving || Move[k - 1];

@@ -16,9 +16,7 @@ void SmartHandController::menuSpeedRate()
   uint8_t selected_speed = display->UserInterfaceSelectionList(&buttonPad, T_SETSPEED, current_selection_speed + 1, string_list_Speed);
   if (selected_speed > 0)
   {
-    char cmd[5] = ":Rn#";
-    cmd[2] = '0' + selected_speed - 1;
-    SetLX200(cmd);
+    m_client->setSpeed(selected_speed - 1);
     current_selection_speed = selected_speed;
   }
   buttonPad.setControlerMode();
@@ -36,16 +34,13 @@ void SmartHandController::increaseSpeed(bool increase)
   if (cur_GR == TeenAstroMountStatus::GuidingRate::UNKNOW)
     return;
   current_speed = static_cast<unsigned char>(cur_GR);
-  char cmd[5] = ":Rn#";
   if (increase && cur_GR < TeenAstroMountStatus::MAX )
   {    
-    cmd[2] = '0' + current_speed + 1;
-    SetLX200(cmd);
+    m_client->setSpeed(current_speed + 1);
   }
   else if (!increase && cur_GR > TeenAstroMountStatus::GUIDING )
   {
-    cmd[2] = '0' + current_speed - 1;
-    SetLX200(cmd);
+    m_client->setSpeed(current_speed - 1);
   }
 }
 #endif
@@ -84,7 +79,7 @@ void SmartHandController::menuTelActionPushTo()
       menuPier();
       break;
     case 5:
-      if (SetLX200(":SU#") == LX200_VALUESET)
+      if (m_client->saveUserPosition() == LX200_VALUESET)
       {
         DisplayMessage("RA DEC", T_SAVED, 500);
       }
@@ -126,7 +121,7 @@ void SmartHandController::menuTelActionPushToGoto()
         exitMenu = true;
         break;
       case 1:
-        SetLX200(":hR#");
+        m_client->unpark();
         exitMenu = true;
         break;
       default:
@@ -184,7 +179,7 @@ void SmartHandController::menuTelActionPushToGoto()
           menuPier();
           break;
         case 7:
-          if (SetLX200(":SU#") == LX200_VALUESET)
+          if (m_client->saveUserPosition() == LX200_VALUESET)
           {
             DisplayMessage("RA DEC", T_SAVED, 500);
           }
@@ -236,7 +231,7 @@ void SmartHandController::menuTelActionGoto()
         exitMenu = true;
         break;
       case 1:
-        SetLX200(":hR#");
+        m_client->unpark();
         exitMenu = true;
         break;
       default:
@@ -290,7 +285,7 @@ void SmartHandController::menuTelActionGoto()
           menuPier();
           break;
         case 6:
-          if (SetLX200(":SU#") == LX200_VALUESET)
+          if (m_client->saveUserPosition() == LX200_VALUESET)
           {
             DisplayMessage("RA DEC", T_SAVED, 500);
           }
@@ -334,7 +329,7 @@ void SmartHandController::menuTrack()
     case 1:
       char out[20];
       memset(out, 0, sizeof(out));
-      if (SetLX200(":Td#") == LX200_VALUESET)
+      if (m_client->enableTracking(false) == LX200_VALUESET)
       {
         DisplayMessage(T_TRACKING, T_OFF, 500);
         exitMenu = true;
@@ -345,16 +340,16 @@ void SmartHandController::menuTrack()
       }
       break;
     case 2:
-      exitMenu = DisplayMessageLX200(SetLX200(":TQ#"));
+      exitMenu = DisplayMessageLX200(m_client->setTrackRateSidereal());
       break;
     case 3:
-      exitMenu = DisplayMessageLX200(SetLX200(":TL#"));
+      exitMenu = DisplayMessageLX200(m_client->setTrackRateLunar());
       break;
     case 4:
-      exitMenu = DisplayMessageLX200(SetLX200(":TS#"));
+      exitMenu = DisplayMessageLX200(m_client->setTrackRateSolar());
       break;
     case 5:
-      exitMenu = DisplayMessageLX200(SetLX200(":TT#"));
+      exitMenu = DisplayMessageLX200(m_client->setTrackRateUser());
       break;
     default:
       break;
@@ -367,7 +362,7 @@ void SmartHandController::menuTrack()
     switch (tmp_sel)
     {
     case 1:
-      if (SetLX200(":Te#") == LX200_VALUESET)
+      if (m_client->enableTracking(true) == LX200_VALUESET)
       {
         DisplayMessage(T_TRACKING, T_ON, 500);
         exitMenu = true;
@@ -416,7 +411,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         if (ret == 1)
         {
           DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
-          if (SetLX200(":A0#") == LX200_VALUESET)
+          if (m_client->alignStart() == LX200_VALUESET)
           {
             ta_MountStatus.startAlign(TeenAstroMountStatus::AlignMode::ALIM_TWO);
             return MR_QUIT;
@@ -435,9 +430,9 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
           if (choice)
           {
             if (choice == 1)
-              ok = DisplayMessageLX200(SetLX200(":SmE#"));
+              ok = DisplayMessageLX200(m_client->setPierSideEast());
             else
-              ok = DisplayMessageLX200(SetLX200(":SmW#"));
+              ok = DisplayMessageLX200(m_client->setPierSideWest());
             if (ok)
             {
               DisplayMessage("Please Sync", "with a Target", 1000);
@@ -463,10 +458,10 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
                 {
                   if (display->UserInterfaceCatalog(&buttonPad, title))
                   {
-                    LX200RETURN out = SyncGotoCatLX200(NAV_SYNC);
+                    LX200RETURN out = SyncGotoCatLX200(*m_client, NAV_SYNC);
                     if (out == LX200_SYNCED)
                     {
-                      DisplayMessageLX200(SetLX200(":A*#"));
+                      DisplayMessageLX200(m_client->alignAcceptStar());
                       ta_MountStatus.startAlignSecondStar(TeenAstroMountStatus::AlignMode::ALIM_TWO);           
                       return MR_QUIT;
                     }
@@ -481,7 +476,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
               else DisplayMessage(cat_mgr.catalogTitle(), "Not Init'd?", -1);
               cat_mgr.filtersClear();
 
-              DisplayMessageLX200(SetLX200(":SmN#"));
+              DisplayMessageLX200(m_client->setPierSideNone());
        
             }
           }
@@ -492,7 +487,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
       if (display->UserInterfaceMessage(&buttonPad, T_READYFOR, T_PC, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
       {
-        if (SetLX200(":AA#") == LX200_VALUESET)
+        if (m_client->alignAtHome() == LX200_VALUESET)
         {
           DisplayMessage(T_MOUNTSYNCED, T_ATHOME, -1);
           return MR_QUIT;
@@ -506,7 +501,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
     case 3:
       if (display->UserInterfaceMessage(&buttonPad, T_SAVE, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
       {
-        if (SetLX200(":AW#") == LX200_VALUESET)
+        if (m_client->alignSave() == LX200_VALUESET)
         {
           DisplayMessage(T_ALIGNMENT, T_SAVED, -1);
           return MR_QUIT;
@@ -520,7 +515,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
     case 4:
       if (display->UserInterfaceMessage(&buttonPad, T_Clear, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
       {
-        if (SetLX200(":AC#") == LX200_VALUESET)
+        if (m_client->alignClear() == LX200_VALUESET)
         {
           DisplayMessage(T_MOUNTSYNCED, T_ATHOME, -1);
           return MR_QUIT;
@@ -533,7 +528,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       break;
     case 5:
       char text[20];
-      if (GetLX200(":AE#", text, sizeof(text)) == LX200_VALUEGET)
+      if (m_client->getAlignError(text, sizeof(text)) == LX200_VALUEGET)
       {
         text[3]='°';
         text[6]='\'';
@@ -550,11 +545,11 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       char err_alt[15] = { "?" };
       char err_pol[15] = { "?" };
       if (
-        GetLX200(":GXAw#", err_pol, sizeof(err_pol)) == LX200_VALUEGET
+        m_client->getAlignErrorPolar(err_pol, sizeof(err_pol)) == LX200_VALUEGET
         &&
-        GetLX200(":GXAz#", err_az, sizeof(err_az)) == LX200_VALUEGET
+        m_client->getAlignErrorAz(err_az, sizeof(err_az)) == LX200_VALUEGET
         &&
-        GetLX200(":GXAa#", err_alt, sizeof(err_alt)) == LX200_VALUEGET)
+        m_client->getAlignErrorAlt(err_alt, sizeof(err_alt)) == LX200_VALUEGET)
       {
         DisplayLongMessage("[Sep.;Az.;Alt.]:", err_pol, err_az, err_alt, -1);
       }

@@ -231,3 +231,4 @@ void Application::loopCommandsAndStatus(ErrorsTraking startLoopError)
 }
 
 Application application;
+timerLoop tlp;  // single definition — declared extern in timerLoop.hpp

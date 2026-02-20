@@ -1,4 +1,4 @@
-﻿// Telescope coordinate conversion
+// Telescope coordinate conversion
 // (C) 2016 Markus L. Noga
 // (C) 2019 Charles Lemaire
 
@@ -317,26 +317,33 @@ void LA3::getEulerRxRyRz(const double(&r)[3][3], double& thetaX, double& thetaY,
 
 // -----------------------------------------------------------------------------------------------------------------------------
 // Coordinate conversion
-//Topocentric Apparent convertions
-// returns the amount of refraction (in arcminutes) at the given true altitude (degrees), pressure (millibars), and temperature (celsius)
+// Topocentric <-> Apparent conversions
+//
+// Standard Saemundsson / Bennett pair from Meeus, "Astronomical Algorithms",
+// Equations 16.4 and 16.3.  These are the same formulas used by Stellarium
+// and match the Nautical Almanac to < 0.07 arcminute.
+// The two formulas are mutually consistent to ~0.4 arcsecond.
+//
+// Input/output:  Alt in radians,  Pressure in mbar,  Temperature in °C.
+
+// Saemundsson formula (Meeus Eq. 16.4): true altitude -> refraction to ADD
 void LA3::Topocentric2Apparent(double& Alt, RefrOpt Opt)
 {
-	double TPC = (Opt.Pressure / 101.) * (283. / (273. + Opt.Temperature));
-	double Beta = Alt + 0.0031375594238031 / (Alt + 0.08918632477691);
-	if (Beta > 0 && Opt.use)
-	{
-		Alt += TPC * 2.96705972839036e-4 / tan(Beta);
-	}
+	if (!Opt.use || Alt < -0.06) return;  // below ~ -3.5 deg: no correction
+	double h_deg = Alt * (180.0 / M_PI);
+	double TPC   = (Opt.Pressure / 1010.0) * (283.0 / (273.0 + Opt.Temperature));
+	double R     = (1.02 / tan((h_deg + 10.3 / (h_deg + 5.11)) * (M_PI / 180.0)) + 0.0019279) * TPC;
+	Alt += R * (M_PI / (180.0 * 60.0));   // arcminutes -> radians
 }
 
+// Bennett formula (Meeus Eq. 16.3): apparent altitude -> refraction to SUBTRACT
 void LA3::Apparent2Topocentric(double& Alt, RefrOpt Opt)
 {
-	double TPC = (Opt.Pressure / 101.) * (283. / (273. + Opt.Temperature));
-	double Beta = Alt + 0.00222675333864084 / (Alt + 0.0767944870877505);
-	if (Beta > 0 && Opt.use)
-	{
-		Alt -= TPC * 2.908882086657216e-4 / tan(Beta);
-	}
+	if (!Opt.use || Alt < -0.06) return;  // below ~ -3.5 deg: no correction
+	double h0_deg = Alt * (180.0 / M_PI);
+	double TPC    = (Opt.Pressure / 1010.0) * (283.0 / (273.0 + Opt.Temperature));
+	double R      = (1.0 / tan((h0_deg + 7.31 / (h0_deg + 4.4)) * (M_PI / 180.0)) + 0.0013515) * TPC;
+	Alt -= R * (M_PI / (180.0 * 60.0));   // arcminutes -> radians
 }
 
 

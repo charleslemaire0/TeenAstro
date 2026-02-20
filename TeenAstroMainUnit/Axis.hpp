@@ -260,6 +260,7 @@ public:
   unsigned long   duration;
   unsigned long   durationLast;
   double          absRate;
+  double          speedMultiplier = 1.0;  // internal: effective rate = absRate * speedMultiplier (pulse long correction)
 private:
   enum moveStatus { MBW = -2, BBW = -1, Idle = 0, BFW = 1, MFW = 2 };
   volatile moveStatus m_mst;
@@ -298,23 +299,24 @@ public:
   {
     if (isDirFW())
     {
-      return absRate;
+      return absRate * speedMultiplier;
     }
     else if (isDirBW())
     {
-      return -absRate;
+      return -absRate * speedMultiplier;
     }
     return 0;
   }
   double getAmount()
   {
+    double amount = m_amount * speedMultiplier;
     if (isDirFW())
     {
-      return m_amount;
+      return amount;
     }
     else if (isDirBW())
     {
-      return -m_amount;
+      return -amount;
     }
     return 0;
   }

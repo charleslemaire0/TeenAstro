@@ -1,5 +1,6 @@
 /**
  * Tracking commands: T (sidereal rate, solar/lunar/target, enable/disable, compensation).
+ * One file per letter (plan). :T+# :T-# :TQ# :TM# LX200 standard; :TS# :TL# :TR# :Te# :Td# :T1# :T2# etc. TeenAstro specific.
  */
 #include "Command.h"  // CommandGlobals provides Coord_LO, alignment, etc.
 

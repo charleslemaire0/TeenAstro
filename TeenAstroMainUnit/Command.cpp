@@ -56,8 +56,8 @@ void processCommands() {
   commandState.S_USB_.update();
   commandState.S_SHC_.update();
 
-  commandState.S_USB_.getCmdPar(commandState.command, process_command);
   commandState.S_SHC_.getCmdPar(commandState.command, process_command);
+  commandState.S_USB_.getCmdPar(commandState.command, process_command);
 
   if (process_command == COMMAND_NONE)
     return;

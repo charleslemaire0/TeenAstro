@@ -2,8 +2,12 @@
 /**
  * Mount and command protocol types and constants.
  * Shared enums, typedefs, and numeric constants used across Mount.h and the firmware.
+ *
+ * ErrorsGoTo is now defined in the shared TeenAstroCommandDef library
+ * (CommandEnums.h) so that client and server stay in sync.
  */
 #include <Arduino.h>
+#include <CommandEnums.h>
 
 // -----------------------------------------------------------------------------
 // Type aliases
@@ -36,26 +40,7 @@ enum ErrorsTraking {
 
 // When goTo() returns a tracking-style error, it uses lastError + 10 (ERRGOTO_* from ERRT_*).
 // Do not reorder ErrorsTraking or ErrorsGoTo without updating Mount::goTo().
-enum ErrorsGoTo {
-  ERRGOTO_NONE,
-  ERRGOTO_BELOWHORIZON,
-  ERRGOTO_NOOBJECTSELECTED,
-  ERRGOTO_SAMESIDE,
-  ERRGOTO_PARKED,
-  ERRGOTO_SLEWING,
-  ERRGOTO_LIMITS,
-  ERRGOTO_GUIDINGBUSY,
-  ERRGOTO_ABOVEOVERHEAD,
-  ERRGOTO_MOTOR,
-  ERRGOTO____,
-  ERRGOTO_MOTOR_FAULT,
-  ERRGOTO_ALT,
-  ERRGOTO_LIMIT_SENSE,
-  ERRGOTO_AXIS1,
-  ERRGOTO_AXIS2,
-  ERRGOTO_UNDER_POLE,
-  ERRGOTO_MERIDIAN
-};
+// ErrorsGoTo is now defined in CommandEnums.h (TeenAstroCommandDef library).
 
 enum SID_Mode { SIDM_STAR, SIDM_SUN, SIDM_MOON, SIDM_TARGET };
 

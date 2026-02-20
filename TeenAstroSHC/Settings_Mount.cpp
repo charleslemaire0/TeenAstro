@@ -48,7 +48,7 @@ void SmartHandController::MenuTrackingRefraction()
 {
   char out[10];
   uint8_t tmp_sel;
-  if (GetLX200(":GXrt#", out, sizeof(out)) == LX200_GETVALUEFAILED) strcpy(out, "n");
+  if (m_client->getRefractionEnabled(out, sizeof(out)) == LX200_GETVALUEFAILED) strcpy(out, "n");
   bool corr_on = out[0] == 'y';
   const char* string_list_tracking = corr_on ? T_OFF : T_ON;
   tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_REFRACTION, 0, string_list_tracking);
@@ -58,7 +58,7 @@ void SmartHandController::MenuTrackingRefraction()
   {
     char out[20];
     memset(out, 0, sizeof(out));
-    if ((corr_on ? SetLX200(":SXrt,n#") : SetLX200(":SXrt,y#")) == LX200_VALUESET)
+    if ((corr_on ? m_client->enableRefraction(false) : m_client->enableRefraction(true)) == LX200_VALUESET)
     {
       DisplayMessage(T_REFRACTION, corr_on ? T_OFF : T_ON, 500);
     }
@@ -80,7 +80,7 @@ void SmartHandController::menuMounts()
   char txt[70] = "";
   for (int i = 0; i < 2; i++)
   {
-    GetMountNameLX200(i, mountname, sizeof(mountname));
+    m_client->getMountName(i, mountname, sizeof(mountname));
     strcat(txt, mountname);
     if (i != 1)
     {
@@ -88,7 +88,7 @@ void SmartHandController::menuMounts()
     }
   }
 
-  if (DisplayMessageLX200(GetMountIdxLX200(val)))
+  if (DisplayMessageLX200(m_client->getMountIdx(val)))
   {
     uint8_t tmp_in = val + 1;
     uint8_t tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_SELECT_MOUNT, tmp_in, txt);
@@ -97,7 +97,7 @@ void SmartHandController::menuMounts()
       if (tmp_in != tmp_sel)
       {
         val = (int)tmp_sel - 1;
-        SetMountLX200(val);
+        m_client->setMount(val);
         powerCycleRequired = true;
         exitMenu = true;
       }
@@ -112,14 +112,14 @@ void SmartHandController::DisplayAccMaxRateSettings()
   char line2[32] = T_SLEWSETTING;
   char line3[32] = "";
   char line4[32] = "";
-  DisplayMessageLX200(GetLX200(":GXOA#", line1, sizeof(line1)));
+  DisplayMessageLX200(m_client->getMountDescription(line1, sizeof(line1)));
 
-  if (DisplayMessageLX200(GetLX200(":GXRX#", out, sizeof(out))))
+  if (DisplayMessageLX200(m_client->get(":GXRX#", out, sizeof(out))))
   {
     int maxrate = (float)strtol(&out[0], NULL, 10);
     sprintf(line4, T_MaxSlew ": %dx", maxrate);
   }
-  if (DisplayMessageLX200(GetLX200(":GXRA#", out, sizeof(out))))
+  if (DisplayMessageLX200(m_client->get(":GXRA#", out, sizeof(out))))
   {
     float acc = atof(&out[0]);
     sprintf(line3, T_ACCELERATION ": %.1f", acc);
@@ -141,7 +141,7 @@ void SmartHandController::menuMountType()
   {
     char out[10];
     sprintf(out, ":S!%u#", tmp_sel);
-    LX200RETURN answ = SetLX200(out);
+    LX200RETURN answ = m_client->set(out);
 
     DisplayMessageLX200(answ, false);
     if (answ == LX200_VALUESET)
@@ -187,7 +187,7 @@ void SmartHandController::menuPolarAlignment()
   char out[10];
   uint8_t tmp_sel;
 
-  if (!DisplayMessageLX200(GetLX200(":GXrp#", out, sizeof(out))))
+  if (!DisplayMessageLX200(m_client->getPolarAlignEnabled(out, sizeof(out))))
     return;
   uint8_t tmp_in = out[0] == 'y' ? 1 : 2;
   const char* string_list_tracking = T_APPARENT_POLE "\n" T_TRUE_POLE  ;
@@ -201,7 +201,7 @@ void SmartHandController::menuPolarAlignment()
   case 1:
   case 2:
   {
-    if (tmp_sel == 1 ? SetLX200(":SXrp,y#") == LX200_VALUESET : SetLX200(":SXrp,n#") == LX200_VALUESET)
+    if (tmp_sel == 1 ? m_client->enablePolarAlign(true) == LX200_VALUESET : m_client->enablePolarAlign(false) == LX200_VALUESET)
     {
       DisplayMessage(T_SET, (tmp_sel == 1) ? T_APPARENT_POLE : T_TRUE_POLE, 1000);
     }
@@ -220,7 +220,7 @@ void SmartHandController::MenuRefractionForGoto()
 {
   char out[10];
   uint8_t tmp_sel;
-  if (!DisplayMessageLX200(GetLX200(":GXrg#", out, sizeof(out))))
+  if (!DisplayMessageLX200(m_client->getGoToEnabled(out, sizeof(out))))
     return;
   uint8_t tmp_in = out[0] == 'y' ? 1 : 2;
   const char* string_list_tracking = T_ON "\n" T_OFF;
@@ -234,7 +234,7 @@ void SmartHandController::MenuRefractionForGoto()
   case 1:
   case 2:
   {
-    if (tmp_sel == 1 ? SetLX200(":SXrg,y#") == LX200_VALUESET : SetLX200(":SXrg,n#") == LX200_VALUESET)
+    if (tmp_sel == 1 ? m_client->enableGoTo(true) == LX200_VALUESET : m_client->enableGoTo(false) == LX200_VALUESET)
     {
       DisplayMessage(T_REFRACTION, (tmp_sel == 1) ? T_ON : T_OFF, 1000);
     }
@@ -254,13 +254,13 @@ void SmartHandController::menuGuideRate()
 {
   char outRate[20];
   char cmd[20];
-  if (DisplayMessageLX200(GetLX200(":GXR0#", outRate, sizeof(outRate))))
+  if (DisplayMessageLX200(m_client->get(":GXR0#", outRate, sizeof(outRate))))
   {
     float guiderate = atof(&outRate[0]);
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_GUIDESPEED, "", &guiderate, 0.1f, 1.f, 4u, 2u, "x"))
     {
       sprintf(cmd, ":SXR0,%03d#", (int)(guiderate * 100));
-      DisplayMessageLX200(SetLX200(cmd),false);
+      DisplayMessageLX200(m_client->set(cmd),false);
     }
   }
 }
@@ -298,14 +298,14 @@ void SmartHandController::menuSetDriftRate(int axis)
   char unit[20];
   axis == 0 ? strcpy(title, T_RIGHTASC) : strcpy(title, T_DECLINAISON);
   axis == 0 ? strcpy(unit, "s/SI") : strcpy(unit, "\"/SI");
-  if (DisplayMessageLX200(GetLX200(cmd, outRate, sizeof(outRate))))
+  if (DisplayMessageLX200(m_client->get(cmd, outRate, sizeof(outRate))))
   {
     float rate = (float)atol(&outRate[0])/10000.0;
     if (display->UserInterfaceInputValueFloat(&buttonPad, title, "", &rate, -2.f, 2.f, 6u, 4u, unit))
     {
       sprintf(cmd, ":SXRx,%06ld#", (long)(rate*10000));
       cmd[4] = axis == 0 ? 'e' : 'f';
-      DisplayMessageLX200(SetLX200(cmd),false);
+      DisplayMessageLX200(m_client->set(cmd),false);
     }
   }
 }
@@ -324,7 +324,7 @@ void SmartHandController::menuReticule()
     {
       char cmd[5] = ":Bn#";
       cmd[2] = selection == 1 ? '+' : '-';
-      DisplayMessageLX200(SetLX200(cmd), false);
+      DisplayMessageLX200(m_client->set(cmd), false);
     }
   }
 
