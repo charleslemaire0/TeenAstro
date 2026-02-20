@@ -503,12 +503,16 @@ void processCommands()
 
 void mainLoopTask(void *arg)
 {
+  TickType_t xLastWakeTime;
+  const TickType_t xPeriod =  pdMS_TO_TICKS(1);  // in mS
   while(1)
   { 
+    xLastWakeTime = xTaskGetTickCount();  
     processCommands();
-    vTaskDelay(100);
+    vTaskDelayUntil( &xLastWakeTime, xPeriod );
   }
 }
+
 
 
 void setup() 
@@ -517,11 +521,11 @@ void setup()
 
   delay(1000);
   PORT.println("\nDebug Monitor");
-
+  
   xTaskCreate(
     mainLoopTask,    // Function that should be called
     "Main Loop",    // Name of the task (for debugging)
-    2000,            // Stack size (bytes)
+    4096,            // Stack size (bytes)
     NULL,           // Parameter to pass
     1,               // Task priority
     NULL             // Task handle

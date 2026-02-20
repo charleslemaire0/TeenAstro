@@ -2,14 +2,15 @@
     {
         "mType": "Eq-German",
         "DefaultR": "Max",
-        "MaxR": 1000,
+        "MaxR": 800,
         "GuideR": 0.5,
         "Acc": "3.7",
         "SlowR": 4,
         "MediumR": 16,
         "FastR": 64,
-        "mrot1": "Direct",
-        "mge1": "1000",
+        "mrot1": "Reverse",
+        "mge1": 1720,
+        "mge1f": 0,
         "mst1": "200",
         "mmu1": 16,
         "mbl1": "0",
@@ -17,7 +18,8 @@
         "mhc1": 1000,
         "msil1": "0",
         "mrot2": "Direct",
-        "mge2": "1000",
+        "mge2": 1755,
+        "mge2f": 42,
         "mst2": "200",
         "mmu2": 16,
         "mbl2": "0",
@@ -29,14 +31,11 @@
         "el": 10,
         "wl": 10,
         "ul": 12,
-        "poleAlign": "True",
-        "corrTrack": "disabled",
-        "a1min": -360,
+        "a1min": 360,
         "a1max": 360,
-        "a2min": -360,
+        "a2min": 360,
         "a2max": 360,
-        "mge1f": 8,
-        "mge2f": 10
+        "mEn": true
     },
     [
         {
@@ -82,7 +81,7 @@
             "timeZone": -0.0
         },
         {
-            "name": "Site3",
+            "name": "",
             "latitude": [
                 0,
                 0
@@ -93,7 +92,7 @@
             ],
             "elevation": 0,
             "currentSite": 0,
-            "timeZone": -0.0
+            "timeZone": 0.0
         }
     ]
 ]
