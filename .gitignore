@@ -1,3 +1,7 @@
+# Debug and test build output (do not commit)
+debug-*.log
+/tests/.pio/
+
 # Prerequisites
 *.d
 
