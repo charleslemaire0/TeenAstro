@@ -47,6 +47,10 @@ class MountState {
   final String boardVersion;
   final String driverType;
 
+  // Site location (degrees, from :Gtf# / :Ggf#)
+  final double latitude;
+  final double longitude;
+
   // Focuser
   final String focuserStatus;
   final bool focuserConnected;
@@ -83,6 +87,8 @@ class MountState {
     this.versionNum = '',
     this.boardVersion = '',
     this.driverType = '',
+    this.latitude = 0.0,
+    this.longitude = 0.0,
     this.focuserStatus = '',
     this.focuserConnected = false,
   });
@@ -209,6 +215,8 @@ class MountState {
     String? versionNum,
     String? boardVersion,
     String? driverType,
+    double? latitude,
+    double? longitude,
     String? focuserStatus,
     bool? focuserConnected,
   }) {
@@ -244,6 +252,8 @@ class MountState {
       versionNum: versionNum ?? this.versionNum,
       boardVersion: boardVersion ?? this.boardVersion,
       driverType: driverType ?? this.driverType,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       focuserStatus: focuserStatus ?? this.focuserStatus,
       focuserConnected: focuserConnected ?? this.focuserConnected,
     );

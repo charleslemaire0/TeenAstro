@@ -8,6 +8,47 @@ enum GotoError {
   alt, limitSense, axis1, axis2, underPole, meridian
 }
 
+/// Human-readable root cause for goto/slew failures.
+String gotoErrorCause(GotoError e) {
+  switch (e) {
+    case GotoError.none:
+      return 'OK';
+    case GotoError.belowHorizon:
+      return 'Target is below the horizon';
+    case GotoError.noObjectSelected:
+      return 'No target selected';
+    case GotoError.sameSide:
+      return 'Target on same pier side (meridian flip may be needed)';
+    case GotoError.parked:
+      return 'Mount is parked; unpark first';
+    case GotoError.slewing:
+      return 'Mount is already slewing';
+    case GotoError.limits:
+      return 'Target outside slew limits';
+    case GotoError.guidingBusy:
+      return 'Guiding in progress';
+    case GotoError.aboveOverhead:
+      return 'Target above overhead limit';
+    case GotoError.motor:
+    case GotoError.motorFault:
+      return 'Motor fault';
+    case GotoError.alt:
+      return 'Altitude limit';
+    case GotoError.limitSense:
+      return 'Limit sensor triggered';
+    case GotoError.axis1:
+      return 'Axis 1 limit';
+    case GotoError.axis2:
+      return 'Axis 2 limit';
+    case GotoError.underPole:
+      return 'Target under the pole';
+    case GotoError.meridian:
+      return 'Meridian limit (flip or reposition)';
+    case GotoError.unknown10:
+      return 'Goto rejected by mount';
+  }
+}
+
 /// Navigation mode
 enum NavMode { sync, goto_, pushTo }
 
@@ -90,6 +131,8 @@ class LX200 {
   static const alignSave       = ':AW#';
   static const alignClear      = ':AC#';
   static const getAlignError   = ':AE#';
+  /// Add alignment star n (OnStepX-style: n=1 first star, n=2 second, n=3 third, etc.)
+  static String alignAddStar(int n) => ':A$n#';
   static const pierEast  = ':SmE#';
   static const pierWest  = ':SmW#';
   static const pierNone  = ':SmN#';
@@ -98,6 +141,24 @@ class LX200 {
   static const focuserIn   = ':F-#';
   static const focuserOut  = ':F+#';
   static const focuserStop = ':FQ#';
+
+  // Site / Location reading
+  static const getLatitude  = ':Gtf#';
+  static const getLongitude = ':Ggf#';
+  static const getElevation = ':Ge#';
+
+  // Time / Date setting
+  static String setLocalTime(String hms)   => ':SL$hms#';
+  static String setDate(String mmddyy)     => ':SC$mmddyy#';
+  static String setTimeZone(String offset) => ':SG$offset#';
+
+  // Location setting
+  static String setLatitude(String dms)  => ':St$dms#';
+  static String setLongitude(String dms) => ':Sg$dms#';
+
+  // GNSS sync (TeenAstro-specific)
+  static const gnssSyncFull = ':gs#';
+  static const gnssSyncTime = ':gt#';
 
   // Refraction
   static const getRefractionEnabled = ':GXrt#';
@@ -123,8 +184,8 @@ CmdReply getReplyType(String cmd) {
   final c2 = cmd[2];
 
   switch (c1) {
-    case 'A': // Alignment
-      if ('*023CWA'.contains(c2)) return CmdReply.shortBool;
+    case 'A': // Alignment (:A0# :A1# .. :A9# :A*# :AE# etc.)
+      if ('*0123456789CWA'.contains(c2)) return CmdReply.shortBool;
       if (c2 == 'E') return CmdReply.long_;
       return CmdReply.invalid;
     case 'B': // Reticule

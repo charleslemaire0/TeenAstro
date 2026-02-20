@@ -42,7 +42,7 @@ class LX200TcpClient {
   int get lastPort => _lastPort;
 
   Future<bool> connect(String ip, int port, {Duration timeout = const Duration(seconds: 5)}) async {
-    if (_state == TcpState.connected) await disconnect();
+    if (_state == TcpState.connected || _subscription != null) await disconnect();
     _state = TcpState.connecting;
     _rxBuffer.clear();
     _lastIp = ip;
@@ -132,6 +132,11 @@ class LX200TcpClient {
       // Send the command
       _socket!.add(Uint8List.fromList(cmd.codeUnits));
       await _socket!.flush();
+      // #region agent log
+      agentLog('lx200_tcp_client.dart:sendCommand', 'cmd sent', {
+        'cmd': cmd, 'replyType': replyType.name, 'connected': isConnected,
+      }, 'H6');
+      // #endregion
 
       if (replyType == CmdReply.none) {
         return '';
@@ -140,12 +145,23 @@ class LX200TcpClient {
       // Wait for response by polling _rxBuffer with a timeout
       final deadline = DateTime.now().add(effectiveTimeout);
       final buffer = StringBuffer();
+      bool gotData = false;
 
       while (DateTime.now().isBefore(deadline)) {
         // Consume any bytes already in the buffer
         if (_rxBuffer.isNotEmpty) {
-          buffer.write(String.fromCharCodes(_rxBuffer));
+          final chunk = String.fromCharCodes(_rxBuffer);
+          buffer.write(chunk);
           _rxBuffer.clear();
+          // #region agent log
+          if (!gotData) {
+            agentLog('lx200_tcp_client.dart:sendCommand', 'first data received', {
+              'cmd': cmd, 'chunk': chunk, 'bufferSoFar': buffer.toString(),
+              'connected': isConnected,
+            }, 'H6');
+            gotData = true;
+          }
+          // #endregion
         }
 
         // Check if we have a complete response
@@ -169,6 +185,12 @@ class LX200TcpClient {
         await Future.delayed(const Duration(milliseconds: 20));
       }
 
+      // #region agent log
+      agentLog('lx200_tcp_client.dart:sendCommand', 'TIMEOUT', {
+        'cmd': cmd, 'bufContent': buffer.toString(), 'gotData': gotData,
+        'connected': isConnected,
+      }, 'H6');
+      // #endregion
       DebugLog.add('$cmd -> TIMEOUT (buf="${buffer.toString()}")');
       return '';
     } catch (e) {

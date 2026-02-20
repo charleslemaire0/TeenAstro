@@ -12,6 +12,7 @@ class MountStateNotifier extends StateNotifier<MountState> {
   bool _polling = false;
   int _pollCount = 0;
   bool _versionFetched = false;
+  bool _siteFetched = false;
 
   /// Delay between individual commands to give the firmware breathing room
   static const _cmdDelay = Duration(milliseconds: 50);
@@ -56,7 +57,8 @@ class MountStateNotifier extends StateNotifier<MountState> {
           await Future.delayed(const Duration(seconds: 5));
           continue;
         }
-        _versionFetched = false;
+        if (state.productName.isEmpty) _versionFetched = false;
+        if (state.latitude == 0.0 && state.longitude == 0.0) _siteFetched = false;
       }
 
       try {
@@ -81,7 +83,14 @@ class MountStateNotifier extends StateNotifier<MountState> {
     if (!_versionFetched) {
       await _fetchVersion();
       _versionFetched = true;
-      return; // Don't overload: version fetch is enough for the first cycle
+      return;
+    }
+
+    // Fetch site location once (needed for sky map projection)
+    if (!_siteFetched) {
+      await _fetchSite();
+      _siteFetched = true;
+      return;
     }
 
     // Always fetch status
@@ -98,6 +107,24 @@ class MountStateNotifier extends StateNotifier<MountState> {
     }
 
     _pollCount++;
+
+    // #region agent log
+    if (_pollCount <= 6) {
+      agentLog('mount_state_provider.dart:_poll', 'poll cycle done', {
+        'pollCount': _pollCount,
+        'ra': state.ra,
+        'dec': state.dec,
+        'alt': state.alt,
+        'az': state.az,
+        'utcTime': state.utcTime,
+        'siderealTime': state.siderealTime,
+        'lat': state.latitude,
+        'lon': state.longitude,
+        'tracking': state.tracking.name,
+        'valid': state.valid,
+      }, 'H2A');
+    }
+    // #endregion
   }
 
   Future<void> _fetchStatus() async {
@@ -150,6 +177,11 @@ class MountStateNotifier extends StateNotifier<MountState> {
   }
 
   Future<void> _fetchVersion() async {
+    // #region agent log
+    agentLog('mount_state_provider.dart:_fetchVersion', 'start', {
+      'connected': _client.isConnected,
+    }, 'H7');
+    // #endregion
     final name = await _client.sendCommand(LX200.getProductName);
     await Future.delayed(_cmdDelay);
     final ver = await _client.sendCommand(LX200.getVersionNum);
@@ -157,6 +189,14 @@ class MountStateNotifier extends StateNotifier<MountState> {
     final board = await _client.sendCommand(LX200.getBoardVersion);
     await Future.delayed(_cmdDelay);
     final driver = await _client.sendCommand(LX200.getDriverType);
+
+    // #region agent log
+    agentLog('mount_state_provider.dart:_fetchVersion', 'done', {
+      'name': name ?? 'null', 'ver': ver ?? 'null',
+      'board': board ?? 'null', 'driver': driver ?? 'null',
+      'connected': _client.isConnected,
+    }, 'H7');
+    // #endregion
 
     state = state.copyWith(
       productName: name ?? '',
@@ -166,9 +206,46 @@ class MountStateNotifier extends StateNotifier<MountState> {
     );
   }
 
+  Future<void> _fetchSite() async {
+    final latStr = await _client.sendCommand(LX200.getLatitude);
+    await Future.delayed(_cmdDelay);
+    final lonStr = await _client.sendCommand(LX200.getLongitude);
+
+    // #region agent log
+    agentLog('mount_state_provider.dart:_fetchSite', 'site fetched', {
+      'latStr': latStr ?? 'null',
+      'lonStr': lonStr ?? 'null',
+    }, 'H2B');
+    // #endregion
+
+    if (latStr != null && latStr.isNotEmpty) {
+      final lat = _parseDms(latStr);
+      if (lat != null) state = state.copyWith(latitude: lat);
+    }
+    if (lonStr != null && lonStr.isNotEmpty) {
+      final lon = _parseDms(lonStr);
+      if (lon != null) state = state.copyWith(longitude: lon);
+    }
+  }
+
+  /// Parse a DMS string like "+47*37:54" or "+047*37:54" into decimal degrees.
+  static double? _parseDms(String s) {
+    if (s.isEmpty) return null;
+    final sign = s.startsWith('-') ? -1.0 : 1.0;
+    final withColons = s.replaceAll('*', ':');
+    final cleaned = withColons.replaceAll(RegExp(r'[^0-9.:]'), '');
+    final parts = cleaned.split(':');
+    if (parts.isEmpty) return null;
+    final deg = double.tryParse(parts[0]) ?? 0;
+    final min = parts.length > 1 ? (double.tryParse(parts[1]) ?? 0) : 0;
+    final sec = parts.length > 2 ? (double.tryParse(parts[2]) ?? 0) : 0;
+    return sign * (deg + min / 60 + sec / 3600);
+  }
+
   /// Force a full refresh
   Future<void> refresh() async {
     _versionFetched = false;
+    _siteFetched = false;
     await _poll();
   }
 

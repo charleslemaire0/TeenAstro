@@ -61,6 +61,7 @@ class AppShell extends StatelessWidget {
           NavigationDestination(icon: Icon(Icons.gamepad), label: 'Control'),
           NavigationDestination(icon: Icon(Icons.my_location), label: 'Goto'),
           NavigationDestination(icon: Icon(Icons.track_changes), label: 'Tracking'),
+          NavigationDestination(icon: Icon(Icons.architecture), label: 'Align'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
@@ -70,8 +71,9 @@ class AppShell extends StatelessWidget {
   int _currentIndex(String location) {
     if (location.startsWith('/control')) return 1;
     if (location.startsWith('/goto') || location.startsWith('/catalogs')) return 2;
-    if (location.startsWith('/tracking') || location.startsWith('/alignment')) return 3;
-    if (location.startsWith('/settings')) return 4;
+    if (location.startsWith('/tracking')) return 3;
+    if (location.startsWith('/alignment')) return 4;
+    if (location.startsWith('/settings')) return 5;
     return 0;
   }
 
@@ -81,7 +83,8 @@ class AppShell extends StatelessWidget {
       case 1: context.go('/control');
       case 2: context.go('/goto');
       case 3: context.go('/tracking');
-      case 4: context.go('/settings');
+      case 4: context.go('/alignment');
+      case 5: context.go('/settings');
     }
   }
 }

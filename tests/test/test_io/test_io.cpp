@@ -229,6 +229,10 @@ void test_getReplyType_rate(void) {
 void test_getReplyType_alignment(void) {
     TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":A0#"));
     TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":A*#"));
+    TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":A1#"));
+    TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":A2#"));
+    TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":A3#"));
+    TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":A9#"));
     TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":AW#"));
     TEST_ASSERT_EQUAL(CMDR_LONG, getReplyType(":AE#"));
 }
@@ -267,6 +271,35 @@ void test_reply_short_bool_false(void) {
     mockStream.loadResponse("0");
     LX200RETURN ret = client->homeGoto();
     TEST_ASSERT_EQUAL(LX200_SETVALUEFAILED, ret);
+}
+
+// Multi-star alignment (OnStepX-style): :A0# start, :A1# 1st star, :An# nth star
+void test_align_start_sends_A0(void) {
+    prepareSetOk();
+    LX200RETURN ret = client->alignStart();
+    TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":A0#", mockStream.getSent());
+}
+
+void test_align_select_star_1_sends_A1(void) {
+    prepareSetOk();
+    LX200RETURN ret = client->alignSelectStar(1);
+    TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":A1#", mockStream.getSent());
+}
+
+void test_align_select_star_2_sends_A2(void) {
+    prepareSetOk();
+    LX200RETURN ret = client->alignSelectStar(2);
+    TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":A2#", mockStream.getSent());
+}
+
+void test_align_select_star_3_sends_A3(void) {
+    prepareSetOk();
+    LX200RETURN ret = client->alignSelectStar(3);
+    TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":A3#", mockStream.getSent());
 }
 
 void test_reply_long(void) {
@@ -1099,6 +1132,10 @@ int main(int argc, char** argv) {
     RUN_TEST(test_reply_no);
     RUN_TEST(test_reply_short_bool_true);
     RUN_TEST(test_reply_short_bool_false);
+    RUN_TEST(test_align_start_sends_A0);
+    RUN_TEST(test_align_select_star_1_sends_A1);
+    RUN_TEST(test_align_select_star_2_sends_A2);
+    RUN_TEST(test_align_select_star_3_sends_A3);
     RUN_TEST(test_reply_long);
     RUN_TEST(test_timeout_returns_failure);
 

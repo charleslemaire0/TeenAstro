@@ -5,7 +5,7 @@
 #include "ValueToString.h"
 
 // -----------------------------------------------------------------------------
-//   A - Alignment  :A0# :A*# :A2# :AE# :AC# :AA# :AW#
+//   A - Alignment  :A0# :A*# :A1# :A2# :A3# ... :An#  (OnStepX-style: A1=1st star, An=nth)
 // -----------------------------------------------------------------------------
 void Command_A() {
   switch (commandState.command[1]) {
@@ -41,8 +41,16 @@ void Command_A() {
     replyShortTrue();
     break;
   }
-  case '2': {
-    // :A2#  LX200 standard (alignment menu 2)
+  case '1':
+  case '2':
+  case '3':
+  case '4':
+  case '5':
+  case '6':
+  case '7':
+  case '8':
+  case '9': {
+    // :A1# :A2# :A3# ... :A9#  OnStepX-style: add nth alignment star (1 = first, 2 = second, ...)
     double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
     double Lat = *localSite.latitude();
     Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);

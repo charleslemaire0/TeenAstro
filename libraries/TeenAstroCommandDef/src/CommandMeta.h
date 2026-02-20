@@ -64,8 +64,8 @@ inline CMDREPLY getReplyType(const char* command)
   {
   // ---- A  Alignment ---------------------------------------------------
   case Cmd::ALIGNMENT:
-    if (strchr("*023CWA", command[2])) return CMDR_SHORT_BOOL;
-    if (strchr("E", command[2]))       return CMDR_LONG;
+    if (strchr("*0123456789CWA", command[2])) return CMDR_SHORT_BOOL;
+    if (strchr("E", command[2]))              return CMDR_LONG;
     return CMDR_INVALID;
 
   // ---- B  Reticule brightness ----------------------------------------

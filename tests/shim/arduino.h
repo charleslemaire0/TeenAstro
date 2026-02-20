@@ -15,8 +15,16 @@
 #include <cstring>
 #include <cstdlib>
 #include <chrono>
+#include <algorithm>
 
 typedef uint8_t byte;
+
+#ifndef max
+#define max(a,b) (((a)>(b))?(a):(b))
+#endif
+#ifndef min
+#define min(a,b) (((a)<(b))?(a):(b))
+#endif
 
 /* ------------------------------------------------------------------ */
 /*  Constants that Arduino.h normally provides                         */
@@ -36,6 +44,11 @@ typedef uint8_t byte;
 #ifndef RAD_TO_DEG
 #define RAD_TO_DEG (180.0 / M_PI)
 #endif
+
+/* ------------------------------------------------------------------ */
+/*  delay() stub (no-op for fast tests; link with real impl if needed) */
+/* ------------------------------------------------------------------ */
+inline void delay(unsigned long ms) { (void)ms; }
 
 /* ------------------------------------------------------------------ */
 /*  millis() stub using std::chrono                                    */

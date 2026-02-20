@@ -143,10 +143,9 @@ TeenAstroMountStatus::AlignReply TeenAstroMountStatus::addStar()
     return AlignReply::ALIR_FAILED2;
   }
 
-  uint8_t n = 0;
-  if (getAlignMode() == ALIM_TWO)        n = 2;
-  else if (getAlignMode() == ALIM_THREE)  n = 3;
-  else { stopAlign(); return AlignReply::ALIR_FAILED2; }
+  // OnStepX-style: :A1# first star, :A2# second, :A3# third, etc.
+  uint8_t n = (uint8_t)getAlignStar();
+  if (n < 1 || n > 9) { stopAlign(); return AlignReply::ALIR_FAILED2; }
 
   if (m_client->alignSelectStar(n) == LX200_VALUESET)
   {
