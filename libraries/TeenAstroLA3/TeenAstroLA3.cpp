@@ -15,7 +15,7 @@
 // LA3 methods
 //
 
-static double LA3::modRad(double angle)
+double LA3::modRad(double angle)
 {
 	return remainder(angle, 2 * M_PI);
 }
