@@ -64,13 +64,19 @@ class _DebugPanel extends StatefulWidget {
   State<_DebugPanel> createState() => _DebugPanelState();
 }
 
-class _DebugPanelState extends State<_DebugPanel> {
+class _DebugPanelState extends State<_DebugPanel>
+    with SingleTickerProviderStateMixin {
   late final Timer _timer;
+  late final TabController _tabs;
+  int _activeTab = 0;
 
   @override
   void initState() {
     super.initState();
-    // Refresh the debug log display periodically
+    _tabs = TabController(length: 2, vsync: this)
+      ..addListener(() {
+        if (_tabs.indexIsChanging) setState(() => _activeTab = _tabs.index);
+      });
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
@@ -79,12 +85,15 @@ class _DebugPanelState extends State<_DebugPanel> {
   @override
   void dispose() {
     _timer.cancel();
+    _tabs.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final logs = DebugLog.entries;
+    final debugLogs = DebugLog.entries;
+    final traceLogs = ConnectTrace.entries;
+
     return Card(
       color: const Color(0xFF0A0E14),
       child: Padding(
@@ -92,31 +101,73 @@ class _DebugPanelState extends State<_DebugPanel> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Tab bar + clear button
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Debug Log (${logs.length})',
-                  style: TextStyle(color: TAColors.warning, fontSize: 12, fontWeight: FontWeight.w600)),
+                Expanded(
+                  child: TabBar(
+                    controller: _tabs,
+                    labelColor: TAColors.warning,
+                    unselectedLabelColor: TAColors.textSecondary,
+                    indicatorColor: TAColors.accent,
+                    labelStyle: const TextStyle(
+                        fontSize: 11, fontWeight: FontWeight.w600),
+                    tabs: [
+                      Tab(text: 'Debug (${debugLogs.length})'),
+                      Tab(text: 'Trace (${traceLogs.length})'),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
                 GestureDetector(
-                  onTap: () { DebugLog.clear(); setState(() {}); },
-                  child: Text('Clear', style: TextStyle(color: TAColors.accent, fontSize: 12)),
+                  onTap: () {
+                    if (_activeTab == 0) {
+                      DebugLog.clear();
+                    } else {
+                      ConnectTrace.clear();
+                    }
+                    setState(() {});
+                  },
+                  child: Text('Clear',
+                      style: TextStyle(color: TAColors.accent, fontSize: 12)),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             SizedBox(
-              height: 200,
-              child: SingleChildScrollView(
-                reverse: true,
-                child: Text(
-                  logs.isEmpty ? '(no logs yet)' : logs.join('\n'),
-                  style: const TextStyle(
-                    color: Color(0xFF4EC9B0),
-                    fontFamily: 'monospace',
-                    fontSize: 10,
-                    height: 1.4,
+              height: 220,
+              child: TabBarView(
+                controller: _tabs,
+                children: [
+                  // --- Debug log tab ---
+                  SingleChildScrollView(
+                    reverse: true,
+                    child: Text(
+                      debugLogs.isEmpty ? '(no logs yet)' : debugLogs.join('\n'),
+                      style: const TextStyle(
+                        color: Color(0xFF4EC9B0),
+                        fontFamily: 'monospace',
+                        fontSize: 10,
+                        height: 1.4,
+                      ),
+                    ),
                   ),
-                ),
+                  // --- Connection trace tab ---
+                  SingleChildScrollView(
+                    reverse: true,
+                    child: SelectableText(
+                      traceLogs.isEmpty
+                          ? '(no trace yet)'
+                          : traceLogs.join('\n'),
+                      style: const TextStyle(
+                        color: Color(0xFFCE9178),
+                        fontFamily: 'monospace',
+                        fontSize: 10,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

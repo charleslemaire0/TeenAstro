@@ -93,18 +93,10 @@ class MountStateNotifier extends StateNotifier<MountState> {
       return;
     }
 
-    // Always fetch status
-    await _fetchStatus();
-    await Future.delayed(_cmdDelay);
-
-    // Alternate between position and time/target to spread the load
-    if (_pollCount % 2 == 0) {
-      await _fetchPosition();
-    } else {
-      await _fetchTime();
-      await Future.delayed(_cmdDelay);
-      await _fetchTarget();
-    }
+    // Single :GXAS# command replaces all per-field queries.
+    // The WiFi bridge serves from its own 500 ms cache when fresh, so this
+    // costs at most one serial round-trip to the MainUnit per 2 s poll cycle.
+    await _fetchAllState();
 
     _pollCount++;
 
@@ -127,53 +119,11 @@ class MountStateNotifier extends StateNotifier<MountState> {
     // #endregion
   }
 
-  Future<void> _fetchStatus() async {
-    final raw = await _client.sendCommand(LX200.getStatus);
-    if (raw != null && raw.isNotEmpty) {
-      state = state.parseStatus(raw);
+  Future<void> _fetchAllState() async {
+    final raw = await _client.sendCommand(LX200.getAllState);
+    if (raw != null && raw.length == 64) {
+      state = state.parseBinaryState(raw);
     }
-  }
-
-  Future<void> _fetchPosition() async {
-    final ra = await _client.sendCommand(LX200.getRa);
-    await Future.delayed(_cmdDelay);
-    final dec = await _client.sendCommand(LX200.getDec);
-    await Future.delayed(_cmdDelay);
-    final az = await _client.sendCommand(LX200.getAz);
-    await Future.delayed(_cmdDelay);
-    final alt = await _client.sendCommand(LX200.getAlt);
-
-    state = state.copyWith(
-      ra: ra ?? state.ra,
-      dec: dec ?? state.dec,
-      az: az ?? state.az,
-      alt: alt ?? state.alt,
-    );
-  }
-
-  Future<void> _fetchTime() async {
-    final utc = await _client.sendCommand(LX200.getUtcTime);
-    await Future.delayed(_cmdDelay);
-    final date = await _client.sendCommand(LX200.getUtcDate);
-    await Future.delayed(_cmdDelay);
-    final sid = await _client.sendCommand(LX200.getSidereal);
-
-    state = state.copyWith(
-      utcTime: utc ?? state.utcTime,
-      utcDate: date ?? state.utcDate,
-      siderealTime: sid ?? state.siderealTime,
-    );
-  }
-
-  Future<void> _fetchTarget() async {
-    final ra = await _client.sendCommand(LX200.getTargetRa);
-    await Future.delayed(_cmdDelay);
-    final dec = await _client.sendCommand(LX200.getTargetDec);
-
-    state = state.copyWith(
-      targetRa: ra ?? state.targetRa,
-      targetDec: dec ?? state.targetDec,
-    );
   }
 
   Future<void> _fetchVersion() async {

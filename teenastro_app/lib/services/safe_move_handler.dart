@@ -28,7 +28,7 @@ class SafeMoveHandler {
   void startMove(String moveCmd) {
     _maxMoveTimer?.cancel();
     _maxMoveTimer = null;
-    _client.send(moveCmd);
+    _client.sendImmediate(moveCmd);
     _maxMoveTimer = Timer(Duration(seconds: kMaxMoveDurationSeconds), () {
       _maxMoveTimer = null;
       _onMaxDurationReached?.call();
@@ -45,16 +45,25 @@ class SafeMoveHandler {
 
   /// Send :Q# multiple times with short delay to improve chance the mount receives stop.
   void _sendRedundantStop() {
-    Future(() async {
-      for (int i = 0; i < kRedundantStopCount; i++) {
-        if (_client.isConnected) {
-          _client.send(LX200.stopAll);
-        }
-        if (i < kRedundantStopCount - 1) {
-          await Future.delayed(const Duration(milliseconds: kRedundantStopDelayMs));
-        }
+    for (int i = 0; i < kRedundantStopCount; i++) {
+      if (_client.isConnected) {
+        _client.sendImmediate(LX200.stopAll);
       }
-    });
+      if (i < kRedundantStopCount - 1) {
+        Future.delayed(const Duration(milliseconds: kRedundantStopDelayMs))
+            .then((_) => _sendNextStop(i + 1));
+        return;
+      }
+    }
+  }
+
+  void _sendNextStop(int i) {
+    if (i >= kRedundantStopCount) return;
+    if (_client.isConnected) _client.sendImmediate(LX200.stopAll);
+    if (i < kRedundantStopCount - 1) {
+      Future.delayed(const Duration(milliseconds: kRedundantStopDelayMs))
+          .then((_) => _sendNextStop(i + 1));
+    }
   }
 
   /// Cancel any active timer. Call when disconnecting or disposing.

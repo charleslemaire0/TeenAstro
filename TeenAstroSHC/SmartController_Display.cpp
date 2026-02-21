@@ -350,7 +350,11 @@ void SmartHandController::updateMainDisplay(PAGES page)
   u8g2_uint_t step1 = u8g2_GetUTF8Width(u8g2, "44");
   u8g2_uint_t step2 = u8g2_GetUTF8Width(u8g2, "4") + 1;
   ta_MountStatus.removeLastConnectionFailure();
-  ta_MountStatus.updateMount();
+  // Single command refreshes all display state: status, positions (RA/Dec/
+  // Alt/Az/LST/target), UTC date/time, and focuser pos/speed.
+  // Falls back to the legacy per-query path for axis-step/degree pages that
+  // are not covered by the bulk packet.
+  ta_MountStatus.updateAllState();
   if (ta_MountStatus.isAligning())
     page = P_ALIGN;
 
@@ -362,29 +366,14 @@ void SmartHandController::updateMainDisplay(PAGES page)
       ta_MountStatus.nextStepAlign();
     }
   }
-  else if (page == P_RADEC && !ta_MountStatus.isPulseGuiding())
-  {
-    ta_MountStatus.updateRaDec();
-  }
   else if (page == P_HADEC && !ta_MountStatus.isPulseGuiding())
   {
+    // HA is not in the bulk packet — keep individual query for this page only.
     ta_MountStatus.updateHaDec();
-  }
-  else if (page == P_ALTAZ && !ta_MountStatus.isPulseGuiding())
-  {
-    ta_MountStatus.updateAzAlt();
   }
   else if (page == P_PUSH && !ta_MountStatus.isPulseGuiding())
   {
     ta_MountStatus.updatePush();
-  }
-  else if (page == P_TIME && !ta_MountStatus.isPulseGuiding())
-  {
-    ta_MountStatus.updateTime();
-  }
-  else if (page == P_FOCUSER && !ta_MountStatus.isPulseGuiding())
-  {
-    ta_MountStatus.updateFocuser();
   }
   else if (page == P_AXIS_STEP && !ta_MountStatus.isPulseGuiding())
   {

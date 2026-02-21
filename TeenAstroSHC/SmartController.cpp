@@ -125,7 +125,7 @@ void SmartHandController::setup(
         DisplayMessage("Focuser " T_VERSION, &out[26], 1200);
       }
     }
-    ta_MountStatus.updateMount();
+    ta_MountStatus.updateAllState();
     if (!ta_MountStatus.hasGNSSBoard())
     {
       ta_MountStatus.updateTime();
