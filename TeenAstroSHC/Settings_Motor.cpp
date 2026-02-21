@@ -48,66 +48,41 @@ void SmartHandController::menuMotor(const uint8_t axis)
       break;
     }
   }
-
 }
+
 void SmartHandController::DisplayMotorSettings(const uint8_t &axis)
 {
+  if (!ta_MountStatus.hasConfig())
+  {
+    DisplayMessage(T_LX200COMMAND, T_FAILED, 500);
+    return;
+  }
+  int ax = axis - 1;
   char line1[32] = "";
   char line2[32] = "";
   char line3[32] = "";
   char line4[32] = "";
-  bool reverse;
-  float backlash, totGear, stepPerRot;
-  uint8_t microStep;
-  unsigned int lowCurr, highCurr;
   sprintf(line1, T_MOTORSETTINGS, axis);
-  if (DisplayMessageLX200(m_client->readReverse(axis, reverse)))
-  {
-    reverse ? sprintf(line3, T_REVERSEDROTATION) : sprintf(line3, T_DIRECTROTATION);
-  }
-  if (DisplayMessageLX200(m_client->readTotGear(axis, totGear)))
-  {
-    sprintf(line4, T_RATIO": %u", (unsigned int)totGear);
-  }
-
+  ta_MountStatus.getCfgReverse(ax) ? sprintf(line3, T_REVERSEDROTATION) : sprintf(line3, T_DIRECTROTATION);
+  sprintf(line4, T_RATIO": %u", (unsigned int)(ta_MountStatus.getCfgGear(ax) / 1000.0f));
   DisplayLongMessage(line1, NULL, line3, line4, -1);
 
-  line2[0] = 0;
-  line3[0] = 0;
-  line4[0] = 0;
-
-  if (DisplayMessageLX200(m_client->readStepPerRot(axis, stepPerRot)))
-  {
-    sprintf(line2, "%u " T_STEPSPERROT, (unsigned int)stepPerRot);
-  }
-  if (DisplayMessageLX200(m_client->readMicro(axis, microStep)))
-  {
-    sprintf(line3, T_MICROSTEP ": %u", (unsigned int)pow(2, microStep));
-  }
-  if (DisplayMessageLX200(m_client->readBacklash(axis, backlash)))
-  {
-    sprintf(line4, T_BACKLASH": %u sec.", (unsigned int)backlash);
-  }
+  line2[0] = line3[0] = line4[0] = 0;
+  sprintf(line2, "%u " T_STEPSPERROT, (unsigned int)ta_MountStatus.getCfgStepRot(ax));
+  sprintf(line3, T_MICROSTEP ": %u", (unsigned int)pow(2, ta_MountStatus.getCfgMicro(ax)));
+  sprintf(line4, T_BACKLASH": %u sec.", (unsigned int)ta_MountStatus.getCfgBacklash(ax));
   DisplayLongMessage(line1, line2, line3, line4, -1);
-  line2[0] = 0;
-  line3[0] = 0;
-  line4[0] = 0;
-  if (DisplayMessageLX200(m_client->readLowCurr(axis, lowCurr)))
-  {
-    sprintf(line3, T_LOWCURR " %u mA", lowCurr);
-  }
-  if (DisplayMessageLX200(m_client->readHighCurr(axis, highCurr)))
-  {
-    sprintf(line4, T_HIGHCURR " %u mA", highCurr);
-  }
 
+  line2[0] = line3[0] = line4[0] = 0;
+  sprintf(line3, T_LOWCURR " %u mA", ta_MountStatus.getCfgLowCurr(ax));
+  sprintf(line4, T_HIGHCURR " %u mA", ta_MountStatus.getCfgHighCurr(ax));
   DisplayLongMessage(line1, NULL, line3, line4, -1);
 }
+
 bool SmartHandController::menuSetReverse(const uint8_t &axis)
 {
-  bool reverse;
-  if (!DisplayMessageLX200(m_client->readReverse(axis, reverse)))
-    return false;
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return false; }
+  bool reverse = ta_MountStatus.getCfgReverse(axis - 1);
   char text[20];
   char * string_list = T_DIRECT "\n" T_REVERSE;
   sprintf(text, T_ROTATION " M%u", axis);
@@ -115,67 +90,77 @@ bool SmartHandController::menuSetReverse(const uint8_t &axis)
   if (choice)
   {
     reverse = (bool)(choice - 1);
-    return DisplayMessageLX200(m_client->writeReverse(axis, reverse), false);
+    bool ok = DisplayMessageLX200(m_client->writeReverse(axis, reverse), false);
+    if (ok) ta_MountStatus.updateAllConfig(true);
+    return ok;
   }
   return true;
 }
+
 bool SmartHandController::menuSetBacklash(const uint8_t &axis)
 {
-  float backlash;
-  if (!DisplayMessageLX200(m_client->readBacklash(axis, backlash)))
-    return false;
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return false; }
+  float backlash = (float)ta_MountStatus.getCfgBacklash(axis - 1);
   char text[20];
   sprintf(text, T_BACKLASH " M%u", axis);
   if (display->UserInterfaceInputValueFloat(&buttonPad, text, "", &backlash, 0, 999, 4, 0, " " T_INSECONDS))
   {
-    return DisplayMessageLX200(m_client->writeBacklash(axis, backlash), false);
+    bool ok = DisplayMessageLX200(m_client->writeBacklash(axis, backlash), false);
+    if (ok) ta_MountStatus.updateAllConfig(true);
+    return ok;
   }
   return true;
 }
+
 bool SmartHandController::menuSetBacklashRate(const uint8_t& axis)
 {
-  float backlash;
-  if (!DisplayMessageLX200(m_client->readBacklashRate(axis, backlash)))
-    return false;
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return false; }
+  float rate = (float)ta_MountStatus.getCfgBacklashRate(axis - 1);
   char text[20];
   sprintf(text, T_BACKLASHSPEED " M%u", axis);
-  if (display->UserInterfaceInputValueFloat(&buttonPad, text, "", &backlash, 16, 64, 2, 0, ""))
+  if (display->UserInterfaceInputValueFloat(&buttonPad, text, "", &rate, 16, 64, 2, 0, ""))
   {
-    return DisplayMessageLX200(m_client->writeBacklashRate(axis, backlash), false);
+    bool ok = DisplayMessageLX200(m_client->writeBacklashRate(axis, rate), false);
+    if (ok) ta_MountStatus.updateAllConfig(true);
+    return ok;
   }
   return true;
 }
+
 bool SmartHandController::menuSetTotGear(const uint8_t &axis)
 {
-  float totGear;
-  if (!DisplayMessageLX200(m_client->readTotGear(axis, totGear)))
-    return false;
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return false; }
+  float totGear = ta_MountStatus.getCfgGear(axis - 1) / 1000.0f;
   char text[20];
   sprintf(text, T_GEAR " M%u", axis);
   if (display->UserInterfaceInputValueFloat(&buttonPad, text, "", &totGear, 1, 60000, 8, 3, ""))
   {
-    return DisplayMessageLX200(m_client->writeTotGear(axis, totGear), false);
+    bool ok = DisplayMessageLX200(m_client->writeTotGear(axis, totGear), false);
+    if (ok) ta_MountStatus.updateAllConfig(true);
+    return ok;
   }
   return true;
 }
+
 bool SmartHandController::menuSetStepPerRot(const uint8_t &axis)
 {
-  float stepPerRot;
-  if (!DisplayMessageLX200(m_client->readStepPerRot(axis, stepPerRot)))
-    return false;
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return false; }
+  float stepPerRot = (float)ta_MountStatus.getCfgStepRot(axis - 1);
   char text[20];
   sprintf(text, T_STEPPER " M%u", axis);
   if (display->UserInterfaceInputValueFloatIncr(&buttonPad, text, "", &stepPerRot, 20, 400, 3, 0, 1, " " T_STEPS))
   {
-    return DisplayMessageLX200(m_client->writeStepPerRot(axis, stepPerRot), false);
+    bool ok = DisplayMessageLX200(m_client->writeStepPerRot(axis, stepPerRot), false);
+    if (ok) ta_MountStatus.updateAllConfig(true);
+    return ok;
   }
   return true;
 }
+
 bool SmartHandController::menuSetMicro(const uint8_t &axis)
 {
-  uint8_t microStep;
-  if (!DisplayMessageLX200(m_client->readMicro(axis, microStep)))
-    return false;
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return false; }
+  uint8_t microStep = ta_MountStatus.getCfgMicro(axis - 1);
   char text[20];
   char * string_list_micro = "2\n4\n8\n16 (~256)\n32\n64\n128\n256";
   sprintf(text, T_STEPPER " M%u", axis);
@@ -184,15 +169,17 @@ bool SmartHandController::menuSetMicro(const uint8_t &axis)
   if (choice)
   {
     microStep = choice - 1 + 1;
-    return DisplayMessageLX200(m_client->writeMicro(axis, microStep), false);
+    bool ok = DisplayMessageLX200(m_client->writeMicro(axis, microStep), false);
+    if (ok) ta_MountStatus.updateAllConfig(true);
+    return ok;
   }
   return true;
 }
+
 bool SmartHandController::menuSetSilentStep(const uint8_t &axis)
 {
-  uint8_t silent;
-  if (!DisplayMessageLX200(m_client->readSilentStep(axis, silent)))
-    return false;
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return false; }
+  uint8_t silent = ta_MountStatus.getCfgSilent(axis - 1) ? 1 : 0;
   char text[20];
   char * string_list_mode = T_OFF "\n" T_ON;
   sprintf(text, T_STEPPER " M%u", axis);
@@ -201,73 +188,65 @@ bool SmartHandController::menuSetSilentStep(const uint8_t &axis)
   if (choice)
   {
     silent = choice - 1;
-    return DisplayMessageLX200(m_client->writeSilentStep(axis, silent), false);
+    bool ok = DisplayMessageLX200(m_client->writeSilentStep(axis, silent), false);
+    if (ok) ta_MountStatus.updateAllConfig(true);
+    return ok;
   }
   return true;
 }
+
 bool SmartHandController::menuSetCurrent(const uint8_t &axis, bool high)
 {
-  unsigned int curr;
-  uint8_t curr8;
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return false; }
+  unsigned int curr = high ? ta_MountStatus.getCfgHighCurr(axis - 1)
+                           : ta_MountStatus.getCfgLowCurr(axis - 1);
   char text[20];
-  if (high)
-  {
-    if (!DisplayMessageLX200(m_client->readHighCurr(axis, curr)))
-    {
-      return false;
-    }
-    sprintf(text, T_HIGHCURR " M%u", axis);
-  }
-  else
-  {
-    if (!DisplayMessageLX200(m_client->readLowCurr(axis, curr)))
-    {
-      return false;
-    }
-    sprintf(text, T_LOWCURR " M%u", axis);
-  }
-
-  curr8 = curr / 100;
-
-  
+  sprintf(text, high ? T_HIGHCURR " M%u" : T_LOWCURR " M%u", axis);
+  uint8_t curr8 = curr / 100;
   if (display->UserInterfaceInputValueInteger(&buttonPad, text, "", &curr8, 2, 28, 3, "00 mA " T_PEAK))
   {
     curr = (unsigned int)curr8 * 100;
-    if (high)
-      return DisplayMessageLX200(m_client->writeHighCurr(axis, curr), false);
-    else
-      return DisplayMessageLX200(m_client->writeLowCurr(axis, curr), false);
+    bool ok = high ? DisplayMessageLX200(m_client->writeHighCurr(axis, curr), false)
+                   : DisplayMessageLX200(m_client->writeLowCurr(axis, curr), false);
+    if (ok) ta_MountStatus.updateAllConfig(true);
+    return ok;
   }
   return true;
 }
+
 bool SmartHandController::menuSetEncoderReverse(const uint8_t& axis)
 {
-  bool reverse;
-  if (!DisplayMessageLX200(m_client->readEncoderReverse(axis, reverse)))
-    return false;
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return false; }
+  bool reverse = ta_MountStatus.getCfgEncReverse(axis - 1);
   char text[20];
   char* string_list = T_DIRECT "\n" T_REVERSE;
   sprintf(text, T_ROTATION " M%u", axis);
-  uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, text, (uint8_t)reverse + 1, string_list );
+  uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, text, (uint8_t)reverse + 1, string_list);
   if (choice)
   {
     reverse = (bool)(choice - 1);
-    return DisplayMessageLX200(m_client->writeEncoderReverse(axis, reverse), false);
+    bool ok = DisplayMessageLX200(m_client->writeEncoderReverse(axis, reverse), false);
+    if (ok) ta_MountStatus.updateAllConfig(true);
+    return ok;
   }
   return true;
 }
+
 bool SmartHandController::menuSetEncoderPulsePerDegree(const uint8_t& axis)
 {
-  float ppd;
-  if (!DisplayMessageLX200(m_client->readPulsePerDegree(axis, ppd)))
-    return false;
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return false; }
+  // Cache stores ppd×100 (same as what readPulsePerDegree() returned).
+  float ppd = axis == 1 ? (float)ta_MountStatus.getCfgPPD1()
+                        : (float)ta_MountStatus.getCfgPPD2();
   char text[20];
   ppd /= 100;
   sprintf(text, T_PULSEPERDEGREE " E%u", axis);
-  if (display->UserInterfaceInputValueFloatIncr( & buttonPad, text, "", &ppd, 0.5, 3600.00, 5, 2, 0.01, ""))
+  if (display->UserInterfaceInputValueFloatIncr(&buttonPad, text, "", &ppd, 0.5, 3600.00, 5, 2, 0.01, ""))
   {
     ppd *= 100;
-    return DisplayMessageLX200(m_client->writePulsePerDegree(axis, ppd), false);
+    bool ok = DisplayMessageLX200(m_client->writePulsePerDegree(axis, ppd), false);
+    if (ok) ta_MountStatus.updateAllConfig(true);
+    return ok;
   }
   return true;
 }

@@ -265,10 +265,80 @@ public:
   const char* getMState()   { return m_focuser; }   // kept for compat but rarely used
   const char* getFocuser()  { return m_focuser; }
 
+  // Numeric accessors populated by updateAllState()
+  uint8_t  getUtcHour()   const { return m_utcH; }
+  uint8_t  getUtcMin()    const { return m_utcM; }
+  uint8_t  getUtcSec()    const { return m_utcS; }
+  uint8_t  getUtcMonth()  const { return m_utcMonth; }
+  uint8_t  getUtcDay()    const { return m_utcDay; }
+  uint8_t  getUtcYear()   const { return m_utcYear; }
+  uint32_t getFocuserPos()   const { return m_focuserPosN; }
+  uint16_t getFocuserSpeed() const { return m_focuserSpeedN; }
+
+  /// True when the all-state cache is older than 500 ms (stale).
+  bool allStateCacheStale() const { return m_timerAllState.needsUpdate(500); }
+
+  /// Returns the cached base64 string from the last successful :GXAS# call,
+  /// with the '#' terminator included, ready to forward to TCP clients.
+  const char* getAllStateB64Cached() const { return m_allStateB64; }
+
   long getTrackingRateRa()        { return m_trackRateRa; }
   long getTrackingRateDec()       { return m_trackRateDec; }
   long getStoredTrackingRateRa()  { return m_storedTrackRateRa; }
   long getStoredTrackingRateDec() { return m_storedTrackRateDec; }
+
+  // -----------------------------------------------------------------------
+  //  Config accessors (populated by updateAllConfig())
+  // -----------------------------------------------------------------------
+  bool hasConfig() const { return m_configValid; }
+
+  // Per-axis motor params: axis 0 = RA/Az (Axis1), axis 1 = Dec/Alt (Axis2)
+  uint32_t getCfgGear(int ax)         const { return m_cfgGear[ax]; }
+  uint16_t getCfgStepRot(int ax)      const { return m_cfgStepRot[ax]; }
+  uint16_t getCfgBacklash(int ax)     const { return m_cfgBacklash[ax]; }
+  uint16_t getCfgBacklashRate(int ax) const { return m_cfgBacklashRate[ax]; }
+  uint16_t getCfgLowCurr(int ax)      const { return m_cfgLowCurr[ax]; }
+  uint16_t getCfgHighCurr(int ax)     const { return m_cfgHighCurr[ax]; }
+  uint8_t  getCfgMicro(int ax)        const { return m_cfgMicro[ax]; }
+  bool     getCfgReverse(int ax)      const { return (m_cfgFlags[ax] >> 0) & 1; }
+  bool     getCfgSilent(int ax)       const { return (m_cfgFlags[ax] >> 1) & 1; }
+
+  // Rates / Speed
+  float    getCfgGuideRate()    const { return m_cfgGuideRate; }
+  float    getCfgSlowRate()     const { return m_cfgSlowRate; }
+  float    getCfgMediumRate()   const { return m_cfgMediumRate; }
+  float    getCfgFastRate()     const { return m_cfgFastRate; }
+  float    getCfgAcceleration() const { return m_cfgAcceleration; }
+  uint16_t getCfgMaxRate()      const { return m_cfgMaxRate; }
+  uint8_t  getCfgDefaultRate()  const { return m_cfgDefaultRate; }
+  uint8_t  getCfgSettleTime()   const { return m_cfgSettleTime; }
+
+  // Limits
+  int16_t  getCfgMeridianE()    const { return m_cfgMeridianE; }
+  int16_t  getCfgMeridianW()    const { return m_cfgMeridianW; }
+  int16_t  getCfgAxis1Min()     const { return m_cfgAxis1Min; }
+  int16_t  getCfgAxis1Max()     const { return m_cfgAxis1Max; }
+  int16_t  getCfgAxis2Min()     const { return m_cfgAxis2Min; }
+  int16_t  getCfgAxis2Max()     const { return m_cfgAxis2Max; }
+  uint16_t getCfgUnderPole10()  const { return m_cfgUnderPole10; }
+  int8_t   getCfgMinAlt()       const { return m_cfgMinAlt; }
+  int8_t   getCfgMaxAlt()       const { return m_cfgMaxAlt; }
+  uint8_t  getCfgMinDistPole()  const { return m_cfgMinDistPole; }
+  bool     getCfgRefrTracking() const { return (m_cfgRefrFlags >> 0) & 1; }
+  bool     getCfgRefrGoto()     const { return (m_cfgRefrFlags >> 1) & 1; }
+  bool     getCfgRefrPole()     const { return (m_cfgRefrFlags >> 2) & 1; }
+
+  // Encoders
+  uint32_t getCfgPPD1()         const { return m_cfgPPD1; }
+  uint32_t getCfgPPD2()         const { return m_cfgPPD2; }
+  uint8_t  getCfgEncSyncMode()  const { return m_cfgEncSyncMode; }
+  bool     getCfgEncReverse(int ax) const { return (m_cfgEncFlags >> ax) & 1; }
+
+  // Options
+  uint8_t  getCfgMountIdx()     const { return m_cfgMountIdx; }
+
+  /// True when the config cache is stale (> 30 s old — config rarely changes).
+  bool configCacheStale() const { return m_timerConfig.needsUpdate(30000); }
 
   // -----------------------------------------------------------------------
   //  Update methods (poll mount, rate-limited)
@@ -287,6 +357,17 @@ public:
   void updateTrackingRate();
   bool updateStoredTrackingRate();
   void updateMount(bool force = false);
+
+  /// Single command (:GXAS#) that refreshes ALL cached state at once:
+  /// mount status, positions (RA/Dec/Alt/Az/LST/targetRA/targetDec),
+  /// UTC date/time, and focuser position/speed.
+  void updateAllState(bool force = false);
+
+  /// Single command (:GXCS#) that refreshes ALL mount configuration:
+  /// motor params (both axes), rates/speed, limits, encoders, and refraction.
+  /// Configuration changes infrequently; call on startup or after a setting
+  /// change rather than every poll cycle.
+  void updateAllConfig(bool force = false);
 
   // -----------------------------------------------------------------------
   //  Mount state queries (from cached MountState)
@@ -381,6 +462,58 @@ private:
   CachedStr<45> m_focuser;
   CacheTimer    m_timerFocuser;
   bool          m_hasFocuser = false;
+
+  // --- All-state bulk cache (:GXAS#) ---
+  // Stores the 64-char base64 string + '#' + NUL (66 bytes total).
+  char          m_allStateB64[66] = "";
+  CacheTimer    m_timerAllState;
+  // Unpacked UTC components
+  uint8_t       m_utcH = 0, m_utcM = 0, m_utcS = 0;
+  uint8_t       m_utcMonth = 1, m_utcDay = 1, m_utcYear = 0;
+  // Unpacked focuser numerics
+  uint32_t      m_focuserPosN   = 0;
+  uint16_t      m_focuserSpeedN = 0;
+
+  // --- All-config bulk cache (:GXCS#) ---
+  CacheTimer    m_timerConfig;
+  bool          m_configValid = false;
+  // Per-axis motor params [0]=Axis1, [1]=Axis2
+  uint32_t  m_cfgGear[2]         = {};
+  uint16_t  m_cfgStepRot[2]      = {};
+  uint16_t  m_cfgBacklash[2]     = {};
+  uint16_t  m_cfgBacklashRate[2] = {};
+  uint16_t  m_cfgLowCurr[2]      = {};
+  uint16_t  m_cfgHighCurr[2]     = {};
+  uint8_t   m_cfgMicro[2]        = {};
+  uint8_t   m_cfgFlags[2]        = {};  // [bit0=reverse, bit1=silent]
+  // Rates
+  float     m_cfgGuideRate    = 0;
+  float     m_cfgSlowRate     = 0;
+  float     m_cfgMediumRate   = 0;
+  float     m_cfgFastRate     = 0;
+  float     m_cfgAcceleration = 0;
+  uint16_t  m_cfgMaxRate      = 0;
+  uint8_t   m_cfgDefaultRate  = 0;
+  uint8_t   m_cfgSettleTime   = 0;
+  // Limits
+  int16_t   m_cfgMeridianE    = 0;
+  int16_t   m_cfgMeridianW    = 0;
+  int16_t   m_cfgAxis1Min     = 0;
+  int16_t   m_cfgAxis1Max     = 0;
+  int16_t   m_cfgAxis2Min     = 0;
+  int16_t   m_cfgAxis2Max     = 0;
+  uint16_t  m_cfgUnderPole10  = 0;
+  int8_t    m_cfgMinAlt       = 0;
+  int8_t    m_cfgMaxAlt       = 90;
+  uint8_t   m_cfgMinDistPole  = 0;
+  uint8_t   m_cfgRefrFlags    = 0;
+  // Encoders
+  uint32_t  m_cfgPPD1         = 0;
+  uint32_t  m_cfgPPD2         = 0;
+  uint8_t   m_cfgEncSyncMode  = 0;
+  uint8_t   m_cfgEncFlags     = 0;
+  // Options
+  uint8_t   m_cfgMountIdx     = 0;
 
   // --- Tracking rates ---
   long          m_trackRateRa  = 0;

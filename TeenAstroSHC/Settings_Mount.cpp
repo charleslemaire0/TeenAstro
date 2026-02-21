@@ -4,6 +4,7 @@
 
 void SmartHandController::menuMount()
 {
+  ta_MountStatus.updateAllConfig(true);
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
   while (!exitMenu)
@@ -46,28 +47,22 @@ void SmartHandController::menuMount()
 
 void SmartHandController::MenuTrackingRefraction()
 {
-  char out[10];
-  uint8_t tmp_sel;
-  if (m_client->getRefractionEnabled(out, sizeof(out)) == LX200_GETVALUEFAILED) strcpy(out, "n");
-  bool corr_on = out[0] == 'y';
+  bool corr_on = ta_MountStatus.hasConfig() ? ta_MountStatus.getCfgRefrTracking() : false;
   const char* string_list_tracking = corr_on ? T_OFF : T_ON;
-  tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_REFRACTION, 0, string_list_tracking);
+  uint8_t tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_REFRACTION, 0, string_list_tracking);
   switch (tmp_sel)
   {
   case 1:
-  {
-    char out[20];
-    memset(out, 0, sizeof(out));
     if ((corr_on ? m_client->enableRefraction(false) : m_client->enableRefraction(true)) == LX200_VALUESET)
     {
       DisplayMessage(T_REFRACTION, corr_on ? T_OFF : T_ON, 500);
+      ta_MountStatus.updateAllConfig(true);
     }
     else
     {
       DisplayMessage(T_LX200COMMAND, T_FAILED, 1000);
     }
     break;
-  }
   default:
     break;
   }
@@ -75,7 +70,6 @@ void SmartHandController::MenuTrackingRefraction()
 
 void SmartHandController::menuMounts()
 {
-  int val;
   char mountname[15];
   char txt[70] = "";
   for (int i = 0; i < 2; i++)
@@ -88,41 +82,34 @@ void SmartHandController::menuMounts()
     }
   }
 
-  if (DisplayMessageLX200(m_client->getMountIdx(val)))
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
+  int val = (int)ta_MountStatus.getCfgMountIdx();
+  uint8_t tmp_in = val + 1;
+  uint8_t tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_SELECT_MOUNT, tmp_in, txt);
+  if (tmp_sel != 0)
   {
-    uint8_t tmp_in = val + 1;
-    uint8_t tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_SELECT_MOUNT, tmp_in, txt);
-    if (tmp_sel != 0)
-    {   
-      if (tmp_in != tmp_sel)
-      {
-        val = (int)tmp_sel - 1;
-        m_client->setMount(val);
-        powerCycleRequired = true;
-        exitMenu = true;
-      }
+    if (tmp_in != tmp_sel)
+    {
+      val = (int)tmp_sel - 1;
+      m_client->setMount(val);
+      powerCycleRequired = true;
+      exitMenu = true;
     }
   }
 }
 
 void SmartHandController::DisplayAccMaxRateSettings()
 {
-  char out[20];
   char line1[32] = "";
   char line2[32] = T_SLEWSETTING;
   char line3[32] = "";
   char line4[32] = "";
   DisplayMessageLX200(m_client->getMountDescription(line1, sizeof(line1)));
 
-  if (DisplayMessageLX200(m_client->get(":GXRX#", out, sizeof(out))))
+  if (ta_MountStatus.hasConfig())
   {
-    int maxrate = (float)strtol(&out[0], NULL, 10);
-    sprintf(line4, T_MaxSlew ": %dx", maxrate);
-  }
-  if (DisplayMessageLX200(m_client->get(":GXRA#", out, sizeof(out))))
-  {
-    float acc = atof(&out[0]);
-    sprintf(line3, T_ACCELERATION ": %.1f", acc);
+    sprintf(line3, T_ACCELERATION ": %.1f", ta_MountStatus.getCfgAcceleration());
+    sprintf(line4, T_MaxSlew ": %dx", (int)ta_MountStatus.getCfgMaxRate());
   }
   DisplayLongMessage(line1, line2, line3, line4, -1);
 }
@@ -151,7 +138,6 @@ void SmartHandController::menuMountType()
       exitMenu = true;
       powerCycleRequired = true;
     }
-
   }
 }
 
@@ -184,15 +170,11 @@ void SmartHandController::MenuRefraction()
 
 void SmartHandController::menuPolarAlignment()
 {
-  char out[10];
-  uint8_t tmp_sel;
-
-  if (!DisplayMessageLX200(m_client->getPolarAlignEnabled(out, sizeof(out))))
-    return;
-  uint8_t tmp_in = out[0] == 'y' ? 1 : 2;
-  const char* string_list_tracking = T_APPARENT_POLE "\n" T_TRUE_POLE  ;
-  tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_POLAR_ALIGNMENT, tmp_in, string_list_tracking);
-  if (tmp_sel == tmp_in)
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
+  uint8_t tmp_in = ta_MountStatus.getCfgRefrPole() ? 1 : 2;
+  const char* string_list_tracking = T_APPARENT_POLE "\n" T_TRUE_POLE;
+  uint8_t tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_POLAR_ALIGNMENT, tmp_in, string_list_tracking);
+  if (tmp_sel == tmp_in || tmp_sel == 0)
   {
     return;
   }
@@ -204,6 +186,7 @@ void SmartHandController::menuPolarAlignment()
     if (tmp_sel == 1 ? m_client->enablePolarAlign(true) == LX200_VALUESET : m_client->enablePolarAlign(false) == LX200_VALUESET)
     {
       DisplayMessage(T_SET, (tmp_sel == 1) ? T_APPARENT_POLE : T_TRUE_POLE, 1000);
+      ta_MountStatus.updateAllConfig(true);
     }
     else
     {
@@ -218,14 +201,11 @@ void SmartHandController::menuPolarAlignment()
 
 void SmartHandController::MenuRefractionForGoto()
 {
-  char out[10];
-  uint8_t tmp_sel;
-  if (!DisplayMessageLX200(m_client->getGoToEnabled(out, sizeof(out))))
-    return;
-  uint8_t tmp_in = out[0] == 'y' ? 1 : 2;
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
+  uint8_t tmp_in = ta_MountStatus.getCfgRefrGoto() ? 1 : 2;
   const char* string_list_tracking = T_ON "\n" T_OFF;
-  tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_REFRACTION, tmp_in, string_list_tracking);
-  if (tmp_sel == tmp_in)
+  uint8_t tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_REFRACTION, tmp_in, string_list_tracking);
+  if (tmp_sel == tmp_in || tmp_sel == 0)
   {
     return;
   }
@@ -237,6 +217,7 @@ void SmartHandController::MenuRefractionForGoto()
     if (tmp_sel == 1 ? m_client->enableGoTo(true) == LX200_VALUESET : m_client->enableGoTo(false) == LX200_VALUESET)
     {
       DisplayMessage(T_REFRACTION, (tmp_sel == 1) ? T_ON : T_OFF, 1000);
+      ta_MountStatus.updateAllConfig(true);
     }
     else
     {
@@ -252,16 +233,14 @@ void SmartHandController::MenuRefractionForGoto()
 
 void SmartHandController::menuGuideRate()
 {
-  char outRate[20];
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
   char cmd[20];
-  if (DisplayMessageLX200(m_client->get(":GXR0#", outRate, sizeof(outRate))))
+  float guiderate = ta_MountStatus.getCfgGuideRate();
+  if (display->UserInterfaceInputValueFloat(&buttonPad, T_GUIDESPEED, "", &guiderate, 0.1f, 1.f, 4u, 2u, "x"))
   {
-    float guiderate = atof(&outRate[0]);
-    if (display->UserInterfaceInputValueFloat(&buttonPad, T_GUIDESPEED, "", &guiderate, 0.1f, 1.f, 4u, 2u, "x"))
-    {
-      sprintf(cmd, ":SXR0,%03d#", (int)(guiderate * 100));
-      DisplayMessageLX200(m_client->set(cmd),false);
-    }
+    sprintf(cmd, ":SXR0,%03d#", (int)(guiderate * 100));
+    if (DisplayMessageLX200(m_client->set(cmd), false))
+      ta_MountStatus.updateAllConfig(true);
   }
 }
 
@@ -327,6 +306,4 @@ void SmartHandController::menuReticule()
       DisplayMessageLX200(m_client->set(cmd), false);
     }
   }
-
 }
-

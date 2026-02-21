@@ -3,6 +3,7 @@
 
 void SmartHandController::menuMotors()
 {
+  ta_MountStatus.updateAllConfig(true);
   if (ta_MountStatus.motorsEnable())
   {
     const char* string_list = T_SHOWSETTINGS "\n" T_MOTOR " 1\n" T_MOTOR " 2\n"
@@ -96,7 +97,6 @@ void SmartHandController::menuMotors()
 
 void SmartHandController::DisplayMountSettings()
 {
-
   DisplayAccMaxRateSettings();
   DisplayMotorSettings(1);
   DisplayMotorSettings(2);
@@ -104,17 +104,14 @@ void SmartHandController::DisplayMountSettings()
 
 void SmartHandController::menuAcceleration()
 {
-  char outAcc[20];
-  char outStepsPerDegree[20];
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
   char cmd[20];
-  if (DisplayMessageLX200(m_client->get(":GXRA#", outAcc, sizeof(outAcc))))
+  float acc = ta_MountStatus.getCfgAcceleration();
+  if (display->UserInterfaceInputValueFloat(&buttonPad, T_ACCELERATION, "", &acc, 0.1, 25, 4, 1, " deg."))
   {
-    float acc = atof(&outAcc[0]);
-    if (display->UserInterfaceInputValueFloat(&buttonPad, T_ACCELERATION, "", &acc, 0.1, 25, 4, 1, " deg."))
-    {
-      sprintf(cmd, ":SXRA,%04d#", (int)(acc * 10.));
-      DisplayMessageLX200(m_client->set(cmd), false);
-    }
+    sprintf(cmd, ":SXRA,%04d#", (int)(acc * 10.));
+    if (DisplayMessageLX200(m_client->set(cmd), false))
+      ta_MountStatus.updateAllConfig(true);
   }
 }
 
@@ -157,54 +154,53 @@ void SmartHandController::MenuRates()
 
 void SmartHandController::menuRate(int r)
 {
-  char outRate[20];
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
   char cmd[20];
-  sprintf(cmd, ":GXR%d#", r);
+  float rate;
+  switch (r)
+  {
+  case 3: rate = ta_MountStatus.getCfgFastRate();   break;
+  case 2: rate = ta_MountStatus.getCfgMediumRate(); break;
+  case 1: rate = ta_MountStatus.getCfgSlowRate();   break;
+  default: rate = ta_MountStatus.getCfgGuideRate(); break;
+  }
   char title[20];
   r == 3 ? strcpy(title, T_FASTSPEED) : (r == 2 ? strcpy(title, T_MEDIUMSPEED) : strcpy(title, T_SLOWSPEED));
-  if (DisplayMessageLX200(m_client->get(cmd, outRate, sizeof(outRate))))
+  if (display->UserInterfaceInputValueFloat(&buttonPad, title, "", &rate, 1.f, 255.f, 4u, 0u, "x"))
   {
-    float rate = atof(&outRate[0]);
-    if (display->UserInterfaceInputValueFloat(&buttonPad, title, "", &rate, 1.f, 255.f, 4u, 0u, "x"))
-    {
-      sprintf(cmd, ":SXR%d,%03d#", r, (int)(rate));
-      DisplayMessageLX200(m_client->set(cmd), false);
-    }
+    sprintf(cmd, ":SXR%d,%03d#", r, (int)(rate));
+    if (DisplayMessageLX200(m_client->set(cmd), false))
+      ta_MountStatus.updateAllConfig(true);
   }
 }
 
 void SmartHandController::menuMaxRate()
 {
-  char outRate[20];
-  char outStepsPerDegree[20];
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
   char cmd[20];
-  if (DisplayMessageLX200(m_client->get(":GXRX#", outRate, sizeof(outRate))))
+  float maxrate = (float)ta_MountStatus.getCfgMaxRate();
+  if (display->UserInterfaceInputValueFloatIncr(&buttonPad, T_MAXSPEED, "", &maxrate, 60, 3600, 4, 0, 60, ""))
   {
-    float maxrate = (float)strtol(&outRate[0], NULL, 10);
-    if (display->UserInterfaceInputValueFloatIncr(&buttonPad, T_MAXSPEED, "", &maxrate, 60, 3600, 4, 0, 60, ""))
-    {
-      sprintf(cmd, ":SXRX,%04d#", (int)maxrate);
-      DisplayMessageLX200(m_client->set(cmd), false);
-    }
+    sprintf(cmd, ":SXRX,%04d#", (int)maxrate);
+    if (DisplayMessageLX200(m_client->set(cmd), false))
+      ta_MountStatus.updateAllConfig(true);
   }
 }
 
 void SmartHandController::MenuDefaultSpeed()
 {
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
   static uint8_t s_sel = 1;
   char out[10];
-  uint8_t tmp_sel;
-  if (DisplayMessageLX200(m_client->get(":GXRD#", out, sizeof(out))))
+  s_sel = ta_MountStatus.getCfgDefaultRate() + 1;
+  s_sel = s_sel > 5 ? 5 : s_sel;
+  const char* string_list = T_GUIDESPEED " \n" T_SLOW "\n" T_MEDIUM "\n" T_FAST "\n" T_MAX;
+  uint8_t tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_DEFAULTSPEED, s_sel, string_list);
+  if (tmp_sel)
   {
-    s_sel = out[0] - '0' + 1;
-    s_sel = s_sel > 5 ? 4 : s_sel;
-    const char* string_list = T_GUIDESPEED " \n" T_SLOW "\n" T_MEDIUM "\n" T_FAST "\n" T_MAX;
-    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_DEFAULTSPEED, s_sel, string_list);
-    if (tmp_sel)
-    {
-      sprintf(out, ":SXRD,%u#", tmp_sel - 1);
-      DisplayMessageLX200(m_client->set(out), false);
-    }
+    sprintf(out, ":SXRD,%u#", tmp_sel - 1);
+    if (DisplayMessageLX200(m_client->set(out), false))
+      ta_MountStatus.updateAllConfig(true);
   }
 }
 
@@ -212,7 +208,6 @@ void SmartHandController::MenuTracking()
 {
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
-
 
   while (!exitMenu)
   {
@@ -238,7 +233,6 @@ void SmartHandController::MenuTracking()
       break;
     }
   }
-  
 }
 
 void SmartHandController::MenuTrackingCorrection()
@@ -277,15 +271,13 @@ void SmartHandController::MenuTrackingCorrection()
 
 void SmartHandController::menuSettleTime()
 {
-  char outval[20];
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
   char cmd[20];
-  if (DisplayMessageLX200(m_client->get(":GXOS#", outval, sizeof(outval))))
+  float val = (float)ta_MountStatus.getCfgSettleTime();
+  if (display->UserInterfaceInputValueFloat(&buttonPad, T_SETTLETIME, "", &val, 0.0f, 20.f, 1u, 0u, " sec."))
   {
-    float val = atof(&outval[0]);
-    if (display->UserInterfaceInputValueFloat(&buttonPad, T_SETTLETIME, "", &val, 0.0f, 20.f, 1u, 0u, " sec."))
-    {
-      sprintf(cmd, ":SXOS,%02d#", (int)(val));
-      DisplayMessageLX200(m_client->set(cmd), false);
-    }
+    sprintf(cmd, ":SXOS,%02d#", (int)(val));
+    if (DisplayMessageLX200(m_client->set(cmd), false))
+      ta_MountStatus.updateAllConfig(true);
   }
 }

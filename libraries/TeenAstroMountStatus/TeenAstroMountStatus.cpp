@@ -3,6 +3,109 @@
 #define UPDATERATE 500
 
 // ===========================================================================
+//  Helpers for updateAllState()
+// ===========================================================================
+
+// Base64 decode table (index by ASCII value; -1 = invalid).
+static const int8_t B64DEC[128] = {
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
+  52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,
+  -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
+  15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,
+  -1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
+  41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1
+};
+
+// Decode `inLen` base64 chars into `out` (caller must supply inLen/4*3 bytes).
+// Returns false on invalid input character.
+static bool b64Decode(const char* in, int inLen, uint8_t* out)
+{
+  if (inLen % 4 != 0) return false;
+  int o = 0;
+  for (int i = 0; i < inLen; i += 4)
+  {
+    uint8_t c0 = (uint8_t)in[i];
+    uint8_t c1 = (uint8_t)in[i + 1];
+    uint8_t c2 = (uint8_t)in[i + 2];
+    uint8_t c3 = (uint8_t)in[i + 3];
+    if (c0 > 127 || c1 > 127 || c2 > 127 || c3 > 127) return false;
+    int8_t v0 = B64DEC[c0], v1 = B64DEC[c1], v2 = B64DEC[c2], v3 = B64DEC[c3];
+    if (v0 < 0 || v1 < 0 || v2 < 0 || v3 < 0) return false;
+    uint32_t b = ((uint32_t)v0 << 18) | ((uint32_t)v1 << 12) |
+                 ((uint32_t)v2 << 6)  | (uint32_t)v3;
+    out[o++] = (uint8_t)(b >> 16);
+    out[o++] = (uint8_t)(b >> 8);
+    out[o++] = (uint8_t)(b);
+  }
+  return true;
+}
+
+// Format RA float (hours) into "HH:MM:SS".
+static void formatRaStr(float h, char* out, int len)
+{
+  if (h < 0.0f) h += 24.0f;
+  if (h >= 24.0f) h -= 24.0f;
+  int ih = (int)h;
+  float mf = (h - ih) * 60.0f;
+  int im = (int)mf;
+  int is = (int)((mf - im) * 60.0f + 0.5f);
+  if (is >= 60) { is -= 60; im++; }
+  if (im >= 60) { im -= 60; ih++; }
+  snprintf(out, len, "%02d:%02d:%02d", ih, im, is);
+}
+
+// Format signed degrees (Dec/Alt) into "±DD*MM:SS".
+static void formatDegStr(float deg, char* out, int len)
+{
+  char sign = (deg >= 0.0f) ? '+' : '-';
+  float abs = (deg >= 0.0f) ? deg : -deg;
+  int id = (int)abs;
+  float mf = (abs - id) * 60.0f;
+  int im = (int)mf;
+  int is = (int)((mf - im) * 60.0f + 0.5f);
+  if (is >= 60) { is -= 60; im++; }
+  if (im >= 60) { im -= 60; id++; }
+  snprintf(out, len, "%c%02d*%02d:%02d", sign, id, im, is);
+}
+
+// Format azimuth (degrees) into "DDD*MM:SS".
+static void formatAzStr(float deg, char* out, int len)
+{
+  while (deg < 0.0f)    deg += 360.0f;
+  while (deg >= 360.0f) deg -= 360.0f;
+  int id = (int)deg;
+  float mf = (deg - id) * 60.0f;
+  int im = (int)mf;
+  int is = (int)((mf - im) * 60.0f + 0.5f);
+  if (is >= 60) { is -= 60; im++; }
+  if (im >= 60) { im -= 60; id++; }
+  snprintf(out, len, "%03d*%02d:%02d", id, im, is);
+}
+
+// Read float32 LE from packet at offset.
+static float pktF32(const uint8_t* pkt, int off)
+{
+  float v;
+  memcpy(&v, pkt + off, 4);
+  return v;
+}
+
+// Read uint32 LE from packet at offset.
+static uint32_t pktU32(const uint8_t* pkt, int off)
+{
+  return (uint32_t)pkt[off] | ((uint32_t)pkt[off+1] << 8) |
+         ((uint32_t)pkt[off+2] << 16) | ((uint32_t)pkt[off+3] << 24);
+}
+
+// Read uint16 LE from packet at offset.
+static uint16_t pktU16(const uint8_t* pkt, int off)
+{
+  return (uint16_t)pkt[off] | ((uint16_t)pkt[off+1] << 8);
+}
+
+// ===========================================================================
 //  MountState — parse from raw :GXI# string
 // ===========================================================================
 //
@@ -330,6 +433,238 @@ void TeenAstroMountStatus::updateMount(bool force)
       m_connectionFailure++;
     }
   }
+}
+
+// ===========================================================================
+//  All-state bulk update  (:GXAS#)
+// ===========================================================================
+
+void TeenAstroMountStatus::updateAllState(bool force)
+{
+  if (!m_timerAllState.needsUpdate(UPDATERATE) && !force) return;
+
+  // Fetch the 64-char base64 response (no '#' in returned string).
+  char raw[66] = "";
+  if (m_client->get(":GXAS#", raw, sizeof(raw)) != LX200_VALUEGET || strlen(raw) != 64)
+  {
+    m_mount.valid = false;
+    m_connectionFailure++;
+    return;
+  }
+
+  // Decode to 48 bytes.
+  uint8_t pkt[48];
+  if (!b64Decode(raw, 64, pkt))
+  {
+    m_mount.valid = false;
+    m_connectionFailure++;
+    return;
+  }
+
+  // Verify XOR checksum: XOR of bytes 0–45 must equal byte 46.
+  uint8_t xorChk = 0;
+  for (int i = 0; i < 46; i++) xorChk ^= pkt[i];
+  if (xorChk != pkt[46])
+  {
+    m_mount.valid = false;
+    m_connectionFailure++;
+    return;
+  }
+
+  // Cache the raw string (add '#' for WiFi bridge forwarding).
+  snprintf(m_allStateB64, sizeof(m_allStateB64), "%s#", raw);
+  m_timerAllState.markUpdated();
+
+  // ── Status bytes 0-5 → m_mount ────────────────────────────────────────
+  uint8_t b0 = pkt[0], b1 = pkt[1], b2 = pkt[2];
+  switch (b0 & 0x3) {
+    case 0: m_mount.tracking = MountState::TRK_OFF;     break;
+    case 1: m_mount.tracking = MountState::TRK_ON;      break;
+    default: m_mount.tracking = MountState::TRK_SLEWING; break;
+  }
+  { int v = (b0 >> 2) & 0x3;
+    m_mount.sidereal = (v >= 0 && v <= 3)
+      ? static_cast<MountState::SiderealMode>(v) : MountState::SID_UNKNOWN; }
+  { int v = (b0 >> 4) & 0x3;
+    switch (v) {
+      case 0: m_mount.parkState = MountState::PRK_UNPARKED; break;
+      case 1: m_mount.parkState = MountState::PRK_PARKING;  break;
+      case 2: m_mount.parkState = MountState::PRK_PARKED;   break;
+      case 3: m_mount.parkState = MountState::PRK_FAILED;   break;
+      default: m_mount.parkState = MountState::PRK_UNKNOW;  break;
+    }
+  }
+  m_mount.atHome        = (b0 >> 6) & 0x1;
+  m_mount.pierSide      = ((b0 >> 7) & 0x1) ? MountState::PIER_W : MountState::PIER_E;
+
+  m_mount.guidingRate   = static_cast<MountState::GuidingRate>((int)(b1 & 0x7));
+  m_mount.aligned       = (b1 >> 3) & 0x1;
+  { uint8_t mt = (b1 >> 4) & 0x7;
+    switch (mt) {
+      case 1: m_mount.mountType = MountState::MOUNT_TYPE_GEM;      break;
+      case 2: m_mount.mountType = MountState::MOUNT_TYPE_FORK;     break;
+      case 3: m_mount.mountType = MountState::MOUNT_TYPE_ALTAZM;   break;
+      case 4: m_mount.mountType = MountState::MOUNT_TYPE_FORK_ALT; break;
+      default: m_mount.mountType = MountState::MOUNT_UNDEFINED;    break;
+    }
+  }
+  m_mount.spiralRunning = (b1 >> 7) & 0x1;
+
+  { uint8_t ew = b2 & 0x3;
+    m_mount.guidingEW = (ew == 1) ? '>' : (ew == 2) ? '<' : (ew == 3) ? 'b' : ' '; }
+  { uint8_t ns = (b2 >> 2) & 0x3;
+    m_mount.guidingNS = (ns == 1) ? '^' : (ns == 2) ? '_' : (ns == 3) ? 'b' : ' '; }
+  m_mount.rateComp      = static_cast<MountState::RateCompensation>((int)((b2 >> 4) & 0x3));
+  m_mount.trackCorrected = (m_mount.rateComp != MountState::RC_UNKNOWN);
+  m_mount.pulseGuiding  = (b2 >> 7) & 0x1;
+
+  m_mount.gnssFlags   = pkt[3];
+  { int e = pkt[4];
+    m_mount.error = (e >= 0 && e <= 8)
+      ? static_cast<MountState::Errors>(e) : MountState::ERR_NONE; }
+  uint8_t eFlags   = pkt[5];
+  m_mount.enableFlags = eFlags & 0x0F;
+  m_hasFocuser      = (eFlags >> 4) & 0x1;
+  m_mount.valid     = true;
+  m_timerMount.markUpdated();
+
+  // ── UTC bytes 6-11 ────────────────────────────────────────────────────
+  m_utcH     = pkt[6];
+  m_utcM     = pkt[7];
+  m_utcS     = pkt[8];
+  m_utcMonth = pkt[9];
+  m_utcDay   = pkt[10];
+  m_utcYear  = pkt[11];
+  snprintf(m_utc.data,     sizeof(m_utc.data),     "%02d:%02d:%02d", m_utcH, m_utcM, m_utcS);
+  snprintf(m_utcDate.data, sizeof(m_utcDate.data), "%02d/%02d/%02d", m_utcMonth, m_utcDay, m_utcYear);
+  m_utc.valid = m_utcDate.valid = true;
+
+  // ── Positions bytes 12-39 ─────────────────────────────────────────────
+  float ra  = pktF32(pkt, 12);
+  float dec = pktF32(pkt, 16);
+  float alt = pktF32(pkt, 20);
+  float az  = pktF32(pkt, 24);
+  float lst = pktF32(pkt, 28);
+  float tRA = pktF32(pkt, 32);
+  float tDec= pktF32(pkt, 36);
+
+  formatRaStr(ra,   m_ra.data,       sizeof(m_ra.data));
+  formatDegStr(dec, m_dec.data,      sizeof(m_dec.data));
+  formatDegStr(alt, m_alt.data,      sizeof(m_alt.data));
+  formatAzStr(az,   m_az.data,       sizeof(m_az.data));
+  formatRaStr(lst,  m_sidereal.data, sizeof(m_sidereal.data));
+  formatRaStr(tRA,  m_raT.data,      sizeof(m_raT.data));
+  formatDegStr(tDec,m_decT.data,     sizeof(m_decT.data));
+  m_ra.valid = m_dec.valid = m_alt.valid = m_az.valid = true;
+  m_sidereal.valid = m_raT.valid = m_decT.valid = true;
+  m_timerRaDec.markUpdated();
+  m_timerAzAlt.markUpdated();
+  m_timerTime.markUpdated();
+  m_timerRaDecT.markUpdated();
+
+  // ── Focuser bytes 40-45 ───────────────────────────────────────────────
+  if (m_hasFocuser)
+  {
+    m_focuserPosN   = pktU32(pkt, 40);
+    m_focuserSpeedN = pktU16(pkt, 44);
+    snprintf(m_focuser.data, sizeof(m_focuser.data),
+             "?%05lu %03u", (unsigned long)m_focuserPosN, (unsigned)m_focuserSpeedN);
+    m_focuser.valid = true;
+    m_timerFocuser.markUpdated();
+  }
+  else
+  {
+    m_focuser.valid = false;
+  }
+
+  m_connectionFailure = 0;
+}
+
+// ===========================================================================
+//  All-config bulk update  (:GXCS#)
+// ===========================================================================
+
+void TeenAstroMountStatus::updateAllConfig(bool force)
+{
+  if (!m_timerConfig.needsUpdate(30000) && !force) return;
+
+  // Fetch the 120-char base64 response.
+  char raw[122] = "";
+  if (m_client->get(":GXCS#", raw, sizeof(raw)) != LX200_VALUEGET || strlen(raw) != 120)
+  {
+    m_configValid = false;
+    m_connectionFailure++;
+    return;
+  }
+
+  // Decode to 90 bytes.
+  uint8_t pkt[90];
+  if (!b64Decode(raw, 120, pkt))
+  {
+    m_configValid = false;
+    m_connectionFailure++;
+    return;
+  }
+
+  // Verify XOR checksum: XOR of bytes 0–88 must equal byte 89.
+  uint8_t xorChk = 0;
+  for (int i = 0; i < 89; i++) xorChk ^= pkt[i];
+  if (xorChk != pkt[89])
+  {
+    m_configValid = false;
+    m_connectionFailure++;
+    return;
+  }
+
+  // ── Unpack axes (0–31) ────────────────────────────────────────────────
+  for (int ax = 0; ax < 2; ax++)
+  {
+    int base = ax * 16;
+    m_cfgGear[ax]         = pktU32(pkt, base + 0);
+    m_cfgStepRot[ax]      = pktU16(pkt, base + 4);
+    m_cfgBacklash[ax]     = pktU16(pkt, base + 6);
+    m_cfgBacklashRate[ax] = pktU16(pkt, base + 8);
+    m_cfgLowCurr[ax]      = pktU16(pkt, base + 10);
+    m_cfgHighCurr[ax]     = pktU16(pkt, base + 12);
+    m_cfgMicro[ax]        = pkt[base + 14];
+    m_cfgFlags[ax]        = pkt[base + 15];
+  }
+
+  // ── Unpack rates (32–55) ──────────────────────────────────────────────
+  m_cfgGuideRate    = pktF32(pkt, 32);
+  m_cfgSlowRate     = pktF32(pkt, 36);
+  m_cfgMediumRate   = pktF32(pkt, 40);
+  m_cfgFastRate     = pktF32(pkt, 44);
+  m_cfgAcceleration = pktF32(pkt, 48);
+  m_cfgMaxRate      = pktU16(pkt, 52);
+  m_cfgDefaultRate  = pkt[54];
+  m_cfgSettleTime   = pkt[55];
+
+  // ── Unpack limits (56–73) ─────────────────────────────────────────────
+  m_cfgMeridianE   = (int16_t)pktU16(pkt, 56);
+  m_cfgMeridianW   = (int16_t)pktU16(pkt, 58);
+  m_cfgAxis1Min    = (int16_t)pktU16(pkt, 60);
+  m_cfgAxis1Max    = (int16_t)pktU16(pkt, 62);
+  m_cfgAxis2Min    = (int16_t)pktU16(pkt, 64);
+  m_cfgAxis2Max    = (int16_t)pktU16(pkt, 66);
+  m_cfgUnderPole10 = pktU16(pkt, 68);
+  m_cfgMinAlt      = (int8_t)pkt[70];
+  m_cfgMaxAlt      = (int8_t)pkt[71];
+  m_cfgMinDistPole = pkt[72];
+  m_cfgRefrFlags   = pkt[73];
+
+  // ── Unpack encoders (74–83) ───────────────────────────────────────────
+  m_cfgPPD1        = pktU32(pkt, 74);
+  m_cfgPPD2        = pktU32(pkt, 78);
+  m_cfgEncSyncMode = pkt[82];
+  m_cfgEncFlags    = pkt[83];
+
+  // ── Unpack options (84) ───────────────────────────────────────────────
+  m_cfgMountIdx    = pkt[84];
+
+  m_configValid = true;
+  m_timerConfig.markUpdated();
+  m_connectionFailure = 0;
 }
 
 // ===========================================================================

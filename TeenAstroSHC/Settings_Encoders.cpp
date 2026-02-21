@@ -7,7 +7,7 @@
 //----------------------------------//
 void SmartHandController::menuEncoders()
 {
-
+  ta_MountStatus.updateAllConfig(true);
   if (ta_MountStatus.encodersEnable())
   {
     const char* string_list = T_AUTO_SYNC "\n" T_CALIBRATION "\n" T_PULSEPERDEGREE " E1\n" T_REVERSE " E1\n" T_PULSEPERDEGREE " E2\n" T_REVERSE " E2\n" T_DISABLE;
@@ -95,16 +95,17 @@ void SmartHandController::menuEncoders()
 
 void SmartHandController::menuAutoSyncEncoder()
 {
+  if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
   const char* string_list = T_OFF "\n60'\n30'\n15'\n8'\n4'\n2'\n" T_ON;
-  static uint8_t s_sel = 1;
-  DisplayMessageLX200(m_client->readEncoderAutoSync(s_sel), true);
-  uint8_t tmp_sel = s_sel + 1;
+  uint8_t syncMode = ta_MountStatus.getCfgEncSyncMode();
+  uint8_t tmp_sel  = syncMode + 1;  // 1-indexed for UI
   while (tmp_sel)
   {
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_AUTO_SYNC, tmp_sel, string_list);
-    if (tmp_sel && tmp_sel != s_sel + 1)
+    if (tmp_sel && tmp_sel != syncMode + 1)
     {
-      DisplayMessageLX200(m_client->writeEncoderAutoSync(tmp_sel - 1), false);
+      if (DisplayMessageLX200(m_client->writeEncoderAutoSync(tmp_sel - 1), false))
+        ta_MountStatus.updateAllConfig(true);
       return;
     }
   }

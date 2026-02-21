@@ -32,6 +32,199 @@ static void PrintRa(double& val) {
 //   GX Sub-handlers  (static -- called only from Command_GX)
 // =============================================================================
 
+// ---- GX All State  :GXAS# --------------------------------------------------
+// Returns a base64-encoded 48-byte binary snapshot of all mount state.
+// 48 bytes → 64 base64 chars + '#'.  No padding ('=' chars) needed since
+// 48 is divisible by 3.  The '#' terminator is safe because base64 never
+// produces 0x23.
+//
+// Packet layout (little-endian):
+//   Byte  0: tracking[1:0]|sidereal[3:2]|park[5:4]|atHome[6]|pierSide[7]
+//   Byte  1: guidingRate[2:0]|aligned[3]|mountType[6:4]|spiralRunning[7]
+//   Byte  2: guidingEW[1:0]|guidingNS[3:2]|trackComp[5:4]|fault[6]|pulse[7]
+//   Byte  3: gnssFlags (5 bits)
+//   Byte  4: error (0-8)
+//   Byte  5: enableFlags[3:0]|hasFocuser[4]|reserved[7:5]
+//   Bytes 6-11:  UTC hour,min,sec,month,day,year(2-digit)
+//   Bytes 12-15: RA          float32 LE (hours 0-24)
+//   Bytes 16-19: Dec         float32 LE (degrees ±90)
+//   Bytes 20-23: Alt         float32 LE (degrees ±90)
+//   Bytes 24-27: Az          float32 LE (degrees 0-360)
+//   Bytes 28-31: LST         float32 LE (hours 0-24)
+//   Bytes 32-35: Target RA   float32 LE (hours 0-24)
+//   Bytes 36-39: Target Dec  float32 LE (degrees ±90)
+//   Bytes 40-43: Focuser pos uint32 LE (steps)
+//   Bytes 44-45: Focuser spd uint16 LE
+//   Bytes 46-47: reserved (0)
+
+static const char GX_B64[] =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static void gxasB64Encode(const uint8_t* in, char* out)
+{
+  // Encode exactly 48 bytes (divisible by 3 — no padding).
+  uint8_t o = 0;
+  for (uint8_t i = 0; i < 48; i += 3)
+  {
+    uint32_t b = ((uint32_t)in[i] << 16) | ((uint32_t)in[i + 1] << 8) | in[i + 2];
+    out[o++] = GX_B64[(b >> 18) & 0x3F];
+    out[o++] = GX_B64[(b >> 12) & 0x3F];
+    out[o++] = GX_B64[(b >>  6) & 0x3F];
+    out[o++] = GX_B64[ b        & 0x3F];
+  }
+  out[o] = 0;
+}
+
+static void gxasPackF32(uint8_t* pkt, int off, float v)
+{
+  memcpy(pkt + off, &v, 4);
+}
+
+static void Command_GX_AllState()
+{
+  uint8_t pkt[48];
+  memset(pkt, 0, sizeof(pkt));
+  PoleSide currentSide = mount.getPoleSide();
+
+  // ── Byte 0 ───────────────────────────────────────────────────────────────
+  uint8_t tracking     = (uint8_t)(2 * mount.tracking.movingTo + mount.tracking.sideralTracking);
+  uint8_t sidereal     = (uint8_t)(mount.tracking.sideralMode  & 0x3);
+  uint8_t park         = (uint8_t)(mount.parkHome.parkStatus    & 0x3);
+  uint8_t atHome       = mount.isAtHome() ? 1u : 0u;
+  uint8_t pierSide     = (currentSide == POLE_OVER) ? 1u : 0u;
+  pkt[0] = tracking | (sidereal << 2) | (park << 4) | (atHome << 6) | (pierSide << 7);
+
+  // ── Byte 1 ───────────────────────────────────────────────────────────────
+  uint8_t guidingRate  = (uint8_t)(mount.guiding.recenterGuideRate & 0x7);
+  uint8_t aligned      = mount.alignment.hasValid ? 1u : 0u;
+  uint8_t mountType    = 0u;
+  if      (mount.config.identity.mountType == MOUNT_TYPE_GEM)      mountType = 1u;
+  else if (mount.config.identity.mountType == MOUNT_TYPE_FORK)     mountType = 2u;
+  else if (mount.config.identity.mountType == MOUNT_TYPE_ALTAZM)   mountType = 3u;
+  else if (mount.config.identity.mountType == MOUNT_TYPE_FORK_ALT) mountType = 4u;
+  uint8_t spiralRunning = mount.tracking.doSpiral ? 1u : 0u;
+  pkt[1] = guidingRate | (aligned << 3) | (mountType << 4) | (spiralRunning << 7);
+
+  // ── Byte 2 ───────────────────────────────────────────────────────────────
+  uint8_t guidingEW = 0;
+  if      (mount.guiding.guideA1.isMFW())     guidingEW = 1;
+  else if (mount.guiding.guideA1.isMBW())     guidingEW = 2;
+  else if (mount.guiding.guideA1.isBraking()) guidingEW = 3;
+
+  uint8_t guidingNS = 0;
+  if (currentSide == POLE_OVER)
+  {
+    if      (mount.guiding.guideA2.isMBW())     guidingNS = 1;
+    else if (mount.guiding.guideA2.isMFW())     guidingNS = 2;
+    else if (mount.guiding.guideA2.isBraking()) guidingNS = 3;
+  }
+  else
+  {
+    if      (mount.guiding.guideA2.isMFW())     guidingNS = 1;
+    else if (mount.guiding.guideA2.isMBW())     guidingNS = 2;
+    else if (mount.guiding.guideA2.isBraking()) guidingNS = 3;
+  }
+  uint8_t trackComp    = (uint8_t)(mount.tracking.trackComp & 0x3);
+  uint8_t fault        = (mount.axes.staA1.fault || mount.axes.staA2.fault) ? 1u : 0u;
+  uint8_t pulseGuiding = mount.isGuidingStar() ? 1u : 0u;
+  pkt[2] = guidingEW | (guidingNS << 2) | (trackComp << 4) | (fault << 6) | (pulseGuiding << 7);
+
+  // ── Byte 3: gnssFlags ────────────────────────────────────────────────────
+  uint8_t gFlags = 0;
+  bitWrite(gFlags, 0, mount.config.peripherals.hasGNSS);
+  if (iSGNSSValid())
+  {
+    bitWrite(gFlags, 1, true);
+    bitWrite(gFlags, 2, isTimeSyncWithGNSS());
+    bitWrite(gFlags, 3, isLocationSyncWithGNSS());
+    bitWrite(gFlags, 4, isHdopSmall());
+  }
+  pkt[3] = gFlags;
+
+  // ── Byte 4: error ────────────────────────────────────────────────────────
+  pkt[4] = (uint8_t)(mount.errors.lastError);
+
+  // ── Byte 5: enableFlags | hasFocuser ─────────────────────────────────────
+  uint8_t enableFlags = 0;
+  bitWrite(enableFlags, 0, mount.motorsEncoders.enableEncoder);
+  bitWrite(enableFlags, 1, mount.motorsEncoders.encoderA1.calibrating() &&
+                           mount.motorsEncoders.encoderA2.calibrating());
+  bitWrite(enableFlags, 2, mount.config.peripherals.PushtoStatus != PT_OFF);
+  bitWrite(enableFlags, 3, mount.motorsEncoders.enableMotor);
+  bitWrite(enableFlags, 4, mount.config.peripherals.hasFocuser);
+  pkt[5] = enableFlags;
+
+  // ── Bytes 6-11: UTC date/time ─────────────────────────────────────────────
+  {
+    int y, m, d, h, mi, s;
+    rtk.getUTDate(y, m, d, h, mi, s);
+    pkt[6]  = (uint8_t)h;
+    pkt[7]  = (uint8_t)mi;
+    pkt[8]  = (uint8_t)s;
+    pkt[9]  = (uint8_t)m;
+    pkt[10] = (uint8_t)d;
+    pkt[11] = (uint8_t)(y % 100);
+  }
+
+  // ── Bytes 12-39: positions (7 × float32 LE) ──────────────────────────────
+  {
+    Coord_EQ EQ_T = mount.getEqu(*localSite.latitude() * DEG_TO_RAD);
+    float ra  = (float)(EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR);
+    float dec = (float)(EQ_T.Dec() * RAD_TO_DEG);
+    Coord_HO HO_T = mount.getHorTopo();
+    float alt = (float)(HO_T.Alt() * RAD_TO_DEG);
+    float az  = (float)(degRange(HO_T.Az() * RAD_TO_DEG));
+    float lst = (float)(rtk.LST());
+    float tgtRA  = (float)(mount.targetCurrent.newTargetRA  / 15.0);
+    float tgtDec = (float)(mount.targetCurrent.newTargetDec);
+    gxasPackF32(pkt, 12, ra);
+    gxasPackF32(pkt, 16, dec);
+    gxasPackF32(pkt, 20, alt);
+    gxasPackF32(pkt, 24, az);
+    gxasPackF32(pkt, 28, lst);
+    gxasPackF32(pkt, 32, tgtRA);
+    gxasPackF32(pkt, 36, tgtDec);
+  }
+
+  // ── Bytes 40-45: focuser position and speed ───────────────────────────────
+  if (mount.config.peripherals.hasFocuser)
+  {
+    Focus_Serial.flush();
+    while (Focus_Serial.available() > 0) Focus_Serial.read();
+    Focus_Serial.print(":F?#");
+    Focus_Serial.flush();
+    delay(20);
+    char fc[50] = "";
+    int pos = 0;
+    while (Focus_Serial.available() > 0 && pos < 48)
+    {
+      char b = (char)Focus_Serial.read();
+      fc[pos++] = b;
+      if (b == '#') break;
+    }
+    fc[pos] = 0;
+    if (fc[0] == '?')
+    {
+      uint32_t fPos  = (uint32_t)atol(fc + 1);
+      uint16_t fSpd  = 0;
+      const char* sp = strchr(fc + 1, ' ');
+      if (sp) fSpd   = (uint16_t)atoi(sp + 1);
+      memcpy(pkt + 40, &fPos, 4);
+      pkt[44] = (uint8_t)(fSpd & 0xFF);
+      pkt[45] = (uint8_t)(fSpd >> 8);
+    }
+  }
+  // Byte 46: XOR checksum of bytes 0–45; byte 47: reserved (0).
+  uint8_t xorChk = 0;
+  for (int i = 0; i < 46; i++) xorChk ^= pkt[i];
+  pkt[46] = xorChk;
+  // pkt[47] stays 0
+
+  // ── Base64 encode → reply ─────────────────────────────────────────────────
+  gxasB64Encode(pkt, commandState.reply);
+  strcat(commandState.reply, "#");
+}
+
 // ---- GX Alignment  :GXAn# --------------------------------------------------
 static void Command_GX_Alignment()
 {
@@ -614,13 +807,184 @@ static void Command_GX_Options()
   }
 }
 
+// ---- GX Config Settings  :GXCS# -------------------------------------------
+// Returns a base64-encoded 90-byte binary snapshot of all mount configuration:
+// motor parameters (both axes), speed/rates, limits, encoders, and refraction
+// flags.  This replaces ~40 individual :GXMx#/:GXRx#/:GXLx# queries.
+//
+// 90 bytes (divisible by 3) → 120 base64 chars + '#' = 121 chars on wire.
+//
+// Packet layout (little-endian):
+//   ── Axis 1 Motor (16 bytes, offset 0) ──────────────────────────────────
+//   Bytes  0– 3: gear        uint32 LE  (raw, ÷1000 = gear ratio float)
+//   Bytes  4– 5: stepRot     uint16 LE  (steps per motor rotation)
+//   Bytes  6– 7: backlash    uint16 LE  (steps)
+//   Bytes  8– 9: backlashRate uint16 LE (steps/s)
+//   Bytes 10–11: lowCurr     uint16 LE  (mA)
+//   Bytes 12–13: highCurr    uint16 LE  (mA)
+//   Byte  14:    micro       uint8      (microstep divider, 0–8)
+//   Byte  15:    flags       uint8      [bit0=reverse, bit1=silent]
+//   ── Axis 2 Motor (16 bytes, offset 16) ─────────────────────────────────
+//   Bytes 16–31: same layout as Axis 1
+//   ── Rates / Speed (24 bytes, offset 32) ────────────────────────────────
+//   Bytes 32–35: guideRate   float32 LE (arcsec/sec, index 0)
+//   Bytes 36–39: slowRate    float32 LE (arcsec/sec, index 1)
+//   Bytes 40–43: mediumRate  float32 LE (arcsec/sec, index 2)
+//   Bytes 44–47: fastRate    float32 LE (arcsec/sec, index 3)
+//   Bytes 48–51: acceleration float32 LE (degrees for acceleration)
+//   Bytes 52–53: maxRate     uint16 LE  (µs/step from EE_maxRate)
+//   Byte  54:    defaultRate uint8      (0–4, from EE_DefaultRate)
+//   Byte  55:    settleTime  uint8      (seconds, from EE_SlewSettleDuration)
+//   ── Limits (18 bytes, offset 56) ───────────────────────────────────────
+//   Bytes 56–57: meridianE   int16 LE  (arcmin)
+//   Bytes 58–59: meridianW   int16 LE  (arcmin)
+//   Bytes 60–61: axis1min    int16 LE  (×10 degrees from EEPROM)
+//   Bytes 62–63: axis1max    int16 LE
+//   Bytes 64–65: axis2min    int16 LE
+//   Bytes 66–67: axis2max    int16 LE
+//   Bytes 68–69: underPole   uint16 LE (underPoleLimitGOTO × 10)
+//   Byte  70:    minAlt      int8      (degrees)
+//   Byte  71:    maxAlt      int8      (degrees)
+//   Byte  72:    minDistPole uint8     (degrees)
+//   Byte  73:    refrFlags   uint8     [bit0=tracking, bit1=goto, bit2=pole]
+//   ── Encoders (10 bytes, offset 74) ─────────────────────────────────────
+//   Bytes 74–77: ppd1×100    uint32 LE (pulsePerDegree×100, Axis1)
+//   Bytes 78–81: ppd2×100    uint32 LE (pulsePerDegree×100, Axis2)
+//   Byte  82:    encSyncMode uint8     (EncoderSync enum)
+//   Byte  83:    encFlags    uint8     [bit0=rev1, bit1=rev2]
+//   ── Options (5 bytes, offset 84) ────────────────────────────────────────
+//   Byte  84:    mountIdx    uint8     (active mount index, midx)
+//   Bytes 85–88: reserved    uint8[4]
+//   ── Checksum (1 byte, offset 89) ────────────────────────────────────────
+//   Byte  89:    XOR of bytes 0–88
+
+// Pack a uint16 into `pkt` at `off` (little-endian).
+static void gxcsPackU16(uint8_t* pkt, int off, uint16_t v)
+{
+  pkt[off]     = (uint8_t)(v & 0xFF);
+  pkt[off + 1] = (uint8_t)(v >> 8);
+}
+
+// Pack an int16 into `pkt` at `off` (little-endian).
+static void gxcsPackI16(uint8_t* pkt, int off, int16_t v)
+{
+  gxcsPackU16(pkt, off, (uint16_t)v);
+}
+
+// Pack a uint32 into `pkt` at `off` (little-endian).
+static void gxcsPackU32(uint8_t* pkt, int off, uint32_t v)
+{
+  pkt[off]     = (uint8_t)(v & 0xFF);
+  pkt[off + 1] = (uint8_t)((v >> 8)  & 0xFF);
+  pkt[off + 2] = (uint8_t)((v >> 16) & 0xFF);
+  pkt[off + 3] = (uint8_t)((v >> 24) & 0xFF);
+}
+
+// Pack one motor axis into `pkt` starting at `base`.
+static void gxcsPackAxis(uint8_t* pkt, int base, const AxisRef& ax)
+{
+  gxcsPackU32(pkt, base +  0, (uint32_t)ax.motor.gear);
+  gxcsPackU16(pkt, base +  4, (uint16_t)ax.motor.stepRot);
+  gxcsPackU16(pkt, base +  6, (uint16_t)ax.motor.backlashAmount);
+  gxcsPackU16(pkt, base +  8, (uint16_t)ax.motor.backlashRate);
+  gxcsPackU16(pkt, base + 10, (uint16_t)ax.motor.lowCurr);
+  gxcsPackU16(pkt, base + 12, (uint16_t)ax.motor.highCurr);
+  pkt[base + 14] = (uint8_t)ax.motor.micro;
+  uint8_t flags  = 0;
+  bitWrite(flags, 0, ax.motor.reverse);
+  bitWrite(flags, 1, ax.motor.silent);
+  pkt[base + 15] = flags;
+}
+
+static void Command_GX_AllConfig()
+{
+  uint8_t pkt[90];
+  memset(pkt, 0, sizeof(pkt));
+
+  // ── Axis 1 Motor (offset 0) ──────────────────────────────────────────────
+  AxisRef* ax1 = selectAxis('R');
+  if (ax1) gxcsPackAxis(pkt, 0, *ax1);
+
+  // ── Axis 2 Motor (offset 16) ─────────────────────────────────────────────
+  AxisRef* ax2 = selectAxis('D');
+  if (ax2) gxcsPackAxis(pkt, 16, *ax2);
+
+  // ── Rates / Speed (offset 32) ────────────────────────────────────────────
+  float fv;
+  fv = (float)mount.guiding.guideRates[0]; memcpy(pkt + 32, &fv, 4);
+  fv = (float)mount.guiding.guideRates[1]; memcpy(pkt + 36, &fv, 4);
+  fv = (float)mount.guiding.guideRates[2]; memcpy(pkt + 40, &fv, 4);
+  fv = (float)mount.guiding.guideRates[3]; memcpy(pkt + 44, &fv, 4);
+  fv = (float)mount.guiding.DegreesForAcceleration; memcpy(pkt + 48, &fv, 4);
+  gxcsPackU16(pkt, 52, (uint16_t)XEEPROM.readUShort(getMountAddress(EE_maxRate)));
+  pkt[54] = (uint8_t)XEEPROM.read(getMountAddress(EE_DefaultRate));
+  pkt[55] = (uint8_t)XEEPROM.read(getMountAddress(EE_SlewSettleDuration));
+
+  // ── Limits (offset 56) ───────────────────────────────────────────────────
+  gxcsPackI16(pkt, 56, (int16_t)round(mount.limits.getMeridianEastLimit()));
+  gxcsPackI16(pkt, 58, (int16_t)round(mount.limits.getMeridianWestLimit()));
+  gxcsPackI16(pkt, 60, (int16_t)XEEPROM.readShort(getMountAddress(EE_minAxis1)));
+  gxcsPackI16(pkt, 62, (int16_t)XEEPROM.readShort(getMountAddress(EE_maxAxis1)));
+  gxcsPackI16(pkt, 64, (int16_t)XEEPROM.readShort(getMountAddress(EE_minAxis2)));
+  gxcsPackI16(pkt, 66, (int16_t)XEEPROM.readShort(getMountAddress(EE_maxAxis2)));
+  gxcsPackU16(pkt, 68, (uint16_t)round(mount.limits.underPoleLimitGOTO * 10.0));
+  pkt[70] = (uint8_t)(int8_t)mount.limits.minAlt;
+  pkt[71] = (uint8_t)(int8_t)mount.limits.maxAlt;
+  pkt[72] = (uint8_t)mount.limits.distanceFromPoleToKeepTrackingOn;
+  uint8_t refrFlags = 0;
+  bitWrite(refrFlags, 0, mount.refraction.forTracking);
+  bitWrite(refrFlags, 1, mount.refraction.forGoto);
+  bitWrite(refrFlags, 2, mount.refraction.forPole);
+  pkt[73] = refrFlags;
+
+  // ── Encoders (offset 74) ─────────────────────────────────────────────────
+  gxcsPackU32(pkt, 74, (uint32_t)round(mount.motorsEncoders.encoderA1.pulsePerDegree * 100.0));
+  gxcsPackU32(pkt, 78, (uint32_t)round(mount.motorsEncoders.encoderA2.pulsePerDegree * 100.0));
+  pkt[82] = (uint8_t)mount.motorsEncoders.EncodeSyncMode;
+  uint8_t encFlags = 0;
+  bitWrite(encFlags, 0, mount.motorsEncoders.encoderA1.reverse);
+  bitWrite(encFlags, 1, mount.motorsEncoders.encoderA2.reverse);
+  pkt[83] = encFlags;
+
+  // ── Options (offset 84) ──────────────────────────────────────────────────
+  pkt[84] = (uint8_t)midx;
+  // pkt[85-88] remain 0
+
+  // ── XOR checksum (byte 89) ───────────────────────────────────────────────
+  uint8_t xorChk = 0;
+  for (int i = 0; i < 89; i++) xorChk ^= pkt[i];
+  pkt[89] = xorChk;
+
+  // ── Base64 encode (90 bytes → 120 chars) + '#' ───────────────────────────
+  // Reuse the same GX_B64 table and encode in 3-byte groups.
+  char* out = commandState.reply;
+  int o = 0;
+  for (int i = 0; i < 90; i += 3)
+  {
+    uint32_t b = ((uint32_t)pkt[i] << 16) | ((uint32_t)pkt[i+1] << 8) | pkt[i+2];
+    out[o++] = GX_B64[(b >> 18) & 0x3F];
+    out[o++] = GX_B64[(b >> 12) & 0x3F];
+    out[o++] = GX_B64[(b >>  6) & 0x3F];
+    out[o++] = GX_B64[ b        & 0x3F];
+  }
+  out[o++] = '#';
+  out[o]   = 0;
+}
+
 // =============================================================================
 //   Command_GX  --  :GXnn#  dispatch to sub-handlers
 // =============================================================================
 void Command_GX() {
   switch (commandState.command[2])
   {
-  case 'A': Command_GX_Alignment();   break;
+  case 'A':
+    if (commandState.command[3] == 'S') Command_GX_AllState();
+    else                                Command_GX_Alignment();
+    break;
+  case 'C':
+    if (commandState.command[3] == 'S') Command_GX_AllConfig();
+    else                                replyLongUnknow();
+    break;
   case 'E': Command_GX_Encoders();    break;
   case 'D': Command_GX_Debug();       break;
   case 'P': Command_GX_Position();    break;

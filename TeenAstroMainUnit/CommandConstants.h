@@ -11,5 +11,6 @@
 
 // Command buffer limits (from protocol: : + cmd + #)
 constexpr int CMD_BUFFER_LEN   = 28;
-constexpr int REPLY_BUFFER_LEN = 50;
+// :GXCS# returns 120 base64 chars + '#' + NUL = 122 bytes — largest reply.
+constexpr int REPLY_BUFFER_LEN = 130;
 constexpr int CMD_MAX_PAYLOAD  = 22;  // max chars between : and #

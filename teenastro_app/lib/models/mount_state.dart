@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 /// Mount state enums and model - mirrors TeenAstroMountStatus
 
 enum TrackState { off, on, slewing, unknown }
@@ -54,6 +57,8 @@ class MountState {
   // Focuser
   final String focuserStatus;
   final bool focuserConnected;
+  final int focuserPos;    // steps (from :GXAS# binary packet)
+  final int focuserSpeed;  // speed units (from :GXAS# binary packet)
 
   const MountState({
     this.tracking = TrackState.unknown,
@@ -91,6 +96,8 @@ class MountState {
     this.longitude = 0.0,
     this.focuserStatus = '',
     this.focuserConnected = false,
+    this.focuserPos = 0,
+    this.focuserSpeed = 0,
   });
 
   // GNSS convenience
@@ -107,6 +114,200 @@ class MountState {
   bool get isParked => parkState == ParkState.parked;
   bool get isTracking => tracking == TrackState.on;
   bool get isSlewing => tracking == TrackState.slewing;
+
+  // ---------------------------------------------------------------------------
+  // Coordinate format helpers
+  // ---------------------------------------------------------------------------
+
+  static String _p2(int n) => n.toString().padLeft(2, '0');
+
+  static String _formatRa(double hours) {
+    while (hours < 0) hours += 24;
+    while (hours >= 24) hours -= 24;
+    final h  = hours.floor();
+    final mf = (hours - h) * 60;
+    final m  = mf.floor();
+    var   s  = ((mf - m) * 60).round();
+    if (s >= 60) s = 59;
+    return '${_p2(h)}:${_p2(m)}:${_p2(s)}';
+  }
+
+  static String _formatDeg(double deg) {
+    final sign = deg >= 0 ? '+' : '-';
+    final abs  = deg.abs();
+    final d    = abs.floor();
+    final mf   = (abs - d) * 60;
+    final m    = mf.floor();
+    var   s    = ((mf - m) * 60).round();
+    if (s >= 60) s = 59;
+    return '$sign${_p2(d)}*${_p2(m)}:${_p2(s)}';
+  }
+
+  static String _formatAz(double deg) {
+    while (deg < 0) deg += 360;
+    while (deg >= 360) deg -= 360;
+    final d  = deg.floor();
+    final mf = (deg - d) * 60;
+    final m  = mf.floor();
+    var   s  = ((mf - m) * 60).round();
+    if (s >= 60) s = 59;
+    return '${d.toString().padLeft(3, '0')}*${_p2(m)}:${_p2(s)}';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Parse binary :GXAS# response (64-char base64 → 48-byte packet)
+  // ---------------------------------------------------------------------------
+  //
+  // Packet layout (little-endian):
+  //   Byte  0: tracking[1:0]|sidereal[3:2]|park[5:4]|atHome[6]|pierSide[7]
+  //   Byte  1: guidingRate[2:0]|aligned[3]|mountType[6:4]|spiralRunning[7]
+  //   Byte  2: guidingEW[1:0]|guidingNS[3:2]|trackComp[5:4]|fault[6]|pulse[7]
+  //   Byte  3: gnssFlags (5 bits)
+  //   Byte  4: error (0-8)
+  //   Byte  5: enableFlags[3:0]|hasFocuser[4]
+  //   Bytes 6-11:  UTC hour,min,sec,month,day,year(2-digit)
+  //   Bytes 12-15: RA          float32 LE (hours 0-24)
+  //   Bytes 16-19: Dec         float32 LE (degrees ±90)
+  //   Bytes 20-23: Alt         float32 LE (degrees ±90)
+  //   Bytes 24-27: Az          float32 LE (degrees 0-360)
+  //   Bytes 28-31: LST         float32 LE (hours 0-24)
+  //   Bytes 32-35: Target RA   float32 LE (hours 0-24)
+  //   Bytes 36-39: Target Dec  float32 LE (degrees ±90)
+  //   Bytes 40-43: Focuser pos uint32 LE (steps)
+  //   Bytes 44-45: Focuser spd uint16 LE
+  //   Bytes 46-47: reserved
+  MountState parseBinaryState(String base64Str) {
+    if (base64Str.length != 64) return copyWith(valid: false);
+
+    final Uint8List bytes;
+    try {
+      bytes = base64.decode(base64Str);
+    } catch (_) {
+      return copyWith(valid: false);
+    }
+    if (bytes.length < 48) return copyWith(valid: false);
+
+    // Verify XOR checksum: XOR of bytes 0–45 must equal byte 46.
+    int xorChk = 0;
+    for (int i = 0; i < 46; i++) xorChk ^= bytes[i];
+    if (xorChk != bytes[46]) return copyWith(valid: false);
+
+    final bd = ByteData.sublistView(bytes);
+
+    // ── Byte 0 ───────────────────────────────────────────────────────────
+    final b0 = bytes[0];
+    final trackVal = switch (b0 & 0x3) {
+      0 => TrackState.off,
+      1 => TrackState.on,
+      _ => TrackState.slewing,
+    };
+    final sidIdx = (b0 >> 2) & 0x3;
+    final sidVal = (sidIdx < SiderealMode.values.length - 1)
+        ? SiderealMode.values[sidIdx]
+        : SiderealMode.unknown;
+    final parkIdx = (b0 >> 4) & 0x3;
+    final parkVal = switch (parkIdx) {
+      0 => ParkState.unparked,
+      1 => ParkState.parking,
+      2 => ParkState.parked,
+      3 => ParkState.failed,
+      _ => ParkState.unknown,
+    };
+    final atHomeVal = ((b0 >> 6) & 0x1) == 1;
+    final pierVal   = ((b0 >> 7) & 0x1) == 0 ? PierSide.east : PierSide.west;
+
+    // ── Byte 1 ───────────────────────────────────────────────────────────
+    final b1 = bytes[1];
+    final speedIdx   = b1 & 0x7;
+    final speedVal   = (speedIdx <= 4)
+        ? SpeedLevel.values[speedIdx] : SpeedLevel.unknown;
+    final alignedVal = ((b1 >> 3) & 0x1) == 1;
+    final mtIdx      = (b1 >> 4) & 0x7;
+    final mountVal   = switch (mtIdx) {
+      1 => MountType.gem,
+      2 => MountType.fork,
+      3 => MountType.altAz,
+      4 => MountType.forkAlt,
+      _ => MountType.undefined,
+    };
+    final spiralVal  = ((b1 >> 7) & 0x1) == 1;
+
+    // ── Byte 2 ───────────────────────────────────────────────────────────
+    final b2 = bytes[2];
+    final ewIdx   = b2 & 0x3;
+    final ewStr   = switch (ewIdx) { 1 => '>', 2 => '<', 3 => 'b', _ => ' ' };
+    final nsIdx   = (b2 >> 2) & 0x3;
+    final nsStr   = switch (nsIdx) { 1 => '^', 2 => '_', 3 => 'b', _ => ' ' };
+    final trkComp = ((b2 >> 4) & 0x3) > 0;
+    final pulse   = ((b2 >> 7) & 0x1) == 1;
+
+    // ── Bytes 3-5 ────────────────────────────────────────────────────────
+    final gFlags   = bytes[3];
+    final errIdx   = bytes[4];
+    final errVal   = (errIdx < MountError.values.length)
+        ? MountError.values[errIdx] : MountError.none;
+    final eFlags     = bytes[5] & 0x0F;
+    final hasFoc     = ((bytes[5] >> 4) & 0x1) == 1;
+
+    // ── UTC bytes 6-11 ────────────────────────────────────────────────────
+    final utcH  = bytes[6];  final utcM = bytes[7];  final utcS = bytes[8];
+    final utcMo = bytes[9];  final utcD = bytes[10]; final utcY = bytes[11];
+    final utcTimeStr = '${_p2(utcH)}:${_p2(utcM)}:${_p2(utcS)}';
+    final utcDateStr = '${_p2(utcMo)}/${_p2(utcD)}/${_p2(utcY)}';
+
+    // ── Positions bytes 12-39 ─────────────────────────────────────────────
+    final raH   = bd.getFloat32(12, Endian.little);
+    final decD  = bd.getFloat32(16, Endian.little);
+    final altD  = bd.getFloat32(20, Endian.little);
+    final azD   = bd.getFloat32(24, Endian.little);
+    final lstH  = bd.getFloat32(28, Endian.little);
+    final tRaH  = bd.getFloat32(32, Endian.little);
+    final tDecD = bd.getFloat32(36, Endian.little);
+
+    final raStr   = _formatRa(raH);
+    final decStr  = _formatDeg(decD);
+    final altStr  = _formatDeg(altD);
+    final azStr   = _formatAz(azD);
+    final lstStr  = _formatRa(lstH);
+    final tRaStr  = _formatRa(tRaH);
+    final tDecStr = _formatDeg(tDecD);
+
+    // ── Focuser bytes 40-45 ───────────────────────────────────────────────
+    final fPos = bd.getUint32(40, Endian.little);
+    final fSpd = bd.getUint16(44, Endian.little);
+
+    return copyWith(
+      tracking: trackVal,
+      sidereal: sidVal,
+      parkState: parkVal,
+      atHome: atHomeVal,
+      speed: speedVal,
+      spiralRunning: spiralVal,
+      pulseGuiding: pulse,
+      guidingEW: ewStr,
+      guidingNS: nsStr,
+      trackCorrected: trkComp,
+      aligned: alignedVal,
+      mountType: mountVal,
+      pierSide: pierVal,
+      gnssFlags: gFlags,
+      error: errVal,
+      enableFlags: eFlags,
+      ra: raStr,
+      dec: decStr,
+      alt: altStr,
+      az: azStr,
+      siderealTime: lstStr,
+      targetRa: tRaStr,
+      targetDec: tDecStr,
+      utcTime: utcTimeStr,
+      utcDate: utcDateStr,
+      focuserConnected: hasFoc,
+      focuserPos: fPos,
+      focuserSpeed: fSpd,
+      valid: true,
+    );
+  }
 
   /// Parse the raw :GXI# status string into a new MountState,
   /// preserving position/time/version fields from previous state.
@@ -219,6 +420,8 @@ class MountState {
     double? longitude,
     String? focuserStatus,
     bool? focuserConnected,
+    int? focuserPos,
+    int? focuserSpeed,
   }) {
     return MountState(
       tracking: tracking ?? this.tracking,
@@ -256,6 +459,8 @@ class MountState {
       longitude: longitude ?? this.longitude,
       focuserStatus: focuserStatus ?? this.focuserStatus,
       focuserConnected: focuserConnected ?? this.focuserConnected,
+      focuserPos: focuserPos ?? this.focuserPos,
+      focuserSpeed: focuserSpeed ?? this.focuserSpeed,
     );
   }
 

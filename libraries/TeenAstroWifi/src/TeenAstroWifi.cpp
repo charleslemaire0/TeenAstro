@@ -734,12 +734,17 @@ void TeenAstroWifi::update()
     if (!cmdSvrClient && cmdSvr.hasClient()) {
       // find free/disconnected spot
       cmdSvrClient = cmdSvr.available();
-      clientTime = millis() + 2000UL;
+      // Idle timeout must exceed both the poll interval (~2 s) and the serial CmdTimeout (up to 8 s)
+      clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
       break;
     }
     break;
   }
 
+
+  // Refresh all-state cache every 500 ms so :GXAS# requests from the app
+  // can be served without an additional serial round-trip to the MainUnit.
+  ta_MountStatus.updateAllState();
 
   // Process at most ONE complete command from the TCP client per update() cycle.
   // This prevents the TCP channel from monopolising the serial port and ensures
@@ -793,7 +798,22 @@ void TeenAstroWifi::update()
       // send cmd and pickup the response
       if ((b == '#') || (b == (char)6))
       {
-        char readBuffer[50] = "";
+        // :GXAS# — serve from all-state cache when fresh (< 500 ms old).
+        if (strcmp(writeBuffer, ":GXAS#") == 0 && !ta_MountStatus.allStateCacheStale())
+        {
+          if (cmdSvrClient.connected())
+            cmdSvrClient.print(ta_MountStatus.getAllStateB64Cached());
+          writeBuffer[0] = 0;
+          writeBufferPos = 0;
+          cmdDone = true;
+          if (activeWifiConnectMode == WifiConnectMode::AutoClose)
+            clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
+          break;
+        }
+
+        // :GXAS# response is 64 base64 chars + '#' = 65 chars — use a larger
+        // read buffer than the default to avoid truncation.
+        char readBuffer[130] = "";
         CMDREPLY cmdreply;
         if (s_client->sendReceiveAuto(writeBuffer, cmdreply, readBuffer, sizeof(readBuffer), CmdTimeout, true))
         {
@@ -808,6 +828,10 @@ void TeenAstroWifi::update()
         writeBuffer[0] = 0;
         writeBufferPos = 0;
         cmdDone = true;  // exit after one complete command
+        // In AutoClose mode, refresh idle timeout after every processed command.
+        // Must exceed CmdTimeout (serial round-trip) + poll interval to avoid race.
+        if (activeWifiConnectMode == WifiConnectMode::AutoClose)
+          clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
       }
     }
   }
