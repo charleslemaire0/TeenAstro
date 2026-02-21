@@ -60,6 +60,12 @@ class MountState {
   final int focuserPos;    // steps (from :GXAS# binary packet)
   final int focuserSpeed;  // speed units (from :GXAS# binary packet)
 
+  // Tracking rates (×10000, from :GXAS# bytes 48-63; same as :GXRr#/:GXRd#/:GXRe#/:GXRf#)
+  final int trackRateRa;
+  final int trackRateDec;
+  final int storedTrackRateRa;
+  final int storedTrackRateDec;
+
   const MountState({
     this.tracking = TrackState.unknown,
     this.sidereal = SiderealMode.unknown,
@@ -98,6 +104,10 @@ class MountState {
     this.focuserConnected = false,
     this.focuserPos = 0,
     this.focuserSpeed = 0,
+    this.trackRateRa = 0,
+    this.trackRateDec = 0,
+    this.storedTrackRateRa = 0,
+    this.storedTrackRateDec = 0,
   });
 
   // GNSS convenience
@@ -155,29 +165,14 @@ class MountState {
   }
 
   // ---------------------------------------------------------------------------
-  // Parse binary :GXAS# response (64-char base64 → 48-byte packet)
+  // Parse binary :GXAS# response (88-char base64 → 66-byte packet)
   // ---------------------------------------------------------------------------
   //
-  // Packet layout (little-endian):
-  //   Byte  0: tracking[1:0]|sidereal[3:2]|park[5:4]|atHome[6]|pierSide[7]
-  //   Byte  1: guidingRate[2:0]|aligned[3]|mountType[6:4]|spiralRunning[7]
-  //   Byte  2: guidingEW[1:0]|guidingNS[3:2]|trackComp[5:4]|fault[6]|pulse[7]
-  //   Byte  3: gnssFlags (5 bits)
-  //   Byte  4: error (0-8)
-  //   Byte  5: enableFlags[3:0]|hasFocuser[4]
-  //   Bytes 6-11:  UTC hour,min,sec,month,day,year(2-digit)
-  //   Bytes 12-15: RA          float32 LE (hours 0-24)
-  //   Bytes 16-19: Dec         float32 LE (degrees ±90)
-  //   Bytes 20-23: Alt         float32 LE (degrees ±90)
-  //   Bytes 24-27: Az          float32 LE (degrees 0-360)
-  //   Bytes 28-31: LST         float32 LE (hours 0-24)
-  //   Bytes 32-35: Target RA   float32 LE (hours 0-24)
-  //   Bytes 36-39: Target Dec  float32 LE (degrees ±90)
-  //   Bytes 40-43: Focuser pos uint32 LE (steps)
-  //   Bytes 44-45: Focuser spd uint16 LE
-  //   Bytes 46-47: reserved
+  // Packet layout (little-endian): fixed data first; optional focuser before checksum.
+  //   Bytes 12-39: positions (7 × float32). Bytes 40-55: tracking rates (4 × int32 LE).
+  //   Bytes 56-61: focuser position (uint32) + speed (uint16), optional. Byte 65: checksum.
   MountState parseBinaryState(String base64Str) {
-    if (base64Str.length != 64) return copyWith(valid: false);
+    if (base64Str.length != 88) return copyWith(valid: false);
 
     final Uint8List bytes;
     try {
@@ -185,12 +180,12 @@ class MountState {
     } catch (_) {
       return copyWith(valid: false);
     }
-    if (bytes.length < 48) return copyWith(valid: false);
+    if (bytes.length < 66) return copyWith(valid: false);
 
-    // Verify XOR checksum: XOR of bytes 0–45 must equal byte 46.
+    // Verify XOR checksum: XOR of bytes 0–64 must equal byte 65.
     int xorChk = 0;
-    for (int i = 0; i < 46; i++) xorChk ^= bytes[i];
-    if (xorChk != bytes[46]) return copyWith(valid: false);
+    for (int i = 0; i < 65; i++) xorChk ^= bytes[i];
+    if (xorChk != bytes[65]) return copyWith(valid: false);
 
     final bd = ByteData.sublistView(bytes);
 
@@ -272,9 +267,15 @@ class MountState {
     final tRaStr  = _formatRa(tRaH);
     final tDecStr = _formatDeg(tDecD);
 
-    // ── Focuser bytes 40-45 ───────────────────────────────────────────────
-    final fPos = bd.getUint32(40, Endian.little);
-    final fSpd = bd.getUint16(44, Endian.little);
+    // ── Tracking rates bytes 40-55 (int32 LE) ──────────────────────────────
+    final trRa = bd.getInt32(40, Endian.little);
+    final trDec = bd.getInt32(44, Endian.little);
+    final stRa = bd.getInt32(48, Endian.little);
+    final stDec = bd.getInt32(52, Endian.little);
+
+    // ── Focuser bytes 56-61 (optional when hasFocuser) ────────────────────
+    final fPos = bd.getUint32(56, Endian.little);
+    final fSpd = bd.getUint16(60, Endian.little);
 
     return copyWith(
       tracking: trackVal,
@@ -305,6 +306,10 @@ class MountState {
       focuserConnected: hasFoc,
       focuserPos: fPos,
       focuserSpeed: fSpd,
+      trackRateRa: trRa,
+      trackRateDec: trDec,
+      storedTrackRateRa: stRa,
+      storedTrackRateDec: stDec,
       valid: true,
     );
   }
@@ -422,6 +427,10 @@ class MountState {
     bool? focuserConnected,
     int? focuserPos,
     int? focuserSpeed,
+    int? trackRateRa,
+    int? trackRateDec,
+    int? storedTrackRateRa,
+    int? storedTrackRateDec,
   }) {
     return MountState(
       tracking: tracking ?? this.tracking,
@@ -461,6 +470,10 @@ class MountState {
       focuserConnected: focuserConnected ?? this.focuserConnected,
       focuserPos: focuserPos ?? this.focuserPos,
       focuserSpeed: focuserSpeed ?? this.focuserSpeed,
+      trackRateRa: trackRateRa ?? this.trackRateRa,
+      trackRateDec: trackRateDec ?? this.trackRateDec,
+      storedTrackRateRa: storedTrackRateRa ?? this.storedTrackRateRa,
+      storedTrackRateDec: storedTrackRateDec ?? this.storedTrackRateDec,
     );
   }
 

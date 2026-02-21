@@ -443,28 +443,28 @@ void TeenAstroMountStatus::updateAllState(bool force)
 {
   if (!m_timerAllState.needsUpdate(UPDATERATE) && !force) return;
 
-  // Fetch the 64-char base64 response (no '#' in returned string).
-  char raw[66] = "";
-  if (m_client->get(":GXAS#", raw, sizeof(raw)) != LX200_VALUEGET || strlen(raw) != 64)
+  // Fetch the 88-char base64 response (no '#' in returned string).
+  char raw[92] = "";
+  if (m_client->get(":GXAS#", raw, sizeof(raw)) != LX200_VALUEGET || strlen(raw) != 88)
   {
     m_mount.valid = false;
     m_connectionFailure++;
     return;
   }
 
-  // Decode to 48 bytes.
-  uint8_t pkt[48];
-  if (!b64Decode(raw, 64, pkt))
+  // Decode to 66 bytes.
+  uint8_t pkt[66];
+  if (!b64Decode(raw, 88, pkt))
   {
     m_mount.valid = false;
     m_connectionFailure++;
     return;
   }
 
-  // Verify XOR checksum: XOR of bytes 0–45 must equal byte 46.
+  // Verify XOR checksum: XOR of bytes 0–64 must equal byte 65.
   uint8_t xorChk = 0;
-  for (int i = 0; i < 46; i++) xorChk ^= pkt[i];
-  if (xorChk != pkt[46])
+  for (int i = 0; i < 65; i++) xorChk ^= pkt[i];
+  if (xorChk != pkt[65])
   {
     m_mount.valid = false;
     m_connectionFailure++;
@@ -562,11 +562,19 @@ void TeenAstroMountStatus::updateAllState(bool force)
   m_timerTime.markUpdated();
   m_timerRaDecT.markUpdated();
 
-  // ── Focuser bytes 40-45 ───────────────────────────────────────────────
+  // ── Bytes 40-55: tracking rates (int32 LE, same as :GXRr#/:GXRd#/:GXRe#/:GXRf#)
+  m_trackRateRa        = (long)(int32_t)pktU32(pkt, 40);
+  m_trackRateDec       = (long)(int32_t)pktU32(pkt, 44);
+  m_storedTrackRateRa  = (long)(int32_t)pktU32(pkt, 48);
+  m_storedTrackRateDec = (long)(int32_t)pktU32(pkt, 52);
+  m_hasInfoTrackingRate = true;
+  m_timerTrackRate.markUpdated();
+
+  // ── Bytes 56-61: focuser (optional; when hasFocuser)
   if (m_hasFocuser)
   {
-    m_focuserPosN   = pktU32(pkt, 40);
-    m_focuserSpeedN = pktU16(pkt, 44);
+    m_focuserPosN   = pktU32(pkt, 56);
+    m_focuserSpeedN = pktU16(pkt, 60);
     snprintf(m_focuser.data, sizeof(m_focuser.data),
              "?%05lu %03u", (unsigned long)m_focuserPosN, (unsigned)m_focuserSpeedN);
     m_focuser.valid = true;
@@ -715,24 +723,27 @@ void TeenAstroMountStatus::updateFocuser()
 
 void TeenAstroMountStatus::updateTrackingRate()
 {
-  if (m_timerTrackRate.needsUpdate(UPDATERATE))
-  {
-    m_hasInfoTrackingRate = (m_client->getTrackRateRA(m_trackRateRa) == LX200_VALUEGET);
-    if (m_hasInfoTrackingRate)
-      m_timerTrackRate.markUpdated();
-    else
-      m_connectionFailure++;
+  // If all-state was recently updated, rates are already in cache — no serial.
+  if (!m_timerTrackRate.needsUpdate(UPDATERATE))
+    return;
+  m_hasInfoTrackingRate = (m_client->getTrackRateRA(m_trackRateRa) == LX200_VALUEGET);
+  if (m_hasInfoTrackingRate)
+    m_timerTrackRate.markUpdated();
+  else
+    m_connectionFailure++;
 
-    m_hasInfoTrackingRate &= (m_client->getTrackRateDec(m_trackRateDec) == LX200_VALUEGET);
-    if (m_hasInfoTrackingRate)
-      m_timerTrackRate.markUpdated();
-    else
-      m_connectionFailure++;
-  }
+  m_hasInfoTrackingRate &= (m_client->getTrackRateDec(m_trackRateDec) == LX200_VALUEGET);
+  if (m_hasInfoTrackingRate)
+    m_timerTrackRate.markUpdated();
+  else
+    m_connectionFailure++;
 }
 
 bool TeenAstroMountStatus::updateStoredTrackingRate()
 {
+  // If all-state was recently updated, stored rates are already in cache — no serial.
+  if (!m_timerAllState.needsUpdate(UPDATERATE))
+    return true;
   bool ok = (m_client->getStoredTrackRateRA(m_storedTrackRateRa) == LX200_VALUEGET);
   ok &= (m_client->getStoredTrackRateDec(m_storedTrackRateDec) == LX200_VALUEGET);
   return ok;

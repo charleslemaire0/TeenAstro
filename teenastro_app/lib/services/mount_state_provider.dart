@@ -121,8 +121,9 @@ class MountStateNotifier extends StateNotifier<MountState> {
 
   Future<void> _fetchAllState() async {
     final raw = await _client.sendCommand(LX200.getAllState);
-    if (raw != null && raw.length == 64) {
-      state = state.parseBinaryState(raw);
+    if (raw != null) {
+      final base64 = raw.endsWith('#') ? raw.substring(0, raw.length - 1) : raw;
+      if (base64.length == 88) state = state.parseBinaryState(base64);
     }
   }
 

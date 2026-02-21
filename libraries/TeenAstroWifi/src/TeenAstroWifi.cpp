@@ -811,7 +811,7 @@ void TeenAstroWifi::update()
           break;
         }
 
-        // :GXAS# response is 64 base64 chars + '#' = 65 chars — use a larger
+        // :GXAS# response is 88 base64 chars + '#' = 89 chars — use a larger
         // read buffer than the default to avoid truncation.
         char readBuffer[130] = "";
         CMDREPLY cmdreply;

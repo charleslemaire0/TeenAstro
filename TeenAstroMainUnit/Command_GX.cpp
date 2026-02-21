@@ -33,38 +33,25 @@ static void PrintRa(double& val) {
 // =============================================================================
 
 // ---- GX All State  :GXAS# --------------------------------------------------
-// Returns a base64-encoded 48-byte binary snapshot of all mount state.
-// 48 bytes → 64 base64 chars + '#'.  No padding ('=' chars) needed since
-// 48 is divisible by 3.  The '#' terminator is safe because base64 never
-// produces 0x23.
+// Returns a base64-encoded 66-byte binary snapshot of all mount state.
+// 66 bytes → 88 base64 chars + '#'.  No padding needed since 66 is divisible by 3.
 //
-// Packet layout (little-endian):
-//   Byte  0: tracking[1:0]|sidereal[3:2]|park[5:4]|atHome[6]|pierSide[7]
-//   Byte  1: guidingRate[2:0]|aligned[3]|mountType[6:4]|spiralRunning[7]
-//   Byte  2: guidingEW[1:0]|guidingNS[3:2]|trackComp[5:4]|fault[6]|pulse[7]
-//   Byte  3: gnssFlags (5 bits)
-//   Byte  4: error (0-8)
-//   Byte  5: enableFlags[3:0]|hasFocuser[4]|reserved[7:5]
+// Packet layout (little-endian). Fixed data first; optional focuser last before checksum.
+//   Bytes 0-5:   Status (tracking, sidereal, park, atHome, pierSide, guidingRate, aligned, mountType, spiralRunning, guidingEW/NS, trackComp, fault, pulse, gnssFlags, error, enableFlags, hasFocuser)
 //   Bytes 6-11:  UTC hour,min,sec,month,day,year(2-digit)
-//   Bytes 12-15: RA          float32 LE (hours 0-24)
-//   Bytes 16-19: Dec         float32 LE (degrees ±90)
-//   Bytes 20-23: Alt         float32 LE (degrees ±90)
-//   Bytes 24-27: Az          float32 LE (degrees 0-360)
-//   Bytes 28-31: LST         float32 LE (hours 0-24)
-//   Bytes 32-35: Target RA   float32 LE (hours 0-24)
-//   Bytes 36-39: Target Dec  float32 LE (degrees ±90)
-//   Bytes 40-43: Focuser pos uint32 LE (steps)
-//   Bytes 44-45: Focuser spd uint16 LE
-//   Bytes 46-47: reserved (0)
+//   Bytes 12-39: Positions (7 × float32 LE: RA, Dec, Alt, Az, LST, Target RA, Target Dec)
+//   Bytes 40-55: Tracking rates (4 × int32 LE: trackRateRA, trackRateDec, storedRateRA, storedRateDec — same as :GXRr#/:GXRd#/:GXRe#/:GXRf#)
+//   Bytes 56-61: Focuser (optional; when hasFocuser): position uint32 LE, speed uint16 LE. Otherwise zero.
+//   Bytes 62-64: reserved (0)
+//   Byte  65:   XOR checksum of bytes 0-64
 
 static const char GX_B64[] =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-static void gxasB64Encode(const uint8_t* in, char* out)
+static void gxasB64Encode(const uint8_t* in, char* out, int len)
 {
-  // Encode exactly 48 bytes (divisible by 3 — no padding).
-  uint8_t o = 0;
-  for (uint8_t i = 0; i < 48; i += 3)
+  int o = 0;
+  for (int i = 0; i < len; i += 3)
   {
     uint32_t b = ((uint32_t)in[i] << 16) | ((uint32_t)in[i + 1] << 8) | in[i + 2];
     out[o++] = GX_B64[(b >> 18) & 0x3F];
@@ -82,7 +69,7 @@ static void gxasPackF32(uint8_t* pkt, int off, float v)
 
 static void Command_GX_AllState()
 {
-  uint8_t pkt[48];
+  uint8_t pkt[66];
   memset(pkt, 0, sizeof(pkt));
   PoleSide currentSide = mount.getPoleSide();
 
@@ -186,7 +173,17 @@ static void Command_GX_AllState()
     gxasPackF32(pkt, 36, tgtDec);
   }
 
-  // ── Bytes 40-45: focuser position and speed ───────────────────────────────
+  // ── Bytes 40-55: tracking rates (int32 LE, same as :GXRr#/:GXRd#/:GXRe#/:GXRf#)
+  int32_t trackRateRA   = (int32_t)round(10000.0 - mount.tracking.RequestedTrackingRateHA * 10000.0);
+  int32_t trackRateDec  = (int32_t)round(mount.tracking.RequestedTrackingRateDEC * 10000.0);
+  int32_t storedRateRA  = (int32_t)mount.tracking.storedTrakingRateRA;
+  int32_t storedRateDec = (int32_t)mount.tracking.storedTrakingRateDEC;
+  memcpy(pkt + 40, &trackRateRA, 4);
+  memcpy(pkt + 44, &trackRateDec, 4);
+  memcpy(pkt + 48, &storedRateRA, 4);
+  memcpy(pkt + 52, &storedRateDec, 4);
+
+  // ── Bytes 56-61: focuser (optional; when hasFocuser). Otherwise zero. ─────
   if (mount.config.peripherals.hasFocuser)
   {
     Focus_Serial.flush();
@@ -209,19 +206,20 @@ static void Command_GX_AllState()
       uint16_t fSpd  = 0;
       const char* sp = strchr(fc + 1, ' ');
       if (sp) fSpd   = (uint16_t)atoi(sp + 1);
-      memcpy(pkt + 40, &fPos, 4);
-      pkt[44] = (uint8_t)(fSpd & 0xFF);
-      pkt[45] = (uint8_t)(fSpd >> 8);
+      memcpy(pkt + 56, &fPos, 4);
+      pkt[60] = (uint8_t)(fSpd & 0xFF);
+      pkt[61] = (uint8_t)(fSpd >> 8);
     }
   }
-  // Byte 46: XOR checksum of bytes 0–45; byte 47: reserved (0).
-  uint8_t xorChk = 0;
-  for (int i = 0; i < 46; i++) xorChk ^= pkt[i];
-  pkt[46] = xorChk;
-  // pkt[47] stays 0
+  // pkt[62-64] stay 0 (reserved)
 
-  // ── Base64 encode → reply ─────────────────────────────────────────────────
-  gxasB64Encode(pkt, commandState.reply);
+  // Byte 65: XOR checksum of bytes 0-64
+  uint8_t xorChk = 0;
+  for (int i = 0; i < 65; i++) xorChk ^= pkt[i];
+  pkt[65] = xorChk;
+
+  // ── Base64 encode (66 bytes → 88 chars) → reply ──────────────────────────
+  gxasB64Encode(pkt, commandState.reply, 66);
   strcat(commandState.reply, "#");
 }
 
@@ -956,19 +954,8 @@ static void Command_GX_AllConfig()
   pkt[89] = xorChk;
 
   // ── Base64 encode (90 bytes → 120 chars) + '#' ───────────────────────────
-  // Reuse the same GX_B64 table and encode in 3-byte groups.
-  char* out = commandState.reply;
-  int o = 0;
-  for (int i = 0; i < 90; i += 3)
-  {
-    uint32_t b = ((uint32_t)pkt[i] << 16) | ((uint32_t)pkt[i+1] << 8) | pkt[i+2];
-    out[o++] = GX_B64[(b >> 18) & 0x3F];
-    out[o++] = GX_B64[(b >> 12) & 0x3F];
-    out[o++] = GX_B64[(b >>  6) & 0x3F];
-    out[o++] = GX_B64[ b        & 0x3F];
-  }
-  out[o++] = '#';
-  out[o]   = 0;
+  gxasB64Encode(pkt, commandState.reply, 90);
+  strcat(commandState.reply, "#");
 }
 
 // =============================================================================

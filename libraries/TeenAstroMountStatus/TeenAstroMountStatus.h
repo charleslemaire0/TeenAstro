@@ -464,8 +464,8 @@ private:
   bool          m_hasFocuser = false;
 
   // --- All-state bulk cache (:GXAS#) ---
-  // Stores the 64-char base64 string + '#' + NUL (66 bytes total).
-  char          m_allStateB64[66] = "";
+  // Stores the 88-char base64 string + '#' + NUL (90 bytes total).
+  char          m_allStateB64[92] = "";
   CacheTimer    m_timerAllState;
   // Unpacked UTC components
   uint8_t       m_utcH = 0, m_utcM = 0, m_utcS = 0;
