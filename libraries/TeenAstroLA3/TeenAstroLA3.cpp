@@ -10,7 +10,7 @@
 
 #include "TeenAstroLA3.hpp"
 #include <svd3.h>
-#include "arduino.h"
+#include "Arduino.h"
 
 // LA3 methods
 //

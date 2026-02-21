@@ -11,7 +11,7 @@
 
 #include "TeenAstroCoordConv.hpp"
 
-#include <arduino.h>
+#include <Arduino.h>
 
 using namespace std;
 
