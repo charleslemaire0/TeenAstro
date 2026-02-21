@@ -94,7 +94,9 @@ Focuser commands are passed through to the focuser serial line. Standard LX200 f
 | `:F-#` | Focus out. | (nothing) | LX200 standard |
 | `:FQ#` | Focus quit / stop. | (nothing) | LX200 standard |
 | `:FF#` / `:FS#` | Focus fast / slow. | (nothing) | LX200 standard |
-| `:F?#` | Query focuser (no focuser = `0`). | (varies) | LX200 standard |
+| `:F?#` | Query focuser. No focuser = `0`. With focuser = `?NNNNN NNN sDD.DD#` (position in steps, speed, temperature). | (varies) | LX200 standard |
+| `:FA#` | Focuser full config (binary). | 200 base64 chars + `#` (150 bytes) | TeenAstro extension |
+| `:Fa#` | Focuser state (binary). | 12 base64 chars + `#` (9 bytes) | TeenAstro extension |
 | `:Fg#` `:FG#` `:FP#` `:Fs#` `:FS#` `:F!#` `:F$#` `:Fx#` `:F~#` `:FM#` `:FV#` | Forwarded to focuser (no reply). | (nothing) | LX200 standard |
 | `:FO#` `:Fo#` `:FI#` `:Fi#` `:FW#` `:F0#` … `:F8#` `:Fc#` `:FC#` `:Fm#` `:Fr#` | Forwarded to focuser (short reply). | Depends on focuser | LX200 standard |
 
@@ -154,6 +156,13 @@ All `:g…#` commands are TeenAstro GNSS extensions.
 
 All `:GXnn#` commands are TeenAstro extensions. **Standard:** TeenAstro extension.
 
+### Binary bulk
+
+| Syntax | Description | Returns |
+|--------|-------------|---------|
+| `:GXAS#` | Bulk state: tracking, UTC, positions (RA/Dec/Alt/Az/LST, target), rates, focuser (when present), timezone. Base64-encoded 66-byte little-endian packet. Byte 65 = XOR checksum of bytes 0–64. | 88 base64 chars + `#` |
+| `:GXCS#` | Bulk config: both axis motors, rates/speed, limits, encoders, refraction flags, mount index. Base64-encoded 90-byte little-endian packet. Byte 89 = XOR checksum of bytes 0–88. | 120 base64 chars + `#` |
+
 ### Alignment
 | Syntax | Description | Returns |
 |--------|-------------|---------|
@@ -178,6 +187,8 @@ All `:GXnn#` commands are TeenAstro extensions. **Standard:** TeenAstro extensio
 | `:GXDR3#` … `:GXDR6#` | Debug current rate, fstep. | `float#` |
 | `:GXDP0#` … `:GXDP7#` | Debug position/target/delta/interval. | `long#` / `double#` |
 | `:GXDW#` | Get workload (%). | `n%#` |
+| `:GXDW1#` | Get missed sidereal ticks count (debug). | `long#` |
+| `:GXDW2#` | Reset missed sidereal ticks counter. | `1#` |
 
 ### Instrument position
 | Syntax | Description | Returns |
