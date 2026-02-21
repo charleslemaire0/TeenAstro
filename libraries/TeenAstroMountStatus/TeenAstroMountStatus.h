@@ -256,6 +256,8 @@ public:
   const char* getVb()   { return m_vbb; }
   /// Parsed driver type from :GVb# (StepDir=0, TOS100=1, TMC2130=2, TMC5160=3, TMC2660=4).
   StepperDriver getDriverType();
+  /// Driver type from cache only (no serial). Use on index page to avoid extra round-trip.
+  StepperDriver getDriverTypeCached() const;
   /// Human-readable driver name; uses getDriverType() and stepperDriverName().
   bool getDriverName(char* name);
   const char* getVD()   { return m_vd; }
@@ -296,6 +298,16 @@ public:
   uint8_t  getUtcYear()   const { return m_utcYear; }
   uint32_t getFocuserPos()   const { return m_focuserPosN; }
   uint16_t getFocuserSpeed() const { return m_focuserSpeedN; }
+
+  /// Timezone offset in hours (toff convention: local = UTC − toff).
+  float    getTimezoneOffset() const { return m_tzOff10 / 10.0f; }
+  bool     hasTimezone()       const { return m_tzValid; }
+
+  /// Compute local date/time from cached UTC + timezone.  No serial round-trip.
+  /// Returns false if UTC or timezone cache is not valid.
+  bool getLocalDateCached(uint8_t& month, uint8_t& day, uint8_t& year) const;
+  bool getLocalTimeCached(uint8_t& hour, uint8_t& min, uint8_t& sec) const;
+  bool getLocalTimeCachedTotalSec(long& totalSeconds) const;
 
   /// True when the all-state cache is older than 500 ms (stale).
   bool allStateCacheStale() const { return m_timerAllState.needsUpdate(500); }
@@ -424,6 +436,9 @@ public:
   bool              isHdopSmall()        { return m_mount.isHdopSmall(); }
   bool              encodersEnable()     { updateMount(); return m_mount.encodersEnabled(); }
   bool              motorsEnable()       { updateMount(); return m_mount.motorsEnabled(); }
+  /// Cached only (no updateMount). Use during index build so mount state is not modified.
+  bool              encodersEnableCached() const { return m_mount.encodersEnabled(); }
+  bool              motorsEnableCached()  const { return m_mount.motorsEnabled(); }
   bool              CalibratingEncoder() { return m_mount.calibratingEncoder(); }
   bool              isPushingto()        { return m_mount.isPushingTo(); }
   bool              isPushTo()           { return m_mount.isPushTo(); }
@@ -492,6 +507,9 @@ private:
   // Unpacked UTC components
   uint8_t       m_utcH = 0, m_utcM = 0, m_utcS = 0;
   uint8_t       m_utcMonth = 1, m_utcDay = 1, m_utcYear = 0;
+  // Timezone (toff × 10, int8_t; local = UTC − toff)
+  int8_t        m_tzOff10 = 0;
+  bool          m_tzValid = false;
   // Unpacked focuser numerics
   uint32_t      m_focuserPosN   = 0;
   uint16_t      m_focuserSpeedN = 0;

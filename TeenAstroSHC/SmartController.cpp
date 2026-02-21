@@ -125,14 +125,13 @@ void SmartHandController::setup(
         DisplayMessage("Focuser " T_VERSION, &out[26], 1200);
       }
     }
-    ta_MountStatus.updateAllState();
+    ta_MountStatus.updateAllState(true);
     if (!ta_MountStatus.hasGNSSBoard())
     {
-      ta_MountStatus.updateTime();
-      unsigned int hour = 0, minute = 0, second = 0;
-      m_client->getLocalTime(hour, minute, second);
+      uint8_t lh = 0, lm = 0, ls = 0;
+      ta_MountStatus.getLocalTimeCached(lh, lm, ls);
       char date_time[40];
-      sprintf(date_time, "%s : %.2d:%.2d:%.2d", T_TIME, hour, minute, second);
+      sprintf(date_time, "%s : %.2d:%.2d:%.2d", T_TIME, lh, lm, ls);
       char date_time2[40];
       sprintf(date_time2, "%s : %s", T_DATE, ta_MountStatus.getUTCdate());
       DisplayMessage(date_time, date_time2, 2000);

@@ -65,7 +65,7 @@ void Command_G()
     strcat(commandState.reply, "#");
     break;
   case 'C':
-    //  :GC#   Get the current date
+    //  :GC#   Get the current date (MM/DD/YY#). Reply may be slow if RTC read (getULDate) blocks.
   {
     int i1, i2, i3, i4, i5;
     rtk.getULDate(i2, i, i1, i3, i4, i5, localSite.toff());

@@ -46,8 +46,8 @@ const char* html_indexMountType PROGMEM = "Mount: <span class='c'>%s</span><br /
 const char* html_indexMotors PROGMEM = "Motors: <span class='c'>%s</span><br />";
 const char* html_indexEncoders PROGMEM = "Encoders: <span class='c'>%s</span><br />";
 
-// Builds status card inner HTML.
-// Calls sendHtml(data) periodically to keep memory usage bounded on ESP.
+// Builds status card inner HTML. Only reads cached mount state (no update* or serial).
+// Call ensureStatusFetched() once before building so cache is fresh.
 void TeenAstroWifi::buildStatusCardContent(String& data)
 {
   char temp[128] = "";
@@ -71,6 +71,7 @@ void TeenAstroWifi::buildStatusCardContent(String& data)
   data += temp;
   sprintf_P(temp, html_indexSidereal, ta_MountStatus.getSidereal());
   data += temp;
+  data += FPSTR(html_settingsBrowserTime);
   sendHtml(data);
 
   // --- Current Jnow (RA, Dec, Alt, Az, Pier) ---
@@ -183,10 +184,10 @@ void TeenAstroWifi::buildStatusCardContent(String& data)
   }
   sprintf_P(temp, html_indexMountType, temp1);
   data += temp;
-  ta_MountStatus.motorsEnable() ? strcpy(temp1, "On") : strcpy(temp1, "Off");
+  ta_MountStatus.motorsEnableCached() ? strcpy(temp1, "On") : strcpy(temp1, "Off");
   sprintf_P(temp, html_indexMotors, temp1);
   data += temp;
-  ta_MountStatus.encodersEnable() ? strcpy(temp1, "On") : strcpy(temp1, "Off");
+  ta_MountStatus.encodersEnableCached() ? strcpy(temp1, "On") : strcpy(temp1, "Off");
   sprintf_P(temp, html_indexEncoders, temp1);
   data += temp;
   ta_MountStatus.isTrackingCorrected() ? strcpy(temp1, "Yes") : strcpy(temp1, "No");
@@ -195,17 +196,11 @@ void TeenAstroWifi::buildStatusCardContent(String& data)
   sendHtml(data);
 }
 
+// Single bulk status update (:GXAS#) for the index page — avoids a long list of
+// separate serial round-trips and keeps the page stable.
 static void ensureStatusFetched()
 {
   ta_MountStatus.updateAllState();
-  if (!ta_MountStatus.mountState().valid)
-  {
-    ta_MountStatus.updateTime();
-    ta_MountStatus.updateRaDec();
-    ta_MountStatus.updateMount();
-    ta_MountStatus.updateRaDecT();
-    ta_MountStatus.updateAzAlt();
-  }
 }
 
 void TeenAstroWifi::statusAjax()
@@ -224,19 +219,16 @@ void TeenAstroWifi::handleRoot()
   s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   String data;
+  // Single :GXAS# update; then index build does not modify mount state (read-only cache).
+  ensureStatusFetched();
   preparePage(data, ServerPage::Index);
   sendHtml(data);
 
-  ensureStatusFetched();
-
-  // Browser time is outside #StatusContent so it is never replaced by AJAX
   data += "<div class='card' id='StatusCard'>";
-  data += FPSTR(html_settingsBrowserTime);
   data += "<div id='StatusContent'>";
   sendHtml(data);
   buildStatusCardContent(data);
   data += "</div>";
-  data += FPSTR(html_statusPoll);
   data += "</div>";
   sendHtml(data);
   data += FPSTR(html_pageFooter);

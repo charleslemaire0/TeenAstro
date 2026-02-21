@@ -4,7 +4,7 @@
 const char html_headB[] PROGMEM = "<!DOCTYPE HTML>\r\n<html lang='en'>\r\n<head>\r\n"
 "<meta charset='UTF-8'>\r\n"
 "<meta name='viewport' content='width=device-width,initial-scale=1'>\r\n";
-const char html_headerIdx[] PROGMEM = "<meta http-equiv=\"refresh\" content=\"15; URL=/index.htm\">\r\n";
+const char html_headerIdx[] PROGMEM = "<meta http-equiv=\"refresh\" content=\"1; URL=/index.htm\">\r\n";
 // Restore scroll after meta-refresh so user does not briefly see the top of the page.
 const char html_indexScrollRestore[] PROGMEM =
 "<script>\n"
@@ -16,27 +16,6 @@ const char html_indexScrollRestore[] PROGMEM =
 "</script>\r\n";
 const char html_headE[] PROGMEM = "</head>\r\n";
 const char html_bodyB[] PROGMEM = "<body>\r\n";
-
-// Polling script for status page: fetches status.txt (full card mimic) every 1s,
-// updates #StatusContent so sidereal, alt/az, coords and last error stay in sync without full reload.
-// Only updates DOM when response changed to avoid blink.
-const char html_statusPoll[] PROGMEM =
-"<script>\n"
-"var _statusPoll=setInterval(function(){"
-"var xhr=new XMLHttpRequest();"
-"xhr.onreadystatechange=function(){"
-"if(xhr.readyState===4&&xhr.status===200){"
-"var e=document.getElementById('StatusContent');"
-"if(e&&xhr.responseText!==e.getAttribute('data-prev')){"
-"e.setAttribute('data-prev',xhr.responseText);"
-"e.innerHTML=xhr.responseText;"
-"}"
-"}"
-"};"
-"xhr.open('GET','status.txt',true);"
-"xhr.send();"
-"},2000);\n"
-"</script>\n";
 
 // Navigation guard: disables nav links after a click to prevent rapid page loads
 const char html_navGuard[] PROGMEM =
@@ -58,9 +37,9 @@ const char html_debugPageLog[] PROGMEM =
   "var h=document.getElementById('_dbg');"
   "var hp=h?parseInt(h.textContent):0;"
   "var l=document.body?document.body.innerHTML.length:0;"
-  "fetch('http://127.0.0.1:7242/ingest/22318eea-23d2-4990-b49b-089aaf334f55',"
-  "{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},"
-  "body:JSON.stringify({location:'page',message:'loaded',"
+  "fetch('http://127.0.0.1:7443/ingest/b0385bde-6061-4018-8dcc-bd4d8b87c969',"
+  "{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d77766'},"
+  "body:JSON.stringify({sessionId:'d77766',location:'Index.cpp:handleRoot',message:'index_loaded',"
   "data:{url:location.href,bodyLen:l,heap:hp},"
   "timestamp:Date.now(),hypothesisId:'B'})}).catch(function(){});"
   "});</script>\n";
@@ -448,6 +427,12 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   else
     data += FPSTR(html_bodyB);
   // #region agent log
+  data += "<script>fetch('http://127.0.0.1:7443/ingest/b0385bde-6061-4018-8dcc-bd4d8b87c969',"
+  "{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d77766'},"
+  "body:JSON.stringify({sessionId:'d77766',location:'TeenAstroWifi.cpp:preparePage',message:'index_body_start',"
+  "data:{heap:";
+  data += ESP.getFreeHeap();
+  data += "},timestamp:Date.now(),hypothesisId:'A'})}).catch(function(){});</script>\n";
   data += "<span id='_dbg' style='display:none'>";
   data += ESP.getFreeHeap();
   data += "</span>";
@@ -463,7 +448,8 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
     data += " &middot; Board ";
     data += ta_MountStatus.getVB();
     data += " &middot; ";
-    data += stepperDriverName(ta_MountStatus.getDriverType());
+    // Index page uses cache-only to avoid updateV() serial round-trip; other pages may call getDriverType().
+    data += stepperDriverName(page == ServerPage::Index ? ta_MountStatus.getDriverTypeCached() : ta_MountStatus.getDriverType());
   }
   else data += "?";
   data += FPSTR(html_header3);
@@ -474,17 +460,20 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   data += "<input type='checkbox' id='navtog'>\n";
   data += page == ServerPage::Index ? FPSTR(html_links1S) : FPSTR(html_links1N);
   data += page == ServerPage::Control ? FPSTR(html_links2S) : FPSTR(html_links2N);
-  if (ta_MountStatus.motorsEnable())
+  // Index: use cached only so mount status is not modified during index build.
+  bool motors = (page == ServerPage::Index) ? ta_MountStatus.motorsEnableCached() : ta_MountStatus.motorsEnable();
+  if (motors)
   {
     data += page == ServerPage::Speed ? FPSTR(html_links3S) : FPSTR(html_links3N);
     data += page == ServerPage::Tracking ? FPSTR(html_links4S) : FPSTR(html_links4N);
   }
   data += page == ServerPage::Site ? FPSTR(html_links5S) : FPSTR(html_links5N);
   data += page == ServerPage::Mount ? FPSTR(html_links6S) : FPSTR(html_links6N);
-  if (ta_MountStatus.motorsEnable())
+  if (motors)
     data += page == ServerPage::Motors ? FPSTR(html_links7S) : FPSTR(html_links7N);
   data += page == ServerPage::Limits ? FPSTR(html_links8S) : FPSTR(html_links8N);
-  if (ta_MountStatus.encodersEnable())
+  bool encoders = (page == ServerPage::Index) ? ta_MountStatus.encodersEnableCached() : ta_MountStatus.encodersEnable();
+  if (encoders)
     data += page == ServerPage::Encoders ? FPSTR(html_links9S) : FPSTR(html_links9N);
   if (ta_MountStatus.hasFocuser())
     data += page == ServerPage::Focuser ? FPSTR(html_links10S) : FPSTR(html_links10N);

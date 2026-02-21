@@ -52,7 +52,7 @@ void TeenAstroWifi::addTrackingInfo(String &data )
 
   if (showRates)
   {
-    ta_MountStatus.updateTrackingRate();
+    // Use only cached rates (e.g. from :GXAS#) — no extra serial round-trip on index/status.
     if (ta_MountStatus.hasInfoTrackingRate())
     {
       float RateRa = ta_MountStatus.getTrackingRateRa() / 10000.0;

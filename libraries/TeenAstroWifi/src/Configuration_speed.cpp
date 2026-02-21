@@ -54,7 +54,7 @@ const char html_configAcceleration[] PROGMEM =
 "<form method='get' action='/configuration_speed.htm'>"
 " <input value='%.1f' type='number' name='Acc' min='0.1' max='25' step='.1'>"
 "<button type='submit'>Upload</button>"
-" (Acceleration, number of degrees to reach the Max Speed from 0.1? to 25?)"
+" (Acceleration, number of degrees to reach the Max Speed from 0.1° to 25°)"
 "</form>"
 "<br />\r\n";
 

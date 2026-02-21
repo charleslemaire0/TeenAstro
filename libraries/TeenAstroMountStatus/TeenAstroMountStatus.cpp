@@ -68,6 +68,7 @@ static void formatRaStr(float h, char* out, int len)
 }
 
 // Format signed degrees (Dec/Alt) into "±DD*MM:SS.s" (1 decimal for seconds).
+// Uses '*' for compatibility with SHC display (single-byte); web can substitute ° when rendering.
 // Safe: clamps absolute value to [0,360) so output never overflows the buffer.
 static void formatDegStr(float deg, char* out, int len)
 {
@@ -85,6 +86,7 @@ static void formatDegStr(float deg, char* out, int len)
 }
 
 // Format azimuth (degrees) into "DDD*MM:SS.s" (1 decimal for seconds).
+// Uses '*' for compatibility with SHC display (single-byte); web can substitute ° when rendering.
 // Safe: uses fmod instead of while-loop so can't hang on extreme values.
 static void formatAzStr(float deg, char* out, int len)
 {
@@ -577,6 +579,10 @@ void TeenAstroMountStatus::updateAllState(bool force)
   snprintf(m_utcDate.data, sizeof(m_utcDate.data), "%02d/%02d/%02d", m_utcMonth, m_utcDay, m_utcYear);
   m_utc.valid = m_utcDate.valid = true;
 
+  // ── Byte 62: timezone offset ────────────────────────────────────────
+  m_tzOff10 = (int8_t)pkt[62];
+  m_tzValid = true;
+
   // ── Positions bytes 12-39 ─────────────────────────────────────────────
   float ra  = pktF32(pkt, 12);
   float dec = pktF32(pkt, 16);
@@ -835,6 +841,14 @@ StepperDriver TeenAstroMountStatus::getDriverType()
   return StepperDriver_Unknown;
 }
 
+StepperDriver TeenAstroMountStatus::getDriverTypeCached() const
+{
+  if (!m_version.valid || m_vbb.data[0] == '\0') return StepperDriver_Unknown;
+  int v = m_vbb.data[0] - '0';
+  if (v >= 0 && v <= 4) return static_cast<StepperDriver>(v);
+  return StepperDriver_Unknown;
+}
+
 bool TeenAstroMountStatus::getDriverName(char* name)
 {
   updateV();
@@ -864,6 +878,70 @@ bool TeenAstroMountStatus::getTrackingRate(double& r)
   // RequestedTrackingRateHA = (10000 - trackRateRA) / 10000; :GT# returns that * 60 * 1.00273790935
   double reqHA = (10000.0 - (double)m_trackRateRa) / 10000.0;
   r = reqHA * 60.0 * 1.00273790935;
+  return true;
+}
+
+// ===========================================================================
+//  Cached local date/time (UTC + timezone, no serial round-trip)
+// ===========================================================================
+
+static uint8_t daysInMonth(uint8_t m, uint16_t y)
+{
+  static const uint8_t dim[] = { 0, 31,28,31,30,31,30,31,31,30,31,30,31 };
+  if (m < 1 || m > 12) return 30;
+  if (m == 2 && (y % 4 == 0) && (y % 100 != 0 || y % 400 == 0)) return 29;
+  return dim[m];
+}
+
+bool TeenAstroMountStatus::getLocalTimeCached(uint8_t& hour, uint8_t& min, uint8_t& sec) const
+{
+  if (!m_utc.valid || !m_tzValid) return false;
+  long utcSec = (long)m_utcH * 3600L + (long)m_utcM * 60L + (long)m_utcS;
+  long localSec = utcSec - (long)m_tzOff10 * 360L;
+  if (localSec < 0)       localSec += 86400L;
+  if (localSec >= 86400L) localSec -= 86400L;
+  hour = (uint8_t)(localSec / 3600L);
+  min  = (uint8_t)((localSec % 3600L) / 60L);
+  sec  = (uint8_t)(localSec % 60L);
+  return true;
+}
+
+bool TeenAstroMountStatus::getLocalTimeCachedTotalSec(long& totalSeconds) const
+{
+  uint8_t h, m, s;
+  if (!getLocalTimeCached(h, m, s)) return false;
+  totalSeconds = (long)h * 3600L + (long)m * 60L + (long)s;
+  return true;
+}
+
+bool TeenAstroMountStatus::getLocalDateCached(uint8_t& month, uint8_t& day, uint8_t& year) const
+{
+  if (!m_utcDate.valid || !m_tzValid) return false;
+  long utcSec = (long)m_utcH * 3600L + (long)m_utcM * 60L + (long)m_utcS;
+  long localSec = utcSec - (long)m_tzOff10 * 360L;
+  int dayDelta = 0;
+  if (localSec < 0)       dayDelta = -1;
+  if (localSec >= 86400L) dayDelta = +1;
+
+  int d = (int)m_utcDay + dayDelta;
+  int mo = (int)m_utcMonth;
+  int y  = (int)m_utcYear;
+  uint16_t fullYear = (uint16_t)y + 2000;
+  if (d < 1)
+  {
+    mo--;
+    if (mo < 1) { mo = 12; y--; }
+    d = daysInMonth((uint8_t)mo, (uint16_t)(y + 2000));
+  }
+  else if (d > (int)daysInMonth((uint8_t)mo, fullYear))
+  {
+    d = 1;
+    mo++;
+    if (mo > 12) { mo = 1; y++; }
+  }
+  month = (uint8_t)mo;
+  day   = (uint8_t)d;
+  year  = (uint8_t)y;
   return true;
 }
 

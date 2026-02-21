@@ -42,7 +42,8 @@ static void PrintRa(double& val) {
 //   Bytes 12-39: Positions (7 × float32 LE: RA, Dec, Alt, Az, LST, Target RA, Target Dec)
 //   Bytes 40-55: Tracking rates (4 × int32 LE: trackRateRA, trackRateDec, storedRateRA, storedRateDec — same as :GXRr#/:GXRd#/:GXRe#/:GXRf#)
 //   Bytes 56-61: Focuser (optional; when hasFocuser): position uint32 LE, speed uint16 LE. Otherwise zero.
-//   Bytes 62-64: reserved (0)
+//   Byte  62:   Timezone offset (int8_t, toff × 10; subtract to get local from UTC)
+//   Bytes 63-64: reserved (0)
 //   Byte  65:   XOR checksum of bytes 0-64
 
 static const char GX_B64[] =
@@ -211,7 +212,11 @@ static void Command_GX_AllState()
       pkt[61] = (uint8_t)(fSpd >> 8);
     }
   }
-  // pkt[62-64] stay 0 (reserved)
+  // ── Byte 62: timezone offset (toff × 10, int8_t) ───────────────────────────
+  // Allows clients to compute local date/time from cached UTC without extra serial commands.
+  pkt[62] = (uint8_t)((int8_t)round(*localSite.toff() * 10.0f));
+
+  // pkt[63-64] stay 0 (reserved)
 
   // Byte 65: XOR checksum of bytes 0-64
   uint8_t xorChk = 0;
@@ -552,6 +557,7 @@ static void Command_GX_Time()
     strcat(commandState.reply, "#");
     break;
   case '1':
+    // :GXT1# UTC date (MM/DD/YY#). Reply may be slow if RTC read (getUTDate) blocks.
   {
     int i, i1, i2, i3, i4, i5;
     rtk.getUTDate(i, i1, i2, i3, i4, i5);

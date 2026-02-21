@@ -149,7 +149,7 @@ class _SkyMapWidgetState extends ConsumerState<SkyMapWidget> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    '${_zoom.toStringAsFixed(1)}x  ${state.ra} / ${state.dec}',
+                    '${_zoom.toStringAsFixed(1)}x  ${state.ra} / ${state.dec.replaceAll('*', '°')}',
                     style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 10,

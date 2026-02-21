@@ -77,9 +77,6 @@
 // -----------------------------------------------------------------------------------
 // Constants
 
-// Status page: script that polls trackinfo.txt to update #TrackingInfo (declared in TeenAstroWifi.cpp)
-extern const char html_statusPoll[] PROGMEM;
-
 // The settings below are for initialization only, afterward they are stored and recalled from EEPROM and must
 // be changed in the web interface OR with a reset (for initialization again) as described in the Config.h comments
 

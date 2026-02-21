@@ -16,24 +16,6 @@ const char  html_trackButton[] PROGMEM = "<script>\n"
 "function g(v1){s('dt',v1);}\n"
 "</script>\n";
 
-const char html_trackInfo[] PROGMEM =
-"<script>\n"
-"var auto1=setInterval(load,1000);\n"
-"function load() {\n"
-"  var xhttp = new XMLHttpRequest();\n"
-"  xhttp.onreadystatechange = function() {\n"
-"    if (this.readyState == 4 && this.status == 200) {\n"
-"      document.getElementById('TrackingInfo').innerHTML = this.responseText;\n"
-"    }\n"
-"  };\n"
-"  xhttp.open('GET', 'trackinfo.txt', true);\n"
-"  xhttp.send();\n"
-"}\n"
-"</script>\n";
-
-const char html_indexTrackingInfo[] PROGMEM =
-"<div id='TrackingInfo'>\n</div><br/>\n";
-
 const char html_configRateRA[] PROGMEM =
 "<form method='get' action='/configuration_tracking.htm'>"
 " <input value='%f' type='number' name='RRA' min='-5' max='+5' step='0.0001'>"
@@ -86,11 +68,6 @@ void TeenAstroWifi::handleConfigurationTracking()
   data += FPSTR(html_trackButton);
   sendHtml(data);
 
-  data += FPSTR(html_trackInfo);
-  sendHtml(data);
-
-  data += FPSTR(html_indexTrackingInfo);
-  sendHtml(data);
   data += "<div class='card'>";
 
   // Refraction tracking option

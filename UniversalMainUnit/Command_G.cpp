@@ -722,7 +722,7 @@ void  Command_G()
   case 'C':
     //  :GC#   Get the current date, Native LX200 command
     //         Returns: MM/DD/YY#
-    //         The current local calendar date
+    //         The current local calendar date. Reply may be slow if RTC read (getULDate) blocks.
   {
     int i1, i2, i3, i4, i5;
     rtk.getULDate(i2, i, i1, i3, i4, i5, localSite.toff());

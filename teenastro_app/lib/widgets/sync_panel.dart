@@ -53,7 +53,7 @@ class _TimeSyncCardState extends ConsumerState<TimeSyncCard> {
             _GnssStatusRow(state: state),
             const SizedBox(height: 12),
 
-            // Time comparison
+            // Time comparison (UTC and local from :GXAS# cache; no extra commands)
             _ComparisonRow(
               icon: Icons.access_time,
               label: 'UTC Time',
@@ -61,6 +61,16 @@ class _TimeSyncCardState extends ConsumerState<TimeSyncCard> {
               phoneValue: _formatUtc(now),
               delta: _timeDelta(state, now),
             ),
+            if (state.localTime != '?' && state.localDate != '?') ...[
+              const SizedBox(height: 4),
+              _ComparisonRow(
+                icon: Icons.schedule,
+                label: 'Local Time',
+                mountValue: '${state.localTime}  ${state.localDate}',
+                phoneValue: _formatUtc(now),
+                delta: null,
+              ),
+            ],
             const SizedBox(height: 8),
 
             // Location comparison

@@ -39,10 +39,14 @@ class MountState {
   final String targetRa;
   final String targetDec;
 
-  // Time strings
+  // Time strings (from :GXAS# bytes 6-11; local from UTC + byte 62 timezone)
   final String utcTime;
   final String utcDate;
+  final String localTime;
+  final String localDate;
   final String siderealTime;
+  /// Timezone offset in hours (local = UTC − timezoneOffset). From GXAS byte 62.
+  final double timezoneOffset;
 
   // Version info
   final String productName;
@@ -93,7 +97,10 @@ class MountState {
     this.targetDec = '',
     this.utcTime = '?',
     this.utcDate = '?',
+    this.localTime = '?',
+    this.localDate = '?',
     this.siderealTime = '?',
+    this.timezoneOffset = 0.0,
     this.productName = '',
     this.versionNum = '',
     this.boardVersion = '',
@@ -130,6 +137,45 @@ class MountState {
   // ---------------------------------------------------------------------------
 
   static String _p2(int n) => n.toString().padLeft(2, '0');
+
+  /// Convert UTC (h,m,s,month,day,year2) + timezone offset (hours) to local (timeStr, dateStr).
+  /// Convention: local = UTC − timezoneOffset.
+  static (String, String) _utcToLocal(
+    int utcH, int utcM, int utcS, int utcMo, int utcD, int utcY, double tzHours,
+  ) {
+    int utcSec = utcH * 3600 + utcM * 60 + utcS;
+    int rawLocalSec = utcSec - (tzHours * 3600).round();
+    int dayDelta = 0;
+    if (rawLocalSec < 0) dayDelta = -1;
+    if (rawLocalSec >= 86400) dayDelta = 1;
+    while (rawLocalSec < 0) rawLocalSec += 86400;
+    while (rawLocalSec >= 86400) rawLocalSec -= 86400;
+    int lh = rawLocalSec ~/ 3600;
+    int lm = (rawLocalSec % 3600) ~/ 60;
+    int ls = rawLocalSec % 60;
+    final timeStr = '${_p2(lh)}:${_p2(lm)}:${_p2(ls)}';
+
+    int d = utcD + dayDelta;
+    int mo = utcMo;
+    int y = utcY;
+    const dim = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    int dims(int month, int year2) {
+      final fullYear = 2000 + year2;
+      if (month == 2 && (fullYear % 4 == 0 && (fullYear % 100 != 0 || fullYear % 400 == 0))) return 29;
+      return dim[month];
+    }
+    if (d < 1) {
+      mo--;
+      if (mo < 1) { mo = 12; y--; }
+      d = dims(mo, y);
+    } else if (d > dims(mo, y)) {
+      d = 1;
+      mo++;
+      if (mo > 12) { mo = 1; y++; }
+    }
+    final dateStr = '${_p2(mo)}/${_p2(d)}/${_p2(y)}';
+    return (timeStr, dateStr);
+  }
 
   static String _formatRa(double hours) {
     while (hours < 0) hours += 24;
@@ -250,6 +296,14 @@ class MountState {
     final utcTimeStr = '${_p2(utcH)}:${_p2(utcM)}:${_p2(utcS)}';
     final utcDateStr = '${_p2(utcMo)}/${_p2(utcD)}/${_p2(utcY)}';
 
+    // ── Byte 62: timezone offset (int8, toff×10; local = UTC − toff) ───────
+    final tz10Raw = bytes[62];
+    final tz10 = tz10Raw > 127 ? tz10Raw - 256 : tz10Raw;
+    final tzHours = tz10 / 10.0;
+    final local = _utcToLocal(utcH, utcM, utcS, utcMo, utcD, utcY, tzHours);
+    final localTimeStr = local.$1;
+    final localDateStr = local.$2;
+
     // ── Positions bytes 12-39 ─────────────────────────────────────────────
     final raH   = bd.getFloat32(12, Endian.little);
     final decD  = bd.getFloat32(16, Endian.little);
@@ -303,6 +357,9 @@ class MountState {
       targetDec: tDecStr,
       utcTime: utcTimeStr,
       utcDate: utcDateStr,
+      localTime: localTimeStr,
+      localDate: localDateStr,
+      timezoneOffset: tzHours,
       focuserConnected: hasFoc,
       focuserPos: fPos,
       focuserSpeed: fSpd,
@@ -416,7 +473,10 @@ class MountState {
     String? targetDec,
     String? utcTime,
     String? utcDate,
+    String? localTime,
+    String? localDate,
     String? siderealTime,
+    double? timezoneOffset,
     String? productName,
     String? versionNum,
     String? boardVersion,
@@ -459,7 +519,10 @@ class MountState {
       targetDec: targetDec ?? this.targetDec,
       utcTime: utcTime ?? this.utcTime,
       utcDate: utcDate ?? this.utcDate,
+      localTime: localTime ?? this.localTime,
+      localDate: localDate ?? this.localDate,
       siderealTime: siderealTime ?? this.siderealTime,
+      timezoneOffset: timezoneOffset ?? this.timezoneOffset,
       productName: productName ?? this.productName,
       versionNum: versionNum ?? this.versionNum,
       boardVersion: boardVersion ?? this.boardVersion,
