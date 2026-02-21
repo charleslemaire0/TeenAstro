@@ -5,10 +5,25 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-# Repo root: when run from scripts\ it's parent of PSScriptRoot
-$RepoRoot = if (Test-Path (Join-Path $PSScriptRoot "..\TeenAstroMainUnit\platformio.ini")) { (Resolve-Path (Join-Path $PSScriptRoot "..")).Path } else { $PSScriptRoot }
+# Resolve the real script directory robustly ($PSScriptRoot can be wrong in Cursor/temp-copy terminals)
+$_scriptFile = $MyInvocation.MyCommand.Path
+if ($_scriptFile -and (Test-Path $_scriptFile)) {
+    $_scriptDir = Split-Path $_scriptFile -Parent
+} else {
+    $_scriptDir = $PSScriptRoot
+}
+
+# Repo root: if run from scripts\ it's the parent; if run from repo root it's here
+$RepoRoot = if (Test-Path (Join-Path $_scriptDir "..\TeenAstroMainUnit\platformio.ini")) {
+    (Resolve-Path (Join-Path $_scriptDir "..")).Path
+} elseif (Test-Path (Join-Path $_scriptDir "TeenAstroMainUnit\platformio.ini")) {
+    $_scriptDir
+} else {
+    $_scriptDir
+}
 if (-not (Test-Path (Join-Path $RepoRoot "TeenAstroMainUnit\platformio.ini"))) {
-    Write-Host "Run this script from the TeenAstro repo root or from scripts\." -ForegroundColor Red
+    Write-Host "Cannot locate repo root (TeenAstroMainUnit\platformio.ini not found)." -ForegroundColor Red
+    Write-Host "Run this script from the repo root or from the scripts\ subfolder." -ForegroundColor Red
     exit 1
 }
 
@@ -16,24 +31,38 @@ Write-Host "TeenAstro build setup (PlatformIO + MinGW)" -ForegroundColor Cyan
 Write-Host "Repo root: $RepoRoot" -ForegroundColor Gray
 Write-Host ""
 
-# 1. Find Python / pip (try pip, pip3, python -m pip, py -m pip)
+# Helper: resolve a command only if it points to a real file on disk
+function Resolve-Exe {
+    param([string]$Name)
+    $cmd = Get-Command $Name -ErrorAction SilentlyContinue
+    if ($cmd -and ($cmd.CommandType -eq 'Application') -and (Test-Path $cmd.Source)) { return $cmd.Source }
+    return $null
+}
+
+# 1. Find Python / pip - prefer python/py (confirmed working) over bare pip
+# Try python -m pip, py -m pip first, then pip/pip3 if they resolve to real files
 $pipInvoke = $null
 $pipLabel = $null
-if (Get-Command pip -ErrorAction SilentlyContinue) {
-    $pipInvoke = { & pip install --user platformio }
-    $pipLabel = "pip"
-}
-elseif (Get-Command pip3 -ErrorAction SilentlyContinue) {
-    $pipInvoke = { & pip3 install --user platformio }
-    $pipLabel = "pip3"
-}
-elseif (Get-Command python -ErrorAction SilentlyContinue) {
-    $pipInvoke = { & python -m pip install --user platformio }
+$pythonExe = Resolve-Exe 'python'
+$pyExe     = Resolve-Exe 'py'
+$pipExe    = Resolve-Exe 'pip'
+$pip3Exe   = Resolve-Exe 'pip3'
+
+if ($pythonExe) {
+    $pipInvoke = [scriptblock]::Create("& '$pythonExe' -m pip install --user platformio")
     $pipLabel = "python -m pip"
 }
-elseif (Get-Command py -ErrorAction SilentlyContinue) {
-    $pipInvoke = { & py -m pip install --user platformio }
+elseif ($pyExe) {
+    $pipInvoke = [scriptblock]::Create("& '$pyExe' -m pip install --user platformio")
     $pipLabel = "py -m pip"
+}
+elseif ($pipExe) {
+    $pipInvoke = [scriptblock]::Create("& '$pipExe' install --user platformio")
+    $pipLabel = "pip"
+}
+elseif ($pip3Exe) {
+    $pipInvoke = [scriptblock]::Create("& '$pip3Exe' install --user platformio")
+    $pipLabel = "pip3"
 }
 
 if (-not $pipInvoke) {
@@ -128,13 +157,22 @@ elseif (-not (Test-Path $mingwBin)) {
     Write-Host "[3/3] MinGW path not found; add it manually after first 'pio run' or 'pio test': $mingwBin" -ForegroundColor Yellow
 }
 
+$pioInstalled = Test-Path (Join-Path $env:USERPROFILE ".platformio\penv\Scripts\pio.exe")
+$mingwInstalled = Test-Path (Join-Path $env:USERPROFILE ".platformio\packages\toolchain-gccmingw32\bin\g++.exe")
+
 Write-Host ""
-Write-Host "Setup done. Next steps:" -ForegroundColor Cyan
-Write-Host "  1. Close and reopen PowerShell (so PATH is updated)." -ForegroundColor White
-Write-Host "  2. From repo root run:" -ForegroundColor White
-Write-Host "     pio run -d TeenAstroMainUnit" -ForegroundColor Gray
-Write-Host "     pio run -d TeenAstroSHC" -ForegroundColor Gray
-Write-Host "     pio run -d TeenAstroServer" -ForegroundColor Gray
-Write-Host "     pio run -d TeenAstroFocuser" -ForegroundColor Gray
-Write-Host "     pio test -d tests" -ForegroundColor Gray
-Write-Host '  See BUILD_SETUP.md for .NET and Flutter builds.' -ForegroundColor White
+Write-Host "Installed tools:" -ForegroundColor Cyan
+Write-Host "  pio.exe   : $(if ($pioInstalled) { 'OK - ' + (Join-Path $env:USERPROFILE '.platformio\penv\Scripts\pio.exe') } else { 'NOT FOUND' })" -ForegroundColor $(if ($pioInstalled) { 'Green' } else { 'Red' })
+Write-Host "  g++.exe   : $(if ($mingwInstalled) { 'OK - ' + (Join-Path $env:USERPROFILE '.platformio\packages\toolchain-gccmingw32\bin\g++.exe') } else { 'NOT FOUND' })" -ForegroundColor $(if ($mingwInstalled) { 'Green' } else { 'Red' })
+Write-Host ""
+Write-Host "NOTE: This script installs build TOOLS only. It does NOT compile firmware." -ForegroundColor Yellow
+Write-Host ""
+Write-Host "Next steps to build firmware:" -ForegroundColor Cyan
+Write-Host "  1. Close and reopen PowerShell (so updated PATH takes effect)." -ForegroundColor White
+Write-Host "  2. From the repo root run one of:" -ForegroundColor White
+Write-Host "     pio run -d TeenAstroMainUnit   -> firmware in TeenAstroMainUnit\pio\" -ForegroundColor Gray
+Write-Host "     pio run -d TeenAstroSHC        -> firmware in TeenAstroSHC\pio\" -ForegroundColor Gray
+Write-Host "     pio run -d TeenAstroServer     -> firmware in TeenAstroServer\pio\" -ForegroundColor Gray
+Write-Host "     pio run -d TeenAstroFocuser    -> firmware in TeenAstroFocuser\pio\" -ForegroundColor Gray
+Write-Host "     pio test -d tests              -> run unit tests" -ForegroundColor Gray
+Write-Host '  See BUILD_SETUP.md for .NET (ASCOM driver) and Flutter (Android/Windows app) builds.' -ForegroundColor White

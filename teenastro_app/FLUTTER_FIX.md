@@ -1,14 +1,16 @@
 # Fix Flutter / Dart (broken SDK)
 
-**Script:** Use `scripts\fix_flutter_and_build.ps1` to reinstall Flutter (optional) and build the app for **Android** and **Windows**:
+**Script:** Use **`scripts\build_app.ps1`** (at repo root) to reinstall Flutter (optional) and build the app for **Android** and **Windows**. All repo build scripts live in `scripts\` — see `scripts\BUILD_SCRIPTS.md`.
 
 ```powershell
-cd "c:\Users\charl\source\repos\charleslemaire0\TeenAstro\teenastro_app\scripts"
-.\fix_flutter_and_build.ps1 -FixFlutter    # Fix Flutter then build APK + Windows
-.\fix_flutter_and_build.ps1                # Build only (Flutter on PATH)
-.\fix_flutter_and_build.ps1 -SkipAndroid   # Build Windows only
-.\fix_flutter_and_build.ps1 -SkipWindows   # Build APK only
+cd "c:\Users\charl\source\repos\charleslemaire0\TeenAstro"
+.\scripts\build_app.ps1 -FixFlutter    # Fix Flutter then build APK + Windows
+.\scripts\build_app.ps1                # Build only (Flutter on PATH)
+.\scripts\build_app.ps1 -SkipAndroid   # Build Windows only
+.\scripts\build_app.ps1 -SkipWindows   # Build APK only
 ```
+
+From the app folder you can still run `teenastro_app\scripts\fix_flutter_and_build.ps1` (it calls `scripts\build_app.ps1`).
 
 Windows output: `build\windows\x64\runner\Release\teenastro_app.exe` (and DLLs in that folder).
 

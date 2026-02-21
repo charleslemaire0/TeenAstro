@@ -1,4 +1,5 @@
 gradle-wrapper.jar
+gradle-8.14-all.zip
 /.gradle
 /gradle-dist/
 /captures/
