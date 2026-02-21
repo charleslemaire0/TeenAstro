@@ -2,6 +2,15 @@
 
 #define UPDATERATE 500
 
+// Reject NaN/Inf and out-of-range values so format functions don't crash (e.g. on embedded snprintf).
+static bool safeFloat(float f)
+{
+  if (f != f) return false;  /* NaN */
+  if (f > 1e15f || f < -1e15f) return false;  /* Inf or absurd */
+  return true;
+}
+
+
 // ===========================================================================
 //  Helpers for updateAllState()
 // ===========================================================================
@@ -42,46 +51,53 @@ static bool b64Decode(const char* in, int inLen, uint8_t* out)
   return true;
 }
 
-// Format RA float (hours) into "HH:MM:SS".
+// Format RA float (hours) into "HH:MM:SS.ss" (2 decimal places for seconds).
+// Safe: normalises to [0,24) using fmod even for very out-of-range values.
 static void formatRaStr(float h, char* out, int len)
 {
+  if (len < 1) return;
+  h = fmodf(h, 24.0f);
   if (h < 0.0f) h += 24.0f;
-  if (h >= 24.0f) h -= 24.0f;
-  int ih = (int)h % 24;
-  float mf = (h - (int)h) * 60.0f;
-  int im = (int)mf % 60;
-  int is = (int)((mf - (int)mf) * 60.0f + 0.5f) % 60;
-  if (is >= 60) { is -= 60; im++; }
+  int ih = (int)h;
+  float mf = (h - ih) * 60.0f;
+  int im = (int)mf;
+  float secs = (mf - im) * 60.0f;
+  if (secs >= 59.995f) { secs = 0.0f; im++; }
   if (im >= 60) { im -= 60; ih++; }
-  snprintf(out, len, "%02d:%02d:%02d", ih % 24, im % 60, is % 60);
+  snprintf(out, len, "%02d:%02d:%05.2f", ih % 24, im % 60, (double)secs);
 }
 
-// Format signed degrees (Dec/Alt) into "±DD*MM:SS".
+// Format signed degrees (Dec/Alt) into "±DD*MM:SS.s" (1 decimal for seconds).
+// Safe: clamps absolute value to [0,360) so output never overflows the buffer.
 static void formatDegStr(float deg, char* out, int len)
 {
+  if (len < 1) return;
   char sign = (deg >= 0.0f) ? '+' : '-';
-  float ad = (deg >= 0.0f) ? deg : -deg;
-  int id = (int)ad % 360;
-  float mf = (ad - (int)ad) * 60.0f;
-  int im = (int)mf % 60;
-  int is = (int)((mf - (int)mf) * 60.0f + 0.5f) % 60;
-  if (is >= 60) { is -= 60; im++; }
+  float ad = fabsf(deg);
+  ad = fmodf(ad, 360.0f);
+  int id = (int)ad;
+  float mf = (ad - id) * 60.0f;
+  int im = (int)mf;
+  float secs = (mf - im) * 60.0f;
+  if (secs >= 59.95f) { secs = 0.0f; im++; }
   if (im >= 60) { im -= 60; id++; }
-  snprintf(out, len, "%c%02d*%02d:%02d", sign, id % 360, im % 60, is % 60);
+  snprintf(out, len, "%c%02d*%02d:%04.1f", sign, id % 360, im % 60, (double)secs);
 }
 
-// Format azimuth (degrees) into "DDD*MM:SS".
+// Format azimuth (degrees) into "DDD*MM:SS.s" (1 decimal for seconds).
+// Safe: uses fmod instead of while-loop so can't hang on extreme values.
 static void formatAzStr(float deg, char* out, int len)
 {
-  while (deg < 0.0f)    deg += 360.0f;
-  while (deg >= 360.0f) deg -= 360.0f;
-  int id = (int)deg % 360;
-  float mf = (deg - (int)deg) * 60.0f;
-  int im = (int)mf % 60;
-  int is = (int)((mf - (int)mf) * 60.0f + 0.5f) % 60;
-  if (is >= 60) { is -= 60; im++; }
+  if (len < 1) return;
+  deg = fmodf(deg, 360.0f);
+  if (deg < 0.0f) deg += 360.0f;
+  int id = (int)deg;
+  float mf = (deg - id) * 60.0f;
+  int im = (int)mf;
+  float secs = (mf - im) * 60.0f;
+  if (secs >= 59.95f) { secs = 0.0f; im++; }
   if (im >= 60) { im -= 60; id++; }
-  snprintf(out, len, "%03d*%02d:%02d", id % 360, im % 60, is % 60);
+  snprintf(out, len, "%03d*%02d:%04.1f", id % 360, im % 60, (double)secs);
 }
 
 // Read float32 LE from packet at offset.
@@ -439,6 +455,22 @@ void TeenAstroMountStatus::updateMount(bool force)
 //  All-state bulk update  (:GXAS#)
 // ===========================================================================
 
+void TeenAstroMountStatus::invalidatePositionTimeCaches()
+{
+  m_ra.valid = m_dec.valid = m_alt.valid = m_az.valid = false;
+  m_sidereal.valid = m_raT.valid = m_decT.valid = false;
+  m_utc.valid = m_utcDate.valid = false;
+  strncpy(m_ra.data, "?", sizeof(m_ra.data) - 1);      m_ra.data[sizeof(m_ra.data) - 1] = '\0';
+  strncpy(m_dec.data, "?", sizeof(m_dec.data) - 1);    m_dec.data[sizeof(m_dec.data) - 1] = '\0';
+  strncpy(m_alt.data, "?", sizeof(m_alt.data) - 1);    m_alt.data[sizeof(m_alt.data) - 1] = '\0';
+  strncpy(m_az.data, "?", sizeof(m_az.data) - 1);      m_az.data[sizeof(m_az.data) - 1] = '\0';
+  strncpy(m_sidereal.data, "?", sizeof(m_sidereal.data) - 1); m_sidereal.data[sizeof(m_sidereal.data) - 1] = '\0';
+  strncpy(m_raT.data, "?", sizeof(m_raT.data) - 1);   m_raT.data[sizeof(m_raT.data) - 1] = '\0';
+  strncpy(m_decT.data, "?", sizeof(m_decT.data) - 1); m_decT.data[sizeof(m_decT.data) - 1] = '\0';
+  strncpy(m_utc.data, "?", sizeof(m_utc.data) - 1);    m_utc.data[sizeof(m_utc.data) - 1] = '\0';
+  strncpy(m_utcDate.data, "?", sizeof(m_utcDate.data) - 1); m_utcDate.data[sizeof(m_utcDate.data) - 1] = '\0';
+}
+
 void TeenAstroMountStatus::updateAllState(bool force)
 {
   if (!m_timerAllState.needsUpdate(UPDATERATE) && !force) return;
@@ -448,6 +480,7 @@ void TeenAstroMountStatus::updateAllState(bool force)
   if (m_client->get(":GXAS#", raw, sizeof(raw)) != LX200_VALUEGET || strlen(raw) != 88)
   {
     m_mount.valid = false;
+    invalidatePositionTimeCaches();
     m_connectionFailure++;
     return;
   }
@@ -457,6 +490,7 @@ void TeenAstroMountStatus::updateAllState(bool force)
   if (!b64Decode(raw, 88, pkt))
   {
     m_mount.valid = false;
+    invalidatePositionTimeCaches();
     m_connectionFailure++;
     return;
   }
@@ -467,6 +501,7 @@ void TeenAstroMountStatus::updateAllState(bool force)
   if (xorChk != pkt[65])
   {
     m_mount.valid = false;
+    invalidatePositionTimeCaches();
     m_connectionFailure++;
     return;
   }
@@ -497,7 +532,9 @@ void TeenAstroMountStatus::updateAllState(bool force)
   m_mount.atHome        = (b0 >> 6) & 0x1;
   m_mount.pierSide      = ((b0 >> 7) & 0x1) ? MountState::PIER_W : MountState::PIER_E;
 
-  m_mount.guidingRate   = static_cast<MountState::GuidingRate>((int)(b1 & 0x7));
+  { int gr = (int)(b1 & 0x7);
+    m_mount.guidingRate = (gr >= 0 && gr <= 4)
+      ? static_cast<MountState::GuidingRate>(gr) : MountState::UNKNOW; }
   m_mount.aligned       = (b1 >> 3) & 0x1;
   { uint8_t mt = (b1 >> 4) & 0x7;
     switch (mt) {
@@ -514,7 +551,8 @@ void TeenAstroMountStatus::updateAllState(bool force)
     m_mount.guidingEW = (ew == 1) ? '>' : (ew == 2) ? '<' : (ew == 3) ? 'b' : ' '; }
   { uint8_t ns = (b2 >> 2) & 0x3;
     m_mount.guidingNS = (ns == 1) ? '^' : (ns == 2) ? '_' : (ns == 3) ? 'b' : ' '; }
-  m_mount.rateComp      = static_cast<MountState::RateCompensation>((int)((b2 >> 4) & 0x3));
+  { int rc = (int)((b2 >> 4) & 0x3);
+    m_mount.rateComp = (rc == 1) ? MountState::RC_RA : (rc == 2) ? MountState::RC_BOTH : MountState::RC_UNKNOWN; }
   m_mount.trackCorrected = (m_mount.rateComp != MountState::RC_UNKNOWN);
   m_mount.pulseGuiding  = (b2 >> 7) & 0x1;
 
@@ -548,13 +586,20 @@ void TeenAstroMountStatus::updateAllState(bool force)
   float tRA = pktF32(pkt, 32);
   float tDec= pktF32(pkt, 36);
 
-  formatRaStr(ra,   m_ra.data,       sizeof(m_ra.data));
-  formatDegStr(dec, m_dec.data,      sizeof(m_dec.data));
-  formatDegStr(alt, m_alt.data,      sizeof(m_alt.data));
-  formatAzStr(az,   m_az.data,       sizeof(m_az.data));
-  formatRaStr(lst,  m_sidereal.data, sizeof(m_sidereal.data));
-  formatRaStr(tRA,  m_raT.data,      sizeof(m_raT.data));
-  formatDegStr(tDec,m_decT.data,     sizeof(m_decT.data));
+  if (!safeFloat(ra))   { strncpy(m_ra.data, "?", sizeof(m_ra.data) - 1); m_ra.data[sizeof(m_ra.data) - 1] = '\0'; }
+  else                  formatRaStr(ra,   m_ra.data,       sizeof(m_ra.data));
+  if (!safeFloat(dec))  { strncpy(m_dec.data, "?", sizeof(m_dec.data) - 1); m_dec.data[sizeof(m_dec.data) - 1] = '\0'; }
+  else                  formatDegStr(dec, m_dec.data,      sizeof(m_dec.data));
+  if (!safeFloat(alt))  { strncpy(m_alt.data, "?", sizeof(m_alt.data) - 1); m_alt.data[sizeof(m_alt.data) - 1] = '\0'; }
+  else                  formatDegStr(alt, m_alt.data,      sizeof(m_alt.data));
+  if (!safeFloat(az))   { strncpy(m_az.data, "?", sizeof(m_az.data) - 1); m_az.data[sizeof(m_az.data) - 1] = '\0'; }
+  else                  formatAzStr(az,   m_az.data,       sizeof(m_az.data));
+  if (!safeFloat(lst))  { strncpy(m_sidereal.data, "?", sizeof(m_sidereal.data) - 1); m_sidereal.data[sizeof(m_sidereal.data) - 1] = '\0'; }
+  else                  formatRaStr(lst,  m_sidereal.data, sizeof(m_sidereal.data));
+  if (!safeFloat(tRA))  { strncpy(m_raT.data, "?", sizeof(m_raT.data) - 1); m_raT.data[sizeof(m_raT.data) - 1] = '\0'; }
+  else                  formatRaStr(tRA,  m_raT.data,      sizeof(m_raT.data));
+  if (!safeFloat(tDec)) { strncpy(m_decT.data, "?", sizeof(m_decT.data) - 1); m_decT.data[sizeof(m_decT.data) - 1] = '\0'; }
+  else                  formatDegStr(tDec,m_decT.data,     sizeof(m_decT.data));
   m_ra.valid = m_dec.valid = m_alt.valid = m_az.valid = true;
   m_sidereal.valid = m_raT.valid = m_decT.valid = true;
   m_timerRaDec.markUpdated();
@@ -809,7 +854,18 @@ bool TeenAstroMountStatus::hasFocuser() { return m_hasFocuser; }
 bool TeenAstroMountStatus::getLstT0(double& T0)    { return m_client->getLstT0(T0) == LX200_VALUEGET; }
 bool TeenAstroMountStatus::getLat(double& lat)      { return m_client->getLatitude(lat) == LX200_VALUEGET; }
 bool TeenAstroMountStatus::getLong(double& longi)   { return m_client->getLongitude(longi) == LX200_VALUEGET; }
-bool TeenAstroMountStatus::getTrackingRate(double& r) { return m_client->getTrackingRate(r) == LX200_VALUEGET; }
+
+// Rate in Hz from GXAS cache only (same formula as main unit :GT#). Never calls :GT#.
+bool TeenAstroMountStatus::getTrackingRate(double& r)
+{
+  r = 0.0;
+  if (!m_hasInfoTrackingRate) return false;
+  if (m_mount.tracking != MountState::TRK_ON) return true;
+  // RequestedTrackingRateHA = (10000 - trackRateRA) / 10000; :GT# returns that * 60 * 1.00273790935
+  double reqHA = (10000.0 - (double)m_trackRateRa) / 10000.0;
+  r = reqHA * 60.0 * 1.00273790935;
+  return true;
+}
 
 // ===========================================================================
 //  Error messages

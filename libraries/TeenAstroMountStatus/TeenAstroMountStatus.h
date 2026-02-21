@@ -445,6 +445,7 @@ public:
   bool connected();
   bool notResponding();
   void removeLastConnectionFailure() { m_connectionFailure = max(m_connectionFailure - 1, 0); }
+  void invalidatePositionTimeCaches();
 
 private:
   LX200Client* m_client = nullptr;

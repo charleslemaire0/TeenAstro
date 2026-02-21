@@ -4,9 +4,39 @@
 const char html_headB[] PROGMEM = "<!DOCTYPE HTML>\r\n<html lang='en'>\r\n<head>\r\n"
 "<meta charset='UTF-8'>\r\n"
 "<meta name='viewport' content='width=device-width,initial-scale=1'>\r\n";
-const char html_headerIdx[] PROGMEM = "<meta http-equiv=\"refresh\" content=\"5; URL=/index.htm\">\r\n";
+const char html_headerIdx[] PROGMEM = "<meta http-equiv=\"refresh\" content=\"15; URL=/index.htm\">\r\n";
+// Restore scroll after meta-refresh so user does not briefly see the top of the page.
+const char html_indexScrollRestore[] PROGMEM =
+"<script>\n"
+"(function(){"
+"window.addEventListener('beforeunload',function(){try{sessionStorage.setItem('_idxY',window.scrollY);sessionStorage.setItem('_idxPath',location.pathname);}catch(e){}});"
+"function r(){var y=sessionStorage.getItem('_idxY');var p=sessionStorage.getItem('_idxPath');if(p===location.pathname&&y!==null){window.scrollTo(0,parseInt(y,10));sessionStorage.removeItem('_idxY');sessionStorage.removeItem('_idxPath');}}"
+"if(document.readyState==='complete')r();else window.addEventListener('load',r);"
+"})();\n"
+"</script>\r\n";
 const char html_headE[] PROGMEM = "</head>\r\n";
 const char html_bodyB[] PROGMEM = "<body>\r\n";
+
+// Polling script for status page: fetches status.txt (full card mimic) every 1s,
+// updates #StatusContent so sidereal, alt/az, coords and last error stay in sync without full reload.
+// Only updates DOM when response changed to avoid blink.
+const char html_statusPoll[] PROGMEM =
+"<script>\n"
+"var _statusPoll=setInterval(function(){"
+"var xhr=new XMLHttpRequest();"
+"xhr.onreadystatechange=function(){"
+"if(xhr.readyState===4&&xhr.status===200){"
+"var e=document.getElementById('StatusContent');"
+"if(e&&xhr.responseText!==e.getAttribute('data-prev')){"
+"e.setAttribute('data-prev',xhr.responseText);"
+"e.innerHTML=xhr.responseText;"
+"}"
+"}"
+"};"
+"xhr.open('GET','status.txt',true);"
+"xhr.send();"
+"},2000);\n"
+"</script>\n";
 
 // Navigation guard: disables nav links after a click to prevent rapid page loads
 const char html_navGuard[] PROGMEM =
@@ -78,6 +108,14 @@ const char html_main_css5[] PROGMEM =
 "border-bottom:1px solid var(--border)}\n"
 ".card{background:var(--card);border:1px solid var(--card-bd);border-radius:var(--radius);"
 "padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}\n";
+
+// Index (status) page: tighter spacing and two columns on wider screens
+const char html_indexCompactCss[] PROGMEM =
+"body.page-idx .content{margin:8px auto;padding:0 10px;max-width:900px;font-size:13px;line-height:1.35}\n"
+"body.page-idx .card{padding:8px 12px;margin-bottom:6px}\n"
+"body.page-idx .bt{margin:6px 0 3px;padding-bottom:2px;font-size:1em}\n"
+"@media(min-width:560px){body.page-idx .content{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;align-items:start}"
+"body.page-idx .content .card{margin-bottom:0}}\n";
 
 const char html_main_css6[] PROGMEM =
 "form{margin:6px 0}"
@@ -374,7 +412,10 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
     page = ServerPage::Index;
 
   if (page == ServerPage::Index)
+  {
     data += FPSTR(html_headerIdx);
+    data += FPSTR(html_indexScrollRestore);
+  }
 
   // CSS
   data += FPSTR(html_main_css1);
@@ -382,6 +423,8 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   data += FPSTR(html_main_css3);
   data += FPSTR(html_main_css4);
   data += FPSTR(html_main_css5);
+  if (page == ServerPage::Index)
+    data += FPSTR(html_indexCompactCss);
   sendHtml(data);
   data += FPSTR(html_main_css6);
   data += FPSTR(html_main_css7);
@@ -400,7 +443,10 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   data += FPSTR(html_debugPageLog);
   // #endregion
   data += FPSTR(html_headE);
-  data += FPSTR(html_bodyB);
+  if (page == ServerPage::Index)
+    data += "<body class='page-idx'>\r\n";
+  else
+    data += FPSTR(html_bodyB);
   // #region agent log
   data += "<span id='_dbg' style='display:none'>";
   data += ESP.getFreeHeap();
@@ -673,6 +719,7 @@ void TeenAstroWifi::setup()
   server.on("/guide.txt", guideAjax);
   server.on("/track.txt", trackAjax);
   server.on("/trackinfo.txt", trackinfoAjax);
+  server.on("/status.txt", statusAjax);
   server.on("/wifi.htm", handleWifi);
   server.onNotFound(handleNotFound);
 

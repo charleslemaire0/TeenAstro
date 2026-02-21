@@ -10,9 +10,8 @@ const char* html_TrackingSpeedDEC PROGMEM =    "Drift Dec: <span class='c'>%.5f 
 
 void TeenAstroWifi::addTrackingInfo(String &data )
 {
-  char temp[300] = "";
-  char temp1[80] = "";
-  ta_MountStatus.updateMount();
+  char temp[128] = "";
+  char temp1[24] = "";
   data += FPSTR(html_TrackingState);
 
   switch (ta_MountStatus.getTrackingState())

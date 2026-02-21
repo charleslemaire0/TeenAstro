@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/mount_state.dart';
 import '../models/lx200_commands.dart';
 import 'lx200_tcp_client.dart';
-import 'debug_agent_log.dart';
 
 /// Notifier that polls the mount and updates state.
 /// Paces commands to avoid overwhelming the embedded system.
@@ -27,9 +26,6 @@ class MountStateNotifier extends StateNotifier<MountState> {
     _polling = true;
     _versionFetched = false;
     _pollCount = 0;
-    // #region agent log
-    DebugLog.add('startPolling() client.isConnected=${_client.isConnected}');
-    // #endregion
     _pollLoop();
   }
 
@@ -42,18 +38,8 @@ class MountStateNotifier extends StateNotifier<MountState> {
   Future<void> _pollLoop() async {
     while (_polling) {
       if (!_client.isConnected) {
-        // #region agent log
-        DebugLog.add('connection lost, attempting reconnect...');
-        agentLog('mount_state_provider.dart:_pollLoop', 'connection lost, attempting reconnect', {'clientState': _client.state.name}, 'H5');
-        // #endregion
         final ok = await _client.reconnect();
-        // #region agent log
-        agentLog('mount_state_provider.dart:_pollLoop', 'reconnect result', {'ok': ok, 'clientState': _client.state.name}, 'H5');
-        // #endregion
         if (!ok) {
-          // #region agent log
-          DebugLog.add('reconnect failed, retrying in 5s');
-          // #endregion
           await Future.delayed(const Duration(seconds: 5));
           continue;
         }
@@ -63,17 +49,9 @@ class MountStateNotifier extends StateNotifier<MountState> {
 
       try {
         await _poll();
-      } catch (e) {
-        // #region agent log
-        DebugLog.add('poll error: $e');
-        // #endregion
-      }
-      // Wait between polls
+      } catch (e) {}
       await Future.delayed(_pollInterval);
     }
-    // #region agent log
-    DebugLog.add('pollLoop ended (polling stopped)');
-    // #endregion
   }
 
   Future<void> _poll() async {
@@ -99,24 +77,6 @@ class MountStateNotifier extends StateNotifier<MountState> {
     await _fetchAllState();
 
     _pollCount++;
-
-    // #region agent log
-    if (_pollCount <= 6) {
-      agentLog('mount_state_provider.dart:_poll', 'poll cycle done', {
-        'pollCount': _pollCount,
-        'ra': state.ra,
-        'dec': state.dec,
-        'alt': state.alt,
-        'az': state.az,
-        'utcTime': state.utcTime,
-        'siderealTime': state.siderealTime,
-        'lat': state.latitude,
-        'lon': state.longitude,
-        'tracking': state.tracking.name,
-        'valid': state.valid,
-      }, 'H2A');
-    }
-    // #endregion
   }
 
   Future<void> _fetchAllState() async {
@@ -124,15 +84,7 @@ class MountStateNotifier extends StateNotifier<MountState> {
     if (raw != null) {
       final base64 = raw.endsWith('#') ? raw.substring(0, raw.length - 1) : raw;
       if (base64.length == 88) {
-        final beforeBoard = state.boardVersion;
         state = state.parseBinaryState(base64);
-        // #region agent log
-        agentLog('mount_state_provider.dart:_fetchAllState', 'after parseBinaryState', {
-          'beforeBoard': beforeBoard,
-          'afterBoard': state.boardVersion,
-          'preserved': beforeBoard == state.boardVersion,
-        }, 'H3');
-        // #endregion
       }
     }
   }
@@ -144,23 +96,35 @@ class MountStateNotifier extends StateNotifier<MountState> {
     return base64.hasMatch(s);
   }
 
+  /// True if [s] looks like a version number (e.g. 1.5.9) — wrong reply for :GVP#.
+  static bool _looksLikeVersion(String? s) {
+    if (s == null || s.isEmpty) return false;
+    return RegExp(r'^\d+\.\d+(\.\d+)?$').hasMatch(s.trim());
+  }
+
+  /// True if [s] is the known product name — wrong reply when we asked :GVN# (misattributed from delayed :GVP#).
+  static bool _isProductNameMisattributedToGVN(String? s) {
+    if (s == null || s.isEmpty) return false;
+    return s.trim() == 'TeenAstro';
+  }
+
   Future<void> _fetchVersion() async {
-    // #region agent log
-    final gvbReplyType = getReplyType(LX200.getBoardVersion);
-    agentLog('mount_state_provider.dart:_fetchVersion', 'start', {
-      'connected': _client.isConnected,
-      'getReplyTypeGVB': gvbReplyType.name,
-    }, 'H2');
-    // #endregion
-    final name = await _client.sendCommand(LX200.getProductName);
+    var name = await _client.sendCommand(LX200.getProductName);
+    if (_looksLikeGxasBase64(name) || _looksLikeVersion(name)) {
+      await Future.delayed(_cmdDelay);
+      final retry = await _client.sendCommand(LX200.getProductName);
+      name = (_looksLikeGxasBase64(retry) || _looksLikeVersion(retry)) ? null : retry;
+    }
     await Future.delayed(_cmdDelay);
-    final ver = await _client.sendCommand(LX200.getVersionNum);
+    var ver = await _client.sendCommand(LX200.getVersionNum);
+    if (_looksLikeGxasBase64(ver) || _isProductNameMisattributedToGVN(ver)) {
+      await Future.delayed(_cmdDelay);
+      final retry = await _client.sendCommand(LX200.getVersionNum);
+      ver = (_looksLikeGxasBase64(retry) || _isProductNameMisattributedToGVN(retry)) ? null : retry;
+    }
     await Future.delayed(_cmdDelay);
     var board = await _client.sendCommand(LX200.getBoardVersion);
     if (_looksLikeGxasBase64(board)) {
-      agentLog('mount_state_provider.dart:_fetchVersion', 'board was GXAS base64, retrying GVB', {
-        'boardLength': board?.length ?? 0,
-      }, 'H5');
       await Future.delayed(_cmdDelay);
       final retry = await _client.sendCommand(LX200.getBoardVersion);
       board = _looksLikeGxasBase64(retry) ? null : retry;
@@ -168,22 +132,10 @@ class MountStateNotifier extends StateNotifier<MountState> {
     await Future.delayed(_cmdDelay);
     var driver = await _client.sendCommand(LX200.getDriverType);
     if (_looksLikeGxasBase64(driver)) {
-      agentLog('mount_state_provider.dart:_fetchVersion', 'driver was GXAS base64, retrying GVb', {
-        'driverLength': driver?.length ?? 0,
-      }, 'H5');
       await Future.delayed(_cmdDelay);
       final retry = await _client.sendCommand(LX200.getDriverType);
       driver = _looksLikeGxasBase64(retry) ? null : retry;
     }
-
-    // #region agent log
-    agentLog('mount_state_provider.dart:_fetchVersion', 'done', {
-      'name': name ?? 'null', 'ver': ver ?? 'null',
-      'board': board ?? 'null', 'boardLength': board?.length ?? 0,
-      'driver': driver ?? 'null', 'driverLength': driver?.length ?? 0,
-      'connected': _client.isConnected,
-    }, 'H5');
-    // #endregion
 
     state = state.copyWith(
       productName: name ?? '',
@@ -197,13 +149,6 @@ class MountStateNotifier extends StateNotifier<MountState> {
     final latStr = await _client.sendCommand(LX200.getLatitude);
     await Future.delayed(_cmdDelay);
     final lonStr = await _client.sendCommand(LX200.getLongitude);
-
-    // #region agent log
-    agentLog('mount_state_provider.dart:_fetchSite', 'site fetched', {
-      'latStr': latStr ?? 'null',
-      'lonStr': lonStr ?? 'null',
-    }, 'H2B');
-    // #endregion
 
     if (latStr != null && latStr.isNotEmpty) {
       final lat = _parseDms(latStr);
