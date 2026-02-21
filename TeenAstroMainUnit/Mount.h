@@ -195,7 +195,7 @@ public:
   void loadGuideRatesFromEEPROM();
   void loadSiderealFromEEPROMAndStartTimers();
   void configureFaultPins();
-  void onSiderealTick(long phase, bool forceTracking);
+  void onSiderealTick(long phase, bool forceTracking, long elapsed = 1);
   void updateEncoderSync(bool runThisLoop);
   void updateStatusLed(int ledPin) const;
 

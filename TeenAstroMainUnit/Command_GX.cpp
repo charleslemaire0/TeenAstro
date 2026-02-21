@@ -388,12 +388,23 @@ static void Command_GX_Debug()
   }
   case 'W':
   {
-    // :GXDW# Get workload
+    // :GXDW# Get workload   :GXDW1# Get missed sidereal ticks (debug)
     if (commandState.command[4] == 0)
     {
       sprintf(commandState.reply, "%ld%%#", (tlp.getWorstTime() * 100L) / 9970L);
       tlp.resetWorstTime();
     }
+    // #region agent log
+    else if (commandState.command[4] == '1')
+    {
+      sprintf(commandState.reply, "%ld#", rtk.m_missedTicks);
+    }
+    else if (commandState.command[4] == '2')
+    {
+      rtk.m_missedTicks = 0;
+      replyLongTrue();
+    }
+    // #endregion
     else
       replyLongUnknow();
     break;

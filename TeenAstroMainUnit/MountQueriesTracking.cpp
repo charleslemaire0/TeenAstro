@@ -316,15 +316,15 @@ void Mount::safetyCheck(bool forceTracking)
   }
 }
 
-void Mount::onSiderealTick(long phase, bool forceTracking)
+void Mount::onSiderealTick(long phase, bool forceTracking, long elapsed)
 {
   if (tracking.sideralTracking)
   {
     cli();
     if (!axes.staA1.backlash_correcting)
-      axes.staA1.target += axes.staA1.fstep;
+      axes.staA1.target += axes.staA1.fstep * elapsed;
     if (!axes.staA2.backlash_correcting)
-      axes.staA2.target += axes.staA2.fstep;
+      axes.staA2.target += axes.staA2.fstep * elapsed;
     sei();
   }
   if (tracking.movingTo)

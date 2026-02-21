@@ -209,11 +209,12 @@ void Application::updateForceTracking(bool& forceTracking)
 // Sidereal tick, timer loop, then safety check.
 void Application::loopSiderealAndSafety(bool& forceTracking)
 {
-  if (rtk.updatesiderealTimer())
+  long elapsed = rtk.updatesiderealTimer();
+  if (elapsed > 0)
   {
     long phase = rtk.m_lst % SIDEREAL_PHASE_MOD;
     updateForceTracking(forceTracking);
-    mount.onSiderealTick(phase, forceTracking);
+    mount.onSiderealTick(phase, forceTracking, elapsed);
   }
 
   tlp.monitor();
