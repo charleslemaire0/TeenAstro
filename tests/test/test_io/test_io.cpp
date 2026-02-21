@@ -214,7 +214,7 @@ void test_getReplyType_halt(void) {
 }
 
 void test_getReplyType_home_park(void) {
-    TEST_ASSERT_EQUAL(CMDR_NO, getReplyType(":hF#"));
+    TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":hF#"));
     TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":hC#"));
     TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":hP#"));
     TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":hR#"));
@@ -1112,6 +1112,701 @@ void test_codec_gethms_getdms(void) {
 }
 
 // =====================================================================
+//  Focuser binary protocol helpers (mirror the focuser encoder logic)
+// =====================================================================
+
+static const char TEST_B64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static void testB64Encode(const uint8_t* in, char* out, int len)
+{
+    int o = 0;
+    for (int i = 0; i < len; i += 3)
+    {
+        uint32_t b = ((uint32_t)in[i] << 16) | ((uint32_t)in[i+1] << 8) | in[i+2];
+        out[o++] = TEST_B64[(b >> 18) & 0x3F];
+        out[o++] = TEST_B64[(b >> 12) & 0x3F];
+        out[o++] = TEST_B64[(b >>  6) & 0x3F];
+        out[o++] = TEST_B64[ b        & 0x3F];
+    }
+    out[o] = 0;
+}
+
+static void testPackU16(uint8_t* p, int off, uint16_t v) {
+    p[off] = (uint8_t)(v & 0xFF);
+    p[off + 1] = (uint8_t)(v >> 8);
+}
+
+static void testPackI16(uint8_t* p, int off, int16_t v) {
+    testPackU16(p, off, (uint16_t)v);
+}
+
+static void testXorChecksum(uint8_t* pkt, int dataLen) {
+    uint8_t x = 0;
+    for (int i = 0; i < dataLen; i++) x ^= pkt[i];
+    pkt[dataLen] = x;
+}
+
+// Build a :FA# config packet (150 bytes) exactly as the focuser does, encode, format as reply string
+static void buildConfigReply(uint8_t* pkt, char* reply, int replySize,
+    uint16_t startPos, uint16_t maxPos, uint16_t lowSpd, uint16_t hiSpd,
+    uint8_t cmdA, uint8_t manA, uint8_t manD,
+    uint8_t rev, uint8_t mic, uint16_t res, uint8_t cur, uint16_t srot)
+{
+    memset(pkt, 0, 150);
+    testPackU16(pkt, 0,  startPos);
+    testPackU16(pkt, 2,  maxPos);
+    testPackU16(pkt, 4,  lowSpd);
+    testPackU16(pkt, 6,  hiSpd);
+    pkt[8]  = cmdA;
+    pkt[9]  = manA;
+    pkt[10] = manD;
+    pkt[11] = rev;
+    pkt[12] = mic;
+    testPackU16(pkt, 13, res);
+    pkt[15] = cur;
+    testPackU16(pkt, 16, srot);
+    testXorChecksum(pkt, 149);
+    char b64[201];
+    testB64Encode(pkt, b64, 150);
+    snprintf(reply, replySize, "%s#", b64);
+}
+
+// Build a :Fa# state packet (9 bytes) exactly as the focuser does
+static void buildStateReply(uint8_t* pkt, char* reply, int replySize,
+    uint16_t pos, uint16_t spd, int16_t tempX100, uint8_t flags)
+{
+    memset(pkt, 0, 9);
+    testPackU16(pkt, 0, pos);
+    testPackU16(pkt, 2, spd);
+    testPackI16(pkt, 4, tempX100);
+    pkt[6] = flags;
+    testXorChecksum(pkt, 8);
+    char b64[13];
+    testB64Encode(pkt, b64, 9);
+    snprintf(reply, replySize, "%s#", b64);
+}
+
+// =====================================================================
+//  11a. :FA# config — all zeros
+// =====================================================================
+
+void test_focuser_config_all_zeros(void)
+{
+    uint8_t pkt[150];
+    char reply[210];
+    buildConfigReply(pkt, reply, sizeof(reply), 0,0,0,0, 0,0,0, 0,0,0,0,0);
+    mockStream.loadResponse(reply);
+
+    unsigned int sp, mp, ls, hs, ca, ma, md;
+    TEST_ASSERT_EQUAL(LX200_VALUEGET,
+        client->readFocuserConfig(sp, mp, ls, hs, ca, ma, md));
+    TEST_ASSERT_EQUAL(0, sp);  TEST_ASSERT_EQUAL(0, mp);
+    TEST_ASSERT_EQUAL(0, ls);  TEST_ASSERT_EQUAL(0, hs);
+    TEST_ASSERT_EQUAL(0, ca);  TEST_ASSERT_EQUAL(0, ma);
+    TEST_ASSERT_EQUAL(0, md);
+}
+
+void test_focuser_motor_all_zeros(void)
+{
+    uint8_t pkt[150];
+    char reply[210];
+    buildConfigReply(pkt, reply, sizeof(reply), 0,0,0,0, 0,0,0, 0,0,0,0,0);
+    mockStream.loadResponse(reply);
+
+    bool rev; unsigned int mic, res, cur, srot;
+    TEST_ASSERT_EQUAL(LX200_VALUEGET,
+        client->readFocuserMotor(rev, mic, res, cur, srot));
+    TEST_ASSERT_FALSE(rev);
+    TEST_ASSERT_EQUAL(0, mic); TEST_ASSERT_EQUAL(0, res);
+    TEST_ASSERT_EQUAL(0, cur); TEST_ASSERT_EQUAL(0, srot);
+}
+
+// =====================================================================
+//  11b. :FA# config — typical values
+// =====================================================================
+
+void test_focuser_config_typical(void)
+{
+    uint8_t pkt[150];
+    char reply[210];
+    buildConfigReply(pkt, reply, sizeof(reply),
+        500, 10000, 50, 200, 10, 8, 5,
+        0, 3, 16, 80, 400);
+    mockStream.loadResponse(reply);
+
+    unsigned int sp, mp, ls, hs, ca, ma, md;
+    TEST_ASSERT_EQUAL(LX200_VALUEGET,
+        client->readFocuserConfig(sp, mp, ls, hs, ca, ma, md));
+    TEST_ASSERT_EQUAL(500, sp);  TEST_ASSERT_EQUAL(10000, mp);
+    TEST_ASSERT_EQUAL(50, ls);   TEST_ASSERT_EQUAL(200, hs);
+    TEST_ASSERT_EQUAL(10, ca);   TEST_ASSERT_EQUAL(8, ma);
+    TEST_ASSERT_EQUAL(5, md);
+}
+
+void test_focuser_motor_typical(void)
+{
+    uint8_t pkt[150];
+    char reply[210];
+    buildConfigReply(pkt, reply, sizeof(reply),
+        500, 10000, 50, 200, 10, 8, 5,
+        1, 4, 32, 120, 200);
+    mockStream.loadResponse(reply);
+
+    bool rev; unsigned int mic, res, cur, srot;
+    TEST_ASSERT_EQUAL(LX200_VALUEGET,
+        client->readFocuserMotor(rev, mic, res, cur, srot));
+    TEST_ASSERT_TRUE(rev);
+    TEST_ASSERT_EQUAL(4, mic); TEST_ASSERT_EQUAL(32, res);
+    TEST_ASSERT_EQUAL(120, cur); TEST_ASSERT_EQUAL(200, srot);
+}
+
+// =====================================================================
+//  11c. :FA# config — max uint16 boundary values
+// =====================================================================
+
+void test_focuser_config_max_values(void)
+{
+    uint8_t pkt[150];
+    char reply[210];
+    buildConfigReply(pkt, reply, sizeof(reply),
+        65535, 65535, 999, 999, 99, 99, 99,
+        1, 7, 512, 160, 800);
+    mockStream.loadResponse(reply);
+
+    unsigned int sp, mp, ls, hs, ca, ma, md;
+    TEST_ASSERT_EQUAL(LX200_VALUEGET,
+        client->readFocuserConfig(sp, mp, ls, hs, ca, ma, md));
+    TEST_ASSERT_EQUAL(65535, sp); TEST_ASSERT_EQUAL(65535, mp);
+    TEST_ASSERT_EQUAL(999, ls);   TEST_ASSERT_EQUAL(999, hs);
+    TEST_ASSERT_EQUAL(99, ca);    TEST_ASSERT_EQUAL(99, ma);
+    TEST_ASSERT_EQUAL(99, md);
+}
+
+void test_focuser_motor_max_values(void)
+{
+    uint8_t pkt[150];
+    char reply[210];
+    buildConfigReply(pkt, reply, sizeof(reply),
+        65535, 65535, 999, 999, 99, 99, 99,
+        1, 7, 512, 160, 800);
+    mockStream.loadResponse(reply);
+
+    bool rev; unsigned int mic, res, cur, srot;
+    TEST_ASSERT_EQUAL(LX200_VALUEGET,
+        client->readFocuserMotor(rev, mic, res, cur, srot));
+    TEST_ASSERT_TRUE(rev);
+    TEST_ASSERT_EQUAL(7, mic); TEST_ASSERT_EQUAL(512, res);
+    TEST_ASSERT_EQUAL(160, cur); TEST_ASSERT_EQUAL(800, srot);
+}
+
+// =====================================================================
+//  11d. :FA# config — user positions with names
+// =====================================================================
+
+void test_focuser_config_user_positions(void)
+{
+    uint8_t pkt[150];
+    char reply[210];
+    buildConfigReply(pkt, reply, sizeof(reply),
+        100, 5000, 30, 150, 5, 5, 3,
+        0, 3, 8, 50, 200);
+
+    // Fill 3 named positions, leave rest empty
+    int base0 = 18 + 0 * 13;
+    testPackU16(pkt, base0, 1234);
+    memcpy(&pkt[base0 + 2], "Halpha\0\0\0\0\0", 11);
+
+    int base1 = 18 + 1 * 13;
+    testPackU16(pkt, base1, 500);
+    memcpy(&pkt[base1 + 2], "OIII_filter", 11);
+
+    int base5 = 18 + 5 * 13;
+    testPackU16(pkt, base5, 65000);
+    memcpy(&pkt[base5 + 2], "MaxPos\0\0\0\0\0", 11);
+
+    testXorChecksum(pkt, 149);
+    char b64[201]; testB64Encode(pkt, b64, 150);
+    snprintf(reply, sizeof(reply), "%s#", b64);
+
+    // Decode via LX200Client and manually verify user positions
+    // We use getFocuserAllConfig to get the raw base64, then decode manually
+    mockStream.loadResponse(reply);
+    char raw[220];
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getFocuserAllConfig(raw, sizeof(raw)));
+
+    // The client strips '#', so len should be 200
+    int len = (int)strlen(raw);
+    TEST_ASSERT_EQUAL(200, len);
+
+    // Manually decode to verify user positions (same as webserver does)
+    static const int8_t DEC[128] = {
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
+      52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,
+      -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
+      15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,
+      -1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
+      41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1
+    };
+    uint8_t dpkt[150];
+    int o = 0;
+    for (int i = 0; i < 200; i += 4) {
+        int8_t v0 = DEC[(uint8_t)raw[i]], v1 = DEC[(uint8_t)raw[i+1]];
+        int8_t v2 = DEC[(uint8_t)raw[i+2]], v3 = DEC[(uint8_t)raw[i+3]];
+        TEST_ASSERT_TRUE(v0 >= 0 && v1 >= 0 && v2 >= 0 && v3 >= 0);
+        uint32_t b = ((uint32_t)v0 << 18) | ((uint32_t)v1 << 12) | ((uint32_t)v2 << 6) | (uint32_t)v3;
+        dpkt[o++] = (uint8_t)(b >> 16); dpkt[o++] = (uint8_t)(b >> 8); dpkt[o++] = (uint8_t)(b);
+    }
+
+    // Verify checksum
+    uint8_t xc = 0; for (int i = 0; i < 149; i++) xc ^= dpkt[i];
+    TEST_ASSERT_EQUAL(dpkt[149], xc);
+
+    // Verify user position 0
+    uint16_t p0 = (uint16_t)dpkt[base0] | ((uint16_t)dpkt[base0+1] << 8);
+    TEST_ASSERT_EQUAL(1234, p0);
+    char name0[12]; memcpy(name0, &dpkt[base0+2], 11); name0[11] = '\0';
+    TEST_ASSERT_EQUAL_STRING("Halpha", name0);
+
+    // Verify user position 1
+    uint16_t p1 = (uint16_t)dpkt[base1] | ((uint16_t)dpkt[base1+1] << 8);
+    TEST_ASSERT_EQUAL(500, p1);
+    char name1[12]; memcpy(name1, &dpkt[base1+2], 11); name1[11] = '\0';
+    TEST_ASSERT_EQUAL_STRING("OIII_filter", name1);
+
+    // Verify user position 5
+    uint16_t p5 = (uint16_t)dpkt[base5] | ((uint16_t)dpkt[base5+1] << 8);
+    TEST_ASSERT_EQUAL(65000, p5);
+    char name5[12]; memcpy(name5, &dpkt[base5+2], 11); name5[11] = '\0';
+    TEST_ASSERT_EQUAL_STRING("MaxPos", name5);
+
+    // Verify empty position 2 is all zeros
+    int base2 = 18 + 2 * 13;
+    uint16_t p2 = (uint16_t)dpkt[base2] | ((uint16_t)dpkt[base2+1] << 8);
+    TEST_ASSERT_EQUAL(0, p2);
+    TEST_ASSERT_EQUAL(0, dpkt[base2+2]);
+}
+
+// =====================================================================
+//  11e. :FA# config — bad checksum rejected
+// =====================================================================
+
+void test_focuser_config_bad_checksum(void)
+{
+    uint8_t pkt[150];
+    char reply[210];
+    buildConfigReply(pkt, reply, sizeof(reply), 100, 5000, 30, 150, 5, 5, 3, 0, 3, 8, 50, 200);
+
+    // Corrupt the checksum
+    pkt[149] ^= 0xFF;
+    char b64[201]; testB64Encode(pkt, b64, 150);
+    snprintf(reply, sizeof(reply), "%s#", b64);
+    mockStream.loadResponse(reply);
+
+    unsigned int sp, mp, ls, hs, ca, ma, md;
+    TEST_ASSERT_EQUAL(LX200_GETVALUEFAILED,
+        client->readFocuserConfig(sp, mp, ls, hs, ca, ma, md));
+}
+
+// =====================================================================
+//  11f. :FA# config — wrong base64 length rejected
+// =====================================================================
+
+void test_focuser_config_wrong_length(void)
+{
+    // Send 196 chars (not 200) — should fail
+    char reply[210];
+    for (int i = 0; i < 196; i++) reply[i] = 'A';
+    reply[196] = '#';
+    reply[197] = '\0';
+    mockStream.loadResponse(reply);
+
+    unsigned int sp, mp, ls, hs, ca, ma, md;
+    TEST_ASSERT_EQUAL(LX200_GETVALUEFAILED,
+        client->readFocuserConfig(sp, mp, ls, hs, ca, ma, md));
+}
+
+// =====================================================================
+//  11g. :FA# config — invalid base64 char rejected
+// =====================================================================
+
+void test_focuser_config_invalid_b64_char(void)
+{
+    uint8_t pkt[150];
+    char reply[210];
+    buildConfigReply(pkt, reply, sizeof(reply), 100, 5000, 30, 150, 5, 5, 3, 0, 3, 8, 50, 200);
+
+    // Corrupt a base64 character to an invalid char
+    reply[10] = '!';
+    mockStream.loadResponse(reply);
+
+    unsigned int sp, mp, ls, hs, ca, ma, md;
+    TEST_ASSERT_EQUAL(LX200_GETVALUEFAILED,
+        client->readFocuserConfig(sp, mp, ls, hs, ca, ma, md));
+}
+
+// =====================================================================
+//  11h. :FA# config — no response returns failure
+// =====================================================================
+
+void test_focuser_config_no_response(void)
+{
+    // No response loaded
+    unsigned int sp, mp, ls, hs, ca, ma, md;
+    TEST_ASSERT_EQUAL(LX200_GETVALUEFAILED,
+        client->readFocuserConfig(sp, mp, ls, hs, ca, ma, md));
+}
+
+// =====================================================================
+//  11i. :Fa# state — all zeros
+// =====================================================================
+
+void test_focuser_state_all_zeros(void)
+{
+    uint8_t pkt[9];
+    char reply[20];
+    buildStateReply(pkt, reply, sizeof(reply), 0, 0, 0, 0);
+    mockStream.loadResponse(reply);
+
+    char raw[20];
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getFocuserAllState(raw, sizeof(raw)));
+    TEST_ASSERT_EQUAL(12, (int)strlen(raw));
+
+    // Verify decoding (same logic as MountStatus)
+    static const int8_t DEC[128] = {
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
+      52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,
+      -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
+      15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,
+      -1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
+      41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1
+    };
+    uint8_t dp[9];
+    int o = 0;
+    for (int i = 0; i < 12; i += 4) {
+        int8_t v0 = DEC[(uint8_t)raw[i]], v1 = DEC[(uint8_t)raw[i+1]];
+        int8_t v2 = DEC[(uint8_t)raw[i+2]], v3 = DEC[(uint8_t)raw[i+3]];
+        uint32_t b = ((uint32_t)v0 << 18) | ((uint32_t)v1 << 12) | ((uint32_t)v2 << 6) | (uint32_t)v3;
+        dp[o++] = (uint8_t)(b >> 16); dp[o++] = (uint8_t)(b >> 8); dp[o++] = (uint8_t)(b);
+    }
+    uint8_t xc = 0; for (int i = 0; i < 8; i++) xc ^= dp[i];
+    TEST_ASSERT_EQUAL(dp[8], xc);
+    uint16_t pos = (uint16_t)dp[0] | ((uint16_t)dp[1] << 8);
+    uint16_t spd = (uint16_t)dp[2] | ((uint16_t)dp[3] << 8);
+    TEST_ASSERT_EQUAL(0, pos);
+    TEST_ASSERT_EQUAL(0, spd);
+}
+
+// =====================================================================
+//  11j. :Fa# state — known values (position, speed, temperature)
+// =====================================================================
+
+void test_focuser_state_known_values(void)
+{
+    uint8_t pkt[9];
+    char reply[20];
+    buildStateReply(pkt, reply, sizeof(reply), 12345, 88, 2350, 1);
+    mockStream.loadResponse(reply);
+
+    char raw[20];
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getFocuserAllState(raw, sizeof(raw)));
+    TEST_ASSERT_EQUAL(12, (int)strlen(raw));
+
+    static const int8_t DEC[128] = {
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
+      52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,
+      -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
+      15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,
+      -1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
+      41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1
+    };
+    uint8_t dp[9];
+    int o = 0;
+    for (int i = 0; i < 12; i += 4) {
+        int8_t v0 = DEC[(uint8_t)raw[i]], v1 = DEC[(uint8_t)raw[i+1]];
+        int8_t v2 = DEC[(uint8_t)raw[i+2]], v3 = DEC[(uint8_t)raw[i+3]];
+        uint32_t b = ((uint32_t)v0 << 18) | ((uint32_t)v1 << 12) | ((uint32_t)v2 << 6) | (uint32_t)v3;
+        dp[o++] = (uint8_t)(b >> 16); dp[o++] = (uint8_t)(b >> 8); dp[o++] = (uint8_t)(b);
+    }
+    uint8_t xc = 0; for (int i = 0; i < 8; i++) xc ^= dp[i];
+    TEST_ASSERT_EQUAL(dp[8], xc);
+
+    uint16_t pos = (uint16_t)dp[0] | ((uint16_t)dp[1] << 8);
+    uint16_t spd = (uint16_t)dp[2] | ((uint16_t)dp[3] << 8);
+    int16_t temp = (int16_t)((uint16_t)dp[4] | ((uint16_t)dp[5] << 8));
+    TEST_ASSERT_EQUAL(12345, pos);
+    TEST_ASSERT_EQUAL(88, spd);
+    TEST_ASSERT_EQUAL(2350, temp);
+    TEST_ASSERT_EQUAL(1, dp[6]);
+}
+
+// =====================================================================
+//  11k. :Fa# state — negative temperature
+// =====================================================================
+
+void test_focuser_state_negative_temp(void)
+{
+    uint8_t pkt[9];
+    char reply[20];
+    buildStateReply(pkt, reply, sizeof(reply), 0, 0, -1500, 0);
+    mockStream.loadResponse(reply);
+
+    char raw[20];
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getFocuserAllState(raw, sizeof(raw)));
+
+    static const int8_t DEC[128] = {
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
+      52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,
+      -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
+      15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,
+      -1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
+      41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1
+    };
+    uint8_t dp[9];
+    int o = 0;
+    for (int i = 0; i < 12; i += 4) {
+        int8_t v0 = DEC[(uint8_t)raw[i]], v1 = DEC[(uint8_t)raw[i+1]];
+        int8_t v2 = DEC[(uint8_t)raw[i+2]], v3 = DEC[(uint8_t)raw[i+3]];
+        uint32_t b = ((uint32_t)v0 << 18) | ((uint32_t)v1 << 12) | ((uint32_t)v2 << 6) | (uint32_t)v3;
+        dp[o++] = (uint8_t)(b >> 16); dp[o++] = (uint8_t)(b >> 8); dp[o++] = (uint8_t)(b);
+    }
+    int16_t temp = (int16_t)((uint16_t)dp[4] | ((uint16_t)dp[5] << 8));
+    TEST_ASSERT_EQUAL(-1500, temp);
+}
+
+// =====================================================================
+//  11l. :Fa# state — max position (boundary)
+// =====================================================================
+
+void test_focuser_state_max_position(void)
+{
+    uint8_t pkt[9];
+    char reply[20];
+    buildStateReply(pkt, reply, sizeof(reply), 65535, 999, 0, 0);
+    mockStream.loadResponse(reply);
+
+    char raw[20];
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getFocuserAllState(raw, sizeof(raw)));
+
+    static const int8_t DEC[128] = {
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
+      52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,
+      -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
+      15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,
+      -1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
+      41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1
+    };
+    uint8_t dp[9];
+    int o = 0;
+    for (int i = 0; i < 12; i += 4) {
+        int8_t v0 = DEC[(uint8_t)raw[i]], v1 = DEC[(uint8_t)raw[i+1]];
+        int8_t v2 = DEC[(uint8_t)raw[i+2]], v3 = DEC[(uint8_t)raw[i+3]];
+        uint32_t b = ((uint32_t)v0 << 18) | ((uint32_t)v1 << 12) | ((uint32_t)v2 << 6) | (uint32_t)v3;
+        dp[o++] = (uint8_t)(b >> 16); dp[o++] = (uint8_t)(b >> 8); dp[o++] = (uint8_t)(b);
+    }
+    uint16_t pos = (uint16_t)dp[0] | ((uint16_t)dp[1] << 8);
+    uint16_t spd = (uint16_t)dp[2] | ((uint16_t)dp[3] << 8);
+    TEST_ASSERT_EQUAL(65535, pos);
+    TEST_ASSERT_EQUAL(999, spd);
+}
+
+// =====================================================================
+//  11m. :Fa# state — bad checksum rejected
+// =====================================================================
+
+void test_focuser_state_bad_checksum(void)
+{
+    uint8_t pkt[9];
+    char reply[20];
+    buildStateReply(pkt, reply, sizeof(reply), 100, 50, 2000, 1);
+
+    // Corrupt the checksum byte (last 4 base64 chars encode bytes 6,7,8)
+    pkt[8] ^= 0xFF;
+    char b64[13]; testB64Encode(pkt, b64, 9);
+    snprintf(reply, sizeof(reply), "%s#", b64);
+    mockStream.loadResponse(reply);
+
+    char raw[20];
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getFocuserAllState(raw, sizeof(raw)));
+    TEST_ASSERT_EQUAL(12, (int)strlen(raw));
+
+    static const int8_t DEC[128] = {
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
+      52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,
+      -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
+      15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,
+      -1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
+      41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1
+    };
+    uint8_t dp[9];
+    int o = 0;
+    for (int i = 0; i < 12; i += 4) {
+        int8_t v0 = DEC[(uint8_t)raw[i]], v1 = DEC[(uint8_t)raw[i+1]];
+        int8_t v2 = DEC[(uint8_t)raw[i+2]], v3 = DEC[(uint8_t)raw[i+3]];
+        uint32_t b = ((uint32_t)v0 << 18) | ((uint32_t)v1 << 12) | ((uint32_t)v2 << 6) | (uint32_t)v3;
+        dp[o++] = (uint8_t)(b >> 16); dp[o++] = (uint8_t)(b >> 8); dp[o++] = (uint8_t)(b);
+    }
+    uint8_t xc = 0; for (int i = 0; i < 8; i++) xc ^= dp[i];
+    TEST_ASSERT_NOT_EQUAL(dp[8], xc);
+}
+
+// =====================================================================
+//  11n. :FA# — encode-decode round-trip consistency
+//  Builds packet like the focuser, encodes, feeds through LX200Client,
+//  then verifies every decoded field matches the original input.
+// =====================================================================
+
+void test_focuser_full_roundtrip(void)
+{
+    const uint16_t startPos = 777, maxPos = 40000, lowSpd = 100, hiSpd = 500;
+    const uint8_t cmdA = 15, manA = 12, manD = 8;
+    const uint8_t rev = 1, mic = 5;
+    const uint16_t res = 64;
+    const uint8_t cur = 100;
+    const uint16_t srot = 400;
+
+    uint8_t pkt[150];
+    char reply[210];
+    buildConfigReply(pkt, reply, sizeof(reply),
+        startPos, maxPos, lowSpd, hiSpd, cmdA, manA, manD,
+        rev, mic, res, cur, srot);
+
+    // Verify base64 string is exactly 200 chars (excluding '#')
+    TEST_ASSERT_EQUAL('#', reply[200]);
+    TEST_ASSERT_EQUAL('\0', reply[201]);
+
+    // Feed to readFocuserConfig
+    mockStream.loadResponse(reply);
+    unsigned int sp, mp, ls, hs, ca, ma, md;
+    TEST_ASSERT_EQUAL(LX200_VALUEGET,
+        client->readFocuserConfig(sp, mp, ls, hs, ca, ma, md));
+    TEST_ASSERT_EQUAL(startPos, sp);
+    TEST_ASSERT_EQUAL(maxPos, mp);
+    TEST_ASSERT_EQUAL(lowSpd, ls);
+    TEST_ASSERT_EQUAL(hiSpd, hs);
+    TEST_ASSERT_EQUAL(cmdA, ca);
+    TEST_ASSERT_EQUAL(manA, ma);
+    TEST_ASSERT_EQUAL(manD, md);
+
+    // Feed to readFocuserMotor
+    mockStream.loadResponse(reply);
+    bool rrev; unsigned int rmic, rres, rcur, rsrot;
+    TEST_ASSERT_EQUAL(LX200_VALUEGET,
+        client->readFocuserMotor(rrev, rmic, rres, rcur, rsrot));
+    TEST_ASSERT_TRUE(rrev);
+    TEST_ASSERT_EQUAL(mic, rmic);
+    TEST_ASSERT_EQUAL(res, rres);
+    TEST_ASSERT_EQUAL(cur, rcur);
+    TEST_ASSERT_EQUAL(srot, rsrot);
+}
+
+// =====================================================================
+//  11o. :Fa# — encode-decode round-trip consistency
+// =====================================================================
+
+void test_focuser_state_full_roundtrip(void)
+{
+    const uint16_t pos = 30000, spd = 150;
+    const int16_t tempX100 = -525;
+    const uint8_t flags = 1;
+
+    uint8_t pkt[9];
+    char reply[20];
+    buildStateReply(pkt, reply, sizeof(reply), pos, spd, tempX100, flags);
+
+    // Verify base64 string is exactly 12 chars (excluding '#')
+    TEST_ASSERT_EQUAL('#', reply[12]);
+    TEST_ASSERT_EQUAL('\0', reply[13]);
+
+    mockStream.loadResponse(reply);
+    char raw[20];
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getFocuserAllState(raw, sizeof(raw)));
+    TEST_ASSERT_EQUAL(12, (int)strlen(raw));
+
+    // Decode and verify
+    static const int8_t DEC[128] = {
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+      -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
+      52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,
+      -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
+      15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,
+      -1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
+      41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1
+    };
+    uint8_t dp[9];
+    int o = 0;
+    for (int i = 0; i < 12; i += 4) {
+        int8_t v0 = DEC[(uint8_t)raw[i]], v1 = DEC[(uint8_t)raw[i+1]];
+        int8_t v2 = DEC[(uint8_t)raw[i+2]], v3 = DEC[(uint8_t)raw[i+3]];
+        uint32_t b = ((uint32_t)v0 << 18) | ((uint32_t)v1 << 12) | ((uint32_t)v2 << 6) | (uint32_t)v3;
+        dp[o++] = (uint8_t)(b >> 16); dp[o++] = (uint8_t)(b >> 8); dp[o++] = (uint8_t)(b);
+    }
+    uint8_t xc = 0; for (int i = 0; i < 8; i++) xc ^= dp[i];
+    TEST_ASSERT_EQUAL(dp[8], xc);
+
+    uint16_t rpos = (uint16_t)dp[0] | ((uint16_t)dp[1] << 8);
+    uint16_t rspd = (uint16_t)dp[2] | ((uint16_t)dp[3] << 8);
+    int16_t rtemp = (int16_t)((uint16_t)dp[4] | ((uint16_t)dp[5] << 8));
+    TEST_ASSERT_EQUAL(pos, rpos);
+    TEST_ASSERT_EQUAL(spd, rspd);
+    TEST_ASSERT_EQUAL(tempX100, rtemp);
+    TEST_ASSERT_EQUAL(flags, dp[6]);
+}
+
+// =====================================================================
+//  11p. Wire format — :FA# sends correct command
+// =====================================================================
+
+void test_focuser_config_wire_format(void)
+{
+    uint8_t pkt[150];
+    char reply[210];
+    buildConfigReply(pkt, reply, sizeof(reply), 0,0,0,0, 0,0,0, 0,0,0,0,0);
+    mockStream.loadResponse(reply);
+
+    unsigned int sp, mp, ls, hs, ca, ma, md;
+    client->readFocuserConfig(sp, mp, ls, hs, ca, ma, md);
+    // Verify the wire command sent was ":FA#"
+    const char* sent = mockStream.getSent();
+    TEST_ASSERT_EQUAL_STRING(":FA#", sent);
+}
+
+void test_focuser_state_wire_format(void)
+{
+    uint8_t pkt[9];
+    char reply[20];
+    buildStateReply(pkt, reply, sizeof(reply), 0, 0, 0, 0);
+    mockStream.loadResponse(reply);
+
+    char raw[20];
+    client->getFocuserAllState(raw, sizeof(raw));
+    const char* sent = mockStream.getSent();
+    TEST_ASSERT_EQUAL_STRING(":Fa#", sent);
+}
+
+// =====================================================================
+//  11q. CommandMeta — :FA# and :Fa# recognized as CMDR_LONG
+// =====================================================================
+
+void test_focuser_binary_reply_type(void)
+{
+    TEST_ASSERT_EQUAL(CMDR_LONG, getReplyType(":FA#"));
+    TEST_ASSERT_EQUAL(CMDR_LONG, getReplyType(":Fa#"));
+}
+
+// =====================================================================
 //  main
 // =====================================================================
 
@@ -1206,7 +1901,32 @@ int main(int argc, char** argv) {
     RUN_TEST(test_movement_commands_wire_format);
     RUN_TEST(test_stop_directional_wire_format);
 
-    // 11. CommandCodec round-trips
+    // 11. Focuser binary :FA# config
+    RUN_TEST(test_focuser_config_all_zeros);
+    RUN_TEST(test_focuser_motor_all_zeros);
+    RUN_TEST(test_focuser_config_typical);
+    RUN_TEST(test_focuser_motor_typical);
+    RUN_TEST(test_focuser_config_max_values);
+    RUN_TEST(test_focuser_motor_max_values);
+    RUN_TEST(test_focuser_config_user_positions);
+    RUN_TEST(test_focuser_config_bad_checksum);
+    RUN_TEST(test_focuser_config_wrong_length);
+    RUN_TEST(test_focuser_config_invalid_b64_char);
+    RUN_TEST(test_focuser_config_no_response);
+    // 11. Focuser binary :Fa# state
+    RUN_TEST(test_focuser_state_all_zeros);
+    RUN_TEST(test_focuser_state_known_values);
+    RUN_TEST(test_focuser_state_negative_temp);
+    RUN_TEST(test_focuser_state_max_position);
+    RUN_TEST(test_focuser_state_bad_checksum);
+    // 11. Focuser binary round-trip and wire format
+    RUN_TEST(test_focuser_full_roundtrip);
+    RUN_TEST(test_focuser_state_full_roundtrip);
+    RUN_TEST(test_focuser_config_wire_format);
+    RUN_TEST(test_focuser_state_wire_format);
+    RUN_TEST(test_focuser_binary_reply_type);
+
+    // 12. CommandCodec round-trips
     RUN_TEST(test_codec_hms_round_trip);
     RUN_TEST(test_codec_dms_round_trip_signed);
     RUN_TEST(test_codec_dms_round_trip_negative);

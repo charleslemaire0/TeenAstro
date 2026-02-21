@@ -57,7 +57,6 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-// #region agent log
 class _DebugPanel extends StatefulWidget {
   const _DebugPanel();
   @override
@@ -176,7 +175,6 @@ class _DebugPanelState extends State<_DebugPanel>
     );
   }
 }
-// #endregion
 
 class _PositionCard extends StatefulWidget {
   final MountState state;

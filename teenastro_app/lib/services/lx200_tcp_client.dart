@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/lx200_commands.dart';
-import 'debug_agent_log.dart';
 
 enum TcpState { disconnected, connecting, connected, error }
 
@@ -105,10 +104,6 @@ class LX200TcpClient {
 
       _socket!.setOption(SocketOption.tcpNoDelay, true);
 
-      // #region agent log
-      agentLog('lx200_tcp_client.dart:connect', 'socket connected',
-          {'ip': ip, 'port': port}, 'H1');
-      // #endregion
       ConnectTrace.record('connect.ok', {'ip': ip, 'port': port});
       DebugLog.add('connected OK');
 
@@ -129,10 +124,6 @@ class LX200TcpClient {
           _state = TcpState.error;
           _subscription = null;
           _stopHeartbeat();
-          // #region agent log
-          agentLog('lx200_tcp_client.dart:onError', 'socket error',
-              {'error': e.toString(), 'state': _state.name}, 'H2');
-          // #endregion
         },
         onDone: () {
           ConnectTrace.record('socket.done', {
@@ -144,10 +135,6 @@ class LX200TcpClient {
           _socket = null;
           _subscription = null; // prevent dangling reference
           _stopHeartbeat();
-          // #region agent log
-          agentLog('lx200_tcp_client.dart:onDone', 'socket closed',
-              {'state': 'disconnected'}, 'H1');
-          // #endregion
         },
         cancelOnError: true,
       );
@@ -179,10 +166,6 @@ class LX200TcpClient {
   Future<void> disconnect() async {
     ConnectTrace.record('disconnect.called',
         {'wasConnected': _state == TcpState.connected});
-    // #region agent log
-    agentLog('lx200_tcp_client.dart:disconnect', 'disconnect() called',
-        {'wasConnected': _state == TcpState.connected}, 'H4');
-    // #endregion
     _stopHeartbeat();
     await _subscription?.cancel();
     _subscription = null;
@@ -223,14 +206,6 @@ class LX200TcpClient {
       _socket!.add(Uint8List.fromList(cmd.codeUnits));
       await _socket!.flush();
 
-      // #region agent log
-      agentLog('lx200_tcp_client.dart:sendCommand', 'cmd sent', {
-        'cmd': cmd,
-        'replyType': replyType.name,
-        'connected': isConnected,
-      }, 'H6');
-      // #endregion
-
       if (replyType == CmdReply.none) {
         ConnectTrace.record('cmd.noReply', {'cmd': cmd});
         return '';
@@ -247,21 +222,7 @@ class LX200TcpClient {
           final chunk = String.fromCharCodes(_rxBuffer);
           buffer.write(chunk);
           _rxBuffer.clear();
-
-          // #region agent log
-          if (!gotData) {
-            final latencyMs =
-                DateTime.now().difference(sendTime).inMilliseconds;
-            agentLog('lx200_tcp_client.dart:sendCommand', 'first data received',
-                {
-                  'cmd': cmd,
-                  'chunk': chunk,
-                  'latencyMs': latencyMs,
-                  'connected': isConnected,
-                }, 'H6');
-            gotData = true;
-          }
-          // #endregion
+          if (!gotData) gotData = true;
         }
 
         if (replyType == CmdReply.short_ || replyType == CmdReply.shortBool) {
@@ -278,18 +239,6 @@ class LX200TcpClient {
           final hashIdx = s.indexOf('#');
           if (hashIdx >= 0) {
             final result = s.substring(0, hashIdx);
-            // #region agent log
-            if (cmd == ':GVB#' || cmd == ':GVb#') {
-              agentLog('lx200_tcp_client.dart:sendCommand', 'GVB/GVb reply decoded', {
-                'cmd': cmd,
-                'rawBuffer': s,
-                'bufferLength': s.length,
-                'hashIdx': hashIdx,
-                'result': result,
-                'resultCodeUnits': result.codeUnits,
-              }, 'H1');
-            }
-            // #endregion
             final ms = DateTime.now().difference(sendTime).inMilliseconds;
             ConnectTrace.record('cmd.ok', {
               'cmd': cmd,
@@ -317,15 +266,6 @@ class LX200TcpClient {
         'bufLen': buffer.length,
       });
 
-      // #region agent log
-      agentLog('lx200_tcp_client.dart:sendCommand', 'TIMEOUT/DISCONNECTED', {
-        'cmd': cmd,
-        'bufContent': buffer.toString(),
-        'gotData': gotData,
-        'connected': isConnected,
-        'reason': reason,
-      }, 'H6');
-      // #endregion
       DebugLog.add('$cmd -> $reason (buf="${buffer.toString()}")');
       return '';
     } catch (e) {
@@ -341,10 +281,6 @@ class LX200TcpClient {
         _socket = null;
         _stopHeartbeat();
       }
-      // #region agent log
-      agentLog('lx200_tcp_client.dart:sendCommand', 'sendCommand exception',
-          {'cmd': cmd, 'error': e.toString(), 'state': _state.name}, 'H3');
-      // #endregion
       return null;
     } finally {
       _busy = false;

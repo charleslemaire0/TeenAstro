@@ -6,11 +6,24 @@ import '../services/mount_state_provider.dart';
 import '../theme.dart';
 import '../widgets/sync_panel.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(mountStateProvider.notifier).refreshSite();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(mountStateProvider);
     final client = ref.read(lx200ClientProvider);
 

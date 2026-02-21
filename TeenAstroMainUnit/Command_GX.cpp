@@ -394,7 +394,6 @@ static void Command_GX_Debug()
       sprintf(commandState.reply, "%ld%%#", (tlp.getWorstTime() * 100L) / 9970L);
       tlp.resetWorstTime();
     }
-    // #region agent log
     else if (commandState.command[4] == '1')
     {
       sprintf(commandState.reply, "%ld#", rtk.m_missedTicks);
@@ -404,7 +403,6 @@ static void Command_GX_Debug()
       rtk.m_missedTicks = 0;
       replyLongTrue();
     }
-    // #endregion
     else
       replyLongUnknow();
     break;

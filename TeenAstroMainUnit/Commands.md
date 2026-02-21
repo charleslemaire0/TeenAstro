@@ -268,7 +268,7 @@ Meade LX200 uses `h` only on 16" for home search. TeenAstro uses `h` for home an
 
 | Syntax | Description | Returns | Standard |
 |--------|-------------|---------|----------|
-| `:hF#` | Reset/sync at home position (cold start). | (nothing) | TeenAstro extension |
+| `:hF#` | Reset/sync at home position (cold start). | `1` / `0` | TeenAstro extension |
 | `:hC#` | Go to home position. | `1` / `0` | TeenAstro extension |
 | `:hB#` | Set current position as home. | `1` / `0` | TeenAstro extension |
 | `:hb#` | Reset home (clear saved home). | `1` | TeenAstro extension |

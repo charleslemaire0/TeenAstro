@@ -181,6 +181,14 @@ class MountStateNotifier extends StateNotifier<MountState> {
     await _poll();
   }
 
+  /// Refresh site information (lat/lon) from the mount
+  Future<void> refreshSite() async {
+    if (!_client.isConnected) return;
+    _siteFetched = false;
+    await _fetchSite();
+    _siteFetched = true;
+  }
+
   @override
   void dispose() {
     stopPolling();

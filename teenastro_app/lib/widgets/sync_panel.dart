@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/lx200_commands.dart';
 import '../models/mount_state.dart';
 import '../services/lx200_tcp_client.dart';
+import '../services/location_service.dart';
 import '../services/mount_state_provider.dart';
 import '../theme.dart';
 
@@ -79,7 +80,7 @@ class _TimeSyncCardState extends ConsumerState<TimeSyncCard> {
               label: 'Location',
               mountValue:
                   '${state.latitude.toStringAsFixed(4)}N  ${state.longitude.toStringAsFixed(4)}E',
-              phoneValue: 'Phone GPS (see below)',
+              phoneValue: 'GPS (mobile) or Internet (Windows)',
               delta: null,
             ),
             const SizedBox(height: 16),
@@ -95,7 +96,9 @@ class _TimeSyncCardState extends ConsumerState<TimeSyncCard> {
                   label: const Text('Sync Time'),
                 ),
                 ElevatedButton.icon(
-                  onPressed: _syncing ? null : () => _syncLocationFromPhone(state),
+                  onPressed: (_syncing || (!state.atHome && !state.isParked))
+                      ? null
+                      : () => _syncLocationFromPhone(state),
                   icon: const Icon(Icons.my_location, size: 18),
                   label: const Text('Sync Location'),
                 ),
@@ -206,22 +209,38 @@ class _TimeSyncCardState extends ConsumerState<TimeSyncCard> {
     final client = ref.read(lx200ClientProvider);
 
     try {
-      // For now, prompt user to enter coordinates manually if no GPS
-      // TODO: integrate geolocator package for auto GPS on Android
       if (!mounted) return;
 
-      final result = await showDialog<_LatLon>(
-        context: context,
-        builder: (_) => _LocationInputDialog(
-          initialLat: state.latitude,
-          initialLon: state.longitude,
-        ),
-      );
+      // TeenAstro only accepts :St#/:Sg# when mount is at home or parked
+      if (!state.atHome && !state.isParked) {
+        setState(() {
+          _syncing = false;
+          _syncResult = 'Mount must be at home or parked to set location';
+        });
+        return;
+      }
+
+      // Try auto location: GPS on mobile, Internet (IP) on Windows
+      LocationResult? loc = await LocationService.getCurrentLocation();
+
+      _LatLon? result;
+      if (loc != null) {
+        result = _LatLon(loc.latitude, loc.longitude);
+      } else {
+        // Fallback: manual entry
+        result = await showDialog<_LatLon>(
+          context: context,
+          builder: (_) => _LocationInputDialog(
+            initialLat: state.latitude,
+            initialLon: state.longitude,
+          ),
+        );
+      }
 
       if (result == null) {
         setState(() {
           _syncing = false;
-          _syncResult = '';
+          _syncResult = loc != null ? '' : 'Location unavailable';
         });
         return;
       }
@@ -248,9 +267,12 @@ class _TimeSyncCardState extends ConsumerState<TimeSyncCard> {
       await Future.delayed(const Duration(milliseconds: 80));
       final lonOk = await client.sendBool(LX200.setLongitude(lonStr));
 
+      final src = loc != null
+          ? LocationService.sourceLabel(loc.source)
+          : 'Manual';
       setState(() {
         _syncResult = (latOk && lonOk)
-            ? 'Location synced: $latStr / $lonStr'
+            ? 'Location synced ($src): $latStr / $lonStr'
             : 'Error: lat=$latOk lon=$lonOk';
       });
     } catch (e) {

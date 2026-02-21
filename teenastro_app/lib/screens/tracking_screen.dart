@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/lx200_tcp_client.dart';
-import '../services/debug_agent_log.dart';
 import '../services/mount_state_provider.dart';
 import '../models/lx200_commands.dart';
 import '../models/mount_state.dart';
@@ -50,13 +49,6 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
                   value: trackingOn,
                   activeTrackColor: TAColors.success,
                   onChanged: (on) {
-                    // #region agent log
-                    agentLog('tracking_screen.dart:Switch', 'onChanged fired', {
-                      'desiredOn': on,
-                      'currentIsTracking': state.isTracking,
-                      'trackingState': state.tracking.name,
-                    }, 'H3A');
-                    // #endregion
                     setState(() => _pendingTracking = on);
                     client.send(on ? LX200.trackOn : LX200.trackOff);
                   },
@@ -140,12 +132,6 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
                   subtitle: const Text('Apply tracking correction on both axes'),
                   value: dualAxisOn,
                   onChanged: (on) {
-                    // #region agent log
-                    agentLog('tracking_screen.dart:DualAxis', 'dual-axis onChanged fired', {
-                      'desiredOn': on,
-                      'currentTrackCorrected': state.trackCorrected,
-                    }, 'H3B');
-                    // #endregion
                     setState(() => _pendingDualAxis = on);
                     client.send(on ? LX200.trackDualOn : LX200.trackDualOff);
                   },
