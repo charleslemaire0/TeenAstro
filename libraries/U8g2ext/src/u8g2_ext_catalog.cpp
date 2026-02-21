@@ -1,4 +1,4 @@
-﻿/*
+/*
 
 u8g2_selection_list.c
 
@@ -332,7 +332,7 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
         static int i;
         char movingtext[128] = "";
         strncpy(movingtext, cat_mgr.objectNameStr(), len);
-        strncpy(&movingtext[len], "...", 3);
+        memcpy(&movingtext[len], "...", 3);
         strncpy(&movingtext[len+3], cat_mgr.objectNameStr(),len ); 
         txt_w = u8g2_GetUTF8Width(u8g2, movingtext);
         if (i >= txt_w /2 )
@@ -438,7 +438,8 @@ bool ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *title)
       else if (event == U8X8_MSG_GPIO_MENU_HOME)
       {
         thisDisplayMode = (CATALOG_DISPLAY_MODES)((int)thisDisplayMode + 1);
-        if (thisDisplayMode > DM_HOR_COORDS) thisDisplayMode = DM_INFO; break;
+        if (thisDisplayMode > DM_HOR_COORDS) thisDisplayMode = DM_INFO;
+        break;
       }
       else if (event == U8X8_MSG_GPIO_MENU_PREV) return false;
       else if (event == U8X8_MSG_GPIO_MENU_DOWN)

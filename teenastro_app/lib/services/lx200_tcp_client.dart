@@ -278,6 +278,18 @@ class LX200TcpClient {
           final hashIdx = s.indexOf('#');
           if (hashIdx >= 0) {
             final result = s.substring(0, hashIdx);
+            // #region agent log
+            if (cmd == ':GVB#' || cmd == ':GVb#') {
+              agentLog('lx200_tcp_client.dart:sendCommand', 'GVB/GVb reply decoded', {
+                'cmd': cmd,
+                'rawBuffer': s,
+                'bufferLength': s.length,
+                'hashIdx': hashIdx,
+                'result': result,
+                'resultCodeUnits': result.codeUnits,
+              }, 'H1');
+            }
+            // #endregion
             final ms = DateTime.now().difference(sendTime).inMilliseconds;
             ConnectTrace.record('cmd.ok', {
               'cmd': cmd,

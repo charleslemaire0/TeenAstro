@@ -84,7 +84,7 @@ bool SmartHandController::menuSetReverse(const uint8_t &axis)
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return false; }
   bool reverse = ta_MountStatus.getCfgReverse(axis - 1);
   char text[20];
-  char * string_list = T_DIRECT "\n" T_REVERSE;
+  const char* string_list = T_DIRECT "\n" T_REVERSE;
   sprintf(text, T_ROTATION " M%u", axis);
   uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, text, (uint8_t)reverse + 1, string_list);
   if (choice)
@@ -162,7 +162,7 @@ bool SmartHandController::menuSetMicro(const uint8_t &axis)
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return false; }
   uint8_t microStep = ta_MountStatus.getCfgMicro(axis - 1);
   char text[20];
-  char * string_list_micro = "2\n4\n8\n16 (~256)\n32\n64\n128\n256";
+  const char* string_list_micro = "2\n4\n8\n16 (~256)\n32\n64\n128\n256";
   sprintf(text, T_STEPPER " M%u", axis);
   uint8_t choice = microStep - 1 + 1;
   choice = display->UserInterfaceSelectionList(&buttonPad, text, choice, string_list_micro);
@@ -181,7 +181,7 @@ bool SmartHandController::menuSetSilentStep(const uint8_t &axis)
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return false; }
   uint8_t silent = ta_MountStatus.getCfgSilent(axis - 1) ? 1 : 0;
   char text[20];
-  char * string_list_mode = T_OFF "\n" T_ON;
+  const char* string_list_mode = T_OFF "\n" T_ON;
   sprintf(text, T_STEPPER " M%u", axis);
   uint8_t choice = silent + 1;
   choice = display->UserInterfaceSelectionList(&buttonPad, text, choice, string_list_mode);
@@ -219,7 +219,7 @@ bool SmartHandController::menuSetEncoderReverse(const uint8_t& axis)
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return false; }
   bool reverse = ta_MountStatus.getCfgEncReverse(axis - 1);
   char text[20];
-  char* string_list = T_DIRECT "\n" T_REVERSE;
+  const char* string_list = T_DIRECT "\n" T_REVERSE;
   sprintf(text, T_ROTATION " M%u", axis);
   uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, text, (uint8_t)reverse + 1, string_list);
   if (choice)

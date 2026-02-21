@@ -205,7 +205,8 @@ SmartHandController::MENU_RESULT SmartHandController::subMenuSyncGoto(NAV mode, 
       // add it to the list (if it isn't a duplicate)
       if (duplicate)
       {
-        if (i != subMenuNum) strcat(string_list_gotoL1, "\n"); strcat(string_list_gotoL1, title);
+        if (i != subMenuNum) strcat(string_list_gotoL1, "\n");
+        strcat(string_list_gotoL1, title);
         catalog_index[catalog_index_count++] = i;
       }
     }

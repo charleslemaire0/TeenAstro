@@ -11,7 +11,6 @@ void SmartHandController::menuFocuserAction()
   static  uint8_t current_selection = 1;
   uint8_t choice;
   buttonPad.setMenuMode();
-  int pos[10];
   int idx = 0;
   int idxs[10] = { -1,-1,-1,-1,-1,-1,-1,-1,-1,-1 };
   char temp[20] = { 0 };

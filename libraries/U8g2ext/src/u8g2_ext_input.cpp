@@ -41,7 +41,7 @@ return:
 
 static void adaptiveInc(const float incr_ref,const float fact,const float threshold, float& incr)
 {
-  if (incr > 0 != incr_ref > 0 || incr == 0)
+  if ((incr > 0) != (incr_ref > 0) || incr == 0)
   {
     incr = incr_ref;
   }
@@ -338,7 +338,7 @@ return:
 uint8_t ext_UserInterfaceInputValueDMS(u8g2_t *u8g2, Pad* extPad, const char *title, long *value, long lo, long hi,
   uint8_t digits1,
 
-  char* symb1, char* symb2, char* symb3,
+  const char* symb1, const char* symb2, const char* symb3,
   const char* symb_plus, const char* symb_minus,
   bool display_seconds)
 {
@@ -525,7 +525,7 @@ uint8_t ext_UserInterfaceInputValueDMS(u8g2_t *u8g2, Pad* extPad, const char *ti
 
 uint8_t ext_UserInterfaceInputValueDate(u8g2_t *u8g2, Pad* extPad, const char *title, uint8_t& year, uint8_t& month, uint8_t& day)
 {
-  char* symb = "/";
+  const char* symb = "/";
   u8g2_SetFont(u8g2, u8g2_font_helvR12_te);
   //display.enableUTF8Print();
   uint8_t line_height;

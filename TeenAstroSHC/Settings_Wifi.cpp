@@ -51,7 +51,6 @@ void SmartHandController::menuWifiMode()
 {
   uint8_t idx = 0;
   uint8_t idxs[4] = { 3,3,3,3 };
-  char temp[20] = { 0 };
   char txt[150] = { 0 };
   char out[40] = { 0 };
   uint8_t selected_item = 10;

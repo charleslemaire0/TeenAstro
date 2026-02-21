@@ -294,7 +294,7 @@ void SmartHandController::menuSetDriftRate(int axis)
 
 void SmartHandController::menuReticule()
 {
-  char *options = T_BRIGHTER "\n" T_LESSBRIGHT;
+  const char* options = T_BRIGHTER "\n" T_LESSBRIGHT;
   uint8_t selection = 1;
   while (selection != 0)
   {

@@ -315,7 +315,7 @@ void Pad::setButtonSpeed(Pad::ButtonSpeed bs)
 
 void Pad::readButtonSpeed()
 {
-  uint8_t val;
+  uint8_t val = 1;
   EEPROM.get(m_adress, val);
   if (val == 0)
   {
@@ -351,14 +351,14 @@ void Pad::setMenuMode()
     tick_ref*= 1.;
     break;
   }
-  m_buttons[0]->setClickTicks(tick_ref*4);
-  m_buttons[0]->setDebounceTicks(tick_ref);
-  m_buttons[0]->setPressTicks(tick_ref*8);
+  m_buttons[0]->setClickMs(tick_ref*4);
+  m_buttons[0]->setDebounceMs(tick_ref);
+  m_buttons[0]->setPressMs(tick_ref*8);
   for (int k = 1; k < 7; k++)
   {
-    m_buttons[k]->setClickTicks(tick_ref*4);
-    m_buttons[k]->setDebounceTicks(tick_ref);
-    m_buttons[k]->setPressTicks(tick_ref*8);
+    m_buttons[k]->setClickMs(tick_ref*4);
+    m_buttons[k]->setDebounceMs(tick_ref);
+    m_buttons[k]->setPressMs(tick_ref*8);
   }
 }
 
@@ -377,14 +377,14 @@ void Pad::setControlerMode()
     tick_ref *= 1.;
     break;
   }
-  m_buttons[0]->setClickTicks(tick_ref * 4);
-  m_buttons[0]->setDebounceTicks(tick_ref);
-  m_buttons[0]->setPressTicks(tick_ref * 8);
+  m_buttons[0]->setClickMs(tick_ref * 4);
+  m_buttons[0]->setDebounceMs(tick_ref);
+  m_buttons[0]->setPressMs(tick_ref * 8);
   for (int k = 1; k < 7; k++)
   {
-    m_buttons[k]->setClickTicks(5);
-    m_buttons[k]->setDebounceTicks(tick_ref);
-    m_buttons[k]->setPressTicks(5);
+    m_buttons[k]->setClickMs(5);
+    m_buttons[k]->setDebounceMs(tick_ref);
+    m_buttons[k]->setPressMs(5);
   }
 }
 

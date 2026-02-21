@@ -7,7 +7,7 @@ void SmartHandController::menuSpeedRate()
   if (ta_MountStatus.isPushTo())
     return;
   buttonPad.setMenuMode();
-  char* string_list_Speed = T_GUIDE "\n" T_SLOW "\n" T_MEDIUM "\n" T_FAST "\n" T_MAX;
+  const char* string_list_Speed = T_GUIDE "\n" T_SLOW "\n" T_MEDIUM "\n" T_FAST "\n" T_MAX;
   static unsigned char current_selection_speed = 3;
   TeenAstroMountStatus::GuidingRate cur_GR = ta_MountStatus.getGuidingRate();
   if (cur_GR == TeenAstroMountStatus::GuidingRate::UNKNOW)
@@ -28,7 +28,7 @@ void SmartHandController::increaseSpeed(bool increase)
   ta_MountStatus.updateMount();
   if (ta_MountStatus.isPushTo())
     return;
-  char* string_list_Speed = T_GUIDE "\n" T_SLOW "\n" T_MEDIUM "\n" T_FAST "\n" T_MAX;
+  const char* string_list_Speed = T_GUIDE "\n" T_SLOW "\n" T_MEDIUM "\n" T_FAST "\n" T_MAX;
   static unsigned char current_speed = 3;
   TeenAstroMountStatus::GuidingRate cur_GR = ta_MountStatus.getGuidingRate();
   if (cur_GR == TeenAstroMountStatus::GuidingRate::UNKNOW)
@@ -530,10 +530,9 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       char text[20];
       if (m_client->getAlignError(text, sizeof(text)) == LX200_VALUEGET)
       {
-        text[3]='°';
+        text[3] = '\xB0';
         text[6]='\'';
         text[9]='\"';
-        //DisplayLongMessage("Alignment error:", "", "sDD*mm:ss", text, -1);
         DisplayMessage(T_ERROR, text, -1);
       }
       else

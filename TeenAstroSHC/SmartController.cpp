@@ -3,8 +3,8 @@
 #include "SHC_text.h"
 #include "SmartController.h"
 
-static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":Fo#", ":Fi#" };
-static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":FO#", ":FI#" };
+static const char* BreakRC[6] = { ":Qn#", ":Qs#", ":Qe#", ":Qw#", ":Fo#", ":Fi#" };
+static const char* RC[6]      = { ":Mn#", ":Ms#", ":Me#", ":Mw#", ":FO#", ":FI#" };
 
 void SmartHandController::setup(
   const char version[], 
@@ -234,7 +234,7 @@ void SmartHandController::updateAlign(bool moving)
   
       DisplayMessage(T_ALIGNMENT, T_SUCESS"!", 1.0);
       m_client->getAlignError(text, sizeof(text));
-      text[3]='°';
+      text[3] = '\xB0'; // degree sign (ISO-8859-1 / u8g2 Latin-1)
       text[6]='\'';
       text[9]='\"';
       //strcat(text, " " T_DEG);

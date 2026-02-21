@@ -20,6 +20,7 @@ void SmartHandController::menuTelSettings()
       {
       case 0:
         exitMenu = true;
+        break;
       case 1:
         menuSHCSettings();
         break;
@@ -54,9 +55,10 @@ void SmartHandController::menuTelSettings()
       {
       case 0:
         exitMenu = true;
+        break;
       case 1:
         menuVisitor();
-        break;;
+        break;
       default:
         break;
       }

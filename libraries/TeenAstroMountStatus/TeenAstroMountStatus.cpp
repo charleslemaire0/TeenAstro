@@ -47,27 +47,27 @@ static void formatRaStr(float h, char* out, int len)
 {
   if (h < 0.0f) h += 24.0f;
   if (h >= 24.0f) h -= 24.0f;
-  int ih = (int)h;
-  float mf = (h - ih) * 60.0f;
-  int im = (int)mf;
-  int is = (int)((mf - im) * 60.0f + 0.5f);
+  int ih = (int)h % 24;
+  float mf = (h - (int)h) * 60.0f;
+  int im = (int)mf % 60;
+  int is = (int)((mf - (int)mf) * 60.0f + 0.5f) % 60;
   if (is >= 60) { is -= 60; im++; }
   if (im >= 60) { im -= 60; ih++; }
-  snprintf(out, len, "%02d:%02d:%02d", ih, im, is);
+  snprintf(out, len, "%02d:%02d:%02d", ih % 24, im % 60, is % 60);
 }
 
 // Format signed degrees (Dec/Alt) into "±DD*MM:SS".
 static void formatDegStr(float deg, char* out, int len)
 {
   char sign = (deg >= 0.0f) ? '+' : '-';
-  float abs = (deg >= 0.0f) ? deg : -deg;
-  int id = (int)abs;
-  float mf = (abs - id) * 60.0f;
-  int im = (int)mf;
-  int is = (int)((mf - im) * 60.0f + 0.5f);
+  float ad = (deg >= 0.0f) ? deg : -deg;
+  int id = (int)ad % 360;
+  float mf = (ad - (int)ad) * 60.0f;
+  int im = (int)mf % 60;
+  int is = (int)((mf - (int)mf) * 60.0f + 0.5f) % 60;
   if (is >= 60) { is -= 60; im++; }
   if (im >= 60) { im -= 60; id++; }
-  snprintf(out, len, "%c%02d*%02d:%02d", sign, id, im, is);
+  snprintf(out, len, "%c%02d*%02d:%02d", sign, id % 360, im % 60, is % 60);
 }
 
 // Format azimuth (degrees) into "DDD*MM:SS".
@@ -75,13 +75,13 @@ static void formatAzStr(float deg, char* out, int len)
 {
   while (deg < 0.0f)    deg += 360.0f;
   while (deg >= 360.0f) deg -= 360.0f;
-  int id = (int)deg;
-  float mf = (deg - id) * 60.0f;
-  int im = (int)mf;
-  int is = (int)((mf - im) * 60.0f + 0.5f);
+  int id = (int)deg % 360;
+  float mf = (deg - (int)deg) * 60.0f;
+  int im = (int)mf % 60;
+  int is = (int)((mf - (int)mf) * 60.0f + 0.5f) % 60;
   if (is >= 60) { is -= 60; im++; }
   if (im >= 60) { im -= 60; id++; }
-  snprintf(out, len, "%03d*%02d:%02d", id, im, is);
+  snprintf(out, len, "%03d*%02d:%02d", id % 360, im % 60, is % 60);
 }
 
 // Read float32 LE from packet at offset.
@@ -756,7 +756,7 @@ bool TeenAstroMountStatus::updateStoredTrackingRate()
 bool TeenAstroMountStatus::connected()      { return m_connectionFailure == 0; }
 bool TeenAstroMountStatus::notResponding()   { return m_connectionFailure > 4; }
 
-bool TeenAstroMountStatus::checkConnection(char* major, char* minor)
+bool TeenAstroMountStatus::checkConnection(const char* major, const char* minor)
 {
   if (!m_isValid)
   {
@@ -767,21 +767,36 @@ bool TeenAstroMountStatus::checkConnection(char* major, char* minor)
   return m_isValid;
 }
 
+const char* stepperDriverName(StepperDriver d)
+{
+  switch (d)
+  {
+  case StepperDriver_StepDir:  return "StepDir";
+  case StepperDriver_TOS100:   return "TOS100";
+  case StepperDriver_TMC2130:  return "TMC2130";
+  case StepperDriver_TMC5160:  return "TMC5160";
+  case StepperDriver_TMC2660:  return "TMC2660";
+  case StepperDriver_Unknown:
+  default:                     return "unknown";
+  }
+}
+
+StepperDriver TeenAstroMountStatus::getDriverType()
+{
+  updateV();
+  if (!hasInfoV() || m_vbb.data[0] == '\0') return StepperDriver_Unknown;
+  int v = m_vbb.data[0] - '0';
+  if (v >= 0 && v <= 4) return static_cast<StepperDriver>(v);
+  return StepperDriver_Unknown;
+}
+
 bool TeenAstroMountStatus::getDriverName(char* name)
 {
   updateV();
   if (hasInfoV())
-  {
-    switch (m_vbb.data[0] - '0')
-    {
-    case 0: strcpy(name, "StepDir"); break;
-    case 1: strcpy(name, "TOS100");  break;
-    case 2: strcpy(name, "TMC2130"); break;
-    case 3: strcpy(name, "TMC5160"); break;
-    case 4: strcpy(name, "TMC2660"); break;
-    default: strcpy(name, "unknown"); break;
-    }
-  }
+    strcpy(name, stepperDriverName(getDriverType()));
+  else
+    strcpy(name, "?");
   return m_version.valid;
 }
 

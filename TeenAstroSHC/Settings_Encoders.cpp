@@ -54,7 +54,6 @@ void SmartHandController::menuEncoders()
         break;
       default:
         return;
-        break;
       }
     }
   }
@@ -136,7 +135,6 @@ void SmartHandController::menuCalibrationEncoder()
       break;
     default:
       return;
-      break;
     }
   }
 }

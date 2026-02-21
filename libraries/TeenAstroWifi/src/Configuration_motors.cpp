@@ -232,9 +232,8 @@ void TeenAstroWifi::handleConfigurationMotors()
     }
   }
 
-  // Silent mode (only for advanced drivers)
-  const char* board = ta_MountStatus.getVb();
-  if (board[0] - '0' > 1)
+  // Silent mode (only for advanced drivers: TMC2130, TMC5160, TMC2660)
+  if (ta_MountStatus.getDriverType() >= StepperDriver_TMC2130)
   {
     for (uint8_t ax = 1; ax <= 2; ax++)
     {

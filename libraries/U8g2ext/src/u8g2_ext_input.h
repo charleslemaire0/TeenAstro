@@ -75,7 +75,7 @@ return:
 uint8_t ext_UserInterfaceInputValueDMS(u8g2_t *u8g2, Pad *extPad, const char *title, long *value, long lo, long hi,
   uint8_t digits1,
 
-  char* symb1, char* symb2, char* symb3,
+  const char* symb1, const char* symb2, const char* symb3,
   const char* symb_plus, const char* symb_minus,
   bool display_seconds);
 

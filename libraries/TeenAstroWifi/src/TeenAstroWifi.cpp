@@ -417,15 +417,7 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
     data += " &middot; Board ";
     data += ta_MountStatus.getVB();
     data += " &middot; ";
-    switch (ta_MountStatus.getVb()[0])
-    {
-    default:
-    case '0': data += "Generic"; break;
-    case '1': data += "TOS100"; break;
-    case '2': data += "TMC2130"; break;
-    case '3': data += "TMC5160"; break;
-    case '4': data += "TMC2160"; break;
-    }
+    data += stepperDriverName(ta_MountStatus.getDriverType());
   }
   else data += "?";
   data += FPSTR(html_header3);
@@ -592,8 +584,6 @@ void TeenAstroWifi::setup()
 
 #ifndef DEBUG_ON
 
-
-  byte tb = 0;
 
   char c = 0;
 

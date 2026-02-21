@@ -6,7 +6,9 @@
 #include <Wifi.h>
 #include <WebServer.h>
 #include <HTTPUpdate.h>
+#ifndef ESP32
 #define ESP32
+#endif
 #endif
 
 
@@ -15,7 +17,9 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFiAP.h>
 #include <ESP8266HTTPUpdateServer.h>
+#ifndef ESP8266
 #define ESP8266
+#endif
 #endif
 
 #ifdef ARDUINO_ESP32_DEV
@@ -45,7 +49,9 @@
 #define TIMEOUT_WEB 4
 #endif
 
+#ifndef Product
 #define Product "TeenAstro Server"
+#endif
 #define ServerFirmwareDate          __DATE__
 #define ServerFirmwareTime          __TIME__
 #define ServerFirmwareVersionMajor  "1"

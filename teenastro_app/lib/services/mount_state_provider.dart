@@ -123,30 +123,66 @@ class MountStateNotifier extends StateNotifier<MountState> {
     final raw = await _client.sendCommand(LX200.getAllState);
     if (raw != null) {
       final base64 = raw.endsWith('#') ? raw.substring(0, raw.length - 1) : raw;
-      if (base64.length == 88) state = state.parseBinaryState(base64);
+      if (base64.length == 88) {
+        final beforeBoard = state.boardVersion;
+        state = state.parseBinaryState(base64);
+        // #region agent log
+        agentLog('mount_state_provider.dart:_fetchAllState', 'after parseBinaryState', {
+          'beforeBoard': beforeBoard,
+          'afterBoard': state.boardVersion,
+          'preserved': beforeBoard == state.boardVersion,
+        }, 'H3');
+        // #endregion
+      }
     }
+  }
+
+  /// True if [s] looks like a :GXAS# base64 payload (88 chars) rather than version/driver text.
+  static bool _looksLikeGxasBase64(String? s) {
+    if (s == null || s.length != 88) return false;
+    final base64 = RegExp(r'^[A-Za-z0-9+/]+$');
+    return base64.hasMatch(s);
   }
 
   Future<void> _fetchVersion() async {
     // #region agent log
+    final gvbReplyType = getReplyType(LX200.getBoardVersion);
     agentLog('mount_state_provider.dart:_fetchVersion', 'start', {
       'connected': _client.isConnected,
-    }, 'H7');
+      'getReplyTypeGVB': gvbReplyType.name,
+    }, 'H2');
     // #endregion
     final name = await _client.sendCommand(LX200.getProductName);
     await Future.delayed(_cmdDelay);
     final ver = await _client.sendCommand(LX200.getVersionNum);
     await Future.delayed(_cmdDelay);
-    final board = await _client.sendCommand(LX200.getBoardVersion);
+    var board = await _client.sendCommand(LX200.getBoardVersion);
+    if (_looksLikeGxasBase64(board)) {
+      agentLog('mount_state_provider.dart:_fetchVersion', 'board was GXAS base64, retrying GVB', {
+        'boardLength': board?.length ?? 0,
+      }, 'H5');
+      await Future.delayed(_cmdDelay);
+      final retry = await _client.sendCommand(LX200.getBoardVersion);
+      board = _looksLikeGxasBase64(retry) ? null : retry;
+    }
     await Future.delayed(_cmdDelay);
-    final driver = await _client.sendCommand(LX200.getDriverType);
+    var driver = await _client.sendCommand(LX200.getDriverType);
+    if (_looksLikeGxasBase64(driver)) {
+      agentLog('mount_state_provider.dart:_fetchVersion', 'driver was GXAS base64, retrying GVb', {
+        'driverLength': driver?.length ?? 0,
+      }, 'H5');
+      await Future.delayed(_cmdDelay);
+      final retry = await _client.sendCommand(LX200.getDriverType);
+      driver = _looksLikeGxasBase64(retry) ? null : retry;
+    }
 
     // #region agent log
     agentLog('mount_state_provider.dart:_fetchVersion', 'done', {
       'name': name ?? 'null', 'ver': ver ?? 'null',
-      'board': board ?? 'null', 'driver': driver ?? 'null',
+      'board': board ?? 'null', 'boardLength': board?.length ?? 0,
+      'driver': driver ?? 'null', 'driverLength': driver?.length ?? 0,
       'connected': _client.isConnected,
-    }, 'H7');
+    }, 'H5');
     // #endregion
 
     state = state.copyWith(

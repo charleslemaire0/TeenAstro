@@ -191,7 +191,7 @@ void SmartHandController::MenuDefaultSpeed()
 {
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
   static uint8_t s_sel = 1;
-  char out[10];
+  char out[12];
   s_sel = ta_MountStatus.getCfgDefaultRate() + 1;
   s_sel = s_sel > 5 ? 5 : s_sel;
   const char* string_list = T_GUIDESPEED " \n" T_SLOW "\n" T_MEDIUM "\n" T_FAST "\n" T_MAX;
@@ -240,17 +240,8 @@ void SmartHandController::MenuTrackingCorrection()
   while (!exitMenu)
   {
     ta_MountStatus.updateMount();
-    uint8_t tmp_sel;
     TeenAstroMountStatus::RateCompensation comp = ta_MountStatus.getRateCompensation();
-    switch (comp)
-    {
-    case TeenAstroMountStatus::RC_RA:
-      tmp_sel = 1;
-      break;
-    case TeenAstroMountStatus::RC_BOTH:
-      tmp_sel = 2;
-      break;
-    }
+    uint8_t tmp_sel = (comp == TeenAstroMountStatus::RC_BOTH) ? 2u : 1u;
     const char* string_list_tracking = T_RIGHTASC "\n" T_BOTH;
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TRACKINGCORRECTION, tmp_sel, string_list_tracking);
     switch (tmp_sel)

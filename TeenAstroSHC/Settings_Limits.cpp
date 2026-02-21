@@ -161,7 +161,6 @@ void SmartHandController::menuLimitAxis()
       current_page = P_AXIS_DEG;
       exitMenu = true;
       return;
-      break;
     case 2:
       menuAxis('A');
       break;

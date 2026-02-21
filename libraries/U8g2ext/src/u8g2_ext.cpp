@@ -38,7 +38,7 @@ uint8_t U8G2_EXT::UserInterfaceInputValueFloat(Pad *extPad, const char *title, c
 }
 
 uint8_t U8G2_EXT::UserInterfaceInputValueDMS(Pad *extPad, const char *title, long *value, long lo, long hi,
-  uint8_t digits1, char* symb1, char* symb2, char* symb3, char* symb_plus, char* symb_minus, bool display_seconds)
+  uint8_t digits1, const char* symb1, const char* symb2, const char* symb3, const char* symb_plus, const char* symb_minus, bool display_seconds)
 {
   return ext_UserInterfaceInputValueDMS(U8G2_EXT::getU8g2(), extPad, title, value, lo, hi, digits1, symb1, symb2, symb3, symb_plus, symb_minus, display_seconds);
 };

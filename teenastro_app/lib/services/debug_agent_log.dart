@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 /// Debug session logging: NDJSON to file.
-/// Session ID: d3761d. Log path: debug-d3761d.log (in workspace root)
-const _kLogPath = r'c:\Users\clemair\Documents\learn\TeenAstro\debug-d3761d.log';
+/// Session ID: 723a44. Log path: debug-723a44.log (in workspace root)
+const _kLogPath = r'c:\Users\charl\source\repos\charleslemaire0\TeenAstro\debug-723a44.log';
 
 void agentLog(
   String location,
@@ -12,7 +12,7 @@ void agentLog(
   String hypothesisId,
 ) {
   final payload = {
-    'sessionId': 'd3761d',
+    'sessionId': '723a44',
     'location': location,
     'message': message,
     'data': data,

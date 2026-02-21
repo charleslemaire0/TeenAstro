@@ -13,7 +13,9 @@
 #define Ser Serial1
 #endif
 
+#ifndef Product
 #define Product "Teenastro SHC"
+#endif
 #define SHCFirmwareDate          __DATE__
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"

@@ -109,6 +109,23 @@ struct MountState
 };
 
 // ---------------------------------------------------------------------------
+//  StepperDriver — MainUnit :GVb# returns a single digit; this enum makes
+//  the mapping explicit (same values as MainUnit AxisDriver / Command_G).
+// ---------------------------------------------------------------------------
+enum StepperDriver
+{
+  StepperDriver_StepDir  = 0,
+  StepperDriver_TOS100   = 1,
+  StepperDriver_TMC2130  = 2,
+  StepperDriver_TMC5160  = 3,
+  StepperDriver_TMC2660  = 4,
+  StepperDriver_Unknown  = -1
+};
+
+/// Human-readable name for a stepper driver (for display on SHC, WiFi, etc.).
+const char* stepperDriverName(StepperDriver d);
+
+// ---------------------------------------------------------------------------
 //  TeenAstroMountStatus
 // ---------------------------------------------------------------------------
 class TeenAstroMountStatus
@@ -235,7 +252,12 @@ public:
   const char* getVP()   { return m_vp; }
   const char* getVN()   { return m_vn; }
   const char* getVB()   { return m_vb; }
+  /// Raw driver string from mount (e.g. "3" for TMC5160). Prefer getDriverType() / getDriverName().
   const char* getVb()   { return m_vbb; }
+  /// Parsed driver type from :GVb# (StepDir=0, TOS100=1, TMC2130=2, TMC5160=3, TMC2660=4).
+  StepperDriver getDriverType();
+  /// Human-readable driver name; uses getDriverType() and stepperDriverName().
+  bool getDriverName(char* name);
   const char* getVD()   { return m_vd; }
   const char* getRa()   { return m_ra; }
   const char* getHa()   { return m_ha; }
@@ -417,8 +439,7 @@ public:
   // -----------------------------------------------------------------------
   //  Connection management
   // -----------------------------------------------------------------------
-  bool checkConnection(char* major, char* minor);
-  bool getDriverName(char* name);
+  bool checkConnection(const char* major, const char* minor);
   bool isConnectionValid() { return m_isValid; }
   bool findFocuser();
   bool connected();
@@ -465,7 +486,7 @@ private:
 
   // --- All-state bulk cache (:GXAS#) ---
   // Stores the 88-char base64 string + '#' + NUL (90 bytes total).
-  char          m_allStateB64[92] = "";
+  char          m_allStateB64[96] = "";
   CacheTimer    m_timerAllState;
   // Unpacked UTC components
   uint8_t       m_utcH = 0, m_utcM = 0, m_utcS = 0;
