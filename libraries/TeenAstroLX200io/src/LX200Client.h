@@ -16,7 +16,11 @@
  */
 #pragma once
 
+#include "IX200Transport.h"
+#ifndef TEENASTRO_NATIVE_BUILD
+#include "StreamTransport.h"
 #include <Arduino.h>
+#endif
 #include <TeenAstroCommandDef.h>
 
 #define LX200_SBUF 20
@@ -39,14 +43,23 @@ public:
   //  Construction
   // -----------------------------------------------------------------------
 
+#ifndef TEENASTRO_NATIVE_BUILD
   /// Construct a client attached to the given serial stream.
   explicit LX200Client(Stream& serial, unsigned long timeoutMs = LX200_DEFAULT_TIMEOUT);
+#endif
+
+  /// Construct a client using an abstract transport (for Windows DLL, tests).
+  explicit LX200Client(IX200Transport& transport, unsigned long timeoutMs = LX200_DEFAULT_TIMEOUT);
+
+  ~LX200Client();
 
   /// Change the default command timeout (milliseconds).
   void setTimeout(unsigned long ms) { m_timeout = ms; }
 
-  /// Access the underlying stream (e.g. for direct use or diagnostics).
-  Stream& stream() { return m_serial; }
+#ifndef TEENASTRO_NATIVE_BUILD
+  /// Access the underlying stream (valid only when constructed with Stream&).
+  Stream& stream() { return *m_stream; }
+#endif
 
   // -----------------------------------------------------------------------
   //  Core I/O  (public for advanced / generic use)
@@ -439,8 +452,12 @@ public:
                                unsigned int& curr, unsigned int& steprot);
 
 private:
-  Stream&        m_serial;
-  unsigned long  m_timeout;
+#ifndef TEENASTRO_NATIVE_BUILD
+  StreamTransport* m_ownedTransport;  // non-null only when constructed with Stream&
+  Stream*          m_stream;          // non-null only when constructed with Stream&
+#endif
+  IX200Transport*  m_transport;
+  unsigned long    m_timeout;
 
   void flushInput();
 };

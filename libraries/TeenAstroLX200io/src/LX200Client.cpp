@@ -6,14 +6,43 @@
  */
 #include "LX200Client.h"
 #include <TeenAstroMath.h>
+#include <string.h>
+#ifdef TEENASTRO_NATIVE_BUILD
+#include <Arduino.h>
+#include <stdlib.h>
+#include <stdio.h>
+#endif
 
 // ===========================================================================
 //  Construction
 // ===========================================================================
 
+#ifndef TEENASTRO_NATIVE_BUILD
 LX200Client::LX200Client(Stream& serial, unsigned long timeoutMs)
-  : m_serial(serial), m_timeout(timeoutMs)
+  : m_ownedTransport(new StreamTransport(serial)),
+    m_transport(m_ownedTransport),
+    m_stream(&serial),
+    m_timeout(timeoutMs)
 {
+}
+#endif
+
+LX200Client::LX200Client(IX200Transport& transport, unsigned long timeoutMs)
+  :
+#ifndef TEENASTRO_NATIVE_BUILD
+    m_ownedTransport(nullptr),
+    m_stream(nullptr),
+#endif
+    m_transport(&transport),
+    m_timeout(timeoutMs)
+{
+}
+
+LX200Client::~LX200Client()
+{
+#ifndef TEENASTRO_NATIVE_BUILD
+  delete m_ownedTransport;
+#endif
 }
 
 // ===========================================================================
@@ -22,7 +51,7 @@ LX200Client::LX200Client(Stream& serial, unsigned long timeoutMs)
 
 void LX200Client::flushInput()
 {
-  while (m_serial.available() > 0) m_serial.read();
+  while (m_transport->available() > 0) m_transport->read();
 }
 
 // ===========================================================================
@@ -33,14 +62,14 @@ bool LX200Client::sendReceive(const char* command, CMDREPLY replyType,
                               char* recvBuffer, int bufferSize,
                               unsigned long timeOutMs, bool keepHashtag)
 {
-  m_serial.setTimeout(timeOutMs);
+  m_transport->setTimeout(timeOutMs);
   memset(recvBuffer, 0, bufferSize);
-  m_serial.flush();
+  m_transport->flush();
   flushInput();
 
   if (replyType == CMDR_INVALID) return false;
 
-  m_serial.print(command);
+  m_transport->write((const uint8_t*)command, strlen(command));
 
   switch (replyType)
   {
@@ -55,9 +84,9 @@ bool LX200Client::sendReceive(const char* command, CMDREPLY replyType,
     recvBuffer[0] = '\0';
     while (millis() - start < timeOutMs)
     {
-      if (m_serial.available())
+      if (m_transport->available())
       {
-        recvBuffer[0] = (char)m_serial.read();
+        recvBuffer[0] = (char)m_transport->read();
         break;
       }
     }
@@ -73,9 +102,9 @@ bool LX200Client::sendReceive(const char* command, CMDREPLY replyType,
     while (millis() - start < timeOutMs)
     {
       recvBuffer[pos] = 0;
-      if (m_serial.available())
+      if (m_transport->available())
       {
-        char b = (char)m_serial.read();
+        char b = (char)m_transport->read();
         if (b == '#')
         {
           if (keepHashtag)

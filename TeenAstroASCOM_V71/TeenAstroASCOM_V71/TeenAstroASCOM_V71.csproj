@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="12.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -78,6 +78,8 @@
     <Compile Include="TelescopeDriver\TelescopeDriver.cs" />
     <Compile Include="TelescopeDriver\Rates.cs" />
     <Compile Include="TelescopeDriver\TelescopeHardware.cs" />
+    <Compile Include="TelescopeDriver\NativeInterop.cs" />
+    <Compile Include="TelescopeDriver\GXASStateWrapper.cs" />
     <Compile Include="GarbageCollection.cs" />
     <Compile Include="LocalServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -122,13 +124,12 @@
     </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
+  <Target Name="CopyNativeDll" AfterTargets="Build"
+          Condition="Exists('..\..\..\TeenAstroAscomNative\.pio\build\windows_x86\TeenAstroAscomNative.dll')">
+    <Copy SourceFiles="..\..\..\TeenAstroAscomNative\.pio\build\windows_x86\TeenAstroAscomNative.dll"
+          DestinationFolder="$(OutputPath)"
+          SkipUnchangedFiles="true" />
   </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>

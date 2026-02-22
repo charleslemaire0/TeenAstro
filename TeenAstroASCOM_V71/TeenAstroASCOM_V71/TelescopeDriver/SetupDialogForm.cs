@@ -29,20 +29,33 @@ namespace ASCOM.TeenAstro.Telescope
 
             tl.Enabled = chkTrace.Checked;
 
-            // Update the COM port variable if one has been selected
-            if (comboBoxComPort.SelectedItem is null) // No COM port selected
+            if (RadioButtonSP.Checked)
             {
-                tl.LogMessage("Setup OK", $"New configuration values - COM Port: Not selected");
+                // Update the COM port variable if one has been selected
+                if (comboBoxComPort.SelectedItem is null) // No COM port selected
+                {
+                    tl.LogMessage("Setup OK", $"New configuration values - COM Port: Not selected");
+                }
+                else if (comboBoxComPort.SelectedItem.ToString() == NO_PORTS_MESSAGE)
+                {
+                    tl.LogMessage("Setup OK", $"New configuration values - NO COM ports detected on this PC.");
+                }
+                else // A valid COM port has been selected
+                {
+                    tl.LogMessage("Setup OK", $"New configuration values - COM Port: {comboBoxComPort.SelectedItem}");
+                    TelescopeHardware.comPort = comboBoxComPort.SelectedItem.ToString();
+                    TelescopeHardware.Interface = TelescopeHardware.InterfaceCOM;
+                }
             }
-            else if (comboBoxComPort.SelectedItem.ToString() == NO_PORTS_MESSAGE)
+            else if (RadioButtonIP.Checked)
             {
-                tl.LogMessage("Setup OK", $"New configuration values - NO COM ports detected on this PC.");
+                TelescopeHardware.IP = TextBoxIP.Text;
+                TelescopeHardware.Port = Convert.ToInt16(TextBoxPort.Text);
+                TelescopeHardware.Interface = TelescopeHardware.InterfaceIP;
             }
-            else // A valid COM port has been selected
-            {
-                TelescopeHardware.comPort = (string)comboBoxComPort.SelectedItem;
-                tl.LogMessage("Setup OK", $"New configuration values - COM Port: {comboBoxComPort.SelectedItem}");
-            }
+
+            this.DialogResult = DialogResult.OK;
+            this.Close();
         }
 
         private void CmdCancel_Click(object sender, EventArgs e) // Cancel button event handler
@@ -69,36 +82,32 @@ namespace ASCOM.TeenAstro.Telescope
 
         private void InitUI()
         {
-
-            // Set the trace checkbox
             chkTrace.Checked = tl.Enabled;
+            TextBoxIP.Text = TelescopeHardware.IP;
+            TextBoxPort.Text = TelescopeHardware.Port.ToString();
+            RadioButtonSP.Checked = TelescopeHardware.Interface == TelescopeHardware.InterfaceCOM;
+            RadioButtonIP.Checked = TelescopeHardware.Interface == TelescopeHardware.InterfaceIP;
 
-            // set the list of COM ports to those that are currently available
-            comboBoxComPort.Items.Clear(); // Clear any existing entries
-            using (Serial serial = new Serial()) // User the Se5rial component to get an extended list of COM ports
+            comboBoxComPort.Items.Clear();
+            using (Serial serial = new Serial())
             {
                 comboBoxComPort.Items.AddRange(serial.AvailableCOMPorts);
             }
 
-            // If no ports are found include a message to this effect
             if (comboBoxComPort.Items.Count == 0)
             {
                 comboBoxComPort.Items.Add(NO_PORTS_MESSAGE);
                 comboBoxComPort.SelectedItem = NO_PORTS_MESSAGE;
             }
 
-            // select the current port if possible
             if (comboBoxComPort.Items.Contains(TelescopeHardware.comPort))
-            {
                 comboBoxComPort.SelectedItem = TelescopeHardware.comPort;
-            }
 
-            tl.LogMessage("InitUI", $"Set UI controls to Trace: {chkTrace.Checked}, COM Port: {comboBoxComPort.SelectedItem}");
+            tl.LogMessage("InitUI", $"Trace: {chkTrace.Checked}, COM: {comboBoxComPort.SelectedItem}, IP: {TextBoxIP.Text}");
         }
 
         private void SetupDialogForm_Load(object sender, EventArgs e)
         {
-            // Bring the setup dialogue to the front of the screen
             if (WindowState == FormWindowState.Minimized)
                 WindowState = FormWindowState.Normal;
             else
@@ -108,6 +117,23 @@ namespace ASCOM.TeenAstro.Telescope
                 BringToFront();
                 TopMost = false;
             }
+        }
+
+        private void RadioButtonIP_CheckedChanged(object sender, EventArgs e)
+        {
+            TextBoxIP.Enabled = RadioButtonIP.Checked;
+            TextBoxPort.Enabled = RadioButtonIP.Checked;
+        }
+
+        private void RadioButtonSP_CheckedChanged(object sender, EventArgs e)
+        {
+            comboBoxComPort.Enabled = RadioButtonSP.Checked;
+        }
+
+        private void TextBoxPort_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar))
+                e.Handled = true;
         }
     }
 }

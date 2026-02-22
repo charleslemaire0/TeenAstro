@@ -1,4 +1,4 @@
-﻿// TODO fill in this information for your driver, then remove this line!
+// TODO fill in this information for your driver, then remove this line!
 //
 // ASCOM Telescope hardware class for TeenAstro
 //
@@ -18,6 +18,7 @@ using ASCOM.Utilities;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -41,19 +42,47 @@ namespace ASCOM.TeenAstro.Telescope
         // Constants used for Profile persistence
         internal const string comPortProfileName = "COM Port";
         internal const string comPortDefault = "COM1";
+        internal const string IPProfileName = "IP Address";
+        internal const string IPDefault = "192.168.0.1";
+        internal const string PortProfileName = "Port";
+        internal const string PortDefault = "9999";
+        internal const string InterfaceProfileName = "Interface";
+        internal const string InterfaceDefault = "COM";
+        internal const string InterfaceCOM = "COM";
+        internal const string InterfaceIP = "IP";
         internal const string traceStateProfileName = "Trace Level";
         internal const string traceStateDefault = "true";
 
-        private static string DriverProgId = ""; // ASCOM DeviceID (COM ProgID) for this driver, the value is set by the driver's class initialiser.
-        private static string DriverDescription = ""; // The value is set by the driver's class initialiser.
-        internal static string comPort; // COM port name (if required)
-        private static bool connectedState; // Local server's connected state
-        private static bool runOnce = false; // Flag to enable "one-off" activities only to run once.
-        internal static Util utilities; // ASCOM Utilities object for use as required
-        internal static AstroUtils astroUtilities; // ASCOM AstroUtilities object for use as required
-        internal static TraceLogger tl; // Local server's trace logger object for diagnostic log with information that you specify
+        // Message constants
+        private const string MsgNotImplemented = "Not implemented";
+        private const string MsgGetPrefix = "Get - ";
+        private const string MsgInvalidIP = " is not a valid IP Address";
+        private const string MsgConnectionFailed = "Connection has failed!";
+        private const string MsgDone = "done";
+        private const string DriverName = "TeenAstro";
+        private const string DmsSeparator = ":";
 
-        private static List<Guid> uniqueIds = new List<Guid>(); // List of driver instance unique IDs
+        private static string DriverProgId = "";
+        private static string DriverDescription = "";
+        internal static string comPort;
+        internal static string IP;
+        internal static short Port;
+        internal static string Interface;
+        internal static System.Net.IPAddress objectIP;
+        private static IntPtr _nativeHandle = IntPtr.Zero;
+        private static bool connectedState;
+        private static bool runOnce = false;
+        internal static Util utilities;
+        internal static AstroUtils astroUtilities;
+        internal static TraceLogger tl;
+        private static List<Guid> uniqueIds = new List<Guid>();
+
+        private static GXASStateWrapper _gxasState;
+        private static System.Diagnostics.Stopwatch _gxasStopwatch = new System.Diagnostics.Stopwatch();
+        private static DateTime ConnectionStatusDate;
+        private static double tgtRa = -999;
+        private static double tgtDec = -999;
+        private static bool HasMotors = true;
 
         /// <summary>
         /// Initializes a new instance of the device Hardware class.
@@ -77,7 +106,7 @@ namespace ASCOM.TeenAstro.Telescope
             catch (Exception ex)
             {
                 try { LogMessage("TelescopeHardware", $"Initialisation exception: {ex}"); } catch { }
-                MessageBox.Show($"TelescopeHardware - {ex.Message}\r\n{ex}", $"Exception creating {Telescope.DriverProgId}", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // Do not show UI from a static initializer. Log and rethrow to allow caller to handle the error.
                 throw;
             }
         }
@@ -169,6 +198,108 @@ namespace ASCOM.TeenAstro.Telescope
             throw new ActionNotImplementedException("Action " + actionName + " is not implemented by this driver");
         }
 
+        #region Communication (Native DLL)
+
+        private static bool NativeCommandBlind(string command, bool raw)
+        {
+            return NativeInterop.TeenAstroAscom_CommandBlind(_nativeHandle, command, raw ? 1 : 0) != 0;
+        }
+
+        private static bool NativeCommandBool(string command, bool raw)
+        {
+            return NativeInterop.TeenAstroAscom_CommandBool(_nativeHandle, command, raw ? 1 : 0) != 0;
+        }
+
+        private static string NativeCommandString(string command, bool raw)
+        {
+            var buf = new byte[256];
+            if (NativeInterop.TeenAstroAscom_CommandString(_nativeHandle, command, raw ? 1 : 0, buf, buf.Length) == 0)
+                return null;
+            int len = Array.IndexOf(buf, (byte)0);
+            if (len < 0) len = buf.Length;
+            return System.Text.Encoding.ASCII.GetString(buf, 0, len);
+        }
+
+        private static void CloseNative()
+        {
+            connectedState = false;
+            if (_nativeHandle != IntPtr.Zero)
+            {
+                try { NativeInterop.TeenAstroAscom_Disconnect(_nativeHandle); } catch { }
+                _nativeHandle = IntPtr.Zero;
+            }
+        }
+
+        private static void ConnectSerial(bool value)
+        {
+            if (value)
+            {
+                LogMessage("Connected Set", "Connecting to port " + comPort);
+                _nativeHandle = NativeInterop.TeenAstroAscom_ConnectSerial(comPort);
+                if (_nativeHandle == IntPtr.Zero)
+                    throw new DriverException("Failed to connect to " + comPort);
+                connectedState = true;
+                ConnectionStatusDate = DateTime.UtcNow;
+                try { HasMotors = NativeInterop.TeenAstroAscom_HasMotors(_nativeHandle) != 0; }
+                catch (Exception ex) { CloseNative(); throw new DriverException(ex.Message); }
+            }
+            else
+            {
+                CloseNative();
+                LogMessage("Connected Set", "Disconnecting from port " + comPort);
+            }
+        }
+
+        private static void ConnectIP(bool value)
+        {
+            if (value)
+            {
+                if (!System.Net.IPAddress.TryParse(IP, out objectIP))
+                {
+                    // Do not show UI here; callers expect exceptions for invalid configuration.
+                    LogMessage("ConnectIP", IP + MsgInvalidIP);
+                    throw new InvalidValueException(IP + MsgInvalidIP);
+                }
+                LogMessage("Connected Set", "Connecting to " + IP + ":" + Port);
+                _nativeHandle = NativeInterop.TeenAstroAscom_ConnectTcp(IP, Port);
+                if (_nativeHandle == IntPtr.Zero)
+                    throw new InvalidValueException(MsgConnectionFailed);
+                connectedState = true;
+                ConnectionStatusDate = DateTime.UtcNow;
+                try { HasMotors = NativeInterop.TeenAstroAscom_HasMotors(_nativeHandle) != 0; }
+                catch (Exception ex) { connectedState = false; throw new DriverException(ex.Message); }
+                DateTime timeTelescope = _gxasState != null && _gxasState.Valid ? _gxasState.GetUTCDate() : DateTime.UtcNow;
+                if (Math.Abs((timeTelescope - DateTime.UtcNow).TotalSeconds) > 2d)
+                    LogMessage("Connected Set", "Synced with computer time");
+            }
+            else
+            {
+                CloseNative();
+                LogMessage("Connected Set", "Disconnecting from IP " + IP);
+            }
+        }
+
+        private static bool UpdateGXASState()
+        {
+            if (_nativeHandle == IntPtr.Zero) return false;
+            if (!_gxasStopwatch.IsRunning || _gxasStopwatch.ElapsedMilliseconds > 100)
+            {
+                NativeInterop.GXASState state;
+                if (NativeInterop.TeenAstroAscom_GetMountState(_nativeHandle, out state) != 0 && state.valid != 0)
+                {
+                    _gxasState = new GXASStateWrapper(state);
+                    _gxasStopwatch.Restart();
+                    return true;
+                }
+                _gxasState = null;
+                _gxasStopwatch.Stop();
+                return false;
+            }
+            return _gxasState != null && _gxasState.Valid;
+        }
+
+        #endregion
+
         /// <summary>
         /// Transmits an arbitrary string to the device and does not wait for a response.
         /// Optionally, protocol framing characters may be added to the string before transmission.
@@ -181,10 +312,9 @@ namespace ASCOM.TeenAstro.Telescope
         public static void CommandBlind(string command, bool raw)
         {
             CheckConnected("CommandBlind");
-            // TODO The optional CommandBlind method should either be implemented OR throw a MethodNotImplementedException
-            // If implemented, CommandBlind must send the supplied command to the mount and return immediately without waiting for a response
-
-            throw new MethodNotImplementedException($"CommandBlind - Command:{command}, Raw: {raw}.");
+            if (!NativeCommandBlind(command, raw))
+                throw new NotConnectedException("CommandBlind " + command + " has failed");
+            ConnectionStatusDate = DateTime.UtcNow;
         }
 
         /// <summary>
@@ -202,10 +332,9 @@ namespace ASCOM.TeenAstro.Telescope
         public static bool CommandBool(string command, bool raw)
         {
             CheckConnected("CommandBool");
-            // TODO The optional CommandBool method should either be implemented OR throw a MethodNotImplementedException
-            // If implemented, CommandBool must send the supplied command to the mount, wait for a response and parse this to return a True or False value
-
-            throw new MethodNotImplementedException($"CommandBool - Command:{command}, Raw: {raw}.");
+            int r = NativeInterop.TeenAstroAscom_CommandBool(_nativeHandle, command, raw ? 1 : 0);
+            ConnectionStatusDate = DateTime.UtcNow;
+            return r != 0;
         }
 
         /// <summary>
@@ -223,10 +352,11 @@ namespace ASCOM.TeenAstro.Telescope
         public static string CommandString(string command, bool raw)
         {
             CheckConnected("CommandString");
-            // TODO The optional CommandString method should either be implemented OR throw a MethodNotImplementedException
-            // If implemented, CommandString must send the supplied command to the mount and wait for a response before returning this to the client
-
-            throw new MethodNotImplementedException($"CommandString - Command:{command}, Raw: {raw}.");
+            string buf = NativeCommandString(command, raw);
+            if (buf == null)
+                throw new NotConnectedException("CommandString " + command + " has failed");
+            ConnectionStatusDate = DateTime.UtcNow;
+            return buf;
         }
 
         /// <summary>
@@ -295,9 +425,23 @@ namespace ASCOM.TeenAstro.Telescope
                     // Check whether this is the first connection to the hardware
                     if (uniqueIds.Count == 0) // This is the first connection to the hardware so initiate the hardware connection
                     {
-                        //
-                        // Add hardware connect logic here
-                        //
+                        if (Interface == InterfaceCOM)
+                            ConnectSerial(true);
+                        else if (Interface == InterfaceIP)
+                        {
+                            if (System.Net.IPAddress.TryParse(IP, out objectIP))
+                            {
+                                ConnectIP(true);
+                            }
+                            else
+                            {
+                                // Do not show UI from driver code. Log and throw so caller can handle the error.
+                                LogMessage("SetConnected", IP + MsgInvalidIP);
+                                throw new InvalidValueException(IP + MsgInvalidIP);
+                            }
+                        }
+                        if (!connectedState)
+                            throw new InvalidValueException(MsgConnectionFailed);
                         LogMessage("SetConnected", $"Connecting to hardware.");
                     }
                     else // Other device instances are connected so the hardware is already connected
@@ -328,9 +472,10 @@ namespace ASCOM.TeenAstro.Telescope
                     // Check whether there are now any connected driver instances 
                     if (uniqueIds.Count == 0) // There are no connected driver instances so disconnect from the hardware
                     {
-                        //
-                        // Add hardware disconnect logic here
-                        //
+                        if (Interface == InterfaceCOM)
+                            ConnectSerial(false);
+                        else if (Interface == InterfaceIP)
+                            ConnectIP(false);
                     }
                     else // Other device instances are connected so do not disconnect the hardware
                     {
@@ -409,12 +554,10 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         public static string Name
         {
-            // TODO customise this device name as required
             get
             {
-                string name = "Short driver name - please customise";
-                LogMessage("Name Get", name);
-                return name;
+                LogMessage("Name Get", DriverName);
+                return DriverName;
             }
         }
 
@@ -427,8 +570,10 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static void AbortSlew()
         {
-            LogMessage("AbortSlew", "Not implemented");
-            throw new MethodNotImplementedException("AbortSlew");
+            if (NativeInterop.TeenAstroAscom_AbortSlew(_nativeHandle) == 0)
+                throw new NotConnectedException("AbortSlew has failed");
+            ConnectionStatusDate = DateTime.UtcNow;
+            LogMessage("AbortSlew", MsgDone);
         }
 
         /// <summary>
@@ -438,8 +583,8 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("AlignmentMode Get", "Not implemented");
-                throw new PropertyNotImplementedException("AlignmentMode", false);
+                ThrowPropertyNotImplemented("AlignmentMode", false);
+                return default(AlignmentModes);
             }
         }
 
@@ -450,8 +595,11 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("Altitude", "Not implemented");
-                throw new PropertyNotImplementedException("Altitude", false);
+                if (!UpdateGXASState())
+                    throw new InvalidOperationException("Altitude unavailable");
+                double alt = _gxasState.AltitudeDegrees;
+                LogMessage("Altitude", utilities.DegreesToDMS(alt, DmsSeparator, DmsSeparator));
+                return alt;
             }
         }
 
@@ -462,8 +610,8 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("ApertureArea Get", "Not implemented");
-                throw new PropertyNotImplementedException("ApertureArea", false);
+                ThrowPropertyNotImplemented("ApertureArea", false);
+                return 0.0;
             }
         }
 
@@ -474,8 +622,23 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("ApertureDiameter Get", "Not implemented");
-                throw new PropertyNotImplementedException("ApertureDiameter", false);
+                ThrowPropertyNotImplemented("ApertureDiameter", false);
+                return 0.0;
+            }
+        }
+
+        /// <summary>
+        /// The azimuth at the local horizon of the telescope's current position (degrees, North-referenced, positive East/clockwise).
+        /// </summary>
+        internal static double Azimuth
+        {
+            get
+            {
+                if (!UpdateGXASState())
+                    throw new InvalidOperationException("Azimuth unavailable");
+                double az = _gxasState.AzimuthDegrees;
+                LogMessage("Azimuth", utilities.DegreesToDMS(az, DmsSeparator, DmsSeparator));
+                return az;
             }
         }
 
@@ -487,8 +650,11 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("AtHome", "Get - " + false.ToString());
-                return false;
+                if (!UpdateGXASState())
+                    return false;
+                bool v = _gxasState.AtHome;
+                LogMessage("AtHome", MsgGetPrefix + v.ToString());
+                return v;
             }
         }
 
@@ -499,8 +665,11 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("AtPark", "Get - " + false.ToString());
-                return false;
+                if (!UpdateGXASState())
+                    return false;
+                bool v = _gxasState.ParkState == 2;
+                LogMessage("AtPark", MsgGetPrefix + v.ToString());
+                return v;
             }
         }
 
@@ -511,20 +680,8 @@ namespace ASCOM.TeenAstro.Telescope
         /// <returns>Collection of <see cref="IRate" /> rate objects</returns>
         internal static IAxisRates AxisRates(TelescopeAxes Axis)
         {
-            LogMessage("AxisRates", "Get - " + Axis.ToString());
+            LogMessage("AxisRates", MsgGetPrefix + Axis.ToString());
             return new AxisRates(Axis);
-        }
-
-        /// <summary>
-        /// The azimuth at the local horizon of the telescope's current position (degrees, North-referenced, positive East/clockwise).
-        /// </summary>
-        internal static double Azimuth
-        {
-            get
-            {
-                LogMessage("Azimuth Get", "Not implemented");
-                throw new PropertyNotImplementedException("Azimuth", false);
-            }
         }
 
         /// <summary>
@@ -532,11 +689,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanFindHome
         {
-            get
-            {
-                LogMessage("CanFindHome", "Get - " + false.ToString());
-                return false;
-            }
+            get { return NativeInterop.TeenAstroAscom_HasSite(_nativeHandle) != 0 && HasMotors; }
         }
 
         /// <summary>
@@ -544,11 +697,10 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanMoveAxis(TelescopeAxes Axis)
         {
-            LogMessage("CanMoveAxis", "Get - " + Axis.ToString());
             switch (Axis)
             {
-                case TelescopeAxes.axisPrimary: return false;
-                case TelescopeAxes.axisSecondary: return false;
+                case TelescopeAxes.axisPrimary: return HasMotors;
+                case TelescopeAxes.axisSecondary: return HasMotors;
                 case TelescopeAxes.axisTertiary: return false;
                 default: throw new InvalidValueException("CanMoveAxis", Axis.ToString(), "0 to 2");
             }
@@ -559,11 +711,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanPark
         {
-            get
-            {
-                LogMessage("CanPark", "Get - " + false.ToString());
-                return false;
-            }
+            get { return NativeInterop.TeenAstroAscom_HasSite(_nativeHandle) != 0 && HasMotors; }
         }
 
         /// <summary>
@@ -571,11 +719,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanPulseGuide
         {
-            get
-            {
-                LogMessage("CanPulseGuide", "Get - " + false.ToString());
-                return false;
-            }
+            get { return HasMotors; }
         }
 
         /// <summary>
@@ -583,23 +727,15 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanSetDeclinationRate
         {
-            get
-            {
-                LogMessage("CanSetDeclinationRate", "Get - " + false.ToString());
-                return false;
-            }
+            get { return HasMotors; }
         }
 
         /// <summary>
-        /// True if the guide rate properties used for <see cref="PulseGuide" /> can ba adjusted.
+        /// True if the guide rate properties used for <see cref="PulseGuide" /> can be adjusted.
         /// </summary>
         internal static bool CanSetGuideRates
         {
-            get
-            {
-                LogMessage("CanSetGuideRates", "Get - " + false.ToString());
-                return false;
-            }
+            get { return HasMotors; }
         }
 
         /// <summary>
@@ -607,11 +743,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanSetPark
         {
-            get
-            {
-                LogMessage("CanSetPark", "Get - " + false.ToString());
-                return false;
-            }
+            get { return NativeInterop.TeenAstroAscom_HasSite(_nativeHandle) != 0 && HasMotors; }
         }
 
         /// <summary>
@@ -619,11 +751,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanSetPierSide
         {
-            get
-            {
-                LogMessage("CanSetPierSide", "Get - " + false.ToString());
-                return false;
-            }
+            get { return false; }
         }
 
         /// <summary>
@@ -631,11 +759,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanSetRightAscensionRate
         {
-            get
-            {
-                LogMessage("CanSetRightAscensionRate", "Get - " + false.ToString());
-                return false;
-            }
+            get { return HasMotors; }
         }
 
         /// <summary>
@@ -643,11 +767,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanSetTracking
         {
-            get
-            {
-                LogMessage("CanSetTracking", "Get - " + false.ToString());
-                return false;
-            }
+            get { return HasMotors; }
         }
 
         /// <summary>
@@ -655,11 +775,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanSlew
         {
-            get
-            {
-                LogMessage("CanSlew", "Get - " + false.ToString());
-                return false;
-            }
+            get { return HasMotors; }
         }
 
         /// <summary>
@@ -667,11 +783,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanSlewAltAz
         {
-            get
-            {
-                LogMessage("CanSlewAltAz", "Get - " + false.ToString());
-                return false;
-            }
+            get { return HasMotors; }
         }
 
         /// <summary>
@@ -679,11 +791,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanSlewAltAzAsync
         {
-            get
-            {
-                LogMessage("CanSlewAltAzAsync", "Get - " + false.ToString());
-                return false;
-            }
+            get { return HasMotors; }
         }
 
         /// <summary>
@@ -691,11 +799,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanSlewAsync
         {
-            get
-            {
-                LogMessage("CanSlewAsync", "Get - " + false.ToString());
-                return false;
-            }
+            get { return HasMotors; }
         }
 
         /// <summary>
@@ -703,11 +807,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanSync
         {
-            get
-            {
-                LogMessage("CanSync", "Get - " + false.ToString());
-                return false;
-            }
+            get { return HasMotors; }
         }
 
         /// <summary>
@@ -715,11 +815,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanSyncAltAz
         {
-            get
-            {
-                LogMessage("CanSyncAltAz", "Get - " + false.ToString());
-                return false;
-            }
+            get { return HasMotors; }
         }
 
         /// <summary>
@@ -727,11 +823,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanUnpark
         {
-            get
-            {
-                LogMessage("CanUnpark", "Get - " + false.ToString());
-                return false;
-            }
+            get { return NativeInterop.TeenAstroAscom_HasSite(_nativeHandle) != 0 && HasMotors; }
         }
 
         /// <summary>
@@ -742,9 +834,11 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                double declination = 0.0;
-                LogMessage("Declination", "Get - " + utilities.DegreesToDMS(declination, ":", ":"));
-                return declination;
+                if (!UpdateGXASState())
+                    throw new InvalidOperationException("Declination unavailable");
+                double dec = _gxasState.DeclinationDegrees;
+                LogMessage("Declination", MsgGetPrefix + utilities.DegreesToDMS(dec, DmsSeparator, DmsSeparator));
+                return dec;
             }
         }
 
@@ -756,13 +850,12 @@ namespace ASCOM.TeenAstro.Telescope
             get
             {
                 double declination = 0.0;
-                LogMessage("DeclinationRate", "Get - " + declination.ToString());
+                LogMessage("DeclinationRate", MsgGetPrefix + declination.ToString());
                 return declination;
             }
             set
             {
-                LogMessage("DeclinationRate Set", "Not implemented");
-                throw new PropertyNotImplementedException("DeclinationRate", true);
+                ThrowPropertyNotImplemented("DeclinationRate", true);
             }
         }
 
@@ -771,8 +864,8 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static PierSide DestinationSideOfPier(double RightAscension, double Declination)
         {
-            LogMessage("DestinationSideOfPier Get", "Not implemented");
-            throw new PropertyNotImplementedException("DestinationSideOfPier", false);
+            ThrowPropertyNotImplemented("DestinationSideOfPier", false);
+            return default(PierSide);
         }
 
         /// <summary>
@@ -782,13 +875,12 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("DoesRefraction Get", "Not implemented");
-                throw new PropertyNotImplementedException("DoesRefraction", false);
+                ThrowPropertyNotImplemented("DoesRefraction", false);
+                return false;
             }
             set
             {
-                LogMessage("DoesRefraction Set", "Not implemented");
-                throw new PropertyNotImplementedException("DoesRefraction", true);
+                ThrowPropertyNotImplemented("DoesRefraction", true);
             }
         }
 
@@ -800,7 +892,7 @@ namespace ASCOM.TeenAstro.Telescope
             get
             {
                 EquatorialCoordinateType equatorialSystem = EquatorialCoordinateType.equTopocentric;
-                LogMessage("DeclinationRate", "Get - " + equatorialSystem.ToString());
+                LogMessage("DeclinationRate", MsgGetPrefix + equatorialSystem.ToString());
                 return equatorialSystem;
             }
         }
@@ -810,8 +902,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static void FindHome()
         {
-            LogMessage("FindHome", "Not implemented");
-            throw new MethodNotImplementedException("FindHome");
+            ThrowMethodNotImplemented("FindHome");
         }
 
         /// <summary>
@@ -821,8 +912,8 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("FocalLength Get", "Not implemented");
-                throw new PropertyNotImplementedException("FocalLength", false);
+                ThrowPropertyNotImplemented("FocalLength", false);
+                return 0.0;
             }
         }
 
@@ -833,13 +924,12 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("GuideRateDeclination Get", "Not implemented");
-                throw new PropertyNotImplementedException("GuideRateDeclination", false);
+                ThrowPropertyNotImplemented("GuideRateDeclination", false);
+                return 0.0;
             }
             set
             {
-                LogMessage("GuideRateDeclination Set", "Not implemented");
-                throw new PropertyNotImplementedException("GuideRateDeclination", true);
+                ThrowPropertyNotImplemented("GuideRateDeclination", true);
             }
         }
 
@@ -850,13 +940,12 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("GuideRateRightAscension Get", "Not implemented");
-                throw new PropertyNotImplementedException("GuideRateRightAscension", false);
+                ThrowPropertyNotImplemented("GuideRateRightAscension", false);
+                return 0.0;
             }
             set
             {
-                LogMessage("GuideRateRightAscension Set", "Not implemented");
-                throw new PropertyNotImplementedException("GuideRateRightAscension", true);
+                ThrowPropertyNotImplemented("GuideRateRightAscension", true);
             }
         }
 
@@ -867,8 +956,9 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("IsPulseGuiding Get", "Not implemented");
-                throw new PropertyNotImplementedException("IsPulseGuiding", false);
+                if (!UpdateGXASState())
+                    return false;
+                return _gxasState.IsPulseGuiding;
             }
         }
 
@@ -879,8 +969,18 @@ namespace ASCOM.TeenAstro.Telescope
         /// <param name="Rate">The rate of motion (deg/sec) about the specified axis</param>
         internal static void MoveAxis(TelescopeAxes Axis, double Rate)
         {
-            LogMessage("MoveAxis", "Not implemented");
-            throw new MethodNotImplementedException("MoveAxis");
+            if (Math.Abs(Rate) < 1e-6)
+            {
+                NativeInterop.TeenAstroAscom_AbortSlew(_nativeHandle);
+                ConnectionStatusDate = DateTime.UtcNow;
+                return;
+            }
+            int axis = (Axis == TelescopeAxes.axisPrimary) ? 0 : 1;
+            double rateArcsec = Rate * 3600.0; // deg/sec to arcsec/sec
+            if (NativeInterop.TeenAstroAscom_MoveAxis(_nativeHandle, axis, rateArcsec) == 0)
+                throw new NotConnectedException("MoveAxis has failed");
+            ConnectionStatusDate = DateTime.UtcNow;
+            LogMessage("MoveAxis", Axis + " " + Rate.ToString(CultureInfo.InvariantCulture));
         }
 
 
@@ -889,8 +989,10 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static void Park()
         {
-            LogMessage("Park", "Not implemented");
-            throw new MethodNotImplementedException("Park");
+            if (NativeInterop.TeenAstroAscom_Park(_nativeHandle) == 0)
+                throw new InvalidOperationException("Park has failed");
+            ConnectionStatusDate = DateTime.UtcNow;
+            LogMessage("Park", MsgDone);
         }
 
         /// <summary>
@@ -901,8 +1003,19 @@ namespace ASCOM.TeenAstro.Telescope
         /// <param name="Duration">The duration of the guide-rate motion (milliseconds)</param>
         internal static void PulseGuide(GuideDirections Direction, int Duration)
         {
-            LogMessage("PulseGuide", "Not implemented");
-            throw new MethodNotImplementedException("PulseGuide");
+            int dir;
+            switch (Direction)
+            {
+                case GuideDirections.guideNorth: dir = 0; break;
+                case GuideDirections.guideSouth: dir = 1; break;
+                case GuideDirections.guideEast: dir = 2; break;
+                case GuideDirections.guideWest: dir = 3; break;
+                default: throw new InvalidValueException("PulseGuide", Direction.ToString(), "Invalid direction");
+            }
+            if (NativeInterop.TeenAstroAscom_PulseGuide(_nativeHandle, dir, Duration) == 0)
+                throw new NotConnectedException("PulseGuide has failed");
+            ConnectionStatusDate = DateTime.UtcNow;
+            LogMessage("PulseGuide", Direction + " " + (Duration / 1000.0).ToString("0.000", CultureInfo.InvariantCulture) + "s");
         }
 
         /// <summary>
@@ -913,9 +1026,11 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                double rightAscension = 0.0;
-                LogMessage("RightAscension", "Get - " + utilities.HoursToHMS(rightAscension));
-                return rightAscension;
+                if (!UpdateGXASState())
+                    throw new InvalidOperationException("RightAscension unavailable");
+                double ra = _gxasState.RightAscensionHours;
+                LogMessage("RightAscension", MsgGetPrefix + utilities.HoursToHMS(ra));
+                return ra;
             }
         }
 
@@ -927,13 +1042,12 @@ namespace ASCOM.TeenAstro.Telescope
             get
             {
                 double rightAscensionRate = 0.0;
-                LogMessage("RightAscensionRate", "Get - " + rightAscensionRate.ToString());
+                LogMessage("RightAscensionRate", MsgGetPrefix + rightAscensionRate.ToString());
                 return rightAscensionRate;
             }
             set
             {
-                LogMessage("RightAscensionRate Set", "Not implemented");
-                throw new PropertyNotImplementedException("RightAscensionRate", true);
+                ThrowPropertyNotImplemented("RightAscensionRate", true);
             }
         }
 
@@ -942,8 +1056,10 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static void SetPark()
         {
-            LogMessage("SetPark", "Not implemented");
-            throw new MethodNotImplementedException("SetPark");
+            if (NativeInterop.TeenAstroAscom_SetPark(_nativeHandle) == 0)
+                throw new InvalidOperationException("SetPark has failed");
+            ConnectionStatusDate = DateTime.UtcNow;
+            LogMessage("SetPark", MsgDone);
         }
 
         /// <summary>
@@ -954,14 +1070,11 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("SideOfPier Get", "Not implemented");
-                throw new PropertyNotImplementedException("SideOfPier", false);
+                if (!UpdateGXASState())
+                    throw new InvalidOperationException("SideOfPier unavailable");
+                return _gxasState.PierSideWest ? DeviceInterface.PierSide.pierWest : DeviceInterface.PierSide.pierEast;
             }
-            set
-            {
-                LogMessage("SideOfPier Set", "Not implemented");
-                throw new PropertyNotImplementedException("SideOfPier", true);
-            }
+            set { throw new PropertyNotImplementedException("SideOfPier", true); }
         }
 
         /// <summary>
@@ -971,33 +1084,24 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                double siderealTime = 0.0; // Sidereal time return value
-
-                // Use NOVAS 3.1 to calculate the sidereal time
+                if (UpdateGXASState() && _gxasState.Valid)
+                {
+                    double lst = _gxasState.SiderealTimeHours;
+                    lst = astroUtilities.ConditionRA(lst);
+                    LogMessage("SiderealTime", MsgGetPrefix + lst.ToString(CultureInfo.InvariantCulture));
+                    return lst;
+                }
+                double siderealTime = 0.0;
                 using (var novas = new NOVAS31())
                 {
                     double julianDate = utilities.DateUTCToJulian(DateTime.UtcNow);
                     novas.SiderealTime(julianDate, 0, novas.DeltaT(julianDate), GstType.GreenwichApparentSiderealTime, Method.EquinoxBased, Accuracy.Full, ref siderealTime);
                 }
-
-                // Adjust the calculated sidereal time for longitude using the value returned by the SiteLongitude property, allowing for the possibility that this property has not yet been implemented
-                try
-                {
-                    siderealTime += SiteLongitude / 360.0 * 24.0;
-                }
-                catch (PropertyNotImplementedException) // SiteLongitude hasn't been implemented
-                {
-                    // No action, just return the calculated sidereal time unadjusted for longitude
-                }
-                catch (Exception) // Some other exception occurred so return it to the client
-                {
-                    throw;
-                }
-
-                // Reduce sidereal time to the range 0 to 24 hours
+                try { siderealTime += SiteLongitude / 360.0 * 24.0; }
+                catch (PropertyNotImplementedException) { }
+                catch (Exception) { throw; }
                 siderealTime = astroUtilities.ConditionRA(siderealTime);
-
-                LogMessage("SiderealTime", "Get - " + siderealTime.ToString());
+                LogMessage("SiderealTime", MsgGetPrefix + siderealTime.ToString(CultureInfo.InvariantCulture));
                 return siderealTime;
             }
         }
@@ -1009,13 +1113,12 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("SiteElevation Get", "Not implemented");
-                throw new PropertyNotImplementedException("SiteElevation", false);
+                ThrowPropertyNotImplemented("SiteElevation", false);
+                return 0.0;
             }
             set
             {
-                LogMessage("SiteElevation Set", "Not implemented");
-                throw new PropertyNotImplementedException("SiteElevation", true);
+                ThrowPropertyNotImplemented("SiteElevation", true);
             }
         }
 
@@ -1026,13 +1129,16 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("SiteLatitude Get", "Not implemented");
-                throw new PropertyNotImplementedException("SiteLatitude", false);
+                if (NativeInterop.TeenAstroAscom_GetSiteLatitude(_nativeHandle, out double lat) == 0)
+                    throw new DriverException("get SiteLatitude has failed");
+                return lat;
             }
             set
             {
-                LogMessage("SiteLatitude Set", "Not implemented");
-                throw new PropertyNotImplementedException("SiteLatitude", true);
+                string sg = value >= 0 ? "+" : "-";
+                string latStr = sg + DegtoDDMMSS(Math.Abs(value));
+                if (NativeInterop.TeenAstroAscom_SetSiteLatitude(_nativeHandle, latStr) == 0)
+                    throw new InvalidOperationException("Set SiteLatitude failed");
             }
         }
 
@@ -1043,13 +1149,16 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("SiteLongitude Get", "Returning 0.0 to ensure that SiderealTime method is functional out of the box.");
-                return 0.0;
+                if (NativeInterop.TeenAstroAscom_GetSiteLongitude(_nativeHandle, out double lg) == 0)
+                    throw new DriverException("get SiteLongitude has failed");
+                return lg * -1;
             }
             set
             {
-                LogMessage("SiteLongitude Set", "Not implemented");
-                throw new PropertyNotImplementedException("SiteLongitude", true);
+                string sg = value >= 0 ? "+" : "-";
+                string lonStr = sg + DegtoDDDMMSS(Math.Abs(value));
+                if (NativeInterop.TeenAstroAscom_SetSiteLongitude(_nativeHandle, lonStr) == 0)
+                    throw new InvalidOperationException("Set SiteLongitude failed");
             }
         }
 
@@ -1060,13 +1169,12 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("SlewSettleTime Get", "Not implemented");
-                throw new PropertyNotImplementedException("SlewSettleTime", false);
+                ThrowPropertyNotImplemented("SlewSettleTime", false);
+                return 0;
             }
             set
             {
-                LogMessage("SlewSettleTime Set", "Not implemented");
-                throw new PropertyNotImplementedException("SlewSettleTime", true);
+                ThrowPropertyNotImplemented("SlewSettleTime", true);
             }
         }
 
@@ -1075,8 +1183,10 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static void SlewToAltAz(double Azimuth, double Altitude)
         {
-            LogMessage("SlewToAltAz", "Not implemented");
-            throw new MethodNotImplementedException("SlewToAltAz");
+            SetAzAlt(Azimuth, Altitude);
+            CheckSlewAltAz();
+            DoSlew(false, true);
+            LogMessage("SlewToAltAz", MsgDone);
         }
 
 
@@ -1089,8 +1199,10 @@ namespace ASCOM.TeenAstro.Telescope
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "VSTHRD200:Use \"Async\" suffix for async methods", Justification = "internal static method name used for many years.")]
         internal static void SlewToAltAzAsync(double Azimuth, double Altitude)
         {
-            LogMessage("SlewToAltAzAsync", "Not implemented");
-            throw new MethodNotImplementedException("SlewToAltAzAsync");
+            SetAzAlt(Azimuth, Altitude);
+            CheckSlewAltAz();
+            DoSlew(true, true);
+            LogMessage("SlewToAltAzAsync", MsgDone);
         }
 
         /// <summary>
@@ -1099,8 +1211,11 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static void SlewToCoordinates(double RightAscension, double Declination)
         {
-            LogMessage("SlewToCoordinates", "Not implemented");
-            throw new MethodNotImplementedException("SlewToCoordinates");
+            TargetRightAscension = RightAscension;
+            TargetDeclination = Declination;
+            CheckSlewRADEC();
+            DoSlew(false, false);
+            LogMessage("SlewToCoordinates", MsgDone);
         }
 
         /// <summary>
@@ -1109,8 +1224,11 @@ namespace ASCOM.TeenAstro.Telescope
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "VSTHRD200:Use \"Async\" suffix for async methods", Justification = "internal static method name used for many years.")]
         internal static void SlewToCoordinatesAsync(double RightAscension, double Declination)
         {
-            LogMessage("SlewToCoordinatesAsync", "Not implemented");
-            throw new MethodNotImplementedException("SlewToCoordinatesAsync");
+            TargetRightAscension = RightAscension;
+            TargetDeclination = Declination;
+            CheckSlewRADEC();
+            DoSlew(true, false);
+            LogMessage("SlewToCoordinatesAsync", MsgDone);
         }
 
         /// <summary>
@@ -1118,8 +1236,9 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static void SlewToTarget()
         {
-            LogMessage("SlewToTarget", "Not implemented");
-            throw new MethodNotImplementedException("SlewToTarget");
+            CheckSlewRADEC();
+            DoSlew(false, false);
+            LogMessage("SlewToTarget", MsgDone);
         }
 
         /// <summary>
@@ -1129,8 +1248,9 @@ namespace ASCOM.TeenAstro.Telescope
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "VSTHRD200:Use \"Async\" suffix for async methods", Justification = "internal static method name used for many years.")]
         internal static void SlewToTargetAsync()
         {
-            LogMessage("SlewToTargetAsync", "Not implemented");
-            throw new MethodNotImplementedException("SlewToTargetAsync");
+            CheckSlewRADEC();
+            DoSlew(true, false);
+            LogMessage("SlewToTargetAsync", MsgDone);
         }
 
         /// <summary>
@@ -1141,8 +1261,9 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("Slewing Get", "Not implemented");
-                throw new PropertyNotImplementedException("Slewing", false);
+                if (!UpdateGXASState())
+                    return false;
+                return _gxasState.Slewing;
             }
         }
 
@@ -1151,8 +1272,11 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static void SyncToAltAz(double Azimuth, double Altitude)
         {
-            LogMessage("SyncToAltAz", "Not implemented");
-            throw new MethodNotImplementedException("SyncToAltAz");
+            SetAzAlt(Azimuth, Altitude);
+            if (NativeInterop.TeenAstroAscom_SyncToAltAz(_nativeHandle) == 0)
+                throw new InvalidOperationException("SyncToAltAz has failed");
+            ConnectionStatusDate = DateTime.UtcNow;
+            LogMessage("SyncToAltAz", MsgDone);
         }
 
         /// <summary>
@@ -1160,8 +1284,10 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static void SyncToCoordinates(double RightAscension, double Declination)
         {
-            LogMessage("SyncToCoordinates", "Not implemented");
-            throw new MethodNotImplementedException("SyncToCoordinates");
+            TargetRightAscension = RightAscension;
+            TargetDeclination = Declination;
+            SyncToTarget();
+            LogMessage("SyncToCoordinates", MsgDone);
         }
 
         /// <summary>
@@ -1169,8 +1295,14 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static void SyncToTarget()
         {
-            LogMessage("SyncToTarget", "Not implemented");
-            throw new MethodNotImplementedException("SyncToTarget");
+            if (AtPark)
+                throw new ParkedException();
+            if (CanSetTracking && !Tracking)
+                throw new InvalidOperationException("Tracking must be on to sync");
+            if (NativeInterop.TeenAstroAscom_SyncToEquatorial(_nativeHandle) == 0)
+                throw new InvalidOperationException("SyncToTarget has failed");
+            ConnectionStatusDate = DateTime.UtcNow;
+            LogMessage("SyncToTarget", MsgDone);
         }
 
         /// <summary>
@@ -1180,13 +1312,21 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("TargetDeclination Get", "Not implemented");
-                throw new PropertyNotImplementedException("TargetDeclination", false);
+                if (tgtDec == -999)
+                    throw new ValueNotSetException();
+                if (!UpdateGXASState())
+                    return tgtDec;
+                tgtDec = _gxasState.TargetDecDegrees;
+                return tgtDec;
             }
             set
             {
-                LogMessage("TargetDeclination Set", "Not implemented");
-                throw new PropertyNotImplementedException("TargetDeclination", true);
+                LogMessage("Set TargetDeclination", value.ToString(CultureInfo.InvariantCulture));
+                if (value < -90 || value > 90)
+                    throw new InvalidValueException("TargetDeclination", value.ToString(), "-90 to 90");
+                if (NativeInterop.TeenAstroAscom_SetTargetDec(_nativeHandle, value) == 0)
+                    throw new InvalidOperationException("Set Target Declination has failed");
+                tgtDec = value;
             }
         }
 
@@ -1197,13 +1337,21 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                LogMessage("TargetRightAscension Get", "Not implemented");
-                throw new PropertyNotImplementedException("TargetRightAscension", false);
+                if (tgtRa == -999)
+                    throw new ValueNotSetException();
+                if (!UpdateGXASState())
+                    return tgtRa;
+                tgtRa = _gxasState.TargetRAHours;
+                return tgtRa;
             }
             set
             {
-                LogMessage("TargetRightAscension Set", "Not implemented");
-                throw new PropertyNotImplementedException("TargetRightAscension", true);
+                LogMessage("Set TargetRightAscension", value.ToString(CultureInfo.InvariantCulture));
+                if (value < 0 || value > 24)
+                    throw new InvalidValueException("TargetRightAscension", value.ToString(), "0 to 24");
+                if (NativeInterop.TeenAstroAscom_SetTargetRA(_nativeHandle, value) == 0)
+                    throw new InvalidOperationException("Set Target RightAscension has failed");
+                tgtRa = value;
             }
         }
 
@@ -1214,14 +1362,22 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                bool tracking = true;
-                LogMessage("Tracking", "Get - " + tracking.ToString());
-                return tracking;
+                if (!UpdateGXASState())
+                    return true;
+                bool trk = _gxasState.Tracking;
+                LogMessage("Get Tracking", trk.ToString());
+                return trk;
             }
             set
             {
-                LogMessage("Tracking Set", "Not implemented");
-                throw new PropertyNotImplementedException("Tracking", true);
+                if (NativeInterop.TeenAstroAscom_EnableTracking(_nativeHandle, value ? 1 : 0) == 0)
+                {
+                    if (value)
+                        throw new InvalidValueException("Could not enable tracking");
+                    throw new InvalidOperationException("Could not disable tracking");
+                }
+                ConnectionStatusDate = DateTime.UtcNow;
+                LogMessage("Set Tracking", value.ToString());
             }
         }
 
@@ -1238,8 +1394,7 @@ namespace ASCOM.TeenAstro.Telescope
             }
             set
             {
-                LogMessage("TrackingRate Set", "Not implemented");
-                throw new PropertyNotImplementedException("TrackingRate", true);
+                ThrowPropertyNotImplemented("TrackingRate", true);
             }
         }
 
@@ -1252,10 +1407,10 @@ namespace ASCOM.TeenAstro.Telescope
             get
             {
                 ITrackingRates trackingRates = new TrackingRates();
-                LogMessage("TrackingRates", "Get - ");
+                LogMessage("TrackingRates", MsgGetPrefix);
                 foreach (DriveRates driveRate in trackingRates)
                 {
-                    LogMessage("TrackingRates", "Get - " + driveRate.ToString());
+                    LogMessage("TrackingRates", MsgGetPrefix + driveRate.ToString());
                 }
                 return trackingRates;
             }
@@ -1268,14 +1423,19 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                DateTime utcDate = DateTime.UtcNow;
-                LogMessage("UTCDate", "Get - " + String.Format("MM/dd/yy HH:mm:ss", utcDate));
-                return utcDate;
+                if (UpdateGXASState() && _gxasState.Valid)
+                    return _gxasState.GetUTCDate();
+                if (NativeInterop.TeenAstroAscom_GetUTCTimestamp(_nativeHandle, out double secs) == 0)
+                    throw new DriverException("Get UTCDate has failed");
+                return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(secs);
             }
             set
             {
-                LogMessage("UTCDate Set", "Not implemented");
-                throw new PropertyNotImplementedException("UTCDate", true);
+                long s = (long)(value - new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds;
+                if (NativeInterop.TeenAstroAscom_SetUTCTimestamp(_nativeHandle, s) == 0)
+                    throw new InvalidOperationException("Set UTCDate has failed");
+                ConnectionStatusDate = DateTime.UtcNow;
+                LogMessage("Set UTCDate", MsgDone);
             }
         }
 
@@ -1284,10 +1444,150 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static void Unpark()
         {
-            LogMessage("Unpark", "Not implemented");
-            throw new MethodNotImplementedException("Unpark");
+            if (NativeInterop.TeenAstroAscom_Unpark(_nativeHandle) == 0)
+                throw new InvalidOperationException("Unpark has failed");
+            ConnectionStatusDate = DateTime.UtcNow;
+            LogMessage("Unpark", MsgDone);
         }
 
+        #endregion
+
+        #region Helper methods for slew/sync
+        private static void DegtoDMS(double degf, ref int degi, ref int mini, ref int seci)
+        {
+            int tts = (int)Math.Round(Math.Floor(degf * 3600d + 0.5d));
+            degi = tts / 3600;
+            mini = (tts - degi * 3600) / 60;
+            seci = tts % 60;
+        }
+
+        private static string DegtoDDDMMSS(double value)
+        {
+            int d = 0, m = 0, s = 0;
+            DegtoDMS(value, ref d, ref m, ref s);
+            return d.ToString("000") + ":" + m.ToString("00") + ":" + s.ToString("00", CultureInfo.InvariantCulture);
+        }
+
+        private static string DegtoDDMMSS(double value)
+        {
+            int d = 0, m = 0, s = 0;
+            DegtoDMS(value, ref d, ref m, ref s);
+            return d.ToString("00") + ":" + m.ToString("00") + ":" + s.ToString("00", CultureInfo.InvariantCulture);
+        }
+
+        private static string DecToString(double value)
+        {
+            if (value < -90 || value > 90)
+                throw new InvalidValueException("DecToString", value.ToString(), "-90 to 90");
+            string sexa = utilities.DegreesToDMS(value, DmsSeparator, DmsSeparator, "");
+            if (!sexa.StartsWith("-"))
+                sexa = "+" + sexa;
+            return sexa;
+        }
+
+        private static string RaToString(double value)
+        {
+            if (value < 0 || value > 24)
+                throw new InvalidValueException("RaToString", value.ToString(), "0 to 24");
+            return utilities.HoursToHMS(value, DmsSeparator, DmsSeparator, "");
+        }
+
+        private static string AltToString(double value)
+        {
+            if (value < -30 || value > 90)
+                throw new InvalidValueException("AltToString", value.ToString(), "-30 to 90");
+            string sexa = utilities.DegreesToDMS(value, DmsSeparator, DmsSeparator, "");
+            if (!sexa.StartsWith("-"))
+                sexa = "+" + sexa;
+            return sexa;
+        }
+
+        private static string AzToString(double value)
+        {
+            if (value < 0 || value > 360)
+                throw new InvalidValueException("AzToString", value.ToString(), "0 to 360");
+            return DegtoDDDMMSS(value);
+        }
+
+        private static void SetAzAlt(double Azimuth, double Altitude)
+        {
+            if (NativeInterop.TeenAstroAscom_SetTargetAz(_nativeHandle, AzToString(Azimuth)) == 0)
+                throw new InvalidOperationException("Set azimuth failed");
+            if (NativeInterop.TeenAstroAscom_SetTargetAlt(_nativeHandle, AltToString(Altitude)) == 0)
+                throw new InvalidOperationException("Set altitude failed");
+        }
+
+        private static void CheckSlewRADEC()
+        {
+            if (tgtDec == -999 || tgtRa == -999)
+                throw new ValueNotSetException();
+            if (AtPark)
+                throw new ParkedException();
+            if (!Tracking)
+                throw new InvalidOperationException("Tracking must be on to slew");
+            while (Slewing) { AbortSlew(); System.Threading.Thread.Sleep(200); }
+            while (IsPulseGuiding) { AbortSlew(); System.Threading.Thread.Sleep(200); }
+        }
+
+        private static void CheckSlewAltAz()
+        {
+            if (AtPark)
+                throw new ParkedException();
+            while (Slewing) { AbortSlew(); System.Threading.Thread.Sleep(100); }
+        }
+
+        private static void DoSlew(bool async, bool altAz)
+        {
+            var buf = new byte[8];
+            int ok = altAz
+                ? NativeInterop.TeenAstroAscom_SlewToAltAz(_nativeHandle, buf, buf.Length)
+                : NativeInterop.TeenAstroAscom_SlewToEquatorial(_nativeHandle, buf, buf.Length);
+            if (ok == 0)
+                throw new DriverException("Telescope is not replying");
+            int len = Array.IndexOf(buf, (byte)0);
+            if (len < 0) len = buf.Length;
+            string state = System.Text.Encoding.ASCII.GetString(buf, 0, len);
+            if (string.IsNullOrEmpty(state))
+                throw new DriverException("Telescope reply is corrupt");
+            if (state.Length >= 1 && state[0] == '0')
+            {
+                ConnectionStatusDate = DateTime.UtcNow;
+                LogMessage("Slew", "Started");
+                if (!async)
+                {
+                    while (Slewing)
+                        System.Threading.Thread.Sleep(1000);
+                }
+            }
+            else if (state.Length >= 1)
+            {
+                ReportState(state);
+            }
+        }
+
+        private static void ReportState(string state)
+        {
+            int val = (int)state[0] - (int)'0';
+            switch (val)
+            {
+                case 1: throw new InvalidOperationException("Object below min altitude");
+                case 2: throw new ValueNotSetException();
+                case 3: throw new InvalidOperationException("Mount Cannot Flip here");
+                case 4: throw new ParkedException();
+                case 5: throw new InvalidOperationException("Telescope is Slewing");
+                case 6: throw new InvalidOperationException("Object is outside limits");
+                case 7: throw new InvalidOperationException("Telescope is Guiding");
+                case 8: throw new InvalidOperationException("Object above max altitude");
+                case 9:
+                case 11: throw new InvalidOperationException("Motor is fault");
+                case 12: throw new InvalidOperationException("Telescope is below horizon limit");
+                case 13: throw new InvalidOperationException("Limit Sensor");
+                case 14: throw new InvalidOperationException("Telescope is outside Axis 1 limit");
+                case 15: throw new InvalidOperationException("Telescope is outside Axis 2 limit");
+                case 16: throw new InvalidOperationException("Telescope is above overhead limit");
+                case 17: throw new InvalidOperationException("Telescope is outside meridian limit");
+            }
+        }
         #endregion
 
         #region Private properties and methods
@@ -1327,11 +1627,14 @@ namespace ASCOM.TeenAstro.Telescope
                 driverProfile.DeviceType = "Telescope";
                 tl.Enabled = Convert.ToBoolean(driverProfile.GetValue(DriverProgId, traceStateProfileName, string.Empty, traceStateDefault));
                 comPort = driverProfile.GetValue(DriverProgId, comPortProfileName, string.Empty, comPortDefault);
+                IP = driverProfile.GetValue(DriverProgId, IPProfileName, string.Empty, IPDefault);
+                Port = Convert.ToInt16(driverProfile.GetValue(DriverProgId, PortProfileName, string.Empty, PortDefault));
+                Interface = driverProfile.GetValue(DriverProgId, InterfaceProfileName, string.Empty, InterfaceDefault);
             }
         }
 
         /// <summary>
-        /// Write the device configuration to the  ASCOM  Profile store
+        /// Write the device configuration to the ASCOM Profile store
         /// </summary>
         internal static void WriteProfile()
         {
@@ -1340,6 +1643,9 @@ namespace ASCOM.TeenAstro.Telescope
                 driverProfile.DeviceType = "Telescope";
                 driverProfile.WriteValue(DriverProgId, traceStateProfileName, tl.Enabled.ToString());
                 driverProfile.WriteValue(DriverProgId, comPortProfileName, comPort.ToString());
+                driverProfile.WriteValue(DriverProgId, IPProfileName, IP.ToString());
+                driverProfile.WriteValue(DriverProgId, PortProfileName, Port.ToString());
+                driverProfile.WriteValue(DriverProgId, InterfaceProfileName, Interface.ToString());
             }
         }
 
@@ -1363,6 +1669,19 @@ namespace ASCOM.TeenAstro.Telescope
         {
             var msg = string.Format(message, args);
             LogMessage(identifier, msg);
+        }
+
+        private static void ThrowPropertyNotImplemented(string propertyName, bool isWrite)
+        {
+            string context = isWrite ? " Set" : " Get";
+            LogMessage(propertyName + context, MsgNotImplemented);
+            throw new PropertyNotImplementedException(propertyName, isWrite);
+        }
+
+        private static void ThrowMethodNotImplemented(string methodName)
+        {
+            LogMessage(methodName, MsgNotImplemented);
+            throw new MethodNotImplementedException(methodName);
         }
         #endregion
     }

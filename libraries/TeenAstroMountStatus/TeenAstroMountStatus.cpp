@@ -462,6 +462,8 @@ void TeenAstroMountStatus::invalidatePositionTimeCaches()
   m_ra.valid = m_dec.valid = m_alt.valid = m_az.valid = false;
   m_sidereal.valid = m_raT.valid = m_decT.valid = false;
   m_utc.valid = m_utcDate.valid = false;
+  m_raHours = m_decDeg = m_altDeg = m_azDeg = 0;
+  m_lstHours = m_targetRaHours = m_targetDecDeg = 0;
   strncpy(m_ra.data, "?", sizeof(m_ra.data) - 1);      m_ra.data[sizeof(m_ra.data) - 1] = '\0';
   strncpy(m_dec.data, "?", sizeof(m_dec.data) - 1);    m_dec.data[sizeof(m_dec.data) - 1] = '\0';
   strncpy(m_alt.data, "?", sizeof(m_alt.data) - 1);    m_alt.data[sizeof(m_alt.data) - 1] = '\0';
@@ -591,6 +593,9 @@ void TeenAstroMountStatus::updateAllState(bool force)
   float lst = pktF32(pkt, 28);
   float tRA = pktF32(pkt, 32);
   float tDec= pktF32(pkt, 36);
+
+  m_raHours = ra; m_decDeg = dec; m_altDeg = alt; m_azDeg = az;
+  m_lstHours = lst; m_targetRaHours = tRA; m_targetDecDeg = tDec;
 
   if (!safeFloat(ra))   { strncpy(m_ra.data, "?", sizeof(m_ra.data) - 1); m_ra.data[sizeof(m_ra.data) - 1] = '\0'; }
   else                  formatRaStr(ra,   m_ra.data,       sizeof(m_ra.data));

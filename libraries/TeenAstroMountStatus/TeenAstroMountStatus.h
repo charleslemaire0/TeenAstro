@@ -316,6 +316,15 @@ public:
   /// with the '#' terminator included, ready to forward to TCP clients.
   const char* getAllStateB64Cached() const { return m_allStateB64; }
 
+  /// Numeric position values from last updateAllState (for ASCOM/native DLL).
+  float getRaHoursCached() const       { return m_raHours; }
+  float getDecDegCached() const       { return m_decDeg; }
+  float getAltDegCached() const       { return m_altDeg; }
+  float getAzDegCached() const        { return m_azDeg; }
+  float getLstHoursCached() const     { return m_lstHours; }
+  float getTargetRaHoursCached() const { return m_targetRaHours; }
+  float getTargetDecDegCached() const  { return m_targetDecDeg; }
+
   long getTrackingRateRa()        { return m_trackRateRa; }
   long getTrackingRateDec()       { return m_trackRateDec; }
   long getStoredTrackingRateRa()  { return m_storedTrackRateRa; }
@@ -504,6 +513,9 @@ private:
   // Stores the 88-char base64 string + '#' + NUL (90 bytes total).
   char          m_allStateB64[96] = "";
   CacheTimer    m_timerAllState;
+  // Numeric position values from last successful updateAllState (for ASCOM)
+  float         m_raHours = 0, m_decDeg = 0, m_altDeg = 0, m_azDeg = 0;
+  float         m_lstHours = 0, m_targetRaHours = 0, m_targetDecDeg = 0;
   // Unpacked UTC components
   uint8_t       m_utcH = 0, m_utcM = 0, m_utcS = 0;
   uint8_t       m_utcMonth = 1, m_utcDay = 1, m_utcYear = 0;
