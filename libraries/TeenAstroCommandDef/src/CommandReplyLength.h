@@ -1,0 +1,166 @@
+/*
+ * CommandReplyLength.h - Generated from command_reply_lengths.json
+ * Do not edit manually. Run: python scripts/generate_reply_lengths.py
+ */
+#pragma once
+
+#include "CommandEnums.h"
+#include "CommandMeta.h"
+
+/// Expected reply payload length (chars before '#'). Returns -1 for variable length, 0 for no reply, 1 for short.
+inline int getExpectedReplyLength(const char* command)
+{
+  if (!command || command[0] != ':') return -1;
+  CMDREPLY r = getReplyType(command);
+  if (r == CMDR_NO) return 0;
+  if (r == CMDR_SHORT || r == CMDR_SHORT_BOOL) return 1;
+  if (r != CMDR_LONG) return -1;
+  // Fixed-length CMDR_LONG commands:
+
+  if (strcmp(command, ":AE#") == 0) return 16;
+  if (strcmp(command, ":CA#") == 0) return 4;
+  if (strcmp(command, ":CM#") == 0) return 4;
+  if (strcmp(command, ":CS#") == 0) return 4;
+  if (strcmp(command, ":CU#") == 0) return 4;
+  if (strcmp(command, ":D#") == 0) return 4;
+  if (strcmp(command, ":ED#") == 0) return 16;
+  if (strcmp(command, ":F?#") == 0) return 32;
+  if (strcmp(command, ":FA#") == 0) return 256;
+  if (strcmp(command, ":FV#") == 0) return 32;
+  if (strcmp(command, ":Fa#") == 0) return 16;
+  if (strcmp(command, ":F~#") == 0) return 128;
+  if (strcmp(command, ":G(#") == 0) return 16;
+  if (strcmp(command, ":G)#") == 0) return 16;
+  if (strcmp(command, ":GA#") == 0) return 16;
+  if (strcmp(command, ":GC#") == 0) return 8;
+  if (strcmp(command, ":GD#") == 0) return 16;
+  if (strcmp(command, ":GDL#") == 0) return 16;
+  if (strcmp(command, ":GG#") == 0) return 8;
+  if (strcmp(command, ":GL#") == 0) return 8;
+  if (strcmp(command, ":GM#") == 0) return 16;
+  if (strcmp(command, ":GN#") == 0) return 16;
+  if (strcmp(command, ":GO#") == 0) return 16;
+  if (strcmp(command, ":GR#") == 0) return 8;
+  if (strcmp(command, ":GRL#") == 0) return 16;
+  if (strcmp(command, ":GS#") == 0) return 8;
+  if (strcmp(command, ":GSL#") == 0) return 16;
+  if (strcmp(command, ":GT#") == 0) return 16;
+  if (strcmp(command, ":GVB#") == 0) return 4;
+  if (strcmp(command, ":GVD#") == 0) return 16;
+  if (strcmp(command, ":GVN#") == 0) return 16;
+  if (strcmp(command, ":GVP#") == 0) return 32;
+  if (strcmp(command, ":GVT#") == 0) return 16;
+  if (strcmp(command, ":GVb#") == 0) return 4;
+  if (strcmp(command, ":GW#") == 0) return 4;
+  if (strcmp(command, ":GXA0#") == 0) return 16;
+  if (strcmp(command, ":GXA1#") == 0) return 16;
+  if (strcmp(command, ":GXA2#") == 0) return 16;
+  if (strcmp(command, ":GXA3#") == 0) return 16;
+  if (strcmp(command, ":GXA4#") == 0) return 16;
+  if (strcmp(command, ":GXA5#") == 0) return 16;
+  if (strcmp(command, ":GXA6#") == 0) return 16;
+  if (strcmp(command, ":GXA7#") == 0) return 16;
+  if (strcmp(command, ":GXA8#") == 0) return 16;
+  if (strcmp(command, ":GXAS#") == 0) return 128;
+  if (strcmp(command, ":GXAa#") == 0) return 16;
+  if (strcmp(command, ":GXAw#") == 0) return 16;
+  if (strcmp(command, ":GXAz#") == 0) return 16;
+  if (strcmp(command, ":GXCS#") == 0) return 128;
+  if (strcmp(command, ":GXDP0#") == 0) return 16;
+  if (strcmp(command, ":GXDP1#") == 0) return 16;
+  if (strcmp(command, ":GXDP2#") == 0) return 16;
+  if (strcmp(command, ":GXDP3#") == 0) return 16;
+  if (strcmp(command, ":GXDP4#") == 0) return 16;
+  if (strcmp(command, ":GXDP5#") == 0) return 16;
+  if (strcmp(command, ":GXDP6#") == 0) return 16;
+  if (strcmp(command, ":GXDP7#") == 0) return 16;
+  if (strcmp(command, ":GXDR1#") == 0) return 16;
+  if (strcmp(command, ":GXDR2#") == 0) return 16;
+  if (strcmp(command, ":GXDR3#") == 0) return 16;
+  if (strcmp(command, ":GXDR4#") == 0) return 16;
+  if (strcmp(command, ":GXDR5#") == 0) return 16;
+  if (strcmp(command, ":GXDR6#") == 0) return 16;
+  if (strcmp(command, ":GXDW#") == 0) return 8;
+  if (strcmp(command, ":GXDW1#") == 0) return 16;
+  if (strcmp(command, ":GXE0#") == 0) return 16;
+  if (strcmp(command, ":GXE1#") == 0) return 16;
+  if (strcmp(command, ":GXE2#") == 0) return 16;
+  if (strcmp(command, ":GXEA#") == 0) return 16;
+  if (strcmp(command, ":GXED#") == 0) return 16;
+  if (strcmp(command, ":GXEO#") == 0) return 4;
+  if (strcmp(command, ":GXEPD#") == 0) return 16;
+  if (strcmp(command, ":GXEPR#") == 0) return 16;
+  if (strcmp(command, ":GXER#") == 0) return 8;
+  if (strcmp(command, ":GXEZ#") == 0) return 16;
+  if (strcmp(command, ":GXErD#") == 0) return 16;
+  if (strcmp(command, ":GXErR#") == 0) return 16;
+  if (strcmp(command, ":GXI#") == 0) return 32;
+  if (strcmp(command, ":GXLE#") == 0) return 16;
+  if (strcmp(command, ":GXLH#") == 0) return 8;
+  if (strcmp(command, ":GXLO#") == 0) return 8;
+  if (strcmp(command, ":GXLS#") == 0) return 8;
+  if (strcmp(command, ":GXLU#") == 0) return 16;
+  if (strcmp(command, ":GXLW#") == 0) return 16;
+  if (strcmp(command, ":GXMBD#") == 0) return 8;
+  if (strcmp(command, ":GXMBR#") == 0) return 8;
+  if (strcmp(command, ":GXMCD#") == 0) return 8;
+  if (strcmp(command, ":GXMCR#") == 0) return 8;
+  if (strcmp(command, ":GXMGD#") == 0) return 16;
+  if (strcmp(command, ":GXMGR#") == 0) return 16;
+  if (strcmp(command, ":GXMID#") == 0) return 8;
+  if (strcmp(command, ":GXMIR#") == 0) return 8;
+  if (strcmp(command, ":GXMLD#") == 0) return 8;
+  if (strcmp(command, ":GXMLR#") == 0) return 8;
+  if (strcmp(command, ":GXMMD#") == 0) return 8;
+  if (strcmp(command, ":GXMMR#") == 0) return 8;
+  if (strcmp(command, ":GXMRD#") == 0) return 4;
+  if (strcmp(command, ":GXMRR#") == 0) return 4;
+  if (strcmp(command, ":GXMSD#") == 0) return 8;
+  if (strcmp(command, ":GXMSR#") == 0) return 8;
+  if (strcmp(command, ":GXMcD#") == 0) return 8;
+  if (strcmp(command, ":GXMcR#") == 0) return 8;
+  if (strcmp(command, ":GXMmD#") == 0) return 8;
+  if (strcmp(command, ":GXMmR#") == 0) return 8;
+  if (strcmp(command, ":GXOA#") == 0) return 16;
+  if (strcmp(command, ":GXOB#") == 0) return 16;
+  if (strcmp(command, ":GXOC#") == 0) return 16;
+  if (strcmp(command, ":GXOI#") == 0) return 8;
+  if (strcmp(command, ":GXOS#") == 0) return 8;
+  if (strcmp(command, ":GXP1#") == 0) return 16;
+  if (strcmp(command, ":GXP2#") == 0) return 16;
+  if (strcmp(command, ":GXP3#") == 0) return 16;
+  if (strcmp(command, ":GXP4#") == 0) return 16;
+  if (strcmp(command, ":GXRA#") == 0) return 16;
+  if (strcmp(command, ":GXRB#") == 0) return 16;
+  if (strcmp(command, ":GXRD#") == 0) return 4;
+  if (strcmp(command, ":GXRX#") == 0) return 8;
+  if (strcmp(command, ":GXRd#") == 0) return 16;
+  if (strcmp(command, ":GXRe#") == 0) return 16;
+  if (strcmp(command, ":GXRf#") == 0) return 16;
+  if (strcmp(command, ":GXRr#") == 0) return 16;
+  if (strcmp(command, ":GXT0#") == 0) return 8;
+  if (strcmp(command, ":GXT1#") == 0) return 8;
+  if (strcmp(command, ":GXT2#") == 0) return 16;
+  if (strcmp(command, ":GXT3#") == 0) return 8;
+  if (strcmp(command, ":GXlX#") == 0) return 8;
+  if (strcmp(command, ":GXrg#") == 0) return 4;
+  if (strcmp(command, ":GXrp#") == 0) return 4;
+  if (strcmp(command, ":GXrt#") == 0) return 4;
+  if (strcmp(command, ":GZ#") == 0) return 16;
+  if (strcmp(command, ":Ga#") == 0) return 8;
+  if (strcmp(command, ":Gc#") == 0) return 4;
+  if (strcmp(command, ":Gd#") == 0) return 16;
+  if (strcmp(command, ":GdL#") == 0) return 16;
+  if (strcmp(command, ":Ge#") == 0) return 8;
+  if (strcmp(command, ":Gf#") == 0) return 16;
+  if (strcmp(command, ":Gg#") == 0) return 16;
+  if (strcmp(command, ":Gh#") == 0) return 8;
+  if (strcmp(command, ":Gm#") == 0) return 4;
+  if (strcmp(command, ":Gn#") == 0) return 16;
+  if (strcmp(command, ":Go#") == 0) return 8;
+  if (strcmp(command, ":Gr#") == 0) return 8;
+  if (strcmp(command, ":GrL#") == 0) return 16;
+  if (strcmp(command, ":Gt#") == 0) return 16;
+  if (strcmp(command, ":W?#") == 0) return 4;
+  return -1;
+}

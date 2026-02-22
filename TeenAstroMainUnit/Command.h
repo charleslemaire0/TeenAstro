@@ -83,3 +83,6 @@ void Command_U();      // U  Precision
 void Command_W();      // W  Site
 
 bool iSGNSSValid();
+
+/// Pad CMDR_LONG reply to expected length (leading blanks). Call after command handler runs.
+void padReplyToExpectedLength();

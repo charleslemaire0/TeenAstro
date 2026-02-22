@@ -98,6 +98,15 @@ bool LX200Client::sendReceive(const char* command, CMDREPLY replyType,
     }
     ok &= (recvBuffer[0] != 0);
     ok &= hashFound;
+    // Verify expected length for fixed-length commands.
+    // Accept short replies (MainUnit may not pad) to support older firmware.
+    if (ok && hashFound) {
+      int expectedLen = getExpectedReplyLength(command);
+      if (expectedLen > 0) {
+        int payloadLen = keepHashtag ? pos - 1 : pos;
+        if (payloadLen > expectedLen) ok = false;  // reject only if too long
+      }
+    }
     return ok;
   }
 
@@ -120,12 +129,33 @@ bool LX200Client::sendReceiveAuto(char* command, CMDREPLY& cmdreply,
   return sendReceive(command, cmdreply, recvBuffer, bufferSize, timeOutMs, keepHashtag);
 }
 
+// Trim leading/trailing spaces (for padded CMDR_LONG replies). Skip binary commands.
+static void trimReplyIfText(const char* command, char* output) {
+  if (!command || !output) return;
+  if (strcmp(command, ":GXAS#") == 0 || strcmp(command, ":GXCS#") == 0 ||
+      strcmp(command, ":FA#") == 0 || strcmp(command, ":Fa#") == 0)
+    return;  // Binary replies: do not trim
+  // Skip leading spaces
+  char* p = output;
+  while (*p == ' ') p++;
+  if (p != output) {
+    size_t len = strlen(p);
+    memmove(output, p, len + 1);
+  }
+  // Trim trailing spaces
+  char* end = output + strlen(output);
+  while (end > output && *(end - 1) == ' ') end--;
+  *end = '\0';
+}
+
 LX200RETURN LX200Client::get(const char* command, char* output, int bufferSize)
 {
   CMDREPLY cmdreply = getReplyType(command);
   bool ok = sendReceive(command, cmdreply, output, bufferSize, m_timeout);
-  if (ok)
+  if (ok) {
+    trimReplyIfText(command, output);
     return LX200_VALUEGET;
+  }
   return cmdreply == CMDR_INVALID ? LX200_INVALIDCOMMAND : LX200_GETVALUEFAILED;
 }
 
@@ -240,6 +270,24 @@ LX200RETURN LX200Client::getSiderealStr(char* out, int len)  { return get(":GS#"
 
 LX200RETURN LX200Client::getMountStateRaw(char* out, int len) { return get(":GXI#", out, len); }
 LX200RETURN LX200Client::getFocuserStatus(char* out, int len) { return get(":F?#", out, len); }
+
+LX200RETURN LX200Client::getFocuserAllConfig(char* out, int len)
+{
+  unsigned long saved = m_timeout;
+  m_timeout = LX200_FOCUSER_TIMEOUT;
+  LX200RETURN ret = get(":FA#", out, len);
+  m_timeout = saved;
+  return ret;
+}
+
+LX200RETURN LX200Client::getFocuserAllState(char* out, int len)
+{
+  unsigned long saved = m_timeout;
+  m_timeout = LX200_FOCUSER_TIMEOUT;
+  LX200RETURN ret = get(":Fa#", out, len);
+  m_timeout = saved;
+  return ret;
+}
 
 // ===========================================================================
 //  Tracking rates (typed)
@@ -1328,7 +1376,7 @@ LX200RETURN LX200Client::readPulsePerDegree(const uint8_t& axis, float& ppd)
 LX200RETURN LX200Client::writePulsePerDegree(const uint8_t& axis, const float& ppd)
 {
   char cmd[LX200_SBUF];
-  sprintf(cmd, ":SXEPX,%u#", (unsigned long)(ppd));
+  sprintf(cmd, ":SXEPX,%lu#", (unsigned long)(ppd));
   cmd[5] = axisChar(axis);
   return set(cmd);
 }
@@ -1371,27 +1419,62 @@ LX200RETURN LX200Client::writeEncoderAutoSync(const uint8_t syncmode)
 //  Focuser
 // ===========================================================================
 
+#define FOC_BIN_CONFIG_LEN 150
+#define FOC_B64_CONFIG_LEN 200
+
+static const int8_t FOC_B64DEC[128] = {
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
+  52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,
+  -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
+  15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,
+  -1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
+  41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1
+};
+
+static bool focB64Decode(const char* in, int inLen, uint8_t* out)
+{
+  if (inLen <= 0 || inLen % 4 != 0) return false;
+  int o = 0;
+  for (int i = 0; i < inLen; i += 4)
+  {
+    uint8_t c0 = (uint8_t)in[i], c1 = (uint8_t)in[i+1], c2 = (uint8_t)in[i+2], c3 = (uint8_t)in[i+3];
+    if (c0 > 127 || c1 > 127 || c2 > 127 || c3 > 127) return false;
+    int8_t v0 = FOC_B64DEC[c0], v1 = FOC_B64DEC[c1], v2 = FOC_B64DEC[c2], v3 = FOC_B64DEC[c3];
+    if (v0 < 0 || v1 < 0 || v2 < 0 || v3 < 0) return false;
+    uint32_t b = ((uint32_t)v0 << 18) | ((uint32_t)v1 << 12) | ((uint32_t)v2 << 6) | (uint32_t)v3;
+    out[o++] = (uint8_t)(b >> 16);
+    out[o++] = (uint8_t)(b >> 8);
+    out[o++] = (uint8_t)(b);
+  }
+  return true;
+}
+
+static uint16_t getU16LE(const uint8_t* p, int off) { return (uint16_t)p[off] | ((uint16_t)p[off+1] << 8); }
+
 LX200RETURN LX200Client::readFocuserConfig(unsigned int& startPosition, unsigned int& maxPosition,
                                             unsigned int& minSpeed, unsigned int& maxSpeed,
                                             unsigned int& cmdAcc, unsigned int& manAcc,
                                             unsigned int& manDec)
 {
-  char out[LX200_LBUF];
-  // retry up to 3 times
-  if (get(":F~#", out, sizeof(out)) == LX200_GETVALUEFAILED)
-    if (get(":F~#", out, sizeof(out)) == LX200_GETVALUEFAILED)
-      if (get(":F~#", out, sizeof(out)) == LX200_GETVALUEFAILED)
-        return LX200_GETVALUEFAILED;
-  if (strlen(out) != 32)
-    return LX200_GETVALUEFAILED;
-  char* pEnd;
-  startPosition = (unsigned int)strtol(&out[1], &pEnd, 10);
-  maxPosition   = (unsigned int)strtol(&out[7], &pEnd, 10);
-  minSpeed      = (unsigned int)strtol(&out[13], &pEnd, 10);
-  maxSpeed      = (unsigned int)strtol(&out[17], &pEnd, 10);
-  cmdAcc        = (unsigned int)strtol(&out[21], &pEnd, 10);
-  manAcc        = (unsigned int)strtol(&out[25], &pEnd, 10);
-  manDec        = (unsigned int)strtol(&out[29], &pEnd, 10);
+  char raw[220];
+  if (getFocuserAllConfig(raw, sizeof(raw)) != LX200_VALUEGET) return LX200_GETVALUEFAILED;
+  int len = (int)strlen(raw);
+  if (raw[len - 1] == '#') len--;
+  if (len != FOC_B64_CONFIG_LEN) return LX200_GETVALUEFAILED;
+  uint8_t pkt[FOC_BIN_CONFIG_LEN];
+  if (!focB64Decode(raw, len, pkt)) return LX200_GETVALUEFAILED;
+  uint8_t xorChk = 0;
+  for (int i = 0; i < FOC_BIN_CONFIG_LEN - 1; i++) xorChk ^= pkt[i];
+  if (xorChk != pkt[FOC_BIN_CONFIG_LEN - 1]) return LX200_GETVALUEFAILED;
+  startPosition = getU16LE(pkt, 0);
+  maxPosition   = getU16LE(pkt, 2);
+  minSpeed      = getU16LE(pkt, 4);
+  maxSpeed      = getU16LE(pkt, 6);
+  cmdAcc        = pkt[8];
+  manAcc        = pkt[9];
+  manDec        = pkt[10];
   return LX200_VALUEGET;
 }
 
@@ -1399,18 +1482,20 @@ LX200RETURN LX200Client::readFocuserMotor(bool& reverse, unsigned int& micro,
                                            unsigned int& incr, unsigned int& curr,
                                            unsigned int& steprot)
 {
-  char out[LX200_LBUF];
-  if (get(":FM#", out, sizeof(out)) == LX200_GETVALUEFAILED)
-    if (get(":FM#", out, sizeof(out)) == LX200_GETVALUEFAILED)
-      if (get(":FM#", out, sizeof(out)) == LX200_GETVALUEFAILED)
-        return LX200_GETVALUEFAILED;
-  if (strlen(out) != 16)
-    return LX200_GETVALUEFAILED;
-  char* pEnd;
-  reverse = (out[1] == '1');
-  micro   = out[3] - '0';
-  incr    = (unsigned int)strtol(&out[5], &pEnd, 10);
-  curr    = (unsigned int)strtol(&out[9], &pEnd, 10);
-  steprot = (unsigned int)strtol(&out[13], &pEnd, 10);
+  char raw[220];
+  if (getFocuserAllConfig(raw, sizeof(raw)) != LX200_VALUEGET) return LX200_GETVALUEFAILED;
+  int len = (int)strlen(raw);
+  if (raw[len - 1] == '#') len--;
+  if (len != FOC_B64_CONFIG_LEN) return LX200_GETVALUEFAILED;
+  uint8_t pkt[FOC_BIN_CONFIG_LEN];
+  if (!focB64Decode(raw, len, pkt)) return LX200_GETVALUEFAILED;
+  uint8_t xorChk = 0;
+  for (int i = 0; i < FOC_BIN_CONFIG_LEN - 1; i++) xorChk ^= pkt[i];
+  if (xorChk != pkt[FOC_BIN_CONFIG_LEN - 1]) return LX200_GETVALUEFAILED;
+  reverse = (pkt[11] != 0);
+  micro   = pkt[12];
+  incr    = getU16LE(pkt, 13);
+  curr    = pkt[15];
+  steprot = getU16LE(pkt, 16);
   return LX200_VALUEGET;
 }

@@ -165,6 +165,19 @@ static void prepareGetLong(const char* value) {
     mockStream.loadResponse(buf);
 }
 
+// Helper: prepare mock for a get command with fixed-length reply (pad value with leading spaces)
+static void prepareGetLongPadded(const char* value, int expectedLen) {
+    char buf[256];
+    int len = (int)strlen(value);
+    int pad = expectedLen - len;
+    if (pad < 0) pad = 0;
+    int i = 0;
+    for (; i < pad; i++) buf[i] = ' ';
+    strcpy(buf + i, value);
+    strcat(buf, "#");
+    mockStream.loadResponse(buf);
+}
+
 // Helper: prepare for set(ok) then get(long value)
 static void prepareSetThenGet(const char* getValue) {
     prepareSetOk();
@@ -303,11 +316,25 @@ void test_align_select_star_3_sends_A3(void) {
 }
 
 void test_reply_long(void) {
-    prepareGetLong("TeenAstro");
-    char out[32];
+    prepareGetLongPadded("TeenAstro", 32);  // :GVP# expects 32 (aligned power of 2)
+    char out[64];  // buffer must be > expected length (32) for null terminator
     LX200RETURN ret = client->getProductName(out, sizeof(out));
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
     TEST_ASSERT_EQUAL_STRING("TeenAstro", out);
+}
+
+void test_reply_long_accepts_short_product_board_driver(void) {
+    // Short replies (no padding) must be accepted for older MainUnit firmware
+    char out[32];
+    prepareGetLong("TeenAstro");  // 9 chars, GVP expects 20
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getProductName(out, sizeof(out)));
+    TEST_ASSERT_EQUAL_STRING("TeenAstro", out);
+    prepareGetLong("240");  // 3 chars, GVB expects 4
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getBoardVersion(out, sizeof(out)));
+    TEST_ASSERT_EQUAL_STRING("240", out);
+    prepareGetLong("3");  // 1 char, GVb expects 4
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getDriverType(out, sizeof(out)));
+    TEST_ASSERT_EQUAL_STRING("3", out);
 }
 
 void test_timeout_returns_failure(void) {
@@ -381,7 +408,7 @@ void test_set_get_elevation(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("+130");
+    prepareGetLongPadded("+130", 6);  // :Ge# expects 6 chars
     char out[20];
     ret = client->getElevation(out, sizeof(out));
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -394,7 +421,7 @@ void test_set_get_timezone(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("-05.0");
+    prepareGetLongPadded("-05.0", 7);  // :GG# expects 7 chars
     char out[20];
     ret = client->getTimeZoneStr(out, sizeof(out));
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -409,7 +436,7 @@ void test_set_get_selected_site(void) {
     TEST_ASSERT_EQUAL_STRING(":W2#", mockStream.getSent());
 
     mockStream.clearSent();
-    prepareGetLong("2");
+    prepareGetLongPadded("2", 2);  // :W?# expects 2 chars
     ret = client->getSite(val);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
     TEST_ASSERT_EQUAL(2, val);
@@ -422,7 +449,7 @@ void test_set_get_mount_idx(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("1");
+    prepareGetLongPadded("1", 6);  // :GXOI# expects 6 chars
     ret = client->getMountIdx(idx);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
     TEST_ASSERT_EQUAL(1, idx);
@@ -434,7 +461,7 @@ void test_set_get_mount_description(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("MyScope");
+    prepareGetLongPadded("MyScope", 16);  // :GXOA# expects 16 chars
     char out[32];
     ret = client->getMountDescription(out, sizeof(out));
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -485,7 +512,7 @@ void test_set_get_acceleration(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("5");
+    prepareGetLongPadded("5", 12);  // :GXRA# expects 12 chars
     float val = 0;
     ret = client->getAcceleration(val);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -498,7 +525,7 @@ void test_set_get_max_rate(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("800");
+    prepareGetLongPadded("800", 6);  // :GXRX# expects 6 chars
     int val = 0;
     ret = client->getMaxRate(val);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -537,7 +564,7 @@ void test_set_get_stored_track_rate_ra(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("15041");
+    prepareGetLongPadded("15041", 12);  // :GXRe# expects 12 chars
     long val = 0;
     ret = client->getStoredTrackRateRA(val);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -550,7 +577,7 @@ void test_set_get_stored_track_rate_dec(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("100");
+    prepareGetLongPadded("100", 12);  // :GXRf# expects 12 chars
     long val = 0;
     ret = client->getStoredTrackRateDec(val);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -567,7 +594,7 @@ void test_set_get_min_altitude(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("-10");
+    prepareGetLongPadded("-10", 5);  // :GXLH# expects 5 chars
     int val = 0;
     ret = client->getMinAltitude(val);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -580,7 +607,7 @@ void test_set_get_max_altitude(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("85");
+    prepareGetLongPadded("85", 5);  // :GXLO# expects 5 chars
     int val = 0;
     ret = client->getMaxAltitude(val);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -593,7 +620,7 @@ void test_set_get_min_dist_from_pole(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("5");
+    prepareGetLongPadded("5", 5);  // :GXLS# expects 5 chars
     int val = 0;
     ret = client->getMinDistFromPole(val);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -606,7 +633,7 @@ void test_set_get_limit_east(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("120");
+    prepareGetLongPadded("120", 12);  // :GXLE# expects 12 chars
     char out[20];
     ret = client->getLimitEast(out, sizeof(out));
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -619,7 +646,7 @@ void test_set_get_limit_west(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("120");
+    prepareGetLongPadded("120", 12);  // :GXLW# expects 12 chars
     char out[20];
     ret = client->getLimitWest(out, sizeof(out));
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -632,7 +659,7 @@ void test_set_get_steps_per_second(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("500");
+    prepareGetLongPadded("500", 6);  // :GXOS# expects 6 chars
     char out[20];
     ret = client->getStepsPerSecond(out, sizeof(out));
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -649,7 +676,7 @@ void test_set_get_refraction_on(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("y");
+    prepareGetLongPadded("y", 2);  // :GXrt# expects 2 chars
     char out[8];
     ret = client->getRefractionEnabled(out, sizeof(out));
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -662,7 +689,7 @@ void test_set_get_refraction_off(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("n");
+    prepareGetLongPadded("n", 2);  // :GXrt# expects 2 chars
     char out[8];
     ret = client->getRefractionEnabled(out, sizeof(out));
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -675,7 +702,7 @@ void test_set_get_polar_align(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("y");
+    prepareGetLongPadded("y", 2);  // :GXrp# expects 2 chars
     char out[8];
     ret = client->getPolarAlignEnabled(out, sizeof(out));
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -688,7 +715,7 @@ void test_set_get_goto_enabled(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("y");
+    prepareGetLongPadded("y", 2);  // :GXrg# expects 2 chars
     char out[8];
     ret = client->getGoToEnabled(out, sizeof(out));
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -707,7 +734,7 @@ void test_write_read_reverse_axis1(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("1");
+    prepareGetLongPadded("1", 2);  // :GXMRR# expects 2 chars
     bool readVal = false;
     ret = client->readReverse(axis, readVal);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -722,7 +749,7 @@ void test_write_read_reverse_axis2(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("0");
+    prepareGetLongPadded("0", 2);  // :GXMRD# expects 2 chars
     bool readVal = true;
     ret = client->readReverse(axis, readVal);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -737,7 +764,7 @@ void test_write_read_backlash_axis1(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("120");
+    prepareGetLongPadded("120", 6);  // :GXMBR# expects 6 chars
     float readVal = 0;
     ret = client->readBacklash(axis, readVal);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -768,7 +795,7 @@ void test_write_read_tot_gear_axis1(void) {
 
     mockStream.clearSent();
     // Wire format: gear * 1000 = 360000
-    prepareGetLong("360000");
+    prepareGetLongPadded("360000", 12);  // :GXMGR# expects 12 chars
     float readVal = 0;
     ret = client->readTotGear(axis, readVal);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -783,7 +810,7 @@ void test_write_read_step_per_rot_axis1(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("200");
+    prepareGetLongPadded("200", 6);  // :GXMSR# expects 6 chars
     float readVal = 0;
     ret = client->readStepPerRot(axis, readVal);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -798,7 +825,7 @@ void test_write_read_micro_axis1(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("4");
+    prepareGetLongPadded("4", 6);  // :GXMMR# expects 6 chars
     uint8_t readVal = 0;
     ret = client->readMicro(axis, readVal);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -813,7 +840,7 @@ void test_write_read_silent_step_axis1(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("1");
+    prepareGetLongPadded("1", 6);  // :GXMmR# expects 6 chars
     uint8_t readVal = 0;
     ret = client->readSilentStep(axis, readVal);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -828,7 +855,7 @@ void test_write_read_low_curr_axis1(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("400");
+    prepareGetLongPadded("400", 6);  // :GXMIR# expects 6 chars
     unsigned int readVal = 0;
     ret = client->readLowCurr(axis, readVal);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -843,7 +870,7 @@ void test_write_read_high_curr_axis1(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("1200");
+    prepareGetLongPadded("1200", 6);  // :GXMCR# expects 6 chars
     unsigned int readVal = 0;
     ret = client->readHighCurr(axis, readVal);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -860,7 +887,7 @@ void test_write_read_motor_axis2(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("80");
+    prepareGetLongPadded("80", 6);  // :GXMBD# expects 6 chars
     float readVal = 0;
     ret = client->readBacklash(axis, readVal);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -875,7 +902,7 @@ void test_write_read_high_curr_axis2(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("1800");
+    prepareGetLongPadded("1800", 6);  // :GXMCD# expects 6 chars
     unsigned int readVal = 0;
     ret = client->readHighCurr(axis, readVal);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -894,7 +921,7 @@ void test_write_read_encoder_reverse_axis1(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("1");
+    prepareGetLongPadded("1", 12);  // :GXErR# expects 12 chars
     bool readVal = false;
     ret = client->readEncoderReverse(axis, readVal);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -909,7 +936,7 @@ void test_write_read_pulse_per_degree_axis1(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("1000");
+    prepareGetLongPadded("1000", 12);  // :GXEPR# expects 12 chars
     float readVal = 0;
     ret = client->readPulsePerDegree(axis, readVal);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -922,7 +949,7 @@ void test_write_read_encoder_auto_sync(void) {
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
 
     mockStream.clearSent();
-    prepareGetLong("3");
+    prepareGetLongPadded("3", 4);  // :GXEO# expects 4 chars
     uint8_t readVal = 0;
     ret = client->readEncoderAutoSync(readVal);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
@@ -1832,6 +1859,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_align_select_star_2_sends_A2);
     RUN_TEST(test_align_select_star_3_sends_A3);
     RUN_TEST(test_reply_long);
+    RUN_TEST(test_reply_long_accepts_short_product_board_driver);
     RUN_TEST(test_timeout_returns_failure);
 
     // 2. Location / Site
