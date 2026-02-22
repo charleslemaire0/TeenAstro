@@ -1,6 +1,0 @@
-<Solution>
-  <Project Path="TeenAstroASCOM_V71/TeenAstroASCOM_V71.csproj" Id="c708e487-e3a9-4073-a545-294b88674225" />
-  <Project Path="TeenAstroASCOM_V71_consoleTest/TeenAstroASCOM_V71_consoleTest.csproj" Id="d5207217-61c7-4e94-8097-91dbace57d2a">
-    <Platform Project="x86" />
-  </Project>
-</Solution>
