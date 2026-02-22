@@ -69,7 +69,7 @@ namespace ASCOM.TeenAstro.Telescope
         internal static short Port;
         internal static string Interface;
         internal static System.Net.IPAddress objectIP;
-        private static IntPtr _nativeHandle = IntPtr.Zero;
+        private static TeenAstroConnection _connection;
         private static bool connectedState;
         private static bool runOnce = false;
         internal static Util utilities;
@@ -202,31 +202,26 @@ namespace ASCOM.TeenAstro.Telescope
 
         private static bool NativeCommandBlind(string command, bool raw)
         {
-            return NativeInterop.TeenAstroAscom_CommandBlind(_nativeHandle, command, raw ? 1 : 0) != 0;
+            return _connection.CommandBlind(command, raw);
         }
 
         private static bool NativeCommandBool(string command, bool raw)
         {
-            return NativeInterop.TeenAstroAscom_CommandBool(_nativeHandle, command, raw ? 1 : 0) != 0;
+            return _connection.CommandBool(command, raw);
         }
 
         private static string NativeCommandString(string command, bool raw)
         {
-            var buf = new byte[256];
-            if (NativeInterop.TeenAstroAscom_CommandString(_nativeHandle, command, raw ? 1 : 0, buf, buf.Length) == 0)
-                return null;
-            int len = Array.IndexOf(buf, (byte)0);
-            if (len < 0) len = buf.Length;
-            return System.Text.Encoding.ASCII.GetString(buf, 0, len);
+            return _connection.CommandString(command, raw);
         }
 
         private static void CloseNative()
         {
             connectedState = false;
-            if (_nativeHandle != IntPtr.Zero)
+            if (_connection != null)
             {
-                try { NativeInterop.TeenAstroAscom_Disconnect(_nativeHandle); } catch { }
-                _nativeHandle = IntPtr.Zero;
+                try { _connection.Disconnect(); } catch { }
+                _connection = null;
             }
         }
 
@@ -235,12 +230,15 @@ namespace ASCOM.TeenAstro.Telescope
             if (value)
             {
                 LogMessage("Connected Set", "Connecting to port " + comPort);
-                _nativeHandle = NativeInterop.TeenAstroAscom_ConnectSerial(comPort);
-                if (_nativeHandle == IntPtr.Zero)
+                _connection = new TeenAstroConnection();
+                if (!_connection.ConnectSerial(comPort))
+                {
+                    _connection = null;
                     throw new DriverException("Failed to connect to " + comPort);
+                }
                 connectedState = true;
                 ConnectionStatusDate = DateTime.UtcNow;
-                try { HasMotors = NativeInterop.TeenAstroAscom_HasMotors(_nativeHandle) != 0; }
+                try { HasMotors = _connection.HasMotors(); }
                 catch (Exception ex) { CloseNative(); throw new DriverException(ex.Message); }
             }
             else
@@ -256,17 +254,19 @@ namespace ASCOM.TeenAstro.Telescope
             {
                 if (!System.Net.IPAddress.TryParse(IP, out objectIP))
                 {
-                    // Do not show UI here; callers expect exceptions for invalid configuration.
                     LogMessage("ConnectIP", IP + MsgInvalidIP);
                     throw new InvalidValueException(IP + MsgInvalidIP);
                 }
                 LogMessage("Connected Set", "Connecting to " + IP + ":" + Port);
-                _nativeHandle = NativeInterop.TeenAstroAscom_ConnectTcp(IP, Port);
-                if (_nativeHandle == IntPtr.Zero)
+                _connection = new TeenAstroConnection();
+                if (!_connection.ConnectTcp(IP, Port))
+                {
+                    _connection = null;
                     throw new InvalidValueException(MsgConnectionFailed);
+                }
                 connectedState = true;
                 ConnectionStatusDate = DateTime.UtcNow;
-                try { HasMotors = NativeInterop.TeenAstroAscom_HasMotors(_nativeHandle) != 0; }
+                try { HasMotors = _connection.HasMotors(); }
                 catch (Exception ex) { connectedState = false; throw new DriverException(ex.Message); }
                 DateTime timeTelescope = _gxasState != null && _gxasState.Valid ? _gxasState.GetUTCDate() : DateTime.UtcNow;
                 if (Math.Abs((timeTelescope - DateTime.UtcNow).TotalSeconds) > 2d)
@@ -281,11 +281,10 @@ namespace ASCOM.TeenAstro.Telescope
 
         private static bool UpdateGXASState()
         {
-            if (_nativeHandle == IntPtr.Zero) return false;
+            if (_connection == null || !_connection.IsConnected) return false;
             if (!_gxasStopwatch.IsRunning || _gxasStopwatch.ElapsedMilliseconds > 100)
             {
-                NativeInterop.GXASState state;
-                if (NativeInterop.TeenAstroAscom_GetMountState(_nativeHandle, out state) != 0 && state.valid != 0)
+                if (_connection.GetMountState(out GXASState state) && state.Valid != 0)
                 {
                     _gxasState = new GXASStateWrapper(state);
                     _gxasStopwatch.Restart();
@@ -332,9 +331,9 @@ namespace ASCOM.TeenAstro.Telescope
         public static bool CommandBool(string command, bool raw)
         {
             CheckConnected("CommandBool");
-            int r = NativeInterop.TeenAstroAscom_CommandBool(_nativeHandle, command, raw ? 1 : 0);
+            bool r = _connection.CommandBool(command, raw);
             ConnectionStatusDate = DateTime.UtcNow;
-            return r != 0;
+            return r;
         }
 
         /// <summary>
@@ -570,7 +569,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static void AbortSlew()
         {
-            if (NativeInterop.TeenAstroAscom_AbortSlew(_nativeHandle) == 0)
+            if (!_connection.AbortSlew())
                 throw new NotConnectedException("AbortSlew has failed");
             ConnectionStatusDate = DateTime.UtcNow;
             LogMessage("AbortSlew", MsgDone);
@@ -689,7 +688,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanFindHome
         {
-            get { return NativeInterop.TeenAstroAscom_HasSite(_nativeHandle) != 0 && HasMotors; }
+            get { return _connection != null && _connection.IsConnected && _connection.HasSite() && HasMotors; }
         }
 
         /// <summary>
@@ -711,7 +710,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanPark
         {
-            get { return NativeInterop.TeenAstroAscom_HasSite(_nativeHandle) != 0 && HasMotors; }
+            get { return _connection != null && _connection.IsConnected && _connection.HasSite() && HasMotors; }
         }
 
         /// <summary>
@@ -743,7 +742,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanSetPark
         {
-            get { return NativeInterop.TeenAstroAscom_HasSite(_nativeHandle) != 0 && HasMotors; }
+            get { return _connection != null && _connection.IsConnected && _connection.HasSite() && HasMotors; }
         }
 
         /// <summary>
@@ -823,7 +822,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static bool CanUnpark
         {
-            get { return NativeInterop.TeenAstroAscom_HasSite(_nativeHandle) != 0 && HasMotors; }
+            get { return _connection != null && _connection.IsConnected && _connection.HasSite() && HasMotors; }
         }
 
         /// <summary>
@@ -971,13 +970,13 @@ namespace ASCOM.TeenAstro.Telescope
         {
             if (Math.Abs(Rate) < 1e-6)
             {
-                NativeInterop.TeenAstroAscom_AbortSlew(_nativeHandle);
+                _connection.AbortSlew();
                 ConnectionStatusDate = DateTime.UtcNow;
                 return;
             }
             int axis = (Axis == TelescopeAxes.axisPrimary) ? 0 : 1;
             double rateArcsec = Rate * 3600.0; // deg/sec to arcsec/sec
-            if (NativeInterop.TeenAstroAscom_MoveAxis(_nativeHandle, axis, rateArcsec) == 0)
+            if (!_connection.MoveAxis(axis, rateArcsec))
                 throw new NotConnectedException("MoveAxis has failed");
             ConnectionStatusDate = DateTime.UtcNow;
             LogMessage("MoveAxis", Axis + " " + Rate.ToString(CultureInfo.InvariantCulture));
@@ -989,7 +988,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static void Park()
         {
-            if (NativeInterop.TeenAstroAscom_Park(_nativeHandle) == 0)
+            if (!_connection.Park())
                 throw new InvalidOperationException("Park has failed");
             ConnectionStatusDate = DateTime.UtcNow;
             LogMessage("Park", MsgDone);
@@ -1012,7 +1011,7 @@ namespace ASCOM.TeenAstro.Telescope
                 case GuideDirections.guideWest: dir = 3; break;
                 default: throw new InvalidValueException("PulseGuide", Direction.ToString(), "Invalid direction");
             }
-            if (NativeInterop.TeenAstroAscom_PulseGuide(_nativeHandle, dir, Duration) == 0)
+            if (!_connection.PulseGuide(dir, Duration))
                 throw new NotConnectedException("PulseGuide has failed");
             ConnectionStatusDate = DateTime.UtcNow;
             LogMessage("PulseGuide", Direction + " " + (Duration / 1000.0).ToString("0.000", CultureInfo.InvariantCulture) + "s");
@@ -1056,7 +1055,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static void SetPark()
         {
-            if (NativeInterop.TeenAstroAscom_SetPark(_nativeHandle) == 0)
+            if (!_connection.SetPark())
                 throw new InvalidOperationException("SetPark has failed");
             ConnectionStatusDate = DateTime.UtcNow;
             LogMessage("SetPark", MsgDone);
@@ -1129,7 +1128,7 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                if (NativeInterop.TeenAstroAscom_GetSiteLatitude(_nativeHandle, out double lat) == 0)
+                if (!_connection.GetSiteLatitude(out double lat))
                     throw new DriverException("get SiteLatitude has failed");
                 return lat;
             }
@@ -1137,7 +1136,7 @@ namespace ASCOM.TeenAstro.Telescope
             {
                 string sg = value >= 0 ? "+" : "-";
                 string latStr = sg + DegtoDDMMSS(Math.Abs(value));
-                if (NativeInterop.TeenAstroAscom_SetSiteLatitude(_nativeHandle, latStr) == 0)
+                if (!_connection.SetSiteLatitude(latStr))
                     throw new InvalidOperationException("Set SiteLatitude failed");
             }
         }
@@ -1149,7 +1148,7 @@ namespace ASCOM.TeenAstro.Telescope
         {
             get
             {
-                if (NativeInterop.TeenAstroAscom_GetSiteLongitude(_nativeHandle, out double lg) == 0)
+                if (!_connection.GetSiteLongitude(out double lg))
                     throw new DriverException("get SiteLongitude has failed");
                 return lg * -1;
             }
@@ -1157,7 +1156,7 @@ namespace ASCOM.TeenAstro.Telescope
             {
                 string sg = value >= 0 ? "+" : "-";
                 string lonStr = sg + DegtoDDDMMSS(Math.Abs(value));
-                if (NativeInterop.TeenAstroAscom_SetSiteLongitude(_nativeHandle, lonStr) == 0)
+                if (!_connection.SetSiteLongitude(lonStr))
                     throw new InvalidOperationException("Set SiteLongitude failed");
             }
         }
@@ -1273,7 +1272,7 @@ namespace ASCOM.TeenAstro.Telescope
         internal static void SyncToAltAz(double Azimuth, double Altitude)
         {
             SetAzAlt(Azimuth, Altitude);
-            if (NativeInterop.TeenAstroAscom_SyncToAltAz(_nativeHandle) == 0)
+            if (!_connection.SyncToAltAz())
                 throw new InvalidOperationException("SyncToAltAz has failed");
             ConnectionStatusDate = DateTime.UtcNow;
             LogMessage("SyncToAltAz", MsgDone);
@@ -1299,7 +1298,7 @@ namespace ASCOM.TeenAstro.Telescope
                 throw new ParkedException();
             if (CanSetTracking && !Tracking)
                 throw new InvalidOperationException("Tracking must be on to sync");
-            if (NativeInterop.TeenAstroAscom_SyncToEquatorial(_nativeHandle) == 0)
+            if (!_connection.SyncToEquatorial())
                 throw new InvalidOperationException("SyncToTarget has failed");
             ConnectionStatusDate = DateTime.UtcNow;
             LogMessage("SyncToTarget", MsgDone);
@@ -1324,7 +1323,7 @@ namespace ASCOM.TeenAstro.Telescope
                 LogMessage("Set TargetDeclination", value.ToString(CultureInfo.InvariantCulture));
                 if (value < -90 || value > 90)
                     throw new InvalidValueException("TargetDeclination", value.ToString(), "-90 to 90");
-                if (NativeInterop.TeenAstroAscom_SetTargetDec(_nativeHandle, value) == 0)
+                if (!_connection.SetTargetDec(value))
                     throw new InvalidOperationException("Set Target Declination has failed");
                 tgtDec = value;
             }
@@ -1349,7 +1348,7 @@ namespace ASCOM.TeenAstro.Telescope
                 LogMessage("Set TargetRightAscension", value.ToString(CultureInfo.InvariantCulture));
                 if (value < 0 || value > 24)
                     throw new InvalidValueException("TargetRightAscension", value.ToString(), "0 to 24");
-                if (NativeInterop.TeenAstroAscom_SetTargetRA(_nativeHandle, value) == 0)
+                if (!_connection.SetTargetRA(value))
                     throw new InvalidOperationException("Set Target RightAscension has failed");
                 tgtRa = value;
             }
@@ -1370,7 +1369,7 @@ namespace ASCOM.TeenAstro.Telescope
             }
             set
             {
-                if (NativeInterop.TeenAstroAscom_EnableTracking(_nativeHandle, value ? 1 : 0) == 0)
+                if (!_connection.EnableTracking(value))
                 {
                     if (value)
                         throw new InvalidValueException("Could not enable tracking");
@@ -1425,14 +1424,14 @@ namespace ASCOM.TeenAstro.Telescope
             {
                 if (UpdateGXASState() && _gxasState.Valid)
                     return _gxasState.GetUTCDate();
-                if (NativeInterop.TeenAstroAscom_GetUTCTimestamp(_nativeHandle, out double secs) == 0)
+                if (!_connection.GetUTCTimestamp(out double secs))
                     throw new DriverException("Get UTCDate has failed");
                 return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(secs);
             }
             set
             {
                 long s = (long)(value - new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds;
-                if (NativeInterop.TeenAstroAscom_SetUTCTimestamp(_nativeHandle, s) == 0)
+                if (!_connection.SetUTCTimestamp(s))
                     throw new InvalidOperationException("Set UTCDate has failed");
                 ConnectionStatusDate = DateTime.UtcNow;
                 LogMessage("Set UTCDate", MsgDone);
@@ -1444,7 +1443,7 @@ namespace ASCOM.TeenAstro.Telescope
         /// </summary>
         internal static void Unpark()
         {
-            if (NativeInterop.TeenAstroAscom_Unpark(_nativeHandle) == 0)
+            if (!_connection.Unpark())
                 throw new InvalidOperationException("Unpark has failed");
             ConnectionStatusDate = DateTime.UtcNow;
             LogMessage("Unpark", MsgDone);
@@ -1511,9 +1510,9 @@ namespace ASCOM.TeenAstro.Telescope
 
         private static void SetAzAlt(double Azimuth, double Altitude)
         {
-            if (NativeInterop.TeenAstroAscom_SetTargetAz(_nativeHandle, AzToString(Azimuth)) == 0)
+            if (!_connection.SetTargetAz(AzToString(Azimuth)))
                 throw new InvalidOperationException("Set azimuth failed");
-            if (NativeInterop.TeenAstroAscom_SetTargetAlt(_nativeHandle, AltToString(Altitude)) == 0)
+            if (!_connection.SetTargetAlt(AltToString(Altitude)))
                 throw new InvalidOperationException("Set altitude failed");
         }
 
@@ -1539,10 +1538,10 @@ namespace ASCOM.TeenAstro.Telescope
         private static void DoSlew(bool async, bool altAz)
         {
             var buf = new byte[8];
-            int ok = altAz
-                ? NativeInterop.TeenAstroAscom_SlewToAltAz(_nativeHandle, buf, buf.Length)
-                : NativeInterop.TeenAstroAscom_SlewToEquatorial(_nativeHandle, buf, buf.Length);
-            if (ok == 0)
+            bool ok = altAz
+                ? _connection.SlewToAltAz(buf, buf.Length)
+                : _connection.SlewToEquatorial(buf, buf.Length);
+            if (!ok)
                 throw new DriverException("Telescope is not replying");
             int len = Array.IndexOf(buf, (byte)0);
             if (len < 0) len = buf.Length;

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="12.0">
   <PropertyGroup>
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.50727</ProductVersion>
@@ -61,6 +62,11 @@
     <AssemblyOriginatorKeyFile>LocalServer.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="System.IO.Ports" Version="4.7.0" />
+    <PackageReference Include="System.Resources.Extensions" Version="4.7.1" />
+    <Reference Include="System.Resources.Extensions, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51">
+      <HintPath>$(MSBuildThisFileDirectory)System.Resources.Extensions.dll</HintPath>
+    </Reference>
     <Reference Include="ASCOM.Astrometry, Version=6.0.0.0, Culture=neutral, PublicKeyToken=565de7938946fba7, processorArchitecture=MSIL" />
     <Reference Include="ASCOM.Attributes, Version=6.0.0.0, Culture=neutral, PublicKeyToken=565de7938946fba7, processorArchitecture=MSIL" />
     <Reference Include="ASCOM.Controls, Version=6.0.0.0, Culture=neutral, PublicKeyToken=565de7938946fba7, processorArchitecture=MSIL" />
@@ -78,7 +84,12 @@
     <Compile Include="TelescopeDriver\TelescopeDriver.cs" />
     <Compile Include="TelescopeDriver\Rates.cs" />
     <Compile Include="TelescopeDriver\TelescopeHardware.cs" />
-    <Compile Include="TelescopeDriver\NativeInterop.cs" />
+    <Compile Include="TelescopeDriver\IX200Transport.cs" />
+    <Compile Include="TelescopeDriver\SerialTransport.cs" />
+    <Compile Include="TelescopeDriver\TcpTransport.cs" />
+    <Compile Include="TelescopeDriver\LX200Protocol.cs" />
+    <Compile Include="TelescopeDriver\GXASDecoder.cs" />
+    <Compile Include="TelescopeDriver\TeenAstroConnection.cs" />
     <Compile Include="TelescopeDriver\GXASStateWrapper.cs" />
     <Compile Include="GarbageCollection.cs" />
     <Compile Include="LocalServer.cs" />
@@ -103,6 +114,8 @@
     <Content Include="ReadMe.htm" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="System.IO.Ports.dll" />
+    <None Include="System.Resources.Extensions.dll" />
     <None Include="app.config" />
     <None Include="LocalServer.snk" />
   </ItemGroup>
@@ -124,12 +137,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <Target Name="CopyNativeDll" AfterTargets="Build"
-          Condition="Exists('..\..\..\TeenAstroAscomNative\.pio\build\windows_x86\TeenAstroAscomNative.dll')">
-    <Copy SourceFiles="..\..\..\TeenAstroAscomNative\.pio\build\windows_x86\TeenAstroAscomNative.dll"
-          DestinationFolder="$(OutputPath)"
-          SkipUnchangedFiles="true" />
-  </Target>
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>

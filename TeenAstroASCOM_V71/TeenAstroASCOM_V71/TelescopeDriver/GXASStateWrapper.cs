@@ -15,32 +15,32 @@ namespace ASCOM.TeenAstro.Telescope
     /// </summary>
     internal class GXASStateWrapper
     {
-        private readonly NativeInterop.GXASState _state;
+        private readonly GXASState _state;
 
-        public GXASStateWrapper(NativeInterop.GXASState state)
+        public GXASStateWrapper(GXASState state)
         {
             _state = state;
         }
 
-        public bool Valid => _state.valid != 0;
-        public double RightAscensionHours => _state.rightAscensionHours;
-        public double DeclinationDegrees => _state.declinationDegrees;
-        public double AltitudeDegrees => _state.altitudeDegrees;
-        public double AzimuthDegrees => _state.azimuthDegrees;
-        public double TargetRAHours => _state.targetRAHours;
-        public double TargetDecDegrees => _state.targetDecDegrees;
-        public double SiderealTimeHours => _state.siderealTimeHours;
-        public bool Tracking => _state.tracking != 0;
-        public bool Slewing => _state.slewing != 0;
-        public bool AtHome => _state.atHome != 0;
-        public int ParkState => _state.parkState;
-        public bool PierSideWest => _state.pierSideWest != 0;
-        public bool IsPulseGuiding => _state.isPulseGuiding != 0;
+        public bool Valid => _state.Valid != 0;
+        public double RightAscensionHours => _state.RightAscensionHours;
+        public double DeclinationDegrees => _state.DeclinationDegrees;
+        public double AltitudeDegrees => _state.AltitudeDegrees;
+        public double AzimuthDegrees => _state.AzimuthDegrees;
+        public double TargetRAHours => _state.TargetRAHours;
+        public double TargetDecDegrees => _state.TargetDecDegrees;
+        public double SiderealTimeHours => _state.SiderealTimeHours;
+        public bool Tracking => _state.Tracking != 0;
+        public bool Slewing => _state.Slewing != 0;
+        public bool AtHome => _state.AtHome != 0;
+        public int ParkState => _state.ParkState;
+        public bool PierSideWest => _state.PierSideWest != 0;
+        public bool IsPulseGuiding => _state.IsPulseGuiding != 0;
 
         public DateTime GetUTCDate()
         {
-            return new DateTime(_state.utcYear, _state.utcMonth, _state.utcDay,
-                _state.utcHour, _state.utcMin, _state.utcSec, DateTimeKind.Utc);
+            return new DateTime(_state.UtcYear, _state.UtcMonth, _state.UtcDay,
+                _state.UtcHour, _state.UtcMin, _state.UtcSec, DateTimeKind.Utc);
         }
     }
 }

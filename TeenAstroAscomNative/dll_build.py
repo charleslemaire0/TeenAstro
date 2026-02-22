@@ -1,11 +1,18 @@
 # Pre-script to build a DLL instead of an executable
+# The windows_x86 platform defaults to -static and PROGSUFFIX=.exe; we must override.
 Import("env")
 
 env.Replace(
     BUILD_PROGNAME="TeenAstroAscomNative",
     BUILD_TYPE="shared",
+    PROGSUFFIX=".dll",
+    # Build a real DLL with exports; replace platform's -static flags
+    LINKFLAGS=[
+        "-shared",
+        "-static-libgcc",
+        "-static-libstdc++",
+    ],
 )
-env.Append(LINKFLAGS=["-shared"])
 env.Append(LIBS=["ws2_32"])
 
 def copy_dll(source, target, env):
