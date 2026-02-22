@@ -21,9 +21,20 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   flutter_lints: ^3.0.1
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  image_path: "assets/icon/app_icon.png"
+  android: true
+  ios: false
+  windows:
+    generate: true
+    image_path: "assets/icon/app_icon.png"
+    icon_size: 256
 
 flutter:
   uses-material-design: true
   assets:
     - assets/catalogs/
     - assets/data/
+    - assets/icon/

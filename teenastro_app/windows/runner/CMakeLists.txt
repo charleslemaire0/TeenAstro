@@ -36,5 +36,10 @@ target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app)
 target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib")
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 
+# Copy app icon to build dir so RC compiler finds it (rc.exe resolves paths from build dir)
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/resources")
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/resources/app_icon.ico"
+     DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/resources")
+
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)
