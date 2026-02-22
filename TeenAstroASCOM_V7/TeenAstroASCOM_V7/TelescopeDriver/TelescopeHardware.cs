@@ -9,30 +9,20 @@
 
 // TODO: Customise the SetConnected and InitialiseHardware methods as needed for your hardware
 
-using ASCOM;
-using ASCOM.Astrometry;
 using ASCOM.Astrometry.AstroUtils;
-using ASCOM.Astrometry.NOVAS;
 using ASCOM.DeviceInterface;
 using ASCOM.Utilities;
 using Microsoft.VisualBasic;
 using Microsoft.VisualBasic.CompilerServices;
-using Microsoft.VisualBasic.Devices;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Runtime.Remoting.Messaging;
-using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
 
 namespace ASCOM.TeenAstro.Telescope
 {
@@ -83,6 +73,7 @@ namespace ASCOM.TeenAstro.Telescope
     private static string DECstringFormat = "+00.00000;-00.00000";
     private static string RAstringFormat = "000.00000";
     private static DateTime ConnectionStatusDate;
+    private static Stopwatch TelstatusStopWatch = new Stopwatch();
 
     private static double tgtRa = -999;
     private static double tgtDec = -999;
@@ -92,6 +83,7 @@ namespace ASCOM.TeenAstro.Telescope
     private static double SlewSpeeds = 0d;
     private static string SlewSpeed = ""; // Last slew speed set via R command
     private static double SiderealRate = 15.04106858d / 3600d; // Sidereal rate in degrees per second
+
 
 
 
@@ -382,6 +374,27 @@ namespace ASCOM.TeenAstro.Telescope
       return MyDeviceRet;
     }
 
+
+    private static void CloseAndDisposeSerial()
+    {
+      connectedState = false;
+      if (objectSerial != null)
+      {
+        if (objectSerial.Connected)
+        {
+          try
+          {
+            objectSerial.Connected = false;
+          }
+          catch
+          {
+
+          }
+        }
+        objectSerial.Dispose();
+        objectSerial = null;
+      }
+    }
     private static void ConnectSerial(bool value)
     {
       if (value)
@@ -389,26 +402,24 @@ namespace ASCOM.TeenAstro.Telescope
         objectSerial = new ASCOM.Utilities.Serial();
         LogMessage("Connected Set", "Connecting to port " + comPort);
         try
-        {
-          
+        {          
           string c = Strings.Replace(comPort, "COM", "");
           objectSerial.Port = Conversions.ToInteger(c);
         }
         catch (Exception ex)
         {
-          connectedState = false;
+          CloseAndDisposeSerial();
           throw new ASCOM.DriverException(ex.Message);
+       
         }
         objectSerial.Speed = SerialSpeed.ps57600;
         try
         {
           objectSerial.Connected = true;
-
         }
         catch (Exception ex)
         {
-          connectedState = false;
-          objectSerial.Dispose();
+          CloseAndDisposeSerial();
           throw new ASCOM.DriverException(ex.Message);
         }
         connectedState = true;
@@ -416,10 +427,8 @@ namespace ASCOM.TeenAstro.Telescope
         objectSerial.ReceiveTimeoutMs = 5000;
         //if (!MyDevice())
         if (false)
-        {
-          objectSerial.Connected = false;
-          connectedState = false;
-          objectSerial.Dispose();
+        { 
+          CloseAndDisposeSerial();
           return;
         }
         else
@@ -437,9 +446,7 @@ namespace ASCOM.TeenAstro.Telescope
           }
           catch (Exception ex)
           {
-            objectSerial.Connected = false;
-            connectedState = false;
-            objectSerial.Dispose();
+            CloseAndDisposeSerial();
             throw new ASCOM.DriverException(ex.Message);
           }
           if (!connectedState)
@@ -450,13 +457,24 @@ namespace ASCOM.TeenAstro.Telescope
       }
       else
       {
-        objectSerial.Connected = false;
-        objectSerial.Dispose();
-        connectedState = false;
+        CloseAndDisposeSerial();
         LogMessage("Connected Set", "Disconnecting from port " + comPort);
       }
     }
 
+    private static void ReConnectSerial()
+    {
+      LogMessage("Serial connection", "port has been closed, unexpectedly closed try to reopen");
+      try
+      {
+        ConnectSerial(false);
+        ConnectSerial(true);
+      }
+      catch (Exception ex)
+      {
+        LogMessage("Serial connection", ex.Message);
+      }
+    }
     private static void ConnectIP(bool value)
     {
       if (value)
@@ -599,16 +617,50 @@ namespace ASCOM.TeenAstro.Telescope
         {
           return true;
         }
+        else if (!connectedState)
+        {
+          break;
+        }
       }
       return false;
     }
     private static bool GetSerial(string Command, int Mode, ref string buf)
     {
-      bool GetSerialRet = default;
+      bool GetSerialRet = false;
+      if (!connectedState || objectSerial==null)
+      {
+        ReConnectSerial();
+      }
+      if (!connectedState || objectSerial == null)
+      {
+        LogMessage("Serial connection", "unable to reconnect");
+        return GetSerialRet;
+      }
       objectSerial.ClearBuffers();
       try
       {
         objectSerial.Transmit(Command);
+      }
+      catch (Exception ex) when (ex.HResult == -2146233079)
+      {
+        LogMessage("Serial connection", ex.Message);
+        ReConnectSerial();
+        return GetSerialRet;
+      }
+      catch (Exception ex) when (ex.HResult == -2147220478)
+      {
+        LogMessage("Serial connection", ex.Message);
+        return GetSerialRet;
+      }
+      catch (Exception ex)
+      {
+        LogMessage("Serial connection", ex.Message);
+        LogMessage("Serial connection error code ", ex.HResult.ToString());
+        return GetSerialRet;
+      }
+
+      try
+      {
         switch (Mode)
         {
           case 0:
@@ -633,8 +685,8 @@ namespace ASCOM.TeenAstro.Telescope
       catch (Exception ex)
       {
         LogMessage("Serial connection", ex.Message);
+        LogMessage("Serial connection error code ", ex.HResult.ToString());
       }
-
       return GetSerialRet;
     }
 
@@ -883,7 +935,10 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
-        updateTelStatus();
+        if (!updateTelStatus())
+        {
+          throw new ASCOM.InvalidOperationException("Get AlignmentMode failed");
+        }
         string m = TelStatus.Substring(12, 1);
         LogMessage("AlignmentMode", m);
         if (m == "E")
@@ -947,7 +1002,10 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
-        updateTelStatus();
+        if (!updateTelStatus())
+        {
+          throw new ASCOM.InvalidOperationException("Get atHome has failed");
+        }
         bool isAtPark = TelStatus.Substring(2, 1) == "H";
         LogMessage("Get AtHome", isAtPark.ToString());
         return isAtPark;
@@ -961,7 +1019,10 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
-        updateTelStatus();
+        if (!updateTelStatus())
+        {
+          throw new ASCOM.InvalidOperationException("Get AtPark has failed");
+        }
         bool isAtPark = TelStatus.Substring(2, 1) == "P";
         LogMessage("Get AtPark", isAtPark.ToString());
         return isAtPark;
@@ -1052,7 +1113,7 @@ namespace ASCOM.TeenAstro.Telescope
       get
       {
         LogMessage("CanPulseGuide", "Get - " + HasMotors.ToString());
-        return HasMotors;
+        return true;
       }
     }
 
@@ -1236,7 +1297,10 @@ namespace ASCOM.TeenAstro.Telescope
       get
       {
         double rate = 0;
-        GetDouble("DeclinationRate", "GXRd", ref rate);
+        if (TrackingRate == DriveRates.driveSidereal)
+        {
+          GetDouble("DeclinationRate", "GXRd", ref rate);
+        }
         return rate / 10000d;
       }
       set
@@ -1613,8 +1677,11 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
-        double rate= 0;
-        GetDouble("RightAscensionRate", "GXRr", ref rate);
+        double rate = 0;
+        if ( TrackingRate == DriveRates.driveSidereal)
+        {
+          GetDouble("RightAscensionRate", "GXRr", ref rate);
+        }
         return rate / 10000d;
       }
       set
@@ -1660,7 +1727,10 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
-        updateTelStatus();
+        if (!updateTelStatus())
+        {
+          throw new ASCOM.InvalidOperationException("Get SideOfPier has failed");
+        }
         LogMessage("Get SideOfPier", TelStatus[13].ToString(CultureInfo.InvariantCulture));
         if (TelStatus[13] == ' ')
         {
@@ -1680,7 +1750,7 @@ namespace ASCOM.TeenAstro.Telescope
         else
         {
           LogMessage("Get SideOfPier", "failed");
-          throw new ASCOM.InvalidValueException("Get SideOfPier failed");
+          throw new ASCOM.InvalidOperationException("Get SideOfPier failed");
         }
       }
       set
@@ -1750,6 +1820,10 @@ namespace ASCOM.TeenAstro.Telescope
       set
       {
         double el = value;
+        if (el <=  -300 || el >= 10000)
+        {
+          throw new ASCOM.InvalidValueException();
+        }
         int el_int = (int)el;
         LogMessage("Set SiteElevation", el_int.ToString("0.0", CultureInfo.InvariantCulture));
         string sg = (el_int >= 0) ?  "+" :  "-";
@@ -2189,7 +2263,10 @@ namespace ASCOM.TeenAstro.Telescope
       get
       {
         DriveRates r = default(DriveRates); // = DriveRates.driveSidereal
-        updateTelStatus();
+        if (!updateTelStatus())
+        {
+          throw new ASCOM.InvalidOperationException("Get TrackingRate has failed");
+        }
         switch (TelStatus.Substring(1, 1))
         {
           case "0":
@@ -2212,6 +2289,7 @@ namespace ASCOM.TeenAstro.Telescope
       }
       set
       {
+        TelstatusStopWatch.Stop();
         switch (value)
         {
           case DriveRates.driveSidereal:
@@ -2232,8 +2310,10 @@ namespace ASCOM.TeenAstro.Telescope
 
           default:
             {
+
               throw new InvalidValueException("Unsupported TrackingRate");
             }
+          
             // Case DriveRates.driveKing
             // CommandBlind("TK")
         }
@@ -2438,9 +2518,22 @@ namespace ASCOM.TeenAstro.Telescope
       return false;
     }
 
-    private static void updateTelStatus()
+    private static bool updateTelStatus()
     {
-      TelStatus = CommandString("GXI", false);
+      if (!TelstatusStopWatch.IsRunning || TelstatusStopWatch.ElapsedMilliseconds > 100)
+      {
+        TelStatus = CommandString("GXI", false);
+        int l = TelStatus.Length;
+        if (TelStatus.Length!=17)
+        {
+          LogMessage("updateTelStatus Failed", TelStatus);
+          TelStatus = "";
+          TelstatusStopWatch.Stop();
+          return false;
+        }
+        TelstatusStopWatch.Restart();
+      }
+      return true;
     }
 
 
@@ -2557,28 +2650,30 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
+        bool ok = false;
         double s1 = (DateTime.UtcNow - ConnectionStatusDate).TotalMilliseconds;
         try
         {
           if (s1 > 1000000000d && connectedState)
           {
-            connectedState = false;
             int k = 0;
-            while (!connectedState && k < 10)
+            while ( k < 10)
             {
-              connectedState = CommandBoolString("GXJC");
+              if (CommandBoolString("GXJC"))
+              {
+                ok = true;
+                break;
+              }
               System.Threading.Thread.Sleep(200);
               k += 1;
             }
-            connectedState = k < 10;
           }
         }
         catch (Exception ex)
         {
-          connectedState = false;
           throw new ASCOM.DriverException(ex.Message);
         }
-        return connectedState;
+        return ok;
       }
     }
 
