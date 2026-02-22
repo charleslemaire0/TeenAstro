@@ -2,6 +2,12 @@
 debug-*.log
 /tests/.pio/
 
+# Temporary / IDE / build artifacts
+.cursor/
+IMPLEMENTATION_PLAN.md
+build_*.txt
+Released data/App/
+
 # Prerequisites
 *.d
 
