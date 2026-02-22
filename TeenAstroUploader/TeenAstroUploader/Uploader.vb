@@ -193,8 +193,8 @@ Public Class Uploader
     'downloadVersion13x(n, sum)
     'downloadVersionx(n, sum, "", 1.4)
     'downloadVersionx(n, sum, "_latest", 1.4)
-    downloadVersionx(n, sum, "", 1.5)
-    downloadVersionx(n, sum, "_latest", 1.5)
+    downloadVersionx(n, sum, "", 1.6)
+    downloadVersionx(n, sum, "_latest", 1.6)
     MsgBox(n.ToString & " of " & sum.ToString & " successfully downloaded!")
   End Sub
 

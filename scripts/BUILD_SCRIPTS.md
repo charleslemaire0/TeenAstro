@@ -22,6 +22,27 @@ Then close and reopen PowerShell so PATH is updated.
 
 ## 2. Build firmware (MainUnit, SHC, Server, Focuser)
 
+### 2a. Build ALL board variants and languages (release distribution)
+
+**Script:** `build_firmware.py` (repo root)
+
+- Builds **every** board variant and language, renames outputs for the TeenAstro Uploader.
+- **Output:** `TeenAstroUploader\TeenAstroUploader\{version}_latest\` (e.g. `1.6_latest`)
+- Requires `pio` on PATH; version is set in `RELEASE_VERSION` in the script (currently 1.6).
+
+| Command | Builds |
+|--------|--------|
+| `python build_firmware.py` | All 13 variants (6 MainUnit + 4 Focuser + 3 SHC languages) |
+| `python build_firmware.py --target main` | MainUnit only (6 boards) |
+| `python build_firmware.py --target focuser` | Focuser only (4 boards) |
+| `python build_firmware.py --target shc` | SHC only (ENGLISH, FRENCH, GERMAN) |
+| `python build_firmware.py --list` | List all variants without building |
+| `python build_firmware.py --clean` | Clean build dirs before building |
+
+Run from repo root.
+
+### 2b. Build default envs only (quick dev build)
+
 **Script:** `scripts\build_firmware.ps1`
 
 - Builds firmware with PlatformIO. Requires `pio` on PATH (run setup above first).
@@ -83,7 +104,8 @@ python scripts\generate_reply_lengths.py
 | Goal | Script | Output location |
 |------|--------|-----------------|
 | Install pio + MinGW | `scripts\setup_build_env.ps1` | (tools in user profile) |
-| Build MainUnit / SHC / Server / Focuser | `scripts\build_firmware.ps1` | `TeenAstroMainUnit\pio\` etc. |
+| Build ALL board/language variants for release | `python build_firmware.py` | `TeenAstroUploader\...\1.6_latest\` |
+| Build MainUnit / SHC / Server / Focuser (default envs) | `scripts\build_firmware.ps1` | `TeenAstroMainUnit\pio\` etc. |
 | Build Android + Windows app | `scripts\build_app.ps1` | `Released data\App\` |
 | Generate reply-length tables | `python scripts\generate_reply_lengths.py` | TeenAstroCommandDef, teenastro_app |
 

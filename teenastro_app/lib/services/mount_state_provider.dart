@@ -97,7 +97,7 @@ class MountStateNotifier extends StateNotifier<MountState> {
     return base64.hasMatch(s);
   }
 
-  /// True if [s] looks like a version number (e.g. 1.5.9) — wrong reply for :GVP#.
+  /// True if [s] looks like a version number (e.g. 1.6.0) — wrong reply for :GVP#.
   static bool _looksLikeVersion(String? s) {
     if (s == null || s.isEmpty) return false;
     return RegExp(r'^\d+\.\d+(\.\d+)?$').hasMatch(s.trim());

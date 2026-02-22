@@ -1,7 +1,7 @@
 name: teenastro_app
 description: TeenAstro telescope controller - replaces the SHC hardware controller
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.6.0+1
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
