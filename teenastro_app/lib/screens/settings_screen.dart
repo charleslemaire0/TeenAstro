@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../services/lx200_tcp_client.dart';
 import '../services/mount_state_provider.dart';
 import '../theme.dart';
+import '../widgets/site_card.dart';
 import '../widgets/sync_panel.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -52,6 +53,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
         // Time and Location Sync
         const TimeSyncCard(),
+        const SizedBox(height: 12),
+
+        // Site selection and naming
+        const SiteCard(),
         const SizedBox(height: 12),
 
         // Alignment

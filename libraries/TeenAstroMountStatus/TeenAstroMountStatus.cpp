@@ -730,15 +730,21 @@ void TeenAstroMountStatus::updateAllConfig(bool force)
 //  Focuser
 // ===========================================================================
 
+// Focuser binary state :Fa# — 12 base64 chars -> 9 bytes (pos u16, speed u16, temp*100 i16, flags, reserved, xor)
+#define FOC_STATE_B64_LEN 12
+#define FOC_STATE_BIN_LEN 9
+
 bool TeenAstroMountStatus::findFocuser()
 {
   int k = 0;
-  char fc[45];
+  char raw[20];
   while (!m_hasFocuser && k < 3)
   {
-    if (m_client->getFocuserStatus(fc, sizeof(fc)) == LX200_VALUEGET)
+    if (m_client->getFocuserAllState(raw, sizeof(raw)) == LX200_VALUEGET)
     {
-      if (fc[0] == '?')
+      int len = (int)strlen(raw);
+      if (raw[len - 1] == '#') len--;
+      if (len == FOC_STATE_B64_LEN)
         m_hasFocuser = true;
     }
     delay(100);
@@ -753,18 +759,38 @@ void TeenAstroMountStatus::updateFocuser()
 
   if (m_timerFocuser.needsUpdate(UPDATERATE))
   {
-    char fc[45];
-    bool ok = (m_client->getFocuserStatus(fc, sizeof(fc)) == LX200_VALUEGET);
-    if (ok && fc[0] == '?')
-    {
-      m_focuser.valid = true;
-      m_timerFocuser.markUpdated();
-      strncpy(m_focuser.data, fc, sizeof(m_focuser.data));
-    }
-    else
+    char raw[20];
+    if (m_client->getFocuserAllState(raw, sizeof(raw)) != LX200_VALUEGET)
     {
       m_focuser.valid = false;
+      return;
     }
+    int len = (int)strlen(raw);
+    if (raw[len - 1] == '#') len--;
+    if (len != FOC_STATE_B64_LEN)
+    {
+      m_focuser.valid = false;
+      return;
+    }
+    uint8_t pkt[FOC_STATE_BIN_LEN];
+    if (!b64Decode(raw, len, pkt))
+    {
+      m_focuser.valid = false;
+      return;
+    }
+    uint8_t xorChk = 0;
+    for (int i = 0; i < FOC_STATE_BIN_LEN - 1; i++) xorChk ^= pkt[i];
+    if (xorChk != pkt[FOC_STATE_BIN_LEN - 1])
+    {
+      m_focuser.valid = false;
+      return;
+    }
+    m_focuserPosN   = pktU16(pkt, 0);
+    m_focuserSpeedN = pktU16(pkt, 2);
+    snprintf(m_focuser.data, sizeof(m_focuser.data),
+             "?%05lu %03u", (unsigned long)m_focuserPosN, (unsigned)m_focuserSpeedN);
+    m_focuser.valid = true;
+    m_timerFocuser.markUpdated();
   }
 }
 

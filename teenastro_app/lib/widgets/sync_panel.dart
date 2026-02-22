@@ -168,6 +168,7 @@ class _TimeSyncCardState extends ConsumerState<TimeSyncCard> {
     });
 
     final client = ref.read(lx200ClientProvider);
+    final notifier = ref.read(mountStateProvider.notifier);
     final now = DateTime.now().toUtc();
 
     try {
@@ -193,6 +194,7 @@ class _TimeSyncCardState extends ConsumerState<TimeSyncCard> {
       setState(() {
         _syncResult = ok ? 'Time synced to $timeStr UTC' : 'Error: time sync failed';
       });
+      if (ok) await notifier.refresh();
     } catch (e) {
       setState(() => _syncResult = 'Error: $e');
     } finally {
@@ -275,6 +277,9 @@ class _TimeSyncCardState extends ConsumerState<TimeSyncCard> {
             ? 'Location synced ($src): $latStr / $lonStr'
             : 'Error: lat=$latOk lon=$lonOk';
       });
+      if (latOk && lonOk) {
+        await ref.read(mountStateProvider.notifier).refresh();
+      }
     } catch (e) {
       setState(() => _syncResult = 'Error: $e');
     } finally {
@@ -283,6 +288,11 @@ class _TimeSyncCardState extends ConsumerState<TimeSyncCard> {
   }
 
   Future<void> _syncAllFromPhone(MountState state) async {
+    // If GNSS is available and valid, use full GNSS sync; else use phone time + location
+    if (state.hasGNSS && state.gnssValid) {
+      await _syncFromGnss();
+      return;
+    }
     await _syncTimeFromPhone(state);
     if (_syncResult.startsWith('Error')) return;
     final timeMsg = _syncResult;
@@ -304,6 +314,7 @@ class _TimeSyncCardState extends ConsumerState<TimeSyncCard> {
       setState(() {
         _syncResult = ok ? 'GNSS sync OK' : 'Error: GNSS sync failed';
       });
+      if (ok) await ref.read(mountStateProvider.notifier).refresh();
     } catch (e) {
       setState(() => _syncResult = 'Error: $e');
     } finally {

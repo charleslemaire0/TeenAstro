@@ -40,6 +40,8 @@ void Command_F() {
   case '~':
   case 'M':
   case 'V':
+  case 'A':
+  case 'a':
     focuserNoResponse = false;
     focuserShortResponse = false;
     break;
@@ -75,41 +77,46 @@ void Command_F() {
   Focus_Serial.print(command_out);
   Focus_Serial.flush();
 
-  if (!focuserNoResponse)
-  {
-    delay(20);
-    int pos = 0;
-    char b = 0;
-
-    while (Focus_Serial.available() > 0)
-    {
-      b = Focus_Serial.read();
-      if (b == '#' && !focuserShortResponse)
-      {
-        commandState.reply[pos] = b;
-        commandState.reply[pos + 1] = 0;
-        return;
-      }
-      commandState.reply[pos] = b;
-      pos++;
-      if (pos > 49)
-      {
-        replyShortFalse();
-        return;
-      }
-      commandState.reply[pos] = 0;
-      if (focuserShortResponse)
-      {
-        if (b != '1')
-          replyShortFalse();
-        return;
-      }
-
-    }
-    replyShortFalse();
-  }
-  else
+  if (focuserNoResponse)
   {
     replyNothing();
+    return;
   }
+
+  unsigned long deadline = millis() + 500;
+  int pos = 0;
+
+  while (millis() < deadline)
+  {
+    if (Focus_Serial.available() <= 0)
+    {
+      delayMicroseconds(200);
+      continue;
+    }
+    char b = Focus_Serial.read();
+    commandState.reply[pos] = b;
+
+    if (focuserShortResponse)
+    {
+      commandState.reply[pos + 1] = 0;
+      if (b != '1')
+        replyShortFalse();
+      return;
+    }
+
+    if (b == '#')
+    {
+      commandState.reply[pos + 1] = 0;
+      return;
+    }
+
+    pos++;
+    if (pos >= REPLY_BUFFER_LEN - 1)
+    {
+      replyShortFalse();
+      return;
+    }
+    commandState.reply[pos] = 0;
+  }
+  replyShortFalse();
 }

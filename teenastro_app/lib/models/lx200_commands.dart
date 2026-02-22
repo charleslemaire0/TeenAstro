@@ -146,10 +146,24 @@ class LX200 {
   static const focuserOut  = ':F+#';
   static const focuserStop = ':FQ#';
 
-  // Site / Location reading
+  // Site / Location reading (:Gtf#/:Ggf# = high precision with seconds)
   static const getLatitude  = ':Gtf#';
   static const getLongitude = ':Ggf#';
   static const getElevation = ':Ge#';
+
+  // Site selection (LX200)
+  static const getCurrentSite = ':W?#';
+  static String setSite(int n) => ':W$n#';
+
+  // Site names
+  static const getSiteName1 = ':GM#';
+  static const getSiteName2 = ':GN#';
+  static const getSiteName3 = ':GO#';
+  static const getCurrentSiteName = ':Gn#';
+  static String setSiteName1(String name) => ':SM$name#';
+  static String setSiteName2(String name) => ':SN$name#';
+  static String setSiteName3(String name) => ':SO$name#';
+  static String setCurrentSiteName(String name) => ':Sn$name#';
 
   // Time / Date setting
   static String setLocalTime(String hms)   => ':SL$hms#';

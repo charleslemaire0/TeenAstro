@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/mount_state.dart';
 import '../models/lx200_commands.dart';
+import '../models/lx200_reply_lengths.dart';
+import '../models/mount_state.dart';
 import 'lx200_tcp_client.dart';
 
 /// Notifier that polls the mount and updates state.
@@ -83,15 +84,15 @@ class MountStateNotifier extends StateNotifier<MountState> {
     final raw = await _client.sendCommand(LX200.getAllState);
     if (raw != null) {
       final base64 = raw.endsWith('#') ? raw.substring(0, raw.length - 1) : raw;
-      if (base64.length == 88) {
+      if (base64.length == LX200ReplyLength.gxas) {
         state = state.parseBinaryState(base64);
       }
     }
   }
 
-  /// True if [s] looks like a :GXAS# base64 payload (88 chars) rather than version/driver text.
+  /// True if [s] looks like a :GXAS# base64 payload rather than version/driver text.
   static bool _looksLikeGxasBase64(String? s) {
-    if (s == null || s.length != 88) return false;
+    if (s == null || s.length != LX200ReplyLength.gxas) return false;
     final base64 = RegExp(r'^[A-Za-z0-9+/]+$');
     return base64.hasMatch(s);
   }

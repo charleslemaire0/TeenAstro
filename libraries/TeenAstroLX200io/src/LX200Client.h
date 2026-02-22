@@ -22,6 +22,7 @@
 #define LX200_SBUF 20
 #define LX200_LBUF 50
 #define LX200_DEFAULT_TIMEOUT 30   // ms
+#define LX200_FOCUSER_TIMEOUT 200  // ms — focuser binary commands pass through main unit
 
 // Semantic timeout presets for consumers
 #ifndef TIMEOUT_CMD
@@ -351,6 +352,8 @@ public:
   //  Focuser config (write)
   // -----------------------------------------------------------------------
   LX200RETURN getFocuserConfigRaw(char* out, int len);      // :F~#
+  LX200RETURN getFocuserAllConfig(char* out, int len);     // :FA# binary base64
+  LX200RETURN getFocuserAllState(char* out, int len);      // :Fa# binary base64
   LX200RETURN setFocuserPark(int val);                      // :F0,val#
   LX200RETURN setFocuserMaxPos(int val);                    // :F1,val#
   LX200RETURN setFocuserLowSpeed(int val);                  // :F2,val#

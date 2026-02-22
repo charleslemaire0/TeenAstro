@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'lx200_reply_lengths.dart';
+
 /// Mount state enums and model - mirrors TeenAstroMountStatus
 
 enum TrackState { off, on, slewing, unknown }
@@ -218,7 +220,7 @@ class MountState {
   //   Bytes 12-39: positions (7 × float32). Bytes 40-55: tracking rates (4 × int32 LE).
   //   Bytes 56-61: focuser position (uint32) + speed (uint16), optional. Byte 65: checksum.
   MountState parseBinaryState(String base64Str) {
-    if (base64Str.length != 88) return copyWith(valid: false);
+    if (base64Str.length != LX200ReplyLength.gxas) return copyWith(valid: false);
 
     final Uint8List bytes;
     try {

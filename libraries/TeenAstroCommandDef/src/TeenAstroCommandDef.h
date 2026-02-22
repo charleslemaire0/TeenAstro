@@ -13,4 +13,5 @@
 #include "CommandEnums.h"
 #include "CommandTypes.h"
 #include "CommandMeta.h"
+#include "CommandReplyLength.h"
 #include "CommandCodec.h"

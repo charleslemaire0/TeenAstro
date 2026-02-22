@@ -64,6 +64,20 @@ Run from repo root or from `scripts\`. Flutter must be on PATH (or use `-Flutter
 
 ---
 
+## 4. Generate LX200 reply lengths (run when JSON changes)
+
+**Script:** `scripts\generate_reply_lengths.py`
+
+- Reads `libraries\TeenAstroCommandDef\data\command_reply_lengths.json`
+- Generates `CommandReplyLength.h` (C++) and `lx200_reply_lengths.dart` (Flutter)
+- Run when adding or changing fixed-length LX200 reply commands
+
+```powershell
+python scripts\generate_reply_lengths.py
+```
+
+---
+
 ## Summary
 
 | Goal | Script | Output location |
@@ -71,5 +85,6 @@ Run from repo root or from `scripts\`. Flutter must be on PATH (or use `-Flutter
 | Install pio + MinGW | `scripts\setup_build_env.ps1` | (tools in user profile) |
 | Build MainUnit / SHC / Server / Focuser | `scripts\build_firmware.ps1` | `TeenAstroMainUnit\pio\` etc. |
 | Build Android + Windows app | `scripts\build_app.ps1` | `Released data\App\` |
+| Generate reply-length tables | `python scripts\generate_reply_lengths.py` | TeenAstroCommandDef, teenastro_app |
 
 Full PC setup (all components, .NET, Flutter): see **`BUILD_SETUP.md`** at repo root.

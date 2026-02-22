@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'lx200_reply_lengths.dart';
+
 /// Configuration data for one motor axis, unpacked from the :GXCS# packet.
 class AxisConfig {
   /// Raw gear value (divide by 1000 to get the gear ratio as a double).
@@ -229,7 +231,7 @@ class MountConfig {
         ? base64Str.substring(0, base64Str.length - 1)
         : base64Str;
 
-    if (trimmed.length != 120) return const MountConfig();
+    if (trimmed.length != LX200ReplyLength.gxcs) return const MountConfig();
 
     final Uint8List bytes;
     try {
