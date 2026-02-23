@@ -12,8 +12,6 @@
 using ASCOM.Astrometry.AstroUtils;
 using ASCOM.DeviceInterface;
 using ASCOM.Utilities;
-using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -402,9 +400,9 @@ namespace ASCOM.TeenAstro.Telescope
         objectSerial = new ASCOM.Utilities.Serial();
         LogMessage("Connected Set", "Connecting to port " + comPort);
         try
-        {          
-          string c = Strings.Replace(comPort, "COM", "");
-          objectSerial.Port = Conversions.ToInteger(c);
+        {
+          string c = comPort.Replace("COM", "");
+          objectSerial.Port = Convert.ToInt32(c);
         }
         catch (Exception ex)
         {
@@ -427,7 +425,7 @@ namespace ASCOM.TeenAstro.Telescope
         objectSerial.ReceiveTimeoutMs = 5000;
         //if (!MyDevice())
         if (false)
-        { 
+        {
           CloseAndDisposeSerial();
           return;
         }
@@ -513,7 +511,7 @@ namespace ASCOM.TeenAstro.Telescope
         }
         else
         {
-          Interaction.MsgBox(IP + " is Not AddressOf valid IP Address");
+          MessageBox.Show(IP + " is Not valid IP Address", "Invalid IP Address", MessageBoxButtons.OK, MessageBoxIcon.Error);
           return;
         }
       }
@@ -2099,7 +2097,7 @@ namespace ASCOM.TeenAstro.Telescope
         throw new ASCOM.InvalidValueException();
       }
       string sexa = utilities.DegreesToDMS(value, ":", ":", ""); // Long format, whole seconds
-      if (Strings.Left(sexa, 1) != "-")
+      if (sexa.Substring(0, 1) != "-")
       {
         sexa = "+" + sexa;         // Both need leading '+'
       }
@@ -2122,7 +2120,7 @@ namespace ASCOM.TeenAstro.Telescope
         throw new ASCOM.InvalidValueException();
       }
       string sexa = utilities.DegreesToDMS(value, ":", ":", ""); // Long format, whole seconds
-      if (Strings.Left(sexa, 1) != "-")
+      if (sexa.Substring(0, 1) != "-")
       {
         sexa = "+" + sexa;         // Both need leading '+'
       }
@@ -2433,7 +2431,7 @@ namespace ASCOM.TeenAstro.Telescope
 
     private static void ReportState(string state)
     {
-      int val = Strings.Asc(state[0]) - Strings.Asc('0');
+      int val = (int)state[0] - (int)'0';
       switch (val)
       {
         case 1:
@@ -2514,7 +2512,8 @@ namespace ASCOM.TeenAstro.Telescope
       {
         return true;
       }
-      Interaction.MsgBox("Connection has failed!" + Constants.vbCrLf + "TeenAstro version is " + versionFW[0] + "." + versionFW[1] + "." + versionFW[2] + ", TeenAstro driver version is " + fvi.FileVersion);
+      MessageBox.Show("Connection has failed!" + Environment.NewLine + "TeenAstro version is " +
+        versionFW[0] + "." + versionFW[1] + "." + versionFW[2] + ", TeenAstro driver version is " + fvi.FileVersion);
       return false;
     }
 
