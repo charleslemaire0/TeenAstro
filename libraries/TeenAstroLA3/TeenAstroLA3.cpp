@@ -1,4 +1,4 @@
-// Telescope coordinate conversion
+﻿// Telescope coordinate conversion
 // (C) 2016 Markus L. Noga
 // (C) 2019 Charles Lemaire
 

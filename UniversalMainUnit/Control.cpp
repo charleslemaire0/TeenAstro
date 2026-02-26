@@ -128,7 +128,7 @@ void controlTask(UNUSED(void *arg))
   long axis1Target, axis2Target;
   long tickCount = 0;
   CTL_MODE prevMode;
-  int dir, previousDirAxis2;
+  int dir;
 
   while (1)
   { 
@@ -145,7 +145,6 @@ void controlTask(UNUSED(void *arg))
           resetEvents(EV_AT_HOME);
           resetEvents(EV_START_TRACKING);
           setEvents(EV_TRACKING | EV_SPEED_CHANGE);
-          previousDirAxis2 = 0;
         }
         break;
 
@@ -166,19 +165,10 @@ void controlTask(UNUSED(void *arg))
             resetEvents(EV_SPEED_CHANGE);
             motorA1.setVmax(fabs(speeds.speed1));
             dir = fsign(speeds.speed1);
-            // only set target if direction has changed (no. in some cases this fails)
-//            if (dir != previousDirAxis1)
-            {
-              motorA1.setTargetPos(dir * geoA1.stepsPerRot);
-//              previousDirAxis1 = dir;
-            }
+            motorA1.setTargetPos(dir * geoA1.stepsPerRot);
             motorA2.setVmax(fabs(speeds.speed2));
             dir = fsign(speeds.speed2);
-//            if (dir != previousDirAxis2)
-            {
-              motorA2.setTargetPos(dir * geoA2.stepsPerRot);
-//              previousDirAxis2 = dir;
-            }
+            motorA2.setTargetPos(dir * geoA2.stepsPerRot);
           }
         }
         break;
@@ -201,13 +191,14 @@ void controlTask(UNUSED(void *arg))
             parkStatus(PRK_PARKED);
           }
         }         
-
+#if 0
+// BUG - disable this until fixed
         if (!isAltAz())
         {
           adjustSpeeds(); 
         }
+#endif
         break;
-
       case CTL_MODE_STOPPING:
         resetAbort();
         // wait until motors stopped, reset mode to idle
