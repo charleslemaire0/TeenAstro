@@ -318,7 +318,8 @@ void Mount::safetyCheck(bool forceTracking)
 
 void Mount::onSiderealTick(long phase, bool forceTracking, long elapsed)
 {
-  if (tracking.sideralTracking)
+  // Advance target only when tracking and NOT slewing (Tracking.md: "If tracking is on and not in a goto")
+  if (tracking.sideralTracking && !tracking.movingTo)
   {
     cli();
     if (!axes.staA1.backlash_correcting)

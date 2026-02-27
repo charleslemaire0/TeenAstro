@@ -201,9 +201,9 @@ void initMount()
     val = XEEPROM.read(getMountAddress(EE_TC_Axis));
     mount.tracking.trackComp = val < 1 || val >  2 ? TC_RA : static_cast<TrackingCompensation>(val);
   }
-  lval = XEEPROM.read(getMountAddress(EE_RA_Drift));
+  lval = XEEPROM.readLong(getMountAddress(EE_RA_Drift));
   mount.tracking.storedTrakingRateRA = lval < -50000 || lval > 50000 ? 0 : lval;
-  lval = XEEPROM.read(getMountAddress(EE_DEC_Drift));
+  lval = XEEPROM.readLong(getMountAddress(EE_DEC_Drift));
   mount.tracking.storedTrakingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
 
   mount.refraction.readFromEEPROM();
