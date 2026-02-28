@@ -129,9 +129,6 @@ namespace ASCOM.TeenAstro.Telescope
     private static double SiderealRate = 15.04106858d / 3600d; // Sidereal rate in degrees per second
     private static double? lastSetRightAscensionRate = null;
 
-
-
-
     /// <summary>
     /// Initializes a new instance of the device Hardware class.
     /// </summary>
@@ -1731,19 +1728,24 @@ namespace ASCOM.TeenAstro.Telescope
     }
 
     /// <summary>
-    /// The right ascension tracking rate offset from sidereal (seconds per sidereal second, default = 0.0)
+    /// The right ascension tracking rate offset from sidereal (seconds per sidereal second, default = 0.0).
+    /// Positive = RA increases (drift east). Firmware interprets HA rate for pier side; driver sends same value.
     /// </summary>
     internal static double RightAscensionRate
     {
       get
       {
         double rate = 0;
-        if (TrackingRate == DriveRates.driveSidereal && EnsureGXASCacheCurrent())
+        if (TrackingRate == DriveRates.driveSidereal)
         {
-          rate = -gxasState.TrackRateRA / 10000d;
-          if (lastSetRightAscensionRate.HasValue && Math.Abs(rate - lastSetRightAscensionRate.Value) < 0.0001)
-            return lastSetRightAscensionRate.Value;
-          lastSetRightAscensionRate = null;
+          ForceGXASCacheRefresh();
+          if (EnsureGXASCacheCurrent())
+          {
+            rate = RARateConversion.MountToAscom(gxasState.TrackRateRA, gxasState.PierSide, gxasState.MountType);
+            if (lastSetRightAscensionRate.HasValue && Math.Abs(rate - lastSetRightAscensionRate.Value) < 0.0001)
+              return lastSetRightAscensionRate.Value;
+            lastSetRightAscensionRate = null;
+          }
         }
         return Math.Round(rate, 4);
       }
@@ -1751,8 +1753,11 @@ namespace ASCOM.TeenAstro.Telescope
       {
         if (CanSetRightAscensionRate)
         {
-          double rounded = Math.Round(value, 4);
-          int rate = (int)Math.Round(-rounded * 10000);
+          ForceGXASCacheRefresh();
+          double rounded = EnsureGXASCacheCurrent()
+            ? RARateConversion.AscomToMount(value, gxasState.PierSide, gxasState.MountType)
+            : Math.Round(value, 4);
+          int rate = (int)Math.Round(rounded * 10000);
           string cmd = "SXRr," + rate.ToString(CultureInfo.InvariantCulture);
           LogMessage("Set RightAscensionRate", "value: " + cmd);
           if (!CommandBoolSingleChar(cmd))
@@ -2452,7 +2457,6 @@ namespace ASCOM.TeenAstro.Telescope
 
     private static void doslew(bool @async, [Optional, DefaultParameterValue(false)] bool altaz)
     {
-
       string state;
       if (altaz)
       {
@@ -2475,8 +2479,11 @@ namespace ASCOM.TeenAstro.Telescope
         LogMessage("Slew to target", "Started");
         if (!async)
         {
+          // Poll every 250 ms so AbortSlew (from another client/thread) is detected promptly.
           while (Slewing)
-            System.Threading.Thread.Sleep(1000);
+          {
+            System.Threading.Thread.Sleep(250);
+          }
         }
       }
       else

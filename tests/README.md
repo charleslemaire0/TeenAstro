@@ -20,13 +20,14 @@ $env:PATH = "$env:USERPROFILE\.platformio\packages\toolchain-gccmingw32\bin;$env
 ## Running tests
 
 ```bash
-# All suites (91 tests)
+# All suites (103 tests)
 pio test -d tests
 
 # Individual suites
 pio test -d tests --filter test_la3
 pio test -d tests --filter test_coord
 pio test -d tests --filter test_coordconv
+pio test -d tests --filter test_tracking_rate
 
 # Python runner (runs all, shows summary)
 python tests/run_all_tests.py
@@ -80,6 +81,15 @@ Mount alignment:
 - **Alignment quality** — known rotation alignment (error ≈ 0), imperfect alignment (error > 0), minimizeAxis1
 - **Full-chain integration** — EQ → HO → IN → HO → EQ round-trips with identity alignment, with rotation, with CoordConv, and with refraction
 
+### test_tracking_rate (12 tests) — MainUnit protocol contract
+
+Verifies the tracking rate formulas between the ASCOM driver and firmware (SXRr/SXRd, GXAS TrackRateRA/TrackRateDec):
+
+- **RightAscensionRate** — ASCOM rate (RA sec/sidereal sec) ↔ SXRr val ↔ RequestedTrackingRateHA ↔ GXAS TrackRateRA round-trips; sidereal (val=0 → HA=1); drift east (+0.0033) and west (-0.0033); large rate (±2.6667); pier-independent (same val for all pier sides)
+- **DeclinationRate** — ASCOM arcsec/s ↔ SXRd val ↔ RequestedTrackingRateDEC ↔ GXAS TrackRateDec round-trips; zero, ±0.05, ±40 arcsec/s
+
+Uses no MainUnit/Mount dependencies; purely validates the protocol math.
+
 ## Architecture
 
 ```
@@ -91,6 +101,7 @@ tests/
         test_la3/test_la3.cpp           LA3 tests
         test_coord/test_coord.cpp       Coord tests
         test_coordconv/test_coordconv.cpp   CoordConv tests
+        test_tracking_rate/test_tracking_rate.cpp   Tracking rate protocol tests
     run_all_tests.py            Master runner script
     run_all_tests.bat           Windows batch wrapper
 ```
