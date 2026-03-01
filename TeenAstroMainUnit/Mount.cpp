@@ -77,7 +77,6 @@ Mount::Mount() : limits(*this), guiding(*this), limitManager(*this), st4(*this),
   tracking.abortSlew = false;
   tracking.doSpiral = false;
   tracking.SpiralFOV = 1.0;
-  tracking.movingToClearReason = 4;  // 4=init
   tracking.movingTo = false;
   guiding.GuidingState = Guiding::GuidingOFF;
   guiding.lastGuidingState = Guiding::GuidingOFF;
