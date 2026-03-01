@@ -153,7 +153,6 @@ void Command_M() {
   case 'w':
     mount.moveAxis1(false, Guiding::GuidingRecenter);
     break;
-  break;
   //  :Mn# & :Ms#      Move Telescope North or South at current slew rate
   //  Returns: Nothing
   case 'n':
