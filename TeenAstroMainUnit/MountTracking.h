@@ -17,4 +17,5 @@ struct MountTracking {
   bool doSpiral;
   double SpiralFOV;
   volatile bool movingTo;  // used from ISR/timer
+  uint8_t movingToClearReason;  // 0=none, 1=settling, 2=park, 3=home, 4=init (debug)
 };

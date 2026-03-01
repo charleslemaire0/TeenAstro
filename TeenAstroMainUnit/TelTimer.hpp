@@ -272,6 +272,7 @@ private:
   void syncClock()
   {
     update_lst(last());
+    updateTimers();  // Resync sidereal timers so UTCDate read-modify-restore doesn't desync them
   }
 
   // passes Local Apparent Sidereal Time to stepper timer

@@ -115,20 +115,17 @@ void Mount::setTrackingRate(double rHA, double rDEC)
 void Mount::rateFromMovingTarget(Coord_EQ& EQprev, Coord_EQ& EQnext, double TimeRange, PoleSide side, bool refr,
   double& A1_trackingRate, double& A2_trackingRate)
 {
-  long axis1_before, axis1_after = 0;
-  long axis2_before, axis2_after = 0;
-  double axis1_delta = 0.0, axis2_delta = 0.0;
   LA3::RefrOpt rop = { refraction.forTracking, 10, 101 };
   Coord_IN INprev = EQprev.To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, rop, alignment.conv.Tinv);
-  angle2Step(INprev.Axis1() * RAD_TO_DEG, INprev.Axis2() * RAD_TO_DEG, side, &axis1_before, &axis2_before);
   Coord_IN INnext = EQnext.To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, rop, alignment.conv.Tinv);
-  angle2Step(INnext.Axis1() * RAD_TO_DEG, INnext.Axis2() * RAD_TO_DEG, side, &axis1_after, &axis2_after);
-  axis1_delta = distStepAxis1(&axis1_before, &axis1_after) / axes.geoA1.stepsPerDegree;
-  while (axis1_delta < -180) axis1_delta += 360.;
-  while (axis1_delta >= 180) axis1_delta -= 360.;
-  axis2_delta = distStepAxis2(&axis2_before, &axis2_after) / axes.geoA2.stepsPerDegree;
-  while (axis2_delta < -180) axis2_delta += 360.;
-  while (axis2_delta >= 180) axis2_delta -= 360.;
+  // Use instrument angles directly to avoid integer step truncation, which loses precision
+  // for small rates (e.g. Dec ±0.05 arcsec/s → ~0.0017 deg span → 0 steps at typical resolution).
+  double axis1_delta = (INnext.Axis1() - INprev.Axis1()) * RAD_TO_DEG;
+  double axis2_delta = (INnext.Axis2() - INprev.Axis2()) * RAD_TO_DEG;
+  while (axis1_delta < -180.) axis1_delta += 360.;
+  while (axis1_delta >= 180.) axis1_delta -= 360.;
+  while (axis2_delta < -180.) axis2_delta += 360.;
+  while (axis2_delta >= 180.) axis2_delta -= 360.;
   A1_trackingRate = 0.5 * axis1_delta * (3600. / (TimeRange * 15));
   A2_trackingRate = 0.5 * axis2_delta * (3600. / (TimeRange * 15));
 }

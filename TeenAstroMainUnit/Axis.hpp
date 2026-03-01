@@ -48,7 +48,7 @@ public:
     {
       updateDeltaTarget();
     }
-    return abs(deltaTarget) <= max((long)abs(fstep),1);
+    return abs(deltaTarget) <= max((long)abs(fstep), 1L);
   };
   
   void resetToSidereal()
@@ -132,6 +132,10 @@ public:
     double rate = ratefromSpeed(speedfromDist(d));
     if (tracking)
       rate += CurrentTrackingRate;
+    // When acc=0 or numeric edge case yields rate≈0 but we have distance, use slew speed.
+    // Avoids interval stuck at sidereal after SIDM_TARGET (SXRr/SXRd) before goto.
+    if (fabs(rate) < 0.01 && abs(d) > 1000)
+      rate = (interval_Step_Sid / minInterval) * (d > 0 ? 1 : -1);
     setIntervalfromRate(fabs(rate), minInterval, maxInterval);
   };
 

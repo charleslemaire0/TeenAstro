@@ -167,11 +167,12 @@ void Application::loop()
   static bool forceTracking = false;
   static ErrorsTraking startLoopError = ERRT_NONE;
 
+  // Process serial commands first so :Q# abort is seen before moveTo runs this iteration.
+  loopCommandsAndStatus(startLoopError);
   startLoopError = mount.errors.lastError;
   loopSt4AndGuiding();
   loopEncoderSync();
   loopSiderealAndSafety(forceTracking);
-  loopCommandsAndStatus(startLoopError);
 }
 
 // ST4, spiral, guide when not moving and motors enabled.
