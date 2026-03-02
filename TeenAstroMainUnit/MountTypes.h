@@ -48,6 +48,8 @@ enum Guiding { GuidingOFF, GuidingPulse, GuidingST4, GuidingRecenter, GuidingAtR
 
 enum GuideRate { RG, RC, RM, RS, RX };
 
+enum GotoState { GOTO_NONE, GOTO_EQ, GOTO_ALTAZ };
+
 // -----------------------------------------------------------------------------
 // Constants
 // -----------------------------------------------------------------------------

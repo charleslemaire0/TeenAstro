@@ -9,7 +9,7 @@ void Command_Q() {
   case 0:
     mount.tracking.doSpiral = false;
     if (!mount.isParked()) {
-      if (mount.tracking.movingTo)
+      if (mount.isMovingTo())
         mount.abortSlew();
       else {
         mount.stopAxis1();
@@ -19,12 +19,12 @@ void Command_Q() {
     break;
   case 'e':
   case 'w':
-    if ((!mount.isParked()) && !mount.tracking.movingTo)
+    if ((!mount.isParked()) && !mount.isMovingTo())
       mount.stopAxis1();
     break;
   case 'n':
   case 's':
-    if ((!mount.isParked()) && !mount.tracking.movingTo)
+    if ((!mount.isParked()) && !mount.isMovingTo())
       mount.stopAxis2();
     break;
   default:

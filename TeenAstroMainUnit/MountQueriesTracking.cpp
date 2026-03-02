@@ -30,9 +30,11 @@
 bool Mount::isParked() const { return parkHome.parkStatus == PRK_PARKED; }
 bool Mount::isAtHome() const { return parkHome.atHome; }
 
+bool Mount::isMovingTo() const { return tracking.gotoState != GOTO_NONE; }
+
 bool Mount::isSlewing() const
 {
-  return tracking.movingTo || guiding.GuidingState != Guiding::GuidingOFF;
+  return isMovingTo() || guiding.GuidingState != Guiding::GuidingOFF;
 }
 
 PoleSide Mount::getPoleSide() const
@@ -143,7 +145,7 @@ void Mount::doCompensationCalc()
   DriftHA = tracking.RequestedTrackingRateHA * TimeRange * 15 / 3600;
   DriftDEC = tracking.RequestedTrackingRateDEC * TimeRange / 3600;
   PoleSide side_tmp;
-  if (tracking.movingTo)
+  if (isMovingTo())
   {
     Coord_EQ EQ_T = getEquTarget(*localSite.latitude() * DEG_TO_RAD);
     HA_now = EQ_T.Ha() * RAD_TO_DEG;
@@ -255,7 +257,7 @@ void Mount::safetyCheck(bool forceTracking)
   if (!axes.geoA1.withinLimit(axis1))
   {
     setError(ERRT_AXIS1);
-    if (tracking.movingTo) abortSlew();
+    if (isMovingTo()) abortSlew();
     else if (!forceTracking) tracking.sideralTracking = false;
     return;
   }
@@ -264,7 +266,7 @@ void Mount::safetyCheck(bool forceTracking)
   if (!axes.geoA2.withinLimit(axis2))
   {
     setError(ERRT_AXIS2);
-    if (tracking.movingTo) abortSlew();
+    if (isMovingTo()) abortSlew();
     else if (!forceTracking) tracking.sideralTracking = false;
     return;
   }
@@ -277,7 +279,7 @@ void Mount::safetyCheck(bool forceTracking)
       if ((axes.staA1.dir && currentSide == POLE_OVER) || (!axes.staA1.dir && currentSide == POLE_UNDER))
       {
         setError(ERRT_MERIDIAN);
-        if (tracking.movingTo) abortSlew();
+        if (isMovingTo()) abortSlew();
         if (currentSide >= POLE_OVER && !forceTracking) tracking.sideralTracking = false;
         return;
       }
@@ -291,7 +293,7 @@ void Mount::safetyCheck(bool forceTracking)
       if ((axes.staA1.dir && currentSide == POLE_UNDER) || (!axes.staA1.dir && currentSide == POLE_OVER))
       {
         setError(ERRT_UNDER_POLE);
-        if (tracking.movingTo) abortSlew();
+        if (isMovingTo()) abortSlew();
         if (currentSide == POLE_UNDER && !forceTracking) tracking.sideralTracking = false;
         return;
       }
@@ -329,7 +331,7 @@ void Mount::onSiderealTick(long phase, bool forceTracking, long elapsed)
       axes.staA2.target += axes.staA2.fstep * elapsed;
     sei();
   }
-  if (tracking.movingTo)
+  if (isMovingTo())
     moveTo();
 
   if (phase % 20 == 0)
@@ -344,7 +346,7 @@ void Mount::onSiderealTick(long phase, bool forceTracking, long elapsed)
     setError(ERRT_MOTOR_FAULT);
     if (!forceTracking)
     {
-      if (tracking.movingTo)
+      if (isMovingTo())
         abortSlew();
       else
       {
@@ -362,7 +364,7 @@ void Mount::onSiderealTick(long phase, bool forceTracking, long elapsed)
     if (!forceTracking)
     {
       setError(ERRT_ALT);
-      if (tracking.movingTo)
+      if (isMovingTo())
         abortSlew();
       else
         tracking.sideralTracking = false;

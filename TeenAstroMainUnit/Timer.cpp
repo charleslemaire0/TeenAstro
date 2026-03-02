@@ -178,7 +178,7 @@ static void BacklashComp(GuideAxis* guideA, StatusAxis* staA,
     thisIntervalAxis = staA->backlash_interval_Step;
     wasInbacklashAxis = true;
   }
-  if (mount.tracking.sideralTracking && !mount.tracking.movingTo)
+  if (mount.tracking.sideralTracking && !mount.isMovingTo())
   {
     // travel through the backlash is done, but we weren't following the target while it was happening!
     // so now get us back to near where we need to be
@@ -228,7 +228,7 @@ ISR(TIMER1_COMPA_vect)
 { 
   rtk.m_lst++;
   // in this mode the target is always a bit faster than the scope because we move first the target!!
-  if (!mount.tracking.movingTo)
+  if (!mount.isMovingTo())
   {
     // guide rate acceleration/deceleration
     UpdateIntervalTrackingGuiding1();

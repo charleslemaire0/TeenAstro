@@ -68,6 +68,7 @@ public:
   // Phase 2a: query methods
   bool isParked() const;
   bool isAtHome() const;
+  bool isMovingTo() const;
   bool isSlewing() const;
   PoleSide getPoleSide() const;
   PoleSide getTargetPoleSide() const;

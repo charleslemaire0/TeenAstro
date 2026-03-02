@@ -50,7 +50,6 @@ void Mount::syncAxis(const long* axis1, const long* axis2)
 void Mount::gotoAxis(const long* axis1Target, const long* axis2Target)
 {
   cli();
-  tracking.movingTo = true;
   SetsiderealClockSpeed(tracking.siderealClockSpeed);
   axes.staA1.resetToSidereal();
   axes.staA2.resetToSidereal();
@@ -279,27 +278,36 @@ bool Mount::predictTarget(const double& Axis1_in, const double& Axis2_in, const 
 
 byte Mount::goToEqu(Coord_EQ EQ_T, PoleSide preferedPoleSide, double Lat)
 {
-  return goToHor(EQ_T.To_Coord_HO(Lat, refrOptForGoto()), preferedPoleSide);
+  tracking.gotoState = GOTO_EQ;
+  byte result = goToHor(EQ_T.To_Coord_HO(Lat, refrOptForGoto()), preferedPoleSide);
+  if (result != ERRGOTO_NONE)
+    tracking.gotoState = GOTO_NONE;
+  return result;
 }
 
 byte Mount::goToHor(Coord_HO HO_T, PoleSide preferedPoleSide)
 {
+  if (tracking.gotoState != GOTO_EQ)
+    tracking.gotoState = GOTO_ALTAZ;
   double Axis1_target = 0.0, Axis2_target = 0.0;
   long axis1_target, axis2_target = 0;
   PoleSide selectedSide = PoleSide::POLE_NOTVALID;
 
   if (HO_T.Alt() * RAD_TO_DEG < limits.minAlt)
-    return ERRGOTO_BELOWHORIZON;
+  { tracking.gotoState = GOTO_NONE; return ERRGOTO_BELOWHORIZON; }
   if (HO_T.Alt() * RAD_TO_DEG > limits.maxAlt)
-    return ERRGOTO_ABOVEOVERHEAD;
+  { tracking.gotoState = GOTO_NONE; return ERRGOTO_ABOVEOVERHEAD; }
 
   Coord_IN instr_T = HO_T.To_Coord_IN(alignment.conv.Tinv);
   Axis1_target = instr_T.Axis1() * RAD_TO_DEG;
   Axis2_target = instr_T.Axis2() * RAD_TO_DEG;
   if (!predictTarget(Axis1_target, Axis2_target, preferedPoleSide, axis1_target, axis2_target, selectedSide))
-    return ERRGOTO_LIMITS;
+  { tracking.gotoState = GOTO_NONE; return ERRGOTO_LIMITS; }
 
-  return (byte)goTo(axis1_target, axis2_target);
+  byte r = (byte)goTo(axis1_target, axis2_target);
+  if (r != ERRGOTO_NONE)
+    tracking.gotoState = GOTO_NONE;
+  return r;
 }
 
 // ----- goTo: checks (motor, slewing, guiding, park, lastError) then gotoAxis -----
@@ -307,7 +315,7 @@ ErrorsGoTo Mount::goTo(long thisTargetAxis1, long thisTargetAxis2)
 {
   if (!motorsEncoders.enableMotor)
     return ErrorsGoTo::ERRGOTO_MOTOR_FAULT;
-  if (tracking.movingTo)
+  if (isMovingTo())
   {
     abortSlew();
     return ErrorsGoTo::ERRGOTO_SLEWING;

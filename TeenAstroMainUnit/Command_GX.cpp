@@ -598,7 +598,7 @@ static void Command_GX_Status()
   PoleSide currentSide = mount.getPoleSide();
   for (int i = 0; i < REPLY_BUFFER_LEN; i++)
     commandState.reply[i] = ' ';
-  commandState.reply[0] = '0' + 2 * mount.tracking.movingTo + mount.tracking.sideralTracking;
+  commandState.reply[0] = '0' + 2 * mount.isMovingTo() + mount.tracking.sideralTracking;
   commandState.reply[1] = '0' + mount.tracking.sideralMode;
   const char* parkStatusCh = "pIPF";
   commandState.reply[2] = parkStatusCh[mount.parkHome.parkStatus];
@@ -690,7 +690,7 @@ static void Command_GX_ASCOM()
     mount.isGuidingStar() ? replyLongTrue() : replyLongFalse();
     break;
   case 'S':
-    (mount.guiding.GuidingState == GuidingRecenter || mount.guiding.GuidingState == GuidingAtRate || mount.tracking.movingTo)
+    (mount.guiding.GuidingState == GuidingRecenter || mount.guiding.GuidingState == GuidingAtRate || mount.isMovingTo())
       ? replyLongTrue() : replyLongFalse();
     break;
   case 'T':

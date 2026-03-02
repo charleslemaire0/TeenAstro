@@ -16,5 +16,5 @@ struct MountTracking {
   bool abortSlew;
   bool doSpiral;
   double SpiralFOV;
-  volatile bool movingTo;  // used from ISR/timer
+  volatile GotoState gotoState;  // GOTO_NONE / GOTO_EQ / GOTO_ALTAZ
 };

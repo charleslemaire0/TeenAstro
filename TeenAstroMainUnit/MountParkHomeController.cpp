@@ -121,7 +121,7 @@ void MountParkHomeController::finalizePark()
   parkClearBacklash();
   if (mount_.parkHome.backlashStatus == DONE)
   {
-    mount_.tracking.movingTo = false;
+    mount_.tracking.gotoState = GOTO_NONE;
     mount_.parkHome.parkStatus = PRK_PARKED;
     mount_.axes.enable(false);
     XEEPROM.write(getMountAddress(EE_parkStatus), mount_.parkHome.parkStatus);
@@ -223,7 +223,7 @@ void MountParkHomeController::unpark()
 
 bool MountParkHomeController::setHome()
 {
-  if ((mount_.parkHome.parkStatus == PRK_UNPARKED) && !mount_.tracking.movingTo)
+  if ((mount_.parkHome.parkStatus == PRK_UNPARKED) && !mount_.isMovingTo())
   {
     mount_.tracking.lastSideralTracking = mount_.tracking.sideralTracking;
     mount_.tracking.sideralTracking = false;
@@ -270,7 +270,7 @@ void MountParkHomeController::finalizeHome()
   if (mount_.parkHome.backlashStatus == DONE)
   {
     mount_.parkHome.homeMount = false;
-    mount_.tracking.movingTo = false;
+    mount_.tracking.gotoState = GOTO_NONE;
     syncAtHome();
     mount_.axes.enable(false);
   }

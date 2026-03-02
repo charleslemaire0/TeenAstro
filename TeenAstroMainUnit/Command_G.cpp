@@ -231,7 +231,7 @@ void Command_G()
     //  :GT#   Get tracking rate
   {
     double f = 0.0;
-    if (mount.tracking.sideralTracking && !mount.tracking.movingTo)
+    if (mount.tracking.sideralTracking && !mount.isMovingTo())
     {
       f = mount.tracking.RequestedTrackingRateHA;
       f *= 60 * 1.00273790935;

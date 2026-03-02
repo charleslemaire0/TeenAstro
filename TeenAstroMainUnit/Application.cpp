@@ -178,7 +178,7 @@ void Application::loop()
 // ST4, spiral, guide when not moving and motors enabled.
 void Application::loopSt4AndGuiding()
 {
-  if (!mount.tracking.movingTo && mount.motorsEncoders.enableMotor)
+  if (!mount.isMovingTo() && mount.motorsEncoders.enableMotor)
   {
     mount.checkST4();
     mount.checkSpiral();

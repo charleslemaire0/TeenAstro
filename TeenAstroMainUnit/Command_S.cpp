@@ -295,7 +295,7 @@ void Command_S(Command& process_command)
   case 'T':
     //  :STdd.ddddd#
   {
-    bool ok = !mount.tracking.movingTo;
+    bool ok = !mount.isMovingTo();
     if (ok)
     {
       char* conv_end;

@@ -24,7 +24,7 @@ void Command_M() {
     {
       strcpy(commandState.reply, "h");
     }
-    else if (mount.tracking.movingTo)
+    else if (mount.isMovingTo())
     {
       strcpy(commandState.reply, "s");
     }
@@ -83,7 +83,7 @@ void Command_M() {
     //  Returns: Nothing
     int i;
     if ((atoi2((char *)&commandState.command[3], &i)) &&
-      ((i > 0) && (i <= 30000)) && !mount.tracking.movingTo && mount.errors.lastError == ERRT_NONE &&
+      ((i > 0) && (i <= 30000)) && !mount.isMovingTo() && mount.errors.lastError == ERRT_NONE &&
         (mount.guiding.GuidingState != GuidingRecenter || mount.guiding.GuidingState != GuidingST4))
     {
       if ((commandState.command[2] == 'e') || (commandState.command[2] == 'w'))
@@ -270,7 +270,7 @@ void Command_M() {
   {
     //  :M@V#   Start Spiral Search V in arcminutes
     //         Return 0 if failed, i if success
-    if (mount.tracking.movingTo || mount.guiding.GuidingState != Guiding::GuidingOFF)
+    if (mount.isMovingTo() || mount.guiding.GuidingState != Guiding::GuidingOFF)
       replyShortFalse();
     else
     {

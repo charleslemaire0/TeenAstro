@@ -31,14 +31,14 @@
 
 void Mount::moveTo()
 {
-  // ----- Settling: wait after arrival before clearing movingTo -----
+  // ----- Settling: wait after arrival before clearing gotoState -----
   if (parkHome.settling)
   {
     unsigned long elapsedTime = millis() - parkHome.lastSettleTime;
     if (elapsedTime > parkHome.slewSettleDuration * 1000)
     {
       parkHome.settling = false;
-      tracking.movingTo = false;
+      tracking.gotoState = GOTO_NONE;
     }
     return;
   }

@@ -43,7 +43,7 @@ static void moveAxis(Mount& m, GuideAxis* guideA, StatusAxis*, bool BW, Guiding 
     return;
   bool canMove = m.parkHome.parkStatus == PRK_UNPARKED;
   canMove &= (Mode == GuidingRecenter || m.errors.lastError == ERRT_NONE);
-  canMove &= !m.tracking.movingTo;
+  canMove &= !m.isMovingTo();
   canMove &= (m.guiding.GuidingState == GuidingOFF || m.guiding.GuidingState == Mode);
 
   if (canMove)
@@ -81,7 +81,7 @@ static void moveAxisAtRate(Mount& m, GuideAxis* guideA, StatusAxis*, double newr
     return;
   bool canMove = m.parkHome.parkStatus == PRK_UNPARKED;
   canMove &= m.errors.lastError == ERRT_NONE;
-  canMove &= !m.tracking.movingTo;
+  canMove &= !m.isMovingTo();
   canMove &= (m.guiding.GuidingState == GuidingOFF || m.guiding.GuidingState == GuidingAtRate);
 
   if (canMove)
