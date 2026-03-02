@@ -315,8 +315,12 @@ void Mount::safetyCheck(bool forceTracking)
 
 void Mount::onSiderealTick(long phase, bool forceTracking, long elapsed)
 {
-  // Advance target only when tracking and NOT slewing (Tracking.md: "If tracking is on and not in a goto")
-  if (tracking.sideralTracking && !tracking.movingTo)
+  // Advance target whenever sidereal tracking is enabled.
+  // During a normal track (no goto), this keeps the telescope following the sky.
+  // During a goto (tracking.movingTo), this lets the mechanical target follow the
+  // moving sky position (RA/Dec) instead of staying fixed while the Earth rotates.
+  // This avoids a systematic RA offset proportional to slew duration.
+  if (tracking.sideralTracking)
   {
     cli();
     if (!axes.staA1.backlash_correcting)
