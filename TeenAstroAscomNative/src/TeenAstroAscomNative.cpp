@@ -355,4 +355,25 @@ TA_ASCOM_API int TeenAstroAscom_EnableTracking(TeenAstroAscom_Handle h, int on)
   return (ctx->client->enableTracking(on != 0) == LX200_OK) ? 1 : 0;
 }
 
+TA_ASCOM_API int TeenAstroAscom_IsReadyForGoto(TeenAstroAscom_Handle h)
+{
+  if (!h) return 0;
+  AscomContext* ctx = (AscomContext*)h;
+
+  // Refresh cached state from mount (GXAS / GXI as implemented by TeenAstroMountStatus)
+  ctx->mountStatus->updateAllState(true);
+  const MountState& m = ctx->mountStatus->mountState();
+  if (!m.valid) return 0;
+
+  bool motorsOn         = m.motorsEnabled();
+  bool notParkedOrFailed =
+    (m.parkState == MountState::PRK_UNPARKED) ||
+    (m.parkState == MountState::PRK_PARKING);
+  bool notSlewing       = (m.tracking != MountState::TRK_SLEWING);
+  bool notGuiding       = !m.pulseGuiding;
+  bool noError          = (m.error == MountState::ERR_NONE);
+
+  return (motorsOn && notParkedOrFailed && notSlewing && notGuiding && noError) ? 1 : 0;
+}
+
 } // extern "C"

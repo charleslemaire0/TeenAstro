@@ -161,17 +161,36 @@ def wait_for_slew_complete(
     return False
 
 
+def parse_hms_to_hours(hms: str) -> float:
+    """Parse an HH:MM[:SS] string to decimal hours."""
+    parts = hms.strip().split(":")
+    if len(parts) < 2:
+        raise RuntimeError(f"Cannot parse HMS from reply: {hms!r}")
+    try:
+        h = float(parts[0])
+        m = float(parts[1])
+        s = float(parts[2]) if len(parts) > 2 else 0.0
+    except ValueError as e:
+        raise RuntimeError(f"Cannot parse HMS from reply: {hms!r}") from e
+    return h + m / 60.0 + s / 3600.0
+
+
 def run_goto_regression(
     port: str,
     baud: int,
     ra_hours: float,
     dec_deg: float,
     tol_arcsec: float,
+    ha_hours: float | None = None,
 ) -> None:
     """
     Perform a single GOTO and assert final RA/Dec are within tolerance.
+
+    If ha_hours is provided, the script will:
+    - Query the mount sidereal time (:GS#),
+    - Convert the requested hour angle to RA using RA = LST - HA,
+    - Then command the GOTO to that RA/Dec.
     """
-    ra_deg = ra_hours * 15.0
     log(f"Connecting to mount on {port} @ {baud} baud...")
     ser = serial.Serial(
         port=port,
@@ -189,10 +208,27 @@ def run_goto_regression(
         send_cmd(ser, ":Te#", expect_term=False)
         time.sleep(0.3)
 
+        # Determine RA either directly (ra_hours) or from hour angle + LST
+        if ha_hours is not None:
+            lst_raw = get_value(ser, ":GS#")
+            lst_hours = parse_hms_to_hours(lst_raw)
+            ra_hours_effective = (lst_hours - ha_hours) % 24.0
+            log(
+                f"Using HA input: HA={ha_hours:.6f}h, LST={lst_hours:.6f}h -> "
+                f"RA={ra_hours_effective:.6f}h"
+            )
+        else:
+            ra_hours_effective = ra_hours
+
+        ra_deg = ra_hours_effective * 15.0
+
         # Set target coordinates using decimal-degree LX200 extensions (:SrL / :SdL)
         sr_cmd = f":SrL{ra_deg:.5f}#"
         sd_cmd = f":SdL{dec_deg:+.5f}#" if dec_deg >= 0 else f":SdL{dec_deg:.5f}#"
-        log(f"Setting target RA/Dec: RA={ra_hours:.6f}h ({ra_deg:.5f} deg), Dec={dec_deg:+.5f} deg")
+        log(
+            f"Setting target RA/Dec: RA={ra_hours_effective:.6f}h "
+            f"({ra_deg:.5f} deg), Dec={dec_deg:+.5f} deg"
+        )
         send_cmd(ser, sr_cmd, expect_term=False)
         time.sleep(0.1)
         send_cmd(ser, sd_cmd, expect_term=False)
@@ -232,7 +268,7 @@ def run_goto_regression(
         dec_err_arcsec = abs(actual_dec_deg - target_dec_deg) * 3600.0
 
         log(
-            f"Residuals: ΔRA={ra_err_arcsec:.2f}\"  ΔDec={dec_err_arcsec:.2f}\" "
+            f"Residuals: dRA={ra_err_arcsec:.2f}\"  dDec={dec_err_arcsec:.2f}\" "
             f"(tolerance={tol_arcsec:.2f}\")"
         )
 
@@ -259,7 +295,14 @@ def main(argv: list[str] | None = None) -> int:
         "--ra-hours",
         type=float,
         default=21 + 23 / 60 + 39.1 / 3600,
-        help="Target RA in hours (default: 21h23m39.1s)",
+        help="Target RA in hours (default: 21h23m39.1s). "
+        "Ignored if --ha-hours is provided.",
+    )
+    ap.add_argument(
+        "--ha-hours",
+        type=float,
+        help="Target hour angle in hours (if set, overrides --ra-hours). "
+        "HA is defined as HA = LST - RA.",
     )
     ap.add_argument(
         "--dec-deg",
@@ -299,6 +342,7 @@ def main(argv: list[str] | None = None) -> int:
             ra_hours=args.ra_hours,
             dec_deg=args.dec_deg,
             tol_arcsec=args.tol_arcsec,
+            ha_hours=args.ha_hours,
         )
     except Exception as e:
         log(f"TEST FAILED: {e}")

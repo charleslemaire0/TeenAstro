@@ -75,7 +75,7 @@ static void Command_GX_AllState()
   PoleSide currentSide = mount.getPoleSide();
 
   // ── Byte 0 ───────────────────────────────────────────────────────────────
-  uint8_t tracking     = (uint8_t)(2 * mount.tracking.movingTo + mount.tracking.sideralTracking);
+  uint8_t tracking     = (uint8_t)(2 * (mount.isMovingTo() ? 1 : 0) + (mount.tracking.sideralTracking ? 1 : 0));
   uint8_t sidereal     = (uint8_t)(mount.tracking.sideralMode  & 0x3);
   uint8_t park         = (uint8_t)(mount.parkHome.parkStatus    & 0x3);
   uint8_t atHome       = mount.isAtHome() ? 1u : 0u;

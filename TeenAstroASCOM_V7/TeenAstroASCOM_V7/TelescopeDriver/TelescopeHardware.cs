@@ -81,6 +81,8 @@ namespace ASCOM.TeenAstro.Telescope
       public int MountType;      // 1=GEM, 2=Fork, 3=AltAz, 4=ForkAlt
       public bool SpiralRunning;
       public bool PulseGuiding;  // true when a PulseGuide command is in progress
+      public byte ErrorCode;     // mount.errors.lastError (0 = ERRT_NONE)
+      public bool MotorEnabled;  // motorsEncoders.enableMotor
       public float RaHours;
       public float DecDeg;
       public float AltDeg;
@@ -268,6 +270,7 @@ namespace ASCOM.TeenAstro.Telescope
       {
         Command = ":" + Command + "#";
       }
+      LogMessage("LX200 TX", Command);
       if (Interface == "COM")
       {
         return GetSerial(Command, Mode, ref buf, 3);
@@ -733,7 +736,27 @@ namespace ASCOM.TeenAstro.Telescope
       return GetSerialRet;
     }
 
+    /// <summary>
+    /// Interpret GXAS state to answer whether the firmware is currently ready for a GOTO,
+    /// ignoring target geometry (altitude, limits, meridian, etc.).
+    /// </summary>
+    private static bool IsFirmwareReadyForGoto()
+    {
+      if (!EnsureGXASCacheCurrent())
+      {
+        return false;
+      }
 
+      bool motorsOn = gxasState.MotorEnabled || HasMotors;
+      bool notParkedOrFailed = gxasState.ParkState == 0 || gxasState.ParkState == 1; // UNPARKED or PARKING
+      bool notSlewing = gxasState.Tracking < 2; // 2/3 = slewing
+      bool notGuiding = !gxasState.PulseGuiding;
+      bool noError = gxasState.ErrorCode == 0;  // ERRT_NONE
+
+      bool ready = motorsOn && notParkedOrFailed && notSlewing && notGuiding && noError;
+      LogMessage("IsFirmwareReadyForGoto", ready.ToString());
+      return ready;
+    }
 
     /// <summary>
     /// Deterministically release both managed and unmanaged resources that are used by this class.
@@ -1247,8 +1270,8 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
-        LogMessage("CanSlew", "Get - " + true.ToString());
-        return true;
+        LogMessage("CanSlew", "Get - " + HasMotors.ToString());
+        return HasMotors;
       }
     }
 
@@ -1982,14 +2005,15 @@ namespace ASCOM.TeenAstro.Telescope
     {
       if (CanSlewAltAz)
       {
-        setAzalt(Azimuth, Altitude);
         checkslewALTAZ();
-        doslew(true, true);
-        LogMessage("SlewToAltAzAsync", "done");
+        setAzalt(Azimuth, Altitude);
+        // Synchronous per ITelescopeV4: block until Slewing becomes false
+        doslew(false, true);
+        LogMessage("SlewToAltAz", "done");
       }
       else
       {
-        throw new ASCOM.MethodNotImplementedException();
+        throw new ASCOM.MethodNotImplementedException("SlewToAltAz");
       }
     }
 
@@ -2005,14 +2029,15 @@ namespace ASCOM.TeenAstro.Telescope
     {
       if (CanSlewAltAzAsync)
       {
-        setAzalt(Azimuth, Altitude);
         checkslewALTAZ();
-        doslew(false, true);
-        LogMessage("SlewToAltAzAsync", "done");
+        setAzalt(Azimuth, Altitude);
+        // Asynchronous per ITelescopeV4: return immediately with Slewing = true
+        doslew(true, true);
+        LogMessage("SlewToAltAzAsync", "started");
       }
       else
       {
-        throw new ASCOM.MethodNotImplementedException();
+        throw new ASCOM.MethodNotImplementedException("SlewToAltAzAsync");
       }
     }
 
@@ -2101,7 +2126,10 @@ namespace ASCOM.TeenAstro.Telescope
         if (!EnsureGXASCacheCurrent())
           throw new ASCOM.NotConnectedException("Get Slewing has failed");
         bool slewing = gxasState.Tracking >= 2;  // 2 or 3 = slewing
-        LogMessage("slewing", slewing.ToString());
+        if (slewing)
+          LogMessage("slewing", $"True TrackRateRA={gxasState.TrackRateRA} TrackRateDec={gxasState.TrackRateDec}");
+        else
+          LogMessage("slewing", slewing.ToString());
         return slewing;
       }
     }
@@ -2494,72 +2522,102 @@ namespace ASCOM.TeenAstro.Telescope
 
     private static void ReportState(string state)
     {
-      int val = (int)state[0] - (int)'0';
-      switch (val)
+      if (string.IsNullOrEmpty(state))
       {
-        case 1:
+        throw new ASCOM.DriverException("Goto failed: empty error code from mount.");
+      }
+
+      char code = state[0]; // Native wire-encoded ErrorsGoTo char
+      switch (code)
+      {
+        case '0':
           {
-            throw new ASCOM.InvalidOperationException("Object below min altitude");
+            // ERRGOTO_NONE – should not reach here (handled earlier), but treat as success fallback.
+            return;
           }
-        case 2:
+        case '1':
           {
-            throw new ASCOM.ValueNotSetException();
+            // ERRGOTO_BELOWHORIZON
+            throw new ASCOM.InvalidOperationException("Target is below the horizon limit.");
           }
-        case 3:
+        case '2':
           {
-            throw new ASCOM.InvalidOperationException("Mount Cannot Flip here");
+            // ERRGOTO_NOOBJECTSELECTED
+            throw new ASCOM.ValueNotSetException("No target is selected for this slew.");
           }
-        case 4:
+        case '3':
           {
+            // ERRGOTO_SAMESIDE (flip would not change pier side)
+            throw new ASCOM.InvalidOperationException("Requested flip would leave the mount on the same pier side.");
+          }
+        case '4':
+          {
+            // ERRGOTO_PARKED
             throw new ASCOM.ParkedException();
           }
-        case 5:
+        case '5':
           {
-            throw new ASCOM.InvalidOperationException("Telescope is Slewing");
+            // ERRGOTO_SLEWING
+            throw new ASCOM.InvalidOperationException("Telescope is already slewing.");
           }
-        case 6:
+        case '6':
           {
-            throw new ASCOM.InvalidOperationException("Object is outside limits");
+            // ERRGOTO_LIMITS (axis / meridian / under-pole limits)
+            throw new ASCOM.InvalidOperationException("Target is outside the configured mount limits.");
           }
-        case 7:
+        case '7':
           {
-            throw new ASCOM.InvalidOperationException("Telescope is Guiding");
+            // ERRGOTO_GUIDINGBUSY
+            throw new ASCOM.InvalidOperationException("Telescope is currently guiding and cannot start a slew.");
           }
-        case 8:
+        case '8':
           {
-            throw new ASCOM.InvalidOperationException("Object above max altitude");
+            // ERRGOTO_ABOVEOVERHEAD
+            throw new ASCOM.InvalidOperationException("Target is above the overhead altitude limit.");
           }
-        case 9:
+        case '9':
           {
-            throw new ASCOM.InvalidOperationException("Motor is fault");
+            // ERRGOTO_MOTOR
+            throw new ASCOM.InvalidOperationException("A motor fault has been detected.");
           }
-        case 11:
+        case ';': // '0' + 11
           {
-            throw new ASCOM.InvalidOperationException("Motor is fault");
+            // ERRGOTO_MOTOR_FAULT
+            throw new ASCOM.InvalidOperationException("Motor fault prevents slewing.");
           }
-        case 12:
+        case '<': // '0' + 12
           {
-            throw new ASCOM.InvalidOperationException("Telescope is below horizon limit");
+            // ERRGOTO_ALT
+            throw new ASCOM.InvalidOperationException("Altitude error prevents slewing (below allowed horizon).");
           }
-        case 13:
+        case '=': // '0' + 13
           {
-            throw new ASCOM.InvalidOperationException("Limit Sensor");
+            // ERRGOTO_LIMIT_SENSE
+            throw new ASCOM.InvalidOperationException("A hardware limit sensor has been triggered.");
           }
-        case 14:
+        case '>': // '0' + 14
           {
-            throw new ASCOM.InvalidOperationException("Telescope is outside Axis 1 limit");
+            // ERRGOTO_AXIS1
+            throw new ASCOM.InvalidOperationException("Axis 1 is outside its allowed range.");
           }
-        case 15:
+        case '?': // '0' + 15
           {
-            throw new ASCOM.InvalidOperationException("Telescope is outside Axis 2 limit");
+            // ERRGOTO_AXIS2
+            throw new ASCOM.InvalidOperationException("Axis 2 is outside its allowed range.");
           }
-        case 16:
+        case '@': // '0' + 16
           {
-            throw new ASCOM.InvalidOperationException("Telescope is above overhead limit");
+            // ERRGOTO_UNDER_POLE
+            throw new ASCOM.InvalidOperationException("Slew would place the telescope in an unsafe under-pole region.");
           }
-        case 17:
+        case 'A': // '0' + 17
           {
-            throw new ASCOM.InvalidOperationException("Telescope is outside meridian limit");
+            // ERRGOTO_MERIDIAN
+            throw new ASCOM.InvalidOperationException("Target is outside the configured meridian limit.");
+          }
+        default:
+          {
+            throw new ASCOM.DriverException($"Goto failed with unrecognised error code '{code}' from mount.");
           }
       }
     }
@@ -2657,6 +2715,11 @@ namespace ASCOM.TeenAstro.Telescope
       s.SpiralRunning = ((b1 >> 7) & 0x1) != 0;
       byte b2 = pkt[2];
       s.PulseGuiding = ((b2 >> 7) & 0x1) != 0;
+      // Byte 4: lastError (ErrorsTraking), see Command_GX.cpp
+      s.ErrorCode = pkt[4];
+      // Byte 5: enableFlags, bit 3 = enableMotor
+      byte enableFlags = pkt[5];
+      s.MotorEnabled = ((enableFlags >> 3) & 0x1) != 0;
       s.RaHours = BitConverter.ToSingle(pkt, 12);
       s.DecDeg = BitConverter.ToSingle(pkt, 16);
       s.AltDeg = BitConverter.ToSingle(pkt, 20);
@@ -2752,11 +2815,17 @@ namespace ASCOM.TeenAstro.Telescope
 
     private static void checkslewALTAZ()
     {
-
       if (AtPark)
       {
         throw new ASCOM.ParkedException();
       }
+
+      // ITelescopeV4: Alt/Az slews are invalid while Tracking = true
+      if (Tracking)
+      {
+        throw new ASCOM.InvalidOperationException("SlewToAltAz is invalid when Tracking is True.");
+      }
+
       while (Slewing)
       {
         AbortSlew();

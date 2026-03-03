@@ -278,17 +278,16 @@ bool Mount::predictTarget(const double& Axis1_in, const double& Axis2_in, const 
 
 byte Mount::goToEqu(Coord_EQ EQ_T, PoleSide preferedPoleSide, double Lat)
 {
-  tracking.gotoState = GOTO_EQ;
   byte result = goToHor(EQ_T.To_Coord_HO(Lat, refrOptForGoto()), preferedPoleSide);
-  if (result != ERRGOTO_NONE)
+  if (result == ERRGOTO_NONE)
+    tracking.gotoState = GOTO_EQ;
+  else
     tracking.gotoState = GOTO_NONE;
   return result;
 }
 
 byte Mount::goToHor(Coord_HO HO_T, PoleSide preferedPoleSide)
 {
-  if (tracking.gotoState != GOTO_EQ)
-    tracking.gotoState = GOTO_ALTAZ;
   double Axis1_target = 0.0, Axis2_target = 0.0;
   long axis1_target, axis2_target = 0;
   PoleSide selectedSide = PoleSide::POLE_NOTVALID;
@@ -306,7 +305,16 @@ byte Mount::goToHor(Coord_HO HO_T, PoleSide preferedPoleSide)
 
   byte r = (byte)goTo(axis1_target, axis2_target);
   if (r != ERRGOTO_NONE)
+  {
     tracking.gotoState = GOTO_NONE;
+  }
+  else
+  {
+    // AltAz slews started directly via goToHor (e.g. :MA#) will mark ALTAZ;
+    // equatorial slews via goToEqu override this immediately after return.
+    if (tracking.gotoState == GOTO_NONE)
+      tracking.gotoState = GOTO_ALTAZ;
+  }
   return r;
 }
 

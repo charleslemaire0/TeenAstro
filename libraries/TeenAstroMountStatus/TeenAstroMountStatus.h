@@ -246,6 +246,25 @@ public:
   bool hasInfoAxis2EDeg() { return m_axis2EDeg.valid; }
   bool hasInfoTrackingRate() { return m_hasInfoTrackingRate; }
 
+  /// True if firmware-side conditions for starting a goto are satisfied
+  /// (motors enabled, not parked/failed, not slewing, not pulse-guiding, no error),
+  /// ignoring target-dependent checks (altitude, limits, meridian, etc.).
+  bool isReadyForGoto()
+  {
+    updateMount();
+    if (!m_mount.valid) return false;
+
+    bool motorsOn          = m_mount.motorsEnabled();
+    bool notParkedOrFailed =
+      (m_mount.parkState == MountState::PRK_UNPARKED) ||
+      (m_mount.parkState == MountState::PRK_PARKING);
+    bool notSlewing  = (m_mount.tracking != MountState::TRK_SLEWING);
+    bool notGuiding  = !m_mount.pulseGuiding;
+    bool noError     = (m_mount.error == MountState::ERR_NONE);
+
+    return motorsOn && notParkedOrFailed && notSlewing && notGuiding && noError;
+  }
+
   // -----------------------------------------------------------------------
   //  Cached values — accessors
   // -----------------------------------------------------------------------

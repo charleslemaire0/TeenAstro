@@ -22,6 +22,7 @@ The ASCOM project copies this DLL to its output directory when building (if the 
 - `TeenAstroAscom_CommandBool(handle, cmd, raw)`
 - `TeenAstroAscom_CommandString(handle, cmd, raw, outBuf, outBufSize)`
 - `TeenAstroAscom_GetMountState(handle, &GXASState)` — parsed GXAS state
+- `TeenAstroAscom_IsReadyForGoto(handle)` — returns 1 if firmware-side conditions for starting a GOTO are satisfied (motors on, not parked/failed, not slewing, not pulse-guiding, no error), else 0
 
 ## Architecture
 

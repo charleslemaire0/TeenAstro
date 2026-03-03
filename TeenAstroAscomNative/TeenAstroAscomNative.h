@@ -83,6 +83,10 @@ TA_ASCOM_API int TeenAstroAscom_SetSiteLongitude(TeenAstroAscom_Handle h, const 
 TA_ASCOM_API int TeenAstroAscom_GetUTCTimestamp(TeenAstroAscom_Handle h, double* outSecs);
 TA_ASCOM_API int TeenAstroAscom_SetUTCTimestamp(TeenAstroAscom_Handle h, long unixSecs);
 TA_ASCOM_API int TeenAstroAscom_EnableTracking(TeenAstroAscom_Handle h, int on);
+/// Returns 1 if firmware-side conditions for starting a goto are satisfied
+/// (motors enabled, not parked/failed, not slewing, not pulse-guiding, no error),
+/// ignoring target-specific checks (altitude, limits, meridian, etc.), else 0.
+TA_ASCOM_API int TeenAstroAscom_IsReadyForGoto(TeenAstroAscom_Handle h);
 
 #ifdef __cplusplus
 }
