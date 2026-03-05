@@ -1585,6 +1585,10 @@ namespace ASCOM.TeenAstro.Telescope
       {
         if (CanPulseGuide)
         {
+          // Always force a fresh GXAS snapshot when querying IsPulseGuiding so that
+          // asynchronous PulseGuide activity is reflected immediately and we do not
+          // return stale values from a recent cache.
+          ForceGXASCacheRefresh();
           if (!EnsureGXASCacheCurrent())
             throw new ASCOM.NotConnectedException("Get IsPulseGuiding has failed");
           bool ipg = gxasState.PulseGuiding;
@@ -1720,6 +1724,9 @@ namespace ASCOM.TeenAstro.Telescope
               }
           }
           CommandBlind(dir + Duration, false);
+          // Expire GXAS cache so subsequent IsPulseGuiding reads observe the new guiding state
+          // as soon as the mount reports it.
+          ForceGXASCacheRefresh();
           LogMessage("PulseGuide", dir + Duration + " done ");
         }
         else

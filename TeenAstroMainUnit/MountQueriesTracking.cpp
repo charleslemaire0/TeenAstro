@@ -195,15 +195,33 @@ void Mount::enableGuideRate(int g, bool force)
 {
   if (g < 0) g = 0;
   if (g > 4) g = 4;
+  // Requested guide rate multiple of sidereal (as stored from :SXRn# / EEPROM)
+  double requested = guiding.guideRates[g];
+
+  // Compute a floor so that even at very low guide rates we still
+  // produce at least 1 motor step over 0.1s (100 ms) on both axes.
+  // Condition per axis: absRate * stepsPerCentiSecond * 10 >= 1 step.
+  auto minRateForAxis = [](const GeoAxis& geo) -> double {
+    if (geo.stepsPerCentiSecond <= 0.0) return 0.0;
+    return 1.0 / (10.0 * geo.stepsPerCentiSecond);
+  };
+  double minRateA1 = minRateForAxis(axes.geoA1);
+  double minRateA2 = minRateForAxis(axes.geoA2);
+  double floorRate = max(minRateA1, minRateA2);
+
+  double effective = requested;
+  if (floorRate > 0.0 && requested > 0.0 && requested < floorRate)
+    effective = floorRate;
+
   if (guiding.activeGuideRate != g || force)
   {
     guiding.activeGuideRate = g;
-    guiding.guideA1.enableAtRate(guiding.guideRates[g]);
-    guiding.guideA2.enableAtRate(guiding.guideRates[g]);
+    guiding.guideA1.enableAtRate(effective);
+    guiding.guideA2.enableAtRate(effective);
   }
 }
 
-void Mount::enableST4GuideRate() { enableGuideRate(0); }
+void Mount::enableST4GuideRate() { enableGuideRate(0, true); }
 void Mount::enableRecenterGuideRate() { enableGuideRate(guiding.recenterGuideRate); }
 void Mount::resetGuideRate() { enableGuideRate(guiding.activeGuideRate, true); }
 

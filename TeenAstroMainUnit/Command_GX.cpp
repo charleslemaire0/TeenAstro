@@ -360,6 +360,11 @@ static void Command_GX_Debug()
     case '4': sprintf(commandState.reply, "%f#", (double)mount.axes.staA2.CurrentTrackingRate); break;
     case '5': sprintf(commandState.reply, "%f#", (double)mount.axes.staA1.fstep); break;
     case '6': sprintf(commandState.reply, "%f#", (double)mount.axes.staA2.fstep); break;
+    case '7': sprintf(commandState.reply, "%f#", (double)mount.guiding.guideA2.absRate); break;
+    case '8': sprintf(commandState.reply, "%f#", (double)mount.guiding.guideA2.speedMultiplier); break;
+    case '9': sprintf(commandState.reply, "%f#", mount.guiding.guideA2.getAmount()); break;
+    case 'A': sprintf(commandState.reply, "%lf#", mount.axes.staA1.interval_Step_Cur); break;
+    case 'B': sprintf(commandState.reply, "%lf#", mount.axes.staA2.interval_Step_Cur); break;
     default:  replyLongUnknow(); break;
     }
     break;

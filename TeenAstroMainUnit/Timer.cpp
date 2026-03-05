@@ -153,7 +153,23 @@ static void UpdateIntervalTrackingGuiding(GuideAxis* guideA, StatusAxis* staA,
       }
     }
   }
-  volatile double sumRateA = mount.tracking.sideralTracking ? fabs(tmp_guideRateA + staA->CurrentTrackingRate) : fabs(tmp_guideRateA);
+  // Compute the effective rate that sets the step interval.
+  // - When tracking is OFF and we're in pulse/ST4 guiding, use the pure guiding rate
+  //   (magnitude only) so the interval reflects only the pulse, in HA space.
+  // - When tracking is ON, keep using |tracking + guiding| so RA motion reflects both.
+  volatile double sumRateA;
+  if (!mount.tracking.sideralTracking &&
+      (mount.guiding.GuidingState == Guiding::GuidingPulse || mount.guiding.GuidingState == Guiding::GuidingST4) &&
+      guideA->isBusy())
+  {
+    sumRateA = fabs(guideA->getRate());
+  }
+  else
+  {
+    sumRateA = mount.tracking.sideralTracking
+      ? fabs(tmp_guideRateA + staA->CurrentTrackingRate)
+      : fabs(tmp_guideRateA);
+  }
   staA->setIntervalfromRate(sumRateA, minInterval, maxInterval);
 }
 
