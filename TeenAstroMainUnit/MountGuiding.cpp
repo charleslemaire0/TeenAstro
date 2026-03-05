@@ -160,14 +160,15 @@ void MountGuiding::guide()
 {
   if (GuidingState == GuidingOFF)
     return;
-  // Call guiding logic every main loop; performPulseGuiding() and friends
-  // internally use micros()/duration to integrate the effect over time.
-  if (GuidingState == GuidingPulse)
-    performPulseGuiding();
-  else if (GuidingState == GuidingST4)
-    performST4Guiding();
-  else if (GuidingState == GuidingRecenter)
-    performGuidingRecenter();
-  else if (GuidingState == GuidingAtRate)
-    performGuidingAtRate();
+  if (rtk.updateguideSiderealTimer())
+  {
+    if (GuidingState == GuidingPulse)
+      performPulseGuiding();
+    else if (GuidingState == GuidingST4)
+      performST4Guiding();
+    else if (GuidingState == GuidingRecenter)
+      performGuidingRecenter();
+    else if (GuidingState == GuidingAtRate)
+      performGuidingAtRate();
+  }
 }
