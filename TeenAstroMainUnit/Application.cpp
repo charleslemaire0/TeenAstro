@@ -149,6 +149,10 @@ void Application::setupFocuserProbe()
 }
 
 // Serial/USB/SHC and turn LED off.
+#ifdef EMU_MAINUNIT
+extern void emu_setupCommandSerial();
+void Application::setupCommandSerial() { emu_setupCommandSerial(); }
+#else
 void Application::setupCommandSerial()
 {
   Serial.begin(BAUD);
@@ -157,6 +161,7 @@ void Application::setupCommandSerial()
   commandState.S_SHC_.attach_Stream((Stream*)&Serial1, COMMAND_SERIAL1);
   digitalWrite(LEDPin, LOW);
 }
+#endif
 
 // -----------------------------------------------------------------------------
 // Loop: high-level sequence

@@ -88,6 +88,7 @@ inline CMDREPLY getReplyType(const char* command)
   case Cmd::ENCODER:
     if (strchr("ACD", command[2])) return CMDR_LONG;
     if (command[2] == 'M' && strchr("ASUQ", command[3])) return CMDR_SHORT;
+    if (command[2] == 'W' && (command[3] == '1' || command[3] == '0')) return CMDR_SHORT_BOOL;  // EW1#/EW0# emu WiFi
     return CMDR_INVALID;
 
   // ---- F  Focuser -----------------------------------------------------

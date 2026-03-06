@@ -56,12 +56,37 @@ void processCommands() {
 
   commandState.S_USB_.update();
   commandState.S_SHC_.update();
+#ifdef EMU_MAINUNIT
+  commandState.S_WiFi_.update();
+#endif
 
   commandState.S_SHC_.getCmdPar(commandState.command, process_command);
   commandState.S_USB_.getCmdPar(commandState.command, process_command);
+#ifdef EMU_MAINUNIT
+  commandState.S_WiFi_.getCmdPar(commandState.command, process_command);
+#endif
 
   if (process_command == COMMAND_NONE)
     return;
+
+#ifdef EMU_MAINUNIT
+  extern void emu_wifiStart(void);
+  extern void emu_wifiStop(void);
+  if (process_command == COMMAND_SERIAL1) {
+    if (strcmp(commandState.command, "EW1") == 0) {
+      emu_wifiStart();
+      replyShortTrue();
+      commandState.S_SHC_.reply(commandState.reply, process_command);
+      return;
+    }
+    if (strcmp(commandState.command, "EW0") == 0) {
+      emu_wifiStop();
+      replyShortTrue();
+      commandState.S_SHC_.reply(commandState.reply, process_command);
+      return;
+    }
+  }
+#endif
 
   clearReply();
 
@@ -91,6 +116,9 @@ void processCommands() {
     padReplyToExpectedLength();
     commandState.S_USB_.reply(commandState.reply, process_command);
     commandState.S_SHC_.reply(commandState.reply, process_command);
+#ifdef EMU_MAINUNIT
+    commandState.S_WiFi_.reply(commandState.reply, process_command);
+#endif
   }
   if (mount.motorsEncoders.reboot_unit)
     reboot();

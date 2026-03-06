@@ -8,6 +8,7 @@ struct TinyGPSLocation {
     double lng() const { return 0.0; }
     bool isValid() const { return false; }
     bool isUpdated() const { return false; }
+    uint32_t age() const { return 999999; }
 };
 
 struct TinyGPSDate {
@@ -16,6 +17,7 @@ struct TinyGPSDate {
     uint8_t day() const { return 5; }
     bool isValid() const { return false; }
     bool isUpdated() const { return false; }
+    uint32_t age() const { return 999999; }
 };
 
 struct TinyGPSTime {
@@ -25,17 +27,20 @@ struct TinyGPSTime {
     uint8_t centisecond() const { return 0; }
     bool isValid() const { return false; }
     bool isUpdated() const { return false; }
+    uint32_t age() const { return 999999; }
 };
 
 struct TinyGPSHDOP {
     double hdop() const { return 99.0; }
     bool isValid() const { return false; }
     bool isUpdated() const { return false; }
+    uint32_t age() const { return 999999; }
 };
 
 struct TinyGPSAltitude {
     double meters() const { return 0.0; }
     bool isValid() const { return false; }
+    uint32_t age() const { return 999999; }
 };
 
 class TinyGPSPlus {

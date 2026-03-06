@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <ctime>
 
-typedef unsigned long time_t;
+/* Do not redefine time_t; use the system's definition */
 
 typedef struct {
     uint8_t Second;

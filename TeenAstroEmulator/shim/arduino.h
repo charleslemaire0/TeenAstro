@@ -15,9 +15,12 @@
 #include <cstring>
 #include <cstdlib>
 #include <chrono>
+#include <thread>
 #include <algorithm>
+using std::isnan;
 
 typedef uint8_t byte;
+typedef unsigned short ushort;
 
 #ifndef max
 #define max(a,b) (((a)>(b))?(a):(b))
@@ -80,6 +83,51 @@ typedef uint8_t byte;
 #endif
 
 /* ------------------------------------------------------------------ */
+/*  AVR/ESP compatibility macros                                       */
+/* ------------------------------------------------------------------ */
+#ifndef PROGMEM
+#define PROGMEM
+#endif
+#ifndef pgm_read_byte
+#define pgm_read_byte(addr) (*(const uint8_t *)(addr))
+#endif
+#ifndef pgm_read_word
+#define pgm_read_word(addr) (*(const uint16_t *)(addr))
+#endif
+#ifndef pgm_read_dword
+#define pgm_read_dword(addr) (*(const uint32_t *)(addr))
+#endif
+#ifndef pgm_read_float
+#define pgm_read_float(addr) (*(const float *)(addr))
+#endif
+#ifndef pgm_read_ptr
+#define pgm_read_ptr(addr) (*(const void* const*)(addr))
+#endif
+#ifndef strcpy_P
+#define strcpy_P strcpy
+#endif
+#ifndef strcmp_P
+#define strcmp_P strcmp
+#endif
+#ifndef strlen_P
+#define strlen_P strlen
+#endif
+#ifndef memcpy_P
+#define memcpy_P memcpy
+#endif
+#ifndef F
+#define F(x) (x)
+#endif
+#ifndef PSTR
+#define PSTR(x) (x)
+#endif
+
+/* Undefine Windows CONST to avoid clash with ephemeris VSOP87.hpp */
+#ifdef CONST
+#undef CONST
+#endif
+
+/* ------------------------------------------------------------------ */
 /*  Bit manipulation macros                                            */
 /* ------------------------------------------------------------------ */
 #ifndef bitRead
@@ -100,15 +148,28 @@ typedef uint8_t byte;
 #endif
 
 /* ------------------------------------------------------------------ */
-/*  Simulated time (test harness can override)                         */
+/*  Time -- two modes: simulated (tests) or real-time (emulator)       */
 /* ------------------------------------------------------------------ */
 namespace sim {
   extern unsigned long g_micros;
   extern unsigned long g_millis;
+  extern bool          g_realtime;  // when true, use wall-clock time
+
+  inline void enableRealtime() { g_realtime = true; }
 }
 
-inline unsigned long micros() { return sim::g_micros; }
-inline unsigned long millis() { return sim::g_millis; }
+inline unsigned long micros() {
+    if (sim::g_realtime) {
+        static auto epoch = std::chrono::steady_clock::now();
+        auto now = std::chrono::steady_clock::now();
+        return (unsigned long)std::chrono::duration_cast<std::chrono::microseconds>(now - epoch).count();
+    }
+    return sim::g_micros;
+}
+inline unsigned long millis() {
+    if (sim::g_realtime) return micros() / 1000UL;
+    return sim::g_millis;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Interrupt stubs (single-threaded emulation)                        */
@@ -126,12 +187,54 @@ inline void digitalWrite(uint8_t, uint8_t) {}
 inline int  digitalRead(uint8_t) { return LOW; }
 inline void digitalWriteFast(uint8_t, uint8_t) {}
 inline void analogWrite(uint8_t, int) {}
+inline int  analogRead(uint8_t) { return 300; }  // selects SSD1306 in SHC
 
 /* ------------------------------------------------------------------ */
-/*  Delay stubs                                                        */
+/*  Delay                                                              */
 /* ------------------------------------------------------------------ */
+#ifdef EMU_SHC
+/*  Forward-declared in u8g2_sdl2.h -- we only need the pointer here. */
+struct U8G2_EXT_SDL2;
+extern U8G2_EXT_SDL2* g_sdlDisplay;
+void _emu_shc_blit();   /* defined in shc_emu.cpp */
+
+inline void delay(unsigned long ms) {
+    if (ms == 0) return;
+    unsigned long deadline = millis() + ms;
+    while (millis() < deadline) {
+        _emu_shc_blit();
+        /* small granularity sleep to keep the window responsive */
+        unsigned long sl = (ms < 16) ? ms : 16;
+        std::this_thread::sleep_for(std::chrono::milliseconds(sl));
+    }
+}
+#elif defined(EMU_MAINUNIT)
+inline void delay(unsigned long ms) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
+#else
 inline void delay(unsigned long) {}
+#endif
 inline void delayMicroseconds(unsigned int) {}
+
+/* ------------------------------------------------------------------ */
+/*  dtostrf (float-to-string, not in standard MinGW libc)              */
+/* ------------------------------------------------------------------ */
+inline char* dtostrf(double val, signed char width, unsigned char prec, char* buf) {
+    char fmt[16];
+    sprintf(fmt, "%%%d.%df", width, prec);
+    sprintf(buf, fmt, val);
+    return buf;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Arduino random()                                                    */
+/* ------------------------------------------------------------------ */
+inline long random(long max) { return rand() % max; }
+inline long random(long min, long max) {
+    if (min >= max) return min;
+    return min + (rand() % (max - min));
+}
 
 /* ------------------------------------------------------------------ */
 /*  Teensy NVIC / SCB stubs                                            */
@@ -153,49 +256,22 @@ static uint32_t SCB_SHPR3 = 0;
 
 /* ------------------------------------------------------------------ */
 /*  Stream base class (minimal Arduino-compatible interface)            */
+/*  Inherits from Print (defined in Print.h) for U8G2 compatibility.   */
 /* ------------------------------------------------------------------ */
-class Stream {
+#include "Print.h"
+
+class Stream : public Print {
 public:
     virtual ~Stream() {}
 
     virtual int available() = 0;
     virtual int read() = 0;
     virtual int peek() = 0;
-    virtual size_t write(uint8_t b) = 0;
+    virtual size_t write(uint8_t b) override = 0;
     virtual void flush() {}
 
     void setTimeout(unsigned long ms) { m_timeout = ms; }
     unsigned long getTimeout() const { return m_timeout; }
-
-    size_t print(const char* s) {
-        size_t n = 0;
-        while (*s) { write((uint8_t)*s++); n++; }
-        return n;
-    }
-    size_t print(int val) {
-        char buf[16]; sprintf(buf, "%d", val); return print(buf);
-    }
-    size_t print(unsigned int val) {
-        char buf[16]; sprintf(buf, "%u", val); return print(buf);
-    }
-    size_t print(long val) {
-        char buf[24]; sprintf(buf, "%ld", val); return print(buf);
-    }
-    size_t print(unsigned long val) {
-        char buf[24]; sprintf(buf, "%lu", val); return print(buf);
-    }
-    size_t print(double val) {
-        char buf[24]; sprintf(buf, "%f", val); return print(buf);
-    }
-    size_t println(const char* s) {
-        return print(s) + write('\n');
-    }
-    size_t println(int val) {
-        return print(val) + write('\n');
-    }
-    size_t println() {
-        return write('\n');
-    }
 
 protected:
     unsigned long m_timeout = 1000;

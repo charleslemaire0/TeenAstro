@@ -2,6 +2,9 @@
 #include <TeenAstroMountStatus.h>
 #include "SHC_text.h"
 #include "SmartController.h"
+#ifdef EMU_SHC
+#include "u8g2_sdl2.h"
+#endif
 
 static const char* BreakRC[6] = { ":Qn#", ":Qs#", ":Qe#", ":Qw#", ":Fo#", ":Fi#" };
 static const char* RC[6]      = { ":Mn#", ":Ms#", ":Me#", ":Mw#", ":FO#", ":FI#" };
@@ -33,6 +36,15 @@ void SmartHandController::setup(
 
   num_supported_display = nSubmodel;
   uint8_t submodel = EEPROM.read(EEPROM_DISPLAYSUBMODEL);
+#ifdef EMU_SHC
+  {
+    extern U8G2_EXT_SDL2* g_sdlDisplay;
+    auto* sdl = new U8G2_EXT_SDL2(U8G2_R0);
+    sdl->initSDL("TeenAstro SHC Emulator");
+    display = sdl;
+    g_sdlDisplay = sdl;
+  }
+#else
   switch (model)
   {
   case OLED_SH1106:
@@ -55,6 +67,7 @@ void SmartHandController::setup(
       display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0);
     break;
   }
+#endif
   SHCrotated = EEPROM.read(EEPROM_DISPLAY180) == 255;
   SHCvisitor = EEPROM.read(EEPROM_VISITOR) == 255;
   if (SHCrotated)
@@ -167,6 +180,11 @@ void SmartHandController::setup(
 #endif
 #ifdef ALIGN_PAGE
     pages[P_ALIGN].show = true;
+#endif
+
+#ifdef EMU_SHC
+  if (buttonPad.isWifiOn() && m_client)
+    m_client->set(":EW1#");
 #endif
 
 }
