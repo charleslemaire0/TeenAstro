@@ -27,37 +27,37 @@ Command T_Serial::getcmdSerial() {
 }
 
 void T_Serial::update() {
-  if (m_serial->available() <= 0 || m_ready)
-    return;
+  while (m_serial->available() > 0 && !m_ready)
+  {
+    char c = m_serial->read();
 
-  char c = m_serial->read();
-
-  if (c == CHAR_ACK && m_bufferPtr == 0) {
-    m_command[0] = c;
-    m_command[1] = '\0';
-    m_ready = true;
-    return;
-  }
-
-  if (c != CHAR_SPACE && c != CHAR_LF && c != CHAR_CR && c != CHAR_ACK) {
-    m_command[m_bufferPtr] = c;
-    m_bufferPtr++;
-    m_command[m_bufferPtr] = '\0';
-    if (m_bufferPtr > CMD_MAX_PAYLOAD)
-      m_bufferPtr = CMD_MAX_PAYLOAD;
-  }
-
-  if (c == FRAME_END) {
-    if (m_bufferPtr > 1 && m_command[0] == FRAME_START && m_command[m_bufferPtr - 1] == FRAME_END) {
-      m_command[m_bufferPtr - 1] = '\0';
-      memmove(m_command, &m_command[1], strlen(&m_command[1]) + 1);
+    if (c == CHAR_ACK && m_bufferPtr == 0) {
+      m_command[0] = c;
+      m_command[1] = '\0';
       m_ready = true;
+      return;
+    }
+
+    if (c != CHAR_SPACE && c != CHAR_LF && c != CHAR_CR && c != CHAR_ACK) {
+      m_command[m_bufferPtr] = c;
+      m_bufferPtr++;
+      m_command[m_bufferPtr] = '\0';
+      if (m_bufferPtr > CMD_MAX_PAYLOAD)
+        m_bufferPtr = CMD_MAX_PAYLOAD;
+    }
+
+    if (c == FRAME_END) {
+      if (m_bufferPtr > 1 && m_command[0] == FRAME_START && m_command[m_bufferPtr - 1] == FRAME_END) {
+        m_command[m_bufferPtr - 1] = '\0';
+        memmove(m_command, &m_command[1], strlen(&m_command[1]) + 1);
+        m_ready = true;
+      } else {
+        clearCommand();
+        m_ready = false;
+      }
     } else {
-      clearCommand();
       m_ready = false;
     }
-  } else {
-    m_ready = false;
   }
 }
 

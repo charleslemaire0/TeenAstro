@@ -340,9 +340,9 @@ class LX200TcpClient {
     if (last == null || now.difference(last) >= _heartbeatIdleThreshold) {
       ConnectTrace.record('heartbeat.ping',
           {'idleMs': last == null ? -1 : now.difference(last).inMilliseconds});
-      // :GXAS# is the single bulk state command used by the poll loop
+      // :GXAS# is the single bulk state command; longer timeout for slew/focuser
       await sendCommand(LX200.getAllState,
-          timeout: const Duration(seconds: 3));
+          timeout: const Duration(seconds: 5));
     }
   }
 

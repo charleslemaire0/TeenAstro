@@ -180,7 +180,8 @@ static void trimReplyIfText(const char* command, char* output) {
 LX200RETURN LX200Client::get(const char* command, char* output, int bufferSize)
 {
   CMDREPLY cmdreply = getReplyType(command);
-  bool ok = sendReceive(command, cmdreply, output, bufferSize, m_timeout);
+  unsigned long to = (strcmp(command, ":GXAS#") == 0) ? LX200_GXAS_TIMEOUT : m_timeout;
+  bool ok = sendReceive(command, cmdreply, output, bufferSize, to);
   if (ok) {
     trimReplyIfText(command, output);
     return LX200_VALUEGET;

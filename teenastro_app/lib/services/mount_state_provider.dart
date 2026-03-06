@@ -80,8 +80,12 @@ class MountStateNotifier extends StateNotifier<MountState> {
     _pollCount++;
   }
 
+  /// Timeout for :GXAS# (bulk state); longer to tolerate slew/focuser delay.
+  static const _gxasTimeout = Duration(seconds: 5);
+
   Future<void> _fetchAllState() async {
-    final raw = await _client.sendCommand(LX200.getAllState);
+    final raw = await _client.sendCommand(
+        LX200.getAllState, timeout: _gxasTimeout);
     if (raw != null) {
       final base64 = raw.endsWith('#') ? raw.substring(0, raw.length - 1) : raw;
       if (base64.length == LX200ReplyLength.gxas) {
