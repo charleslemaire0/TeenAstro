@@ -195,8 +195,9 @@ void Mount::enableGuideRate(int g, bool force)
 {
   if (g < 0) g = 0;
   if (g > 4) g = 4;
-  // Requested guide rate multiple of sidereal (as stored from :SXRn# / EEPROM)
-  double requested = guiding.guideRates[g];
+  // Requested guide rate multiple of sidereal (as stored from :SXRn# / EEPROM).
+  // Guiding speed scaling (0.01x–1x) is deactivated: index 0 always uses 1.0.
+  double requested = (g == 0) ? 1.0 : guiding.guideRates[g];
 
   // Compute a floor so that even at very low guide rates we still
   // produce at least 1 motor step over 0.1s (100 ms) on both axes.
