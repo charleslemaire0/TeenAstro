@@ -264,7 +264,7 @@ public:
   unsigned long   duration;
   unsigned long   durationLast;
   double          absRate;
-  double          speedMultiplier = 1.0;  // internal: effective rate = absRate * speedMultiplier (pulse long correction)
+  double          speedMultiplier = 1.0;  // kept for :GXDR8#; deactivated: getRate/getAmount no longer multiply by it
 private:
   enum moveStatus { MBW = -2, BBW = -1, Idle = 0, BFW = 1, MFW = 2 };
   volatile moveStatus m_mst;
@@ -303,17 +303,17 @@ public:
   {
     if (isDirFW())
     {
-      return absRate * speedMultiplier;
+      return absRate;
     }
     else if (isDirBW())
     {
-      return -absRate * speedMultiplier;
+      return -absRate;
     }
     return 0;
   }
   double getAmount()
   {
-    double amount = m_amount * speedMultiplier;
+    double amount = m_amount;
     if (isDirFW())
     {
       return amount;
