@@ -143,17 +143,11 @@ public:
   // -----------------------------------------------------------------------
   //  Mount state & diagnostics
   // -----------------------------------------------------------------------
-  LX200RETURN getMountStateRaw(char* out, int len);    // :GXI#
   LX200RETURN getFocuserStatus(char* out, int len);    // :F?#
 
   // -----------------------------------------------------------------------
   //  Tracking rates (typed)
   // -----------------------------------------------------------------------
-  LX200RETURN getTrackRateRA(double& value);            // :GXRr# (float reply: ASCOM RA rate)
-  LX200RETURN getTrackRateDec(double& value);           // :GXRd# (float reply: arcsec/s)
-  LX200RETURN getStoredTrackRateRA(long& value);       // :GXRe#
-  LX200RETURN getStoredTrackRateDec(long& value);      // :GXRf#
-
   // -----------------------------------------------------------------------
   //  Location / Observatory
   // -----------------------------------------------------------------------

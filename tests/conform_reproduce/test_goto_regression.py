@@ -6,7 +6,7 @@ Goals:
 - Flash the TeenAstro main unit firmware (via PlatformIO) before the test run.
 - Connect to the mount on a serial port (default: COM3).
 - Command a GOTO to a given RA/Dec.
-- Wait for the slew to complete using :GXI# / :GXAS# tracking state.
+- Wait for the slew to complete using :GXAS# tracking state.
 - Read both *actual* and *target* RA/Dec from the mount.
 - Assert that the final actual coordinates match the target coordinates within a small tolerance.
 
@@ -29,6 +29,7 @@ Exit status:
 """
 
 import argparse
+import base64
 import math
 import subprocess
 import sys
@@ -135,24 +136,26 @@ def wait_for_slew_complete(
     poll_interval_s: float = 1.0,
 ) -> bool:
     """
-    Poll :GXI# to detect when the mount finishes slewing.
+    Poll :GXAS# to detect when the mount finishes slewing.
+    GXAS byte 0 bits 0-1: 0=off, 1=tracking, 2=slewing.
 
     Returns True if slew finished within max_wait_s, False on timeout.
     """
-    log("Waiting for slew to complete (polling :GXI#)...")
+    log("Waiting for slew to complete (polling :GXAS#)...")
     start = time.time()
     while time.time() - start < max_wait_s:
-        status = get_value(ser, ":GXI#")
-        if not status:
-            log("Empty :GXI# reply, continuing...")
+        b64 = get_value(ser, ":GXAS#")
+        if not b64 or len(b64) < 136:
+            log("Empty or short :GXAS# reply, continuing...")
         else:
             try:
-                trk = int(status[0])
-            except (ValueError, IndexError):
-                log(f"Unexpected :GXI# reply: {status!r}")
+                pkt = base64.b64decode(b64)
+                trk = pkt[0] & 0x3 if len(pkt) > 0 else 0
+            except Exception:
+                log(f"Unexpected :GXAS# reply (decode error)")
                 trk = 0
-            slewing = (trk & 2) != 0
-            log(f":GXI# -> trk={trk} slewing={slewing}")
+            slewing = trk == 2
+            log(f":GXAS# -> trk={trk} slewing={slewing}")
             if not slewing:
                 log("Slew reported complete.")
                 return True

@@ -7,7 +7,6 @@
  *   - formatRaStr: normal, negative, very large, edge-case wrapping
  *   - formatDegStr: positive, negative, near-boundary, wrapping
  *   - formatAzStr: normal, negative, >360, near-boundary
- *   - MountState::parseFrom: valid string, truncated, all-zeros, max values
  *   - updateAllState (via mock): valid packet, checksum error, truncated,
  *     corrupt floats (NaN/Inf in position fields)
  */
@@ -331,61 +330,7 @@ void test_formatAz_very_large(void) {
 }
 
 // =====================================================================
-//  6. MountState::parseFrom (legacy :GXI# string parser)
-// =====================================================================
-void test_parseFrom_valid(void) {
-    // Build a valid 17-char status string
-    //  [0]='1' tracking on, [1]='0' sidereal, [2]='p' unparked,
-    //  [3]='H' at home, [4]='2' medium, [5]=' ' no spiral,
-    //  [6]=' ' no pulse, [7]=' ' no guide EW, [8]=' ' no guide NS,
-    //  [9]=' ' reserved, [10]='1' comp RA, [11]='1' aligned,
-    //  [12]='E' GEM, [13]='W' west, [14]='A' GNSS none,
-    //  [15]='0' no error, [16]='I' enable=8 (motors on)
-    char raw[18] = "10pH2  " "  " " 11EWA0I";
-    raw[3] = 'H';
-    raw[4] = '2';
-    raw[5] = ' ';
-    raw[6] = ' ';
-    raw[7] = ' ';
-    raw[8] = ' ';
-    raw[9] = ' ';
-    raw[10] = '1';
-
-    MountState ms;
-    ms.parseFrom(raw);
-    TEST_ASSERT_TRUE(ms.valid);
-    TEST_ASSERT_EQUAL(MountState::TRK_ON, ms.tracking);
-    TEST_ASSERT_EQUAL(MountState::SID_STAR, ms.sidereal);
-    TEST_ASSERT_EQUAL(MountState::PRK_UNPARKED, ms.parkState);
-    TEST_ASSERT_TRUE(ms.atHome);
-    TEST_ASSERT_EQUAL(MountState::MOUNT_TYPE_GEM, ms.mountType);
-    TEST_ASSERT_EQUAL(MountState::PIER_W, ms.pierSide);
-    TEST_ASSERT_TRUE(ms.aligned);
-    TEST_ASSERT_EQUAL(MountState::ERR_NONE, ms.error);
-}
-
-void test_parseFrom_truncated(void) {
-    MountState ms;
-    ms.parseFrom("10pH");  // only 4 chars, needs 17
-    TEST_ASSERT_FALSE(ms.valid);
-}
-
-void test_parseFrom_null(void) {
-    MountState ms;
-    ms.parseFrom(nullptr);
-    TEST_ASSERT_FALSE(ms.valid);
-}
-
-void test_parseFrom_unknown_tracking(void) {
-    char raw[18] = "X0pH2     11EWA0I";
-    MountState ms;
-    ms.parseFrom(raw);
-    TEST_ASSERT_TRUE(ms.valid);
-    TEST_ASSERT_EQUAL(MountState::TRK_UNKNOW, ms.tracking);
-}
-
-// =====================================================================
-//  7. updateAllState via mock (GXAS packet)
+//  6. updateAllState via mock (GXAS packet)
 // =====================================================================
 
 // Helper: encode 66 bytes into 88 base64 chars (simple encoder for tests)
@@ -723,12 +668,6 @@ int main(int argc, char** argv) {
     RUN_TEST(test_formatAz_negative);
     RUN_TEST(test_formatAz_over_360);
     RUN_TEST(test_formatAz_very_large);
-
-    // MountState::parseFrom
-    RUN_TEST(test_parseFrom_valid);
-    RUN_TEST(test_parseFrom_truncated);
-    RUN_TEST(test_parseFrom_null);
-    RUN_TEST(test_parseFrom_unknown_tracking);
 
     // Time/date display (Index-style formatting)
     RUN_TEST(test_time_date_display_format);

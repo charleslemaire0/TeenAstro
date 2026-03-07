@@ -298,7 +298,6 @@ LX200RETURN LX200Client::getSiderealStr(char* out, int len)  { return get(":GS#"
 //  Mount state & diagnostics
 // ===========================================================================
 
-LX200RETURN LX200Client::getMountStateRaw(char* out, int len) { return get(":GXI#", out, len); }
 LX200RETURN LX200Client::getFocuserStatus(char* out, int len) { return get(":F?#", out, len); }
 
 LX200RETURN LX200Client::getFocuserAllConfig(char* out, int len)
@@ -343,11 +342,6 @@ static LX200RETURN getTypedDouble(LX200Client& c, const char* cmd, double& value
   }
   return ret;
 }
-
-LX200RETURN LX200Client::getTrackRateRA(double& value)     { return getTypedDouble(*this, ":GXRr#", value); }
-LX200RETURN LX200Client::getTrackRateDec(double& value)    { return getTypedDouble(*this, ":GXRd#", value); }
-LX200RETURN LX200Client::getStoredTrackRateRA(long& value)   { return getTypedLong(*this, ":GXRe#", value); }
-LX200RETURN LX200Client::getStoredTrackRateDec(long& value)  { return getTypedLong(*this, ":GXRf#", value); }
 
 // ===========================================================================
 //  Time / Date (typed)

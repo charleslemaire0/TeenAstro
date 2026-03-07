@@ -43,7 +43,7 @@ struct CachedStr
 };
 
 // ---------------------------------------------------------------------------
-//  MountState — parsed snapshot of the :GXI# status string
+//  MountState — parsed snapshot of mount status (from :GXAS# packet bytes 0-5)
 // ---------------------------------------------------------------------------
 class TeenAstroMountStatus;   // forward
 
@@ -83,9 +83,6 @@ struct MountState
   Errors            error         = ERR_NONE;
   uint8_t           enableFlags   = 0;          // bitfield from char[16]
   bool              valid         = false;
-
-  // --- Parse from raw :GXI# string ---
-  void parseFrom(const char* raw);
 
   // --- GNSS convenience ---
   bool hasGNSSBoard()        const { return gnssFlags & 0x01; }

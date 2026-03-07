@@ -91,7 +91,7 @@ def main():
     ])
     # Only emit constants that are used by the app for EXACT length validation (base64/binary).
     # Use raw (unaligned) lengths - these must match actual reply size.
-    used_constants = {":GXAS#": "gxas", ":GXCS#": "gxcs", ":GXI#": "gxi", ":FA#": "faConfig", ":Fa#": "faState"}
+    used_constants = {":GXAS#": "gxas", ":GXCS#": "gxcs", ":FA#": "faConfig", ":Fa#": "faState"}
     for cmd in sorted(used_constants.keys()):
         const_name = used_constants[cmd]
         length = raw_lengths.get(cmd, 0)

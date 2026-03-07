@@ -33,18 +33,19 @@ class MountTestHelper {
 
   Future<MountState> queryStatus() async {
     await ensureConnected(_mountIp, _mountPort);
-    var raw = await client.sendCommand(LX200.getStatus);
+    var raw = await client.sendCommand(LX200.getAllState);
     if (raw == null || raw.isEmpty) {
       // Force reconnect: socket may look connected but be stale
       await client.disconnect();
       await Future.delayed(const Duration(milliseconds: 500));
       await ensureConnected(_mountIp, _mountPort);
-      raw = await client.sendCommand(LX200.getStatus);
+      raw = await client.sendCommand(LX200.getAllState);
     }
-    expect(raw, isNotNull, reason: 'GXI returned null (not connected?)');
-    expect(raw, isNotEmpty, reason: 'GXI returned empty string (timeout?)');
-    final state = const MountState().parseStatus(raw!);
-    expect(state.valid, isTrue, reason: 'GXI parse failed on "$raw"');
+    expect(raw, isNotNull, reason: 'GXAS returned null (not connected?)');
+    expect(raw, isNotEmpty, reason: 'GXAS returned empty string (timeout?)');
+    final b64 = raw!.endsWith('#') ? raw.substring(0, raw.length - 1) : raw;
+    final state = const MountState().parseBinaryState(b64);
+    expect(state.valid, isTrue, reason: 'GXAS parse failed on "$raw"');
     return state;
   }
 
@@ -194,14 +195,15 @@ void main() {
       await client.disconnect();
     });
 
-    testWidgets('GXI returns valid 17+ char status', (tester) async {
+    testWidgets('GXAS returns valid 136-char base64 status', (tester) async {
       await tester.runAsync(() async {
         await connectIfNeeded();
-        final raw = await client.sendCommand(LX200.getStatus);
+        final raw = await client.sendCommand(LX200.getAllState);
         expect(raw, isNotNull);
-        expect(raw!.length, greaterThanOrEqualTo(17),
-            reason: 'GXI too short: "$raw" (${raw.length} chars)');
-        print('  Status raw: $raw');
+        final b64 = raw != null && raw.endsWith('#') ? raw.substring(0, raw.length - 1) : raw ?? '';
+        expect(b64.length, greaterThanOrEqualTo(136),
+            reason: 'GXAS too short: ${b64.length} chars');
+        print('  GXAS base64 length: ${b64.length}');
       });
     });
 
@@ -335,7 +337,7 @@ void main() {
     });
 
     for (var level = 0; level <= 4; level++) {
-      testWidgets('set speed $level and verify via GXI', (tester) async {
+      testWidgets('set speed $level and verify via GXAS', (tester) async {
         await tester.runAsync(() async {
           await connectIfNeeded();
           await client.send(LX200.setSpeed(level));
@@ -480,9 +482,10 @@ void main() {
           await client.send(entry.value[0]);
           await Future.delayed(const Duration(milliseconds: 500));
 
-          // Verify the mount is active via GXI guiding indicators
-          final statusRaw = await client.sendCommand(LX200.getStatus);
-          final statusDuring = const MountState().parseStatus(statusRaw ?? '');
+          // Verify the mount is active via GXAS guiding indicators
+          final statusRaw = await client.sendCommand(LX200.getAllState);
+          final b64 = (statusRaw ?? '').endsWith('#') ? (statusRaw!.substring(0, statusRaw.length - 1)) : (statusRaw ?? '');
+          final statusDuring = b64.length >= 136 ? const MountState().parseBinaryState(b64) : const MountState();
           final guidingActive = statusDuring.guidingEW.trim().isNotEmpty ||
               statusDuring.guidingNS.trim().isNotEmpty;
           print('  ${entry.key} during move: tracking=${statusDuring.tracking.name}, '
@@ -1041,12 +1044,13 @@ void main() {
             await helper.ensureConnected(_mountIp, _mountPort);
           }
 
-          final raw = await client.sendCommand(LX200.getStatus);
-          if (raw == null || raw.isEmpty || raw.length < 17) {
+          final raw = await client.sendCommand(LX200.getAllState);
+          final b64 = raw != null && raw.endsWith('#') ? raw.substring(0, raw.length - 1) : (raw ?? '');
+          if (raw == null || raw.isEmpty || b64.length < 136) {
             failures++;
             print('  Poll #$i: FAIL (raw=${raw ?? "null"})');
           } else {
-            final state = const MountState().parseStatus(raw);
+            final state = const MountState().parseBinaryState(b64);
             print('  Poll #$i: OK track=${state.trackingLabel} '
                 'park=${state.parkLabel}');
           }

@@ -67,7 +67,7 @@ namespace ASCOM.TeenAstro.Telescope
 
     private static List<Guid> uniqueIds = new List<Guid>(); // List of driver instance unique IDs
 
-    /// <summary>Parsed :GXAS# binary state (88 base64 → 66 bytes). Replaces obsolete GXI.</summary>
+    /// <summary>Parsed :GXAS# binary state (136 base64 → 102 bytes).</summary>
     private struct GXASState
     {
       public bool Valid;
@@ -486,7 +486,14 @@ namespace ASCOM.TeenAstro.Telescope
           }
           try
           {
-            HasMotors = CommandBoolString("GXJm");
+            ForceGXASCacheRefresh();
+            if (EnsureGXASCacheCurrent())
+              HasMotors = gxasState.MotorEnabled;
+            else
+            {
+              CloseAndDisposeSerial();
+              throw new ASCOM.DriverException("Failed to get mount state (GXAS).");
+            }
           }
           catch (Exception ex)
           {
@@ -529,7 +536,14 @@ namespace ASCOM.TeenAstro.Telescope
           connectedState = MyDevice();
           try
           {
-            HasMotors = CommandBoolString("GXJm");
+            ForceGXASCacheRefresh();
+            if (EnsureGXASCacheCurrent())
+              HasMotors = gxasState.MotorEnabled;
+            else
+            {
+              connectedState = false;
+              throw new ASCOM.DriverException("Failed to get mount state (GXAS).");
+            }
           }
           catch (Exception ex)
           {
@@ -2868,9 +2882,9 @@ namespace ASCOM.TeenAstro.Telescope
           if (s1 > 1000000000d && connectedState)
           {
             int k = 0;
-            while ( k < 10)
+            while (k < 10)
             {
-              if (CommandBoolString("GXJC"))
+              if (EnsureGXASCacheCurrent())
               {
                 ok = true;
                 break;

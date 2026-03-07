@@ -30,7 +30,7 @@ LX200Client client(Serial1, 30);  // 30 ms timeout
 |-------|---------|
 | **Position** | `getRaStr()`, `getDecStr()`, `getAzStr()`, `getAltStr()`, `getAxisSteps()` |
 | **Time/Date** | `getUTCTime()`, `setUTCTime()`, `getLocalDate()`, `getSiderealStr()` |
-| **Tracking** | `enableTracking()`, `setTrackRateSidereal()`, `setTrackRateLunar()`, `getTrackRateRA()` |
+| **Tracking** | `enableTracking()`, `setTrackRateSidereal()`, `setTrackRateLunar()` (rates from GXAS via MountStatus) |
 | **Navigation** | `moveToTarget()`, `syncGoto()`, `syncGotoAltAz()`, `pushToTarget()` |
 | **Movement** | `startMoveNorth()`, `stopSlew()`, `meridianFlip()`, `setSpeed()` |
 | **Home/Park** | `homeReset()`, `homeGoto()`, `park()`, `unpark()`, `setPark()` |

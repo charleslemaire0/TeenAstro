@@ -198,7 +198,6 @@ void test_getReplyType_get_commands(void) {
     TEST_ASSERT_EQUAL(CMDR_LONG, getReplyType(":GS#"));
     TEST_ASSERT_EQUAL(CMDR_LONG, getReplyType(":GC#"));
     TEST_ASSERT_EQUAL(CMDR_LONG, getReplyType(":GVP#"));
-    TEST_ASSERT_EQUAL(CMDR_LONG, getReplyType(":GXI#"));
     TEST_ASSERT_EQUAL(CMDR_LONG, getReplyType(":GXRA#"));
 }
 
@@ -556,32 +555,6 @@ void test_set_get_speed_rate(void) {
     ret = client->getSpeedRate(1, val);
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
     TEST_ASSERT_FLOAT_WITHIN(0.1f, 4.0f, val);
-}
-
-void test_set_get_stored_track_rate_ra(void) {
-    prepareSetOk();
-    LX200RETURN ret = client->setStoredTrackRateRA(15041);
-    TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
-
-    mockStream.clearSent();
-    prepareGetLongPadded("15041", 12);  // :GXRe# expects 12 chars
-    long val = 0;
-    ret = client->getStoredTrackRateRA(val);
-    TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
-    TEST_ASSERT_EQUAL(15041, val);
-}
-
-void test_set_get_stored_track_rate_dec(void) {
-    prepareSetOk();
-    LX200RETURN ret = client->setStoredTrackRateDec(100);
-    TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
-
-    mockStream.clearSent();
-    prepareGetLongPadded("100", 12);  // :GXRf# expects 12 chars
-    long val = 0;
-    ret = client->getStoredTrackRateDec(val);
-    TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
-    TEST_ASSERT_EQUAL(100, val);
 }
 
 // =====================================================================
@@ -1882,9 +1855,6 @@ int main(int argc, char** argv) {
     RUN_TEST(test_set_get_max_rate);
     RUN_TEST(test_set_get_deadband);
     RUN_TEST(test_set_get_speed_rate);
-    RUN_TEST(test_set_get_stored_track_rate_ra);
-    RUN_TEST(test_set_get_stored_track_rate_dec);
-
     // 5. Limits
     RUN_TEST(test_set_get_min_altitude);
     RUN_TEST(test_set_get_max_altitude);

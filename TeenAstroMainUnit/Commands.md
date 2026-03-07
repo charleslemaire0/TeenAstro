@@ -209,8 +209,6 @@ All `:GXnn#` commands are TeenAstro extensions. **Standard:** TeenAstro extensio
 | `:GXRB#` | Get backlash take-up rate. | `long#` |
 | `:GXRD#` | Get default rate index. | `0`–`4#` |
 | `:GXRX#` | Get max slew rate. | `int#` |
-| `:GXRr#` `:GXRh#` `:GXRd#` | Get requested RA/HA/DEC tracking rate. | `long#` |
-| `:GXRe#` `:GXRf#` | Get stored RA/DEC rate. | `long#` |
 
 ### Limits (user)
 | Syntax | Description | Returns |
@@ -235,18 +233,6 @@ All `:GXnn#` commands are TeenAstro extensions. **Standard:** TeenAstro extensio
 | `:GXT1#` | Get UTC date. | `MM/DD/YY#` |
 | `:GXT2#` | Get seconds since 1970-01-01. | `ul#` |
 | `:GXT3#` | Get LHA time. | `HH:MM:SS#` |
-
-### Status
-| Syntax | Description | Returns |
-|--------|-------------|---------|
-| `:GXI#` | Get telescope status string (tracking, park, guide, pier, etc.). | 18 chars + `#` |
-| `:GXJB#` | Both rate axes enabled. | `1#` / `0#` |
-| `:GXJC#` | Connected. | `1#` |
-| `:GXJm#` | Motors enabled. | `1#` / `0#` |
-| `:GXJM1#` `:GXJM2#` | Axis 1/2 moving. | `1#` / `0#` |
-| `:GXJP#` | Pulse guiding active. | `1#` / `0#` |
-| `:GXJS#` | Slewing. | `1#` / `0#` |
-| `:GXJT#` | Tracking. | `1#` / `0#` |
 
 ### Motors (axis: R = axis1, D = axis2)
 | Syntax | Description | Returns |

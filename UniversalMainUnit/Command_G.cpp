@@ -281,26 +281,6 @@ void Command_GX()
       // :GXRX# return Max Slew rate
       sprintf(reply, "%d#", XEEPROM.readInt(getMountAddress(EE_maxRate)));
       break;
-    case 'r':
-      // :GXRr# Requested RA tracking rate (double: ASCOM RA rate = 1 - HA)
-      sprintf(reply, "%.17g#", 1.0 - RequestedTrackingRateHA);
-      break;
-    case 'h':
-      // :GXRh# Requested HA tracking rate (double)
-      sprintf(reply, "%.17g#", RequestedTrackingRateHA);
-      break;
-    case 'd':
-      // :GXRd# Requested DEC tracking rate (double: arcsec/s)
-      sprintf(reply, "%.17g#", RequestedTrackingRateDEC);
-      break;
-    case 'e':
-      // :GXRe,VVVVVVVVVV# get stored Rate for RA
-      sprintf(reply, "%ld#", storedTrackingRateRA);
-      break;
-    case 'f':
-      // :GXRf,VVVVVVVVVV# get stored Rate for DEC
-      sprintf(reply, "%ld#", storedTrackingRateDEC);
-      break;
     default:
         replyLongUnknown();
       break;
@@ -421,71 +401,6 @@ void Command_GX()
     break;
     }
     break;
-  case 'I':
-  {
-    // :GXI#   Get telescope Status
-    for (i = 0; i < 50; i++)
-      reply[i] = ' ';
-
-    reply[0] = '0' + 2 * isSlewing() + isTracking();
-    reply[1] = '0' + siderealMode;
-    const char* parkStatusCh = "pIPF";
-    reply[2] = parkStatusCh[parkStatus()];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
-    if (atHome()) reply[3] = 'H';
-    reply[4] = '0' + activeGuideRate;
-
-    if (getEvent(EV_GUIDING_AXIS1) || getEvent(EV_GUIDING_AXIS2))
-    {
-      reply[5] = 'G';
-      reply[6] = '*';
-    }
-
-    if (getEvent(EV_SPIRAL))
-    {
-      reply[5] = '@';
-    }
-    else if (getEvent(EV_CENTERING))
-    {
-      reply[5] = 'G';
-      reply[6] = '+';
-    }
-
-    if (getEvent(EV_EAST))
-      reply[7] = '<';
-    else if (getEvent(EV_WEST))
-      reply[7] = '>';
-    if (getEvent(EV_NORTH))
-      reply[8] = '^';
-    else if (getEvent(EV_SOUTH))
-      reply[8] = '_';
-
-    if (mount.mP->type == MOUNT_TYPE_GEM)
-    {
-      reply[12] = 'E';
-    }
-    else if (mount.mP->type == MOUNT_TYPE_FORK)
-      reply[12] = 'K';
-    else if (mount.mP->type == MOUNT_TYPE_FORK_ALT)
-      reply[12] = 'k';
-    else if (mount.mP->type == MOUNT_TYPE_ALTAZM)
-      reply[12] = 'A';
-    else
-      reply[12] = 'U';
-    PierSide currentSide = mount.mP->GetPierSide();
-    switch (currentSide)
-    {
-      case PIER_EAST: reply[13] = 'E'; break;
-      case PIER_WEST: reply[13] = 'W'; break;
-      default: reply[13] = '?'; break;
-    }
-    reply[14] = 'A';      // no GNSS
-    reply[15] = '0' + lastError();
-    reply[16] = 'A';      // no encoder
-    reply[17] = '#';
-    reply[18] = 0;
-    i = 17;
-  }
-  break;
   case 'M':
   {
     // :GXM..#   Get Motor Settings

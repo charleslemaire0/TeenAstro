@@ -90,12 +90,10 @@ class LX200 {
   static const setHome  = ':hB#';
   static const resetHome = ':hb#';
 
-  // Bulk all-state query (48-byte binary, base64-encoded, 64 chars + '#')
+  // Bulk all-state query (102-byte binary, base64-encoded, 136 chars + '#')
   static const getAllState  = ':GXAS#';
   static const getAllConfig = ':GXCS#';
 
-  // Status
-  static const getStatus  = ':GXI#';
   static const getRa      = ':GR#';
   static const getDec     = ':GD#';
   static const getHa      = ':GXT3#';

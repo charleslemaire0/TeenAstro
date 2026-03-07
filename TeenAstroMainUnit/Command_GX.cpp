@@ -500,30 +500,6 @@ static void Command_GX_Rates()
   case 'X':
     sprintf(commandState.reply, "%d#", XEEPROM.readUShort(getMountAddress(EE_maxRate)));
     break;
-  case 'r':
-  {
-    double raRate = 1.0 - mount.tracking.RequestedTrackingRateHA;
-    sprintf(commandState.reply, "%.17g#", raRate);
-  }
-  break;
-  case 'h':
-  {
-    double haRate = mount.tracking.RequestedTrackingRateHA;
-    sprintf(commandState.reply, "%.17g#", haRate);
-  }
-  break;
-  case 'd':
-  {
-    double decRate = mount.tracking.RequestedTrackingRateDEC;
-    sprintf(commandState.reply, "%.17g#", decRate);
-  }
-  break;
-  case 'e':
-    sprintf(commandState.reply, "%ld#", mount.tracking.storedTrakingRateRA);
-    break;
-  case 'f':
-    sprintf(commandState.reply, "%ld#", mount.tracking.storedTrakingRateDEC);
-    break;
   default:
     replyLongUnknow();
     break;
@@ -595,113 +571,6 @@ static void Command_GX_Time()
     strcat(commandState.reply, "#");
   }
   break;
-  }
-}
-
-// ---- GX Status  :GXI# ------------------------------------------------------
-static void Command_GX_Status()
-{
-  PoleSide currentSide = mount.getPoleSide();
-  for (int i = 0; i < REPLY_BUFFER_LEN; i++)
-    commandState.reply[i] = ' ';
-  commandState.reply[0] = '0' + 2 * mount.isMovingTo() + mount.tracking.sideralTracking;
-  commandState.reply[1] = '0' + mount.tracking.sideralMode;
-  const char* parkStatusCh = "pIPF";
-  commandState.reply[2] = parkStatusCh[mount.parkHome.parkStatus];
-  if (mount.isAtHome()) commandState.reply[3] = 'H';
-  commandState.reply[4] = '0' + mount.guiding.recenterGuideRate;
-  if (mount.tracking.doSpiral) commandState.reply[5] = '@';
-  else if (mount.guiding.GuidingState != GuidingOFF)
-  {
-    commandState.reply[5] = 'G';
-  }
-  if (mount.isGuidingStar()) commandState.reply[6] = '*';
-  else if (mount.guiding.GuidingState == GuidingRecenter) commandState.reply[6] = '+';
-  else if (mount.guiding.GuidingState == GuidingAtRate) commandState.reply[6] = '-';
-  if (mount.guiding.guideA1.isMFW()) commandState.reply[7] = '>';
-  else if (mount.guiding.guideA1.isMBW()) commandState.reply[7] = '<';
-  else if (mount.guiding.guideA1.isBraking()) commandState.reply[7] = 'b';
-
-  if (currentSide == POLE_OVER)
-  {
-    if (mount.guiding.guideA2.isMBW()) commandState.reply[8] = '^';
-    else if (mount.guiding.guideA2.isMFW()) commandState.reply[8] = '_';
-    else if (mount.guiding.guideA2.isBraking()) commandState.reply[8] = 'b';
-  }
-  else
-  {
-    if (mount.guiding.guideA2.isMFW()) commandState.reply[8] = '^';
-    else if (mount.guiding.guideA2.isMBW()) commandState.reply[8] = '_';
-    else if (mount.guiding.guideA2.isBraking()) commandState.reply[8] = 'b';
-  }
-
-  if (mount.axes.staA1.fault || mount.axes.staA2.fault) commandState.reply[9] = 'f';
-  commandState.reply[10] = '0' + mount.tracking.trackComp;
-  commandState.reply[11] = mount.alignment.hasValid ? '1' : '0';
-  if (mount.config.identity.mountType == MOUNT_TYPE_GEM)        commandState.reply[12] = 'E';
-  else if (mount.config.identity.mountType == MOUNT_TYPE_FORK)  commandState.reply[12] = 'K';
-  else if (mount.config.identity.mountType == MOUNT_TYPE_FORK_ALT) commandState.reply[12] = 'k';
-  else if (mount.config.identity.mountType == MOUNT_TYPE_ALTAZM) commandState.reply[12] = 'A';
-  else commandState.reply[12] = 'U';
-
-  if (currentSide == POLE_UNDER) commandState.reply[13] = mount.isAltAZ() || localSite.northHemisphere() ? 'E' : 'W';
-  if (currentSide == POLE_OVER) commandState.reply[13] = mount.isAltAZ() || localSite.northHemisphere() ? 'W' : 'E';
-
-  char val = 0;
-  bitWrite(val, 0, mount.config.peripherals.hasGNSS);
-  if (iSGNSSValid())
-  {
-    bitWrite(val, 1, true);
-    bitWrite(val, 2, isTimeSyncWithGNSS());
-    bitWrite(val, 3, isLocationSyncWithGNSS());
-    bitWrite(val, 4, isHdopSmall());
-  }
-  commandState.reply[14] = 'A' + val;
-  commandState.reply[15] = '0' + mount.errors.lastError;
-  val = 0;
-  bitWrite(val, 0, mount.motorsEncoders.enableEncoder);
-  bitWrite(val, 1, mount.motorsEncoders.encoderA1.calibrating() && mount.motorsEncoders.encoderA2.calibrating());
-  bitWrite(val, 2, mount.config.peripherals.PushtoStatus != PT_OFF);
-  bitWrite(val, 3, mount.motorsEncoders.enableMotor);
-  commandState.reply[16] = 'A' + val;
-  commandState.reply[17] = '#';
-  commandState.reply[18] = 0;
-}
-
-// ---- GX ASCOM  :GXJn# ------------------------------------------------------
-static void Command_GX_ASCOM()
-{
-  switch (commandState.command[3])
-  {
-  case 'B':
-    mount.tracking.trackComp == TC_BOTH ? replyLongTrue() : replyLongFalse();
-    break;
-  case 'C':
-    replyLongTrue();
-    break;
-  case 'm':
-    mount.motorsEncoders.enableMotor ? replyLongTrue() : replyLongFalse();
-    break;
-  case 'M':
-  {
-    if (commandState.command[4] == '1')
-      mount.guiding.GuidingState == Guiding::GuidingAtRate && mount.guiding.guideA1.isBusy() ? replyLongTrue() : replyLongFalse();
-    else if (commandState.command[4] == '2')
-      mount.guiding.GuidingState == Guiding::GuidingAtRate && mount.guiding.guideA2.isBusy() ? replyLongTrue() : replyLongFalse();
-    else
-      replyLongUnknow();
-    break;
-  }
-  case 'P':
-    mount.isGuidingStar() ? replyLongTrue() : replyLongFalse();
-    break;
-  case 'S':
-    (mount.guiding.GuidingState == GuidingRecenter || mount.guiding.GuidingState == GuidingAtRate || mount.isMovingTo())
-      ? replyLongTrue() : replyLongFalse();
-    break;
-  case 'T':
-    mount.tracking.sideralTracking ? replyLongTrue() : replyLongFalse();
-    break;
   }
 }
 
@@ -1001,8 +870,6 @@ void Command_GX() {
   case 'L': Command_GX_Limits();      break;
   case 'l': Command_GX_MountLimits(); break;
   case 'T': Command_GX_Time();        break;
-  case 'I': Command_GX_Status();      break;
-  case 'J': Command_GX_ASCOM();       break;
   case 'M': Command_GX_Motors();      break;
   case 'O': Command_GX_Options();     break;
   default:  replyLongUnknow();        break;

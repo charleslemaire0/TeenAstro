@@ -176,9 +176,7 @@ TA_ASCOM_API int TeenAstroAscom_HasMotors(TeenAstroAscom_Handle h)
 {
   if (!h) return 0;
   AscomContext* ctx = (AscomContext*)h;
-  char out[8];
-  if (ctx->client->get(":GXJm#", out, sizeof(out)) != LX200_VALUEGET) return 0;
-  return (out[0] == '1') ? 1 : 0;
+  return ctx->mountStatus->motorsEnable() ? 1 : 0;
 }
 
 TA_ASCOM_API int TeenAstroAscom_Park(TeenAstroAscom_Handle h)
@@ -360,7 +358,7 @@ TA_ASCOM_API int TeenAstroAscom_IsReadyForGoto(TeenAstroAscom_Handle h)
   if (!h) return 0;
   AscomContext* ctx = (AscomContext*)h;
 
-  // Refresh cached state from mount (GXAS / GXI as implemented by TeenAstroMountStatus)
+  // Refresh cached state from mount (GXAS as implemented by TeenAstroMountStatus)
   ctx->mountStatus->updateAllState(true);
   const MountState& m = ctx->mountStatus->mountState();
   if (!m.valid) return 0;
