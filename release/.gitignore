@@ -1,0 +1,4 @@
+# All release outputs are build artifacts -- do not commit
+*
+!.gitignore
+!README.md

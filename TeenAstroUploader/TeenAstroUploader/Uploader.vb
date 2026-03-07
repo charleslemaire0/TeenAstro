@@ -183,18 +183,15 @@ Public Class Uploader
       Next
       client.Dispose()
     End Using
-    sum += Firmwares.Count.ToString
+    sum += Firmwares.Count
   End Sub
 
   Private Sub ButtonDownLoad_Click(sender As Object, e As EventArgs) Handles ButtonDownLoad.Click
     Dim n As Integer = 0
     Dim sum As Integer = 0
-    sum = n
-    'downloadVersion13x(n, sum)
-    'downloadVersionx(n, sum, "", 1.4)
-    'downloadVersionx(n, sum, "_latest", 1.4)
-    downloadVersionx(n, sum, "", 1.6)
-    downloadVersionx(n, sum, "_latest", 1.6)
+    Dim ver As String = ComboBoxFirmwareVersion.SelectedItem.ToString()
+    downloadVersionx(n, sum, "", ver)
+    downloadVersionx(n, sum, "_latest", ver)
     MsgBox(n.ToString & " of " & sum.ToString & " successfully downloaded!")
   End Sub
 

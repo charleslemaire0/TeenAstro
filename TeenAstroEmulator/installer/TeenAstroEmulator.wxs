@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <Product Id="*"
+           Name="TeenAstro Emulator"
+           Language="1033"
+           Version="1.6.0"
+           Manufacturer="TeenAstro"
+           UpgradeCode="B7E8A7F2-9C4D-4E1A-8B3D-2F6E5A1C9D0B">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="TeenAstroIcon" SourceFile="stage\icon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="TeenAstroIcon" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="TeenAstro Emulator">
+
+          <!-- SHC Emulator + SDL2 -->
+          <Component Id="EmulatorComponent" Guid="A1B2C3D4-E5F6-7890-ABCD-EF1234567890">
+            <File Id="SHCExe" Source="stage\TeenAstroSHC.exe" KeyPath="yes" />
+            <File Id="SDL2Dll" Source="stage\SDL2.dll" />
+          </Component>
+
+          <!-- Firmware Uploader -->
+          <Component Id="UploaderComponent" Guid="C3D4E5F6-A7B8-9012-CDEF-123456789ABC">
+            <File Id="UploaderExe" Source="stage\TeenAstroUploader.exe" KeyPath="yes" />
+          </Component>
+
+          <!-- TeenAstro App (Flutter Windows) - harvested by heat.exe into AppFiles.wxs -->
+
+        </Directory>
+      </Directory>
+
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="AppMenuDir" Name="TeenAstro">
+          <Component Id="ShortcutComponent" Directory="AppMenuDir" Guid="B2C3D4E5-F6A7-8901-BCDE-F12345678901">
+            <Shortcut Id="SHCShortcut"
+                      Name="TeenAstro SHC Emulator"
+                      Description="Start Smart Hand Controller emulator"
+                      Target="[INSTALLFOLDER]TeenAstroSHC.exe"
+                      WorkingDirectory="INSTALLFOLDER"
+                      Icon="TeenAstroIcon" />
+            <Shortcut Id="UploaderShortcut"
+                      Name="TeenAstro Firmware Uploader"
+                      Description="Download and upload TeenAstro firmware"
+                      Target="[INSTALLFOLDER]TeenAstroUploader.exe"
+                      WorkingDirectory="INSTALLFOLDER"
+                      Icon="TeenAstroIcon" />
+            <Shortcut Id="AppShortcut"
+                      Name="TeenAstro App"
+                      Description="TeenAstro telescope controller app"
+                      Target="[INSTALLFOLDER]teenastro_app.exe"
+                      WorkingDirectory="INSTALLFOLDER"
+                      Icon="TeenAstroIcon" />
+            <RemoveFolder Id="RemoveAppMenuDir" Directory="AppMenuDir" On="uninstall" />
+            <RegistryValue Root="HKCU" Key="Software\TeenAstro\Emulator" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
+          </Component>
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <Feature Id="ProductFeature" Title="TeenAstro Emulator" Level="1">
+      <ComponentRef Id="EmulatorComponent" />
+      <ComponentRef Id="UploaderComponent" />
+      <ComponentRef Id="ShortcutComponent" />
+      <ComponentGroupRef Id="AppFiles" />
+    </Feature>
+  </Product>
+</Wix>

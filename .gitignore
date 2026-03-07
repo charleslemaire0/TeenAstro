@@ -7,6 +7,9 @@ debug-*.log
 IMPLEMENTATION_PLAN.md
 build_*.txt
 Released data/App/
+/release/ascom/
+/release/msi/
+/release/app/
 
 # Prerequisites
 *.d

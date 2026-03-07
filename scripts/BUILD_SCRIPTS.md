@@ -99,6 +99,51 @@ python scripts\generate_reply_lengths.py
 
 ---
 
+## 5. Build MSI installer (SHC emulator + Uploader + App)
+
+**Script:** `TeenAstroEmulator\installer\build_msi.ps1`
+
+- Builds the SHC emulator (PlatformIO), Firmware Uploader (MSBuild), and TeenAstro App (Flutter).
+- Produces a Windows MSI that installs all three with Start Menu shortcuts.
+- **Output:** `TeenAstroEmulator\installer\out\TeenAstroEmulator.msi`
+
+| Command | Effect |
+|---------|--------|
+| `.\TeenAstroEmulator\installer\build_msi.ps1` | Build everything and produce MSI |
+| `.\TeenAstroEmulator\installer\build_msi.ps1 -SkipApp` | Skip Flutter app (emulator + uploader only) |
+| `.\TeenAstroEmulator\installer\build_msi.ps1 -SkipEmulator` | Reuse previously staged emulator exe |
+
+Requires: PlatformIO, MSBuild, Flutter, WiX Toolset 3. See `TeenAstroEmulator\installer\README.md`.
+
+---
+
+## 6. Build all release artifacts (ASCOM + MSI + App)
+
+**Script:** `scripts\build_release.ps1`
+
+- Builds the **ASCOM driver**, the **MSI** (emulator + uploader + app), and copies the **Flutter Windows app** standalone.
+- Collects all outputs under **`release\`**.
+
+| Command | Effect |
+|---------|--------|
+| `.\scripts\build_release.ps1` | Build everything |
+| `.\scripts\build_release.ps1 -SkipASCOM` | Skip ASCOM driver |
+| `.\scripts\build_release.ps1 -SkipMSI` | Skip MSI |
+| `.\scripts\build_release.ps1 -SkipApp` | Skip standalone app copy |
+
+**Output layout:**
+
+```
+release\
+  ascom\    ASCOM driver (ASCOM.TeenAstro.exe + deps) -- register with /regserver
+  msi\      TeenAstroEmulator.msi
+  app\      Flutter Windows app (standalone)
+```
+
+Requires: PlatformIO, MSBuild (.NET 4.7.2), Flutter, WiX Toolset 3.
+
+---
+
 ## Summary
 
 | Goal | Script | Output location |
@@ -108,5 +153,7 @@ python scripts\generate_reply_lengths.py
 | Build MainUnit / SHC / Server / Focuser (default envs) | `scripts\build_firmware.ps1` | `TeenAstroMainUnit\pio\` etc. |
 | Build Android + Windows app | `scripts\build_app.ps1` | `Released data\App\` |
 | Generate reply-length tables | `python scripts\generate_reply_lengths.py` | TeenAstroCommandDef, teenastro_app |
+| Build MSI (emulator + uploader + app) | `TeenAstroEmulator\installer\build_msi.ps1` | `TeenAstroEmulator\installer\out\` |
+| **Build all release artifacts** | **`scripts\build_release.ps1`** | **`release\`** |
 
 Full PC setup (all components, .NET, Flutter): see **`BUILD_SETUP.md`** at repo root.
