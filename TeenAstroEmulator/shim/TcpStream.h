@@ -224,6 +224,15 @@ private:
 };
 
 
+/* Optional yield hook: called from TcpClientStream::available() while
+   waiting for data, so the SHC emulator can pump SDL events + blit. */
+#ifdef EMU_SHC
+extern void _emu_shc_blit();
+static inline void _tcp_yield() { _emu_shc_blit(); }
+#else
+static inline void _tcp_yield() {}
+#endif
+
 class TcpClientStream : public Stream {
 public:
     TcpClientStream() = default;
@@ -258,7 +267,9 @@ public:
     int available() override {
         if (sock_ == INVALID_SOCK) return 0;
         fillBuffer();
-        return buf_len_ - buf_pos_;
+        int n = buf_len_ - buf_pos_;
+        if (n == 0) _tcp_yield();
+        return n;
     }
 
     int read() override {
