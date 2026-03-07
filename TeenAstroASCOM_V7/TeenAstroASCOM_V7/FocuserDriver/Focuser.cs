@@ -200,7 +200,7 @@ namespace ASCOM.TeenAstro.Focuser
       get
       {
         CheckConnected("IsMoving");
-        return false; // TeenAstro does not report moving state via :F?#; could poll position change if needed
+        return FocuserHardware.GetIsMoving();
       }
     }
 
@@ -247,7 +247,7 @@ namespace ASCOM.TeenAstro.Focuser
       }
     }
 
-    public double StepSize => 0.0; // Not reported by TeenAstro focuser
+    public double StepSize => 1.0; // 1 micron per step (Conform requires > 0; actual value not reported by firmware)
 
     public bool TempComp
     {
@@ -264,7 +264,9 @@ namespace ASCOM.TeenAstro.Focuser
         CheckConnected("Temperature");
         if (!FocuserHardware.GetFocuserPosition(out _, out _, out double temp))
           throw new ASCOM.DriverException("No focuser or focuser not responding.");
-        return double.IsNaN(temp) ? 0.0 : temp;
+        if (double.IsNaN(temp) || temp < -50.0)
+          throw new PropertyNotImplementedException("Temperature", true);
+        return temp;
       }
     }
 

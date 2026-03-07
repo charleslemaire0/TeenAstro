@@ -40,6 +40,12 @@ namespace ASCOM.TeenAstro.Focuser
     /// <summary>Default max position (TeenAstro focuser step range).</summary>
     internal const int DefaultMaxStep = 65535;
 
+    /// <summary>Position tolerance (steps) to consider a move complete for IsMoving.</summary>
+    private const int MoveToleranceSteps = 2;
+
+    /// <summary>Target position for current move; -1 when not moving.</summary>
+    private static int moveTargetPosition = -1;
+
     static FocuserHardware()
     {
       try
@@ -166,15 +172,30 @@ namespace ASCOM.TeenAstro.Focuser
       string buf = "";
       if (!SendFocuserCommand(cmd, 0, ref buf))
         throw new ASCOM.DriverException("Focuser move command failed.");
+      moveTargetPosition = position;
       LogMessage("MoveTo", cmd);
     }
 
     /// <summary>Halt focuser. Command :FQ#.</summary>
     public static void Halt()
     {
+      moveTargetPosition = -1;
       string buf = "";
       SendFocuserCommand(":FQ#", 0, ref buf);
       LogMessage("Halt", "Sent :FQ#");
+    }
+
+    /// <summary>True if a move is in progress. Polls position and clears move state when within tolerance of target.</summary>
+    public static bool GetIsMoving()
+    {
+      if (moveTargetPosition < 0) return false;
+      if (!GetFocuserPosition(out int pos, out _, out _)) return false;
+      if (Math.Abs(pos - moveTargetPosition) <= MoveToleranceSteps)
+      {
+        moveTargetPosition = -1;
+        return false;
+      }
+      return true;
     }
 
     internal static void LogMessage(string identifier, string message)
