@@ -530,7 +530,7 @@ private:
 
   // --- All-state bulk cache (:GXAS#) ---
   // Stores the 88-char base64 string + '#' + NUL (90 bytes total).
-  char          m_allStateB64[96] = "";
+  char          m_allStateB64[144] = "";  /* 136 base64 + '#' + null for GXAS 102-byte packet */
   CacheTimer    m_timerAllState;
   // Numeric position values from last successful updateAllState (for ASCOM)
   float         m_raHours = 0, m_decDeg = 0, m_altDeg = 0, m_azDeg = 0;
@@ -586,7 +586,7 @@ private:
   // Options
   uint8_t   m_cfgMountIdx     = 0;
 
-  // --- Tracking rates (current from GXAS bytes 40,44 float32; stored from 48,52 int32) ---
+  // --- Tracking rates (current from GXAS bytes 68,76 float64; stored from 84,88 int32) ---
   double        m_trackRateRa  = 0.0;
   double        m_trackRateDec = 0.0;
   long          m_storedTrackRateRa  = 0;

@@ -61,7 +61,7 @@ inline int getExpectedReplyLength(const char* command)
   if (strcmp(command, ":GXA6#") == 0) return 16;
   if (strcmp(command, ":GXA7#") == 0) return 16;
   if (strcmp(command, ":GXA8#") == 0) return 16;
-  if (strcmp(command, ":GXAS#") == 0) return 128;
+  if (strcmp(command, ":GXAS#") == 0) return 136;
   if (strcmp(command, ":GXAa#") == 0) return 16;
   if (strcmp(command, ":GXAw#") == 0) return 16;
   if (strcmp(command, ":GXAz#") == 0) return 16;
@@ -134,11 +134,11 @@ inline int getExpectedReplyLength(const char* command)
   if (strcmp(command, ":GXRB#") == 0) return 16;
   if (strcmp(command, ":GXRD#") == 0) return 4;
   if (strcmp(command, ":GXRX#") == 0) return 8;
-  if (strcmp(command, ":GXRd#") == 0) return 24;  /* float reply */
+  if (strcmp(command, ":GXRd#") == 0) return 32;  /* %.17g double reply */
   if (strcmp(command, ":GXRe#") == 0) return 16;
   if (strcmp(command, ":GXRf#") == 0) return 16;
-  if (strcmp(command, ":GXRr#") == 0) return 24;  /* float reply */
-  if (strcmp(command, ":GXRh#") == 0) return 24;  /* float reply */
+  if (strcmp(command, ":GXRr#") == 0) return 32;  /* %.17g double reply */
+  if (strcmp(command, ":GXRh#") == 0) return 32;  /* %.17g double reply */
   if (strcmp(command, ":GXT0#") == 0) return 8;
   if (strcmp(command, ":GXT1#") == 0) return 8;
   if (strcmp(command, ":GXT2#") == 0) return 16;

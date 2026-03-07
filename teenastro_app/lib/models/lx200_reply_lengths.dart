@@ -48,7 +48,7 @@ int? getExpectedReplyLength(String cmd) {
     case ":GXA6#": return 16;
     case ":GXA7#": return 16;
     case ":GXA8#": return 16;
-    case ":GXAS#": return 128;
+    case ":GXAS#": return 136;
     case ":GXAa#": return 16;
     case ":GXAw#": return 16;
     case ":GXAz#": return 16;
@@ -158,7 +158,7 @@ int? getExpectedReplyLength(String cmd) {
 abstract class LX200ReplyLength {
   static const int faConfig = 200;
   static const int faState = 12;
-  static const int gxas = 88;
+  static const int gxas = 136;
   static const int gxcs = 120;
   static const int gxi = 18;
 }

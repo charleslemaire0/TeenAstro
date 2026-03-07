@@ -47,7 +47,7 @@ class MountState {
   final String localTime;
   final String localDate;
   final String siderealTime;
-  /// Timezone offset in hours (local = UTC − timezoneOffset). From GXAS byte 62.
+  /// Timezone offset in hours (local = UTC − timezoneOffset). From GXAS byte 98.
   final double timezoneOffset;
 
   // Version info
@@ -66,7 +66,7 @@ class MountState {
   final int focuserPos;    // steps (from :GXAS# binary packet)
   final int focuserSpeed;  // speed units (from :GXAS# binary packet)
 
-  // Tracking rates (current from :GXAS# bytes 40-47 float32; stored from 48-55 int32; same as :GXRr#/:GXRd#/:GXRe#/:GXRf#)
+  // Tracking rates (current from :GXAS# bytes 68-83 float64; stored from 84-91 int32; same as :GXRr#/:GXRd#/:GXRe#/:GXRf#)
   final double trackRateRa;
   final double trackRateDec;
   final int storedTrackRateRa;
@@ -213,12 +213,12 @@ class MountState {
   }
 
   // ---------------------------------------------------------------------------
-  // Parse binary :GXAS# response (88-char base64 → 66-byte packet)
+  // Parse binary :GXAS# response (136-char base64 → 102-byte packet)
   // ---------------------------------------------------------------------------
   //
-  // Packet layout (little-endian): fixed data first; optional focuser before checksum.
-  //   Bytes 12-39: positions (7 × float32). Bytes 40-55: tracking rates (4 × int32 LE).
-  //   Bytes 56-61: focuser position (uint32) + speed (uint16), optional. Byte 65: checksum.
+  // Packet layout (little-endian): all float fields are float64. Byte 101: checksum.
+  //   Bytes 12-83: positions and rates (9 × float64). Bytes 84-91: stored rates (int32).
+  //   Bytes 92-97: focuser. Byte 98: timezone.
   MountState parseBinaryState(String base64Str) {
     if (base64Str.length != LX200ReplyLength.gxas) return copyWith(valid: false);
 
@@ -228,12 +228,13 @@ class MountState {
     } catch (_) {
       return copyWith(valid: false);
     }
-    if (bytes.length < 66) return copyWith(valid: false);
+    const int gxasPktLen = 102;
+    if (bytes.length < gxasPktLen) return copyWith(valid: false);
 
-    // Verify XOR checksum: XOR of bytes 0–64 must equal byte 65.
+    // Verify XOR checksum: XOR of bytes 0–100 must equal byte 101.
     int xorChk = 0;
-    for (int i = 0; i < 65; i++) xorChk ^= bytes[i];
-    if (xorChk != bytes[65]) return copyWith(valid: false);
+    for (int i = 0; i < gxasPktLen - 1; i++) xorChk ^= bytes[i];
+    if (xorChk != bytes[gxasPktLen - 1]) return copyWith(valid: false);
 
     final bd = ByteData.sublistView(bytes);
 
@@ -298,22 +299,22 @@ class MountState {
     final utcTimeStr = '${_p2(utcH)}:${_p2(utcM)}:${_p2(utcS)}';
     final utcDateStr = '${_p2(utcMo)}/${_p2(utcD)}/${_p2(utcY)}';
 
-    // ── Byte 62: timezone offset (int8, toff×10; local = UTC − toff) ───────
-    final tz10Raw = bytes[62];
+    // ── Byte 98: timezone offset (int8, toff×10; local = UTC − toff) ───────
+    final tz10Raw = bytes[98];
     final tz10 = tz10Raw > 127 ? tz10Raw - 256 : tz10Raw;
     final tzHours = tz10 / 10.0;
     final local = _utcToLocal(utcH, utcM, utcS, utcMo, utcD, utcY, tzHours);
     final localTimeStr = local.$1;
     final localDateStr = local.$2;
 
-    // ── Positions bytes 12-39 ─────────────────────────────────────────────
-    final raH   = bd.getFloat32(12, Endian.little);
-    final decD  = bd.getFloat32(16, Endian.little);
-    final altD  = bd.getFloat32(20, Endian.little);
-    final azD   = bd.getFloat32(24, Endian.little);
-    final lstH  = bd.getFloat32(28, Endian.little);
-    final tRaH  = bd.getFloat32(32, Endian.little);
-    final tDecD = bd.getFloat32(36, Endian.little);
+    // ── Positions and rates bytes 12-83 (9 × float64 LE) ───────────────────
+    final raH   = bd.getFloat64(12, Endian.little);
+    final decD  = bd.getFloat64(20, Endian.little);
+    final altD  = bd.getFloat64(28, Endian.little);
+    final azD   = bd.getFloat64(36, Endian.little);
+    final lstH  = bd.getFloat64(44, Endian.little);
+    final tRaH  = bd.getFloat64(52, Endian.little);
+    final tDecD = bd.getFloat64(60, Endian.little);
 
     final raStr   = _formatRa(raH);
     final decStr  = _formatDeg(decD);
@@ -323,15 +324,15 @@ class MountState {
     final tRaStr  = _formatRa(tRaH);
     final tDecStr = _formatDeg(tDecD);
 
-    // ── Tracking rates bytes 40-55 (float32 at 40,44; int32 at 48,52) ───────
-    final trRa = bd.getFloat32(40, Endian.little);
-    final trDec = bd.getFloat32(44, Endian.little);
-    final stRa = bd.getInt32(48, Endian.little);
-    final stDec = bd.getInt32(52, Endian.little);
+    // ── Tracking rates bytes 68-83 (float64); stored bytes 84-91 (int32) ───
+    final trRa  = bd.getFloat64(68, Endian.little);
+    final trDec = bd.getFloat64(76, Endian.little);
+    final stRa  = bd.getInt32(84, Endian.little);
+    final stDec = bd.getInt32(88, Endian.little);
 
-    // ── Focuser bytes 56-61 (optional when hasFocuser) ────────────────────
-    final fPos = bd.getUint32(56, Endian.little);
-    final fSpd = bd.getUint16(60, Endian.little);
+    // ── Focuser bytes 92-97 (optional when hasFocuser) ─────────────────────
+    final fPos = bd.getUint32(92, Endian.little);
+    final fSpd = bd.getUint16(96, Endian.little);
 
     return copyWith(
       tracking: trackVal,

@@ -33,18 +33,20 @@ static void PrintRa(double& val) {
 // =============================================================================
 
 // ---- GX All State  :GXAS# --------------------------------------------------
-// Returns a base64-encoded 66-byte binary snapshot of all mount state.
-// 66 bytes → 88 base64 chars + '#'.  No padding needed since 66 is divisible by 3.
+// Returns a base64-encoded 102-byte binary snapshot of all mount state.
+// 102 bytes → 136 base64 chars + '#'.  Padding: 2 bytes (102 % 3 == 0, no pad).
 //
-// Packet layout (little-endian). Fixed data first; optional focuser last before checksum.
+// Packet layout (little-endian). All float fields are float64 (double) for full precision.
 //   Bytes 0-5:   Status (tracking, sidereal, park, atHome, pierSide, guidingRate, aligned, mountType, spiralRunning, guidingEW/NS, trackComp, fault, pulse, gnssFlags, error, enableFlags, hasFocuser)
 //   Bytes 6-11:  UTC hour,min,sec,month,day,year(2-digit)
-//   Bytes 12-39: Positions (7 × float32 LE: RA, Dec, Alt, Az, LST, Target RA, Target Dec)
-//   Bytes 40-55: Tracking rates (float32 LE at 40,44 = current; int32 at 48,52 = stored — same as :GXRr#/:GXRd#/:GXRe#/:GXRf#)
-//   Bytes 56-61: Focuser (optional; when hasFocuser): position uint32 LE, speed uint16 LE. Otherwise zero.
-//   Byte  62:   Timezone offset (int8_t, toff × 10; subtract to get local from UTC)
-//   Bytes 63-64: reserved (0)
-//   Byte  65:   XOR checksum of bytes 0-64
+//   Bytes 12-83: Positions and rates (9 × float64 LE: RA, Dec, Alt, Az, LST, Target RA, Target Dec, TrackRate RA, TrackRate Dec)
+//   Bytes 84-91: Stored rates (int32 LE at 84, 88 — same as :GXRe#/:GXRf#)
+//   Bytes 92-97: Focuser (optional; when hasFocuser): position uint32 LE, speed uint16 LE. Otherwise zero.
+//   Byte  98:   Timezone offset (int8_t, toff × 10; subtract to get local from UTC)
+//   Bytes 99-100: reserved (0)
+//   Byte  101:  XOR checksum of bytes 0-100
+
+static constexpr int GXAS_PKT_LEN = 102;
 
 static const char GX_B64[] =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -63,14 +65,14 @@ static void gxasB64Encode(const uint8_t* in, char* out, int len)
   out[o] = 0;
 }
 
-static void gxasPackF32(uint8_t* pkt, int off, float v)
+static void gxasPackF64(uint8_t* pkt, int off, double v)
 {
-  memcpy(pkt + off, &v, 4);
+  memcpy(pkt + off, &v, 8);
 }
 
 static void Command_GX_AllState()
 {
-  uint8_t pkt[66];
+  uint8_t pkt[GXAS_PKT_LEN];
   memset(pkt, 0, sizeof(pkt));
   PoleSide currentSide = mount.getPoleSide();
 
@@ -154,37 +156,37 @@ static void Command_GX_AllState()
     pkt[11] = (uint8_t)(y % 100);
   }
 
-  // ── Bytes 12-39: positions (7 × float32 LE) ──────────────────────────────
+  // ── Bytes 12-83: positions and tracking rates (9 × float64 LE) ─────────────
   {
     Coord_EQ EQ_T = mount.getEqu(*localSite.latitude() * DEG_TO_RAD);
-    float ra  = (float)(EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR);
-    float dec = (float)(EQ_T.Dec() * RAD_TO_DEG);
+    double ra  = EQ_T.Ra(rtk.LST() * HOUR_TO_RAD) * RAD_TO_HOUR;
+    double dec = EQ_T.Dec() * RAD_TO_DEG;
     Coord_HO HO_T = mount.getHorTopo();
-    float alt = (float)(HO_T.Alt() * RAD_TO_DEG);
-    float az  = (float)(degRange(HO_T.Az() * RAD_TO_DEG));
-    float lst = (float)(rtk.LST());
-    float tgtRA  = (float)(mount.targetCurrent.newTargetRA  / 15.0);
-    float tgtDec = (float)(mount.targetCurrent.newTargetDec);
-    gxasPackF32(pkt, 12, ra);
-    gxasPackF32(pkt, 16, dec);
-    gxasPackF32(pkt, 20, alt);
-    gxasPackF32(pkt, 24, az);
-    gxasPackF32(pkt, 28, lst);
-    gxasPackF32(pkt, 32, tgtRA);
-    gxasPackF32(pkt, 36, tgtDec);
+    double alt = HO_T.Alt() * RAD_TO_DEG;
+    double az  = degRange(HO_T.Az() * RAD_TO_DEG);
+    double lst = rtk.LST();
+    double tgtRA  = mount.targetCurrent.newTargetRA  / 15.0;
+    double tgtDec = mount.targetCurrent.newTargetDec;
+    double trackRateRA = 1.0 - mount.tracking.RequestedTrackingRateHA;
+    double trackRateDec = mount.tracking.RequestedTrackingRateDEC;
+    gxasPackF64(pkt, 12, ra);
+    gxasPackF64(pkt, 20, dec);
+    gxasPackF64(pkt, 28, alt);
+    gxasPackF64(pkt, 36, az);
+    gxasPackF64(pkt, 44, lst);
+    gxasPackF64(pkt, 52, tgtRA);
+    gxasPackF64(pkt, 60, tgtDec);
+    gxasPackF64(pkt, 68, trackRateRA);
+    gxasPackF64(pkt, 76, trackRateDec);
   }
 
-  // ── Bytes 40-55: tracking rates (float32 LE at 40,44; int32 at 48,52 for stored)
-  float trackRateRA   = (float)(1.0 - mount.tracking.RequestedTrackingRateHA);
-  float trackRateDec  = (float)mount.tracking.RequestedTrackingRateDEC;
+  // ── Bytes 84-91: stored tracking rates (int32 LE) ────────────────────────
   int32_t storedRateRA  = (int32_t)mount.tracking.storedTrakingRateRA;
   int32_t storedRateDec = (int32_t)mount.tracking.storedTrakingRateDEC;
-  gxasPackF32(pkt, 40, trackRateRA);
-  gxasPackF32(pkt, 44, trackRateDec);
-  memcpy(pkt + 48, &storedRateRA, 4);
-  memcpy(pkt + 52, &storedRateDec, 4);
+  memcpy(pkt + 84, &storedRateRA, 4);
+  memcpy(pkt + 88, &storedRateDec, 4);
 
-  // ── Bytes 56-61: focuser (optional; when hasFocuser). Otherwise zero. ─────
+  // ── Bytes 92-97: focuser (optional; when hasFocuser). Otherwise zero. ─────
   if (mount.config.peripherals.hasFocuser)
   {
     Focus_Serial.flush();
@@ -207,24 +209,23 @@ static void Command_GX_AllState()
       uint16_t fSpd  = 0;
       const char* sp = strchr(fc + 1, ' ');
       if (sp) fSpd   = (uint16_t)atoi(sp + 1);
-      memcpy(pkt + 56, &fPos, 4);
-      pkt[60] = (uint8_t)(fSpd & 0xFF);
-      pkt[61] = (uint8_t)(fSpd >> 8);
+      memcpy(pkt + 92, &fPos, 4);
+      pkt[96] = (uint8_t)(fSpd & 0xFF);
+      pkt[97] = (uint8_t)(fSpd >> 8);
     }
   }
-  // ── Byte 62: timezone offset (toff × 10, int8_t) ───────────────────────────
-  // Allows clients to compute local date/time from cached UTC without extra serial commands.
-  pkt[62] = (uint8_t)((int8_t)round(*localSite.toff() * 10.0f));
+  // ── Byte 98: timezone offset (toff × 10, int8_t) ───────────────────────────
+  pkt[98] = (uint8_t)((int8_t)round(*localSite.toff() * 10.0f));
 
-  // pkt[63-64] stay 0 (reserved)
+  // pkt[99-100] stay 0 (reserved)
 
-  // Byte 65: XOR checksum of bytes 0-64
+  // Byte 101: XOR checksum of bytes 0-100
   uint8_t xorChk = 0;
-  for (int i = 0; i < 65; i++) xorChk ^= pkt[i];
-  pkt[65] = xorChk;
+  for (int i = 0; i < 101; i++) xorChk ^= pkt[i];
+  pkt[101] = xorChk;
 
-  // ── Base64 encode (66 bytes → 88 chars) → reply ──────────────────────────
-  gxasB64Encode(pkt, commandState.reply, 66);
+  // ── Base64 encode (102 bytes → 136 chars) → reply ────────────────────────
+  gxasB64Encode(pkt, commandState.reply, GXAS_PKT_LEN);
   strcat(commandState.reply, "#");
 }
 
@@ -502,19 +503,19 @@ static void Command_GX_Rates()
   case 'r':
   {
     double raRate = 1.0 - mount.tracking.RequestedTrackingRateHA;
-    sprintf(commandState.reply, "%.10g#", raRate);
+    sprintf(commandState.reply, "%.17g#", raRate);
   }
   break;
   case 'h':
   {
     double haRate = mount.tracking.RequestedTrackingRateHA;
-    sprintf(commandState.reply, "%.10g#", haRate);
+    sprintf(commandState.reply, "%.17g#", haRate);
   }
   break;
   case 'd':
   {
     double decRate = mount.tracking.RequestedTrackingRateDEC;
-    sprintf(commandState.reply, "%.10g#", decRate);
+    sprintf(commandState.reply, "%.17g#", decRate);
   }
   break;
   case 'e':

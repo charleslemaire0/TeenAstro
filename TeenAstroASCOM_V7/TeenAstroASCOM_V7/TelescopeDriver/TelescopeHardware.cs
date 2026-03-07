@@ -83,13 +83,13 @@ namespace ASCOM.TeenAstro.Telescope
       public bool PulseGuiding;  // true when a PulseGuide command is in progress
       public byte ErrorCode;     // mount.errors.lastError (0 = ERRT_NONE)
       public bool MotorEnabled;  // motorsEncoders.enableMotor
-      public float RaHours;
-      public float DecDeg;
-      public float AltDeg;
-      public float AzDeg;
-      public float LstHours;
-      public float TargetRaHours;
-      public float TargetDecDeg;
+      public double RaHours;
+      public double DecDeg;
+      public double AltDeg;
+      public double AzDeg;
+      public double LstHours;
+      public double TargetRaHours;
+      public double TargetDecDeg;
       public double TrackRateRA;
       public double TrackRateDec;
       public int StoredRateRA;
@@ -2653,16 +2653,18 @@ namespace ASCOM.TeenAstro.Telescope
           gxasCacheTimer.Stop();
           return false;
         }
-        if (string.IsNullOrEmpty(response) || response.Length < 88)
+        const int GXAS_B64_LEN = 136;
+        const int GXAS_PKT_LEN = 102;
+        if (string.IsNullOrEmpty(response) || response.Length < GXAS_B64_LEN)
         {
           LogMessage("EnsureGXASCacheCurrent Failed", $"GXAS response too short: {response?.Length ?? 0} chars");
           gxasCacheTimer.Stop();
           return false;
         }
         string b64 = response.EndsWith("#") ? response.Substring(0, response.Length - 1) : response;
-        if (b64.Length != 88)
+        if (b64.Length != GXAS_B64_LEN)
         {
-          LogMessage("EnsureGXASCacheCurrent Failed", $"GXAS expected 88 base64 chars, got {b64.Length}");
+          LogMessage("EnsureGXASCacheCurrent Failed", $"GXAS expected {GXAS_B64_LEN} base64 chars, got {b64.Length}");
           gxasCacheTimer.Stop();
           return false;
         }
@@ -2677,15 +2679,15 @@ namespace ASCOM.TeenAstro.Telescope
           gxasCacheTimer.Stop();
           return false;
         }
-        if (decoded == null || decoded.Length != 66)
+        if (decoded == null || decoded.Length != GXAS_PKT_LEN)
         {
-          LogMessage("EnsureGXASCacheCurrent Failed", $"GXAS decode length {decoded?.Length ?? 0}, expected 66");
+          LogMessage("EnsureGXASCacheCurrent Failed", $"GXAS decode length {decoded?.Length ?? 0}, expected {GXAS_PKT_LEN}");
           gxasCacheTimer.Stop();
           return false;
         }
         byte xorChk = 0;
-        for (int i = 0; i < 65; i++) xorChk ^= decoded[i];
-        if (xorChk != decoded[65])
+        for (int i = 0; i < GXAS_PKT_LEN - 1; i++) xorChk ^= decoded[i];
+        if (xorChk != decoded[GXAS_PKT_LEN - 1])
         {
           LogMessage("EnsureGXASCacheCurrent Failed", "GXAS checksum mismatch");
           gxasCacheTimer.Stop();
@@ -2718,24 +2720,24 @@ namespace ASCOM.TeenAstro.Telescope
       // Byte 5: enableFlags, bit 3 = enableMotor
       byte enableFlags = pkt[5];
       s.MotorEnabled = ((enableFlags >> 3) & 0x1) != 0;
-      s.RaHours = BitConverter.ToSingle(pkt, 12);
-      s.DecDeg = BitConverter.ToSingle(pkt, 16);
-      s.AltDeg = BitConverter.ToSingle(pkt, 20);
-      s.AzDeg = BitConverter.ToSingle(pkt, 24);
-      s.LstHours = BitConverter.ToSingle(pkt, 28);
-      s.TargetRaHours = BitConverter.ToSingle(pkt, 32);
-      s.TargetDecDeg = BitConverter.ToSingle(pkt, 36);
-      s.TrackRateRA = BitConverter.ToSingle(pkt, 40);
-      s.TrackRateDec = BitConverter.ToSingle(pkt, 44);
-      s.StoredRateRA = BitConverter.ToInt32(pkt, 48);
-      s.StoredRateDec = BitConverter.ToInt32(pkt, 52);
+      s.RaHours = BitConverter.ToDouble(pkt, 12);
+      s.DecDeg = BitConverter.ToDouble(pkt, 20);
+      s.AltDeg = BitConverter.ToDouble(pkt, 28);
+      s.AzDeg = BitConverter.ToDouble(pkt, 36);
+      s.LstHours = BitConverter.ToDouble(pkt, 44);
+      s.TargetRaHours = BitConverter.ToDouble(pkt, 52);
+      s.TargetDecDeg = BitConverter.ToDouble(pkt, 60);
+      s.TrackRateRA = BitConverter.ToDouble(pkt, 68);
+      s.TrackRateDec = BitConverter.ToDouble(pkt, 76);
+      s.StoredRateRA = BitConverter.ToInt32(pkt, 84);
+      s.StoredRateDec = BitConverter.ToInt32(pkt, 88);
       s.UtcHour = pkt[6];
       s.UtcMin = pkt[7];
       s.UtcSec = pkt[8];
       s.UtcMonth = pkt[9];
       s.UtcDay = pkt[10];
       s.UtcYear = pkt[11];
-      s.TimezoneOffset10 = (sbyte)pkt[62];
+      s.TimezoneOffset10 = (sbyte)pkt[98];
       return s;
     }
 

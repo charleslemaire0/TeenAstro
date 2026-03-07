@@ -110,6 +110,14 @@ static float pktF32(const uint8_t* pkt, int off)
   return v;
 }
 
+// Read float64 (double) LE from packet at offset.
+static double pktF64(const uint8_t* pkt, int off)
+{
+  double v;
+  memcpy(&v, pkt + off, 8);
+  return v;
+}
+
 // Read uint32 LE from packet at offset.
 static uint32_t pktU32(const uint8_t* pkt, int off)
 {
@@ -479,9 +487,11 @@ void TeenAstroMountStatus::updateAllState(bool force)
 {
   if (!m_timerAllState.needsUpdate(UPDATERATE) && !force) return;
 
-  // Fetch the 88-char base64 response (no '#' in returned string).
-  char raw[92] = "";
-  if (m_client->get(":GXAS#", raw, sizeof(raw)) != LX200_VALUEGET || strlen(raw) != 88)
+  // Fetch the 136-char base64 response (no '#' in returned string). GXAS packet = 102 bytes.
+  static const int GXAS_B64_LEN = 136;
+  static const int GXAS_PKT_LEN = 102;
+  char raw[GXAS_B64_LEN + 8] = "";
+  if (m_client->get(":GXAS#", raw, sizeof(raw)) != LX200_VALUEGET || strlen(raw) != GXAS_B64_LEN)
   {
     m_mount.valid = false;
     invalidatePositionTimeCaches();
@@ -489,9 +499,9 @@ void TeenAstroMountStatus::updateAllState(bool force)
     return;
   }
 
-  // Decode to 66 bytes.
-  uint8_t pkt[66];
-  if (!b64Decode(raw, 88, pkt))
+  // Decode to 102 bytes (all float fields in GXAS are float64).
+  uint8_t pkt[GXAS_PKT_LEN];
+  if (!b64Decode(raw, GXAS_B64_LEN, pkt))
   {
     m_mount.valid = false;
     invalidatePositionTimeCaches();
@@ -499,10 +509,10 @@ void TeenAstroMountStatus::updateAllState(bool force)
     return;
   }
 
-  // Verify XOR checksum: XOR of bytes 0–64 must equal byte 65.
+  // Verify XOR checksum: XOR of bytes 0–100 must equal byte 101.
   uint8_t xorChk = 0;
-  for (int i = 0; i < 65; i++) xorChk ^= pkt[i];
-  if (xorChk != pkt[65])
+  for (int i = 0; i < GXAS_PKT_LEN - 1; i++) xorChk ^= pkt[i];
+  if (xorChk != pkt[GXAS_PKT_LEN - 1])
   {
     m_mount.valid = false;
     invalidatePositionTimeCaches();
@@ -581,36 +591,36 @@ void TeenAstroMountStatus::updateAllState(bool force)
   snprintf(m_utcDate.data, sizeof(m_utcDate.data), "%02d/%02d/%02d", m_utcMonth, m_utcDay, m_utcYear);
   m_utc.valid = m_utcDate.valid = true;
 
-  // ── Byte 62: timezone offset ────────────────────────────────────────
-  m_tzOff10 = (int8_t)pkt[62];
+  // ── Byte 98: timezone offset ────────────────────────────────────────
+  m_tzOff10 = (int8_t)pkt[98];
   m_tzValid = true;
 
-  // ── Positions bytes 12-39 ─────────────────────────────────────────────
-  float ra  = pktF32(pkt, 12);
-  float dec = pktF32(pkt, 16);
-  float alt = pktF32(pkt, 20);
-  float az  = pktF32(pkt, 24);
-  float lst = pktF32(pkt, 28);
-  float tRA = pktF32(pkt, 32);
-  float tDec= pktF32(pkt, 36);
+  // ── Positions and rates bytes 12-83 (9 × float64 LE) ───────────────────
+  double ra   = pktF64(pkt, 12);
+  double dec  = pktF64(pkt, 20);
+  double alt  = pktF64(pkt, 28);
+  double az   = pktF64(pkt, 36);
+  double lst  = pktF64(pkt, 44);
+  double tRA  = pktF64(pkt, 52);
+  double tDec = pktF64(pkt, 60);
 
-  m_raHours = ra; m_decDeg = dec; m_altDeg = alt; m_azDeg = az;
-  m_lstHours = lst; m_targetRaHours = tRA; m_targetDecDeg = tDec;
+  m_raHours = (float)ra; m_decDeg = (float)dec; m_altDeg = (float)alt; m_azDeg = (float)az;
+  m_lstHours = (float)lst; m_targetRaHours = (float)tRA; m_targetDecDeg = (float)tDec;
 
-  if (!safeFloat(ra))   { strncpy(m_ra.data, "?", sizeof(m_ra.data) - 1); m_ra.data[sizeof(m_ra.data) - 1] = '\0'; }
-  else                  formatRaStr(ra,   m_ra.data,       sizeof(m_ra.data));
-  if (!safeFloat(dec))  { strncpy(m_dec.data, "?", sizeof(m_dec.data) - 1); m_dec.data[sizeof(m_dec.data) - 1] = '\0'; }
-  else                  formatDegStr(dec, m_dec.data,      sizeof(m_dec.data));
-  if (!safeFloat(alt))  { strncpy(m_alt.data, "?", sizeof(m_alt.data) - 1); m_alt.data[sizeof(m_alt.data) - 1] = '\0'; }
-  else                  formatDegStr(alt, m_alt.data,      sizeof(m_alt.data));
-  if (!safeFloat(az))   { strncpy(m_az.data, "?", sizeof(m_az.data) - 1); m_az.data[sizeof(m_az.data) - 1] = '\0'; }
-  else                  formatAzStr(az,   m_az.data,       sizeof(m_az.data));
-  if (!safeFloat(lst))  { strncpy(m_sidereal.data, "?", sizeof(m_sidereal.data) - 1); m_sidereal.data[sizeof(m_sidereal.data) - 1] = '\0'; }
-  else                  formatRaStr(lst,  m_sidereal.data, sizeof(m_sidereal.data));
-  if (!safeFloat(tRA))  { strncpy(m_raT.data, "?", sizeof(m_raT.data) - 1); m_raT.data[sizeof(m_raT.data) - 1] = '\0'; }
-  else                  formatRaStr(tRA,  m_raT.data,      sizeof(m_raT.data));
-  if (!safeFloat(tDec)) { strncpy(m_decT.data, "?", sizeof(m_decT.data) - 1); m_decT.data[sizeof(m_decT.data) - 1] = '\0'; }
-  else                  formatDegStr(tDec,m_decT.data,     sizeof(m_decT.data));
+  if (!safeFloat((float)ra))   { strncpy(m_ra.data, "?", sizeof(m_ra.data) - 1); m_ra.data[sizeof(m_ra.data) - 1] = '\0'; }
+  else                        formatRaStr((float)ra,   m_ra.data,       sizeof(m_ra.data));
+  if (!safeFloat((float)dec)) { strncpy(m_dec.data, "?", sizeof(m_dec.data) - 1); m_dec.data[sizeof(m_dec.data) - 1] = '\0'; }
+  else                        formatDegStr((float)dec, m_dec.data,      sizeof(m_dec.data));
+  if (!safeFloat((float)alt)) { strncpy(m_alt.data, "?", sizeof(m_alt.data) - 1); m_alt.data[sizeof(m_alt.data) - 1] = '\0'; }
+  else                        formatDegStr((float)alt, m_alt.data,      sizeof(m_alt.data));
+  if (!safeFloat((float)az))  { strncpy(m_az.data, "?", sizeof(m_az.data) - 1); m_az.data[sizeof(m_az.data) - 1] = '\0'; }
+  else                        formatAzStr((float)az,   m_az.data,       sizeof(m_az.data));
+  if (!safeFloat((float)lst)) { strncpy(m_sidereal.data, "?", sizeof(m_sidereal.data) - 1); m_sidereal.data[sizeof(m_sidereal.data) - 1] = '\0'; }
+  else                        formatRaStr((float)lst,  m_sidereal.data, sizeof(m_sidereal.data));
+  if (!safeFloat((float)tRA)) { strncpy(m_raT.data, "?", sizeof(m_raT.data) - 1); m_raT.data[sizeof(m_raT.data) - 1] = '\0'; }
+  else                        formatRaStr((float)tRA,  m_raT.data,      sizeof(m_raT.data));
+  if (!safeFloat((float)tDec)){ strncpy(m_decT.data, "?", sizeof(m_decT.data) - 1); m_decT.data[sizeof(m_decT.data) - 1] = '\0'; }
+  else                        formatDegStr((float)tDec,m_decT.data,     sizeof(m_decT.data));
   m_ra.valid = m_dec.valid = m_alt.valid = m_az.valid = true;
   m_sidereal.valid = m_raT.valid = m_decT.valid = true;
   m_timerRaDec.markUpdated();
@@ -618,19 +628,19 @@ void TeenAstroMountStatus::updateAllState(bool force)
   m_timerTime.markUpdated();
   m_timerRaDecT.markUpdated();
 
-  // ── Bytes 40-55: tracking rates (float32 LE at 40,44 = current; int32 at 48,52 = stored)
-  m_trackRateRa        = (double)pktF32(pkt, 40);
-  m_trackRateDec       = (double)pktF32(pkt, 44);
-  m_storedTrackRateRa  = (long)(int32_t)pktU32(pkt, 48);
-  m_storedTrackRateDec = (long)(int32_t)pktU32(pkt, 52);
+  // ── Bytes 68-83: tracking rates (float64 LE); bytes 84-91: stored (int32 LE)
+  m_trackRateRa        = pktF64(pkt, 68);
+  m_trackRateDec       = pktF64(pkt, 76);
+  m_storedTrackRateRa  = (long)(int32_t)pktU32(pkt, 84);
+  m_storedTrackRateDec = (long)(int32_t)pktU32(pkt, 88);
   m_hasInfoTrackingRate = true;
   m_timerTrackRate.markUpdated();
 
-  // ── Bytes 56-61: focuser (optional; when hasFocuser)
+  // ── Bytes 92-97: focuser (optional; when hasFocuser)
   if (m_hasFocuser)
   {
-    m_focuserPosN   = pktU32(pkt, 56);
-    m_focuserSpeedN = pktU16(pkt, 60);
+    m_focuserPosN   = pktU32(pkt, 92);
+    m_focuserSpeedN = pktU16(pkt, 96);
     snprintf(m_focuser.data, sizeof(m_focuser.data),
              "?%05lu %03u", (unsigned long)m_focuserPosN, (unsigned)m_focuserSpeedN);
     m_focuser.valid = true;

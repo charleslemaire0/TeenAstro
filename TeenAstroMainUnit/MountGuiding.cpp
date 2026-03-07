@@ -64,7 +64,7 @@ void MountGuiding::performPulseGuiding()
     {
       if (!mount_.axes.staA1.backlash_correcting)
       {
-        applyGuidingA1();
+        // Target is advanced every sidereal tick in Timer ISR so it stays in sync with steps
         unsigned long elapsedtime = micros() - guideA1.durationLast;
         if (elapsedtime > guideA1.duration)
           guideA1.duration = 0;
@@ -94,7 +94,7 @@ void MountGuiding::performPulseGuiding()
     {
       if (!mount_.axes.staA2.backlash_correcting)
       {
-        applyGuidingA2();
+        // Target is advanced every sidereal tick in Timer ISR so it stays in sync with steps
         unsigned long elapsedtime = micros() - guideA2.durationLast;
         if (elapsedtime > guideA2.duration)
           guideA2.duration = 0;
