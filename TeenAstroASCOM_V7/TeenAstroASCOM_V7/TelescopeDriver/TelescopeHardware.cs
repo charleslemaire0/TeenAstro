@@ -1771,7 +1771,7 @@ namespace ASCOM.TeenAstro.Telescope
           if (EnsureGXASCacheCurrent())
             rate = gxasState.TrackRateRA;
         }
-        return Math.Round(rate, 4);
+        return rate;
       }
       set
       {
