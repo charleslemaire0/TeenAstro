@@ -11,6 +11,7 @@
 
 using ASCOM.Astrometry.AstroUtils;
 using ASCOM.DeviceInterface;
+using ASCOM.LocalServer;
 using ASCOM.Utilities;
 using System;
 using System.Collections;
@@ -57,15 +58,10 @@ namespace ASCOM.TeenAstro.Telescope
     internal static string IP;      // IP adress
     internal static Int16 Port;     // Port for IP
     internal static string Interface;
-    internal static System.Net.IPAddress objectIP;
-    internal static ASCOM.Utilities.Serial objectSerial;
-    private static bool connectedState; // Local server's connected state
     private static bool runOnce = false; // Flag to enable "one-off" activities only to run once.
     internal static Util utilities; // ASCOM Utilities object for use as required
     internal static AstroUtils astroUtilities; // ASCOM AstroUtilities object for use as required
     internal static TraceLogger tl; // Local server's trace logger object for diagnostic log with information that you specify
-
-    private static List<Guid> uniqueIds = new List<Guid>(); // List of driver instance unique IDs
 
     /// <summary>Parsed :GXAS# binary state (136 base64 → 102 bytes).</summary>
     private struct GXASState
@@ -177,7 +173,6 @@ namespace ASCOM.TeenAstro.Telescope
 
         LogMessage("InitialiseHardware", $"ProgID: {DriverProgId}, Description: {DriverDescription}");
 
-        connectedState = false; // Initialise connected to false
         utilities = new Util(); //Initialise ASCOM Utilities object
         astroUtilities = new AstroUtils(); // Initialise ASCOM Astronomy Utilities object
 
@@ -270,15 +265,7 @@ namespace ASCOM.TeenAstro.Telescope
         Command = ":" + Command + "#";
       }
       LogMessage("LX200 TX", Command);
-      if (Interface == "COM")
-      {
-        return GetSerial(Command, Mode, ref buf, 3);
-      }
-      else if (Interface == "IP")
-      {
-        return getStream(Command, Mode, ref buf, 3);
-      }
-      return false;
+      return SharedResources.SendCommand(Command, Mode, ref buf, 3);
     }
 
     /// <summary>
@@ -419,335 +406,6 @@ namespace ASCOM.TeenAstro.Telescope
     }
 
 
-    private static void CloseAndDisposeSerial()
-    {
-      connectedState = false;
-      if (objectSerial != null)
-      {
-        if (objectSerial.Connected)
-        {
-          try
-          {
-            objectSerial.Connected = false;
-          }
-          catch
-          {
-
-          }
-        }
-        objectSerial.Dispose();
-        objectSerial = null;
-      }
-    }
-    private static void ConnectSerial(bool value)
-    {
-      if (value)
-      {
-        objectSerial = new ASCOM.Utilities.Serial();
-        LogMessage("Connected Set", "Connecting to port " + comPort);
-        try
-        {
-          string c = comPort.Replace("COM", "");
-          objectSerial.Port = Convert.ToInt32(c);
-        }
-        catch (Exception ex)
-        {
-          CloseAndDisposeSerial();
-          throw new ASCOM.DriverException(ex.Message);
-       
-        }
-        objectSerial.Speed = SerialSpeed.ps57600;
-        try
-        {
-          objectSerial.Connected = true;
-        }
-        catch (Exception ex)
-        {
-          CloseAndDisposeSerial();
-          throw new ASCOM.DriverException(ex.Message);
-        }
-        connectedState = true;
-        ConnectionStatusDate = DateTime.UtcNow;
-        objectSerial.ReceiveTimeoutMs = 5000;
-        //if (!MyDevice())
-        if (false)
-        {
-          CloseAndDisposeSerial();
-          return;
-        }
-        else
-        {
-          DateTime timeTelescope = UTCDate;
-          DateTime time = DateTime.UtcNow;
-          if (Math.Abs((timeTelescope - time).TotalSeconds) > 2d)
-          {
-            UTCDate = DateTime.UtcNow;
-            LogMessage("Connected Set", "Synced with computer time");
-          }
-          try
-          {
-            ForceGXASCacheRefresh();
-            if (EnsureGXASCacheCurrent())
-              HasMotors = gxasState.MotorEnabled;
-            else
-            {
-              CloseAndDisposeSerial();
-              throw new ASCOM.DriverException("Failed to get mount state (GXAS).");
-            }
-          }
-          catch (Exception ex)
-          {
-            CloseAndDisposeSerial();
-            throw new ASCOM.DriverException(ex.Message);
-          }
-          if (!connectedState)
-          {
-            throw new ASCOM.NotConnectedException("Connection has failed!");
-          }
-        }
-      }
-      else
-      {
-        CloseAndDisposeSerial();
-        LogMessage("Connected Set", "Disconnecting from port " + comPort);
-      }
-    }
-
-    private static void ReConnectSerial()
-    {
-      LogMessage("Serial connection", "port has been closed, unexpectedly closed try to reopen");
-      try
-      {
-        ConnectSerial(false);
-        ConnectSerial(true);
-      }
-      catch (Exception ex)
-      {
-        LogMessage("Serial connection", ex.Message);
-      }
-    }
-    private static void ConnectIP(bool value)
-    {
-      if (value)
-      {
-
-        if (System.Net.IPAddress.TryParse(IP, out objectIP))
-        {
-          connectedState = MyDevice();
-          try
-          {
-            ForceGXASCacheRefresh();
-            if (EnsureGXASCacheCurrent())
-              HasMotors = gxasState.MotorEnabled;
-            else
-            {
-              connectedState = false;
-              throw new ASCOM.DriverException("Failed to get mount state (GXAS).");
-            }
-          }
-          catch (Exception ex)
-          {
-            connectedState = false;
-            throw new ASCOM.DriverException(ex.Message);
-          }
-          // mformcontrol = New FormControl(Me)
-          // If My.Settings.ShowII Then
-          // mformcontrol.Show()
-          // End If
-          if (!connectedState)
-          {
-            throw new ASCOM.InvalidValueException("Connection has failed!");
-          }
-          else
-          {
-            DateTime timeTelescope = UTCDate;
-            DateTime time = DateTime.UtcNow;
-            if (Math.Abs((timeTelescope - time).TotalSeconds) > 2d)
-            {
-              LogMessage("Connected Set", "Synced with computer time");
-              UTCDate = DateTime.UtcNow;
-            }
-          }
-        }
-        else
-        {
-          MessageBox.Show(IP + " is Not valid IP Address", "Invalid IP Address", MessageBoxButtons.OK, MessageBoxIcon.Error);
-          return;
-        }
-      }
-      else
-      {
-        connectedState = false;
-        LogMessage("Connected Set", "Disconnecting from IP " + IP);
-      }
-    }
-    private static bool getStream(string Command, int Mode, ref string buf, int retry)
-    {
-      for (int k = 0, loopTo = retry; k <= loopTo; k++)
-      {
-        if (getStream(Command, Mode, ref buf))
-        {
-          return true;
-        }
-      }
-      return false;
-    }
-    private static bool getStream(string Command, int Mode, ref string buf)
-    {
-      bool getStreamRet = default;
-
-      var ClientSocket = new System.Net.Sockets.TcpClient();
-      var result = ClientSocket.BeginConnect(objectIP.ToString(), Port, default, default);
-      bool online = result.AsyncWaitHandle.WaitOne(2000, true);
-      if (!online)
-      {
-        ClientSocket.Close();
-        connectedState = false;
-        return false;
-      }
-      try
-      {
-        var ServerStream = ClientSocket.GetStream();
-        byte[] outStream = Encoding.ASCII.GetBytes(Command);
-        ServerStream.Write(outStream, 0, outStream.Length);
-        ServerStream.Flush();
-        buf = "";
-        switch (Mode)
-        {
-          case 0:
-            {
-              if (ServerStream.CanRead)
-              {
-                var myReadBuffer = new byte[ClientSocket.ReceiveBufferSize + 1];
-                ServerStream.Read(myReadBuffer, 0, myReadBuffer.Length);
-              }
-              getStreamRet = true;
-              break;
-            }
-          case var @case when 1 <= @case && @case <= 2:
-            {
-              if (ServerStream.CanRead)
-              {
-                var myReadBuffer = new byte[ClientSocket.ReceiveBufferSize + 1];
-                var myCompleteMessage = new StringBuilder();
-                int numberOfBytesRead = 0;
-                // Incoming message may be larger than the buffer size.
-                do
-                {
-                  numberOfBytesRead = ServerStream.Read(myReadBuffer, 0, myReadBuffer.Length);
-                  myCompleteMessage.AppendFormat("{0}", Encoding.ASCII.GetString(myReadBuffer, 0, numberOfBytesRead));
-                }
-                while (ServerStream.DataAvailable);
-                buf = myCompleteMessage.ToString();
-                if (Mode == 1 && !string.IsNullOrEmpty(buf))
-                {
-                  buf = buf.Substring(0, 1);
-                }
-                else if (Mode == 2 && !string.IsNullOrEmpty(buf))
-                {
-                  buf = buf.Split('#')[0];
-                }
-                getStreamRet = !string.IsNullOrEmpty(buf);
-              }
-              else
-              {
-                getStreamRet = false;
-              }
-
-              break;
-            }
-
-        }
-      }
-      catch (Exception ex)
-      {
-        LogMessage("Network error", ex.Message);
-        getStreamRet = false;
-      }
-      ClientSocket.Close();
-      return getStreamRet;
-    }
-    private static bool GetSerial(string Command, int Mode, ref string buf, int retry)
-    {
-      for (int k = 0, loopTo = retry; k <= loopTo; k++)
-      {
-        if (GetSerial(Command, Mode, ref buf))
-        {
-          return true;
-        }
-        else if (!connectedState)
-        {
-          break;
-        }
-      }
-      return false;
-    }
-    private static bool GetSerial(string Command, int Mode, ref string buf)
-    {
-      bool GetSerialRet = false;
-      if (!connectedState || objectSerial==null)
-      {
-        ReConnectSerial();
-      }
-      if (!connectedState || objectSerial == null)
-      {
-        LogMessage("Serial connection", "unable to reconnect");
-        return GetSerialRet;
-      }
-      objectSerial.ClearBuffers();
-      try
-      {
-        objectSerial.Transmit(Command);
-      }
-      catch (Exception ex) when (ex.HResult == -2146233079)
-      {
-        LogMessage("Serial connection", ex.Message);
-        ReConnectSerial();
-        return GetSerialRet;
-      }
-      catch (Exception ex) when (ex.HResult == -2147220478)
-      {
-        LogMessage("Serial connection", ex.Message);
-        return GetSerialRet;
-      }
-      catch (Exception ex)
-      {
-        LogMessage("Serial connection", ex.Message);
-        LogMessage("Serial connection error code ", ex.HResult.ToString());
-        return GetSerialRet;
-      }
-
-      try
-      {
-        switch (Mode)
-        {
-          case 0:
-            {
-              GetSerialRet = true;
-              break;
-            }
-          case 1:
-            {
-              buf = objectSerial.ReceiveCounted(1);
-              GetSerialRet = !string.IsNullOrEmpty(buf);
-              break;
-            }
-          case 2:
-            {
-              buf = objectSerial.ReceiveTerminated("#").TrimEnd('#');
-              GetSerialRet = !string.IsNullOrEmpty(buf);
-              break;
-            }
-        }
-      }
-      catch (Exception ex)
-      {
-        LogMessage("Serial connection", ex.Message);
-        LogMessage("Serial connection error code ", ex.HResult.ToString());
-      }
-      return GetSerialRet;
-    }
-
     /// <summary>
     /// Interpret GXAS state to answer whether the firmware is currently ready for a GOTO,
     /// ignoring target geometry (altitude, limits, meridian, etc.).
@@ -822,103 +480,49 @@ namespace ASCOM.TeenAstro.Telescope
     /// <param name="newState">New state: Connected or Disconnected</param>
     public static void SetConnected(Guid uniqueId, bool newState)
     {
-      // Check whether we are connecting or disconnecting
-      if (newState) // We are connecting
+      if (newState) // Connecting
       {
-        // Check whether this driver instance has already connected
-        if (uniqueIds.Contains(uniqueId)) // Instance already connected
+        if (SharedResources.IsInstanceConnected(uniqueId))
         {
-          // Ignore the request, the unique ID is already in the list
           LogMessage("SetConnected", $"Ignoring request to connect because the device is already connected.");
+          return;
         }
-        else // Instance not already connected, so connect it
+        int countBefore = SharedResources.Connections;
+        SharedResources.Connect(uniqueId, comPort, IP, Port, Interface);
+        if (countBefore == 0) // First connection: validate mount and sync
         {
-          // Check whether this is the first connection to the hardware
-          if (uniqueIds.Count == 0) // This is the first connection to the hardware so initiate the hardware connection
+          if (!checkCompatibility())
           {
-            if (Interface == "COM")
-            {
-              ConnectSerial(true);
-            }
-            else if (Interface == "IP")
-            {
-              ConnectIP(true);
-            }
-            if (!checkCompatibility())
-            {
-              if (Interface == "COM")
-              {
-                ConnectSerial(false);
-              }
-              else if (Interface == "IP")
-              {
-                ConnectIP(false);
-              }
-            }
-            else
-            {
-              // Ensure Sidereal so CanSetDeclinationRate/CanSetRightAscensionRate are true for Conform and clients
-              try
-              {
-                if (TrackingRate != DriveRates.driveSidereal)
-                  TrackingRate = DriveRates.driveSidereal;
-              }
-              catch { /* ignore if mount rejects */ }
-            }
-            LogMessage("SetConnected", $"Connecting to hardware.");
+            SharedResources.Disconnect(uniqueId);
+            return;
           }
-          else // Other device instances are connected so the hardware is already connected
+          try
           {
-            // Since the hardware is already connected no action is required
-            LogMessage("SetConnected", $"Hardware already connected.");
+            if (TrackingRate != DriveRates.driveSidereal)
+              TrackingRate = DriveRates.driveSidereal;
           }
-
-          // The hardware either "already was" or "is now" connected, so add the driver unique ID to the connected list
-          uniqueIds.Add(uniqueId);
-          LogMessage("SetConnected", $"Unique id {uniqueId} added to the connection list.");
+          catch { /* ignore if mount rejects */ }
+          DateTime timeTelescope = UTCDate;
+          DateTime time = DateTime.UtcNow;
+          if (Math.Abs((timeTelescope - time).TotalSeconds) > 2d)
+            UTCDate = DateTime.UtcNow;
+          ForceGXASCacheRefresh();
+          if (EnsureGXASCacheCurrent())
+            HasMotors = gxasState.MotorEnabled;
+          ConnectionStatusDate = DateTime.UtcNow;
+          LogMessage("SetConnected", "Connecting to hardware.");
         }
+        LogMessage("SetConnected", $"Unique id {uniqueId} added to the connection list.");
       }
-      else // We are disconnecting
+      else // Disconnecting
       {
-        // Check whether this driver instance has already disconnected
-        if (!uniqueIds.Contains(uniqueId)) // Instance not connected so ignore request
+        if (!SharedResources.IsInstanceConnected(uniqueId))
         {
-          // Ignore the request, the unique ID is not in the list
-          LogMessage("SetConnected", $"Ignoring request to disconnect because the device is already disconnected.");
+          LogMessage("SetConnected", "Ignoring request to disconnect because the device is already disconnected.");
+          return;
         }
-        else // Instance currently connected so disconnect it
-        {
-          // Remove the driver unique ID to the connected list
-          uniqueIds.Remove(uniqueId);
-          LogMessage("SetConnected", $"Unique id {uniqueId} removed from the connection list.");
-
-          // Check whether there are now any connected driver instances 
-          if (uniqueIds.Count == 0) // There are no connected driver instances so disconnect from the hardware
-          {
-            //
-            if (Interface == "COM")
-            {
-              ConnectSerial(false);
-            }
-            else if (Interface == "IP")
-            {
-              ConnectIP(false);
-            }
-            //
-          }
-          else // Other device instances are connected so do not disconnect the hardware
-          {
-            // No action is required
-            LogMessage("SetConnected", $"Hardware already connected.");
-          }
-        }
-      }
-
-      // Log the current connected state
-      LogMessage("SetConnected", $"Currently connected driver ids:");
-      foreach (Guid id in uniqueIds)
-      {
-        LogMessage("SetConnected", $" ID {id} is connected");
+        SharedResources.Disconnect(uniqueId);
+        LogMessage("SetConnected", $"Unique id {uniqueId} removed from the connection list.");
       }
     }
 
@@ -2875,29 +2479,21 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
-        bool ok = false;
+        if (!SharedResources.IsConnected) return false;
         double s1 = (DateTime.UtcNow - ConnectionStatusDate).TotalMilliseconds;
+        if (s1 <= 1000000000d) return true; // Recent activity, consider connected
+        bool ok = false;
         try
         {
-          if (s1 > 1000000000d && connectedState)
+          int k = 0;
+          while (k < 10)
           {
-            int k = 0;
-            while (k < 10)
-            {
-              if (EnsureGXASCacheCurrent())
-              {
-                ok = true;
-                break;
-              }
-              System.Threading.Thread.Sleep(200);
-              k += 1;
-            }
+            if (EnsureGXASCacheCurrent()) { ok = true; break; }
+            System.Threading.Thread.Sleep(200);
+            k += 1;
           }
         }
-        catch (Exception ex)
-        {
-          throw new ASCOM.DriverException(ex.Message);
-        }
+        catch (Exception ex) { throw new ASCOM.DriverException(ex.Message); }
         return ok;
       }
     }
