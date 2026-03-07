@@ -2564,6 +2564,210 @@ namespace ASCOM.TeenAstro.Telescope
       LogMessage(identifier, msg);
     }
     #endregion
+
+    #region EEPROM Configuration
+
+    internal class MotorAxisSettings
+    {
+      public int GearRatio;
+      public int StepsPerRotation;
+      public int Microstep;
+      public bool Reverse;
+      public int LowCurrent;
+      public int HighCurrent;
+      public int BacklashAmount;
+      public int BacklashRate;
+      public bool Silent;
+    }
+
+    internal class RateSettings
+    {
+      public int GuideRate;
+      public int Rate1;
+      public int Rate2;
+      public int Rate3;
+      public int MaxRate;
+      public int DefaultRate;
+      public int DegAcc;
+    }
+
+    internal class LimitSettings
+    {
+      public int Horizon;
+      public int Overhead;
+      public int Axis1Min;
+      public int Axis1Max;
+      public int Axis2Min;
+      public int Axis2Max;
+      public string MeridianE = "";
+      public string MeridianW = "";
+      public int UnderPole;
+      public string DistFromPole = "";
+    }
+
+    internal class EncoderSettings
+    {
+      public int Axis1PulseDeg;
+      public bool Axis1Reverse;
+      public int Axis2PulseDeg;
+      public bool Axis2Reverse;
+      public int SyncMode;
+    }
+
+    internal class RefractionSettings
+    {
+      public bool Goto;
+      public bool Pole;
+      public bool Tracking;
+    }
+
+    internal class SiteOptionSettings
+    {
+      public string MountName = "";
+      public int SlewSettleDuration;
+      public string Latitude = "";
+      public string Longitude = "";
+      public double Elevation;
+    }
+
+    private static string ReadGX(string cmd)
+    {
+      return CommandString("GX" + cmd, false);
+    }
+
+    private static int ReadGXInt(string cmd)
+    {
+      string val = ReadGX(cmd);
+      if (int.TryParse(val, NumberStyles.Any, CultureInfo.InvariantCulture, out int result))
+        return result;
+      throw new ASCOM.DriverException("Failed to parse GX" + cmd + " response: " + val);
+    }
+
+    private static bool WriteGXSetting(string cmd, string value)
+    {
+      return CommandBoolSingleChar("SX" + cmd + "," + value);
+    }
+
+    public static MotorAxisSettings ReadMotorSettings(int axis)
+    {
+      string s = axis == 1 ? "R" : "D";
+      var m = new MotorAxisSettings();
+      m.GearRatio = ReadGXInt("MG" + s);
+      m.StepsPerRotation = ReadGXInt("MS" + s);
+      m.Microstep = ReadGXInt("MM" + s);
+      m.Reverse = ReadGX("Mr" + s) != "0";
+      m.LowCurrent = ReadGXInt("Mc" + s);
+      m.HighCurrent = ReadGXInt("MC" + s);
+      m.BacklashAmount = ReadGXInt("MB" + s);
+      m.BacklashRate = ReadGXInt("Mb" + s);
+      m.Silent = ReadGX("Mm" + s) != "0";
+      LogMessage("ReadMotorSettings", "Axis " + axis + " OK");
+      return m;
+    }
+
+    public static RateSettings ReadRateSettings()
+    {
+      var r = new RateSettings();
+      r.GuideRate = ReadGXInt("R0");
+      r.Rate1 = ReadGXInt("R1");
+      r.Rate2 = ReadGXInt("R2");
+      r.Rate3 = ReadGXInt("R3");
+      r.MaxRate = ReadGXInt("RX");
+      r.DefaultRate = ReadGXInt("RD");
+      r.DegAcc = ReadGXInt("RA");
+      LogMessage("ReadRateSettings", "OK");
+      return r;
+    }
+
+    public static LimitSettings ReadLimitSettings()
+    {
+      var l = new LimitSettings();
+      l.Horizon = ReadGXInt("LH");
+      l.Overhead = ReadGXInt("LO");
+      l.Axis1Min = ReadGXInt("LA");
+      l.Axis1Max = ReadGXInt("LB");
+      l.Axis2Min = ReadGXInt("LC");
+      l.Axis2Max = ReadGXInt("LD");
+      l.MeridianE = ReadGX("LE");
+      l.MeridianW = ReadGX("LW");
+      l.UnderPole = ReadGXInt("LU");
+      l.DistFromPole = ReadGX("LS");
+      LogMessage("ReadLimitSettings", "OK");
+      return l;
+    }
+
+    public static EncoderSettings ReadEncoderSettings()
+    {
+      var enc = new EncoderSettings();
+      enc.Axis1PulseDeg = ReadGXInt("EPR");
+      enc.Axis1Reverse = ReadGX("ErR") != "0";
+      enc.Axis2PulseDeg = ReadGXInt("EPD");
+      enc.Axis2Reverse = ReadGX("ErD") != "0";
+      enc.SyncMode = ReadGXInt("EO");
+      LogMessage("ReadEncoderSettings", "OK");
+      return enc;
+    }
+
+    public static RefractionSettings ReadRefractionSettings()
+    {
+      var r = new RefractionSettings();
+      r.Goto = ReadGX("rg").StartsWith("y");
+      r.Pole = ReadGX("rp").StartsWith("y");
+      r.Tracking = ReadGX("rt").StartsWith("y");
+      LogMessage("ReadRefractionSettings", "OK");
+      return r;
+    }
+
+    public static SiteOptionSettings ReadSiteOptionSettings()
+    {
+      var s = new SiteOptionSettings();
+      s.MountName = ReadGX("OA");
+      string raw = ReadGX("OS");
+      int.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out int settle);
+      s.SlewSettleDuration = settle;
+      s.Latitude = CommandString("Gtf", false);
+      s.Longitude = CommandString("Ggf", false);
+      double el = 0;
+      GetDouble("Elevation", "Ge", ref el);
+      s.Elevation = el;
+      LogMessage("ReadSiteOptionSettings", "OK");
+      return s;
+    }
+
+    public static bool WriteMotorSetting(int axis, string field, string value)
+    {
+      string s = axis == 1 ? "R" : "D";
+      return WriteGXSetting("M" + field + s, value);
+    }
+
+    public static bool WriteRateSetting(string field, string value)
+    {
+      return WriteGXSetting("R" + field, value);
+    }
+
+    public static bool WriteLimitSetting(string field, string value)
+    {
+      return WriteGXSetting("L" + field, value);
+    }
+
+    public static bool WriteEncoderSetting(string field, string value)
+    {
+      return WriteGXSetting("E" + field, value);
+    }
+
+    public static bool WriteRefractionSetting(string field, string value)
+    {
+      return WriteGXSetting("r" + field, value);
+    }
+
+    public static bool WriteSiteOptionSetting(string field, string value)
+    {
+      if (field == "OA" || field == "OS")
+        return WriteGXSetting(field, value);
+      return CommandBoolSingleChar("S" + field);
+    }
+
+    #endregion
   }
 }
 

@@ -198,6 +198,89 @@ namespace ASCOM.TeenAstro.Focuser
       return true;
     }
 
+    #region EEPROM Configuration
+
+    internal class FocuserEepromSettings
+    {
+      public ushort ParkPos;
+      public ushort MaxPos;
+      public ushort MinSpeed;
+      public ushort MaxSpeed;
+      public ushort CmdAcc;
+      public ushort ManAcc;
+      public bool Reverse;
+      public ushort Micro;
+      public ushort Resolution;
+      public ushort Current;
+    }
+
+    /// <summary>Read focuser settings via :F~#. Response: ~parkPos maxPos minSpeed maxSpeed cmdAcc manAcc</summary>
+    public static FocuserEepromSettings ReadEepromSettings()
+    {
+      var settings = new FocuserEepromSettings();
+      string buf = "";
+      for (int attempt = 0; attempt < 10; attempt++)
+      {
+        if (!SendFocuserCommand(":F~#", 2, ref buf)) continue;
+        buf = (buf ?? "").Trim();
+        if (!buf.StartsWith("~")) continue;
+        buf = buf.Substring(1);
+        string[] parts = buf.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 6) continue;
+        try
+        {
+          settings.ParkPos = ushort.Parse(parts[0], CultureInfo.InvariantCulture);
+          settings.MaxPos = ushort.Parse(parts[1], CultureInfo.InvariantCulture);
+          settings.MinSpeed = ushort.Parse(parts[2], CultureInfo.InvariantCulture);
+          settings.MaxSpeed = ushort.Parse(parts[3], CultureInfo.InvariantCulture);
+          settings.CmdAcc = ushort.Parse(parts[4], CultureInfo.InvariantCulture);
+          settings.ManAcc = ushort.Parse(parts[5], CultureInfo.InvariantCulture);
+          LogMessage("ReadEepromSettings", "OK: " + buf);
+          return settings;
+        }
+        catch { continue; }
+      }
+      throw new ASCOM.DriverException("Failed to read focuser EEPROM settings.");
+    }
+
+    /// <summary>Read motor settings via :FM#. Response: Mreverse micro resolution current</summary>
+    public static void ReadEepromMotor(FocuserEepromSettings settings)
+    {
+      string buf = "";
+      for (int attempt = 0; attempt < 10; attempt++)
+      {
+        if (!SendFocuserCommand(":FM#", 2, ref buf)) continue;
+        buf = (buf ?? "").Trim();
+        if (!buf.StartsWith("M")) continue;
+        buf = buf.Substring(1);
+        string[] parts = buf.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 4) continue;
+        try
+        {
+          settings.Reverse = parts[0] != "0";
+          settings.Micro = ushort.Parse(parts[1], CultureInfo.InvariantCulture);
+          settings.Resolution = ushort.Parse(parts[2], CultureInfo.InvariantCulture);
+          settings.Current = ushort.Parse(parts[3], CultureInfo.InvariantCulture);
+          LogMessage("ReadEepromMotor", "OK: " + buf);
+          return;
+        }
+        catch { continue; }
+      }
+      throw new ASCOM.DriverException("Failed to read focuser motor EEPROM settings.");
+    }
+
+    /// <summary>Write a single EEPROM value. Index is "0"-"8" for settings, "c" for current, "m" for microstep.</summary>
+    public static bool WriteEepromValue(string index, ushort value)
+    {
+      string cmd = ":F" + index + "," + value.ToString(CultureInfo.InvariantCulture) + "#";
+      string buf = "";
+      bool ok = SendFocuserCommand(cmd, 1, ref buf);
+      LogMessage("WriteEepromValue", cmd + " -> " + (ok ? buf : "FAIL"));
+      return ok && buf == "1";
+    }
+
+    #endregion
+
     internal static void LogMessage(string identifier, string message)
     {
       tl?.LogMessageCrLf(identifier, message);

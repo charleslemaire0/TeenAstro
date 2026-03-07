@@ -16,6 +16,7 @@ namespace ASCOM.TeenAstro.Focuser
     private void InitializeComponent()
     {
       this.GroupBox1 = new System.Windows.Forms.GroupBox();
+      this.btnOptions = new System.Windows.Forms.Button();
       this.chkTrace = new System.Windows.Forms.CheckBox();
       this.TextBoxPort = new System.Windows.Forms.TextBox();
       this.Label1 = new System.Windows.Forms.Label();
@@ -32,6 +33,7 @@ namespace ASCOM.TeenAstro.Focuser
       //
       // GroupBox1
       //
+      this.GroupBox1.Controls.Add(this.btnOptions);
       this.GroupBox1.Controls.Add(this.chkTrace);
       this.GroupBox1.Controls.Add(this.TextBoxPort);
       this.GroupBox1.Controls.Add(this.Label1);
@@ -45,6 +47,16 @@ namespace ASCOM.TeenAstro.Focuser
       this.GroupBox1.TabIndex = 0;
       this.GroupBox1.TabStop = false;
       this.GroupBox1.Text = "Connection (shared with Telescope)";
+      //
+      // btnOptions
+      //
+      this.btnOptions.Location = new System.Drawing.Point(85, 100);
+      this.btnOptions.Name = "btnOptions";
+      this.btnOptions.Size = new System.Drawing.Size(117, 22);
+      this.btnOptions.TabIndex = 16;
+      this.btnOptions.Text = "Options";
+      this.btnOptions.UseVisualStyleBackColor = true;
+      this.btnOptions.Click += new System.EventHandler(this.btnOptions_Click);
       //
       // chkTrace
       //
@@ -183,5 +195,6 @@ namespace ASCOM.TeenAstro.Focuser
     internal System.Windows.Forms.TableLayoutPanel TableLayoutPanel1;
     internal System.Windows.Forms.Button OK_Button;
     internal System.Windows.Forms.Button Cancel_Button;
+    internal System.Windows.Forms.Button btnOptions;
   }
 }

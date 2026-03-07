@@ -101,5 +101,52 @@ namespace ASCOM.TeenAstro.Focuser
       if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar))
         e.Handled = true;
     }
+
+    private void btnOptions_Click(object sender, EventArgs e)
+    {
+      SaveCurrentState();
+      FocuserHardware.WriteProfile();
+
+      Guid tempId = Guid.NewGuid();
+      bool wasConnected = FocuserHardware.IsConnected;
+      try
+      {
+        if (!wasConnected)
+          FocuserHardware.SetConnected(tempId, true);
+
+        using (var form = new FocuserConfigEepromForm())
+          form.ShowDialog(this);
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show("Connection failed: " + ex.Message, "Error",
+          MessageBoxButtons.OK, MessageBoxIcon.Error);
+      }
+      finally
+      {
+        if (!wasConnected)
+          FocuserHardware.SetConnected(tempId, false);
+      }
+    }
+
+    private void SaveCurrentState()
+    {
+      tl.Enabled = chkTrace.Checked;
+      if (RadioButtonSP.Checked)
+      {
+        if (comboBoxComPort.SelectedItem != null && comboBoxComPort.SelectedItem.ToString() != NO_PORTS_MESSAGE)
+        {
+          FocuserHardware.comPort = comboBoxComPort.SelectedItem.ToString();
+          FocuserHardware.Interface = "COM";
+        }
+      }
+      else if (RadioButtonIP.Checked)
+      {
+        FocuserHardware.IP = TextBoxIP.Text;
+        if (short.TryParse(TextBoxPort.Text, out short p))
+          FocuserHardware.Port = p;
+        FocuserHardware.Interface = "IP";
+      }
+    }
   }
 }

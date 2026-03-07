@@ -108,6 +108,18 @@
     <Compile Include="FocuserDriver\FocuserSetupDialogForm.designer.cs">
       <DependentUpon>FocuserSetupDialogForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="FocuserDriver\FocuserConfigEepromForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FocuserDriver\FocuserConfigEepromForm.designer.cs">
+      <DependentUpon>FocuserConfigEepromForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TelescopeDriver\TelescopeConfigEepromForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TelescopeDriver\TelescopeConfigEepromForm.designer.cs">
+      <DependentUpon>TelescopeConfigEepromForm.cs</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

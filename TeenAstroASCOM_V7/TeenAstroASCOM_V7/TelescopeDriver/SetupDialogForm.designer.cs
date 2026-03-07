@@ -98,7 +98,8 @@ namespace ASCOM.TeenAstro.Telescope
       this.Button1.TabIndex = 16;
       this.Button1.Text = "Options";
       this.Button1.UseVisualStyleBackColor = true;
-      this.Button1.Visible = false;
+      this.Button1.Visible = true;
+      this.Button1.Click += new System.EventHandler(this.Button1_Click);
       // 
       // chkTrace
       // 
