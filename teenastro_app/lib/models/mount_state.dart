@@ -66,9 +66,9 @@ class MountState {
   final int focuserPos;    // steps (from :GXAS# binary packet)
   final int focuserSpeed;  // speed units (from :GXAS# binary packet)
 
-  // Tracking rates (×10000, from :GXAS# bytes 48-63; same as :GXRr#/:GXRd#/:GXRe#/:GXRf#)
-  final int trackRateRa;
-  final int trackRateDec;
+  // Tracking rates (current from :GXAS# bytes 40-47 float32; stored from 48-55 int32; same as :GXRr#/:GXRd#/:GXRe#/:GXRf#)
+  final double trackRateRa;
+  final double trackRateDec;
   final int storedTrackRateRa;
   final int storedTrackRateDec;
 
@@ -113,8 +113,8 @@ class MountState {
     this.focuserConnected = false,
     this.focuserPos = 0,
     this.focuserSpeed = 0,
-    this.trackRateRa = 0,
-    this.trackRateDec = 0,
+    this.trackRateRa = 0.0,
+    this.trackRateDec = 0.0,
     this.storedTrackRateRa = 0,
     this.storedTrackRateDec = 0,
   });
@@ -323,9 +323,9 @@ class MountState {
     final tRaStr  = _formatRa(tRaH);
     final tDecStr = _formatDeg(tDecD);
 
-    // ── Tracking rates bytes 40-55 (int32 LE) ──────────────────────────────
-    final trRa = bd.getInt32(40, Endian.little);
-    final trDec = bd.getInt32(44, Endian.little);
+    // ── Tracking rates bytes 40-55 (float32 at 40,44; int32 at 48,52) ───────
+    final trRa = bd.getFloat32(40, Endian.little);
+    final trDec = bd.getFloat32(44, Endian.little);
     final stRa = bd.getInt32(48, Endian.little);
     final stDec = bd.getInt32(52, Endian.little);
 
@@ -489,8 +489,8 @@ class MountState {
     bool? focuserConnected,
     int? focuserPos,
     int? focuserSpeed,
-    int? trackRateRa,
-    int? trackRateDec,
+    double? trackRateRa,
+    double? trackRateDec,
     int? storedTrackRateRa,
     int? storedTrackRateDec,
   }) {

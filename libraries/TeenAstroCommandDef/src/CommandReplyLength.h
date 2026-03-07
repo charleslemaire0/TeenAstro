@@ -134,10 +134,11 @@ inline int getExpectedReplyLength(const char* command)
   if (strcmp(command, ":GXRB#") == 0) return 16;
   if (strcmp(command, ":GXRD#") == 0) return 4;
   if (strcmp(command, ":GXRX#") == 0) return 8;
-  if (strcmp(command, ":GXRd#") == 0) return 16;
+  if (strcmp(command, ":GXRd#") == 0) return 24;  /* float reply */
   if (strcmp(command, ":GXRe#") == 0) return 16;
   if (strcmp(command, ":GXRf#") == 0) return 16;
-  if (strcmp(command, ":GXRr#") == 0) return 16;
+  if (strcmp(command, ":GXRr#") == 0) return 24;  /* float reply */
+  if (strcmp(command, ":GXRh#") == 0) return 24;  /* float reply */
   if (strcmp(command, ":GXT0#") == 0) return 8;
   if (strcmp(command, ":GXT1#") == 0) return 8;
   if (strcmp(command, ":GXT2#") == 0) return 16;

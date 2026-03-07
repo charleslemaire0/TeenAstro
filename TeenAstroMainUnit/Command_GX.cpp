@@ -40,7 +40,7 @@ static void PrintRa(double& val) {
 //   Bytes 0-5:   Status (tracking, sidereal, park, atHome, pierSide, guidingRate, aligned, mountType, spiralRunning, guidingEW/NS, trackComp, fault, pulse, gnssFlags, error, enableFlags, hasFocuser)
 //   Bytes 6-11:  UTC hour,min,sec,month,day,year(2-digit)
 //   Bytes 12-39: Positions (7 × float32 LE: RA, Dec, Alt, Az, LST, Target RA, Target Dec)
-//   Bytes 40-55: Tracking rates (4 × int32 LE: trackRateRA, trackRateDec, storedRateRA, storedRateDec — same as :GXRr#/:GXRd#/:GXRe#/:GXRf#)
+//   Bytes 40-55: Tracking rates (float32 LE at 40,44 = current; int32 at 48,52 = stored — same as :GXRr#/:GXRd#/:GXRe#/:GXRf#)
 //   Bytes 56-61: Focuser (optional; when hasFocuser): position uint32 LE, speed uint16 LE. Otherwise zero.
 //   Byte  62:   Timezone offset (int8_t, toff × 10; subtract to get local from UTC)
 //   Bytes 63-64: reserved (0)
@@ -174,13 +174,13 @@ static void Command_GX_AllState()
     gxasPackF32(pkt, 36, tgtDec);
   }
 
-  // ── Bytes 40-55: tracking rates (int32 LE, same as :GXRr#/:GXRd#/:GXRe#/:GXRf#)
-  int32_t trackRateRA   = (int32_t)round(10000.0 - mount.tracking.RequestedTrackingRateHA * 10000.0);
-  int32_t trackRateDec  = (int32_t)round(mount.tracking.RequestedTrackingRateDEC * 10000.0);
+  // ── Bytes 40-55: tracking rates (float32 LE at 40,44; int32 at 48,52 for stored)
+  float trackRateRA   = (float)(1.0 - mount.tracking.RequestedTrackingRateHA);
+  float trackRateDec  = (float)mount.tracking.RequestedTrackingRateDEC;
   int32_t storedRateRA  = (int32_t)mount.tracking.storedTrakingRateRA;
   int32_t storedRateDec = (int32_t)mount.tracking.storedTrakingRateDEC;
-  memcpy(pkt + 40, &trackRateRA, 4);
-  memcpy(pkt + 44, &trackRateDec, 4);
+  gxasPackF32(pkt, 40, trackRateRA);
+  gxasPackF32(pkt, 44, trackRateDec);
   memcpy(pkt + 48, &storedRateRA, 4);
   memcpy(pkt + 52, &storedRateDec, 4);
 
@@ -501,20 +501,20 @@ static void Command_GX_Rates()
     break;
   case 'r':
   {
-    long l1 = 10000l - (long)(mount.tracking.RequestedTrackingRateHA * 10000.0);
-    sprintf(commandState.reply, "%ld#", l1);
+    double raRate = 1.0 - mount.tracking.RequestedTrackingRateHA;
+    sprintf(commandState.reply, "%.10g#", raRate);
   }
   break;
   case 'h':
   {
-    long l1 = mount.tracking.RequestedTrackingRateHA * 10000.0;
-    sprintf(commandState.reply, "%ld#", l1);
+    double haRate = mount.tracking.RequestedTrackingRateHA;
+    sprintf(commandState.reply, "%.10g#", haRate);
   }
   break;
   case 'd':
   {
-    long l1 = mount.tracking.RequestedTrackingRateDEC * 10000.0;
-    sprintf(commandState.reply, "%ld#", l1);
+    double decRate = mount.tracking.RequestedTrackingRateDEC;
+    sprintf(commandState.reply, "%.10g#", decRate);
   }
   break;
   case 'e':

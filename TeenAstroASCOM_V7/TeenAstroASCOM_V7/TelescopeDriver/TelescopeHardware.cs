@@ -90,8 +90,8 @@ namespace ASCOM.TeenAstro.Telescope
       public float LstHours;
       public float TargetRaHours;
       public float TargetDecDeg;
-      public int TrackRateRA;
-      public int TrackRateDec;
+      public double TrackRateRA;
+      public double TrackRateDec;
       public int StoredRateRA;
       public int StoredRateDec;
       public byte UtcHour;
@@ -129,7 +129,6 @@ namespace ASCOM.TeenAstro.Telescope
     private static double SlewSpeeds = 0d;
     private static string SlewSpeed = ""; // Last slew speed set via R command
     private static double SiderealRate = 15.04106858d / 3600d; // Sidereal rate in degrees per second
-    private static double? lastSetRightAscensionRate = null;
 
     /// <summary>
     /// Initializes a new instance of the device Hardware class.
@@ -423,7 +422,6 @@ namespace ASCOM.TeenAstro.Telescope
     private static void CloseAndDisposeSerial()
     {
       connectedState = false;
-      lastSetRightAscensionRate = null;
       if (objectSerial != null)
       {
         if (objectSerial.Connected)
@@ -1374,7 +1372,7 @@ namespace ASCOM.TeenAstro.Telescope
         double rate = 0;
         if (TrackingRate == DriveRates.driveSidereal && EnsureGXASCacheCurrent())
         {
-          rate = gxasState.TrackRateDec / 10000d;
+          rate = gxasState.TrackRateDec;
         }
         return rate;
       }
@@ -1382,8 +1380,7 @@ namespace ASCOM.TeenAstro.Telescope
       {
         if (CanSetDeclinationRate)
         {
-          int rate = (int)(value * 10000);
-          string cmd = "SXRd," + rate.ToString(CultureInfo.InvariantCulture);
+          string cmd = "SXRd," + value.ToString("G9", CultureInfo.InvariantCulture);
           LogMessage("Set DeclinationRate", "value: " + cmd);
           if (!CommandBoolSingleChar(cmd))
           {
@@ -1618,15 +1615,17 @@ namespace ASCOM.TeenAstro.Telescope
         {
           throw new ASCOM.ParkedException();
         }
-        // Main Unit :M1#/:M2# expect rate in arcsec/s (deg/s * 3600)
+        // Main Unit :M1#/:M2# expect rate in arcsec/s (deg/s * 3600).
+        // Firmware rejects if abs(rate) > guideRates[4] (integer); round to integer to avoid rejection.
         double rateArcsecPerSec = Rate * 3600.0;
+        int rateInt = rateArcsecPerSec >= 0 ? (int)Math.Floor(rateArcsecPerSec) : (int)Math.Ceiling(rateArcsecPerSec);
         if (Axis == TelescopeAxes.axisPrimary)
         {
-          cmd = "M1" + rateArcsecPerSec.ToString("+0.0000000;-0.0000000", CultureInfo.InvariantCulture);
+          cmd = "M1" + rateInt.ToString("+0;-0", CultureInfo.InvariantCulture);
         }
         else if (Axis == TelescopeAxes.axisSecondary)
         {
-          cmd = "M2" + rateArcsecPerSec.ToString("+0.0000000;-0.0000000", CultureInfo.InvariantCulture);
+          cmd = "M2" + rateInt.ToString("+0;-0", CultureInfo.InvariantCulture);
         }
         else
         {
@@ -1770,12 +1769,7 @@ namespace ASCOM.TeenAstro.Telescope
         {
           ForceGXASCacheRefresh();
           if (EnsureGXASCacheCurrent())
-          {
-            rate = RARateConversion.MountToAscom(gxasState.TrackRateRA, gxasState.PierSide, gxasState.MountType);
-            if (lastSetRightAscensionRate.HasValue && Math.Abs(rate - lastSetRightAscensionRate.Value) < 0.0001)
-              return lastSetRightAscensionRate.Value;
-            lastSetRightAscensionRate = null;
-          }
+            rate = gxasState.TrackRateRA;
         }
         return Math.Round(rate, 4);
       }
@@ -1787,14 +1781,12 @@ namespace ASCOM.TeenAstro.Telescope
           double rounded = EnsureGXASCacheCurrent()
             ? RARateConversion.AscomToMount(value, gxasState.PierSide, gxasState.MountType)
             : Math.Round(value, 4);
-          int rate = (int)Math.Round(rounded * 10000);
-          string cmd = "SXRr," + rate.ToString(CultureInfo.InvariantCulture);
+          string cmd = "SXRr," + rounded.ToString("G9", CultureInfo.InvariantCulture);
           LogMessage("Set RightAscensionRate", "value: " + cmd);
           if (!CommandBoolSingleChar(cmd))
           {
             throw new ASCOM.InvalidValueException("Set RightAscensionRate via :" + cmd + " has failed");
           }
-          lastSetRightAscensionRate = value;
         }
         else
         {
@@ -1945,7 +1937,7 @@ namespace ASCOM.TeenAstro.Telescope
         string cmd = "St" + sg + DegtoDDMMSS(Math.Abs(lt));
         if (!CommandBoolSingleChar(cmd))
         {
-          throw new ASCOM.InvalidOperationException();
+          throw new ASCOM.InvalidOperationException("Site latitude can only be set when the telescope is at the home or park position.");
         }
         LogMessage("SiteLatitude Set", lt.ToString(CultureInfo.InvariantCulture));
       }
@@ -1973,7 +1965,7 @@ namespace ASCOM.TeenAstro.Telescope
         string cmd = "Sg" + sg + DegtoDDDMMSS(Math.Abs(lg));
         if (!CommandBoolSingleChar(cmd))
         {
-          throw new ASCOM.InvalidOperationException();
+          throw new ASCOM.InvalidOperationException("Site longitude can only be set when the telescope is at the home or park position.");
         }
         LogMessage("Set SiteLongitude", lg.ToString(CultureInfo.InvariantCulture));
       }
@@ -2374,7 +2366,6 @@ namespace ASCOM.TeenAstro.Telescope
       set
       {
         ForceGXASCacheRefresh();
-        lastSetRightAscensionRate = null;
         switch (value)
         {
           case DriveRates.driveSidereal:
@@ -2734,8 +2725,8 @@ namespace ASCOM.TeenAstro.Telescope
       s.LstHours = BitConverter.ToSingle(pkt, 28);
       s.TargetRaHours = BitConverter.ToSingle(pkt, 32);
       s.TargetDecDeg = BitConverter.ToSingle(pkt, 36);
-      s.TrackRateRA = BitConverter.ToInt32(pkt, 40);
-      s.TrackRateDec = BitConverter.ToInt32(pkt, 44);
+      s.TrackRateRA = BitConverter.ToSingle(pkt, 40);
+      s.TrackRateDec = BitConverter.ToSingle(pkt, 44);
       s.StoredRateRA = BitConverter.ToInt32(pkt, 48);
       s.StoredRateDec = BitConverter.ToInt32(pkt, 52);
       s.UtcHour = pkt[6];

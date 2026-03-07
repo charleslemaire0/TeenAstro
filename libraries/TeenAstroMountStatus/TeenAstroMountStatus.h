@@ -344,8 +344,8 @@ public:
   float getTargetRaHoursCached() const { return m_targetRaHours; }
   float getTargetDecDegCached() const  { return m_targetDecDeg; }
 
-  long getTrackingRateRa()        { return m_trackRateRa; }
-  long getTrackingRateDec()       { return m_trackRateDec; }
+  double getTrackingRateRa()      { return m_trackRateRa; }
+  double getTrackingRateDec()     { return m_trackRateDec; }
   long getStoredTrackingRateRa()  { return m_storedTrackRateRa; }
   long getStoredTrackingRateDec() { return m_storedTrackRateDec; }
 
@@ -586,9 +586,9 @@ private:
   // Options
   uint8_t   m_cfgMountIdx     = 0;
 
-  // --- Tracking rates ---
-  long          m_trackRateRa  = 0;
-  long          m_trackRateDec = 0;
+  // --- Tracking rates (current from GXAS bytes 40,44 float32; stored from 48,52 int32) ---
+  double        m_trackRateRa  = 0.0;
+  double        m_trackRateDec = 0.0;
   long          m_storedTrackRateRa  = 0;
   long          m_storedTrackRateDec = 0;
   bool          m_hasInfoTrackingRate = false;

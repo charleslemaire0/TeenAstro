@@ -282,19 +282,16 @@ void Command_GX()
       sprintf(reply, "%d#", XEEPROM.readInt(getMountAddress(EE_maxRate)));
       break;
     case 'r':
-      // :GXRr# Requested RA traking rate in sidereal
-      l1 = -(RequestedTrackingRateHA - 1.0) * 10000.0;
-      sprintf(reply, "%ld#", l1);
+      // :GXRr# Requested RA tracking rate (float: ASCOM RA rate = 1 - HA)
+      sprintf(reply, "%.10g#", 1.0 - RequestedTrackingRateHA);
       break;
     case 'h':
-      l1 = RequestedTrackingRateHA * 10000.0;
-      // :GXRh# Requested HA traking rate in sidereal
-      sprintf(reply, "%ld#", l1);
+      // :GXRh# Requested HA tracking rate (float)
+      sprintf(reply, "%.10g#", RequestedTrackingRateHA);
       break;
     case 'd':
-      // :GXRd# Requested DEC traking rate in sidereal
-      l1 = RequestedTrackingRateDEC * 10000.0;
-      sprintf(reply, "%ld#", l1);
+      // :GXRd# Requested DEC tracking rate (float: arcsec/s)
+      sprintf(reply, "%.10g#", RequestedTrackingRateDEC);
       break;
     case 'e':
       // :GXRe,VVVVVVVVVV# get stored Rate for RA

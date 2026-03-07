@@ -332,8 +332,20 @@ static LX200RETURN getTypedLong(LX200Client& c, const char* cmd, long& value)
   return ret;
 }
 
-LX200RETURN LX200Client::getTrackRateRA(long& value)        { return getTypedLong(*this, ":GXRr#", value); }
-LX200RETURN LX200Client::getTrackRateDec(long& value)       { return getTypedLong(*this, ":GXRd#", value); }
+static LX200RETURN getTypedDouble(LX200Client& c, const char* cmd, double& value)
+{
+  char out[24];
+  LX200RETURN ret = c.get(cmd, out, sizeof(out));
+  if (ret == LX200_VALUEGET)
+  {
+    char* endptr;
+    value = strtod(out, &endptr);
+  }
+  return ret;
+}
+
+LX200RETURN LX200Client::getTrackRateRA(double& value)     { return getTypedDouble(*this, ":GXRr#", value); }
+LX200RETURN LX200Client::getTrackRateDec(double& value)    { return getTypedDouble(*this, ":GXRd#", value); }
 LX200RETURN LX200Client::getStoredTrackRateRA(long& value)   { return getTypedLong(*this, ":GXRe#", value); }
 LX200RETURN LX200Client::getStoredTrackRateDec(long& value)  { return getTypedLong(*this, ":GXRf#", value); }
 

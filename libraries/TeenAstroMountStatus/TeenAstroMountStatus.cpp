@@ -618,9 +618,9 @@ void TeenAstroMountStatus::updateAllState(bool force)
   m_timerTime.markUpdated();
   m_timerRaDecT.markUpdated();
 
-  // ── Bytes 40-55: tracking rates (int32 LE, same as :GXRr#/:GXRd#/:GXRe#/:GXRf#)
-  m_trackRateRa        = (long)(int32_t)pktU32(pkt, 40);
-  m_trackRateDec       = (long)(int32_t)pktU32(pkt, 44);
+  // ── Bytes 40-55: tracking rates (float32 LE at 40,44 = current; int32 at 48,52 = stored)
+  m_trackRateRa        = (double)pktF32(pkt, 40);
+  m_trackRateDec       = (double)pktF32(pkt, 44);
   m_storedTrackRateRa  = (long)(int32_t)pktU32(pkt, 48);
   m_storedTrackRateDec = (long)(int32_t)pktU32(pkt, 52);
   m_hasInfoTrackingRate = true;
@@ -906,8 +906,8 @@ bool TeenAstroMountStatus::getTrackingRate(double& r)
   r = 0.0;
   if (!m_hasInfoTrackingRate) return false;
   if (m_mount.tracking != MountState::TRK_ON) return true;
-  // RequestedTrackingRateHA = (10000 - trackRateRA) / 10000; :GT# returns that * 60 * 1.00273790935
-  double reqHA = (10000.0 - (double)m_trackRateRa) / 10000.0;
+  // m_trackRateRa is ASCOM RA rate (1 - HA); HA = 1 - m_trackRateRa; :GT# returns HA * 60 * 1.00273790935
+  double reqHA = 1.0 - m_trackRateRa;
   r = reqHA * 60.0 * 1.00273790935;
   return true;
 }

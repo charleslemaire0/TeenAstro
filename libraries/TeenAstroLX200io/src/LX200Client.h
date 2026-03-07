@@ -149,8 +149,8 @@ public:
   // -----------------------------------------------------------------------
   //  Tracking rates (typed)
   // -----------------------------------------------------------------------
-  LX200RETURN getTrackRateRA(long& value);             // :GXRr#
-  LX200RETURN getTrackRateDec(long& value);            // :GXRd#
+  LX200RETURN getTrackRateRA(double& value);            // :GXRr# (float reply: ASCOM RA rate)
+  LX200RETURN getTrackRateDec(double& value);           // :GXRd# (float reply: arcsec/s)
   LX200RETURN getStoredTrackRateRA(long& value);       // :GXRe#
   LX200RETURN getStoredTrackRateDec(long& value);      // :GXRf#
 

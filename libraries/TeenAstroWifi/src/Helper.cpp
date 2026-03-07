@@ -55,10 +55,10 @@ void TeenAstroWifi::addTrackingInfo(String &data )
     // Use only cached rates (e.g. from :GXAS#) — no extra serial round-trip on index/status.
     if (ta_MountStatus.hasInfoTrackingRate())
     {
-      float RateRa = ta_MountStatus.getTrackingRateRa() / 10000.0;
+      float RateRa = (float)ta_MountStatus.getTrackingRateRa();
       sprintf_P(temp, html_TrackingSpeedRA, RateRa);
       data += temp;
-      float RateDec = ta_MountStatus.getTrackingRateDec() / 10000.0;
+      float RateDec = (float)ta_MountStatus.getTrackingRateDec();
       sprintf_P(temp, html_TrackingSpeedDEC, RateDec);
       data += temp;
     }
