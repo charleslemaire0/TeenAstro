@@ -281,12 +281,15 @@ protected:
 /*  Stub Serial objects                                                */
 /* ------------------------------------------------------------------ */
 struct SerialStub : public Stream {
+    using Print::write;
+    Stream* forward_ = nullptr;
+    void setForward(Stream* s) { forward_ = s; }
     void begin(unsigned long) {}
     void end() {}
-    int available() override { return 0; }
-    int read() override { return -1; }
-    int peek() override { return -1; }
-    size_t write(uint8_t) override { return 1; }
+    int available() override { return forward_ ? forward_->available() : 0; }
+    int read() override { return forward_ ? forward_->read() : -1; }
+    int peek() override { return forward_ ? forward_->peek() : -1; }
+    size_t write(uint8_t b) override { return forward_ ? forward_->write(b) : 1; }
     void setRX(int) {}
     void setTX(int) {}
 };

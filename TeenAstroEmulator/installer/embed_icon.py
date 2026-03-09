@@ -6,6 +6,7 @@ Usage in platformio.ini (emu_shc env only):
 """
 
 import os
+import shutil
 import subprocess
 Import("env")
 
@@ -15,25 +16,29 @@ rc_file = os.path.join(installer_dir, "app_icon.rc")
 build_dir = env.subst("$BUILD_DIR")
 res_file = os.path.join(build_dir, "app_icon.res")
 
-toolchain_prefix = ""
-for p in env.get("ENV", {}).get("PATH", "").split(os.pathsep):
-    candidate = os.path.join(p, "windres.exe")
+windres = None
+
+gcc = env.subst("$CC")
+if gcc:
+    gcc_path = os.path.abspath(gcc) if not os.path.isabs(gcc) else gcc
+    candidate = os.path.join(os.path.dirname(gcc_path), "windres.exe")
     if os.path.isfile(candidate):
-        toolchain_prefix = ""
-        break
+        windres = candidate
+
+if not windres:
+    windres = shutil.which("windres", path=env.get("ENV", {}).get("PATH"))
+
+if not windres:
+    windres = shutil.which("windres")
+
+if not windres:
+    print("  [embed_icon] windres not found: skipping icon (EXE will have default icon)")
+    print("  [embed_icon] To embed the icon, install MinGW with windres or use toolchain-gccmingw32.")
 else:
-    gcc = env.subst("$CC")
-    if gcc and gcc.endswith("gcc.exe"):
-        toolchain_prefix = gcc.replace("gcc.exe", "")
-
-windres = toolchain_prefix + "windres"
-
-os.makedirs(build_dir, exist_ok=True)
-
-print(f"  [embed_icon] {rc_file} -> {res_file}")
-subprocess.check_call(
-    [windres, rc_file, "-O", "coff", "-o", res_file],
-    cwd=installer_dir,
-)
-
-env.Append(LINKFLAGS=[res_file])
+    os.makedirs(build_dir, exist_ok=True)
+    print(f"  [embed_icon] {rc_file} -> {res_file}")
+    subprocess.check_call(
+        [windres, rc_file, "-O", "coff", "-o", res_file],
+        cwd=installer_dir,
+    )
+    env.Append(LINKFLAGS=[res_file])

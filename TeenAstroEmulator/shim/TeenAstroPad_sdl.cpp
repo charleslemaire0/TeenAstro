@@ -1,23 +1,24 @@
 /*
  * TeenAstroPad_sdl.cpp -- SDL2 keyboard replacement for the TeenAstroPad library.
  *
- * Maps keyboard keys to SHC button events:
+ * Faithfully replicates the OneButton FSM used by the real TeenAstroPad.
+ * Supports controller mode / menu mode with per-button timing, exactly
+ * as in the Release_1.5 firmware.
+ *
+ * Keyboard mapping:
  *   Space       -> Shift (B_SHIFT)
- *   8           -> North (B_NORTH)   [Up]
- *   5           -> South (B_SOUTH)   [Down]
- *   4           -> East  (B_EAST)    [Left]
- *   6           -> West  (B_WEST)    [Right]
+ *   8 / Up      -> North (B_NORTH)
+ *   5 / Down    -> South (B_SOUTH)
+ *   4 / Left    -> East  (B_EAST)
+ *   6 / Right   -> West  (B_WEST)
  *   3           -> Focus+ (B_F)
  *   1           -> Focus- (B_f)
- *
- * This file replaces TeenAstroPad.cpp entirely for the SHC emulator build.
  */
 
 #include <Arduino.h>
 #include <TeenAstroPad.h>
 #include <SDL.h>
 
-/* Blit the SDL display -- defined in shc_emu.cpp */
 extern void _emu_shc_blit();
 
 volatile byte eventbuttons[7] = { E_NONE, E_NONE, E_NONE, E_NONE, E_NONE, E_NONE, E_NONE };
@@ -25,25 +26,28 @@ volatile byte eventbuttons[7] = { E_NONE, E_NONE, E_NONE, E_NONE, E_NONE, E_NONE
 bool g_padKeyState[7] = { false };
 static bool (&keyState)[7] = g_padKeyState;
 
-/*
- * Per-button state machine (mimics OneButton):
- *   IDLE  → key down → WAIT (record press time, no event yet)
- *   WAIT  → key up before threshold → emit E_CLICK, go IDLE
- *   WAIT  → threshold elapsed       → emit E_LONGPRESSTART, go LONG
- *   LONG  → repeat timer fires      → emit E_LONGPRESS
- *   LONG  → key up                  → go IDLE (no E_CLICK)
- */
-enum BtnState { BTN_IDLE, BTN_WAIT, BTN_LONG };
-static BtnState      s_btnState[7]      = {};
-static unsigned long s_btnPressTime[7]  = {};
+/* ------------------------------------------------------------------ */
+/*  OneButton-compatible per-button state machine                      */
+/* ------------------------------------------------------------------ */
 
-static const unsigned long CLICK_THRESHOLD_MS = 120;
+enum OBState { OB_INIT, OB_DOWN, OB_UP, OB_COUNT, OB_PRESS, OB_PRESSEND };
 
-/* Auto-repeat timing for nav buttons 1..4 (N,S,E,W) */
-static unsigned long s_lastNavRepeat[4] = { 0, 0, 0, 0 };
-static bool          s_navInitial[4]    = { true, true, true, true };
-static unsigned long s_initialDelayMs   = 500;
-static unsigned long s_repeatMs         = 400;
+static struct BtnFSM {
+    OBState  state       = OB_INIT;
+    unsigned long startTime = 0;
+    int      nClicks     = 0;
+    unsigned long lastLPTime = 0;
+
+    unsigned int debounce_ms  = 50;
+    unsigned int click_ms     = 400;
+    unsigned int press_ms     = 800;
+    unsigned int lp_interval  = 0;
+
+    bool     prevLevel   = false;
+    unsigned long dbTime = 0;
+    bool     dbLevel     = false;
+    bool     lastDbLevel = false;
+} s_btn[7];
 
 static int keyToButton(SDL_Keycode k) {
     switch (k) {
@@ -58,7 +62,6 @@ static int keyToButton(SDL_Keycode k) {
     }
 }
 
-/* Physical key position (works with any keyboard layout, e.g. AZERTY) */
 static int scancodeToButton(SDL_Scancode s) {
     switch (s) {
         case SDL_SCANCODE_8:  return B_NORTH;
@@ -71,13 +74,112 @@ static int scancodeToButton(SDL_Scancode s) {
     }
 }
 
-static void applySpeedToRepeat(Pad::ButtonSpeed bs) {
-    switch (bs) {
-        case Pad::BS_SLOW:   s_initialDelayMs = 700; s_repeatMs = 550; break;
-        case Pad::BS_MEDIUM: s_initialDelayMs = 500; s_repeatMs = 400; break;
-        case Pad::BS_FAST:   s_initialDelayMs = 350; s_repeatMs = 250; break;
+static bool debounce(BtnFSM& b, bool raw, unsigned long now) {
+    if (b.lastDbLevel == raw) {
+        if (now - b.dbTime >= b.debounce_ms)
+            b.dbLevel = raw;
+    } else {
+        b.dbTime = now;
+        b.lastDbLevel = raw;
+    }
+    return b.dbLevel;
+}
+
+static void obTick(int k, bool rawActive, unsigned long now) {
+    BtnFSM& b = s_btn[k];
+    bool active = debounce(b, rawActive, now);
+    unsigned long wait = now - b.startTime;
+
+    switch (b.state) {
+    case OB_INIT:
+        if (active) {
+            b.state = OB_DOWN;
+            b.startTime = now;
+            b.nClicks = 0;
+        }
+        break;
+
+    case OB_DOWN:
+        if (!active) {
+            b.state = OB_UP;
+            b.startTime = now;
+        } else if (wait > b.press_ms) {
+            eventbuttons[k] = E_LONGPRESSTART;
+            b.state = OB_PRESS;
+            b.lastLPTime = now;
+        }
+        break;
+
+    case OB_UP:
+        b.nClicks++;
+        b.state = OB_COUNT;
+        break;
+
+    case OB_COUNT:
+        if (active) {
+            b.state = OB_DOWN;
+            b.startTime = now;
+        } else if (wait >= b.click_ms || b.nClicks >= 2) {
+            if (b.nClicks == 1) {
+                eventbuttons[k] = E_CLICK;
+            } else if (b.nClicks == 2) {
+                eventbuttons[k] = E_DOUBLECLICK;
+            }
+            b.state = OB_INIT;
+            b.nClicks = 0;
+            b.startTime = now;
+        }
+        break;
+
+    case OB_PRESS:
+        if (!active) {
+            b.state = OB_PRESSEND;
+        } else {
+            if (now - b.lastLPTime >= b.lp_interval) {
+                eventbuttons[k] = E_LONGPRESS;
+                b.lastLPTime = now;
+            }
+        }
+        break;
+
+    case OB_PRESSEND:
+        eventbuttons[k] = E_LONGPRESSSTOP;
+        b.state = OB_INIT;
+        b.nClicks = 0;
+        b.startTime = now;
+        break;
+
+    default:
+        b.state = OB_INIT;
+        break;
     }
 }
+
+/* ------------------------------------------------------------------ */
+/*  Timing helpers (matching real TeenAstroPad setMenuMode etc.)       */
+/* ------------------------------------------------------------------ */
+
+static int s_tickRef = 30;
+
+static void applyTimings(int tickRef) {
+    s_tickRef = tickRef;
+}
+
+static Pad::ButtonSpeed s_speed = Pad::BS_MEDIUM;
+
+static int computeTickRef(Pad::ButtonSpeed bs) {
+    int tr = 20;
+    switch (bs) {
+        case Pad::BS_SLOW:   tr = (int)(20 * 2);   break;
+        case Pad::BS_MEDIUM: tr = (int)(20 * 1.5);  break;
+        case Pad::BS_FAST:   tr = (int)(20 * 1);    break;
+    }
+    return tr;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Pad interface                                                      */
+/* ------------------------------------------------------------------ */
 
 void Pad::setup(const int[7], const bool[7], int adress, bool) {
     m_adress = adress;
@@ -85,68 +187,45 @@ void Pad::setup(const int[7], const bool[7], int adress, bool) {
     m_shiftPressed = false;
     m_button_speed = BS_MEDIUM;
     readButtonSpeed();
+    setControlerMode();
 }
 
 void Pad::tickButtons() {
+    delay(1);
     m_buttonPressed = false;
-    for (int k = 0; k < 7; k++)
+    m_shiftPressed = false;
+
+    for (int k = 0; k < 7; k++) {
+        delay(1);
         eventbuttons[k] = E_NONE;
 
-    SDL_Event ev;
-    while (SDL_PollEvent(&ev)) {
-        if (ev.type == SDL_QUIT) exit(0);
-
-        if (ev.type == SDL_KEYDOWN && !ev.key.repeat) {
-            int b = keyToButton(ev.key.keysym.sym);
-            if (b < 0) b = scancodeToButton(ev.key.keysym.scancode);
-            if (b >= 0) {
-                keyState[b] = true;
-                s_btnState[b] = BTN_WAIT;
-                s_btnPressTime[b] = millis();
+        SDL_Event ev;
+        while (SDL_PollEvent(&ev)) {
+            if (ev.type == SDL_QUIT) { extern void emu_shutdown(); emu_shutdown(); }
+            if (ev.type == SDL_KEYDOWN && !ev.key.repeat) {
+                int b = keyToButton(ev.key.keysym.sym);
+                if (b < 0) b = scancodeToButton(ev.key.keysym.scancode);
+                if (b >= 0)
+                    keyState[b] = true;
+            }
+            if (ev.type == SDL_KEYUP) {
+                int b = keyToButton(ev.key.keysym.sym);
+                if (b < 0) b = scancodeToButton(ev.key.keysym.scancode);
+                if (b >= 0)
+                    keyState[b] = false;
             }
         }
-        if (ev.type == SDL_KEYUP) {
-            int b = keyToButton(ev.key.keysym.sym);
-            if (b < 0) b = scancodeToButton(ev.key.keysym.scancode);
-            if (b >= 0) {
-                if (s_btnState[b] == BTN_WAIT)
-                    eventbuttons[b] = E_CLICK;
-                keyState[b] = false;
-                s_btnState[b] = BTN_IDLE;
-            }
-        }
-    }
 
-    m_shiftPressed = keyState[B_SHIFT];
-
-    unsigned long now = millis();
-    for (int k = 0; k < 7; k++) {
-        if (eventbuttons[k] != E_NONE) continue;
-
-        if (s_btnState[k] == BTN_WAIT) {
-            if (now - s_btnPressTime[k] >= CLICK_THRESHOLD_MS) {
-                eventbuttons[k] = E_LONGPRESSTART;
-                s_btnState[k] = BTN_LONG;
-                if (k >= 1 && k <= 4) {
-                    s_lastNavRepeat[k - 1] = now;
-                    s_navInitial[k - 1] = true;
-                }
-            }
-        } else if (s_btnState[k] == BTN_LONG) {
-            if (k >= 1 && k <= 4) {
-                unsigned long threshold = s_navInitial[k - 1] ? s_initialDelayMs : s_repeatMs;
-                if (now - s_lastNavRepeat[k - 1] < threshold)
-                    continue;
-                s_lastNavRepeat[k - 1] = now;
-                s_navInitial[k - 1] = false;
-            }
-            eventbuttons[k] = E_LONGPRESS;
-        }
+        obTick(k, keyState[k], millis());
     }
 
     for (int k = 0; k < 7; k++) {
-        if (eventbuttons[k] != E_NONE)
+        if (eventbuttons[k] != E_NONE) {
             m_buttonPressed = true;
+            if (k == 0)
+                m_shiftPressed = true;
+            break;
+        }
     }
 
     for (int k = 1; k < 6; k += 2) {
@@ -156,16 +235,34 @@ void Pad::tickButtons() {
         }
     }
 
-    if (!m_buttonPressed)
-        SDL_Delay(10);
-
     _emu_shc_blit();
 }
 
-void Pad::setMenuMode() {}
-void Pad::setControlerMode() {}
+void Pad::setMenuMode() {
+    int tr = computeTickRef(m_button_speed);
+    for (int k = 0; k < 7; k++) {
+        s_btn[k].click_ms    = tr * 4;
+        s_btn[k].debounce_ms = tr;
+        s_btn[k].press_ms    = tr * 8;
+    }
+}
+
+void Pad::setControlerMode() {
+    int tr = computeTickRef(m_button_speed);
+    s_btn[0].click_ms    = tr * 4;
+    s_btn[0].debounce_ms = tr;
+    s_btn[0].press_ms    = tr * 8;
+    for (int k = 1; k < 7; k++) {
+        s_btn[k].click_ms    = 5;
+        s_btn[k].debounce_ms = tr;
+        s_btn[k].press_ms    = 5;
+    }
+}
+
 void Pad::attachEvent() {}
+
 Pad::ButtonSpeed Pad::getButtonSpeed() { return m_button_speed; }
+
 void Pad::readButtonSpeed() {
     uint8_t val = 1;
     EEPROM.get(m_adress, val);
@@ -173,15 +270,15 @@ void Pad::readButtonSpeed() {
     else if (val == 1)  m_button_speed = BS_MEDIUM;
     else if (val == 2)  m_button_speed = BS_FAST;
     else { m_button_speed = BS_MEDIUM; EEPROM.put(m_adress, (uint8_t)1); }
-    applySpeedToRepeat(m_button_speed);
 }
+
 void Pad::setButtonSpeed(ButtonSpeed bs) {
     m_button_speed = bs;
     uint8_t val = static_cast<uint8_t>(bs);
     EEPROM.put(m_adress, val);
     EEPROM.commit();
-    applySpeedToRepeat(bs);
 }
+
 bool Pad::buttonPressed() { return m_buttonPressed; }
 bool Pad::shiftPressed() { return m_shiftPressed; }
 

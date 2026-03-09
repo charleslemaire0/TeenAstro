@@ -26,6 +26,7 @@ namespace sim {
 #include "TcpStream.h"
 #include "arduino.h"
 #include "EEPROM.h"
+#include "FocuserStub.h"
 #include "TimeLib.h"
 #include "Teensy3Clock.h"
 #include "IntervalTimer.h"
@@ -45,6 +46,7 @@ namespace sim {
 /* ------------------------------------------------------------------ */
 #include "Command.h"
 #include "Application.h"
+#include "XEEPROM.hpp"
 
 /* ------------------------------------------------------------------ */
 /*  Cockpit UI                                                         */
@@ -64,6 +66,7 @@ namespace sim {
 static TcpServerStream g_tcpUsb;
 static TcpServerStream g_tcpShc;
 static TcpServerStream g_tcpWifi;   /* Android / SkySafari LX200 */
+static FocuserStub     g_focuserStub;
 
 /* ------------------------------------------------------------------ */
 /*  reboot() stub                                                      */
@@ -117,6 +120,10 @@ int main(int, char**)
 
     sim::enableRealtime();
 
+    /* Route Focus_Serial (Serial2) to the in-process focuser emulation */
+    Serial2.setForward(&g_focuserStub);
+    printf("[EMU] Focuser stub attached to Serial2 (Focus_Serial).\n");
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
         printf("[EMU] SDL_Init failed: %s\n", SDL_GetError());
         return 1;
@@ -136,12 +143,22 @@ int main(int, char**)
     printf("[EMU] Entering main loop...\n\n");
     fflush(stdout);
 
+    unsigned long lastEepromFlush = millis();
+
     while (true) {
         {
             std::lock_guard<std::mutex> lk(IntervalTimerThread::instance().mutex());
             application.loop();
         }
         cockpit::cockpit_update();
+
+        /* Flush EEPROM every 5 s so settings survive TerminateProcess */
+        if (millis() - lastEepromFlush > 5000) {
+            EEPROM.commit();
+            XEEPROM.commit();
+            lastEepromFlush = millis();
+        }
+
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
 

@@ -1,5 +1,5 @@
 # Build TeenAstro MSI: SHC Emulator + Firmware Uploader + TeenAstro App.
-# Requires: PlatformIO (pio), MSBuild (.NET Framework), Flutter, WiX Toolset 3.
+# Requires: PlatformIO (pio), MSBuild (.NET Framework), WiX Toolset 3. Optional: Flutter (for app), MinGW with g++ on PATH (for emulator).
 #
 # Run from repo root: .\TeenAstroEmulator\installer\build_msi.ps1
 # Or from this folder: .\build_msi.ps1 (script detects repo root)
@@ -75,10 +75,21 @@ function Find-WixBin {
 
 # ---------- 1. Build SHC emulator ----------
 if (-not $SkipEmulator) {
+    # PlatformIO's toolchain-gccmingw32 is not always on PATH when pio spawns the compiler.
+    # Prepend its bin so g++/windres are found (inherited by child processes).
+    $pioHome = if ($env:PIOHOME_DIR) { $env:PIOHOME_DIR } else { Join-Path $env:USERPROFILE ".platformio" }
+    $toolchainBin = Join-Path $pioHome "packages\toolchain-gccmingw32\bin"
+    if (Test-Path (Join-Path $toolchainBin "g++.exe")) {
+        $env:Path = "$toolchainBin;$env:Path"
+    }
     Push-Location $RepoRoot
     try {
         Write-Host "`n=== Building SHC Emulator ===" -ForegroundColor Yellow
         pio run -d TeenAstroEmulator -e emu_shc
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "SHC emulator build failed. Install MinGW (e.g. mingw-w64) and add its bin folder to PATH, or use -SkipEmulator if you have pre-built exe in TeenAstroEmulator\.pio\build\emu_shc." -ForegroundColor Red
+            exit $LASTEXITCODE
+        }
     } finally { Pop-Location }
 }
 
@@ -127,10 +138,20 @@ $null = New-Item -ItemType Directory -Force -Path $StageDir
 # Emulator
 if (Test-Path (Join-Path $BuildSHC "program.exe")) {
     Copy-Item (Join-Path $BuildSHC "program.exe") (Join-Path $StageDir "TeenAstroSHC.exe") -Force
-    Copy-Item (Join-Path $BuildSHC "SDL2.dll")    (Join-Path $StageDir "SDL2.dll") -Force
+    $sdl2 = Join-Path $BuildSHC "SDL2.dll"
+    if (Test-Path $sdl2) {
+        Copy-Item $sdl2 (Join-Path $StageDir "SDL2.dll") -Force
+    } else {
+        Write-Host "  Warning: SDL2.dll not in build output (optional if static-linked)" -ForegroundColor Yellow
+    }
 }
-# Icon
-Copy-Item (Join-Path $InstallerDir "icon.ico") (Join-Path $StageDir "icon.ico") -Force
+# Icon (required for MSI and shortcuts)
+$iconSrc = Join-Path $InstallerDir "icon.ico"
+if (-not (Test-Path $iconSrc)) {
+    Write-Host "Missing installer/icon.ico. Add an icon.ico to TeenAstroEmulator\installer (used for MSI and shortcuts)." -ForegroundColor Red
+    exit 1
+}
+Copy-Item $iconSrc (Join-Path $StageDir "icon.ico") -Force
 
 # Uploader
 $uploaderExe = Join-Path $UploaderBin "TeenAstroUploader.exe"
@@ -179,8 +200,10 @@ try {
     $msi     = Join-Path $outDir "TeenAstroEmulator.msi"
 
     Write-Host "  Compiling WiX (candle)..." -ForegroundColor Gray
-    & (Join-Path $wixBin "candle.exe") -nologo `
-        "-dStageDir=$StageDir" `
+    # Quote StageDir for candle if path contains spaces (heat uses var.StageDir)
+    $stageDirArg = "-dStageDir=$StageDir"
+    if ($StageDir -match '\s') { $stageDirArg = "-dStageDir=`"$StageDir`"" }
+    & (Join-Path $wixBin "candle.exe") -nologo $stageDirArg `
         -out "$outDir\" `
         $mainWxs $appWxs
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

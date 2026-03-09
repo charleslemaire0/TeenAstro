@@ -16,6 +16,10 @@ public:
         for (size_t i = 0; i < len; i++) n += write(buf[i]);
         return n;
     }
+    size_t write(const char* str) {
+        if (!str) return 0;
+        return write((const uint8_t*)str, strlen(str));
+    }
 
     size_t print(const char* s) {
         size_t n = 0;
