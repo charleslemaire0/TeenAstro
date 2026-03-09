@@ -257,6 +257,7 @@ namespace ASCOM.TeenAstro.Focuser
 
     public bool TempCompAvailable => false;
 
+    /// <summary>Temperature in °C. Returns value from focuser when present; firmware uses -99.99 when no sensor. Conformance expects a value when the protocol supports temperature.</summary>
     public double Temperature
     {
       get
@@ -264,7 +265,7 @@ namespace ASCOM.TeenAstro.Focuser
         CheckConnected("Temperature");
         if (!FocuserHardware.GetFocuserPosition(out _, out _, out double temp))
           throw new ASCOM.DriverException("No focuser or focuser not responding.");
-        if (double.IsNaN(temp) || temp < -50.0)
+        if (double.IsNaN(temp))
           throw new PropertyNotImplementedException("Temperature", true);
         return temp;
       }
