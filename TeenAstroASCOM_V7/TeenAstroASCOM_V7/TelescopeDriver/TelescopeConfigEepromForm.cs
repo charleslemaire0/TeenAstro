@@ -65,6 +65,7 @@ namespace ASCOM.TeenAstro.Telescope
     {
       gear.Value = Clamp(m.GearRatio, gear.Minimum, gear.Maximum);
       steps.Value = Clamp(m.StepsPerRotation, steps.Minimum, steps.Maximum);
+      // MotorAxisSettings.Microstep holds the actual microstep count (8,16,32,…). Select matching item.
       SelectMicrostep(micro, m.Microstep);
       reverse.Checked = m.Reverse;
       lowCurr.Value = Clamp(m.LowCurrent, lowCurr.Minimum, lowCurr.Maximum);
@@ -76,7 +77,11 @@ namespace ASCOM.TeenAstro.Telescope
 
     private void PopulateRates()
     {
-      numGuideRate.Value = Clamp(cachedRates.GuideRate, numGuideRate.Minimum, numGuideRate.Maximum);
+      // Guide rate is stored as multiple of sidereal (0.01 resolution). UI shows value in "x sidereal".
+      decimal g = (decimal)cachedRates.GuideRate;
+      if (g < numGuideRate.Minimum) g = numGuideRate.Minimum;
+      if (g > numGuideRate.Maximum) g = numGuideRate.Maximum;
+      numGuideRate.Value = g;
       numRate1.Value = Clamp(cachedRates.Rate1, numRate1.Minimum, numRate1.Maximum);
       numRate2.Value = Clamp(cachedRates.Rate2, numRate2.Minimum, numRate2.Maximum);
       numRate3.Value = Clamp(cachedRates.Rate3, numRate3.Minimum, numRate3.Maximum);
@@ -152,13 +157,22 @@ namespace ASCOM.TeenAstro.Telescope
       NumericUpDown lowCurr, NumericUpDown highCurr, NumericUpDown backlash,
       NumericUpDown backlashRate, CheckBox silent)
     {
-      if ((int)gear.Value != cached.GearRatio)
-        TelescopeHardware.WriteMotorSetting(axis, "G", ((int)gear.Value).ToString(CultureInfo.InvariantCulture));
+      int uiGear = (int)gear.Value;
+      if (uiGear != cached.GearRatio)
+      {
+        // Protocol stores gear as 1000 * ratio
+        int rawGear = uiGear * 1000;
+        TelescopeHardware.WriteMotorSetting(axis, "G", rawGear.ToString(CultureInfo.InvariantCulture));
+      }
       if ((int)steps.Value != cached.StepsPerRotation)
         TelescopeHardware.WriteMotorSetting(axis, "S", ((int)steps.Value).ToString(CultureInfo.InvariantCulture));
-      int microVal = GetMicrostepValue(micro);
-      if (microVal != cached.Microstep)
-        TelescopeHardware.WriteMotorSetting(axis, "M", microVal.ToString(CultureInfo.InvariantCulture));
+      int microSteps = GetMicrostepValue(micro); // 8,16,32,...
+      // Convert back to exponent 0–8 used by firmware: micro = log2(steps)
+      int microExp = 0;
+      if (microSteps > 0)
+        microExp = (int)Math.Round(Math.Log(microSteps, 2.0), MidpointRounding.AwayFromZero);
+      if (microExp != cached.Microstep)
+        TelescopeHardware.WriteMotorSetting(axis, "M", microExp.ToString(CultureInfo.InvariantCulture));
       if (reverse.Checked != cached.Reverse)
         TelescopeHardware.WriteMotorSetting(axis, "r", reverse.Checked ? "1" : "0");
       if ((int)lowCurr.Value != cached.LowCurrent)
@@ -175,8 +189,13 @@ namespace ASCOM.TeenAstro.Telescope
 
     private void WriteRateChanges()
     {
-      if ((int)numGuideRate.Value != cachedRates.GuideRate)
-        TelescopeHardware.WriteRateSetting("0", ((int)numGuideRate.Value).ToString("000", CultureInfo.InvariantCulture));
+      double uiGuideRate = (double)numGuideRate.Value;
+      if (Math.Abs(uiGuideRate - cachedRates.GuideRate) > 1e-4)
+      {
+        // :SXR0,NNN# where NNN = guideRate * 100 (0.01 resolution)
+        int encoded = (int)Math.Round(uiGuideRate * 100.0);
+        TelescopeHardware.WriteRateSetting("0", encoded.ToString("000", CultureInfo.InvariantCulture));
+      }
       if ((int)numRate1.Value != cachedRates.Rate1)
         TelescopeHardware.WriteRateSetting("1", ((int)numRate1.Value).ToString(CultureInfo.InvariantCulture));
       if ((int)numRate2.Value != cachedRates.Rate2)
@@ -201,20 +220,38 @@ namespace ASCOM.TeenAstro.Telescope
       }
       if ((int)numOverhead.Value != cachedLimits.Overhead)
         TelescopeHardware.WriteLimitSetting("O", ((int)numOverhead.Value).ToString(CultureInfo.InvariantCulture));
+      // Axis user limits are edited in degrees but stored as tenths of a degree.
       if ((int)numAxis1Min.Value != cachedLimits.Axis1Min)
-        TelescopeHardware.WriteLimitSetting("A", ((int)numAxis1Min.Value).ToString(CultureInfo.InvariantCulture));
+        TelescopeHardware.WriteLimitSetting("A", (((int)numAxis1Min.Value) * 10).ToString(CultureInfo.InvariantCulture));
       if ((int)numAxis1Max.Value != cachedLimits.Axis1Max)
-        TelescopeHardware.WriteLimitSetting("B", ((int)numAxis1Max.Value).ToString(CultureInfo.InvariantCulture));
+        TelescopeHardware.WriteLimitSetting("B", (((int)numAxis1Max.Value) * 10).ToString(CultureInfo.InvariantCulture));
       if ((int)numAxis2Min.Value != cachedLimits.Axis2Min)
-        TelescopeHardware.WriteLimitSetting("C", ((int)numAxis2Min.Value).ToString(CultureInfo.InvariantCulture));
+        TelescopeHardware.WriteLimitSetting("C", (((int)numAxis2Min.Value) * 10).ToString(CultureInfo.InvariantCulture));
       if ((int)numAxis2Max.Value != cachedLimits.Axis2Max)
-        TelescopeHardware.WriteLimitSetting("D", ((int)numAxis2Max.Value).ToString(CultureInfo.InvariantCulture));
+        TelescopeHardware.WriteLimitSetting("D", (((int)numAxis2Max.Value) * 10).ToString(CultureInfo.InvariantCulture));
       if (txtMeridianE.Text != cachedLimits.MeridianE)
-        TelescopeHardware.WriteLimitSetting("E", txtMeridianE.Text);
+      {
+        // UI uses degrees of hour angle; firmware stores minutes past meridian.
+        if (int.TryParse(txtMeridianE.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int degE))
+        {
+          int minutesE = (int)Math.Round((degE * 60.0) / 15.0);
+          TelescopeHardware.WriteLimitSetting("E", minutesE.ToString(CultureInfo.InvariantCulture));
+        }
+      }
       if (txtMeridianW.Text != cachedLimits.MeridianW)
-        TelescopeHardware.WriteLimitSetting("W", txtMeridianW.Text);
+      {
+        if (int.TryParse(txtMeridianW.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out int degW))
+        {
+          int minutesW = (int)Math.Round((degW * 60.0) / 15.0);
+          TelescopeHardware.WriteLimitSetting("W", minutesW.ToString(CultureInfo.InvariantCulture));
+        }
+      }
       if ((int)numUnderPole.Value != cachedLimits.UnderPole)
-        TelescopeHardware.WriteLimitSetting("U", ((int)numUnderPole.Value).ToString(CultureInfo.InvariantCulture));
+      {
+        // Under-pole is edited in degrees but stored as ×10.
+        int vU = (int)numUnderPole.Value;
+        TelescopeHardware.WriteLimitSetting("U", (vU * 10).ToString(CultureInfo.InvariantCulture));
+      }
       if (txtDistFromPole.Text != cachedLimits.DistFromPole)
         TelescopeHardware.WriteLimitSetting("S", txtDistFromPole.Text);
     }

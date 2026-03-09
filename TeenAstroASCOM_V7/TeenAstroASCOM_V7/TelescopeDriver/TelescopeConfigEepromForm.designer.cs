@@ -174,13 +174,21 @@ namespace ASCOM.TeenAstro.Telescope
       System.Windows.Forms.NumericUpDown backlash, System.Windows.Forms.NumericUpDown backlashRate,
       System.Windows.Forms.CheckBox silent)
     {
+      tlp.SuspendLayout();
+
       tlp.ColumnCount = 2;
+      tlp.ColumnStyles.Clear();
       tlp.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
       tlp.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+
       tlp.RowCount = 9;
+      tlp.RowStyles.Clear();
       for (int i = 0; i < 9; i++)
-        tlp.RowStyles.Add(new System.Windows.Forms.RowStyle());
-      tlp.Dock = System.Windows.Forms.DockStyle.Fill;
+        tlp.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+
+      tlp.AutoSize = true;
+      tlp.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+      tlp.Dock = System.Windows.Forms.DockStyle.Top;
 
       string[] labels = { "Gear Ratio", "Steps/Rotation", "Microstep", "Reverse", "Low Current (mA)",
         "High Current (mA)", "Backlash Amount", "Backlash Rate", "Silent/CoolStep" };
@@ -196,7 +204,8 @@ namespace ASCOM.TeenAstro.Telescope
       gear.Maximum = 99999; gear.Minimum = 1; gear.Size = new System.Drawing.Size(100, 20);
       steps.Maximum = 99999; steps.Minimum = 1; steps.Size = new System.Drawing.Size(100, 20);
       micro.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-      micro.Items.AddRange(new object[] { "1", "2", "4", "8", "16", "32", "64", "128", "256" });
+      // Microstep values are the actual microsteps (2^exp). Firmware stores the exponent (0–8).
+      micro.Items.AddRange(new object[] { "8", "16", "32", "64", "128", "256" });
       micro.Size = new System.Drawing.Size(100, 21);
       reverse.Anchor = System.Windows.Forms.AnchorStyles.Left; reverse.AutoSize = true;
       lowCurr.Maximum = 2500; lowCurr.Minimum = 0; lowCurr.Increment = 10; lowCurr.Size = new System.Drawing.Size(100, 20);
@@ -204,19 +213,37 @@ namespace ASCOM.TeenAstro.Telescope
       backlash.Maximum = 9999; backlash.Minimum = 0; backlash.Size = new System.Drawing.Size(100, 20);
       backlashRate.Maximum = 9999; backlashRate.Minimum = 0; backlashRate.Size = new System.Drawing.Size(100, 20);
       silent.Anchor = System.Windows.Forms.AnchorStyles.Left; silent.AutoSize = true;
+
+      tlp.ResumeLayout(false);
     }
 
     private void SetupRatesTable()
     {
-      this.tlpRates.ColumnCount = 2;
-      this.tlpRates.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-      this.tlpRates.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-      this.tlpRates.RowCount = 7;
-      for (int i = 0; i < 7; i++)
-        this.tlpRates.RowStyles.Add(new System.Windows.Forms.RowStyle());
-      this.tlpRates.Dock = System.Windows.Forms.DockStyle.Fill;
+      this.tlpRates.SuspendLayout();
 
-      string[] labels = { "Guide Rate", "User Rate 1", "User Rate 2", "User Rate 3", "Max Slew Rate", "Default Rate (0-4)", "Acceleration (deg)" };
+      this.tlpRates.ColumnCount = 2;
+      this.tlpRates.ColumnStyles.Clear();
+      this.tlpRates.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+      this.tlpRates.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+
+      this.tlpRates.RowCount = 7;
+      this.tlpRates.RowStyles.Clear();
+      for (int i = 0; i < 7; i++)
+        this.tlpRates.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+
+      this.tlpRates.AutoSize = true;
+      this.tlpRates.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+      this.tlpRates.Dock = System.Windows.Forms.DockStyle.Top;
+
+      string[] labels = {
+        "Guide Rate (× sidereal)",
+        "User Rate 1 (× sidereal)",
+        "User Rate 2 (× sidereal)",
+        "User Rate 3 (× sidereal)",
+        "Max Slew Rate (× sidereal)",
+        "Default Rate (0-4)",
+        "Acceleration (deg)"
+      };
       System.Windows.Forms.NumericUpDown[] nums = { numGuideRate, numRate1, numRate2, numRate3, numMaxRate, numDefaultRate, numDegAcc };
 
       for (int i = 0; i < labels.Length; i++)
@@ -226,22 +253,46 @@ namespace ASCOM.TeenAstro.Telescope
         nums[i].Size = new System.Drawing.Size(100, 20);
         this.tlpRates.Controls.Add(nums[i], 1, i);
       }
-      numGuideRate.Maximum = 999; numRate1.Maximum = 9999; numRate2.Maximum = 9999; numRate3.Maximum = 9999;
+      numGuideRate.DecimalPlaces = 2;
+      numGuideRate.Increment = 0.01M;
+      numGuideRate.Minimum = 0.10M;
+      numGuideRate.Maximum = 1.00M;
+      numRate1.Maximum = 9999; numRate2.Maximum = 9999; numRate3.Maximum = 9999;
       numMaxRate.Maximum = 9999; numDefaultRate.Maximum = 4; numDegAcc.Maximum = 999; numDegAcc.Minimum = 1;
+
+      this.tlpRates.ResumeLayout(false);
     }
 
     private void SetupLimitsTable()
     {
-      this.tlpLimits.ColumnCount = 2;
-      this.tlpLimits.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-      this.tlpLimits.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-      this.tlpLimits.RowCount = 10;
-      for (int i = 0; i < 10; i++)
-        this.tlpLimits.RowStyles.Add(new System.Windows.Forms.RowStyle());
-      this.tlpLimits.Dock = System.Windows.Forms.DockStyle.Fill;
+      this.tlpLimits.SuspendLayout();
 
-      string[] labels = { "Horizon Limit", "Overhead Limit", "Axis 1 Min", "Axis 1 Max", "Axis 2 Min", "Axis 2 Max",
-        "Meridian East", "Meridian West", "Under-Pole", "Dist from Pole" };
+      this.tlpLimits.ColumnCount = 2;
+      this.tlpLimits.ColumnStyles.Clear();
+      this.tlpLimits.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+      this.tlpLimits.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+
+      this.tlpLimits.RowCount = 10;
+      this.tlpLimits.RowStyles.Clear();
+      for (int i = 0; i < 10; i++)
+        this.tlpLimits.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+
+      this.tlpLimits.AutoSize = true;
+      this.tlpLimits.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+      this.tlpLimits.Dock = System.Windows.Forms.DockStyle.Top;
+
+      string[] labels = {
+        "Horizon Limit (deg)",
+        "Overhead Limit (deg)",
+        "Axis 1 Min (deg)",
+        "Axis 1 Max (deg)",
+        "Axis 2 Min (deg)",
+        "Axis 2 Max (deg)",
+        "Meridian East (deg HA)",
+        "Meridian West (deg HA)",
+        "Under-Pole (hours)",
+        "Dist from Pole (deg)"
+      };
       System.Windows.Forms.Control[] ctrls = { numHorizon, numOverhead, numAxis1Min, numAxis1Max, numAxis2Min, numAxis2Max,
         txtMeridianE, txtMeridianW, numUnderPole, txtDistFromPole };
 
@@ -261,24 +312,40 @@ namespace ASCOM.TeenAstro.Telescope
       txtMeridianW.Size = new System.Drawing.Size(100, 20);
       numUnderPole.Maximum = 99; numUnderPole.Size = new System.Drawing.Size(100, 20);
       txtDistFromPole.Size = new System.Drawing.Size(100, 20);
+
+      this.tlpLimits.ResumeLayout(false);
     }
 
     private void SetupEncodersTable()
     {
+      this.tlpEncoders.SuspendLayout();
+
       this.tlpEncoders.ColumnCount = 2;
+      this.tlpEncoders.ColumnStyles.Clear();
       this.tlpEncoders.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
       this.tlpEncoders.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+
       this.tlpEncoders.RowCount = 5;
+      this.tlpEncoders.RowStyles.Clear();
+      // Use AutoSize rows so no single row (like the last one) stretches to fill the remaining space.
       for (int i = 0; i < 5; i++)
-        this.tlpEncoders.RowStyles.Add(new System.Windows.Forms.RowStyle());
-      this.tlpEncoders.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.tlpEncoders.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+
+      this.tlpEncoders.AutoSize = true;
+      this.tlpEncoders.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+      this.tlpEncoders.Dock = System.Windows.Forms.DockStyle.Top;
 
       string[] labels = { "Axis 1 Pulse/Deg", "Axis 1 Reverse", "Axis 2 Pulse/Deg", "Axis 2 Reverse", "Sync Mode" };
       System.Windows.Forms.Control[] ctrls = { numEnc1Pulse, chkEnc1Reverse, numEnc2Pulse, chkEnc2Reverse, numEncSyncMode };
 
       for (int i = 0; i < labels.Length; i++)
       {
-        var lbl = new System.Windows.Forms.Label { Text = labels[i], Anchor = System.Windows.Forms.AnchorStyles.Left, AutoSize = true };
+        var lbl = new System.Windows.Forms.Label
+        {
+          Text = labels[i],
+          Anchor = System.Windows.Forms.AnchorStyles.Left,
+          AutoSize = true
+        };
         this.tlpEncoders.Controls.Add(lbl, 0, i);
         this.tlpEncoders.Controls.Add(ctrls[i], 1, i);
       }
@@ -287,17 +354,26 @@ namespace ASCOM.TeenAstro.Telescope
       numEnc2Pulse.Maximum = 99999; numEnc2Pulse.Size = new System.Drawing.Size(100, 20);
       chkEnc2Reverse.Anchor = System.Windows.Forms.AnchorStyles.Left; chkEnc2Reverse.AutoSize = true;
       numEncSyncMode.Maximum = 9; numEncSyncMode.Size = new System.Drawing.Size(100, 20);
+
+      this.tlpEncoders.ResumeLayout(false);
     }
 
     private void SetupSiteOptionsTable()
     {
+      this.tlpSiteOptions.SuspendLayout();
+
       this.tlpSiteOptions.ColumnCount = 2;
+      this.tlpSiteOptions.ColumnStyles.Clear();
       this.tlpSiteOptions.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
       this.tlpSiteOptions.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
       this.tlpSiteOptions.RowCount = 8;
+      this.tlpSiteOptions.RowStyles.Clear();
       for (int i = 0; i < 8; i++)
-        this.tlpSiteOptions.RowStyles.Add(new System.Windows.Forms.RowStyle());
-      this.tlpSiteOptions.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.tlpSiteOptions.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+
+      this.tlpSiteOptions.AutoSize = true;
+      this.tlpSiteOptions.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+      this.tlpSiteOptions.Dock = System.Windows.Forms.DockStyle.Top;
 
       string[] labels = { "Mount Name", "Slew Settle (s)", "Refraction Goto", "Refraction Pole",
         "Refraction Tracking", "Latitude", "Longitude", "Elevation (m)" };
@@ -310,14 +386,17 @@ namespace ASCOM.TeenAstro.Telescope
         this.tlpSiteOptions.Controls.Add(lbl, 0, i);
         this.tlpSiteOptions.Controls.Add(ctrls[i], 1, i);
       }
+      // Use a uniform width so the last row (Elevation) aligns cleanly with its label.
       txtMountName.Size = new System.Drawing.Size(140, 20);
-      numSlewSettle.Maximum = 21; numSlewSettle.Size = new System.Drawing.Size(100, 20);
+      numSlewSettle.Maximum = 21; numSlewSettle.Size = new System.Drawing.Size(140, 20);
       chkRefrGoto.Anchor = System.Windows.Forms.AnchorStyles.Left; chkRefrGoto.AutoSize = true;
       chkRefrPole.Anchor = System.Windows.Forms.AnchorStyles.Left; chkRefrPole.AutoSize = true;
       chkRefrTracking.Anchor = System.Windows.Forms.AnchorStyles.Left; chkRefrTracking.AutoSize = true;
       txtLatitude.Size = new System.Drawing.Size(140, 20); txtLatitude.ReadOnly = true;
       txtLongitude.Size = new System.Drawing.Size(140, 20); txtLongitude.ReadOnly = true;
-      numElevation.Minimum = -300; numElevation.Maximum = 10000; numElevation.Size = new System.Drawing.Size(100, 20);
+      numElevation.Minimum = -300; numElevation.Maximum = 10000; numElevation.Size = new System.Drawing.Size(140, 20);
+
+      this.tlpSiteOptions.ResumeLayout(false);
     }
 
     #endregion

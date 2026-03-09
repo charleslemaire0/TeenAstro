@@ -16,9 +16,9 @@ Commands below return data that is **already present** in the bulk packets **:GX
 | `:GXT1#`  | UTC date                 | Bytes 9–11 (month, day, year)                 |
 | `:GXT3#`  | LHA (sidereal)           | Derivable: LST − RA (bytes 44–51, 12–19)      |
 
-**Current use:**  
-- **TeenAstroASCOM_V7** and **TeenAstroAscomNative** use GXAS for HasMotors and connection check.  
-- **LX200Client** no longer exposes rate getters; **TeenAstroMountStatus** gets rates from GXAS.  
+**Current use:**
+- **TeenAstroASCOM_V7** and **TeenAstroAscomNative** use GXAS for HasMotors and connection check.
+- **LX200Client** no longer exposes rate getters; **TeenAstroMountStatus** gets rates from GXAS.
 - **teenastro_app** uses GXAS for state.
 
 ---
@@ -49,8 +49,8 @@ Commands below return data that is **already present** in the bulk packets **:GX
 | `:GXOI#`   | Mount index           | Byte 84                          |
 | `:GXOS#`   | Slew settle (s)       | Byte 55                          |
 
-**Current use:**  
-- **TAConfig** and other config tools often use the individual `:GXMx#` / `:GXRx#` / `:GXLx#` getters when reading or validating one field.  
+**Current use:**
+- **TAConfig** and other config tools often use the individual `:GXMx#` / `:GXRx#` / `:GXLx#` getters when reading or validating one field.
 - **MountStatus** (C++) and **teenastro_app** use **:GXCS#** for full config; individual getters are still used where only one value is needed (e.g. config UI).
 
 ---
@@ -70,15 +70,7 @@ Commands below return data that is **already present** in the bulk packets **:GX
 
 ## 4. Recommendation
 
-- **State:** Any client that already polls **:GXAS#** does not need the **:GXJx#**, **:GXRr#**, **:GXRd#**, **:GXRe#**, **:GXRf#**, **:GXT0#**, **:GXT1#**, **:GXT3#** getters for that purpose. They remain useful for:
-  - Minimal “single property” queries (e.g. “is motor on?” without parsing 102 bytes).
-  - Legacy or VB ASCOM driver that has not been switched to GXAS.
-- **Config:** Similarly, **:GXCS#** makes the listed **:GXMx#**, **:GXRx#**, **:GXLx#**, **:GXr*#**, **:GXOI#**, **:GXOS#** getters redundant for “full config” use cases; individual getters are still convenient for config UIs that read/write one field at a time.
+- **State:** Status and tracking rates are obtained via **:GXAS#** only; the former **:GXJx#** and **:GXRr#** / **:GXRd#** / **:GXRe#** / **:GXRf#** getters have been removed. Clients (ASCOM V7, MountStatus, teenastro_app) use the GXAS packet for state.
+- **Config:** **:GXCS#** provides full config in one call. The individual **:GXMx#**, **:GXRx#**, **:GXLx#**, etc. getters remain available for config UIs that read or validate a single field.
 
-To **remove** a command as orphan:
-
-1. Ensure every current caller (ASCOM V7, LX200Client, app, TAConfig, tests) uses GXAS/GXCS (or another non-orphan command) for that data.
-2. Remove the command handler in **TeenAstroMainUnit/Command_GX.cpp** (and **UniversalMainUnit/Command_G.cpp** if present).
-3. Update **CommandReplyLength**, **Commands.md**, and any client that still referenced the command.
-
-This document is a reference for planning; no commands have been removed automatically.
+To remove a further command as orphan: ensure all callers use GXAS/GXCS (or another kept command), then remove the handler in **TeenAstroMainUnit/Command_GX.cpp** (and **UniversalMainUnit/Command_G.cpp** if present) and update **CommandReplyLength**, **Commands.md**, and any client references.

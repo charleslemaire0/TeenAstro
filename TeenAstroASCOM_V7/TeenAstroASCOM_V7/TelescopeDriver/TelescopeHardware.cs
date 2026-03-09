@@ -2582,7 +2582,7 @@ namespace ASCOM.TeenAstro.Telescope
 
     internal class RateSettings
     {
-      public int GuideRate;
+      public double GuideRate;
       public int Rate1;
       public int Rate2;
       public int Rate3;
@@ -2637,7 +2637,11 @@ namespace ASCOM.TeenAstro.Telescope
 
     private static int ReadGXInt(string cmd)
     {
-      string val = ReadGX(cmd);
+      string val = (ReadGX(cmd) ?? "").Trim();
+      // Some legacy GX replies (e.g. :GXLH# / :GXLO#) return values with a trailing '*' like "-10*".
+      // Strip non-numeric suffix characters before parsing, while preserving the sign.
+      if (val.EndsWith("*", StringComparison.Ordinal))
+        val = val.Substring(0, val.Length - 1).TrimEnd();
       if (int.TryParse(val, NumberStyles.Any, CultureInfo.InvariantCulture, out int result))
         return result;
       throw new ASCOM.DriverException("Failed to parse GX" + cmd + " response: " + val);
@@ -2652,9 +2656,19 @@ namespace ASCOM.TeenAstro.Telescope
     {
       string s = axis == 1 ? "R" : "D";
       var m = new MotorAxisSettings();
-      m.GearRatio = ReadGXInt("MG" + s);
+
+      // Gear is stored as 1000 * gearRatio (see LX200Client::readTotGear). Present integer gear ratio to the UI.
+      int rawGear = ReadGXInt("MG" + s);
+      m.GearRatio = (int)Math.Round(rawGear / 1000.0);
+
       m.StepsPerRotation = ReadGXInt("MS" + s);
-      m.Microstep = ReadGXInt("MM" + s);
+
+      // Microstep is stored as exponent 0–8 (2^exp). Present actual microstep count (8, 16, 32, …) to the UI.
+      int microExp = ReadGXInt("MM" + s);
+      if (microExp < 0) microExp = 0;
+      if (microExp > 8) microExp = 8;
+      m.Microstep = 1 << microExp;
+
       m.Reverse = ReadGX("Mr" + s) != "0";
       m.LowCurrent = ReadGXInt("Mc" + s);
       m.HighCurrent = ReadGXInt("MC" + s);
@@ -2668,7 +2682,10 @@ namespace ASCOM.TeenAstro.Telescope
     public static RateSettings ReadRateSettings()
     {
       var r = new RateSettings();
-      r.GuideRate = ReadGXInt("R0");
+      // Guide rate 0 is exposed as a multiple of sidereal via :GXR0# (dd.dd).
+      double gRate = 0.0;
+      GetDouble("GuideRate", "GXR0", ref gRate);
+      r.GuideRate = gRate;
       r.Rate1 = ReadGXInt("R1");
       r.Rate2 = ReadGXInt("R2");
       r.Rate3 = ReadGXInt("R3");
@@ -2682,15 +2699,32 @@ namespace ASCOM.TeenAstro.Telescope
     public static LimitSettings ReadLimitSettings()
     {
       var l = new LimitSettings();
+
+      // Horizon / overhead limits are returned as degrees with optional '*' suffix (handled in ReadGXInt).
       l.Horizon = ReadGXInt("LH");
       l.Overhead = ReadGXInt("LO");
-      l.Axis1Min = ReadGXInt("LA");
-      l.Axis1Max = ReadGXInt("LB");
-      l.Axis2Min = ReadGXInt("LC");
-      l.Axis2Max = ReadGXInt("LD");
-      l.MeridianE = ReadGX("LE");
-      l.MeridianW = ReadGX("LW");
-      l.UnderPole = ReadGXInt("LU");
+
+      // Axis user limits are stored as tenths of a degree. Present degrees to the UI.
+      l.Axis1Min = (int)Math.Round(ReadGXInt("LA") / 10.0);
+      l.Axis1Max = (int)Math.Round(ReadGXInt("LB") / 10.0);
+      l.Axis2Min = (int)Math.Round(ReadGXInt("LC") / 10.0);
+      l.Axis2Max = (int)Math.Round(ReadGXInt("LD") / 10.0);
+
+      // Meridian limits are stored as minutes past meridian; web UI shows degrees of hour angle.
+      // degPastMer = minutes * 15 / 60.
+      string merE = ReadGX("LE");
+      string merW = ReadGX("LW");
+      if (int.TryParse(merE, NumberStyles.Any, CultureInfo.InvariantCulture, out int merEmin))
+        l.MeridianE = ((int)Math.Round(merEmin * 15.0 / 60.0)).ToString(CultureInfo.InvariantCulture);
+      else
+        l.MeridianE = merE;
+      if (int.TryParse(merW, NumberStyles.Any, CultureInfo.InvariantCulture, out int merWmin))
+        l.MeridianW = ((int)Math.Round(merWmin * 15.0 / 60.0)).ToString(CultureInfo.InvariantCulture);
+      else
+        l.MeridianW = merW;
+      // Under-pole limit is stored as ×10 (see :GXLU#); present degrees to the UI.
+      l.UnderPole = (int)Math.Round(ReadGXInt("LU") / 10.0);
+
       l.DistFromPole = ReadGX("LS");
       LogMessage("ReadLimitSettings", "OK");
       return l;

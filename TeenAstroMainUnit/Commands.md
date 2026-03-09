@@ -160,7 +160,7 @@ All `:GXnn#` commands are TeenAstro extensions. **Standard:** TeenAstro extensio
 
 | Syntax | Description | Returns |
 |--------|-------------|---------|
-| `:GXAS#` | Bulk state: tracking, UTC, positions (RA/Dec/Alt/Az/LST, target), rates, focuser (when present), timezone. Base64-encoded 66-byte little-endian packet. Byte 65 = XOR checksum of bytes 0–64. | 88 base64 chars + `#` |
+| `:GXAS#` | Bulk state: tracking, slewing, park, motors, pulse guiding, UTC, positions (RA/Dec/Alt/Az/LST, target), **current and stored tracking rates**, focuser (when present), timezone. Base64-encoded **102-byte** little-endian packet (all numeric fields float64). Byte 101 = XOR checksum of bytes 0–100. Use this for status and rates; individual status/rate get commands have been removed. | **136** base64 chars + `#` |
 | `:GXCS#` | Bulk config: both axis motors, rates/speed, limits, encoders, refraction flags, mount index. Base64-encoded 90-byte little-endian packet. Byte 89 = XOR checksum of bytes 0–88. | 120 base64 chars + `#` |
 
 ### Alignment
@@ -209,6 +209,8 @@ All `:GXnn#` commands are TeenAstro extensions. **Standard:** TeenAstro extensio
 | `:GXRB#` | Get backlash take-up rate. | `long#` |
 | `:GXRD#` | Get default rate index. | `0`–`4#` |
 | `:GXRX#` | Get max slew rate. | `int#` |
+
+Current and stored tracking rates (RA/Dec/HA) are included in the **:GXAS#** packet only; there are no separate get commands for them.
 
 ### Limits (user)
 | Syntax | Description | Returns |
