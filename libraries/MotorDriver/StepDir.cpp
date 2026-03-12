@@ -2,7 +2,7 @@
 #ifdef __ESP32__
 #include <Arduino.h>
 #define ISR(f) void IRAM_ATTR f(void) 
-#define MIN_INTERRUPT_PERIOD 10UL      // µS
+#define MIN_INTERRUPT_PERIOD 5UL      // µS
 #define MAX_INTERRUPT_PERIOD 10000000UL  // 10S 
 // the motor task runs every mS
 #define TICK_PERIOD_MS 1
@@ -15,11 +15,15 @@
 #include "event_groups.h"
 #include "semphr.h"
 #define ISR(f)  void f(void)
+//#include "IntervalTimer2.h"
+
+
 IntervalTimer  itimer3;
 IntervalTimer  itimer4;
+
 // Periods in µS, speeds in steps/S
 // *** replace by constants from the HAL
-#define MIN_INTERRUPT_PERIOD 5UL        // µS
+#define MIN_INTERRUPT_PERIOD 1L        // µS
 #define MAX_INTERRUPT_PERIOD 100000UL  // 100mS
 // the motor task runs every 1mS
 #define TICK_PERIOD_MS 1
@@ -32,25 +36,7 @@ IntervalTimer  itimer4;
 
 #define VSTOP 20 
   
-#if defined(ESP32) || defined(BOARD_240)
-void      HAL_debug0(uint8_t b);
-void      HAL_debug1(uint8_t b);
-
-// hack to debug only axis1 since we only have one debug port 
-void SD_debug0(uint8_t b)
-{
-  char *p = pcTaskGetName(NULL);    // task name is 'Motor0x'
-  if (*(p+6) == '1')
-    HAL_debug0(b);
-  else
-    HAL_debug1(b);    
-}
-#else
 #define SD_debug0(b)
-#define SD_debug1(b)
-#endif
-
-
 
 
 /*
@@ -65,12 +51,14 @@ long StepDir::decelDistance(double speed, unsigned long aMax)
 
 
 // Compute period in microseconds from speed in (micro)steps per second 
-unsigned long getPeriod(double V)
+double getPeriod(double V)
 {
   if (V == 0)
-    return MAX_INTERRUPT_PERIOD;
+  {
+    return 1000;  // when stopped, keep interrupting once per millisecond
+  }
 
-  unsigned long period = 1000000UL / fabs(V);
+  double period = 1000000UL / fabs(V);
 
   if (period <= MIN_INTERRUPT_PERIOD)
   {
@@ -124,9 +112,10 @@ void StepDir::programSpeed(double V)
   if (V !=0)
     setDir(V<0.0);
 
-  long period = getPeriod(fabs(V));
+  double period = getPeriod(fabs(V));
   #ifdef __arm__
-  timerP->update(period); 
+
+  ((IntervalTimer *) timerP)->update(period); 
   #endif
 
   #ifdef __ESP32__  
@@ -189,6 +178,9 @@ void StepDir::positionMode(void)
   int sign;
   newSpeed = fabs(currentSpeed);
   
+  if (!enabled)
+    return;
+  
   // check target distance
   // perform calculations on absolute speed, then apply sign 
   delta = getDelta();
@@ -208,17 +200,20 @@ void StepDir::positionMode(void)
   // Check for abort 
   if (getEvents() & EV_MOT_ABORT)
   {
-    resetEvents(EV_MOT_ABORT | EV_MOT_GOTO);
-    cli();
-    targetPos = currentPos + (currentSpeed >= 0 ? 1:-1) * d1;
-    sei();
-    if (newSpeed < vStop)
+    resetEvents(EV_MOT_ABORT);
+    if (newSpeed != 0)
     {
-      state(PS_STOPPING);
-    }
-    else
-    {
-      state(PS_DECEL_TARGET);
+      cli();
+      targetPos = currentPos + (currentSpeed >= 0 ? 1:-1) * d1;
+      sei();
+      if (newSpeed < vStop)
+      {
+        state(PS_STOPPING);
+      }
+      else
+      {
+        state(PS_DECEL_TARGET);
+      }      
     }
   }
 
@@ -250,7 +245,7 @@ void StepDir::positionMode(void)
     case PS_ACCEL: 
       {
         // Accelerate to VMax
-        newSpeed = fmin(vMax, newSpeed + (aMax * TICK_PERIOD_MS) / 1000);
+        newSpeed = fmin(vMax, newSpeed + ((double) (aMax * TICK_PERIOD_MS)) / 1000);
         programSpeed(sign * newSpeed); 
         if (newSpeed == vMax)
           state(PS_CRUISE);               
@@ -267,13 +262,21 @@ void StepDir::positionMode(void)
       {
         state(PS_DECEL);
       }
+      if (newSpeed == 0.0)
+      {
+        programSpeed(0.0);
+        resetEvents(EV_MOT_GOTO);
+        state(PS_IDLE);
+      }
       break;
 
     case PS_DECEL:
       {
         // Decelerate at default deceleration aMax
-        newSpeed = fmax(vMax, newSpeed - (aMax * TICK_PERIOD_MS) / 1000);
+        newSpeed = fmax(vMax, newSpeed - ((double)(aMax * TICK_PERIOD_MS)) / 1000);
         programSpeed(sign * newSpeed);                
+        if (newSpeed == vMax)
+          state(PS_CRUISE);
       }
       break;
 
@@ -330,7 +333,7 @@ void motorTask(void *arg)
       {
         case MSG_SET_CUR_POS:
           cli();
-          mcP->currentPos = msgBuffer[1];
+          mcP->currentPosImage = mcP->currentPos = msgBuffer[1];
           sei();            
           if (mcP->currentPos != mcP->targetPos)
           {
@@ -358,12 +361,13 @@ void motorTask(void *arg)
 
         case MSG_SYNC_POS:
           cli();
-          mcP->currentPos = msgBuffer[1];
-          mcP->targetPos = msgBuffer[1];
+          mcP->currentPosImage = mcP->currentPos = mcP->targetPos = msgBuffer[1];
           sei(); 
           break;
 
         case MSG_SET_VMAX:
+          if ((mcP->state() != PS_CRUISE) && (mcP->state() != PS_IDLE))  // ignore speed change when accelerating etc. 
+            break;
           double v;
           memcpy(&v, &msgBuffer[1], sizeof(double));  // always positive 
           mcP->vMax = v;
@@ -405,8 +409,8 @@ void StepDir::initStepDir(int DirPin, int StepPin, void (*isrP)(), unsigned time
   else
     timerP = &itimer4;
 
-  timerP->begin(isrP, 1000);  // start at 1mS
-  timerP->priority(1);
+  ((IntervalTimer *) timerP)->begin(isrP, 1000);  // start at 1mS
+  ((IntervalTimer *) timerP)->priority(1);
   #endif
 
   #ifdef __ESP32__  
@@ -521,6 +525,7 @@ void StepDir::syncPos(long pos)
 
   msg[0] = MSG_SYNC_POS; 
   msg[1] = pos;
+  xQueueSend( motQueue, &msg, 0);
 }
 
 void StepDir::abort(void)
@@ -544,6 +549,14 @@ bool StepDir::isMoving(void)
   return((getEvents() & EV_MOT_GOTO) !=0);
 }
 
+void StepDir::enable(void)
+{
+  enabled = true;
+}
+void StepDir::disable(void)
+{
+  enabled = false;
+}
 // never called
 void StepDir::setRatios(long fkHz)
 {

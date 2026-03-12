@@ -1,4 +1,4 @@
-// Telescope coordinate conversion
+﻿// Telescope coordinate conversion
 // (C) 2016 Markus L. Noga
 // (C) 2019 Charles Lemaire
 
@@ -10,7 +10,7 @@
 
 #include "TeenAstroLA3.hpp"
 #include <svd3.h>
-#include "arduino.h"
+#include "Arduino.h"
 
 // LA3 methods
 //

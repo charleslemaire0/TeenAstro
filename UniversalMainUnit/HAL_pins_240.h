@@ -18,3 +18,4 @@
 
 #define LEDPin          23
 
+#define GNSSSerial     Serial2

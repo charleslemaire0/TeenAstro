@@ -156,7 +156,7 @@ void SafetyCheck()
       lastError(ERRT_NONE);
     }
 
-    if (!mount.mP->checkPole(axes.axis1, CHECKMODE_TRACKING))
+    if (!mount.mP->checkPole(axes.axis1, CHECKMODE_TRACKING, currentSide))
     {
         lastError(ERRT_UNDER_POLE);
         if (isSlewing() || isTracking())

@@ -47,9 +47,13 @@ driftFrame = sg.Frame('Drift Rates (arc-sec/S)', [[sg.T('RA:'), sg.T('0', key='r
 
 axisFrame = sg.Frame('Axis Positions (º)', [[sg.T('Axis1:'), sg.T('0', key='axis1_degrees')],[sg.T('Axis2:'), sg.T('0', key='axis2_degrees')]]) 
 
+slewPosFrame = sg.Frame('Axis Positions (º)', [[sg.T('Axis1:'), sg.T('0', key='axis1_slew_degrees')],[sg.T('Axis2:'), sg.T('0', key='axis2_slew_degrees')]]) 
+
 stepsFrame = sg.Frame('Axis Positions (steps)', [[sg.T('Axis1:'), sg.T('0', key='axis1_steps')],[sg.T('Axis2:'), sg.T('0', key='axis2_steps')]]) 
 
 speedFrame = sg.Frame('Axis Speeds ', [[sg.T('Axis1:'), sg.T('0', key='axis1_speed')],[sg.T('Axis2:'), sg.T('0', key='axis2_speed')]]) 
+
+slewSpeedFrame = sg.Frame('Axis Speeds (º/S)', [[sg.T('Axis1:'), sg.T('0', key='axis1_slew_speed')],[sg.T('Axis2:'), sg.T('0', key='axis2_slew_speed')]]) 
 
 slewFrame = sg.Frame('Slew Rates (arc-sec/S)', [[sg.T('RA:'), sg.T('0', key='ra_rate')],[sg.T('Dec:'), sg.T('0', key='dec_rate')]]) 
 
@@ -68,9 +72,13 @@ centeringFrame = sg.Frame('Centering',[[sg.B(button_text='N', key='alignN'), sg.
                       sg.Spin(values = ['0', '1', '2', '3', '4'], initial_value=2, key='CenteringSpeed', background_color='white', enable_events=True, size=6)]])
 
 
-alignmentFrame = sg.Frame('Sync/Alignment',[[sg.B(button_text='Sync', key='alignmentSync'),sg.B(button_text='StartAlign', key='startAlign'),
-                                        sg.B(button_text='ClearAlign', key='clearAlign'),
-                                        sg.B(button_text='Align2', key='align2'),sg.B(button_text='Align3', key='align3')]])
+alignmentFrame = sg.Frame('Sync/Alignment',[[sg.B(button_text='Sync', key='alignmentSync'),
+                                        sg.B(button_text='StartAlign', key='startAlign'),sg.B(button_text='AddStar', key='addStar'),
+                                        sg.B(button_text='ClearAlign', key='clearAlign'),sg.B(button_text='SaveAlign', key='saveAlign')], 
+                                        [sg.T('Align Status: '),sg.T('Disabled', key='align_status'),
+                                         sg.T('Num Stars: '),   sg.T('0', key='align_stars'), 
+                                         sg.T('Align Error: '), sg.T('0', key='align_error'), 
+                                         ]])
 
 slewingCanvasGroup = sg.TabGroup([[sg.Tab('T',  [[sg.Canvas(key='slew_cv_t', size=(640, 400))]])],
                                    [sg.Tab('Polar', [[sg.Canvas(key='slew_cv_polar', size=(640, 400))]])]
@@ -81,10 +89,10 @@ slewTestTab = [[sg.Column([
                      sg.B(button_text = 'East', key='slewEast'),sg.B(button_text = 'South', key='slewSouth'),sg.B(button_text = 'Zenith', key='slewZenith'),
                      sg.B(button_text = 'AutoSlew', key='autoSlew'),sg.B(button_text = 'Stop', key='stopSlew'),
                      sg.B(button_text = 'Clear', key='clearSlew'), sg.B(button_text = 'Flip', key='flipMount'), 
-                     sg.B(button_text = 'Park', key='park'), sg.B(button_text = 'Unpark', key='unpark')],
-                    [slewingCanvasGroup]]),
-                    sg.Column([[horCoordFrame]])
-                    ]]
+                     sg.B(button_text = 'Park', key='park'), sg.B(button_text = 'Unpark', key='unpark'), sg.B(button_text = 'Set Park', key='setPark')],
+                    [slewingCanvasGroup, sg.Column([[horCoordFrame],[slewPosFrame], [slewSpeedFrame]])]
+                ])]]
+                    
 
 trackingCanvasGroup = sg.TabGroup([[sg.Tab('T',  [[sg.Canvas(key='tracking_cv_t', size=(640, 400))]])],
                                    [sg.Tab('XY', [[sg.Canvas(key='tracking_cv_xy', size=(640, 400))]])]
@@ -96,18 +104,23 @@ trackingTab = [[sg.Column([
                       sg.B(button_text = 'GuideN', key='GuideN'), sg.B(button_text = 'GuideS',key='GuideS'),
                       sg.B(button_text = 'GuideE',key='GuideE'),sg.B(button_text = 'GuideW',key='GuideW'),
                       sg.B(button_text = 'Nudge',key='Nudge'),
-                      sg.B(button_text='Spiral', key='spiral'),sg.B(button_text = 'Clear', key='clearTrack')],
-                    [trackingCanvasGroup]]),
-                    sg.Column([[driftFrame], [axisFrame], [stepsFrame], [speedFrame]])
-                ]]
+                      sg.B(button_text = 'Sidereal',key='siderealTracking'),
+                      sg.B(button_text = 'Lunar',key='lunarTracking'),
+                      sg.B(button_text = 'Solar',key='solarTracking'),
+                      sg.B(button_text = 'Target',key='targetTracking'),
+                      sg.B(button_text='Spiral', key='spiral'),sg.B(button_text = 'Clear', key='clearTrack')
+                      ],
+                    [trackingCanvasGroup, sg.Column([[driftFrame], [axisFrame], [stepsFrame], [speedFrame]])]
+                ])]]
 
 alignmentTab = [[sg.Column([
                     [sg.B(button_text = '+',key='zoomInA'),sg.B(button_text = '-',key='zoomOutA'),
                       sg.DropDown([], key='alignmentTarget', size=25),
                       sg.B(button_text='Goto', key='alignmentGoto'), 
                       centeringFrame, alignmentFrame],
-                    [sg.Canvas(key='alignment_cv', size=(640, 400))]]), sg.Column([[eqCoordFrame],[homeErrorFrame], [poleErrorFrame]])]
-                ]
+                    [sg.Canvas(key='alignment_cv', size=(640, 400)), 
+                     sg.Column([[eqCoordFrame],[homeErrorFrame], [poleErrorFrame]])]
+                ])]]
 
 
 topRow = [commFrame, sg.B('Exit'), sg.Column([[statusFrame], [errorFrame]])]
@@ -150,7 +163,7 @@ class Application:
     def __init__(self, options):
         self.ts = load.timescale()
 
-        self.window = sg.Window('TeenAstro AutoTest', layout, finalize=True, size=(1024,720))
+        self.window = sg.Window('TeenAstro AutoTest', layout, finalize=True, size=(1200,720))
         if options.portType == 'tcp':
             self.window['-tcp-'].update(value = True)
             self.window['-IPADDR-'].update(disabled = False)
@@ -245,10 +258,10 @@ class Application:
                     status = 'TRACKING '
                 elif self.ta.isSlewing():
                     status = 'SLEWING '
-                elif self.ta.isParking():
-                    status = 'PARKING '
-                elif self.ta.isParked():
-                    status = 'PARKED '
+                if self.ta.isParking():
+                    status += 'PARKING '
+                if self.ta.isParked():
+                    status += 'PARKED '
                 self.window['statusCode'].update(status + self.ta.guideStatus())
                 self.window['errorCode'].update(self.ta.getErrorCode())
         

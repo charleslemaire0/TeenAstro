@@ -15,9 +15,21 @@
 #endif
 
 #ifdef BOARD_esp32dev      // Standalone esp32dev
-#include "HAL_esp32.h"         
+#include "HAL_esp32.h"      // Common ESP32          
 #include "HAL_pins_esp32.h"  
 #endif
+
+#ifdef BOARD_esp32s3      // Standalone esp32s3
+#include "HAL_esp32.h"      // Common ESP32          
+#include "HAL_pins_esp32s3.h"  
+#endif
+
+#ifdef BOARD_esp32s3_norm // Norman's TeenAstro debug board
+#include "HAL_esp32.h"      // Common ESP32          
+#include "HAL_pins_esp32s3_norm.h"  
+#endif
+
+
 
 struct EE_Site
 {

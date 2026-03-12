@@ -143,3 +143,13 @@ void Mc5160::setRatios(long fkHz)
   speedRatio = (fHz / 2.0) / 0x800000;
   accelRatio = (fHz * fHz) / ((512.0 * 256.0) * 0x1000000); 
 }
+
+// enable / disable driver to allow changing parameters without moving
+void Mc5160::enable(void)
+{
+  drvP->toff(5);
+}
+void Mc5160::disable(void)
+{
+  drvP->toff(0);
+}

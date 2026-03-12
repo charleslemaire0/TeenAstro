@@ -30,6 +30,22 @@ bool checkAltitude(void)
 }
 
 
+void reset_EE_Limit()
+{
+  // need to check this
+#if 0
+  geoA1.minAxis = geoA1.LimMinAxis * geoA1.stepsPerDegree;
+  geoA1.maxAxis = geoA1.LimMaxAxis * geoA1.stepsPerDegree;
+  geoA2.minAxis = geoA2.LimMinAxis * geoA2.stepsPerDegree;
+  geoA2.maxAxis = geoA2.LimMaxAxis * geoA2.stepsPerDegree;
+  XEEPROM.writeShort(getMountAddress(EE_minAxis1), 10 * geoA1.LimMinAxis);
+  XEEPROM.writeShort(getMountAddress(EE_maxAxis1), 10 * geoA1.LimMaxAxis);
+  XEEPROM.writeShort(getMountAddress(EE_minAxis2), 10 * geoA2.LimMinAxis);
+  XEEPROM.writeShort(getMountAddress(EE_maxAxis2), 10 * geoA2.LimMaxAxis);
+#endif
+}
+
+
 
 // init the telescope home position;  if defined use the user defined home position
 void initLimits()

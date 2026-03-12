@@ -1,8 +1,32 @@
 #include "Global.h"
+#include "Command_GNSS.h"
 //----------------------------------------------------------------------------------
 // :GXnn#  Get TeenAstro value
 //         Returns: value
 //         All these commands are not part of the LX200 Standard.
+void PrintAltitude(double val)
+{
+  doubleToDms(reply, &val, false, true, highPrecision);
+  strcat(reply, "#");
+}
+void PrintAzimuth(double val)
+{
+  val = AzRange(val);
+
+  doubleToDms(reply, &val, true, false, highPrecision);
+  strcat(reply, "#");
+}
+void PrintDec(double val)
+{
+  doubleToDms(reply, &val, false, true, highPrecision);
+  strcat(reply, "#");
+}
+void PrintRa(double val)
+{
+  doubleToHms(reply, &val, highPrecision);
+  strcat(reply, "#");
+}
+
 void Command_GX()
 {
   int i;
@@ -15,9 +39,9 @@ void Command_GX()
     // :GXAn# Align Model values
   {
     float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
-    if (mount.mP->hasStarAlignment())
+    if (mount.mP->pm.alignment.isReady())
     {
-      mount.mP->alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
+      mount.mP->pm.alignment.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
     }
     switch (command[3])
     {
@@ -60,6 +84,14 @@ void Command_GX()
     case 'c':
       // :GXAc#
       TrackingCompForAlignment ? sprintf(reply, "y#") : sprintf(reply, "n#");
+      break;
+    case 's': // status of pointing model (enabled / disabled)
+      // :GXAs#
+      sprintf(reply, "%d#", mount.mP->pm.isReady());
+      break;
+    case 'n': // number of stars in pointing model
+      // :GXAn#
+      sprintf(reply, "%d#", mount.mP->pm.numStars());
       break;
 #if 0      
     case 'a':
@@ -155,6 +187,10 @@ void Command_GX()
         break;
       case '4':
         sprintf(reply, "%f#", motorA2.getSpeed());
+        break;
+      case 'X':
+        // :GXDRX# Mount Max Slew Speed 
+        sprintf(reply, "%f#", mount.maxSpeed);
         break;
       default:
         replyLongUnknown();
@@ -287,13 +323,13 @@ void Command_GX()
     }
     break;
   case 'L':
-    // :GXLn user defined limits
+    // :GXLn user defined limits 
     switch (command[3])
     {
     case 'A':
-      // :GXLA# get user defined minAXIS1 (always negative)
+      // :GXLA# get user defined minAXIS1 (always negative, store absolute value)
       i = XEEPROM.readInt(getMountAddress(EE_minAxis1));
-      sprintf(reply, "%d#", i);
+      sprintf(reply, "%d#", -i);
       break;
     case 'B':
       // :GXLB# get user defined maxAXIS1 (always positive)
@@ -303,7 +339,7 @@ void Command_GX()
     case 'C':
       // :GXLC# get user defined minAXIS2 (always negative)
       i = XEEPROM.readInt(getMountAddress(EE_minAxis2));
-      sprintf(reply, "%d#", i);
+      sprintf(reply, "%d#", -i);
       break;
     case 'D':
       // :GXLD# get user defined maxAXIS2 (always positive)
@@ -331,6 +367,31 @@ void Command_GX()
       // :GXLH# return user defined horizon Limit
       // NB: duplicate with :Gh#
       sprintf(reply, "%+02d*#", limits.minAlt);
+      break;
+    default:
+        replyLongUnknown();
+      break;
+    }
+    break;
+  case 'l':
+    // :GXln mount limits - temporary fix - need to move this to the mount headers
+    switch (command[3])
+    {
+    case 'A':
+      i = -360;
+      sprintf(reply, "%d#", i);
+      break;
+    case 'B':
+      i = 360;
+      sprintf(reply, "%d#", i);
+      break;
+    case 'C':
+      i = -360;
+      sprintf(reply, "%d#", i);
+      break;
+    case 'D':
+      i = 360;
+      sprintf(reply, "%d#", i);
       break;
     default:
         replyLongUnknown();
@@ -401,6 +462,180 @@ void Command_GX()
     break;
     }
     break;
+  case 'I':
+  {
+    // :GXI#   Get telescope Status
+    for (i = 0; i < 50; i++)
+      reply[i] = ' ';
+
+    reply[0] = '0' + 2 * isSlewing() + isTracking();
+    reply[1] = '0' + siderealMode;
+    const char* parkStatusCh = "pIPF";
+    reply[2] = parkStatusCh[parkStatus()];  // not [p]arked, parking [I]n-progress, [P]arked, Park [F]ailed
+    if (atHome()) reply[3] = 'H';
+    reply[4] = '0' + activeGuideRate;
+
+    if (getEvent(EV_GUIDING_AXIS1) || getEvent(EV_GUIDING_AXIS2))
+    {
+      reply[5] = 'G';
+      reply[6] = '*';
+    }
+
+    if (getEvent(EV_SPIRAL))
+    {
+      reply[5] = '@';
+    }
+    else if (getEvent(EV_CENTERING))
+    {
+      reply[5] = 'G';
+      reply[6] = '+';
+    }
+
+    if (getEvent(EV_EAST))
+      reply[7] = '<';
+    else if (getEvent(EV_WEST))
+      reply[7] = '>';
+    if (getEvent(EV_NORTH))
+      reply[8] = '^';
+    else if (getEvent(EV_SOUTH))
+      reply[8] = '_';
+
+    reply[10] = '0' + trackComp;
+
+    reply[11] = mount.mP->pm.alignment.isReady()? '1' : '0';
+    if (mount.mP->type == MOUNT_TYPE_GEM)
+    {
+      reply[12] = 'E';
+    }
+    else if (mount.mP->type == MOUNT_TYPE_FORK)
+      reply[12] = 'K';
+    else if (mount.mP->type == MOUNT_TYPE_FORK_ALT)
+      reply[12] = 'k';
+    else if (mount.mP->type == MOUNT_TYPE_ALTAZM)
+      reply[12] = 'A';
+    else
+      reply[12] = 'U';
+    PierSide currentSide = mount.mP->GetPierSide();
+    switch (currentSide)
+    {
+      case PIER_EAST: reply[13] = 'E'; break;
+      case PIER_WEST: reply[13] = 'W'; break;
+      default: reply[13] = '?'; break;
+    }
+    char val = 0;
+    bitWrite(val, 0, hasGNSS);
+    if (iSGNSSValid())
+    {
+      bitWrite(val, 1, true);
+      bitWrite(val, 2, isTimeSyncWithGNSS());
+      bitWrite(val, 3, isLocationSyncWithGNSS());
+      bitWrite(val, 4, isHdopSmall());
+    }
+    reply[14] = 'A' + val;      // GNSS
+    reply[15] = '0' + lastError();
+
+    val = 0;
+    bitWrite(val, 0, 0);    // no encoders
+    bitWrite(val, 1, 0);    // not calibrating
+    bitWrite(val, 2, 0);    // no pushto
+    bitWrite(val, 3, 1);    // motors enabled
+
+    reply[16] = 'A' + val;  
+    reply[17] = '#';
+    reply[18] = 0;
+    i = 17;
+  }
+  break;
+//jma
+  case 'J':
+  {
+    //specific command for ASCOM
+    switch (command[3])
+    {
+      case 'B':
+      // :GXJB# get if Both rate Axis are enabled
+      {
+        replyLongTrue();
+      }
+      break;
+      case 'C':
+        // :GXJC# get if connected
+      {
+        replyLongTrue();
+      }
+      break;
+      case 'm':
+        // :GXJm# get if mount has motor and can slew track etc...
+      {
+        replyLongTrue();  
+      }
+      break;
+      case 'M':
+        // :GXJMn# get if axis is still moving
+      {
+        if (command[4] == '1')
+        {
+          if (motorA1.isMoving())
+            replyLongTrue();
+          else
+            replyLongFalse();
+        }
+        else if (command[4] == '2')
+        {
+          if (motorA2.isMoving())
+            replyLongTrue();
+          else
+            replyLongFalse();
+        }
+        else
+        {
+          replyLongUnknown();
+        }
+      }
+      break;
+      case 'P':
+        // :GXJP# get if pulse guiding
+      {
+        if (GuidingState == GuidingPulse || GuidingState == GuidingST4)
+        {
+          replyLongTrue();
+        }
+        else
+        {
+          replyLongFalse();
+        }
+      }
+      break;
+      case 'S':
+        // :GXJS# get if Slewing
+      {
+        //jma if (GuidingState == GuidingRecenter || GuidingState == GuidingAtRate || movingTo)
+        if (GuidingState == GuidingRecenter || GuidingState == GuidingAtRate || isSlewing())
+        {
+          replyLongTrue();
+        }
+        else
+        {
+          replyLongFalse();
+        }
+      }
+      break;
+      case 'T':
+        // :GXJT# get if tracking
+      {
+        if (isTracking())
+        {
+          replyLongTrue();
+        }
+        else
+        {
+          replyLongFalse();
+        }
+      }
+      break;
+    }
+  }
+  break;
   case 'M':
   {
     // :GXM..#   Get Motor Settings
@@ -591,6 +826,13 @@ void Command_GX()
       // :GXOC# second Mount Name
       sprintf(reply, "%s#", mountNames[1]);
       break;
+    case 'S':
+      // :GXOS# get Slew Settle Duration in seconds 
+      {
+        int i = XEEPROM.read(getMountAddress(EE_SlewSettleDuration));
+        sprintf(reply, "%d#", i);
+      }
+      break;
     }
   }
   break;
@@ -603,7 +845,7 @@ void Command_GX()
 //   G - Get Telescope Information
 void  Command_G()
 {
-  double f, f1;
+  double f;
   HorCoords horCoords;
   int i;
 
@@ -650,42 +892,42 @@ void  Command_G()
     break;
   case 'D':
   case 'R':
+  case '(':
     //  :GD#   Get Telescope Declination, Native LX200 command
     //         Returns: sDD*MM# or sDD*MM'SS# (based on precision setting)
     //  :GR#   Get Telescope RA, Native LX200 command
     //         Returns: HH:MM.T# or HH:MM:SS# (based on precision setting)
+    //  :GDL#   Get Telescope Declination, TeenAstro LX200 command
+    //         Returns: sDD,VVVVV#
+    //  :GRL#   Get Telescope RA, TeenAstro LX200 command
+    //         Returns: DDD,VVVVV#
   {
-    static unsigned long _coord_t = 0;
     static double _dec = 0;
     static double _ra = 0;
 
-    // avoid calling getEqu too often by checking time of last call
-    if (millis() - _coord_t < 100)
+    mount.mP->getEqu(&_ra, &_dec, localSite.cosLat(), localSite.sinLat(), false);
+
+    if (command[1] == 'R')
     {
-      f = _ra;
-      f1 = _dec;
-    }
-    else
-    {
-      mount.mP->getEqu(&f, &f1, localSite.cosLat(), localSite.sinLat(), false);
-      f /= 15.0;
-      _ra = f;
-      _dec = f1;
-      _coord_t = millis();
-    }
-    if (command[1] == 'D')
-    {
-      if (!doubleToDms(reply, &f1, false, true, highPrecision))
-        replyLongUnknown();
+      if (command[2] == 'L')
+      {
+         sprintf(reply, "%08.5f#", _ra);
+      }
       else
-        strcat(reply, "#");
+      {
+        PrintRa(_ra / 15.0);
+      }
     }
-    else
+    else if (command[1] == 'D')
     {
-      if (!doubleToHms(reply, &f, highPrecision))
-        replyLongUnknown();
+      if (command[2] == 'L')
+      {
+         sprintf(reply, "%08.5f#", _dec);
+      }
       else
-        strcat(reply, "#");
+      {
+        PrintDec(_dec);
+      }
     }
     break;
   }
@@ -815,15 +1057,21 @@ void  Command_G()
     //  :GS#   Get the Sidereal Time, Native LX200 command
     //         Returns: HH:MM:SS#
     //         The Sidereal Time as an ASCII Sexidecimal value in 24 hour format
-    i = highPrecision;
-    highPrecision = true;
-    f = rtk.LST();
-    if (!doubleToHms(reply, &f, highPrecision))
-      replyLongUnknown();
+    //  :GSL#  Get the Sidereal Time, TeenAstro LX200 command
+    //         Returns: HH.VVVVVV#
+  {
+    double f = rtk.LST();
+    if (command[2] == 'L')
+    {
+      sprintf(reply, "%+08.6f#", f);
+    }
     else
+    {
+      doubleToHms(reply, &f, true);
       strcat(reply, "#");
-    highPrecision = i;
-    break;
+    }
+  }
+  break;
   case 'T':
     //  :GT#   Get tracking rate, Native LX200 command
     //         Returns: dd.ddddd#
@@ -888,7 +1136,11 @@ void  Command_G()
       sprintf(reply, "%s", HAL_getBoardVersion());
       break;
     case 'b':
-      //  :GVb#   Get Firmware Stepper driver board, extended LX200 command
+      //  :GVb#   re-implemented for compatibility with SHC that expects a "3" for 5160
+      sprintf(reply, "%d", 3);
+      break;
+    case 'x':
+      //  :GVx#   Get Firmware Stepper driver board, extended LX200 command
       sprintf(reply, "%s/%s", Axis1DriverName, Axis2DriverName);
       break;
     default:
@@ -898,6 +1150,51 @@ void  Command_G()
     strcat(reply, "#");
   }
   break;
+
+  // :GW# return status of mount
+  case 'W':
+  {
+    switch (mount.mP->type)
+    {
+      case MOUNT_TYPE_ALTAZM:
+      case MOUNT_TYPE_FORK_ALT:
+        strcat(reply, "A");
+      break;
+      case MOUNT_TYPE_FORK:
+        strcat(reply, "P");
+      break;
+      case MOUNT_TYPE_GEM:
+        strcat(reply, "G");
+      break;
+      case MOUNT_UNDEFINED:
+      default:
+        strcat(reply, "L");
+      break;
+    }
+    if (isTracking())  
+      strcat(reply, "T");
+    else 
+      strcat(reply, "N");
+    if (atHome())
+    {
+      strcat(reply, "H");
+    }
+    else if (parkStatus() == PRK_PARKED)
+    {
+      strcat(reply, "P");
+    }
+    else if (mount.mP->pm.isReady())
+    {
+      strcat(reply, "2");
+    }
+    else
+    {
+      strcat(reply, "1");
+    }
+    strcat(reply, "#");
+  }
+  break;
+
   case 'X':
     Command_GX();
     break;

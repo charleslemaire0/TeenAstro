@@ -48,6 +48,10 @@ enum SID_Mode
   SIDM_MOON,
   SIDM_TARGET
 };
+enum PierSide
+{
+  PIER_NOTVALID, PIER_EAST, PIER_WEST
+};
 
 // Tracking
 #define TrackingStar  1
@@ -62,6 +66,7 @@ enum SID_Mode
 
 #include <math.h>
 #include "FirmwareDef.h"
+#include "TATypes.h"
 #include "HAL_TeenAstro.h"
 #include "XEEPROM.hpp"
 #include "EEPROM_init.h"
@@ -70,6 +75,7 @@ enum SID_Mode
 #include "TelTimer.hpp"
 #include "Refraction.hpp"
 #include "CoordConv.hpp"
+#include "PointingModel.h"
 #include "Command.h"
 #include "ValueToString.h"
 #include "TMCStepper.h"
@@ -87,6 +93,7 @@ enum SID_Mode
 #include "Control.h"
 #include "Monitor.h"
 #include "Guiding.h"
+#include <TinyGPS++.h>
 
 // TeenAstroMainUnit.h
 void initMotors(bool);
@@ -116,6 +123,7 @@ void SafetyCheck(void);
 #define MON_TASK_PERIOD 100  // milliseconds
 #define CMD_TASK_PERIOD  1
 #define CTRL_TASK_PERIOD 1 
+
 
 GLOBAL QueueHandle_t controlQueue;
 GLOBAL SemaphoreHandle_t hwMutex;       // to prevent concurrent hardware accesses 
@@ -157,7 +165,7 @@ GLOBAL bool homeSaved ;
 GLOBAL bool autoAlignmentBySync ;
 GLOBAL bool TrackingCompForAlignment ;
 
-GLOBAL TrackingCompensation tc;
+GLOBAL TrackingCompensation trackComp;
 GLOBAL volatile SID_Mode   siderealMode;
 GLOBAL siteDefinition      localSite;
 
@@ -175,7 +183,6 @@ GLOBAL double              RequestedTrackingRateHA; // in RA seconds per siderea
 GLOBAL double              RequestedTrackingRateDEC; // in DEC seconds per sidereal second
 GLOBAL long                storedTrackingRateRA;
 GLOBAL long                storedTrackingRateDEC;
-GLOBAL unsigned long       lastSetTrackingEnable;
 
 //Guiding
 GLOBAL volatile Guiding    GuidingState;
@@ -183,7 +190,7 @@ GLOBAL Guiding             lastGuidingState;
 GLOBAL volatile byte       activeGuideRate;
 GLOBAL double              guideTimerBaseRate1;
 GLOBAL double              guideTimerBaseRate2;
-GLOBAL double  guideRates[5];
+GLOBAL double              guideRates[5];
 GLOBAL GuideAxis           guideA1;
 GLOBAL GuideAxis           guideA2;
 
@@ -197,3 +204,13 @@ GLOBAL char                Axis1DriverName[20];
 GLOBAL char                Axis2DriverName[20];
 GLOBAL char                mountNames[maxNumMounts][MountNameLen];
 GLOBAL bool                reboot_unit;
+
+
+GLOBAL unsigned int slewSettleDuration;
+GLOBAL unsigned long lastSettleTime;
+GLOBAL bool settling;
+
+
+//GNSS - GPS
+GLOBAL bool                hasGNSS;
+GLOBAL TinyGPSPlus         gps;

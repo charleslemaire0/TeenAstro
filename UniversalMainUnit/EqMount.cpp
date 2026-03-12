@@ -86,7 +86,6 @@ bool EqMount::getTargetPierSide(EqCoords *eP, PierSide *psOutP)
   return true;
 }
 
-#define ALIGNMENT 0
 
 /*
  * eqToAxes: computes axes from equatorial coordinates
@@ -94,22 +93,18 @@ bool EqMount::getTargetPierSide(EqCoords *eP, PierSide *psOutP)
  */
 bool EqMount::eqToAxes(EqCoords *eP, Axes *aP, PierSide ps)
 {  
-  EqCoords ref;
-#if ALIGNMENT
-  // Get instrument coordinates from ref. coordinates using alignment matrix
-  alignment.toInstrumentDeg(ref.ha, ref.dec, eP->ha, eP->dec);
-#else
-  ref.ha = eP->ha;
-  ref.dec = eP->dec;
-#endif  
+  Axes sky;
 
   int hemisphere = (*localSite.latitude() >= 0) ? 1 : -1;                     // 1 for Northern Hemisphere
   if (type == MOUNT_TYPE_GEM)
   {
     int flipSign = ((ps==PIER_EAST)==(*localSite.latitude() >= 0)) ? 1 : -1;    // -1 if mount is flipped
 
-    aP->axis1 = hemisphere * ref.ha  - flipSign * 90;
-    aP->axis2 = flipSign * (90 - hemisphere * ref.dec);  
+    sky.axis1 = hemisphere * eP->ha  - flipSign * 90;
+    sky.axis2 = flipSign * (90 - hemisphere * eP->dec);  
+
+    // Get instrument coordinates from sky coordinates using alignment matrix
+    pm.instr(&sky, aP);
 
     if (!withinLimits(aP->axis1 * geoA1.stepsPerDegree, aP->axis2 * geoA2.stepsPerDegree))
       return false;
@@ -117,7 +112,7 @@ bool EqMount::eqToAxes(EqCoords *eP, Axes *aP, PierSide ps)
     if (!checkMeridian(aP, CHECKMODE_GOTO, ps))
       return false;
 
-    if (!checkPole(aP->axis1, CHECKMODE_GOTO))
+    if (!checkPole(aP->axis1, CHECKMODE_GOTO, ps))
       return false;
 
     return true;    
@@ -130,7 +125,7 @@ bool EqMount::eqToAxes(EqCoords *eP, Axes *aP, PierSide ps)
     if (!withinLimits(aP->axis1 * geoA1.stepsPerDegree, aP->axis2 * geoA2.stepsPerDegree))
       return false;
 
-    if (!checkPole(aP->axis1, CHECKMODE_GOTO))
+    if (!checkPole(aP->axis1, CHECKMODE_GOTO, ps))
       return false;
 
     return true;    
@@ -139,25 +134,22 @@ bool EqMount::eqToAxes(EqCoords *eP, Axes *aP, PierSide ps)
 
 void EqMount::axesToEqu(Axes *aP, EqCoords *eP)
 {
-  EqCoords instr;
+  Axes instr;
   int hemisphere = (*localSite.latitude() >= 0) ? 1 : -1;
   int flipSign = (aP->axis2 < 0) ? -1 : 1;
+
+  pm.sky(aP, &instr);
+
   if (type == MOUNT_TYPE_GEM)
   {
-    instr.ha  = hemisphere * (aP->axis1 + flipSign * 90);
-    instr.dec = hemisphere * (90 - (flipSign * aP->axis2));    
+    eP->ha  = hemisphere * (instr.axis1 + flipSign * 90);
+    eP->dec = hemisphere * (90 - (flipSign * instr.axis2));    
   }
   else // eq fork
   {
-    instr.ha  = hemisphere * aP->axis1;
-    instr.dec = hemisphere * (90 - aP->axis2);    
+    eP->ha  = hemisphere * instr.axis1;
+    eP->dec = hemisphere * (90 - instr.axis2);    
   }
-#if ALIGNMENT  
-  alignment.toReferenceDeg(eP->ha, eP->dec, instr.ha, instr.dec);
-#else 
-  eP->ha = instr.ha;
-  eP->dec = instr.dec;
-#endif
 }
 
 bool EqMount::getEqu(double *haP, double *decP, UNUSED(const double *cosLatP), UNUSED(const double *sinLatP), bool returnHA)
@@ -199,13 +191,13 @@ bool EqMount::syncEqu(double HA, double Dec, PierSide Side, UNUSED(const double 
 	Axes axes;
 	Steps newSteps;
 
+  resetEvents(EV_AT_HOME);
 	eqCoords.ha = HA;
 	eqCoords.dec = Dec;
 	eqToAxes(&eqCoords, &axes, Side);
 	axesToSteps(&axes, &newSteps);
 
-  motorA1.syncPos(newSteps.steps1);
-  motorA2.syncPos(newSteps.steps2);
+  sync(&newSteps);
   return true;
 }
 
@@ -213,8 +205,9 @@ bool EqMount::syncAzAlt(double Azm, double Alt, PierSide Side)
 {
 	EqCoords eq;
 	
+  resetEvents(EV_AT_HOME);
 	HorTopoToEqu(Azm, Alt, &eq.ha, &eq.dec, localSite.cosLat(), localSite.sinLat());
-	return syncEqu(eq.ha, eq.dec, Side, localSite.cosLat(), localSite.sinLat());
+	return syncEqu(haRange(eq.ha), eq.dec, Side, localSite.cosLat(), localSite.sinLat());
 }
 
 byte EqMount::Flip()
@@ -240,19 +233,30 @@ byte EqMount::Flip()
 /*
  * checkPole
  * check if the hour angle is within the under pole limits 
- * min. allowable movement is += 9 decimal hours on either side of the pole
+ * min. allowable movement is += 9 decimal hours on either side of the meridian
  * no limit: +- 12 decimal hours
  */
-bool EqMount::checkPole(double axis1, CheckMode mode)
+bool EqMount::checkPole(double axis1, CheckMode mode, PierSide ps)
 {
   double underPoleLimit;
+
+  if (limits.underPoleLimitGOTO == 12.0)
+    return true;
 
   if (mode == CHECKMODE_GOTO)
     underPoleLimit = limits.underPoleLimitGOTO;              // for determining if a GOTO is valid, use exact value
   else 
     underPoleLimit = limits.underPoleLimitGOTO + 5.0 / 60;   // for triggering an error, add 5 degrees (1/12 decimal hour)
 
-  return (axis1 > (-underPoleLimit * 15.0)) && (axis1 < (underPoleLimit * 15.0));
+  if (ps == PIER_EAST)
+  {
+    return (axis1 < (90 - (12 - underPoleLimit) * 15.0));
+  }
+  else
+  {
+    return (axis1 > - (90 - (12 - underPoleLimit) * 15.0));
+  }
+
 }
 
 
@@ -285,10 +289,10 @@ bool EqMount::checkMeridian(Axes *aP, CheckMode mode, PierSide ps)
  * setTrackingSpeed
  * speed is expressed as a multiple of sidereal speed 
  */
-void EqMount::setTrackingSpeed(double speed)
+void EqMount::setTrackingSpeed(double speed1, double speed2)
 {
-  trackingSpeeds.speed1 = speed * axis1Direction('w');	// multiple of sidereal
-  trackingSpeeds.speed2 = 0;
+  trackingSpeeds.speed1 = speed1 * axis1Direction('w');	// multiple of sidereal
+  trackingSpeeds.speed2 = speed2;
   setEvents(EV_SPEED_CHANGE);
 }
 
@@ -307,18 +311,18 @@ void EqMount::getTrackingSpeeds(Speeds *sP)
   sP->speed1 = trackingSpeeds.speed1;
   sP->speed2 = trackingSpeeds.speed2;
 
-  if (getEvent(EV_GUIDING_AXIS1 | EV_WEST | EV_SPEED_CHANGE))
+  if (getEvent(EV_GUIDING_AXIS1 | EV_WEST))
   {
     deltaV = guideRates[0] * axis1Direction('w');
     sP->speed1 += deltaV;
   }
-  if (getEvent(EV_GUIDING_AXIS1 | EV_EAST | EV_SPEED_CHANGE))
+  if (getEvent(EV_GUIDING_AXIS1 | EV_EAST))
   {
     deltaV = guideRates[0] * axis1Direction('e');
     sP->speed1 += deltaV;
   }
 
-  if (getEvent(EV_GUIDING_AXIS2 | EV_NORTH | EV_SPEED_CHANGE))
+  if (getEvent(EV_GUIDING_AXIS2 | EV_NORTH))
   {
     dir = axis2Direction('n');    // direction is zero for the pole, ie home position. Convert to +1 or -1 depending on our current position
     if (dir == 0)
@@ -328,7 +332,7 @@ void EqMount::getTrackingSpeeds(Speeds *sP)
     deltaV = guideRates[0] * dir;
     sP->speed2 += deltaV;
   }
-  if (getEvent(EV_GUIDING_AXIS2 | EV_SOUTH | EV_SPEED_CHANGE))
+  if (getEvent(EV_GUIDING_AXIS2 | EV_SOUTH))
   {
     dir = axis2Direction('s');
     if (dir == 0)
@@ -339,13 +343,12 @@ void EqMount::getTrackingSpeeds(Speeds *sP)
     sP->speed2 += deltaV;
   }
 
-  if (getEvent(EV_SPIRAL | EV_SPEED_CHANGE))
+  if (getEvent(EV_SPIRAL))
   {
     Speeds v;
     getSpiralSpeeds(&v);
     sP->speed1 += v.speed1;
     sP->speed2 += v.speed2;
-    setEvents(EV_SPEED_CHANGE);
   }
 
   sP->speed1 *= (geoA1.stepsPerSecond/SIDEREAL_SECOND);
@@ -419,39 +422,7 @@ int EqMount::decDirection(void)
     return (sp < 0.0 ? 1:-1);
 }
 
-void EqMount::initTransformation(bool reset)
-{
-  float t11 = 0, t12 = 0, t13 = 0, t21 = 0, t22 = 0, t23 = 0, t31 = 0, t32 = 0, t33 = 0;
-  mount.mP->hasStarAlignment(false);
-  mount.mP->alignment.clean();
-  byte TvalidFromEEPROM = XEEPROM.read(getMountAddress(EE_Tvalid));
 
-  if (TvalidFromEEPROM == 1 && reset)
-  {
-    XEEPROM.write(getMountAddress(EE_Tvalid), 0);
-  }
-  if (TvalidFromEEPROM == 1 && !reset)
-  {
-    t11 = XEEPROM.readFloat(getMountAddress(EE_T11));
-    t12 = XEEPROM.readFloat(getMountAddress(EE_T12));
-    t13 = XEEPROM.readFloat(getMountAddress(EE_T13));
-    t21 = XEEPROM.readFloat(getMountAddress(EE_T21));
-    t22 = XEEPROM.readFloat(getMountAddress(EE_T22));
-    t23 = XEEPROM.readFloat(getMountAddress(EE_T23));
-    t31 = XEEPROM.readFloat(getMountAddress(EE_T31));
-    t32 = XEEPROM.readFloat(getMountAddress(EE_T32));
-    t33 = XEEPROM.readFloat(getMountAddress(EE_T33));
-    mount.mP->alignment.setT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
-    mount.mP->alignment.setTinvFromT();
-    mount.mP->hasStarAlignment(true);
-  }
-  else
-  {
-    alignment.addReferenceDeg(90, 0, 90, 0);
-    alignment.addReferenceDeg(180, 0, 180, 0);
-    alignment.calculateThirdReference();
-  }
-}
 
 
 

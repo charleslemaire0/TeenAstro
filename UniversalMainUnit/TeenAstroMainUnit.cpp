@@ -95,7 +95,7 @@ void updateRatios(bool deleteAlignment, bool deleteHP)
   mount.backlashA2.inSteps = (int)round(((double)mount.backlashA2.inSeconds * 3600.0) / (double)geoA2.stepsPerDegree);
   sei();
 
-  mount.mP->initTransformation(deleteAlignment);
+  mount.mP->initModel(deleteAlignment);
   if (deleteHP)
   {
     unsetPark();
@@ -186,7 +186,7 @@ void setup()
   HAL_beginTimer(siderealTimer, siderealTickCount);
 
   mount.mP->updateRaDec();
-  mount.mP->setTrackingSpeed(TrackingStar);
+  mount.mP->setTrackingSpeed(TrackingStar, 0);
 
   rtk.resetLongitude(*localSite.longitude());
 
@@ -211,24 +211,26 @@ void setup()
   // prep timers
   rtk.updateTimers();
 
-
   HAL_initSerial();
+  delay(500);  
+  hasGNSS = GNSSSerial.available() > 0;
 
 
   // Monitor - safety check and heartbeat
   xTaskCreate(
     monitorTask,    // Function that should be called
     "Monitor",      // Name of the task (for debugging)
-    2000,           // Stack size (bytes)
+    4096,           // Stack size (bytes)
     NULL,           // Parameter to pass
     MON_TASK_PRTY,  // Task priority
     NULL            // Task handle
   );
+
   // Main control task
   xTaskCreate(
     controlTask, 
     "Control",   
-    2000,        
+    4096,        
     NULL,     
     CTRL_TASK_PRTY,        
     NULL      
@@ -238,7 +240,7 @@ void setup()
   xTaskCreate(
     processCommandsTask,
     "Command",   
-    2000,
+    4096,
     NULL,
     CMD_TASK_PRTY, 
     NULL

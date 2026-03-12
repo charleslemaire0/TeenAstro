@@ -22,13 +22,27 @@ void Command_M()
       byte dir; 
       if (command[1] == '1')
       {
-        dir = (speed >= 0) ? 'w' : 'e'; 
-        MoveAxis1AtRate(fabs(speed), dir);
+        if (speed == 0)
+        {
+          StopAxis1();
+        }
+        else
+        {
+          dir = (speed > 0) ? 'w' : 'e'; 
+          MoveAxis1AtRate(fabs(speed), dir);
+        }
       }
       else
       {
-        dir = (speed >= 0) ? 'n' : 's'; 
-        MoveAxis2AtRate(fabs(speed), dir);
+        if (speed == 0)
+        {
+          StopAxis2();
+        }
+        else
+        {
+          dir = (speed >= 0) ? 'n' : 's'; 
+          MoveAxis2AtRate(fabs(speed), dir);
+        }
       }
       replyShortTrue();
     }
@@ -56,7 +70,12 @@ void Command_M()
     //       Returns an ERRGOTO
     if (mount.mP->type == MOUNT_TYPE_GEM)
     {
+      bool t = isTracking();
       i = mount.mP->Flip();
+      if (t && (i == ERRGOTO_NONE))
+      {
+        startTracking();
+      }
       reply[0] = i + '0';
       reply[1] = 0;
     }

@@ -76,6 +76,9 @@
 #define EE_homePosAxis1     57 // in degree
 #define EE_homePosAxis2     61 // in degree
 
+//Slew Settle Time
+#define EE_SlewSettleDuration   65
+
 #define EE_siderealClockSpeed     88
 #define EE_clk5160              92
 
@@ -121,6 +124,7 @@
 #define EE_T32              EE_T11 + 28
 #define EE_T33              EE_T11 + 32
 #define EE_Tvalid           EE_T11 + 36
+#define EE_AlignError       EE_T11 + 40
 
 int getMountAddress(int adress);
 int getMountAddress(int adress, int ndx);

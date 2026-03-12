@@ -146,6 +146,14 @@ class TeenAstro(object):
         self.axis2Reverse = True
       else:
         self.axis2Reverse = False
+      self.Gear1 = (float(self.gear1) / 1000 ) * float(self.steps1) * pow (2 , float (self.microsteps1))
+      self.Gear2 = (float(self.gear2) / 1000) * float(self.steps2) * pow(2, float (self.microsteps2))
+
+  def getGear1(self):
+    return self.Gear1
+
+  def getGear2(self):
+    return self.Gear2
 
   def readSite(self):
     if (self.port != None):
@@ -250,7 +258,12 @@ class TeenAstro(object):
 
   def isTracking(self):
     self.readStatus()
-    return (int(self.status[0]) & 1 == 1)
+    try:
+      val = self.status
+#    return (int(self.status[0]) & 1 == 1)
+    except:
+      print (val)
+    return (int(val[0]) & 1 == 1)
 
   def isSlewing(self):
     self.readStatus()
@@ -299,6 +312,9 @@ class TeenAstro(object):
   def unpark(self):
     self.sendCommand(":hR#")
 
+  def setPark(self):
+    self.sendCommand(":hQ#")
+
   def flipMount(self):
     self.sendCommand(":MF#")
 
@@ -309,10 +325,11 @@ class TeenAstro(object):
     dmsAz = deg2dms(az)
     dmsAlt = deg2dms(alt)
     self.sendCommand(":Sz%03u*%02u:%02u#" % dmsAz)
-    self.sendCommand(":Sa%+02d*%02u:%02u#" % dmsAlt)
+    self.sendCommand(":Sa%0+3d*%02u'%02u#" % dmsAlt)
     self.sendCommand(":MA#")
 
-  def gotoRaDec(self, ra, dec):
+
+  def setTarget(self, ra, dec):
     dmsRa = deg2dms(ra)
     dmsDec = deg2dms(dec)
     res1 = self.sendCommand(":Sr%02u:%02u:%02u#" % dmsRa)
@@ -322,7 +339,12 @@ class TeenAstro(object):
     res2 = self.sendCommand(":Sd%+03d:%02u:%02u#" % dmsDec)
     if (res2 != '1'):
       return ("error setting Dec")
+    return('ok')  
 
+  def gotoRaDec(self, ra, dec):
+    res = self.setTarget(ra, dec)
+    if (res != 'ok'):
+      return res
     res = self.sendCommand(":MS#")
     if (res != '0'):
       return ("gotoRaDec error %s:" % res)
@@ -338,11 +360,11 @@ class TeenAstro(object):
   def clearAlignment(self):
     return self.getValue(":AC#")
 
-  def align2Stars(self):
-    return self.getValue(":A2#")
+  def saveAlignment(self):
+    return self.getValue(":AW#")
 
-  def align3Stars(self):
-    return self.getValue(":A3#")
+  def addStar(self):
+    return self.getValue(":A2#")
 
   def enableTracking(self):
     self.sendCommand(":Te#")
@@ -352,6 +374,18 @@ class TeenAstro(object):
 
   def enableTrackingCompensation(self):
     self.sendCommand(":Tr#")
+
+  def siderealTracking(self):
+    self.sendCommand(":TQ#")
+
+  def lunarTracking(self):
+    self.sendCommand(":TL#")
+
+  def solarTracking(self):
+    self.sendCommand(":TS#")
+
+  def targetTracking(self):
+    self.sendCommand(":TT#")
 
   def disableTrackingCompensation(self):
     self.sendCommand(":Tn#")
@@ -399,8 +433,23 @@ class TeenAstro(object):
     return self.meridianWestLimit
 
   def getTimeZone(self):
-    self.timeZone = -float (self.getValue(':GG#'))
+    try:
+      val = self.getValue(':GG#')
+      self.timeZone = -float(val)      
+#      self.timeZone = -float (self.getValue(':GG#'))
+    except:
+      print (val)
+      self.timeZone = 0      
     return self.timeZone
+
+  def alignStatus(self):
+    return(self.getValue(':GXAs#'))
+    
+  def alignNumStars(self):
+    return(self.getValue(':GXAn#'))
+
+  def alignError(self):
+    return(self.getValue(':AE#'))
 
   def guideCmd(self, dir, ms):
     self.port.write((":Mg%1s%04u#" % (dir, ms)).encode('utf-8'))  # does not return a value
@@ -419,6 +468,9 @@ class TeenAstro(object):
 
   def getName(self):
     return self.getValue(':GVP#')
+
+  def getSubName(self):
+    return self.getValue(':GVp#')
 
   def log(self, msg):
     ts = datetime.datetime.now().timestamp()    

@@ -5,45 +5,6 @@
 
 
 
-void computeTrackingRate(bool apply)
-{  
-#if 0  
-  //reset SideralMode if it is equal to sideralspeed
-  if (RequestedTrackingRateHA == 1 && RequestedTrackingRateDEC == 0)
-  {
-    sideralMode = SIDM_STAR;
-  }
-  if (isAltAZ() || sideralMode == SIDM_TARGET)
-  {
-    do_compensation_calc();
-  }
-  else if (tc == TC_NONE)
-  {
-    staA1.RequestedTrackingRate = RequestedTrackingRateHA;
-    staA2.RequestedTrackingRate = 0;
-  }
-  else if (doesRefraction.forTracking || TrackingCompForAlignment)
-  {
-    do_compensation_calc();
-    if (tc == TC_RA)
-    {
-      staA2.RequestedTrackingRate = 0;
-    }
-  }
-  else
-  {
-    staA1.RequestedTrackingRate = RequestedTrackingRateHA;
-    staA2.RequestedTrackingRate = 0;
-  }
-  if (apply)
-  {
-    ApplyTrackingRate();
-  }
-#endif  
-}
-
-
-
 /*
  * initMaxSpeed
  * Read max speed from EEPROM, correct if it exceeds processor capability
@@ -53,19 +14,17 @@ void initMaxSpeed()
 {
   long maxSlewEEPROM = XEEPROM.readInt(getMountAddress(EE_maxRate));     // in multiples of sidereal speed
 
-  double maxAxis1Speed = geoA1.stepsPerSecond * maxSlewEEPROM;
-  double maxAxis2Speed = geoA2.stepsPerSecond * maxSlewEEPROM;
+  long maxStepsPerSecond = fmax(geoA1.stepsPerSecond, geoA2.stepsPerSecond);
+  mount.maxSpeed = maxSlewEEPROM * maxStepsPerSecond;
 
-  mount.maxSpeed = fmin(maxAxis1Speed, maxAxis2Speed); // steps per second  
-
+  // For StepDir drivers only, if the speed read from the EEPROM is too high for the processor, correct it
   if ((motorA1.drvType == DRV_STEPDIR) || (motorA2.drvType == DRV_STEPDIR))
   {
-    mount.maxSpeed = fmin(mount.maxSpeed, MAX_TEENASTRO_SPEED);   // steps per second
-    long maxSlewCorrected = mount.maxSpeed / fmin(geoA1.stepsPerSecond, geoA2.stepsPerSecond); 
-    // If the speed read from the EEPROM is too high, correct it
-    if (maxSlewEEPROM > maxSlewCorrected)
+    if (mount.maxSpeed > MAX_TEENASTRO_SPEED)
     {
-      XEEPROM.writeInt(getMountAddress(EE_maxRate), (int) (maxSlewCorrected));
+      mount.maxSpeed = MAX_TEENASTRO_SPEED;
+      maxSlewEEPROM = MAX_TEENASTRO_SPEED / maxStepsPerSecond;
+      XEEPROM.writeInt(getMountAddress(EE_maxRate), (int) (maxSlewEEPROM));
     }
   } 
 

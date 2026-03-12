@@ -94,8 +94,8 @@ public:
 
 void processCommandsTask(void *);
 void processCommands(void);
-void Command_GNSS(void);
 void Command_dollar(void);
+void Command_ACK(void);
 void Command_A(void);
 void Command_B(void);
 void Command_C(void);
@@ -111,7 +111,6 @@ void Command_W(void);
 void Command_G(void);
 void Command_GX(void);
 void Command_S(Command& process_command);
-bool iSGNSSValid(void);
 void replyShortTrue();
 void replyLongTrue();
 void replyShortFalse();
@@ -119,3 +118,4 @@ void replyLongFalse();
 void replyLongUnknown();
 void replyNothing(void);
 void clearReply(void);
+void replyValueSetShort(bool set);

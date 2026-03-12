@@ -42,7 +42,7 @@ void writeDefaultMount()
   // init the default maxRate
   XEEPROM.writeInt(getMountAddress(EE_maxRate), DefaultR4);
 
-  // init degree for acceleration 1°
+  // init degree for acceleration 1º
   XEEPROM.write(getMountAddress(EE_degAcc), (uint8_t)(1 * 10));
 
   // init the sidereal tracking rate, use this once - then issue the T+ and T- commands to fine tune
@@ -73,6 +73,7 @@ void writeDefaultMounts()
     writeDefaultMount();
   }
   currentMount = 0;
+  XEEPROM.write(EE_currentMount, 0);
 }
 
 
@@ -139,16 +140,24 @@ void initMount()
   guideA2.amount = 0;
 
   // Tracking and rate control
-  val = XEEPROM.read(EE_TC_Axis);
-//  tc = val < 0 || val >  2 ? TC_NONE : static_cast<TrackingCompensation>(val);
-  lval = XEEPROM.read(EE_RA_Drift);
+  if (isAltAz())
+  {
+    trackComp = TC_BOTH;
+  }
+  else
+  {
+    val = XEEPROM.read(getMountAddress(EE_TC_Axis));
+    trackComp = val < 1 || val >  2 ? TC_RA : static_cast<TrackingCompensation>(val);
+  }
+  lval = XEEPROM.read(getMountAddress(EE_RA_Drift));
   storedTrackingRateRA  = lval < -50000 || lval > 50000? 0 :lval;
-  lval = XEEPROM.read(EE_DEC_Drift);
+  lval = XEEPROM.read(getMountAddress(EE_DEC_Drift));
   storedTrackingRateDEC = lval < -50000 || lval > 50000 ? 0 : lval;
   mount.clk5160 = XEEPROM.readLong(getMountAddress(EE_clk5160));
   if ((mount.clk5160 < 12000) || (mount.clk5160 > 18000)) // check for invalid values
   {
     mount.clk5160 = 16000;
+    XEEPROM.writeLong(getMountAddress(EE_clk5160), 16000);
   }
 }
 
@@ -233,7 +242,7 @@ void writeDefaultEEPROMmotor()
   XEEPROM.write(getMountAddress(EE_motorA1silent), 0);
 
   XEEPROM.writeInt(getMountAddress(EE_backlashAxis2), 0);
-  XEEPROM.writeInt(getMountAddress(EE_motorA2gear), 1800);
+  XEEPROM.writeLong(getMountAddress(EE_motorA2gear), 1800 * 1000);
   XEEPROM.writeInt(getMountAddress(EE_motorA2stepRot), 200);
   XEEPROM.write(getMountAddress(EE_motorA2micro), 4);
   XEEPROM.write(getMountAddress(EE_motorA2reverse), 0);

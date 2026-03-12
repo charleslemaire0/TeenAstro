@@ -103,10 +103,10 @@ void stopGuidingAxis2(UNUSED(TimerHandle_t xTimer))
 #ifdef HASST4
 void setupST4()
 {
-  pinMode(ST4RAw, INPUT);
-  pinMode(ST4RAe, INPUT);
-  pinMode(ST4DEn, INPUT);
-  pinMode(ST4DEs, INPUT);
+  pinMode(ST4RAw, INPUT_PULLUP);
+  pinMode(ST4RAe, INPUT_PULLUP);
+  pinMode(ST4DEn, INPUT_PULLUP);
+  pinMode(ST4DEs, INPUT_PULLUP);
 }
 
 void checkST4()
@@ -245,9 +245,12 @@ void spiralTask(UNUSED(TimerHandle_t xTimer))
 void stopSpiral(void)
 {
   xTimerStop(spiralTimer, 0);
+  xSemaphoreTake(swMutex, portMAX_DELAY); 
   spiralSpeed.speed1 = 0;
   spiralSpeed.speed2 = 0;
+  xSemaphoreGive(swMutex);
   resetEvents(EV_SPIRAL);  
+  setEvents(EV_SPEED_CHANGE);
 }
 
 // speeds are in multiple of sidereal

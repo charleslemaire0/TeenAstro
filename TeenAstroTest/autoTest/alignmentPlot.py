@@ -6,27 +6,10 @@ from teenastro import TeenAstro, deg2dms
 import numpy as np  
 import sys, time
 from pandas import read_csv
-from skyfield.api import wgs84, load, position_of_radec, utc, Star
 from skyfield.positionlib import Apparent, Barycentric, Astrometric, Distance
 from skyfield.earthlib import refraction
 from skyfield.projections import build_stereographic_projection
-
-
-# Utility functions
-
-def eqAxesToHaDec(axis1, axis2, pierSide, latitude):
-  if (latitude < 0):
-    hemisphere = -1
-  else:
-    hemisphere = 1
-  if (axis2 < 0):
-    flipSign = -1
-  else:
-    flipSign = 1
-
-  ha = (hemisphere * (axis1 + flipSign * 90)) / 15
-  dec = (hemisphere * (90 - (flipSign * axis2)))
-  return ha, dec
+from trackingPlot import eqAxesToEqu, sign, altazAxesToAltAz
 
 
 class alignmentPlot():
@@ -65,6 +48,10 @@ class alignmentPlot():
 
   def connect(self, ta):
     self.ta = ta
+    self.lat = self.ta.getLatitude()
+    self.lon = -self.ta.getLongitude()       # LX200 treats west longitudes as positive, Skyfield as negative
+    self.site = self.planets['earth'] + wgs84.latlon(self.lat, self.lon)
+    self.subName = self.ta.getSubName()
     self.start()
 
   def handleEvent(self, ev, v, w):
@@ -106,6 +93,26 @@ class alignmentPlot():
       self.log('Sync {0} RA:{1:2.2f} Dec:{2:3.2f}'.format (self.window['alignmentTarget'].get(), self.ra, self.dec))
       self.log (self.ta.syncRaDec())
 
+    # Simulate plate-solve:
+    # Sync to currentPos+1º, then slew to currentPos 
+    if (ev == 'syncSlew'):
+      ra = self.ta.getRA() 
+      dec = self.ta.getDeclination()
+      ra1 = ra + 1 / 15.0 
+      dec1 = dec + 1
+      res = self.ta.setTarget(ra1,dec1)
+      if (res != 'ok'):
+        self.log('Error setting Ra/Dec')
+      else:
+        self.ta.syncRaDec()
+        self.log('Current: {0:2.2f} / {1:3.2f}, Sync to {2:2.2f} / {3:3.2f}'.format (ra, dec, ra1, dec1))
+      time.sleep(0.5)
+      ra2 = self.ta.getRA() 
+      dec2 = self.ta.getDeclination()
+      self.log('Now: {0:2.2f} / {1:3.2f}, Goto {2:2.2f} / {3:3.2f} '.format (ra2, dec2, ra, dec))
+      self.ta.gotoRaDec(ra, dec)
+      self.log('done')
+
     if (ev == 'alignN'):
       self.log('Move N')
       self.ta.moveCmd('n')
@@ -133,13 +140,12 @@ class alignmentPlot():
     if (ev == 'clearAlign'):
       self.log('Clear Alignment')
       self.log(self.ta.clearAlignment())
-    if (ev == 'align2'):
-      self.log('Align 2 stars')
-      self.log(self.ta.align2Stars())
-    if (ev == 'align3'):
-      self.log('Align 3 stars')
-      self.log(self.ta.align3Stars())
-
+    if (ev == 'saveAlign'):
+      self.log('Save Alignment')
+      self.log(self.ta.saveAlignment())
+    if (ev == 'addStar'):
+      self.log('Add Star')
+      self.log(self.ta.addStar())
 
 
 
@@ -168,13 +174,26 @@ class alignmentPlot():
     self.figure_canvas_agg.get_tk_widget().pack(side='right', fill='both', expand=1)
 
   def getAxisCoords(self):
-    pierSide = self.ta.getPierSide()
-    axis1 = self.ta.getAxis1()
-    axis2 = self.ta.getAxis2()   
     lst = self.ta.getLST()            # in hours
-    ha, dec = eqAxesToHaDec(axis1, axis2, pierSide, self.lat)
-    ra = lst - ha                      # in hours
-    return (ra,dec,lst,ha)   
+    if self.mountType in ['E', 'K']:        # Eq mount
+      pierSide = self.ta.getPierSide()
+      axis1 = self.ta.getAxis1()
+      axis2 = self.ta.getAxis2()   
+      ha, ra, dec = eqAxesToEqu(self.subName, pierSide, axis1, axis2, self.lat, lst)
+      return (ra, dec, lst, ha) 
+    else:                                   # AltAz mount
+      axis1 = self.ta.getAxis1()
+      axis2 = self.ta.getAxis2()   
+      lst = self.ta.getLST()            # in hours
+      az, alt = altazAxesToAltAz(axis1, axis2, self.lat)
+
+      # use skyfield to find equ coordinates
+      t = self.ts.from_datetime(self.ta.readDateTime())
+      direction = self.site.at(t).from_altaz(alt_degrees=alt, az_degrees=az)
+
+      ra, dec, distance = direction.radec()      
+      ha = lst - ra.hours
+      return (ra.hours, dec.degrees, lst, ha) 
 
   def computePolarError(self, Δa, Δe, dec, lst, ha):    # from Wikipedia
     Φ = np.radians(self.lat)
@@ -192,6 +211,10 @@ class alignmentPlot():
 
     self.window['ra_disp'].Update(self.ra2string(deg2dms(self.ta.getRA())))
     self.window['dec_disp'].Update(self.dec2string(deg2dms(self.ta.getDeclination())))
+
+    self.window['align_status'].Update(self.ta.alignStatus())
+    self.window['align_stars'].Update(self.ta.alignNumStars())   
+    self.window['align_error'].Update(self.ta.alignError())   
 
     projection = build_stereographic_projection(center)
     star_positions = self.site.at(t).observe(Star(ra_hours=self.stars.ra_hours, dec_degrees=self.stars.dec_degrees)) 
@@ -224,9 +247,6 @@ class alignmentPlot():
       self.log('Not connected')
       return
     self.mountType = self.ta.readMountType()
-    if not self.mountType in ['E', 'K']:
-      self.log('not yet implemented for Alt Az mounts')
-      return
     self.lat = self.ta.getLatitude()
     self.lon = -self.ta.getLongitude()       # LX200 treats west longitudes as positive, Skyfield as negative
     self.site = self.planets['earth'] + wgs84.latlon(self.lat, self.lon)

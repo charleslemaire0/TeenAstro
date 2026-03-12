@@ -17,13 +17,33 @@ def sign(val):
     return res
 
 
-def axesToEqu(axis1, axis2, latitude, lst):
-    hemisphere = sign(latitude)
-    flipSign = sign(axis2)
-    ha  = hemisphere * (axis1 + flipSign * 90);
-    ra = 15.0 * lst - ha
-    dec = hemisphere * (90 - (flipSign * axis2));    
-    return (ra, dec)
+def raRange(ra):
+  while (ra < 0):
+    ra += 24
+  while (ra >= 24):
+    ra -= 24
+  return ra
+
+def eqAxesToEqu(subName, pierSide, axis1, axis2, latitude, lst):
+  # different methods for UniversalMainUnit and standard version
+    if (subName == 'UniversalMainUnit'):
+      hemisphere = sign(latitude)
+      flipSign = sign(axis2)
+      ha  = hemisphere * (axis1 + flipSign * 90) / 15;
+      ra = raRange(lst - ha)       # in hours
+      dec = hemisphere * (90 - (flipSign * axis2));    
+    else:
+      # not sure about the hemisphere - check later
+      hemisphere = sign(latitude)
+      if (pierSide) == 'E': 
+        ha = (axis1 + 90) / 15
+        dec = axis2 
+      else:
+        ha = (axis1 - 90) / 15
+        dec = 180 - axis2 
+      ra = lst - ha       # in hours
+
+    return (ha, ra, dec)
 
 
 def altazAxesToAltAz(axis1, axis2, latitude):
@@ -136,6 +156,7 @@ class trackingPlot():
         self.lon = -self.ta.getLongitude()       # LX200 treats west longitudes as positive, Skyfield as negative
         self.site = self.planets['earth'] + wgs84.latlon(self.lat, self.lon)
         self.mountType = self.ta.readMountType()
+        self.subName = self.ta.getSubName()
         self.reset()
 
     def run(self):
@@ -158,16 +179,16 @@ class trackingPlot():
 
         if (self.mountType in ['E','K']):
             pierSide = self.ta.getPierSide()
-            ra, dec = axesToEqu(axis1, axis2, self.lat, lst)
+            ha, ra, dec = eqAxesToEqu(self.subName, pierSide, axis1, axis2, self.lat, lst)
         elif (self.mountType in ['A','k']):     
             az, alt = altazAxesToAltAz(axis1, axis2, self.lat)
             direction = self.site.at(t).from_altaz(az_degrees=az, alt_degrees=alt)
             ra_, dec_, distance_ = direction.radec()
-            ra = ra_._degrees
+            ra = ra_.hours
             dec = dec_.degrees
 
         self.t = np.append(self.t, datetime.now().timestamp())
-        self.ra = np.append(self.ra, 3600*(ra-self.initialRA))
+        self.ra = np.append(self.ra, 3600*(15*ra-self.initialRA)) # convert ra to arc-seconds
         self.dec = np.append(self.dec, 3600*(dec-self.initialDec))
         self.sp1 = np.append(self.sp1, sp1)
         self.sp2 = np.append(self.sp2, sp2)
@@ -202,7 +223,9 @@ class trackingPlot():
             pierSide = self.ta.getPierSide()
             axis1 = self.ta.getAxis1()
             axis2 = self.ta.getAxis2()
-            self.initialRA, self.initialDec = axesToEqu(axis1, axis2, self.lat, lst)
+            ha, ra, dec = eqAxesToEqu(self.subName, pierSide, axis1, axis2, self.lat, lst)
+            self.initialRA = 15 * ra  # convert to degrees
+            self.initialDec = dec
         elif (self.mountType in ['A','k']):     
             axis1 = self.ta.getAxis1()
             axis2 = self.ta.getAxis2()
@@ -226,7 +249,7 @@ class trackingPlot():
                 self.window['startStopTrack'].update('Stop Tracking')
                 self.state = 'TRACKING'
             else:
-                self.ta.abort()
+                self.ta.disableTracking()
                 self.log ('tracking disabled')
                 self.window['startStopTrack'].update('Start Tracking')
                 self.state = 'IDLE'
@@ -244,11 +267,22 @@ class trackingPlot():
             self.ta.guideCmd('w',50)
 
         if (ev == 'Nudge'):
-            ra = self.ta.getRA() + (random.random() - 0.5)    # add or subtract up to a half degree
+            ra = self.ta.getRA() + (random.random() - 0.5) / 15.0    # add or subtract up to a half degree
             dec = self.ta.getDeclination() + (random.random() - 0.5)
             self.log('goto ra:{0:2.2f} dec:{1:2.2f}'.format(ra, dec))
             self.ta.gotoRaDec(ra, dec)
 
+        if (ev == 'siderealTracking'):
+            self.ta.siderealTracking()
+
+        if (ev == 'lunarTracking'):
+            self.ta.lunarTracking()
+
+        if (ev == 'solarTracking'):
+            self.ta.solarTracking()
+
+        if (ev == 'targetTracking'):
+            self.ta.targetTracking()
 
         if (ev == 'spiral'):
             self.ta.spiral(10)

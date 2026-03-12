@@ -1,0 +1,98 @@
+[
+    {
+        "mType": "Eq-German",
+        "DefaultR": "Max",
+        "MaxR": 356,
+        "GuideR": 0.4,
+        "Acc": "2.0",
+        "SlowR": 4,
+        "MediumR": 63,
+        "FastR": 64,
+        "mrot1": "Direct",
+        "mge1": 10800,
+        "mge1f": 0,
+        "mst1": "200",
+        "mmu1": 16,
+        "mbl1": "0",
+        "mlc1": 1000,
+        "mhc1": 1000,
+        "msil1": "0",
+        "mrot2": "Reverse",
+        "mge2": 6480,
+        "mge2f": 0,
+        "mst2": "200",
+        "mmu2": 32,
+        "mbl2": "0",
+        "mlc2": 1000,
+        "mhc2": 1000,
+        "msil2": "0",
+        "hl": "-10",
+        "ol": "+91",
+        "el": 10,
+        "wl": 10,
+        "ul": 12,
+        "a1min": -360,
+        "a1max": 360,
+        "a2min": -360,
+        "a2max": 360,
+        "mEn": true
+    },
+    [
+        {
+            "name": "Site0",
+            "latitude": [
+                44,
+                47
+            ],
+            "longitude": [
+                -5,
+                46
+            ],
+            "elevation": 769,
+            "currentSite": 0,
+            "timeZone": 1.0
+        },
+        {
+            "name": "Site1",
+            "latitude": [
+                0,
+                0
+            ],
+            "longitude": [
+                0,
+                0
+            ],
+            "elevation": 0,
+            "currentSite": 0,
+            "timeZone": 12.0
+        },
+        {
+            "name": "Site2",
+            "latitude": [
+                0,
+                0
+            ],
+            "longitude": [
+                0,
+                0
+            ],
+            "elevation": 0,
+            "currentSite": 0,
+            "timeZone": 12.0
+        },
+        {
+            "name": "",
+            "latitude": [
+                0,
+                0
+            ],
+            "longitude": [
+                0,
+                0
+            ],
+            "elevation": 0,
+            "currentSite": 0,
+            "timeZone": 0.0
+        }
+    ]
+]

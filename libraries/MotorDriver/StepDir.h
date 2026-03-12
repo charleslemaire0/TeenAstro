@@ -47,6 +47,8 @@ public:
 	void initMc5160(TMC5160Stepper *driverP, SemaphoreHandle_t, long);
   void setRatios(long fkHz);
   long decelDistance(double speed, unsigned long aMax);
+  void enable(void);
+  void disable(void);
 
 
 	volatile int dirPin, stepPin;
@@ -89,7 +91,7 @@ private:
 
 	// Processor-specific variables
 #ifdef __arm__
-	IntervalTimer *timerP;
+	void *timerP;
 #endif
 
 #ifdef __ESP32__

@@ -23,10 +23,6 @@ void HAL_preInit(void)
   Serial1.begin(BAUD);
   S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
 
-#ifdef BOARD_240
-  Serial2.begin(BAUD);
-#endif
-
   // process SHC initial commands (GVP etc.) to avoid losing connection 
   // this is because FreeRTOS initialization is very slow (7sec) for unknown reason
   for (int j = 0; j<800; j++)
@@ -36,17 +32,6 @@ void HAL_preInit(void)
   }
 
 }
-
-#ifdef BOARD_240
-// currently use only one debug port
-void HAL_debug0(uint8_t b)
-{
-  Serial2.write(b);
-}
-void HAL_debug1(uint8_t b)
-{
-}
-#endif
 
 void HAL_initSerial(void)
 {

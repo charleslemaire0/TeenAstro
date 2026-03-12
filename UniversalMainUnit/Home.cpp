@@ -49,6 +49,9 @@ bool goHome()
   unsigned msg[CTL_MAX_MESSAGE_SIZE];
   setSlewSpeed(guideRates[RXX]);
 
+  if (parkStatus() == PRK_PARKED)
+    return(false);
+
   msg[0] = CTL_MSG_GOTO_HOME; 
   xQueueSend( controlQueue, &msg, 0);
 

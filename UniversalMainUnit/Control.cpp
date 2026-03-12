@@ -68,46 +68,47 @@ void DecayModeGoto()
 // Weird algorithm to prevent GEM mounts from pointing below horizon while slewing 
 void adjustSpeeds(void)
 {
-  bool dangerZone=false;
+  static int n = 0;                       // counter to only run once every 100mS
+  enum adjAxis {NONE, AXIS1, AXIS2};
+  static adjAxis ajx = NONE;
   int decDir = mount.mP->decDirection();
-  static double adj = 1.0;
-  double k = 1.01;
+  double k;
+
+  n++;
+  if ((n % 100) != 0)
+    return;
 
   if (decDir == 0)
     return;
 
-  xSemaphoreTake(swMutex, portMAX_DELAY); 
-  deltaAlt = currentAzAlt.alt - prevAzAlt.alt;
-  xSemaphoreGive(swMutex);
+  float aboveLimit = currentAzAlt.alt - limits.minAlt;
 
-  if ((currentAzAlt.alt - limits.minAlt) < 8)  // arbitrary value that works
+  if (aboveLimit < mount.DegreesForAcceleration)  
   {
-    dangerZone = true;
-    adj = fmin(adj * k, 3.0);                 // speed adjustment coefficient
-
-    if (decDir < 0)  // decreasing declination?
+    k = fmax(0.3, (aboveLimit < 0 ? 0 : aboveLimit / mount.DegreesForAcceleration));
+    if (decDir > 0)
     {
-      motorA1.setVmax(slewingSpeeds.speed1 * fmin(adj, 1.0));
-      motorA2.setVmax(slewingSpeeds.speed2 / fmax(adj, 0.5));
+      ajx = AXIS1;
+      motorA1.setVmax(slewingSpeeds.speed1 * k);      
     }
     else
     {
-      motorA1.setVmax(slewingSpeeds.speed1 / fmax(adj, 1.0));
-      motorA2.setVmax(slewingSpeeds.speed2 * fmin(adj, 0.5));
+      ajx = AXIS2;
+      motorA2.setVmax(slewingSpeeds.speed2 * k);      
     }
   }
-  else
+  else // above limit: reset speed to max
   {
-    if (dangerZone)
+    switch (ajx)
     {
-      // well above altitude limit: reset speed to max
-      dangerZone = false;
-      adj = 1.0;
-      motorA1.setVmax(slewingSpeeds.speed1);
-      motorA2.setVmax(slewingSpeeds.speed2);
+      case AXIS1: motorA1.setVmax(slewingSpeeds.speed1); ajx = NONE; break;    
+      case AXIS2: motorA2.setVmax(slewingSpeeds.speed2); ajx = NONE; break;
+      case NONE: break;    
     }
   }  
 }
+
+
 
 int fsign(double n)
 {
@@ -127,7 +128,7 @@ void controlTask(UNUSED(void *arg))
   long axis1Target, axis2Target;
   long tickCount = 0;
   CTL_MODE prevMode;
-  int dir, previousDirAxis1, previousDirAxis2;
+  int dir;
 
   while (1)
   { 
@@ -139,12 +140,11 @@ void controlTask(UNUSED(void *arg))
       case CTL_MODE_IDLE:
         if (getEvent(EV_START_TRACKING))
         {
-          Speeds speeds;
           currentMode = CTL_MODE_TRACKING;
+          DecayModeTracking();
           resetEvents(EV_AT_HOME);
           resetEvents(EV_START_TRACKING);
           setEvents(EV_TRACKING | EV_SPEED_CHANGE);
-          previousDirAxis1 = previousDirAxis2 = 0;
         }
         break;
 
@@ -164,20 +164,11 @@ void controlTask(UNUSED(void *arg))
             mount.mP->getTrackingSpeeds(&speeds);
             resetEvents(EV_SPEED_CHANGE);
             motorA1.setVmax(fabs(speeds.speed1));
-            // only set target if direction has changed
             dir = fsign(speeds.speed1);
-            if (dir != previousDirAxis1)
-            {
-              motorA1.setTargetPos(dir * geoA1.stepsPerRot);
-              previousDirAxis1 = dir;
-            }
+            motorA1.setTargetPos(dir * geoA1.stepsPerRot);
             motorA2.setVmax(fabs(speeds.speed2));
             dir = fsign(speeds.speed2);
-            if (dir != previousDirAxis2)
-            {
-              motorA2.setTargetPos(dir * geoA2.stepsPerRot);
-              previousDirAxis2 = dir;
-            }
+            motorA2.setTargetPos(dir * geoA2.stepsPerRot);
           }
         }
         break;
@@ -200,13 +191,14 @@ void controlTask(UNUSED(void *arg))
             parkStatus(PRK_PARKED);
           }
         }         
-
+#if 0
+// BUG - disable this until fixed
         if (!isAltAz())
         {
           adjustSpeeds(); 
         }
+#endif
         break;
-
       case CTL_MODE_STOPPING:
         resetAbort();
         // wait until motors stopped, reset mode to idle
@@ -229,6 +221,7 @@ void controlTask(UNUSED(void *arg))
       motorA1.abort();
       motorA2.abort();
       resetEvents(EV_START_TRACKING | EV_ABORT);
+      parkStatus(PRK_UNPARKED);
       currentMode = CTL_MODE_STOPPING;
     }
   
@@ -236,6 +229,7 @@ void controlTask(UNUSED(void *arg))
   double speed;
   long target;
   byte dir;
+  bool t;
 
     // Wait for next message
   BaseType_t res = xQueueReceive( controlQueue, &msgBuffer, 0);
@@ -248,9 +242,10 @@ void controlTask(UNUSED(void *arg))
           if (lastError() != ERRT_NONE)
             break;
           currentMode = CTL_MODE_GOTO;
-          resetEvents(EV_AT_HOME | EV_TRACKING | EV_START_TRACKING | EV_SPIRAL);
+          resetEvents(EV_AT_HOME | EV_TRACKING | EV_START_TRACKING | EV_SPIRAL | EV_GUIDING_AXIS1 | EV_GUIDING_AXIS2);
           axis1Target = msgBuffer[1];
           axis2Target = msgBuffer[2];
+          DecayModeGoto();
           motorA1.setVmax(slewingSpeeds.speed1);
           motorA1.setTargetPos(axis1Target);
           motorA2.setVmax(slewingSpeeds.speed2);
@@ -262,7 +257,8 @@ void controlTask(UNUSED(void *arg))
           if (lastError() != ERRT_NONE)
             break;
           currentMode = CTL_MODE_GOTO;
-          resetEvents(EV_AT_HOME | EV_TRACKING | EV_START_TRACKING | EV_SPIRAL);
+          resetEvents(EV_AT_HOME | EV_TRACKING | EV_START_TRACKING | EV_SPIRAL | EV_GUIDING_AXIS1 | EV_GUIDING_AXIS2);
+          DecayModeGoto();
           motorA1.setVmax(slewingSpeeds.speed1);
           motorA1.setTargetPos(geoA1.homeDef);
           motorA2.setVmax(slewingSpeeds.speed2);
@@ -271,12 +267,28 @@ void controlTask(UNUSED(void *arg))
           setEvents(EV_SLEWING);
           break;
 
+        case CTL_MSG_SYNC:
+          if (lastError() != ERRT_NONE)
+            break;
+          t = isTracking();
+          axis1Target = msgBuffer[1];
+          axis2Target = msgBuffer[2];
+          motorA1.syncPos(axis1Target);
+          motorA2.syncPos(axis2Target);
+          // After synchronizing the motors, restart tracking if needed
+          if (t)
+          {
+            startTracking();
+          }
+          break;
+
         case CTL_MSG_MOVE_AXIS1:
           prevMode = currentMode;
           dir = msgBuffer[1];
           target = mount.mP->axis1Direction(dir) * geoA1.stepsPerRot;
           memcpy(&speed, &msgBuffer[2], sizeof(double));
           resetEvents(EV_AT_HOME);
+          DecayModeGoto();
           motorA1.setVmax(fabs(speed)*geoA1.stepsPerSecond/SIDEREAL_SECOND);
           motorA1.setTargetPos(target);  
           if (dir == 'w')
@@ -291,6 +303,7 @@ void controlTask(UNUSED(void *arg))
           target = mount.mP->axis2Direction(dir) * geoA2.stepsPerRot;
           memcpy(&speed, &msgBuffer[2], sizeof(double));
           resetEvents(EV_AT_HOME);
+          DecayModeGoto();
           motorA2.setVmax(fabs(speed)*geoA2.stepsPerSecond/SIDEREAL_SECOND);
           motorA2.setTargetPos(target);  
           if (dir == 'n')
@@ -312,10 +325,8 @@ void controlTask(UNUSED(void *arg))
           resetEvents(EV_CENTERING | EV_WEST | EV_EAST);
           if (prevMode == CTL_MODE_TRACKING)
           {
-            Speeds speeds;
-            mount.mP->getTrackingSpeeds(&speeds);
-            motorA1.setVmax(fabs(speeds.speed1));
-            motorA1.setTargetPos(speeds.speed1>0 ? geoA1.stepsPerRot : -geoA1.stepsPerRot);
+            currentMode = CTL_MODE_STOPPING;
+            setEvents(EV_START_TRACKING);
           }
           break;
 
@@ -339,6 +350,8 @@ void startTracking(void)
 
 void stopTracking(void)
 {
+  if (getEvent(EV_SPIRAL))
+    stopSpiral();
   stopMoving();
 }
 
@@ -376,7 +389,6 @@ void MoveAxis2(const byte dir)
 void MoveAxis2AtRate(double speed, const byte dir)
 {
   unsigned msg[CTL_MAX_MESSAGE_SIZE];
-  long target;
 
   if ((parkStatus() != PRK_UNPARKED) || isSlewing())
     return;
@@ -411,9 +423,25 @@ byte goTo(Steps *sP)
 
   waitSlewing();
 
-//  DecayModeGoto();
   return ERRGOTO_NONE;
 }
+
+byte sync(Steps *sP)
+{
+  unsigned msg[CTL_MAX_MESSAGE_SIZE];
+
+  if (parkStatus() == PRK_PARKED)
+    return(ERRGOTO_PARKED);
+
+  msg[0] = CTL_MSG_SYNC; 
+  msg[1] = sP->steps1;
+  msg[2] = sP->steps2;
+  xQueueSend(controlQueue, &msg, 0);
+
+  return ERRGOTO_NONE;
+}
+
+
 
 void setSlewSpeed(double speed)
 {
