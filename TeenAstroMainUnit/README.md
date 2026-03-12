@@ -38,8 +38,6 @@ For the two largest handlers (GX and SX), the code is further split into **domai
 | Options | `Command_GX_Options()` | `Command_SX_Options()` |
 | Refraction | `Command_GX_Refraction()` | `Command_SX_Refraction()` |
 | Debug | `Command_GX_Debug()` | — |
-| Status | `Command_GX_Status()` | — |
-| ASCOM | `Command_GX_ASCOM()` | — |
 | Position | `Command_GX_Position()` | — |
 
 ### Axis helper (`CommandHelpers.h`)

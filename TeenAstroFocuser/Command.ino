@@ -2,6 +2,24 @@
 #include <EEPROM.h>
 #define INPUT_SIZE 30
 
+// Base64 for binary dump commands (:FA# / :Fa#)
+static const char FOC_B64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static void focB64Encode(const uint8_t* in, char* out, int len)
+{
+  int o = 0;
+  for (int i = 0; i < len; i += 3)
+  {
+    uint32_t b = ((uint32_t)in[i] << 16) | ((uint32_t)in[i + 1] << 8) | in[i + 2];
+    out[o++] = FOC_B64[(b >> 18) & 0x3F];
+    out[o++] = FOC_B64[(b >> 12) & 0x3F];
+    out[o++] = FOC_B64[(b >>  6) & 0x3F];
+    out[o++] = FOC_B64[ b        & 0x3F];
+  }
+  out[o] = 0;
+}
+static void packU16(uint8_t* p, int off, uint16_t v) { p[off] = (uint8_t)(v & 0xFF); p[off + 1] = (uint8_t)(v >> 8); }
+static void packI16(uint8_t* p, int off, int16_t v)  { packU16(p, off, (uint16_t)v); }
+
 //target
 enum MoveMode
 {
@@ -208,6 +226,14 @@ bool SerCom::GetRequest(void)
     break;
   case CmdDumpConfigMotor:
     dumpConfigMotor();
+    m_hasReceivedCommand = false;
+    break;
+  case CmdBinConfig:
+    dumpAllConfig();
+    m_hasReceivedCommand = false;
+    break;
+  case CmdBinState:
+    dumpAllState();
     m_hasReceivedCommand = false;
     break;
   default:
@@ -566,6 +592,78 @@ void SerCom::dumpConfigMotor()
           (unsigned int)(curr->get()),
           (unsigned int)(steprot->get()));
   ser.print(buf);
+  ser.flush();
+}
+
+// :FA# -- 150-byte binary config -> 200 base64 chars + '#'
+void SerCom::dumpAllConfig()
+{
+  uint8_t pkt[150];
+  memset(pkt, 0, sizeof(pkt));
+  unsigned int res = resolution->get();
+  packU16(pkt,  0, (uint16_t)(startPosition->get() / res));
+  packU16(pkt,  2, (uint16_t)(maxPosition->get() / res));
+  packU16(pkt,  4, (uint16_t)lowSpeed->get());
+  packU16(pkt,  6, (uint16_t)highSpeed->get());
+  pkt[8]  = (uint8_t)cmdAcc->get();
+  pkt[9]  = (uint8_t)manAcc->get();
+  pkt[10] = (uint8_t)manDec->get();
+  pkt[11] = (uint8_t)reverse->get();
+  pkt[12] = (uint8_t)micro->get();
+  packU16(pkt, 13, (uint16_t)resolution->get());
+  pkt[15] = (uint8_t)curr->get();
+  packU16(pkt, 16, (uint16_t)steprot->get());
+  for (int i = 0; i < 10; i++)
+  {
+    int base = 18 + i * 13;
+    char id[11] = { 0 };
+    unsigned long posVal;
+    PositionList[i]->get(id, posVal);
+    if (id[0] == 0)
+    {
+      packU16(pkt, base, 0);
+    }
+    else
+    {
+      unsigned int pos = (unsigned int)(posVal / res);
+      if (pos > 65535) pos = 0;
+      packU16(pkt, base, (uint16_t)pos);
+      for (int k = 0; k < 11; k++) pkt[base + 2 + k] = (uint8_t)(id[k] ? id[k] : 0);
+    }
+  }
+  uint8_t xorChk = 0;
+  for (int i = 0; i < 149; i++) xorChk ^= pkt[i];
+  pkt[149] = xorChk;
+  char b64[201];
+  focB64Encode(pkt, b64, 150);
+  ser.print(b64);
+  ser.print("#");
+  ser.flush();
+}
+
+// :Fa# -- 9-byte binary state -> 12 base64 chars + '#'
+void SerCom::dumpAllState()
+{
+  uint8_t pkt[9];
+  memset(pkt, 0, sizeof(pkt));
+  unsigned int p = (unsigned int)(stepper.getPosition() / resolution->get());
+  if (p > 65535U) p = 65535U;
+  packU16(pkt, 0, (uint16_t)p);
+  unsigned int spd = 0;
+  if (rotateController.isRunning())
+    spd = (unsigned int)abs(rotateController.getCurrentSpeed() / pow(2, micro->get()));
+  else if (controller.isRunning())
+    spd = (unsigned int)abs(controller.getCurrentSpeed() / pow(2, micro->get()));
+  packU16(pkt, 2, (uint16_t)spd);
+  packI16(pkt, 4, (int16_t)(lastTemp * 100.0f));
+  pkt[6] = (controller.isRunning() || rotateController.isRunning()) ? 1 : 0;
+  uint8_t xorChk = 0;
+  for (int i = 0; i < 8; i++) xorChk ^= pkt[i];
+  pkt[8] = xorChk;
+  char b64[13];
+  focB64Encode(pkt, b64, 9);
+  ser.print(b64);
+  ser.print("#");
   ser.flush();
 }
 

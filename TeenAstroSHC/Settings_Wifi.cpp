@@ -18,6 +18,10 @@ void SmartHandController::menuWifi()
       return;
     case 1:
       buttonPad.turnWifiOn(!buttonPad.isWifiOn());
+#ifdef EMU_SHC
+      if (m_client)
+        m_client->set(buttonPad.isWifiOn() ? ":EW1#" : ":EW0#");
+#endif
       exitMenu = true;
       powerCycleRequired = true;
       break;
@@ -51,7 +55,6 @@ void SmartHandController::menuWifiMode()
 {
   uint8_t idx = 0;
   uint8_t idxs[4] = { 3,3,3,3 };
-  char temp[20] = { 0 };
   char txt[150] = { 0 };
   char out[40] = { 0 };
   uint8_t selected_item = 10;

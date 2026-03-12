@@ -2,9 +2,12 @@
 #include <TeenAstroMountStatus.h>
 #include "SHC_text.h"
 #include "SmartController.h"
+#ifdef EMU_SHC
+#include "u8g2_sdl2.h"
+#endif
 
-static char* BreakRC[6] = { ":Qn#" ,":Qs#" ,":Qe#" ,":Qw#", ":Fo#", ":Fi#" };
-static char* RC[6] = { ":Mn#" , ":Ms#" ,":Me#" ,":Mw#", ":FO#", ":FI#" };
+static const char* BreakRC[6] = { ":Qn#", ":Qs#", ":Qe#", ":Qw#", ":Fo#", ":Fi#" };
+static const char* RC[6]      = { ":Mn#", ":Ms#", ":Me#", ":Mw#", ":FO#", ":FI#" };
 
 void SmartHandController::setup(
   const char version[], 
@@ -33,6 +36,15 @@ void SmartHandController::setup(
 
   num_supported_display = nSubmodel;
   uint8_t submodel = EEPROM.read(EEPROM_DISPLAYSUBMODEL);
+#ifdef EMU_SHC
+  {
+    extern U8G2_EXT_SDL2* g_sdlDisplay;
+    auto* sdl = new U8G2_EXT_SDL2(U8G2_R0);
+    sdl->initSDL("TeenAstro SHC Emulator");
+    display = sdl;
+    g_sdlDisplay = sdl;
+  }
+#else
   switch (model)
   {
   case OLED_SH1106:
@@ -55,6 +67,7 @@ void SmartHandController::setup(
       display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0);
     break;
   }
+#endif
   SHCrotated = EEPROM.read(EEPROM_DISPLAY180) == 255;
   SHCvisitor = EEPROM.read(EEPROM_VISITOR) == 255;
   if (SHCrotated)
@@ -125,14 +138,13 @@ void SmartHandController::setup(
         DisplayMessage("Focuser " T_VERSION, &out[26], 1200);
       }
     }
-    ta_MountStatus.updateMount();
+    ta_MountStatus.updateAllState(true);
     if (!ta_MountStatus.hasGNSSBoard())
     {
-      ta_MountStatus.updateTime();
-      unsigned int hour = 0, minute = 0, second = 0;
-      m_client->getLocalTime(hour, minute, second);
+      uint8_t lh = 0, lm = 0, ls = 0;
+      ta_MountStatus.getLocalTimeCached(lh, lm, ls);
       char date_time[40];
-      sprintf(date_time, "%s : %.2d:%.2d:%.2d", T_TIME, hour, minute, second);
+      sprintf(date_time, "%s : %.2d:%.2d:%.2d", T_TIME, lh, lm, ls);
       char date_time2[40];
       sprintf(date_time2, "%s : %s", T_DATE, ta_MountStatus.getUTCdate());
       DisplayMessage(date_time, date_time2, 2000);
@@ -168,6 +180,11 @@ void SmartHandController::setup(
 #endif
 #ifdef ALIGN_PAGE
     pages[P_ALIGN].show = true;
+#endif
+
+#ifdef EMU_SHC
+  if (buttonPad.isWifiOn() && m_client)
+    m_client->set(":EW1#");
 #endif
 
 }
@@ -234,7 +251,7 @@ void SmartHandController::updateAlign(bool moving)
   
       DisplayMessage(T_ALIGNMENT, T_SUCESS"!", 1.0);
       m_client->getAlignError(text, sizeof(text));
-      text[3]='°';
+      text[3] = '\xB0'; // degree sign (ISO-8859-1 / u8g2 Latin-1)
       text[6]='\'';
       text[9]='\"';
       //strcat(text, " " T_DEG);

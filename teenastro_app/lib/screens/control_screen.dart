@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/lx200_tcp_client.dart';
 import '../services/mount_state_provider.dart';
+import '../services/safe_move_handler.dart';
 import '../models/lx200_commands.dart';
 import '../models/mount_state.dart';
 import '../theme.dart';
@@ -14,6 +15,7 @@ class ControlScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final client = ref.read(lx200ClientProvider);
+    final safeMove = ref.read(safeMoveHandlerProvider);
     final state = ref.watch(mountStateProvider);
 
     return ListView(
@@ -29,17 +31,17 @@ class ControlScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
 
-        // Direction pad
+        // Direction pad (safe move: redundant stop + max duration)
         Center(
           child: DirectionPad(
-            onNorthStart: () => client.send(LX200.moveNorth),
-            onNorthStop:  () => client.send(LX200.stopNorth),
-            onSouthStart: () => client.send(LX200.moveSouth),
-            onSouthStop:  () => client.send(LX200.stopSouth),
-            onEastStart:  () => client.send(LX200.moveEast),
-            onEastStop:   () => client.send(LX200.stopEast),
-            onWestStart:  () => client.send(LX200.moveWest),
-            onWestStop:   () => client.send(LX200.stopWest),
+            onNorthStart: () => safeMove.startMove(LX200.moveNorth),
+            onNorthStop:  () => safeMove.stopMove(),
+            onSouthStart: () => safeMove.startMove(LX200.moveSouth),
+            onSouthStop:  () => safeMove.stopMove(),
+            onEastStart:  () => safeMove.startMove(LX200.moveEast),
+            onEastStop:   () => safeMove.stopMove(),
+            onWestStart:  () => safeMove.startMove(LX200.moveWest),
+            onWestStop:   () => safeMove.stopMove(),
           ),
         ),
         const SizedBox(height: 24),
@@ -54,7 +56,7 @@ class ControlScreen extends ConsumerWidget {
               icon: Icons.stop_circle,
               label: 'STOP',
               color: TAColors.error,
-              onPressed: () => client.send(LX200.stopAll),
+              onPressed: () => safeMove.stopMove(),
             ),
             _ActionButton(
               icon: Icons.local_parking,

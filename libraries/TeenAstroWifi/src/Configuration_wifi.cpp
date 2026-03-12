@@ -168,7 +168,6 @@ void TeenAstroWifi::handleWifi()
 {
   if (busyGuard()) return;
   char temp[300] = "";
-  char temp1[80] = "";
   String data;
   sendHtmlStart();
   processWifiGet();
@@ -220,12 +219,12 @@ void TeenAstroWifi::handleWifi()
     sprintf_P(temp, html_wifiSSID1C, k, ""); data += temp;
     uint8_t mac[6] = { 0,0,0,0,0,0 }; WiFi.macAddress(mac);
     char wifi_sta_mac[80] = "";
+    int pos = 0;
     for (int i = 0; i < 6; i++)
     {
-      sprintf(wifi_sta_mac, "%s%02x:", wifi_sta_mac, mac[i]);
+      pos += snprintf(wifi_sta_mac + pos, sizeof(wifi_sta_mac) - pos, "%02x:", mac[i]);
     } wifi_sta_mac[strlen(wifi_sta_mac) - 1] = 0;
     sprintf_P(temp, html_wifiMAC, k, wifi_sta_mac); data += temp;
-    IPAddress tempIP = wifi_sta_ip[k];
     sprintf_P(temp, html_wifiSTAIP, k, wifi_sta_ip[k][0], k, wifi_sta_ip[k][1], k, wifi_sta_ip[k][2], k, wifi_sta_ip[k][3]); data += temp;
     sprintf_P(temp, html_wifiSTAGW, k, wifi_sta_gw[k][0], k, wifi_sta_gw[k][1], k, wifi_sta_gw[k][2], k, wifi_sta_gw[k][3]); data += temp;
     sprintf_P(temp, html_wifiSTASN, k, wifi_sta_sn[k][0], k, wifi_sta_sn[k][1], k, wifi_sta_sn[k][2], k, wifi_sta_sn[k][3]); data += temp;
@@ -235,10 +234,11 @@ void TeenAstroWifi::handleWifi()
   sprintf_P(temp, html_wifiSSID3, wifi_ap_ssid, "", wifi_ap_ch); data += temp;
   uint8_t macap[6] = { 0,0,0,0,0,0 }; WiFi.softAPmacAddress(macap);
   char wifi_ap_mac[80] = "";
+  { int pos = 0;
   for (int i = 0; i < 6; i++)
   {
-    sprintf(wifi_ap_mac, "%s%02x:", wifi_ap_mac, macap[i]);
-  } wifi_ap_mac[strlen(wifi_ap_mac) - 1] = 0;
+    pos += snprintf(wifi_ap_mac + pos, sizeof(wifi_ap_mac) - pos, "%02x:", macap[i]);
+  } } wifi_ap_mac[strlen(wifi_ap_mac) - 1] = 0;
   sprintf_P(temp, html_wifiApMAC, wifi_ap_mac); data += temp;
   sendHtml(data);
   sprintf_P(temp, html_wifiSSID4, wifi_ap_ip[0], wifi_ap_ip[1], wifi_ap_ip[2], wifi_ap_ip[3]); data += temp;

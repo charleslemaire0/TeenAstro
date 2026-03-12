@@ -9,7 +9,7 @@
 #include "WProgram.h"
 #endif
 #define PROJECT "TeenAstro Focuser"
-#define FirmwareVersion "1.5.1"
+#define FirmwareVersion "1.6.0"
 
 
 #ifndef VERSION
@@ -82,6 +82,9 @@
 
 // Temperature Sensor
 #define TempPin 9
+
+// Set to 1 to print Dallas temp debug to Serial (9600). Open Serial Monitor on focuser COM port.
+#define TEMP_DEBUG 0
 
 #endif
 

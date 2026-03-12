@@ -136,12 +136,17 @@ void SmartHandController::menuSites()
 void SmartHandController::menuLocalTime()
 {
   long value;
-  if (DisplayMessageLX200(m_client->getLocalTime(value)))
+  ta_MountStatus.updateAllState(true);
+  if (ta_MountStatus.getLocalTimeCachedTotalSec(value))
   {
     if (display->UserInterfaceInputValueLocalTime(&buttonPad, T_LOCALTIME, &value))
     {
       DisplayMessageLX200(m_client->setLocalTime(value), false);
     }
+  }
+  else
+  {
+    DisplayMessage("!" T_ERROR "!", T_NOT_CONNECTED, -1);
   }
 }
 
@@ -163,18 +168,20 @@ void SmartHandController::menuLocalTimeZone()
 
 void SmartHandController::menuLocalDate()
 {
-  char out[20];
-  if (DisplayMessageLX200(m_client->getDate(out, sizeof(out))))
+  uint8_t month, day, year;
+  ta_MountStatus.updateAllState(true);
+  if (ta_MountStatus.getLocalDateCached(month, day, year))
   {
-    char* pEnd;
-    uint8_t month = strtol(&out[0], &pEnd, 10);
-    uint8_t day = strtol(&out[3], &pEnd, 10);
-    uint8_t year = strtol(&out[6], &pEnd, 10);
     if (display->UserInterfaceInputValueDate(&buttonPad, T_DATE, year, month, day))
     {
+      char out[20];
       sprintf(out, ":SC%02d/%02d/%02d#", month, day, year);
       DisplayMessageLX200(m_client->set(out), false);
     }
+  }
+  else
+  {
+    DisplayMessage("!" T_ERROR "!", T_NOT_CONNECTED, -1);
   }
 }
 

@@ -6,7 +6,7 @@
 # (C) 2020, Lukas Zimmermann, Basel
 
 import PySimpleGUI as sg
-import platform, re, json, sys, math, time
+import platform, re, json, sys, math, time, base64
 from datetime import datetime
 from telnetlib import Telnet
 import serial
@@ -43,9 +43,9 @@ MountDef = { 'mType':['Eq-German', 'Eq-Fork', 'AltAz-Tee', 'AltAz-Fork'],
       'mEn': [False]
       }
 
-# Commands for getting mount parameters
+# Commands for getting mount parameters (mType comes from GXAS packet)
 MountReadCmd = { 
-      'mType':'GXI','DefaultR':'GXRD',
+      'mType':'GXAS','DefaultR':'GXRD',
       'MaxR':'GXRX','GuideR':'GXR0','Acc':'GXRA', 'SlowR':'GXR1','MediumR':'GXR2','FastR':'GXR3',
       'mrot1':'GXMRR','mge1':'GXMGR','mst1':'GXMSR','mmu1':'GXMMR','mbl1':'GXMBR','mlc1':'GXMcR','mhc1':'GXMCR', 'msil1':'GXMmR',
       'mrot2':'GXMRD','mge2':'GXMGD','mst2':'GXMSD','mmu2':'GXMMD','mbl2':'GXMBD','mlc2':'GXMcD','mhc2':'GXMCD', 'msil2':'GXMmD',
@@ -129,15 +129,37 @@ def openPort():
       return None
 
 def getValue(comm, cmd):
-  cmdStr = ":" + cmd + "#"  
+  cmdStr = ":" + cmd + "#"
   comm.write(cmdStr.encode('utf-8'))
   try:
-    val1 = comm.read_until(b'#', 50)
+    # GXAS returns 136 base64 chars + '#'; use larger read for bulk commands
+    max_len = 200 if cmd == 'GXAS' else 50
+    val1 = comm.read_until(b'#', max_len)
     val = val1.decode('utf-8')[:-1]
-  except:  
+  except:
     logText("getValue Error: %s" % cmd)
     val = '?'
   return (val)
+
+def getStatusFromGXAS(comm):
+  """Fetch :GXAS# and return an 18-char status string compatible with legacy GXI indices [0],[12],[13],[15]."""
+  try:
+    b64 = getValue(comm, 'GXAS')
+    if len(b64) < 136:
+      return ' ' * 18
+    pkt = base64.b64decode(b64)
+    if len(pkt) < 5:
+      return ' ' * 18
+    b0, b1, b4 = pkt[0], pkt[1], pkt[4]
+    s = [' '] * 18
+    s[0] = chr(ord('0') + min(b0 & 0x3, 3))   # tracking/slewing
+    mt = (b1 >> 4) & 0x7
+    s[12] = 'E' if mt == 1 else 'K' if mt == 2 else 'A' if mt == 3 else 'k' if mt == 4 else 'U'
+    s[13] = 'W' if (b0 >> 7) & 1 else 'E'     # pier
+    s[15] = chr(ord('0') + min(b4, 8))        # error
+    return ''.join(s)
+  except Exception:
+    return ' ' * 18
 
 def sendCommand(comm, cmdStr):
   global portType
@@ -317,18 +339,26 @@ def clearVersions():
 def readMountData():
   if (comm == None):
     return
-  for tag in list(MountReadCmd.keys()): 
-    resp = getValue(comm, MountReadCmd[tag]) 
+  for tag in list(MountReadCmd.keys()):
+    resp = getValue(comm, MountReadCmd[tag])
     if (tag == 'mType'):
-      mt = resp[12]     # Mount type is byte number 12 in the result string
-      if (mt == 'E'):
-        Mount[tag] = 'Eq-German'
-      elif (mt == 'K'):
-        Mount[tag] = 'Eq-Fork'
-      elif (mt == 'A'):
-        Mount[tag] = 'AltAz-Tee'
-      elif (mt == 'k'):
-        Mount[tag] = 'AltAz-Fork'   
+      # Mount type from GXAS packet byte 1 bits 4-6 (1=GEM, 2=Fork, 3=AltAz, 4=ForkAlt)
+      try:
+        if len(resp) >= 136:
+          pkt = base64.b64decode(resp)
+          if len(pkt) >= 2:
+            mt = (pkt[1] >> 4) & 0x7
+            if mt == 1:   Mount[tag] = 'Eq-German'
+            elif mt == 2: Mount[tag] = 'Eq-Fork'
+            elif mt == 3: Mount[tag] = 'AltAz-Tee'
+            elif mt == 4: Mount[tag] = 'AltAz-Fork'
+            else:         Mount[tag] = MountDef['mType'][0]
+          else:
+            Mount[tag] = MountDef['mType'][0]
+        else:
+          Mount[tag] = MountDef['mType'][0]
+      except Exception:
+        Mount[tag] = MountDef['mType'][0]   
 
     elif ((tag == 'mlc1') or (tag == 'mlc2') or (tag == 'mhc1') or (tag == 'mhc2')):   # Current values need multiply by 10    
       Mount[tag] = int(resp)
@@ -587,7 +617,7 @@ def updateStatus(comm):
   window['axis2'].update("Axis 2 Steps: %s" % getValue(comm, 'GXDP1'))
   window['axis1deg'].update("Axis 1 Deg: %s" % getValue(comm, 'GXP1'))
   window['axis2deg'].update("Axis 2 Deg: %s" % getValue(comm, 'GXP2'))
-  statusCode = getValue(comm, 'GXI')
+  statusCode = getStatusFromGXAS(comm)
   try:
     window['pierside'].update("Pier Side: %c" % statusCode[13])
   except:

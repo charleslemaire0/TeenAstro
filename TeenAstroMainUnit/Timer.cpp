@@ -153,7 +153,23 @@ static void UpdateIntervalTrackingGuiding(GuideAxis* guideA, StatusAxis* staA,
       }
     }
   }
-  volatile double sumRateA = mount.tracking.sideralTracking ? fabs(tmp_guideRateA + staA->CurrentTrackingRate) : fabs(tmp_guideRateA);
+  // Compute the effective rate that sets the step interval.
+  // - When tracking is OFF and we're in pulse/ST4 guiding, use the pure guiding rate
+  //   (magnitude only) so the interval reflects only the pulse, in HA space.
+  // - When tracking is ON, keep using |tracking + guiding| so RA motion reflects both.
+  volatile double sumRateA;
+  if (!mount.tracking.sideralTracking &&
+      (mount.guiding.GuidingState == Guiding::GuidingPulse || mount.guiding.GuidingState == Guiding::GuidingST4) &&
+      guideA->isBusy())
+  {
+    sumRateA = fabs(guideA->getRate());
+  }
+  else
+  {
+    sumRateA = mount.tracking.sideralTracking
+      ? fabs(tmp_guideRateA + staA->CurrentTrackingRate)
+      : fabs(tmp_guideRateA);
+  }
   staA->setIntervalfromRate(sumRateA, minInterval, maxInterval);
 }
 
@@ -178,7 +194,7 @@ static void BacklashComp(GuideAxis* guideA, StatusAxis* staA,
     thisIntervalAxis = staA->backlash_interval_Step;
     wasInbacklashAxis = true;
   }
-  if (mount.tracking.sideralTracking && !mount.tracking.movingTo)
+  if (mount.tracking.sideralTracking && !mount.isMovingTo())
   {
     // travel through the backlash is done, but we weren't following the target while it was happening!
     // so now get us back to near where we need to be
@@ -228,8 +244,26 @@ ISR(TIMER1_COMPA_vect)
 { 
   rtk.m_lst++;
   // in this mode the target is always a bit faster than the scope because we move first the target!!
-  if (!mount.tracking.movingTo)
+  if (!mount.isMovingTo())
   {
+    // Advance pulse-guide targets every sidereal tick so they stay in sync with steps.
+    // (performPulseGuiding() only runs when the main loop sees a new tick; if the loop
+    // runs slower than the tick rate, target would lag and brake→idle would take seconds.)
+    if (mount.guiding.GuidingState == Guiding::GuidingPulse)
+    {
+      if (mount.guiding.guideA1.isMoving() && mount.guiding.guideA1.duration > 0UL)
+      {
+        cli();
+        mount.axes.staA1.target += mount.guiding.guideA1.getAmount();
+        sei();
+      }
+      if (mount.guiding.guideA2.isMoving() && mount.guiding.guideA2.duration > 0UL)
+      {
+        cli();
+        mount.axes.staA2.target += mount.guiding.guideA2.getAmount();
+        sei();
+      }
+    }
     // guide rate acceleration/deceleration
     UpdateIntervalTrackingGuiding1();
     UpdateIntervalTrackingGuiding2();

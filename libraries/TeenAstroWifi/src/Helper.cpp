@@ -10,9 +10,8 @@ const char* html_TrackingSpeedDEC PROGMEM =    "Drift Dec: <span class='c'>%.5f 
 
 void TeenAstroWifi::addTrackingInfo(String &data )
 {
-  char temp[300] = "";
-  char temp1[80] = "";
-  ta_MountStatus.updateMount();
+  char temp[128] = "";
+  char temp1[24] = "";
   data += FPSTR(html_TrackingState);
 
   switch (ta_MountStatus.getTrackingState())
@@ -53,13 +52,13 @@ void TeenAstroWifi::addTrackingInfo(String &data )
 
   if (showRates)
   {
-    ta_MountStatus.updateTrackingRate();
+    // Use only cached rates (e.g. from :GXAS#) — no extra serial round-trip on index/status.
     if (ta_MountStatus.hasInfoTrackingRate())
     {
-      float RateRa = ta_MountStatus.getTrackingRateRa() / 10000.0;
+      float RateRa = (float)ta_MountStatus.getTrackingRateRa();
       sprintf_P(temp, html_TrackingSpeedRA, RateRa);
       data += temp;
-      float RateDec = ta_MountStatus.getTrackingRateDec() / 10000.0;
+      float RateDec = (float)ta_MountStatus.getTrackingRateDec();
       sprintf_P(temp, html_TrackingSpeedDEC, RateDec);
       data += temp;
     }

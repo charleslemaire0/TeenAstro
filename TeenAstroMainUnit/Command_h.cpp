@@ -11,7 +11,10 @@ void Command_h() {
   switch (commandState.command[1]) {
   case 'F':
     // :hF#  TeenAstro specific (reset at home)
-    mount.syncAtHome();
+    if (!mount.syncAtHome())
+      replyShortFalse();
+    else
+      replyShortTrue();
     break;
   case 'C':
     // :hC#  TeenAstro specific (goto home)

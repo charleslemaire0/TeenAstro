@@ -17,7 +17,6 @@ void SmartHandController::menuFocuserSettings()
   {
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_FOCUSERSETTINGS, s_sel, string_list_Focuser);
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
-    bool ValueSetRequested = false;
     switch (tmp_sel)
     {
     case 0:
@@ -240,7 +239,7 @@ void SmartHandController::menuFocuserMotor()
       }
       case 3:
       {
-        char * string_list = T_DIRECT "\n" T_REVERSEDROTATION;
+        const char* string_list = T_DIRECT "\n" T_REVERSEDROTATION;
         uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, T_ROTATION, (uint8_t)rev + 1, string_list);
         if (choice)
         {
@@ -259,7 +258,7 @@ void SmartHandController::menuFocuserMotor()
       case 5:
       {
         uint8_t microStep = mu;
-        char * string_list_micro = "4\n8\n16\n32\n64\n128";
+        const char* string_list_micro = "4\n8\n16\n32\n64\n128";
         uint8_t choice = microStep - 2 + 1;
         choice = display->UserInterfaceSelectionList(&buttonPad, T_MICROSTEP, choice, string_list_micro);
         if (choice)

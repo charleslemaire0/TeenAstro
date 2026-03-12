@@ -1,7 +1,7 @@
 name: teenastro_app
 description: TeenAstro telescope controller - replaces the SHC hardware controller
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.6.0+1
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -13,13 +13,28 @@ dependencies:
   go_router: ^13.0.0
   shared_preferences: ^2.2.2
   intl: ^0.19.0
+  geolocator: ^13.0.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   flutter_lints: ^3.0.1
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  image_path: "assets/icon/app_icon.png"
+  android: true
+  ios: false
+  windows:
+    generate: true
+    image_path: "assets/icon/app_icon.png"
+    icon_size: 256
 
 flutter:
   uses-material-design: true
   assets:
     - assets/catalogs/
+    - assets/data/
+    - assets/icon/

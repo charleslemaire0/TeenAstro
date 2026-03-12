@@ -16,12 +16,18 @@
  */
 #pragma once
 
+#include "IX200Transport.h"
+#ifndef TEENASTRO_NATIVE_BUILD
+#include "StreamTransport.h"
 #include <Arduino.h>
+#endif
 #include <TeenAstroCommandDef.h>
 
 #define LX200_SBUF 20
 #define LX200_LBUF 50
 #define LX200_DEFAULT_TIMEOUT 30   // ms
+#define LX200_GXAS_TIMEOUT   80   // ms — bulk state :GXAS# (longer to tolerate slew/focuser delay)
+#define LX200_FOCUSER_TIMEOUT 200  // ms — focuser binary commands pass through main unit
 
 // Semantic timeout presets for consumers
 #ifndef TIMEOUT_CMD
@@ -38,14 +44,23 @@ public:
   //  Construction
   // -----------------------------------------------------------------------
 
+#ifndef TEENASTRO_NATIVE_BUILD
   /// Construct a client attached to the given serial stream.
   explicit LX200Client(Stream& serial, unsigned long timeoutMs = LX200_DEFAULT_TIMEOUT);
+#endif
+
+  /// Construct a client using an abstract transport (for Windows DLL, tests).
+  explicit LX200Client(IX200Transport& transport, unsigned long timeoutMs = LX200_DEFAULT_TIMEOUT);
+
+  ~LX200Client();
 
   /// Change the default command timeout (milliseconds).
   void setTimeout(unsigned long ms) { m_timeout = ms; }
 
-  /// Access the underlying stream (e.g. for direct use or diagnostics).
-  Stream& stream() { return m_serial; }
+#ifndef TEENASTRO_NATIVE_BUILD
+  /// Access the underlying stream (valid only when constructed with Stream&).
+  Stream& stream() { return *m_stream; }
+#endif
 
   // -----------------------------------------------------------------------
   //  Core I/O  (public for advanced / generic use)
@@ -128,17 +143,11 @@ public:
   // -----------------------------------------------------------------------
   //  Mount state & diagnostics
   // -----------------------------------------------------------------------
-  LX200RETURN getMountStateRaw(char* out, int len);    // :GXI#
   LX200RETURN getFocuserStatus(char* out, int len);    // :F?#
 
   // -----------------------------------------------------------------------
   //  Tracking rates (typed)
   // -----------------------------------------------------------------------
-  LX200RETURN getTrackRateRA(long& value);             // :GXRr#
-  LX200RETURN getTrackRateDec(long& value);            // :GXRd#
-  LX200RETURN getStoredTrackRateRA(long& value);       // :GXRe#
-  LX200RETURN getStoredTrackRateDec(long& value);      // :GXRf#
-
   // -----------------------------------------------------------------------
   //  Location / Observatory
   // -----------------------------------------------------------------------
@@ -351,6 +360,8 @@ public:
   //  Focuser config (write)
   // -----------------------------------------------------------------------
   LX200RETURN getFocuserConfigRaw(char* out, int len);      // :F~#
+  LX200RETURN getFocuserAllConfig(char* out, int len);     // :FA# binary base64
+  LX200RETURN getFocuserAllState(char* out, int len);      // :Fa# binary base64
   LX200RETURN setFocuserPark(int val);                      // :F0,val#
   LX200RETURN setFocuserMaxPos(int val);                    // :F1,val#
   LX200RETURN setFocuserLowSpeed(int val);                  // :F2,val#
@@ -436,8 +447,12 @@ public:
                                unsigned int& curr, unsigned int& steprot);
 
 private:
-  Stream&        m_serial;
-  unsigned long  m_timeout;
+#ifndef TEENASTRO_NATIVE_BUILD
+  StreamTransport* m_ownedTransport;  // non-null only when constructed with Stream&
+  Stream*          m_stream;          // non-null only when constructed with Stream&
+#endif
+  IX200Transport*  m_transport;
+  unsigned long    m_timeout;
 
   void flushInput();
 };

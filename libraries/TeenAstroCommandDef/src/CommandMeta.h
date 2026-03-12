@@ -64,8 +64,8 @@ inline CMDREPLY getReplyType(const char* command)
   {
   // ---- A  Alignment ---------------------------------------------------
   case Cmd::ALIGNMENT:
-    if (strchr("*023CWA", command[2])) return CMDR_SHORT_BOOL;
-    if (strchr("E", command[2]))       return CMDR_LONG;
+    if (strchr("*0123456789CWA", command[2])) return CMDR_SHORT_BOOL;
+    if (strchr("E", command[2]))              return CMDR_LONG;
     return CMDR_INVALID;
 
   // ---- B  Reticule brightness ----------------------------------------
@@ -88,13 +88,14 @@ inline CMDREPLY getReplyType(const char* command)
   case Cmd::ENCODER:
     if (strchr("ACD", command[2])) return CMDR_LONG;
     if (command[2] == 'M' && strchr("ASUQ", command[3])) return CMDR_SHORT;
+    if (command[2] == 'W' && (command[3] == '1' || command[3] == '0')) return CMDR_SHORT_BOOL;  // EW1#/EW0# emu WiFi
     return CMDR_INVALID;
 
   // ---- F  Focuser -----------------------------------------------------
   case Cmd::FOCUSER:
     if (strchr("+-gGPQsS$!", command[2]))                    return CMDR_NO;
     if (strchr("OoIi:012345678cCmrW", command[2]))           return CMDR_SHORT_BOOL;
-    if (strchr("x?~MV", command[2]))                         return CMDR_LONG;
+    if (strchr("x?~MVAa", command[2]))                       return CMDR_LONG;
     return CMDR_INVALID;
 
   // ---- g  GNSS --------------------------------------------------------
@@ -110,8 +111,7 @@ inline CMDREPLY getReplyType(const char* command)
 
   // ---- h  Home / Park -------------------------------------------------
   case Cmd::HOME_PARK:
-    if (strchr("F", command[2]))       return CMDR_NO;
-    if (strchr("BbCOPQRS", command[2])) return CMDR_SHORT_BOOL;
+    if (strchr("BbCFOPQRS", command[2])) return CMDR_SHORT_BOOL;
     return CMDR_INVALID;
 
   // ---- M  Move / Slew -------------------------------------------------

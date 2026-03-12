@@ -82,10 +82,25 @@ class _DirButtonState extends State<_DirButton> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) { setState(() => _pressed = true); widget.onStart(); },
-      onTapUp: (_) { setState(() => _pressed = false); widget.onStop(); },
-      onTapCancel: () { setState(() => _pressed = false); widget.onStop(); },
+    return Listener(
+      onPointerDown: (_) {
+        if (!_pressed) {
+          setState(() => _pressed = true);
+          widget.onStart();
+        }
+      },
+      onPointerUp: (_) {
+        if (_pressed) {
+          setState(() => _pressed = false);
+          widget.onStop();
+        }
+      },
+      onPointerCancel: (_) {
+        if (_pressed) {
+          setState(() => _pressed = false);
+          widget.onStop();
+        }
+      },
       child: Container(
         width: 80, height: 80,
         decoration: BoxDecoration(

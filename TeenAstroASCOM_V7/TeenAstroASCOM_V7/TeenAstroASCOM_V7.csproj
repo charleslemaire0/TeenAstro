@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="12.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -85,6 +85,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="TelescopeDriver\TelescopeDriver.cs" />
+    <Compile Include="TelescopeDriver\RARateConversion.cs" />
     <Compile Include="TelescopeDriver\Rates.cs" />
     <Compile Include="TelescopeDriver\TelescopeHardware.cs" />
     <Compile Include="GarbageCollection.cs" />
@@ -99,6 +100,26 @@
       <DependentUpon>SetupDialogForm.cs</DependentUpon>
     </Compile>
     <Compile Include="SharedResources.cs" />
+    <Compile Include="FocuserDriver\Focuser.cs" />
+    <Compile Include="FocuserDriver\FocuserHardware.cs" />
+    <Compile Include="FocuserDriver\FocuserSetupDialogForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FocuserDriver\FocuserSetupDialogForm.designer.cs">
+      <DependentUpon>FocuserSetupDialogForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FocuserDriver\FocuserConfigEepromForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FocuserDriver\FocuserConfigEepromForm.designer.cs">
+      <DependentUpon>FocuserConfigEepromForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TelescopeDriver\TelescopeConfigEepromForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TelescopeDriver\TelescopeConfigEepromForm.designer.cs">
+      <DependentUpon>TelescopeConfigEepromForm.cs</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

@@ -9,7 +9,7 @@
 void Command_D() {
   if (commandState.command[1] != 0)
     return;
-  if (mount.tracking.movingTo) {
+  if (mount.isMovingTo()) {
     commandState.reply[0] = (char)127;
     commandState.reply[1] = 0;
   } else {

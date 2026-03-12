@@ -24,7 +24,7 @@ void Command_M() {
     {
       strcpy(commandState.reply, "h");
     }
-    else if (mount.tracking.movingTo)
+    else if (mount.isMovingTo())
     {
       strcpy(commandState.reply, "s");
     }
@@ -83,13 +83,13 @@ void Command_M() {
     //  Returns: Nothing
     int i;
     if ((atoi2((char *)&commandState.command[3], &i)) &&
-      ((i > 0) && (i <= 30000)) && !mount.tracking.movingTo && mount.errors.lastError == ERRT_NONE &&
+      ((i > 0) && (i <= 30000)) && !mount.isMovingTo() && mount.errors.lastError == ERRT_NONE &&
         (mount.guiding.GuidingState != GuidingRecenter || mount.guiding.GuidingState != GuidingST4))
     {
       if ((commandState.command[2] == 'e') || (commandState.command[2] == 'w'))
       {
         mount.enableST4GuideRate();
-        mount.guiding.guideA1.speedMultiplier = (i > 50) ? ((double)i / 50.0) : 1.0;
+        mount.guiding.guideA1.speedMultiplier = 1.0;
         if (commandState.command[2] == 'e')
         {
           mount.guiding.guideA1.moveBW();
@@ -109,7 +109,7 @@ void Command_M() {
       else if ((commandState.command[2] == 'n') || (commandState.command[2] == 's'))
       {
         mount.enableST4GuideRate();
-        mount.guiding.guideA2.speedMultiplier = (i > 50) ? ((double)i / 50.0) : 1.0;
+        mount.guiding.guideA2.speedMultiplier = 1.0;
         if (mount.getPoleSide() == POLE_UNDER)
         {
           if (commandState.command[2] == 'n')
@@ -153,7 +153,6 @@ void Command_M() {
   case 'w':
     mount.moveAxis1(false, Guiding::GuidingRecenter);
     break;
-  break;
   //  :Mn# & :Ms#      Move Telescope North or South at current slew rate
   //  Returns: Nothing
   case 'n':
@@ -271,7 +270,7 @@ void Command_M() {
   {
     //  :M@V#   Start Spiral Search V in arcminutes
     //         Return 0 if failed, i if success
-    if (mount.tracking.movingTo || mount.guiding.GuidingState != Guiding::GuidingOFF)
+    if (mount.isMovingTo() || mount.guiding.GuidingState != Guiding::GuidingOFF)
       replyShortFalse();
     else
     {

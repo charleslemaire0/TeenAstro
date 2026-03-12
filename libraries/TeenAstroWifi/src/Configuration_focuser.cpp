@@ -1,5 +1,34 @@
 #include "TeenAstroWifi.h"
 #include "HtmlCommon.h"
+
+// Decode focuser binary config (:FA#) — 200 base64 chars -> 150 bytes
+#define FOC_CFG_BIN 150
+#define FOC_CFG_B64 200
+static const int8_t FOC_B64DEC[128] = {
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+  -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
+  52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,
+  -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
+  15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,
+  -1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
+  41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1
+};
+static bool focB64Decode(const char* in, int inLen, uint8_t* out) {
+  if (inLen <= 0 || inLen % 4 != 0) return false;
+  int o = 0;
+  for (int i = 0; i < inLen; i += 4) {
+    uint8_t c0 = (uint8_t)in[i], c1 = (uint8_t)in[i+1], c2 = (uint8_t)in[i+2], c3 = (uint8_t)in[i+3];
+    if (c0 > 127 || c1 > 127 || c2 > 127 || c3 > 127) return false;
+    int8_t v0 = FOC_B64DEC[c0], v1 = FOC_B64DEC[c1], v2 = FOC_B64DEC[c2], v3 = FOC_B64DEC[c3];
+    if (v0 < 0 || v1 < 0 || v2 < 0 || v3 < 0) return false;
+    uint32_t b = ((uint32_t)v0 << 18) | ((uint32_t)v1 << 12) | ((uint32_t)v2 << 6) | (uint32_t)v3;
+    out[o++] = (uint8_t)(b >> 16); out[o++] = (uint8_t)(b >> 8); out[o++] = (uint8_t)(b);
+  }
+  return true;
+}
+static uint16_t getU16LE(const uint8_t* p, int off) { return (uint16_t)p[off] | ((uint16_t)p[off+1] << 8); }
+
 // -----------------------------------------------------------------------------------
 // configuration_focuser
 const char html_configParkFocuser[] PROGMEM =
@@ -118,7 +147,6 @@ void TeenAstroWifi::handleConfigurationFocuser()
 {
   if (busyGuard()) return;
   char temp[320] = "";
-  char temp1[80] = "";
   String data;
   sendHtmlStart();
   processConfigurationFocuserGet();
@@ -126,75 +154,103 @@ void TeenAstroWifi::handleConfigurationFocuser()
   sendHtml(data);
   data += "<div class='card'>";
 
-  // Read focuser config via named method
-  if (s_client->getFocuserConfigRaw(temp1, sizeof(temp1)) == LX200_VALUEGET && temp1[0] == '~')
+  char raw[220];
+  if (s_client->getFocuserAllConfig(raw, sizeof(raw)) != LX200_VALUEGET)
   {
-    int park      = (int)strtol(&temp1[1], NULL, 10);
-    int maxPos    = (int)strtol(&temp1[7], NULL, 10);
-    int lowSpeed  = (int)strtol(&temp1[13], NULL, 10);
-    int highSpeed = (int)strtol(&temp1[17], NULL, 10);
-    int gotoAcc   = (int)strtol(&temp1[21], NULL, 10);
-    int manAcc    = (int)strtol(&temp1[25], NULL, 10);
-
-    sprintf_P(temp, html_configParkFocuser, park);
-    data += temp; sendHtml(data);
-    sprintf_P(temp, html_configMaxPositionFocuser, maxPos);
-    data += temp; sendHtml(data);
-    sprintf_P(temp, html_configLowSpeedFocuser, lowSpeed);
-    data += temp; sendHtml(data);
-    sprintf_P(temp, html_configHighSpeedFocuser, highSpeed);
-    data += temp; sendHtml(data);
-    sprintf_P(temp, html_configGotoAccFocuser, gotoAcc);
-    data += temp; sendHtml(data);
-    sprintf_P(temp, html_configManAccFocuser, manAcc);
-    data += temp; sendHtml(data);
-  }
-
-  bool reverse = false;
-  unsigned int micro = 3, resolution = 100, curr = 100, steprot = 100;
-  if (s_client->readFocuserMotor(reverse, micro, resolution, curr, steprot))
-  {
-    data += PSTR("Resolution: <br />");
-    sprintf_P(temp, html_configResolutionFocuser, resolution);
-    data += temp; sendHtml(data);
-
-    data += PSTR("Rotation: <br />");
-    data += FPSTR(html_configRotFocuser_1);
-    data += reverse ? FPSTR(html_configRotFocuser_r) : FPSTR(html_configRotFocuser_d);
-    data += FPSTR(html_configRotFocuser_2);
+    data += "<p>Focuser communication error</p>";
+    data += "</div>";
+    data += FPSTR(html_pageFooter);
     sendHtml(data);
-
-    data += PSTR("Motor: <br />");
-    sprintf_P(temp, html_configStepRotFocuser, steprot);
-    data += temp;
-    sprintf_P(temp, html_configMuFocuser, (int)pow(2., micro));
-    data += temp;
-    sprintf_P(temp, html_configHCFocuser, curr * 10);
-    data += temp; sendHtml(data);
+    sendHtmlDone(data);
+    s_handlerBusy = false;
+    return;
   }
 
-  // User-defined positions
+  int len = (int)strlen(raw);
+  if (raw[len - 1] == '#') len--;
+  uint8_t pkt[FOC_CFG_BIN];
+  if (len != FOC_CFG_B64 || !focB64Decode(raw, len, pkt))
+  {
+    data += "<p>Focuser binary decode error</p>";
+    data += "</div>";
+    data += FPSTR(html_pageFooter);
+    sendHtml(data);
+    sendHtmlDone(data);
+    s_handlerBusy = false;
+    return;
+  }
+  uint8_t xorChk = 0;
+  for (int i = 0; i < FOC_CFG_BIN - 1; i++) xorChk ^= pkt[i];
+  if (xorChk != pkt[FOC_CFG_BIN - 1])
+  {
+    data += "<p>Focuser checksum error</p>";
+    data += "</div>";
+    data += FPSTR(html_pageFooter);
+    sendHtml(data);
+    sendHtmlDone(data);
+    s_handlerBusy = false;
+    return;
+  }
+
+  int park      = (int)getU16LE(pkt, 0);
+  int maxPos    = (int)getU16LE(pkt, 2);
+  int lowSpeed  = (int)getU16LE(pkt, 4);
+  int highSpeed = (int)getU16LE(pkt, 6);
+  int gotoAcc   = (int)pkt[8];
+  int manAcc    = (int)pkt[9];
+  int manDec    = (int)pkt[10];
+  bool reverse  = (pkt[11] != 0);
+  unsigned int micro = pkt[12];
+  unsigned int resolution = getU16LE(pkt, 13);
+  unsigned int curr = pkt[15];
+  unsigned int steprot = getU16LE(pkt, 16);
+
+  sprintf_P(temp, html_configParkFocuser, park);
+  data += temp; sendHtml(data);
+  sprintf_P(temp, html_configMaxPositionFocuser, maxPos);
+  data += temp; sendHtml(data);
+  sprintf_P(temp, html_configLowSpeedFocuser, lowSpeed);
+  data += temp; sendHtml(data);
+  sprintf_P(temp, html_configHighSpeedFocuser, highSpeed);
+  data += temp; sendHtml(data);
+  sprintf_P(temp, html_configGotoAccFocuser, gotoAcc);
+  data += temp; sendHtml(data);
+  sprintf_P(temp, html_configManAccFocuser, manAcc);
+  data += temp; sendHtml(data);
+  sprintf_P(temp, html_configManDecFocuser, manDec);
+  data += temp; sendHtml(data);
+
+  data += PSTR("Resolution: <br />");
+  sprintf_P(temp, html_configResolutionFocuser, resolution);
+  data += temp; sendHtml(data);
+  data += PSTR("Rotation: <br />");
+  data += FPSTR(html_configRotFocuser_1);
+  data += reverse ? FPSTR(html_configRotFocuser_r) : FPSTR(html_configRotFocuser_d);
+  data += FPSTR(html_configRotFocuser_2);
+  sendHtml(data);
+  data += PSTR("Motor: <br />");
+  sprintf_P(temp, html_configStepRotFocuser, steprot);
+  data += temp;
+  sprintf_P(temp, html_configMuFocuser, (int)pow(2., (double)micro));
+  data += temp;
+  sprintf_P(temp, html_configHCFocuser, curr * 10);
+  data += temp; sendHtml(data);
+
   data += PSTR("Userdefined Position: <br />");
   data += PSTR("to remove a position set an empty name <br />");
   for (int k = 0; k < 10; k++)
   {
-    if (s_client->getFocuserUserPos(k, temp1, sizeof(temp1)) == LX200_VALUEGET && temp1[0] != 0)
-    {
-      if (temp1[0] == '0')
-      {
-        sprintf_P(temp, html_configPosFocuser, "undefined", k, 0, k);
-        data += temp;
-      }
-      else if (temp1[0] == 'P')
-      {
-        char id[11];
-        memcpy(id, &temp1[7], sizeof(id));
-        int pos = (int)strtol(&temp1[1], NULL, 10);
-        sprintf_P(temp, html_configPosFocuser, id, k, pos, k);
-        data += temp;
-        sendHtml(data);
-      }
-    }
+    int base = 18 + k * 13;
+    uint16_t pos = getU16LE(pkt, base);
+    char id[12];
+    memcpy(id, &pkt[base + 2], 11);
+    id[11] = '\0';
+    if (id[0] == '\0')
+      sprintf_P(temp, html_configPosFocuser, "undefined", k, 0, k);
+    else
+      sprintf_P(temp, html_configPosFocuser, id, k, (int)pos, k);
+    data += temp;
+    sendHtml(data);
   }
 
   data += "</div>"; // close card

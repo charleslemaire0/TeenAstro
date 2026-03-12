@@ -4,12 +4,27 @@ import 'package:go_router/go_router.dart';
 import '../services/lx200_tcp_client.dart';
 import '../services/mount_state_provider.dart';
 import '../theme.dart';
+import '../widgets/site_card.dart';
+import '../widgets/sync_panel.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(mountStateProvider.notifier).refreshSite();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(mountStateProvider);
     final client = ref.read(lx200ClientProvider);
 
@@ -34,6 +49,14 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
         ),
+        const SizedBox(height: 12),
+
+        // Time and Location Sync
+        const TimeSyncCard(),
+        const SizedBox(height: 12),
+
+        // Site selection and naming
+        const SiteCard(),
         const SizedBox(height: 12),
 
         // Alignment

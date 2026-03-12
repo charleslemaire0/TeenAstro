@@ -7,6 +7,7 @@ class DateTimeTimers
 {
 public:
   volatile long           m_lst = 0;                    // this is the local (apparent) sidereal time in 1/100 seconds (23h 56m 4.1s per day = 86400 clock seconds/
+  volatile long           m_missedTicks = 0;             // accumulated missed sidereal ticks (for :GXDW1#/:GXDW2#)
 private:
 
   //timers members
@@ -129,17 +130,20 @@ public:
   }
 
   //TIMERS
-  bool updatesiderealTimer()
+  long updatesiderealTimer()
   {
     cli();
     long    tempLst = m_lst;
     sei();
-    if (tempLst != m_siderealTimer)
+    long elapsed = tempLst - m_siderealTimer;
+    if (elapsed > 0)
     {
       m_siderealTimer = tempLst;
-      return true;
+      if (elapsed > 1)
+        m_missedTicks += (elapsed - 1);
+      return elapsed;
     }
-    return false;
+    return 0;
   }
   bool updateguideSiderealTimer()
   {
@@ -268,6 +272,7 @@ private:
   void syncClock()
   {
     update_lst(last());
+    updateTimers();  // Resync sidereal timers so UTCDate read-modify-restore doesn't desync them
   }
 
   // passes Local Apparent Sidereal Time to stepper timer

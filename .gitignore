@@ -1,3 +1,16 @@
+# Debug and test build output (do not commit)
+debug-*.log
+/tests/.pio/
+
+# Temporary / IDE / build artifacts
+.cursor/
+IMPLEMENTATION_PLAN.md
+build_*.txt
+Released data/App/
+/release/ascom/
+/release/msi/
+/release/app/
+
 # Prerequisites
 *.d
 
@@ -194,9 +207,40 @@ UINO.ipch
 /TeenAstroUploader/TeenAstroUploader/builder/log_Foc_TMC5160_240.txt
 /TeenAstroUploader/TeenAstroUploader/builder/MainUnit_Build/TeenAstroMainUnit.ino.lst
 /TeenAstroUploader/TeenAstroUploader/builder/TeenAstroSHC_1.5/
+/TeenAstroUploader/TeenAstroUploader/builder/TeenAstroSHC_1.6/
 /TeenAstroASCOM/.vs/
+/TeenAstroASCOM_V71/.vs/
 /TeenAstroUploader/.vs/
+TeenAstroAscomNative/.pio/
 /TeenAstroUploader/TeenAstroUploader/builder/Focuser_Build
+/.vs/TeenAstro.slnx/copilot-chat/55dc65b2/sessions/b8a2bd43-a766-4397-972e-3546054716bd
+/.vs/TeenAstro.slnx/FileContentIndex/0a9298b3-d62f-444a-8a4f-a48e5417f4e1.vsidx
+/.vs/TeenAstro.slnx/FileContentIndex/5545777a-dbfc-4a58-82d5-5f344affcfc5.vsidx
+/.vs/TeenAstro.slnx/FileContentIndex/6cdb7f51-6013-4741-a8ec-8ef09b73d41b.vsidx
+/.vs/TeenAstro.slnx/FileContentIndex/911818c5-130a-43fa-9e60-d8b81e5410b6.vsidx
+/.vs/TeenAstro.slnx/FileContentIndex/bcab8748-4e73-4161-9c33-2b9ec16b3f70.vsidx
+/.vs/TeenAstro.slnx/v18/ipch/AutoPCH/b5088cf5dabce42a/TEENASTROMAINUNIT.ipch
+/.vs/TeenAstro.slnx/v18/ipch/AutoPCH/bd35ad6697ac0583/COMMAND_GNSS.ipch
+/.vs/TeenAstro.slnx/v18/.wsuo
+/.vs/TeenAstro.slnx/v18/Browse.VC.db
+/.vs/TeenAstro.slnx/v18/DocumentLayout.backup.json
+/.vs/TeenAstro.slnx/v18/DocumentLayout.json
+/.vs/TeenAstro.slnx/v18/Solution.VC.db
+/.vs/TeenAstro/CopilotIndices/18.0.988.22099/CodeChunks.db
+/.vs/TeenAstro/CopilotIndices/18.0.988.22099/SemanticSymbols.db
+/.vs/TeenAstro/v18/workspaceFileList.bin
+/.vs/CMakeWorkspaceSettings.json
+/.vs/ProjectSettings.json
+/.vs/slnx.sqlite
+/.vs/VSWorkspaceState.json
+/TeenAstroASCOM_V71/.vs/TeenAstroASCOM_V71.slnx/FileContentIndex/45290ba4-892e-47a9-aa1a-a111e5e44851.vsidx
+/TeenAstroASCOM_V71/.vs/TeenAstroASCOM_V71.slnx/v18/.suo
+/TeenAstroASCOM_V71/.vs/TeenAstroASCOM_V71.slnx/v18/DocumentLayout.json
+/.vs/TeenAstro.slnx/FileContentIndex/39938e82-8233-476b-88c5-20f4b232f5bd.vsidx
+/.vs/TeenAstro.slnx/FileContentIndex/665302cd-4a90-4071-9592-d7af6eb7077b.vsidx
+/.vs/TeenAstro.slnx/FileContentIndex/a6ff5263-5921-46b8-8aa9-cf5f7d3e4467.vsidx
+/.vs/TeenAstro.slnx/FileContentIndex/d3ca94ca-5752-490d-bd74-856f2677d12d.vsidx
+/.vs/TeenAstro.slnx/FileContentIndex/f4591fe9-2499-466f-b3b5-4bfd13781fbc.vsidx
 /.DS_Store
 /TeenAstroConfig/.DS_Store
 /TeenAstroConfig/__pycache__/

@@ -200,11 +200,15 @@ static void Command_SX_Rates()
     replyValueSetShort(true);
     break;
   case 'r':
-    // :SXRr,VVVVVVVVVV# Set Rate for RA
-    mount.tracking.sideralMode = SIDM_TARGET;
-    mount.tracking.RequestedTrackingRateHA = (double)(10000l - strtol(&commandState.command[5], NULL, 10)) / 10000.;
-    mount.computeTrackingRate(true);
-    replyValueSetShort(true);
+    // :SXRr,VAL# Set Rate for RA (VAL float: ASCOM RA rate in RA sec/sidereal sec, HA = 1 - val)
+    {
+      char* endptr;
+      double val = strtod(&commandState.command[5], &endptr);
+      mount.tracking.sideralMode = SIDM_TARGET;
+      mount.tracking.RequestedTrackingRateHA = 1.0 - val;
+      mount.computeTrackingRate(true);
+      replyValueSetShort(true);
+    }
     break;
   case 'h':
     // :SXRh,VVVVVVVVVV# Set Rate for HA
@@ -214,11 +218,13 @@ static void Command_SX_Rates()
     replyValueSetShort(true);
     break;
   case 'd':
-    // :SXRd,VVVVVVVVVV# Set Rate for DEC
+    // :SXRd,VAL# Set Rate for DEC (VAL float: arcsec/s)
     if (mount.tracking.trackComp == TC_BOTH)
     {
+      char* endptr;
+      double val = strtod(&commandState.command[5], &endptr);
       mount.tracking.sideralMode = SIDM_TARGET;
-      mount.tracking.RequestedTrackingRateDEC = (double)strtol(&commandState.command[5], NULL, 10) / 10000.0;
+      mount.tracking.RequestedTrackingRateDEC = val;
       mount.computeTrackingRate(true);
       replyValueSetShort(true);
     }

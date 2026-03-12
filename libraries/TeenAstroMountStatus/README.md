@@ -59,20 +59,9 @@ ta_MountStatus.checkConnection(major, minor);
 
 `getRa()`, `getDec()`, `getHa()`, `getAz()`, `getAlt()`, `getUTC()`, `getSidereal()`, axis steps/degrees, tracking rates, and version strings.
 
-## Status string format
+## Status and all-state
 
-The `:GXI#` command returns a fixed-format string where each character index encodes a specific field:
-
-| Index | Field | Encoding |
-|-------|-------|----------|
-| 0 | Tracking | `0`=off, `1`=on, `2`/`3`=slewing |
-| 1 | Sidereal mode | `0`-`3` |
-| 2 | Park state | `P`/`p`/`I`/`F` |
-| 3 | At home | `H` = yes |
-| 4 | Guiding rate | `0`-`4` |
-| 12 | Mount type | `E`/`K`/`A`/`k` |
-| 13 | Pier side | `E`/`W` |
-| 15 | Error code | `0`-`8` |
+Mount status (tracking, park, pier, errors, etc.) is obtained via `:GXAS#`, which returns a base64-encoded binary packet. Use `updateAllState()` (or `updateMount()`, which calls it) to refresh the cached `MountState`.
 
 ## Dependencies
 

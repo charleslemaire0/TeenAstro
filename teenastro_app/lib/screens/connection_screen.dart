@@ -138,6 +138,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
               ),
               const SizedBox(height: 32),
               TextField(
+                key: const Key('connect_ip'),
                 controller: _ipController,
                 decoration: const InputDecoration(
                   labelText: 'IP Address',
@@ -147,6 +148,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
               ),
               const SizedBox(height: 16),
               TextField(
+                key: const Key('connect_port'),
                 controller: _portController,
                 decoration: const InputDecoration(
                   labelText: 'Port',
@@ -159,6 +161,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton.icon(
+                  key: const Key('connect_btn'),
                   onPressed: _connecting ? null : _connect,
                   icon: _connecting
                       ? const SizedBox(width: 20, height: 20,

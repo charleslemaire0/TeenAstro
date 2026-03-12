@@ -7,13 +7,30 @@ import '../models/mount_state.dart';
 import '../theme.dart';
 import '../widgets/status_bar.dart';
 
-class TrackingScreen extends ConsumerWidget {
+class TrackingScreen extends ConsumerStatefulWidget {
   const TrackingScreen({super.key});
+  @override
+  ConsumerState<TrackingScreen> createState() => _TrackingScreenState();
+}
+
+class _TrackingScreenState extends ConsumerState<TrackingScreen> {
+  bool? _pendingTracking;
+  bool? _pendingDualAxis;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final client = ref.read(lx200ClientProvider);
     final state = ref.watch(mountStateProvider);
+
+    final trackingOn = _pendingTracking ?? state.isTracking;
+    final dualAxisOn = _pendingDualAxis ?? state.trackCorrected;
+
+    if (_pendingTracking != null && _pendingTracking == state.isTracking) {
+      _pendingTracking = null;
+    }
+    if (_pendingDualAxis != null && _pendingDualAxis == state.trackCorrected) {
+      _pendingDualAxis = null;
+    }
 
     return ListView(
       padding: const EdgeInsets.all(12),
@@ -21,7 +38,6 @@ class TrackingScreen extends ConsumerWidget {
         MountStatusBar(state: state),
         const SizedBox(height: 16),
 
-        // On/Off toggle
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -30,9 +46,12 @@ class TrackingScreen extends ConsumerWidget {
               children: [
                 Text('Tracking', style: Theme.of(context).textTheme.titleLarge),
                 Switch(
-                  value: state.isTracking,
+                  value: trackingOn,
                   activeTrackColor: TAColors.success,
-                  onChanged: (on) => client.send(on ? LX200.trackOn : LX200.trackOff),
+                  onChanged: (on) {
+                    setState(() => _pendingTracking = on);
+                    client.send(on ? LX200.trackOn : LX200.trackOff);
+                  },
                 ),
               ],
             ),
@@ -40,7 +59,6 @@ class TrackingScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
 
-        // Rate selection
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -69,7 +87,6 @@ class TrackingScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
 
-        // Fine rate adjust
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -105,7 +122,6 @@ class TrackingScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
 
-        // Options
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -114,8 +130,11 @@ class TrackingScreen extends ConsumerWidget {
                 SwitchListTile(
                   title: const Text('Dual-Axis Tracking'),
                   subtitle: const Text('Apply tracking correction on both axes'),
-                  value: false, // would need to track this in state
-                  onChanged: (on) => client.send(on ? LX200.trackDualOn : LX200.trackDualOff),
+                  value: dualAxisOn,
+                  onChanged: (on) {
+                    setState(() => _pendingDualAxis = on);
+                    client.send(on ? LX200.trackDualOn : LX200.trackDualOff);
+                  },
                 ),
               ],
             ),

@@ -28,7 +28,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-RELEASE_VERSION = "1.5"
+RELEASE_VERSION = "1.6"
 
 # Repo root is the directory containing this script
 REPO_ROOT = Path(__file__).resolve().parent

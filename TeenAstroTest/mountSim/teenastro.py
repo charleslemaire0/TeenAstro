@@ -4,7 +4,7 @@
 #
 # (C) 2020, François Desvallées
 
-import platform, re, json, sys, math
+import platform, re, json, sys, math, base64
 from telnetlib import Telnet
 import serial, time, datetime
 import serial.tools.list_ports
@@ -209,9 +209,32 @@ class TeenAstro(object):
   def readStatus(self):
     if (self.port != None):
       try:
-        self.status= self.getValue(':GXI#')
-      except:
-        print ("Error reading status")    
+        b64 = self.getValue(':GXAS#')
+        if len(b64) >= 136:
+          pkt = base64.b64decode(b64)
+          if len(pkt) >= 5:
+            b0, b1, b2, b4 = pkt[0], pkt[1], pkt[2], pkt[4]
+            s = [' '] * 18
+            s[0] = chr(ord('0') + min(b0 & 0x3, 3))
+            s[2] = ['p', 'I', 'P', 'F'][(b0 >> 4) & 0x3]
+            s[3] = 'H' if (b0 >> 6) & 1 else ' '
+            mt = (b1 >> 4) & 0x7
+            s[12] = 'E' if mt == 1 else 'K' if mt == 2 else 'A' if mt == 3 else 'k' if mt == 4 else 'U'
+            s[13] = 'W' if (b0 >> 7) & 1 else 'E'
+            s[15] = chr(ord('0') + min(b4, 8))
+            s[5] = '@' if (b1 >> 7) & 1 else ('G' if (b2 >> 7) & 1 else ' ')
+            s[6] = '*' if (b2 >> 7) & 1 else ' '
+            ew, ns = b2 & 0x3, (b2 >> 2) & 0x3
+            s[7] = '>' if ew == 1 else '<' if ew == 2 else 'b' if ew == 3 else ' '
+            s[8] = '^' if ns == 1 else '_' if ns == 2 else 'b' if ns == 3 else ' '
+            self.status = ''.join(s)
+          else:
+            self.status = ' ' * 18
+        else:
+          self.status = ' ' * 18
+      except Exception:
+        print ("Error reading status")
+        self.status = ' ' * 18    
 
   def readMountType(self):
     self.readStatus()

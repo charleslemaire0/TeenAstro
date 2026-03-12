@@ -23,6 +23,7 @@
  * Description: Command dispatcher and reply helpers; commandState and rtk. See Command.h.
  */
 #include "Command.h"
+#include <string.h>
 
 // -----------------------------------------------------------------------------
 // Command/serial state and real-time clock (single definitions)
@@ -55,12 +56,37 @@ void processCommands() {
 
   commandState.S_USB_.update();
   commandState.S_SHC_.update();
+#ifdef EMU_MAINUNIT
+  commandState.S_WiFi_.update();
+#endif
 
   commandState.S_SHC_.getCmdPar(commandState.command, process_command);
   commandState.S_USB_.getCmdPar(commandState.command, process_command);
+#ifdef EMU_MAINUNIT
+  commandState.S_WiFi_.getCmdPar(commandState.command, process_command);
+#endif
 
   if (process_command == COMMAND_NONE)
     return;
+
+#ifdef EMU_MAINUNIT
+  extern void emu_wifiStart(void);
+  extern void emu_wifiStop(void);
+  if (process_command == COMMAND_SERIAL1) {
+    if (strcmp(commandState.command, "EW1") == 0) {
+      emu_wifiStart();
+      replyShortTrue();
+      commandState.S_SHC_.reply(commandState.reply, process_command);
+      return;
+    }
+    if (strcmp(commandState.command, "EW0") == 0) {
+      emu_wifiStop();
+      replyShortTrue();
+      commandState.S_SHC_.reply(commandState.reply, process_command);
+      return;
+    }
+  }
+#endif
 
   clearReply();
 
@@ -87,8 +113,12 @@ void processCommands() {
   }
 
   if (strlen(commandState.reply) > 0) {
+    padReplyToExpectedLength();
     commandState.S_USB_.reply(commandState.reply, process_command);
     commandState.S_SHC_.reply(commandState.reply, process_command);
+#ifdef EMU_MAINUNIT
+    commandState.S_WiFi_.reply(commandState.reply, process_command);
+#endif
   }
   if (mount.motorsEncoders.reboot_unit)
     reboot();
@@ -128,4 +158,24 @@ void replyNothing() {
 void clearReply() {
   for (int i = 0; i < REPLY_BUFFER_LEN; i++)
     commandState.reply[i] = '\0';
+}
+
+// -----------------------------------------------------------------------------
+// Pad CMDR_LONG replies to fixed length (leading blanks) for validation
+// -----------------------------------------------------------------------------
+void padReplyToExpectedLength() {
+  char* r = commandState.reply;
+  char* hash = strchr(r, '#');
+  if (!hash)
+    return;
+  int payloadLen = (int)(hash - r);
+  int expected = getExpectedReplyLength(commandState.command);
+  if (expected <= 0 || payloadLen >= expected)
+    return;
+  int pad = expected - payloadLen;
+  if (payloadLen + pad + 1 + 1 > REPLY_BUFFER_LEN)  // payload + pad + '#' + NUL
+    return;
+  memmove(r + pad, r, payloadLen + 1);  // move payload and '#' and NUL
+  for (int i = 0; i < pad; i++)
+    r[i] = ' ';
 }

@@ -68,6 +68,7 @@ public:
   // Phase 2a: query methods
   bool isParked() const;
   bool isAtHome() const;
+  bool isMovingTo() const;
   bool isSlewing() const;
   PoleSide getPoleSide() const;
   PoleSide getTargetPoleSide() const;
@@ -195,7 +196,7 @@ public:
   void loadGuideRatesFromEEPROM();
   void loadSiderealFromEEPROMAndStartTimers();
   void configureFaultPins();
-  void onSiderealTick(long phase, bool forceTracking);
+  void onSiderealTick(long phase, bool forceTracking, long elapsed = 1);
   void updateEncoderSync(bool runThisLoop);
   void updateStatusLed(int ledPin) const;
 

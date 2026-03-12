@@ -148,7 +148,7 @@ void Command_SX()
       replyShortTrue();
       break;
     case 'r':
-      // :SXRr,VVVVVVVVVV# Set Rate for RA 
+      // :SXRr,VAL# Set Rate for RA (VAL float: ASCOM RA rate, HA = 1 - val)
       siderealMode = SIDM_TARGET;
       RequestedTrackingRateHA = (double)(10000l - strtol(&command[5], NULL, 10)) / 10000.;
       if (isTracking())
@@ -159,7 +159,7 @@ void Command_SX()
       replyValueSetShort(true);
       break;
     case 'h':
-      // :SXRh,VVVVVVVVVV# Set Rate for HA
+      // :SXRh,VAL# Set Rate for HA (VAL float)
       siderealMode = SIDM_TARGET;
       RequestedTrackingRateHA = (double)strtol(&command[5], NULL, 10) / 10000.0;
       if (isTracking())

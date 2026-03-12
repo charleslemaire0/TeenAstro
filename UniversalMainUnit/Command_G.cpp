@@ -317,29 +317,6 @@ void Command_GX()
       // :GXRX# return Max Slew rate
       sprintf(reply, "%d#", XEEPROM.readInt(getMountAddress(EE_maxRate)));
       break;
-    case 'r':
-      // :GXRr# Requested RA traking rate in sidereal
-      l1 = -(RequestedTrackingRateHA - 1.0) * 10000.0;
-      sprintf(reply, "%ld#", l1);
-      break;
-    case 'h':
-      l1 = RequestedTrackingRateHA * 10000.0;
-      // :GXRh# Requested HA traking rate in sidereal
-      sprintf(reply, "%ld#", l1);
-      break;
-    case 'd':
-      // :GXRd# Requested DEC traking rate in sidereal
-      l1 = RequestedTrackingRateDEC * 10000.0;
-      sprintf(reply, "%ld#", l1);
-      break;
-    case 'e':
-      // :GXRe,VVVVVVVVVV# get stored Rate for RA
-      sprintf(reply, "%ld#", storedTrackingRateRA);
-      break;
-    case 'f':
-      // :GXRf,VVVVVVVVVV# get stored Rate for DEC
-      sprintf(reply, "%ld#", storedTrackingRateDEC);
-      break;
     default:
         replyLongUnknown();
       break;
@@ -899,7 +876,7 @@ void  Command_G()
   case 'C':
     //  :GC#   Get the current date, Native LX200 command
     //         Returns: MM/DD/YY#
-    //         The current local calendar date
+    //         The current local calendar date. Reply may be slow if RTC read (getULDate) blocks.
   {
     int i1, i2, i3, i4, i5;
     rtk.getULDate(i2, i, i1, i3, i4, i5, localSite.toff());

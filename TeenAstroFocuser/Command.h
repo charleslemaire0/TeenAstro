@@ -36,6 +36,8 @@
 #define CmdDumpConfig '~'
 #define CmdDumpConfigPos 'x'
 #define CmdDumpConfigMotor 'M'
+#define CmdBinConfig 'A'
+#define CmdBinState 'a'
 
 #define FocCmd_startPosition '0'
 #define FocCmd_maxPosition '1'
@@ -87,6 +89,8 @@ private:
   void printvalue(double val, int n, int d, bool plus);
   void dumpConfig();
   void dumpConfigMotor();
+  void dumpAllConfig();
+  void dumpAllState();
   void sayHello();
 
   bool setvalue(bool valuedefined, unsigned int value, Parameteruint *adress);

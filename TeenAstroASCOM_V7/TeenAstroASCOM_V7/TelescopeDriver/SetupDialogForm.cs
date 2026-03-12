@@ -161,5 +161,51 @@ namespace ASCOM.TeenAstro.Telescope
     {
       this.Close();
     }
+
+    private void Button1_Click(object sender, EventArgs e)
+    {
+      SaveCurrentState();
+      TelescopeHardware.WriteProfile();
+
+      Guid tempId = Guid.NewGuid();
+      bool wasConnected = ASCOM.LocalServer.SharedResources.IsConnected;
+      try
+      {
+        if (!wasConnected)
+          TelescopeHardware.SetConnected(tempId, true);
+
+        using (var form = new TelescopeConfigEepromForm())
+          form.ShowDialog(this);
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show("Connection failed: " + ex.Message, "Error",
+          MessageBoxButtons.OK, MessageBoxIcon.Error);
+      }
+      finally
+      {
+        if (!wasConnected)
+          TelescopeHardware.SetConnected(tempId, false);
+      }
+    }
+
+    private void SaveCurrentState()
+    {
+      tl.Enabled = chkTrace.Checked;
+      if (RadioButtonSP.Checked)
+      {
+        if (comboBoxComPort.SelectedItem != null && comboBoxComPort.SelectedItem.ToString() != NO_PORTS_MESSAGE)
+        {
+          TelescopeHardware.comPort = comboBoxComPort.SelectedItem.ToString();
+          TelescopeHardware.Interface = "COM";
+        }
+      }
+      else if (RadioButtonIP.Checked)
+      {
+        TelescopeHardware.IP = TextBoxIP.Text;
+        TelescopeHardware.Port = Convert.ToInt16(TextBoxPort.Text);
+        TelescopeHardware.Interface = "IP";
+      }
+    }
   }
 }

@@ -1,0 +1,4 @@
+stage/
+out/
+*.wixobj
+*.msi

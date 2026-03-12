@@ -59,11 +59,6 @@ static unsigned char parkingFailed_bits[] U8X8_PROGMEM = {
     0x99, 0x91, 0xf9, 0x90, 0x19, 0x90, 0xd9, 0x93, 0x59, 0x90, 0xd9, 0x91,
     0x41, 0x80, 0x41, 0x90, 0x01, 0x80, 0xff, 0xff };
 
-static unsigned char guiding_bits[] U8X8_PROGMEM = {
-    0x00, 0x00, 0x80, 0x01, 0x80, 0x01, 0xc0, 0x03, 0x20, 0x04, 0x10, 0x08,
-    0x08, 0x10, 0x8e, 0x71, 0x8e, 0x71, 0x08, 0x10, 0x10, 0x08, 0x20, 0x04,
-    0xc0, 0x03, 0x80, 0x01, 0x80, 0x01, 0x00, 0x00 };
-
 static unsigned char guiding_W_bits[] U8X8_PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0x00, 0x70,
     0x00, 0x78, 0x00, 0x7c, 0x00, 0x7c, 0x00, 0x78, 0x00, 0x70, 0x00, 0x60,
@@ -347,10 +342,12 @@ void SmartHandController::updateMainDisplay(PAGES page)
   u8g2_t* u8g2 = display->getU8g2();
   display->setFont(u8g2_font_helvR12_te);
   u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
-  u8g2_uint_t step1 = u8g2_GetUTF8Width(u8g2, "44");
-  u8g2_uint_t step2 = u8g2_GetUTF8Width(u8g2, "4") + 1;
   ta_MountStatus.removeLastConnectionFailure();
-  ta_MountStatus.updateMount();
+  // Single command refreshes all display state: status, positions (RA/Dec/
+  // Alt/Az/LST/target), UTC date/time, and focuser pos/speed.
+  // Falls back to the legacy per-query path for axis-step/degree pages that
+  // are not covered by the bulk packet.
+  ta_MountStatus.updateAllState();
   if (ta_MountStatus.isAligning())
     page = P_ALIGN;
 
@@ -362,29 +359,14 @@ void SmartHandController::updateMainDisplay(PAGES page)
       ta_MountStatus.nextStepAlign();
     }
   }
-  else if (page == P_RADEC && !ta_MountStatus.isPulseGuiding())
-  {
-    ta_MountStatus.updateRaDec();
-  }
   else if (page == P_HADEC && !ta_MountStatus.isPulseGuiding())
   {
+    // HA is not in the bulk packet — keep individual query for this page only.
     ta_MountStatus.updateHaDec();
-  }
-  else if (page == P_ALTAZ && !ta_MountStatus.isPulseGuiding())
-  {
-    ta_MountStatus.updateAzAlt();
   }
   else if (page == P_PUSH && !ta_MountStatus.isPulseGuiding())
   {
     ta_MountStatus.updatePush();
-  }
-  else if (page == P_TIME && !ta_MountStatus.isPulseGuiding())
-  {
-    ta_MountStatus.updateTime();
-  }
-  else if (page == P_FOCUSER && !ta_MountStatus.isPulseGuiding())
-  {
-    ta_MountStatus.updateFocuser();
   }
   else if (page == P_AXIS_STEP && !ta_MountStatus.isPulseGuiding())
   {
@@ -400,7 +382,6 @@ void SmartHandController::updateMainDisplay(PAGES page)
   {
     u8g2_uint_t xr = u8g2_GetDisplayWidth(u8g2);
     u8g2_uint_t xl = 0;
-    int k = 0;
     if (buttonPad.isWifiOn())
     {
       buttonPad.isWifiRunning() ? display->drawXBMP(xl, 0, icon_width, icon_height, wifi_bits) : display->drawXBMP(0, 0, icon_width, icon_height, wifi_not_connected_bits);
@@ -687,8 +668,6 @@ void SmartHandController::updateMainDisplay(PAGES page)
         display->setFont(u8g2_font_courB18_tn);
         u8g2_uint_t y = 39;
         x = u8g2_GetDisplayWidth(u8g2);
-        const char* txt1 = ta_MountStatus.GetPushA1();
-        const char* txt2 = ta_MountStatus.GetPushA2();
         u8g2_DrawUTF8(u8g2, 20, y, ta_MountStatus.GetPushA1());
         y += 22;
         u8g2_DrawUTF8(u8g2, 20, y, ta_MountStatus.GetPushA2());

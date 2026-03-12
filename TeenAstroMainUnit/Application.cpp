@@ -149,6 +149,10 @@ void Application::setupFocuserProbe()
 }
 
 // Serial/USB/SHC and turn LED off.
+#ifdef EMU_MAINUNIT
+extern void emu_setupCommandSerial();
+void Application::setupCommandSerial() { emu_setupCommandSerial(); }
+#else
 void Application::setupCommandSerial()
 {
   Serial.begin(BAUD);
@@ -157,6 +161,7 @@ void Application::setupCommandSerial()
   commandState.S_SHC_.attach_Stream((Stream*)&Serial1, COMMAND_SERIAL1);
   digitalWrite(LEDPin, LOW);
 }
+#endif
 
 // -----------------------------------------------------------------------------
 // Loop: high-level sequence
@@ -167,17 +172,18 @@ void Application::loop()
   static bool forceTracking = false;
   static ErrorsTraking startLoopError = ERRT_NONE;
 
+  // Process serial commands first so :Q# abort is seen before moveTo runs this iteration.
+  loopCommandsAndStatus(startLoopError);
   startLoopError = mount.errors.lastError;
   loopSt4AndGuiding();
   loopEncoderSync();
   loopSiderealAndSafety(forceTracking);
-  loopCommandsAndStatus(startLoopError);
 }
 
 // ST4, spiral, guide when not moving and motors enabled.
 void Application::loopSt4AndGuiding()
 {
-  if (!mount.tracking.movingTo && mount.motorsEncoders.enableMotor)
+  if (!mount.isMovingTo() && mount.motorsEncoders.enableMotor)
   {
     mount.checkST4();
     mount.checkSpiral();
@@ -209,11 +215,12 @@ void Application::updateForceTracking(bool& forceTracking)
 // Sidereal tick, timer loop, then safety check.
 void Application::loopSiderealAndSafety(bool& forceTracking)
 {
-  if (rtk.updatesiderealTimer())
+  long elapsed = rtk.updatesiderealTimer();
+  if (elapsed > 0)
   {
     long phase = rtk.m_lst % SIDEREAL_PHASE_MOD;
     updateForceTracking(forceTracking);
-    mount.onSiderealTick(phase, forceTracking);
+    mount.onSiderealTick(phase, forceTracking, elapsed);
   }
 
   tlp.monitor();

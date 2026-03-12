@@ -20,7 +20,7 @@ public:
   uint8_t UserInterfaceInputValueFloat(Pad *extPad, const char *title, const char *pre, float *value, float lo, float hi, uint8_t len, uint8_t dec, const char *post);
 
   uint8_t UserInterfaceInputValueDMS(Pad *extPad, const char *title, long *value, long lo, long hi,
-    uint8_t digits1, char* symb1, char* symb2, char* symb3, char* symb_plus, char* symb_minus, bool display_seconds);
+    uint8_t digits1, const char* symb1, const char* symb2, const char* symb3, const char* symb_plus, const char* symb_minus, bool display_seconds);
 
   uint8_t UserInterfaceInputValueDate(Pad *extPad, const char *title, uint8_t& year, uint8_t& month, uint8_t& day);
 

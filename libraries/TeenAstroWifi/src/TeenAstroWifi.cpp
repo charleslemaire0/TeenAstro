@@ -4,7 +4,16 @@
 const char html_headB[] PROGMEM = "<!DOCTYPE HTML>\r\n<html lang='en'>\r\n<head>\r\n"
 "<meta charset='UTF-8'>\r\n"
 "<meta name='viewport' content='width=device-width,initial-scale=1'>\r\n";
-const char html_headerIdx[] PROGMEM = "<meta http-equiv=\"refresh\" content=\"5; URL=/index.htm\">\r\n";
+const char html_headerIdx[] PROGMEM = "<meta http-equiv=\"refresh\" content=\"15; URL=/index.htm\">\r\n";
+// Restore scroll after meta-refresh so user does not briefly see the top of the page.
+const char html_indexScrollRestore[] PROGMEM =
+"<script>\n"
+"(function(){"
+"window.addEventListener('beforeunload',function(){try{sessionStorage.setItem('_idxY',window.scrollY);sessionStorage.setItem('_idxPath',location.pathname);}catch(e){}});"
+"function r(){var y=sessionStorage.getItem('_idxY');var p=sessionStorage.getItem('_idxPath');if(p===location.pathname&&y!==null){window.scrollTo(0,parseInt(y,10));sessionStorage.removeItem('_idxY');sessionStorage.removeItem('_idxPath');}}"
+"if(document.readyState==='complete')r();else window.addEventListener('load',r);"
+"})();\n"
+"</script>\r\n";
 const char html_headE[] PROGMEM = "</head>\r\n";
 const char html_bodyB[] PROGMEM = "<body>\r\n";
 
@@ -21,20 +30,6 @@ const char html_navGuard[] PROGMEM =
 "a.textContent=a.textContent+' ...';\n"
 "});\n"
 "</script>\n";
-
-// #region agent log
-const char html_debugPageLog[] PROGMEM =
-  "<script>document.addEventListener('DOMContentLoaded',function(){"
-  "var h=document.getElementById('_dbg');"
-  "var hp=h?parseInt(h.textContent):0;"
-  "var l=document.body?document.body.innerHTML.length:0;"
-  "fetch('http://127.0.0.1:7242/ingest/22318eea-23d2-4990-b49b-089aaf334f55',"
-  "{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},"
-  "body:JSON.stringify({location:'page',message:'loaded',"
-  "data:{url:location.href,bodyLen:l,heap:hp},"
-  "timestamp:Date.now(),hypothesisId:'B'})}).catch(function(){});"
-  "});</script>\n";
-// #endregion
 
 // ---- Modern consolidated CSS with CSS custom properties ----
 const char html_main_css1[] PROGMEM = "<style>\n"
@@ -78,6 +73,14 @@ const char html_main_css5[] PROGMEM =
 "border-bottom:1px solid var(--border)}\n"
 ".card{background:var(--card);border:1px solid var(--card-bd);border-radius:var(--radius);"
 "padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}\n";
+
+// Index (status) page: tighter spacing and two columns on wider screens
+const char html_indexCompactCss[] PROGMEM =
+"body.page-idx .content{margin:8px auto;padding:0 10px;max-width:900px;font-size:13px;line-height:1.35}\n"
+"body.page-idx .card{padding:8px 12px;margin-bottom:6px}\n"
+"body.page-idx .bt{margin:6px 0 3px;padding-bottom:2px;font-size:1em}\n"
+"@media(min-width:560px){body.page-idx .content{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;align-items:start}"
+"body.page-idx .content .card{margin-bottom:0}}\n";
 
 const char html_main_css6[] PROGMEM =
 "form{margin:6px 0}"
@@ -180,11 +183,9 @@ bool TeenAstroWifi::busyGuard()
   unsigned long now = millis();
   if (s_handlerBusy || (now - s_lastPageMs < PAGE_COOLDOWN_MS))
   {
-    // #region agent log
-    unsigned long cd = now - s_lastPageMs;
     uint32_t heap = ESP.getFreeHeap();
     String html;
-    html.reserve(750);
+    html.reserve(256);
     html = F("<!DOCTYPE HTML><html><head>"
       "<meta http-equiv='refresh' content='1'>"
       "</head><body style='background:#0d1117;color:#c9d1d9;"
@@ -194,24 +195,8 @@ bool TeenAstroWifi::busyGuard()
       "<div style='font-size:1.5em;margin-bottom:8px'>&#8987;</div>"
       "Loading...<br><small style='color:#8b949e'>heap:");
     html += heap;
-    html += F(" busy:");
-    html += (int)s_handlerBusy;
-    html += F(" cd:");
-    html += cd;
-    html += F("ms</small></div>"
-      "<script>fetch('http://127.0.0.1:7242/ingest/22318eea-23d2-4990-b49b-089aaf334f55',"
-      "{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},"
-      "body:JSON.stringify({location:'busyGuard',message:'wait_page',"
-      "data:{url:location.href,heap:");
-    html += heap;
-    html += F(",busy:");
-    html += (int)s_handlerBusy;
-    html += F(",cd:");
-    html += cd;
-    html += F("},timestamp:Date.now(),hypothesisId:'A'})}).catch(function(){});</script>"
-      "</body></html>");
+    html += F("</small></div></body></html>");
     server.send(200, "text/html", html);
-    // #endregion
     return true;
   }
   s_handlerBusy = true;
@@ -374,7 +359,10 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
     page = ServerPage::Index;
 
   if (page == ServerPage::Index)
+  {
     data += FPSTR(html_headerIdx);
+    data += FPSTR(html_indexScrollRestore);
+  }
 
   // CSS
   data += FPSTR(html_main_css1);
@@ -382,6 +370,8 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   data += FPSTR(html_main_css3);
   data += FPSTR(html_main_css4);
   data += FPSTR(html_main_css5);
+  if (page == ServerPage::Index)
+    data += FPSTR(html_indexCompactCss);
   sendHtml(data);
   data += FPSTR(html_main_css6);
   data += FPSTR(html_main_css7);
@@ -396,16 +386,11 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   data += FPSTR(html_main_css_control4);  // responsive rules (always)
   sendHtml(data);
   data += FPSTR(html_navGuard);
-  // #region agent log
-  data += FPSTR(html_debugPageLog);
-  // #endregion
   data += FPSTR(html_headE);
-  data += FPSTR(html_bodyB);
-  // #region agent log
-  data += "<span id='_dbg' style='display:none'>";
-  data += ESP.getFreeHeap();
-  data += "</span>";
-  // #endregion
+  if (page == ServerPage::Index)
+    data += "<body class='page-idx'>\r\n";
+  else
+    data += FPSTR(html_bodyB);
 
   // Header bar
   data += FPSTR(html_header1);
@@ -417,15 +402,8 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
     data += " &middot; Board ";
     data += ta_MountStatus.getVB();
     data += " &middot; ";
-    switch (ta_MountStatus.getVb()[0])
-    {
-    default:
-    case '0': data += "Generic"; break;
-    case '1': data += "TOS100"; break;
-    case '2': data += "TMC2130"; break;
-    case '3': data += "TMC5160"; break;
-    case '4': data += "TMC2160"; break;
-    }
+    // Index page uses cache-only to avoid updateV() serial round-trip; other pages may call getDriverType().
+    data += stepperDriverName(page == ServerPage::Index ? ta_MountStatus.getDriverTypeCached() : ta_MountStatus.getDriverType());
   }
   else data += "?";
   data += FPSTR(html_header3);
@@ -436,17 +414,20 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   data += "<input type='checkbox' id='navtog'>\n";
   data += page == ServerPage::Index ? FPSTR(html_links1S) : FPSTR(html_links1N);
   data += page == ServerPage::Control ? FPSTR(html_links2S) : FPSTR(html_links2N);
-  if (ta_MountStatus.motorsEnable())
+  // Index: use cached only so mount status is not modified during index build.
+  bool motors = (page == ServerPage::Index) ? ta_MountStatus.motorsEnableCached() : ta_MountStatus.motorsEnable();
+  if (motors)
   {
     data += page == ServerPage::Speed ? FPSTR(html_links3S) : FPSTR(html_links3N);
     data += page == ServerPage::Tracking ? FPSTR(html_links4S) : FPSTR(html_links4N);
   }
   data += page == ServerPage::Site ? FPSTR(html_links5S) : FPSTR(html_links5N);
   data += page == ServerPage::Mount ? FPSTR(html_links6S) : FPSTR(html_links6N);
-  if (ta_MountStatus.motorsEnable())
+  if (motors)
     data += page == ServerPage::Motors ? FPSTR(html_links7S) : FPSTR(html_links7N);
   data += page == ServerPage::Limits ? FPSTR(html_links8S) : FPSTR(html_links8N);
-  if (ta_MountStatus.encodersEnable())
+  bool encoders = (page == ServerPage::Index) ? ta_MountStatus.encodersEnableCached() : ta_MountStatus.encodersEnable();
+  if (encoders)
     data += page == ServerPage::Encoders ? FPSTR(html_links9S) : FPSTR(html_links9N);
   if (ta_MountStatus.hasFocuser())
     data += page == ServerPage::Focuser ? FPSTR(html_links10S) : FPSTR(html_links10N);
@@ -593,8 +574,6 @@ void TeenAstroWifi::setup()
 #ifndef DEBUG_ON
 
 
-  byte tb = 0;
-
   char c = 0;
 
   // safety net
@@ -683,6 +662,7 @@ void TeenAstroWifi::setup()
   server.on("/guide.txt", guideAjax);
   server.on("/track.txt", trackAjax);
   server.on("/trackinfo.txt", trackinfoAjax);
+  server.on("/status.txt", statusAjax);
   server.on("/wifi.htm", handleWifi);
   server.onNotFound(handleNotFound);
 
@@ -734,12 +714,17 @@ void TeenAstroWifi::update()
     if (!cmdSvrClient && cmdSvr.hasClient()) {
       // find free/disconnected spot
       cmdSvrClient = cmdSvr.available();
-      clientTime = millis() + 2000UL;
+      // Idle timeout must exceed both the poll interval (~2 s) and the serial CmdTimeout (up to 8 s)
+      clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
       break;
     }
     break;
   }
 
+
+  // Refresh all-state cache every 500 ms so :GXAS# requests from the app
+  // can be served without an additional serial round-trip to the MainUnit.
+  ta_MountStatus.updateAllState();
 
   // Process at most ONE complete command from the TCP client per update() cycle.
   // This prevents the TCP channel from monopolising the serial port and ensures
@@ -793,7 +778,22 @@ void TeenAstroWifi::update()
       // send cmd and pickup the response
       if ((b == '#') || (b == (char)6))
       {
-        char readBuffer[50] = "";
+        // :GXAS# — serve from all-state cache when fresh (< 500 ms old).
+        if (strcmp(writeBuffer, ":GXAS#") == 0 && !ta_MountStatus.allStateCacheStale())
+        {
+          if (cmdSvrClient.connected())
+            cmdSvrClient.print(ta_MountStatus.getAllStateB64Cached());
+          writeBuffer[0] = 0;
+          writeBufferPos = 0;
+          cmdDone = true;
+          if (activeWifiConnectMode == WifiConnectMode::AutoClose)
+            clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
+          break;
+        }
+
+        // :GXAS# response is 88 base64 chars + '#' = 89 chars — use a larger
+        // read buffer than the default to avoid truncation.
+        char readBuffer[130] = "";
         CMDREPLY cmdreply;
         if (s_client->sendReceiveAuto(writeBuffer, cmdreply, readBuffer, sizeof(readBuffer), CmdTimeout, true))
         {
@@ -808,6 +808,10 @@ void TeenAstroWifi::update()
         writeBuffer[0] = 0;
         writeBufferPos = 0;
         cmdDone = true;  // exit after one complete command
+        // In AutoClose mode, refresh idle timeout after every processed command.
+        // Must exceed CmdTimeout (serial round-trip) + poll interval to avoid race.
+        if (activeWifiConnectMode == WifiConnectMode::AutoClose)
+          clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
       }
     }
   }

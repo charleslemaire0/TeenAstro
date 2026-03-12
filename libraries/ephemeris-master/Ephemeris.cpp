@@ -70,7 +70,7 @@
 static FLOAT latitudeOnEarth      = NAN;
 static FLOAT longitudeOnEarth     = NAN;
 static FLOAT longitudeOnEarthSign = -1;
-static int   altitudeOnEarth      = NAN;
+static int   altitudeOnEarth      = 0;  /* 0 = unset / sea level (use setAltitude() to set) */
 
 void Ephemeris::floatingHoursToHoursMinutesSeconds(FLOAT floatingHours, int *hours, int *minutes, FLOAT *seconds)
 {

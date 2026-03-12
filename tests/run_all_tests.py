@@ -19,7 +19,7 @@ import time
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # All available test suites (subdirectories under tests/test/)
-ALL_SUITES = ["test_la3", "test_coord", "test_coordconv"]
+ALL_SUITES = ["test_la3", "test_coord", "test_coordconv", "test_tracking_rate"]
 
 
 def run_suite(suite_name: str) -> bool:

@@ -15,6 +15,9 @@ enum Command {
   COMMAND_NONE,
   COMMAND_SERIAL,
   COMMAND_SERIAL1
+#ifdef EMU_MAINUNIT
+  , COMMAND_WIFI
+#endif
 };
 
 // -----------------------------------------------------------------------------
@@ -47,6 +50,9 @@ struct CommandState {
   unsigned long baudRate_[10];
   T_Serial S_SHC_;
   T_Serial S_USB_;
+#ifdef EMU_MAINUNIT
+  T_Serial S_WiFi_;
+#endif
   char reply[REPLY_BUFFER_LEN];
   char command[CMD_BUFFER_LEN];
   bool highPrecision;
@@ -83,3 +89,6 @@ void Command_U();      // U  Precision
 void Command_W();      // W  Site
 
 bool iSGNSSValid();
+
+/// Pad CMDR_LONG reply to expected length (leading blanks). Call after command handler runs.
+void padReplyToExpectedLength();

@@ -94,7 +94,9 @@ Focuser commands are passed through to the focuser serial line. Standard LX200 f
 | `:F-#` | Focus out. | (nothing) | LX200 standard |
 | `:FQ#` | Focus quit / stop. | (nothing) | LX200 standard |
 | `:FF#` / `:FS#` | Focus fast / slow. | (nothing) | LX200 standard |
-| `:F?#` | Query focuser (no focuser = `0`). | (varies) | LX200 standard |
+| `:F?#` | Query focuser. No focuser = `0`. With focuser = `?NNNNN NNN sDD.DD#` (position in steps, speed, temperature). | (varies) | LX200 standard |
+| `:FA#` | Focuser full config (binary). | 200 base64 chars + `#` (150 bytes) | TeenAstro extension |
+| `:Fa#` | Focuser state (binary). | 12 base64 chars + `#` (9 bytes) | TeenAstro extension |
 | `:Fg#` `:FG#` `:FP#` `:Fs#` `:FS#` `:F!#` `:F$#` `:Fx#` `:F~#` `:FM#` `:FV#` | Forwarded to focuser (no reply). | (nothing) | LX200 standard |
 | `:FO#` `:Fo#` `:FI#` `:Fi#` `:FW#` `:F0#` … `:F8#` `:Fc#` `:FC#` `:Fm#` `:Fr#` | Forwarded to focuser (short reply). | Depends on focuser | LX200 standard |
 
@@ -154,6 +156,13 @@ All `:g…#` commands are TeenAstro GNSS extensions.
 
 All `:GXnn#` commands are TeenAstro extensions. **Standard:** TeenAstro extension.
 
+### Binary bulk
+
+| Syntax | Description | Returns |
+|--------|-------------|---------|
+| `:GXAS#` | Bulk state: tracking, slewing, park, motors, pulse guiding, UTC, positions (RA/Dec/Alt/Az/LST, target), **current and stored tracking rates**, focuser (when present), timezone. Base64-encoded **102-byte** little-endian packet (all numeric fields float64). Byte 101 = XOR checksum of bytes 0–100. Use this for status and rates; individual status/rate get commands have been removed. | **136** base64 chars + `#` |
+| `:GXCS#` | Bulk config: both axis motors, rates/speed, limits, encoders, refraction flags, mount index. Base64-encoded 90-byte little-endian packet. Byte 89 = XOR checksum of bytes 0–88. | 120 base64 chars + `#` |
+
 ### Alignment
 | Syntax | Description | Returns |
 |--------|-------------|---------|
@@ -178,6 +187,8 @@ All `:GXnn#` commands are TeenAstro extensions. **Standard:** TeenAstro extensio
 | `:GXDR3#` … `:GXDR6#` | Debug current rate, fstep. | `float#` |
 | `:GXDP0#` … `:GXDP7#` | Debug position/target/delta/interval. | `long#` / `double#` |
 | `:GXDW#` | Get workload (%). | `n%#` |
+| `:GXDW1#` | Get missed sidereal ticks count (debug). | `long#` |
+| `:GXDW2#` | Reset missed sidereal ticks counter. | `1#` |
 
 ### Instrument position
 | Syntax | Description | Returns |
@@ -198,8 +209,8 @@ All `:GXnn#` commands are TeenAstro extensions. **Standard:** TeenAstro extensio
 | `:GXRB#` | Get backlash take-up rate. | `long#` |
 | `:GXRD#` | Get default rate index. | `0`–`4#` |
 | `:GXRX#` | Get max slew rate. | `int#` |
-| `:GXRr#` `:GXRh#` `:GXRd#` | Get requested RA/HA/DEC tracking rate. | `long#` |
-| `:GXRe#` `:GXRf#` | Get stored RA/DEC rate. | `long#` |
+
+Current and stored tracking rates (RA/Dec/HA) are included in the **:GXAS#** packet only; there are no separate get commands for them.
 
 ### Limits (user)
 | Syntax | Description | Returns |
@@ -224,18 +235,6 @@ All `:GXnn#` commands are TeenAstro extensions. **Standard:** TeenAstro extensio
 | `:GXT1#` | Get UTC date. | `MM/DD/YY#` |
 | `:GXT2#` | Get seconds since 1970-01-01. | `ul#` |
 | `:GXT3#` | Get LHA time. | `HH:MM:SS#` |
-
-### Status
-| Syntax | Description | Returns |
-|--------|-------------|---------|
-| `:GXI#` | Get telescope status string (tracking, park, guide, pier, etc.). | 18 chars + `#` |
-| `:GXJB#` | Both rate axes enabled. | `1#` / `0#` |
-| `:GXJC#` | Connected. | `1#` |
-| `:GXJm#` | Motors enabled. | `1#` / `0#` |
-| `:GXJM1#` `:GXJM2#` | Axis 1/2 moving. | `1#` / `0#` |
-| `:GXJP#` | Pulse guiding active. | `1#` / `0#` |
-| `:GXJS#` | Slewing. | `1#` / `0#` |
-| `:GXJT#` | Tracking. | `1#` / `0#` |
 
 ### Motors (axis: R = axis1, D = axis2)
 | Syntax | Description | Returns |
@@ -268,7 +267,7 @@ Meade LX200 uses `h` only on 16" for home search. TeenAstro uses `h` for home an
 
 | Syntax | Description | Returns | Standard |
 |--------|-------------|---------|----------|
-| `:hF#` | Reset/sync at home position (cold start). | (nothing) | TeenAstro extension |
+| `:hF#` | Reset/sync at home position (cold start). | `1` / `0` | TeenAstro extension |
 | `:hC#` | Go to home position. | `1` / `0` | TeenAstro extension |
 | `:hB#` | Set current position as home. | `1` / `0` | TeenAstro extension |
 | `:hb#` | Reset home (clear saved home). | `1` | TeenAstro extension |

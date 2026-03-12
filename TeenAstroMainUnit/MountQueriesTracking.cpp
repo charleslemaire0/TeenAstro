@@ -30,9 +30,11 @@
 bool Mount::isParked() const { return parkHome.parkStatus == PRK_PARKED; }
 bool Mount::isAtHome() const { return parkHome.atHome; }
 
+bool Mount::isMovingTo() const { return tracking.gotoState != GOTO_NONE; }
+
 bool Mount::isSlewing() const
 {
-  return tracking.movingTo || guiding.GuidingState != Guiding::GuidingOFF;
+  return isMovingTo() || guiding.GuidingState != Guiding::GuidingOFF;
 }
 
 PoleSide Mount::getPoleSide() const
@@ -115,20 +117,17 @@ void Mount::setTrackingRate(double rHA, double rDEC)
 void Mount::rateFromMovingTarget(Coord_EQ& EQprev, Coord_EQ& EQnext, double TimeRange, PoleSide side, bool refr,
   double& A1_trackingRate, double& A2_trackingRate)
 {
-  long axis1_before, axis1_after = 0;
-  long axis2_before, axis2_after = 0;
-  double axis1_delta = 0.0, axis2_delta = 0.0;
   LA3::RefrOpt rop = { refraction.forTracking, 10, 101 };
   Coord_IN INprev = EQprev.To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, rop, alignment.conv.Tinv);
-  angle2Step(INprev.Axis1() * RAD_TO_DEG, INprev.Axis2() * RAD_TO_DEG, side, &axis1_before, &axis2_before);
   Coord_IN INnext = EQnext.To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, rop, alignment.conv.Tinv);
-  angle2Step(INnext.Axis1() * RAD_TO_DEG, INnext.Axis2() * RAD_TO_DEG, side, &axis1_after, &axis2_after);
-  axis1_delta = distStepAxis1(&axis1_before, &axis1_after) / axes.geoA1.stepsPerDegree;
-  while (axis1_delta < -180) axis1_delta += 360.;
-  while (axis1_delta >= 180) axis1_delta -= 360.;
-  axis2_delta = distStepAxis2(&axis2_before, &axis2_after) / axes.geoA2.stepsPerDegree;
-  while (axis2_delta < -180) axis2_delta += 360.;
-  while (axis2_delta >= 180) axis2_delta -= 360.;
+  // Use instrument angles directly to avoid integer step truncation, which loses precision
+  // for small rates (e.g. Dec ±0.05 arcsec/s → ~0.0017 deg span → 0 steps at typical resolution).
+  double axis1_delta = (INnext.Axis1() - INprev.Axis1()) * RAD_TO_DEG;
+  double axis2_delta = (INnext.Axis2() - INprev.Axis2()) * RAD_TO_DEG;
+  while (axis1_delta < -180.) axis1_delta += 360.;
+  while (axis1_delta >= 180.) axis1_delta -= 360.;
+  while (axis2_delta < -180.) axis2_delta += 360.;
+  while (axis2_delta >= 180.) axis2_delta -= 360.;
   A1_trackingRate = 0.5 * axis1_delta * (3600. / (TimeRange * 15));
   A2_trackingRate = 0.5 * axis2_delta * (3600. / (TimeRange * 15));
 }
@@ -146,7 +145,7 @@ void Mount::doCompensationCalc()
   DriftHA = tracking.RequestedTrackingRateHA * TimeRange * 15 / 3600;
   DriftDEC = tracking.RequestedTrackingRateDEC * TimeRange / 3600;
   PoleSide side_tmp;
-  if (tracking.movingTo)
+  if (isMovingTo())
   {
     Coord_EQ EQ_T = getEquTarget(*localSite.latitude() * DEG_TO_RAD);
     HA_now = EQ_T.Ha() * RAD_TO_DEG;
@@ -196,15 +195,33 @@ void Mount::enableGuideRate(int g, bool force)
 {
   if (g < 0) g = 0;
   if (g > 4) g = 4;
+  // Requested guide rate multiple of sidereal (as stored from :SXRn# / EEPROM)
+  double requested = guiding.guideRates[g];
+
+  // Compute a floor so that even at very low guide rates we still
+  // produce at least 1 motor step over 0.1s (100 ms) on both axes.
+  // Condition per axis: absRate * stepsPerCentiSecond * 10 >= 1 step.
+  auto minRateForAxis = [](const GeoAxis& geo) -> double {
+    if (geo.stepsPerCentiSecond <= 0.0) return 0.0;
+    return 1.0 / (10.0 * geo.stepsPerCentiSecond);
+  };
+  double minRateA1 = minRateForAxis(axes.geoA1);
+  double minRateA2 = minRateForAxis(axes.geoA2);
+  double floorRate = max(minRateA1, minRateA2);
+
+  double effective = requested;
+  if (floorRate > 0.0 && requested > 0.0 && requested < floorRate)
+    effective = floorRate;
+
   if (guiding.activeGuideRate != g || force)
   {
     guiding.activeGuideRate = g;
-    guiding.guideA1.enableAtRate(guiding.guideRates[g]);
-    guiding.guideA2.enableAtRate(guiding.guideRates[g]);
+    guiding.guideA1.enableAtRate(effective);
+    guiding.guideA2.enableAtRate(effective);
   }
 }
 
-void Mount::enableST4GuideRate() { enableGuideRate(0); }
+void Mount::enableST4GuideRate() { enableGuideRate(0, true); }
 void Mount::enableRecenterGuideRate() { enableGuideRate(guiding.recenterGuideRate); }
 void Mount::resetGuideRate() { enableGuideRate(guiding.activeGuideRate, true); }
 
@@ -258,7 +275,7 @@ void Mount::safetyCheck(bool forceTracking)
   if (!axes.geoA1.withinLimit(axis1))
   {
     setError(ERRT_AXIS1);
-    if (tracking.movingTo) abortSlew();
+    if (isMovingTo()) abortSlew();
     else if (!forceTracking) tracking.sideralTracking = false;
     return;
   }
@@ -267,7 +284,7 @@ void Mount::safetyCheck(bool forceTracking)
   if (!axes.geoA2.withinLimit(axis2))
   {
     setError(ERRT_AXIS2);
-    if (tracking.movingTo) abortSlew();
+    if (isMovingTo()) abortSlew();
     else if (!forceTracking) tracking.sideralTracking = false;
     return;
   }
@@ -280,7 +297,7 @@ void Mount::safetyCheck(bool forceTracking)
       if ((axes.staA1.dir && currentSide == POLE_OVER) || (!axes.staA1.dir && currentSide == POLE_UNDER))
       {
         setError(ERRT_MERIDIAN);
-        if (tracking.movingTo) abortSlew();
+        if (isMovingTo()) abortSlew();
         if (currentSide >= POLE_OVER && !forceTracking) tracking.sideralTracking = false;
         return;
       }
@@ -294,7 +311,7 @@ void Mount::safetyCheck(bool forceTracking)
       if ((axes.staA1.dir && currentSide == POLE_UNDER) || (!axes.staA1.dir && currentSide == POLE_OVER))
       {
         setError(ERRT_UNDER_POLE);
-        if (tracking.movingTo) abortSlew();
+        if (isMovingTo()) abortSlew();
         if (currentSide == POLE_UNDER && !forceTracking) tracking.sideralTracking = false;
         return;
       }
@@ -316,18 +333,23 @@ void Mount::safetyCheck(bool forceTracking)
   }
 }
 
-void Mount::onSiderealTick(long phase, bool forceTracking)
+void Mount::onSiderealTick(long phase, bool forceTracking, long elapsed)
 {
+  // Advance target whenever sidereal tracking is enabled.
+  // During a normal track (no goto), this keeps the telescope following the sky.
+  // During a goto (tracking.movingTo), this lets the mechanical target follow the
+  // moving sky position (RA/Dec) instead of staying fixed while the Earth rotates.
+  // This avoids a systematic RA offset proportional to slew duration.
   if (tracking.sideralTracking)
   {
     cli();
     if (!axes.staA1.backlash_correcting)
-      axes.staA1.target += axes.staA1.fstep;
+      axes.staA1.target += axes.staA1.fstep * elapsed;
     if (!axes.staA2.backlash_correcting)
-      axes.staA2.target += axes.staA2.fstep;
+      axes.staA2.target += axes.staA2.fstep * elapsed;
     sei();
   }
-  if (tracking.movingTo)
+  if (isMovingTo())
     moveTo();
 
   if (phase % 20 == 0)
@@ -342,7 +364,7 @@ void Mount::onSiderealTick(long phase, bool forceTracking)
     setError(ERRT_MOTOR_FAULT);
     if (!forceTracking)
     {
-      if (tracking.movingTo)
+      if (isMovingTo())
         abortSlew();
       else
       {
@@ -360,7 +382,7 @@ void Mount::onSiderealTick(long phase, bool forceTracking)
     if (!forceTracking)
     {
       setError(ERRT_ALT);
-      if (tracking.movingTo)
+      if (isMovingTo())
         abortSlew();
       else
         tracking.sideralTracking = false;
