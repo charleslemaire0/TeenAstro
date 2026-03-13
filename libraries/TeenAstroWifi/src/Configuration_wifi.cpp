@@ -95,7 +95,7 @@ const char html_wifiSSID6[] PROGMEM =
 const char html_wifiSSID7[] PROGMEM =
 "<button type='submit'>Upload</button></form><br />\r\n";
 
-const char html_logout[] =
+const char html_logout[] PROGMEM =
 "<br/><b>WiFi configuration_telescope Security:</b><br/>"
 "<form method='post' action='/wifi.htm'>"
 "Password: <input style='width:100%;max-width:8em' name='webpwd' type='password' maxlength='39'> "
@@ -167,7 +167,7 @@ int TeenAstroWifi::hexToInt(String s)
 void TeenAstroWifi::handleWifi()
 {
   if (busyGuard()) return;
-  char temp[300] = "";
+  char temp[500] = "";
   String data;
   sendHtmlStart();
   processWifiGet();
