@@ -1,12 +1,12 @@
 #include "TeenAstroWifi.h"
 
-const char* html_TrackingState PROGMEM =        "<b>Tracking State:</b><br/>\n";
-const char* html_Tracking PROGMEM =             "Tracking: <span class='c'>%s</span><br/>\n";
-const char* html_TrackingCorrections PROGMEM =  "Corrections: <span class='c'>%s</span><br/>\n";
-const char* html_TrackingSpeed PROGMEM =        "Speed: <span class='c'>%s</span><br/>\n";
-const char* html_TrackingRate PROGMEM =         "Rate: <span class='c'>%f</span> Hz<br/>\n";
-const char* html_TrackingSpeedRA PROGMEM =     "Drift RA: <span class='c'>%.5f sec/SI</span><br/>\n";
-const char* html_TrackingSpeedDEC PROGMEM =    "Drift Dec: <span class='c'>%.5f arcsec/SI</span><br/><br/>\n";
+const char html_TrackingState[] PROGMEM =        "<b>Tracking State:</b><br/>\n";
+const char html_Tracking[] PROGMEM =             "Tracking: <span class='c'>%s</span><br/>\n";
+const char html_TrackingCorrections[] PROGMEM =  "Corrections: <span class='c'>%s</span><br/>\n";
+const char html_TrackingSpeed[] PROGMEM =        "Speed: <span class='c'>%s</span><br/>\n";
+const char html_TrackingRate[] PROGMEM =         "Rate: <span class='c'>%f</span> Hz<br/>\n";
+const char html_TrackingSpeedRA[] PROGMEM =     "Drift RA: <span class='c'>%.5f sec/SI</span><br/>\n";
+const char html_TrackingSpeedDEC[] PROGMEM =    "Drift Dec: <span class='c'>%.5f arcsec/SI</span><br/><br/>\n";
 
 void TeenAstroWifi::addTrackingInfo(String &data )
 {

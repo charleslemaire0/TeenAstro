@@ -220,15 +220,15 @@ void TeenAstroWifi::handleConfigurationFocuser()
   sprintf_P(temp, html_configManDecFocuser, manDec);
   data += temp; sendHtml(data);
 
-  data += PSTR("Resolution: <br />");
+  data += F("Resolution: <br />");
   sprintf_P(temp, html_configResolutionFocuser, resolution);
   data += temp; sendHtml(data);
-  data += PSTR("Rotation: <br />");
+  data += F("Rotation: <br />");
   data += FPSTR(html_configRotFocuser_1);
   data += reverse ? FPSTR(html_configRotFocuser_r) : FPSTR(html_configRotFocuser_d);
   data += FPSTR(html_configRotFocuser_2);
   sendHtml(data);
-  data += PSTR("Motor: <br />");
+  data += F("Motor: <br />");
   sprintf_P(temp, html_configStepRotFocuser, steprot);
   data += temp;
   sprintf_P(temp, html_configMuFocuser, (int)pow(2., (double)micro));
@@ -236,8 +236,8 @@ void TeenAstroWifi::handleConfigurationFocuser()
   sprintf_P(temp, html_configHCFocuser, curr * 10);
   data += temp; sendHtml(data);
 
-  data += PSTR("Userdefined Position: <br />");
-  data += PSTR("to remove a position set an empty name <br />");
+  data += F("Userdefined Position: <br />");
+  data += F("to remove a position set an empty name <br />");
   for (int k = 0; k < 10; k++)
   {
     int base = 18 + k * 13;

@@ -265,14 +265,23 @@ void TeenAstroWifi::controlAjax()
     char temp[40] = "";
     data += "focuserpos|";
     ta_MountStatus.updateFocuser();
-    strcpy(temp, ta_MountStatus.getFocuser());
-    temp[6] = 0;
-    data += &temp[1];
-    data += " steps, ";
-    temp[10] = 0;
-    temp[16] = 0;
-    data += &temp[11];
-    data += "&deg C";
+    strncpy(temp, ta_MountStatus.getFocuser(), sizeof(temp) - 1);
+    temp[sizeof(temp) - 1] = 0;
+    int len = strlen(temp);
+    if (len > 16)
+    {
+      temp[6] = 0;
+      data += &temp[1];
+      data += " steps, ";
+      temp[10] = 0;
+      temp[16] = 0;
+      data += &temp[11];
+      data += "&deg C";
+    }
+    else
+    {
+      data += temp;
+    }
     server.send(200, "text/plain", data);
   }
 }

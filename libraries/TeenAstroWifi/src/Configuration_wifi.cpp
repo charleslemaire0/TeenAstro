@@ -276,7 +276,8 @@ void TeenAstroWifi::processWifiGet()
   v = server.arg("webpwd");
   if (v != "")
   {
-    strcpy(masterPassword, (char*)v.c_str());
+    strncpy(masterPassword, (char*)v.c_str(), sizeof(masterPassword) - 1);
+    masterPassword[sizeof(masterPassword) - 1] = 0;
     TeenAstroWifi::EEPROM_writeString(EPPROM_password, masterPassword);
     EEwrite = true;
   }
@@ -285,10 +286,14 @@ void TeenAstroWifi::processWifiGet()
   v = server.arg("wifimode");
   if (v != "")
   {
-    activeWifiMode = static_cast<WifiMode>(v.toInt());
-    EEPROM.write(EEPROM_WifiMode, activeWifiMode);
-    EEwrite = true;
-    restartRequired = true;
+    int mode = v.toInt();
+    if (mode >= 0 && mode <= 3)
+    {
+      activeWifiMode = static_cast<WifiMode>(mode);
+      EEPROM.write(EEPROM_WifiMode, activeWifiMode);
+      EEwrite = true;
+      restartRequired = true;
+    }
   }
 
   v = server.arg("wificonnectionmode");
@@ -335,13 +340,13 @@ void TeenAstroWifi::processWifiGet()
         // seperators all in place
         if ((v.charAt(2) == ':') && (v.charAt(5) == ':') && (v.charAt(8) == ':') && (v.charAt(11) == ':') && (v.charAt(14) == ':'))
         {
-          // digits all in 0..9,A..F and validate
           v.toUpperCase();
-          uint8_t mac[6];
-          mac[0] = hexToInt(v.substring(0, 2)); mac[1] = hexToInt(v.substring(3, 2)); mac[2] = hexToInt(v.substring(6, 2));
-          mac[3] = hexToInt(v.substring(9, 2)); mac[4] = hexToInt(v.substring(12, 2)); mac[5] = hexToInt(v.substring(15, 2));
-          if ((mac[0] >= 0) && (mac[1] >= 0) && (mac[2] >= 0) && (mac[3] >= 0) && (mac[4] >= 0) && (mac[5] >= 0))
+          int m[6];
+          m[0] = hexToInt(v.substring(0, 2)); m[1] = hexToInt(v.substring(3, 5)); m[2] = hexToInt(v.substring(6, 8));
+          m[3] = hexToInt(v.substring(9, 11)); m[4] = hexToInt(v.substring(12, 14)); m[5] = hexToInt(v.substring(15, 17));
+          if ((m[0] >= 0) && (m[1] >= 0) && (m[2] >= 0) && (m[3] >= 0) && (m[4] >= 0) && (m[5] >= 0))
           {
+            uint8_t mac[6] = { (uint8_t)m[0], (uint8_t)m[1], (uint8_t)m[2], (uint8_t)m[3], (uint8_t)m[4], (uint8_t)m[5] };
             WiFi.macAddress(mac); restartRequired = true;
           }
         }
@@ -353,8 +358,9 @@ void TeenAstroWifi::processWifiGet()
     v = server.arg(cmd); v1 = v;
     if (v != "")
     {
-      if (!strcmp(wifi_sta_ssid[k], (char*)v.c_str())) restartRequired = true;
-      strcpy(wifi_sta_ssid[k], (char*)v.c_str());
+      if (strcmp(wifi_sta_ssid[k], (char*)v.c_str())) restartRequired = true;
+      strncpy(wifi_sta_ssid[k], (char*)v.c_str(), sizeof(wifi_sta_ssid[k]) - 1);
+      wifi_sta_ssid[k][sizeof(wifi_sta_ssid[k]) - 1] = 0;
       // if this section was submitted set the stationEnabled default to false
       stationDhcpEnabled[k] = false;
     }
@@ -364,8 +370,9 @@ void TeenAstroWifi::processWifiGet()
     v = server.arg(cmd);
     if (v != "")
     {
-      if (!strcmp(wifi_sta_pwd[k], (char*)v.c_str())) restartRequired = true;
-      strcpy(wifi_sta_pwd[k], (char*)v.c_str());
+      if (strcmp(wifi_sta_pwd[k], (char*)v.c_str())) restartRequired = true;
+      strncpy(wifi_sta_pwd[k], (char*)v.c_str(), sizeof(wifi_sta_pwd[k]) - 1);
+      wifi_sta_pwd[k][sizeof(wifi_sta_pwd[k]) - 1] = 0;
     }
 
     // Station dhcp enabled
@@ -415,13 +422,13 @@ void TeenAstroWifi::processWifiGet()
       // seperators all in place
       if ((v.charAt(2) == ':') && (v.charAt(5) == ':') && (v.charAt(8) == ':') && (v.charAt(11) == ':') && (v.charAt(14) == ':'))
       {
-        // digits all in 0..9,A..F and validate
         v.toUpperCase();
-        uint8_t mac[6];
-        mac[0] = hexToInt(v.substring(0, 2)); mac[1] = hexToInt(v.substring(3, 2)); mac[2] = hexToInt(v.substring(6, 2));
-        mac[3] = hexToInt(v.substring(9, 2)); mac[4] = hexToInt(v.substring(12, 2)); mac[5] = hexToInt(v.substring(15, 2));
-        if ((mac[0] >= 0) && (mac[1] >= 0) && (mac[2] >= 0) && (mac[3] >= 0) && (mac[4] >= 0) && (mac[5] >= 0))
+        int m[6];
+        m[0] = hexToInt(v.substring(0, 2)); m[1] = hexToInt(v.substring(3, 5)); m[2] = hexToInt(v.substring(6, 8));
+        m[3] = hexToInt(v.substring(9, 11)); m[4] = hexToInt(v.substring(12, 14)); m[5] = hexToInt(v.substring(15, 17));
+        if ((m[0] >= 0) && (m[1] >= 0) && (m[2] >= 0) && (m[3] >= 0) && (m[4] >= 0) && (m[5] >= 0))
         {
+          uint8_t mac[6] = { (uint8_t)m[0], (uint8_t)m[1], (uint8_t)m[2], (uint8_t)m[3], (uint8_t)m[4], (uint8_t)m[5] };
           WiFi.softAPmacAddress(mac); restartRequired = true;
         }
       }
@@ -429,22 +436,24 @@ void TeenAstroWifi::processWifiGet()
   }
 
   // Access-Point SSID
+  boolean apChanged = false;
   v = server.arg("apssid");
   if (v != "")
   {
-    if (!strcmp(wifi_ap_ssid, (char*)v.c_str())) restartRequired = true;
-    strcpy(wifi_ap_ssid, (char*)v.c_str());
-
-    // if this section was submitted set the accessPointEnabled default to false
-    //accessPointEnabled[k]=false;
+    if (strcmp(wifi_ap_ssid, (char*)v.c_str())) restartRequired = true;
+    strncpy(wifi_ap_ssid, (char*)v.c_str(), sizeof(wifi_ap_ssid) - 1);
+    wifi_ap_ssid[sizeof(wifi_ap_ssid) - 1] = 0;
+    apChanged = true;
   }
 
   // Access-Point password
   v = server.arg("appwd");
   if (v != "")
   {
-    if (!strcmp(wifi_ap_pwd, (char*)v.c_str())) restartRequired = true;
-    strcpy(wifi_ap_pwd, (char*)v.c_str());
+    if (strcmp(wifi_ap_pwd, (char*)v.c_str())) restartRequired = true;
+    strncpy(wifi_ap_pwd, (char*)v.c_str(), sizeof(wifi_ap_pwd) - 1);
+    wifi_ap_pwd[sizeof(wifi_ap_pwd) - 1] = 0;
+    apChanged = true;
   }
 
   // Access-Point channel
@@ -453,27 +462,28 @@ void TeenAstroWifi::processWifiGet()
   {
     if (wifi_ap_ch != v.toInt()) restartRequired = true;
     wifi_ap_ch = v.toInt();
+    apChanged = true;
   }
 
   // Access-Point ip
-  v = server.arg("apip0"); if (v != "") wifi_ap_ip[0] = v.toInt();
-  v = server.arg("apip1"); if (v != "") wifi_ap_ip[1] = v.toInt();
-  v = server.arg("apip2"); if (v != "") wifi_ap_ip[2] = v.toInt();
-  v = server.arg("apip3"); if (v != "") wifi_ap_ip[3] = v.toInt();
+  v = server.arg("apip0"); if (v != "") { wifi_ap_ip[0] = v.toInt(); apChanged = true; }
+  v = server.arg("apip1"); if (v != "") { wifi_ap_ip[1] = v.toInt(); apChanged = true; }
+  v = server.arg("apip2"); if (v != "") { wifi_ap_ip[2] = v.toInt(); apChanged = true; }
+  v = server.arg("apip3"); if (v != "") { wifi_ap_ip[3] = v.toInt(); apChanged = true; }
 
   // Access-Point SubNet
-  v = server.arg("apsn0"); if (v != "") wifi_ap_sn[0] = v.toInt();
-  v = server.arg("apsn1"); if (v != "") wifi_ap_sn[1] = v.toInt();
-  v = server.arg("apsn2"); if (v != "") wifi_ap_sn[2] = v.toInt();
-  v = server.arg("apsn3"); if (v != "") wifi_ap_sn[3] = v.toInt();
+  v = server.arg("apsn0"); if (v != "") { wifi_ap_sn[0] = v.toInt(); apChanged = true; }
+  v = server.arg("apsn1"); if (v != "") { wifi_ap_sn[1] = v.toInt(); apChanged = true; }
+  v = server.arg("apsn2"); if (v != "") { wifi_ap_sn[2] = v.toInt(); apChanged = true; }
+  v = server.arg("apsn3"); if (v != "") { wifi_ap_sn[3] = v.toInt(); apChanged = true; }
 
   // Access-Point Gateway
-  v = server.arg("apgw0"); if (v != "") wifi_ap_gw[0] = v.toInt();
-  v = server.arg("apgw1"); if (v != "") wifi_ap_gw[1] = v.toInt();
-  v = server.arg("apgw2"); if (v != "") wifi_ap_gw[2] = v.toInt();
-  v = server.arg("apgw3"); if (v != "") wifi_ap_gw[3] = v.toInt();
+  v = server.arg("apgw0"); if (v != "") { wifi_ap_gw[0] = v.toInt(); apChanged = true; }
+  v = server.arg("apgw1"); if (v != "") { wifi_ap_gw[1] = v.toInt(); apChanged = true; }
+  v = server.arg("apgw2"); if (v != "") { wifi_ap_gw[2] = v.toInt(); apChanged = true; }
+  v = server.arg("apgw3"); if (v != "") { wifi_ap_gw[3] = v.toInt(); apChanged = true; }
 
-  if (v != "")
+  if (apChanged)
   {
     writeAccess2EEPROM();
     EEwrite = true;

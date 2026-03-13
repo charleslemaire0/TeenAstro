@@ -7,7 +7,7 @@
 #define Axis1 "&alpha;"
 #define Axis2 "&delta;"
 
-const char* html_settingsBrowserTime PROGMEM =
+const char html_settingsBrowserTime[] PROGMEM =
 "<span id=\"datetime\"></span> UT (web browser)"
 "<script> "
 "function pad(num, size) { var s = '000000000' + num; return s.substr(s.length-size); }"
@@ -16,35 +16,35 @@ const char* html_settingsBrowserTime PROGMEM =
 "' '+pad(now.getUTCHours().toString(),2)+':'+pad(now.getUTCMinutes().toString(),2)+':'+pad(now.getUTCSeconds().toString(),2); "
 "</script><br />\r\n";
 
-const char* html_indexDate PROGMEM = "<span class='c'>%s</span>";
-const char* html_indexTime PROGMEM = " <span class='c'>%s</span> UT";
-const char* html_indexSidereal PROGMEM = " (<span class='c'>%s</span> LST)<br />";
+const char html_indexDate[] PROGMEM = "<span class='c'>%s</span>";
+const char html_indexTime[] PROGMEM = " <span class='c'>%s</span> UT";
+const char html_indexSidereal[] PROGMEM = " (<span class='c'>%s</span> LST)<br />";
 
-const char* html_indexPosition PROGMEM = Axis1 " = <span class='c'>%s</span> &nbsp; " Axis2 " = <span class='c'>%s</span><br />";
-const char* html_indexAltAz PROGMEM = "Alt = <span class='c'>%s</span> &nbsp; Az = <span class='c'>%s</span><br />";
-const char* html_indexTarget PROGMEM = "Target: " Axis1 " = <span class='c'>%s</span> &nbsp; " Axis2 " = <span class='c'>%s</span><br />";
+const char html_indexPosition[] PROGMEM = Axis1 " = <span class='c'>%s</span> &nbsp; " Axis2 " = <span class='c'>%s</span><br />";
+const char html_indexAltAz[] PROGMEM = "Alt = <span class='c'>%s</span> &nbsp; Az = <span class='c'>%s</span><br />";
+const char html_indexTarget[] PROGMEM = "Target: " Axis1 " = <span class='c'>%s</span> &nbsp; " Axis2 " = <span class='c'>%s</span><br />";
 
-const char* html_indexPier PROGMEM = "Pier Side: <span class='c'>%s</span><br />";
+const char html_indexPier[] PROGMEM = "Pier Side: <span class='c'>%s</span><br />";
 
-const char* html_indexPark PROGMEM = "Parking: <span class='c'>%s</span><br />";
-const char* html_indexHasFocuser PROGMEM = "Has Focuser: <span class='c'>%s</span><br />";
-const char* html_indexGNSS PROGMEM = "GNSS: <span class='c'>%s</span><br />";
-const char* html_indexPowerMode PROGMEM = "Power mode: <span class='c'>%s</span><br />";
-const char* html_indexAligned PROGMEM = "Aligned: <span class='c'>%s</span><br />";
+const char html_indexPark[] PROGMEM = "Parking: <span class='c'>%s</span><br />";
+const char html_indexHasFocuser[] PROGMEM = "Has Focuser: <span class='c'>%s</span><br />";
+const char html_indexGNSS[] PROGMEM = "GNSS: <span class='c'>%s</span><br />";
+const char html_indexPowerMode[] PROGMEM = "Power mode: <span class='c'>%s</span><br />";
+const char html_indexAligned[] PROGMEM = "Aligned: <span class='c'>%s</span><br />";
 
-const char* html_indexGuiding PROGMEM = "Guiding: <span class='c'>%s</span><br />";
-const char* html_indexSpiral PROGMEM = "Spiral running: <span class='c'>%s</span><br />";
+const char html_indexGuiding[] PROGMEM = "Guiding: <span class='c'>%s</span><br />";
+const char html_indexSpiral[] PROGMEM = "Spiral running: <span class='c'>%s</span><br />";
 
-const char* html_indexLastError PROGMEM = "Last Error: <span class='c'>%s</span><br />";
-const char* html_indexWorkload PROGMEM = "Workload: <span class='c'>%s</span><br />";
-const char* html_indexAtHome PROGMEM = "At Home: <span class='c'>%s</span><br />";
-const char* html_indexGuidingRate PROGMEM = "Guiding rate: <span class='c'>%s</span><br />";
-const char* html_indexPulseGuiding PROGMEM = "Pulse guiding: <span class='c'>%s</span><br />";
-const char* html_indexGuidingDir PROGMEM = "Guiding: <span class='c'>%s</span><br />";
-const char* html_indexTrackCorrected PROGMEM = "Track corrected: <span class='c'>%s</span><br />";
-const char* html_indexMountType PROGMEM = "Mount: <span class='c'>%s</span><br />";
-const char* html_indexMotors PROGMEM = "Motors: <span class='c'>%s</span><br />";
-const char* html_indexEncoders PROGMEM = "Encoders: <span class='c'>%s</span><br />";
+const char html_indexLastError[] PROGMEM = "Last Error: <span class='c'>%s</span><br />";
+const char html_indexWorkload[] PROGMEM = "Workload: <span class='c'>%s</span><br />";
+const char html_indexAtHome[] PROGMEM = "At Home: <span class='c'>%s</span><br />";
+const char html_indexGuidingRate[] PROGMEM = "Guiding rate: <span class='c'>%s</span><br />";
+const char html_indexPulseGuiding[] PROGMEM = "Pulse guiding: <span class='c'>%s</span><br />";
+const char html_indexGuidingDir[] PROGMEM = "Guiding: <span class='c'>%s</span><br />";
+const char html_indexTrackCorrected[] PROGMEM = "Track corrected: <span class='c'>%s</span><br />";
+const char html_indexMountType[] PROGMEM = "Mount: <span class='c'>%s</span><br />";
+const char html_indexMotors[] PROGMEM = "Motors: <span class='c'>%s</span><br />";
+const char html_indexEncoders[] PROGMEM = "Encoders: <span class='c'>%s</span><br />";
 
 // Builds status card inner HTML. Only reads cached mount state (no update* or serial).
 // Call ensureStatusFetched() once before building so cache is fresh.
