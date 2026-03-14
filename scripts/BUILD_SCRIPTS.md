@@ -2,6 +2,8 @@
 
 Reminder of which script does what and where outputs go.
 
+**Publishing firmware for the TeenAstro Uploader:** You must follow the procedure in **[README_FIRMWARE_PUBLISH.md](README_FIRMWARE_PUBLISH.md)** (and [FIRMWARE_PUBLISH_PROCEDURE.md](FIRMWARE_PUBLISH_PROCEDURE.md)) and **only** that procedure. Builds go into **X.Y_latest**; promoting to stable copies **X.Y_latest** → **X.Y**. Do not add patch versions to the dropdown or use other paths.
+
 ---
 
 ## 1. Install build tools (run once)

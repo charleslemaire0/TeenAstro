@@ -28,13 +28,20 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-RELEASE_VERSION = "1.6.1"
+RELEASE_VERSION = "1.6"
 
 # Repo root is the directory containing this script
 REPO_ROOT = Path(__file__).resolve().parent
 
-# Distribution folder consumed by the TeenAstro Uploader
-DIST_DIR = REPO_ROOT / "TeenAstroUploader" / "TeenAstroUploader" / f"{RELEASE_VERSION}_latest"
+# Uploader uses X.Y only: folder is {X.Y}_latest (rolling) or {X.Y} (stable after promote).
+# E.g. 1.6.1 builds go to 1.6_latest; filenames may still be TeenAstro_1.6.1_...
+def _release_line(version: str) -> str:
+    """Return X.Y from X.Y or X.Y.Z (folder name for uploader)."""
+    parts = version.strip().split(".")
+    return ".".join(parts[:2]) if len(parts) >= 2 else version
+
+# Distribution folder = rolling "latest" for this release line (X.Y_latest)
+DIST_DIR = REPO_ROOT / "TeenAstroUploader" / "TeenAstroUploader" / f"{_release_line(RELEASE_VERSION)}_latest"
 
 
 @dataclass
@@ -115,8 +122,33 @@ def find_output_file(project_path: Path, pio_env: str, ext: str) -> Path | None:
 # ---------------------------------------------------------------------------
 # Build logic
 # ---------------------------------------------------------------------------
-def build_and_distribute(fw: FirmwareBuild, clean: bool = False) -> bool:
+def get_manifest_for_version(version: str) -> tuple[Path, list[FirmwareBuild]]:
+    """Return (dist_dir, list of FirmwareBuild) for the given version.
+    Uploader uses X.Y only: folder is X.Y_latest (or X.Y after promote), filenames use X.Y.
+    """
+    rl = _release_line(version)
+    dist_dir = REPO_ROOT / "TeenAstroUploader" / "TeenAstroUploader" / f"{rl}_latest"
+    manifest = [
+        FirmwareBuild("main", "TeenAstroMainUnit", "220", f"TeenAstro_{rl}_220_TMC260", ".hex"),
+        FirmwareBuild("main", "TeenAstroMainUnit", "230", f"TeenAstro_{rl}_230_TMC260", ".hex"),
+        FirmwareBuild("main", "TeenAstroMainUnit", "240_2130", f"TeenAstro_{rl}_240_TMC2130", ".hex"),
+        FirmwareBuild("main", "TeenAstroMainUnit", "240_5160", f"TeenAstro_{rl}_240_TMC5160", ".hex"),
+        FirmwareBuild("main", "TeenAstroMainUnit", "250_2130", f"TeenAstro_{rl}_250_TMC2130", ".hex"),
+        FirmwareBuild("main", "TeenAstroMainUnit", "250_5160", f"TeenAstro_{rl}_250_TMC5160", ".hex"),
+        FirmwareBuild("focuser", "TeenAstroFocuser", "220_2130", f"TeenAstroFocuser_{rl}_220_TMC2130", ".hex"),
+        FirmwareBuild("focuser", "TeenAstroFocuser", "230_2130", f"TeenAstroFocuser_{rl}_230_TMC2130", ".hex"),
+        FirmwareBuild("focuser", "TeenAstroFocuser", "240_2130", f"TeenAstroFocuser_{rl}_240_TMC2130", ".hex"),
+        FirmwareBuild("focuser", "TeenAstroFocuser", "240_5160", f"TeenAstroFocuser_{rl}_240_TMC5160", ".hex"),
+        FirmwareBuild("shc", "TeenAstroSHC", "ENGLISH", f"TeenAstroSHC_{rl}_English", ".bin"),
+        FirmwareBuild("shc", "TeenAstroSHC", "FRENCH", f"TeenAstroSHC_{rl}_French", ".bin"),
+        FirmwareBuild("shc", "TeenAstroSHC", "GERMAN", f"TeenAstroSHC_{rl}_German", ".bin"),
+    ]
+    return dist_dir, manifest
+
+
+def build_and_distribute(fw: FirmwareBuild, clean: bool = False, dist_dir: Path | None = None) -> bool:
     """Build one firmware variant and copy it to the distribution folder."""
+    out_dir = dist_dir if dist_dir is not None else DIST_DIR
     project_path = REPO_ROOT / fw.project_dir
     print(f"\n{'='*60}")
     print(f"  Building: {fw.dist_name}{fw.extension}")
@@ -139,8 +171,8 @@ def build_and_distribute(fw: FirmwareBuild, clean: bool = False) -> bool:
         return False
 
     # Copy to distribution
-    DIST_DIR.mkdir(parents=True, exist_ok=True)
-    dest = DIST_DIR / f"{fw.dist_name}{fw.extension}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    dest = out_dir / f"{fw.dist_name}{fw.extension}"
     shutil.copy2(str(output), str(dest))
     size_kb = dest.stat().st_size / 1024
     print(f"  -> Copied to {dest.relative_to(REPO_ROOT)}  ({size_kb:.1f} KB)")
@@ -170,26 +202,33 @@ def main():
         action="store_true",
         help="Clean build directories before building"
     )
+    parser.add_argument(
+        "--version", "-v",
+        metavar="X.Y[.Z]",
+        help="Override release version (e.g. 1.6.1). Used by publish script."
+    )
     args = parser.parse_args()
 
-    # Filter manifest by target
-    if args.target == "all":
-        builds = FIRMWARE_MANIFEST
+    version = (args.version if args.version else RELEASE_VERSION).strip()
+    if args.version:
+        dist_dir, manifest = get_manifest_for_version(version)
+        builds = manifest if args.target == "all" else [fw for fw in manifest if fw.target == args.target]
     else:
-        builds = [fw for fw in FIRMWARE_MANIFEST if fw.target == args.target]
+        dist_dir = DIST_DIR
+        builds = FIRMWARE_MANIFEST if args.target == "all" else [fw for fw in FIRMWARE_MANIFEST if fw.target == args.target]
 
     # List mode
     if args.list:
-        print(f"TeenAstro Firmware Manifest  (release {RELEASE_VERSION})")
-        print(f"Distribution folder: {DIST_DIR.relative_to(REPO_ROOT)}\n")
+        print(f"TeenAstro Firmware Manifest  (release {version})")
+        print(f"Distribution folder: {dist_dir.relative_to(REPO_ROOT)}\n")
         for fw in builds:
             print(f"  [{fw.target:8s}]  {fw.project_dir:20s}  env={fw.pio_env:12s}  -> {fw.dist_name}{fw.extension}")
         print(f"\nTotal: {len(builds)} variants")
         return
 
     # Build
-    print(f"TeenAstro Firmware Builder  (release {RELEASE_VERSION})")
-    print(f"Distribution folder: {DIST_DIR}")
+    print(f"TeenAstro Firmware Builder  (release {version})")
+    print(f"Distribution folder: {dist_dir}")
     print(f"Variants to build: {len(builds)}")
 
     succeeded = 0
@@ -197,7 +236,7 @@ def main():
     failures = []
 
     for fw in builds:
-        if build_and_distribute(fw, clean=args.clean):
+        if build_and_distribute(fw, clean=args.clean, dist_dir=dist_dir):
             succeeded += 1
         else:
             failed += 1
@@ -211,7 +250,7 @@ def main():
         print(f"  Failed builds:")
         for name in failures:
             print(f"    - {name}")
-    print(f"  Output: {DIST_DIR}")
+    print(f"  Output: {dist_dir}")
     print(f"{'='*60}")
 
     sys.exit(1 if failed else 0)
