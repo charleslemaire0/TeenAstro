@@ -249,6 +249,7 @@ public:
   LX200RETURN alignAtHome();                     // :AA#
   LX200RETURN alignSave();                       // :AW#
   LX200RETURN alignClear();                      // :AC#
+  LX200RETURN alignAbort();                      // :AB# (abort without sync at home)
   LX200RETURN getAlignError(char* out, int len); // :AE#
   LX200RETURN alignSelectStar(uint8_t n);        // :A1# .. :A9#
   LX200RETURN alignNextStar();                   // :A+#

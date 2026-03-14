@@ -10,6 +10,7 @@ enum SiderealMode { star, sun, moon, target, unknown }
 enum ParkState { unparked, parked, failed, parking, unknown }
 enum PierSide { east, west, unknown }
 enum MountType { gem, fork, altAz, forkAlt, undefined }
+enum AlignPhase { idle, select, slew, recenter }
 enum SpeedLevel { guide, slow, medium, fast, max, unknown }
 enum MountError { none, motorFault, alt, limitSense, limitA1, limitA2, underPole, meridian, sync }
 
@@ -25,6 +26,9 @@ class MountState {
   final String guidingNS; // '^' north, '_' south, ' ' none
   final bool trackCorrected;
   final bool aligned;
+  final int alignmentRefCount;
+  final AlignPhase alignPhase;
+  final int alignStarNum;
   final MountType mountType;
   final PierSide pierSide;
   final int gnssFlags;
@@ -84,6 +88,9 @@ class MountState {
     this.guidingNS = ' ',
     this.trackCorrected = false,
     this.aligned = false,
+    this.alignmentRefCount = 0,
+    this.alignPhase = AlignPhase.idle,
+    this.alignStarNum = 0,
     this.mountType = MountType.undefined,
     this.pierSide = PierSide.unknown,
     this.gnssFlags = 0,
@@ -133,6 +140,14 @@ class MountState {
   bool get isParked => parkState == ParkState.parked;
   bool get isTracking => tracking == TrackState.on;
   bool get isSlewing => tracking == TrackState.slewing;
+  bool get alignmentInProgress => alignPhase != AlignPhase.idle;
+
+  String get alignPhaseLabel => switch (alignPhase) {
+        AlignPhase.idle => '',
+        AlignPhase.select => 'Select star $alignStarNum',
+        AlignPhase.slew => 'Slewing to star $alignStarNum',
+        AlignPhase.recenter => 'Recenter star $alignStarNum',
+      };
 
   // ---------------------------------------------------------------------------
   // Coordinate format helpers
@@ -346,6 +361,9 @@ class MountState {
       guidingNS: nsStr,
       trackCorrected: trkComp,
       aligned: alignedVal,
+      alignmentRefCount: bytes[99] & 0x3,
+      alignPhase: AlignPhase.values[(bytes[100] & 0x3).clamp(0, 3)],
+      alignStarNum: (bytes[100] >> 2) & 0x7,
       mountType: mountVal,
       pierSide: pierVal,
       gnssFlags: gFlags,
@@ -386,6 +404,9 @@ class MountState {
     String? guidingNS,
     bool? trackCorrected,
     bool? aligned,
+    int? alignmentRefCount,
+    AlignPhase? alignPhase,
+    int? alignStarNum,
     MountType? mountType,
     PierSide? pierSide,
     int? gnssFlags,
@@ -432,6 +453,9 @@ class MountState {
       guidingNS: guidingNS ?? this.guidingNS,
       trackCorrected: trackCorrected ?? this.trackCorrected,
       aligned: aligned ?? this.aligned,
+      alignmentRefCount: alignmentRefCount ?? this.alignmentRefCount,
+      alignPhase: alignPhase ?? this.alignPhase,
+      alignStarNum: alignStarNum ?? this.alignStarNum,
       mountType: mountType ?? this.mountType,
       pierSide: pierSide ?? this.pierSide,
       gnssFlags: gnssFlags ?? this.gnssFlags,

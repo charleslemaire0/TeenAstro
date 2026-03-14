@@ -5,7 +5,7 @@
 #include "ValueToString.h"
 
 // -----------------------------------------------------------------------------
-//   A - Alignment  :A0# :A*# :A1# :A2# :A3# ... :An#  (OnStepX-style: A1=1st star, An=nth)
+//   A - Alignment  :A0# :A*# :A1# .. :A9# :AB# :AC# :AA# :AE# :AW#
 // -----------------------------------------------------------------------------
 void Command_A() {
   switch (commandState.command[1]) {
@@ -17,6 +17,8 @@ void Command_A() {
     delay(10);
     if (mount.motorsEncoders.enableMotor)
       mount.startSideralTracking();
+    mount.alignment.alignPhase   = ALIGN_SELECT;
+    mount.alignment.alignStarNum = 1;
     replyShortTrue();
     break;
   case '*': {
@@ -38,6 +40,8 @@ void Command_A() {
     mount.syncAzAlt(&HO_T, targetPoleSide);
     Coord_IN IN_T = mount.getInstr();
     mount.alignment.conv.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
+    mount.alignment.alignPhase   = ALIGN_SELECT;
+    mount.alignment.alignStarNum = 2;
     replyShortTrue();
     break;
   }
@@ -64,6 +68,12 @@ void Command_A() {
       mount.alignment.conv.minimizeAxis1(mount.config.identity.mountType == MOUNT_TYPE_GEM ? (Lat >= 0 ? M_PI_2 : -M_PI_2) : 0);
       mount.syncAzAlt(&HO_T, mount.getPoleSide());
       mount.alignment.hasValid = true;
+      mount.alignment.alignPhase   = ALIGN_IDLE;
+      mount.alignment.alignStarNum = 0;
+    } else {
+      uint8_t starIdx = commandState.command[1] - '0';
+      mount.alignment.alignPhase   = ALIGN_SELECT;
+      mount.alignment.alignStarNum = starIdx + 1;
     }
     mount.config.peripherals.PushtoStatus = PT_OFF;
     replyShortTrue();
@@ -82,6 +92,17 @@ void Command_A() {
     initTransformation(true);
     mount.syncAtHome();
     mount.alignment.autoAlignmentBySync = (commandState.command[1] == 'A');
+    mount.alignment.alignPhase   = ALIGN_IDLE;
+    mount.alignment.alignStarNum = 0;
+    replyShortTrue();
+    break;
+  case 'B':
+    // :AB#  Abort alignment in progress (clear refs without syncing at home)
+    mount.alignment.conv.clean();
+    mount.alignment.hasValid = false;
+    mount.alignment.alignPhase   = ALIGN_IDLE;
+    mount.alignment.alignStarNum = 0;
+    XEEPROM.write(getMountAddress(EE_Tvalid), 0);
     replyShortTrue();
     break;
   case 'W':

@@ -401,6 +401,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
     case 1:
       if (alignInProgress)
       {
+        m_client->alignAbort();
         ta_MountStatus.stopAlign();
         DisplayMessage(T_ALIGNMENT, T_CANCELED, -1);
         return MR_QUIT;

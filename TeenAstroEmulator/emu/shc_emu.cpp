@@ -689,7 +689,7 @@ int main(int argc, char** argv)
     TeenAstroWifi::setClient(*g_lx200);
     HdCrtlr.setClient(*g_lx200);
 
-    const char SHCVersion[] = "1.6.0-emu";
+    const char SHCVersion[] = "1.6.1-emu";
     const int pin[7] = { 0, 0, 0, 0, 0, 0, 0 };
     const bool active[7] = { false, false, false, false, false, false, false };
 

@@ -17,6 +17,7 @@ class ControlScreen extends ConsumerWidget {
     final client = ref.read(lx200ClientProvider);
     final safeMove = ref.read(safeMoveHandlerProvider);
     final state = ref.watch(mountStateProvider);
+    final slewing = state.isSlewing;
 
     return ListView(
       padding: const EdgeInsets.all(12),
@@ -54,20 +55,40 @@ class ControlScreen extends ConsumerWidget {
           children: [
             _ActionButton(
               icon: Icons.stop_circle,
-              label: 'STOP',
+              label: slewing ? 'STOP SLEW' : 'STOP',
               color: TAColors.error,
-              onPressed: () => safeMove.stopMove(),
+              large: slewing,
+              onPressed: () {
+                safeMove.stopMove();
+                client.sendImmediate(LX200.stopAll);
+              },
             ),
             _ActionButton(
               icon: Icons.local_parking,
               label: state.isParked ? 'Unpark' : 'Park',
-              onPressed: () => client.send(
-                state.isParked ? LX200.unpark : LX200.park),
+              onPressed: () async {
+                final cmd = state.isParked ? LX200.unpark : LX200.park;
+                final ok = await client.sendBool(cmd);
+                if (context.mounted && !ok) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(state.isParked ? 'Unpark failed' : 'Park failed'),
+                    backgroundColor: TAColors.error,
+                  ));
+                }
+              },
             ),
             _ActionButton(
               icon: Icons.home,
               label: 'Home',
-              onPressed: () => client.send(LX200.goHome),
+              onPressed: () async {
+                final ok = await client.sendBool(LX200.goHome);
+                if (context.mounted && !ok) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Go-home failed (mount parked or busy?)'),
+                    backgroundColor: TAColors.error,
+                  ));
+                }
+              },
             ),
             if (state.isGEM)
               _ActionButton(
@@ -122,10 +143,11 @@ class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color? color;
+  final bool large;
   final VoidCallback onPressed;
   const _ActionButton({
     required this.icon, required this.label,
-    this.color, required this.onPressed,
+    this.color, this.large = false, required this.onPressed,
   });
 
   @override
@@ -134,11 +156,14 @@ class _ActionButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: color ?? TAColors.surfaceVariant,
         foregroundColor: color != null ? Colors.white : TAColors.text,
-        minimumSize: const Size(100, 48),
+        minimumSize: Size(large ? 160 : 100, large ? 56 : 48),
       ),
       onPressed: onPressed,
-      icon: Icon(icon, size: 18),
-      label: Text(label),
+      icon: Icon(icon, size: large ? 22 : 18),
+      label: Text(label, style: TextStyle(
+        fontSize: large ? 16 : 14,
+        fontWeight: large ? FontWeight.w700 : FontWeight.normal,
+      )),
     );
   }
 }

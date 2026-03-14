@@ -451,7 +451,25 @@ void TeenAstroMountStatus::updateAllState(bool force)
   uint8_t eFlags   = pkt[5];
   m_mount.enableFlags = eFlags & 0x0F;
   m_hasFocuser      = (eFlags >> 4) & 0x1;
+  m_mount.alignmentRefCount = pkt[99] & 0x3;
+  m_mount.alignPhase   = pkt[100] & 0x3;
+  m_mount.alignStarNum = (pkt[100] >> 2) & 0x7;
   m_mount.valid     = true;
+
+  // Sync local alignment mimic from mount-reported fine-grained phase so
+  // SHC display/logic stays consistent with the mount (and other clients).
+  static const AlignState phaseToState[] = { ALI_OFF, ALI_SELECT, ALI_SLEW, ALI_RECENTER };
+  AlignState mountPhase = phaseToState[m_mount.alignPhase & 0x3];
+  if (mountPhase == ALI_OFF)
+  {
+    if (m_align != ALI_OFF) { m_align = ALI_OFF; m_alignStar = 0; }
+  }
+  else
+  {
+    m_align     = mountPhase;
+    m_alignStar = m_mount.alignStarNum;
+  }
+
   m_timerMount.markUpdated();
 
   // ── UTC bytes 6-11 ────────────────────────────────────────────────────

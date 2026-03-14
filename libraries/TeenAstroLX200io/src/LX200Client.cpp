@@ -788,6 +788,7 @@ LX200RETURN LX200Client::alignAcceptStar()  { return set(":A*#"); }
 LX200RETURN LX200Client::alignAtHome()      { return set(":AA#"); }
 LX200RETURN LX200Client::alignSave()        { return set(":AW#"); }
 LX200RETURN LX200Client::alignClear()       { return set(":AC#"); }
+LX200RETURN LX200Client::alignAbort()       { return set(":AB#"); }
 LX200RETURN LX200Client::getAlignError(char* out, int len) { return get(":AE#", out, len); }
 LX200RETURN LX200Client::alignNextStar()    { return set(":A+#"); }
 LX200RETURN LX200Client::setPierSideEast()  { return set(":SmE#"); }

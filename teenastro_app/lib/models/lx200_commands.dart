@@ -132,6 +132,7 @@ class LX200 {
   static const alignAtHome     = ':AA#';
   static const alignSave       = ':AW#';
   static const alignClear      = ':AC#';
+  static const alignAbort      = ':AB#';
   static const getAlignError   = ':AE#';
   /// Add alignment star n (OnStepX-style: n=1 first star, n=2 second, n=3 third, etc.)
   static String alignAddStar(int n) => ':A$n#';

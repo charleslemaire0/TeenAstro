@@ -230,7 +230,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilterVarMaxPer()
   current_selection_filter_varmax = display->UserInterfaceSelectionList(&buttonPad, "Filter Var* Period", current_selection_filter_varmax, string_list_fVarMax);
   if (current_selection_filter_varmax == 0)
   {
-    current_selection_filter_dblmax = last_selection_filter_varmax; return MR_CANCEL;
+    current_selection_filter_varmax = last_selection_filter_varmax; return MR_CANCEL;
   }
   return MR_OK;
 }

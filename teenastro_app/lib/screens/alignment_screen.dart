@@ -211,6 +211,13 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
     });
   }
 
+  Future<void> _abortAlignment() async {
+    if (_isSlewingStep) await _client.send(LX200.stopAll);
+    await _client.sendBool(LX200.alignAbort);
+    _slewPoll?.cancel();
+    if (mounted) _reset();
+  }
+
   bool get _isSelectStep =>
       _step == AlignStep.selectStar1 ||
       _step == AlignStep.selectStar2 ||
@@ -284,6 +291,21 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
             star2: _star2,
             star3: _star3),
 
+        // Mount alignment status from GXAS
+        if (state.alignmentInProgress)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            color: TAColors.surfaceVariant,
+            child: Row(
+              children: [
+                Icon(Icons.settings_input_antenna, size: 14, color: TAColors.accent),
+                const SizedBox(width: 6),
+                Text('Mount: ${state.alignPhaseLabel}',
+                    style: TextStyle(color: TAColors.text, fontSize: 11)),
+              ],
+            ),
+          ),
+
         // Sky map fills remaining space
         Expanded(
           child: Stack(
@@ -329,6 +351,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
                           ElevatedButton.icon(
                             onPressed: () async {
                               await _client.send(LX200.stopAll);
+                              await _client.sendBool(LX200.alignAbort);
                               _slewPoll?.cancel();
                               if (mounted) _reset();
                             },
@@ -454,7 +477,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
                 style: TextStyle(color: TAColors.text, fontSize: 12),
               ),
             ),
-            _SmallBtn(Icons.close, 'Cancel alignment', _reset),
+            _SmallBtn(Icons.close, 'Abort alignment', _abortAlignment),
           ],
         );
 
@@ -494,7 +517,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
               ),
             ),
             const SizedBox(width: 6),
-            _SmallBtn(Icons.close, 'Cancel alignment', _reset),
+            _SmallBtn(Icons.close, 'Abort alignment', _abortAlignment),
           ],
         );
 
@@ -510,11 +533,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
                     fontWeight: FontWeight.w600)),
             const SizedBox(width: 8),
             Expanded(child: const SizedBox.shrink()),
-            _SmallBtn(Icons.stop, 'Abort', () async {
-              await _client.send(LX200.stopAll);
-              _slewPoll?.cancel();
-              if (mounted) _reset();
-            }),
+            _SmallBtn(Icons.stop, 'Abort', _abortAlignment),
           ],
         );
 
@@ -542,7 +561,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
                 style: TextStyle(color: TAColors.text, fontSize: 12),
               ),
             ),
-            _SmallBtn(Icons.close, 'Cancel alignment', _reset),
+            _SmallBtn(Icons.close, 'Abort alignment', _abortAlignment),
             const SizedBox(width: 8),
             ElevatedButton(
               style: ElevatedButton.styleFrom(

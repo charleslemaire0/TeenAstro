@@ -77,6 +77,9 @@ struct MountState
   bool              trackCorrected = false;
   RateCompensation  rateComp      = RC_UNKNOWN;
   bool              aligned       = false;
+  uint8_t           alignmentRefCount = 0;  // 0–2, from GXAS byte 99
+  uint8_t           alignPhase    = 0;     // 0=idle, 1=select, 2=slew, 3=recenter (GXAS byte 100 bits 0-1)
+  uint8_t           alignStarNum  = 0;     // 1-based star being worked on (GXAS byte 100 bits 2-4)
   Mount             mountType     = MOUNT_UNDEFINED;
   PierState         pierSide      = PIER_UNKNOW;
   uint8_t           gnssFlags     = 0;          // bitfield from char[14]
@@ -454,6 +457,9 @@ public:
   bool              isGuidingN()         { return m_mount.guidingNS == '^'; }
   bool              isGuidingS()         { return m_mount.guidingNS == '_'; }
   bool              isAligned()          { return m_mount.aligned; }
+  uint8_t           getAlignmentRefCount() { return m_mount.alignmentRefCount; }
+  uint8_t           getMountAlignPhase() { return m_mount.alignPhase; }
+  uint8_t           getMountAlignStarNum() { return m_mount.alignStarNum; }
   bool              hasGNSSBoard()       { return m_mount.hasGNSSBoard(); }
   bool              isGNSSValid()        { return m_mount.isGNSSValid(); }
   bool              isGNSSTimeSync()     { return m_mount.isGNSSTimeSync(); }

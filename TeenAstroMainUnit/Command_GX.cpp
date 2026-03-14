@@ -43,7 +43,8 @@ static void PrintRa(double& val) {
 //   Bytes 84-91: Stored rates (int32 LE at 84, 88 — same as :GXRe#/:GXRf#)
 //   Bytes 92-97: Focuser (optional; when hasFocuser): position uint32 LE, speed uint16 LE. Otherwise zero.
 //   Byte  98:   Timezone offset (int8_t, toff × 10; subtract to get local from UTC)
-//   Bytes 99-100: reserved (0)
+//   Byte  99:   Alignment ref count (0–2, from CoordConv::getRefs())
+//   Byte  100:  Alignment phase (bits 0-1: 0=idle,1=select,2=slew,3=recenter) + star number (bits 2-4: 0–7)
 //   Byte  101:  XOR checksum of bytes 0-100
 
 static constexpr int GXAS_PKT_LEN = 102;
@@ -217,7 +218,23 @@ static void Command_GX_AllState()
   // ── Byte 98: timezone offset (toff × 10, int8_t) ───────────────────────────
   pkt[98] = (uint8_t)((int8_t)round(*localSite.toff() * 10.0f));
 
-  // pkt[99-100] stay 0 (reserved)
+  // Byte 99: alignment reference count (0, 1, or 2)
+  pkt[99] = (uint8_t)(mount.alignment.conv.getRefs() & 0x3);
+
+  // Byte 100: alignment phase (bits 0-1) + star number (bits 2-4)
+  // Auto-detect slew/recenter transitions from mount motion state.
+  {
+    AlignPhase phase = mount.alignment.alignPhase;
+    if (phase == ALIGN_SELECT && mount.isMovingTo()) {
+      phase = ALIGN_SLEW;
+      mount.alignment.alignPhase = ALIGN_SLEW;
+    }
+    if (phase == ALIGN_SLEW && !mount.isMovingTo()) {
+      phase = ALIGN_RECENTER;
+      mount.alignment.alignPhase = ALIGN_RECENTER;
+    }
+    pkt[100] = (phase & 0x3) | ((mount.alignment.alignStarNum & 0x7) << 2);
+  }
 
   // Byte 101: XOR checksum of bytes 0-100
   uint8_t xorChk = 0;

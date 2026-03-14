@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../services/lx200_tcp_client.dart';
 import '../services/mount_state_provider.dart';
 import '../models/lx200_commands.dart';
+import '../providers/last_goto_route_provider.dart';
 import '../theme.dart';
 import '../widgets/status_bar.dart';
 
@@ -41,9 +42,11 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
         _result = 'Slewing to target...';
       } else {
         final errIdx = int.tryParse(reply ?? '') ?? -1;
-        _result = errIdx >= 0 && errIdx < GotoError.values.length
-            ? 'Error: ${GotoError.values[errIdx].name}'
-            : 'Error: $reply';
+        if (errIdx >= 0 && errIdx < GotoError.values.length) {
+          _result = 'Error: ${gotoErrorCause(GotoError.values[errIdx])}';
+        } else {
+          _result = 'Error: $reply';
+        }
       }
     });
   }
@@ -58,6 +61,32 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
     setState(() => _result = reply != null ? 'Synced: $reply' : 'Sync failed');
   }
 
+  Future<void> _stopSlew(LX200TcpClient client) async {
+    client.sendImmediate(LX200.stopAll);
+    setState(() => _result = 'Slew aborted');
+  }
+
+  Future<void> _goHome(LX200TcpClient client) async {
+    final reply = await client.sendBool(LX200.goHome);
+    setState(() {
+      _result = reply ? 'Going home...' : 'Go-home failed (mount parked or busy?)';
+    });
+  }
+
+  Future<void> _park(LX200TcpClient client) async {
+    final reply = await client.sendBool(LX200.park);
+    setState(() {
+      _result = reply ? 'Parking...' : 'Park failed';
+    });
+  }
+
+  @override
+  @override
+  void initState() {
+    super.initState();
+    ref.read(lastGotoTabRouteProvider.notifier).state = '/goto';
+  }
+
   @override
   void dispose() {
     _raH.dispose(); _raM.dispose(); _raS.dispose();
@@ -70,12 +99,25 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
   Widget build(BuildContext context) {
     final client = ref.read(lx200ClientProvider);
     final state = ref.watch(mountStateProvider);
+    final slewing = state.isSlewing;
 
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
         MountStatusBar(state: state),
         const SizedBox(height: 16),
+
+        // Planetarium
+        Card(
+          child: ListTile(
+            leading: Icon(Icons.public, color: TAColors.accent),
+            title: const Text('Planetarium'),
+            subtitle: const Text('Interactive sky map with Goto'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.go('/planetarium'),
+          ),
+        ),
+        const SizedBox(height: 8),
 
         // Catalog button
         Card(
@@ -146,21 +188,28 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Action buttons
+                // Goto / Stop / Sync buttons
                 Row(
                   children: [
                     Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _gotoRaDec(client),
-                        icon: const Icon(Icons.my_location),
-                        label: const Text('Goto'),
-                      ),
+                      child: slewing
+                          ? ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(backgroundColor: TAColors.error),
+                              onPressed: () => _stopSlew(client),
+                              icon: const Icon(Icons.stop_circle),
+                              label: const Text('Stop'),
+                            )
+                          : ElevatedButton.icon(
+                              onPressed: () => _gotoRaDec(client),
+                              icon: const Icon(Icons.my_location),
+                              label: const Text('Goto'),
+                            ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(backgroundColor: TAColors.surfaceVariant),
-                        onPressed: () => _syncRaDec(client),
+                        onPressed: slewing ? null : () => _syncRaDec(client),
                         icon: const Icon(Icons.sync),
                         label: const Text('Sync'),
                       ),
@@ -171,7 +220,9 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
                 if (_result.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Text(_result, style: TextStyle(
-                    color: _result.startsWith('Error') ? TAColors.error : TAColors.success,
+                    color: _result.startsWith('Error') || _result.contains('failed')
+                        ? TAColors.error
+                        : TAColors.success,
                     fontSize: 13)),
                 ],
               ],
@@ -194,22 +245,25 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        await client.send(LX200.goHome);
-                        setState(() => _result = 'Going home...');
-                      },
-                      icon: const Icon(Icons.home),
-                      label: const Text('Home'),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        await client.send(LX200.park);
-                        setState(() => _result = 'Parking...');
-                      },
-                      icon: const Icon(Icons.local_parking),
-                      label: const Text('Park'),
-                    ),
+                    if (slewing)
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(backgroundColor: TAColors.error),
+                        onPressed: () => _stopSlew(client),
+                        icon: const Icon(Icons.stop_circle),
+                        label: const Text('Stop Slew'),
+                      )
+                    else ...[
+                      ElevatedButton.icon(
+                        onPressed: () => _goHome(client),
+                        icon: const Icon(Icons.home),
+                        label: const Text('Home'),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () => _park(client),
+                        icon: const Icon(Icons.local_parking),
+                        label: const Text('Park'),
+                      ),
+                    ],
                   ],
                 ),
               ],
