@@ -28,10 +28,7 @@
       "email": "rob.tillaart@gmail.com"
     }
   ],
-  "dependencies":
-  {
-    "paulstoffregen/OneWire": "^2.3.5"
-  },
+  "dependencies": {},
   "version": "4.0.6",
   "license": "MIT",
   "frameworks": "arduino",
