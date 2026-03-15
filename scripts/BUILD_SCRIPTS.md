@@ -15,7 +15,8 @@ Reminder of which script does what and where outputs go.
 - **Does not build** anything.
 
 ```powershell
-C:\Users\charl\source\repos\charleslemaire0\TeenAstro\scripts\setup_build_env.ps1
+# From repo root:
+.\scripts\setup_build_env.ps1
 ```
 
 Then close and reopen PowerShell so PATH is updated.

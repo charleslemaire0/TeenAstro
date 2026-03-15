@@ -14,13 +14,14 @@
 
 param(
     [switch]$FixFlutter,
-    [string]$FlutterPath = "C:\Users\charl\OneDrive\Dokumente\develop\flutter\bin",
+    [string]$FlutterPath = "",   # Empty = use Flutter from PATH; set only if Flutter is not on PATH
     [switch]$SkipAndroid,
     [switch]$SkipWindows
 )
 
 $ErrorActionPreference = "Stop"
-$DevelopRoot = "C:\Users\charl\OneDrive\Dokumente\develop"
+# Only used when -FixFlutter is set: clone Flutter into this folder (default: user's home)
+$DevelopRoot = if ($env:USERPROFILE) { $env:USERPROFILE } else { $env:HOME }
 
 # Resolve script location: script lives in repo\scripts\, so RepoRoot = parent of scripts\
 $_scriptFile = $MyInvocation.MyCommand.Path
@@ -86,10 +87,10 @@ if ($FixFlutter) {
 
 # --- Ensure we can run Flutter ---
 if (-not (Get-Command flutter -ErrorAction SilentlyContinue)) {
-    if (Add-FlutterToPath -BinPath $FlutterPath) {
+    if ($FlutterPath -and (Add-FlutterToPath -BinPath $FlutterPath)) {
         Write-Host "Using Flutter at: $FlutterPath" -ForegroundColor Gray
     } else {
-        Write-Error "Flutter not found. Add Flutter\bin to PATH, use -FlutterPath, or run with -FixFlutter."
+        Write-Error "Flutter not found. Add Flutter\bin to PATH, set -FlutterPath 'C:\path\to\flutter\bin', or run with -FixFlutter to clone Flutter into $DevelopRoot."
     }
 }
 
