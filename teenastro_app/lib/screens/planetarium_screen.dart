@@ -50,6 +50,13 @@ class _SkyObject {
   });
 }
 
+String _objectSubtitle(_SkyObject obj) {
+  final parts = <String>[obj.type];
+  if (obj.constellation.isNotEmpty) parts.add(obj.constellation);
+  parts.add(obj.mag != null ? 'mag ${obj.mag!.toStringAsFixed(1)}' : 'mag —');
+  return parts.join('  •  ');
+}
+
 // ---------------------------------------------------------------------------
 // PlanetariumScreen
 // ---------------------------------------------------------------------------
@@ -193,6 +200,7 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
     final size = context.size;
     if (size == null) return;
 
+    final settings = ref.read(planetariumSettingsProvider);
     final proj = _Proj(
       lat: state.latitude,
       lst: _parseLST(state.siderealTime),
@@ -206,18 +214,10 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
     double bestDist = 30.0;
 
     final jd = julianDate(DateTime.now().toUtc());
-    final settings = ref.read(planetariumSettingsProvider);
-    final useJNow = settings.epochMode == EpochMode.jNow;
-
-    (double, double) catCoords(double ra, double dec) {
-      if (useJNow) return equatorialEquinoxToJNow(ra, dec, 2000, jd);
-      return (ra, dec);
-    }
-
-    (double, double) mountCoords(double ra, double dec) {
-      if (!useJNow) return equatorialJNowToEquinox(ra, dec, 2000, jd);
-      return (ra, dec);
-    }
+    // Display always uses JNow (mount and catalog precession).
+    (double, double) catCoords(double ra, double dec) =>
+        equatorialEquinoxToJNow(ra, dec, 2000, jd);
+    (double, double) mountCoords(double ra, double dec) => (ra, dec);
 
     // Check planets (JNow source)
     for (final body in allBodies(jd)) {
@@ -374,23 +374,13 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
   void _centerOnObject(_SkyObject obj) {
     final state = ref.read(mountStateProvider);
     final jd = julianDate(DateTime.now().toUtc());
-    final settings = ref.read(planetariumSettingsProvider);
-    final useJNow = settings.epochMode == EpochMode.jNow;
+    // Display always JNow.
     final double dispRa, dispDec;
     if (obj.isJNow) {
-      if (!useJNow) {
-        (dispRa, dispDec) = equatorialJNowToEquinox(obj.ra, obj.dec, 2000, jd);
-      } else {
-        dispRa = obj.ra;
-        dispDec = obj.dec;
-      }
+      dispRa = obj.ra;
+      dispDec = obj.dec;
     } else {
-      if (useJNow) {
-        (dispRa, dispDec) = equatorialEquinoxToJNow(obj.ra, obj.dec, 2000, jd);
-      } else {
-        dispRa = obj.ra;
-        dispDec = obj.dec;
-      }
+      (dispRa, dispDec) = equatorialEquinoxToJNow(obj.ra, obj.dec, 2000, jd);
     }
     final lst = _parseLST(state.siderealTime);
     final latRad = state.latitude * math.pi / 180;
@@ -849,7 +839,8 @@ class _SkyRenderer extends CustomPainter {
     this.nightMode = false,
   });
 
-  bool get _useJNow => settings.epochMode == EpochMode.jNow;
+  // Display always JNow (no epoch toggle).
+  static const bool _useJNow = true;
 
   // Sky colors: normal (cool blue) vs night vision (warm red)
   Color get _skyBg          => nightMode ? const Color(0xFF120606) : const Color(0xFF0C1520);
@@ -1513,8 +1504,6 @@ class _LayerPanel extends StatelessWidget {
             // --- Coordinates ---
             const _SectionHeader('Coordinates'),
             _coordSelector(),
-            const SizedBox(height: 6),
-            _epochSelector(),
             Divider(color: TA.border, height: 12),
 
             // --- Reset ---
@@ -1640,47 +1629,6 @@ class _LayerPanel extends StatelessWidget {
     );
   }
 
-  Widget _epochSelector() {
-    return Row(
-      children: [
-        _epochChip('JNow', EpochMode.jNow),
-        const SizedBox(width: 4),
-        _epochChip('J2000', EpochMode.j2000),
-      ],
-    );
-  }
-
-  Widget _epochChip(String label, EpochMode mode) {
-    final selected = settings.epochMode == mode;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          notifier.setEpochMode(mode);
-          onChanged();
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          decoration: BoxDecoration(
-            color: selected ? TA.accent.withValues(alpha: 0.25) : Colors.transparent,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(
-              color: selected ? TA.accent : TA.border,
-              width: selected ? 1.5 : 1.0,
-            ),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              color: selected ? TA.accent : TA.textSecondary,
-              fontSize: 11,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _SectionHeader extends StatelessWidget {
@@ -1732,6 +1680,33 @@ class _ObjectInfoPanel extends ConsumerWidget {
     return '$sign${d.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  Widget _coordLines(String altStr) {
+    final jd = julianDate(DateTime.now().toUtc());
+    final double raJ2000, decJ2000, raJNow, decJNow;
+    if (object.isJNow) {
+      raJNow = object.ra;
+      decJNow = object.dec;
+      (raJ2000, decJ2000) = equatorialJNowToEquinox(object.ra, object.dec, 2000, jd);
+    } else {
+      raJ2000 = object.ra;
+      decJ2000 = object.dec;
+      (raJNow, decJNow) = equatorialEquinoxToJNow(object.ra, object.dec, 2000, jd);
+    }
+    final mono = TextStyle(
+      color: TA.text,
+      fontSize: 10,
+      fontFamily: 'monospace',
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('J2000  RA ${_formatRa(raJ2000)}   Dec ${_formatDec(decJ2000)}', style: mono),
+        const SizedBox(height: 1),
+        Text('JNow   RA ${_formatRa(raJNow)}   Dec ${_formatDec(decJNow)}   Alt $altStr', style: mono),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mountState = ref.watch(mountStateProvider);
@@ -1747,7 +1722,7 @@ class _ObjectInfoPanel extends ConsumerWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
       decoration: BoxDecoration(
         color: TA.surface.withValues(alpha: 0.95),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
@@ -1757,14 +1732,13 @@ class _ObjectInfoPanel extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title row
           Row(
             children: [
               if (object.color != null)
                 Container(
-                  width: 10,
-                  height: 10,
-                  margin: const EdgeInsets.only(right: 8),
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.only(right: 6),
                   decoration: BoxDecoration(
                     color: object.color,
                     shape: BoxShape.circle,
@@ -1775,39 +1749,34 @@ class _ObjectInfoPanel extends ConsumerWidget {
                   object.name,
                   style: TextStyle(
                     color: TA.textHigh,
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               IconButton(
                 icon: Icon(Icons.close, size: 18, color: TA.textSecondary),
                 onPressed: onClose,
-                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
                 padding: EdgeInsets.zero,
+                style: IconButton.styleFrom(
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-
-          // Details
+          const SizedBox(height: 2),
           Text(
-            '${object.type}${object.constellation.isNotEmpty ? '  •  ${object.constellation}' : ''}'
-            '${object.mag != null ? '  •  mag ${object.mag!.toStringAsFixed(1)}' : ''}',
-            style: TextStyle(color: TA.textSecondary, fontSize: 12),
+            _objectSubtitle(object),
+            style: TextStyle(color: TA.textSecondary, fontSize: 10),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
-          Text(
-            'RA: ${_formatRa(object.ra)}   Dec: ${_formatDec(object.dec)}   Alt: $altStr',
-            style: TextStyle(
-              color: TA.text,
-              fontSize: 11,
-              fontFamily: 'monospace',
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Action buttons
+          const SizedBox(height: 2),
+          _coordLines(altStr),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
@@ -1815,21 +1784,29 @@ class _ObjectInfoPanel extends ConsumerWidget {
                     ? ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: TA.error,
-                          minimumSize: const Size(0, 40),
+                          minimumSize: const Size(0, 34),
                         ),
                         onPressed: () {
                           client.sendImmediate(LX200.stopAll);
                         },
-                        icon: const Icon(Icons.stop_circle, size: 16),
+                        icon: const Icon(Icons.stop_circle, size: 14),
                         label: const Text('Stop'),
                       )
                     : ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(0, 40),
+                          minimumSize: const Size(0, 34),
                         ),
+                        icon: const Icon(Icons.my_location, size: 14),
                         onPressed: () async {
-                          final raStr = _formatRa(object.ra);
-                          final decStr = _formatDec(object.dec);
+                          String raStr;
+                          String decStr;
+                          if (object.isJNow) {
+                            raStr = _formatRa(object.ra);
+                            decStr = _formatDec(object.dec);
+                          } else {
+                            final jd = julianDate(DateTime.now().toUtc());
+                            (raStr, decStr) = j2000ToJNowLx200(object.ra, object.dec, jd);
+                          }
                           await client.sendBool(LX200.setTargetRa(raStr));
                           await client.sendBool(LX200.setTargetDec(decStr));
                           final reply =
@@ -1848,27 +1825,33 @@ class _ObjectInfoPanel extends ConsumerWidget {
                             );
                           }
                         },
-                        icon: const Icon(Icons.my_location, size: 16),
                         label: const Text('Goto'),
                       ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: TA.surfaceVariant,
-                    minimumSize: const Size(0, 40),
+                    minimumSize: const Size(0, 34),
                   ),
+                  icon: const Icon(Icons.sync, size: 14),
                   onPressed: slewing
                       ? null
                       : () async {
-                          final raStr = _formatRa(object.ra);
-                          final decStr = _formatDec(object.dec);
+                          String raStr;
+                          String decStr;
+                          if (object.isJNow) {
+                            raStr = _formatRa(object.ra);
+                            decStr = _formatDec(object.dec);
+                          } else {
+                            final jd = julianDate(DateTime.now().toUtc());
+                            (raStr, decStr) = j2000ToJNowLx200(object.ra, object.dec, jd);
+                          }
                           await client.sendBool(LX200.setTargetRa(raStr));
                           await client.sendBool(LX200.setTargetDec(decStr));
                           await client.sendCommand(LX200.syncTarget);
                         },
-                  icon: const Icon(Icons.sync, size: 16),
                   label: const Text('Sync'),
                 ),
               ),
@@ -1940,9 +1923,7 @@ class _SearchPanel extends StatelessWidget {
                         style: TextStyle(
                             color: TA.textHigh, fontSize: 14)),
                     subtitle: Text(
-                      '${obj.type}'
-                      '${obj.constellation.isNotEmpty ? '  •  ${obj.constellation}' : ''}'
-                      '${obj.mag != null ? '  •  mag ${obj.mag!.toStringAsFixed(1)}' : ''}',
+                      _objectSubtitle(obj),
                       style: TextStyle(
                           color: TA.textSecondary, fontSize: 11),
                     ),

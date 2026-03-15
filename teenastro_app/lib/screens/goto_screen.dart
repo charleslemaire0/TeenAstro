@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../services/lx200_tcp_client.dart';
 import '../services/mount_state_provider.dart';
+import '../models/equinox_precession.dart';
 import '../models/lx200_commands.dart';
+import '../models/planet_positions.dart';
 import '../providers/last_goto_route_provider.dart';
 import '../theme.dart';
 import '../widgets/status_bar.dart';
@@ -25,11 +27,18 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
   String _result = '';
 
   Future<void> _gotoRaDec(LX200TcpClient client) async {
-    final ra = '${_raH.text.padLeft(2, '0')}:${_raM.text.padLeft(2, '0')}:${_raS.text.padLeft(2, '0')}';
-    final dec = '${_decSign.value}${_decD.text.padLeft(2, '0')}:${_decM.text.padLeft(2, '0')}:${_decS.text.padLeft(2, '0')}';
+    final raHours = (int.tryParse(_raH.text) ?? 0) +
+        (int.tryParse(_raM.text) ?? 0) / 60 +
+        (int.tryParse(_raS.text) ?? 0) / 3600;
+    final decDeg = (_decSign.value == '-' ? -1.0 : 1.0) *
+        ((int.tryParse(_decD.text) ?? 0) +
+            (int.tryParse(_decM.text) ?? 0) / 60 +
+            (int.tryParse(_decS.text) ?? 0) / 3600);
+    final jd = julianDate(DateTime.now().toUtc());
+    final (raStr, decStr) = j2000ToJNowLx200(raHours, decDeg, jd);
 
-    final setRa = await client.sendBool(LX200.setTargetRa(ra));
-    final setDec = await client.sendBool(LX200.setTargetDec(dec));
+    final setRa = await client.sendBool(LX200.setTargetRa(raStr));
+    final setDec = await client.sendBool(LX200.setTargetDec(decStr));
 
     if (!setRa || !setDec) {
       setState(() => _result = 'Failed to set target coordinates');
@@ -52,11 +61,18 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
   }
 
   Future<void> _syncRaDec(LX200TcpClient client) async {
-    final ra = '${_raH.text.padLeft(2, '0')}:${_raM.text.padLeft(2, '0')}:${_raS.text.padLeft(2, '0')}';
-    final dec = '${_decSign.value}${_decD.text.padLeft(2, '0')}:${_decM.text.padLeft(2, '0')}:${_decS.text.padLeft(2, '0')}';
+    final raHours = (int.tryParse(_raH.text) ?? 0) +
+        (int.tryParse(_raM.text) ?? 0) / 60 +
+        (int.tryParse(_raS.text) ?? 0) / 3600;
+    final decDeg = (_decSign.value == '-' ? -1.0 : 1.0) *
+        ((int.tryParse(_decD.text) ?? 0) +
+            (int.tryParse(_decM.text) ?? 0) / 60 +
+            (int.tryParse(_decS.text) ?? 0) / 3600);
+    final jd = julianDate(DateTime.now().toUtc());
+    final (raStr, decStr) = j2000ToJNowLx200(raHours, decDeg, jd);
 
-    await client.sendBool(LX200.setTargetRa(ra));
-    await client.sendBool(LX200.setTargetDec(dec));
+    await client.sendBool(LX200.setTargetRa(raStr));
+    await client.sendBool(LX200.setTargetDec(decStr));
     final reply = await client.sendCommand(LX200.syncTarget);
     setState(() => _result = reply != null ? 'Synced: $reply' : 'Sync failed');
   }

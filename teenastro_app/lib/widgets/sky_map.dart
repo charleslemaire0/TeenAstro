@@ -12,15 +12,18 @@ import '../services/catalog_service.dart';
 import '../services/mount_state_provider.dart';
 import '../theme.dart';
 
-/// Sky planetarium widget.
+/// Sky planetarium widget (same projection and epoch logic as main planetarium).
 /// [onStarSelected] fires when user taps a named star (only bright, named stars).
 /// [overlayMessage] shows a prominent message across the map.
 /// [highlightedStar] draws a highlight ring around a specific star.
+/// [maxStarScale] when set (e.g. 4.0 for align view), clamps star size to 1.0..maxStarScale.
 class SkyMapWidget extends ConsumerStatefulWidget {
   final double? height;
   final void Function(CatalogEntry star)? onStarSelected;
   final String? overlayMessage;
   final CatalogEntry? highlightedStar;
+  /// If set, effective star scale is clamped to [1.0, maxStarScale] (e.g. align view uses 4.0).
+  final double? maxStarScale;
 
   const SkyMapWidget({
     super.key,
@@ -28,6 +31,7 @@ class SkyMapWidget extends ConsumerStatefulWidget {
     this.onStarSelected,
     this.overlayMessage,
     this.highlightedStar,
+    this.maxStarScale,
   });
 
   @override
@@ -140,6 +144,9 @@ class _SkyMapWidgetState extends ConsumerState<SkyMapWidget> {
               Consumer(
                 builder: (_, ref, __) {
                   final settings = ref.watch(planetariumSettingsProvider);
+                  final effectiveStarScale = widget.maxStarScale == null
+                      ? settings.starScale
+                      : settings.starScale.clamp(1.0, widget.maxStarScale!);
                   return CustomPaint(
                     size: Size.infinite,
                     painter: _SkyPainter(
@@ -150,8 +157,8 @@ class _SkyMapWidgetState extends ConsumerState<SkyMapWidget> {
                       rotation: _rotation,
                       panY: _panY,
                       highlightedStar: widget.highlightedStar,
-                      starScale: settings.starScale,
-                      epochMode: settings.epochMode,
+                      starScale: effectiveStarScale,
+                      epochMode: EpochMode.jNow,
                       nightMode: TA.isNight,
                     ),
                   );
@@ -252,18 +259,14 @@ class _SkyMapWidgetState extends ConsumerState<SkyMapWidget> {
       panY: _panY,
     );
 
-    final settings = ref.read(planetariumSettingsProvider);
-    final useJNow = settings.epochMode == EpochMode.jNow;
+    // Display always JNow.
     final jd = julianDate(DateTime.now().toUtc());
 
     CatalogEntry? nearest;
     double nearestDist = 25.0;
 
     for (final star in _stars!) {
-      double sRa = star.ra, sDec = star.dec;
-      if (useJNow) {
-        (sRa, sDec) = equatorialEquinoxToJNow(star.ra, star.dec, 2000, jd);
-      }
+      final (sRa, sDec) = equatorialEquinoxToJNow(star.ra, star.dec, 2000, jd);
       final pt = proj.project(sRa, sDec);
       if (pt == null) continue;
       final d = (pt - localPos).distance;
@@ -437,19 +440,10 @@ class _SkyPainter extends CustomPainter {
     _drawCardinal(canvas, proj, 'NW', 7 * math.pi / 4, rotation, 8);
 
     final jd = julianDate(DateTime.now().toUtc());
-    final useJNow = epochMode == EpochMode.jNow;
-
-    // Helper: convert catalog J2000 coords to display epoch
-    (double, double) starCoords(double raH, double decDeg) {
-      if (useJNow) return equatorialEquinoxToJNow(raH, decDeg, 2000, jd);
-      return (raH, decDeg); // J2000 mode: catalog stays as-is
-    }
-
-    // Helper: convert mount JNow coords to display epoch
-    (double, double) mountCoords(double raH, double decDeg) {
-      if (!useJNow) return equatorialJNowToEquinox(raH, decDeg, 2000, jd);
-      return (raH, decDeg); // JNow mode: mount stays as-is
-    }
+    // Display always JNow.
+    (double, double) starCoords(double raH, double decDeg) =>
+        equatorialEquinoxToJNow(raH, decDeg, 2000, jd);
+    (double, double) mountCoords(double raH, double decDeg) => (raH, decDeg);
 
     // Constellation lines (Stellarium-style)
     final constLineC = nightMode ? const Color(0xFF662222) : const Color(0xFF4466AA);

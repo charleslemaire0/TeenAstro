@@ -6,6 +6,9 @@ import '../services/mount_state_provider.dart';
 import '../models/lx200_commands.dart';
 import '../models/mount_state.dart';
 import '../models/catalog_entry.dart';
+import '../models/equinox_precession.dart';
+import '../models/planet_positions.dart';
+import '../providers/planetarium_settings_provider.dart';
 import '../theme.dart';
 import '../widgets/sky_map.dart';
 
@@ -170,11 +173,13 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
       await Future.delayed(const Duration(milliseconds: 60));
     }
 
+    final jd = julianDate(DateTime.now().toUtc());
+    final (raStr, decStr) = j2000ToJNowLx200(star.ra, star.dec, jd);
     final raOk =
-        await _client.sendBool(LX200.setTargetRa(star.raStr));
+        await _client.sendBool(LX200.setTargetRa(raStr));
     await Future.delayed(const Duration(milliseconds: 60));
     final decOk =
-        await _client.sendBool(LX200.setTargetDec(star.decStr.replaceFirst(':', '*')));
+        await _client.sendBool(LX200.setTargetDec(decStr.replaceFirst(':', '*')));
     await Future.delayed(const Duration(milliseconds: 60));
 
     if (!raOk || !decOk) {
@@ -356,7 +361,39 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
             ),
           ),
 
-        // Sky map fills remaining space
+        // View options (align view derived from planetarium: same epoch, star size max 4)
+        Consumer(
+          builder: (_, ref, __) {
+            final settings = ref.watch(planetariumSettingsProvider);
+            final notifier = ref.read(planetariumSettingsProvider.notifier);
+            final starScale = settings.starScale.clamp(1.0, 4.0);
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              color: TA.surface.withValues(alpha: 0.6),
+              child: Row(
+                children: [
+                  Text('Star size', style: TextStyle(color: TA.textSecondary, fontSize: 11)),
+                  const SizedBox(width: 6),
+                  SizedBox(
+                    width: 80,
+                    height: 24,
+                    child: Slider(
+                      value: starScale,
+                      min: 1.0,
+                      max: 4.0,
+                      divisions: 30,
+                      onChanged: (v) => notifier.setStarScale(v),
+                    ),
+                  ),
+                  Text(starScale.toStringAsFixed(1),
+                      style: TextStyle(color: TA.text, fontSize: 11, fontFamily: 'monospace')),
+                ],
+              ),
+            );
+          },
+        ),
+
+        // Sky map fills remaining space (same projection & epoch as planetarium, max star size 4)
         Expanded(
           child: Stack(
             children: [
@@ -368,6 +405,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
                     onStarSelected: _isSelectStep ? _onStarSelected : null,
                     overlayMessage: overlayMsg,
                     highlightedStar: _currentHighlight,
+                    maxStarScale: 4.0,
                   ),
                 ),
               ),

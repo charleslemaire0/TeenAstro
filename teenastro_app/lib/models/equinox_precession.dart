@@ -209,3 +209,57 @@ const _arcsecToHours = 1.0 / 54000.0;
 
   return (raEst, decEst);
 }
+
+// ---------------------------------------------------------------------------
+// J2000 → JNow for mount target (LX200 format)
+// ---------------------------------------------------------------------------
+
+/// Format RA (hours) and Dec (degrees) as LX200 strings: HH:MM:SS and ±DD:MM:SS.
+(String raStr, String decStr) formatRaDecLx200(double raHours, double decDeg) {
+  var h = raHours.floor();
+  var m = ((raHours - h) * 60).floor();
+  var s = (((raHours - h) * 60 - m) * 60).round();
+  if (s >= 60) {
+    s -= 60;
+    m += 1;
+  }
+  if (m >= 60) {
+    m -= 60;
+    h += 1;
+  }
+  if (h >= 24) h -= 24;
+  if (h < 0) h += 24;
+  final raStr =
+      '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+
+  final sign = decDeg >= 0 ? '+' : '-';
+  final absD = decDeg.abs();
+  var d = absD.floor();
+  var dm = ((absD - d) * 60).floor();
+  var ds = (((absD - d) * 60 - dm) * 60).round();
+  if (ds >= 60) {
+    ds -= 60;
+    dm += 1;
+  }
+  if (dm >= 60) {
+    dm -= 60;
+    d += 1;
+  }
+  final decStr =
+      '$sign${d.toString().padLeft(2, '0')}:${dm.toString().padLeft(2, '0')}:${ds.toString().padLeft(2, '0')}';
+
+  return (raStr, decStr);
+}
+
+/// Convert J2000 catalog coordinates to JNow and return LX200-format strings
+/// for the mount. Use when sending catalog (J2000) target to a main unit that
+/// works in JNow.
+(String raStr, String decStr) j2000ToJNowLx200(
+  double raJ2000Hours,
+  double decJ2000Deg,
+  double jd,
+) {
+  final (ra, dec) =
+      equatorialEquinoxToJNow(raJ2000Hours, decJ2000Deg, 2000, jd);
+  return formatRaDecLx200(ra, dec);
+}
