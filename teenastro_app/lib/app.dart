@@ -39,7 +39,6 @@ class TeenAstroApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.read(nightViewProvider.notifier).loadSaved();
     final nightView = ref.watch(nightViewProvider);
     return MaterialApp.router(
       title: 'TeenAstro Controller',
