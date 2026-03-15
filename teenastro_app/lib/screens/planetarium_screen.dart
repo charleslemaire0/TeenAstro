@@ -15,61 +15,9 @@ import '../models/lx200_commands.dart';
 import '../services/catalog_service.dart';
 import '../services/lx200_tcp_client.dart';
 import '../providers/last_goto_route_provider.dart';
+import '../providers/planetarium_settings_provider.dart';
 import '../services/mount_state_provider.dart';
 import '../theme.dart';
-
-// ---------------------------------------------------------------------------
-// Persisted planetarium view state (restored when returning to planetarium)
-// ---------------------------------------------------------------------------
-
-class PlanetariumViewState {
-  final double zoom;
-  final double rotation;
-  final double panY;
-
-  const PlanetariumViewState({
-    this.zoom = 1.0,
-    this.rotation = 0.0,
-    this.panY = 0.0,
-  });
-
-  PlanetariumViewState copyWith({double? zoom, double? rotation, double? panY}) {
-    return PlanetariumViewState(
-      zoom: zoom ?? this.zoom,
-      rotation: rotation ?? this.rotation,
-      panY: panY ?? this.panY,
-    );
-  }
-}
-
-class PlanetariumViewNotifier extends Notifier<PlanetariumViewState> {
-  @override
-  PlanetariumViewState build() => const PlanetariumViewState();
-
-  void update({double? zoom, double? rotation, double? panY}) {
-    state = state.copyWith(zoom: zoom, rotation: rotation, panY: panY);
-  }
-}
-
-final planetariumViewProvider =
-    NotifierProvider<PlanetariumViewNotifier, PlanetariumViewState>(
-  PlanetariumViewNotifier.new,
-);
-
-// ---------------------------------------------------------------------------
-// Layer visibility state
-// ---------------------------------------------------------------------------
-
-class _Layers {
-  bool constellationLines = true;
-  bool constellationNames = true;
-  bool altAzGrid = false;
-  bool eqGrid = false;
-  bool milkyWay = true;
-  bool dsoObjects = true;
-  bool planetLabels = true;
-  bool starLabels = true;
-}
 
 // ---------------------------------------------------------------------------
 // Selectable sky object (unified for stars, DSOs, planets)
@@ -128,7 +76,6 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
   static const double _radiansPerPixel = 0.008;
 
   // UI state
-  final _layers = _Layers();
   _SkyObject? _selectedObject;
   bool _showSearch = false;
   bool _showLayers = false;
@@ -140,10 +87,10 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
   void initState() {
     super.initState();
     ref.read(lastGotoTabRouteProvider.notifier).state = '/planetarium';
-    final saved = ref.read(planetariumViewProvider);
-    _zoom = saved.zoom;
-    _rotation = saved.rotation;
-    _panY = saved.panY;
+    final saved = ref.read(planetariumSettingsProvider);
+    _zoom = saved.lastZoom;
+    _rotation = saved.lastRotation;
+    _panY = saved.lastPanY;
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _loadAllData();
     _scheduleUiHide();
@@ -151,6 +98,8 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
 
   @override
   void dispose() {
+    ref.read(planetariumSettingsProvider.notifier)
+        .saveViewState(_zoom, _rotation, _panY);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _searchController.dispose();
     super.dispose();
@@ -296,7 +245,7 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
     }
 
     // Check DSOs (J2000 → JNow)
-    if (_dsos != null && _layers.dsoObjects) {
+    if (_dsos != null && ref.read(planetariumSettingsProvider).dsoObjects) {
       for (final dso in _dsos!) {
         final (raNow, decNow) = equatorialEquinoxToJNow(dso.ra, dso.dec, 2000, jd);
         final pt = proj.project(raNow, decNow);
@@ -423,11 +372,6 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
       _rotation = -az;
       _panY = 0;
       _zoom = _centerOnObjectZoom;
-      ref.read(planetariumViewProvider.notifier).update(
-        zoom: _zoom,
-        rotation: _rotation,
-        panY: _panY,
-      );
       _selectedObject = obj;
       _showSearch = false;
     });
@@ -437,9 +381,35 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
   // Build
   // -----------------------------------------------------------------------
 
+  String _hudCoordText(MountState state, PlanetariumSettings settings) {
+    if (settings.coordDisplay == CoordDisplay.horizontal) {
+      final lst = _parseLST(state.siderealTime);
+      final raH = _parseLST(state.ra);
+      final dec = _parseCoord(state.dec);
+      final latRad = state.latitude * math.pi / 180;
+      final ha = (lst - raH) * 15 * math.pi / 180;
+      final decRad = dec * math.pi / 180;
+      final sinAlt = math.sin(decRad) * math.sin(latRad) +
+          math.cos(decRad) * math.cos(latRad) * math.cos(ha);
+      final alt = math.asin(sinAlt.clamp(-1.0, 1.0));
+      final cosAlt = math.cos(alt);
+      final denom = cosAlt * math.cos(latRad);
+      final cosAz = denom.abs() < 1e-10
+          ? 1.0
+          : ((math.sin(decRad) - sinAlt * math.sin(latRad)) / denom);
+      var az = math.acos(cosAz.clamp(-1.0, 1.0));
+      if (math.sin(ha) > 0) az = 2 * math.pi - az;
+      final altDeg = alt * 180 / math.pi;
+      final azDeg = az * 180 / math.pi;
+      return 'Alt ${altDeg.toStringAsFixed(1)}°  Az ${azDeg.toStringAsFixed(1)}°';
+    }
+    return '${state.ra} / ${state.dec.replaceAll('*', '°')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(mountStateProvider);
+    final settings = ref.watch(planetariumSettingsProvider);
 
     if (_stars == null) {
       return const Scaffold(
@@ -460,7 +430,6 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
                 setState(() {
                   final delta = event.scrollDelta.dy > 0 ? 0.9 : 1.1;
                   _zoom = (_zoom * delta).clamp(0.5, 30.0);
-                  ref.read(planetariumViewProvider.notifier).update(zoom: _zoom);
                 });
               }
             },
@@ -478,11 +447,6 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
                   _lastFocalPoint = d.focalPoint;
                   _rotation += delta.dx * _radiansPerPixel;
                   _panY += delta.dy;
-                  ref.read(planetariumViewProvider.notifier).update(
-                    zoom: _zoom,
-                    rotation: _rotation,
-                    panY: _panY,
-                  );
                 });
               },
               onTapUp: (d) {
@@ -496,17 +460,17 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
               child: RepaintBoundary(
                 child: CustomPaint(
                   size: Size.infinite,
-                    painter: _SkyRenderer(
+                  painter: _SkyRenderer(
                     stars: _stars!,
                     constellations: _constellations ?? [],
                     constNames: _constNames ?? [],
                     milkyWay: _milkyWay,
-                    dsos: _layers.dsoObjects ? _dsos : null,
+                    dsos: settings.dsoObjects ? _dsos : null,
                     state: state,
                     zoom: _zoom,
                     rotation: _rotation,
                     panY: _panY,
-                    layers: _layers,
+                    settings: settings,
                     selectedObject: _selectedObject,
                   ),
                 ),
@@ -544,7 +508,7 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            '${_zoom.toStringAsFixed(1)}x  ${state.ra} / ${state.dec.replaceAll('*', '°')}',
+                            '${_zoom.toStringAsFixed(1)}x  ${_hudCoordText(state, settings)}',
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 10,
@@ -579,7 +543,8 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
                       top: MediaQuery.of(context).padding.top + 44,
                       right: 4,
                       child: _LayerPanel(
-                        layers: _layers,
+                        settings: settings,
+                        notifier: ref.read(planetariumSettingsProvider.notifier),
                         onChanged: () => setState(() {}),
                       ),
                     ),
@@ -756,7 +721,7 @@ class _SkyRenderer extends CustomPainter {
   final double zoom;
   final double rotation;
   final double panY;
-  final _Layers layers;
+  final PlanetariumSettings settings;
   final _SkyObject? selectedObject;
 
   _SkyRenderer({
@@ -769,7 +734,7 @@ class _SkyRenderer extends CustomPainter {
     required this.zoom,
     required this.rotation,
     required this.panY,
-    required this.layers,
+    required this.settings,
     this.selectedObject,
   });
 
@@ -809,27 +774,27 @@ class _SkyRenderer extends CustomPainter {
     );
 
     // 2. Milky Way band
-    if (layers.milkyWay && milkyWay != null) {
+    if (settings.milkyWay && milkyWay != null) {
       _drawMilkyWay(canvas, proj, jd);
     }
 
     // 3. Alt-Az grid
-    if (layers.altAzGrid) {
+    if (settings.altAzGrid) {
       _drawAltAzGrid(canvas, proj);
     }
 
     // 4. Equatorial grid
-    if (layers.eqGrid) {
+    if (settings.eqGrid) {
       _drawEqGrid(canvas, proj);
     }
 
     // 5. Constellation lines
-    if (layers.constellationLines) {
+    if (settings.constellationLines) {
       _drawConstellationLines(canvas, proj, jd);
     }
 
     // 6. Constellation names
-    if (layers.constellationNames) {
+    if (settings.constellationNames) {
       _drawConstellationNames(canvas, proj, jd);
     }
 
@@ -837,7 +802,7 @@ class _SkyRenderer extends CustomPainter {
     _drawStars(canvas, proj, jd);
 
     // 8. DSO objects (symbols in front of star field)
-    if (layers.dsoObjects && dsos != null) {
+    if (settings.dsoObjects && dsos != null) {
       _drawDSOs(canvas, proj, jd);
     }
 
@@ -1045,8 +1010,7 @@ class _SkyRenderer extends CustomPainter {
       final isClusterNebula = (type == 12);
       final isNebula = (type == 10 || type == 11 || type == 14 || type == 16);
 
-      // Symbol size grows mildly with zoom so they stay visible but not oversized
-      final scale = math.sqrt(zoom);
+      final scale = math.sqrt(zoom) * settings.objectScale;
 
       if (isGalaxy) {
         // Galaxy: stroke ellipse
@@ -1146,7 +1110,7 @@ class _SkyRenderer extends CustomPainter {
       // Luminance-based size; scale with zoom so faint stars (e.g. mag 9) visible at max zoom
       final baseR = 2.5 * math.pow(10, -0.2 * mag) * 1.25;
       final zoomScale = math.pow(zoom.clamp(0.5, 30), 0.45);
-      final r = (baseR * zoomScale).clamp(0.15, 22.0);
+      final r = (baseR * zoomScale * settings.starScale).clamp(0.15, 22.0);
       if (r < 0.3) continue;
       final brightness = math.pow(10, -0.4 * (mag - magLimit)).clamp(0.2, 1.0).toDouble();
 
@@ -1188,7 +1152,7 @@ class _SkyRenderer extends CustomPainter {
       }
 
       // Labels for bright named stars
-      if (layers.starLabels &&
+      if (settings.starLabels &&
           star.name.isNotEmpty &&
           mag <= 3.5 &&
           zoom >= 0.7) {
@@ -1228,7 +1192,7 @@ class _SkyRenderer extends CustomPainter {
       final pt = proj.project(body.ra, body.dec);
       if (pt == null) continue;
 
-      final r = body.radius * math.sqrt(zoom);
+      final r = body.radius * math.sqrt(zoom) * settings.objectScale;
       canvas.drawCircle(pt, r, Paint()..color = body.color);
       canvas.drawCircle(
         pt,
@@ -1239,7 +1203,7 @@ class _SkyRenderer extends CustomPainter {
           ..strokeWidth = 1.5,
       );
 
-      if (layers.planetLabels) {
+      if (settings.planetLabels) {
         final tp = TextPainter(
           text: TextSpan(
             text: body.name,
@@ -1337,41 +1301,86 @@ class _SkyRenderer extends CustomPainter {
 // ---------------------------------------------------------------------------
 
 class _LayerPanel extends StatelessWidget {
-  final _Layers layers;
+  final PlanetariumSettings settings;
+  final PlanetariumSettingsNotifier notifier;
   final VoidCallback onChanged;
 
-  const _LayerPanel({required this.layers, required this.onChanged});
+  const _LayerPanel({
+    required this.settings,
+    required this.notifier,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 200,
+      width: 220,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: TAColors.surface.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: TAColors.border),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _toggle('Constellation lines', layers.constellationLines,
-              (v) => layers.constellationLines = v),
-          _toggle('Constellation names', layers.constellationNames,
-              (v) => layers.constellationNames = v),
-          _toggle('Alt-Az grid', layers.altAzGrid,
-              (v) => layers.altAzGrid = v),
-          _toggle('Equatorial grid', layers.eqGrid,
-              (v) => layers.eqGrid = v),
-          _toggle('Milky Way', layers.milkyWay,
-              (v) => layers.milkyWay = v),
-          _toggle('DSO objects', layers.dsoObjects,
-              (v) => layers.dsoObjects = v),
-          _toggle('Planet labels', layers.planetLabels,
-              (v) => layers.planetLabels = v),
-          _toggle('Star labels', layers.starLabels,
-              (v) => layers.starLabels = v),
-        ],
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- Layers ---
+            const _SectionHeader('Layers'),
+            _toggle('Constellation lines', settings.constellationLines,
+                (v) => notifier.setLayer('constellationLines', v)),
+            _toggle('Constellation names', settings.constellationNames,
+                (v) => notifier.setLayer('constellationNames', v)),
+            _toggle('Alt-Az grid', settings.altAzGrid,
+                (v) => notifier.setLayer('altAzGrid', v)),
+            _toggle('Equatorial grid', settings.eqGrid,
+                (v) => notifier.setLayer('eqGrid', v)),
+            _toggle('Milky Way', settings.milkyWay,
+                (v) => notifier.setLayer('milkyWay', v)),
+            _toggle('DSO objects', settings.dsoObjects,
+                (v) => notifier.setLayer('dsoObjects', v)),
+            _toggle('Planet labels', settings.planetLabels,
+                (v) => notifier.setLayer('planetLabels', v)),
+            _toggle('Star labels', settings.starLabels,
+                (v) => notifier.setLayer('starLabels', v)),
+            const Divider(color: TAColors.border, height: 12),
+
+            // --- Display ---
+            const _SectionHeader('Display'),
+            _slider('Star size', settings.starScale, (v) {
+              notifier.setStarScale(v);
+              onChanged();
+            }),
+            _slider('Object size', settings.objectScale, (v) {
+              notifier.setObjectScale(v);
+              onChanged();
+            }),
+            const Divider(color: TAColors.border, height: 12),
+
+            // --- Coordinates ---
+            const _SectionHeader('Coordinates'),
+            _coordSelector(),
+            const Divider(color: TAColors.border, height: 12),
+
+            // --- Reset ---
+            Center(
+              child: TextButton.icon(
+                onPressed: () {
+                  notifier.resetToDefaults();
+                  onChanged();
+                },
+                icon: const Icon(Icons.restore, size: 14, color: TAColors.textSecondary),
+                label: const Text('Reset to defaults',
+                    style: TextStyle(color: TAColors.textSecondary, fontSize: 11)),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, 28),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1399,6 +1408,98 @@ class _LayerPanel extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _slider(String label, double value, ValueChanged<double> onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(label,
+                    style: const TextStyle(color: TAColors.text, fontSize: 12)),
+              ),
+              Text(value.toStringAsFixed(1),
+                  style: const TextStyle(
+                      color: TAColors.textSecondary, fontSize: 11, fontFamily: 'monospace')),
+            ],
+          ),
+          SizedBox(
+            height: 24,
+            child: Slider(
+              value: value.clamp(0.3, 3.0),
+              min: 0.3,
+              max: 3.0,
+              divisions: 27,
+              onChanged: onChanged,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _coordSelector() {
+    return Row(
+      children: [
+        _coordChip('RA / Dec', CoordDisplay.equatorial),
+        const SizedBox(width: 4),
+        _coordChip('Alt / Az', CoordDisplay.horizontal),
+      ],
+    );
+  }
+
+  Widget _coordChip(String label, CoordDisplay mode) {
+    final selected = settings.coordDisplay == mode;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          notifier.setCoordDisplay(mode);
+          onChanged();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: selected ? TAColors.accent.withValues(alpha: 0.25) : Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: selected ? TAColors.accent : TAColors.border,
+              width: selected ? 1.5 : 1.0,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? TAColors.accent : TAColors.textSecondary,
+              fontSize: 11,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String text;
+  const _SectionHeader(this.text);
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2, top: 2),
+      child: Text(text,
+          style: const TextStyle(
+            color: TAColors.textSecondary,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+          )),
     );
   }
 }
