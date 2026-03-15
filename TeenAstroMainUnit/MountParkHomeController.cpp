@@ -150,6 +150,7 @@ uint8_t MountParkHomeController::park()
   mount_.tracking.sideralTracking = false;
   mount_.parkHome.parkStatus = PRK_PARKING;
   XEEPROM.write(getMountAddress(EE_parkStatus), mount_.parkHome.parkStatus);
+  mount_.tracking.gotoState = GOTO_EQ;
   mount_.gotoAxis(&h, &d);
   return 0;
 }
@@ -255,6 +256,7 @@ bool MountParkHomeController::goHome()
   if (mount_.isSlewing()) return false;
   mount_.tracking.lastSideralTracking = false;
   mount_.tracking.sideralTracking = false;
+  mount_.tracking.gotoState = GOTO_EQ;
   mount_.gotoAxis(&mount_.axes.geoA1.homeDef, &mount_.axes.geoA2.homeDef);
   mount_.parkHome.homeMount = true;
   return true;
