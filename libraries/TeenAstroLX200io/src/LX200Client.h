@@ -256,6 +256,7 @@ public:
   LX200RETURN setPierSideEast();                 // :SmE#
   LX200RETURN setPierSideWest();                 // :SmW#
   LX200RETURN setPierSideNone();                 // :SmN#
+  LX200RETURN getAlignStarName(char* out, int len);    // :GXAs#
   LX200RETURN getAlignErrorPolar(char* out, int len);  // :GXAw#
   LX200RETURN getAlignErrorAz(char* out, int len);     // :GXAz#
   LX200RETURN getAlignErrorAlt(char* out, int len);    // :GXAa#

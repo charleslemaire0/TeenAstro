@@ -208,9 +208,11 @@ public:
   bool      isAlignSlew()     { return m_align == ALI_SLEW; }
   bool      isAlignSelect()   { return m_align == ALI_SELECT; }
   bool      isAlignRecenter() { return m_align == ALI_RECENTER; }
-  void      stopAlign()       { m_align = ALI_OFF; m_alignStar = 0; }
-  void      startAlign(AlignMode in)           { m_aliMode = in; m_align = ALI_SELECT; m_alignStar = 1; }
-  void      startAlignSecondStar(AlignMode in) { m_aliMode = in; m_align = ALI_SELECT; m_alignStar = 2; }
+  bool      isRemoteAlign()   { return m_remoteAlign; }
+  const char* getRemoteStarName() { return m_alignStarName; }
+  void      stopAlign()       { m_align = ALI_OFF; m_alignStar = 0; m_remoteAlign = false; m_alignStarName[0] = '\0'; }
+  void      startAlign(AlignMode in)           { m_aliMode = in; m_align = ALI_SELECT; m_alignStar = 1; m_remoteAlign = false; }
+  void      startAlignSecondStar(AlignMode in) { m_aliMode = in; m_align = ALI_SELECT; m_alignStar = 2; m_remoteAlign = false; }
   void      nextStepAlign();
   void      backStepAlign();
   bool      isLastStarAlign() { return (int)m_aliMode == m_alignStar; }
@@ -500,6 +502,8 @@ private:
   AlignState  m_align     = ALI_OFF;
   AlignMode   m_aliMode   = ALIM_ONE;
   int         m_alignStar = 0;
+  bool        m_remoteAlign = false;
+  char        m_alignStarName[16] = "";
 
   // --- Version (fetched once) ---
   struct { bool valid = false; } m_version;

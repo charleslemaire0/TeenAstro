@@ -750,23 +750,53 @@ void SmartHandController::updateMainDisplay(PAGES page)
       u8g2_uint_t y = 36;
       static char text1[29] = T_SLEWINGTO " " T_STAR;
       static char text2[28] = T_RECENTER " " T_STAR;
-      if (ta_MountStatus.isAlignSlew())
-        u8g2_DrawUTF8(u8g2, 0, y, text1);
-      else if (ta_MountStatus.isAlignRecenter())
-        u8g2_DrawUTF8(u8g2, 0, y, text2);
 
-      y += line_height + 4;
-      if (cat_mgr.objectNameStr()[0] != 0)
+      if (ta_MountStatus.isRemoteAlign())
       {
-        u8g2_DrawUTF8(u8g2, 0, y, cat_mgr.objectNameStr());
+        if (ta_MountStatus.isAlignSelect())
+          u8g2_DrawUTF8(u8g2, 0, y, T_REMOTEALIGN);
+        else if (ta_MountStatus.isAlignSlew())
+          u8g2_DrawUTF8(u8g2, 0, y, text1);
+        else if (ta_MountStatus.isAlignRecenter())
+          u8g2_DrawUTF8(u8g2, 0, y, text2);
+
+        y += line_height + 4;
+        const char* starName = ta_MountStatus.getRemoteStarName();
+        if (starName[0] != '\0')
+        {
+          u8g2_DrawUTF8(u8g2, 0, y, starName);
+        }
+        else if (ta_MountStatus.isAlignSelect())
+        {
+          u8g2_DrawUTF8(u8g2, 0, y, T_WAITING);
+        }
+        else
+        {
+          char starNum[16];
+          sprintf(starNum, T_STAR " #%d", ta_MountStatus.getAlignStar());
+          u8g2_DrawUTF8(u8g2, 0, y, starNum);
+        }
       }
       else
       {
-        u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
-        u8g2_DrawGlyph(u8g2, 0, y, 945 + cat_mgr.bayerFlam());
-        const uint8_t* myfont = u8g2->font;
-        u8g2_SetFont(u8g2, myfont);
-        u8g2_DrawUTF8(u8g2, 16, y, cat_mgr.constellationStr());
+        if (ta_MountStatus.isAlignSlew())
+          u8g2_DrawUTF8(u8g2, 0, y, text1);
+        else if (ta_MountStatus.isAlignRecenter())
+          u8g2_DrawUTF8(u8g2, 0, y, text2);
+
+        y += line_height + 4;
+        if (cat_mgr.objectNameStr()[0] != 0)
+        {
+          u8g2_DrawUTF8(u8g2, 0, y, cat_mgr.objectNameStr());
+        }
+        else
+        {
+          u8g2_SetFont(u8g2, u8g2_font_unifont_t_greek);
+          u8g2_DrawGlyph(u8g2, 0, y, 945 + cat_mgr.bayerFlam());
+          const uint8_t* myfont = u8g2->font;
+          u8g2_SetFont(u8g2, myfont);
+          u8g2_DrawUTF8(u8g2, 16, y, cat_mgr.constellationStr());
+        }
       }
     }
   } while (u8g2_NextPage(u8g2));

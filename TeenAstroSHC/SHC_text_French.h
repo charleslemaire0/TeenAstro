@@ -69,6 +69,8 @@
 #define T_NOTDEFINED "non défini"
 #define T_SUCESS "Réussi"
 #define T_STARADDED "Étoile ajoutée"
+#define T_REMOTEALIGN "Align. distant"
+#define T_WAITING "Attente..."
 #define T_VERSION "version"
 #define T_YES "OUI"
 #define T_NO "NON"

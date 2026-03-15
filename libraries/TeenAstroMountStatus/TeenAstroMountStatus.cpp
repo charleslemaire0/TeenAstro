@@ -462,12 +462,23 @@ void TeenAstroMountStatus::updateAllState(bool force)
   AlignState mountPhase = phaseToState[m_mount.alignPhase & 0x3];
   if (mountPhase == ALI_OFF)
   {
-    if (m_align != ALI_OFF) { m_align = ALI_OFF; m_alignStar = 0; }
+    if (m_align != ALI_OFF) { m_align = ALI_OFF; m_alignStar = 0; m_remoteAlign = false; m_alignStarName[0] = '\0'; }
   }
   else
   {
+    if (m_align == ALI_OFF) m_remoteAlign = true;
     m_align     = mountPhase;
     m_alignStar = m_mount.alignStarNum;
+
+    if (m_remoteAlign)
+    {
+      char name[16] = "";
+      if (m_client->getAlignStarName(name, sizeof(name)) == LX200_VALUEGET)
+      {
+        strncpy(m_alignStarName, name, sizeof(m_alignStarName) - 1);
+        m_alignStarName[sizeof(m_alignStarName) - 1] = '\0';
+      }
+    }
   }
 
   m_timerMount.markUpdated();

@@ -802,6 +802,7 @@ LX200RETURN LX200Client::alignSelectStar(uint8_t n)
   return set(cmd);
 }
 
+LX200RETURN LX200Client::getAlignStarName(char* out, int len)   { return get(":GXAs#", out, len); }
 LX200RETURN LX200Client::getAlignErrorPolar(char* out, int len) { return get(":GXAw#", out, len); }
 LX200RETURN LX200Client::getAlignErrorAz(char* out, int len)    { return get(":GXAz#", out, len); }
 LX200RETURN LX200Client::getAlignErrorAlt(char* out, int len)   { return get(":GXAa#", out, len); }

@@ -210,6 +210,36 @@ void SmartHandController::getNextpage()
 
 void SmartHandController::updateAlign(bool moving)
 {
+  if (ta_MountStatus.isRemoteAlign())
+  {
+    if (top - lastpageupdate > 200)
+    {
+      updateMainDisplay(pages[current_page].p);
+    }
+    if (!moving && (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART))
+    {
+      if (eventbuttons[1] == E_LONGPRESS || eventbuttons[1] == E_CLICK || eventbuttons[1] == E_LONGPRESSTART)
+      {
+      #ifdef NO_SPEED_MENU
+        increaseSpeed(true);
+      #else
+        menuSpeedRate();
+      #endif
+        time_last_action = millis();
+      }
+      else if (eventbuttons[2] == E_LONGPRESS || eventbuttons[2] == E_CLICK || eventbuttons[2] == E_LONGPRESSTART)
+      {
+      #ifdef NO_SPEED_MENU
+        increaseSpeed(false);
+      #else
+        menuSpeedRate();
+      #endif
+        time_last_action = millis();
+      }
+    }
+    return;
+  }
+
   if (ta_MountStatus.isAlignSelect())
   {
     char message[10] = T_STAR "#?";
