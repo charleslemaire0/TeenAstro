@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/lx200_tcp_client.dart';
 import '../services/mount_state_provider.dart';
 import '../services/catalog_service.dart';
+import '../providers/last_goto_route_provider.dart';
 import '../services/catalog_filter_provider.dart';
 import '../models/catalog_entry.dart';
 import '../models/lx200_commands.dart';
@@ -23,6 +24,7 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
   @override
   void initState() {
     super.initState();
+    ref.read(lastGotoTabRouteProvider.notifier).state = '/catalogs';
     _searchController = TextEditingController(
       text: ref.read(catalogFilterProvider).search,
     );

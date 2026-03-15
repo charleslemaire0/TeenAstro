@@ -129,7 +129,12 @@ if ($needExtractCatalogs -or $needStarCatalog -or $needConstellationLines) {
 foreach ($f in @("constellation_names.json", "milky_way.json")) {
     $p = Join-Path $AssetsData $f
     if (-not (Test-Path $p)) {
-        Write-Warning "Optional asset missing: assets/data/$f (planetarium will work with reduced features)."
+        Write-Host "Creating default assets/data/$f (basic planetarium visuals)..." -ForegroundColor Gray
+        if ($f -eq "constellation_names.json") {
+            '{ "constellations": [] }' | Out-File -FilePath $p -Encoding UTF8 -Force
+        } else {
+            '{ "polygons": [] }' | Out-File -FilePath $p -Encoding UTF8 -Force
+        }
     }
 }
 

@@ -6,10 +6,7 @@ debug-*.log
 .cursor/
 IMPLEMENTATION_PLAN.md
 build_*.txt
-Released data/App/
-/release/ascom/
-/release/msi/
-/release/app/
+
 
 # Prerequisites
 *.d
@@ -258,3 +255,27 @@ TeenAstroAscomNative/.pio/
 /libraries/TeenAstroCatalog/src/catalogs/.DS_Store
 /universalMainUnit.sublime-project
 /universalMainUnit.sublime-workspace
+/TeenAstroASCOM_V7/.vs/ProjectEvaluation/teenastroascom_v7.metadata.v10.bin
+/TeenAstroASCOM_V7/.vs/ProjectEvaluation/teenastroascom_v7.projects.v10.bin
+/TeenAstroASCOM_V7/.vs/ProjectEvaluation/teenastroascom_v7.strings.v10.bin
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/CopilotIndices/18.3.508.13148/CodeChunks.db
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/CopilotIndices/18.3.508.13148/CodeChunks.db-shm
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/CopilotIndices/18.3.508.13148/CodeChunks.db-wal
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/CopilotIndices/18.3.508.13148/SemanticSymbols.db
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/CopilotIndices/18.3.508.13148/SemanticSymbols.db-shm
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/CopilotIndices/18.3.508.13148/SemanticSymbols.db-wal
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/DesignTimeBuild/.dtbcache.v2
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/FileContentIndex/30f264cd-29b2-4856-9f98-4f99260e524e.vsidx
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/FileContentIndex/3ebcc202-a02e-4cff-9cea-9ba4820a8480.vsidx
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/FileContentIndex/67a5111d-286b-481e-be54-6d9c43824ff4.vsidx
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/FileContentIndex/ae8dda8b-f8bf-4a50-a764-52f3f2233b70.vsidx
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/FileContentIndex/ce5d9df3-cf14-415e-88df-d6041dcc5391.vsidx
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/v18/ipch/AutoPCH/2f26119f2a131791/VCTMP11488_265873.LX200CLIENT.00000000.ipch
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/v18/ipch/AutoPCH/64a31000965939ce/LX200CLIENT.ipch
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/v18/.futdcache.v2
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/v18/.suo
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/v18/Browse.VC.db
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/v18/Browse.VC.db-shm
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/v18/Browse.VC.db-wal
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/v18/DocumentLayout.backup.json
+/TeenAstroASCOM_V7/.vs/TeenAstroASCOM_V7/v18/DocumentLayout.json
