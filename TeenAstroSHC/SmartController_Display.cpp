@@ -358,6 +358,10 @@ void SmartHandController::updateMainDisplay(PAGES page)
     {
       ta_MountStatus.nextStepAlign();
     }
+    if (ta_MountStatus.isRemoteAlign())
+    {
+      ta_MountStatus.fetchRemoteStarName();
+    }
   }
   else if (page == P_HADEC && !ta_MountStatus.isPulseGuiding())
   {

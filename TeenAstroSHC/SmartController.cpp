@@ -216,7 +216,11 @@ void SmartHandController::updateAlign(bool moving)
     {
       updateMainDisplay(pages[current_page].p);
     }
-    if (!moving && (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART))
+    if (moving)
+    {
+      return;
+    }
+    if (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART)
     {
       if (eventbuttons[1] == E_LONGPRESS || eventbuttons[1] == E_CLICK || eventbuttons[1] == E_LONGPRESSTART)
       {
@@ -235,6 +239,33 @@ void SmartHandController::updateAlign(bool moving)
         menuSpeedRate();
       #endif
         time_last_action = millis();
+      }
+    }
+    else if (eventbuttons[0] == E_CLICK && ta_MountStatus.isAlignRecenter())
+    {
+      TeenAstroMountStatus::AlignReply reply = ta_MountStatus.addStar();
+      switch (reply)
+      {
+      case TeenAstroMountStatus::AlignReply::ALIR_FAILED1:
+        DisplayMessage(T_ALIGNMENT, T_FAILED"!", -1);
+        break;
+      case TeenAstroMountStatus::AlignReply::ALIR_FAILED2:
+        DisplayMessage(T_ALIGNMENT, T_WRONG"!", -1);
+        break;
+      case TeenAstroMountStatus::AlignReply::ALIR_DONE:
+      {
+        char text[20];
+        DisplayMessage(T_ALIGNMENT, T_SUCESS"!", 1.0);
+        m_client->getAlignError(text, sizeof(text));
+        text[3] = '\xB0';
+        text[6]='\'';
+        text[9]='\"';
+        DisplayMessage(T_ERROR, text, -1);
+      }
+      break;
+      case TeenAstroMountStatus::AlignReply::ALIR_ADDED:
+        DisplayMessage(T_STARADDED, "=>", 1000);
+        break;
       }
     }
     return;

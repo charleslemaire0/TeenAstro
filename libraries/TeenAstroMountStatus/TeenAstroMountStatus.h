@@ -210,6 +210,7 @@ public:
   bool      isAlignRecenter() { return m_align == ALI_RECENTER; }
   bool      isRemoteAlign()   { return m_remoteAlign; }
   const char* getRemoteStarName() { return m_alignStarName; }
+  void      fetchRemoteStarName();
   void      stopAlign()       { m_align = ALI_OFF; m_alignStar = 0; m_remoteAlign = false; m_alignStarName[0] = '\0'; }
   void      startAlign(AlignMode in)           { m_aliMode = in; m_align = ALI_SELECT; m_alignStar = 1; m_remoteAlign = false; }
   void      startAlignSecondStar(AlignMode in) { m_aliMode = in; m_align = ALI_SELECT; m_alignStar = 2; m_remoteAlign = false; }

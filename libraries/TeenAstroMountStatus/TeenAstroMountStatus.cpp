@@ -135,6 +135,17 @@ static uint16_t pktU16(const uint8_t* pkt, int off)
 //  Alignment state machine
 // ===========================================================================
 
+void TeenAstroMountStatus::fetchRemoteStarName()
+{
+  if (!m_remoteAlign) return;
+  char name[16] = "";
+  if (m_client->getAlignStarName(name, sizeof(name)) == LX200_VALUEGET)
+  {
+    strncpy(m_alignStarName, name, sizeof(m_alignStarName) - 1);
+    m_alignStarName[sizeof(m_alignStarName) - 1] = '\0';
+  }
+}
+
 void TeenAstroMountStatus::nextStepAlign()
 {
   if (!isAligning()) return;
@@ -469,16 +480,6 @@ void TeenAstroMountStatus::updateAllState(bool force)
     if (m_align == ALI_OFF) m_remoteAlign = true;
     m_align     = mountPhase;
     m_alignStar = m_mount.alignStarNum;
-
-    if (m_remoteAlign)
-    {
-      char name[16] = "";
-      if (m_client->getAlignStarName(name, sizeof(name)) == LX200_VALUEGET)
-      {
-        strncpy(m_alignStarName, name, sizeof(m_alignStarName) - 1);
-        m_alignStarName[sizeof(m_alignStarName) - 1] = '\0';
-      }
-    }
   }
 
   m_timerMount.markUpdated();
