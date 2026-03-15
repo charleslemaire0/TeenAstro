@@ -132,7 +132,7 @@ foreach ($f in @("constellation_names.json", "milky_way.json")) {
     if (-not (Test-Path $p)) {
         Write-Host "Creating default assets/data/$f (basic planetarium visuals)..." -ForegroundColor Gray
         if ($f -eq "constellation_names.json") {
-            '{ "constellations": [] }' | Out-File -FilePath $p -Encoding UTF8 -Force
+            '[]' | Out-File -FilePath $p -Encoding UTF8 -Force
         } else {
             '{ "polygons": [] }' | Out-File -FilePath $p -Encoding UTF8 -Force
         }

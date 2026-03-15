@@ -135,9 +135,12 @@ class CatalogEntry {
 
   /// Format RA as HH:MM:SS
   String get raStr {
-    final h = ra.floor();
-    final m = ((ra - h) * 60).floor();
-    final s = (((ra - h) * 60 - m) * 60).round();
+    var h = ra.floor();
+    var m = ((ra - h) * 60).floor();
+    var s = (((ra - h) * 60 - m) * 60).round();
+    if (s >= 60) { s -= 60; m += 1; }
+    if (m >= 60) { m -= 60; h += 1; }
+    if (h >= 24) h -= 24;
     return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
@@ -145,9 +148,11 @@ class CatalogEntry {
   String get decStr {
     final sign = dec >= 0 ? '+' : '-';
     final absD = dec.abs();
-    final d = absD.floor();
-    final m = ((absD - d) * 60).floor();
-    final s = (((absD - d) * 60 - m) * 60).round();
+    var d = absD.floor();
+    var m = ((absD - d) * 60).floor();
+    var s = (((absD - d) * 60 - m) * 60).round();
+    if (s >= 60) { s -= 60; m += 1; }
+    if (m >= 60) { m -= 60; d += 1; }
     return '$sign${d.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 

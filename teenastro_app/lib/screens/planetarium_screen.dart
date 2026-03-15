@@ -421,10 +421,12 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
     if (math.sin(ha) > 0) az = 2 * math.pi - az;
     setState(() {
       _rotation = -az;
+      _panY = 0;
       _zoom = _centerOnObjectZoom;
       ref.read(planetariumViewProvider.notifier).update(
         zoom: _zoom,
         rotation: _rotation,
+        panY: _panY,
       );
       _selectedObject = obj;
       _showSearch = false;
@@ -1144,8 +1146,8 @@ class _SkyRenderer extends CustomPainter {
       // Luminance-based size; scale with zoom so faint stars (e.g. mag 9) visible at max zoom
       final baseR = 2.5 * math.pow(10, -0.2 * mag) * 1.25;
       final zoomScale = math.pow(zoom.clamp(0.5, 30), 0.45);
-      final r = (baseR * zoomScale).clamp(0.5, 22.0);
-      if (r < 0.3) continue; // Stellarium cutoff: don't draw if < 0.3 px
+      final r = (baseR * zoomScale).clamp(0.15, 22.0);
+      if (r < 0.3) continue;
       final brightness = math.pow(10, -0.4 * (mag - magLimit)).clamp(0.2, 1.0).toDouble();
 
       final baseColor = _bvToColor(star.bv);
@@ -1412,18 +1414,23 @@ class _ObjectInfoPanel extends ConsumerWidget {
   const _ObjectInfoPanel({required this.object, required this.onClose});
 
   String _formatRa(double ra) {
-    final h = ra.floor();
-    final m = ((ra - h) * 60).floor();
-    final s = (((ra - h) * 60 - m) * 60).round();
+    var h = ra.floor();
+    var m = ((ra - h) * 60).floor();
+    var s = (((ra - h) * 60 - m) * 60).round();
+    if (s >= 60) { s -= 60; m += 1; }
+    if (m >= 60) { m -= 60; h += 1; }
+    if (h >= 24) h -= 24;
     return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   String _formatDec(double dec) {
     final sign = dec >= 0 ? '+' : '-';
     final abs = dec.abs();
-    final d = abs.floor();
-    final m = ((abs - d) * 60).floor();
-    final s = (((abs - d) * 60 - m) * 60).round();
+    var d = abs.floor();
+    var m = ((abs - d) * 60).floor();
+    var s = (((abs - d) * 60 - m) * 60).round();
+    if (s >= 60) { s -= 60; m += 1; }
+    if (m >= 60) { m -= 60; d += 1; }
     return '$sign${d.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
