@@ -23,6 +23,9 @@ const char  html_controlScript1[] PROGMEM = "<script>\n"
 "function g(v1){s('dr',v1);}\n"
 "function gf(v1){s('dr',v1);autoFastRun();}\n"
 "function sf(key,v1){s(key,v1);autoFastRun();}\n"
+"function stopAll(){g('Fq');g('n0');g('s0');g('e0');g('w0');}\n"
+"document.addEventListener('visibilitychange',function(){if(document.hidden)stopAll();});\n"
+"window.addEventListener('pagehide',stopAll);\n"
 "</script>\n";
 
 
@@ -61,11 +64,11 @@ const char html_controlParkHome[] PROGMEM =
 const char html_controlGuide[] PROGMEM =
 "<div class='panel'>"
 "<div class='panel-title'>Recenter</div>"
-"<button class='gb' type='button' onpointerdown=\"g('n1')\" onpointerup=\"g('n0')\">" BUTTON_N "</button><br/>"
-"<button class='gb' type='button' onpointerdown=\"g('e1')\" onpointerup=\"g('e0')\">" BUTTON_E "</button>"
+"<button class='gb' type='button' onpointerdown=\"g('n1')\" onpointerup=\"g('n0')\" onpointerleave=\"g('n0')\" onpointercancel=\"g('n0')\">" BUTTON_N "</button><br/>"
+"<button class='gb' type='button' onpointerdown=\"g('e1')\" onpointerup=\"g('e0')\" onpointerleave=\"g('e0')\" onpointercancel=\"g('e0')\">" BUTTON_E "</button>"
 "<button class='gb' type='button' onpointerdown=\"g('q1')\">" BUTTON_Stop "</button>"
-"<button class='gb' type='button' onpointerdown=\"g('w1')\" onpointerup=\"g('w0')\">" BUTTON_W "</button><br/>"
-"<button class='gb' type='button' onpointerdown=\"g('s1')\" onpointerup=\"g('s0')\">" BUTTON_S "</button><br/><br/>"
+"<button class='gb' type='button' onpointerdown=\"g('w1')\" onpointerup=\"g('w0')\" onpointerleave=\"g('w0')\" onpointercancel=\"g('w0')\">" BUTTON_W "</button><br/>"
+"<button class='gb' type='button' onpointerdown=\"g('s1')\" onpointerup=\"g('s0')\" onpointerleave=\"g('s0')\" onpointercancel=\"g('s0')\">" BUTTON_S "</button><br/><br/>"
 "<button class='bbh' type='button' onpointerdown=\"g('R0')\">Guide</button>"
 "<button class='bbh' type='button' onpointerdown=\"g('R1')\">Slow</button>"
 "<button class='bbh' type='button' onpointerdown=\"g('R2')\">Medium</button>"
@@ -79,9 +82,9 @@ const char html_controlFocus3[] PROGMEM =
 "<button class='bb' type='button' onpointerdown=\"gf('Fz')\">Park</button>"
 "<button class='bb' type='button' onpointerdown=\"gf('Fh')\">Set 0</button>&nbsp;&nbsp;";
 const char html_controlFocus4[] PROGMEM =
-"<button class='bbh' type='button' onpointerdown=\"gf('Fi')\" onpointerup=\"g('Fq')\">" MINUS_CH "</button>";
+"<button class='bbh' type='button' onpointerdown=\"gf('Fi')\" onpointerup=\"g('Fq')\" onpointerleave=\"g('Fq')\" onpointercancel=\"g('Fq')\">" MINUS_CH "</button>";
 const char html_controlFocus5[] PROGMEM =
-"<button class='bbh' type='button' onpointerdown=\"gf('Fo')\" onpointerup=\"g('Fq')\">" PLUS_CH "</button>";
+"<button class='bbh' type='button' onpointerdown=\"gf('Fo')\" onpointerup=\"g('Fq')\" onpointerleave=\"g('Fq')\" onpointercancel=\"g('Fq')\">" PLUS_CH "</button>";
 const char html_controlFocus6[] PROGMEM =
 "</div>\r\n";
 

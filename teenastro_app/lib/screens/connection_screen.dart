@@ -86,10 +86,10 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
   }
 
   Color get _statusColor {
-    if (_error.isNotEmpty) return TAColors.error;
-    if (_connecting) return TAColors.warning;
+    if (_error.isNotEmpty) return TA.error;
+    if (_connecting) return TA.warning;
     final client = ref.read(lx200ClientProvider);
-    return client.isConnected ? TAColors.success : TAColors.textSecondary;
+    return client.isConnected ? TA.success : TA.textSecondary;
   }
 
   String get _statusLabel {
@@ -115,7 +115,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.explore, size: 80, color: TAColors.accent),
+              Icon(Icons.explore, size: 80, color: TA.accent),
               const SizedBox(height: 16),
               Text('TeenAstro Controller',
                 style: Theme.of(context).textTheme.headlineMedium),
@@ -186,8 +186,8 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                   key: const Key('connect_btn'),
                   onPressed: _connecting ? null : _connect,
                   icon: _connecting
-                      ? const SizedBox(width: 20, height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? SizedBox(width: 20, height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: TA.textHigh))
                       : const Icon(Icons.link),
                   label: Text(_connecting ? 'Connecting...' : 'Connect'),
                 ),
@@ -197,16 +197,16 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: TAColors.error.withValues(alpha: 0.1),
+                    color: TA.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: TAColors.error.withValues(alpha: 0.3)),
+                    border: Border.all(color: TA.error.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: TAColors.error, size: 20),
+                      Icon(Icons.error_outline, color: TA.error, size: 20),
                       const SizedBox(width: 8),
                       Expanded(child: Text(_error,
-                        style: TextStyle(color: TAColors.error, fontSize: 13))),
+                        style: TextStyle(color: TA.error, fontSize: 13))),
                     ],
                   ),
                 ),

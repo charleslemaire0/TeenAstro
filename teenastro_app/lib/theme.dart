@@ -20,6 +20,32 @@ class TAColors {
   static const success = Color(0xFF3FB950);
 }
 
+/// Dynamic color resolver — returns TAColors or NightViewColors based on
+/// [TA.setNight]. Call [TA.setNight] once per build cycle (see app.dart).
+/// Use `TA.xxx` everywhere instead of `TAColors.xxx` to respect night mode.
+class TA {
+  TA._();
+  static bool _night = false;
+  static void setNight(bool v) => _night = v;
+  static bool get isNight => _night;
+
+  static Color get background   => _night ? NightViewColors.background   : TAColors.background;
+  static Color get surface      => _night ? NightViewColors.surface      : TAColors.surface;
+  static Color get surfaceVariant => _night ? NightViewColors.surfaceVariant : TAColors.surfaceVariant;
+  static Color get border       => _night ? NightViewColors.border       : TAColors.border;
+  static Color get accent       => _night ? NightViewColors.accent       : TAColors.accent;
+  static Color get accentHover  => _night ? NightViewColors.accentHover  : TAColors.accentHover;
+  static Color get text         => _night ? NightViewColors.text         : TAColors.text;
+  static Color get textSecondary => _night ? NightViewColors.textSecondary : TAColors.textSecondary;
+  static Color get textHigh     => _night ? NightViewColors.textHigh     : TAColors.textHigh;
+  static Color get nav          => _night ? NightViewColors.nav          : TAColors.nav;
+  static Color get card         => _night ? NightViewColors.card         : TAColors.card;
+  static Color get cardBorder   => _night ? NightViewColors.cardBorder   : TAColors.cardBorder;
+  static Color get error        => _night ? NightViewColors.error        : TAColors.error;
+  static Color get warning      => _night ? NightViewColors.warning      : TAColors.warning;
+  static Color get success      => _night ? NightViewColors.success      : TAColors.success;
+}
+
 final teenAstroTheme = ThemeData(
   brightness: Brightness.dark,
   scaffoldBackgroundColor: TAColors.background,

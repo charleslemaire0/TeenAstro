@@ -265,6 +265,10 @@ static void Command_GX_Alignment()
   case '6': sprintf(commandState.reply, "%f#", t31); break;
   case '7': sprintf(commandState.reply, "%f#", t32); break;
   case '8': sprintf(commandState.reply, "%f#", t33); break;
+  case 's':
+    // :GXAs#  Return alignment star name (set by app via :SXAs,name#)
+    sprintf(commandState.reply, "%s#", mount.alignment.alignStarName);
+    break;
   default:  replyLongUnknow(); break;
   }
 }

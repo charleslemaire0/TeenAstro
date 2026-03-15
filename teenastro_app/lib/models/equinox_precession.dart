@@ -179,3 +179,33 @@ const _arcsecToHours = 1.0 / 54000.0;
   ra = _limitHours24(ra);
   return (ra, dec);
 }
+
+/// Inverse: convert apparent (JNow) coordinates back to a given equinox
+/// (e.g. J2000) for the given Julian Date.  Uses two Newton-style iterations
+/// of the forward function — sufficient for sub-arcsecond accuracy.
+(double raEquinoxHours, double decEquinoxDeg) equatorialJNowToEquinox(
+  double raJNowHours,
+  double decJNowDeg,
+  int equinox,
+  double jd,
+) {
+  double raEst = raJNowHours;
+  double decEst = decJNowDeg;
+
+  for (int i = 0; i < 3; i++) {
+    final (raFwd, decFwd) = equatorialEquinoxToJNow(raEst, decEst, equinox, jd);
+    raEst += raJNowHours - raFwd;
+    decEst += decJNowDeg - decFwd;
+  }
+
+  raEst = _limitHours24(raEst);
+  if (decEst > 90) {
+    decEst = 180 - decEst;
+    raEst = _limitHours24(raEst + 12);
+  } else if (decEst < -90) {
+    decEst = -180 - decEst;
+    raEst = _limitHours24(raEst + 12);
+  }
+
+  return (raEst, decEst);
+}

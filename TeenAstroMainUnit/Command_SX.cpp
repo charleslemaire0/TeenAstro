@@ -28,6 +28,19 @@ static void Command_SX_Alignment()
   case '3': break;
   case '4': break;
   case '5': break;
+  case 's': {
+    // :SXAs,starname#  Store alignment star name (sent by the app so the SHC
+    //                  can display which star was selected remotely).
+    // command[5] is the comma separator; value starts at command[6].
+    const char* val = commandState.command + 6;
+    size_t len = strlen(val);
+    if (len >= sizeof(mount.alignment.alignStarName))
+      len = sizeof(mount.alignment.alignStarName) - 1;
+    memcpy(mount.alignment.alignStarName, val, len);
+    mount.alignment.alignStarName[len] = '\0';
+    ok = true;
+    break;
+  }
   case 'x':
     //GeoAlign.init();
     //GeoAlign.writeCoe();

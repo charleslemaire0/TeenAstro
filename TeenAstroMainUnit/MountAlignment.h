@@ -20,4 +20,5 @@ struct MountAlignment {
   bool autoAlignmentBySync = false;
   AlignPhase alignPhase = ALIGN_IDLE;
   uint8_t alignStarNum  = 0;
+  char alignStarName[16] = {0};  // name of current alignment star (set by app via :SXAs,name#)
 };

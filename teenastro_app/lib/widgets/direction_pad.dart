@@ -52,10 +52,10 @@ class DirectionPad extends StatelessWidget {
             width: 60, height: 60,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: TAColors.surfaceVariant,
-              border: Border.all(color: TAColors.border, width: 2),
+              color: TA.surfaceVariant,
+              border: Border.all(color: TA.border, width: 2),
             ),
-            child: Icon(Icons.control_camera, color: TAColors.textSecondary, size: 28),
+            child: Icon(Icons.control_camera, color: TA.textSecondary, size: 28),
           ),
         ],
       ),
@@ -104,22 +104,22 @@ class _DirButtonState extends State<_DirButton> {
       child: Container(
         width: 80, height: 80,
         decoration: BoxDecoration(
-          color: _pressed ? TAColors.accent : TAColors.surfaceVariant,
+          color: _pressed ? TA.accent : TA.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: _pressed ? TAColors.accent : TAColors.border,
+            color: _pressed ? TA.accent : TA.border,
             width: 1.5,
           ),
           boxShadow: _pressed ? [
-            BoxShadow(color: TAColors.accent.withValues(alpha: 0.3), blurRadius: 12),
+            BoxShadow(color: TA.accent.withValues(alpha: 0.3), blurRadius: 12),
           ] : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(widget.icon, color: _pressed ? Colors.white : TAColors.textHigh, size: 28),
+            Icon(widget.icon, color: _pressed ? TA.textHigh : TA.text, size: 28),
             Text(widget.label, style: TextStyle(
-              color: _pressed ? Colors.white : TAColors.textSecondary,
+              color: _pressed ? TA.textHigh : TA.textSecondary,
               fontSize: 11, fontWeight: FontWeight.w600)),
           ],
         ),

@@ -75,7 +75,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         // Alignment
         Card(
           child: ListTile(
-            leading: Icon(Icons.architecture, color: TAColors.accent),
+            leading: Icon(Icons.architecture, color: TA.accent),
             title: const Text('Alignment'),
             subtitle: Text(state.aligned
                 ? 'Aligned'
@@ -100,7 +100,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Row(
                   children: [
                     Icon(Icons.circle, size: 12,
-                      color: client.isConnected ? TAColors.success : TAColors.error),
+                      color: client.isConnected ? TA.success : TA.error),
                     const SizedBox(width: 8),
                     Text(client.isConnected ? 'Connected' : 'Disconnected'),
                   ],
@@ -109,7 +109,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(backgroundColor: TAColors.surfaceVariant),
+                    style: ElevatedButton.styleFrom(backgroundColor: TA.surfaceVariant),
                     onPressed: () async {
                       ref.read(mountStateProvider.notifier).stopPolling();
                       await client.disconnect();
@@ -134,10 +134,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               children: [
                 Text('TeenAstro Controller', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 4),
-                Text('Version 1.6.1', style: TextStyle(color: TAColors.textSecondary)),
+                Text('Version 1.6.1', style: TextStyle(color: TA.textSecondary)),
                 const SizedBox(height: 4),
                 Text('Flutter app for TeenAstro telescope mounts',
-                  style: TextStyle(color: TAColors.textSecondary, fontSize: 12)),
+                  style: TextStyle(color: TA.textSecondary, fontSize: 12)),
               ],
             ),
           ),
@@ -159,9 +159,9 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: TAColors.textSecondary)),
+          Text(label, style: TextStyle(color: TA.textSecondary)),
           Text(value.isNotEmpty ? value : '—',
-            style: TextStyle(color: TAColors.textHigh, fontWeight: FontWeight.w500)),
+            style: TextStyle(color: TA.textHigh, fontWeight: FontWeight.w500)),
         ],
       ),
     );

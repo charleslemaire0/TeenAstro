@@ -91,12 +91,12 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.folder_open, size: 64, color: TAColors.textSecondary),
+              Icon(Icons.folder_open, size: 64, color: TA.textSecondary),
               const SizedBox(height: 16),
               Text('No catalogs loaded', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               Text('Run tools/extract_catalogs.py to generate catalog JSON files.',
-                style: TextStyle(color: TAColors.textSecondary), textAlign: TextAlign.center),
+                style: TextStyle(color: TA.textSecondary), textAlign: TextAlign.center),
             ],
           ),
         ),
@@ -119,9 +119,9 @@ class _CatalogBrowserScreenState extends ConsumerState<CatalogBrowserScreen> {
               child: ChoiceChip(
                 label: Text(_catalogs[i].title),
                 selected: i == filter.selectedCatalog,
-                selectedColor: TAColors.accent,
+                selectedColor: TA.accent,
                 labelStyle: TextStyle(
-                  color: i == filter.selectedCatalog ? Colors.white : TAColors.text),
+                  color: i == filter.selectedCatalog ? TA.textHigh : TA.text),
                 onSelected: (_) => filterNotifier.setSelectedCatalog(i),
               ),
             ),
@@ -394,21 +394,21 @@ class _ObjectTile extends StatelessWidget {
 
     return ListTile(
       title: Text(title, style: TextStyle(
-        color: belowHorizon ? TAColors.textSecondary : TAColors.textHigh,
+        color: belowHorizon ? TA.textSecondary : TA.textHigh,
         fontWeight: FontWeight.w500)),
       subtitle: Row(
         children: [
           Expanded(child: Text(subtitle.toString(),
-            style: TextStyle(color: TAColors.textSecondary, fontSize: 12))),
+            style: TextStyle(color: TA.textSecondary, fontSize: 12))),
           if (altStr != null)
             Text(altStr, style: TextStyle(
-              color: belowHorizon ? TAColors.error : TAColors.success,
+              color: belowHorizon ? TA.error : TA.success,
               fontSize: 11, fontWeight: FontWeight.w600)),
         ],
       ),
       trailing: Text('${entry.raStr}\n${entry.decStr}',
         textAlign: TextAlign.right,
-        style: TextStyle(color: TAColors.text, fontFamily: 'monospace', fontSize: 11)),
+        style: TextStyle(color: TA.text, fontFamily: 'monospace', fontSize: 11)),
       onTap: () => _showActions(context),
     );
   }
@@ -452,14 +452,14 @@ class _ObjectActionSheet extends ConsumerWidget {
             style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 4),
           Text('RA: ${entry.raStr}  Dec: ${entry.decStr}',
-            style: TextStyle(fontFamily: 'monospace', color: TAColors.textSecondary)),
+            style: TextStyle(fontFamily: 'monospace', color: TA.textSecondary)),
           const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
                 child: slewing
                     ? ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(backgroundColor: TAColors.error),
+                        style: ElevatedButton.styleFrom(backgroundColor: TA.error),
                         onPressed: () {
                           client.sendImmediate(LX200.stopAll);
                           if (context.mounted) Navigator.pop(context);
@@ -473,9 +473,9 @@ class _ObjectActionSheet extends ConsumerWidget {
                           final okDec = await client.sendBool(LX200.setTargetDec(entry.decStr));
                           if (!okRa || !okDec) {
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                                content: Text('Failed to set target coordinates'),
-                                backgroundColor: TAColors.error,
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: const Text('Failed to set target coordinates'),
+                                backgroundColor: TA.error,
                               ));
                               Navigator.pop(context);
                             }
@@ -490,7 +490,7 @@ class _ObjectActionSheet extends ConsumerWidget {
                                   : 'Goto failed: $reply';
                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                 content: Text(msg),
-                                backgroundColor: TAColors.error,
+                                backgroundColor: TA.error,
                               ));
                             }
                             Navigator.pop(context);
@@ -503,7 +503,7 @@ class _ObjectActionSheet extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: TAColors.surfaceVariant),
+                  style: ElevatedButton.styleFrom(backgroundColor: TA.surfaceVariant),
                   onPressed: slewing ? null : () async {
                     await client.sendBool(LX200.setTargetRa(entry.raStr));
                     await client.sendBool(LX200.setTargetDec(entry.decStr));

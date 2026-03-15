@@ -110,7 +110,7 @@ class _TimeSyncCardState extends ConsumerState<TimeSyncCard> {
                 if (state.hasGNSS)
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: TAColors.surfaceVariant),
+                        backgroundColor: TA.surfaceVariant),
                     onPressed:
                         _syncing || !state.gnssValid ? null : _syncFromGnss,
                     icon: const Icon(Icons.satellite_alt, size: 18),
@@ -125,8 +125,8 @@ class _TimeSyncCardState extends ConsumerState<TimeSyncCard> {
               Text(_syncResult,
                   style: TextStyle(
                       color: _syncResult.startsWith('Error')
-                          ? TAColors.error
-                          : TAColors.success,
+                          ? TA.error
+                          : TA.success,
                       fontSize: 12)),
             ],
           ],
@@ -350,12 +350,12 @@ class _GnssStatusRow extends StatelessWidget {
             height: 8,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: ok ? TAColors.success : TAColors.error,
+              color: ok ? TA.success : TA.error,
             ),
           ),
           const SizedBox(width: 4),
           Text(label,
-              style: TextStyle(color: TAColors.textSecondary, fontSize: 11)),
+              style: TextStyle(color: TA.textSecondary, fontSize: 11)),
         ],
       );
 }
@@ -380,7 +380,7 @@ class _ComparisonRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: TAColors.textSecondary),
+        Icon(icon, size: 16, color: TA.textSecondary),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
@@ -388,18 +388,18 @@ class _ComparisonRow extends StatelessWidget {
             children: [
               Text(label,
                   style: TextStyle(
-                      color: TAColors.textSecondary,
+                      color: TA.textSecondary,
                       fontSize: 11,
                       fontWeight: FontWeight.w600)),
               const SizedBox(height: 2),
               Text('Mount: $mountValue',
                   style: TextStyle(
-                      color: TAColors.textHigh,
+                      color: TA.textHigh,
                       fontFamily: 'monospace',
                       fontSize: 11)),
               Text('Phone: $phoneValue',
                   style: TextStyle(
-                      color: TAColors.text,
+                      color: TA.text,
                       fontFamily: 'monospace',
                       fontSize: 11)),
             ],
@@ -409,12 +409,12 @@ class _ComparisonRow extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: TAColors.warning.withValues(alpha: 0.15),
+              color: TA.warning.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text('$delta',
                 style: TextStyle(
-                    color: TAColors.warning,
+                    color: TA.warning,
                     fontSize: 10,
                     fontWeight: FontWeight.w600)),
           ),

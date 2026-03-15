@@ -56,7 +56,7 @@ class ControlScreen extends ConsumerWidget {
             _ActionButton(
               icon: Icons.stop_circle,
               label: slewing ? 'STOP SLEW' : 'STOP',
-              color: TAColors.error,
+              color: TA.error,
               large: slewing,
               onPressed: () {
                 safeMove.stopMove();
@@ -72,7 +72,7 @@ class ControlScreen extends ConsumerWidget {
                 if (context.mounted && !ok) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     content: Text(state.isParked ? 'Unpark failed' : 'Park failed'),
-                    backgroundColor: TAColors.error,
+                    backgroundColor: TA.error,
                   ));
                 }
               },
@@ -83,9 +83,9 @@ class ControlScreen extends ConsumerWidget {
               onPressed: () async {
                 final ok = await client.sendBool(LX200.goHome);
                 if (context.mounted && !ok) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Go-home failed (mount parked or busy?)'),
-                    backgroundColor: TAColors.error,
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: const Text('Go-home failed (mount parked or busy?)'),
+                    backgroundColor: TA.error,
                   ));
                 }
               },
@@ -126,9 +126,9 @@ class _SpeedSelector extends StatelessWidget {
           child: ChoiceChip(
             label: Text(labels[i]),
             selected: selected,
-            selectedColor: TAColors.accent,
+            selectedColor: TA.accent,
             labelStyle: TextStyle(
-              color: selected ? Colors.white : TAColors.text,
+              color: selected ? TA.textHigh : TA.text,
               fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
             ),
             onSelected: (_) => onChanged(i),
@@ -154,8 +154,8 @@ class _ActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
-        backgroundColor: color ?? TAColors.surfaceVariant,
-        foregroundColor: color != null ? Colors.white : TAColors.text,
+        backgroundColor: color ?? TA.surfaceVariant,
+        foregroundColor: color != null ? TA.textHigh : TA.text,
         minimumSize: Size(large ? 160 : 100, large ? 56 : 48),
       ),
       onPressed: onPressed,
@@ -181,7 +181,7 @@ class _FocuserPanel extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Focuser', style: TextStyle(
-              color: TAColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+              color: TA.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -190,7 +190,7 @@ class _FocuserPanel extends StatelessWidget {
                   onStop: () => client.send(LX200.focuserStop)),
                 const SizedBox(width: 16),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: TAColors.error),
+                  style: ElevatedButton.styleFrom(backgroundColor: TA.error),
                   onPressed: () => client.send(LX200.focuserStop),
                   child: const Text('Stop'),
                 ),
@@ -221,12 +221,12 @@ class _HoldButton extends StatelessWidget {
       child: Container(
         width: 64, height: 48,
         decoration: BoxDecoration(
-          color: TAColors.surfaceVariant,
+          color: TA.surfaceVariant,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: TAColors.border),
+          border: Border.all(color: TA.border),
         ),
         alignment: Alignment.center,
-        child: Text(label, style: TextStyle(color: TAColors.text, fontWeight: FontWeight.w600)),
+        child: Text(label, style: TextStyle(color: TA.text, fontWeight: FontWeight.w600)),
       ),
     );
   }

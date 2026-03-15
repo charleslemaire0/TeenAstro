@@ -94,7 +94,7 @@ class _DebugPanelState extends State<_DebugPanel>
     final traceLogs = ConnectTrace.entries;
 
     return Card(
-      color: const Color(0xFF0A0E14),
+      color: TA.isNight ? const Color(0xFF100808) : const Color(0xFF0A0E14),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -106,9 +106,9 @@ class _DebugPanelState extends State<_DebugPanel>
                 Expanded(
                   child: TabBar(
                     controller: _tabs,
-                    labelColor: TAColors.warning,
-                    unselectedLabelColor: TAColors.textSecondary,
-                    indicatorColor: TAColors.accent,
+                    labelColor: TA.warning,
+                    unselectedLabelColor: TA.textSecondary,
+                    indicatorColor: TA.accent,
                     labelStyle: const TextStyle(
                         fontSize: 11, fontWeight: FontWeight.w600),
                     tabs: [
@@ -128,7 +128,7 @@ class _DebugPanelState extends State<_DebugPanel>
                     setState(() {});
                   },
                   child: Text('Clear',
-                      style: TextStyle(color: TAColors.accent, fontSize: 12)),
+                      style: TextStyle(color: TA.accent, fontSize: 12)),
                 ),
               ],
             ),
@@ -143,8 +143,8 @@ class _DebugPanelState extends State<_DebugPanel>
                     reverse: true,
                     child: Text(
                       debugLogs.isEmpty ? '(no logs yet)' : debugLogs.join('\n'),
-                      style: const TextStyle(
-                        color: Color(0xFF4EC9B0),
+                      style: TextStyle(
+                        color: TA.isNight ? const Color(0xFFAA5544) : const Color(0xFF4EC9B0),
                         fontFamily: 'monospace',
                         fontSize: 10,
                         height: 1.4,
@@ -158,8 +158,8 @@ class _DebugPanelState extends State<_DebugPanel>
                       traceLogs.isEmpty
                           ? '(no trace yet)'
                           : traceLogs.join('\n'),
-                      style: const TextStyle(
-                        color: Color(0xFFCE9178),
+                      style: TextStyle(
+                        color: TA.isNight ? const Color(0xFF884433) : const Color(0xFFCE9178),
                         fontFamily: 'monospace',
                         fontSize: 10,
                         height: 1.4,
@@ -270,7 +270,7 @@ class _TargetCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Target', style: TextStyle(
-              color: TAColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+              color: TA.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -293,15 +293,15 @@ class _ErrorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: TAColors.error.withValues(alpha: 0.1),
+      color: TA.error.withValues(alpha: 0.1),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(Icons.warning, color: TAColors.error),
+            Icon(Icons.warning, color: TA.error),
             const SizedBox(width: 12),
             Text(state.errorLabel,
-              style: TextStyle(color: TAColors.error, fontWeight: FontWeight.w600)),
+              style: TextStyle(color: TA.error, fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -323,12 +323,12 @@ class _FirmwareCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Firmware', style: TextStyle(
-              color: TAColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+              color: TA.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Text('${state.productName} v${state.versionNum}',
-              style: TextStyle(color: TAColors.textHigh)),
+              style: TextStyle(color: TA.textHigh)),
             Text('Board: ${state.boardVersion}  Driver: ${state.driverType}',
-              style: TextStyle(color: TAColors.textSecondary, fontSize: 12)),
+              style: TextStyle(color: TA.textSecondary, fontSize: 12)),
           ],
         ),
       ),
@@ -345,10 +345,10 @@ class _InfoItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(label, style: TextStyle(color: TAColors.textSecondary, fontSize: 11)),
+        Text(label, style: TextStyle(color: TA.textSecondary, fontSize: 11)),
         const SizedBox(height: 4),
         Text(value, style: TextStyle(
-          color: TAColors.textHigh, fontSize: 16, fontFamily: 'monospace', fontWeight: FontWeight.w600)),
+          color: TA.textHigh, fontSize: 16, fontFamily: 'monospace', fontWeight: FontWeight.w600)),
       ],
     );
   }

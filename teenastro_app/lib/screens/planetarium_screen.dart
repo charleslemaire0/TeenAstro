@@ -33,6 +33,8 @@ class _SkyObject {
   final Color? color;
   final String? catalogPrefix;
   final int? catalogId;
+  /// True for solar-system objects whose RA/Dec are already apparent (JNow).
+  final bool isJNow;
 
   const _SkyObject({
     required this.name,
@@ -44,6 +46,7 @@ class _SkyObject {
     this.color,
     this.catalogPrefix,
     this.catalogId,
+    this.isJNow = false,
   });
 }
 
@@ -73,7 +76,6 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
   double _panY = 0.0;       // vertical offset (pixels)
   Offset _lastFocalPoint = Offset.zero;
   double _lastScale = 1.0;
-  static const double _radiansPerPixel = 0.008;
 
   // UI state
   _SkyObject? _selectedObject;
@@ -203,10 +205,24 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
     _SkyObject? best;
     double bestDist = 30.0;
 
-    // Check planets
     final jd = julianDate(DateTime.now().toUtc());
+    final settings = ref.read(planetariumSettingsProvider);
+    final useJNow = settings.epochMode == EpochMode.jNow;
+
+    (double, double) catCoords(double ra, double dec) {
+      if (useJNow) return equatorialEquinoxToJNow(ra, dec, 2000, jd);
+      return (ra, dec);
+    }
+
+    (double, double) mountCoords(double ra, double dec) {
+      if (!useJNow) return equatorialJNowToEquinox(ra, dec, 2000, jd);
+      return (ra, dec);
+    }
+
+    // Check planets (JNow source)
     for (final body in allBodies(jd)) {
-      final pt = proj.project(body.ra, body.dec);
+      final (pRa, pDec) = mountCoords(body.ra, body.dec);
+      final pt = proj.project(pRa, pDec);
       if (pt == null) continue;
       final d = (pt - localPos).distance;
       if (d < bestDist) {
@@ -218,17 +234,18 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
           dec: body.dec,
           mag: body.mag,
           color: body.color,
+          isJNow: true,
         );
       }
     }
 
-    // Check stars (use same dynamic mag limit as renderer; J2000 → JNow for display)
+    // Check stars (J2000 catalog)
     if (_stars != null) {
       final starMagLimit = 6.0 + 2.5 * (math.log(_zoom.clamp(0.5, 30)) / math.ln10);
       for (final star in _stars!) {
         if (star.mag > starMagLimit) continue;
-        final (raNow, decNow) = equatorialEquinoxToJNow(star.ra, star.dec, 2000, jd);
-        final pt = proj.project(raNow, decNow);
+        final (sRa, sDec) = catCoords(star.ra, star.dec);
+        final pt = proj.project(sRa, sDec);
         if (pt == null) continue;
         final d = (pt - localPos).distance;
         if (d < bestDist) {
@@ -244,11 +261,11 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
       }
     }
 
-    // Check DSOs (J2000 → JNow)
-    if (_dsos != null && ref.read(planetariumSettingsProvider).dsoObjects) {
+    // Check DSOs (J2000 catalog)
+    if (_dsos != null && settings.dsoObjects) {
       for (final dso in _dsos!) {
-        final (raNow, decNow) = equatorialEquinoxToJNow(dso.ra, dso.dec, 2000, jd);
-        final pt = proj.project(raNow, decNow);
+        final (dRa, dDec) = catCoords(dso.ra, dso.dec);
+        final pt = proj.project(dRa, dDec);
         if (pt == null) continue;
         final d = (pt - localPos).distance;
         if (d < bestDist) {
@@ -304,6 +321,7 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
           dec: body.dec,
           mag: body.mag,
           color: body.color,
+          isJNow: true,
         ));
       }
     }
@@ -356,11 +374,28 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
   void _centerOnObject(_SkyObject obj) {
     final state = ref.read(mountStateProvider);
     final jd = julianDate(DateTime.now().toUtc());
-    final (raNow, decNow) = equatorialEquinoxToJNow(obj.ra, obj.dec, 2000, jd);
+    final settings = ref.read(planetariumSettingsProvider);
+    final useJNow = settings.epochMode == EpochMode.jNow;
+    final double dispRa, dispDec;
+    if (obj.isJNow) {
+      if (!useJNow) {
+        (dispRa, dispDec) = equatorialJNowToEquinox(obj.ra, obj.dec, 2000, jd);
+      } else {
+        dispRa = obj.ra;
+        dispDec = obj.dec;
+      }
+    } else {
+      if (useJNow) {
+        (dispRa, dispDec) = equatorialEquinoxToJNow(obj.ra, obj.dec, 2000, jd);
+      } else {
+        dispRa = obj.ra;
+        dispDec = obj.dec;
+      }
+    }
     final lst = _parseLST(state.siderealTime);
     final latRad = state.latitude * math.pi / 180;
-    final ha = (lst - raNow) * 15 * math.pi / 180;
-    final dec = decNow * math.pi / 180;
+    final ha = (lst - dispRa) * 15 * math.pi / 180;
+    final dec = dispDec * math.pi / 180;
     final sinAlt = math.sin(dec) * math.sin(latRad) + math.cos(dec) * math.cos(latRad) * math.cos(ha);
     final alt = math.asin(sinAlt.clamp(-1.0, 1.0));
     final cosAlt = math.cos(alt);
@@ -368,12 +403,53 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
     final cosAz = denom.abs() < 1e-10 ? 1.0 : ((math.sin(dec) - sinAlt * math.sin(latRad)) / denom);
     var az = math.acos(cosAz.clamp(-1.0, 1.0));
     if (math.sin(ha) > 0) az = 2 * math.pi - az;
+
+    double panY = 0;
+    final size = context.size;
+    if (size != null) {
+      final diag = math.sqrt(size.width * size.width + size.height * size.height);
+      final radius = (diag / 2) * _centerOnObjectZoom;
+      panY = radius * cosAlt / (1 + math.sin(alt));
+    }
+
     setState(() {
       _rotation = -az;
-      _panY = 0;
+      _panY = panY;
       _zoom = _centerOnObjectZoom;
       _selectedObject = obj;
       _showSearch = false;
+    });
+  }
+
+  void _recenterOnTelescope() {
+    final state = ref.read(mountStateProvider);
+    final size = context.size;
+    if (size == null) return;
+    final lst = _parseLST(state.siderealTime);
+    final raH = _parseLST(state.ra);
+    final decDeg = _parseCoord(state.dec);
+    final latRad = state.latitude * math.pi / 180;
+    final ha = (lst - raH) * 15 * math.pi / 180;
+    final decRad = decDeg * math.pi / 180;
+
+    final sinAlt = math.sin(decRad) * math.sin(latRad) +
+        math.cos(decRad) * math.cos(latRad) * math.cos(ha);
+    final alt = math.asin(sinAlt.clamp(-1.0, 1.0));
+    final cosAlt = math.cos(alt);
+    final denom = cosAlt * math.cos(latRad);
+    final cosAz = denom.abs() < 1e-10
+        ? 1.0
+        : ((math.sin(decRad) - sinAlt * math.sin(latRad)) / denom);
+    var az = math.acos(cosAz.clamp(-1.0, 1.0));
+    if (math.sin(ha) > 0) az = 2 * math.pi - az;
+
+    final diag = math.sqrt(size.width * size.width + size.height * size.height);
+    final radius = (diag / 2) * _zoom;
+    final r = radius * cosAlt / (1 + math.sin(alt));
+
+    setState(() {
+      _rotation = -az;
+      _panY = r;
     });
   }
 
@@ -412,14 +488,14 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
     final settings = ref.watch(planetariumSettingsProvider);
 
     if (_stars == null) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF060A10),
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: TA.isNight ? const Color(0xFF0A0404) : const Color(0xFF060A10),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF060A10),
+      backgroundColor: TA.isNight ? const Color(0xFF0A0404) : const Color(0xFF060A10),
       body: Stack(
         children: [
           // Full-bleed sky renderer
@@ -428,25 +504,44 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
               if (event is PointerScrollEvent) {
                 _showUi();
                 setState(() {
+                  final oldZoom = _zoom;
                   final delta = event.scrollDelta.dy > 0 ? 0.9 : 1.1;
                   _zoom = (_zoom * delta).clamp(0.5, 30.0);
+                  _panY = _panY * (_zoom / oldZoom);
                 });
               }
             },
             child: GestureDetector(
               onScaleStart: (d) {
                 _showUi();
-                _lastFocalPoint = d.focalPoint;
+                _lastFocalPoint = d.localFocalPoint;
                 _lastScale = 1.0;
               },
               onScaleUpdate: (d) {
                 setState(() {
+                  final oldZoom = _zoom;
                   _zoom = (_zoom * (d.scale / _lastScale)).clamp(0.5, 30.0);
                   _lastScale = d.scale;
-                  final delta = d.focalPoint - _lastFocalPoint;
-                  _lastFocalPoint = d.focalPoint;
-                  _rotation += delta.dx * _radiansPerPixel;
-                  _panY += delta.dy;
+                  _panY = _panY * (_zoom / oldZoom);
+
+                  final delta = d.localFocalPoint - _lastFocalPoint;
+                  _lastFocalPoint = d.localFocalPoint;
+
+                  final size = context.size;
+                  if (size != null) {
+                    final cx = size.width / 2;
+                    final cy = size.height / 2 + _panY;
+                    final fDy = cy - d.localFocalPoint.dy;
+                    final fDx = cx - d.localFocalPoint.dx;
+                    // Damped Jacobian inversion: avoids singularity when finger
+                    // is on the horizontal equator of the projection (fDy ≈ 0).
+                    const eps2 = 30.0 * 30.0;
+                    final denom = fDy * fDy + eps2;
+                    _rotation -= delta.dx * fDy / denom;
+                    _panY += delta.dy + delta.dx * fDx * fDy / denom;
+                  } else {
+                    _panY += delta.dy;
+                  }
                 });
               },
               onTapUp: (d) {
@@ -472,6 +567,7 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
                     panY: _panY,
                     settings: settings,
                     selectedObject: _selectedObject,
+                    nightMode: TA.isNight,
                   ),
                 ),
               ),
@@ -493,7 +589,7 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
                     child: Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white70, size: 20),
+                          icon: Icon(Icons.arrow_back, color: TA.text, size: 20),
                           onPressed: () => context.go('/goto'),
                           style: IconButton.styleFrom(
                             backgroundColor: Colors.black45,
@@ -509,8 +605,8 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
                           ),
                           child: Text(
                             '${_zoom.toStringAsFixed(1)}x  ${_hudCoordText(state, settings)}',
-                            style: const TextStyle(
-                              color: Colors.white70,
+                            style: TextStyle(
+                              color: TA.text,
                               fontSize: 10,
                               fontFamily: 'monospace',
                             ),
@@ -525,7 +621,7 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
                     top: MediaQuery.of(context).padding.top + 4,
                     right: 4,
                     child: IconButton(
-                      icon: const Icon(Icons.layers, color: Colors.white70, size: 20),
+                      icon: Icon(Icons.layers, color: TA.text, size: 20),
                       onPressed: () => setState(() {
                         _showLayers = !_showLayers;
                         _showSearch = false;
@@ -549,18 +645,31 @@ class _PlanetariumScreenState extends ConsumerState<PlanetariumScreen> {
                       ),
                     ),
 
+                  // Recenter on telescope FAB
+                  if (!_showSearch && _selectedObject == null)
+                    Positioned(
+                      bottom: MediaQuery.of(context).padding.bottom + 16,
+                      left: 16,
+                      child: FloatingActionButton.small(
+                        backgroundColor: TA.surfaceVariant,
+                        onPressed: _recenterOnTelescope,
+                        tooltip: 'Recenter on telescope',
+                        child: Icon(Icons.center_focus_strong, color: TA.textHigh),
+                      ),
+                    ),
+
                   // Search FAB
                   if (!_showSearch && _selectedObject == null)
                     Positioned(
                       bottom: MediaQuery.of(context).padding.bottom + 16,
                       right: 16,
                       child: FloatingActionButton.small(
-                        backgroundColor: TAColors.accent,
+                        backgroundColor: TA.accent,
                         onPressed: () => setState(() {
                           _showSearch = true;
                           _showLayers = false;
                         }),
-                        child: const Icon(Icons.search, color: Colors.white),
+                        child: Icon(Icons.search, color: TA.textHigh),
                       ),
                     ),
                 ],
@@ -723,6 +832,7 @@ class _SkyRenderer extends CustomPainter {
   final double panY;
   final PlanetariumSettings settings;
   final _SkyObject? selectedObject;
+  final bool nightMode;
 
   _SkyRenderer({
     required this.stars,
@@ -736,7 +846,41 @@ class _SkyRenderer extends CustomPainter {
     required this.panY,
     required this.settings,
     this.selectedObject,
+    this.nightMode = false,
   });
+
+  bool get _useJNow => settings.epochMode == EpochMode.jNow;
+
+  // Sky colors: normal (cool blue) vs night vision (warm red)
+  Color get _skyBg          => nightMode ? const Color(0xFF120606) : const Color(0xFF0C1520);
+  Color get _groundColor    => nightMode ? const Color(0xFF100808) : const Color(0xFF0A140A);
+  Color get _horizonColor   => nightMode ? const Color(0xFF3A1818) : const Color(0xFF2A4020);
+  Color get _gridColor      => nightMode ? const Color(0xFF2A1010) : const Color(0xFF1A3020);
+  Color get _constLineColor => nightMode ? const Color(0xFF662222) : const Color(0xFF4466AA);
+  Color get _constNameColor => nightMode ? const Color(0xFF884444) : const Color(0xFF5577AA);
+  Color get _starLabelColor => nightMode ? const Color(0xFF884444) : const Color(0xFFAABBDD);
+  Color get _cardinalColor  => nightMode ? const Color(0xFF884444) : const Color(0xFF5577AA);
+  Color get _milkyWayColor  => nightMode ? const Color(0xFF1A0C0C) : const Color(0xFF1A2840);
+  Color get _mwOutlineColor => nightMode ? const Color(0xFF2A1616) : const Color(0xFF1A3050);
+  Color get _eqGridColor    => nightMode ? const Color(0xFF201010) : const Color(0xFF1A3020);
+
+  /// Shift any color to a red-only tone for night vision.
+  static Color _toNightRed(Color c) {
+    final lum = (c.red * 0.299 + c.green * 0.587 + c.blue * 0.114).round().clamp(0, 255);
+    return Color.fromARGB(c.alpha.toInt(), lum, (lum * 0.3).round(), (lum * 0.2).round());
+  }
+
+  /// Convert J2000 catalog coords to display epoch.
+  (double, double) _catCoords(double raH, double decDeg, double jd) {
+    if (_useJNow) return equatorialEquinoxToJNow(raH, decDeg, 2000, jd);
+    return (raH, decDeg);
+  }
+
+  /// Convert JNow mount/planet coords to display epoch.
+  (double, double) _mountCoords(double raH, double decDeg, double jd) {
+    if (!_useJNow) return equatorialJNowToEquinox(raH, decDeg, 2000, jd);
+    return (raH, decDeg);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -753,7 +897,7 @@ class _SkyRenderer extends CustomPainter {
     // 1. Sky background
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()..color = const Color(0xFF0C1520),
+      Paint()..color = _skyBg,
     );
 
     // Ground below horizon
@@ -761,14 +905,14 @@ class _SkyRenderer extends CustomPainter {
     final skyCircle = Path()..addOval(
       Rect.fromCircle(center: Offset(proj.cx, proj.cy), radius: proj.radius));
     final groundPath = Path.combine(PathOperation.difference, groundAll, skyCircle);
-    canvas.drawPath(groundPath, Paint()..color = const Color(0xFF0A140A));
+    canvas.drawPath(groundPath, Paint()..color = _groundColor);
 
     // Horizon line
     canvas.drawCircle(
       Offset(proj.cx, proj.cy),
       proj.radius,
       Paint()
-        ..color = const Color(0xFF2A4020)
+        ..color = _horizonColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );
@@ -816,22 +960,30 @@ class _SkyRenderer extends CustomPainter {
     _drawTarget(canvas, proj);
 
     // Cardinal labels
-    _drawCardinal(canvas, proj, 'N', 0, rotation);
-    _drawCardinal(canvas, proj, 'E', math.pi / 2, rotation);
-    _drawCardinal(canvas, proj, 'S', math.pi, rotation);
-    _drawCardinal(canvas, proj, 'W', 3 * math.pi / 2, rotation);
+    _drawCardinal(canvas, proj, 'N', 0, rotation, 12);
+    _drawCardinal(canvas, proj, 'NE', math.pi / 4, rotation, 9);
+    _drawCardinal(canvas, proj, 'E', math.pi / 2, rotation, 12);
+    _drawCardinal(canvas, proj, 'SE', 3 * math.pi / 4, rotation, 9);
+    _drawCardinal(canvas, proj, 'S', math.pi, rotation, 12);
+    _drawCardinal(canvas, proj, 'SW', 5 * math.pi / 4, rotation, 9);
+    _drawCardinal(canvas, proj, 'W', 3 * math.pi / 2, rotation, 12);
+    _drawCardinal(canvas, proj, 'NW', 7 * math.pi / 4, rotation, 9);
 
-    // Selection ring (convert stored J2000 to JNow for current time)
+    // Selection ring
     if (selectedObject != null) {
-      final (raNow, decNow) = equatorialEquinoxToJNow(
-        selectedObject!.ra, selectedObject!.dec, 2000, jd);
-      final pt = proj.project(raNow, decNow, clipHorizon: false);
+      final double dispRa, dispDec;
+      if (selectedObject!.isJNow) {
+        (dispRa, dispDec) = _mountCoords(selectedObject!.ra, selectedObject!.dec, jd);
+      } else {
+        (dispRa, dispDec) = _catCoords(selectedObject!.ra, selectedObject!.dec, jd);
+      }
+      final pt = proj.project(dispRa, dispDec, clipHorizon: false);
       if (pt != null) {
         canvas.drawCircle(
           pt,
           12,
           Paint()
-            ..color = TAColors.warning
+            ..color = TA.warning
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2.0,
         );
@@ -841,12 +993,11 @@ class _SkyRenderer extends CustomPainter {
 
   void _drawMilkyWay(Canvas canvas, _Proj proj, double jd) {
     final mw = milkyWay!;
-    const equinox = 2000;
     final path = Path();
     bool first = true;
 
     for (final p in mw.center) {
-      final (raNow, decNow) = equatorialEquinoxToJNow(p.$1, p.$2, equinox, jd);
+      final (raNow, decNow) = _catCoords(p.$1, p.$2, jd);
       final pt = proj.project(raNow, decNow, clipHorizon: false);
       if (pt == null) continue;
       if (first) {
@@ -858,7 +1009,7 @@ class _SkyRenderer extends CustomPainter {
     }
     for (int i = mw.width.length - 1; i >= 0; i--) {
       final w = mw.width[i];
-      final (raNow, decNow) = equatorialEquinoxToJNow(w.$1, w.$2, equinox, jd);
+      final (raNow, decNow) = _catCoords(w.$1, w.$2, jd);
       final pt = proj.project(raNow, decNow, clipHorizon: false);
       if (pt == null) continue;
       path.lineTo(pt.dx, pt.dy);
@@ -871,14 +1022,14 @@ class _SkyRenderer extends CustomPainter {
           center: Offset(proj.cx, proj.cy), radius: proj.radius)));
     canvas.drawPath(
       path,
-      Paint()..color = const Color(0x0D6688AA),
+      Paint()..color = nightMode ? const Color(0x0D884444) : const Color(0x0D6688AA),
     );
     canvas.restore();
   }
 
   void _drawAltAzGrid(Canvas canvas, _Proj proj) {
     final paint = Paint()
-      ..color = const Color(0xFF1A2840)
+      ..color = _milkyWayColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.5;
 
@@ -901,7 +1052,7 @@ class _SkyRenderer extends CustomPainter {
 
   void _drawEqGrid(Canvas canvas, _Proj proj) {
     final paint = Paint()
-      ..color = const Color(0xFF1A3020)
+      ..color = _eqGridColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.5;
 
@@ -942,9 +1093,8 @@ class _SkyRenderer extends CustomPainter {
   }
 
   void _drawConstellationLines(Canvas canvas, _Proj proj, double jd) {
-    const equinox = 2000;
     final paint = Paint()
-      ..color = const Color(0xFF4466AA).withValues(alpha: 0.55)
+      ..color = _constLineColor.withValues(alpha: 0.55)
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
@@ -953,8 +1103,8 @@ class _SkyRenderer extends CustomPainter {
 
     for (final c in constellations) {
       for (final line in c.lines) {
-        final (ra1, dec1) = equatorialEquinoxToJNow(line.ra1, line.dec1, equinox, jd);
-        final (ra2, dec2) = equatorialEquinoxToJNow(line.ra2, line.dec2, equinox, jd);
+        final (ra1, dec1) = _catCoords(line.ra1, line.dec1, jd);
+        final (ra2, dec2) = _catCoords(line.ra2, line.dec2, jd);
         final p1 = proj.project(ra1, dec1);
         final p2 = proj.project(ra2, dec2);
         if (p1 != null && p2 != null) {
@@ -965,9 +1115,8 @@ class _SkyRenderer extends CustomPainter {
   }
 
   void _drawConstellationNames(Canvas canvas, _Proj proj, double jd) {
-    const equinox = 2000;
     for (final cn in constNames) {
-      final (raNow, decNow) = equatorialEquinoxToJNow(cn.ra, cn.dec, equinox, jd);
+      final (raNow, decNow) = _catCoords(cn.ra, cn.dec, jd);
       final pt = proj.project(raNow, decNow);
       if (pt == null) continue;
       final fontSize = zoom > 4 ? 13.0 : (zoom > 2 ? 11.0 : 10.0);
@@ -975,7 +1124,7 @@ class _SkyRenderer extends CustomPainter {
         text: TextSpan(
           text: cn.abbr,
           style: TextStyle(
-            color: const Color(0xFF5577AA).withValues(alpha: 0.65),
+            color: _constNameColor.withValues(alpha: 0.65),
             fontSize: fontSize,
             fontWeight: FontWeight.w500,
             letterSpacing: 1.0,
@@ -988,13 +1137,11 @@ class _SkyRenderer extends CustomPainter {
   }
 
   void _drawDSOs(Canvas canvas, _Proj proj, double jd) {
-    const equinox = 2000;
-    // Stellarium-like magnitude limit: log scale with FOV (magLimit ∝ 2.5*log10(zoom))
     final magLimit = (8.0 + 2.5 * (math.log(zoom.clamp(0.5, 30)) / math.ln10)).clamp(8.0, 25.0);
 
     for (final dso in dsos!) {
       if (dso.mag != null && dso.mag! > magLimit) continue;
-      final (raNow, decNow) = equatorialEquinoxToJNow(dso.ra, dso.dec, equinox, jd);
+      final (raNow, decNow) = _catCoords(dso.ra, dso.dec, jd);
       final pt = proj.project(raNow, decNow);
       if (pt == null) continue;
 
@@ -1012,11 +1159,17 @@ class _SkyRenderer extends CustomPainter {
 
       final scale = math.sqrt(zoom) * settings.objectScale;
 
+      final Color galaxyC   = nightMode ? const Color(0xFF993322) : const Color(0xFFCC8866);
+      final Color nebulaC   = nightMode ? const Color(0xFF884422) : const Color(0xFF44CCAA);
+      final Color clusterC  = nightMode ? const Color(0xFF886633) : const Color(0xFFCCCC66);
+      final Color openClrC  = nightMode ? const Color(0xFF776644) : const Color(0xFFAAAAAA);
+      final Color diffNebuC = nightMode ? const Color(0xFF884433) : const Color(0xFF6699CC);
+      final Color defaultC  = nightMode ? const Color(0xFF993322) : const Color(0xFFCC6644);
+
       if (isGalaxy) {
-        // Galaxy: stroke ellipse
         final r = ((6.0 - mag * 0.35).clamp(2.5, 8.0)) * scale;
         final paint = Paint()
-          ..color = const Color(0xFFCC8866).withValues(alpha: alpha)
+          ..color = galaxyC.withValues(alpha: alpha)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.2;
         canvas.drawOval(
@@ -1024,10 +1177,9 @@ class _SkyRenderer extends CustomPainter {
           paint,
         );
       } else if (isPlanNeb) {
-        // Planetary nebula: ring with four spokes and central dot
         final r = ((6.0 - mag * 0.35).clamp(2.5, 8.0)) * scale;
         final paint = Paint()
-          ..color = const Color(0xFF44CCAA).withValues(alpha: alpha)
+          ..color = nebulaC.withValues(alpha: alpha)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.0;
         canvas.drawCircle(pt, r, paint);
@@ -1041,11 +1193,10 @@ class _SkyRenderer extends CustomPainter {
           );
         }
         canvas.drawCircle(pt, 1.5 * scale,
-          Paint()..color = const Color(0xFF44CCAA).withValues(alpha: alpha * 0.9));
+          Paint()..color = nebulaC.withValues(alpha: alpha * 0.9));
       } else if (isOpenCluster || isClusterNebula) {
-        // Open cluster: dashed circle (arcs with gaps)
         final r = ((5.5 - mag * 0.3).clamp(3.0, 7.0)) * scale;
-        final gray = isOpenCluster ? const Color(0xFFAAAAAA) : const Color(0xFFCCCC66);
+        final gray = isOpenCluster ? openClrC : clusterC;
         final dashPaint = Paint()
           ..color = gray.withValues(alpha: alpha)
           ..style = PaintingStyle.stroke
@@ -1060,20 +1211,18 @@ class _SkyRenderer extends CustomPainter {
           canvas.drawArc(rect, start, dashAngle, false, dashPaint);
         }
       } else if (isGlobularCluster) {
-        // Globular cluster: circle with cross
         final r = ((5.5 - mag * 0.3).clamp(3.0, 7.0)) * scale;
         final paint = Paint()
-          ..color = const Color(0xFFCCCC66).withValues(alpha: alpha)
+          ..color = clusterC.withValues(alpha: alpha)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.0;
         canvas.drawCircle(pt, r, paint);
         canvas.drawLine(Offset(pt.dx - r, pt.dy), Offset(pt.dx + r, pt.dy), paint);
         canvas.drawLine(Offset(pt.dx, pt.dy - r), Offset(pt.dx, pt.dy + r), paint);
       } else if (isNebula) {
-        // Nebula: rounded square
         final r = ((6.0 - mag * 0.35).clamp(2.5, 7.0)) * scale;
         final paint = Paint()
-          ..color = const Color(0xFF6699CC).withValues(alpha: alpha)
+          ..color = diffNebuC.withValues(alpha: alpha)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.0;
         canvas.drawRRect(
@@ -1088,7 +1237,7 @@ class _SkyRenderer extends CustomPainter {
         canvas.drawCircle(
           pt, r,
           Paint()
-            ..color = const Color(0xFFCC6644).withValues(alpha: alpha)
+            ..color = defaultC.withValues(alpha: alpha)
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.0,
         );
@@ -1097,20 +1246,19 @@ class _SkyRenderer extends CustomPainter {
   }
 
   void _drawStars(Canvas canvas, _Proj proj, double jd) {
-    const equinox = 2000;
     final magLimit = 6.0 + 2.5 * (math.log(zoom.clamp(0.5, 30)) / math.ln10);
 
     for (final star in stars) {
       if (star.mag > magLimit) continue;
-      final (raNow, decNow) = equatorialEquinoxToJNow(star.ra, star.dec, equinox, jd);
+      final (raNow, decNow) = _catCoords(star.ra, star.dec, jd);
       final pt = proj.project(raNow, decNow);
       if (pt == null) continue;
 
       final mag = star.mag;
-      // Luminance-based size; scale with zoom so faint stars (e.g. mag 9) visible at max zoom
-      final baseR = 2.5 * math.pow(10, -0.2 * mag) * 1.25;
+      // Softer magnitude curve so faint stars stay visible at reasonable scale
+      final baseR = 2.5 * math.pow(10, -0.14 * mag) * 1.25;
       final zoomScale = math.pow(zoom.clamp(0.5, 30), 0.45);
-      final r = (baseR * zoomScale * settings.starScale).clamp(0.15, 22.0);
+      final r = (baseR * zoomScale * settings.starScale).clamp(0.3, 40.0);
       if (r < 0.3) continue;
       final brightness = math.pow(10, -0.4 * (mag - magLimit)).clamp(0.2, 1.0).toDouble();
 
@@ -1161,7 +1309,7 @@ class _SkyRenderer extends CustomPainter {
           text: TextSpan(
             text: star.name,
             style: TextStyle(
-              color: const Color(0xFFAABBDD).withValues(alpha: 0.85),
+              color: _starLabelColor.withValues(alpha: 0.85),
               fontSize: labelFontSize,
             ),
           ),
@@ -1173,7 +1321,8 @@ class _SkyRenderer extends CustomPainter {
   }
 
   /// SKY2000 spectral color palette: maps B-V color index to star color.
-  static Color _bvToColor(double? bv) {
+  Color _bvToColor(double? bv) {
+    if (nightMode) return const Color(0xFFCC6644);
     if (bv == null) return const Color(0xFFE0E8FF);
     if (bv < -0.30) return const Color(0xFF9BB0FF); // O  blue
     if (bv < -0.02) return const Color(0xFFAABFFF); // B  blue-white
@@ -1189,16 +1338,18 @@ class _SkyRenderer extends CustomPainter {
     final bodies = allBodies(jd);
 
     for (final body in bodies) {
-      final pt = proj.project(body.ra, body.dec);
+      final (pRa, pDec) = _mountCoords(body.ra, body.dec, jd);
+      final pt = proj.project(pRa, pDec);
       if (pt == null) continue;
 
+      final pColor = nightMode ? _toNightRed(body.color) : body.color;
       final r = body.radius * math.sqrt(zoom) * settings.objectScale;
-      canvas.drawCircle(pt, r, Paint()..color = body.color);
+      canvas.drawCircle(pt, r, Paint()..color = pColor);
       canvas.drawCircle(
         pt,
         r + 1,
         Paint()
-          ..color = body.color.withValues(alpha: 0.4)
+          ..color = pColor.withValues(alpha: 0.4)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5,
       );
@@ -1208,7 +1359,7 @@ class _SkyRenderer extends CustomPainter {
           text: TextSpan(
             text: body.name,
             style: TextStyle(
-              color: body.color,
+              color: pColor,
               fontSize: zoom > 2 ? 11 : 9,
               fontWeight: FontWeight.w600,
             ),
@@ -1221,14 +1372,14 @@ class _SkyRenderer extends CustomPainter {
   }
 
   void _drawCrosshair(Canvas canvas, _Proj proj) {
-    final raH = _parseLST(state.ra);
-    final scopeDec = _parseCoord(state.dec);
+    final jd = julianDate(DateTime.now().toUtc());
+    final (raH, scopeDec) = _mountCoords(_parseLST(state.ra), _parseCoord(state.dec), jd);
 
     final scopePt = proj.project(raH, scopeDec, clipHorizon: false);
     if (scopePt == null) return;
 
     final paint = Paint()
-      ..color = TAColors.accent
+      ..color = TA.accent
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
 
@@ -1244,7 +1395,7 @@ class _SkyRenderer extends CustomPainter {
       paint,
     );
     canvas.drawCircle(scopePt, 7, paint);
-    canvas.drawCircle(scopePt, 2, Paint()..color = TAColors.accent);
+    canvas.drawCircle(scopePt, 2, Paint()..color = TA.accent);
   }
 
   void _drawTarget(Canvas canvas, _Proj proj) {
@@ -1253,14 +1404,15 @@ class _SkyRenderer extends CustomPainter {
       return;
     }
 
-    final raH = _parseLST(state.targetRa);
-    final tDec = _parseCoord(state.targetDec);
+    final jd = julianDate(DateTime.now().toUtc());
+    final (raH, tDec) = _mountCoords(
+        _parseLST(state.targetRa), _parseCoord(state.targetDec), jd);
 
     final pt = proj.project(raH, tDec, clipHorizon: false);
     if (pt == null) return;
 
     final paint = Paint()
-      ..color = TAColors.success
+      ..color = TA.success
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
@@ -1274,16 +1426,16 @@ class _SkyRenderer extends CustomPainter {
     canvas.drawPath(path, paint);
   }
 
-  void _drawCardinal(Canvas canvas, _Proj proj, String label, double azRad, double rotation) {
+  void _drawCardinal(Canvas canvas, _Proj proj, String label, double azRad, double rotation, double fontSize) {
     final a = azRad + rotation;
     final x = proj.cx - (proj.radius - 16) * math.sin(a);
     final y = proj.cy - (proj.radius - 16) * math.cos(a);
     final tp = TextPainter(
       text: TextSpan(
         text: label,
-        style: const TextStyle(
-          color: Color(0xFF5577AA),
-          fontSize: 12,
+        style: TextStyle(
+          color: _cardinalColor,
+          fontSize: fontSize,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -1317,9 +1469,9 @@ class _LayerPanel extends StatelessWidget {
       width: 220,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: TAColors.surface.withValues(alpha: 0.95),
+        color: TA.surface.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: TAColors.border),
+        border: Border.all(color: TA.border),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -1344,24 +1496,26 @@ class _LayerPanel extends StatelessWidget {
                 (v) => notifier.setLayer('planetLabels', v)),
             _toggle('Star labels', settings.starLabels,
                 (v) => notifier.setLayer('starLabels', v)),
-            const Divider(color: TAColors.border, height: 12),
+            Divider(color: TA.border, height: 12),
 
             // --- Display ---
             const _SectionHeader('Display'),
             _slider('Star size', settings.starScale, (v) {
               notifier.setStarScale(v);
               onChanged();
-            }),
+            }, min: 1.0, max: 10.0),
             _slider('Object size', settings.objectScale, (v) {
               notifier.setObjectScale(v);
               onChanged();
             }),
-            const Divider(color: TAColors.border, height: 12),
+            Divider(color: TA.border, height: 12),
 
             // --- Coordinates ---
             const _SectionHeader('Coordinates'),
             _coordSelector(),
-            const Divider(color: TAColors.border, height: 12),
+            const SizedBox(height: 6),
+            _epochSelector(),
+            Divider(color: TA.border, height: 12),
 
             // --- Reset ---
             Center(
@@ -1370,9 +1524,9 @@ class _LayerPanel extends StatelessWidget {
                   notifier.resetToDefaults();
                   onChanged();
                 },
-                icon: const Icon(Icons.restore, size: 14, color: TAColors.textSecondary),
-                label: const Text('Reset to defaults',
-                    style: TextStyle(color: TAColors.textSecondary, fontSize: 11)),
+                icon: Icon(Icons.restore, size: 14, color: TA.textSecondary),
+                label: Text('Reset to defaults',
+                    style: TextStyle(color: TA.textSecondary, fontSize: 11)),
                 style: TextButton.styleFrom(
                   minimumSize: const Size(0, 28),
                   padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -1404,14 +1558,15 @@ class _LayerPanel extends StatelessWidget {
           ),
           Expanded(
             child: Text(label,
-                style: const TextStyle(color: TAColors.text, fontSize: 12)),
+                style: TextStyle(color: TA.text, fontSize: 12)),
           ),
         ],
       ),
     );
   }
 
-  Widget _slider(String label, double value, ValueChanged<double> onChanged) {
+  Widget _slider(String label, double value, ValueChanged<double> onChanged,
+      {double min = 0.3, double max = 3.0, int? divisions}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Column(
@@ -1421,20 +1576,20 @@ class _LayerPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(label,
-                    style: const TextStyle(color: TAColors.text, fontSize: 12)),
+                    style: TextStyle(color: TA.text, fontSize: 12)),
               ),
               Text(value.toStringAsFixed(1),
-                  style: const TextStyle(
-                      color: TAColors.textSecondary, fontSize: 11, fontFamily: 'monospace')),
+                  style: TextStyle(
+                      color: TA.textSecondary, fontSize: 11, fontFamily: 'monospace')),
             ],
           ),
           SizedBox(
             height: 24,
             child: Slider(
-              value: value.clamp(0.3, 3.0),
-              min: 0.3,
-              max: 3.0,
-              divisions: 27,
+              value: value.clamp(min, max),
+              min: min,
+              max: max,
+              divisions: divisions ?? ((max - min) * 10).round(),
               onChanged: onChanged,
             ),
           ),
@@ -1464,10 +1619,10 @@ class _LayerPanel extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
-            color: selected ? TAColors.accent.withValues(alpha: 0.25) : Colors.transparent,
+            color: selected ? TA.accent.withValues(alpha: 0.25) : Colors.transparent,
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
-              color: selected ? TAColors.accent : TAColors.border,
+              color: selected ? TA.accent : TA.border,
               width: selected ? 1.5 : 1.0,
             ),
           ),
@@ -1475,7 +1630,49 @@ class _LayerPanel extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              color: selected ? TAColors.accent : TAColors.textSecondary,
+              color: selected ? TA.accent : TA.textSecondary,
+              fontSize: 11,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _epochSelector() {
+    return Row(
+      children: [
+        _epochChip('JNow', EpochMode.jNow),
+        const SizedBox(width: 4),
+        _epochChip('J2000', EpochMode.j2000),
+      ],
+    );
+  }
+
+  Widget _epochChip(String label, EpochMode mode) {
+    final selected = settings.epochMode == mode;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          notifier.setEpochMode(mode);
+          onChanged();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: selected ? TA.accent.withValues(alpha: 0.25) : Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: selected ? TA.accent : TA.border,
+              width: selected ? 1.5 : 1.0,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? TA.accent : TA.textSecondary,
               fontSize: 11,
               fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
             ),
@@ -1494,8 +1691,8 @@ class _SectionHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 2, top: 2),
       child: Text(text,
-          style: const TextStyle(
-            color: TAColors.textSecondary,
+          style: TextStyle(
+            color: TA.textSecondary,
             fontSize: 10,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.8,
@@ -1552,9 +1749,9 @@ class _ObjectInfoPanel extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
-        color: TAColors.surface.withValues(alpha: 0.95),
+        color: TA.surface.withValues(alpha: 0.95),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-        border: Border.all(color: TAColors.border),
+        border: Border.all(color: TA.border),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1576,15 +1773,15 @@ class _ObjectInfoPanel extends ConsumerWidget {
               Expanded(
                 child: Text(
                   object.name,
-                  style: const TextStyle(
-                    color: TAColors.textHigh,
+                  style: TextStyle(
+                    color: TA.textHigh,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close, size: 18, color: TAColors.textSecondary),
+                icon: Icon(Icons.close, size: 18, color: TA.textSecondary),
                 onPressed: onClose,
                 constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                 padding: EdgeInsets.zero,
@@ -1597,13 +1794,13 @@ class _ObjectInfoPanel extends ConsumerWidget {
           Text(
             '${object.type}${object.constellation.isNotEmpty ? '  •  ${object.constellation}' : ''}'
             '${object.mag != null ? '  •  mag ${object.mag!.toStringAsFixed(1)}' : ''}',
-            style: const TextStyle(color: TAColors.textSecondary, fontSize: 12),
+            style: TextStyle(color: TA.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: 4),
           Text(
             'RA: ${_formatRa(object.ra)}   Dec: ${_formatDec(object.dec)}   Alt: $altStr',
-            style: const TextStyle(
-              color: TAColors.text,
+            style: TextStyle(
+              color: TA.text,
               fontSize: 11,
               fontFamily: 'monospace',
             ),
@@ -1617,7 +1814,7 @@ class _ObjectInfoPanel extends ConsumerWidget {
                 child: slewing
                     ? ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: TAColors.error,
+                          backgroundColor: TA.error,
                           minimumSize: const Size(0, 40),
                         ),
                         onPressed: () {
@@ -1646,7 +1843,7 @@ class _ObjectInfoPanel extends ConsumerWidget {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(msg),
-                                backgroundColor: TAColors.error,
+                                backgroundColor: TA.error,
                               ),
                             );
                           }
@@ -1659,7 +1856,7 @@ class _ObjectInfoPanel extends ConsumerWidget {
               Expanded(
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: TAColors.surfaceVariant,
+                    backgroundColor: TA.surfaceVariant,
                     minimumSize: const Size(0, 40),
                   ),
                   onPressed: slewing
@@ -1705,7 +1902,7 @@ class _SearchPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: TAColors.background.withValues(alpha: 0.92),
+      color: TA.background.withValues(alpha: 0.92),
       child: SafeArea(
         child: Column(
           children: [
@@ -1714,7 +1911,7 @@ class _SearchPanel extends StatelessWidget {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.close, color: TAColors.text),
+                    icon: Icon(Icons.close, color: TA.text),
                     onPressed: onClose,
                   ),
                   Expanded(
@@ -1740,14 +1937,14 @@ class _SearchPanel extends StatelessWidget {
                   return ListTile(
                     dense: true,
                     title: Text(obj.name,
-                        style: const TextStyle(
-                            color: TAColors.textHigh, fontSize: 14)),
+                        style: TextStyle(
+                            color: TA.textHigh, fontSize: 14)),
                     subtitle: Text(
                       '${obj.type}'
                       '${obj.constellation.isNotEmpty ? '  •  ${obj.constellation}' : ''}'
                       '${obj.mag != null ? '  •  mag ${obj.mag!.toStringAsFixed(1)}' : ''}',
-                      style: const TextStyle(
-                          color: TAColors.textSecondary, fontSize: 11),
+                      style: TextStyle(
+                          color: TA.textSecondary, fontSize: 11),
                     ),
                     onTap: () => onSelect(obj),
                   );

@@ -110,7 +110,7 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
         // Planetarium
         Card(
           child: ListTile(
-            leading: Icon(Icons.public, color: TAColors.accent),
+            leading: Icon(Icons.public, color: TA.accent),
             title: const Text('Planetarium'),
             subtitle: const Text('Interactive sky map with Goto'),
             trailing: const Icon(Icons.chevron_right),
@@ -122,7 +122,7 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
         // Catalog button
         Card(
           child: ListTile(
-            leading: Icon(Icons.list_alt, color: TAColors.accent),
+            leading: Icon(Icons.list_alt, color: TA.accent),
             title: const Text('Browse Catalogs'),
             subtitle: const Text('Messier, NGC, Stars, and more'),
             trailing: const Icon(Icons.chevron_right),
@@ -139,11 +139,11 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Coordinate Entry (J2000)', style: TextStyle(
-                  color: TAColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                  color: TA.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 12),
 
                 // RA
-                Text('Right Ascension', style: TextStyle(color: TAColors.text, fontSize: 13)),
+                Text('Right Ascension', style: TextStyle(color: TA.text, fontSize: 13)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -157,7 +157,7 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
                 const SizedBox(height: 16),
 
                 // Dec
-                Text('Declination', style: TextStyle(color: TAColors.text, fontSize: 13)),
+                Text('Declination', style: TextStyle(color: TA.text, fontSize: 13)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -168,13 +168,13 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
                         child: Container(
                           width: 36, height: 44,
                           decoration: BoxDecoration(
-                            color: TAColors.surfaceVariant,
+                            color: TA.surfaceVariant,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: TAColors.border),
+                            border: Border.all(color: TA.border),
                           ),
                           alignment: Alignment.center,
                           child: Text(sign, style: TextStyle(
-                            color: TAColors.textHigh, fontSize: 20, fontWeight: FontWeight.w700)),
+                            color: TA.textHigh, fontSize: 20, fontWeight: FontWeight.w700)),
                         ),
                       ),
                     ),
@@ -194,7 +194,7 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
                     Expanded(
                       child: slewing
                           ? ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(backgroundColor: TAColors.error),
+                              style: ElevatedButton.styleFrom(backgroundColor: TA.error),
                               onPressed: () => _stopSlew(client),
                               icon: const Icon(Icons.stop_circle),
                               label: const Text('Stop'),
@@ -208,7 +208,7 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(backgroundColor: TAColors.surfaceVariant),
+                        style: ElevatedButton.styleFrom(backgroundColor: TA.surfaceVariant),
                         onPressed: slewing ? null : () => _syncRaDec(client),
                         icon: const Icon(Icons.sync),
                         label: const Text('Sync'),
@@ -221,8 +221,8 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
                   const SizedBox(height: 12),
                   Text(_result, style: TextStyle(
                     color: _result.startsWith('Error') || _result.contains('failed')
-                        ? TAColors.error
-                        : TAColors.success,
+                        ? TA.error
+                        : TA.success,
                     fontSize: 13)),
                 ],
               ],
@@ -239,7 +239,7 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Quick Targets', style: TextStyle(
-                  color: TAColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                  color: TA.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
@@ -247,7 +247,7 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
                   children: [
                     if (slewing)
                       ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(backgroundColor: TAColors.error),
+                        style: ElevatedButton.styleFrom(backgroundColor: TA.error),
                         onPressed: () => _stopSlew(client),
                         icon: const Icon(Icons.stop_circle),
                         label: const Text('Stop Slew'),
@@ -293,7 +293,7 @@ class _CoordField extends StatelessWidget {
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,
         style: TextStyle(
-          color: TAColors.textHigh, fontSize: 18, fontFamily: 'monospace', fontWeight: FontWeight.w600),
+          color: TA.textHigh, fontSize: 18, fontFamily: 'monospace', fontWeight: FontWeight.w600),
       ),
     );
   }

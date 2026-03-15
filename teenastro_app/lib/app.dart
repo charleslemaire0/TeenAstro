@@ -40,6 +40,7 @@ class TeenAstroApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final nightView = ref.watch(nightViewProvider);
+    TA.setNight(nightView);
     return MaterialApp.router(
       title: 'TeenAstro Controller',
       theme: nightView ? teenAstroNightTheme : teenAstroTheme,

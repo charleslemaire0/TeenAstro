@@ -15,10 +15,10 @@ class CoordinateDisplay extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(label, style: TextStyle(
-          color: TAColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
+          color: TA.textSecondary, fontSize: 11, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
         Text(_displayValue(value), style: TextStyle(
-          color: TAColors.textHigh,
+          color: TA.textHigh,
           fontSize: 20,
           fontFamily: 'monospace',
           fontWeight: FontWeight.w700,

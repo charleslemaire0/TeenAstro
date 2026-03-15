@@ -218,7 +218,8 @@ void SmartHandController::updateAlign(bool moving)
     if (!SelectStarAlign())
     {
       DisplayMessage(T_SELECTION, T_ABORTED, -1);
-      ta_MountStatus.backStepAlign();
+      m_client->alignAbort();
+      ta_MountStatus.stopAlign();
       return;
     }
     else

@@ -19,6 +19,7 @@ void Command_A() {
       mount.startSideralTracking();
     mount.alignment.alignPhase   = ALIGN_SELECT;
     mount.alignment.alignStarNum = 1;
+    mount.alignment.alignStarName[0] = '\0';
     replyShortTrue();
     break;
   case '*': {
@@ -102,6 +103,7 @@ void Command_A() {
     mount.alignment.hasValid = false;
     mount.alignment.alignPhase   = ALIGN_IDLE;
     mount.alignment.alignStarNum = 0;
+    mount.alignment.alignStarName[0] = '\0';
     XEEPROM.write(getMountAddress(EE_Tvalid), 0);
     replyShortTrue();
     break;

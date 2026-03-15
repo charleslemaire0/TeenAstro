@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 const _prefsKey = 'planetarium_settings';
 
 enum CoordDisplay { equatorial, horizontal }
+enum EpochMode { jNow, j2000 }
 
 class PlanetariumSettings {
   // Rendering scales
@@ -13,6 +14,9 @@ class PlanetariumSettings {
 
   // Coordinate display
   final CoordDisplay coordDisplay;
+
+  // Epoch: JNow (precess catalog stars to current date) or J2000 (convert mount coords to J2000)
+  final EpochMode epochMode;
 
   // Layer visibility
   final bool constellationLines;
@@ -30,9 +34,10 @@ class PlanetariumSettings {
   final double lastPanY;
 
   const PlanetariumSettings({
-    this.starScale = 1.0,
+    this.starScale = 3.0,
     this.objectScale = 1.0,
     this.coordDisplay = CoordDisplay.equatorial,
+    this.epochMode = EpochMode.jNow,
     this.constellationLines = true,
     this.constellationNames = true,
     this.altAzGrid = false,
@@ -50,6 +55,7 @@ class PlanetariumSettings {
     double? starScale,
     double? objectScale,
     CoordDisplay? coordDisplay,
+    EpochMode? epochMode,
     bool? constellationLines,
     bool? constellationNames,
     bool? altAzGrid,
@@ -66,6 +72,7 @@ class PlanetariumSettings {
       starScale: starScale ?? this.starScale,
       objectScale: objectScale ?? this.objectScale,
       coordDisplay: coordDisplay ?? this.coordDisplay,
+      epochMode: epochMode ?? this.epochMode,
       constellationLines: constellationLines ?? this.constellationLines,
       constellationNames: constellationNames ?? this.constellationNames,
       altAzGrid: altAzGrid ?? this.altAzGrid,
@@ -84,6 +91,7 @@ class PlanetariumSettings {
         'starScale': starScale,
         'objectScale': objectScale,
         'coordDisplay': coordDisplay.name,
+        'epochMode': epochMode.name,
         'constellationLines': constellationLines,
         'constellationNames': constellationNames,
         'altAzGrid': altAzGrid,
@@ -99,11 +107,14 @@ class PlanetariumSettings {
 
   factory PlanetariumSettings.fromJson(Map<String, dynamic> j) {
     return PlanetariumSettings(
-      starScale: (j['starScale'] as num?)?.toDouble() ?? 1.0,
+      starScale: (j['starScale'] as num?)?.toDouble() ?? 3.0,
       objectScale: (j['objectScale'] as num?)?.toDouble() ?? 1.0,
       coordDisplay: j['coordDisplay'] == 'horizontal'
           ? CoordDisplay.horizontal
           : CoordDisplay.equatorial,
+      epochMode: j['epochMode'] == 'j2000'
+          ? EpochMode.j2000
+          : EpochMode.jNow,
       constellationLines: j['constellationLines'] as bool? ?? true,
       constellationNames: j['constellationNames'] as bool? ?? true,
       altAzGrid: j['altAzGrid'] as bool? ?? false,
@@ -141,7 +152,7 @@ class PlanetariumSettingsNotifier extends StateNotifier<PlanetariumSettings> {
   }
 
   void setStarScale(double v) {
-    state = state.copyWith(starScale: v.clamp(0.3, 3.0));
+    state = state.copyWith(starScale: v.clamp(1.0, 10.0));
     _save();
   }
 
@@ -152,6 +163,11 @@ class PlanetariumSettingsNotifier extends StateNotifier<PlanetariumSettings> {
 
   void setCoordDisplay(CoordDisplay v) {
     state = state.copyWith(coordDisplay: v);
+    _save();
+  }
+
+  void setEpochMode(EpochMode v) {
+    state = state.copyWith(epochMode: v);
     _save();
   }
 
