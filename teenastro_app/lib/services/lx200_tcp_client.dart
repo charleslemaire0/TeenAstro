@@ -80,6 +80,17 @@ class LX200TcpClient {
   String get lastIp => _lastIp;
   int get lastPort => _lastPort;
 
+  /// True if [host] looks like a numeric IPv4 address (avoids Windows trying IPv6 first and timing out).
+  static bool _isIPv4(String host) {
+    final parts = host.split('.');
+    if (parts.length != 4) return false;
+    for (final p in parts) {
+      final n = int.tryParse(p);
+      if (n == null || n < 0 || n > 255) return false;
+    }
+    return true;
+  }
+
   // ---------------------------------------------------------------------------
   // Connect
   // ---------------------------------------------------------------------------
@@ -98,7 +109,15 @@ class LX200TcpClient {
     DebugLog.add('connect($ip:$port) ...');
 
     try {
-      _socket = await Socket.connect(ip, port, timeout: timeout);
+      // Force IPv4 for numeric addresses so Windows doesn't try IPv6 first and timeout.
+      final Socket socket;
+      if (_isIPv4(ip)) {
+        final address = InternetAddress(ip, type: InternetAddressType.IPv4);
+        socket = await Socket.connect(address, port, timeout: timeout);
+      } else {
+        socket = await Socket.connect(ip, port, timeout: timeout);
+      }
+      _socket = socket;
       _state = TcpState.connected;
       _lastError = '';
 

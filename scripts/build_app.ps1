@@ -93,9 +93,49 @@ if (-not (Get-Command flutter -ErrorAction SilentlyContinue)) {
     }
 }
 
+# --- Ensure app infrastructure (generated catalogs and planetarium data) ---
+$AssetsCatalogs = Join-Path $AppRoot "assets\catalogs"
+$AssetsData = Join-Path $AppRoot "assets\data"
+$needExtractCatalogs = -not (Test-Path (Join-Path $AssetsCatalogs "messier.json"))
+$needStarCatalog = -not (Test-Path (Join-Path $AssetsData "stars_mag9.json"))
+$needConstellationLines = -not (Test-Path (Join-Path $AssetsData "constellation_lines.json"))
+
+if ($needExtractCatalogs -or $needStarCatalog -or $needConstellationLines) {
+    Write-Host "`n=== App infrastructure (generated assets) ===" -ForegroundColor Cyan
+    if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+        Write-Error "Generated app assets are missing and Python is not on PATH. Run from repo root: python tools/extract_catalogs.py; python tools/generate_star_catalog.py; python tools/convert_stellarium_constellations.py"
+    }
+    Set-Location $RepoRoot
+    if ($needExtractCatalogs) {
+        Write-Host "Running tools/extract_catalogs.py (catalogs for DSOs, stars, etc.)..." -ForegroundColor Gray
+        python tools/extract_catalogs.py
+        if ($LASTEXITCODE -ne 0) { Write-Error "extract_catalogs.py failed." }
+    }
+    if ($needStarCatalog) {
+        Write-Host "Running tools/generate_star_catalog.py (planetarium star field)..." -ForegroundColor Gray
+        python tools/generate_star_catalog.py
+        if ($LASTEXITCODE -ne 0) { Write-Error "generate_star_catalog.py failed." }
+    }
+    if ($needConstellationLines) {
+        if (-not (Test-Path (Join-Path $AssetsData "stars_mag9.json"))) {
+            Write-Error "constellation_lines.json requires stars_mag9.json. Run python tools/generate_star_catalog.py first (or run this script again)."
+        }
+        Write-Host "Running tools/convert_stellarium_constellations.py (constellation lines)..." -ForegroundColor Gray
+        python tools/convert_stellarium_constellations.py
+        if ($LASTEXITCODE -ne 0) { Write-Error "convert_stellarium_constellations.py failed." }
+    }
+    Write-Host "App infrastructure ready." -ForegroundColor Green
+}
+foreach ($f in @("constellation_names.json", "milky_way.json")) {
+    $p = Join-Path $AssetsData $f
+    if (-not (Test-Path $p)) {
+        Write-Warning "Optional asset missing: assets/data/$f (planetarium will work with reduced features)."
+    }
+}
+
 # --- Build app ---
 Set-Location $AppRoot
-Write-Host "`n=== flutter pub get ===" -ForegroundColor Cyan
+Write-Host "`n=== Flutter pub get ===" -ForegroundColor Cyan
 flutter pub get
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

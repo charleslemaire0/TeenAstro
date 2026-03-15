@@ -36,12 +36,34 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
     }
   }
 
+  /// Parse IP field: accept "192.168.1.17" or "http://192.168.1.17" or "http://192.168.1.17:9999".
+  static (String host, int port) _parseConnectionInput(String ipText, String portText) {
+    String s = ipText.trim();
+    if (s.isEmpty) return ('', int.tryParse(portText.trim()) ?? 9999);
+    // If it looks like a URL, parse it to get host and optional port.
+    if (s.contains('://')) {
+      try {
+        final uri = Uri.parse(s.startsWith('http') ? s : 'http://$s');
+        final host = uri.host;
+        final port = uri.hasPort ? uri.port : (int.tryParse(portText.trim()) ?? 9999);
+        if (host.isNotEmpty) return (host, port);
+      } catch (_) {}
+    }
+    // Strip trailing slash (e.g. "http://192.168.1.17/" pasted without scheme)
+    if (s.endsWith('/')) s = s.substring(0, s.length - 1);
+    final port = int.tryParse(portText.trim()) ?? 9999;
+    return (s, port);
+  }
+
   Future<void> _connect() async {
     setState(() { _connecting = true; _error = ''; });
 
     final client = ref.read(lx200ClientProvider);
-    final ip = _ipController.text.trim();
-    final port = int.tryParse(_portController.text.trim()) ?? 9999;
+    final (ip, port) = _parseConnectionInput(_ipController.text, _portController.text);
+    if (ip.isEmpty) {
+      setState(() { _connecting = false; _error = 'Enter an IP address or URL'; });
+      return;
+    }
 
     final ok = await client.connect(ip, port);
 

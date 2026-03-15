@@ -68,6 +68,7 @@ Run from repo root or from `scripts\`.
 **Script:** `scripts\build_app.ps1`
 
 - Builds the TeenAstro Flutter app (Android APK and/or Windows).
+- **Infrastructure:** Before building, the script checks for generated app assets (catalogs, planetarium star field, constellation lines). If any are missing, it runs the required Python tools (`extract_catalogs.py`, `generate_star_catalog.py`, `convert_stellarium_constellations.py`) so you don't have to remember to run them manually.
 - **Output:** Copied to **`Released data\App\`**
   - APK: `Released data\App\teenastro_app-release.apk`
   - Windows: `Released data\App\Windows\` (exe + DLLs)
