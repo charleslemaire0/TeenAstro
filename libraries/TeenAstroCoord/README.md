@@ -2,6 +2,8 @@
 
 Object-oriented coordinate system library for the TeenAstro telescope controller. Models four astronomical/instrument coordinate frames and the transformations between them.
 
+**Full documentation:** [docs/math/coord.md](../../docs/math/coord.md)
+
 ## Coordinate systems
 
 | Class | Components | Description |

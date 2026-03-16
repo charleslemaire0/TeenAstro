@@ -2,6 +2,8 @@
 
 This folder collects all distributable artifacts produced by `scripts\build_release.ps1`.
 
+**Build documentation:** [docs/build.md](../docs/build.md) · [scripts/BUILD_SCRIPTS.md](../scripts/BUILD_SCRIPTS.md)
+
 ## Layout
 
 ```

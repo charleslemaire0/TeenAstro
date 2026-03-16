@@ -69,4 +69,4 @@ Core mount firmware on Teensy 3/4. Real-time control loop: sidereal clock, step 
 
 ---
 
-**See also:** [Alignment](../math/alignment.md) · [SHC](shc.md) · [Protocol](../protocol.md)
+**See also:** [Tracking (detailed)](tracking.md) · [Alignment](../math/alignment.md) · [SHC](shc.md) · [Protocol](../protocol.md)

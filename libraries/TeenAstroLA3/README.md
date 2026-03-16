@@ -2,6 +2,8 @@
 
 Linear algebra library for 3-vectors and 3x3 matrices, designed for telescope coordinate transformations. Provides rotation matrices, Euler angle decomposition, atmospheric refraction, and SVD.
 
+**Full documentation:** [docs/math/la3.md](../../docs/math/la3.md)
+
 ## API overview
 
 ### Types

@@ -2,6 +2,8 @@
 
 Flutter Android app that replaces the SHC (Smart Hand Controller) for TeenAstro telescope mounts.
 
+**Full documentation:** [docs/app/overview.md](../docs/app/overview.md)
+
 ## Setup
 
 1. Install [Flutter SDK](https://flutter.dev/docs/get-started/install)

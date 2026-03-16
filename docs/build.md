@@ -51,6 +51,8 @@ python tests/run_all_tests.py
 
 Firmware release is **X.Y** only (e.g. 1.6), no patch. RELEASE_VERSION in build_firmware.py. Publish: build → 1.6_latest; promote to stable (1.6) per README_FIRMWARE_PUBLISH.md and FIRMWARE_PUBLISH_PROCEDURE.md.
 
+**Full policy:** [VERSIONING.md](../VERSIONING.md) at repo root.
+
 ---
 
 **See also:** [BUILD_SETUP.md](../BUILD_SETUP.md) (repo root) · [scripts/BUILD_SCRIPTS.md](../scripts/BUILD_SCRIPTS.md)

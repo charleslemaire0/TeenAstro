@@ -2,6 +2,6 @@
 
 Windows application to upload TeenAstro firmware (MainUnit, Focuser, SHC) to hardware.
 
-**To publish firmware for this Uploader:** you must follow the procedure in **`scripts/README_FIRMWARE_PUBLISH.md`** (and **`scripts/FIRMWARE_PUBLISH_PROCEDURE.md`**) and **only** that procedure. New builds go into **X.Y_latest**; when releasing, promote by copying **X.Y_latest** into **X.Y**. Do not add patch versions (e.g. 1.6.1) to the version dropdown.
+**To publish firmware:** follow [scripts/README_FIRMWARE_PUBLISH.md](../scripts/README_FIRMWARE_PUBLISH.md) and [scripts/FIRMWARE_PUBLISH_PROCEDURE.md](../scripts/FIRMWARE_PUBLISH_PROCEDURE.md) only. Builds go into **X.Y_latest**; promote to **X.Y** when releasing. No patch versions (e.g. 1.6.1). See [VERSIONING.md](../VERSIONING.md).
 
-Build with MSBuild: see `BUILD_SETUP.md` at repo root.
+**Build:** MSBuild; see [BUILD_SETUP.md](../BUILD_SETUP.md) at repo root.

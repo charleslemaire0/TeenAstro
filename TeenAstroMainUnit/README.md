@@ -2,6 +2,8 @@
 
 Firmware for the TeenAstro telescope mount controller. It drives stepper motors and exposes an LX200-style serial command set for alignment, goto, tracking, guiding, and configuration.
 
+**Full documentation:** [docs/firmware/mainunit.md](../docs/firmware/mainunit.md) · [Tracking (detailed)](../docs/firmware/tracking.md)
+
 ## Source layout
 
 - **MainUnit.h** – Mount + cross-module declarations (includes Mount.h and MainUnitDecl.h). Use Command.h / CommandGlobals.h for the command layer.
@@ -58,7 +60,7 @@ if (ax) {
 ## Documentation
 
 - **[Commands.md](Commands.md)** – Serial command reference (LX200 and TeenAstro extensions).
-- **[Tracking.md](Tracking.md)** – How tracking is performed: sidereal clock, target-based motion, rates, compensation, guiding, and backlash.
+- **[docs/firmware/tracking.md](../docs/firmware/tracking.md)** – How tracking is performed: sidereal clock, target-based motion, rates, compensation, guiding, and backlash.
 
 ## Serial protocol
 

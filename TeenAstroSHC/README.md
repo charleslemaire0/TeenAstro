@@ -1,33 +1,15 @@
-OnStep Smart Hand Controller
-===========================
+# TeenAstro Smart Hand Controller (SHC)
 
-# What is a smart hand controller (SHC)?
-This firmware is designed to run on a Teensy3.2 micro-controller which communicates with OnStep across the ST4 guiding port to provide
-setup and control of most features.  This is largely (almost entirely at the moment) based on Charles Lemaire's excellent TeenAstro work.
-While you can point to point wire/assemble you own hardware design many will opt to use the inexpensive 
-EasyEDA PCB.  For those who choose a more complete DIY experience the EasyEDA schematic still can serve as wiring instructions. :)
+ESP8266-based hand controller with OLED display and button pad. Communicates with the TeenAstro MainUnit over serial using the LX200 protocol. Provides on-device setup, catalogs, goto, sync, and alignment.
 
-https://easyeda.com/hdutton/HC-20e242d665db4c85bb565a0cd0b52233
+**Full documentation:** [docs/firmware/shc.md](../docs/firmware/shc.md)
 
-# Features
-The SHC can:
+## Build
 
-* Set Site (Latitude/Longitude) and Time.
-* Configure most options.  Backlash, limits, etc.
-* Center objects and operate focuser/rotator.
-* Goto stars and deep sky objects.
+Requires PlatformIO (Teensy/ESP8266). From repo root:
 
-# Documentation
-None available yet.
+```bash
+pio run -d TeenAstroSHC
+```
 
-# Support
-Questions and discussion should be on the mailing list (also accessible via the
-web) at the [OnStep Group](https://groups.io/g/onstep/).
-
-# License
-OnStep is open source free software, licensed under the GPL.
-
-See [LICENSE.txt](./LICENSE.txt) file.
-
-# Author
-Charles Lemaire, [Howard Dutton](http://www.stellarjourney.com)
+Language variants (EN, FR, DE) are selected via `platformio.ini` envs.

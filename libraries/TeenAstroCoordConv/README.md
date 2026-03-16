@@ -2,6 +2,8 @@
 
 Mount alignment library for the TeenAstro telescope controller. Computes a 3x3 transformation matrix that maps between sky (reference) coordinates and instrument (axis) coordinates, using 2-star alignment based on the Taki method.
 
+**Full documentation:** [docs/math/alignment.md](../../docs/math/alignment.md)
+
 ## Algorithm
 
 1. **Reference stars** -- Two observed stars provide direction cosine vectors in both the reference frame (sky) and the axis frame (instrument)
