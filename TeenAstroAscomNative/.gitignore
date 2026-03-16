@@ -1,0 +1,7 @@
+# PlatformIO
+.pio/
+
+# IDE / OS
+.vs/
+.cursor/
+.DS_Store

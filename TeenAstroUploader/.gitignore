@@ -1,0 +1,11 @@
+# Visual Studio / IDE
+.vs/
+*.vcxproj.user
+*.vcxproj.filters
+*.ipch
+*.suo
+.cursor/
+.DS_Store
+
+# Builder output (Arduino build artifacts)
+TeenAstroUploader/builder/

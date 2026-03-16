@@ -1,3 +1,26 @@
-/.vs
-/.vscode
 /pio
+# Visual Studio
+.vs/
+*.vcxproj.user
+*.vcxproj.filters
+*.ipch
+*.suo
+TeenAstroFocuser.sln
+TeenAstroFocuser.vcxproj
+
+# C/C++ build
+*.d
+*.o
+*.obj
+*.a
+*.lib
+Release/
+bin/
+obj/
+
+# Local scripts
+rename_focuser.py
+
+# IDE / OS
+.cursor/
+.DS_Store
