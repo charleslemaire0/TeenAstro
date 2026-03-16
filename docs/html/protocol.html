@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeenAstro — LX200 Protocol</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+
+<nav id="sidebar">
+  <a class="nav-back" href="index.html">&larr; Back to Index</a>
+  <div id="sidebar-logo"><h1>TeenAstro</h1><div class="subtitle">LX200 Protocol</div></div>
+  <div id="nav">
+    <div class="nav-section">
+      <span class="nav-section-label">Protocol</span>
+      <a href="#overview"><span class="ico">01</span> Overview</a>
+      <a href="#command-format"><span class="ico">02</span> Command Format</a>
+      <a href="#command-groups"><span class="ico">03</span> Command Groups</a>
+      <a href="#lx200client"><span class="ico">04</span> LX200Client Class</a>
+      <a href="#lx200navigation"><span class="ico">05</span> LX200Navigation</a>
+    </div>
+  </div>
+</nav>
+
+<main id="content">
+  <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><a href="index.html#architecture">Protocol</a><span class="sep">/</span>LX200 Protocol</div>
+
+  <section id="overview">
+    <h2>LX200 Protocol</h2>
+    <p>
+      TeenAstro uses the <strong>LX200 serial protocol</strong> (Meade Autostar/LX200 compatible) for
+      all communication between clients (SHC, WiFi Server, Flutter app, ASCOM) and the MainUnit.
+      Commands are case-sensitive and use a fixed format.
+    </p>
+  </section>
+
+  <hr />
+
+  <section id="command-format">
+    <h2>Command Format</h2>
+
+    <p>All commands use the format <code>:CMD#</code>:</p>
+    <ul>
+      <li>Leading colon <code>:</code></li>
+      <li>Command string (case-sensitive)</li>
+      <li>Hash <code>#</code> terminator</li>
+    </ul>
+
+    <p>Replies may be ACK-only (<code>\x06</code>), short (<code>1</code>/<code>0</code>), or
+       variable-length data. Reply lengths are defined in <code>CommandReplyLength.h</code> and
+       <code>lx200_reply_lengths.dart</code>.</p>
+  </section>
+
+  <hr />
+
+  <section id="command-groups">
+    <h2>Command Groups</h2>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Group</th><th>Prefix</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Reset</td><td><code>$</code></td><td>Reboot, EEPROM erase, reinit encoders/motors</td></tr>
+          <tr><td>ACK</td><td>&lt;ACK&gt;</td><td>Alignment type query (A/P/G/L)</td></tr>
+          <tr><td>Alignment</td><td><code>A</code></td><td>Polar home, sync, add reference, save alignment</td></tr>
+          <tr><td>Reticule</td><td><code>B</code></td><td>Reticle brightness +/−</td></tr>
+          <tr><td>Sync</td><td><code>C</code></td><td>Sync to target (CM, CS, CA, CU)</td></tr>
+          <tr><td>Distance</td><td><code>D</code></td><td>Distance-to-target bars</td></tr>
+          <tr><td>Encoder</td><td><code>E</code></td><td>Encoder align, sync, push-to mode</td></tr>
+          <tr><td>Focuser</td><td><code>F</code></td><td>Focus in/out, query, binary packets</td></tr>
+          <tr><td>GNSS</td><td><code>g</code></td><td>GNSS sync (gs, gt)</td></tr>
+          <tr><td>Get</td><td><code>G</code></td><td>Position, time, site, status (GA, GZ, GR, GD, GS, etc.)</td></tr>
+          <tr><td>Get extensions</td><td><code>GX</code></td><td>TeenAstro extensions: GXAS, GXCS, alignment, encoders, debug</td></tr>
+          <tr><td>Move</td><td><code>M</code></td><td>Slew (MS, MA), pulse guide (Mge, Mgw, Mgn, Mgs)</td></tr>
+          <tr><td>Quit</td><td><code>Q</code></td><td>Halt all, halt E/W, halt N/S</td></tr>
+          <tr><td>Set</td><td><code>S</code></td><td>Time, site, limits, target (Sr, Sd, St, Sh, So, etc.)</td></tr>
+          <tr><td>Set extensions</td><td><code>SX</code></td><td>TeenAstro extensions: alignment, encoders, rates, limits, motors</td></tr>
+          <tr><td>Tracking</td><td><code>T</code></td><td>Enable/disable, sidereal/solar/lunar, rate +/−</td></tr>
+          <tr><td>User rates</td><td><code>U</code></td><td>Precision toggle</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Key Commands by Group</h3>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Command</th><th>Syntax</th><th>Description</th><th>Returns</th></tr></thead>
+        <tbody>
+          <tr><td>Reset</td><td><code>:$$#</code></td><td>Erase EEPROM (factory reset)</td><td><code>1</code></td></tr>
+          <tr><td>Reset</td><td><code>:$!#</code></td><td>Reboot main unit</td><td><code>1</code></td></tr>
+          <tr><td>Alignment</td><td><code>:A0#</code></td><td>Set alignment from polar home; enable axes, start tracking</td><td><code>1</code></td></tr>
+          <tr><td>Alignment</td><td><code>:A*#</code></td><td>Sync to current Alt/Az, add reference</td><td><code>1</code></td></tr>
+          <tr><td>Sync</td><td><code>:CM#</code></td><td>Sync to current target (EQ); optional multi-star</td><td>N/A</td></tr>
+          <tr><td>Sync</td><td><code>:CS#</code></td><td>Sync and start tracking</td><td>(nothing)</td></tr>
+          <tr><td>Get</td><td><code>:GR#</code></td><td>Get telescope RA</td><td><code>HH:MM.T#</code> or <code>HH:MM:SS#</code></td></tr>
+          <tr><td>Get</td><td><code>:GD#</code></td><td>Get telescope declination</td><td><code>sDD*MM#</code></td></tr>
+          <tr><td>Get</td><td><code>:GXAS#</code></td><td>Bulk state (102 bytes, base64)</td><td>136 chars + <code>#</code></td></tr>
+          <tr><td>Get</td><td><code>:GXCS#</code></td><td>Bulk config (90 bytes, base64)</td><td>120 chars + <code>#</code></td></tr>
+          <tr><td>Move</td><td><code>:MS#</code></td><td>Slew to current target</td><td><code>0</code>–<code>6</code> (ERRGOTO)</td></tr>
+          <tr><td>Move</td><td><code>:Q#</code></td><td>Halt all motion</td><td>(nothing)</td></tr>
+          <tr><td>Set</td><td><code>:Sr HH:MM.T#</code></td><td>Set target RA</td><td><code>1</code>/<code>0</code></td></tr>
+          <tr><td>Set</td><td><code>:Sd sDD*MM#</code></td><td>Set target declination</td><td><code>1</code>/<code>0</code></td></tr>
+          <tr><td>Tracking</td><td><code>:Te#</code> / <code>:Td#</code></td><td>Enable / disable tracking</td><td><code>1</code>/<code>0</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      Full command reference: <code>TeenAstroMainUnit/Commands.md</code>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="lx200client">
+    <h2>LX200Client Class</h2>
+
+    <p><code>LX200Client</code> provides an object-oriented LX200 client for C++ firmware (SHC, WiFi bridge):</p>
+
+    <h3>IX200Transport Interface</h3>
+    <p>Abstract transport for send/receive. Implementations:</p>
+    <ul>
+      <li><code>StreamTransport</code> — Wraps a <code>Stream</code> (Serial, Serial1, etc.)</li>
+    </ul>
+
+    <h3>Key Methods</h3>
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>sendReceive(cmd, replyType, buf, size, timeout)</code></td><td>Send command, read reply into buffer</td></tr>
+          <tr><td><code>sendReceiveAuto(cmd, cmdreply, buf, size, ...)</code></td><td>Auto-detect reply type from CommandReplyLength</td></tr>
+          <tr><td><code>get(cmd, out, len)</code></td><td>Send get command, return value in <code>out</code></td></tr>
+          <tr><td><code>set(cmd)</code></td><td>Send set command, return success/fail</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Convenience getters: <code>getRaStr</code>, <code>getDecStr</code>, <code>getAltStr</code>,
+       <code>getAzStr</code>, <code>getUTCTimeStr</code>, <code>getSiderealStr</code>, etc.</p>
+  </section>
+
+  <hr />
+
+  <section id="lx200navigation">
+    <h2>LX200Navigation Free Functions</h2>
+
+    <p><code>LX200Navigation</code> provides higher-level helpers built on <code>LX200Client</code>:</p>
+
+    <ul>
+      <li>Equinox precession (J2000 ↔ equinox-of-date)</li>
+      <li>Catalog object lookup and coordinate conversion</li>
+      <li>Goto/sync helpers with coordinate transforms</li>
+    </ul>
+
+    <p><strong>Location:</strong> <code>libraries/TeenAstroLX200io/src/LX200Navigation.cpp</code></p>
+  </section>
+
+  <div class="page-nav">
+    <a href="app-astro.html">&larr; <span><span class="label">Previous</span><br />Astronomy Algorithms</span></a>
+    <a href="protocol-bulk.html"><span><span class="label">Next</span><br />Bulk Packets</span> &rarr;</a>
+  </div>
+</main>
+<script src="nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeenAstro — Build System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+
+<nav id="sidebar">
+  <a class="nav-back" href="index.html">&larr; Back to Index</a>
+  <div id="sidebar-logo"><h1>TeenAstro</h1><div class="subtitle">Build System</div></div>
+  <div id="nav">
+    <div class="nav-section">
+      <span class="nav-section-label">Build</span>
+      <a href="#overview"><span class="ico">01</span> Overview</a>
+      <a href="#prerequisites"><span class="ico">02</span> Prerequisites</a>
+      <a href="#build-scripts"><span class="ico">03</span> Build Scripts</a>
+      <a href="#release-layout"><span class="ico">04</span> Release Layout</a>
+      <a href="#unit-tests"><span class="ico">05</span> Unit Tests</a>
+      <a href="#versioning"><span class="ico">06</span> Versioning</a>
+      <a href="#eeprom"><span class="ico">07</span> EEPROM Auto-Init</a>
+    </div>
+  </div>
+</nav>
+
+<main id="content">
+  <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><a href="index.html#architecture">Build &amp; Operations</a><span class="sep">/</span>Build System</div>
+
+  <section id="overview">
+    <h2>Build System</h2>
+    <p>
+      TeenAstro uses <strong>PlatformIO</strong> for firmware, <strong>Flutter</strong> for the app,
+      and <strong>.NET/MSBuild</strong> for ASCOM, Uploader, and MSI. All build scripts are in the repo;
+      a full clone contains everything needed to build without extra generation steps.
+    </p>
+  </section>
+
+  <hr />
+
+  <section id="prerequisites">
+    <h2>Prerequisites</h2>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Component</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Python 3.7+</td><td>PlatformIO via pip, asset generation scripts</td></tr>
+          <tr><td>PlatformIO</td><td>Firmware build (MainUnit, SHC, Server, Focuser)</td></tr>
+          <tr><td>MinGW toolchain</td><td>Native unit tests on Windows</td></tr>
+          <tr><td>.NET Framework 4.7.2</td><td>ASCOM driver, Uploader, CatalogConverter</td></tr>
+          <tr><td>MSBuild</td><td>Visual Studio or Build Tools</td></tr>
+          <tr><td>Flutter SDK</td><td>Android/Windows app</td></tr>
+          <tr><td>Android SDK</td><td>APK build (ANDROID_HOME)</td></tr>
+          <tr><td>Visual Studio C++</td><td>Flutter Windows desktop</td></tr>
+          <tr><td>WiX Toolset 3</td><td>MSI installer</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>PlatformIO Install</h3>
+    <pre><code>pip install platformio</code></pre>
+
+    <h3>Flutter Install</h3>
+    <p>Download from <a href="https://flutter.dev/docs/get-started/install" target="_blank">flutter.dev</a>;
+       add to PATH. Run <code>flutter doctor</code>.</p>
+
+    <h3>.NET Install</h3>
+    <p>Visual Studio 2022 with &ldquo;.NET desktop development&rdquo; workload, or Build Tools for Visual Studio
+       with .NET Framework 4.7.2 targeting pack.</p>
+  </section>
+
+  <hr />
+
+  <section id="build-scripts">
+    <h2>Build Scripts</h2>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Script</th><th>Goal</th><th>Command</th><th>Output</th></tr></thead>
+        <tbody>
+          <tr><td><code>setup_build_env.ps1</code></td><td>Install pio + MinGW</td><td><code>.\scripts\setup_build_env.ps1</code></td><td>Tools in user profile</td></tr>
+          <tr><td><code>build_firmware.py</code></td><td>All board/language variants</td><td><code>python build_firmware.py</code></td><td><code>TeenAstroUploader/.../1.6_latest/</code></td></tr>
+          <tr><td><code>build_firmware.ps1</code></td><td>Default envs (quick dev)</td><td><code>.\scripts\build_firmware.ps1</code></td><td><code>TeenAstroMainUnit/pio/</code> etc.</td></tr>
+          <tr><td><code>build_app.ps1</code></td><td>Android + Windows app</td><td><code>.\scripts\build_app.ps1</code></td><td><code>Released data\App\</code></td></tr>
+          <tr><td><code>generate_reply_lengths.py</code></td><td>LX200 reply tables</td><td><code>python scripts\generate_reply_lengths.py</code></td><td>CommandReplyLength.h, lx200_reply_lengths.dart</td></tr>
+          <tr><td><code>build_msi.ps1</code></td><td>MSI (emulator + uploader + app)</td><td><code>.\TeenAstroEmulator\installer\build_msi.ps1</code></td><td><code>TeenAstroEmulator\installer\out\</code></td></tr>
+          <tr><td><code>build_release.ps1</code></td><td>Full release artifacts</td><td><code>.\scripts\build_release.ps1</code></td><td><code>release\</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>build_firmware.py Flags</h3>
+    <ul>
+      <li><code>--target main</code> — MainUnit only</li>
+      <li><code>--target focuser</code> — Focuser only</li>
+      <li><code>--target shc</code> — SHC only (ENGLISH, FRENCH, GERMAN)</li>
+      <li><code>--list</code> — List variants without building</li>
+      <li><code>--clean</code> — Clean before build</li>
+    </ul>
+
+    <h3>build_app.ps1 Flags</h3>
+    <ul>
+      <li><code>-SkipAndroid</code> — Windows only</li>
+      <li><code>-SkipWindows</code> — Android only</li>
+      <li><code>-FixFlutter</code> — Reinstall Flutter if broken</li>
+      <li><code>-FlutterPath "path"</code> — Override Flutter location</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="release-layout">
+    <h2>Release Layout</h2>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Path</th><th>Content</th></tr></thead>
+        <tbody>
+          <tr><td><code>release/ascom/</code></td><td>ASCOM driver (ASCOM.TeenAstro.exe + deps)</td></tr>
+          <tr><td><code>release/msi/</code></td><td>TeenAstroEmulator.msi</td></tr>
+          <tr><td><code>release/app/</code></td><td>Flutter Windows app (standalone)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="unit-tests">
+    <h2>Unit Tests</h2>
+
+    <p><strong>91 tests</strong> across <strong>3 suites</strong>:</p>
+
+    <ul>
+      <li><code>test_mount_status</code> — GXAS/GXCS parsing, MountState</li>
+      <li><code>test_align_state</code> — Alignment state machine</li>
+      <li><code>test_io</code> — LX200 I/O, transport</li>
+    </ul>
+
+    <pre><code>pio test -d tests</code></pre>
+
+    <p>Requires MinGW on PATH for native tests on Windows.</p>
+  </section>
+
+  <hr />
+
+  <section id="versioning">
+    <h2>Versioning</h2>
+
+    <p>TeenAstro uses <strong>X.Y</strong> versioning only; no patch component in the release dropdown.</p>
+
+    <p>Version is set in <code>RELEASE_VERSION</code> in <code>build_firmware.py</code> (e.g. 1.6).</p>
+  </section>
+
+  <hr />
+
+  <section id="eeprom">
+    <h2>EEPROM Auto-Init Key</h2>
+
+    <p><code>EE_autoInitKey</code> is a magic value stored in EEPROM. On first boot (or after factory reset),
+       the key is absent or invalid; the firmware initializes default config. On subsequent boots, the key
+       is valid and saved config is restored.</p>
+
+    <div class="callout warn">
+      Factory reset (<code>:$$#</code>) erases the entire EEPROM, including the auto-init key.
+    </div>
+  </section>
+
+  <div class="page-nav">
+    <a href="protocol-bulk.html">&larr; <span><span class="label">Previous</span><br />Bulk Packets</span></a>
+    <a href="audits.html"><span><span class="label">Next</span><br />Audits &amp; Safety</span> &rarr;</a>
+  </div>
+</main>
+<script src="nav.js"></script>
+</body>
+</html>

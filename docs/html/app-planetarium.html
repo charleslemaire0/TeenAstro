@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeenAstro — Planetarium Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+
+<nav id="sidebar">
+  <a class="nav-back" href="index.html">&larr; Back to Index</a>
+  <div id="sidebar-logo">
+    <h1>TeenAstro</h1>
+    <div class="subtitle">Planetarium Engine</div>
+  </div>
+  <div id="nav">
+    <div class="nav-section">
+      <span class="nav-section-label">Planetarium</span>
+      <a href="#projection"><span class="ico">01</span> Stereographic Projection</a>
+      <a href="#sky-renderer"><span class="ico">02</span> CustomPainter (_SkyRenderer)</a>
+      <a href="#layers"><span class="ico">03</span> 14 Rendering Layers</a>
+      <a href="#hit-testing"><span class="ico">04</span> Hit Testing</a>
+      <a href="#gestures"><span class="ico">05</span> Gesture Handling</a>
+      <a href="#transforms"><span class="ico">06</span> Coordinate Transforms</a>
+    </div>
+  </div>
+</nav>
+
+<main id="content">
+  <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><a href="index.html">Application</a><span class="sep">/</span>Planetarium Engine</div>
+
+  <!-- ═══════════ STEREOGRAPHIC PROJECTION ═══════════ -->
+  <section id="projection">
+    <h2>Stereographic Zenithal Projection (<code>_Proj</code> class)</h2>
+
+    <p>
+      The planetarium uses a <strong>stereographic zenithal projection</strong> to map the celestial
+      sphere onto a flat canvas. This projection preserves angles (conformal) and maps circles on the
+      sphere to circles (or lines) on the plane. The zenith is at the center; the horizon forms the
+      outer boundary circle.
+    </p>
+
+    <h3>Class Fields</h3>
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>lat</code></td><td>double</td><td>Observer latitude (degrees)</td></tr>
+          <tr><td><code>lst</code></td><td>double</td><td>Local Sidereal Time (hours, 0&ndash;24)</td></tr>
+          <tr><td><code>size</code></td><td>double</td><td>Canvas diagonal (pixels)</td></tr>
+          <tr><td><code>zoom</code></td><td>double</td><td>Zoom factor (affects scale)</td></tr>
+          <tr><td><code>rotation</code></td><td>double</td><td>View rotation (radians)</td></tr>
+          <tr><td><code>panY</code></td><td>double</td><td>Vertical pan offset (pixels)</td></tr>
+          <tr><td><code>_latRad</code></td><td>double</td><td>Cached latitude in radians</td></tr>
+          <tr><td><code>_cx</code></td><td>double</td><td>Center X (pixels)</td></tr>
+          <tr><td><code>_cy</code></td><td>double</td><td>Center Y (pixels)</td></tr>
+          <tr><td><code>_radius</code></td><td>double</td><td>Projection radius: <code class="math-inline">(diag/2) &times; zoom</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3><code>project(raH, decDeg)</code> Method</h3>
+    <p>Projects equatorial coordinates (RA in hours, Dec in degrees) to canvas (x, y) pixels.</p>
+
+    <h4>Step 1: Hour Angle</h4>
+    <div class="math">HA  =  (LST &minus; RA) &times; 15 &times; &pi;/180
+
+where HA is in radians, LST and RA in hours; 15&deg;/h converts to degrees.</div>
+
+    <h4>Step 2: Altitude (spherical trig)</h4>
+    <div class="math">sin(Alt)  =  sin(Dec) &middot; sin(&phi;) + cos(Dec) &middot; cos(&phi;) &middot; cos(HA)
+
+where &phi; = observer latitude (radians), Dec in radians.</div>
+
+    <h4>Step 3: Azimuth (cosine formula)</h4>
+    <div class="math">cos(Az)  =  ( sin(Dec) &minus; sin(Alt) &middot; sin(&phi;) ) / ( cos(Alt) &middot; cos(&phi;) )</div>
+
+    <h4>Step 4: Azimuth quadrant correction</h4>
+    <div class="math">If  sin(HA) &gt; 0:   Az  =  2&pi; &minus; Az</div>
+    <p>Ensures Az is measured correctly from North through East (0&deg; = N, 90&deg; = E).</p>
+
+    <h4>Step 5: Stereographic radius</h4>
+    <div class="math">r  =  radius &middot; cos(Alt) / (1 + sin(Alt))
+
+Stereographic formula: point on sphere at altitude Alt projects to distance r from zenith.</div>
+
+    <h4>Step 6: Canvas coordinates</h4>
+    <div class="math">x  =  cx &minus; r &middot; sin(Az + rotation)
+y  =  cy &minus; r &middot; cos(Az + rotation) + panY</div>
+    <p>Rotation is applied to azimuth; panY shifts the view vertically. Y-axis is flipped (minus cos) for screen coordinates.</p>
+
+    <h3><code>projectAltAz(alt, az)</code> Variant</h3>
+    <p>Direct projection from horizontal coordinates (altitude, azimuth in radians). Skips the equatorial-to-horizontal conversion; useful for objects already in Alt/Az (e.g., mount position, horizon grid):</p>
+    <div class="math">r  =  radius &middot; cos(alt) / (1 + sin(alt))
+x  =  cx &minus; r &middot; sin(az + rotation)
+y  =  cy &minus; r &middot; cos(az + rotation) + panY</div>
+    <div class="callout tip">Use <code>project</code> for catalog objects (RA/Dec); use <code>projectAltAz</code> for horizon grid, cardinal labels, and mount crosshair when already in Alt/Az.</div>
+  </section>
+
+  <hr />
+
+  <!-- ═══════════ SKY RENDERER ═══════════ -->
+  <section id="sky-renderer">
+    <h2>CustomPainter: <code>_SkyRenderer</code></h2>
+
+    <p>
+      <code>_SkyRenderer</code> extends Flutter&rsquo;s <code>CustomPainter</code> and performs all sky-dome
+      drawing in a single <code>paint()</code> call. It receives data from the app state and renders
+      the 14 layers in back-to-front order.
+    </p>
+
+    <h3>All Fields</h3>
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Field</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>stars</code></td><td>Star catalog (RA, Dec, mag, B-V, etc.)</td></tr>
+          <tr><td><code>constellations</code></td><td>Constellation line segments (pairs of star indices)</td></tr>
+          <tr><td><code>constNames</code></td><td>Constellation name labels with centroid positions</td></tr>
+          <tr><td><code>milkyWay</code></td><td>Milky Way polyline data (center + width)</td></tr>
+          <tr><td><code>dsos</code></td><td>Deep-sky objects (galaxies, nebulae, clusters)</td></tr>
+          <tr><td><code>state</code></td><td>Mount/app state (LST, lat, mount RA/Dec, target RA/Dec)</td></tr>
+          <tr><td><code>zoom</code></td><td>Current zoom level</td></tr>
+          <tr><td><code>rotation</code></td><td>View rotation (radians)</td></tr>
+          <tr><td><code>panY</code></td><td>Vertical pan offset</td></tr>
+          <tr><td><code>settings</code></td><td>User preferences (show grids, labels, magnitude limit, etc.)</td></tr>
+          <tr><td><code>selectedObject</code></td><td>Currently selected/tapped object (for highlight)</td></tr>
+          <tr><td><code>nightMode</code></td><td>Dark/red theme for night vision</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ═══════════ 14 RENDERING LAYERS ═══════════ -->
+  <section id="layers">
+    <h2>14 Rendering Layers</h2>
+
+    <p>Layers are drawn in order from back (1) to front (14). Each layer may be toggled via settings.</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>#</th><th>Layer</th><th>Details</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><strong>Sky background</strong></td>
+            <td>Gradient fill from zenith (darker) to horizon (lighter). In night mode: deep blue/black; day mode: lighter blue. Uses <code>Canvas.drawRect</code> or radial gradient with sky circle mask.</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><strong>Ground</strong></td>
+            <td><code>Path.combine(PathOperation.difference, skyCircle, groundPath)</code>. The sky circle is the dome; ground is everything below the horizon. Typically a dark fill (brown/gray) or gradient simulating terrain.</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><strong>Horizon circle</strong></td>
+            <td>Outer boundary of the visible sky. Drawn as a stroked circle at <code>radius</code> from center. May include a subtle glow or thicker stroke for visibility.</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><strong>Milky Way</strong> (<code>_drawMilkyWay</code>)</td>
+            <td>Polylines with center path + width. Data in J2000 equatorial; each vertex converted via <code>equatorialEquinoxToJNow</code> then projected. Clipped to sky circle (points below horizon discarded). Drawn with semi-transparent fill or stroke.</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td><strong>Alt-Az grid</strong></td>
+            <td>Altitude circles at 10&deg;, 20&deg;, &hellip;, 80&deg;; azimuth lines every 30&deg; (0, 30, 60, &hellip;, 330). Uses <code>projectAltAz(alt, az)</code>. Circles become eccentric on stereographic projection; lines radiate from zenith.</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td><strong>Equatorial grid</strong></td>
+            <td>RA lines at 2h steps (0h, 2h, 4h, &hellip;); Dec circles at &plusmn;75&deg;, 15&deg; steps (&minus;75, &minus;60, &hellip;, +75). Each point converted J2000&rarr;JNow, then EQ&rarr;Alt/Az, then projected. Grid follows celestial coordinates.</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td><strong>Constellation lines</strong></td>
+            <td>Line segments between star pairs. Each segment endpoint: star RA/Dec in J2000 &rarr; JNow via <code>equatorialEquinoxToJNow</code> &rarr; project. Stroked with thin line (1&ndash;2 px).</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td><strong>Constellation names</strong></td>
+            <td><code>TextPainter</code> at constellation centroid (precomputed or mean of member stars). Small font, dim color. Only drawn if above horizon and within magnitude/zoom limits.</td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td><strong>Stars</strong></td>
+            <td>Magnitude limit from settings; B-V color index &rarr; color (blue for hot, red for cool). Bright stars use radial gradient (core + halo). Size clamped 0.15&ndash;22 px based on magnitude. Each star: J2000&rarr;JNow &rarr; project.</td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td><strong>DSO symbols</strong></td>
+            <td>Stellarium-like symbols per type: galaxy (ellipse), planetary nebula (ring), open cluster (dots), globular cluster (filled circle with halo), nebula (irregular shape), etc. Position from DSO RA/Dec; size from catalog or fixed scale.</td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td><strong>Planets</strong></td>
+            <td>Filled circles with optional halo for bright planets (Venus, Jupiter). Position from ephemeris (RA/Dec JNow). Size reflects magnitude or fixed scale.</td>
+          </tr>
+          <tr>
+            <td>12</td>
+            <td><strong>Crosshair</strong></td>
+            <td>Mount RA/Dec position. Uses mount coordinates (already JNow); project to canvas. Cross or circle at center of FOV. Indicates where the telescope is pointing.</td>
+          </tr>
+          <tr>
+            <td>13</td>
+            <td><strong>Target marker</strong></td>
+            <td>Diamond shape at goto target RA/Dec. Only visible when a goto is active. Project target coordinates; draw diamond with distinct color (e.g., green or cyan).</td>
+          </tr>
+          <tr>
+            <td>14</td>
+            <td><strong>Cardinal labels</strong></td>
+            <td>N, NE, E, SE, S, SW, W, NW at horizon. Azimuths 0&deg;, 45&deg;, 90&deg;, &hellip;. Use <code>projectAltAz(0, az)</code> (alt=0 at horizon). <code>TextPainter</code> at each point.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      Layers 4, 7, 8, 9 require J2000&rarr;JNow conversion for precession/nutation. Layers 5, 14 use Alt/Az directly. Layers 11, 12, 13 use mount/target positions (already JNow).
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ═══════════ HIT TESTING ═══════════ -->
+  <section id="hit-testing">
+    <h2>Hit Testing</h2>
+
+    <h3><code>_handleTap</code></h3>
+    <p>On tap, the engine iterates over <strong>planets</strong>, <strong>stars</strong>, and <strong>DSOs</strong>. For each object:</p>
+    <ol>
+      <li>Project its position to canvas (x, y).</li>
+      <li>Compute Euclidean distance from tap point: <code class="math-inline">d = &radic;((x &minus; tapX)&sup2; + (y &minus; tapY)&sup2;)</code>.</li>
+      <li>Pick the <strong>closest</strong> object within 30 px threshold.</li>
+    </ol>
+    <p>Priority order: planets first (most prominent), then stars, then DSOs. The selected object is stored in <code>selectedObject</code> and may trigger an info panel or goto.</p>
+
+    <h3><code>_SkyObject</code></h3>
+    <p>Unified representation for tappable objects:</p>
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Field</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>name</code></td><td>Display name (e.g., &ldquo;Sirius&rdquo;, &ldquo;M31&rdquo;)</td></tr>
+          <tr><td><code>type</code></td><td>Enum: star, planet, galaxy, nebula, cluster, etc.</td></tr>
+          <tr><td><code>RA</code></td><td>Right ascension (hours or radians)</td></tr>
+          <tr><td><code>Dec</code></td><td>Declination (degrees or radians)</td></tr>
+          <tr><td><code>mag</code></td><td>Magnitude (optional)</td></tr>
+          <tr><td><code>color</code></td><td>Display color (from B-V or type)</td></tr>
+          <tr><td><code>catalog</code></td><td>Catalog info (HIP, NGC, M, etc.)</td></tr>
+          <tr><td><code>isJNow</code></td><td>True if RA/Dec already in JNow; false if J2000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn">If <code>isJNow</code> is false, convert to JNow before projecting for hit-test projection.</div>
+  </section>
+
+  <hr />
+
+  <!-- ═══════════ GESTURE HANDLING ═══════════ -->
+  <section id="gestures">
+    <h2>Gesture Handling</h2>
+
+    <h3>Scroll (Pinch / Wheel)</h3>
+    <p>Vertical scroll adjusts zoom:</p>
+    <div class="math">zoom  &larr;  zoom &times; 0.9   (scroll down / pinch in)
+zoom  &larr;  zoom &times; 1.1   (scroll up / pinch out)</div>
+    <p><code>panY</code> is scaled with zoom to maintain consistent feel: <code class="math-inline">panY &larr; panY &times; (zoom_new / zoom_old)</code>.</p>
+
+    <h3><code>onScaleUpdate</code> (Two-finger drag)</h3>
+    <p>Damped Jacobian for rotation and panY. Let <code class="math-inline">delta = (dx, dy)</code> be the gesture delta, and <code class="math-inline">fDx, fDy</code> be the finger separation components:</p>
+    <div class="math">denom  =  fDy&sup2; + 30&sup2;
+
+rotation  &larr;  rotation &minus; delta.dx &middot; fDy / denom
+
+panY  &larr;  panY + delta.dy + delta.dx &middot; fDx &middot; fDy / denom</div>
+    <p>The <code>30&sup2;</code> term prevents division by zero and dampens sensitivity when fingers are close together. Horizontal drag primarily rotates; vertical drag pans, with a cross-term from finger geometry.</p>
+
+    <h3><code>onTapUp</code></h3>
+    <p>Single tap: toggles UI visibility (e.g., hide/show top bar) or invokes <code>_handleTap</code> for object selection. Logic depends on tap target (sky vs. UI overlay).</p>
+  </section>
+
+  <hr />
+
+  <!-- ═══════════ COORDINATE TRANSFORMS ═══════════ -->
+  <section id="transforms">
+    <h2>Coordinate Transforms</h2>
+
+    <h3>Catalog (J2000) &rarr; JNow</h3>
+    <p>Star and DSO catalogs use J2000.0 equatorial coordinates. Before projection, apply:</p>
+    <div class="math">(RA_JNow, Dec_JNow)  =  equatorialEquinoxToJNow(RA_J2000, Dec_J2000, JD)</div>
+    <p>This applies precession and optionally nutation/aberration. <code>JD</code> is the current Julian Date.</p>
+
+    <h3>Mount Positions</h3>
+    <p>Mount RA/Dec (from <code>:GR#</code>, <code>:GD#</code> or bulk packets) are already in <strong>JNow</strong>. Use directly for crosshair and target marker projection.</p>
+
+    <h3>Helper Functions</h3>
+    <ul>
+      <li><code>_parseLST</code> — Parses LST string (e.g., from <code>:GL#</code>) to hours (0&ndash;24).</li>
+      <li><code>_parseCoord</code> — Parses RA/Dec strings (e.g., <code>:GR#</code>, <code>:GD#</code>) to numeric radians or hours/degrees.</li>
+    </ul>
+    <p>These handle LX200 format (e.g., <code>+12*34:56</code> for Dec, <code>08:45:32</code> for RA).</p>
+
+    <div class="diagram">Catalog (J2000 RA/Dec)
+         │ equatorialEquinoxToJNow(JD)
+         ▼
+  JNow (Apparent RA/Dec)
+         │ project(raH, decDeg)  or  EQ→Alt/Az → projectAltAz
+         ▼
+  Canvas (x, y) pixels</div>
+
+    <div class="page-nav">
+      <a href="app-overview.html">&larr; <span><span class="label">Previous</span><br />Flutter App</span></a>
+      <a href="app-astro.html"><span><span class="label">Next</span><br />Astronomy Algorithms</span> &rarr;</a>
+    </div>
+  </section>
+</main>
+<script src="nav.js"></script>
+</body>
+</html>

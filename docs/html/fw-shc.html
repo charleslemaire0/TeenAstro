@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeenAstro — SHC Hand Controller</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+
+<nav id="sidebar">
+  <a class="nav-back" href="index.html">&larr; Back to Index</a>
+  <div id="sidebar-logo"><h1>TeenAstro</h1><div class="subtitle">SHC Hand Controller</div></div>
+  <div id="nav">
+    <div class="nav-section">
+      <span class="nav-section-label">SHC</span>
+      <a href="#overview"><span class="ico">01</span> Overview</a>
+      <a href="#smartcontroller"><span class="ico">02</span> SmartHandController Class</a>
+      <a href="#pages"><span class="ico">03</span> PAGES &amp; OLED</a>
+      <a href="#menu-system"><span class="ico">04</span> Menu System</a>
+      <a href="#actions"><span class="ico">05</span> Actions Files</a>
+      <a href="#display"><span class="ico">06</span> Display Code</a>
+      <a href="#lx200client"><span class="ico">07</span> LX200Client Integration</a>
+    </div>
+  </div>
+</nav>
+
+<main id="content">
+  <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><a href="index.html#architecture">Firmware</a><span class="sep">/</span>SHC</div>
+
+  <section id="overview">
+    <h2>SHC Hand Controller</h2>
+    <p>
+      The <strong>Smart Hand Controller (SHC)</strong> runs on ESP8266 and provides a local user interface
+      with OLED display, button navigation, catalogs, and menu-driven control of the mount. It communicates
+      with the MainUnit over serial using the LX200 protocol.
+    </p>
+    <p><strong>Source:</strong> <code>TeenAstroSHC/</code></p>
+  </section>
+
+  <hr />
+
+  <section id="smartcontroller">
+    <h2>SmartHandController Class</h2>
+
+    <h3>Setup and Update</h3>
+    <p>The main controller class orchestrates initialization and the event loop:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>setup()</code></td><td>Initialize serial, OLED (U8g2), buttons, LX200 client, load catalogs</td></tr>
+          <tr><td><code>update()</code></td><td>Main loop: read buttons, process menu, send LX200 commands, refresh display</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Key Methods</h3>
+    <ul>
+      <li><code>processKey()</code> — Handle button presses (up/down/select/back)</li>
+      <li><code>updateDisplay()</code> — Refresh OLED content for current page</li>
+      <li><code>updateMount()</code> — Poll MainUnit for state (GXAS/GXCS)</li>
+      <li><code>setLX200()</code> — Send LX200 command to MainUnit</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="pages">
+    <h2>PAGES Enum</h2>
+
+    <p>The SHC organizes the UI into discrete pages. Each page corresponds to a screen or submenu:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Page</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>P_RADEC</code></td><td>RA/Dec position display</td></tr>
+          <tr><td><code>P_HADEC</code></td><td>Hour Angle / Dec display</td></tr>
+          <tr><td><code>P_ALTAZ</code></td><td>Alt/Az position display</td></tr>
+          <tr><td><code>P_PUSH</code></td><td>Push-to mode</td></tr>
+          <tr><td><code>P_TIME</code></td><td>Time and date</td></tr>
+          <tr><td><code>P_AXIS_STEP</code></td><td>Axis position in steps</td></tr>
+          <tr><td><code>P_AXIS_DEG</code></td><td>Axis position in degrees</td></tr>
+          <tr><td><code>P_FOCUSER</code></td><td>Focuser control</td></tr>
+          <tr><td><code>P_ALIGN</code></td><td>Alignment wizard</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>OLED Enum</h3>
+    <p>Display driver selection for the SHC OLED:</p>
+    <ul>
+      <li><code>OLED_SH1106</code> — SH1106 controller</li>
+      <li><code>OLED_SSD1306</code> — SSD1306 controller</li>
+      <li><code>OLED_SSD1309</code> — SSD1309 controller</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="menu-system">
+    <h2>Menu System Architecture</h2>
+
+    <h3>U8g2_ext</h3>
+    <p>The display uses <code>U8g2</code> (and extensions in <code>U8g2ext</code>) for OLED rendering.
+       Text, menus, and selection lists are drawn via U8g2 primitives.</p>
+
+    <h3>Selection Lists</h3>
+    <p>Menus use selection lists: a scrollable list of items with a highlighted selection.
+       The user navigates with up/down and selects with the center button.</p>
+
+    <h3>Top-Level Menus → Sub-Menus</h3>
+    <p>The menu hierarchy is structured as:</p>
+
+    <div class="diagram">Top-level menus (Main, Catalog, Sync/Goto, Align, Settings, ...)
+         │
+         ├── Sub-menus (e.g. Catalog → Messier, NGC, Stars)
+         │        │
+         │        └── Actions (select object → Goto, Sync, Align)
+         │
+         └── Settings sub-menus (Mount, Motor, Limits, Time, WiFi, ...)</div>
+
+    <p>Each menu level has its own handler; navigation state is tracked in the controller.</p>
+  </section>
+
+  <hr />
+
+  <section id="actions">
+    <h2>Actions Files</h2>
+
+    <p>Action handlers implement the behavior for catalog browsing, goto, sync, and alignment:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>Actions_SyncGoto.cpp</code></td><td>Sync and goto from catalog selection; menuCatalog, menuCatalogAlign</td></tr>
+          <tr><td><code>Actions_Tel.cpp</code></td><td>Telescope/catalog display; object selection and title display</td></tr>
+          <tr><td><code>Actions_Focuser.cpp</code></td><td>Focuser in/out, speed, temperature; forwards focus commands to MainUnit</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="display">
+    <h2>Display Code</h2>
+
+    <p>Display logic is split across several files:</p>
+
+    <ul>
+      <li><code>SmartController_Display.cpp</code> — Main display update; draws current page (RA/Dec, Alt/Az, time, etc.)</li>
+      <li><code>SmartController_Message.cpp</code> — Message and status text overlays</li>
+      <li><code>U8g2ext</code> — Extended U8g2 helpers for catalog scrolling, moving text, selection lists</li>
+    </ul>
+
+    <p>Each page type has a dedicated draw routine that formats coordinates, time, or menu content.</p>
+  </section>
+
+  <hr />
+
+  <section id="lx200client">
+    <h2>LX200Client Integration</h2>
+
+    <p>The SHC uses an <code>LX200Client</code> (or equivalent) to communicate with the MainUnit over serial.
+       Commands are sent in <code>:CMD#</code> format; replies are parsed for display and state.</p>
+
+    <div class="callout">
+      The SHC acts as an LX200 client: it sends commands and receives replies. It does not implement
+      the full LX200 server; the MainUnit is the protocol endpoint.
+    </div>
+  </section>
+
+  <div class="page-nav">
+    <a href="fw-mainunit.html">&larr; <span><span class="label">Previous</span><br />MainUnit</span></a>
+    <a href="fw-server.html"><span><span class="label">Next</span><br />WiFi Server</span> &rarr;</a>
+  </div>
+</main>
+<script src="nav.js"></script>
+</body>
+</html>

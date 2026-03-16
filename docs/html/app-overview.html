@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeenAstro — Flutter App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+
+<nav id="sidebar">
+  <a class="nav-back" href="index.html">&larr; Back to Index</a>
+  <div id="sidebar-logo"><h1>TeenAstro</h1><div class="subtitle">Flutter App</div></div>
+  <div id="nav">
+    <div class="nav-section">
+      <span class="nav-section-label">Flutter App</span>
+      <a href="#overview"><span class="ico">01</span> Overview</a>
+      <a href="#project-structure"><span class="ico">02</span> Project Structure</a>
+      <a href="#riverpod"><span class="ico">03</span> Riverpod State</a>
+      <a href="#tcp-client"><span class="ico">04</span> TCP Client</a>
+      <a href="#screens"><span class="ico">05</span> Screens</a>
+      <a href="#mount-state"><span class="ico">06</span> MountState &amp; MountConfig</a>
+      <a href="#catalog-filter"><span class="ico">07</span> CatalogFilterState</a>
+    </div>
+  </div>
+</nav>
+
+<main id="content">
+  <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><a href="index.html#architecture">Application</a><span class="sep">/</span>Flutter App</div>
+
+  <section id="overview">
+    <h2>Flutter App</h2>
+    <p>
+      The <strong>TeenAstro Flutter app</strong> provides a cross-platform (Android, Windows) user interface
+      for telescope control: connection, dashboard, goto, catalog browser, planetarium, alignment wizard,
+      tracking, and settings. It connects to the mount via TCP (WiFi Server on port 9999) using the LX200 protocol.
+    </p>
+    <p><strong>Source:</strong> <code>teenastro_app/</code></p>
+  </section>
+
+  <hr />
+
+  <section id="project-structure">
+    <h2>Project Structure</h2>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>lib/main.dart</code></td><td>Entry point, app bootstrap</td></tr>
+          <tr><td><code>lib/app.dart</code></td><td>GoRouter, MaterialApp, AppShell, navigation</td></tr>
+          <tr><td><code>lib/theme.dart</code></td><td>Light/dark themes, colors, typography</td></tr>
+          <tr><td><code>lib/screens/</code></td><td>Screen widgets (Connection, Dashboard, Control, etc.)</td></tr>
+          <tr><td><code>lib/models/</code></td><td>MountState, MountConfig, catalog entries, LX200 commands</td></tr>
+          <tr><td><code>lib/providers/</code></td><td>Riverpod providers (mountStateProvider, etc.)</td></tr>
+          <tr><td><code>lib/services/</code></td><td>LX200TcpClient, mount state polling, safe move handler</td></tr>
+          <tr><td><code>lib/widgets/</code></td><td>Reusable widgets (SyncPanel, StatusBar, SkyMap, etc.)</td></tr>
+          <tr><td><code>assets/</code></td><td>Catalogs (messier.json, ngc.json), stars, constellations, milky way</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="riverpod">
+    <h2>Riverpod State Management</h2>
+
+    <p>State is managed with <strong>Riverpod</strong>:</p>
+
+    <ul>
+      <li><code>MountStateNotifier</code> — Holds MountState, polls GXAS, updates providers</li>
+      <li><code>mountStateProvider</code> — Exposes current mount state to widgets</li>
+    </ul>
+
+    <p>Other providers: connection state, catalog filter, planetarium view, night mode.</p>
+  </section>
+
+  <hr />
+
+  <section id="tcp-client">
+    <h2>TCP Client (LX200TcpClient)</h2>
+
+    <p><code>LX200TcpClient</code> connects to the WiFi Server and sends LX200 commands:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>connect(host, port)</code></td><td>Open TCP socket to mount</td></tr>
+          <tr><td><code>disconnect()</code></td><td>Close socket, cancel subscriptions</td></tr>
+          <tr><td><code>sendCommand(cmd)</code></td><td>Send <code>:CMD#</code>, wait for reply</td></tr>
+          <tr><td><code>heartbeat</code></td><td>Fires every 1.5&nbsp;s; sends <code>:GXAS#</code> if idle &gt;1&nbsp;s</td></tr>
+          <tr><td><code>mutex</code></td><td>Serializes command send/receive to avoid interleaving</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      Disconnect order: close socket first, then cancel stream subscription, to avoid race conditions.
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="screens">
+    <h2>All 10 Screens</h2>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Screen</th><th>Route</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Connection</td><td><code>/connect</code></td><td>IP/port, connect/disconnect</td></tr>
+          <tr><td>Dashboard</td><td><code>/dashboard</code></td><td>Status overview, RA/Dec, time, errors</td></tr>
+          <tr><td>Control</td><td><code>/control</code></td><td>NSEW slew, rate, stop</td></tr>
+          <tr><td>Goto</td><td><code>/goto</code></td><td>Goto by coordinates or search</td></tr>
+          <tr><td>Catalog Browser</td><td><code>/catalogs</code></td><td>Messier, NGC, stars; filter, select, goto</td></tr>
+          <tr><td>Planetarium</td><td><code>/planetarium</code></td><td>Sky map, stereographic projection, tap-to-goto</td></tr>
+          <tr><td>Alignment</td><td><code>/alignment</code></td><td>Multi-star alignment wizard</td></tr>
+          <tr><td>Tracking</td><td><code>/tracking</code></td><td>Tracking rates, sidereal mode</td></tr>
+          <tr><td>Settings</td><td><code>/settings</code></td><td>Site, limits, night mode</td></tr>
+          <tr><td>Sync Panel</td><td>(modal/widget)</td><td>Sync to coordinates, site selection</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="mount-state">
+    <h2>MountState and MountConfig</h2>
+
+    <h3>MountState (from GXAS parsing)</h3>
+    <p>Fields include: <code>tracking</code>, <code>sidereal</code>, <code>parkState</code>, <code>atHome</code>,
+       <code>speed</code>, <code>pulseGuiding</code>, <code>guidingEW</code>, <code>guidingNS</code>,
+       <code>trackCorrected</code>, <code>aligned</code>, <code>alignmentRefCount</code>, <code>alignPhase</code>,
+       <code>alignStarNum</code>, <code>mountType</code>, <code>pierSide</code>, <code>gnssFlags</code>,
+       <code>error</code>, <code>enableFlags</code>, <code>ra</code>, <code>dec</code>, <code>ha</code>,
+       <code>az</code>, <code>alt</code>, <code>targetRa</code>, <code>targetDec</code>, <code>utcTime</code>,
+       <code>utcDate</code>, <code>localTime</code>, <code>siderealTime</code>, <code>timezoneOffset</code>,
+       <code>latitude</code>, <code>longitude</code>, <code>focuserStatus</code>, <code>focuserPos</code>,
+       <code>trackRateRa</code>, <code>trackRateDec</code>, <code>storedTrackRateRa</code>, <code>storedTrackRateDec</code>.</p>
+
+    <h3>MountConfig (from GXCS parsing)</h3>
+    <p>Per-axis motor config, rates, limits, encoders, refraction flags, mount index.</p>
+  </section>
+
+  <hr />
+
+  <section id="catalog-filter">
+    <h2>CatalogFilterState</h2>
+
+    <p><code>CatalogFilterState</code> holds filter selections for the catalog browser:</p>
+
+    <ul>
+      <li>Constellation filter</li>
+      <li>Object type filter (galaxy, nebula, etc.)</li>
+      <li>Search text</li>
+    </ul>
+
+    <p>Used by <code>CatalogBrowserScreen</code> to narrow the displayed catalog list.</p>
+  </section>
+
+  <div class="page-nav">
+    <a href="fw-stepper.html">&larr; <span><span class="label">Previous</span><br />Motor &amp; Stepper</span></a>
+    <a href="app-planetarium.html"><span><span class="label">Next</span><br />Planetarium Engine</span> &rarr;</a>
+  </div>
+</main>
+<script src="nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeenAstro — Bulk Packets (GXAS/GXCS)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+
+<nav id="sidebar">
+  <a class="nav-back" href="index.html">&larr; Back to Index</a>
+  <div id="sidebar-logo"><h1>TeenAstro</h1><div class="subtitle">Bulk Packets</div></div>
+  <div id="nav">
+    <div class="nav-section">
+      <span class="nav-section-label">Bulk Packets</span>
+      <a href="#overview"><span class="ico">01</span> Overview</a>
+      <a href="#gxas"><span class="ico">02</span> GXAS Packet</a>
+      <a href="#gxcs"><span class="ico">03</span> GXCS Packet</a>
+      <a href="#focuser"><span class="ico">04</span> Focuser Packet</a>
+      <a href="#mount-status"><span class="ico">05</span> TeenAstroMountStatus</a>
+    </div>
+  </div>
+</nav>
+
+<main id="content">
+  <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><a href="index.html#architecture">Protocol</a><span class="sep">/</span>Bulk Packets</div>
+
+  <section id="overview">
+    <h2>Bulk Packets (GXAS / GXCS)</h2>
+    <p>
+      TeenAstro provides binary bulk packets for efficient state and config polling. Clients send
+      <code>:GXAS#</code> or <code>:GXCS#</code> and receive base64-encoded little-endian binary data.
+      A single packet replaces dozens of individual get commands.
+    </p>
+  </section>
+
+  <hr />
+
+  <section id="gxas">
+    <h2>GXAS Packet (102 bytes, 136 base64 chars)</h2>
+
+    <p>Command: <code>:GXAS#</code>. Returns full mount state. Byte 101 = XOR checksum of bytes 0–100.</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Bytes</th><th>Type</th><th>Content</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>uint8</td><td>Status: bits 0–1 track (0=off, 1=on, 2=slew); 2–3 sidereal; 4–5 park; 6 atHome; 7 pierSide</td></tr>
+          <tr><td>1</td><td>uint8</td><td>Status: bits 0–2 guidingRate; 3 aligned; 4–6 mountType; 7 spiralRunning</td></tr>
+          <tr><td>2</td><td>uint8</td><td>Status: bits 0–1 guidingEW; 2–3 guidingNS; 4–5 rateComp; 7 pulseGuiding</td></tr>
+          <tr><td>3</td><td>uint8</td><td>gnssFlags (hasBoard, valid, timeSync, locationSync, hdop)</td></tr>
+          <tr><td>4</td><td>uint8</td><td>error (MountState::Errors enum)</td></tr>
+          <tr><td>5</td><td>uint8</td><td>enableFlags (encoders, calibrating, pushTo, motors, focuser)</td></tr>
+          <tr><td>6–8</td><td>uint8</td><td>UTC: hour, minute, second</td></tr>
+          <tr><td>9–11</td><td>uint8</td><td>UTC date: month, day, year</td></tr>
+          <tr><td>12–19</td><td>float64</td><td>RA (hours)</td></tr>
+          <tr><td>20–27</td><td>float64</td><td>Dec (degrees)</td></tr>
+          <tr><td>28–35</td><td>float64</td><td>Alt (degrees)</td></tr>
+          <tr><td>36–43</td><td>float64</td><td>Az (degrees)</td></tr>
+          <tr><td>44–51</td><td>float64</td><td>LST (hours)</td></tr>
+          <tr><td>52–59</td><td>float64</td><td>Target RA</td></tr>
+          <tr><td>60–67</td><td>float64</td><td>Target Dec</td></tr>
+          <tr><td>68–75</td><td>float64</td><td>Current track rate RA</td></tr>
+          <tr><td>76–83</td><td>float64</td><td>Current track rate Dec</td></tr>
+          <tr><td>84–87</td><td>int32</td><td>Stored track rate RA</td></tr>
+          <tr><td>88–91</td><td>int32</td><td>Stored track rate Dec</td></tr>
+          <tr><td>92–95</td><td>uint32</td><td>Focuser position (steps)</td></tr>
+          <tr><td>96–97</td><td>uint16</td><td>Focuser speed</td></tr>
+          <tr><td>98</td><td>int8</td><td>Timezone offset (×10)</td></tr>
+          <tr><td>99</td><td>uint8</td><td>Alignment ref count (0–2)</td></tr>
+          <tr><td>100</td><td>uint8</td><td>Align phase (bits 0–1); align star num (bits 2–4)</td></tr>
+          <tr><td>101</td><td>uint8</td><td>XOR checksum of bytes 0–100</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="gxcs">
+    <h2>GXCS Packet (90 bytes, 120 base64 chars)</h2>
+
+    <p>Command: <code>:GXCS#</code>. Returns full mount config. Byte 89 = XOR checksum of bytes 0–88.</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Bytes</th><th>Type</th><th>Content</th></tr></thead>
+        <tbody>
+          <tr><td>0–15</td><td>axis 1</td><td>Gear (u32), stepRot (u16), backlash (u16), backlashRate (u16), lowCurr (u16), highCurr (u16), micro (u8), flags (u8)</td></tr>
+          <tr><td>16–31</td><td>axis 2</td><td>Same layout as axis 1</td></tr>
+          <tr><td>32–35</td><td>float32</td><td>Guide rate</td></tr>
+          <tr><td>36–39</td><td>float32</td><td>Slow rate</td></tr>
+          <tr><td>40–43</td><td>float32</td><td>Medium rate</td></tr>
+          <tr><td>44–47</td><td>float32</td><td>Fast rate</td></tr>
+          <tr><td>48–51</td><td>float32</td><td>Acceleration (deg)</td></tr>
+          <tr><td>52–53</td><td>uint16</td><td>Max slew rate</td></tr>
+          <tr><td>54</td><td>uint8</td><td>Default rate index</td></tr>
+          <tr><td>55</td><td>uint8</td><td>Slew settle time (s)</td></tr>
+          <tr><td>56–59</td><td>int16</td><td>Meridian E/W limits</td></tr>
+          <tr><td>60–67</td><td>int16</td><td>User axis limits (min1, max1, min2, max2)</td></tr>
+          <tr><td>68–69</td><td>uint16</td><td>Under-pole limit</td></tr>
+          <tr><td>70–71</td><td>int8</td><td>Min/max altitude</td></tr>
+          <tr><td>72</td><td>uint8</td><td>Distance from pole</td></tr>
+          <tr><td>73</td><td>uint8</td><td>Refraction flags</td></tr>
+          <tr><td>74–83</td><td>—</td><td>Encoder config</td></tr>
+          <tr><td>84</td><td>uint8</td><td>Mount index</td></tr>
+          <tr><td>85–88</td><td>—</td><td>Reserved</td></tr>
+          <tr><td>89</td><td>uint8</td><td>XOR checksum of bytes 0–88</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="focuser">
+    <h2>Focuser Packet (:Fa#)</h2>
+
+    <p>Command: <code>:Fa#</code>. Returns focuser state. 12 base64 chars = 9 bytes.</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Bytes</th><th>Content</th></tr></thead>
+        <tbody>
+          <tr><td>0–3</td><td>Position (steps)</td></tr>
+          <tr><td>4–5</td><td>Speed</td></tr>
+          <tr><td>6–8</td><td>Temperature (optional)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="mount-status">
+    <h2>TeenAstroMountStatus C++ Class</h2>
+
+    <p><code>TeenAstroMountStatus</code> parses GXAS and GXCS into structured state. It caches the
+       raw base64 and exposes <code>MountState</code> and config fields.</p>
+
+    <h3>MountState Fields (from GXAS)</h3>
+    <p>tracking, sidereal, parkState, atHome, guidingRate, aligned, alignmentRefCount, alignPhase,
+       alignStarNum, mountType, pierSide, gnssFlags, error, enableFlags, ra, dec, alt, az, targetRa,
+       targetDec, utcTime, utcDate, siderealTime, timezoneOffset, trackRateRa, trackRateDec,
+       storedTrackRateRa, storedTrackRateDec, focuserPos, focuserSpeed, valid.</p>
+
+    <h3>Enums</h3>
+    <ul>
+      <li><code>TrackState</code> — off, on, slewing</li>
+      <li><code>SiderealMode</code> — star, sun, moon, target</li>
+      <li><code>ParkState</code> — unparked, parked, failed, parking</li>
+      <li><code>PierState</code> — east, west</li>
+      <li><code>GuidingRate</code> — guide, slow, medium, fast, max</li>
+      <li><code>Mount</code> — GEM, Fork, AltAz, ForkAlt</li>
+      <li><code>Errors</code> — none, motorFault, alt, limitSense, limitA1, limitA2, underPole, meridian, sync</li>
+    </ul>
+
+    <h3>StepperDriver Enum</h3>
+    <p>StepDir, TOS100, TMC2130, TMC5160, etc. (from <code>:GVb#</code>).</p>
+  </section>
+
+  <div class="page-nav">
+    <a href="protocol.html">&larr; <span><span class="label">Previous</span><br />LX200 Protocol</span></a>
+    <a href="build.html"><span><span class="label">Next</span><br />Build System</span> &rarr;</a>
+  </div>
+</main>
+<script src="nav.js"></script>
+</body>
+</html>

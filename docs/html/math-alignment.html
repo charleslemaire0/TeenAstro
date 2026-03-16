@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeenAstro — Alignment (CoordConv)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+<nav id="sidebar">
+  <a class="nav-back" href="index.html">&larr; Back to Index</a>
+  <div id="sidebar-logo"><h1>TeenAstro</h1><div class="subtitle">Alignment (CoordConv)</div></div>
+  <div id="nav">
+    <div class="nav-section">
+      <span class="nav-section-label">Alignment</span>
+      <a href="#overview"><span class="ico">01</span> Overview</a>
+      <a href="#class"><span class="ico">02</span> CoordConv Class</a>
+      <a href="#taki"><span class="ico">03</span> Taki Method</a>
+      <a href="#svd-correction"><span class="ico">04</span> SVD Correction</a>
+      <a href="#minimization"><span class="ico">05</span> Axis Minimization</a>
+      <a href="#firmware-usage"><span class="ico">06</span> Firmware Integration</a>
+    </div>
+  </div>
+</nav>
+
+<main id="content">
+  <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span>Math<span class="sep">/</span>Alignment</div>
+
+  <section id="overview">
+    <h2>Mount Alignment — CoordConv</h2>
+    <p>
+      <code>TeenAstroCoordConv</code> implements a two-star alignment model based on
+      <strong>Toshimi Taki&rsquo;s method</strong> (<em>Sky &amp; Telescope</em>, Feb 1989,
+      pp. 194&ndash;196). The raw transformation is refined using <strong>Singular Value Decomposition</strong>
+      to project onto the nearest proper rotation matrix (det = +1), compensating for measurement noise.
+    </p>
+    <p><strong>Source:</strong> <code>libraries/TeenAstroCoordConv/</code></p>
+  </section>
+
+  <hr />
+
+  <section id="class">
+    <h2>CoordConv Class</h2>
+    <pre><code>class CoordConv : public LA3 {
+public:
+    // Reference star axis angles
+    double ax1[2], ax2[2];
+
+    // Transformation matrices
+    double T[3][3];     // HO &rarr; IN (sky &rarr; instrument)
+    double Tinv[3][3];  // IN &rarr; HO (instrument &rarr; sky)
+
+    // SVD factors
+    double u[3][3], v[3][3];
+
+    CoordConv();
+    void reset();
+    void clean();
+    bool isReady() const;
+    double getError() const;
+    unsigned char getRefs() const;
+
+    // Persistence
+    void getT(float &amp;m11, ..., float &amp;m33);  // read T as floats
+    void setT(float m11, ..., float m33);       // restore T from EEPROM
+    void setTinvFromT();                        // recompute Tinv = T&sup1;
+
+    // Alignment procedure
+    void addReference(double angle1, double angle2, double axis1, double axis2);
+    bool calculateThirdReference();
+
+    // Post-alignment refinement
+    void minimizeAxis1(double offset);
+    void minimizeAxis2();
+
+protected:
+    double dcAARef[3][3];   // axis direction cosines (3 refs &times; 3 components)
+    double dcHDRef[3][3];   // sky direction cosines
+    unsigned char refs;     // reference count (0, 1, or 2)
+    bool isready;
+    double anglediff;       // angular consistency error
+
+    void buildTransformations();
+};</code></pre>
+  </section>
+
+  <hr />
+
+  <section id="taki">
+    <h2>Taki Alignment Method</h2>
+
+    <h3>Step 1 — Collect Two Reference Stars</h3>
+    <p>For each reference star <em>i</em> &isin; {0, 1}, record:</p>
+    <ul>
+      <li><strong>Sky position:</strong> (angle1, angle2) = (Azimuth, Altitude)</li>
+      <li><strong>Instrument position:</strong> (axis1, axis2) = physical mount axes</li>
+    </ul>
+    <p>Convert each pair to direction cosines on the unit sphere:</p>
+    <div class="math">d&#8407;_HD,i  =  toDirCos(Az_i, Alt_i)      &larr; sky
+d&#8407;_AA,i  =  toDirCos(axis1_i, axis2_i)  &larr; instrument</div>
+
+    <h3>Step 2 — Compute Third Reference (Cross Product)</h3>
+    <p>A third, synthetic reference point is computed as the normalized cross product of the first two:</p>
+    <div class="math">d&#8407;_HD,2  =  normalize( d&#8407;_HD,0 &times; d&#8407;_HD,1 )
+d&#8407;_AA,2  =  normalize( d&#8407;_AA,0 &times; d&#8407;_AA,1 )</div>
+    <p>This completes a full 3D basis for both the sky and instrument frames.</p>
+
+    <h3>Step 3 — Build Transformation Matrix</h3>
+    <p>Form 3&times;3 matrices from the direction cosines (each row is one reference):</p>
+    <div class="math">D_HD  =  [ d&#8407;_HD,0 ]       D_AA  =  [ d&#8407;_AA,0 ]
+          [ d&#8407;_HD,1 ]                [ d&#8407;_AA,1 ]
+          [ d&#8407;_HD,2 ]                [ d&#8407;_AA,2 ]</div>
+    <p>The transformation from sky to instrument is:</p>
+    <div class="math">T  =  D_AA&#7488; &middot; (D_HD&#7488;)&#8315;&sup1;</div>
+    <p>And the inverse:</p>
+    <div class="math">T_inv  =  T&#8315;&sup1;  =  D_HD&#7488; &middot; (D_AA&#7488;)&#8315;&sup1;</div>
+
+    <h3>Angular Error</h3>
+    <p>The consistency of the reference stars is checked by comparing the angular separation
+       in both frames:</p>
+    <div class="math">anglediff  =  angle(d&#8407;_HD,0, d&#8407;_HD,1) &minus; angle(d&#8407;_AA,0, d&#8407;_AA,1)</div>
+    <p>A large <code>anglediff</code> indicates misidentified stars or pointing errors.</p>
+  </section>
+
+  <hr />
+
+  <section id="svd-correction">
+    <h2>SVD Correction — Optimal Rotation</h2>
+
+    <h3>Problem</h3>
+    <p>Due to measurement noise and star position errors, the matrix <code>T</code> from the Taki
+       method may not be a proper rotation (its determinant may not be exactly +1). We need to
+       find the <em>nearest</em> proper rotation matrix.</p>
+
+    <h3>Solution</h3>
+    <p>Compute the SVD of T<sub>inv</sub>:</p>
+    <div class="math">T_inv  =  U &middot; &Sigma; &middot; V&#7488;</div>
+    <p>Then replace &Sigma; with a diagonal matrix D that forces det = +1:</p>
+    <div class="math">D  =  diag(1, 1, det(U) &middot; det(V))
+
+R_opt  =  U &middot; D &middot; V&#7488;</div>
+    <ul>
+      <li>If <code class="math-inline">det(U) &middot; det(V) = +1</code>: D = I, so R<sub>opt</sub> = U &middot; V<sup>T</sup> (already a rotation).</li>
+      <li>If <code class="math-inline">det(U) &middot; det(V) = &minus;1</code>: D = diag(1, 1, &minus;1), flipping the sign of the smallest singular value&rsquo;s contribution to ensure det(R<sub>opt</sub>) = +1.</li>
+    </ul>
+
+    <h3>Implementation</h3>
+    <pre><code>getsvd(Tinv, u, v);
+double du = determinant(u);
+double dv = determinant(v);
+diag[2][2] = du * dv;       // +1 or -1
+multiply(tmp, diag, vt);     // tmp = D &middot; V^T
+multiply(Tinv, u, tmp);      // Tinv = U &middot; D &middot; V^T  (optimal rotation)
+transpose(T, Tinv);          // T = Tinv^T</code></pre>
+    <p>After this step, <code>T</code> and <code>Tinv</code> are guaranteed to be proper rotation
+       matrices (orthogonal, det = +1), which is essential for stable coordinate conversions.</p>
+  </section>
+
+  <hr />
+
+  <section id="minimization">
+    <h2>Axis Minimization</h2>
+
+    <h3>minimizeAxis1(offset)</h3>
+    <p>Compensates for a systematic offset in the first axis. It extracts Euler angles from
+       T<sub>inv</sub>, shifts axis1 for both reference stars by the offset, recomputes direction
+       cosines, and recalculates the third reference and transformation:</p>
+    <div class="math">axis1'_i  =  direct_axis1_i &minus; offset     (for i = 0, 1)
+Recompute d&#8407;_AA,i = toDirCos(axis1'_i, axis2_i)
+Recompute third reference and T via calculateThirdReference()</div>
+
+    <h3>minimizeAxis2()</h3>
+    <p>Iterative Newton-like refinement (5 iterations) to minimize the angular error by
+       adjusting axis2 for both reference stars:</p>
+    <div class="math">For each iteration:
+  &delta;  =  anglediff / denom
+
+  where denom =  &minus;&Sigma;_i ( dcAA_i,0 &middot; sin(ax2_{1&minus;i}) &middot; cos(&minus;ax1_{1&minus;i}) + &hellip; )
+
+  ax2[0] += 0.8 &middot; &delta;
+  ax2[1] += 0.8 &middot; &delta;
+
+  Recompute direction cosines and third reference.</div>
+    <p>The 0.8 damping factor prevents oscillation.</p>
+  </section>
+
+  <hr />
+
+  <section id="firmware-usage">
+    <h2>Firmware Integration</h2>
+    <p>The alignment matrices are used throughout the MainUnit real-time loop:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Operation</th><th>Matrix Used</th><th>Conversion</th></tr></thead>
+        <tbody>
+          <tr><td>Read current sky position</td><td><code>T</code> (via <code>Tinv</code>)</td><td>IN &rarr; HO &rarr; EQ</td></tr>
+          <tr><td>Goto target</td><td><code>Tinv</code></td><td>EQ &rarr; HO &rarr; IN (target steps)</td></tr>
+          <tr><td>Sync mount to known position</td><td><code>Tinv</code></td><td>EQ &rarr; IN (set stepper positions)</td></tr>
+          <tr><td>Compute tracking rates</td><td><code>Tinv</code></td><td>EQ &plusmn;&delta;t &rarr; IN (rate = &Delta;axis / &Delta;t)</td></tr>
+          <tr><td>Real-time altitude for safety</td><td><code>T</code></td><td>IN &rarr; HO (check altitude limits)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>EEPROM Persistence</h3>
+    <p>The 9 elements of T are stored as <code>float</code> (4 bytes each, 36 bytes total) plus
+       a validity flag (<code>EE_Tvalid</code>). On power-up, if valid, T is loaded and
+       T<sub>inv</sub> is recomputed via <code>setTinvFromT()</code>.</p>
+
+    <div class="page-nav">
+      <a href="math-coord.html">&larr; <span><span class="label">Previous</span><br />Coordinate Systems</span></a>
+      <a href="fw-mainunit.html"><span><span class="label">Next</span><br />MainUnit Firmware</span> &rarr;</a>
+    </div>
+  </section>
+</main>
+<script src="nav.js"></script>
+</body>
+</html>

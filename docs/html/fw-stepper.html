@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeenAstro — Motor &amp; Stepper Drivers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+
+<nav id="sidebar">
+  <a class="nav-back" href="index.html">&larr; Back to Index</a>
+  <div id="sidebar-logo"><h1>TeenAstro</h1><div class="subtitle">Motor &amp; Stepper</div></div>
+  <div id="nav">
+    <div class="nav-section">
+      <span class="nav-section-label">Stepper</span>
+      <a href="#overview"><span class="ico">01</span> Overview</a>
+      <a href="#class-hierarchy"><span class="ico">02</span> Class Hierarchy</a>
+      <a href="#driver-enum"><span class="ico">03</span> Driver Class &amp; MOTORDRIVER</a>
+      <a href="#stepdir"><span class="ico">04</span> StepDir Class</a>
+      <a href="#mc5160"><span class="ico">05</span> Mc5160 Class</a>
+      <a href="#position-state"><span class="ico">06</span> PositionState Enum</a>
+      <a href="#tmc-integration"><span class="ico">07</span> TMC Integration</a>
+      <a href="#step-rate-math"><span class="ico">08</span> Step Rate Math</a>
+    </div>
+  </div>
+</nav>
+
+<main id="content">
+  <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><a href="index.html#architecture">Firmware</a><span class="sep">/</span>Motor &amp; Stepper</div>
+
+  <section id="overview">
+    <h2>Motor &amp; Stepper Drivers</h2>
+    <p>
+      The TeenAstro stepper stack provides a unified interface for different motor driver types:
+      classic step/dir, TMC26x, TMC2130, TMC5160, and TMC2660. The MainUnit uses these drivers to
+      generate step pulses for each axis.
+    </p>
+    <p><strong>Source:</strong> <code>libraries/TeenAstroStepper/</code></p>
+  </section>
+
+  <hr />
+
+  <section id="class-hierarchy">
+    <h2>Class Hierarchy</h2>
+
+    <div class="diagram">MotionControl (abstract)
+         │
+         ├── StepDir   (step/dir pins, ISR-driven)
+         │
+         └── Mc5160    (SPI motion controller, TMC5160)
+
+MotorDriver (interface)
+         │
+         └── Driver (concrete implementations)</div>
+
+    <p><code>MotionControl</code> defines the interface for moving axes; <code>StepDir</code> and
+       <code>Mc5160</code> implement it for different hardware.</p>
+  </section>
+
+  <hr />
+
+  <section id="driver-enum">
+    <h2>Driver Class and MOTORDRIVER Enum</h2>
+
+    <p>The <code>Driver</code> class wraps the physical driver. The <code>MOTORDRIVER</code> enum
+       selects the driver type:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Value</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>NODRIVER</code></td><td>No driver (disabled axis)</td></tr>
+          <tr><td><code>STEPDIR</code></td><td>Classic step/dir (A4988, DRV8825, etc.)</td></tr>
+          <tr><td><code>TMC26X</code></td><td>TMC26x stepper driver</td></tr>
+          <tr><td><code>TMC2130</code></td><td>TMC2130 SPI driver</td></tr>
+          <tr><td><code>TMC5160</code></td><td>TMC5160 SPI motion controller</td></tr>
+          <tr><td><code>TMC2660</code></td><td>TMC2660 driver</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="stepdir">
+    <h2>StepDir Class</h2>
+
+    <p><code>StepDir</code> drives steppers via step and direction pins. The timer ISR generates
+       step pulses at the computed interval.</p>
+
+    <h3>Key Members and Methods</h3>
+    <ul>
+      <li><code>ISR</code> — Timer interrupt; fires at <code>interval_Step_Cur</code>, toggles step pin</li>
+      <li><code>programSpeed()</code> — Sets step interval from desired speed</li>
+      <li><code>step</code> / <code>dir</code> pins — GPIO for step pulse and direction</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="mc5160">
+    <h2>Mc5160 Class</h2>
+
+    <p><code>Mc5160</code> uses the TMC5160 SPI motion controller. The chip handles acceleration,
+       deceleration, and step generation internally; the firmware programs target positions and
+       reads status over SPI.</p>
+
+    <p>Advantages: lower CPU load, built-in stall detection, microstep interpolation.</p>
+  </section>
+
+  <hr />
+
+  <section id="position-state">
+    <h2>PositionState Enum</h2>
+
+    <p>Motion state for each axis during goto or tracking:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>State</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>PS_IDLE</code></td><td>Not moving</td></tr>
+          <tr><td><code>PS_ACCEL</code></td><td>Accelerating toward target</td></tr>
+          <tr><td><code>PS_CRUISE</code></td><td>Constant speed (max slew)</td></tr>
+          <tr><td><code>PS_DECEL</code></td><td>Decelerating</td></tr>
+          <tr><td><code>PS_DECEL_TARGET</code></td><td>Final deceleration to target</td></tr>
+          <tr><td><code>PS_STOPPING</code></td><td>Stopping (halt or fault)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="tmc-integration">
+    <h2>TMC Driver Integration</h2>
+
+    <p>TMC drivers support:</p>
+
+    <ul>
+      <li><strong>Current</strong> — High/low current (mA) for run and idle</li>
+      <li><strong>Microstep</strong> — 1, 2, 4, 8, 16, 32, 64, 128, 256</li>
+      <li><strong>Silent mode</strong> — SpreadCycle vs StealthChop (TMC2130/5160)</li>
+    </ul>
+
+    <p>These are configured via LX200 set commands and stored in EEPROM.</p>
+  </section>
+
+  <hr />
+
+  <section id="step-rate-math">
+    <h2>Step Rate Math</h2>
+
+    <p>Step interval (timer ticks between steps) and speed (steps/s) are related by:</p>
+
+    <div class="math">interval2speed(interval)  =  ClockSpeed / interval
+
+speed2interval(V)  =  ClockSpeed / V</div>
+
+    <p>Where <code>ClockSpeed</code> is the timer clock in Hz (e.g. 1&nbsp;MHz on Teensy).</p>
+
+    <h3>Minimum Step Interval</h3>
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Platform</th><th>StepsMinInterval</th></tr></thead>
+        <tbody>
+          <tr><td>Teensy 4.x</td><td>3&nbsp;µs</td></tr>
+          <tr><td>Teensy 3.x / older</td><td>12&nbsp;µs</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>This limits maximum slew speed to avoid overloading the ISR.</p>
+  </section>
+
+  <div class="page-nav">
+    <a href="fw-server.html">&larr; <span><span class="label">Previous</span><br />WiFi Server</span></a>
+    <a href="app-overview.html"><span><span class="label">Next</span><br />Flutter App</span> &rarr;</a>
+  </div>
+</main>
+<script src="nav.js"></script>
+</body>
+</html>

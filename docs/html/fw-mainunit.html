@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeenAstro — MainUnit Firmware</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+
+<nav id="sidebar">
+  <a class="nav-back" href="index.html">&larr; Back to Index</a>
+  <div id="sidebar-logo"><h1>TeenAstro</h1><div class="subtitle">MainUnit Firmware</div></div>
+  <div id="nav">
+    <div class="nav-section">
+      <span class="nav-section-label">MainUnit</span>
+      <a href="#overview"><span class="ico">01</span> Overview</a>
+      <a href="#application"><span class="ico">02</span> Application Class</a>
+      <a href="#axis-classes"><span class="ico">03</span> Axis Classes</a>
+      <a href="#sidereal-clock"><span class="ico">04</span> Sidereal Clock &amp; Timer ISRs</a>
+      <a href="#tracking-goto"><span class="ico">05</span> Tracking &amp; Goto</a>
+      <a href="#command-dispatcher"><span class="ico">06</span> Command Dispatcher</a>
+      <a href="#eeprom"><span class="ico">07</span> EEPROM Layout</a>
+      <a href="#encoder"><span class="ico">08</span> Encoder Support</a>
+    </div>
+  </div>
+</nav>
+
+<main id="content">
+  <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><a href="index.html#architecture">Firmware</a><span class="sep">/</span>MainUnit</div>
+
+  <section id="overview">
+    <h2>MainUnit Firmware</h2>
+    <p>
+      The <strong>TeenAstro MainUnit</strong> firmware runs on Teensy 3/4 microcontrollers and provides
+      real-time mount control: motor drive, goto, sidereal tracking, multi-star alignment, encoder
+      support, and LX200 serial protocol handling. It is the central controller for the telescope
+      mount.
+    </p>
+    <p><strong>Source:</strong> <code>TeenAstroMainUnit/</code></p>
+  </section>
+
+  <hr />
+
+  <section id="application">
+    <h2>Application Class</h2>
+
+    <p>The main application orchestrates initialization and the real-time control loop through
+       <code>setup()</code> and <code>loop()</code>.</p>
+
+    <h3>setup() Sequence</h3>
+    <p>Initialization runs in a fixed order to ensure hardware and state are ready before
+       the main loop begins:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Step</th><th>Function</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>setupStartupBlink()</code></td><td>LED blink sequence to indicate power-on and boot progress</td></tr>
+          <tr><td>2</td><td><code>setupEepromAndMount()</code></td><td>Load EEPROM, validate auto-init key, restore mount config and alignment matrix</td></tr>
+          <tr><td>3</td><td><code>setupTimeSync()</code></td><td>Initialize RTC/date-time, sync sidereal clock with GNSS or manual input</td></tr>
+          <tr><td>4</td><td><code>setupReticule()</code></td><td>Configure reticule LED and illumination if present</td></tr>
+          <tr><td>5</td><td><code>setupMountPinsAndSidereal()</code></td><td>Configure axis pins, start Timer1 for sidereal tick, enable step timers</td></tr>
+          <tr><td>6</td><td><code>setupParkHomeAndGuideRates()</code></td><td>Set park/home positions, guide rates, and tracking rates</td></tr>
+          <tr><td>7</td><td><code>setupGnssProbe()</code></td><td>Probe for GNSS/GPS module on serial port</td></tr>
+          <tr><td>8</td><td><code>setupFocuserProbe()</code></td><td>Probe for focuser module on serial port</td></tr>
+          <tr><td>9</td><td><code>setupCommandSerial()</code></td><td>Initialize LX200 command serial port (57600 baud)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>loop() Sequence</h3>
+    <p>The main loop repeatedly executes these phases in order:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Phase</th><th>Function</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>loopCommandsAndStatus()</code></td><td>Process serial commands, send status updates, handle bulk packets (GXAS/GXCS)</td></tr>
+          <tr><td>2</td><td><code>loopSt4AndGuiding()</code></td><td>Read ST4 guide port, apply guide pulses to axes</td></tr>
+          <tr><td>3</td><td><code>loopEncoderSync()</code></td><td>Read encoders, auto-sync mount position if enabled</td></tr>
+          <tr><td>4</td><td><code>loopSiderealAndSafety()</code></td><td>100Hz sidereal tick: update tracking targets, goto state machine, safety checks (altitude limits, collision)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="diagram">setup() flow:
+  setupStartupBlink
+       &darr;
+  setupEepromAndMount
+       &darr;
+  setupTimeSync
+       &darr;
+  setupReticule
+       &darr;
+  setupMountPinsAndSidereal
+       &darr;
+  setupParkHomeAndGuideRates
+       &darr;
+  setupGnssProbe
+       &darr;
+  setupFocuserProbe
+       &darr;
+  setupCommandSerial
+
+loop() flow (repeated):
+  loopCommandsAndStatus
+       &darr;
+  loopSt4AndGuiding
+       &darr;
+  loopEncoderSync
+       &darr;
+  loopSiderealAndSafety</div>
+  </section>
+
+  <hr />
+
+  <section id="axis-classes">
+    <h2>Axis Classes</h2>
+
+    <p>The MainUnit uses a layered axis model: <code>StatusAxis</code> holds state and motion logic,
+       <code>GeoAxis</code> adds geometry, <code>GuideAxis</code> adds guiding, <code>MotorAxis</code>
+       adds hardware, and <code>EncoderAxis</code> adds encoder feedback.</p>
+
+    <h3>StatusAxis</h3>
+    <p>Core state and motion control for one axis. Members:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Member</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>enable</code></td><td>bool</td><td>Axis enabled for motion</td></tr>
+          <tr><td><code>fault</code></td><td>bool</td><td>Driver fault flag</td></tr>
+          <tr><td><code>acc</code></td><td>double</td><td>Acceleration (steps/s&sup2;)</td></tr>
+          <tr><td><code>pos</code></td><td>long</td><td>Current position (steps)</td></tr>
+          <tr><td><code>start</code></td><td>long</td><td>Start position for move</td></tr>
+          <tr><td><code>target</code></td><td>long</td><td>Target position (steps)</td></tr>
+          <tr><td><code>deltaTarget</code></td><td>long</td><td>Target &minus; pos (for goto)</td></tr>
+          <tr><td><code>deltaStart</code></td><td>long</td><td>Target &minus; start (total move distance)</td></tr>
+          <tr><td><code>dir</code></td><td>int</td><td>Direction (+1 or &minus;1)</td></tr>
+          <tr><td><code>fstep</code></td><td>double</td><td>Fractional step accumulator for sub-step tracking</td></tr>
+          <tr><td><code>interval_Step_Sid</code></td><td>double</td><td>Step interval at sidereal rate (steps per tick)</td></tr>
+          <tr><td><code>takeupRate</code></td><td>double</td><td>Takeup rate for backlash correction</td></tr>
+          <tr><td><code>takeupInterval</code></td><td>double</td><td>Takeup step interval</td></tr>
+          <tr><td><code>interval_Step_Cur</code></td><td>double</td><td>Current step interval (for goto)</td></tr>
+          <tr><td><code>CurrentTrackingRate</code></td><td>double</td><td>Actual tracking rate</td></tr>
+          <tr><td><code>RequestedTrackingRate</code></td><td>double</td><td>Requested tracking rate</td></tr>
+          <tr><td><code>ClockSpeed</code></td><td>double</td><td>Timer clock speed (Hz)</td></tr>
+          <tr><td><code>backlash_correcting</code></td><td>bool</td><td>Currently in backlash takeup</td></tr>
+          <tr><td><code>backlash_movedSteps</code></td><td>long</td><td>Steps moved during backlash</td></tr>
+          <tr><td><code>backlash_interval_Step</code></td><td>double</td><td>Backlash step interval</td></tr>
+          <tr><td><code>backlash_inSteps</code></td><td>long</td><td>Steps remaining in backlash</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Key Methods</h4>
+    <ul>
+      <li><code>updateDeltaTarget()</code> — Recomputes <code>deltaTarget = target - pos</code></li>
+      <li><code>atTarget()</code> — Returns true when <code>pos</code> equals <code>target</code></li>
+      <li><code>resetToSidereal()</code> — Sets interval to sidereal tracking rate</li>
+      <li><code>setSidereal()</code> — Configures sidereal tracking</li>
+      <li><code>breakDist()</code> — Returns braking distance for current speed</li>
+      <li><code>setIntervalfromDist()</code> — Sets step interval from distance (for goto)</li>
+      <li><code>setIntervalfromRate()</code> — Sets step interval from rate</li>
+      <li><code>move()</code> — Initiates move to target with acceleration</li>
+    </ul>
+
+    <h4>Math Formulas</h4>
+    <div class="math">speedfromDist(d)  =  sign(d) &middot; sqrt(2 &middot; acc &middot; |d|)</div>
+    <p>Speed (steps/s) from distance for constant acceleration.</p>
+    <div class="math">ratefromSpeed(V)  =  V &middot; interval_Step_Sid / ClockSpeed</div>
+    <p>Tracking rate from speed.</p>
+    <div class="math">interval2speed(interval)  =  ClockSpeed / interval</div>
+    <p>Step interval to speed (steps/s).</p>
+
+    <h3>GeoAxis</h3>
+    <p>Geometric parameters for axis conversion (steps &harr; degrees/arcsec):</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Member</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>poleDef</code></td><td>Pole definition (axis type)</td></tr>
+          <tr><td><code>homeDef</code></td><td>Home position definition</td></tr>
+          <tr><td><code>stepsPerRot</code></td><td>Steps per full rotation</td></tr>
+          <tr><td><code>stepsPerDegree</code></td><td>Steps per degree</td></tr>
+          <tr><td><code>stepsPerArcSecond</code></td><td>Steps per arcsecond</td></tr>
+          <tr><td><code>stepsPerSecond</code></td><td>Steps per second at sidereal</td></tr>
+          <tr><td><code>halfRot</code></td><td>Half rotation in steps</td></tr>
+          <tr><td><code>quaterRot</code></td><td>Quarter rotation in steps</td></tr>
+          <tr><td><code>minAxis</code></td><td>Minimum axis limit (steps)</td></tr>
+          <tr><td><code>maxAxis</code></td><td>Maximum axis limit (steps)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>GuideAxis</h3>
+    <p>Guiding state and rate control:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Member</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>duration</code></td><td>Guide pulse duration (ms)</td></tr>
+          <tr><td><code>absRate</code></td><td>Absolute guide rate</td></tr>
+          <tr><td><code>speedMultiplier</code></td><td>Guide speed multiplier</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>GuideAxis Methods</h4>
+    <ul>
+      <li><code>isMFW()</code> — Moving forward (RA+ or Dec+)</li>
+      <li><code>isMBW()</code> — Moving backward (RA&minus; or Dec&minus;)</li>
+      <li><code>isDirFW()</code> — Direction is forward</li>
+      <li><code>isDirBW()</code> — Direction is backward</li>
+    </ul>
+
+    <h3>MotorAxis</h3>
+    <p>Hardware and driver configuration:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Member</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>gear</code></td><td>Gear ratio</td></tr>
+          <tr><td><code>stepRot</code></td><td>Steps per motor rotation</td></tr>
+          <tr><td><code>micro</code></td><td>Microstep setting</td></tr>
+          <tr><td><code>reverse</code></td><td>Reverse direction flag</td></tr>
+          <tr><td><code>silent</code></td><td>Silent mode (TMC)</td></tr>
+          <tr><td><code>highCurr</code></td><td>High current setting</td></tr>
+          <tr><td><code>lowCurr</code></td><td>Low current (idle) setting</td></tr>
+          <tr><td><code>backlashAmount</code></td><td>Backlash compensation (steps)</td></tr>
+          <tr><td><code>backlashRate</code></td><td>Backlash takeup rate</td></tr>
+          <tr><td><code>driver</code></td><td>Driver type (StepDir, TMC5160, etc.)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="sidereal-clock">
+    <h2>Sidereal Clock &amp; Timer ISRs</h2>
+
+    <h3>Master Clock</h3>
+    <p>The sidereal clock is driven by Timer1 with:</p>
+    <div class="math">masterClockSpeed   =  1,000,000  Hz
+siderealClockSpeed  &asymp;  997,269.5625  Hz</div>
+    <p>The sidereal ratio compensates for Earth&rsquo;s rotation: one sidereal day &asymp; 23h 56m 4s.</p>
+
+    <h3>Timer1 ISR</h3>
+    <p>Timer1 fires at sidereal rate. On each tick:</p>
+    <ul>
+      <li><code>m_lst++</code> — Increment local sidereal time counter</li>
+      <li>Update tracking targets for both axes</li>
+      <li>Update guiding state</li>
+    </ul>
+
+    <h3>TIMER3 / TIMER4</h3>
+    <p>Each axis has a dedicated step pulse timer (TIMER3 for Axis1, TIMER4 for Axis2):</p>
+    <ul>
+      <li>ISR fires at <code>interval_Step_Cur</code> (or sidereal interval when tracking)</li>
+      <li>Generates step pulse to motor driver</li>
+      <li>Updates <code>pos</code> and recomputes interval for acceleration/deceleration</li>
+    </ul>
+
+    <h3>Main Loop Sidereal Tick</h3>
+    <p>The main loop runs a 100&nbsp;Hz sidereal tick. On each <code>onSiderealTick</code>:</p>
+    <ol>
+      <li>Update tracking: <code>target += fstep * elapsed</code> for both axes</li>
+      <li>Run goto state machine: check <code>atTarget()</code>, update intervals</li>
+      <li>Safety checks: altitude limits, meridian flip, collision avoidance</li>
+      <li>Update status for bulk packet (<code>:GXAS#</code>)</li>
+    </ol>
+
+    <div class="diagram">Timer hierarchy:
+  Timer1 (sidereal)  &rarr;  m_lst, tracking target update
+  TIMER3 (Axis1)     &rarr;  step pulse, pos update
+  TIMER4 (Axis2)     &rarr;  step pulse, pos update
+
+Main loop (100 Hz):
+  onSiderealTick  &rarr;  tracking, goto, safety</div>
+  </section>
+
+  <hr />
+
+  <section id="tracking-goto">
+    <h2>Tracking &amp; Goto</h2>
+
+    <h3>Tracking</h3>
+    <p>During sidereal tracking, the target advances at the sidereal rate:</p>
+    <div class="math">target  +=  fstep &middot; elapsed</div>
+    <p>For both axes. <code>fstep</code> is the fractional step per tick; <code>elapsed</code> is
+       the time since last tick.</p>
+
+    <h3>Goto</h3>
+    <p>Goto sequence:</p>
+    <ol>
+      <li><code>start = pos</code> — Record current position</li>
+      <li><code>target = axisTarget</code> — Set target from sky coordinates (via alignment)</li>
+      <li><code>moveTo()</code> — Computes intervals from distance using acceleration profile</li>
+    </ol>
+
+    <h3>Acceleration</h3>
+    <p>Acceleration is computed from maximum speed and distance for acceleration phase:</p>
+    <div class="math">acc  =  Vmax&sup2; / (4 &middot; degreesForAccel &middot; stepsPerDegree)</div>
+    <p>This ensures smooth ramp-up and ramp-down within the acceleration distance.</p>
+
+    <h3>Break Distance</h3>
+    <p>Distance required to decelerate from current speed to zero:</p>
+    <div class="math">breakDist  =  interval2speed(interval)&sup2; / (2 &middot; acc)</div>
+    <p>Used to determine when to begin deceleration during goto.</p>
+
+    <div class="callout tip">
+      The goto state machine uses trapezoidal velocity profiles: accelerate to max speed,
+      coast, then decelerate to target.
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="command-dispatcher">
+    <h2>Command Dispatcher</h2>
+
+    <h3>T_Serial Class</h3>
+    <p>The command serial uses the LX200 frame format:</p>
+    <ul>
+      <li><strong>Format:</strong> <code>:cmd#</code> — colon, command string, hash terminator</li>
+      <li><strong>ACK-only:</strong> <code>\x06</code> (ASCII 6) for simple success</li>
+      <li>Some commands return data; length is defined in <code>CommandReplyLength.h</code></li>
+    </ul>
+
+    <h3>processCommands</h3>
+    <p>Commands are dispatched by <code>switch</code> on <code>command[0]</code>:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Prefix</th><th>Category</th><th>Examples</th></tr></thead>
+        <tbody>
+          <tr><td><code>A</code></td><td>Command_A</td><td>Alignment, axis config</td></tr>
+          <tr><td><code>B</code></td><td>Command_B</td><td>Bulk, binary packets</td></tr>
+          <tr><td><code>C</code></td><td>Command_C</td><td>Coordinates, sync</td></tr>
+          <tr><td><code>D</code></td><td>Command_D</td><td>Date, time</td></tr>
+          <tr><td><code>E</code></td><td>Command_E</td><td>EEPROM, site</td></tr>
+          <tr><td><code>F</code></td><td>Command_F</td><td>Focus, filter</td></tr>
+          <tr><td><code>G</code></td><td>Command_G</td><td>Get (position, status, config)</td></tr>
+          <tr><td><code>h</code></td><td>Command_h</td><td>Home, park</td></tr>
+          <tr><td><code>M</code></td><td>Command_M</td><td>Move, slew</td></tr>
+          <tr><td><code>Q</code></td><td>Command_Q</td><td>Quit, stop</td></tr>
+          <tr><td><code>R</code></td><td>Command_R</td><td>Rates, tracking</td></tr>
+          <tr><td><code>S</code></td><td>Command_S</td><td>Set (time, site, limits)</td></tr>
+          <tr><td><code>T</code></td><td>Command_T</td><td>Tracking on/off</td></tr>
+          <tr><td><code>U</code></td><td>Command_U</td><td>User-defined</td></tr>
+          <tr><td><code>W</code></td><td>Command_W</td><td>WiFi, network</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      See <a href="protocol.html">LX200 Protocol</a> for full command reference and
+      <a href="protocol-bulk.html">Bulk Packets</a> for <code>:GXAS#</code> and <code>:GXCS#</code>.
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="eeprom">
+    <h2>EEPROM Layout</h2>
+
+    <h3>Global Keys</h3>
+    <ul>
+      <li><code>EE_autoInitKey</code> — Magic value to detect first run vs. valid config</li>
+      <li><code>EE_currentMount</code> — Index of active mount profile</li>
+      <li><code>EE_sites</code> — Site list (latitude, longitude, timezone)</li>
+      <li><code>EE_Mounts</code> — Mount profiles (200 bytes each)</li>
+    </ul>
+
+    <h3>Per-Mount Block (200 bytes)</h3>
+    <p>Each mount profile stores:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Field</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>mountType</code></td><td>GEM, Fork, Alt-Az, etc.</td></tr>
+          <tr><td><code>positions</code></td><td>Current/target axis positions</td></tr>
+          <tr><td><code>TC</code></td><td>Transformation matrix (alignment T)</td></tr>
+          <tr><td><code>park</code></td><td>Park position</td></tr>
+          <tr><td><code>site</code></td><td>Site index</td></tr>
+          <tr><td><code>refraction</code></td><td>Refraction on/off</td></tr>
+          <tr><td><code>rates</code></td><td>Guide rates, tracking rates</td></tr>
+          <tr><td><code>limits</code></td><td>Axis limits, altitude limits</td></tr>
+          <tr><td><code>drift</code></td><td>Drift alignment parameters</td></tr>
+          <tr><td><code>home</code></td><td>Home position</td></tr>
+          <tr><td><code>motors</code></td><td>Motor config (gear, microstep, current)</td></tr>
+          <tr><td><code>encoders</code></td><td>Encoder config (pulse/deg, reverse)</td></tr>
+          <tr><td><code>alignment T matrix</code></td><td>9 floats for CoordConv T</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      EEPROM writes are wear-limited. Config changes are batched and written only when necessary.
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="encoder">
+    <h2>Encoder Support (EncoderAxis)</h2>
+
+    <p><code>EncoderAxis</code> extends the axis model with absolute or relative encoder feedback
+       for position verification and auto-sync.</p>
+
+    <h3>Members</h3>
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Member</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>pulsePerDegree</code></td><td>Encoder pulses per degree of rotation</td></tr>
+          <tr><td><code>reverse</code></td><td>Reverse encoder direction</td></tr>
+          <tr><td><code>has_Ref</code></td><td>Has reference position (index pulse)</td></tr>
+          <tr><td><code>deg_T_Ref</code></td><td>True angle at reference (degrees)</td></tr>
+          <tr><td><code>pulse_E_Ref</code></td><td>Encoder pulse count at reference</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Methods</h3>
+    <ul>
+      <li><code>readencoder()</code> — Read raw encoder count</li>
+      <li><code>r_deg()</code> — Read angle in degrees</li>
+      <li><code>w_deg()</code> — Write/calibrate angle</li>
+      <li><code>setRef()</code> — Set reference position</li>
+      <li><code>calibrate()</code> — Calibrate encoder scale</li>
+    </ul>
+
+    <h3>autoSyncWithEncoder</h3>
+    <p>When enabled, the mount syncs stepper position to encoder when the error exceeds a tolerance:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Constant</th><th>Tolerance</th></tr></thead>
+        <tbody>
+          <tr><td><code>ES_60</code></td><td>1&deg;</td></tr>
+          <tr><td><code>ES_30</code></td><td>0.5&deg;</td></tr>
+          <tr><td><code>ES_15</code></td><td>0.25&deg;</td></tr>
+          <tr><td><code>ES_7</code></td><td>0.125&deg;</td></tr>
+          <tr><td><code>ES_3</code></td><td>0.05&deg;</td></tr>
+          <tr><td><code>ES_1</code></td><td>0.017&deg; (&asymp;1 arcmin)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Sync occurs in <code>loopEncoderSync()</code> when <code>|pos_steps - pos_encoder|</code>
+       exceeds the selected tolerance.</p>
+  </section>
+
+  <div class="page-nav">
+    <a href="math-alignment.html">&larr; <span><span class="label">Previous</span><br />Alignment</span></a>
+    <a href="fw-shc.html"><span><span class="label">Next</span><br />SHC Hand Controller</span> &rarr;</a>
+  </div>
+</main>
+<script src="nav.js"></script>
+</body>
+</html>

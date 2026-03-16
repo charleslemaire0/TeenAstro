@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeenAstro — Coordinate Systems</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+<nav id="sidebar">
+  <a class="nav-back" href="index.html">&larr; Back to Index</a>
+  <div id="sidebar-logo"><h1>TeenAstro</h1><div class="subtitle">Coordinate Systems</div></div>
+  <div id="nav">
+    <div class="nav-section">
+      <span class="nav-section-label">Coordinates</span>
+      <a href="#class-hierarchy"><span class="ico">01</span> Class Hierarchy</a>
+      <a href="#coord-eq"><span class="ico">02</span> Equatorial (EQ)</a>
+      <a href="#coord-ho"><span class="ico">03</span> Horizontal (HO)</a>
+      <a href="#coord-in"><span class="ico">04</span> Instrument (IN)</a>
+      <a href="#coord-lo"><span class="ico">05</span> Local/Logical (LO)</a>
+      <a href="#conversions"><span class="ico">06</span> Conversion Formulas</a>
+    </div>
+  </div>
+</nav>
+
+<main id="content">
+  <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span>Math<span class="sep">/</span>Coordinate Systems</div>
+
+  <section id="class-hierarchy">
+    <h2>Class Hierarchy</h2>
+    <p><code>TeenAstroCoord</code> defines four coordinate-system classes, all built on a common
+       rotation-chain base. Each coordinate is internally represented as an ordered sequence of
+       Euler rotations that, when composed, produce a 3&times;3 rotation matrix mapping the
+       coordinate frame to a Cartesian reference.</p>
+    <div class="diagram">LA3  (static linear algebra)
+  &uarr;
+Coord3R  (3 SingleRotations: m_Eulers[3])
+  ├── Coord_EQ   (FrE, Dec, &minus;Ha)
+  ├── Coord_HO   (FrH, Alt, &minus;Az+&pi;)
+  └── Coord_IN   (Axis3, Axis2, &minus;Axis1)
+
+Coord3R  (same base)
+  └── Coord_LO   (Axis3, Axis2, +Axis1)    &larr; note: positive Axis1</div>
+
+    <h3>Coord3R — Base Class</h3>
+    <pre><code>class Coord3R : protected LA3 {
+protected:
+    SingleRotation m_Eulers[3];
+public:
+    Coord3R(SingleRotation R0, SingleRotation R1, SingleRotation R2);
+    SingleRotation getE0();  // first rotation
+    SingleRotation getE1();  // second rotation
+    SingleRotation getE2();  // third rotation
+};</code></pre>
+    <p>The three rotations are always applied as <code class="math-inline">R = R<sub>x</sub>(E0) &middot; R<sub>y</sub>(E1) &middot; R<sub>z</sub>(E2)</code>,
+       producing a 3&times;3 rotation matrix that defines the coordinate frame orientation.</p>
+  </section>
+
+  <hr />
+
+  <section id="coord-eq">
+    <h2>Coord_EQ — Equatorial Coordinates</h2>
+    <pre><code>class Coord_EQ : protected Coord3R {
+public:
+    Coord_EQ(double FrE, double Dec, double Ha);
+    double FrE();          // field rotation (equatorial)
+    double Dec();          // declination (radians)
+    double Ha();           // hour angle (radians, normalized)
+    double direct_Ha();    // raw hour angle before normalization
+    double Ra(double LST); // right ascension = LST &minus; Ha
+
+    Coord_HO To_Coord_HO(double Lat, RefrOpt Opt);
+    Coord_IN To_Coord_IN(double Lat, RefrOpt Opt, const double(&amp;misalignment)[3][3]);
+    Coord_LO To_Coord_LO(const double(&amp;trafo)[3][3]);
+};</code></pre>
+
+    <h3>Euler Sequence</h3>
+    <div class="math">R_EQ  =  R&#7093;(FrE) &middot; R&#7526;(Dec) &middot; R&#7527;(&minus;Ha)</div>
+    <ul>
+      <li><strong>FrE</strong> — Field rotation in the equatorial frame (usually 0 for standard mounts)</li>
+      <li><strong>Dec</strong> — Declination: angle from celestial equator (&minus;&pi;/2 to +&pi;/2)</li>
+      <li><strong>Ha</strong> — Hour angle: angular distance west of the meridian (Ha = LST &minus; RA)</li>
+    </ul>
+    <div class="callout">
+      Right ascension is derived: <code class="math-inline">RA = LST &minus; Ha</code>, normalized to [0, 2&pi;).
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="coord-ho">
+    <h2>Coord_HO — Horizontal Coordinates</h2>
+    <pre><code>class Coord_HO : protected Coord3R {
+public:
+    Coord_HO(double FrH, double Alt, double Az, bool IsApparent);
+    double FrH();           // field rotation (horizontal)
+    double Alt();           // altitude (radians)
+    double Az();            // azimuth from south (radians, normalized)
+    double direct_Az_S();   // raw azimuth
+
+    Coord_HO ToApparent(RefrOpt opt);    // apply refraction
+    Coord_HO ToTopocentric(RefrOpt opt); // remove refraction
+    Coord_EQ To_Coord_EQ(double Lat);
+    Coord_IN To_Coord_IN(const double(&amp;misalignment)[3][3]);
+private:
+    bool mIsApparent;  // tracks whether refraction has been applied
+};</code></pre>
+
+    <h3>Euler Sequence</h3>
+    <div class="math">R_HO  =  R&#7093;(FrH) &middot; R&#7526;(Alt) &middot; R&#7527;(&minus;Az + &pi;)</div>
+    <ul>
+      <li><strong>FrH</strong> — Field rotation in the horizontal frame</li>
+      <li><strong>Alt</strong> — Altitude: angle above the horizon (0 = horizon, &pi;/2 = zenith)</li>
+      <li><strong>Az</strong> — Azimuth: measured from South toward West (astronomical convention)</li>
+      <li><strong>mIsApparent</strong> — Flag tracking whether this is apparent (refracted) or topocentric (geometric)</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="coord-in">
+    <h2>Coord_IN — Instrument Coordinates</h2>
+    <pre><code>class Coord_IN : protected Coord3R {
+public:
+    Coord_IN(double Axis3, double Axis2, double Axis1);
+    double Axis3();        // third axis (field rotation)
+    double Axis2();        // second axis (Dec-like)
+    double Axis1();        // first axis (HA-like, normalized)
+    double Axis1_direct(); // raw first axis
+
+    Coord_HO To_Coord_HO(const double(&amp;misalignmentinv)[3][3], RefrOpt Opt);
+    Coord_EQ To_Coord_EQ(const double(&amp;misalignmentinv)[3][3], RefrOpt Opt, double Lat);
+};</code></pre>
+
+    <h3>Euler Sequence</h3>
+    <div class="math">R_IN  =  R&#7093;(Axis3) &middot; R&#7526;(Axis2) &middot; R&#7527;(&minus;Axis1)</div>
+    <p>Instrument coordinates represent the physical mount axes.
+       The <strong>misalignment matrix</strong> (from the alignment model) maps between HO and IN frames.
+       For a perfectly aligned mount, this matrix is the identity.</p>
+  </section>
+
+  <hr />
+
+  <section id="coord-lo">
+    <h2>Coord_LO — Local / Logical Coordinates</h2>
+    <pre><code>class Coord_LO : protected Coord3R {
+public:
+    Coord_LO(double Axis3, double Axis2, double Axis1);
+    double Axis3();
+    double Axis2();
+    double Axis1();  // note: NOT negated
+
+    Coord_EQ To_Coord_EQ(const double(&amp;trafoinv)[3][3]);
+};</code></pre>
+
+    <h3>Euler Sequence</h3>
+    <div class="math">R_LO  =  R&#7093;(Axis3) &middot; R&#7526;(Axis2) &middot; R&#7527;(+Axis1)</div>
+    <p>Note the <strong>positive</strong> sign on Axis1 (unlike EQ/HO/IN which negate it).
+       LO coordinates are used for the logical mount frame, handling pier-side and
+       the alignment transformation <code>T</code>/<code>Tinv</code>.</p>
+  </section>
+
+  <hr />
+
+  <section id="conversions">
+    <h2>Conversion Formulas</h2>
+
+    <h3>EQ &rarr; HO (Equatorial to Horizontal)</h3>
+    <div class="math">R_combined = R_EQ &middot; R&#7526;(&pi;/2 &minus; Lat)
+
+  where R_EQ = R&#7093;(FrE) &middot; R&#7526;(Dec) &middot; R&#7527;(&minus;Ha)
+
+Extract angles via getEulerRxRyRz(R_combined):
+  FrH, Alt, Az_S  &rarr;  Az = &pi; &minus; Az_S</div>
+    <p>If refraction is enabled, <code>Topocentric2Apparent</code> is applied to Alt before
+       constructing the Coord_HO result.</p>
+
+    <h3>HO &rarr; EQ (Horizontal to Equatorial)</h3>
+    <div class="math">R_combined = R_HO &middot; R&#7526;(&minus;(&pi;/2 &minus; Lat))
+
+  where R_HO = R&#7093;(FrH) &middot; R&#7526;(Alt) &middot; R&#7527;(&minus;Az + &pi;)
+
+Extract via getEulerRxRyRz:
+  FrE, Dec, raw_Ha  &rarr;  Ha = &minus;raw_Ha</div>
+
+    <h3>HO &rarr; IN (Horizontal to Instrument)</h3>
+    <div class="math">R_IN_matrix  =  R_HO_matrix &middot; T
+
+where T is the 3&times;3 alignment matrix (HO &rarr; IN)
+Extract Axis3, Axis2, Axis1 via getEulerRxRyRz.</div>
+
+    <h3>IN &rarr; HO (Instrument to Horizontal)</h3>
+    <div class="math">R_HO_matrix  =  R_IN_matrix &middot; T&sup1;
+
+where T&sup1; = T&#8315;&sup1; (inverse alignment matrix)
+Extract FrH, Alt, Az via getEulerRxRyRz.
+If refraction used: Apparent2Topocentric on Alt.</div>
+
+    <h3>EQ &rarr; LO (Equatorial to Logical)</h3>
+    <div class="math">R_LO_matrix  =  R_EQ_matrix &middot; T&#8315;&sup1;
+
+Extract Axis3, Axis2, Axis1 via getEulerRxRyRz.</div>
+
+    <h3>LO &rarr; EQ (Logical to Equatorial)</h3>
+    <div class="math">R_EQ_matrix  =  R_LO_matrix &middot; T_inv
+
+Extract FrE, Dec, Ha via getEulerRxRyRz.</div>
+
+    <div class="callout tip">
+      All conversions follow the same pattern: compose the coordinate&rsquo;s Euler rotation chain,
+      multiply by the latitude rotation or alignment matrix, then decompose back via
+      <code>getEulerRxRyRz</code>.
+    </div>
+
+    <div class="page-nav">
+      <a href="math-la3.html">&larr; <span><span class="label">Previous</span><br />Linear Algebra (LA3)</span></a>
+      <a href="math-alignment.html"><span><span class="label">Next</span><br />Alignment (CoordConv)</span> &rarr;</a>
+    </div>
+  </section>
+</main>
+<script src="nav.js"></script>
+</body>
+</html>

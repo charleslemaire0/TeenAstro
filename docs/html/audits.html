@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeenAstro — Audits &amp; Safety</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+
+<nav id="sidebar">
+  <a class="nav-back" href="index.html">&larr; Back to Index</a>
+  <div id="sidebar-logo"><h1>TeenAstro</h1><div class="subtitle">Audits &amp; Safety</div></div>
+  <div id="nav">
+    <div class="nav-section">
+      <span class="nav-section-label">Audits</span>
+      <a href="#overview"><span class="ico">01</span> Overview</a>
+      <a href="#memory-overflow"><span class="ico">02</span> Memory Overflow Audit</a>
+      <a href="#fixes-table"><span class="ico">03</span> Fixes Table</a>
+      <a href="#recommendations"><span class="ico">04</span> Recommendations</a>
+      <a href="#build-app-audit"><span class="ico">05</span> Build &amp; App Audit</a>
+      <a href="#orphan-commands"><span class="ico">06</span> Orphan Commands</a>
+    </div>
+  </div>
+</nav>
+
+<main id="content">
+  <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><a href="index.html#architecture">Build &amp; Operations</a><span class="sep">/</span>Audits</div>
+
+  <section id="overview">
+    <h2>Audits &amp; Safety</h2>
+    <p>
+      This page summarizes security and code-quality audits performed on the TeenAstro codebase:
+      memory overflow fixes, build portability, app bugs, and orphan command removal.
+    </p>
+  </section>
+
+  <hr />
+
+  <section id="memory-overflow">
+    <h2>Memory Overflow Audit Summary</h2>
+
+    <h3>SHC Fixes</h3>
+    <p>Several buffer overflows were found in the SHC (catalog titles, constellation list, <code>catalogSubMenu</code>).
+       Fixes applied: increased buffer sizes, <code>strncpy</code>/<code>strncat</code> with explicit bounds.</p>
+
+    <h3>Webserver Safe</h3>
+    <p>TeenAstroWifi HTTP form input is copied with <code>strncpy</code> and length checks. SSID, password,
+       AP settings, and web password handling are bounded. No unchecked <code>strcpy</code> of
+       <code>server.arg()</code> into fixed buffers found.</p>
+
+    <h3>TeenAstroCatalog Fix</h3>
+    <p><code>catalogSubMenu()</code> had a definite overflow: <code>Title[32]</code> copied into
+       <code>thisSubMenu[16]</code>. Fixed with <code>strncpy(thisSubMenu, catalog[_selected].Title, sizeof(thisSubMenu)-1)</code>
+       and null termination.</p>
+  </section>
+
+  <hr />
+
+  <section id="fixes-table">
+    <h2>Fixes Table</h2>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>File</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td><code>libraries/TeenAstroCatalog/src/TeenAstroCatalog.cpp</code></td><td>catalogSubMenu: strncpy + null terminate</td></tr>
+          <tr><td><code>TeenAstroSHC/Actions_Tel.cpp</code></td><td>title[20] → title[40]</td></tr>
+          <tr><td><code>TeenAstroSHC/Actions_SyncGoto.cpp</code></td><td>title/lastSubmenu/thisSubmenu 16→32; string_list_gotoL1 150→400; menuCatalog title 20→40</td></tr>
+          <tr><td><code>TeenAstroSHC/SmartController_CatFilter.cpp</code></td><td>string_list_fCon[1000] → string_list_fCon[2000]</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="recommendations">
+    <h2>Recommendations</h2>
+
+    <ul>
+      <li><strong>Prefer bounded functions:</strong> Use <code>strncpy</code>/<code>strncat</code>/<code>snprintf</code>
+         with explicit size for any buffer receiving variable-length or external data.</li>
+      <li><strong>Centralize max lengths:</strong> For catalog titles/submenus, consider <code>#define CATALOG_TITLE_MAX 32</code>
+         and use it for both <code>catalog_t.Title</code> and local buffers.</li>
+      <li><strong>Keep SHC_text.h checks:</strong> Existing <code>static_assert</code> checks prevent T_* strings from
+         exceeding display and buffer sizes.</li>
+      <li><strong>Constellation/object lists:</strong> If more catalogs or longer names are added, re-check
+         <code>string_list_fCon</code> and <code>string_list_fType</code> sizes.</li>
+    </ul>
+  </section>
+
+  <hr />
+
+  <section id="build-app-audit">
+    <h2>Build &amp; App Audit</h2>
+
+    <h3>Portability</h3>
+    <p>All required files are in the repo. No hidden &ldquo;only on one PC&rdquo; dependencies. Build scripts use
+       generic paths; <code>FlutterPath</code> default is empty (rely on PATH); <code>DevelopRoot</code> uses
+       <code>$env:USERPROFILE</code>.</p>
+
+    <h3>TCP Disconnect Fix</h3>
+    <p><strong>File:</strong> <code>teenastro_app/lib/services/lx200_tcp_client.dart</code>. In <code>disconnect()</code>,
+       the code previously cancelled the stream subscription first, then closed the socket. If <code>onDone</code> ran
+       asynchronously, the socket might not be closed. <strong>Fix:</strong> Close socket first, then cancel subscription.</p>
+
+    <h3>RA/Dec Formatting</h3>
+    <p><code>.round()</code> on fractional seconds could produce 60 (e.g. 59.7 → 60), giving &ldquo;12:59:60&rdquo;.
+       <strong>Fix:</strong> Carry logic: if seconds ≥ 60 increment minutes; if minutes ≥ 60 increment hours/degrees.</p>
+
+    <h3>Center-on-Object</h3>
+    <p>Search-and-select set <code>_rotation</code> but not <code>_panY</code>, so object wasn&rsquo;t centered vertically.
+       <strong>Fix:</strong> Reset <code>_panY = 0</code> when centering.</p>
+
+    <h3>Star Size Clamp</h3>
+    <p>Radius clamped to [0.5, 22.0] but cutoff was <code>r &lt; 0.3</code>. Dead code; faintest stars inflated to 0.5px.
+       <strong>Fix:</strong> Lower clamp minimum to 0.15 so faint-star cutoff works.</p>
+
+    <h3>Constellation Fallback</h3>
+    <p><code>build_app.ps1</code> fallback created <code>{ "constellations": [] }</code> (JSON object) but parser expects
+       a top-level array. <strong>Fix:</strong> Fallback now creates <code>[]</code>.</p>
+  </section>
+
+  <hr />
+
+  <section id="orphan-commands">
+    <h2>Orphan Commands</h2>
+
+    <h3>Removed (GXJB..GXRf)</h3>
+    <p>Commands <code>:GXJB#</code>, <code>:GXJC#</code>, <code>:GXJm#</code>, <code>:GXJM1#</code>, <code>:GXJM2#</code>,
+       <code>:GXJP#</code>, <code>:GXJS#</code>, <code>:GXJT#</code>, <code>:GXRr#</code>, <code>:GXRd#</code>,
+       <code>:GXRh#</code>, <code>:GXRe#</code>, <code>:GXRf#</code> returned data already in <code>:GXAS#</code>.
+       They have been removed; clients use GXAS for state.</p>
+
+    <h3>Kept (GR, GD, etc.)</h3>
+    <p>Standard LX200 commands <code>:GR#</code>, <code>:GD#</code>, <code>:GA#</code>, <code>:GZ#</code>,
+       <code>:GS#</code>, <code>:Gr#</code>, <code>:Gd#</code> are <strong>kept</strong> for protocol compatibility
+       with planetarium software, simulators, and scripts.</p>
+
+    <div class="callout">
+      The individual <code>:GXMx#</code>, <code>:GXRx#</code>, <code>:GXLx#</code> config getters remain available
+      for config UIs that read or validate a single field; <code>:GXCS#</code> provides full config in one call.
+    </div>
+  </section>
+
+  <div class="page-nav">
+    <a href="build.html">&larr; <span><span class="label">Previous</span><br />Build System</span></a>
+    <span></span>
+  </div>
+</main>
+<script src="nav.js"></script>
+</body>
+</html>

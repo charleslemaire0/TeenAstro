@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeenAstro — Linear Algebra (LA3)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+
+<nav id="sidebar">
+  <a class="nav-back" href="index.html">&larr; Back to Index</a>
+  <div id="sidebar-logo"><h1>TeenAstro</h1><div class="subtitle">Linear Algebra (LA3)</div></div>
+  <div id="nav">
+    <div class="nav-section">
+      <span class="nav-section-label">LA3 Library</span>
+      <a href="#overview"><span class="ico">01</span> Overview</a>
+      <a href="#types"><span class="ico">02</span> Types &amp; Enums</a>
+      <a href="#vectors"><span class="ico">03</span> Vector Operations</a>
+      <a href="#matrices"><span class="ico">04</span> Matrix Operations</a>
+      <a href="#rotations"><span class="ico">05</span> Rotation Matrices</a>
+      <a href="#euler"><span class="ico">06</span> Euler Angle Extraction</a>
+      <a href="#refraction"><span class="ico">07</span> Atmospheric Refraction</a>
+      <a href="#svd"><span class="ico">08</span> SVD Decomposition</a>
+      <a href="#api"><span class="ico">09</span> Full API Reference</a>
+    </div>
+  </div>
+</nav>
+
+<main id="content">
+  <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span>Math &amp; Coordinates<span class="sep">/</span>Linear Algebra</div>
+
+  <section id="overview">
+    <h2>Linear Algebra Library (LA3)</h2>
+    <p>
+      <code>TeenAstroLA3</code> provides all linear-algebra primitives used by the coordinate and
+      alignment systems. It is a single static class (<code>LA3</code>) containing 28 public methods
+      for 3-vector and 3&times;3 matrix operations, rotation matrices, Euler angle decomposition,
+      atmospheric refraction, and singular value decomposition.
+    </p>
+    <p><strong>Authors:</strong> Markus Noga, Charles Lemaire<br />
+       <strong>Source:</strong> <code>libraries/TeenAstroLA3/</code></p>
+  </section>
+
+  <hr />
+
+  <section id="types">
+    <h2>Types &amp; Enumerations</h2>
+
+    <h3>RotAxis</h3>
+    <pre><code>enum RotAxis { ROTAXISX, ROTAXISY, ROTAXISZ };</code></pre>
+    <p>Identifies which principal axis a rotation is performed around.</p>
+
+    <h3>SingleRotation</h3>
+    <pre><code>struct SingleRotation {
+    RotAxis axis;   // rotation axis
+    double  angle;  // rotation angle (radians)
+};</code></pre>
+    <p>Pairs an axis with an angle to define one elemental rotation. Used as building blocks for
+       multi-rotation chains (Euler angles).</p>
+
+    <h3>RefrOpt</h3>
+    <pre><code>struct RefrOpt {
+    bool   use;          // enable refraction correction
+    double Temperature;  // ambient temperature (°C)
+    double Pressure;     // atmospheric pressure (mbar)
+};</code></pre>
+    <p>Atmospheric conditions for refraction corrections. Passed to <code>Topocentric2Apparent</code>
+       and <code>Apparent2Topocentric</code>.</p>
+  </section>
+
+  <hr />
+
+  <section id="vectors">
+    <h2>Vector Operations</h2>
+
+    <h3>Dot Product</h3>
+    <pre><code>static double dotProduct(const double(&amp;a)[3], const double(&amp;b)[3]);</code></pre>
+    <div class="math">a &middot; b  =  a&#8320;b&#8320; + a&#8321;b&#8321; + a&#8322;b&#8322;</div>
+
+    <h3>Cross Product</h3>
+    <pre><code>static void crossProduct(double(&amp;out)[3], const double(&amp;a)[3], const double(&amp;b)[3]);</code></pre>
+    <div class="math">a &times; b  =  ( a&#8321;b&#8322; &minus; a&#8322;b&#8321;,
+              a&#8322;b&#8320; &minus; a&#8320;b&#8322;,
+              a&#8320;b&#8321; &minus; a&#8321;b&#8320; )</div>
+
+    <h3>Norm (Euclidean)</h3>
+    <pre><code>static double norm(const double(&amp;in)[3]);</code></pre>
+    <div class="math">&Vert;v&Vert;  =  &radic;( v&#8320;&sup2; + v&#8321;&sup2; + v&#8322;&sup2; )</div>
+
+    <h3>Normalize</h3>
+    <pre><code>static void normalize(double(&amp;out)[3], const double(&amp;in)[3]);</code></pre>
+    <div class="math">v&#770;  =  v / &Vert;v&Vert;</div>
+
+    <h3>Angle Between Two Vectors</h3>
+    <pre><code>static double angle2Vectors(const double(&amp;a)[3], const double(&amp;b)[3]);</code></pre>
+    <div class="math">&theta;  =  acos( (a &middot; b) / (&Vert;a&Vert; &middot; &Vert;b&Vert;) )</div>
+
+    <h3>Direction Cosines from Polar Angles</h3>
+    <pre><code>static void toDirCos(double(&amp;dc)[3], double ang1, double ang2);</code></pre>
+    <p>Converts two polar angles (azimuth <code class="math-inline">&theta;&#8321;</code>, elevation <code class="math-inline">&theta;&#8322;</code>) to a unit direction vector:</p>
+    <div class="math">dc&#8320;  =  cos(&theta;&#8322;) &middot; cos(&minus;&theta;&#8321;)
+dc&#8321;  =  cos(&theta;&#8322;) &middot; sin(&minus;&theta;&#8321;)
+dc&#8322;  =  sin(&theta;&#8322;)</div>
+    <p>This maps celestial coordinates (HA/Az, Dec/Alt) to Cartesian direction cosines on the unit sphere.</p>
+  </section>
+
+  <hr />
+
+  <section id="matrices">
+    <h2>Matrix Operations</h2>
+
+    <h3>Transpose</h3>
+    <pre><code>static void transpose(double(&amp;out)[3][3], const double(&amp;in)[3][3]);</code></pre>
+    <div class="math">M&#7488;[i][j]  =  M[j][i]</div>
+
+    <h3>Determinant</h3>
+    <pre><code>static double determinant(const double(&amp;m)[3][3]);</code></pre>
+    <div class="math">det(M)  =  M&#8320;&#8320;(M&#8321;&#8321;M&#8322;&#8322; &minus; M&#8322;&#8321;M&#8321;&#8322;)
+           &minus; M&#8320;&#8321;(M&#8321;&#8320;M&#8322;&#8322; &minus; M&#8321;&#8322;M&#8322;&#8320;)
+           + M&#8320;&#8322;(M&#8321;&#8320;M&#8322;&#8321; &minus; M&#8321;&#8321;M&#8322;&#8320;)</div>
+
+    <h3>Inverse (Cofactor Method)</h3>
+    <pre><code>static void invert(double(&amp;out)[3][3], const double(&amp;m)[3][3]);</code></pre>
+    <div class="math">M&sup1;  =  (1 / det(M)) &middot; adj(M)
+
+where  adj(M) = C&#7488;  (transpose of cofactor matrix)
+
+M&sup1;[0][0] = (M&#8321;&#8321;M&#8322;&#8322; &minus; M&#8322;&#8321;M&#8321;&#8322;) / det
+M&sup1;[0][1] = (M&#8320;&#8322;M&#8322;&#8321; &minus; M&#8320;&#8321;M&#8322;&#8322;) / det
+M&sup1;[0][2] = (M&#8320;&#8321;M&#8321;&#8322; &minus; M&#8320;&#8322;M&#8321;&#8321;) / det
+  &hellip; (9 entries total)</div>
+
+    <h3>Matrix &times; Matrix</h3>
+    <pre><code>static void multiply(double(&amp;out)[3][3], const double(&amp;a)[3][3], const double(&amp;b)[3][3]);</code></pre>
+    <div class="math">out[i][j]  =  &Sigma;(k=0..2) a[i][k] &middot; b[k][j]</div>
+
+    <h3>Matrix &times; Vector</h3>
+    <pre><code>static void multiply(double(&amp;out)[3], const double(&amp;m)[3][3], const double(&amp;v)[3]);</code></pre>
+    <div class="math">out[i]  =  &Sigma;(j=0..2) m[i][j] &middot; v[j]</div>
+
+    <h3>Identity Matrix</h3>
+    <pre><code>static void getIdentityMatrix(double(&amp;out)[3][3]);</code></pre>
+  </section>
+
+  <hr />
+
+  <section id="rotations">
+    <h2>Rotation Matrices</h2>
+
+    <pre><code>static void getSingleRotationMatrix(double(&amp;out)[3][3], const SingleRotation sr);
+static void getMultipleRotationMatrix(double(&amp;out)[3][3], const SingleRotation* sr, int n);</code></pre>
+
+    <p>All rotations follow the <strong>right-hand rule</strong>: positive angle = counterclockwise
+       when looking along the axis toward the origin.</p>
+
+    <h3>R<sub>x</sub>(&theta;) — Rotation about X-axis</h3>
+    <div class="math">         [ 1     0        0    ]
+R&#7093;(&theta;) = [ 0   cos(&theta;)   sin(&theta;) ]
+         [ 0  &minus;sin(&theta;)   cos(&theta;) ]</div>
+    <p>Rotates in the YZ plane. Used for field rotation (FrE, FrH, Axis3).</p>
+
+    <h3>R<sub>y</sub>(&theta;) — Rotation about Y-axis</h3>
+    <div class="math">         [ cos(&theta;)  0  &minus;sin(&theta;) ]
+R&#7526;(&theta;) = [   0      1     0     ]
+         [ sin(&theta;)  0   cos(&theta;) ]</div>
+    <p>Rotates in the XZ plane. Used for declination/altitude (Dec, Alt, Axis2).</p>
+
+    <h3>R<sub>z</sub>(&theta;) — Rotation about Z-axis</h3>
+    <div class="math">         [ cos(&theta;)  &minus;sin(&theta;)  0 ]
+R&#7527;(&theta;) = [ sin(&theta;)   cos(&theta;)  0 ]
+         [   0        0     1 ]</div>
+    <p>Rotates in the XY plane. Used for hour angle/azimuth (HA, Az, Axis1).</p>
+
+    <h3>Multiple Rotations</h3>
+    <p><code>getMultipleRotationMatrix</code> computes the product of <em>n</em> single-axis
+       rotations applied left-to-right:</p>
+    <div class="math">R  =  R&#8321; &middot; R&#8322; &middot; &hellip; &middot; R&#8345;</div>
+    <p>This is the foundation for all coordinate-system transformations in TeenAstro.</p>
+  </section>
+
+  <hr />
+
+  <section id="euler">
+    <h2>Euler Angle Extraction</h2>
+
+    <p>Four decomposition routines extract Euler angles from a 3&times;3 rotation matrix.
+       All handle <strong>gimbal lock</strong> (degenerate cases where <code class="math-inline">|sin(&theta;)| = 1</code>).</p>
+
+    <h3>R<sub>x</sub>R<sub>y</sub>R<sub>z</sub> (Intrinsic X&ndash;Y&ndash;Z)</h3>
+    <pre><code>static void getEulerRxRyRz(const double(&amp;r)[3][3],
+    double&amp; thetaX, double&amp; thetaY, double&amp; thetaZ);</code></pre>
+    <p>Decomposes R = R<sub>x</sub>(&theta;<sub>X</sub>) &middot; R<sub>y</sub>(&theta;<sub>Y</sub>) &middot; R<sub>z</sub>(&theta;<sub>Z</sub>). <strong>Primary decomposition used for coordinate conversions.</strong></p>
+    <div class="math">Given  &minus;1 &lt; r&#8320;&#8322; &lt; 1:
+  &theta;Y  =  asin(r&#8320;&#8322;)
+  &theta;X  =  atan2(&minus;r&#8321;&#8322;, r&#8322;&#8322;)
+  &theta;Z  =  atan2(&minus;r&#8320;&#8321;, r&#8320;&#8320;)
+
+Gimbal lock  r&#8320;&#8322; = &minus;1:  &theta;Y = &minus;&pi;/2,  &theta;X = 0,  &theta;Z = atan2(r&#8321;&#8320;, r&#8321;&#8321;)
+Gimbal lock  r&#8320;&#8322; = +1:  &theta;Y = +&pi;/2,  &theta;X = 0,  &theta;Z = atan2(r&#8321;&#8320;, r&#8321;&#8321;)</div>
+
+    <h3>R<sub>z</sub>R<sub>y</sub>R<sub>x</sub> (Intrinsic Z&ndash;Y&ndash;X)</h3>
+    <pre><code>static void getEulerRzRyRx(const double(&amp;r)[3][3],
+    double&amp; thetaZ, double&amp; thetaY, double&amp; thetaX);</code></pre>
+    <div class="math">  &theta;Y  =  asin(&minus;r&#8322;&#8320;)
+  &theta;Z  =  atan2(r&#8321;&#8320;, r&#8320;&#8320;)
+  &theta;X  =  atan2(r&#8322;&#8321;, r&#8322;&#8322;)</div>
+
+    <h3>R<sub>z</sub>R<sub>x</sub>R<sub>y</sub> (Intrinsic Z&ndash;X&ndash;Y)</h3>
+    <pre><code>static void getEulerRzRxRy(const double(&amp;r)[3][3],
+    double&amp; thetaZ, double&amp; thetaX, double&amp; thetaY);</code></pre>
+    <div class="math">  &theta;X  =  asin(r&#8322;&#8321;)
+  &theta;Z  =  atan2(&minus;r&#8320;&#8321;, r&#8321;&#8321;)
+  &theta;Y  =  atan2(&minus;r&#8322;&#8320;, r&#8322;&#8322;)</div>
+
+    <h3>R<sub>x0</sub>R<sub>y</sub>R<sub>x1</sub> (Proper Euler X&ndash;Y&ndash;X)</h3>
+    <pre><code>static void getEulerRx0RyRx1(const double(&amp;r)[3][3],
+    double&amp; thetaX0, double&amp; thetaY, double&amp; thetaX1);</code></pre>
+    <div class="math">  &theta;Y   =  acos(r&#8320;&#8320;)
+  &theta;X0  =  atan2(r&#8321;&#8320;, &minus;r&#8322;&#8320;)
+  &theta;X1  =  atan2(r&#8320;&#8321;, r&#8320;&#8322;)</div>
+  </section>
+
+  <hr />
+
+  <section id="refraction">
+    <h2>Atmospheric Refraction</h2>
+
+    <p>Two complementary models from Meeus <em>Astronomical Algorithms</em> correct for
+       atmospheric bending of light near the horizon.</p>
+
+    <h3>Topocentric &rarr; Apparent (Saemundsson, Meeus Eq. 16.4)</h3>
+    <pre><code>static void Topocentric2Apparent(double&amp; Alt, RefrOpt Opt);</code></pre>
+    <p>Adds refraction to the true (geometric) altitude to get the apparent altitude:</p>
+    <div class="math">Temperature-Pressure Correction:
+  TPC  =  (P / 1010) &middot; (283 / (273 + T))
+
+Refraction (arcminutes):
+  R  =  ( 1.02 / tan(h&deg; + 10.3/(h&deg; + 5.11)) + 0.0019279 ) &middot; TPC
+
+Result:
+  Alt_apparent  =  Alt_true + R &middot; &pi; / 10800
+
+where  h&deg; = Alt in degrees,  P = pressure (mbar),  T = temperature (&deg;C)</div>
+    <div class="callout">Not applied if <code class="math-inline">Alt &lt; &minus;0.06 rad (&asymp; &minus;3.5&deg;)</code> or <code>Opt.use</code> is false.</div>
+
+    <h3>Apparent &rarr; Topocentric (Bennett, Meeus Eq. 16.3)</h3>
+    <pre><code>static void Apparent2Topocentric(double&amp; Alt, RefrOpt Opt);</code></pre>
+    <p>Subtracts refraction from the apparent altitude to recover the true altitude:</p>
+    <div class="math">R  =  ( 1.0 / tan(h&#8320;&deg; + 7.31/(h&#8320;&deg; + 4.4)) + 0.0013515 ) &middot; TPC
+
+Alt_true  =  Alt_apparent &minus; R &middot; &pi; / 10800</div>
+    <p>Same TPC formula as above. Same guard conditions apply.</p>
+  </section>
+
+  <hr />
+
+  <section id="svd">
+    <h2>SVD Decomposition</h2>
+
+    <pre><code>static void getsvd(const double(&amp;m)[3][3], double(&amp;u)[3][3], double(&amp;v)[3][3]);</code></pre>
+
+    <p>Computes the Singular Value Decomposition of a 3&times;3 matrix. Implementation uses the
+       <strong>McAdams et al.</strong> algorithm (UW-Madison Technical Report 1690, May 2011),
+       optimized for 3&times;3 matrices with minimal branching.</p>
+
+    <h3>Algorithm</h3>
+    <ol>
+      <li><strong>Normal equations:</strong> Compute A<sup>T</sup>A (symmetric 3&times;3).</li>
+      <li><strong>Jacobi eigenvalue iteration:</strong> Diagonalize A<sup>T</sup>A using approximate
+          Givens rotations via quaternions. Constants:
+        <code class="math-inline">&gamma; = &radic;(8) + 3 &asymp; 5.828</code>,
+        <code class="math-inline">c* = cos(&pi;/8)</code>,
+        <code class="math-inline">s* = sin(&pi;/8)</code>.
+        4 sweeps over all three off-diagonal pairs (0,1), (1,2), (0,2).</li>
+      <li><strong>V matrix:</strong> Accumulate eigenvector quaternion &rarr; rotation matrix.</li>
+      <li><strong>B = A &middot; V:</strong> Apply V to original matrix.</li>
+      <li><strong>Sort singular values:</strong> Sort columns of B by <code class="math-inline">&rho;<sub>j</sub> = &Sigma;(b<sub>ij</sub>&sup2;)</code> descending; apply same permutation to V.</li>
+      <li><strong>QR decomposition:</strong> Factor B = QR using Givens rotations (three steps).</li>
+      <li><strong>Output:</strong> U = Q, V = sorted right singular vectors. (Singular values S are not exposed.)</li>
+    </ol>
+
+    <div class="callout">
+      The SVD is used by <code>CoordConv</code> to project the raw Taki transformation matrix
+      onto the nearest proper rotation (det = +1). See <a href="math-alignment.html#svd-correction">Alignment &rarr; SVD Correction</a>.
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="api">
+    <h2>Full API Reference</h2>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Method Signature</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>double modRad(double angle)</code></td><td>Reduce angle to (&minus;&pi;, &pi;]</td></tr>
+          <tr><td><code>double toRad(double degrees)</code></td><td>Degrees &rarr; radians</td></tr>
+          <tr><td><code>double toDeg(double radians)</code></td><td>Radians &rarr; degrees</td></tr>
+          <tr><td><code>double normalizeRads(double radians)</code></td><td>Reduce to [0, 2&pi;)</td></tr>
+          <tr><td><code>double dotProduct(a[3], b[3])</code></td><td>Dot product</td></tr>
+          <tr><td><code>void crossProduct(out[3], a[3], b[3])</code></td><td>Cross product</td></tr>
+          <tr><td><code>double angle2Vectors(a[3], b[3])</code></td><td>Angle between two vectors (radians)</td></tr>
+          <tr><td><code>double norm(in[3])</code></td><td>Euclidean norm</td></tr>
+          <tr><td><code>void normalize(out[3], in[3])</code></td><td>Normalize to unit vector</td></tr>
+          <tr><td><code>void toDirCos(dc[3], ang1, ang2)</code></td><td>Polar angles &rarr; direction cosines</td></tr>
+          <tr><td><code>void copy(out[3][3], in[3][3])</code></td><td>Copy matrix</td></tr>
+          <tr><td><code>void transpose(out[3][3], in[3][3])</code></td><td>Transpose</td></tr>
+          <tr><td><code>double determinant(m[3][3])</code></td><td>3&times;3 determinant</td></tr>
+          <tr><td><code>void invert(out[3][3], m[3][3])</code></td><td>3&times;3 inverse (cofactor)</td></tr>
+          <tr><td><code>void multiply(out[3][3], a[3][3], b[3][3])</code></td><td>Matrix &times; matrix</td></tr>
+          <tr><td><code>void multiply(out[3], m[3][3], v[3])</code></td><td>Matrix &times; vector</td></tr>
+          <tr><td><code>void getIdentityMatrix(out[3][3])</code></td><td>Identity matrix</td></tr>
+          <tr><td><code>void getSingleRotationMatrix(out[3][3], sr)</code></td><td>Single-axis rotation R<sub>x/y/z</sub>(&theta;)</td></tr>
+          <tr><td><code>void getMultipleRotationMatrix(out[3][3], sr*, n)</code></td><td>Product of <em>n</em> rotations</td></tr>
+          <tr><td><code>void getEulerRx0RyRx1(r, &theta;X0, &theta;Y, &theta;X1)</code></td><td>Euler decomposition X&ndash;Y&ndash;X</td></tr>
+          <tr><td><code>void getEulerRzRxRy(r, &theta;Z, &theta;X, &theta;Y)</code></td><td>Euler decomposition Z&ndash;X&ndash;Y</td></tr>
+          <tr><td><code>void getEulerRzRyRx(r, &theta;Z, &theta;Y, &theta;X)</code></td><td>Euler decomposition Z&ndash;Y&ndash;X</td></tr>
+          <tr><td><code>void getEulerRxRyRz(r, &theta;X, &theta;Y, &theta;Z)</code></td><td>Euler decomposition X&ndash;Y&ndash;Z (primary)</td></tr>
+          <tr><td><code>void Topocentric2Apparent(&amp;Alt, Opt)</code></td><td>Refraction: true &rarr; apparent (Saemundsson)</td></tr>
+          <tr><td><code>void Apparent2Topocentric(&amp;Alt, Opt)</code></td><td>Refraction: apparent &rarr; true (Bennett)</td></tr>
+          <tr><td><code>void getsvd(m[3][3], u[3][3], v[3][3])</code></td><td>3&times;3 SVD (McAdams)</td></tr>
+          <tr><td><code>void printV(label, v[3])</code></td><td>Debug: print vector</td></tr>
+          <tr><td><code>void printV(label, m[3][3])</code></td><td>Debug: print matrix</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="page-nav">
+      <a href="index.html">&larr; <span><span class="label">Previous</span><br />System Overview</span></a>
+      <a href="math-coord.html"><span><span class="label">Next</span><br />Coordinate Systems</span> &rarr;</a>
+    </div>
+  </section>
+</main>
+<script src="nav.js"></script>
+</body>
+</html>
