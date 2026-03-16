@@ -105,11 +105,10 @@ def run(cmd: list[str], cwd: Path) -> bool:
 def find_output_file(project_path: Path, pio_env: str, ext: str) -> Path | None:
     """Locate the PlatformIO output file for a given environment.
 
-    PIO places output in  project/pio/<env>/  and the rename scripts
-    produce files named  <Prefix>_<customOption>_<env>.<ext>.
-    We simply glob for *.<ext> in the env build dir.
+    PlatformIO places build artefacts by default under  project/.pio/<env>/.
+    We simply glob for *.<ext> in that env build directory.
     """
-    build_dir = project_path / "pio" / pio_env
+    build_dir = project_path / ".pio" / pio_env
     if not build_dir.is_dir():
         return None
     candidates = list(build_dir.glob(f"*{ext}"))

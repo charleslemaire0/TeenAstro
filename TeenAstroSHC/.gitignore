@@ -1,4 +1,4 @@
-/pio
+/.pio/
 # Visual Studio (root-level project files when opened from here)
 .vs/
 *.vcxproj.user

@@ -1,4 +1,4 @@
-/pio
+/.pio/
 # Visual Studio
 .vs/
 *.vcxproj.user

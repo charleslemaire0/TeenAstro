@@ -17,3 +17,11 @@ Release/
 bin/
 obj/
 .DS_Store
+/pio/
+/.pio/
+/goto_trace_no_utc.log
+/goto_trace_ascom.log
+/goto_trace.log
+/TeenAstroMainUnit/.vscode/c_cpp_properties.json
+/TeenAstroMainUnit/.vscode/extensions.json
+/TeenAstroMainUnit/.vscode/launch.json

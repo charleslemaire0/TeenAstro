@@ -64,25 +64,25 @@ try {
         Write-Host "`n=== pio run -d TeenAstroMainUnit ===" -ForegroundColor Cyan
         & $pioCmd run -d TeenAstroMainUnit
         if ($LASTEXITCODE -ne 0) { $failed = $true }
-        else { Write-Host "Output: TeenAstroMainUnit\pio\" -ForegroundColor Gray }
+        else { Write-Host "Output: TeenAstroMainUnit\.pio\" -ForegroundColor Gray }
     }
     if ($buildAll -or $SHC) {
         Write-Host "`n=== pio run -d TeenAstroSHC ===" -ForegroundColor Cyan
         & $pioCmd run -d TeenAstroSHC
         if ($LASTEXITCODE -ne 0) { $failed = $true }
-        else { Write-Host "Output: TeenAstroSHC\pio\" -ForegroundColor Gray }
+        else { Write-Host "Output: TeenAstroSHC\.pio\" -ForegroundColor Gray }
     }
     if ($buildAll -or $Server) {
         Write-Host "`n=== pio run -d TeenAstroServer ===" -ForegroundColor Cyan
         & $pioCmd run -d TeenAstroServer
         if ($LASTEXITCODE -ne 0) { $failed = $true }
-        else { Write-Host "Output: TeenAstroServer\pio\" -ForegroundColor Gray }
+        else { Write-Host "Output: TeenAstroServer\.pio\" -ForegroundColor Gray }
     }
     if ($buildAll -or $Focuser) {
         Write-Host "`n=== pio run -d TeenAstroFocuser ===" -ForegroundColor Cyan
         & $pioCmd run -d TeenAstroFocuser
         if ($LASTEXITCODE -ne 0) { $failed = $true }
-        else { Write-Host "Output: TeenAstroFocuser\pio\" -ForegroundColor Gray }
+        else { Write-Host "Output: TeenAstroFocuser\.pio\" -ForegroundColor Gray }
     }
 } finally {
     Pop-Location
