@@ -88,8 +88,8 @@ void SmartHandController::DisplayLongMessage(const char* txt1, const char* txt2,
 
 bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
 {
-  char text1[20] = "";
-  char text2[20] = "";
+  char text1[32] = "";
+  char text2[32] = "";
   int time = -1;
   if (val < LX200_OK)
   {

@@ -288,7 +288,7 @@
 #define T_DISTANCE "Distance"
 
 #define T_CURRENTLYTRACKING "Suivi en cours"
-#define T_CANNOTBECHANGED "Impossible de changer"
+#define T_CANNOTBECHANGED "Non modifiable"
 #define T_INITIALISATION "Initialisation"
 #define T_THEMOUNTMUSTBEATHOME1 "La monture doit"
 #define T_THEMOUNTMUSTBEATHOME2 "être en"
