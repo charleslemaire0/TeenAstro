@@ -533,12 +533,21 @@ void SmartHandController::updateMainDisplay(PAGES page)
 
         if (ta_MountStatus.isAligning())
         {
-          if (ta_MountStatus.getAlignMode() == TeenAstroMountStatus::ALIM_ONE)
+          // Show icon for the *current* alignment star index (1, 2, or 3+),
+          // not just the configured alignment mode (one/two/three-star).
+          int starIdx = ta_MountStatus.getAlignStar();
+          if (starIdx <= 1)
+          {
             display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, align1_bits);
-          else if (ta_MountStatus.getAlignMode() == TeenAstroMountStatus::ALIM_TWO)
+          }
+          else if (starIdx == 2)
+          {
             display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, align2_bits);
-          else if (ta_MountStatus.getAlignMode() == TeenAstroMountStatus::ALIM_THREE)
+          }
+          else
+          {
             display->drawXBMP(xr - icon_width, 0, icon_width, icon_height, align3_bits);
+          }
           xr -= icon_width + 1;
         }
         else if (ta_MountStatus.isSpiralRunning())
