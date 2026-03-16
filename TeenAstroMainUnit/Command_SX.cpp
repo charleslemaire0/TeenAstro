@@ -31,8 +31,8 @@ static void Command_SX_Alignment()
   case 's': {
     // :SXAs,starname#  Store alignment star name (sent by the app so the SHC
     //                  can display which star was selected remotely).
-    // command[5] is the comma separator; value starts at command[6].
-    const char* val = commandState.command + 6;
+    // command[4] is the comma separator; value starts at command[5].
+    const char* val = commandState.command + 5;
     size_t len = strlen(val);
     if (len >= sizeof(mount.alignment.alignStarName))
       len = sizeof(mount.alignment.alignStarName) - 1;
