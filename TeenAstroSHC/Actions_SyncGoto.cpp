@@ -1,7 +1,10 @@
 #include "SmartController.h"
 #include "SHC_text.h"
 
-
+// Catalog list buffer: same shape as catalog (60 + NUM_CAT * entry).
+// Each entry = catalog title (max 31 chars, catalog_t.Title[32]) + newline.
+#define CATALOG_LIST_ENTRY_MAX 32
+#define CATALOG_LIST_SIZE (60 + NUM_CAT * CATALOG_LIST_ENTRY_MAX)
 
 void putText(NAV mode, char* dst, const char* synctxt, const char* gototxt, const char* pushtotxt)
 {
@@ -182,12 +185,12 @@ SmartHandController::MENU_RESULT SmartHandController::subMenuSyncGoto(NAV mode, 
   while (true)
   {
     // build the list of star/dso catalogs
-    char string_list_gotoL1[60 + NUM_CAT * 10] = "";
+    char string_list_gotoL1[CATALOG_LIST_SIZE] = "";
     int  catalog_index[NUM_CAT];
     int  catalog_index_count = 0;
-    char title[16] = "";
-    char lastSubmenu[16] = "";
-    char thisSubmenu[16] = "";
+    char title[32] = "";
+    char lastSubmenu[32] = "";
+    char thisSubmenu[32] = "";
     // build the list of subMenu catalogs
     for (int i = subMenuNum; i < NUM_CAT; i++)
     {
@@ -231,7 +234,7 @@ SmartHandController::MENU_RESULT SmartHandController::subMenuSyncGoto(NAV mode, 
 SmartHandController::MENU_RESULT SmartHandController::menuCatalog(NAV mode, int number)
 {
   cat_mgr.select(number);
-  char title[20] = "";
+  char title[40] = "";
   setCatMgrFilters();
   if (cat_mgr.hasActiveFilter())
   {
@@ -262,7 +265,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalog(NAV mode, int 
 SmartHandController::MENU_RESULT SmartHandController::menuCatalogAlign(NAV mode)
 {
   cat_mgr.select(0);
-  char title[20] = "";
+  char title[40] = "";
   cat_mgr.filtersClear();
   cat_mgr.filterAdd(FM_OBJ_HAS_NAME);
   cat_mgr.filterAdd(FM_ABOVE_HORIZON, 1);
@@ -309,13 +312,13 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalogs(NAV mode)
   {
 
     // build the list of star/dso catalogs
-    char string_list_gotoL1[60 + NUM_CAT * 10] = "";
+    char string_list_gotoL1[CATALOG_LIST_SIZE] = "";
     int  catalog_index[NUM_CAT];
     int  catalog_index_count = 0;
-    char title[16] = "";
+    char title[32] = "";
     char menu[32] = "";
-    char thisSubmenu[16] = "";
-    char lastSubmenu[16] = "";
+    char thisSubmenu[32] = "";
+    char lastSubmenu[32] = "";
     for (int i = 1; i <= NUM_CAT; i++)
     {
       cat_mgr.select(i - 1);

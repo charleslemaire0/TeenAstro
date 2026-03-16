@@ -3,7 +3,7 @@
 #include <TeenAstroCatalog.h>
 
 // maximum number of catalogs supported
-// there is a matching array in subMenuSyncGoto() that also needs adjustment if this is increased
+// SHC catalog list buffer size is derived from NUM_CAT in Actions_SyncGoto.cpp (CATALOG_LIST_SIZE)
 #define MaxCatalogs 64
 
 // ----------------------------------------------------------

@@ -438,7 +438,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
             {
               DisplayMessage("Please Sync", "with a Target", 1000);
               cat_mgr.select(0);
-              char title[20] = "";
+              char title[40] = "";
               cat_mgr.filtersClear();
               cat_mgr.filterAdd(FM_OBJ_HAS_NAME);
               cat_mgr.filterAdd(FM_ABOVE_HORIZON, 1);
