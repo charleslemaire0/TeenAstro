@@ -620,12 +620,12 @@ void TeenAstroWifi::setup()
     break;
   case TeenAstroWifi::M_AcessPoint:
     WiFi.mode(WIFI_AP);
+    WiFi.softAPConfig(wifi_ap_ip, wifi_ap_gw, wifi_ap_sn);
+    delay(100);
     WiFi.softAP(wifi_ap_ssid, wifi_ap_pwd, wifi_ap_ch);
 #ifdef ARDUINO_LOLIN_C3_MINI
     WiFi.setTxPower(WIFI_POWER_8_5dBm);
 #endif // ARDUINO_LOLIN_C3_MINI
-    delay(1000);
-    WiFi.softAPConfig(wifi_ap_ip, wifi_ap_gw, wifi_ap_sn);
     delay(1000);
     break;
   case TeenAstroWifi::M_Station1:
