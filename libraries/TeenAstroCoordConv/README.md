@@ -4,23 +4,28 @@ Mount alignment library for the TeenAstro telescope controller. Computes a 3x3 t
 
 ## Algorithm
 
-1. **Reference stars** — Two observed stars provide direction cosine vectors in both the reference frame (sky) and the axis frame (instrument)
-2. **Third reference** — Derived mathematically as the normalized cross product of the first two vectors in each frame
-3. **Transformation matrix** — `T = dcAxis^T x inv(dcRef^T)` maps reference to instrument coordinates
-4. **SVD refinement** — Singular Value Decomposition enforces a proper rotation matrix (det = +1), filtering out noise
-5. **Optional minimization** — `minimizeAxis1()` and `minimizeAxis2()` iteratively reduce alignment error
+1. **Reference stars** -- Two observed stars provide direction cosine vectors in both the reference frame (sky) and the axis frame (instrument)
+2. **Third reference** -- Derived mathematically as the normalized cross product of the first two vectors in each frame
+3. **Transformation matrix** -- `T = dcAxis^T x inv(dcRef^T)` maps reference to instrument coordinates
+4. **SVD refinement** -- Singular Value Decomposition enforces a proper rotation matrix (det = +1), filtering out noise
+5. **Optional minimization** -- `minimizeAxis1()` and `minimizeAxis2()` iteratively reduce alignment error
 
-## Main class: `CoordConv`
+## Usage
 
 ```cpp
-CoordConv conv;
-conv.addReference(angle1, angle2, axis1, axis2);  // star 1
-conv.addReference(angle1, angle2, axis1, axis2);  // star 2
-conv.calculateThirdReference();                    // derive 3rd
+#include <TeenAstroCoordConv.hpp>
 
-// T maps sky -> instrument, Tinv maps instrument -> sky
-double T[3][3], Tinv[3][3];
-// Access via conv.T and conv.Tinv after calculation
+CoordConv conv;
+conv.addReference(az1, alt1, instAz1, instAlt1);  // star 1 (radians)
+conv.addReference(az2, alt2, instAz2, instAlt2);  // star 2 (radians)
+// calculateThirdReference() is called automatically after the 2nd star
+
+if (conv.isReady()) {
+    // conv.T    maps sky -> instrument
+    // conv.Tinv maps instrument -> sky
+    Coord_IN in = ho.To_Coord_IN(conv.T);
+    Coord_HO ho = in.To_Coord_HO(conv.Tinv, refrOpt);
+}
 ```
 
 ## Key API
@@ -39,7 +44,19 @@ double T[3][3], Tinv[3][3];
 | `reset()` | Clear reference stars |
 | `clean()` | Reset all matrices and state |
 
+## Example
+
+See `libraries/TeenAstroCoord/examples/CoordDemo/` for a full integrated C++ example that exercises alignment with a simulated polar misalignment. Build with: `pio run -d libraries/TeenAstroCoord/examples/CoordDemo`
+
 ## Dependencies
 
-- **TeenAstroLA3** — base class; provides direction cosines, matrix ops, SVD, Euler angles
-- **svd3** — 3x3 SVD implementation
+- **TeenAstroLA3** -- base class; provides direction cosines, matrix ops, SVD, Euler angles
+- **svd3** -- 3x3 SVD implementation
+
+## Testing
+
+Unit tests and integration tests are in `tests/test/test_coordconv/` (PlatformIO Unity, native platform). They cover construction, identity alignment, matrix properties (det = +1, T * Tinv = I), getT/setT serialization, and full-chain round-trips through all three libraries.
+
+```
+pio test -d tests --filter test_coordconv
+```
