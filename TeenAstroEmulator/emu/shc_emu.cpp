@@ -417,6 +417,16 @@ static int runAutomatedTests(LX200Client& lx200)
     TEST_CHECK(lx200.enableTracking(false) == LX200_VALUESET, "enableTracking(off)", "failed");
 
     printf("\n[TEST] GXAS Bulk Status\n");
+    {
+        char rawGxas[200] = "";
+        LX200RETURN gr = lx200.get(":GXAS#", rawGxas, sizeof(rawGxas));
+        printf("         raw GXAS get: ret=%d len=%d\n", (int)gr, (int)strlen(rawGxas));
+        if (gr == LX200_VALUEGET) {
+            printf("         raw GXAS (first 40): '%.40s'\n", rawGxas);
+            printf("         raw GXAS (last  20): '%s'\n",
+                   strlen(rawGxas) > 20 ? rawGxas + strlen(rawGxas) - 20 : rawGxas);
+        }
+    }
     ta_MountStatus.updateAllState(true);
     bool gxasOk = ta_MountStatus.hasInfoMount();
     TEST_CHECK(gxasOk, "updateAllState (GXAS)", "failed");
@@ -630,6 +640,117 @@ static int runAutomatedTests(LX200Client& lx200)
         trk = ta_MountStatus.getTrackingState();
         printf("         After stop: %d (1=ON)\n", (int)trk);
         TEST_CHECK(trk != TeenAstroMountStatus::TRK_SLEWING, "slew stopped", "still slewing");
+    }
+
+    /* ---- 20. Alignment Star Name round-trip (:SXAs / :GXAs) ---- */
+    printf("\n[TEST] Alignment Star Name round-trip\n");
+    {
+        const char* testName = "Vega";
+        char setCmd[64];
+        sprintf(setCmd, ":SXAs,%s#", testName);
+        LX200RETURN sr = lx200.set(setCmd);
+        TEST_CHECK(sr == LX200_VALUESET, "setAlignStarName(Vega)", "rejected");
+
+        char readName[16] = "";
+        LX200RETURN gr = lx200.getAlignStarName(readName, sizeof(readName));
+        TEST_CHECK(gr == LX200_VALUEGET, "getAlignStarName", "no response");
+        printf("         Star name: set '%s' -> read '%s'\n", testName, readName);
+        TEST_CHECK(strcmp(readName, testName) == 0, "starName == Vega", readName);
+
+        const char* testName2 = "Polaris";
+        sprintf(setCmd, ":SXAs,%s#", testName2);
+        sr = lx200.set(setCmd);
+        TEST_CHECK(sr == LX200_VALUESET, "setAlignStarName(Polaris)", "rejected");
+
+        memset(readName, 0, sizeof(readName));
+        gr = lx200.getAlignStarName(readName, sizeof(readName));
+        TEST_CHECK(gr == LX200_VALUEGET, "getAlignStarName (2)", "no response");
+        printf("         Star name: set '%s' -> read '%s'\n", testName2, readName);
+        TEST_CHECK(strcmp(readName, testName2) == 0, "starName == Polaris", readName);
+
+        const char* longName = "AlphaCentauri";
+        sprintf(setCmd, ":SXAs,%s#", longName);
+        sr = lx200.set(setCmd);
+        TEST_CHECK(sr == LX200_VALUESET, "setAlignStarName(AlphaCentauri)", "rejected");
+
+        memset(readName, 0, sizeof(readName));
+        gr = lx200.getAlignStarName(readName, sizeof(readName));
+        TEST_CHECK(gr == LX200_VALUEGET, "getAlignStarName (3)", "no response");
+        printf("         Star name: set '%s' -> read '%s'\n", longName, readName);
+        TEST_CHECK(strcmp(readName, longName) == 0, "starName == AlphaCentauri", readName);
+    }
+
+    /* ---- 21. Two-client alignment: App on WiFi sets name, SHC reads it ---- */
+    printf("\n[TEST] Two-client alignment (App via WiFi, SHC reads star name)\n");
+    {
+        // Enable WiFi port (9999) on the emulator
+        LX200RETURN wr = lx200.set(":EW1#");
+        TEST_CHECK(wr == LX200_VALUESET, "WiFi ON for two-client test", "rejected");
+        SDL_Delay(500);
+
+        // Create a second client (simulating the App) on WiFi port 9999
+        TcpClientStream wifiStream;
+        bool wifiOk = wifiStream.connect("127.0.0.1", 9999);
+        TEST_CHECK(wifiOk, "App connects to WiFi port 9999", "connection failed");
+
+        if (wifiOk) {
+            LX200Client appClient(wifiStream, 200);
+
+            // Abort any prior alignment via SHC (clean state)
+            lx200.alignAbort();
+            SDL_Delay(200);
+            ta_MountStatus.updateAllState(true);
+            TEST_CHECK(!ta_MountStatus.isAligning(), "idle before two-client test", "still aligning");
+
+            // APP starts alignment (:A0#)
+            LX200RETURN ar = appClient.set(":A0#");
+            TEST_CHECK(ar == LX200_VALUESET, "App: start alignment (:A0#)", "rejected");
+            SDL_Delay(200);
+
+            // SHC polls GXAS — should detect remote alignment
+            ta_MountStatus.updateAllState(true);
+            uint8_t phase = ta_MountStatus.getMountAlignPhase();
+            printf("         SHC sees: phase=%d isAligning=%d isRemoteAlign=%d\n",
+                   phase, ta_MountStatus.isAligning(), ta_MountStatus.isRemoteAlign());
+            TEST_CHECK(phase == 1, "SHC: alignPhase == SELECT", "wrong phase");
+            TEST_CHECK(ta_MountStatus.isRemoteAlign(), "SHC: isRemoteAlign", "not remote");
+
+            // APP sets star name (:SXAs,Vega#)
+            ar = appClient.set(":SXAs,Vega#");
+            TEST_CHECK(ar == LX200_VALUESET, "App: setAlignStarName(Vega)", "rejected");
+            SDL_Delay(100);
+
+            // SHC fetches star name (as it would in the display loop)
+            ta_MountStatus.fetchRemoteStarName();
+            const char* dispName = ta_MountStatus.getRemoteStarName();
+            printf("         SHC remote star name: '%s'\n", dispName);
+            TEST_CHECK(strcmp(dispName, "Vega") == 0, "SHC displays 'Vega'", dispName);
+
+            // SHC verifies via direct GXAs query
+            char readName[16] = "";
+            LX200RETURN gr = lx200.getAlignStarName(readName, sizeof(readName));
+            TEST_CHECK(gr == LX200_VALUEGET, "SHC: getAlignStarName", "no response");
+            printf("         SHC direct GXAs: '%s'\n", readName);
+            TEST_CHECK(strcmp(readName, "Vega") == 0, "SHC GXAs == Vega", readName);
+
+            // APP changes star name to Polaris
+            ar = appClient.set(":SXAs,Polaris#");
+            TEST_CHECK(ar == LX200_VALUESET, "App: setAlignStarName(Polaris)", "rejected");
+            SDL_Delay(100);
+
+            // SHC refetches — should get new name
+            ta_MountStatus.fetchRemoteStarName();
+            dispName = ta_MountStatus.getRemoteStarName();
+            printf("         SHC updated star name: '%s'\n", dispName);
+            TEST_CHECK(strcmp(dispName, "Polaris") == 0, "SHC displays 'Polaris'", dispName);
+
+            // Cleanup
+            appClient.alignAbort();
+            SDL_Delay(200);
+            ta_MountStatus.updateAllState(true);
+            lx200.set(":EW0#");
+            printf("         Cleanup: alignment aborted, WiFi OFF\n");
+        }
     }
 
     printf("\n========================================\n");
