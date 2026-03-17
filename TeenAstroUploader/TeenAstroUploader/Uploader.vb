@@ -2,7 +2,51 @@ Imports System.IO
 Imports System.Globalization
 Imports System.Threading
 Imports System.Runtime.InteropServices
+Imports System.Net
+Imports System.Diagnostics
 Public Class Uploader
+  ' Firmware is stored in: C:\Users\<user>\AppData\Local\TeenAstro\Firmware
+  ' (%LocalAppData%\TeenAstro\Firmware). Always writable by the current user, no admin required.
+  ' If the folder does not exist, it is created automatically (including parent TeenAstro if needed).
+  Private Shared Function GetFirmwareBasePath() As String
+    Dim base As String = System.IO.Path.Combine(
+      Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+      "TeenAstro",
+      "Firmware")
+    If Not Directory.Exists(base) Then Directory.CreateDirectory(base)
+    Return base
+  End Function
+
+  ''' <summary>
+  ''' Download a file using curl.exe (built into Windows 10+).
+  ''' CrowdStrike and other endpoint security software trust system binaries,
+  ''' so curl works for normal users while WebClient gets blocked.
+  ''' </summary>
+  ''' <summary>Returns True if downloaded, False if file not found on server (404).</summary>
+  Private Shared Function DownloadFileWithCurl(url As String, destPath As String) As Boolean
+    Dim curlPath As String = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "curl.exe")
+    If Not System.IO.File.Exists(curlPath) Then
+      Throw New FileNotFoundException("curl.exe not found at " & curlPath & ". Windows 10 version 1803 or later is required.")
+    End If
+    Dim psi As New ProcessStartInfo()
+    psi.FileName = curlPath
+    psi.Arguments = "-L -s -f -o """ & destPath & """ """ & url & """"
+    psi.UseShellExecute = False
+    psi.CreateNoWindow = True
+    psi.RedirectStandardError = True
+    Dim proc As Process = Process.Start(psi)
+    Dim stderr As String = proc.StandardError.ReadToEnd()
+    proc.WaitForExit()
+    If proc.ExitCode = 22 Then
+      ' curl exit 22 = HTTP error (404 not found). File doesn't exist on server -- skip it.
+      Return False
+    End If
+    If proc.ExitCode <> 0 Then
+      Throw New Exception("curl failed (exit " & proc.ExitCode & "): " & stderr.Trim() & vbLf & "URL: " & url)
+    End If
+    Return True
+  End Function
+
   Private Sub ButtonUploadT_Click(sender As Object, e As EventArgs) Handles ButtonUploadT.Click
     Try
       Dim pHelp As New ProcessStartInfo
@@ -15,7 +59,8 @@ Public Class Uploader
       If RadioButtonLatest.Checked Then
         fwvdir += "_latest"
       End If
-      Dim HexPath = System.IO.Path.GetDirectoryName(Application.ExecutablePath) + "\" + fwvdir
+      Dim HexPath As String = System.IO.Path.Combine(GetFirmwareBasePath(), fwvdir)
+      If Not System.IO.Directory.Exists(HexPath) Then System.IO.Directory.CreateDirectory(HexPath)
       Select Case pcb
         Case "2.2 TMC260"
           Hexfile = "TeenAstro_" + fwv + "_220_TMC260"
@@ -80,7 +125,8 @@ Public Class Uploader
       If RadioButtonLatest.Checked Then
         fwvdir += "_latest"
       End If
-      Dim HexPath = System.IO.Path.GetDirectoryName(Application.ExecutablePath) + "\" + fwvdir
+      Dim HexPath As String = System.IO.Path.Combine(GetFirmwareBasePath(), fwvdir)
+      If Not System.IO.Directory.Exists(HexPath) Then System.IO.Directory.CreateDirectory(HexPath)
       Select Case pcb
         Case "2.2 TMC2130"
           Hexfile = "TeenAstroFocuser_" + fwv + "_220_TMC2130"
@@ -125,8 +171,10 @@ Public Class Uploader
       If RadioButtonLatest.Checked Then
         fwvdir += "_latest"
       End If
+      Dim HexPath As String = System.IO.Path.Combine(GetFirmwareBasePath(), fwvdir)
+      If Not System.IO.Directory.Exists(HexPath) Then System.IO.Directory.CreateDirectory(HexPath)
       Dim lg As String = "_" + ComboBoxLanguage.SelectedItem
-      Dim Binfile As String = ".\" + fwvdir + "\" + "TeenAstroSHC_" + fwv + lg + ".bin"
+      Dim Binfile As String = System.IO.Path.Combine(HexPath, "TeenAstroSHC_" + fwv + lg + ".bin")
 
       If Not System.IO.File.Exists(Binfile) Then
         MsgBox(Binfile + " Not found!")
@@ -148,10 +196,26 @@ Public Class Uploader
     Process.Start(webAddress)
   End Sub
 
-  Private Sub downloadVersionx(ByRef n As Integer, ByRef sum As Integer, ByVal ext As String, ByVal ver As String)
+  Private Shared Function GetFullExceptionMessage(ex As Exception) As String
+    Dim s As String = ex.Message
+    Dim inner As Exception = ex.InnerException
+    While inner IsNot Nothing
+      s = s & vbLf & " -> " & inner.Message
+      inner = inner.InnerException
+    End While
+    If TypeOf ex Is WebException Then
+      Dim we As WebException = CType(ex, WebException)
+      If we.Response IsNot Nothing AndAlso TypeOf we.Response Is HttpWebResponse Then
+        Dim resp As HttpWebResponse = CType(we.Response, HttpWebResponse)
+        s = s & vbLf & "HTTP " & CInt(resp.StatusCode) & " " & resp.StatusDescription
+      End If
+    End If
+    Return s
+  End Function
 
-    Dim verdir As String = ver + ext
-    Dim gitRootAdress As String = "https://github.com/charleslemaire0/TeenAstro/raw/Release_" + ver + "/TeenAstroUploader/TeenAstroUploader/" + verdir + "/"
+  Private Sub downloadVersionx(ByRef n As Integer, ByRef sum As Integer, ByVal ext As String, ByVal ver As String)
+    Dim gitRootAdress As String = ""
+    Dim currentFirmware As String = ""
     Dim Firmwares As New List(Of String)
     Firmwares.Add("TeenAstroFocuser_" + ver + "_220_TMC2130.hex")
     Firmwares.Add("TeenAstroFocuser_" + ver + "_230_TMC2130.hex")
@@ -166,23 +230,26 @@ Public Class Uploader
     Firmwares.Add("TeenAstro_" + ver + "_240_TMC5160.hex")
     Firmwares.Add("TeenAstro_" + ver + "_250_TMC2130.hex")
     Firmwares.Add("TeenAstro_" + ver + "_250_TMC5160.hex")
-    If Not System.IO.Directory.Exists(".\" + verdir) Then
-      System.IO.Directory.CreateDirectory(".\" + verdir)
-    End If
-    Using client As New System.Net.WebClient()
-      System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12
-      client.Headers.Add("user-agent", "Anything")
+    Try
+      Dim verdir As String = ver + ext
+      Dim targetDir As String = System.IO.Path.Combine(GetFirmwareBasePath(), verdir)
+      gitRootAdress = "https://github.com/charleslemaire0/TeenAstro/raw/Release_" + ver + "/TeenAstroUploader/TeenAstroUploader/" + verdir + "/"
+      If Not System.IO.Directory.Exists(targetDir) Then
+        System.IO.Directory.CreateDirectory(targetDir)
+      End If
       For Each firmware In Firmwares
-        Try
-          client.DownloadFile(gitRootAdress + firmware, ".\" + verdir + "\" + firmware)
-        Catch ex As Exception
-          MsgBox(ex.Message)
-          Exit For
-        End Try
-        n = n + 1
+        currentFirmware = firmware
+        Dim url As String = gitRootAdress + firmware
+        Dim destPath As String = System.IO.Path.Combine(targetDir, firmware)
+        If DownloadFileWithCurl(url, destPath) Then
+          n = n + 1
+        End If
       Next
-      client.Dispose()
-    End Using
+    Catch ex As Exception
+      Dim msg As String = "Download failed: " & currentFirmware & vbLf & vbLf & GetFullExceptionMessage(ex)
+      If gitRootAdress <> "" AndAlso currentFirmware <> "" Then msg = msg & vbLf & vbLf & "URL: " & gitRootAdress & currentFirmware
+      MsgBox(msg, MsgBoxStyle.Exclamation, "TeenAstro Firmware Download")
+    End Try
     sum += Firmwares.Count
   End Sub
 

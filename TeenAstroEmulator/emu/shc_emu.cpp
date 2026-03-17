@@ -7,7 +7,7 @@
  * - Maps keyboard keys to SHC buttons
  *
  * Build:  pio run -d TeenAstroEmulator -e emu_shc
- * Run:    .pio\build\emu_shc\program.exe
+ * Run:    .pio\build\emu\shc_emu.exe
  */
 
 /* ------------------------------------------------------------------ */
@@ -65,10 +65,17 @@ static bool launchMainUnit() {
     char* lastSlash = strrchr(myPath, '\\');
     if (!lastSlash) return false;
     *(lastSlash + 1) = '\0';
-    strcat(myPath, "TeenAstroMainUnit.exe");
-    if (GetFileAttributesA(myPath) == INVALID_FILE_ATTRIBUTES) return false;
+    /* Prefer build-dir name (mainunit_emu.exe), then installed name (TeenAstroMainUnit.exe) */
+    char muPath[MAX_PATH];
+    strcpy(muPath, myPath);
+    strcat(muPath, "mainunit_emu.exe");
+    if (GetFileAttributesA(muPath) == INVALID_FILE_ATTRIBUTES) {
+        strcpy(muPath, myPath);
+        strcat(muPath, "TeenAstroMainUnit.exe");
+    }
+    if (GetFileAttributesA(muPath) == INVALID_FILE_ATTRIBUTES) return false;
     STARTUPINFOA si = {}; si.cb = sizeof(si);
-    if (!CreateProcessA(myPath, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &g_muProcInfo))
+    if (!CreateProcessA(muPath, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &g_muProcInfo))
         return false;
     g_muLaunched = true;
     return true;
@@ -821,10 +828,10 @@ int main(int argc, char** argv)
 
     /* Launch MainUnit as a child process */
     if (launchMainUnit()) {
-        printf("Launched TeenAstroMainUnit.exe (auto)\n");
+        printf("Launched MainUnit emulator (auto)\n");
         SDL_Delay(2000);
     } else {
-        printf("TeenAstroMainUnit.exe not found next to SHC -- assuming already running.\n");
+        printf("MainUnit exe not found next to SHC -- assuming already running.\n");
     }
     fflush(stdout);
 

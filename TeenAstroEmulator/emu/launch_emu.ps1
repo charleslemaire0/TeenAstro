@@ -17,12 +17,13 @@ param(
 
 $ErrorActionPreference = "Stop"
 $EmuDir   = Split-Path -Parent $PSScriptRoot
-$MuExe    = Join-Path $EmuDir ".pio\build\emu_mainunit\program.exe"
-$ShcExe   = Join-Path $EmuDir ".pio\build\emu_shc\program.exe"
+$BuildDir = Join-Path $EmuDir ".pio\build\emu"
+$MuExe    = Join-Path $BuildDir "mainunit_emu.exe"
+$ShcExe   = Join-Path $BuildDir "shc_emu.exe"
 $Sdl2Dll  = "C:\SDL2\bin\SDL2.dll"
 
 # Kill leftovers
-Get-Process -Name "program" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Get-Process -Name "mainunit_emu","shc_emu" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 1
 
 if (-not $NoBuild) {
@@ -35,14 +36,11 @@ if (-not $NoBuild) {
     if ($LASTEXITCODE -ne 0) { throw "SHC build failed." }
 }
 
-foreach ($env in @("emu_mainunit", "emu_shc")) {
-    $dir = Join-Path $EmuDir ".pio\build\$env"
-    if (-not (Test-Path (Join-Path $dir "SDL2.dll"))) {
-        if (Test-Path $Sdl2Dll) {
-            Copy-Item $Sdl2Dll $dir -Force
-        } else {
-            Write-Warning "SDL2.dll not found at $Sdl2Dll. $env may fail to start."
-        }
+if (-not (Test-Path (Join-Path $BuildDir "SDL2.dll"))) {
+    if (Test-Path $Sdl2Dll) {
+        Copy-Item $Sdl2Dll $BuildDir -Force
+    } else {
+        Write-Warning "SDL2.dll not found at $Sdl2Dll. Emulators may fail to start."
     }
 }
 

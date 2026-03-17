@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <Product Id="*"
-           Name="TeenAstro Emulator"
+           Name="TeenAstro Emulators"
            Language="1033"
            Version="1.6.0"
            Manufacturer="TeenAstro"
@@ -29,13 +29,6 @@
             <File Id="SDL2Dll" Source=".stage\SDL2.dll" />
           </Component>
 
-          <!-- Firmware Uploader -->
-          <Component Id="UploaderComponent" Guid="C3D4E5F6-A7B8-9012-CDEF-123456789ABC">
-            <File Id="UploaderExe" Source=".stage\TeenAstroUploader.exe" KeyPath="yes" />
-          </Component>
-
-          <!-- TeenAstro App (Flutter Windows) - harvested by heat.exe into AppFiles.wxs -->
-
         </Directory>
       </Directory>
 
@@ -54,18 +47,6 @@
                       Target="[INSTALLFOLDER]TeenAstroSHC.exe"
                       WorkingDirectory="INSTALLFOLDER"
                       Icon="TeenAstroIcon" />
-            <Shortcut Id="UploaderShortcut"
-                      Name="TeenAstro Firmware Uploader"
-                      Description="Download and upload TeenAstro firmware"
-                      Target="[INSTALLFOLDER]TeenAstroUploader.exe"
-                      WorkingDirectory="INSTALLFOLDER"
-                      Icon="TeenAstroIcon" />
-            <Shortcut Id="AppShortcut"
-                      Name="TeenAstro App"
-                      Description="TeenAstro telescope controller app"
-                      Target="[INSTALLFOLDER]teenastro_app.exe"
-                      WorkingDirectory="INSTALLFOLDER"
-                      Icon="TeenAstroIcon" />
             <RemoveFolder Id="RemoveAppMenuDir" Directory="AppMenuDir" On="uninstall" />
             <RegistryValue Root="HKCU" Key="Software\TeenAstro\Emulator" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
           </Component>
@@ -73,12 +54,10 @@
       </Directory>
     </Directory>
 
-    <Feature Id="ProductFeature" Title="TeenAstro Emulator" Level="1">
+    <Feature Id="ProductFeature" Title="TeenAstro Emulators" Level="1">
       <ComponentRef Id="MainUnitComponent" />
       <ComponentRef Id="EmulatorComponent" />
-      <ComponentRef Id="UploaderComponent" />
       <ComponentRef Id="ShortcutComponent" />
-      <ComponentGroupRef Id="AppFiles" />
     </Feature>
   </Product>
 </Wix>

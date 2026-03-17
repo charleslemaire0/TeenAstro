@@ -8,7 +8,7 @@
  * - micros()/millis() use wall-clock time via <chrono>
  *
  * Build:  pio run -d TeenAstroEmulator -e emu_mainunit
- * Run:    .pio\build\emu_mainunit\program.exe
+ * Run:    .pio\build\emu\mainunit_emu.exe
  */
 
 /* ------------------------------------------------------------------ */
