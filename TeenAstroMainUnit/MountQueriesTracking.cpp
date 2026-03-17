@@ -352,9 +352,9 @@ void Mount::onSiderealTick(long phase, bool forceTracking, long elapsed)
   if (isMovingTo())
     moveTo();
 
-  if (phase % 20 == 0)
+  if (elapsed >= 20 || phase % 20 == 0)
     targetCurrent.currentAlt = getHorTopo().Alt() * RAD_TO_DEG;
-  if (phase == 0)
+  if (elapsed >= 100 || phase == 0)
     computeTrackingRate(true);
 
   checkEndOfMoveAxisAtRate();

@@ -547,8 +547,12 @@ void SmartHandController::manualMove(bool &moving)
     }
     if (stop)
     {
+#ifdef EMU_SHC
+      m_client->stopSlew();
+#else
       Ser.print(":Q#");
       Ser.flush();
+#endif
       time_last_action = millis();
       display->sleepOff();
       ta_MountStatus.backStepAlign();

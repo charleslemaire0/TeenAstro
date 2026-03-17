@@ -69,6 +69,13 @@ static TcpServerStream g_tcpWifi;   /* Android / SkySafari LX200 */
 static FocuserStub     g_focuserStub;
 
 /* ------------------------------------------------------------------ */
+/*  Mutex accessor for Timer1 ISR split (guiding/backlash section)     */
+/* ------------------------------------------------------------------ */
+std::mutex& emu_getFireMutex() {
+    return IntervalTimerThread::instance().mutex();
+}
+
+/* ------------------------------------------------------------------ */
 /*  reboot() stub                                                      */
 /* ------------------------------------------------------------------ */
 void reboot() {
@@ -146,10 +153,7 @@ int main(int, char**)
     unsigned long lastEepromFlush = millis();
 
     while (true) {
-        {
-            std::lock_guard<std::mutex> lk(IntervalTimerThread::instance().mutex());
-            application.loop();
-        }
+        application.loop();
         cockpit::cockpit_update();
 
         /* Flush EEPROM every 5 s so settings survive TerminateProcess */

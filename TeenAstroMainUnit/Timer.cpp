@@ -66,10 +66,12 @@ void beginTimers()
 }
 
 #endif
-// set timer1 to interval (in microseconds)
 static void Timer1SetInterval(interval i)
 {
   itimer1.begin(TIMER1_COMPA_vect, i);
+#ifdef EMU_MAINUNIT
+  itimer1.setLockFree(true);
+#endif
 }
 
 
@@ -240,15 +242,24 @@ static void BacklashAndApplyInterval2()
   }
 }
 
+#ifdef EMU_MAINUNIT
+#include <mutex>
+static std::mutex& emu_fire_mtx() {
+  extern std::mutex& emu_getFireMutex();
+  return emu_getFireMutex();
+}
+#endif
+
 ISR(TIMER1_COMPA_vect)
-{ 
+{
   rtk.m_lst++;
-  // in this mode the target is always a bit faster than the scope because we move first the target!!
+
+#ifdef EMU_MAINUNIT
+  std::lock_guard<std::mutex> lk(emu_fire_mtx());
+#endif
+
   if (!mount.isMovingTo())
   {
-    // Advance pulse-guide targets every sidereal tick so they stay in sync with steps.
-    // (performPulseGuiding() only runs when the main loop sees a new tick; if the loop
-    // runs slower than the tick rate, target would lag and brake→idle would take seconds.)
     if (mount.guiding.GuidingState == Guiding::GuidingPulse)
     {
       if (mount.guiding.guideA1.isMoving() && mount.guiding.guideA1.duration > 0UL)
@@ -264,7 +275,6 @@ ISR(TIMER1_COMPA_vect)
         sei();
       }
     }
-    // guide rate acceleration/deceleration
     UpdateIntervalTrackingGuiding1();
     UpdateIntervalTrackingGuiding2();
     if (!mount.guiding.guideA1.isBusy() && !mount.guiding.guideA2.isBusy())

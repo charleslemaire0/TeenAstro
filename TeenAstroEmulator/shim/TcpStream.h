@@ -202,8 +202,17 @@ private:
             buf_len_ = r;
         } else if (r == 0) {
             disconnectClient();
+        } else if (!isWouldBlock()) {
+            disconnectClient();
         }
-        // r < 0 with EWOULDBLOCK is normal for non-blocking
+    }
+
+    static bool isWouldBlock() {
+#ifdef _WIN32
+        return WSAGetLastError() == WSAEWOULDBLOCK;
+#else
+        return errno == EWOULDBLOCK || errno == EAGAIN;
+#endif
     }
 
     void disconnectClient() {
@@ -255,9 +264,20 @@ public:
             return false;
         }
         tcp_detail::setNonBlocking(sock_);
+        strncpy(host_, host, sizeof(host_) - 1);
+        host_[sizeof(host_) - 1] = '\0';
+        port_ = port;
         printf("[TcpClient] Connected to %s:%d\n", host, port);
         fflush(stdout);
         return true;
+    }
+
+    bool reconnect() {
+        if (sock_ != INVALID_SOCK) return true;
+        if (port_ == 0) return false;
+        printf("[TcpClient] Attempting reconnect to %s:%d...\n", host_, port_);
+        fflush(stdout);
+        return connect(host_, port_);
     }
 
     void stop() {
@@ -265,7 +285,7 @@ public:
     }
 
     int available() override {
-        if (sock_ == INVALID_SOCK) return 0;
+        if (sock_ == INVALID_SOCK) { reconnect(); return 0; }
         fillBuffer();
         int n = buf_len_ - buf_pos_;
         if (n == 0) _tcp_yield();
@@ -289,14 +309,14 @@ public:
     size_t write(uint8_t b) override {
         if (sock_ == INVALID_SOCK) return 0;
         int r = send(sock_, (const char*)&b, 1, 0);
-        if (r <= 0) return 0;
+        if (r <= 0) { handleSendError(); return 0; }
         return 1;
     }
 
     size_t write(const uint8_t* buf, size_t len) {
         if (sock_ == INVALID_SOCK) return 0;
         int r = send(sock_, (const char*)buf, (int)len, 0);
-        if (r <= 0) return 0;
+        if (r <= 0) { handleSendError(); return 0; }
         return (size_t)r;
     }
 
@@ -313,12 +333,36 @@ private:
         if (r > 0) {
             buf_len_ = r;
         } else if (r == 0) {
-            SOCK_CLOSE(sock_);
-            sock_ = INVALID_SOCK;
+            disconnect();
+        } else if (!isWouldBlock()) {
+            disconnect();
         }
     }
 
+    void disconnect() {
+        if (sock_ != INVALID_SOCK) {
+            SOCK_CLOSE(sock_);
+            sock_ = INVALID_SOCK;
+            printf("[TcpClient] Disconnected from %s:%d\n", host_, port_);
+            fflush(stdout);
+        }
+    }
+
+    void handleSendError() {
+        if (!isWouldBlock()) disconnect();
+    }
+
+    static bool isWouldBlock() {
+#ifdef _WIN32
+        return WSAGetLastError() == WSAEWOULDBLOCK;
+#else
+        return errno == EWOULDBLOCK || errno == EAGAIN;
+#endif
+    }
+
     socket_t sock_ = INVALID_SOCK;
+    char host_[64] = "";
+    int port_ = 0;
     char buf_[512];
     int buf_pos_ = 0;
     int buf_len_ = 0;

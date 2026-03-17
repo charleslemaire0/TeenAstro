@@ -430,6 +430,15 @@ static void Command_GX_Debug()
       rtk.m_missedTicks = 0;
       replyLongTrue();
     }
+    else if (commandState.command[4] == '3')
+    {
+      sprintf(commandState.reply, "%ld#", rtk.m_peakGap);
+    }
+    else if (commandState.command[4] == '4')
+    {
+      rtk.m_peakGap = 0;
+      replyLongTrue();
+    }
     else
       replyLongUnknow();
     break;

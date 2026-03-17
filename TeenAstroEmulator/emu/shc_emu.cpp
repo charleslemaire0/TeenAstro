@@ -48,6 +48,9 @@ namespace sim {
 #include "esp_shim.h"
 #include "u8g2_sdl2.h"
 
+/* TCP client to MainUnit (used by emu_attempt_reconnect and main) */
+static TcpClientStream g_tcpToMainUnit;
+
 /* ------------------------------------------------------------------ */
 /*  Child-process management (auto-launch MainUnit)                    */
 /* ------------------------------------------------------------------ */
@@ -91,6 +94,41 @@ void emu_shutdown() {
     exit(0);
 }
 
+/*
+ * Called by ESP.reset()/restart() (esp_shim.h) instead of exit(0).
+ * Attempts to re-establish the TCP link to the MainUnit and resets the
+ * connection failure counter so the SHC firmware continues running.
+ */
+void emu_attempt_reconnect() {
+    extern TeenAstroMountStatus ta_MountStatus;
+
+    printf("[SHC-EMU] Reconnecting to MainUnit...\n");
+    fflush(stdout);
+
+    for (int attempt = 0; attempt < 20; attempt++) {
+        if (g_tcpToMainUnit.connected()) break;
+        if (g_tcpToMainUnit.reconnect()) break;
+        printf("[SHC-EMU]   Retry %d/20...\n", attempt + 1);
+        fflush(stdout);
+        SDL_Delay(500);
+    }
+
+    if (g_tcpToMainUnit.connected()) {
+        ta_MountStatus.removeLastConnectionFailure();
+        ta_MountStatus.removeLastConnectionFailure();
+        ta_MountStatus.removeLastConnectionFailure();
+        ta_MountStatus.removeLastConnectionFailure();
+        ta_MountStatus.removeLastConnectionFailure();
+        printf("[SHC-EMU] Reconnected successfully.\n");
+    } else {
+        printf("[SHC-EMU] Reconnect failed. Exiting.\n");
+        killMainUnit();
+        SDL_Quit();
+        exit(1);
+    }
+    fflush(stdout);
+}
+
 /* ------------------------------------------------------------------ */
 /*  SHC firmware includes                                              */
 /* ------------------------------------------------------------------ */
@@ -99,9 +137,8 @@ void emu_shutdown() {
 #include <TeenAstroMountStatus.h>
 
 /* ------------------------------------------------------------------ */
-/*  TCP serial to MainUnit                                             */
+/*  TCP serial to MainUnit (g_tcpToMainUnit defined above after shims) */
 /* ------------------------------------------------------------------ */
-static TcpClientStream g_tcpToMainUnit;
 
 /* ------------------------------------------------------------------ */
 /*  Global instances (matching TeenAstroSHC.ino)                       */
@@ -810,7 +847,8 @@ int main(int argc, char** argv)
     TeenAstroWifi::setClient(*g_lx200);
     HdCrtlr.setClient(*g_lx200);
 
-    const char SHCVersion[] = "1.6.1-emu";
+    /* Match real SHC version from SmartController.h, suffix -emu */
+    const char SHCVersion[] = SHCFirmwareVersionMajor "." SHCFirmwareVersionMinor "." SHCFirmwareVersionPatch "-emu";
     const int pin[7] = { 0, 0, 0, 0, 0, 0, 0 };
     const bool active[7] = { false, false, false, false, false, false, false };
 

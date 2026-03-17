@@ -189,6 +189,8 @@ All `:GXnn#` commands are TeenAstro extensions. **Standard:** TeenAstro extensio
 | `:GXDW#` | Get workload (%). | `n%#` |
 | `:GXDW1#` | Get missed sidereal ticks count (debug). | `long#` |
 | `:GXDW2#` | Reset missed sidereal ticks counter. | `1#` |
+| `:GXDW3#` | Get peak gap (worst single elapsed ticks). | `long#` |
+| `:GXDW4#` | Reset peak gap counter. | `1#` |
 
 ### Instrument position
 | Syntax | Description | Returns |
