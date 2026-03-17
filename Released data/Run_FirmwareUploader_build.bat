@@ -3,7 +3,7 @@ REM Build Firmware Uploader (MSBuild), create MSI with all required files, copy 
 setlocal
 set "REPO_ROOT=%~dp0.."
 set "OUT_DIR=%~dp0Firmware"
-set "MSI_SRC=%REPO_ROOT%\TeenAstroEmulator\installer\.out\TeenAstroUploader.msi"
+set "MSI_SRC=%REPO_ROOT%\TeenAstroUploader\installer\.out\TeenAstroUploader.msi"
 
 if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
 

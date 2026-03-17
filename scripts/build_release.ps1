@@ -87,7 +87,7 @@ if (-not $SkipMSI) {
     Write-Host "  Building MSI" -ForegroundColor Yellow
     Write-Host "========================================" -ForegroundColor Yellow
 
-    $buildMsi = Join-Path $RepoRoot "TeenAstroEmulator\installer\build_msi.ps1"
+    $buildMsi = Join-Path $RepoRoot "TeenAstroEmulator\installer\build.ps1"
     $msiArgs = @()
     if ($FlutterPath) { $msiArgs += "-FlutterPath"; $msiArgs += $FlutterPath }
     & $buildMsi @msiArgs

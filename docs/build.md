@@ -27,7 +27,7 @@
 | MainUnit/SHC/Server/Focuser (default) | `scripts/build_firmware.ps1` | */pio/ |
 | Android + Windows app | `scripts/build_app.ps1` | Released data/App/ |
 | Reply-length tables | `python scripts/generate_reply_lengths.py` | TeenAstroCommandDef, teenastro_app |
-| MSI (emulator + uploader + app) | `TeenAstroEmulator/installer/build_msi.ps1` | installer/out/ |
+| MSI (emulator + uploader + app) | `TeenAstroEmulator/installer/build.ps1` | installer/out/ |
 | Full release | `scripts/build_release.ps1` | release/ (ascom, msi, app) |
 
 **build_firmware.py:** `--target main|focuser|shc`, `--list`, `--clean`.  

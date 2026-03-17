@@ -36,7 +36,7 @@ Documented in **`BUILD_SETUP.md`** and **`scripts/BUILD_SCRIPTS.md`**:
   - Error message when Flutter is not found now explains PATH / `-FlutterPath` / `-FixFlutter`.
 - **`scripts/BUILD_SCRIPTS.md`** was updated to use a generic "from repo root" example instead of a user-specific path.
 
-Other scripts (**`build_release.ps1`**, **`TeenAstroEmulator/installer/build_msi.ps1`**) already use optional `-FlutterPath` and resolve repo root from the script location; no machine-specific paths were found there.
+Other scripts (**`build_release.ps1`**, **`TeenAstroEmulator/installer/build.ps1`**) already use optional `-FlutterPath` and resolve repo root from the script location; no machine-specific paths were found there.
 
 ---
 

@@ -105,7 +105,7 @@ python scripts\generate_reply_lengths.py
 
 ## 5. Build MSI installer (SHC emulator + Uploader + App)
 
-**Script:** `TeenAstroEmulator\installer\build_msi.ps1`
+**Script:** `TeenAstroEmulator\installer\build.ps1`
 
 - Builds the SHC emulator (PlatformIO), Firmware Uploader (MSBuild), and TeenAstro App (Flutter).
 - Produces a Windows MSI that installs all three with Start Menu shortcuts.
@@ -113,9 +113,9 @@ python scripts\generate_reply_lengths.py
 
 | Command | Effect |
 |---------|--------|
-| `.\TeenAstroEmulator\installer\build_msi.ps1` | Build everything and produce MSI |
-| `.\TeenAstroEmulator\installer\build_msi.ps1 -SkipApp` | Skip Flutter app (emulator + uploader only) |
-| `.\TeenAstroEmulator\installer\build_msi.ps1 -SkipEmulator` | Reuse previously staged emulator exe |
+| `.\TeenAstroEmulator\installer\build.ps1` | Build everything and produce MSI |
+| `.\TeenAstroEmulator\installer\build.ps1 -SkipApp` | Skip Flutter app (emulator + uploader only) |
+| `.\TeenAstroEmulator\installer\build.ps1 -SkipEmulator` | Reuse previously staged emulator exe |
 
 Requires: PlatformIO, MSBuild, Flutter, WiX Toolset 3. See `TeenAstroEmulator\installer\README.md`.
 
@@ -157,7 +157,7 @@ Requires: PlatformIO, MSBuild (.NET 4.7.2), Flutter, WiX Toolset 3.
 | Build MainUnit / SHC / Server / Focuser (default envs) | `scripts\build_firmware.ps1` | `TeenAstroMainUnit\pio\` etc. |
 | Build Android + Windows app | `scripts\build_app.ps1` | `Released data\App\` |
 | Generate reply-length tables | `python scripts\generate_reply_lengths.py` | TeenAstroCommandDef, teenastro_app |
-| Build MSI (emulator + uploader + app) | `TeenAstroEmulator\installer\build_msi.ps1` | `TeenAstroEmulator\installer\out\` |
+| Build MSI (emulator + uploader + app) | `TeenAstroEmulator\installer\build.ps1` | `TeenAstroEmulator\installer\out\` |
 | **Build all release artifacts** | **`scripts\build_release.ps1`** | **`release\`** |
 
 Full PC setup (all components, .NET, Flutter): see **`BUILD_SETUP.md`** at repo root.

@@ -3,7 +3,7 @@ REM Build TeenAstro Windows app (Flutter), create MSI, copy MSI to Released data
 setlocal
 set "REPO_ROOT=%~dp0.."
 set "OUT_DIR=%~dp0app"
-set "MSI_SRC=%REPO_ROOT%\TeenAstroEmulator\installer\.out\TeenAstroApp.msi"
+set "MSI_SRC=%REPO_ROOT%\teenastro_app\installer\.out\TeenAstroApp.msi"
 
 if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
 

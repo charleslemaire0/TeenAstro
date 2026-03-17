@@ -9,3 +9,7 @@
 
 # Builder output (Arduino build artifacts)
 TeenAstroUploader/builder/
+
+# Installer temporary staging and MSI output
+installer/.stage/
+installer/.out/
