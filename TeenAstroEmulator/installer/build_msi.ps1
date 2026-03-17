@@ -7,6 +7,7 @@
 # Switches:
 #   -EmulatorsOnly   Build and install only the emulators (MainUnit + SHC). No Uploader, no App. No MSBuild/Flutter needed.
 #   -UploaderOnly    Build and install only the Firmware Uploader (all required exes + config). No emulators, no App. MSI -> TeenAstroUploader.msi
+#   -AppOnly         Build and install only the TeenAstro Windows app (Flutter). No emulators, no Uploader. MSI -> TeenAstroApp.msi
 #   -SkipEmulator    Skip building the emulators (reuse staged exe)
 #   -SkipUploader    Skip building the firmware uploader
 #   -SkipApp         Skip building the Flutter Windows app
@@ -15,6 +16,7 @@
 param(
     [switch]$EmulatorsOnly,
     [switch]$UploaderOnly,
+    [switch]$AppOnly,
     [switch]$SkipEmulator,
     [switch]$SkipUploader,
     [switch]$SkipApp,
@@ -51,6 +53,10 @@ if ($EmulatorsOnly) {
 if ($UploaderOnly) {
     $SkipEmulator = $true
     $SkipApp      = $true
+}
+if ($AppOnly) {
+    $SkipEmulator = $true
+    $SkipUploader = $true
 }
 $BuildEmu     = Join-Path $EmuDir ".pio\build\emu"
 $BuildMainUnit = $BuildEmu
@@ -161,27 +167,73 @@ if (-not $SkipApp) {
 # ================================================================
 Write-Host "`n=== Staging files ===" -ForegroundColor Yellow
 $null = New-Item -ItemType Directory -Force -Path $StageDir
-# When -SkipApp, -EmulatorsOnly, or -UploaderOnly, clear stage so we don't harvest leftover files.
-if ($SkipApp -or $EmulatorsOnly -or $UploaderOnly) {
+# When -SkipApp, -EmulatorsOnly, -UploaderOnly, or -AppOnly, clear stage so we don't harvest leftover files.
+if ($SkipApp -or $EmulatorsOnly -or $UploaderOnly -or $AppOnly) {
     Get-ChildItem $StageDir -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-# MainUnit emulator (extended state view / tabbed cockpit) — skip when UploaderOnly
-if (-not $UploaderOnly -and (Test-Path (Join-Path $BuildEmu "mainunit_emu.exe"))) {
-    Copy-Item (Join-Path $BuildEmu "mainunit_emu.exe") (Join-Path $StageDir "TeenAstroMainUnit.exe") -Force
-}
-# SHC emulator — skip when UploaderOnly
-if (-not $UploaderOnly -and (Test-Path (Join-Path $BuildEmu "shc_emu.exe"))) {
-    Copy-Item (Join-Path $BuildEmu "shc_emu.exe") (Join-Path $StageDir "TeenAstroSHC.exe") -Force
-}
-# SDL2 (used by both emulators; from shared build dir or C:\SDL2\bin) — skip when UploaderOnly
-if (-not $UploaderOnly) {
-    $sdl2 = Join-Path $BuildEmu "SDL2.dll"
-    if (-not (Test-Path $sdl2)) { $sdl2 = "C:\SDL2\bin\SDL2.dll" }
-    if (Test-Path $sdl2) {
-        Copy-Item $sdl2 (Join-Path $StageDir "SDL2.dll") -Force
-    } else {
-        Write-Host "  Warning: SDL2.dll not found in build or C:\SDL2\bin. MSI may fail if SDL2 is required." -ForegroundColor Yellow
+# Emulators: stage all build output (exes + all DLLs: SDL2, MinGW runtime, etc.) so MSI has everything — skip when UploaderOnly or AppOnly
+if (-not $UploaderOnly -and -not $AppOnly) {
+    $emuStaged = $false
+    # Prefer shared dir .pio/build/emu (setup_env.py) with mainunit_emu.exe and shc_emu.exe
+    if (Test-Path $BuildEmu) {
+        Get-ChildItem -Path $BuildEmu -File | ForEach-Object {
+            $destName = $_.Name
+            if ($_.Name -eq "mainunit_emu.exe") { $destName = "TeenAstroMainUnit.exe" }
+            if ($_.Name -eq "shc_emu.exe")       { $destName = "TeenAstroSHC.exe" }
+            Copy-Item $_.FullName (Join-Path $StageDir $destName) -Force
+        }
+        if ((Test-Path (Join-Path $StageDir "TeenAstroMainUnit.exe")) -and (Test-Path (Join-Path $StageDir "TeenAstroSHC.exe"))) { $emuStaged = $true }
+    }
+    # Fallback: PlatformIO may use per-env dirs .pio/build/emu_mainunit and .pio/build/emu_shc with program.exe
+    if (-not $emuStaged) {
+        $buildMainUnit = Join-Path $EmuDir ".pio\build\emu_mainunit"
+        $buildSHC = Join-Path $EmuDir ".pio\build\emu_shc"
+        $mainExe = Join-Path $buildMainUnit "program.exe"
+        $shcExe = Join-Path $buildSHC "program.exe"
+        if ((Test-Path $mainExe) -and (Test-Path $shcExe)) {
+            Copy-Item $mainExe (Join-Path $StageDir "TeenAstroMainUnit.exe") -Force
+            Copy-Item $shcExe (Join-Path $StageDir "TeenAstroSHC.exe") -Force
+            Get-ChildItem -Path $buildMainUnit -Filter "*.dll" -File -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName (Join-Path $StageDir $_.Name) -Force }
+            Get-ChildItem -Path $buildSHC -Filter "*.dll" -File -ErrorAction SilentlyContinue | ForEach-Object { Copy-Item $_.FullName (Join-Path $StageDir $_.Name) -Force }
+            Write-Host "  Staged emulators from .pio\build\emu_mainunit and emu_shc (program.exe)." -ForegroundColor Gray
+            $emuStaged = $true
+        }
+    }
+    if (-not $emuStaged) {
+        Write-Host "Emulator build output not found. Expected .pio\build\emu\mainunit_emu.exe and shc_emu.exe, or .pio\build\emu_mainunit\program.exe and .pio\build\emu_shc\program.exe. Run the build first (e.g. pio run -d TeenAstroEmulator -e emu_mainunit and -e emu_shc)." -ForegroundColor Red
+        Pause-IfInteractive; exit 1
+    }
+    if ($emuStaged) {
+        # If SDL2.dll was not in build output, try C:\SDL2\bin (e.g. when build uses system SDL2)
+        if (-not (Test-Path (Join-Path $StageDir "SDL2.dll"))) {
+            $sdl2 = "C:\SDL2\bin\SDL2.dll"
+            if (Test-Path $sdl2) {
+                Copy-Item $sdl2 (Join-Path $StageDir "SDL2.dll") -Force
+                Write-Host "  SDL2.dll taken from C:\SDL2\bin." -ForegroundColor Gray
+            } else {
+                Write-Host "  Warning: SDL2.dll not in build and not at C:\SDL2\bin. MSI may be missing it." -ForegroundColor Yellow
+            }
+        }
+        # MinGW runtime DLLs (libgcc_s_dw2-1, libstdc++-6, libwinpthread-1) are not copied to build output; take from toolchain
+        $mingwDlls = @("libgcc_s_dw2-1.dll", "libgcc_s_seh-1.dll", "libstdc++-6.dll", "libwinpthread-1.dll")
+        $pioHome = if ($env:PIOHOME_DIR) { $env:PIOHOME_DIR } else { Join-Path $env:USERPROFILE ".platformio" }
+        $toolchainBins = @(
+            (Join-Path $pioHome "packages\toolchain-gccmingw32\bin"),
+            (Join-Path $RepoRoot ".platformio\packages\toolchain-gccmingw32\bin")
+        )
+        foreach ($dll in $mingwDlls) {
+            if (Test-Path (Join-Path $StageDir $dll)) { continue }
+            foreach ($tc in $toolchainBins) {
+                $src = Join-Path $tc $dll
+                if (Test-Path $src) {
+                    Copy-Item $src (Join-Path $StageDir $dll) -Force
+                    Write-Host "  $dll from toolchain." -ForegroundColor Gray
+                    break
+                }
+            }
+        }
+        if ($EmulatorsOnly) { Write-Host "  Staged all emulator build files (exes + DLLs + MinGW runtime)." -ForegroundColor Gray }
     }
 }
 # Icon (required for MSI and shortcuts)
@@ -201,7 +253,7 @@ if ($UploaderOnly) {
         Write-Host "Firmware Uploader build output not found at $UploaderBin. Build with MSBuild first." -ForegroundColor Red
         Pause-IfInteractive; exit 1
     }
-} elseif (-not $EmulatorsOnly) {
+} elseif (-not $EmulatorsOnly -and -not $AppOnly) {
     $uploaderExe = Join-Path $UploaderBin "TeenAstroUploader.exe"
     if (Test-Path $uploaderExe) {
         Copy-Item $uploaderExe (Join-Path $StageDir "TeenAstroUploader.exe") -Force
@@ -211,6 +263,20 @@ if ($UploaderOnly) {
 # Flutter app -- copy all files flat into stage (exe + DLLs + data/) (skipped when -EmulatorsOnly or -SkipApp)
 if (-not $EmulatorsOnly -and -not $SkipApp -and (Test-Path $AppBuildDir)) {
     Copy-Item "$AppBuildDir\*" $StageDir -Recurse -Force
+    if ($AppOnly) {
+        Write-Host "  Staged TeenAstro App (Flutter Windows: exe, DLLs, data\)." -ForegroundColor Gray
+        # Ensure app MSI will contain all required files: exe, runtime DLL, and data folder
+        $required = @(
+            (Join-Path $StageDir "teenastro_app.exe"),
+            (Join-Path $StageDir "flutter_windows.dll"),
+            (Join-Path $StageDir "data")
+        )
+        $missing = $required | Where-Object { -not (Test-Path $_) }
+        if ($missing.Count -gt 0) {
+            Write-Host "Missing required app files in stage: $($missing -join ', ')" -ForegroundColor Red
+            Pause-IfInteractive; exit 1
+        }
+    }
 }
 
 Write-Host "Staged: $StageDir" -ForegroundColor Green
@@ -233,17 +299,22 @@ Push-Location $InstallerDir
 try {
     $mainWxs = $null
     $mainObj = $null
-    $msi     = if ($UploaderOnly) { Join-Path $outDir "TeenAstroUploader.msi" } else { Join-Path $outDir "TeenAstroEmulator.msi" }
+    $msi     = if ($UploaderOnly) { Join-Path $outDir "TeenAstroUploader.msi" } elseif ($AppOnly) { Join-Path $outDir "TeenAstroApp.msi" } else { Join-Path $outDir "TeenAstroEmulator.msi" }
     $candleInputs = @()
     $lightInputs  = @()
 
     if ($EmulatorsOnly) {
-        # Emulators only: use minimal wxs, no heat. Use relative paths so candle/light do not mis-parse "C:\".
+        # Emulators only: harvest all staged files (exes + all DLLs) with heat so MSI contains everything.
+        $heatExe = Join-Path $wixBin "heat.exe"
+        $emuWxs  = Join-Path $outDir "EmulatorFiles.wxs"
+        Write-Host "  Harvesting emulator files with heat.exe..." -ForegroundColor Gray
+        & $heatExe dir ".stage" -nologo -cg EmulatorFiles -dr INSTALLFOLDER -srd -ke -gg -sfrag -sreg -template fragment -var "var.StageDir" -out $emuWxs
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         $mainWxs = Join-Path $InstallerDir "TeenAstroEmulator_emulators_only.wxs"
         $mainObj = Join-Path $outDir "TeenAstroEmulator_emulators_only.wixobj"
-        $candleInputs = @("TeenAstroEmulator_emulators_only.wxs")
-        $lightInputs  = @(".out\TeenAstroEmulator_emulators_only.wixobj")
-        Write-Host "  Emulators-only package (MainUnit + SHC)." -ForegroundColor Gray
+        $candleInputs = @("TeenAstroEmulator_emulators_only.wxs", ".out\EmulatorFiles.wxs")
+        $lightInputs  = @(".out\TeenAstroEmulator_emulators_only.wixobj", ".out\EmulatorFiles.wixobj")
+        Write-Host "  Emulators-only package (all exes + DLLs)." -ForegroundColor Gray
     } elseif ($UploaderOnly) {
         # Firmware Uploader only: harvest staged files with heat, then compile main wxs + fragment. Use relative paths.
         $heatExe = Join-Path $wixBin "heat.exe"
@@ -257,6 +328,18 @@ try {
         $candleInputs = @("TeenAstroUploader_only.wxs", ".out\AppFiles_uploader.wxs")
         $lightInputs  = @(".out\TeenAstroUploader_only.wixobj", ".out\AppFiles_uploader.wixobj")
         Write-Host "  Firmware Uploader package." -ForegroundColor Gray
+    } elseif ($AppOnly) {
+        # TeenAstro App only: harvest staged Flutter files with heat (no exclude), then compile app-only wxs. Use relative paths.
+        $heatExe = Join-Path $wixBin "heat.exe"
+        $appWxs  = Join-Path $outDir "AppFiles_app.wxs"
+        Write-Host "  Harvesting TeenAstro App files with heat.exe..." -ForegroundColor Gray
+        & $heatExe dir ".stage" -nologo -cg AppFiles -dr INSTALLFOLDER -srd -ke -gg -sfrag -sreg -template fragment -var "var.StageDir" -out $appWxs
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        $mainWxs = Join-Path $InstallerDir "TeenAstroApp_only.wxs"
+        $mainObj = Join-Path $outDir "TeenAstroApp_only.wixobj"
+        $candleInputs = @("TeenAstroApp_only.wxs", ".out\AppFiles_app.wxs")
+        $lightInputs  = @(".out\TeenAstroApp_only.wixobj", ".out\AppFiles_app.wixobj")
+        Write-Host "  TeenAstro App package." -ForegroundColor Gray
     } else {
         # Full package: harvest Flutter app with heat, then compile main wxs + AppFiles.
         $heatExe = Join-Path $wixBin "heat.exe"
@@ -278,18 +361,16 @@ try {
 
     Write-Host "  Compiling WiX (candle)..." -ForegroundColor Gray
     $candleArgs = @("-nologo", "-out", "$outDir\")
-    if (-not $EmulatorsOnly) {
-        # UploaderOnly: use relative StageDir so candle/light do not mis-parse "C:\"
-        $stageDirArg = if ($UploaderOnly) { ".stage" } else { $StageDir }
-        $candleArgs += "-dStageDir=`"$stageDirArg`""
-    }
+    # EmulatorsOnly/UploaderOnly/AppOnly: use relative StageDir so candle/light do not mis-parse "C:\"
+    $stageDirArg = if ($EmulatorsOnly -or $UploaderOnly -or $AppOnly) { ".stage" } else { $StageDir }
+    $candleArgs += "-dStageDir=`"$stageDirArg`""
     & (Join-Path $wixBin "candle.exe") @candleArgs @candleInputs
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
     Write-Host "  Linking MSI (light)..." -ForegroundColor Gray
     # EmulatorsOnly/UploaderOnly: use relative -b and -out so light.exe does not mis-parse "C:\"
-    $bindPath = if ($EmulatorsOnly -or $UploaderOnly) { "." } else { $StageDir }
-    $lightOut = if ($EmulatorsOnly) { ".out\TeenAstroEmulator.msi" } elseif ($UploaderOnly) { ".out\TeenAstroUploader.msi" } else { $msi }
+    $bindPath = if ($EmulatorsOnly -or $UploaderOnly -or $AppOnly) { "." } else { $StageDir }
+    $lightOut = if ($EmulatorsOnly) { ".out\TeenAstroEmulator.msi" } elseif ($UploaderOnly) { ".out\TeenAstroUploader.msi" } elseif ($AppOnly) { ".out\TeenAstroApp.msi" } else { $msi }
     & (Join-Path $wixBin "light.exe") -nologo -out $lightOut -b $bindPath @lightInputs
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

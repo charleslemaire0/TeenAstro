@@ -11,7 +11,7 @@ REM Remove existing MSI(s) in output directory
 del /Q "%OUT_DIR%\*.msi" 2>nul
 
 echo Building Firmware Uploader MSI...
-powershell -ExecutionPolicy Bypass -File "%REPO_ROOT%\TeenAstroEmulator\installer\build_msi.ps1" -UploaderOnly
+powershell -ExecutionPolicy Bypass -File "%REPO_ROOT%\TeenAstroUploader\installer\build.ps1"
 if errorlevel 1 (
     echo Build failed.
     exit /b 1

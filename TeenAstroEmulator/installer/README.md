@@ -6,7 +6,7 @@ Builds a Windows MSI package that installs the **MainUnit emulator** (extended s
   ```powershell
   .\TeenAstroEmulator\installer\build_msi.ps1 -EmulatorsOnly
   ```
-  This builds only MainUnit and SHC, stages them plus SDL2 and icon, and produces an MSI that installs just the emulators and Start Menu shortcuts. SDL2 is taken from the build output or, if missing, from `C:\SDL2\bin\SDL2.dll`.
+  This builds MainUnit and SHC, stages **all** build output (exes plus every DLL: SDL2, MinGW runtime, etc.) and icon, then harvests with heat so the MSI contains everything needed to run. SDL2 is taken from the build output or, if missing, from `C:\SDL2\bin\SDL2.dll`.
 
 - **Firmware Uploader only** — To build and install only the Firmware Uploader (all required files: exe, config, esptool, teensy tools), run:
   ```powershell

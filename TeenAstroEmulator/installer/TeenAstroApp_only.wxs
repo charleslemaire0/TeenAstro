@@ -2,11 +2,11 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <Product Id="*"
-           Name="TeenAstro Emulators"
+           Name="TeenAstro App"
            Language="1033"
            Version="1.6.0"
            Manufacturer="TeenAstro"
-           UpgradeCode="B7E8A7F2-9C4D-4E1A-8B3D-2F6E5A1C9D0B">
+           UpgradeCode="C4D5E6F7-A8B9-0123-4567-89ABCDEF0123">
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
     <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version is already installed." />
     <MediaTemplate EmbedCab="yes" />
@@ -16,33 +16,27 @@
 
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFilesFolder">
-        <Directory Id="INSTALLFOLDER" Name="TeenAstro Emulator" />
+        <Directory Id="INSTALLFOLDER" Name="TeenAstro App" />
       </Directory>
 
       <Directory Id="ProgramMenuFolder">
         <Directory Id="AppMenuDir" Name="TeenAstro">
-          <Component Id="ShortcutComponent" Guid="B2C3D4E5-F6A7-8901-BCDE-F12345678901">
-            <Shortcut Id="MainUnitShortcut"
-                      Name="TeenAstro MainUnit Emulator"
-                      Description="Start MainUnit emulator with extended state view (tabbed cockpit)"
-                      Target="[INSTALLFOLDER]TeenAstroMainUnit.exe"
-                      WorkingDirectory="INSTALLFOLDER"
-                      Icon="TeenAstroIcon" />
-            <Shortcut Id="SHCShortcut"
-                      Name="TeenAstro SHC Emulator"
-                      Description="Start Smart Hand Controller emulator"
-                      Target="[INSTALLFOLDER]TeenAstroSHC.exe"
+          <Component Id="ShortcutComponent" Guid="E5F6A7B8-C9D0-1234-EF01-23456789ABCD">
+            <Shortcut Id="AppShortcut"
+                      Name="TeenAstro App"
+                      Description="TeenAstro Windows application"
+                      Target="[INSTALLFOLDER]teenastro_app.exe"
                       WorkingDirectory="INSTALLFOLDER"
                       Icon="TeenAstroIcon" />
             <RemoveFolder Id="RemoveAppMenuDir" Directory="AppMenuDir" On="uninstall" />
-            <RegistryValue Root="HKCU" Key="Software\TeenAstro\Emulator" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
+            <RegistryValue Root="HKCU" Key="Software\TeenAstro\App" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
           </Component>
         </Directory>
       </Directory>
     </Directory>
 
-    <Feature Id="ProductFeature" Title="TeenAstro Emulators" Level="1">
-      <ComponentGroupRef Id="EmulatorFiles" />
+    <Feature Id="ProductFeature" Title="TeenAstro App" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
       <ComponentRef Id="ShortcutComponent" />
     </Feature>
   </Product>
