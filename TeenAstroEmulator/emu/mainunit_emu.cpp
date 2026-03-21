@@ -8,7 +8,7 @@
  * - micros()/millis() use wall-clock time via <chrono>
  *
  * Build:  pio run -d TeenAstroEmulator -e emu_mainunit
- * Run:    .pio\build\emu_mainunit\program.exe
+ * Run:    .pio\build\emu\mainunit_emu.exe
  */
 
 /* ------------------------------------------------------------------ */
@@ -67,6 +67,13 @@ static TcpServerStream g_tcpUsb;
 static TcpServerStream g_tcpShc;
 static TcpServerStream g_tcpWifi;   /* Android / SkySafari LX200 */
 static FocuserStub     g_focuserStub;
+
+/* ------------------------------------------------------------------ */
+/*  Mutex accessor for Timer1 ISR split (guiding/backlash section)     */
+/* ------------------------------------------------------------------ */
+std::mutex& emu_getFireMutex() {
+    return IntervalTimerThread::instance().mutex();
+}
 
 /* ------------------------------------------------------------------ */
 /*  reboot() stub                                                      */
@@ -146,10 +153,7 @@ int main(int, char**)
     unsigned long lastEepromFlush = millis();
 
     while (true) {
-        {
-            std::lock_guard<std::mutex> lk(IntervalTimerThread::instance().mutex());
-            application.loop();
-        }
+        application.loop();
         cockpit::cockpit_update();
 
         /* Flush EEPROM every 5 s so settings survive TerminateProcess */

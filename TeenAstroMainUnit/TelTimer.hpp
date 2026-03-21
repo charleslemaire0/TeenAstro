@@ -8,6 +8,8 @@ class DateTimeTimers
 public:
   volatile long           m_lst = 0;                    // this is the local (apparent) sidereal time in 1/100 seconds (23h 56m 4.1s per day = 86400 clock seconds/
   volatile long           m_missedTicks = 0;             // accumulated missed sidereal ticks (for :GXDW1#/:GXDW2#)
+  volatile long           m_peakGap = 0;                 // worst single elapsed value seen (for :GXDW3#/:GXDW4#)
+  volatile long           m_totalTicks = 0;              // total ticks processed (for miss-rate computation)
 private:
 
   //timers members
@@ -139,8 +141,17 @@ public:
     if (elapsed > 0)
     {
       m_siderealTimer = tempLst;
+      m_totalTicks += elapsed;
+      if (elapsed > m_peakGap)
+        m_peakGap = elapsed;
       if (elapsed > 1)
+      {
         m_missedTicks += (elapsed - 1);
+#ifdef EMU_MAINUNIT
+        printf("[EMU] WARNING: %ld sidereal ticks missed (elapsed=%ld)\n", elapsed - 1, elapsed);
+        fflush(stdout);
+#endif
+      }
       return elapsed;
     }
     return 0;

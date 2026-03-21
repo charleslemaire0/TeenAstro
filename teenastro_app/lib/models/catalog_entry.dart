@@ -1,3 +1,32 @@
+import 'dart:math';
+
+/// Compute altitude (degrees) of a celestial object given observer latitude,
+/// local sidereal time (hours), and object RA (hours) / Dec (degrees).
+double objectAltitude(double latDeg, double lstHours, double raHours, double decDeg) {
+  final lat = latDeg * pi / 180;
+  final dec = decDeg * pi / 180;
+  var ha = (lstHours - raHours) * 15 * pi / 180;
+  while (ha > pi) {
+    ha -= 2 * pi;
+  }
+  while (ha < -pi) {
+    ha += 2 * pi;
+  }
+  final sinAlt = sin(lat) * sin(dec) + cos(lat) * cos(dec) * cos(ha);
+  return asin(sinAlt.clamp(-1.0, 1.0)) * 180 / pi;
+}
+
+/// Parse a sidereal time string "HH:MM:SS" into decimal hours.
+double? parseSiderealTime(String s) {
+  final parts = s.split(':');
+  if (parts.length < 2) return null;
+  final h = int.tryParse(parts[0]);
+  final m = int.tryParse(parts[1]);
+  final sec = parts.length > 2 ? int.tryParse(parts[2]) : 0;
+  if (h == null || m == null) return null;
+  return h + m / 60.0 + (sec ?? 0) / 3600.0;
+}
+
 /// Catalog types
 enum CatalogType { dso, star, doubleStar, variableStar }
 
@@ -106,9 +135,12 @@ class CatalogEntry {
 
   /// Format RA as HH:MM:SS
   String get raStr {
-    final h = ra.floor();
-    final m = ((ra - h) * 60).floor();
-    final s = (((ra - h) * 60 - m) * 60).round();
+    var h = ra.floor();
+    var m = ((ra - h) * 60).floor();
+    var s = (((ra - h) * 60 - m) * 60).round();
+    if (s >= 60) { s -= 60; m += 1; }
+    if (m >= 60) { m -= 60; h += 1; }
+    if (h >= 24) h -= 24;
     return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
@@ -116,9 +148,11 @@ class CatalogEntry {
   String get decStr {
     final sign = dec >= 0 ? '+' : '-';
     final absD = dec.abs();
-    final d = absD.floor();
-    final m = ((absD - d) * 60).floor();
-    final s = (((absD - d) * 60 - m) * 60).round();
+    var d = absD.floor();
+    var m = ((absD - d) * 60).floor();
+    var s = (((absD - d) * 60 - m) * 60).round();
+    if (s >= 60) { s -= 60; m += 1; }
+    if (m >= 60) { m -= 60; d += 1; }
     return '$sign${d.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 

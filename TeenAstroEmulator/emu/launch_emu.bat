@@ -12,12 +12,14 @@ REM ============================================================
 
 setlocal
 set EMU_DIR=%~dp0..
-set MU_EXE=%EMU_DIR%\.pio\build\emu_mainunit\program.exe
-set SHC_EXE=%EMU_DIR%\.pio\build\emu_shc\program.exe
+set BUILD_DIR=%EMU_DIR%\.pio\build\emu
+set MU_EXE=%BUILD_DIR%\mainunit_emu.exe
+set SHC_EXE=%BUILD_DIR%\shc_emu.exe
 set SDL2_DLL=C:\SDL2\bin\SDL2.dll
 
 REM Kill any previous emulator instances
-taskkill /f /im program.exe >nul 2>&1
+taskkill /f /im mainunit_emu.exe >nul 2>&1
+taskkill /f /im shc_emu.exe >nul 2>&1
 
 if "%1"=="--no-build" goto :skip_build
 
@@ -41,14 +43,12 @@ popd
 
 :skip_build
 
-REM Ensure SDL2.dll is next to both executables
-for %%D in (emu_mainunit emu_shc) do (
-    if not exist "%EMU_DIR%\.pio\build\%%D\SDL2.dll" (
-        if exist "%SDL2_DLL%" (
-            copy "%SDL2_DLL%" "%EMU_DIR%\.pio\build\%%D\" >nul
-        ) else (
-            echo WARNING: SDL2.dll not found at %SDL2_DLL%. %%D may fail to start.
-        )
+REM Ensure SDL2.dll is next to executables
+if not exist "%BUILD_DIR%\SDL2.dll" (
+    if exist "%SDL2_DLL%" (
+        copy "%SDL2_DLL%" "%BUILD_DIR%\" >nul
+    ) else (
+        echo WARNING: SDL2.dll not found at %SDL2_DLL%. Emulators may fail to start.
     )
 )
 
@@ -71,4 +71,5 @@ start "TeenAstro SHC" "%SHC_EXE%"
 
 echo Both emulators launched. Close this window or press Ctrl+C to stop.
 pause
-taskkill /f /im program.exe >nul 2>&1
+taskkill /f /im mainunit_emu.exe >nul 2>&1
+taskkill /f /im shc_emu.exe >nul 2>&1

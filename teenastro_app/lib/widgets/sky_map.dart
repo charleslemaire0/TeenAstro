@@ -1,23 +1,29 @@
-import 'dart:math';
+import 'dart:math' as math;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/catalog_entry.dart';
 import '../models/constellation_lines.dart';
+import '../models/equinox_precession.dart';
 import '../models/mount_state.dart';
+import '../models/planet_positions.dart';
+import '../providers/planetarium_settings_provider.dart';
 import '../services/catalog_service.dart';
 import '../services/mount_state_provider.dart';
 import '../theme.dart';
 
-/// Sky planetarium widget.
+/// Sky planetarium widget (same projection and epoch logic as main planetarium).
 /// [onStarSelected] fires when user taps a named star (only bright, named stars).
 /// [overlayMessage] shows a prominent message across the map.
 /// [highlightedStar] draws a highlight ring around a specific star.
+/// [maxStarScale] when set (e.g. 4.0 for align view), clamps star size to 1.0..maxStarScale.
 class SkyMapWidget extends ConsumerStatefulWidget {
   final double? height;
   final void Function(CatalogEntry star)? onStarSelected;
   final String? overlayMessage;
   final CatalogEntry? highlightedStar;
+  /// If set, effective star scale is clamped to [1.0, maxStarScale] (e.g. align view uses 4.0).
+  final double? maxStarScale;
 
   const SkyMapWidget({
     super.key,
@@ -25,6 +31,7 @@ class SkyMapWidget extends ConsumerStatefulWidget {
     this.onStarSelected,
     this.overlayMessage,
     this.highlightedStar,
+    this.maxStarScale,
   });
 
   @override
@@ -35,8 +42,10 @@ class _SkyMapWidgetState extends ConsumerState<SkyMapWidget> {
   List<CatalogEntry>? _stars;
   List<Constellation>? _constellations;
   double _zoom = 1.0;
-  Offset _pan = Offset.zero;
+  double _rotation = 0.0;
+  double _panY = 0.0;
   Offset _lastFocalPoint = Offset.zero;
+  double _lastScale = 1.0;
   String? _tappedInfo;
 
   @override
@@ -70,7 +79,7 @@ class _SkyMapWidgetState extends ConsumerState<SkyMapWidget> {
           _constellations = consts;
         });
       }
-    } catch (e, st) {
+    } catch (e) {
       // Load failed - leave _stars/_constellations null
     }
   }
@@ -91,34 +100,69 @@ class _SkyMapWidgetState extends ConsumerState<SkyMapWidget> {
         onPointerSignal: (event) {
           if (event is PointerScrollEvent) {
             setState(() {
+              final oldZoom = _zoom;
               final delta = event.scrollDelta.dy > 0 ? 0.9 : 1.1;
-              _zoom = (_zoom * delta).clamp(0.5, 10.0);
+              _zoom = (_zoom * delta).clamp(0.5, 30.0);
+              _panY = _panY * (_zoom / oldZoom);
             });
           }
         },
         child: GestureDetector(
-          onScaleStart: (d) => _lastFocalPoint = d.focalPoint,
+          onScaleStart: (d) {
+            _lastFocalPoint = d.localFocalPoint;
+            _lastScale = 1.0;
+          },
           onScaleUpdate: (d) {
             setState(() {
-              _zoom = (_zoom * d.scale).clamp(0.5, 10.0);
-              _pan += d.focalPoint - _lastFocalPoint;
-              _lastFocalPoint = d.focalPoint;
+              final oldZoom = _zoom;
+              _zoom = (_zoom * (d.scale / _lastScale)).clamp(0.5, 30.0);
+              _lastScale = d.scale;
+              _panY = _panY * (_zoom / oldZoom);
+
+              final delta = d.localFocalPoint - _lastFocalPoint;
+              _lastFocalPoint = d.localFocalPoint;
+
+              final size = context.size;
+              if (size != null) {
+                final cx = size.width / 2;
+                final cy = size.height / 2 + _panY;
+                final fDy = cy - d.localFocalPoint.dy;
+                final fDx = cx - d.localFocalPoint.dx;
+                const eps2 = 30.0 * 30.0;
+                final denom = fDy * fDy + eps2;
+                _rotation -= delta.dx * fDy / denom;
+                _panY += delta.dy + delta.dx * fDx * fDy / denom;
+              } else {
+                _panY += delta.dy;
+              }
             });
           },
           onTapUp: (d) => _handleTap(d.localPosition, state),
           child: Stack(
             fit: StackFit.expand,
             children: [
-              CustomPaint(
-                size: Size.infinite,
-                painter: _SkyPainter(
-                  stars: _stars!,
-                  constellations: _constellations ?? [],
-                  state: state,
-                  zoom: _zoom,
-                  pan: _pan,
-                  highlightedStar: widget.highlightedStar,
-                ),
+              Consumer(
+                builder: (_, ref, __) {
+                  final settings = ref.watch(planetariumSettingsProvider);
+                  final effectiveStarScale = widget.maxStarScale == null
+                      ? settings.starScale
+                      : settings.starScale.clamp(1.0, widget.maxStarScale!);
+                  return CustomPaint(
+                    size: Size.infinite,
+                    painter: _SkyPainter(
+                      stars: _stars!,
+                      constellations: _constellations ?? [],
+                      state: state,
+                      zoom: _zoom,
+                      rotation: _rotation,
+                      panY: _panY,
+                      highlightedStar: widget.highlightedStar,
+                      starScale: effectiveStarScale,
+                      epochMode: EpochMode.jNow,
+                      nightMode: TA.isNight,
+                    ),
+                  );
+                },
               ),
               // Tapped star tooltip
               if (_tappedInfo != null)
@@ -129,12 +173,12 @@ class _SkyMapWidgetState extends ConsumerState<SkyMapWidget> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: TAColors.surface.withValues(alpha: 0.9),
+                      color: TA.surface.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(_tappedInfo!,
-                        style: const TextStyle(
-                            color: TAColors.textHigh, fontSize: 11)),
+                        style: TextStyle(
+                            color: TA.textHigh, fontSize: 11)),
                   ),
                 ),
               // Zoom + scope overlay
@@ -150,8 +194,8 @@ class _SkyMapWidgetState extends ConsumerState<SkyMapWidget> {
                   ),
                   child: Text(
                     '${_zoom.toStringAsFixed(1)}x  ${state.ra} / ${state.dec.replaceAll('*', '°')}',
-                    style: const TextStyle(
-                        color: Colors.white70,
+                    style: TextStyle(
+                        color: TA.text,
                         fontSize: 10,
                         fontFamily: 'monospace'),
                   ),
@@ -168,13 +212,13 @@ class _SkyMapWidgetState extends ConsumerState<SkyMapWidget> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 6),
                       decoration: BoxDecoration(
-                        color: TAColors.accent.withValues(alpha: 0.85),
+                        color: TA.accent.withValues(alpha: 0.85),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         widget.overlayMessage!,
-                        style: const TextStyle(
-                            color: Colors.white,
+                        style: TextStyle(
+                            color: TA.textHigh,
                             fontSize: 13,
                             fontWeight: FontWeight.w600),
                       ),
@@ -190,7 +234,7 @@ class _SkyMapWidgetState extends ConsumerState<SkyMapWidget> {
     final content = ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        color: const Color(0xFF080C12),
+        color: TA.isNight ? const Color(0xFF0A0404) : const Color(0xFF080C12),
         child: mapContent,
       ),
     );
@@ -211,14 +255,19 @@ class _SkyMapWidgetState extends ConsumerState<SkyMapWidget> {
       lst: _parseSiderealTime(state.siderealTime),
       size: size,
       zoom: _zoom,
-      pan: _pan,
+      rotation: _rotation,
+      panY: _panY,
     );
+
+    // Display always JNow.
+    final jd = julianDate(DateTime.now().toUtc());
 
     CatalogEntry? nearest;
     double nearestDist = 25.0;
 
     for (final star in _stars!) {
-      final pt = proj.project(star.ra, star.dec);
+      final (sRa, sDec) = equatorialEquinoxToJNow(star.ra, star.dec, 2000, jd);
+      final pt = proj.project(sRa, sDec);
       if (pt == null) continue;
       final d = (pt - localPos).distance;
       if (d < nearestDist) {
@@ -278,48 +327,44 @@ double _parseDec(String s) {
 }
 
 class _Projection {
-  final double lat;
-  final double lst;
+  final double lat, lst;
   final Size size;
   final double zoom;
-  final Offset pan;
-
-  late final double _latRad;
-  late final double _cx, _cy, _radius;
+  final double rotation;
+  final double panY;
+  late final double _latRad, _cx, _cy, _radius;
 
   _Projection({
     required this.lat,
     required this.lst,
     required this.size,
     required this.zoom,
-    required this.pan,
+    required this.rotation,
+    required this.panY,
   }) {
-    _latRad = lat * pi / 180;
-    _cx = size.width / 2 + pan.dx;
-    _cy = size.height / 2 + pan.dy;
-    _radius = (min(size.width, size.height) / 2 - 8) * zoom;
+    _latRad = lat * math.pi / 180;
+    _cx = size.width / 2;
+    _cy = size.height / 2 + panY;
+    _radius = (math.sqrt(size.width * size.width + size.height * size.height) / 2) * zoom;
   }
 
   Offset? project(double raH, double decDeg, {bool clipHorizon = true}) {
-    final ha = (lst - raH) * 15 * pi / 180;
-    final dec = decDeg * pi / 180;
-
-    final sinAlt =
-        sin(dec) * sin(_latRad) + cos(dec) * cos(_latRad) * cos(ha);
-    final alt = asin(sinAlt.clamp(-1.0, 1.0));
-
+    final ha = (lst - raH) * 15 * math.pi / 180;
+    final dec = decDeg * math.pi / 180;
+    final sinAlt = math.sin(dec) * math.sin(_latRad) +
+        math.cos(dec) * math.cos(_latRad) * math.cos(ha);
+    final alt = math.asin(sinAlt.clamp(-1.0, 1.0));
     if (clipHorizon && alt < 0) return null;
-
-    final cosAz =
-        (sin(dec) - sin(alt) * sin(_latRad)) / (cos(alt) * cos(_latRad));
-    var az = acos(cosAz.clamp(-1.0, 1.0));
-    if (sin(ha) > 0) az = 2 * pi - az;
-
-    final r = _radius * cos(alt) / (1 + sin(alt));
-    final x = _cx + r * sin(az);
-    final y = _cy - r * cos(az);
-
-    return Offset(x, y);
+    final cosAlt = math.cos(alt);
+    final denom = cosAlt * math.cos(_latRad);
+    final cosAz = denom.abs() < 1e-10
+        ? 1.0
+        : ((math.sin(dec) - sinAlt * math.sin(_latRad)) / denom);
+    var az = math.acos(cosAz.clamp(-1.0, 1.0));
+    if (math.sin(ha) > 0) az = 2 * math.pi - az;
+    final azRot = az + rotation;
+    final r = _radius * cosAlt / (1 + math.sin(alt));
+    return Offset(_cx - r * math.sin(azRot), _cy - r * math.cos(azRot));
   }
 
   double get cx => _cx;
@@ -332,16 +377,24 @@ class _SkyPainter extends CustomPainter {
   final List<Constellation> constellations;
   final MountState state;
   final double zoom;
-  final Offset pan;
+  final double rotation;
+  final double panY;
   final CatalogEntry? highlightedStar;
+  final double starScale;
+  final EpochMode epochMode;
+  final bool nightMode;
 
   _SkyPainter({
     required this.stars,
     required this.constellations,
     required this.state,
     required this.zoom,
-    required this.pan,
+    required this.rotation,
+    required this.panY,
     this.highlightedStar,
+    this.starScale = 3.0,
+    this.epochMode = EpochMode.jNow,
+    this.nightMode = false,
   });
 
   @override
@@ -351,102 +404,148 @@ class _SkyPainter extends CustomPainter {
       lst: _parseSiderealTime(state.siderealTime),
       size: size,
       zoom: zoom,
-      pan: pan,
+      rotation: rotation,
+      panY: panY,
     );
 
+    // Sky background
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height),
-        Paint()..color = const Color(0xFF080C12));
+        Paint()..color = nightMode ? const Color(0xFF120606) : const Color(0xFF0C1520));
 
-    // Sky circle fill
-    canvas.drawCircle(Offset(proj.cx, proj.cy), proj.radius,
-        Paint()..color = const Color(0xFF0D1520));
+    // Ground below horizon
+    final groundAll = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final skyCircle = Path()..addOval(
+      Rect.fromCircle(center: Offset(proj.cx, proj.cy), radius: proj.radius));
+    final groundPath = Path.combine(PathOperation.difference, groundAll, skyCircle);
+    canvas.drawPath(groundPath,
+        Paint()..color = nightMode ? const Color(0xFF100808) : const Color(0xFF0A140A));
 
     // Horizon ring
     canvas.drawCircle(
         Offset(proj.cx, proj.cy),
         proj.radius,
         Paint()
-          ..color = const Color(0xFF1A3050)
+          ..color = nightMode ? const Color(0xFF3A1818) : const Color(0xFF2A4020)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5);
 
-    // Cardinal labels on horizon
-    _drawCardinal(canvas, proj, 'N', 0);
-    _drawCardinal(canvas, proj, 'E', pi / 2);
-    _drawCardinal(canvas, proj, 'S', pi);
-    _drawCardinal(canvas, proj, 'W', 3 * pi / 2);
+    // Cardinal labels on horizon (rotate with map)
+    _drawCardinal(canvas, proj, 'N', 0, rotation, 11);
+    _drawCardinal(canvas, proj, 'NE', math.pi / 4, rotation, 8);
+    _drawCardinal(canvas, proj, 'E', math.pi / 2, rotation, 11);
+    _drawCardinal(canvas, proj, 'SE', 3 * math.pi / 4, rotation, 8);
+    _drawCardinal(canvas, proj, 'S', math.pi, rotation, 11);
+    _drawCardinal(canvas, proj, 'SW', 5 * math.pi / 4, rotation, 8);
+    _drawCardinal(canvas, proj, 'W', 3 * math.pi / 2, rotation, 11);
+    _drawCardinal(canvas, proj, 'NW', 7 * math.pi / 4, rotation, 8);
 
-    // Constellation lines (only above horizon; hide constellations below horizon)
+    final jd = julianDate(DateTime.now().toUtc());
+    // Display always JNow.
+    (double, double) starCoords(double raH, double decDeg) =>
+        equatorialEquinoxToJNow(raH, decDeg, 2000, jd);
+    (double, double) mountCoords(double raH, double decDeg) => (raH, decDeg);
+
+    // Constellation lines (Stellarium-style)
+    final constLineC = nightMode ? const Color(0xFF662222) : const Color(0xFF4466AA);
     final linePaint = Paint()
-      ..color = const Color(0xFF3A5080)
+      ..color = constLineC.withValues(alpha: 0.55)
       ..strokeWidth = 1.2
-      ..style = PaintingStyle.stroke;
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true;
 
     for (final c in constellations) {
       for (final line in c.lines) {
-        final p1 = proj.project(line.ra1, line.dec1, clipHorizon: true);
-        final p2 = proj.project(line.ra2, line.dec2, clipHorizon: true);
+        final (ra1, dec1) = starCoords(line.ra1, line.dec1);
+        final (ra2, dec2) = starCoords(line.ra2, line.dec2);
+        final p1 = proj.project(ra1, dec1, clipHorizon: true);
+        final p2 = proj.project(ra2, dec2, clipHorizon: true);
         if (p1 != null && p2 != null) {
           canvas.drawLine(p1, p2, linePaint);
         }
       }
     }
 
-    // Stars
+    // Stars (same formula as planetarium: magLimit, baseR, brightness, starScale)
+    final magLimit = 6.0 + 2.5 * (math.log(zoom.clamp(0.5, 30)) / math.ln10);
+    final neutralColor = nightMode ? const Color(0xFFCC6644) : const Color(0xFFE0E8FF);
+    final zoomScale = math.pow(zoom.clamp(0.5, 30), 0.45);
     for (final star in stars) {
-      final pt = proj.project(star.ra, star.dec);
+      final mag = star.mag ?? 5.0;
+      if (mag > magLimit) continue;
+      final (sRa, sDec) = starCoords(star.ra, star.dec);
+      final pt = proj.project(sRa, sDec);
       if (pt == null) continue;
 
-      final mag = star.mag ?? 5.0;
-      final r = (3.5 - mag * 0.45).clamp(0.8, 4.0);
-      final brightness = ((6.0 - mag) / 6.0).clamp(0.3, 1.0);
+      final baseR = 2.5 * math.pow(10, -0.14 * mag) * 1.25;
+      final r = (baseR * zoomScale * starScale).clamp(0.3, 40.0);
+      if (r < 0.3) continue;
+      final brightness = math.pow(10, -0.4 * (mag - magLimit)).clamp(0.2, 1.0).toDouble();
+      final cr = neutralColor.red;
+      final cg = neutralColor.green;
+      final cb = neutralColor.blue;
 
-      final starPaint = Paint()
-        ..color = Color.fromRGBO(
-            (200 + 55 * brightness).toInt().clamp(0, 255),
-            (200 + 55 * brightness).toInt().clamp(0, 255),
-            (220 + 35 * brightness).toInt().clamp(0, 255),
-            brightness);
+      if (r >= 1.8) {
+        final centerColor = Color.fromRGBO(
+          (cr * brightness).round().clamp(0, 255),
+          (cg * brightness).round().clamp(0, 255),
+          (cb * brightness).round().clamp(0, 255),
+          brightness,
+        );
+        final edgeColor = Color.fromRGBO(
+          (cr * brightness * 0.5).round().clamp(0, 255),
+          (cg * brightness * 0.5).round().clamp(0, 255),
+          (cb * brightness * 0.5).round().clamp(0, 255),
+          brightness * 0.3,
+        );
+        final gradient = RadialGradient(colors: [centerColor, edgeColor]);
+        canvas.drawCircle(pt, r, Paint()
+          ..shader = gradient.createShader(
+              Rect.fromCircle(center: pt, radius: r)));
+      } else {
+        canvas.drawCircle(pt, r, Paint()
+          ..color = Color.fromRGBO(
+              (cr * brightness).round().clamp(0, 255),
+              (cg * brightness).round().clamp(0, 255),
+              (cb * brightness).round().clamp(0, 255),
+              brightness));
+      }
 
-      canvas.drawCircle(pt, r, starPaint);
-
-      // Highlight ring for selected alignment star
-      if (highlightedStar != null &&
-          star.ra == highlightedStar!.ra &&
-          star.dec == highlightedStar!.dec) {
+      if (highlightedStar != null && star.id == highlightedStar!.id) {
         canvas.drawCircle(
             pt,
             r + 6,
             Paint()
-              ..color = TAColors.warning
+              ..color = TA.warning
               ..style = PaintingStyle.stroke
               ..strokeWidth = 2.0);
       }
 
-      // Label bright named stars
       if (mag <= 2.5 && star.name.isNotEmpty && zoom >= 0.8) {
+        final labelFontSize = zoom > 4 ? 12.0 : (zoom > 2 ? 10.0 : 9.0);
         final tp = TextPainter(
           text: TextSpan(
             text: star.name,
             style: TextStyle(
-              color: const Color(0xFF8899BB).withValues(alpha: 0.8),
-              fontSize: 9 * (zoom > 2 ? 1.2 : 1.0),
+              color: (nightMode ? const Color(0xFF884444) : const Color(0xFFAABBDD))
+                  .withValues(alpha: 0.85),
+              fontSize: labelFontSize,
             ),
           ),
           textDirection: TextDirection.ltr,
         )..layout();
-        tp.paint(canvas, pt + const Offset(5, -5));
+        tp.paint(canvas, pt + Offset(r + 3, -tp.height / 2));
       }
     }
 
-    // Telescope crosshair
-    final scopeRa = _parseRa(state.ra);
-    final scopeDec = _parseDec(state.dec);
+    // Telescope crosshair (mount reports JNow)
+    final (scopeRa, scopeDec) = mountCoords(_parseRa(state.ra), _parseDec(state.dec));
     final scopePt = proj.project(scopeRa, scopeDec, clipHorizon: false);
 
     if (scopePt != null) {
       final scopePaint = Paint()
-        ..color = TAColors.accent
+        ..color = TA.accent
         ..strokeWidth = 1.5
         ..style = PaintingStyle.stroke;
 
@@ -456,19 +555,18 @@ class _SkyPainter extends CustomPainter {
       canvas.drawLine(scopePt - const Offset(0, arm),
           scopePt + const Offset(0, arm), scopePaint);
       canvas.drawCircle(scopePt, 6, scopePaint);
-      canvas.drawCircle(scopePt, 2, Paint()..color = TAColors.accent);
+      canvas.drawCircle(scopePt, 2, Paint()..color = TA.accent);
     }
 
-    // Target diamond
+    // Target diamond (mount reports JNow)
     if (state.targetRa.isNotEmpty &&
         state.targetDec.isNotEmpty &&
         state.targetRa != '00:00:00') {
-      final tRa = _parseRa(state.targetRa);
-      final tDec = _parseDec(state.targetDec);
+      final (tRa, tDec) = mountCoords(_parseRa(state.targetRa), _parseDec(state.targetDec));
       final tPt = proj.project(tRa, tDec, clipHorizon: false);
       if (tPt != null) {
         final targetPaint = Paint()
-          ..color = TAColors.success
+          ..color = TA.success
           ..strokeWidth = 1.0
           ..style = PaintingStyle.stroke;
         canvas.drawCircle(tPt, 8, targetPaint);
@@ -484,15 +582,16 @@ class _SkyPainter extends CustomPainter {
   }
 
   void _drawCardinal(
-      Canvas canvas, _Projection proj, String label, double azRad) {
-    final x = proj.cx + (proj.radius + 12) * sin(azRad);
-    final y = proj.cy - (proj.radius + 12) * cos(azRad);
+      Canvas canvas, _Projection proj, String label, double azRad, double rotation, double fontSize) {
+    final a = azRad + rotation;
+    final x = proj.cx - (proj.radius - 16) * math.sin(a);
+    final y = proj.cy - (proj.radius - 16) * math.cos(a);
     final tp = TextPainter(
       text: TextSpan(
         text: label,
-        style: const TextStyle(
-            color: Color(0xFF5577AA),
-            fontSize: 11,
+        style: TextStyle(
+            color: nightMode ? const Color(0xFF884444) : const Color(0xFF5577AA),
+            fontSize: fontSize,
             fontWeight: FontWeight.w700),
       ),
       textDirection: TextDirection.ltr,

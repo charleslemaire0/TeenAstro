@@ -6,6 +6,9 @@ import '../services/mount_state_provider.dart';
 import '../models/lx200_commands.dart';
 import '../models/mount_state.dart';
 import '../models/catalog_entry.dart';
+import '../models/equinox_precession.dart';
+import '../models/planet_positions.dart';
+import '../providers/planetarium_settings_provider.dart';
 import '../theme.dart';
 import '../widgets/sky_map.dart';
 
@@ -43,9 +46,53 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
   Timer? _slewPoll;
 
   @override
+  void initState() {
+    super.initState();
+    _restoreFromMountState();
+  }
+
+  @override
   void dispose() {
     _slewPoll?.cancel();
     super.dispose();
+  }
+
+  /// On entering the screen, check the mount's alignment phase/star number
+  /// (from GXAS) and resume the correct step. Star names are lost when
+  /// navigating away, so show a generic label.
+  void _restoreFromMountState() {
+    final state = ref.read(mountStateProvider);
+    if (state.alignPhase == AlignPhase.idle) return;
+
+    final starNum = state.alignStarNum;
+    final phase = state.alignPhase;
+
+    AlignStep restored;
+    if (phase == AlignPhase.select) {
+      restored = starNum <= 1
+          ? AlignStep.selectStar1
+          : starNum == 2
+              ? AlignStep.selectStar2
+              : AlignStep.selectStar3;
+    } else if (phase == AlignPhase.slew) {
+      restored = starNum <= 1
+          ? AlignStep.slewingStar1
+          : starNum == 2
+              ? AlignStep.slewingStar2
+              : AlignStep.slewingStar3;
+      _startSlewMonitor(starNum.clamp(1, 3));
+    } else {
+      restored = starNum <= 1
+          ? AlignStep.recenterStar1
+          : starNum == 2
+              ? AlignStep.recenterStar2
+              : AlignStep.recenterStar3;
+    }
+
+    setState(() {
+      _step = restored;
+      _numStars = starNum <= 2 ? 2 : 3;
+    });
   }
 
   LX200TcpClient get _client => ref.read(lx200ClientProvider);
@@ -120,11 +167,19 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
               : AlignStep.slewingStar3;
     });
 
+    // Tell the mount which star was selected (displayed on SHC)
+    if (star.name.isNotEmpty) {
+      await _client.sendBool(LX200.setAlignStarName(star.name));
+      await Future.delayed(const Duration(milliseconds: 60));
+    }
+
+    final jd = julianDate(DateTime.now().toUtc());
+    final (raStr, decStr) = j2000ToJNowLx200(star.ra, star.dec, jd);
     final raOk =
-        await _client.sendBool(LX200.setTargetRa(star.raStr));
+        await _client.sendBool(LX200.setTargetRa(raStr));
     await Future.delayed(const Duration(milliseconds: 60));
     final decOk =
-        await _client.sendBool(LX200.setTargetDec(star.decStr.replaceFirst(':', '*')));
+        await _client.sendBool(LX200.setTargetDec(decStr.replaceFirst(':', '*')));
     await Future.delayed(const Duration(milliseconds: 60));
 
     if (!raOk || !decOk) {
@@ -211,6 +266,13 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
     });
   }
 
+  Future<void> _abortAlignment() async {
+    if (_isSlewingStep) await _client.send(LX200.stopAll);
+    await _client.sendBool(LX200.alignAbort);
+    _slewPoll?.cancel();
+    if (mounted) _reset();
+  }
+
   bool get _isSelectStep =>
       _step == AlignStep.selectStar1 ||
       _step == AlignStep.selectStar2 ||
@@ -284,7 +346,54 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
             star2: _star2,
             star3: _star3),
 
-        // Sky map fills remaining space
+        // Mount alignment status from GXAS
+        if (state.alignmentInProgress)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            color: TA.surfaceVariant,
+            child: Row(
+              children: [
+                Icon(Icons.settings_input_antenna, size: 14, color: TA.accent),
+                const SizedBox(width: 6),
+                Text('Mount: ${state.alignPhaseLabel}',
+                    style: TextStyle(color: TA.text, fontSize: 11)),
+              ],
+            ),
+          ),
+
+        // View options (align view derived from planetarium: same epoch, star size max 4)
+        Consumer(
+          builder: (_, ref, __) {
+            final settings = ref.watch(planetariumSettingsProvider);
+            final notifier = ref.read(planetariumSettingsProvider.notifier);
+            final starScale = settings.starScale.clamp(1.0, 4.0);
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              color: TA.surface.withValues(alpha: 0.6),
+              child: Row(
+                children: [
+                  Text('Star size', style: TextStyle(color: TA.textSecondary, fontSize: 11)),
+                  const SizedBox(width: 6),
+                  SizedBox(
+                    width: 80,
+                    height: 24,
+                    child: Slider(
+                      value: starScale,
+                      min: 1.0,
+                      max: 4.0,
+                      divisions: 30,
+                      onChanged: (v) => notifier.setStarScale(v),
+                    ),
+                  ),
+                  Text(starScale.toStringAsFixed(1),
+                      style: TextStyle(color: TA.text, fontSize: 11, fontFamily: 'monospace')),
+                ],
+              ),
+            );
+          },
+        ),
+
+        // Sky map fills remaining space (same projection & epoch as planetarium, max star size 4)
         Expanded(
           child: Stack(
             children: [
@@ -296,6 +405,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
                     onStarSelected: _isSelectStep ? _onStarSelected : null,
                     overlayMessage: overlayMsg,
                     highlightedStar: _currentHighlight,
+                    maxStarScale: 4.0,
                   ),
                 ),
               ),
@@ -303,40 +413,41 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
               if (_isSlewingStep)
                 Positioned.fill(
                   child: Container(
-                    color: TAColors.background.withValues(alpha: 0.85),
+                    color: TA.background.withValues(alpha: 0.85),
                     child: Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
+                          Text(
                             'Slewing',
                             style: TextStyle(
-                              color: TAColors.warning,
+                              color: TA.warning,
                               fontSize: 22,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                           const SizedBox(height: 16),
-                          const SizedBox(
+                          SizedBox(
                             width: 40,
                             height: 40,
                             child: CircularProgressIndicator(
                               strokeWidth: 3,
-                              color: TAColors.warning,
+                              color: TA.warning,
                             ),
                           ),
                           const SizedBox(height: 20),
                           ElevatedButton.icon(
                             onPressed: () async {
                               await _client.send(LX200.stopAll);
+                              await _client.sendBool(LX200.alignAbort);
                               _slewPoll?.cancel();
                               if (mounted) _reset();
                             },
                             icon: const Icon(Icons.stop, size: 18),
                             label: const Text('Abort'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: TAColors.error,
-                              foregroundColor: Colors.white,
+                              backgroundColor: TA.error,
+                              foregroundColor: TA.textHigh,
                             ),
                           ),
                         ],
@@ -353,7 +464,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             child: Text(_error,
-                style: TextStyle(color: TAColors.error, fontSize: 11)),
+                style: TextStyle(color: TA.error, fontSize: 11)),
           ),
 
         // Action bar
@@ -374,13 +485,13 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.check_circle, color: TAColors.success, size: 20),
+                  Icon(Icons.check_circle, color: TA.success, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Alignment already complete.',
                       style: TextStyle(
-                          color: TAColors.success,
+                          color: TA.success,
                           fontSize: 13,
                           fontWeight: FontWeight.w600),
                     ),
@@ -444,17 +555,17 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
       case AlignStep.selectStar3:
         return Row(
           children: [
-            Icon(Icons.touch_app, color: TAColors.accent, size: 18),
+            Icon(Icons.touch_app, color: TA.accent, size: 18),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
                 _step == AlignStep.selectStar1
                     ? 'Tap a bright named star on the map'
                     : 'Tap a star (spread across the sky)',
-                style: TextStyle(color: TAColors.text, fontSize: 12),
+                style: TextStyle(color: TA.text, fontSize: 12),
               ),
             ),
-            _SmallBtn(Icons.close, 'Cancel alignment', _reset),
+            _SmallBtn(Icons.close, 'Abort alignment', _abortAlignment),
           ],
         );
 
@@ -473,12 +584,12 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
                 : _star3?.name;
         return Row(
           children: [
-            Icon(Icons.star, color: TAColors.warning, size: 18),
+            Icon(Icons.star, color: TA.warning, size: 18),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
                 'Slew to $starName?',
-                style: TextStyle(color: TAColors.text, fontSize: 12),
+                style: TextStyle(color: TA.text, fontSize: 12),
               ),
             ),
             _SmallBtn(Icons.arrow_back, 'Back', () => _cancelConfirm(starNum)),
@@ -488,13 +599,13 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
               icon: const Icon(Icons.navigation, size: 16),
               label: const Text('Slew'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: TAColors.accent,
+                backgroundColor: TA.accent,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               ),
             ),
             const SizedBox(width: 6),
-            _SmallBtn(Icons.close, 'Cancel alignment', _reset),
+            _SmallBtn(Icons.close, 'Abort alignment', _abortAlignment),
           ],
         );
 
@@ -503,18 +614,14 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
       case AlignStep.slewingStar3:
         return Row(
           children: [
-            const Text('Slewing',
+            Text('Slewing',
                 style: TextStyle(
-                    color: TAColors.warning,
+                    color: TA.warning,
                     fontSize: 12,
                     fontWeight: FontWeight.w600)),
             const SizedBox(width: 8),
             Expanded(child: const SizedBox.shrink()),
-            _SmallBtn(Icons.stop, 'Abort', () async {
-              await _client.send(LX200.stopAll);
-              _slewPoll?.cancel();
-              if (mounted) _reset();
-            }),
+            _SmallBtn(Icons.stop, 'Abort', _abortAlignment),
           ],
         );
 
@@ -534,19 +641,19 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
         return Row(
           children: [
             Icon(Icons.center_focus_strong,
-                color: TAColors.success, size: 18),
+                color: TA.success, size: 18),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
                 'Recenter $starName in eyepiece, then accept',
-                style: TextStyle(color: TAColors.text, fontSize: 12),
+                style: TextStyle(color: TA.text, fontSize: 12),
               ),
             ),
-            _SmallBtn(Icons.close, 'Cancel alignment', _reset),
+            _SmallBtn(Icons.close, 'Abort alignment', _abortAlignment),
             const SizedBox(width: 8),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: TAColors.success,
+                backgroundColor: TA.success,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
@@ -562,13 +669,13 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.check_circle, color: TAColors.success, size: 20),
+                Icon(Icons.check_circle, color: TA.success, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Alignment complete!  Error: $_alignResult',
                     style: TextStyle(
-                        color: TAColors.success,
+                        color: TA.success,
                         fontSize: 12,
                         fontWeight: FontWeight.w600),
                   ),
@@ -617,7 +724,7 @@ class _StepBar extends StatelessWidget {
     final pastStar3 = step.index >= AlignStep.selectStar3.index;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      color: TAColors.surface,
+      color: TA.surface,
       child: Row(
         children: [
           _dot(1, step.index >= AlignStep.selectStar1.index, pastStar2),
@@ -632,26 +739,26 @@ class _StepBar extends StatelessWidget {
             step == AlignStep.done ? Icons.check_circle : Icons.flag,
             size: 14,
             color: step == AlignStep.done
-                ? TAColors.success
-                : TAColors.textSecondary,
+                ? TA.success
+                : TA.textSecondary,
           ),
           const SizedBox(width: 8),
           if (star1 != null)
             Text('1: ${star1!.name}  ',
-                style: const TextStyle(
-                    color: TAColors.textHigh,
+                style: TextStyle(
+                    color: TA.textHigh,
                     fontSize: 10,
                     fontFamily: 'monospace')),
           if (star2 != null)
             Text('2: ${star2!.name}  ',
-                style: const TextStyle(
-                    color: TAColors.textHigh,
+                style: TextStyle(
+                    color: TA.textHigh,
                     fontSize: 10,
                     fontFamily: 'monospace')),
           if (star3 != null)
             Text('3: ${star3!.name}',
-                style: const TextStyle(
-                    color: TAColors.textHigh,
+                style: TextStyle(
+                    color: TA.textHigh,
                     fontSize: 10,
                     fontFamily: 'monospace')),
         ],
@@ -666,17 +773,17 @@ class _StepBar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: complete
-            ? TAColors.success
+            ? TA.success
             : active
-                ? TAColors.accent
-                : TAColors.surfaceVariant,
+                ? TA.accent
+                : TA.surfaceVariant,
       ),
       child: Center(
         child: complete
-            ? const Icon(Icons.check, size: 12, color: Colors.white)
+            ? Icon(Icons.check, size: 12, color: TA.textHigh)
             : Text('$num',
                 style: TextStyle(
-                    color: active ? Colors.white : TAColors.textSecondary,
+                    color: active ? TA.textHigh : TA.textSecondary,
                     fontSize: 10,
                     fontWeight: FontWeight.w700)),
       ),
@@ -687,7 +794,7 @@ class _StepBar extends StatelessWidget {
     return Container(
       width: 24,
       height: 2,
-      color: active ? TAColors.success : TAColors.surfaceVariant,
+      color: active ? TA.success : TA.surfaceVariant,
     );
   }
 }
@@ -708,7 +815,7 @@ class _SmallBtn extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             visualDensity: VisualDensity.compact,
-            backgroundColor: TAColors.surfaceVariant,
+            backgroundColor: TA.surfaceVariant,
             textStyle: const TextStyle(fontSize: 11),
           ),
           onPressed: onTap,

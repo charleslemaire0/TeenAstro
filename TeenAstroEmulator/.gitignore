@@ -1,2 +1,4 @@
-.pio/
 *.bin
+
+# Directories not part of the repo (use a leading dot, e.g. .temp, .pio, .cache, so they are easy to spot)
+.*/

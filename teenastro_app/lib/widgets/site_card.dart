@@ -123,7 +123,7 @@ class _SiteCardState extends ConsumerState<SiteCard> {
               const SizedBox(height: 8),
               Text(_status,
                   style: TextStyle(
-                      color: _status.contains('Failed') ? TAColors.error : TAColors.success,
+                      color: _status.contains('Failed') ? TA.error : TA.success,
                       fontSize: 12)),
             ],
           ],

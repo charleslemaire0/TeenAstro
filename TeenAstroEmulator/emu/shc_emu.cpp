@@ -7,7 +7,7 @@
  * - Maps keyboard keys to SHC buttons
  *
  * Build:  pio run -d TeenAstroEmulator -e emu_shc
- * Run:    .pio\build\emu_shc\program.exe
+ * Run:    .pio\build\emu\shc_emu.exe
  */
 
 /* ------------------------------------------------------------------ */
@@ -48,6 +48,9 @@ namespace sim {
 #include "esp_shim.h"
 #include "u8g2_sdl2.h"
 
+/* TCP client to MainUnit (used by emu_attempt_reconnect and main) */
+static TcpClientStream g_tcpToMainUnit;
+
 /* ------------------------------------------------------------------ */
 /*  Child-process management (auto-launch MainUnit)                    */
 /* ------------------------------------------------------------------ */
@@ -62,10 +65,17 @@ static bool launchMainUnit() {
     char* lastSlash = strrchr(myPath, '\\');
     if (!lastSlash) return false;
     *(lastSlash + 1) = '\0';
-    strcat(myPath, "TeenAstroMainUnit.exe");
-    if (GetFileAttributesA(myPath) == INVALID_FILE_ATTRIBUTES) return false;
+    /* Prefer build-dir name (mainunit_emu.exe), then installed name (TeenAstroMainUnit.exe) */
+    char muPath[MAX_PATH];
+    strcpy(muPath, myPath);
+    strcat(muPath, "mainunit_emu.exe");
+    if (GetFileAttributesA(muPath) == INVALID_FILE_ATTRIBUTES) {
+        strcpy(muPath, myPath);
+        strcat(muPath, "TeenAstroMainUnit.exe");
+    }
+    if (GetFileAttributesA(muPath) == INVALID_FILE_ATTRIBUTES) return false;
     STARTUPINFOA si = {}; si.cb = sizeof(si);
-    if (!CreateProcessA(myPath, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &g_muProcInfo))
+    if (!CreateProcessA(muPath, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &g_muProcInfo))
         return false;
     g_muLaunched = true;
     return true;
@@ -91,6 +101,41 @@ void emu_shutdown() {
     exit(0);
 }
 
+/*
+ * Called by ESP.reset()/restart() (esp_shim.h) instead of exit(0).
+ * Attempts to re-establish the TCP link to the MainUnit and resets the
+ * connection failure counter so the SHC firmware continues running.
+ */
+void emu_attempt_reconnect() {
+    extern TeenAstroMountStatus ta_MountStatus;
+
+    printf("[SHC-EMU] Reconnecting to MainUnit...\n");
+    fflush(stdout);
+
+    for (int attempt = 0; attempt < 20; attempt++) {
+        if (g_tcpToMainUnit.connected()) break;
+        if (g_tcpToMainUnit.reconnect()) break;
+        printf("[SHC-EMU]   Retry %d/20...\n", attempt + 1);
+        fflush(stdout);
+        SDL_Delay(500);
+    }
+
+    if (g_tcpToMainUnit.connected()) {
+        ta_MountStatus.removeLastConnectionFailure();
+        ta_MountStatus.removeLastConnectionFailure();
+        ta_MountStatus.removeLastConnectionFailure();
+        ta_MountStatus.removeLastConnectionFailure();
+        ta_MountStatus.removeLastConnectionFailure();
+        printf("[SHC-EMU] Reconnected successfully.\n");
+    } else {
+        printf("[SHC-EMU] Reconnect failed. Exiting.\n");
+        killMainUnit();
+        SDL_Quit();
+        exit(1);
+    }
+    fflush(stdout);
+}
+
 /* ------------------------------------------------------------------ */
 /*  SHC firmware includes                                              */
 /* ------------------------------------------------------------------ */
@@ -99,9 +144,8 @@ void emu_shutdown() {
 #include <TeenAstroMountStatus.h>
 
 /* ------------------------------------------------------------------ */
-/*  TCP serial to MainUnit                                             */
+/*  TCP serial to MainUnit (g_tcpToMainUnit defined above after shims) */
 /* ------------------------------------------------------------------ */
-static TcpClientStream g_tcpToMainUnit;
 
 /* ------------------------------------------------------------------ */
 /*  Global instances (matching TeenAstroSHC.ino)                       */
@@ -417,6 +461,16 @@ static int runAutomatedTests(LX200Client& lx200)
     TEST_CHECK(lx200.enableTracking(false) == LX200_VALUESET, "enableTracking(off)", "failed");
 
     printf("\n[TEST] GXAS Bulk Status\n");
+    {
+        char rawGxas[200] = "";
+        LX200RETURN gr = lx200.get(":GXAS#", rawGxas, sizeof(rawGxas));
+        printf("         raw GXAS get: ret=%d len=%d\n", (int)gr, (int)strlen(rawGxas));
+        if (gr == LX200_VALUEGET) {
+            printf("         raw GXAS (first 40): '%.40s'\n", rawGxas);
+            printf("         raw GXAS (last  20): '%s'\n",
+                   strlen(rawGxas) > 20 ? rawGxas + strlen(rawGxas) - 20 : rawGxas);
+        }
+    }
     ta_MountStatus.updateAllState(true);
     bool gxasOk = ta_MountStatus.hasInfoMount();
     TEST_CHECK(gxasOk, "updateAllState (GXAS)", "failed");
@@ -632,6 +686,117 @@ static int runAutomatedTests(LX200Client& lx200)
         TEST_CHECK(trk != TeenAstroMountStatus::TRK_SLEWING, "slew stopped", "still slewing");
     }
 
+    /* ---- 20. Alignment Star Name round-trip (:SXAs / :GXAs) ---- */
+    printf("\n[TEST] Alignment Star Name round-trip\n");
+    {
+        const char* testName = "Vega";
+        char setCmd[64];
+        sprintf(setCmd, ":SXAs,%s#", testName);
+        LX200RETURN sr = lx200.set(setCmd);
+        TEST_CHECK(sr == LX200_VALUESET, "setAlignStarName(Vega)", "rejected");
+
+        char readName[16] = "";
+        LX200RETURN gr = lx200.getAlignStarName(readName, sizeof(readName));
+        TEST_CHECK(gr == LX200_VALUEGET, "getAlignStarName", "no response");
+        printf("         Star name: set '%s' -> read '%s'\n", testName, readName);
+        TEST_CHECK(strcmp(readName, testName) == 0, "starName == Vega", readName);
+
+        const char* testName2 = "Polaris";
+        sprintf(setCmd, ":SXAs,%s#", testName2);
+        sr = lx200.set(setCmd);
+        TEST_CHECK(sr == LX200_VALUESET, "setAlignStarName(Polaris)", "rejected");
+
+        memset(readName, 0, sizeof(readName));
+        gr = lx200.getAlignStarName(readName, sizeof(readName));
+        TEST_CHECK(gr == LX200_VALUEGET, "getAlignStarName (2)", "no response");
+        printf("         Star name: set '%s' -> read '%s'\n", testName2, readName);
+        TEST_CHECK(strcmp(readName, testName2) == 0, "starName == Polaris", readName);
+
+        const char* longName = "AlphaCentauri";
+        sprintf(setCmd, ":SXAs,%s#", longName);
+        sr = lx200.set(setCmd);
+        TEST_CHECK(sr == LX200_VALUESET, "setAlignStarName(AlphaCentauri)", "rejected");
+
+        memset(readName, 0, sizeof(readName));
+        gr = lx200.getAlignStarName(readName, sizeof(readName));
+        TEST_CHECK(gr == LX200_VALUEGET, "getAlignStarName (3)", "no response");
+        printf("         Star name: set '%s' -> read '%s'\n", longName, readName);
+        TEST_CHECK(strcmp(readName, longName) == 0, "starName == AlphaCentauri", readName);
+    }
+
+    /* ---- 21. Two-client alignment: App on WiFi sets name, SHC reads it ---- */
+    printf("\n[TEST] Two-client alignment (App via WiFi, SHC reads star name)\n");
+    {
+        // Enable WiFi port (9999) on the emulator
+        LX200RETURN wr = lx200.set(":EW1#");
+        TEST_CHECK(wr == LX200_VALUESET, "WiFi ON for two-client test", "rejected");
+        SDL_Delay(500);
+
+        // Create a second client (simulating the App) on WiFi port 9999
+        TcpClientStream wifiStream;
+        bool wifiOk = wifiStream.connect("127.0.0.1", 9999);
+        TEST_CHECK(wifiOk, "App connects to WiFi port 9999", "connection failed");
+
+        if (wifiOk) {
+            LX200Client appClient(wifiStream, 200);
+
+            // Abort any prior alignment via SHC (clean state)
+            lx200.alignAbort();
+            SDL_Delay(200);
+            ta_MountStatus.updateAllState(true);
+            TEST_CHECK(!ta_MountStatus.isAligning(), "idle before two-client test", "still aligning");
+
+            // APP starts alignment (:A0#)
+            LX200RETURN ar = appClient.set(":A0#");
+            TEST_CHECK(ar == LX200_VALUESET, "App: start alignment (:A0#)", "rejected");
+            SDL_Delay(200);
+
+            // SHC polls GXAS — should detect remote alignment
+            ta_MountStatus.updateAllState(true);
+            uint8_t phase = ta_MountStatus.getMountAlignPhase();
+            printf("         SHC sees: phase=%d isAligning=%d isRemoteAlign=%d\n",
+                   phase, ta_MountStatus.isAligning(), ta_MountStatus.isRemoteAlign());
+            TEST_CHECK(phase == 1, "SHC: alignPhase == SELECT", "wrong phase");
+            TEST_CHECK(ta_MountStatus.isRemoteAlign(), "SHC: isRemoteAlign", "not remote");
+
+            // APP sets star name (:SXAs,Vega#)
+            ar = appClient.set(":SXAs,Vega#");
+            TEST_CHECK(ar == LX200_VALUESET, "App: setAlignStarName(Vega)", "rejected");
+            SDL_Delay(100);
+
+            // SHC fetches star name (as it would in the display loop)
+            ta_MountStatus.fetchRemoteStarName();
+            const char* dispName = ta_MountStatus.getRemoteStarName();
+            printf("         SHC remote star name: '%s'\n", dispName);
+            TEST_CHECK(strcmp(dispName, "Vega") == 0, "SHC displays 'Vega'", dispName);
+
+            // SHC verifies via direct GXAs query
+            char readName[16] = "";
+            LX200RETURN gr = lx200.getAlignStarName(readName, sizeof(readName));
+            TEST_CHECK(gr == LX200_VALUEGET, "SHC: getAlignStarName", "no response");
+            printf("         SHC direct GXAs: '%s'\n", readName);
+            TEST_CHECK(strcmp(readName, "Vega") == 0, "SHC GXAs == Vega", readName);
+
+            // APP changes star name to Polaris
+            ar = appClient.set(":SXAs,Polaris#");
+            TEST_CHECK(ar == LX200_VALUESET, "App: setAlignStarName(Polaris)", "rejected");
+            SDL_Delay(100);
+
+            // SHC refetches — should get new name
+            ta_MountStatus.fetchRemoteStarName();
+            dispName = ta_MountStatus.getRemoteStarName();
+            printf("         SHC updated star name: '%s'\n", dispName);
+            TEST_CHECK(strcmp(dispName, "Polaris") == 0, "SHC displays 'Polaris'", dispName);
+
+            // Cleanup
+            appClient.alignAbort();
+            SDL_Delay(200);
+            ta_MountStatus.updateAllState(true);
+            lx200.set(":EW0#");
+            printf("         Cleanup: alignment aborted, WiFi OFF\n");
+        }
+    }
+
     printf("\n========================================\n");
     printf("  Results: %d passed, %d failed\n", g_testPass, g_testFail);
     printf("========================================\n\n");
@@ -663,10 +828,10 @@ int main(int argc, char** argv)
 
     /* Launch MainUnit as a child process */
     if (launchMainUnit()) {
-        printf("Launched TeenAstroMainUnit.exe (auto)\n");
+        printf("Launched MainUnit emulator (auto)\n");
         SDL_Delay(2000);
     } else {
-        printf("TeenAstroMainUnit.exe not found next to SHC -- assuming already running.\n");
+        printf("MainUnit exe not found next to SHC -- assuming already running.\n");
     }
     fflush(stdout);
 
@@ -689,7 +854,8 @@ int main(int argc, char** argv)
     TeenAstroWifi::setClient(*g_lx200);
     HdCrtlr.setClient(*g_lx200);
 
-    const char SHCVersion[] = "1.6.0-emu";
+    /* Match real SHC version from SmartController.h, suffix -emu */
+    const char SHCVersion[] = SHCFirmwareVersionMajor "." SHCFirmwareVersionMinor "." SHCFirmwareVersionPatch "-emu";
     const int pin[7] = { 0, 0, 0, 0, 0, 0, 0 };
     const bool active[7] = { false, false, false, false, false, false, false };
 

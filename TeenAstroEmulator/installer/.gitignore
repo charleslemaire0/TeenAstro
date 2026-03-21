@@ -1,4 +1,5 @@
-stage/
-out/
+# Directories not part of the repo (dot prefix = easy to spot)
+.stage/
+.out/
 *.wixobj
 *.msi

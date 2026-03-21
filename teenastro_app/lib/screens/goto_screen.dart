@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../services/lx200_tcp_client.dart';
 import '../services/mount_state_provider.dart';
+import '../models/equinox_precession.dart';
 import '../models/lx200_commands.dart';
+import '../models/planet_positions.dart';
+import '../providers/last_goto_route_provider.dart';
 import '../theme.dart';
 import '../widgets/status_bar.dart';
 
@@ -24,11 +27,18 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
   String _result = '';
 
   Future<void> _gotoRaDec(LX200TcpClient client) async {
-    final ra = '${_raH.text.padLeft(2, '0')}:${_raM.text.padLeft(2, '0')}:${_raS.text.padLeft(2, '0')}';
-    final dec = '${_decSign.value}${_decD.text.padLeft(2, '0')}:${_decM.text.padLeft(2, '0')}:${_decS.text.padLeft(2, '0')}';
+    final raHours = (int.tryParse(_raH.text) ?? 0) +
+        (int.tryParse(_raM.text) ?? 0) / 60 +
+        (int.tryParse(_raS.text) ?? 0) / 3600;
+    final decDeg = (_decSign.value == '-' ? -1.0 : 1.0) *
+        ((int.tryParse(_decD.text) ?? 0) +
+            (int.tryParse(_decM.text) ?? 0) / 60 +
+            (int.tryParse(_decS.text) ?? 0) / 3600);
+    final jd = julianDate(DateTime.now().toUtc());
+    final (raStr, decStr) = j2000ToJNowLx200(raHours, decDeg, jd);
 
-    final setRa = await client.sendBool(LX200.setTargetRa(ra));
-    final setDec = await client.sendBool(LX200.setTargetDec(dec));
+    final setRa = await client.sendBool(LX200.setTargetRa(raStr));
+    final setDec = await client.sendBool(LX200.setTargetDec(decStr));
 
     if (!setRa || !setDec) {
       setState(() => _result = 'Failed to set target coordinates');
@@ -41,21 +51,56 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
         _result = 'Slewing to target...';
       } else {
         final errIdx = int.tryParse(reply ?? '') ?? -1;
-        _result = errIdx >= 0 && errIdx < GotoError.values.length
-            ? 'Error: ${GotoError.values[errIdx].name}'
-            : 'Error: $reply';
+        if (errIdx >= 0 && errIdx < GotoError.values.length) {
+          _result = 'Error: ${gotoErrorCause(GotoError.values[errIdx])}';
+        } else {
+          _result = 'Error: $reply';
+        }
       }
     });
   }
 
   Future<void> _syncRaDec(LX200TcpClient client) async {
-    final ra = '${_raH.text.padLeft(2, '0')}:${_raM.text.padLeft(2, '0')}:${_raS.text.padLeft(2, '0')}';
-    final dec = '${_decSign.value}${_decD.text.padLeft(2, '0')}:${_decM.text.padLeft(2, '0')}:${_decS.text.padLeft(2, '0')}';
+    final raHours = (int.tryParse(_raH.text) ?? 0) +
+        (int.tryParse(_raM.text) ?? 0) / 60 +
+        (int.tryParse(_raS.text) ?? 0) / 3600;
+    final decDeg = (_decSign.value == '-' ? -1.0 : 1.0) *
+        ((int.tryParse(_decD.text) ?? 0) +
+            (int.tryParse(_decM.text) ?? 0) / 60 +
+            (int.tryParse(_decS.text) ?? 0) / 3600);
+    final jd = julianDate(DateTime.now().toUtc());
+    final (raStr, decStr) = j2000ToJNowLx200(raHours, decDeg, jd);
 
-    await client.sendBool(LX200.setTargetRa(ra));
-    await client.sendBool(LX200.setTargetDec(dec));
+    await client.sendBool(LX200.setTargetRa(raStr));
+    await client.sendBool(LX200.setTargetDec(decStr));
     final reply = await client.sendCommand(LX200.syncTarget);
     setState(() => _result = reply != null ? 'Synced: $reply' : 'Sync failed');
+  }
+
+  Future<void> _stopSlew(LX200TcpClient client) async {
+    client.sendImmediate(LX200.stopAll);
+    setState(() => _result = 'Slew aborted');
+  }
+
+  Future<void> _goHome(LX200TcpClient client) async {
+    final reply = await client.sendBool(LX200.goHome);
+    setState(() {
+      _result = reply ? 'Going home...' : 'Go-home failed (mount parked or busy?)';
+    });
+  }
+
+  Future<void> _park(LX200TcpClient client) async {
+    final reply = await client.sendBool(LX200.park);
+    setState(() {
+      _result = reply ? 'Parking...' : 'Park failed';
+    });
+  }
+
+  @override
+  @override
+  void initState() {
+    super.initState();
+    ref.read(lastGotoTabRouteProvider.notifier).state = '/goto';
   }
 
   @override
@@ -70,6 +115,7 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
   Widget build(BuildContext context) {
     final client = ref.read(lx200ClientProvider);
     final state = ref.watch(mountStateProvider);
+    final slewing = state.isSlewing;
 
     return ListView(
       padding: const EdgeInsets.all(12),
@@ -77,10 +123,22 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
         MountStatusBar(state: state),
         const SizedBox(height: 16),
 
+        // Planetarium
+        Card(
+          child: ListTile(
+            leading: Icon(Icons.public, color: TA.accent),
+            title: const Text('Planetarium'),
+            subtitle: const Text('Interactive sky map with Goto'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.go('/planetarium'),
+          ),
+        ),
+        const SizedBox(height: 8),
+
         // Catalog button
         Card(
           child: ListTile(
-            leading: Icon(Icons.list_alt, color: TAColors.accent),
+            leading: Icon(Icons.list_alt, color: TA.accent),
             title: const Text('Browse Catalogs'),
             subtitle: const Text('Messier, NGC, Stars, and more'),
             trailing: const Icon(Icons.chevron_right),
@@ -97,11 +155,11 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Coordinate Entry (J2000)', style: TextStyle(
-                  color: TAColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                  color: TA.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 12),
 
                 // RA
-                Text('Right Ascension', style: TextStyle(color: TAColors.text, fontSize: 13)),
+                Text('Right Ascension', style: TextStyle(color: TA.text, fontSize: 13)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -115,7 +173,7 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
                 const SizedBox(height: 16),
 
                 // Dec
-                Text('Declination', style: TextStyle(color: TAColors.text, fontSize: 13)),
+                Text('Declination', style: TextStyle(color: TA.text, fontSize: 13)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -126,13 +184,13 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
                         child: Container(
                           width: 36, height: 44,
                           decoration: BoxDecoration(
-                            color: TAColors.surfaceVariant,
+                            color: TA.surfaceVariant,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: TAColors.border),
+                            border: Border.all(color: TA.border),
                           ),
                           alignment: Alignment.center,
                           child: Text(sign, style: TextStyle(
-                            color: TAColors.textHigh, fontSize: 20, fontWeight: FontWeight.w700)),
+                            color: TA.textHigh, fontSize: 20, fontWeight: FontWeight.w700)),
                         ),
                       ),
                     ),
@@ -146,21 +204,28 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Action buttons
+                // Goto / Stop / Sync buttons
                 Row(
                   children: [
                     Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _gotoRaDec(client),
-                        icon: const Icon(Icons.my_location),
-                        label: const Text('Goto'),
-                      ),
+                      child: slewing
+                          ? ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(backgroundColor: TA.error),
+                              onPressed: () => _stopSlew(client),
+                              icon: const Icon(Icons.stop_circle),
+                              label: const Text('Stop'),
+                            )
+                          : ElevatedButton.icon(
+                              onPressed: () => _gotoRaDec(client),
+                              icon: const Icon(Icons.my_location),
+                              label: const Text('Goto'),
+                            ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(backgroundColor: TAColors.surfaceVariant),
-                        onPressed: () => _syncRaDec(client),
+                        style: ElevatedButton.styleFrom(backgroundColor: TA.surfaceVariant),
+                        onPressed: slewing ? null : () => _syncRaDec(client),
                         icon: const Icon(Icons.sync),
                         label: const Text('Sync'),
                       ),
@@ -171,7 +236,9 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
                 if (_result.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Text(_result, style: TextStyle(
-                    color: _result.startsWith('Error') ? TAColors.error : TAColors.success,
+                    color: _result.startsWith('Error') || _result.contains('failed')
+                        ? TA.error
+                        : TA.success,
                     fontSize: 13)),
                 ],
               ],
@@ -188,28 +255,31 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Quick Targets', style: TextStyle(
-                  color: TAColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                  color: TA.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        await client.send(LX200.goHome);
-                        setState(() => _result = 'Going home...');
-                      },
-                      icon: const Icon(Icons.home),
-                      label: const Text('Home'),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        await client.send(LX200.park);
-                        setState(() => _result = 'Parking...');
-                      },
-                      icon: const Icon(Icons.local_parking),
-                      label: const Text('Park'),
-                    ),
+                    if (slewing)
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(backgroundColor: TA.error),
+                        onPressed: () => _stopSlew(client),
+                        icon: const Icon(Icons.stop_circle),
+                        label: const Text('Stop Slew'),
+                      )
+                    else ...[
+                      ElevatedButton.icon(
+                        onPressed: () => _goHome(client),
+                        icon: const Icon(Icons.home),
+                        label: const Text('Home'),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () => _park(client),
+                        icon: const Icon(Icons.local_parking),
+                        label: const Text('Park'),
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -239,7 +309,7 @@ class _CoordField extends StatelessWidget {
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,
         style: TextStyle(
-          color: TAColors.textHigh, fontSize: 18, fontFamily: 'monospace', fontWeight: FontWeight.w600),
+          color: TA.textHigh, fontSize: 18, fontFamily: 'monospace', fontWeight: FontWeight.w600),
       ),
     );
   }

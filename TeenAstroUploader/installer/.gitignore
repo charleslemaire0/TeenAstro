@@ -1,0 +1,5 @@
+# Temporary staging and MSI build output (not part of the repo)
+.stage/
+.out/
+*.wixobj
+*.msi

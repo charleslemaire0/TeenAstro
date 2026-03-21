@@ -79,3 +79,13 @@ if not os.path.isfile(sdl2_header):
         env.Exit(1)
 else:
     pass  # SDL2 already present
+
+# --- 3. Shared build dir and output exe name ---
+# Both emu_mainunit and emu_shc build into .pio/build/emu with distinct exe names.
+pioenv = env.get("PIOENV", "")
+build_emu = os.path.join(env.subst("$PROJECT_DIR"), ".pio", "build", "emu")
+env.Replace(BUILD_DIR=build_emu)
+if pioenv == "emu_mainunit":
+    env.Replace(PROGNAME="mainunit_emu")
+elif pioenv == "emu_shc":
+    env.Replace(PROGNAME="shc_emu")

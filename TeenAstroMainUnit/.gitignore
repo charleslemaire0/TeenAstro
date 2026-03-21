@@ -1,3 +1,29 @@
-/.vs
-/.vscode
-/pio
+/.pio/
+# Visual Studio
+.vs/
+*.vcxproj.user
+*.vcxproj.filters
+*.ipch
+*.suo
+TeenAstroMainUnit.sln
+TeenAstroMainUnit.vcxproj
+Makefile-cli
+Debug/
+
+# C/C++ build
+*.d
+*.o
+*.obj
+*.gch
+*.pch
+*.a
+*.lib
+*.so
+*.dll
+Release/
+bin/
+obj/
+
+# IDE / OS
+.cursor/
+.DS_Store

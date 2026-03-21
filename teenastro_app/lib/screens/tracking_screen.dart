@@ -47,7 +47,7 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
                 Text('Tracking', style: Theme.of(context).textTheme.titleLarge),
                 Switch(
                   value: trackingOn,
-                  activeTrackColor: TAColors.success,
+                  activeTrackColor: TA.success,
                   onChanged: (on) {
                     setState(() => _pendingTracking = on);
                     client.send(on ? LX200.trackOn : LX200.trackOff);
@@ -66,7 +66,7 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Tracking Rate', style: TextStyle(
-                  color: TAColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                  color: TA.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
@@ -94,7 +94,7 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Fine Rate Adjust', style: TextStyle(
-                  color: TAColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                  color: TA.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -106,7 +106,7 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
                     const SizedBox(width: 16),
                     ElevatedButton(
                       onPressed: () => client.send(LX200.trackReset),
-                      style: ElevatedButton.styleFrom(backgroundColor: TAColors.surfaceVariant),
+                      style: ElevatedButton.styleFrom(backgroundColor: TA.surfaceVariant),
                       child: const Text('Reset'),
                     ),
                     const SizedBox(width: 16),
@@ -155,11 +155,11 @@ class _RateChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChoiceChip(
-      avatar: Icon(icon, size: 16, color: selected ? Colors.white : TAColors.text),
+      avatar: Icon(icon, size: 16, color: selected ? TA.textHigh : TA.text),
       label: Text(label),
       selected: selected,
-      selectedColor: TAColors.accent,
-      labelStyle: TextStyle(color: selected ? Colors.white : TAColors.text),
+      selectedColor: TA.accent,
+      labelStyle: TextStyle(color: selected ? TA.textHigh : TA.text),
       onSelected: (_) => onTap(),
     );
   }

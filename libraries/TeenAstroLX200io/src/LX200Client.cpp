@@ -788,6 +788,7 @@ LX200RETURN LX200Client::alignAcceptStar()  { return set(":A*#"); }
 LX200RETURN LX200Client::alignAtHome()      { return set(":AA#"); }
 LX200RETURN LX200Client::alignSave()        { return set(":AW#"); }
 LX200RETURN LX200Client::alignClear()       { return set(":AC#"); }
+LX200RETURN LX200Client::alignAbort()       { return set(":AB#"); }
 LX200RETURN LX200Client::getAlignError(char* out, int len) { return get(":AE#", out, len); }
 LX200RETURN LX200Client::alignNextStar()    { return set(":A+#"); }
 LX200RETURN LX200Client::setPierSideEast()  { return set(":SmE#"); }
@@ -801,6 +802,7 @@ LX200RETURN LX200Client::alignSelectStar(uint8_t n)
   return set(cmd);
 }
 
+LX200RETURN LX200Client::getAlignStarName(char* out, int len)   { return get(":GXAs#", out, len); }
 LX200RETURN LX200Client::getAlignErrorPolar(char* out, int len) { return get(":GXAw#", out, len); }
 LX200RETURN LX200Client::getAlignErrorAz(char* out, int len)    { return get(":GXAz#", out, len); }
 LX200RETURN LX200Client::getAlignErrorAlt(char* out, int len)   { return get(":GXAa#", out, len); }

@@ -19,44 +19,44 @@ class MountStatusBar extends StatelessWidget {
             _StatusChip(
               icon: state.isTracking ? Icons.track_changes : Icons.pause_circle,
               label: state.trackingLabel,
-              color: state.isTracking ? TAColors.success
-                   : state.isSlewing ? TAColors.warning
-                   : TAColors.textSecondary,
+              color: state.isTracking ? TA.success
+                   : state.isSlewing ? TA.warning
+                   : TA.textSecondary,
             ),
             if (state.isTracking)
               _StatusChip(
                 icon: _siderealIcon(state.sidereal),
                 label: state.siderealLabel,
-                color: TAColors.text,
+                color: TA.text,
               ),
             _StatusChip(
               icon: state.isParked ? Icons.local_parking : Icons.open_in_new,
               label: state.parkLabel,
-              color: state.isParked ? TAColors.warning : TAColors.text,
+              color: state.isParked ? TA.warning : TA.text,
             ),
             if (state.isGEM)
               _StatusChip(
                 icon: Icons.swap_horiz,
                 label: 'Pier ${state.pierLabel}',
-                color: TAColors.text,
+                color: TA.text,
               ),
             _StatusChip(
               icon: Icons.speed,
               label: state.speedLabel,
-              color: TAColors.text,
+              color: TA.text,
             ),
             if (state.aligned)
-              _StatusChip(icon: Icons.check_circle, label: 'Aligned', color: TAColors.success),
+              _StatusChip(icon: Icons.check_circle, label: 'Aligned', color: TA.success),
             if (state.atHome)
-              _StatusChip(icon: Icons.home, label: 'Home', color: TAColors.success),
+              _StatusChip(icon: Icons.home, label: 'Home', color: TA.success),
             if (state.hasGNSS)
               _StatusChip(
                 icon: Icons.satellite_alt,
                 label: 'GNSS',
-                color: state.gnssValid ? TAColors.success : TAColors.textSecondary,
+                color: state.gnssValid ? TA.success : TA.textSecondary,
               ),
             if (state.error != MountError.none)
-              _StatusChip(icon: Icons.warning, label: state.errorLabel, color: TAColors.error),
+              _StatusChip(icon: Icons.warning, label: state.errorLabel, color: TA.error),
           ],
         ),
       ),

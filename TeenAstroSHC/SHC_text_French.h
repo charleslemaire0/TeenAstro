@@ -69,6 +69,8 @@
 #define T_NOTDEFINED "non défini"
 #define T_SUCESS "Réussi"
 #define T_STARADDED "Étoile ajoutée"
+#define T_REMOTEALIGN "Align. distant"
+#define T_WAITING "Attente..."
 #define T_VERSION "version"
 #define T_YES "OUI"
 #define T_NO "NON"
@@ -286,7 +288,7 @@
 #define T_DISTANCE "Distance"
 
 #define T_CURRENTLYTRACKING "Suivi en cours"
-#define T_CANNOTBECHANGED "Impossible de changer"
+#define T_CANNOTBECHANGED "Non modifiable"
 #define T_INITIALISATION "Initialisation"
 #define T_THEMOUNTMUSTBEATHOME1 "La monture doit"
 #define T_THEMOUNTMUSTBEATHOME2 "être en"

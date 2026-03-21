@@ -27,6 +27,7 @@ public:
     callback_t  cb_ = nullptr;
     float       interval_us_ = 0;
     int         prio_ = 128;
+    bool        lockFree_ = false;
 
     bool begin(callback_t cb, int us) { return begin(cb, (float)us); }
     bool begin(callback_t cb, float us) {
@@ -40,6 +41,7 @@ public:
     void update(double us) { interval_us_ = (float)us; }
     void end() { cb_ = nullptr; }
     void priority(int p) { prio_ = p; }
+    void setLockFree(bool v) { lockFree_ = v; }
 
     void fire() { if (cb_) cb_(); }
 
@@ -104,7 +106,9 @@ private:
                 IntervalTimer* t = timers_[i];
                 if (!t->cb_ || t->interval_us_ <= 0) continue;
                 while (states[i].next_us <= now_us) {
-                    {
+                    if (t->lockFree_) {
+                        t->cb_();
+                    } else {
                         std::lock_guard<std::mutex> flk(fire_mtx_);
                         t->cb_();
                     }

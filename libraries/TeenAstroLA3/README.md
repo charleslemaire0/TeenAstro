@@ -2,7 +2,17 @@
 
 Linear algebra library for 3-vectors and 3x3 matrices, designed for telescope coordinate transformations. Provides rotation matrices, Euler angle decomposition, atmospheric refraction, and SVD.
 
+**Full documentation:** [docs/math/la3.md](../../docs/math/la3.md)
+
 ## API overview
+
+### Types
+
+| Type | Description |
+|------|-------------|
+| `RotAxis` | Enum: `ROTAXISX`, `ROTAXISY`, `ROTAXISZ` |
+| `SingleRotation` | Struct: `{ RotAxis axis, double angle }` |
+| `RefrOpt` | Struct: `{ bool use, double Temperature, double Pressure }` |
 
 ### Vectors
 
@@ -49,7 +59,7 @@ Linear algebra library for 3-vectors and 3x3 matrices, designed for telescope co
 | `Topocentric2Apparent(Alt, Opt)` | Saemundsson (Meeus Eq. 16.4) | True -> apparent (add refraction) |
 | `Apparent2Topocentric(Alt, Opt)` | Bennett (Meeus Eq. 16.3) | Apparent -> true (subtract refraction) |
 
-Altitude in radians; `RefrOpt` carries `use`, `Temperature` (C), `Pressure` (mbar). The pair is consistent to ~0.4 arcsec at moderate altitudes.
+Altitude in radians; `RefrOpt` carries `use`, `Temperature` (Celsius), `Pressure` (mbar). The pair is consistent to ~0.4 arcsec at moderate altitudes.
 
 ### SVD
 
@@ -66,15 +76,15 @@ Altitude in radians; `RefrOpt` carries `use`, `Temperature` (C), `Pressure` (mba
 | `toDeg(rad)` | Radians to degrees |
 | `normalizeRads(rad)` | Normalize to [0, 2*PI) |
 
-## Types
-
-| Type | Description |
-|------|-------------|
-| `RotAxis` | Enum: `ROTAXISX`, `ROTAXISY`, `ROTAXISZ` |
-| `SingleRotation` | Struct: `{ RotAxis axis, double angle }` |
-| `RefrOpt` | Struct: `{ bool use, double Temperature, double Pressure }` |
-
 ## Dependencies
 
-- **svd3** — 3x3 SVD implementation
-- **math.h** — standard math functions
+- **svd3** -- 3x3 SVD implementation (McAdams et al., UW-Madison TR1690)
+- **math.h** -- standard math functions
+
+## Testing
+
+Unit tests are in `tests/test/test_la3/` (PlatformIO Unity, native platform). They cover every API function including Euler angle round-trips and Meeus refraction against the Nautical Almanac.
+
+```
+pio test -d tests --filter test_la3
+```

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeenAstro Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+
+<nav id="sidebar">
+  <div id="sidebar-logo">
+    <h1>TeenAstro</h1>
+    <div class="subtitle">Technical Reference Documentation</div>
+    <span class="ver">Release 1.6</span>
+  </div>
+  <div id="nav">
+    <div class="nav-section">
+      <span class="nav-section-label">Overview</span>
+      <a href="#overview"><span class="ico">01</span> System Overview</a>
+      <a href="#architecture"><span class="ico">02</span> Architecture</a>
+      <a href="#topology"><span class="ico">03</span> Data Flow &amp; Topology</a>
+    </div>
+    <div class="nav-section">
+      <span class="nav-section-label">Math &amp; Coordinates</span>
+      <a href="math-la3.html"><span class="ico">04</span> Linear Algebra (LA3)</a>
+      <a href="math-coord.html"><span class="ico">05</span> Coordinate Systems</a>
+      <a href="math-alignment.html"><span class="ico">06</span> Alignment (CoordConv)</a>
+    </div>
+    <div class="nav-section">
+      <span class="nav-section-label">Firmware</span>
+      <a href="fw-mainunit.html"><span class="ico">07</span> MainUnit Firmware</a>
+      <a href="fw-shc.html"><span class="ico">08</span> SHC Hand Controller</a>
+      <a href="fw-server.html"><span class="ico">09</span> WiFi Server</a>
+      <a href="fw-stepper.html"><span class="ico">10</span> Motor &amp; Stepper</a>
+    </div>
+    <div class="nav-section">
+      <span class="nav-section-label">Application</span>
+      <a href="app-overview.html"><span class="ico">11</span> Flutter App</a>
+      <a href="app-planetarium.html"><span class="ico">12</span> Planetarium Engine</a>
+      <a href="app-astro.html"><span class="ico">13</span> Astronomy Algorithms</a>
+    </div>
+    <div class="nav-section">
+      <span class="nav-section-label">Protocol</span>
+      <a href="protocol.html"><span class="ico">14</span> LX200 Protocol</a>
+      <a href="protocol-bulk.html"><span class="ico">15</span> Bulk Packets</a>
+    </div>
+    <div class="nav-section">
+      <span class="nav-section-label">Build &amp; Operations</span>
+      <a href="build.html"><span class="ico">16</span> Build System</a>
+      <a href="audits.html"><span class="ico">17</span> Audits &amp; Safety</a>
+    </div>
+  </div>
+</nav>
+
+<main id="content">
+
+  <!-- ═══════════ OVERVIEW ═══════════ -->
+  <section id="overview">
+    <h2>System Overview</h2>
+
+    <p>
+      <strong>TeenAstro</strong> is an open-source telescope mount controller designed for
+      German Equatorial (GEM), Fork, Alt-Az, and hybrid mounts. The system comprises embedded
+      firmware running on Teensy and ESP8266 microcontrollers, a multi-platform mobile/desktop
+      application built with Flutter, and Windows-based ASCOM integration.
+    </p>
+
+    <div class="cards">
+      <div class="card">
+        <h4>MainUnit</h4>
+        <p>Teensy 3/4. Real-time control loop: motor drive, goto, tracking, multi-star alignment, encoder support.</p>
+      </div>
+      <div class="card">
+        <h4>SHC</h4>
+        <p>ESP8266. Smart Hand Controller with OLED UI, button navigation, catalogs, menu system.</p>
+      </div>
+      <div class="card">
+        <h4>WiFi Server</h4>
+        <p>ESP8266. TCP bridge (port 9999) exposing the LX200 serial protocol over WiFi.</p>
+      </div>
+      <div class="card">
+        <h4>Flutter App</h4>
+        <p>Android/Windows. Dashboard, planetarium, catalog browser, goto, multi-star alignment wizard.</p>
+      </div>
+      <div class="card">
+        <h4>ASCOM V7</h4>
+        <p>.NET C#. Windows ASCOM driver for Stellarium, Cartes du Ciel, and other planetarium software.</p>
+      </div>
+      <div class="card">
+        <h4>Focuser</h4>
+        <p>Teensy. Dedicated electronic focuser with temperature sensing and serial passthrough.</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      User community: <a href="https://groups.io/g/TeenAstro/wiki/home" target="_blank">groups.io/g/TeenAstro</a>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ═══════════ ARCHITECTURE ═══════════ -->
+  <section id="architecture">
+    <h2>Architecture</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Component</th><th>Platform</th><th>Language</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td><code>TeenAstroMainUnit</code></td><td>Teensy 3/4</td><td>C++</td><td>Mount control, motor ISR, goto, tracking, alignment model, EEPROM</td></tr>
+          <tr><td><code>UniversalMainUnit</code></td><td>Teensy / ESP32</td><td>C++</td><td>Next-gen main unit (custom platform)</td></tr>
+          <tr><td><code>TeenAstroSHC</code></td><td>ESP8266</td><td>C++</td><td>Hand controller — OLED display, button UI, menus, catalogs</td></tr>
+          <tr><td><code>TeenAstroServer</code></td><td>ESP8266</td><td>C++</td><td>WiFi &harr; serial TCP bridge, web configuration</td></tr>
+          <tr><td><code>TeenAstroFocuser</code></td><td>Teensy</td><td>C++</td><td>Focuser motor control with temperature sensor</td></tr>
+          <tr><td><code>teenastro_app</code></td><td>Flutter</td><td>Dart</td><td>User-facing app — dashboard, planetarium, goto, alignment</td></tr>
+          <tr><td><code>TeenAstroASCOM_V7</code></td><td>.NET</td><td>C#</td><td>ASCOM V7 driver for planetarium software integration</td></tr>
+          <tr><td><code>TeenAstroUploader</code></td><td>.NET</td><td>VB.NET</td><td>Firmware flash utility</td></tr>
+          <tr><td><code>TeenAstroEmulator</code></td><td>PlatformIO</td><td>C++</td><td>SHC emulator for desktop testing</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Shared Libraries</h3>
+    <p>All firmware targets share a common library set under <code>libraries/</code>. The three core
+       mathematical libraries are covered in detail in the dedicated pages:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Library</th><th>Purpose</th><th>Documentation</th></tr></thead>
+        <tbody>
+          <tr><td><code>TeenAstroLA3</code></td><td>3-vector and 3&times;3 matrix operations, rotation matrices, SVD, atmospheric refraction</td><td><a href="math-la3.html">Linear Algebra (LA3)</a></td></tr>
+          <tr><td><code>TeenAstroCoord</code></td><td>Coordinate systems (EQ, HO, IN, LO) with conversions via Euler-angle rotation chains</td><td><a href="math-coord.html">Coordinate Systems</a></td></tr>
+          <tr><td><code>TeenAstroCoordConv</code></td><td>Mount alignment using the Taki method with SVD-optimal rotation</td><td><a href="math-alignment.html">Alignment</a></td></tr>
+          <tr><td><code>TeenAstroMountStatus</code></td><td>Mount state/config model; parses GXAS/GXCS binary packets</td><td><a href="protocol-bulk.html">Bulk Packets</a></td></tr>
+          <tr><td><code>TeenAstroStepper</code></td><td>Stepper driver abstraction (StepDir, TMC5160 SPI)</td><td><a href="fw-stepper.html">Motor &amp; Stepper</a></td></tr>
+          <tr><td><code>TeenAstroLX200io</code></td><td>LX200 protocol I/O: transport, client, navigation helpers</td><td><a href="protocol.html">LX200 Protocol</a></td></tr>
+          <tr><td><code>TeenAstroCatalog</code></td><td>PROGMEM object catalogs (Messier, NGC, stars, etc.)</td><td>&mdash;</td></tr>
+          <tr><td><code>TeenAstroLanguage</code></td><td>UI localisation (EN, FR, DE) for SHC display strings</td><td>&mdash;</td></tr>
+          <tr><td><code>TeenAstroWifi</code></td><td>ESP8266 TCP server and web configuration handler</td><td><a href="fw-server.html">WiFi Server</a></td></tr>
+          <tr><td><code>TeenAstroCommandDef</code></td><td>Command/reply length definitions; generates <code>CommandReplyLength.h</code> and <code>lx200_reply_lengths.dart</code></td><td><a href="protocol.html">LX200 Protocol</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ═══════════ TOPOLOGY ═══════════ -->
+  <section id="topology">
+    <h2>Data Flow &amp; Topology</h2>
+
+    <div class="diagram">                          ┌─────────────────┐
+                          │  Flutter App     │
+                          │  (Android / Win) │
+                          └────────┬─────────┘
+                                   │ TCP :9999 (LX200)
+                          ┌────────▼─────────┐
+                          │  WiFi Server     │
+                          │  (ESP8266)       │
+                          └────────┬─────────┘
+                                   │ Serial (57600)
+  ┌──────────────────┐    ┌────────▼─────────┐    ┌──────────────────┐
+  │  SHC             ├────┤  MainUnit        ├────┤  Focuser         │
+  │  (ESP8266)       │    │  (Teensy 3/4)    │    │  (Teensy)        │
+  │  OLED + Buttons  │    │  Motors, Align,  │    │  Focus Motor     │
+  └──────────────────┘    │  Goto, Tracking  │    └──────────────────┘
+                          └──────┬───────────┘
+                                 │ USB / Serial
+                          ┌──────▼───────────┐
+                          │  ASCOM / PC      │
+                          │  Stellarium etc. │
+                          └──────────────────┘</div>
+
+    <h3>Communication Protocol</h3>
+    <p>All communication uses the <strong>LX200 serial protocol</strong>: <code>:CMD#</code> format.
+       The MainUnit is the protocol endpoint; the WiFi Server and SHC are transparent bridges/clients.</p>
+
+    <h3>Real-Time Control Loop</h3>
+    <ol>
+      <li>The MainUnit runs a <strong>sidereal clock</strong> at ~100 Hz (<code class="math-inline">masterClockSpeed = 10<sup>6</sup></code>, <code class="math-inline">siderealClockSpeed &asymp; 997269.5625</code>).</li>
+      <li>Timer ISRs (TIMER3, TIMER4) generate step pulses for each axis based on computed intervals.</li>
+      <li>The main loop processes serial commands, updates tracking targets, runs the goto state machine, and performs safety checks.</li>
+      <li>Clients poll state via the binary bulk packet <code>:GXAS#</code> (102 bytes, &asymp;10 Hz) and config via <code>:GXCS#</code> (90 bytes, on demand).</li>
+    </ol>
+
+    <h3>Coordinate Pipeline</h3>
+    <p>The mount transforms coordinates through a well-defined pipeline:</p>
+    <div class="diagram">  Catalog (J2000 RA/Dec)
+         │ precession + nutation + aberration
+         ▼
+  Apparent (JNow RA/Dec)
+         │ EQ → HO conversion (latitude, LST)
+         ▼
+  Horizontal (Alt/Az)
+         │ Atmospheric refraction (Saemundsson / Bennett)
+         ▼
+  Apparent Horizontal
+         │ Alignment matrix T (Taki + SVD)
+         ▼
+  Instrument (Axis1, Axis2, Axis3)
+         │ gear ratio, microstep, steps/rotation
+         ▼
+  Stepper positions (steps)</div>
+
+    <div class="page-nav">
+      <span></span>
+      <a href="math-la3.html">
+        <span>
+          <span class="label">Next</span><br />
+          Linear Algebra (LA3)
+        </span> &rarr;
+      </a>
+    </div>
+  </section>
+
+</main>
+<script src="nav.js"></script>
+</body>
+</html>

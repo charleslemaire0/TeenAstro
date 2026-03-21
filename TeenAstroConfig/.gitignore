@@ -1,0 +1,11 @@
+# Local config (may contain secrets)
+default.json
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE / OS
+.vs/
+.cursor/
+.DS_Store

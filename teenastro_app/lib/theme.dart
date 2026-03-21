@@ -20,6 +20,32 @@ class TAColors {
   static const success = Color(0xFF3FB950);
 }
 
+/// Dynamic color resolver — returns TAColors or NightViewColors based on
+/// [TA.setNight]. Call [TA.setNight] once per build cycle (see app.dart).
+/// Use `TA.xxx` everywhere instead of `TAColors.xxx` to respect night mode.
+class TA {
+  TA._();
+  static bool _night = false;
+  static void setNight(bool v) => _night = v;
+  static bool get isNight => _night;
+
+  static Color get background   => _night ? NightViewColors.background   : TAColors.background;
+  static Color get surface      => _night ? NightViewColors.surface      : TAColors.surface;
+  static Color get surfaceVariant => _night ? NightViewColors.surfaceVariant : TAColors.surfaceVariant;
+  static Color get border       => _night ? NightViewColors.border       : TAColors.border;
+  static Color get accent       => _night ? NightViewColors.accent       : TAColors.accent;
+  static Color get accentHover  => _night ? NightViewColors.accentHover  : TAColors.accentHover;
+  static Color get text         => _night ? NightViewColors.text         : TAColors.text;
+  static Color get textSecondary => _night ? NightViewColors.textSecondary : TAColors.textSecondary;
+  static Color get textHigh     => _night ? NightViewColors.textHigh     : TAColors.textHigh;
+  static Color get nav          => _night ? NightViewColors.nav          : TAColors.nav;
+  static Color get card         => _night ? NightViewColors.card         : TAColors.card;
+  static Color get cardBorder   => _night ? NightViewColors.cardBorder   : TAColors.cardBorder;
+  static Color get error        => _night ? NightViewColors.error        : TAColors.error;
+  static Color get warning      => _night ? NightViewColors.warning      : TAColors.warning;
+  static Color get success      => _night ? NightViewColors.success      : TAColors.success;
+}
+
 final teenAstroTheme = ThemeData(
   brightness: Brightness.dark,
   scaffoldBackgroundColor: TAColors.background,
@@ -82,5 +108,89 @@ final teenAstroTheme = ThemeData(
     bodyMedium: TextStyle(color: TAColors.text),
     bodySmall: TextStyle(color: TAColors.textSecondary),
     labelLarge: TextStyle(color: TAColors.text, fontWeight: FontWeight.w600),
+  ),
+);
+
+// Night vision: red-dominant theme to preserve dark adaptation
+class NightViewColors {
+  static const background = Color(0xFF1A0808);
+  static const surface = Color(0xFF2A1010);
+  static const surfaceVariant = Color(0xFF351515);
+  static const border = Color(0xFF552222);
+  static const accent = Color(0xFFCC4444);
+  static const accentHover = Color(0xFFDD6666);
+  static const text = Color(0xFFCC6666);
+  static const textSecondary = Color(0xFFAA5555);
+  static const textHigh = Color(0xFFDD8888);
+  static const nav = Color(0xFF251010);
+  static const card = Color(0xFF2A1010);
+  static const cardBorder = Color(0xFF552222);
+  static const error = Color(0xFFDD6666);
+  static const warning = Color(0xFFCC8844);
+  static const success = Color(0xFFAA6644);
+}
+
+final teenAstroNightTheme = ThemeData(
+  brightness: Brightness.dark,
+  scaffoldBackgroundColor: NightViewColors.background,
+  colorScheme: const ColorScheme.dark(
+    primary: NightViewColors.accent,
+    secondary: NightViewColors.accentHover,
+    surface: NightViewColors.surface,
+    error: NightViewColors.error,
+    onPrimary: Color(0xFF1A0808),
+    onSurface: NightViewColors.text,
+    onError: Color(0xFF1A0808),
+  ),
+  cardTheme: CardThemeData(
+    color: NightViewColors.card,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+      side: const BorderSide(color: NightViewColors.cardBorder),
+    ),
+    elevation: 2,
+  ),
+  navigationBarTheme: NavigationBarThemeData(
+    backgroundColor: NightViewColors.nav,
+    indicatorColor: NightViewColors.accent,
+    labelTextStyle: WidgetStatePropertyAll(
+      TextStyle(fontSize: 12, color: NightViewColors.text),
+    ),
+  ),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: NightViewColors.accent,
+      foregroundColor: NightViewColors.background,
+      minimumSize: const Size(44, 44),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    ),
+  ),
+  inputDecorationTheme: InputDecorationTheme(
+    filled: true,
+    fillColor: NightViewColors.surfaceVariant,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: NightViewColors.border),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: NightViewColors.border),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: NightViewColors.accent),
+    ),
+    labelStyle: const TextStyle(color: NightViewColors.textSecondary),
+    hintStyle: const TextStyle(color: NightViewColors.textSecondary),
+  ),
+  textTheme: const TextTheme(
+    headlineLarge: TextStyle(color: NightViewColors.textHigh, fontWeight: FontWeight.w700),
+    headlineMedium: TextStyle(color: NightViewColors.textHigh, fontWeight: FontWeight.w600),
+    titleLarge: TextStyle(color: NightViewColors.textHigh, fontWeight: FontWeight.w600),
+    titleMedium: TextStyle(color: NightViewColors.text),
+    bodyLarge: TextStyle(color: NightViewColors.text),
+    bodyMedium: TextStyle(color: NightViewColors.text),
+    bodySmall: TextStyle(color: NightViewColors.textSecondary),
+    labelLarge: TextStyle(color: NightViewColors.text, fontWeight: FontWeight.w600),
   ),
 );

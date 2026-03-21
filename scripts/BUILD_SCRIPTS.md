@@ -2,6 +2,8 @@
 
 Reminder of which script does what and where outputs go.
 
+**Publishing firmware for the TeenAstro Uploader:** You must follow the procedure in **[README_FIRMWARE_PUBLISH.md](README_FIRMWARE_PUBLISH.md)** (and [FIRMWARE_PUBLISH_PROCEDURE.md](FIRMWARE_PUBLISH_PROCEDURE.md)) and **only** that procedure. Builds go into **X.Y_latest**; promoting to stable copies **X.Y_latest** → **X.Y**. Do not add patch versions to the dropdown or use other paths.
+
 ---
 
 ## 1. Install build tools (run once)
@@ -13,7 +15,8 @@ Reminder of which script does what and where outputs go.
 - **Does not build** anything.
 
 ```powershell
-C:\Users\charl\source\repos\charleslemaire0\TeenAstro\scripts\setup_build_env.ps1
+# From repo root:
+.\scripts\setup_build_env.ps1
 ```
 
 Then close and reopen PowerShell so PATH is updated.
@@ -66,6 +69,7 @@ Run from repo root or from `scripts\`.
 **Script:** `scripts\build_app.ps1`
 
 - Builds the TeenAstro Flutter app (Android APK and/or Windows).
+- **Infrastructure:** Before building, the script checks for generated app assets (catalogs, planetarium star field, constellation lines). If any are missing, it runs the required Python tools (`extract_catalogs.py`, `generate_star_catalog.py`, `convert_stellarium_constellations.py`) so you don't have to remember to run them manually.
 - **Output:** Copied to **`Released data\App\`**
   - APK: `Released data\App\teenastro_app-release.apk`
   - Windows: `Released data\App\Windows\` (exe + DLLs)
@@ -101,7 +105,7 @@ python scripts\generate_reply_lengths.py
 
 ## 5. Build MSI installer (SHC emulator + Uploader + App)
 
-**Script:** `TeenAstroEmulator\installer\build_msi.ps1`
+**Script:** `TeenAstroEmulator\installer\build.ps1`
 
 - Builds the SHC emulator (PlatformIO), Firmware Uploader (MSBuild), and TeenAstro App (Flutter).
 - Produces a Windows MSI that installs all three with Start Menu shortcuts.
@@ -109,9 +113,9 @@ python scripts\generate_reply_lengths.py
 
 | Command | Effect |
 |---------|--------|
-| `.\TeenAstroEmulator\installer\build_msi.ps1` | Build everything and produce MSI |
-| `.\TeenAstroEmulator\installer\build_msi.ps1 -SkipApp` | Skip Flutter app (emulator + uploader only) |
-| `.\TeenAstroEmulator\installer\build_msi.ps1 -SkipEmulator` | Reuse previously staged emulator exe |
+| `.\TeenAstroEmulator\installer\build.ps1` | Build everything and produce MSI |
+| `.\TeenAstroEmulator\installer\build.ps1 -SkipApp` | Skip Flutter app (emulator + uploader only) |
+| `.\TeenAstroEmulator\installer\build.ps1 -SkipEmulator` | Reuse previously staged emulator exe |
 
 Requires: PlatformIO, MSBuild, Flutter, WiX Toolset 3. See `TeenAstroEmulator\installer\README.md`.
 
@@ -153,7 +157,7 @@ Requires: PlatformIO, MSBuild (.NET 4.7.2), Flutter, WiX Toolset 3.
 | Build MainUnit / SHC / Server / Focuser (default envs) | `scripts\build_firmware.ps1` | `TeenAstroMainUnit\pio\` etc. |
 | Build Android + Windows app | `scripts\build_app.ps1` | `Released data\App\` |
 | Generate reply-length tables | `python scripts\generate_reply_lengths.py` | TeenAstroCommandDef, teenastro_app |
-| Build MSI (emulator + uploader + app) | `TeenAstroEmulator\installer\build_msi.ps1` | `TeenAstroEmulator\installer\out\` |
+| Build MSI (emulator + uploader + app) | `TeenAstroEmulator\installer\build.ps1` | `TeenAstroEmulator\installer\out\` |
 | **Build all release artifacts** | **`scripts\build_release.ps1`** | **`release\`** |
 
 Full PC setup (all components, .NET, Flutter): see **`BUILD_SETUP.md`** at repo root.

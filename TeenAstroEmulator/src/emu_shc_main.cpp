@@ -2,7 +2,7 @@
  * emu_shc_main.cpp -- Single-TU build of the TeenAstro SHC emulator.
  *
  * Build:  pio run -d TeenAstroEmulator -e emu_shc
- * Run:    .pio\build\emu_shc\program.exe
+ * Run:    .pio\build\emu\shc_emu.exe
  */
 
 #ifdef EMU_SHC

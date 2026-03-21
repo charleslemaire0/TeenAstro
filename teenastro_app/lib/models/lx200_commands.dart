@@ -132,9 +132,14 @@ class LX200 {
   static const alignAtHome     = ':AA#';
   static const alignSave       = ':AW#';
   static const alignClear      = ':AC#';
+  static const alignAbort      = ':AB#';
   static const getAlignError   = ':AE#';
   /// Add alignment star n (OnStepX-style: n=1 first star, n=2 second, n=3 third, etc.)
   static String alignAddStar(int n) => ':A$n#';
+  /// Store alignment star name on the mount (so the SHC can display it).
+  static String setAlignStarName(String name) => ':SXAs,$name#';
+  /// Read alignment star name from the mount.
+  static const getAlignStarName = ':GXAs#';
   static const pierEast  = ':SmE#';
   static const pierWest  = ':SmW#';
   static const pierNone  = ':SmN#';

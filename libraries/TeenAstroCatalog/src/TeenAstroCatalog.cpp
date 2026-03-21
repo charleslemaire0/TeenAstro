@@ -217,14 +217,15 @@ const char* CatMgr::catalogTitle() {
 // Get active catalog submenu
 const char* CatMgr::catalogSubMenu() {
   if (_selected<0) return "";
-  static char thisSubMenu[16];
-  
-  strcpy(thisSubMenu,catalog[_selected].Title);
-  char *subMenu=strstr(thisSubMenu,">");
+  static char thisSubMenu[32];
+  strncpy(thisSubMenu, catalog[_selected].Title, sizeof(thisSubMenu) - 1);
+  thisSubMenu[sizeof(thisSubMenu) - 1] = '\0';
+  char *subMenu = strstr(thisSubMenu, ">");
   if (subMenu) {
-    subMenu[0]=0;
+    subMenu[0] = 0;
     return thisSubMenu;
-  } else return "";
+  }
+  return "";
 }
 
 // Get active catalog prefix

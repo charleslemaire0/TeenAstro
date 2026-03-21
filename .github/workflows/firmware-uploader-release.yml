@@ -1,0 +1,43 @@
+name: Firmware Uploader Release
+
+on:
+  push:
+    tags:
+      - 'v*'   # e.g. v1.6.0, v1.6.1
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build TeenAstro Firmware Uploader (Release)
+        run: |
+          msbuild "TeenAstroUploader/TeenAstroUploader/TeenAstroUploader.vbproj" ^
+            /p:Configuration=Release ^
+            /v:m
+
+      - name: Package uploader binaries
+        run: |
+          mkdir dist
+          xcopy "TeenAstroUploader\TeenAstroUploader\bin\Release" "dist\uploader" /E /I /Y
+          powershell -Command "Compress-Archive -Path 'dist/uploader/*' -DestinationPath 'dist/TeenAstroUploader.zip' -Force"
+
+      - name: Upload artifact (optional, for inspection)
+        uses: actions/upload-artifact@v4
+        with:
+          name: TeenAstroUploader
+          path: dist/TeenAstroUploader.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/TeenAstroUploader.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

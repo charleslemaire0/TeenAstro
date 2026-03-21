@@ -77,6 +77,9 @@ struct MountState
   bool              trackCorrected = false;
   RateCompensation  rateComp      = RC_UNKNOWN;
   bool              aligned       = false;
+  uint8_t           alignmentRefCount = 0;  // 0–2, from GXAS byte 99
+  uint8_t           alignPhase    = 0;     // 0=idle, 1=select, 2=slew, 3=recenter (GXAS byte 100 bits 0-1)
+  uint8_t           alignStarNum  = 0;     // 1-based star being worked on (GXAS byte 100 bits 2-4)
   Mount             mountType     = MOUNT_UNDEFINED;
   PierState         pierSide      = PIER_UNKNOW;
   uint8_t           gnssFlags     = 0;          // bitfield from char[14]
@@ -205,9 +208,12 @@ public:
   bool      isAlignSlew()     { return m_align == ALI_SLEW; }
   bool      isAlignSelect()   { return m_align == ALI_SELECT; }
   bool      isAlignRecenter() { return m_align == ALI_RECENTER; }
-  void      stopAlign()       { m_align = ALI_OFF; m_alignStar = 0; }
-  void      startAlign(AlignMode in)           { m_aliMode = in; m_align = ALI_SELECT; m_alignStar = 1; }
-  void      startAlignSecondStar(AlignMode in) { m_aliMode = in; m_align = ALI_SELECT; m_alignStar = 2; }
+  bool      isRemoteAlign()   { return m_remoteAlign; }
+  const char* getRemoteStarName() { return m_alignStarName; }
+  void      fetchRemoteStarName();
+  void      stopAlign()       { m_align = ALI_OFF; m_alignStar = 0; m_remoteAlign = false; m_alignStarName[0] = '\0'; }
+  void      startAlign(AlignMode in)           { m_aliMode = in; m_align = ALI_SELECT; m_alignStar = 1; m_remoteAlign = false; }
+  void      startAlignSecondStar(AlignMode in) { m_aliMode = in; m_align = ALI_SELECT; m_alignStar = 2; m_remoteAlign = false; }
   void      nextStepAlign();
   void      backStepAlign();
   bool      isLastStarAlign() { return (int)m_aliMode == m_alignStar; }
@@ -454,6 +460,9 @@ public:
   bool              isGuidingN()         { return m_mount.guidingNS == '^'; }
   bool              isGuidingS()         { return m_mount.guidingNS == '_'; }
   bool              isAligned()          { return m_mount.aligned; }
+  uint8_t           getAlignmentRefCount() { return m_mount.alignmentRefCount; }
+  uint8_t           getMountAlignPhase() { return m_mount.alignPhase; }
+  uint8_t           getMountAlignStarNum() { return m_mount.alignStarNum; }
   bool              hasGNSSBoard()       { return m_mount.hasGNSSBoard(); }
   bool              isGNSSValid()        { return m_mount.isGNSSValid(); }
   bool              isGNSSTimeSync()     { return m_mount.isGNSSTimeSync(); }
@@ -494,6 +503,8 @@ private:
   AlignState  m_align     = ALI_OFF;
   AlignMode   m_aliMode   = ALIM_ONE;
   int         m_alignStar = 0;
+  bool        m_remoteAlign = false;
+  char        m_alignStarName[16] = "";
 
   // --- Version (fetched once) ---
   struct { bool valid = false; } m_version;

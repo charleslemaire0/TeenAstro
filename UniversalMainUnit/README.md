@@ -1,8 +1,9 @@
 UniversalMainUnit
 ======  
+
 ### Introduction
 
-This is an early release of the TeenAstro redesign documented [here](https://fdesvallees.github.io/teenastro/swDesign/UniversalMainUnit/)
+This is an early release of the TeenAstro redesign documented [here](https://fdesvallees.github.io/teenastro/swDesign/UniversalMainUnit/). See also [docs/overview.md](../docs/overview.md) for the main TeenAstro architecture.
 
 It dynamically supports both step/dir and position/velocity interface. It is possible to run each motor with a different interface.
 

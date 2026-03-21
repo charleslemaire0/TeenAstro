@@ -249,12 +249,14 @@ public:
   LX200RETURN alignAtHome();                     // :AA#
   LX200RETURN alignSave();                       // :AW#
   LX200RETURN alignClear();                      // :AC#
+  LX200RETURN alignAbort();                      // :AB# (abort without sync at home)
   LX200RETURN getAlignError(char* out, int len); // :AE#
   LX200RETURN alignSelectStar(uint8_t n);        // :A1# .. :A9#
   LX200RETURN alignNextStar();                   // :A+#
   LX200RETURN setPierSideEast();                 // :SmE#
   LX200RETURN setPierSideWest();                 // :SmW#
   LX200RETURN setPierSideNone();                 // :SmN#
+  LX200RETURN getAlignStarName(char* out, int len);    // :GXAs#
   LX200RETURN getAlignErrorPolar(char* out, int len);  // :GXAw#
   LX200RETURN getAlignErrorAz(char* out, int len);     // :GXAz#
   LX200RETURN getAlignErrorAlt(char* out, int len);    // :GXAa#

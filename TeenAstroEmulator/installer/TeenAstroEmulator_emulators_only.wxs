@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <Product Id="*"
+           Name="TeenAstro Emulators"
+           Language="1033"
+           Version="1.6.0"
+           Manufacturer="TeenAstro"
+           UpgradeCode="B7E8A7F2-9C4D-4E1A-8B3D-2F6E5A1C9D0B">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="TeenAstroIcon" SourceFile=".stage\icon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="TeenAstroIcon" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="TeenAstro Emulator" />
+      </Directory>
+
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="AppMenuDir" Name="TeenAstro">
+          <Component Id="ShortcutComponent" Guid="B2C3D4E5-F6A7-8901-BCDE-F12345678901">
+            <Shortcut Id="MainUnitShortcut"
+                      Name="TeenAstro MainUnit Emulator"
+                      Description="Start MainUnit emulator with extended state view (tabbed cockpit)"
+                      Target="[INSTALLFOLDER]TeenAstroMainUnit.exe"
+                      WorkingDirectory="INSTALLFOLDER"
+                      Icon="TeenAstroIcon" />
+            <Shortcut Id="SHCShortcut"
+                      Name="TeenAstro SHC Emulator"
+                      Description="Start Smart Hand Controller emulator"
+                      Target="[INSTALLFOLDER]TeenAstroSHC.exe"
+                      WorkingDirectory="INSTALLFOLDER"
+                      Icon="TeenAstroIcon" />
+            <RemoveFolder Id="RemoveAppMenuDir" Directory="AppMenuDir" On="uninstall" />
+            <RegistryValue Root="HKCU" Key="Software\TeenAstro\Emulator" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
+          </Component>
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <Feature Id="ProductFeature" Title="TeenAstro Emulators" Level="1">
+      <ComponentGroupRef Id="EmulatorFiles" />
+      <ComponentRef Id="ShortcutComponent" />
+    </Feature>
+  </Product>
+</Wix>

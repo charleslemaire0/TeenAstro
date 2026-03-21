@@ -1,0 +1,15 @@
+# Visual Studio
+.vs/
+*.vcxproj.user
+*.vcxproj.filters
+*.ipch
+*.suo
+
+# Build
+bin/
+obj/
+Release/
+
+# IDE / OS
+.cursor/
+.DS_Store

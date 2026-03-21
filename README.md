@@ -5,6 +5,12 @@ All Equatorial and Alt-AZ mount types are supported: German Equatorial, Fork (an
 
 Join our user group: https://groups.io/g/TeenAstro/wiki/home
 
+## Documentation
+
+**Full documentation is in Markdown** in [docs/](docs/). Open [docs/README.md](docs/README.md) on GitHub — it renders natively and links to all sections (overview, math, firmware, app, protocol, build, audits). Use the repo as the navigation basis; no GitHub Pages needed.
+
+An HTML version (same content, styled) is in [docs/html/](docs/html/). Open `docs/html/index.html` in a browser after cloning (or run `python -m http.server 8080` in `docs/html/`).
+
 ## Math libraries
 
 The core coordinate and linear algebra libraries live under `libraries/`:

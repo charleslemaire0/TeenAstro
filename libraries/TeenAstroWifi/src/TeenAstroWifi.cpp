@@ -84,7 +84,7 @@ const char html_indexCompactCss[] PROGMEM =
 
 const char html_main_css6[] PROGMEM =
 "form{margin:6px 0}"
-"input[type=number],input[type=text]{background:var(--bg3);border:1px solid var(--border);"
+"input[type=number],input[type=text],input[type=password]{background:var(--bg3);border:1px solid var(--border);"
 "color:var(--text-hi);padding:8px 10px;border-radius:var(--radius);font-size:16px;"
 "width:7em;font-weight:600;outline:none;transition:border-color .15s;min-height:44px}\n"
 "input:focus{border-color:var(--accent)}\n"
@@ -620,12 +620,12 @@ void TeenAstroWifi::setup()
     break;
   case TeenAstroWifi::M_AcessPoint:
     WiFi.mode(WIFI_AP);
+    WiFi.softAPConfig(wifi_ap_ip, wifi_ap_gw, wifi_ap_sn);
+    delay(100);
     WiFi.softAP(wifi_ap_ssid, wifi_ap_pwd, wifi_ap_ch);
 #ifdef ARDUINO_LOLIN_C3_MINI
     WiFi.setTxPower(WIFI_POWER_8_5dBm);
 #endif // ARDUINO_LOLIN_C3_MINI
-    delay(1000);
-    WiFi.softAPConfig(wifi_ap_ip, wifi_ap_gw, wifi_ap_sn);
     delay(1000);
     break;
   case TeenAstroWifi::M_Station1:

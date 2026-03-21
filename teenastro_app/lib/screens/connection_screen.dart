@@ -36,12 +36,34 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
     }
   }
 
+  /// Parse IP field: accept "192.168.1.17" or "http://192.168.1.17" or "http://192.168.1.17:9999".
+  static (String host, int port) _parseConnectionInput(String ipText, String portText) {
+    String s = ipText.trim();
+    if (s.isEmpty) return ('', int.tryParse(portText.trim()) ?? 9999);
+    // If it looks like a URL, parse it to get host and optional port.
+    if (s.contains('://')) {
+      try {
+        final uri = Uri.parse(s.startsWith('http') ? s : 'http://$s');
+        final host = uri.host;
+        final port = uri.hasPort ? uri.port : (int.tryParse(portText.trim()) ?? 9999);
+        if (host.isNotEmpty) return (host, port);
+      } catch (_) {}
+    }
+    // Strip trailing slash (e.g. "http://192.168.1.17/" pasted without scheme)
+    if (s.endsWith('/')) s = s.substring(0, s.length - 1);
+    final port = int.tryParse(portText.trim()) ?? 9999;
+    return (s, port);
+  }
+
   Future<void> _connect() async {
     setState(() { _connecting = true; _error = ''; });
 
     final client = ref.read(lx200ClientProvider);
-    final ip = _ipController.text.trim();
-    final port = int.tryParse(_portController.text.trim()) ?? 9999;
+    final (ip, port) = _parseConnectionInput(_ipController.text, _portController.text);
+    if (ip.isEmpty) {
+      setState(() { _connecting = false; _error = 'Enter an IP address or URL'; });
+      return;
+    }
 
     final ok = await client.connect(ip, port);
 
@@ -64,10 +86,10 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
   }
 
   Color get _statusColor {
-    if (_error.isNotEmpty) return TAColors.error;
-    if (_connecting) return TAColors.warning;
+    if (_error.isNotEmpty) return TA.error;
+    if (_connecting) return TA.warning;
     final client = ref.read(lx200ClientProvider);
-    return client.isConnected ? TAColors.success : TAColors.textSecondary;
+    return client.isConnected ? TA.success : TA.textSecondary;
   }
 
   String get _statusLabel {
@@ -93,7 +115,7 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.explore, size: 80, color: TAColors.accent),
+              Icon(Icons.explore, size: 80, color: TA.accent),
               const SizedBox(height: 16),
               Text('TeenAstro Controller',
                 style: Theme.of(context).textTheme.headlineMedium),
@@ -164,8 +186,8 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                   key: const Key('connect_btn'),
                   onPressed: _connecting ? null : _connect,
                   icon: _connecting
-                      ? const SizedBox(width: 20, height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? SizedBox(width: 20, height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: TA.textHigh))
                       : const Icon(Icons.link),
                   label: Text(_connecting ? 'Connecting...' : 'Connect'),
                 ),
@@ -175,16 +197,16 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: TAColors.error.withValues(alpha: 0.1),
+                    color: TA.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: TAColors.error.withValues(alpha: 0.3)),
+                    border: Border.all(color: TA.error.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: TAColors.error, size: 20),
+                      Icon(Icons.error_outline, color: TA.error, size: 20),
                       const SizedBox(width: 8),
                       Expanded(child: Text(_error,
-                        style: TextStyle(color: TAColors.error, fontSize: 13))),
+                        style: TextStyle(color: TA.error, fontSize: 13))),
                     ],
                   ),
                 ),

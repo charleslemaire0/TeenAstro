@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeenAstro — Astronomy Algorithms</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+
+<nav id="sidebar">
+  <a class="nav-back" href="index.html">&larr; Back to Index</a>
+  <div id="sidebar-logo"><h1>TeenAstro</h1><div class="subtitle">Astronomy Algorithms</div></div>
+  <div id="nav">
+    <div class="nav-section">
+      <span class="nav-section-label">Astronomy Algorithms</span>
+      <a href="#equinox-precession"><span class="ico">01</span> Equinox Precession</a>
+      <a href="#planet-positions"><span class="ico">02</span> Planet Positions</a>
+      <a href="#data-structures"><span class="ico">03</span> Data Structures</a>
+    </div>
+  </div>
+</nav>
+
+<main id="content">
+  <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><a href="index.html#architecture">Application</a><span class="sep">/</span>Astronomy Algorithms</div>
+
+  <section id="equinox-precession">
+    <h2>Equinox Precession (equinox_precession.dart)</h2>
+
+    <p>
+      Converts equatorial coordinates from a catalog equinox (e.g. J2000) to JNow (apparent, equinox of date).
+      Logic matches TeenAstro Ephemeris and LX200Navigation: the SHC converts catalog coordinates to JNow
+      at UTC date before sending to the main unit. The main unit is always in JNow.
+    </p>
+
+    <h3>Helper Functions</h3>
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Function</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>_limitDeg360(value)</code></td><td><code>value % 360</code>, normalized to [0, 360)</td></tr>
+          <tr><td><code>_limitHours24(value)</code></td><td><code>value % 24</code>, normalized to [0, 24)</td></tr>
+          <tr><td><code>_sinD(deg)</code></td><td>sin of angle in degrees</td></tr>
+          <tr><td><code>_cosD(deg)</code></td><td>cos of angle in degrees</td></tr>
+          <tr><td><code>_tanD(deg)</code></td><td>tan of angle in degrees</td></tr>
+          <tr><td><code>_tFromJd(jd)</code></td><td>Julian centuries from J2000: <code>(jd − 2451545.0) / 36525.0</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Mean Obliquity of the Ecliptic</h3>
+    <p>Mean obliquity in arcseconds (IAU 1980):</p>
+    <div class="math">ε₀  =  23°26'21.448" − 46.8150·T − 0.00059·T² + 0.001813·T³
+
+where  T = (JD − 2451545.0) / 36525  (Julian centuries from J2000)</div>
+
+    <h3>Nutation (17-term series)</h3>
+    <p><strong>Mean longitudes</strong> (degrees):</p>
+    <div class="math">Ls  =  280.4565 + 36000.7698·T + 0.000303·T²   (mean longitude of Sun)
+Lm  =  218.3164 + 481267.8812·T − 0.001599·T²   (mean longitude of Moon)
+Ms  =  357.5291 + 35999.0503·T − 0.000154·T²    (mean anomaly of Sun)
+Mm  =  134.9634 + 477198.8675·T + 0.008721·T²   (mean anomaly of Moon)
+ω   =  125.0443 − 1934.1363·T + 0.008721·T²     (longitude of ascending node of Moon)</div>
+
+    <p><strong>Nutation in longitude</strong> Δψ (arcsec):</p>
+    <div class="math">Δψ  =  −(17.1996 + 0.01742·T)·sin(ω) − (1.3187 + 0.00016·T)·sin(2Ls)
+     − 0.2274·sin(2Lm) + 0.2062·sin(2ω) + (0.1426 − 0.00034·T)·sin(Ms)
+     + 0.0712·sin(Mm) − (0.0517 − 0.00012·T)·sin(2Ls + Ms)
+     − 0.0386·sin(2Lm − ω) − 0.0301·sin(2Lm + Mm) + 0.0217·sin(2Ls − Ms)
+     − 0.0158·sin(2Ls − 2Lm + Mm) + 0.0129·sin(2Ls − ω) + 0.0123·sin(2Lm − Mm)</div>
+
+    <p><strong>Nutation in obliquity</strong> Δε (arcsec):</p>
+    <div class="math">Δε  =  (9.2025 + 0.00089·T)·cos(ω) + (0.5736 − 0.00031·T)·cos(2Ls)
+     + 0.0977·cos(2Lm) − 0.0895·cos(2ω) + 0.0224·cos(2Ls + Ms)
+     + 0.0200·cos(2Lm − ω) + 0.0129·cos(2Lm + Mm) − 0.0095·cos(2Ls − Ms)
+     − 0.0070·cos(2Ls − ω)</div>
+
+    <p><strong>True obliquity:</strong></p>
+    <div class="math">ε  =  ε₀ + Δε</div>
+
+    <h3>Precession (annual)</h3>
+    <p>Annual precession rates (seconds of time for RA, arcsec for Dec):</p>
+    <div class="math">m    =  3.07496 + 0.00186·T<sub>eq</sub>
+nRA  =  1.33621 − 0.00057·T<sub>eq</sub>
+nDec =  20.0431 − 0.0085·T<sub>eq</sub>
+
+where  T<sub>eq</sub> = equinox − 2000
+
+ΔRA  =  m + nRA·sin(RA)·tan(Dec)
+ΔDec =  nDec·cos(RA)
+
+RA  +=  (ΔRA · yearDiff) / 3600   (convert sec of time → hours)
+Dec +=  (ΔDec · yearDiff) / 3600  (convert arcsec → degrees)</div>
+
+    <h3>Nutation in RA/Dec</h3>
+    <p>Convert nutation (Δψ, Δε in arcsec) to equatorial corrections:</p>
+    <div class="math">ΔRA<sub>nut</sub>  =  (cos(ε) + sin(ε)·sin(RA)·tan(Dec))·Δψ − cos(RA)·tan(Dec)·Δε
+
+ΔDec<sub>nut</sub>  =  sin(ε)·cos(RA)·Δψ + sin(RA)·Δε</div>
+    <p>RA and Dec in the formulas are in degrees. Results are converted to hours (RA) and degrees (Dec).</p>
+
+    <h3>Aberration</h3>
+    <p><strong>Constant of aberration:</strong> K = 20.49552"</p>
+    <p><strong>Sun orbital elements:</strong></p>
+    <div class="math">L₀  =  280.46646 + 36000.76983·T + 0.0003032·T²   (mean longitude)
+M   =  357.5291092 + 35999.0502909·T − 0.0001536·T²   (mean anomaly)
+e   =  0.016708634 − 0.000042037·T − 0.0000001267·T²  (eccentricity)
+π   =  102.93735 + 1.71946·T + 0.00046·T²             (longitude of perihelion)</div>
+
+    <p><strong>Equation of center and true longitude:</strong></p>
+    <div class="math">C  =  (1.914602 − 0.004817·T − 0.000014·T²)·sin(M)
+   + (0.019993 − 0.000101·T)·sin(2M) + 0.000289·sin(3M)
+
+☉ (true longitude of Sun)  =  L₀ + C</div>
+
+    <p><strong>Aberration corrections</strong> (arcsec → hours/degrees):</p>
+    <div class="math">ΔRA<sub>ab</sub>  =  −K·(cos(RA)·cos(☉)·cos(ε) + sin(RA)·sin(☉)) / cos(Dec)
+                + K·e·(cos(RA)·cos(π)·cos(ε) + sin(RA)·sin(π)) / cos(Dec)
+
+ΔDec<sub>ab</sub>  =  −K·(cos(☉)·cos(ε)·(tan(ε)·cos(Dec) − sin(RA)·sin(Dec))
+                 + cos(RA)·sin(Dec)·sin(☉))
+                + K·e·(cos(π)·cos(ε)·(tan(ε)·cos(Dec) − sin(RA)·sin(Dec))
+                 + cos(RA)·sin(Dec)·sin(π))</div>
+
+    <h3>Functions</h3>
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Function</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>equatorialEquinoxToJNow(raHours, decDeg, equinox, jd)</code></td><td>Converts equatorial coordinates from given equinox to JNow (apparent). Returns <code>(raJNow, decJNow)</code>.</td></tr>
+          <tr><td><code>equatorialJNowToEquinox(raJNowHours, decJNowDeg, equinox, jd)</code></td><td>Inverse: JNow → equinox. Uses Newton iteration (3 iterations of forward function) for sub-arcsecond accuracy.</td></tr>
+          <tr><td><code>j2000ToJNowLx200(raJ2000Hours, decJ2000Deg, jd)</code></td><td>Converts J2000 to JNow and returns LX200-format strings <code>(raStr, decStr)</code> for mount target: <code>HH:MM:SS</code> and <code>±DD:MM:SS</code>.</td></tr>
+          <tr><td><code>formatRaDecLx200(raHours, decDeg)</code></td><td>Formats RA/Dec as LX200 strings.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="planet-positions">
+    <h2>Planet Positions (planet_positions.dart)</h2>
+
+    <p>
+      Astronomical algorithms for Sun, Moon, and planet positions. Based on Jean Meeus
+      <em>Astronomical Algorithms</em> (simplified, visual accuracy).
+    </p>
+
+    <h3>Julian Date</h3>
+    <pre><code>double julianDate(DateTime utc)</code></pre>
+    <p>Meeus formula (Ch. 7):</p>
+    <div class="math">If month ≤ 2:  y = year − 1,  m = month + 12
+Else:           y = year,      m = month
+
+a = floor(y / 100)
+b = 2 − a + floor(a / 4)
+
+JD = floor(365.25·(y + 4716)) + floor(30.6001·(m + 1)) + day + b − 1524.5
+
+where  day = day + hour/24 + minute/1440 + second/86400</div>
+
+    <p><code>_jdCenturies(jd) = (jd − 2451545.0) / 36525.0</code></p>
+
+    <h3>Mean Obliquity</h3>
+    <div class="math">meanObliquity(t)  =  23.439291 − 0.0130042·t − 1.64×10⁻⁷·t² + 5.04×10⁻⁷·t³
+
+(degrees, Meeus Ch. 22)</div>
+
+    <h3>Ecliptic → Equatorial</h3>
+    <pre><code>(double ra, double dec) eclipticToEquatorial(double lonDeg, double latDeg, double obliquity)</code></pre>
+    <div class="math">sin(Dec)  =  sin(lat)·cos(ε) + cos(lat)·sin(ε)·sin(lon)
+
+RA  =  atan2(sin(lon)·cos(ε) − tan(lat)·sin(ε), cos(lon))
+
+RA in hours = RA_deg / 15</div>
+
+    <h3>Sun Position (Meeus Ch. 25)</h3>
+    <p>Low accuracy ~1′:</p>
+    <div class="math">L₀  =  280.46646 + 36000.76983·t + 0.0003032·t²   (geometric mean longitude)
+M   =  357.52911 + 35999.05029·t − 0.0001537·t²   (mean anomaly)
+
+C (equation of center)  =  (1.914602 − 0.004817·t − 0.000014·t²)·sin(M)
+                        + (0.019993 − 0.000101·t)·sin(2M) + 0.000289·sin(3M)
+
+sunLon  =  L₀ + C
+
+ω  =  125.04 − 1934.136·t
+apparentLon  =  sunLon − 0.00569 − 0.00478·sin(ω)
+
+ε  =  meanObliquity(t) + 0.00256·cos(ω)
+
+Then: eclipticToEquatorial(apparentLon, 0, ε)</div>
+
+    <h3>Moon Position (Meeus Ch. 47)</h3>
+    <p>Truncated ~20 terms, ~10′ accuracy. <strong>Mean arguments</strong> (degrees):</p>
+    <div class="math">lp  =  218.3164477 + 481267.88123421·t − 0.0015786·t² + t³/538841   (mean longitude)
+d   =  297.8501921 + 445267.1114034·t − 0.0018819·t² + t³/545868     (mean elongation)
+m   =  357.5291092 + 35999.0502909·t − 0.0001536·t² + t³/24490000    (mean anomaly Sun)
+mp  =  134.9633964 + 477198.8675055·t + 0.0087414·t² + t³/69699      (mean anomaly Moon)
+f   =  93.2720950 + 483202.0175233·t − 0.0036539·t² − t³/3526000    (argument of latitude)</div>
+
+    <p><strong>Longitude terms</strong> (sumL, coefficients × 10⁻⁶):</p>
+    <div class="math">6288774·sin(mp)      1274027·sin(2d−mp)    658314·sin(2d)
+213618·sin(2mp)    −185116·sin(m)        −114332·sin(2f)
+58793·sin(2d−2mp)  57066·sin(2d−m−mp)   53322·sin(2d+mp)
+45758·sin(2d−m)    −40923·sin(m−mp)      −34720·sin(d)
+−30383·sin(m+mp)  15327·sin(2d−2f)      −12528·sin(mp+2f)
+10980·sin(mp−2f)  10675·sin(4d−mp)     10034·sin(3mp)
+8548·sin(4d−2mp)</div>
+
+    <p><strong>Latitude terms</strong> (sumB):</p>
+    <div class="math">5128122·sin(f)       280602·sin(mp+f)     277693·sin(mp−f)
+173237·sin(2d−f)  55413·sin(2d−mp+f)   46271·sin(2d−mp−f)
+32573·sin(2d+f)   17198·sin(2mp+f)     9266·sin(2d+mp−f)
+8822·sin(2mp−f)   8216·sin(2d−m−f)     4324·sin(2d−2mp−f)</div>
+
+    <div class="math">lonMoon  =  lp + sumL / 1,000,000
+latMoon  =  sumB / 1,000,000</div>
+
+    <h3>Planetary Positions (Meeus Ch. 31–33)</h3>
+
+    <h4>Orbital Elements (_OrbitalElements)</h4>
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Element</th><th>Description</th><th>Units</th></tr></thead>
+        <tbody>
+          <tr><td><code>l0, l1</code></td><td>Mean longitude</td><td>deg, deg/century</td></tr>
+          <tr><td><code>a0, a1</code></td><td>Semi-major axis</td><td>AU, AU/century</td></tr>
+          <tr><td><code>e0, e1</code></td><td>Eccentricity</td><td>—</td></tr>
+          <tr><td><code>i0, i1</code></td><td>Inclination</td><td>deg</td></tr>
+          <tr><td><code>om0, om1</code></td><td>Longitude of ascending node Ω</td><td>deg</td></tr>
+          <tr><td><code>wp0, wp1</code></td><td>Longitude of perihelion ω</td><td>deg</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>J2000.0 elements from Standish 1992 (JPL). Current elements: <code>l = l0 + l1·t</code>, etc.</p>
+
+    <h4>Kepler Equation</h4>
+    <pre><code>double _solveKepler(double mDeg, double e)</code></pre>
+    <div class="math">M  =  E − e·sin(E)   (mean anomaly M, eccentric anomaly E)
+
+Newton iteration:  dE = (M − E + e·sin(E)) / (1 − e·cos(E))
+                   E += dE   (until |dE| &lt; 1e-10, max 20 iterations)</div>
+
+    <h4>Heliocentric Position (orbital plane)</h4>
+    <div class="math">xp  =  a·(cos(E) − e)
+yp  =  a·√(1 − e²)·sin(E)</div>
+
+    <h4>Rotation to Ecliptic</h4>
+    <p>Via Ω (ascending node), ω (perihelion), i (inclination):</p>
+    <div class="math">argPeri  =  ω − Ω
+
+x<sub>ecl</sub>  =  (cos(argPeri)·cos(Ω) − sin(argPeri)·sin(Ω)·cos(i))·xp
+         + (−sin(argPeri)·cos(Ω) − cos(argPeri)·sin(Ω)·cos(i))·yp
+y<sub>ecl</sub>  =  (cos(argPeri)·sin(Ω) + sin(argPeri)·cos(Ω)·cos(i))·xp
+         + (−sin(argPeri)·sin(Ω) + cos(argPeri)·cos(Ω)·cos(i))·yp
+z<sub>ecl</sub>  =  sin(argPeri)·sin(i)·xp + cos(argPeri)·sin(i)·yp</div>
+
+    <h4>Geocentric</h4>
+    <p>Subtract Earth position (same Kepler method). Geocentric ecliptic:</p>
+    <div class="math">lonGeo  =  atan2(dy, dx)
+latGeo  =  asin(dz / dist)
+dist  =  √(dx² + dy² + dz²)</div>
+
+    <h4>API</h4>
+    <pre><code>CelestialBody planetPosition(Planet planet, double jd)</code></pre>
+
+    <h4>Magnitude</h4>
+    <div class="math">_planetMag(planet, delta, r, e, mAnom)
+
+Approximate:  mag = base + 5·log₁₀(δ·r)
+
+Mercury: −0.36   Venus: −4.34   Mars: −1.51   Jupiter: −9.40
+Saturn: −8.88   Uranus: −7.19   Neptune: −6.87</div>
+    <p>Phase angle ignored for simplicity. <code>delta</code> = Earth–planet distance (AU), <code>r</code> = Sun–planet distance (AU).</p>
+  </section>
+
+  <hr />
+
+  <section id="data-structures">
+    <h2>Data Structures</h2>
+
+    <h3>CelestialBody</h3>
+    <pre><code>class CelestialBody {
+  final String name;
+  final double ra;   // hours
+  final double dec;  // degrees
+  final double mag;
+  final Color color;
+  final double radius;  // rendering radius in px
+}</code></pre>
+    <p>Returned by <code>sunPosition</code>, <code>moonPosition</code>, <code>planetPosition</code>, <code>allBodies</code>.</p>
+
+    <h3>CatalogEntry</h3>
+    <pre><code>class CatalogEntry {
+  final int id;
+  final String name;
+  final String? subId;
+  final double ra;   // hours (J2000)
+  final double dec; // degrees (J2000)
+  final double? mag;
+  final int? objType;       // index into dsoTypeNames
+  final int constellation; // index into constellationAbbr
+  // Double star extras
+  final double? separation;   // arcsec
+  final int? positionAngle;  // degrees
+  final double? mag2;
+  // Variable star extras
+  final double? period;   // days
+  final double? magMin;
+}</code></pre>
+    <p>Catalog objects (DSOs, stars, double stars, variable stars). RA/Dec are J2000; use <code>j2000ToJNowLx200</code> for mount targets.</p>
+  </section>
+
+  <div class="page-nav">
+    <a href="app-planetarium.html">&larr; <span><span class="label">Previous</span><br />Planetarium Engine</span></a>
+    <a href="protocol.html"><span><span class="label">Next</span><br />LX200 Protocol</span> &rarr;</a>
+  </div>
+</main>
+<script src="nav.js"></script>
+</body>
+</html>

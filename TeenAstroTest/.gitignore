@@ -1,1 +1,20 @@
+# Scopetosky outputs and deps
+scopetosky/*.csv
+scopetosky/*.ods
+scopetosky/node_modules/
+scopetosky/__pycache__/
+
+# Python
+mountSim/__pycache__/
+__pycache__/
+*.pyc
+
+# Debug / local
+debugEEPROM/
+autoTest/get-platformio.py
+autoTest/njp_stepdir
+
+# IDE / OS
+.vs/
+.cursor/
 .DS_Store

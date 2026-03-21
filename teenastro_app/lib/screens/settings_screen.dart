@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../services/lx200_tcp_client.dart';
 import '../services/mount_state_provider.dart';
 import '../theme.dart';
+import '../providers/night_view_provider.dart';
 import '../widgets/site_card.dart';
 import '../widgets/sync_panel.dart';
 
@@ -59,12 +60,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         const SiteCard(),
         const SizedBox(height: 12),
 
+        // Night view (red UI for night vision)
+        Card(
+          child: SwitchListTile(
+            secondary: Icon(Icons.nightlight_round, color: Theme.of(context).colorScheme.primary),
+            title: const Text('Night view'),
+            subtitle: const Text('Red-dominant UI to preserve night vision'),
+            value: ref.watch(nightViewProvider),
+            onChanged: (v) => ref.read(nightViewProvider.notifier).setEnabled(v),
+          ),
+        ),
+        const SizedBox(height: 12),
+
         // Alignment
         Card(
           child: ListTile(
-            leading: Icon(Icons.architecture, color: TAColors.accent),
+            leading: Icon(Icons.architecture, color: TA.accent),
             title: const Text('Alignment'),
-            subtitle: Text(state.aligned ? 'Aligned' : 'Not aligned'),
+            subtitle: Text(state.aligned
+                ? 'Aligned'
+                : state.alignmentInProgress
+                    ? state.alignPhaseLabel
+                    : 'Not aligned'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.go('/alignment'),
           ),
@@ -83,7 +100,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Row(
                   children: [
                     Icon(Icons.circle, size: 12,
-                      color: client.isConnected ? TAColors.success : TAColors.error),
+                      color: client.isConnected ? TA.success : TA.error),
                     const SizedBox(width: 8),
                     Text(client.isConnected ? 'Connected' : 'Disconnected'),
                   ],
@@ -92,7 +109,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(backgroundColor: TAColors.surfaceVariant),
+                    style: ElevatedButton.styleFrom(backgroundColor: TA.surfaceVariant),
                     onPressed: () async {
                       ref.read(mountStateProvider.notifier).stopPolling();
                       await client.disconnect();
@@ -117,10 +134,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               children: [
                 Text('TeenAstro Controller', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 4),
-                Text('Version 1.0.0', style: TextStyle(color: TAColors.textSecondary)),
+                Text('Version 1.6.1', style: TextStyle(color: TA.textSecondary)),
                 const SizedBox(height: 4),
                 Text('Flutter app for TeenAstro telescope mounts',
-                  style: TextStyle(color: TAColors.textSecondary, fontSize: 12)),
+                  style: TextStyle(color: TA.textSecondary, fontSize: 12)),
               ],
             ),
           ),
@@ -142,9 +159,9 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: TAColors.textSecondary)),
+          Text(label, style: TextStyle(color: TA.textSecondary)),
           Text(value.isNotEmpty ? value : '—',
-            style: TextStyle(color: TAColors.textHigh, fontWeight: FontWeight.w500)),
+            style: TextStyle(color: TA.textHigh, fontWeight: FontWeight.w500)),
         ],
       ),
     );

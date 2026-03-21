@@ -109,7 +109,7 @@ void SmartHandController::setCatMgrFilters()
 
 SmartHandController::MENU_RESULT SmartHandController::menuFilterCon()
 {
-  char string_list_fCon[1000] = "";
+  char string_list_fCon[2000] = "";
   for (int l = 0; l < 89; l++)
   {
     if (l == 0) strcat(string_list_fCon, T_ALL); else strcat(string_list_fCon, cat_mgr.constellationCodeToStrLong(l - 1));
@@ -230,7 +230,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuFilterVarMaxPer()
   current_selection_filter_varmax = display->UserInterfaceSelectionList(&buttonPad, "Filter Var* Period", current_selection_filter_varmax, string_list_fVarMax);
   if (current_selection_filter_varmax == 0)
   {
-    current_selection_filter_dblmax = last_selection_filter_varmax; return MR_CANCEL;
+    current_selection_filter_varmax = last_selection_filter_varmax; return MR_CANCEL;
   }
   return MR_OK;
 }

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeenAstro — WiFi Server</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<button id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+
+<nav id="sidebar">
+  <a class="nav-back" href="index.html">&larr; Back to Index</a>
+  <div id="sidebar-logo"><h1>TeenAstro</h1><div class="subtitle">WiFi Server</div></div>
+  <div id="nav">
+    <div class="nav-section">
+      <span class="nav-section-label">WiFi Server</span>
+      <a href="#overview"><span class="ico">01</span> Overview</a>
+      <a href="#tcp-bridge"><span class="ico">02</span> TCP Bridge</a>
+      <a href="#web-config"><span class="ico">03</span> Web Configuration</a>
+      <a href="#input-safety"><span class="ico">04</span> Bounded Input Handling</a>
+      <a href="#teenastrowifi"><span class="ico">05</span> TeenAstroWifi Library</a>
+      <a href="#buffers"><span class="ico">06</span> Buffer Sizes &amp; Safety</a>
+    </div>
+  </div>
+</nav>
+
+<main id="content">
+  <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><a href="index.html#architecture">Firmware</a><span class="sep">/</span>WiFi Server</div>
+
+  <section id="overview">
+    <h2>WiFi Server</h2>
+    <p>
+      The <strong>TeenAstro WiFi Server</strong> runs on ESP8266 and provides a TCP bridge exposing the
+      LX200 serial protocol over WiFi. Clients (Flutter app, ASCOM, Stellarium) connect to the server
+      and send/receive LX200 commands as if they were on a serial port.
+    </p>
+    <p><strong>Source:</strong> <code>TeenAstroServer/</code>, <code>libraries/TeenAstroWifi/</code></p>
+  </section>
+
+  <hr />
+
+  <section id="tcp-bridge">
+    <h2>TCP Bridge (Port 9999)</h2>
+
+    <p>The server listens on <strong>TCP port 9999</strong>. Each connected client receives a transparent
+       bridge to the MainUnit serial line:</p>
+
+    <ul>
+      <li>Client sends LX200 commands (<code>:CMD#</code>) over TCP</li>
+      <li>Server forwards commands to MainUnit via serial (57600 baud)</li>
+      <li>Server receives replies and forwards them back to the client</li>
+    </ul>
+
+    <div class="callout tip">
+      The WiFi Server does not interpret commands; it acts as a transparent serial-to-TCP bridge.
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="web-config">
+    <h2>Web Configuration UI</h2>
+
+    <p>The server hosts a web interface for WiFi configuration:</p>
+
+    <ul>
+      <li>Station mode: SSID and password for connecting to an existing WiFi network</li>
+      <li>Access Point mode: SSID and password for the ESP8266&rsquo;s own hotspot</li>
+      <li>Web password: protects the configuration pages</li>
+      <li>Site and mount settings: forwarded to MainUnit via LX200</li>
+    </ul>
+
+    <p>Configuration is served over HTTP; form submissions update EEPROM and WiFi settings.</p>
+  </section>
+
+  <hr />
+
+  <section id="input-safety">
+    <h2>Bounded Input Handling (strncpy)</h2>
+
+    <p>All web form input is copied with bounded functions to prevent buffer overflows:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Input</th><th>Handling</th></tr></thead>
+        <tbody>
+          <tr><td><code>webpwd</code></td><td><code>strncpy(masterPassword, v.c_str(), sizeof(masterPassword)-1)</code> + null termination</td></tr>
+          <tr><td><code>wifi_sta_ssid</code></td><td><code>strncpy(wifi_sta_ssid[k], v.c_str(), sizeof(wifi_sta_ssid[k])-1)</code></td></tr>
+          <tr><td><code>wifi_sta_pwd</code></td><td><code>strncpy(wifi_sta_pwd[k], v.c_str(), sizeof(wifi_sta_pwd[k])-1)</code></td></tr>
+          <tr><td><code>wifi_ap_ssid</code></td><td><code>strncpy(wifi_ap_ssid, v.c_str(), sizeof(wifi_ap_ssid)-1)</code></td></tr>
+          <tr><td><code>wifi_ap_pwd</code></td><td><code>strncpy(wifi_ap_pwd, v.c_str(), sizeof(wifi_ap_pwd)-1)</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout tip">
+      No unchecked <code>strcpy</code> of <code>server.arg()</code> into fixed buffers was found in the audit.
+    </div>
+  </section>
+
+  <hr />
+
+  <section id="teenastrowifi">
+    <h2>TeenAstroWifi Library</h2>
+
+    <p>The <code>TeenAstroWifi</code> library provides:</p>
+
+    <ul>
+      <li>TCP server on port 9999</li>
+      <li>Serial bridge: TCP ↔ MainUnit serial</li>
+      <li>Web server for configuration pages</li>
+      <li>mDNS for discovery (optional)</li>
+    </ul>
+
+    <p><strong>Location:</strong> <code>libraries/TeenAstroWifi/</code></p>
+  </section>
+
+  <hr />
+
+  <section id="buffers">
+    <h2>readBuffer / writeBuffer Sizes and Safety</h2>
+
+    <p>TCP command handling uses fixed-size buffers with explicit bounds checks:</p>
+
+    <div class="table-wrap">
+      <table class="api-table">
+        <thead><tr><th>Buffer</th><th>Size</th><th>Safety</th></tr></thead>
+        <tbody>
+          <tr><td><code>writeBuffer</code></td><td>50 bytes</td><td><code>writeBufferPos > 49</code> checked; buffer reset on overflow</td></tr>
+          <tr><td><code>readBuffer</code></td><td>130 bytes</td><td><code>sendReceiveAuto(..., readBuffer, sizeof(readBuffer), ...)</code> — bounded</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The GXAS reply is 136 base64 chars + <code>#</code>. Clients connecting to the WiFi server
+       receive the full reply; the bridge forwards bytes transparently. Internal buffers are bounded
+       to prevent overflow.</p>
+  </section>
+
+  <div class="page-nav">
+    <a href="fw-shc.html">&larr; <span><span class="label">Previous</span><br />SHC</span></a>
+    <a href="fw-stepper.html"><span><span class="label">Next</span><br />Motor &amp; Stepper</span> &rarr;</a>
+  </div>
+</main>
+<script src="nav.js"></script>
+</body>
+</html>

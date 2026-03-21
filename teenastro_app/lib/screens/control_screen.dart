@@ -17,6 +17,7 @@ class ControlScreen extends ConsumerWidget {
     final client = ref.read(lx200ClientProvider);
     final safeMove = ref.read(safeMoveHandlerProvider);
     final state = ref.watch(mountStateProvider);
+    final slewing = state.isSlewing;
 
     return ListView(
       padding: const EdgeInsets.all(12),
@@ -54,20 +55,40 @@ class ControlScreen extends ConsumerWidget {
           children: [
             _ActionButton(
               icon: Icons.stop_circle,
-              label: 'STOP',
-              color: TAColors.error,
-              onPressed: () => safeMove.stopMove(),
+              label: slewing ? 'STOP SLEW' : 'STOP',
+              color: TA.error,
+              large: slewing,
+              onPressed: () {
+                safeMove.stopMove();
+                client.sendImmediate(LX200.stopAll);
+              },
             ),
             _ActionButton(
               icon: Icons.local_parking,
               label: state.isParked ? 'Unpark' : 'Park',
-              onPressed: () => client.send(
-                state.isParked ? LX200.unpark : LX200.park),
+              onPressed: () async {
+                final cmd = state.isParked ? LX200.unpark : LX200.park;
+                final ok = await client.sendBool(cmd);
+                if (context.mounted && !ok) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(state.isParked ? 'Unpark failed' : 'Park failed'),
+                    backgroundColor: TA.error,
+                  ));
+                }
+              },
             ),
             _ActionButton(
               icon: Icons.home,
               label: 'Home',
-              onPressed: () => client.send(LX200.goHome),
+              onPressed: () async {
+                final ok = await client.sendBool(LX200.goHome);
+                if (context.mounted && !ok) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: const Text('Go-home failed (mount parked or busy?)'),
+                    backgroundColor: TA.error,
+                  ));
+                }
+              },
             ),
             if (state.isGEM)
               _ActionButton(
@@ -105,9 +126,9 @@ class _SpeedSelector extends StatelessWidget {
           child: ChoiceChip(
             label: Text(labels[i]),
             selected: selected,
-            selectedColor: TAColors.accent,
+            selectedColor: TA.accent,
             labelStyle: TextStyle(
-              color: selected ? Colors.white : TAColors.text,
+              color: selected ? TA.textHigh : TA.text,
               fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
             ),
             onSelected: (_) => onChanged(i),
@@ -122,23 +143,27 @@ class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color? color;
+  final bool large;
   final VoidCallback onPressed;
   const _ActionButton({
     required this.icon, required this.label,
-    this.color, required this.onPressed,
+    this.color, this.large = false, required this.onPressed,
   });
 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
-        backgroundColor: color ?? TAColors.surfaceVariant,
-        foregroundColor: color != null ? Colors.white : TAColors.text,
-        minimumSize: const Size(100, 48),
+        backgroundColor: color ?? TA.surfaceVariant,
+        foregroundColor: color != null ? TA.textHigh : TA.text,
+        minimumSize: Size(large ? 160 : 100, large ? 56 : 48),
       ),
       onPressed: onPressed,
-      icon: Icon(icon, size: 18),
-      label: Text(label),
+      icon: Icon(icon, size: large ? 22 : 18),
+      label: Text(label, style: TextStyle(
+        fontSize: large ? 16 : 14,
+        fontWeight: large ? FontWeight.w700 : FontWeight.normal,
+      )),
     );
   }
 }
@@ -156,7 +181,7 @@ class _FocuserPanel extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Focuser', style: TextStyle(
-              color: TAColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+              color: TA.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -165,7 +190,7 @@ class _FocuserPanel extends StatelessWidget {
                   onStop: () => client.send(LX200.focuserStop)),
                 const SizedBox(width: 16),
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: TAColors.error),
+                  style: ElevatedButton.styleFrom(backgroundColor: TA.error),
                   onPressed: () => client.send(LX200.focuserStop),
                   child: const Text('Stop'),
                 ),
@@ -196,12 +221,12 @@ class _HoldButton extends StatelessWidget {
       child: Container(
         width: 64, height: 48,
         decoration: BoxDecoration(
-          color: TAColors.surfaceVariant,
+          color: TA.surfaceVariant,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: TAColors.border),
+          border: Border.all(color: TA.border),
         ),
         alignment: Alignment.center,
-        child: Text(label, style: TextStyle(color: TAColors.text, fontWeight: FontWeight.w600)),
+        child: Text(label, style: TextStyle(color: TA.text, fontWeight: FontWeight.w600)),
       ),
     );
   }

@@ -2,7 +2,7 @@
  * emu_mainunit_main.cpp -- Single-TU build of the TeenAstro MainUnit emulator.
  *
  * Build:  pio run -d TeenAstroEmulator -e emu_mainunit
- * Run:    .pio\build\emu_mainunit\program.exe
+ * Run:    .pio\build\emu\mainunit_emu.exe
  */
 
 #ifdef EMU_MAINUNIT
