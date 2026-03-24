@@ -140,7 +140,7 @@ GLOBAL EventGroupHandle_t mountEvents;  // abort etc.
 #define HzCf  (TICKS_PER_SEC / 60.0)   // conversion factor to go to/from Hz for sidereal interval
 GLOBAL double  siderealClockSpeed;
 
-GLOBAL char reply[50];
+GLOBAL char reply[150];
 GLOBAL char command[28];
 
 GLOBAL T_Serial S_SHC;

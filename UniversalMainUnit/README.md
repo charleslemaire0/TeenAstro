@@ -3,7 +3,7 @@ UniversalMainUnit
 
 ### Introduction
 
-This is an early release of the TeenAstro redesign documented [here](https://fdesvallees.github.io/teenastro/swDesign/UniversalMainUnit/). See also [docs/overview.md](../docs/overview.md) for the main TeenAstro architecture.
+This is a release of the TeenAstro redesign documented [here](https://fdesvallees.github.io/teenastro/swDesign/UniversalMainUnit/). See also [docs/overview.md](../docs/overview.md) for the main TeenAstro architecture.
 
 It dynamically supports both step/dir and position/velocity interface. It is possible to run each motor with a different interface.
 
@@ -31,7 +31,8 @@ What is does **not** have:
 
 ### Hardware support
 
-The software is tested on Norman Cleesattel's ESP32S3 development board, a Board 250 (Teensy4) and a modified board 240 (removed the ST4 5V pull-up resistors). It is built with PlatformIO, either with the command line tools or through VSCode. On the ESP32, it is possible to use JTAG with its excellent breakpoint and watch capabilities. 
+The software is tested on a Board 250 (Teensy4) and a modified board 240 (removed the ST4 5V pull-up resistors). It is built with PlatformIO, either with the command line tools or through VSCode. 
+I no longer test on the ESP32. 
 
 ### Design choices
 
@@ -66,26 +67,24 @@ A new command has been added (SXK,vvvv#) to indicate the clock speed of the TMC5
 
 ### Test and Configuration
 
-**TAConfig.py**  updates the mount parameters. Testing is based on **debug5160** (stand-alone executable that runs commands from a terminal), **mountSim.py** (useful for visualizing) and **autoTest.py** (more thorough testing). Both test programs rely on the axis coordinates and steps reported by TeenAstro. See the respective README for more info on both programs.
+**TAConfig.py**  updates the mount parameters. Testing is based on **debug5160** (stand-alone executable that runs commands from a terminal),  and **autoTest.py** (more thorough testing). Both test programs rely on the axis coordinates and steps reported by TeenAstro. See the respective README for more info on both programs.
 
-### Test Status - 21 Dec 2023
+### Test Status - March 2026
 
 #### Tested features
 Basic Goto, sync, tracking and guiding work, SHC connects and runs normally. Tests are done first in simulation (both Equatorial and AltAz), then with a real equatorial mount (AP600).  
 
 Visual observation under the sky works, tested sync.   
 Spiral is ok   
-Pulse and ST4 guiding work, performance is good (better than 1 arc-sec RMS - not yet compared against standard version)     
+Pulse and ST4 guiding work, performance is good (up to 0.35" RMS in very good conditions with a Takahashi NJP mount)     
 
-I did a little testing with EKOS through the INDI driver, 
+Tested with ASCOM and NINA. No longer tested with EKOS through the INDI driver, but it should still work because it is backward-compatible with pre-1.60 releases (:GXI# command is still in the code)
 
 ### Not yet implemented or tested   
-No ASCOM testing whatsoever   
 Refraction is not yet implemented  
 
 
 #### Known bugs
-- FreeRTOS startup on Teensy4 is very slow (7 seconds!) which confuses the SHC. I put a work-around that requires a reboot, then it works fine. This does not happen on ESP32. Debugging is ongoing.   
-
-
+- Errors when displaying motor parameters etc. with the Wifi server interface (I did not implement the fixed-length commands of release 1.6)
+- **mountSim.py** no longer works due to API changes
 

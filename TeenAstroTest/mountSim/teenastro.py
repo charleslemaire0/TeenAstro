@@ -99,7 +99,7 @@ class TeenAstro(object):
 #    self.log(cmdStr)
     self.port.write(cmdStr.encode('utf-8'))
     # Read response byte to allow some time before the next command
-    resp = (self.port.read_until(b'#', 100)).decode('utf-8')
+    resp = (self.port.read_until(b'#', 200)).decode('utf-8')
 #    self.log(resp)
     return resp.strip('#')
 
