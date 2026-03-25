@@ -680,13 +680,28 @@ void TeenAstroWifi::setup()
 
 void TeenAstroWifi::update()
 {
+  // Persist parser state across calls but make it resettable when TCP session changes.
+  static char writeBuffer[50] = "";
+  static int writeBufferPos = 0;
+
   if (wifiOn == false)
+  {
+    // Ensure stale client/session state is dropped when WiFi is disabled.
+    if (cmdSvrClient) cmdSvrClient.stop();
+    writeBuffer[0] = 0;
+    writeBufferPos = 0;
     return;
+  }
   if ((activeWifiMode == WifiMode::M_Station1 ||
     activeWifiMode == WifiMode::M_Station2 ||
     activeWifiMode == WifiMode::M_Station3)
     && WiFi.status() != WL_CONNECTED)
   {
+    // Station link lost: close command socket and clear parser state so reconnect
+    // starts from a clean state once WiFi comes back.
+    if (cmdSvrClient) cmdSvrClient.stop();
+    writeBuffer[0] = 0;
+    writeBufferPos = 0;
     return;
   }
   server.handleClient();
@@ -699,24 +714,47 @@ void TeenAstroWifi::update()
     if (cmdSvrClient && !cmdSvrClient.connected())
     {
       cmdSvrClient.stop();
+      writeBuffer[0] = 0;
+      writeBufferPos = 0;
     }
     // new client
     if (!cmdSvrClient && cmdSvr.hasClient())
     {
       cmdSvrClient = cmdSvr.available();
+      writeBuffer[0] = 0;
+      writeBufferPos = 0;
+    }
+    // If another client is queued while one is active, drain it immediately so
+    // the listen queue does not clog after disconnect/reconnect storms.
+    while (cmdSvrClient && cmdSvr.hasClient())
+    {
+      WiFiClient extra = cmdSvr.available();
+      if (extra) extra.stop();
     }
     break;
   case WifiConnectMode::AutoClose:
   default:
     if (cmdSvrClient && (!cmdSvrClient.connected() || clientTime < millis()))
+    {
       cmdSvrClient.stop();
+      writeBuffer[0] = 0;
+      writeBufferPos = 0;
+    }
     // new client
     if (!cmdSvrClient && cmdSvr.hasClient()) {
       // find free/disconnected spot
       cmdSvrClient = cmdSvr.available();
       // Idle timeout must exceed both the poll interval (~2 s) and the serial CmdTimeout (up to 8 s)
       clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
+      writeBuffer[0] = 0;
+      writeBufferPos = 0;
       break;
+    }
+    // Drain queued extras while a client is active to keep reconnect reliable.
+    while (cmdSvrClient && cmdSvr.hasClient())
+    {
+      WiFiClient extra = cmdSvr.available();
+      if (extra) extra.stop();
     }
     break;
   }
@@ -732,8 +770,6 @@ void TeenAstroWifi::update()
   // IMPORTANT: server.handleClient() must NOT be called from inside this loop
   // to avoid re-entrant serial access (HTTP handlers also use s_client).
   {
-    static char writeBuffer[50] = "";
-    static int writeBufferPos = 0;
     bool cmdDone = false;
 
     while (cmdSvrClient.connected() && cmdSvrClient.available() && !cmdDone)
