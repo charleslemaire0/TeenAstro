@@ -1,25 +1,27 @@
-UNAME := $(shell uname)
+# Makefile for TeenAstro Main Unit
+#
+# Uses PlatformIO for compilation.
+# See platformio.ini for available environments (board/driver combinations).
+#
+# Examples:
+#   make                     # build default env (240_5160)
+#   make env-240_5160        # build one specific env
+#   make env-250_2130        # build Teensy 4.0 + TMC2130
+#   make all-envs            # build every env defined in platformio.ini
+#   make clean               # clean all build artefacts
+#
+# Requires: pip install platformio   (or: curl -fsSL https://platformio.org/install.sh | sh)
 
-ifeq ($(UNAME), Linux)
-TOOLS=$(HOME)/arduino-1.8.12
-LIB=$(HOME)/Arduino/libraries
-ARD15=$(HOME)/.arduino15
-endif
-
-ifeq ($(UNAME), Darwin)
-TOOLS=/Applications/Arduino.app/Contents/Java
-LIB=$(HOME)/Documents/Arduino/libraries
-ARD15=$(HOME)/Library/Arduino15
-endif
-
-OPTIONS = --build-properties compiler.cpp.extra_flags=-DLANGUAGE
-
-
+.PHONY: all all-envs clean
 
 all:
-	$(TOOLS)/arduino-builder -compile -logger=machine -hardware $(TOOLS)/hardware -hardware $(ARD15)/packages \
-                            -tools $(TOOLS)/tools-builder -tools $(TOOLS)/hardware/tools/avr \
-                            -tools $(ARD15)/packages -built-in-libraries $(TOOLS)/libraries \
-                            -libraries $(LIB) -fqbn=teensy:avr:teensy31:usb=serial,speed=96,opt=o2std,keys=en-us -ide-version=10810 \
-                            -build-path $(HOME)/Sources/build/mu -warnings=none -build-cache /tmp/arduino_cache_170105 \
-							-verbose $(PWD)/TeenAstroMainUnit.ino
+	pio run
+
+env-%:
+	pio run -e $*
+
+all-envs:
+	pio run
+
+clean:
+	pio run --target clean

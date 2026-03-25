@@ -637,7 +637,9 @@ void TeenAstroWifi::setup()
     }
     WiFi.softAPdisconnect(true);
     WiFi.mode(WIFI_STA);
+#if defined(ARDUINO_ARCH_ESP8266)
     WiFi.setSleepMode(WiFiSleepType::WIFI_NONE_SLEEP);
+#endif
     WiFi.begin(wifi_sta_ssid[activeWifiMode], wifi_sta_pwd[activeWifiMode]);
 #ifdef ARDUINO_LOLIN_C3_MINI
     WiFi.setTxPower(WIFI_POWER_8_5dBm);
@@ -663,6 +665,7 @@ void TeenAstroWifi::setup()
   server.on("/track.txt", trackAjax);
   server.on("/trackinfo.txt", trackinfoAjax);
   server.on("/status.txt", statusAjax);
+  server.on("/cmd", handleLx200Cmd);
   server.on("/wifi.htm", handleWifi);
   server.onNotFound(handleNotFound);
 
@@ -678,11 +681,54 @@ void TeenAstroWifi::setup()
   httpUpdater.setup(&server);
 };
 
+void TeenAstroWifi::handleLx200Cmd()
+{
+  String q = server.arg("q");
+  if (q.length() == 0)
+  {
+    server.send(400, "text/plain", "");
+    return;
+  }
+  s_client->setTimeout(CmdTimeout > 0 ? (unsigned long)CmdTimeout * 2 : 30);
+  char buf[256] = "";
+  LX200RETURN ret = s_client->get(q.c_str(), buf, sizeof(buf));
+  if (ret == LX200_VALUEGET && strlen(buf) > 0)
+    server.send(200, "text/plain", buf);
+  else
+    server.send(200, "text/plain", "");
+}
+
+void TeenAstroWifi::restartStationAssociation()
+{
+#if defined(ARDUINO_ARCH_ESP8266)
+  WiFi.disconnect(false);
+#elif defined(ARDUINO_ARCH_ESP32)
+  WiFi.disconnect(false, false);
+#else
+  WiFi.disconnect();
+#endif
+  delay(50);
+  if (!stationDhcpEnabled[activeWifiMode])
+  {
+    WiFi.config(wifi_sta_ip[activeWifiMode], wifi_sta_gw[activeWifiMode], wifi_sta_sn[activeWifiMode]);
+  }
+  WiFi.mode(WIFI_STA);
+#if defined(ARDUINO_ARCH_ESP8266)
+  WiFi.setSleepMode(WiFiSleepType::WIFI_NONE_SLEEP);
+#endif
+  WiFi.begin(wifi_sta_ssid[activeWifiMode], wifi_sta_pwd[activeWifiMode]);
+#ifdef ARDUINO_LOLIN_C3_MINI
+  WiFi.setTxPower(WIFI_POWER_8_5dBm);
+#endif
+}
+
 void TeenAstroWifi::update()
 {
   // Persist parser state across calls but make it resettable when TCP session changes.
   static char writeBuffer[50] = "";
   static int writeBufferPos = 0;
+  static unsigned long lastStaReconnectMs = 0;
+  static bool staEverHadLink = false;
 
   if (wifiOn == false)
   {
@@ -690,6 +736,7 @@ void TeenAstroWifi::update()
     if (cmdSvrClient) cmdSvrClient.stop();
     writeBuffer[0] = 0;
     writeBufferPos = 0;
+    staEverHadLink = false;
     return;
   }
   if ((activeWifiMode == WifiMode::M_Station1 ||
@@ -697,17 +744,34 @@ void TeenAstroWifi::update()
     activeWifiMode == WifiMode::M_Station3)
     && WiFi.status() != WL_CONNECTED)
   {
-    // Station link lost: close command socket and clear parser state so reconnect
-    // starts from a clean state once WiFi comes back.
+    // Station link lost: close command socket and clear parser state. The ESP stack
+    // often keeps a half-dead association; periodically restart association so the
+    // mount can join the network again after router/AP hiccups.
     if (cmdSvrClient) cmdSvrClient.stop();
     writeBuffer[0] = 0;
     writeBufferPos = 0;
+    const unsigned long now = millis();
+    // Only re-run association after we have had a working link this session; otherwise the
+    // initial WiFi.begin() from setup() is left alone (slow joins can exceed 8 s).
+    if (staEverHadLink && (now - lastStaReconnectMs >= 8000UL))
+    {
+      lastStaReconnectMs = now;
+      TeenAstroWifi::restartStationAssociation();
+    }
     return;
   }
+  if (activeWifiMode == WifiMode::M_Station1 ||
+      activeWifiMode == WifiMode::M_Station2 ||
+      activeWifiMode == WifiMode::M_Station3)
+    staEverHadLink = true;
   server.handleClient();
 
   // disconnect client
   static unsigned long clientTime = 0;
+  // Tracks when the current TCP client last sent a complete command.
+  // Used in KeepOpened mode to detect half-open (stale) TCP sessions.
+  static unsigned long lastClientCmdMs = 0;
+
   switch (activeWifiConnectMode)
   {
   case WifiConnectMode::KeepOpened:
@@ -721,13 +785,30 @@ void TeenAstroWifi::update()
     if (!cmdSvrClient && cmdSvr.hasClient())
     {
       cmdSvrClient = cmdSvr.available();
+      lastClientCmdMs = millis();
       writeBuffer[0] = 0;
       writeBufferPos = 0;
     }
-    // If another client is queued while one is active, drain it immediately so
-    // the listen queue does not clog after disconnect/reconnect storms.
+    // If another client is queued while one is active: the existing client may be
+    // a half-open TCP session left over after the remote app crashed or switched
+    // networks (no FIN received). If no command has arrived for >15 s (the app
+    // sends heartbeats every 1.5 s), assume the session is stale and replace it.
     while (cmdSvrClient && cmdSvr.hasClient())
     {
+      if (millis() - lastClientCmdMs > 15000UL)
+      {
+        cmdSvrClient.stop();
+        cmdSvrClient = cmdSvr.available();
+        lastClientCmdMs = millis();
+        writeBuffer[0] = 0;
+        writeBufferPos = 0;
+        while (cmdSvr.hasClient())
+        {
+          WiFiClient extra = cmdSvr.available();
+          if (extra) extra.stop();
+        }
+        break;
+      }
       WiFiClient extra = cmdSvr.available();
       if (extra) extra.stop();
     }
@@ -742,10 +823,9 @@ void TeenAstroWifi::update()
     }
     // new client
     if (!cmdSvrClient && cmdSvr.hasClient()) {
-      // find free/disconnected spot
       cmdSvrClient = cmdSvr.available();
-      // Idle timeout must exceed both the poll interval (~2 s) and the serial CmdTimeout (up to 8 s)
       clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
+      lastClientCmdMs = millis();
       writeBuffer[0] = 0;
       writeBufferPos = 0;
       break;
@@ -822,6 +902,7 @@ void TeenAstroWifi::update()
           writeBuffer[0] = 0;
           writeBufferPos = 0;
           cmdDone = true;
+          lastClientCmdMs = millis();
           if (activeWifiConnectMode == WifiConnectMode::AutoClose)
             clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
           break;
@@ -843,9 +924,8 @@ void TeenAstroWifi::update()
         }
         writeBuffer[0] = 0;
         writeBufferPos = 0;
-        cmdDone = true;  // exit after one complete command
-        // In AutoClose mode, refresh idle timeout after every processed command.
-        // Must exceed CmdTimeout (serial round-trip) + poll interval to avoid race.
+        cmdDone = true;
+        lastClientCmdMs = millis();
         if (activeWifiConnectMode == WifiConnectMode::AutoClose)
           clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
       }
