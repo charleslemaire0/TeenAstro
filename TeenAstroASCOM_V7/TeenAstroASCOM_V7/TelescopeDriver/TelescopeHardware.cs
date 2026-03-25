@@ -2781,7 +2781,9 @@ namespace ASCOM.TeenAstro.Telescope
       if (microExp > 8) microExp = 8;
       m.Microstep = 1 << microExp;
 
-      m.Reverse = ReadGX("Mr" + s) != "0";
+      // LX200 motor reverse rotation uses :GXMRR# / :GXMRD# (uppercase 'R').
+      // Using the documented casing is important if the firmware command parser is case-sensitive.
+      m.Reverse = ReadGX("MR" + s) != "0";
       m.LowCurrent = ReadGXInt("Mc" + s);
       m.HighCurrent = ReadGXInt("MC" + s);
       m.BacklashAmount = ReadGXInt("MB" + s);
