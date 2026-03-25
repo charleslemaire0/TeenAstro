@@ -14,7 +14,6 @@ using ASCOM.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 
 namespace ASCOM.LocalServer
@@ -42,6 +41,12 @@ namespace ASCOM.LocalServer
     private static short connectionPort;
     private static string connectionInterface;
 
+    // HTTP transport is stateless — no persistent socket needed for IP mode.
+
+    /// <summary>Optional log callback. Set by the driver so transport diagnostics
+    /// appear in the ASCOM trace log.</summary>
+    public static Action<string, string> LogCallback { get; set; }
+
     /// <summary>Whether the physical connection is currently open (COM port connected or IP session allowed).</summary>
     public static bool IsConnected
     {
@@ -52,7 +57,7 @@ namespace ASCOM.LocalServer
           if (connectionInterface == "COM")
             return sharedSerial != null && sharedSerial.Connected;
           if (connectionInterface == "IP")
-            return uniqueIds.Count > 0; // For IP we don't hold a persistent socket
+            return uniqueIds.Count > 0;
           return false;
         }
       }
@@ -113,12 +118,14 @@ namespace ASCOM.LocalServer
               throw new ASCOM.DriverException("COM connect failed: " + ex.Message);
             }
           }
-          // For IP we don't open a persistent socket; SendCommand will create TcpClient per request
+
+          // IP mode uses stateless HTTP — no persistent socket to open.
         }
 
         uniqueIds.Add(uniqueId);
       }
     }
+
 
     /// <summary>
     /// Disconnect this driver instance. If this was the last instance, closes the physical connection.
@@ -197,18 +204,25 @@ namespace ASCOM.LocalServer
               return true;
             case 1:
               buf = sharedSerial.ReceiveCounted(1);
-              return !string.IsNullOrEmpty(buf);
+              if (!string.IsNullOrEmpty(buf)) return true;
+              break;
             case 2:
               buf = sharedSerial.ReceiveTerminated("#").TrimEnd('#');
-              // Mode 2 expects a non-empty response payload before the '#'.
-              // Treat empty as failure so callers can retry (helps when transport
-              // returns an empty string on disconnect/timeout).
-              return !string.IsNullOrEmpty(buf);
+              if (!string.IsNullOrEmpty(buf)) return true;
+              break;
           }
+          // Empty response: log and retry after a brief pause.
+          LogCallback?.Invoke("Serial RX empty",
+              $"attempt {k + 1}/{retries + 1} for {command}");
+          if (k < retries)
+            System.Threading.Thread.Sleep(100);
         }
         catch
         {
+          LogCallback?.Invoke("Serial RX error",
+              $"attempt {k + 1}/{retries + 1} for {command}");
           if (k == retries) return false;
+          System.Threading.Thread.Sleep(50);
         }
       }
       return false;
@@ -219,100 +233,51 @@ namespace ASCOM.LocalServer
       if (string.IsNullOrWhiteSpace(connectionIP))
         return false;
 
-      // Users sometimes paste an URL (http://ip:port/path) or have trailing spaces.
-      // The old code required a "pure" dotted-quad string and would fail parsing.
       int portToUse = connectionPort;
       string normalizedHost = null;
-
-      // Accept common "IP:port" input in the IP textbox (e.g. "192.168.1.17:9999").
       if (!TryNormalizeHostAndOptionalPort(connectionIP, out normalizedHost, out portToUse))
         return false;
-
       if (string.IsNullOrWhiteSpace(normalizedHost))
         return false;
 
-      if (!TryResolveToIPAddress(normalizedHost, out IPAddress addr))
-        return false;
-
-      // Keep each request bounded; the TeensAstro WiFi server may keep the TCP
-      // connection open for a while (AutoClose idle timeout).
-      // GVN/GVP/GXAS commands are expected to be fast, but initial network/firmware
-      // responses can occasionally exceed the defaults, so keep some headroom.
-      const int connectTimeoutMs = 5000;
-      const int ioTimeoutMs = 10000;
+      // Port from profile is for the TCP command channel (9999), NOT the HTTP server (80).
+      string baseUrl = "http://" + normalizedHost + "/cmd?q=" + Uri.EscapeDataString(command);
 
       for (int k = 0; k <= retries; k++)
       {
-        TcpClient client = null;
         try
         {
-          client = new TcpClient();
-          client.NoDelay = true;
-          client.ReceiveTimeout = ioTimeoutMs;
-          client.SendTimeout = ioTimeoutMs;
+          var request = (HttpWebRequest)WebRequest.Create(baseUrl);
+          request.Method = "GET";
+          request.Timeout = 10000;
+          request.ReadWriteTimeout = 10000;
+          request.Proxy = new WebProxy();
+          request.KeepAlive = false;
+          request.ServicePoint.ConnectionLimit = 10;
 
-          var result = client.BeginConnect(addr, portToUse, null, null);
-          if (!result.AsyncWaitHandle.WaitOne(connectTimeoutMs, true))
+          using (var response = (HttpWebResponse)request.GetResponse())
+          using (var reader = new System.IO.StreamReader(response.GetResponseStream(), Encoding.ASCII))
           {
-            client.Close();
-            return false;
+            buf = reader.ReadToEnd().TrimEnd('#');
           }
-          client.EndConnect(result);
 
-          var stream = client.GetStream();
-          byte[] outBytes = Encoding.ASCII.GetBytes(command);
-          stream.Write(outBytes, 0, outBytes.Length);
-          stream.Flush();
+          if (mode == 0) return true;
+          if (!string.IsNullOrEmpty(buf)) return true;
+
+          // ESP returned HTTP 200 with empty body (MCU serial timeout).
+          LogCallback?.Invoke("IP RX empty",
+              $"attempt {k + 1}/{retries + 1} for {command}");
           buf = "";
-
-          switch (mode)
-          {
-            case 0:
-              client.Close();
-              return true;
-            case 1:
-            case 2:
-              if (stream.CanRead)
-              {
-                // Mode 1: expect a single-byte reply (first char only).
-                // Mode 2: expect a response terminated by '#'.
-                //
-                // The previous implementation read until the TCP socket closed,
-                // which could hang if the server uses "auto-close on idle".
-                if (mode == 1)
-                {
-                  int first = stream.ReadByte(); // respects ReceiveTimeout
-                  buf = first >= 0 ? ((char)first).ToString() : "";
-                }
-                else
-                {
-                  var sb = new StringBuilder();
-                  // Replies are small ASCII strings, but cap to avoid runaway on bad firmware.
-                  int maxChars = Math.Max(128, client.ReceiveBufferSize + 1);
-                  while (sb.Length < maxChars)
-                  {
-                    int b = stream.ReadByte(); // respects ReceiveTimeout
-                    if (b < 0) break; // remote closed
-                    if ((char)b == '#') break;
-                    sb.Append((char)b);
-                  }
-                  buf = sb.ToString();
-                }
-              }
-              client.Close();
-              // Mode 1/2 must receive some payload. If the WiFi bridge closes
-              // the socket without sending data, buf will be empty; treat as
-              // failure so SendCommand() can retry.
-              return !string.IsNullOrEmpty(buf);
-            default:
-              client.Close();
-              return false;
-          }
+          if (k < retries)
+            System.Threading.Thread.Sleep(150);
         }
-        catch
+        catch (Exception ex)
         {
-          try { client?.Close(); } catch { }
+          LogCallback?.Invoke("IP RX error",
+              $"attempt {k + 1}/{retries + 1} for {command}: {ex.GetType().Name}");
+          buf = "";
           if (k == retries) return false;
+          System.Threading.Thread.Sleep(100);
         }
       }
       return false;
@@ -383,72 +348,6 @@ namespace ASCOM.LocalServer
       // No port detected; treat whole input as host/IP.
       host = s.Trim();
       return !string.IsNullOrWhiteSpace(host);
-    }
-
-    // Removes optional scheme and any trailing path/query/port so the remaining
-    // value can be parsed/resolved as an IP/host.
-    private static string NormalizeIpHost(string input)
-    {
-      if (input == null) return "";
-
-      string s = input.Trim();
-      if (s.Length == 0) return "";
-
-      // Remove URL scheme if present.
-      if (s.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
-        s = s.Substring("http://".Length);
-      else if (s.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-        s = s.Substring("https://".Length);
-
-      // Remove path/query/fragment.
-      int slash = s.IndexOf('/');
-      if (slash >= 0) s = s.Substring(0, slash);
-      int q = s.IndexOf('?');
-      if (q >= 0) s = s.Substring(0, q);
-      int hash = s.IndexOf('#');
-      if (hash >= 0) s = s.Substring(0, hash);
-
-      // If it's host:port (IPv4 or hostname), keep only host.
-      // For bracketed IPv6 ([::1]:1234) keep the bracketed host.
-      if (s.StartsWith("[", StringComparison.OrdinalIgnoreCase))
-      {
-        int end = s.IndexOf(']');
-        if (end >= 0) return s.Substring(1, end - 1);
-      }
-      else
-      {
-        int firstColon = s.IndexOf(':');
-        int lastColon = s.LastIndexOf(':');
-        // Only strip port for "single-colon" forms like "192.168.0.10:9999".
-        if (firstColon > 0 && firstColon == lastColon)
-          s = s.Substring(0, firstColon);
-      }
-
-      return s.Trim();
-    }
-
-    private static bool TryResolveToIPAddress(string hostOrIp, out IPAddress addr)
-    {
-      addr = null;
-      if (string.IsNullOrWhiteSpace(hostOrIp)) return false;
-
-      if (IPAddress.TryParse(hostOrIp, out addr))
-        return true;
-
-      try
-      {
-        var addresses = Dns.GetHostAddresses(hostOrIp);
-        foreach (var a in addresses)
-        {
-          addr = a;
-          return true;
-        }
-      }
-      catch
-      {
-        // ignore and return false
-      }
-      return false;
     }
 
     #region Dispose method to clean up resources before close

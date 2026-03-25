@@ -161,6 +161,8 @@ namespace ASCOM.TeenAstro.Telescope
         // ReadProfile has to go here before anything is written to the log because it loads the TraceLogger enable / disable state.
         ReadProfile(); // Read device configuration from the ASCOM Profile store, including the trace state
 
+        SharedResources.LogCallback = LogMessage;
+
         LogMessage("TelescopeHardware", $"Static initialiser completed.");
       }
       catch (Exception ex)
@@ -551,6 +553,14 @@ namespace ASCOM.TeenAstro.Telescope
             SharedResources.Disconnect(uniqueId);
             return;
           }
+
+          LogMessage("SetConnected", $"Interface: {Interface}, IP: {IP}, Port: {Port}, COM: {comPort}");
+
+          // Let the ESP/MCU settle after the GVN handshake before
+          // hammering it with GXAS and property reads.
+          if (string.Equals(Interface, "IP", StringComparison.OrdinalIgnoreCase))
+            System.Threading.Thread.Sleep(250);
+
           try
           {
             if (TrackingRate != DriveRates.driveSidereal)
