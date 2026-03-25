@@ -10,27 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../TeenAstroASCOM_V7/TeenAstroASCOM_V7.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Needed at compile-time because we directly use ASCOM.Utilities.Profile in Program.cs -->
-    <Reference Include="ASCOM.Utilities, Version=6.0.0.0, Culture=neutral, PublicKeyToken=565de7938946fba7, processorArchitecture=MSIL" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Needed for ITelescopeV4 type -->
-    <Reference Include="ASCOM.DeviceInterfaces, Version=6.0.0.0, Culture=neutral, PublicKeyToken=565de7938946fba7, processorArchitecture=MSIL" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Needed for ASCOM.NotConnectedException and other ASCOM exceptions -->
-    <Reference Include="ASCOM.Exceptions, Version=6.0.0.0, Culture=neutral, PublicKeyToken=565de7938946fba7, processorArchitecture=MSIL" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Needed for C# 'dynamic' support (runtime binder). -->
-    <Reference Include="Microsoft.CSharp" />
+    <ProjectReference Include="../TeenAstroASCOM_V7.DriverVerification/TeenAstroASCOM_V7.DriverVerification.csproj" />
   </ItemGroup>
 
 </Project>

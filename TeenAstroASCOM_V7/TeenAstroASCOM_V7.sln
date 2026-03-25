@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeenAstroASCOM_V7.Tests", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeenAstroASCOM_V7_TcpConnectivityTest", "TeenAstroASCOM_V7_TcpConnectivityTest\TeenAstroASCOM_V7_TcpConnectivityTest.csproj", "{EAFB59BD-2B7B-46BA-B142-6336F82E445B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeenAstroASCOM_V7.DriverVerification", "TeenAstroASCOM_V7.DriverVerification\TeenAstroASCOM_V7.DriverVerification.csproj", "{8D1BFFF4-2420-449D-9F0A-FB0E970E757B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{EAFB59BD-2B7B-46BA-B142-6336F82E445B}.Release|x64.Build.0 = Release|Any CPU
 		{EAFB59BD-2B7B-46BA-B142-6336F82E445B}.Release|x86.ActiveCfg = Release|Any CPU
 		{EAFB59BD-2B7B-46BA-B142-6336F82E445B}.Release|x86.Build.0 = Release|Any CPU
+		{8D1BFFF4-2420-449D-9F0A-FB0E970E757B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D1BFFF4-2420-449D-9F0A-FB0E970E757B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D1BFFF4-2420-449D-9F0A-FB0E970E757B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8D1BFFF4-2420-449D-9F0A-FB0E970E757B}.Debug|x64.Build.0 = Debug|Any CPU
+		{8D1BFFF4-2420-449D-9F0A-FB0E970E757B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8D1BFFF4-2420-449D-9F0A-FB0E970E757B}.Debug|x86.Build.0 = Debug|Any CPU
+		{8D1BFFF4-2420-449D-9F0A-FB0E970E757B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D1BFFF4-2420-449D-9F0A-FB0E970E757B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D1BFFF4-2420-449D-9F0A-FB0E970E757B}.Release|x64.ActiveCfg = Release|Any CPU
+		{8D1BFFF4-2420-449D-9F0A-FB0E970E757B}.Release|x64.Build.0 = Release|Any CPU
+		{8D1BFFF4-2420-449D-9F0A-FB0E970E757B}.Release|x86.ActiveCfg = Release|Any CPU
+		{8D1BFFF4-2420-449D-9F0A-FB0E970E757B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

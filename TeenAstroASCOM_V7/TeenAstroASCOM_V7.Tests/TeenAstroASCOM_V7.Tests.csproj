@@ -4,12 +4,15 @@
     <RootNamespace>TeenAstroASCOM_V7.Tests</RootNamespace>
     <AssemblyName>TeenAstroASCOM_V7.Tests</AssemblyName>
     <IsPackable>false</IsPackable>
+    <PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MSTest.TestAdapter" Version="3.6.3" />
     <PackageReference Include="MSTest.TestFramework" Version="3.6.3" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\TeenAstroASCOM_V7\TelescopeDriver\RARateConversion.cs" Link="RARateConversion.cs" />
+    <ProjectReference Include="..\TeenAstroASCOM_V7\TeenAstroASCOM_V7.csproj" />
+    <ProjectReference Include="..\TeenAstroASCOM_V7.DriverVerification\TeenAstroASCOM_V7.DriverVerification.csproj" />
   </ItemGroup>
 </Project>

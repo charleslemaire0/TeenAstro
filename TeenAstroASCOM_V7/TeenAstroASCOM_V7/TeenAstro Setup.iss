@@ -35,6 +35,8 @@ Name: "{cf}\ASCOM\Uninstall\Telescope\TeenAstro"
 [Files]
 ; Main ASCOM Local Server Executable
 Source: "C:\Users\charl\source\repos\charleslemaire0\TeenAstro\TeenAstroASCOM_V7\TeenAstroASCOM_V7\bin\Release\ASCOM.TeenAstro.exe"; DestDir: "{app}"
+; Runtime + .NET HTTP proxy policy (must sit beside the exe)
+Source: "C:\Users\charl\source\repos\charleslemaire0\TeenAstro\TeenAstroASCOM_V7\TeenAstroASCOM_V7\bin\Release\ASCOM.TeenAstro.exe.config"; DestDir: "{app}"
 ; Require a read-me HTML to appear after installation, maybe driver's Help doc
 Source: "C:\Users\charl\source\repos\charleslemaire0\TeenAstro\TeenAstroASCOM_V7\TeenAstroASCOM_V7\ReadMe.htm"; DestDir: "{app}"; Flags: isreadme
 
