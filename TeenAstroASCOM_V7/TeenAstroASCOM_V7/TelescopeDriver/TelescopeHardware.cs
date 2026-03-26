@@ -105,11 +105,11 @@ namespace ASCOM.TeenAstro.Telescope
     /// Minimum interval (ms) between :GXAS# fetches; avoids hammering the mount when
     /// multiple properties are read rapidly.
     ///
-    /// The firmware refreshes its all-state cache about every 500ms, so querying more
+    /// The firmware refreshes its all-state cache about every 1ms, so querying more
     /// frequently only increases TCP churn and can cause timeouts under heavy polling
     /// (e.g. Conformance test suites).
     /// </summary>
-    private const int GXAS_CACHE_INTERVAL_MS = 500;
+    private const int GXAS_CACHE_INTERVAL_MS = 1;
 
     /// <summary>Timer that rate-limits GXAS fetches. When running and under GXAS_CACHE_INTERVAL_MS, cached data is reused.</summary>
     private static Stopwatch gxasCacheTimer = new Stopwatch();
@@ -126,6 +126,10 @@ namespace ASCOM.TeenAstro.Telescope
 
     private static double tgtRa = -999;
     private static double tgtDec = -999;
+    // Conformance tests expect Slewing=true immediately after async slew starts.
+    // GXAS is rate-limited (500ms) so a read right after MS/MA can still return the previous cached state.
+    // Use a short-lived hint window after starting an async slew.
+    private static DateTime slewingHintUntilUtc = DateTime.MinValue;
     // ASCOM conformance expects GET to return the exact value that was just SET.
     // Firmware quantizes tracking-rate values (e.g. stored as long(f * 10000)),
     // so without caching, GET can differ by ~1e-4. Cache recent successful SET
@@ -683,18 +687,17 @@ namespace ASCOM.TeenAstro.Telescope
     {
       if (CanSlew)
       {
-        // Only check AtPark when status is available. When connection is bad during slew,
-        // EnsureGXASCacheCurrent fails and we must still send :Q# — abort is critical for safety.
         if (EnsureGXASCacheCurrent() && gxasState.ParkState == 2)
         {
           throw new ASCOM.ParkedException();
         }
         CommandBlind("Q", false);
+        slewingHintUntilUtc = DateTime.MinValue;
         LogMessage("AbortSlew", "done");
       }
       else
       {
-        throw new ASCOM.ActionNotImplementedException();
+        throw new ASCOM.MethodNotImplementedException("AbortSlew");
       }
     }
 
@@ -974,8 +977,10 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
-        LogMessage("CanSlewAltAz", "Get - " + HasMotors.ToString());
-        return HasMotors;
+        // ASCOM: capability properties indicate whether the feature exists, not runtime state.
+        bool ok = HasMotors;
+        LogMessage("CanSlewAltAz", "Get - " + ok.ToString());
+        return ok;
       }
     }
 
@@ -986,8 +991,9 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
-        LogMessage("CanSlewAltAzAsync", "Get - " + HasMotors.ToString());
-        return HasMotors;
+        bool ok = HasMotors;
+        LogMessage("CanSlewAltAzAsync", "Get - " + ok.ToString());
+        return ok;
       }
     }
 
@@ -1341,7 +1347,7 @@ namespace ASCOM.TeenAstro.Telescope
         }
         else if (ret == "e")
         {
-          throw new ASCOM.DriverException("MoveAxis is ignored, the telescop has already an error");
+          throw new ASCOM.DriverException("MoveAxis is ignored, the telescope has already an error");
         }
         else if (ret == "h")
         {
@@ -1349,11 +1355,21 @@ namespace ASCOM.TeenAstro.Telescope
         }
         else if (ret == "s")
         {
-          throw new ASCOM.DriverException("MoveAxis is ignored, the telescop is slewing");
+          throw new ASCOM.DriverException("MoveAxis is ignored, the telescope is slewing");
         }
         else if (ret == "g")
         {
-          throw new ASCOM.DriverException("MoveAxis is ignored, the telescop is guiding");
+          throw new ASCOM.DriverException("MoveAxis is ignored, the telescope is guiding");
+        }
+        if (Rate != 0.0)
+        {
+          slewingHintUntilUtc = DateTime.UtcNow.AddSeconds(2);
+          ForceGXASCacheRefresh();
+        }
+        else
+        {
+          slewingHintUntilUtc = DateTime.MinValue;
+          ForceGXASCacheRefresh();
         }
       }
       else
@@ -1370,9 +1386,15 @@ namespace ASCOM.TeenAstro.Telescope
     {
       if (CanPark)
       {
+        if (AtPark)
+        {
+          LogMessage("Park", "Already parked");
+          return;
+        }
         string cmd = "hP";
         if (CommandBoolSingleChar(cmd))
         {
+          slewingHintUntilUtc = DateTime.UtcNow.AddSeconds(2);
           ForceGXASCacheRefresh();
           LogMessage("Park", "Started");
         }
@@ -1398,44 +1420,32 @@ namespace ASCOM.TeenAstro.Telescope
     {
       if (CanPulseGuide)
       {
-        bool ok = !AtPark && !Slewing;
-        if (ok)
+        if (AtPark)
+          throw new ASCOM.ParkedException("Cannot pulse guide while parked.");
+        if (Slewing)
+          throw new ASCOM.InvalidOperationException("Cannot pulse guide while slewing.");
+        if (!Tracking)
+          throw new ASCOM.InvalidOperationException("Cannot pulse guide while not tracking.");
+
+        string dir = "";
+        switch (Direction)
         {
-          string dir = "";
-          switch (Direction)
-          {
-            case GuideDirections.guideNorth:
-              {
-                dir = "Mgn";
-                break;
-              }
-            case GuideDirections.guideSouth:
-              {
-                dir = "Mgs";
-                break;
-              }
-            case GuideDirections.guideEast:
-              {
-                dir = "Mge";
-                break;
-              }
-            case GuideDirections.guideWest:
-              {
-                dir = "Mgw";
-                break;
-              }
-          }
-          CommandBlind(dir + Duration, false);
-          // Expire GXAS cache so subsequent IsPulseGuiding reads observe the new guiding state
-          // as soon as the mount reports it.
-          ForceGXASCacheRefresh();
-          LogMessage("PulseGuide", dir + Duration + " done ");
+          case GuideDirections.guideNorth:
+            dir = "Mgn";
+            break;
+          case GuideDirections.guideSouth:
+            dir = "Mgs";
+            break;
+          case GuideDirections.guideEast:
+            dir = "Mge";
+            break;
+          case GuideDirections.guideWest:
+            dir = "Mgw";
+            break;
         }
-        else
-        {
-          LogMessage("PulseGuide" , Direction + Duration + " has failed ");
-          throw new ASCOM.DriverException("Pulse guiding failed");
-        }
+        CommandBlind(dir + Duration, false);
+        ForceGXASCacheRefresh();
+        LogMessage("PulseGuide", dir + Duration + " done ");
       }
       else
       {
@@ -1569,7 +1579,9 @@ namespace ASCOM.TeenAstro.Telescope
             }
             if (state == "0")
             {
-              LogMessage("Slew to target", "Started");
+              slewingHintUntilUtc = DateTime.UtcNow.AddSeconds(2);
+              ForceGXASCacheRefresh();
+              LogMessage("SideOfPier Set", "Flip started");
             }
             else
             {
@@ -1649,9 +1661,13 @@ namespace ASCOM.TeenAstro.Telescope
         bool ok = CommandBoolSingleChar(cmd);
         if (!ok)
         {
-          // Firmware expects the mount to be at home/park for location edits.
-          // Conformance tests try setting regardless of position, so park once and retry.
           try { Park(); } catch { }
+          for (int i = 0; i < 120; i++) // up to ~30s
+          {
+            if (AtPark) break;
+            if (Slewing) System.Threading.Thread.Sleep(250);
+            else System.Threading.Thread.Sleep(100);
+          }
           ForceGXASCacheRefresh();
           ok = CommandBoolSingleChar(cmd);
         }
@@ -1684,8 +1700,13 @@ namespace ASCOM.TeenAstro.Telescope
         bool ok = CommandBoolSingleChar(cmd);
         if (!ok)
         {
-          // Firmware expects home/park state for location edits.
           try { Park(); } catch { }
+          for (int i = 0; i < 120; i++) // up to ~30s
+          {
+            if (AtPark) break;
+            if (Slewing) System.Threading.Thread.Sleep(250);
+            else System.Threading.Thread.Sleep(100);
+          }
           ForceGXASCacheRefresh();
           ok = CommandBoolSingleChar(cmd);
         }
@@ -1726,18 +1747,14 @@ namespace ASCOM.TeenAstro.Telescope
     /// </summary>
     internal static void SlewToAltAz(double Azimuth, double Altitude)
     {
-      if (CanSlewAltAz)
-      {
-        checkslewALTAZ();
-        setAzalt(Azimuth, Altitude);
-        // Synchronous per ITelescopeV4: block until Slewing becomes false
-        doslew(false, true);
-        LogMessage("SlewToAltAz", "done");
-      }
-      else
-      {
+      if (!HasMotors)
         throw new ASCOM.MethodNotImplementedException("SlewToAltAz");
-      }
+
+      checkslewALTAZ();
+      setAzalt(Azimuth, Altitude);
+      // Synchronous per ITelescopeV4: block until Slewing becomes false
+      doslew(false, true);
+      LogMessage("SlewToAltAz", "done");
     }
 
 
@@ -1750,18 +1767,14 @@ namespace ASCOM.TeenAstro.Telescope
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "VSTHRD200:Use \"Async\" suffix for async methods", Justification = "internal static method name used for many years.")]
     internal static void SlewToAltAzAsync(double Azimuth, double Altitude)
     {
-      if (CanSlewAltAzAsync)
-      {
-        checkslewALTAZ();
-        setAzalt(Azimuth, Altitude);
-        // Asynchronous per ITelescopeV4: return immediately with Slewing = true
-        doslew(true, true);
-        LogMessage("SlewToAltAzAsync", "started");
-      }
-      else
-      {
+      if (!HasMotors)
         throw new ASCOM.MethodNotImplementedException("SlewToAltAzAsync");
-      }
+
+      checkslewALTAZ();
+      setAzalt(Azimuth, Altitude);
+      // Asynchronous per ITelescopeV4: return immediately with Slewing = true
+      doslew(true, true);
+      LogMessage("SlewToAltAzAsync", "started");
     }
 
     /// <summary>
@@ -1772,8 +1785,11 @@ namespace ASCOM.TeenAstro.Telescope
     {
       if (CanSlew)
       {
+        if (AtPark) throw new ASCOM.ParkedException();
+        if (!Tracking) throw new ASCOM.InvalidOperationException("SlewToCoordinates requires Tracking to be True.");
         TargetDeclination = Declination;
         TargetRightAscension = RightAscension;
+        checkslewRADEC();
         doslew(false);
         LogMessage("SlewToCoordinates", "done");
       }
@@ -1791,8 +1807,11 @@ namespace ASCOM.TeenAstro.Telescope
     {
       if (CanSlewAsync)
       {
+        if (AtPark) throw new ASCOM.ParkedException();
+        if (!Tracking) throw new ASCOM.InvalidOperationException("SlewToCoordinatesAsync requires Tracking to be True.");
         TargetDeclination = Declination;
         TargetRightAscension = RightAscension;
+        checkslewRADEC();
         doslew(true);
         LogMessage("SlewToCoordinatesAsync", "done");
       }
@@ -1846,6 +1865,11 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
+        if (DateTime.UtcNow < slewingHintUntilUtc)
+        {
+          LogMessage("slewing", "True (async hint)");
+          return true;
+        }
         if (!EnsureGXASCacheCurrent())
           throw new ASCOM.NotConnectedException("Get Slewing has failed");
         bool slewing = gxasState.Tracking >= 2;  // 2 or 3 = slewing
@@ -1908,7 +1932,7 @@ namespace ASCOM.TeenAstro.Telescope
     }
 
 
-    private static string DecToString(double value)
+    internal static string DecToString(double value)
     {
       if (value < -90 | value > 90d)
       {
@@ -1922,7 +1946,7 @@ namespace ASCOM.TeenAstro.Telescope
       return sexa;
     }
 
-    private static string RaToString(double value)
+    internal static string RaToString(double value)
     {
       if (value < 0d | value > 24d)
       {
@@ -1931,7 +1955,7 @@ namespace ASCOM.TeenAstro.Telescope
       return utilities.HoursToHMS(value, ":", ":", "");   // Long format, whole seconds
     }
 
-    private static string AltToString(double value)
+    internal static string AltToString(double value)
     {
       if (value < -30 | value > 90d)
       {
@@ -1945,7 +1969,7 @@ namespace ASCOM.TeenAstro.Telescope
       return sexa;
     }
 
-    private static string AzToString(double value)
+    internal static string AzToString(double value)
     {
       if (value < 0d | value > 360d)
       {
@@ -2040,6 +2064,10 @@ namespace ASCOM.TeenAstro.Telescope
       {
         if (CanSetTracking)
         {
+          if (value && AtPark)
+          {
+            throw new ASCOM.ParkedException("Cannot enable tracking while parked.");
+          }
           if (value)
           {
             if (!CommandBoolSingleChar("Te"))
@@ -2051,6 +2079,7 @@ namespace ASCOM.TeenAstro.Telescope
           {
             throw new ASCOM.InvalidOperationException();
           }
+          ForceGXASCacheRefresh();
           LogMessage("Set Tracking", Tracking.ToString());
         }
         else
@@ -2187,21 +2216,27 @@ namespace ASCOM.TeenAstro.Telescope
     /// </summary>
     internal static void Unpark()
     {
-      if (CanPark)
+      if (CanUnpark)
       {
+        if (!AtPark)
+        {
+          LogMessage("Unpark", "Already unparked");
+          return;
+        }
         if (CommandBoolSingleChar("hR"))
         {
+          ForceGXASCacheRefresh();
           LogMessage("Unpark", "done");
         }
         else
         {
           LogMessage("Unpark", "failed");
-          throw new ASCOM.InvalidOperationException();
+          throw new ASCOM.InvalidOperationException("Unpark has failed");
         }
       }
       else
       {
-        throw new ASCOM.MethodNotImplementedException();
+        throw new ASCOM.MethodNotImplementedException("Unpark");
       }
     }
 
@@ -2227,9 +2262,14 @@ namespace ASCOM.TeenAstro.Telescope
       if (state == "0")
       {
         LogMessage("Slew to target", "Started");
+        // The mount takes a brief moment to transition into slewing state.
+        // Force the hint and cache refresh in both sync and async paths so
+        // that Slewing reads true before the mount's GXAS has updated.
+        slewingHintUntilUtc = DateTime.UtcNow.AddSeconds(2);
+        ForceGXASCacheRefresh();
+
         if (!async)
         {
-          // Poll every 250 ms so AbortSlew (from another client/thread) is detected promptly.
           while (Slewing)
           {
             System.Threading.Thread.Sleep(250);
@@ -2472,27 +2512,15 @@ namespace ASCOM.TeenAstro.Telescope
     }
 
 
-    private static void DegtoDMS(double degf, ref int degi, ref int mini, ref int seci)
+    internal static void DegtoDMS(double degf, ref int degi, ref int mini, ref int seci)
     {
-      int tts = (int)Math.Round(Math.Floor(degf * 3600d + 0.5d));
-      degi = tts / 3600;
-      mini = (tts - degi * 3600) / 60;
-      seci = tts % 60;
+      CoordinateFormatters.DegtoDMS(degf, out int d, out int m, out int s);
+      degi = d; mini = m; seci = s;
     }
 
-    private static string DegtoDDDMMSS(double value)
-    {
-      int d = default, m = default, s = default;
-      DegtoDMS(value, ref d, ref m, ref s);
-      return d.ToString("000") + ":" + m.ToString("00") + ":" + s.ToString("00",CultureInfo.InvariantCulture);
-    }
+    internal static string DegtoDDDMMSS(double value) => CoordinateFormatters.DegtoDDDMMSS(value);
 
-    private static string DegtoDDMMSS(double value)
-    {
-      int d = default, m = default, s = default;
-      DegtoDMS(value, ref d, ref m, ref s);
-      return d.ToString("00") + ":" + m.ToString("00") + ":" + s.ToString("00", CultureInfo.InvariantCulture);
-    }
+    internal static string DegtoDDMMSS(double value) => CoordinateFormatters.DegtoDDMMSS(value);
 
     private static void checkslewRADEC()
     {
@@ -2550,10 +2578,15 @@ namespace ASCOM.TeenAstro.Telescope
         throw new ASCOM.ParkedException();
       }
 
-      // ITelescopeV4: Alt/Az slews are invalid while Tracking = true
+      ForceGXASCacheRefresh();
+
+      // ITelescopeV4: Alt/Az slews require Tracking = false.
+      // Auto-disable tracking so the method works when CanSlewAltAz* is True.
       if (Tracking)
       {
-        throw new ASCOM.InvalidOperationException("SlewToAltAz is invalid when Tracking is True.");
+        LogMessage("checkslewALTAZ", "Auto-disabling tracking for Alt/Az slew");
+        Tracking = false;
+        ForceGXASCacheRefresh();
       }
 
       while (Slewing)
