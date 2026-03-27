@@ -48,57 +48,24 @@ void processCommands()
 
   switch (command[0])
   {
-  case '$':
-    Command_dollar();
-    break;
-  case 6:
-    Command_ACK();
-    break;
-  case 'A':
-    Command_A();
-    break;
-  case 'B':
-    Command_B();
-    break;
-  case 'C':
-    Command_C();
-    break;
-  case 'D':
-    Command_D();
-    break;
-  case 'F':
-    Command_F();
-    break;
-  case 'G':
-    Command_G();
-    break;
-  case 'g':
-    Command_GNSS();
-    break;
-  case 'h':
-    Command_h();
-    break;
-  case 'M':
-    Command_M();
-    break;
-  case 'Q':
-    Command_Q();
-    break;
-  case 'R':
-    Command_R();
-    break;
-  case 'S':
-    Command_S(process_command);
-    break;
-  case 'T':
-    Command_T();
-    break;
-  case 'W':
-    Command_W();
-    break;
-  default:
-    replyNothing();
-    break;
+  case '$': Command_dollar(); break;
+  case 6:   Command_ACK();    break;
+  case 'A': Command_A();      break;
+  case 'B': Command_B();      break;
+  case 'C': Command_C();      break;
+  case 'D': Command_D();      break;
+  case 'F': Command_F();      break;
+  case 'G': Command_G();      break;
+  case 'g': Command_GNSS();   break;
+  case 'h': Command_h();      break;
+  case 'M': Command_M();      break;
+  case 'Q': Command_Q();      break;
+  case 'R': Command_R();      break;
+  case 'S': Command_S(process_command);    break;
+  case 'T': Command_T();      break;
+  case 'U': Command_U();      break;
+  case 'W': Command_W();      break;
+  default:  replyNothing();   break;
   }
   if (strlen(reply) > 0)
   {
@@ -152,3 +119,24 @@ void clearReply()
     reply[i] = 0;
   }
 }
+
+// -----------------------------------------------------------------------------
+// Pad CMDR_LONG replies to fixed length (leading blanks) for validation
+// -----------------------------------------------------------------------------
+void padReplyToExpectedLength() {
+  char* r = reply;
+  char* hash = strchr(r, '#');
+  if (!hash)
+    return;
+  int payloadLen = (int)(hash - r);
+  int expected = getExpectedReplyLength(command);
+  if (expected <= 0 || payloadLen >= expected)
+    return;
+  int pad = expected - payloadLen;
+  if (payloadLen + pad + 1 + 1 > REPLY_BUFFER_LEN)  // payload + pad + '#' + NUL
+    return;
+  memmove(r + pad, r, payloadLen + 1);  // move payload and '#' and NUL
+  for (int i = 0; i < pad; i++)
+    r[i] = ' ';
+}
+

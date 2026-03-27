@@ -7,6 +7,17 @@ enum CheckMode { CHECKMODE_GOTO, CHECKMODE_TRACKING };
 enum ParkState { PRK_UNPARKED, PRK_PARKING, PRK_PARKED, PRK_FAILED};
 enum RateCompensation { RC_UNKOWN = -1, RC_NONE, RC_ALIGN_RA, RC_ALIGN_BOTH, RC_FULL_RA, RC_FULL_BOTH };
 enum TrackingCompensation {TC_NONE, TC_RA, TC_BOTH};
+// ---------------------------------------------------------------------------
+//  CMDREPLY - Expected reply type from a command
+// ---------------------------------------------------------------------------
+enum CMDREPLY
+{
+  CMDR_NO,           // No reply expected
+  CMDR_SHORT,        // Single character reply
+  CMDR_SHORT_BOOL,   // Single character '0' or '1'
+  CMDR_LONG,         // String terminated by '#'
+  CMDR_INVALID       // Invalid / unknown command
+};
 enum ErrorsGoTo
 {
   ERRGOTO_NONE,
@@ -140,8 +151,13 @@ GLOBAL EventGroupHandle_t mountEvents;  // abort etc.
 #define HzCf  (TICKS_PER_SEC / 60.0)   // conversion factor to go to/from Hz for sidereal interval
 GLOBAL double  siderealClockSpeed;
 
-GLOBAL char reply[150];
-GLOBAL char command[28];
+// Command buffer limits (from protocol: : + cmd + #)
+constexpr int CMD_BUFFER_LEN   = 28;
+constexpr int REPLY_BUFFER_LEN = 210;
+constexpr int CMD_MAX_PAYLOAD  = 22;  // max chars between : and #
+
+GLOBAL char reply[REPLY_BUFFER_LEN];
+GLOBAL char command[CMD_BUFFER_LEN];
 
 GLOBAL T_Serial S_SHC;
 GLOBAL T_Serial S_USB;
