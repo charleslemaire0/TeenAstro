@@ -34,10 +34,10 @@ The Android app has evolved from a basic controller into a full observing compan
 
 ### Downloads
 
-- ASCOM Driver Setup (Windows EXE): [TeenAstro Setup 1.6.exe](https://github.com/charleslemaire0/TeenAstro/blob/main/Released%20data/driver/TeenAstro%20Setup%201.6.exe)
-- Firmware Uploader (Windows MSI): [TeenAstroUploader.msi](https://github.com/charleslemaire0/TeenAstro/blob/main/Released%20data/Firmware/TeenAstroUploader.msi)
-- TeenAstro App (Windows EXE): [teenastro_app.exe](https://github.com/charleslemaire0/TeenAstro/blob/main/Released%20data/App/Windows/teenastro_app.exe)
-- TeenAstro App (Android APK): [teenastro_app-release.apk](https://github.com/charleslemaire0/TeenAstro/blob/main/Released%20data/App/teenastro_app-release.apk)
+- ASCOM Driver Setup (Windows EXE): [TeenAstro Setup 1.6.exe](https://github.com/charleslemaire0/TeenAstro/blob/Release_1.6/Released%20data/driver/TeenAstro%20Setup%201.6.exe)
+- Firmware Uploader (Windows MSI): [TeenAstroUploader.msi](https://github.com/charleslemaire0/TeenAstro/blob/Release_1.6/Released%20data/Firmware/TeenAstroUploader.msi)
+- TeenAstro App (Windows EXE): [teenastro_app.exe](https://github.com/charleslemaire0/TeenAstro/blob/Release_1.6/Released%20data/App/Windows/teenastro_app.exe)
+- TeenAstro App (Android APK): [teenastro_app-release.apk](https://github.com/charleslemaire0/TeenAstro/blob/Release_1.6/Released%20data/App/teenastro_app-release.apk)
 
 ## Francais
 
@@ -73,10 +73,10 @@ L'application Android est devenue un vrai compagnon d'observation:
 
 ### Telechargements
 
-- Installation pilote ASCOM (EXE Windows): [TeenAstro Setup 1.6.exe](https://github.com/charleslemaire0/TeenAstro/blob/main/Released%20data/driver/TeenAstro%20Setup%201.6.exe)
-- Uploader firmware (MSI Windows): [TeenAstroUploader.msi](https://github.com/charleslemaire0/TeenAstro/blob/main/Released%20data/Firmware/TeenAstroUploader.msi)
-- Application TeenAstro (EXE Windows): [teenastro_app.exe](https://github.com/charleslemaire0/TeenAstro/blob/main/Released%20data/App/Windows/teenastro_app.exe)
-- Application TeenAstro (APK Android): [teenastro_app-release.apk](https://github.com/charleslemaire0/TeenAstro/blob/main/Released%20data/App/teenastro_app-release.apk)
+- Installation pilote ASCOM (EXE Windows): [TeenAstro Setup 1.6.exe](https://github.com/charleslemaire0/TeenAstro/blob/Release_1.6/Released%20data/driver/TeenAstro%20Setup%201.6.exe)
+- Uploader firmware (MSI Windows): [TeenAstroUploader.msi](https://github.com/charleslemaire0/TeenAstro/blob/Release_1.6/Released%20data/Firmware/TeenAstroUploader.msi)
+- Application TeenAstro (EXE Windows): [teenastro_app.exe](https://github.com/charleslemaire0/TeenAstro/blob/Release_1.6/Released%20data/App/Windows/teenastro_app.exe)
+- Application TeenAstro (APK Android): [teenastro_app-release.apk](https://github.com/charleslemaire0/TeenAstro/blob/Release_1.6/Released%20data/App/teenastro_app-release.apk)
 
 ## Deutsch
 
@@ -112,7 +112,7 @@ Die Android-App ist inzwischen ein vollwertiger Beobachtungs-Controller:
 
 ### Downloads
 
-- ASCOM-Treiber Setup (Windows EXE): [TeenAstro Setup 1.6.exe](https://github.com/charleslemaire0/TeenAstro/blob/main/Released%20data/driver/TeenAstro%20Setup%201.6.exe)
-- Firmware Uploader (Windows MSI): [TeenAstroUploader.msi](https://github.com/charleslemaire0/TeenAstro/blob/main/Released%20data/Firmware/TeenAstroUploader.msi)
-- TeenAstro App (Windows EXE): [teenastro_app.exe](https://github.com/charleslemaire0/TeenAstro/blob/main/Released%20data/App/Windows/teenastro_app.exe)
-- TeenAstro App (Android APK): [teenastro_app-release.apk](https://github.com/charleslemaire0/TeenAstro/blob/main/Released%20data/App/teenastro_app-release.apk)
+- ASCOM-Treiber Setup (Windows EXE): [TeenAstro Setup 1.6.exe](https://github.com/charleslemaire0/TeenAstro/blob/Release_1.6/Released%20data/driver/TeenAstro%20Setup%201.6.exe)
+- Firmware Uploader (Windows MSI): [TeenAstroUploader.msi](https://github.com/charleslemaire0/TeenAstro/blob/Release_1.6/Released%20data/Firmware/TeenAstroUploader.msi)
+- TeenAstro App (Windows EXE): [teenastro_app.exe](https://github.com/charleslemaire0/TeenAstro/blob/Release_1.6/Released%20data/App/Windows/teenastro_app.exe)
+- TeenAstro App (Android APK): [teenastro_app-release.apk](https://github.com/charleslemaire0/TeenAstro/blob/Release_1.6/Released%20data/App/teenastro_app-release.apk)
