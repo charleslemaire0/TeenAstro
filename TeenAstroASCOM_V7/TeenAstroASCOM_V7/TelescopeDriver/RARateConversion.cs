@@ -8,10 +8,12 @@ namespace ASCOM.TeenAstro.Telescope
   /// </summary>
   public static class RARateConversion
   {
-    /// <summary>ASCOM rate (RA sec/sidereal sec) → value to send in SXRr.</summary>
+    /// <summary>ASCOM rate (RA sec/sidereal sec) → value encoded in :SXRr,&lt;16 hex LE&gt;#.</summary>
     public static double AscomToMount(double ascomRate, int pierSide, int mountType)
     {
-      return Math.Round(ascomRate, 4);
+      // Do not quantize here: the firmware (and GXAS packet) will quantize if needed.
+      // The ASCOM driver should not pre-round beyond protocol/storage resolution.
+      return ascomRate;
     }
 
     /// <summary>TrackRateRA from GXAS (×10000) → ASCOM rate.</summary>

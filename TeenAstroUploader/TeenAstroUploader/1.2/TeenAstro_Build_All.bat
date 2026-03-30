@@ -1,4 +1,20 @@
 @echo off
+echo.
+echo ============================================================
+echo  DEPRECATED: This script uses arduino-builder (Arduino 1.8)
+echo  which is incompatible with Teensyduino 1.60+.
+echo.
+echo  Use build_firmware.py instead:
+echo    python build_firmware.py              (build all)
+echo    python build_firmware.py -t main      (MainUnit only)
+echo    python build_firmware.py -t focuser   (Focuser only)
+echo    python build_firmware.py -t shc       (SHC only)
+echo ============================================================
+echo.
+pause
+exit /b 1
+
+rem --- Original script below (kept for reference) ---
 rem usage : TeenAstroBuilder -target MainUnit|SHC|Focuser -driver TMC2130|TMC5160|TMC2160 -hwvers 240 -local FRENCH|GERMAN|ENGLISH -release x.y -v
 
 setlocal enableDelayedExpansion

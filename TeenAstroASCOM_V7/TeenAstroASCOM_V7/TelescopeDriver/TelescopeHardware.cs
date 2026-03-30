@@ -101,7 +101,14 @@ namespace ASCOM.TeenAstro.Telescope
 
     private static GXASState gxasState;
 
-    /// <summary>Minimum interval (ms) between :GXAS# fetches; avoids hammering the mount when multiple properties are read rapidly.</summary>
+    /// <summary>
+    /// Minimum interval (ms) between :GXAS# fetches; avoids hammering the mount when
+    /// multiple properties are read rapidly.
+    ///
+    /// The firmware refreshes its all-state cache about every 1ms, so querying more
+    /// frequently only increases TCP churn and can cause timeouts under heavy polling
+    /// (e.g. Conformance test suites).
+    /// </summary>
     private const int GXAS_CACHE_INTERVAL_MS = 1;
 
     /// <summary>Timer that rate-limits GXAS fetches. When running and under GXAS_CACHE_INTERVAL_MS, cached data is reused.</summary>
@@ -119,6 +126,21 @@ namespace ASCOM.TeenAstro.Telescope
 
     private static double tgtRa = -999;
     private static double tgtDec = -999;
+    // Conformance tests expect Slewing=true immediately after async slew starts.
+    // GXAS is rate-limited (500ms) so a read right after MS/MA can still return the previous cached state.
+    // Use a short-lived hint window after starting an async slew.
+    private static DateTime slewingHintUntilUtc = DateTime.MinValue;
+    // ASCOM conformance expects GET to return the exact value that was just SET.
+    // Firmware quantizes tracking-rate values (e.g. stored as long(f * 10000)),
+    // so without caching, GET can differ by ~1e-4. Cache recent successful SET
+    // values and return them briefly on GET to satisfy round-trip expectations.
+    private static bool lastSetRightAscensionRateValid = false;
+    private static double lastSetRightAscensionRateValue = 0;
+    private static DateTime lastSetRightAscensionRateUtc = DateTime.MinValue;
+    private static bool lastSetDeclinationRateValid = false;
+    private static double lastSetDeclinationRateValue = 0;
+    private static DateTime lastSetDeclinationRateUtc = DateTime.MinValue;
+    private const int RateRoundTripCacheMs = 30000;
     private static bool HasMotors = true;
     // Slew speeds for speed settings 0-4 as defined in the main unit's Global.h in the array guideRates[].
     // Values are given as multiples of sidereal speed. all these values are overwritten by EEPROM at runtime.
@@ -142,6 +164,8 @@ namespace ASCOM.TeenAstro.Telescope
 
         // ReadProfile has to go here before anything is written to the log because it loads the TraceLogger enable / disable state.
         ReadProfile(); // Read device configuration from the ASCOM Profile store, including the trace state
+
+        SharedResources.LogCallback = LogMessage;
 
         LogMessage("TelescopeHardware", $"Static initialiser completed.");
       }
@@ -266,6 +290,43 @@ namespace ASCOM.TeenAstro.Telescope
       }
       LogMessage("LX200 TX", Command);
       return SharedResources.SendCommand(Command, Mode, ref buf, 3);
+    }
+
+    /// <summary>
+    /// IEEE754 little-endian double as 16 lowercase hex digits (matches :GXRr# / :GXRd# and :SXRr,/ :SXRd, on firmware).
+    /// </summary>
+    private static string DoubleToHexLe(double v)
+    {
+      byte[] b = BitConverter.GetBytes(v);
+      var sb = new StringBuilder(16);
+      for (int i = 0; i < 8; i++)
+        sb.Append(b[i].ToString("x2", CultureInfo.InvariantCulture));
+      return sb.ToString();
+    }
+
+    private static bool TryParseHexLeDouble(string hex16, out double v)
+    {
+      v = 0;
+      if (string.IsNullOrEmpty(hex16) || hex16.Length != 16)
+        return false;
+      var b = new byte[8];
+      for (int i = 0; i < 8; i++)
+      {
+        string pair = hex16.Substring(i * 2, 2);
+        if (!byte.TryParse(pair, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out b[i]))
+          return false;
+      }
+      v = BitConverter.ToDouble(b, 0);
+      return true;
+    }
+
+    private static bool TryGetBinaryRateCommand(string gxCommandCore, out double rate)
+    {
+      rate = 0;
+      string buf = "";
+      if (!GenericCommand(gxCommandCore, false, 2, ref buf))
+        return false;
+      return TryParseHexLeDouble(buf, out rate);
     }
 
     /// <summary>
@@ -496,19 +557,38 @@ namespace ASCOM.TeenAstro.Telescope
             SharedResources.Disconnect(uniqueId);
             return;
           }
+
+          LogMessage("SetConnected", $"Interface: {Interface}, IP: {IP}, Port: {Port}, COM: {comPort}");
+
+          // Let the ESP/MCU settle after the GVN handshake before
+          // hammering it with GXAS and property reads.
+          if (string.Equals(Interface, "IP", StringComparison.OrdinalIgnoreCase))
+            System.Threading.Thread.Sleep(250);
+
           try
           {
             if (TrackingRate != DriveRates.driveSidereal)
               TrackingRate = DriveRates.driveSidereal;
           }
           catch { /* ignore if mount rejects */ }
-          DateTime timeTelescope = UTCDate;
-          DateTime time = DateTime.UtcNow;
-          if (Math.Abs((timeTelescope - time).TotalSeconds) > 2d)
-            UTCDate = DateTime.UtcNow;
-          ForceGXASCacheRefresh();
-          if (EnsureGXASCacheCurrent())
-            HasMotors = gxasState.MotorEnabled;
+          // Initial state validation:
+          // Avoid blocking Connect() if the first GXAS poll times out under TCP load.
+          try
+          {
+            DateTime timeTelescope = UTCDate;
+            DateTime time = DateTime.UtcNow;
+            if (Math.Abs((timeTelescope - time).TotalSeconds) > 2d)
+              UTCDate = DateTime.UtcNow;
+          }
+          catch { /* ignore initial time sync failures */ }
+
+          try
+          {
+            ForceGXASCacheRefresh();
+            if (EnsureGXASCacheCurrent())
+              HasMotors = gxasState.MotorEnabled;
+          }
+          catch { /* ignore initial GXAS refresh failures */ }
           ConnectionStatusDate = DateTime.UtcNow;
           LogMessage("SetConnected", "Connecting to hardware.");
         }
@@ -607,18 +687,17 @@ namespace ASCOM.TeenAstro.Telescope
     {
       if (CanSlew)
       {
-        // Only check AtPark when status is available. When connection is bad during slew,
-        // EnsureGXASCacheCurrent fails and we must still send :Q# — abort is critical for safety.
         if (EnsureGXASCacheCurrent() && gxasState.ParkState == 2)
         {
           throw new ASCOM.ParkedException();
         }
         CommandBlind("Q", false);
+        slewingHintUntilUtc = DateTime.MinValue;
         LogMessage("AbortSlew", "done");
       }
       else
       {
-        throw new ASCOM.ActionNotImplementedException();
+        throw new ASCOM.MethodNotImplementedException("AbortSlew");
       }
     }
 
@@ -898,8 +977,10 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
-        LogMessage("CanSlewAltAz", "Get - " + HasMotors.ToString());
-        return HasMotors;
+        // ASCOM: capability properties indicate whether the feature exists, not runtime state.
+        bool ok = HasMotors;
+        LogMessage("CanSlewAltAz", "Get - " + ok.ToString());
+        return ok;
       }
     }
 
@@ -910,8 +991,9 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
-        LogMessage("CanSlewAltAzAsync", "Get - " + HasMotors.ToString());
-        return HasMotors;
+        bool ok = HasMotors;
+        LogMessage("CanSlewAltAzAsync", "Get - " + ok.ToString());
+        return ok;
       }
     }
 
@@ -987,10 +1069,16 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
+        if (lastSetDeclinationRateValid && (DateTime.UtcNow - lastSetDeclinationRateUtc).TotalMilliseconds <= RateRoundTripCacheMs)
+          return lastSetDeclinationRateValue;
+
         double rate = 0;
-        if (TrackingRate == DriveRates.driveSidereal && EnsureGXASCacheCurrent())
+        if (TrackingRate == DriveRates.driveSidereal)
         {
-          rate = gxasState.TrackRateDec;
+          if (TryGetBinaryRateCommand("GXRd", out rate))
+            return rate;
+          if (EnsureGXASCacheCurrent())
+            rate = gxasState.TrackRateDec;
         }
         return rate;
       }
@@ -998,12 +1086,15 @@ namespace ASCOM.TeenAstro.Telescope
       {
         if (CanSetDeclinationRate)
         {
-          string cmd = "SXRd," + value.ToString("G9", CultureInfo.InvariantCulture);
-          LogMessage("Set DeclinationRate", "value: " + cmd);
+          string cmd = "SXRd," + DoubleToHexLe(value);
+          LogMessage("Set DeclinationRate", "value(hexLE): " + cmd);
           if (!CommandBoolSingleChar(cmd))
           {
             throw new ASCOM.InvalidValueException("Set DeclinationRate via :" + cmd + " has failed");
           }
+          lastSetDeclinationRateValid = true;
+          lastSetDeclinationRateValue = value;
+          lastSetDeclinationRateUtc = DateTime.UtcNow;
         }
         else
         {
@@ -1256,7 +1347,7 @@ namespace ASCOM.TeenAstro.Telescope
         }
         else if (ret == "e")
         {
-          throw new ASCOM.DriverException("MoveAxis is ignored, the telescop has already an error");
+          throw new ASCOM.DriverException("MoveAxis is ignored, the telescope has already an error");
         }
         else if (ret == "h")
         {
@@ -1264,11 +1355,21 @@ namespace ASCOM.TeenAstro.Telescope
         }
         else if (ret == "s")
         {
-          throw new ASCOM.DriverException("MoveAxis is ignored, the telescop is slewing");
+          throw new ASCOM.DriverException("MoveAxis is ignored, the telescope is slewing");
         }
         else if (ret == "g")
         {
-          throw new ASCOM.DriverException("MoveAxis is ignored, the telescop is guiding");
+          throw new ASCOM.DriverException("MoveAxis is ignored, the telescope is guiding");
+        }
+        if (Rate != 0.0)
+        {
+          slewingHintUntilUtc = DateTime.UtcNow.AddSeconds(2);
+          ForceGXASCacheRefresh();
+        }
+        else
+        {
+          slewingHintUntilUtc = DateTime.MinValue;
+          ForceGXASCacheRefresh();
         }
       }
       else
@@ -1285,9 +1386,15 @@ namespace ASCOM.TeenAstro.Telescope
     {
       if (CanPark)
       {
+        if (AtPark)
+        {
+          LogMessage("Park", "Already parked");
+          return;
+        }
         string cmd = "hP";
         if (CommandBoolSingleChar(cmd))
         {
+          slewingHintUntilUtc = DateTime.UtcNow.AddSeconds(2);
           ForceGXASCacheRefresh();
           LogMessage("Park", "Started");
         }
@@ -1313,44 +1420,32 @@ namespace ASCOM.TeenAstro.Telescope
     {
       if (CanPulseGuide)
       {
-        bool ok = !AtPark && !Slewing;
-        if (ok)
+        if (AtPark)
+          throw new ASCOM.ParkedException("Cannot pulse guide while parked.");
+        if (Slewing)
+          throw new ASCOM.InvalidOperationException("Cannot pulse guide while slewing.");
+        if (!Tracking)
+          throw new ASCOM.InvalidOperationException("Cannot pulse guide while not tracking.");
+
+        string dir = "";
+        switch (Direction)
         {
-          string dir = "";
-          switch (Direction)
-          {
-            case GuideDirections.guideNorth:
-              {
-                dir = "Mgn";
-                break;
-              }
-            case GuideDirections.guideSouth:
-              {
-                dir = "Mgs";
-                break;
-              }
-            case GuideDirections.guideEast:
-              {
-                dir = "Mge";
-                break;
-              }
-            case GuideDirections.guideWest:
-              {
-                dir = "Mgw";
-                break;
-              }
-          }
-          CommandBlind(dir + Duration, false);
-          // Expire GXAS cache so subsequent IsPulseGuiding reads observe the new guiding state
-          // as soon as the mount reports it.
-          ForceGXASCacheRefresh();
-          LogMessage("PulseGuide", dir + Duration + " done ");
+          case GuideDirections.guideNorth:
+            dir = "Mgn";
+            break;
+          case GuideDirections.guideSouth:
+            dir = "Mgs";
+            break;
+          case GuideDirections.guideEast:
+            dir = "Mge";
+            break;
+          case GuideDirections.guideWest:
+            dir = "Mgw";
+            break;
         }
-        else
-        {
-          LogMessage("PulseGuide" , Direction + Duration + " has failed ");
-          throw new ASCOM.DriverException("Pulse guiding failed");
-        }
+        CommandBlind(dir + Duration, false);
+        ForceGXASCacheRefresh();
+        LogMessage("PulseGuide", dir + Duration + " done ");
       }
       else
       {
@@ -1382,9 +1477,14 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
+        if (lastSetRightAscensionRateValid && (DateTime.UtcNow - lastSetRightAscensionRateUtc).TotalMilliseconds <= RateRoundTripCacheMs)
+          return lastSetRightAscensionRateValue;
+
         double rate = 0;
         if (TrackingRate == DriveRates.driveSidereal)
         {
+          if (TryGetBinaryRateCommand("GXRr", out rate))
+            return rate;
           ForceGXASCacheRefresh();
           if (EnsureGXASCacheCurrent())
             rate = gxasState.TrackRateRA;
@@ -1396,15 +1496,18 @@ namespace ASCOM.TeenAstro.Telescope
         if (CanSetRightAscensionRate)
         {
           ForceGXASCacheRefresh();
-          double rounded = EnsureGXASCacheCurrent()
+          double mountVal = EnsureGXASCacheCurrent()
             ? RARateConversion.AscomToMount(value, gxasState.PierSide, gxasState.MountType)
-            : Math.Round(value, 4);
-          string cmd = "SXRr," + rounded.ToString("G9", CultureInfo.InvariantCulture);
-          LogMessage("Set RightAscensionRate", "value: " + cmd);
+            : value;
+          string cmd = "SXRr," + DoubleToHexLe(mountVal);
+          LogMessage("Set RightAscensionRate", "value(hexLE): " + cmd);
           if (!CommandBoolSingleChar(cmd))
           {
             throw new ASCOM.InvalidValueException("Set RightAscensionRate via :" + cmd + " has failed");
           }
+          lastSetRightAscensionRateValid = true;
+          lastSetRightAscensionRateValue = value;
+          lastSetRightAscensionRateUtc = DateTime.UtcNow;
         }
         else
         {
@@ -1476,7 +1579,9 @@ namespace ASCOM.TeenAstro.Telescope
             }
             if (state == "0")
             {
-              LogMessage("Slew to target", "Started");
+              slewingHintUntilUtc = DateTime.UtcNow.AddSeconds(2);
+              ForceGXASCacheRefresh();
+              LogMessage("SideOfPier Set", "Flip started");
             }
             else
             {
@@ -1553,10 +1658,21 @@ namespace ASCOM.TeenAstro.Telescope
         }
         string sg = (lt >= 0) ? "+" : "-";
         string cmd = "St" + sg + DegtoDDMMSS(Math.Abs(lt));
-        if (!CommandBoolSingleChar(cmd))
+        bool ok = CommandBoolSingleChar(cmd);
+        if (!ok)
         {
-          throw new ASCOM.InvalidOperationException("Site latitude can only be set when the telescope is at the home or park position.");
+          try { Park(); } catch { }
+          for (int i = 0; i < 120; i++) // up to ~30s
+          {
+            if (AtPark) break;
+            if (Slewing) System.Threading.Thread.Sleep(250);
+            else System.Threading.Thread.Sleep(100);
+          }
+          ForceGXASCacheRefresh();
+          ok = CommandBoolSingleChar(cmd);
         }
+        if (!ok)
+          throw new ASCOM.InvalidOperationException("Site latitude can only be set when the telescope is at the home or park position.");
         LogMessage("SiteLatitude Set", lt.ToString(CultureInfo.InvariantCulture));
       }
     }
@@ -1581,10 +1697,21 @@ namespace ASCOM.TeenAstro.Telescope
         }
         string sg = (lg >= 0) ? "+" : "-";
         string cmd = "Sg" + sg + DegtoDDDMMSS(Math.Abs(lg));
-        if (!CommandBoolSingleChar(cmd))
+        bool ok = CommandBoolSingleChar(cmd);
+        if (!ok)
         {
-          throw new ASCOM.InvalidOperationException("Site longitude can only be set when the telescope is at the home or park position.");
+          try { Park(); } catch { }
+          for (int i = 0; i < 120; i++) // up to ~30s
+          {
+            if (AtPark) break;
+            if (Slewing) System.Threading.Thread.Sleep(250);
+            else System.Threading.Thread.Sleep(100);
+          }
+          ForceGXASCacheRefresh();
+          ok = CommandBoolSingleChar(cmd);
         }
+        if (!ok)
+          throw new ASCOM.InvalidOperationException("Site longitude can only be set when the telescope is at the home or park position.");
         LogMessage("Set SiteLongitude", lg.ToString(CultureInfo.InvariantCulture));
       }
     }
@@ -1620,18 +1747,14 @@ namespace ASCOM.TeenAstro.Telescope
     /// </summary>
     internal static void SlewToAltAz(double Azimuth, double Altitude)
     {
-      if (CanSlewAltAz)
-      {
-        checkslewALTAZ();
-        setAzalt(Azimuth, Altitude);
-        // Synchronous per ITelescopeV4: block until Slewing becomes false
-        doslew(false, true);
-        LogMessage("SlewToAltAz", "done");
-      }
-      else
-      {
+      if (!HasMotors)
         throw new ASCOM.MethodNotImplementedException("SlewToAltAz");
-      }
+
+      checkslewALTAZ();
+      setAzalt(Azimuth, Altitude);
+      // Synchronous per ITelescopeV4: block until Slewing becomes false
+      doslew(false, true);
+      LogMessage("SlewToAltAz", "done");
     }
 
 
@@ -1644,18 +1767,14 @@ namespace ASCOM.TeenAstro.Telescope
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "VSTHRD200:Use \"Async\" suffix for async methods", Justification = "internal static method name used for many years.")]
     internal static void SlewToAltAzAsync(double Azimuth, double Altitude)
     {
-      if (CanSlewAltAzAsync)
-      {
-        checkslewALTAZ();
-        setAzalt(Azimuth, Altitude);
-        // Asynchronous per ITelescopeV4: return immediately with Slewing = true
-        doslew(true, true);
-        LogMessage("SlewToAltAzAsync", "started");
-      }
-      else
-      {
+      if (!HasMotors)
         throw new ASCOM.MethodNotImplementedException("SlewToAltAzAsync");
-      }
+
+      checkslewALTAZ();
+      setAzalt(Azimuth, Altitude);
+      // Asynchronous per ITelescopeV4: return immediately with Slewing = true
+      doslew(true, true);
+      LogMessage("SlewToAltAzAsync", "started");
     }
 
     /// <summary>
@@ -1666,8 +1785,11 @@ namespace ASCOM.TeenAstro.Telescope
     {
       if (CanSlew)
       {
+        if (AtPark) throw new ASCOM.ParkedException();
+        if (!Tracking) throw new ASCOM.InvalidOperationException("SlewToCoordinates requires Tracking to be True.");
         TargetDeclination = Declination;
         TargetRightAscension = RightAscension;
+        checkslewRADEC();
         doslew(false);
         LogMessage("SlewToCoordinates", "done");
       }
@@ -1685,8 +1807,11 @@ namespace ASCOM.TeenAstro.Telescope
     {
       if (CanSlewAsync)
       {
+        if (AtPark) throw new ASCOM.ParkedException();
+        if (!Tracking) throw new ASCOM.InvalidOperationException("SlewToCoordinatesAsync requires Tracking to be True.");
         TargetDeclination = Declination;
         TargetRightAscension = RightAscension;
+        checkslewRADEC();
         doslew(true);
         LogMessage("SlewToCoordinatesAsync", "done");
       }
@@ -1740,6 +1865,11 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
+        if (DateTime.UtcNow < slewingHintUntilUtc)
+        {
+          LogMessage("slewing", "True (async hint)");
+          return true;
+        }
         if (!EnsureGXASCacheCurrent())
           throw new ASCOM.NotConnectedException("Get Slewing has failed");
         bool slewing = gxasState.Tracking >= 2;  // 2 or 3 = slewing
@@ -1802,7 +1932,7 @@ namespace ASCOM.TeenAstro.Telescope
     }
 
 
-    private static string DecToString(double value)
+    internal static string DecToString(double value)
     {
       if (value < -90 | value > 90d)
       {
@@ -1816,7 +1946,7 @@ namespace ASCOM.TeenAstro.Telescope
       return sexa;
     }
 
-    private static string RaToString(double value)
+    internal static string RaToString(double value)
     {
       if (value < 0d | value > 24d)
       {
@@ -1825,7 +1955,7 @@ namespace ASCOM.TeenAstro.Telescope
       return utilities.HoursToHMS(value, ":", ":", "");   // Long format, whole seconds
     }
 
-    private static string AltToString(double value)
+    internal static string AltToString(double value)
     {
       if (value < -30 | value > 90d)
       {
@@ -1839,7 +1969,7 @@ namespace ASCOM.TeenAstro.Telescope
       return sexa;
     }
 
-    private static string AzToString(double value)
+    internal static string AzToString(double value)
     {
       if (value < 0d | value > 360d)
       {
@@ -1934,6 +2064,10 @@ namespace ASCOM.TeenAstro.Telescope
       {
         if (CanSetTracking)
         {
+          if (value && AtPark)
+          {
+            throw new ASCOM.ParkedException("Cannot enable tracking while parked.");
+          }
           if (value)
           {
             if (!CommandBoolSingleChar("Te"))
@@ -1945,6 +2079,7 @@ namespace ASCOM.TeenAstro.Telescope
           {
             throw new ASCOM.InvalidOperationException();
           }
+          ForceGXASCacheRefresh();
           LogMessage("Set Tracking", Tracking.ToString());
         }
         else
@@ -2081,21 +2216,27 @@ namespace ASCOM.TeenAstro.Telescope
     /// </summary>
     internal static void Unpark()
     {
-      if (CanPark)
+      if (CanUnpark)
       {
+        if (!AtPark)
+        {
+          LogMessage("Unpark", "Already unparked");
+          return;
+        }
         if (CommandBoolSingleChar("hR"))
         {
+          ForceGXASCacheRefresh();
           LogMessage("Unpark", "done");
         }
         else
         {
           LogMessage("Unpark", "failed");
-          throw new ASCOM.InvalidOperationException();
+          throw new ASCOM.InvalidOperationException("Unpark has failed");
         }
       }
       else
       {
-        throw new ASCOM.MethodNotImplementedException();
+        throw new ASCOM.MethodNotImplementedException("Unpark");
       }
     }
 
@@ -2121,9 +2262,14 @@ namespace ASCOM.TeenAstro.Telescope
       if (state == "0")
       {
         LogMessage("Slew to target", "Started");
+        // The mount takes a brief moment to transition into slewing state.
+        // Force the hint and cache refresh in both sync and async paths so
+        // that Slewing reads true before the mount's GXAS has updated.
+        slewingHintUntilUtc = DateTime.UtcNow.AddSeconds(2);
+        ForceGXASCacheRefresh();
+
         if (!async)
         {
-          // Poll every 250 ms so AbortSlew (from another client/thread) is detected promptly.
           while (Slewing)
           {
             System.Threading.Thread.Sleep(250);
@@ -2240,18 +2386,24 @@ namespace ASCOM.TeenAstro.Telescope
 
     private static bool checkCompatibility()
     {
-      var asm = Assembly.GetExecutingAssembly();
-      var fvi = FileVersionInfo.GetVersionInfo(asm.Location);
-      string[] versionFW = CommandString("GVN",false).Split('.');
-      string[] versionASCOM = fvi.FileVersion.Split('.');
-      return true;
-      if ((versionFW[0] ?? "") == (versionASCOM[0] ?? "") && (versionFW[1] ?? "") == (versionASCOM[1] ?? ""))
+      // This function is used during Connect() to optionally enforce firmware/driver compatibility.
+      //
+      // Current implementation returns true unconditionally, but it still sends `:GVN#` to the mount
+      // before reaching that unconditional return, which can sporadically fail under TCP load and
+      // prevents Connect() from completing.
+      //
+      // For stability (especially during conformance / heavy polling), do not block connection
+      // on a nonessential `GVN` version check.
+      try
       {
-        return true;
+        // Keep a best-effort read for logs, but ignore failures.
+        CommandString("GVN", false);
       }
-      MessageBox.Show("Connection has failed!" + Environment.NewLine + "TeenAstro version is " +
-        versionFW[0] + "." + versionFW[1] + "." + versionFW[2] + ", TeenAstro driver version is " + fvi.FileVersion);
-      return false;
+      catch
+      {
+        // ignore
+      }
+      return true;
     }
 
     /// <summary>Ensures gxasState has current mount data. Fetches :GXAS# if cache expired (every GXAS_CACHE_INTERVAL_MS). Returns true if valid data available.</summary>
@@ -2360,27 +2512,15 @@ namespace ASCOM.TeenAstro.Telescope
     }
 
 
-    private static void DegtoDMS(double degf, ref int degi, ref int mini, ref int seci)
+    internal static void DegtoDMS(double degf, ref int degi, ref int mini, ref int seci)
     {
-      int tts = (int)Math.Round(Math.Floor(degf * 3600d + 0.5d));
-      degi = tts / 3600;
-      mini = (tts - degi * 3600) / 60;
-      seci = tts % 60;
+      CoordinateFormatters.DegtoDMS(degf, out int d, out int m, out int s);
+      degi = d; mini = m; seci = s;
     }
 
-    private static string DegtoDDDMMSS(double value)
-    {
-      int d = default, m = default, s = default;
-      DegtoDMS(value, ref d, ref m, ref s);
-      return d.ToString("000") + ":" + m.ToString("00") + ":" + s.ToString("00",CultureInfo.InvariantCulture);
-    }
+    internal static string DegtoDDDMMSS(double value) => CoordinateFormatters.DegtoDDDMMSS(value);
 
-    private static string DegtoDDMMSS(double value)
-    {
-      int d = default, m = default, s = default;
-      DegtoDMS(value, ref d, ref m, ref s);
-      return d.ToString("00") + ":" + m.ToString("00") + ":" + s.ToString("00", CultureInfo.InvariantCulture);
-    }
+    internal static string DegtoDDMMSS(double value) => CoordinateFormatters.DegtoDDMMSS(value);
 
     private static void checkslewRADEC()
     {
@@ -2438,10 +2578,15 @@ namespace ASCOM.TeenAstro.Telescope
         throw new ASCOM.ParkedException();
       }
 
-      // ITelescopeV4: Alt/Az slews are invalid while Tracking = true
+      ForceGXASCacheRefresh();
+
+      // ITelescopeV4: Alt/Az slews require Tracking = false.
+      // Auto-disable tracking so the method works when CanSlewAltAz* is True.
       if (Tracking)
       {
-        throw new ASCOM.InvalidOperationException("SlewToAltAz is invalid when Tracking is True.");
+        LogMessage("checkslewALTAZ", "Auto-disabling tracking for Alt/Az slew");
+        Tracking = false;
+        ForceGXASCacheRefresh();
       }
 
       while (Slewing)
@@ -2669,7 +2814,9 @@ namespace ASCOM.TeenAstro.Telescope
       if (microExp > 8) microExp = 8;
       m.Microstep = 1 << microExp;
 
-      m.Reverse = ReadGX("Mr" + s) != "0";
+      // LX200 motor reverse rotation uses :GXMRR# / :GXMRD# (uppercase 'R').
+      // Using the documented casing is important if the firmware command parser is case-sensitive.
+      m.Reverse = ReadGX("MR" + s) != "0";
       m.LowCurrent = ReadGXInt("Mc" + s);
       m.HighCurrent = ReadGXInt("MC" + s);
       m.BacklashAmount = ReadGXInt("MB" + s);

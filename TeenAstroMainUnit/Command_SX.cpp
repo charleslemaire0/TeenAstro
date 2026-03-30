@@ -5,6 +5,41 @@
 #include "Command.h"
 #include "CommandHelpers.h"
 #include "ValueToString.h"
+#include <cctype>
+#include <cstring>
+
+// Exactly 16 hex digits → IEEE754 little-endian double (same encoding as :GXRr# / :GXRd# reply).
+static bool parseHexF64Le(const char* s, double* out)
+{
+  if (!s || !out)
+    return false;
+  for (int i = 0; i < 16; i++)
+  {
+    if (!isxdigit((unsigned char)s[i]))
+      return false;
+  }
+  if (s[16] != '\0')
+    return false;
+
+  auto hexNibble = [](char c) -> int {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+  };
+
+  uint8_t b[8];
+  for (int i = 0; i < 8; i++)
+  {
+    int hi = hexNibble(s[i * 2]);
+    int lo = hexNibble(s[i * 2 + 1]);
+    if (hi < 0 || lo < 0)
+      return false;
+    b[i] = (uint8_t)((hi << 4) | lo);
+  }
+  memcpy(out, b, sizeof(double));
+  return true;
+}
 
 static bool parseYesNo(char c, bool& out) {
   if (c == 'y') { out = true;  return true; }
@@ -213,12 +248,18 @@ static void Command_SX_Rates()
     replyValueSetShort(true);
     break;
   case 'r':
-    // :SXRr,VAL# Set Rate for RA (VAL float: ASCOM RA rate in RA sec/sidereal sec, HA = 1 - val)
+    // :SXRr,VAL# — ASCOM RA rate (RA sec per sidereal sec). HA = 1 - val.
+    // VAL is either 16 hex digits (IEEE754 LE double, preferred) or legacy ASCII float.
     {
-      char* endptr;
-      double val = strtod(&commandState.command[5], &endptr);
+      const char* val = &commandState.command[5];
+      double ascVal;
+      if (!parseHexF64Le(val, &ascVal))
+      {
+        char* endptr;
+        ascVal = strtod(val, &endptr);
+      }
       mount.tracking.sideralMode = SIDM_TARGET;
-      mount.tracking.RequestedTrackingRateHA = 1.0 - val;
+      mount.tracking.RequestedTrackingRateHA = 1.0 - ascVal;
       mount.computeTrackingRate(true);
       replyValueSetShort(true);
     }
@@ -231,13 +272,18 @@ static void Command_SX_Rates()
     replyValueSetShort(true);
     break;
   case 'd':
-    // :SXRd,VAL# Set Rate for DEC (VAL float: arcsec/s)
+    // :SXRd,VAL# — Dec tracking offset (arcsec/s). 16 hex = IEEE754 LE double, else legacy float.
     if (mount.tracking.trackComp == TC_BOTH)
     {
-      char* endptr;
-      double val = strtod(&commandState.command[5], &endptr);
+      const char* val = &commandState.command[5];
+      double decVal;
+      if (!parseHexF64Le(val, &decVal))
+      {
+        char* endptr;
+        decVal = strtod(val, &endptr);
+      }
       mount.tracking.sideralMode = SIDM_TARGET;
-      mount.tracking.RequestedTrackingRateDEC = val;
+      mount.tracking.RequestedTrackingRateDEC = decVal;
       mount.computeTrackingRate(true);
       replyValueSetShort(true);
     }

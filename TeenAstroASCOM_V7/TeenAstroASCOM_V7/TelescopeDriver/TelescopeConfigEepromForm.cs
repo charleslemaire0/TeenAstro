@@ -174,7 +174,8 @@ namespace ASCOM.TeenAstro.Telescope
       if (microExp != cached.Microstep)
         TelescopeHardware.WriteMotorSetting(axis, "M", microExp.ToString(CultureInfo.InvariantCulture));
       if (reverse.Checked != cached.Reverse)
-        TelescopeHardware.WriteMotorSetting(axis, "r", reverse.Checked ? "1" : "0");
+        // Reverse rotation uses :GXMRR# / :GXMRD# (uppercase 'R' in MRR/MRD).
+        TelescopeHardware.WriteMotorSetting(axis, "R", reverse.Checked ? "1" : "0");
       if ((int)lowCurr.Value != cached.LowCurrent)
         TelescopeHardware.WriteMotorSetting(axis, "c", ((int)lowCurr.Value).ToString(CultureInfo.InvariantCulture));
       if ((int)highCurr.Value != cached.HighCurrent)

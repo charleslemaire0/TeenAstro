@@ -1,3 +1,8 @@
+@echo off
+echo DEPRECATED: Use build_firmware.py instead (see repo root).
+pause
+exit /b 1
+REM --- Original script below (kept for reference) ---
 set SHCNAME=TeenAstroSHC_1.2
 set OUTPUT=.\%SHCNAME%
 set BOARD=esp8266:esp8266:d1_mini:xtal=80,vt=flash,eesz=4M1M,ip=lm2n,dbg=Disabled,lvl=None____,wipe=none,baud=921600
