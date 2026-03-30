@@ -14,7 +14,6 @@ using ASCOM.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 
 namespace ASCOM.LocalServer
@@ -42,6 +41,12 @@ namespace ASCOM.LocalServer
     private static short connectionPort;
     private static string connectionInterface;
 
+    // HTTP transport is stateless — no persistent socket needed for IP mode.
+
+    /// <summary>Optional log callback. Set by the driver so transport diagnostics
+    /// appear in the ASCOM trace log.</summary>
+    public static Action<string, string> LogCallback { get; set; }
+
     /// <summary>Whether the physical connection is currently open (COM port connected or IP session allowed).</summary>
     public static bool IsConnected
     {
@@ -52,7 +57,7 @@ namespace ASCOM.LocalServer
           if (connectionInterface == "COM")
             return sharedSerial != null && sharedSerial.Connected;
           if (connectionInterface == "IP")
-            return uniqueIds.Count > 0; // For IP we don't hold a persistent socket
+            return uniqueIds.Count > 0;
           return false;
         }
       }
@@ -113,12 +118,14 @@ namespace ASCOM.LocalServer
               throw new ASCOM.DriverException("COM connect failed: " + ex.Message);
             }
           }
-          // For IP we don't open a persistent socket; SendCommand will create TcpClient per request
+
+          // IP mode uses stateless HTTP — no persistent socket to open.
         }
 
         uniqueIds.Add(uniqueId);
       }
     }
+
 
     /// <summary>
     /// Disconnect this driver instance. If this was the last instance, closes the physical connection.
@@ -197,15 +204,25 @@ namespace ASCOM.LocalServer
               return true;
             case 1:
               buf = sharedSerial.ReceiveCounted(1);
-              return !string.IsNullOrEmpty(buf);
+              if (!string.IsNullOrEmpty(buf)) return true;
+              break;
             case 2:
               buf = sharedSerial.ReceiveTerminated("#").TrimEnd('#');
-              return !string.IsNullOrEmpty(buf) || buf == "";
+              if (!string.IsNullOrEmpty(buf)) return true;
+              break;
           }
+          // Empty response: log and retry after a brief pause.
+          LogCallback?.Invoke("Serial RX empty",
+              $"attempt {k + 1}/{retries + 1} for {command}");
+          if (k < retries)
+            System.Threading.Thread.Sleep(100);
         }
         catch
         {
+          LogCallback?.Invoke("Serial RX error",
+              $"attempt {k + 1}/{retries + 1} for {command}");
           if (k == retries) return false;
+          System.Threading.Thread.Sleep(50);
         }
       }
       return false;
@@ -213,69 +230,124 @@ namespace ASCOM.LocalServer
 
     private static bool SendCommandIP(string command, int mode, ref string buf, int retries)
     {
-      if (string.IsNullOrEmpty(connectionIP))
+      if (string.IsNullOrWhiteSpace(connectionIP))
         return false;
 
-      if (!IPAddress.TryParse(connectionIP, out IPAddress addr))
+      int portToUse = connectionPort;
+      string normalizedHost = null;
+      if (!TryNormalizeHostAndOptionalPort(connectionIP, out normalizedHost, out portToUse))
         return false;
+      if (string.IsNullOrWhiteSpace(normalizedHost))
+        return false;
+
+      // Port from profile is for the TCP command channel (9999), NOT the HTTP server (80).
+      string baseUrl = "http://" + normalizedHost + "/cmd?q=" + Uri.EscapeDataString(command);
 
       for (int k = 0; k <= retries; k++)
       {
-        TcpClient client = null;
         try
         {
-          client = new TcpClient();
-          var result = client.BeginConnect(addr, connectionPort, null, null);
-          if (!result.AsyncWaitHandle.WaitOne(2000, true))
-          {
-            client.Close();
-            return false;
-          }
-          client.EndConnect(result);
+          var request = (HttpWebRequest)WebRequest.Create(baseUrl);
+          request.Method = "GET";
+          request.Timeout = 10000;
+          request.ReadWriteTimeout = 10000;
+          request.Proxy = new WebProxy();
+          request.KeepAlive = false;
+          request.ServicePoint.ConnectionLimit = 10;
 
-          var stream = client.GetStream();
-          byte[] outBytes = Encoding.ASCII.GetBytes(command);
-          stream.Write(outBytes, 0, outBytes.Length);
-          stream.Flush();
+          using (var response = (HttpWebResponse)request.GetResponse())
+          using (var reader = new System.IO.StreamReader(response.GetResponseStream(), Encoding.ASCII))
+          {
+            buf = reader.ReadToEnd().TrimEnd('#');
+          }
+
+          if (mode == 0) return true;
+          if (!string.IsNullOrEmpty(buf)) return true;
+
+          // ESP returned HTTP 200 with empty body (MCU serial timeout).
+          LogCallback?.Invoke("IP RX empty",
+              $"attempt {k + 1}/{retries + 1} for {command}");
           buf = "";
-
-          switch (mode)
-          {
-            case 0:
-              if (stream.CanRead)
-              {
-                var discard = new byte[client.ReceiveBufferSize + 1];
-                stream.Read(discard, 0, discard.Length);
-              }
-              client.Close();
-              return true;
-            case 1:
-            case 2:
-              if (stream.CanRead)
-              {
-                var readBuffer = new byte[client.ReceiveBufferSize + 1];
-                var sb = new StringBuilder();
-                int n;
-                while ((n = stream.Read(readBuffer, 0, readBuffer.Length)) > 0)
-                  sb.Append(Encoding.ASCII.GetString(readBuffer, 0, n));
-                buf = sb.ToString();
-                if (mode == 1 && buf.Length > 0) buf = buf.Substring(0, 1);
-                else if (mode == 2 && buf.Length > 0) buf = buf.Split('#')[0];
-              }
-              client.Close();
-              return true;
-            default:
-              client.Close();
-              return false;
-          }
+          if (k < retries)
+            System.Threading.Thread.Sleep(150);
         }
-        catch
+        catch (Exception ex)
         {
-          try { client?.Close(); } catch { }
+          LogCallback?.Invoke("IP RX error",
+              $"attempt {k + 1}/{retries + 1} for {command}: {ex.GetType().Name}");
+          buf = "";
           if (k == retries) return false;
+          System.Threading.Thread.Sleep(100);
         }
       }
       return false;
+    }
+
+    // Returns true when a usable host is extracted.
+    // Also optionally extracts a numeric ":port" suffix from typical IPv4/hostname forms.
+    private static bool TryNormalizeHostAndOptionalPort(string input, out string host, out int portOverride)
+    {
+      host = null;
+      portOverride = connectionPort;
+
+      if (string.IsNullOrWhiteSpace(input))
+        return false;
+
+      string s = input.Trim();
+
+      // Remove URL scheme if present.
+      if (s.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+        s = s.Substring("http://".Length);
+      else if (s.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        s = s.Substring("https://".Length);
+
+      // Remove path/query/fragment.
+      int slash = s.IndexOf('/');
+      if (slash >= 0) s = s.Substring(0, slash);
+      int q = s.IndexOf('?');
+      if (q >= 0) s = s.Substring(0, q);
+      int hash = s.IndexOf('#');
+      if (hash >= 0) s = s.Substring(0, hash);
+
+      s = s.Trim();
+      if (s.Length == 0) return false;
+
+      // Bracketed IPv6: [::1]:9999
+      if (s.StartsWith("[", StringComparison.OrdinalIgnoreCase))
+      {
+        int end = s.IndexOf(']');
+        if (end < 0) return false;
+
+        host = s.Substring(1, end - 1);
+
+        string after = s.Substring(end + 1).Trim();
+        if (after.StartsWith(":", StringComparison.Ordinal))
+        {
+          string portPart = after.Substring(1).Trim();
+          if (int.TryParse(portPart, out int p) && p > 0 && p <= 65535)
+            portOverride = p;
+        }
+        return true;
+      }
+
+      // IPv4/hostname with single colon: "192.168.1.17:9999" or "host:9999"
+      int firstColon = s.IndexOf(':');
+      int lastColon = s.LastIndexOf(':');
+      if (firstColon > 0 && firstColon == lastColon)
+      {
+        string maybeHost = s.Substring(0, firstColon).Trim();
+        string portPart = s.Substring(firstColon + 1).Trim();
+        if (int.TryParse(portPart, out int p) && p > 0 && p <= 65535)
+        {
+          host = maybeHost;
+          portOverride = p;
+          return true;
+        }
+      }
+
+      // No port detected; treat whole input as host/IP.
+      host = s.Trim();
+      return !string.IsNullOrWhiteSpace(host);
     }
 
     #region Dispose method to clean up resources before close

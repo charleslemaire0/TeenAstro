@@ -87,6 +87,7 @@
     <Compile Include="TelescopeDriver\TelescopeDriver.cs" />
     <Compile Include="TelescopeDriver\RARateConversion.cs" />
     <Compile Include="TelescopeDriver\Rates.cs" />
+    <Compile Include="TelescopeDriver\CoordinateFormatters.cs" />
     <Compile Include="TelescopeDriver\TelescopeHardware.cs" />
     <Compile Include="GarbageCollection.cs" />
     <Compile Include="LocalServer.cs" />

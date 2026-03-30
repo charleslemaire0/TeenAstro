@@ -1,19 +1,27 @@
-# Makefile for Smart Hand Controller using Arduino command line interface
+# Makefile for TeenAstro Smart Hand Controller (ESP8266)
+#
+# Uses PlatformIO for compilation.
+# See platformio.ini for available environments.
+#
+# Examples:
+#   make                 # build all languages
+#   make english         # build English only
+#   make clean           # clean build artefacts
+#
+# Requires: pip install platformio
 
-OUTPUT = $(HOME)/Sources/build/shc/SmartHandController
-BOARD = esp8266:esp8266:d1_mini 
-OPTIONS = --build-properties compiler.cpp.extra_flags=-DLANGUAGE
+.PHONY: all english french german clean
 
-all:  english french german
+all: english french german
 
+english:
+	pio run -e ENGLISH
 
-french: 
-	arduino-cli compile -v -b $(BOARD) -o $(OUTPUT)_FR $(OPTIONS)=FRENCH TeenAstroSHC.ino
-	
-english: 
-	arduino-cli compile -v -b $(BOARD) -o $(OUTPUT)_EN $(OPTIONS)=ENGLISH TeenAstroSHC.ino
+french:
+	pio run -e FRENCH
 
-german: 
-	arduino-cli compile -v -b $(BOARD) -o $(OUTPUT)_DE $(OPTIONS)=GERMAN TeenAstroSHC.ino
+german:
+	pio run -e GERMAN
 
-
+clean:
+	pio run --target clean

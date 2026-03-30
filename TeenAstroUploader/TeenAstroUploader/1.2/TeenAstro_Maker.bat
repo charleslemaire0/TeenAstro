@@ -1,3 +1,8 @@
+@echo off
+echo DEPRECATED: Use build_firmware.py instead (see repo root).
+pause
+exit /b 1
+REM --- Original script below (kept for reference) ---
 REM Prepared but doesn't work
 set PRJNAME=TeenAstro_1.2
 set OUTPUT=.\%PRJNAME%

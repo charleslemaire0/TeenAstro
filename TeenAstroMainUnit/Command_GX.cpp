@@ -5,6 +5,7 @@
 #include "Command.h"
 #include "CommandHelpers.h"
 #include "ValueToString.h"
+#include <cstring>
 
 // ----- Reply formatters for coordinates -----
 static void PrintAtitude(double& val)
@@ -530,6 +531,38 @@ static void Command_GX_Rates()
   case 'X':
     sprintf(commandState.reply, "%d#", XEEPROM.readUShort(getMountAddress(EE_maxRate)));
     break;
+  case 'r':
+    // :GXRr# — ASCOM RA tracking offset (RA sec/sidereal sec) as 16 lowercase hex chars (IEEE754 LE) + '#'
+  {
+    double trackRateRA = 1.0 - mount.tracking.RequestedTrackingRateHA;
+    uint8_t b[8];
+    memcpy(b, &trackRateRA, 8);
+    static const char* hx = "0123456789abcdef";
+    for (int i = 0; i < 8; i++)
+    {
+      commandState.reply[i * 2]     = hx[b[i] >> 4];
+      commandState.reply[i * 2 + 1] = hx[b[i] & 0x0F];
+    }
+    commandState.reply[16] = '#';
+    commandState.reply[17] = '\0';
+  }
+  break;
+  case 'd':
+    // :GXRd# — Dec tracking offset (arcsec/s), same 16-hex LE encoding + '#'
+  {
+    double trackRateDec = mount.tracking.RequestedTrackingRateDEC;
+    uint8_t b[8];
+    memcpy(b, &trackRateDec, 8);
+    static const char* hx = "0123456789abcdef";
+    for (int i = 0; i < 8; i++)
+    {
+      commandState.reply[i * 2]     = hx[b[i] >> 4];
+      commandState.reply[i * 2 + 1] = hx[b[i] & 0x0F];
+    }
+    commandState.reply[16] = '#';
+    commandState.reply[17] = '\0';
+  }
+  break;
   default:
     replyLongUnknow();
     break;

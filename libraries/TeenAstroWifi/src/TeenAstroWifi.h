@@ -189,6 +189,8 @@ class TeenAstroWifi
   static void handleWifi();
   static void handleNotFound();
   static void initFromEEPROM();
+  /// Re-apply STA credentials after a drop (same sequence as setup() station case).
+  static void restartStationAssociation();
   static void writeStation2EEPROM(const int& k);
   static void writeAccess2EEPROM();
   static void processWifiGet();
@@ -196,6 +198,7 @@ class TeenAstroWifi
   static void addTrackingInfo(String &data);
   static void buildStatusCardContent(String& data);
   static void statusAjax();
+  static void handleLx200Cmd();
 
   static bool atoi2(char *a, int *i);
   static bool atof2(char *a, float *f);
