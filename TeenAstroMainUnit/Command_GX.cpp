@@ -518,6 +518,11 @@ static void Command_GX_Rates()
     strcat(commandState.reply, "#");
   }
   break;
+  case '4':
+    // Effective max MoveAxis/M1/M2 rate (arcsec/s); matches :M1#/:M2# limit. :GXRX# is EEPROM and can be slightly higher.
+    dtostrf(mount.guiding.guideRates[4], 2, 2, commandState.reply);
+    strcat(commandState.reply, "#");
+    break;
   case 'A':
     dtostrf(mount.guiding.DegreesForAcceleration, 2, 1, commandState.reply);
     strcat(commandState.reply, "#");
