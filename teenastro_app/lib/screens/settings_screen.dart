@@ -134,7 +134,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               children: [
                 Text('TeenAstro Controller', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 4),
-                Text('Version 1.6.1', style: TextStyle(color: TA.textSecondary)),
+                Text('Version 1.6.2', style: TextStyle(color: TA.textSecondary)),
                 const SizedBox(height: 4),
                 Text('Flutter app for TeenAstro telescope mounts',
                   style: TextStyle(color: TA.textSecondary, fontSize: 12)),
