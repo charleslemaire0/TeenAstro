@@ -25,3 +25,6 @@ obj/
 /TeenAstroMainUnit/.vscode/c_cpp_properties.json
 /TeenAstroMainUnit/.vscode/extensions.json
 /TeenAstroMainUnit/.vscode/launch.json
+
+# Code-signing password sidecar (keep PFX + password file out of the repo)
+*.pfx.password.txt

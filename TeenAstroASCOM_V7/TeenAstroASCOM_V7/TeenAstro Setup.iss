@@ -16,8 +16,9 @@ MinVersion=6.1.7601
 DefaultDirName="{cf}\ASCOM\Telescope"
 DisableDirPage=yes
 DisableProgramGroupPage=yes
-OutputDir="."
-OutputBaseFilename="TeenAstro Setup"
+; Installer EXE: parent folder — basename must match $SetupInstallerExeName in scripts\build_ascom_setup.ps1 (TeenAstro Setup 1.6.exe)
+OutputDir=".."
+OutputBaseFilename="TeenAstro Setup 1.6"
 Compression=lzma
 SolidCompression=yes
 ; Put there by Platform if Driver Installer Support selected
@@ -33,12 +34,13 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "{cf}\ASCOM\Uninstall\Telescope\TeenAstro"
 
 [Files]
+; Paths relative to this .iss file (TeenAstroASCOM_V7\TeenAstroASCOM_V7\)
 ; Main ASCOM Local Server Executable (ignoreversion: always overwrite even if file version unchanged)
-Source: "C:\Users\charl\source\repos\charleslemaire0\TeenAstro\TeenAstroASCOM_V7\TeenAstroASCOM_V7\bin\Release\ASCOM.TeenAstro.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\ASCOM.TeenAstro.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; Runtime + .NET HTTP proxy policy (must sit beside the exe)
-Source: "C:\Users\charl\source\repos\charleslemaire0\TeenAstro\TeenAstroASCOM_V7\TeenAstroASCOM_V7\bin\Release\ASCOM.TeenAstro.exe.config"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\ASCOM.TeenAstro.exe.config"; DestDir: "{app}"; Flags: ignoreversion
 ; Require a read-me HTML to appear after installation, maybe driver's Help doc
-Source: "C:\Users\charl\source\repos\charleslemaire0\TeenAstro\TeenAstroASCOM_V7\TeenAstroASCOM_V7\ReadMe.htm"; DestDir: "{app}"; Flags: isreadme ignoreversion
+Source: "ReadMe.htm"; DestDir: "{app}"; Flags: isreadme ignoreversion
 
 ;Only if COM Local Server
 [Run]
