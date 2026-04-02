@@ -160,7 +160,7 @@ All `:GXnn#` commands are TeenAstro extensions. **Standard:** TeenAstro extensio
 
 | Syntax | Description | Returns |
 |--------|-------------|---------|
-| `:GXAS#` | Bulk state: tracking, slewing, park, motors, pulse guiding, UTC, positions (RA/Dec/Alt/Az/LST, target), **current and stored tracking rates**, focuser (when present), timezone. Base64-encoded **102-byte** little-endian packet (all numeric fields float64). Byte 101 = XOR checksum of bytes 0–100. Use this for status and rates; individual status/rate get commands have been removed. | **136** base64 chars + `#` |
+| `:GXAS#` | Bulk state: tracking, slewing, park, motors, pulse guiding, **GuidingState** (byte 3 bits 5-7: 0=Off, 1=Pulse, 2=ST4, 3=Recenter, 4=AtRate), UTC, positions (RA/Dec/Alt/Az/LST, target), **current and stored tracking rates**, focuser (when present), timezone. Base64-encoded **102-byte** little-endian packet (all numeric fields float64). Byte 101 = XOR checksum of bytes 0–100. Use this for status and rates; individual status/rate get commands have been removed. | **136** base64 chars + `#` |
 | `:GXCS#` | Bulk config: both axis motors, rates/speed, limits, encoders, refraction flags, mount index. Base64-encoded 90-byte little-endian packet. Byte 89 = XOR checksum of bytes 0–88. | 120 base64 chars + `#` |
 
 ### Alignment

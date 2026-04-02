@@ -38,7 +38,7 @@ static void PrintRa(double& val) {
 // 102 bytes → 136 base64 chars + '#'.  Padding: 2 bytes (102 % 3 == 0, no pad).
 //
 // Packet layout (little-endian). All float fields are float64 (double) for full precision.
-//   Bytes 0-5:   Status (tracking, sidereal, park, atHome, pierSide, guidingRate, aligned, mountType, spiralRunning, guidingEW/NS, trackComp, fault, pulse, gnssFlags, error, enableFlags, hasFocuser)
+//   Bytes 0-5:   Status (tracking, sidereal, park, atHome, pierSide, guidingRate, aligned, mountType, spiralRunning, guidingEW/NS, trackComp, fault, pulse, gnssFlags, GuidingState[5:7], error, enableFlags, hasFocuser)
 //   Bytes 6-11:  UTC hour,min,sec,month,day,year(2-digit)
 //   Bytes 12-83: Positions and rates (9 × float64 LE: RA, Dec, Alt, Az, LST, Target RA, Target Dec, TrackRate RA, TrackRate Dec)
 //   Bytes 84-91: Stored rates (int32 LE at 84, 88 — same as :GXRe#/:GXRf#)
@@ -121,7 +121,7 @@ static void Command_GX_AllState()
   uint8_t pulseGuiding = mount.isGuidingStar() ? 1u : 0u;
   pkt[2] = guidingEW | (guidingNS << 2) | (trackComp << 4) | (fault << 6) | (pulseGuiding << 7);
 
-  // ── Byte 3: gnssFlags ────────────────────────────────────────────────────
+  // ── Byte 3: gnssFlags (bits 0-4) | GuidingState (bits 5-7) ──────────────
   uint8_t gFlags = 0;
   bitWrite(gFlags, 0, mount.config.peripherals.hasGNSS);
   if (iSGNSSValid())
@@ -131,6 +131,7 @@ static void Command_GX_AllState()
     bitWrite(gFlags, 3, isLocationSyncWithGNSS());
     bitWrite(gFlags, 4, isHdopSmall());
   }
+  gFlags |= ((uint8_t)(mount.guiding.GuidingState & 0x7)) << 5;
   pkt[3] = gFlags;
 
   // ── Byte 4: error ────────────────────────────────────────────────────────

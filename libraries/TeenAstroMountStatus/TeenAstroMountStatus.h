@@ -63,6 +63,7 @@ struct MountState
   enum Errors        { ERR_NONE, ERR_MOTOR_FAULT, ERR_ALT, ERR_LIMIT_SENSE,
                        ERR_LIMIT_A1, ERR_LIMIT_A2, ERR_UNDER_POLE,
                        ERR_MERIDIAN, ERR_SYNC };
+  enum GuidingStateE { GS_OFF, GS_PULSE, GS_ST4, GS_RECENTER, GS_AT_RATE, GS_UNKNOWN };
 
   // --- Parsed fields ---
   TrackState        tracking      = TRK_UNKNOW;
@@ -83,6 +84,7 @@ struct MountState
   Mount             mountType     = MOUNT_UNDEFINED;
   PierState         pierSide      = PIER_UNKNOW;
   uint8_t           gnssFlags     = 0;          // bitfield from char[14]
+  GuidingStateE     guidingState  = GS_OFF;     // GXAS byte 3 bits 5-7
   Errors            error         = ERR_NONE;
   uint8_t           enableFlags   = 0;          // bitfield from char[16]
   bool              valid         = false;
@@ -455,6 +457,9 @@ public:
   bool              Parked()             { return m_mount.parkState == PRK_PARKED; }
   bool              isSpiralRunning()    { return m_mount.spiralRunning; }
   bool              isPulseGuiding()     { return m_mount.pulseGuiding; }
+  MountState::GuidingStateE getGuidingState() { return m_mount.guidingState; }
+  bool              isGuidingAtRate()    { return m_mount.guidingState == MountState::GS_AT_RATE; }
+  bool              isRecentering()      { return m_mount.guidingState == MountState::GS_RECENTER; }
   bool              isGuidingE()         { return m_mount.guidingEW == '>'; }
   bool              isGuidingW()         { return m_mount.guidingEW == '<'; }
   bool              isGuidingN()         { return m_mount.guidingNS == '^'; }

@@ -77,6 +77,7 @@ namespace ASCOM.TeenAstro.Telescope
       public int MountType;      // 1=GEM, 2=Fork, 3=AltAz, 4=ForkAlt
       public bool SpiralRunning;
       public bool PulseGuiding;  // true when a PulseGuide command is in progress
+      public int GuidingState;   // 0=Off, 1=Pulse, 2=ST4, 3=Recenter, 4=AtRate (from byte 3 bits 5-7)
       public byte ErrorCode;     // mount.errors.lastError (0 = ERRT_NONE)
       public bool MotorEnabled;  // motorsEncoders.enableMotor
       public double RaHours;
@@ -1904,9 +1905,10 @@ namespace ASCOM.TeenAstro.Telescope
         }
         if (!EnsureGXASCacheCurrent())
           throw new ASCOM.NotConnectedException("Get Slewing has failed");
-        bool slewing = gxasState.Tracking >= 2;  // 2 or 3 = slewing
+        // ASCOM: Slewing is true during GOTO (Tracking >= 2) or MoveAxis (GuidingState == 4 = AtRate)
+        bool slewing = gxasState.Tracking >= 2 || gxasState.GuidingState == 4;
         if (slewing)
-          LogMessage("slewing", $"True TrackRateRA={gxasState.TrackRateRA} TrackRateDec={gxasState.TrackRateDec}");
+          LogMessage("slewing", $"True Tracking={gxasState.Tracking} GuidingState={gxasState.GuidingState}");
         else
           LogMessage("slewing", slewing.ToString());
         return slewing;
@@ -2517,6 +2519,8 @@ namespace ASCOM.TeenAstro.Telescope
       s.SpiralRunning = ((b1 >> 7) & 0x1) != 0;
       byte b2 = pkt[2];
       s.PulseGuiding = ((b2 >> 7) & 0x1) != 0;
+      // Byte 3 bits 5-7: GuidingState (0=Off, 1=Pulse, 2=ST4, 3=Recenter, 4=AtRate)
+      s.GuidingState = (pkt[3] >> 5) & 0x7;
       // Byte 4: lastError (ErrorsTraking), see Command_GX.cpp
       s.ErrorCode = pkt[4];
       // Byte 5: enableFlags, bit 3 = enableMotor
