@@ -388,6 +388,12 @@ void Command_SX()
       else replyLongUnknown();
     }
     break;
+    case 'b':
+    {
+      // :SXMbn,VVVV# Set BacklashRate
+      replyValueSetShort(ok);
+    }
+    break;
     case 'G':
     {
       // :SXMGn,VVVV# Set Gear

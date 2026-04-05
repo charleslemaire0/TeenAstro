@@ -165,7 +165,7 @@ void Command_GX_AllState()
         else if (getEvent(EV_SOUTH))
             guidingNS = 2;
     }
-    uint8_t trackComp    = (uint8_t)(0);
+    uint8_t trackComp    = (uint8_t)(TC_RA);
     uint8_t fault        = (uint8_t)(0);
     uint8_t pulseGuiding = (GuidingState == GuidingPulse || GuidingState == GuidingST4) ? 1u : 0u;
     pkt[2] = guidingEW | (guidingNS << 2) | (trackComp << 4) | (fault << 6) | (pulseGuiding << 7);
@@ -220,12 +220,12 @@ void Command_GX_AllState()
       double lst = rtk.LST();
       double trackRateRA = 1.0 - RequestedTrackingRateHA;
       double trackRateDec = RequestedTrackingRateDEC;
-      gxasPackF64(pkt, 12, ra);
+      gxasPackF64(pkt, 12, ra / 15.0);
       gxasPackF64(pkt, 20, dec);
       gxasPackF64(pkt, 28, alt);
       gxasPackF64(pkt, 36, az);
       gxasPackF64(pkt, 44, lst);
-      gxasPackF64(pkt, 52, newTargetRA);
+      gxasPackF64(pkt, 52, newTargetRA / 15.0);
       gxasPackF64(pkt, 60, newTargetDec);
       gxasPackF64(pkt, 68, trackRateRA);
       gxasPackF64(pkt, 76, trackRateDec);
@@ -427,6 +427,7 @@ void Command_GX_Alignment()
 
 void Command_GX_Encoders()
 {
+  replyLongUnknown();
 }
 void Command_GX_Debug()
 {
@@ -737,6 +738,12 @@ void Command_GX_Motors()
         }
         else
             replyLongUnknown();
+        }
+        break;
+        case 'b':
+        {
+          // :GXMb.#   Get Motor backlash Rate
+          replyLongUnknown();
         }
         break;
         case 'G':
