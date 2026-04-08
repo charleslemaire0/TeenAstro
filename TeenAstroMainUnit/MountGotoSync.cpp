@@ -24,6 +24,37 @@
  */
 #include "MainUnit.h"
 #include "EmuDbgGoto_log.h"
+#include <math.h>
+
+namespace {
+
+// Rough upper bound on slew time (seconds) from current motor positions to destination steps.
+// max slew: interval = minInterval (µs/step) → steps/s ≈ 1e6 / interval. Parallel axes → max(t1,t2).
+double estimateGotoSlewSeconds(const Mount& m, long dest1, long dest2)
+{
+  long pos1, pos2;
+  m.limits.getAxisPositions(pos1, pos2);
+  long d1 = labs(dest1 - pos1);
+  long d2 = labs(dest2 - pos2);
+  double v1 = 1000000.0 / (double)m.motorsEncoders.minInterval1;
+  double v2 = 1000000.0 / (double)m.motorsEncoders.minInterval2;
+  if (v1 < 1e-9) v1 = 1e-9;
+  if (v2 < 1e-9) v2 = 1e-9;
+  double t1 = (double)d1 / v1;
+  double t2 = (double)d2 / v2;
+  double t = (t1 > t2) ? t1 : t2;
+  if (t < 0.5) t = 0.5;
+  if (t > 600.0) t = 600.0;
+  return t;
+}
+
+// m_lst advances ~100 units per sidereal second (8640000 units = 24h sidereal). onSiderealTick
+// does target += fstep * elapsed with elapsed in those units — scale wall-time seconds accordingly.
+constexpr double kSiderealLstUnitsPerSec = 100.0;
+// estimateGotoSlewSeconds is a lower bound (max slew speed, no accel); margin avoids under-projecting drift.
+constexpr double kFlipSlewTimeMargin = 1.2;
+
+} // namespace
 
 // -----------------------------------------------------------------------------
 // Step–angle conversion and axis sync (delegate to axes)
@@ -259,13 +290,13 @@ Coord_HO Mount::getHorAppTarget() const
 
 bool Mount::predictTarget(const double& Axis1_in, const double& Axis2_in, const PoleSide& inputSide,
   long& Axis1_out, long& Axis2_out, PoleSide& outputSide, bool allowAlternatePierSideFallback,
-  bool skipMeridianCheckForFlip) const
+  bool relaxGotoLimitsForFlip) const
 {
   double Axis1 = Axis1_in;
   double Axis2 = Axis2_in;
   outputSide = inputSide;
   angle2Step(Axis1, Axis2, outputSide, &Axis1_out, &Axis2_out);
-  if (limits.withinLimit(Axis1_out, Axis2_out, skipMeridianCheckForFlip))
+  if (limits.withinLimit(Axis1_out, Axis2_out, relaxGotoLimitsForFlip))
     return true;
   if (allowAlternatePierSideFallback && config.identity.meridianFlip == FLIP_ALWAYS)
   {
@@ -273,7 +304,7 @@ bool Mount::predictTarget(const double& Axis1_in, const double& Axis2_in, const 
     Axis2 = Axis2_in;
     outputSide = (inputSide == POLE_UNDER) ? POLE_OVER : POLE_UNDER;
     angle2Step(Axis1, Axis2, outputSide, &Axis1_out, &Axis2_out);
-    if (limits.withinLimit(Axis1_out, Axis2_out, skipMeridianCheckForFlip))
+    if (limits.withinLimit(Axis1_out, Axis2_out, relaxGotoLimitsForFlip))
       return true;
   }
   return false;
@@ -339,6 +370,11 @@ ErrorsGoTo Mount::goTo(long thisTargetAxis1, long thisTargetAxis2)
     return ErrorsGoTo::ERRGOTO_GUIDINGBUSY;
   if ((parkHome.parkStatus != PRK_UNPARKED) && (parkHome.parkStatus != PRK_PARKING))
     return ErrorsGoTo::ERRGOTO_PARKED;
+  // Tracking may set ERRT_MERIDIAN / ERRT_UNDER_POLE for the *current* position while
+  // sidereal tracking; a new commanded slew validates the *destination* via predictTarget.
+  // Do not block :MS# / goTo with stale tracking-only meridian/pole errors (same idea as flip()).
+  if (errors.lastError == ERRT_MERIDIAN || errors.lastError == ERRT_UNDER_POLE)
+    setError(ERRT_NONE);
   if (errors.lastError != ERRT_NONE)
     return static_cast<ErrorsGoTo>(errors.lastError + 10);
 
@@ -362,12 +398,54 @@ ErrorsGoTo Mount::flip()
   PoleSide pierNow = getPoleSide();
   PoleSide preferedPoleSide = (pierNow == POLE_UNDER) ? POLE_OVER : POLE_UNDER;
   // Do not use FLIP_ALWAYS alternate here: that path can accept the current pier side and spuriously ERRGOTO_SAMESIDE.
-  // Skip meridian GOTO bounds for the flip candidate: the other-pier solution is allowed to sit
-  // where normal GOTO would forbid (e.g. past meridian / toward southern sky) — that is the flip.
+  // relaxGotoLimitsForFlip on predictTarget: other-pier solution may sit where normal GOTO limits
+  // would forbid (e.g. past meridian / toward southern sky) — same sky, different motor coords.
   if (!predictTarget(Angle1, Angle2, preferedPoleSide, axis1Flip, axis2Flip, selectedSide, false, true))
     return ErrorsGoTo::ERRGOTO_LIMITS;
+
+  // Tracking meridian/pole at landing: re-predict flip motor steps (out1/out2) for the sky at
+  // arrival. Advance motor targets by fstep * elapsedLst (m_lst units, same as onSiderealTick)
+  // when sideralTracking is on; if off, elapsedLst=0 (no extra drift). When elapsedLst=0, reuse
+  // Angle1/Angle2 from getAxisPositions above — do not use stepToAngle(staA*.target) or pos≠target
+  // makes the second predictTarget disagree with the first and spuriously fails meridian.
+  // safetyCheck may clear sideralTracking during GOTO; then elapsedLst=0 but angles still match pos.
+  {
+    double Tsec = estimateGotoSlewSeconds(*this, axis1Flip, axis2Flip) * kFlipSlewTimeMargin;
+#ifdef EMU_MAINUNIT
+    if (Tsec > 180.0) Tsec = 180.0;
+#endif
+    const double elapsedLst =
+      tracking.sideralTracking ? (kSiderealLstUnitsPerSec * Tsec) : 0.0;
+    double A1f = Angle1;
+    double A2f = Angle2;
+    if (elapsedLst != 0.0)
+    {
+      long fut1, fut2;
+      cli();
+      fut1 = axes.staA1.target + (long)round(axes.staA1.fstep * elapsedLst);
+      fut2 = axes.staA2.target + (long)round(axes.staA2.fstep * elapsedLst);
+      sei();
+      PoleSide sideFut = POLE_NOTVALID;
+      stepToAngle(fut1, fut2, &A1f, &A2f, &sideFut);
+      (void)sideFut;
+    }
+    long out1, out2;
+    PoleSide tmpSel = POLE_NOTVALID;
+    if (!predictTarget(A1f, A2f, preferedPoleSide, out1, out2, tmpSel, false, true))
+      return ErrorsGoTo::ERRGOTO_LIMITS;
+    // Same landing validation on Teensy and PC emulator (test–hardware parity for :MF#).
+    if (!limits.checkMeridian(out1, out2, CHECKMODE_TRACKING))
+      return ErrorsGoTo::ERRGOTO_MERIDIAN;
+    if (!limits.checkPole(out1, out2, CHECKMODE_TRACKING))
+      return ErrorsGoTo::ERRGOTO_UNDER_POLE;
+  }
+
   if (selectedSide == getPoleSide())
     return ErrorsGoTo::ERRGOTO_SAMESIDE;
+  // safetyCheck may have set ERRT_MERIDIAN / ERRT_UNDER_POLE while tracking near the window;
+  // we just validated the flip landing for those — clear so goTo() does not return lastError+10.
+  if (errors.lastError == ERRT_MERIDIAN || errors.lastError == ERRT_UNDER_POLE)
+    setError(ERRT_NONE);
   ErrorsGoTo r = goTo(axis1Flip, axis2Flip);
   if (r == ErrorsGoTo::ERRGOTO_NONE)
     tracking.gotoState = GOTO_FLIP_PIER_SIDE;
