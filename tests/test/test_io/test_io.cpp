@@ -8,6 +8,12 @@
  * Pattern: set a value, then get it back and verify the values match.
  */
 
+namespace sim {
+unsigned long g_micros = 0;
+unsigned long g_millis = 0;
+bool g_realtime = false;
+}
+
 // Single-translation-unit build: include library .cpp sources directly.
 // We include CommandCodec.cpp (has static atoi2) and LX200Client.cpp.
 // TeenAstroMath.cpp also defines atoi2 (non-static), so we provide

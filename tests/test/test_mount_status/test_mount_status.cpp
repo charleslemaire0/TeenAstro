@@ -11,6 +11,12 @@
  *     corrupt floats (NaN/Inf in position fields)
  */
 
+namespace sim {
+unsigned long g_micros = 0;
+unsigned long g_millis = 0;
+bool g_realtime = false;
+}
+
 #include "CommandCodec.cpp"
 #include "TeenAstroMath.h"
 

@@ -43,7 +43,27 @@ With **mainunit_emu** running on **127.0.0.1:9997**, run:
 python TeenAstroEmulator/tools/emu_flip_gxas_mimic_test.py
 ```
 
+By default it does **not** send **:SXLE** / **:SXLW** (those write meridian GOTO limits to EEPROM). Use **`--set-meridian-goto-limits`** only when you intentionally want a fixed ~15° E/W band on the device.
+
 It checks that an **EQ goto** reports **gotoKind = 1** while slewing, and—if **:MF#** returns **0**—that a **flip** reports **gotoKind = 3** during the flip slew. If **:MF#** returns **3** or **6**, the emulator pose/limits did not allow a flip; EQ mimic can still pass.
+
+## Match hardware mount settings (COM → emulator)
+
+`tools/emu_sync_config_from_serial.py` reads **:GXCS#** (and **:GW#**) from a real TeenAstro serial port and sends the equivalent **:SXR** / **:SXL** / **:SXr** / **:SXM**… commands to the emulator on **TCP 9997** so rates, meridian limits, axis soft limits, horizon/overhead, under-pole, refraction flags, etc. match the scope.
+
+- By default it does **not** send **:S!n#** (mount type): on the PC emulator, **reboot** runs `exit(0)` and the process stops—restart **mainunit_emu** yourself if you use **`--apply-mount-type`**.
+- Some **:SXM**… lines may return **0** on the emulator when gears/currents are “fixed” in the build; limits and rates should still apply.
+- Requires **pyserial** (`pip install pyserial`).
+
+Example (hardware on **COM3**, emulator on localhost):
+
+```bash
+pio run -d TeenAstroEmulator -e emu_mainunit
+# run mainunit_emu.exe from .pio/build/emu, then:
+python TeenAstroEmulator/tools/emu_sync_config_from_serial.py --serial COM3
+python TeenAstroEmulator/tools/emu_flip_gxas_mimic_test.py
+# Optional EEPROM write for a known overlap band: add --set-meridian-goto-limits
+```
 
 ## Prerequisites
 

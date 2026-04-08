@@ -48,19 +48,25 @@ public:
   /// (sidereal / next tracking step), else last `dir`. Used for GEM meridian / under-pole checks.
   bool effectiveMotionDirectionPositive() const
   {
-    long d;
-    double fs;
-    bool dLast;
+    long pos_copy;
+    double tgt;
+    double fstep_copy;
+    bool dir_copy;
     cli();
-    d = (long)target - pos;
-    fs = fstep;
-    dLast = dir;
+    pos_copy = pos;
+    tgt = target;
+    fstep_copy = fstep;
+    dir_copy = dir;
     sei();
-    if (d != 0)
-      return d > 0;
-    if (fs != 0.0)
-      return fs > 0.0;
-    return dLast;
+    long delta = (long)tgt - pos_copy;
+    bool towardPositive;
+    if (delta != 0)
+      towardPositive = (delta > 0);
+    else if (fstep_copy != 0.0)
+      towardPositive = (fstep_copy > 0.0);
+    else
+      towardPositive = dir_copy;
+    return towardPositive;
   }
 
   bool atTarget(bool update)
