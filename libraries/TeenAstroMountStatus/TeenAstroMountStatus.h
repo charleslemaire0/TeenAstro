@@ -64,6 +64,8 @@ struct MountState
                        ERR_LIMIT_A1, ERR_LIMIT_A2, ERR_UNDER_POLE,
                        ERR_MERIDIAN, ERR_SYNC };
   enum GuidingStateE { GS_OFF, GS_PULSE, GS_ST4, GS_RECENTER, GS_AT_RATE, GS_UNKNOWN };
+  /// Same numeric values as MainUnit CommandEnums.h GotoState / GXAS byte 100 bits 5–7
+  enum GotoKind { GK_NONE = 0, GK_EQ = 1, GK_ALTAZ = 2, GK_FLIP_PIER_SIDE = 3 };
 
   // --- Parsed fields ---
   TrackState        tracking      = TRK_UNKNOW;
@@ -81,6 +83,7 @@ struct MountState
   uint8_t           alignmentRefCount = 0;  // 0–2, from GXAS byte 99
   uint8_t           alignPhase    = 0;     // 0=idle, 1=select, 2=slew, 3=recenter (GXAS byte 100 bits 0-1)
   uint8_t           alignStarNum  = 0;     // 1-based star being worked on (GXAS byte 100 bits 2-4)
+  uint8_t           gotoKind      = 0;     // GotoKind: GXAS byte 100 bits 5-7
   Mount             mountType     = MOUNT_UNDEFINED;
   PierState         pierSide      = PIER_UNKNOW;
   uint8_t           gnssFlags     = 0;          // bitfield from char[14]
@@ -445,6 +448,8 @@ public:
   bool              isAltAz()            { return m_mount.isAltAz(); }
   ParkState         getParkState()       { return m_mount.parkState; }
   TrackState        getTrackingState()   { return m_mount.tracking; }
+  /// GXAS byte 100 bits 5–7 (GotoKind / CommandEnums GotoState on main unit).
+  uint8_t           getGotoKind()        { return m_mount.gotoKind; }
   SiderealMode      getSiderealMode()    { return m_mount.sidereal; }
   bool              isTrackingCorrected(){ return m_mount.trackCorrected; }
   PierState         getPierState()       { return m_mount.pierSide; }

@@ -98,6 +98,8 @@ namespace ASCOM.TeenAstro.Telescope
       public byte UtcDay;
       public byte UtcYear;
       public sbyte TimezoneOffset10;
+      /// <summary>Goto kind from GXAS byte 100 bits 5–7 (CommandEnums GotoState: 0=none, 1=EQ, 2=AltAz, 3=flip).</summary>
+      public int GotoKind;
     }
 
     private static GXASState gxasState;
@@ -2544,6 +2546,7 @@ namespace ASCOM.TeenAstro.Telescope
       s.UtcDay = pkt[10];
       s.UtcYear = pkt[11];
       s.TimezoneOffset10 = (sbyte)pkt[98];
+      s.GotoKind = (pkt[100] >> 5) & 0x7;
       return s;
     }
 

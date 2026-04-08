@@ -45,7 +45,7 @@ static void PrintRa(double& val) {
 //   Bytes 92-97: Focuser (optional; when hasFocuser): position uint32 LE, speed uint16 LE. Otherwise zero.
 //   Byte  98:   Timezone offset (int8_t, toff × 10; subtract to get local from UTC)
 //   Byte  99:   Alignment ref count (0–2, from CoordConv::getRefs())
-//   Byte  100:  Alignment phase (bits 0-1: 0=idle,1=select,2=slew,3=recenter) + star number (bits 2-4: 0–7)
+//   Byte  100:  Alignment phase (bits 0-1) + star number (bits 2-4) + GotoState (bits 5-7, see CommandEnums.h GotoState)
 //   Byte  101:  XOR checksum of bytes 0-100
 
 static constexpr int GXAS_PKT_LEN = 102;
@@ -72,6 +72,13 @@ static void gxasPackF64(uint8_t* pkt, int off, double v)
   memcpy(pkt + off, &v, 8);
 }
 
+// Byte 0 bits 0-1: 2 * (goto active) + (sidereal tracking on). Same encoding as before (was isMovingTo + sideral).
+static uint8_t gxasByte0TrackingBits(GotoState gs, bool siderealOn)
+{
+  uint8_t moving = (gs != GOTO_NONE) ? 1u : 0u;
+  return (uint8_t)(2u * moving + (siderealOn ? 1u : 0u));
+}
+
 static void Command_GX_AllState()
 {
   uint8_t pkt[GXAS_PKT_LEN];
@@ -79,7 +86,8 @@ static void Command_GX_AllState()
   PoleSide currentSide = mount.getPoleSide();
 
   // ── Byte 0 ───────────────────────────────────────────────────────────────
-  uint8_t tracking     = (uint8_t)(2 * (mount.isMovingTo() ? 1 : 0) + (mount.tracking.sideralTracking ? 1 : 0));
+  GotoState gs = mount.tracking.gotoState;
+  uint8_t tracking = gxasByte0TrackingBits(gs, mount.tracking.sideralTracking);
   uint8_t sidereal     = (uint8_t)(mount.tracking.sideralMode  & 0x3);
   uint8_t park         = (uint8_t)(mount.parkHome.parkStatus    & 0x3);
   uint8_t atHome       = mount.isAtHome() ? 1u : 0u;
@@ -235,7 +243,9 @@ static void Command_GX_AllState()
       phase = ALIGN_RECENTER;
       mount.alignment.alignPhase = ALIGN_RECENTER;
     }
-    pkt[100] = (phase & 0x3) | ((mount.alignment.alignStarNum & 0x7) << 2);
+    uint8_t b100 = (phase & 0x3) | ((mount.alignment.alignStarNum & 0x7) << 2);
+    b100 |= (uint8_t)((uint8_t)(mount.tracking.gotoState & 0x7) << 5);
+    pkt[100] = b100;
   }
 
   // Byte 101: XOR checksum of bytes 0-100

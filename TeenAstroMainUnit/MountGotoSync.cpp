@@ -355,5 +355,8 @@ ErrorsGoTo Mount::flip()
     return ErrorsGoTo::ERRGOTO_LIMITS;
   if (selectedSide == getPoleSide())
     return ErrorsGoTo::ERRGOTO_SAMESIDE;
-  return goTo(axis1Flip, axis2Flip);
+  ErrorsGoTo r = goTo(axis1Flip, axis2Flip);
+  if (r == ErrorsGoTo::ERRGOTO_NONE)
+    tracking.gotoState = GOTO_FLIP_PIER_SIDE;
+  return r;
 }

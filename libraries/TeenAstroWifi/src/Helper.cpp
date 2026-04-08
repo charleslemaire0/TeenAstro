@@ -16,7 +16,15 @@ void TeenAstroWifi::addTrackingInfo(String &data )
 
   switch (ta_MountStatus.getTrackingState())
   {
-  case TeenAstroMountStatus::TRK_SLEWING: strcpy(temp1, "Slewing"); break;
+  case TeenAstroMountStatus::TRK_SLEWING:
+    switch (ta_MountStatus.getGotoKind())
+    {
+    case MountState::GK_EQ:            strcpy(temp1, "Slewing (EQ)"); break;
+    case MountState::GK_ALTAZ:         strcpy(temp1, "Slewing (Alt-Az)"); break;
+    case MountState::GK_FLIP_PIER_SIDE: strcpy(temp1, "Slewing (Meridian flip)"); break;
+    default:                           strcpy(temp1, "Slewing"); break;
+    }
+    break;
   case TeenAstroMountStatus::TRK_ON:      strcpy(temp1, "On"); break;
   case TeenAstroMountStatus::TRK_OFF:     strcpy(temp1, "Off"); break;
   default: strcpy(temp1, "?");

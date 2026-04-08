@@ -15,6 +15,9 @@ enum SpeedLevel { guide, slow, medium, fast, max, unknown }
 enum GuidingMode { off, pulse, st4, recenter, atRate, unknown }
 enum MountError { none, motorFault, alt, limitSense, limitA1, limitA2, underPole, meridian, sync }
 
+/// GXAS byte 100 bits 5–7 (same as firmware CommandEnums GotoState).
+enum GotoKind { none, eq, altAz, flipPierSide, unknown }
+
 class MountState {
   final TrackState tracking;
   final SiderealMode sidereal;
@@ -31,6 +34,8 @@ class MountState {
   final int alignmentRefCount;
   final AlignPhase alignPhase;
   final int alignStarNum;
+  /// From :GXAS# byte 100 bits 5–7 when a goto is in progress.
+  final GotoKind gotoKind;
   final MountType mountType;
   final PierSide pierSide;
   final int gnssFlags;
@@ -94,6 +99,7 @@ class MountState {
     this.alignmentRefCount = 0,
     this.alignPhase = AlignPhase.idle,
     this.alignStarNum = 0,
+    this.gotoKind = GotoKind.none,
     this.mountType = MountType.undefined,
     this.pierSide = PierSide.unknown,
     this.gnssFlags = 0,
@@ -375,6 +381,13 @@ class MountState {
       alignmentRefCount: bytes[99] & 0x3,
       alignPhase: AlignPhase.values[(bytes[100] & 0x3).clamp(0, 3)],
       alignStarNum: (bytes[100] >> 2) & 0x7,
+      gotoKind: switch ((bytes[100] >> 5) & 0x7) {
+        0 => GotoKind.none,
+        1 => GotoKind.eq,
+        2 => GotoKind.altAz,
+        3 => GotoKind.flipPierSide,
+        _ => GotoKind.unknown,
+      },
       mountType: mountVal,
       pierSide: pierVal,
       gnssFlags: gFlags,
@@ -419,6 +432,7 @@ class MountState {
     int? alignmentRefCount,
     AlignPhase? alignPhase,
     int? alignStarNum,
+    GotoKind? gotoKind,
     MountType? mountType,
     PierSide? pierSide,
     int? gnssFlags,
@@ -469,6 +483,7 @@ class MountState {
       alignmentRefCount: alignmentRefCount ?? this.alignmentRefCount,
       alignPhase: alignPhase ?? this.alignPhase,
       alignStarNum: alignStarNum ?? this.alignStarNum,
+      gotoKind: gotoKind ?? this.gotoKind,
       mountType: mountType ?? this.mountType,
       pierSide: pierSide ?? this.pierSide,
       gnssFlags: gnssFlags ?? this.gnssFlags,
@@ -509,7 +524,13 @@ class MountState {
   String get trackingLabel => switch (tracking) {
         TrackState.off => 'Off',
         TrackState.on => 'Tracking',
-        TrackState.slewing => 'Slewing',
+        TrackState.slewing => switch (gotoKind) {
+            GotoKind.eq => 'Slewing (EQ)',
+            GotoKind.altAz => 'Slewing (Alt-Az)',
+            GotoKind.flipPierSide => 'Slewing (Meridian flip)',
+            GotoKind.none => 'Slewing',
+            GotoKind.unknown => 'Slewing',
+          },
         TrackState.unknown => '?',
       };
 

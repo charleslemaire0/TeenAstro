@@ -262,6 +262,15 @@ Public Class Uploader
     MsgBox(n.ToString & " of " & sum.ToString & " successfully downloaded!")
   End Sub
 
+  Private Sub ButtonOpenFirmwareFolder_Click(sender As Object, e As EventArgs) Handles ButtonOpenFirmwareFolder.Click
+    Try
+      Dim folder As String = GetFirmwareBasePath()
+      Process.Start(New ProcessStartInfo(folder) With {.UseShellExecute = True})
+    Catch ex As Exception
+      MsgBox(ex.Message, MsgBoxStyle.Exclamation, "TeenAstro Firmware Uploader")
+    End Try
+  End Sub
+
   Private Sub ComboBoxCOMSHC_Click(sender As Object, e As EventArgs) Handles ComboBoxCOMSHC.Click
     ComboBoxCOMSHC.Items.Clear()
     For Each sp As String In My.Computer.Ports.SerialPortNames

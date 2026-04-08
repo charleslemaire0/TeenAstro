@@ -468,6 +468,7 @@ void TeenAstroMountStatus::updateAllState(bool force)
   m_mount.alignmentRefCount = pkt[99] & 0x3;
   m_mount.alignPhase   = pkt[100] & 0x3;
   m_mount.alignStarNum = (pkt[100] >> 2) & 0x7;
+  m_mount.gotoKind     = (pkt[100] >> 5) & 0x7;
   m_mount.valid     = true;
 
   // Sync local alignment mimic from mount-reported fine-grained phase so

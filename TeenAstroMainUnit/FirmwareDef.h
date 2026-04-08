@@ -11,7 +11,7 @@
 #define FirmwareDate    __DATE__
 // Main unit only — bump from previous MainUnit semver (+1 step). Do not copy this
 // string to WiFi server, Flutter, ASCOM, etc.; those have their own counters.
-#define FirmwareNumber  "1.6.4"
+#define FirmwareNumber  "1.6.5"
 #define FirmwareName    "TeenAstro"
 #define FirmwareTime    "00:00:00"
 // forces initialialization of a host of settings in XEEPROM.
