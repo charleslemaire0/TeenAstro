@@ -18,7 +18,10 @@ public:
   bool checkAltitudeLimits(double alt) const;
   bool checkPole(long axis1, long axis2, CheckMode mode) const;
   bool checkMeridian(long axis1, long axis2, CheckMode mode) const;
+  /// Axis bounds + GEM pole/meridian. If skipMeridianCheck, meridian GOTO limits are not applied
+  /// (used for :MF# flip target — the other-pier solution may lie past normal meridian GOTO bounds).
   bool withinLimit(long axis1, long axis2) const;
+  bool withinLimit(long axis1, long axis2, bool skipMeridianCheck) const;
 
   PoleSide getPoleSideFromAxis2(long axis2) const;
   void getAxisPositions(long& axis1, long& axis2) const;

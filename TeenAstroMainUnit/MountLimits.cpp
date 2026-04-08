@@ -143,6 +143,11 @@ bool MountLimits::checkMeridian(long axis1, long axis2, CheckMode mode) const
 
 bool MountLimits::withinLimit(long axis1, long axis2) const
 {
+  return withinLimit(axis1, axis2, false);
+}
+
+bool MountLimits::withinLimit(long axis1, long axis2, bool skipMeridianCheck) const
+{
   bool ok = mount_.axes.geoA1.withinLimit(axis1) && mount_.axes.geoA2.withinLimit(axis2);
   if (!ok)
     return ok;
@@ -159,7 +164,7 @@ bool MountLimits::withinLimit(long axis1, long axis2) const
       if (!ok)
         return ok;
     }
-    if (mount_.config.identity.meridianFlip == FLIP_ALWAYS)
+    if (mount_.config.identity.meridianFlip == FLIP_ALWAYS && !skipMeridianCheck)
       ok = checkMeridian(axis1, axis2, CHECKMODE_GOTO);
   }
   return ok;

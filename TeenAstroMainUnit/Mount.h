@@ -180,8 +180,13 @@ public:
   Coord_HO getHorTopo() const;
   Coord_HO getHorETopo() const;
   Coord_HO getHorAppTarget() const;
+  /// If allowAlternatePierSideFallback is false (used by flip()), only the requested pier side is tried;
+  /// the FLIP_ALWAYS alternate is skipped so we never "succeed" on the current pier side and then ERRGOTO_SAMESIDE.
+  /// If skipMeridianCheckForFlip is true (flip only), meridian GOTO limits are not applied to the candidate.
   bool predictTarget(const double& Axis1_in, const double& Axis2_in, const PoleSide& inputSide,
-    long& Axis1_out, long& Axis2_out, PoleSide& outputSide) const;
+    long& Axis1_out, long& Axis2_out, PoleSide& outputSide,
+    bool allowAlternatePierSideFallback = true,
+    bool skipMeridianCheckForFlip = false) const;
   byte goToEqu(Coord_EQ EQ_T, PoleSide preferedPoleSide, double Lat);
   byte goToHor(Coord_HO HO_T, PoleSide preferedPoleSide);
   ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2);

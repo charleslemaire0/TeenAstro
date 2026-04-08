@@ -23,6 +23,7 @@
  * Description: Mount goto, sync, coordinate getters, predictTarget, goTo, flip. See Mount.h.
  */
 #include "MainUnit.h"
+#include "EmuDbgGoto_log.h"
 
 // -----------------------------------------------------------------------------
 // Step–angle conversion and axis sync (delegate to axes)
@@ -49,6 +50,11 @@ void Mount::syncAxis(const long* axis1, const long* axis2)
 
 void Mount::gotoAxis(const long* axis1Target, const long* axis2Target)
 {
+  // #region agent log
+  emuDbgGotoLog("Mount::gotoAxis", "H1", parkHome.settling ? 1 : 0, 0, (int)tracking.gotoState, 0);
+  // #endregion
+  // New slew must exit post-arrival settle; otherwise moveTo() returns early and never drives the new targets.
+  parkHome.settling = false;
   cli();
   SetsiderealClockSpeed(tracking.siderealClockSpeed);
   axes.staA1.resetToSidereal();
@@ -252,21 +258,22 @@ Coord_HO Mount::getHorAppTarget() const
 // -----------------------------------------------------------------------------
 
 bool Mount::predictTarget(const double& Axis1_in, const double& Axis2_in, const PoleSide& inputSide,
-  long& Axis1_out, long& Axis2_out, PoleSide& outputSide) const
+  long& Axis1_out, long& Axis2_out, PoleSide& outputSide, bool allowAlternatePierSideFallback,
+  bool skipMeridianCheckForFlip) const
 {
   double Axis1 = Axis1_in;
   double Axis2 = Axis2_in;
   outputSide = inputSide;
   angle2Step(Axis1, Axis2, outputSide, &Axis1_out, &Axis2_out);
-  if (limits.withinLimit(Axis1_out, Axis2_out))
+  if (limits.withinLimit(Axis1_out, Axis2_out, skipMeridianCheckForFlip))
     return true;
-  if (config.identity.meridianFlip == FLIP_ALWAYS)
+  if (allowAlternatePierSideFallback && config.identity.meridianFlip == FLIP_ALWAYS)
   {
     Axis1 = Axis1_in;
     Axis2 = Axis2_in;
     outputSide = (inputSide == POLE_UNDER) ? POLE_OVER : POLE_UNDER;
     angle2Step(Axis1, Axis2, outputSide, &Axis1_out, &Axis2_out);
-    if (limits.withinLimit(Axis1_out, Axis2_out))
+    if (limits.withinLimit(Axis1_out, Axis2_out, skipMeridianCheckForFlip))
       return true;
   }
   return false;
@@ -346,12 +353,18 @@ ErrorsGoTo Mount::flip()
   long Axis1, Axis2, axis1Flip, axis2Flip;
   double Angle1, Angle2;
   PoleSide selectedSide = POLE_NOTVALID;
-  PoleSide CurrentSide = POLE_NOTVALID;
+  PoleSide stepToAngleSide = POLE_NOTVALID;
 
   limits.getAxisPositions(Axis1, Axis2);
-  stepToAngle(Axis1, Axis2, &Angle1, &Angle2, &CurrentSide);
-  PoleSide preferedPoleSide = (CurrentSide == POLE_UNDER) ? POLE_OVER : POLE_UNDER;
-  if (!predictTarget(Angle1, Angle2, preferedPoleSide, axis1Flip, axis2Flip, selectedSide))
+  stepToAngle(Axis1, Axis2, &Angle1, &Angle2, &stepToAngleSide);
+  (void)stepToAngleSide;
+  // Use getPoleSide() (axis2 vs quaterRot) for flip direction — same as SAMESIDE check and pier reporting.
+  PoleSide pierNow = getPoleSide();
+  PoleSide preferedPoleSide = (pierNow == POLE_UNDER) ? POLE_OVER : POLE_UNDER;
+  // Do not use FLIP_ALWAYS alternate here: that path can accept the current pier side and spuriously ERRGOTO_SAMESIDE.
+  // Skip meridian GOTO bounds for the flip candidate: the other-pier solution is allowed to sit
+  // where normal GOTO would forbid (e.g. past meridian / toward southern sky) — that is the flip.
+  if (!predictTarget(Angle1, Angle2, preferedPoleSide, axis1Flip, axis2Flip, selectedSide, false, true))
     return ErrorsGoTo::ERRGOTO_LIMITS;
   if (selectedSide == getPoleSide())
     return ErrorsGoTo::ERRGOTO_SAMESIDE;

@@ -198,6 +198,11 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
       sprintf(text1, T_TELESCOPE);
       sprintf(text2, T_CANTGOHOME "!");
     }
+    else if (val == LX200_FLIPSAMESIDE)
+    {
+      sprintf(text1, T_FLIP);
+      sprintf(text2, T_FLIPNOTPOSSIBLE "!");
+    }
     else
     {
       sprintf(text1, T_ERROR);
@@ -251,4 +256,121 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
     DisplayMessage(text1, text2, time);
   }
   return isOk(val);
+}
+
+bool SmartHandController::DisplayMessageMeridianFlip(LX200RETURN val)
+{
+  char text1[32] = "";
+  char text2[32] = "";
+  int time = -1;
+
+  if (isOk(val))
+  {
+    sprintf(text1, T_FLIP);
+    sprintf(text2, T_STARTED);
+    time = 1000;
+    DisplayMessage(text1, text2, time);
+    return true;
+  }
+
+  sprintf(text1, T_FLIP);
+  if (val == LX200_NOTOK)
+  {
+    sprintf(text2, T_HASFAILED "!");
+  }
+  else if (val == LX200_INVALIDCOMMAND || val == LX200_INVALIDREPLY)
+  {
+    sprintf(text2, T_HASFAILED "!");
+  }
+  else if (val == LX200_SETVALUEFAILED)
+  {
+    sprintf(text2, T_HASFAILED "!");
+  }
+  else if (val == LX200_GETVALUEFAILED)
+  {
+    sprintf(text2, T_HASFAILED "!");
+  }
+  else if (val == LX200_SYNCFAILED)
+  {
+    sprintf(text2, T_HASFAILED "!");
+  }
+  else if (val == LX200_SETTARGETFAILED)
+  {
+    sprintf(text2, T_HASFAILED "!");
+  }
+  else if (val == LX200_TARGETBELOWHORIZON)
+  {
+    sprintf(text2, T_BELOWHORIZON "!");
+  }
+  else if (val == LX200_TARGETABOVEOVERHEAD)
+  {
+    sprintf(text2, T_ABOVEOVERHEAD "!");
+  }
+  else if (val == LX200_ERR_MOTOR_FAULT)
+  {
+    sprintf(text2, T_FAULT "!");
+  }
+  else if (val == LX200_ERR_ALT)
+  {
+    sprintf(text2, T_BELOWHORIZON "!");
+  }
+  else if (val == LX200_ERR_LIMIT_SENSE)
+  {
+    sprintf(text2, T_SENSORLIMIT "!");
+  }
+  else if (val == LX200_ERR_UNDER_POLE)
+  {
+    sprintf(text2, T_UNDERPOLELIMIT "!");
+  }
+  else if (val == LX200_ERR_MERIDIAN)
+  {
+    sprintf(text2, T_MERIDIANLIMIT "!");
+  }
+  else if (val == LX200_ERR_AXIS1)
+  {
+    sprintf(text2, T_OUTSIDELIMITS " A1!");
+  }
+  else if (val == LX200_ERR_AXIS2)
+  {
+    sprintf(text2, T_OUTSIDELIMITS " A2!");
+  }
+  else if (val == LX200_ERRGOTO_NOOBJECTSELECTED)
+  {
+    sprintf(text2, "%s!", T_NOOBJECT);
+  }
+  else if (val == LX200_ERRGOTO_PARKED)
+  {
+    sprintf(text2, T_PARKED "!");
+  }
+  else if (val == LX200_ERRGOTO_BUSY)
+  {
+    sprintf(text2, T_BUSY "!");
+  }
+  else if (val == LX200_ERRGOTO_LIMITS)
+  {
+    sprintf(text2, T_OUTSIDELIMITS "!");
+  }
+  else if (val == LX200_ERRGOTO_UNKOWN)
+  {
+    sprintf(text2, T_ERROR "!");
+  }
+  else if (val == LX200_GOPARK_FAILED)
+  {
+    sprintf(text2, T_CANTPARK "!");
+  }
+  else if (val == LX200_GOHOME_FAILED)
+  {
+    sprintf(text2, T_CANTGOHOME "!");
+  }
+  else if (val == LX200_FLIPSAMESIDE)
+  {
+    sprintf(text2, T_FLIPNOTPOSSIBLE "!");
+  }
+  else
+  {
+    sprintf(text2, T_ERROR "!");
+  }
+
+  DisplayMessage(text1, text2, -1);
+  return false;
 }

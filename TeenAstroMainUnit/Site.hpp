@@ -166,8 +166,14 @@ public:
     {
       m_siteIndex = k;
       XEEPROM.write(getMountAddress(EE_currentSite), m_siteIndex);
+#ifdef EMU_MAINUNIT
+      // PC emulator: sensible mid-north latitude + prime meridian (fresh EEPROM only)
+      setLat(45.0);
+      setLong(0.0);
+#else
       setLat(0);
       setLong(0);
+#endif
       setElev(0);
       setToff(0);
       sprintf(txt, "Site %d", k);

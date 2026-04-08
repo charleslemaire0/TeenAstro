@@ -213,4 +213,6 @@ private:
   void DisplayMessage(const char* txt1, const char* txt2 = NULL, int duration = 0);
   void DisplayLongMessage(const char* txt1, const char* txt2 = NULL, const char* txt3 = NULL, const char* txt4 = NULL, int duration = 0);
   bool DisplayMessageLX200(LX200RETURN val, bool silentOk = true);
+  /// Like DisplayMessageLX200 for :MF# — always shows T_FLIP on line 1 with a reason for every outcome.
+  bool DisplayMessageMeridianFlip(LX200RETURN val);
 };

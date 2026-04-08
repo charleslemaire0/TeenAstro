@@ -24,6 +24,7 @@
  */
 #include "MainUnit.h"
 #include "Site.hpp"
+#include "EmuDbgGoto_log.h"
 
 // -----------------------------------------------------------------------------
 // moveTo() — main slew loop
@@ -35,6 +36,10 @@ void Mount::moveTo()
   if (parkHome.settling)
   {
     unsigned long elapsedTime = millis() - parkHome.lastSettleTime;
+    // #region agent log
+    emuDbgGotoLog("MountMoveTo::settling", "H1", 1, elapsedTime, (int)tracking.gotoState,
+      (elapsedTime <= parkHome.slewSettleDuration * 1000) ? 1 : 0);
+    // #endregion
     if (elapsedTime > parkHome.slewSettleDuration * 1000)
     {
       parkHome.settling = false;

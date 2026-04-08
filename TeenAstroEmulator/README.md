@@ -33,6 +33,18 @@ Both executables are in the same folder: `TeenAstroEmulator/.pio/build/emu/mainu
 - **9998** – SHC serial, localhost
 - **9999** – WiFi/Android (SkySafari, etc.), all interfaces (`0.0.0.0`)
 
+## GXAS / SHC slewing “mimic” check
+
+The SHC picks slewing icons from **:GXAS#** packet byte **100** bits **5–7** (`GotoState`: idle / EQ / AltAz / meridian flip).
+
+With **mainunit_emu** running on **127.0.0.1:9997**, run:
+
+```bash
+python TeenAstroEmulator/tools/emu_flip_gxas_mimic_test.py
+```
+
+It checks that an **EQ goto** reports **gotoKind = 1** while slewing, and—if **:MF#** returns **0**—that a **flip** reports **gotoKind = 3** during the flip slew. If **:MF#** returns **3** or **6**, the emulator pose/limits did not allow a flip; EQ mimic can still pass.
+
 ## Prerequisites
 
 - PlatformIO CLI (`pio`)
