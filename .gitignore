@@ -5,6 +5,10 @@ TeenAstroSHC.vcxproj
 TeenAstroSHC.vcxproj.filters
 TeenAstroSHC.vcxproj.user
 TeenAstroSHC.sln
+.gram/
+TeenAstroMainUnit/pio/
+TeenAstroSHC/.vscode/
+TeenAstroSHC/pio/
 IMPLEMENTATION_PLAN.md
 *.sublime-project
 *.sublime-workspace
