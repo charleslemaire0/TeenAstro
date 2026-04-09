@@ -89,6 +89,32 @@ Run from repo root or from `scripts\`. Flutter must be on PATH (or use `-Flutter
 
 ---
 
+## 3b. Build ASCOM Windows installer (Inno Setup)
+
+**Scripts:** `scripts\build_ascom_setup.ps1`, `scripts\build_ascom_setup.bat`
+
+Pipeline: **MSBuild** (Release) → **sign** `ASCOM.TeenAstro.exe` (optional) → **ISCC** → **sign** `TeenAstro Setup 1.6.exe` + verify (optional) → **copy** that installer into `Released data\driver\` (merges; **does not delete** that folder or subfolders like `Archiv`). Optional **`-CopyBinToRelease`** adds all of `bin\Release\*`.
+
+- **Intermediate output:** `TeenAstroASCOM_V7\TeenAstro Setup 1.6.exe` (Inno `OutputBaseFilename`; keep in sync with `TeenAstro Setup.iss`).
+- **Release output:** `Released data\driver\` contains **`TeenAstro Setup 1.6.exe`** only (the installer bundles the driver). Use **`-CopyBinToRelease`** if you also want the full `bin\Release\*` tree (DLLs) copied there.
+
+| Command | Effect |
+|---------|--------|
+| `.\scripts\build_ascom_setup.bat` | Full pipeline (prompts for PFX password if signing) |
+| `.\scripts\build_ascom_setup.ps1 -SkipSign` | Build + Inno + `Released data\driver` copy — **unsigned** (used by `build_release.ps1`) |
+| `.\scripts\build_ascom_setup.ps1 -SkipBuild` | Inno only (Release binaries already built) |
+| `.\scripts\build_ascom_setup.ps1 -SkipCopyToRelease` | Do not refresh `Released data\driver\` |
+| `.\scripts\build_ascom_setup.ps1 -CopyBinToRelease` | Also copy full `bin\Release\*` into `Released data\driver\` (DLLs + exe) |
+| `.\scripts\build_ascom_setup.ps1 -ISCC "C:\...\ISCC.exe"` | Use a specific Inno compiler |
+
+Signing uses the PFX default path `C:\Users\charl\TeenAstroCodeSigning.pfx` (override with `-PfxPath`), Windows SDK **signtool**, and optional RFC 3161 timestamp. The password is taken from **`TEENASTRO_PFX_PASSWORD`** (environment variable), **`-PfxPassword`** (SecureString), **`-PfxPasswordFile`**, or **`{PfxPath}.password.txt`** if it exists; otherwise you are prompted unless **`-NonInteractive`** is set (then the script fails with instructions). If a password from file/env does not open the PFX, you are prompted again (unless `-NonInteractive`). **`Released data\Run_Ascom_build.bat`** uses **`-NoAutoPasswordFile`** so you type the PFX password at the prompt (set `TEENASTRO_PFX_PASSWORD` to skip). For installer-only signing of an existing EXE, use `TeenAstroASCOM_V7\sign_ASCOM_driver.ps1`.
+
+Requires: **Visual Studio** or **Build Tools** (MSBuild), **Inno Setup**, and for signed builds **Windows SDK** signing tools. The `.iss` may reference ASCOM Developer paths for wizard images; install ASCOM Platform Developer Components if those steps fail.
+
+*Legacy shortcut:* `Released data\Run_Ascom_build.bat` changes to the repo root and runs `scripts\build_ascom_setup.ps1` (pass `-SkipSign` for a non-interactive unsigned build).
+
+---
+
 ## 4. Generate LX200 reply lengths (run when JSON changes)
 
 **Script:** `scripts\generate_reply_lengths.py`
@@ -125,7 +151,7 @@ Requires: PlatformIO, MSBuild, Flutter, WiX Toolset 3. See `TeenAstroEmulator\in
 
 **Script:** `scripts\build_release.ps1`
 
-- Builds the **ASCOM driver**, the **MSI** (emulator + uploader + app), and copies the **Flutter Windows app** standalone.
+- Runs **`scripts\build_ascom_setup.ps1 -SkipSign`** (ASCOM Release + Inno + copy to `Released data\driver\`), then builds the **MSI** (emulator + uploader + app), then copies the **Flutter Windows app** standalone.
 - Collects all outputs under **`release\`**.
 
 | Command | Effect |
@@ -138,13 +164,13 @@ Requires: PlatformIO, MSBuild, Flutter, WiX Toolset 3. See `TeenAstroEmulator\in
 **Output layout:**
 
 ```
+Released data\driver\   TeenAstro Setup 1.6.exe (optional: `-CopyBinToRelease` adds bin\Release\*)
 release\
-  ascom\    ASCOM driver (ASCOM.TeenAstro.exe + deps) -- register with /regserver
   msi\      TeenAstroEmulator.msi
   app\      Flutter Windows app (standalone)
 ```
 
-Requires: PlatformIO, MSBuild (.NET 4.7.2), Flutter, WiX Toolset 3.
+Requires: PlatformIO, MSBuild, Inno Setup (ASCOM), Flutter, WiX Toolset 3.
 
 ---
 
@@ -156,6 +182,7 @@ Requires: PlatformIO, MSBuild (.NET 4.7.2), Flutter, WiX Toolset 3.
 | Build ALL board/language variants for release | `python build_firmware.py` | `TeenAstroUploader\...\1.6_latest\` |
 | Build MainUnit / SHC / Server / Focuser (default envs) | `scripts\build_firmware.ps1` | `TeenAstroMainUnit\pio\` etc. |
 | Build Android + Windows app | `scripts\build_app.ps1` | `Released data\App\` |
+| Build ASCOM Setup (+ optional signing) | `scripts\build_ascom_setup.bat` or `scripts\build_ascom_setup.ps1` | `TeenAstroASCOM_V7\TeenAstro Setup 1.6.exe`, `Released data\driver\` |
 | Generate reply-length tables | `python scripts\generate_reply_lengths.py` | TeenAstroCommandDef, teenastro_app |
 | Build MSI (emulator + uploader + app) | `TeenAstroEmulator\installer\build.ps1` | `TeenAstroEmulator\installer\out\` |
 | **Build all release artifacts** | **`scripts\build_release.ps1`** | **`release\`** |

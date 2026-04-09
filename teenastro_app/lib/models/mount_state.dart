@@ -12,7 +12,11 @@ enum PierSide { east, west, unknown }
 enum MountType { gem, fork, altAz, forkAlt, undefined }
 enum AlignPhase { idle, select, slew, recenter }
 enum SpeedLevel { guide, slow, medium, fast, max, unknown }
+enum GuidingMode { off, pulse, st4, recenter, atRate, unknown }
 enum MountError { none, motorFault, alt, limitSense, limitA1, limitA2, underPole, meridian, sync }
+
+/// GXAS byte 100 bits 5–7 (same as firmware CommandEnums GotoState).
+enum GotoKind { none, eq, altAz, flipPierSide, unknown }
 
 class MountState {
   final TrackState tracking;
@@ -22,6 +26,7 @@ class MountState {
   final SpeedLevel speed;
   final bool spiralRunning;
   final bool pulseGuiding;
+  final GuidingMode guidingMode;
   final String guidingEW; // '>' east, '<' west, ' ' none
   final String guidingNS; // '^' north, '_' south, ' ' none
   final bool trackCorrected;
@@ -29,6 +34,8 @@ class MountState {
   final int alignmentRefCount;
   final AlignPhase alignPhase;
   final int alignStarNum;
+  /// From :GXAS# byte 100 bits 5–7 when a goto is in progress.
+  final GotoKind gotoKind;
   final MountType mountType;
   final PierSide pierSide;
   final int gnssFlags;
@@ -84,6 +91,7 @@ class MountState {
     this.speed = SpeedLevel.unknown,
     this.spiralRunning = false,
     this.pulseGuiding = false,
+    this.guidingMode = GuidingMode.off,
     this.guidingEW = ' ',
     this.guidingNS = ' ',
     this.trackCorrected = false,
@@ -91,6 +99,7 @@ class MountState {
     this.alignmentRefCount = 0,
     this.alignPhase = AlignPhase.idle,
     this.alignStarNum = 0,
+    this.gotoKind = GotoKind.none,
     this.mountType = MountType.undefined,
     this.pierSide = PierSide.unknown,
     this.gnssFlags = 0,
@@ -140,6 +149,8 @@ class MountState {
   bool get isParked => parkState == ParkState.parked;
   bool get isTracking => tracking == TrackState.on;
   bool get isSlewing => tracking == TrackState.slewing;
+  bool get isGuidingAtRate => guidingMode == GuidingMode.atRate;
+  bool get isRecentering => guidingMode == GuidingMode.recenter;
   bool get alignmentInProgress => alignPhase != AlignPhase.idle;
 
   String get alignPhaseLabel => switch (alignPhase) {
@@ -301,7 +312,12 @@ class MountState {
     final pulse   = ((b2 >> 7) & 0x1) == 1;
 
     // ── Bytes 3-5 ────────────────────────────────────────────────────────
-    final gFlags   = bytes[3];
+    final b3       = bytes[3];
+    final gFlags   = b3 & 0x1F;
+    final guidingIdx = (b3 >> 5) & 0x7;
+    final guidingModeVal = (guidingIdx < GuidingMode.values.length - 1)
+        ? GuidingMode.values[guidingIdx]
+        : GuidingMode.unknown;
     final errIdx   = bytes[4];
     final errVal   = (errIdx < MountError.values.length)
         ? MountError.values[errIdx] : MountError.none;
@@ -357,6 +373,7 @@ class MountState {
       speed: speedVal,
       spiralRunning: spiralVal,
       pulseGuiding: pulse,
+      guidingMode: guidingModeVal,
       guidingEW: ewStr,
       guidingNS: nsStr,
       trackCorrected: trkComp,
@@ -364,6 +381,13 @@ class MountState {
       alignmentRefCount: bytes[99] & 0x3,
       alignPhase: AlignPhase.values[(bytes[100] & 0x3).clamp(0, 3)],
       alignStarNum: (bytes[100] >> 2) & 0x7,
+      gotoKind: switch ((bytes[100] >> 5) & 0x7) {
+        0 => GotoKind.none,
+        1 => GotoKind.eq,
+        2 => GotoKind.altAz,
+        3 => GotoKind.flipPierSide,
+        _ => GotoKind.unknown,
+      },
       mountType: mountVal,
       pierSide: pierVal,
       gnssFlags: gFlags,
@@ -400,6 +424,7 @@ class MountState {
     SpeedLevel? speed,
     bool? spiralRunning,
     bool? pulseGuiding,
+    GuidingMode? guidingMode,
     String? guidingEW,
     String? guidingNS,
     bool? trackCorrected,
@@ -407,6 +432,7 @@ class MountState {
     int? alignmentRefCount,
     AlignPhase? alignPhase,
     int? alignStarNum,
+    GotoKind? gotoKind,
     MountType? mountType,
     PierSide? pierSide,
     int? gnssFlags,
@@ -449,6 +475,7 @@ class MountState {
       speed: speed ?? this.speed,
       spiralRunning: spiralRunning ?? this.spiralRunning,
       pulseGuiding: pulseGuiding ?? this.pulseGuiding,
+      guidingMode: guidingMode ?? this.guidingMode,
       guidingEW: guidingEW ?? this.guidingEW,
       guidingNS: guidingNS ?? this.guidingNS,
       trackCorrected: trackCorrected ?? this.trackCorrected,
@@ -456,6 +483,7 @@ class MountState {
       alignmentRefCount: alignmentRefCount ?? this.alignmentRefCount,
       alignPhase: alignPhase ?? this.alignPhase,
       alignStarNum: alignStarNum ?? this.alignStarNum,
+      gotoKind: gotoKind ?? this.gotoKind,
       mountType: mountType ?? this.mountType,
       pierSide: pierSide ?? this.pierSide,
       gnssFlags: gnssFlags ?? this.gnssFlags,
@@ -496,7 +524,13 @@ class MountState {
   String get trackingLabel => switch (tracking) {
         TrackState.off => 'Off',
         TrackState.on => 'Tracking',
-        TrackState.slewing => 'Slewing',
+        TrackState.slewing => switch (gotoKind) {
+            GotoKind.eq => 'Slewing (EQ)',
+            GotoKind.altAz => 'Slewing (Alt-Az)',
+            GotoKind.flipPierSide => 'Slewing (Meridian flip)',
+            GotoKind.none => 'Slewing',
+            GotoKind.unknown => 'Slewing',
+          },
         TrackState.unknown => '?',
       };
 
@@ -528,6 +562,15 @@ class MountState {
         PierSide.east => 'East',
         PierSide.west => 'West',
         PierSide.unknown => '?',
+      };
+
+  String get guidingModeLabel => switch (guidingMode) {
+        GuidingMode.off => '',
+        GuidingMode.pulse => 'Pulse Guide',
+        GuidingMode.st4 => 'ST4 Guide',
+        GuidingMode.recenter => 'Recentering',
+        GuidingMode.atRate => 'Moving',
+        GuidingMode.unknown => '?',
       };
 
   String get speedLabel => switch (speed) {

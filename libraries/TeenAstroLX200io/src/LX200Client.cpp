@@ -757,7 +757,19 @@ LX200RETURN LX200Client::stopMoveSouth()   { return set(":Qs#"); }
 LX200RETURN LX200Client::stopMoveEast()    { return set(":Qe#"); }
 LX200RETURN LX200Client::stopMoveWest()    { return set(":Qw#"); }
 LX200RETURN LX200Client::stopSlew()        { return set(":Q#"); }
-LX200RETURN LX200Client::meridianFlip()    { return set(":MF#"); }
+LX200RETURN LX200Client::meridianFlip()
+{
+  // :MF# returns one ERRGOTO digit (same wire encoding as :MS#), not a generic "set ok".
+  char out[LX200_SBUF];
+  const char* cmd = ":MF#";
+  CMDREPLY cmdreply = getReplyType(cmd);
+  if (cmdreply == CMDR_INVALID)
+    return LX200_INVALIDCOMMAND;
+  if (!sendReceive(cmd, cmdreply, out, sizeof(out), m_timeout))
+    return LX200_INVALIDREPLY;
+  ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
+  return gotoErrorToReturn(err, true);
+}
 
 LX200RETURN LX200Client::setSpeed(uint8_t level)
 {

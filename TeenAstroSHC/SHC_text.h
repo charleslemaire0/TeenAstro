@@ -42,6 +42,7 @@ static_assert(sizeof(T_OUTSIDELIMITS " A2!")    <= 32, "T_OUTSIDELIMITS ' A2!' e
 static_assert(sizeof(T_OUTSIDELIMITS "!")       <= 32, "T_OUTSIDELIMITS '!' exceeds text2[32]");
 static_assert(sizeof(T_CANTPARK "!")            <= 32, "T_CANTPARK '!' exceeds text2[32]");
 static_assert(sizeof(T_CANTGOHOME "!")          <= 32, "T_CANTGOHOME '!' exceeds text2[32]");
+static_assert(sizeof(T_FLIPNOTPOSSIBLE "!")     <= 32, "T_FLIPNOTPOSSIBLE '!' exceeds text2[32]");
 static_assert(sizeof(T_SELECTED "!")            <= 32, "T_SELECTED '!' exceeds text2[32]");
 static_assert(sizeof(T_SYNCED "!")              <= 32, "T_SYNCED '!' exceeds text2[32]");
 
@@ -86,6 +87,7 @@ static_assert(sizeof(T_OUTSIDELIMITS "!")    <= SHC_MAXBYTES_R12, "T_OUTSIDELIMI
 static_assert(sizeof(T_UNDERPOLELIMIT "!")   <= SHC_MAXBYTES_R12, "T_UNDERPOLELIMIT '!' too wide for 128px");
 static_assert(sizeof(T_CANTPARK "!")         <= SHC_MAXBYTES_R12, "T_CANTPARK '!' too wide for 128px");
 static_assert(sizeof(T_CANTGOHOME "!")       <= SHC_MAXBYTES_R12, "T_CANTGOHOME '!' too wide for 128px");
+static_assert(sizeof(T_FLIPNOTPOSSIBLE "!")  <= SHC_MAXBYTES_R12, "T_FLIPNOTPOSSIBLE '!' too wide for 128px");
 static_assert(sizeof(T_BELOWHORIZON "!")     <= SHC_MAXBYTES_R12, "T_BELOWHORIZON '!' too wide for 128px");
 
 // other DisplayMessage calls

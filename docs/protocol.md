@@ -40,7 +40,7 @@ All communication with the MainUnit uses the **LX200 serial protocol** (Meade Au
 | :A*# | Sync + add reference | 1 |
 | :CM# / :CS# | Sync to target (EQ) / + start tracking | N/A / (nothing) |
 | :GR# / :GD# | Get RA / Dec | HH:MM.T# / sDD*MM# |
-| :GXAS# | Bulk state (102 bytes, base64) | 136 chars + # |
+| :GXAS# | Bulk state (102 bytes, base64); byte 100 bits 5–7 = goto kind when slewing | 136 chars + # |
 | :GXCS# | Bulk config (90 bytes, base64) | 120 chars + # |
 | :MS# | Slew to target | 0–6 (ERRGOTO) |
 | :Q# | Halt all | (nothing) |

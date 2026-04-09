@@ -73,7 +73,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuSyncGoto(NAV mode)
       if (DisplayMessageLX200(m_client->syncGoPark(mode), false)) return MR_QUIT;
       break;
     case 7:
-      if (DisplayMessageLX200(m_client->meridianFlip()))
+      if (DisplayMessageMeridianFlip(m_client->meridianFlip()))
         return MR_QUIT;
       break;
     }

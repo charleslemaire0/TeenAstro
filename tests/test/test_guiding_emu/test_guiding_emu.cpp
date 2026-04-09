@@ -19,11 +19,12 @@
 #include <cstdlib>
 
 /* ================================================================== */
-/*  Simulated-time globals (consumed by the arduino.h shim)            */
+/*  Simulated-time globals (arduino.h shim; must be defined in one TU) */
 /* ================================================================== */
 namespace sim {
-  unsigned long g_micros = 0;
-  unsigned long g_millis = 0;
+unsigned long g_micros = 0;
+unsigned long g_millis = 0;
+bool g_realtime = false;
 }
 
 /* ================================================================== */

@@ -10,6 +10,7 @@ Since version 1.5, TeenAstro has received a major functional upgrade for both vi
 - **ASCOM Hub / Device Hub is no longer required** for normal Telescope + Focuser use. The TeenAstro driver now handles shared access directly.
 - **Telescope and Focuser drivers are fused at connection level**: both interfaces use the same COM/IP session and keep mount/focuser state synchronized.
 - **Binary protocol for highest accuracy and speed**: bulk commands (`:GXAS#`, `:GXCS#`) and high-precision rate paths (including float64/double handling) reduce latency and rounding drift.
+- **GXAS byte 100** now reports the **kind of goto in progress** (EQ, Alt-Az, or meridian flip) in bits 5–7, so apps and the SHC can show the correct slewing context without guessing from mount type alone.
 - **Practical result for users**: faster state refresh, better coordinate consistency, more reliable guiding/tracking behavior, and fewer client disconnect/reconnect issues in real sessions.
 
 ### Android app: expanded user workflow
@@ -49,6 +50,7 @@ Depuis la version 1.5, TeenAstro a recu une evolution majeure pour l'observation
 - **ASCOM Hub / Device Hub n'est plus necessaire** pour un usage normal Telescope + Focuser.
 - **Pilotes Telescope et Focuser fusionnes au niveau connexion**: une seule session COM/IP partagee, avec etats monture/focuser coherents.
 - **Protocole binaire pour une precision maximale**: commandes bulk (`:GXAS#`, `:GXCS#`) et gestion haute precision des vitesses (float64/double) pour limiter latence et erreurs d'arrondi.
+- **Octet 100 de GXAS**: les bits 5–7 indiquent le **type de goto en cours** (EQ, Alt-Az ou retournement meridien), pour que l'application et la SHC affichent le bon contexte sans deduire uniquement du type de monture.
 - **Impact concret**: rafraichissement d'etat plus rapide, coordonnees plus coherentes, suivi/guidage plus fiable, moins de deconnexions cote client.
 
 ### Application Android: fonctions et usage terrain

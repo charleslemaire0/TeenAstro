@@ -455,7 +455,10 @@ void TeenAstroMountStatus::updateAllState(bool force)
   m_mount.trackCorrected = (m_mount.rateComp != MountState::RC_UNKNOWN);
   m_mount.pulseGuiding  = (b2 >> 7) & 0x1;
 
-  m_mount.gnssFlags   = pkt[3];
+  m_mount.gnssFlags   = pkt[3] & 0x1F;
+  { int gs = (pkt[3] >> 5) & 0x7;
+    m_mount.guidingState = (gs >= 0 && gs <= 4)
+      ? static_cast<MountState::GuidingStateE>(gs) : MountState::GS_UNKNOWN; }
   { int e = pkt[4];
     m_mount.error = (e >= 0 && e <= 8)
       ? static_cast<MountState::Errors>(e) : MountState::ERR_NONE; }
@@ -465,6 +468,7 @@ void TeenAstroMountStatus::updateAllState(bool force)
   m_mount.alignmentRefCount = pkt[99] & 0x3;
   m_mount.alignPhase   = pkt[100] & 0x3;
   m_mount.alignStarNum = (pkt[100] >> 2) & 0x7;
+  m_mount.gotoKind     = (pkt[100] >> 5) & 0x7;
   m_mount.valid     = true;
 
   // Sync local alignment mimic from mount-reported fine-grained phase so

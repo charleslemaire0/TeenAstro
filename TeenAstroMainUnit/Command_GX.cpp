@@ -38,14 +38,14 @@ static void PrintRa(double& val) {
 // 102 bytes → 136 base64 chars + '#'.  Padding: 2 bytes (102 % 3 == 0, no pad).
 //
 // Packet layout (little-endian). All float fields are float64 (double) for full precision.
-//   Bytes 0-5:   Status (tracking, sidereal, park, atHome, pierSide, guidingRate, aligned, mountType, spiralRunning, guidingEW/NS, trackComp, fault, pulse, gnssFlags, error, enableFlags, hasFocuser)
+//   Bytes 0-5:   Status (tracking, sidereal, park, atHome, pierSide, guidingRate, aligned, mountType, spiralRunning, guidingEW/NS, trackComp, fault, pulse, gnssFlags, GuidingState[5:7], error, enableFlags, hasFocuser)
 //   Bytes 6-11:  UTC hour,min,sec,month,day,year(2-digit)
 //   Bytes 12-83: Positions and rates (9 × float64 LE: RA, Dec, Alt, Az, LST, Target RA, Target Dec, TrackRate RA, TrackRate Dec)
 //   Bytes 84-91: Stored rates (int32 LE at 84, 88 — same as :GXRe#/:GXRf#)
 //   Bytes 92-97: Focuser (optional; when hasFocuser): position uint32 LE, speed uint16 LE. Otherwise zero.
 //   Byte  98:   Timezone offset (int8_t, toff × 10; subtract to get local from UTC)
 //   Byte  99:   Alignment ref count (0–2, from CoordConv::getRefs())
-//   Byte  100:  Alignment phase (bits 0-1: 0=idle,1=select,2=slew,3=recenter) + star number (bits 2-4: 0–7)
+//   Byte  100:  Alignment phase (bits 0-1) + star number (bits 2-4) + GotoState (bits 5-7, see CommandEnums.h GotoState)
 //   Byte  101:  XOR checksum of bytes 0-100
 
 static constexpr int GXAS_PKT_LEN = 102;
@@ -72,6 +72,13 @@ static void gxasPackF64(uint8_t* pkt, int off, double v)
   memcpy(pkt + off, &v, 8);
 }
 
+// Byte 0 bits 0-1: 2 * (goto active) + (sidereal tracking on). Same encoding as before (was isMovingTo + sideral).
+static uint8_t gxasByte0TrackingBits(GotoState gs, bool siderealOn)
+{
+  uint8_t moving = (gs != GOTO_NONE) ? 1u : 0u;
+  return (uint8_t)(2u * moving + (siderealOn ? 1u : 0u));
+}
+
 static void Command_GX_AllState()
 {
   uint8_t pkt[GXAS_PKT_LEN];
@@ -79,7 +86,8 @@ static void Command_GX_AllState()
   PoleSide currentSide = mount.getPoleSide();
 
   // ── Byte 0 ───────────────────────────────────────────────────────────────
-  uint8_t tracking     = (uint8_t)(2 * (mount.isMovingTo() ? 1 : 0) + (mount.tracking.sideralTracking ? 1 : 0));
+  GotoState gs = mount.tracking.gotoState;
+  uint8_t tracking = gxasByte0TrackingBits(gs, mount.tracking.sideralTracking);
   uint8_t sidereal     = (uint8_t)(mount.tracking.sideralMode  & 0x3);
   uint8_t park         = (uint8_t)(mount.parkHome.parkStatus    & 0x3);
   uint8_t atHome       = mount.isAtHome() ? 1u : 0u;
@@ -121,7 +129,7 @@ static void Command_GX_AllState()
   uint8_t pulseGuiding = mount.isGuidingStar() ? 1u : 0u;
   pkt[2] = guidingEW | (guidingNS << 2) | (trackComp << 4) | (fault << 6) | (pulseGuiding << 7);
 
-  // ── Byte 3: gnssFlags ────────────────────────────────────────────────────
+  // ── Byte 3: gnssFlags (bits 0-4) | GuidingState (bits 5-7) ──────────────
   uint8_t gFlags = 0;
   bitWrite(gFlags, 0, mount.config.peripherals.hasGNSS);
   if (iSGNSSValid())
@@ -131,6 +139,7 @@ static void Command_GX_AllState()
     bitWrite(gFlags, 3, isLocationSyncWithGNSS());
     bitWrite(gFlags, 4, isHdopSmall());
   }
+  gFlags |= ((uint8_t)(mount.guiding.GuidingState & 0x7)) << 5;
   pkt[3] = gFlags;
 
   // ── Byte 4: error ────────────────────────────────────────────────────────
@@ -234,7 +243,9 @@ static void Command_GX_AllState()
       phase = ALIGN_RECENTER;
       mount.alignment.alignPhase = ALIGN_RECENTER;
     }
-    pkt[100] = (phase & 0x3) | ((mount.alignment.alignStarNum & 0x7) << 2);
+    uint8_t b100 = (phase & 0x3) | ((mount.alignment.alignStarNum & 0x7) << 2);
+    b100 |= (uint8_t)((uint8_t)(mount.tracking.gotoState & 0x7) << 5);
+    pkt[100] = b100;
   }
 
   // Byte 101: XOR checksum of bytes 0-100
@@ -518,6 +529,11 @@ static void Command_GX_Rates()
     strcat(commandState.reply, "#");
   }
   break;
+  case '4':
+    // Effective max MoveAxis/M1/M2 rate (arcsec/s); matches :M1#/:M2# limit. :GXRX# is EEPROM and can be slightly higher.
+    dtostrf(mount.guiding.guideRates[4], 2, 2, commandState.reply);
+    strcat(commandState.reply, "#");
+    break;
   case 'A':
     dtostrf(mount.guiding.DegreesForAcceleration, 2, 1, commandState.reply);
     strcat(commandState.reply, "#");

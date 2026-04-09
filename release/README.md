@@ -7,8 +7,8 @@ This folder collects all distributable artifacts produced by `scripts\build_rele
 ## Layout
 
 ```
+Released data/driver/     TeenAstro Setup 1.6.exe (Windows installer; run it to install the driver). Optional: `build_ascom_setup.ps1 -CopyBinToRelease` also copies `bin\Release\*` for a portable layout.
 release/
-  ascom/                  ASCOM telescope driver (ASCOM.TeenAstro.exe + deps)
   msi/                    TeenAstro Emulator MSI (SHC + Uploader + App)
   app/                    Flutter Windows app (standalone, also bundled in MSI)
 ```
@@ -25,19 +25,17 @@ See `scripts\BUILD_SCRIPTS.md` for options and prerequisites.
 
 ## ASCOM driver
 
-The ASCOM driver (`release\ascom\ASCOM.TeenAstro.exe`) is a COM local server. After copying the files to the target PC, register it once (as Administrator):
+Run **`Released data\driver\TeenAstro Setup 1.6.exe`** on the target PC to install the driver (recommended).
+
+The installed driver is a COM local server (`ASCOM.TeenAstro.exe` under `{cf}\ASCOM\Telescope\` or as chosen by the installer). To register manually if needed (as Administrator), from that folder:
 
 ```
 ASCOM.TeenAstro.exe /regserver
 ```
 
-To unregister:
+To unregister: `ASCOM.TeenAstro.exe /unregserver`
 
-```
-ASCOM.TeenAstro.exe /unregserver
-```
-
-The driver will then appear in the ASCOM Chooser. ASCOM Platform 6 must be installed on the target PC.
+The driver appears in the ASCOM Chooser after installation. ASCOM Platform 6 must be installed on the target PC.
 
 ## MSI
 

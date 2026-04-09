@@ -5,6 +5,12 @@
  * slew, recenter, add star 1; select star 2, slew, recenter, add star 2 -> done.
  */
 
+namespace sim {
+unsigned long g_micros = 0;
+unsigned long g_millis = 0;
+bool g_realtime = false;
+}
+
 #include "CommandCodec.cpp"
 #include "TeenAstroMath.h"
 

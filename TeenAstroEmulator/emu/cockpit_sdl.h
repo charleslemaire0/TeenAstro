@@ -19,7 +19,6 @@
 extern Mount mount;
 extern siteDefinition localSite;
 extern DateTimeTimers rtk;
-extern timerLoop tlp;
 
 namespace cockpit {
 
@@ -284,9 +283,9 @@ static void drawTabOverview(int y0) {
         y = drawKV(y, "Park Status", parkNames[pi], pc);
     }
     {
-        const char* gotoNames[] = { "Idle", "GoTo EQ", "GoTo AltAz" };
+        const char* gotoNames[] = { "Idle", "GoTo EQ", "GoTo AltAz", "Meridian flip" };
         int gi = (int)mount.tracking.gotoState;
-        if (gi < 0 || gi > 2) gi = 0;
+        if (gi < 0 || gi > 3) gi = 0;
         y = drawKV(y, "GoTo State", gotoNames[gi],
             gi > 0 ? COL_WARN : COL_VALUE);
     }
@@ -470,9 +469,9 @@ static void drawTabTracking(int y0) {
 
     y = drawSection(y, "GoTo / Spiral");
     {
-        const char* gotoNames[] = { "Idle", "GoTo EQ", "GoTo AltAz" };
+        const char* gotoNames[] = { "Idle", "GoTo EQ", "GoTo AltAz", "Meridian flip" };
         int gi = (int)mount.tracking.gotoState;
-        if (gi < 0 || gi > 2) gi = 0;
+        if (gi < 0 || gi > 3) gi = 0;
         y = drawKV(y, "GoTo State", gotoNames[gi], gi > 0 ? COL_WARN : COL_VALUE);
     }
     y = drawKV(y, "Abort Slew", mount.tracking.abortSlew ? "ACTIVE" : "no",
@@ -880,13 +879,6 @@ static void drawTabSiteLimits(int y0) {
         mount.motorsEncoders.encoderA2.pulsePerDegree,
         mount.motorsEncoders.encoderA2.reverse ? "Y" : "N");
     y = drawKV(y, "Encoder A2", buf);
-    y += 4;
-
-    y = drawSection(y, "Performance");
-    snprintf(buf, sizeof(buf), "%ld us", tlp.getWorstTime());
-    y = drawKV(y, "Worst Loop Time", buf,
-        tlp.getWorstTime() > 10000 ? COL_BAD :
-        (tlp.getWorstTime() > 5000 ? COL_WARN : COL_GOOD));
 }
 
 /* ================================================================== */

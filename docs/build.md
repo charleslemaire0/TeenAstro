@@ -26,12 +26,14 @@
 | All board/language variants | `python build_firmware.py` | TeenAstroUploader/.../1.6_latest/ |
 | MainUnit/SHC/Server/Focuser (default) | `scripts/build_firmware.ps1` | */pio/ |
 | Android + Windows app | `scripts/build_app.ps1` | Released data/App/ |
+| ASCOM Setup (Inno, optional signing) | `scripts/build_ascom_setup.bat` or `scripts/build_ascom_setup.ps1` | `TeenAstroASCOM_V7/TeenAstro Setup 1.6.exe` + `Released data/driver/` |
 | Reply-length tables | `python scripts/generate_reply_lengths.py` | TeenAstroCommandDef, teenastro_app |
 | MSI (emulator + uploader + app) | `TeenAstroEmulator/installer/build.ps1` | installer/out/ |
-| Full release | `scripts/build_release.ps1` | release/ (ascom, msi, app) |
+| Full release | `scripts/build_release.ps1` | `Released data/driver/`, `release/` (msi, app) |
 
 **build_firmware.py:** `--target main|focuser|shc`, `--list`, `--clean`.  
-**build_app.ps1:** `-SkipAndroid`, `-SkipWindows`, `-FixFlutter`.
+**build_app.ps1:** `-SkipAndroid`, `-SkipWindows`, `-FixFlutter`.  
+**build_ascom_setup.ps1:** `-SkipSign`, `-SkipBuild`, `-SkipCopyToRelease`, `-CopyBinToRelease` (copy all of `bin\Release` into `Released data/driver`), `-ISCC`, `-NonInteractive`; signing: `-PfxPath`, `-PfxPasswordFile`, `-PfxPassword`, `-NoTimestamp`, etc.
 
 ---
 

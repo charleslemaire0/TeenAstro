@@ -6,6 +6,7 @@
 
 ## How the Uploader works
 
+
 - The **Firmware Version** dropdown lists **X.Y only** (e.g. **1.6**, **1.5**). There is no 1.6.1 in the list.
 - For each version there are two choices:
   - **Stable** → firmware is in folder **`1.6`** (promoted, released).

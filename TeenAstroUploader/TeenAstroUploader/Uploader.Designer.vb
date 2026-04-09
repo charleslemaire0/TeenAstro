@@ -46,6 +46,7 @@ Partial Class Uploader
     Me.Label6 = New System.Windows.Forms.Label()
     Me.ComboBoxFirmwareVersion = New System.Windows.Forms.ComboBox()
     Me.ButtonDownLoad = New System.Windows.Forms.Button()
+    Me.ButtonOpenFirmwareFolder = New System.Windows.Forms.Button()
         Me.RadioButtonStable = New System.Windows.Forms.RadioButton()
         Me.RadioButtonLatest = New System.Windows.Forms.RadioButton()
         Me.TabPage3.SuspendLayout()
@@ -273,6 +274,15 @@ Partial Class Uploader
         Me.ButtonDownLoad.Text = "Download all Firmware"
         Me.ButtonDownLoad.UseVisualStyleBackColor = True
         '
+        'ButtonOpenFirmwareFolder
+        '
+        Me.ButtonOpenFirmwareFolder.Location = New System.Drawing.Point(167, 12)
+        Me.ButtonOpenFirmwareFolder.Name = "ButtonOpenFirmwareFolder"
+        Me.ButtonOpenFirmwareFolder.Size = New System.Drawing.Size(210, 23)
+        Me.ButtonOpenFirmwareFolder.TabIndex = 19
+        Me.ButtonOpenFirmwareFolder.Text = "Open firmware folder..."
+        Me.ButtonOpenFirmwareFolder.UseVisualStyleBackColor = True
+        '
         'RadioButtonStable
         '
         Me.RadioButtonStable.AutoSize = True
@@ -347,6 +357,7 @@ Partial Class Uploader
   Friend WithEvents Label7 As Label
   Friend WithEvents ComboBoxLanguage As ComboBox
   Friend WithEvents ButtonDownLoad As Button
+  Friend WithEvents ButtonOpenFirmwareFolder As Button
     Friend WithEvents RadioButtonStable As RadioButton
     Friend WithEvents RadioButtonLatest As RadioButton
 End Class
