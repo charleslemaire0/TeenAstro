@@ -8,7 +8,7 @@
 import PySimpleGUI as sg
 import platform, re, json, sys, math, time, base64
 from datetime import datetime
-from telnetlib import Telnet
+from telnetlib3 import Telnet
 import serial
 import serial.tools.list_ports
 
