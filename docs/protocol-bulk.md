@@ -16,7 +16,8 @@ Binary state and config in one call. Base64-encoded little-endian packets; last 
 | 12–83 | 9× float64 LE: RA, Dec, Alt, Az, LST, targetRA, targetDec, trackRateRa, trackRateDec |
 | 84–91 | Stored rates (int32), focuser (pos, speed) |
 | 98 | Timezone (int8 ×10) |
-| 99–100 | Alignment ref count, phase, star num |
+| 99 | Alignment reference count (0–2) |
+| 100 | Alignment phase (bits 0–1), star number (bits 2–4), **GotoState** (bits 5–7: 0=none, 1=EQ, 2=Alt-Az, 3=meridian flip; see `CommandEnums.h`) |
 | 101 | XOR checksum (bytes 0–100) |
 
 ---
@@ -37,7 +38,7 @@ Binary state and config in one call. Base64-encoded little-endian packets; last 
 
 ## TeenAstroMountStatus (C++)
 
-Parses GXAS → **MountState** (tracking, sidereal, parkState, atHome, positions, time, rates, focuser, alignment, error, enableFlags, …). Parses GXCS → config (axes, rates, limits, encoders). Enums: TrackState, SiderealMode, ParkState, PierState, GuidingRate, Mount, Errors. **StepperDriver:** StepDir, TOS100, TMC2130, TMC5160, TMC2660.
+Parses GXAS → **MountState** (tracking, sidereal, parkState, atHome, positions, time, rates, focuser, alignment, **gotoKind** from byte 100 bits 5–7, error, enableFlags, …). Parses GXCS → config (axes, rates, limits, encoders). Enums: TrackState, SiderealMode, ParkState, PierState, GuidingRate, Mount, Errors. **StepperDriver:** StepDir, TOS100, TMC2130, TMC5160, TMC2660.
 
 **Focuser:** :Fa# → 12 base64 chars (9 bytes).
 

@@ -18,7 +18,11 @@ public:
   bool checkAltitudeLimits(double alt) const;
   bool checkPole(long axis1, long axis2, CheckMode mode) const;
   bool checkMeridian(long axis1, long axis2, CheckMode mode) const;
+  /// Axis bounds + GEM pole/meridian. If relaxGotoLimitsForFlip (only flip() via predictTarget),
+  /// per-axis slew soft limits, under-pole GOTO check, and meridian GOTO limits are not
+  /// applied — the other-pier solution uses different motor coordinates for the same sky.
   bool withinLimit(long axis1, long axis2) const;
+  bool withinLimit(long axis1, long axis2, bool relaxGotoLimitsForFlip) const;
 
   PoleSide getPoleSideFromAxis2(long axis2) const;
   void getAxisPositions(long& axis1, long& axis2) const;

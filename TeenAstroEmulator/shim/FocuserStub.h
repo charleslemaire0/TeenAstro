@@ -134,7 +134,7 @@ class FocuserStub : public Stream {
         }
         /* --- Version (:FV#) --- */
         case 'V': {
-            txPut("$ TeenAstro Focuser 2.4.0 1.6.1#");
+            txPut("$ TeenAstro Focuser 2.4.0 1.6.2#");
             break;
         }
         /* --- Binary config dump (:FA#) --- 150 bytes -> 200 b64 + '#' */

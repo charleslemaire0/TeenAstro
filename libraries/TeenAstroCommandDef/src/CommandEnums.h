@@ -72,6 +72,18 @@ enum ErrorsGoTo
 };
 
 // ---------------------------------------------------------------------------
+//  GotoState - In-progress goto kind (MainUnit tracking.gotoState; :GXAS# byte 100 bits 5–7)
+// ---------------------------------------------------------------------------
+enum GotoState : uint8_t
+{
+  GOTO_NONE = 0,
+  GOTO_EQ = 1,
+  GOTO_ALTAZ = 2,
+  GOTO_FLIP_PIER_SIDE = 3
+  // Values 4–7 reserved for future use on the wire
+};
+
+// ---------------------------------------------------------------------------
 //  TARGETTYPE - Coordinate frame for goto/pushto target
 // ---------------------------------------------------------------------------
 enum TARGETTYPE

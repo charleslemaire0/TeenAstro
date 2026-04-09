@@ -5,19 +5,20 @@
 [Setup]
 AppID={{deec129d-8d5e-4457-af33-2a3f365b2a86}
 AppName=ASCOM TeenAstro Telescope Driver
-AppVerName=ASCOM TeenAstro Telescope Driver 1.6.0
-AppVersion=1.6.0
+AppVerName=ASCOM TeenAstro Telescope Driver 1.6.2
+AppVersion=1.6.2
 AppPublisher=TeenAstro@groups.io <TeenAstro@groups.io>
 AppPublisherURL=mailto:TeenAstro@groups.io
 AppSupportURL=https://ascomtalk.groups.io/g/Help
 AppUpdatesURL=https://ascom-standards.org/
-VersionInfoVersion=1.0.0
+VersionInfoVersion=1.6.2.0
 MinVersion=6.1.7601
 DefaultDirName="{cf}\ASCOM\Telescope"
 DisableDirPage=yes
 DisableProgramGroupPage=yes
-OutputDir="."
-OutputBaseFilename="TeenAstro Setup"
+; Installer EXE: parent folder — basename must match $SetupInstallerExeName in scripts\build_ascom_setup.ps1 (TeenAstro Setup 1.6.exe)
+OutputDir=".."
+OutputBaseFilename="TeenAstro Setup 1.6"
 Compression=lzma
 SolidCompression=yes
 ; Put there by Platform if Driver Installer Support selected
@@ -33,12 +34,13 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "{cf}\ASCOM\Uninstall\Telescope\TeenAstro"
 
 [Files]
+; Paths relative to this .iss file (TeenAstroASCOM_V7\TeenAstroASCOM_V7\)
 ; Main ASCOM Local Server Executable (ignoreversion: always overwrite even if file version unchanged)
-Source: "C:\Users\charl\source\repos\charleslemaire0\TeenAstro\TeenAstroASCOM_V7\TeenAstroASCOM_V7\bin\Release\ASCOM.TeenAstro.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\ASCOM.TeenAstro.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; Runtime + .NET HTTP proxy policy (must sit beside the exe)
-Source: "C:\Users\charl\source\repos\charleslemaire0\TeenAstro\TeenAstroASCOM_V7\TeenAstroASCOM_V7\bin\Release\ASCOM.TeenAstro.exe.config"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\Release\ASCOM.TeenAstro.exe.config"; DestDir: "{app}"; Flags: ignoreversion
 ; Require a read-me HTML to appear after installation, maybe driver's Help doc
-Source: "C:\Users\charl\source\repos\charleslemaire0\TeenAstro\TeenAstroASCOM_V7\TeenAstroASCOM_V7\ReadMe.htm"; DestDir: "{app}"; Flags: isreadme ignoreversion
+Source: "ReadMe.htm"; DestDir: "{app}"; Flags: isreadme ignoreversion
 
 ;Only if COM Local Server
 [Run]

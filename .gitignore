@@ -25,3 +25,9 @@ obj/
 /TeenAstroMainUnit/.vscode/c_cpp_properties.json
 /TeenAstroMainUnit/.vscode/extensions.json
 /TeenAstroMainUnit/.vscode/launch.json
+
+# Code-signing password sidecar (keep PFX + password file out of the repo)
+*.pfx.password.txt
+/TeenAstroSHC/tools/__pycache__/gen_goto_icons.cpython-314.pyc
+/TeenAstroSHC/tools/__pycache__/u8x8_icon_editor.cpython-314.pyc
+/TeenAstroEmulator/tools/__pycache__/emu_flip_gxas_mimic_test.cpython-314.pyc

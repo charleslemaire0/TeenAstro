@@ -292,9 +292,11 @@ void Mount::safetyCheck(bool forceTracking)
     setError(ERRT_NONE);
   if (config.identity.mountType == MOUNT_TYPE_GEM)
   {
+    const bool raEast = axes.staA1.effectiveMotionDirectionPositive();
+
     if (!limits.checkMeridian(axis1, axis2, CHECKMODE_TRACKING))
     {
-      if ((axes.staA1.dir && currentSide == POLE_OVER) || (!axes.staA1.dir && currentSide == POLE_UNDER))
+      if ((raEast && currentSide == POLE_OVER) || (!raEast && currentSide == POLE_UNDER))
       {
         setError(ERRT_MERIDIAN);
         if (isMovingTo()) abortSlew();
@@ -308,7 +310,7 @@ void Mount::safetyCheck(bool forceTracking)
       setError(ERRT_NONE);
     if (!limits.checkPole(axis1, axis2, CHECKMODE_TRACKING))
     {
-      if ((axes.staA1.dir && currentSide == POLE_UNDER) || (!axes.staA1.dir && currentSide == POLE_OVER))
+      if ((raEast && currentSide == POLE_UNDER) || (!raEast && currentSide == POLE_OVER))
       {
         setError(ERRT_UNDER_POLE);
         if (isMovingTo()) abortSlew();

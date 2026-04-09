@@ -143,7 +143,21 @@ bool MountLimits::checkMeridian(long axis1, long axis2, CheckMode mode) const
 
 bool MountLimits::withinLimit(long axis1, long axis2) const
 {
-  bool ok = mount_.axes.geoA1.withinLimit(axis1) && mount_.axes.geoA2.withinLimit(axis2);
+  return withinLimit(axis1, axis2, false);
+}
+
+bool MountLimits::withinLimit(long axis1, long axis2, bool relaxGotoLimitsForFlip) const
+{
+  // :MF# flip candidate: same celestial position on the other pier. Normal GOTO checks
+  // include per-axis soft limits (min/max slew) and meridian bounds; those can reject a
+  // valid flip because motor coordinates differ (e.g. RA wrap, cable window) while the
+  // sky point is unchanged. predictTarget(..., relaxGotoLimitsForFlip=true) is only
+  // used from flip(), so we relax axis soft limits here as well as meridian (below).
+  bool ok;
+  if (relaxGotoLimitsForFlip)
+    ok = true;
+  else
+    ok = mount_.axes.geoA1.withinLimit(axis1) && mount_.axes.geoA2.withinLimit(axis2);
   if (!ok)
     return ok;
 
@@ -155,11 +169,16 @@ bool MountLimits::withinLimit(long axis1, long axis2) const
   {
     if (mount_.config.identity.mountType == MOUNT_TYPE_GEM)
     {
-      ok = checkPole(axis1, axis2, CHECKMODE_GOTO);
-      if (!ok)
-        return ok;
+      // Flip candidate: skip under-pole GOTO check too — same sky on the other pier can read as
+      // "past" pole limits in axis space while tracking west toward the meridian window edge.
+      if (!relaxGotoLimitsForFlip)
+      {
+        ok = checkPole(axis1, axis2, CHECKMODE_GOTO);
+        if (!ok)
+          return ok;
+      }
     }
-    if (mount_.config.identity.meridianFlip == FLIP_ALWAYS)
+    if (mount_.config.identity.meridianFlip == FLIP_ALWAYS && !relaxGotoLimitsForFlip)
       ok = checkMeridian(axis1, axis2, CHECKMODE_GOTO);
   }
   return ok;

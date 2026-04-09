@@ -77,6 +77,7 @@ namespace ASCOM.TeenAstro.Telescope
       public int MountType;      // 1=GEM, 2=Fork, 3=AltAz, 4=ForkAlt
       public bool SpiralRunning;
       public bool PulseGuiding;  // true when a PulseGuide command is in progress
+      public int GuidingState;   // 0=Off, 1=Pulse, 2=ST4, 3=Recenter, 4=AtRate (from byte 3 bits 5-7)
       public byte ErrorCode;     // mount.errors.lastError (0 = ERRT_NONE)
       public bool MotorEnabled;  // motorsEncoders.enableMotor
       public double RaHours;
@@ -97,6 +98,8 @@ namespace ASCOM.TeenAstro.Telescope
       public byte UtcDay;
       public byte UtcYear;
       public sbyte TimezoneOffset10;
+      /// <summary>Goto kind from GXAS byte 100 bits 5–7 (CommandEnums GotoState: 0=none, 1=EQ, 2=AltAz, 3=flip).</summary>
+      public int GotoKind;
     }
 
     private static GXASState gxasState;
@@ -399,6 +402,22 @@ namespace ASCOM.TeenAstro.Telescope
       LogMessage("Get "+ GetName, response);
       if (!double.TryParse(response, NumberStyles.Any, CultureInfo.InvariantCulture, out val))
         throw new ASCOM.DriverException("get " + GetName + " has failed");
+    }
+
+    /// <summary>Optional numeric query (e.g. :GXR4# on newer firmware). Returns false if missing or parse fails.</summary>
+    private static bool TryGetDoubleCommand(string command, string logName, out double val)
+    {
+      val = 0;
+      try
+      {
+        string response = CommandString(command, false);
+        LogMessage("Get " + logName, response);
+        return double.TryParse(response, NumberStyles.Any, CultureInfo.InvariantCulture, out val);
+      }
+      catch
+      {
+        return false;
+      }
     }
     private static bool CommandBoolSingleChar(string Command, bool Raw = false)
     {
@@ -812,8 +831,14 @@ namespace ASCOM.TeenAstro.Telescope
     /// <returns>Collection of <see cref="IRate" /> rate objects</returns>
     internal static IAxisRates AxisRates(TelescopeAxes Axis)
     {
-      // Read maxSpeed from TeenAstro main unit and assign top two speed settings on this basis
-      double Speed=0;
+      // :GXRX# is EEPROM max; :GXR4# is the effective cap used by :M1#/:M2# (motor-corrected). Prefer GXR4 so ASCOM max matches MoveAxis.
+      double maxArcsec = 0;
+      if (TryGetDoubleCommand("GXR4", "AxisRates effective max (GXR4)", out maxArcsec) && maxArcsec > 0)
+      {
+        SlewSpeeds = maxArcsec / (3600.0 * SiderealRate);
+        return new AxisRates(Axis, SlewSpeeds, SiderealRate);
+      }
+      double Speed = 0;
       GetDouble("AxisRates for " + Axis.ToString(), "GXRX", ref Speed);
       SlewSpeeds = Speed;
       return new AxisRates(Axis, SlewSpeeds, SiderealRate);
@@ -1328,6 +1353,16 @@ namespace ASCOM.TeenAstro.Telescope
         // Firmware rejects if abs(rate) > guideRates[4] (integer); round to integer to avoid rejection.
         double rateArcsecPerSec = Rate * 3600.0;
         int rateInt = rateArcsecPerSec >= 0 ? (int)Math.Floor(rateArcsecPerSec) : (int)Math.Ceiling(rateArcsecPerSec);
+        double maxArcsecEff = 0;
+        if (TryGetDoubleCommand("GXR4", "MoveAxis max arcsec/s (GXR4)", out maxArcsecEff) && maxArcsecEff > 0)
+        {
+          int maxInt = (int)Math.Floor(maxArcsecEff + 1e-9);
+          if (maxInt > 0)
+          {
+            if (rateInt > maxInt) rateInt = maxInt;
+            if (rateInt < -maxInt) rateInt = -maxInt;
+          }
+        }
         if (Axis == TelescopeAxes.axisPrimary)
         {
           cmd = "M1" + rateInt.ToString("+0;-0", CultureInfo.InvariantCulture);
@@ -1872,9 +1907,10 @@ namespace ASCOM.TeenAstro.Telescope
         }
         if (!EnsureGXASCacheCurrent())
           throw new ASCOM.NotConnectedException("Get Slewing has failed");
-        bool slewing = gxasState.Tracking >= 2;  // 2 or 3 = slewing
+        // ASCOM: Slewing is true during GOTO (Tracking >= 2) or MoveAxis (GuidingState == 4 = AtRate)
+        bool slewing = gxasState.Tracking >= 2 || gxasState.GuidingState == 4;
         if (slewing)
-          LogMessage("slewing", $"True TrackRateRA={gxasState.TrackRateRA} TrackRateDec={gxasState.TrackRateDec}");
+          LogMessage("slewing", $"True Tracking={gxasState.Tracking} GuidingState={gxasState.GuidingState}");
         else
           LogMessage("slewing", slewing.ToString());
         return slewing;
@@ -2485,6 +2521,8 @@ namespace ASCOM.TeenAstro.Telescope
       s.SpiralRunning = ((b1 >> 7) & 0x1) != 0;
       byte b2 = pkt[2];
       s.PulseGuiding = ((b2 >> 7) & 0x1) != 0;
+      // Byte 3 bits 5-7: GuidingState (0=Off, 1=Pulse, 2=ST4, 3=Recenter, 4=AtRate)
+      s.GuidingState = (pkt[3] >> 5) & 0x7;
       // Byte 4: lastError (ErrorsTraking), see Command_GX.cpp
       s.ErrorCode = pkt[4];
       // Byte 5: enableFlags, bit 3 = enableMotor
@@ -2508,6 +2546,7 @@ namespace ASCOM.TeenAstro.Telescope
       s.UtcDay = pkt[10];
       s.UtcYear = pkt[11];
       s.TimezoneOffset10 = (sbyte)pkt[98];
+      s.GotoKind = (pkt[100] >> 5) & 0x7;
       return s;
     }
 

@@ -42,6 +42,33 @@ public:
     deltaStart = pos - start;
     sei();
   };
+
+  /// True if commanded motion is toward increasing `pos` (RA “east” on a GEM). Matches ISR
+  /// `dir` when stepping (deltaTarget != 0). When idle, `dir` is stale; use sign of `fstep`
+  /// (sidereal / next tracking step), else last `dir`. Used for GEM meridian / under-pole checks.
+  bool effectiveMotionDirectionPositive() const
+  {
+    long pos_copy;
+    double tgt;
+    double fstep_copy;
+    bool dir_copy;
+    cli();
+    pos_copy = pos;
+    tgt = target;
+    fstep_copy = fstep;
+    dir_copy = dir;
+    sei();
+    long delta = (long)tgt - pos_copy;
+    bool towardPositive;
+    if (delta != 0)
+      towardPositive = (delta > 0);
+    else if (fstep_copy != 0.0)
+      towardPositive = (fstep_copy > 0.0);
+    else
+      towardPositive = dir_copy;
+    return towardPositive;
+  }
+
   bool atTarget(bool update)
   {
     if (update)

@@ -180,11 +180,19 @@ public:
   Coord_HO getHorTopo() const;
   Coord_HO getHorETopo() const;
   Coord_HO getHorAppTarget() const;
+  /// If allowAlternatePierSideFallback is false (used by flip()), only the requested pier side is tried;
+  /// the FLIP_ALWAYS alternate is skipped so we never "succeed" on the current pier side and then ERRGOTO_SAMESIDE.
+  /// If relaxGotoLimitsForFlip is true (flip only), meridian GOTO limits, under-pole GOTO
+  /// check, and per-axis slew soft limits are not applied to the candidate (same sky, other pier).
   bool predictTarget(const double& Axis1_in, const double& Axis2_in, const PoleSide& inputSide,
-    long& Axis1_out, long& Axis2_out, PoleSide& outputSide) const;
+    long& Axis1_out, long& Axis2_out, PoleSide& outputSide,
+    bool allowAlternatePierSideFallback = true,
+    bool relaxGotoLimitsForFlip = false) const;
   byte goToEqu(Coord_EQ EQ_T, PoleSide preferedPoleSide, double Lat);
   byte goToHor(Coord_HO HO_T, PoleSide preferedPoleSide);
   ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2);
+  /// Flip: predictTarget (relaxGotoLimitsForFlip), then meridian/pole on re-predicted flip steps; drift uses
+  /// estimated slew time only while sideralTracking is on (if safety cleared tracking during GOTO, elapsed=0).
   ErrorsGoTo flip();
   // Refraction (options for pole, goto, tracking; uses temperature, pressure)
   LA3::RefrOpt refrOptForPole() const;

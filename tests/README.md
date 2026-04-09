@@ -20,7 +20,7 @@ $env:PATH = "$env:USERPROFILE\.platformio\packages\toolchain-gccmingw32\bin;$env
 ## Running tests
 
 ```bash
-# All suites (103 tests)
+# All native Unity suites (see tests/test/test_*/)
 pio test -d tests
 
 # Individual suites
@@ -28,10 +28,14 @@ pio test -d tests --filter test_la3
 pio test -d tests --filter test_coord
 pio test -d tests --filter test_coordconv
 pio test -d tests --filter test_tracking_rate
+pio test -d tests --filter test_meridian_flip
 
-# Python runner (runs all, shows summary)
+# Python runner: discovers every tests/test/test_* folder and runs each via pio test
 python tests/run_all_tests.py
 python tests/run_all_tests.py test_la3       # single suite
+
+# Optional: after starting mainunit_emu (TCP 127.0.0.1:9997), GXAS meridian/flip regression
+python tests/run_all_tests.py --with-emulator
 ```
 
 ## Test suites
@@ -90,6 +94,12 @@ Verifies the tracking rate formulas between the ASCOM driver and firmware (SXRr/
 
 Uses no MainUnit/Mount dependencies; purely validates the protocol math.
 
+### test_meridian_flip (13 tests) — GEM meridian / flip wire helpers
+
+Covers the same rules as **`StatusAxis::effectiveMotionDirectionPositive()`** in `Axis.hpp` (direction logic duplicated in the test file with a sync comment), meridian GOTO minutes→HA scaling (`/4`, as in MountLimits / GXCS), and **GotoState** / :GXAS# byte 100 bits 5–7 vs `Command_GX.cpp`.
+
+No full `Mount` link; native Unity only.
+
 ## Architecture
 
 ```
@@ -102,6 +112,7 @@ tests/
         test_coord/test_coord.cpp       Coord tests
         test_coordconv/test_coordconv.cpp   CoordConv tests
         test_tracking_rate/test_tracking_rate.cpp   Tracking rate protocol tests
+        test_meridian_flip/test_meridian_flip.cpp   Meridian axis helpers + GXAS GotoState
     run_all_tests.py            Master runner script
     run_all_tests.bat           Windows batch wrapper
 ```
