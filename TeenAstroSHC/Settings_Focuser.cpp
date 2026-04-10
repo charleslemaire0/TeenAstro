@@ -92,7 +92,6 @@ void SmartHandController::menuFocuserInfo()
 }
 void SmartHandController::menuFocuserConfig()
 {
-  char cmd[50];
   const char *string_list_Focuser = T_DISPLAYSETTINGS "\n" T_PARKPOSITION "\n" T_MAXPOSITION "\n" T_MANUALSPEED "\n" T_GOTOSPEED "\n" T_ACCFORMAN "\n" T_ACCFORGOTO;
   unsigned int sP, maxP, minS, maxS, cmdAcc, manAcc, manDec;
   static uint8_t s_sel = 1;
@@ -135,57 +134,60 @@ void SmartHandController::menuFocuserConfig()
       {
         value = sP;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_PARKPOSITION, "", &value, 0, 65535, 5, 0, "");
-        sprintf(cmd, ":F0,%05d#", (int)(value));
+        if (ValueSetRequested)
+          DisplayMessageLX200(m_client->setFocuserPark((int)value), false);
         break;
       }
       case 3:
       {
         value = maxP;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_MAXPOSITION, "", &value, 0, 65535, 5, 0, "");
-        sprintf(cmd, ":F1,%05d#", (int)(value));
+        if (ValueSetRequested)
+          DisplayMessageLX200(m_client->setFocuserMaxPos((int)value), false);
         break;
       }
       case 4:
       {
         value = minS;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_MANUALSPEED, "", &value, 1, 999, 5, 0, "");
-        sprintf(cmd, ":F2,%03d#", (int)(value));
+        if (ValueSetRequested)
+          DisplayMessageLX200(m_client->setFocuserLowSpeed((int)value), false);
         break;
       }
       case 5:
       {
         value = maxS;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_GOTOSPEED, "", &value, 1, 999, 5, 0, "");
-        sprintf(cmd, ":F3,%03d#", (int)(value));
+        if (ValueSetRequested)
+          DisplayMessageLX200(m_client->setFocuserHighSpeed((int)value), false);
         break;
       }
       case 6:
       {
         value = manAcc;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_ACCFORMAN, "", &value, 1, 100, 5, 0, "");
-        sprintf(cmd, ":F5,%03d#", (int)(value));
+        if (ValueSetRequested)
+          DisplayMessageLX200(m_client->setFocuserManAcc((int)value), false);
         break;
       }
       case 7:
       {
         value = cmdAcc;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_ACCFORGOTO, "", &value, 1, 100, 5, 0, "");
-        sprintf(cmd, ":F4,%03d#", (int)(value));
+        if (ValueSetRequested)
+          DisplayMessageLX200(m_client->setFocuserGotoAcc((int)value), false);
         break;
       }
       case 8:
       {
         value = manDec;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_DECFORMAN, "", &value, 1, 100, 5, 0, "");
-        sprintf(cmd, ":F6,%03d#", (int)(value));
+        if (ValueSetRequested)
+          DisplayMessageLX200(m_client->setFocuserDecel((int)value), false);
         break;
       }
       default:
         break;
-      }
-      if (ValueSetRequested)
-      {
-        DisplayMessageLX200(m_client->set(cmd), false);
       }
     }
     else
@@ -194,7 +196,6 @@ void SmartHandController::menuFocuserConfig()
 }
 void SmartHandController::menuFocuserMotor()
 {
-  char cmd[50];
   const char *string_list_Focuser = T_DISPLAYSETTINGS "\n" T_RESOLUTION "\n" T_ROTATION "\n" T_STEPSPERROT "\n" T_MICROSTEP "\n" T_CURRENT;
   unsigned int res, mu, curr, steprot;
   bool rev;
@@ -234,7 +235,11 @@ void SmartHandController::menuFocuserMotor()
       {
         value = res;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_INCREMENTATION, "", &value, 1, 512, 5, 0, " " T_MICROSTEP);
-        sprintf(cmd, ":F8,%03d#", (int)(value));
+        if (ValueSetRequested)
+        {
+          DisplayMessageLX200(m_client->setFocuserResolution((int)value), false);
+          delay(250);
+        }
         break;
       }
       case 3:
@@ -243,8 +248,8 @@ void SmartHandController::menuFocuserMotor()
         uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, T_ROTATION, (uint8_t)rev + 1, string_list);
         if (choice)
         {
-          sprintf(cmd, ":F7,%d#", (int)(choice - 1));
-          ValueSetRequested = true;
+          DisplayMessageLX200(m_client->setFocuserRotation((int)(choice - 1)), false);
+          delay(250);
         }
         break;
       }
@@ -252,7 +257,11 @@ void SmartHandController::menuFocuserMotor()
       {
         value = steprot;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_STEPSPERROT, "", &value, 10, 800, 3, 0, " " T_MICROSTEP);
-        sprintf(cmd, ":Fr,%03d#", (int)(value));
+        if (ValueSetRequested)
+        {
+          DisplayMessageLX200(m_client->setFocuserStepPerRot((int)value), false);
+          delay(250);
+        }
         break;
       }
       case 5:
@@ -264,8 +273,8 @@ void SmartHandController::menuFocuserMotor()
         if (choice)
         {
           microStep = choice - 1 + 2;
-          sprintf(cmd, ":Fm,%d#", microStep);
-          ValueSetRequested = true;
+          DisplayMessageLX200(m_client->setFocuserMicro((int)microStep), false);
+          delay(250);
         }
         break;
       }
@@ -273,16 +282,15 @@ void SmartHandController::menuFocuserMotor()
       {
         value = curr;
         ValueSetRequested = display->UserInterfaceInputValueFloat(&buttonPad, T_CURRENT, "", &value, 1, 160, 10, 0, "0 mA");
-        sprintf(cmd, ":Fc,%03d#", (int)(value));
+        if (ValueSetRequested)
+        {
+          DisplayMessageLX200(m_client->setFocuserCurrent((int)value), false);
+          delay(250);
+        }
         break;
       }
       default:
         break;
-      }
-      if (ValueSetRequested)
-      {
-        DisplayMessageLX200(m_client->set(cmd), false);
-        delay(250);
       }
     }
     else
