@@ -405,8 +405,10 @@ void TeenAstroMountStatus::updateAllState(bool force)
     return;
   }
 
-  // Cache the raw string (add '#' for WiFi bridge forwarding).
-  snprintf(m_allStateB64, sizeof(m_allStateB64), "%s#", raw);
+  // Cache the raw string (add '#' for WiFi bridge forwarding). strlen(raw)==GXAS_B64_LEN was checked above.
+  memcpy(m_allStateB64, raw, (size_t)GXAS_B64_LEN);
+  m_allStateB64[GXAS_B64_LEN] = '#';
+  m_allStateB64[GXAS_B64_LEN + 1] = '\0';
   m_timerAllState.markUpdated();
 
   // ── Status bytes 0-5 → m_mount ────────────────────────────────────────

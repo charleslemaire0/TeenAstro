@@ -109,12 +109,17 @@ void TeenAstroWifi::handleConfigurationMotors()
 {
   if (busyGuard()) return;
   s_client->setTimeout(WebTimeout);
+  const bool hadMutation = processConfigurationMotorsGet();
+  if (hadMutation && !restartRequired_t1)
+  {
+    sendRedirectAfterMutation("/configuration_motors.htm");
+    return;
+  }
   sendHtmlStart();
   char temp[320] = "";
   char temp2[50] = "";
   String data;
 
-  processConfigurationMotorsGet();
   preparePage(data, ServerPage::Motors);
   sendHtml(data);
   if (restartRequired_t1)
@@ -257,8 +262,9 @@ void TeenAstroWifi::handleConfigurationMotors()
   s_handlerBusy = false;
 }
 
-void TeenAstroWifi::processConfigurationMotorsGet()
+bool TeenAstroWifi::processConfigurationMotorsGet()
 {
+  bool any = false;
   String v;
   int i;
   float f;
@@ -267,6 +273,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   v = server.arg("mw");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 20)))
       s_client->setStepsPerSecond(i);
   }
@@ -275,12 +282,14 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   v = server.arg("MaxR");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4000)))
       s_client->setMaxRate(i);
   }
   v = server.arg("Acc");
   if (v != "")
   {
+    any = true;
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.1) && (f <= 25)))
       s_client->setAcceleration(f);
   }
@@ -291,6 +300,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
     v = server.arg(argName);
     if (v != "")
     {
+      any = true;
       if (atof2((char*)v.c_str(), &f))
         s_client->setSpeedRate(idx, f);
     }
@@ -298,6 +308,7 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   v = server.arg("RD");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4)))
       s_client->setDeadband(i);
   }
@@ -310,47 +321,47 @@ void TeenAstroWifi::processConfigurationMotorsGet()
     // Rotation
     sprintf(argName, "mrot%d", ax);
     v = server.arg(argName);
-    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) s_client->writeReverse(ax, i); }
+    if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) s_client->writeReverse(ax, i); }
 
     // Gear
     sprintf(argName, "mge%d", ax);
     v = server.arg(argName);
-    if (v != "") { if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 60000))) s_client->writeTotGear(ax, f); }
+    if (v != "") { any = true; if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 60000))) s_client->writeTotGear(ax, f); }
 
     // Steps per rotation
     sprintf(argName, "mst%d", ax);
     v = server.arg(argName);
-    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400))) s_client->writeStepPerRot(ax, i); }
+    if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400))) s_client->writeStepPerRot(ax, i); }
 
     // Microsteps
     sprintf(argName, "mmu%d", ax);
     v = server.arg(argName);
-    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256))) s_client->writeMicro(ax, (float)((int)log2(i))); }
+    if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256))) s_client->writeMicro(ax, (float)((int)log2(i))); }
 
     // Backlash
     sprintf(argName, "mbl%d", ax);
     v = server.arg(argName);
-    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999))) s_client->writeBacklash(ax, (float)i); }
+    if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999))) s_client->writeBacklash(ax, (float)i); }
 
     // Backlash rate
     sprintf(argName, "mblr%d", ax);
     v = server.arg(argName);
-    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 64))) s_client->writeBacklashRate(ax, (float)i); }
+    if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 64))) s_client->writeBacklashRate(ax, (float)i); }
 
     // Low current
     sprintf(argName, "mlc%d", ax);
     v = server.arg(argName);
-    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800))) s_client->writeLowCurr(ax, i); }
+    if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800))) s_client->writeLowCurr(ax, i); }
 
     // High current
     sprintf(argName, "mhc%d", ax);
     v = server.arg(argName);
-    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800))) s_client->writeHighCurr(ax, i); }
+    if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800))) s_client->writeHighCurr(ax, i); }
 
     // Silent mode
     sprintf(argName, "ms%d", ax);
     v = server.arg(argName);
-    if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) s_client->writeSilentStep(ax, i); }
+    if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) s_client->writeSilentStep(ax, i); }
   }
 
   // Time zone
@@ -358,16 +369,20 @@ void TeenAstroWifi::processConfigurationMotorsGet()
   v = server.arg("u1");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -13) && (i <= 13)))
       ut_hrs = i;
   }
   v = server.arg("u2");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i == 00) || (i == 30) || (i == 45)))
     {
       if ((ut_hrs >= -13) && (ut_hrs <= 13))
         s_client->setTimeZone((float)(-(ut_hrs * 60 + i) / 60.0));
     }
   }
+
+  return any;
 }

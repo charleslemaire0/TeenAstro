@@ -146,10 +146,15 @@ const char html_configPosFocuser[] PROGMEM =
 void TeenAstroWifi::handleConfigurationFocuser()
 {
   if (busyGuard()) return;
+  s_client->setTimeout(WebTimeout);
+  if (processConfigurationFocuserGet())
+  {
+    sendRedirectAfterMutation("/configuration_focuser.htm");
+    return;
+  }
   char temp[320] = "";
   String data;
   sendHtmlStart();
-  processConfigurationFocuserGet();
   preparePage(data, ServerPage::Focuser);
   sendHtml(data);
   data += "<div class='card'>";
@@ -260,8 +265,9 @@ void TeenAstroWifi::handleConfigurationFocuser()
   s_handlerBusy = false;
 }
 
-void TeenAstroWifi::processConfigurationFocuserGet()
+bool TeenAstroWifi::processConfigurationFocuserGet()
 {
+  bool any = false;
   String v;
   int i;
   float f;
@@ -269,6 +275,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
   v = server.arg("Park");
   if (v != "")
   {
+    any = true;
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535)))
       s_client->setFocuserPark((int)f);
   }
@@ -276,6 +283,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
   v = server.arg("MaxPos");
   if (v != "")
   {
+    any = true;
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535)))
       s_client->setFocuserMaxPos((int)f);
   }
@@ -283,6 +291,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
   v = server.arg("LowSpeed");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 999)))
       s_client->setFocuserLowSpeed(i);
   }
@@ -290,6 +299,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
   v = server.arg("HighSpeed");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 999)))
       s_client->setFocuserHighSpeed(i);
   }
@@ -297,6 +307,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
   v = server.arg("GotoAcc");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99)))
       s_client->setFocuserGotoAcc(i);
   }
@@ -304,6 +315,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
   v = server.arg("ManAcc");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99)))
       s_client->setFocuserManAcc(i);
   }
@@ -311,6 +323,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
   v = server.arg("Dcc");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 99)))
       s_client->setFocuserDecel(i);
   }
@@ -318,6 +331,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
   v = server.arg("Rot");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
       s_client->setFocuserRotation(i);
   }
@@ -325,6 +339,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
   v = server.arg("Res");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 512)))
       s_client->setFocuserResolution(i);
   }
@@ -332,6 +347,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
   v = server.arg("StepRot");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 10) && (i <= 800)))
       s_client->setFocuserStepPerRot(i);
   }
@@ -339,6 +355,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
   v = server.arg("MuF");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 4) && (i <= 128)))
       s_client->setFocuserMicro((int)log2(i));
   }
@@ -346,6 +363,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
   v = server.arg("HcF");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 100) && (i <= 1600)))
       s_client->setFocuserCurrent(i / 10);
   }
@@ -358,6 +376,7 @@ void TeenAstroWifi::processConfigurationFocuserGet()
     v = server.arg(argPos);
     if (v != "")
     {
+      any = true;
       if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535)))
       {
         sprintf(argName, "Fn%d", k);
@@ -366,4 +385,6 @@ void TeenAstroWifi::processConfigurationFocuserGet()
       }
     }
   }
+
+  return any;
 }

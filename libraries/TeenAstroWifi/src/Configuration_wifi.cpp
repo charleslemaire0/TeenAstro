@@ -167,10 +167,14 @@ int TeenAstroWifi::hexToInt(String s)
 void TeenAstroWifi::handleWifi()
 {
   if (busyGuard()) return;
+  if (processWifiGet() && !restartRequired)
+  {
+    sendRedirectAfterMutation("/wifi.htm");
+    return;
+  }
   char temp[500] = "";
   String data;
   sendHtmlStart();
-  processWifiGet();
   preparePage(data, ServerPage::Wifi);
   sendHtml(data);
   data += "<div class='card'>";
@@ -258,8 +262,9 @@ void TeenAstroWifi::handleWifi()
   s_handlerBusy = false;
 }
 
-void TeenAstroWifi::processWifiGet()
+bool TeenAstroWifi::processWifiGet()
 {
+  bool any = false;
   String v, v1;
 
   boolean EEwrite = false;
@@ -268,14 +273,20 @@ void TeenAstroWifi::processWifiGet()
   v = server.arg("login");
   if (v != "")
   {
+    any = true;
     if (!strcmp(masterPassword, (char*)v.c_str())) loginRequired = false;
   }
   v = server.arg("logout");
-  if (v != "") loginRequired = true;
-  if (loginRequired) return;
+  if (v != "")
+  {
+    any = true;
+    loginRequired = true;
+  }
+  if (loginRequired) return any;
   v = server.arg("webpwd");
   if (v != "")
   {
+    any = true;
     strncpy(masterPassword, (char*)v.c_str(), sizeof(masterPassword) - 1);
     masterPassword[sizeof(masterPassword) - 1] = 0;
     TeenAstroWifi::EEPROM_writeString(EPPROM_password, masterPassword);
@@ -286,6 +297,7 @@ void TeenAstroWifi::processWifiGet()
   v = server.arg("wifimode");
   if (v != "")
   {
+    any = true;
     int mode = v.toInt();
     if (mode >= 0 && mode <= 3)
     {
@@ -299,6 +311,7 @@ void TeenAstroWifi::processWifiGet()
   v = server.arg("wificonnectionmode");
   if (v != "")
   {
+    any = true;
     activeWifiConnectMode = static_cast<WifiConnectMode>(v.toInt() > 0);
     EEPROM.write(EEPROM_WifiConnectMode, activeWifiConnectMode);
     EEwrite = true;
@@ -310,6 +323,7 @@ void TeenAstroWifi::processWifiGet()
   v = server.arg("ccto");
   if (v != "")
   {
+    any = true;
     CmdTimeout = v.toInt();
     EEPROM.write(EEPROM_CmdTimeout, CmdTimeout);
     EEwrite = true;
@@ -319,6 +333,7 @@ void TeenAstroWifi::processWifiGet()
   v = server.arg("wcto");
   if (v != "")
   {
+    any = true;
     WebTimeout = v.toInt();
     EEPROM.write(EEPROM_WebTimeout, WebTimeout);
     EEwrite = true;
@@ -333,6 +348,7 @@ void TeenAstroWifi::processWifiGet()
     v = server.arg(cmd);
     if (v != "")
     {
+      any = true;
       // 5c:cf:7f:0f:ad:85
       // first the length should be 17
       if (v.length() == 17)
@@ -358,6 +374,7 @@ void TeenAstroWifi::processWifiGet()
     v = server.arg(cmd); v1 = v;
     if (v != "")
     {
+      any = true;
       if (strcmp(wifi_sta_ssid[k], (char*)v.c_str())) restartRequired = true;
       strncpy(wifi_sta_ssid[k], (char*)v.c_str(), sizeof(wifi_sta_ssid[k]) - 1);
       wifi_sta_ssid[k][sizeof(wifi_sta_ssid[k]) - 1] = 0;
@@ -370,6 +387,7 @@ void TeenAstroWifi::processWifiGet()
     v = server.arg(cmd);
     if (v != "")
     {
+      any = true;
       if (strcmp(wifi_sta_pwd[k], (char*)v.c_str())) restartRequired = true;
       strncpy(wifi_sta_pwd[k], (char*)v.c_str(), sizeof(wifi_sta_pwd[k]) - 1);
       wifi_sta_pwd[k][sizeof(wifi_sta_pwd[k]) - 1] = 0;
@@ -380,6 +398,7 @@ void TeenAstroWifi::processWifiGet()
     v = server.arg(cmd);
     if (v != "")
     {
+      any = true;
       stationDhcpEnabled[k] = v.toInt();
     }
 
@@ -389,20 +408,21 @@ void TeenAstroWifi::processWifiGet()
     for (int i = 0; i < 4; i++)
     {
       sprintf(cmd, "staip%d%d", i, k);
-      v = server.arg(cmd); if (v != "") wifi_sta_ip[k][i] = v.toInt();
+      v = server.arg(cmd); if (v != "") { any = true; wifi_sta_ip[k][i] = v.toInt(); }
     }
     for (int i = 0; i < 4; i++)
     {
       sprintf(cmd, "stasn%d%d", i, k);
-      v = server.arg(cmd); if (v != "") wifi_sta_sn[k][i] = v.toInt();
+      v = server.arg(cmd); if (v != "") { any = true; wifi_sta_sn[k][i] = v.toInt(); }
     }
     for (int i = 0; i < 4; i++)
     {
       sprintf(cmd, "stagw%d%d", i, k);
-      v = server.arg(cmd); if (v != "") wifi_sta_gw[k][i] = v.toInt();
+      v = server.arg(cmd); if (v != "") { any = true; wifi_sta_gw[k][i] = v.toInt(); }
     }
     if (v1 != "")
     {
+      any = true;
       writeStation2EEPROM(k);
       EEwrite = true;
       restartRequired = true;
@@ -415,6 +435,7 @@ void TeenAstroWifi::processWifiGet()
   v = server.arg("apmac");
   if (v != "")
   {
+    any = true;
     // 5c:cf:7f:0f:ad:85
     // first the length should be 17
     if (v.length() == 17)
@@ -440,6 +461,7 @@ void TeenAstroWifi::processWifiGet()
   v = server.arg("apssid");
   if (v != "")
   {
+    any = true;
     if (strcmp(wifi_ap_ssid, (char*)v.c_str())) restartRequired = true;
     strncpy(wifi_ap_ssid, (char*)v.c_str(), sizeof(wifi_ap_ssid) - 1);
     wifi_ap_ssid[sizeof(wifi_ap_ssid) - 1] = 0;
@@ -450,6 +472,7 @@ void TeenAstroWifi::processWifiGet()
   v = server.arg("appwd");
   if (v != "")
   {
+    any = true;
     if (strcmp(wifi_ap_pwd, (char*)v.c_str())) restartRequired = true;
     strncpy(wifi_ap_pwd, (char*)v.c_str(), sizeof(wifi_ap_pwd) - 1);
     wifi_ap_pwd[sizeof(wifi_ap_pwd) - 1] = 0;
@@ -460,28 +483,29 @@ void TeenAstroWifi::processWifiGet()
   v = server.arg("apch");
   if (v != "")
   {
+    any = true;
     if (wifi_ap_ch != v.toInt()) restartRequired = true;
     wifi_ap_ch = v.toInt();
     apChanged = true;
   }
 
   // Access-Point ip
-  v = server.arg("apip0"); if (v != "") { wifi_ap_ip[0] = v.toInt(); apChanged = true; }
-  v = server.arg("apip1"); if (v != "") { wifi_ap_ip[1] = v.toInt(); apChanged = true; }
-  v = server.arg("apip2"); if (v != "") { wifi_ap_ip[2] = v.toInt(); apChanged = true; }
-  v = server.arg("apip3"); if (v != "") { wifi_ap_ip[3] = v.toInt(); apChanged = true; }
+  v = server.arg("apip0"); if (v != "") { any = true; wifi_ap_ip[0] = v.toInt(); apChanged = true; }
+  v = server.arg("apip1"); if (v != "") { any = true; wifi_ap_ip[1] = v.toInt(); apChanged = true; }
+  v = server.arg("apip2"); if (v != "") { any = true; wifi_ap_ip[2] = v.toInt(); apChanged = true; }
+  v = server.arg("apip3"); if (v != "") { any = true; wifi_ap_ip[3] = v.toInt(); apChanged = true; }
 
   // Access-Point SubNet
-  v = server.arg("apsn0"); if (v != "") { wifi_ap_sn[0] = v.toInt(); apChanged = true; }
-  v = server.arg("apsn1"); if (v != "") { wifi_ap_sn[1] = v.toInt(); apChanged = true; }
-  v = server.arg("apsn2"); if (v != "") { wifi_ap_sn[2] = v.toInt(); apChanged = true; }
-  v = server.arg("apsn3"); if (v != "") { wifi_ap_sn[3] = v.toInt(); apChanged = true; }
+  v = server.arg("apsn0"); if (v != "") { any = true; wifi_ap_sn[0] = v.toInt(); apChanged = true; }
+  v = server.arg("apsn1"); if (v != "") { any = true; wifi_ap_sn[1] = v.toInt(); apChanged = true; }
+  v = server.arg("apsn2"); if (v != "") { any = true; wifi_ap_sn[2] = v.toInt(); apChanged = true; }
+  v = server.arg("apsn3"); if (v != "") { any = true; wifi_ap_sn[3] = v.toInt(); apChanged = true; }
 
   // Access-Point Gateway
-  v = server.arg("apgw0"); if (v != "") { wifi_ap_gw[0] = v.toInt(); apChanged = true; }
-  v = server.arg("apgw1"); if (v != "") { wifi_ap_gw[1] = v.toInt(); apChanged = true; }
-  v = server.arg("apgw2"); if (v != "") { wifi_ap_gw[2] = v.toInt(); apChanged = true; }
-  v = server.arg("apgw3"); if (v != "") { wifi_ap_gw[3] = v.toInt(); apChanged = true; }
+  v = server.arg("apgw0"); if (v != "") { any = true; wifi_ap_gw[0] = v.toInt(); apChanged = true; }
+  v = server.arg("apgw1"); if (v != "") { any = true; wifi_ap_gw[1] = v.toInt(); apChanged = true; }
+  v = server.arg("apgw2"); if (v != "") { any = true; wifi_ap_gw[2] = v.toInt(); apChanged = true; }
+  v = server.arg("apgw3"); if (v != "") { any = true; wifi_ap_gw[3] = v.toInt(); apChanged = true; }
 
   if (apChanged)
   {
@@ -490,5 +514,6 @@ void TeenAstroWifi::processWifiGet()
     restartRequired = true;
   }
   if (EEwrite) EEPROM.commit();
+  return any;
 }
 
