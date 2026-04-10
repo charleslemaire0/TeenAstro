@@ -280,9 +280,9 @@ void Command_GX_AllConfig()
     // ── Limits (offset 56) ───────────────────────────────────────────────────
     gxcsPackI16(pkt, 56, (int16_t)round(limits.minutesPastMeridianGOTOE));
     gxcsPackI16(pkt, 58, (int16_t)round(limits.minutesPastMeridianGOTOW));
-    gxcsPackI16(pkt, 60, (int16_t)XEEPROM.readInt(getMountAddress(EE_minAxis1)));
+    gxcsPackI16(pkt, 60, -(int16_t)XEEPROM.readInt(getMountAddress(EE_minAxis1)));
     gxcsPackI16(pkt, 62, (int16_t)XEEPROM.readInt(getMountAddress(EE_maxAxis1)));
-    gxcsPackI16(pkt, 64, (int16_t)XEEPROM.readInt(getMountAddress(EE_minAxis2)));
+    gxcsPackI16(pkt, 64, -(int16_t)XEEPROM.readInt(getMountAddress(EE_minAxis2)));
     gxcsPackI16(pkt, 66, (int16_t)XEEPROM.readInt(getMountAddress(EE_maxAxis2)));
     gxcsPackU16(pkt, 68, (uint16_t)round(limits.underPoleLimitGOTO * 10.0));
     pkt[70] = (uint8_t)(int8_t)limits.minAlt;

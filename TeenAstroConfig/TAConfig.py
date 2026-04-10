@@ -39,7 +39,7 @@ MountDef = { 'mType':['Eq-German', 'Eq-Fork', 'AltAz-Tee', 'AltAz-Fork'],
       'msil2':[0,1],
       'hl':[i for i in range(-30,30)], 'ol':[i for i in range(60,92)], 'el':[i for i in range(-45,45)], 
       'wl':[i for i in range(-45,45)], 'ul':[i for i in range(9,13)],
-      'a1min':[i for i in range(-380,0)],'a1max':[i for i in range(0,380)],'a2min':[i for i in range(-380,0)],'a2max':[i for i in range(0,380)],
+      'a1min':[i for i in range(-360,360)],'a1max':[i for i in range(-360,360)],'a2min':[i for i in range(-360,360)],'a2max':[i for i in range(-360,360)],
       'mEn': [False]
       }
 
@@ -249,7 +249,7 @@ def writeMountData():
       cmdStr += str(int(float(Mount[tag]) * 10))
 
     elif tag == 'a1min' or tag == 'a2min':
-      cmdStr += str(10*abs(int(Mount[tag])))
+      cmdStr += str(10*(int(Mount[tag])))
 
     elif tag == 'a1max' or tag == 'a2max':
       cmdStr += str(10*int(Mount[tag]))
@@ -400,11 +400,11 @@ def readMountData():
       Mount[tag] = float(resp)
 
     elif (tag == 'a1min'):
-      Mount[tag] = -int(float(resp)/10)
+      Mount[tag] = int(float(resp)/10)
     elif (tag == 'a1max'):
       Mount[tag] = int(float(resp)/10)
     elif (tag == 'a2min'):
-      Mount[tag] = -int(float(resp)/10)
+      Mount[tag] = int(float(resp)/10)
     elif (tag == 'a2max'):
       Mount[tag] = int(float(resp)/10)
 

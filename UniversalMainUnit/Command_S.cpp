@@ -216,7 +216,7 @@ void Command_SX()
       break;
     case 'A':
       // :SXLA,VVVV# set user defined minAXIS1 (always negative)
-      i = (int)strtol(&command[5], NULL, 10);
+      i = -(int)strtol(&command[5], NULL, 10);
       XEEPROM.writeInt(getMountAddress(EE_minAxis1), i);
       initLimitMinAxis1();
       replyShortTrue();
@@ -229,8 +229,8 @@ void Command_SX()
       replyShortTrue();
       break;
     case 'C':
-      // :SXLC,VVVV# set user defined minAXIS2 (always positive)
-      i = (int)strtol(&command[5], NULL, 10);
+      // :SXLC,VVVV# set user defined minAXIS2 (always negative)
+      i = -(int)strtol(&command[5], NULL, 10);
       XEEPROM.writeInt(getMountAddress(EE_minAxis2), i);
       initLimitMinAxis2();
       replyShortTrue();
