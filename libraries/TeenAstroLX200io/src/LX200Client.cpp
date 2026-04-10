@@ -778,6 +778,13 @@ LX200RETURN LX200Client::setSpeed(uint8_t level)
   return set(cmd);
 }
 
+LX200RETURN LX200Client::spiralSearchStart(int arcMinutes)
+{
+  char cmd[12];
+  sprintf(cmd, ":M@%03d#", arcMinutes);
+  return set(cmd);
+}
+
 // ===========================================================================
 //  Home / Park
 // ===========================================================================
@@ -832,6 +839,33 @@ LX200RETURN LX200Client::focuserResetConfig() { return set(":F!#"); }
 LX200RETURN LX200Client::focuserSaveConfig() { return set(":F$#"); }
 LX200RETURN LX200Client::focuserGotoHome()   { return set(":FS,0#"); }
 
+LX200RETURN LX200Client::focuserPadMoveOut() { return set(":FO#"); }
+LX200RETURN LX200Client::focuserPadMoveIn()  { return set(":FI#"); }
+LX200RETURN LX200Client::focuserPadStopOut() { return set(":Fo#"); }
+LX200RETURN LX200Client::focuserPadStopIn()  { return set(":Fi#"); }
+
+LX200RETURN LX200Client::focuserGotoUserSlot(int slot)
+{
+  if (slot < 0 || slot > 9) return LX200_INVALIDCOMMAND;
+  char cmd[10];
+  sprintf(cmd, ":Fg%d#", slot);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::focuserGotoPosition(int pos)
+{
+  char cmd[16];
+  sprintf(cmd, ":FG,%05d#", pos);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::focuserSyncPosition(int pos)
+{
+  char cmd[16];
+  sprintf(cmd, ":FS,%05d#", pos);
+  return set(cmd);
+}
+
 LX200RETURN LX200Client::focuserIsConnected(bool& connected)
 {
   char out[LX200_SBUF];
@@ -876,7 +910,8 @@ LX200RETURN LX200Client::getAcceleration(float& val)
 LX200RETURN LX200Client::setAcceleration(float val)
 {
   char cmd[LX200_SBUF];
-  sprintf(cmd, ":SXRA,%d#", (int)val);
+  // Firmware treats payload as integer N with degrees = 0.1 * N (see :SXRA in Command_SX).
+  sprintf(cmd, ":SXRA,%d#", (int)(val * 10.f + 0.5f));
   return set(cmd);
 }
 
@@ -923,7 +958,10 @@ LX200RETURN LX200Client::getSpeedRate(uint8_t idx, float& val)
 LX200RETURN LX200Client::setSpeedRate(uint8_t idx, float val)
 {
   char cmd[LX200_SBUF];
-  sprintf(cmd, ":SXR%c,%d#", '0' + idx, (int)val);
+  // Firmware :SXR0 uses EEPROM units of 0.01× sidereal (same as SHC :SXR0,%03d with value*100).
+  // Rates 1–3 are integer multipliers 1–255.
+  int enc = (idx == 0) ? (int)(val * 100.f + 0.5f) : (int)val;
+  sprintf(cmd, ":SXR%c,%d#", '0' + idx, enc);
   return set(cmd);
 }
 
@@ -993,6 +1031,30 @@ LX200RETURN LX200Client::getAxisLimit(char mode, char* out, int len)
   char cmd[10] = ":GXlX#";
   cmd[4] = mode;
   return get(cmd, out, len);
+}
+
+LX200RETURN LX200Client::getUserAxisLimit(char corner, int& tenths)
+{
+  if (corner < 'A' || corner > 'D') return LX200_INVALIDCOMMAND;
+  char cmd[10];
+  sprintf(cmd, ":GXL%c#", corner);
+  char out[LX200_SBUF];
+  LX200RETURN ret = get(cmd, out, sizeof(out));
+  if (ret != LX200_VALUEGET) return ret;
+  tenths = (int)strtol(out, NULL, 10);
+  return LX200_VALUEGET;
+}
+
+LX200RETURN LX200Client::getMountTypeAxisLimit(char corner, int& tenths)
+{
+  if (corner < 'A' || corner > 'D') return LX200_INVALIDCOMMAND;
+  char cmd[10];
+  sprintf(cmd, ":GXl%c#", corner);
+  char out[LX200_SBUF];
+  LX200RETURN ret = get(cmd, out, sizeof(out));
+  if (ret != LX200_VALUEGET) return ret;
+  tenths = (int)strtol(out, NULL, 10);
+  return LX200_VALUEGET;
 }
 
 LX200RETURN LX200Client::setAxisLimit(char mode, float val)
@@ -1100,6 +1162,19 @@ LX200RETURN LX200Client::setSiteName(const char* name)
 
 LX200RETURN LX200Client::getTimeZoneStr(char* out, int len) { return get(":GG#", out, len); }
 
+LX200RETURN LX200Client::getTimeZoneHours(float& hours)
+{
+  char out[LX200_SBUF];
+  LX200RETURN ret = get(":GG#", out, sizeof(out));
+  if (ret != LX200_VALUEGET) return ret;
+  char* end = nullptr;
+  double f = strtod(out, &end);
+  if (end == out) return LX200_GETVALUEFAILED;
+  if (f < -14.0 || f > 14.0) return LX200_GETVALUEFAILED;
+  hours = (float)f;
+  return LX200_VALUEGET;
+}
+
 LX200RETURN LX200Client::setTimeZone(float tz)
 {
   char cmd[16]; sprintf(cmd, ":SG%+05.1f#", tz); return set(cmd);
@@ -1110,19 +1185,39 @@ LX200RETURN LX200Client::getLongitudeStr(char* out, int len) { return get(":Ggf#
 
 LX200RETURN LX200Client::setLatitudeDMS(int sign, int deg, int min, int sec)
 {
-  char cmd[20]; sprintf(cmd, ":St%c%02d:%02d:%02d#", sign ? '-' : '+', deg, min, sec);
+  char cmd[24];
+  sprintf(cmd, ":St%c%03d:%02d:%02d#", sign ? '-' : '+', deg, min, sec);
   return set(cmd);
 }
 
 LX200RETURN LX200Client::setLongitudeDMS(int sign, int deg, int min, int sec)
 {
-  char cmd[20]; sprintf(cmd, ":Sg%c%03d:%02d:%02d#", sign ? '-' : '+', deg, min, sec);
+  char cmd[24];
+  sprintf(cmd, ":Sg%c%04d:%02d:%02d#", sign ? '-' : '+', deg, min, sec);
   return set(cmd);
+}
+
+LX200RETURN LX200Client::getElevationMeters(int& meters)
+{
+  char out[LX200_SBUF];
+  LX200RETURN ret = get(":Ge#", out, sizeof(out));
+  if (ret != LX200_VALUEGET) return ret;
+  meters = (int)strtol(out, nullptr, 10);
+  return LX200_VALUEGET;
 }
 
 LX200RETURN LX200Client::setElevation(int val)
 {
   char cmd[16]; sprintf(cmd, ":Se%+04d#", val); return set(cmd);
+}
+
+LX200RETURN LX200Client::setLocalDate(int month, int day, int year)
+{
+  int yy = year % 100;
+  if (yy < 0) yy += 100;
+  char cmd[20];
+  sprintf(cmd, ":SC%02d/%02d/%02d#", month, day, yy);
+  return set(cmd);
 }
 
 LX200RETURN LX200Client::setUTCDateRaw(int month, int day, int year)
@@ -1141,8 +1236,24 @@ LX200RETURN LX200Client::setMountType(int type)
 }
 
 // ===========================================================================
-//  Tracking rates — stored (write)
+//  Tracking rates — stored drift (read / write)
 // ===========================================================================
+
+LX200RETURN LX200Client::getStoredTrackRateRA(long& val)
+{
+  char out[LX200_SBUF];
+  LX200RETURN ret = get(":GXRe#", out, sizeof(out));
+  if (ret == LX200_VALUEGET) val = strtol(out, nullptr, 10);
+  return ret;
+}
+
+LX200RETURN LX200Client::getStoredTrackRateDec(long& val)
+{
+  char out[LX200_SBUF];
+  LX200RETURN ret = get(":GXRf#", out, sizeof(out));
+  if (ret == LX200_VALUEGET) val = strtol(out, nullptr, 10);
+  return ret;
+}
 
 LX200RETURN LX200Client::setStoredTrackRateRA(long val)
 {
@@ -1204,6 +1315,8 @@ LX200RETURN LX200Client::getDate(char* out, int len) { return get(":GC#", out, l
 LX200RETURN LX200Client::getElevation(char* out, int len) { return get(":Ge#", out, len); }
 LX200RETURN LX200Client::syncTime()           { return set(":gs#"); }
 LX200RETURN LX200Client::syncLocation()       { return set(":gt#"); }
+LX200RETURN LX200Client::reticuleBrightnessAdjust(bool brighter) { return set(brighter ? ":B+#" : ":B-#"); }
+LX200RETURN LX200Client::enableWifiBridge(bool on) { return set(on ? ":EW1#" : ":EW0#"); }
 LX200RETURN LX200Client::reboot()             { return set(":$!#"); }
 LX200RETURN LX200Client::factoryReset()       { return set(":$$#"); }
 LX200RETURN LX200Client::encoderSync()        { return set(":ECS#"); }
