@@ -1186,14 +1186,14 @@ LX200RETURN LX200Client::getLongitudeStr(char* out, int len) { return get(":Ggf#
 LX200RETURN LX200Client::setLatitudeDMS(int sign, int deg, int min, int sec)
 {
   char cmd[24];
-  sprintf(cmd, ":St%c%03d:%02d:%02d#", sign ? '-' : '+', deg, min, sec);
+  sprintf(cmd, ":St%c%02d:%02d:%02d#", sign ? '-' : '+', deg, min, sec);
   return set(cmd);
 }
 
 LX200RETURN LX200Client::setLongitudeDMS(int sign, int deg, int min, int sec)
 {
   char cmd[24];
-  sprintf(cmd, ":Sg%c%04d:%02d:%02d#", sign ? '-' : '+', deg, min, sec);
+  sprintf(cmd, ":Sg%c%03d:%02d:%02d#", sign ? '-' : '+', deg, min, sec);
   return set(cmd);
 }
 
