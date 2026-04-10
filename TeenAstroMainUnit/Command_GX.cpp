@@ -547,6 +547,12 @@ static void Command_GX_Rates()
   case 'X':
     sprintf(commandState.reply, "%d#", XEEPROM.readUShort(getMountAddress(EE_maxRate)));
     break;
+  case 'e':
+    sprintf(commandState.reply, "%ld#", (long)mount.tracking.storedTrakingRateRA);
+    break;
+  case 'f':
+    sprintf(commandState.reply, "%ld#", (long)mount.tracking.storedTrakingRateDEC);
+    break;
   case 'r':
     // :GXRr# — ASCOM RA tracking offset (RA sec/sidereal sec) as 16 lowercase hex chars (IEEE754 LE) + '#'
   {

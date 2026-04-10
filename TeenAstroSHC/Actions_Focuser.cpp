@@ -13,14 +13,12 @@ void SmartHandController::menuFocuserAction()
   buttonPad.setMenuMode();
   int idx = 0;
   int idxs[10] = { -1,-1,-1,-1,-1,-1,-1,-1,-1,-1 };
-  char temp[20] = { 0 };
   char txt[150] = { 0 };
   char out[20];
 
   for (int k = 0; k < 10; k++)
   {
-    sprintf(temp, ":Fx%d#", k);
-    m_client->get(temp, out, 20);
+    m_client->getFocuserUserPos(k, out, sizeof(out));
     if (out[0] == 'P')
     {
       strcat(txt, &out[7]);
@@ -74,10 +72,8 @@ void SmartHandController::menuFocuserAction()
       }
       else if (choice - 1 < idx)
       {
-        char cmd[15];
-        sprintf(cmd, ":Fg%d#", idxs[choice - 1]);
         DisplayMessage(T_GOTO, T_POSITION, 1000);
-        m_client->set(cmd);
+        m_client->focuserGotoUserSlot(idxs[choice - 1]);
         exitMenu = true;
       }
       else
@@ -88,10 +84,8 @@ void SmartHandController::menuFocuserAction()
         {
           if (display->UserInterfaceInputValueFloat(&buttonPad, T_GOTOPOSITION, "", &FocuserPos, 0, 65535, 5, 0, ""))
           {
-            char cmd[15];
-            sprintf(cmd, ":FG,%05d#", (int)(FocuserPos));
             DisplayMessage(T_GOTO, T_POSITION, 1000);
-            m_client->set(cmd);
+            m_client->focuserGotoPosition((int)FocuserPos);
             exitMenu = true;
           }
           break;
@@ -100,10 +94,8 @@ void SmartHandController::menuFocuserAction()
         {
           if (display->UserInterfaceInputValueFloat(&buttonPad, T_SYNCPOSITION, "", &FocuserPos, 0, 65535, 5, 0, ""))
           {
-            char cmd[15];
-            sprintf(cmd, ":FS,%05d#", (int)(FocuserPos));
             DisplayMessage(T_SYNCEDAT, T_POSITION, 1000);
-            m_client->set(cmd);
+            m_client->focuserSyncPosition((int)FocuserPos);
             exitMenu = true;
           }
           break;

@@ -161,9 +161,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuSpirale()
   char DEGREE_SYMBOL[] = { 0xB0, '\0' };
   if (display->UserInterfaceInputValueDMS(&buttonPad, T_FIELDOFVIEW, &angle, 60, 3600 * 3, 1, DEGREE_SYMBOL, "'", "", "", "", false))
   {
-    char out[32];
-    sprintf(out, ":M@%03d#", (int)(angle / 60));
-    if (m_client->set(out) == LX200_VALUESET)
+    if (m_client->spiralSearchStart((int)(angle / 60)) == LX200_VALUESET)
     {
       answer = MR_OK;
       DisplayMessage(T_SPIRAL, T_STARTED, 500);

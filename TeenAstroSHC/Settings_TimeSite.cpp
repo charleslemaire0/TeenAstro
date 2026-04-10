@@ -153,14 +153,12 @@ void SmartHandController::menuLocalTime()
 void SmartHandController::menuLocalTimeZone()
 {
   float val = 0;
-  if (DisplayMessageLX200(m_client->getFloat(":GG#", &val)))
+  if (DisplayMessageLX200(m_client->getTimeZoneHours(val)))
   {
     val *= -1;
     if (display->UserInterfaceInputValueFloatIncr(&buttonPad, T_TIMEZONE, "UTC ", &val, -12, 12, 3, 1, 0.5, " " T_HOUR))
     {
-      char cmd[15];
-      sprintf(cmd, ":SG%+05.1f#", -val);
-      if (DisplayMessageLX200(m_client->set(cmd),false))
+      if (DisplayMessageLX200(m_client->setTimeZone(-val), false))
         exitMenu = true;
     }
   }
@@ -174,9 +172,7 @@ void SmartHandController::menuLocalDate()
   {
     if (display->UserInterfaceInputValueDate(&buttonPad, T_DATE, year, month, day))
     {
-      char out[20];
-      sprintf(out, ":SC%02d/%02d/%02d#", month, day, year);
-      DisplayMessageLX200(m_client->set(out), false);
+      DisplayMessageLX200(m_client->setLocalDate((int)month, (int)day, (int)year), false);
     }
   }
   else
@@ -194,19 +190,13 @@ void SmartHandController::menuLatitude()
     long angle = degree_d * 3600;
     if (display->UserInterfaceInputValueLatitude(&buttonPad, T_LATITUDE, T_N " ", T_S " ", &angle))
     {
-      char cmd[20];
-      char sign = angle < 0 ? '-' : '+';
-      angle = abs(angle);
-      seconds = angle % 60;
-      // seconds = angle;
+      const bool south = angle < 0;
+      angle = labs(angle);
+      seconds = (int)(angle % 60);
       angle /= 60;
-      // seconds -=angle*60;
-      minute = angle % 60;
-      degree = angle / 60;
-      sprintf(cmd, ":St%+03d:%02d:%02d#", degree, minute, seconds);
-      //sprintf(cmd, ":St%+03d*%02d#", degree, minute);
-      cmd[3] = sign;
-      DisplayMessageLX200(m_client->set(cmd), false);
+      minute = (int)(angle % 60);
+      degree = (int)(angle / 60);
+      DisplayMessageLX200(m_client->setLatitudeDMS(south ? 1 : 0, degree, minute, seconds), false);
     }
   }
 }
@@ -220,32 +210,26 @@ void SmartHandController::menuLongitude()
     long angle = degree_d * 3600;
     if (display->UserInterfaceInputValueLongitude(&buttonPad, T_LONGITUDE, T_W " ", T_E " ", &angle))
     {
-      char cmd[20];
-      char sign = angle < 0 ? '-' : '+';
-      angle = abs(angle);
-      seconds = angle % 60;
+      const bool west = angle < 0;
+      angle = labs(angle);
+      seconds = (int)(angle % 60);
       angle /= 60;
-      //seconds -= angle*60;
-      minute = angle % 60;
-      degree = angle / 60;
-      sprintf(cmd, ":Sg%+04d:%02d:%02d#", degree, minute, seconds);
-      //sprintf(cmd, ":Sg%+04d*%02d#", degree, minute);
-      cmd[3] = sign;
-      DisplayMessageLX200(m_client->set(cmd), false);
+      minute = (int)(angle % 60);
+      degree = (int)(angle / 60);
+      DisplayMessageLX200(m_client->setLongitudeDMS(west ? 1 : 0, degree, minute, seconds), false);
     }
   }
 }
 
 void SmartHandController::menuElevation()
 {
-  char out[20];
-  if (DisplayMessageLX200(m_client->getElevation(out, sizeof(out))))
+  int altM = 0;
+  if (DisplayMessageLX200(m_client->getElevationMeters(altM)))
   {
-    float alt = (float)strtol(&out[0], NULL, 10);
+    float alt = (float)altM;
     if (display->UserInterfaceInputValueFloat(&buttonPad, T_SITEELEVATION, "", &alt, -200, 8000, 2, 0, " meters"))
     {
-      sprintf(out, ":Se%+04d#", (int)alt);
-      DisplayMessageLX200(m_client->set(out), false);
+      DisplayMessageLX200(m_client->setElevation((int)alt), false);
     }
   }
 }

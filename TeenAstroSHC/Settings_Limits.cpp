@@ -38,12 +38,10 @@ void SmartHandController::menuLimits()
 void SmartHandController::menuHorizon()
 {
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
-  char out[20];
   float angle = (float)ta_MountStatus.getCfgMinAlt();
   if (display->UserInterfaceInputValueFloat(&buttonPad, T_HORIZONLIMIT, "", &angle, -10, 20, 2, 0, " " T_DEGREE))
   {
-    sprintf(out, ":SXLH,%+03d#", (int)angle);
-    if (DisplayMessageLX200(m_client->set(out), false))
+    if (DisplayMessageLX200(m_client->setMinAltitude((int)angle), false))
       ta_MountStatus.updateAllConfig(true);
   }
 }
@@ -51,12 +49,10 @@ void SmartHandController::menuHorizon()
 void SmartHandController::menuOverhead()
 {
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
-  char out[20];
   float angle = (float)ta_MountStatus.getCfgMaxAlt();
   if (display->UserInterfaceInputValueFloat(&buttonPad, T_OVERHEADLIMIT, "", &angle, 60, 91, 2, 0, " " T_DEGREE))
   {
-    sprintf(out, ":SXLO,%02d#", (int)angle);
-    if (DisplayMessageLX200(m_client->set(out), false))
+    if (DisplayMessageLX200(m_client->setMaxAltitude((int)angle), false))
       ta_MountStatus.updateAllConfig(true);
   }
 }
@@ -64,13 +60,11 @@ void SmartHandController::menuOverhead()
 void SmartHandController::menuUnderPole()
 {
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
-  char cmd[15];
   // getCfgUnderPole10() returns underPoleLimitGOTO × 10 (same as :GXLU# response).
   float angle = ta_MountStatus.getCfgUnderPole10() / 10.0f;
   if (display->UserInterfaceInputValueFloat(&buttonPad, T_MAXHOURANGLE, "+-", &angle, 9, 12, 2, 1, " " T_HOURS))
   {
-    sprintf(cmd, ":SXLU,%03d#", (int)(angle * 10));
-    if (DisplayMessageLX200(m_client->set(cmd), false))
+    if (DisplayMessageLX200(m_client->setUnderPoleLimit(angle), false))
       ta_MountStatus.updateAllConfig(true);
   }
 }
@@ -79,12 +73,10 @@ void SmartHandController::menuUnderPole()
 void SmartHandController::menuFarFromPole()
 {
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
-  char out[20];
   float angle = (float)ta_MountStatus.getCfgMinDistPole();
   if (display->UserInterfaceInputValueFloat(&buttonPad, T_DISTANCE, "", &angle, 0, 181, 2, 0, " " T_DEGREE))
   {
-    sprintf(out, ":SXLS,%03d#", (int)angle);
-    if (DisplayMessageLX200(m_client->set(out), false))
+    if (DisplayMessageLX200(m_client->setMinDistFromPole((int)angle), false))
       ta_MountStatus.updateAllConfig(true);
   }
 }
@@ -93,15 +85,14 @@ void SmartHandController::menuFarFromPole()
 void SmartHandController::menuMeridian(bool east)
 {
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
-  char cmd[15];
-  // getCfgMeridianE/W() return arcminutes (same as :GXLE#/:GXLW# responses).
+  // getCfgMeridianE/W() return arcminutes × 4 (same as :GXLE#/:GXLW# responses).
   int16_t rawVal = east ? ta_MountStatus.getCfgMeridianE() : ta_MountStatus.getCfgMeridianW();
   float angle = rawVal / 4.0f;
   if (display->UserInterfaceInputValueFloat(&buttonPad, east ? T_MERIDIANLIMITE : T_MERIDIANLIMITW, "", &angle, -45, 45, 2, 0, " " T_DEGREE))
   {
-    sprintf(cmd, ":SXLX,%+03d#", (int)(angle * 4.0));
-    cmd[4] = east ? 'E' : 'W';
-    if (DisplayMessageLX200(m_client->set(cmd), false))
+    const int lim = (int)(angle * 4.0f);
+    LX200RETURN ret = east ? m_client->setLimitEast(lim) : m_client->setLimitWest(lim);
+    if (DisplayMessageLX200(ret, false))
       ta_MountStatus.updateAllConfig(true);
   }
 }
@@ -183,50 +174,40 @@ void SmartHandController::menuAxis(char mode)
 {
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
 
-  char out[20];
-  char cmd[15];
   char menu[32];
   const double fact = 10.;
   double minval = 0;
   double maxval = 360;
   double val    = 0;
-
-  // Build the :GXl[mode]# command (mount-type limits — read-only range bounds).
-  sprintf(cmd, ":GXlX#");
-  cmd[4] = mode;
+  int mountBound = 0;
 
   switch (mode)
   {
   case 'A':
     sprintf(menu, T_AXIS1MIN);
-    // Mount-type axis1 min → UI slider lower bound (raw int, NOT ÷ fact).
-    if (!DisplayMessageLX200(m_client->get(cmd, out, sizeof(out)))) return;
-    minval = (double)strtol(&out[0], NULL, 10);
-    // Current axis1 max from cache → UI slider upper bound.
+    if (!DisplayMessageLX200(m_client->getMountTypeAxisLimit('A', mountBound))) return;
+    minval = (double)mountBound;
     maxval = ta_MountStatus.getCfgAxis1Max() / fact;
-    // Current axis1 min from cache → the value being edited.
     val    = ta_MountStatus.getCfgAxis1Min() / fact;
     break;
   case 'B':
     sprintf(menu, T_AXIS1MAX);
-    // Mount-type axis1 max → UI slider upper bound.
-    if (!DisplayMessageLX200(m_client->get(cmd, out, sizeof(out)))) return;
-    maxval = (double)strtol(&out[0], NULL, 10);
-    // Current axis1 min from cache → UI slider lower bound.
+    if (!DisplayMessageLX200(m_client->getMountTypeAxisLimit('B', mountBound))) return;
+    maxval = (double)mountBound;
     minval = ta_MountStatus.getCfgAxis1Min() / fact;
     val    = ta_MountStatus.getCfgAxis1Max() / fact;
     break;
   case 'C':
     sprintf(menu, T_AXIS2MIN);
-    if (!DisplayMessageLX200(m_client->get(cmd, out, sizeof(out)))) return;
-    minval = (double)strtol(&out[0], NULL, 10);
+    if (!DisplayMessageLX200(m_client->getMountTypeAxisLimit('C', mountBound))) return;
+    minval = (double)mountBound;
     maxval = ta_MountStatus.getCfgAxis2Max() / fact;
     val    = ta_MountStatus.getCfgAxis2Min() / fact;
     break;
   case 'D':
     sprintf(menu, T_AXIS2MAX);
-    if (!DisplayMessageLX200(m_client->get(cmd, out, sizeof(out)))) return;
-    maxval = (double)strtol(&out[0], NULL, 10);
+    if (!DisplayMessageLX200(m_client->getMountTypeAxisLimit('D', mountBound))) return;
+    maxval = (double)mountBound;
     minval = ta_MountStatus.getCfgAxis2Min() / fact;
     val    = ta_MountStatus.getCfgAxis2Max() / fact;
     break;
@@ -237,9 +218,7 @@ void SmartHandController::menuAxis(char mode)
   float fval = (float)val;
   if (display->UserInterfaceInputValueFloat(&buttonPad, menu, "", &fval, minval, maxval, 3, 1, " " T_DEGREE))
   {
-    sprintf(cmd, ":SXLX,%+03d#", (int)(fval * fact));
-    cmd[4] = mode;
-    if (DisplayMessageLX200(m_client->set(cmd), false))
+    if (DisplayMessageLX200(m_client->setAxisLimit(mode, fval), false))
       ta_MountStatus.updateAllConfig(true);
   }
 }

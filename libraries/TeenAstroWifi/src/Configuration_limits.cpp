@@ -139,14 +139,14 @@ void TeenAstroWifi::handleConfigurationLimits()
     sendHtml(data);
   }
 
-  // Axis limits
+  // Axis limits (user EEPROM :GXLA#–D# vs mount-type :GXlA#–D#)
   bool ok = true;
-  short anglemin, anglemax, angle_i_min, angle_i_max;
+  int anglemin = 0, anglemax = 0, angle_i_min = 0, angle_i_max = 0;
 
-  ok =  s_client->getShort(":GXLA#", &anglemin)  == LX200_VALUEGET;
-  ok &= s_client->getShort(":GXLB#", &anglemax)  == LX200_VALUEGET;
-  ok &= s_client->getShort(":GXlA#", &angle_i_min) == LX200_VALUEGET;
-  ok &= s_client->getShort(":GXlB#", &angle_i_max) == LX200_VALUEGET;
+  ok =  s_client->getUserAxisLimit('A', anglemin) == LX200_VALUEGET;
+  ok &= s_client->getUserAxisLimit('B', anglemax) == LX200_VALUEGET;
+  ok &= s_client->getMountTypeAxisLimit('A', angle_i_min) == LX200_VALUEGET;
+  ok &= s_client->getMountTypeAxisLimit('B', angle_i_max) == LX200_VALUEGET;
 
   if (ok)
   {
@@ -157,10 +157,10 @@ void TeenAstroWifi::handleConfigurationLimits()
     sendHtml(data);
   }
 
-  ok =  s_client->getShort(":GXLC#", &anglemin)  == LX200_VALUEGET;
-  ok &= s_client->getShort(":GXLD#", &anglemax)  == LX200_VALUEGET;
-  ok &= s_client->getShort(":GXlC#", &angle_i_min) == LX200_VALUEGET;
-  ok &= s_client->getShort(":GXlD#", &angle_i_max) == LX200_VALUEGET;
+  ok =  s_client->getUserAxisLimit('C', anglemin) == LX200_VALUEGET;
+  ok &= s_client->getUserAxisLimit('D', anglemax) == LX200_VALUEGET;
+  ok &= s_client->getMountTypeAxisLimit('C', angle_i_min) == LX200_VALUEGET;
+  ok &= s_client->getMountTypeAxisLimit('D', angle_i_max) == LX200_VALUEGET;
 
   if (ok)
   {

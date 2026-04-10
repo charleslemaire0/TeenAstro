@@ -6,9 +6,6 @@
 #include "u8g2_sdl2.h"
 #endif
 
-static const char* BreakRC[6] = { ":Qn#", ":Qs#", ":Qe#", ":Qw#", ":Fo#", ":Fi#" };
-static const char* RC[6]      = { ":Mn#", ":Ms#", ":Me#", ":Mw#", ":FO#", ":FI#" };
-
 void SmartHandController::setup(
   const char version[], 
   const int pin[7], 
@@ -184,7 +181,7 @@ void SmartHandController::setup(
 
 #ifdef EMU_SHC
   if (buttonPad.isWifiOn() && m_client)
-    m_client->set(":EW1#");
+    m_client->enableWifiBridge(true);
 #endif
 
 }
@@ -547,12 +544,7 @@ void SmartHandController::manualMove(bool &moving)
     }
     if (stop)
     {
-#ifdef EMU_SHC
       m_client->stopSlew();
-#else
-      Ser.print(":Q#");
-      Ser.flush();
-#endif
       time_last_action = millis();
       display->sleepOff();
       ta_MountStatus.backStepAlign();
@@ -569,9 +561,21 @@ void SmartHandController::manualMove(bool &moving)
         buttonCommand = true;
         Move[k - 1] = false;
         if (k < 5)
-          m_client->set(BreakRC[k - 1]);
+        {
+          switch (k)
+          {
+          case 1: m_client->stopMoveNorth(); break;
+          case 2: m_client->stopMoveSouth(); break;
+          case 3: m_client->stopMoveEast(); break;
+          case 4: m_client->stopMoveWest(); break;
+          default: break;
+          }
+        }
         else
-          Move[k - 1] = !(m_client->set(BreakRC[k - 1]) == LX200_VALUESET);
+        {
+          LX200RETURN r = (k == 5) ? m_client->focuserPadStopOut() : m_client->focuserPadStopIn();
+          Move[k - 1] = !(r == LX200_VALUESET);
+        }
         continue;
       }
       else if (eventbuttons[0] == E_NONE && !Move[k - 1] && (eventbuttons[k] == E_LONGPRESS || eventbuttons[k] == E_CLICK || eventbuttons[k] == E_LONGPRESSTART))
@@ -583,11 +587,21 @@ void SmartHandController::manualMove(bool &moving)
           if (!telescoplocked)
           {
             Move[k - 1] = true;
-            m_client->set(RC[k - 1]);
+            switch (k)
+            {
+            case 1: m_client->startMoveNorth(); break;
+            case 2: m_client->startMoveSouth(); break;
+            case 3: m_client->startMoveEast(); break;
+            case 4: m_client->startMoveWest(); break;
+            default: break;
+            }
           }
         }
         else if (!focuserlocked)
-          Move[k - 1] = (m_client->set(RC[k - 1]) == LX200_VALUESET);
+        {
+          LX200RETURN r = (k == 5) ? m_client->focuserPadMoveOut() : m_client->focuserPadMoveIn();
+          Move[k - 1] = (r == LX200_VALUESET);
+        }
         continue;
       }
       moving = moving || Move[k - 1];

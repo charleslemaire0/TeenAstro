@@ -228,6 +228,7 @@ public:
   LX200RETURN stopSlew();                        // :Q#
   LX200RETURN meridianFlip();                    // :MF#
   LX200RETURN setSpeed(uint8_t level);           // :R0# .. :R4#
+  LX200RETURN spiralSearchStart(int arcMinutes); // :M@NNN# (field size in arcminutes)
 
   // -----------------------------------------------------------------------
   //  Home / Park
@@ -272,6 +273,14 @@ public:
   LX200RETURN focuserResetConfig();              // :F!#
   LX200RETURN focuserSaveConfig();               // :F$#
   LX200RETURN focuserGotoHome();                 // :FS,0#
+  /// SHC gamepad-style continuous focuser motion (:FO#/:FI#, stop :Fo#/:Fi#) — forwarded to focuser hardware.
+  LX200RETURN focuserPadMoveOut();
+  LX200RETURN focuserPadMoveIn();
+  LX200RETURN focuserPadStopOut();
+  LX200RETURN focuserPadStopIn();
+  LX200RETURN focuserGotoUserSlot(int slot);     // :FgN#  (stored user slot 0–9)
+  LX200RETURN focuserGotoPosition(int pos);      // :FG,NNNNN#
+  LX200RETURN focuserSyncPosition(int pos);      // :FS,NNNNN# (sync current position)
   LX200RETURN focuserIsConnected(bool& connected); // :F~#
 
   // -----------------------------------------------------------------------
@@ -289,13 +298,13 @@ public:
   //  Extended GX/SX config — Rates & Acceleration
   // -----------------------------------------------------------------------
   LX200RETURN getAcceleration(float& val);       // :GXRA#
-  LX200RETURN setAcceleration(float val);        // :SXRA,val#
+  LX200RETURN setAcceleration(float val);        // :SXRA,val# (val in degrees; sent as tenths)
   LX200RETURN getMaxRate(int& val);              // :GXRX#
   LX200RETURN setMaxRate(int val);               // :SXRX,val#
   LX200RETURN getDeadband(int& val);             // :GXRD#
   LX200RETURN setDeadband(int val);              // :SXRD,val#
   LX200RETURN getSpeedRate(uint8_t idx, float& val);   // :GXRn#
-  LX200RETURN setSpeedRate(uint8_t idx, float val);    // :SXRn,val#
+  LX200RETURN setSpeedRate(uint8_t idx, float val);    // :SXRn,val# (idx 0: ×sidereal → sent as hundredths)
 
   // -----------------------------------------------------------------------
   //  Extended GX/SX config — Limits
@@ -312,7 +321,9 @@ public:
   LX200RETURN setLimitEast(int val);             // :SXLE,val#
   LX200RETURN getLimitWest(char* out, int len);  // :GXLW#
   LX200RETURN setLimitWest(int val);             // :SXLW,val#
-  LX200RETURN getAxisLimit(char mode, char* out, int len);   // :GXlA#..D# or :GXLA#..D#
+  LX200RETURN getAxisLimit(char mode, char* out, int len);   // :GXlA#..D# (mount-type bounds, raw string)
+  LX200RETURN getUserAxisLimit(char corner, int& tenths);   // :GXLA#..D# (stored user limits, int ×0.1°)
+  LX200RETURN getMountTypeAxisLimit(char corner, int& tenths); // :GXlA#..D#
   LX200RETURN setAxisLimit(char mode, float val);             // :SXLx,val#
 
   // -----------------------------------------------------------------------
@@ -342,19 +353,24 @@ public:
   LX200RETURN setSelectedSite(int val);                     // :W0#..:W3#
   LX200RETURN setSiteName(const char* name);                // :Sn name#
   LX200RETURN getTimeZoneStr(char* out, int len);           // :GG#
+  LX200RETURN getTimeZoneHours(float& hours);               // :GG# as float (mount UTC offset hours)
   LX200RETURN setTimeZone(float tz);                        // :SG+NN:MM#
   LX200RETURN getLatitudeStr(char* out, int len);           // :Gtf#
   LX200RETURN getLongitudeStr(char* out, int len);          // :Ggf#
-  LX200RETURN setLatitudeDMS(int sign, int deg, int min, int sec);   // :St+DD:MM:SS#
-  LX200RETURN setLongitudeDMS(int sign, int deg, int min, int sec);  // :Sg+DDD:MM:SS#
+  LX200RETURN setLatitudeDMS(int sign, int deg, int min, int sec);   // :St+sDD:MM:SS# (sign: 0=+, 1=-)
+  LX200RETURN setLongitudeDMS(int sign, int deg, int min, int sec);  // :Sg+sDDDD:MM:SS#
+  LX200RETURN getElevationMeters(int& meters);               // :Ge#
   LX200RETURN setElevation(int val);                        // :Se+NNNN#
+  LX200RETURN setLocalDate(int month, int day, int year);   // :SCMM/DD/YY# (local clock; YY = year % 100)
   LX200RETURN setUTCDateRaw(int month, int day, int year);  // :SXT1MM/DD/YY#
   LX200RETURN setUTCTimeRaw(int h, int m, int s);           // :SXT0HH:MM:SS#
   LX200RETURN setMountType(int type);                       // :S!1#..:S!4#
 
   // -----------------------------------------------------------------------
-  //  Tracking rates — stored (write)
+  //  Tracking rates — stored drift (read / write, units 1/10000 as on wire)
   // -----------------------------------------------------------------------
+  LX200RETURN getStoredTrackRateRA(long& val);             // :GXRe#
+  LX200RETURN getStoredTrackRateDec(long& val);            // :GXRf#
   LX200RETURN setStoredTrackRateRA(long val);               // :SXRe,val#
   LX200RETURN setStoredTrackRateDec(long val);              // :SXRf,val#
 
@@ -387,6 +403,8 @@ public:
   LX200RETURN getElevation(char* out, int len);  // :Ge#
   LX200RETURN syncTime();                        // :gs#
   LX200RETURN syncLocation();                    // :gt#
+  LX200RETURN reticuleBrightnessAdjust(bool brighter); // :B+# / :B-#
+  LX200RETURN enableWifiBridge(bool on);         // :EW1# / :EW0# (SHC → main unit WiFi for apps)
   LX200RETURN reboot();                          // :$!#
   LX200RETURN factoryReset();                    // :$$#
   LX200RETURN encoderSync();                     // :ECS#

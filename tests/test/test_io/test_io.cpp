@@ -358,6 +358,7 @@ void test_set_get_latitude(void) {
     prepareSetOk();
     LX200RETURN ret = client->setLatitudeDMS(0, 48, 51, 0);
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":St+048:51:00#", mockStream.getSent());
 
     // Get latitude back - server would reply with "+48*51:00"
     mockStream.clearSent();
@@ -372,6 +373,7 @@ void test_set_get_latitude_negative(void) {
     prepareSetOk();
     LX200RETURN ret = client->setLatitudeDMS(1, 33, 52, 0);
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":St-033:52:00#", mockStream.getSent());
 
     mockStream.clearSent();
     prepareGetLong("-33*52:00");
@@ -385,6 +387,7 @@ void test_set_get_longitude(void) {
     prepareSetOk();
     LX200RETURN ret = client->setLongitudeDMS(0, 2, 20, 0);
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":Sg+0002:20:00#", mockStream.getSent());
 
     mockStream.clearSent();
     prepareGetLong("+002*20:00");
@@ -398,6 +401,7 @@ void test_set_get_longitude_negative(void) {
     prepareSetOk();
     LX200RETURN ret = client->setLongitudeDMS(1, 122, 25, 0);
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":Sg-0122:25:00#", mockStream.getSent());
 
     mockStream.clearSent();
     prepareGetLong("-122*25:00");
@@ -431,6 +435,30 @@ void test_set_get_timezone(void) {
     ret = client->getTimeZoneStr(out, sizeof(out));
     TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
     TEST_ASSERT_DOUBLE_WITHIN(0.1, -5.0, atof(out));
+
+    mockStream.clearSent();
+    prepareGetLongPadded("+03.5", 7);
+    float tz = 0;
+    ret = client->getTimeZoneHours(tz);
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
+    TEST_ASSERT_FLOAT_WITHIN(0.05f, 3.5f, tz);
+}
+
+void test_set_local_date_wire_format(void) {
+    prepareSetOk();
+    LX200RETURN ret = client->setLocalDate(12, 25, 2025);
+    TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":SC12/25/25#", mockStream.getSent());
+}
+
+void test_get_elevation_meters(void) {
+    mockStream.clearSent();
+    prepareGetLongPadded("+130", 6);
+    int m = 0;
+    LX200RETURN ret = client->getElevationMeters(m);
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, ret);
+    TEST_ASSERT_EQUAL(130, m);
+    TEST_ASSERT_EQUAL_STRING(":Ge#", mockStream.getSent());
 }
 
 void test_set_get_selected_site(void) {
@@ -515,6 +543,7 @@ void test_set_get_acceleration(void) {
     prepareSetOk();
     LX200RETURN ret = client->setAcceleration(5.0);
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":SXRA,50#", mockStream.getSent());
 
     mockStream.clearSent();
     prepareGetLongPadded("5", 12);  // :GXRA# expects 12 chars
@@ -554,6 +583,13 @@ void test_set_get_speed_rate(void) {
     prepareSetOk();
     LX200RETURN ret = client->setSpeedRate(1, 4.0);
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":SXR1,4#", mockStream.getSent());
+
+    mockStream.clearSent();
+    prepareSetOk();
+    ret = client->setSpeedRate(0, 0.5f);
+    TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":SXR0,50#", mockStream.getSent());
 
     mockStream.clearSent();
     prepareGetLong("4");
@@ -1848,6 +1884,8 @@ int main(int argc, char** argv) {
     RUN_TEST(test_set_get_longitude_negative);
     RUN_TEST(test_set_get_elevation);
     RUN_TEST(test_set_get_timezone);
+    RUN_TEST(test_set_local_date_wire_format);
+    RUN_TEST(test_get_elevation_meters);
     RUN_TEST(test_set_get_selected_site);
     RUN_TEST(test_set_get_mount_idx);
     RUN_TEST(test_set_get_mount_description);

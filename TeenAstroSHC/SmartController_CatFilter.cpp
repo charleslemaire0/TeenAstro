@@ -109,7 +109,8 @@ void SmartHandController::setCatMgrFilters()
 
 SmartHandController::MENU_RESULT SmartHandController::menuFilterCon()
 {
-  char string_list_fCon[2000] = "";
+  static char string_list_fCon[2000]; // BSS, not stack (ESP8266 stack is tight)
+  string_list_fCon[0] = '\0';
   for (int l = 0; l < 89; l++)
   {
     if (l == 0) strcat(string_list_fCon, T_ALL); else strcat(string_list_fCon, cat_mgr.constellationCodeToStrLong(l - 1));

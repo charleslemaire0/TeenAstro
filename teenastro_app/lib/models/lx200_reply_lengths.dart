@@ -120,6 +120,8 @@ int? getExpectedReplyLength(String cmd) {
     case ":GXRB#": return 16;
     case ":GXRD#": return 4;
     case ":GXRX#": return 8;
+    case ":GXRe#": return 16;
+    case ":GXRf#": return 16;
     case ":GXT0#": return 8;
     case ":GXT1#": return 8;
     case ":GXT2#": return 16;

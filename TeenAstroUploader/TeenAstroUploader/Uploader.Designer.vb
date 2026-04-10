@@ -312,6 +312,7 @@ Partial Class Uploader
         Me.ClientSize = New System.Drawing.Size(390, 301)
         Me.Controls.Add(Me.RadioButtonLatest)
         Me.Controls.Add(Me.RadioButtonStable)
+        Me.Controls.Add(Me.ButtonOpenFirmwareFolder)
         Me.Controls.Add(Me.ButtonDownLoad)
         Me.Controls.Add(Me.ComboBoxFirmwareVersion)
         Me.Controls.Add(Me.Label6)

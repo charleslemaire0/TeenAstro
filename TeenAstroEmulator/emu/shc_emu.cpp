@@ -387,11 +387,11 @@ static int runAutomatedTests(LX200Client& lx200)
     printf("\n[TEST] Rates & Acceleration round-trip\n");
     {
         float accOut = 0;
-        TEST_CHECK(lx200.setAcceleration(100.0f) == LX200_VALUESET,
-                   "setAcceleration(100 -> 10.0 deg)", "rejected");
+        TEST_CHECK(lx200.setAcceleration(10.0f) == LX200_VALUESET,
+                   "setAcceleration(10.0 deg)", "rejected");
         TEST_CHECK(lx200.getAcceleration(accOut) == LX200_VALUEGET,
                    "getAcceleration", "no response");
-        printf("         Acceleration: set 100 (=10.0 deg) -> read %.1f\n", accOut);
+        printf("         Acceleration: set 10.0 deg -> read %.1f\n", accOut);
         TEST_CHECK(fabs(accOut - 10.0f) < 0.2f, "acceleration == 10.0", "mismatch");
 
         int maxRateOut = 0;
@@ -517,10 +517,10 @@ static int runAutomatedTests(LX200Client& lx200)
 
     printf("\n[TEST] WiFi\n");
     {
-        LX200RETURN wr = lx200.set(":EW1#");
-        TEST_CHECK(wr == LX200_VALUESET, "WiFi ON (:EW1#)", "rejected");
-        wr = lx200.set(":EW0#");
-        TEST_CHECK(wr == LX200_VALUESET, "WiFi OFF (:EW0#)", "rejected");
+        LX200RETURN wr = lx200.enableWifiBridge(true);
+        TEST_CHECK(wr == LX200_VALUESET, "WiFi ON (enableWifiBridge)", "rejected");
+        wr = lx200.enableWifiBridge(false);
+        TEST_CHECK(wr == LX200_VALUESET, "WiFi OFF (enableWifiBridge)", "rejected");
     }
 
     /* ============================================================ */
@@ -728,7 +728,7 @@ static int runAutomatedTests(LX200Client& lx200)
     printf("\n[TEST] Two-client alignment (App via WiFi, SHC reads star name)\n");
     {
         // Enable WiFi port (9999) on the emulator
-        LX200RETURN wr = lx200.set(":EW1#");
+        LX200RETURN wr = lx200.enableWifiBridge(true);
         TEST_CHECK(wr == LX200_VALUESET, "WiFi ON for two-client test", "rejected");
         SDL_Delay(500);
 
@@ -792,7 +792,7 @@ static int runAutomatedTests(LX200Client& lx200)
             appClient.alignAbort();
             SDL_Delay(200);
             ta_MountStatus.updateAllState(true);
-            lx200.set(":EW0#");
+            lx200.enableWifiBridge(false);
             printf("         Cleanup: alignment aborted, WiFi OFF\n");
         }
     }

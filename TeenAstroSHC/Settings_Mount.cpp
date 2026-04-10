@@ -126,9 +126,7 @@ void SmartHandController::menuMountType()
   tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_MOUNTTYPE, tmp_sel, string_list_Mount);
   if (tmp_sel)
   {
-    char out[10];
-    sprintf(out, ":S!%u#", tmp_sel);
-    LX200RETURN answ = m_client->set(out);
+    LX200RETURN answ = m_client->setMountType((int)tmp_sel);
 
     DisplayMessageLX200(answ, false);
     if (answ == LX200_VALUESET)
@@ -234,12 +232,10 @@ void SmartHandController::MenuRefractionForGoto()
 void SmartHandController::menuGuideRate()
 {
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
-  char cmd[20];
   float guiderate = ta_MountStatus.getCfgGuideRate();
   if (display->UserInterfaceInputValueFloat(&buttonPad, T_GUIDESPEED, "", &guiderate, 0.1f, 1.f, 4u, 2u, "x"))
   {
-    sprintf(cmd, ":SXR0,%03d#", (int)(guiderate * 100));
-    if (DisplayMessageLX200(m_client->set(cmd), false))
+    if (DisplayMessageLX200(m_client->setSpeedRate(0, guiderate), false))
       ta_MountStatus.updateAllConfig(true);
   }
 }
@@ -269,22 +265,22 @@ void SmartHandController::menuTrackRate()
 
 void SmartHandController::menuSetDriftRate(int axis)
 {
-  char outRate[20];
-  char cmd[20];
-  sprintf(cmd, ":GXRx#");
-  cmd[4] = axis == 0 ? 'e' : 'f';
+  long stored = 0;
+  LX200RETURN getRet = axis == 0 ? m_client->getStoredTrackRateRA(stored)
+                                 : m_client->getStoredTrackRateDec(stored);
   char title[20];
   char unit[20];
   axis == 0 ? strcpy(title, T_RIGHTASC) : strcpy(title, T_DECLINAISON);
   axis == 0 ? strcpy(unit, "s/SI") : strcpy(unit, "\"/SI");
-  if (DisplayMessageLX200(m_client->get(cmd, outRate, sizeof(outRate))))
+  if (DisplayMessageLX200(getRet, true))
   {
-    float rate = (float)atol(&outRate[0])/10000.0;
+    float rate = (float)stored / 10000.f;
     if (display->UserInterfaceInputValueFloat(&buttonPad, title, "", &rate, -2.f, 2.f, 6u, 4u, unit))
     {
-      sprintf(cmd, ":SXRx,%06ld#", (long)(rate*10000));
-      cmd[4] = axis == 0 ? 'e' : 'f';
-      DisplayMessageLX200(m_client->set(cmd),false);
+      long w = (long)(rate * 10000.f + (rate >= 0 ? 0.5f : -0.5f));
+      LX200RETURN setRet = axis == 0 ? m_client->setStoredTrackRateRA(w)
+                                    : m_client->setStoredTrackRateDec(w);
+      DisplayMessageLX200(setRet, false);
     }
   }
 }
@@ -301,9 +297,7 @@ void SmartHandController::menuReticule()
     selection = display->UserInterfaceSelectionList(&buttonPad, T_RETICULE, selection, options);
     if (selection > 0)
     {
-      char cmd[5] = ":Bn#";
-      cmd[2] = selection == 1 ? '+' : '-';
-      DisplayMessageLX200(m_client->set(cmd), false);
+      DisplayMessageLX200(m_client->reticuleBrightnessAdjust(selection == 1), false);
     }
   }
 }
