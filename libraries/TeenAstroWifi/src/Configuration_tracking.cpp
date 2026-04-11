@@ -54,14 +54,18 @@ const char html_Opt_1[] PROGMEM =
 void TeenAstroWifi::handleConfigurationTracking()
 {
   if (busyGuard()) return;
+  s_client->setTimeout(WebTimeout);
+  if (processConfigurationTrackingGet())
+  {
+    sendRedirectAfterMutation("/configuration_tracking.htm");
+    return;
+  }
   ta_MountStatus.updateMount();
 
-  s_client->setTimeout(WebTimeout);
   sendHtmlStart();
   char temp[320] = "";
   char temp1[50] = "";
   String data;
-  processConfigurationTrackingGet();
   preparePage(data, ServerPage::Tracking);
   sendHtml(data);
 
@@ -115,8 +119,9 @@ void TeenAstroWifi::handleConfigurationTracking()
   s_handlerBusy = false;
 }
 
-void TeenAstroWifi::processConfigurationTrackingGet()
+bool TeenAstroWifi::processConfigurationTrackingGet()
 {
+  bool any = false;
   String v;
   int i;
   float f;
@@ -124,12 +129,14 @@ void TeenAstroWifi::processConfigurationTrackingGet()
   v = server.arg("trackr");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
       i == 1 ? s_client->enableRefraction(true) : s_client->enableRefraction(false);
   }
   v = server.arg("trackboth");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
     {
       i == 1 ? s_client->setStepperMode(2) : s_client->setStepperMode(1);
@@ -139,18 +146,21 @@ void TeenAstroWifi::processConfigurationTrackingGet()
   v = server.arg("RRA");
   if (v != "")
   {
+    any = true;
     if ((atof2((char*)v.c_str(), &f)) && ((f >= -5) && (f <= 5)))
       s_client->setStoredTrackRateRA((long)(f * 10000));
   }
   v = server.arg("RDEC");
   if (v != "")
   {
+    any = true;
     if ((atof2((char*)v.c_str(), &f)) && ((f >= -5) && (f <= 5)))
       s_client->setStoredTrackRateDec((long)(f * 10000));
   }
   v = server.arg("dt");
   if (v != "")
   {
+    any = true;
     if (v == "on") s_client->enableTracking(true);
     else if (v == "off") s_client->enableTracking(false);
     else if (v == "f") s_client->incrementTrackRate();
@@ -161,6 +171,7 @@ void TeenAstroWifi::processConfigurationTrackingGet()
     else if (v == "Th") s_client->setTrackRateSolar();
     else if (v == "Tt") s_client->setTrackRateUser();
   }
+  return any;
 }
 
 void TeenAstroWifi::trackAjax()

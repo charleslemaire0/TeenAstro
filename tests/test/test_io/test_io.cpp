@@ -358,7 +358,7 @@ void test_set_get_latitude(void) {
     prepareSetOk();
     LX200RETURN ret = client->setLatitudeDMS(0, 48, 51, 0);
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
-    TEST_ASSERT_EQUAL_STRING(":St+048:51:00#", mockStream.getSent());
+    TEST_ASSERT_EQUAL_STRING(":St+48:51:00#", mockStream.getSent());
 
     // Get latitude back - server would reply with "+48*51:00"
     mockStream.clearSent();
@@ -373,7 +373,7 @@ void test_set_get_latitude_negative(void) {
     prepareSetOk();
     LX200RETURN ret = client->setLatitudeDMS(1, 33, 52, 0);
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
-    TEST_ASSERT_EQUAL_STRING(":St-033:52:00#", mockStream.getSent());
+    TEST_ASSERT_EQUAL_STRING(":St-33:52:00#", mockStream.getSent());
 
     mockStream.clearSent();
     prepareGetLong("-33*52:00");
@@ -387,7 +387,7 @@ void test_set_get_longitude(void) {
     prepareSetOk();
     LX200RETURN ret = client->setLongitudeDMS(0, 2, 20, 0);
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
-    TEST_ASSERT_EQUAL_STRING(":Sg+0002:20:00#", mockStream.getSent());
+    TEST_ASSERT_EQUAL_STRING(":Sg+002:20:00#", mockStream.getSent());
 
     mockStream.clearSent();
     prepareGetLong("+002*20:00");
@@ -401,7 +401,7 @@ void test_set_get_longitude_negative(void) {
     prepareSetOk();
     LX200RETURN ret = client->setLongitudeDMS(1, 122, 25, 0);
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
-    TEST_ASSERT_EQUAL_STRING(":Sg-0122:25:00#", mockStream.getSent());
+    TEST_ASSERT_EQUAL_STRING(":Sg-122:25:00#", mockStream.getSent());
 
     mockStream.clearSent();
     prepareGetLong("-122*25:00");

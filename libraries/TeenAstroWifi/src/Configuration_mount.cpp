@@ -52,12 +52,17 @@ void TeenAstroWifi::handleConfigurationMount()
 {
   if (busyGuard()) return;
   s_client->setTimeout(WebTimeout);
+  const bool hadMutation = processConfigurationMountGet();
+  if (hadMutation && !restartRequired_t)
+  {
+    sendRedirectAfterMutation("/configuration_mount.htm");
+    return;
+  }
   sendHtmlStart();
   char temp[320] = "";
   char temp1[50] = "";
   String data;
   int selectedmount = 0;
-  processConfigurationMountGet();
   preparePage(data, ServerPage::Mount);
   sendHtml(data);
   if (restartRequired_t)
@@ -148,8 +153,9 @@ void TeenAstroWifi::handleConfigurationMount()
   s_handlerBusy = false;
 }
 
-void TeenAstroWifi::processConfigurationMountGet()
+bool TeenAstroWifi::processConfigurationMountGet()
 {
+  bool any = false;
   String v;
   int i;
 
@@ -157,6 +163,7 @@ void TeenAstroWifi::processConfigurationMountGet()
   v = server.arg("mount_select");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
     {
       if (s_client->setMount(i) == LX200_VALUESET)
@@ -166,12 +173,16 @@ void TeenAstroWifi::processConfigurationMountGet()
   // name
   v = server.arg("mount_n");
   if (v != "")
+  {
+    any = true;
     s_client->setMountDescription(v.c_str());
+  }
 
   // mount type
   v = server.arg("mount");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 4)))
     {
       if (s_client->setMountType(i) == LX200_VALUESET)
@@ -182,6 +193,7 @@ void TeenAstroWifi::processConfigurationMountGet()
   v = server.arg("motors");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
     {
       if ((i == 1 ? s_client->enableMotors(true) : s_client->enableMotors(false)) == LX200_VALUESET)
@@ -192,6 +204,7 @@ void TeenAstroWifi::processConfigurationMountGet()
   v = server.arg("encoders");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
     {
       if ((i == 1 ? s_client->enableEncoders(true) : s_client->enableEncoders(false)) == LX200_VALUESET)
@@ -202,6 +215,7 @@ void TeenAstroWifi::processConfigurationMountGet()
   v = server.arg("polar");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
       i == 1 ? s_client->enablePolarAlign(true) : s_client->enablePolarAlign(false);
   }
@@ -209,7 +223,10 @@ void TeenAstroWifi::processConfigurationMountGet()
   v = server.arg("gotor");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 2)))
       i == 1 ? s_client->enableGoTo(true) : s_client->enableGoTo(false);
   }
+
+  return any;
 }

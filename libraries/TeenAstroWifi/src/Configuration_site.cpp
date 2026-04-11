@@ -121,12 +121,16 @@ void TeenAstroWifi::handleConfigurationSite()
 {
   if (busyGuard()) return;
   s_client->setTimeout(WebTimeout);
+  if (processConfigurationSiteGet())
+  {
+    sendRedirectAfterMutation("/configuration_site.htm");
+    return;
+  }
   sendHtmlStart();
   char temp[150] = "";
   char temp1[50] = "";
   int tmp;
   String data;
-  processConfigurationSiteGet();
   preparePage(data, ServerPage::Site);
   sendHtml(data);
   data += FPSTR(html_BrowserTimeScript1);
@@ -258,8 +262,9 @@ int get_temp_hour;
 int get_temp_minute;
 int get_temp_second;
 
-void TeenAstroWifi::processConfigurationSiteGet()
+bool TeenAstroWifi::processConfigurationSiteGet()
 {
+  bool any = false;
   String v;
   int i;
   float f;
@@ -268,18 +273,23 @@ void TeenAstroWifi::processConfigurationSiteGet()
   v = server.arg("site_select");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 3)))
       s_client->setSelectedSite(i);
   }
   // name
   v = server.arg("site_n");
   if (v != "")
+  {
+    any = true;
     s_client->setSiteName(v.c_str());
+  }
 
   // Time Zone
   v = server.arg("TimeZ");
   if (v != "")
   {
+    any = true;
     if ((atof2((char*)v.c_str(), &f)) && ((f >= -12) && (f <= 12)))
       s_client->setTimeZone(-f);
   }
@@ -288,18 +298,21 @@ void TeenAstroWifi::processConfigurationSiteGet()
   v = server.arg("dm");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 11)))
       get_temp_month = i + 1;
   }
   v = server.arg("dd");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 31)))
       get_temp_day = i;
   }
   v = server.arg("dy");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 2016) && (i <= 9999)))
     {
       get_temp_year = i - 2000;
@@ -309,18 +322,21 @@ void TeenAstroWifi::processConfigurationSiteGet()
   v = server.arg("th");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 23)))
       get_temp_hour = i;
   }
   v = server.arg("tm");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 59)))
       get_temp_minute = i;
   }
   v = server.arg("ts");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 59)))
     {
       get_temp_second = i;
@@ -333,14 +349,15 @@ void TeenAstroWifi::processConfigurationSiteGet()
   int long_min = 0;
   int sign = -1;
   v = server.arg("site_g0");
-  if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) sign = i; }
+  if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) sign = i; }
   v = server.arg("site_g1");
-  if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i < 180))) long_deg = i; }
+  if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i < 180))) long_deg = i; }
   v = server.arg("site_g2");
-  if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i < 60))) long_min = i; }
+  if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i < 60))) long_min = i; }
   v = server.arg("site_g3");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 60)))
     {
       if ((long_deg >= 0) && (long_deg < 180) && (long_min >= 0) && (long_min < 60))
@@ -352,14 +369,15 @@ void TeenAstroWifi::processConfigurationSiteGet()
   int lat_deg = -999;
   int lat_min = 0;
   v = server.arg("site_t0");
-  if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) sign = i; }
+  if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) sign = i; }
   v = server.arg("site_t1");
-  if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i < 90))) lat_deg = i; }
+  if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i < 90))) lat_deg = i; }
   v = server.arg("site_t2");
-  if (v != "") { if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 60))) lat_min = i; }
+  if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 60))) lat_min = i; }
   v = server.arg("site_t3");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i < 60)))
     {
       if ((lat_deg >= 0) && (lat_deg < 90) && (lat_min >= 0) && (lat_min < 60))
@@ -371,13 +389,16 @@ void TeenAstroWifi::processConfigurationSiteGet()
   v = server.arg("site_e");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -200) && (i <= 8000)))
       s_client->setElevation(i);
   }
 
   // GNSS sync
   v = server.arg("GNSSS");
-  if (v != "") s_client->syncTime();
+  if (v != "") { any = true; s_client->syncTime(); }
   v = server.arg("GNSST");
-  if (v != "") s_client->syncLocation();
+  if (v != "") { any = true; s_client->syncLocation(); }
+
+  return any;
 }

@@ -63,11 +63,17 @@ void TeenAstroWifi::handleConfigurationSpeed()
 {
   if (busyGuard()) return;
   s_client->setTimeout(WebTimeout);
+  // GET forms leave ?R0=… in the URL; a normal refresh would re-apply uploads. PRG: apply once, then 303.
+  if (processConfigurationSpeedGet())
+  {
+    sendRedirectAfterMutation("/configuration_speed.htm");
+    return;
+  }
+
   sendHtmlStart();
   char temp[320] = "";
   String data;
 
-  processConfigurationSpeedGet();
   preparePage(data, ServerPage::Speed);
   sendHtml(data);
 
@@ -121,8 +127,9 @@ void TeenAstroWifi::handleConfigurationSpeed()
   s_handlerBusy = false;
 }
 
-void TeenAstroWifi::processConfigurationSpeedGet()
+bool TeenAstroWifi::processConfigurationSpeedGet()
 {
+  bool hadUploadFields = false;
   String v;
   int i;
   float f;
@@ -130,6 +137,7 @@ void TeenAstroWifi::processConfigurationSpeedGet()
   v = server.arg("MaxR");
   if (v != "")
   {
+    hadUploadFields = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4000)))
       s_client->setMaxRate(i);
   }
@@ -137,6 +145,7 @@ void TeenAstroWifi::processConfigurationSpeedGet()
   v = server.arg("Acc");
   if (v != "")
   {
+    hadUploadFields = true;
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 0.1) && (f <= 25)))
       s_client->setAcceleration(f);
   }
@@ -149,6 +158,7 @@ void TeenAstroWifi::processConfigurationSpeedGet()
     v = server.arg(argName);
     if (v != "")
     {
+      hadUploadFields = true;
       if (atof2((char*)v.c_str(), &f))
         s_client->setSpeedRate(idx, f);
     }
@@ -157,7 +167,10 @@ void TeenAstroWifi::processConfigurationSpeedGet()
   v = server.arg("RD");
   if (v != "")
   {
+    hadUploadFields = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 4)))
       s_client->setDeadband(i);
   }
+
+  return hadUploadFields;
 }

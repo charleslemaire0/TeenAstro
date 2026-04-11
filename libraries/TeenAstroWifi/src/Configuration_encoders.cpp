@@ -41,11 +41,15 @@ void TeenAstroWifi::handleConfigurationEncoders()
 {
   if (busyGuard()) return;
   s_client->setTimeout(WebTimeout);
+  if (processConfigurationEncodersGet())
+  {
+    sendRedirectAfterMutation("/configuration_encoders.htm");
+    return;
+  }
   sendHtmlStart();
   char temp[320] = "";
   String data;
 
-  processConfigurationEncodersGet();
   preparePage(data, ServerPage::Encoders);
   sendHtml(data);
   ta_MountStatus.updateMount();
@@ -96,8 +100,9 @@ void TeenAstroWifi::handleConfigurationEncoders()
   s_handlerBusy = false;
 }
 
-void TeenAstroWifi::processConfigurationEncodersGet()
+bool TeenAstroWifi::processConfigurationEncodersGet()
 {
+  bool any = false;
   String v;
   int i;
   float f;
@@ -105,6 +110,7 @@ void TeenAstroWifi::processConfigurationEncodersGet()
   v = server.arg("smE");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 7)))
       s_client->writeEncoderAutoSync(i);
   }
@@ -119,14 +125,18 @@ void TeenAstroWifi::processConfigurationEncodersGet()
     v = server.arg(argPPD);
     if (v != "")
     {
+      any = true;
       if ((atof2((char*)v.c_str(), &f)) && ((f > 0) && (f <= 3600)))
         s_client->writePulsePerDegree(ax, f * 100);
     }
     v = server.arg(argRot);
     if (v != "")
     {
+      any = true;
       if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1)))
         s_client->writeEncoderReverse(ax, i);
     }
   }
+
+  return any;
 }

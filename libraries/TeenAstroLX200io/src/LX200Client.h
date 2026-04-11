@@ -357,8 +357,8 @@ public:
   LX200RETURN setTimeZone(float tz);                        // :SG+NN:MM#
   LX200RETURN getLatitudeStr(char* out, int len);           // :Gtf#
   LX200RETURN getLongitudeStr(char* out, int len);          // :Ggf#
-  LX200RETURN setLatitudeDMS(int sign, int deg, int min, int sec);   // :St+sDD:MM:SS# (sign: 0=+, 1=-)
-  LX200RETURN setLongitudeDMS(int sign, int deg, int min, int sec);  // :Sg+sDDDD:MM:SS#
+  LX200RETURN setLatitudeDMS(int sign, int deg, int min, int sec);   // :St±DD:MM:SS# (sign: 0=+, 1=-)
+  LX200RETURN setLongitudeDMS(int sign, int deg, int min, int sec);  // :Sg±DDD:MM:SS#
   LX200RETURN getElevationMeters(int& meters);               // :Ge#
   LX200RETURN setElevation(int val);                        // :Se+NNNN#
   LX200RETURN setLocalDate(int month, int day, int year);   // :SCMM/DD/YY# (local clock; YY = year % 100)

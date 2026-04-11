@@ -64,7 +64,7 @@
 #ifndef LEGACY_TRANSMIT_ON
 // macros to help with sending webpage data, chunked
 #define sendHtmlStart() server.setContentLength(CONTENT_LENGTH_UNKNOWN); server.sendHeader("Cache-Control","no-cache"); server.send(200, "text/html", String());
-#define sendHtml(x) server.sendContent(x); x=""
+#define sendHtml(x) server.sendContent(x); x = ""; yield();
 #define sendHtmlDone(x) server.sendContent("");
 #else
 // macros to help with sending webpage data, normal method
@@ -162,26 +162,30 @@ class TeenAstroWifi
   static WiFiClient cmdSvrClient;
   static const char* HighSpeedCommsStr(long baud);
   static void preparePage(String &data, ServerPage page);
-  static void processConfigurationSiteGet();
+  /// True if request carried site form/query fields (caller sends 303 to drop query string).
+  static bool processConfigurationSiteGet();
   static void handleConfigurationSite();
-  static void processConfigurationSpeedGet();
+  /// Returns true if the request carried speed-page upload fields (GET query); caller may redirect.
+  static bool processConfigurationSpeedGet();
+  /// HTTP 303 to path, clear handler busy + page cooldown so the follow-up GET is not blocked.
+  static void sendRedirectAfterMutation(const char* path);
   static void handleConfigurationSpeed();
-  static void processConfigurationTrackingGet();
+  static bool processConfigurationTrackingGet();
   static void handleConfigurationTracking();
-  static void processConfigurationMountGet();
+  static bool processConfigurationMountGet();
   static void handleConfigurationMount();
-  static void processConfigurationMotorsGet();
+  static bool processConfigurationMotorsGet();
   static void handleConfigurationMotors();
-  static void processConfigurationLimitsGet();
+  static bool processConfigurationLimitsGet();
   static void handleConfigurationLimits();
-  static void processConfigurationEncodersGet();
+  static bool processConfigurationEncodersGet();
   static void handleConfigurationEncoders();
-  static void processConfigurationFocuserGet();
+  static bool processConfigurationFocuserGet();
   static void handleConfigurationFocuser();
   static void handleRoot();
 
   static void controlAjax();
-  static void processControlGet();
+  static bool processControlGet();
   static void guideAjax();
   static void trackAjax();
   static void trackinfoAjax();
@@ -193,7 +197,7 @@ class TeenAstroWifi
   static void restartStationAssociation();
   static void writeStation2EEPROM(const int& k);
   static void writeAccess2EEPROM();
-  static void processWifiGet();
+  static bool processWifiGet();
 
   static void addTrackingInfo(String &data);
   static void buildStatusCardContent(String& data);

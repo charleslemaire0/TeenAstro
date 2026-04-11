@@ -8,6 +8,7 @@
  * shc_emu.cpp.
  */
 #pragma once
+#include <cstdint>
 #include <cstdlib>
 #include <cstdio>
 
