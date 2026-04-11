@@ -23,7 +23,11 @@ const char  html_controlScript1[] PROGMEM = "<script>\n"
 "function g(v1){s('dr',v1);}\n"
 "function gf(v1){s('dr',v1);autoFastRun();}\n"
 "function sf(key,v1){s(key,v1);autoFastRun();}\n"
-"function stopAll(){g('Fq');g('n0');g('s0');g('e0');g('w0');}\n"
+"function stopAll(){\n"
+"var xhttp=new XMLHttpRequest();\n"
+"xhttp.open('GET','guide.txt?stopall=1&x='+new Date().getTime(),true);\n"
+"xhttp.send();\n"
+"}\n"
 "document.addEventListener('visibilitychange',function(){if(document.hidden)stopAll();});\n"
 "window.addEventListener('pagehide',stopAll);\n"
 "</script>\n";
@@ -93,9 +97,13 @@ void TeenAstroWifi::handleControl()
 {
   if (busyGuard()) return;
   s_client->setTimeout(WebTimeout);
+  if (processControlGet())
+  {
+    sendRedirectAfterMutation("/control.htm");
+    return;
+  }
   sendHtmlStart();
   String data;
-  processControlGet();
   preparePage(data, ServerPage::Control);
   sendHtml(data);
   // guide script
@@ -186,14 +194,16 @@ void TeenAstroWifi::handleControl()
 
 
 
-void TeenAstroWifi::processControlGet()
+bool TeenAstroWifi::processControlGet()
 {
+  bool any = false;
   String v;
   // Align
 #ifdef ALIGN_ON
   v = server.arg("al");
   if (v != "")
   {
+    any = true;
     if (v == "1") s_client->alignSelectStar(1);
     if (v == "2") s_client->alignSelectStar(2);
     if (v == "3") s_client->alignSelectStar(3);
@@ -211,6 +221,7 @@ void TeenAstroWifi::processControlGet()
   v = server.arg("dr");
   if (v != "")
   {
+    any = true;
     // quick
     if (v == "qc") s_client->meridianFlip();
     else if (v == "qr") s_client->homeReset();
@@ -258,6 +269,8 @@ void TeenAstroWifi::processControlGet()
     else if (v == "dr") s_client->rotatorReverse();
     else if (v == "dp") s_client->rotatorDeRotateToggle();
   }
+
+  return any;
 }
 
 void TeenAstroWifi::controlAjax()
@@ -291,6 +304,19 @@ void TeenAstroWifi::controlAjax()
 
 void TeenAstroWifi::guideAjax()
 {
+  s_client->setTimeout(WebTimeout);
+  if (server.hasArg("stopall"))
+  {
+    // One request on page hide/unload instead of five parallel guide.txt calls
+    // (focuser stop + N/S/E/W slew stop), which overloads serial + HTTP on ESP.
+    s_client->focuserStop();
+    s_client->stopMoveNorth();
+    s_client->stopMoveSouth();
+    s_client->stopMoveEast();
+    s_client->stopMoveWest();
+    server.send(200, "text/html", "");
+    return;
+  }
   processControlGet();
   server.send(200, "text/html", "");
 }

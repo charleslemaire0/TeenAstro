@@ -20,8 +20,8 @@
 #ifndef TEENASTRO_NATIVE_BUILD
 LX200Client::LX200Client(Stream& serial, unsigned long timeoutMs)
   : m_ownedTransport(new StreamTransport(serial)),
-    m_transport(m_ownedTransport),
     m_stream(&serial),
+    m_transport(m_ownedTransport),
     m_timeout(timeoutMs)
 {
 }
@@ -315,31 +315,6 @@ LX200RETURN LX200Client::getFocuserAllState(char* out, int len)
   m_timeout = LX200_FOCUSER_TIMEOUT;
   LX200RETURN ret = get(":Fa#", out, len);
   m_timeout = saved;
-  return ret;
-}
-
-// ===========================================================================
-//  Tracking rates (typed)
-// ===========================================================================
-
-static LX200RETURN getTypedLong(LX200Client& c, const char* cmd, long& value)
-{
-  char out[20];
-  LX200RETURN ret = c.get(cmd, out, sizeof(out));
-  if (ret == LX200_VALUEGET)
-    value = strtol(out, NULL, 10);
-  return ret;
-}
-
-static LX200RETURN getTypedDouble(LX200Client& c, const char* cmd, double& value)
-{
-  char out[24];
-  LX200RETURN ret = c.get(cmd, out, sizeof(out));
-  if (ret == LX200_VALUEGET)
-  {
-    char* endptr;
-    value = strtod(out, &endptr);
-  }
   return ret;
 }
 
@@ -1186,14 +1161,14 @@ LX200RETURN LX200Client::getLongitudeStr(char* out, int len) { return get(":Ggf#
 LX200RETURN LX200Client::setLatitudeDMS(int sign, int deg, int min, int sec)
 {
   char cmd[24];
-  sprintf(cmd, ":St%c%03d:%02d:%02d#", sign ? '-' : '+', deg, min, sec);
+  sprintf(cmd, ":St%c%02d:%02d:%02d#", sign ? '-' : '+', deg, min, sec);
   return set(cmd);
 }
 
 LX200RETURN LX200Client::setLongitudeDMS(int sign, int deg, int min, int sec)
 {
   char cmd[24];
-  sprintf(cmd, ":Sg%c%04d:%02d:%02d#", sign ? '-' : '+', deg, min, sec);
+  sprintf(cmd, ":Sg%c%03d:%02d:%02d#", sign ? '-' : '+', deg, min, sec);
   return set(cmd);
 }
 

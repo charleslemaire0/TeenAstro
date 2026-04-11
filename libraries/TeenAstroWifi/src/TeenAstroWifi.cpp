@@ -204,6 +204,15 @@ bool TeenAstroWifi::busyGuard()
   return false;
 }
 
+void TeenAstroWifi::sendRedirectAfterMutation(const char* path)
+{
+  server.sendHeader("Location", path);
+  server.send(303, "text/plain", "");
+  s_handlerBusy = false;
+  // Next request is the browser's follow-up GET; allow it immediately (avoid busyGuard wait page).
+  s_lastPageMs = 0;
+}
+
 int TeenAstroWifi::WebTimeout = TIMEOUT_WEB;
 int TeenAstroWifi::CmdTimeout = TIMEOUT_CMD;
 TeenAstroWifi::WifiConnectMode TeenAstroWifi::activeWifiConnectMode = WifiConnectMode::AutoClose;

@@ -86,11 +86,15 @@ void TeenAstroWifi::handleConfigurationLimits()
 {
   if (busyGuard()) return;
   s_client->setTimeout(WebTimeout);
+  if (processConfigurationLimitsGet())
+  {
+    sendRedirectAfterMutation("/configuration_limits.htm");
+    return;
+  }
   sendHtmlStart();
   char temp[350] = "";
   String data;
 
-  processConfigurationLimitsGet();
   preparePage(data, ServerPage::Limits);
   sendHtml(data);
   ta_MountStatus.updateMount();
@@ -180,8 +184,9 @@ void TeenAstroWifi::handleConfigurationLimits()
   s_handlerBusy = false;
 }
 
-void TeenAstroWifi::processConfigurationLimitsGet()
+bool TeenAstroWifi::processConfigurationLimitsGet()
 {
+  bool any = false;
   String v;
   int i;
   float f;
@@ -190,12 +195,14 @@ void TeenAstroWifi::processConfigurationLimitsGet()
   v = server.arg("ol");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 60) && (i <= 91)))
       s_client->setMaxAltitude(i);
   }
   v = server.arg("hl");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -30) && (i <= 30)))
       s_client->setMinAltitude(i);
   }
@@ -204,6 +211,7 @@ void TeenAstroWifi::processConfigurationLimitsGet()
   v = server.arg("el");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
     {
       i = (int)round((i * 60.0) / 15.0);
@@ -213,6 +221,7 @@ void TeenAstroWifi::processConfigurationLimitsGet()
   v = server.arg("wl");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
     {
       i = (int)round((i * 60.0) / 15.0);
@@ -222,6 +231,7 @@ void TeenAstroWifi::processConfigurationLimitsGet()
   v = server.arg("up");
   if (v != "")
   {
+    any = true;
     if ((atof2((char*)v.c_str(), &f)) && ((f >= 9) && (f <= 12)))
       s_client->setUnderPoleLimit(f);
   }
@@ -229,6 +239,7 @@ void TeenAstroWifi::processConfigurationLimitsGet()
   v = server.arg("miDistanceFromPole");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 181)))
       s_client->setMinDistFromPole(i);
   }
@@ -238,24 +249,28 @@ void TeenAstroWifi::processConfigurationLimitsGet()
   v = server.arg("mia1");
   if (v != "")
   {
+    any = true;
     if (atof2((char*)v.c_str(), &f))
       s_client->setAxisLimit('A', f);
   }
   v = server.arg("maa1");
   if (v != "")
   {
+    any = true;
     if (atof2((char*)v.c_str(), &f))
       s_client->setAxisLimit('B', f);
   }
   v = server.arg("mia2");
   if (v != "")
   {
+    any = true;
     if (atof2((char*)v.c_str(), &f))
       s_client->setAxisLimit('C', f);
   }
   v = server.arg("maa2");
   if (v != "")
   {
+    any = true;
     if (atof2((char*)v.c_str(), &f))
       s_client->setAxisLimit('D', f);
   }
@@ -265,16 +280,20 @@ void TeenAstroWifi::processConfigurationLimitsGet()
   v = server.arg("u1");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i >= -13) && (i <= 13)))
       ut_hrs = i;
   }
   v = server.arg("u2");
   if (v != "")
   {
+    any = true;
     if ((atoi2((char*)v.c_str(), &i)) && ((i == 00) || (i == 30) || (i == 45)))
     {
       if ((ut_hrs >= -13) && (ut_hrs <= 13))
         s_client->setTimeZone((float)(-(ut_hrs * 60 + i) / 60.0));
     }
   }
+
+  return any;
 }
