@@ -24,6 +24,20 @@ void AlpacaTelescope::begin(LX200Client& client,
   m_parent = &parent;
 }
 
+void AlpacaTelescope::syncUtcToHost()
+{
+  if (!m_client) return;
+  time_t now = time(nullptr);
+  // Skip obviously unset clocks (TeenAstro epoch starts ~1970 but SNTP-less
+  // boards often sit at boot epoch until configured).
+  if (now < (time_t)1577836800)
+    return;
+  struct tm* u = gmtime(&now);
+  if (!u) return;
+  m_client->setUTCDateRaw(u->tm_mon + 1, u->tm_mday, (u->tm_year + 1900) % 100);
+  m_client->setUTCTimeRaw(u->tm_hour, u->tm_min, u->tm_sec);
+}
+
 bool AlpacaTelescope::requireConnected(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (m_connected) return true;

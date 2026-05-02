@@ -1,0 +1,21 @@
+18:30:14.644 ASCOM Universal Device Conformance Checker Version 4.2.1.48140, Build time: Mon 09 February 2026 12:14:24          
+18:30:14.644                                              
+18:30:14.645 Operating system is Windows 11 (25H2), Processor is Intel/AMD 64bit, Application is 64bit.          
+18:30:14.645                                              
+18:30:14.646 Alpaca device:  (127.0.0.1:11111 Telescope/0)          
+18:30:14.646                                              
+18:30:14.647 CreateDevice                        INFO     Creating Alpaca device: Access service: Http, IP address: 127.0.0.1, IP Port: 11111, Alpaca device number: 0 (Not accepting user generated SSL certificates)
+18:30:14.657 CreateDevice                        INFO     Alpaca device created OK
+18:30:14.657 CreateDevice                        INFO     Successfully created driver
+18:30:15.729 CreateDevice                        OK       Found a valid interface version: 1
+18:30:15.729 CreateDevice                        OK       Driver instance created successfully
+18:30:15.729                                              
+18:30:15.729 Connect to device                            
+18:30:15.744 ConnectToDevice                     ISSUE    Connection exception - further testing abandoned: Unable to read data from the transport connection: An established connection was aborted by the software in your host machine..
+18:30:15.745                                              
+18:30:15.745 ConnectToDevice                              Cannot connect to device, further tests abandoned.
+18:30:15.745                                              
+18:30:15.745 Your device had 1 issue, 0 errors and 0 configuration alerts          
+18:30:15.745                                              
+18:30:15.745 Issue Summary                                
+18:30:15.745 ConnectToDevice                     ISSUE    Connection exception - further testing abandoned: Unable to read data from the transport connection: An established connection was aborted by the software in your host machine..

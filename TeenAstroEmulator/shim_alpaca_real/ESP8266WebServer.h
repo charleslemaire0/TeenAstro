@@ -141,6 +141,12 @@ private:
   // -------------------------------------------------------------------------
   void serveOne(SOCKET cs)
   {
+    // Listening socket is non-blocking so handleClient can poll accept().
+    // Each accepted stream must block on recv/send or Expect:100-continue
+    // PUTs lose their body when we spin once on an empty RX buffer.
+    u_long blocking = 0;
+    ioctlsocket(cs, FIONBIO, &blocking);
+
     DWORD timeoutMs = 5000;
     setsockopt(cs, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeoutMs, sizeof(timeoutMs));
     setsockopt(cs, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeoutMs, sizeof(timeoutMs));
@@ -170,6 +176,7 @@ private:
     // Parse Content-Length to determine if we still need body bytes.
     size_t      contentLength = 0;
     std::string contentType;
+    bool        expect100Continue = false;
     {
       size_t pos = 0;
       while (true)
@@ -188,7 +195,20 @@ private:
         std::string lname = lowerStr(name);
         if      (lname == "content-length") contentLength = (size_t)std::strtoul(value.c_str(), nullptr, 10);
         else if (lname == "content-type")   contentType   = value;
+        else if (lname == "expect")
+        {
+          std::string lv = lowerStr(value);
+          if (lv.find("100-continue") != std::string::npos)
+            expect100Continue = true;
+        }
       }
+    }
+    // HttpWebRequest / HttpClient sends Expect: 100-continue on PUT by default.
+    // If we don't reply before reading the body, the client aborts the socket.
+    if (expect100Continue && contentLength > 0 && body.size() < contentLength)
+    {
+      static const char k100[] = "HTTP/1.1 100 Continue\r\n\r\n";
+      sendAll(cs, k100, sizeof(k100) - 1);
     }
     while (body.size() < contentLength)
     {
@@ -279,8 +299,8 @@ private:
     {
       hdr[hdrLen++] = '\r'; hdr[hdrLen++] = '\n';
     }
-    ::send(m_curClient, hdr, hdrLen, 0);
-    if (body && bodyLen > 0) ::send(m_curClient, body, bodyLen, 0);
+    sendAll(m_curClient, hdr, (size_t)hdrLen);
+    if (body && bodyLen > 0) sendAll(m_curClient, body, (size_t)bodyLen);
     m_responseSent = true;
   }
 
@@ -290,7 +310,20 @@ private:
     int n = std::snprintf(buf, sizeof(buf),
                           "HTTP/1.1 %d %s\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
                           code, reason);
-    ::send(cs, buf, n, 0);
+    sendAll(cs, buf, (size_t)n);
+  }
+
+  /// Best-effort full send (handles Winsock partial writes).
+  static void sendAll(SOCKET s, const void* data, size_t len)
+  {
+    const char* p = (const char*)data;
+    while (len > 0)
+    {
+      int n = ::send(s, p, (int)len, 0);
+      if (n <= 0) return;
+      p += n;
+      len -= (size_t)n;
+    }
   }
 
   // -------------------------------------------------------------------------

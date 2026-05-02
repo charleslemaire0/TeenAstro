@@ -1,98 +1,26 @@
 {
   "ErrorCount": 0,
-  "IssueCount": 50,
+  "IssueCount": 23,
   "ConfigurationAlertCount": 0,
   "TimingIssuesCount": 0,
-  "TimingCount": 81,
+  "TimingCount": 90,
   "Errors": [],
   "Issues": [
     {
       "Key": "SiderealTime",
-      "Value": "Scope and ASCOM sidereal times are more than 1 hour apart, Scope: \u002B11:44:48.89, ASCOM: \u002B06:41:48.40"
-    },
-    {
-      "Key": "Parked:AbortSlew",
-      "Value": "AbortSlew didn\u0027t raise an error when Parked as required"
-    },
-    {
-      "Key": "Parked:MoveAxis Primary",
-      "Value": "MoveAxis Primary didn\u0027t raise an error when Parked as required"
-    },
-    {
-      "Key": "Parked:MoveAxis Secondary",
-      "Value": "MoveAxis Secondary didn\u0027t raise an error when Parked as required"
+      "Value": "Scope and ASCOM sidereal times are more than 1 hour apart, Scope: \u002B11:44:33.33, ASCOM: \u002B07:16:33.71"
     },
     {
       "Key": "AbortSlew",
       "Value": "Slewing did not have the expected state: True, it was: False."
     },
     {
-      "Key": "MoveAxis Primary",
-      "Value": "Unexpected error - when setting rate: 0.01065415: MoveAxis Rate out of range"
-    },
-    {
-      "Key": "MoveAxis Primary",
-      "Value": "Unexpected error - when setting rate: 1.0654155: MoveAxis Rate out of range"
-    },
-    {
-      "Key": "MoveAxis Primary",
-      "Value": "Unexpected error: MoveAxis Rate out of range"
-    },
-    {
-      "Key": "MoveAxis Secondary",
-      "Value": "Unexpected error - when setting rate: 0.01065415: MoveAxis Rate out of range"
-    },
-    {
-      "Key": "MoveAxis Secondary",
-      "Value": "Unexpected error - when setting rate: 1.0654155: MoveAxis Rate out of range"
-    },
-    {
-      "Key": "MoveAxis Secondary",
-      "Value": "Unexpected error: MoveAxis Rate out of range"
-    },
-    {
-      "Key": "PulseGuide -9.0 North",
-      "Value": "East-West movement was outside test tolerance: RA change (HMS): \u002B00:00:05.75, Expected: \u002B00:00:00.00, Tolerance: \u002B00:00:00.07"
-    },
-    {
-      "Key": "PulseGuide -9.0 South",
-      "Value": "East-West movement was outside test tolerance: RA change (HMS): \u002B00:00:05.73, Expected: \u002B00:00:00.00, Tolerance: \u002B00:00:00.07"
-    },
-    {
-      "Key": "PulseGuide -9.0 East",
-      "Value": "Moved east but outside test tolerance - RA change (HMS): \u002B00:00:18.63, Expected: \u002B00:00:12.82, Difference: \u002B00:00:05.81, Test tolerance: \u002B00:00:00.07"
-    },
-    {
-      "Key": "PulseGuide -9.0 West",
-      "Value": "Moved west but outside test tolerance - RA change (HMS): -00:00:07.42, Expected: -00:00:12.82, Difference: \u002B00:00:05.40, Test tolerance: \u002B00:00:00.07"
-    },
-    {
-      "Key": "PulseGuide \u002B9.0 North",
-      "Value": "East-West movement was outside test tolerance: RA change (HMS): \u002B00:00:00.07, Expected: \u002B00:00:00.00, Tolerance: \u002B00:00:00.07"
-    },
-    {
-      "Key": "PulseGuide \u002B9.0 East",
-      "Value": "Moved east but outside test tolerance - RA change (HMS): \u002B00:00:12.74, Expected: \u002B00:00:12.82, Difference: \u002B00:00:00.08, Test tolerance: \u002B00:00:00.07"
-    },
-    {
-      "Key": "PulseGuide \u002B9.0 West",
-      "Value": "Moved west but outside test tolerance - RA change (HMS): -00:00:12.60, Expected: -00:00:12.82, Difference: \u002B00:00:00.22, Test tolerance: \u002B00:00:00.07"
-    },
-    {
-      "Key": "PulseGuide -3.0 North",
-      "Value": "Moved north but outside test tolerance - Declination change (DMS): \u002B00:03:12.8, Expected: \u002B00:03:11.8, Difference: \u002B00:00:01.0, Test tolerance: \u002B00:00:01.0"
-    },
-    {
-      "Key": "PulseGuide \u002B3.0 East",
-      "Value": "Moved east but outside test tolerance - RA change (HMS): \u002B00:00:12.73, Expected: \u002B00:00:12.82, Difference: \u002B00:00:00.09, Test tolerance: \u002B00:00:00.07"
+      "Key": "SlewToCoordinates",
+      "Value": "Slewed 108916.7 arc seconds away from RA target: \u002B10:49:13.19 Actual RA: \u002B08:48:12.08 Tolerance: \u00B110 arc seconds"
     },
     {
       "Key": "SlewToCoordinates",
-      "Value": "Slewed 108979.8 arc seconds away from RA target: \u002B10:48:55.28 Actual RA: \u002B08:47:49.96 Tolerance: \u00B110 arc seconds"
-    },
-    {
-      "Key": "SlewToCoordinates",
-      "Value": "Slewed 122399.3 arc seconds from the expected DEC: \u002B01:00:00.0 Actual DEC: \u002B34:59:59.3 Tolerance: \u00B110 degrees."
+      "Value": "Slewed 86400.2 arc seconds from the expected DEC: \u002B01:00:00.0 Actual DEC: \u002B25:00:00.2 Tolerance: \u00B110 degrees."
     },
     {
       "Key": "SlewToCoordinatesAsync",
@@ -100,27 +28,23 @@
     },
     {
       "Key": "SyncToCoordinates",
-      "Value": "Slewed to start position 915.1 arc seconds away from RA target: \u002B08:48:55.84 Actual RA: \u002B08:47:54.83 Tolerance: \u00B110 arc seconds"
+      "Value": "Slewed to start position 739.3 arc seconds away from RA target: \u002B08:49:13.72 Actual RA: \u002B08:48:24.43 Tolerance: \u00B110 arc seconds"
     },
     {
       "Key": "SyncToCoordinates",
-      "Value": "Slewed to start position 44926.2 arc seconds from the expected DEC: \u002B22:30:00.0 Actual DEC: \u002B34:58:46.2 Tolerance: \u00B110 degrees."
+      "Value": "Slewed to start position 8835.5 arc seconds from the expected DEC: \u002B22:30:00.0 Actual DEC: \u002B24:57:15.5 Tolerance: \u00B110 degrees."
     },
     {
       "Key": "SyncToCoordinates",
-      "Value": "Synced to sync position 2684.9 arc seconds away from RA target: \u002B08:44:55.84 Actual RA: \u002B08:47:54.83 Tolerance: \u00B110 arc seconds"
+      "Value": "Synced to sync position 10.7 arc seconds away from RA target: \u002B08:45:13.72 Actual RA: \u002B08:45:13.01 Tolerance: \u00B110 arc seconds"
     },
     {
       "Key": "SyncToCoordinates",
-      "Value": "Synced to sync position 48526.2 arc seconds from the expected DEC: \u002B21:30:00.0 Actual DEC: \u002B34:58:46.2 Tolerance: \u00B110 degrees."
+      "Value": "Slewed back to start position 10.3 arc seconds away from RA target: \u002B08:49:13.72 Actual RA: \u002B08:49:13.03 Tolerance: \u00B110 arc seconds"
     },
     {
       "Key": "SyncToCoordinates",
-      "Value": "Slewed back to start position 12.0 arc seconds away from RA target: \u002B08:48:55.84 Actual RA: \u002B08:48:55.04 Tolerance: \u00B110 arc seconds"
-    },
-    {
-      "Key": "SyncToCoordinates",
-      "Value": "Synced to reversed sync position 3612.1 arc seconds away from RA target: \u002B08:52:55.84 Actual RA: \u002B08:48:55.03 Tolerance: \u00B110 arc seconds"
+      "Value": "Synced to reversed sync position 3610.3 arc seconds away from RA target: \u002B08:53:13.72 Actual RA: \u002B08:49:13.03 Tolerance: \u00B110 arc seconds"
     },
     {
       "Key": "SyncToCoordinates",
@@ -128,11 +52,11 @@
     },
     {
       "Key": "SyncToCoordinates",
-      "Value": "Slewed back to start position 12.1 arc seconds away from RA target: \u002B08:48:55.84 Actual RA: \u002B08:48:55.03 Tolerance: \u00B110 arc seconds"
+      "Value": "Slewed back to start position 10.3 arc seconds away from RA target: \u002B08:49:13.72 Actual RA: \u002B08:49:13.03 Tolerance: \u00B110 arc seconds"
     },
     {
       "Key": "SlewToTarget",
-      "Value": "Slewed 252.1 arc seconds away from RA target: \u002B08:49:11.84 Actual RA: \u002B08:48:55.03 Tolerance: \u00B110 arc seconds"
+      "Value": "Slewed 252.3 arc seconds away from RA target: \u002B08:49:29.85 Actual RA: \u002B08:49:13.03 Tolerance: \u00B110 arc seconds"
     },
     {
       "Key": "SlewToTarget",
@@ -144,67 +68,35 @@
     },
     {
       "Key": "DestinationSideOfPier",
-      "Value": "DestinationSideOfPier Exception\r\nASCOM.NotImplementedException: Telescope member not implemented\r\n   at ASCOM.Alpaca.Clients.DynamicClientDriver.SendToRemoteDevice[T](UInt32 clientNumber, HttpClient client, Int32 timeout, String uriBase, Boolean strictCasing, ILogger logger, String method, Dictionary\u00602 parameters, HttpMethod httpMethod, ImageArrayTransferType imageArrayTransferType, ImageArrayCompression imageArrayCompression, MemberTypes memberType, Boolean throwOnBadDateTimeJson) in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/DynamicClientDriver.cs:line 919\r\n   at ASCOM.Alpaca.Clients.DynamicClientDriver.SendToRemoteDevice[T](UInt32 clientNumber, HttpClient client, Int32 timeout, String URIBase, Boolean strictCasing, ILogger logger, String method, Dictionary\u00602 Parameters, HttpMethod HttpMethod, MemberTypes memberType) in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/DynamicClientDriver.cs:line 623\r\n   at ASCOM.Alpaca.Clients.AlpacaTelescope.DestinationSideOfPier(Double RightAscension, Double Declination) in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/AlpacaDevices/AlpacaTelescope.cs:line 472\r\n   at ConformU.TelescopeTester.\u003C\u003Ec__DisplayClass142_1.\u003CTelescopeOptionalMethodsTest\u003Eb__0() in J:\\ConformU\\ConformU\\Conform\\TelescopeTester.cs:line 6200\r\n   at ConformU.DeviceTesterBaseClass.TimeFunc[TResult](String methodName, Func\u00601 function, TargetTime targetTime) in J:\\ConformU\\ConformU\\Conform\\DeviceTesterBaseClass\\DeviceTesterBaseClass.cs:line 1872\r\n   at ConformU.TelescopeTester.TelescopeOptionalMethodsTest(OptionalMethodType testType, String testName, Boolean canTest) in J:\\ConformU\\ConformU\\Conform\\TelescopeTester.cs:line 6200"
-    },
-    {
-      "Key": "SlewToAltAz",
-      "Value": "CanSlewAltAz is false but no exception was generated on use"
-    },
-    {
-      "Key": "SlewToAltAzAsync",
-      "Value": "Unexpected error - CanSlewAltAzAsync is False: AltAz slew refused"
+      "Value": "Same value for DestinationSideOfPier received on both sides of the meridian - East: ThroughThePole, West: ThroughThePole"
     },
     {
       "Key": "SyncToTarget",
-      "Value": "Slewed to start position 262.1 arc seconds away from RA target: \u002B08:49:18.07 Actual RA: \u002B08:49:00.59 Tolerance: \u00B110 arc seconds"
+      "Value": "Slewed to start position 11.7 arc seconds away from RA target: \u002B08:49:35.99 Actual RA: \u002B08:49:35.21 Tolerance: \u00B110 arc seconds"
     },
     {
       "Key": "SyncToTarget",
-      "Value": "Slewed to start position 85.7 arc seconds from the expected DEC: \u002B22:30:00.0 Actual DEC: \u002B22:28:34.3 Tolerance: \u00B110 degrees."
+      "Value": "Synced to sync position 14.9 arc seconds away from RA target: \u002B08:45:35.99 Actual RA: \u002B08:45:34.99 Tolerance: \u00B110 arc seconds"
     },
     {
       "Key": "SyncToTarget",
-      "Value": "Synced to sync position 3337.9 arc seconds away from RA target: \u002B08:45:18.07 Actual RA: \u002B08:49:00.59 Tolerance: \u00B110 arc seconds"
+      "Value": "Slewed back to start position 14.2 arc seconds away from RA target: \u002B08:49:35.99 Actual RA: \u002B08:49:35.04 Tolerance: \u00B110 arc seconds"
     },
     {
       "Key": "SyncToTarget",
-      "Value": "Synced to sync position 3514.3 arc seconds from the expected DEC: \u002B21:30:00.0 Actual DEC: \u002B22:28:34.3 Tolerance: \u00B110 degrees."
-    },
-    {
-      "Key": "SyncToTarget",
-      "Value": "Synced to reversed sync position 3600.4 arc seconds away from RA target: \u002B08:53:18.07 Actual RA: \u002B08:49:18.04 Tolerance: \u00B110 arc seconds"
+      "Value": "Synced to reversed sync position 3614.2 arc seconds away from RA target: \u002B08:53:35.99 Actual RA: \u002B08:49:35.04 Tolerance: \u00B110 arc seconds"
     },
     {
       "Key": "SyncToTarget",
       "Value": "Synced to reversed sync position 3600.2 arc seconds from the expected DEC: \u002B23:30:00.0 Actual DEC: \u002B22:29:59.8 Tolerance: \u00B110 degrees."
     },
     {
-      "Key": "SyncToAltAz",
-      "Value": "CanSyncToAltAz is False but call to SyncToAltAz did not throw an exception."
+      "Key": "SyncToTarget",
+      "Value": "Slewed back to start position 14.2 arc seconds away from RA target: \u002B08:49:35.99 Actual RA: \u002B08:49:35.05 Tolerance: \u00B110 arc seconds"
     },
     {
-      "Key": "SideOfPier Write",
-      "Value": "CanSideOfPier Write is false but no exception was generated on use"
-    },
-    {
-      "Key": "SOPPierTest",
-      "Value": "SideofPierException: System.IO.IOException: Unable to read data from the transport connection: An existing connection was forcibly closed by the remote host..\r\n ---\u003E System.Net.Sockets.SocketException (10054): An existing connection was forcibly closed by the remote host.\r\n   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.CreateException(SocketError error, Boolean forAsyncThrow)\r\n   at System.Net.Sockets.NetworkStream.ReadAsync(Memory\u00601 buffer, CancellationToken cancellationToken)\r\n   at System.Net.Http.HttpConnection.InitialFillAsync(Boolean async)\r\n   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine\u0026 stateMachine)\r\n   at System.Net.Http.HttpConnection.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)\r\n   at System.Net.Http.HttpConnection.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)\r\n   at System.Net.Http.HttpConnectionPool.SendWithVersionDetectionAndRetryAsync(HttpRequestMessage request, Boolean async, Boolean doRequestAuth, CancellationToken cancellationToken)\r\n   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)\r\n   at System.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(IAsyncStateMachineBox box, Boolean allowInlining)\r\n   at System.Threading.Tasks.Task.RunContinuations(Object continuationObject)\r\n   at System.Threading.Tasks.TaskCompletionSourceWithCancellation\u00601.WaitWithCancellationAsync(CancellationToken cancellationToken)\r\n   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)\r\n   at System.Runtime.CompilerServices.AsyncTaskMethodBuilder\u00601.AsyncStateMachineBox\u00601.ExecuteFromThreadPool(Thread threadPoolThread)\r\n   at System.Threading.ThreadPoolWorkQueue.Dispatch()\r\n   at System.Threading.PortableThreadPool.WorkerThread.WorkerThreadStart()\r\n   at System.Threading.Thread.StartCallback()\r\n--- End of stack trace from previous location ---\r\n\r\n   --- End of inner exception stack trace ---\r\n   at ASCOM.Alpaca.Clients.DynamicClientDriver.SendToRemoteDevice[T](UInt32 clientNumber, HttpClient client, Int32 timeout, String uriBase, Boolean strictCasing, ILogger logger, String method, Dictionary\u00602 parameters, HttpMethod httpMethod, ImageArrayTransferType imageArrayTransferType, ImageArrayCompression imageArrayCompression, MemberTypes memberType, Boolean throwOnBadDateTimeJson) in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/DynamicClientDriver.cs:line 1647\r\n   at ASCOM.Alpaca.Clients.DynamicClientDriver.GetValue[T](UInt32 clientNumber, HttpClient client, Int32 timeout, String URIBase, Boolean strictCasing, ILogger logger, String method, ImageArrayTransferType imageArrayTransferType, ImageArrayCompression imageArrayCompression, MemberTypes memberType, Boolean throwOnBadDateTimeJson) in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/DynamicClientDriver.cs:line 492\r\n   at ASCOM.Alpaca.Clients.DynamicClientDriver.GetValue[T](UInt32 clientNumber, HttpClient client, Int32 timeout, String URIBase, Boolean strictCasing, ILogger logger, String method, MemberTypes memberType, Boolean throwOnBadDateTimeJson) in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/DynamicClientDriver.cs:line 470\r\n   at ASCOM.Alpaca.Clients.AlpacaTelescope.get_Slewing() in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/AlpacaDevices/AlpacaTelescope.cs:line 747\r\n   at ConformU.TelescopeTester.\u003C\u003Ec__DisplayClass152_0.\u003CWaitForSlew\u003Eb__0() in J:\\ConformU\\ConformU\\Conform\\TelescopeTester.cs:line 7763\r\n   at ConformU.DeviceTesterBaseClass.WaitWhile(String actionName, Func\u00601 waitFunction, Int32 pollInterval, Int32 timeoutSeconds, Func\u00601 statusString) in J:\\ConformU\\ConformU\\Conform\\DeviceTesterBaseClass\\DeviceTesterBaseClass.cs:line 1294\r\n   at ConformU.TelescopeTester.WaitForSlew(String testName, String actionMessage) in J:\\ConformU\\ConformU\\Conform\\TelescopeTester.cs:line 7763\r\n   at ConformU.TelescopeTester.SlewScope(Double pRa, Double pDec, String pMsg) in J:\\ConformU\\ConformU\\Conform\\TelescopeTester.cs:line 7736\r\n   at ConformU.TelescopeTester.SopPierTest(Double testRa, Double testDec, Double startRa, Double startDeclination, String message) in J:\\ConformU\\ConformU\\Conform\\TelescopeTester.cs:line 7534"
-    },
-    {
-      "Key": "SOPPierTest",
-      "Value": "SideofPierException: ASCOM.DriverException: Slew refused by mount\r\n   at ASCOM.Alpaca.Clients.DynamicClientDriver.SendToRemoteDevice[T](UInt32 clientNumber, HttpClient client, Int32 timeout, String uriBase, Boolean strictCasing, ILogger logger, String method, Dictionary\u00602 parameters, HttpMethod httpMethod, ImageArrayTransferType imageArrayTransferType, ImageArrayCompression imageArrayCompression, MemberTypes memberType, Boolean throwOnBadDateTimeJson) in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/DynamicClientDriver.cs:line 934\r\n   at ASCOM.Alpaca.Clients.DynamicClientDriver.SendToRemoteDevice[T](UInt32 clientNumber, HttpClient client, Int32 timeout, String URIBase, Boolean strictCasing, ILogger logger, String method, Dictionary\u00602 Parameters, HttpMethod HttpMethod, MemberTypes memberType) in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/DynamicClientDriver.cs:line 623\r\n   at ASCOM.Alpaca.Clients.AlpacaTelescope.SlewToCoordinatesAsync(Double RightAscension, Double Declination) in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/AlpacaDevices/AlpacaTelescope.cs:line 725\r\n   at ConformU.TelescopeTester.SlewScope(Double pRa, Double pDec, String pMsg) in J:\\ConformU\\ConformU\\Conform\\TelescopeTester.cs:line 7734\r\n   at ConformU.TelescopeTester.SopPierTest(Double testRa, Double testDec, Double startRa, Double startDeclination, String message) in J:\\ConformU\\ConformU\\Conform\\TelescopeTester.cs:line 7534"
-    },
-    {
-      "Key": "SOPPierTest",
-      "Value": "DestinationSideOfPier Exception: ASCOM.NotImplementedException: Telescope member not implemented\r\n   at ASCOM.Alpaca.Clients.DynamicClientDriver.SendToRemoteDevice[T](UInt32 clientNumber, HttpClient client, Int32 timeout, String uriBase, Boolean strictCasing, ILogger logger, String method, Dictionary\u00602 parameters, HttpMethod httpMethod, ImageArrayTransferType imageArrayTransferType, ImageArrayCompression imageArrayCompression, MemberTypes memberType, Boolean throwOnBadDateTimeJson) in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/DynamicClientDriver.cs:line 919\r\n   at ASCOM.Alpaca.Clients.DynamicClientDriver.SendToRemoteDevice[T](UInt32 clientNumber, HttpClient client, Int32 timeout, String URIBase, Boolean strictCasing, ILogger logger, String method, Dictionary\u00602 Parameters, HttpMethod HttpMethod, MemberTypes memberType) in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/DynamicClientDriver.cs:line 623\r\n   at ASCOM.Alpaca.Clients.AlpacaTelescope.DestinationSideOfPier(Double RightAscension, Double Declination) in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/AlpacaDevices/AlpacaTelescope.cs:line 472\r\n   at ConformU.TelescopeTester.\u003C\u003Ec__DisplayClass146_0.\u003CSopPierTest\u003Eb__0() in J:\\ConformU\\ConformU\\Conform\\TelescopeTester.cs:line 7545\r\n   at ConformU.DeviceTesterBaseClass.TimeFunc[TResult](String methodName, Func\u00601 function, TargetTime targetTime) in J:\\ConformU\\ConformU\\Conform\\DeviceTesterBaseClass\\DeviceTesterBaseClass.cs:line 1872\r\n   at ConformU.TelescopeTester.SopPierTest(Double testRa, Double testDec, Double startRa, Double startDeclination, String message) in J:\\ConformU\\ConformU\\Conform\\TelescopeTester.cs:line 7545"
-    },
-    {
-      "Key": "SOPPierTest",
-      "Value": "DestinationSideOfPier Exception: ASCOM.NotImplementedException: Telescope member not implemented\r\n   at ASCOM.Alpaca.Clients.DynamicClientDriver.SendToRemoteDevice[T](UInt32 clientNumber, HttpClient client, Int32 timeout, String uriBase, Boolean strictCasing, ILogger logger, String method, Dictionary\u00602 parameters, HttpMethod httpMethod, ImageArrayTransferType imageArrayTransferType, ImageArrayCompression imageArrayCompression, MemberTypes memberType, Boolean throwOnBadDateTimeJson) in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/DynamicClientDriver.cs:line 919\r\n   at ASCOM.Alpaca.Clients.DynamicClientDriver.SendToRemoteDevice[T](UInt32 clientNumber, HttpClient client, Int32 timeout, String URIBase, Boolean strictCasing, ILogger logger, String method, Dictionary\u00602 Parameters, HttpMethod HttpMethod, MemberTypes memberType) in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/DynamicClientDriver.cs:line 623\r\n   at ASCOM.Alpaca.Clients.AlpacaTelescope.DestinationSideOfPier(Double RightAscension, Double Declination) in /_/ASCOM.Alpaca/ASCOM.Alpaca.Clients/AlpacaDevices/AlpacaTelescope.cs:line 472\r\n   at ConformU.TelescopeTester.\u003C\u003Ec__DisplayClass146_0.\u003CSopPierTest\u003Eb__0() in J:\\ConformU\\ConformU\\Conform\\TelescopeTester.cs:line 7545\r\n   at ConformU.DeviceTesterBaseClass.TimeFunc[TResult](String methodName, Func\u00601 function, TargetTime targetTime) in J:\\ConformU\\ConformU\\Conform\\DeviceTesterBaseClass\\DeviceTesterBaseClass.cs:line 1872\r\n   at ConformU.TelescopeTester.SopPierTest(Double testRa, Double testDec, Double startRa, Double startDeclination, String message) in J:\\ConformU\\ConformU\\Conform\\TelescopeTester.cs:line 7545"
-    },
-    {
-      "Key": "SideofPier",
-      "Value": "pierEast is returned when the mount is observing at an hour angle between -6.0 and 0.0"
+      "Key": "DestinationSideofPier",
+      "Value": "pierWest is returned when the mount will observe at an hour angle between 0.0 and \u002B6.0"
     }
   ],
   "ConfigurationAlerts": [],
