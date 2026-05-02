@@ -4,6 +4,7 @@
  */
 #include "Command.h"
 #include "ValueToString.h"
+#include <string.h>
 
 // -----------------------------------------------------------------------------
 //   M - Move / slew  :M1# :M2# :MA# :MF# :Mg# etc.
@@ -170,19 +171,31 @@ void Command_M() {
   break;
 
   case 'P':
-    //  :MP#   Goto the Current Position for Polar Align
-        //       Returns an ERRGOTO
-  //{
-  //  double  r, d;
-  //  getEqu(&r, &d, false);
-  //  GeoAlign.altCor = 0.0;
-  //  GeoAlign.azmCor = 0.0;
-  //  i = goToEqu(r, d, PoleSide);
-  //  commandState.reply[0] = i + '0';
-  //  commandState.reply[1] = 0;
-  //  quietReply = true;
-  //  supress_frame = true;
-  //}
+    //  :MP#   Goto current equatorial position (polar-align / recenter slew); ERRGOTO like :MS#
+    if (commandState.command[2] == 0 && !mount.isAltAZ()) {
+      Coord_EQ cur = mount.getEqu(*localSite.latitude() * DEG_TO_RAD);
+      byte i = mount.goToEqu(cur, mount.getPoleSide(), *localSite.latitude() * DEG_TO_RAD);
+      if (i == 0)
+        mount.startSideralTracking();
+      commandState.reply[0] = i + '0';
+      commandState.reply[1] = 0;
+    } else {
+      replyNothing();
+    }
+    break;
+
+  case 'a':
+    //  :Malign#  Same as :MP# (EQ goto current RA/Dec for alignment recenter)
+    if (strcmp(&commandState.command[1], "align") == 0 && commandState.command[6] == 0 && !mount.isAltAZ()) {
+      Coord_EQ cur = mount.getEqu(*localSite.latitude() * DEG_TO_RAD);
+      byte i = mount.goToEqu(cur, mount.getPoleSide(), *localSite.latitude() * DEG_TO_RAD);
+      if (i == 0)
+        mount.startSideralTracking();
+      commandState.reply[0] = i + '0';
+      commandState.reply[1] = 0;
+    } else {
+      replyNothing();
+    }
     break;
 
   case 'S':

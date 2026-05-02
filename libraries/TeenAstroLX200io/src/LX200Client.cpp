@@ -559,6 +559,15 @@ LX200RETURN LX200Client::setTargetAlt(bool& ispos, uint16_t& vd1, uint8_t& vd2, 
 //  Navigation
 // ===========================================================================
 
+LX200RETURN LX200Client::gotoPolarAlignCurrent()
+{
+  char out[LX200_SBUF];
+  if (!sendReceive(":MP#", CMDR_SHORT, out, sizeof(out), m_timeout))
+    return LX200_ERRGOTO_UNKOWN;
+  ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
+  return gotoErrorToReturn(err, true);
+}
+
 LX200RETURN LX200Client::moveToTarget(TARGETTYPE target)
 {
   char out[LX200_SBUF];
@@ -778,7 +787,11 @@ LX200RETURN LX200Client::resetHomeCurrent() { return set(":hb#"); }
 // ===========================================================================
 
 LX200RETURN LX200Client::alignStart()       { return set(":A0#"); }
+LX200RETURN LX200Client::alignStartMechanicalPole() { return set(":A0,m#"); }
+LX200RETURN LX200Client::alignStartThreeStars() { return alignStartMechanicalPole(); }
 LX200RETURN LX200Client::alignAcceptStar()  { return set(":A*#"); }
+LX200RETURN LX200Client::alignAcceptStarMechanicalPole() { return set(":A*,m#"); }
+LX200RETURN LX200Client::alignPolarFinalize() { return set(":AP#"); }
 LX200RETURN LX200Client::alignAtHome()      { return set(":AA#"); }
 LX200RETURN LX200Client::alignSave()        { return set(":AW#"); }
 LX200RETURN LX200Client::alignClear()       { return set(":AC#"); }
@@ -791,6 +804,8 @@ LX200RETURN LX200Client::setPierSideNone()  { return set(":SmN#"); }
 
 LX200RETURN LX200Client::alignSelectStar(uint8_t n)
 {
+  if (n == 3)
+    return alignPolarFinalize();
   char cmd[5] = ":A0#";
   cmd[2] = '0' + n;
   return set(cmd);

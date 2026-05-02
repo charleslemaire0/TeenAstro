@@ -227,6 +227,7 @@ public:
   LX200RETURN stopMoveWest();                    // :Qw#
   LX200RETURN stopSlew();                        // :Q#
   LX200RETURN meridianFlip();                    // :MF#
+  LX200RETURN gotoPolarAlignCurrent();           // :MP# (EQ: goto current RA/Dec)
   LX200RETURN setSpeed(uint8_t level);           // :R0# .. :R4#
   LX200RETURN spiralSearchStart(int arcMinutes); // :M@NNN# (field size in arcminutes)
 
@@ -246,7 +247,15 @@ public:
   //  Alignment
   // -----------------------------------------------------------------------
   LX200RETURN alignStart();                      // :A0#
+  /// Mechanical pole: two stars + bolt pass; use :AP# to finalize after recenter.
+  LX200RETURN alignStartMechanicalPole();        // :A0,m#
+  /// @deprecated Use alignStartMechanicalPole(); still sends :A0,m#.
+  LX200RETURN alignStartThreeStars();
   LX200RETURN alignAcceptStar();                 // :A*#
+  /// First star at target for mechanical-pole session (same as :A*# + session flag).
+  LX200RETURN alignAcceptStarMechanicalPole();   // :A*,m#
+  /// Finalize mechanical pole pass after :MP# / recenter (not :A3#).
+  LX200RETURN alignPolarFinalize();             // :AP#
   LX200RETURN alignAtHome();                     // :AA#
   LX200RETURN alignSave();                       // :AW#
   LX200RETURN alignClear();                      // :AC#

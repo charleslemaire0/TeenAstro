@@ -120,6 +120,10 @@ class LX200 {
 
   // Goto / Sync
   static const gotoTarget     = ':MS#';
+  /// EQ: slew to current RA/Dec (same object), ERRGOTO like :MS# (polar-align recenter).
+  static const gotoPolarAlignCurrent = ':MP#';
+  /// Same as [gotoPolarAlignCurrent] (:MP#).
+  static const gotoPolarAlignMalign = ':Malign#';
   static const gotoTargetJNow = ':MA#';
   static const syncTarget     = ':CM#';
   static const pushToTarget   = ':EMS#';
@@ -128,18 +132,28 @@ class LX200 {
 
   // Alignment
   static const alignStart      = ':A0#';
+  /// Mechanical pole: two stars + bolts + :MP#; finalize with [alignPolarFinalize].
+  static const alignStartMechanicalPole = ':A0,m#';
+  /// @deprecated Use [alignStartMechanicalPole] (same wire string).
+  static const alignStartThreeStars = ':A0,m#';
   static const alignAcceptStar = ':A*#';
+  static const alignAcceptStarMechanicalPole = ':A*,m#';
+  static const alignPolarFinalize = ':AP#';
   static const alignAtHome     = ':AA#';
   static const alignSave       = ':AW#';
   static const alignClear      = ':AC#';
   static const alignAbort      = ':AB#';
   static const getAlignError   = ':AE#';
-  /// Add alignment star n (OnStepX-style: n=1 first star, n=2 second, n=3 third, etc.)
-  static String alignAddStar(int n) => ':A$n#';
+  /// Add alignment star n (n=1,2). For n=3 sends [alignPolarFinalize] (:AP#) on TeenAstro.
+  static String alignAddStar(int n) => n == 3 ? alignPolarFinalize : ':A$n#';
   /// Store alignment star name on the mount (so the SHC can display it).
   static String setAlignStarName(String name) => ':SXAs,$name#';
   /// Read alignment star name from the mount.
   static const getAlignStarName = ':GXAs#';
+  /// Misclosure from alignment model (DMS + `#`), when ready; else ~0°.
+  static const getAlignErrorAz = ':GXAz#';
+  static const getAlignErrorAlt = ':GXAa#';
+  static const getAlignErrorPolarW = ':GXAw#';
   static const pierEast  = ':SmE#';
   static const pierWest  = ':SmW#';
   static const pierNone  = ':SmN#';
@@ -205,8 +219,9 @@ CmdReply getReplyType(String cmd) {
   final c2 = cmd[2];
 
   switch (c1) {
-    case 'A': // Alignment (:A0# :A1# .. :A9# :A*# :AE# etc.)
-      if ('*0123456789CWA'.contains(c2)) return CmdReply.shortBool;
+    case 'A': // Alignment
+      if (cmd == ':A0,3#' || cmd == ':A*,3#') return CmdReply.none;
+      if ('*0123456789PCWAB'.contains(c2)) return CmdReply.shortBool;
       if (c2 == 'E') return CmdReply.long_;
       return CmdReply.invalid;
     case 'B': // Reticule
@@ -240,7 +255,7 @@ CmdReply getReplyType(String cmd) {
       return CmdReply.invalid;
     case 'M': // Move/Slew
       if ('ewnsg'.contains(c2)) return CmdReply.none;
-      if ('SAUF?'.contains(c2)) return CmdReply.short_;
+      if ('PSAUF?a'.contains(c2)) return CmdReply.short_;
       if ('12@'.contains(c2)) return CmdReply.shortBool;
       return CmdReply.invalid;
     case 'Q': // Halt

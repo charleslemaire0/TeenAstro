@@ -43,6 +43,13 @@
 
 #include "TeenAstroLA3.hpp"
 
+/// Selectors for polar / horizontal misclosure from \p Tinv (polErrorDeg).
+enum PolarErrSel : uint8_t {
+  PE_EQ_AZ = 0,
+  PE_EQ_ALT = 1,
+  PE_POL_W = 2
+};
+
 // Compute a 3x3 Matrix that describes rotaions between reference coordinates (angle1/angle2) 
 // and axis coordinates (axis1 and axis2)
 class CoordConv : public LA3 {
@@ -77,6 +84,9 @@ public:
 	void setT(float m11, float m12, float m13,float m21, float m22, float m23,float m31, float m32, float m33);
 
 	void setTinvFromT();
+
+	/// Pole / horizontal misclosure (degrees). \p latRad site latitude (radians); basis matches toDirCos / southern azimuth.
+	double polErrorDeg(double latRad, PolarErrSel sel) const;
 	
 	// add a user-provided reference star (all values in radians)
 	void addReference(double angle1, double angle2, double axis1, double axis2);

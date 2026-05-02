@@ -43,6 +43,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
   CatalogEntry? _star3;
   String _error = '';
   String _alignResult = '';
+  bool _wasMechanicalPole = false;
   Timer? _slewPoll;
 
   @override
@@ -100,9 +101,13 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
   // ── Alignment flow ──────────────────────────────────────
 
   Future<void> _startAlignment() async {
-    final ok = await _client.sendBool(LX200.alignStart);
+    final sessionStars = ref.read(mountStateProvider).isAltAz ? 2 : _numStars;
+    final startCmd = sessionStars >= 3
+        ? LX200.alignStartMechanicalPole
+        : LX200.alignStart;
+    final ok = await _client.sendBool(startCmd);
     if (!ok) {
-      setState(() => _error = 'Failed to start alignment (:A0#)');
+      setState(() => _error = 'Failed to start alignment ($startCmd)');
       return;
     }
     setState(() {
@@ -222,8 +227,14 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
   }
 
   Future<void> _acceptStar(int starNum) async {
-    // OnStepX-style: :A1# first star, :A2# second, :A3# third
-    final ok = await _client.sendBool(LX200.alignAddStar(starNum));
+    // :A1# / :A2# stars; mechanical pole finalize :AP# (not :A3#)
+    final isAltAz = ref.read(mountStateProvider).isAltAz;
+    final sessionStars = isAltAz ? 2 : _numStars;
+    final isMechPoleFinalize =
+        (starNum == 3 && sessionStars >= 3 && !isAltAz);
+    final cmd =
+        isMechPoleFinalize ? LX200.alignPolarFinalize : LX200.alignAddStar(starNum);
+    final ok = await _client.sendBool(cmd);
     if (!ok) {
       setState(() => _error = 'Failed to accept star $starNum');
       return;
@@ -237,12 +248,22 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
         _error = '';
       });
     } else {
-      // Alignment complete - fetch error
-      await Future.delayed(const Duration(milliseconds: 200));
-      final errStr = await _client.sendCommand(LX200.getAlignError);
+      String result;
+      if (isMechPoleFinalize) {
+        // :AP# discards the soft model (cold-baseline conv, hasValid=false,
+        // EE_Tvalid cleared). :AE# / mis-closure are zero by construction —
+        // skip the queries and show a status instead.
+        result = 'Mechanical pole done. Soft model cleared, '
+            'EEPROM alignment cleared.';
+      } else {
+        await Future.delayed(const Duration(milliseconds: 200));
+        final errStr = await _client.sendCommand(LX200.getAlignError);
+        result = errStr ?? 'unknown';
+      }
       setState(() {
         _step = AlignStep.done;
-        _alignResult = errStr ?? 'unknown';
+        _alignResult = result;
+        _wasMechanicalPole = isMechPoleFinalize;
       });
     }
   }
@@ -263,6 +284,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
       _star3 = null;
       _error = '';
       _alignResult = '';
+      _wasMechanicalPole = false;
     });
   }
 
@@ -525,14 +547,28 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
               children: [
                 const Text('Stars:', style: TextStyle(fontSize: 12)),
                 const SizedBox(width: 8),
-                SegmentedButton<int>(
-                  segments: const [
-                    ButtonSegment(value: 2, label: Text('2'), icon: Icon(Icons.star, size: 16)),
-                    ButtonSegment(value: 3, label: Text('3'), icon: Icon(Icons.star, size: 16)),
-                  ],
-                  selected: {_numStars},
-                  onSelectionChanged: (s) => setState(() => _numStars = s.first),
-                ),
+                if (state.isAltAz)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Text('2 (EQ 3-star N/A)',
+                        style: TextStyle(color: TA.textSecondary, fontSize: 11)),
+                  )
+                else
+                  SegmentedButton<int>(
+                    segments: const [
+                      ButtonSegment(
+                          value: 2,
+                          label: Text('2'),
+                          icon: Icon(Icons.star, size: 16)),
+                      ButtonSegment(
+                          value: 3,
+                          label: Text('3'),
+                          icon: Icon(Icons.star, size: 16)),
+                    ],
+                    selected: {_numStars.clamp(2, 3)},
+                    onSelectionChanged: (s) =>
+                        setState(() => _numStars = s.first),
+                  ),
               ],
             ),
             const SizedBox(height: 6),
@@ -650,6 +686,16 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
               ),
             ),
             _SmallBtn(Icons.close, 'Abort alignment', _abortAlignment),
+            if (starNum == 3 && _numStars >= 3 && !state.isAltAz) ...[
+              const SizedBox(width: 6),
+              _SmallBtn(Icons.my_location, ':MP#', () async {
+                final r = await _client.sendCommand(LX200.gotoPolarAlignCurrent);
+                if (!mounted) return;
+                if (r != null && r != '0') {
+                  setState(() => _error = 'Goto current rejected: $r');
+                }
+              }),
+            ],
             const SizedBox(width: 8),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -665,6 +711,9 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
         );
 
       case AlignStep.done:
+        final headline = _wasMechanicalPole
+            ? _alignResult
+            : 'Alignment complete!  Error: $_alignResult';
         return Column(
           children: [
             Row(
@@ -673,7 +722,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Alignment complete!  Error: $_alignResult',
+                    headline,
                     style: TextStyle(
                         color: TA.success,
                         fontSize: 12,
@@ -683,22 +732,35 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
               ],
             ),
             const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _saveAlignment,
-                    icon: const Icon(Icons.save, size: 16),
-                    label: const Text('Save to EEPROM'),
+            if (_wasMechanicalPole)
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _reset,
+                      icon: const Icon(Icons.check, size: 16),
+                      label: const Text('Done'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                _SmallBtn(Icons.delete_outline, 'Remove alignment', () async {
-                  await _client.sendBool(LX200.alignClear);
-                  if (mounted) _reset();
-                }),
-              ],
-            ),
+                ],
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _saveAlignment,
+                      icon: const Icon(Icons.save, size: 16),
+                      label: const Text('Save to EEPROM'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _SmallBtn(Icons.delete_outline, 'Remove alignment', () async {
+                    await _client.sendBool(LX200.alignClear);
+                    if (mounted) _reset();
+                  }),
+                ],
+              ),
           ],
         );
     }

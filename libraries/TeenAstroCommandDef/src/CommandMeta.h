@@ -64,8 +64,10 @@ inline CMDREPLY getReplyType(const char* command)
   {
   // ---- A  Alignment ---------------------------------------------------
   case Cmd::ALIGNMENT:
-    if (strchr("*0123456789CWA", command[2])) return CMDR_SHORT_BOOL;
-    if (strchr("E", command[2]))              return CMDR_LONG;
+    if (strcmp(command, ":A0,3#") == 0) return CMDR_NO;
+    if (strcmp(command, ":A*,3#") == 0) return CMDR_NO;
+    if (strchr("*0123456789PCWAB", command[2])) return CMDR_SHORT_BOOL;
+    if (strchr("E", command[2]))                return CMDR_LONG;
     return CMDR_INVALID;
 
   // ---- B  Reticule brightness ----------------------------------------
@@ -117,7 +119,7 @@ inline CMDREPLY getReplyType(const char* command)
   // ---- M  Move / Slew -------------------------------------------------
   case Cmd::MOVE:
     if (strchr("ewnsg", command[2]))    return CMDR_NO;
-    if (strchr("SAUF?", command[2]))    return CMDR_SHORT;
+    if (strchr("PSAUF?a", command[2]))   return CMDR_SHORT;
     if (strchr("12@", command[2]))      return CMDR_SHORT_BOOL;
     return CMDR_INVALID;
 

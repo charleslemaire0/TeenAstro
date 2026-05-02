@@ -388,10 +388,15 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
   static int current_selection = 1;
   while (true)
   {
+    const bool showThreeStar = !ta_MountStatus.isAltAz();
     const char* string_list = alignInProgress ? T_CANCEL :
       (ta_MountStatus.isAligned() ?
-        "2 " T_STARS "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error" :
-        "2 " T_STARS "\n" T_PC " " T_ALIGNMENT//  "\n" T_SAVE "\n" T_Clear
+        (showThreeStar ?
+          "2 " T_STARS "\n" T_TWO_STARS_MECH "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error" :
+          "2 " T_STARS "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error") :
+        (showThreeStar ?
+          "2 " T_STARS "\n" T_TWO_STARS_MECH "\n" T_PC " " T_ALIGNMENT :
+          "2 " T_STARS "\n" T_PC " " T_ALIGNMENT)
         );
     int selection = display->UserInterfaceSelectionList(&buttonPad, T_ALIGNMENT, current_selection, string_list);
     if (selection == 0) return MR_CANCEL;
@@ -463,7 +468,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
                     if (out == LX200_SYNCED)
                     {
                       DisplayMessageLX200(m_client->alignAcceptStar());
-                      ta_MountStatus.startAlignSecondStar(TeenAstroMountStatus::AlignMode::ALIM_TWO);           
+                      ta_MountStatus.startAlignSecondStar(TeenAstroMountStatus::AlignMode::ALIM_TWO);
                       return MR_QUIT;
                     }
                     else
@@ -485,22 +490,117 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       }
       break;
     case 2:
-      DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
-      if (display->UserInterfaceMessage(&buttonPad, T_READYFOR, T_PC, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
+      if (showThreeStar)
       {
-        if (m_client->alignAtHome() == LX200_VALUESET)
+        int ret = display->UserInterfaceMessage(&buttonPad, T_SELECTMODE, T_TWO_STARS_MECH, T_ALIGNMENT , T_HOME "\n" T_STAR);
+        if (ret == 1)
         {
-          DisplayMessage(T_MOUNTSYNCED, T_ATHOME, -1);
-          return MR_QUIT;
+          DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
+          if (m_client->alignStartMechanicalPole() == LX200_VALUESET)
+          {
+            ta_MountStatus.startAlign(TeenAstroMountStatus::AlignMode::ALIM_THREE);
+            return MR_QUIT;
+          }
+          else
+          {
+            DisplayMessage(T_INITIALISATION, T_FAILED, -1);
+          }
         }
-        else
+        else if (ret == 2)
         {
-          DisplayMessage(T_Clear, T_FAILED, -1);
+          ta_MountStatus.updateMount();
+          uint8_t choice = ((uint8_t)ta_MountStatus.getPierState());
+          choice = display->UserInterfaceSelectionList(&buttonPad, T_SETSIDEOFPIER, choice, T_EAST "\n" T_WEST);
+          bool ok = false;
+          if (choice)
+          {
+            if (choice == 1)
+              ok = DisplayMessageLX200(m_client->setPierSideEast());
+            else
+              ok = DisplayMessageLX200(m_client->setPierSideWest());
+            if (ok)
+            {
+              DisplayMessage("Please Sync", "with a Target", 1000);
+              cat_mgr.select(0);
+              char title[40] = "";
+              cat_mgr.filtersClear();
+              cat_mgr.filterAdd(FM_OBJ_HAS_NAME);
+              cat_mgr.filterAdd(FM_ABOVE_HORIZON, 1);
+
+              strcat(title, cat_mgr.catalogTitle());
+              double lat, LT0;
+              while (!ta_MountStatus.getLat(lat))
+              {
+              }
+              while (!ta_MountStatus.getLstT0(LT0))
+              {
+              }
+              cat_mgr.setLat(lat);
+              cat_mgr.setLstT0(LT0);
+              if (cat_mgr.isInitialized())
+              {
+                if (cat_mgr.setIndex(cat_mgr.getIndex()))
+                {
+                  if (display->UserInterfaceCatalog(&buttonPad, title))
+                  {
+                    LX200RETURN out = SyncGotoCatLX200(*m_client, NAV_SYNC);
+                    if (out == LX200_SYNCED)
+                    {
+                      DisplayMessageLX200(m_client->alignAcceptStarMechanicalPole());
+                      ta_MountStatus.startAlignSecondStar(TeenAstroMountStatus::AlignMode::ALIM_THREE);
+                      return MR_QUIT;
+                    }
+                    else
+                    {
+                      DisplayMessageLX200(out);
+                    }
+                  }
+                }
+                else DisplayMessage(cat_mgr.catalogTitle(), "No Object", -1);
+              }
+              else DisplayMessage(cat_mgr.catalogTitle(), "Not Init'd?", -1);
+              cat_mgr.filtersClear();
+
+              DisplayMessageLX200(m_client->setPierSideNone());
+            }
+          }
+        }
+      }
+      else
+      {
+        DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
+        if (display->UserInterfaceMessage(&buttonPad, T_READYFOR, T_PC, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
+        {
+          if (m_client->alignAtHome() == LX200_VALUESET)
+          {
+            DisplayMessage(T_MOUNTSYNCED, T_ATHOME, -1);
+            return MR_QUIT;
+          }
+          else
+          {
+            DisplayMessage(T_Clear, T_FAILED, -1);
+          }
         }
       }
       break;
     case 3:
-      if (display->UserInterfaceMessage(&buttonPad, T_SAVE, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
+      if (showThreeStar)
+      {
+        DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
+        if (display->UserInterfaceMessage(&buttonPad, T_READYFOR, T_PC, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
+        {
+          if (m_client->alignAtHome() == LX200_VALUESET)
+          {
+            DisplayMessage(T_MOUNTSYNCED, T_ATHOME, -1);
+            return MR_QUIT;
+          }
+          else
+          {
+            DisplayMessage(T_Clear, T_FAILED, -1);
+          }
+        }
+      }
+      else if (display->UserInterfaceMessage(&buttonPad, T_SAVE, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
       {
         if (m_client->alignSave() == LX200_VALUESET)
         {
@@ -514,7 +614,22 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       }
       break;
     case 4:
-      if (display->UserInterfaceMessage(&buttonPad, T_Clear, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
+      if (showThreeStar)
+      {
+        if (display->UserInterfaceMessage(&buttonPad, T_SAVE, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
+        {
+          if (m_client->alignSave() == LX200_VALUESET)
+          {
+            DisplayMessage(T_ALIGNMENT, T_SAVED, -1);
+            return MR_QUIT;
+          }
+          else
+          {
+            DisplayMessage(T_SAVING, T_FAILED, -1);
+          }
+        }
+      }
+      else if (display->UserInterfaceMessage(&buttonPad, T_Clear, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
       {
         if (m_client->alignClear() == LX200_VALUESET)
         {
@@ -528,35 +643,73 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       }
       break;
     case 5:
-      char text[20];
-      if (m_client->getAlignError(text, sizeof(text)) == LX200_VALUEGET)
+      if (showThreeStar)
       {
-        text[3] = '\xB0';
-        text[6]='\'';
-        text[9]='\"';
-        DisplayMessage(T_ERROR, text, -1);
+        if (display->UserInterfaceMessage(&buttonPad, T_Clear, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
+        {
+          if (m_client->alignClear() == LX200_VALUESET)
+          {
+            DisplayMessage(T_MOUNTSYNCED, T_ATHOME, -1);
+            return MR_QUIT;
+          }
+          else
+          {
+            DisplayMessage(T_Clear, T_FAILED, -1);
+          }
+        }
       }
       else
-        DisplayMessage(T_ERROR, "?", -1);
-      break;
-        
-    
-/*      char err_az[15] = { "?" };
-      char err_alt[15] = { "?" };
-      char err_pol[15] = { "?" };
-      if (
-        m_client->getAlignErrorPolar(err_pol, sizeof(err_pol)) == LX200_VALUEGET
-        &&
-        m_client->getAlignErrorAz(err_az, sizeof(err_az)) == LX200_VALUEGET
-        &&
-        m_client->getAlignErrorAlt(err_alt, sizeof(err_alt)) == LX200_VALUEGET)
       {
-        DisplayLongMessage("[Sep.;Az.;Alt.]:", err_pol, err_az, err_alt, -1);
+        char err_az[20] = { "?" };
+        char err_alt[20] = { "?" };
+        char err_pol[20] = { "?" };
+        if (m_client->getAlignErrorPolar(err_pol, sizeof(err_pol)) == LX200_VALUEGET
+            && m_client->getAlignErrorAz(err_az, sizeof(err_az)) == LX200_VALUEGET
+            && m_client->getAlignErrorAlt(err_alt, sizeof(err_alt)) == LX200_VALUEGET)
+        {
+          DisplayLongMessage("[W;Az;Alt]:", err_pol, err_az, err_alt, -1);
+        }
+        else
+        {
+          char text[20];
+          if (m_client->getAlignError(text, sizeof(text)) == LX200_VALUEGET)
+          {
+            text[3] = '\xB0';
+            text[6] = '\'';
+            text[9] = '\"';
+            DisplayMessage(T_ERROR, text, -1);
+          }
+          else
+            DisplayMessage(T_ERROR, "?", -1);
+        }
       }
-      else
-        DisplayMessage("Alignment error:", "?", -1);
       break;
-*/
+    case 6:
+      {
+        char err_az[20] = { "?" };
+        char err_alt[20] = { "?" };
+        char err_pol[20] = { "?" };
+        if (m_client->getAlignErrorPolar(err_pol, sizeof(err_pol)) == LX200_VALUEGET
+            && m_client->getAlignErrorAz(err_az, sizeof(err_az)) == LX200_VALUEGET
+            && m_client->getAlignErrorAlt(err_alt, sizeof(err_alt)) == LX200_VALUEGET)
+        {
+          DisplayLongMessage("[W;Az;Alt]:", err_pol, err_az, err_alt, -1);
+        }
+        else
+        {
+          char text[20];
+          if (m_client->getAlignError(text, sizeof(text)) == LX200_VALUEGET)
+          {
+            text[3] = '\xB0';
+            text[6] = '\'';
+            text[9] = '\"';
+            DisplayMessage(T_ERROR, text, -1);
+          }
+          else
+            DisplayMessage(T_ERROR, "?", -1);
+        }
+      }
+      break;
     }
   }
 }

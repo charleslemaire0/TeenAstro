@@ -34,7 +34,7 @@ LX200Client client(Serial1, 30);  // 30 ms timeout
 | **Navigation** | `moveToTarget()`, `syncGoto()`, `syncGotoAltAz()`, `pushToTarget()` |
 | **Movement** | `startMoveNorth()`, `stopSlew()`, `meridianFlip()`, `setSpeed()` |
 | **Home/Park** | `homeReset()`, `homeGoto()`, `park()`, `unpark()`, `setPark()` |
-| **Alignment** | `alignStart()`, `alignAcceptStar()`, `alignSave()`, `getAlignError()` |
+| **Alignment** | `alignStart()`, `alignStartMechanicalPole()` (`:A0,m#`), `alignAcceptStar()`, `alignAcceptStarMechanicalPole()` (`:A*,m#`), `alignPolarFinalize()` (`:AP#`), `alignSave()`, `getAlignError()` |
 | **Site** | `getLatitude()`, `getLongitude()`, `getSite()`, `setSite()`, `setMount()` |
 | **Motors** | per-axis: reverse, backlash, gear ratio, microstepping, current |
 | **Encoders** | per-axis: pulse/degree, reverse, calibration, auto-sync |

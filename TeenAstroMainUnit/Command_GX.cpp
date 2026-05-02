@@ -281,6 +281,26 @@ static void Command_GX_Alignment()
     // :GXAs#  Return alignment star name (set by app via :SXAs,name#)
     sprintf(commandState.reply, "%s#", mount.alignment.alignStarName);
     break;
+  case 'a':
+  case 'z':
+  case 'w': {
+    // :GXAa# :GXAz# :GXAw#  Polar / horizontal misclosure from Tinv (degrees DMS), when model ready
+    if (!mount.alignment.conv.isReady()) {
+      double z = 0.0;
+      doubleToDms(commandState.reply, &z, false, true, true);
+      strcat(commandState.reply, "#");
+      break;
+    }
+    double latRad = *localSite.latitude() * DEG_TO_RAD;
+    PolarErrSel sel = PE_EQ_ALT;
+    if (commandState.command[3] == 'z')
+      sel = PE_EQ_AZ;
+    else if (commandState.command[3] == 'w')
+      sel = PE_POL_W;
+    double valDeg = mount.alignment.conv.polErrorDeg(latRad, sel);
+    doubleToDms(commandState.reply, &valDeg, false, true, true);
+    strcat(commandState.reply, "#");
+  } break;
   default:  replyLongUnknow(); break;
   }
 }

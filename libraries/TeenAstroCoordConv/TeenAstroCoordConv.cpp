@@ -52,6 +52,36 @@ void CoordConv::setTinvFromT() {
   invert(Tinv, T);
 }
 
+double CoordConv::polErrorDeg(double latRad, PolarErrSel sel) const {
+  if (!isready)
+    return 0.0;
+  double x_id[3] = { cos(latRad), 0.0, sin(latRad) };
+  double x[3] = { Tinv[0][2], Tinv[1][2], Tinv[2][2] };
+  double nrm = norm(x);
+  if (nrm < 1e-15)
+    return 0.0;
+  for (int i = 0; i < 3; i++)
+    x[i] /= nrm;
+  switch (sel) {
+  case PE_EQ_AZ:
+    if (x[0] == 0.0)
+      return (x[1] > 0.0 ? 90.0 : -90.0);
+    return atan(x[1] / x[0]) * 180.0 / M_PI;
+  case PE_EQ_ALT:
+    if (x[0] == 0.0)
+      return (x[2] > 0.0 ? 90.0 - latRad * 180.0 / M_PI : -90.0 - latRad * 180.0 / M_PI);
+    return (atan(x[2] / x[0]) - latRad) * 180.0 / M_PI;
+  case PE_POL_W: {
+    double c = x[0] * x_id[0] + x[1] * x_id[1] + x[2] * x_id[2];
+    if (c > 1.0) c = 1.0;
+    if (c < -1.0) c = -1.0;
+    return acos(c) * 180.0 / M_PI;
+  }
+  default:
+    return 0.0;
+  }
+}
+
 // add reference star (all values in radians). adding more than three has no effect
 void CoordConv::addReference(double angle1, double angle2, double axis1, double axis2) {
   if (refs >= 2)
