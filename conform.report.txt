@@ -1,102 +1,50 @@
 {
   "ErrorCount": 0,
-  "IssueCount": 23,
+  "IssueCount": 10,
   "ConfigurationAlertCount": 0,
   "TimingIssuesCount": 0,
-  "TimingCount": 90,
+  "TimingCount": 72,
   "Errors": [],
   "Issues": [
     {
+      "Key": "DeclinationRate Write",
+      "Value": "Unexpected error - CanSetDeclinationRate is True: DeclinationRate refused by mount"
+    },
+    {
+      "Key": "RightAscensionRate Write",
+      "Value": "Unexpected error - CanSetRightAscensionRate is True: RightAscensionRate refused by mount"
+    },
+    {
       "Key": "SiderealTime",
-      "Value": "Scope and ASCOM sidereal times are more than 1 hour apart, Scope: \u002B11:44:33.33, ASCOM: \u002B07:16:33.71"
+      "Value": "Scope and ASCOM sidereal times are more than 1 hour apart, Scope: \u002B11:44:32.64, ASCOM: \u002B09:05:46.64"
     },
     {
-      "Key": "AbortSlew",
-      "Value": "Slewing did not have the expected state: True, it was: False."
+      "Key": "MoveAxis Primary",
+      "Value": "No exception raised when move axis value \u003C minimum rate: -1.16666667"
     },
     {
-      "Key": "SlewToCoordinates",
-      "Value": "Slewed 108916.7 arc seconds away from RA target: \u002B10:49:13.19 Actual RA: \u002B08:48:12.08 Tolerance: \u00B110 arc seconds"
+      "Key": "MoveAxis Primary",
+      "Value": "No exception raised when move axis value \u003E maximum rate: 1.16666667"
     },
     {
-      "Key": "SlewToCoordinates",
-      "Value": "Slewed 86400.2 arc seconds from the expected DEC: \u002B01:00:00.0 Actual DEC: \u002B25:00:00.2 Tolerance: \u00B110 degrees."
+      "Key": "MoveAxis Primary",
+      "Value": "Tracking state not correctly restored after MoveAxis when CanSetTracking is true"
     },
     {
-      "Key": "SlewToCoordinatesAsync",
-      "Value": "Unexpected error - CanSlewAsync is True: Slew refused by mount"
+      "Key": "MoveAxis Secondary",
+      "Value": "No exception raised when move axis value \u003C minimum rate: -1.16666667"
     },
     {
-      "Key": "SyncToCoordinates",
-      "Value": "Slewed to start position 739.3 arc seconds away from RA target: \u002B08:49:13.72 Actual RA: \u002B08:48:24.43 Tolerance: \u00B110 arc seconds"
+      "Key": "MoveAxis Secondary",
+      "Value": "No exception raised when move axis value \u003E maximum rate: 1.16666667"
     },
     {
-      "Key": "SyncToCoordinates",
-      "Value": "Slewed to start position 8835.5 arc seconds from the expected DEC: \u002B22:30:00.0 Actual DEC: \u002B24:57:15.5 Tolerance: \u00B110 degrees."
+      "Key": "MoveAxis Secondary",
+      "Value": "Tracking state not correctly restored after MoveAxis when CanSetTracking is true"
     },
     {
-      "Key": "SyncToCoordinates",
-      "Value": "Synced to sync position 10.7 arc seconds away from RA target: \u002B08:45:13.72 Actual RA: \u002B08:45:13.01 Tolerance: \u00B110 arc seconds"
-    },
-    {
-      "Key": "SyncToCoordinates",
-      "Value": "Slewed back to start position 10.3 arc seconds away from RA target: \u002B08:49:13.72 Actual RA: \u002B08:49:13.03 Tolerance: \u00B110 arc seconds"
-    },
-    {
-      "Key": "SyncToCoordinates",
-      "Value": "Synced to reversed sync position 3610.3 arc seconds away from RA target: \u002B08:53:13.72 Actual RA: \u002B08:49:13.03 Tolerance: \u00B110 arc seconds"
-    },
-    {
-      "Key": "SyncToCoordinates",
-      "Value": "Synced to reversed sync position 3600.2 arc seconds from the expected DEC: \u002B23:30:00.0 Actual DEC: \u002B22:29:59.8 Tolerance: \u00B110 degrees."
-    },
-    {
-      "Key": "SyncToCoordinates",
-      "Value": "Slewed back to start position 10.3 arc seconds away from RA target: \u002B08:49:13.72 Actual RA: \u002B08:49:13.03 Tolerance: \u00B110 arc seconds"
-    },
-    {
-      "Key": "SlewToTarget",
-      "Value": "Slewed 252.3 arc seconds away from RA target: \u002B08:49:29.85 Actual RA: \u002B08:49:13.03 Tolerance: \u00B110 arc seconds"
-    },
-    {
-      "Key": "SlewToTarget",
-      "Value": "Slewed 70199.8 arc seconds from the expected DEC: \u002B03:00:00.0 Actual DEC: \u002B22:29:59.8 Tolerance: \u00B110 degrees."
-    },
-    {
-      "Key": "SlewToTargetAsync",
-      "Value": "Unexpected error - CanSlewAsync is True: Slew refused by mount"
-    },
-    {
-      "Key": "DestinationSideOfPier",
-      "Value": "Same value for DestinationSideOfPier received on both sides of the meridian - East: ThroughThePole, West: ThroughThePole"
-    },
-    {
-      "Key": "SyncToTarget",
-      "Value": "Slewed to start position 11.7 arc seconds away from RA target: \u002B08:49:35.99 Actual RA: \u002B08:49:35.21 Tolerance: \u00B110 arc seconds"
-    },
-    {
-      "Key": "SyncToTarget",
-      "Value": "Synced to sync position 14.9 arc seconds away from RA target: \u002B08:45:35.99 Actual RA: \u002B08:45:34.99 Tolerance: \u00B110 arc seconds"
-    },
-    {
-      "Key": "SyncToTarget",
-      "Value": "Slewed back to start position 14.2 arc seconds away from RA target: \u002B08:49:35.99 Actual RA: \u002B08:49:35.04 Tolerance: \u00B110 arc seconds"
-    },
-    {
-      "Key": "SyncToTarget",
-      "Value": "Synced to reversed sync position 3614.2 arc seconds away from RA target: \u002B08:53:35.99 Actual RA: \u002B08:49:35.04 Tolerance: \u00B110 arc seconds"
-    },
-    {
-      "Key": "SyncToTarget",
-      "Value": "Synced to reversed sync position 3600.2 arc seconds from the expected DEC: \u002B23:30:00.0 Actual DEC: \u002B22:29:59.8 Tolerance: \u00B110 degrees."
-    },
-    {
-      "Key": "SyncToTarget",
-      "Value": "Slewed back to start position 14.2 arc seconds away from RA target: \u002B08:49:35.99 Actual RA: \u002B08:49:35.05 Tolerance: \u00B110 arc seconds"
-    },
-    {
-      "Key": "DestinationSideofPier",
-      "Value": "pierWest is returned when the mount will observe at an hour angle between 0.0 and \u002B6.0"
+      "Key": "CheckMethods",
+      "Value": "Exception when testing device - testing abandoned: No connection could be made because the target machine actively refused it."
     }
   ],
   "ConfigurationAlerts": [],

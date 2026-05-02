@@ -52,6 +52,14 @@ private:
   void getDriverVersion(AlpacaWebServer& s, const AlpacaRequest& r);
   void getInterfaceVersion(AlpacaWebServer& s, const AlpacaRequest& r);
   void getSupportedActions(AlpacaWebServer& s, const AlpacaRequest& r);
+  /// ASCOM Telescope Interface Version 4+ (aggregated operational state).
+  void getDeviceState(AlpacaWebServer& s, const AlpacaRequest& r);
+  /// ASCOM Platform 7 — async Connect()/Disconnect() completion flag (instant attach here).
+  void getConnecting(AlpacaWebServer& s, const AlpacaRequest& r);
+  /// ASCOM Platform 7 — async disconnect entry point (immediate on this bridge).
+  void putDisconnect(AlpacaWebServer& s, const AlpacaRequest& r);
+  /// ASCOM Platform 7 — async connect entry point (immediate on this bridge).
+  void putConnect(AlpacaWebServer& s, const AlpacaRequest& r);
 
   // ---------- read-only properties ----------
   void getRightAscension(AlpacaWebServer& s, const AlpacaRequest& r);
@@ -159,6 +167,12 @@ private:
   /// the mount's sidereal-time computation lines up with the client's
   /// expectations.  Best-effort (silently ignores firmware refusal).
   void syncUtcToHost();
+  /// Wait for pulse guide / goto / MoveAxis to finish before :MS# / :CM# (ConformU).
+  void settleMotionBeforeRadecCmd();
+  /// Turn sidereal tracking on when motors are enabled (Conform resumes EQ ops after AltAz).
+  void ensureTrackingOnForRadecOps();
+  /// Shared attach behaviour for PUT connected=true and PUT connect (Alpaca Platform 7).
+  void noteAlpacaAttached(bool wasAlreadySoftConnected);
   /// Common helper to start a slew to (raHours, decDeg) using LX200 syncGoto
   /// in NAV_GOTO mode.  Sends the response itself and returns true if the
   /// operation was accepted.
@@ -197,6 +211,11 @@ private:
   bool                   m_siteLonSet    = false;
   double                 m_raRate        = 0;
   double                 m_decRate       = 0;
+  /// Same as TeenAstro ASCOM driver RateRoundTripCacheMs — GXAS quantizes tiny tracking offsets.
+  unsigned long          m_raRateCacheStartMs  = 0;
+  unsigned long          m_decRateCacheStartMs = 0;
+  bool                   m_raRateCacheActive   = false;
+  bool                   m_decRateCacheActive  = false;
   int                    m_trackingRate  = 0;   // Alpaca DriveRates: 0=Sidereal, 1=Solar, 2=Lunar, 3=King
 
   // ---- Soft state to honour ASCOM async semantics ----
@@ -204,6 +223,8 @@ private:
   // The mount-state cache in TeenAstroMountStatus only flips into
   // TRK_SLEWING during a goto, so we shadow MoveAxis state here.
   bool                   m_moveAxisActive[2] = { false, false };
+  /// ConformU: firmware suspends sidereal during :M1/:M2 AtRate — restore when stopping if it was on.
+  bool                   m_moveAxisRestoreTracking = false;
   // PulseGuide is asynchronous: the call returns immediately, and
   // IsPulseGuiding must report true for `duration` ms afterwards.  The
   // firmware does not expose a flag for this, so we shadow it.

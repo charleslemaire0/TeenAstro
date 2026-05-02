@@ -40,6 +40,7 @@ namespace sim {
 /*  SDL2 (for cockpit window)                                          */
 /* ------------------------------------------------------------------ */
 #include <SDL.h>
+#include <ctime>
 
 /* ------------------------------------------------------------------ */
 /*  Real firmware includes                                             */
@@ -47,6 +48,7 @@ namespace sim {
 #include "Command.h"
 #include "Application.h"
 #include "XEEPROM.hpp"
+#include "EEPROM_address.h"
 
 /* ------------------------------------------------------------------ */
 /*  Cockpit UI                                                         */
@@ -67,6 +69,30 @@ static TcpServerStream g_tcpUsb;
 static TcpServerStream g_tcpShc;
 static TcpServerStream g_tcpWifi;   /* Android / SkySafari LX200 */
 static FocuserStub     g_focuserStub;
+
+/// Initialise RTC/LST from PC UTC (matches ASCOM calculator / Alpaca bridge), and
+/// force RA+Dec tracking compensation so :SXRr/:SXRd (ASCOM rates) succeed —
+/// factory EEPROM leaves EE_TC_Axis at 0 which maps to TC_RA only (`EEPROM.cpp`).
+static void emu_applyHostUtcAndConformTrackingDefaults()
+{
+  time_t now = time(nullptr);
+  if (now >= (time_t)1577836800)
+  {
+    struct tm* u = gmtime(&now);
+    if (u)
+    {
+      rtk.setClock(u->tm_year + 1900, u->tm_mon + 1, u->tm_mday,
+                   u->tm_hour, u->tm_min, u->tm_sec,
+                   *localSite.longitude(), 0);
+    }
+  }
+  if (!mount.isAltAZ())
+  {
+    mount.tracking.trackComp = TC_BOTH;
+    mount.computeTrackingRate(true);
+    XEEPROM.update(getMountAddress(EE_TC_Axis), 2);
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /*  Mutex accessor for Timer1 ISR split (guiding/backlash section)     */
@@ -137,6 +163,10 @@ int main(int, char**)
     }
 
     application.setup();
+
+    emu_applyHostUtcAndConformTrackingDefaults();
+    printf("[EMU] Host UTC applied to RTC/LST; GEM tracking compensation = RA+Dec (TC_BOTH).\n");
+    fflush(stdout);
 
     IntervalTimerThread::instance().start();
     printf("[EMU] Timer thread started.\n");

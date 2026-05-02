@@ -997,7 +997,8 @@ LX200RETURN LX200Client::setTrackingOffsetRa(double rate)
 {
   char hex[17];
   lxDoubleToHexLe(rate, hex);
-  char cmd[LX200_SBUF];
+  // ":SXRr," + 16 hex + '#' + NUL → 26 bytes (LX200_SBUF is too small).
+  char cmd[LX200_LBUF];
   snprintf(cmd, sizeof(cmd), ":SXRr,%s#", hex);
   return set(cmd);
 }
@@ -1006,7 +1007,7 @@ LX200RETURN LX200Client::setTrackingOffsetDec(double rate)
 {
   char hex[17];
   lxDoubleToHexLe(rate, hex);
-  char cmd[LX200_SBUF];
+  char cmd[LX200_LBUF];
   snprintf(cmd, sizeof(cmd), ":SXRd,%s#", hex);
   return set(cmd);
 }
