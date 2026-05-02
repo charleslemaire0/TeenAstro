@@ -8,8 +8,42 @@
 #include "TeenAstroAlpaca.h"
 #include <LX200Client.h>
 #include <TeenAstroMountStatus.h>
+#include <TeenAstroMath.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
+
+namespace {
+
+constexpr double kSiderealDegPerSec = 15.04106858 / 3600.0;
+
+/// RA/Dec sexagesimal payloads for `:M?<8-char RA><9-char Dec>#` (Command_M.cpp case '?').
+void taFormatRaMQuery(double raHours, char out9[9])
+{
+  double r = raHours;
+  if (r < 0.0) r = 0.0;
+  if (r >= 24.0) r = (86400.0 - 1.0) / 3600.0;
+  long tsec = (long)floor(r * 3600.0 + 0.5);
+  if (tsec < 0) tsec = 0;
+  if (tsec >= 86400) tsec = 86399;
+  uint8_t h = 0, m = 0, s = 0;
+  gethms(tsec, h, m, s);
+  snprintf(out9, 9, "%02u:%02u:%02u", (unsigned)h, (unsigned)m, (unsigned)s);
+}
+
+void taFormatDecMQuery(double decDeg, char out10[10])
+{
+  long arcsec = (long)floor(decDeg * 3600.0 + (decDeg >= 0 ? 0.5 : -0.5));
+  bool ispos = false;
+  uint16_t vd1 = 0;
+  uint8_t vd2 = 0, vd3 = 0;
+  getdms(arcsec, ispos, vd1, vd2, vd3);
+  snprintf(out10, 10, "%s%02u:%02u:%02u",
+           ispos ? "+" : "-", (unsigned)vd1, (unsigned)vd2, (unsigned)vd3);
+}
+
+}  // namespace
 
 // ----------------------------------------------------------------------------
 //  Lifecycle
@@ -176,12 +210,14 @@ void AlpacaTelescope::putConnected(AlpacaWebServer& s, const AlpacaRequest& r)
     // Trigger one mount-state refresh on connect so subsequent property
     // reads return current values without waiting for the polling cycle.
     if (m_status) m_status->updateAllState(true);
-    // Sync the firmware clock to host UTC on the *first* connect of a
-    // session.  The emulator boots with a default fixture date that is
-    // wildly out of step with the host, which trips ConformU's
-    // SiderealTime sanity check.  On real hardware this is a no-op for
-    // already-synced clocks (write succeeds, value re-stored).
-    if (!wasConnected) syncUtcToHost();
+    if (!wasConnected)
+    {
+      // ASCOM TelescopeHardware.SetConnected: prefer sidereal tracking rate at attach.
+      if (m_client) m_client->setTrackRateSidereal();
+      // Sync the firmware clock to host UTC on the *first* connect of a
+      // session (ConformU sidereal sanity checks / typical client expectation).
+      syncUtcToHost();
+    }
   }
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
@@ -313,24 +349,8 @@ void AlpacaTelescope::getSiderealTime(AlpacaWebServer& s, const AlpacaRequest& r
 {
   if (!requireConnected(s, r)) return;
   m_status->updateAllState();
-  double lst = m_status->getLstHoursCached();
-  // The firmware computes LST using *its* SiteLongitude.  When the client
-  // has supplied a different longitude via PUT /sitelongitude (which the
-  // firmware silently rejects unless the mount is parked), shift the LST
-  // by the difference so SiderealTime stays consistent with the longitude
-  // we report.
-  if (m_siteLonSet)
-  {
-    double fwLon = 0;
-    if (isOk(m_client->getLongitude(fwLon)))
-    {
-      lst += (m_siteLon - fwLon) / 15.0;          // 15 deg / hour
-      while (lst < 0)   lst += 24.0;
-      while (lst >= 24) lst -= 24.0;
-    }
-  }
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
-               AlpacaJson::doubleStr(lst));
+               AlpacaJson::doubleStr((double)m_status->getLstHoursCached()));
 }
 
 void AlpacaTelescope::getSlewing(AlpacaWebServer& s, const AlpacaRequest& r)
@@ -340,11 +360,10 @@ void AlpacaTelescope::getSlewing(AlpacaWebServer& s, const AlpacaRequest& r)
   unsigned long now = millis();
   bool moveAxis    = m_moveAxisActive[0] || m_moveAxisActive[1];
   bool slewKickAct = (m_slewKickEndMs != 0) && (long)(m_slewKickEndMs - now) > 0;
-  // The mount's `gotoKind` field describes the *kind* of last goto and
-  // can linger across syncs — use TRK_SLEWING (the firmware's own
-  // "currently slewing" flag) as the authoritative source.
   bool fromMount   = (m_status->getTrackingState() == MountState::TRK_SLEWING);
-  bool slewing = moveAxis || slewKickAct || fromMount;
+  // GXAS gotoKind is non-zero during EQ / AltAz goto / flip slews (cleared when idle).
+  bool gotoBusy = (m_status->getGotoKind() != 0);
+  bool slewing = moveAxis || slewKickAct || fromMount || gotoBusy;
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
                AlpacaJson::boolStr(slewing));
 }
@@ -402,32 +421,115 @@ void AlpacaTelescope::getSideOfPier(AlpacaWebServer& s, const AlpacaRequest& r)
 
 void AlpacaTelescope::putSideOfPier(AlpacaWebServer& s, const AlpacaRequest& r)
 {
-  // CanSetPierSide is false; per spec, set must throw NotImplemented.
-  sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                  AE_NOT_IMPLEMENTED, "SideOfPier set not implemented");
+  if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  if (m_status->getMount() != MountState::MOUNT_TYPE_GEM)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_OPERATION,
+                    "Change Side of Pier is only supported for german mount");
+    return;
+  }
+  String av = AlpacaRequest::arg(s, "SideOfPier");
+  int want = av.toInt();
+  if (want != 0 && want != 1)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_VALUE, "SideOfPier must be 0 (east) or 1 (west)");
+    return;
+  }
+  int cur = -1;
+  switch (m_status->getPierState())
+  {
+    case MountState::PIER_E: cur = 0; break;
+    case MountState::PIER_W: cur = 1; break;
+    default: break;
+  }
+  if (want == cur)
+  {
+    sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
+    return;
+  }
+  if (m_status->Parked())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_PARKED, "Cannot set SideOfPier while parked");
+    return;
+  }
+  if (m_status->getTrackingState() != MountState::TRK_ON)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_OPERATION, "SideOfPier set requires tracking on");
+    return;
+  }
+  m_client->stopSlew();
+  LX200RETURN ret = m_client->meridianFlip();
+  if (!isOk(ret))
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_DRIVER, "Meridian flip refused by mount");
+    return;
+  }
+  m_slewKickEndMs = millis() + 2000;
+  sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
 void AlpacaTelescope::getDestinationSideOfPier(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
   m_status->updateAllState();
-  // Compute pier side a goto to (RightAscension, Declination) would end up
-  // on, using the simple ASCOM convention based on hour angle:
-  //   HA in [-6, +6]  => pierWest (1)
-  //   HA in (+6, -6) => pierEast (0)
-  double ra  = AlpacaRequest::arg(s, "RightAscension").toDouble();
-  double lst = m_status->getLstHoursCached();
-  if (m_siteLonSet)
+
+  double ra     = AlpacaRequest::arg(s, "RightAscension").toDouble();
+  double decDeg = AlpacaRequest::arg(s, "Declination").toDouble();
+  if (ra < 0.0 || ra >= 24.0 || decDeg < -90.0 || decDeg > 90.0)
   {
-    double fwLon = 0;
-    if (isOk(m_client->getLongitude(fwLon))) lst += (m_siteLon - fwLon) / 15.0;
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_VALUE, "RightAscension or Declination out of range");
+    return;
   }
-  double ha = lst - ra;
-  while (ha < -12) ha += 24;
-  while (ha >  12) ha -= 24;
-  int side = (ha >= -6 && ha <= 6) ? 1 : 0;
-  sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
-               AlpacaJson::intStr(side));
+
+  // Same wire protocol as TeenAstroASCOM_V7 TelescopeHardware.DestinationSideOfPier:
+  //   CommandSingleChar("M?" + RaToString + DecToString)  →  :M?HH:MM:SS±DD:MM:SS#
+  char ra8[9];
+  char dec9[10];
+  taFormatRaMQuery(ra, ra8);
+  taFormatDecMQuery(decDeg, dec9);
+
+  char cmd[28];
+  snprintf(cmd, sizeof(cmd), ":M?%s%s#", ra8, dec9);
+
+  char out[8] = "";
+  bool io = m_client->sendReceive(cmd, CMDR_SHORT, out, sizeof(out), 150);
+  if (!io || out[0] == '\0')
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_DRIVER, "DestinationSideOfPier query failed");
+    return;
+  }
+
+  switch (out[0])
+  {
+  case 'E':
+    sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
+                 AlpacaJson::intStr(0));   // pierEast / normal pointing state
+    break;
+  case 'W':
+    sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
+                 AlpacaJson::intStr(1));   // pierWest / beyond pole
+    break;
+  case '?':
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_VALUE, "Destination cannot be reached");
+    break;
+  case '!':
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_VALUE, "DestinationSideOfPier coordinate parse failed");
+    break;
+  default:
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_DRIVER, "Unexpected DestinationSideOfPier reply");
+    break;
+  }
 }
 
 void AlpacaTelescope::getAlignmentMode(AlpacaWebServer& s, const AlpacaRequest& r)
@@ -597,13 +699,13 @@ void AlpacaTelescope::getTrackingRate(AlpacaWebServer& s, const AlpacaRequest& r
 {
   if (!requireConnected(s, r)) return;
   m_status->updateMount();
-  // Map TeenAstro sidereal mode -> Alpaca DriveRates: 0=Sidereal, 1=Lunar, 2=Solar, 3=King
+  // ASCOM DriveRates order (Alpaca indices): 0=Sidereal, 1=Solar, 2=Lunar, 3=King
   int rate = m_trackingRate;
   switch (m_status->getSiderealMode())
   {
-    case MountState::SID_STAR:   rate = 0; break;
-    case MountState::SID_MOON:   rate = 1; break;
-    case MountState::SID_SUN:    rate = 2; break;
+    case MountState::SID_STAR: rate = 0; break;
+    case MountState::SID_SUN:  rate = 1; break;
+    case MountState::SID_MOON: rate = 2; break;
     default: break;
   }
   m_trackingRate = rate;
@@ -619,8 +721,8 @@ void AlpacaTelescope::putTrackingRate(AlpacaWebServer& s, const AlpacaRequest& r
   switch (rate)
   {
     case 0: m_client->setTrackRateSidereal(); break;
-    case 1: m_client->setTrackRateLunar();    break;
-    case 2: m_client->setTrackRateSolar();    break;
+    case 1: m_client->setTrackRateSolar();    break;
+    case 2: m_client->setTrackRateLunar();    break;
     case 3: m_client->setTrackRateSidereal(); break;  // King ≈ sidereal on TeenAstro
     default:
       sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -641,64 +743,161 @@ void AlpacaTelescope::getTrackingRates(AlpacaWebServer& s, const AlpacaRequest& 
 void AlpacaTelescope::getRightAscensionRate(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
+  m_status->updateAllState();
+  double rate = m_raRate;
+  if (m_status->getSiderealMode() == MountState::SID_STAR)
+    rate = m_status->getTrackingRateRa();
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
-               AlpacaJson::doubleStr(m_raRate));
+               AlpacaJson::doubleStr(rate));
 }
 
 void AlpacaTelescope::putRightAscensionRate(AlpacaWebServer& s, const AlpacaRequest& r)
 {
-  // Capability is reported false; honour the spec by returning NotImplemented.
-  sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                  AE_NOT_IMPLEMENTED, "RightAscensionRate is read-only");
+  if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "RightAscensionRate is not supported without motors");
+    return;
+  }
+  if (m_status->getSiderealMode() != MountState::SID_STAR)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_OPERATION,
+                    "RightAscensionRate can only be set when TrackingRate is Sidereal.");
+    return;
+  }
+  double val = AlpacaRequest::arg(s, "RightAscensionRate").toDouble();
+  if (!isOk(m_client->setTrackingOffsetRa(val)))
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_VALUE, "RightAscensionRate refused by mount");
+    return;
+  }
+  m_raRate = val;
+  sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
 void AlpacaTelescope::getDeclinationRate(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
+  m_status->updateAllState();
+  double rate = m_decRate;
+  if (m_status->getSiderealMode() == MountState::SID_STAR)
+    rate = m_status->getTrackingRateDec();
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
-               AlpacaJson::doubleStr(m_decRate));
+               AlpacaJson::doubleStr(rate));
 }
 
 void AlpacaTelescope::putDeclinationRate(AlpacaWebServer& s, const AlpacaRequest& r)
 {
-  sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                  AE_NOT_IMPLEMENTED, "DeclinationRate is read-only");
+  if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "DeclinationRate is not supported without motors");
+    return;
+  }
+  if (m_status->getSiderealMode() != MountState::SID_STAR)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_OPERATION,
+                    "DeclinationRate can only be set when TrackingRate is Sidereal.");
+    return;
+  }
+  double val = AlpacaRequest::arg(s, "DeclinationRate").toDouble();
+  if (!isOk(m_client->setTrackingOffsetDec(val)))
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_VALUE, "DeclinationRate refused by mount");
+    return;
+  }
+  m_decRate = val;
+  sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
 void AlpacaTelescope::getGuideRateRA(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
   m_status->updateAllConfig();
-  // TeenAstro guide rate is stored as multiples of sidereal; report deg/sec.
-  // 1× sidereal ≈ 0.004178°/s.
-  double rateDegPerSec = m_status->getCfgGuideRate() * 0.0041781;
+  float mult = 0;
+  double rateDegPerSec = m_status->getCfgGuideRate() * kSiderealDegPerSec;
+  if (isOk(m_client->getSpeedRate(0, mult)))
+    rateDegPerSec = (double)mult * kSiderealDegPerSec;
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
                AlpacaJson::doubleStr(rateDegPerSec));
 }
 
 void AlpacaTelescope::putGuideRateRA(AlpacaWebServer& s, const AlpacaRequest& r)
 {
-  sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                  AE_NOT_IMPLEMENTED, "GuideRateRightAscension is read-only");
+  if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "GuideRateRightAscension is not supported without motors");
+    return;
+  }
+  double rateDegPerSec = AlpacaRequest::arg(s, "GuideRateRightAscension").toDouble();
+  if (rateDegPerSec <= 0.0 || rateDegPerSec > 10.0)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_VALUE, "GuideRateRightAscension out of range");
+    return;
+  }
+  float mult = (float)(rateDegPerSec / kSiderealDegPerSec);
+  if (!isOk(m_client->setSpeedRate(0, mult)))
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_VALUE, "GuideRateRightAscension refused by mount");
+    return;
+  }
+  sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
 void AlpacaTelescope::getGuideRateDec(AlpacaWebServer& s, const AlpacaRequest& r)
 {
-  // TeenAstro shares one guide rate for both axes.
+  // TeenAstro shares one guide rate for both axes (ASCOM driver / :GXR0# / :SXR0,).
   getGuideRateRA(s, r);
 }
 
 void AlpacaTelescope::putGuideRateDec(AlpacaWebServer& s, const AlpacaRequest& r)
 {
-  sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                  AE_NOT_IMPLEMENTED, "GuideRateDeclination is read-only");
+  if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "GuideRateDeclination is not supported without motors");
+    return;
+  }
+  double rateDegPerSec = AlpacaRequest::arg(s, "GuideRateDeclination").toDouble();
+  if (rateDegPerSec <= 0.0 || rateDegPerSec > 10.0)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_VALUE, "GuideRateDeclination out of range");
+    return;
+  }
+  float mult = (float)(rateDegPerSec / kSiderealDegPerSec);
+  if (!isOk(m_client->setSpeedRate(0, mult)))
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_VALUE, "GuideRateDeclination refused by mount");
+    return;
+  }
+  sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
 void AlpacaTelescope::getSlewSettleTime(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
-  sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
-               AlpacaJson::intStr(m_slewSettleSec));
+  char out[LX200_SBUF];
+  int t = 0;
+  if (isOk(m_client->getStepsPerSecond(out, sizeof(out))))
+    t = (int)strtol(out, nullptr, 10);
+  sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), AlpacaJson::intStr(t));
 }
 
 void AlpacaTelescope::putSlewSettleTime(AlpacaWebServer& s, const AlpacaRequest& r)
@@ -706,13 +905,18 @@ void AlpacaTelescope::putSlewSettleTime(AlpacaWebServer& s, const AlpacaRequest&
   if (!requireConnected(s, r)) return;
   String v = AlpacaRequest::arg(s, "SlewSettleTime");
   long t = v.toInt();
-  if (t < 0 || t > 100)
+  if (t < 0 || t > 21)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
                     AE_INVALID_VALUE, "SlewSettleTime out of range");
     return;
   }
-  m_slewSettleSec = (uint16_t)t;
+  if (!isOk(m_client->setStepsPerSecond((int)t)))
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_DRIVER, "SlewSettleTime refused by mount");
+    return;
+  }
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
@@ -880,26 +1084,99 @@ void AlpacaTelescope::putUtcDate(AlpacaWebServer& s, const AlpacaRequest& r)
 //  Capabilities
 // ----------------------------------------------------------------------------
 
-void AlpacaTelescope::getCanFindHome(AlpacaWebServer& s, const AlpacaRequest& r)             { sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("true")); }
-void AlpacaTelescope::getCanPark(AlpacaWebServer& s, const AlpacaRequest& r)                 { sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("true")); }
-void AlpacaTelescope::getCanUnpark(AlpacaWebServer& s, const AlpacaRequest& r)               { sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("true")); }
-void AlpacaTelescope::getCanSetPark(AlpacaWebServer& s, const AlpacaRequest& r)              { sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("true")); }
-void AlpacaTelescope::getCanSetTracking(AlpacaWebServer& s, const AlpacaRequest& r)          { sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("true")); }
-void AlpacaTelescope::getCanSlew(AlpacaWebServer& s, const AlpacaRequest& r)                 { sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("true")); }
-void AlpacaTelescope::getCanSlewAsync(AlpacaWebServer& s, const AlpacaRequest& r)            { sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("true")); }
-void AlpacaTelescope::getCanSync(AlpacaWebServer& s, const AlpacaRequest& r)                 { sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("true")); }
-void AlpacaTelescope::getCanPulseGuide(AlpacaWebServer& s, const AlpacaRequest& r)           { sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("true")); }
-void AlpacaTelescope::getCanSetGuideRates(AlpacaWebServer& s, const AlpacaRequest& r)        { sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("false")); }
-void AlpacaTelescope::getCanSetRightAscensionRate(AlpacaWebServer& s, const AlpacaRequest& r){ sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("false")); }
-void AlpacaTelescope::getCanSetDeclinationRate(AlpacaWebServer& s, const AlpacaRequest& r)   { sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("false")); }
-void AlpacaTelescope::getCanSetPierSide(AlpacaWebServer& s, const AlpacaRequest& r)          { sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("false")); }
+void AlpacaTelescope::getCanFindHome(AlpacaWebServer& s, const AlpacaRequest& r)
+{
+  sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("false"));
+}
+
+void AlpacaTelescope::getCanPark(AlpacaWebServer& s, const AlpacaRequest& r)
+{
+  if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  bool motors = m_status->motorsEnableCached();
+  bool saved = false;
+  bool ok = motors && isOk(m_client->getParkSaved(saved)) && saved;
+  sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), AlpacaJson::boolStr(ok));
+}
+
+void AlpacaTelescope::getCanUnpark(AlpacaWebServer& s, const AlpacaRequest& r)
+{
+  getCanPark(s, r);
+}
+
+void AlpacaTelescope::getCanSetPark(AlpacaWebServer& s, const AlpacaRequest& r)
+{
+  if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
+               AlpacaJson::boolStr(m_status->motorsEnableCached()));
+}
+
+void AlpacaTelescope::getCanSetTracking(AlpacaWebServer& s, const AlpacaRequest& r)
+{
+  if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
+               AlpacaJson::boolStr(m_status->motorsEnableCached()));
+}
+
+void AlpacaTelescope::getCanSlew(AlpacaWebServer& s, const AlpacaRequest& r)
+{
+  if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
+               AlpacaJson::boolStr(m_status->motorsEnableCached()));
+}
+
+void AlpacaTelescope::getCanSlewAsync(AlpacaWebServer& s, const AlpacaRequest& r)
+{
+  getCanSlew(s, r);
+}
+
+void AlpacaTelescope::getCanSync(AlpacaWebServer& s, const AlpacaRequest& r)
+{
+  getCanSlew(s, r);
+}
+
+void AlpacaTelescope::getCanPulseGuide(AlpacaWebServer& s, const AlpacaRequest& r)
+{
+  // TeenAstro ASCOM driver reports true unconditionally for this capability bit.
+  sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("true"));
+}
+
+void AlpacaTelescope::getCanSetGuideRates(AlpacaWebServer& s, const AlpacaRequest& r)
+{
+  if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
+               AlpacaJson::boolStr(m_status->motorsEnableCached()));
+}
+
+void AlpacaTelescope::getCanSetRightAscensionRate(AlpacaWebServer& s, const AlpacaRequest& r)
+{
+  if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  bool ok = m_status->motorsEnableCached()
+            && (m_status->getSiderealMode() == MountState::SID_STAR);
+  sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), AlpacaJson::boolStr(ok));
+}
+
+void AlpacaTelescope::getCanSetDeclinationRate(AlpacaWebServer& s, const AlpacaRequest& r)
+{
+  getCanSetRightAscensionRate(s, r);
+}
+
+void AlpacaTelescope::getCanSetPierSide(AlpacaWebServer& s, const AlpacaRequest& r)
+{
+  sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("true"));
+}
 
 void AlpacaTelescope::getCanSlewAltAz(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
   m_status->updateMount();
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
-               AlpacaJson::boolStr(m_status->isAltAz()));
+               AlpacaJson::boolStr(m_status->motorsEnableCached()));
 }
 
 void AlpacaTelescope::getCanSlewAltAzAsync(AlpacaWebServer& s, const AlpacaRequest& r)
@@ -918,7 +1195,8 @@ void AlpacaTelescope::getCanMoveAxisQ(AlpacaWebServer& s, const AlpacaRequest& r
   if (!requireConnected(s, r)) return;
   String a = AlpacaRequest::arg(s, "Axis");
   int axis = a.toInt();
-  bool can = (axis == 0 || axis == 1);
+  m_status->updateMount();
+  bool can = m_status->motorsEnableCached() && (axis == 0 || axis == 1);
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
                AlpacaJson::boolStr(can));
 }
@@ -931,6 +1209,13 @@ void AlpacaTelescope::getCanMoveAxisQ(AlpacaWebServer& s, const AlpacaRequest& r
 void AlpacaTelescope::putAbortSlew(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "AbortSlew is not supported without motors");
+    return;
+  }
   m_status->updateAllState();
   if (m_status->Parked())
   {
@@ -957,42 +1242,67 @@ void AlpacaTelescope::putAbortSlew(AlpacaWebServer& s, const AlpacaRequest& r)
 void AlpacaTelescope::putFindHome(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
-  LX200RETURN ret = m_client->homeGoto();
-  if (!isOk(ret))
-  {
-    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                    AE_DRIVER, "FindHome refused by mount");
-    return;
-  }
-  sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
+  sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                  AE_NOT_IMPLEMENTED, "FindHome is not implemented");
 }
 
 void AlpacaTelescope::putPark(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
-  // The mount refuses :hP# if no park position has ever been saved.
-  // Auto-bootstrap by calling :hQ# (set the *current* axis position as the
-  // park position) on the first attempt — matches the legacy ASCOM driver
-  // behaviour and keeps ConformU happy on a freshly-booted controller.
-  LX200RETURN ret = m_client->park();
-  if (!isOk(ret))
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
   {
-    m_client->setPark();
-    ret = m_client->park();
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "Park is not supported without motors");
+    return;
   }
+  bool saved = false;
+  if (!isOk(m_client->getParkSaved(saved)) || !saved)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "Park requires a saved park position");
+    return;
+  }
+  m_status->updateAllState();
+  if (m_status->Parked())
+  {
+    sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
+    return;
+  }
+  LX200RETURN ret = m_client->park();
   if (!isOk(ret))
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
                     AE_DRIVER, "Park refused by mount");
     return;
   }
-  m_slewKickEndMs = millis() + 750;  // Park goto -> looks like a slew
+  m_slewKickEndMs = millis() + 2800;
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
 void AlpacaTelescope::putUnpark(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "Unpark is not supported without motors");
+    return;
+  }
+  bool saved = false;
+  if (!isOk(m_client->getParkSaved(saved)) || !saved)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "Unpark requires a saved park position");
+    return;
+  }
+  m_status->updateAllState();
+  if (!m_status->Parked())
+  {
+    sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
+    return;
+  }
   LX200RETURN ret = m_client->unpark();
   if (!isOk(ret))
   {
@@ -1006,6 +1316,13 @@ void AlpacaTelescope::putUnpark(AlpacaWebServer& s, const AlpacaRequest& r)
 void AlpacaTelescope::putSetPark(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "SetPark is not supported without motors");
+    return;
+  }
   LX200RETURN ret = m_client->setPark();
   if (!isOk(ret))
   {
@@ -1020,12 +1337,28 @@ void AlpacaTelescope::putSetPark(AlpacaWebServer& s, const AlpacaRequest& r)
 bool AlpacaTelescope::slewToRaDec(AlpacaWebServer& s, const AlpacaRequest& r,
                                   double raHours, double decDeg)
 {
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "Slew is not supported without motors");
+    return false;
+  }
+  m_status->updateAllState();
   if (m_status->Parked())
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
                     AE_PARKED, "Cannot slew while parked");
     return false;
   }
+  if (m_status->getTrackingState() != MountState::TRK_ON)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_OPERATION,
+                    "Equatorial slew requires tracking on");
+    return false;
+  }
+  m_client->stopSlew();
   float ra  = (float)raHours;
   float dec = (float)decDeg;
   LX200RETURN ret = m_client->syncGoto(NAV_GOTO, ra, dec);
@@ -1039,9 +1372,8 @@ bool AlpacaTelescope::slewToRaDec(AlpacaWebServer& s, const AlpacaRequest& r,
   m_targetDecDeg  = decDeg;
   m_targetRaSet   = true;
   m_targetDecSet  = true;
-  // Force Slewing=true for the next ~750ms so async-slew clients see the
-  // transition even before the mount cache has caught up.
-  m_slewKickEndMs = millis() + 750;
+  // Force Slewing=true briefly so async-slew clients see true before GXAS catches up.
+  m_slewKickEndMs = millis() + 2800;
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
   return true;
 }
@@ -1049,6 +1381,28 @@ bool AlpacaTelescope::slewToRaDec(AlpacaWebServer& s, const AlpacaRequest& r,
 bool AlpacaTelescope::syncToRaDec(AlpacaWebServer& s, const AlpacaRequest& r,
                                   double raHours, double decDeg)
 {
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "Sync is not supported without motors");
+    return false;
+  }
+  m_status->updateAllState();
+  if (m_status->Parked())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_PARKED, "Cannot sync while parked");
+    return false;
+  }
+  if (m_status->getTrackingState() != MountState::TRK_ON)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_OPERATION,
+                    "Sync requires tracking on");
+    return false;
+  }
+  m_client->stopSlew();
   float ra  = (float)raHours;
   float dec = (float)decDeg;
   LX200RETURN ret = m_client->syncGoto(NAV_SYNC, ra, dec);
@@ -1069,11 +1423,25 @@ bool AlpacaTelescope::syncToRaDec(AlpacaWebServer& s, const AlpacaRequest& r,
 bool AlpacaTelescope::slewSyncToAltAz(AlpacaWebServer& s, const AlpacaRequest& r,
                                       double azDeg, double altDeg, bool sync)
 {
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "AltAz slew/sync is not supported without motors");
+    return false;
+  }
+  m_status->updateAllState();
   if (!sync && m_status->Parked())
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
                     AE_PARKED, "Cannot slew while parked");
     return false;
+  }
+  // ASCOM checkslewALTAZ turns tracking off before :MA for horizon-coordinate slews.
+  if (!sync)
+  {
+    m_client->enableTracking(false);
+    m_client->stopSlew();
   }
   float az  = (float)azDeg;
   float alt = (float)altDeg;
@@ -1084,7 +1452,7 @@ bool AlpacaTelescope::slewSyncToAltAz(AlpacaWebServer& s, const AlpacaRequest& r
                     AE_DRIVER, sync ? "AltAz sync refused" : "AltAz slew refused");
     return false;
   }
-  if (!sync) m_slewKickEndMs = millis() + 750;
+  if (!sync) m_slewKickEndMs = millis() + 2800;
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
   return true;
 }
@@ -1092,6 +1460,13 @@ bool AlpacaTelescope::slewSyncToAltAz(AlpacaWebServer& s, const AlpacaRequest& r
 void AlpacaTelescope::putSlewToCoordinates(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "SlewToCoordinates is not supported without motors");
+    return;
+  }
   double ra  = AlpacaRequest::arg(s, "RightAscension").toDouble();
   double dec = AlpacaRequest::arg(s, "Declination").toDouble();
   if (ra < 0 || ra >= 24 || dec < -90 || dec > 90)
@@ -1111,6 +1486,13 @@ void AlpacaTelescope::putSlewToCoordinatesAsync(AlpacaWebServer& s, const Alpaca
 void AlpacaTelescope::putSyncToCoordinates(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "SyncToCoordinates is not supported without motors");
+    return;
+  }
   double ra  = AlpacaRequest::arg(s, "RightAscension").toDouble();
   double dec = AlpacaRequest::arg(s, "Declination").toDouble();
   if (ra < 0 || ra >= 24 || dec < -90 || dec > 90)
@@ -1125,6 +1507,13 @@ void AlpacaTelescope::putSyncToCoordinates(AlpacaWebServer& s, const AlpacaReque
 void AlpacaTelescope::putSlewToTarget(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "SlewToTarget is not supported without motors");
+    return;
+  }
   if (!m_targetRaSet || !m_targetDecSet)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -1142,6 +1531,13 @@ void AlpacaTelescope::putSlewToTargetAsync(AlpacaWebServer& s, const AlpacaReque
 void AlpacaTelescope::putSyncToTarget(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "SyncToTarget is not supported without motors");
+    return;
+  }
   if (!m_targetRaSet || !m_targetDecSet)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -1154,12 +1550,11 @@ void AlpacaTelescope::putSyncToTarget(AlpacaWebServer& s, const AlpacaRequest& r
 void AlpacaTelescope::putSlewToAltAz(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
-  // Honour CanSlewAltAz: AltAz slew is only supported on AltAz-style mounts.
   m_status->updateMount();
-  if (!m_status->isAltAz())
+  if (!m_status->motorsEnableCached())
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                    AE_NOT_IMPLEMENTED, "SlewToAltAz not supported by this mount");
+                    AE_NOT_IMPLEMENTED, "SlewToAltAz is not supported without motors");
     return;
   }
   double az  = AlpacaRequest::arg(s, "Azimuth").toDouble();
@@ -1182,10 +1577,10 @@ void AlpacaTelescope::putSyncToAltAz(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
   m_status->updateMount();
-  if (!m_status->isAltAz())
+  if (!m_status->motorsEnableCached())
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                    AE_NOT_IMPLEMENTED, "SyncToAltAz not supported by this mount");
+                    AE_NOT_IMPLEMENTED, "SyncToAltAz is not supported without motors");
     return;
   }
   double az  = AlpacaRequest::arg(s, "Azimuth").toDouble();
@@ -1217,6 +1612,26 @@ void AlpacaTelescope::putPulseGuide(AlpacaWebServer& s, const AlpacaRequest& r)
                     AE_PARKED, "Cannot PulseGuide while parked");
     return;
   }
+  if (m_status->getTrackingState() == MountState::TRK_OFF
+      || m_status->getTrackingState() == MountState::TRK_UNKNOW)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_OPERATION,
+                    "PulseGuide requires tracking on");
+    return;
+  }
+  unsigned long now = millis();
+  bool moveAxis    = m_moveAxisActive[0] || m_moveAxisActive[1];
+  bool slewKickAct = (m_slewKickEndMs != 0) && (long)(m_slewKickEndMs - now) > 0;
+  bool fromMount   = (m_status->getTrackingState() == MountState::TRK_SLEWING);
+  bool gotoBusy    = (m_status->getGotoKind() != 0);
+  if (moveAxis || slewKickAct || fromMount || gotoBusy)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_OPERATION,
+                    "Cannot PulseGuide while slewing");
+    return;
+  }
   // Alpaca: 0=North, 1=South, 2=East, 3=West
   static const char dirChar[] = {'n', 's', 'e', 'w'};
   char cmd[24];
@@ -1233,6 +1648,13 @@ void AlpacaTelescope::putPulseGuide(AlpacaWebServer& s, const AlpacaRequest& r)
 void AlpacaTelescope::putMoveAxis(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
+  m_status->updateMount();
+  if (!m_status->motorsEnableCached())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_NOT_IMPLEMENTED, "MoveAxis is not supported without motors");
+    return;
+  }
   int axis = (int)AlpacaRequest::arg(s, "Axis").toInt();
   double rateDegSec = AlpacaRequest::arg(s, "Rate").toDouble();
   if (axis < 0 || axis > 1)
@@ -1253,10 +1675,10 @@ void AlpacaTelescope::putMoveAxis(AlpacaWebServer& s, const AlpacaRequest& r)
   // accepted with bogus values, and ConformU's "out-of-range" probes get
   // the InvalidValue error they expect.
   m_status->updateAllConfig();
-  double minRate = m_status->getCfgGuideRate() * 0.0041781;
-  double maxRate = m_status->getCfgFastRate()  * 0.0041781;
+  double minRate = m_status->getCfgGuideRate() * kSiderealDegPerSec;
+  double maxRate = m_status->getCfgFastRate()  * kSiderealDegPerSec;
   if (maxRate <= 0) maxRate = 5.0;
-  if (minRate <= 0) minRate = 0.0041781;
+  if (minRate <= 0) minRate = kSiderealDegPerSec;
   double absRate = (rateDegSec < 0) ? -rateDegSec : rateDegSec;
   if (rateDegSec != 0.0 && (absRate < minRate || absRate > maxRate))
   {
@@ -1308,11 +1730,11 @@ void AlpacaTelescope::getAxisRates(AlpacaWebServer& s, const AlpacaRequest& r)
   }
   m_status->updateAllConfig();
   // Report a single contiguous range from the configured guide rate up to
-  // the configured max rate (deg/sec).  Sidereal ≈ 0.004178 °/s.
-  double minRate = m_status->getCfgGuideRate() * 0.0041781;
-  double maxRate = m_status->getCfgFastRate()  * 0.0041781;
+  // the configured max rate (deg/sec).
+  double minRate = m_status->getCfgGuideRate() * kSiderealDegPerSec;
+  double maxRate = m_status->getCfgFastRate()  * kSiderealDegPerSec;
   if (maxRate <= 0) maxRate = 5.0;          // sensible fallback
-  if (minRate <= 0) minRate = 0.0041781;
+  if (minRate <= 0) minRate = kSiderealDegPerSec;
   String body = "[{\"Minimum\":";
   body += AlpacaJson::doubleStr(minRate);
   body += F(",\"Maximum\":");

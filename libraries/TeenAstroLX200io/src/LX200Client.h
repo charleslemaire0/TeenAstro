@@ -239,6 +239,8 @@ public:
   LX200RETURN park();                            // :hP#
   LX200RETURN unpark();                          // :hR#
   LX200RETURN setPark();                         // :hQ#
+  /// Whether a park position has been saved (:hS# → '1' / '0').
+  LX200RETURN getParkSaved(bool& saved);
   LX200RETURN parkReset();                       // :hO#
   LX200RETURN setHomeCurrent();                  // :hB#
   LX200RETURN resetHomeCurrent();                // :hb#
@@ -314,6 +316,9 @@ public:
   LX200RETURN setDeadband(int val);              // :SXRD,val#
   LX200RETURN getSpeedRate(uint8_t idx, float& val);   // :GXRn#
   LX200RETURN setSpeedRate(uint8_t idx, float val);    // :SXRn,val# (idx 0: ×sidereal → sent as hundredths)
+  /// ASCOM tracking offsets as IEEE754 little-endian doubles on the wire (:SXRr# / :SXRd#, same as ASCOM driver).
+  LX200RETURN setTrackingOffsetRa(double ascomRaSecPerSiderealSec);   // :SXRr,<16 hex LE>#
+  LX200RETURN setTrackingOffsetDec(double decArcsecPerSec);           // :SXRd,<16 hex LE>#
 
   // -----------------------------------------------------------------------
   //  Extended GX/SX config — Limits

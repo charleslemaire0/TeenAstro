@@ -7,10 +7,10 @@
 #include "LX200Client.h"
 #include <TeenAstroMath.h>
 #include <string.h>
+#include <stdio.h>
 #ifdef TEENASTRO_NATIVE_BUILD
 #include <Arduino.h>
 #include <stdlib.h>
-#include <stdio.h>
 #endif
 
 // ===========================================================================
@@ -653,14 +653,27 @@ LX200RETURN LX200Client::syncGoto(NAV mode, uint8_t& vr1, uint8_t& vr2, uint8_t&
 
 LX200RETURN LX200Client::syncGoto(NAV mode, float& Ra, float& Dec)
 {
-  uint8_t vr1, vr2, vr3, vd2, vd3;
-  uint16_t vd1;
-  bool ispos = false;
-  long Ras  = (long)(Ra  * 3600);
-  long Decs = (long)(Dec * 3600);
-  gethms(Ras, vr1, vr2, vr3);
-  getdms(Decs, ispos, vd1, vd2, vd3);
-  return syncGoto(mode, vr1, vr2, vr3, ispos, vd1, vd2, vd3);
+  // High-precision :SrL / :SdL matches Command_S.cpp on the main unit and the
+  // legacy ASCOM driver's target commands — avoids HMS/highPrecision quirks on
+  // :Sr/:Sd during goto/sync from Alpaca.
+  char cmd[52];
+  snprintf(cmd, sizeof(cmd), ":SrL%.9f#", (double)(Ra * 15.0));
+  if (set(cmd) != LX200_VALUESET)
+    return LX200_SETTARGETFAILED;
+  snprintf(cmd, sizeof(cmd), ":SdL%s%.9f#", Dec >= 0.0f ? "+" : "-", (double)fabs((double)Dec));
+  if (set(cmd) != LX200_VALUESET)
+    return LX200_SETTARGETFAILED;
+
+  if (mode == NAV_SYNC)
+  {
+    char out[LX200_LBUF];
+    if (get(":CM#", out, LX200_LBUF) == LX200_VALUEGET)
+      return (strcmp(out, "N/A") == 0) ? LX200_SYNCED : LX200_SYNCFAILED;
+    return LX200_SYNCFAILED;
+  }
+  if (mode == NAV_GOTO) return moveToTarget(T_RADEC);
+  if (mode == NAV_PUSHTO) return pushToTarget(T_RADEC);
+  return LX200_SETVALUEFAILED;
 }
 
 LX200RETURN LX200Client::syncGotoAltAz(NAV mode, uint16_t& vz1, uint8_t& vz2, uint8_t& vz3,
@@ -781,6 +794,31 @@ LX200RETURN LX200Client::setPark()          { return set(":hQ#"); }
 LX200RETURN LX200Client::parkReset()        { return set(":hO#"); }
 LX200RETURN LX200Client::setHomeCurrent()   { return set(":hB#"); }
 LX200RETURN LX200Client::resetHomeCurrent() { return set(":hb#"); }
+
+LX200RETURN LX200Client::getParkSaved(bool& saved)
+{
+  char out[LX200_SBUF];
+  memset(out, 0, sizeof(out));
+  if (!sendReceive(":hS#", CMDR_SHORT_BOOL, out, sizeof(out), m_timeout))
+    return LX200_GETVALUEFAILED;
+  saved = (out[0] == '1');
+  return LX200_VALUEGET;
+}
+
+namespace {
+static void lxDoubleToHexLe(double v, char out17[17])
+{
+  uint8_t b[8];
+  memcpy(b, &v, sizeof(b));
+  static const char* hd = "0123456789abcdef";
+  for (int i = 0; i < 8; ++i)
+  {
+    out17[i * 2]     = hd[b[i] >> 4];
+    out17[i * 2 + 1] = hd[b[i] & 15];
+  }
+  out17[16] = '\0';
+}
+}  // namespace
 
 // ===========================================================================
 //  Alignment
@@ -952,6 +990,24 @@ LX200RETURN LX200Client::setSpeedRate(uint8_t idx, float val)
   // Rates 1–3 are integer multipliers 1–255.
   int enc = (idx == 0) ? (int)(val * 100.f + 0.5f) : (int)val;
   sprintf(cmd, ":SXR%c,%d#", '0' + idx, enc);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::setTrackingOffsetRa(double rate)
+{
+  char hex[17];
+  lxDoubleToHexLe(rate, hex);
+  char cmd[LX200_SBUF];
+  snprintf(cmd, sizeof(cmd), ":SXRr,%s#", hex);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::setTrackingOffsetDec(double rate)
+{
+  char hex[17];
+  lxDoubleToHexLe(rate, hex);
+  char cmd[LX200_SBUF];
+  snprintf(cmd, sizeof(cmd), ":SXRd,%s#", hex);
   return set(cmd);
 }
 

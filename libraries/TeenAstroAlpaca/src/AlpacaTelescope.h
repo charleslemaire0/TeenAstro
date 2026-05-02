@@ -40,7 +40,7 @@ public:
   static const char* deviceName()        { return "TeenAstro Telescope"; }
   static const char* driverInfo()        { return "TeenAstro Alpaca driver — bridges the ASCOM Alpaca REST API to the TeenAstro LX200 protocol."; }
   static const char* driverVersion()     { return "1.0.0"; }
-  static int         interfaceVersion()  { return 3; }
+  static int         interfaceVersion()  { return 4; }
 
 private:
   // ---------- common ----------
@@ -197,8 +197,7 @@ private:
   bool                   m_siteLonSet    = false;
   double                 m_raRate        = 0;
   double                 m_decRate       = 0;
-  uint16_t               m_slewSettleSec = 0;
-  int                    m_trackingRate  = 0;   // 0=Sidereal, 1=Lunar, 2=Solar, 3=King
+  int                    m_trackingRate  = 0;   // Alpaca DriveRates: 0=Sidereal, 1=Solar, 2=Lunar, 3=King
 
   // ---- Soft state to honour ASCOM async semantics ----
   // MoveAxis must report Slewing=true while a non-zero rate is active.
