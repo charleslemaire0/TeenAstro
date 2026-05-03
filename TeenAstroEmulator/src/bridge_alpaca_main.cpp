@@ -62,7 +62,8 @@ int main(int argc, char** argv)
   std::printf("MainUnit link: connected.\n");
   std::fflush(stdout);
 
-  LX200Client          client(transport, 200);
+  // Longer LX timeout helps :GXAS#, :SXT1/:SXT0 UTC writes under emulator load (ConformU).
+  LX200Client          client(transport, 450);
   TeenAstroMountStatus mountStatus;
   mountStatus.setClient(client);
 

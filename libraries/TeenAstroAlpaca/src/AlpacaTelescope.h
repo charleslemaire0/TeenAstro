@@ -218,18 +218,10 @@ private:
   bool                   m_decRateCacheActive  = false;
   int                    m_trackingRate  = 0;   // Alpaca DriveRates: 0=Sidereal, 1=Solar, 2=Lunar, 3=King
 
-  // ---- Soft state to honour ASCOM async semantics ----
-  // MoveAxis must report Slewing=true while a non-zero rate is active.
-  // The mount-state cache in TeenAstroMountStatus only flips into
-  // TRK_SLEWING during a goto, so we shadow MoveAxis state here.
+  // ---- Soft state matching TelescopeHardware.cs shadows ----
   bool                   m_moveAxisActive[2] = { false, false };
-  /// ConformU: firmware suspends sidereal during :M1/:M2 AtRate — restore when stopping if it was on.
+  /// COM mirrors sidereal-after-MoveAxis: firmware suspends tracking during AtRate.
   bool                   m_moveAxisRestoreTracking = false;
-  // PulseGuide is asynchronous: the call returns immediately, and
-  // IsPulseGuiding must report true for `duration` ms afterwards.  The
-  // firmware does not expose a flag for this, so we shadow it.
-  unsigned long          m_pulseGuideEndMs   = 0;
-  // Forced "we just kicked off a slew, treat Slewing=true for ~settle ms"
-  // so async-slew callers can observe Slewing=true on the very next GET.
+  /// Deadline millis — TelescopeHardware.slewingHintUntilUtc (MS/MA/Park/MoveAxis/MF/doslew).
   unsigned long          m_slewKickEndMs     = 0;
 };

@@ -1,115 +1,21 @@
-20:43:14.358 ASCOM Universal Device Conformance Checker Version 4.2.1.48140, Build time: Mon 09 February 2026 12:14:24          
-20:43:14.358                                              
-20:43:14.359 Operating system is Windows 11 (25H2), Processor is Intel/AMD 64bit, Application is 64bit.          
-20:43:14.359                                              
-20:43:14.360 Alpaca device: TeenAstro Telescope (127.0.0.1:11111 Telescope/0)          
-20:43:14.360                                              
-20:43:14.362 CreateDevice                        INFO     Creating Alpaca device: Access service: Http, IP address: 127.0.0.1, IP Port: 11111, Alpaca device number: 0 (Not accepting user generated SSL certificates)
-20:43:14.371 CreateDevice                        INFO     Alpaca device created OK
-20:43:14.371 CreateDevice                        INFO     Successfully created driver
-20:43:15.450 CreateDevice                        OK       Found a valid interface version: 4
-20:43:15.450 CreateDevice                        OK       Driver instance created successfully
-20:43:15.450                                              
-20:43:15.450 Connect to device                            
-20:43:15.536 Connected                           OK       Connected to device successfully using Connected = True
-20:43:16.071 Connected                           OK       Disconnected from device successfully using Connected = False
-20:43:16.149 Connect                             OK       Connected to device successfully using Connect()
-20:43:16.150                                              
-20:43:16.152 Common Driver Methods                        
-20:43:16.152 InterfaceVersion                    OK       4
-20:43:16.165 Connected                           OK       True
-20:43:16.182 Description                         OK       TeenAstro mount via ASCOM Alpaca
-20:43:16.197 DriverInfo                          OK       TeenAstro Alpaca driver — bridges the ASCOM Alpaca REST API to the TeenAstro LX200 protocol.
-20:43:16.213 DriverVersion                       OK       1.0.0
-20:43:16.228 Name                                OK       TeenAstro Telescope
-20:43:16.228                                              
-20:43:16.228 Action                              INFO     Conform cannot test the Action method
-20:43:16.244 SupportedActions                    OK       Driver returned an empty action list
-20:43:16.244                                              
-20:43:16.267 DeviceState                         OK       Received 12 operational state properties.
-20:43:16.267 DeviceState                         OK         Altitude = 44.99988556
-20:43:16.267 DeviceState                         OK         AtHome = True
-20:43:16.267 DeviceState                         OK         AtPark = False
-20:43:16.267 DeviceState                         OK         Azimuth = 359.99975586
-20:43:16.267 DeviceState                         OK         Declination = 89.99978638
-20:43:16.267 DeviceState                         OK         IsPulseGuiding = False
-20:43:16.267 DeviceState                         OK         RightAscension = 3.54508281
-20:43:16.267 DeviceState                         OK         SideOfPier = Normal
-20:43:16.267 DeviceState                         OK         SiderealTime = 11.74203873
-20:43:16.267 DeviceState                         OK         Slewing = False
-20:43:16.267 DeviceState                         OK         Tracking = False
-20:43:16.267 DeviceState                         OK         UTCDate = 3/5/2026 12:53:20 AM
-20:43:16.269 DeviceState                         OK       Found all expected operational properties
-20:43:16.269                                              
-20:43:16.269 Can Properties                               
-20:43:16.276 CanFindHome                         OK       False
-20:43:16.290 CanPark                             OK       False
-20:43:16.305 CanPulseGuide                       OK       True
-20:43:16.320 CanSetDeclinationRate               OK       True
-20:43:16.335 CanSetGuideRates                    OK       True
-20:43:16.351 CanSetPark                          OK       True
-20:43:16.366 CanSetPierSide                      OK       True
-20:43:16.382 CanSetRightAscensionRate            OK       True
-20:43:16.398 CanSetTracking                      OK       True
-20:43:16.413 CanSlew                             OK       True
-20:43:16.428 CanSlewltAz                         OK       True
-20:43:16.444 CanSlewAltAzAsync                   OK       True
-20:43:16.460 CanSlewAsync                        OK       True
-20:43:16.476 CanSync                             OK       True
-20:43:16.492 CanSyncAltAz                        OK       True
-20:43:16.509 CanUnPark                           OK       False
-20:43:16.510                                              
-20:43:16.510 Pre-run Checks                               
-20:43:16.524 Mount Safety                        INFO     Scope is not parked, continuing testing
-20:43:16.540 Mount Safety                        INFO     Scope tracking has been enabled
-20:43:16.540 TimeCheck                           INFO     PC Time Zone:  (UTC+01:00) Brussels, Copenhagen, Madrid, Paris offset: 1 hours.
-20:43:16.540 TimeCheck                           INFO     PC UTCDate:    02-May-2026 18:43:16.540
-20:43:16.558 TimeCheck                           INFO     Mount UTCDate: 05-Mar-2026 00:53:20.000
-20:43:16.558                                              
-20:43:16.558 Properties                                   
-20:43:16.641 AlignmentMode                       OK       GermanPolar
-20:43:16.652 Altitude                            OK       +44:59:59.6
-20:43:16.667 ApertureArea                        OK       Optional member returned a NotImplementedException error.
-20:43:16.682 ApertureDiameter                    OK       Optional member returned a NotImplementedException error.
-20:43:16.698 AtHome                              OK       False
-20:43:16.713 AtPark                              OK       False
-20:43:16.729 Azimuth                             OK       +359:59:59.1
-20:43:16.744 Declination                         OK       +89:59:59.2
-20:43:16.760 DeclinationRate Read                OK       0.00
-20:43:16.775 DeclinationRate Write               INFO     Configured offset test duration: 30 seconds.
-20:43:16.775 DeclinationRate Write               INFO     Configured offset rate (low):   +0.050 arc seconds per second.
-20:43:16.775 DeclinationRate Write               INFO     Configured offset rate (high): +40.000 arc seconds per second.
-20:43:17.863 DeclinationRate Write               OK       Set rate to   0.000 - successfully set rate to  +0.000
-20:43:18.946 DeclinationRate Write               OK       Set rate to  +0.050 - successfully set rate to  +0.050
-20:43:20.060 DeclinationRate Write               OK       Set rate to  -0.050 - successfully set rate to  -0.050
-20:43:21.164 DeclinationRate Write               OK       Set rate to +40.000 - successfully set rate to +40.000
-20:43:22.270 DeclinationRate Write               OK       Set rate to -40.000 - successfully set rate to -40.000
-20:43:23.375 DeclinationRate Write               OK       Set rate to   0.000 - successfully set rate to  +0.000
-20:44:14.282 DeclinationRate Write -9.0          OK       Rate:  +0.050 - RightAscensionRate is within expected tolerance. Expected:  +0.0000, Actual:  +0.0005, Deviation from expected: 0.91%.
-20:44:14.282 DeclinationRate Write -9.0          OK       Rate:  +0.050 - DeclinationRate    is within expected tolerance. Expected:  +0.0500, Actual:  +0.0522, Deviation from expected: 4.37%.
-20:44:49.668 DeclinationRate Write -9.0          OK       Rate:  -0.050 - RightAscensionRate is within expected tolerance. Expected:  +0.0000, Actual:  +0.0007, Deviation from expected: 1.37%.
-20:44:49.668 DeclinationRate Write -9.0          ISSUE    Rate:  -0.050 - DeclinationRate    is outside the expected tolerance. Expected:  -0.0500, Actual:  -0.0449, Deviation from expected: 10.28%, Tolerance:5%, Test duration: 30 seconds.
-20:45:25.030 DeclinationRate Write -9.0          OK       Rate: +40.000 - RightAscensionRate is within expected tolerance. Expected:  +0.0000, Actual:  -0.0002, Deviation from expected: 0.46%.
-20:45:25.030 DeclinationRate Write -9.0          OK       Rate: +40.000 - DeclinationRate    is within expected tolerance. Expected: +40.0000, Actual: +39.7275, Deviation from expected: 0.68%.
-20:46:00.411 DeclinationRate Write -9.0          OK       Rate: -40.000 - RightAscensionRate is within expected tolerance. Expected:  +0.0000, Actual:  -0.0007, Deviation from expected: 1.37%.
-20:46:00.411 DeclinationRate Write -9.0          OK       Rate: -40.000 - DeclinationRate    is within expected tolerance. Expected: -40.0000, Actual: -40.0424, Deviation from expected: 0.11%.
-20:47:06.795 DeclinationRate Write +3.0          OK       Rate:  +0.050 - RightAscensionRate is within expected tolerance. Expected:  +0.0000, Actual:  +0.0009, Deviation from expected: 1.83%.
-20:47:06.795 DeclinationRate Write +3.0          ISSUE    Rate:  +0.050 - DeclinationRate    is outside the expected tolerance. Expected:  +0.0500, Actual:  +0.0449, Deviation from expected: 10.28%, Tolerance:5%, Test duration: 30 seconds.
-20:47:42.197 DeclinationRate Write +3.0          OK       Rate:  -0.050 - RightAscensionRate is within expected tolerance. Expected:  +0.0000, Actual:  -0.0001, Deviation from expected: 0.23%.
-20:47:42.197 DeclinationRate Write +3.0          OK       Rate:  -0.050 - DeclinationRate    is within expected tolerance. Expected:  -0.0500, Actual:  -0.0524, Deviation from expected: 4.83%.
-20:48:17.617 DeclinationRate Write +3.0          OK       Rate: +40.000 - RightAscensionRate is within expected tolerance. Expected:  +0.0000, Actual:  -0.0005, Deviation from expected: 0.91%.
-20:48:17.618 DeclinationRate Write +3.0          OK       Rate: +40.000 - DeclinationRate    is within expected tolerance. Expected: +40.0000, Actual: +39.4274, Deviation from expected: 1.43%.
-20:48:53.033 DeclinationRate Write +3.0          OK       Rate: -40.000 - RightAscensionRate is within expected tolerance. Expected:  +0.0000, Actual:  +0.0001, Deviation from expected: 0.23%.
-20:48:53.033 DeclinationRate Write +3.0          OK       Rate: -40.000 - DeclinationRate    is within expected tolerance. Expected: -40.0000, Actual: -39.7275, Deviation from expected: 0.68%.
-20:50:01.949 DeclinationRate Write +9.0          OK       Rate:  +0.050 - RightAscensionRate is within expected tolerance. Expected:  +0.0000, Actual:  +0.0010, Deviation from expected: 2.00%.
-20:50:01.949 DeclinationRate Write +9.0          ISSUE    Rate:  +0.050 - DeclinationRate    is outside the expected tolerance. Expected:  +0.0500, Actual:  +0.0449, Deviation from expected: 10.28%, Tolerance:5%, Test duration: 30 seconds.
-20:50:37.387 DeclinationRate Write +9.0          OK       Rate:  -0.050 - RightAscensionRate is within expected tolerance. Expected:  +0.0000, Actual:  +0.0008, Deviation from expected: 1.66%.
-20:50:37.387 DeclinationRate Write +9.0          ISSUE    Rate:  -0.050 - DeclinationRate    is outside the expected tolerance. Expected:  -0.0500, Actual:  -0.0526, Deviation from expected:  5.29%, Tolerance:5%, Test duration: 30 seconds.
-20:51:12.831 DeclinationRate Write +9.0          OK       Rate: +40.000 - RightAscensionRate is within expected tolerance. Expected:  +0.0000, Actual:  +0.0000, Deviation from expected: 0.00%.
-20:51:12.832 DeclinationRate Write +9.0          OK       Rate: +40.000 - DeclinationRate    is within expected tolerance. Expected: +40.0000, Actual: +40.0649, Deviation from expected: 0.16%.
-20:51:48.274 DeclinationRate Write +9.0          OK       Rate: -40.000 - RightAscensionRate is within expected tolerance. Expected:  +0.0000, Actual:  +0.0002, Deviation from expected: 0.34%.
-20:51:48.274 DeclinationRate Write +9.0          OK       Rate: -40.000 - DeclinationRate    is within expected tolerance. Expected: -40.0000, Actual: -40.0804, Deviation from expected: 0.20%.
-20:52:55.220 DeclinationRate Write -3.0          OK       Rate:  +0.050 - RightAscensionRate is within expected tolerance. Expected:  +0.0000, Actual:  +0.0007, Deviation from expected: 1.37%.
-20:52:55.220 DeclinationRate Write -3.0          OK       Rate:  +0.050 - DeclinationRate    is within expected tolerance. Expected:  +0.0500, Actual:  +0.0522, Deviation from expected: 4.37%.
-20:53:30.656 DeclinationRate Write -3.0          OK       Rate:  -0.050 - RightAscensionRate is within expected tolerance. Expected:  +0.0000, Actual:  +0.0001, Deviation from expected: 0.23%.
-20:53:30.656 DeclinationRate Write -3.0          ISSUE    Rate:  -0.050 - DeclinationRate    is outside the expected tolerance. Expected:  -0.0500, Actual:  -0.0453, Deviation from expected:  9.36%, Tolerance:5%, Test duration: 30 seconds.
+08:40:10.830 ASCOM Universal Device Conformance Checker Version 4.3.0.49708, Build time: Mon 30 March 2026 13:31:20          
+08:40:10.830                                              
+08:40:10.831 Operating system is Windows 11 (25H2), Processor is Intel/AMD 64bit, Application is 64bit.          
+08:40:10.831                                              
+08:40:10.832 Alpaca device: TeenAstro Telescope (127.0.0.1:11111 Telescope/0)          
+08:40:10.832                                              
+08:40:10.834 CreateDevice                        INFO     Creating Alpaca device: Access service: Http, IP address: 127.0.0.1, IP Port: 11111, Alpaca device number: 0 (Not accepting user generated SSL certificates)
+08:40:10.842 CreateDevice                        INFO     Alpaca device created OK
+08:40:10.842 CreateDevice                        INFO     Successfully created driver
+08:40:16.079 CreateDevice                        OK       Found a valid interface version: 1
+08:40:16.079 CreateDevice                        OK       Driver instance created successfully
+08:40:16.080                                              
+08:40:16.080 Connect to device                            
+08:40:20.268 ConnectToDevice                     ISSUE    Connection exception - further testing abandoned: No connection could be made because the target machine actively refused it.
+08:40:20.270                                              
+08:40:20.270 ConnectToDevice                              Cannot connect to device, further tests abandoned.
+08:40:20.271                                              
+08:40:20.271 Your device had 1 issue, 0 errors and 0 configuration alerts          
+08:40:20.271                                              
+08:40:20.271 Issue Summary                                
+08:40:20.271 ConnectToDevice                     ISSUE    Connection exception - further testing abandoned: No connection could be made because the target machine actively refused it.

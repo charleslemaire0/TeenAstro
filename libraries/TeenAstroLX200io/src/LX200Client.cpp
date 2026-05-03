@@ -562,8 +562,9 @@ LX200RETURN LX200Client::setTargetAlt(bool& ispos, uint16_t& vd1, uint8_t& vd2, 
 LX200RETURN LX200Client::gotoPolarAlignCurrent()
 {
   char out[LX200_SBUF];
-  if (!sendReceive(":MP#", CMDR_SHORT, out, sizeof(out), m_timeout))
-    return LX200_ERRGOTO_UNKOWN;
+  if (!sendReceive(":MP#", CMDR_SHORT, out, sizeof(out), m_timeout)
+      || out[0] < '0' || out[0] > '9')
+    return LX200_INVALIDREPLY;
   ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
   return gotoErrorToReturn(err, true);
 }
@@ -579,7 +580,9 @@ LX200RETURN LX200Client::moveToTarget(TARGETTYPE target)
   case T_USERRADEC: cmd = ":MU#"; break;
   default:          return LX200_ERRGOTO_UNKOWN;
   }
-  sendReceive(cmd, CMDR_SHORT, out, sizeof(out), m_timeout);
+  if (!sendReceive(cmd, CMDR_SHORT, out, sizeof(out), m_timeout)
+      || out[0] < '0' || out[0] > '9')
+    return LX200_INVALIDREPLY;
   ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
   return gotoErrorToReturn(err, true);
 }
@@ -595,7 +598,9 @@ LX200RETURN LX200Client::pushToTarget(TARGETTYPE target)
   case T_USERRADEC: cmd = ":EMU#"; break;
   default:          return LX200_ERRGOTO_UNKOWN;
   }
-  sendReceive(cmd, CMDR_SHORT, out, sizeof(out), m_timeout);
+  if (!sendReceive(cmd, CMDR_SHORT, out, sizeof(out), m_timeout)
+      || out[0] < '0' || out[0] > '9')
+    return LX200_INVALIDREPLY;
   ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
   return gotoErrorToReturn(err, false);
 }
@@ -762,7 +767,8 @@ LX200RETURN LX200Client::meridianFlip()
   CMDREPLY cmdreply = getReplyType(cmd);
   if (cmdreply == CMDR_INVALID)
     return LX200_INVALIDCOMMAND;
-  if (!sendReceive(cmd, cmdreply, out, sizeof(out), m_timeout))
+  if (!sendReceive(cmd, cmdreply, out, sizeof(out), m_timeout)
+      || out[0] < '0' || out[0] > '9')
     return LX200_INVALIDREPLY;
   ErrorsGoTo err = static_cast<ErrorsGoTo>(out[0] - '0');
   return gotoErrorToReturn(err, true);
