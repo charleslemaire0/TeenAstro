@@ -44,7 +44,8 @@
 #include "TeenAstroLA3.hpp"
 
 /// Selectors for polar / horizontal misclosure from \p Tinv (polErrorDeg).
-enum PolarErrSel : uint8_t {
+/// Plain enum (no fixed underlying type) so Teensy / Arduino builds without -std=c++11 still compile.
+enum PolarErrSel {
   PE_EQ_AZ = 0,
   PE_EQ_ALT = 1,
   PE_POL_W = 2
