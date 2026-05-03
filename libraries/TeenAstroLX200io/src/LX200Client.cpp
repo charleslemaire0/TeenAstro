@@ -125,7 +125,7 @@ bool LX200Client::sendReceive(const char* command, CMDREPLY replyType,
         }
       }
     }
-    ok &= (recvBuffer[0] != 0);
+    // Empty payload before '#' is valid (firmware replyLongUnknow() sends '#' alone).
     ok &= hashFound;
     // Verify expected length for fixed-length commands.
     // Accept short replies (MainUnit may not pad) to support older firmware.
