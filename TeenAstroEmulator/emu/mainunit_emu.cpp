@@ -54,6 +54,7 @@ namespace sim {
 /*  Cockpit UI                                                         */
 /* ------------------------------------------------------------------ */
 #include "cockpit_sdl.h"
+#include "http_cmd_proxy.h"
 
 /* Globals defined in firmware .cpp files:
  *   Mount mount;                   (Mount.cpp)
@@ -138,6 +139,9 @@ void emu_setupCommandSerial()
 
     /* WiFi server not started here; opened only when SHC sends :EW1# (WiFi on in menu) */
     commandState.S_WiFi_.attach_Stream(&g_tcpWifi, COMMAND_WIFI);
+
+    /* ASCOM COM driver IP mode uses HTTP GET /cmd?q=… (ESP8266 WebServer). Emulator proxies that to raw LX200 TCP (USB). */
+    emu_http_cmd_proxy_start(8080, 9997);
 }
 
 /* ------------------------------------------------------------------ */
@@ -147,6 +151,7 @@ int main(int, char**)
 {
     printf("=== TeenAstro MainUnit Emulator ===\n");
     printf("USB serial:    TCP 127.0.0.1:9997\n");
+    printf("ASCOM HTTP:    http://127.0.0.1:8080/cmd?q=   (driver: IP mode, host 127.0.0.1 — Port 9999 or 8080)\n");
     printf("SHC serial:    TCP 127.0.0.1:9998\n");
     printf("WiFi (Android): port 9999 opens when SHC menu has WiFi ON\n\n");
     fflush(stdout);

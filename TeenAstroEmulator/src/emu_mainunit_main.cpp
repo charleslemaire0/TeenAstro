@@ -22,6 +22,7 @@
 
 /* Entry point + globals */
 #include "../emu/mainunit_emu.cpp"
+#include "../emu/http_cmd_proxy.cpp"
 
 /* ---- Library .cpp files (pure math, no hardware) ---- */
 #include "../../libraries/TeenAstroLA3/TeenAstroLA3.cpp"
