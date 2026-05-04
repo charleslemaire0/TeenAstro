@@ -388,7 +388,14 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
   static int current_selection = 1;
   while (true)
   {
-    const bool showThreeStar = !ta_MountStatus.isAltAz();
+    // Deferred mechanical-pole alignment is GEM/FORK only. Do not use isAltAz() here:
+    // MountState::isAltAz() is true for MOUNT_UNDEFINED, which hides this menu line
+    // until :GXAS# has set mount type — bad UX on EQ mounts before the first decode.
+    const TeenAstroMountStatus::Mount mtAlign = ta_MountStatus.getMount();
+    const bool showThreeStar =
+        (mtAlign == TeenAstroMountStatus::MOUNT_TYPE_GEM
+         || mtAlign == TeenAstroMountStatus::MOUNT_TYPE_FORK
+         || mtAlign == TeenAstroMountStatus::MOUNT_UNDEFINED);
     const char* string_list = alignInProgress ? T_CANCEL :
       (ta_MountStatus.isAligned() ?
         (showThreeStar ?
