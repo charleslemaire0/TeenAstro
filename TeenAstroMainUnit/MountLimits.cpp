@@ -58,10 +58,16 @@ bool MountLimits::checkAltitudeLimits(double alt) const
 
 // -----------------------------------------------------------------------------
 // checkPole (GEM): position must stay away from under-pole; limit in degrees
+// Unit tests mirror this logic in tests/test_under_pole/test_under_pole.cpp (SYNC).
 // -----------------------------------------------------------------------------
 
 bool MountLimits::checkPole(long axis1, long axis2, CheckMode mode) const
 {
+  // Maximum configurable limit (12 decimal hours): treat as inactive — same as
+  // UniversalMainUnit/EqMount.cpp checkPole() and EEPROM :SXLU ceiling.
+  if (underPoleLimitGOTO >= 12.0)
+    return true;
+
   bool ok = false;
   double underPoleLimit = (mode == CHECKMODE_GOTO)
     ? underPoleLimitGOTO

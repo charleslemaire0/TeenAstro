@@ -29,13 +29,17 @@ pio test -d tests --filter test_coord
 pio test -d tests --filter test_coordconv
 pio test -d tests --filter test_tracking_rate
 pio test -d tests --filter test_meridian_flip
+pio test -d tests --filter test_under_pole
 
 # Python runner: discovers every tests/test/test_* folder and runs each via pio test
 python tests/run_all_tests.py
 python tests/run_all_tests.py test_la3       # single suite
 
-# Optional: after starting mainunit_emu (TCP 127.0.0.1:9997), GXAS meridian/flip regression
+# Optional: mainunit_emu on TCP 9997 — meridian / flip GXAS regression
 python tests/run_all_tests.py --with-emulator
+
+# Under-pole: compares :GXLU# to GXCS bytes 68–69 (no EEPROM writes unless script uses --write-test)
+python tests/run_all_tests.py --with-under-pole-emulator
 ```
 
 ## Test suites
@@ -100,6 +104,19 @@ Covers the same rules as **`StatusAxis::effectiveMotionDirectionPositive()`** in
 
 No full `Mount` link; native Unity only.
 
+### test_under_pole (10 tests) — GEM under-pole limit (`MountLimits::checkPole`)
+
+Mirrors **`MountLimits::checkPole()`** in `TeenAstroMainUnit/MountLimits.cpp` (see SYNC comments in both files): POLE_UNDER / POLE_OVER boundaries, GOTO vs TRACKING slack, scaling for limits 9–12 h, `POLE_NOTVALID` ⇒ false.
+
+**Emulator/hardware parity** (reads `:GXLU#` vs GXCS field; optional EEPROM round-trip with `--write-test`):
+
+```bash
+python TeenAstroEmulator/tools/emu_under_pole_integration_test.py
+python TeenAstroEmulator/tools/emu_under_pole_integration_test.py --verify-twelve-hour-deactivation 127.0.0.1 9997
+python TeenAstroEmulator/tools/emu_under_pole_integration_test.py --native-only-under-pole
+python TeenAstroEmulator/tools/emu_under_pole_integration_test.py --write-test
+```
+
 ## Architecture
 
 ```
@@ -113,6 +130,7 @@ tests/
         test_coordconv/test_coordconv.cpp   CoordConv tests
         test_tracking_rate/test_tracking_rate.cpp   Tracking rate protocol tests
         test_meridian_flip/test_meridian_flip.cpp   Meridian axis helpers + GXAS GotoState
+        test_under_pole/test_under_pole.cpp         Under-pole limit geometry (GEM)
     run_all_tests.py            Master runner script
     run_all_tests.bat           Windows batch wrapper
 ```

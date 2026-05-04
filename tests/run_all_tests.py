@@ -8,6 +8,8 @@ Usage:
     python tests/run_all_tests.py --with-emulator
                         # same + GXAS meridian/flip regression (TCP 127.0.0.1:9997;
                         # start mainunit_emu first)
+    python tests/run_all_tests.py --with-under-pole-emulator
+                        # TeenAstroEmulator/tools/emu_under_pole_integration_test.py (GXLU vs GXCS)
     python tests/run_all_tests.py test_la3
     python tests/run_all_tests.py test_la3 test_coord
 
@@ -57,6 +59,25 @@ def run_suite(suite_name: str) -> bool:
     return result.returncode == 0
 
 
+def run_emulator_under_pole() -> bool:
+    """
+    Under-pole limit: :GXLU# vs GXCS bytes 68-69 parity (TCP 127.0.0.1:9997).
+    Requires mainunit_emu running.
+    """
+    script = os.path.join(
+        REPO_ROOT, "TeenAstroEmulator", "tools", "emu_under_pole_integration_test.py"
+    )
+    if not os.path.isfile(script):
+        print(f"Missing script: {script}")
+        return False
+    print(f"\n{'='*60}")
+    print("  Emulator: emu_under_pole_integration_test.py (127.0.0.1:9997)")
+    print(f"{'='*60}\n")
+    cmd = [sys.executable, "-u", script, "127.0.0.1", "9997"]
+    result = subprocess.run(cmd, cwd=REPO_ROOT)
+    return result.returncode == 0
+
+
 def run_emulator_gxas_regression() -> bool:
     """
     Integration regression: TeenAstroEmulator mainunit_emu on TCP 9997.
@@ -77,8 +98,10 @@ def run_emulator_gxas_regression() -> bool:
 
 
 def main():
-    argv = [a for a in sys.argv[1:] if a != "--with-emulator"]
+    SKIP_FLAGS = ("--with-emulator", "--with-under-pole-emulator")
+    argv = [a for a in sys.argv[1:] if a not in SKIP_FLAGS]
     with_emulator = "--with-emulator" in sys.argv[1:]
+    with_under_pole_emu = "--with-under-pole-emulator" in sys.argv[1:]
 
     all_suites = discover_native_suites()
     if not all_suites:
@@ -106,6 +129,9 @@ def main():
 
     if with_emulator:
         results["emulator_gxas_flip"] = run_emulator_gxas_regression()
+
+    if with_under_pole_emu:
+        results["emulator_under_pole"] = run_emulator_under_pole()
 
     elapsed = time.time() - start
 

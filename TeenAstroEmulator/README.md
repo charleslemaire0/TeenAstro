@@ -47,6 +47,19 @@ By default it does **not** send **:SXLE** / **:SXLW** (those write meridian GOTO
 
 It checks that an **EQ goto** reports **gotoKind = 1** while slewing, and—if **:MF#** returns **0**—that a **flip** reports **gotoKind = 3** during the flip slew. If **:MF#** returns **3** or **6**, the emulator pose/limits did not allow a flip; EQ mimic can still pass.
 
+## Under-pole limit parity (`:GXLU#` vs GXCS)
+
+`tools/emu_under_pole_integration_test.py` checks that the under-pole hour limit from **:GXLU#** matches **GXCS** bytes **68–69** (uint16 LE, value ×10). With **`--write-test`**, it briefly sets **:SXLU,110#** (11.0 h) and restores the previous value.
+
+**Twelve-hour deactivation:** firmware treats **≥ 12 h** as inactive for `checkPole` (OnStep / Universal parity — `MountLimits::checkPole` early-out). **`--verify-twelve-hour-deactivation`** runs the PlatformIO **`test_under_pole`** Unity suite plus a live **`:SXLU,120#`** round-trip against **mainunit_emu** on TCP **9997**. For logic only (no emulator), use **`--native-only-under-pole`**.
+
+```bash
+python TeenAstroEmulator/tools/emu_under_pole_integration_test.py
+python TeenAstroEmulator/tools/emu_under_pole_integration_test.py --verify-twelve-hour-deactivation 127.0.0.1 9997
+python TeenAstroEmulator/tools/emu_under_pole_integration_test.py --native-only-under-pole
+python TeenAstroEmulator/tools/emu_under_pole_integration_test.py --write-test
+```
+
 ## Match hardware mount settings (COM → emulator)
 
 `tools/emu_sync_config_from_serial.py` reads **:GXCS#** (and **:GW#**) from a real TeenAstro serial port and sends the equivalent **:SXR** / **:SXL** / **:SXr** / **:SXM**… commands to the emulator on **TCP 9997** so rates, meridian limits, axis soft limits, horizon/overhead, under-pole, refraction flags, etc. match the scope.
