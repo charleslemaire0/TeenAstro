@@ -11,6 +11,22 @@ void main() {
       expect(LX200.alignStart, equals(':A0#'));
     });
 
+    test('alignStartMechanicalPole is :A0,m#', () {
+      expect(LX200.alignStartMechanicalPole, equals(':A0,m#'));
+    });
+
+    test('alignStartThreeStars aliases :A0,m#', () {
+      expect(LX200.alignStartThreeStars, equals(':A0,m#'));
+    });
+
+    test('gotoPolarAlignCurrent is :MP#', () {
+      expect(LX200.gotoPolarAlignCurrent, equals(':MP#'));
+    });
+
+    test('gotoPolarAlignMalign is :Malign#', () {
+      expect(LX200.gotoPolarAlignMalign, equals(':Malign#'));
+    });
+
     test('alignAddStar(1) is :A1# (first star, OnStepX-style)', () {
       expect(LX200.alignAddStar(1), equals(':A1#'));
     });
@@ -19,8 +35,8 @@ void main() {
       expect(LX200.alignAddStar(2), equals(':A2#'));
     });
 
-    test('alignAddStar(3) is :A3# (third star)', () {
-      expect(LX200.alignAddStar(3), equals(':A3#'));
+    test('alignAddStar(3) is :AP# (polar / mechanical finalize)', () {
+      expect(LX200.alignAddStar(3), equals(':AP#'));
     });
 
     test('getAlignError is :AE#', () {
@@ -50,10 +66,10 @@ void main() {
       expect(AlignStep.recenterStar2.index, lessThan(AlignStep.done.index));
     });
 
-    test('accept star n sends :An# (OnStepX-style)', () {
+    test('accept star 1–2 sends :An#; star 3 finalize sends :AP#', () {
       expect(LX200.alignAddStar(1), equals(':A1#'));
       expect(LX200.alignAddStar(2), equals(':A2#'));
-      expect(LX200.alignAddStar(3), equals(':A3#'));
+      expect(LX200.alignAddStar(3), equals(':AP#'));
     });
   });
 

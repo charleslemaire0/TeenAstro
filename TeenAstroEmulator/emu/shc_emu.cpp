@@ -51,6 +51,21 @@ namespace sim {
 /* TCP client to MainUnit (used by emu_attempt_reconnect and main) */
 static TcpClientStream g_tcpToMainUnit;
 
+static bool probeTcpLoopbackPort(int port)
+{
+    tcp_detail::initWsa();
+    socket_t s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (s == INVALID_SOCK)
+        return false;
+    sockaddr_in addr{};
+    addr.sin_family      = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port        = htons((uint16_t)port);
+    bool reachable       = (::connect(s, (struct sockaddr*)&addr, sizeof(addr)) != SOCK_ERR);
+    SOCK_CLOSE(s);
+    return reachable;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Child-process management (auto-launch MainUnit)                    */
 /* ------------------------------------------------------------------ */
@@ -826,12 +841,16 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    /* Launch MainUnit as a child process */
-    if (launchMainUnit()) {
-        printf("Launched MainUnit emulator (auto)\n");
-        SDL_Delay(2000);
+    /* Launch MainUnit only if nothing is already listening on the SHC link */
+    if (!probeTcpLoopbackPort(9998)) {
+        if (launchMainUnit()) {
+            printf("Launched MainUnit emulator (auto)\n");
+            SDL_Delay(2000);
+        } else {
+            printf("MainUnit exe not found next to SHC -- assuming already running.\n");
+        }
     } else {
-        printf("MainUnit exe not found next to SHC -- assuming already running.\n");
+        printf("MainUnit already listening on 127.0.0.1:9998.\n");
     }
     fflush(stdout);
 

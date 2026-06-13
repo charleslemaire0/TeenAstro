@@ -36,6 +36,7 @@
 #define T_WARNING "ALERTE"
 #define T_STAR "Étoile"
 #define T_STARS "Étoiles"
+#define T_TWO_STARS_MECH "2 étoiles méca."
 #define T_SLEWINGTO "Pointe vers" 
 #define T_RECENTER "Recentre"
 #define T_SELECTASTAR "Sélect. une Étoile"

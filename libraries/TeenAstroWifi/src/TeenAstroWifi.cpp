@@ -702,8 +702,14 @@ void TeenAstroWifi::handleLx200Cmd()
   char buf[256] = "";
   // Generic LX200 query passthrough; form handlers in Configuration_*.cpp use typed s_client methods.
   LX200RETURN ret = s_client->get(q.c_str(), buf, sizeof(buf));
-  if (ret == LX200_VALUEGET && strlen(buf) > 0)
-    server.send(200, "text/plain", buf);
+  // LX200Client now accepts '#'‑only replies; forward them so ASCOM sees non‑empty HTTP body.
+  if (ret == LX200_VALUEGET)
+  {
+    if (strlen(buf) > 0)
+      server.send(200, "text/plain", buf);
+    else
+      server.send(200, "text/plain", "#");
+  }
   else
     server.send(200, "text/plain", "");
 }

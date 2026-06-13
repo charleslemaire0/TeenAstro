@@ -146,7 +146,7 @@ namespace ASCOM.TeenAstro.Telescope
       this.RadioButtonIP.Name = "RadioButtonIP";
       this.RadioButtonIP.Size = new System.Drawing.Size(70, 17);
       this.RadioButtonIP.TabIndex = 12;
-      this.RadioButtonIP.Text = "IP Adress";
+      this.RadioButtonIP.Text = "IP / Wi-Fi (HTTP)";
       this.RadioButtonIP.UseVisualStyleBackColor = true;
       this.RadioButtonIP.CheckedChanged += new System.EventHandler(this.RadioButtonIP_CheckedChanged);
       // 

@@ -13,6 +13,7 @@
 using ASCOM.Utilities;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Text;
 
@@ -40,6 +41,11 @@ namespace ASCOM.LocalServer
     private static string connectionIP;
     private static short connectionPort;
     private static string connectionInterface;
+
+    /// <summary>Driver profile default for raw LX200 TCP; HTTP GET /cmd may use a different port — see <see cref="ResolveHttpPortForCmd"/>.</summary>
+    private const short ProfilePortDefaultLx200Tcp = 9999;
+    private const int HttpPortEspWifiCmd = 80;
+    private const int HttpPortLoopbackEmuCmd = 8080;
 
     // HTTP transport is stateless — no persistent socket needed for IP mode.
 
@@ -228,6 +234,50 @@ namespace ASCOM.LocalServer
       return false;
     }
 
+    /// <summary>Map profile port + host field to the TCP port of TeenAstro's HTTP <c>/cmd</c> endpoint.</summary>
+    private static int ResolveHttpPortForCmd(bool explicitHttpPortInHost, int portFromHostField, bool loopbackHost)
+    {
+      if (explicitHttpPortInHost)
+        return portFromHostField;
+      if (connectionPort == ProfilePortDefaultLx200Tcp && loopbackHost)
+        return HttpPortLoopbackEmuCmd;
+      if (connectionPort == ProfilePortDefaultLx200Tcp)
+        return HttpPortEspWifiCmd;
+      return connectionPort;
+    }
+
+    private static bool TryBuildTeenAstroCmdUri(string host, int httpPort, string command, out string absoluteUri)
+    {
+      absoluteUri = null;
+      if (string.IsNullOrWhiteSpace(host) || httpPort < 1 || httpPort > 65535)
+        return false;
+      try
+      {
+        var ub = new UriBuilder("http", host, httpPort, "/cmd")
+        {
+          Query = "q=" + Uri.EscapeDataString(command ?? "")
+        };
+        absoluteUri = ub.Uri.AbsoluteUri;
+        return true;
+      }
+      catch (UriFormatException)
+      {
+        return false;
+      }
+    }
+
+    /// <summary>LX200 payloads over HTTP: strip trailing line ends; preserve a lone '#' (unknown reply); otherwise strip trailing '#'.</summary>
+    private static string NormalizeIpCmdResponseBody(string raw)
+    {
+      if (string.IsNullOrEmpty(raw))
+        return "";
+      string trimmedEnds = raw.TrimEnd('\r', '\n', '\uFEFF');
+      string outerTrim = trimmedEnds.Trim();
+      if (outerTrim == "#")
+        return "#";
+      return trimmedEnds.TrimEnd('#');
+    }
+
     private static bool SendCommandIP(string command, int mode, ref string buf, int retries)
     {
       if (string.IsNullOrWhiteSpace(connectionIP))
@@ -235,13 +285,23 @@ namespace ASCOM.LocalServer
 
       int portToUse = connectionPort;
       string normalizedHost = null;
-      if (!TryNormalizeHostAndOptionalPort(connectionIP, out normalizedHost, out portToUse))
+      bool explicitHttpPort = false;
+      if (!TryNormalizeHostAndOptionalPort(connectionIP, out normalizedHost, out portToUse, out explicitHttpPort))
         return false;
       if (string.IsNullOrWhiteSpace(normalizedHost))
         return false;
 
-      // Port from profile is for the TCP command channel (9999), NOT the HTTP server (80).
-      string baseUrl = "http://" + normalizedHost + "/cmd?q=" + Uri.EscapeDataString(command);
+      bool loopbackHost =
+          string.Equals(normalizedHost, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
+          || string.Equals(normalizedHost, "localhost", StringComparison.OrdinalIgnoreCase)
+          || string.Equals(normalizedHost, "::1", StringComparison.OrdinalIgnoreCase);
+
+      int httpPort = ResolveHttpPortForCmd(explicitHttpPort, portToUse, loopbackHost);
+      if (!TryBuildTeenAstroCmdUri(normalizedHost, httpPort, command, out string baseUrl))
+      {
+        LogCallback?.Invoke("IP URL invalid", $"host={normalizedHost} port={httpPort}");
+        return false;
+      }
 
       for (int k = 0; k <= retries; k++)
       {
@@ -256,9 +316,19 @@ namespace ASCOM.LocalServer
           request.ServicePoint.ConnectionLimit = 10;
 
           using (var response = (HttpWebResponse)request.GetResponse())
-          using (var reader = new System.IO.StreamReader(response.GetResponseStream(), Encoding.ASCII))
           {
-            buf = reader.ReadToEnd().TrimEnd('#');
+            using (Stream stream = response.GetResponseStream())
+            {
+              if (stream == null)
+              {
+                buf = "";
+              }
+              else
+              {
+                using (var reader = new StreamReader(stream, Encoding.ASCII))
+                  buf = NormalizeIpCmdResponseBody(reader.ReadToEnd());
+              }
+            }
           }
 
           if (mode == 0) return true;
@@ -285,10 +355,13 @@ namespace ASCOM.LocalServer
 
     // Returns true when a usable host is extracted.
     // Also optionally extracts a numeric ":port" suffix from typical IPv4/hostname forms.
-    private static bool TryNormalizeHostAndOptionalPort(string input, out string host, out int portOverride)
+    // When explicitPortInHost is true, that port applies to HTTP /cmd; otherwise derive HTTP port from profile Port
+    // (9999 → 80 on LAN mounts; 9999 → 8080 on loopback for PC emulator; non‑9999 → use as HTTP port).
+    private static bool TryNormalizeHostAndOptionalPort(string input, out string host, out int portOverride, out bool explicitPortInHost)
     {
       host = null;
       portOverride = connectionPort;
+      explicitPortInHost = false;
 
       if (string.IsNullOrWhiteSpace(input))
         return false;
@@ -325,7 +398,10 @@ namespace ASCOM.LocalServer
         {
           string portPart = after.Substring(1).Trim();
           if (int.TryParse(portPart, out int p) && p > 0 && p <= 65535)
+          {
             portOverride = p;
+            explicitPortInHost = true;
+          }
         }
         return true;
       }
@@ -341,6 +417,7 @@ namespace ASCOM.LocalServer
         {
           host = maybeHost;
           portOverride = p;
+          explicitPortInHost = true;
           return true;
         }
       }

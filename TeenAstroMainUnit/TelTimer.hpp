@@ -147,10 +147,6 @@ public:
       if (elapsed > 1)
       {
         m_missedTicks += (elapsed - 1);
-#ifdef EMU_MAINUNIT
-        printf("[EMU] WARNING: %ld sidereal ticks missed (elapsed=%ld)\n", elapsed - 1, elapsed);
-        fflush(stdout);
-#endif
       }
       return elapsed;
     }
