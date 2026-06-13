@@ -227,6 +227,7 @@ public:
   LX200RETURN stopMoveWest();                    // :Qw#
   LX200RETURN stopSlew();                        // :Q#
   LX200RETURN meridianFlip();                    // :MF#
+  LX200RETURN gotoPolarAlignCurrent();           // :MP# (EQ: goto current RA/Dec)
   LX200RETURN setSpeed(uint8_t level);           // :R0# .. :R4#
   LX200RETURN spiralSearchStart(int arcMinutes); // :M@NNN# (field size in arcminutes)
 
@@ -238,6 +239,8 @@ public:
   LX200RETURN park();                            // :hP#
   LX200RETURN unpark();                          // :hR#
   LX200RETURN setPark();                         // :hQ#
+  /// Whether a park position has been saved (:hS# → '1' / '0').
+  LX200RETURN getParkSaved(bool& saved);
   LX200RETURN parkReset();                       // :hO#
   LX200RETURN setHomeCurrent();                  // :hB#
   LX200RETURN resetHomeCurrent();                // :hb#
@@ -246,7 +249,15 @@ public:
   //  Alignment
   // -----------------------------------------------------------------------
   LX200RETURN alignStart();                      // :A0#
+  /// Mechanical pole: two stars + bolt pass; use :AP# to finalize after recenter.
+  LX200RETURN alignStartMechanicalPole();        // :A0,m#
+  /// @deprecated Use alignStartMechanicalPole(); still sends :A0,m#.
+  LX200RETURN alignStartThreeStars();
   LX200RETURN alignAcceptStar();                 // :A*#
+  /// First star at target for mechanical-pole session (same as :A*# + session flag).
+  LX200RETURN alignAcceptStarMechanicalPole();   // :A*,m#
+  /// Finalize mechanical pole pass after :MP# / recenter (not :A3#).
+  LX200RETURN alignPolarFinalize();             // :AP#
   LX200RETURN alignAtHome();                     // :AA#
   LX200RETURN alignSave();                       // :AW#
   LX200RETURN alignClear();                      // :AC#
@@ -305,6 +316,9 @@ public:
   LX200RETURN setDeadband(int val);              // :SXRD,val#
   LX200RETURN getSpeedRate(uint8_t idx, float& val);   // :GXRn#
   LX200RETURN setSpeedRate(uint8_t idx, float val);    // :SXRn,val# (idx 0: ×sidereal → sent as hundredths)
+  /// ASCOM tracking offsets as IEEE754 little-endian doubles on the wire (:SXRr# / :SXRd#, same as ASCOM driver).
+  LX200RETURN setTrackingOffsetRa(double ascomRaSecPerSiderealSec);   // :SXRr,<16 hex LE>#
+  LX200RETURN setTrackingOffsetDec(double decArcsecPerSec);           // :SXRd,<16 hex LE>#
 
   // -----------------------------------------------------------------------
   //  Extended GX/SX config — Limits

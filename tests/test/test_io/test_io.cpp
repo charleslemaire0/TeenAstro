@@ -244,12 +244,25 @@ void test_getReplyType_rate(void) {
     TEST_ASSERT_EQUAL(CMDR_NO, getReplyType(":R4#"));
 }
 
+void test_getReplyType_move_goto(void) {
+    TEST_ASSERT_EQUAL(CMDR_SHORT, getReplyType(":MS#"));
+    TEST_ASSERT_EQUAL(CMDR_SHORT, getReplyType(":MP#"));
+    TEST_ASSERT_EQUAL(CMDR_SHORT, getReplyType(":Malign#"));
+    TEST_ASSERT_EQUAL(CMDR_SHORT, getReplyType(":MF#"));
+}
+
 void test_getReplyType_alignment(void) {
     TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":A0#"));
+    TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":A0,2#"));
+    TEST_ASSERT_EQUAL(CMDR_NO, getReplyType(":A0,3#"));
+    TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":A0,m#"));
+    TEST_ASSERT_EQUAL(CMDR_NO, getReplyType(":A*,3#"));
     TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":A*#"));
+    TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":A*,m#"));
     TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":A1#"));
     TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":A2#"));
     TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":A3#"));
+    TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":AP#"));
     TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":A9#"));
     TEST_ASSERT_EQUAL(CMDR_SHORT_BOOL, getReplyType(":AW#"));
     TEST_ASSERT_EQUAL(CMDR_LONG, getReplyType(":AE#"));
@@ -299,6 +312,20 @@ void test_align_start_sends_A0(void) {
     TEST_ASSERT_EQUAL_STRING(":A0#", mockStream.getSent());
 }
 
+void test_align_start_mechanical_sends_A0_comma_m(void) {
+    prepareSetOk();
+    LX200RETURN ret = client->alignStartMechanicalPole();
+    TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":A0,m#", mockStream.getSent());
+}
+
+void test_goto_polar_align_sends_MP(void) {
+    mockStream.loadResponse("0");
+    LX200RETURN ret = client->gotoPolarAlignCurrent();
+    TEST_ASSERT_EQUAL(LX200_GOTO_TARGET, ret);
+    TEST_ASSERT_EQUAL_STRING(":MP#", mockStream.getSent());
+}
+
 void test_align_select_star_1_sends_A1(void) {
     prepareSetOk();
     LX200RETURN ret = client->alignSelectStar(1);
@@ -313,11 +340,11 @@ void test_align_select_star_2_sends_A2(void) {
     TEST_ASSERT_EQUAL_STRING(":A2#", mockStream.getSent());
 }
 
-void test_align_select_star_3_sends_A3(void) {
+void test_align_select_star_3_sends_AP(void) {
     prepareSetOk();
     LX200RETURN ret = client->alignSelectStar(3);
     TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
-    TEST_ASSERT_EQUAL_STRING(":A3#", mockStream.getSent());
+    TEST_ASSERT_EQUAL_STRING(":AP#", mockStream.getSent());
 }
 
 void test_reply_long(void) {
@@ -1862,6 +1889,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_getReplyType_halt);
     RUN_TEST(test_getReplyType_home_park);
     RUN_TEST(test_getReplyType_rate);
+    RUN_TEST(test_getReplyType_move_goto);
     RUN_TEST(test_getReplyType_alignment);
     RUN_TEST(test_getReplyType_invalid);
     RUN_TEST(test_frame_format_get);
@@ -1870,9 +1898,11 @@ int main(int argc, char** argv) {
     RUN_TEST(test_reply_short_bool_true);
     RUN_TEST(test_reply_short_bool_false);
     RUN_TEST(test_align_start_sends_A0);
+    RUN_TEST(test_align_start_mechanical_sends_A0_comma_m);
+    RUN_TEST(test_goto_polar_align_sends_MP);
     RUN_TEST(test_align_select_star_1_sends_A1);
     RUN_TEST(test_align_select_star_2_sends_A2);
-    RUN_TEST(test_align_select_star_3_sends_A3);
+    RUN_TEST(test_align_select_star_3_sends_AP);
     RUN_TEST(test_reply_long);
     RUN_TEST(test_reply_long_accepts_short_product_board_driver);
     RUN_TEST(test_timeout_returns_failure);

@@ -17,6 +17,11 @@ struct MountAlignment {
   CoordConv conv;
   bool hasValid = false;
   byte maxAlignNumStar = 0;
+  /// Session star count from :A0# (default 2) or :A0,m# / :A*,m# for equatorial mechanical-pole path.
+  uint8_t alignNumStarsSession = 2;
+  /// After two stars, provisional model built; :AP# discards it (cold baseline,
+  /// hasValid=false, EE_Tvalid cleared) and syncs at the recentered star.
+  bool alignPolarThirdPending = false;
   bool autoAlignmentBySync = false;
   AlignPhase alignPhase = ALIGN_IDLE;
   uint8_t alignStarNum  = 0;

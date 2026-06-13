@@ -63,6 +63,7 @@ extern uint8_t midx;
 // limits GEM
 #define EE_dpmE             52
 #define EE_dpmW             53
+/** Under-pole limit (GEM): EEPROM byte = decimal hours × 10 (90…120); see :SXLU#, :GXLU#, GXCS. */
 #define EE_dup              54
 #define EE_dpmDistanceFromPole  55
 

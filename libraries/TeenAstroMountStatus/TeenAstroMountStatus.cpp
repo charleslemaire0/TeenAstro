@@ -170,7 +170,7 @@ TeenAstroMountStatus::AlignReply TeenAstroMountStatus::addStar()
     return AlignReply::ALIR_FAILED2;
   }
 
-  // OnStepX-style: :A1# first star, :A2# second, :A3# third, etc.
+  // OnStepX-style: :A1# / :A2# stars; mechanical pole session uses :AP# to finalize (not :A3#).
   uint8_t n = (uint8_t)getAlignStar();
   if (n < 1 || n > 9) { stopAlign(); return AlignReply::ALIR_FAILED2; }
 

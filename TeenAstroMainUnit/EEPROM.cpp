@@ -59,7 +59,8 @@ void writeDefaultMount()
   XEEPROM.write(getMountAddress(EE_maxAlt), mount.limits.maxAlt);
   XEEPROM.write(getMountAddress(EE_dpmE), 0);
   XEEPROM.write(getMountAddress(EE_dpmW), 0);
-  XEEPROM.write(getMountAddress(EE_dup), (12 - 9) * 15);
+  /* Under-pole limit in EEPROM: integer tenths of an hour (9.0→90 … 12.0→120), same as :SXLU#. */
+  XEEPROM.write(getMountAddress(EE_dup), 120);
   XEEPROM.write(getMountAddress(EE_dpmDistanceFromPole), 181);
   mount.limits.forceResetEELimit();
 
@@ -180,9 +181,18 @@ void initMount()
   mount.limits.minutesPastMeridianGOTOW = round(((EEPROM.read(getMountAddress(EE_dpmW)) - 128) * 60.0) / 15.0);
   if (abs(mount.limits.minutesPastMeridianGOTOW) > 180)
     mount.limits.minutesPastMeridianGOTOW = 60;
-  mount.limits.underPoleLimitGOTO = (double)EEPROM.read(getMountAddress(EE_dup)) / 10;
-  if (mount.limits.underPoleLimitGOTO < 9 || mount.limits.underPoleLimitGOTO>12)
-    mount.limits.underPoleLimitGOTO = 12;
+  {
+    /* EE_dup: one byte = round(limit_hours × 10). Legacy autoinit used (12-9)*15=45 (wrong); normalize invalid to 120. */
+    uint8_t dupRaw = XEEPROM.read(getMountAddress(EE_dup));
+    double up = dupRaw / 10.0;
+    if (up < 9.0 || up > 12.0)
+    {
+      mount.limits.underPoleLimitGOTO = 12.0;
+      XEEPROM.update(getMountAddress(EE_dup), 120);
+    }
+    else
+      mount.limits.underPoleLimitGOTO = up;
+  }
 
   // initialize some fixed-point values
   mount.axes.staA1.fstep = 0.0;
