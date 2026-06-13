@@ -140,7 +140,7 @@ inline int getExpectedReplyLength(const char* command)
   if (strcmp(command, ":GXT0#") == 0) return 8;
   if (strcmp(command, ":GXT1#") == 0) return 8;
   if (strcmp(command, ":GXT2#") == 0) return 16;
-  if (strcmp(command, ":GXT3#") == 0) return 8;
+  if (strcmp(command, ":GXT3#") == 0) return 9;
   if (strcmp(command, ":GXlX#") == 0) return 8;
   if (strcmp(command, ":GXrg#") == 0) return 4;
   if (strcmp(command, ":GXrp#") == 0) return 4;
