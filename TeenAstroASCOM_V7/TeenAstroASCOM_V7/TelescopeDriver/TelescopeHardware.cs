@@ -866,8 +866,8 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
-        LogMessage("CanFindHome", "Get - " + false.ToString());
-        return false;
+        LogMessage("Get CanFindHome", HasMotors.ToString());
+        return HasMotors;
       }
     }
 
@@ -1220,8 +1220,30 @@ namespace ASCOM.TeenAstro.Telescope
     /// </summary>
     internal static void FindHome()
     {
-      LogMessage("FindHome", "Not implemented");
-      throw new MethodNotImplementedException("FindHome");
+      if (CanFindHome)
+      {
+        if (AtHome)
+        {
+          LogMessage("FindHome", "Already at home");
+          return;
+        }
+        string cmd = "hC";
+        if (CommandBoolSingleChar(cmd))
+        {
+          slewingHintUntilUtc = DateTime.UtcNow.AddSeconds(2);
+          ForceGXASCacheRefresh();
+          LogMessage("FindHome", "Started");
+        }
+        else
+        {
+          LogMessage("FindHome", "failed");
+          throw new ASCOM.DriverException("FindHome has failed");
+        }
+      }
+      else
+      {
+        throw new ASCOM.MethodNotImplementedException("FindHome");
+      }
     }
 
     /// <summary>
