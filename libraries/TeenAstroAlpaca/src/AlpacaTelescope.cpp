@@ -164,37 +164,245 @@ bool AlpacaTelescope::requireConnected(AlpacaWebServer& s, const AlpacaRequest& 
   return false;
 }
 
-void AlpacaTelescope::ensureTrackingOnForRadecOps()
+// ----------------------------------------------------------------------------
+//  Non-blocking motion state machine
+//
+//  Replaces the former blocking poll loops (ensureTrackingOnForRadecOps, up to
+//  6.4 s, and settleMotionBeforeRadecCmd, up to 18 s) that ran inside the HTTP
+//  request handler.  A slew/sync/flip request now validates fast preconditions
+//  synchronously, enqueues the operation via beginMotion(), and returns at
+//  once.  tick() advances EnsureTracking -> Settle -> Issue one short serial
+//  step per call, so neither the Alpaca handler nor the host loop ever blocks
+//  for seconds.  Slewing reflects the queued operation so clients still poll
+//  to completion exactly as the ASCOM async contract expects.
+// ----------------------------------------------------------------------------
+
+bool AlpacaTelescope::motionNeedsTracking(MotionKind k)
 {
-  if (!m_client || !m_status) return;
-  if (!m_status->motorsEnableCached()) return;
-  // ConformU toggles Tracking=false between sections; GXAS may lag :Te#. Restore
-  // sidereal tracking like the TeenAstro ASCOM driver and poll until ON (~6 s).
-  for (int attempt = 0; attempt < 160; ++attempt)
-  {
-    m_status->updateAllState(true);
-    if (m_status->getTrackingState() == MountState::TRK_ON)
-      return;
-    (void)m_client->setTrackRateSidereal();
-    (void)m_client->enableTracking(true);
-    delay(40);
-  }
+  // EQ slews/syncs and meridian flip require sidereal tracking on first.
+  // AltAz operations do not (a slew explicitly disables tracking for :MA).
+  return k == MotionKind::SlewRaDec || k == MotionKind::SyncRaDec ||
+         k == MotionKind::MeridianFlip;
 }
 
-void AlpacaTelescope::settleMotionBeforeRadecCmd()
+bool AlpacaTelescope::motionReportsSlewing(MotionKind k)
+{
+  // A sync registers a position without moving the mount, so it must not make
+  // Slewing report true; genuine slews and the meridian flip do.
+  return k == MotionKind::SlewRaDec || k == MotionKind::SlewAltAz ||
+         k == MotionKind::MeridianFlip;
+}
+
+void AlpacaTelescope::beginMotion(MotionKind kind, double a, double b)
 {
   if (!m_client || !m_status) return;
-  m_slewKickEndMs = 0;
-  // Mirror TelescopeHardware.checkslewRADEC: AbortSlew + 200 ms until GXAS reports idle.
-  for (int iter = 0; iter < 90; ++iter)
-  {
-    m_client->stopSlew();
-    m_status->updateAllState(true);
-    if (!taComDriverGxasSlewingMotion(*m_status) && !m_status->isPulseGuiding())
-      break;
-    delay(200);
-  }
+  m_motionKind        = kind;
+  m_motionA           = a;
+  m_motionB           = b;
+  m_motionRetriedBusy = false;
+  m_motionPhase       = motionNeedsTracking(kind) ? MotionPhase::EnsureTracking
+                                                  : MotionPhase::Settle;
+  unsigned long now = millis();
+  m_motionStepDueMs        = now;             // first step on the next tick
+  m_motionTrackDeadlineMs  = now + 6400;      // old ensure-tracking budget
+  m_motionSettleDeadlineMs = now + 18000;     // old settle budget (now non-blocking)
+
+  // Superseding any previous motion: drop the stale slew hint + MoveAxis flags
+  // (the old settle loop did this at entry).
+  m_slewKickEndMs     = 0;
   m_moveAxisActive[0] = m_moveAxisActive[1] = false;
+  // COM slewingHintUntilUtc fires on dispatch; keep Slewing true until GXAS agrees.
+  if (motionReportsSlewing(kind))
+    m_slewKickEndMs = now + kComSlewingHintMs;
+
+  // AltAz slews drive in horizon coordinates with tracking off (mirrors the
+  // old checkslewALTAZ behaviour).  One quick, non-blocking command.
+  if (kind == MotionKind::SlewAltAz)
+    m_client->enableTracking(false);
+}
+
+void AlpacaTelescope::cancelMotion()
+{
+  m_motionKind                 = MotionKind::None;
+  m_motionPhase                = MotionPhase::EnsureTracking;
+  m_motionRetriedBusy          = false;
+  m_motionCompleteDeadlineMs   = 0;
+}
+
+void AlpacaTelescope::beginMotionCompletePoll()
+{
+  unsigned long now = millis();
+  m_motionPhase              = MotionPhase::Complete;
+  m_motionStepDueMs          = now + 200;
+  m_motionCompleteDeadlineMs = now + 300000UL;  // 5 min cap (Conform long slews)
+  m_slewKickEndMs            = now + kComSlewingHintMs;
+}
+
+void AlpacaTelescope::issueMotion()
+{
+  MotionKind kind = m_motionKind;
+  bool accepted   = false;
+
+  switch (kind)
+  {
+    case MotionKind::SlewRaDec:
+    case MotionKind::SyncRaDec:
+    {
+      float ra  = (float)m_motionA;
+      float dec = (float)m_motionB;
+      bool isSync = (kind == MotionKind::SyncRaDec);
+      LX200RETURN ret = m_client->syncGoto(isSync ? NAV_SYNC : NAV_GOTO, ra, dec);
+      if (ret == LX200_ERRGOTO_BUSY && !m_motionRetriedBusy)
+      {
+        m_motionRetriedBusy = true;
+        m_motionPhase       = MotionPhase::Settle;
+        m_motionStepDueMs   = millis();
+        return;
+      }
+      if (isOk(ret))
+      {
+        m_targetRaHours = m_motionA;
+        m_targetDecDeg  = m_motionB;
+        m_targetRaSet   = true;
+        m_targetDecSet  = true;
+        accepted = true;
+        if (!isSync)
+          beginMotionCompletePoll();
+      }
+      break;
+    }
+    case MotionKind::SlewAltAz:
+    case MotionKind::SyncAltAz:
+    {
+      float az  = (float)m_motionA;
+      float alt = (float)m_motionB;
+      bool isSync = (kind == MotionKind::SyncAltAz);
+      LX200RETURN ret = m_client->syncGotoAltAz(isSync ? NAV_SYNC : NAV_GOTO, az, alt);
+      if (ret == LX200_ERRGOTO_BUSY && !m_motionRetriedBusy)
+      {
+        m_motionRetriedBusy = true;
+        m_motionPhase       = MotionPhase::Settle;
+        m_motionStepDueMs   = millis();
+        return;
+      }
+      if (isOk(ret))
+      {
+        accepted = true;
+        if (!isSync)
+          beginMotionCompletePoll();
+      }
+      break;
+    }
+    case MotionKind::MeridianFlip:
+    {
+      m_client->stopSlew();
+      LX200RETURN ret = m_client->meridianFlip();
+      if (isOk(ret))
+      {
+        accepted = true;
+        beginMotionCompletePoll();
+      }
+      break;
+    }
+    default:
+      break;
+  }
+
+  if (m_motionPhase == MotionPhase::Complete)
+    return;
+
+  m_motionKind        = MotionKind::None;
+  m_motionRetriedBusy = false;
+  if (!accepted && motionReportsSlewing(kind))
+    m_slewKickEndMs = 0;
+}
+
+void AlpacaTelescope::tick()
+{
+  if (m_motionKind == MotionKind::None) return;
+  if (!m_client || !m_status) { cancelMotion(); return; }
+
+  unsigned long now = millis();
+  if ((long)(now - m_motionStepDueMs) < 0)
+    return;  // throttle between serial polls
+
+  // Advance through as many phases as can complete without waiting; only
+  // return early (to resume next tick) when a phase must keep polling.
+  for (;;)
+  {
+    switch (m_motionPhase)
+    {
+      case MotionPhase::EnsureTracking:
+      {
+        if (!motionNeedsTracking(m_motionKind))
+        {
+          m_motionPhase = MotionPhase::Settle;
+          continue;
+        }
+        m_status->updateAllState(true);
+        if (m_status->getTrackingState() == MountState::TRK_ON)
+        {
+          m_motionPhase = MotionPhase::Settle;
+          continue;
+        }
+        if ((long)(now - m_motionTrackDeadlineMs) >= 0)
+        {
+          // Could not get tracking on within budget: abort the operation
+          // (Slewing falls back to false, mirroring the old hard failure).
+          cancelMotion();
+          return;
+        }
+        (void)m_client->setTrackRateSidereal();
+        (void)m_client->enableTracking(true);
+        m_motionStepDueMs = now + 40;   // re-poll shortly
+        return;
+      }
+
+      case MotionPhase::Settle:
+      {
+        m_client->stopSlew();
+        m_status->updateAllState(true);
+        if (!taComDriverGxasSlewingMotion(*m_status) && !m_status->isPulseGuiding())
+        {
+          m_motionPhase = MotionPhase::Issue;
+          continue;
+        }
+        if ((long)(now - m_motionSettleDeadlineMs) >= 0)
+        {
+          // Best-effort: the old loop also proceeded after its cap expired.
+          m_motionPhase = MotionPhase::Issue;
+          continue;
+        }
+        m_motionStepDueMs = now + 200;  // re-poll like the old 200 ms cadence
+        return;
+      }
+
+      case MotionPhase::Issue:
+        issueMotion();
+        return;
+
+      case MotionPhase::Complete:
+      {
+        m_status->updateAllState(true);
+        if (!taComDriverGxasSlewingMotion(*m_status))
+        {
+          cancelMotion();
+          return;
+        }
+        if ((long)(now - m_motionCompleteDeadlineMs) >= 0)
+        {
+          cancelMotion();
+          return;
+        }
+        m_motionStepDueMs = now + 200;
+        return;
+      }
+
+      default:
+        issueMotion();
+        return;
+    }
+  }
 }
 
 
@@ -374,7 +582,8 @@ void AlpacaTelescope::getDeviceState(AlpacaWebServer& s, const AlpacaRequest& r)
 
   unsigned long now = millis();
   bool slewHint = (m_slewKickEndMs != 0) && (long)(m_slewKickEndMs - now) > 0;
-  bool slewing = slewHint || taComDriverGxasSlewingMotion(*m_status);
+  bool slewing = motionSlewingActive() || slewHint ||
+                 taComDriverGxasSlewingMotion(*m_status);
 
   bool pulseGuide = m_status->isPulseGuiding();
 
@@ -542,8 +751,11 @@ void AlpacaTelescope::getSlewing(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
   unsigned long now = millis();
-  // TelescopeHardware.Slewing: slewingHintUntilUtc first, then GXAS (Tracking>=2 or GuidingState AtRate).
-  if (m_slewKickEndMs != 0 && (long)(m_slewKickEndMs - now) > 0)
+  // A queued slew/flip (state machine still ensuring tracking / settling /
+  // issuing) reports Slewing=true so async clients keep polling to completion.
+  // Then TelescopeHardware.Slewing order: slewingHintUntilUtc, then GXAS.
+  if (motionSlewingActive() ||
+      (m_slewKickEndMs != 0 && (long)(m_slewKickEndMs - now) > 0))
   {
     sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
                  AlpacaJson::boolStr(true));
@@ -639,23 +851,9 @@ void AlpacaTelescope::putSideOfPier(AlpacaWebServer& s, const AlpacaRequest& r)
                     AE_PARKED, "Cannot set SideOfPier while parked");
     return;
   }
-  ensureTrackingOnForRadecOps();
-  m_status->updateAllState(true);
-  if (m_status->getTrackingState() != MountState::TRK_ON)
-  {
-    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                    AE_INVALID_OPERATION, "SideOfPier set requires tracking on");
-    return;
-  }
-  m_client->stopSlew();
-  LX200RETURN ret = m_client->meridianFlip();
-  if (!isOk(ret))
-  {
-    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                    AE_DRIVER, "Meridian flip refused by mount");
-    return;
-  }
-  m_slewKickEndMs = millis() + kComSlewingHintMs;
+  // Queue the meridian flip (ensure-tracking -> stop -> :MF#) and return now;
+  // Slewing reports true until the flip slew begins.
+  beginMotion(MotionKind::MeridianFlip, 0, 0);
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
@@ -1029,13 +1227,6 @@ void AlpacaTelescope::putDeclinationRate(AlpacaWebServer& s, const AlpacaRequest
                     AE_INVALID_OPERATION,
                     "DeclinationRate is only valid when TrackingRate is Sidereal");
     return;
-  }
-  TeenAstroMountStatus::Mount mt = m_status->getMount();
-  if (mt == TeenAstroMountStatus::MOUNT_TYPE_GEM
-      || mt == TeenAstroMountStatus::MOUNT_TYPE_FORK)
-  {
-    // :SXRd tracking offset applies when TC_BOTH — same as EEPROM / ASCOM expectation.
-    m_client->set(":T2#");
   }
   double val = AlpacaRequest::arg(s, "DeclinationRate").toDouble();
   if (!isOk(m_client->setTrackingOffsetDec(val)))
@@ -1456,6 +1647,8 @@ void AlpacaTelescope::putAbortSlew(AlpacaWebServer& s, const AlpacaRequest& r)
                     AE_PARKED, "Cannot AbortSlew while parked");
     return;
   }
+  // Drop any queued slew/sync/flip before physically stopping the mount.
+  cancelMotion();
   m_client->stopSlew();
   char mBuf[8];
   if (m_moveAxisActive[0])
@@ -1587,36 +1780,10 @@ bool AlpacaTelescope::slewToRaDec(AlpacaWebServer& s, const AlpacaRequest& r,
                     AE_PARKED, "Cannot slew while parked");
     return false;
   }
-  ensureTrackingOnForRadecOps();
-  m_status->updateAllState(true);
-  if (m_status->getTrackingState() != MountState::TRK_ON)
-  {
-    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                    AE_INVALID_OPERATION,
-                    "Equatorial slew requires tracking on");
-    return false;
-  }
-  settleMotionBeforeRadecCmd();
-  float ra  = (float)raHours;
-  float dec = (float)decDeg;
-  LX200RETURN ret = m_client->syncGoto(NAV_GOTO, ra, dec);
-  if (ret == LX200_ERRGOTO_BUSY)
-  {
-    settleMotionBeforeRadecCmd();
-    ret = m_client->syncGoto(NAV_GOTO, ra, dec);
-  }
-  if (!isOk(ret))
-  {
-    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                    AE_DRIVER, "Slew refused by mount");
-    return false;
-  }
-  m_targetRaHours = raHours;
-  m_targetDecDeg  = decDeg;
-  m_targetRaSet   = true;
-  m_targetDecSet  = true;
-  // TelescopeHardware.doslew — slewingHintUntilUtc + ForceGXASCacheRefresh after MS ok.
-  m_slewKickEndMs = millis() + kComSlewingHintMs;
+  // Queue the slew (ensure-tracking -> settle -> :MS#) and return immediately;
+  // the non-blocking state machine in tick() carries it out.  Slewing stays
+  // true until the mount actually starts moving, so clients poll to completion.
+  beginMotion(MotionKind::SlewRaDec, raHours, decDeg);
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
   return true;
 }
@@ -1638,34 +1805,9 @@ bool AlpacaTelescope::syncToRaDec(AlpacaWebServer& s, const AlpacaRequest& r,
                     AE_PARKED, "Cannot sync while parked");
     return false;
   }
-  ensureTrackingOnForRadecOps();
-  m_status->updateAllState(true);
-  if (m_status->getTrackingState() != MountState::TRK_ON)
-  {
-    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                    AE_INVALID_OPERATION,
-                    "Sync requires tracking on");
-    return false;
-  }
-  settleMotionBeforeRadecCmd();
-  float ra  = (float)raHours;
-  float dec = (float)decDeg;
-  LX200RETURN ret = m_client->syncGoto(NAV_SYNC, ra, dec);
-  if (ret == LX200_ERRGOTO_BUSY)
-  {
-    settleMotionBeforeRadecCmd();
-    ret = m_client->syncGoto(NAV_SYNC, ra, dec);
-  }
-  if (!isOk(ret))
-  {
-    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                    AE_DRIVER, "Sync refused by mount");
-    return false;
-  }
-  m_targetRaHours = raHours;
-  m_targetDecDeg  = decDeg;
-  m_targetRaSet   = true;
-  m_targetDecSet  = true;
+  // Queue the sync (ensure-tracking -> settle -> :CM#) and return immediately.
+  // When the mount is idle the state machine issues it on the very next tick.
+  beginMotion(MotionKind::SyncRaDec, raHours, decDeg);
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
   return true;
 }
@@ -1687,25 +1829,10 @@ bool AlpacaTelescope::slewSyncToAltAz(AlpacaWebServer& s, const AlpacaRequest& r
                     AE_PARKED, "Cannot slew while parked");
     return false;
   }
-  // ASCOM checkslewALTAZ turns tracking off before :MA for horizon-coordinate slews.
-  if (!sync)
-    m_client->enableTracking(false);
-  settleMotionBeforeRadecCmd();
-  float az  = (float)azDeg;
-  float alt = (float)altDeg;
-  LX200RETURN ret = m_client->syncGotoAltAz(sync ? NAV_SYNC : NAV_GOTO, az, alt);
-  if (ret == LX200_ERRGOTO_BUSY)
-  {
-    settleMotionBeforeRadecCmd();
-    ret = m_client->syncGotoAltAz(sync ? NAV_SYNC : NAV_GOTO, az, alt);
-  }
-  if (!isOk(ret))
-  {
-    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                    AE_DRIVER, sync ? "AltAz sync refused" : "AltAz slew refused");
-    return false;
-  }
-  if (!sync) m_slewKickEndMs = millis() + kComSlewingHintMs;
+  // Queue the AltAz slew/sync and return immediately.  beginMotion() turns
+  // tracking off for a slew (ASCOM checkslewALTAZ) before the settle -> :A?#
+  // sequence runs in tick().
+  beginMotion(sync ? MotionKind::SyncAltAz : MotionKind::SlewAltAz, azDeg, altDeg);
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
   return true;
 }

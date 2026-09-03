@@ -36,6 +36,11 @@ public:
   /// response on `server`.
   void dispatch(AlpacaWebServer& server, const AlpacaRequest& req);
 
+  /// Advance the non-blocking motion state machine.  Must be called every
+  /// loop (alongside the HTTP server pump) so deferred slew/sync/flip
+  /// operations make progress without blocking the request handler.
+  void tick();
+
   /// Used by the management API to advertise the telescope.
   static const char* deviceName()        { return "TeenAstro Telescope"; }
   static const char* driverInfo()        { return "TeenAstro Alpaca driver — bridges the ASCOM Alpaca REST API to the TeenAstro LX200 protocol."; }
@@ -167,12 +172,33 @@ private:
   /// the mount's sidereal-time computation lines up with the client's
   /// expectations.  Best-effort (silently ignores firmware refusal).
   void syncUtcToHost();
-  /// Wait for pulse guide / goto / MoveAxis to finish before :MS# / :CM# (ConformU).
-  void settleMotionBeforeRadecCmd();
-  /// Turn sidereal tracking on when motors are enabled (Conform resumes EQ ops after AltAz).
-  void ensureTrackingOnForRadecOps();
   /// Shared attach behaviour for PUT connected=true and PUT connect (Alpaca Platform 7).
   void noteAlpacaAttached(bool wasAlreadySoftConnected);
+
+  // -------- Non-blocking motion state machine --------
+  // Replaces the former blocking settle/ensure-tracking poll loops.  A slew /
+  // sync / meridian-flip request validates fast preconditions synchronously,
+  // enqueues the operation, and returns immediately; tick() then performs the
+  // ensure-tracking -> settle -> issue sequence one short serial step at a
+  // time so the request handler (and the host loop) never block for seconds.
+  enum class MotionKind : uint8_t
+  { None, SlewRaDec, SyncRaDec, SlewAltAz, SyncAltAz, MeridianFlip };
+  enum class MotionPhase : uint8_t { EnsureTracking, Settle, Issue, Complete };
+
+  /// Begin a deferred motion. `a`/`b` are raHours/decDeg (RaDec) or azDeg/altDeg (AltAz).
+  void beginMotion(MotionKind kind, double a, double b);
+  /// Issue the underlying LX200 command for the current motion (handles BUSY retry).
+  void issueMotion();
+  /// After a slew/flip is accepted, poll GXAS until motion ends (keeps Slewing true).
+  void beginMotionCompletePoll();
+  /// Cancel any pending motion (e.g. AbortSlew, or a phase timeout).
+  void cancelMotion();
+  bool motionBusy() const { return m_motionKind != MotionKind::None; }
+  static bool motionNeedsTracking(MotionKind k);
+  static bool motionReportsSlewing(MotionKind k);
+  /// True while a queued slew/flip should report Slewing=true (not for syncs).
+  bool motionSlewingActive() const
+  { return motionBusy() && motionReportsSlewing(m_motionKind); }
   /// Common helper to start a slew to (raHours, decDeg) using LX200 syncGoto
   /// in NAV_GOTO mode.  Sends the response itself and returns true if the
   /// operation was accepted.
@@ -224,4 +250,19 @@ private:
   bool                   m_moveAxisRestoreTracking = false;
   /// Deadline millis — TelescopeHardware.slewingHintUntilUtc (MS/MA/Park/MoveAxis/MF/doslew).
   unsigned long          m_slewKickEndMs     = 0;
+
+  // ---- Non-blocking motion state machine state ----
+  MotionKind             m_motionKind        = MotionKind::None;
+  MotionPhase            m_motionPhase       = MotionPhase::EnsureTracking;
+  double                 m_motionA           = 0;   // raHours  | azDeg
+  double                 m_motionB           = 0;   // decDeg   | altDeg
+  bool                   m_motionRetriedBusy = false;
+  /// Next millis() at which tick() may perform another serial step (throttles polling).
+  unsigned long          m_motionStepDueMs   = 0;
+  /// Ensure-tracking timeout (was 160 x 40 ms blocking loop).
+  unsigned long          m_motionTrackDeadlineMs  = 0;
+  /// Settle timeout (was 90 x 200 ms blocking loop); best-effort like the old loop.
+  unsigned long          m_motionSettleDeadlineMs = 0;
+  /// Poll GXAS until slewing ends after :MS# / :MA# / :MF# (Conform async Slewing checks).
+  unsigned long          m_motionCompleteDeadlineMs = 0;
 };

@@ -29,8 +29,11 @@
 
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
 #include <string>
 #include <map>
+#include <chrono>
+#include <thread>
 
 // Real LX200 + mount status (compiled with TEENASTRO_NATIVE_BUILD)
 #include "LX200Client.h"
@@ -99,6 +102,62 @@ static void run_test(ESP8266WebServer& srv,
   EXPECT(envelope_ok && content_ok, name, srv.last_body);
 }
 
+// ---------------------------------------------------------------------------
+//  Helpers for the async motion state machine phase
+// ---------------------------------------------------------------------------
+
+static long now_ms()
+{
+  using namespace std::chrono;
+  return (long)duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+}
+
+// Dispatch one request and return the elapsed wall time (ms).
+static long dispatch_ms(ESP8266WebServer& srv, AlpacaTelescope& tel,
+                        const String& uri, int method,
+                        std::map<std::string, std::string> args)
+{
+  srv.mock_request(uri, method, args);
+  AlpacaRequest req;
+  req.decode(srv);
+  long t0 = now_ms();
+  tel.dispatch(srv, req);
+  return now_ms() - t0;
+}
+
+// Read the boolean Slewing property via a GET dispatch.
+static bool get_slewing(ESP8266WebServer& srv, AlpacaTelescope& tel)
+{
+  srv.mock_request("/api/v1/telescope/0/slewing", HTTP_GET,
+                   {{"ClientID","1"},{"ClientTransactionID","900"}});
+  AlpacaRequest req;
+  req.decode(srv);
+  tel.dispatch(srv, req);
+  return body_contains(srv.last_body, "\"Value\":true");
+}
+
+// Extract the numeric value following the first `"Value":` in a JSON body.
+static double parse_value_double(const String& body, bool* ok)
+{
+  int p = body.indexOf("\"Value\":");
+  if (p < 0) { if (ok) *ok = false; return 0.0; }
+  const char* s = body.c_str() + p + 8;
+  char* end = nullptr;
+  double v = std::strtod(s, &end);
+  if (ok) *ok = (end != s);
+  return v;
+}
+
+static double get_double(ESP8266WebServer& srv, AlpacaTelescope& tel,
+                         const char* uri, bool* ok)
+{
+  srv.mock_request(uri, HTTP_GET, {{"ClientID","1"},{"ClientTransactionID","901"}});
+  AlpacaRequest req;
+  req.decode(srv);
+  tel.dispatch(srv, req);
+  return parse_value_double(srv.last_body, ok);
+}
+
 // ===========================================================================
 //  main
 // ===========================================================================
@@ -148,7 +207,7 @@ int main(int argc, char** argv)
            "1.0.0");
   run_test(srv, telescope, "GET interfaceversion",
            "/api/v1/telescope/0/interfaceversion", HTTP_GET, {{"ClientID","1"},{"ClientTransactionID","4"}},
-           "\"Value\":3");
+           "\"Value\":4");
   run_test(srv, telescope, "GET supportedactions",
            "/api/v1/telescope/0/supportedactions", HTTP_GET, {{"ClientID","1"},{"ClientTransactionID","5"}},
            "\"Value\":[]");
@@ -227,12 +286,13 @@ int main(int argc, char** argv)
   // -------------------------------------------------------------------------
   std::printf("\n==> Phase 3: capability flags\n");
 
-  run_test(srv, telescope, "GET canpark = true",
+  // Park/Unpark are not implemented on the Alpaca bridge (matches Conform CanPark=False).
+  run_test(srv, telescope, "GET canpark = false",
            "/api/v1/telescope/0/canpark", HTTP_GET, {{"ClientID","1"},{"ClientTransactionID","30"}},
-           "\"Value\":true");
-  run_test(srv, telescope, "GET canunpark = true",
+           "\"Value\":false");
+  run_test(srv, telescope, "GET canunpark = false",
            "/api/v1/telescope/0/canunpark", HTTP_GET, {{"ClientID","1"},{"ClientTransactionID","31"}},
-           "\"Value\":true");
+           "\"Value\":false");
   run_test(srv, telescope, "GET cansetpark = true",
            "/api/v1/telescope/0/cansetpark", HTTP_GET, {{"ClientID","1"},{"ClientTransactionID","32"}},
            "\"Value\":true");
@@ -251,12 +311,13 @@ int main(int argc, char** argv)
   run_test(srv, telescope, "GET canpulseguide = true",
            "/api/v1/telescope/0/canpulseguide", HTTP_GET, {{"ClientID","1"},{"ClientTransactionID","37"}},
            "\"Value\":true");
-  run_test(srv, telescope, "GET cansetrightascensionrate = false",
+  // With motors + sidereal-class tracking, offset rates are writable (ASCOM parity).
+  run_test(srv, telescope, "GET cansetrightascensionrate = true",
            "/api/v1/telescope/0/cansetrightascensionrate", HTTP_GET, {{"ClientID","1"},{"ClientTransactionID","38"}},
-           "\"Value\":false");
-  run_test(srv, telescope, "GET cansetdeclinationrate = false",
+           "\"Value\":true");
+  run_test(srv, telescope, "GET cansetdeclinationrate = true",
            "/api/v1/telescope/0/cansetdeclinationrate", HTTP_GET, {{"ClientID","1"},{"ClientTransactionID","39"}},
-           "\"Value\":false");
+           "\"Value\":true");
   run_test(srv, telescope, "GET canmoveaxis (Axis=0) = true",
            "/api/v1/telescope/0/canmoveaxis", HTTP_GET,
            {{"Axis","0"},{"ClientID","1"},{"ClientTransactionID","40"}},
@@ -360,10 +421,26 @@ int main(int argc, char** argv)
            "/api/v1/telescope/0/abortslew", HTTP_PUT,
            {{"ClientID","1"},{"ClientTransactionID","80"}},
            "\"ErrorNumber\":0");
+  // PulseGuide requires tracking on (ASCOM / Alpaca contract).
+  run_test(srv, telescope, "PUT tracking=true (for PulseGuide)",
+           "/api/v1/telescope/0/tracking", HTTP_PUT,
+           {{"Tracking","True"},{"ClientID","1"},{"ClientTransactionID","80b"}},
+           "\"ErrorNumber\":0");
   run_test(srv, telescope, "PUT pulseguide North 100ms",
            "/api/v1/telescope/0/pulseguide", HTTP_PUT,
            {{"Direction","0"},{"Duration","100"},{"ClientID","1"},{"ClientTransactionID","81"}},
            "\"ErrorNumber\":0");
+  // Wait for the short pulse to finish so MoveAxis is not refused as "guiding".
+  for (int i = 0; i < 50; ++i)
+  {
+    srv.mock_request("/api/v1/telescope/0/ispulseguiding", HTTP_GET,
+                     {{"ClientID","1"},{"ClientTransactionID","81b"}});
+    AlpacaRequest pgReq;
+    pgReq.decode(srv);
+    telescope.dispatch(srv, pgReq);
+    if (body_contains(srv.last_body, "\"Value\":false")) break;
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  }
   run_test(srv, telescope, "PUT pulseguide invalid Direction=9",
            "/api/v1/telescope/0/pulseguide", HTTP_PUT,
            {{"Direction","9"},{"Duration","100"},{"ClientID","1"},{"ClientTransactionID","82"}},
@@ -386,6 +463,97 @@ int main(int argc, char** argv)
            "/api/v1/telescope/0/totallyunknown", HTTP_GET,
            {{"ClientID","1"},{"ClientTransactionID","90"}},
            "\"ErrorNumber\":1024");
+
+  // -------------------------------------------------------------------------
+  //  Phase 9 — non-blocking motion state machine (the async refactor)
+  //
+  //  Verifies that SlewToCoordinatesAsync:
+  //    a) returns to the caller essentially instantly (no 18 s / 6.4 s settle
+  //       loop inside the handler — the root-cause fix),
+  //    b) reports Slewing=true immediately after enqueue,
+  //    c) is actually carried out by telescope.tick() and reaches completion,
+  //    d) never blocks for more than a few hundred ms in any single tick(),
+  //  and that AbortSlew cancels a queued slew.
+  // -------------------------------------------------------------------------
+  std::printf("\n==> Phase 9: non-blocking motion state machine\n");
+
+  // Make sure tracking is on (EQ slews require it) and the mount is settled.
+  dispatch_ms(srv, telescope, "/api/v1/telescope/0/tracking", HTTP_PUT,
+              {{"Tracking","True"},{"ClientID","1"},{"ClientTransactionID","100"}});
+  dispatch_ms(srv, telescope, "/api/v1/telescope/0/abortslew", HTTP_PUT,
+              {{"ClientID","1"},{"ClientTransactionID","101"}});
+  for (int i = 0; i < 50 && get_slewing(srv, telescope); ++i)
+  {
+    telescope.tick();
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  }
+
+  // Pick a target a short distance from the current pose so the emulator slew
+  // is quick but still observable.
+  bool okRa = false, okDec = false;
+  double curRa  = get_double(srv, telescope, "/api/v1/telescope/0/rightascension", &okRa);
+  double curDec = get_double(srv, telescope, "/api/v1/telescope/0/declination",   &okDec);
+  if (!okRa || !okDec) { curRa = 6.0; curDec = 20.0; }
+  double tgtRa  = curRa + 0.10;  if (tgtRa >= 24.0) tgtRa -= 0.5;
+  double tgtDec = curDec + 1.0;  if (tgtDec >  89.0) tgtDec = curDec - 1.0;
+  char raStr[32], decStr[32];
+  std::snprintf(raStr,  sizeof(raStr),  "%.6f", tgtRa);
+  std::snprintf(decStr, sizeof(decStr), "%.6f", tgtDec);
+
+  // (a) async slew dispatch must return fast — this is the headline proof that
+  // the multi-second settle loop is gone from the request path.
+  long slewDispatchMs = dispatch_ms(srv, telescope,
+      "/api/v1/telescope/0/slewtocoordinatesasync", HTTP_PUT,
+      {{"RightAscension",raStr},{"Declination",decStr},
+       {"ClientID","1"},{"ClientTransactionID","102"}});
+  bool slewAccepted = body_contains(srv.last_body, "\"ErrorNumber\":0");
+  EXPECT(slewAccepted, "PUT slewtocoordinatesasync accepted", srv.last_body);
+  EXPECT(slewDispatchMs < 1000,
+         (String("slew dispatch is non-blocking (") + (int)slewDispatchMs + " ms, was up to 18000 ms)").c_str(),
+         srv.last_body);
+
+  // (b) Slewing must be true right after enqueue, before any tick().
+  EXPECT(get_slewing(srv, telescope),
+         "Slewing=true immediately after async slew (queued)", srv.last_body);
+
+  // (c)+(d) pump the state machine to completion, timing each tick.
+  long maxTickMs = 0;
+  bool slewDone  = false;
+  long startMs   = now_ms();
+  for (int i = 0; i < 2000; ++i)              // generous safety cap
+  {
+    long a = now_ms();
+    telescope.tick();
+    long dt = now_ms() - a;
+    if (dt > maxTickMs) maxTickMs = dt;
+
+    if (!get_slewing(srv, telescope)) { slewDone = true; break; }
+    if (now_ms() - startMs > 40000) break;    // 40 s wall-clock timeout
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  }
+  EXPECT(slewDone, "async slew reaches completion (Slewing returns false)", srv.last_body);
+  EXPECT(maxTickMs < 1000,
+         (String("no single tick() blocks (max ") + (int)maxTickMs + " ms)").c_str(),
+         String(""));
+
+  // AbortSlew must cancel a freshly-queued slew (state machine drops it).
+  dispatch_ms(srv, telescope,
+      "/api/v1/telescope/0/slewtocoordinatesasync", HTTP_PUT,
+      {{"RightAscension",raStr},{"Declination",decStr},
+       {"ClientID","1"},{"ClientTransactionID","103"}});
+  long abortMs = dispatch_ms(srv, telescope, "/api/v1/telescope/0/abortslew", HTTP_PUT,
+                             {{"ClientID","1"},{"ClientTransactionID","104"}});
+  // Give the mount a few ticks to physically stop, then Slewing must clear.
+  bool abortStopped = false;
+  for (int i = 0; i < 200; ++i)
+  {
+    telescope.tick();
+    if (!get_slewing(srv, telescope)) { abortStopped = true; break; }
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  }
+  EXPECT(abortMs < 1000,
+         (String("abortslew is non-blocking (") + (int)abortMs + " ms)").c_str(), String(""));
+  EXPECT(abortStopped, "AbortSlew cancels queued slew (Slewing clears)", srv.last_body);
 
   // -------------------------------------------------------------------------
   //  Summary
