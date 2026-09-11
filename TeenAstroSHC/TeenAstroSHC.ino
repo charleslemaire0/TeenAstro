@@ -37,8 +37,23 @@ LX200Client lx200(Ser);
 SmartHandController HdCrtlr;
 TeenAstroMountStatus ta_MountStatus;
 
+// MainUnit-style startup blink on boards with an onboard RGB LED (e.g. LOLIN S3 Mini).
+static void shcStartupLedBlink()
+{
+#if defined(RGB_BUILTIN)
+  for (int k = 0; k < 20; k++)
+  {
+    neopixelWrite(RGB_BUILTIN, 0, 100, 0);
+    delay(10);
+    neopixelWrite(RGB_BUILTIN, 0, 0, 0);
+    delay(50);
+  }
+#endif
+}
+
 void setup(void)
 {
+  shcStartupLedBlink();
   ta_MountStatus.setClient(lx200);
   TeenAstroWifi::setClient(lx200);
   HdCrtlr.setClient(lx200);
