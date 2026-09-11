@@ -120,6 +120,10 @@ void SmartHandController::setup(
   drawIntro();
   buttonPad.setup(pin, active, EEPROM_BSPEED, SHCrotated);
   tickButtons();
+#ifdef SHC_STARTUP_BUTTON_TEST
+  // After Pad/WiFi pin restore — same bias as runtime.
+  showStartupButtons(pin, active);
+#endif
   displayT1 = EEPROM.read(EEPROM_T1);
   if (displayT1 < 3)
   {

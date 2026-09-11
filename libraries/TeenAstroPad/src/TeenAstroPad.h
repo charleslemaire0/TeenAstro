@@ -19,6 +19,7 @@ private:
   bool m_shiftPressed;
   int m_adress;
   OneButton *m_buttons[7];
+  bool m_activeLow[7];
   ButtonSpeed m_button_speed;
 public:
   void setup(const int pin[7], const bool active[7], int adress, bool rotated);

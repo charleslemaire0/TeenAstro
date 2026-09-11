@@ -7,6 +7,7 @@
 #define DEBUG_OFF                 // default=_OFF, use "DEBUG_ON" to activate
 #define DebugSer Serial           // default=Serial, or Serial1 for example (always 9600 baud)
 #define DEBUGBUTTON_OFF           // defualt=_OFF, use "DEBUGBUTTON" to activate
+#define SHC_STARTUP_BUTTON_TEST_OFF // default=_OFF; set SHC_STARTUP_BUTTON_TEST to show pad diag at boot
 
 #ifdef ARDUINO_ESP8266_WEMOS_D1MINI
 #define SERIAL_BAUD 57600
@@ -96,30 +97,38 @@
 #endif
 
 // LOLIN S3 Mini — same SHC PCB as the Wemos D1 Mini (ESP8266).
-// Use the D0–D8 / A0 silkscreen positions (not the inner IO35/IO36 I2C pads).
+// Dual-row headers: only the OUTER row mates with the D1 Mini socket.
+// Outer map (USB at bottom, antenna at top) from board silk / schematic:
+//   Left:  EN, 2, 4, 12, 13, 11, 10, 3V3  = RST, A0, D0, D5, D6, D7, D8, 3V3
+//   Right: 43, 44, 36, 35, 18, 16, G, 5V = TX, RX, D1, D2, D3, D4, G, 5V
+// Do NOT use D#==GPIO# (inner row / CircuitPython alias, not the shield row).
 #ifdef ARDUINO_LOLIN_S3_MINI
 #define SERIAL_BAUD 57600
 #define DEBUG_OFF
 #define SHC_SERIAL_RX 44            // RX
 #define SHC_SERIAL_TX 43            // TX
-#define SHC_I2C_SCL   1             // D1 socket
-#define SHC_I2C_SDA   2             // D2 socket
-#define B_PIN0  8                   // D8 Shift
-#define B_PIN1  7                   // D7 N
-#define B_PIN2  6                   // D6 S
-#define B_PIN3  0                   // D0 E
-#define B_PIN4  5                   // D5 W
-#define B_PIN5  3                   // D3 F
-#define B_PIN6  4                   // D4 f
+// Display already verified on these pins with this PCB + module.
+#define SHC_I2C_SCL   1
+#define SHC_I2C_SDA   2
+#define B_PIN0  10                  // D8 Shift
+#define B_PIN1  11                  // D7 N
+#define B_PIN2  13                  // D6 S
+#define B_PIN3  4                   // D0 E
+#define B_PIN4  12                  // D5 W
+#define B_PIN5  18                  // D3 F
+#define B_PIN6  16                  // D4 f
 
-#define B_PIN_UP_0 false            // true for active LOW, false if active HIGH
-#define B_PIN_UP_1 false
-#define B_PIN_UP_2 false
-#define B_PIN_UP_3 false
-#define B_PIN_UP_4 false
-#define B_PIN_UP_5 true
-#define B_PIN_UP_6 true
-#define A_SCREEN 1                  // A0 (same GPIO as D1; read before I2C init)
+// Same resistor PCB as Wemos D1 Mini:
+//   Shift/N/S/E/W  and  F/f  use opposite polarities.
+// Pin map OK on S3; sense was inverted vs the pad (same flags as Wemos).
+#define B_PIN_UP_0 false            // Shift  active HIGH
+#define B_PIN_UP_1 false            // N
+#define B_PIN_UP_2 false            // S
+#define B_PIN_UP_3 false            // E
+#define B_PIN_UP_4 false            // W
+#define B_PIN_UP_5 true             // F   inverse of NEWSShift
+#define B_PIN_UP_6 true             // f   inverse of NEWSShift
+#define A_SCREEN 2                  // A0 outer
 #endif
 
 

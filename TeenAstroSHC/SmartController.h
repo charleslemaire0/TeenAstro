@@ -83,6 +83,7 @@ private:
   long angleDEC = 0;
   void manualMove(bool &moving);
   void drawIntro();
+  void showStartupButtons(const int pin[7], const bool active[7]);
   void updateMainDisplay(PAGES page);
   void tickButtons();
   bool buttonPressed();
