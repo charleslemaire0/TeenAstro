@@ -422,6 +422,7 @@ void TeenAstroMountStatus::updateAllState(bool force)
   m_allStateB64[GXAS_B64_LEN] = '#';
   m_allStateB64[GXAS_B64_LEN + 1] = '\0';
   m_timerAllState.markUpdated();
+  m_lastStateOkMs = millis();
 
   // ── Status bytes 0-5 → m_mount ────────────────────────────────────────
   uint8_t b0 = pkt[0], b1 = pkt[1], b2 = pkt[2];

@@ -517,7 +517,26 @@ public:
   uint16_t getLastStateElapsedMs() const { return m_lastStateElapsedMs; }
   uint32_t getStateFailCount()    const { return m_stateFailCount; }
 
+  // Rate the MainUnit link is running at. Published here because it is set by
+  // the SHC and read by the web diagnostics, which cannot see each other.
+  void     setLinkBaud(uint32_t b) { m_linkBaud = b; }
+  uint32_t getLinkBaud() const     { return m_linkBaud; }
+
+  // Outcome of the :SB0# rate upgrade, for diagnostics.
+  // 0 = not attempted, 1 = skipped, 2 = :SB refused, 3 = verify failed
+  // (fell back), 4 = success, 5 = recovered by re-probing at runtime
+  void    setLinkNegotiation(uint8_t v) { m_linkNegotiation = v; }
+  uint8_t getLinkNegotiation() const    { return m_linkNegotiation; }
+
+  /// millis() of the last good :GXAS# decode, 0 if never. Unlike
+  /// m_connectionFailure this is never decremented, so callers can tell a
+  /// genuinely dead link from one the webIoGrace() path keeps forgiving.
+  uint32_t getLastStateOkMs() const { return m_lastStateOkMs; }
+
 private:
+  uint32_t m_linkBaud = 0;
+  uint32_t m_lastStateOkMs = 0;
+  uint8_t  m_linkNegotiation = 0;
   bool     m_updatesInhibited = false;
   uint8_t  m_lastStateFailStage = 0;
   uint16_t m_lastStateRawLen = 0;

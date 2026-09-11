@@ -157,7 +157,7 @@ void Application::setupCommandSerial()
 {
   Serial.begin(BAUD);
   commandState.S_USB_.attach_Stream((Stream*)&Serial, COMMAND_SERIAL);
-  Serial1.begin(57600);
+  Serial1.begin(SHC_BAUD);
   commandState.S_SHC_.attach_Stream((Stream*)&Serial1, COMMAND_SERIAL1);
   digitalWrite(LEDPin, LOW);
 }

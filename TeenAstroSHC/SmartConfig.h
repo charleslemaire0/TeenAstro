@@ -9,8 +9,14 @@
 #define DEBUGBUTTON_OFF           // defualt=_OFF, use "DEBUGBUTTON" to activate
 #define SHC_STARTUP_BUTTON_TEST_OFF // default=_OFF; set SHC_STARTUP_BUTTON_TEST to show pad diag at boot
 
-#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
+// Link to the MainUnit. Not board-specific. This is the rate every MainUnit
+// boots at, so first contact always works; the SHC then asks for the faster
+// rate itself (SHC_BAUD_FAST in SmartController.h, which the .cpp can see too).
+#ifndef SERIAL_BAUD
 #define SERIAL_BAUD 57600
+#endif
+
+#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
 #define DEBUG_OFF
 // the hand controller buttons
 #define B_PIN0 D8               // Shift
@@ -32,7 +38,6 @@
 #endif
 
 #ifdef ARDUINO_LOLIN_C3_MINI
-#define SERIAL_BAUD 57600
 #define DEBUG_OFF
 // the hand controller buttons
 #define B_PIN0 5               // Shift
@@ -55,7 +60,6 @@
 #endif
 
 #ifdef ARDUINO_TTGO_LoRa32_V1
-#define SERIAL_BAUD 57600
 #define DEBUG_OFF
 // the Keypad controller buttons
 #define B_PIN0 21               // Row1
@@ -76,7 +80,6 @@
 #endif
 
 #ifdef ARDUINO_ESP32_DEV
-#define SERIAL_BAUD 57600
 #define DEBUG_OFF
 // the hand controller buttons
 #define B_PIN0 32               // Shift
@@ -103,7 +106,6 @@
 //   Right: 43, 44, 36, 35, 18, 16, G, 5V = TX, RX, D1, D2, D3, D4, G, 5V
 // Do NOT use D#==GPIO# (inner row / CircuitPython alias, not the shield row).
 #ifdef ARDUINO_LOLIN_S3_MINI
-#define SERIAL_BAUD 57600
 #define DEBUG_OFF
 #define SHC_SERIAL_RX 44            // RX
 #define SHC_SERIAL_TX 43            // TX

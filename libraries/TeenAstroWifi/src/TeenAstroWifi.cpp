@@ -783,7 +783,8 @@ void TeenAstroWifi::handleDiag()
 #endif
   snprintf(buf, sizeof(buf),
            "uptime_ms=%lu\nreset_reason=%d\nheap=%u\nmin_heap=%u\nmax_block=%u\nmount_ok=%d\nnot_responding=%d\n"
-           "gxas_fail_stage=%u\ngxas_raw_len=%u\ngxas_fail_count=%lu\ngxas_elapsed_ms=%u\n",
+           "gxas_fail_stage=%u\ngxas_raw_len=%u\ngxas_fail_count=%lu\ngxas_elapsed_ms=%u\n"
+           "link_baud=%lu\nlink_negotiation=%u\n",
            (unsigned long)millis(), reason, (unsigned)ESP.getFreeHeap(),
            (unsigned)minHeap, (unsigned)maxBlock,
            ta_MountStatus.connected() ? 1 : 0,
@@ -791,7 +792,9 @@ void TeenAstroWifi::handleDiag()
            (unsigned)ta_MountStatus.getLastStateFailStage(),
            (unsigned)ta_MountStatus.getLastStateRawLen(),
            (unsigned long)ta_MountStatus.getStateFailCount(),
-           (unsigned)ta_MountStatus.getLastStateElapsedMs());
+           (unsigned)ta_MountStatus.getLastStateElapsedMs(),
+           (unsigned long)ta_MountStatus.getLinkBaud(),
+           (unsigned)ta_MountStatus.getLinkNegotiation());
   server.send(200, "text/plain", buf);
 }
 

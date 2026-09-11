@@ -21,6 +21,61 @@ static void rebootSHC()
 #endif
 }
 
+void SmartHandController::setLinkBaud(unsigned long baud)
+{
+  if (baud == 0 || baud == m_linkBaud)
+    return;
+#ifndef EMU_SHC
+  Ser.flush();                            // let pending TX leave at the old rate
+  Ser.updateBaudRate(baud);
+  delay(5);
+  while (Ser.available()) Ser.read();     // framing garbage from the switch
+#endif
+  m_linkBaud = baud;
+  ta_MountStatus.setLinkBaud((uint32_t)baud);
+}
+
+bool SmartHandController::raiseLinkBaud()
+{
+  if (SHC_BAUD_FAST == 0 || m_linkBaud == SHC_BAUD_FAST || m_client == nullptr)
+  {
+    ta_MountStatus.setLinkNegotiation(1);
+    return false;
+  }
+
+  char out[8] = "";
+  if (!m_client->sendReceive(":SB0#", CMDR_SHORT_BOOL, out, sizeof(out), 500) ||
+      out[0] != '1')
+  {
+    ta_MountStatus.setLinkNegotiation(2);
+    return false;
+  }
+
+  // The mount answers '1' at the old rate, waits 20 ms, switches, then sends the
+  // reply a second time at the new one. Follow it; setLinkBaud drops the copy.
+  delay(40);
+  setLinkBaud(SHC_BAUD_FAST);
+
+  // Give it more than one chance: the first read after the switch is the one
+  // most likely to catch the mount still settling.
+  char vn[20] = "";
+  for (int attempt = 0; attempt < 3; attempt++)
+  {
+    if (m_client->getVersionNumber(vn, sizeof(vn)) == LX200_VALUEGET)
+    {
+      ta_MountStatus.setLinkNegotiation(4);
+      return true;
+    }
+    delay(30);
+  }
+
+  // It did not follow. Go back to the rate the probe already proved works; the
+  // runtime re-probe in update() will find the mount if it switched anyway.
+  setLinkBaud(m_baudSlow);
+  ta_MountStatus.setLinkNegotiation(3);
+  return false;
+}
+
 void SmartHandController::setup(
   const char version[], 
   const int pin[7], 
@@ -36,6 +91,8 @@ void SmartHandController::setup(
 #else
   Ser.begin(SerialBaud);
 #endif
+  m_linkBaud = m_baudSlow = (unsigned long)SerialBaud;
+  ta_MountStatus.setLinkBaud((uint32_t)SerialBaud);
 
   if (EEPROM.length() == 0)
 #ifdef ARDUINO_D1_MINI32
@@ -144,9 +201,14 @@ void SmartHandController::setup(
   delay(1000);
 #endif
   display->setFont(u8g2_font_helvR12_te);
+  // The mount forgets any :SB rate when it reboots, and the SHC can restart on
+  // its own, so the link may legitimately be at either rate. Alternate until
+  // one of them answers instead of assuming.
+  const unsigned long probe[2] = { m_baudSlow, SHC_BAUD_FAST };
   int k = 0;
   while (!ta_MountStatus.hasInfoV() && k < 10)
   {
+    setLinkBaud(probe[k & 1]);
     ta_MountStatus.updateV();
     ta_MountStatus.removeLastConnectionFailure();
     delay(500);
@@ -155,8 +217,13 @@ void SmartHandController::setup(
   DisplayMessage("SHC " T_VERSION, _version, 1500);
   if (k == 10)
   {
+    // Never made contact. Park on the rate every MainUnit boots at, so a mount
+    // powered up later is met at the rate it will be using.
+    setLinkBaud(m_baudSlow);
     return;
   } 
+
+  raiseLinkBaud();
   
   DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1200);
   char line[32] = "";
@@ -399,6 +466,30 @@ void SmartHandController::update()
   bool moving = false;
   tickButtons();
   top = millis();
+
+  // Recover a rate desync before anything else can return early: the link can
+  // change under us (the mount forgets any :SB rate when it reboots, and other
+  // clients can move it), and this must work with the display asleep and while
+  // web traffic keeps webIoGrace() true, which defers the reboot below forever.
+  if (SHC_BAUD_FAST != 0 && (unsigned long)SHC_BAUD_FAST != m_baudSlow)
+  {
+    // Time since the last good bulk read, not notResponding(): the grace path
+    // below decrements the failure counter on every pass while any web client
+    // is active, so that counter never reaches its threshold.
+    unsigned long okMs = ta_MountStatus.getLastStateOkMs();
+    bool quiet = (okMs == 0) ? (top > kLinkFlipMs)
+                             : ((top - okMs) > kLinkFlipMs);
+    if (quiet && (top - m_lastFlipMs) > kLinkFlipMs)
+    {
+      setLinkBaud(m_linkBaud == m_baudSlow ? (unsigned long)SHC_BAUD_FAST
+                                           : m_baudSlow);
+      ta_MountStatus.setLinkNegotiation(5);
+      ta_MountStatus.updateV();       // prove the new rate before flipping again
+      ta_MountStatus.updateAllState(true);
+      m_lastFlipMs = top;
+    }
+  }
+
   if (isSleeping())
     return;
 
@@ -419,6 +510,7 @@ void SmartHandController::update()
     rebootSHC();
     return;
   }
+
   if (ta_MountStatus.notResponding())
   {
 #if defined(ARDUINO_ARCH_ESP32)
