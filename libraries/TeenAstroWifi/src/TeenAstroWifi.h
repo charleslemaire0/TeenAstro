@@ -26,20 +26,27 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <WiFiAP.h>
+#if __has_include(<HTTPUpdateServer.h>)
 #include <HTTPUpdateServer.h>
+#endif
 #endif
 
 #ifdef ARDUINO_ARCH_ESP32
 #include <WiFi.h>
 #include <WebServer.h>
 #include <WiFiAP.h>
+#if __has_include(<HTTPUpdateServer.h>)
 #include <HTTPUpdateServer.h>
+#endif
 #endif
 
 #include <EEPROM.h>
 #include <WiFiClient.h>
 #include <LX200Client.h>
 #include <TeenAstroMountStatus.h>
+#ifdef SHC_HAS_ALPACA
+#include <TeenAstroAlpaca.h>
+#endif
 
 // Default timeouts (seconds) for serial commands and web requests
 #ifndef TIMEOUT_CMD

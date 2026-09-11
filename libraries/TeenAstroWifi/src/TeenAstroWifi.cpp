@@ -1,5 +1,9 @@
 #include "TeenAstroWifi.h"
 
+#ifdef SHC_HAS_ALPACA
+static TeenAstroAlpaca alpaca;
+#endif
+
 
 const char html_headB[] PROGMEM = "<!DOCTYPE HTML>\r\n<html lang='en'>\r\n<head>\r\n"
 "<meta charset='UTF-8'>\r\n"
@@ -249,7 +253,9 @@ ESP8266HTTPUpdateServer httpUpdater;
 
 #ifdef ARDUINO_ARCH_ESP32
 WebServer TeenAstroWifi::server;
+#if __has_include(<HTTPUpdateServer.h>)
 HTTPUpdateServer httpUpdater;
+#endif
 #endif
 
 // -----------------------------------------------------------------------------------
@@ -648,6 +654,8 @@ void TeenAstroWifi::setup()
     WiFi.mode(WIFI_STA);
 #if defined(ARDUINO_ARCH_ESP8266)
     WiFi.setSleepMode(WiFiSleepType::WIFI_NONE_SLEEP);
+#elif defined(ARDUINO_ARCH_ESP32)
+    WiFi.setSleep(false);
 #endif
     WiFi.begin(wifi_sta_ssid[activeWifiMode], wifi_sta_pwd[activeWifiMode]);
 #ifdef ARDUINO_LOLIN_C3_MINI
@@ -687,7 +695,13 @@ void TeenAstroWifi::setup()
 #endif
 
   // HTTP OTA: register /update route on the main web server
+#if defined(ARDUINO_ARCH_ESP8266) || (defined(ARDUINO_ARCH_ESP32) && __has_include(<HTTPUpdateServer.h>))
   httpUpdater.setup(&server);
+#endif
+#ifdef SHC_HAS_ALPACA
+  if (s_client)
+    alpaca.setup(*s_client, ta_MountStatus);
+#endif
 };
 
 void TeenAstroWifi::handleLx200Cmd()
@@ -731,6 +745,8 @@ void TeenAstroWifi::restartStationAssociation()
   WiFi.mode(WIFI_STA);
 #if defined(ARDUINO_ARCH_ESP8266)
   WiFi.setSleepMode(WiFiSleepType::WIFI_NONE_SLEEP);
+#elif defined(ARDUINO_ARCH_ESP32)
+  WiFi.setSleep(false);
 #endif
   WiFi.begin(wifi_sta_ssid[activeWifiMode], wifi_sta_pwd[activeWifiMode]);
 #ifdef ARDUINO_LOLIN_C3_MINI
@@ -947,6 +963,9 @@ void TeenAstroWifi::update()
       }
     }
   }
+#ifdef SHC_HAS_ALPACA
+  alpaca.update();
+#endif
 }
 
 bool TeenAstroWifi::isWifiOn()

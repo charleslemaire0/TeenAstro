@@ -95,3 +95,31 @@
 #define B_PIN_UP_6 true
 #endif
 
+// LOLIN S3 Mini — same SHC PCB as the Wemos D1 Mini (ESP8266).
+// Use the D0–D8 / A0 silkscreen positions (not the inner IO35/IO36 I2C pads).
+#ifdef ARDUINO_LOLIN_S3_MINI
+#define SERIAL_BAUD 57600
+#define DEBUG_OFF
+#define SHC_SERIAL_RX 44            // RX
+#define SHC_SERIAL_TX 43            // TX
+#define SHC_I2C_SCL   1             // D1 socket
+#define SHC_I2C_SDA   2             // D2 socket
+#define B_PIN0  8                   // D8 Shift
+#define B_PIN1  7                   // D7 N
+#define B_PIN2  6                   // D6 S
+#define B_PIN3  0                   // D0 E
+#define B_PIN4  5                   // D5 W
+#define B_PIN5  3                   // D3 F
+#define B_PIN6  4                   // D4 f
+
+#define B_PIN_UP_0 false            // true for active LOW, false if active HIGH
+#define B_PIN_UP_1 false
+#define B_PIN_UP_2 false
+#define B_PIN_UP_3 false
+#define B_PIN_UP_4 false
+#define B_PIN_UP_5 true
+#define B_PIN_UP_6 true
+#define A_SCREEN 1                  // A0 (same GPIO as D1; read before I2C init)
+#endif
+
+
