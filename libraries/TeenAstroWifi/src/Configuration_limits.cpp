@@ -92,7 +92,7 @@ void TeenAstroWifi::handleConfigurationLimits()
     return;
   }
   sendHtmlStart();
-  char temp[350] = "";
+  char temp[448] = "";
   String data;
 
   preparePage(data, ServerPage::Limits);
@@ -103,13 +103,13 @@ void TeenAstroWifi::handleConfigurationLimits()
   // Overhead and Horizon Limits
   int minAlt = 0;
   if (s_client->getMinAltitude(minAlt) != LX200_VALUEGET) minAlt = 0;
-  sprintf_P(temp, html_configMinAlt, minAlt);
+  snprintf_P(temp, sizeof(temp), html_configMinAlt, minAlt);
   data += temp;
   sendHtml(data);
 
   int maxAlt = 0;
   if (s_client->getMaxAltitude(maxAlt) != LX200_VALUEGET) maxAlt = 0;
-  sprintf_P(temp, html_configMaxAlt, maxAlt);
+  snprintf_P(temp, sizeof(temp), html_configMaxAlt, maxAlt);
   data += temp;
   sendHtml(data);
 
@@ -120,7 +120,7 @@ void TeenAstroWifi::handleConfigurationLimits()
     if (s_client->getUnderPoleLimit(underPole, sizeof(underPole)) == LX200_VALUEGET)
     {
       float angle = (float)strtol(underPole, NULL, 10) / 10;
-      sprintf_P(temp, html_configUnderPole, angle);
+      snprintf_P(temp, sizeof(temp), html_configUnderPole, angle);
       data += temp;
     }
     char merE[20], merW[20];
@@ -128,16 +128,16 @@ void TeenAstroWifi::handleConfigurationLimits()
         s_client->getLimitWest(merW, sizeof(merW)) == LX200_VALUEGET)
     {
       int degPastMerE = (int)round(strtol(merE, NULL, 10) * 15.0 / 60.0);
-      sprintf_P(temp, html_configPastMerE, degPastMerE);
+      snprintf_P(temp, sizeof(temp), html_configPastMerE, degPastMerE);
       data += temp;
       int degPastMerW = (int)round(strtol(merW, NULL, 10) * 15.0 / 60.0);
-      sprintf_P(temp, html_configPastMerW, degPastMerW);
+      snprintf_P(temp, sizeof(temp), html_configPastMerW, degPastMerW);
       data += temp;
     }
     #ifdef keepTrackingOnWhenFarFromPole
     int miDist = 181;
     if (s_client->getMinDistFromPole(miDist) != LX200_VALUEGET) miDist = 181;
-    sprintf_P(temp, html_configMiDistanceFromPole, miDist);
+    snprintf_P(temp, sizeof(temp), html_configMiDistanceFromPole, miDist);
     data += temp;
     #endif
     sendHtml(data);
@@ -154,9 +154,9 @@ void TeenAstroWifi::handleConfigurationLimits()
 
   if (ok)
   {
-    sprintf_P(temp, html_configMinAxis1, (float)anglemin / 10.0, (float)angle_i_min, (float)anglemax / 10.0, (float)angle_i_min, (float)anglemax / 10.0);
+    snprintf_P(temp, sizeof(temp), html_configMinAxis1, (float)anglemin / 10.0, (float)angle_i_min, (float)anglemax / 10.0, (float)angle_i_min, (float)anglemax / 10.0);
     data += temp;
-    sprintf_P(temp, html_configMaxAxis1, (float)anglemax / 10.0, (float)anglemin / 10.0, (float)angle_i_max, (float)anglemin / 10.0, (float)angle_i_max);
+    snprintf_P(temp, sizeof(temp), html_configMaxAxis1, (float)anglemax / 10.0, (float)anglemin / 10.0, (float)angle_i_max, (float)anglemin / 10.0, (float)angle_i_max);
     data += temp;
     sendHtml(data);
   }
@@ -168,9 +168,9 @@ void TeenAstroWifi::handleConfigurationLimits()
 
   if (ok)
   {
-    sprintf_P(temp, html_configMinAxis2, (float)anglemin / 10.0, (float)angle_i_min, (float)anglemax / 10.0, (float)angle_i_min, (float)anglemax / 10.0);
+    snprintf_P(temp, sizeof(temp), html_configMinAxis2, (float)anglemin / 10.0, (float)angle_i_min, (float)anglemax / 10.0, (float)angle_i_min, (float)anglemax / 10.0);
     data += temp;
-    sprintf_P(temp, html_configMaxAxis2, (float)anglemax / 10.0, (float)anglemin / 10.0, (float)angle_i_max, (float)anglemin / 10.0, (float)angle_i_max);
+    snprintf_P(temp, sizeof(temp), html_configMaxAxis2, (float)anglemax / 10.0, (float)anglemin / 10.0, (float)angle_i_max, (float)anglemin / 10.0, (float)angle_i_max);
     data += temp;
     sendHtml(data);
   }

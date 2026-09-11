@@ -89,6 +89,7 @@ bool LX200Client::sendReceive(const char* command, CMDREPLY replyType,
         recvBuffer[0] = (char)m_transport->read();
         break;
       }
+      yield();
     }
     return recvBuffer[0] != '\0';
   }
@@ -124,6 +125,8 @@ bool LX200Client::sendReceive(const char* command, CMDREPLY replyType,
           pos = bufferSize - 1;
         }
       }
+      else
+        yield();
     }
     // Empty payload before '#' is valid (firmware replyLongUnknow() sends '#' alone).
     ok &= hashFound;

@@ -210,23 +210,23 @@ void TeenAstroWifi::handleConfigurationFocuser()
   unsigned int curr = pkt[15];
   unsigned int steprot = getU16LE(pkt, 16);
 
-  sprintf_P(temp, html_configParkFocuser, park);
+  snprintf_P(temp, sizeof(temp), html_configParkFocuser, park);
   data += temp; sendHtml(data);
-  sprintf_P(temp, html_configMaxPositionFocuser, maxPos);
+  snprintf_P(temp, sizeof(temp), html_configMaxPositionFocuser, maxPos);
   data += temp; sendHtml(data);
-  sprintf_P(temp, html_configLowSpeedFocuser, lowSpeed);
+  snprintf_P(temp, sizeof(temp), html_configLowSpeedFocuser, lowSpeed);
   data += temp; sendHtml(data);
-  sprintf_P(temp, html_configHighSpeedFocuser, highSpeed);
+  snprintf_P(temp, sizeof(temp), html_configHighSpeedFocuser, highSpeed);
   data += temp; sendHtml(data);
-  sprintf_P(temp, html_configGotoAccFocuser, gotoAcc);
+  snprintf_P(temp, sizeof(temp), html_configGotoAccFocuser, gotoAcc);
   data += temp; sendHtml(data);
-  sprintf_P(temp, html_configManAccFocuser, manAcc);
+  snprintf_P(temp, sizeof(temp), html_configManAccFocuser, manAcc);
   data += temp; sendHtml(data);
-  sprintf_P(temp, html_configManDecFocuser, manDec);
+  snprintf_P(temp, sizeof(temp), html_configManDecFocuser, manDec);
   data += temp; sendHtml(data);
 
   data += F("Resolution: <br />");
-  sprintf_P(temp, html_configResolutionFocuser, resolution);
+  snprintf_P(temp, sizeof(temp), html_configResolutionFocuser, resolution);
   data += temp; sendHtml(data);
   data += F("Rotation: <br />");
   data += FPSTR(html_configRotFocuser_1);
@@ -234,11 +234,11 @@ void TeenAstroWifi::handleConfigurationFocuser()
   data += FPSTR(html_configRotFocuser_2);
   sendHtml(data);
   data += F("Motor: <br />");
-  sprintf_P(temp, html_configStepRotFocuser, steprot);
+  snprintf_P(temp, sizeof(temp), html_configStepRotFocuser, steprot);
   data += temp;
-  sprintf_P(temp, html_configMuFocuser, (int)pow(2., (double)micro));
+  snprintf_P(temp, sizeof(temp), html_configMuFocuser, (int)pow(2., (double)micro));
   data += temp;
-  sprintf_P(temp, html_configHCFocuser, curr * 10);
+  snprintf_P(temp, sizeof(temp), html_configHCFocuser, curr * 10);
   data += temp; sendHtml(data);
 
   data += F("Userdefined Position: <br />");
@@ -251,9 +251,9 @@ void TeenAstroWifi::handleConfigurationFocuser()
     memcpy(id, &pkt[base + 2], 11);
     id[11] = '\0';
     if (id[0] == '\0')
-      sprintf_P(temp, html_configPosFocuser, "undefined", k, 0, k);
+      snprintf_P(temp, sizeof(temp), html_configPosFocuser, "undefined", k, 0, k);
     else
-      sprintf_P(temp, html_configPosFocuser, id, k, (int)pos, k);
+      snprintf_P(temp, sizeof(temp), html_configPosFocuser, id, k, (int)pos, k);
     data += temp;
     sendHtml(data);
   }
@@ -372,14 +372,14 @@ bool TeenAstroWifi::processConfigurationFocuserGet()
   for (int k = 0; k < 10; k++)
   {
     char argPos[6], argName[6];
-    sprintf(argPos, "Fp%d", k);
+    snprintf(argPos, sizeof(argPos), "Fp%d", k);
     v = server.arg(argPos);
     if (v != "")
     {
       any = true;
       if ((atof2((char*)v.c_str(), &f)) && ((f >= 0) && (f <= 65535)))
       {
-        sprintf(argName, "Fn%d", k);
+        snprintf(argName, sizeof(argName), "Fn%d", k);
         String nameVal = server.arg(argName);
         s_client->setFocuserUserPos(k, (int)f, nameVal.c_str());
       }

@@ -59,28 +59,28 @@ void TeenAstroWifi::buildStatusCardContent(String& data)
   if (ta_MountStatus.getError() != TeenAstroMountStatus::ERR_NONE) strcpy(temp1, "</span><span class='y'>"); else strcpy(temp1, "");
   ta_MountStatus.getLastErrorMessage(temp2);
   strcat(temp1, temp2);
-  sprintf_P(temp, html_indexLastError, temp1);
+  snprintf_P(temp, sizeof(temp), html_indexLastError, temp1);
   data += temp;
   sendHtml(data);
 
   // --- Time & Date (mount + sidereal) ---
   data += "<div class='bt'>Time &amp; Date</div>";
-  sprintf_P(temp, html_indexDate, ta_MountStatus.getUTCdate());
+  snprintf_P(temp, sizeof(temp), html_indexDate, ta_MountStatus.getUTCdate());
   data += temp;
-  sprintf_P(temp, html_indexTime, ta_MountStatus.getUTC());
+  snprintf_P(temp, sizeof(temp), html_indexTime, ta_MountStatus.getUTC());
   data += temp;
-  sprintf_P(temp, html_indexSidereal, ta_MountStatus.getSidereal());
+  snprintf_P(temp, sizeof(temp), html_indexSidereal, ta_MountStatus.getSidereal());
   data += temp;
   data += FPSTR(html_settingsBrowserTime);
   sendHtml(data);
 
   // --- Current Jnow (RA, Dec, Alt, Az, Pier) ---
   data += "<div class='bt'>Current Jnow</div>";
-  sprintf_P(temp, html_indexPosition, ta_MountStatus.getRa(), ta_MountStatus.getDec());
+  snprintf_P(temp, sizeof(temp), html_indexPosition, ta_MountStatus.getRa(), ta_MountStatus.getDec());
   data += temp;
   if (ta_MountStatus.hasInfoAlt() && ta_MountStatus.hasInfoAz())
   {
-    sprintf_P(temp, html_indexAltAz, ta_MountStatus.getAlt(), ta_MountStatus.getAz());
+    snprintf_P(temp, sizeof(temp), html_indexAltAz, ta_MountStatus.getAlt(), ta_MountStatus.getAz());
     data += temp;
   }
   switch (ta_MountStatus.getPierState())
@@ -90,19 +90,19 @@ void TeenAstroWifi::buildStatusCardContent(String& data)
   case TeenAstroMountStatus::PIER_UNKNOW: strcpy(temp1, "None"); break;
   default: strcpy(temp1, "?"); break;
   }
-  sprintf_P(temp, html_indexPier, temp1);
+  snprintf_P(temp, sizeof(temp), html_indexPier, temp1);
   data += temp;
   sendHtml(data);
 
   // --- Target ---
   data += "<div class='bt'>Target</div>";
-  sprintf_P(temp, html_indexPosition, ta_MountStatus.getRaT(), ta_MountStatus.getDecT());
+  snprintf_P(temp, sizeof(temp), html_indexPosition, ta_MountStatus.getRaT(), ta_MountStatus.getDecT());
   data += temp;
 
   // --- Alignment ---
   data += "<div class='bt'>Alignment</div>";
   ta_MountStatus.isAligned() ? strcpy(temp1, "Yes") : strcpy(temp1, "No");
-  sprintf_P(temp, html_indexAligned, temp1);
+  snprintf_P(temp, sizeof(temp), html_indexAligned, temp1);
   data += temp;
   sendHtml(data);
 
@@ -121,23 +121,23 @@ void TeenAstroWifi::buildStatusCardContent(String& data)
   case TeenAstroMountStatus::PRK_PARKING: strcpy(temp1, "Parking"); break;
   default: strcpy(temp1, "?"); break;
   }
-  sprintf_P(temp, html_indexPark, temp1);
+  snprintf_P(temp, sizeof(temp), html_indexPark, temp1);
   data += temp;
   ta_MountStatus.atHome() ? strcpy(temp1, "Yes") : strcpy(temp1, "No");
-  sprintf_P(temp, html_indexAtHome, temp1);
+  snprintf_P(temp, sizeof(temp), html_indexAtHome, temp1);
   data += temp;
   ta_MountStatus.isSpiralRunning() ? strcpy(temp1, "Yes") : strcpy(temp1, "No");
-  sprintf_P(temp, html_indexSpiral, temp1);
+  snprintf_P(temp, sizeof(temp), html_indexSpiral, temp1);
   data += temp;
   ta_MountStatus.isPulseGuiding() ? strcpy(temp1, "Yes") : strcpy(temp1, "No");
-  sprintf_P(temp, html_indexPulseGuiding, temp1);
+  snprintf_P(temp, sizeof(temp), html_indexPulseGuiding, temp1);
   data += temp;
   sendHtml(data);
   temp1[0] = ta_MountStatus.isGuidingE() ? 'E' : (ta_MountStatus.isGuidingW() ? 'W' : '-');
   temp1[1] = ' ';
   temp1[2] = ta_MountStatus.isGuidingN() ? 'N' : (ta_MountStatus.isGuidingS() ? 'S' : '-');
   temp1[3] = '\0';
-  sprintf_P(temp, html_indexGuidingDir, temp1);
+  snprintf_P(temp, sizeof(temp), html_indexGuidingDir, temp1);
   data += temp;
   switch (ta_MountStatus.getGuidingRate())
   {
@@ -148,10 +148,10 @@ void TeenAstroWifi::buildStatusCardContent(String& data)
   case TeenAstroMountStatus::MAX:    strcpy(temp1, "Max"); break;
   default: strcpy(temp1, "?"); break;
   }
-  sprintf_P(temp, html_indexGuidingRate, temp1);
+  snprintf_P(temp, sizeof(temp), html_indexGuidingRate, temp1);
   data += temp;
   ta_MountStatus.hasFocuser() ? strcpy(temp1, "Yes") : strcpy(temp1, "No");
-  sprintf_P(temp, html_indexHasFocuser, temp1);
+  snprintf_P(temp, sizeof(temp), html_indexHasFocuser, temp1);
   data += temp;
   sendHtml(data);
   if (ta_MountStatus.hasGNSSBoard())
@@ -169,7 +169,7 @@ void TeenAstroWifi::buildStatusCardContent(String& data)
   }
   else
     strcpy(temp1, "No board");
-  sprintf_P(temp, html_indexGNSS, temp1);
+  snprintf_P(temp, sizeof(temp), html_indexGNSS, temp1);
   data += temp;
 
   // --- Mount ---
@@ -182,16 +182,16 @@ void TeenAstroWifi::buildStatusCardContent(String& data)
   case TeenAstroMountStatus::MOUNT_TYPE_FORK_ALT: strcpy(temp1, "Fork Alt-Az"); break;
   default: strcpy(temp1, "?"); break;
   }
-  sprintf_P(temp, html_indexMountType, temp1);
+  snprintf_P(temp, sizeof(temp), html_indexMountType, temp1);
   data += temp;
   ta_MountStatus.motorsEnableCached() ? strcpy(temp1, "On") : strcpy(temp1, "Off");
-  sprintf_P(temp, html_indexMotors, temp1);
+  snprintf_P(temp, sizeof(temp), html_indexMotors, temp1);
   data += temp;
   ta_MountStatus.encodersEnableCached() ? strcpy(temp1, "On") : strcpy(temp1, "Off");
-  sprintf_P(temp, html_indexEncoders, temp1);
+  snprintf_P(temp, sizeof(temp), html_indexEncoders, temp1);
   data += temp;
   ta_MountStatus.isTrackingCorrected() ? strcpy(temp1, "Yes") : strcpy(temp1, "No");
-  sprintf_P(temp, html_indexTrackCorrected, temp1);
+  snprintf_P(temp, sizeof(temp), html_indexTrackCorrected, temp1);
   data += temp;
   sendHtml(data);
 }

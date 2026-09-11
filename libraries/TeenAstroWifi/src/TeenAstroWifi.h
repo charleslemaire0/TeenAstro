@@ -37,6 +37,10 @@
 #include <WiFiAP.h>
 #if __has_include(<HTTPUpdateServer.h>)
 #include <HTTPUpdateServer.h>
+#else
+// Arduino-ESP32 2.x has no HTTPUpdateServer; serve /update ourselves.
+#include <Update.h>
+#define SHC_OTA_FALLBACK
 #endif
 #endif
 
@@ -48,12 +52,17 @@
 #include <TeenAstroAlpaca.h>
 #endif
 
-// Default timeouts (seconds) for serial commands and web requests
+// Serial read timeouts for LX200Client::setTimeout() — units are milliseconds
+// (matches the WiFi page form labels: min 5, max 100 ms).
 #ifndef TIMEOUT_CMD
-#define TIMEOUT_CMD 8
+#define TIMEOUT_CMD 50
 #endif
 #ifndef TIMEOUT_WEB
-#define TIMEOUT_WEB 4
+#define TIMEOUT_WEB 50
+#endif
+// How long an idle TCP :9999 cmd client is kept open (not related to serial ms).
+#ifndef CMD_TCP_IDLE_MS
+#define CMD_TCP_IDLE_MS 10000UL
 #endif
 
 #ifndef Product
@@ -239,6 +248,18 @@ public:
   /// Bind an LX200Client for all serial communication.
   static void setClient(LX200Client& client) { s_client = &client; }
   static LX200Client& client() { return *s_client; }
+
+  // True while a config page is building or for a few seconds after — ESP32
+  // WiFi TX often causes transient LX200 misses; callers should not reboot yet.
+  static bool webIoGrace(unsigned long graceMs = 4000);
+
+#ifdef SHC_OTA_FALLBACK
+  static void handleUpdateForm();
+  static void handleUpdateUpload();
+  static void handleUpdateResult();
+#endif
+  // Uptime / reset-reason / heap, to tell a crash apart from a deliberate reboot.
+  static void handleDiag();
 
   static bool isWifiOn();
   static bool isWifiRunning();

@@ -140,7 +140,7 @@ void TeenAstroWifi::handleConfigurationMotors()
   if (s_client->getStepsPerSecond(temp2, sizeof(temp2)) == LX200_VALUEGET)
   {
     int wt = (int)strtol(temp2, NULL, 10);
-    sprintf_P(temp, html_configSettleTime, wt);
+    snprintf_P(temp, sizeof(temp), html_configSettleTime, wt);
     data += temp;
     sendHtml(data);
   }
@@ -151,10 +151,10 @@ void TeenAstroWifi::handleConfigurationMotors()
     bool reverse = false;
     if (s_client->readReverse(ax, reverse) == LX200_VALUEGET)
     {
-      sprintf_P(temp, html_configRotAxis_1, ax);
+      snprintf_P(temp, sizeof(temp), html_configRotAxis_1, ax);
       data += temp;
       data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
-      sprintf_P(temp, html_configRotAxis_2, ax);
+      snprintf_P(temp, sizeof(temp), html_configRotAxis_2, ax);
       data += temp;
       sendHtml(data);
     }
@@ -165,7 +165,7 @@ void TeenAstroWifi::handleConfigurationMotors()
     float gear = 0;
     if (s_client->readTotGear(ax, gear) == LX200_VALUEGET)
     {
-      sprintf_P(temp, html_configGeAxis, gear, ax, ax);
+      snprintf_P(temp, sizeof(temp), html_configGeAxis, gear, ax, ax);
       data += temp;
       sendHtml(data);
     }
@@ -176,7 +176,7 @@ void TeenAstroWifi::handleConfigurationMotors()
     float step;
     if (s_client->readStepPerRot(ax, step) == LX200_VALUEGET)
     {
-      sprintf_P(temp, html_configStAxis, (int)step, ax, ax);
+      snprintf_P(temp, sizeof(temp), html_configStAxis, (int)step, ax, ax);
       data += temp;
       sendHtml(data);
     }
@@ -187,7 +187,7 @@ void TeenAstroWifi::handleConfigurationMotors()
     uint8_t micro;
     if (s_client->readMicro(ax, micro) == LX200_VALUEGET)
     {
-      sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), ax, ax);
+      snprintf_P(temp, sizeof(temp), html_configMuAxis, (int)pow(2., micro), ax, ax);
       data += temp;
       sendHtml(data);
     }
@@ -198,7 +198,7 @@ void TeenAstroWifi::handleConfigurationMotors()
     float backlash;
     if (s_client->readBacklash(ax, backlash) == LX200_VALUEGET)
     {
-      sprintf_P(temp, html_configBlAxis, (int)backlash, ax, ax);
+      snprintf_P(temp, sizeof(temp), html_configBlAxis, (int)backlash, ax, ax);
       data += temp;
       sendHtml(data);
     }
@@ -209,7 +209,7 @@ void TeenAstroWifi::handleConfigurationMotors()
     float blRate;
     if (s_client->readBacklashRate(ax, blRate) == LX200_VALUEGET)
     {
-      sprintf_P(temp, html_configBlRateAxis, (int)blRate, ax, ax);
+      snprintf_P(temp, sizeof(temp), html_configBlRateAxis, (int)blRate, ax, ax);
       data += temp;
       sendHtml(data);
     }
@@ -220,7 +220,7 @@ void TeenAstroWifi::handleConfigurationMotors()
     unsigned int lowC;
     if (s_client->readLowCurr(ax, lowC) == LX200_VALUEGET)
     {
-      sprintf_P(temp, html_configLCAxis, lowC, ax, ax);
+      snprintf_P(temp, sizeof(temp), html_configLCAxis, lowC, ax, ax);
       data += temp;
       sendHtml(data);
     }
@@ -231,7 +231,7 @@ void TeenAstroWifi::handleConfigurationMotors()
     unsigned int highC;
     if (s_client->readHighCurr(ax, highC) == LX200_VALUEGET)
     {
-      sprintf_P(temp, html_configHCAxis, highC, ax, ax);
+      snprintf_P(temp, sizeof(temp), html_configHCAxis, highC, ax, ax);
       data += temp;
       sendHtml(data);
     }
@@ -245,10 +245,10 @@ void TeenAstroWifi::handleConfigurationMotors()
       uint8_t silent;
       if (s_client->readSilentStep(ax, silent) == LX200_VALUEGET)
       {
-        sprintf_P(temp, html_configSilentAxis_1, ax);
+        snprintf_P(temp, sizeof(temp), html_configSilentAxis_1, ax);
         data += temp;
         data += silent ? FPSTR(html_configSilentAxis_r) : FPSTR(html_configSilentAxis_d);
-        sprintf_P(temp, html_configSilentAxis_2, ax);
+        snprintf_P(temp, sizeof(temp), html_configSilentAxis_2, ax);
         data += temp;
         sendHtml(data);
       }
@@ -296,7 +296,7 @@ bool TeenAstroWifi::processConfigurationMotorsGet()
   for (uint8_t idx = 0; idx <= 3; idx++)
   {
     char argName[4];
-    sprintf(argName, "R%d", idx);
+    snprintf(argName, sizeof(argName), "R%d", idx);
     v = server.arg(argName);
     if (v != "")
     {
@@ -319,47 +319,47 @@ bool TeenAstroWifi::processConfigurationMotorsGet()
     char argName[8];
 
     // Rotation
-    sprintf(argName, "mrot%d", ax);
+    snprintf(argName, sizeof(argName), "mrot%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) s_client->writeReverse(ax, i); }
 
     // Gear
-    sprintf(argName, "mge%d", ax);
+    snprintf(argName, sizeof(argName), "mge%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 60000))) s_client->writeTotGear(ax, f); }
 
     // Steps per rotation
-    sprintf(argName, "mst%d", ax);
+    snprintf(argName, sizeof(argName), "mst%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400))) s_client->writeStepPerRot(ax, i); }
 
     // Microsteps
-    sprintf(argName, "mmu%d", ax);
+    snprintf(argName, sizeof(argName), "mmu%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256))) s_client->writeMicro(ax, (float)((int)log2(i))); }
 
     // Backlash
-    sprintf(argName, "mbl%d", ax);
+    snprintf(argName, sizeof(argName), "mbl%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999))) s_client->writeBacklash(ax, (float)i); }
 
     // Backlash rate
-    sprintf(argName, "mblr%d", ax);
+    snprintf(argName, sizeof(argName), "mblr%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 64))) s_client->writeBacklashRate(ax, (float)i); }
 
     // Low current
-    sprintf(argName, "mlc%d", ax);
+    snprintf(argName, sizeof(argName), "mlc%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800))) s_client->writeLowCurr(ax, i); }
 
     // High current
-    sprintf(argName, "mhc%d", ax);
+    snprintf(argName, sizeof(argName), "mhc%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800))) s_client->writeHighCurr(ax, i); }
 
     // Silent mode
-    sprintf(argName, "ms%d", ax);
+    snprintf(argName, sizeof(argName), "ms%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) s_client->writeSilentStep(ax, i); }
   }

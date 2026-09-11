@@ -421,6 +421,15 @@ void SmartHandController::update()
   }
   if (ta_MountStatus.notResponding())
   {
+#if defined(ARDUINO_ARCH_ESP32)
+    // ESP32 WiFi serving config pages often causes transient MainUnit UART misses
+    // (Wemos usually still answers in time). Do not reboot during/after web I/O.
+    if (TeenAstroWifi::webIoGrace())
+    {
+      ta_MountStatus.removeLastConnectionFailure();
+      return;
+    }
+#endif
     display->sleepOff();
     buttonPad.setMenuMode();
     DisplayMessage("!! " T_ERROR " !!", T_NOT_CONNECTED, -1);

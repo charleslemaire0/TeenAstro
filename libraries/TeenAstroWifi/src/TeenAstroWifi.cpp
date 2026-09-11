@@ -208,6 +208,15 @@ bool TeenAstroWifi::busyGuard()
   return false;
 }
 
+bool TeenAstroWifi::webIoGrace(unsigned long graceMs)
+{
+  if (s_handlerBusy)
+    return true;
+  if (s_lastPageMs == 0)
+    return false;
+  return (millis() - s_lastPageMs) < graceMs;
+}
+
 void TeenAstroWifi::sendRedirectAfterMutation(const char* path)
 {
   server.sendHeader("Location", path);
@@ -417,8 +426,9 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
     data += " &middot; Board ";
     data += ta_MountStatus.getVB();
     data += " &middot; ";
-    // Index page uses cache-only to avoid updateV() serial round-trip; other pages may call getDriverType().
-    data += stepperDriverName(page == ServerPage::Index ? ta_MountStatus.getDriverTypeCached() : ta_MountStatus.getDriverType());
+    // Index uses cache-only to avoid serial during page build; do the same on
+    // all pages — ESP32 WiFi TX + extra UART queries is what trips SHC reboot.
+    data += stepperDriverName(ta_MountStatus.getDriverTypeCached());
   }
   else data += "?";
   data += FPSTR(html_header3);
@@ -429,8 +439,7 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   data += "<input type='checkbox' id='navtog'>\n";
   data += page == ServerPage::Index ? FPSTR(html_links1S) : FPSTR(html_links1N);
   data += page == ServerPage::Control ? FPSTR(html_links2S) : FPSTR(html_links2N);
-  // Index: use cached only so mount status is not modified during index build.
-  bool motors = (page == ServerPage::Index) ? ta_MountStatus.motorsEnableCached() : ta_MountStatus.motorsEnable();
+  bool motors = ta_MountStatus.motorsEnableCached();
   if (motors)
   {
     data += page == ServerPage::Speed ? FPSTR(html_links3S) : FPSTR(html_links3N);
@@ -441,7 +450,7 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   if (motors)
     data += page == ServerPage::Motors ? FPSTR(html_links7S) : FPSTR(html_links7N);
   data += page == ServerPage::Limits ? FPSTR(html_links8S) : FPSTR(html_links8N);
-  bool encoders = (page == ServerPage::Index) ? ta_MountStatus.encodersEnableCached() : ta_MountStatus.encodersEnable();
+  bool encoders = ta_MountStatus.encodersEnableCached();
   if (encoders)
     data += page == ServerPage::Encoders ? FPSTR(html_links9S) : FPSTR(html_links9N);
   if (ta_MountStatus.hasFocuser())
@@ -530,6 +539,20 @@ void TeenAstroWifi::initFromEEPROM()
 
     WebTimeout = EEPROM.read(EEPROM_WebTimeout);
     CmdTimeout = EEPROM.read(EEPROM_CmdTimeout);
+    // WiFi form stores ms (5–100). Older mistaken "seconds" defaults (e.g. 4)
+    // starve LX200 reads and make SHC reboot when opening Mount/Site pages.
+    if (WebTimeout < 15 || WebTimeout > 100)
+    {
+      WebTimeout = TIMEOUT_WEB;
+      EEPROM.write(EEPROM_WebTimeout, (uint8_t)WebTimeout);
+      EEPROM.commit();
+    }
+    if (CmdTimeout < 15 || CmdTimeout > 100)
+    {
+      CmdTimeout = TIMEOUT_CMD;
+      EEPROM.write(EEPROM_CmdTimeout, (uint8_t)CmdTimeout);
+      EEPROM.commit();
+    }
     val = EEPROM.read(EEPROM_WifiConnectMode);
     activeWifiConnectMode = static_cast<WifiConnectMode>(val < 2 ? val : 0 );
     EEPROM_readString(EPPROM_password, masterPassword);
@@ -684,6 +707,7 @@ void TeenAstroWifi::setup()
   server.on("/status.txt", statusAjax);
   server.on("/cmd", handleLx200Cmd);
   server.on("/wifi.htm", handleWifi);
+  server.on("/diag.txt", handleDiag);
   server.onNotFound(handleNotFound);
 
   cmdSvr.begin();
@@ -695,14 +719,72 @@ void TeenAstroWifi::setup()
 #endif
 
   // HTTP OTA: register /update route on the main web server
-#if defined(ARDUINO_ARCH_ESP8266) || (defined(ARDUINO_ARCH_ESP32) && __has_include(<HTTPUpdateServer.h>))
+#if defined(ARDUINO_ARCH_ESP8266) || (defined(ARDUINO_ARCH_ESP32) && !defined(SHC_OTA_FALLBACK))
   httpUpdater.setup(&server);
+#elif defined(SHC_OTA_FALLBACK)
+  server.on("/update", HTTP_GET, handleUpdateForm);
+  server.on("/update", HTTP_POST, handleUpdateResult, handleUpdateUpload);
 #endif
 #ifdef SHC_HAS_ALPACA
   if (s_client)
     alpaca.setup(*s_client, ta_MountStatus);
 #endif
 };
+
+#ifdef SHC_OTA_FALLBACK
+void TeenAstroWifi::handleUpdateForm()
+{
+  server.send(200, "text/html", F(
+    "<!DOCTYPE HTML><html><body style='background:#0d1117;color:#c9d1d9;font-family:sans-serif'>"
+    "<h3>Firmware update</h3>"
+    "<form method='POST' action='/update' enctype='multipart/form-data'>"
+    "<input type='file' name='firmware' accept='.bin'> "
+    "<button type='submit'>Upload</button></form>"
+    "<p>Upload the SHC .bin, then the device restarts.</p>"
+    "</body></html>"));
+}
+
+void TeenAstroWifi::handleUpdateUpload()
+{
+  HTTPUpload& up = server.upload();
+  if (up.status == UPLOAD_FILE_START)
+    Update.begin(UPDATE_SIZE_UNKNOWN);
+  else if (up.status == UPLOAD_FILE_WRITE)
+    Update.write(up.buf, up.currentSize);
+  else if (up.status == UPLOAD_FILE_END)
+    Update.end(true);
+  yield();
+}
+
+void TeenAstroWifi::handleUpdateResult()
+{
+  const bool ok = !Update.hasError();
+  server.sendHeader("Connection", "close");
+  server.send(200, "text/plain", ok ? "OK - rebooting" : "FAIL");
+  delay(500);
+  ESP.restart();
+}
+#endif
+
+void TeenAstroWifi::handleDiag()
+{
+  char buf[256];
+  int reason = 0;
+  uint32_t minHeap = 0;
+  uint32_t maxBlock = 0;
+#if defined(ARDUINO_ARCH_ESP32)
+  reason = (int)esp_reset_reason();
+  minHeap = ESP.getMinFreeHeap();
+  maxBlock = ESP.getMaxAllocHeap();
+#endif
+  snprintf(buf, sizeof(buf),
+           "uptime_ms=%lu\nreset_reason=%d\nheap=%u\nmin_heap=%u\nmax_block=%u\nmount_ok=%d\nnot_responding=%d\n",
+           (unsigned long)millis(), reason, (unsigned)ESP.getFreeHeap(),
+           (unsigned)minHeap, (unsigned)maxBlock,
+           ta_MountStatus.connected() ? 1 : 0,
+           ta_MountStatus.notResponding() ? 1 : 0);
+  server.send(200, "text/plain", buf);
+}
 
 void TeenAstroWifi::handleLx200Cmd()
 {
@@ -712,7 +794,7 @@ void TeenAstroWifi::handleLx200Cmd()
     server.send(400, "text/plain", "");
     return;
   }
-  s_client->setTimeout(CmdTimeout > 0 ? (unsigned long)CmdTimeout * 2 : 30);
+  s_client->setTimeout(CmdTimeout > 0 ? (unsigned long)CmdTimeout : (unsigned long)TIMEOUT_CMD);
   char buf[256] = "";
   // Generic LX200 query passthrough; form handlers in Configuration_*.cpp use typed s_client methods.
   LX200RETURN ret = s_client->get(q.c_str(), buf, sizeof(buf));
@@ -856,7 +938,7 @@ void TeenAstroWifi::update()
     // new client
     if (!cmdSvrClient && cmdSvr.hasClient()) {
       cmdSvrClient = cmdSvr.available();
-      clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
+      clientTime = millis() + CMD_TCP_IDLE_MS;
       lastClientCmdMs = millis();
       writeBuffer[0] = 0;
       writeBufferPos = 0;
@@ -936,7 +1018,7 @@ void TeenAstroWifi::update()
           cmdDone = true;
           lastClientCmdMs = millis();
           if (activeWifiConnectMode == WifiConnectMode::AutoClose)
-            clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
+            clientTime = millis() + CMD_TCP_IDLE_MS;
           break;
         }
 
@@ -959,7 +1041,7 @@ void TeenAstroWifi::update()
         cmdDone = true;
         lastClientCmdMs = millis();
         if (activeWifiConnectMode == WifiConnectMode::AutoClose)
-          clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
+          clientTime = millis() + CMD_TCP_IDLE_MS;
       }
     }
   }
