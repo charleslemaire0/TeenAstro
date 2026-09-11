@@ -768,7 +768,11 @@ void TeenAstroWifi::handleUpdateResult()
 
 void TeenAstroWifi::handleDiag()
 {
-  char buf[256];
+  char buf[512];
+  // ?force=1 runs the same forced bulk-state read the Alpaca handlers do,
+  // but from a port-80 handler, to tell the two contexts apart.
+  if (server.arg("force") == "1")
+    ta_MountStatus.updateAllState(true);
   int reason = 0;
   uint32_t minHeap = 0;
   uint32_t maxBlock = 0;
@@ -778,11 +782,16 @@ void TeenAstroWifi::handleDiag()
   maxBlock = ESP.getMaxAllocHeap();
 #endif
   snprintf(buf, sizeof(buf),
-           "uptime_ms=%lu\nreset_reason=%d\nheap=%u\nmin_heap=%u\nmax_block=%u\nmount_ok=%d\nnot_responding=%d\n",
+           "uptime_ms=%lu\nreset_reason=%d\nheap=%u\nmin_heap=%u\nmax_block=%u\nmount_ok=%d\nnot_responding=%d\n"
+           "gxas_fail_stage=%u\ngxas_raw_len=%u\ngxas_fail_count=%lu\ngxas_elapsed_ms=%u\n",
            (unsigned long)millis(), reason, (unsigned)ESP.getFreeHeap(),
            (unsigned)minHeap, (unsigned)maxBlock,
            ta_MountStatus.connected() ? 1 : 0,
-           ta_MountStatus.notResponding() ? 1 : 0);
+           ta_MountStatus.notResponding() ? 1 : 0,
+           (unsigned)ta_MountStatus.getLastStateFailStage(),
+           (unsigned)ta_MountStatus.getLastStateRawLen(),
+           (unsigned long)ta_MountStatus.getStateFailCount(),
+           (unsigned)ta_MountStatus.getLastStateElapsedMs());
   server.send(200, "text/plain", buf);
 }
 
