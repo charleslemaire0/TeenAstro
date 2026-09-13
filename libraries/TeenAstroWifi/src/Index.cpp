@@ -16,6 +16,22 @@ const char html_settingsBrowserTime[] PROGMEM =
 "' '+pad(now.getUTCHours().toString(),2)+':'+pad(now.getUTCMinutes().toString(),2)+':'+pad(now.getUTCSeconds().toString(),2); "
 "</script><br />\r\n";
 
+// Silent partial refresh of #StatusContent; meta refresh (see html_headerIdx) remains as fallback.
+const char html_indexAutoRefresh[] PROGMEM =
+"<script>\n"
+"function refreshStatus(){\n"
+"if(document.hidden)return;\n"
+"var x=new XMLHttpRequest();\n"
+"x.onreadystatechange=function(){\n"
+"if(x.readyState==4&&x.status==200)document.getElementById('StatusContent').innerHTML=x.responseText;\n"
+"};\n"
+"x.open('GET','status.txt?nocache='+Date.now(),true);\n"
+"x.send();\n"
+"}\n"
+"setInterval(refreshStatus,5000);\n"
+"document.addEventListener('visibilitychange',function(){if(!document.hidden)refreshStatus();});\n"
+"</script>\n";
+
 const char html_indexDate[] PROGMEM = "<span class='c'>%s</span>";
 const char html_indexTime[] PROGMEM = " <span class='c'>%s</span> UT";
 const char html_indexSidereal[] PROGMEM = " (<span class='c'>%s</span> LST)<br />";
@@ -230,6 +246,7 @@ void TeenAstroWifi::handleRoot()
   buildStatusCardContent(data);
   data += "</div>";
   data += "</div>";
+  data += FPSTR(html_indexAutoRefresh);
   sendHtml(data);
   data += FPSTR(html_pageFooter);
   sendHtml(data);

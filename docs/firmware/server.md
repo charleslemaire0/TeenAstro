@@ -8,7 +8,7 @@ ESP8266 firmware: TCP bridge on port **9999**, exposing the MainUnit LX200 seria
 
 ## Role
 
-- Listen on TCP 9999; forward bytes to/from MainUnit serial (57600).
+- Listen on TCP 9999; forward bytes to/from MainUnit serial (115200 baud).
 - Web server for WiFi credentials (STA/AP), web password, site config.
 
 ---
