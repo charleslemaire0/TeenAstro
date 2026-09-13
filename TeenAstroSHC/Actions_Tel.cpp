@@ -130,7 +130,7 @@ void SmartHandController::menuTelActionPushToGoto()
     }
     else if (currentstate == TeenAstroMountStatus::PRK_UNPARKED)
     {
-      const char* string_list_main_UnParkedL0 = telescoplocked ? T_UNLOCK : T_GOTO "\n" T_PUSHTO "\n" T_SYNC "\n" T_ALIGN "\n" T_TRACKING "\n" T_SIDEOFPIER "\n" T_SAVE " RADEC\n" T_LOCK "\n" T_SPIRAL;
+      const char* string_list_main_UnParkedL0 = telescoplocked ? T_UNLOCK : T_GOTO "\n" T_PUSHTO "\n" T_SYNC "\n" T_ALIGN "\n" T_GEARCHECK "\n" T_TRACKING "\n" T_SIDEOFPIER "\n" T_SAVE " RADEC\n" T_LOCK "\n" T_SPIRAL;
       tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPEACTION, s_sel, string_list_main_UnParkedL0);
       s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
       MENU_RESULT answer = MR_CANCEL;
@@ -173,12 +173,16 @@ void SmartHandController::menuTelActionPushToGoto()
           answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
           break;
         case 5:
-          menuTrack();
+          answer = menuGearCheck();
+          answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
           break;
         case 6:
-          menuPier();
+          menuTrack();
           break;
         case 7:
+          menuPier();
+          break;
+        case 8:
           if (m_client->saveUserPosition() == LX200_VALUESET)
           {
             DisplayMessage("RA DEC", T_SAVED, 500);
@@ -188,11 +192,11 @@ void SmartHandController::menuTelActionPushToGoto()
             DisplayMessage(T_LX200COMMAND, T_FAILED, 1000);
           }
           break;
-        case 8:
+        case 9:
           telescoplocked = true;
           exitMenu = true;
           break;
-        case 9:
+        case 10:
         {
           menuSpirale();
           break;
@@ -240,7 +244,7 @@ void SmartHandController::menuTelActionGoto()
     }
     else if (currentstate == TeenAstroMountStatus::PRK_UNPARKED)
     {
-      const char* string_list_main_UnParkedL0 = telescoplocked ? T_UNLOCK : T_GOTO "\n" T_SYNC "\n" T_ALIGN "\n" T_TRACKING "\n" T_SIDEOFPIER "\n" T_SAVE " RADEC\n" T_LOCK "\n" T_SPIRAL;
+      const char* string_list_main_UnParkedL0 = telescoplocked ? T_UNLOCK : T_GOTO "\n" T_SYNC "\n" T_ALIGN "\n" T_GEARCHECK "\n" T_TRACKING "\n" T_SIDEOFPIER "\n" T_SAVE " RADEC\n" T_LOCK "\n" T_SPIRAL;
       tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_TELESCOPEACTION, s_sel, string_list_main_UnParkedL0);
       s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
       MENU_RESULT answer = MR_CANCEL;
@@ -279,12 +283,16 @@ void SmartHandController::menuTelActionGoto()
           answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
           break;
         case 4:
-          menuTrack();
+          answer = menuGearCheck();
+          answer == MR_OK || answer == MR_QUIT ? exitMenu = true : exitMenu = false;
           break;
         case 5:
-          menuPier();
+          menuTrack();
           break;
         case 6:
+          menuPier();
+          break;
+        case 7:
           if (m_client->saveUserPosition() == LX200_VALUESET)
           {
             DisplayMessage("RA DEC", T_SAVED, 500);
@@ -294,11 +302,11 @@ void SmartHandController::menuTelActionGoto()
             DisplayMessage(T_LX200COMMAND, T_FAILED, 1000);
           }
           break;
-        case 7:
+        case 8:
           telescoplocked = true;
           exitMenu = true;
           break;
-        case 8:
+        case 9:
         {
           menuSpirale();
           break;
