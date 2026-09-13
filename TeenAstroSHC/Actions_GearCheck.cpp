@@ -5,9 +5,11 @@
 #include <cmath>
 
 // Gear-check goto ladder: sync A → goto B (mostly axis1) → recenter →
-// goto C (mostly axis2) → recenter → report which axis miss grew.
-// EQ and AltAz use separate prompts/labels; miss is from instrument axes
-// (:GXP1# / :GXP2#) so it maps to motor gear / steps-per-degree.
+// goto C (mostly axis2) → recenter → report miss and measured gear.
+// Measured gear = cfg_gear * commanded / true, with true = commanded + miss
+// on the primary instrument axis (:GXP1# / :GXP2#).
+
+static const double kMinCmdDeg = 5.0; // need a meaningful slew for scale
 
 static double wrap180(double deg)
 {
@@ -20,6 +22,19 @@ static void formatArcmin(char* out, size_t len, double deg)
 {
   const double am = deg * 60.0;
   snprintf(out, len, "%+.0f'", am);
+}
+
+static bool computeMeasuredGear(float gearCfg, double cmdDeg, double missDeg,
+                                float& gearMeas)
+{
+  const double trueDeg = cmdDeg + missDeg;
+  if (fabs(cmdDeg) < kMinCmdDeg || fabs(trueDeg) < 1e-3)
+    return false;
+  // Same sign expected for a mostly-axis move; still allow if true is usable.
+  gearMeas = (float)((double)gearCfg * cmdDeg / trueDeg);
+  if (!isfinite(gearMeas) || gearMeas <= 0.0f || gearMeas > 100000.0f)
+    return false;
+  return true;
 }
 
 bool SmartHandController::gearCheckReadAxes(double& a1Deg, double& a2Deg)
@@ -46,7 +61,6 @@ bool SmartHandController::gearCheckWaitSlewSettled()
     ta_MountStatus.updateMount();
     if (ta_MountStatus.getTrackingState() != TeenAstroMountStatus::TRK_SLEWING)
     {
-      // Brief settle so the reported position is stable.
       delay(400);
       ta_MountStatus.updateMount();
       return true;
@@ -109,10 +123,20 @@ bool SmartHandController::gearCheckRecenterAndMeasure(double& miss1Deg, double& 
 
 SmartHandController::MENU_RESULT SmartHandController::gearCheckRunLeg(
   const char* pickPrompt,
-  double& miss1Deg,
-  double& miss2Deg)
+  int primaryAxis,
+  GearCheckLegResult& out)
 {
+  out = GearCheckLegResult();
+  out.primaryAxis = primaryAxis;
+
   DisplayLongMessage(T_GEARCHECK, pickPrompt, T_SELECTASTAR, "", -1);
+
+  double start1 = 0, start2 = 0;
+  if (!gearCheckReadAxes(start1, start2))
+  {
+    DisplayMessage(T_GETVEALUE, T_FAILED, -1);
+    return MR_CANCEL;
+  }
 
   MENU_RESULT cat = menuCatalogAlign(NAV_GOTO);
   if (cat == MR_CANCEL)
@@ -124,39 +148,59 @@ SmartHandController::MENU_RESULT SmartHandController::gearCheckRunLeg(
     return MR_CANCEL;
   }
 
-  if (!gearCheckRecenterAndMeasure(miss1Deg, miss2Deg))
+  double settle1 = 0, settle2 = 0;
+  if (!gearCheckReadAxes(settle1, settle2))
   {
     DisplayMessage(T_GETVEALUE, T_FAILED, -1);
     return MR_CANCEL;
   }
 
-  char row1[28], row2[28];
-  char am1[16], am2[16];
-  formatArcmin(am1, sizeof(am1), miss1Deg);
-  formatArcmin(am2, sizeof(am2), miss2Deg);
-  snprintf(row1, sizeof(row1), "A1 %s", am1);
-  snprintf(row2, sizeof(row2), "A2 %s", am2);
-  DisplayLongMessage(T_GEARCHECK, row1, row2, "", -1);
+  // RecenterAndMeasure re-reads settle as "before" — same moment for miss.
+  if (!gearCheckRecenterAndMeasure(out.miss1Deg, out.miss2Deg))
+  {
+    DisplayMessage(T_GETVEALUE, T_FAILED, -1);
+    return MR_CANCEL;
+  }
+
+  const double cmd1 = wrap180(settle1 - start1);
+  const double cmd2 = wrap180(settle2 - start2);
+  out.cmdPrimaryDeg = (primaryAxis == 1) ? cmd1 : cmd2;
+  out.missPrimaryDeg = (primaryAxis == 1) ? out.miss1Deg : out.miss2Deg;
+
+  ta_MountStatus.updateAllConfig(true);
+  const float gearCfg = ta_MountStatus.hasConfig()
+    ? (ta_MountStatus.getCfgGear(primaryAxis - 1) / 1000.0f)
+    : 0.0f;
+  out.gearCfg = gearCfg;
+  out.gearValid = computeMeasuredGear(gearCfg, out.cmdPrimaryDeg, out.missPrimaryDeg, out.gearMeas);
+
+  char rowMiss[28], rowGear[28];
+  char am[16];
+  formatArcmin(am, sizeof(am), out.missPrimaryDeg);
+  snprintf(rowMiss, sizeof(rowMiss), "A%d %s", primaryAxis, am);
+  if (out.gearValid)
+    snprintf(rowGear, sizeof(rowGear), "%s %.1f>%.1f", T_GEAR, (double)out.gearCfg, (double)out.gearMeas);
+  else
+    snprintf(rowGear, sizeof(rowGear), "%s %s", T_GEAR, T_FAILED);
+
+  DisplayLongMessage(T_GEARCHECK, rowMiss, rowGear, "", -1);
   return MR_OK;
 }
 
 void SmartHandController::gearCheckReport(
-  double miss1Leg1,
-  double miss2Leg1,
-  double miss1Leg2,
-  double miss2Leg2,
+  const GearCheckLegResult& leg1,
+  const GearCheckLegResult& leg2,
   const char* label1,
   const char* label2)
 {
-  // Primary miss on the intended axis of each leg.
-  const double score1 = fabs(miss1Leg1);
-  const double score2 = fabs(miss2Leg2);
+  const double score1 = fabs(leg1.missPrimaryDeg);
+  const double score2 = fabs(leg2.missPrimaryDeg);
   const double threshDeg = 2.0 / 60.0; // 2'
 
   char r1[28], r2[28];
   char am1[16], am2[16];
-  formatArcmin(am1, sizeof(am1), miss1Leg1);
-  formatArcmin(am2, sizeof(am2), miss2Leg2);
+  formatArcmin(am1, sizeof(am1), leg1.missPrimaryDeg);
+  formatArcmin(am2, sizeof(am2), leg2.missPrimaryDeg);
   snprintf(r1, sizeof(r1), "%s %s", label1, am1);
   snprintf(r2, sizeof(r2), "%s %s", label2, am2);
 
@@ -174,9 +218,17 @@ void SmartHandController::gearCheckReport(
   DisplayLongMessage(T_GC_LEG1, r1, T_GC_LEG2, r2, -1);
   DisplayLongMessage(T_GEARCHECK, verdict, "", "", -1);
 
-  // Keep cross-axis numbers available if useful (leg1 A2 / leg2 A1).
-  (void)miss2Leg1;
-  (void)miss1Leg2;
+  // Measured gear: configured → estimated (from cmd/(cmd+miss)).
+  char g1[28], g2[28];
+  if (leg1.gearValid)
+    snprintf(g1, sizeof(g1), "A1 %.1f>%.1f", (double)leg1.gearCfg, (double)leg1.gearMeas);
+  else
+    snprintf(g1, sizeof(g1), "A1 %s", T_FAILED);
+  if (leg2.gearValid)
+    snprintf(g2, sizeof(g2), "A2 %.1f>%.1f", (double)leg2.gearCfg, (double)leg2.gearMeas);
+  else
+    snprintf(g2, sizeof(g2), "A2 %s", T_FAILED);
+  DisplayLongMessage(T_GEAR, g1, g2, "", -1);
 }
 
 SmartHandController::MENU_RESULT SmartHandController::menuGearCheckEq()
@@ -190,13 +242,13 @@ SmartHandController::MENU_RESULT SmartHandController::menuGearCheckEq()
   if (syncRes == MR_CANCEL)
     return MR_CANCEL;
 
-  double m11 = 0, m12 = 0, m21 = 0, m22 = 0;
-  if (gearCheckRunLeg(T_GC_PICK_HA, m11, m12) != MR_OK)
+  GearCheckLegResult leg1, leg2;
+  if (gearCheckRunLeg(T_GC_PICK_HA, 1, leg1) != MR_OK)
     return MR_CANCEL;
-  if (gearCheckRunLeg(T_GC_PICK_DEC, m21, m22) != MR_OK)
+  if (gearCheckRunLeg(T_GC_PICK_DEC, 2, leg2) != MR_OK)
     return MR_CANCEL;
 
-  gearCheckReport(m11, m12, m21, m22, "HA", "Dec");
+  gearCheckReport(leg1, leg2, "HA", "Dec");
   return MR_OK;
 }
 
@@ -211,13 +263,13 @@ SmartHandController::MENU_RESULT SmartHandController::menuGearCheckAltAz()
   if (syncRes == MR_CANCEL)
     return MR_CANCEL;
 
-  double m11 = 0, m12 = 0, m21 = 0, m22 = 0;
-  if (gearCheckRunLeg(T_GC_PICK_AZ, m11, m12) != MR_OK)
+  GearCheckLegResult leg1, leg2;
+  if (gearCheckRunLeg(T_GC_PICK_AZ, 1, leg1) != MR_OK)
     return MR_CANCEL;
-  if (gearCheckRunLeg(T_GC_PICK_ALT, m21, m22) != MR_OK)
+  if (gearCheckRunLeg(T_GC_PICK_ALT, 2, leg2) != MR_OK)
     return MR_CANCEL;
 
-  gearCheckReport(m11, m12, m21, m22, "Az", "Alt");
+  gearCheckReport(leg1, leg2, "Az", "Alt");
   return MR_OK;
 }
 
@@ -231,7 +283,6 @@ SmartHandController::MENU_RESULT SmartHandController::menuGearCheck()
     return MR_CANCEL;
   }
 
-  // Explicit GEM/FORK vs AltAz — same care as menuAlignment (do not use isAltAz()).
   if (mt == TeenAstroMountStatus::MOUNT_TYPE_GEM || mt == TeenAstroMountStatus::MOUNT_TYPE_FORK)
     return menuGearCheckEq();
   if (mt == TeenAstroMountStatus::MOUNT_TYPE_ALTAZM || mt == TeenAstroMountStatus::MOUNT_TYPE_FORK_ALT)

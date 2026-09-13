@@ -134,11 +134,22 @@ private:
   MENU_RESULT menuGearCheck();
   MENU_RESULT menuGearCheckEq();
   MENU_RESULT menuGearCheckAltAz();
+  struct GearCheckLegResult
+  {
+    int primaryAxis = 1;
+    double miss1Deg = 0;
+    double miss2Deg = 0;
+    double missPrimaryDeg = 0;
+    double cmdPrimaryDeg = 0;
+    float gearCfg = 0;
+    float gearMeas = 0;
+    bool gearValid = false;
+  };
   bool gearCheckReadAxes(double& a1Deg, double& a2Deg);
   bool gearCheckWaitSlewSettled();
   bool gearCheckRecenterAndMeasure(double& miss1Deg, double& miss2Deg);
-  MENU_RESULT gearCheckRunLeg(const char* pickPrompt, double& miss1Deg, double& miss2Deg);
-  void gearCheckReport(double miss1Leg1, double miss2Leg1, double miss1Leg2, double miss2Leg2,
+  MENU_RESULT gearCheckRunLeg(const char* pickPrompt, int primaryAxis, GearCheckLegResult& out);
+  void gearCheckReport(const GearCheckLegResult& leg1, const GearCheckLegResult& leg2,
                        const char* label1, const char* label2);
 
   bool SelectStarAlign();
