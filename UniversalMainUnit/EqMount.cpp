@@ -39,11 +39,11 @@ byte EqMount::goToEqu(EqCoords *eP)
 	PierSide ps;
   HorCoords hor;
 
-  // check destination altitude
+  // check destination altitude (epsilon: match inclusive band under FP noise)
   EquToHor(eP->ha, eP->dec, false, &hor.az, &hor.alt, localSite.cosLat(), localSite.sinLat());
-  if (hor.alt < limits.minAlt)
+  if (hor.alt < limits.minAlt - 1e-4)
     return ERRGOTO_BELOWHORIZON;
-  if (hor.alt > limits.maxAlt)
+  if (hor.alt > limits.maxAlt + 1e-4)
     return ERRGOTO_ABOVEOVERHEAD;
 
 	ps = GetPierSide();

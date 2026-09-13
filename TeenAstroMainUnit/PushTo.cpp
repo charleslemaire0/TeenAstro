@@ -13,8 +13,10 @@ byte PushToHor(Coord_HO HO_T, PoleSide preferedPoleSide, float* deltaA1, float* 
   PoleSide selectedSide = PoleSide::POLE_NOTVALID;
 
 
-  if (HO_T.Alt() < mount.limits.minAlt * DEG_TO_RAD) return ERRGOTO_BELOWHORIZON;   // fail, below min altitude
-  if (HO_T.Alt() > mount.limits.maxAlt * DEG_TO_RAD) return ERRGOTO_ABOVEOVERHEAD;   // fail, above max altitude
+  const double altDeg = HO_T.Alt() * RAD_TO_DEG;
+  const double kAltEpsDeg = 1e-4;
+  if (altDeg < (double)mount.limits.minAlt - kAltEpsDeg) return ERRGOTO_BELOWHORIZON;
+  if (altDeg > (double)mount.limits.maxAlt + kAltEpsDeg) return ERRGOTO_ABOVEOVERHEAD;
 
   Coord_IN instr_T = HO_T.To_Coord_IN(mount.alignment.conv.Tinv);
   Axis1_target = instr_T.Axis1() * RAD_TO_DEG;

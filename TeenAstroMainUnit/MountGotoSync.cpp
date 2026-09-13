@@ -330,9 +330,13 @@ byte Mount::goToHor(Coord_HO HO_T, PoleSide preferedPoleSide)
   long axis1_target, axis2_target = 0;
   PoleSide selectedSide = PoleSide::POLE_NOTVALID;
 
-  if (HO_T.Alt() * RAD_TO_DEG < limits.minAlt)
+  // Inclusive altitude band (same as MountLimits::checkAltitudeLimits). Tiny epsilon
+  // absorbs deg↔rad round-trip so an exact :Sa at maxAlt/minAlt is not spuriously rejected.
+  const double altDeg = HO_T.Alt() * RAD_TO_DEG;
+  const double kAltEpsDeg = 1e-4;
+  if (altDeg < (double)limits.minAlt - kAltEpsDeg)
   { tracking.gotoState = GOTO_NONE; return ERRGOTO_BELOWHORIZON; }
-  if (HO_T.Alt() * RAD_TO_DEG > limits.maxAlt)
+  if (altDeg > (double)limits.maxAlt + kAltEpsDeg)
   { tracking.gotoState = GOTO_NONE; return ERRGOTO_ABOVEOVERHEAD; }
 
   Coord_IN instr_T = HO_T.To_Coord_IN(alignment.conv.Tinv);

@@ -199,14 +199,15 @@ void Command_A() {
     replyShortTrue();
     break;
   case 'B':
-    // :AB#  Abort alignment in progress (clear refs without syncing at home)
-    mount.alignment.conv.clean();
-    mount.alignment.hasValid = false;
+    // :AB#  Abort alignment in progress (clear refs without syncing at home).
+    // Must reseed synthetic T/Tinv — conv.clean() alone zeros T and leaves Tinv
+    // stale, so reported Alt/Az and RA/Dec diverge until the next initTransformation.
+    initTransformation(true);
     mount.alignment.alignPhase   = ALIGN_IDLE;
     mount.alignment.alignStarNum = 0;
     mount.alignment.alignPolarThirdPending = false;
     mount.alignment.alignStarName[0] = '\0';
-    XEEPROM.write(getMountAddress(EE_Tvalid), 0);
+    mount.alignment.autoAlignmentBySync = false;
     replyShortTrue();
     break;
   case 'W':

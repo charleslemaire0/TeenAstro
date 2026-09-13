@@ -85,10 +85,10 @@ byte AltAzMount::goToHor(HorCoords *hP)
 	Axes axes;
 	Steps steps;
 
-  // check destination altitude
-  if (hP->alt < limits.minAlt)
+  // check destination altitude (epsilon: match inclusive band under FP noise)
+  if (hP->alt < limits.minAlt - 1e-4)
     return ERRGOTO_BELOWHORIZON;
-  if (hP->alt > limits.maxAlt)
+  if (hP->alt > limits.maxAlt + 1e-4)
     return ERRGOTO_ABOVEOVERHEAD;
 
   if (!horToAxes(hP, &axes))

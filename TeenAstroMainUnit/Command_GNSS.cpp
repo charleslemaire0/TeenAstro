@@ -31,6 +31,23 @@ void UpdateGnss()
     {
       mount.gnss.encode(GNSS_Serial.read());
     }
+
+    // Once after startup: if still at home and RTC differs from GNSS, sync time silently.
+    static bool startupTimeSyncDone = false;
+    if (!startupTimeSyncDone && mount.isAtHome() && iSGNSSValid())
+    {
+      TinyGPSDate d = mount.gnss.date;
+      TinyGPSTime t = mount.gnss.time;
+      long delta = rtk.GetDeltaUTC(d.year(), d.month(), d.day(),
+        t.hour(), t.minute(), t.second());
+      if (abs(delta) >= 1)
+      {
+        rtk.setClock(d.year(), d.month(), d.day(),
+          t.hour(), t.minute(), t.second(),
+          *localSite.longitude(), 0);
+      }
+      startupTimeSyncDone = true;
+    }
   }
 }
 
