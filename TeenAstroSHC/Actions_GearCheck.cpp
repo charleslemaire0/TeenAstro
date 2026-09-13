@@ -178,10 +178,11 @@ SmartHandController::MENU_RESULT SmartHandController::gearCheckRunLeg(
   char am[16];
   formatArcmin(am, sizeof(am), out.missPrimaryDeg);
   snprintf(rowMiss, sizeof(rowMiss), "A%d %s", primaryAxis, am);
+  // Keep under SHC_MAXBYTES_R10 (25): do not prefix localized T_GEAR (FR/DE are long).
   if (out.gearValid)
-    snprintf(rowGear, sizeof(rowGear), "%s %.1f>%.1f", T_GEAR, (double)out.gearCfg, (double)out.gearMeas);
+    snprintf(rowGear, sizeof(rowGear), "%.1f>%.1f", (double)out.gearCfg, (double)out.gearMeas);
   else
-    snprintf(rowGear, sizeof(rowGear), "%s %s", T_GEAR, T_FAILED);
+    snprintf(rowGear, sizeof(rowGear), "%s", T_FAILED);
 
   DisplayLongMessage(T_GEARCHECK, rowMiss, rowGear, "", -1);
   return MR_OK;
