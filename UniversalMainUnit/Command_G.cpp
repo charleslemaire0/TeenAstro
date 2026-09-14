@@ -449,10 +449,11 @@ void Command_GX()
       }
 
       tmpLST -= f;
-      if (tmpLST < -12)
-        tmpLST += 24;
-      else if (tmpLST > 12)
-        tmpLST -= 24;
+      // Wrap into [0, 24) so :GXT3# stays HH:MM:SS (8 chars), never signed
+      if (tmpLST < 0.0)
+        tmpLST += 24.0;
+      else if (tmpLST >= 24.0)
+        tmpLST -= 24.0;
 
       if (!doubleToHms(reply, &tmpLST, true))
         strcpy(reply, "0#");
