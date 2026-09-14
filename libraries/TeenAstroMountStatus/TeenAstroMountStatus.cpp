@@ -218,19 +218,6 @@ void TeenAstroMountStatus::updateRaDec()
   }
 }
 
-void TeenAstroMountStatus::updateHaDec()
-{
-  if (m_timerHaDec.needsUpdate(UPDATERATE))
-  {
-    m_ha.fetch(*m_client, &LX200Client::getHaStr);
-    m_dec.fetch(*m_client, &LX200Client::getDecStr);
-    if (m_ha.valid && m_dec.valid)
-      m_timerHaDec.markUpdated();
-    else
-      m_connectionFailure++;
-  }
-}
-
 void TeenAstroMountStatus::updateRaDecT()
 {
   if (m_timerRaDecT.needsUpdate(UPDATERATE))
@@ -322,19 +309,6 @@ void TeenAstroMountStatus::updateTime()
     m_utcDate.fetch(*m_client, &LX200Client::getUTCDateStr);
     m_sidereal.fetch(*m_client, &LX200Client::getSiderealStr);
     if (m_utc.valid && m_utcDate.valid && m_sidereal.valid)
-      m_timerTime.markUpdated();
-    else
-      m_connectionFailure++;
-  }
-}
-
-void TeenAstroMountStatus::updateLHA()
-{
-  if (m_timerTime.needsUpdate(UPDATERATE))
-  {
-    m_utc.fetch(*m_client, &LX200Client::getUTCTimeStr);
-    m_lha.fetch(*m_client, &LX200Client::getHaStr);
-    if (m_utc.valid && m_lha.valid)
       m_timerTime.markUpdated();
     else
       m_connectionFailure++;

@@ -57,7 +57,7 @@ ta_MountStatus.checkConnection(major, minor);
 
 ### Cached position/time accessors
 
-`getRa()`, `getDec()`, `getHa()`, `getAz()`, `getAlt()`, `getUTC()`, `getSidereal()`, axis steps/degrees, tracking rates, and version strings.
+`getRa()`, `getDec()`, `getAz()`, `getAlt()`, `getUTC()`, `getSidereal()`, axis steps/degrees, tracking rates, and version strings.
 
 ## Status and all-state
 

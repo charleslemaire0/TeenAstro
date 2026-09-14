@@ -13,7 +13,6 @@
 //#define AXIS_DEG_PAGE
 #define FOCUSER_PAGE
 //#define ALIGN_PAGE
-//#define HA_PAGE
 
 
 //The following lines are used to enable experimental/unofficial features

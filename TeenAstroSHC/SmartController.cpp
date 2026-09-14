@@ -267,9 +267,6 @@ void SmartHandController::setup(
 #ifdef RADEC_PAGE
     pages[P_RADEC].show = true;
 #endif
-#ifdef HA_PAGE
-    pages[P_HADEC].show = true;
-#endif
 #ifdef ALTAZ_PAGE
     pages[P_ALTAZ].show = true;
 #endif

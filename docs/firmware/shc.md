@@ -14,7 +14,7 @@ ESP8266-based hand controller with OLED display and button pad. Talks to MainUni
 
 ## Display pages (PAGES)
 
-`P_RADEC`, `P_HADEC`, `P_ALTAZ`, `P_PUSH`, `P_TIME`, `P_AXIS_STEP`, `P_AXIS_DEG`, `P_FOCUSER`, `P_ALIGN`.
+`P_RADEC`, `P_ALTAZ`, `P_PUSH`, `P_TIME`, `P_AXIS_STEP`, `P_AXIS_DEG`, `P_FOCUSER`, `P_ALIGN`.
 
 ---
 

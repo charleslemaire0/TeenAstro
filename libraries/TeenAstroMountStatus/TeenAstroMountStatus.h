@@ -235,13 +235,11 @@ public:
   // -----------------------------------------------------------------------
   bool hasInfoV()         { return m_version.valid; }
   bool hasInfoRa()        { return m_ra.valid; }
-  bool hasInfoHa()        { return m_ha.valid; }
   bool hasInfoDec()       { return m_dec.valid; }
   bool hasInfoAz()        { return m_az.valid; }
   bool hasInfoAlt()       { return m_alt.valid; }
   bool hasInfoPush()      { return m_push.valid; }
   bool hasInfoUTC()       { return m_utc.valid; }
-  bool hasInfoLHA()       { return m_lha.valid; }
   bool hasInfoSidereal()  { return m_sidereal.valid; }
   bool hasInfoMount()     { return m_mount.valid; }
   bool hasInfoFocuser()   { return m_focuser.valid; }
@@ -289,7 +287,6 @@ public:
   bool getDriverName(char* name);
   const char* getVD()   { return m_vd; }
   const char* getRa()   { return m_ra; }
-  const char* getHa()   { return m_ha; }
   const char* getDec()  { return m_dec; }
   const char* getRaT()  { return m_raT; }
   const char* getDecT() { return m_decT; }
@@ -310,7 +307,6 @@ public:
   const char* getAxis2EDeg() { return m_axis2EDeg; }
 
   const char* getUTC()      { return m_utc; }
-  const char* getLHA()       { return m_lha; }
   const char* getUTCdate()  { return m_utcDate; }
   const char* getSidereal() { return m_sidereal; }
   const char* getMState()   { return m_focuser; }   // kept for compat but rarely used
@@ -415,14 +411,12 @@ public:
   // -----------------------------------------------------------------------
   void updateV();
   void updateRaDec();
-  void updateHaDec();
   void updateRaDecT();
   void updateAzAlt();
   void updatePush();
   void updateAxisStep();
   void updateAxisDeg();
   void updateTime();
-  void updateLHA();
   void updateFocuser();
   void updateTrackingRate();
   bool updateStoredTrackingRate();
@@ -560,7 +554,7 @@ private:
   CachedStr<20> m_vd;       // version date
 
   // --- Position caches ---
-  CachedStr<15> m_ra, m_ha, m_dec;
+  CachedStr<15> m_ra, m_dec;
   CachedStr<15> m_raT, m_decT;
   CachedStr<15> m_az, m_alt;
   CachedStr<20> m_push;
@@ -570,7 +564,7 @@ private:
   CachedStr<15> m_axis1EDeg, m_axis2EDeg;
 
   // --- Time caches ---
-  CachedStr<15> m_utc, m_lha, m_utcDate, m_sidereal;
+  CachedStr<15> m_utc, m_utcDate, m_sidereal;
 
   // --- Mount state ---
   MountState    m_mount;
@@ -648,7 +642,7 @@ private:
   CacheTimer    m_timerTrackRate;
 
   // --- Rate timers ---
-  CacheTimer    m_timerRaDec, m_timerHaDec, m_timerRaDecT;
+  CacheTimer    m_timerRaDec, m_timerRaDecT;
   CacheTimer    m_timerAzAlt, m_timerPush;
   CacheTimer    m_timerAxisStep, m_timerAxisDeg;
   CacheTimer    m_timerTime;

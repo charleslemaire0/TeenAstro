@@ -533,8 +533,8 @@ void SmartHandController::updateMainDisplay(PAGES page)
   ta_MountStatus.removeLastConnectionFailure();
   // Single command refreshes all display state: status, positions (RA/Dec/
   // Alt/Az/LST/target), UTC date/time, and focuser pos/speed.
-  // Falls back to the legacy per-query path for axis-step/degree pages that
-  // are not covered by the bulk packet.
+  // Falls back to the legacy per-query path for axis-step/degree/push pages
+  // that are not covered by the bulk packet.
   ta_MountStatus.updateAllState();
   if (ta_MountStatus.isAligning())
     page = P_ALIGN;
@@ -550,11 +550,6 @@ void SmartHandController::updateMainDisplay(PAGES page)
     {
       ta_MountStatus.fetchRemoteStarName();
     }
-  }
-  else if (page == P_HADEC && !ta_MountStatus.isPulseGuiding())
-  {
-    // HA is not in the bulk packet — keep individual query for this page only.
-    ta_MountStatus.updateHaDec();
   }
   else if (page == P_PUSH && !ta_MountStatus.isPulseGuiding())
   {
@@ -890,19 +885,6 @@ void SmartHandController::updateMainDisplay(PAGES page)
         x = u8g2_GetDisplayWidth(u8g2);
         display->drawRA(x, y, ta_MountStatus.getRa());
         u8g2_DrawUTF8(u8g2, 0, y, "RA");
-        y += line_height + 4;
-        u8g2_DrawUTF8(u8g2, 0, y, "Dec");
-        display->drawDec(x, y, ta_MountStatus.getDec());
-      }
-    }
-    else if (page == P_HADEC)
-    {
-      if (ta_MountStatus.hasInfoHa() && ta_MountStatus.hasInfoDec())
-      {
-        u8g2_uint_t y = 36;
-        x = u8g2_GetDisplayWidth(u8g2);
-        display->drawRA(x, y, ta_MountStatus.getHa());
-        u8g2_DrawUTF8(u8g2, 0, y, "HA");
         y += line_height + 4;
         u8g2_DrawUTF8(u8g2, 0, y, "Dec");
         display->drawDec(x, y, ta_MountStatus.getDec());
