@@ -35,10 +35,10 @@ Then close and reopen PowerShell so PATH is updated.
 
 | Command | Builds |
 |--------|--------|
-| `python build_firmware.py` | All 13 variants (6 MainUnit + 4 Focuser + 3 SHC languages) |
+| `python build_firmware.py` | All 16 variants (6 MainUnit + 4 Focuser + 6 SHC) |
 | `python build_firmware.py --target main` | MainUnit only (6 boards) |
 | `python build_firmware.py --target focuser` | Focuser only (4 boards) |
-| `python build_firmware.py --target shc` | SHC only (ENGLISH, FRENCH, GERMAN) |
+| `python build_firmware.py --target shc` | SHC only (3× ESP8266 + 3× ESP32-S3 languages) |
 | `python build_firmware.py --list` | List all variants without building |
 | `python build_firmware.py --clean` | Clean build dirs before building |
 
