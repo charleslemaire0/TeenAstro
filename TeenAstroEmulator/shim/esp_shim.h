@@ -25,6 +25,11 @@ struct EspClass {
         fflush(stdout);
         emu_attempt_reconnect();
     }
+    /* ESP8266 WiFi flash config wipe (Settings_SHC factory reset). No-op on PC. */
+    void eraseConfig() {
+        printf("[EMU] ESP.eraseConfig() ignored (no WiFi flash config).\n");
+        fflush(stdout);
+    }
     uint32_t getFreeHeap() { return 65536; }
     uint32_t getChipId() { return 0x12345678; }
 };

@@ -124,5 +124,6 @@ void u8g2_Setup_ssd1306_i2c_128x64_noname_f(u8g2_t *u8g2, const u8g2_cb_t *rotat
 #include "../../TeenAstroSHC/Actions_Tel.cpp"
 #include "../../TeenAstroSHC/Actions_SyncGoto.cpp"
 #include "../../TeenAstroSHC/Actions_Focuser.cpp"
+#include "../../TeenAstroSHC/Actions_GearCheck.cpp"
 
 #endif /* EMU_SHC */

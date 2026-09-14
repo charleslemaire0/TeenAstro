@@ -18,6 +18,7 @@
 #include <thread>
 #include <algorithm>
 using std::isnan;
+using std::isfinite;
 
 typedef uint8_t byte;
 typedef unsigned short ushort;
@@ -216,6 +217,16 @@ inline void delay(unsigned long ms) {
 inline void delay(unsigned long) {}
 #endif
 inline void delayMicroseconds(unsigned int) {}
+
+/* Arduino yield() -- ESP/Teensy cooperative multitasking hook.
+ * LX200Client and other firmware call this while waiting on serial. */
+#ifdef EMU_SHC
+inline void yield() { _emu_shc_blit(); }
+#elif defined(EMU_MAINUNIT)
+inline void yield() { std::this_thread::yield(); }
+#else
+inline void yield() {}
+#endif
 
 /* ------------------------------------------------------------------ */
 /*  dtostrf (float-to-string, not in standard MinGW libc)              */
