@@ -27,12 +27,157 @@ void SmartHandController::setLinkBaud(unsigned long baud)
     return;
 #ifndef EMU_SHC
   Ser.flush();                            // let pending TX leave at the old rate
+#if defined(ESP8266)
+  // Re-begin at the new rate. Avoid Serial.end() during boot — it drops the
+  // UART long enough that the following short LX200 timeouts miss the mount.
+  Ser.begin(baud);
+  delay(20);
+#else
   Ser.updateBaudRate(baud);
   delay(5);
+#endif
   while (Ser.available()) Ser.read();     // framing garbage from the switch
 #endif
   m_linkBaud = baud;
   ta_MountStatus.setLinkBaud((uint32_t)baud);
+}
+
+bool SmartHandController::probeMountLink(int maxAttempts)
+{
+  if (maxAttempts < 1)
+    maxAttempts = 1;
+  if (m_client == nullptr)
+    return false;
+
+  // Boot probe must tolerate ESP8266 UART settle; the default 30 ms (60 ms for
+  // :G…) is enough on S3 but often misses the MainUnit on Wemos.
+  m_client->setTimeout(100);
+
+  const unsigned long probe[2] = { m_baudSlow, SHC_BAUD_FAST };
+  bool found = false;
+  for (int k = 0; k < maxAttempts; k++)
+  {
+    ta_MountStatus.invalidateVersion();
+    setLinkBaud(probe[k & 1]);
+    ta_MountStatus.updateV();
+    ta_MountStatus.removeLastConnectionFailure();
+    if (ta_MountStatus.hasInfoV())
+    {
+      found = true;
+      break;
+    }
+    delay(100);
+  }
+
+  m_client->setTimeout(LX200_DEFAULT_TIMEOUT);
+  return found;
+}
+
+void SmartHandController::completeMountBoot(bool showSplash)
+{
+  if (m_mountBootDone || !ta_MountStatus.hasInfoV())
+    return;
+
+  raiseLinkBaud();
+
+  if (showSplash)
+  {
+    DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1200);
+    char line[32] = "";
+    char drivername[10] = "";
+    ta_MountStatus.getDriverName(drivername);
+    strcat(line, ta_MountStatus.getVB());
+    strcat(line, " - ");
+    strcat(line, drivername);
+    DisplayMessage("PCB", line, 1200);
+
+    if (ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor))
+    {
+      if (ta_MountStatus.findFocuser())
+      {
+        char out[50];
+        if (DisplayMessageLX200(m_client->getFocuserVersion(out, sizeof(out))))
+        {
+          out[31] = 0;
+          DisplayMessage("Focuser " T_VERSION, &out[26], 1200);
+        }
+      }
+      ta_MountStatus.updateAllState(true);
+      if (!ta_MountStatus.hasGNSSBoard())
+      {
+        uint8_t lh = 0, lm = 0, ls = 0;
+        ta_MountStatus.getLocalTimeCached(lh, lm, ls);
+        char date_time[40];
+        sprintf(date_time, "%s : %.2d:%.2d:%.2d", T_TIME, lh, lm, ls);
+        char date_time2[40];
+        sprintf(date_time2, "%s : %s", T_DATE, ta_MountStatus.getUTCdate());
+        DisplayMessage(date_time, date_time2, 2000);
+      }
+      else
+      {
+        DisplayMessage("GNSS", T_CONNECTED, 1200);
+      }
+    }
+  }
+  else
+  {
+    ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor);
+    ta_MountStatus.updateAllState(true);
+  }
+
+#ifdef RADEC_PAGE
+  pages[P_RADEC].show = true;
+#endif
+#ifdef ALTAZ_PAGE
+  pages[P_ALTAZ].show = true;
+#endif
+#ifdef PUSH_PAGE
+  pages[P_PUSH].show = true;
+#endif
+#ifdef TIME_PAGE
+  pages[P_TIME].show = true;
+#endif
+#ifdef AXIS_STEP_PAGE
+  pages[P_AXIS_STEP].show = true;
+#endif
+#ifdef AXIS_DEG_PAGE
+  pages[P_AXIS_DEG].show = true;
+#endif
+#ifdef FOCUSER_PAGE
+  pages[P_FOCUSER].show = true;
+#endif
+#ifdef ALIGN_PAGE
+  pages[P_ALIGN].show = true;
+#endif
+
+  m_mountBootDone = true;
+}
+
+void SmartHandController::tryRecoverLinkBaud()
+{
+  if (SHC_BAUD_FAST == 0 || (unsigned long)SHC_BAUD_FAST == m_baudSlow)
+    return;
+
+  unsigned long now = millis();
+  // Time since the last good bulk read, not notResponding(): the grace path
+  // below decrements the failure counter on every pass while any web client
+  // is active, so that counter never reaches its threshold.
+  unsigned long okMs = ta_MountStatus.getLastStateOkMs();
+  bool quiet = (okMs == 0) ? (now > kLinkFlipMs)
+                           : ((now - okMs) > kLinkFlipMs);
+  if (!quiet || (now - m_lastFlipMs) <= kLinkFlipMs)
+    return;
+
+  setLinkBaud(m_linkBaud == m_baudSlow ? (unsigned long)SHC_BAUD_FAST
+                                       : m_baudSlow);
+  // Keep a successful :SB0# result visible in /diag.txt; only mark recovery
+  // when we never completed the boot raise.
+  if (ta_MountStatus.getLinkNegotiation() != 4)
+    ta_MountStatus.setLinkNegotiation(5);
+  ta_MountStatus.invalidateVersion();
+  ta_MountStatus.updateV();       // prove the new rate before flipping again
+  ta_MountStatus.updateAllState(true);
+  m_lastFlipMs = now;
 }
 
 bool SmartHandController::raiseLinkBaud()
@@ -93,12 +238,18 @@ void SmartHandController::setup(
 #endif
   m_linkBaud = m_baudSlow = (unsigned long)SerialBaud;
   ta_MountStatus.setLinkBaud((uint32_t)SerialBaud);
+  delay(50);
+  // Talk to the MainUnit immediately — before OLED/WiFi — while UART is quiet.
+  bool linked = probeMountLink(8);
 
-  if (EEPROM.length() == 0)
+#ifndef EMU_SHC
+  // Always begin — length()!=0 does not mean the ESP8266 EEPROM mirror is ready
+  // after a brown-out (MainUnit power cycle often kills SHC 5V mid-write).
 #ifdef ARDUINO_D1_MINI32
-    EEPROM.begin(512);
+  EEPROM.begin(512);
 #else
-    EEPROM.begin(1024);
+  EEPROM.begin(1024);
+#endif
 #endif
 
   if (strlen(version) <= 19) strcpy(_version, version);
@@ -162,19 +313,47 @@ void SmartHandController::setup(
     break;
   }
 #endif
-  SHCrotated = EEPROM.read(EEPROM_DISPLAY180) == 255;
-  SHCvisitor = EEPROM.read(EEPROM_VISITOR) == 255;
-  if (SHCrotated)
+  // Orientation: 0 = normal, 1 = 180°. Legacy left-hander wrote 255; erased
+  // flash is also 0xFF, which caused random rotation after MainUnit power cuts.
+  // Treat only 1 as rotated; migrate legacy 255 → 1 once.
   {
-    display->setDisplayRotation(U8G2_R2);
+    uint8_t rot = EEPROM.read(EEPROM_DISPLAY180);
+    if (rot == 255)
+    {
+      // Ambiguous legacy/erased value: default to normal (0). Users who chose
+      // left-hander can set it again; that now stores 1.
+      rot = 0;
+      EEPROM.write(EEPROM_DISPLAY180, 0);
+      EEPROM.commit();
+    }
+    else if (rot != 0 && rot != 1)
+    {
+      rot = 0;
+      EEPROM.write(EEPROM_DISPLAY180, 0);
+      EEPROM.commit();
+    }
+    SHCrotated = (rot == 1);
   }
+  SHCvisitor = EEPROM.read(EEPROM_VISITOR) == 255;
 
   display->begin();
+  // Apply after begin() — begin() installs the constructor rotation (R0).
+  display->setDisplayRotation(SHCrotated ? U8G2_R2 : U8G2_R0);
   maxContrast = EEPROM.read(EEPROM_Contrast);
   if (maxContrast == 0)
     maxContrast = 220;
   display->setContrast(maxContrast);
   drawIntro();
+
+  // Splash uses the link we already probed right after Ser.begin.
+  display->setFont(u8g2_font_helvR12_te);
+  DisplayMessage("SHC " T_VERSION, _version, 1500);
+  if (linked)
+    completeMountBoot(true);
+  else
+    setLinkBaud(m_baudSlow);
+
+  // Buttons + WiFi after the splash so RF init cannot steal the handshake.
   buttonPad.setup(pin, active, EEPROM_BSPEED, SHCrotated);
   tickButtons();
 #ifdef SHC_STARTUP_BUTTON_TEST
@@ -201,92 +380,29 @@ void SmartHandController::setup(
   delay(1000);
 #endif
   display->setFont(u8g2_font_helvR12_te);
-  // The mount forgets any :SB rate when it reboots, and the SHC can restart on
-  // its own, so the link may legitimately be at either rate. Alternate until
-  // one of them answers instead of assuming.
-  const unsigned long probe[2] = { m_baudSlow, SHC_BAUD_FAST };
-  int k = 0;
-  while (!ta_MountStatus.hasInfoV() && k < 10)
+
+#if defined(ESP8266)
+  // Confirm the link survived WiFi; re-handshake if UART framing was disturbed.
+  delay(50);
+  if (m_mountBootDone && m_client != nullptr)
   {
-    setLinkBaud(probe[k & 1]);
-    ta_MountStatus.updateV();
-    ta_MountStatus.removeLastConnectionFailure();
-    delay(500);
-    k++;
-  }
-  DisplayMessage("SHC " T_VERSION, _version, 1500);
-  if (k == 10)
-  {
-    // Never made contact. Park on the rate every MainUnit boots at, so a mount
-    // powered up later is met at the rate it will be using.
-    setLinkBaud(m_baudSlow);
-    return;
-  } 
-
-  raiseLinkBaud();
-  
-  DisplayMessage("Main Unit " T_VERSION, ta_MountStatus.getVN(), 1200);
-  char line[32] = "";
-
-  char drivername[10] = "";
-  ta_MountStatus.getDriverName(drivername);
-  strcat(line, ta_MountStatus.getVB());
-  strcat(line, " - ");
-  strcat(line, drivername);
-
- 
-  DisplayMessage("PCB", line, 1200);
-
-  if (ta_MountStatus.checkConnection(SHCFirmwareVersionMajor, SHCFirmwareVersionMinor))
-  {    
-    if (ta_MountStatus.findFocuser())
+    char vn[20] = "";
+    if (m_client->getVersionNumber(vn, sizeof(vn)) != LX200_VALUEGET)
     {
-      char out[50];
-      if (DisplayMessageLX200(m_client->getFocuserVersion(out, sizeof(out))))
+      delay(30);
+      while (Ser.available()) Ser.read();
+      if (m_client->getVersionNumber(vn, sizeof(vn)) != LX200_VALUEGET)
       {
-        out[31] = 0;
-        DisplayMessage("Focuser " T_VERSION, &out[26], 1200);
+        m_mountBootDone = false;
+        if (probeMountLink(8))
+          completeMountBoot(false);
       }
     }
-    ta_MountStatus.updateAllState(true);
-    if (!ta_MountStatus.hasGNSSBoard())
-    {
-      uint8_t lh = 0, lm = 0, ls = 0;
-      ta_MountStatus.getLocalTimeCached(lh, lm, ls);
-      char date_time[40];
-      sprintf(date_time, "%s : %.2d:%.2d:%.2d", T_TIME, lh, lm, ls);
-      char date_time2[40];
-      sprintf(date_time2, "%s : %s", T_DATE, ta_MountStatus.getUTCdate());
-      DisplayMessage(date_time, date_time2, 2000);
-    }
-    else
-    {
-      DisplayMessage("GNSS", T_CONNECTED, 1200);
-    }
   }
-#ifdef RADEC_PAGE
-    pages[P_RADEC].show = true;
-#endif
-#ifdef ALTAZ_PAGE
-    pages[P_ALTAZ].show = true;
-#endif
-#ifdef PUSH_PAGE
-    pages[P_PUSH].show = true;
-#endif
-#ifdef TIME_PAGE
-    pages[P_TIME].show = true;
-#endif
-#ifdef AXIS_STEP_PAGE
-    pages[P_AXIS_STEP].show = true;
-#endif
-#ifdef AXIS_DEG_PAGE
-    pages[P_AXIS_DEG].show = true;
-#endif
-#ifdef FOCUSER_PAGE
-    pages[P_FOCUSER].show = true;
-#endif
-#ifdef ALIGN_PAGE
-    pages[P_ALIGN].show = true;
+  else if (!m_mountBootDone && probeMountLink(8))
+  {
+    completeMountBoot(true);
+  }
 #endif
 
 #ifdef EMU_SHC
@@ -468,23 +584,11 @@ void SmartHandController::update()
   // change under us (the mount forgets any :SB rate when it reboots, and other
   // clients can move it), and this must work with the display asleep and while
   // web traffic keeps webIoGrace() true, which defers the reboot below forever.
-  if (SHC_BAUD_FAST != 0 && (unsigned long)SHC_BAUD_FAST != m_baudSlow)
+  tryRecoverLinkBaud();
+  if (!m_mountBootDone && ta_MountStatus.hasInfoV())
   {
-    // Time since the last good bulk read, not notResponding(): the grace path
-    // below decrements the failure counter on every pass while any web client
-    // is active, so that counter never reaches its threshold.
-    unsigned long okMs = ta_MountStatus.getLastStateOkMs();
-    bool quiet = (okMs == 0) ? (top > kLinkFlipMs)
-                             : ((top - okMs) > kLinkFlipMs);
-    if (quiet && (top - m_lastFlipMs) > kLinkFlipMs)
-    {
-      setLinkBaud(m_linkBaud == m_baudSlow ? (unsigned long)SHC_BAUD_FAST
-                                           : m_baudSlow);
-      ta_MountStatus.setLinkNegotiation(5);
-      ta_MountStatus.updateV();       // prove the new rate before flipping again
-      ta_MountStatus.updateAllState(true);
-      m_lastFlipMs = top;
-    }
+    completeMountBoot(true);
+    return;
   }
 
   if (isSleeping())
@@ -510,18 +614,86 @@ void SmartHandController::update()
 
   if (ta_MountStatus.notResponding())
   {
-#if defined(ARDUINO_ARCH_ESP32)
-    // ESP32 WiFi serving config pages often causes transient MainUnit UART misses
-    // (Wemos usually still answers in time). Do not reboot during/after web I/O.
+    // WiFi page loads steal UART time on ESP32 and ESP8266 (8266 even more so
+    // with ~7 KB free heap). Forgive briefly so baud recovery in update() can
+    // keep running — without this the Wemos blocks in DisplayMessage and the
+    // link stays stuck on the wrong rate forever.
     if (TeenAstroWifi::webIoGrace())
     {
       ta_MountStatus.removeLastConnectionFailure();
       return;
     }
-#endif
+
+    // Boot never finished the handshake: keep hunting quietly instead of the
+    // alarming "not connected" / reboot path the user sees after WiFi steal.
+    if (!m_mountBootDone)
+    {
+      display->sleepOff();
+      display->setFont(u8g2_font_helvR12_tf);
+      display->firstPage();
+      do
+      {
+        const char* t1 = "Main Unit";
+        const char* t2 = T_WAITING;
+        uint8_t y = 25;
+        uint8_t x = (display->getDisplayWidth() - display->getUTF8Width(t1)) / 2;
+        display->drawUTF8(x, y, t1);
+        y = 50;
+        x = (display->getDisplayWidth() - display->getUTF8Width(t2)) / 2;
+        display->drawUTF8(x, y, t2);
+      }
+      while (display->nextPage());
+
+      // Do not wait on kLinkFlipMs here — boot should finish as soon as the
+      // mount answers at either rate.
+      if (probeMountLink(6))
+      {
+        completeMountBoot(true);
+        return;
+      }
+      tickButtons();
+      if (m_mountBootDone)
+        return;
+      // Fall through to the key/reboot path only if still silent.
+    }
+
     display->sleepOff();
     buttonPad.setMenuMode();
-    DisplayMessage("!! " T_ERROR " !!", T_NOT_CONNECTED, -1);
+    display->setFont(u8g2_font_helvR12_tf);
+    {
+      const char* txt1 = "!! " T_ERROR " !!";
+      const char* txt2 = T_NOT_CONNECTED;
+      display->firstPage();
+      do
+      {
+        uint8_t y = 50;
+        uint8_t x = (display->getDisplayWidth() - display->getUTF8Width(txt2)) / 2;
+        display->drawUTF8(x, y, txt2);
+        y = 25;
+        x = (display->getDisplayWidth() - display->getUTF8Width(txt1)) / 2;
+        display->drawUTF8(x, y, txt1);
+      }
+      while (display->nextPage());
+    }
+    // Keep flipping baud while waiting for a key; if the mount answers again,
+    // resume instead of rebooting (fixes ESP8266 desync after S3 left :SB0#).
+    for (;;)
+    {
+      tryRecoverLinkBaud();
+      if (!m_mountBootDone && ta_MountStatus.hasInfoV())
+      {
+        completeMountBoot(true);
+        return;
+      }
+      tickButtons();
+      delay(50);
+      if (buttonPressed())
+        break;
+      if (m_mountBootDone && !ta_MountStatus.notResponding())
+        return;
+      if (!ta_MountStatus.notResponding())
+        return;
+    }
     DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
 
     rebootSHC();
@@ -624,6 +796,7 @@ bool SmartHandController::isSleeping()
     if (sleepDisplay)
     {
       display->setContrast(maxContrast);
+      display->setDisplayRotation(SHCrotated ? U8G2_R2 : U8G2_R0);
       display->sleepOff();
       sleepDisplay = false;
       lowContrast = false;

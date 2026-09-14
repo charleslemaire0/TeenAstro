@@ -129,7 +129,9 @@ void SmartHandController::menuErgonomy()
     EEPROM.write(EEPROM_DISPLAY180, 0);
     break;
   case 2:
-    EEPROM.write(EEPROM_DISPLAY180, 255);
+    // Store as 1 (not 255). Erased flash is 0xFF and must not mean "rotated"
+    // or orientation flips after brown-outs when the MainUnit cuts SHC power.
+    EEPROM.write(EEPROM_DISPLAY180, 1);
     break;
   default:
     break;

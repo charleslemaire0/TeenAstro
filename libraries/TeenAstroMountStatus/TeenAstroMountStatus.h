@@ -234,6 +234,8 @@ public:
   //  Cached values — validity checks
   // -----------------------------------------------------------------------
   bool hasInfoV()         { return m_version.valid; }
+  /// Drop cached :GVP/:GVN so the next updateV() talks to the mount again.
+  void invalidateVersion() { m_version.valid = false; m_isValid = false; }
   bool hasInfoRa()        { return m_ra.valid; }
   bool hasInfoDec()       { return m_dec.valid; }
   bool hasInfoAz()        { return m_az.valid; }

@@ -53,9 +53,17 @@ private:
   /// Ask the MainUnit to move the link to SHC_BAUD_FAST and follow it.
   /// Leaves the link untouched and returns false if the mount does not follow.
   bool raiseLinkBaud();
+  /// Alternate 57600/115200 until :GVP answers. Returns true on contact.
+  bool probeMountLink(int maxAttempts);
+  /// :SB0# upgrade, version/PCB splash, and enable main pages.
+  void completeMountBoot(bool showSplash);
+  /// If the link has been quiet, try the other baud rate. Safe to call from
+  /// the not-connected wait loop as well as update().
+  void tryRecoverLinkBaud();
   unsigned long m_linkBaud = 0;   // rate the link is running at now
   unsigned long m_baudSlow  = 0;  // rate setup() opened with; always safe
   unsigned long m_lastFlipMs = 0; // rate-limits the re-probe above
+  bool m_mountBootDone = false;   // true after completeMountBoot()
   static const unsigned long kLinkFlipMs = 5000;
 
   void getNextpage();
