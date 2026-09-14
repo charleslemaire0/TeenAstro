@@ -126,8 +126,24 @@ const char html_update[] PROGMEM =
 "Firmware extention is *.bin and can be found in the TeenAstroLoader.exe directory<br/><br/>"
 "\r\n";
 
+const char html_factoryReset[] PROGMEM =
+"<br/><b>Reset to Factory:</b><br/>"
+"<form method='post' action='/wifi.htm' onsubmit=\"return confirm('Erase all Hand Controller settings (WiFi, display, visitor mode) and reboot?');\">"
+"<input type='hidden' name='factoryreset' value='1'>"
+"<button type='submit' style='width:100%;max-width:12em;min-height:44px'>Reset to Factory</button></form>"
+"Clears EEPROM settings. Firmware is kept. Device reboots afterward.<br/><br/>"
+"\r\n";
+
+const char html_factoryRebooting[] PROGMEM =
+"<br/><br/><br/><br/><br/>"
+"<b>Factory reset done. Rebooting…</b><br/><br/>"
+"WiFi defaults will be restored after reboot (AP SSID TeenAstro, password as configured in firmware)."
+"<br/><br/><br/><br/>"
+"\r\n";
+
 bool restartRequired = false;
 bool loginRequired = true;
+bool factoryResetPending = false;
 
 // convert hex to int with error checking
 // returns -1 on error
@@ -181,7 +197,7 @@ void TeenAstroWifi::handleWifi()
 
   if (restartRequired)
   {
-    data += FPSTR(html_reboot);
+    data += factoryResetPending ? FPSTR(html_factoryRebooting) : FPSTR(html_reboot);
     data += "</div>";
     data += FPSTR(html_pageFooter);
     sendHtml(data);
@@ -189,6 +205,11 @@ void TeenAstroWifi::handleWifi()
     s_handlerBusy = false;
     restartRequired = false;
     delay(1000);
+    if (factoryResetPending)
+    {
+      factoryResetPending = false;
+      ESP.restart();
+    }
     return;
   }
 
@@ -253,6 +274,8 @@ void TeenAstroWifi::handleWifi()
   sendHtml(data);
   data += FPSTR(html_update);
   sendHtml(data);
+  data += FPSTR(html_factoryReset);
+  sendHtml(data);
 
   data += "</div>"; // close card
   data += FPSTR(html_pageFooter);
@@ -283,6 +306,32 @@ bool TeenAstroWifi::processWifiGet()
     loginRequired = true;
   }
   if (loginRequired) return any;
+
+  // Factory reset (same wipe as SHC menu Reset to Factory)
+  v = server.arg("factoryreset");
+  if (v == "1")
+  {
+    any = true;
+    int l = EEPROM.length();
+    for (int k = 0; k < l; k++)
+    {
+      EEPROM.write(k, 0);
+    }
+    // Keep OLED readable after wipe (menu factory reset used to leave contrast at 0)
+    EEPROM.write(EEPROM_Contrast, 127);
+    EEPROM.commit();
+#if defined(ARDUINO_ARCH_ESP32)
+    // ESP32 keeps STA credentials in NVS separately from emulated EEPROM
+    WiFi.disconnect(true, true);
+    WiFi.mode(WIFI_OFF);
+#elif defined(ARDUINO_ARCH_ESP8266)
+    ESP.eraseConfig();
+#endif
+    factoryResetPending = true;
+    restartRequired = true;
+    return any;
+  }
+
   v = server.arg("webpwd");
   if (v != "")
   {

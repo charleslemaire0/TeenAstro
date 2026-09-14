@@ -162,30 +162,58 @@ Public Class Uploader
 
   Private Sub ButtonUploadSHC_Click(sender As Object, e As EventArgs) Handles ButtonUploadSHC.Click
     Try
-      Dim pHelp As New ProcessStartInfo
-      Dim exepath As String = """" & System.IO.Path.GetDirectoryName(Application.ExecutablePath) & """"
-      pHelp.FileName = "esptool.exe"
-      Dim pcb As String = ComboBoxPCBSHC.SelectedItem()
-      Dim fwv As String = ComboBoxFirmwareVersion.SelectedItem
+      Dim comport As String = Nothing
+      If ComboBoxCOMSHC.SelectedItem IsNot Nothing Then
+        comport = ComboBoxCOMSHC.SelectedItem.ToString()
+      End If
+      If String.IsNullOrEmpty(comport) Then
+        MsgBox("Select a ComPort first.", MsgBoxStyle.Exclamation, "Upload SHC")
+        Return
+      End If
+
+      Dim fwv As String = ComboBoxFirmwareVersion.SelectedItem.ToString()
       Dim fwvdir As String = fwv
       If RadioButtonLatest.Checked Then
         fwvdir += "_latest"
       End If
       Dim HexPath As String = System.IO.Path.Combine(GetFirmwareBasePath(), fwvdir)
       If Not System.IO.Directory.Exists(HexPath) Then System.IO.Directory.CreateDirectory(HexPath)
-      Dim lg As String = "_" + ComboBoxLanguage.SelectedItem
-      Dim Binfile As String = System.IO.Path.Combine(HexPath, "TeenAstroSHC_" + fwv + lg + ".bin")
+      Dim lg As String = ComboBoxLanguage.SelectedItem.ToString()
+      Dim isS3 As Boolean = IsShcEsp32S3()
+      Dim Binfile As String = GetShcFirmwarePath(HexPath, fwv, lg, isS3)
 
       If Not System.IO.File.Exists(Binfile) Then
-        MsgBox(Binfile + " Not found!")
+        MsgBox(Binfile + " Not found!" & vbLf & vbLf &
+               If(isS3,
+                  "Expected a merged ESP32-S3 image (TeenAstroSHC_" & fwv & "_S3_" & lg & ".bin)." & vbLf &
+                  "Build with: pio run -d TeenAstroSHC -e esp32s3" & vbLf &
+                  "then copy TeenAstroSHC_*_esp32s3_merged.bin into the firmware folder.",
+                  "Download firmware first, or place the .bin in the firmware folder."),
+               MsgBoxStyle.Exclamation, "Upload SHC")
         Return
       End If
-      Dim comport As String = ComboBoxCOMSHC.SelectedItem
-      '"-vv -cd nodemcu -cb 921600 -cp "COM8" -ca 0x00000 -cf C: \Users\Charles\AppData\Local\Temp\VMBuilds\SMARTH~1\ESP826~1\Release/SMARTH~1.BIN
-      Dim cmd As String = "-vv -cd nodemcu -cb 921600 -cp " & comport & " -ca 0x00000 -cf " & Binfile
-      pHelp.Arguments = cmd
+
+      Dim pHelp As New ProcessStartInfo
+      pHelp.WorkingDirectory = System.IO.Path.GetDirectoryName(Application.ExecutablePath)
       pHelp.WindowStyle = ProcessWindowStyle.Normal
-      Dim proc1 As Process = Process.Start(pHelp)
+
+      If isS3 Then
+        Dim espTool As String = FindEspressifEsptool()
+        If String.IsNullOrEmpty(espTool) Then
+          MsgBox("ESP32 esptool not found." & vbLf & vbLf &
+                 "Install Arduino ESP32 board support, or PlatformIO, then retry." & vbLf &
+                 "Looked for esptool_esp32.exe next to this app and Arduino15/PlatformIO esptool.",
+                 MsgBoxStyle.Exclamation, "Upload SHC")
+          Return
+        End If
+        ApplyEspressifEsptool(pHelp, espTool,
+          "--chip esp32s3 --port " & comport &
+          " --baud 921600 --before default_reset --after hard_reset write_flash -z 0x0 """ & Binfile & """")
+      Else
+        pHelp.FileName = "esptool.exe"
+        pHelp.Arguments = "-vv -cd nodemcu -cb 921600 -cp " & comport & " -ca 0x00000 -cf """ & Binfile & """"
+      End If
+      Process.Start(pHelp)
     Catch ex As Exception
       MsgBox(ex.Message)
     End Try
@@ -201,8 +229,11 @@ Public Class Uploader
         MsgBox("Select a ComPort first.", MsgBoxStyle.Exclamation, "Erase Flash")
         Return
       End If
+
+      Dim isS3 As Boolean = IsShcEsp32S3()
+      Dim chipName As String = If(isS3, "ESP32-S3", "ESP8266")
       Dim confirm As MsgBoxResult = MsgBox(
-        "This erases the entire ESP8266 flash (firmware and settings)." & vbLf & vbLf &
+        "This erases the entire " & chipName & " flash (firmware and settings)." & vbLf & vbLf &
         "You must Upload over COM afterwards to restore the Hand Controller." & vbLf & vbLf &
         "Continue on " & comport & "?",
         MsgBoxStyle.YesNo Or MsgBoxStyle.Exclamation Or MsgBoxStyle.DefaultButton2,
@@ -210,15 +241,102 @@ Public Class Uploader
       If confirm <> MsgBoxResult.Yes Then Return
 
       Dim pHelp As New ProcessStartInfo
-      pHelp.FileName = "esptool.exe"
       pHelp.WorkingDirectory = System.IO.Path.GetDirectoryName(Application.ExecutablePath)
-      ' esptool-ck: -ce erases the whole flash (same tool as Upload over COM)
-      pHelp.Arguments = "-vv -cd nodemcu -cb 921600 -cp " & comport & " -ce"
       pHelp.WindowStyle = ProcessWindowStyle.Normal
+
+      If isS3 Then
+        Dim espTool As String = FindEspressifEsptool()
+        If String.IsNullOrEmpty(espTool) Then
+          MsgBox("ESP32 esptool not found." & vbLf & vbLf &
+                 "Install Arduino ESP32 board support, or PlatformIO, then retry.",
+                 MsgBoxStyle.Exclamation, "Erase Flash")
+          Return
+        End If
+        ApplyEspressifEsptool(pHelp, espTool, "--chip esp32s3 --port " & comport & " erase_flash")
+      Else
+        pHelp.FileName = "esptool.exe"
+        ' esptool-ck: -ce erases the whole flash (same tool as Upload over COM)
+        pHelp.Arguments = "-vv -cd nodemcu -cb 921600 -cp " & comport & " -ce"
+      End If
       Process.Start(pHelp)
     Catch ex As Exception
       MsgBox(ex.Message)
     End Try
+  End Sub
+
+  Private Function IsShcEsp32S3() As Boolean
+    Dim pcb As String = ""
+    If ComboBoxPCBSHC.SelectedItem IsNot Nothing Then
+      pcb = ComboBoxPCBSHC.SelectedItem.ToString()
+    End If
+    Return pcb.IndexOf("S3", StringComparison.OrdinalIgnoreCase) >= 0
+  End Function
+
+  Private Shared Function GetShcFirmwarePath(hexPath As String, fwv As String, language As String, isS3 As Boolean) As String
+    If isS3 Then
+      ' Preferred packaged name for TeenAstroUploader
+      Dim preferred As String = System.IO.Path.Combine(hexPath, "TeenAstroSHC_" & fwv & "_S3_" & language & ".bin")
+      If System.IO.File.Exists(preferred) Then Return preferred
+      ' PlatformIO merge output from rename_shc.py (English env = esp32s3)
+      Dim envSuffix As String = "esp32s3"
+      If language.Equals("French", StringComparison.OrdinalIgnoreCase) Then
+        envSuffix = "esp32s3_FRENCH"
+      ElseIf language.Equals("German", StringComparison.OrdinalIgnoreCase) Then
+        envSuffix = "esp32s3_GERMAN"
+      End If
+      Dim merged As String = System.IO.Path.Combine(hexPath, "TeenAstroSHC_166_" & envSuffix & "_merged.bin")
+      If System.IO.File.Exists(merged) Then Return merged
+      Return preferred
+    End If
+    Return System.IO.Path.Combine(hexPath, "TeenAstroSHC_" & fwv & "_" & language & ".bin")
+  End Function
+
+  ''' <summary>
+  ''' Locate Espressif esptool (ESP32-S3). The bundled esptool.exe is esptool-ck (ESP8266 only).
+  ''' </summary>
+  Private Shared Function FindEspressifEsptool() As String
+    Dim appDir As String = System.IO.Path.GetDirectoryName(Application.ExecutablePath)
+    Dim candidates As New List(Of String)
+    candidates.Add(System.IO.Path.Combine(appDir, "esptool_esp32.exe"))
+
+    Dim arduinoTools As String = System.IO.Path.Combine(
+      Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+      "Arduino15", "packages", "esp32", "tools", "esptool_py")
+    If System.IO.Directory.Exists(arduinoTools) Then
+      Dim dirs() As String = System.IO.Directory.GetDirectories(arduinoTools)
+      Array.Sort(dirs)
+      Array.Reverse(dirs)
+      For Each verDir As String In dirs
+        candidates.Add(System.IO.Path.Combine(verDir, "esptool.exe"))
+      Next
+    End If
+
+    For Each c As String In candidates
+      If System.IO.File.Exists(c) Then Return c
+    Next
+
+    Dim pioEsptool As String = System.IO.Path.Combine(
+      Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+      ".platformio", "packages", "tool-esptoolpy", "esptool.py")
+    Dim pioPython As String = System.IO.Path.Combine(
+      Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+      ".platformio", "penv", "Scripts", "python.exe")
+    If System.IO.File.Exists(pioEsptool) AndAlso System.IO.File.Exists(pioPython) Then
+      Return "PIO:" & pioPython & "|" & pioEsptool
+    End If
+
+    Return Nothing
+  End Function
+
+  Private Shared Sub ApplyEspressifEsptool(ByRef pHelp As ProcessStartInfo, espTool As String, args As String)
+    If espTool.StartsWith("PIO:") Then
+      Dim parts = espTool.Substring(4).Split("|"c)
+      pHelp.FileName = parts(0)
+      pHelp.Arguments = """" & parts(1) & """ " & args
+    Else
+      pHelp.FileName = espTool
+      pHelp.Arguments = args
+    End If
   End Sub
 
   Private Sub ButtonWIFISHC_Click(sender As Object, e As EventArgs) Handles ButtonWIFISHC.Click
@@ -254,6 +372,9 @@ Public Class Uploader
     Firmwares.Add("TeenAstroSHC_" + ver + "_English.bin")
     Firmwares.Add("TeenAstroSHC_" + ver + "_French.bin")
     Firmwares.Add("TeenAstroSHC_" + ver + "_German.bin")
+    Firmwares.Add("TeenAstroSHC_" + ver + "_S3_English.bin")
+    Firmwares.Add("TeenAstroSHC_" + ver + "_S3_French.bin")
+    Firmwares.Add("TeenAstroSHC_" + ver + "_S3_German.bin")
     Firmwares.Add("TeenAstro_" + ver + "_220_TMC260.hex")
     Firmwares.Add("TeenAstro_" + ver + "_230_TMC260.hex")
     Firmwares.Add("TeenAstro_" + ver + "_240_TMC2130.hex")

@@ -214,7 +214,15 @@ void SmartHandController::resetSHC()
     {
       EEPROM.write(k, 0);
     }
+    // Keep OLED readable after wipe
+    EEPROM.write(EEPROM_Contrast, 127);
     EEPROM.commit();
+#if defined(ARDUINO_ARCH_ESP32)
+    WiFi.disconnect(true, true);
+    WiFi.mode(WIFI_OFF);
+#elif defined(ARDUINO_ARCH_ESP8266)
+    ESP.eraseConfig();
+#endif
     powerCycleRequired = true;
     exitMenu = true;
     return;
