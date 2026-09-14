@@ -740,7 +740,8 @@ void TeenAstroWifi::handleUpdateForm()
     "<form method='POST' action='/update' enctype='multipart/form-data'>"
     "<input type='file' name='firmware' accept='.bin'> "
     "<button type='submit'>Upload</button></form>"
-    "<p>Upload the SHC .bin, then the device restarts.</p>"
+    "<p>ESP32-S3: use <code>TeenAstroSHC_*_S3_*_OTA.bin</code> (app image).</p>"
+    "<p>Do not use the USB merged flash image (no <code>_OTA</code> in the name) — it is too large for OTA.</p>"
     "</body></html>"));
 }
 
@@ -760,9 +761,20 @@ void TeenAstroWifi::handleUpdateResult()
 {
   const bool ok = !Update.hasError();
   server.sendHeader("Connection", "close");
-  server.send(200, "text/plain", ok ? "OK - rebooting" : "FAIL");
+  if (ok) {
+    server.send(200, "text/plain", "OK - rebooting");
+  } else {
+    String msg = F("FAIL");
+#if defined(ARDUINO_ARCH_ESP32)
+    msg += F(": ");
+    msg += Update.errorString();
+    msg += F("\nUse TeenAstroSHC_*_S3_*_OTA.bin (not the USB merged .bin).");
+#endif
+    server.send(200, "text/plain", msg);
+  }
   delay(500);
-  ESP.restart();
+  if (ok)
+    ESP.restart();
 }
 #endif
 

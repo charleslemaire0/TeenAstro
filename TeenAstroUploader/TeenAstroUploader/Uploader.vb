@@ -375,6 +375,10 @@ Public Class Uploader
     Firmwares.Add("TeenAstroSHC_" + ver + "_S3_English.bin")
     Firmwares.Add("TeenAstroSHC_" + ver + "_S3_French.bin")
     Firmwares.Add("TeenAstroSHC_" + ver + "_S3_German.bin")
+    ' App-only images for HTTP OTA (/update); merged S3 bins above are USB-only.
+    Firmwares.Add("TeenAstroSHC_" + ver + "_S3_English_OTA.bin")
+    Firmwares.Add("TeenAstroSHC_" + ver + "_S3_French_OTA.bin")
+    Firmwares.Add("TeenAstroSHC_" + ver + "_S3_German_OTA.bin")
     Firmwares.Add("TeenAstro_" + ver + "_220_TMC260.hex")
     Firmwares.Add("TeenAstro_" + ver + "_230_TMC260.hex")
     Firmwares.Add("TeenAstro_" + ver + "_240_TMC2130.hex")

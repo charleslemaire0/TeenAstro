@@ -117,7 +117,8 @@ def find_output_file(project_path: Path, pio_env: str, ext: str) -> Path | None:
     We simply glob for *.<ext> in that env build directory.
 
     ESP32-S3 builds produce a ``*_merged.bin`` (bootloader + partitions + app
-    at 0x0) via rename_shc.py — that is what TeenAstroUploader flashes.
+    at 0x0) via rename_shc.py — that is what TeenAstroUploader flashes over USB.
+    Web OTA needs the separate application image (see find_ota_app_file).
     """
     build_dir = project_path / ".pio" / pio_env
     if not build_dir.is_dir():
@@ -131,6 +132,27 @@ def find_output_file(project_path: Path, pio_env: str, ext: str) -> Path | None:
             return max(merged, key=lambda p: p.stat().st_size)
     # Return the largest file (the actual firmware, not the bootloader)
     return max(candidates, key=lambda p: p.stat().st_size)
+
+
+def find_ota_app_file(project_path: Path, pio_env: str, ext: str) -> Path | None:
+    """Locate the ESP32-S3 application .bin for HTTP OTA (/update).
+
+    The merged flash image is too large for the OTA app partition (~1.25 MiB)
+    and is not a valid app image (it starts with the bootloader).
+    """
+    if "esp32s3" not in pio_env.lower():
+        return None
+    build_dir = project_path / ".pio" / pio_env
+    if not build_dir.is_dir():
+        return None
+    apps = [
+        p for p in build_dir.glob(f"*{ext}")
+        if not p.name.endswith("_merged" + ext)
+        and p.name not in ("bootloader.bin", "partitions.bin")
+    ]
+    if not apps:
+        return None
+    return max(apps, key=lambda p: p.stat().st_size)
 
 
 # ---------------------------------------------------------------------------
@@ -193,6 +215,16 @@ def build_and_distribute(fw: FirmwareBuild, clean: bool = False, dist_dir: Path 
     shutil.copy2(str(output), str(dest))
     size_kb = dest.stat().st_size / 1024
     print(f"  -> Copied to {dest.relative_to(REPO_ROOT)}  ({size_kb:.1f} KB)")
+
+    # ESP32-S3: also publish the app-only image for web OTA (/update).
+    # The merged USB image does not fit in the OTA partition and will FAIL.
+    ota_src = find_ota_app_file(project_path, fw.pio_env, fw.extension)
+    if ota_src is not None:
+        ota_dest = out_dir / f"{fw.dist_name}_OTA{fw.extension}"
+        shutil.copy2(str(ota_src), str(ota_dest))
+        ota_kb = ota_dest.stat().st_size / 1024
+        print(f"  -> Copied to {ota_dest.relative_to(REPO_ROOT)}  ({ota_kb:.1f} KB)  [web OTA]")
+
     return True
 
 
