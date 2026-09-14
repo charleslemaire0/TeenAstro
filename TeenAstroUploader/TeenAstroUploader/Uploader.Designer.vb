@@ -28,6 +28,7 @@ Partial Class Uploader
     Me.TabPage3 = New System.Windows.Forms.TabPage()
     Me.Label7 = New System.Windows.Forms.Label()
     Me.ComboBoxLanguage = New System.Windows.Forms.ComboBox()
+    Me.ButtonEraseSHC = New System.Windows.Forms.Button()
     Me.ButtonWIFISHC = New System.Windows.Forms.Button()
     Me.TextBoxIP = New System.Windows.Forms.TextBox()
     Me.Label5 = New System.Windows.Forms.Label()
@@ -76,6 +77,7 @@ Partial Class Uploader
         '
         Me.TabPage3.Controls.Add(Me.Label7)
         Me.TabPage3.Controls.Add(Me.ComboBoxLanguage)
+        Me.TabPage3.Controls.Add(Me.ButtonEraseSHC)
         Me.TabPage3.Controls.Add(Me.ButtonWIFISHC)
         Me.TabPage3.Controls.Add(Me.TextBoxIP)
         Me.TabPage3.Controls.Add(Me.Label5)
@@ -86,7 +88,7 @@ Partial Class Uploader
         Me.TabPage3.Controls.Add(Me.Label1)
         Me.TabPage3.Location = New System.Drawing.Point(4, 22)
         Me.TabPage3.Name = "TabPage3"
-        Me.TabPage3.Size = New System.Drawing.Size(364, 155)
+        Me.TabPage3.Size = New System.Drawing.Size(364, 185)
         Me.TabPage3.TabIndex = 2
         Me.TabPage3.Text = "Hand controler"
         Me.TabPage3.UseVisualStyleBackColor = True
@@ -107,6 +109,15 @@ Partial Class Uploader
         Me.ComboBoxLanguage.Name = "ComboBoxLanguage"
         Me.ComboBoxLanguage.Size = New System.Drawing.Size(110, 21)
         Me.ComboBoxLanguage.TabIndex = 29
+        '
+        'ButtonEraseSHC
+        '
+        Me.ButtonEraseSHC.Location = New System.Drawing.Point(187, 127)
+        Me.ButtonEraseSHC.Name = "ButtonEraseSHC"
+        Me.ButtonEraseSHC.Size = New System.Drawing.Size(119, 23)
+        Me.ButtonEraseSHC.TabIndex = 31
+        Me.ButtonEraseSHC.Text = "Erase Flash"
+        Me.ButtonEraseSHC.UseVisualStyleBackColor = True
         '
         'ButtonWIFISHC
         '
@@ -183,7 +194,7 @@ Partial Class Uploader
         Me.TabPage2.Location = New System.Drawing.Point(4, 22)
         Me.TabPage2.Name = "TabPage2"
         Me.TabPage2.Padding = New System.Windows.Forms.Padding(3)
-        Me.TabPage2.Size = New System.Drawing.Size(364, 155)
+        Me.TabPage2.Size = New System.Drawing.Size(364, 185)
         Me.TabPage2.TabIndex = 1
         Me.TabPage2.Text = "Focuser"
         Me.TabPage2.UseVisualStyleBackColor = True
@@ -223,7 +234,7 @@ Partial Class Uploader
         Me.TabPage1.Location = New System.Drawing.Point(4, 22)
         Me.TabPage1.Name = "TabPage1"
         Me.TabPage1.Padding = New System.Windows.Forms.Padding(3)
-        Me.TabPage1.Size = New System.Drawing.Size(364, 155)
+        Me.TabPage1.Size = New System.Drawing.Size(364, 185)
         Me.TabPage1.TabIndex = 0
         Me.TabPage1.Text = "Telescope"
         Me.TabPage1.UseVisualStyleBackColor = True
@@ -245,7 +256,7 @@ Partial Class Uploader
         Me.TabControlFirmware.Location = New System.Drawing.Point(9, 111)
         Me.TabControlFirmware.Name = "TabControlFirmware"
         Me.TabControlFirmware.SelectedIndex = 0
-        Me.TabControlFirmware.Size = New System.Drawing.Size(372, 181)
+        Me.TabControlFirmware.Size = New System.Drawing.Size(372, 211)
         Me.TabControlFirmware.TabIndex = 14
         '
         'Label6
@@ -309,7 +320,7 @@ Partial Class Uploader
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(390, 301)
+        Me.ClientSize = New System.Drawing.Size(390, 331)
         Me.Controls.Add(Me.RadioButtonLatest)
         Me.Controls.Add(Me.RadioButtonStable)
         Me.Controls.Add(Me.ButtonOpenFirmwareFolder)
@@ -351,6 +362,7 @@ Partial Class Uploader
   Friend WithEvents ComboBoxCOMSHC As ComboBox
   Friend WithEvents Label3 As Label
   Friend WithEvents ButtonUploadSHC As Button
+  Friend WithEvents ButtonEraseSHC As Button
   Friend WithEvents ComboBoxPCBSHC As ComboBox
   Friend WithEvents Label1 As Label
   Friend WithEvents Label6 As Label

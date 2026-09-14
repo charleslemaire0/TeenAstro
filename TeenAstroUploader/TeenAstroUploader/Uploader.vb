@@ -191,6 +191,36 @@ Public Class Uploader
     End Try
   End Sub
 
+  Private Sub ButtonEraseSHC_Click(sender As Object, e As EventArgs) Handles ButtonEraseSHC.Click
+    Try
+      Dim comport As String = Nothing
+      If ComboBoxCOMSHC.SelectedItem IsNot Nothing Then
+        comport = ComboBoxCOMSHC.SelectedItem.ToString()
+      End If
+      If String.IsNullOrEmpty(comport) Then
+        MsgBox("Select a ComPort first.", MsgBoxStyle.Exclamation, "Erase Flash")
+        Return
+      End If
+      Dim confirm As MsgBoxResult = MsgBox(
+        "This erases the entire ESP8266 flash (firmware and settings)." & vbLf & vbLf &
+        "You must Upload over COM afterwards to restore the Hand Controller." & vbLf & vbLf &
+        "Continue on " & comport & "?",
+        MsgBoxStyle.YesNo Or MsgBoxStyle.Exclamation Or MsgBoxStyle.DefaultButton2,
+        "Erase Flash")
+      If confirm <> MsgBoxResult.Yes Then Return
+
+      Dim pHelp As New ProcessStartInfo
+      pHelp.FileName = "esptool.exe"
+      pHelp.WorkingDirectory = System.IO.Path.GetDirectoryName(Application.ExecutablePath)
+      ' esptool-ck: -ce erases the whole flash (same tool as Upload over COM)
+      pHelp.Arguments = "-vv -cd nodemcu -cb 921600 -cp " & comport & " -ce"
+      pHelp.WindowStyle = ProcessWindowStyle.Normal
+      Process.Start(pHelp)
+    Catch ex As Exception
+      MsgBox(ex.Message)
+    End Try
+  End Sub
+
   Private Sub ButtonWIFISHC_Click(sender As Object, e As EventArgs) Handles ButtonWIFISHC.Click
     Dim webAddress As String = "http://" & TextBoxIP.Text & "/update"
     Process.Start(webAddress)
