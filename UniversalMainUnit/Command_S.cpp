@@ -5,6 +5,40 @@ unsigned long   baudRate[10] =
   115200, 56700, 38400, 28800, 19200, 14400, 9600, 4800, 2400, 1200
 };
 
+// newfangled parser for rates
+// Exactly 16 hex digits → IEEE754 little-endian double (same encoding as :GXRr# / :GXRd# reply).
+static bool parseHexF64Le(const char* s, double* out)
+{
+  if (!s || !out)
+    return false;
+  for (int i = 0; i < 16; i++)
+  {
+    if (!isxdigit((unsigned char)s[i]))
+      return false;
+  }
+  if (s[16] != '\0')
+    return false;
+
+  auto hexNibble = [](char c) -> int {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+  };
+
+  uint8_t b[8];
+  for (int i = 0; i < 8; i++)
+  {
+    int hi = hexNibble(s[i * 2]);
+    int lo = hexNibble(s[i * 2 + 1]);
+    if (hi < 0 || lo < 0)
+      return false;
+    b[i] = (uint8_t)((hi << 4) | lo);
+  }
+  memcpy(out, b, sizeof(double));
+  return true;
+}
+
 bool yesno(char l, bool& val)
 {
   switch (l)
@@ -113,7 +147,7 @@ void Command_SX()
       {
         i = command[3] - '0';
         int val = strtol(&command[5], NULL, 10);
-        val = val > 0 && val < 256 ? val : pow(4, i);
+        val = val > 0 && val < 256 ? val : pow(4, i); // if value is not within [1..255] then use 1, 4, 16, 64 - legacy?
         XEEPROM.write(getMountAddress(EE_Rate0) + i, val);
         if (i == 0)
           guideRates[0] = (double)val / 100.;
@@ -148,15 +182,27 @@ void Command_SX()
       replyShortTrue();
       break;
     case 'r':
-      // :SXRr,VVVVVVVVVV# Set Rate for RA 
-      siderealMode = SIDM_TARGET;
-      RequestedTrackingRateHA = (double)(10000l - strtol(&command[5], NULL, 10)) / 10000.;
-      if (isTracking())
+      // :SXRr,VAL# — ASCOM RA rate (RA sec per sidereal sec). HA = 1 - val.
+      // VAL is either 16 hex digits (IEEE754 LE double, preferred) or legacy ASCII float.
       {
-        mount.mP->setTrackingSpeed(RequestedTrackingRateHA, RequestedTrackingRateDEC);
-        setEvents(EV_SPEED_CHANGE);
-      }       
-      replyValueSetShort(true);
+        const char* val = &command[5];
+        double ascVal;
+        if (!parseHexF64Le(val, &ascVal)) // not a valid IEEE number?
+        {
+          char* endptr;
+          ascVal = strtod(val, &endptr);
+        }
+        siderealMode = SIDM_TARGET;
+
+        RequestedTrackingRateHA = 1.0 - ascVal;
+
+        if (isTracking())
+        {
+          mount.mP->setTrackingSpeed(RequestedTrackingRateHA, RequestedTrackingRateDEC);
+          setEvents(EV_SPEED_CHANGE);
+        }       
+        replyValueSetShort(true);
+      }
       break;
     case 'h':
       // :SXRh,VVVVVVVVVV# Set Rate for HA
@@ -173,8 +219,16 @@ void Command_SX()
       // :SXRd,VVVVVVVVVV# Set Rate for DEC
       if (trackComp == TC_BOTH)
       {
+        const char* val = &command[5];
+        double decVal;
+        if (!parseHexF64Le(val, &decVal))
+        {
+          char* endptr;
+          decVal = strtod(val, &endptr);
+        }
+ 
         siderealMode = SIDM_TARGET;
-        RequestedTrackingRateDEC = (double)strtol(&command[5], NULL, 10) / 10000.0;
+        RequestedTrackingRateDEC = decVal;
         if (isTracking())
         {
           mount.mP->setTrackingSpeed(1.0 - RequestedTrackingRateHA, RequestedTrackingRateDEC);
@@ -294,8 +348,21 @@ void Command_SX()
         replyLongUnknown();
       }
     break;
+    case 'S':
+      // :SXLS,sVV# set user defined distance from Pole - not implemented
+    {
+      int i;
+      bool ok = (atoi2(&command[5], &i)) && ((i >= 0) && (i <= 181));
+      if (ok)
+      {
+        limits.distanceFromPoleToKeepTrackingOn = i;
+        XEEPROM.update(getMountAddress(EE_dpmDistanceFromPole), limits.distanceFromPoleToKeepTrackingOn);
+      }
+      replyValueSetShort(ok);
+    }
+    break;
     default:
-      replyLongUnknown();
+      replyNothing();
       break;
     }
     break;

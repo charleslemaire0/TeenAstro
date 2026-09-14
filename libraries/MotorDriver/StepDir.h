@@ -70,7 +70,7 @@ public:
 	double aMax, dMax, vMax, vStop, vSlow;
 	double newSpeed, speedAdjustment;
   long targetPos, delta;
-  unsigned long stopDistance;
+  long stopDistance;
 	bool edgePos = false;
 
   void state(PositionState newState);

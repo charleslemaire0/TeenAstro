@@ -85,10 +85,13 @@ void Command_M()
   {
     //  :Mgdnnnn# Pulse guide command
     //  Returns: Nothing
-    if ((atoi2((char *)&command[3], &i)) && ((i > 0) && (i <= 16399)))
+    if (lastError() == ERRT_NONE) // ignore if in error
     {
-      char dir = command[2];
-      startGuiding(dir, i); 
+      if ((atoi2((char *)&command[3], &i)) && ((i > 0) && (i <= 16399)))
+      {
+        char dir = command[2];
+        startGuiding(dir, i); 
+      }
     }
   }
   break;

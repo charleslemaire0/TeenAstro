@@ -227,7 +227,10 @@ byte EqMount::Flip()
     axesToSteps(&axes, &steps);
     return goTo(&steps);
   }
-  return ERRGOTO_NONE;
+  else
+  {
+    return ERRGOTO_LIMITS;
+  }
 }
 
 /*

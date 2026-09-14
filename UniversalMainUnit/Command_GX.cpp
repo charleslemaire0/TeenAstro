@@ -123,6 +123,27 @@ static void gxasPackF64(uint8_t* pkt, int off, double v)
   memcpy(pkt + off, &v, 8);
 }
 
+// =============================================================================
+//   GX Sub-handlers  (static -- called only from Command_GX)
+// =============================================================================
+
+// ---- GX All State  :GXAS# --------------------------------------------------
+// Returns a base64-encoded 102-byte binary snapshot of all mount state.
+// 102 bytes → 136 base64 chars + '#'.  Padding: 2 bytes (102 % 3 == 0, no pad).
+//
+// Packet layout (little-endian). All float fields are float64 (double) for full precision.
+//   Bytes 0-5:   Status (tracking, sidereal, park, atHome, pierSide, guidingRate, aligned, mountType, spiralRunning, guidingEW/NS, trackComp, fault, pulse, gnssFlags, GuidingState[5:7], error, enableFlags, hasFocuser)
+//   Bytes 6-11:  UTC hour,min,sec,month,day,year(2-digit)
+//   Bytes 12-83: Positions and rates (9 × float64 LE: RA, Dec, Alt, Az, LST, Target RA, Target Dec, TrackRate RA, TrackRate Dec)
+//   Bytes 84-91: Stored rates (int32 LE at 84, 88 — same as :GXRe#/:GXRf#)
+//   Bytes 92-97: Focuser (optional; when hasFocuser): position uint32 LE, speed uint16 LE. Otherwise zero.
+//   Byte  98:   Timezone offset (int8_t, toff × 10; subtract to get local from UTC)
+//   Byte  99:   Alignment ref count (0–2, from CoordConv::getRefs())
+//   Byte  100:  Alignment phase (bits 0-1) + star number (bits 2-4) + GotoState (bits 5-7, see CommandEnums.h GotoState)
+//   Byte  101:  XOR checksum of bytes 0-100
+
+
+
 void Command_GX_AllState()
 {
     uint8_t pkt[GXAS_PKT_LEN];
@@ -187,7 +208,7 @@ void Command_GX_AllState()
 
     // ── Byte 5: enableFlags | hasFocuser ─────────────────────────────────────
     uint8_t enableFlags = 0;
-    bitWrite(enableFlags, 0, 0);
+    bitWrite(enableFlags, 0, 0);    // enableEncoder
     bitWrite(enableFlags, 1, 0);
     bitWrite(enableFlags, 2, 0);
     bitWrite(enableFlags, 3, 1);    // enable Motors
@@ -232,8 +253,8 @@ void Command_GX_AllState()
     }
 
     // ── Bytes 84-91: stored tracking rates (int32 LE) ────────────────────────
-    int32_t storedRateRA  = (int32_t) 0;    // not sure
-    int32_t storedRateDec = (int32_t) 0;
+    int32_t storedRateRA  = (int32_t) storedTrackingRateRA;
+    int32_t storedRateDec = (int32_t) storedTrackingRateDEC;
     memcpy(pkt + 84, &storedRateRA, 4);
     memcpy(pkt + 88, &storedRateDec, 4);
 
@@ -243,7 +264,8 @@ void Command_GX_AllState()
     // ── Byte 98: timezone offset (toff × 10, int8_t) ───────────────────────────
     pkt[98] = (uint8_t)((int8_t)round(*localSite.toff() * 10.0f));
 
-    // pkt[99-100] stay 0 (reserved)
+    // Byte 99: alignment reference count (0, 1, or 2) - not implemented
+    // Byte 100: alignment phase (bits 0-1) + star number (bits 2-4) - not implemented
 
     // Byte 101: XOR checksum of bytes 0-100
     uint8_t xorChk = 0;
@@ -554,7 +576,7 @@ void Command_GX_Rates()
 {
     switch (command[3])
     {
-        case '0':
+        case '0': 
         case '1':
         case '2':
         case '3':
@@ -566,6 +588,11 @@ void Command_GX_Rates()
 
         }
         break;
+        case '4':
+          // Effective max MoveAxis/M1/M2 rate (arcsec/s); matches :M1#/:M2# limit. :GXRX# is EEPROM and can be slightly higher.
+          dtostrf(guideRates[4], 2, 2, reply);
+          strcat(reply, "#");
+          break;
         case 'A':
             // :GXRA# returns the Degrees For Acceleration
             dtostrf(mount.DegreesForAcceleration, 2, 1, reply);
@@ -589,56 +616,23 @@ void Command_GX_Rates()
     }
 }
 
+// ---- GX Limits  :GXLn# -----------------------------------------------------
 void Command_GX_Limits()
 {
     int i;
     switch (command[3])
     {
-        case 'A':
-        // :GXLA# get user defined minAXIS1 (always negative, store absolute value)
-        i = XEEPROM.readInt(getMountAddress(EE_minAxis1));
-        sprintf(reply, "%d#", -i);
-        break;
-        case 'B':
-        // :GXLB# get user defined maxAXIS1 (always positive)
-        i = XEEPROM.readInt(getMountAddress(EE_maxAxis1));
-        sprintf(reply, "%d#", i);
-        break;
-        case 'C':
-        // :GXLC# get user defined minAXIS2 (always negative)
-        i = XEEPROM.readInt(getMountAddress(EE_minAxis2));
-        sprintf(reply, "%d#", -i);
-        break;
-        case 'D':
-        // :GXLD# get user defined maxAXIS2 (always positive)
-        i = XEEPROM.readInt(getMountAddress(EE_maxAxis2));
-        sprintf(reply, "%d#", i);
-        break;
-        case 'E':
-        // :GXLE# return user defined Meridian East Limit
-        sprintf(reply, "%ld#", (long)round(limits.minutesPastMeridianGOTOE));
-        break;
-        case 'W':
-        // :GXLW# return user defined Meridian West Limit
-        sprintf(reply, "%ld#", (long)round(limits.minutesPastMeridianGOTOW));
-        break;
-        case 'U':
-        // :GXLU# return user defined Under pole Limit
-        sprintf(reply, "%ld#", (long)round(limits.underPoleLimitGOTO * 10));
-        break;
-        case 'O':
-        // :GXLO# return user defined horizon Limit
-        // NB: duplicate with :Go#
-        sprintf(reply, "%+02d*#", limits.maxAlt);
-        break;
-        case 'H':
-        // :GXLH# return user defined horizon Limit
-        // NB: duplicate with :Gh#
-        sprintf(reply, "%+02d*#", limits.minAlt);
-        break;
-        default:
-            replyLongUnknown();
-        break;
+        case 'A': i = XEEPROM.readInt(getMountAddress(EE_minAxis1)); sprintf(reply, "%d#", -i); break; // always negative, store absolute value
+        case 'B': i = XEEPROM.readInt(getMountAddress(EE_maxAxis1)); sprintf(reply, "%d#", i);  break; 
+        case 'C': i = XEEPROM.readInt(getMountAddress(EE_minAxis2)); sprintf(reply, "%d#", -i); break; // always negative,  store absolute value
+        case 'D': i = XEEPROM.readInt(getMountAddress(EE_maxAxis2)); sprintf(reply, "%d#", i);  break; 
+        case 'E': sprintf(reply, "%ld#", (long)round(limits.minutesPastMeridianGOTOE)); break; 
+        case 'W': sprintf(reply, "%ld#", (long)round(limits.minutesPastMeridianGOTOW)); break;
+        case 'U': sprintf(reply, "%ld#", (long)round(limits.underPoleLimitGOTO * 10));  break;
+        case 'O': sprintf(reply, "%+02d*#", limits.maxAlt); break;
+        case 'H': sprintf(reply, "%+02d*#", limits.minAlt); break;
+        case 'S': sprintf(reply, "%02d*#", limits.distanceFromPoleToKeepTrackingOn); break; // not implemented
+        default: replyLongUnknown(); break;
     }
 }
 

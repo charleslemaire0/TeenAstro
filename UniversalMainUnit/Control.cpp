@@ -414,6 +414,11 @@ byte goTo(Steps *sP)
   if (parkStatus() == PRK_PARKED)
     return(ERRGOTO_PARKED);
 
+  if (lastError() != ERRT_NONE)
+  {
+    return ERRGOTO____;
+  }
+
   setSlewSpeed(guideRates[RXX]);
   // initiate the goto
   msg[0] = CTL_MSG_GOTO; 
