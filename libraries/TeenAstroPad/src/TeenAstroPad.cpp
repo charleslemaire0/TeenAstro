@@ -1,7 +1,28 @@
 #include <Arduino.h>
 #include <TeenAstroPad.h>
+#if defined(ARDUINO_ARCH_ESP32)
+#include <driver/gpio.h>
+#endif
 
 volatile byte eventbuttons[7] = { E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE ,E_NONE };
+
+static void padConfigurePin(int p, bool activeLow)
+{
+  if (p < 0)
+    return;
+#if defined(ARDUINO_ARCH_ESP32)
+  gpio_reset_pin((gpio_num_t)p);
+  if (activeLow)
+    pinMode(p, INPUT_PULLUP);     // NEWSShift: idle high, press to GND
+  else
+    pinMode(p, INPUT_PULLDOWN);   // F/f inverse: idle low, press to VCC
+#else
+  if (activeLow)
+    pinMode(p, INPUT_PULLUP);
+  else
+    pinMode(p, INPUT);
+#endif
+}
 
 #if defined(DEBUG_ON)
 #define D(x)     DebugSer.print(x)
@@ -243,11 +264,19 @@ void Pad::setup(const int pin[7], const bool active[7], const int adress, const 
   {
     for (int k = 0; k < 7; k++)
     {
+      m_activeLow[k] = active[k];
       m_buttons[k] = new OneButton(pin[k], active[k], active[k]);
     }
   }
   else
   {
+    m_activeLow[0] = active[0];
+    m_activeLow[1] = active[2];
+    m_activeLow[2] = active[1];
+    m_activeLow[3] = active[4];
+    m_activeLow[4] = active[3];
+    m_activeLow[5] = active[6];
+    m_activeLow[6] = active[5];
     m_buttons[0] = new OneButton(pin[0], active[0], active[0]);
     m_buttons[1] = new OneButton(pin[2], active[2], active[2]);
     m_buttons[2] = new OneButton(pin[1], active[1], active[1]);
@@ -263,7 +292,23 @@ void Pad::setup(const int pin[7], const bool active[7], const int adress, const 
   readButtonSpeed();
   setControlerMode();
 
+  // Apply ESP32-safe biases before WiFi (active-HIGH must not float).
+  for (int k = 0; k < 7; k++)
+  {
+    if (m_buttons[k] == nullptr)
+      continue;
+    padConfigurePin(m_buttons[k]->pin(), m_activeLow[k]);
+  }
+
   m_wbt.setup();
+
+  // WiFi bring-up can reset GPIO config; restore button input modes.
+  for (int k = 0; k < 7; k++)
+  {
+    if (m_buttons[k] == nullptr)
+      continue;
+    padConfigurePin(m_buttons[k]->pin(), m_activeLow[k]);
+  }
 }
 
 void Pad::tickButtons()

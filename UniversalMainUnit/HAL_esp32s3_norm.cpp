@@ -21,7 +21,7 @@ const char* HAL_getBoardVersion(void)
 void HAL_preInit(void)
 {
   Serial.begin(BAUD);
-  Serial0.begin(BAUD, SERIAL_8N1, SHCRx, SHCTx);
+  Serial0.begin(SHC_BAUD, SERIAL_8N1, SHCRx, SHCTx);
 //  rtc.setTime(initialSystemTime);   // removed because it messes up EEPROM reading
 }
 

@@ -370,14 +370,22 @@ void TeenAstroMountStatus::invalidatePositionTimeCaches()
 
 void TeenAstroMountStatus::updateAllState(bool force)
 {
+  if (m_updatesInhibited) return;
   if (!m_timerAllState.needsUpdate(UPDATERATE) && !force) return;
 
   // Fetch the 136-char base64 response (no '#' in returned string). GXAS packet = 102 bytes.
   static const int GXAS_B64_LEN = 136;
   static const int GXAS_PKT_LEN = 102;
   char raw[GXAS_B64_LEN + 8] = "";
-  if (m_client->get(":GXAS#", raw, sizeof(raw)) != LX200_VALUEGET || strlen(raw) != GXAS_B64_LEN)
+  unsigned long gxasT0 = millis();
+  LX200RETURN gxasRet = m_client->get(":GXAS#", raw, sizeof(raw));
+  if (gxasRet != LX200_VALUEGET || strlen(raw) != GXAS_B64_LEN)
   {
+    // Only failures are recorded, so a later good read cannot mask them.
+    m_lastStateElapsedMs = (uint16_t)(millis() - gxasT0);
+    m_lastStateRawLen = (uint16_t)strlen(raw);
+    m_lastStateFailStage = (gxasRet != LX200_VALUEGET) ? 1 : 2;
+    m_stateFailCount++;
     m_mount.valid = false;
     invalidatePositionTimeCaches();
     m_connectionFailure++;
@@ -388,6 +396,8 @@ void TeenAstroMountStatus::updateAllState(bool force)
   uint8_t pkt[GXAS_PKT_LEN];
   if (!b64Decode(raw, GXAS_B64_LEN, pkt))
   {
+    m_lastStateFailStage = 3;
+    m_stateFailCount++;
     m_mount.valid = false;
     invalidatePositionTimeCaches();
     m_connectionFailure++;
@@ -399,6 +409,8 @@ void TeenAstroMountStatus::updateAllState(bool force)
   for (int i = 0; i < GXAS_PKT_LEN - 1; i++) xorChk ^= pkt[i];
   if (xorChk != pkt[GXAS_PKT_LEN - 1])
   {
+    m_lastStateFailStage = 4;
+    m_stateFailCount++;
     m_mount.valid = false;
     invalidatePositionTimeCaches();
     m_connectionFailure++;
@@ -410,6 +422,7 @@ void TeenAstroMountStatus::updateAllState(bool force)
   m_allStateB64[GXAS_B64_LEN] = '#';
   m_allStateB64[GXAS_B64_LEN + 1] = '\0';
   m_timerAllState.markUpdated();
+  m_lastStateOkMs = millis();
 
   // ── Status bytes 0-5 → m_mount ────────────────────────────────────────
   uint8_t b0 = pkt[0], b1 = pkt[1], b2 = pkt[2];

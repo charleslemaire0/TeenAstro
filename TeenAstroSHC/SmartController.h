@@ -5,12 +5,23 @@
 #include <u8g2_ext.h>
 #include <TeenAstroPad.h>
 
-// Platform-specific serial port alias
-#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
-#define Ser Serial
-#endif
+// Platform-specific serial port alias (MainUnit link)
 #ifdef ARDUINO_LOLIN_C3_MINI
 #define Ser Serial1
+#elif defined(ARDUINO_LOLIN_S3_MINI) || defined(ARDUINO_ESP32S3_DEV)
+#define Ser Serial0
+#else
+#define Ser Serial
+#endif
+
+
+// Rate the SHC asks the MainUnit to move the link up to, with :SB0#, once it is
+// talking. Every published MainUnit implements :SB, so no mainboard needs
+// reflashing; if one does not follow, the link stays at the rate setup() used.
+// Defined here rather than in SmartConfig.h because only the .ino sees that.
+// Set to 0 to keep the link at the boot rate.
+#ifndef SHC_BAUD_FAST
+#define SHC_BAUD_FAST 115200
 #endif
 
 #ifndef Product
@@ -36,6 +47,17 @@ public:
   void update();
 private:
   LX200Client* m_client = nullptr;
+
+  /// Re-open the MainUnit link and discard what the rate change garbled.
+  void setLinkBaud(unsigned long baud);
+  /// Ask the MainUnit to move the link to SHC_BAUD_FAST and follow it.
+  /// Leaves the link untouched and returns false if the mount does not follow.
+  bool raiseLinkBaud();
+  unsigned long m_linkBaud = 0;   // rate the link is running at now
+  unsigned long m_baudSlow  = 0;  // rate setup() opened with; always safe
+  unsigned long m_lastFlipMs = 0; // rate-limits the re-probe above
+  static const unsigned long kLinkFlipMs = 5000;
+
   void getNextpage();
   void updateAlign(bool moving);
   void updatePushing(bool moving);
@@ -81,6 +103,7 @@ private:
   long angleDEC = 0;
   void manualMove(bool &moving);
   void drawIntro();
+  void showStartupButtons(const int pin[7], const bool active[7]);
   void updateMainDisplay(PAGES page);
   void tickButtons();
   bool buttonPressed();

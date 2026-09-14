@@ -89,7 +89,7 @@ void TeenAstroWifi::handleConfigurationSpeed()
   for (int k = 0; k < 5; k++)
   {
     char opt[60];
-    sprintf(opt, "<option %svalue='%d'>%s</option>", (k == deadband) ? "selected " : "", k, speedNames[k]);
+    snprintf(opt, sizeof(opt), "<option %svalue='%d'>%s</option>", (k == deadband) ? "selected " : "", k, speedNames[k]);
     data += opt;
   }
   data += FPSTR(html_configRateD_1);
@@ -98,7 +98,7 @@ void TeenAstroWifi::handleConfigurationSpeed()
   // Max rate
   int maxRate = 0;
   s_client->getMaxRate(maxRate);
-  sprintf_P(temp, html_configMaxRate, maxRate);
+  snprintf_P(temp, sizeof(temp), html_configMaxRate, maxRate);
   data += temp;
   sendHtml(data);
 
@@ -109,7 +109,7 @@ void TeenAstroWifi::handleConfigurationSpeed()
   {
     rate = 0;
     s_client->getSpeedRate(idx, rate);
-    sprintf_P(temp, rateFmts[idx], rate);
+    snprintf_P(temp, sizeof(temp), rateFmts[idx], rate);
     data += temp;
     sendHtml(data);
   }
@@ -117,7 +117,7 @@ void TeenAstroWifi::handleConfigurationSpeed()
   // Acceleration
   float acc = 0;
   s_client->getAcceleration(acc);
-  sprintf_P(temp, html_configAcceleration, acc);
+  snprintf_P(temp, sizeof(temp), html_configAcceleration, acc);
   data += temp;
   data += "</div>"; // close card
   sendHtml(data);
@@ -154,7 +154,7 @@ bool TeenAstroWifi::processConfigurationSpeedGet()
   for (uint8_t idx = 0; idx <= 3; idx++)
   {
     char argName[4];
-    sprintf(argName, "R%d", idx);
+    snprintf(argName, sizeof(argName), "R%d", idx);
     v = server.arg(argName);
     if (v != "")
     {

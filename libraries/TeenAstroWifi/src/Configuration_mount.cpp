@@ -86,16 +86,16 @@ void TeenAstroWifi::handleConfigurationMount()
     data += FPSTR(html_configMountSelect1);
     sendHtml(data);
     selectedmount == 0 ? data += "<option selected value='0'>" : data += "<option value='0'>";
-    sprintf(temp, "%s</option>", mount0);
+    snprintf(temp, sizeof(temp), "%s</option>", mount0);
     data += temp;
     selectedmount == 1 ? data += "<option selected value='1'>" : data += "<option value='1'>";
-    sprintf(temp, "%s</option>", mount1);
+    snprintf(temp, sizeof(temp), "%s</option>", mount1);
     data += temp;
     data += FPSTR(html_configMountSelect2);
     sendHtml(data);
     // Name
     data += FPSTR(html_configMountName1);
-    sprintf_P(temp, html_configMountName2, selectedmount == 0 ? mount0 : mount1);
+    snprintf_P(temp, sizeof(temp), html_configMountName2, selectedmount == 0 ? mount0 : mount1);
     data += temp;
     data += FPSTR(html_configMountName3);
     sendHtml(data);
@@ -109,14 +109,14 @@ void TeenAstroWifi::handleConfigurationMount()
     ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_FORK_ALT ? data += "<option selected value='4'>Fork Alt Az</option>" : data += "<option value='4'>Fork Alt Az</option>";
     data += FPSTR(html_configMount_2);
 
-    sprintf_P(temp, html_Opt_1, "motors");
+    snprintf_P(temp, sizeof(temp), html_Opt_1, "motors");
     data += temp;
     ta_MountStatus.motorsEnable() ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
     !ta_MountStatus.motorsEnable() ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
     data += "</select> Enable Motors</form><br/>\r\n";
     sendHtml(data);
 
-    sprintf_P(temp, html_Opt_1, "encoders");
+    snprintf_P(temp, sizeof(temp), html_Opt_1, "encoders");
     data += temp;
     ta_MountStatus.encodersEnable() ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
     !ta_MountStatus.encodersEnable() ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
@@ -128,7 +128,7 @@ void TeenAstroWifi::handleConfigurationMount()
     {
       if (s_client->getPolarAlignEnabled(temp1, sizeof(temp1)) != LX200_GETVALUEFAILED)
       {
-        sprintf_P(temp, html_Opt_1, "polar");
+        snprintf_P(temp, sizeof(temp), html_Opt_1, "polar");
         data += temp;
         temp1[0] == 'y' ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
         temp1[0] == 'n' ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
@@ -138,7 +138,7 @@ void TeenAstroWifi::handleConfigurationMount()
     }
     if (s_client->getGoToEnabled(temp1, sizeof(temp1)) != LX200_GETVALUEFAILED)
     {
-      sprintf_P(temp, html_Opt_1, "gotor");
+      snprintf_P(temp, sizeof(temp), html_Opt_1, "gotor");
       data += temp;
       temp1[0] == 'y' ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
       temp1[0] == 'n' ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);

@@ -108,6 +108,14 @@ void SafetyCheck(void);
 
 #define BAUD 57600
 
+// Hand-controller link only. Kept separate from BAUD because BAUD is also the
+// PC/ASCOM port, and the ASCOM drivers open that at a fixed 57600.
+// Stays at 57600 so any SHC can still make first contact; a current SHC then
+// asks for 115200 with :SB0# once it is talking. See TeenAstroSHC/SmartConfig.h.
+#ifndef SHC_BAUD
+#define SHC_BAUD 57600
+#endif
+
 
 #ifdef TEENASTRO_MAIN_UNIT
 #define GLOBAL

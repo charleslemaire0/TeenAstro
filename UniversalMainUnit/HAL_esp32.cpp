@@ -26,7 +26,7 @@ void HAL_preInit(void)
 
 void HAL_initSerial(void)
 {
-  Serial.begin(BAUD);
+  Serial.begin(SHC_BAUD);
   S_SHC.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
 
   Serial2.begin(BAUD);
@@ -109,7 +109,7 @@ void HAL_preInit(void)
 
 void HAL_initSerial(void)
 { 
-  SHCSerial.begin(BAUD);
+  SHCSerial.begin(SHC_BAUD);
   S_SHC.attach_Stream((Stream *)&SHCSerial, COMMAND_SERIAL);
   SHC1Serial.begin(BAUD);
   S_USB.attach_Stream((Stream *)&SHC1Serial, COMMAND_SERIAL1);

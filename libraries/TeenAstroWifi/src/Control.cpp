@@ -168,15 +168,15 @@ void TeenAstroWifi::handleControl()
   {
     for (int i = 1; i <= ta_MountStatus.alignMaxStars(); i++)
     {
-      char temp2[120] = ""; sprintf_P(temp2, html_controlAlign2, i, i, SIDEREAL_CH); data += temp2;
+      char temp2[192] = ""; snprintf_P(temp2, sizeof(temp2), html_controlAlign2, i, i, SIDEREAL_CH); data += temp2;
     }
   }
   else
   {
-    char temp2[120] = "";
-    sprintf_P(temp2, html_controlAlign2, 1, 1, SIDEREAL_CH); data += temp2;
-    sprintf_P(temp2, html_controlAlign2, 4, 4, SIDEREAL_CH); data += temp2;
-    sprintf_P(temp2, html_controlAlign2, 6, 6, SIDEREAL_CH); data += temp2;
+    char temp2[192] = "";
+    snprintf_P(temp2, sizeof(temp2), html_controlAlign2, 1, 1, SIDEREAL_CH); data += temp2;
+    snprintf_P(temp2, sizeof(temp2), html_controlAlign2, 4, 4, SIDEREAL_CH); data += temp2;
+    snprintf_P(temp2, sizeof(temp2), html_controlAlign2, 6, 6, SIDEREAL_CH); data += temp2;
   }
   data += FPSTR(html_controlAlign3);
 #endif

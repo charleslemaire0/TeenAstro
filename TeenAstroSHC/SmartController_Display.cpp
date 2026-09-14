@@ -1,5 +1,8 @@
 #include "SmartController.h"
 #include "SHC_text.h"
+#if defined(ARDUINO_ARCH_ESP32)
+#include <driver/gpio.h>
+#endif
 
 #define MY_BORDER_SIZE 1
 #define icon_width 16
@@ -425,6 +428,101 @@ void SmartHandController::drawIntro()
     display->drawXBMP(0, 0, teenastro_width, teenastro_height, teenastro_bits);
   } while (display->nextPage());
   delay(1500);
+}
+
+void SmartHandController::showStartupButtons(const int pin[7], const bool active[7])
+{
+  static const char* names[7] = { "Sh", "N", "S", "E", "W", "F", "f" };
+  const unsigned long t0 = millis();
+  const unsigned long holdMs = 20000;
+
+  for (int i = 0; i < 7; i++)
+  {
+#if defined(ARDUINO_ARCH_ESP32)
+    gpio_reset_pin((gpio_num_t)pin[i]);
+#endif
+    if (active[i])
+      pinMode(pin[i], INPUT_PULLUP);
+    else
+#if defined(ARDUINO_ARCH_ESP32)
+      pinMode(pin[i], INPUT_PULLDOWN);
+#else
+      pinMode(pin[i], INPUT);
+#endif
+  }
+  delay(20);
+
+  while (millis() - t0 < holdMs)
+  {
+    char pressed[40];
+    char gpios[40];
+    char levels[16];
+    size_t np = 0;
+    size_t ng = 0;
+    size_t nl = 0;
+    pressed[0] = 0;
+    gpios[0] = 0;
+    levels[0] = 0;
+
+    for (int i = 0; i < 7; i++)
+    {
+      int hi = 0;
+      for (int s = 0; s < 3; s++)
+      {
+        if (digitalRead(pin[i]) == HIGH)
+          hi++;
+        delay(1);
+      }
+      const int level = (hi >= 2) ? HIGH : LOW;
+      const bool down = active[i] ? (level == LOW) : (level == HIGH);
+
+      if (down)
+      {
+        if (np && np + 1 < sizeof(pressed))
+          pressed[np++] = ' ';
+        for (const char* p = names[i]; *p && np + 1 < sizeof(pressed); ++p)
+          pressed[np++] = *p;
+        pressed[np] = 0;
+      }
+
+      if (nl + 1 < sizeof(levels))
+      {
+        levels[nl++] = (level == HIGH) ? 'H' : 'L';
+        levels[nl] = 0;
+      }
+
+      // Show GPIO numbers once on the title line context via gpios string
+      if (ng && ng + 1 < sizeof(gpios))
+        gpios[ng++] = ' ';
+      char num[6];
+      snprintf(num, sizeof(num), "%d", pin[i]);
+      for (const char* p = num; *p && ng + 1 < sizeof(gpios); ++p)
+        gpios[ng++] = *p;
+      gpios[ng] = 0;
+    }
+    if (!pressed[0])
+      strcpy(pressed, "(none)");
+
+    const unsigned long left = (holdMs - (millis() - t0) + 999) / 1000;
+    char line0[40];
+    snprintf(line0, sizeof(line0), "%s %lus", gpios, left);
+
+    display->setFont(u8g2_font_helvR08_te);
+    display->firstPage();
+    do
+    {
+      display->drawUTF8(0, 10, line0);           // GPIO#s: 10 11 13 4 12 18 16
+      display->drawUTF8(0, 24, "Sh N S E W F f");
+      display->drawUTF8(0, 40, pressed);
+      display->drawUTF8(0, 56, levels);
+    }
+    while (display->nextPage());
+
+#if defined(ARDUINO_USB_CDC_ON_BOOT) || defined(ARDUINO_LOLIN_S3_MINI)
+    Serial.printf("btn %s [%s] gpios %s\n", pressed, levels, gpios);
+#endif
+    delay(80);
+  }
 }
 
 void SmartHandController::updateMainDisplay(PAGES page)

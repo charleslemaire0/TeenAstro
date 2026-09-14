@@ -20,7 +20,7 @@ void HAL_preInit(void)
 {
 //  Serial.begin(BAUD); // not needed according to Teensy documentation
   S_USB.attach_Stream((Stream *)&Serial, COMMAND_SERIAL);
-  Serial1.begin(BAUD);
+  Serial1.begin(SHC_BAUD);
   S_SHC.attach_Stream((Stream *)&Serial1, COMMAND_SERIAL1);
 
   // process SHC initial commands (GVP etc.) to avoid losing connection 

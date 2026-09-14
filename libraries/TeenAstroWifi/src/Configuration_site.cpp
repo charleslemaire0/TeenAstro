@@ -127,7 +127,8 @@ void TeenAstroWifi::handleConfigurationSite()
     return;
   }
   sendHtmlStart();
-  char temp[150] = "";
+  // html_configTimeZone alone expands to ~213 bytes; 150 overflowed the stack.
+  char temp[320] = "";
   char temp1[50] = "";
   int tmp;
   String data;
@@ -182,7 +183,7 @@ void TeenAstroWifi::handleConfigurationSite()
     if (s_client->getSiteName(selectedsite, siteName, sizeof(siteName)) != LX200_VALUEGET)
       strcpy(siteName, "error!");
     data += FPSTR(html_configSiteName1);
-    sprintf_P(temp, html_configSiteName2, siteName);
+    snprintf_P(temp, sizeof(temp), html_configSiteName2, siteName);
     data += temp;
     data += FPSTR(html_configSiteName3);
     sendHtml(data);
@@ -191,7 +192,7 @@ void TeenAstroWifi::handleConfigurationSite()
     char tzStr[20];
     if (s_client->getTimeZoneStr(tzStr, sizeof(tzStr)) != LX200_VALUEGET) strcpy(tzStr, "0");
     float TShift = -(float)strtof(tzStr, NULL);
-    sprintf_P(temp, html_configTimeZone, TShift);
+    snprintf_P(temp, sizeof(temp), html_configTimeZone, TShift);
     data += temp;
     sendHtml(data);
 
@@ -205,13 +206,13 @@ void TeenAstroWifi::handleConfigurationSite()
     temp1[0] = '0';
     temp1[3] = 0; temp1[6] = 0; temp1[9] = 0;
     tmp = (int)strtol(&temp1[0], NULL, 10);
-    sprintf_P(temp, html_configLatDeg, tmp);
+    snprintf_P(temp, sizeof(temp), html_configLatDeg, tmp);
     data += temp;
     tmp = (int)strtol(&temp1[4], NULL, 10);
-    sprintf_P(temp, html_configLatMin, tmp);
+    snprintf_P(temp, sizeof(temp), html_configLatMin, tmp);
     data += temp;
     tmp = (int)strtol(&temp1[7], NULL, 10);
-    sprintf_P(temp, html_configLatSec, tmp);
+    snprintf_P(temp, sizeof(temp), html_configLatSec, tmp);
     data += temp;
     if (allowchange) data += FPSTR(html_uploadLat1);
     data += FPSTR(html_uploadLat2);
@@ -226,13 +227,13 @@ void TeenAstroWifi::handleConfigurationSite()
     temp1[0] = '0';
     temp1[4] = 0; temp1[7] = 0; temp1[10] = 0;
     tmp = (int)strtol(&temp1[0], NULL, 10);
-    sprintf_P(temp, html_configLongDeg, tmp);
+    snprintf_P(temp, sizeof(temp), html_configLongDeg, tmp);
     data += temp;
     tmp = (int)strtol(&temp1[5], NULL, 10);
-    sprintf_P(temp, html_configLongMin, tmp);
+    snprintf_P(temp, sizeof(temp), html_configLongMin, tmp);
     data += temp;
     tmp = (int)strtol(&temp1[8], NULL, 10);
-    sprintf_P(temp, html_configLongSec, tmp);
+    snprintf_P(temp, sizeof(temp), html_configLongSec, tmp);
     data += temp;
     if (allowchange) data += FPSTR(html_uploadLong1);
     data += FPSTR(html_uploadLong2);
@@ -242,7 +243,7 @@ void TeenAstroWifi::handleConfigurationSite()
     if (s_client->getElevation(temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "+000");
     if (temp1[0] == '+') temp1[0] = '0';
     data += FPSTR(html_configElev1);
-    sprintf_P(temp, html_configElev2, temp1);
+    snprintf_P(temp, sizeof(temp), html_configElev2, temp1);
     data += temp;
     if (allowchange) data += FPSTR(html_configElev3);
     data += FPSTR(html_configElev4);
