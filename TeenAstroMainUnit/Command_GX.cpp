@@ -669,10 +669,11 @@ static void Command_GX_Time()
   break;
   case '3':
   {
-    double tmpLST;
-    Coord_EQ EQ_T = mount.getEqu(*localSite.latitude() * DEG_TO_RAD);
-    tmpLST = EQ_T.Ha() * RAD_TO_HOUR;
-    doubleToHms(commandState.reply, &tmpLST, true);
+    // :GXT3# HA as HH:MM:SS in [0, 24) — wrap negatives so reply stays 8 chars
+    double ha = mount.getEqu(*localSite.latitude() * DEG_TO_RAD).Ha() * RAD_TO_HOUR;
+    if (ha < 0.0) ha += 24.0;
+    else if (ha >= 24.0) ha -= 24.0;
+    doubleToHms(commandState.reply, &ha, true);
     strcat(commandState.reply, "#");
   }
   break;
