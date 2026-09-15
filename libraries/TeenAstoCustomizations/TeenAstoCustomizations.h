@@ -2,18 +2,8 @@
 // Customization file
 // Leave as is to use default configuration
 
-// SHC PAGEs configuration
-// comment/uncomment to hide/show the corresponding PAGE on display
-
-#define RADEC_PAGE
-#define ALTAZ_PAGE
-//#define PUSH_PAGE
-#define  TIME_PAGE
-//#define AXIS_STEP_PAGE
-//#define AXIS_DEG_PAGE
-#define FOCUSER_PAGE
-//#define ALIGN_PAGE
-
+// SHC main display pages are enabled at runtime via Hand Controller → Pages
+// (EEPROM bitmask). Defaults: RA/Dec, HA/Dec, Az/Alt, Time, Focuser.
 
 //The following lines are used to enable experimental/unofficial features
 

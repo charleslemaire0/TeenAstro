@@ -14,7 +14,9 @@ ESP8266-based hand controller with OLED display and button pad. Talks to MainUni
 
 ## Display pages (PAGES)
 
-`P_RADEC`, `P_ALTAZ`, `P_PUSH`, `P_TIME`, `P_AXIS_STEP`, `P_AXIS_DEG`, `P_FOCUSER`, `P_ALIGN`.
+`P_RADEC`, `P_HADEC`, `P_ALTAZ`, `P_PUSH`, `P_TIME`, `P_AXIS_STEP`, `P_AXIS_DEG`, `P_FOCUSER`, `P_ALIGN`.
+
+Enabled pages are stored in EEPROM (`EEPROM_PAGES`) and configured under Hand Controller → Pages. Defaults: RA/Dec, HA/Dec, Az/Alt, Time, Focuser.
 
 ---
 

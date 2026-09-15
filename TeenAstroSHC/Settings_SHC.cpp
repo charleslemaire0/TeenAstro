@@ -5,7 +5,8 @@ void SmartHandController::menuSHCSettings()
 {
   static uint8_t s_sel = 1;
   uint8_t tmp_sel;
-  const char *string_list_SettingsL3 = T_RIGHTS "\n" T_DISPLAY "\n" T_BUTTONSPEED "\n" T_ERGONOMICS "\n" T_RESET;
+  const char *string_list_SettingsL3 =
+    T_RIGHTS "\n" T_DISPLAY "\n" T_PAGES "\n" T_BUTTONSPEED "\n" T_ERGONOMICS "\n" T_RESET;
   while (!exitMenu)
   {
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_SHCSETTINGS, s_sel, string_list_SettingsL3);
@@ -21,13 +22,78 @@ void SmartHandController::menuSHCSettings()
       menuDisplaySettings();
       break;
     case 3:
-      menuButtonSpeed();
+      menuPages();
       break;
     case 4:
-      menuErgonomy();
+      menuButtonSpeed();
       break;
     case 5:
+      menuErgonomy();
+      break;
+    case 6:
       resetSHC();
+      break;
+    }
+  }
+}
+
+void SmartHandController::menuPageToggle(PAGES page, const char* title)
+{
+  const bool on = pages[(int)page].show;
+  uint8_t tmp_in = on ? 1 : 2;
+  uint8_t tmp_sel = display->UserInterfaceSelectionList(&buttonPad, title, tmp_in, T_ON "\n" T_OFF);
+  if (tmp_sel == 0 || tmp_sel == tmp_in)
+    return;
+
+  uint16_t mask = readPageMask();
+  if (mask == 0 || mask == 0xFFFF)
+    mask = kDefaultPageMask;
+  mask &= (uint16_t)((1u << NUMPAGES) - 1u);
+
+  if (tmp_sel == 1)
+    mask |= (uint16_t)(1u << page);
+  else
+  {
+    uint16_t cleared = (uint16_t)(mask & ~(1u << page));
+    // Keep at least one non-align page so the main display can cycle.
+    uint16_t core = (uint16_t)(cleared & ~(1u << P_ALIGN));
+    if (core == 0)
+    {
+      DisplayMessage(title, T_ON, 800);
+      return;
+    }
+    mask = cleared;
+  }
+  writePageMask(mask);
+  applyPageMask(mask);
+  DisplayMessage(title, (tmp_sel == 1) ? T_ON : T_OFF, 500);
+}
+
+void SmartHandController::menuPages()
+{
+  static uint8_t s_sel = 1;
+  uint8_t tmp_sel;
+  const char* string_list =
+    T_PAGE_RADEC "\n" T_PAGE_HADEC "\n" T_PAGE_ALTAZ "\n" T_PAGE_PUSH "\n"
+    T_PAGE_TIME "\n" T_PAGE_AXISSTEP "\n" T_PAGE_AXISDEG "\n" T_PAGE_FOCUSER "\n" T_PAGE_ALIGN;
+  while (!exitMenu)
+  {
+    tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_PAGES, s_sel, string_list);
+    s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
+    switch (tmp_sel)
+    {
+    case 0:
+      return;
+    case 1: menuPageToggle(P_RADEC, T_PAGE_RADEC); break;
+    case 2: menuPageToggle(P_HADEC, T_PAGE_HADEC); break;
+    case 3: menuPageToggle(P_ALTAZ, T_PAGE_ALTAZ); break;
+    case 4: menuPageToggle(P_PUSH, T_PAGE_PUSH); break;
+    case 5: menuPageToggle(P_TIME, T_PAGE_TIME); break;
+    case 6: menuPageToggle(P_AXIS_STEP, T_PAGE_AXISSTEP); break;
+    case 7: menuPageToggle(P_AXIS_DEG, T_PAGE_AXISDEG); break;
+    case 8: menuPageToggle(P_FOCUSER, T_PAGE_FOCUSER); break;
+    case 9: menuPageToggle(P_ALIGN, T_PAGE_ALIGN); break;
+    default:
       break;
     }
   }
@@ -217,7 +283,10 @@ void SmartHandController::resetSHC()
     // Keep OLED readable after wipe
     EEPROM.write(EEPROM_Contrast, 127);
     EEPROM.write(EEPROM_BSPEED, 1);   // Medium — matches invalid-value default
+    EEPROM.write(EEPROM_PAGES, (uint8_t)(kDefaultPageMask & 0xFF));
+    EEPROM.write(EEPROM_PAGES_HI, (uint8_t)((kDefaultPageMask >> 8) & 0xFF));
     EEPROM.commit();
+    applyPageMask(kDefaultPageMask);
 #if defined(ARDUINO_ARCH_ESP32)
     WiFi.disconnect(true, true);
     WiFi.mode(WIFI_OFF);

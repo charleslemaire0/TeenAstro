@@ -891,6 +891,19 @@ void SmartHandController::updateMainDisplay(PAGES page)
         display->drawDec(x, y, ta_MountStatus.getDec());
       }
     }
+    else if (page == P_HADEC)
+    {
+      if (ta_MountStatus.hasInfoHa() && ta_MountStatus.hasInfoDec())
+      {
+        u8g2_uint_t y = 36;
+        x = u8g2_GetDisplayWidth(u8g2);
+        display->drawRA(x, y, ta_MountStatus.getHa());
+        u8g2_DrawUTF8(u8g2, 0, y, "HA");
+        y += line_height + 4;
+        u8g2_DrawUTF8(u8g2, 0, y, "Dec");
+        display->drawDec(x, y, ta_MountStatus.getDec());
+      }
+    }
     else if (page == P_ALTAZ)
     {
       if (ta_MountStatus.hasInfoAz() && ta_MountStatus.hasInfoAlt())

@@ -237,6 +237,7 @@ public:
   /// Drop cached :GVP/:GVN so the next updateV() talks to the mount again.
   void invalidateVersion() { m_version.valid = false; m_isValid = false; }
   bool hasInfoRa()        { return m_ra.valid; }
+  bool hasInfoHa()        { return m_ha.valid; }
   bool hasInfoDec()       { return m_dec.valid; }
   bool hasInfoAz()        { return m_az.valid; }
   bool hasInfoAlt()       { return m_alt.valid; }
@@ -289,6 +290,7 @@ public:
   bool getDriverName(char* name);
   const char* getVD()   { return m_vd; }
   const char* getRa()   { return m_ra; }
+  const char* getHa()   { return m_ha; }
   const char* getDec()  { return m_dec; }
   const char* getRaT()  { return m_raT; }
   const char* getDecT() { return m_decT; }
@@ -425,8 +427,9 @@ public:
   void updateMount(bool force = false);
 
   /// Single command (:GXAS#) that refreshes ALL cached state at once:
-  /// mount status, positions (RA/Dec/Alt/Az/LST/targetRA/targetDec),
+  /// mount status, positions (RA/Dec/HA/Alt/Az/LST/targetRA/targetDec),
   /// UTC date/time, and focuser position/speed.
+  /// HA is derived as wrap(LST − RA) in (-12, +12].
   void updateAllState(bool force = false);
 
   /// Single command (:GXCS#) that refreshes ALL mount configuration:
@@ -556,7 +559,7 @@ private:
   CachedStr<20> m_vd;       // version date
 
   // --- Position caches ---
-  CachedStr<15> m_ra, m_dec;
+  CachedStr<15> m_ra, m_ha, m_dec;
   CachedStr<15> m_raT, m_decT;
   CachedStr<15> m_az, m_alt;
   CachedStr<20> m_push;

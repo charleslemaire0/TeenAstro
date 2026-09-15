@@ -33,7 +33,7 @@
 #define SHCFirmwareVersionMinor  "6"
 #define SHCFirmwareVersionPatch  "7"
 
-#define NUMPAGES 8
+#define NUMPAGES 9
 class SmartHandController
 {
 public:
@@ -71,7 +71,7 @@ private:
   void updatePushing(bool moving);
   enum PAGES
   {
-    P_RADEC, P_ALTAZ, P_PUSH, P_TIME, P_AXIS_STEP, P_AXIS_DEG, P_FOCUSER, P_ALIGN
+    P_RADEC, P_HADEC, P_ALTAZ, P_PUSH, P_TIME, P_AXIS_STEP, P_AXIS_DEG, P_FOCUSER, P_ALIGN
   };
   enum MENU_RESULT
   {
@@ -103,9 +103,22 @@ private:
   bool forceDisplayoff = false;
   bool focuserlocked = false;
   bool telescoplocked = false;
-  pageInfo pages[NUMPAGES] = { {P_RADEC,false}, {P_ALTAZ,false}, {P_PUSH,false}, {P_TIME,false}, {P_AXIS_STEP,false}, {P_AXIS_DEG,false}, {P_FOCUSER,false}, {P_ALIGN,false} };
+  pageInfo pages[NUMPAGES] = {
+    {P_RADEC,false}, {P_HADEC,false}, {P_ALTAZ,false}, {P_PUSH,false}, {P_TIME,false},
+    {P_AXIS_STEP,false}, {P_AXIS_DEG,false}, {P_FOCUSER,false}, {P_ALIGN,false}
+  };
   byte current_page = 0;
   bool exitMenu = false;
+
+  /// Default enabled pages: RA/Dec, HA/Dec, Az/Alt, Time, Focuser.
+  static const uint16_t kDefaultPageMask =
+    (1u << P_RADEC) | (1u << P_HADEC) | (1u << P_ALTAZ) | (1u << P_TIME) | (1u << P_FOCUSER);
+  uint16_t readPageMask() const;
+  void writePageMask(uint16_t mask);
+  void applyPageMask(uint16_t mask);
+  void loadPageSettings();
+  void menuPages();
+  void menuPageToggle(PAGES page, const char* title);
   
   long angleRA = 0;
   long angleDEC = 0;

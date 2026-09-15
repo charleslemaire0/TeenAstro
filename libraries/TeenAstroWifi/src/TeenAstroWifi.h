@@ -110,6 +110,9 @@
 #define EEPROM_DISPLAYSUBMODEL 24
 #define EEPROM_DISPLAY180 25
 #define EEPROM_VISITOR 26
+// Bitmask of enabled SHC main pages (bit i = PAGES enum index). 0 / 0xFFFF → defaults.
+#define EEPROM_PAGES 27
+#define EEPROM_PAGES_HI 28
 #define EPPROM_password 50
 #define EEPROM_start_wifi_sta 100
 #ifdef ARDUINO_D1_MINI32

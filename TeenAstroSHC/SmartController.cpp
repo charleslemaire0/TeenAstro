@@ -125,32 +125,48 @@ void SmartHandController::completeMountBoot(bool showSplash)
     ta_MountStatus.updateAllState(true);
   }
 
-#ifdef RADEC_PAGE
-  pages[P_RADEC].show = true;
-#endif
-#ifdef ALTAZ_PAGE
-  pages[P_ALTAZ].show = true;
-#endif
-#ifdef PUSH_PAGE
-  pages[P_PUSH].show = true;
-#endif
-#ifdef TIME_PAGE
-  pages[P_TIME].show = true;
-#endif
-#ifdef AXIS_STEP_PAGE
-  pages[P_AXIS_STEP].show = true;
-#endif
-#ifdef AXIS_DEG_PAGE
-  pages[P_AXIS_DEG].show = true;
-#endif
-#ifdef FOCUSER_PAGE
-  pages[P_FOCUSER].show = true;
-#endif
-#ifdef ALIGN_PAGE
-  pages[P_ALIGN].show = true;
-#endif
+  loadPageSettings();
 
   m_mountBootDone = true;
+}
+
+uint16_t SmartHandController::readPageMask() const
+{
+  return (uint16_t)EEPROM.read(EEPROM_PAGES) | ((uint16_t)EEPROM.read(EEPROM_PAGES_HI) << 8);
+}
+
+void SmartHandController::writePageMask(uint16_t mask)
+{
+  EEPROM.write(EEPROM_PAGES, (uint8_t)(mask & 0xFF));
+  EEPROM.write(EEPROM_PAGES_HI, (uint8_t)((mask >> 8) & 0xFF));
+  EEPROM.commit();
+}
+
+void SmartHandController::applyPageMask(uint16_t mask)
+{
+  for (int i = 0; i < NUMPAGES; i++)
+    pages[i].show = (mask & (1u << i)) != 0;
+  // Keep current index on an enabled page when possible.
+  if (!pages[current_page].show)
+    getNextpage();
+}
+
+void SmartHandController::loadPageSettings()
+{
+  uint16_t mask = readPageMask();
+  if (mask == 0 || mask == 0xFFFF)
+  {
+    mask = kDefaultPageMask;
+    writePageMask(mask);
+  }
+  // Keep only known page bits.
+  mask &= (uint16_t)((1u << NUMPAGES) - 1u);
+  if (mask == 0)
+  {
+    mask = kDefaultPageMask;
+    writePageMask(mask);
+  }
+  applyPageMask(mask);
 }
 
 void SmartHandController::tryRecoverLinkBaud()

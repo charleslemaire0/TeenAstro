@@ -67,6 +67,27 @@ static void formatRaStr(float h, char* out, int len)
   snprintf(out, len, "%02d:%02d:%05.2f", ih % 24, im % 60, (double)secs);
 }
 
+// Format hour angle (hours) into "[-]HH:MM:SS.ss", wrapped to (-12, +12].
+static void formatHaStr(float h, char* out, int len)
+{
+  if (len < 1) return;
+  h = fmodf(h, 24.0f);
+  if (h <= -12.0f) h += 24.0f;
+  else if (h > 12.0f) h -= 24.0f;
+  const bool neg = (h < 0.0f);
+  if (neg) h = -h;
+  int ih = (int)h;
+  float mf = (h - ih) * 60.0f;
+  int im = (int)mf;
+  float secs = (mf - im) * 60.0f;
+  if (secs >= 59.995f) { secs = 0.0f; im++; }
+  if (im >= 60) { im -= 60; ih++; }
+  if (neg)
+    snprintf(out, len, "-%02d:%02d:%05.2f", ih, im, (double)secs);
+  else
+    snprintf(out, len, "%02d:%02d:%05.2f", ih, im, (double)secs);
+}
+
 // Format signed degrees (Dec/Alt) into "±DD*MM:SS.s" (1 decimal for seconds).
 // Uses '*' for compatibility with SHC display (single-byte); web can substitute ° when rendering.
 // Safe: clamps absolute value to [0,360) so output never overflows the buffer.
@@ -326,12 +347,13 @@ void TeenAstroMountStatus::updateMount(bool force)
 
 void TeenAstroMountStatus::invalidatePositionTimeCaches()
 {
-  m_ra.valid = m_dec.valid = m_alt.valid = m_az.valid = false;
+  m_ra.valid = m_ha.valid = m_dec.valid = m_alt.valid = m_az.valid = false;
   m_sidereal.valid = m_raT.valid = m_decT.valid = false;
   m_utc.valid = m_utcDate.valid = false;
   m_raHours = m_decDeg = m_altDeg = m_azDeg = 0;
   m_lstHours = m_targetRaHours = m_targetDecDeg = 0;
   strncpy(m_ra.data, "?", sizeof(m_ra.data) - 1);      m_ra.data[sizeof(m_ra.data) - 1] = '\0';
+  strncpy(m_ha.data, "?", sizeof(m_ha.data) - 1);      m_ha.data[sizeof(m_ha.data) - 1] = '\0';
   strncpy(m_dec.data, "?", sizeof(m_dec.data) - 1);    m_dec.data[sizeof(m_dec.data) - 1] = '\0';
   strncpy(m_alt.data, "?", sizeof(m_alt.data) - 1);    m_alt.data[sizeof(m_alt.data) - 1] = '\0';
   strncpy(m_az.data, "?", sizeof(m_az.data) - 1);      m_az.data[sizeof(m_az.data) - 1] = '\0';
@@ -514,6 +536,17 @@ void TeenAstroMountStatus::updateAllState(bool force)
   else                        formatAzStr((float)az,   m_az.data,       sizeof(m_az.data));
   if (!safeFloat((float)lst)) { strncpy(m_sidereal.data, "?", sizeof(m_sidereal.data) - 1); m_sidereal.data[sizeof(m_sidereal.data) - 1] = '\0'; }
   else                        formatRaStr((float)lst,  m_sidereal.data, sizeof(m_sidereal.data));
+  // HA = LST − RA wrapped to (-12, +12]; no :GXT3# poll.
+  if (safeFloat((float)ra) && safeFloat((float)lst))
+  {
+    formatHaStr((float)(lst - ra), m_ha.data, sizeof(m_ha.data));
+    m_ha.valid = true;
+  }
+  else
+  {
+    strncpy(m_ha.data, "?", sizeof(m_ha.data) - 1); m_ha.data[sizeof(m_ha.data) - 1] = '\0';
+    m_ha.valid = false;
+  }
   if (!safeFloat((float)tRA)) { strncpy(m_raT.data, "?", sizeof(m_raT.data) - 1); m_raT.data[sizeof(m_raT.data) - 1] = '\0'; }
   else                        formatRaStr((float)tRA,  m_raT.data,      sizeof(m_raT.data));
   if (!safeFloat((float)tDec)){ strncpy(m_decT.data, "?", sizeof(m_decT.data) - 1); m_decT.data[sizeof(m_decT.data) - 1] = '\0'; }
