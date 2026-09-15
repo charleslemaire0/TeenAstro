@@ -24,10 +24,53 @@ a copy of this library. You can find more detail about installing libraries
 #include <OneButton.h>
 ```
 
-Each physical button requires its own `OneButton` instance. You can initialize them like this:
+Each physical button requires its own `OneButton` instance.
 
 
-### OneButton Tiny version
+### Initialize on Instance creation (old way)
+
+You can create a global instance and pass the hardware configurtion directly at compile time:
+
+```cpp
+// Declare and initialize
+OneButton btn = OneButton(
+  BUTTON_PIN,  // Input pin for the button
+  true,        // Button is active LOW
+  true         // Enable internal pull-up resistor
+);
+```
+
+This works for most boards.  However, some boards will initialize the hardware AFTER the initialization of global
+defined instances and the Input pin will not work at all.
+
+
+### Explicit setup and deferred initialization (new, more compatible option)
+
+By using an explicit initialization using the `setup(...)` function solves the problem of the initialization order.
+Also this is also a good option in case you do not know the Hardware configuration at compile time.
+
+Declare a global instance, un-initialized:
+
+```cpp
+OneButton btn;
+```
+
+In the main `setup()` function the instance will be initialized by passing the hardware configuration.  Pass the input
+mode as known from pinMode():
+
+```cpp
+btn.setup(
+  BUTTON_PIN,   // Input pin for the button
+  INPUT_PULLUP, // INPUT and enable the internal pull-up resistor
+  true          // Button is active LOW
+);
+```
+
+In the SimpleOneButton example shows how to use this sequence.  In the new `setup(...)` function the pinMode can be
+given in the second parameter to allow all kind of hardware options.
+
+
+## OneButton Tiny version
 
 The OneButton Library was extended over time with functionality that was requested for specific
 use cases. This makes the library growing over time too and therefore was limiting use cases using very small processors like attiny84.
@@ -150,7 +193,8 @@ Here's a full list of events handled by this library:
 
 | Attach Function         | Description                                                   |
 | ----------------------- | ------------------------------------------------------------- |
-| `attachClick`           | Fires as soon as a single click is detected.                  |
+| `attachPress`           | Fires as soon as a press is detected.                         |
+| `attachClick`           | Fires as soon as a single click press and release is detected.|
 | `attachDoubleClick`     | Fires as soon as a double click is detected.                  |
 | `attachMultiClick`      | Fires as soon as multiple clicks have been detected.          |
 | `attachLongPressStart`  | Fires as soon as the button is held down for 800 milliseconds.|
@@ -175,11 +219,15 @@ This is because a single click callback must not to be triggered in case of a do
 | `setPressMs(int)`       | `800 msec` | Duration to hold a button to trigger a long press.            |
 
 You may change these default values but be aware that when you specify too short times
-it is hard to click twice or you will create a press instead of a click.
+it is hard to click twice or you will create a long press instead of a click.
 
 The former functions `setDebounceTicks`, `setClickTicks` and `setPressTicks` are marked deprecated.
 The term `Ticks` in these functions where confusing. Replace them with the ...Ms function calls.
 There is no functional change on them.
+
+Set debounce ms to a negative value to only debounce on release. `setDebounceMs(-25);` will immediately
+update to a pressed state, and will debounce for 25ms going into the released state. This will expidite
+the `attachPress` callback function to run instantly.
 
 
 ### Additional Functions

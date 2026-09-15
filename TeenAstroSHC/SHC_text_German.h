@@ -57,9 +57,9 @@
 #define T_MAXSPEED "Max Geschw."
 #define T_GUIDE "Guiding"
 #define T_FAST "Schnell"
-#define T_MEDIUM "Normal"
+#define T_MEDIUM "Mittel"
 #define T_SLOW "Langsam"
-#define T_MAX "Maximal"
+#define T_MAX "Max"
 
 #define T_STARTED "Gestartet"
 #define T_STOP "Stop"
@@ -88,7 +88,6 @@
 #define T_LOW "Niedrig"
 #define T_HIGH "Hoch"
 #define T_MIN "Min"
-#define T_MAX "Max"
 #define T_ERGONOMICS "Ergonomie"
 #define T_RIGHT_HANDER "Rechtshaender"
 #define T_LEFT_HANDER "Linkshaender"
@@ -275,9 +274,6 @@
 #define T_TURNDISPLAYOFF "Anzeige aussch."
 
 #define T_BUTTONSPEED "Geschw. Knopf"
-#define T_SLOW "Langsam"
-#define T_MEDIUM "Mittel"
-#define T_FAST "Schnell"
 
 #define T_SITEELEVATION "Geo. Höhe"
 #define T_HORIZON "Horizont"

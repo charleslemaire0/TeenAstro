@@ -197,8 +197,6 @@ void SmartHandController::menuButtonSpeed()
   {
     Pad::ButtonSpeed val = static_cast<Pad::ButtonSpeed>(tmp_sel - 1);
     buttonPad.setButtonSpeed(val);
-    EEPROM.write(EEPROM_BSPEED, tmp_sel - 1);
-    EEPROM.commit();
     buttonPad.setMenuMode();
     break;
   }
@@ -218,6 +216,7 @@ void SmartHandController::resetSHC()
     }
     // Keep OLED readable after wipe
     EEPROM.write(EEPROM_Contrast, 127);
+    EEPROM.write(EEPROM_BSPEED, 1);   // Medium — matches invalid-value default
     EEPROM.commit();
 #if defined(ARDUINO_ARCH_ESP32)
     WiFi.disconnect(true, true);

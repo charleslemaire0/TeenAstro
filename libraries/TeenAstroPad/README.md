@@ -21,9 +21,18 @@ Button input library for the TeenAstro Smart Hand Controller (SHC). Handles a 7-
 ```cpp
 Pad pad;
 pad.setup(pins, activeLevels, eepromAddress, rotated);
-pad.setMenuMode();       // longer debounce for menus
-pad.setControlerMode();  // shorter debounce for slewing
+pad.setMenuMode();       // Slow/Medium/Fast UI click & long-press timings
+pad.setControlerMode();  // same debounce; N/S/E/W/F/f start motion quickly
 ```
+
+PCB buttons are RC-filtered; software debounce is fixed at 15 ms for all speeds.
+Button Speed only changes menu click/long-press:
+
+| Speed  | Debounce | Click | Long-press |
+|--------|----------|-------|------------|
+| Slow   | 15 ms    | 280 ms | 550 ms    |
+| Medium | 15 ms    | 180 ms | 380 ms    |
+| Fast   | 15 ms    | 110 ms | 250 ms    |
 
 ### Input handling
 

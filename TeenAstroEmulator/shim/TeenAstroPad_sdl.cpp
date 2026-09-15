@@ -161,20 +161,31 @@ static void obTick(int k, bool rawActive, unsigned long now) {
 
 static int s_tickRef = 30;
 
-static void applyTimings(int tickRef) {
-    s_tickRef = tickRef;
+static void applyTimings(unsigned debounceMs, unsigned clickMs, unsigned pressMs) {
+    for (int k = 0; k < 7; k++) {
+        s_btn[k].debounce_ms = (int)debounceMs;
+        s_btn[k].click_ms    = (int)clickMs;
+        s_btn[k].press_ms    = (int)pressMs;
+    }
+    s_tickRef = (int)debounceMs;
 }
 
 static Pad::ButtonSpeed s_speed = Pad::BS_MEDIUM;
 
-static int computeTickRef(Pad::ButtonSpeed bs) {
-    int tr = 20;
+static void timingsForSpeed(Pad::ButtonSpeed bs,
+                            unsigned& debounceMs,
+                            unsigned& clickMs,
+                            unsigned& pressMs) {
+    debounceMs = 15;
     switch (bs) {
-        case Pad::BS_SLOW:   tr = (int)(20 * 2);   break;
-        case Pad::BS_MEDIUM: tr = (int)(20 * 1.5);  break;
-        case Pad::BS_FAST:   tr = (int)(20 * 1);    break;
+        case Pad::BS_SLOW:
+            clickMs = 280; pressMs = 550; break;
+        case Pad::BS_MEDIUM:
+            clickMs = 180; pressMs = 380; break;
+        case Pad::BS_FAST:
+        default:
+            clickMs = 110; pressMs = 250; break;
     }
-    return tr;
 }
 
 /* ------------------------------------------------------------------ */
@@ -196,7 +207,6 @@ void Pad::tickButtons() {
     m_shiftPressed = false;
 
     for (int k = 0; k < 7; k++) {
-        delay(1);
         eventbuttons[k] = E_NONE;
 
         SDL_Event ev;
@@ -239,24 +249,23 @@ void Pad::tickButtons() {
 }
 
 void Pad::setMenuMode() {
-    int tr = computeTickRef(m_button_speed);
-    for (int k = 0; k < 7; k++) {
-        s_btn[k].click_ms    = tr * 4;
-        s_btn[k].debounce_ms = tr;
-        s_btn[k].press_ms    = tr * 8;
-    }
+    unsigned debounceMs, clickMs, pressMs;
+    timingsForSpeed(m_button_speed, debounceMs, clickMs, pressMs);
+    applyTimings(debounceMs, clickMs, pressMs);
 }
 
 void Pad::setControlerMode() {
-    int tr = computeTickRef(m_button_speed);
-    s_btn[0].click_ms    = tr * 4;
-    s_btn[0].debounce_ms = tr;
-    s_btn[0].press_ms    = tr * 8;
+    unsigned debounceMs, clickMs, pressMs;
+    timingsForSpeed(m_button_speed, debounceMs, clickMs, pressMs);
+    s_btn[0].debounce_ms = (int)debounceMs;
+    s_btn[0].click_ms    = (int)clickMs;
+    s_btn[0].press_ms    = (int)pressMs;
     for (int k = 1; k < 7; k++) {
-        s_btn[k].click_ms    = 5;
-        s_btn[k].debounce_ms = tr;
-        s_btn[k].press_ms    = 5;
+        s_btn[k].debounce_ms = (int)debounceMs;
+        s_btn[k].click_ms    = 20;
+        s_btn[k].press_ms    = 40;
     }
+    s_tickRef = (int)debounceMs;
 }
 
 void Pad::attachEvent() {}

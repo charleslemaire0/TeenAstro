@@ -504,8 +504,9 @@ void SmartHandController::showStartupButtons(const int pin[7], const bool active
       strcpy(pressed, "(none)");
 
     const unsigned long left = (holdMs - (millis() - t0) + 999) / 1000;
-    char line0[40];
-    snprintf(line0, sizeof(line0), "%s %lus", gpios, left);
+    char line0[48];
+    // Cap GPIO list so the countdown always fits (avoids -Wformat-truncation).
+    snprintf(line0, sizeof(line0), "%.36s %lus", gpios, left);
 
     display->setFont(u8g2_font_helvR08_te);
     display->firstPage();

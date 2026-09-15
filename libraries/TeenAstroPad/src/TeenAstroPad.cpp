@@ -313,12 +313,13 @@ void Pad::setup(const int pin[7], const bool active[7], const int adress, const 
 
 void Pad::tickButtons()
 {
+  // One short yield per poll; per-button delay(1) added ~8 ms of lag and is
+  // unnecessary with RC-filtered inputs.
   delay(1);
   m_buttonPressed = false;
   m_shiftPressed = false;
   for (int k = 0; k < 7; k++)
   {
-    delay(1);
     eventbuttons[k] = E_NONE;
     m_buttons[k]->tick();
   }
@@ -356,6 +357,7 @@ void Pad::setButtonSpeed(Pad::ButtonSpeed bs)
   m_button_speed = bs;
   uint8_t val = static_cast<uint8_t>(m_button_speed);
   EEPROM.put(m_adress, val);
+  EEPROM.commit();
 }
 
 void Pad::readButtonSpeed()
@@ -378,58 +380,65 @@ void Pad::readButtonSpeed()
   {
     m_button_speed = BS_MEDIUM;
     EEPROM.put(m_adress, (uint8_t)1);
+    EEPROM.commit();
+  }
+}
+
+// PCB buttons are RC-filtered; debounce is a fixed light residual filter.
+// Slow/Medium/Fast only change menu click vs long-press feel.
+static void padTimingsForSpeed(Pad::ButtonSpeed speed,
+                               unsigned& debounceMs,
+                               unsigned& clickMs,
+                               unsigned& pressMs)
+{
+  debounceMs = 15;   // same for all speeds (HW RC does the heavy bounce work)
+  switch (speed)
+  {
+  case Pad::BS_SLOW:
+    // Former Medium
+    clickMs = 280;
+    pressMs = 550;
+    break;
+  case Pad::BS_MEDIUM:
+    // Former Fast
+    clickMs = 180;
+    pressMs = 380;
+    break;
+  case Pad::BS_FAST:
+  default:
+    // New Fast — snappier than the old Fast
+    clickMs = 110;
+    pressMs = 250;
+    break;
   }
 }
 
 void Pad::setMenuMode()
 {
-  int tick_ref = 20;
-  switch (m_button_speed)
+  unsigned debounceMs, clickMs, pressMs;
+  padTimingsForSpeed(m_button_speed, debounceMs, clickMs, pressMs);
+  for (int k = 0; k < 7; k++)
   {
-  case BS_SLOW:
-    tick_ref*= 2;
-    break;
-  case BS_MEDIUM:
-    tick_ref*= 1.5;
-    break;
-  case  BS_FAST:
-    tick_ref*= 1.;
-    break;
-  }
-  m_buttons[0]->setClickMs(tick_ref*4);
-  m_buttons[0]->setDebounceMs(tick_ref);
-  m_buttons[0]->setPressMs(tick_ref*8);
-  for (int k = 1; k < 7; k++)
-  {
-    m_buttons[k]->setClickMs(tick_ref*4);
-    m_buttons[k]->setDebounceMs(tick_ref);
-    m_buttons[k]->setPressMs(tick_ref*8);
+    m_buttons[k]->setDebounceMs(debounceMs);
+    m_buttons[k]->setClickMs(clickMs);
+    m_buttons[k]->setPressMs(pressMs);
   }
 }
 
 void Pad::setControlerMode()
 {
-  int tick_ref = 20;
-  switch (m_button_speed)
-  {
-  case BS_SLOW:
-    tick_ref *= 2;
-    break;
-  case BS_MEDIUM:
-    tick_ref *= 1.5;
-    break;
-  case  BS_FAST:
-    tick_ref *= 1.;
-    break;
-  }
-  m_buttons[0]->setClickMs(tick_ref * 4);
-  m_buttons[0]->setDebounceMs(tick_ref);
-  m_buttons[0]->setPressMs(tick_ref * 8);
+  unsigned debounceMs, clickMs, pressMs;
+  padTimingsForSpeed(m_button_speed, debounceMs, clickMs, pressMs);
+  // Shift keeps full menu timings (menus / double-click).
+  m_buttons[0]->setDebounceMs(debounceMs);
+  m_buttons[0]->setClickMs(clickMs);
+  m_buttons[0]->setPressMs(pressMs);
+  // N/S/E/W/F/f: start motion as soon as the RC-filtered edge is stable.
   for (int k = 1; k < 7; k++)
   {
-    m_buttons[k]->setClickMs(5);
-    m_buttons[k]->setDebounceMs(tick_ref);
-    m_buttons[k]->setPressMs(5);
+    m_buttons[k]->setDebounceMs(debounceMs);
+    m_buttons[k]->setClickMs(20);
+    m_buttons[k]->setPressMs(40);
   }
 }
 

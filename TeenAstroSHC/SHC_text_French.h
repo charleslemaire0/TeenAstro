@@ -88,7 +88,6 @@
 #define T_LOW "Faible"
 #define T_HIGH "Haut"
 #define T_MIN "Min"
-#define T_MAX "Max"
 #define T_ERGONOMICS "Ergonomie"
 #define T_RIGHT_HANDER "Droitier"
 #define T_LEFT_HANDER "Gaucher"
@@ -273,11 +272,6 @@
 #define T_AFTER "après"
 #define T_LOWCONTRAST "Contraste min."
 #define T_TURNDISPLAYOFF "Éteindre l'écran"
-
-
-#define T_SLOW "Lente"
-#define T_MEDIUM "Moyenne"
-#define T_FAST "Rapide"
 
 #define T_SITEELEVATION "Altitude du Site"
 #define T_HORIZON "Horizon"

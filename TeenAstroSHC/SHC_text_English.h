@@ -89,7 +89,6 @@
 #define T_LOW "Low"
 #define T_HIGH "High"
 #define T_MIN "Min"
-#define T_MAX "Max"
 #define T_ERGONOMICS "Ergonomics"
 #define T_RIGHT_HANDER "right-hander"
 #define T_LEFT_HANDER "left-hander"
@@ -276,9 +275,6 @@
 #define T_TURNDISPLAYOFF "Turn display off"
 
 #define T_BUTTONSPEED "Button Speed"
-#define T_SLOW "Slow"
-#define T_MEDIUM "Medium"
-#define T_FAST "Fast"
 
 #define T_SITEELEVATION "Site Elevation"
 #define T_HORIZON "Horizon"
