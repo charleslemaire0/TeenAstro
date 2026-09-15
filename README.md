@@ -114,7 +114,6 @@ Comprehensive documentation is available directly within this repository:
 - [libraries/TeenAstroLanguage/README.md](libraries/TeenAstroLanguage/README.md) – Multi-language internationalization strings (EN, FR, DE).
 - [libraries/TeenAstroPad/README.md](libraries/TeenAstroPad/README.md) – Keypad scanning and debouncing logic.
 - [libraries/TeenAstroMath/README.md](libraries/TeenAstroMath/README.md) – Common mathematical routines and trigonometry helpers.
-- [libraries/TeenAstroCommandDef/README.md](libraries/TeenAstroCommandDef/README.md) – Shared protocol opcode and packet definitions.
 
 ### Build Setup, Deployment & Scripts
 - [BUILD_SETUP.md](BUILD_SETUP.md) – Complete guide to setting up PlatformIO, MinGW, Flutter, and MSBuild on your PC.
