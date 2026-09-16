@@ -148,14 +148,21 @@ bool TeenAstroWifi::processConfigurationTrackingGet()
   {
     any = true;
     if ((atof2((char*)v.c_str(), &f)) && ((f >= -5) && (f <= 5)))
+    {
       s_client->setStoredTrackRateRA((long)(f * 10000));
+      // Force GXAS refresh so the PRG follow-up GET does not show stale rates.
+      ta_MountStatus.updateAllState(true);
+    }
   }
   v = server.arg("RDEC");
   if (v != "")
   {
     any = true;
     if ((atof2((char*)v.c_str(), &f)) && ((f >= -5) && (f <= 5)))
+    {
       s_client->setStoredTrackRateDec((long)(f * 10000));
+      ta_MountStatus.updateAllState(true);
+    }
   }
   v = server.arg("dt");
   if (v != "")

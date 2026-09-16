@@ -181,13 +181,19 @@ unsigned long TeenAstroWifi::s_lastPageMs = 0;
 bool TeenAstroWifi::busyGuard()
 {
   unsigned long now = millis();
-  if (s_handlerBusy || (now - s_lastPageMs < PAGE_COOLDOWN_MS))
+  // Cooldown only applies to clean page GETs. Form/mutation requests carry query
+  // args; blocking those returns the Loading page instead of applying the change
+  // and issuing the 303 PRG reload — which looks like "page did not reload".
+  const bool inCooldown =
+    (now - s_lastPageMs < PAGE_COOLDOWN_MS) && (server.args() == 0);
+  if (s_handlerBusy || inCooldown)
   {
     uint32_t heap = ESP.getFreeHeap();
     String html;
     html.reserve(256);
     html = F("<!DOCTYPE HTML><html><head>"
       "<meta http-equiv='refresh' content='1'>"
+      "<meta http-equiv='Cache-Control' content='no-cache'>"
       "</head><body style='background:#0d1117;color:#c9d1d9;"
       "display:flex;justify-content:center;align-items:center;height:90vh;"
       "font-family:sans-serif'>"
@@ -196,6 +202,7 @@ bool TeenAstroWifi::busyGuard()
       "Loading...<br><small style='color:#8b949e'>heap:");
     html += heap;
     html += F("</small></div></body></html>");
+    server.sendHeader("Cache-Control", "no-cache");
     server.send(200, "text/html", html);
     return true;
   }
