@@ -79,7 +79,7 @@ void TeenAstroWifi::handleConfigurationTracking()
 
   // Refraction tracking option (:GXCS# refrFlags bit0)
   data += FPSTR(html_configTrackingOptions);
-  sprintf_P(temp, html_Opt_1, "trackr");
+  snprintf_P(temp, sizeof(temp), html_Opt_1, "trackr");
   data += temp;
   const bool refrTrack = ta_MountStatus.hasConfig() && ta_MountStatus.getCfgRefrTracking();
   refrTrack ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
@@ -90,7 +90,7 @@ void TeenAstroWifi::handleConfigurationTracking()
   // Dual-axis tracking option
   if (!ta_MountStatus.isAltAz() && ta_MountStatus.getRateCompensation() != TeenAstroMountStatus::RC_UNKNOWN)
   {
-    sprintf_P(temp, html_Opt_1, "trackboth");
+    snprintf_P(temp, sizeof(temp), html_Opt_1, "trackboth");
     data += temp;
     ta_MountStatus.getRateCompensation() == TeenAstroMountStatus::RC_BOTH ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
     ta_MountStatus.getRateCompensation() != TeenAstroMountStatus::RC_BOTH ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
@@ -103,11 +103,11 @@ void TeenAstroWifi::handleConfigurationTracking()
   {
     data += FPSTR(html_configTrackingDrift);
     double Rate = ((double)ta_MountStatus.getStoredTrackingRateRa()) / 10000.0;
-    sprintf_P(temp, html_configRateRA, Rate);
+    snprintf_P(temp, sizeof(temp), html_configRateRA, Rate);
     data += temp;
     sendHtml(data);
     Rate = ((double)ta_MountStatus.getStoredTrackingRateDec()) / 10000.0;
-    sprintf_P(temp, html_configRateDEC, Rate);
+    snprintf_P(temp, sizeof(temp), html_configRateDEC, Rate);
     data += temp;
     sendHtml(data);
   }

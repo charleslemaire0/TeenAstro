@@ -26,7 +26,9 @@
 #define LX200_SBUF 20
 #define LX200_LBUF 50
 #define LX200_DEFAULT_TIMEOUT 30   // ms
+#ifndef LX200_GXAS_TIMEOUT
 #define LX200_GXAS_TIMEOUT   80   // ms — bulk state :GXAS# (longer to tolerate slew/focuser delay)
+#endif
 #define LX200_FOCUSER_TIMEOUT 200  // ms — focuser binary commands pass through main unit
 
 // Semantic timeout presets for consumers

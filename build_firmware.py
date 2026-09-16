@@ -11,7 +11,7 @@ Usage:
     python build_firmware.py                  # build everything
     python build_firmware.py --target main    # only MainUnit
     python build_firmware.py --target focuser # only Focuser
-    python build_firmware.py --target shc     # only SHC
+    python build_firmware.py --target shc     # only SHC (ESP8266 + ESP32-S3)
     python build_firmware.py --list           # list all firmware variants
     python build_firmware.py --clean          # clean build dirs first
 """
@@ -82,13 +82,21 @@ FIRMWARE_MANIFEST: list[FirmwareBuild] = [
     FirmwareBuild("focuser", "TeenAstroFocuser", "240_5160",
                   f"TeenAstroFocuser_{RELEASE_VERSION}_240_TMC5160", ".hex"),
 
-    # ── SHC (ESP8266 .bin) ─────────────────────────────────────────────────
+    # ── SHC Wemos D1 Mini (ESP8266 .bin) ───────────────────────────────────
     FirmwareBuild("shc", "TeenAstroSHC", "ENGLISH",
                   f"TeenAstroSHC_{RELEASE_VERSION}_English", ".bin"),
     FirmwareBuild("shc", "TeenAstroSHC", "FRENCH",
                   f"TeenAstroSHC_{RELEASE_VERSION}_French", ".bin"),
     FirmwareBuild("shc", "TeenAstroSHC", "GERMAN",
                   f"TeenAstroSHC_{RELEASE_VERSION}_German", ".bin"),
+
+    # ── SHC LOLIN S3 Mini (ESP32-S3 merged .bin @0x0) ──────────────────────
+    FirmwareBuild("shc", "TeenAstroSHC", "esp32s3",
+                  f"TeenAstroSHC_{RELEASE_VERSION}_S3_English", ".bin"),
+    FirmwareBuild("shc", "TeenAstroSHC", "esp32s3_FRENCH",
+                  f"TeenAstroSHC_{RELEASE_VERSION}_S3_French", ".bin"),
+    FirmwareBuild("shc", "TeenAstroSHC", "esp32s3_GERMAN",
+                  f"TeenAstroSHC_{RELEASE_VERSION}_S3_German", ".bin"),
 ]
 
 
@@ -107,6 +115,10 @@ def find_output_file(project_path: Path, pio_env: str, ext: str) -> Path | None:
 
     PlatformIO places build artefacts by default under  project/.pio/<env>/.
     We simply glob for *.<ext> in that env build directory.
+
+    ESP32-S3 builds produce a ``*_merged.bin`` (bootloader + partitions + app
+    at 0x0) via rename_shc.py — that is what TeenAstroUploader flashes over USB.
+    Web OTA needs the separate application image (see find_ota_app_file).
     """
     build_dir = project_path / ".pio" / pio_env
     if not build_dir.is_dir():
@@ -114,8 +126,33 @@ def find_output_file(project_path: Path, pio_env: str, ext: str) -> Path | None:
     candidates = list(build_dir.glob(f"*{ext}"))
     if not candidates:
         return None
+    if "esp32s3" in pio_env.lower():
+        merged = [p for p in candidates if p.name.endswith("_merged" + ext)]
+        if merged:
+            return max(merged, key=lambda p: p.stat().st_size)
     # Return the largest file (the actual firmware, not the bootloader)
     return max(candidates, key=lambda p: p.stat().st_size)
+
+
+def find_ota_app_file(project_path: Path, pio_env: str, ext: str) -> Path | None:
+    """Locate the ESP32-S3 application .bin for HTTP OTA (/update).
+
+    The merged flash image is too large for the OTA app partition (~1.25 MiB)
+    and is not a valid app image (it starts with the bootloader).
+    """
+    if "esp32s3" not in pio_env.lower():
+        return None
+    build_dir = project_path / ".pio" / pio_env
+    if not build_dir.is_dir():
+        return None
+    apps = [
+        p for p in build_dir.glob(f"*{ext}")
+        if not p.name.endswith("_merged" + ext)
+        and p.name not in ("bootloader.bin", "partitions.bin")
+    ]
+    if not apps:
+        return None
+    return max(apps, key=lambda p: p.stat().st_size)
 
 
 # ---------------------------------------------------------------------------
@@ -141,6 +178,9 @@ def get_manifest_for_version(version: str) -> tuple[Path, list[FirmwareBuild]]:
         FirmwareBuild("shc", "TeenAstroSHC", "ENGLISH", f"TeenAstroSHC_{rl}_English", ".bin"),
         FirmwareBuild("shc", "TeenAstroSHC", "FRENCH", f"TeenAstroSHC_{rl}_French", ".bin"),
         FirmwareBuild("shc", "TeenAstroSHC", "GERMAN", f"TeenAstroSHC_{rl}_German", ".bin"),
+        FirmwareBuild("shc", "TeenAstroSHC", "esp32s3", f"TeenAstroSHC_{rl}_S3_English", ".bin"),
+        FirmwareBuild("shc", "TeenAstroSHC", "esp32s3_FRENCH", f"TeenAstroSHC_{rl}_S3_French", ".bin"),
+        FirmwareBuild("shc", "TeenAstroSHC", "esp32s3_GERMAN", f"TeenAstroSHC_{rl}_S3_German", ".bin"),
     ]
     return dist_dir, manifest
 
@@ -175,6 +215,16 @@ def build_and_distribute(fw: FirmwareBuild, clean: bool = False, dist_dir: Path 
     shutil.copy2(str(output), str(dest))
     size_kb = dest.stat().st_size / 1024
     print(f"  -> Copied to {dest.relative_to(REPO_ROOT)}  ({size_kb:.1f} KB)")
+
+    # ESP32-S3: also publish the app-only image for web OTA (/update).
+    # The merged USB image does not fit in the OTA partition and will FAIL.
+    ota_src = find_ota_app_file(project_path, fw.pio_env, fw.extension)
+    if ota_src is not None:
+        ota_dest = out_dir / f"{fw.dist_name}_OTA{fw.extension}"
+        shutil.copy2(str(ota_src), str(ota_dest))
+        ota_kb = ota_dest.stat().st_size / 1024
+        print(f"  -> Copied to {ota_dest.relative_to(REPO_ROOT)}  ({ota_kb:.1f} KB)  [web OTA]")
+
     return True
 
 

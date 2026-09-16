@@ -29,7 +29,7 @@ void TeenAstroWifi::addTrackingInfo(String &data )
   case TeenAstroMountStatus::TRK_OFF:     strcpy(temp1, "Off"); break;
   default: strcpy(temp1, "?");
   }
-  sprintf_P(temp, html_Tracking, temp1);
+  snprintf_P(temp, sizeof(temp), html_Tracking, temp1);
   data += temp;
 
   switch (ta_MountStatus.getRateCompensation())
@@ -38,12 +38,12 @@ void TeenAstroWifi::addTrackingInfo(String &data )
   case TeenAstroMountStatus::RateCompensation::RC_BOTH: strcpy(temp1, "Comp Both Axis"); break;
   default: strcpy(temp1, "get Comp Axis failed"); break;
   }
-  sprintf_P(temp, html_TrackingCorrections, temp1);
+  snprintf_P(temp, sizeof(temp), html_TrackingCorrections, temp1);
   data += temp;
 
   double rate;
   ta_MountStatus.getTrackingRate(rate);
-  sprintf_P(temp, html_TrackingRate, rate);
+  snprintf_P(temp, sizeof(temp), html_TrackingRate, rate);
   data += temp;
 
   bool showRates = false;
@@ -55,7 +55,7 @@ void TeenAstroWifi::addTrackingInfo(String &data )
   case TeenAstroMountStatus::SID_TARGET: strcpy(temp1, "Target"); showRates = true; break;
   default: strcpy(temp1, "Unknown"); break;
   }
-  sprintf_P(temp, html_TrackingSpeed, temp1);
+  snprintf_P(temp, sizeof(temp), html_TrackingSpeed, temp1);
   data += temp;
 
   if (showRates)
@@ -64,10 +64,10 @@ void TeenAstroWifi::addTrackingInfo(String &data )
     if (ta_MountStatus.hasInfoTrackingRate())
     {
       float RateRa = (float)ta_MountStatus.getTrackingRateRa();
-      sprintf_P(temp, html_TrackingSpeedRA, RateRa);
+      snprintf_P(temp, sizeof(temp), html_TrackingSpeedRA, RateRa);
       data += temp;
       float RateDec = (float)ta_MountStatus.getTrackingRateDec();
-      sprintf_P(temp, html_TrackingSpeedDEC, RateDec);
+      snprintf_P(temp, sizeof(temp), html_TrackingSpeedDEC, RateDec);
       data += temp;
     }
   }

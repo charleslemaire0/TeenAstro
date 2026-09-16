@@ -93,7 +93,7 @@ void TeenAstroWifi::handleConfigurationLimits()
     return;
   }
   sendHtmlStart();
-  char temp[350] = "";
+  char temp[448] = "";
   String data;
 
   preparePage(data, ServerPage::Limits);
@@ -115,11 +115,11 @@ void TeenAstroWifi::handleConfigurationLimits()
   }
 
   // Overhead and Horizon Limits
-  sprintf_P(temp, html_configMinAlt, (int)ta_MountStatus.getCfgMinAlt());
+  snprintf_P(temp, sizeof(temp), html_configMinAlt, (int)ta_MountStatus.getCfgMinAlt());
   data += temp;
   sendHtml(data);
 
-  sprintf_P(temp, html_configMaxAlt, (int)ta_MountStatus.getCfgMaxAlt());
+  snprintf_P(temp, sizeof(temp), html_configMaxAlt, (int)ta_MountStatus.getCfgMaxAlt());
   data += temp;
   sendHtml(data);
 
@@ -127,18 +127,18 @@ void TeenAstroWifi::handleConfigurationLimits()
   if (ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_GEM)
   {
     const float underPole = ta_MountStatus.getCfgUnderPole10() / 10.0f;
-    sprintf_P(temp, html_configUnderPole, underPole);
+    snprintf_P(temp, sizeof(temp), html_configUnderPole, underPole);
     data += temp;
 
     // :GXCS# meridian values match :GXLE#/:GXLW# (arcmin×4) → degrees via /4
     const int degPastMerE = (int)round(ta_MountStatus.getCfgMeridianE() / 4.0);
     const int degPastMerW = (int)round(ta_MountStatus.getCfgMeridianW() / 4.0);
-    sprintf_P(temp, html_configPastMerE, degPastMerE);
+    snprintf_P(temp, sizeof(temp), html_configPastMerE, degPastMerE);
     data += temp;
-    sprintf_P(temp, html_configPastMerW, degPastMerW);
+    snprintf_P(temp, sizeof(temp), html_configPastMerW, degPastMerW);
     data += temp;
     #ifdef keepTrackingOnWhenFarFromPole
-    sprintf_P(temp, html_configMiDistanceFromPole, (int)ta_MountStatus.getCfgMinDistPole());
+    snprintf_P(temp, sizeof(temp), html_configMiDistanceFromPole, (int)ta_MountStatus.getCfgMinDistPole());
     data += temp;
     #endif
     sendHtml(data);
@@ -155,9 +155,9 @@ void TeenAstroWifi::handleConfigurationLimits()
   {
     const float anglemin = ta_MountStatus.getCfgAxis1Min() / 10.0f;
     const float anglemax = ta_MountStatus.getCfgAxis1Max() / 10.0f;
-    sprintf_P(temp, html_configMinAxis1, anglemin, (float)angle_i_min, anglemax, (float)angle_i_min, anglemax);
+    snprintf_P(temp, sizeof(temp), html_configMinAxis1, anglemin, (float)angle_i_min, anglemax, (float)angle_i_min, anglemax);
     data += temp;
-    sprintf_P(temp, html_configMaxAxis1, anglemax, anglemin, (float)angle_i_max, anglemin, (float)angle_i_max);
+    snprintf_P(temp, sizeof(temp), html_configMaxAxis1, anglemax, anglemin, (float)angle_i_max, anglemin, (float)angle_i_max);
     data += temp;
     sendHtml(data);
   }
@@ -169,9 +169,9 @@ void TeenAstroWifi::handleConfigurationLimits()
   {
     const float anglemin = ta_MountStatus.getCfgAxis2Min() / 10.0f;
     const float anglemax = ta_MountStatus.getCfgAxis2Max() / 10.0f;
-    sprintf_P(temp, html_configMinAxis2, anglemin, (float)angle_i_min, anglemax, (float)angle_i_min, anglemax);
+    snprintf_P(temp, sizeof(temp), html_configMinAxis2, anglemin, (float)angle_i_min, anglemax, (float)angle_i_min, anglemax);
     data += temp;
-    sprintf_P(temp, html_configMaxAxis2, anglemax, anglemin, (float)angle_i_max, anglemin, (float)angle_i_max);
+    snprintf_P(temp, sizeof(temp), html_configMaxAxis2, anglemax, anglemin, (float)angle_i_max, anglemin, (float)angle_i_max);
     data += temp;
     sendHtml(data);
   }

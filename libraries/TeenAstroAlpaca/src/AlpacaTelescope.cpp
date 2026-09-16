@@ -148,12 +148,53 @@ void AlpacaTelescope::syncUtcToHost()
   }
 }
 
+void AlpacaTelescope::prepareForRequest()
+{
+  if (!m_connected || !m_status) return;
+
+  // Work deferred out of putConnected(), which runs inside the handler.
+  if (m_attachSyncPending)
+  {
+    m_attachSyncPending = false;
+    syncUtcToHost();
+    if (m_client) m_client->setTrackRateSidereal();
+  }
+
+  // Not forced: shares the host loop's UPDATERATE timer, so this adds no
+  // serial traffic and only acts if the host loop has not polled recently.
+  unsigned long now = millis();
+  m_status->updateAllState();
+
+  // Site coordinates are not part of the :GXAS# packet and change rarely.
+  if (m_client &&
+      (!m_siteCacheValid || (now - m_lastSiteRefreshMs) >= kSiteRefreshMs))
+  {
+    double lat = 0, lon = 0;
+    bool okLat = isOk(m_client->getLatitude(lat));
+    bool okLon = isOk(m_client->getLongitude(lon));
+    if (okLat && okLon)
+    {
+      m_siteLatCache = lat;
+      m_siteLonCache = lon;
+      m_siteCacheValid = true;
+      m_lastSiteRefreshMs = now;
+    }
+  }
+}
+
+void AlpacaTelescope::setHandlerActive(bool active)
+{
+  if (m_status) m_status->inhibitUpdates(active);
+}
+
 void AlpacaTelescope::noteAlpacaAttached(bool wasAlreadySoftConnected)
 {
-  syncUtcToHost();
-  if (m_status) m_status->updateAllState(true);
-  if (!wasAlreadySoftConnected && m_client)
-    m_client->setTrackRateSidereal();
+  // Runs inside the HTTP handler, where serial I/O gets no reply; the actual
+  // sync happens on the next prepareForRequest().
+  (void)wasAlreadySoftConnected;
+  m_attachSyncPending = true;
+  m_lastCacheRefreshMs = 0;
+  m_siteCacheValid = false;
 }
 
 bool AlpacaTelescope::requireConnected(AlpacaWebServer& s, const AlpacaRequest& r)
@@ -741,7 +782,6 @@ void AlpacaTelescope::getAzimuth(AlpacaWebServer& s, const AlpacaRequest& r)
 void AlpacaTelescope::getSiderealTime(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
-  syncUtcToHost();
   m_status->updateAllState(true);
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
                AlpacaJson::doubleStr((double)m_status->getLstHoursCached()));
@@ -1360,15 +1400,14 @@ void AlpacaTelescope::getSiteLatitude(AlpacaWebServer& s, const AlpacaRequest& r
                  AlpacaJson::doubleStr(m_siteLat));
     return;
   }
-  double lat = 0;
-  if (!isOk(m_client->getLatitude(lat)))
+  if (!m_siteCacheValid)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
                     AE_DRIVER, "Failed to read latitude");
     return;
   }
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
-               AlpacaJson::doubleStr(lat));
+               AlpacaJson::doubleStr(m_siteLatCache));
 }
 
 void AlpacaTelescope::putSiteLatitude(AlpacaWebServer& s, const AlpacaRequest& r)
@@ -1403,15 +1442,14 @@ void AlpacaTelescope::getSiteLongitude(AlpacaWebServer& s, const AlpacaRequest& 
                  AlpacaJson::doubleStr(m_siteLon));
     return;
   }
-  double lon = 0;
-  if (!isOk(m_client->getLongitude(lon)))
+  if (!m_siteCacheValid)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
                     AE_DRIVER, "Failed to read longitude");
     return;
   }
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
-               AlpacaJson::doubleStr(lon));
+               AlpacaJson::doubleStr(m_siteLonCache));
 }
 
 void AlpacaTelescope::putSiteLongitude(AlpacaWebServer& s, const AlpacaRequest& r)

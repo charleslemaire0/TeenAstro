@@ -148,7 +148,7 @@ void TeenAstroWifi::handleConfigurationMotors()
   }
 
   // Settle time
-  sprintf_P(temp, html_configSettleTime, (int)ta_MountStatus.getCfgSettleTime());
+  snprintf_P(temp, sizeof(temp), html_configSettleTime, (int)ta_MountStatus.getCfgSettleTime());
   data += temp;
   sendHtml(data);
 
@@ -157,10 +157,10 @@ void TeenAstroWifi::handleConfigurationMotors()
   {
     const int cax = ax - 1;
     const bool reverse = ta_MountStatus.getCfgReverse(cax);
-    sprintf_P(temp, html_configRotAxis_1, ax);
+    snprintf_P(temp, sizeof(temp), html_configRotAxis_1, ax);
     data += temp;
     data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
-    sprintf_P(temp, html_configRotAxis_2, ax);
+    snprintf_P(temp, sizeof(temp), html_configRotAxis_2, ax);
     data += temp;
     sendHtml(data);
   }
@@ -168,49 +168,49 @@ void TeenAstroWifi::handleConfigurationMotors()
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
     const float gear = ta_MountStatus.getCfgGear(ax - 1) / 1000.0f;
-    sprintf_P(temp, html_configGeAxis, gear, ax, ax);
+    snprintf_P(temp, sizeof(temp), html_configGeAxis, gear, ax, ax);
     data += temp;
     sendHtml(data);
   }
 
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    sprintf_P(temp, html_configStAxis, (int)ta_MountStatus.getCfgStepRot(ax - 1), ax, ax);
+    snprintf_P(temp, sizeof(temp), html_configStAxis, (int)ta_MountStatus.getCfgStepRot(ax - 1), ax, ax);
     data += temp;
     sendHtml(data);
   }
 
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    sprintf_P(temp, html_configMuAxis, (int)pow(2., (double)ta_MountStatus.getCfgMicro(ax - 1)), ax, ax);
+    snprintf_P(temp, sizeof(temp), html_configMuAxis, (int)pow(2., (double)ta_MountStatus.getCfgMicro(ax - 1)), ax, ax);
     data += temp;
     sendHtml(data);
   }
 
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    sprintf_P(temp, html_configBlAxis, (int)ta_MountStatus.getCfgBacklash(ax - 1), ax, ax);
+    snprintf_P(temp, sizeof(temp), html_configBlAxis, (int)ta_MountStatus.getCfgBacklash(ax - 1), ax, ax);
     data += temp;
     sendHtml(data);
   }
 
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    sprintf_P(temp, html_configBlRateAxis, (int)ta_MountStatus.getCfgBacklashRate(ax - 1), ax, ax);
+    snprintf_P(temp, sizeof(temp), html_configBlRateAxis, (int)ta_MountStatus.getCfgBacklashRate(ax - 1), ax, ax);
     data += temp;
     sendHtml(data);
   }
 
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    sprintf_P(temp, html_configLCAxis, (unsigned int)ta_MountStatus.getCfgLowCurr(ax - 1), ax, ax);
+    snprintf_P(temp, sizeof(temp), html_configLCAxis, (unsigned int)ta_MountStatus.getCfgLowCurr(ax - 1), ax, ax);
     data += temp;
     sendHtml(data);
   }
 
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    sprintf_P(temp, html_configHCAxis, (unsigned int)ta_MountStatus.getCfgHighCurr(ax - 1), ax, ax);
+    snprintf_P(temp, sizeof(temp), html_configHCAxis, (unsigned int)ta_MountStatus.getCfgHighCurr(ax - 1), ax, ax);
     data += temp;
     sendHtml(data);
   }
@@ -221,10 +221,10 @@ void TeenAstroWifi::handleConfigurationMotors()
     for (uint8_t ax = 1; ax <= 2; ax++)
     {
       const bool silent = ta_MountStatus.getCfgSilent(ax - 1);
-      sprintf_P(temp, html_configSilentAxis_1, ax);
+      snprintf_P(temp, sizeof(temp), html_configSilentAxis_1, ax);
       data += temp;
       data += silent ? FPSTR(html_configSilentAxis_r) : FPSTR(html_configSilentAxis_d);
-      sprintf_P(temp, html_configSilentAxis_2, ax);
+      snprintf_P(temp, sizeof(temp), html_configSilentAxis_2, ax);
       data += temp;
       sendHtml(data);
     }
@@ -271,7 +271,7 @@ bool TeenAstroWifi::processConfigurationMotorsGet()
   for (uint8_t idx = 0; idx <= 3; idx++)
   {
     char argName[4];
-    sprintf(argName, "R%d", idx);
+    snprintf(argName, sizeof(argName), "R%d", idx);
     v = server.arg(argName);
     if (v != "")
     {
@@ -294,47 +294,47 @@ bool TeenAstroWifi::processConfigurationMotorsGet()
     char argName[8];
 
     // Rotation
-    sprintf(argName, "mrot%d", ax);
+    snprintf(argName, sizeof(argName), "mrot%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) s_client->writeReverse(ax, i); }
 
     // Gear
-    sprintf(argName, "mge%d", ax);
+    snprintf(argName, sizeof(argName), "mge%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atof2((char*)v.c_str(), &f)) && ((f >= 1) && (f <= 60000))) s_client->writeTotGear(ax, f); }
 
     // Steps per rotation
-    sprintf(argName, "mst%d", ax);
+    snprintf(argName, sizeof(argName), "mst%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 1) && (i <= 400))) s_client->writeStepPerRot(ax, i); }
 
     // Microsteps
-    sprintf(argName, "mmu%d", ax);
+    snprintf(argName, sizeof(argName), "mmu%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 8) && (i <= 256))) s_client->writeMicro(ax, (float)((int)log2(i))); }
 
     // Backlash
-    sprintf(argName, "mbl%d", ax);
+    snprintf(argName, sizeof(argName), "mbl%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 999))) s_client->writeBacklash(ax, (float)i); }
 
     // Backlash rate
-    sprintf(argName, "mblr%d", ax);
+    snprintf(argName, sizeof(argName), "mblr%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 16) && (i <= 64))) s_client->writeBacklashRate(ax, (float)i); }
 
     // Low current
-    sprintf(argName, "mlc%d", ax);
+    snprintf(argName, sizeof(argName), "mlc%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800))) s_client->writeLowCurr(ax, i); }
 
     // High current
-    sprintf(argName, "mhc%d", ax);
+    snprintf(argName, sizeof(argName), "mhc%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 200) && (i <= 2800))) s_client->writeHighCurr(ax, i); }
 
     // Silent mode
-    sprintf(argName, "ms%d", ax);
+    snprintf(argName, sizeof(argName), "ms%d", ax);
     v = server.arg(argName);
     if (v != "") { any = true; if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 1))) s_client->writeSilentStep(ax, i); }
   }

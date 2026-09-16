@@ -37,8 +37,23 @@ LX200Client lx200(Ser);
 SmartHandController HdCrtlr;
 TeenAstroMountStatus ta_MountStatus;
 
+// MainUnit-style startup blink on boards with an onboard RGB LED (e.g. LOLIN S3 Mini).
+static void shcStartupLedBlink()
+{
+#if defined(RGB_BUILTIN)
+  for (int k = 0; k < 20; k++)
+  {
+    neopixelWrite(RGB_BUILTIN, 0, 100, 0);
+    delay(10);
+    neopixelWrite(RGB_BUILTIN, 0, 0, 0);
+    delay(50);
+  }
+#endif
+}
+
 void setup(void)
 {
+  shcStartupLedBlink();
   ta_MountStatus.setClient(lx200);
   TeenAstroWifi::setClient(lx200);
   HdCrtlr.setClient(lx200);
@@ -46,6 +61,15 @@ void setup(void)
   HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309, 2);
   return;
 #else
+#ifdef ARDUINO_LOLIN_S3_MINI
+  // A0 shares the D1 socket on the S3 Mini; auto-detect is unreliable.
+  // 1.3" 128x64 modules on the SHC use SH1106 (same as Wemos A0 < 200).
+  // Submodel 0 = noname, 1 = winstar (Settings > Display > Submodel).
+  HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SH1106, 2);
+#else
+#ifdef ARDUINO_ARCH_ESP32
+  analogReadResolution(10);   // match Wemos 10-bit OLED-select thresholds
+#endif
   int value = analogRead(A_SCREEN);
   if (value < 200)       //0.616129032V
   {
@@ -59,6 +83,7 @@ void setup(void)
   {
     HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309, 2);
   }
+#endif
 #endif    
 }
 

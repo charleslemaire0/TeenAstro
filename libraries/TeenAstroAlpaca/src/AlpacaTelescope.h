@@ -41,6 +41,14 @@ public:
   /// operations make progress without blocking the request handler.
   void tick();
 
+  /// Refresh the mount cache just before pumping the HTTP server.  Blocking
+  /// LX200 reads issued from inside an Alpaca request handler never get a
+  /// reply, so the handlers serve the cache and it is filled here instead.
+  void prepareForRequest();
+
+  /// Keep blocking mount reads out of the request handler.
+  void setHandlerActive(bool active);
+
   /// Used by the management API to advertise the telescope.
   static const char* deviceName()        { return "TeenAstro Telescope"; }
   static const char* driverInfo()        { return "TeenAstro Alpaca driver — bridges the ASCOM Alpaca REST API to the TeenAstro LX200 protocol."; }
@@ -219,6 +227,16 @@ private:
   // attach, and we honour that as a contract even though our serial link
   // to the MainUnit is always live.
   bool                   m_connected    = false;
+
+  // Mount cache refresh done outside the HTTP handler (see prepareForRequest).
+  static const unsigned long kCacheRefreshMs = 250;
+  static const unsigned long kSiteRefreshMs  = 10000;
+  unsigned long          m_lastCacheRefreshMs = 0;
+  unsigned long          m_lastSiteRefreshMs  = 0;
+  bool                   m_attachSyncPending  = false;
+  bool                   m_siteCacheValid     = false;
+  double                 m_siteLatCache       = 0;
+  double                 m_siteLonCache       = 0;
 
   // Cached writes that have no equivalent in the firmware: Alpaca
   // applications expect to round-trip these values even if we cannot

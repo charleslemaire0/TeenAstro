@@ -126,8 +126,24 @@ const char html_update[] PROGMEM =
 "Firmware extention is *.bin and can be found in the TeenAstroLoader.exe directory<br/><br/>"
 "\r\n";
 
+const char html_factoryReset[] PROGMEM =
+"<br/><b>Reset to Factory:</b><br/>"
+"<form method='post' action='/wifi.htm' onsubmit=\"return confirm('Erase all Hand Controller settings (WiFi, display, visitor mode) and reboot?');\">"
+"<input type='hidden' name='factoryreset' value='1'>"
+"<button type='submit' style='width:100%;max-width:12em;min-height:44px'>Reset to Factory</button></form>"
+"Clears EEPROM settings. Firmware is kept. Device reboots afterward.<br/><br/>"
+"\r\n";
+
+const char html_factoryRebooting[] PROGMEM =
+"<br/><br/><br/><br/><br/>"
+"<b>Factory reset done. Rebooting…</b><br/><br/>"
+"WiFi defaults will be restored after reboot (AP SSID TeenAstro, password as configured in firmware)."
+"<br/><br/><br/><br/>"
+"\r\n";
+
 bool restartRequired = false;
 bool loginRequired = true;
+bool factoryResetPending = false;
 
 // convert hex to int with error checking
 // returns -1 on error
@@ -181,7 +197,7 @@ void TeenAstroWifi::handleWifi()
 
   if (restartRequired)
   {
-    data += FPSTR(html_reboot);
+    data += factoryResetPending ? FPSTR(html_factoryRebooting) : FPSTR(html_reboot);
     data += "</div>";
     data += FPSTR(html_pageFooter);
     sendHtml(data);
@@ -189,6 +205,11 @@ void TeenAstroWifi::handleWifi()
     s_handlerBusy = false;
     restartRequired = false;
     delay(1000);
+    if (factoryResetPending)
+    {
+      factoryResetPending = false;
+      ESP.restart();
+    }
     return;
   }
 
@@ -210,7 +231,7 @@ void TeenAstroWifi::handleWifi()
   activeWifiMode == WifiMode::M_AcessPoint ? data += "<option selected value='3'>AccessPoint</option>" : data += "<option value='3'>AccessPoint</option>";
   data += FPSTR(html_wifiMode2);
   sendHtml(data);
-  sprintf_P(temp, html_wifiSerial1, CmdTimeout, WebTimeout); data += temp;
+  snprintf_P(temp, sizeof(temp), html_wifiSerial1, CmdTimeout, WebTimeout); data += temp;
   data += FPSTR(html_wifiConnectMode1);
   activeWifiConnectMode == WifiConnectMode::AutoClose ? data += "<option selected value='0'>One to Many</option>" : data += "<option value='0'>One to Many</option>";
   activeWifiConnectMode == WifiConnectMode::KeepOpened ? data += "<option selected value='1'>One to One</option>" : data += "<option value='1'>One to One</option>";
@@ -218,9 +239,9 @@ void TeenAstroWifi::handleWifi()
   sendHtml(data);
   for (int k = 0; k < NUM_sta; k++)
   {
-    sprintf_P(temp, html_wifiSSID1A, k); data += temp;
-    sprintf_P(temp, html_wifiSSID1B, k, wifi_sta_ssid[k]); data += temp;
-    sprintf_P(temp, html_wifiSSID1C, k, ""); data += temp;
+    snprintf_P(temp, sizeof(temp), html_wifiSSID1A, k); data += temp;
+    snprintf_P(temp, sizeof(temp), html_wifiSSID1B, k, wifi_sta_ssid[k]); data += temp;
+    snprintf_P(temp, sizeof(temp), html_wifiSSID1C, k, ""); data += temp;
     uint8_t mac[6] = { 0,0,0,0,0,0 }; WiFi.macAddress(mac);
     char wifi_sta_mac[80] = "";
     int pos = 0;
@@ -228,14 +249,14 @@ void TeenAstroWifi::handleWifi()
     {
       pos += snprintf(wifi_sta_mac + pos, sizeof(wifi_sta_mac) - pos, "%02x:", mac[i]);
     } wifi_sta_mac[strlen(wifi_sta_mac) - 1] = 0;
-    sprintf_P(temp, html_wifiMAC, k, wifi_sta_mac); data += temp;
-    sprintf_P(temp, html_wifiSTAIP, k, wifi_sta_ip[k][0], k, wifi_sta_ip[k][1], k, wifi_sta_ip[k][2], k, wifi_sta_ip[k][3]); data += temp;
-    sprintf_P(temp, html_wifiSTAGW, k, wifi_sta_gw[k][0], k, wifi_sta_gw[k][1], k, wifi_sta_gw[k][2], k, wifi_sta_gw[k][3]); data += temp;
-    sprintf_P(temp, html_wifiSTASN, k, wifi_sta_sn[k][0], k, wifi_sta_sn[k][1], k, wifi_sta_sn[k][2], k, wifi_sta_sn[k][3]); data += temp;
-    sprintf_P(temp, html_wifiSSID2, k, stationDhcpEnabled[k] ? "checked" : ""); data += temp;
+    snprintf_P(temp, sizeof(temp), html_wifiMAC, k, wifi_sta_mac); data += temp;
+    snprintf_P(temp, sizeof(temp), html_wifiSTAIP, k, wifi_sta_ip[k][0], k, wifi_sta_ip[k][1], k, wifi_sta_ip[k][2], k, wifi_sta_ip[k][3]); data += temp;
+    snprintf_P(temp, sizeof(temp), html_wifiSTAGW, k, wifi_sta_gw[k][0], k, wifi_sta_gw[k][1], k, wifi_sta_gw[k][2], k, wifi_sta_gw[k][3]); data += temp;
+    snprintf_P(temp, sizeof(temp), html_wifiSTASN, k, wifi_sta_sn[k][0], k, wifi_sta_sn[k][1], k, wifi_sta_sn[k][2], k, wifi_sta_sn[k][3]); data += temp;
+    snprintf_P(temp, sizeof(temp), html_wifiSSID2, k, stationDhcpEnabled[k] ? "checked" : ""); data += temp;
     sendHtml(data);
   }
-  sprintf_P(temp, html_wifiSSID3, wifi_ap_ssid, "", wifi_ap_ch); data += temp;
+  snprintf_P(temp, sizeof(temp), html_wifiSSID3, wifi_ap_ssid, "", wifi_ap_ch); data += temp;
   uint8_t macap[6] = { 0,0,0,0,0,0 }; WiFi.softAPmacAddress(macap);
   char wifi_ap_mac[80] = "";
   { int pos = 0;
@@ -243,15 +264,17 @@ void TeenAstroWifi::handleWifi()
   {
     pos += snprintf(wifi_ap_mac + pos, sizeof(wifi_ap_mac) - pos, "%02x:", macap[i]);
   } } wifi_ap_mac[strlen(wifi_ap_mac) - 1] = 0;
-  sprintf_P(temp, html_wifiApMAC, wifi_ap_mac); data += temp;
+  snprintf_P(temp, sizeof(temp), html_wifiApMAC, wifi_ap_mac); data += temp;
   sendHtml(data);
-  sprintf_P(temp, html_wifiSSID4, wifi_ap_ip[0], wifi_ap_ip[1], wifi_ap_ip[2], wifi_ap_ip[3]); data += temp;
-  sprintf_P(temp, html_wifiSSID5, wifi_ap_gw[0], wifi_ap_gw[1], wifi_ap_gw[2], wifi_ap_gw[3]); data += temp;
-  sprintf_P(temp, html_wifiSSID6, wifi_ap_sn[0], wifi_ap_sn[1], wifi_ap_sn[2], wifi_ap_sn[3]); data += temp;
+  snprintf_P(temp, sizeof(temp), html_wifiSSID4, wifi_ap_ip[0], wifi_ap_ip[1], wifi_ap_ip[2], wifi_ap_ip[3]); data += temp;
+  snprintf_P(temp, sizeof(temp), html_wifiSSID5, wifi_ap_gw[0], wifi_ap_gw[1], wifi_ap_gw[2], wifi_ap_gw[3]); data += temp;
+  snprintf_P(temp, sizeof(temp), html_wifiSSID6, wifi_ap_sn[0], wifi_ap_sn[1], wifi_ap_sn[2], wifi_ap_sn[3]); data += temp;
   data += FPSTR(html_wifiSSID7);
   data += FPSTR(html_logout);
   sendHtml(data);
   data += FPSTR(html_update);
+  sendHtml(data);
+  data += FPSTR(html_factoryReset);
   sendHtml(data);
 
   data += "</div>"; // close card
@@ -283,6 +306,32 @@ bool TeenAstroWifi::processWifiGet()
     loginRequired = true;
   }
   if (loginRequired) return any;
+
+  // Factory reset (same wipe as SHC menu Reset to Factory)
+  v = server.arg("factoryreset");
+  if (v == "1")
+  {
+    any = true;
+    int l = EEPROM.length();
+    for (int k = 0; k < l; k++)
+    {
+      EEPROM.write(k, 0);
+    }
+    // Keep OLED readable after wipe (menu factory reset used to leave contrast at 0)
+    EEPROM.write(EEPROM_Contrast, 127);
+    EEPROM.commit();
+#if defined(ARDUINO_ARCH_ESP32)
+    // ESP32 keeps STA credentials in NVS separately from emulated EEPROM
+    WiFi.disconnect(true, true);
+    WiFi.mode(WIFI_OFF);
+#elif defined(ARDUINO_ARCH_ESP8266)
+    ESP.eraseConfig();
+#endif
+    factoryResetPending = true;
+    restartRequired = true;
+    return any;
+  }
+
   v = server.arg("webpwd");
   if (v != "")
   {
@@ -319,22 +368,28 @@ bool TeenAstroWifi::processWifiGet()
   }
 
   // Timeouts -----------------------------------------------------------------
-  // Cmd channel timeout
+  // Cmd channel timeout (milliseconds for LX200Client)
   v = server.arg("ccto");
   if (v != "")
   {
     any = true;
-    CmdTimeout = v.toInt();
+    int t = v.toInt();
+    if (t < 5) t = 5;
+    if (t > 100) t = 100;
+    CmdTimeout = t;
     EEPROM.write(EEPROM_CmdTimeout, CmdTimeout);
     EEwrite = true;
   }
 
-  // Web channel timeout
+  // Web channel timeout (milliseconds for LX200Client)
   v = server.arg("wcto");
   if (v != "")
   {
     any = true;
-    WebTimeout = v.toInt();
+    int t = v.toInt();
+    if (t < 5) t = 5;
+    if (t > 100) t = 100;
+    WebTimeout = t;
     EEPROM.write(EEPROM_WebTimeout, WebTimeout);
     EEwrite = true;
   }
@@ -344,7 +399,7 @@ bool TeenAstroWifi::processWifiGet()
   {
     char cmd[20];
     // Station MAC
-    sprintf(cmd, "stmac%d", k);
+    snprintf(cmd, sizeof(cmd), "stmac%d", k);
     v = server.arg(cmd);
     if (v != "")
     {
@@ -370,7 +425,7 @@ bool TeenAstroWifi::processWifiGet()
     }
 
     // Station SSID
-    sprintf(cmd, "stssid%d", k);
+    snprintf(cmd, sizeof(cmd), "stssid%d", k);
     v = server.arg(cmd); v1 = v;
     if (v != "")
     {
@@ -383,7 +438,7 @@ bool TeenAstroWifi::processWifiGet()
     }
 
     // Station password
-    sprintf(cmd, "stpwd%d", k);
+    snprintf(cmd, sizeof(cmd), "stpwd%d", k);
     v = server.arg(cmd);
     if (v != "")
     {
@@ -394,7 +449,7 @@ bool TeenAstroWifi::processWifiGet()
     }
 
     // Station dhcp enabled
-    sprintf(cmd, "stadhcp%d", k);
+    snprintf(cmd, sizeof(cmd), "stadhcp%d", k);
     v = server.arg(cmd);
     if (v != "")
     {
@@ -407,17 +462,17 @@ bool TeenAstroWifi::processWifiGet()
 
     for (int i = 0; i < 4; i++)
     {
-      sprintf(cmd, "staip%d%d", i, k);
+      snprintf(cmd, sizeof(cmd), "staip%d%d", i, k);
       v = server.arg(cmd); if (v != "") { any = true; wifi_sta_ip[k][i] = v.toInt(); }
     }
     for (int i = 0; i < 4; i++)
     {
-      sprintf(cmd, "stasn%d%d", i, k);
+      snprintf(cmd, sizeof(cmd), "stasn%d%d", i, k);
       v = server.arg(cmd); if (v != "") { any = true; wifi_sta_sn[k][i] = v.toInt(); }
     }
     for (int i = 0; i < 4; i++)
     {
-      sprintf(cmd, "stagw%d%d", i, k);
+      snprintf(cmd, sizeof(cmd), "stagw%d%d", i, k);
       v = server.arg(cmd); if (v != "") { any = true; wifi_sta_gw[k][i] = v.toInt(); }
     }
     if (v1 != "")

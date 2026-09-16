@@ -1,5 +1,9 @@
 #include "TeenAstroWifi.h"
 
+#ifdef SHC_HAS_ALPACA
+static TeenAstroAlpaca alpaca;
+#endif
+
 
 const char html_headB[] PROGMEM = "<!DOCTYPE HTML>\r\n<html lang='en'>\r\n<head>\r\n"
 "<meta charset='UTF-8'>\r\n"
@@ -20,6 +24,7 @@ const char html_bodyB[] PROGMEM = "<body>\r\n";
 // Navigation guard: disables nav links after a click to prevent rapid page loads
 const char html_navGuard[] PROGMEM =
 "<script>\n"
+"(function(){\n"
 "document.addEventListener('click',function(e){\n"
 "var a=e.target.closest('nav a');\n"
 "if(!a||a.classList.contains('sel'))return;\n"
@@ -29,6 +34,8 @@ const char html_navGuard[] PROGMEM =
 "for(var i=0;i<links.length;i++){links[i].style.opacity='0.4';links[i].style.pointerEvents='none';}\n"
 "a.textContent=a.textContent+' ...';\n"
 "});\n"
+"window.addEventListener('pageshow',function(){window._navBusy=false;});\n"
+"})();\n"
 "</script>\n";
 
 // ---- Modern consolidated CSS with CSS custom properties ----
@@ -38,19 +45,22 @@ const char html_main_css1[] PROGMEM = "<style>\n"
 "--accent:#c9453a;--accent-h:#e05544;--accent-bg:rgba(201,69,58,.12);"
 "--text:#c9d1d9;--text2:#8b949e;--text-hi:#f0f6fc;"
 "--nav:#21262d;--nav-sel:#c9453a;--nav-text:#c9d1d9;"
-"--card:#161b22;--card-bd:#30363d;"
-"--radius:8px;--shadow:0 2px 8px rgba(0,0,0,.3);"
+"--card:#161b22;--card-bd:#30363d;--warn:#f0c040;"
+"--radius:8px;--shadow:0 2px 8px rgba(0,0,0,.3);--focus:0 0 0 3px rgba(224,85,68,.35);"
 "}\n";
 
 const char html_main_css2[] PROGMEM =
 "*{box-sizing:border-box;margin:0;padding:0}"
 "body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;"
-"background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;padding:0}\n";
+"background:var(--bg);color:var(--text);color-scheme:dark;font-size:14px;line-height:1.6;padding:0;"
+"-webkit-font-smoothing:antialiased}\n"
+"a,button,input,select{font:inherit}\n"
+"a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:none;box-shadow:var(--focus)}\n";
 
 const char html_main_css3[] PROGMEM =
 ".hdr{background:var(--bg2);border-bottom:1px solid var(--border);"
-"padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}\n"
-".hdr-title{font-size:1.3em;font-weight:700;color:var(--text-hi)}\n"
+"padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}\n"
+".hdr-title{font-size:1.3em;font-weight:700;letter-spacing:.02em;color:var(--text-hi)}\n"
 ".hdr-info{font-size:.85em;color:var(--text2);text-align:right}\n";
 
 const char html_main_css4[] PROGMEM =
@@ -69,16 +79,23 @@ const char html_main_css4[] PROGMEM =
 
 const char html_main_css5[] PROGMEM =
 ".content{max-width:900px;margin:20px auto;padding:0 16px}\n"
-".bt{font-size:1.1em;font-weight:600;color:var(--text-hi);margin:18px 0 8px;padding-bottom:4px;"
+".bt{font-size:.78em;font-weight:700;letter-spacing:.06em;text-transform:uppercase;"
+"color:var(--text2);margin:18px 0 8px;padding-bottom:6px;"
 "border-bottom:1px solid var(--border)}\n"
+"#StatusContent .bt:first-child,.card>.bt:first-child{margin-top:0}\n"
 ".card{background:var(--card);border:1px solid var(--card-bd);border-radius:var(--radius);"
-"padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}\n";
+"padding:16px;margin-bottom:12px;box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s}\n"
+".card:hover{border-color:#4b5563;box-shadow:0 3px 12px rgba(0,0,0,.36)}\n"
+"::-webkit-scrollbar{width:10px;height:10px}\n"
+"::-webkit-scrollbar-track{background:var(--bg2)}\n"
+"::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px}\n"
+"::-webkit-scrollbar-thumb:hover{background:#3f4750}\n";
 
 // Index (status) page: tighter spacing and two columns on wider screens
 const char html_indexCompactCss[] PROGMEM =
 "body.page-idx .content{margin:8px auto;padding:0 10px;max-width:900px;font-size:13px;line-height:1.35}\n"
 "body.page-idx .card{padding:8px 12px;margin-bottom:6px}\n"
-"body.page-idx .bt{margin:6px 0 3px;padding-bottom:2px;font-size:1em}\n"
+"body.page-idx .bt{margin:6px 0 3px;padding-bottom:2px;font-size:.82em}\n"
 "@media(min-width:560px){body.page-idx .content{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;align-items:start}"
 "body.page-idx .content .card{margin-bottom:0}}\n";
 
@@ -96,18 +113,23 @@ const char html_main_css6[] PROGMEM =
 const char html_main_css7[] PROGMEM =
 "button{background:var(--accent);color:#fff;font-weight:600;border:none;"
 "border-radius:var(--radius);padding:8px 16px;font-size:.9em;cursor:pointer;"
-"transition:background .15s,transform .1s;min-height:44px}\n"
+"transition:background .15s,transform .1s,box-shadow .15s;min-height:44px}\n"
 "button:hover{background:var(--accent-h)}\n"
+"button:disabled{opacity:.55;cursor:not-allowed}\n"
 "button:active{transform:scale(.97)}\n"
-".c{color:var(--accent-h);font-weight:700}\n"
-".y{color:#f0c040;font-weight:700}\n";
+".c{color:var(--accent-h);font-weight:700;background:var(--accent-bg);"
+"padding:1px 8px;border-radius:999px;font-size:.92em;white-space:nowrap}\n"
+".y{color:var(--warn);font-weight:700;background:rgba(240,192,64,.14);"
+"padding:1px 8px;border-radius:999px;font-size:.92em;white-space:nowrap}\n"
+".c:empty,.y:empty{display:none;padding:0}\n";
 
 const char html_main_css_control1[] PROGMEM =
 ".panel{background:var(--card);border:1px solid var(--card-bd);"
 "border-radius:var(--radius);padding:16px;margin:8px;box-shadow:var(--shadow);"
-"display:inline-block;vertical-align:top;text-align:center}\n"
-".panels{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}\n"
-".panel-title{font-size:1.1em;font-weight:600;color:var(--text-hi);margin-bottom:10px;"
+"display:inline-block;vertical-align:top;text-align:center;transition:border-color .15s}\n"
+"@media(hover:hover){.panel:hover{border-color:#4b5563}}\n"
+".panels{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}\n"
+".panel-title{font-size:1.05em;font-weight:600;color:var(--text-hi);margin-bottom:10px;"
 "text-align:left;padding-bottom:6px;border-bottom:1px solid var(--border)}\n";
 
 const char html_main_css_control2[] PROGMEM =
@@ -137,7 +159,9 @@ const char html_main_css_control4[] PROGMEM =
 ".panel{margin:4px;padding:12px;min-width:0;width:100%}"
 ".bb,.bbh{width:100%;min-height:48px}"
 ".gb{width:56px;height:46px}"
-"}\n</style>\n";
+"}\n"
+"@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}\n"
+"</style>\n";
 
 const char html_header1[] PROGMEM = "<div class='hdr'><span class='hdr-title'>\n";
 const char html_header2[] PROGMEM = "</span><span class='hdr-info'>" Product " " ServerFirmwareVersionMajor "." ServerFirmwareVersionMinor "." ServerFirmwareVersionPatch "<br>Main Unit \n";
@@ -211,6 +235,15 @@ bool TeenAstroWifi::busyGuard()
   return false;
 }
 
+bool TeenAstroWifi::webIoGrace(unsigned long graceMs)
+{
+  if (s_handlerBusy)
+    return true;
+  if (s_lastPageMs == 0)
+    return false;
+  return (millis() - s_lastPageMs) < graceMs;
+}
+
 void TeenAstroWifi::sendRedirectAfterMutation(const char* path)
 {
   server.sendHeader("Location", path);
@@ -256,7 +289,9 @@ ESP8266HTTPUpdateServer httpUpdater;
 
 #ifdef ARDUINO_ARCH_ESP32
 WebServer TeenAstroWifi::server;
+#if __has_include(<HTTPUpdateServer.h>)
 HTTPUpdateServer httpUpdater;
+#endif
 #endif
 
 // -----------------------------------------------------------------------------------
@@ -533,6 +568,20 @@ void TeenAstroWifi::initFromEEPROM()
 
     WebTimeout = EEPROM.read(EEPROM_WebTimeout);
     CmdTimeout = EEPROM.read(EEPROM_CmdTimeout);
+    // WiFi form stores ms (5–100). Older mistaken "seconds" defaults (e.g. 4)
+    // starve LX200 reads and make SHC reboot when opening Mount/Site pages.
+    if (WebTimeout < 15 || WebTimeout > 100)
+    {
+      WebTimeout = TIMEOUT_WEB;
+      EEPROM.write(EEPROM_WebTimeout, (uint8_t)WebTimeout);
+      EEPROM.commit();
+    }
+    if (CmdTimeout < 15 || CmdTimeout > 100)
+    {
+      CmdTimeout = TIMEOUT_CMD;
+      EEPROM.write(EEPROM_CmdTimeout, (uint8_t)CmdTimeout);
+      EEPROM.commit();
+    }
     val = EEPROM.read(EEPROM_WifiConnectMode);
     activeWifiConnectMode = static_cast<WifiConnectMode>(val < 2 ? val : 0 );
     EEPROM_readString(EPPROM_password, masterPassword);
@@ -657,6 +706,8 @@ void TeenAstroWifi::setup()
     WiFi.mode(WIFI_STA);
 #if defined(ARDUINO_ARCH_ESP8266)
     WiFi.setSleepMode(WiFiSleepType::WIFI_NONE_SLEEP);
+#elif defined(ARDUINO_ARCH_ESP32)
+    WiFi.setSleep(false);
 #endif
     WiFi.begin(wifi_sta_ssid[activeWifiMode], wifi_sta_pwd[activeWifiMode]);
 #ifdef ARDUINO_LOLIN_C3_MINI
@@ -685,6 +736,7 @@ void TeenAstroWifi::setup()
   server.on("/status.txt", statusAjax);
   server.on("/cmd", handleLx200Cmd);
   server.on("/wifi.htm", handleWifi);
+  server.on("/diag.txt", handleDiag);
   server.onNotFound(handleNotFound);
 
   cmdSvr.begin();
@@ -696,8 +748,93 @@ void TeenAstroWifi::setup()
 #endif
 
   // HTTP OTA: register /update route on the main web server
+#if defined(ARDUINO_ARCH_ESP8266) || (defined(ARDUINO_ARCH_ESP32) && !defined(SHC_OTA_FALLBACK))
   httpUpdater.setup(&server);
+#elif defined(SHC_OTA_FALLBACK)
+  server.on("/update", HTTP_GET, handleUpdateForm);
+  server.on("/update", HTTP_POST, handleUpdateResult, handleUpdateUpload);
+#endif
+#ifdef SHC_HAS_ALPACA
+  if (s_client)
+    alpaca.setup(*s_client, ta_MountStatus);
+#endif
 };
+
+#ifdef SHC_OTA_FALLBACK
+void TeenAstroWifi::handleUpdateForm()
+{
+  server.send(200, "text/html", F(
+    "<!DOCTYPE HTML><html><body style='background:#0d1117;color:#c9d1d9;font-family:sans-serif'>"
+    "<h3>Firmware update</h3>"
+    "<form method='POST' action='/update' enctype='multipart/form-data'>"
+    "<input type='file' name='firmware' accept='.bin'> "
+    "<button type='submit'>Upload</button></form>"
+    "<p>ESP32-S3: use <code>TeenAstroSHC_*_S3_*_OTA.bin</code> (app image).</p>"
+    "<p>Do not use the USB merged flash image (no <code>_OTA</code> in the name) — it is too large for OTA.</p>"
+    "</body></html>"));
+}
+
+void TeenAstroWifi::handleUpdateUpload()
+{
+  HTTPUpload& up = server.upload();
+  if (up.status == UPLOAD_FILE_START)
+    Update.begin(UPDATE_SIZE_UNKNOWN);
+  else if (up.status == UPLOAD_FILE_WRITE)
+    Update.write(up.buf, up.currentSize);
+  else if (up.status == UPLOAD_FILE_END)
+    Update.end(true);
+  yield();
+}
+
+void TeenAstroWifi::handleUpdateResult()
+{
+  const bool ok = !Update.hasError();
+  server.sendHeader("Connection", "close");
+  if (ok) {
+    server.send(200, "text/plain", "OK - rebooting");
+  } else {
+    String msg = F("FAIL");
+#if defined(ARDUINO_ARCH_ESP32)
+    msg += F(": ");
+    msg += Update.errorString();
+    msg += F("\nUse TeenAstroSHC_*_S3_*_OTA.bin (not the USB merged .bin).");
+#endif
+    server.send(200, "text/plain", msg);
+  }
+  delay(500);
+  if (ok)
+    ESP.restart();
+}
+#endif
+
+void TeenAstroWifi::handleDiag()
+{
+  char buf[512];
+  // ?force=1 runs the same forced bulk-state read the Alpaca handlers do,
+  // but from a port-80 handler, to tell the two contexts apart.
+  if (server.arg("force") == "1")
+    ta_MountStatus.updateAllState(true);
+  int reason = 0;
+  uint32_t minHeap = 0;
+  uint32_t maxBlock = 0;
+#if defined(ARDUINO_ARCH_ESP32)
+  reason = (int)esp_reset_reason();
+  minHeap = ESP.getMinFreeHeap();
+  maxBlock = ESP.getMaxAllocHeap();
+#endif
+  snprintf(buf, sizeof(buf),
+           "uptime_ms=%lu\nreset_reason=%d\nheap=%u\nmin_heap=%u\nmax_block=%u\nmount_ok=%d\nnot_responding=%d\n"
+           "gxas_fail_stage=%u\ngxas_raw_len=%u\ngxas_fail_count=%lu\ngxas_elapsed_ms=%u\n",
+           (unsigned long)millis(), reason, (unsigned)ESP.getFreeHeap(),
+           (unsigned)minHeap, (unsigned)maxBlock,
+           ta_MountStatus.connected() ? 1 : 0,
+           ta_MountStatus.notResponding() ? 1 : 0,
+           (unsigned)ta_MountStatus.getLastStateFailStage(),
+           (unsigned)ta_MountStatus.getLastStateRawLen(),
+           (unsigned long)ta_MountStatus.getStateFailCount(),
+           (unsigned)ta_MountStatus.getLastStateElapsedMs());
+  server.send(200, "text/plain", buf);
+}
 
 void TeenAstroWifi::handleLx200Cmd()
 {
@@ -707,7 +844,7 @@ void TeenAstroWifi::handleLx200Cmd()
     server.send(400, "text/plain", "");
     return;
   }
-  s_client->setTimeout(CmdTimeout > 0 ? (unsigned long)CmdTimeout * 2 : 30);
+  s_client->setTimeout(CmdTimeout > 0 ? (unsigned long)CmdTimeout : (unsigned long)TIMEOUT_CMD);
   char buf[256] = "";
   // Generic LX200 query passthrough; form handlers in Configuration_*.cpp use typed s_client methods.
   LX200RETURN ret = s_client->get(q.c_str(), buf, sizeof(buf));
@@ -740,6 +877,8 @@ void TeenAstroWifi::restartStationAssociation()
   WiFi.mode(WIFI_STA);
 #if defined(ARDUINO_ARCH_ESP8266)
   WiFi.setSleepMode(WiFiSleepType::WIFI_NONE_SLEEP);
+#elif defined(ARDUINO_ARCH_ESP32)
+  WiFi.setSleep(false);
 #endif
   WiFi.begin(wifi_sta_ssid[activeWifiMode], wifi_sta_pwd[activeWifiMode]);
 #ifdef ARDUINO_LOLIN_C3_MINI
@@ -849,7 +988,7 @@ void TeenAstroWifi::update()
     // new client
     if (!cmdSvrClient && cmdSvr.hasClient()) {
       cmdSvrClient = cmdSvr.available();
-      clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
+      clientTime = millis() + CMD_TCP_IDLE_MS;
       lastClientCmdMs = millis();
       writeBuffer[0] = 0;
       writeBufferPos = 0;
@@ -929,7 +1068,7 @@ void TeenAstroWifi::update()
           cmdDone = true;
           lastClientCmdMs = millis();
           if (activeWifiConnectMode == WifiConnectMode::AutoClose)
-            clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
+            clientTime = millis() + CMD_TCP_IDLE_MS;
           break;
         }
 
@@ -952,10 +1091,13 @@ void TeenAstroWifi::update()
         cmdDone = true;
         lastClientCmdMs = millis();
         if (activeWifiConnectMode == WifiConnectMode::AutoClose)
-          clientTime = millis() + (unsigned long)(CmdTimeout + 2) * 1000UL;
+          clientTime = millis() + CMD_TCP_IDLE_MS;
       }
     }
   }
+#ifdef SHC_HAS_ALPACA
+  alpaca.update();
+#endif
 }
 
 bool TeenAstroWifi::isWifiOn()

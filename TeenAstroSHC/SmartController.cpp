@@ -5,6 +5,21 @@
 #ifdef EMU_SHC
 #include "u8g2_sdl2.h"
 #endif
+#ifndef SHC_I2C_SCL
+#define SHC_I2C_SCL U8X8_PIN_NONE
+#endif
+#ifndef SHC_I2C_SDA
+#define SHC_I2C_SDA U8X8_PIN_NONE
+#endif
+
+static void rebootSHC()
+{
+#if defined(ARDUINO_ARCH_ESP32)
+  ESP.restart();
+#elif defined(ESP8266)
+  ESP.reset();
+#endif
+}
 
 void SmartHandController::setup(
   const char version[], 
@@ -14,7 +29,9 @@ void SmartHandController::setup(
   const OLED model,
   const uint8_t nSubmodel)
 {
-#ifdef ARDUINO_LOLIN_C3_MINI
+#if defined(SHC_SERIAL_RX) && defined(SHC_SERIAL_TX)
+  Ser.begin(SerialBaud, SERIAL_8N1, SHC_SERIAL_RX, SHC_SERIAL_TX);
+#elif defined(ARDUINO_LOLIN_C3_MINI)
   Ser.begin(SerialBaud, SERIAL_8N1, RX, TX);
 #else
   Ser.begin(SerialBaud);
@@ -45,10 +62,26 @@ void SmartHandController::setup(
   switch (model)
   {
   case OLED_SH1106:
-    display = new U8G2_EXT_SH1106_128X64_NONAME_1_HW_I2C(U8G2_R0);
+    if (!(submodel < num_supported_display))
+    {
+      submodel = 0;
+      EEPROM.write(EEPROM_DISPLAYSUBMODEL, 0);
+    }
+#if defined(SHC_USE_SW_I2C)
+    if (submodel == 1)
+      display = new U8G2_EXT_SH1106_128X64_WINSTAR_F_SW_I2C(U8G2_R0, i2cScl, i2cSda);
+    else
+      display = new U8G2_EXT_SH1106_128X64_NONAME_F_SW_I2C(U8G2_R0, i2cScl, i2cSda);
+#else
+    display = new U8G2_EXT_SH1106_128X64_NONAME_1_HW_I2C(U8G2_R0, U8X8_PIN_NONE, SHC_I2C_SCL, SHC_I2C_SDA);
+#endif
     break;
   case OLED_SSD1306:
-    display = new U8G2_EXT_SSD1306_128X64_NONAME_F_HW_I2C(U8G2_R0);
+#if defined(SHC_USE_SW_I2C)
+    display = new U8G2_EXT_SSD1306_128X64_NONAME_F_SW_I2C(U8G2_R0, i2cScl, i2cSda);
+#else
+    display = new U8G2_EXT_SSD1306_128X64_NONAME_F_HW_I2C(U8G2_R0, U8X8_PIN_NONE, SHC_I2C_SCL, SHC_I2C_SDA);
+#endif
     break;
   case OLED_SSD1309:
     if (!(submodel < num_supported_display))
@@ -56,12 +89,19 @@ void SmartHandController::setup(
       submodel = 0;
       EEPROM.write(EEPROM_DISPLAYSUBMODEL, 0);
     }
-    if (submodel == 0)
-      display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0);
-    else if (submodel == 1)
-      display = new U8G2_EXT_SSD1309_128X64_NONAME2_F_HW_I2C(U8G2_R0);
+#if defined(SHC_USE_SW_I2C)
+    if (submodel == 1)
+      display = new U8G2_EXT_SSD1309_128X64_NONAME2_F_SW_I2C(U8G2_R0, i2cScl, i2cSda);
     else
-      display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0);
+      display = new U8G2_EXT_SSD1309_128X64_NONAME_F_SW_I2C(U8G2_R0, i2cScl, i2cSda);
+#else
+    if (submodel == 0)
+      display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0, U8X8_PIN_NONE, SHC_I2C_SCL, SHC_I2C_SDA);
+    else if (submodel == 1)
+      display = new U8G2_EXT_SSD1309_128X64_NONAME2_F_HW_I2C(U8G2_R0, U8X8_PIN_NONE, SHC_I2C_SCL, SHC_I2C_SDA);
+    else
+      display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0, U8X8_PIN_NONE, SHC_I2C_SCL, SHC_I2C_SDA);
+#endif
     break;
   }
 #endif
@@ -73,11 +113,17 @@ void SmartHandController::setup(
   }
 
   display->begin();
+  maxContrast = EEPROM.read(EEPROM_Contrast);
+  if (maxContrast == 0)
+    maxContrast = 220;
+  display->setContrast(maxContrast);
   drawIntro();
   buttonPad.setup(pin, active, EEPROM_BSPEED, SHCrotated);
   tickButtons();
-  maxContrast = EEPROM.read(EEPROM_Contrast);
-  display->setContrast(maxContrast);
+#ifdef SHC_STARTUP_BUTTON_TEST
+  // After Pad/WiFi pin restore — same bias as runtime.
+  showStartupButtons(pin, active);
+#endif
   displayT1 = EEPROM.read(EEPROM_T1);
   if (displayT1 < 3)
   {
@@ -370,28 +416,26 @@ void SmartHandController::update()
     DisplayMessage(T_PRESS_KEY, T_TO_REBOOT "...", -1);
     DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
 
-#ifdef ARDUINO_D1_MINI32
-    ESP.restart();
-#endif
-#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
-    ESP.reset();
-#endif
+    rebootSHC();
     return;
   }
   if (ta_MountStatus.notResponding())
   {
+#if defined(ARDUINO_ARCH_ESP32)
+    // ESP32 WiFi serving config pages often causes transient MainUnit UART misses
+    // (Wemos usually still answers in time). Do not reboot during/after web I/O.
+    if (TeenAstroWifi::webIoGrace())
+    {
+      ta_MountStatus.removeLastConnectionFailure();
+      return;
+    }
+#endif
     display->sleepOff();
     buttonPad.setMenuMode();
     DisplayMessage("!! " T_ERROR " !!", T_NOT_CONNECTED, -1);
     DisplayMessage(T_DEVICE, T_WILL_REBOOT "...", 1000);
 
-#ifdef ARDUINO_D1_MINI32
-    ESP.restart();
-#endif
-#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
-    ESP.reset();
-#endif
-
+    rebootSHC();
   }
 
   manualMove(moving);

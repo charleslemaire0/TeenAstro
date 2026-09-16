@@ -48,7 +48,7 @@ void TeenAstroWifi::handleConfigurationEncoders()
     return;
   }
   sendHtmlStart();
-  char temp[320] = "";
+  char temp[416] = "";
   String data;
 
   preparePage(data, ServerPage::Encoders);
@@ -74,7 +74,7 @@ void TeenAstroWifi::handleConfigurationEncoders()
   for (uint8_t k = 0; k < 8; k++)
   {
     char opt[60];
-    sprintf(opt, "<option %svalue='%d'>%s</option>", (k == syncMode) ? "selected " : "", k, modeLabels[k]);
+    snprintf(opt, sizeof(opt), "<option %svalue='%d'>%s</option>", (k == syncMode) ? "selected " : "", k, modeLabels[k]);
     data += opt;
   }
   data += FPSTR(html_configEncoders_2);
@@ -85,15 +85,15 @@ void TeenAstroWifi::handleConfigurationEncoders()
   {
     const float ppd = (ax == 1 ? (float)ta_MountStatus.getCfgPPD1()
                                : (float)ta_MountStatus.getCfgPPD2()) / 100.0f;
-    sprintf_P(temp, html_configPPDAxis, ax, ppd, ax, ax);
+    snprintf_P(temp, sizeof(temp), html_configPPDAxis, ax, ppd, ax, ax);
     data += temp;
     sendHtml(data);
 
     const bool reverse = ta_MountStatus.getCfgEncReverse(ax - 1);
-    sprintf_P(temp, html_configRotEAxis_1, ax);
+    snprintf_P(temp, sizeof(temp), html_configRotEAxis_1, ax);
     data += temp;
     data += reverse ? FPSTR(html_configRotEAxis_r) : FPSTR(html_configRotEAxis_d);
-    sprintf_P(temp, html_configRotEAxis_2, ax);
+    snprintf_P(temp, sizeof(temp), html_configRotEAxis_2, ax);
     data += temp;
     sendHtml(data);
   }
@@ -124,8 +124,8 @@ bool TeenAstroWifi::processConfigurationEncodersGet()
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
     char argPPD[10], argRot[10];
-    sprintf(argPPD, "ppdEa%d", ax);
-    sprintf(argRot, "mrotE%d", ax);
+    snprintf(argPPD, sizeof(argPPD), "ppdEa%d", ax);
+    snprintf(argRot, sizeof(argRot), "mrotE%d", ax);
 
     v = server.arg(argPPD);
     if (v != "")

@@ -80,7 +80,13 @@ void TeenAstroAlpaca::stop()
 
 void TeenAstroAlpaca::update()
 {
-  if (m_server) m_server->handleClient();
+  if (m_server)
+  {
+    m_telescope.prepareForRequest();
+    m_telescope.setHandlerActive(true);
+    m_server->handleClient();
+    m_telescope.setHandlerActive(false);
+  }
   if (m_discoveryStarted) serviceDiscovery();
   // Advance any deferred slew/sync/flip without blocking the request handler.
   m_telescope.tick();

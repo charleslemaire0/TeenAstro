@@ -5,13 +5,15 @@
 #include <u8g2_ext.h>
 #include <TeenAstroPad.h>
 
-// Platform-specific serial port alias
-#ifdef ARDUINO_ESP8266_WEMOS_D1MINI
-#define Ser Serial
-#endif
+// Platform-specific serial port alias (MainUnit link)
 #ifdef ARDUINO_LOLIN_C3_MINI
 #define Ser Serial1
+#elif defined(ARDUINO_LOLIN_S3_MINI) || defined(ARDUINO_ESP32S3_DEV)
+#define Ser Serial0
+#else
+#define Ser Serial
 #endif
+
 
 #ifndef Product
 #define Product "Teenastro SHC"
@@ -81,6 +83,7 @@ private:
   long angleDEC = 0;
   void manualMove(bool &moving);
   void drawIntro();
+  void showStartupButtons(const int pin[7], const bool active[7]);
   void updateMainDisplay(PAGES page);
   void tickButtons();
   bool buttonPressed();
