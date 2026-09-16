@@ -55,12 +55,12 @@ void TeenAstroWifi::handleConfigurationMount()
   const bool hadMutation = processConfigurationMountGet();
   if (hadMutation && !restartRequired_t)
   {
+    ta_MountStatus.invalidateAllConfig();
     sendRedirectAfterMutation("/configuration_mount.htm");
     return;
   }
   sendHtmlStart();
   char temp[320] = "";
-  char temp1[50] = "";
   String data;
   int selectedmount = 0;
   preparePage(data, ServerPage::Mount);
@@ -100,7 +100,9 @@ void TeenAstroWifi::handleConfigurationMount()
     data += FPSTR(html_configMountName3);
     sendHtml(data);
 
+    // Mount type / motors / encoders from :GXAS#; refraction flags from :GXCS#.
     ta_MountStatus.updateMount();
+    ta_MountStatus.updateAllConfig();
 
     data += FPSTR(html_configMount_1);
     ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_GEM ? data += "<option selected value='1'>German Eq</option>" : data += "<option value='1'>German Eq</option>";
@@ -111,37 +113,35 @@ void TeenAstroWifi::handleConfigurationMount()
 
     sprintf_P(temp, html_Opt_1, "motors");
     data += temp;
-    ta_MountStatus.motorsEnable() ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
-    !ta_MountStatus.motorsEnable() ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
+    ta_MountStatus.motorsEnableCached() ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
+    !ta_MountStatus.motorsEnableCached() ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
     data += "</select> Enable Motors</form><br/>\r\n";
     sendHtml(data);
 
     sprintf_P(temp, html_Opt_1, "encoders");
     data += temp;
-    ta_MountStatus.encodersEnable() ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
-    !ta_MountStatus.encodersEnable() ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
+    ta_MountStatus.encodersEnableCached() ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
+    !ta_MountStatus.encodersEnableCached() ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
     data += "</select> Enable Encoders</form><br/>\r\n";
     sendHtml(data);
 
     data += FPSTR(html_configRefraction);
     if (!ta_MountStatus.isAltAz())
     {
-      if (s_client->getPolarAlignEnabled(temp1, sizeof(temp1)) != LX200_GETVALUEFAILED)
-      {
-        sprintf_P(temp, html_Opt_1, "polar");
-        data += temp;
-        temp1[0] == 'y' ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
-        temp1[0] == 'n' ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
-        data += "</select> Consider Refraction for Pole definition</form><br/>\r\n";
-        sendHtml(data);
-      }
+      sprintf_P(temp, html_Opt_1, "polar");
+      data += temp;
+      const bool refrPole = ta_MountStatus.hasConfig() && ta_MountStatus.getCfgRefrPole();
+      refrPole ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
+      !refrPole ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
+      data += "</select> Consider Refraction for Pole definition</form><br/>\r\n";
+      sendHtml(data);
     }
-    if (s_client->getGoToEnabled(temp1, sizeof(temp1)) != LX200_GETVALUEFAILED)
     {
       sprintf_P(temp, html_Opt_1, "gotor");
       data += temp;
-      temp1[0] == 'y' ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
-      temp1[0] == 'n' ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
+      const bool refrGoto = ta_MountStatus.hasConfig() && ta_MountStatus.getCfgRefrGoto();
+      refrGoto ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
+      !refrGoto ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
       data += "</select> Consider Refraction for Goto and Sync</form><br/>\r\n";
       sendHtml(data);
     }

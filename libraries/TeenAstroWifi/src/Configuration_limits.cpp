@@ -88,6 +88,7 @@ void TeenAstroWifi::handleConfigurationLimits()
   s_client->setTimeout(WebTimeout);
   if (processConfigurationLimitsGet())
   {
+    ta_MountStatus.invalidateAllConfig();
     sendRedirectAfterMutation("/configuration_limits.htm");
     return;
   }
@@ -97,80 +98,80 @@ void TeenAstroWifi::handleConfigurationLimits()
 
   preparePage(data, ServerPage::Limits);
   sendHtml(data);
+
+  // Mount type (GEM meridian UI) from :GXAS#; limit values from :GXCS#.
   ta_MountStatus.updateMount();
+  ta_MountStatus.updateAllConfig();
   data += "<div class='card'>";
 
+  if (!ta_MountStatus.hasConfig())
+  {
+    data += "<p>Mount config unavailable</p></div>";
+    data += FPSTR(html_pageFooter);
+    sendHtml(data);
+    sendHtmlDone(data);
+    s_handlerBusy = false;
+    return;
+  }
+
   // Overhead and Horizon Limits
-  int minAlt = 0;
-  if (s_client->getMinAltitude(minAlt) != LX200_VALUEGET) minAlt = 0;
-  sprintf_P(temp, html_configMinAlt, minAlt);
+  sprintf_P(temp, html_configMinAlt, (int)ta_MountStatus.getCfgMinAlt());
   data += temp;
   sendHtml(data);
 
-  int maxAlt = 0;
-  if (s_client->getMaxAltitude(maxAlt) != LX200_VALUEGET) maxAlt = 0;
-  sprintf_P(temp, html_configMaxAlt, maxAlt);
+  sprintf_P(temp, html_configMaxAlt, (int)ta_MountStatus.getCfgMaxAlt());
   data += temp;
   sendHtml(data);
 
   // Meridian Limits (GEM only)
   if (ta_MountStatus.getMount() == TeenAstroMountStatus::MOUNT_TYPE_GEM)
   {
-    char underPole[20];
-    if (s_client->getUnderPoleLimit(underPole, sizeof(underPole)) == LX200_VALUEGET)
-    {
-      float angle = (float)strtol(underPole, NULL, 10) / 10;
-      sprintf_P(temp, html_configUnderPole, angle);
-      data += temp;
-    }
-    char merE[20], merW[20];
-    if (s_client->getLimitEast(merE, sizeof(merE)) == LX200_VALUEGET &&
-        s_client->getLimitWest(merW, sizeof(merW)) == LX200_VALUEGET)
-    {
-      int degPastMerE = (int)round(strtol(merE, NULL, 10) * 15.0 / 60.0);
-      sprintf_P(temp, html_configPastMerE, degPastMerE);
-      data += temp;
-      int degPastMerW = (int)round(strtol(merW, NULL, 10) * 15.0 / 60.0);
-      sprintf_P(temp, html_configPastMerW, degPastMerW);
-      data += temp;
-    }
+    const float underPole = ta_MountStatus.getCfgUnderPole10() / 10.0f;
+    sprintf_P(temp, html_configUnderPole, underPole);
+    data += temp;
+
+    // :GXCS# meridian values match :GXLE#/:GXLW# (arcmin×4) → degrees via /4
+    const int degPastMerE = (int)round(ta_MountStatus.getCfgMeridianE() / 4.0);
+    const int degPastMerW = (int)round(ta_MountStatus.getCfgMeridianW() / 4.0);
+    sprintf_P(temp, html_configPastMerE, degPastMerE);
+    data += temp;
+    sprintf_P(temp, html_configPastMerW, degPastMerW);
+    data += temp;
     #ifdef keepTrackingOnWhenFarFromPole
-    int miDist = 181;
-    if (s_client->getMinDistFromPole(miDist) != LX200_VALUEGET) miDist = 181;
-    sprintf_P(temp, html_configMiDistanceFromPole, miDist);
+    sprintf_P(temp, html_configMiDistanceFromPole, (int)ta_MountStatus.getCfgMinDistPole());
     data += temp;
     #endif
     sendHtml(data);
   }
 
-  // Axis limits (user EEPROM :GXLA#–D# vs mount-type :GXlA#–D#)
+  // Axis limits: user values from :GXCS#; mount-type bounds still need :GXlA#–D#
   bool ok = true;
-  int anglemin = 0, anglemax = 0, angle_i_min = 0, angle_i_max = 0;
+  int angle_i_min = 0, angle_i_max = 0;
 
-  ok =  s_client->getUserAxisLimit('A', anglemin) == LX200_VALUEGET;
-  ok &= s_client->getUserAxisLimit('B', anglemax) == LX200_VALUEGET;
-  ok &= s_client->getMountTypeAxisLimit('A', angle_i_min) == LX200_VALUEGET;
+  ok =  s_client->getMountTypeAxisLimit('A', angle_i_min) == LX200_VALUEGET;
   ok &= s_client->getMountTypeAxisLimit('B', angle_i_max) == LX200_VALUEGET;
 
   if (ok)
   {
-    sprintf_P(temp, html_configMinAxis1, (float)anglemin / 10.0, (float)angle_i_min, (float)anglemax / 10.0, (float)angle_i_min, (float)anglemax / 10.0);
+    const float anglemin = ta_MountStatus.getCfgAxis1Min() / 10.0f;
+    const float anglemax = ta_MountStatus.getCfgAxis1Max() / 10.0f;
+    sprintf_P(temp, html_configMinAxis1, anglemin, (float)angle_i_min, anglemax, (float)angle_i_min, anglemax);
     data += temp;
-    sprintf_P(temp, html_configMaxAxis1, (float)anglemax / 10.0, (float)anglemin / 10.0, (float)angle_i_max, (float)anglemin / 10.0, (float)angle_i_max);
+    sprintf_P(temp, html_configMaxAxis1, anglemax, anglemin, (float)angle_i_max, anglemin, (float)angle_i_max);
     data += temp;
     sendHtml(data);
   }
 
-  ok =  s_client->getUserAxisLimit('C', anglemin) == LX200_VALUEGET;
-  ok &= s_client->getUserAxisLimit('D', anglemax) == LX200_VALUEGET;
-  ok &= s_client->getMountTypeAxisLimit('C', angle_i_min) == LX200_VALUEGET;
+  ok =  s_client->getMountTypeAxisLimit('C', angle_i_min) == LX200_VALUEGET;
   ok &= s_client->getMountTypeAxisLimit('D', angle_i_max) == LX200_VALUEGET;
 
   if (ok)
   {
-    sprintf_P(temp, html_configMinAxis2, (float)anglemin / 10.0, (float)angle_i_min, (float)anglemax / 10.0, (float)angle_i_min, (float)anglemax / 10.0);
+    const float anglemin = ta_MountStatus.getCfgAxis2Min() / 10.0f;
+    const float anglemax = ta_MountStatus.getCfgAxis2Max() / 10.0f;
+    sprintf_P(temp, html_configMinAxis2, anglemin, (float)angle_i_min, anglemax, (float)angle_i_min, anglemax);
     data += temp;
-    sprintf_P(temp, html_configMaxAxis2, (float)anglemax / 10.0, (float)anglemin / 10.0, (float)angle_i_max, (float)anglemin / 10.0, (float)angle_i_max);
+    sprintf_P(temp, html_configMaxAxis2, anglemax, anglemin, (float)angle_i_max, anglemin, (float)angle_i_max);
     data += temp;
     sendHtml(data);
   }

@@ -29,6 +29,46 @@ static bool focB64Decode(const char* in, int inLen, uint8_t* out) {
 }
 static uint16_t getU16LE(const uint8_t* p, int off) { return (uint16_t)p[off] | ((uint16_t)p[off+1] << 8); }
 
+// Short-lived decoded :FA# cache (large serial payload).
+struct FocuserCfgCache {
+  unsigned long ms = 0;
+  bool valid = false;
+  uint8_t pkt[FOC_CFG_BIN];
+};
+static FocuserCfgCache s_focCfgCache;
+static const unsigned long FOC_CFG_CACHE_MS = 3000;
+static void invalidateFocuserCfgCache() { s_focCfgCache.valid = false; }
+
+static bool ensureFocuserCfgCache(LX200Client* client)
+{
+  if (s_focCfgCache.valid && (millis() - s_focCfgCache.ms < FOC_CFG_CACHE_MS))
+    return true;
+
+  char raw[220];
+  if (client->getFocuserAllConfig(raw, sizeof(raw)) != LX200_VALUEGET)
+  {
+    s_focCfgCache.valid = false;
+    return false;
+  }
+  int len = (int)strlen(raw);
+  if (raw[len - 1] == '#') len--;
+  if (len != FOC_CFG_B64 || !focB64Decode(raw, len, s_focCfgCache.pkt))
+  {
+    s_focCfgCache.valid = false;
+    return false;
+  }
+  uint8_t xorChk = 0;
+  for (int i = 0; i < FOC_CFG_BIN - 1; i++) xorChk ^= s_focCfgCache.pkt[i];
+  if (xorChk != s_focCfgCache.pkt[FOC_CFG_BIN - 1])
+  {
+    s_focCfgCache.valid = false;
+    return false;
+  }
+  s_focCfgCache.ms = millis();
+  s_focCfgCache.valid = true;
+  return true;
+}
+
 // -----------------------------------------------------------------------------------
 // configuration_focuser
 const char html_configParkFocuser[] PROGMEM =
@@ -149,6 +189,7 @@ void TeenAstroWifi::handleConfigurationFocuser()
   s_client->setTimeout(WebTimeout);
   if (processConfigurationFocuserGet())
   {
+    invalidateFocuserCfgCache();
     sendRedirectAfterMutation("/configuration_focuser.htm");
     return;
   }
@@ -159,8 +200,7 @@ void TeenAstroWifi::handleConfigurationFocuser()
   sendHtml(data);
   data += "<div class='card'>";
 
-  char raw[220];
-  if (s_client->getFocuserAllConfig(raw, sizeof(raw)) != LX200_VALUEGET)
+  if (!ensureFocuserCfgCache(s_client))
   {
     data += "<p>Focuser communication error</p>";
     data += "</div>";
@@ -170,32 +210,7 @@ void TeenAstroWifi::handleConfigurationFocuser()
     s_handlerBusy = false;
     return;
   }
-
-  int len = (int)strlen(raw);
-  if (raw[len - 1] == '#') len--;
-  uint8_t pkt[FOC_CFG_BIN];
-  if (len != FOC_CFG_B64 || !focB64Decode(raw, len, pkt))
-  {
-    data += "<p>Focuser binary decode error</p>";
-    data += "</div>";
-    data += FPSTR(html_pageFooter);
-    sendHtml(data);
-    sendHtmlDone(data);
-    s_handlerBusy = false;
-    return;
-  }
-  uint8_t xorChk = 0;
-  for (int i = 0; i < FOC_CFG_BIN - 1; i++) xorChk ^= pkt[i];
-  if (xorChk != pkt[FOC_CFG_BIN - 1])
-  {
-    data += "<p>Focuser checksum error</p>";
-    data += "</div>";
-    data += FPSTR(html_pageFooter);
-    sendHtml(data);
-    sendHtmlDone(data);
-    s_handlerBusy = false;
-    return;
-  }
+  const uint8_t* pkt = s_focCfgCache.pkt;
 
   int park      = (int)getU16LE(pkt, 0);
   int maxPos    = (int)getU16LE(pkt, 2);

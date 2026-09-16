@@ -57,30 +57,33 @@ void TeenAstroWifi::handleConfigurationTracking()
   s_client->setTimeout(WebTimeout);
   if (processConfigurationTrackingGet())
   {
+    ta_MountStatus.invalidateAllConfig();
     sendRedirectAfterMutation("/configuration_tracking.htm");
     return;
   }
-  ta_MountStatus.updateMount();
 
   sendHtmlStart();
   char temp[320] = "";
-  char temp1[50] = "";
   String data;
   preparePage(data, ServerPage::Tracking);
   sendHtml(data);
+
+  // Mount state for rate-compensation; :GXCS# for refraction flag.
+  ta_MountStatus.updateMount();
+  ta_MountStatus.updateAllConfig();
 
   data += FPSTR(html_trackButton);
   sendHtml(data);
 
   data += "<div class='card'>";
 
-  // Refraction tracking option
+  // Refraction tracking option (:GXCS# refrFlags bit0)
   data += FPSTR(html_configTrackingOptions);
   sprintf_P(temp, html_Opt_1, "trackr");
   data += temp;
-  if (s_client->getRefractionEnabled(temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "n");
-  temp1[0] == 'y' ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
-  temp1[0] == 'n' ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
+  const bool refrTrack = ta_MountStatus.hasConfig() && ta_MountStatus.getCfgRefrTracking();
+  refrTrack ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
+  !refrTrack ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
   data += "</select> Consider Refraction for Tracking</form><br/>\r\n";
   sendHtml(data);
 

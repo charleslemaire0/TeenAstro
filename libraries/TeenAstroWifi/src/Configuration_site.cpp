@@ -116,6 +116,56 @@ const char html_configElev4[] PROGMEM =
 "</form>"
 "<br />\r\n";
 
+// Short-lived cache of Site page LX200 reads (serial is the bottleneck).
+// Invalidated on any Site mutation so PRG reload shows fresh values.
+struct SitePageCache {
+  unsigned long ms = 0;
+  bool valid = false;
+  int selected = 0;
+  char names[3][32];
+  char tz[20];
+  char lat[20];
+  char lon[20];
+  char elev[20];
+};
+static SitePageCache s_siteCache;
+static const unsigned long SITE_CACHE_MS = 3000;
+
+static void invalidateSiteCache() { s_siteCache.valid = false; }
+
+static bool fillSiteCacheFromMount(LX200Client* client)
+{
+  int selectedsite = 0;
+  if (client->getSelectedSite(selectedsite) != LX200_VALUEGET ||
+      selectedsite < 0 || selectedsite > 3)
+    return false;
+
+  for (int k = 0; k < 3; k++)
+  {
+    if (client->getSiteName(k, s_siteCache.names[k], sizeof(s_siteCache.names[k])) != LX200_VALUEGET)
+      strcpy(s_siteCache.names[k], "?");
+  }
+  if (client->getTimeZoneStr(s_siteCache.tz, sizeof(s_siteCache.tz)) != LX200_VALUEGET)
+    strcpy(s_siteCache.tz, "0");
+  if (client->getLatitudeStr(s_siteCache.lat, sizeof(s_siteCache.lat)) != LX200_VALUEGET)
+    strcpy(s_siteCache.lat, "+00*00*00");
+  if (client->getLongitudeStr(s_siteCache.lon, sizeof(s_siteCache.lon)) != LX200_VALUEGET)
+    strcpy(s_siteCache.lon, "+000*00*00");
+  if (client->getElevation(s_siteCache.elev, sizeof(s_siteCache.elev)) == LX200_GETVALUEFAILED)
+    strcpy(s_siteCache.elev, "+000");
+
+  s_siteCache.selected = selectedsite;
+  s_siteCache.ms = millis();
+  s_siteCache.valid = true;
+  return true;
+}
+
+static bool ensureSiteCache(LX200Client* client)
+{
+  if (s_siteCache.valid && (millis() - s_siteCache.ms < SITE_CACHE_MS))
+    return true;
+  return fillSiteCacheFromMount(client);
+}
 
 void TeenAstroWifi::handleConfigurationSite()
 {
@@ -123,6 +173,7 @@ void TeenAstroWifi::handleConfigurationSite()
   s_client->setTimeout(WebTimeout);
   if (processConfigurationSiteGet())
   {
+    invalidateSiteCache();
     sendRedirectAfterMutation("/configuration_site.htm");
     return;
   }
@@ -152,35 +203,32 @@ void TeenAstroWifi::handleConfigurationSite()
   data += FPSTR(html_siteQuick1a);
   sendHtml(data);
 
-  int selectedsite = 0;
-  if (s_client->getSelectedSite(selectedsite) == LX200_VALUEGET &&
-      selectedsite >= 0 && selectedsite <= 3)
+  if (ensureSiteCache(s_client))
   {
-    char m[32]; char n[32]; char o[32];
-    s_client->getSiteName(0, m, sizeof(m));
-    s_client->getSiteName(1, n, sizeof(n));
-    s_client->getSiteName(2, o, sizeof(o));
+    const int selectedsite = s_siteCache.selected;
     if (allowchange)
     {
       data += FPSTR(html_configSiteSelect1);
       sendHtml(data);
-      const char* siteNames[] = { m, n, o };
       for (int k = 0; k < 3; k++)
       {
         selectedsite == k ? data += "<option selected value='" : data += "<option value='";
         char kc = '0' + k;
         data += kc;
         data += "'>";
-        data += siteNames[k];
+        data += s_siteCache.names[k];
         data += "</option>";
       }
       data += FPSTR(html_configSiteSelect2);
       sendHtml(data);
     }
-    // Name
+    // Name — reuse cached names for sites 0..2 (avoids a 4th :GMx# round-trip).
     char siteName[50];
-    if (s_client->getSiteName(selectedsite, siteName, sizeof(siteName)) != LX200_VALUEGET)
+    if (selectedsite >= 0 && selectedsite <= 2)
+      strncpy(siteName, s_siteCache.names[selectedsite], sizeof(siteName) - 1);
+    else if (s_client->getSiteName(selectedsite, siteName, sizeof(siteName)) != LX200_VALUEGET)
       strcpy(siteName, "error!");
+    siteName[sizeof(siteName) - 1] = '\0';
     data += FPSTR(html_configSiteName1);
     sprintf_P(temp, html_configSiteName2, siteName);
     data += temp;
@@ -188,15 +236,14 @@ void TeenAstroWifi::handleConfigurationSite()
     sendHtml(data);
 
     // Time Zone
-    char tzStr[20];
-    if (s_client->getTimeZoneStr(tzStr, sizeof(tzStr)) != LX200_VALUEGET) strcpy(tzStr, "0");
-    float TShift = -(float)strtof(tzStr, NULL);
+    float TShift = -(float)strtof(s_siteCache.tz, NULL);
     sprintf_P(temp, html_configTimeZone, TShift);
     data += temp;
     sendHtml(data);
 
     // Latitude
-    if (s_client->getLatitudeStr(temp1, sizeof(temp1)) != LX200_VALUEGET) strcpy(temp1, "+00*00*00");
+    strncpy(temp1, s_siteCache.lat, sizeof(temp1) - 1);
+    temp1[sizeof(temp1) - 1] = '\0';
     data += FPSTR(html_configLatNS1);
     sendHtml(data);
     temp1[0] == '+' ? data += "<option selected value='0'>North</option>" : data += "<option value='0'>North</option>";
@@ -218,7 +265,8 @@ void TeenAstroWifi::handleConfigurationSite()
     sendHtml(data);
 
     // Longitude
-    if (s_client->getLongitudeStr(temp1, sizeof(temp1)) != LX200_VALUEGET) strcpy(temp1, "+000*00*00");
+    strncpy(temp1, s_siteCache.lon, sizeof(temp1) - 1);
+    temp1[sizeof(temp1) - 1] = '\0';
     data += FPSTR(html_configLongWE1);
     temp1[0] == '+' ? data += "<option selected value='0'>West</option>" : data += "<option value='0'>West</option>";
     temp1[0] == '-' ? data += "<option selected value='1'>East</option>" : data += "<option value='1'>East</option>";
@@ -239,7 +287,8 @@ void TeenAstroWifi::handleConfigurationSite()
     sendHtml(data);
 
     // Elevation
-    if (s_client->getElevation(temp1, sizeof(temp1)) == LX200_GETVALUEFAILED) strcpy(temp1, "+000");
+    strncpy(temp1, s_siteCache.elev, sizeof(temp1) - 1);
+    temp1[sizeof(temp1) - 1] = '\0';
     if (temp1[0] == '+') temp1[0] = '0';
     data += FPSTR(html_configElev1);
     sprintf_P(temp, html_configElev2, temp1);

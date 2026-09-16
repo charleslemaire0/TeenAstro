@@ -112,12 +112,12 @@ void TeenAstroWifi::handleConfigurationMotors()
   const bool hadMutation = processConfigurationMotorsGet();
   if (hadMutation && !restartRequired_t1)
   {
+    ta_MountStatus.invalidateAllConfig();
     sendRedirectAfterMutation("/configuration_motors.htm");
     return;
   }
   sendHtmlStart();
   char temp[320] = "";
-  char temp2[50] = "";
   String data;
 
   preparePage(data, ServerPage::Motors);
@@ -134,107 +134,85 @@ void TeenAstroWifi::handleConfigurationMotors()
     return;
   }
 
+  ta_MountStatus.updateAllConfig();
   data += "<div class='card'>";
 
-  // Settle time
-  if (s_client->getStepsPerSecond(temp2, sizeof(temp2)) == LX200_VALUEGET)
+  if (!ta_MountStatus.hasConfig())
   {
-    int wt = (int)strtol(temp2, NULL, 10);
-    sprintf_P(temp, html_configSettleTime, wt);
+    data += "<p>Mount config unavailable</p></div>";
+    data += FPSTR(html_pageFooter);
+    sendHtml(data);
+    sendHtmlDone(data);
+    s_handlerBusy = false;
+    return;
+  }
+
+  // Settle time
+  sprintf_P(temp, html_configSettleTime, (int)ta_MountStatus.getCfgSettleTime());
+  data += temp;
+  sendHtml(data);
+
+  // Per-axis parameters using loops (axis index 1/2 in forms; cache is 0/1)
+  for (uint8_t ax = 1; ax <= 2; ax++)
+  {
+    const int cax = ax - 1;
+    const bool reverse = ta_MountStatus.getCfgReverse(cax);
+    sprintf_P(temp, html_configRotAxis_1, ax);
+    data += temp;
+    data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
+    sprintf_P(temp, html_configRotAxis_2, ax);
     data += temp;
     sendHtml(data);
   }
 
-  // Per-axis parameters using loops
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    bool reverse = false;
-    if (s_client->readReverse(ax, reverse) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configRotAxis_1, ax);
-      data += temp;
-      data += reverse ? FPSTR(html_configRotAxis_r) : FPSTR(html_configRotAxis_d);
-      sprintf_P(temp, html_configRotAxis_2, ax);
-      data += temp;
-      sendHtml(data);
-    }
+    const float gear = ta_MountStatus.getCfgGear(ax - 1) / 1000.0f;
+    sprintf_P(temp, html_configGeAxis, gear, ax, ax);
+    data += temp;
+    sendHtml(data);
   }
 
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    float gear = 0;
-    if (s_client->readTotGear(ax, gear) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configGeAxis, gear, ax, ax);
-      data += temp;
-      sendHtml(data);
-    }
+    sprintf_P(temp, html_configStAxis, (int)ta_MountStatus.getCfgStepRot(ax - 1), ax, ax);
+    data += temp;
+    sendHtml(data);
   }
 
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    float step;
-    if (s_client->readStepPerRot(ax, step) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configStAxis, (int)step, ax, ax);
-      data += temp;
-      sendHtml(data);
-    }
+    sprintf_P(temp, html_configMuAxis, (int)pow(2., (double)ta_MountStatus.getCfgMicro(ax - 1)), ax, ax);
+    data += temp;
+    sendHtml(data);
   }
 
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    uint8_t micro;
-    if (s_client->readMicro(ax, micro) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configMuAxis, (int)pow(2., micro), ax, ax);
-      data += temp;
-      sendHtml(data);
-    }
+    sprintf_P(temp, html_configBlAxis, (int)ta_MountStatus.getCfgBacklash(ax - 1), ax, ax);
+    data += temp;
+    sendHtml(data);
   }
 
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    float backlash;
-    if (s_client->readBacklash(ax, backlash) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configBlAxis, (int)backlash, ax, ax);
-      data += temp;
-      sendHtml(data);
-    }
+    sprintf_P(temp, html_configBlRateAxis, (int)ta_MountStatus.getCfgBacklashRate(ax - 1), ax, ax);
+    data += temp;
+    sendHtml(data);
   }
 
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    float blRate;
-    if (s_client->readBacklashRate(ax, blRate) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configBlRateAxis, (int)blRate, ax, ax);
-      data += temp;
-      sendHtml(data);
-    }
+    sprintf_P(temp, html_configLCAxis, (unsigned int)ta_MountStatus.getCfgLowCurr(ax - 1), ax, ax);
+    data += temp;
+    sendHtml(data);
   }
 
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    unsigned int lowC;
-    if (s_client->readLowCurr(ax, lowC) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configLCAxis, lowC, ax, ax);
-      data += temp;
-      sendHtml(data);
-    }
-  }
-
-  for (uint8_t ax = 1; ax <= 2; ax++)
-  {
-    unsigned int highC;
-    if (s_client->readHighCurr(ax, highC) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configHCAxis, highC, ax, ax);
-      data += temp;
-      sendHtml(data);
-    }
+    sprintf_P(temp, html_configHCAxis, (unsigned int)ta_MountStatus.getCfgHighCurr(ax - 1), ax, ax);
+    data += temp;
+    sendHtml(data);
   }
 
   // Silent mode (only for advanced drivers: TMC2130, TMC5160, TMC2660)
@@ -242,16 +220,13 @@ void TeenAstroWifi::handleConfigurationMotors()
   {
     for (uint8_t ax = 1; ax <= 2; ax++)
     {
-      uint8_t silent;
-      if (s_client->readSilentStep(ax, silent) == LX200_VALUEGET)
-      {
-        sprintf_P(temp, html_configSilentAxis_1, ax);
-        data += temp;
-        data += silent ? FPSTR(html_configSilentAxis_r) : FPSTR(html_configSilentAxis_d);
-        sprintf_P(temp, html_configSilentAxis_2, ax);
-        data += temp;
-        sendHtml(data);
-      }
+      const bool silent = ta_MountStatus.getCfgSilent(ax - 1);
+      sprintf_P(temp, html_configSilentAxis_1, ax);
+      data += temp;
+      data += silent ? FPSTR(html_configSilentAxis_r) : FPSTR(html_configSilentAxis_d);
+      sprintf_P(temp, html_configSilentAxis_2, ax);
+      data += temp;
+      sendHtml(data);
     }
   }
 

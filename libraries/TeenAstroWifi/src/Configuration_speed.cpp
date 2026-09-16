@@ -66,6 +66,7 @@ void TeenAstroWifi::handleConfigurationSpeed()
   // GET forms leave ?R0=… in the URL; a normal refresh would re-apply uploads. PRG: apply once, then 303.
   if (processConfigurationSpeedGet())
   {
+    ta_MountStatus.invalidateAllConfig();
     sendRedirectAfterMutation("/configuration_speed.htm");
     return;
   }
@@ -77,12 +78,21 @@ void TeenAstroWifi::handleConfigurationSpeed()
   preparePage(data, ServerPage::Speed);
   sendHtml(data);
 
-  ta_MountStatus.updateMount();
+  ta_MountStatus.updateAllConfig();
   data += "<div class='card'>";
 
-  // Default speed after start
-  int deadband = 4;
-  s_client->getDeadband(deadband);
+  if (!ta_MountStatus.hasConfig())
+  {
+    data += "<p>Mount config unavailable</p></div>";
+    data += FPSTR(html_pageFooter);
+    sendHtml(data);
+    sendHtmlDone(data);
+    s_handlerBusy = false;
+    return;
+  }
+
+  // Default speed after start (:GXCS# defaultRate)
+  int deadband = (int)ta_MountStatus.getCfgDefaultRate();
   deadband = min(max(deadband, 0), 4);
   data += FPSTR(html_configRateD_0);
   const char* speedNames[] = { "Guiding", "Slow", "Medium", "Fast", "Max" };
@@ -95,29 +105,25 @@ void TeenAstroWifi::handleConfigurationSpeed()
   data += FPSTR(html_configRateD_1);
   sendHtml(data);
 
-  // Max rate
-  int maxRate = 0;
-  s_client->getMaxRate(maxRate);
-  sprintf_P(temp, html_configMaxRate, maxRate);
+  sprintf_P(temp, html_configMaxRate, (int)ta_MountStatus.getCfgMaxRate());
   data += temp;
   sendHtml(data);
 
-  // Speed rates 3..0
-  float rate;
+  const float rates[4] = {
+    ta_MountStatus.getCfgGuideRate(),
+    ta_MountStatus.getCfgSlowRate(),
+    ta_MountStatus.getCfgMediumRate(),
+    ta_MountStatus.getCfgFastRate()
+  };
   const char* rateFmts[] = { html_configRate0, html_configRate1, html_configRate2, html_configRate3 };
   for (int idx = 3; idx >= 0; idx--)
   {
-    rate = 0;
-    s_client->getSpeedRate(idx, rate);
-    sprintf_P(temp, rateFmts[idx], rate);
+    sprintf_P(temp, rateFmts[idx], rates[idx]);
     data += temp;
     sendHtml(data);
   }
 
-  // Acceleration
-  float acc = 0;
-  s_client->getAcceleration(acc);
-  sprintf_P(temp, html_configAcceleration, acc);
+  sprintf_P(temp, html_configAcceleration, ta_MountStatus.getCfgAcceleration());
   data += temp;
   data += "</div>"; // close card
   sendHtml(data);

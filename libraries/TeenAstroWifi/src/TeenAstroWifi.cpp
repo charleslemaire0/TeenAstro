@@ -174,9 +174,9 @@ unsigned long TeenAstroWifi::s_lastPageMs = 0;
 
 // Minimum interval between full page loads (ms).
 // If a new page is requested within this cooldown, return a lightweight
-// "please wait" that auto-retries after 1 second.  This prevents rapid
-// clicks from queueing heavy serial-IO handlers back to back.
-#define PAGE_COOLDOWN_MS 800
+// "please wait" that auto-retries.  Keeps rapid nav from queueing heavy
+// serial-IO handlers back to back without making Site feel stuck.
+#define PAGE_COOLDOWN_MS 400
 
 bool TeenAstroWifi::busyGuard()
 {
@@ -192,7 +192,7 @@ bool TeenAstroWifi::busyGuard()
     String html;
     html.reserve(256);
     html = F("<!DOCTYPE HTML><html><head>"
-      "<meta http-equiv='refresh' content='1'>"
+      "<meta http-equiv='refresh' content='0.5'>"
       "<meta http-equiv='Cache-Control' content='no-cache'>"
       "</head><body style='background:#0d1117;color:#c9d1d9;"
       "display:flex;justify-content:center;align-items:center;height:90vh;"
@@ -418,8 +418,9 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
     data += " &middot; Board ";
     data += ta_MountStatus.getVB();
     data += " &middot; ";
-    // Index page uses cache-only to avoid updateV() serial round-trip; other pages may call getDriverType().
-    data += stepperDriverName(page == ServerPage::Index ? ta_MountStatus.getDriverTypeCached() : ta_MountStatus.getDriverType());
+    // Prefer cache so preparePage does not force updateV()/GXAS (Control stays live).
+    const bool driverCached = (page != ServerPage::Control);
+    data += stepperDriverName(driverCached ? ta_MountStatus.getDriverTypeCached() : ta_MountStatus.getDriverType());
   }
   else data += "?";
   data += FPSTR(html_header3);
@@ -430,8 +431,9 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   data += "<input type='checkbox' id='navtog'>\n";
   data += page == ServerPage::Index ? FPSTR(html_links1S) : FPSTR(html_links1N);
   data += page == ServerPage::Control ? FPSTR(html_links2S) : FPSTR(html_links2N);
-  // Index: use cached only so mount status is not modified during index build.
-  bool motors = (page == ServerPage::Index) ? ta_MountStatus.motorsEnableCached() : ta_MountStatus.motorsEnable();
+  // Non-Control pages: use cached motors/encoders flags (no GXAS during page chrome).
+  const bool navCached = (page != ServerPage::Control);
+  bool motors = navCached ? ta_MountStatus.motorsEnableCached() : ta_MountStatus.motorsEnable();
   if (motors)
   {
     data += page == ServerPage::Speed ? FPSTR(html_links3S) : FPSTR(html_links3N);
@@ -442,7 +444,7 @@ void TeenAstroWifi::preparePage(String &data, ServerPage page)
   if (motors)
     data += page == ServerPage::Motors ? FPSTR(html_links7S) : FPSTR(html_links7N);
   data += page == ServerPage::Limits ? FPSTR(html_links8S) : FPSTR(html_links8N);
-  bool encoders = (page == ServerPage::Index) ? ta_MountStatus.encodersEnableCached() : ta_MountStatus.encodersEnable();
+  bool encoders = navCached ? ta_MountStatus.encodersEnableCached() : ta_MountStatus.encodersEnable();
   if (encoders)
     data += page == ServerPage::Encoders ? FPSTR(html_links9S) : FPSTR(html_links9N);
   if (ta_MountStatus.hasFocuser())

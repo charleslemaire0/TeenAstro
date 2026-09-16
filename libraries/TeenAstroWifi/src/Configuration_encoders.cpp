@@ -43,6 +43,7 @@ void TeenAstroWifi::handleConfigurationEncoders()
   s_client->setTimeout(WebTimeout);
   if (processConfigurationEncodersGet())
   {
+    ta_MountStatus.invalidateAllConfig();
     sendRedirectAfterMutation("/configuration_encoders.htm");
     return;
   }
@@ -52,45 +53,49 @@ void TeenAstroWifi::handleConfigurationEncoders()
 
   preparePage(data, ServerPage::Encoders);
   sendHtml(data);
-  ta_MountStatus.updateMount();
+
+  ta_MountStatus.updateAllConfig();
   data += "<div class='card'>";
 
-  // Sync mode selector
-  uint8_t syncMode = 0;
-  if (s_client->readEncoderAutoSync(syncMode) == LX200_VALUEGET)
+  if (!ta_MountStatus.hasConfig())
   {
-    data += FPSTR(html_configEncoders_1);
-    const char* modeLabels[] = { "OFF", "60'", "30'", "15'", "8'", "4'", "2'", "ON" };
-    for (uint8_t k = 0; k < 8; k++)
-    {
-      char opt[60];
-      sprintf(opt, "<option %svalue='%d'>%s</option>", (k == syncMode) ? "selected " : "", k, modeLabels[k]);
-      data += opt;
-    }
-    data += FPSTR(html_configEncoders_2);
+    data += "<p>Mount config unavailable</p></div>";
+    data += FPSTR(html_pageFooter);
     sendHtml(data);
+    sendHtmlDone(data);
+    s_handlerBusy = false;
+    return;
   }
 
-  // Per-axis: PPD + rotation
+  // Sync mode selector
+  const uint8_t syncMode = ta_MountStatus.getCfgEncSyncMode();
+  data += FPSTR(html_configEncoders_1);
+  const char* modeLabels[] = { "OFF", "60'", "30'", "15'", "8'", "4'", "2'", "ON" };
+  for (uint8_t k = 0; k < 8; k++)
+  {
+    char opt[60];
+    sprintf(opt, "<option %svalue='%d'>%s</option>", (k == syncMode) ? "selected " : "", k, modeLabels[k]);
+    data += opt;
+  }
+  data += FPSTR(html_configEncoders_2);
+  sendHtml(data);
+
+  // Per-axis: PPD + rotation (:GXCS# stores ppd×100)
   for (uint8_t ax = 1; ax <= 2; ax++)
   {
-    float ppd = 0;
-    if (s_client->readPulsePerDegree(ax, ppd) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configPPDAxis, ax, ppd / 100.0, ax, ax);
-      data += temp;
-      sendHtml(data);
-    }
-    bool reverse = false;
-    if (s_client->readEncoderReverse(ax, reverse) == LX200_VALUEGET)
-    {
-      sprintf_P(temp, html_configRotEAxis_1, ax);
-      data += temp;
-      data += reverse ? FPSTR(html_configRotEAxis_r) : FPSTR(html_configRotEAxis_d);
-      sprintf_P(temp, html_configRotEAxis_2, ax);
-      data += temp;
-      sendHtml(data);
-    }
+    const float ppd = (ax == 1 ? (float)ta_MountStatus.getCfgPPD1()
+                               : (float)ta_MountStatus.getCfgPPD2()) / 100.0f;
+    sprintf_P(temp, html_configPPDAxis, ax, ppd, ax, ax);
+    data += temp;
+    sendHtml(data);
+
+    const bool reverse = ta_MountStatus.getCfgEncReverse(ax - 1);
+    sprintf_P(temp, html_configRotEAxis_1, ax);
+    data += temp;
+    data += reverse ? FPSTR(html_configRotEAxis_r) : FPSTR(html_configRotEAxis_d);
+    sprintf_P(temp, html_configRotEAxis_2, ax);
+    data += temp;
+    sendHtml(data);
   }
 
   data += "</div>"; // close card

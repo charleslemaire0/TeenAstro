@@ -410,6 +410,9 @@ public:
   /// True when the config cache is stale (> 30 s old — config rarely changes).
   bool configCacheStale() const { return m_timerConfig.needsUpdate(30000); }
 
+  /// Drop cached :GXCS# so the next updateAllConfig() refetches (call after web uploads).
+  void invalidateAllConfig() { m_configValid = false; m_timerConfig.lastUpdate = 0; }
+
   // -----------------------------------------------------------------------
   //  Update methods (poll mount, rate-limited)
   // -----------------------------------------------------------------------
