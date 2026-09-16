@@ -109,11 +109,12 @@ void SmartHandController::setCatMgrFilters()
 
 SmartHandController::MENU_RESULT SmartHandController::menuFilterCon()
 {
-  static char string_list_fCon[2000]; // BSS, not stack (ESP8266 stack is tight)
+  // Abbreviations (~450 B) instead of long names (~850 B); keep BSS small for ESP8266 heap/OTA.
+  static char string_list_fCon[512];
   string_list_fCon[0] = '\0';
   for (int l = 0; l < 89; l++)
   {
-    if (l == 0) strcat(string_list_fCon, T_ALL); else strcat(string_list_fCon, cat_mgr.constellationCodeToStrLong(l - 1));
+    if (l == 0) strcat(string_list_fCon, T_ALL); else strcat(string_list_fCon, cat_mgr.constellationCodeToStr(l - 1));
     if (l < 88) strcat(string_list_fCon, "\n");
   }
   int last_selection_filter_con = current_selection_filter_con;

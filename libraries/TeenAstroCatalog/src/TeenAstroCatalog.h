@@ -129,6 +129,7 @@ private:
     bool isFiltered();
 
     const char* getElementFromString(const char *data, long elementNum);
+    const char* getElementFromStringProgmem(const char *data, long elementNum);
     double DistFromEqu(double RA, double Dec);
     double HAToRA(double ha);
     void EquToHor(double RA, double Dec, double *Alt, double *Azm);

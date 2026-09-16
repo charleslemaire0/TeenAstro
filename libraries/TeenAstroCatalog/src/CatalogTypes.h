@@ -142,27 +142,28 @@ typedef struct {
 
 
 // Bayer designation, the Greek letter for each star within a constellation
-const char* Txt_Bayer[25] = {
+// Pointer tables in PROGMEM to keep ~900B off ESP8266 BSS/data.
+const char* const Txt_Bayer[25] PROGMEM = {
   "Alp","Bet","Gam","Del","Eps","Zet","Eta","The","Iot","Kap","Lam","Mu","Nu","Xi","Omi","Pi","Rho","Sig","Tau","Ups","Phi","Chi","Psi","Ome","?"
 };
 
 // Type of object, in the Open NGC database. Do not change the
 // order of this, since it has to match what is in Open NGC
-const char* Txt_Object_Type[21] = {
+const char* const Txt_Object_Type[21] PROGMEM = {
   "Galaxy",        "Open Cluster",   "Star",           "Double Star", "Other",      "Galaxy Pair",    "Galaxy Triplet",
   "Galaxy Group",  "Globular Clstr", "Planetary Nebula", "Nebula",      "Hii Region", "Cluster+Nebula", "Asterism",
   "Reflectn Nbla", "SuperNov Rmnt",  "Emission Nbla",  "Non Existant","Nova",       "Duplicate",      "Dark Nebula"
 };
 
 //Constellation abbreviation, alphabetical order
-const char* Txt_Constellations[89] = {
+const char* const Txt_Constellations[89] PROGMEM = {
   "And","Ant","Aps","Aql","Aqr","Ara","Ari","Aur","Boo","CMa","CMi","CVn","Cae","Cam","Cap","Car","Cas","Cen","Cep","Cet","Cha","Cir",
   "Cnc","Col","Com","CrA","CrB","Crt","Cru","Crv","Cyg","Del","Dor","Dra","Equ","Eri","For","Gem","Gru","Her","Hor","Hya","Hyi","Ind",
   "LMi","Lac","Leo","Lep","Lib","Lup","Lyn","Lyr","Men","Mic","Mon","Mus","Nor","Oct","Oph","Ori","Pav","Peg","Per","Phe","Pic","PsA",
   "Psc","Pup","Pyx","Ret","Scl","Sco","Sct","Ser","Sex","Sge","Sgr","Tau","Tel","TrA","Tri","Tuc","UMa","UMi","Vel","Vir","Vol","Vul"," ---"
 };
 
-const char* Txt_Constellations_Long[89] = {
+const char* const Txt_Constellations_Long[89] PROGMEM = {
   "Andromeda","Antlia","Apus","Aquila","Aquarius","Ara","Aries","Auriga","Boötes","Canis Major","Canis Minor","Canes Venatici","Caelum","Camelopardalis","Capricornus","Carina","Cassiopeia","Centaurus","Cepheus","Cetus","Chamaeleon","Circinus",
   "Cancer","Columba","Coma Berenices","Corona Australis","Corona Borealis","Crater","Crux","Corvus","Cygnus","Delphinus","Dorado","Draco","Equuleus","Eridanus","Fornax","Gemini","Grus","Hercules","Horologium","Hydra","Hydrus","Indus",
   "Leo Minor","Lacerta","Leo","Lepus","Libra","Lupus","Lynx","Lyra","Mensa","Microscopium","Monoceros","Musca","Norma","Octans","Ophiuchus","Orion","Pavo","Pegasus","Perseus","Phoenix","Pictor","Piscis Austrinus",

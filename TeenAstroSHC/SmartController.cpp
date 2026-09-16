@@ -48,7 +48,7 @@ void SmartHandController::setup(
     display = new U8G2_EXT_SH1106_128X64_NONAME_1_HW_I2C(U8G2_R0);
     break;
   case OLED_SSD1306:
-    display = new U8G2_EXT_SSD1306_128X64_NONAME_F_HW_I2C(U8G2_R0);
+    display = new U8G2_EXT_SSD1306_128X64_NONAME_1_HW_I2C(U8G2_R0);
     break;
   case OLED_SSD1309:
     if (!(submodel < num_supported_display))
@@ -57,11 +57,11 @@ void SmartHandController::setup(
       EEPROM.write(EEPROM_DISPLAYSUBMODEL, 0);
     }
     if (submodel == 0)
-      display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0);
+      display = new U8G2_EXT_SSD1309_128X64_NONAME_1_HW_I2C(U8G2_R0);
     else if (submodel == 1)
-      display = new U8G2_EXT_SSD1309_128X64_NONAME2_F_HW_I2C(U8G2_R0);
+      display = new U8G2_EXT_SSD1309_128X64_NONAME2_1_HW_I2C(U8G2_R0);
     else
-      display = new U8G2_EXT_SSD1309_128X64_NONAME_F_HW_I2C(U8G2_R0);
+      display = new U8G2_EXT_SSD1309_128X64_NONAME_1_HW_I2C(U8G2_R0);
     break;
   }
 #endif

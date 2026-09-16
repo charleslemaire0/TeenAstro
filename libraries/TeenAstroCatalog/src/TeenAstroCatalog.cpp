@@ -1,11 +1,17 @@
 #include <Arduino.h>
 #include <math.h>
+#include <pgmspace.h>
 #include "TeenAstroCatalog.h"
 #include "CatalogTypes.h"
 #include "CatalogConfig.h"
 
 // --------------------------------------------------------------------------------
 // Catalog Manager Helper
+
+static inline const char* flashStrAt(const char* const *table, int index)
+{
+  return (const char*)pgm_read_ptr(&table[index]);
+}
 
 template <typename T> void PROGMEM_readAnything(const T * sce, T& dest)
 {
@@ -77,9 +83,6 @@ var_star_comp_t  _varStarCompObject  = { 0,0,0,0,0,0,0,0,0,0 };
 dso_t            _dsoObject          = { 0,0,0,0,0,0,0,0 };
 dso_comp_t       _dsoCompObject      = { 0,0,0,0,0,0,0,0 };
 dso_vcomp_t      _dsoVCompObject     = { 0,0,0,0,0,0,0 };
-char             _genNames[3500];
-char             _genSubIds[3500];
-
 // handle catalog selection (0..n)
 void CatMgr::select(int number) {
   _genStarCatalog      =NULL;
@@ -100,11 +103,7 @@ void CatMgr::select(int number) {
     if (catalog[_selected].CatalogType==CAT_DSO)            _dsoCatalog         =(dso_t*)catalog[_selected].Objects; else
     if (catalog[_selected].CatalogType==CAT_DSO_COMP)       _dsoCompCatalog     =(dso_comp_t*)catalog[_selected].Objects; else
     if (catalog[_selected].CatalogType==CAT_DSO_VCOMP)      _dsoVCompCatalog    =(dso_vcomp_t*)catalog[_selected].Objects; else _selected=-1;
-    if (_selected>=0)
-    {
-      memcpy_P(_genNames, catalog[_selected].ObjectNames, 3500);
-      memcpy_P(_genSubIds, catalog[_selected].ObjectSubIds, 3000);
-    }
+    // ObjectNames / ObjectSubIds stay in PROGMEM; parsed on demand (saves ~7KB BSS).
   }
 }
 
@@ -632,21 +631,21 @@ byte CatMgr::constellation() {
 
 // Constellation string
 const char* CatMgr::constellationStr() {
-  return Txt_Constellations[constellation()];
+  return flashStrAt(Txt_Constellations, constellation());
 }
 
 // Constellation string, from constellation number
 const char* CatMgr::constellationCodeToStr(int code) {
-  if ((code>=0) && (code<=87)) return Txt_Constellations[code]; else return "";
+  if ((code>=0) && (code<=87)) return flashStrAt(Txt_Constellations, code); else return "";
 }
 
 const char* CatMgr::constellationStrLong() {
-  return Txt_Constellations_Long[constellation()];
+  return flashStrAt(Txt_Constellations_Long, constellation());
 }
 
 // Constellation string, from constellation number
 const char* CatMgr::constellationCodeToStrLong(int code) {
-  if ((code >= 0) && (code <= 87)) return Txt_Constellations_Long[code]; else return "";
+  if ((code >= 0) && (code <= 87)) return flashStrAt(Txt_Constellations_Long, code); else return "";
 }
 
 // Object type code
@@ -666,12 +665,12 @@ byte CatMgr::objectType() {
 // Object type string
 const char* CatMgr::objectTypeStr() {
   int t=objectType();
-  if ((t>=0) && (t<=20)) return Txt_Object_Type[t]; else return "";
+  if ((t>=0) && (t<=20)) return flashStrAt(Txt_Object_Type, t); else return "";
 }
 
 // Object Type string, from code number
 const char* CatMgr::objectTypeCodeToStr(int code) {
-  if ((code>=0) && (code<=20)) return Txt_Object_Type[code]; else return "";
+  if ((code>=0) && (code<=20)) return flashStrAt(Txt_Object_Type, code); else return "";
 }
 
 // Object name code (encoded by Has_name.)  Returns -1 if the object doesn't have a name code.
@@ -695,7 +694,7 @@ long CatMgr::objectName() {
 const char* CatMgr::objectNameStr() {
   if (_selected<0) return "";
   long elementNum=objectName();
-  if (elementNum>=0) return getElementFromString(_genNames,elementNum); else return "";
+  if (elementNum>=0) return getElementFromStringProgmem(catalog[_selected].ObjectNames, elementNum); else return "";
 }
 
 // Object Id
@@ -736,7 +735,7 @@ long CatMgr::subId() {
 const char* CatMgr::subIdStr() {
   if (_selected<0) return "";
   long elementNum=subId();
-  if (elementNum>=0) return getElementFromString(_genSubIds,elementNum); else return "";
+  if (elementNum>=0) return getElementFromStringProgmem(catalog[_selected].ObjectSubIds, elementNum); else return "";
 }
 
 // For Bayer designated Stars 0 = Alp, etc. to 23. For Fleemstead designated Stars 25 = '1', etc.
@@ -794,6 +793,33 @@ const char* CatMgr::getElementFromString(const char *data, long elementNum) {
     }
     return result;
   } else return "";
+}
+
+// Same as getElementFromString, but data lives in PROGMEM (catalog name/subId blobs).
+const char* CatMgr::getElementFromStringProgmem(const char *data, long elementNum) {
+  static char result[40] = "";
+  if (!data) return "";
+
+  bool found = false;
+  long j = 0;
+  long n = elementNum;
+  const long len = (long)strlen_P(data);
+  for (long i = 0; i < len; i++) {
+    if (n == 0) { j = i; found = true; break; }
+    if (pgm_read_byte(data + i) == ',') n--;
+  }
+
+  if (!found) return "";
+
+  long k = 0;
+  for (long i = j; i < len; i++) {
+    const char c = (char)pgm_read_byte(data + i);
+    result[k++] = c;
+    if (c == ',') { result[k - 1] = 0; break; }
+    if (i == len - 1) { result[k] = 0; break; }
+    if (k >= (long)sizeof(result) - 1) { result[sizeof(result) - 1] = 0; break; }
+  }
+  return result;
 }
 
 // angular distance from current Equ coords, in degrees
