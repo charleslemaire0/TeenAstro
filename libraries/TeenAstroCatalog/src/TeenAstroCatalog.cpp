@@ -769,57 +769,87 @@ const char* CatMgr::bayerFlamStr() {
 
 // support functions
 
-// returns elementNum 'th element from the comma delimited string where the 0th element is the first etc.
+// returns elementNum 'th element from the semicolon-delimited string (0th = first).
+// Catalog Prefix / ObjectNames / ObjectSubIds all use ';' (see catalogPrefix() and *.h generators).
 const char* CatMgr::getElementFromString(const char *data, long elementNum) {
-  static char result[40] = "";
-
-  // find the string start index
-  bool found=false;
-  long j=0;
-  long n=elementNum;
-  long len=strlen(data);
-  for (long i=0; i<len; i++) {
-    if (n==0) { j=i; found=true; break; }
-    if (data[i]==';') { n--; }
-  }
-
-  // return the string
-  if (found) {
-    long k=0;
-    for (long i=j; i<len; i++) {
-      result[k++]=data[i];
-      if (result[k-1]==';') { result[k-1]=0; break; }
-      if (i==len-1) { result[k]=0; break; }
-    }
-    return result;
-  } else return "";
-}
-
-// Same as getElementFromString, but data lives in PROGMEM (catalog name/subId blobs).
-const char* CatMgr::getElementFromStringProgmem(const char *data, long elementNum) {
   static char result[40] = "";
   if (!data) return "";
 
-  bool found = false;
-  long j = 0;
   long n = elementNum;
-  const long len = (long)strlen_P(data);
-  for (long i = 0; i < len; i++) {
-    if (n == 0) { j = i; found = true; break; }
-    if (pgm_read_byte(data + i) == ',') n--;
+  long i = 0;
+  for (;;) {
+    const char c = data[i];
+    if (c == 0) return "";
+    if (n == 0) break;
+    if (c == ';') n--;
+    i++;
   }
-
-  if (!found) return "";
 
   long k = 0;
-  for (long i = j; i < len; i++) {
-    const char c = (char)pgm_read_byte(data + i);
+  for (;;) {
+    const char c = data[i];
+    if (c == 0 || c == ';') {
+      result[k] = 0;
+      break;
+    }
+    if (k >= (long)sizeof(result) - 1) {
+      result[k] = 0;
+      break;
+    }
     result[k++] = c;
-    if (c == ',') { result[k - 1] = 0; break; }
-    if (i == len - 1) { result[k] = 0; break; }
-    if (k >= (long)sizeof(result) - 1) { result[sizeof(result) - 1] = 0; break; }
+    i++;
   }
   return result;
+}
+
+// Same as getElementFromString, but data lives in PROGMEM (catalog name/subId blobs).
+// Two-slot cache: catalog draw calls name + subId many times per frame.
+const char* CatMgr::getElementFromStringProgmem(const char *data, long elementNum) {
+  struct Slot {
+    const char* data;
+    long element;
+    char result[40];
+  };
+  static Slot slots[2] = {};
+  static uint8_t nextSlot = 0;
+
+  if (!data) return "";
+
+  for (uint8_t s = 0; s < 2; s++) {
+    if (slots[s].data == data && slots[s].element == elementNum)
+      return slots[s].result;
+  }
+
+  Slot& slot = slots[nextSlot ^= 1];
+  slot.data = data;
+  slot.element = elementNum;
+  slot.result[0] = 0;
+
+  long n = elementNum;
+  long i = 0;
+  for (;;) {
+    const char c = (char)pgm_read_byte(data + i);
+    if (c == 0) return "";
+    if (n == 0) break;
+    if (c == ';') n--;
+    i++;
+  }
+
+  long k = 0;
+  for (;;) {
+    const char c = (char)pgm_read_byte(data + i);
+    if (c == 0 || c == ';') {
+      slot.result[k] = 0;
+      break;
+    }
+    if (k >= (long)sizeof(slot.result) - 1) {
+      slot.result[k] = 0;
+      break;
+    }
+    slot.result[k++] = c;
+    i++;
+  }
+  return slot.result;
 }
 
 // angular distance from current Equ coords, in degrees
