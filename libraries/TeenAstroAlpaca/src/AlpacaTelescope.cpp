@@ -2081,7 +2081,8 @@ void AlpacaTelescope::putMoveAxis(AlpacaWebServer& s, const AlpacaRequest& r)
     return;
   }
   m_status->updateAllState(true);
-  if (m_status->Parked())
+  // Device Hub / ASCOM: rate 0 may be issued while parked to stop; reject only non-zero.
+  if (rateDegSec != 0.0 && m_status->Parked())
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
                     AE_PARKED, "Cannot MoveAxis while parked");

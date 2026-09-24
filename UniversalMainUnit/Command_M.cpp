@@ -14,7 +14,18 @@ void Command_M()
   case '1':
   case '2':
     speed = strtod(&command[2], &conv_end);
-    ok = (&command[2] != conv_end) && abs(speed) <= guideRates[4];
+    ok = (&command[2] != conv_end);
+    // ASCOM MoveAxis(rate=0): always stop / no-op succeed.
+    if (ok && speed == 0)
+    {
+      if (command[1] == '1')
+        StopAxis1();
+      else
+        StopAxis2();
+      replyShortTrue();
+      break;
+    }
+    ok &= abs(speed) <= guideRates[4];
     ok &= !isSlewing() && lastError() == ERRT_NONE;
     ok &= (GuidingState == GuidingOFF || GuidingState == GuidingAtRate);
     if (ok)
@@ -22,27 +33,13 @@ void Command_M()
       byte dir; 
       if (command[1] == '1')
       {
-        if (speed == 0)
-        {
-          StopAxis1();
-        }
-        else
-        {
-          dir = (speed > 0) ? 'w' : 'e'; 
-          MoveAxis1AtRate(fabs(speed), dir);
-        }
+        dir = (speed > 0) ? 'w' : 'e'; 
+        MoveAxis1AtRate(fabs(speed), dir);
       }
       else
       {
-        if (speed == 0)
-        {
-          StopAxis2();
-        }
-        else
-        {
-          dir = (speed >= 0) ? 'n' : 's'; 
-          MoveAxis2AtRate(fabs(speed), dir);
-        }
+        dir = (speed >= 0) ? 'n' : 's'; 
+        MoveAxis2AtRate(fabs(speed), dir);
       }
       replyShortTrue();
     }

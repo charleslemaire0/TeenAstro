@@ -711,7 +711,11 @@ namespace ASCOM.TeenAstro.Telescope
           throw new ASCOM.ParkedException();
         }
         CommandBlind("Q", false);
+        // Also clear MoveAxis AtRate (same as Alpaca AbortSlew :M1+0#/:M2+0#).
+        try { CommandSingleChar("M1+0"); } catch { /* best-effort stop */ }
+        try { CommandSingleChar("M2+0"); } catch { /* best-effort stop */ }
         slewingHintUntilUtc = DateTime.MinValue;
+        ForceGXASCacheRefresh();
         LogMessage("AbortSlew", "done");
       }
       else
@@ -1367,18 +1371,27 @@ namespace ASCOM.TeenAstro.Telescope
       {
         LogMessage("Set MoveAxis", Axis.ToString() + ":" + Rate.ToString(CultureInfo.InvariantCulture));
         string cmd;
-        if (EnsureGXASCacheCurrent() && gxasState.ParkState == 2)
+        // Device Hub / ASCOM: rate 0 may be issued while parked to stop; reject only non-zero.
+        if (Rate != 0.0 && EnsureGXASCacheCurrent() && gxasState.ParkState == 2)
         {
           throw new ASCOM.ParkedException();
         }
         // Main Unit :M1#/:M2# expect rate in arcsec/s (deg/s * 3600).
-        // Firmware rejects if abs(rate) > guideRates[4] (integer); round to integer to avoid rejection.
+        // Firmware rejects if abs(rate) > guideRates[4] (integer); round toward zero to match Alpaca.
         double rateArcsecPerSec = Rate * 3600.0;
-        int rateInt = rateArcsecPerSec >= 0 ? (int)Math.Floor(rateArcsecPerSec) : (int)Math.Ceiling(rateArcsecPerSec);
+        int rateInt = rateArcsecPerSec >= 0
+          ? (int)Math.Floor(rateArcsecPerSec + 1e-9)
+          : (int)Math.Ceiling(rateArcsecPerSec - 1e-9);
         double maxArcsecEff = 0;
         if (TryGetDoubleCommand("GXR4", "MoveAxis max arcsec/s (GXR4)", out maxArcsecEff) && maxArcsecEff > 0)
         {
-          int maxInt = (int)Math.Floor(maxArcsecEff + 1e-9);
+          // Reject outside AxisRates (do not silently clamp — Conform expects InvalidValue).
+          if (Rate != 0.0 && Math.Abs(rateArcsecPerSec) > maxArcsecEff + 1e-3)
+          {
+            throw new ASCOM.InvalidValueException("MoveAxis", Rate.ToString(CultureInfo.InvariantCulture),
+              "Rate must be within AxisRates (max " + (maxArcsecEff / 3600.0).ToString(CultureInfo.InvariantCulture) + " deg/s)");
+          }
+          int maxInt = (int)Math.Floor(maxArcsecEff + 0.5);
           if (maxInt > 0)
           {
             if (rateInt > maxInt) rateInt = maxInt;

@@ -77,10 +77,9 @@ without the user typing an IP address.
   fail with `NotConnected (0x407)`.
 - Coordinates are reported in the **equinox of date** (Alpaca
   `EquatorialSystem = 1` / Topocentric), matching the LX200 protocol.
-- `MoveAxis(rate)` is mapped to TeenAstro's discrete slew‑speed buckets
-  (`R0..R4`), so the actual rate may differ from the requested one. The
-  granularity is reflected in the single `axisrates` range returned per
-  axis.
+- `MoveAxis(rate)` uses continuous `:M1#`/`:M2#` rates (deg/s on the
+  Alpaca wire, integer arcsec/s to the Main Unit). `axisrates` returns a
+  single continuous `0…max` range from `:GXR4#`. Rate `0` always stops.
 - All endpoints are dispatched from a single `onNotFound` handler to
   keep flash + RAM usage low on the ESP8266; latency is dominated by
   the LX200 round‑trip to the MainUnit, not by the dispatch loop.
