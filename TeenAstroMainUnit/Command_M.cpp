@@ -21,6 +21,15 @@ void Command_M() {
     {
       strcpy(commandState.reply, "i");
     }
+    // ASCOM MoveAxis(rate=0): always stop / no-op succeed (Conform + Device Hub).
+    else if (f == 0.0)
+    {
+      if (commandState.command[1] == '1')
+        mount.moveAxisAtRate1(0);
+      else
+        mount.moveAxisAtRate2(0);
+      replyShortTrue();
+    }
     else if (abs(f) > mount.guiding.guideRates[4])
     {
       strcpy(commandState.reply, "h");

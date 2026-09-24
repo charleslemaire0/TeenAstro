@@ -79,6 +79,12 @@ static void moveAxisAtRate(Mount& m, GuideAxis* guideA, StatusAxis*, double newr
 {
   if (!m.motorsEncoders.enableMotor)
     return;
+  // ASCOM MoveAxis rate 0: always apply stop (even if error / parked / guiding).
+  if (newrate == 0)
+  {
+    stopAxis(m, guideA, nullptr);
+    return;
+  }
   bool canMove = m.parkHome.parkStatus == PRK_UNPARKED;
   canMove &= m.errors.lastError == ERRT_NONE;
   canMove &= !m.isMovingTo();
@@ -86,11 +92,6 @@ static void moveAxisAtRate(Mount& m, GuideAxis* guideA, StatusAxis*, double newr
 
   if (canMove)
   {
-    if (newrate == 0)
-    {
-      stopAxis(m, guideA, nullptr);
-      return;
-    }
     if (m.guiding.GuidingState != GuidingAtRate)
     {
       m.tracking.lastSideralTracking = m.tracking.sideralTracking;
