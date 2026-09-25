@@ -131,4 +131,29 @@
 #define A_SCREEN 2                  // A0 outer
 #endif
 
+// LilyGO T-Display S3 — ST7789 170×320 color TFT (U8g2 128×64 blit).
+// No hand-controller pad: all B_PIN* = -1. USB CDC Serial to the PC.
+#if defined(SHC_TDISPLAY_S3) || defined(ARDUINO_LILYGO_T_DISPLAY_S3)
+#ifndef SHC_TDISPLAY_S3
+#define SHC_TDISPLAY_S3
+#endif
+#define SERIAL_BAUD 115200
+#define DEBUG_OFF
+#define B_PIN0  -1
+#define B_PIN1  -1
+#define B_PIN2  -1
+#define B_PIN3  -1
+#define B_PIN4  -1
+#define B_PIN5  -1
+#define B_PIN6  -1
+#define B_PIN_UP_0 true
+#define B_PIN_UP_1 true
+#define B_PIN_UP_2 true
+#define B_PIN_UP_3 true
+#define B_PIN_UP_4 true
+#define B_PIN_UP_5 true
+#define B_PIN_UP_6 true
+#define A_SCREEN  -1
+#endif
+
 

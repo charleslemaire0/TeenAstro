@@ -38,6 +38,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define MY_BORDER_SIZE 1
 #include "u8g2_ext_selection.h"
+#include "u8g2_ext_present.h"
 
 
 /*
@@ -153,7 +154,7 @@ uint8_t ext_UserInterfaceSelectionList(u8g2_t *u8g2, Pad *extPad, const char *ti
         yy += 3;
       }
       u8g2_DrawSelectionList(u8g2, &u8sl, yy, sl);
-    } while (u8g2_NextPage(u8g2));
+    } while (ext_NextPage(u8g2));
 
 #ifdef U8G2_REF_MAN_PIC
     return 0;

@@ -257,6 +257,14 @@ void Pad::attachEvent()
   m_buttons[B_f]->attachDuringLongPress(longPress_f);
 
 }
+static OneButton* padMakeButton(int pin, bool activeLow)
+{
+  // pin < 0: disabled (no pad attached). Default ctor leaves _pin == -1; tick() is a no-op.
+  if (pin < 0)
+    return new OneButton();
+  return new OneButton(pin, activeLow, activeLow);
+}
+
 void Pad::setup(const int pin[7], const bool active[7], const int adress, const bool rotated)
 {
   m_adress = adress;
@@ -265,7 +273,7 @@ void Pad::setup(const int pin[7], const bool active[7], const int adress, const 
     for (int k = 0; k < 7; k++)
     {
       m_activeLow[k] = active[k];
-      m_buttons[k] = new OneButton(pin[k], active[k], active[k]);
+      m_buttons[k] = padMakeButton(pin[k], active[k]);
     }
   }
   else
@@ -277,13 +285,13 @@ void Pad::setup(const int pin[7], const bool active[7], const int adress, const 
     m_activeLow[4] = active[3];
     m_activeLow[5] = active[6];
     m_activeLow[6] = active[5];
-    m_buttons[0] = new OneButton(pin[0], active[0], active[0]);
-    m_buttons[1] = new OneButton(pin[2], active[2], active[2]);
-    m_buttons[2] = new OneButton(pin[1], active[1], active[1]);
-    m_buttons[3] = new OneButton(pin[4], active[4], active[4]);
-    m_buttons[4] = new OneButton(pin[3], active[3], active[3]);
-    m_buttons[5] = new OneButton(pin[6], active[6], active[6]);
-    m_buttons[6] = new OneButton(pin[5], active[5], active[5]);
+    m_buttons[0] = padMakeButton(pin[0], active[0]);
+    m_buttons[1] = padMakeButton(pin[2], active[2]);
+    m_buttons[2] = padMakeButton(pin[1], active[1]);
+    m_buttons[3] = padMakeButton(pin[4], active[4]);
+    m_buttons[4] = padMakeButton(pin[3], active[3]);
+    m_buttons[5] = padMakeButton(pin[6], active[6]);
+    m_buttons[6] = padMakeButton(pin[5], active[5]);
   }
 
 

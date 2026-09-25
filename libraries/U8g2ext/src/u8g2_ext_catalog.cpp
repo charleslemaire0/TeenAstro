@@ -39,6 +39,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <TeenAstroCatalog.h>
 #include "u8g2_ext_value.h"
 #include "u8g2_ext_event.h"
+#include "u8g2_ext_present.h"
 
 #define OC_width 18
 #define OC_height 10
@@ -430,7 +431,7 @@ bool ext_UserInterfaceCatalog(u8g2_t *u8g2, Pad* extPad, const char *title)
       }
       ext_draw_catalog_list_line(u8g2, yy, thisDisplayMode, firstPass);
       firstPass = false;
-    } while (u8g2_NextPage(u8g2));
+    } while (ext_NextPage(u8g2));
 
     for (;;) {
       event = ext_GetMenuEvent(extPad);

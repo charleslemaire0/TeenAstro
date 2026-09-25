@@ -5,6 +5,9 @@
 #ifdef EMU_SHC
 #include "u8g2_sdl2.h"
 #endif
+#ifdef SHC_TDISPLAY_S3
+#include <u8g2_ext_tdisplay.h>
+#endif
 #ifndef SHC_I2C_SCL
 #define SHC_I2C_SCL U8X8_PIN_NONE
 #endif
@@ -57,6 +60,12 @@ void SmartHandController::setup(
     sdl->initSDL("TeenAstro SHC Emulator");
     display = sdl;
     g_sdlDisplay = sdl;
+  }
+#elif defined(SHC_TDISPLAY_S3)
+  {
+    auto* tft = new U8G2_EXT_TDisplay(U8G2_R0);
+    tft->initTft();
+    display = tft;
   }
 #else
   switch (model)

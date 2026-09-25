@@ -35,6 +35,7 @@
 
 #include "u8g2_ext_message.h"
 #include "u8g2_ext_event.h"
+#include "u8g2_ext_present.h"
 
 #define SPACE_BETWEEN_BUTTONS_IN_PIXEL 6
 #define SPACE_BETWEEN_TEXT_AND_BUTTONS_IN_PIXEL 3
@@ -162,7 +163,7 @@ uint8_t ext_UserInterfaceMessage(u8g2_t *u8g2, Pad *extPad, const char *title1, 
 
       button_cnt = ext_draw_button_line(u8g2, yy, u8g2_GetDisplayWidth(u8g2), cursor, buttons);
 
-    } while (u8g2_NextPage(u8g2));
+    } while (ext_NextPage(u8g2));
 
 #ifdef U8G2_REF_MAN_PIC
     return 0;

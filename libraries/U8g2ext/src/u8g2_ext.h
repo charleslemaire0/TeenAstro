@@ -2,10 +2,22 @@
 #include <U8g2lib.h>
 #include <TeenAstroCatalog.h>
 #include "u8g2_ext_event.h"
+#include "u8g2_ext_present.h"
 
 class U8G2_EXT : public U8G2
 {
 public:
+
+  /* Virtual so software backends (SDL / T-Display) can blit after refresh.
+   * U8g2ext C helpers use ext_NextPage() + u8g2_ext_present_cb for the same. */
+  virtual void sendBuffer(void) { U8G2::sendBuffer(); }
+  virtual uint8_t nextPage(void)
+  {
+    uint8_t r = U8G2::nextPage();
+    if (r == 0 && u8g2_ext_present_cb)
+      u8g2_ext_present_cb();
+    return r;
+  }
 
   bool UserInterfaceCatalog(Pad *extPad, const char *title);
 

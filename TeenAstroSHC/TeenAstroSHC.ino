@@ -57,6 +57,11 @@ void setup(void)
   ta_MountStatus.setClient(lx200);
   TeenAstroWifi::setClient(lx200);
   HdCrtlr.setClient(lx200);
+#ifdef SHC_TDISPLAY_S3
+  // Color TFT via U8g2 blit; OLED model arg unused.
+  HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1306, 1);
+  return;
+#else
 #ifdef ARDUINO_TTGO_LoRa32_V1
   HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309, 2);
   return;
@@ -84,7 +89,8 @@ void setup(void)
     HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309, 2);
   }
 #endif
-#endif    
+#endif
+#endif
 }
 
 void loop()

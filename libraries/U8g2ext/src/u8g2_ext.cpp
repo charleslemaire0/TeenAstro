@@ -6,6 +6,8 @@
 #include "u8g2_ext_message.h"
 #include "u8g2_ext_value.h"
 
+void (*u8g2_ext_present_cb)(void) = nullptr;
+
 
 bool U8G2_EXT::UserInterfaceCatalog(Pad *extPad, const char *title)
 {

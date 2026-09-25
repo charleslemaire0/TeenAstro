@@ -8,6 +8,9 @@
 // Platform-specific serial port alias (MainUnit link)
 #ifdef ARDUINO_LOLIN_C3_MINI
 #define Ser Serial1
+#elif defined(SHC_TDISPLAY_S3)
+// USB CDC to the PC — no UART MainUnit link on this bring-up board
+#define Ser Serial
 #elif defined(ARDUINO_LOLIN_S3_MINI) || defined(ARDUINO_ESP32S3_DEV)
 #define Ser Serial0
 #else

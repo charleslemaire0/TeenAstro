@@ -1,6 +1,7 @@
 #include <TeenAstroMath.h>
 #include "u8g2_ext_input.h"
 #include "u8g2_ext_event.h"
+#include "u8g2_ext_present.h"
 
 /*
 Copyright (c) 2018, 
@@ -125,7 +126,7 @@ uint8_t ext_UserInterfaceInputValueInteger(u8g2_t *u8g2, Pad* extPad, const char
       xx += u8g2_DrawUTF8(u8g2, xx, yy, pre);
       xx += u8g2_DrawUTF8(u8g2, xx, yy, u8x8_u8toa(local_value, digits));
       u8g2_DrawUTF8(u8g2, xx, yy, post);
-    } while (u8g2_NextPage(u8g2));
+    } while (ext_NextPage(u8g2));
 
 #ifdef U8G2_REF_MAN_PIC
     return 0;
@@ -253,7 +254,7 @@ uint8_t ext_UserInterfaceInputValueFloatIncr(u8g2_t *u8g2, Pad* extPad, const ch
       dtostrf(fabs(rounded), len, dec, outstr);
       xx += u8g2_DrawUTF8(u8g2, xx, yy, outstr);
       u8g2_DrawUTF8(u8g2, xx, yy, post);
-    } while (u8g2_NextPage(u8g2));
+    } while (ext_NextPage(u8g2));
 
 #ifdef U8G2_REF_MAN_PIC
     return 0;
@@ -439,7 +440,7 @@ uint8_t ext_UserInterfaceInputValueDMS(u8g2_t *u8g2, Pad* extPad, const char *ti
         xx += u8g2_DrawUTF8(u8g2, xx, yy, u8x8_u8toa(v3, 2));
         xx += u8g2_DrawUTF8(u8g2, xx, yy, symb3);
       }
-    } while (u8g2_NextPage(u8g2));
+    } while (ext_NextPage(u8g2));
 
 #ifdef U8G2_REF_MAN_PIC
     return 0;
@@ -605,7 +606,7 @@ uint8_t ext_UserInterfaceInputValueDate(u8g2_t *u8g2, Pad* extPad, const char *t
       xx += u8g2_DrawUTF8(u8g2, xx, yy, symb);
       xx += u8g2_DrawUTF8(u8g2, xx, yy, u8x8_u8toa(local_day, 2));
 
-    } while (u8g2_NextPage(u8g2));
+    } while (ext_NextPage(u8g2));
 
 #ifdef U8G2_REF_MAN_PIC
     return 0;
