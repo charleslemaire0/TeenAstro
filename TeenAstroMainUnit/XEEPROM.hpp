@@ -142,9 +142,12 @@ struct extendedEEPROM : EEPROMClass
 
   // All XEEPROM read/write helpers mutate the global EEPROM instance.
   // Never flush this object's separate data_ buffer (would wipe the file).
+  // Teensy AVR/EEPROMClass has no commit(); ESP32 / emulator need it.
   void commit()
   {
+#if defined(ESP32) || defined(ARDUINO_ARCH_ESP32) || defined(TEENASTRO_EMU)
     EEPROM.commit();
+#endif
   }
 
   void update(int addr, uint8_t val) { EEPROM.update(addr, val); }
