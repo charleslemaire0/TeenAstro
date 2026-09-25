@@ -79,10 +79,17 @@ static void moveAxisAtRate(Mount& m, GuideAxis* guideA, StatusAxis*, double newr
 {
   if (!m.motorsEncoders.enableMotor)
     return;
-  // ASCOM MoveAxis rate 0: always apply stop (even if error / parked / guiding).
+  // ASCOM MoveAxis rate 0: stop immediately. Clear guide busy and GuidingState
+  // here (do not wait for TIMER1) so AtRate ends even if the high-rate path left
+  // residual tmp_guideRate / goto-decay state, while the other axis may still track.
   if (newrate == 0)
   {
     stopAxis(m, guideA, nullptr);
+    guideA->setIdle();
+    guideA->moveAxisActive = false;
+    if (!m.guiding.guideA1.isBusy() && !m.guiding.guideA2.isBusy()
+        && !m.guiding.guideA1.moveAxisActive && !m.guiding.guideA2.moveAxisActive)
+      m.guiding.GuidingState = Guiding::GuidingOFF;
     return;
   }
   bool canMove = m.parkHome.parkStatus == PRK_UNPARKED;
@@ -92,17 +99,17 @@ static void moveAxisAtRate(Mount& m, GuideAxis* guideA, StatusAxis*, double newr
 
   if (canMove)
   {
-    if (m.guiding.GuidingState != GuidingAtRate)
-    {
-      m.tracking.lastSideralTracking = m.tracking.sideralTracking;
-      m.tracking.sideralTracking = false;
-    }
+    // OnStep-style: keep sideralTracking as-is. Timer adds guide+tracking per axis,
+    // so the other axis (and both axes on AltAz / dual-rate tracking) keep tracking.
+    // Do not clear tracking globally — ASCOM MoveAxis only replaces motion on the
+    // commanded axis; OnStep similarly keeps trackingTimerRate on unmoved axes.
     bool samedirection = ((newrate > 0) == (guideA->getRate() >= 0));
     if (guideA->isBusy() && !samedirection && guideA->absRate > 2)
       stopAxis(m, guideA, nullptr);
     else
     {
       guideA->enableAtRate(abs(newrate));
+      guideA->moveAxisActive = true;
       m.guiding.GuidingState = Guiding::GuidingAtRate;
       newrate > 0 ? guideA->moveFW() : guideA->moveBW();
       m.parkHome.atHome = false;

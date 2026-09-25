@@ -292,6 +292,9 @@ public:
   unsigned long   durationLast;
   double          absRate;
   double          speedMultiplier = 1.0;  // kept for :GXDR8#; deactivated: getRate/getAmount no longer multiply by it
+  // Set while ASCOM MoveAxis/:Mn# AtRate is commanded on this axis (independent of isBusy
+  // so tracking stays suspended across brief Idle/brake transitions).
+  bool            moveAxisActive = false;
 private:
   enum moveStatus { MBW = -2, BBW = -1, Idle = 0, BFW = 1, MFW = 2 };
   volatile moveStatus m_mst;

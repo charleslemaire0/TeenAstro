@@ -140,7 +140,15 @@ struct extendedEEPROM : EEPROMClass
     return l;
   };
 
+  // All XEEPROM read/write helpers mutate the global EEPROM instance.
+  // Never flush this object's separate data_ buffer (would wipe the file).
+  void commit()
+  {
+    EEPROM.commit();
+  }
 
+  void update(int addr, uint8_t val) { EEPROM.update(addr, val); }
+  void write(int addr, uint8_t val) { EEPROM.write(addr, val); }
 };
 
 static extendedEEPROM XEEPROM;
