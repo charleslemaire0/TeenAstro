@@ -18,6 +18,8 @@
 #include <Arduino.h>
 #include <TeenAstroPad.h>
 #include <SDL.h>
+#include <stdio.h>
+#include <string.h>
 
 extern void _emu_shc_blit();
 
@@ -48,6 +50,54 @@ static struct BtnFSM {
     bool     dbLevel     = false;
     bool     lastDbLevel = false;
 } s_btn[7];
+
+/* Optional button override written by the screenshot tool.
+   Seven integers, one per button: 1 = held, 0 = released.
+   While the file exists it replaces the keyboard, so a capture does not
+   depend on which window has focus. */
+static bool s_ignoreUntilRelease[7] = { false, false, false, false, false, false, false };
+
+static void applyInjectFile() {
+    FILE* f = fopen("pad_inject.txt", "r");
+    if (!f)
+        return;
+    int s[7];
+    if (fscanf(f, "%d %d %d %d %d %d %d",
+               &s[0], &s[1], &s[2], &s[3], &s[4], &s[5], &s[6]) == 7) {
+        for (int i = 0; i < 7; i++)
+            keyState[i] = s[i] != 0;
+    }
+    fclose(f);
+}
+
+/* One-shot commands in pad_inject.txt, consumed on the next poll:
+     click N     -> short press of button N
+     menu N      -> Shift held + button N (opens that menu)
+   The file is removed so the command is delivered once. */
+static void applyInjectCommand() {
+    const char* path = "pad_inject.txt";
+    FILE* f = fopen(path, "r");
+    if (!f)
+        return;
+    char cmd[16];
+    int btn = -1;
+    int n = fscanf(f, "%15s %d", cmd, &btn);
+    fclose(f);
+    if (n != 2 || btn < 0 || btn > 6)
+        return;
+    bool used = false;
+    if (strcmp(cmd, "click") == 0) {
+        eventbuttons[btn] = E_CLICK;
+        used = true;
+    } else if (strcmp(cmd, "menu") == 0) {
+        eventbuttons[0] = E_LONGPRESS;
+        eventbuttons[btn] = E_CLICK;
+        used = true;
+    }
+    if (!used)
+        return;
+    remove(path);
+}
 
 static int keyToButton(SDL_Keycode k) {
     switch (k) {
@@ -216,7 +266,16 @@ void Pad::tickButtons() {
             }
         }
 
-        obTick(k, keyState[k], millis());
+        applyInjectFile();
+        bool raw = keyState[k];
+        /* A chord that just opened a menu must not also be read as Home. */
+        if (s_ignoreUntilRelease[k]) {
+            if (!raw)
+                s_ignoreUntilRelease[k] = false;
+            else
+                raw = false;
+        }
+        obTick(k, raw, millis());
     }
 
     for (int k = 0; k < 7; k++) {
@@ -235,6 +294,8 @@ void Pad::tickButtons() {
         }
     }
 
+    applyInjectCommand();
+
     _emu_shc_blit();
 }
 
@@ -244,6 +305,10 @@ void Pad::setMenuMode() {
         s_btn[k].click_ms    = tr * 4;
         s_btn[k].debounce_ms = tr;
         s_btn[k].press_ms    = tr * 8;
+        s_btn[k].state       = OB_INIT;
+        s_btn[k].nClicks     = 0;
+        if (keyState[k])
+            s_ignoreUntilRelease[k] = true;
     }
 }
 

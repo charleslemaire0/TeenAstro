@@ -18,6 +18,7 @@
 #include <thread>
 #include <algorithm>
 using std::isnan;
+using std::isfinite;
 
 typedef uint8_t byte;
 typedef unsigned short ushort;
@@ -216,6 +217,7 @@ inline void delay(unsigned long ms) {
 inline void delay(unsigned long) {}
 #endif
 inline void delayMicroseconds(unsigned int) {}
+inline void yield() { std::this_thread::yield(); }
 
 /* ------------------------------------------------------------------ */
 /*  dtostrf (float-to-string, not in standard MinGW libc)              */

@@ -264,8 +264,6 @@ private:
 
   // ---- Soft state matching TelescopeHardware.cs shadows ----
   bool                   m_moveAxisActive[2] = { false, false };
-  /// COM mirrors sidereal-after-MoveAxis: firmware suspends tracking during AtRate.
-  bool                   m_moveAxisRestoreTracking = false;
   /// Deadline millis — TelescopeHardware.slewingHintUntilUtc (MS/MA/Park/MoveAxis/MF/doslew).
   unsigned long          m_slewKickEndMs     = 0;
 

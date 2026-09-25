@@ -345,9 +345,12 @@ void Mount::onSiderealTick(long phase, bool forceTracking, long elapsed)
   if (tracking.sideralTracking)
   {
     cli();
-    if (!axes.staA1.backlash_correcting)
+    // While MoveAxis/AtRate is active on an axis, suspend tracking steps on that
+    // axis only (ASCOM). The other axis keeps fstep so dual-axis tracking continues.
+    const bool atRate = (guiding.GuidingState == GuidingAtRate);
+    if (!axes.staA1.backlash_correcting && !(atRate && guiding.guideA1.moveAxisActive))
       axes.staA1.target += axes.staA1.fstep * elapsed;
-    if (!axes.staA2.backlash_correcting)
+    if (!axes.staA2.backlash_correcting && !(atRate && guiding.guideA2.moveAxisActive))
       axes.staA2.target += axes.staA2.fstep * elapsed;
     sei();
   }
@@ -461,10 +464,10 @@ void Mount::checkEndOfMoveAxisAtRate()
   if (!motorsEncoders.enableMotor) return;
   if (guiding.lastGuidingState == GuidingAtRate && guiding.GuidingState == GuidingOFF)
   {
-    if (tracking.lastSideralTracking)
-    {
-      startSideralTracking();
-    }
+    // Tracking was left on during AtRate (OnStep-style). Recompute rates so both
+    // axes pick up current HA/Dec compensation after the guide overlay ends.
+    if (tracking.sideralTracking)
+      computeTrackingRate(true);
     resetGuideRate();
   }
   guiding.lastGuidingState = guiding.GuidingState;

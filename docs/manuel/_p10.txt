@@ -1,0 +1,42 @@
+TeenAstro
+Manuel d'utilisation
+10
+systématiquement à l'opposé en azimut.
+Altitude du Site : altitude du lieu, en mètres. Elle entre dans la réfraction.
+Selection Site : lieu actif.
+Synchro GNSS
+Synchro GNSS copie l'heure et le lieu du récepteur vers l'unité principale. Sans antenne, ou à l'intérieur,
+l'écran indique Pas de GNSS. La synchro automatique est proposée lorsque la monture est à la maison ou
+au parc et que le récepteur a un fix.
+11. Maison et parc
+La position maison est l'origine des axes. La position parc est l'endroit où l'on range le tube en fin de nuit,
+moteurs encore informés de leur angle, pour retrouver le ciel au rallumage sans refaire la mise en station.
+Maison
+Parc
+Rôle
+Origine mécanique, départ de l'alignement
+Rangement
+Équatoriale
+Vers le pôle, contrepoids en bas sur une allemande
+Là où le tube est en sécurité
+Altazimutale par défaut
+Hauteur 0°, azimut 180° (sud)
+Au choix
+Param. Télescope → Parc et Maison
+Déf. Pos. Parc : la position actuelle devient le parc.
+Déf Pos. Maison : la position actuelle devient la maison. À n'utiliser qu'une fois le tube réellement dans
+la pose que vous voulez comme origine.
+Reset Pos. Maison : revient à la maison d'usine du type de monture.
+Action Télescope → Goto → Home ou Parc envoie le tube à cet endroit. Synchro → Home ou Parc
+déclare que le tube y est déjà, sans le déplacer : à réserver au cas où vous l'y avez mis à la main.
+Quand la monture est parquée, le menu d'action ne propose que Déparc. Déparquez avant tout
+déplacement.
+L'icône maison ou parc à droite de l'écran confirme l'état. Si elle est absente alors que le tube vous semble
+à la maison, la position mémorisée et la position réelle ont divergé : soit vous ramenez le tube, soit vous
+redéfinissez la maison.
+12. Vitesses
+Deux endroits distincts :
+Shift + Nord → Réglage Vitesse choisit la vitesse des boutons pour la séance : Guidage, Lente,
+Moyenne, Rapide, Max. La ligne en surbrillance est le cran actif. Le détail des barres est au chapitre 4.
+ - Moteurs → Vitesse
+définit ce que valent ces cinq crans, plus la vitesse retenue au démarrage.

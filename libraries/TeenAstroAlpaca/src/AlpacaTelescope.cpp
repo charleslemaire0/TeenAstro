@@ -1702,7 +1702,6 @@ void AlpacaTelescope::putAbortSlew(AlpacaWebServer& s, const AlpacaRequest& r)
     m_moveAxisActive[1] = false;
   }
   m_slewKickEndMs = 0;
-  m_moveAxisRestoreTracking = false;
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
@@ -2088,13 +2087,8 @@ void AlpacaTelescope::putMoveAxis(AlpacaWebServer& s, const AlpacaRequest& r)
                     AE_PARKED, "Cannot MoveAxis while parked");
     return;
   }
-  bool snapshotTrackingOn = false;
-  if (rateDegSec != 0.0)
-  {
-    m_status->updateAllState(true);
-    snapshotTrackingOn = (m_status->getTrackingState() == MountState::TRK_ON);
-  }
   // TeenAstro ASCOM driver: `:M1#` / `:M2#` rate in integer arcsec/s (matches :GXR4# cap).
+  // Firmware keeps sidereal tracking on during AtRate (OnStep-style); no restore needed.
   double rateArcsecPerSec = rateDegSec * 3600.0;
   int rateInt = rateArcsecPerSec >= 0
                 ? (int)floor(rateArcsecPerSec + 1e-9)
@@ -2160,26 +2154,14 @@ void AlpacaTelescope::putMoveAxis(AlpacaWebServer& s, const AlpacaRequest& r)
     return;
   }
   if (rateDegSec != 0.0)
-    m_moveAxisRestoreTracking = snapshotTrackingOn;
-  m_moveAxisActive[axis] = (rateDegSec != 0.0);
+    m_moveAxisActive[axis] = true;
+  else
+    m_moveAxisActive[axis] = false;
   // TelescopeHardware.MoveAxis — slewing hint + GXAS refresh like COM.
   if (rateDegSec != 0.0)
     m_slewKickEndMs = millis() + kComSlewingHintMs;
   else
     m_slewKickEndMs = 0;
-  if (rateDegSec == 0.0 && m_moveAxisRestoreTracking)
-  {
-    for (int i = 0; i < 40; ++i)
-    {
-      m_status->updateAllState(true);
-      if (m_status->getTrackingState() == MountState::TRK_ON)
-        break;
-      delay(25);
-    }
-    if (m_status->getTrackingState() != MountState::TRK_ON)
-      m_client->enableTracking(true);
-    m_moveAxisRestoreTracking = false;
-  }
   m_status->updateAllState(true);
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }

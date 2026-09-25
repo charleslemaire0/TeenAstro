@@ -106,8 +106,10 @@ std::mutex& emu_getFireMutex() {
 /*  reboot() stub                                                      */
 /* ------------------------------------------------------------------ */
 void reboot() {
-    printf("[EMU] reboot() called -- exiting.\n");
+    printf("[EMU] reboot() called -- flushing EEPROM and exiting.\n");
     fflush(stdout);
+    EEPROM.commit();
+    XEEPROM.commit();
     exit(0);
 }
 

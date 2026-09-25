@@ -6,12 +6,12 @@
 AppID={{deec129d-8d5e-4457-af33-2a3f365b2a86}
 AppName=ASCOM TeenAstro Telescope Driver
 AppVerName=ASCOM TeenAstro Telescope Driver 1.6.4
-AppVersion=1.6.4
+AppVersion=1.6.5
 AppPublisher=TeenAstro@groups.io <TeenAstro@groups.io>
 AppPublisherURL=mailto:TeenAstro@groups.io
 AppSupportURL=https://ascomtalk.groups.io/g/Help
 AppUpdatesURL=https://ascom-standards.org/
-VersionInfoVersion=1.6.4.0
+VersionInfoVersion=1.6.5.0
 MinVersion=6.1.7601
 DefaultDirName="{cf}\ASCOM\Telescope"
 DisableDirPage=yes

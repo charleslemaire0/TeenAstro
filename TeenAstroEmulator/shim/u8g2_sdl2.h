@@ -16,6 +16,8 @@
 
 #include <u8g2_ext.h>
 #include <SDL.h>
+#include <stdio.h>
+#include <stdint.h>
 
 /* Exposed by TeenAstroPad_sdl.cpp -- true while the key is held */
 extern bool g_padKeyState[7];
@@ -98,6 +100,7 @@ public:
         }
 
         SDL_UpdateTexture(texture_, nullptr, pixels, OLED_W * sizeof(uint32_t));
+        dumpFrameIfRequested(pixels);
 
         SDL_SetRenderDrawColor(renderer_, 0x11, 0x11, 0x22, 0xFF);
         SDL_RenderClear(renderer_);
@@ -110,6 +113,55 @@ public:
         drawButtonKeypad();
 
         SDL_RenderPresent(renderer_);
+    }
+
+    /* The on-screen window is rotated 180 degrees so the text is upright.
+       Write that same view when shot.req is present, then delete the request. */
+    static void dumpFrameIfRequested(const uint32_t* pixels) {
+        FILE* req = fopen("shot.req", "rb");
+        if (!req)
+            return;
+        fclose(req);
+
+        const int S = SCALE;
+        const int outW = OLED_W * S;
+        const int outH = OLED_H * S;
+        const int rowStride = outW * 3;
+        const uint32_t pixelBytes = (uint32_t)(rowStride * outH);
+        const uint32_t fileSize = 54u + pixelBytes;
+        uint8_t hdr[54] = {};
+        hdr[0] = 'B'; hdr[1] = 'M';
+        hdr[2] = (uint8_t)(fileSize);
+        hdr[3] = (uint8_t)(fileSize >> 8);
+        hdr[4] = (uint8_t)(fileSize >> 16);
+        hdr[5] = (uint8_t)(fileSize >> 24);
+        hdr[10] = 54;
+        hdr[14] = 40;
+        hdr[18] = (uint8_t)(outW);
+        hdr[19] = (uint8_t)(outW >> 8);
+        hdr[22] = (uint8_t)(outH);
+        hdr[23] = (uint8_t)(outH >> 8);
+        hdr[26] = 1;
+        hdr[28] = 24;
+
+        FILE* f = fopen("oled_frame.bmp", "wb");
+        if (!f)
+            return;
+        fwrite(hdr, 1, 54, f);
+        uint8_t row[512 * 3];
+        for (int oy = outH - 1; oy >= 0; --oy) {
+            for (int ox = 0; ox < outW; ++ox) {
+                int sx = OLED_W - 1 - (ox / S);
+                int sy = OLED_H - 1 - (oy / S);
+                uint32_t p = pixels[sy * OLED_W + sx];
+                row[ox * 3 + 0] = (uint8_t)(p);         /* B */
+                row[ox * 3 + 1] = (uint8_t)(p >> 8);    /* G */
+                row[ox * 3 + 2] = (uint8_t)(p >> 16);   /* R */
+            }
+            fwrite(row, 1, rowStride, f);
+        }
+        fclose(f);
+        remove("shot.req");
     }
 
     void sendBuffer() {
