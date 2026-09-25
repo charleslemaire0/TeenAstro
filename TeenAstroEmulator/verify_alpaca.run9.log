@@ -1,0 +1,88 @@
+﻿==> Connecting to TeenAstro MainUnit emulator at 127.0.0.1:9997 ...
+==> Connected.
+
+==> Phase 1: common metadata
+[ OK ] GET name
+[ OK ] GET description
+[ OK ] GET driverversion
+[ OK ] GET interfaceversion
+[ OK ] GET supportedactions
+[ OK ] GET connected (initially false)
+[ OK ] GET tracking before connect ÔåÆ NotConnected
+
+==> Phase 2: connect & state reads
+[ OK ] PUT connected=true
+[ OK ] GET connected (now true)
+[ OK ] GET rightascension
+[ OK ] GET declination
+[ OK ] GET altitude
+[ OK ] GET azimuth
+[ OK ] GET siderealtime
+[ OK ] GET utcdate (ISO 8601)
+[ OK ] GET tracking (bool)
+[ OK ] GET slewing (bool)
+[ OK ] GET atpark (bool)
+[ OK ] GET athome (bool)
+[ OK ] GET sideofpier
+[ OK ] GET alignmentmode
+[ OK ] GET equatorialsystem (Topocentric=1)
+
+==> Phase 3: capability flags
+[ OK ] GET canpark = false
+[ OK ] GET canunpark = false
+[ OK ] GET cansetpark = true
+[ OK ] GET cansettracking = true
+[ OK ] GET canslew = true
+[ OK ] GET canslewasync = true
+[ OK ] GET cansync = true
+[ OK ] GET canpulseguide = true
+[ OK ] GET cansetrightascensionrate = true
+[ OK ] GET cansetdeclinationrate = true
+[ OK ] GET canmoveaxis (Axis=0) = true
+[ OK ] GET canmoveaxis (Axis=2) = false
+[ OK ] GET axisrates (Axis=0)
+
+==> Phase 4: site reads + writes
+[ OK ] GET sitelatitude
+[ OK ] GET sitelongitude
+[ OK ] GET siteelevation
+
+==> Phase 5: target round-trip
+[ OK ] GET targetrightascension before set ÔåÆ ValueNotSet
+[ OK ] PUT targetrightascension=12.5
+[ OK ] PUT targetdeclination=42.0
+[ OK ] GET targetrightascension after set
+[ OK ] GET targetdeclination after set
+[ OK ] PUT targetrightascension=99 ÔåÆ InvalidValue
+[ OK ] PUT targetdeclination=-200 ÔåÆ InvalidValue
+
+==> Phase 6: tracking control
+[ OK ] PUT tracking=true
+[ OK ] PUT tracking=false
+[ OK ] GET trackingrates
+[ OK ] PUT trackingrate=0 (Sidereal)
+[ OK ] PUT trackingrate=1 (Lunar)
+[ OK ] PUT trackingrate=99 ÔåÆ InvalidValue
+
+==> Phase 7: methods
+[ OK ] PUT abortslew
+[ OK ] PUT tracking=true (for PulseGuide)
+[ OK ] PUT pulseguide North 100ms
+[ OK ] PUT pulseguide invalid Direction=9
+[FAIL] PUT moveaxis Axis=0 Rate=0 (stop)
+        body: {"ClientTransactionID":83,"ServerTransactionID":56,"ErrorNumber":1035,"ErrorMessage":"MoveAxis ignored (guiding)"}
+[ OK ] PUT moveaxis Axis=2 ÔåÆ InvalidValue
+
+==> Phase 8: error path
+[ OK ] GET totallyunknown ÔåÆ NotImplemented
+
+==> Phase 9: non-blocking motion state machine
+[ OK ] PUT slewtocoordinatesasync accepted
+[ OK ] slew dispatch is non-blocking (96 ms, was up to 18000 ms)
+[ OK ] Slewing=true immediately after async slew (queued)
+[ OK ] async slew reaches completion (Slewing returns false)
+[ OK ] no single tick() blocks (max 61 ms)
+[ OK ] abortslew is non-blocking (62 ms)
+[ OK ] AbortSlew cancels queued slew (Slewing clears)
+
+==> Summary: 64 passed, 1 failed
