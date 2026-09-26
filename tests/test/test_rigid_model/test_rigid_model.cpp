@@ -503,6 +503,84 @@ static double worstPointingError(const CoordConv &cc, const double (&Tm)[3][3],
     return worst;
 }
 
+/// As synthMountAxes, but choosing which of the two mechanical configurations
+/// reaches the target. \p flipped selects the beyond the pole branch, where
+/// axis2 runs past 90 degrees; the mount reports exactly that, since
+/// MountAxes::getInstrDeg divides the raw step count and Coord_IN stores the
+/// angle verbatim.
+static void synthMountAxesSide(const double (&Tm)[3][3], const HeadModel &head,
+                               double az, double alt, bool flipped,
+                               double &axis1Direct, double &axis2)
+{
+    double dcSky[3], dcIn[3];
+    LA3::toDirCos(dcSky, az, alt);
+    LA3::multiply(dcIn, Tm, dcSky);
+    LA3::normalize(dcIn, dcIn);
+    const double s = asin(dcIn[2] > 1.0 ? 1.0 : (dcIn[2] < -1.0 ? -1.0 : dcIn[2]));
+    HeadGeom::inverse(dcIn, head, flipped ? (M_PI - s) : s, axis1Direct, axis2);
+}
+
+/// Feed STARS_WIDE, placing star \p k on the beyond the pole branch when
+/// flipped[k] is set.
+static void feedSides(CoordConv &cc, const double (&Tm)[3][3], const HeadModel &head,
+                      const bool (&flipped)[6])
+{
+    for (int k = 0; k < 6; k++) {
+        double a1d, a2;
+        synthMountAxesSide(Tm, head, STARS_WIDE[k][0], STARS_WIDE[k][1], flipped[k], a1d, a2);
+        feedStar(cc, STARS_WIDE[k][0], STARS_WIDE[k][1], a1d, a2);
+    }
+}
+
+void test_fit_drops_cone_without_a_meridian_flip(void)
+{
+    // Cone error and axis2 non-perpendicularity both displace axis1 with nearly
+    // the same dependence on axis2, so within a single mechanical configuration
+    // they are ~99.9% redundant (cone keeps 0.0005 of its own information once
+    // perp is in the model) no matter how wide the sky coverage is. The fit must
+    // therefore keep only one of them.
+    double Ttruth[3][3];
+    truthT(Ttruth);
+    const bool oneSide[6] = { false, false, false, false, false, false };
+    CoordConv cc;
+    feedSides(cc, Ttruth, HEAD_TRUTH, oneSide);
+    TEST_ASSERT_TRUE(cc.fitRigidModel());
+
+    TEST_ASSERT_EQUAL_UINT8(0, cc.getRigidMask() & COORDCONV_FIT_CONE);
+    TEST_ASSERT_EQUAL_UINT8(COORDCONV_FIT_PERP, cc.getRigidMask() & COORDCONV_FIT_PERP);
+    float c, p, i2;
+    cc.getHead(c, p, i2);
+    TEST_ASSERT_EQUAL_DOUBLE(0.0, c);
+    // The axis2 index stays separable and must still come out right.
+    TEST_ASSERT_DOUBLE_WITHIN(2.0 * ARCSEC, HEAD_TRUTH.idx2, i2);
+}
+
+void test_fit_recovers_cone_with_one_star_past_the_flip(void)
+{
+    // A cone error is fixed in the tube, so crossing to the beyond the pole
+    // configuration reverses its effect on the sky while the axis2
+    // non-perpendicularity, being a property of the head, does not follow it.
+    // That asymmetry is what separates the pair, and a single star on the other
+    // side is enough: cone recovers 0.11 of its independent information, above
+    // the selection threshold, and all three terms then come out exactly.
+    double Ttruth[3][3];
+    truthT(Ttruth);
+    const bool lastFlipped[6] = { false, false, false, false, false, true };
+    CoordConv cc;
+    feedSides(cc, Ttruth, HEAD_TRUTH, lastFlipped);
+    TEST_ASSERT_TRUE(cc.fitRigidModel());
+
+    TEST_ASSERT_EQUAL_UINT8(COORDCONV_FIT_CONE | COORDCONV_FIT_PERP | COORDCONV_FIT_IDX2,
+                            cc.getRigidMask());
+    float c, p, i2;
+    cc.getHead(c, p, i2);
+    TEST_ASSERT_DOUBLE_WITHIN(2.0 * ARCSEC, HEAD_TRUTH.cone, c);
+    TEST_ASSERT_DOUBLE_WITHIN(2.0 * ARCSEC, HEAD_TRUTH.perp, p);
+    TEST_ASSERT_DOUBLE_WITHIN(2.0 * ARCSEC, HEAD_TRUTH.idx2, i2);
+    // With the geometry fully determined the model is exact off the star set too.
+    TEST_ASSERT_TRUE(worstPointingError(cc, Ttruth, HEAD_TRUTH) < 1.0 * ARCSEC);
+}
+
 void test_fit_recovers_axis2_index(void)
 {
     // The axis2 index is the one head term that is always well separated from
@@ -723,6 +801,8 @@ int main(int, char **)
     RUN_TEST(test_onstep_agreement_pier_side_west);
     RUN_TEST(test_teenastro_closer_to_truth_for_large_errors);
 
+    RUN_TEST(test_fit_drops_cone_without_a_meridian_flip);
+    RUN_TEST(test_fit_recovers_cone_with_one_star_past_the_flip);
     RUN_TEST(test_fit_recovers_axis2_index);
     RUN_TEST(test_fit_selects_one_of_the_correlated_pair);
     RUN_TEST(test_fit_drops_terms_for_single_declination);

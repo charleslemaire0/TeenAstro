@@ -417,6 +417,13 @@ double independentInfo(const double N[RIGID_NPAR][RIGID_NPAR], const bool keep[R
 /// values that reproduce the calibration stars but degrade pointing away from
 /// them, and look alarming when displayed. Leaving the unsupported term at zero
 /// costs nothing on these stars and keeps the model honest.
+///
+/// The pair does become separable, and there is no need to special case it: a
+/// cone error is fixed in the tube, so it reverses across a meridian flip while
+/// the head's non-perpendicularity does not. One star taken beyond the pole
+/// therefore makes the cone column independent again, and this test picks that
+/// up on its own, because starAxis records the raw mechanical axis2 and so runs
+/// past 90 degrees for that star.
 void selectParams(const double N[RIGID_NPAR][RIGID_NPAR], unsigned char nstars,
                   bool (&active)[RIGID_NPAR])
 {
