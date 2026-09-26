@@ -16,6 +16,9 @@ void beginTimers();
 
 // Park / alignment
 void saveAlignModel();
+// Fit the rigid six degree of freedom model to the accumulated alignment stars.
+// Returns true when the fit succeeded and the head terms were updated.
+bool fitRigidAlignModel();
 
 // EEPROM / mount init
 void AutoinitEEPROM();

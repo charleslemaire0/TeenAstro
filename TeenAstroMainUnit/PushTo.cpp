@@ -18,7 +18,7 @@ byte PushToHor(Coord_HO HO_T, PoleSide preferedPoleSide, float* deltaA1, float* 
   if (altDeg < (double)mount.limits.minAlt - kAltEpsDeg) return ERRGOTO_BELOWHORIZON;
   if (altDeg > (double)mount.limits.maxAlt + kAltEpsDeg) return ERRGOTO_ABOVEOVERHEAD;
 
-  Coord_IN instr_T = HO_T.To_Coord_IN(mount.alignment.conv.Tinv);
+  Coord_IN instr_T = HO_T.To_Coord_IN(mount.alignment.conv.Tinv, mount.alignment.conv.head);
   Axis1_target = instr_T.Axis1() * RAD_TO_DEG;
   Axis2_target = instr_T.Axis2() * RAD_TO_DEG;
 

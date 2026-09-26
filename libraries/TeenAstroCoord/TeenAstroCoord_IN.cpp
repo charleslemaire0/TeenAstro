@@ -34,6 +34,29 @@ Coord_EQ Coord_IN::To_Coord_EQ(const double(&missaligmentinv)[3][3], RefrOpt Opt
 {
   return To_Coord_HO(missaligmentinv, Opt).To_Coord_EQ(Lat);
 };
+Coord_HO Coord_IN::To_Coord_HO(const double(&missaligmentinv)[3][3], RefrOpt Opt, const HeadModel &head)
+{
+  if (head.isZero())
+    return To_Coord_HO(missaligmentinv, Opt);
+
+  double frh, alt, az_s_direct;
+  double tmp1[3][3];
+  double tmp2[3][3];
+  LA3::SingleRotation rots[HEADMODEL_CHAIN_LEN];
+  HeadGeom::chain(rots, m_Eulers[0].angle, m_Eulers[1].angle, m_Eulers[2].angle, head);
+  LA3::getMultipleRotationMatrix(tmp1, rots, HEADMODEL_CHAIN_LEN);
+  LA3::multiply(tmp2, tmp1, missaligmentinv);
+  LA3::getEulerRxRyRz(tmp2, frh, alt, az_s_direct);
+  if (Opt.use)
+  {
+    LA3::Apparent2Topocentric(alt, Opt);
+  }
+  return Coord_HO(frh, alt, modRad(-az_s_direct - M_PI), Opt.use);
+};
+Coord_EQ Coord_IN::To_Coord_EQ(const double(&missaligmentinv)[3][3], RefrOpt Opt, double Lat, const HeadModel &head)
+{
+  return To_Coord_HO(missaligmentinv, Opt, head).To_Coord_EQ(Lat);
+};
 double Coord_IN::Axis3()
 {
   return m_Eulers[0].angle;

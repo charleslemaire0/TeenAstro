@@ -26,4 +26,14 @@ struct MountAlignment {
   AlignPhase alignPhase = ALIGN_IDLE;
   uint8_t alignStarNum  = 0;
   char alignStarName[16] = {0};  // name of current alignment star (set by app via :SXAs,name#)
+
+  /// Rigid six degree of freedom session from :A0,r<n># / :A*,r<n>#. Zero means
+  /// a classic two star session, where only T is fitted and the head stays zero.
+  uint8_t alignRigidStars = 0;
+  /// True once a fit produced non-zero head terms (cone / perp / axis2 index).
+  bool hasRigid = false;
+  /// RMS pointing residual of the last rigid fit, arcseconds.
+  float rigidRmsArcsec = 0.f;
+
+  bool isRigidSession() const { return alignRigidStars >= COORDCONV_MIN_RIGID_STARS; }
 };

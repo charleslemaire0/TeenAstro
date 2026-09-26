@@ -114,13 +114,13 @@ bool Mount::syncInstr(Coord_IN* instr, PoleSide Side)
 
 bool Mount::syncEqu(Coord_EQ* EQ_T, PoleSide Side, double Lat)
 {
-  Coord_IN instr = EQ_T->To_Coord_IN(Lat, refrOptForGoto(), alignment.conv.Tinv);
+  Coord_IN instr = EQ_T->To_Coord_IN(Lat, refrOptForGoto(), alignment.conv.Tinv, alignment.conv.head);
   return syncInstr(&instr, Side);
 }
 
 bool Mount::syncAzAlt(Coord_HO* HO_T, PoleSide Side)
 {
-  Coord_IN instr = HO_T->To_Coord_IN(alignment.conv.Tinv);
+  Coord_IN instr = HO_T->To_Coord_IN(alignment.conv.Tinv, alignment.conv.head);
   return syncInstr(&instr, Side);
 }
 
@@ -254,34 +254,34 @@ Coord_IN Mount::getInstrTarget() const
 
 Coord_EQ Mount::getEqu(double Lat) const
 {
-  return getInstr().To_Coord_EQ(alignment.conv.T, refrOptForGoto(), Lat);
+  return getInstr().To_Coord_EQ(alignment.conv.T, refrOptForGoto(), Lat, alignment.conv.head);
 }
 
 Coord_EQ Mount::getEquE(double Lat) const
 {
-  return getInstrE().To_Coord_EQ(alignment.conv.T, refrOptForGoto(), Lat);
+  return getInstrE().To_Coord_EQ(alignment.conv.T, refrOptForGoto(), Lat, alignment.conv.head);
 }
 
 Coord_EQ Mount::getEquTarget(double Lat) const
 {
-  return getInstrTarget().To_Coord_EQ(alignment.conv.T, refrOptForGoto(), Lat);
+  return getInstrTarget().To_Coord_EQ(alignment.conv.T, refrOptForGoto(), Lat, alignment.conv.head);
 }
 
 Coord_HO Mount::getHorTopo() const
 {
-  return getInstr().To_Coord_HO(alignment.conv.T, refrOptForTracking());
+  return getInstr().To_Coord_HO(alignment.conv.T, refrOptForTracking(), alignment.conv.head);
 }
 
 Coord_HO Mount::getHorETopo() const
 {
   if (motorsEncoders.enableEncoder)
-    return getInstrE().To_Coord_HO(alignment.conv.T, refrOptForTracking());
+    return getInstrE().To_Coord_HO(alignment.conv.T, refrOptForTracking(), alignment.conv.head);
   return getHorTopo();
 }
 
 Coord_HO Mount::getHorAppTarget() const
 {
-  return getInstrTarget().To_Coord_HO(alignment.conv.T, refrOptForGoto());
+  return getInstrTarget().To_Coord_HO(alignment.conv.T, refrOptForGoto(), alignment.conv.head);
 }
 
 // -----------------------------------------------------------------------------
@@ -339,7 +339,7 @@ byte Mount::goToHor(Coord_HO HO_T, PoleSide preferedPoleSide)
   if (altDeg > (double)limits.maxAlt + kAltEpsDeg)
   { tracking.gotoState = GOTO_NONE; return ERRGOTO_ABOVEOVERHEAD; }
 
-  Coord_IN instr_T = HO_T.To_Coord_IN(alignment.conv.Tinv);
+  Coord_IN instr_T = HO_T.To_Coord_IN(alignment.conv.Tinv, alignment.conv.head);
   Axis1_target = instr_T.Axis1() * RAD_TO_DEG;
   Axis2_target = instr_T.Axis2() * RAD_TO_DEG;
   if (!predictTarget(Axis1_target, Axis2_target, preferedPoleSide, axis1_target, axis2_target, selectedSide))

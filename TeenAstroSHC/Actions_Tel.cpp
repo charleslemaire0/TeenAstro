@@ -390,6 +390,34 @@ void SmartHandController::menuTrack()
   }
 }
 
+/// Format the rigid head geometry (cone, axis2 non-perpendicularity, axis2
+/// index) for the alignment error screen, all in arcseconds. Returns false when
+/// the model has none, i.e. when no rigid multi-star session fitted them, so the
+/// extra screen only appears where it means something.
+///
+/// A term the star distribution could not separate is shown as "n/a" rather
+/// than as a measured zero, so the display never implies a measurement that
+/// was not actually made.
+static bool formatRigidHead(LX200Client& client, char(&cone)[20], char(&perp)[20], char(&idx2)[20])
+{
+  double c = 0.0, p = 0.0, i2 = 0.0;
+  char mask[8] = { 0 };
+  if (client.getAlignHeadCone(c) != LX200_VALUEGET
+      || client.getAlignHeadPerp(p) != LX200_VALUEGET
+      || client.getAlignHeadIndex2(i2) != LX200_VALUEGET
+      || client.getAlignFittedTerms(mask, sizeof(mask)) != LX200_VALUEGET)
+    return false;
+  if (strchr(mask, 'C') == NULL && strchr(mask, 'P') == NULL && strchr(mask, 'I') == NULL)
+    return false;
+  if (strchr(mask, 'C')) snprintf(cone, sizeof(cone), "Cone %+.0f\"", c);
+  else                   snprintf(cone, sizeof(cone), "Cone n/a");
+  if (strchr(mask, 'P')) snprintf(perp, sizeof(perp), "Perp %+.0f\"", p);
+  else                   snprintf(perp, sizeof(perp), "Perp n/a");
+  if (strchr(mask, 'I')) snprintf(idx2, sizeof(idx2), "Idx2 %+.0f\"", i2);
+  else                   snprintf(idx2, sizeof(idx2), "Idx2 n/a");
+  return true;
+}
+
 SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
 {
   bool alignInProgress = ta_MountStatus.isAligning();
@@ -683,6 +711,9 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
             && m_client->getAlignErrorAlt(err_alt, sizeof(err_alt)) == LX200_VALUEGET)
         {
           DisplayLongMessage("[W;Az;Alt]:", err_pol, err_az, err_alt, -1);
+          char hc[20], hp[20], hi[20];
+          if (formatRigidHead(*m_client, hc, hp, hi))
+            DisplayLongMessage("Head geometry:", hc, hp, hi, -1);
         }
         else
         {
@@ -709,6 +740,9 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
             && m_client->getAlignErrorAlt(err_alt, sizeof(err_alt)) == LX200_VALUEGET)
         {
           DisplayLongMessage("[W;Az;Alt]:", err_pol, err_az, err_alt, -1);
+          char hc[20], hp[20], hi[20];
+          if (formatRigidHead(*m_client, hc, hp, hi))
+            DisplayLongMessage("Head geometry:", hc, hp, hi, -1);
         }
         else
         {

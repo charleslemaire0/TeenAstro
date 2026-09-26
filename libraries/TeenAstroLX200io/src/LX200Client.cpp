@@ -855,6 +855,71 @@ LX200RETURN LX200Client::alignSelectStar(uint8_t n)
   return set(cmd);
 }
 
+namespace {
+/// Shared body for the :GXA{c,p,i,r}# float getters, all in arcseconds.
+LX200RETURN getAlignFloat(LX200Client& c, const char* cmd, double& arcsec)
+{
+  char out[LX200_SBUF];
+  if (c.get(cmd, out, sizeof(out)) != LX200_VALUEGET)
+    return LX200_GETVALUEFAILED;
+  arcsec = atof(out);
+  return LX200_VALUEGET;
+}
+
+/// Shared body for the :SXA{c,p,i},V# setters, all in arcseconds.
+LX200RETURN setAlignFloat(LX200Client& c, char sel, double arcsec)
+{
+  char cmd[24];
+  snprintf(cmd, sizeof(cmd), ":SXA%c,%.3f#", sel, arcsec);
+  return c.set(cmd);
+}
+}  // namespace
+
+LX200RETURN LX200Client::alignStartRigid(uint8_t stars)
+{
+  if (stars < 4 || stars > 9) return LX200_SETVALUEFAILED;
+  char cmd[8] = ":A0,r0#";
+  cmd[5] = (char)('0' + stars);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::alignAcceptStarRigid(uint8_t stars)
+{
+  if (stars < 4 || stars > 9) return LX200_SETVALUEFAILED;
+  char cmd[8] = ":A*,r0#";
+  cmd[5] = (char)('0' + stars);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::alignSelectStarRigid(uint8_t n)
+{
+  if (n < 1 || n > 9) return LX200_SETVALUEFAILED;
+  char cmd[5] = ":A0#";
+  cmd[2] = (char)('0' + n);
+  return set(cmd);
+}
+
+LX200RETURN LX200Client::getAlignHeadCone(double& arcsec)   { return getAlignFloat(*this, ":GXAc#", arcsec); }
+LX200RETURN LX200Client::getAlignHeadPerp(double& arcsec)   { return getAlignFloat(*this, ":GXAp#", arcsec); }
+LX200RETURN LX200Client::getAlignHeadIndex2(double& arcsec) { return getAlignFloat(*this, ":GXAi#", arcsec); }
+LX200RETURN LX200Client::getAlignRigidRms(double& arcsec)   { return getAlignFloat(*this, ":GXAr#", arcsec); }
+
+LX200RETURN LX200Client::getAlignStarCount(uint8_t& stars)
+{
+  char out[LX200_SBUF];
+  if (get(":GXAn#", out, sizeof(out)) != LX200_VALUEGET)
+    return LX200_GETVALUEFAILED;
+  stars = (uint8_t)atoi(out);
+  return LX200_VALUEGET;
+}
+
+LX200RETURN LX200Client::getAlignFittedTerms(char* out, int len) { return get(":GXAf#", out, len); }
+
+LX200RETURN LX200Client::setAlignHeadCone(double arcsec)   { return setAlignFloat(*this, 'c', arcsec); }
+LX200RETURN LX200Client::setAlignHeadPerp(double arcsec)   { return setAlignFloat(*this, 'p', arcsec); }
+LX200RETURN LX200Client::setAlignHeadIndex2(double arcsec) { return setAlignFloat(*this, 'i', arcsec); }
+LX200RETURN LX200Client::alignClearHead()                  { return set(":SXAC#"); }
+
 LX200RETURN LX200Client::getAlignStarName(char* out, int len)   { return get(":GXAs#", out, len); }
 LX200RETURN LX200Client::getAlignErrorPolar(char* out, int len) { return get(":GXAw#", out, len); }
 LX200RETURN LX200Client::getAlignErrorAz(char* out, int len)    { return get(":GXAz#", out, len); }

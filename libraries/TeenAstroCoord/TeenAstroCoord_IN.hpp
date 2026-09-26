@@ -49,6 +49,9 @@ public:
 	Coord_IN(double Axis3, double Axis2, double Axis1);
 	Coord_HO To_Coord_HO(const double(&missaligmentinv)[3][3], RefrOpt Opt);
 	Coord_EQ To_Coord_EQ(const double(&missaligmentinv)[3][3], RefrOpt Opt, double Lat);
+	/// As above, with the rigid head geometry applied. A zero head is identical to the overload without it.
+	Coord_HO To_Coord_HO(const double(&missaligmentinv)[3][3], RefrOpt Opt, const HeadModel &head);
+	Coord_EQ To_Coord_EQ(const double(&missaligmentinv)[3][3], RefrOpt Opt, double Lat, const HeadModel &head);
 	double Axis3();
 	double Axis2();
 	double Axis1();

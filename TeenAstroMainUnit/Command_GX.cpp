@@ -281,6 +281,35 @@ static void Command_GX_Alignment()
     // :GXAs#  Return alignment star name (set by app via :SXAs,name#)
     sprintf(commandState.reply, "%s#", mount.alignment.alignStarName);
     break;
+  case 'c':
+  case 'p':
+  case 'i': {
+    // :GXAc# :GXAp# :GXAi#  Rigid head geometry in arcseconds: optical axis cone
+    // error, axis2 non-perpendicularity, axis2 index. Zero unless a rigid
+    // session (:A0,r<n>#) was completed. TeenAstro extension.
+    float hcone = 0.f, hperp = 0.f, hidx2 = 0.f;
+    mount.alignment.conv.getHead(hcone, hperp, hidx2);
+    const float sel = commandState.command[3] == 'c' ? hcone : (commandState.command[3] == 'p' ? hperp : hidx2);
+    sprintf(commandState.reply, "%f#", sel * (float)RAD_TO_DEG * 3600.f);
+  } break;
+  case 'r':
+    // :GXAr#  RMS pointing residual of the last rigid fit, arcseconds. TeenAstro extension.
+    sprintf(commandState.reply, "%f#", mount.alignment.rigidRmsArcsec);
+    break;
+  case 'n':
+    // :GXAn#  Stars collected in the current/last alignment session. TeenAstro extension.
+    sprintf(commandState.reply, "%d#", (int)mount.alignment.conv.getStars());
+    break;
+  case 'f': {
+    // :GXAf#  Which head terms the last rigid fit actually solved, as "CPI" with
+    // a dash for each term the star distribution could not separate. TeenAstro extension.
+    const unsigned char m = mount.alignment.conv.getRigidMask();
+    commandState.reply[0] = (m & COORDCONV_FIT_CONE) ? 'C' : '-';
+    commandState.reply[1] = (m & COORDCONV_FIT_PERP) ? 'P' : '-';
+    commandState.reply[2] = (m & COORDCONV_FIT_IDX2) ? 'I' : '-';
+    commandState.reply[3] = '#';
+    commandState.reply[4] = 0;
+  } break;
   case 'a':
   case 'z':
   case 'w': {
@@ -508,7 +537,7 @@ static void Command_GX_Position()
   case '3':
   case '4':
   {
-    Coord_IN IN_T = mount.getEqu(*localSite.latitude() * DEG_TO_RAD).To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, mount.refrOptForGoto(), mount.alignment.conv.Tinv);
+    Coord_IN IN_T = mount.getEqu(*localSite.latitude() * DEG_TO_RAD).To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, mount.refrOptForGoto(), mount.alignment.conv.Tinv, mount.alignment.conv.head);
     double f = IN_T.Axis1() * RAD_TO_DEG;
     double f1 = IN_T.Axis2() * RAD_TO_DEG;
     long Axis1_out, Axis2_out;

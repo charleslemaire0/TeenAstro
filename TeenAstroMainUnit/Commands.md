@@ -30,10 +30,12 @@ Commands use the format `:CMD#`: leading colon, command string, terminating hash
 | `:A0,2#` | Same as `:A0#`; session is two equatorial stars (default if omitted). | `1` | TeenAstro extension |
 | `:A0,m#` | Same as `:A0#`; **mechanical pole** session — two star measurements, then adjust pole bolts, `:MP#` / `:Malign#` to recenter, finalize with `:AP#` (after star 2 the model stays provisional until `:AP#`). | `1` | TeenAstro extension |
 | `:A0,3#` | **Removed** (rejected); use `:A0,m#`. | (nothing) | — |
+| `:A0,r<n>#` | Same as `:A0#`; **rigid session** of *n* stars (`n` = 4…9). The first two stars seed `T` as usual, so gotos work while collecting; on star *n* a six degree of freedom fit also solves the optical-axis cone error, the axis2 non-perpendicularity and the axis2 index. Head terms the star distribution cannot separate are left at zero — see `:GXAf#`. The legacy `minimizeAxis1/2` fudges are skipped when the fit solved at least one head term, since those terms are then modelled explicitly; if the stars separate none of them (a set clustered in altitude can do this) the fudges are applied as usual, so a rigid session is never worse than the two-star path. Out-of-range `n` is rejected. Three stars determine the six unknowns with zero redundancy, so four is the minimum. | `1` | TeenAstro extension |
 | `:A*#` | Telescope at target: sync to current Alt/Az, add reference to alignment model. | `1` | LX200 standard |
 | `:A*,m#` | Same as `:A*#` but mechanical pole session (`:A0,m#`-style defer on 2nd star → `:AP#`). | `1` | TeenAstro extension |
+| `:A*,r<n>#` | Same as `:A*#` but starts a rigid *n*-star session (see `:A0,r<n>#`). | `1` | TeenAstro extension |
 | `:A1#` … `:A2#` | Add alignment reference from current target for star *n*; complete or defer per session. | `1` | LX200 standard |
-| `:A3#` | Rejected in TeenAstro (does not add star 3 or finalize polar pass). | (nothing) | TeenAstro extension |
+| `:A3#` … `:A9#` | Add alignment reference for star *n* of a rigid session; the fit runs on the star that matches the session count. Outside a rigid session `:A3#` is rejected (it neither adds star 3 nor finalizes the polar pass — use `:AP#`). | `1` | TeenAstro extension |
 | `:AP#` | **Polar pass done:** finalize a deferred mechanical-pole session (was previously overloaded on `:A3#`). Only valid when a deferred polar session is pending. Mount syncs on the recentered alignment star, then RAM `CoordConv` is **reset to the cold-boot baseline** (synthetic refs, `hasValid=false`) and `EE_Tvalid` is cleared in EEPROM — i.e. **the provisional soft model is discarded** and the firmware trusts the now-mechanical pole. `:AW#` after `:AP#` is a no-op (writes `EE_Tvalid=0`). | `1` | TeenAstro extension |
 | `:AE#` | Get current alignment error (degrees). | `sDD*MM'SS#` | LX200 standard |
 | `:AC#` | Sync at home; disable auto alignment-by-sync. | `1` | LX200 standard |
@@ -174,6 +176,10 @@ All `:GXnn#` commands are TeenAstro extensions. **Standard:** TeenAstro extensio
 |--------|-------------|---------|
 | `:GXA0#` … `:GXA8#` | Get alignment matrix coefficient (0–8 = t11…t33). | `float#` |
 | `:GXAs#` | Alignment star name (set via `:SXAs,name#`). | text + `#` |
+| `:GXAc#` `:GXAp#` `:GXAi#` | Rigid head geometry in **arcseconds**: optical-axis cone error, axis2 non-perpendicularity, axis2 index. Zero unless a rigid session (`:A0,r<n>#`) completed or the terms were set via `:SXA{c,p,i}#`. | float + `#` |
+| `:GXAr#` | RMS pointing residual of the last rigid fit (arcseconds). | float + `#` |
+| `:GXAn#` | Number of stars collected in the current/last alignment session. | int + `#` |
+| `:GXAf#` | Head terms the last rigid fit actually solved, as three characters `CPI`, with a dash in place of any term the star distribution could not separate. A dashed term is held at zero, so `:GXAc/p/i#` returning zero for it means "not measured", not "measured as zero". Cone and axis2 non-perpendicularity displace axis1 almost identically, so in practice only one of the two is separable and the fit keeps whichever the stars support. | e.g. `-PI#` |
 | `:GXAz#` `:GXAa#` `:GXAw#` | Equatorial azimuth / altitude / wedge misclosure from `Tinv` (degrees, DMS + `#`) when the model is ready; else ~0°. | DMS + `#` |
 
 ### Encoders
@@ -365,6 +371,9 @@ All `:SXnnn,V#` commands are TeenAstro extensions. **Standard:** TeenAstro exten
 | Syntax | Description |
 |--------|-------------|
 | `:SXAn,VVVVVV#` | Set alignment model value (n = 0–5, x). |
+| `:SXAs,name#` | Store the alignment star name for the SHC to display. |
+| `:SXAc,V#` `:SXAp,V#` `:SXAi,V#` | Set one rigid head term in **arcseconds** (cone, axis2 non-perpendicularity, axis2 index), for restoring measured geometry without a multi-star session. Values beyond ±5° are rejected. |
+| `:SXAC#` | Clear the rigid head terms, reverting to the plain `T` model. |
 
 ### Encoders
 | Syntax | Description |

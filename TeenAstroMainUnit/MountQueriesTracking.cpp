@@ -118,8 +118,8 @@ void Mount::rateFromMovingTarget(Coord_EQ& EQprev, Coord_EQ& EQnext, double Time
   double& A1_trackingRate, double& A2_trackingRate)
 {
   LA3::RefrOpt rop = { refraction.forTracking, 10, 101 };
-  Coord_IN INprev = EQprev.To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, rop, alignment.conv.Tinv);
-  Coord_IN INnext = EQnext.To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, rop, alignment.conv.Tinv);
+  Coord_IN INprev = EQprev.To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, rop, alignment.conv.Tinv, alignment.conv.head);
+  Coord_IN INnext = EQnext.To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, rop, alignment.conv.Tinv, alignment.conv.head);
   // Use instrument angles directly to avoid integer step truncation, which loses precision
   // for small rates (e.g. Dec ±0.05 arcsec/s → ~0.0017 deg span → 0 steps at typical resolution).
   double axis1_delta = (INnext.Axis1() - INprev.Axis1()) * RAD_TO_DEG;

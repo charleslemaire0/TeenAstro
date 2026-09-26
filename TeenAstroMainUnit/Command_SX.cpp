@@ -76,6 +76,34 @@ static void Command_SX_Alignment()
     ok = true;
     break;
   }
+  case 'c':
+  case 'p':
+  case 'i': {
+    // :SXAc,V# :SXAp,V# :SXAi,V#  Set one rigid head term in arcseconds (cone,
+    // axis2 non-perpendicularity, axis2 index). Lets a user restore measured
+    // geometry without redoing a multi-star session. TeenAstro extension.
+    // command[4] is the comma separator; value starts at command[5].
+    const double arcsec = strtod(&commandState.command[5], NULL);
+    if (fabs(arcsec) > 5.0 * 3600.0)  // beyond a few degrees this is not a head error
+      break;
+    float hcone = 0.f, hperp = 0.f, hidx2 = 0.f;
+    mount.alignment.conv.getHead(hcone, hperp, hidx2);
+    const double rad = arcsec * DEG_TO_RAD / 3600.0;
+    if (commandState.command[3] == 'c')      hcone = (float)rad;
+    else if (commandState.command[3] == 'p') hperp = (float)rad;
+    else                                     hidx2 = (float)rad;
+    mount.alignment.conv.setHead(hcone, hperp, hidx2);
+    mount.alignment.hasRigid = mount.alignment.conv.hasHead();
+    ok = true;
+    break;
+  }
+  case 'C':
+    // :SXAC#  Clear the rigid head terms, reverting to the plain T model.
+    mount.alignment.conv.clearHead();
+    mount.alignment.hasRigid = false;
+    mount.alignment.rigidRmsArcsec = 0.f;
+    ok = true;
+    break;
   case 'x':
     //GeoAlign.init();
     //GeoAlign.writeCoe();

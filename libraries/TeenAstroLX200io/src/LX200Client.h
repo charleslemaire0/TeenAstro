@@ -265,6 +265,27 @@ public:
   LX200RETURN getAlignError(char* out, int len); // :AE#
   LX200RETURN alignSelectStar(uint8_t n);        // :A1# .. :A9#
   LX200RETURN alignNextStar();                   // :A+#
+  /// Rigid six degree of freedom session of \p stars (3..9) stars: on the last
+  /// star the mount also solves the optical-axis cone error, the axis2
+  /// non-perpendicularity and the axis2 index.
+  LX200RETURN alignStartRigid(uint8_t stars);        // :A0,r<n>#
+  LX200RETURN alignAcceptStarRigid(uint8_t stars);   // :A*,r<n>#
+  /// Send :A<n># verbatim. Needed for rigid sessions because alignSelectStar()
+  /// maps star 3 to the :AP# polar-finalize shortcut, where here it is a real
+  /// alignment star.
+  LX200RETURN alignSelectStarRigid(uint8_t n);       // :A1# .. :A9#
+  LX200RETURN getAlignHeadCone(double& arcsec);      // :GXAc#
+  LX200RETURN getAlignHeadPerp(double& arcsec);      // :GXAp#
+  LX200RETURN getAlignHeadIndex2(double& arcsec);    // :GXAi#
+  LX200RETURN getAlignRigidRms(double& arcsec);      // :GXAr#
+  LX200RETURN getAlignStarCount(uint8_t& stars);     // :GXAn#
+  /// Which head terms the last fit solved, as "CPI" with a dash for each term
+  /// the star distribution could not separate from the others.
+  LX200RETURN getAlignFittedTerms(char* out, int len); // :GXAf#
+  LX200RETURN setAlignHeadCone(double arcsec);       // :SXAc,V#
+  LX200RETURN setAlignHeadPerp(double arcsec);       // :SXAp,V#
+  LX200RETURN setAlignHeadIndex2(double arcsec);     // :SXAi,V#
+  LX200RETURN alignClearHead();                      // :SXAC#
   LX200RETURN setPierSideEast();                 // :SmE#
   LX200RETURN setPierSideWest();                 // :SmW#
   LX200RETURN setPierSideNone();                 // :SmN#

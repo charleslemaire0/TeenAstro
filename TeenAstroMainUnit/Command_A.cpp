@@ -32,6 +32,60 @@ void alignmentPolarFinalizeFromCurrentTarget()
   mount.config.peripherals.PushtoStatus = PT_OFF;
 }
 
+/// Parse an ",r<n>" suffix requesting a rigid six degree of freedom session.
+/// Returns the star count (COORDCONV_MIN_RIGID_STARS..COORDCONV_MAX_STARS) or 0
+/// when the suffix is absent. \p bad is set when the count is out of range.
+uint8_t parseRigidSuffix(const char *cmd, bool &bad)
+{
+  bad = false;
+  if (cmd[0] != ',' || cmd[1] != 'r')
+    return 0;
+  const char n = cmd[2];
+  if (n < '0' || n > '9' || cmd[3] != 0)
+  {
+    bad = true;
+    return 0;
+  }
+  const uint8_t stars = (uint8_t)(n - '0');
+  if (stars < COORDCONV_MIN_RIGID_STARS || stars > COORDCONV_MAX_STARS)
+  {
+    bad = true;
+    return 0;
+  }
+  return stars;
+}
+
+/// Close out an alignment session: refine T with the legacy minimisers, or run
+/// the rigid fit when enough stars were collected, then sync on the last star.
+void alignmentFinalize(Coord_HO &HO_T, double Lat)
+{
+  MountAlignment &al = mount.alignment;
+
+  // The rigid fit replaces the legacy minimize* fudges only if it actually
+  // solved something. It drops any head term the star distribution cannot
+  // separate, and a set clustered in altitude can leave it with none at all;
+  // in that case we must still fall back, or a long rigid session would end up
+  // worse than the two star path it was meant to improve on.
+  bool fitted = false;
+  if (al.isRigidSession() && al.conv.getStars() >= COORDCONV_MIN_RIGID_STARS)
+  {
+    // Up to six unknowns: T contributes three, the head at most three more. The
+    // two star Taki solution already seeded T, so it converges in a couple of
+    // iterations.
+    fitted = fitRigidAlignModel() && al.conv.hasHead();
+  }
+  if (!fitted)
+  {
+    al.conv.minimizeAxis2();
+    al.conv.minimizeAxis1(mount.config.identity.mountType == MOUNT_TYPE_GEM ? (Lat >= 0 ? M_PI_2 : -M_PI_2) : 0);
+  }
+  mount.syncAzAlt(&HO_T, mount.getPoleSide());
+  al.hasValid = true;
+  al.alignPhase   = ALIGN_IDLE;
+  al.alignStarNum = 0;
+  al.alignPolarThirdPending = false;
+}
+
 } // namespace
 
 // -----------------------------------------------------------------------------
@@ -41,20 +95,31 @@ void Command_A() {
   switch (commandState.command[1]) {
   case '0': {
     // :A0#  LX200 standard (alignment menu 0); :A0,2# two-star; :A0,m# mechanical pole (two-star + bolt pass)
-    if (commandState.command[2] == ',' && commandState.command[3] == '3' && commandState.command[4] == 0) {
+    // :A0,r<n># rigid six degree of freedom session with n=3..9 stars (TeenAstro extension)
+    bool rigidBad = false;
+    const uint8_t rigidStars = parseRigidSuffix(&commandState.command[2], rigidBad);
+    if (rigidBad) {
       replyNothing();
       break;
     }
-    if (commandState.command[2] == ',' && commandState.command[4] != 0) {
-      replyNothing();
-      break;
-    }
-    if (commandState.command[2] == ',' && commandState.command[3] != '2' && commandState.command[3] != 'm') {
-      replyNothing();
-      break;
+    if (rigidStars == 0) {
+      if (commandState.command[2] == ',' && commandState.command[3] == '3' && commandState.command[4] == 0) {
+        replyNothing();
+        break;
+      }
+      if (commandState.command[2] == ',' && commandState.command[4] != 0) {
+        replyNothing();
+        break;
+      }
+      if (commandState.command[2] == ',' && commandState.command[3] != '2' && commandState.command[3] != 'm') {
+        replyNothing();
+        break;
+      }
     }
     uint8_t numStarsSession = 2;
-    if (commandState.command[2] == ',' && commandState.command[3] == 'm' && commandState.command[4] == 0)
+    if (rigidStars != 0)
+      numStarsSession = rigidStars;
+    else if (commandState.command[2] == ',' && commandState.command[3] == 'm' && commandState.command[4] == 0)
       numStarsSession = 3;
     else if (commandState.command[2] == ',' && commandState.command[3] == '2' && commandState.command[4] == 0)
       numStarsSession = 2;
@@ -69,22 +134,32 @@ void Command_A() {
     mount.alignment.alignStarName[0] = '\0';
     mount.alignment.alignPolarThirdPending = false;
     mount.alignment.alignNumStarsSession = numStarsSession;
+    mount.alignment.alignRigidStars = rigidStars;
     replyShortTrue();
     break;
   }
   case '*': {
     // :A*#  LX200 standard (telescope at target); :A*,m# same + mechanical pole session (defer on 2nd star)
-    if (commandState.command[2] == ',' && commandState.command[3] == '3' && commandState.command[4] == 0) {
+    // :A*,r<n># rigid six degree of freedom session with n=3..9 stars (TeenAstro extension)
+    bool rigidBadStar = false;
+    const uint8_t rigidStarsAtTarget = parseRigidSuffix(&commandState.command[2], rigidBadStar);
+    if (rigidBadStar) {
       replyNothing();
       break;
     }
-    if (commandState.command[2] == ',' && commandState.command[4] != 0) {
-      replyNothing();
-      break;
-    }
-    if (commandState.command[2] == ',' && commandState.command[3] != 'm') {
-      replyNothing();
-      break;
+    if (rigidStarsAtTarget == 0) {
+      if (commandState.command[2] == ',' && commandState.command[3] == '3' && commandState.command[4] == 0) {
+        replyNothing();
+        break;
+      }
+      if (commandState.command[2] == ',' && commandState.command[4] != 0) {
+        replyNothing();
+        break;
+      }
+      if (commandState.command[2] == ',' && commandState.command[3] != 'm') {
+        replyNothing();
+        break;
+      }
     }
     const bool mechanicalPole = (commandState.command[2] == ',' && commandState.command[3] == 'm' && commandState.command[4] == 0);
     initTransformation(true);
@@ -106,7 +181,8 @@ void Command_A() {
     mount.alignment.conv.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
     mount.alignment.alignPhase   = ALIGN_SELECT;
     mount.alignment.alignStarNum = 2;
-    mount.alignment.alignNumStarsSession = mechanicalPole ? 3 : 2;
+    mount.alignment.alignNumStarsSession = rigidStarsAtTarget != 0 ? rigidStarsAtTarget : (mechanicalPole ? 3 : 2);
+    mount.alignment.alignRigidStars = rigidStarsAtTarget;
     mount.alignment.alignPolarThirdPending = false;
     replyShortTrue();
     break;
@@ -126,24 +202,39 @@ void Command_A() {
     Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
     Coord_HO HO_T = EQ_T.To_Coord_HO(Lat * DEG_TO_RAD, mount.refrOptForGoto());
 
-    // :A3# does not finalize polar pass — use :AP#
-    if (starIdx == 3 && mount.alignment.alignPolarThirdPending) {
+    const bool rigidSession = mount.alignment.isRigidSession();
+
+    // :A3# does not finalize the polar pass (that is :AP#), and :A3# outside any
+    // session would corrupt conv. A rigid session is the one case where :A3# is
+    // legitimate: stars three and up are what the six parameter fit needs.
+    if (starIdx == 3 && !rigidSession) {
       replyNothing();
       break;
     }
 
-    // :A3# without pending session — reject (avoids corrupting conv)
-    if (starIdx == 3 && !mount.alignment.alignPolarThirdPending) {
-      replyNothing();
-      break;
-    }
-
-    if (mount.alignment.conv.getRefs() == 0)
+    // Only the very first star of a session may sync the encoders; after that
+    // the axes must be read where they actually are, which is what makes the
+    // residuals meaningful. getRefs() alone is not enough to spot the first
+    // star: it drops back to 0 once the two star pass has built T.
+    if (mount.alignment.conv.getRefs() == 0 && mount.alignment.conv.getStars() == 0)
       mount.syncAzAlt(&HO_T, mount.getPoleSide());
     Coord_IN IN_T = mount.getInstr();
-    mount.alignment.conv.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
-    if (mount.alignment.conv.isReady()) {
-      const bool deferThird = !mount.isAltAZ() && mount.alignment.alignNumStarsSession >= 3 && starIdx == 2;
+
+    // Every star is recorded for the rigid fit, but only the first two seed T
+    // through the two star pass. Feeding it more would restart it and leave T
+    // rebuilt from an arbitrary pair.
+    const bool seedTaki = !rigidSession || mount.alignment.conv.getStars() < 2;
+    mount.alignment.conv.addStar(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
+    if (seedTaki)
+      mount.alignment.conv.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
+    if (rigidSession && starIdx < mount.alignment.alignRigidStars) {
+      // Still collecting. The first two stars already seeded T, so gotos work
+      // and the user can slew to the next star, but the model is not final.
+      mount.alignment.alignPhase   = ALIGN_SELECT;
+      mount.alignment.alignStarNum = starIdx + 1;
+      mount.alignment.hasValid = mount.alignment.conv.isReady();
+    } else if (mount.alignment.conv.isReady()) {
+      const bool deferThird = !rigidSession && !mount.isAltAZ() && mount.alignment.alignNumStarsSession >= 3 && starIdx == 2;
       if (deferThird) {
         mount.syncAzAlt(&HO_T, mount.getPoleSide());
         mount.alignment.alignPolarThirdPending = true;
@@ -151,13 +242,7 @@ void Command_A() {
         mount.alignment.alignStarNum = 3;
         mount.alignment.hasValid = false;
       } else {
-        mount.alignment.conv.minimizeAxis2();
-        mount.alignment.conv.minimizeAxis1(mount.config.identity.mountType == MOUNT_TYPE_GEM ? (Lat >= 0 ? M_PI_2 : -M_PI_2) : 0);
-        mount.syncAzAlt(&HO_T, mount.getPoleSide());
-        mount.alignment.hasValid = true;
-        mount.alignment.alignPhase   = ALIGN_IDLE;
-        mount.alignment.alignStarNum = 0;
-        mount.alignment.alignPolarThirdPending = false;
+        alignmentFinalize(HO_T, Lat);
       }
     } else {
       mount.alignment.alignPhase   = ALIGN_SELECT;

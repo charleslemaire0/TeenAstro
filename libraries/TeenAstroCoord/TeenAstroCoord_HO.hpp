@@ -51,6 +51,8 @@ public:
 	Coord_HO ToTopocentric(RefrOpt opt);
 	Coord_EQ To_Coord_EQ(double Lat);
 	Coord_IN To_Coord_IN(const double(&missaligment)[3][3]);
+	/// As above, with the rigid head geometry applied. A zero head is identical to the overload without it.
+	Coord_IN To_Coord_IN(const double(&missaligment)[3][3], const HeadModel &head);
 	double FrH();
 	double Alt();
 	double Az();

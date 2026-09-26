@@ -17,6 +17,16 @@ int getMountAddress(int address, int idx)
   return (int)EE_Mounts + (int)MountSize * (int)idx + address;
 }
 
+int getHeadAddress(int address)
+{
+  return (int)EE_HeadBase + (int)EE_HeadSize * (int)midx + address;
+}
+
+int getHeadAddress(int address, int idx)
+{
+  return (int)EE_HeadBase + (int)EE_HeadSize * (int)idx + address;
+}
+
 static const float pulsePerDegreedefault = 15.f;
 static const EncoderSync EncoderSyncDefault = EncoderSync::ES_OFF;
 
@@ -246,11 +256,19 @@ void initTransformation(bool reset)
   float t11 = 0.f, t12 = 0.f, t13 = 0.f, t21 = 0.f, t22 = 0.f, t23 = 0.f, t31 = 0.f, t32 = 0.f, t33 = 0.f;
   mount.alignment.hasValid = false;
   mount.alignment.conv.clean();
+  // conv.clean() drops the head terms and the collected stars, so the session
+  // bookkeeping that mirrors them has to go too. Every alignment reset path
+  // (:A0# :A*# :AC# :AA# :AB# :AP#) comes through here.
+  mount.alignment.alignRigidStars = 0;
+  mount.alignment.hasRigid = false;
+  mount.alignment.rigidRmsArcsec = 0.f;
   byte TvalidFromEEPROM = XEEPROM.read(getMountAddress(EE_Tvalid));
 
   if (TvalidFromEEPROM == 1 && reset)
   {
     XEEPROM.write(getMountAddress(EE_Tvalid), 0);
+    // The head terms only mean anything alongside the T they were fitted with.
+    XEEPROM.write(getHeadAddress(EE_head_valid), 0);
   }
   if (TvalidFromEEPROM == 1 && !reset)
   {
@@ -265,6 +283,15 @@ void initTransformation(bool reset)
     t33 = XEEPROM.readFloat(getMountAddress(EE_T33));
     mount.alignment.conv.setT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
     mount.alignment.conv.setTinvFromT();
+    // Restore the rigid head geometry if this mount has one. An EEPROM written
+    // by an older firmware reads 0 here and the model stays T only.
+    if (XEEPROM.read(getHeadAddress(EE_head_valid)) == 1)
+    {
+      mount.alignment.conv.setHead(XEEPROM.readFloat(getHeadAddress(EE_head_cone)),
+                                   XEEPROM.readFloat(getHeadAddress(EE_head_perp)),
+                                   XEEPROM.readFloat(getHeadAddress(EE_head_idx2)));
+      mount.alignment.hasRigid = mount.alignment.conv.hasHead();
+    }
     mount.alignment.hasValid = true;
   }
   else
@@ -319,6 +346,16 @@ void initTransformation(bool reset)
   }
 }
 
+bool fitRigidAlignModel()
+{
+  double rms = 0.0;
+  if (!mount.alignment.conv.fitRigidModel(&rms, NULL))
+    return false;
+  mount.alignment.rigidRmsArcsec = (float)(rms * RAD_TO_DEG * 3600.0);
+  mount.alignment.hasRigid = mount.alignment.conv.hasHead();
+  return true;
+}
+
 void saveAlignModel()
 {
   float t11 = 0.f, t12 = 0.f, t13 = 0.f, t21 = 0.f, t22 = 0.f, t23 = 0.f, t31 = 0.f, t32 = 0.f, t33 = 0.f;
@@ -336,6 +373,18 @@ void saveAlignModel()
   XEEPROM.writeFloat(getMountAddress(EE_T31), t31);
   XEEPROM.writeFloat(getMountAddress(EE_T32), t32);
   XEEPROM.writeFloat(getMountAddress(EE_T33), t33);
+
+  // Rigid head geometry, stored alongside T so both are restored together.
+  float hcone = 0.f, hperp = 0.f, hidx2 = 0.f;
+  const bool headValid = mount.alignment.hasValid && mount.alignment.conv.hasHead();
+  if (headValid)
+  {
+    mount.alignment.conv.getHead(hcone, hperp, hidx2);
+  }
+  XEEPROM.writeFloat(getHeadAddress(EE_head_cone), hcone);
+  XEEPROM.writeFloat(getHeadAddress(EE_head_perp), hperp);
+  XEEPROM.writeFloat(getHeadAddress(EE_head_idx2), hidx2);
+  XEEPROM.write(getHeadAddress(EE_head_valid), headValid ? 1 : 0);
 }
 
 void initCelestialPole()
