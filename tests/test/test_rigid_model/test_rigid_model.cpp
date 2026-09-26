@@ -535,6 +535,81 @@ static void fitSession(CoordConv &cc, const double (&Tm)[3][3], int n, int flipI
     TEST_ASSERT_TRUE_MESSAGE(cc.fitRigidModel(), msg);
 }
 
+static const double STARS9[9][2] = {
+    { 0.30, 0.35 }, { 1.30, 0.80 }, { 2.40, 0.25 },
+    { 3.50, 0.60 }, { 4.60, 0.95 }, { 5.40, 0.45 },
+    { 0.90, 0.15 }, { 2.90, 1.05 }, { 4.10, 0.30 }
+};
+
+/// Deterministic uniform noise in [-0.5, 0.5], so the statistics below are
+/// reproducible across runs and platforms.
+static unsigned long g_seed = 12345;
+static double urand()
+{
+    g_seed = g_seed * 1103515245UL + 12345UL;
+    return ((double)((g_seed >> 16) & 0x7FFF) / 32767.0) - 0.5;
+}
+
+/// Mean worst-case pointing error over \p trials sessions of \p n stars, with a
+/// 15 arcsec peak centring error on each declared sky position. The first
+/// \p nFlip stars are taken beyond the pole. Also reports how often all three
+/// head terms were selected.
+static double meanWorstUnderNoise(int n, int nFlip, int trials, int *allThree)
+{
+    double Tt[3][3];
+    truthT(Tt);
+    const double peak = 15.0 * ARCSEC;
+    double sum = 0.0;
+    int fits = 0;
+    *allThree = 0;
+    g_seed = 12345;
+    for (int t = 0; t < trials; t++) {
+        CoordConv cc;
+        for (int k = 0; k < n; k++) {
+            double a1d, a2;
+            synthMountAxesSide(Tt, HEAD_TRUTH, STARS9[k][0], STARS9[k][1],
+                               k < nFlip, a1d, a2);
+            const double s2 = STARS9[k][1] + 2.0 * peak * urand();
+            const double s1 = STARS9[k][0] + 2.0 * peak * urand() / cos(STARS9[k][1]);
+            feedStar(cc, s1, s2, a1d, a2);
+        }
+        if (!cc.fitRigidModel())
+            continue;
+        fits++;
+        if (cc.getRigidMask() == (COORDCONV_FIT_CONE | COORDCONV_FIT_PERP | COORDCONV_FIT_IDX2))
+            (*allThree)++;
+        sum += worstPointingError(cc, Tt, HEAD_TRUTH);
+    }
+    return fits ? sum / fits : 1.0;
+}
+
+void test_flip_pays_off_from_five_stars(void)
+{
+    // Cone is published only for a 3+3 pier split. Under a 15 arcsec centring
+    // error that split must select all three terms, and must not point worse
+    // than the same six stars kept on one side.
+    const int TRIALS = 60;
+    int all3 = 0;
+
+    // Six stars split 3 and 3 selects cone on every trial. Under a 15 arcsec
+    // centring error the pointing gain over a one-side session is small
+    // (about 21 arcsec against 23), so the check is that the split is not worse.
+    const double oneSide6 = meanWorstUnderNoise(6, 0, TRIALS, &all3);
+    TEST_ASSERT_EQUAL_INT(0, all3);
+    const double flipped6 = meanWorstUnderNoise(6, 3, TRIALS, &all3);
+    TEST_ASSERT_EQUAL_INT(TRIALS, all3);
+    TEST_ASSERT_TRUE_MESSAGE(flipped6 <= oneSide6,
+                             "3+3 must not point worse than six stars on one side");
+
+    // Six stars with only one past the pole is not 3 per side, so no cone.
+    meanWorstUnderNoise(6, 1, TRIALS, &all3);
+    TEST_ASSERT_EQUAL_INT(0, all3);
+
+    // Four stars, even with one past the pole, must not publish a cone.
+    meanWorstUnderNoise(4, 1, TRIALS, &all3);
+    TEST_ASSERT_EQUAL_INT(0, all3);
+}
+
 void test_fit_drops_cone_without_a_meridian_flip(void)
 {
     // Cone error and axis2 non-perpendicularity both displace axis1 with nearly
@@ -562,40 +637,62 @@ void test_fit_drops_cone_without_a_meridian_flip(void)
     }
 }
 
-void test_fit_recovers_cone_with_one_star_past_the_flip(void)
+/// Fit \p n stars from STARS_WIDE, taking the first \p nFlip beyond the pole.
+static void fitSplit(CoordConv &cc, const double (&Tm)[3][3], int n, int nFlip)
 {
-    // A cone error is fixed in the tube, so crossing to the beyond the pole
-    // configuration reverses its effect on the sky, while the axis2
-    // non-perpendicularity is a property of the head and does not follow it.
-    // That asymmetry separates the pair, and one star is enough to exploit it.
-    //
-    // Sweeping every star count from the accepted minimum up, and every choice
-    // of which star is the flipped one, the cone term always scores at least
-    // 0.0278 - sixty times the single side figure - so all three terms are
-    // solved and the model comes out exact. Getting this wrong is expensive:
-    // declining cone when a flipped star is present leaves that star's reading
-    // unexplainable and pushes pointing error past 60 arcsec, worse than never
-    // having flipped at all.
+    for (int k = 0; k < n; k++) {
+        double a1d, a2;
+        synthMountAxesSide(Tm, HEAD_TRUTH, STARS_WIDE[k][0], STARS_WIDE[k][1],
+                           k < nFlip, a1d, a2);
+        feedStar(cc, STARS_WIDE[k][0], STARS_WIDE[k][1], a1d, a2);
+    }
+    char msg[64];
+    sprintf(msg, "fit failed for n=%d nFlip=%d", n, nFlip);
+    TEST_ASSERT_TRUE_MESSAGE(cc.fitRigidModel(), msg);
+}
+
+void test_fit_withholds_cone_below_three_per_side(void)
+{
+    // Cone needs three stars on each pier side. Fewer than that, including a
+    // six star session with only one or two past the pole, must not publish it.
+    // Perp still needs only four stars in total.
     double Ttruth[3][3];
     truthT(Ttruth);
-    for (int n = COORDCONV_MIN_RIGID_STARS; n <= 6; n++) {
-        for (int flipIdx = 0; flipIdx < n; flipIdx++) {
-            CoordConv cc;
-            fitSession(cc, Ttruth, n, flipIdx);
-            char msg[64];
-            sprintf(msg, "n=%d flip=%d mask=%x", n, flipIdx, (unsigned)cc.getRigidMask());
-            TEST_ASSERT_EQUAL_UINT8_MESSAGE(
-                COORDCONV_FIT_CONE | COORDCONV_FIT_PERP | COORDCONV_FIT_IDX2,
-                cc.getRigidMask(), msg);
-            float c, p, i2;
-            cc.getHead(c, p, i2);
-            TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(2.0 * ARCSEC, HEAD_TRUTH.cone, c, msg);
-            TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(2.0 * ARCSEC, HEAD_TRUTH.perp, p, msg);
-            TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(2.0 * ARCSEC, HEAD_TRUTH.idx2, i2, msg);
-            // Fully determined geometry means the model is exact off the stars too.
-            TEST_ASSERT_TRUE_MESSAGE(worstPointingError(cc, Ttruth, HEAD_TRUTH) < 1.0 * ARCSEC, msg);
-        }
+    const int splits[][2] = { { 4, 1 }, { 5, 1 }, { 6, 1 }, { 6, 2 } };
+    for (int s = 0; s < 4; s++) {
+        CoordConv cc;
+        fitSplit(cc, Ttruth, splits[s][0], splits[s][1]);
+        char msg[64];
+        sprintf(msg, "n=%d nFlip=%d mask=%x", splits[s][0], splits[s][1],
+                (unsigned)cc.getRigidMask());
+        TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, cc.getRigidMask() & COORDCONV_FIT_CONE, msg);
+        TEST_ASSERT_EQUAL_UINT8_MESSAGE(COORDCONV_FIT_PERP,
+                                        cc.getRigidMask() & COORDCONV_FIT_PERP, msg);
+        float c, p, i2;
+        cc.getHead(c, p, i2);
+        TEST_ASSERT_EQUAL_DOUBLE(0.0, c);
+        (void)p;
+        (void)i2;
     }
+}
+
+void test_fit_recovers_cone_with_three_stars_per_side(void)
+{
+    // Three stars on each pier side is the smallest session allowed to estimate
+    // cone. All three head terms then come out, and the model is exact off the
+    // star set.
+    double Ttruth[3][3];
+    truthT(Ttruth);
+    CoordConv cc;
+    fitSplit(cc, Ttruth, 6, COORDCONV_MIN_CONE_PER_SIDE);
+    TEST_ASSERT_EQUAL_UINT8(COORDCONV_FIT_CONE | COORDCONV_FIT_PERP | COORDCONV_FIT_IDX2,
+                            cc.getRigidMask());
+    float c, p, i2;
+    cc.getHead(c, p, i2);
+    TEST_ASSERT_DOUBLE_WITHIN(2.0 * ARCSEC, HEAD_TRUTH.cone, c);
+    TEST_ASSERT_DOUBLE_WITHIN(2.0 * ARCSEC, HEAD_TRUTH.perp, p);
+    TEST_ASSERT_DOUBLE_WITHIN(2.0 * ARCSEC, HEAD_TRUTH.idx2, i2);
+    TEST_ASSERT_TRUE(worstPointingError(cc, Ttruth, HEAD_TRUTH) < 1.0 * ARCSEC);
 }
 
 void test_fit_recovers_axis2_index(void)
@@ -818,8 +915,10 @@ int main(int, char **)
     RUN_TEST(test_onstep_agreement_pier_side_west);
     RUN_TEST(test_teenastro_closer_to_truth_for_large_errors);
 
+    RUN_TEST(test_flip_pays_off_from_five_stars);
     RUN_TEST(test_fit_drops_cone_without_a_meridian_flip);
-    RUN_TEST(test_fit_recovers_cone_with_one_star_past_the_flip);
+    RUN_TEST(test_fit_withholds_cone_below_three_per_side);
+    RUN_TEST(test_fit_recovers_cone_with_three_stars_per_side);
     RUN_TEST(test_fit_recovers_axis2_index);
     RUN_TEST(test_fit_selects_one_of_the_correlated_pair);
     RUN_TEST(test_fit_drops_terms_for_single_declination);

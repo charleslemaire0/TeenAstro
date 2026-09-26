@@ -153,6 +153,7 @@ private:
                        const char* label1, const char* label2);
 
   bool SelectStarAlign();
+  void showAlignmentResult();
 
   void menuTelSettings();
   void menuSHCSettings();

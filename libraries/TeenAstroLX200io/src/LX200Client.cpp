@@ -913,6 +913,19 @@ LX200RETURN LX200Client::getAlignStarCount(uint8_t& stars)
   return LX200_VALUEGET;
 }
 
+LX200RETURN LX200Client::getAlignPierSides(uint8_t& nIn, uint8_t& nOut)
+{
+  char out[LX200_SBUF];
+  if (get(":GXAb#", out, sizeof(out)) != LX200_VALUEGET)
+    return LX200_GETVALUEFAILED;
+  int a = 0, b = 0;
+  if (sscanf(out, "%d,%d", &a, &b) != 2 || a < 0 || b < 0)
+    return LX200_GETVALUEFAILED;
+  nIn = (uint8_t)a;
+  nOut = (uint8_t)b;
+  return LX200_VALUEGET;
+}
+
 LX200RETURN LX200Client::getAlignFittedTerms(char* out, int len) { return get(":GXAf#", out, len); }
 
 LX200RETURN LX200Client::setAlignHeadCone(double arcsec)   { return setAlignFloat(*this, 'c', arcsec); }

@@ -171,10 +171,14 @@ TeenAstroMountStatus::AlignReply TeenAstroMountStatus::addStar()
   }
 
   // OnStepX-style: :A1# / :A2# stars; mechanical pole session uses :AP# to finalize (not :A3#).
+  // A rigid session sends :A3# as a real star, so it must not take that shortcut.
   uint8_t n = (uint8_t)getAlignStar();
   if (n < 1 || n > 9) { stopAlign(); return AlignReply::ALIR_FAILED2; }
 
-  if (m_client->alignSelectStar(n) == LX200_VALUESET)
+  const LX200RETURN accepted = isRigidAlign()
+      ? m_client->alignSelectStarRigid(n)
+      : m_client->alignSelectStar(n);
+  if (accepted == LX200_VALUESET)
   {
     if (isLastStarAlign()) { stopAlign(); return AlignReply::ALIR_DONE; }
     else                   { nextStepAlign(); return AlignReply::ALIR_ADDED; }

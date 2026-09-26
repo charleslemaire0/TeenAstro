@@ -370,6 +370,15 @@ void test_align_start_rigid_rejects_out_of_range(void) {
     TEST_ASSERT_EQUAL(LX200_SETVALUEFAILED, client->alignStartRigid(10));
 }
 
+void test_get_align_pier_sides(void) {
+    mockStream.loadResponse("3,2#");
+    uint8_t nIn = 0, nOut = 0;
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getAlignPierSides(nIn, nOut));
+    TEST_ASSERT_EQUAL_STRING(":GXAb#", mockStream.getSent());
+    TEST_ASSERT_EQUAL_UINT8(3, nIn);
+    TEST_ASSERT_EQUAL_UINT8(2, nOut);
+}
+
 void test_get_align_fitted_terms(void) {
     mockStream.loadResponse("-PI#");
     char mask[8] = { 0 };
@@ -2005,6 +2014,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_align_select_star_rigid_3_sends_A3_not_AP);
     RUN_TEST(test_get_align_head_terms);
     RUN_TEST(test_get_align_rigid_rms_and_star_count);
+    RUN_TEST(test_get_align_pier_sides);
     RUN_TEST(test_get_align_fitted_terms);
     RUN_TEST(test_set_align_head_terms);
     RUN_TEST(test_reply_long);

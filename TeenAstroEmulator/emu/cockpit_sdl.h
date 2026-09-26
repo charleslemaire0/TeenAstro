@@ -742,12 +742,38 @@ static void drawTabAlignment(int y0) {
     y += 4;
 
     y = drawSection(y, "Rigid Head Geometry");
+    {
+        const char* proc = "2 stars (Taki)";
+        if (mount.alignment.alignRigidStars == 4)
+            proc = "4 stars (perpendicularity)";
+        else if (mount.alignment.alignRigidStars == 6)
+            proc = "3+3 (cone)";
+        else if (mount.alignment.isRigidSession())
+            proc = "rigid (other count)";
+        y = drawKV(y, "Procedure", proc,
+            mount.alignment.isRigidSession() ? COL_WARN : COL_DIM);
+    }
     if (mount.alignment.isRigidSession()) {
         snprintf(buf, sizeof(buf), "%d of %d star(s)",
             (int)mount.alignment.conv.getStars(), (int)mount.alignment.alignRigidStars);
         y = drawKV(y, "Session", buf, COL_WARN);
     } else {
         y = drawKV(y, "Session", "none (two star)", COL_DIM);
+    }
+    {
+        // Cone is published only when each pier side has three stars. Show the
+        // split while stars are being collected, not only after the fit.
+        int nIn = 0, nOut = 0;
+        mount.alignment.conv.pierSideCounts(nIn, nOut);
+        snprintf(buf, sizeof(buf), "%d + %d", nIn, nOut);
+        const bool coneOpen = nIn >= COORDCONV_MIN_CONE_PER_SIDE
+                           && nOut >= COORDCONV_MIN_CONE_PER_SIDE;
+        y = drawKV(y, "Pier sides", buf, coneOpen ? COL_GOOD : COL_VALUE);
+        snprintf(buf, sizeof(buf), coneOpen ? "%d each side, met" : "%d each side",
+                 COORDCONV_MIN_CONE_PER_SIDE);
+        y = drawKV(y, "Cone needs", buf, coneOpen ? COL_GOOD : COL_DIM);
+        snprintf(buf, sizeof(buf), "%d star(s)", COORDCONV_MIN_PERP_STARS);
+        y = drawKV(y, "Perp needs", buf, COL_DIM);
     }
     if (mount.alignment.conv.hasHead()) {
         float hcone = 0.f, hperp = 0.f, hidx2 = 0.f;
@@ -757,11 +783,16 @@ static void drawTabAlignment(int y0) {
         // reported as "not separable" rather than as a measured value.
         const unsigned char fitMask = mount.alignment.conv.getRigidMask();
         const char* notFit = "n/a (not separable)";
+        const char* needSides = "n/a (need 3 each side)";
+        int nIn = 0, nOut = 0;
+        mount.alignment.conv.pierSideCounts(nIn, nOut);
+        const bool coneOpen = nIn >= COORDCONV_MIN_CONE_PER_SIDE
+                           && nOut >= COORDCONV_MIN_CONE_PER_SIDE;
         if (fitMask & COORDCONV_FIT_CONE) {
             snprintf(buf, sizeof(buf), "%+.1f\"", hcone * toArcsec);
             y = drawKV(y, "Cone Error", buf);
         } else {
-            y = drawKV(y, "Cone Error", notFit, COL_DIM);
+            y = drawKV(y, "Cone Error", coneOpen ? notFit : needSides, COL_DIM);
         }
         if (fitMask & COORDCONV_FIT_PERP) {
             snprintf(buf, sizeof(buf), "%+.1f\"", hperp * toArcsec);

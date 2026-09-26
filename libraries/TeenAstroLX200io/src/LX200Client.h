@@ -279,6 +279,9 @@ public:
   LX200RETURN getAlignHeadIndex2(double& arcsec);    // :GXAi#
   LX200RETURN getAlignRigidRms(double& arcsec);      // :GXAr#
   LX200RETURN getAlignStarCount(uint8_t& stars);     // :GXAn#
+  /// Retained stars on each pier side: \p nIn is axis2 inside +/-90 deg, \p nOut
+  /// is beyond the pole. Cone is solved only when both are at least 3.
+  LX200RETURN getAlignPierSides(uint8_t& nIn, uint8_t& nOut); // :GXAb#
   /// Which head terms the last fit solved, as "CPI" with a dash for each term
   /// the star distribution could not separate from the others.
   LX200RETURN getAlignFittedTerms(char* out, int len); // :GXAf#

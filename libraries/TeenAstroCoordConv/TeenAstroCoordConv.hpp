@@ -52,6 +52,14 @@
 /// two spare equations, which is what lets the conditioning test below tell a
 /// genuinely separable term from noise.
 #define COORDCONV_MIN_RIGID_STARS 4
+/// Axis2 non-perpendicularity may be solved once a rigid session has this many
+/// stars. It does not need a meridian flip: within one pier side it is the
+/// observable combination of cone and non-perpendicularity.
+#define COORDCONV_MIN_PERP_STARS 4
+/// Cone error is solved only when each pier side contributes at least this many
+/// stars. Three and three is the smallest such session (six stars). One star
+/// past the pole is not enough, and six stars on one side is not either.
+#define COORDCONV_MIN_CONE_PER_SIDE 3
 
 /// Bits returned by CoordConv::getRigidMask().
 #define COORDCONV_FIT_CONE 0x01
@@ -149,6 +157,25 @@ public:
 
 	/// Number of retained alignment stars.
 	unsigned char getStars() const { return nstars; }
+
+	/// How the retained stars split across the two mechanical configurations.
+	/// \p nIn is axis2 inside +/-90 deg, \p nOut is axis2 past that (beyond the
+	/// pole). Cone error is solved only when both are at least
+	/// COORDCONV_MIN_CONE_PER_SIDE.
+	void pierSideCounts(int &nIn, int &nOut) const
+	{
+		nIn = 0;
+		nOut = 0;
+		for (unsigned char i = 0; i < nstars; i++)
+		{
+			double a = starAxis[i][1];
+			while (a > M_PI) a -= 2.0 * M_PI;
+			while (a < -M_PI) a += 2.0 * M_PI;
+			const double mag = a < 0.0 ? -a : a;
+			if (mag < M_PI_2 - 1e-3) nIn++;
+			else if (mag > M_PI_2 + 1e-3) nOut++;
+		}
+	}
 
 	/// Forget the retained stars. T and the head terms are left alone.
 	void resetStars() { nstars = 0; }

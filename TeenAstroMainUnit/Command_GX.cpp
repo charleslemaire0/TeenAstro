@@ -300,6 +300,14 @@ static void Command_GX_Alignment()
     // :GXAn#  Stars collected in the current/last alignment session. TeenAstro extension.
     sprintf(commandState.reply, "%d#", (int)mount.alignment.conv.getStars());
     break;
+  case 'b': {
+    // :GXAb#  Retained stars on each pier side, "in,out#". "in" is axis2 inside
+    // +/-90 deg, "out" is beyond the pole. Cone needs at least
+    // COORDCONV_MIN_CONE_PER_SIDE on each. TeenAstro extension.
+    int nIn = 0, nOut = 0;
+    mount.alignment.conv.pierSideCounts(nIn, nOut);
+    sprintf(commandState.reply, "%d,%d#", nIn, nOut);
+  } break;
   case 'f': {
     // :GXAf#  Which head terms the last rigid fit actually solved, as "CPI" with
     // a dash for each term the star distribution could not separate. TeenAstro extension.

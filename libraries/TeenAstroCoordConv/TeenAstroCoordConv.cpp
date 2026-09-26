@@ -418,14 +418,15 @@ double independentInfo(const double N[RIGID_NPAR][RIGID_NPAR], const bool keep[R
 /// them, and look alarming when displayed. Leaving the unsupported term at zero
 /// costs nothing on these stars and keeps the model honest.
 ///
-/// The pair does become separable, and there is no need to special case it: a
-/// cone error is fixed in the tube, so it reverses across a meridian flip while
-/// the head's non-perpendicularity does not. One star taken beyond the pole
-/// therefore makes the cone column independent again, and this test picks that
-/// up on its own, because starAxis records the raw mechanical axis2 and so runs
-/// past 90 degrees for that star.
+/// The pair does become separable once a star is taken beyond the pole, because
+/// a cone error is fixed in the tube and reverses across the flip while the
+/// head's non-perpendicularity does not. That is not sufficient to publish a
+/// cone value: \p eligible (COORDCONV_FIT_* bits) withholds cone unless each
+/// pier side has at least COORDCONV_MIN_CONE_PER_SIDE stars, and withholds perp
+/// below COORDCONV_MIN_PERP_STARS. The rank test still runs on whatever remains,
+/// so a session that never leaves one pier side does not get a cone.
 void selectParams(const double N[RIGID_NPAR][RIGID_NPAR], unsigned char nstars,
-                  bool (&active)[RIGID_NPAR])
+                  unsigned char eligible, bool (&active)[RIGID_NPAR])
 {
   // A term must retain at least this fraction of its sensitivity after the
   // already selected terms are projected out; equivalently 1 - R^2 against
@@ -460,7 +461,8 @@ void selectParams(const double N[RIGID_NPAR][RIGID_NPAR], unsigned char nstars,
     double bestRatio = 0.0;
     for (int c = 3; c < RIGID_NPAR; c++)
     {
-      if (active[c] || N[c][c] <= minSensitivity)
+      const unsigned char bit = (unsigned char)(1u << (c - 3));
+      if ((eligible & bit) == 0 || active[c] || N[c][c] <= minSensitivity)
         continue;
       const double ratio = independentInfo(N, active, c) / N[c][c];
       if (ratio > bestRatio)
@@ -611,7 +613,17 @@ bool CoordConv::fitRigidModel(double *rmsOut, int *iterOut)
   {
     double N0[RIGID_NPAR][RIGID_NPAR], g0[RIGID_NPAR];
     accumulateNormals(Tinv_w, head_w, targets, N0, g0);
-    selectParams(N0, nstars, active);
+    // Perp from four stars on either side. Cone only when each pier side has
+    // at least three stars. Idx2 has no extra count gate; the rank test still
+    // applies to all three.
+    int nIn = 0, nOut = 0;
+    pierSideCounts(nIn, nOut);
+    unsigned char eligible = COORDCONV_FIT_IDX2;
+    if (nstars >= COORDCONV_MIN_PERP_STARS)
+      eligible = (unsigned char)(eligible | COORDCONV_FIT_PERP);
+    if (nIn >= COORDCONV_MIN_CONE_PER_SIDE && nOut >= COORDCONV_MIN_CONE_PER_SIDE)
+      eligible = (unsigned char)(eligible | COORDCONV_FIT_CONE);
+    selectParams(N0, nstars, eligible, active);
   }
 
   double lambda = 1e-9;
