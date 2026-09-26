@@ -431,6 +431,106 @@ void test_get_align_rigid_rms_and_star_count(void) {
     TEST_ASSERT_EQUAL_UINT8(5, stars);
 }
 
+// Same framing as T_Serial: drop the leading ':' and the trailing '#'.
+// Same indexes as Command_SX_KnownGeom on that stripped buffer.
+static bool applyKnownCommand(const char* wire, double& coneRad, double& perpRad, bool& use)
+{
+    if (wire[0] != ':') return false;
+    char cmd[32];
+    strncpy(cmd, wire + 1, sizeof(cmd) - 1);
+    cmd[sizeof(cmd) - 1] = '\0';
+    char* hash = strchr(cmd, '#');
+    if (!hash) return false;
+    *hash = '\0';
+    if (cmd[0] != 'S' || cmd[1] != 'X' || cmd[2] != 'K') return false;
+    switch (cmd[3])
+    {
+    case 'c':
+    case 'p':
+    {
+        if (cmd[4] != ',') return false;
+        const double arcsec = strtod(&cmd[5], NULL);
+        if (fabs(arcsec) > 5.0 * 3600.0) return false;
+        const double rad = arcsec * DEG_TO_RAD / 3600.0;
+        if (cmd[3] == 'c') coneRad = rad;
+        else               perpRad = rad;
+        return true;
+    }
+    case 'k':
+        if (cmd[4] == ',' && (cmd[5] == '0' || cmd[5] == '1') && cmd[6] == 0)
+        {
+            use = cmd[5] == '1';
+            return true;
+        }
+        return false;
+    default:
+        return false;
+    }
+}
+
+static double knownReplyDegrees(double rad)
+{
+    char reply[32];
+    sprintf(reply, "%f#", rad * RAD_TO_DEG * 3600.0);
+    return atof(reply) / 3600.0;
+}
+
+void test_known_cone_and_perp_commands_round_trip(void)
+{
+    double coneRad = 0, perpRad = 0;
+    bool use = false;
+
+    prepareSetOk();
+    TEST_ASSERT_EQUAL(LX200_VALUESET, client->setKnownCone(1.25));
+    TEST_ASSERT_EQUAL_STRING(":SXKc,4500.000#", mockStream.getSent());
+    TEST_ASSERT_TRUE(applyKnownCommand(mockStream.getSent(), coneRad, perpRad, use));
+
+    mockStream.clearSent();
+    prepareSetOk();
+    TEST_ASSERT_EQUAL(LX200_VALUESET, client->setKnownPerp(-0.5));
+    TEST_ASSERT_EQUAL_STRING(":SXKp,-1800.000#", mockStream.getSent());
+    TEST_ASSERT_TRUE(applyKnownCommand(mockStream.getSent(), coneRad, perpRad, use));
+
+    mockStream.clearSent();
+    prepareSetOk();
+    TEST_ASSERT_EQUAL(LX200_VALUESET, client->setKnownGeomUse(true));
+    TEST_ASSERT_EQUAL_STRING(":SXKk,1#", mockStream.getSent());
+    TEST_ASSERT_TRUE(applyKnownCommand(mockStream.getSent(), coneRad, perpRad, use));
+    TEST_ASSERT_TRUE(use);
+
+    // EEPROM stores the radians as float, the same way saveKnownGeom does.
+    coneRad = (double)(float)coneRad;
+    perpRad = (double)(float)perpRad;
+    TEST_ASSERT_DOUBLE_WITHIN(1e-4, 1.25, knownReplyDegrees(coneRad));
+    TEST_ASSERT_DOUBLE_WITHIN(1e-4, -0.5, knownReplyDegrees(perpRad));
+
+    char reply[32];
+    sprintf(reply, "%f", coneRad * RAD_TO_DEG * 3600.0);
+    mockStream.clearSent();
+    prepareGetLong(reply);
+    double deg = 0;
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getKnownCone(deg));
+    TEST_ASSERT_EQUAL_STRING(":GXKc#", mockStream.getSent());
+    TEST_ASSERT_DOUBLE_WITHIN(1e-4, 1.25, deg);
+
+    sprintf(reply, "%f", perpRad * RAD_TO_DEG * 3600.0);
+    mockStream.clearSent();
+    prepareGetLong(reply);
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getKnownPerp(deg));
+    TEST_ASSERT_EQUAL_STRING(":GXKp#", mockStream.getSent());
+    TEST_ASSERT_DOUBLE_WITHIN(1e-4, -0.5, deg);
+
+    mockStream.clearSent();
+    prepareGetLong("1");
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getKnownGeomUse(use));
+    TEST_ASSERT_EQUAL_STRING(":GXKk#", mockStream.getSent());
+    TEST_ASSERT_TRUE(use);
+
+    // Past ±5° the main unit refuses the value.
+    TEST_ASSERT_FALSE(applyKnownCommand(":SXKc,18003.600#", coneRad, perpRad, use));
+    TEST_ASSERT_DOUBLE_WITHIN(1e-6, (double)(float)(1.25 * DEG_TO_RAD), coneRad);
+}
+
 void test_set_align_head_terms(void) {
     prepareSetOk();
     TEST_ASSERT_EQUAL(LX200_VALUESET, client->setAlignHeadCone(12.5));
@@ -2016,6 +2116,7 @@ int main(int argc, char** argv) {
     RUN_TEST(test_get_align_rigid_rms_and_star_count);
     RUN_TEST(test_get_align_pier_sides);
     RUN_TEST(test_get_align_fitted_terms);
+    RUN_TEST(test_known_cone_and_perp_commands_round_trip);
     RUN_TEST(test_set_align_head_terms);
     RUN_TEST(test_reply_long);
     RUN_TEST(test_reply_long_accepts_short_product_board_driver);
