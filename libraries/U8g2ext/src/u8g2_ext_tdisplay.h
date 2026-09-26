@@ -3,6 +3,7 @@
  *
  * Same pattern as the SDL emulator: real U8g2 SSD1306 full buffer with empty I/O
  * callbacks; after each page cycle, scale 2× and push to TFT_eSPI via present hook.
+ * Backlight (GPIO38) is PWM-dimmed via setContrast() (SHC Contrast menu / timeouts).
  */
 #pragma once
 
@@ -23,8 +24,12 @@ public:
   static constexpr uint16_t COL_ON  = 0xF800;  // red
   static constexpr uint16_t COL_OFF = 0x0000;  // black
 
-  // T-Display S3 LCD power enable
+  // T-Display S3 LCD power enable + backlight
   static constexpr int PIN_LCD_POWER = 15;
+  static constexpr int PIN_BL = 38;
+  static constexpr int BL_LEDC_CH = 0;
+  static constexpr int BL_LEDC_FREQ = 5000;
+  static constexpr int BL_LEDC_RES = 8;  // 0..255 duty
 
   U8G2_EXT_TDisplay(const u8g2_cb_t *rotation = U8G2_R0) : U8G2_EXT() {
     u8g2_Setup_ssd1306_i2c_128x64_noname_f(
@@ -47,9 +52,20 @@ public:
     tft_.init();
     tft_.setRotation(1);  // 320×170 landscape
     tft_.fillScreen(COL_OFF);
+
+    // Take over backlight from TFT_eSPI digital on → PWM (GPIO38, active HIGH).
+    ledcSetup(BL_LEDC_CH, BL_LEDC_FREQ, BL_LEDC_RES);
+    ledcAttachPin(PIN_BL, BL_LEDC_CH);
+    setContrast(220);
+
     tftReady_ = true;
     u8g2_ext_present_cb = &U8G2_EXT_TDisplay::presentThunk;
     return true;
+  }
+
+  void setContrast(uint8_t value) override {
+    // SHC menu: Min=0, Low=63, High=127, Max=255; idle timeout uses 0.
+    ledcWrite(BL_LEDC_CH, value);
   }
 
   void blitToTft() {

@@ -18,6 +18,7 @@ public:
       u8g2_ext_present_cb();
     return r;
   }
+  virtual void setContrast(uint8_t value) { U8G2::setContrast(value); }
 
   bool UserInterfaceCatalog(Pad *extPad, const char *title);
 
