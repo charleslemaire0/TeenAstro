@@ -186,17 +186,6 @@ static void EquToHorTopo(double HA, double Dec,
   *Alt = *Alt * Rad;
 }
 
-/**
- * [LEGACY] Internal: Equatorial -> Apparent Horizontal (degrees).
- */
-static void EquToHorApp(double HA, double Dec,
-                         double* Azm, double* Alt,
-                         const double* cosLat, const double* sinLat)
-{
-  EquToHorTopo(HA, Dec, Azm, Alt, cosLat, sinLat);
-  Topocentric2Apparent(Alt);
-}
-
 void EquToHor(double HA, double Dec, bool refraction,
               double* Azm, double* Alt,
               const double* cosLat, const double* sinLat)

@@ -136,7 +136,6 @@ void CoordConv::minimizeAxis1(double Offset)
 void CoordConv::minimizeAxis2()
 {
   double delta = 0;
-  double ax2init[2] = { ax2[0] , ax2[1] };
   #ifdef DEBUG_COUT
   char txt[512];
   Serial.println("minimizeSync");

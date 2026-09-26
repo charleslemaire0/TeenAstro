@@ -25,6 +25,21 @@
 #define EPSILON 1e-6
 
 #include <math.h>
+#include <string.h>
+
+inline int svd3FloatBits(float x)
+{
+  int i;
+  memcpy(&i, &x, sizeof(i));
+  return i;
+}
+
+inline float svd3BitsToFloat(int i)
+{
+  float x;
+  memcpy(&x, &i, sizeof(x));
+  return x;
+}
 
 /* This is a novel and fast routine for the reciprocal square root of an
 IEEE float (single precision).
@@ -37,10 +52,10 @@ inline float rsqrt(float x) {
 // int ihalf = *(int *)&x - 0x00800000; // Alternative to next line,
 // float xhalf = *(float *)&ihalf;      // for sufficiently large nos.
    float xhalf = 0.5f*x;
-   int i = *(int *)&x;          // View x as an int.
+   int i = svd3FloatBits(x);
 // i = 0x5f3759df - (i >> 1);   // Initial guess (traditional).
    i = 0x5f375a82 - (i >> 1);   // Initial guess (slightly better).
-   x = *(float *)&i;            // View i as float.
+   x = svd3BitsToFloat(i);
    x = x*(1.5f - xhalf*x*x);    // Newton step.
 // x = x*(1.5008908 - xhalf*x*x);  // Newton step for a balanced error.
    return x;
@@ -52,9 +67,9 @@ range from 0 to -0.00000463.
    You can't balance the error by adjusting the constant. */
 inline float rsqrt1(float x) {
    float xhalf = 0.5f*x;
-   int i = *(int *)&x;          // View x as an int.
+   int i = svd3FloatBits(x);
    i = 0x5f37599e - (i >> 1);   // Initial guess.
-   x = *(float *)&i;            // View i as float.
+   x = svd3BitsToFloat(i);
    x = x*(1.5f - xhalf*x*x);    // Newton step.
    x = x*(1.5f - xhalf*x*x);    // Newton step again.
    return x;
