@@ -520,65 +520,82 @@ static void synthMountAxesSide(const double (&Tm)[3][3], const HeadModel &head,
     HeadGeom::inverse(dcIn, head, flipped ? (M_PI - s) : s, axis1Direct, axis2);
 }
 
-/// Feed STARS_WIDE, placing star \p k on the beyond the pole branch when
-/// flipped[k] is set.
-static void feedSides(CoordConv &cc, const double (&Tm)[3][3], const HeadModel &head,
-                      const bool (&flipped)[6])
+/// Build a session of \p n stars from STARS_WIDE, taking star \p flipIdx beyond
+/// the pole (\p flipIdx < 0 keeps every star on the same side), and fit it.
+static void fitSession(CoordConv &cc, const double (&Tm)[3][3], int n, int flipIdx)
 {
-    for (int k = 0; k < 6; k++) {
+    for (int k = 0; k < n; k++) {
         double a1d, a2;
-        synthMountAxesSide(Tm, head, STARS_WIDE[k][0], STARS_WIDE[k][1], flipped[k], a1d, a2);
+        synthMountAxesSide(Tm, HEAD_TRUTH, STARS_WIDE[k][0], STARS_WIDE[k][1],
+                           k == flipIdx, a1d, a2);
         feedStar(cc, STARS_WIDE[k][0], STARS_WIDE[k][1], a1d, a2);
     }
+    char msg[64];
+    sprintf(msg, "fit failed for n=%d flip=%d", n, flipIdx);
+    TEST_ASSERT_TRUE_MESSAGE(cc.fitRigidModel(), msg);
 }
 
 void test_fit_drops_cone_without_a_meridian_flip(void)
 {
     // Cone error and axis2 non-perpendicularity both displace axis1 with nearly
     // the same dependence on axis2, so within a single mechanical configuration
-    // they are ~99.9% redundant (cone keeps 0.0005 of its own information once
-    // perp is in the model) no matter how wide the sky coverage is. The fit must
-    // therefore keep only one of them.
+    // they stay ~99.9% redundant no matter how wide the sky coverage is: cone
+    // keeps at most 0.00046 of its own information once perp is in the model.
+    // The fit must keep only one of the pair, at every star count.
     double Ttruth[3][3];
     truthT(Ttruth);
-    const bool oneSide[6] = { false, false, false, false, false, false };
-    CoordConv cc;
-    feedSides(cc, Ttruth, HEAD_TRUTH, oneSide);
-    TEST_ASSERT_TRUE(cc.fitRigidModel());
-
-    TEST_ASSERT_EQUAL_UINT8(0, cc.getRigidMask() & COORDCONV_FIT_CONE);
-    TEST_ASSERT_EQUAL_UINT8(COORDCONV_FIT_PERP, cc.getRigidMask() & COORDCONV_FIT_PERP);
-    float c, p, i2;
-    cc.getHead(c, p, i2);
-    TEST_ASSERT_EQUAL_DOUBLE(0.0, c);
-    // The axis2 index stays separable and must still come out right.
-    TEST_ASSERT_DOUBLE_WITHIN(2.0 * ARCSEC, HEAD_TRUTH.idx2, i2);
+    for (int n = COORDCONV_MIN_RIGID_STARS; n <= 6; n++) {
+        CoordConv cc;
+        fitSession(cc, Ttruth, n, -1);
+        char msg[64];
+        sprintf(msg, "n=%d mask=%x", n, (unsigned)cc.getRigidMask());
+        TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, cc.getRigidMask() & COORDCONV_FIT_CONE, msg);
+        TEST_ASSERT_EQUAL_UINT8_MESSAGE(COORDCONV_FIT_PERP,
+                                        cc.getRigidMask() & COORDCONV_FIT_PERP, msg);
+        float c, p, i2;
+        cc.getHead(c, p, i2);
+        TEST_ASSERT_EQUAL_DOUBLE(0.0, c);
+        // The axis2 index stays separable and must still come out right, and
+        // perp absorbing the observable combination has to keep pointing sane.
+        TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(2.0 * ARCSEC, HEAD_TRUTH.idx2, i2, msg);
+        TEST_ASSERT_TRUE_MESSAGE(worstPointingError(cc, Ttruth, HEAD_TRUTH) < 30.0 * ARCSEC, msg);
+    }
 }
 
 void test_fit_recovers_cone_with_one_star_past_the_flip(void)
 {
     // A cone error is fixed in the tube, so crossing to the beyond the pole
-    // configuration reverses its effect on the sky while the axis2
-    // non-perpendicularity, being a property of the head, does not follow it.
-    // That asymmetry is what separates the pair, and a single star on the other
-    // side is enough: cone recovers 0.11 of its independent information, above
-    // the selection threshold, and all three terms then come out exactly.
+    // configuration reverses its effect on the sky, while the axis2
+    // non-perpendicularity is a property of the head and does not follow it.
+    // That asymmetry separates the pair, and one star is enough to exploit it.
+    //
+    // Sweeping every star count from the accepted minimum up, and every choice
+    // of which star is the flipped one, the cone term always scores at least
+    // 0.0278 - sixty times the single side figure - so all three terms are
+    // solved and the model comes out exact. Getting this wrong is expensive:
+    // declining cone when a flipped star is present leaves that star's reading
+    // unexplainable and pushes pointing error past 60 arcsec, worse than never
+    // having flipped at all.
     double Ttruth[3][3];
     truthT(Ttruth);
-    const bool lastFlipped[6] = { false, false, false, false, false, true };
-    CoordConv cc;
-    feedSides(cc, Ttruth, HEAD_TRUTH, lastFlipped);
-    TEST_ASSERT_TRUE(cc.fitRigidModel());
-
-    TEST_ASSERT_EQUAL_UINT8(COORDCONV_FIT_CONE | COORDCONV_FIT_PERP | COORDCONV_FIT_IDX2,
-                            cc.getRigidMask());
-    float c, p, i2;
-    cc.getHead(c, p, i2);
-    TEST_ASSERT_DOUBLE_WITHIN(2.0 * ARCSEC, HEAD_TRUTH.cone, c);
-    TEST_ASSERT_DOUBLE_WITHIN(2.0 * ARCSEC, HEAD_TRUTH.perp, p);
-    TEST_ASSERT_DOUBLE_WITHIN(2.0 * ARCSEC, HEAD_TRUTH.idx2, i2);
-    // With the geometry fully determined the model is exact off the star set too.
-    TEST_ASSERT_TRUE(worstPointingError(cc, Ttruth, HEAD_TRUTH) < 1.0 * ARCSEC);
+    for (int n = COORDCONV_MIN_RIGID_STARS; n <= 6; n++) {
+        for (int flipIdx = 0; flipIdx < n; flipIdx++) {
+            CoordConv cc;
+            fitSession(cc, Ttruth, n, flipIdx);
+            char msg[64];
+            sprintf(msg, "n=%d flip=%d mask=%x", n, flipIdx, (unsigned)cc.getRigidMask());
+            TEST_ASSERT_EQUAL_UINT8_MESSAGE(
+                COORDCONV_FIT_CONE | COORDCONV_FIT_PERP | COORDCONV_FIT_IDX2,
+                cc.getRigidMask(), msg);
+            float c, p, i2;
+            cc.getHead(c, p, i2);
+            TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(2.0 * ARCSEC, HEAD_TRUTH.cone, c, msg);
+            TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(2.0 * ARCSEC, HEAD_TRUTH.perp, p, msg);
+            TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(2.0 * ARCSEC, HEAD_TRUTH.idx2, i2, msg);
+            // Fully determined geometry means the model is exact off the stars too.
+            TEST_ASSERT_TRUE_MESSAGE(worstPointingError(cc, Ttruth, HEAD_TRUTH) < 1.0 * ARCSEC, msg);
+        }
+    }
 }
 
 void test_fit_recovers_axis2_index(void)

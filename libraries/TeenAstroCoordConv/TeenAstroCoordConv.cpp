@@ -428,9 +428,23 @@ void selectParams(const double N[RIGID_NPAR][RIGID_NPAR], unsigned char nstars,
                   bool (&active)[RIGID_NPAR])
 {
   // A term must retain at least this fraction of its sensitivity after the
-  // already selected terms are projected out. Equivalently 1 - R^2 against
-  // them, so 0.05 means "at least 5% of this term's effect is its own".
-  const double minIndependent = 0.05;
+  // already selected terms are projected out; equivalently 1 - R^2 against
+  // them. The threshold is placed inside a measured gap rather than picked for
+  // roundness: sweeping 4 to 6 stars over every choice of which one is taken
+  // beyond the pole, the cone term scores at most 0.00046 when every star is on
+  // the same side and at least 0.0278 when one is not, so the two populations
+  // are 60 times apart and this sits near the middle of that gap.
+  //
+  // Erring low is deliberate. Declining a term the stars cannot separate is
+  // cheap, because the remaining terms absorb the combination that is actually
+  // observable. Declining one they can separate is not: the flipped star's
+  // reading then cannot be reproduced at all, and pointing degrades further
+  // than it would have with no flipped star in the set.
+  //
+  // The score is a property of the Jacobian, which depends on the axis readings
+  // and T but not on the recorded sky positions, so it does not drift with
+  // measurement noise the way a residual based criterion would.
+  const double minIndependent = 0.004;
   // And it must move the prediction at all: guards a term the geometry makes
   // completely inert, such as the axis2 index for stars all at one declination.
   const double minSensitivity = 1e-6 * (double)nstars;
