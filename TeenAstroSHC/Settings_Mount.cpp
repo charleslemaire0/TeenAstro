@@ -10,7 +10,7 @@ void SmartHandController::menuMount()
   while (!exitMenu)
   {
     const char *string_list = T_MOUNT "\n" T_MOUNTTYPE "\n" T_MOTORS " \n" T_ENCODERS" \n"
-      T_LIMITS "\n" T_REFRACTION "\n" T_RETICULE;
+      T_LIMITS "\n" T_KNOWN_ERRORS "\n" T_REFRACTION "\n" T_RETICULE;
     tmp_sel = display->UserInterfaceSelectionList(&buttonPad, T_MOUNT, s_sel, string_list);
     s_sel = tmp_sel > 0 ? tmp_sel : s_sel;
     switch (tmp_sel)
@@ -33,9 +33,12 @@ void SmartHandController::menuMount()
       menuLimits();
       break;
     case 6:
-      MenuRefraction();
+      menuKnownErrors();
       break;
     case 7:
+      MenuRefraction();
+      break;
+    case 8:
       menuReticule();
       break;
     default:

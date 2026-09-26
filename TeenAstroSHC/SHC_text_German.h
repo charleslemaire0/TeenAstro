@@ -39,7 +39,7 @@
 #define T_TWO_STARS_MECH "2 Sterne Mech."
 #define T_ALIGN_PERP "4 Sterne"
 #define T_ALIGN_CONE "3+3 Sterne"
-#define T_KNOWN_ERRORS "Bekannte Fehler"
+#define T_KNOWN_ERRORS "Montierungsfehler"
 #define T_POLE_AZ "Pol Az"
 #define T_POLE_ALT "Pol Hoehe"
 #define T_CONE "Konus"

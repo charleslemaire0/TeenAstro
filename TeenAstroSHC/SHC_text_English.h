@@ -38,7 +38,7 @@
 #define T_TWO_STARS_MECH "2 Stars Mech."
 #define T_ALIGN_PERP "4 Stars"
 #define T_ALIGN_CONE "3+3 Stars"
-#define T_KNOWN_ERRORS "Known errors"
+#define T_KNOWN_ERRORS "Mount error"
 #define T_POLE_AZ "Pole Az"
 #define T_POLE_ALT "Pole Alt"
 #define T_CONE "Cone"

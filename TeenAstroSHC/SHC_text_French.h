@@ -39,7 +39,7 @@
 #define T_TWO_STARS_MECH "2 étoiles méca."
 #define T_ALIGN_PERP "4 étoiles"
 #define T_ALIGN_CONE "3+3 étoiles"
-#define T_KNOWN_ERRORS "Erreurs connues"
+#define T_KNOWN_ERRORS "Erreur monture"
 #define T_POLE_AZ "Pole Az"
 #define T_POLE_ALT "Pole Alt"
 #define T_CONE "Cone"
