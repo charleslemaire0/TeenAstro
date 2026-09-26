@@ -138,12 +138,12 @@ public:
 	/// pole and does not change the reported pole error.
 	void setPoleError(double latRad, double dAzRad, double dAltRad, double indexRad);
 
-	/// Two-star alignment with a known axis2 non-perpendicularity.
-	/// The perpendicularity is written into the head and the instrument vectors
-	/// are rebuilt through it. The two stars then estimate the pole direction
-	/// and the axis index together, the same three degrees of freedom as Taki.
+	/// Two-star alignment with a known optical cone and axis2 non-perpendicularity.
+	/// Both are written into the head and the instrument vectors are rebuilt
+	/// through them. The two stars then estimate the pole direction and the axis
+	/// index together, the same three degrees of freedom as Taki.
 	/// Returns false when two reference axes are not available.
-	bool alignTwoStarKnownPerp(double perpRad);
+	bool alignTwoStarKnownGeom(double coneRad, double perpRad);
 
 	// ---------------------------------------------------------------------------
 	// Rigid six degree of freedom model: T (three) plus head (three).

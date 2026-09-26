@@ -246,25 +246,27 @@ void test_two_star_with_known_perp_estimates_the_pole(void)
   const double lat = 47.22 * DEG_TO_RAD;
   const double dAz = 1.1 * DEG_TO_RAD;
   const double dAlt = -0.4 * DEG_TO_RAD;
+  const double cone = 50.0 / 3600.0 * DEG_TO_RAD;
   const double perp = -70.0 / 3600.0 * DEG_TO_RAD;
   const double az0 = 90.0 * DEG_TO_RAD, alt0 = 40.0 * DEG_TO_RAD;
   const double az1 = 250.0 * DEG_TO_RAD, alt1 = 55.0 * DEG_TO_RAD;
 
   CoordConv truth;
   truth.setPoleError(lat, dAz, dAlt, 0.35);
-  HeadModel head(0.0, perp, 0.0);
+  HeadModel head(cone, perp, 0.0);
 
-  // Same finish as a GEM 2-star: strip the known perpendicularity, then the
-  // two stars estimate the pole. The perpendicularity stays in the head.
+  // Same finish as a GEM 2-star: strip the known cone and perpendicularity,
+  // then the two stars estimate the pole. Both stay in the head.
   CoordConv obs;
   obs.clean();
   addHeadStar(obs, truth.T, head, az0, alt0);
   addHeadStar(obs, truth.T, head, az1, alt1);
   const double meas1[2] = { obs.ax1[0], obs.ax2[0] };
   const double meas2[2] = { obs.ax1[1], obs.ax2[1] };
-  TEST_ASSERT_TRUE(obs.alignTwoStarKnownPerp(perp));
+  TEST_ASSERT_TRUE(obs.alignTwoStarKnownGeom(cone, perp));
   TEST_ASSERT_DOUBLE_WITHIN(TOL_ALIGN, dAz * 180.0 / M_PI, obs.polErrorDeg(lat, PE_EQ_AZ));
   TEST_ASSERT_DOUBLE_WITHIN(TOL_ALIGN, dAlt * 180.0 / M_PI, obs.polErrorDeg(lat, PE_EQ_ALT));
+  TEST_ASSERT_DOUBLE_WITHIN(1e-9, cone, obs.head.cone);
   TEST_ASSERT_DOUBLE_WITHIN(1e-9, perp, obs.head.perp);
 
   double dcSky[3], dcI[3], pred[3];

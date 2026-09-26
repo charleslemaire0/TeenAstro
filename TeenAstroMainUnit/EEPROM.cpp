@@ -46,6 +46,7 @@ void loadKnownGeom()
   mount.alignment.knownPoleAz = saneKnownRad(XEEPROM.readFloat(getKnownGeomAddress(EE_kgeom_az)));
   mount.alignment.knownPoleAlt = saneKnownRad(XEEPROM.readFloat(getKnownGeomAddress(EE_kgeom_alt)));
   mount.alignment.knownPerp = saneKnownRad(XEEPROM.readFloat(getKnownGeomAddress(EE_kgeom_perp)));
+  mount.alignment.knownCone = saneKnownRad(XEEPROM.readFloat((int)EE_KnownConeBase + 4 * (int)midx));
 }
 
 void saveKnownGeom()
@@ -53,6 +54,7 @@ void saveKnownGeom()
   XEEPROM.writeFloat(getKnownGeomAddress(EE_kgeom_az), (float)mount.alignment.knownPoleAz);
   XEEPROM.writeFloat(getKnownGeomAddress(EE_kgeom_alt), (float)mount.alignment.knownPoleAlt);
   XEEPROM.writeFloat(getKnownGeomAddress(EE_kgeom_perp), (float)mount.alignment.knownPerp);
+  XEEPROM.writeFloat((int)EE_KnownConeBase + 4 * (int)midx, (float)mount.alignment.knownCone);
   XEEPROM.write(getKnownGeomAddress(EE_kgeom_use), mount.alignment.knownGeom ? 1 : 0);
 }
 

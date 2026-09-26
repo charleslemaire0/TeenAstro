@@ -42,6 +42,7 @@
 #define T_KNOWN_ERRORS "Bekannte Fehler"
 #define T_POLE_AZ "Pol Az"
 #define T_POLE_ALT "Pol Hoehe"
+#define T_CONE "Konus"
 #define T_PERP "Senkr."
 #define T_USE_IN_2STAR "Misst den Pol"
 #define T_SAME_SIDE "Gleiche Seite"

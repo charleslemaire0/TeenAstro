@@ -289,13 +289,16 @@ public:
   LX200RETURN setAlignHeadPerp(double arcsec);       // :SXAp,V#
   LX200RETURN setAlignHeadIndex2(double arcsec);     // :SXAi,V#
   LX200RETURN alignClearHead();                      // :SXAC#
-  /// Known pole azimuth, pole altitude and axis2 non-perpendicularity, degrees.
-  /// When use is on, a 2-star alignment holds them and solves only the index.
+  /// Known pole azimuth, pole altitude, cone and axis2 non-perpendicularity, degrees.
+  /// When use is on, a 2-star alignment holds the cone and the perpendicularity
+  /// and still estimates the pole.
   LX200RETURN getKnownPoleAz(double& deg);           // :GXKz#
   LX200RETURN getKnownPoleAlt(double& deg);          // :GXKa#
+  LX200RETURN getKnownCone(double& deg);             // :GXKc#
   LX200RETURN getKnownPerp(double& deg);             // :GXKp#
   LX200RETURN setKnownPoleAz(double deg);            // :SXKz,V#
   LX200RETURN setKnownPoleAlt(double deg);           // :SXKa,V#
+  LX200RETURN setKnownCone(double deg);              // :SXKc,V#
   LX200RETURN setKnownPerp(double deg);              // :SXKp,V#
   LX200RETURN getKnownGeomUse(bool& on);             // :GXKk#
   LX200RETURN setKnownGeomUse(bool on);              // :SXKk,0# / :SXKk,1#

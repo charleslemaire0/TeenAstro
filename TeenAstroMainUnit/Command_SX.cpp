@@ -836,13 +836,15 @@ static void Command_SX_Options()
 // =============================================================================
 static void Command_SX_KnownGeom()
 {
-  // :SXKz,V# :SXKa,V# :SXKp,V#  known pole azimuth, pole altitude, perpendicularity,
-  // arcseconds. :SXKk,0# / :SXKk,1#  whether a 2-star alignment holds them fixed.
+  // :SXKz,V# :SXKa,V# :SXKc,V# :SXKp,V#  known pole azimuth, pole altitude, cone,
+  // perpendicularity, arcseconds. :SXKk,0# / :SXKk,1#  whether a 2-star alignment
+  // holds the cone and the perpendicularity.
   bool ok = false;
   switch (commandState.command[3])
   {
   case 'z':
   case 'a':
+  case 'c':
   case 'p': {
     if (commandState.command[4] != ',')
       break;
@@ -854,6 +856,8 @@ static void Command_SX_KnownGeom()
       mount.alignment.knownPoleAz = rad;
     else if (commandState.command[3] == 'a')
       mount.alignment.knownPoleAlt = rad;
+    else if (commandState.command[3] == 'c')
+      mount.alignment.knownCone = rad;
     else
       mount.alignment.knownPerp = rad;
     saveKnownGeom();

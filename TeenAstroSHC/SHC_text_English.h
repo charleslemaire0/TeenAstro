@@ -41,6 +41,7 @@
 #define T_KNOWN_ERRORS "Known errors"
 #define T_POLE_AZ "Pole Az"
 #define T_POLE_ALT "Pole Alt"
+#define T_CONE "Cone"
 #define T_PERP "Perp"
 #define T_USE_IN_2STAR "Measures pole"
 #define T_SAME_SIDE "Same pier side"

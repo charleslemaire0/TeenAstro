@@ -952,9 +952,11 @@ LX200RETURN knownDegSet(LX200Client& c, char sel, double deg)
 
 LX200RETURN LX200Client::getKnownPoleAz(double& deg)  { return knownDegGet(*this, ":GXKz#", deg); }
 LX200RETURN LX200Client::getKnownPoleAlt(double& deg) { return knownDegGet(*this, ":GXKa#", deg); }
+LX200RETURN LX200Client::getKnownCone(double& deg)    { return knownDegGet(*this, ":GXKc#", deg); }
 LX200RETURN LX200Client::getKnownPerp(double& deg)    { return knownDegGet(*this, ":GXKp#", deg); }
 LX200RETURN LX200Client::setKnownPoleAz(double deg)   { return knownDegSet(*this, 'z', deg); }
 LX200RETURN LX200Client::setKnownPoleAlt(double deg)  { return knownDegSet(*this, 'a', deg); }
+LX200RETURN LX200Client::setKnownCone(double deg)     { return knownDegSet(*this, 'c', deg); }
 LX200RETURN LX200Client::setKnownPerp(double deg)     { return knownDegSet(*this, 'p', deg); }
 
 LX200RETURN LX200Client::getKnownGeomUse(bool& on)
