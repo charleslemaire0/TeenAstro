@@ -390,6 +390,87 @@ void SmartHandController::menuTrack()
   }
 }
 
+/// Format the rigid head geometry (cone, axis2 non-perpendicularity, axis2
+/// index) for the alignment error screen, all in arcseconds. Returns false when
+/// the model has none, i.e. when no rigid multi-star session fitted them, so the
+/// extra screen only appears where it means something.
+///
+/// A term the star distribution could not separate is shown as "n/a" rather
+/// than as a measured zero, so the display never implies a measurement that
+/// was not actually made. Cone stays "n/a" until each pier side has 3 stars;
+/// the line then shows the current split, for example "Cone n/a 1+5".
+static bool formatRigidHead(LX200Client& client, char(&cone)[20], char(&perp)[20], char(&idx2)[20])
+{
+  double c = 0.0, p = 0.0, i2 = 0.0;
+  char mask[8] = { 0 };
+  uint8_t nIn = 0, nOut = 0;
+  const bool haveSides = client.getAlignPierSides(nIn, nOut) == LX200_VALUEGET;
+  if (client.getAlignHeadCone(c) != LX200_VALUEGET
+      || client.getAlignHeadPerp(p) != LX200_VALUEGET
+      || client.getAlignHeadIndex2(i2) != LX200_VALUEGET
+      || client.getAlignFittedTerms(mask, sizeof(mask)) != LX200_VALUEGET)
+    return false;
+  if (strchr(mask, 'C') == NULL && strchr(mask, 'P') == NULL && strchr(mask, 'I') == NULL)
+    return false;
+  if (strchr(mask, 'C'))
+    snprintf(cone, sizeof(cone), "Cone %+.0f\"", c);
+  else if (haveSides && (nIn < 3 || nOut < 3))
+    snprintf(cone, sizeof(cone), "Cone n/a %u+%u", (unsigned)nIn, (unsigned)nOut);
+  else
+    snprintf(cone, sizeof(cone), "Cone n/a");
+  if (strchr(mask, 'P')) snprintf(perp, sizeof(perp), "Perp %+.0f\"", p);
+  else                   snprintf(perp, sizeof(perp), "Perp n/a");
+  if (strchr(mask, 'I')) snprintf(idx2, sizeof(idx2), "Idx2 %+.0f\"", i2);
+  else                   snprintf(idx2, sizeof(idx2), "Idx2 n/a");
+  return true;
+}
+
+void SmartHandController::showAlignmentResult()
+{
+  char text[20] = { 0 };
+  DisplayMessage(T_ALIGNMENT, T_SUCESS "!", 1.0);
+  if (m_client->getAlignError(text, sizeof(text)) == LX200_VALUEGET)
+  {
+    text[3] = '\xB0';
+    text[6] = '\'';
+    text[9] = '\"';
+    DisplayMessage(T_ERROR, text, -1);
+  }
+  char hc[20], hp[20], hi[20];
+  if (formatRigidHead(*m_client, hc, hp, hi))
+    DisplayLongMessage("Head geometry:", hc, hp, hi, -1);
+}
+
+void SmartHandController::menuKnownErrors()
+{
+  bool on = false;
+  if (m_client->getKnownGeomUse(on) != LX200_VALUEGET)
+  {
+    DisplayMessage(T_LX200COMMAND, T_FAILED, -1);
+    return;
+  }
+  const uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, T_KNOWN_ERRORS, on ? 2 : 1, T_OFF "\n" T_ON);
+  if (choice == 0)
+    return;
+  const bool want = choice == 2;
+  if (want != on && m_client->setKnownGeomUse(want) != LX200_VALUESET)
+  {
+    DisplayMessage(T_LX200COMMAND, T_FAILED, -1);
+    return;
+  }
+  if (!want)
+    return;
+
+  double d = 0;
+  float perp = 0.f;
+  if (m_client->getKnownPerp(d) == LX200_VALUEGET)
+    perp = (float)d;
+  if (!display->UserInterfaceInputValueFloat(&buttonPad, T_PERP, "", &perp, -5.f, 5.f, 6, 3, " deg"))
+    return;
+  if (m_client->setKnownPerp(perp) != LX200_VALUESET)
+    DisplayMessage(T_LX200COMMAND, T_FAILED, -1);
+}
+
 SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
 {
   bool alignInProgress = ta_MountStatus.isAligning();
@@ -407,15 +488,28 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
     const char* string_list = alignInProgress ? T_CANCEL :
       (ta_MountStatus.isAligned() ?
         (showThreeStar ?
-          "2 " T_STARS "\n" T_TWO_STARS_MECH "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error" :
-          "2 " T_STARS "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error") :
+          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_TWO_STARS_MECH "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error\n" T_KNOWN_ERRORS :
+          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error\n" T_KNOWN_ERRORS) :
         (showThreeStar ?
-          "2 " T_STARS "\n" T_TWO_STARS_MECH "\n" T_PC " " T_ALIGNMENT :
-          "2 " T_STARS "\n" T_PC " " T_ALIGNMENT)
+          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_TWO_STARS_MECH "\n" T_PC " " T_ALIGNMENT "\n" T_KNOWN_ERRORS :
+          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_PC " " T_ALIGNMENT "\n" T_KNOWN_ERRORS)
         );
     int selection = display->UserInterfaceSelectionList(&buttonPad, T_ALIGNMENT, current_selection, string_list);
     if (selection == 0) return MR_CANCEL;
     current_selection = selection;
+    if (!alignInProgress)
+    {
+      // Last item on every alignment list. Handled here so the star-count
+      // cases below keep their numbers when the mechanical-pole line is hidden.
+      const int knownSel = ta_MountStatus.isAligned()
+        ? (showThreeStar ? 9 : 8)
+        : (showThreeStar ? 6 : 5);
+      if (selection == knownSel)
+      {
+        menuKnownErrors();
+        continue;
+      }
+    }
     switch (current_selection)
     {
     case 1:
@@ -428,7 +522,10 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       }
       else
       {
-        int ret = display->UserInterfaceMessage(&buttonPad, T_SELECTMODE, "2 " T_STAR, T_ALIGNMENT , T_HOME "\n" T_STAR);
+        bool useKnown = false;
+        m_client->getKnownGeomUse(useKnown);
+        int ret = display->UserInterfaceMessage(&buttonPad, T_SELECTMODE, "2 " T_STAR,
+          useKnown ? T_USE_IN_2STAR : T_ALIGNMENT, T_HOME "\n" T_STAR);
         if (ret == 1)
         {
           DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
@@ -505,6 +602,39 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       }
       break;
     case 2:
+      if (!alignInProgress)
+      {
+        // Four stars, kept on one pier side. The mount runs :A0,r4# and solves
+        // axis2 non-perpendicularity. Cone stays unpublished. No leaves the menu
+        // without starting a session.
+        if (display->UserInterfaceMessage(&buttonPad, "4 " T_STARS, T_SAME_SIDE, T_MEASURES_PERP, T_NO "\n" T_YES) != 2)
+          break;
+        DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
+        if (m_client->alignStartRigid(4) == LX200_VALUESET)
+        {
+          ta_MountStatus.startAlign(TeenAstroMountStatus::AlignMode::ALIM_FOUR);
+          return MR_QUIT;
+        }
+        DisplayMessage(T_INITIALISATION, T_FAILED, -1);
+      }
+      break;
+    case 3:
+      if (!alignInProgress)
+      {
+        // Three stars, then the other pier side, then three more. :A0,r6#.
+        // Cone is solved only when the split really is 3 and 3.
+        if (display->UserInterfaceMessage(&buttonPad, T_ALIGN_CONE, T_FLIP_AFTER_3, T_MEASURES_CONE, T_NO "\n" T_YES) != 2)
+          break;
+        DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
+        if (m_client->alignStartRigid(6) == LX200_VALUESET)
+        {
+          ta_MountStatus.startAlign(TeenAstroMountStatus::AlignMode::ALIM_SIX);
+          return MR_QUIT;
+        }
+        DisplayMessage(T_INITIALISATION, T_FAILED, -1);
+      }
+      break;
+    case 4:
       if (showThreeStar)
       {
         int ret = display->UserInterfaceMessage(&buttonPad, T_SELECTMODE, T_TWO_STARS_MECH, T_ALIGNMENT , T_HOME "\n" T_STAR);
@@ -598,7 +728,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         }
       }
       break;
-    case 3:
+    case 5:
       if (showThreeStar)
       {
         DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
@@ -628,7 +758,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         }
       }
       break;
-    case 4:
+    case 6:
       if (showThreeStar)
       {
         if (display->UserInterfaceMessage(&buttonPad, T_SAVE, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
@@ -657,7 +787,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         }
       }
       break;
-    case 5:
+    case 7:
       if (showThreeStar)
       {
         if (display->UserInterfaceMessage(&buttonPad, T_Clear, T_STAR, T_ALIGNMENT "?", T_NO "\n" T_YES) == 2)
@@ -683,6 +813,9 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
             && m_client->getAlignErrorAlt(err_alt, sizeof(err_alt)) == LX200_VALUEGET)
         {
           DisplayLongMessage("[W;Az;Alt]:", err_pol, err_az, err_alt, -1);
+          char hc[20], hp[20], hi[20];
+          if (formatRigidHead(*m_client, hc, hp, hi))
+            DisplayLongMessage("Head geometry:", hc, hp, hi, -1);
         }
         else
         {
@@ -699,7 +832,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         }
       }
       break;
-    case 6:
+    case 8:
       {
         char err_az[20] = { "?" };
         char err_alt[20] = { "?" };
@@ -709,6 +842,9 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
             && m_client->getAlignErrorAlt(err_alt, sizeof(err_alt)) == LX200_VALUEGET)
         {
           DisplayLongMessage("[W;Az;Alt]:", err_pol, err_az, err_alt, -1);
+          char hc[20], hp[20], hi[20];
+          if (formatRigidHead(*m_client, hc, hp, hi))
+            DisplayLongMessage("Head geometry:", hc, hp, hi, -1);
         }
         else
         {

@@ -296,16 +296,8 @@ void SmartHandController::updateAlign(bool moving)
         DisplayMessage(T_ALIGNMENT, T_WRONG"!", -1);
         break;
       case TeenAstroMountStatus::AlignReply::ALIR_DONE:
-      {
-        char text[20];
-        DisplayMessage(T_ALIGNMENT, T_SUCESS"!", 1.0);
-        m_client->getAlignError(text, sizeof(text));
-        text[3] = '\xB0';
-        text[6]='\'';
-        text[9]='\"';
-        DisplayMessage(T_ERROR, text, -1);
-      }
-      break;
+        showAlignmentResult();
+        break;
       case TeenAstroMountStatus::AlignReply::ALIR_ADDED:
         DisplayMessage(T_STARADDED, "=>", 1000);
         break;
@@ -316,8 +308,32 @@ void SmartHandController::updateAlign(bool moving)
 
   if (ta_MountStatus.isAlignSelect())
   {
-    char message[10] = T_STAR "#?";
-    message[6] = '0' + ta_MountStatus.getAlignStar();
+    const TeenAstroMountStatus::AlignMode mode = ta_MountStatus.getAlignMode();
+    const int star = ta_MountStatus.getAlignStar();
+    static int flipShown = 0;
+    if (mode != TeenAstroMountStatus::ALIM_SIX || star != 4)
+      flipShown = 0;
+    if (mode == TeenAstroMountStatus::ALIM_SIX && star == 4 && flipShown != 4)
+    {
+      buttonPad.setMenuMode();
+      const int go = display->UserInterfaceMessage(&buttonPad, T_OTHER_PIER, T_FLIP_THE_MOUNT, T_THEN_3_STARS, T_CANCEL "\n" T_YES);
+      buttonPad.setControlerMode();
+      flipShown = 4;
+      if (go != 2)
+      {
+        DisplayMessage(T_ALIGNMENT, T_CANCELED, -1);
+        m_client->alignAbort();
+        ta_MountStatus.stopAlign();
+        return;
+      }
+    }
+    char message[24];
+    if (mode == TeenAstroMountStatus::ALIM_FOUR)
+      snprintf(message, sizeof(message), T_STAR " %d/4", star);
+    else if (mode == TeenAstroMountStatus::ALIM_SIX)
+      snprintf(message, sizeof(message), T_SIDE " %c %d/3", star <= 3 ? 'A' : 'B', star <= 3 ? star : star - 3);
+    else
+      snprintf(message, sizeof(message), T_STAR " #%d", star);
     DisplayLongMessage(T_SELECTASTAR, T_FROMFOLLOWINGLIST, "", message, -1);
     if (!SelectStarAlign())
     {
@@ -351,18 +367,8 @@ void SmartHandController::updateAlign(bool moving)
       DisplayMessage(T_ALIGNMENT, T_WRONG"!", -1);
       break;
     case TeenAstroMountStatus::AlignReply::ALIR_DONE:
-    {
-      char text[20];
-  
-      DisplayMessage(T_ALIGNMENT, T_SUCESS"!", 1.0);
-      m_client->getAlignError(text, sizeof(text));
-      text[3] = '\xB0'; // degree sign (ISO-8859-1 / u8g2 Latin-1)
-      text[6]='\'';
-      text[9]='\"';
-      //strcat(text, " " T_DEG);
-      DisplayMessage(T_ERROR, text, -1);
-    }
-    break;
+      showAlignmentResult();
+      break;
     case TeenAstroMountStatus::AlignReply::ALIR_ADDED:
       DisplayMessage(T_STARADDED, "=>", 1000);
       break;

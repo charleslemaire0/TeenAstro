@@ -40,6 +40,7 @@
 #endif
 
 #include "TeenAstroLA3.hpp"
+#include "TeenAstroHeadModel.hpp"
 
 // Converts between reference coordinates (angle1/angle2) 
 // and axis coordinates (axis1 and axis2)

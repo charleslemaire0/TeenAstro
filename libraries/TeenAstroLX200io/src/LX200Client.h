@@ -267,6 +267,40 @@ public:
   LX200RETURN getAlignError(char* out, int len); // :AE#
   LX200RETURN alignSelectStar(uint8_t n);        // :A1# .. :A9#
   LX200RETURN alignNextStar();                   // :A+#
+  /// Rigid six degree of freedom session of \p stars (3..9) stars: on the last
+  /// star the mount also solves the optical-axis cone error, the axis2
+  /// non-perpendicularity and the axis2 index.
+  LX200RETURN alignStartRigid(uint8_t stars);        // :A0,r<n>#
+  LX200RETURN alignAcceptStarRigid(uint8_t stars);   // :A*,r<n>#
+  /// Send :A<n># verbatim. Needed for rigid sessions because alignSelectStar()
+  /// maps star 3 to the :AP# polar-finalize shortcut, where here it is a real
+  /// alignment star.
+  LX200RETURN alignSelectStarRigid(uint8_t n);       // :A1# .. :A9#
+  LX200RETURN getAlignHeadCone(double& arcsec);      // :GXAc#
+  LX200RETURN getAlignHeadPerp(double& arcsec);      // :GXAp#
+  LX200RETURN getAlignHeadIndex2(double& arcsec);    // :GXAi#
+  LX200RETURN getAlignRigidRms(double& arcsec);      // :GXAr#
+  LX200RETURN getAlignStarCount(uint8_t& stars);     // :GXAn#
+  /// Retained stars on each pier side: \p nIn is axis2 inside +/-90 deg, \p nOut
+  /// is beyond the pole. Cone is solved only when both are at least 3.
+  LX200RETURN getAlignPierSides(uint8_t& nIn, uint8_t& nOut); // :GXAb#
+  /// Which head terms the last fit solved, as "CPI" with a dash for each term
+  /// the star distribution could not separate from the others.
+  LX200RETURN getAlignFittedTerms(char* out, int len); // :GXAf#
+  LX200RETURN setAlignHeadCone(double arcsec);       // :SXAc,V#
+  LX200RETURN setAlignHeadPerp(double arcsec);       // :SXAp,V#
+  LX200RETURN setAlignHeadIndex2(double arcsec);     // :SXAi,V#
+  LX200RETURN alignClearHead();                      // :SXAC#
+  /// Known pole azimuth, pole altitude and axis2 non-perpendicularity, degrees.
+  /// When use is on, a 2-star alignment holds them and solves only the index.
+  LX200RETURN getKnownPoleAz(double& deg);           // :GXKz#
+  LX200RETURN getKnownPoleAlt(double& deg);          // :GXKa#
+  LX200RETURN getKnownPerp(double& deg);             // :GXKp#
+  LX200RETURN setKnownPoleAz(double deg);            // :SXKz,V#
+  LX200RETURN setKnownPoleAlt(double deg);           // :SXKa,V#
+  LX200RETURN setKnownPerp(double deg);              // :SXKp,V#
+  LX200RETURN getKnownGeomUse(bool& on);             // :GXKk#
+  LX200RETURN setKnownGeomUse(bool on);              // :SXKk,0# / :SXKk,1#
   LX200RETURN setPierSideEast();                 // :SmE#
   LX200RETURN setPierSideWest();                 // :SmW#
   LX200RETURN setPierSideNone();                 // :SmN#

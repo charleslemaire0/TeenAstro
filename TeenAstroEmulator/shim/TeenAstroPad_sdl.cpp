@@ -278,15 +278,6 @@ void Pad::tickButtons() {
         obTick(k, raw, millis());
     }
 
-    for (int k = 0; k < 7; k++) {
-        if (eventbuttons[k] != E_NONE) {
-            m_buttonPressed = true;
-            if (k == 0)
-                m_shiftPressed = true;
-            break;
-        }
-    }
-
     for (int k = 1; k < 6; k += 2) {
         if (eventbuttons[k] == eventbuttons[k + 1]) {
             eventbuttons[k] = E_NONE;
@@ -295,6 +286,16 @@ void Pad::tickButtons() {
     }
 
     applyInjectCommand();
+
+    /* After inject, so "click N" dismisses any-key screens the same way a keypad click does. */
+    for (int k = 0; k < 7; k++) {
+        if (eventbuttons[k] != E_NONE) {
+            m_buttonPressed = true;
+            if (k == 0)
+                m_shiftPressed = true;
+            break;
+        }
+    }
 
     _emu_shc_blit();
 }

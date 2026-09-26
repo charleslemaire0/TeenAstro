@@ -347,6 +347,111 @@ void test_align_select_star_3_sends_AP(void) {
     TEST_ASSERT_EQUAL_STRING(":AP#", mockStream.getSent());
 }
 
+void test_align_start_rigid_sends_A0_comma_r(void) {
+    prepareSetOk();
+    LX200RETURN ret = client->alignStartRigid(5);
+    TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":A0,r5#", mockStream.getSent());
+}
+
+void test_align_accept_star_rigid_sends_Astar_comma_r(void) {
+    prepareSetOk();
+    LX200RETURN ret = client->alignAcceptStarRigid(4);
+    TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":A*,r4#", mockStream.getSent());
+}
+
+void test_align_start_rigid_rejects_out_of_range(void) {
+    // Three stars determine six unknowns with zero redundancy, so the firmware
+    // requires four; more than nine has no command encoding. Neither may reach
+    // the mount.
+    TEST_ASSERT_EQUAL(LX200_SETVALUEFAILED, client->alignStartRigid(2));
+    TEST_ASSERT_EQUAL(LX200_SETVALUEFAILED, client->alignStartRigid(3));
+    TEST_ASSERT_EQUAL(LX200_SETVALUEFAILED, client->alignStartRigid(10));
+}
+
+void test_get_align_pier_sides(void) {
+    mockStream.loadResponse("3,2#");
+    uint8_t nIn = 0, nOut = 0;
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getAlignPierSides(nIn, nOut));
+    TEST_ASSERT_EQUAL_STRING(":GXAb#", mockStream.getSent());
+    TEST_ASSERT_EQUAL_UINT8(3, nIn);
+    TEST_ASSERT_EQUAL_UINT8(2, nOut);
+}
+
+void test_get_align_fitted_terms(void) {
+    mockStream.loadResponse("-PI#");
+    char mask[8] = { 0 };
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getAlignFittedTerms(mask, sizeof(mask)));
+    TEST_ASSERT_EQUAL_STRING(":GXAf#", mockStream.getSent());
+    TEST_ASSERT_EQUAL_STRING("-PI", mask);
+}
+
+void test_align_select_star_rigid_3_sends_A3_not_AP(void) {
+    // The plain alignSelectStar() maps 3 to :AP#; in a rigid session star 3 is
+    // a real alignment star and must be sent verbatim.
+    prepareSetOk();
+    LX200RETURN ret = client->alignSelectStarRigid(3);
+    TEST_ASSERT_EQUAL(LX200_VALUESET, ret);
+    TEST_ASSERT_EQUAL_STRING(":A3#", mockStream.getSent());
+}
+
+void test_get_align_head_terms(void) {
+    mockStream.loadResponse("12.500000#");
+    double arcsec = 0.0;
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getAlignHeadCone(arcsec));
+    TEST_ASSERT_EQUAL_STRING(":GXAc#", mockStream.getSent());
+    TEST_ASSERT_DOUBLE_WITHIN(1e-6, 12.5, arcsec);
+
+    mockStream.clearSent();
+    mockStream.loadResponse("-7.250000#");
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getAlignHeadPerp(arcsec));
+    TEST_ASSERT_EQUAL_STRING(":GXAp#", mockStream.getSent());
+    TEST_ASSERT_DOUBLE_WITHIN(1e-6, -7.25, arcsec);
+
+    mockStream.clearSent();
+    mockStream.loadResponse("3.000000#");
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getAlignHeadIndex2(arcsec));
+    TEST_ASSERT_EQUAL_STRING(":GXAi#", mockStream.getSent());
+    TEST_ASSERT_DOUBLE_WITHIN(1e-6, 3.0, arcsec);
+}
+
+void test_get_align_rigid_rms_and_star_count(void) {
+    mockStream.loadResponse("4.750000#");
+    double rms = 0.0;
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getAlignRigidRms(rms));
+    TEST_ASSERT_EQUAL_STRING(":GXAr#", mockStream.getSent());
+    TEST_ASSERT_DOUBLE_WITHIN(1e-6, 4.75, rms);
+
+    mockStream.clearSent();
+    mockStream.loadResponse("5#");
+    uint8_t stars = 0;
+    TEST_ASSERT_EQUAL(LX200_VALUEGET, client->getAlignStarCount(stars));
+    TEST_ASSERT_EQUAL_STRING(":GXAn#", mockStream.getSent());
+    TEST_ASSERT_EQUAL_UINT8(5, stars);
+}
+
+void test_set_align_head_terms(void) {
+    prepareSetOk();
+    TEST_ASSERT_EQUAL(LX200_VALUESET, client->setAlignHeadCone(12.5));
+    TEST_ASSERT_EQUAL_STRING(":SXAc,12.500#", mockStream.getSent());
+
+    mockStream.clearSent();
+    prepareSetOk();
+    TEST_ASSERT_EQUAL(LX200_VALUESET, client->setAlignHeadPerp(-7.25));
+    TEST_ASSERT_EQUAL_STRING(":SXAp,-7.250#", mockStream.getSent());
+
+    mockStream.clearSent();
+    prepareSetOk();
+    TEST_ASSERT_EQUAL(LX200_VALUESET, client->setAlignHeadIndex2(3.0));
+    TEST_ASSERT_EQUAL_STRING(":SXAi,3.000#", mockStream.getSent());
+
+    mockStream.clearSent();
+    prepareSetOk();
+    TEST_ASSERT_EQUAL(LX200_VALUESET, client->alignClearHead());
+    TEST_ASSERT_EQUAL_STRING(":SXAC#", mockStream.getSent());
+}
+
 void test_reply_long(void) {
     prepareGetLongPadded("TeenAstro", 32);  // :GVP# expects 32 (aligned power of 2)
     char out[64];  // buffer must be > expected length (32) for null terminator
@@ -1903,6 +2008,15 @@ int main(int argc, char** argv) {
     RUN_TEST(test_align_select_star_1_sends_A1);
     RUN_TEST(test_align_select_star_2_sends_A2);
     RUN_TEST(test_align_select_star_3_sends_AP);
+    RUN_TEST(test_align_start_rigid_sends_A0_comma_r);
+    RUN_TEST(test_align_accept_star_rigid_sends_Astar_comma_r);
+    RUN_TEST(test_align_start_rigid_rejects_out_of_range);
+    RUN_TEST(test_align_select_star_rigid_3_sends_A3_not_AP);
+    RUN_TEST(test_get_align_head_terms);
+    RUN_TEST(test_get_align_rigid_rms_and_star_count);
+    RUN_TEST(test_get_align_pier_sides);
+    RUN_TEST(test_get_align_fitted_terms);
+    RUN_TEST(test_set_align_head_terms);
     RUN_TEST(test_reply_long);
     RUN_TEST(test_reply_long_accepts_short_product_board_driver);
     RUN_TEST(test_timeout_returns_failure);

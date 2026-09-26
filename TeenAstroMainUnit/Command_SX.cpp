@@ -76,6 +76,34 @@ static void Command_SX_Alignment()
     ok = true;
     break;
   }
+  case 'c':
+  case 'p':
+  case 'i': {
+    // :SXAc,V# :SXAp,V# :SXAi,V#  Set one rigid head term in arcseconds (cone,
+    // axis2 non-perpendicularity, axis2 index). Lets a user restore measured
+    // geometry without redoing a multi-star session. TeenAstro extension.
+    // command[4] is the comma separator; value starts at command[5].
+    const double arcsec = strtod(&commandState.command[5], NULL);
+    if (fabs(arcsec) > 5.0 * 3600.0)  // beyond a few degrees this is not a head error
+      break;
+    float hcone = 0.f, hperp = 0.f, hidx2 = 0.f;
+    mount.alignment.conv.getHead(hcone, hperp, hidx2);
+    const double rad = arcsec * DEG_TO_RAD / 3600.0;
+    if (commandState.command[3] == 'c')      hcone = (float)rad;
+    else if (commandState.command[3] == 'p') hperp = (float)rad;
+    else                                     hidx2 = (float)rad;
+    mount.alignment.conv.setHead(hcone, hperp, hidx2);
+    mount.alignment.hasRigid = mount.alignment.conv.hasHead();
+    ok = true;
+    break;
+  }
+  case 'C':
+    // :SXAC#  Clear the rigid head terms, reverting to the plain T model.
+    mount.alignment.conv.clearHead();
+    mount.alignment.hasRigid = false;
+    mount.alignment.rigidRmsArcsec = 0.f;
+    ok = true;
+    break;
   case 'x':
     //GeoAlign.init();
     //GeoAlign.writeCoe();
@@ -806,10 +834,52 @@ static void Command_SX_Options()
 // =============================================================================
 //   Command_SX  --  :SXnn#  dispatch to sub-handlers
 // =============================================================================
+static void Command_SX_KnownGeom()
+{
+  // :SXKz,V# :SXKa,V# :SXKp,V#  known pole azimuth, pole altitude, perpendicularity,
+  // arcseconds. :SXKk,0# / :SXKk,1#  whether a 2-star alignment holds them fixed.
+  bool ok = false;
+  switch (commandState.command[3])
+  {
+  case 'z':
+  case 'a':
+  case 'p': {
+    if (commandState.command[4] != ',')
+      break;
+    const double arcsec = strtod(&commandState.command[5], NULL);
+    if (fabs(arcsec) > 5.0 * 3600.0)
+      break;
+    const double rad = arcsec * DEG_TO_RAD / 3600.0;
+    if (commandState.command[3] == 'z')
+      mount.alignment.knownPoleAz = rad;
+    else if (commandState.command[3] == 'a')
+      mount.alignment.knownPoleAlt = rad;
+    else
+      mount.alignment.knownPerp = rad;
+    saveKnownGeom();
+    ok = true;
+    break;
+  }
+  case 'k':
+    if (commandState.command[4] == ',' && (commandState.command[5] == '0' || commandState.command[5] == '1')
+        && commandState.command[6] == 0)
+    {
+      mount.alignment.knownGeom = commandState.command[5] == '1';
+      saveKnownGeom();
+      ok = true;
+    }
+    break;
+  default:
+    break;
+  }
+  replyValueSetShort(ok);
+}
+
 void Command_SX() {
   switch (commandState.command[2])
   {
   case 'A': Command_SX_Alignment();  break;
+  case 'K': Command_SX_KnownGeom();  break;
   case 'E': Command_SX_Encoders();   break;
   case 'r': Command_SX_Refraction(); break;
   case 'R': Command_SX_Rates();      break;

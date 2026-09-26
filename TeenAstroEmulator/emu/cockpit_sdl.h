@@ -729,6 +729,8 @@ static void drawTabAlignment(int y0) {
                mount.alignment.conv.isReady() ? COL_GOOD : COL_WARN);
     snprintf(buf, sizeof(buf), "%d", (int)mount.alignment.conv.getRefs());
     y = drawKV(y, "Reference Stars", buf);
+    snprintf(buf, sizeof(buf), "%d", (int)mount.alignment.conv.getStars());
+    y = drawKV(y, "Retained Stars", buf);
     if (mount.alignment.conv.isReady()) {
         snprintf(buf, sizeof(buf), "%.8f rad", mount.alignment.conv.getError());
         y = drawKV(y, "Alignment Error", buf,
@@ -736,6 +738,80 @@ static void drawTabAlignment(int y0) {
             (mount.alignment.conv.getError() < 0.01 ? COL_WARN : COL_BAD));
     } else {
         y = drawKV(y, "Alignment Error", "N/A (not ready)", COL_DIM);
+    }
+    y += 4;
+
+    y = drawSection(y, "Rigid Head Geometry");
+    {
+        const char* proc = "2 stars (Taki)";
+        if (mount.alignment.alignRigidStars == 4)
+            proc = "4 stars (perpendicularity)";
+        else if (mount.alignment.alignRigidStars == 6)
+            proc = "3+3 (cone)";
+        else if (mount.alignment.isRigidSession())
+            proc = "rigid (other count)";
+        y = drawKV(y, "Procedure", proc,
+            mount.alignment.isRigidSession() ? COL_WARN : COL_DIM);
+    }
+    if (mount.alignment.isRigidSession()) {
+        snprintf(buf, sizeof(buf), "%d of %d star(s)",
+            (int)mount.alignment.conv.getStars(), (int)mount.alignment.alignRigidStars);
+        y = drawKV(y, "Session", buf, COL_WARN);
+    } else {
+        y = drawKV(y, "Session", "none (two star)", COL_DIM);
+    }
+    {
+        // Cone is published only when each pier side has three stars. Show the
+        // split while stars are being collected, not only after the fit.
+        int nIn = 0, nOut = 0;
+        mount.alignment.conv.pierSideCounts(nIn, nOut);
+        snprintf(buf, sizeof(buf), "%d + %d", nIn, nOut);
+        const bool coneOpen = nIn >= COORDCONV_MIN_CONE_PER_SIDE
+                           && nOut >= COORDCONV_MIN_CONE_PER_SIDE;
+        y = drawKV(y, "Pier sides", buf, coneOpen ? COL_GOOD : COL_VALUE);
+        snprintf(buf, sizeof(buf), coneOpen ? "%d each side, met" : "%d each side",
+                 COORDCONV_MIN_CONE_PER_SIDE);
+        y = drawKV(y, "Cone needs", buf, coneOpen ? COL_GOOD : COL_DIM);
+        snprintf(buf, sizeof(buf), "%d star(s)", COORDCONV_MIN_PERP_STARS);
+        y = drawKV(y, "Perp needs", buf, COL_DIM);
+    }
+    if (mount.alignment.conv.hasHead()) {
+        float hcone = 0.f, hperp = 0.f, hidx2 = 0.f;
+        mount.alignment.conv.getHead(hcone, hperp, hidx2);
+        const float toArcsec = (float)RAD_TO_DEG * 3600.f;
+        // A term the star distribution could not separate is held at zero and
+        // reported as "not separable" rather than as a measured value.
+        const unsigned char fitMask = mount.alignment.conv.getRigidMask();
+        const char* notFit = "n/a (not separable)";
+        const char* needSides = "n/a (need 3 each side)";
+        int nIn = 0, nOut = 0;
+        mount.alignment.conv.pierSideCounts(nIn, nOut);
+        const bool coneOpen = nIn >= COORDCONV_MIN_CONE_PER_SIDE
+                           && nOut >= COORDCONV_MIN_CONE_PER_SIDE;
+        if (fitMask & COORDCONV_FIT_CONE) {
+            snprintf(buf, sizeof(buf), "%+.1f\"", hcone * toArcsec);
+            y = drawKV(y, "Cone Error", buf);
+        } else {
+            y = drawKV(y, "Cone Error", coneOpen ? notFit : needSides, COL_DIM);
+        }
+        if (fitMask & COORDCONV_FIT_PERP) {
+            snprintf(buf, sizeof(buf), "%+.1f\"", hperp * toArcsec);
+            y = drawKV(y, "Axis2 Non-Perp", buf);
+        } else {
+            y = drawKV(y, "Axis2 Non-Perp", notFit, COL_DIM);
+        }
+        if (fitMask & COORDCONV_FIT_IDX2) {
+            snprintf(buf, sizeof(buf), "%+.1f\"", hidx2 * toArcsec);
+            y = drawKV(y, "Axis2 Index", buf);
+        } else {
+            y = drawKV(y, "Axis2 Index", notFit, COL_DIM);
+        }
+        snprintf(buf, sizeof(buf), "%.1f\"", mount.alignment.rigidRmsArcsec);
+        y = drawKV(y, "Fit RMS", buf,
+            mount.alignment.rigidRmsArcsec < 30.f ? COL_GOOD :
+            (mount.alignment.rigidRmsArcsec < 120.f ? COL_WARN : COL_BAD));
+    } else {
+        y = drawKV(y, "Head Terms", "zero (T only)", COL_DIM);
     }
     y += 4;
 

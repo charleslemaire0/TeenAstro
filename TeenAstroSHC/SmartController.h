@@ -134,6 +134,7 @@ private:
   MENU_RESULT menuRADecJ2000(NAV mode);
   MENU_RESULT menuAltAz(NAV mode);
   MENU_RESULT menuAlignment();
+  void menuKnownErrors();
   MENU_RESULT menuGearCheck();
   MENU_RESULT menuGearCheckEq();
   MENU_RESULT menuGearCheckAltAz();
@@ -156,6 +157,7 @@ private:
                        const char* label1, const char* label2);
 
   bool SelectStarAlign();
+  void showAlignmentResult();
 
   void menuTelSettings();
   void menuSHCSettings();

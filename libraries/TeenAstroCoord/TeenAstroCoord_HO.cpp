@@ -63,6 +63,37 @@ Coord_IN Coord_HO::To_Coord_IN(const double(&missaligment)[3][3])
   return Coord_IN(axis3, axis2, -direct_axis1);
 };
 
+Coord_IN Coord_HO::To_Coord_IN(const double(&missaligment)[3][3], const HeadModel &head)
+{
+  if (head.isZero())
+    return To_Coord_IN(missaligment);
+
+  double axis3, axis2, direct_axis1;
+  double tmp1[3][3];
+  double tmp2[3][3];
+  LA3::SingleRotation rots[3] = {
+    m_Eulers[0],
+    m_Eulers[1],
+    m_Eulers[2]
+  };
+  LA3::getMultipleRotationMatrix(tmp1, rots, 3);
+  LA3::multiply(tmp2, tmp1, missaligment);
+
+  // Ideal (zero head) solution first: it fixes which of the two valid mount
+  // configurations we stay on, so pier side and beyond the pole behaviour match
+  // the overload without a head model.
+  LA3::getEulerRxRyRz(tmp2, axis3, axis2, direct_axis1);
+
+  // The pointing direction is the first row of the instrument frame matrix.
+  const double d[3] = { tmp2[0][0], tmp2[0][1], tmp2[0][2] };
+  double headAxis1Direct, headAxis2;
+  if (!HeadGeom::inverse(d, head, axis2, headAxis1Direct, headAxis2))
+    return Coord_IN(axis3, axis2, -direct_axis1);  // unreachable with this head, keep the ideal solution
+
+  axis3 = HeadGeom::fieldRotation(tmp2, headAxis1Direct, headAxis2, head);
+  return Coord_IN(axis3, headAxis2, -headAxis1Direct);
+};
+
 
 double Coord_HO::FrH()
 {

@@ -53,6 +53,8 @@ public:
 	Coord_LO To_Coord_LO(const double(&trafo)[3][3]);
 	Coord_HO To_Coord_HO(double Lat, RefrOpt Opt);
 	Coord_IN To_Coord_IN(double Lat, RefrOpt Opt, const double(&missaligment)[3][3]);
+	/// As above, with the rigid head geometry applied. A zero head is identical to the overload without it.
+	Coord_IN To_Coord_IN(double Lat, RefrOpt Opt, const double(&missaligment)[3][3], const HeadModel &head);
   double FrE();
 	double Dec();
 	double Ha();

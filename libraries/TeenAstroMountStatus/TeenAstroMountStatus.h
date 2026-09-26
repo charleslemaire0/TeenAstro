@@ -196,7 +196,11 @@ public:
   static constexpr RateCompensation RC_RA      = MountState::RC_RA;
   static constexpr RateCompensation RC_BOTH    = MountState::RC_BOTH;
 
-  enum AlignMode  { ALIM_OFF, ALIM_ONE, ALIM_TWO, ALIM_THREE };
+  // Numeric values are the star counts. isLastStarAlign() compares the mode to
+  // the current star, so a new procedure has to keep that equality.
+  // TWO is the Taki pass. FOUR adds axis2 non-perpendicularity. SIX is three
+  // stars on each pier side and adds the cone error.
+  enum AlignMode  { ALIM_OFF = 0, ALIM_ONE = 1, ALIM_TWO = 2, ALIM_THREE = 3, ALIM_FOUR = 4, ALIM_SIX = 6 };
   enum AlignState { ALI_OFF, ALI_SELECT, ALI_SLEW, ALI_RECENTER };
   enum AlignReply { ALIR_FAILED1, ALIR_FAILED2, ALIR_DONE, ALIR_ADDED };
 
@@ -222,6 +226,7 @@ public:
   void      nextStepAlign();
   void      backStepAlign();
   bool      isLastStarAlign() { return (int)m_aliMode == m_alignStar; }
+  bool      isRigidAlign()    { return m_aliMode == ALIM_FOUR || m_aliMode == ALIM_SIX; }
   AlignMode getAlignMode()    { return m_aliMode; }
   int       getAlignStar()    { return m_alignStar; }
   void      setAlignMode(AlignMode mode) { m_aliMode = mode; }
