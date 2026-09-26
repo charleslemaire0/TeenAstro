@@ -834,10 +834,52 @@ static void Command_SX_Options()
 // =============================================================================
 //   Command_SX  --  :SXnn#  dispatch to sub-handlers
 // =============================================================================
+static void Command_SX_KnownGeom()
+{
+  // :SXKz,V# :SXKa,V# :SXKp,V#  known pole azimuth, pole altitude, perpendicularity,
+  // arcseconds. :SXKk,0# / :SXKk,1#  whether a 2-star alignment holds them fixed.
+  bool ok = false;
+  switch (commandState.command[3])
+  {
+  case 'z':
+  case 'a':
+  case 'p': {
+    if (commandState.command[4] != ',')
+      break;
+    const double arcsec = strtod(&commandState.command[5], NULL);
+    if (fabs(arcsec) > 5.0 * 3600.0)
+      break;
+    const double rad = arcsec * DEG_TO_RAD / 3600.0;
+    if (commandState.command[3] == 'z')
+      mount.alignment.knownPoleAz = rad;
+    else if (commandState.command[3] == 'a')
+      mount.alignment.knownPoleAlt = rad;
+    else
+      mount.alignment.knownPerp = rad;
+    saveKnownGeom();
+    ok = true;
+    break;
+  }
+  case 'k':
+    if (commandState.command[4] == ',' && (commandState.command[5] == '0' || commandState.command[5] == '1')
+        && commandState.command[6] == 0)
+    {
+      mount.alignment.knownGeom = commandState.command[5] == '1';
+      saveKnownGeom();
+      ok = true;
+    }
+    break;
+  default:
+    break;
+  }
+  replyValueSetShort(ok);
+}
+
 void Command_SX() {
   switch (commandState.command[2])
   {
   case 'A': Command_SX_Alignment();  break;
+  case 'K': Command_SX_KnownGeom();  break;
   case 'E': Command_SX_Encoders();   break;
   case 'r': Command_SX_Refraction(); break;
   case 'R': Command_SX_Rates();      break;

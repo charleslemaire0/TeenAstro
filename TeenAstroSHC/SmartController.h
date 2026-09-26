@@ -131,6 +131,7 @@ private:
   MENU_RESULT menuRADecJ2000(NAV mode);
   MENU_RESULT menuAltAz(NAV mode);
   MENU_RESULT menuAlignment();
+  void menuKnownErrors();
   MENU_RESULT menuGearCheck();
   MENU_RESULT menuGearCheckEq();
   MENU_RESULT menuGearCheckAltAz();

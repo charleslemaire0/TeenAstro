@@ -143,6 +143,17 @@ extern uint8_t midx;
 #define EE_head_idx2        8   // float, radians
 #define EE_head_valid       12  // byte, 1 when the three floats above are meaningful
 
+// User-entered pole error and perpendicularity, used by a 2-star alignment
+// instead of estimating those terms from the stars. Separate from the head
+// block so an old EEPROM (valid byte not 1) keeps the classic Taki 2-star path.
+// Placed after both head blocks: 512 + 2*16 = 544.
+#define EE_KnownGeomBase    544
+#define EE_KnownGeomSize    16
+#define EE_kgeom_az         0   // float, radians, polar azimuth error
+#define EE_kgeom_alt        4   // float, radians, polar altitude error
+#define EE_kgeom_perp       8   // float, radians, axis2 non-perpendicularity
+#define EE_kgeom_use        12  // byte, 1 when a 2-star alignment must hold these fixed
+
 // address: one of the EE_* offsets above; idx (if used): within mount count.
 int getMountAddress(int address);
 int getMountAddress(int address, int idx);

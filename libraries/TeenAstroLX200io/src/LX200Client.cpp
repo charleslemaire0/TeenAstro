@@ -933,6 +933,44 @@ LX200RETURN LX200Client::setAlignHeadPerp(double arcsec)   { return setAlignFloa
 LX200RETURN LX200Client::setAlignHeadIndex2(double arcsec) { return setAlignFloat(*this, 'i', arcsec); }
 LX200RETURN LX200Client::alignClearHead()                  { return set(":SXAC#"); }
 
+namespace {
+LX200RETURN knownDegGet(LX200Client& c, const char* cmd, double& deg)
+{
+  double arcsec = 0;
+  const LX200RETURN r = getAlignFloat(c, cmd, arcsec);
+  if (r == LX200_VALUEGET)
+    deg = arcsec / 3600.0;
+  return r;
+}
+LX200RETURN knownDegSet(LX200Client& c, char sel, double deg)
+{
+  char cmd[24];
+  snprintf(cmd, sizeof(cmd), ":SXK%c,%.3f#", sel, deg * 3600.0);
+  return c.set(cmd);
+}
+}  // namespace
+
+LX200RETURN LX200Client::getKnownPoleAz(double& deg)  { return knownDegGet(*this, ":GXKz#", deg); }
+LX200RETURN LX200Client::getKnownPoleAlt(double& deg) { return knownDegGet(*this, ":GXKa#", deg); }
+LX200RETURN LX200Client::getKnownPerp(double& deg)    { return knownDegGet(*this, ":GXKp#", deg); }
+LX200RETURN LX200Client::setKnownPoleAz(double deg)   { return knownDegSet(*this, 'z', deg); }
+LX200RETURN LX200Client::setKnownPoleAlt(double deg)  { return knownDegSet(*this, 'a', deg); }
+LX200RETURN LX200Client::setKnownPerp(double deg)     { return knownDegSet(*this, 'p', deg); }
+
+LX200RETURN LX200Client::getKnownGeomUse(bool& on)
+{
+  char out[LX200_SBUF];
+  if (get(":GXKk#", out, sizeof(out)) != LX200_VALUEGET)
+    return LX200_GETVALUEFAILED;
+  on = out[0] == '1';
+  return LX200_VALUEGET;
+}
+
+LX200RETURN LX200Client::setKnownGeomUse(bool on)
+{
+  return set(on ? ":SXKk,1#" : ":SXKk,0#");
+}
+
 LX200RETURN LX200Client::getAlignStarName(char* out, int len)   { return get(":GXAs#", out, len); }
 LX200RETURN LX200Client::getAlignErrorPolar(char* out, int len) { return get(":GXAw#", out, len); }
 LX200RETURN LX200Client::getAlignErrorAz(char* out, int len)    { return get(":GXAz#", out, len); }

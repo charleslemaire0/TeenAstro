@@ -97,6 +97,7 @@ public:
 			for (int j = 0; j < 3; j++)
 				Tinv[i][j] = 0;
 		refs = 0;
+		storedAxes = 0;
 		isready = false;
 		anglediff = 0;
 		head = HeadModel();
@@ -131,6 +132,18 @@ public:
 	bool calculateThirdReference();
 	void minimizeAxis1(double offset);
 	void minimizeAxis2();
+
+	/// Build T so its pole matches \p dAzRad / \p dAltRad (same angles polErrorDeg
+	/// reports) at latitude \p latRad. \p indexRad is the free rotation about that
+	/// pole and does not change the reported pole error.
+	void setPoleError(double latRad, double dAzRad, double dAltRad, double indexRad);
+
+	/// Two-star alignment with a known axis2 non-perpendicularity.
+	/// The perpendicularity is written into the head and the instrument vectors
+	/// are rebuilt through it. The two stars then estimate the pole direction
+	/// and the axis index together, the same three degrees of freedom as Taki.
+	/// Returns false when two reference axes are not available.
+	bool alignTwoStarKnownPerp(double perpRad);
 
 	// ---------------------------------------------------------------------------
 	// Rigid six degree of freedom model: T (three) plus head (three).
@@ -219,6 +232,7 @@ protected:
   double dcHDRef[3][3];	// angle1/angle2l direction cosine vectors for the three reference stars, indexed by reference first
 
   unsigned char refs=0;	// number of reference stars
+  unsigned char storedAxes = 0; // reference axes kept after the third-star build resets refs
   bool isready = false;
 	double anglediff = 0;
 

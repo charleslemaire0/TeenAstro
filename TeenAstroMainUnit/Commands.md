@@ -182,6 +182,8 @@ All `:GXnn#` commands are TeenAstro extensions. **Standard:** TeenAstro extensio
 | `:GXAb#` | Retained stars on each pier side, as `in,out`. `in` is axis2 inside ±90°, `out` is beyond the pole. Cone error is solved only when both are at least 3. | e.g. `3,3#` |
 | `:GXAf#` | Head terms the last rigid fit actually solved, as three characters `CPI`, with a dash in place of any term the star distribution could not separate. A dashed term is held at zero, so `:GXAc/p/i#` returning zero for it means "not measured", not "measured as zero". Cone and axis2 non-perpendicularity displace axis1 almost identically within one mechanical configuration, so a session confined to a single pier side never returns cone. Cone is solved only when each pier side has at least 3 stars. Four stars are enough for axis2 non-perpendicularity. | e.g. `-PI#` |
 | `:GXAz#` `:GXAa#` `:GXAw#` | Equatorial azimuth / altitude / wedge misclosure from `Tinv` (degrees, DMS + `#`) when the model is ready; else ~0°. | DMS + `#` |
+| `:GXKz#` `:GXKa#` `:GXKp#` | Stored polar azimuth, polar altitude, and perpendicularity, in **arcseconds**. A 2-star alignment estimates the pole itself; only the perpendicularity is held and removed from that estimate. | float + `#` |
+| `:GXKk#` | `1` when a 2-star alignment holds the stored perpendicularity. | `0#` / `1#` |
 
 ### Encoders
 | Syntax | Description | Returns |
@@ -375,6 +377,8 @@ All `:SXnnn,V#` commands are TeenAstro extensions. **Standard:** TeenAstro exten
 | `:SXAs,name#` | Store the alignment star name for the SHC to display. |
 | `:SXAc,V#` `:SXAp,V#` `:SXAi,V#` | Set one rigid head term in **arcseconds** (cone, axis2 non-perpendicularity, axis2 index), for restoring measured geometry without a multi-star session. Values beyond ±5° are rejected. |
 | `:SXAC#` | Clear the rigid head terms, reverting to the plain `T` model. |
+| `:SXKz,V#` `:SXKa,V#` `:SXKp,V#` | Store a polar azimuth error, a polar altitude error, and an axis2 non-perpendicularity, in **arcseconds** (±5°). A 2-star alignment estimates the pole direction. When enabled, it holds the perpendicularity and does not fold that term into the pole. |
+| `:SXKk,0#` `:SXKk,1#` | Do not use / use the stored perpendicularity in a 2-star alignment. |
 
 ### Encoders
 | Syntax | Description |

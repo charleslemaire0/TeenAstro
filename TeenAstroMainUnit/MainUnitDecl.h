@@ -27,6 +27,8 @@ void writeDefaultMount();
 void writeDefaultMountName(int i);
 void initMount();
 void initTransformation(bool reset);
+void loadKnownGeom();
+void saveKnownGeom();
 void initCelestialPole();
 void initmotor(bool deleteAlignment);
 void ReadEEPROMEncoderMotorMode();

@@ -213,6 +213,137 @@ void test_gem_2star_then_ap_cold_baseline_clears_soft_model(void)
   TEST_ASSERT_DOUBLE_WITHIN(TOL_ALIGN, 0.0, cc.polErrorDeg(Lat, PE_EQ_ALT));
 }
 
+void test_set_pole_error_matches_reported_angles(void)
+{
+  CoordConv cc;
+  const double lat = 48.0 * DEG_TO_RAD;
+  const double dAz = 1.25 * DEG_TO_RAD;
+  const double dAlt = -0.8 * DEG_TO_RAD;
+  cc.setPoleError(lat, dAz, dAlt, 0.4);
+  TEST_ASSERT_DOUBLE_WITHIN(1e-6, dAz * 180.0 / M_PI, cc.polErrorDeg(lat, PE_EQ_AZ));
+  TEST_ASSERT_DOUBLE_WITHIN(1e-6, dAlt * 180.0 / M_PI, cc.polErrorDeg(lat, PE_EQ_ALT));
+  // Rotation about the pole must not move the reported pole.
+  cc.setPoleError(lat, dAz, dAlt, -1.7);
+  TEST_ASSERT_DOUBLE_WITHIN(1e-6, dAz * 180.0 / M_PI, cc.polErrorDeg(lat, PE_EQ_AZ));
+  TEST_ASSERT_DOUBLE_WITHIN(1e-6, dAlt * 180.0 / M_PI, cc.polErrorDeg(lat, PE_EQ_ALT));
+}
+
+static void addHeadStar(CoordConv& obs, const double (&T)[3][3], const HeadModel& head,
+                        double az, double alt)
+{
+  double dcSky[3], dcI[3];
+  LA3::toDirCos(dcSky, az, alt);
+  LA3::multiply(dcI, T, dcSky);
+  HeadModel zero;
+  double hint1 = 0, hint2 = 0, ax1 = 0, ax2 = 0;
+  HeadGeom::inverse(dcI, zero, 0.0, hint1, hint2);
+  TEST_ASSERT_TRUE(HeadGeom::inverse(dcI, head, hint2, ax1, ax2));
+  obs.addReference(az, alt, ax1, ax2);
+}
+
+void test_two_star_with_known_perp_estimates_the_pole(void)
+{
+  const double lat = 47.22 * DEG_TO_RAD;
+  const double dAz = 1.1 * DEG_TO_RAD;
+  const double dAlt = -0.4 * DEG_TO_RAD;
+  const double perp = -70.0 / 3600.0 * DEG_TO_RAD;
+  const double az0 = 90.0 * DEG_TO_RAD, alt0 = 40.0 * DEG_TO_RAD;
+  const double az1 = 250.0 * DEG_TO_RAD, alt1 = 55.0 * DEG_TO_RAD;
+
+  CoordConv truth;
+  truth.setPoleError(lat, dAz, dAlt, 0.35);
+  HeadModel head(0.0, perp, 0.0);
+
+  // Same finish as a GEM 2-star: strip the known perpendicularity, then the
+  // two stars estimate the pole. The perpendicularity stays in the head.
+  CoordConv obs;
+  obs.clean();
+  addHeadStar(obs, truth.T, head, az0, alt0);
+  addHeadStar(obs, truth.T, head, az1, alt1);
+  const double meas1[2] = { obs.ax1[0], obs.ax2[0] };
+  const double meas2[2] = { obs.ax1[1], obs.ax2[1] };
+  TEST_ASSERT_TRUE(obs.alignTwoStarKnownPerp(perp));
+  TEST_ASSERT_DOUBLE_WITHIN(TOL_ALIGN, dAz * 180.0 / M_PI, obs.polErrorDeg(lat, PE_EQ_AZ));
+  TEST_ASSERT_DOUBLE_WITHIN(TOL_ALIGN, dAlt * 180.0 / M_PI, obs.polErrorDeg(lat, PE_EQ_ALT));
+  TEST_ASSERT_DOUBLE_WITHIN(1e-9, perp, obs.head.perp);
+
+  double dcSky[3], dcI[3], pred[3];
+  LA3::toDirCos(dcSky, az0, alt0);
+  HeadGeom::forward(dcI, meas1[0], meas1[1], obs.head);
+  LA3::multiply(pred, obs.Tinv, dcI);
+  TEST_ASSERT_DOUBLE_WITHIN(1e-3, 0.0, LA3::angle2Vectors(pred, dcSky));
+  LA3::toDirCos(dcSky, az1, alt1);
+  HeadGeom::forward(dcI, meas2[0], meas2[1], obs.head);
+  LA3::multiply(pred, obs.Tinv, dcI);
+  TEST_ASSERT_DOUBLE_WITHIN(1e-3, 0.0, LA3::angle2Vectors(pred, dcSky));
+}
+
+// One two-star session the way Command_A finishes a GEM alignment.
+// Encoder angles already include the simulated errors. Nothing else is passed.
+static void alignPair(CoordConv& cc, double Lat,
+                      double az1, double alt1, double a1, double b1,
+                      double az2, double alt2, double a2, double b2)
+{
+  cc.clean();
+  Coord_HO sky1(0, alt1 * DEG_TO_RAD, az1 * DEG_TO_RAD, false);
+  Coord_HO sky2(0, alt2 * DEG_TO_RAD, az2 * DEG_TO_RAD, false);
+  // getInstr() then Axis1_direct(), which is what :A*# records.
+  Coord_IN r1(0, b1, a1);
+  Coord_IN r2(0, b2, a2);
+  cc.addReference(sky1.direct_Az_S(), sky1.Alt(), r1.Axis1_direct(), r1.Axis2());
+  cc.addReference(sky2.direct_Az_S(), sky2.Alt(), r2.Axis1_direct(), r2.Axis2());
+  cc.minimizeAxis2();
+  cc.minimizeAxis1(Lat >= 0 ? M_PI_2 : -M_PI_2);
+}
+
+void test_gem_2star_many_pairs_pole_5deg_index_is_unknown(void)
+{
+  const double Lat = 47.22 * DEG_TO_RAD;
+  const double dAz = 5.0 * DEG_TO_RAD;
+  const double dAlt = 5.0 * DEG_TO_RAD;
+  const double indexRad = 5.0 * DEG_TO_RAD;
+  // The truth model is only used to build encoder readings. The alignment
+  // CoordConv below is never given these angles.
+  CoordConv truth;
+  truth.setPoleError(Lat, dAz, dAlt, 0.0);
+
+  const double pairs[][4] = {
+    { 90, 45, 270, 45 },
+    { 60, 30, 300, 55 },
+    { 120, 60, 240, 35 },
+    { 45, 40, 200, 50 },
+    { 80, 25, 280, 70 },
+    { 100, 50, 220, 30 },
+    { 70, 55, 250, 40 },
+    { 110, 35, 290, 60 }
+  };
+  const int nPairs = (int)(sizeof(pairs) / sizeof(pairs[0]));
+
+  double worstAz = 0, worstAlt = 0;
+  for (int p = 0; p < nPairs; p++)
+  {
+    const double az1 = pairs[p][0], alt1 = pairs[p][1];
+    const double az2 = pairs[p][2], alt2 = pairs[p][3];
+    Coord_HO sky1(0, alt1 * DEG_TO_RAD, az1 * DEG_TO_RAD, false);
+    Coord_HO sky2(0, alt2 * DEG_TO_RAD, az2 * DEG_TO_RAD, false);
+    Coord_IN i1 = sky1.To_Coord_IN(truth.Tinv);
+    Coord_IN i2 = sky2.To_Coord_IN(truth.Tinv);
+    // 5° axis1 index, unknown to the mount: a common shift of the encoder.
+    CoordConv cc;
+    alignPair(cc, Lat, az1, alt1, i1.Axis1() + indexRad, i1.Axis2(),
+                         az2, alt2, i2.Axis1() + indexRad, i2.Axis2());
+    const double eAz = cc.polErrorDeg(Lat, PE_EQ_AZ);
+    const double eAlt = cc.polErrorDeg(Lat, PE_EQ_ALT);
+    if (fabs(eAz - 5.0) > worstAz) worstAz = fabs(eAz - 5.0);
+    if (fabs(eAlt - 5.0) > worstAlt) worstAlt = fabs(eAlt - 5.0);
+    TEST_ASSERT_DOUBLE_WITHIN(TOL_ALIGN, 5.0, eAz);
+    TEST_ASSERT_DOUBLE_WITHIN(TOL_ALIGN, 5.0, eAlt);
+  }
+  // The 5° index is absorbed into the axis index. It does not move the pole.
+  TEST_ASSERT_DOUBLE_WITHIN(0.001, 0.0, worstAz);
+  TEST_ASSERT_DOUBLE_WITHIN(0.001, 0.0, worstAlt);
+}
+
 int main(int argc, char** argv) {
     UNITY_BEGIN();
     RUN_TEST(test_pol_error_zero_when_not_ready);
@@ -222,5 +353,8 @@ int main(int argc, char** argv) {
     RUN_TEST(test_gem_2star_ideal_pole_reports_near_zero);
     RUN_TEST(test_gem_2star_pole_offset_5deg_az_alt);
     RUN_TEST(test_gem_2star_then_ap_cold_baseline_clears_soft_model);
+    RUN_TEST(test_set_pole_error_matches_reported_angles);
+    RUN_TEST(test_two_star_with_known_perp_estimates_the_pole);
+    RUN_TEST(test_gem_2star_many_pairs_pole_5deg_index_is_unknown);
     return UNITY_END();
 }

@@ -27,6 +27,35 @@ int getHeadAddress(int address, int idx)
   return (int)EE_HeadBase + (int)EE_HeadSize * (int)idx + address;
 }
 
+static int getKnownGeomAddress(int address)
+{
+  return (int)EE_KnownGeomBase + (int)EE_KnownGeomSize * (int)midx + address;
+}
+
+static double saneKnownRad(float v)
+{
+  const float lim = 5.0f * (float)DEG_TO_RAD;
+  if (v != v || v > lim || v < -lim)
+    return 0.0;
+  return (double)v;
+}
+
+void loadKnownGeom()
+{
+  mount.alignment.knownGeom = XEEPROM.read(getKnownGeomAddress(EE_kgeom_use)) == 1;
+  mount.alignment.knownPoleAz = saneKnownRad(XEEPROM.readFloat(getKnownGeomAddress(EE_kgeom_az)));
+  mount.alignment.knownPoleAlt = saneKnownRad(XEEPROM.readFloat(getKnownGeomAddress(EE_kgeom_alt)));
+  mount.alignment.knownPerp = saneKnownRad(XEEPROM.readFloat(getKnownGeomAddress(EE_kgeom_perp)));
+}
+
+void saveKnownGeom()
+{
+  XEEPROM.writeFloat(getKnownGeomAddress(EE_kgeom_az), (float)mount.alignment.knownPoleAz);
+  XEEPROM.writeFloat(getKnownGeomAddress(EE_kgeom_alt), (float)mount.alignment.knownPoleAlt);
+  XEEPROM.writeFloat(getKnownGeomAddress(EE_kgeom_perp), (float)mount.alignment.knownPerp);
+  XEEPROM.write(getKnownGeomAddress(EE_kgeom_use), mount.alignment.knownGeom ? 1 : 0);
+}
+
 static const float pulsePerDegreedefault = 15.f;
 static const EncoderSync EncoderSyncDefault = EncoderSync::ES_OFF;
 
@@ -249,6 +278,7 @@ void initMount()
   }
   mount.parkHome.slewSettleDuration = val;
 
+  loadKnownGeom();
 }
 
 void initTransformation(bool reset)

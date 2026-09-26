@@ -76,8 +76,20 @@ void alignmentFinalize(Coord_HO &HO_T, double Lat)
   }
   if (!fitted)
   {
-    al.conv.minimizeAxis2();
-    al.conv.minimizeAxis1(mount.config.identity.mountType == MOUNT_TYPE_GEM ? (Lat >= 0 ? M_PI_2 : -M_PI_2) : 0);
+    // A 2-star session estimates the pole direction and the axis index.
+    // A non-zero perpendicularity is removed from the reference axes first and
+    // kept in the head, so the pole estimate is not asked to absorb it.
+    // The axis fudge below rebuilds those vectors without the head, so it runs
+    // only when there is no perpendicularity to protect.
+    const bool holdPerp = !al.isRigidSession() && al.knownGeom && fabs(al.knownPerp) > 0.0
+      && al.conv.alignTwoStarKnownPerp(al.knownPerp);
+    if (!holdPerp)
+    {
+      al.conv.minimizeAxis2();
+      al.conv.minimizeAxis1(mount.config.identity.mountType == MOUNT_TYPE_GEM ? (Lat >= 0 ? M_PI_2 : -M_PI_2) : 0);
+    }
+    else
+      al.hasRigid = al.conv.hasHead();
   }
   mount.syncAzAlt(&HO_T, mount.getPoleSide());
   al.hasValid = true;

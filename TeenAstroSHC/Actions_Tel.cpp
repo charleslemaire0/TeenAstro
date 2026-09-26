@@ -441,6 +441,36 @@ void SmartHandController::showAlignmentResult()
     DisplayLongMessage("Head geometry:", hc, hp, hi, -1);
 }
 
+void SmartHandController::menuKnownErrors()
+{
+  bool on = false;
+  if (m_client->getKnownGeomUse(on) != LX200_VALUEGET)
+  {
+    DisplayMessage(T_LX200COMMAND, T_FAILED, -1);
+    return;
+  }
+  const uint8_t choice = display->UserInterfaceSelectionList(&buttonPad, T_KNOWN_ERRORS, on ? 2 : 1, T_OFF "\n" T_ON);
+  if (choice == 0)
+    return;
+  const bool want = choice == 2;
+  if (want != on && m_client->setKnownGeomUse(want) != LX200_VALUESET)
+  {
+    DisplayMessage(T_LX200COMMAND, T_FAILED, -1);
+    return;
+  }
+  if (!want)
+    return;
+
+  double d = 0;
+  float perp = 0.f;
+  if (m_client->getKnownPerp(d) == LX200_VALUEGET)
+    perp = (float)d;
+  if (!display->UserInterfaceInputValueFloat(&buttonPad, T_PERP, "", &perp, -5.f, 5.f, 6, 3, " deg"))
+    return;
+  if (m_client->setKnownPerp(perp) != LX200_VALUESET)
+    DisplayMessage(T_LX200COMMAND, T_FAILED, -1);
+}
+
 SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
 {
   bool alignInProgress = ta_MountStatus.isAligning();
@@ -458,15 +488,28 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
     const char* string_list = alignInProgress ? T_CANCEL :
       (ta_MountStatus.isAligned() ?
         (showThreeStar ?
-          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_TWO_STARS_MECH "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error" :
-          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error") :
+          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_TWO_STARS_MECH "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error\n" T_KNOWN_ERRORS :
+          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error\n" T_KNOWN_ERRORS) :
         (showThreeStar ?
-          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_TWO_STARS_MECH "\n" T_PC " " T_ALIGNMENT :
-          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_PC " " T_ALIGNMENT)
+          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_TWO_STARS_MECH "\n" T_PC " " T_ALIGNMENT "\n" T_KNOWN_ERRORS :
+          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_PC " " T_ALIGNMENT "\n" T_KNOWN_ERRORS)
         );
     int selection = display->UserInterfaceSelectionList(&buttonPad, T_ALIGNMENT, current_selection, string_list);
     if (selection == 0) return MR_CANCEL;
     current_selection = selection;
+    if (!alignInProgress)
+    {
+      // Last item on every alignment list. Handled here so the star-count
+      // cases below keep their numbers when the mechanical-pole line is hidden.
+      const int knownSel = ta_MountStatus.isAligned()
+        ? (showThreeStar ? 9 : 8)
+        : (showThreeStar ? 6 : 5);
+      if (selection == knownSel)
+      {
+        menuKnownErrors();
+        continue;
+      }
+    }
     switch (current_selection)
     {
     case 1:
@@ -479,7 +522,10 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       }
       else
       {
-        int ret = display->UserInterfaceMessage(&buttonPad, T_SELECTMODE, "2 " T_STAR, T_ALIGNMENT , T_HOME "\n" T_STAR);
+        bool useKnown = false;
+        m_client->getKnownGeomUse(useKnown);
+        int ret = display->UserInterfaceMessage(&buttonPad, T_SELECTMODE, "2 " T_STAR,
+          useKnown ? T_USE_IN_2STAR : T_ALIGNMENT, T_HOME "\n" T_STAR);
         if (ret == 1)
         {
           DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);

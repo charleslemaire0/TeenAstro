@@ -98,6 +98,8 @@ void CoordConv::addReference(double angle1, double angle2, double axis1, double 
   ax1[refs] = axis1;
   ax2[refs] = axis2;
   refs++;
+  if (storedAxes < 2)
+    storedAxes = refs;
   if (refs == 2)
   {
     //check angle between the input observation
@@ -165,6 +167,92 @@ void CoordConv::minimizeAxis2()
   }
   refs = 2;
   calculateThirdReference();
+}
+
+void CoordConv::setPoleError(double latRad, double dAzRad, double dAltRad, double indexRad)
+{
+  // Invert polErrorDeg. Azimuth is atan(x[1]/x[0]) and altitude is
+  // atan(x[2]/x[0]) - lat, so a toDirCos of the offset pole is not the vector
+  // those two angles describe once the azimuth error is nonzero.
+  const double a = latRad + dAltRad;
+  const double tAz = tan(dAzRad);
+  const double tAlt = tan(a);
+  double p[3];
+  if (fabs(cos(a)) < 1e-6)
+  {
+    p[0] = 0.0;
+    p[1] = 0.0;
+    p[2] = sin(a) >= 0.0 ? 1.0 : -1.0;
+  }
+  else
+  {
+    double x0 = 1.0 / sqrt(1.0 + tAz * tAz + tAlt * tAlt);
+    if (cos(a) < 0.0)
+      x0 = -x0;
+    p[0] = x0;
+    p[1] = x0 * tAz;
+    p[2] = x0 * tAlt;
+  }
+
+  double ref[3] = { 0.0, 0.0, 1.0 };
+  if (fabs(p[2]) > 0.9)
+  {
+    ref[0] = 1.0;
+    ref[1] = 0.0;
+    ref[2] = 0.0;
+  }
+  double u[3], v[3];
+  crossProduct(u, ref, p);
+  normalize(u, u);
+  crossProduct(v, p, u);
+  normalize(v, v);
+
+  const double c = cos(indexRad);
+  const double s = sin(indexRad);
+  double ur[3], vr[3];
+  for (int i = 0; i < 3; i++)
+  {
+    ur[i] = c * u[i] + s * v[i];
+    vr[i] = -s * u[i] + c * v[i];
+  }
+  for (int i = 0; i < 3; i++)
+  {
+    Tinv[i][0] = ur[i];
+    Tinv[i][1] = vr[i];
+    Tinv[i][2] = p[i];
+  }
+  transpose(T, Tinv);
+  isready = true;
+  refs = 0;
+}
+
+bool CoordConv::alignTwoStarKnownPerp(double perpRad)
+{
+  if (storedAxes < 2)
+    return false;
+
+  // Take the known perpendicularity out of the two measured axes, then let the
+  // usual two-star build estimate the pole. The head keeps the perpendicularity
+  // so pointing puts it back on the real encoders.
+  HeadModel known(0.0, perpRad, 0.0);
+  HeadModel zero;
+  double corr1[2], corr2[2];
+  for (int i = 0; i < 2; i++)
+  {
+    double dc[3];
+    HeadGeom::forward(dc, ax1[i], ax2[i], known);
+    if (!HeadGeom::inverse(dc, zero, ax2[i], corr1[i], corr2[i]))
+      return false;
+  }
+  for (int i = 0; i < 2; i++)
+  {
+    ax1[i] = corr1[i];
+    ax2[i] = corr2[i];
+    toDirCos(dcAARef[i], ax1[i], ax2[i]);
+  }
+  head = known;
+  refs = 2;
+  return calculateThirdReference();
 }
 
 // Calculate third reference star from two provided ones. Returns false if more or less than two provided 

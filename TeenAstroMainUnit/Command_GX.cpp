@@ -994,9 +994,23 @@ static void Command_GX_AllConfig()
 // =============================================================================
 //   Command_GX  --  :GXnn#  dispatch to sub-handlers
 // =============================================================================
+static void Command_GX_KnownGeom()
+{
+  const double toArc = (double)RAD_TO_DEG * 3600.0;
+  switch (commandState.command[3])
+  {
+  case 'z': sprintf(commandState.reply, "%f#", mount.alignment.knownPoleAz * toArc); break;
+  case 'a': sprintf(commandState.reply, "%f#", mount.alignment.knownPoleAlt * toArc); break;
+  case 'p': sprintf(commandState.reply, "%f#", mount.alignment.knownPerp * toArc); break;
+  case 'k': sprintf(commandState.reply, "%d#", mount.alignment.knownGeom ? 1 : 0); break;
+  default:  replyLongUnknow(); break;
+  }
+}
+
 void Command_GX() {
   switch (commandState.command[2])
   {
+  case 'K': Command_GX_KnownGeom();   break;
   case 'A':
     if (commandState.command[3] == 'S') Command_GX_AllState();
     else                                Command_GX_Alignment();
