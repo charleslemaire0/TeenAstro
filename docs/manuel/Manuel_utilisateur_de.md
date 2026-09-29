@@ -676,7 +676,21 @@ Nur für deutsche Montierung und Gabel. Derselbe Ablauf, aber die Rechnung bleib
 
 ### Vom Rechner
 
-Die Rechner-Ausrichtung wartet auf Sterne, die App oder Programm über das Protokoll schicken. Die Anzeige wechselt zu **Fern-Ausricht.** und zeigt den Namen des verlangten Sterns. Das Zentrieren und der lange Druck auf Shift bleiben am Handkontroller, in der Okularmitte.
+**Computer Ausrichtung** schaltet die Ausrichtung per Synchronisierung ein und nimmt die aktuelle Lage als Home: der Tubus muss schon dort stehen. Der Rechner erledigt den Rest. Der Stern wird nicht nachzentriert, weder am Handkontroller noch vom Rechner.
+
+Für jeden von zwei Sternen:
+
+1. Ein Goto befehlen. Ein äquatoriales Goto und ein altazimutales Goto gehen beide.
+2. Eine Plattenlösung rechnen.
+3. Auf die gelöste Rektaszension und Deklination synchronisieren. Auf diese gelösten Koordinaten synchronisieren, auch wenn sie von den an das Goto gesendeten abweichen. Diese Differenz misst das Modell. Eine Synchronisierung, die noch die Goto-Koordinaten trägt, verwirft den Restfehler.
+
+Die erste Synchronisierung verankert die Achsen auf der gelösten Position. Die zweite baut das Modell aus dem Ort, an dem die Montierung stehen blieb, und dem Ort, an den die Lösung den Himmel legt. **Speichern** schreibt das Modell.
+
+Eine spätere Synchronisierung korrigiert nur die aktuelle Zeigerichtung, zum Beispiel nach einer weiteren Plattenlösung. Sie löscht das Modell nicht. **Computer Ausrichtung** erneut, oder **Löschen**, setzt es zurück.
+
+Ist **Montierungsfehler** auf **AN** und **Konus** oder **Senkr.** nicht null, hält diese Synchron-Ausrichtung beide Zahlen und misst den Pol weiter, wie **2 Sterne**. **4 Sterne** und **3+3 Sterne** sind die oben beschriebenen Prozeduren am Handkontroller. **Computer Ausrichtung** startet sie nicht.
+
+Führt ein Programm stattdessen eine Sitzung Stern für Stern, zeigt die Anzeige **Fern-Ausricht.** und den Namen des verlangten Sterns. Das Zentrieren und der lange Druck auf Shift erfolgen dann am Handkontroller.
 
 ### Welches Sternpaar
 

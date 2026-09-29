@@ -674,7 +674,21 @@ Réservé aux équatoriales allemande et à fourche. Même déroulement, mais le
 
 ### Depuis un ordinateur
 
-**Ordinateur Alignement** attend les étoiles envoyées par l'application ou par un logiciel via le protocole. L'écran passe en **Align. distant** et affiche le nom de l'étoile demandée. Le recentrage et l'appui long sur Shift restent faits à la raquette, au centre de l'oculaire.
+**Ordinateur Alignement** active l'alignement par synchro et prend la pose actuelle pour la maison : le tube doit déjà y être. L'ordinateur fait le reste. Rien ne recentre l'étoile, ni à la raquette ni depuis l'ordinateur.
+
+Pour chacune de deux étoiles :
+
+1. Commandez un goto. Un goto équatorial et un goto altazimutal conviennent tous les deux.
+2. Faites la résolution astrométrique.
+3. Synchronisez sur l'ascension droite et la déclinaison résolues. Synchronisez sur ces coordonnées résolues même lorsqu'elles diffèrent de celles envoyées au goto. C'est cette différence que le modèle mesure. Une synchro qui garde les coordonnées du goto perd le résidu.
+
+La première synchro ancre les axes sur la position résolue. La seconde construit le modèle à partir de l'endroit où la monture s'est arrêtée et de l'endroit où la résolution place le ciel. **Sauver** écrit le modèle.
+
+Une synchro ensuite ne corrige que le pointage courant, par exemple après une nouvelle résolution. Elle n'efface pas le modèle. Relancer **Ordinateur Alignement**, ou **Effacer**, le réinitialise.
+
+Si **Erreur monture** est sur **ON** et si **Cone** ou **Perp** n'est pas nul, cet alignement par synchro tient les deux nombres et mesure encore le pôle, comme **2 Étoiles**. **4 étoiles** et **3+3 étoiles** sont les procédures à la raquette décrites plus haut. **Ordinateur Alignement** ne les lance pas.
+
+Quand un logiciel conduit au contraire une session étoile par étoile, l'écran passe en **Align. distant** et affiche le nom de l'étoile demandée. Le recentrage et l'appui long sur Shift se font alors à la raquette.
 
 ### Quelle paire d'étoiles
 

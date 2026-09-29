@@ -36,8 +36,7 @@ void Command_C() {
         mount.alignment.conv.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
         if (mount.alignment.conv.isReady())
         {
-          mount.alignment.conv.minimizeAxis2();
-          mount.alignment.conv.minimizeAxis1(mount.config.identity.mountType == MOUNT_TYPE_GEM ? (*localSite.latitude() >= 0 ? M_PI_2 : -M_PI_2) : 0);
+          closeTwoStarAlignment(*localSite.latitude());
           mount.syncAzAlt(&HO_T, mount.getPoleSide());
           mount.alignment.hasValid = true;
           mount.alignment.autoAlignmentBySync = false;
@@ -45,6 +44,8 @@ void Command_C() {
       }
       else
       {
+        // The model is left as it is. This sync only moves the axes so the
+        // current pointing matches the target through the stored transform.
         double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
         Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
         mount.syncEqu(&EQ_T, targetPoleSide, *localSite.latitude() * DEG_TO_RAD);

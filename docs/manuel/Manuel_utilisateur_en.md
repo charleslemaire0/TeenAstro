@@ -676,7 +676,21 @@ Reserved for German equatorial and fork mounts. The same steps, but the calculat
 
 ### From a computer
 
-**PC Alignment** waits for stars sent by the app or by software through the protocol. The display switches to **Remote Align** and shows the name of the requested star. Recentering and the long press on Shift are still done on the hand controller, at the center of the eyepiece.
+**PC Alignment** turns on alignment-by-sync and treats the current pose as home, so the tube must already be there. The computer does the rest. Nothing recenters the star, neither on the hand controller nor from the computer.
+
+For each of two stars:
+
+1. Command a goto. An equatorial goto and an alt-azimuth goto both work.
+2. Plate-solve.
+3. Sync on the solved right ascension and declination. Sync on those solved coordinates even when they differ from the coordinates sent to the goto. That difference is what the model measures. A sync that still carries the goto coordinates throws the residual away.
+
+The first sync anchors the axes on the solved position. The second builds the model from where the mount stopped and where the solve says the sky is. **Save** writes the model.
+
+A sync after that only corrects the current pointing, for example after another plate solve. It does not clear the model. **PC Alignment** again, or **Clear**, does reset it.
+
+If **Mount error** is **On** and at least one of **Cone** and **Perp** is not zero, this sync alignment holds both numbers and still measures the pole, the same way as **2 Stars**. **4 Stars** and **3+3 Stars** are the hand-controller procedures above. **PC Alignment** does not start them.
+
+When software instead drives a star-by-star session, the display shows **Remote Align** and the name of the requested star. Recentering and the long press on Shift are then done on the hand controller.
 
 ### Which pair of stars
 

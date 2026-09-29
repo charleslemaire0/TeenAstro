@@ -39,8 +39,24 @@ Commands use the format `:CMD#`: leading colon, command string, terminating hash
 | `:AP#` | **Polar pass done:** finalize a deferred mechanical-pole session (was previously overloaded on `:A3#`). Only valid when a deferred polar session is pending. Mount syncs on the recentered alignment star, then RAM `CoordConv` is **reset to the cold-boot baseline** (synthetic refs, `hasValid=false`) and `EE_Tvalid` is cleared in EEPROM — i.e. **the provisional soft model is discarded** and the firmware trusts the now-mechanical pole. `:AW#` after `:AP#` is a no-op (writes `EE_Tvalid=0`). | `1` | TeenAstro extension |
 | `:AE#` | Get current alignment error (degrees). | `sDD*MM'SS#` | LX200 standard |
 | `:AC#` | Sync at home; disable auto alignment-by-sync. | `1` | LX200 standard |
-| `:AA#` | Sync at home; enable auto alignment-by-sync. | `1` | LX200 standard |
+| `:AA#` | Sync at home and enable alignment-by-sync. The next two `:CM#` / `:CS#` build a two-star model from the target coordinates at sync time. No recentering. See below. | `1` | LX200 standard |
 | `:AW#` | Save alignment model to EEPROM. | `1` | LX200 standard |
+
+### Alignment by sync (`:AA#`)
+
+The mount must already be at the home position. `:AA#` resets the model, syncs that home into the axes, and sets `autoAlignmentBySync`. It does not start a rigid session and it does not slew.
+
+For each of two stars:
+
+1. Slew with `:MS#` (equatorial target) or `:MA#` (alt/azimuth target). Alt/azimuth gotos stay available during and after the session.
+2. Plate-solve. Write the **solved** right ascension and declination into the target (`:Sr` / `:Sd`), not the coordinates that were commanded for the slew.
+3. `:CM#` or `:CS#`.
+
+The first sync anchors the axes on that solved position, then stores the pair. The second sync stores the instrument position where the slew stopped against the solved sky position, then closes the two-star model. If mount error is enabled and the stored cone or perpendicularity is not zero, both are held and the two stars still estimate the pole — the same close-out as `:A2#`. Otherwise the classic Taki fudge runs. The flag clears itself. The model is in RAM only until `:AW#`.
+
+A `:CM#` / `:CS#` once the flag is off does not change the stored transform. It only moves the axes so the current pointing matches the target through that transform. `:CA#` syncs alt/azimuth and does not add an alignment star.
+
+**4 Stars** and **3+3 Stars** are not this path. Start them with `:A0,r4#` or `:A0,r6#` (or `:A*,r<n>#` when the tube is already on a star) and send `:A1#` … `:A<n>#` after setting each target to the solved coordinates.
 
 ---
 
@@ -57,8 +73,8 @@ Commands use the format `:CMD#`: leading colon, command string, terminating hash
 
 | Syntax | Description | Returns | Standard |
 |--------|-------------|---------|----------|
-| `:CM#` | Sync mount to current object coordinates (EQ); optional multi-star alignment. | `N/A#` or nothing | LX200 standard |
-| `:CS#` | Sync mount to current object coordinates (EQ); optional multi-star alignment; start tracking. | (nothing) | LX200 standard |
+| `:CM#` | Sync mount to the current equatorial target. While alignment-by-sync is on (`:AA#`), the first two syncs build the two-star model from those target coordinates. Afterwards, and when the flag is off, the sync only corrects the current pointing and leaves the alignment model in place. | `N/A#` or nothing | LX200 standard |
+| `:CS#` | Same as `:CM#`, and start tracking. | (nothing) | LX200 standard |
 | `:CA#` | Sync mount to current target Alt/Az. | `N/A#` | LX200 standard |
 | `:CU#` | Sync to user-defined RA/Dec (from EEPROM). | `N/A#` | TeenAstro extension |
 
