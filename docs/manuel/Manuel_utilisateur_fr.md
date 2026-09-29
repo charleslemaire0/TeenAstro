@@ -313,8 +313,17 @@ C'est suffisant pour une soirée visuelle si la mise en station mécanique est d
 | Moteurs | Mécanique, vitesses, suivi |
 | Encodeurs | Codeurs de position |
 | Limites | Horizon, zénith, axes, méridien |
+| Erreur monture | Cône et perpendicularité tenus pendant un alignement à deux étoiles |
 | Réfraction | Voir ci-dessous |
 | Réticule | Luminosité du réticule polaire, si la sortie est câblée |
+
+**Erreur monture** : **OFF** ou **ON**. Sur **ON**, la raquette demande **Cone**, puis **Perp**. Chaque valeur est en degrés, de −5 à +5, avec trois décimales.
+
+Laissez **OFF** pour l'alignement à deux étoiles habituel. Passez à **ON** quand le cône optique et le défaut de perpendicularité du deuxième axe sont déjà connus, par un alignement **4 étoiles** ou **3+3 étoiles** précédent, ou par une mesure de la mécanique. Un alignement à deux étoiles tient alors ces deux nombres et mesure encore le pôle. L'écran de départ affiche **Mesure le pôle**. Si les deux nombres sont à zéro, rien n'est tenu et l'alignement reste le modèle habituel. **4 étoiles**, **3+3 étoiles** et **2 étoiles méca.** n'utilisent pas ce réglage.
+
+Le même article est la dernière ligne de **Action Télescope → Aligner**.
+
+Sur la page web de la raquette, le bloc s'appelle **Mount error** et se place au-dessus de la réfraction. Le texte de cette page est en anglais, quelle que soit la langue du firmware. **Off** ou **On** vient en premier ; le texte après le choix est « Hold cone and perpendicularity ». Le cône et la perpendicularité ont chacun leur ligne : la valeur, **Upload**, puis le nom et l'unité, en degrés, ±5.
 
 **Réfraction → Goto** : ON ou OFF. Activée, la réfraction atmosphérique est prise en compte dans le pointage (formule de Saemundsson à l'aller, Bennett au retour).
 
@@ -613,19 +622,18 @@ La synchro recale la position. Elle ne construit pas le modèle d'alignement : u
 
 ## 15. Alignement
 
-L'alignement calcule la transformation entre le ciel et les axes. La méthode est celle de Taki (deux directions mesurées), complétée par une rotation la plus proche au sens des moindres carrés. Le résultat est une matrice 3×3. Elle sert au pointage, à la synchro, au suivi corrigé et au contrôle de hauteur.
+L'alignement calcule la transformation entre le ciel et les axes. Un alignement à deux étoiles suit la méthode de Taki (deux directions mesurées), complétée par une rotation la plus proche au sens des moindres carrés. Le résultat est une matrice 3×3. Elle sert au pointage, à la synchro, au suivi corrigé et au contrôle de hauteur. **4 étoiles** et **3+3 étoiles**, décrits plus bas, peuvent aussi mesurer le cône et la perpendicularité du deuxième axe.
 
 **Action Télescope → Aligner**
 
-Tant qu'aucun modèle n'est enregistré, monture équatoriale :
-
 - **2 Étoiles**
-- **2 étoiles méca.**
+- **4 étoiles**
+- **3+3 étoiles**
+- **2 étoiles méca.** (montures équatoriales)
 - **Ordinateur Alignement**
+- **Erreur monture**
 
-Sur une altazimutale, la ligne mécanique n'est pas proposée.
-
-Une fois le modèle en place, s'ajoutent **Sauver**, **Effacer** et **Show align. error**.
+Sur une altazimutale, **2 étoiles méca.** n'est pas proposé. **Erreur monture** reste la dernière ligne. Une fois le modèle enregistré, **Sauver**, **Effacer** et **Show align. error** s'insèrent au-dessus.
 
 ### 2 Étoiles, depuis la maison
 
@@ -647,6 +655,18 @@ Si la maison n'est pas accessible (tube déjà sur le ciel) :
 2. Indiquez le **Côté du Pilier** (Est ou Ouest). Sur une fourche ou une altazimutale, indiquez le côté qui correspond à la pose réelle.
 3. **Synchro** sur une étoile centrée. Cette étoile devient la première référence.
 4. La procédure enchaîne sur la seconde étoile, comme ci-dessus.
+
+### Erreur monture pendant un alignement à deux étoiles
+
+Réglez **Erreur monture** avant de commencer, depuis ce menu ou depuis **Param. Télescope → Monture**. Sur **ON**, et si **Cone** ou **Perp** n'est pas nul, les deux étoiles mesurent encore le pôle et l'index d'axe. Les deux nombres sont conservés, y compris un zéro sur l'autre ligne. Ils ne sont pas absorbés dans le pôle. La ligne de mode à l'écran de départ est **Mesure le pôle**, à la place d'**Alignement**.
+
+### 4 étoiles
+
+Depuis la maison, du même côté du pilier. L'écran affiche **Même côté** et **Perpendicularité**. Confirmez par **OUI**. Quatre étoiles estiment le défaut de perpendicularité du deuxième axe. Le cône n'est pas estimé depuis un seul côté. Les valeurs enregistrées dans **Erreur monture** ne sont pas utilisées.
+
+### 3+3 étoiles
+
+Pour une monture allemande ou à fourche qui peut changer de côté. L'écran affiche **Retour après 3** et **Cône + perp**. Confirmez par **OUI**. Trois étoiles d'un côté, un retournement, puis trois de l'autre. Le cône n'est estimé que si chaque côté a vraiment apporté trois étoiles. Une seule étoile après le retournement ne suffit pas, et le cône reste non publié tant que cette répartition n'est pas atteinte. Les valeurs enregistrées dans **Erreur monture** ne sont pas utilisées.
 
 ### 2 étoiles méca.
 
@@ -820,7 +840,7 @@ Le pont TCP écoute le port **9999** et transporte le même dialogue que le câb
 
 L'application reprend le tableau de bord, le planétarium, le goto et l'alignement. Le pilote ASCOM ouvre TeenAstro à Stellarium, Cartes du Ciel, NINA, et aux autres clients ASCOM sous Windows.
 
-Une page web de l'interface permet de saisir les réseaux et le mot de passe sans passer par la raquette. L'adresse est celle affichée par **Montre IP**.
+Une page web de l'interface permet de saisir les réseaux et le mot de passe sans passer par la raquette. L'adresse est celle affichée par **Montre IP**. La page monture de ce site place **Mount error** au-dessus de la réfraction : voir le chapitre 7.
 
 ### SkySafari
 
@@ -982,7 +1002,7 @@ Les lignes entre parenthèses n'apparaissent que dans le cas indiqué.
 - Goto — Catalogues, Système Solaire, Coordonnées, Déf. par Util., Home, Parc, Retournement
 - (codeurs) Pushto — Catalogues, Système Solaire, Coordonnées, Déf. par Util.
 - Synchro — comme le goto, sans Retournement
-- Aligner — 2 Étoiles, (équatoriale) 2 étoiles méca., Ordinateur Alignement, puis Sauver, Effacer, Show align. error
+- Aligner — 2 Étoiles, 4 étoiles, 3+3 étoiles, (équatoriale) 2 étoiles méca., Ordinateur Alignement, Erreur monture ; une fois le modèle enregistré, aussi Sauver, Effacer, Show align. error (Erreur monture reste en dernier)
 - Verif. engren.
 - Suivi
 - Côté du Pilier
@@ -997,7 +1017,7 @@ Les lignes entre parenthèses n'apparaissent que dans le cas indiqué.
 - Param. Raquette — Privilèges, Écran, Vitesse Boutons, Ergonomie, Reset
 - Heure & Site — Heure (Horloge, Fuseau, Date, Heure GNSS), Site, Synchro GNSS
 - Parc et Maison — Déf. Pos. Parc, Déf Pos. Maison, Reset Pos. Maison
-- Monture — Monture, Type de Monture, Moteurs, Encodeurs, Limites, Réfraction, Réticule
+- Monture — Monture, Type de Monture, Moteurs, Encodeurs, Limites, Erreur monture, Réfraction, Réticule
 - Info Unité Princip. — Affichage Version, Redémarrage, Réinit. Usine
 - Wifi
 

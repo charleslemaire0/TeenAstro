@@ -315,8 +315,17 @@ That is enough for a visual night if the mechanical polar alignment is already g
 | Motors | Mechanics, speeds, tracking |
 | Encoders | Position encoders |
 | Limits | Horizon, zenith, axes, meridian |
+| Mount error | Cone and perpendicularity held in a two-star alignment |
 | Refraction | See below |
 | Reticule | Polar-finder brightness, if that output is wired |
+
+**Mount error**: **Off** or **On**. When **On**, enter **Cone**, then **Perp**. Each value is in degrees, from −5 to +5, with three decimals.
+
+Leave it **Off** for the usual two-star alignment. Turn it **On** when the optical cone and the non-perpendicularity of the second axis are already known, from a previous **4 Stars** or **3+3 Stars** alignment, or from a measurement of the mechanics. A two-star alignment then holds both numbers and still measures the pole. The start screen says **Measures pole**. If both numbers are zero, nothing is held and the two-star alignment stays the usual one. **4 Stars**, **3+3 Stars**, and **2 Stars Mech.** ignore this setting.
+
+The same item is the last line of **Telescope Action → Align**.
+
+On the hand controller web page the card is labelled **Mount error** and sits above refraction. **Off** or **On** comes first; the text after the choice is “Hold cone and perpendicularity”. Cone and perpendicularity are each their own row: the value, **Upload**, then the name and the unit, in degrees, ±5. The web page is in English on every firmware.
 
 **Refraction → Goto**: ON or OFF. When on, atmospheric refraction is included in the slew (Saemundsson on the way out, Bennett on the way back).
 
@@ -615,19 +624,18 @@ Sync recenters the position. It does not build the alignment model: a single obj
 
 ## 15. Alignment
 
-Alignment computes the transform between the sky and the axes. The method is Taki's (two measured directions), completed by the nearest proper rotation in the least-squares sense. The result is a 3×3 matrix. It is used for pointing, sync, corrected tracking, and the altitude check.
+Alignment computes the transform between the sky and the axes. A two-star alignment uses Taki's method (two measured directions), completed by the nearest proper rotation in the least-squares sense. The result is a 3×3 matrix. It is used for pointing, sync, corrected tracking, and the altitude check. **4 Stars** and **3+3 Stars**, described below, can also measure the cone and the perpendicularity of the second axis.
 
 **Telescope Action → Align**
 
-While no model is stored, on an equatorial mount:
-
 - **2 Stars**
-- **2 Stars Mech.**
+- **4 Stars**
+- **3+3 Stars**
+- **2 Stars Mech.** (equatorial mounts)
 - **PC Alignment**
+- **Mount error**
 
-On an alt-azimuth mount, the mechanical line is not offered.
-
-Once a model is in place, **Save**, **Clear**, and **Show align. error** are added.
+On an alt-azimuth mount, **2 Stars Mech.** is not offered. **Mount error** stays the last line. Once a model is stored, **Save**, **Clear**, and **Show align. error** are inserted above it.
 
 ### 2 Stars, from home
 
@@ -649,6 +657,18 @@ If home is not reachable (the tube is already on the sky):
 2. Set the **Side of Pier** (East or West). On a fork or an alt-azimuth mount, set the side that matches the real pose.
 3. **Sync** on a centered star. That star becomes the first reference.
 4. The procedure continues with the second star, as above.
+
+### Mount error during a 2-star alignment
+
+Set **Mount error** before you start, from this menu or from **Telescope Settings → Mount**. When it is **On** and at least one of **Cone** and **Perp** is not zero, the two stars still measure the pole and the axis index. Both numbers are kept, including a zero on the other line. They are not folded into the pole. The mode line on the start screen is **Measures pole** instead of **Alignment**.
+
+### 4 Stars
+
+From home, on one pier side. The screen says **Same pier side** and **Perpendicularity**. Confirm with **YES**. Four stars estimate the non-perpendicularity of the second axis. The cone is not estimated from a single pier side. The stored **Mount error** values are not used.
+
+### 3+3 Stars
+
+For a German or fork mount that can change pier side. The screen says **Flip after 3** and **Cone + perp**. Confirm with **YES**. Take three stars on one side, flip, then three on the other. The cone is estimated only when each side really contributed three stars. One star past the flip is not enough, and the cone stays unpublished until that split is met. The stored **Mount error** values are not used.
 
 ### 2 Stars Mech.
 
@@ -822,7 +842,7 @@ The TCP bridge listens on port **9999** and carries the same dialogue as the mai
 
 The app provides the dashboard, the planetarium, goto, and alignment. The ASCOM driver opens TeenAstro to Stellarium, Cartes du Ciel, NINA, and other ASCOM clients on Windows.
 
-A web page on the interface lets you enter networks and the password without using the hand controller. The address is the one shown by **Show IP**.
+A web page on the interface lets you enter networks and the password without using the hand controller. The address is the one shown by **Show IP**. The mount page on that site has **Mount error** above refraction: see chapter 7.
 
 ### SkySafari
 
@@ -984,7 +1004,7 @@ Lines in parentheses appear only in the case indicated.
 - Goto — Catalogs, Solar System, Coordinates, User Defined, Home, Park, Flip
 - (encoders) Pushto — Catalogs, Solar System, Coordinates, User Defined
 - Sync — same as goto, without Flip
-- Align — 2 Stars, (equatorial) 2 Stars Mech., PC Alignment, then Save, Clear, Show align. error
+- Align — 2 Stars, 4 Stars, 3+3 Stars, (equatorial) 2 Stars Mech., PC Alignment, Mount error; once a model is stored, also Save, Clear, Show align. error (Mount error stays last)
 - Gear Check
 - Tracking
 - Side of Pier
@@ -999,7 +1019,7 @@ Lines in parentheses appear only in the case indicated.
 - Hand Controller — Rights, Display, Button Speed, Ergonomics, Reset
 - Time & Site — Time (Clock, Time Zone, Date, GNSS Time), Site, Sync to GNSS
 - Park & Home — Set Park, Set Home, Reset Home
-- Mount — Mount, Mount type, Motors, Encoders, Limits, Refraction, Reticule
+- Mount — Mount, Mount type, Motors, Encoders, Limits, Mount error, Refraction, Reticule
 - Main Unit Info — Show Version, Reboot, Reset to Factory
 - Wifi
 

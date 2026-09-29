@@ -315,8 +315,17 @@ Das genügt für einen visuellen Abend, wenn die mechanische Polausrichtung scho
 | Motoren | Mechanik, Geschwindigkeiten, Nachführung |
 | Encoders | Positionsgeber |
 | Grenzen | Horizont, Zenit, Achsen, Meridian |
+| Montierungsfehler | Konus und Nicht-Senkrechtigkeit, fest bei einer 2-Sterne-Ausrichtung |
 | Refraktion | Siehe unten |
 | Strichplatte | Helligkeit des Polsucher-Fadenkreuzes, wenn der Ausgang verdrahtet ist |
+
+**Montierungsfehler**: **AUS** oder **AN**. Bei **AN** fragt der Handkontroller **Konus**, dann **Senkr.** Jeder Wert ist in Grad, von −5 bis +5, mit drei Nachkommastellen.
+
+**AUS** lassen für die übliche 2-Sterne-Ausrichtung. **AN** stellen, wenn der optische Konus und die Nicht-Senkrechtigkeit der zweiten Achse schon bekannt sind, aus einer früheren Ausrichtung **4 Sterne** oder **3+3 Sterne**, oder aus einer Messung der Mechanik. Eine 2-Sterne-Ausrichtung hält dann beide Zahlen und misst den Pol weiterhin. Der Startbildschirm zeigt **Misst den Pol**. Sind beide Zahlen null, wird nichts festgehalten und die 2-Sterne-Ausrichtung bleibt die übliche. **4 Sterne**, **3+3 Sterne** und **2 Sterne Mech.** verwenden diese Einstellung nicht.
+
+Derselbe Eintrag ist die letzte Zeile von **Teleskop Aktion → Ausrichten**.
+
+Auf der Webseite des Handkontrollers heißt der Block **Mount error** und steht über der Refraktion. Der Seitentext ist auf jeder Firmware englisch. **Off** oder **On** kommt zuerst; der Text nach der Auswahl ist „Hold cone and perpendicularity“. Konus und Senkrechtigkeit haben je eine eigene Zeile: der Wert, **Upload**, dann Name und Einheit, in Grad, ±5.
 
 **Refraktion → Goto**: AN oder AUS. Eingeschaltet geht die atmosphärische Refraktion in den Schwenk ein (Saemundsson hin, Bennett zurück).
 
@@ -615,19 +624,18 @@ Die Synchronisierung setzt die Position neu. Sie baut kein Ausrichtungsmodell: e
 
 ## 15. Ausrichtung
 
-Die Ausrichtung berechnet die Abbildung zwischen Himmel und Achsen. Das Verfahren ist das von Taki (zwei gemessene Richtungen), ergänzt um die nächstliegende echte Drehung im Sinne der kleinsten Quadrate. Das Ergebnis ist eine 3×3-Matrix. Sie dient dem Zeigen, der Synchronisierung, der korrigierten Nachführung und der Höhenkontrolle.
+Die Ausrichtung berechnet die Abbildung zwischen Himmel und Achsen. Eine 2-Sterne-Ausrichtung folgt dem Verfahren von Taki (zwei gemessene Richtungen), ergänzt um die nächstliegende echte Drehung im Sinne der kleinsten Quadrate. Das Ergebnis ist eine 3×3-Matrix. Sie dient dem Zeigen, der Synchronisierung, der korrigierten Nachführung und der Höhenkontrolle. **4 Sterne** und **3+3 Sterne**, weiter unten beschrieben, können außerdem den Konus und die Nicht-Senkrechtigkeit der zweiten Achse messen.
 
 **Teleskop Aktion → Ausrichten**
 
-Solange kein Modell gespeichert ist, äquatoriale Montierung:
-
 - **2 Sterne**
-- **2 Sterne Mech.**
+- **4 Sterne**
+- **3+3 Sterne**
+- **2 Sterne Mech.** (äquatoriale Montierungen)
 - **Computer Ausrichtung**
+- **Montierungsfehler**
 
-Auf einer altazimutalen Montierung wird die mechanische Zeile nicht angeboten.
-
-Steht ein Modell, kommen **Speichern**, **Löschen** und **Show align. error** hinzu.
+Auf einer altazimutalen Montierung wird **2 Sterne Mech.** nicht angeboten. **Montierungsfehler** bleibt die letzte Zeile. Steht ein Modell, werden **Speichern**, **Löschen** und **Show align. error** darüber eingefügt.
 
 ### 2 Sterne, von Home
 
@@ -649,6 +657,18 @@ Wenn Home nicht erreichbar ist (der Tubus steht schon am Himmel):
 2. Die **Montierungs-Seite** angeben (Ost oder West). Bei Gabel oder Altazimut die Seite angeben, die der wirklichen Lage entspricht.
 3. **Synchronisierung** auf einen zentrierten Stern. Dieser Stern wird die erste Referenz.
 4. Die Prozedur geht mit dem zweiten Stern weiter, wie oben.
+
+### Montierungsfehler bei einer 2-Sterne-Ausrichtung
+
+**Montierungsfehler** vor dem Start setzen, in diesem Menü oder unter **Teleskop-Einst. → Montierung**. Bei **AN**, und wenn **Konus** oder **Senkr.** nicht null ist, messen die zwei Sterne weiterhin den Pol und den Achsindex. Beide Zahlen bleiben erhalten, auch eine Null auf der anderen Zeile. Sie gehen nicht in den Pol ein. Die Moduszeile auf dem Startbildschirm ist **Misst den Pol** statt **Ausrichtung**.
+
+### 4 Sterne
+
+Von Home, auf derselben Säulenseite. Die Anzeige sagt **Gleiche Seite** und **Nicht-senkrecht**. Mit **Ja** bestätigen. Vier Sterne schätzen die Nicht-Senkrechtigkeit der zweiten Achse. Der Konus wird von einer einzigen Säulenseite nicht geschätzt. Die gespeicherten Werte unter **Montierungsfehler** werden nicht verwendet.
+
+### 3+3 Sterne
+
+Für eine deutsche Montierung oder eine Gabel, die die Seite wechseln kann. Die Anzeige sagt **Wenden nach 3** und **Konus + Perp**. Mit **Ja** bestätigen. Drei Sterne auf einer Seite, Umschlag, dann drei auf der anderen. Der Konus wird nur geschätzt, wenn jede Seite wirklich drei Sterne beigetragen hat. Ein einzelner Stern nach dem Umschlag reicht nicht, und der Konus bleibt unveröffentlicht, bis diese Aufteilung erreicht ist. Die gespeicherten Werte unter **Montierungsfehler** werden nicht verwendet.
 
 ### 2 Sterne Mech.
 
@@ -822,7 +842,7 @@ Die TCP-Brücke hört auf Port **9999** und trägt denselben Dialog wie das USB-
 
 Die App bietet Übersicht, Planetarium, Goto und Ausrichtung. Der ASCOM-Treiber öffnet TeenAstro für Stellarium, Cartes du Ciel, NINA und andere ASCOM-Clients unter Windows.
 
-Eine Webseite der Schnittstelle nimmt Netze und Passwort entgegen, ohne den Handkontroller. Die Adresse ist die von **IP-Adresse zeigen**.
+Eine Webseite der Schnittstelle nimmt Netze und Passwort entgegen, ohne den Handkontroller. Die Adresse ist die von **IP-Adresse zeigen**. Die Montierungsseite dort setzt **Mount error** über die Refraktion: siehe Kapitel 7.
 
 ### SkySafari
 
@@ -984,7 +1004,7 @@ Zeilen in Klammern erscheinen nur im genannten Fall.
 - Goto — Kataloge, Sonnensystem, Koordinaten, Benutzer definiert, Home, Park, Umschw.
 - (Encoder) Pushto — Kataloge, Sonnensystem, Koordinaten, Benutzer definiert
 - Synchronisierung — wie Goto, ohne Umschw.
-- Ausrichten — 2 Sterne, (äquatorial) 2 Sterne Mech., Computer Ausrichtung, danach Speichern, Löschen, Show align. error
+- Ausrichten — 2 Sterne, 4 Sterne, 3+3 Sterne, (äquatorial) 2 Sterne Mech., Computer Ausrichtung, Montierungsfehler; steht ein Modell, zusätzlich Speichern, Löschen, Show align. error (Montierungsfehler bleibt zuletzt)
 - Getriebe-Check
 - Nachführung
 - Montierungs-Seite
@@ -999,7 +1019,7 @@ Zeilen in Klammern erscheinen nur im genannten Fall.
 - Handkontroller — Rechte, Anzeige, Geschw. Knopf, Ergonomie, Reset
 - Zeit & Ort — Zeit (Uhr, Zeitzone, Datum, GNSS Zeit), Ort, Sync mit GNSS
 - Park und Home — Setze Parkposition, Setze Homeposition, Reset HomePosition
-- Montierung — Montierung, Montierungs-Art, Motoren, Encoders, Grenzen, Refraktion, Strichplatte
+- Montierung — Montierung, Montierungs-Art, Motoren, Encoders, Grenzen, Montierungsfehler, Refraktion, Strichplatte
 - Steuergerät Info — Versionsnr. zeigen, Neustart, zurücksetzen auf Werk
 - Wifi
 

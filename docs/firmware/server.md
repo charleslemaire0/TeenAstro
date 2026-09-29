@@ -9,7 +9,7 @@ ESP8266 firmware: TCP bridge on port **9999**, exposing the MainUnit LX200 seria
 ## Role
 
 - Listen on TCP 9999; forward bytes to/from MainUnit serial (57600).
-- Web server for WiFi credentials (STA/AP), web password, site config.
+- Web server for WiFi credentials (STA/AP), web password, site and mount config. On the mount page, **Mount error** is above refraction: an Off/On choice (“Hold cone and perpendicularity”), then one row for the cone and one for the perpendicularity. Each row is the value, Upload, then the label and the unit (degrees, ±5).
 
 ---
 
