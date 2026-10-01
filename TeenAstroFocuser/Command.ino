@@ -771,6 +771,8 @@ void SerCom::sayHello(void)
   ser.print(BOARDINFO);
   ser.print(" ");
   ser.print(FirmwareVersion);
+  ser.print(" ");
+  ser.print(AxisDriver);
   ser.print("#");
   ser.flush();
 }

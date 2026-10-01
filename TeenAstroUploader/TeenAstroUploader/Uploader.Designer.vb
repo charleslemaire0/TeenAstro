@@ -38,10 +38,12 @@ Partial Class Uploader
     Me.Label1 = New System.Windows.Forms.Label()
     Me.TabPage2 = New System.Windows.Forms.TabPage()
     Me.ButtonUploadF = New System.Windows.Forms.Button()
+    Me.ButtonAutoF = New System.Windows.Forms.Button()
     Me.ComboBoxPCBMainUnitF = New System.Windows.Forms.ComboBox()
     Me.Label2 = New System.Windows.Forms.Label()
     Me.TabPage1 = New System.Windows.Forms.TabPage()
     Me.ButtonUploadT = New System.Windows.Forms.Button()
+    Me.ButtonAutoT = New System.Windows.Forms.Button()
     Me.TabControlFirmware = New System.Windows.Forms.TabControl()
     Me.Label6 = New System.Windows.Forms.Label()
     Me.ComboBoxFirmwareVersion = New System.Windows.Forms.ComboBox()
@@ -177,6 +179,7 @@ Partial Class Uploader
         '
         'TabPage2
         '
+        Me.TabPage2.Controls.Add(Me.ButtonAutoF)
         Me.TabPage2.Controls.Add(Me.ButtonUploadF)
         Me.TabPage2.Controls.Add(Me.ComboBoxPCBMainUnitF)
         Me.TabPage2.Controls.Add(Me.Label2)
@@ -196,6 +199,15 @@ Partial Class Uploader
         Me.ButtonUploadF.TabIndex = 18
         Me.ButtonUploadF.Text = "Upload!"
         Me.ButtonUploadF.UseVisualStyleBackColor = True
+        '
+        'ButtonAutoF
+        '
+        Me.ButtonAutoF.Location = New System.Drawing.Point(187, 48)
+        Me.ButtonAutoF.Name = "ButtonAutoF"
+        Me.ButtonAutoF.Size = New System.Drawing.Size(119, 23)
+        Me.ButtonAutoF.TabIndex = 19
+        Me.ButtonAutoF.Text = "Auto"
+        Me.ButtonAutoF.UseVisualStyleBackColor = True
         '
         'ComboBoxPCBMainUnitF
         '
@@ -217,6 +229,7 @@ Partial Class Uploader
         '
         'TabPage1
         '
+        Me.TabPage1.Controls.Add(Me.ButtonAutoT)
         Me.TabPage1.Controls.Add(Me.ButtonUploadT)
         Me.TabPage1.Controls.Add(Me.ComboBoxPCBMainUnitT)
         Me.TabPage1.Controls.Add(Me.Label4)
@@ -236,6 +249,15 @@ Partial Class Uploader
         Me.ButtonUploadT.TabIndex = 12
         Me.ButtonUploadT.Text = "Upload!"
         Me.ButtonUploadT.UseVisualStyleBackColor = True
+        '
+        'ButtonAutoT
+        '
+        Me.ButtonAutoT.Location = New System.Drawing.Point(187, 48)
+        Me.ButtonAutoT.Name = "ButtonAutoT"
+        Me.ButtonAutoT.Size = New System.Drawing.Size(119, 23)
+        Me.ButtonAutoT.TabIndex = 13
+        Me.ButtonAutoT.Text = "Auto"
+        Me.ButtonAutoT.UseVisualStyleBackColor = True
         '
         'TabControlFirmware
         '
@@ -341,8 +363,10 @@ Partial Class Uploader
   Friend WithEvents TabPage2 As TabPage
   Friend WithEvents TabPage1 As TabPage
   Friend WithEvents ButtonUploadT As Button
+  Friend WithEvents ButtonAutoT As Button
   Friend WithEvents TabControlFirmware As TabControl
   Friend WithEvents ButtonUploadF As Button
+  Friend WithEvents ButtonAutoF As Button
   Friend WithEvents ComboBoxPCBMainUnitF As ComboBox
   Friend WithEvents Label2 As Label
   Friend WithEvents ButtonWIFISHC As Button

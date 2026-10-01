@@ -13,6 +13,7 @@
 using ASCOM.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -104,7 +105,7 @@ namespace ASCOM.LocalServer
             try
             {
               string c = connectionComPort.Replace("COM", "");
-              sharedSerial.Port = Convert.ToInt32(c);
+              sharedSerial.Port = int.Parse(c, CultureInfo.InvariantCulture);
             }
             catch (Exception ex)
             {
@@ -397,7 +398,7 @@ namespace ASCOM.LocalServer
         if (after.StartsWith(":", StringComparison.Ordinal))
         {
           string portPart = after.Substring(1).Trim();
-          if (int.TryParse(portPart, out int p) && p > 0 && p <= 65535)
+          if (int.TryParse(portPart, NumberStyles.Integer, CultureInfo.InvariantCulture, out int p) && p > 0 && p <= 65535)
           {
             portOverride = p;
             explicitPortInHost = true;
@@ -413,7 +414,7 @@ namespace ASCOM.LocalServer
       {
         string maybeHost = s.Substring(0, firstColon).Trim();
         string portPart = s.Substring(firstColon + 1).Trim();
-        if (int.TryParse(portPart, out int p) && p > 0 && p <= 65535)
+        if (int.TryParse(portPart, NumberStyles.Integer, CultureInfo.InvariantCulture, out int p) && p > 0 && p <= 65535)
         {
           host = maybeHost;
           portOverride = p;

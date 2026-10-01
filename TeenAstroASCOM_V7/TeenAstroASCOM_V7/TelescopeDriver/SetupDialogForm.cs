@@ -1,5 +1,6 @@
 using ASCOM.Utilities;
 using System;
+using System.Globalization;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -58,7 +59,7 @@ namespace ASCOM.TeenAstro.Telescope
       // Set the trace checkbox
       chkTrace.Checked = tl.Enabled;
       TextBoxIP.Text = TelescopeHardware.IP;
-      TextBoxPort.Text = TelescopeHardware.Port.ToString();
+      TextBoxPort.Text = TelescopeHardware.Port.ToString(CultureInfo.InvariantCulture);
       RadioButtonSP.Checked = TelescopeHardware.Interface == "COM";
       RadioButtonIP.Checked = TelescopeHardware.Interface == "IP";
       // set the list of COM ports to those that are currently available
@@ -124,7 +125,7 @@ namespace ASCOM.TeenAstro.Telescope
       else if (RadioButtonIP.Checked)
       {
         TelescopeHardware.IP = TextBoxIP.Text;
-        TelescopeHardware.Port = Convert.ToInt16(TextBoxPort.Text);
+        TelescopeHardware.Port = short.Parse(TextBoxPort.Text, CultureInfo.InvariantCulture);
         TelescopeHardware.Interface = "IP";
       }
       this.DialogResult = DialogResult.OK;
@@ -203,7 +204,7 @@ namespace ASCOM.TeenAstro.Telescope
       else if (RadioButtonIP.Checked)
       {
         TelescopeHardware.IP = TextBoxIP.Text;
-        TelescopeHardware.Port = Convert.ToInt16(TextBoxPort.Text);
+        TelescopeHardware.Port = short.Parse(TextBoxPort.Text, CultureInfo.InvariantCulture);
         TelescopeHardware.Interface = "IP";
       }
     }
