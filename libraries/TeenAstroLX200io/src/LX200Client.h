@@ -28,6 +28,11 @@
 #define LX200_DEFAULT_TIMEOUT 30   // ms
 #define LX200_GXAS_TIMEOUT   80   // ms — bulk state :GXAS# (longer to tolerate slew/focuser delay)
 #define LX200_FOCUSER_TIMEOUT 200  // ms — focuser binary commands pass through main unit
+// The last star of a rigid session runs the least-squares fit before it replies.
+// On a Teensy 3.2 that fit is software double precision and can take a few
+// hundred milliseconds. The 30 ms default made the hand controller report
+// "Failed!" after the stars had already been accepted.
+#define LX200_ALIGN_FIT_TIMEOUT 2000
 
 // Semantic timeout presets for consumers
 #ifndef TIMEOUT_CMD

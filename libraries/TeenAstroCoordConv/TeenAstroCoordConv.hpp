@@ -203,6 +203,12 @@ public:
 	/// terms already selected. See getRigidMask().
 	bool fitRigidModel(double *rmsOut = 0, int *iterOut = 0);
 
+	/// Same solver as fitRigidModel(), allowed from the third star. Cone still
+	/// waits for three stars on each pier side. Perpendicularity may be solved
+	/// from three, so the next goto can use the part of the head error the
+	/// stars already show.
+	bool fitProgressive(double *rmsOut = 0, int *iterOut = 0);
+
 	/// Which head terms the last fit actually solved, as a bit mask of
 	/// COORDCONV_FIT_CONE / _PERP / _IDX2. Terms left out were not separable
 	/// from the others given the star distribution and are held at zero.
@@ -227,6 +233,10 @@ protected:
 	double accumulateNormals(const double (&Tinv_w)[3][3], const HeadModel &head_w,
 	                         const double (&targets)[COORDCONV_MAX_STARS][3],
 	                         double (&N)[6][6], double (&g)[6]) const;
+
+	/// Shared body. \p minStars and \p minPerp are the gates for this call.
+	/// Cone still requires three stars on each pier side.
+	bool fitRigidWork(double *rmsOut, int *iterOut, unsigned char minStars, unsigned char minPerp);
 
   double dcAARef[3][3];	// axis1/axis2 direction cosine vectors for the three reference stars, indexed by reference first
   double dcHDRef[3][3];	// angle1/angle2l direction cosine vectors for the three reference stars, indexed by reference first

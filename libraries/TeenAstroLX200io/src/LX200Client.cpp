@@ -896,7 +896,12 @@ LX200RETURN LX200Client::alignSelectStarRigid(uint8_t n)
   if (n < 1 || n > 9) return LX200_SETVALUEFAILED;
   char cmd[5] = ":A0#";
   cmd[2] = (char)('0' + n);
-  return set(cmd);
+  // Stars before the last one answer at once. The last one fits first.
+  unsigned long saved = m_timeout;
+  m_timeout = LX200_ALIGN_FIT_TIMEOUT;
+  LX200RETURN ret = set(cmd);
+  m_timeout = saved;
+  return ret;
 }
 
 LX200RETURN LX200Client::getAlignHeadCone(double& arcsec)   { return getAlignFloat(*this, ":GXAc#", arcsec); }

@@ -88,6 +88,8 @@ void alignmentFinalize(Coord_HO &HO_T, double Lat)
   // separate, and a set clustered in altitude can leave it with none at all;
   // in that case we must still fall back, or a long rigid session would end up
   // worse than the two star path it was meant to improve on.
+  // The "1" reply is sent only after this returns. alignSelectStarRigid() waits
+  // for that, because the fit is much slower than recording one more star.
   bool fitted = false;
   if (al.isRigidSession() && al.conv.getStars() >= COORDCONV_MIN_RIGID_STARS)
   {
@@ -247,11 +249,22 @@ void Command_A() {
     if (seedTaki)
       mount.alignment.conv.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
     if (rigidSession && starIdx < mount.alignment.alignRigidStars) {
-      // Still collecting. The first two stars already seeded T, so gotos work
-      // and the user can slew to the next star, but the model is not final.
-      mount.alignment.alignPhase   = ALIGN_SELECT;
-      mount.alignment.alignStarNum = starIdx + 1;
-      mount.alignment.hasValid = mount.alignment.conv.isReady();
+      // Still collecting. The first two stars seed T. Each later star is folded
+      // in before the next goto, so a mount that starts a long way off is not
+      // left on that first guess until the last star. Cone still waits for
+      // three stars on each pier side.
+      MountAlignment &al = mount.alignment;
+      if (al.conv.getStars() >= 3) {
+        double rms = 0.0;
+        if (al.conv.fitProgressive(&rms)) {
+          al.rigidRmsArcsec = (float)(rms * RAD_TO_DEG * 3600.0);
+          al.hasRigid = al.conv.hasHead();
+          mount.syncAzAlt(&HO_T, mount.getPoleSide());
+        }
+      }
+      al.alignPhase   = ALIGN_SELECT;
+      al.alignStarNum = starIdx + 1;
+      al.hasValid = al.conv.isReady();
     } else if (mount.alignment.conv.isReady()) {
       const bool deferThird = !rigidSession && !mount.isAltAZ() && mount.alignment.alignNumStarsSession >= 3 && starIdx == 2;
       if (deferThird) {

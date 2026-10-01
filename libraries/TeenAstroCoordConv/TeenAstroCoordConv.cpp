@@ -680,7 +680,21 @@ double CoordConv::accumulateNormals(const double (&Tinv_w)[3][3], const HeadMode
 
 bool CoordConv::fitRigidModel(double *rmsOut, int *iterOut)
 {
-  if (!isready || nstars < COORDCONV_MIN_RIGID_STARS)
+  return fitRigidWork(rmsOut, iterOut, (unsigned char)COORDCONV_MIN_RIGID_STARS,
+                      (unsigned char)COORDCONV_MIN_PERP_STARS);
+}
+
+bool CoordConv::fitProgressive(double *rmsOut, int *iterOut)
+{
+  // Three stars give six equations. T uses three of them, and one head term
+  // can take another, which is what lets the next goto improve before a full
+  // session exists. Cone stays gated on the pier split inside the solver.
+  return fitRigidWork(rmsOut, iterOut, 3, 3);
+}
+
+bool CoordConv::fitRigidWork(double *rmsOut, int *iterOut, unsigned char minStars, unsigned char minPerp)
+{
+  if (!isready || nstars < minStars)
     return false;
 
   // Work on copies so a failed fit leaves the existing model untouched.
@@ -700,13 +714,13 @@ bool CoordConv::fitRigidModel(double *rmsOut, int *iterOut)
   {
     double N0[RIGID_NPAR][RIGID_NPAR], g0[RIGID_NPAR];
     accumulateNormals(Tinv_w, head_w, targets, N0, g0);
-    // Perp from four stars on either side. Cone only when each pier side has
+    // Perp from minPerp stars on either side. Cone only when each pier side has
     // at least three stars. Idx2 has no extra count gate; the rank test still
     // applies to all three.
     int nIn = 0, nOut = 0;
     pierSideCounts(nIn, nOut);
     unsigned char eligible = COORDCONV_FIT_IDX2;
-    if (nstars >= COORDCONV_MIN_PERP_STARS)
+    if (nstars >= minPerp)
       eligible = (unsigned char)(eligible | COORDCONV_FIT_PERP);
     if (nIn >= COORDCONV_MIN_CONE_PER_SIDE && nOut >= COORDCONV_MIN_CONE_PER_SIDE)
       eligible = (unsigned char)(eligible | COORDCONV_FIT_CONE);
