@@ -84,7 +84,7 @@ namespace ASCOM.TeenAstro.Focuser
         profile.DeviceType = "Telescope";
         comPort = profile.GetValue(ConnectionProfileProgId, comPortProfileName, string.Empty, comPortDefault);
         IP = profile.GetValue(ConnectionProfileProgId, IPProfileName, string.Empty, IPDefault);
-        Port = Convert.ToInt16(profile.GetValue(ConnectionProfileProgId, PortProfileName, string.Empty, PortDefault));
+        Port = short.Parse(profile.GetValue(ConnectionProfileProgId, PortProfileName, string.Empty, PortDefault), CultureInfo.InvariantCulture);
         Interface = profile.GetValue(ConnectionProfileProgId, InterfaceProfileName, string.Empty, InterfaceDefault);
       }
     }
@@ -101,7 +101,7 @@ namespace ASCOM.TeenAstro.Focuser
         profile.DeviceType = "Telescope";
         profile.WriteValue(ConnectionProfileProgId, comPortProfileName, comPort);
         profile.WriteValue(ConnectionProfileProgId, IPProfileName, IP);
-        profile.WriteValue(ConnectionProfileProgId, PortProfileName, Port.ToString());
+        profile.WriteValue(ConnectionProfileProgId, PortProfileName, Port.ToString(CultureInfo.InvariantCulture));
         profile.WriteValue(ConnectionProfileProgId, InterfaceProfileName, Interface);
       }
     }

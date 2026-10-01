@@ -1506,7 +1506,7 @@ namespace ASCOM.TeenAstro.Telescope
             dir = "Mgw";
             break;
         }
-        CommandBlind(dir + Duration, false);
+        CommandBlind(dir + Duration.ToString(CultureInfo.InvariantCulture), false);
         ForceGXASCacheRefresh();
         LogMessage("PulseGuide", dir + Duration + " done ");
       }
@@ -1748,7 +1748,7 @@ namespace ASCOM.TeenAstro.Telescope
       get
       {
         double lg = utilities.DMSToDegrees(CommandString("Ggf", false)) * -1;
-        LogMessage("Get SiteLongitude", lg.ToString("0.000000"));
+        LogMessage("Get SiteLongitude", lg.ToString("0.000000", CultureInfo.InvariantCulture));
         return lg;
       }
       set
@@ -1786,7 +1786,7 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
-        short time = Convert.ToInt16(CommandString("GXOS",false));
+        short time = short.Parse(CommandString("GXOS", false), CultureInfo.InvariantCulture);
         LogMessage("Get SlewSettleTime", time.ToString(CultureInfo.InvariantCulture));
         return time;
       }
@@ -2247,7 +2247,7 @@ namespace ASCOM.TeenAstro.Telescope
           int d = gxasState.UtcDay;
           var utcDate__1 = new DateTime(y, m, d,
             gxasState.UtcHour, gxasState.UtcMin, gxasState.UtcSec, DateTimeKind.Utc);
-          LogMessage("Get UTCDate", string.Format("Get - {0}", utcDate__1));
+          LogMessage("Get UTCDate", string.Format(CultureInfo.InvariantCulture, "Get - {0:u}", utcDate__1));
           return utcDate__1;
         }
         catch (ASCOM.NotConnectedException)
@@ -2733,7 +2733,7 @@ namespace ASCOM.TeenAstro.Telescope
         tl.Enabled = Convert.ToBoolean(driverProfile.GetValue(DriverProgId, traceStateProfileName, string.Empty, traceStateDefault));
         comPort = driverProfile.GetValue(DriverProgId, comPortProfileName, string.Empty, comPortDefault);
         IP = driverProfile.GetValue(DriverProgId, IPProfileName, string.Empty, IPDefault);
-        Port = Convert.ToInt16(driverProfile.GetValue(DriverProgId, PortProfileName, string.Empty, PortDefault.ToString()));
+        Port = short.Parse(driverProfile.GetValue(DriverProgId, PortProfileName, string.Empty, PortDefault), CultureInfo.InvariantCulture);
         Interface = driverProfile.GetValue(DriverProgId, InterfaceProfileName, string.Empty, InterfaceDefault);
       }
     }
@@ -2749,7 +2749,7 @@ namespace ASCOM.TeenAstro.Telescope
         driverProfile.WriteValue(DriverProgId, traceStateProfileName, tl.Enabled.ToString());
         driverProfile.WriteValue(DriverProgId, comPortProfileName, comPort.ToString());
         driverProfile.WriteValue(DriverProgId, IPProfileName, IP.ToString());
-        driverProfile.WriteValue(DriverProgId, PortProfileName, Port.ToString());
+        driverProfile.WriteValue(DriverProgId, PortProfileName, Port.ToString(CultureInfo.InvariantCulture));
         driverProfile.WriteValue(DriverProgId, InterfaceProfileName, Interface.ToString());
       }
     }
@@ -2772,7 +2772,7 @@ namespace ASCOM.TeenAstro.Telescope
     /// <param name="args"></param>
     internal static void LogMessage(string identifier, string message, params object[] args)
     {
-      var msg = string.Format(message, args);
+      var msg = string.Format(CultureInfo.InvariantCulture, message, args);
       LogMessage(identifier, msg);
     }
     #endregion

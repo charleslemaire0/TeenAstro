@@ -312,7 +312,7 @@ namespace ASCOM.TeenAstro.Telescope
 
     private static int GetMicrostepValue(ComboBox cbo)
     {
-      if (cbo.SelectedItem != null && int.TryParse(cbo.SelectedItem.ToString(), out int v))
+      if (cbo.SelectedItem != null && int.TryParse(cbo.SelectedItem.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int v))
         return v;
       return 1;
     }
