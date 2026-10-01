@@ -1094,3 +1094,55 @@ Beispiel: Getriebezahl 360, Motor 200 Schritte, 16 Mikroschritte → 11,25" je M
 - FS2-Anleitung, für die ursprüngliche Denkweise: [anleit_f.pdf](https://www.astro-electronic.de/anleit_f.pdf), Astro-Electronic, Michael Koch. Die deutsche Ausgabe liegt auf derselben Website.
 
 Platinen, Versorgungsspannungen und Motorkabel sind von Version zu Version nicht dieselben. Für die Verdrahtung von der Wiki-Seite der eigenen Karte ausgehen, und für den Betrieb hierher zurückkommen.
+
+---
+
+## Anhang E. Änderungen seit Version 1.6.0
+
+Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Treibers, die mit dem Treiber installiert wird, beschreibt den Sprung von 1.5 auf 1.6. Dieser Anhang listet, was danach geändert wurde, bis Firmware 1.6.8 und dem passenden ASCOM-Treiber.
+
+### 1.6.1
+
+- Während eines Gotos unterscheidet der Handkontroller eine äquatoriale Schwenkung, eine Altazimut-Schwenkung und einen Meridianwechsel.
+- Die WLAN-Einrichtungsseite läuft nicht mehr über, und der Webserver ist stabiler.
+- Der Temperaturfühler des Fokussierers startet zuverlässig. Der ASCOM-Fokussierer meldet einen fehlenden Fühler, ohne das Programm abstürzen zu lassen.
+- Die ASCOM-Einrichtung kann die im Mount gespeicherte Teleskop- und Fokussierer-Konfiguration lesen und schreiben.
+
+### 1.6.2 bis 1.6.4
+
+- Katalognamen von Sternen werden richtig gespeichert und angezeigt. Lange Texte des Handkontrollers wurden gekürzt, damit sie auf das Display passen.
+- Goto zu Park und zu Home läuft zu Ende. Startet ein Computer eine Ausrichtung, zeigt der Handkontroller diese Ausrichtung.
+- Der Handkontroller zeigt den aktiven WLAN-Modus, und der Zugangspunkt startet zuverlässig.
+- Nachführraten werden in voller Genauigkeit übertragen. MoveAxis verwendet die wirksame Höchstgeschwindigkeit der Montierung.
+- Guiding steht im Mount-Status, damit ein Programm sieht, dass ein Guide-Impuls läuft.
+- ASCOM-Goto-Koordinaten kommen genauer zurück. Eine abgerissene serielle oder WLAN-Verbindung wird erneut versucht. Die Motordrehrichtung verwendet die dokumentierten Einstellungen.
+- Die TeenAstro-App hat Planetarium, Nachtansicht, J2000 und JNow sowie Katalogfilter bekommen.
+
+### 1.6.5
+
+- Steuergerät und Handkontroller wurden auf dieselbe Versionsnummer gebracht. Keine neue Handlung in der Nacht.
+
+### 1.6.6
+
+- Ein Meridianwechsel-Goto darf zu Ende laufen, die Nachführung startet danach wieder, und die Meridianrichtung passt zur Montierung.
+- Die mechanische Polausrichtung (**2 Stars Mech.**) ist ein eigener Ablauf und wird mit einer eigenen Bestätigung geschlossen.
+- WLAN im Stationsmodus hält die Verbindung. Das Speichern einer Einstellung auf der Webseite führt auf diese Seite zurück.
+- Der Handkontroller stürzt bei einer langen Sitzung seltener ab.
+
+### 1.6.7
+
+- Die Getriebeprüfung am Handkontroller, für eine äquatoriale oder eine Altazimut-Montierung, zeigt das gemessene Verhältnis.
+- Die Grenze unter dem Pol ist korrigiert. Ein Goto, das eine Grenze überschreiten würde, wird abgelehnt. Der Abbruch einer Ausrichtung stellt das vorherige Modell wieder her.
+- Der Stundenwinkel bleibt in einem festen Bereich, auch westlich des Meridians, damit ein Computer die Antwort nicht verwirft.
+- GNSS übernimmt eine Zeit nur, wenn die Positionen übereinstimmen, und eine stille Synchronisation stört die Sitzung nicht.
+- Kataloge lassen sich schneller durchblättern, und ein Semikolon in einem Namen zerstört die Liste nicht mehr. Konfigurationsseiten laden schneller. Webformulare lassen sich wieder absenden.
+- ASCOM kann Home suchen.
+
+### 1.6.8
+
+- Das Stoppen von MoveAxis bremst mit der eingestellten Beschleunigung. Die Nachführung läuft auf der Achse weiter, die nicht bewegt wird. Die Rate null stoppt immer. Eine Rate über dem Maximum wird abgelehnt.
+- SharpCap und die anderen Programme zeigen die MoveAxis-Geschwindigkeiten wieder, einschließlich 0,25°/s und 0,5°/s. Der Treiber verwendet siderische Vielfache, dieselbe Einheit wie Treiber 1.5.
+- ASCOM-Raten, Koordinaten und Ports verwenden einen festen Dezimalpunkt, damit ein französisches oder deutsches Windows die Befehle nicht verändert.
+- Der Handkontroller führt **2 Stars**, **4 Stars** und **3+3 Stars**. Vier Sterne auf einer Pier-Seite messen die Nicht-Rechtwinkligkeit. 3+3 misst Konus und Nicht-Rechtwinkligkeit nur, wenn jede Pier-Seite drei Sterne hat.
+- **Mount error**, über der Refraktion, hält einen bekannten Konus und eine bekannte Nicht-Rechtwinkligkeit bei einer Zwei-Stern-Ausrichtung und bei einem Plate-Solve-Sync fest.
+- Die Schaltfläche **Auto** im Firmware-Uploader erkennt das angeschlossene Teleskop oder den Fokussierer und schreibt die passende Datei.

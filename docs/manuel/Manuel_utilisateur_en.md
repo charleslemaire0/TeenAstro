@@ -1094,3 +1094,55 @@ Example: gear 360, 200-step motor, 16 microsteps → 11.25" per microstep. That 
 - FS2 manual, for the original approach: [anleit_f.pdf](https://www.astro-electronic.de/anleit_f.pdf) (French) and the German edition on the same site, Astro-Electronic, Michael Koch.
 
 Boards, supply voltages, and motor harnesses are not the same from one version to the next. For wiring, start from your board's page in the wiki, then come back here for use.
+
+---
+
+## Appendix E. Changes since version 1.6.0
+
+Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme, installed with the driver, describes the jump from 1.5 to 1.6. This appendix lists what changed afterwards, through firmware 1.6.8 and the matching ASCOM driver.
+
+### 1.6.1
+
+- During a goto, the hand controller can tell an equatorial slew, an alt-azimuth slew, and a meridian flip apart.
+- The Wi-Fi setup page no longer overflows, and the web server is more stable.
+- The focuser temperature sensor starts reliably. The ASCOM focuser reports a missing sensor without crashing the client.
+- The ASCOM setup can read and write the telescope and focuser settings stored in the mount.
+
+### 1.6.2 to 1.6.4
+
+- Catalog star names are stored and shown correctly. Long hand-controller texts were shortened so they fit the display.
+- Park and home gotos complete. If a computer starts an alignment, the hand controller shows that alignment.
+- The hand controller shows which Wi-Fi mode is active, and the access point comes up reliably.
+- Tracking rates travel at full precision. MoveAxis uses the mount's effective maximum slew rate.
+- Guiding is reported in the mount status, so a client can see that a guide pulse is in progress.
+- ASCOM goto coordinates round-trip more accurately. A dropped serial or Wi-Fi link is retried. Motor reverse uses the documented settings.
+- The TeenAstro app gained the planetarium, night view, J2000 and JNow, and catalog filters.
+
+### 1.6.5
+
+- The main unit and the hand controller were brought to the same version number. No new night-time action.
+
+### 1.6.6
+
+- A meridian-flip goto is allowed to finish, tracking starts again afterwards, and the meridian direction matches the mount.
+- Mechanical polar alignment (**2 Stars Mech.**) is its own procedure and is closed with its own confirmation.
+- Wi-Fi in station mode keeps the link. Saving a setting on the web page returns to that page.
+- The hand controller is less likely to crash during a long session.
+
+### 1.6.7
+
+- Gear check on the hand controller, for an equatorial or an alt-azimuth mount, shows the measured ratio.
+- The under-pole limit is corrected. A goto that would cross a limit is refused. Aborting an alignment restores the previous model.
+- Hour angle stays in a fixed range, including west of the meridian, so a computer does not reject the reply.
+- GNSS accepts a time fix only when the positions agree, and a quiet sync does not disturb the session.
+- Catalog scrolling is faster, and a semicolon inside a name no longer corrupts the list. Configuration pages load faster. Web forms can be submitted again.
+- ASCOM can find home.
+
+### 1.6.8
+
+- Stopping MoveAxis slows down with the configured acceleration. Tracking continues on the axis that is not being moved. A rate of zero always stops. A rate above the maximum is refused.
+- SharpCap and the other clients show the MoveAxis speeds again, including 0.25°/s and 0.5°/s. The driver uses sidereal-rate multiples, the same unit as driver 1.5.
+- ASCOM rates, coordinates, and port numbers use a fixed decimal point, so a French or German Windows does not change the commands.
+- The hand controller guides **2 Stars**, **4 Stars**, and **3+3 Stars**. Four stars on one pier side measure perpendicularity. 3+3 measures cone and perpendicularity only when each pier side has three stars.
+- **Mount error**, above Refraction, holds a known cone and perpendicularity during a two-star alignment and during a plate-solve sync.
+- The firmware uploader **Auto** button detects the connected telescope or focuser and flashes the matching file.

@@ -1092,3 +1092,55 @@ Exemple : réduction 360, moteur 200 pas, 16 micropas → 11,25" par micropas. C
 - Manuel FS2, pour l'esprit d'origine : [anleit_f.pdf](https://www.astro-electronic.de/anleit_f.pdf), Astro-Electronic, Michael Koch.
 
 Les cartes, les tensions d'alimentation et les faisceaux moteurs ne sont pas les mêmes d'une version à l'autre. Pour le câblage, partez de la page de votre carte dans le wiki, puis revenez ici pour l'usage.
+
+---
+
+## Annexe E. Changements depuis la version 1.6.0
+
+Le firmware 1.6.0 est la première version de cette génération. Le fichier Lisez-moi du pilote ASCOM, installé avec le pilote, décrit le passage de 1.5 à 1.6. Cette annexe liste ce qui a changé ensuite, jusqu'au firmware 1.6.8 et au pilote ASCOM correspondant.
+
+### 1.6.1
+
+- Pendant un goto, la raquette distingue un pointage équatorial, un pointage altazimutal et un retournement au méridien.
+- La page de réglage Wi-Fi ne déborde plus, et le serveur web est plus stable.
+- La sonde de température du focuser démarre de façon fiable. Le focuser ASCOM signale une sonde absente sans faire planter le logiciel.
+- Le réglage ASCOM peut lire et écrire la configuration du télescope et du focuser enregistrée dans la monture.
+
+### 1.6.2 à 1.6.4
+
+- Les noms d'étoiles des catalogues sont enregistrés et affichés correctement. Les textes longs de la raquette ont été raccourcis pour tenir sur l'écran.
+- Les goto vers le parc et vers la position de repos vont au bout. Si un ordinateur lance un alignement, la raquette l'affiche.
+- La raquette indique le mode Wi-Fi en cours, et le point d'accès démarre de façon fiable.
+- Les vitesses de suivi voyagent en pleine précision. MoveAxis utilise la vitesse maximale effective de la monture.
+- Le guidage est indiqué dans l'état de la monture, pour qu'un logiciel voie qu'une impulsion de guidage est en cours.
+- Les coordonnées de goto ASCOM font l'aller-retour avec plus de précision. Une liaison série ou Wi-Fi coupée est retentée. L'inversion des moteurs utilise les réglages documentés.
+- L'application TeenAstro a gagné le planétarium, la vue de nuit, J2000 et JNow, et les filtres de catalogues.
+
+### 1.6.5
+
+- L'unité principale et la raquette ont été alignées sur le même numéro de version. Pas de nouveau geste de nuit.
+
+### 1.6.6
+
+- Un goto de retournement au méridien peut aller au bout, le suivi reprend ensuite, et le sens du méridien correspond à la monture.
+- L'alignement polaire mécanique (**2 Stars Mech.**) est une procédure à part et se termine par sa propre confirmation.
+- Le Wi-Fi en mode station garde la liaison. Enregistrer un réglage sur la page web ramène à cette page.
+- La raquette plante moins souvent pendant une longue séance.
+
+### 1.6.7
+
+- Le contrôle d'engrenage sur la raquette, pour une monture équatoriale ou altazimutale, affiche le rapport mesuré.
+- La limite sous le pôle est corrigée. Un goto qui franchirait une limite est refusé. Abandonner un alignement restaure le modèle précédent.
+- L'angle horaire reste dans une plage fixe, y compris à l'ouest du méridien, pour qu'un ordinateur ne rejette pas la réponse.
+- Le GNSS n'accepte une heure que lorsque les positions concordent, et une synchro silencieuse ne dérange pas la séance.
+- Le défilement des catalogues est plus rapide, et un point-virgule dans un nom ne corrompt plus la liste. Les pages de configuration s'ouvrent plus vite. Les formulaires web peuvent à nouveau être envoyés.
+- ASCOM peut chercher la position de repos.
+
+### 1.6.8
+
+- L'arrêt d'un MoveAxis ralentit avec l'accélération réglée. Le suivi continue sur l'axe qui n'est pas déplacé. Une vitesse nulle arrête toujours. Une vitesse au-dessus du maximum est refusée.
+- SharpCap et les autres logiciels affichent à nouveau les vitesses MoveAxis, dont 0,25°/s et 0,5°/s. Le pilote utilise les multiples de la vitesse sidérale, la même unité que le pilote 1.5.
+- Les vitesses, les coordonnées et les ports ASCOM utilisent un point décimal fixe, pour qu'un Windows français ou allemand ne modifie pas les commandes.
+- La raquette guide **2 étoiles**, **4 étoiles** et **3+3 étoiles**. Quatre étoiles sur un côté de pilier mesurent la perpendicularité. Le 3+3 mesure le cône et la perpendicularité seulement quand chaque côté a trois étoiles.
+- **Erreur de monture**, au-dessus de la réfraction, conserve un cône et une perpendicularité déjà connus pendant un alignement à deux étoiles et pendant une synchro de plate-solve.
+- Le bouton **Auto** de l'uploader détecte le télescope ou le focuser connecté et flashe le fichier correspondant.
