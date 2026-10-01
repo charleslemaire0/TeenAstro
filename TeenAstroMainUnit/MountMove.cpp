@@ -79,17 +79,10 @@ static void moveAxisAtRate(Mount& m, GuideAxis* guideA, StatusAxis*, double newr
 {
   if (!m.motorsEncoders.enableMotor)
     return;
-  // ASCOM MoveAxis rate 0: stop immediately. Clear guide busy and GuidingState
-  // here (do not wait for TIMER1) so AtRate ends even if the high-rate path left
-  // residual tmp_guideRate / goto-decay state, while the other axis may still track.
+  // Rate 0 only brakes. TIMER1 ramps the rate down and setIdle() at the target.
   if (newrate == 0)
   {
     stopAxis(m, guideA, nullptr);
-    guideA->setIdle();
-    guideA->moveAxisActive = false;
-    if (!m.guiding.guideA1.isBusy() && !m.guiding.guideA2.isBusy()
-        && !m.guiding.guideA1.moveAxisActive && !m.guiding.guideA2.moveAxisActive)
-      m.guiding.GuidingState = Guiding::GuidingOFF;
     return;
   }
   bool canMove = m.parkHome.parkStatus == PRK_UNPARKED;

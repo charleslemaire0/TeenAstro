@@ -835,11 +835,13 @@ namespace ASCOM.TeenAstro.Telescope
     /// <returns>Collection of <see cref="IRate" /> rate objects</returns>
     internal static IAxisRates AxisRates(TelescopeAxes Axis)
     {
-      // :GXRX# is EEPROM max; :GXR4# is the effective cap used by :M1#/:M2# (motor-corrected). Prefer GXR4 so ASCOM max matches MoveAxis.
-      double maxArcsec = 0;
-      if (TryGetDoubleCommand("GXR4", "AxisRates effective max (GXR4)", out maxArcsec) && maxArcsec > 0)
+      // :GXR4# and :GXRX# are sidereal-rate multiples (1 = sidereal), the same unit :M1#/:M2# use.
+      // AxisRates then publishes degrees/second as multiple * SiderealRate, which is what SharpCap
+      // uses for the 0.25°/s, 0.5°/s, … buttons. Prefer GXR4 (motor-corrected cap) over EEPROM GXRX.
+      double maxMultiple = 0;
+      if (TryGetDoubleCommand("GXR4", "AxisRates effective max (GXR4)", out maxMultiple) && maxMultiple > 0)
       {
-        SlewSpeeds = maxArcsec / (3600.0 * SiderealRate);
+        SlewSpeeds = maxMultiple;
         return new AxisRates(Axis, SlewSpeeds, SiderealRate);
       }
       double Speed = 0;
@@ -1376,35 +1378,26 @@ namespace ASCOM.TeenAstro.Telescope
         {
           throw new ASCOM.ParkedException();
         }
-        // Main Unit :M1#/:M2# expect rate in arcsec/s (deg/s * 3600).
-        // Firmware rejects if abs(rate) > guideRates[4] (integer); round toward zero to match Alpaca.
-        double rateArcsecPerSec = Rate * 3600.0;
-        int rateInt = rateArcsecPerSec >= 0
-          ? (int)Math.Floor(rateArcsecPerSec + 1e-9)
-          : (int)Math.Ceiling(rateArcsecPerSec - 1e-9);
-        double maxArcsecEff = 0;
-        if (TryGetDoubleCommand("GXR4", "MoveAxis max arcsec/s (GXR4)", out maxArcsecEff) && maxArcsecEff > 0)
+        // :M1#/:M2# expect sidereal-rate multiples, same as driver 1.5 (deg/s / sidereal deg/s).
+        double rateMultiple = Rate / SiderealRate;
+        double maxMultiple = 0;
+        if (TryGetDoubleCommand("GXR4", "MoveAxis max sidereal multiples (GXR4)", out maxMultiple) && maxMultiple > 0)
         {
           // Reject outside AxisRates (do not silently clamp — Conform expects InvalidValue).
-          if (Rate != 0.0 && Math.Abs(rateArcsecPerSec) > maxArcsecEff + 1e-3)
+          if (Rate != 0.0 && Math.Abs(rateMultiple) > maxMultiple + 1e-3)
           {
             throw new ASCOM.InvalidValueException("MoveAxis", Rate.ToString(CultureInfo.InvariantCulture),
-              "Rate must be within AxisRates (max " + (maxArcsecEff / 3600.0).ToString(CultureInfo.InvariantCulture) + " deg/s)");
-          }
-          int maxInt = (int)Math.Floor(maxArcsecEff + 0.5);
-          if (maxInt > 0)
-          {
-            if (rateInt > maxInt) rateInt = maxInt;
-            if (rateInt < -maxInt) rateInt = -maxInt;
+              "Rate must be within AxisRates (max " + (maxMultiple * SiderealRate).ToString(CultureInfo.InvariantCulture) + " deg/s)");
           }
         }
+        string rateText = rateMultiple.ToString("+0.0000000;-0.0000000", CultureInfo.InvariantCulture);
         if (Axis == TelescopeAxes.axisPrimary)
         {
-          cmd = "M1" + rateInt.ToString("+0;-0", CultureInfo.InvariantCulture);
+          cmd = "M1" + rateText;
         }
         else if (Axis == TelescopeAxes.axisSecondary)
         {
-          cmd = "M2" + rateInt.ToString("+0;-0", CultureInfo.InvariantCulture);
+          cmd = "M2" + rateText;
         }
         else
         {
