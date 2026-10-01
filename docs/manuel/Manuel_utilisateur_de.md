@@ -1099,7 +1099,7 @@ Platinen, Versorgungsspannungen und Motorkabel sind von Version zu Version nicht
 
 ## Anhang E. Änderungen seit Version 1.6.0
 
-Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Treibers, die mit dem Treiber installiert wird, beschreibt den Sprung von 1.5 auf 1.6. Dieser Anhang listet, was danach geändert wurde, bis Firmware 1.6.8 und dem passenden ASCOM-Treiber.
+Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Treibers, die mit dem Treiber installiert wird, beschreibt den Sprung von 1.5 auf 1.6. Dieser Anhang listet, was danach geändert wurde, bis Firmware 1.6.9 und dem passenden ASCOM-Treiber.
 
 ### 1.6.1
 
@@ -1138,7 +1138,7 @@ Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Tre
 - Kataloge lassen sich schneller durchblättern, und ein Semikolon in einem Namen zerstört die Liste nicht mehr. Konfigurationsseiten laden schneller. Webformulare lassen sich wieder absenden.
 - ASCOM kann Home suchen.
 
-### 1.6.8
+### 1.6.9
 
 - Das Stoppen von MoveAxis bremst mit der eingestellten Beschleunigung. Die Nachführung läuft auf der Achse weiter, die nicht bewegt wird. Die Rate null stoppt immer. Eine Rate über dem Maximum wird abgelehnt.
 - SharpCap und die anderen Programme zeigen die MoveAxis-Geschwindigkeiten wieder, einschließlich 0,25°/s und 0,5°/s. Der Treiber verwendet siderische Vielfache, dieselbe Einheit wie Treiber 1.5.

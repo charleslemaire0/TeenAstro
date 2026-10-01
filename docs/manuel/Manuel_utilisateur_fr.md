@@ -1097,7 +1097,7 @@ Les cartes, les tensions d'alimentation et les faisceaux moteurs ne sont pas les
 
 ## Annexe E. Changements depuis la version 1.6.0
 
-Le firmware 1.6.0 est la première version de cette génération. Le fichier Lisez-moi du pilote ASCOM, installé avec le pilote, décrit le passage de 1.5 à 1.6. Cette annexe liste ce qui a changé ensuite, jusqu'au firmware 1.6.8 et au pilote ASCOM correspondant.
+Le firmware 1.6.0 est la première version de cette génération. Le fichier Lisez-moi du pilote ASCOM, installé avec le pilote, décrit le passage de 1.5 à 1.6. Cette annexe liste ce qui a changé ensuite, jusqu'au firmware 1.6.9 et au pilote ASCOM correspondant.
 
 ### 1.6.1
 
@@ -1136,7 +1136,7 @@ Le firmware 1.6.0 est la première version de cette génération. Le fichier Lis
 - Le défilement des catalogues est plus rapide, et un point-virgule dans un nom ne corrompt plus la liste. Les pages de configuration s'ouvrent plus vite. Les formulaires web peuvent à nouveau être envoyés.
 - ASCOM peut chercher la position de repos.
 
-### 1.6.8
+### 1.6.9
 
 - L'arrêt d'un MoveAxis ralentit avec l'accélération réglée. Le suivi continue sur l'axe qui n'est pas déplacé. Une vitesse nulle arrête toujours. Une vitesse au-dessus du maximum est refusée.
 - SharpCap et les autres logiciels affichent à nouveau les vitesses MoveAxis, dont 0,25°/s et 0,5°/s. Le pilote utilise les multiples de la vitesse sidérale, la même unité que le pilote 1.5.

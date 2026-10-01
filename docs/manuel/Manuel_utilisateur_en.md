@@ -1099,7 +1099,7 @@ Boards, supply voltages, and motor harnesses are not the same from one version t
 
 ## Appendix E. Changes since version 1.6.0
 
-Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme, installed with the driver, describes the jump from 1.5 to 1.6. This appendix lists what changed afterwards, through firmware 1.6.8 and the matching ASCOM driver.
+Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme, installed with the driver, describes the jump from 1.5 to 1.6. This appendix lists what changed afterwards, through firmware 1.6.9 and the matching ASCOM driver.
 
 ### 1.6.1
 
@@ -1138,7 +1138,7 @@ Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme,
 - Catalog scrolling is faster, and a semicolon inside a name no longer corrupts the list. Configuration pages load faster. Web forms can be submitted again.
 - ASCOM can find home.
 
-### 1.6.8
+### 1.6.9
 
 - Stopping MoveAxis slows down with the configured acceleration. Tracking continues on the axis that is not being moved. A rate of zero always stops. A rate above the maximum is refused.
 - SharpCap and the other clients show the MoveAxis speeds again, including 0.25°/s and 0.5°/s. The driver uses sidereal-rate multiples, the same unit as driver 1.5.
