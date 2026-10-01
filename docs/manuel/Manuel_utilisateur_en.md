@@ -768,7 +768,7 @@ At each arrival:
 2. Recenter the star.
 3. Short press on Shift to confirm.
 
-The display shows the error of each step, in arcminutes, and the measured gear. The formula is: measured gear = stored gear × commanded move / true move. A commanded move of less than 5° is rejected: the scale would be too poor.
+The display shows the error of each step, in arcminutes, and the measured gear. The formula is: measured gear = stored gear × true move / commanded move, where the true move is the commanded move plus the recentering error. A shortfall (you still had to push the star further) raises the gear; an overshoot lowers it. A commanded move of less than 5° is rejected: the scale would be too poor.
 
 If the two axes give inconsistent ratios, the display reports **Axes similar**: the chosen stars did not separate the axes enough. Start again with targets farther apart.
 

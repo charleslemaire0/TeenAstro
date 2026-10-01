@@ -766,7 +766,7 @@ Le firmware demande une synchro sur une étoile A, puis un goto vers B (grand d�
 2. Recentrez l'étoile.
 3. Appui court sur Shift pour valider.
 
-L'écran affiche l'erreur de chaque étape, en minutes d'arc, et la réduction mesurée. La formule utilisée est : réduction mesurée = réduction enregistrée × déplacement commandé / déplacement vrai. Un déplacement commandé de moins de 5° est rejeté : l'échelle serait trop mauvaise.
+L'écran affiche l'erreur de chaque étape, en minutes d'arc, et la réduction mesurée. La formule utilisée est : réduction mesurée = réduction enregistrée × déplacement vrai / déplacement commandé, où le déplacement vrai est le déplacement commandé plus l'erreur de recentrage. Un manque (il a encore fallu pousser l'étoile) augmente la réduction ; un dépassement la diminue. Un déplacement commandé de moins de 5° est rejeté : l'échelle serait trop mauvaise.
 
 Si les deux axes donnent des rapports incohérents, l'écran signale **Axes similaires** : les étoiles choisies n'ont pas assez séparé les axes. Recommencez avec des cibles plus écartées.
 

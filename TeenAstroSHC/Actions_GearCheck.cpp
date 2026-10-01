@@ -6,8 +6,11 @@
 
 // Gear-check goto ladder: sync A → goto B (mostly axis1) → recenter →
 // goto C (mostly axis2) → recenter → report miss and measured gear.
-// Measured gear = cfg_gear * commanded / true, with true = commanded + miss
+// Measured gear = cfg_gear * true / commanded, with true = commanded + miss
 // on the primary instrument axis (:GXP1# / :GXP2#).
+// cmd and miss are both in the mount's step scale. Physical travel is
+// (cmd + miss) * gear_cfg / gear_true, and that equals the catalog separation
+// cmd when only the gear scale is wrong, so gear_true = gear_cfg * (cmd + miss) / cmd.
 
 static const double kMinCmdDeg = 5.0; // need a meaningful slew for scale
 
@@ -31,7 +34,7 @@ static bool computeMeasuredGear(float gearCfg, double cmdDeg, double missDeg,
   if (fabs(cmdDeg) < kMinCmdDeg || fabs(trueDeg) < 1e-3)
     return false;
   // Same sign expected for a mostly-axis move; still allow if true is usable.
-  gearMeas = (float)((double)gearCfg * cmdDeg / trueDeg);
+  gearMeas = (float)((double)gearCfg * trueDeg / cmdDeg);
   if (!isfinite(gearMeas) || gearMeas <= 0.0f || gearMeas > 100000.0f)
     return false;
   return true;
@@ -219,7 +222,7 @@ void SmartHandController::gearCheckReport(
   DisplayLongMessage(T_GC_LEG1, r1, T_GC_LEG2, r2, -1);
   DisplayLongMessage(T_GEARCHECK, verdict, "", "", -1);
 
-  // Measured gear: configured → estimated (from cmd/(cmd+miss)).
+  // Measured gear: configured → estimated (from (cmd+miss)/cmd).
   char g1[28], g2[28];
   if (leg1.gearValid)
     snprintf(g1, sizeof(g1), "A1 %.1f>%.1f", (double)leg1.gearCfg, (double)leg1.gearMeas);

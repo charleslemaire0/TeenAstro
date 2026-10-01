@@ -63,11 +63,10 @@ bool MountLimits::checkAltitudeLimits(double alt) const
 
 bool MountLimits::checkPole(long axis1, long axis2, CheckMode mode) const
 {
-  // Maximum configurable limit (12 decimal hours): treat as inactive — same as
-  // UniversalMainUnit/EqMount.cpp checkPole() and EEPROM :SXLU ceiling.
-  if (underPoleLimitGOTO >= 12.0)
-    return true;
-
+  // 12 h is the widest setting, not "off". poleDef is the home index, 6 h from the
+  // meridian, so (limit - 6) * 15° is the travel past home. At 12 h that is 90°,
+  // which is what Release 1.5 enforced. Skipping the check here sends a goto
+  // from home past that stop and onto the wrong pier.
   bool ok = false;
   double underPoleLimit = (mode == CHECKMODE_GOTO)
     ? underPoleLimitGOTO
