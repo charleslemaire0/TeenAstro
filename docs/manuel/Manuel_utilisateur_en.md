@@ -666,9 +666,11 @@ Set **Mount error** before you start, from this menu or from **Telescope Setting
 
 From home, on one pier side. The screen says **Same pier side** and **Perpendicularity**. Confirm with **YES**. Four stars estimate the non-perpendicularity of the second axis. The cone is not estimated from a single pier side. The stored **Mount error** values are not used.
 
+The first two stars set the pole. After the third star the model is updated before the slew to the fourth, so a mount that starts a long way off is closer on that last star. The hand controller waits while the update runs. The fourth star closes the session.
+
 ### 3+3 Stars
 
-For a German or fork mount that can change pier side. The screen says **Flip after 3** and **Cone + perp**. Confirm with **YES**. Take three stars on one side, flip, then three on the other. The cone is estimated only when each side really contributed three stars. One star past the flip is not enough, and the cone stays unpublished until that split is met. The stored **Mount error** values are not used.
+For a German or fork mount that can change pier side. The screen says **Flip after 3** and **Cone + perp**. Confirm with **YES**. Take three stars on one side, flip, then three on the other. After the third star, and after each later star except the last, the model is updated before the next slew. The hand controller waits while that update runs. The cone is estimated only when each side really contributed three stars. One star past the flip is not enough, and the cone stays unpublished until that split is met. The stored **Mount error** values are not used.
 
 ### 2 Stars Mech.
 
@@ -1144,5 +1146,6 @@ Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme,
 - SharpCap and the other clients show the MoveAxis speeds again, including 0.25°/s and 0.5°/s. The driver uses sidereal-rate multiples, the same unit as driver 1.5.
 - ASCOM rates, coordinates, and port numbers use a fixed decimal point, so a French or German Windows does not change the commands.
 - The hand controller guides **2 Stars**, **4 Stars**, and **3+3 Stars**. Four stars on one pier side measure perpendicularity. 3+3 measures cone and perpendicularity only when each pier side has three stars.
+- **4 Stars** and **3+3 Stars** update the model after the third star, and after each later star before the last. The next slew uses the stars already centered. The hand controller waits while that calculation runs.
 - **Mount error**, above Refraction, holds a known cone and perpendicularity during a two-star alignment and during a plate-solve sync.
 - The firmware uploader **Auto** button detects the connected telescope or focuser and flashes the matching file.

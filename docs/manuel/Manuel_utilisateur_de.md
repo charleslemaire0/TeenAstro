@@ -666,9 +666,11 @@ Wenn Home nicht erreichbar ist (der Tubus steht schon am Himmel):
 
 Von Home, auf derselben Säulenseite. Die Anzeige sagt **Gleiche Seite** und **Nicht-senkrecht**. Mit **Ja** bestätigen. Vier Sterne schätzen die Nicht-Senkrechtigkeit der zweiten Achse. Der Konus wird von einer einzigen Säulenseite nicht geschätzt. Die gespeicherten Werte unter **Montierungsfehler** werden nicht verwendet.
 
+Die ersten zwei Sterne setzen den Pol. Nach dem dritten Stern wird das Modell aktualisiert, bevor zum vierten geschwenkt wird, damit eine anfangs weit daneben liegende Montierung bei diesem letzten Stern näher liegt. Der Handkontroller wartet, während die Aktualisierung läuft. Der vierte Stern schließt die Sitzung.
+
 ### 3+3 Sterne
 
-Für eine deutsche Montierung oder eine Gabel, die die Seite wechseln kann. Die Anzeige sagt **Wenden nach 3** und **Konus + Perp**. Mit **Ja** bestätigen. Drei Sterne auf einer Seite, Umschlag, dann drei auf der anderen. Der Konus wird nur geschätzt, wenn jede Seite wirklich drei Sterne beigetragen hat. Ein einzelner Stern nach dem Umschlag reicht nicht, und der Konus bleibt unveröffentlicht, bis diese Aufteilung erreicht ist. Die gespeicherten Werte unter **Montierungsfehler** werden nicht verwendet.
+Für eine deutsche Montierung oder eine Gabel, die die Seite wechseln kann. Die Anzeige sagt **Wenden nach 3** und **Konus + Perp**. Mit **Ja** bestätigen. Drei Sterne auf einer Seite, Umschlag, dann drei auf der anderen. Nach dem dritten Stern, und nach jedem weiteren Stern außer dem letzten, wird das Modell vor dem nächsten Schwenk aktualisiert. Der Handkontroller wartet, während diese Aktualisierung läuft. Der Konus wird nur geschätzt, wenn jede Seite wirklich drei Sterne beigetragen hat. Ein einzelner Stern nach dem Umschlag reicht nicht, und der Konus bleibt unveröffentlicht, bis diese Aufteilung erreicht ist. Die gespeicherten Werte unter **Montierungsfehler** werden nicht verwendet.
 
 ### 2 Sterne Mech.
 
@@ -1144,5 +1146,6 @@ Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Tre
 - SharpCap und die anderen Programme zeigen die MoveAxis-Geschwindigkeiten wieder, einschließlich 0,25°/s und 0,5°/s. Der Treiber verwendet siderische Vielfache, dieselbe Einheit wie Treiber 1.5.
 - ASCOM-Raten, Koordinaten und Ports verwenden einen festen Dezimalpunkt, damit ein französisches oder deutsches Windows die Befehle nicht verändert.
 - Der Handkontroller führt **2 Stars**, **4 Stars** und **3+3 Stars**. Vier Sterne auf einer Pier-Seite messen die Nicht-Rechtwinkligkeit. 3+3 misst Konus und Nicht-Rechtwinkligkeit nur, wenn jede Pier-Seite drei Sterne hat.
+- **4 Sterne** und **3+3 Sterne** aktualisieren das Modell nach dem dritten Stern und nach jedem weiteren Stern vor dem letzten. Das nächste Goto benutzt die bereits zentrierten Sterne. Der Handkontroller wartet, während diese Rechnung läuft.
 - **Mount error**, über der Refraktion, hält einen bekannten Konus und eine bekannte Nicht-Rechtwinkligkeit bei einer Zwei-Stern-Ausrichtung und bei einem Plate-Solve-Sync fest.
 - Die Schaltfläche **Auto** im Firmware-Uploader erkennt das angeschlossene Teleskop oder den Fokussierer und schreibt die passende Datei.

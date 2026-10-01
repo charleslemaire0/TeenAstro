@@ -664,9 +664,11 @@ Réglez **Erreur monture** avant de commencer, depuis ce menu ou depuis **Param.
 
 Depuis la maison, du même côté du pilier. L'écran affiche **Même côté** et **Perpendicularité**. Confirmez par **OUI**. Quatre étoiles estiment le défaut de perpendicularité du deuxième axe. Le cône n'est pas estimé depuis un seul côté. Les valeurs enregistrées dans **Erreur monture** ne sont pas utilisées.
 
+Les deux premières étoiles fixent le pôle. Après la troisième, le modèle est mis à jour avant le pointage vers la quatrième, pour qu'une monture très écartée au départ soit plus proche sur cette dernière étoile. La raquette attend pendant cette mise à jour. La quatrième étoile clôt la séance.
+
 ### 3+3 étoiles
 
-Pour une monture allemande ou à fourche qui peut changer de côté. L'écran affiche **Retour après 3** et **Cône + perp**. Confirmez par **OUI**. Trois étoiles d'un côté, un retournement, puis trois de l'autre. Le cône n'est estimé que si chaque côté a vraiment apporté trois étoiles. Une seule étoile après le retournement ne suffit pas, et le cône reste non publié tant que cette répartition n'est pas atteinte. Les valeurs enregistrées dans **Erreur monture** ne sont pas utilisées.
+Pour une monture allemande ou à fourche qui peut changer de côté. L'écran affiche **Retour après 3** et **Cône + perp**. Confirmez par **OUI**. Trois étoiles d'un côté, un retournement, puis trois de l'autre. Après la troisième étoile, et après chaque étoile suivante sauf la dernière, le modèle est mis à jour avant le pointage suivant. La raquette attend pendant cette mise à jour. Le cône n'est estimé que si chaque côté a vraiment apporté trois étoiles. Une seule étoile après le retournement ne suffit pas, et le cône reste non publié tant que cette répartition n'est pas atteinte. Les valeurs enregistrées dans **Erreur monture** ne sont pas utilisées.
 
 ### 2 étoiles méca.
 
@@ -1142,5 +1144,6 @@ Le firmware 1.6.0 est la première version de cette génération. Le fichier Lis
 - SharpCap et les autres logiciels affichent à nouveau les vitesses MoveAxis, dont 0,25°/s et 0,5°/s. Le pilote utilise les multiples de la vitesse sidérale, la même unité que le pilote 1.5.
 - Les vitesses, les coordonnées et les ports ASCOM utilisent un point décimal fixe, pour qu'un Windows français ou allemand ne modifie pas les commandes.
 - La raquette guide **2 étoiles**, **4 étoiles** et **3+3 étoiles**. Quatre étoiles sur un côté de pilier mesurent la perpendicularité. Le 3+3 mesure le cône et la perpendicularité seulement quand chaque côté a trois étoiles.
+- **4 étoiles** et **3+3 étoiles** mettent le modèle à jour après la troisième étoile, puis après chaque étoile suivante sauf la dernière. Le goto suivant utilise les étoiles déjà centrées. La raquette attend pendant ce calcul.
 - **Erreur de monture**, au-dessus de la réfraction, conserve un cône et une perpendicularité déjà connus pendant un alignement à deux étoiles et pendant une synchro de plate-solve.
 - Le bouton **Auto** de l'uploader détecte le télescope ou le focuser connecté et flashe le fichier correspondant.
