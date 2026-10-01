@@ -35,12 +35,13 @@ struct MountAlignment {
   /// RMS pointing residual of the last rigid fit, arcseconds.
   float rigidRmsArcsec = 0.f;
 
-  /// User-defined pole error (radians, equatorial azimuth and altitude) and
-  /// axis2 non-perpendicularity. When \p knownGeom is set, a 2-star alignment
-  /// holds the perpendicularity and still estimates the pole direction.
+  /// User-defined pole error (radians, equatorial azimuth and altitude), optical
+  /// cone and axis2 non-perpendicularity. When \p knownGeom is set, a 2-star
+  /// alignment holds the cone and the perpendicularity and still estimates the pole.
   bool knownGeom = false;
   double knownPoleAz = 0;
   double knownPoleAlt = 0;
+  double knownCone = 0;
   double knownPerp = 0;
 
   bool isRigidSession() const { return alignRigidStars >= COORDCONV_MIN_RIGID_STARS; }

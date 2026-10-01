@@ -9,6 +9,7 @@ using ASCOM.LocalServer; // SharedResources
 using ASCOM.Utilities;
 using System;
 using System.Collections;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -232,7 +233,7 @@ namespace ASCOM.TeenAstro.Focuser
     {
       CheckConnected("Move");
       if (position < 0 || position > FocuserHardware.DefaultMaxStep)
-        throw new InvalidValueException("Move", position.ToString(), "0", FocuserHardware.DefaultMaxStep.ToString());
+        throw new InvalidValueException("Move", position.ToString(CultureInfo.InvariantCulture), "0", FocuserHardware.DefaultMaxStep.ToString(CultureInfo.InvariantCulture));
       FocuserHardware.MoveTo(position);
     }
 

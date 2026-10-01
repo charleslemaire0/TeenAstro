@@ -39,8 +39,24 @@ Commands use the format `:CMD#`: leading colon, command string, terminating hash
 | `:AP#` | **Polar pass done:** finalize a deferred mechanical-pole session (was previously overloaded on `:A3#`). Only valid when a deferred polar session is pending. Mount syncs on the recentered alignment star, then RAM `CoordConv` is **reset to the cold-boot baseline** (synthetic refs, `hasValid=false`) and `EE_Tvalid` is cleared in EEPROM — i.e. **the provisional soft model is discarded** and the firmware trusts the now-mechanical pole. `:AW#` after `:AP#` is a no-op (writes `EE_Tvalid=0`). | `1` | TeenAstro extension |
 | `:AE#` | Get current alignment error (degrees). | `sDD*MM'SS#` | LX200 standard |
 | `:AC#` | Sync at home; disable auto alignment-by-sync. | `1` | LX200 standard |
-| `:AA#` | Sync at home; enable auto alignment-by-sync. | `1` | LX200 standard |
+| `:AA#` | Sync at home and enable alignment-by-sync. The next two `:CM#` / `:CS#` build a two-star model from the target coordinates at sync time. No recentering. See below. | `1` | LX200 standard |
 | `:AW#` | Save alignment model to EEPROM. | `1` | LX200 standard |
+
+### Alignment by sync (`:AA#`)
+
+The mount must already be at the home position. `:AA#` resets the model, syncs that home into the axes, and sets `autoAlignmentBySync`. It does not start a rigid session and it does not slew.
+
+For each of two stars:
+
+1. Slew with `:MS#` (equatorial target) or `:MA#` (alt/azimuth target). Alt/azimuth gotos stay available during and after the session.
+2. Plate-solve. Write the **solved** right ascension and declination into the target (`:Sr` / `:Sd`), not the coordinates that were commanded for the slew.
+3. `:CM#` or `:CS#`.
+
+The first sync anchors the axes on that solved position, then stores the pair. The second sync stores the instrument position where the slew stopped against the solved sky position, then closes the two-star model. If mount error is enabled and the stored cone or perpendicularity is not zero, both are held and the two stars still estimate the pole — the same close-out as `:A2#`. Otherwise the classic Taki fudge runs. The flag clears itself. The model is in RAM only until `:AW#`.
+
+A `:CM#` / `:CS#` once the flag is off does not change the stored transform. It only moves the axes so the current pointing matches the target through that transform. `:CA#` syncs alt/azimuth and does not add an alignment star.
+
+**4 Stars** and **3+3 Stars** are not this path. Start them with `:A0,r4#` or `:A0,r6#` (or `:A*,r<n>#` when the tube is already on a star) and send `:A1#` … `:A<n>#` after setting each target to the solved coordinates.
 
 ---
 
@@ -57,8 +73,8 @@ Commands use the format `:CMD#`: leading colon, command string, terminating hash
 
 | Syntax | Description | Returns | Standard |
 |--------|-------------|---------|----------|
-| `:CM#` | Sync mount to current object coordinates (EQ); optional multi-star alignment. | `N/A#` or nothing | LX200 standard |
-| `:CS#` | Sync mount to current object coordinates (EQ); optional multi-star alignment; start tracking. | (nothing) | LX200 standard |
+| `:CM#` | Sync mount to the current equatorial target. While alignment-by-sync is on (`:AA#`), the first two syncs build the two-star model from those target coordinates. Afterwards, and when the flag is off, the sync only corrects the current pointing and leaves the alignment model in place. | `N/A#` or nothing | LX200 standard |
+| `:CS#` | Same as `:CM#`, and start tracking. | (nothing) | LX200 standard |
 | `:CA#` | Sync mount to current target Alt/Az. | `N/A#` | LX200 standard |
 | `:CU#` | Sync to user-defined RA/Dec (from EEPROM). | `N/A#` | TeenAstro extension |
 
@@ -182,8 +198,8 @@ All `:GXnn#` commands are TeenAstro extensions. **Standard:** TeenAstro extensio
 | `:GXAb#` | Retained stars on each pier side, as `in,out`. `in` is axis2 inside ±90°, `out` is beyond the pole. Cone error is solved only when both are at least 3. | e.g. `3,3#` |
 | `:GXAf#` | Head terms the last rigid fit actually solved, as three characters `CPI`, with a dash in place of any term the star distribution could not separate. A dashed term is held at zero, so `:GXAc/p/i#` returning zero for it means "not measured", not "measured as zero". Cone and axis2 non-perpendicularity displace axis1 almost identically within one mechanical configuration, so a session confined to a single pier side never returns cone. Cone is solved only when each pier side has at least 3 stars. Four stars are enough for axis2 non-perpendicularity. | e.g. `-PI#` |
 | `:GXAz#` `:GXAa#` `:GXAw#` | Equatorial azimuth / altitude / wedge misclosure from `Tinv` (degrees, DMS + `#`) when the model is ready; else ~0°. | DMS + `#` |
-| `:GXKz#` `:GXKa#` `:GXKp#` | Stored polar azimuth, polar altitude, and perpendicularity, in **arcseconds**. A 2-star alignment estimates the pole itself; only the perpendicularity is held and removed from that estimate. | float + `#` |
-| `:GXKk#` | `1` when a 2-star alignment holds the stored perpendicularity. | `0#` / `1#` |
+| `:GXKz#` `:GXKa#` `:GXKc#` `:GXKp#` | Stored polar azimuth, polar altitude, optical cone and perpendicularity, in **arcseconds**. A 2-star alignment estimates the pole itself. When enabled, the cone and the perpendicularity are held and removed from that estimate. | float + `#` |
+| `:GXKk#` | `1` when a 2-star alignment holds the stored cone and perpendicularity. | `0#` / `1#` |
 
 ### Encoders
 | Syntax | Description | Returns |
@@ -377,8 +393,8 @@ All `:SXnnn,V#` commands are TeenAstro extensions. **Standard:** TeenAstro exten
 | `:SXAs,name#` | Store the alignment star name for the SHC to display. |
 | `:SXAc,V#` `:SXAp,V#` `:SXAi,V#` | Set one rigid head term in **arcseconds** (cone, axis2 non-perpendicularity, axis2 index), for restoring measured geometry without a multi-star session. Values beyond ±5° are rejected. |
 | `:SXAC#` | Clear the rigid head terms, reverting to the plain `T` model. |
-| `:SXKz,V#` `:SXKa,V#` `:SXKp,V#` | Store a polar azimuth error, a polar altitude error, and an axis2 non-perpendicularity, in **arcseconds** (±5°). A 2-star alignment estimates the pole direction. When enabled, it holds the perpendicularity and does not fold that term into the pole. |
-| `:SXKk,0#` `:SXKk,1#` | Do not use / use the stored perpendicularity in a 2-star alignment. |
+| `:SXKz,V#` `:SXKa,V#` `:SXKc,V#` `:SXKp,V#` | Store a polar azimuth error, a polar altitude error, an optical cone and an axis2 non-perpendicularity, in **arcseconds** (±5°). A 2-star alignment estimates the pole direction. When enabled, it holds the cone and the perpendicularity and does not fold those terms into the pole. |
+| `:SXKk,0#` `:SXKk,1#` | Do not use / use the stored cone and perpendicularity in a 2-star alignment. |
 
 ### Encoders
 | Syntax | Description |

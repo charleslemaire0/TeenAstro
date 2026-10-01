@@ -4,6 +4,28 @@
 #include "Command.h"
 #include "ValueToString.h"
 
+void closeTwoStarAlignment(double latDeg)
+{
+  // A 2-star session estimates the pole direction and the axis index.
+  // A non-zero cone or perpendicularity is removed from the reference axes
+  // first and kept in the head, so the pole estimate is not asked to absorb it.
+  // The axis fudge below rebuilds those vectors without the head, so it runs
+  // only when there is no cone or perpendicularity to protect.
+  // :AA# / :CM# uses the same close-out, so a plate-solve sync session holds
+  // a defined mount error the same way as a hand-controller 2-star.
+  MountAlignment &al = mount.alignment;
+  const bool holdKnown = !al.isRigidSession() && al.knownGeom
+    && (fabs(al.knownCone) > 0.0 || fabs(al.knownPerp) > 0.0)
+    && al.conv.alignTwoStarKnownGeom(al.knownCone, al.knownPerp);
+  if (!holdKnown)
+  {
+    al.conv.minimizeAxis2();
+    al.conv.minimizeAxis1(mount.config.identity.mountType == MOUNT_TYPE_GEM ? (latDeg >= 0 ? M_PI_2 : -M_PI_2) : 0);
+  }
+  else
+    al.hasRigid = al.conv.hasHead();
+}
+
 namespace {
 
 void alignmentPolarFinalizeFromCurrentTarget()
@@ -75,22 +97,7 @@ void alignmentFinalize(Coord_HO &HO_T, double Lat)
     fitted = fitRigidAlignModel() && al.conv.hasHead();
   }
   if (!fitted)
-  {
-    // A 2-star session estimates the pole direction and the axis index.
-    // A non-zero perpendicularity is removed from the reference axes first and
-    // kept in the head, so the pole estimate is not asked to absorb it.
-    // The axis fudge below rebuilds those vectors without the head, so it runs
-    // only when there is no perpendicularity to protect.
-    const bool holdPerp = !al.isRigidSession() && al.knownGeom && fabs(al.knownPerp) > 0.0
-      && al.conv.alignTwoStarKnownPerp(al.knownPerp);
-    if (!holdPerp)
-    {
-      al.conv.minimizeAxis2();
-      al.conv.minimizeAxis1(mount.config.identity.mountType == MOUNT_TYPE_GEM ? (Lat >= 0 ? M_PI_2 : -M_PI_2) : 0);
-    }
-    else
-      al.hasRigid = al.conv.hasHead();
-  }
+    closeTwoStarAlignment(Lat);
   mount.syncAzAlt(&HO_T, mount.getPoleSide());
   al.hasValid = true;
   al.alignPhase   = ALIGN_IDLE;

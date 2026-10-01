@@ -134,6 +134,18 @@
         </LI>
     </UL>
 
+    <H2>Changes since version 1.6.0</H2>
+    <P>
+        Firmware 1.6.0 is the first release of this generation. The list above is the jump from 1.5. The items below are what changed afterwards, through firmware 1.6.9 and this driver. The same list, including the hand controller and the mount, is Appendix E of the user manual.
+    </P>
+    <UL>
+        <LI><STRONG>1.6.1:</STRONG> The hand controller distinguishes an equatorial slew, an alt-azimuth slew, and a meridian flip. The Wi-Fi setup page and web server are more stable. The focuser temperature sensor starts reliably, and a missing sensor does not crash the client. The driver setup can read and write the telescope and focuser settings stored in the mount.</LI>
+        <LI><STRONG>1.6.2 to 1.6.4:</STRONG> Catalog names, park and home gotos, and an alignment started from the computer are shown correctly on the hand controller. Tracking rates travel at full precision, and MoveAxis uses the mount's effective maximum slew rate. Guiding is reported in the mount status. Goto coordinates round-trip more accurately, a dropped link is retried, and motor reverse uses the documented settings.</LI>
+        <LI><STRONG>1.6.6:</STRONG> A meridian-flip goto is allowed to finish and tracking restarts afterwards. Mechanical polar alignment is its own procedure. Wi-Fi station mode keeps the link.</LI>
+        <LI><STRONG>1.6.7:</STRONG> Gear check on the hand controller shows the measured ratio. The under-pole limit, alignment abort, and GNSS time sync were corrected. Hour angle stays in a fixed range, including west of the meridian. Catalogs scroll faster, and the driver can find home.</LI>
+        <LI><STRONG>1.6.9:</STRONG> Stopping MoveAxis slows down with the configured acceleration, and tracking continues on the axis that is not moving. A rate of zero always stops, and a rate above the maximum is refused. SharpCap shows the MoveAxis speeds again, including 0.25&deg;/s and 0.5&deg;/s, because the driver uses sidereal-rate multiples, the same unit as driver 1.5. Rates, coordinates, and port numbers use a fixed decimal point, so a French or German Windows does not change the commands. The hand controller guides 2-star, 4-star, and 3+3-star alignment, and Mount error can hold a known cone and perpendicularity. The firmware uploader Auto button detects the connected board and flashes the matching file.</LI>
+    </UL>
+
     <H2>How to Use</H2>
     <OL>
         <LI>Install the driver using the ASCOM Installer.</LI>

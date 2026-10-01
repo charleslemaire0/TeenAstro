@@ -313,8 +313,17 @@ C'est suffisant pour une soirée visuelle si la mise en station mécanique est d
 | Moteurs | Mécanique, vitesses, suivi |
 | Encodeurs | Codeurs de position |
 | Limites | Horizon, zénith, axes, méridien |
+| Erreur monture | Cône et perpendicularité tenus pendant un alignement à deux étoiles |
 | Réfraction | Voir ci-dessous |
 | Réticule | Luminosité du réticule polaire, si la sortie est câblée |
+
+**Erreur monture** : **OFF** ou **ON**. Sur **ON**, la raquette demande **Cone**, puis **Perp**. Chaque valeur est en degrés, de −5 à +5, avec trois décimales.
+
+Laissez **OFF** pour l'alignement à deux étoiles habituel. Passez à **ON** quand le cône optique et le défaut de perpendicularité du deuxième axe sont déjà connus, par un alignement **4 étoiles** ou **3+3 étoiles** précédent, ou par une mesure de la mécanique. Un alignement à deux étoiles tient alors ces deux nombres et mesure encore le pôle. L'écran de départ affiche **Mesure le pôle**. Si les deux nombres sont à zéro, rien n'est tenu et l'alignement reste le modèle habituel. **4 étoiles**, **3+3 étoiles** et **2 étoiles méca.** n'utilisent pas ce réglage.
+
+Le même article est la dernière ligne de **Action Télescope → Aligner**.
+
+Sur la page web de la raquette, le bloc s'appelle **Mount error** et se place au-dessus de la réfraction. Le texte de cette page est en anglais, quelle que soit la langue du firmware. **Off** ou **On** vient en premier ; le texte après le choix est « Hold cone and perpendicularity ». Le cône et la perpendicularité ont chacun leur ligne : la valeur, **Upload**, puis le nom et l'unité, en degrés, ±5.
 
 **Réfraction → Goto** : ON ou OFF. Activée, la réfraction atmosphérique est prise en compte dans le pointage (formule de Saemundsson à l'aller, Bennett au retour).
 
@@ -613,19 +622,18 @@ La synchro recale la position. Elle ne construit pas le modèle d'alignement : u
 
 ## 15. Alignement
 
-L'alignement calcule la transformation entre le ciel et les axes. La méthode est celle de Taki (deux directions mesurées), complétée par une rotation la plus proche au sens des moindres carrés. Le résultat est une matrice 3×3. Elle sert au pointage, à la synchro, au suivi corrigé et au contrôle de hauteur.
+L'alignement calcule la transformation entre le ciel et les axes. Un alignement à deux étoiles suit la méthode de Taki (deux directions mesurées), complétée par une rotation la plus proche au sens des moindres carrés. Le résultat est une matrice 3×3. Elle sert au pointage, à la synchro, au suivi corrigé et au contrôle de hauteur. **4 étoiles** et **3+3 étoiles**, décrits plus bas, peuvent aussi mesurer le cône et la perpendicularité du deuxième axe.
 
 **Action Télescope → Aligner**
 
-Tant qu'aucun modèle n'est enregistré, monture équatoriale :
-
 - **2 Étoiles**
-- **2 étoiles méca.**
+- **4 étoiles**
+- **3+3 étoiles**
+- **2 étoiles méca.** (montures équatoriales)
 - **Ordinateur Alignement**
+- **Erreur monture**
 
-Sur une altazimutale, la ligne mécanique n'est pas proposée.
-
-Une fois le modèle en place, s'ajoutent **Sauver**, **Effacer** et **Show align. error**.
+Sur une altazimutale, **2 étoiles méca.** n'est pas proposé. **Erreur monture** reste la dernière ligne. Une fois le modèle enregistré, **Sauver**, **Effacer** et **Show align. error** s'insèrent au-dessus.
 
 ### 2 Étoiles, depuis la maison
 
@@ -648,13 +656,39 @@ Si la maison n'est pas accessible (tube déjà sur le ciel) :
 3. **Synchro** sur une étoile centrée. Cette étoile devient la première référence.
 4. La procédure enchaîne sur la seconde étoile, comme ci-dessus.
 
+### Erreur monture pendant un alignement à deux étoiles
+
+Réglez **Erreur monture** avant de commencer, depuis ce menu ou depuis **Param. Télescope → Monture**. Sur **ON**, et si **Cone** ou **Perp** n'est pas nul, les deux étoiles mesurent encore le pôle et l'index d'axe. Les deux nombres sont conservés, y compris un zéro sur l'autre ligne. Ils ne sont pas absorbés dans le pôle. La ligne de mode à l'écran de départ est **Mesure le pôle**, à la place d'**Alignement**.
+
+### 4 étoiles
+
+Depuis la maison, du même côté du pilier. L'écran affiche **Même côté** et **Perpendicularité**. Confirmez par **OUI**. Quatre étoiles estiment le défaut de perpendicularité du deuxième axe. Le cône n'est pas estimé depuis un seul côté. Les valeurs enregistrées dans **Erreur monture** ne sont pas utilisées.
+
+### 3+3 étoiles
+
+Pour une monture allemande ou à fourche qui peut changer de côté. L'écran affiche **Retour après 3** et **Cône + perp**. Confirmez par **OUI**. Trois étoiles d'un côté, un retournement, puis trois de l'autre. Le cône n'est estimé que si chaque côté a vraiment apporté trois étoiles. Une seule étoile après le retournement ne suffit pas, et le cône reste non publié tant que cette répartition n'est pas atteinte. Les valeurs enregistrées dans **Erreur monture** ne sont pas utilisées.
+
 ### 2 étoiles méca.
 
 Réservé aux équatoriales allemande et à fourche. Même déroulement, mais le calcul force la cohérence avec le pôle mécanique de la monture. À utiliser quand la mise en station polaire est le référence, et que vous voulez un modèle qui ne « tord » pas le pôle. Le départ est encore **Home** ou **Étoile**.
 
 ### Depuis un ordinateur
 
-**Ordinateur Alignement** attend les étoiles envoyées par l'application ou par un logiciel via le protocole. L'écran passe en **Align. distant** et affiche le nom de l'étoile demandée. Le recentrage et l'appui long sur Shift restent faits à la raquette, au centre de l'oculaire.
+**Ordinateur Alignement** active l'alignement par synchro et prend la pose actuelle pour la maison : le tube doit déjà y être. L'ordinateur fait le reste. Rien ne recentre l'étoile, ni à la raquette ni depuis l'ordinateur.
+
+Pour chacune de deux étoiles :
+
+1. Commandez un goto. Un goto équatorial et un goto altazimutal conviennent tous les deux.
+2. Faites la résolution astrométrique.
+3. Synchronisez sur l'ascension droite et la déclinaison résolues. Synchronisez sur ces coordonnées résolues même lorsqu'elles diffèrent de celles envoyées au goto. C'est cette différence que le modèle mesure. Une synchro qui garde les coordonnées du goto perd le résidu.
+
+La première synchro ancre les axes sur la position résolue. La seconde construit le modèle à partir de l'endroit où la monture s'est arrêtée et de l'endroit où la résolution place le ciel. **Sauver** écrit le modèle.
+
+Une synchro ensuite ne corrige que le pointage courant, par exemple après une nouvelle résolution. Elle n'efface pas le modèle. Relancer **Ordinateur Alignement**, ou **Effacer**, le réinitialise.
+
+Si **Erreur monture** est sur **ON** et si **Cone** ou **Perp** n'est pas nul, cet alignement par synchro tient les deux nombres et mesure encore le pôle, comme **2 Étoiles**. **4 étoiles** et **3+3 étoiles** sont les procédures à la raquette décrites plus haut. **Ordinateur Alignement** ne les lance pas.
+
+Quand un logiciel conduit au contraire une session étoile par étoile, l'écran passe en **Align. distant** et affiche le nom de l'étoile demandée. Le recentrage et l'appui long sur Shift se font alors à la raquette.
 
 ### Quelle paire d'étoiles
 
@@ -820,7 +854,7 @@ Le pont TCP écoute le port **9999** et transporte le même dialogue que le câb
 
 L'application reprend le tableau de bord, le planétarium, le goto et l'alignement. Le pilote ASCOM ouvre TeenAstro à Stellarium, Cartes du Ciel, NINA, et aux autres clients ASCOM sous Windows.
 
-Une page web de l'interface permet de saisir les réseaux et le mot de passe sans passer par la raquette. L'adresse est celle affichée par **Montre IP**.
+Une page web de l'interface permet de saisir les réseaux et le mot de passe sans passer par la raquette. L'adresse est celle affichée par **Montre IP**. La page monture de ce site place **Mount error** au-dessus de la réfraction : voir le chapitre 7.
 
 ### SkySafari
 
@@ -982,7 +1016,7 @@ Les lignes entre parenthèses n'apparaissent que dans le cas indiqué.
 - Goto — Catalogues, Système Solaire, Coordonnées, Déf. par Util., Home, Parc, Retournement
 - (codeurs) Pushto — Catalogues, Système Solaire, Coordonnées, Déf. par Util.
 - Synchro — comme le goto, sans Retournement
-- Aligner — 2 Étoiles, (équatoriale) 2 étoiles méca., Ordinateur Alignement, puis Sauver, Effacer, Show align. error
+- Aligner — 2 Étoiles, 4 étoiles, 3+3 étoiles, (équatoriale) 2 étoiles méca., Ordinateur Alignement, Erreur monture ; une fois le modèle enregistré, aussi Sauver, Effacer, Show align. error (Erreur monture reste en dernier)
 - Verif. engren.
 - Suivi
 - Côté du Pilier
@@ -997,7 +1031,7 @@ Les lignes entre parenthèses n'apparaissent que dans le cas indiqué.
 - Param. Raquette — Privilèges, Écran, Vitesse Boutons, Ergonomie, Reset
 - Heure & Site — Heure (Horloge, Fuseau, Date, Heure GNSS), Site, Synchro GNSS
 - Parc et Maison — Déf. Pos. Parc, Déf Pos. Maison, Reset Pos. Maison
-- Monture — Monture, Type de Monture, Moteurs, Encodeurs, Limites, Réfraction, Réticule
+- Monture — Monture, Type de Monture, Moteurs, Encodeurs, Limites, Erreur monture, Réfraction, Réticule
 - Info Unité Princip. — Affichage Version, Redémarrage, Réinit. Usine
 - Wifi
 
@@ -1058,3 +1092,55 @@ Exemple : réduction 360, moteur 200 pas, 16 micropas → 11,25" par micropas. C
 - Manuel FS2, pour l'esprit d'origine : [anleit_f.pdf](https://www.astro-electronic.de/anleit_f.pdf), Astro-Electronic, Michael Koch.
 
 Les cartes, les tensions d'alimentation et les faisceaux moteurs ne sont pas les mêmes d'une version à l'autre. Pour le câblage, partez de la page de votre carte dans le wiki, puis revenez ici pour l'usage.
+
+---
+
+## Annexe E. Changements depuis la version 1.6.0
+
+Le firmware 1.6.0 est la première version de cette génération. Le fichier Lisez-moi du pilote ASCOM, installé avec le pilote, décrit le passage de 1.5 à 1.6. Cette annexe liste ce qui a changé ensuite, jusqu'au firmware 1.6.9 et au pilote ASCOM correspondant.
+
+### 1.6.1
+
+- Pendant un goto, la raquette distingue un pointage équatorial, un pointage altazimutal et un retournement au méridien.
+- La page de réglage Wi-Fi ne déborde plus, et le serveur web est plus stable.
+- La sonde de température du focuser démarre de façon fiable. Le focuser ASCOM signale une sonde absente sans faire planter le logiciel.
+- Le réglage ASCOM peut lire et écrire la configuration du télescope et du focuser enregistrée dans la monture.
+
+### 1.6.2 à 1.6.4
+
+- Les noms d'étoiles des catalogues sont enregistrés et affichés correctement. Les textes longs de la raquette ont été raccourcis pour tenir sur l'écran.
+- Les goto vers le parc et vers la position de repos vont au bout. Si un ordinateur lance un alignement, la raquette l'affiche.
+- La raquette indique le mode Wi-Fi en cours, et le point d'accès démarre de façon fiable.
+- Les vitesses de suivi voyagent en pleine précision. MoveAxis utilise la vitesse maximale effective de la monture.
+- Le guidage est indiqué dans l'état de la monture, pour qu'un logiciel voie qu'une impulsion de guidage est en cours.
+- Les coordonnées de goto ASCOM font l'aller-retour avec plus de précision. Une liaison série ou Wi-Fi coupée est retentée. L'inversion des moteurs utilise les réglages documentés.
+- L'application TeenAstro a gagné le planétarium, la vue de nuit, J2000 et JNow, et les filtres de catalogues.
+
+### 1.6.5
+
+- L'unité principale et la raquette ont été alignées sur le même numéro de version. Pas de nouveau geste de nuit.
+
+### 1.6.6
+
+- Un goto de retournement au méridien peut aller au bout, le suivi reprend ensuite, et le sens du méridien correspond à la monture.
+- L'alignement polaire mécanique (**2 Stars Mech.**) est une procédure à part et se termine par sa propre confirmation.
+- Le Wi-Fi en mode station garde la liaison. Enregistrer un réglage sur la page web ramène à cette page.
+- La raquette plante moins souvent pendant une longue séance.
+
+### 1.6.7
+
+- Le contrôle d'engrenage sur la raquette, pour une monture équatoriale ou altazimutale, affiche le rapport mesuré.
+- La limite sous le pôle est corrigée. Un goto qui franchirait une limite est refusé. Abandonner un alignement restaure le modèle précédent.
+- L'angle horaire reste dans une plage fixe, y compris à l'ouest du méridien, pour qu'un ordinateur ne rejette pas la réponse.
+- Le GNSS n'accepte une heure que lorsque les positions concordent, et une synchro silencieuse ne dérange pas la séance.
+- Le défilement des catalogues est plus rapide, et un point-virgule dans un nom ne corrompt plus la liste. Les pages de configuration s'ouvrent plus vite. Les formulaires web peuvent à nouveau être envoyés.
+- ASCOM peut chercher la position de repos.
+
+### 1.6.9
+
+- L'arrêt d'un MoveAxis ralentit avec l'accélération réglée. Le suivi continue sur l'axe qui n'est pas déplacé. Une vitesse nulle arrête toujours. Une vitesse au-dessus du maximum est refusée.
+- SharpCap et les autres logiciels affichent à nouveau les vitesses MoveAxis, dont 0,25°/s et 0,5°/s. Le pilote utilise les multiples de la vitesse sidérale, la même unité que le pilote 1.5.
+- Les vitesses, les coordonnées et les ports ASCOM utilisent un point décimal fixe, pour qu'un Windows français ou allemand ne modifie pas les commandes.
+- La raquette guide **2 étoiles**, **4 étoiles** et **3+3 étoiles**. Quatre étoiles sur un côté de pilier mesurent la perpendicularité. Le 3+3 mesure le cône et la perpendicularité seulement quand chaque côté a trois étoiles.
+- **Erreur de monture**, au-dessus de la réfraction, conserve un cône et une perpendicularité déjà connus pendant un alignement à deux étoiles et pendant une synchro de plate-solve.
+- Le bouton **Auto** de l'uploader détecte le télescope ou le focuser connecté et flashe le fichier correspondant.

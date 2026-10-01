@@ -1,5 +1,6 @@
 using ASCOM.Utilities;
 using System;
+using System.Globalization;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -40,7 +41,7 @@ namespace ASCOM.TeenAstro.Focuser
 
       chkTrace.Checked = tl.Enabled;
       TextBoxIP.Text = FocuserHardware.IP;
-      TextBoxPort.Text = FocuserHardware.Port.ToString();
+      TextBoxPort.Text = FocuserHardware.Port.ToString(CultureInfo.InvariantCulture);
       RadioButtonSP.Checked = FocuserHardware.Interface == "COM";
       RadioButtonIP.Checked = FocuserHardware.Interface == "IP";
 
@@ -72,7 +73,7 @@ namespace ASCOM.TeenAstro.Focuser
       else if (RadioButtonIP.Checked)
       {
         FocuserHardware.IP = TextBoxIP.Text;
-        if (short.TryParse(TextBoxPort.Text, out short p))
+        if (short.TryParse(TextBoxPort.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out short p))
           FocuserHardware.Port = p;
         FocuserHardware.Interface = "IP";
       }
@@ -143,7 +144,7 @@ namespace ASCOM.TeenAstro.Focuser
       else if (RadioButtonIP.Checked)
       {
         FocuserHardware.IP = TextBoxIP.Text;
-        if (short.TryParse(TextBoxPort.Text, out short p))
+        if (short.TryParse(TextBoxPort.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out short p))
           FocuserHardware.Port = p;
         FocuserHardware.Interface = "IP";
       }

@@ -27,7 +27,7 @@ Full documentation in **Markdown**. Use the repo as the navigation basis: open a
 | [math/README.md](math/README.md) | Math libraries index |
 | [Linear algebra (LA3)](math/la3.md) | Vectors, matrices, rotations, Euler angles, refraction, SVD |
 | [Coordinate systems](math/coord.md) | EQ, HO, IN, LO and conversion formulas |
-| [Alignment (CoordConv)](math/alignment.md) | Taki method, SVD correction, firmware integration |
+| [Alignment (CoordConv)](math/alignment.md) | Taki method, known cone and perpendicularity, rigid 4-star and 3+3, SVD correction |
 
 ### Firmware
 

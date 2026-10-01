@@ -125,6 +125,37 @@ void TeenAstroWifi::handleConfigurationMount()
     data += "</select> Enable Encoders</form><br/>\r\n";
     sendHtml(data);
 
+    {
+      bool kOn = false;
+      double kPerp = 0;
+      double kCone = 0;
+      s_client->getKnownGeomUse(kOn);
+      s_client->getKnownPerp(kPerp);
+      s_client->getKnownCone(kCone);
+      data += "<div class='bt'>Mount error</div>";
+      data += "<form method='get' action='/configuration_mount.htm'>";
+      data += "<select name='kgeom' onchange='this.form.submit()' style='width:100%;max-width:11em'>";
+      data += kOn
+        ? "<option value='0'>Off</option><option selected value='1'>On</option>"
+        : "<option selected value='0'>Off</option><option value='1'>On</option>";
+      data += "</select> Hold cone and perpendicularity</form><br/>\r\n";
+      sprintf(temp,
+        "<form method='get' action='/configuration_mount.htm'>"
+        " <input value='%.3f' type='number' name='cone' min='-5' max='5' step='0.001'>"
+        "<button type='submit'>Upload</button>"
+        " (Cone, in degrees +/- 5)"
+        "</form>\r\n", kCone);
+      data += temp;
+      sprintf(temp,
+        "<form method='get' action='/configuration_mount.htm'>"
+        " <input value='%.3f' type='number' name='pole_perp' min='-5' max='5' step='0.001'>"
+        "<button type='submit'>Upload</button>"
+        " (Perpendicularity, in degrees +/- 5)"
+        "</form>\r\n", kPerp);
+      data += temp;
+      sendHtml(data);
+    }
+
     data += FPSTR(html_configRefraction);
     if (!ta_MountStatus.isAltAz())
     {
@@ -143,24 +174,6 @@ void TeenAstroWifi::handleConfigurationMount()
       refrGoto ? data += FPSTR(html_optOnSel) : data += FPSTR(html_optOnUnsel);
       !refrGoto ? data += FPSTR(html_optOffSel) : data += FPSTR(html_optOffUnsel);
       data += "</select> Consider Refraction for Goto and Sync</form><br/>\r\n";
-      sendHtml(data);
-    }
-
-    {
-      bool kOn = false;
-      double kPerp = 0;
-      s_client->getKnownGeomUse(kOn);
-      s_client->getKnownPerp(kPerp);
-      data += "<div class='bt'>Known errors for 2-star alignment</div>";
-      data += "<form method='get' action='/configuration_mount.htm'>";
-      data += "<select name='kgeom' style='width:100%;max-width:11em'>";
-      data += kOn
-        ? "<option value='0'>Off</option><option selected value='1'>On</option>"
-        : "<option selected value='0'>Off</option><option value='1'>On</option>";
-      data += "</select> Hold perpendicularity fixed<br/>\r\n";
-      sprintf(temp, "Perp <input name='pole_perp' type='number' step='0.001' min='-5' max='5' value='%.3f' style='width:6em'> deg<br/>\r\n", kPerp);
-      data += temp;
-      data += "<button type='submit'>Upload</button> (a 2-star alignment still measures the pole)</form><br/>\r\n";
       sendHtml(data);
     }
   }
@@ -246,21 +259,30 @@ bool TeenAstroWifi::processConfigurationMountGet()
       i == 1 ? s_client->enableGoTo(true) : s_client->enableGoTo(false);
   }
 
-  // Only the known-errors form posts kgeom, so the other selects on this page
-  // do not wipe the stored pole and perpendicularity.
+  // Each mount-error row is its own form, so a cone upload does not rewrite
+  // the perpendicularity, and the other selects on this page do not touch them.
   v = server.arg("kgeom");
   if (v != "")
   {
     any = true;
     if ((atoi2((char*)v.c_str(), &i)) && (i == 0 || i == 1))
       s_client->setKnownGeomUse(i == 1);
-    String a = server.arg("pole_perp");
-    if (a != "")
-    {
-      const double d = atof(a.c_str());
-      if (d >= -5.0 && d <= 5.0)
-        s_client->setKnownPerp(d);
-    }
+  }
+  v = server.arg("cone");
+  if (v != "")
+  {
+    any = true;
+    const double d = atof(v.c_str());
+    if (d >= -5.0 && d <= 5.0)
+      s_client->setKnownCone(d);
+  }
+  v = server.arg("pole_perp");
+  if (v != "")
+  {
+    any = true;
+    const double d = atof(v.c_str());
+    if (d >= -5.0 && d <= 5.0)
+      s_client->setKnownPerp(d);
   }
 
   return any;

@@ -70,6 +70,9 @@ void processCommands();
 void Command_dollar();   // $
 void Command_ACK();      // <ACK>
 void Command_A();       // A  Alignment
+/// Two-star close-out shared by :A2# and alignment-by-sync (:AA# then :CM#/:CS#).
+/// Holds a non-zero stored cone or perpendicularity; otherwise the classic Taki fudge.
+void closeTwoStarAlignment(double latDeg);
 void Command_B();       // B  Reticule
 void Command_C();       // C  Sync
 void Command_D();       // D  Distance bars

@@ -462,7 +462,18 @@ void SmartHandController::menuKnownErrors()
     return;
 
   double d = 0;
+  float cone = 0.f;
   float perp = 0.f;
+  if (m_client->getKnownCone(d) == LX200_VALUEGET)
+    cone = (float)d;
+  if (!display->UserInterfaceInputValueFloat(&buttonPad, T_CONE, "", &cone, -5.f, 5.f, 6, 3, " deg"))
+    return;
+  if (m_client->setKnownCone(cone) != LX200_VALUESET)
+  {
+    DisplayMessage(T_LX200COMMAND, T_FAILED, -1);
+    return;
+  }
+  d = 0;
   if (m_client->getKnownPerp(d) == LX200_VALUEGET)
     perp = (float)d;
   if (!display->UserInterfaceInputValueFloat(&buttonPad, T_PERP, "", &perp, -5.f, 5.f, 6, 3, " deg"))

@@ -14,6 +14,7 @@ using ASCOM.LocalServer;
 using ASCOM.Utilities;
 using System;
 using System.Collections;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -1260,7 +1261,7 @@ namespace ASCOM.TeenAstro.Telescope
       {
         CheckConnected("DestinationSideOfPier");
         PierSide destinationSideOfPier = TelescopeHardware.DestinationSideOfPier(rightAscension, declination);
-        LogMessage("DestinationSideOfPier", $"RA: {rightAscension}, Dec: {declination} - {destinationSideOfPier}.");
+        LogMessage("DestinationSideOfPier", "RA: " + rightAscension.ToString(CultureInfo.InvariantCulture) + ", Dec: " + declination.ToString(CultureInfo.InvariantCulture) + " - " + destinationSideOfPier + ".");
         return destinationSideOfPier;
       }
       catch (Exception ex)
@@ -1513,7 +1514,7 @@ namespace ASCOM.TeenAstro.Telescope
       try
       {
         CheckConnected("MoveAxis");
-        LogMessage("MoveAxis", $"Calling method - Axis: {axis}, Rate: {rate}.");
+        LogMessage("MoveAxis", "Calling method - Axis: " + axis + ", Rate: " + rate.ToString(CultureInfo.InvariantCulture) + ".");
         TelescopeHardware.MoveAxis(axis, rate);
         LogMessage("MoveAxis", $"Completed.");
       }
@@ -1857,7 +1858,7 @@ namespace ASCOM.TeenAstro.Telescope
       try
       {
         CheckConnected("SlewToAltAz");
-        LogMessage("SlewToAltAz", $"Calling method - Azimuth: {azimuth}, Altitude: {altitude}.");
+        LogMessage("SlewToAltAz", "Calling method - Azimuth: " + azimuth.ToString(CultureInfo.InvariantCulture) + ", Altitude: " + altitude.ToString(CultureInfo.InvariantCulture) + ".");
         TelescopeHardware.SlewToAltAz(azimuth, altitude);
         LogMessage("SlewToAltAz", $"Completed.");
       }
@@ -1881,7 +1882,7 @@ namespace ASCOM.TeenAstro.Telescope
       try
       {
         CheckConnected("SlewToAltAzAsync");
-        LogMessage("SlewToAltAzAsync", $"Calling method - Azimuth: {azimuth}, Altitude: {altitude}.");
+        LogMessage("SlewToAltAzAsync", "Calling method - Azimuth: " + azimuth.ToString(CultureInfo.InvariantCulture) + ", Altitude: " + altitude.ToString(CultureInfo.InvariantCulture) + ".");
         TelescopeHardware.SlewToAltAzAsync(azimuth, altitude);
         LogMessage("SlewToAltAzAsync", $"Completed.");
       }
@@ -1902,7 +1903,7 @@ namespace ASCOM.TeenAstro.Telescope
       try
       {
         CheckConnected("SlewToCoordinates");
-        LogMessage("SlewToCoordinates", $"Calling method - RightAscension: {rightAscension}, Declination: {declination}.");
+        LogMessage("SlewToCoordinates", "Calling method - RightAscension: " + rightAscension.ToString(CultureInfo.InvariantCulture) + ", Declination: " + declination.ToString(CultureInfo.InvariantCulture) + ".");
         TelescopeHardware.SlewToCoordinates(rightAscension, declination);
         LogMessage("SlewToCoordinates", $"Completed.");
       }
@@ -1924,7 +1925,7 @@ namespace ASCOM.TeenAstro.Telescope
       try
       {
         CheckConnected("SlewToCoordinatesAsync");
-        LogMessage("SlewToCoordinatesAsync", $"Calling method - RightAscension: {rightAscension}, Declination: {declination}.");
+        LogMessage("SlewToCoordinatesAsync", "Calling method - RightAscension: " + rightAscension.ToString(CultureInfo.InvariantCulture) + ", Declination: " + declination.ToString(CultureInfo.InvariantCulture) + ".");
         TelescopeHardware.SlewToCoordinatesAsync(rightAscension, declination);
         LogMessage("SlewToCoordinatesAsync", $"Completed.");
       }
@@ -2009,7 +2010,7 @@ namespace ASCOM.TeenAstro.Telescope
       try
       {
         CheckConnected("SyncToAltAz");
-        LogMessage("SyncToAltAz", $"Calling method - Azimuth: {azimuth}, Altitude: {altitude}.");
+        LogMessage("SyncToAltAz", "Calling method - Azimuth: " + azimuth.ToString(CultureInfo.InvariantCulture) + ", Altitude: " + altitude.ToString(CultureInfo.InvariantCulture) + ".");
         TelescopeHardware.SyncToAltAz(azimuth, altitude);
         LogMessage("SyncToAltAz", $"Completed.");
       }
@@ -2028,7 +2029,7 @@ namespace ASCOM.TeenAstro.Telescope
       try
       {
         CheckConnected("SyncToCoordinates");
-        LogMessage("SyncToCoordinates", $"Calling method - RightAscension: {rightAscension}, Declination: {declination}.");
+        LogMessage("SyncToCoordinates", "Calling method - RightAscension: " + rightAscension.ToString(CultureInfo.InvariantCulture) + ", Declination: " + declination.ToString(CultureInfo.InvariantCulture) + ".");
         TelescopeHardware.SyncToCoordinates(rightAscension, declination);
         LogMessage("SyncToCoordinates", $"Completed.");
       }

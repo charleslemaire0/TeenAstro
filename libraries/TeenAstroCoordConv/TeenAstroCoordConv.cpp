@@ -225,15 +225,15 @@ void CoordConv::setPoleError(double latRad, double dAzRad, double dAltRad, doubl
   refs = 0;
 }
 
-bool CoordConv::alignTwoStarKnownPerp(double perpRad)
+bool CoordConv::alignTwoStarKnownGeom(double coneRad, double perpRad)
 {
   if (storedAxes < 2)
     return false;
 
-  // Take the known perpendicularity out of the two measured axes, then let the
-  // usual two-star build estimate the pole. The head keeps the perpendicularity
-  // so pointing puts it back on the real encoders.
-  HeadModel known(0.0, perpRad, 0.0);
+  // Take the known cone and perpendicularity out of the two measured axes, then
+  // let the usual two-star build estimate the pole. The head keeps both, so
+  // pointing puts them back on the real encoders.
+  HeadModel known(coneRad, perpRad, 0.0);
   HeadModel zero;
   double corr1[2], corr2[2];
   for (int i = 0; i < 2; i++)

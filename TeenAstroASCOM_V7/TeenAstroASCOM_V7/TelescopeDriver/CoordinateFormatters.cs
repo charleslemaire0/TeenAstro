@@ -29,7 +29,7 @@ namespace ASCOM.TeenAstro
     public static string DegtoDDDMMSS(double value)
     {
       DegtoDMS(value, out int d, out int m, out int s);
-      return d.ToString("000") + ":" + m.ToString("00") + ":" + s.ToString("00", CultureInfo.InvariantCulture);
+      return d.ToString("000", CultureInfo.InvariantCulture) + ":" + m.ToString("00", CultureInfo.InvariantCulture) + ":" + s.ToString("00", CultureInfo.InvariantCulture);
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ namespace ASCOM.TeenAstro
     public static string DegtoDDMMSS(double value)
     {
       DegtoDMS(value, out int d, out int m, out int s);
-      return d.ToString("00") + ":" + m.ToString("00") + ":" + s.ToString("00", CultureInfo.InvariantCulture);
+      return d.ToString("00", CultureInfo.InvariantCulture) + ":" + m.ToString("00", CultureInfo.InvariantCulture) + ":" + s.ToString("00", CultureInfo.InvariantCulture);
     }
 
     /// <summary>

@@ -835,11 +835,13 @@ namespace ASCOM.TeenAstro.Telescope
     /// <returns>Collection of <see cref="IRate" /> rate objects</returns>
     internal static IAxisRates AxisRates(TelescopeAxes Axis)
     {
-      // :GXRX# is EEPROM max; :GXR4# is the effective cap used by :M1#/:M2# (motor-corrected). Prefer GXR4 so ASCOM max matches MoveAxis.
-      double maxArcsec = 0;
-      if (TryGetDoubleCommand("GXR4", "AxisRates effective max (GXR4)", out maxArcsec) && maxArcsec > 0)
+      // :GXR4# and :GXRX# are sidereal-rate multiples (1 = sidereal), the same unit :M1#/:M2# use.
+      // AxisRates then publishes degrees/second as multiple * SiderealRate, which is what SharpCap
+      // uses for the 0.25°/s, 0.5°/s, … buttons. Prefer GXR4 (motor-corrected cap) over EEPROM GXRX.
+      double maxMultiple = 0;
+      if (TryGetDoubleCommand("GXR4", "AxisRates effective max (GXR4)", out maxMultiple) && maxMultiple > 0)
       {
-        SlewSpeeds = maxArcsec / (3600.0 * SiderealRate);
+        SlewSpeeds = maxMultiple;
         return new AxisRates(Axis, SlewSpeeds, SiderealRate);
       }
       double Speed = 0;
@@ -1376,35 +1378,26 @@ namespace ASCOM.TeenAstro.Telescope
         {
           throw new ASCOM.ParkedException();
         }
-        // Main Unit :M1#/:M2# expect rate in arcsec/s (deg/s * 3600).
-        // Firmware rejects if abs(rate) > guideRates[4] (integer); round toward zero to match Alpaca.
-        double rateArcsecPerSec = Rate * 3600.0;
-        int rateInt = rateArcsecPerSec >= 0
-          ? (int)Math.Floor(rateArcsecPerSec + 1e-9)
-          : (int)Math.Ceiling(rateArcsecPerSec - 1e-9);
-        double maxArcsecEff = 0;
-        if (TryGetDoubleCommand("GXR4", "MoveAxis max arcsec/s (GXR4)", out maxArcsecEff) && maxArcsecEff > 0)
+        // :M1#/:M2# expect sidereal-rate multiples, same as driver 1.5 (deg/s / sidereal deg/s).
+        double rateMultiple = Rate / SiderealRate;
+        double maxMultiple = 0;
+        if (TryGetDoubleCommand("GXR4", "MoveAxis max sidereal multiples (GXR4)", out maxMultiple) && maxMultiple > 0)
         {
           // Reject outside AxisRates (do not silently clamp — Conform expects InvalidValue).
-          if (Rate != 0.0 && Math.Abs(rateArcsecPerSec) > maxArcsecEff + 1e-3)
+          if (Rate != 0.0 && Math.Abs(rateMultiple) > maxMultiple + 1e-3)
           {
             throw new ASCOM.InvalidValueException("MoveAxis", Rate.ToString(CultureInfo.InvariantCulture),
-              "Rate must be within AxisRates (max " + (maxArcsecEff / 3600.0).ToString(CultureInfo.InvariantCulture) + " deg/s)");
-          }
-          int maxInt = (int)Math.Floor(maxArcsecEff + 0.5);
-          if (maxInt > 0)
-          {
-            if (rateInt > maxInt) rateInt = maxInt;
-            if (rateInt < -maxInt) rateInt = -maxInt;
+              "Rate must be within AxisRates (max " + (maxMultiple * SiderealRate).ToString(CultureInfo.InvariantCulture) + " deg/s)");
           }
         }
+        string rateText = rateMultiple.ToString("+0.0000000;-0.0000000", CultureInfo.InvariantCulture);
         if (Axis == TelescopeAxes.axisPrimary)
         {
-          cmd = "M1" + rateInt.ToString("+0;-0", CultureInfo.InvariantCulture);
+          cmd = "M1" + rateText;
         }
         else if (Axis == TelescopeAxes.axisSecondary)
         {
-          cmd = "M2" + rateInt.ToString("+0;-0", CultureInfo.InvariantCulture);
+          cmd = "M2" + rateText;
         }
         else
         {
@@ -1513,7 +1506,7 @@ namespace ASCOM.TeenAstro.Telescope
             dir = "Mgw";
             break;
         }
-        CommandBlind(dir + Duration, false);
+        CommandBlind(dir + Duration.ToString(CultureInfo.InvariantCulture), false);
         ForceGXASCacheRefresh();
         LogMessage("PulseGuide", dir + Duration + " done ");
       }
@@ -1755,7 +1748,7 @@ namespace ASCOM.TeenAstro.Telescope
       get
       {
         double lg = utilities.DMSToDegrees(CommandString("Ggf", false)) * -1;
-        LogMessage("Get SiteLongitude", lg.ToString("0.000000"));
+        LogMessage("Get SiteLongitude", lg.ToString("0.000000", CultureInfo.InvariantCulture));
         return lg;
       }
       set
@@ -1793,7 +1786,7 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
-        short time = Convert.ToInt16(CommandString("GXOS",false));
+        short time = short.Parse(CommandString("GXOS", false), CultureInfo.InvariantCulture);
         LogMessage("Get SlewSettleTime", time.ToString(CultureInfo.InvariantCulture));
         return time;
       }
@@ -2254,7 +2247,7 @@ namespace ASCOM.TeenAstro.Telescope
           int d = gxasState.UtcDay;
           var utcDate__1 = new DateTime(y, m, d,
             gxasState.UtcHour, gxasState.UtcMin, gxasState.UtcSec, DateTimeKind.Utc);
-          LogMessage("Get UTCDate", string.Format("Get - {0}", utcDate__1));
+          LogMessage("Get UTCDate", string.Format(CultureInfo.InvariantCulture, "Get - {0:u}", utcDate__1));
           return utcDate__1;
         }
         catch (ASCOM.NotConnectedException)
@@ -2740,7 +2733,7 @@ namespace ASCOM.TeenAstro.Telescope
         tl.Enabled = Convert.ToBoolean(driverProfile.GetValue(DriverProgId, traceStateProfileName, string.Empty, traceStateDefault));
         comPort = driverProfile.GetValue(DriverProgId, comPortProfileName, string.Empty, comPortDefault);
         IP = driverProfile.GetValue(DriverProgId, IPProfileName, string.Empty, IPDefault);
-        Port = Convert.ToInt16(driverProfile.GetValue(DriverProgId, PortProfileName, string.Empty, PortDefault.ToString()));
+        Port = short.Parse(driverProfile.GetValue(DriverProgId, PortProfileName, string.Empty, PortDefault), CultureInfo.InvariantCulture);
         Interface = driverProfile.GetValue(DriverProgId, InterfaceProfileName, string.Empty, InterfaceDefault);
       }
     }
@@ -2756,7 +2749,7 @@ namespace ASCOM.TeenAstro.Telescope
         driverProfile.WriteValue(DriverProgId, traceStateProfileName, tl.Enabled.ToString());
         driverProfile.WriteValue(DriverProgId, comPortProfileName, comPort.ToString());
         driverProfile.WriteValue(DriverProgId, IPProfileName, IP.ToString());
-        driverProfile.WriteValue(DriverProgId, PortProfileName, Port.ToString());
+        driverProfile.WriteValue(DriverProgId, PortProfileName, Port.ToString(CultureInfo.InvariantCulture));
         driverProfile.WriteValue(DriverProgId, InterfaceProfileName, Interface.ToString());
       }
     }
@@ -2779,7 +2772,7 @@ namespace ASCOM.TeenAstro.Telescope
     /// <param name="args"></param>
     internal static void LogMessage(string identifier, string message, params object[] args)
     {
-      var msg = string.Format(message, args);
+      var msg = string.Format(CultureInfo.InvariantCulture, message, args);
       LogMessage(identifier, msg);
     }
     #endregion

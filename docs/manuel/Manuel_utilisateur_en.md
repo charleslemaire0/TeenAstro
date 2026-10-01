@@ -315,8 +315,17 @@ That is enough for a visual night if the mechanical polar alignment is already g
 | Motors | Mechanics, speeds, tracking |
 | Encoders | Position encoders |
 | Limits | Horizon, zenith, axes, meridian |
+| Mount error | Cone and perpendicularity held in a two-star alignment |
 | Refraction | See below |
 | Reticule | Polar-finder brightness, if that output is wired |
+
+**Mount error**: **Off** or **On**. When **On**, enter **Cone**, then **Perp**. Each value is in degrees, from −5 to +5, with three decimals.
+
+Leave it **Off** for the usual two-star alignment. Turn it **On** when the optical cone and the non-perpendicularity of the second axis are already known, from a previous **4 Stars** or **3+3 Stars** alignment, or from a measurement of the mechanics. A two-star alignment then holds both numbers and still measures the pole. The start screen says **Measures pole**. If both numbers are zero, nothing is held and the two-star alignment stays the usual one. **4 Stars**, **3+3 Stars**, and **2 Stars Mech.** ignore this setting.
+
+The same item is the last line of **Telescope Action → Align**.
+
+On the hand controller web page the card is labelled **Mount error** and sits above refraction. **Off** or **On** comes first; the text after the choice is “Hold cone and perpendicularity”. Cone and perpendicularity are each their own row: the value, **Upload**, then the name and the unit, in degrees, ±5. The web page is in English on every firmware.
 
 **Refraction → Goto**: ON or OFF. When on, atmospheric refraction is included in the slew (Saemundsson on the way out, Bennett on the way back).
 
@@ -615,19 +624,18 @@ Sync recenters the position. It does not build the alignment model: a single obj
 
 ## 15. Alignment
 
-Alignment computes the transform between the sky and the axes. The method is Taki's (two measured directions), completed by the nearest proper rotation in the least-squares sense. The result is a 3×3 matrix. It is used for pointing, sync, corrected tracking, and the altitude check.
+Alignment computes the transform between the sky and the axes. A two-star alignment uses Taki's method (two measured directions), completed by the nearest proper rotation in the least-squares sense. The result is a 3×3 matrix. It is used for pointing, sync, corrected tracking, and the altitude check. **4 Stars** and **3+3 Stars**, described below, can also measure the cone and the perpendicularity of the second axis.
 
 **Telescope Action → Align**
 
-While no model is stored, on an equatorial mount:
-
 - **2 Stars**
-- **2 Stars Mech.**
+- **4 Stars**
+- **3+3 Stars**
+- **2 Stars Mech.** (equatorial mounts)
 - **PC Alignment**
+- **Mount error**
 
-On an alt-azimuth mount, the mechanical line is not offered.
-
-Once a model is in place, **Save**, **Clear**, and **Show align. error** are added.
+On an alt-azimuth mount, **2 Stars Mech.** is not offered. **Mount error** stays the last line. Once a model is stored, **Save**, **Clear**, and **Show align. error** are inserted above it.
 
 ### 2 Stars, from home
 
@@ -650,13 +658,39 @@ If home is not reachable (the tube is already on the sky):
 3. **Sync** on a centered star. That star becomes the first reference.
 4. The procedure continues with the second star, as above.
 
+### Mount error during a 2-star alignment
+
+Set **Mount error** before you start, from this menu or from **Telescope Settings → Mount**. When it is **On** and at least one of **Cone** and **Perp** is not zero, the two stars still measure the pole and the axis index. Both numbers are kept, including a zero on the other line. They are not folded into the pole. The mode line on the start screen is **Measures pole** instead of **Alignment**.
+
+### 4 Stars
+
+From home, on one pier side. The screen says **Same pier side** and **Perpendicularity**. Confirm with **YES**. Four stars estimate the non-perpendicularity of the second axis. The cone is not estimated from a single pier side. The stored **Mount error** values are not used.
+
+### 3+3 Stars
+
+For a German or fork mount that can change pier side. The screen says **Flip after 3** and **Cone + perp**. Confirm with **YES**. Take three stars on one side, flip, then three on the other. The cone is estimated only when each side really contributed three stars. One star past the flip is not enough, and the cone stays unpublished until that split is met. The stored **Mount error** values are not used.
+
 ### 2 Stars Mech.
 
 Reserved for German equatorial and fork mounts. The same steps, but the calculation is forced to stay consistent with the mount's mechanical pole. Use it when polar alignment is the reference and you want a model that does not twist the pole. The start is still **Home** or **Star**.
 
 ### From a computer
 
-**PC Alignment** waits for stars sent by the app or by software through the protocol. The display switches to **Remote Align** and shows the name of the requested star. Recentering and the long press on Shift are still done on the hand controller, at the center of the eyepiece.
+**PC Alignment** turns on alignment-by-sync and treats the current pose as home, so the tube must already be there. The computer does the rest. Nothing recenters the star, neither on the hand controller nor from the computer.
+
+For each of two stars:
+
+1. Command a goto. An equatorial goto and an alt-azimuth goto both work.
+2. Plate-solve.
+3. Sync on the solved right ascension and declination. Sync on those solved coordinates even when they differ from the coordinates sent to the goto. That difference is what the model measures. A sync that still carries the goto coordinates throws the residual away.
+
+The first sync anchors the axes on the solved position. The second builds the model from where the mount stopped and where the solve says the sky is. **Save** writes the model.
+
+A sync after that only corrects the current pointing, for example after another plate solve. It does not clear the model. **PC Alignment** again, or **Clear**, does reset it.
+
+If **Mount error** is **On** and at least one of **Cone** and **Perp** is not zero, this sync alignment holds both numbers and still measures the pole, the same way as **2 Stars**. **4 Stars** and **3+3 Stars** are the hand-controller procedures above. **PC Alignment** does not start them.
+
+When software instead drives a star-by-star session, the display shows **Remote Align** and the name of the requested star. Recentering and the long press on Shift are then done on the hand controller.
 
 ### Which pair of stars
 
@@ -822,7 +856,7 @@ The TCP bridge listens on port **9999** and carries the same dialogue as the mai
 
 The app provides the dashboard, the planetarium, goto, and alignment. The ASCOM driver opens TeenAstro to Stellarium, Cartes du Ciel, NINA, and other ASCOM clients on Windows.
 
-A web page on the interface lets you enter networks and the password without using the hand controller. The address is the one shown by **Show IP**.
+A web page on the interface lets you enter networks and the password without using the hand controller. The address is the one shown by **Show IP**. The mount page on that site has **Mount error** above refraction: see chapter 7.
 
 ### SkySafari
 
@@ -984,7 +1018,7 @@ Lines in parentheses appear only in the case indicated.
 - Goto — Catalogs, Solar System, Coordinates, User Defined, Home, Park, Flip
 - (encoders) Pushto — Catalogs, Solar System, Coordinates, User Defined
 - Sync — same as goto, without Flip
-- Align — 2 Stars, (equatorial) 2 Stars Mech., PC Alignment, then Save, Clear, Show align. error
+- Align — 2 Stars, 4 Stars, 3+3 Stars, (equatorial) 2 Stars Mech., PC Alignment, Mount error; once a model is stored, also Save, Clear, Show align. error (Mount error stays last)
 - Gear Check
 - Tracking
 - Side of Pier
@@ -999,7 +1033,7 @@ Lines in parentheses appear only in the case indicated.
 - Hand Controller — Rights, Display, Button Speed, Ergonomics, Reset
 - Time & Site — Time (Clock, Time Zone, Date, GNSS Time), Site, Sync to GNSS
 - Park & Home — Set Park, Set Home, Reset Home
-- Mount — Mount, Mount type, Motors, Encoders, Limits, Refraction, Reticule
+- Mount — Mount, Mount type, Motors, Encoders, Limits, Mount error, Refraction, Reticule
 - Main Unit Info — Show Version, Reboot, Reset to Factory
 - Wifi
 
@@ -1060,3 +1094,55 @@ Example: gear 360, 200-step motor, 16 microsteps → 11.25" per microstep. That 
 - FS2 manual, for the original approach: [anleit_f.pdf](https://www.astro-electronic.de/anleit_f.pdf) (French) and the German edition on the same site, Astro-Electronic, Michael Koch.
 
 Boards, supply voltages, and motor harnesses are not the same from one version to the next. For wiring, start from your board's page in the wiki, then come back here for use.
+
+---
+
+## Appendix E. Changes since version 1.6.0
+
+Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme, installed with the driver, describes the jump from 1.5 to 1.6. This appendix lists what changed afterwards, through firmware 1.6.9 and the matching ASCOM driver.
+
+### 1.6.1
+
+- During a goto, the hand controller can tell an equatorial slew, an alt-azimuth slew, and a meridian flip apart.
+- The Wi-Fi setup page no longer overflows, and the web server is more stable.
+- The focuser temperature sensor starts reliably. The ASCOM focuser reports a missing sensor without crashing the client.
+- The ASCOM setup can read and write the telescope and focuser settings stored in the mount.
+
+### 1.6.2 to 1.6.4
+
+- Catalog star names are stored and shown correctly. Long hand-controller texts were shortened so they fit the display.
+- Park and home gotos complete. If a computer starts an alignment, the hand controller shows that alignment.
+- The hand controller shows which Wi-Fi mode is active, and the access point comes up reliably.
+- Tracking rates travel at full precision. MoveAxis uses the mount's effective maximum slew rate.
+- Guiding is reported in the mount status, so a client can see that a guide pulse is in progress.
+- ASCOM goto coordinates round-trip more accurately. A dropped serial or Wi-Fi link is retried. Motor reverse uses the documented settings.
+- The TeenAstro app gained the planetarium, night view, J2000 and JNow, and catalog filters.
+
+### 1.6.5
+
+- The main unit and the hand controller were brought to the same version number. No new night-time action.
+
+### 1.6.6
+
+- A meridian-flip goto is allowed to finish, tracking starts again afterwards, and the meridian direction matches the mount.
+- Mechanical polar alignment (**2 Stars Mech.**) is its own procedure and is closed with its own confirmation.
+- Wi-Fi in station mode keeps the link. Saving a setting on the web page returns to that page.
+- The hand controller is less likely to crash during a long session.
+
+### 1.6.7
+
+- Gear check on the hand controller, for an equatorial or an alt-azimuth mount, shows the measured ratio.
+- The under-pole limit is corrected. A goto that would cross a limit is refused. Aborting an alignment restores the previous model.
+- Hour angle stays in a fixed range, including west of the meridian, so a computer does not reject the reply.
+- GNSS accepts a time fix only when the positions agree, and a quiet sync does not disturb the session.
+- Catalog scrolling is faster, and a semicolon inside a name no longer corrupts the list. Configuration pages load faster. Web forms can be submitted again.
+- ASCOM can find home.
+
+### 1.6.9
+
+- Stopping MoveAxis slows down with the configured acceleration. Tracking continues on the axis that is not being moved. A rate of zero always stops. A rate above the maximum is refused.
+- SharpCap and the other clients show the MoveAxis speeds again, including 0.25°/s and 0.5°/s. The driver uses sidereal-rate multiples, the same unit as driver 1.5.
+- ASCOM rates, coordinates, and port numbers use a fixed decimal point, so a French or German Windows does not change the commands.
+- The hand controller guides **2 Stars**, **4 Stars**, and **3+3 Stars**. Four stars on one pier side measure perpendicularity. 3+3 measures cone and perpendicularity only when each pier side has three stars.
+- **Mount error**, above Refraction, holds a known cone and perpendicularity during a two-star alignment and during a plate-solve sync.
+- The firmware uploader **Auto** button detects the connected telescope or focuser and flashes the matching file.

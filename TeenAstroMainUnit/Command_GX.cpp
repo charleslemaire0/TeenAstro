@@ -1001,6 +1001,7 @@ static void Command_GX_KnownGeom()
   {
   case 'z': sprintf(commandState.reply, "%f#", mount.alignment.knownPoleAz * toArc); break;
   case 'a': sprintf(commandState.reply, "%f#", mount.alignment.knownPoleAlt * toArc); break;
+  case 'c': sprintf(commandState.reply, "%f#", mount.alignment.knownCone * toArc); break;
   case 'p': sprintf(commandState.reply, "%f#", mount.alignment.knownPerp * toArc); break;
   case 'k': sprintf(commandState.reply, "%d#", mount.alignment.knownGeom ? 1 : 0); break;
   default:  replyLongUnknow(); break;
