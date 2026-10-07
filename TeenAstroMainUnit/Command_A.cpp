@@ -55,8 +55,8 @@ void alignmentPolarFinalizeFromCurrentTarget()
 }
 
 /// Parse an ",r<n>" suffix requesting a rigid six degree of freedom session.
-/// Returns the star count (COORDCONV_MIN_RIGID_STARS..COORDCONV_MAX_STARS) or 0
-/// when the suffix is absent. \p bad is set when the count is out of range.
+/// Returns the star count (COORDCONV_MIN_PROGRESSIVE_STARS..COORDCONV_MAX_STARS)
+/// or 0 when the suffix is absent. \p bad is set when the count is out of range.
 uint8_t parseRigidSuffix(const char *cmd, bool &bad)
 {
   bad = false;
@@ -69,7 +69,7 @@ uint8_t parseRigidSuffix(const char *cmd, bool &bad)
     return 0;
   }
   const uint8_t stars = (uint8_t)(n - '0');
-  if (stars < COORDCONV_MIN_RIGID_STARS || stars > COORDCONV_MAX_STARS)
+  if (stars < COORDCONV_MIN_PROGRESSIVE_STARS || stars > COORDCONV_MAX_STARS)
   {
     bad = true;
     return 0;
@@ -88,13 +88,24 @@ void alignmentFinalize(Coord_HO &HO_T, double Lat)
   // separate, and a set clustered in altitude can leave it with none at all;
   // in that case we must still fall back, or a long rigid session would end up
   // worse than the two star path it was meant to improve on.
+  // The "1" reply is sent only after this returns. alignSelectStarRigid() waits
+  // for that, because the fit is much slower than recording one more star.
   bool fitted = false;
-  if (al.isRigidSession() && al.conv.getStars() >= COORDCONV_MIN_RIGID_STARS)
+  const unsigned char nstars = al.conv.getStars();
+  if (al.isRigidSession() && nstars >= COORDCONV_MIN_PROGRESSIVE_STARS)
   {
-    // Up to six unknowns: T contributes three, the head at most three more. The
-    // two star Taki solution already seeded T, so it converges in a couple of
-    // iterations.
-    fitted = fitRigidAlignModel() && al.conv.hasHead();
+    // N>=4 closes with the one-shot rigid fit. A three-star session has no
+    // redundancy for that gate, so it closes with the progressive solver.
+    if (nstars >= COORDCONV_MIN_RIGID_STARS)
+      fitted = fitRigidAlignModel() && al.conv.hasHead();
+    else {
+      double rms = 0.0;
+      if (al.conv.fitProgressive(&rms, NULL, mount.refrOptForGoto()) && al.conv.hasHead()) {
+        al.rigidRmsArcsec = (float)(rms * RAD_TO_DEG * 3600.0);
+        al.hasRigid = true;
+        fitted = true;
+      }
+    }
   }
   if (!fitted)
     closeTwoStarAlignment(Lat);
@@ -114,7 +125,8 @@ void Command_A() {
   switch (commandState.command[1]) {
   case '0': {
     // :A0#  LX200 standard (alignment menu 0); :A0,2# two-star; :A0,m# mechanical pole (two-star + bolt pass)
-    // :A0,r<n># rigid six degree of freedom session with n=3..9 stars (TeenAstro extension)
+    // :A0,r<n># rigid six degree of freedom session with n=3..9 stars
+    // (TeenAstro extension; n=3 closes with fitProgressive)
     bool rigidBad = false;
     const uint8_t rigidStars = parseRigidSuffix(&commandState.command[2], rigidBad);
     if (rigidBad) {
@@ -219,6 +231,12 @@ void Command_A() {
     double newTargetHA = haRange(rtk.LST() * 15.0 - mount.targetCurrent.newTargetRA);
     double Lat = *localSite.latitude();
     Coord_EQ EQ_T(0, mount.targetCurrent.newTargetDec * DEG_TO_RAD, newTargetHA * DEG_TO_RAD);
+    // The retained star is the geometric place. Refraction is applied when the
+    // fit runs, from the temperature and pressure current then. The sync and
+    // the two-star seed stay in the apparent frame, which is the frame gotos use.
+    LA3::RefrOpt geometric = mount.refrOptForGoto();
+    geometric.use = false;
+    Coord_HO HO_raw = EQ_T.To_Coord_HO(Lat * DEG_TO_RAD, geometric);
     Coord_HO HO_T = EQ_T.To_Coord_HO(Lat * DEG_TO_RAD, mount.refrOptForGoto());
 
     const bool rigidSession = mount.alignment.isRigidSession();
@@ -243,15 +261,30 @@ void Command_A() {
     // through the two star pass. Feeding it more would restart it and leave T
     // rebuilt from an arbitrary pair.
     const bool seedTaki = !rigidSession || mount.alignment.conv.getStars() < 2;
-    mount.alignment.conv.addStar(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
+    mount.alignment.conv.addStar(HO_raw.direct_Az_S(), HO_raw.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
     if (seedTaki)
       mount.alignment.conv.addReference(HO_T.direct_Az_S(), HO_T.Alt(), IN_T.Axis1_direct(), IN_T.Axis2());
     if (rigidSession && starIdx < mount.alignment.alignRigidStars) {
-      // Still collecting. The first two stars already seeded T, so gotos work
-      // and the user can slew to the next star, but the model is not final.
-      mount.alignment.alignPhase   = ALIGN_SELECT;
-      mount.alignment.alignStarNum = starIdx + 1;
-      mount.alignment.hasValid = mount.alignment.conv.isReady();
+      // Still collecting. The first two stars seed T. Each later star is folded
+      // in before the next goto, so a mount that starts a long way off is not
+      // left on that first guess until the last star. Cone still waits for
+      // three stars on each pier side.
+      MountAlignment &al = mount.alignment;
+      if (al.conv.getStars() >= 3) {
+        double rms = 0.0;
+        if (al.conv.fitProgressive(&rms, 0, mount.refrOptForGoto())) {
+          al.rigidRmsArcsec = (float)(rms * RAD_TO_DEG * 3600.0);
+          al.hasRigid = al.conv.hasHead();
+          // Progressive T/head improve the next goto. Do not sync or shift
+          // stored stars: :GXAo stays in the encoder frame of each accept,
+          // and :AE# / close-out refits that frozen raw set with
+          // fitRigidModel. Syncing mid-session would move the motor origin
+          // and force every past star to be rewritten.
+        }
+      }
+      al.alignPhase   = ALIGN_SELECT;
+      al.alignStarNum = starIdx + 1;
+      al.hasValid = al.conv.isReady();
     } else if (mount.alignment.conv.isReady()) {
       const bool deferThird = !rigidSession && !mount.isAltAZ() && mount.alignment.alignNumStarsSession >= 3 && starIdx == 2;
       if (deferThird) {

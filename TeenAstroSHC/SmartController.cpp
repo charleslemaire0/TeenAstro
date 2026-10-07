@@ -251,6 +251,54 @@ void SmartHandController::getNextpage()
   }
 }
 
+bool SmartHandController::handleAlignRecenterSpeed()
+{
+  if (!ta_MountStatus.isAlignRecenter())
+    return false;
+  if (!(eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART))
+    return false;
+
+  const bool north = eventbuttons[1] == E_LONGPRESS || eventbuttons[1] == E_CLICK
+                  || eventbuttons[1] == E_LONGPRESSTART;
+  const bool south = eventbuttons[2] == E_LONGPRESS || eventbuttons[2] == E_CLICK
+                  || eventbuttons[2] == E_LONGPRESSTART;
+  // Shift alone: N/S stay free for recentering. Shift+N/S match normal night use.
+  const bool alone = eventbuttons[1] == E_NONE && eventbuttons[2] == E_NONE
+                  && eventbuttons[3] == E_NONE && eventbuttons[4] == E_NONE
+                  && eventbuttons[5] == E_NONE && eventbuttons[6] == E_NONE;
+#ifdef NO_SPEED_MENU
+  if (north) { increaseSpeed(true); time_last_action = millis(); return true; }
+  if (south) { increaseSpeed(false); time_last_action = millis(); return true; }
+  return false;
+#else
+  if (!(north || south || alone))
+    return false;
+  menuSpeedRate();
+  time_last_action = millis();
+  return true;
+#endif
+}
+
+void SmartHandController::acceptAlignStar()
+{
+  TeenAstroMountStatus::AlignReply reply = ta_MountStatus.addStar();
+  switch (reply)
+  {
+  case TeenAstroMountStatus::AlignReply::ALIR_FAILED1:
+    DisplayMessage(T_ALIGNMENT, T_FAILED "!", -1);
+    break;
+  case TeenAstroMountStatus::AlignReply::ALIR_FAILED2:
+    DisplayMessage(T_ALIGNMENT, T_WRONG "!", -1);
+    break;
+  case TeenAstroMountStatus::AlignReply::ALIR_DONE:
+    showAlignmentResult();
+    break;
+  case TeenAstroMountStatus::AlignReply::ALIR_ADDED:
+    DisplayMessage(T_STARADDED, "=>", 1000);
+    break;
+  }
+}
+
 void SmartHandController::updateAlign(bool moving)
 {
   if (ta_MountStatus.isRemoteAlign())
@@ -263,46 +311,10 @@ void SmartHandController::updateAlign(bool moving)
     {
       return;
     }
-    if (eventbuttons[0] == E_LONGPRESS || eventbuttons[0] == E_LONGPRESSTART)
-    {
-      if (eventbuttons[1] == E_LONGPRESS || eventbuttons[1] == E_CLICK || eventbuttons[1] == E_LONGPRESSTART)
-      {
-      #ifdef NO_SPEED_MENU
-        increaseSpeed(true);
-      #else
-        menuSpeedRate();
-      #endif
-        time_last_action = millis();
-      }
-      else if (eventbuttons[2] == E_LONGPRESS || eventbuttons[2] == E_CLICK || eventbuttons[2] == E_LONGPRESSTART)
-      {
-      #ifdef NO_SPEED_MENU
-        increaseSpeed(false);
-      #else
-        menuSpeedRate();
-      #endif
-        time_last_action = millis();
-      }
-    }
-    else if (eventbuttons[0] == E_CLICK && ta_MountStatus.isAlignRecenter())
-    {
-      TeenAstroMountStatus::AlignReply reply = ta_MountStatus.addStar();
-      switch (reply)
-      {
-      case TeenAstroMountStatus::AlignReply::ALIR_FAILED1:
-        DisplayMessage(T_ALIGNMENT, T_FAILED"!", -1);
-        break;
-      case TeenAstroMountStatus::AlignReply::ALIR_FAILED2:
-        DisplayMessage(T_ALIGNMENT, T_WRONG"!", -1);
-        break;
-      case TeenAstroMountStatus::AlignReply::ALIR_DONE:
-        showAlignmentResult();
-        break;
-      case TeenAstroMountStatus::AlignReply::ALIR_ADDED:
-        DisplayMessage(T_STARADDED, "=>", 1000);
-        break;
-      }
-    }
+    if (handleAlignRecenterSpeed())
+      return;
+    if (eventbuttons[0] == E_CLICK && ta_MountStatus.isAlignRecenter())
+      acceptAlignStar();
     return;
   }
 
@@ -340,6 +352,8 @@ void SmartHandController::updateAlign(bool moving)
       DisplayMessage(T_SELECTION, T_ABORTED, -1);
       m_client->alignAbort();
       ta_MountStatus.stopAlign();
+      m_alignResumeIndex = -1;
+      m_alignPicked = 0;
       return;
     }
     else
@@ -355,26 +369,10 @@ void SmartHandController::updateAlign(bool moving)
   {
     return;
   }
-  else if (eventbuttons[0] == E_CLICK && ta_MountStatus.isAlignRecenter())
-  {
-    TeenAstroMountStatus::AlignReply reply = ta_MountStatus.addStar();
-    switch (reply)
-    {
-    case TeenAstroMountStatus::AlignReply::ALIR_FAILED1:
-      DisplayMessage(T_ALIGNMENT, T_FAILED"!", -1);
-      break;
-    case TeenAstroMountStatus::AlignReply::ALIR_FAILED2:
-      DisplayMessage(T_ALIGNMENT, T_WRONG"!", -1);
-      break;
-    case TeenAstroMountStatus::AlignReply::ALIR_DONE:
-      showAlignmentResult();
-      break;
-    case TeenAstroMountStatus::AlignReply::ALIR_ADDED:
-      DisplayMessage(T_STARADDED, "=>", 1000);
-      break;
-    }
-  }
-  return;
+  if (handleAlignRecenterSpeed())
+    return;
+  if (eventbuttons[0] == E_CLICK && ta_MountStatus.isAlignRecenter())
+    acceptAlignStar();
 }
 
 void SmartHandController::updatePushing(bool moving)
@@ -597,7 +595,14 @@ void SmartHandController::manualMove(bool &moving)
       m_client->stopSlew();
       time_last_action = millis();
       display->sleepOff();
+      const bool wasAligning = ta_MountStatus.isAligning();
       ta_MountStatus.backStepAlign();
+      if (wasAligning && ta_MountStatus.isAlignSelect())
+      {
+        // Reopen the star list on the star whose goto was broken.
+        m_alignResumeIndex = cat_mgr.getIndex();
+        dropAlignStar();
+      }
       return;
     }
   }

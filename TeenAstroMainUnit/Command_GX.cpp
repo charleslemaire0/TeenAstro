@@ -261,11 +261,11 @@ static void Command_GX_AllState()
 // ---- GX Alignment  :GXAn# --------------------------------------------------
 static void Command_GX_Alignment()
 {
+  // Always expose the live T, including mid-session progressive updates.
+  // hasValid gates whether the model is "user finished"; gotos and
+  // instrument-frame test injection still need the current matrix.
   float t11 = 0.f, t12 = 0.f, t13 = 0.f, t21 = 0.f, t22 = 0.f, t23 = 0.f, t31 = 0.f, t32 = 0.f, t33 = 0.f;
-  if (mount.alignment.hasValid)
-  {
-    mount.alignment.conv.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
-  }
+  mount.alignment.conv.getT(t11, t12, t13, t21, t22, t23, t31, t32, t33);
   switch (commandState.command[3])
   {
   case '0': sprintf(commandState.reply, "%f#", t11); break;
@@ -284,12 +284,15 @@ static void Command_GX_Alignment()
   case 'c':
   case 'p':
   case 'i': {
-    // :GXAc# :GXAp# :GXAi#  Rigid head geometry in arcseconds: optical axis cone
-    // error, axis2 non-perpendicularity, axis2 index. Zero unless a rigid
+    // :GXAc# :GXAp# :GXAi#  Rigid head in arcseconds, TPOINT signs:
+    // CH (collimation), NP (non-perpendicularity), ID (declination index).
+    // NP is the opposite of the internal perp rotation. Zero unless a rigid
     // session (:A0,r<n>#) was completed. TeenAstro extension.
     float hcone = 0.f, hperp = 0.f, hidx2 = 0.f;
     mount.alignment.conv.getHead(hcone, hperp, hidx2);
-    const float sel = commandState.command[3] == 'c' ? hcone : (commandState.command[3] == 'p' ? hperp : hidx2);
+    float sel = commandState.command[3] == 'c' ? hcone : (commandState.command[3] == 'p' ? hperp : hidx2);
+    if (commandState.command[3] == 'p')
+      sel = -sel;
     sprintf(commandState.reply, "%f#", sel * (float)RAD_TO_DEG * 3600.f);
   } break;
   case 'r':
@@ -300,6 +303,23 @@ static void Command_GX_Alignment()
     // :GXAn#  Stars collected in the current/last alignment session. TeenAstro extension.
     sprintf(commandState.reply, "%d#", (int)mount.alignment.conv.getStars());
     break;
+  case 'o': {
+    // :GXAo,<n>#  Retained star n (1-based): geometric az_S, alt, axis1Direct,
+    // axis2 in degrees. Same frame the fit stores. TeenAstro extension.
+    if (commandState.command[4] != ',' || commandState.command[5] < '1'
+        || commandState.command[5] > '9' || commandState.command[6] != 0) {
+      replyLongUnknow();
+      break;
+    }
+    const unsigned char idx = (unsigned char)(commandState.command[5] - '1');
+    double azS = 0, alt = 0, ax1 = 0, ax2 = 0;
+    if (!mount.alignment.conv.getStar(idx, azS, alt, ax1, ax2)) {
+      replyLongUnknow();
+      break;
+    }
+    sprintf(commandState.reply, "%0.8f,%0.8f,%0.8f,%0.8f#",
+            azS * RAD_TO_DEG, alt * RAD_TO_DEG, ax1 * RAD_TO_DEG, ax2 * RAD_TO_DEG);
+  } break;
   case 'b': {
     // :GXAb#  Retained stars on each pier side, "in,out#". "in" is axis2 inside
     // +/-90 deg, "out" is beyond the pole. Cone needs at least
@@ -335,6 +355,13 @@ static void Command_GX_Alignment()
     else if (commandState.command[3] == 'w')
       sel = PE_POL_W;
     double valDeg = mount.alignment.conv.polErrorDeg(latRad, sel);
+    // :GXAa# is Wallace ME. The horizontal altitude error has the opposite sign.
+    // :GXAz# is Wallace MA. The stored tilt is the azimuth rotation of the
+    // wedge; MA is that tilt times cos(latitude).
+    if (sel == PE_EQ_ALT)
+      valDeg = -valDeg;
+    else if (sel == PE_EQ_AZ)
+      valDeg *= cos(latRad);
     doubleToDms(commandState.reply, &valDeg, false, true, true);
     strcat(commandState.reply, "#");
   } break;
@@ -999,10 +1026,14 @@ static void Command_GX_KnownGeom()
   const double toArc = (double)RAD_TO_DEG * 3600.0;
   switch (commandState.command[3])
   {
-  case 'z': sprintf(commandState.reply, "%f#", mount.alignment.knownPoleAz * toArc); break;
-  case 'a': sprintf(commandState.reply, "%f#", mount.alignment.knownPoleAlt * toArc); break;
+  case 'z': {
+    // Stored angle is the azimuth tilt of the wedge. The wire value is Wallace MA.
+    const double latRad = *localSite.latitude() * DEG_TO_RAD;
+    sprintf(commandState.reply, "%f#", mount.alignment.knownPoleAz * cos(latRad) * toArc);
+  } break;
+  case 'a': sprintf(commandState.reply, "%f#", -mount.alignment.knownPoleAlt * toArc); break;
   case 'c': sprintf(commandState.reply, "%f#", mount.alignment.knownCone * toArc); break;
-  case 'p': sprintf(commandState.reply, "%f#", mount.alignment.knownPerp * toArc); break;
+  case 'p': sprintf(commandState.reply, "%f#", -mount.alignment.knownPerp * toArc); break;
   case 'k': sprintf(commandState.reply, "%d#", mount.alignment.knownGeom ? 1 : 0); break;
   default:  replyLongUnknow(); break;
   }

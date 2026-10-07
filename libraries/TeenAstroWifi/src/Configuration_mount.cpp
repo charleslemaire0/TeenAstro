@@ -138,19 +138,19 @@ void TeenAstroWifi::handleConfigurationMount()
       data += kOn
         ? "<option value='0'>Off</option><option selected value='1'>On</option>"
         : "<option selected value='0'>Off</option><option value='1'>On</option>";
-      data += "</select> Hold cone and perpendicularity</form><br/>\r\n";
+      data += "</select> Hold CH and NP</form><br/>\r\n";
       sprintf(temp,
         "<form method='get' action='/configuration_mount.htm'>"
         " <input value='%.3f' type='number' name='cone' min='-5' max='5' step='0.001'>"
         "<button type='submit'>Upload</button>"
-        " (Cone, in degrees +/- 5)"
+        " (CH, collimation, degrees +/- 5)"
         "</form>\r\n", kCone);
       data += temp;
       sprintf(temp,
         "<form method='get' action='/configuration_mount.htm'>"
         " <input value='%.3f' type='number' name='pole_perp' min='-5' max='5' step='0.001'>"
         "<button type='submit'>Upload</button>"
-        " (Perpendicularity, in degrees +/- 5)"
+        " (NP, non-perpendicularity, degrees +/- 5)"
         "</form>\r\n", kPerp);
       data += temp;
       sendHtml(data);

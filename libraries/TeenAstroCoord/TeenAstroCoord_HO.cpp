@@ -63,9 +63,9 @@ Coord_IN Coord_HO::To_Coord_IN(const double(&missaligment)[3][3])
   return Coord_IN(axis3, axis2, -direct_axis1);
 };
 
-Coord_IN Coord_HO::To_Coord_IN(const double(&missaligment)[3][3], const HeadModel &head)
+Coord_IN Coord_HO::To_Coord_IN(const double(&missaligment)[3][3], const HeadModel &head, bool beyondPole)
 {
-  if (head.isZero())
+  if (head.isZero() && !beyondPole)
     return To_Coord_IN(missaligment);
 
   double axis3, axis2, direct_axis1;
@@ -79,15 +79,27 @@ Coord_IN Coord_HO::To_Coord_IN(const double(&missaligment)[3][3], const HeadMode
   LA3::getMultipleRotationMatrix(tmp1, rots, 3);
   LA3::multiply(tmp2, tmp1, missaligment);
 
-  // Ideal (zero head) solution first: it fixes which of the two valid mount
-  // configurations we stay on, so pier side and beyond the pole behaviour match
-  // the overload without a head model.
+  // Ideal (zero head) solution first: it supplies the axis2 hint that picks
+  // which of the two valid mount configurations we stay on.
   LA3::getEulerRxRyRz(tmp2, axis3, axis2, direct_axis1);
+  const double hint = beyondPole ? (M_PI - axis2) : axis2;
+
+  if (head.isZero())
+  {
+    // Beyond-pole Euler for a zero head: same pointing, axis2 mirrored through
+    // the pole and axis1 advanced half a turn — matches angle2Step(POLE_OVER).
+    if (!beyondPole)
+      return Coord_IN(axis3, axis2, -direct_axis1);
+    double wrap1 = direct_axis1 + M_PI;
+    while (wrap1 > M_PI) wrap1 -= 2.0 * M_PI;
+    while (wrap1 <= -M_PI) wrap1 += 2.0 * M_PI;
+    return Coord_IN(axis3, M_PI - axis2, -wrap1);
+  }
 
   // The pointing direction is the first row of the instrument frame matrix.
   const double d[3] = { tmp2[0][0], tmp2[0][1], tmp2[0][2] };
   double headAxis1Direct, headAxis2;
-  if (!HeadGeom::inverse(d, head, axis2, headAxis1Direct, headAxis2))
+  if (!HeadGeom::inverse(d, head, hint, headAxis1Direct, headAxis2))
     return Coord_IN(axis3, axis2, -direct_axis1);  // unreachable with this head, keep the ideal solution
 
   axis3 = HeadGeom::fieldRotation(tmp2, headAxis1Direct, headAxis2, head);

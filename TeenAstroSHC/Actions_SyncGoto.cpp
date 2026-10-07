@@ -260,13 +260,34 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalog(NAV mode, int 
   return MR_CANCEL;
 }
 
-SmartHandController::MENU_RESULT SmartHandController::menuCatalogAlign(NAV mode)
+SmartHandController::MENU_RESULT SmartHandController::menuCatalogAlign(NAV mode, bool rateAlign)
 {
   cat_mgr.select(0);
   char title[40] = "";
   cat_mgr.filtersClear();
   cat_mgr.filterAdd(FM_OBJ_HAS_NAME);
   cat_mgr.filterAdd(FM_ABOVE_HORIZON, 1);
+  if (rateAlign)
+  {
+    const int star = ta_MountStatus.getAlignStar();
+    while (m_alignPicked >= star && m_alignPicked > 0) m_alignPicked--;
+    const TeenAstroMountStatus::Mount mt = ta_MountStatus.getMount();
+    const int mountKind =
+        (mt == TeenAstroMountStatus::MOUNT_TYPE_ALTAZM
+         || mt == TeenAstroMountStatus::MOUNT_TYPE_FORK_ALT) ? 1 : 0;
+    int session = 0;
+    const TeenAstroMountStatus::AlignMode modeAlign = ta_MountStatus.getAlignMode();
+    if (modeAlign == TeenAstroMountStatus::ALIM_FOUR)
+      session = 1;
+    else if (modeAlign == TeenAstroMountStatus::ALIM_SIX)
+      session = star >= 4 ? 3 : 2;
+    cat_mgr.buildAlignRank(mountKind, session, m_alignRa, m_alignDec, m_alignPicked);
+    if (m_alignResumeIndex >= 0)
+    {
+      cat_mgr.setIndex(m_alignResumeIndex);
+      m_alignResumeIndex = -1;
+    }
+  }
   if (mode== NAV_PUSHTO)
     strcat(title, "PushTo ");
   else if (mode == NAV_GOTO)
@@ -278,7 +299,8 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalogAlign(NAV mode)
   {
     if (cat_mgr.setIndex(cat_mgr.getIndex()))
     {
-      if (display->UserInterfaceCatalog(&buttonPad, title))
+      // On a rejected/broken goto, keep the same star selected and re-open.
+      while (display->UserInterfaceCatalog(&buttonPad, title))
       {
         if (DisplayMessageLX200(SyncGotoCatLX200(*m_client, mode), false))
         {

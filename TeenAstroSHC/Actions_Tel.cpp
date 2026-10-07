@@ -397,8 +397,8 @@ void SmartHandController::menuTrack()
 ///
 /// A term the star distribution could not separate is shown as "n/a" rather
 /// than as a measured zero, so the display never implies a measurement that
-/// was not actually made. Cone stays "n/a" until each pier side has 3 stars;
-/// the line then shows the current split, for example "Cone n/a 1+5".
+/// was not actually made. CH stays "n/a" until each pier side has 3 stars;
+/// the line then shows the current split, for example "CH n/a 1+5".
 static bool formatRigidHead(LX200Client& client, char(&cone)[20], char(&perp)[20], char(&idx2)[20])
 {
   double c = 0.0, p = 0.0, i2 = 0.0;
@@ -413,22 +413,22 @@ static bool formatRigidHead(LX200Client& client, char(&cone)[20], char(&perp)[20
   if (strchr(mask, 'C') == NULL && strchr(mask, 'P') == NULL && strchr(mask, 'I') == NULL)
     return false;
   if (strchr(mask, 'C'))
-    snprintf(cone, sizeof(cone), "Cone %+.0f\"", c);
+    snprintf(cone, sizeof(cone), "CH %+.0f\"", c);
   else if (haveSides && (nIn < 3 || nOut < 3))
-    snprintf(cone, sizeof(cone), "Cone n/a %u+%u", (unsigned)nIn, (unsigned)nOut);
+    snprintf(cone, sizeof(cone), "CH n/a %u+%u", (unsigned)nIn, (unsigned)nOut);
   else
-    snprintf(cone, sizeof(cone), "Cone n/a");
-  if (strchr(mask, 'P')) snprintf(perp, sizeof(perp), "Perp %+.0f\"", p);
-  else                   snprintf(perp, sizeof(perp), "Perp n/a");
-  if (strchr(mask, 'I')) snprintf(idx2, sizeof(idx2), "Idx2 %+.0f\"", i2);
-  else                   snprintf(idx2, sizeof(idx2), "Idx2 n/a");
+    snprintf(cone, sizeof(cone), "CH n/a");
+  if (strchr(mask, 'P')) snprintf(perp, sizeof(perp), "NP %+.0f\"", p);
+  else                   snprintf(perp, sizeof(perp), "NP n/a");
+  if (strchr(mask, 'I')) snprintf(idx2, sizeof(idx2), "ID %+.0f\"", i2);
+  else                   snprintf(idx2, sizeof(idx2), "ID n/a");
   return true;
 }
 
 void SmartHandController::showAlignmentResult()
 {
   char text[20] = { 0 };
-  DisplayMessage(T_ALIGNMENT, T_SUCESS "!", 1.0);
+  DisplayMessage(T_ALIGNMENT, T_SUCESS "!", -1);
   if (m_client->getAlignError(text, sizeof(text)) == LX200_VALUEGET)
   {
     text[3] = '\xB0';
@@ -823,7 +823,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
             && m_client->getAlignErrorAz(err_az, sizeof(err_az)) == LX200_VALUEGET
             && m_client->getAlignErrorAlt(err_alt, sizeof(err_alt)) == LX200_VALUEGET)
         {
-          DisplayLongMessage("[W;Az;Alt]:", err_pol, err_az, err_alt, -1);
+          DisplayLongMessage("[W;MA;ME]:", err_pol, err_az, err_alt, -1);
           char hc[20], hp[20], hi[20];
           if (formatRigidHead(*m_client, hc, hp, hi))
             DisplayLongMessage("Head geometry:", hc, hp, hi, -1);
@@ -852,7 +852,7 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
             && m_client->getAlignErrorAz(err_az, sizeof(err_az)) == LX200_VALUEGET
             && m_client->getAlignErrorAlt(err_alt, sizeof(err_alt)) == LX200_VALUEGET)
         {
-          DisplayLongMessage("[W;Az;Alt]:", err_pol, err_az, err_alt, -1);
+          DisplayLongMessage("[W;MA;ME]:", err_pol, err_az, err_alt, -1);
           char hc[20], hp[20], hi[20];
           if (formatRigidHead(*m_client, hc, hp, hi))
             DisplayLongMessage("Head geometry:", hc, hp, hi, -1);
@@ -888,7 +888,22 @@ bool SmartHandController::SelectStarAlign()
   }
   cat_mgr.setLat(lat);
   cat_mgr.setLstT0(LT0);
-  bool ok = menuCatalogAlign(ta_MountStatus.isPushTo()?NAV_PUSHTO: NAV_GOTO) != SmartHandController::MENU_RESULT::MR_CANCEL;
+  const MENU_RESULT result = menuCatalogAlign(ta_MountStatus.isPushTo() ? NAV_PUSHTO : NAV_GOTO, true);
+  if (result == MENU_RESULT::MR_QUIT)
+    noteAlignStar();
   buttonPad.setControlerMode();
-  return ok;
+  return result != MENU_RESULT::MR_CANCEL;
+}
+
+void SmartHandController::noteAlignStar()
+{
+  if (m_alignPicked >= 6) return;
+  m_alignRa[m_alignPicked] = (float)cat_mgr.ra();
+  m_alignDec[m_alignPicked] = (float)cat_mgr.dec();
+  m_alignPicked++;
+}
+
+void SmartHandController::dropAlignStar()
+{
+  if (m_alignPicked > 0) m_alignPicked--;
 }

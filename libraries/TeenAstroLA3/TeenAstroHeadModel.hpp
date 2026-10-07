@@ -60,12 +60,21 @@
  * perfect mount head.
  *
  * Sign conventions, all as seen in the instrument frame where axis1 is z,
- * axis2 is y and the optical axis is x:
+ * axis2 is y and the optical axis is x. The rotations below are the exact
+ * model. Wallace's TPOINT names, used by the commands, the web page and the
+ * hand controller, map onto them as:
+ *   CH =  cone     collimation, same sign
+ *   NP = -perp     non-perpendicularity, opposite sign
+ *   ID =  idx2     declination index, same sign
+ * Polar elevation ME is the opposite of polErrorDeg(PE_EQ_ALT).
+ * Wallace MA is polErrorDeg(PE_EQ_AZ) times cos(latitude). The azimuth
+ * itself is the tilt of the wedge, the angle the mount is rotated in
+ * azimuth, equal to MA / cos(latitude).
  *   cone  rotation of the optical axis about z, i.e. out of the plane
- *         perpendicular to axis2 (collimation / cone error)
+ *         perpendicular to axis2 (collimation / CH)
  *   perp  rotation of axis2 about x, i.e. axis2 tilted out of perpendicular
- *         to axis1
- *   idx2  added to axis2 before the axis2 rotation is applied (axis2 index)
+ *         to axis1. A positive perp is a negative NP.
+ *   idx2  added to axis2 before the axis2 rotation is applied (ID)
  *
  * The axis1 index is deliberately absent: it is not independent of T.
  */

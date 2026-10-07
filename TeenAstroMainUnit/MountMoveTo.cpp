@@ -114,6 +114,9 @@ Again:
       tracking.sideralTracking = tracking.lastSideralTracking;
       parkHome.homeMount = false;
     }
+    // Broken alignment goto → pick another star (do not treat as recenter).
+    if (alignment.alignPhase == ALIGN_SLEW)
+      alignment.alignPhase = ALIGN_SELECT;
     tracking.abortSlew = false;
     goto Again;
   }

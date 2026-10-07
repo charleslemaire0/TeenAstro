@@ -54,7 +54,8 @@ public:
 	Coord_HO To_Coord_HO(double Lat, RefrOpt Opt);
 	Coord_IN To_Coord_IN(double Lat, RefrOpt Opt, const double(&missaligment)[3][3]);
 	/// As above, with the rigid head geometry applied. A zero head is identical to the overload without it.
-	Coord_IN To_Coord_IN(double Lat, RefrOpt Opt, const double(&missaligment)[3][3], const HeadModel &head);
+	/// \p beyondPole selects the OVER-pier HeadGeom branch (see Coord_HO).
+	Coord_IN To_Coord_IN(double Lat, RefrOpt Opt, const double(&missaligment)[3][3], const HeadModel &head, bool beyondPole = false);
   double FrE();
 	double Dec();
 	double Ha();

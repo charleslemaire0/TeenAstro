@@ -9,8 +9,8 @@ Since version 1.5, TeenAstro has received a major functional upgrade for both vi
 **Firmware**
 
 - Stopping a MoveAxis command now slows down with the configured acceleration. The rate is no longer cut off at once, and tracking on the other axis continues.
-- The hand controller guides 2-star, 4-star, and 3+3-star alignment. Four stars on one pier side measure perpendicularity. 3+3 measures cone and perpendicularity only when each pier side has three stars.
-- **Mount error**, in the Mount menu above Refraction, holds a known cone and perpendicularity during a two-star alignment and during a plate-solve sync, so those terms stay out of the pole estimate.
+- The hand controller guides 2-star, 4-star, and 3+3-star alignment. Four stars on one pier side measure NP. 3+3 measures CH and NP only when each pier side has three stars. Reported terms are Wallace's CH, NP, ID and ME.
+- **Mount error**, in the Mount menu above Refraction, holds a known CH and NP during a two-star alignment and during a plate-solve sync, so those terms stay out of the pole estimate.
 - The firmware uploader **Auto** button on the telescope and focuser tabs detects the connected board and flashes the matching firmware.
 
 **ASCOM driver**
@@ -63,8 +63,8 @@ Depuis la version 1.5, TeenAstro a recu une evolution majeure pour l'observation
 **Firmware**
 
 - L'arret d'un MoveAxis ralentit maintenant avec l'acceleration configuree. La vitesse n'est plus coupee d'un coup, et le suivi de l'autre axe continue.
-- La raquette guide l'alignement 2 etoiles, 4 etoiles et 3+3 etoiles. Quatre etoiles sur un cote de pilier mesurent la perpendicularite. Le 3+3 mesure le cone et la perpendicularite seulement quand chaque cote a trois etoiles.
-- **Erreur de monture**, dans le menu Mount au-dessus de la refraction, conserve un cone et une perpendicularite deja connus pendant un alignement a deux etoiles et pendant une synchro de plate-solve, pour que ces termes ne rentrent pas dans l'estimation du pole.
+- La raquette guide l'alignement 2 etoiles, 4 etoiles et 3+3 etoiles. Quatre etoiles sur un cote de pilier mesurent NP. Le 3+3 mesure CH et NP seulement quand chaque cote a trois etoiles. Les nombres affiches sont CH, NP, ID et ME.
+- **Erreur de monture**, dans le menu Mount au-dessus de la refraction, conserve un CH et un NP deja connus pendant un alignement a deux etoiles et pendant une synchro de plate-solve, pour que ces termes ne rentrent pas dans l'estimation du pole.
 - Le bouton **Auto** de l'uploader, sur les onglets telescope et focuser, detecte la carte connectee et flashe le firmware correspondant.
 
 **Pilote ASCOM**
@@ -117,8 +117,8 @@ Seit Version 1.5 hat TeenAstro einen deutlichen Funktionssprung gemacht. Neben S
 **Firmware**
 
 - Das Stoppen eines MoveAxis bremst jetzt mit der eingestellten Beschleunigung. Die Geschwindigkeit wird nicht mehr sofort abgeschnitten, und das Tracking der anderen Achse laeuft weiter.
-- Der Handcontroller fuehrt die Ausrichtung mit 2 Sternen, 4 Sternen und 3+3 Sternen. Vier Sterne auf einer Pier-Seite messen die Nicht-Rechtwinkligkeit. 3+3 misst Konus und Nicht-Rechtwinkligkeit nur, wenn jede Pier-Seite drei Sterne hat.
-- **Mount error**, im Mount-Menue ueber der Refraktion, haelt einen bekannten Konus und eine bekannte Nicht-Rechtwinkligkeit bei einer Zwei-Stern-Ausrichtung und bei einem Plate-Solve-Sync fest, damit diese Terme nicht in die Polschaetzung eingehen.
+- Der Handcontroller fuehrt die Ausrichtung mit 2 Sternen, 4 Sternen und 3+3 Sternen. Vier Sterne auf einer Pier-Seite messen NP. 3+3 misst CH und NP nur, wenn jede Pier-Seite drei Sterne hat. Die angezeigten Zahlen sind CH, NP, ID und ME.
+- **Mount error**, im Mount-Menue ueber der Refraktion, haelt ein bekanntes CH und NP bei einer Zwei-Stern-Ausrichtung und bei einem Plate-Solve-Sync fest, damit diese Terme nicht in die Polschaetzung eingehen.
 - Die Schaltflaeche **Auto** im Firmware-Uploader, auf den Registerkarten Teleskop und Focuser, erkennt die angeschlossene Platine und schreibt die passende Firmware.
 
 **ASCOM-Treiber**

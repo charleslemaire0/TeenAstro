@@ -4,7 +4,7 @@
  * SYNC: Logic and constants must match TeenAstroMainUnit/MountLimits.cpp (checkPole).
  *       If you change MountLimits::checkPole, update this file in the same commit.
  *
- * Includes: 12 h limit disables the check (OnStep / UniversalMainUnit parity).
+ * 12 h is the widest setting and still applies (limit - 6) * 15°, as on Release 1.5.
  */
 
 #include <unity.h>
@@ -29,10 +29,6 @@ enum class CheckMode { GOTO, TRACKING };
 bool checkPoleMirror(long axis1, long poleDef, double stepsPerDegree, PoleSide side,
   double underPoleLimitGOTO, CheckMode mode)
 {
-  // SYNC MountLimits.cpp:12h disables under-pole check (OnStep / Universal parity).
-  if (underPoleLimitGOTO >= 12.0)
-    return true;
-
   double underPoleLimit = (mode == CheckMode::GOTO)
     ? underPoleLimitGOTO
     : underPoleLimitGOTO + UNDER_POLE_TRACKING_MARGIN;
@@ -108,15 +104,18 @@ void test_pole_under_11h_goto_wider_margin_than_9h()
   TEST_ASSERT_TRUE(checkPoleMirror(between, poleDef, spd, POLE_UNDER, 11.0, CheckMode::GOTO));
 }
 
-void test_twelve_hours_deactivates_under_pole_check()
+void test_twelve_hours_still_stops_ninety_degrees_past_home()
 {
-  const long poleDef = 100000L;
-  const double spd = 5000.0;
-  const long absurd = poleDef + 500000000L;
-  TEST_ASSERT_TRUE(checkPoleMirror(absurd, poleDef, spd, POLE_UNDER, 12.0, CheckMode::GOTO));
-  TEST_ASSERT_TRUE(checkPoleMirror(absurd, poleDef, spd, POLE_UNDER, 12.0, CheckMode::TRACKING));
-  const long absurdOver = poleDef - 500000000L;
-  TEST_ASSERT_TRUE(checkPoleMirror(absurdOver, poleDef, spd, POLE_OVER, 12.0, CheckMode::GOTO));
+  const long poleDef = 0L;
+  const double spd = 16000.0;
+  // (12 - 6) * 15° = 90° past the home index.
+  double thr = thresholdUnder(poleDef, spd, 12.0, CheckMode::GOTO);
+  TEST_ASSERT_DOUBLE_WITHIN(1e-6, 90.0 * spd, thr);
+  long inside = (long)std::floor(thr - 1.0);
+  long outside = (long)std::ceil(thr);
+  TEST_ASSERT_TRUE(checkPoleMirror(inside, poleDef, spd, POLE_UNDER, 12.0, CheckMode::GOTO));
+  TEST_ASSERT_FALSE(checkPoleMirror(outside, poleDef, spd, POLE_UNDER, 12.0, CheckMode::GOTO));
+  TEST_ASSERT_FALSE(checkPoleMirror(poleDef + 500000000L, poleDef, spd, POLE_UNDER, 12.0, CheckMode::TRACKING));
 }
 
 void test_just_below_twelve_hours_still_restricts()
@@ -208,7 +207,7 @@ int main(int argc, char** argv)
   RUN_TEST(test_pole_under_9h_goto_inside_one_step_below_threshold);
   RUN_TEST(test_pole_under_9h_goto_outside_at_threshold);
   RUN_TEST(test_pole_under_11h_goto_wider_margin_than_9h);
-  RUN_TEST(test_twelve_hours_deactivates_under_pole_check);
+  RUN_TEST(test_twelve_hours_still_stops_ninety_degrees_past_home);
   RUN_TEST(test_just_below_twelve_hours_still_restricts);
   RUN_TEST(test_pole_over_9h_goto_inside_one_step_above_threshold);
   RUN_TEST(test_pole_over_9h_goto_outside_at_threshold);

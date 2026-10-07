@@ -9,6 +9,9 @@
  *   4. Agreement with OnStep's GeoAlign for small errors (strict, sub arcsec).
  *   5. TeenAstro is closer to the truth than OnStep for large errors.
  *   6. CoordConv::fitRigidModel recovers injected head terms from synthetic stars.
+ *   7. A 3+3 session whose axes come from OnStep X recovers that model's head,
+ *      including when the model is refit after each star from the third.
+ *   8. Each star after the second pulls the next goto closer when the pole is far off.
  */
 
 // Include library implementations (single-translation-unit build)
@@ -785,6 +788,83 @@ void test_fit_does_not_invent_geometry_from_noise(void)
     TEST_ASSERT_TRUE(worstPointingError(cc, Ttruth, zero) < 60.0 * ARCSEC);
 }
 
+/// Pointing error at one sky position under the model held by \p cc.
+static double pointingAt(const CoordConv &cc, const double (&Tm)[3][3], const HeadModel &head,
+                         double az, double alt)
+{
+    double a1d, a2m;
+    synthMountAxes(Tm, head, az, alt, a1d, a2m);
+    double dcIn[3], p[3], target[3];
+    HeadGeom::forward(dcIn, a1d, a2m, cc.head);
+    LA3::multiply(p, cc.Tinv, dcIn);
+    LA3::normalize(p, p);
+    LA3::toDirCos(target, az, alt);
+    return LA3::angle2Vectors(p, target);
+}
+
+static double pointingAtSide(const CoordConv &cc, const double (&Tm)[3][3], const HeadModel &head,
+                             double az, double alt, bool flipped)
+{
+    double a1d, a2m;
+    synthMountAxesSide(Tm, head, az, alt, flipped, a1d, a2m);
+    double dcIn[3], p[3], target[3];
+    HeadGeom::forward(dcIn, a1d, a2m, cc.head);
+    LA3::multiply(p, cc.Tinv, dcIn);
+    LA3::normalize(p, p);
+    LA3::toDirCos(target, az, alt);
+    return LA3::angle2Vectors(p, target);
+}
+
+void test_each_added_star_improves_the_next_goto(void)
+{
+    // Several degrees of polar error and a half-degree cone. Two stars reproduce
+    // themselves and leave the next goto a long way off, which is the painful
+    // 3+3 session on a mount that has not been aligned yet.
+    double Tm[3][3];
+    LA3::SingleRotation tilt[2] = { { LA3::ROTAXISY, 4.0 * DEG }, { LA3::ROTAXISX, -3.0 * DEG } };
+    LA3::getMultipleRotationMatrix(Tm, tilt, 2);
+    const HeadModel head(0.5 * DEG, -0.3 * DEG, 0.2 * DEG);
+    const double stars[5][2] = {
+        { 0.40, 0.40 }, { 1.60, 0.90 }, { 2.50, 0.30 }, { 3.60, 0.70 }, { 4.80, 1.00 }
+    };
+
+    CoordConv cc;
+    for (int k = 0; k < 2; k++) {
+        double a1d, a2;
+        synthMountAxes(Tm, head, stars[k][0], stars[k][1], a1d, a2);
+        feedStar(cc, stars[k][0], stars[k][1], a1d, a2);
+    }
+    TEST_ASSERT_FALSE(cc.fitProgressive());
+
+    char msg[96];
+    const double goto4before = pointingAt(cc, Tm, head, stars[3][0], stars[3][1]);
+    const double twoStar5 = pointingAt(cc, Tm, head, stars[4][0], stars[4][1]);
+    const double flipBefore = pointingAtSide(cc, Tm, head, 0.80, 0.55, true);
+    double a1d, a2;
+    synthMountAxes(Tm, head, stars[2][0], stars[2][1], a1d, a2);
+    feedStar(cc, stars[2][0], stars[2][1], a1d, a2);
+    TEST_ASSERT_TRUE(cc.fitProgressive());
+    TEST_ASSERT_TRUE((cc.getRigidMask() & COORDCONV_FIT_CONE) == 0);
+    const double goto4after = pointingAt(cc, Tm, head, stars[3][0], stars[3][1]);
+    const double flipAfter = pointingAtSide(cc, Tm, head, 0.80, 0.55, true);
+    sprintf(msg, "flip before %.4f deg after %.4f deg",
+            flipBefore * 180.0 / M_PI, flipAfter * 180.0 / M_PI);
+    // Publishing the one-sided head term must not throw the first star on the
+    // other pier further out than the two-star model already did.
+    TEST_ASSERT_TRUE_MESSAGE(flipAfter < flipBefore + 0.05 * DEG, msg);
+    sprintf(msg, "goto4 before %.4f deg after %.4f deg",
+            goto4before * 180.0 / M_PI, goto4after * 180.0 / M_PI);
+    TEST_ASSERT_TRUE_MESSAGE(goto4after < 0.5 * goto4before, msg);
+
+    synthMountAxes(Tm, head, stars[3][0], stars[3][1], a1d, a2);
+    feedStar(cc, stars[3][0], stars[3][1], a1d, a2);
+    TEST_ASSERT_TRUE(cc.fitProgressive());
+    const double goto5after = pointingAt(cc, Tm, head, stars[4][0], stars[4][1]);
+    sprintf(msg, "goto5 two-star %.4f deg after fourth %.4f deg",
+            twoStar5 * 180.0 / M_PI, goto5after * 180.0 / M_PI);
+    TEST_ASSERT_TRUE_MESSAGE(goto5after < 0.5 * twoStar5, msg);
+}
+
 void test_fit_improves_pointing_off_the_star_set(void)
 {
     // Selecting only the observable combination cannot reproduce a cone and a
@@ -866,6 +946,154 @@ void test_fit_keeps_t_orthonormal(void)
             TEST_ASSERT_DOUBLE_WITHIN(1e-9, (i == j) ? 1.0 : 0.0, prod[i][j]);
 }
 
+/// OnStep keeps both pier sides in hour angle / declination and flips the
+/// cone and perpendicularity with a sign. TeenAstro records the other pier as
+/// the raw motor angles: axis2 reflected through the pole (pi - ax2) and
+/// axis1 advanced half a turn. That is what getInstr() stores in a 3+3 session.
+static void onstepAxesToMount(double ax1, double ax2, double pier,
+                              double &axis1Direct, double &axis2Out)
+{
+    if (pier > 0.0)
+    {
+        axis1Direct = -ax1;
+        axis2Out = ax2;
+        return;
+    }
+    axis2Out = M_PI - ax2;
+    axis1Direct = remainder(-(ax1 + M_PI), 2.0 * M_PI);
+}
+
+void test_onstep_3plus3_dataset_recovers_head(void)
+{
+    // Published OnStep X rigid terms, a few arcminutes, the size of a real mount.
+    // The axis1 index is left at zero: OnStep subtracts it from hour angle and
+    // TeenAstro folds that into T, so it is not one of the three head terms.
+    OnStepModel m;
+    m.doCor = 3.0 * ARCMIN;
+    m.pdCor = -1.5 * ARCMIN;
+    m.ax2Cor = 0.7 * ARCMIN;
+    m.ax1Cor = 0.0;
+    const HeadModel expect = headFromOnStep(m);
+
+    // Three stars east (pier +1), then three west (pier -1). Spread in hour
+    // angle and declination, kept off the pole where OnStep's 1/cos diverges.
+    struct Star { double ha; double dec; double pier; const char *name; };
+    const Star stars[6] = {
+        { -40.0 * DEG,  15.0 * DEG, +1.0, "east Alioth" },
+        {  25.0 * DEG,  48.0 * DEG, +1.0, "east Vega" },
+        {  70.0 * DEG, -18.0 * DEG, +1.0, "east Rigel" },
+        { -35.0 * DEG,  32.0 * DEG, -1.0, "west Arcturus" },
+        {  12.0 * DEG,  62.0 * DEG, -1.0, "west Deneb" },
+        {  55.0 * DEG,   8.0 * DEG, -1.0, "west Altair" },
+    };
+
+    CoordConv cc;
+    for (int k = 0; k < 6; k++)
+    {
+        double oAx1, oAx2, a1d, a2;
+        onstepObservedPlaceToMount(m, stars[k].ha, stars[k].dec, stars[k].pier, oAx1, oAx2);
+        onstepAxesToMount(oAx1, oAx2, stars[k].pier, a1d, a2);
+
+        // The folded west reading, under the single east head, must still
+        // point at the catalogue star. If this fails, the pier conversion is
+        // wrong and the fit below would be meaningless.
+        double dcMount[3], dcSky[3];
+        HeadGeom::forward(dcMount, a1d, a2, expect);
+        LA3::toDirCos(dcSky, -stars[k].ha, stars[k].dec);
+        char msg[80];
+        sprintf(msg, "%s does not point at its catalogue position", stars[k].name);
+        TEST_ASSERT_TRUE_MESSAGE(LA3::angle2Vectors(dcMount, dcSky) < 2.0 * ARCSEC, msg);
+
+        // Sky angles use the same convention as toDirCos(-ha, dec).
+        feedStar(cc, -stars[k].ha, stars[k].dec, a1d, a2);
+    }
+
+    int nIn = 0, nOut = 0;
+    cc.pierSideCounts(nIn, nOut);
+    TEST_ASSERT_EQUAL_INT(3, nIn);
+    TEST_ASSERT_EQUAL_INT(3, nOut);
+
+    TEST_ASSERT_TRUE_MESSAGE(cc.fitRigidModel(), "3+3 OnStep session failed to fit");
+    TEST_ASSERT_EQUAL_UINT8(COORDCONV_FIT_CONE | COORDCONV_FIT_PERP | COORDCONV_FIT_IDX2,
+                            cc.getRigidMask());
+
+    float cone, perp, idx2;
+    cc.getHead(cone, perp, idx2);
+    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(5.0 * ARCSEC, expect.cone, cone, "cone");
+    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(5.0 * ARCSEC, expect.perp, perp, "perp");
+    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(5.0 * ARCSEC, expect.idx2, idx2, "axis2 index");
+    TEST_ASSERT_TRUE_MESSAGE(cc.getRigidRms() < 5.0 * ARCSEC, "residual above 5 arcsec");
+}
+
+void test_onstep_3plus3_progressive_matches_final_head(void)
+{
+    // Same OnStep X stars as the batch fit, but updated the way the mount does
+    // it: refit after every star from the third, and close with the full fit
+    // on the sixth. The head at the end has to be the OnStep head, not a
+    // different compromise built up along the way.
+    OnStepModel m;
+    m.doCor = 3.0 * ARCMIN;
+    m.pdCor = -1.5 * ARCMIN;
+    m.ax2Cor = 0.7 * ARCMIN;
+    m.ax1Cor = 0.0;
+    const HeadModel expect = headFromOnStep(m);
+
+    struct Star { double ha; double dec; double pier; const char *name; };
+    const Star stars[6] = {
+        { -40.0 * DEG,  15.0 * DEG, +1.0, "east Alioth" },
+        {  25.0 * DEG,  48.0 * DEG, +1.0, "east Vega" },
+        {  70.0 * DEG, -18.0 * DEG, +1.0, "east Rigel" },
+        { -35.0 * DEG,  32.0 * DEG, -1.0, "west Arcturus" },
+        {  12.0 * DEG,  62.0 * DEG, -1.0, "west Deneb" },
+        {  55.0 * DEG,   8.0 * DEG, -1.0, "west Altair" },
+    };
+
+    CoordConv stepped, batch;
+    for (int k = 0; k < 6; k++)
+    {
+        double oAx1, oAx2, a1d, a2;
+        onstepObservedPlaceToMount(m, stars[k].ha, stars[k].dec, stars[k].pier, oAx1, oAx2);
+        onstepAxesToMount(oAx1, oAx2, stars[k].pier, a1d, a2);
+
+        double dcMount[3], dcSky[3];
+        HeadGeom::forward(dcMount, a1d, a2, expect);
+        LA3::toDirCos(dcSky, -stars[k].ha, stars[k].dec);
+        char msg[80];
+        sprintf(msg, "%s does not point at its catalogue position", stars[k].name);
+        TEST_ASSERT_TRUE_MESSAGE(LA3::angle2Vectors(dcMount, dcSky) < 2.0 * ARCSEC, msg);
+
+        feedStar(stepped, -stars[k].ha, stars[k].dec, a1d, a2);
+        feedStar(batch, -stars[k].ha, stars[k].dec, a1d, a2);
+
+        // Stars 3, 4 and 5. The sixth is the session close, not an intermediate refit.
+        if (k >= 2 && k < 5)
+        {
+            sprintf(msg, "progressive fit failed after %s", stars[k].name);
+            TEST_ASSERT_TRUE_MESSAGE(stepped.fitProgressive(), msg);
+            sprintf(msg, "cone published before both piers had 3 stars (%s)", stars[k].name);
+            TEST_ASSERT_TRUE_MESSAGE((stepped.getRigidMask() & COORDCONV_FIT_CONE) == 0, msg);
+        }
+    }
+
+    TEST_ASSERT_TRUE_MESSAGE(batch.fitRigidModel(), "batch OnStep fit failed");
+    TEST_ASSERT_TRUE_MESSAGE(stepped.fitRigidModel(), "progressive OnStep session failed to close");
+
+    float cone, perp, idx2;
+    stepped.getHead(cone, perp, idx2);
+    TEST_ASSERT_EQUAL_UINT8(COORDCONV_FIT_CONE | COORDCONV_FIT_PERP | COORDCONV_FIT_IDX2,
+                            stepped.getRigidMask());
+    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(5.0 * ARCSEC, expect.cone, cone, "cone");
+    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(5.0 * ARCSEC, expect.perp, perp, "perp");
+    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(5.0 * ARCSEC, expect.idx2, idx2, "axis2 index");
+    TEST_ASSERT_TRUE_MESSAGE(stepped.getRigidRms() < 5.0 * ARCSEC, "residual above 5 arcsec");
+
+    float bCone, bPerp, bIdx2;
+    batch.getHead(bCone, bPerp, bIdx2);
+    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(1.0 * ARCSEC, bCone, cone, "cone drifted from the batch fit");
+    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(1.0 * ARCSEC, bPerp, perp, "perp drifted from the batch fit");
+    TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(1.0 * ARCSEC, bIdx2, idx2, "axis2 index drifted from the batch fit");
+}
+
 void test_clean_clears_head_and_stars(void)
 {
     CoordConv cc;
@@ -919,10 +1147,13 @@ int main(int, char **)
     RUN_TEST(test_fit_drops_cone_without_a_meridian_flip);
     RUN_TEST(test_fit_withholds_cone_below_three_per_side);
     RUN_TEST(test_fit_recovers_cone_with_three_stars_per_side);
+    RUN_TEST(test_onstep_3plus3_dataset_recovers_head);
+    RUN_TEST(test_onstep_3plus3_progressive_matches_final_head);
     RUN_TEST(test_fit_recovers_axis2_index);
     RUN_TEST(test_fit_selects_one_of_the_correlated_pair);
     RUN_TEST(test_fit_drops_terms_for_single_declination);
     RUN_TEST(test_fit_does_not_invent_geometry_from_noise);
+    RUN_TEST(test_each_added_star_improves_the_next_goto);
     RUN_TEST(test_fit_improves_pointing_off_the_star_set);
     RUN_TEST(test_fit_rejects_too_few_stars);
     RUN_TEST(test_fit_leaves_model_untouched_on_failure);

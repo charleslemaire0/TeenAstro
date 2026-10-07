@@ -79,9 +79,10 @@ static void Command_SX_Alignment()
   case 'c':
   case 'p':
   case 'i': {
-    // :SXAc,V# :SXAp,V# :SXAi,V#  Set one rigid head term in arcseconds (cone,
-    // axis2 non-perpendicularity, axis2 index). Lets a user restore measured
-    // geometry without redoing a multi-star session. TeenAstro extension.
+    // :SXAc,V# :SXAp,V# :SXAi,V#  Set one rigid head term in arcseconds, TPOINT
+    // signs: CH, NP, ID. NP is stored as the opposite internal rotation.
+    // Lets a user restore measured geometry without redoing a multi-star
+    // session. TeenAstro extension.
     // command[4] is the comma separator; value starts at command[5].
     const double arcsec = strtod(&commandState.command[5], NULL);
     if (fabs(arcsec) > 5.0 * 3600.0)  // beyond a few degrees this is not a head error
@@ -90,7 +91,7 @@ static void Command_SX_Alignment()
     mount.alignment.conv.getHead(hcone, hperp, hidx2);
     const double rad = arcsec * DEG_TO_RAD / 3600.0;
     if (commandState.command[3] == 'c')      hcone = (float)rad;
-    else if (commandState.command[3] == 'p') hperp = (float)rad;
+    else if (commandState.command[3] == 'p') hperp = (float)(-rad);
     else                                     hidx2 = (float)rad;
     mount.alignment.conv.setHead(hcone, hperp, hidx2);
     mount.alignment.hasRigid = mount.alignment.conv.hasHead();
@@ -836,9 +837,10 @@ static void Command_SX_Options()
 // =============================================================================
 static void Command_SX_KnownGeom()
 {
-  // :SXKz,V# :SXKa,V# :SXKc,V# :SXKp,V#  known pole azimuth, pole altitude, cone,
-  // perpendicularity, arcseconds. :SXKk,0# / :SXKk,1#  whether a 2-star alignment
-  // holds the cone and the perpendicularity.
+  // :SXKz,V# :SXKa,V# :SXKc,V# :SXKp,V#  Wallace MA, ME, CH and NP,
+  // arcseconds. MA is stored as the azimuth tilt of the wedge, MA / cos(latitude).
+  // ME and NP use Wallace's sign and are stored as the opposite internal angle.
+  // :SXKk,0# / :SXKk,1#  whether a 2-star alignment holds CH and NP.
   bool ok = false;
   switch (commandState.command[3])
   {
@@ -853,13 +855,23 @@ static void Command_SX_KnownGeom()
       break;
     const double rad = arcsec * DEG_TO_RAD / 3600.0;
     if (commandState.command[3] == 'z')
-      mount.alignment.knownPoleAz = rad;
+    {
+      // V is Wallace MA. The EEPROM angle is the azimuth tilt of the wedge,
+      // MA / cos(latitude). Near the pole that tilt is undefined.
+      const double c = cos(*localSite.latitude() * DEG_TO_RAD);
+      if (fabs(c) < 1e-3)
+        break;
+      const double mech = rad / c;
+      if (fabs(mech) > 5.0 * DEG_TO_RAD)
+        break;
+      mount.alignment.knownPoleAz = mech;
+    }
     else if (commandState.command[3] == 'a')
-      mount.alignment.knownPoleAlt = rad;
+      mount.alignment.knownPoleAlt = -rad;
     else if (commandState.command[3] == 'c')
       mount.alignment.knownCone = rad;
     else
-      mount.alignment.knownPerp = rad;
+      mount.alignment.knownPerp = -rad;
     saveKnownGeom();
     ok = true;
     break;

@@ -315,17 +315,17 @@ That is enough for a visual night if the mechanical polar alignment is already g
 | Motors | Mechanics, speeds, tracking |
 | Encoders | Position encoders |
 | Limits | Horizon, zenith, axes, meridian |
-| Mount error | Cone and perpendicularity held in a two-star alignment |
+| Mount error | CH and NP held in a two-star alignment |
 | Refraction | See below |
 | Reticule | Polar-finder brightness, if that output is wired |
 
-**Mount error**: **Off** or **On**. When **On**, enter **Cone**, then **Perp**. Each value is in degrees, from −5 to +5, with three decimals.
+**Mount error**: **Off** or **On**. When **On**, enter **CH**, then **NP**. Each value is in degrees, from −5 to +5, with three decimals, in Wallace's sign.
 
-Leave it **Off** for the usual two-star alignment. Turn it **On** when the optical cone and the non-perpendicularity of the second axis are already known, from a previous **4 Stars** or **3+3 Stars** alignment, or from a measurement of the mechanics. A two-star alignment then holds both numbers and still measures the pole. The start screen says **Measures pole**. If both numbers are zero, nothing is held and the two-star alignment stays the usual one. **4 Stars**, **3+3 Stars**, and **2 Stars Mech.** ignore this setting.
+Leave it **Off** for the usual two-star alignment. Turn it **On** when CH and NP are already known, from a previous **4 Stars** or **3+3 Stars** alignment, or from a measurement of the mechanics. The signs are Wallace's TPOINT signs: CH is collimation and NP is non-perpendicularity. A two-star alignment then holds both numbers and still measures the pole. The start screen says **Measures pole**. If both numbers are zero, nothing is held and the two-star alignment stays the usual one. **4 Stars**, **3+3 Stars**, and **2 Stars Mech.** ignore this setting.
 
 The same item is the last line of **Telescope Action → Align**.
 
-On the hand controller web page the card is labelled **Mount error** and sits above refraction. **Off** or **On** comes first; the text after the choice is “Hold cone and perpendicularity”. Cone and perpendicularity are each their own row: the value, **Upload**, then the name and the unit, in degrees, ±5. The web page is in English on every firmware.
+On the hand controller web page the card is labelled **Mount error** and sits above refraction. **Off** or **On** comes first; the text after the choice is “Hold CH and NP”. CH and NP are each their own row: the value, **Upload**, then the name and the unit, in degrees, ±5, in Wallace's sign. The web page is in English on every firmware.
 
 **Refraction → Goto**: ON or OFF. When on, atmospheric refraction is included in the slew (Saemundsson on the way out, Bennett on the way back).
 
@@ -624,7 +624,7 @@ Sync recenters the position. It does not build the alignment model: a single obj
 
 ## 15. Alignment
 
-Alignment computes the transform between the sky and the axes. A two-star alignment uses Taki's method (two measured directions), completed by the nearest proper rotation in the least-squares sense. The result is a 3×3 matrix. It is used for pointing, sync, corrected tracking, and the altitude check. **4 Stars** and **3+3 Stars**, described below, can also measure the cone and the perpendicularity of the second axis.
+Alignment computes the transform between the sky and the axes. A two-star alignment uses Taki's method (two measured directions), completed by the nearest proper rotation in the least-squares sense. The result is a 3×3 matrix. It is used for pointing, sync, corrected tracking, and the altitude check. **4 Stars** and **3+3 Stars**, described below, can also measure CH and NP. The result is reported as CH, NP, ID and ME, Wallace's TPOINT signs.
 
 **Telescope Action → Align**
 
@@ -641,11 +641,11 @@ On an alt-azimuth mount, **2 Stars Mech.** is not offered. **Mount error** stays
 
 1. The tube is at the home position. The display reminds you: **The mount must** be at the home position.
 2. Choose **Home** when the display asks for the mode.
-3. The main unit accepts the start. Pick the first star from the list (named stars, above the horizon).
-4. The tube slews. **Slewing to**, then **Recenter**, is shown.
-5. Center the star. A long press on Shift accepts the star (**Star added**).
-6. Pick the second star, far from the first in hour angle and in declination. Same recentering, same long press.
-7. On success, the model is computed. **Save** writes it to memory. Without a save it is lost at the next park or power-off, depending on whether you park: the group wiki reminds you to park at the end of the procedure to keep the result. **Save** in the Align menu does that write explicitly.
+3. The main unit accepts the start. Pick a star from the list (named stars, above the horizon). The list stays in normal catalog order. Each star shows a suitability mark on the right of its name, from `*` to `****`: more stars mean a better pick for the next alignment measurement. Stars already measured in this session are hidden. The cursor opens on the best remaining candidate; North and South then browse the catalog as usual. On a German equatorial or an equatorial fork a good pick is at a comfortable altitude, well off the meridian, and far from the stars already taken. Four stars stay on the same side of the meridian. For 3+3 the second side of the list prefers the other side. On an alt-azimuth mount, including an alt-azimuth fork, a good pick spreads azimuth and altitude, away from the zenith. Four stars stay in the same part of the sky. For 3+3 the second side prefers the opposite azimuth.
+4. The tube slews. **Slewing to**, then **Recenter**, is shown. If the goto is rejected (limits, below horizon) or you abort the slew (long Shift or another key), the star list reopens on that same star so you can pick again or choose another.
+5. Center the star with the direction buttons. A **short** press on Shift accepts the star (**Star added**). To change the recentering speed, a **long** press on Shift alone opens **Set Speed** (Guiding, Slow, Medium, Fast, Max). **Shift + North** or **Shift + South** open the same menu, as outside alignment.
+6. Pick the second star. On an equatorial mount prefer one far from the first in hour angle and declination. On an alt-azimuth mount prefer one far in azimuth and altitude. The suitability marks (`*`…`****`) and the starting cursor guide that choice; already-used stars are gone from the list. Same recentering: short Shift accepts, long Shift changes speed.
+7. On success the model is computed. The hand controller shows **Alignment** / **Success**, then the residual error, then (for **4 Stars** and **3+3 Stars**) the head geometry (CH, NP, ID). Each of those screens stays until you press a key. **Save** writes the model to memory. Without a save it is lost at the next park or power-off, depending on whether you park: the group wiki reminds you to park at the end of the procedure to keep the result. **Save** in the Align menu does that write explicitly.
 
 **Clear** forgets the model. The mount returns to the assumption "mechanically correct, starting from home".
 
@@ -660,15 +660,17 @@ If home is not reachable (the tube is already on the sky):
 
 ### Mount error during a 2-star alignment
 
-Set **Mount error** before you start, from this menu or from **Telescope Settings → Mount**. When it is **On** and at least one of **Cone** and **Perp** is not zero, the two stars still measure the pole and the axis index. Both numbers are kept, including a zero on the other line. They are not folded into the pole. The mode line on the start screen is **Measures pole** instead of **Alignment**.
+Set **Mount error** before you start, from this menu or from **Telescope Settings → Mount**. When it is **On** and at least one of **CH** and **NP** is not zero, the two stars still measure the pole and the axis index. Both numbers are kept, including a zero on the other line. They are not folded into the pole. The mode line on the start screen is **Measures pole** instead of **Alignment**.
 
 ### 4 Stars
 
-From home, on one pier side. The screen says **Same pier side** and **Perpendicularity**. Confirm with **YES**. Four stars estimate the non-perpendicularity of the second axis. The cone is not estimated from a single pier side. The stored **Mount error** values are not used.
+From home, on one pier side. The screen says **Same pier side** and **NP**. Confirm with **YES**. Four stars estimate NP. CH is not estimated from a single pier side. The stored **Mount error** values are not used.
+
+The first two stars set the pole. After the third star the model is updated before the slew to the fourth, so a mount that starts a long way off is closer on that last star. The hand controller waits while the update runs. The fourth star closes the session.
 
 ### 3+3 Stars
 
-For a German or fork mount that can change pier side. The screen says **Flip after 3** and **Cone + perp**. Confirm with **YES**. Take three stars on one side, flip, then three on the other. The cone is estimated only when each side really contributed three stars. One star past the flip is not enough, and the cone stays unpublished until that split is met. The stored **Mount error** values are not used.
+For a German or fork mount that can change pier side. The screen says **Flip after 3** and **CH + NP**. Confirm with **YES**. Take three stars on one side, flip, then three on the other. After the third star, and after each later star except the last, the model is updated before the next slew. The hand controller waits while that update runs. CH is estimated only when each side really contributed three stars. One star past the flip is not enough, and CH stays unpublished until that split is met. The stored **Mount error** values are not used. The result is shown as CH, NP and ID, in arcseconds, and the pole as MA and ME. The angle to rotate the mount in azimuth is MA divided by the cosine of the latitude.
 
 ### 2 Stars Mech.
 
@@ -688,9 +690,9 @@ The first sync anchors the axes on the solved position. The second builds the mo
 
 A sync after that only corrects the current pointing, for example after another plate solve. It does not clear the model. **PC Alignment** again, or **Clear**, does reset it.
 
-If **Mount error** is **On** and at least one of **Cone** and **Perp** is not zero, this sync alignment holds both numbers and still measures the pole, the same way as **2 Stars**. **4 Stars** and **3+3 Stars** are the hand-controller procedures above. **PC Alignment** does not start them.
+If **Mount error** is **On** and at least one of **CH** and **NP** is not zero, this sync alignment holds both numbers and still measures the pole, the same way as **2 Stars**. **4 Stars** and **3+3 Stars** are the hand-controller procedures above. **PC Alignment** does not start them.
 
-When software instead drives a star-by-star session, the display shows **Remote Align** and the name of the requested star. Recentering and the long press on Shift are then done on the hand controller.
+When software instead drives a star-by-star session, the display shows **Remote Align** and the name of the requested star. Recentering is then done on the hand controller: short Shift accepts the star, long Shift (alone or with North/South) opens **Set Speed**.
 
 ### Which pair of stars
 
@@ -701,6 +703,74 @@ Pick two bright stars, well above the horizon, separated by at least about forty
 ### What alignment does not fix
 
 It does not replace a wrong gear ratio, a reversed direction, or a wrong clock. If the first goto lands degrees away from the target, go back through chapters 8 to 10 before you start another alignment.
+
+### TPOINT names and what TeenAstro really computes
+
+The hand controller and the web page report **CH**, **NP**, **ID**, **ME** and **MA** with Wallace’s TPOINT signs. Those names are the usual language for mount errors. TeenAstro does **not** point the sky with the classic linearized TPOINT dial formulas. It uses exact rotations: the head geometry (collimation, non-perpendicularity, index) and a real orientation of the polar axis in space.
+
+**TPOINT** was built to fit small residuals in hour angle and declination on a few stars. Its geometric terms are convenient corrections for least-squares, valid mainly for **small** (almost infinitesimal) errors. **TeenAstro** asks a different question: where does the polar axis point, and how is the head built.
+
+```
+  TPOINT:      which ΔHA, ΔDec patches reduce residual on my stars?
+  TeenAstro:   what is the orientation of the head and polar axis in space?
+```
+
+Classic TPOINT (first-order, on the dials), with \(H\) = hour angle and \(\delta\) = declination:
+
+\[
+\begin{aligned}
+\Delta H &=
+  \mathrm{IH}
+  + \mathrm{CH}\,\sec\delta
+  + \mathrm{NP}\,\tan\delta
+  + \mathrm{MA}\,\cos H\,\tan\delta
+  - \mathrm{ME}\,\sin H\,\tan\delta \\[0.4em]
+\Delta\delta &=
+  \mathrm{ID}
+  - \mathrm{ME}\,\cos H
+  + \mathrm{MA}\,\sin H
+\end{aligned}
+\]
+
+TeenAstro’s pole is a direction in the local horizontal frame (a plumbed mount). If \(d_{\mathrm{Az}}\) and \(d_{\mathrm{Alt}}\) are the azimuth and altitude tilts of the mechanical polar axis, and \(\phi\) is the latitude:
+
+\[
+\mathrm{MA} = d_{\mathrm{Az}}\cos\phi,\qquad
+\mathrm{ME} = -d_{\mathrm{Alt}}
+\]
+
+The angle you turn the mount in azimuth to correct the pole is therefore \(\mathrm{MA}/\cos\phi\), as already stated for **3+3 Stars**. EEPROM stores that azimuth tilt, not MA itself.
+
+```
+                    true celestial pole
+                           *
+                          /|
+                         / |  ME  (altitude of the mechanical pole)
+                        /  |
+                       /___|______ horizon
+                      / dAz
+                     *
+            mechanical polar axis
+```
+
+| Term | Meaning on the display | In TeenAstro |
+|------|------------------------|--------------|
+| CH | collimation (east–west) | head cone, same sign |
+| NP | non-perpendicularity | head, opposite internal sign |
+| ID | declination index | head index |
+| ME | polar elevation | altitude of the polar axis (sign as above) |
+| MA | polar azimuth | \(d_{\mathrm{Az}}\cos\phi\) on the polar axis |
+
+**CH**, **NP**, **ID** and **ME** match the usual TPOINT idea closely enough for night use. **MA** is the exception: the classic TPOINT formula for MA is a dial patch \(\Delta H = \mathrm{MA}\,\cos H\,\tan\delta\), \(\Delta\delta = \mathrm{MA}\,\sin H\). That is **not** the same as tilting the polar axis in azimuth. TeenAstro’s displayed MA is always the plumbed pole tilt. Software that expects the old tan/sec MA operator is speaking a different language.
+
+```
+  Physical MA (TeenAstro)              Classic TPOINT MA formula
+  -----------------------              -------------------------
+  One polar-axis direction             Linear ΔH, Δδ on the dials
+  in space (valid at large angle)      (small-angle approximation)
+```
+
+For the full formulas, sketches and the cross-check against OnStep, see the math note [alignment.md](../math/alignment.md) (section *Extra: TPOINT vs TeenAstro geometry*).
 
 ---
 
@@ -768,7 +838,7 @@ At each arrival:
 2. Recenter the star.
 3. Short press on Shift to confirm.
 
-The display shows the error of each step, in arcminutes, and the measured gear. The formula is: measured gear = stored gear × commanded move / true move. A commanded move of less than 5° is rejected: the scale would be too poor.
+The display shows the error of each step, in arcminutes, and the measured gear. The formula is: measured gear = stored gear × true move / commanded move, where the true move is the commanded move plus the recentering error. A shortfall (you still had to push the star further) raises the gear; an overshoot lowers it. A commanded move of less than 5° is rejected: the scale would be too poor.
 
 If the two axes give inconsistent ratios, the display reports **Axes similar**: the chosen stars did not separate the axes enough. Start again with targets farther apart.
 
@@ -943,9 +1013,9 @@ If a model already exists and the polar alignment has not moved: **Goto → Cata
 
 Otherwise, a two-star alignment from home (chapter 15), with two named stars, high, and far apart:
 
-1. First star: Vega, in Lyra. The tube moves, the screen says **Slewing to** then **Recenter**. Center it. A long press on Shift: **Star added**.
-2. Second star: Altair, in Aquila. It is far from Vega in hour angle. Same recentering, same long press.
-3. **Save**. The alignment icon confirms that the model is stored.
+1. First star: Vega, in Lyra (look for a high `****` mark). The tube moves, the screen says **Slewing to** then **Recenter**. Center it. Short press on Shift: **Star added**. Long Shift opens **Set Speed** if you need a slower step.
+2. Second star: Altair, in Aquila. It is far from Vega in hour angle; Vega is no longer in the list. Same recentering, short Shift to accept.
+3. Read the success and error screens (each waits for a key). **Save**. The alignment icon confirms that the model is stored.
 
 A pair that is too close, Vega and Deneb for example, gives a weak model. Chapter 15 explains how to choose.
 
@@ -1091,6 +1161,7 @@ Example: gear 360, 200-step motor, 16 microsteps → 11.25" per microstep. That 
 
 - Group and wiki: [https://groups.io/g/TeenAstro/wiki/home](https://groups.io/g/TeenAstro/wiki/home). First run, illustrated menus, boards, the backup tool, and the flashing procedure are there.
 - Technical documentation in the repository: [docs/README.md](../README.md) (architecture, tracking, protocol). It is for people who change the software, not for running a night.
+- Alignment math, including TPOINT versus TeenAstro geometry: [docs/math/alignment.md](../math/alignment.md). Chapter 15 of this manual has the field summary.
 - FS2 manual, for the original approach: [anleit_f.pdf](https://www.astro-electronic.de/anleit_f.pdf) (French) and the German edition on the same site, Astro-Electronic, Michael Koch.
 
 Boards, supply voltages, and motor harnesses are not the same from one version to the next. For wiring, start from your board's page in the wiki, then come back here for use.
@@ -1143,6 +1214,7 @@ Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme,
 - Stopping MoveAxis slows down with the configured acceleration. Tracking continues on the axis that is not being moved. A rate of zero always stops. A rate above the maximum is refused.
 - SharpCap and the other clients show the MoveAxis speeds again, including 0.25°/s and 0.5°/s. The driver uses sidereal-rate multiples, the same unit as driver 1.5.
 - ASCOM rates, coordinates, and port numbers use a fixed decimal point, so a French or German Windows does not change the commands.
-- The hand controller guides **2 Stars**, **4 Stars**, and **3+3 Stars**. Four stars on one pier side measure perpendicularity. 3+3 measures cone and perpendicularity only when each pier side has three stars.
-- **Mount error**, above Refraction, holds a known cone and perpendicularity during a two-star alignment and during a plate-solve sync.
+- The hand controller guides **2 Stars**, **4 Stars**, and **3+3 Stars**. Four stars on one pier side measure NP. 3+3 measures CH and NP only when each pier side has three stars. The reported numbers are Wallace's CH, NP, ID and ME.
+- **4 Stars** and **3+3 Stars** update the model after the third star, and after each later star before the last. The next slew uses the stars already centered. The hand controller waits while that calculation runs.
+- **Mount error**, above Refraction, holds a known CH and NP during a two-star alignment and during a plate-solve sync.
 - The firmware uploader **Auto** button detects the connected telescope or focuser and flashes the matching file.

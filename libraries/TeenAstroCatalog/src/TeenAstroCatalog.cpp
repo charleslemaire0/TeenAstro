@@ -251,6 +251,212 @@ const char* CatMgr::catalogPrefix() {
 // catalog filtering
 void CatMgr::filtersClear() {
   _fm=FM_NONE;
+  clearAlignRank();
+}
+
+void CatMgr::clearAlignRank() {
+  _alignRanked = false;
+  _alignRankN = 0;
+  _alignRankAt = 0;
+  _alignScoreMax = 0;
+}
+
+// Keep catalog index order. Suitability is shown as *…****, not by sorting.
+void CatMgr::insertAlignRank(short index, short score) {
+  if (_alignRankN >= ALIGN_RANK_CAP) return;
+  int i = _alignRankN++;
+  while (i > 0 && _alignRank[i - 1].index > index) {
+    _alignRank[i] = _alignRank[i - 1];
+    i--;
+  }
+  _alignRank[i].index = index;
+  _alignRank[i].score = score;
+  if (score > _alignScoreMax) _alignScoreMax = score;
+}
+
+int CatMgr::alignSuitability() {
+  if (_selected < 0 || !_alignRanked || _alignRankN <= 0 || _alignScoreMax <= 0) return 0;
+  short score = 0;
+  bool found = false;
+  if (_alignRankAt >= 0 && _alignRankAt < _alignRankN
+      && _alignRank[_alignRankAt].index == catalog[_selected].Index) {
+    score = _alignRank[_alignRankAt].score;
+    found = true;
+  } else {
+    for (short i = 0; i < _alignRankN; i++) {
+      if (_alignRank[i].index == catalog[_selected].Index) {
+        score = _alignRank[i].score;
+        found = true;
+        break;
+      }
+    }
+  }
+  if (!found || score <= 0) return 0;
+  int s = (int)((4L * (long)score + (long)_alignScoreMax - 1L) / (long)_alignScoreMax);
+  if (s < 1) s = 1;
+  if (s > 4) s = 4;
+  return s;
+}
+
+const char* CatMgr::alignSuitabilityStr() {
+  static const char* stars[] = { "", "*", "**", "***", "****" };
+  int s = alignSuitability();
+  if (s < 0) s = 0;
+  if (s > 4) s = 4;
+  return stars[s];
+}
+
+static double alignWrapSigned(double deg) {
+  while (deg > 180.0) deg -= 360.0;
+  while (deg < -180.0) deg += 360.0;
+  return deg;
+}
+
+static double alignAzDelta(double a, double b) {
+  double d = fabs(a - b);
+  while (d >= 360.0) d -= 360.0;
+  if (d > 180.0) d = 360.0 - d;
+  return d;
+}
+
+void CatMgr::buildAlignRank(int mountKind, int session, const float *prevRa, const float *prevDec, int nPrev) {
+  clearAlignRank();
+  if (_selected < 0 || !isInitialized()) return;
+  if (nPrev < 0) nPrev = 0;
+  if (nPrev > 6) nPrev = 6;
+  const bool altaz = (mountKind == 1);
+
+  // Equatorial side is the sign of the hour angle. The other side of a 3+3
+  // is judged from the first three stars only. A star within 12° of the
+  // meridian does not vote.
+  int haVotes = 0;
+  int voteLimit = nPrev;
+  if (session == 3 && voteLimit > 3) voteLimit = 3;
+  double meanDec = 0.0;
+  double meanAlt = 0.0;
+  double azx = 0.0;
+  double azy = 0.0;
+  int azCount = voteLimit;
+  if (nPrev > 0 && prevRa != NULL && prevDec != NULL) {
+    for (int k = 0; k < nPrev; k++) {
+      const double h = alignWrapSigned(lstDegs() - prevRa[k]);
+      if (k < voteLimit) {
+        if (h > 12.0) haVotes++;
+        else if (h < -12.0) haVotes--;
+      }
+      meanDec += prevDec[k];
+    }
+    meanDec /= nPrev;
+    for (int k = 0; k < azCount; k++) {
+      double pAlt = 0.0, pAz = 0.0;
+      EquToHor(prevRa[k], prevDec[k], &pAlt, &pAz);
+      meanAlt += pAlt;
+      azx += cos(pAz / Rad);
+      azy += sin(pAz / Rad);
+    }
+    if (azCount > 0) meanAlt /= azCount;
+  }
+  double meanAz = 0.0;
+  if (azCount > 0) {
+    meanAz = atan2(azy, azx) * Rad;
+    if (meanAz < 0.0) meanAz += 360.0;
+  }
+  int wantSign = 0;
+  if (!altaz && haVotes != 0 && (session == 1 || session == 2 || session == 3))
+    wantSign = (haVotes > 0 ? 1 : -1) * (session == 3 ? -1 : 1);
+  // A two-star equatorial pair wants the second star across the meridian.
+  int preferSign = 0;
+  if (!altaz && session == 0 && nPrev > 0 && haVotes != 0)
+    preferSign = haVotes > 0 ? -1 : 1;
+
+  const long saved = catalog[_selected].Index;
+  const long nObj = getMaxIndex();
+  for (long i = 0; i <= nObj; i++) {
+    catalog[_selected].Index = i;
+    read();
+    if (isFiltered()) continue;
+
+    double minSep = 180.0;
+    if (nPrev > 0 && prevRa != NULL && prevDec != NULL) {
+      for (int k = 0; k < nPrev; k++) {
+        const double sep = DistFromEqu(prevRa[k], prevDec[k]);
+        if (sep < minSep) minSep = sep;
+      }
+      // Already measured — omit from the list entirely.
+      if (minSep < 4.0) continue;
+    }
+
+    const double altD = alt();
+    const double decD = dec();
+    double score = (3.5 - magnitude()) * 1.5;
+
+    if (!altaz) {
+      const double haD = ha();
+      // Comfortable altitude, and off the meridian so polar azimuth and
+      // perpendicularity are not the same pattern.
+      double altScore = 36.0 - fabs(altD - 42.0);
+      if (altScore < 0.0) altScore = 0.0;
+      score += altScore;
+      score += 28.0 - fabs(fabs(haD) - 40.0);
+      if (nPrev > 0 && prevRa != NULL && prevDec != NULL) {
+        score += (minSep > 70.0 ? 70.0 : minSep);
+        double ddec = fabs(decD - meanDec);
+        if (ddec > 45.0) ddec = 45.0;
+        score += ddec * 0.4;
+      }
+      int sign = 0;
+      if (haD > 12.0) sign = 1;
+      else if (haD < -12.0) sign = -1;
+      if (wantSign != 0 && sign != 0 && sign != wantSign) score -= 300.0;
+      else if (preferSign != 0 && sign == preferSign) score += 40.0;
+    } else {
+      // Alt-azimuth: spread azimuth and altitude. The zenith makes azimuth
+      // undefined, so a star overhead is a poor pick. There is no meridian.
+      double altScore = 36.0 - fabs(altD - 45.0);
+      if (altScore < 0.0) altScore = 0.0;
+      score += altScore;
+      if (altD > 72.0) score -= (altD - 72.0) * 3.0;
+      if (nPrev > 0 && prevRa != NULL && prevDec != NULL) {
+        score += (minSep > 70.0 ? 70.0 : minSep);
+        double cAlt = 0.0, cAz = 0.0;
+        EquToHor(ra(), dec(), &cAlt, &cAz);
+        const double dAz = alignAzDelta(cAz, meanAz);
+        double dAlt = fabs(altD - meanAlt);
+        if (dAlt > 40.0) dAlt = 40.0;
+        if (session == 0) {
+          score += 30.0 - fabs(dAz - 90.0) * 0.35;
+          score += dAlt * 0.5;
+        } else if (session == 3) {
+          // Opposite azimuth: the other mechanical side, over the zenith.
+          score += 36.0 - fabs(dAz - 160.0) * 0.3;
+          if (dAz < 70.0) score -= 250.0;
+          score += dAlt * 0.3;
+        } else {
+          // Four stars, and the first half of 3+3, stay in one part of the sky.
+          if (dAz > 100.0) score -= 250.0;
+          else score += 24.0 - fabs(dAz - 50.0);
+          score += dAlt * 0.5;
+        }
+      }
+    }
+
+    insertAlignRank((short)i, (short)(score * 10.0));
+  }
+
+  if (_alignRankN > 0) {
+    _alignRanked = true;
+    // Catalog order for browsing; land the cursor on the best candidate.
+    short bestAt = 0;
+    for (short j = 1; j < _alignRankN; j++) {
+      if (_alignRank[j].score > _alignRank[bestAt].score) bestAt = j;
+    }
+    _alignRankAt = bestAt;
+    catalog[_selected].Index = _alignRank[bestAt].index;
+    read();
+  } else {
+    catalog[_selected].Index = saved;
+    read();
+  }
 }
 
 void CatMgr::filterAdd(int fm) {
@@ -380,6 +586,21 @@ bool CatMgr::isFiltered() {
 // select catalog record
 bool CatMgr::setIndex(long index) {
   if (_selected<0) return false;
+  if (_alignRanked) {
+    for (short i = 0; i < _alignRankN; i++) {
+      if (_alignRank[i].index == index) {
+        _alignRankAt = i;
+        catalog[_selected].Index = index;
+        read();
+        return true;
+      }
+    }
+    if (_alignRankN <= 0) return false;
+    _alignRankAt = 0;
+    catalog[_selected].Index = _alignRank[0].index;
+    read();
+    return true;
+  }
   catalog[_selected].Index=index;
   read();
   decIndex();
@@ -395,6 +616,14 @@ long CatMgr::getMaxIndex() {
 }
 
 bool CatMgr::incIndex() {
+  if (_alignRanked) {
+    if (_alignRankN <= 0) return false;
+    _alignRankAt++;
+    if (_alignRankAt >= _alignRankN) _alignRankAt = 0;
+    catalog[_selected].Index = _alignRank[_alignRankAt].index;
+    read();
+    return true;
+  }
   long i=getMaxIndex()+1;
   do {
     i--;
@@ -406,6 +635,14 @@ bool CatMgr::incIndex() {
 }
 
 bool CatMgr::decIndex() {
+  if (_alignRanked) {
+    if (_alignRankN <= 0) return false;
+    _alignRankAt--;
+    if (_alignRankAt < 0) _alignRankAt = (short)(_alignRankN - 1);
+    catalog[_selected].Index = _alignRank[_alignRankAt].index;
+    read();
+    return true;
+  }
   long i=getMaxIndex()+1;
   do {
     i--;

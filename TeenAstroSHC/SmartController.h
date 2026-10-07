@@ -22,7 +22,7 @@
 #define SHCFirmwareTime          __TIME__
 #define SHCFirmwareVersionMajor  "1"
 #define SHCFirmwareVersionMinor  "6"
-#define SHCFirmwareVersionPatch  "9"
+#define SHCFirmwareVersionPatch  "10"
 
 #define NUMPAGES 9
 class SmartHandController
@@ -96,6 +96,9 @@ private:
   #ifdef NO_SPEED_MENU
   void increaseSpeed(bool increase);
   #endif
+  /// During align recenter: long Shift (alone or +N/S) → Set Speed. Returns true if handled.
+  bool handleAlignRecenterSpeed();
+  void acceptAlignStar();
   void menuReticule();
   void menuTrack();
 
@@ -117,7 +120,11 @@ private:
   MENU_RESULT menuSpirale();
   MENU_RESULT subMenuSyncGoto(NAV mode, int subMenuNum);
   MENU_RESULT menuCatalog(NAV mode, int number);
-  MENU_RESULT menuCatalogAlign(NAV mode);
+  /// \p rateAlign when true, score stars for alignment suitability (*…****)
+  /// and hide stars already measured in this session.
+  MENU_RESULT menuCatalogAlign(NAV mode, bool rateAlign = false);
+  void noteAlignStar();
+  void dropAlignStar();
   MENU_RESULT menuCatalogs(NAV mode);
   MENU_RESULT menuSolarSys(NAV mode);
   MENU_RESULT menuFilters();
@@ -158,6 +165,11 @@ private:
 
   bool SelectStarAlign();
   void showAlignmentResult();
+  float m_alignRa[6] = {};
+  float m_alignDec[6] = {};
+  uint8_t m_alignPicked = 0;
+  /// Catalog index to reopen after a broken/aborted alignment goto; -1 = none.
+  long m_alignResumeIndex = -1;
 
   void menuTelSettings();
   void menuSHCSettings();
