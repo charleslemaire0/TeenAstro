@@ -24,6 +24,14 @@ void SmartHandController::DisplayMessage(const char* txt1, const char* txt2, int
     delay(duration);
   else
   {
+    // Wait for release first: the key that opened this screen may still be held.
+    for (;;)
+    {
+      tickButtons();
+      delay(50);
+      if (!buttonPressed())
+        break;
+    }
     for (;;)
     {
       tickButtons();
@@ -75,6 +83,14 @@ void SmartHandController::DisplayLongMessage(const char* txt1, const char* txt2,
     delay(duration);
   else
   {
+    // Wait for release first: the key that opened this screen may still be held.
+    for (;;)
+    {
+      tickButtons();
+      delay(50);
+      if (!buttonPressed())
+        break;
+    }
     for (;;)
     {
       tickButtons();

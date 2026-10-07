@@ -1,6 +1,10 @@
 # PlatformIO
 .pio/
 
+# Pointing cross-check build and generated report
+pointing_crosscheck/*.exe
+pointing_crosscheck/out/
+
 # Logs
 debug-*.log
 build_*.txt

@@ -1,4 +1,4 @@
-﻿// Telescope coordinate conversion
+// Telescope coordinate conversion
 // (C) 2016 Markus L. Noga
 // (C) 2019 Charles Lemaire
 
@@ -55,24 +55,35 @@ void CoordConv::setTinvFromT() {
 double CoordConv::polErrorDeg(double latRad, PolarErrSel sel) const {
   if (!isready)
     return 0.0;
-  double x_id[3] = { cos(latRad), 0.0, sin(latRad) };
-  double x[3] = { Tinv[0][2], Tinv[1][2], Tinv[2][2] };
-  double nrm = norm(x);
-  if (nrm < 1e-15)
-    return 0.0;
-  for (int i = 0; i < 3; i++)
-    x[i] /= nrm;
+  // Mount polar axis = tube direction at the polar home stop (axis2 = ±90°,
+  // axis1 = 0). That is the Coord_IN pose getInstr() uses, not Tinv's +Z
+  // column: with Axis1_direct storage those two directions differ, and the
+  // column readout was reporting ~90°+ of bogus ME while home still pointed
+  // at the celestial pole.
+  const double axis2Home = latRad >= 0.0 ? M_PI_2 : -M_PI_2;
+  LA3::SingleRotation homeRots[3] = {
+    { LA3::RotAxis::ROTAXISX, 0.0 },
+    { LA3::RotAxis::ROTAXISY, axis2Home },
+    { LA3::RotAxis::ROTAXISZ, 0.0 }
+  };
+  double Rhome[3][3], M[3][3];
+  getMultipleRotationMatrix(Rhome, homeRots, 3);
+  multiply(M, Rhome, T);
+  double frh = 0.0, alt = 0.0, az_s_direct = 0.0;
+  getEulerRxRyRz(M, frh, alt, az_s_direct);
+  // Same north-based azimuth as Coord_HO::Az().
+  double az = -az_s_direct - M_PI;
+  while (az > M_PI) az -= 2.0 * M_PI;
+  while (az < -M_PI) az += 2.0 * M_PI;
+
   switch (sel) {
   case PE_EQ_AZ:
-    if (x[0] == 0.0)
-      return (x[1] > 0.0 ? 90.0 : -90.0);
-    return atan(x[1] / x[0]) * 180.0 / M_PI;
+    return az * 180.0 / M_PI;
   case PE_EQ_ALT:
-    if (x[0] == 0.0)
-      return (x[2] > 0.0 ? 90.0 - latRad * 180.0 / M_PI : -90.0 - latRad * 180.0 / M_PI);
-    return (atan(x[2] / x[0]) - latRad) * 180.0 / M_PI;
+    return (alt - latRad) * 180.0 / M_PI;
   case PE_POL_W: {
-    double c = x[0] * x_id[0] + x[1] * x_id[1] + x[2] * x_id[2];
+    // Angle on the sphere between the mount pole (az, alt) and the NCP (0, lat).
+    double c = sin(alt) * sin(latRad) + cos(alt) * cos(latRad) * cos(az);
     if (c > 1.0) c = 1.0;
     if (c < -1.0) c = -1.0;
     return acos(c) * 180.0 / M_PI;
@@ -170,57 +181,33 @@ void CoordConv::minimizeAxis2()
 
 void CoordConv::setPoleError(double latRad, double dAzRad, double dAltRad, double indexRad)
 {
-  // Invert polErrorDeg. Azimuth is atan(x[1]/x[0]) and altitude is
-  // atan(x[2]/x[0]) - lat, so a toDirCos of the offset pole is not the vector
-  // those two angles describe once the azimuth error is nonzero.
-  const double a = latRad + dAltRad;
-  const double tAz = tan(dAzRad);
-  const double tAlt = tan(a);
-  double p[3];
-  if (fabs(cos(a)) < 1e-6)
-  {
-    p[0] = 0.0;
-    p[1] = 0.0;
-    p[2] = sin(a) >= 0.0 ? 1.0 : -1.0;
-  }
-  else
-  {
-    double x0 = 1.0 / sqrt(1.0 + tAz * tAz + tAlt * tAlt);
-    if (cos(a) < 0.0)
-      x0 = -x0;
-    p[0] = x0;
-    p[1] = x0 * tAz;
-    p[2] = x0 * tAlt;
-  }
+  // Invert polErrorDeg: put the Coord_IN polar-home boresight at
+  // (az, alt) = (dAz, lat + dAlt). indexRad is a rotation about that pole,
+  // applied as axis1 at the home stop (Coord_IN RotZ(-index)).
+  const double axis2Home = latRad >= 0.0 ? M_PI_2 : -M_PI_2;
+  LA3::SingleRotation homeRots[3] = {
+    { LA3::RotAxis::ROTAXISX, 0.0 },
+    { LA3::RotAxis::ROTAXISY, axis2Home },
+    { LA3::RotAxis::ROTAXISZ, -indexRad }
+  };
+  double Rhome[3][3];
+  getMultipleRotationMatrix(Rhome, homeRots, 3);
 
-  double ref[3] = { 0.0, 0.0, 1.0 };
-  if (fabs(p[2]) > 0.9)
-  {
-    ref[0] = 1.0;
-    ref[1] = 0.0;
-    ref[2] = 0.0;
-  }
-  double u[3], v[3];
-  crossProduct(u, ref, p);
-  normalize(u, u);
-  crossProduct(v, p, u);
-  normalize(v, v);
+  const double alt = latRad + dAltRad;
+  const double az_s_direct = -dAzRad - M_PI;
+  LA3::SingleRotation tgtRots[3] = {
+    { LA3::RotAxis::ROTAXISX, 0.0 },
+    { LA3::RotAxis::ROTAXISY, alt },
+    { LA3::RotAxis::ROTAXISZ, az_s_direct }
+  };
+  double Rtgt[3][3];
+  getMultipleRotationMatrix(Rtgt, tgtRots, 3);
 
-  const double c = cos(indexRad);
-  const double s = sin(indexRad);
-  double ur[3], vr[3];
-  for (int i = 0; i < 3; i++)
-  {
-    ur[i] = c * u[i] + s * v[i];
-    vr[i] = -s * u[i] + c * v[i];
-  }
-  for (int i = 0; i < 3; i++)
-  {
-    Tinv[i][0] = ur[i];
-    Tinv[i][1] = vr[i];
-    Tinv[i][2] = p[i];
-  }
-  transpose(T, Tinv);
+  // Rhome * T = Rtgt  =>  T = Rhome^T * Rtgt
+  double RhomeInv[3][3];
+  transpose(RhomeInv, Rhome);
+  multiply(T, RhomeInv, Rtgt);
+  invert(Tinv, T);
   isready = true;
   refs = 0;
 }
@@ -566,6 +553,15 @@ void selectParams(const double N[RIGID_NPAR][RIGID_NPAR], unsigned char nstars,
 
 } // namespace
 
+void CoordConv::shiftStoredStars(double dAxis1Direct, double dAxis2)
+{
+  for (unsigned char i = 0; i < nstars; i++)
+  {
+    starAxis[i][0] += dAxis1Direct;
+    starAxis[i][1] += dAxis2;
+  }
+}
+
 void CoordConv::addStar(double angle1, double angle2, double axis1Direct, double axis2)
 {
   if (nstars >= COORDCONV_MAX_STARS)
@@ -586,7 +582,16 @@ void CoordConv::predictSky(double (&p)[3], unsigned char i, const HeadModel &h) 
   LA3::normalize(p, p);
 }
 
-double CoordConv::residualRms() const
+void CoordConv::starSkyDir(double (&dc)[3], unsigned char i, LA3::RefrOpt refr) const
+{
+  // Refraction is a lift of altitude only. The stored azimuth angle is unchanged,
+  // which is the same split To_Coord_HO uses when it builds an apparent place.
+  double alt = starSky[i][1];
+  LA3::Topocentric2Apparent(alt, refr);
+  LA3::toDirCos(dc, starSky[i][0], alt);
+}
+
+double CoordConv::residualRms(LA3::RefrOpt refr) const
 {
   if (nstars == 0)
     return 0.0;
@@ -595,7 +600,7 @@ double CoordConv::residualRms() const
   {
     double p[3], t[3];
     predictSky(p, i, head);
-    LA3::toDirCos(t, starSky[i][0], starSky[i][1]);
+    starSkyDir(t, i, refr);
     const double a = LA3::angle2Vectors(p, t);
     sum += a * a;
   }
@@ -678,21 +683,21 @@ double CoordConv::accumulateNormals(const double (&Tinv_w)[3][3], const HeadMode
   return sumSq;
 }
 
-bool CoordConv::fitRigidModel(double *rmsOut, int *iterOut)
+bool CoordConv::fitRigidModel(double *rmsOut, int *iterOut, LA3::RefrOpt refr)
 {
   return fitRigidWork(rmsOut, iterOut, (unsigned char)COORDCONV_MIN_RIGID_STARS,
-                      (unsigned char)COORDCONV_MIN_PERP_STARS);
+                      (unsigned char)COORDCONV_MIN_PERP_STARS, refr);
 }
 
-bool CoordConv::fitProgressive(double *rmsOut, int *iterOut)
+bool CoordConv::fitProgressive(double *rmsOut, int *iterOut, LA3::RefrOpt refr)
 {
   // Three stars give six equations. T uses three of them, and one head term
   // can take another, which is what lets the next goto improve before a full
   // session exists. Cone stays gated on the pier split inside the solver.
-  return fitRigidWork(rmsOut, iterOut, 3, 3);
+  return fitRigidWork(rmsOut, iterOut, 3, 3, refr);
 }
 
-bool CoordConv::fitRigidWork(double *rmsOut, int *iterOut, unsigned char minStars, unsigned char minPerp)
+bool CoordConv::fitRigidWork(double *rmsOut, int *iterOut, unsigned char minStars, unsigned char minPerp, LA3::RefrOpt refr)
 {
   if (!isready || nstars < minStars)
     return false;
@@ -705,7 +710,7 @@ bool CoordConv::fitRigidWork(double *rmsOut, int *iterOut, unsigned char minStar
 
   double targets[COORDCONV_MAX_STARS][3];
   for (unsigned char i = 0; i < nstars; i++)
-    LA3::toDirCos(targets[i], starSky[i][0], starSky[i][1]);
+    starSkyDir(targets[i], i, refr);
 
   // Decide which head terms this star distribution can actually support, using
   // the Jacobian at the seed. Doing it once keeps the active set fixed for the
@@ -752,6 +757,16 @@ bool CoordConv::fitRigidWork(double *rmsOut, int *iterOut, unsigned char minStar
     // ---- Levenberg-Marquardt damping, insurance against a poor star spread ----
     for (int a = 0; a < RIGID_NPAR; a++)
       N[a][a] *= (1.0 + lambda);
+
+    // Cone and perpendicularity share a similar axis2 signature. When both are
+    // free, a small ridge against their cross-term stops the solver dumping a
+    // second-order (Wallace vs HeadGeom) residual into a huge opposing CH/NP
+    // pair. T and idx2 are left alone.
+    if (active[3] && active[4]) {
+      const double coup = fabs(N[3][4]);
+      N[3][3] += 0.25 * coup;
+      N[4][4] += 0.25 * coup;
+    }
 
     // Solve over the selected parameters only. Terms left out stay at zero
     // rather than being driven by whatever the residuals happen to look like.

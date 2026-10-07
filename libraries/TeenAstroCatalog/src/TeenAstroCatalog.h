@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <Arduino.h>
 #define NUM_CAT 9
 const double Rad=57.29577951;
@@ -60,6 +60,20 @@ class CatMgr {
     long        getMaxIndex();
     bool        incIndex();
     bool        decIndex();
+
+    /// Build the alignment-star list: catalog order, already-measured stars
+    /// omitted, each entry scored for suitability (shown as *…****).
+    /// Previous stars are equatorial degrees.
+    /// \p mountKind  0 equatorial (German or fork), 1 alt-azimuth.
+    /// \p session    0 two-star spread, 1 four-star same side,
+    ///               2 first side of 3+3, 3 the other side of 3+3.
+    void        buildAlignRank(int mountKind, int session, const float *prevRa, const float *prevDec, int nPrev);
+    void        clearAlignRank();
+    bool        isAlignRanked() const { return _alignRanked; }
+    /// Suitability of the current object for the next alignment star: 0–4.
+    int         alignSuitability();
+    /// "*", "**", "***", "****", or "" when not scored / poorly suited.
+    const char* alignSuitabilityStr();
 
 // get catalog contents
     int         epoch();
@@ -127,6 +141,15 @@ private:
     int _selected=0;
     void read();
     bool isFiltered();
+
+    enum { ALIGN_RANK_CAP = 160 };
+    struct AlignRank { short index; short score; };
+    AlignRank _alignRank[ALIGN_RANK_CAP];
+    short _alignRankN = 0;
+    short _alignRankAt = 0;
+    short _alignScoreMax = 0;
+    bool _alignRanked = false;
+    void insertAlignRank(short index, short score);
 
     const char* getElementFromString(const char *data, long elementNum);
     const char* getElementFromStringProgmem(const char *data, long elementNum);

@@ -279,9 +279,9 @@ public:
   /// maps star 3 to the :AP# polar-finalize shortcut, where here it is a real
   /// alignment star.
   LX200RETURN alignSelectStarRigid(uint8_t n);       // :A1# .. :A9#
-  LX200RETURN getAlignHeadCone(double& arcsec);      // :GXAc#
-  LX200RETURN getAlignHeadPerp(double& arcsec);      // :GXAp#
-  LX200RETURN getAlignHeadIndex2(double& arcsec);    // :GXAi#
+  LX200RETURN getAlignHeadCone(double& arcsec);      // :GXAc#  TPOINT CH, arcsec
+  LX200RETURN getAlignHeadPerp(double& arcsec);      // :GXAp#  TPOINT NP, arcsec
+  LX200RETURN getAlignHeadIndex2(double& arcsec);    // :GXAi#  TPOINT ID, arcsec
   LX200RETURN getAlignRigidRms(double& arcsec);      // :GXAr#
   LX200RETURN getAlignStarCount(uint8_t& stars);     // :GXAn#
   /// Retained stars on each pier side: \p nIn is axis2 inside +/-90 deg, \p nOut
@@ -290,21 +290,21 @@ public:
   /// Which head terms the last fit solved, as "CPI" with a dash for each term
   /// the star distribution could not separate from the others.
   LX200RETURN getAlignFittedTerms(char* out, int len); // :GXAf#
-  LX200RETURN setAlignHeadCone(double arcsec);       // :SXAc,V#
-  LX200RETURN setAlignHeadPerp(double arcsec);       // :SXAp,V#
-  LX200RETURN setAlignHeadIndex2(double arcsec);     // :SXAi,V#
+  LX200RETURN setAlignHeadCone(double arcsec);       // :SXAc,V#  TPOINT CH
+  LX200RETURN setAlignHeadPerp(double arcsec);       // :SXAp,V#  TPOINT NP
+  LX200RETURN setAlignHeadIndex2(double arcsec);     // :SXAi,V#  TPOINT ID
   LX200RETURN alignClearHead();                      // :SXAC#
-  /// Known pole azimuth, pole altitude, cone and axis2 non-perpendicularity, degrees.
-  /// When use is on, a 2-star alignment holds the cone and the perpendicularity
-  /// and still estimates the pole.
-  LX200RETURN getKnownPoleAz(double& deg);           // :GXKz#
-  LX200RETURN getKnownPoleAlt(double& deg);          // :GXKa#
-  LX200RETURN getKnownCone(double& deg);             // :GXKc#
-  LX200RETURN getKnownPerp(double& deg);             // :GXKp#
-  LX200RETURN setKnownPoleAz(double deg);            // :SXKz,V#
-  LX200RETURN setKnownPoleAlt(double deg);           // :SXKa,V#
-  LX200RETURN setKnownCone(double deg);              // :SXKc,V#
-  LX200RETURN setKnownPerp(double deg);              // :SXKp,V#
+  /// Known MA, ME, CH and NP, degrees. MA is Wallace's azimuth; the EEPROM
+  /// angle is the wedge tilt MA / cos(latitude).
+  /// When use is on, a 2-star alignment holds CH and NP and still estimates the pole.
+  LX200RETURN getKnownPoleAz(double& deg);           // :GXKz#   TPOINT MA, degrees
+  LX200RETURN getKnownPoleAlt(double& deg);          // :GXKa#   TPOINT ME, degrees
+  LX200RETURN getKnownCone(double& deg);             // :GXKc#   TPOINT CH, degrees
+  LX200RETURN getKnownPerp(double& deg);             // :GXKp#   TPOINT NP, degrees
+  LX200RETURN setKnownPoleAz(double deg);            // :SXKz,V#  TPOINT MA
+  LX200RETURN setKnownPoleAlt(double deg);           // :SXKa,V#  TPOINT ME
+  LX200RETURN setKnownCone(double deg);              // :SXKc,V#  TPOINT CH
+  LX200RETURN setKnownPerp(double deg);              // :SXKp,V#  TPOINT NP
   LX200RETURN getKnownGeomUse(bool& on);             // :GXKk#
   LX200RETURN setKnownGeomUse(bool on);              // :SXKk,0# / :SXKk,1#
   LX200RETURN setPierSideEast();                 // :SmE#
@@ -312,8 +312,8 @@ public:
   LX200RETURN setPierSideNone();                 // :SmN#
   LX200RETURN getAlignStarName(char* out, int len);    // :GXAs#
   LX200RETURN getAlignErrorPolar(char* out, int len);  // :GXAw#
-  LX200RETURN getAlignErrorAz(char* out, int len);     // :GXAz#
-  LX200RETURN getAlignErrorAlt(char* out, int len);    // :GXAa#
+  LX200RETURN getAlignErrorAz(char* out, int len);     // :GXAz#  TPOINT MA, DMS
+  LX200RETURN getAlignErrorAlt(char* out, int len);    // :GXAa#  TPOINT ME, DMS
 
   // -----------------------------------------------------------------------
   //  Focuser actions

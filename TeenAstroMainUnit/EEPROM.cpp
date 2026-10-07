@@ -332,8 +332,11 @@ void initTransformation(bool reset)
     {
       double rot = localSite.northHemisphere() ? 0 : M_PI;
       mount.alignment.conv.addReference(0, 0, rot, 0);
+      // The second reference closes the build and clears the reference count.
+      // Calling calculateThirdReference again sees that count at zero and
+      // marks the model not ready, so the pole readout stays at zero while
+      // gotos still use this matrix.
       mount.alignment.conv.addReference(M_PI_2, 0, rot + M_PI_2, 0);
-      mount.alignment.conv.calculateThirdReference();
     }
     else
     {
@@ -355,6 +358,10 @@ void initTransformation(bool reset)
         Coord_EQ EQ2 = HO2.To_Coord_EQ(Lat);
         Coord_IN IN2 = Coord_IN(0, sign * EQ2.Dec(), sign * EQ2.Ha() - M_PI_2);
 
+        // Axis1_direct() is the angle getInstr() stores. Axis1() makes the
+        // pole-column readout zero, but it maps the home stop (axis 2 at 90°)
+        // to declination 2*latitude-90° instead of the pole, so every slew
+        // in that model is off by that amount.
         mount.alignment.conv.addReference(HO1.direct_Az_S(), HO1.Alt(), IN1.Axis1_direct(), IN1.Axis2());
         mount.alignment.conv.addReference(HO2.direct_Az_S(), HO2.Alt(), IN2.Axis1_direct(), IN2.Axis2());
       }
@@ -371,9 +378,6 @@ void initTransformation(bool reset)
         mount.alignment.conv.addReference(HO1.direct_Az_S(), HO1.Alt(), IN1.Axis1_direct(), IN1.Axis2());
         mount.alignment.conv.addReference(HO2.direct_Az_S(), HO2.Alt(), IN2.Axis1_direct(), IN2.Axis2());
       }
-
-
-      mount.alignment.conv.calculateThirdReference();
     }
   }
 }
@@ -381,7 +385,7 @@ void initTransformation(bool reset)
 bool fitRigidAlignModel()
 {
   double rms = 0.0;
-  if (!mount.alignment.conv.fitRigidModel(&rms, NULL))
+  if (!mount.alignment.conv.fitRigidModel(&rms, NULL, mount.refrOptForGoto()))
     return false;
   mount.alignment.rigidRmsArcsec = (float)(rms * RAD_TO_DEG * 3600.0);
   mount.alignment.hasRigid = mount.alignment.conv.hasHead();

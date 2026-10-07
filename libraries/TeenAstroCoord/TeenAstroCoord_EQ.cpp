@@ -47,9 +47,9 @@ Coord_IN Coord_EQ::To_Coord_IN(double Lat, RefrOpt Opt, const double(&missaligme
 {
   return To_Coord_HO(Lat, Opt).To_Coord_IN(missaligment);
 };
-Coord_IN Coord_EQ::To_Coord_IN(double Lat, RefrOpt Opt, const double(&missaligment)[3][3], const HeadModel &head)
+Coord_IN Coord_EQ::To_Coord_IN(double Lat, RefrOpt Opt, const double(&missaligment)[3][3], const HeadModel &head, bool beyondPole)
 {
-  return To_Coord_HO(Lat, Opt).To_Coord_IN(missaligment, head);
+  return To_Coord_HO(Lat, Opt).To_Coord_IN(missaligment, head, beyondPole);
 };
 double Coord_EQ::FrE()
 {

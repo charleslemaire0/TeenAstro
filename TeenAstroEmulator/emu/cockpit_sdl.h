@@ -745,9 +745,9 @@ static void drawTabAlignment(int y0) {
     {
         const char* proc = "2 stars (Taki)";
         if (mount.alignment.alignRigidStars == 4)
-            proc = "4 stars (perpendicularity)";
+            proc = "4 stars (NP)";
         else if (mount.alignment.alignRigidStars == 6)
-            proc = "3+3 (cone)";
+            proc = "3+3 (CH + NP)";
         else if (mount.alignment.isRigidSession())
             proc = "rigid (other count)";
         y = drawKV(y, "Procedure", proc,
@@ -771,9 +771,9 @@ static void drawTabAlignment(int y0) {
         y = drawKV(y, "Pier sides", buf, coneOpen ? COL_GOOD : COL_VALUE);
         snprintf(buf, sizeof(buf), coneOpen ? "%d each side, met" : "%d each side",
                  COORDCONV_MIN_CONE_PER_SIDE);
-        y = drawKV(y, "Cone needs", buf, coneOpen ? COL_GOOD : COL_DIM);
+        y = drawKV(y, "CH needs", buf, coneOpen ? COL_GOOD : COL_DIM);
         snprintf(buf, sizeof(buf), "%d star(s)", COORDCONV_MIN_PERP_STARS);
-        y = drawKV(y, "Perp needs", buf, COL_DIM);
+        y = drawKV(y, "NP needs", buf, COL_DIM);
     }
     if (mount.alignment.conv.hasHead()) {
         float hcone = 0.f, hperp = 0.f, hidx2 = 0.f;
@@ -790,21 +790,21 @@ static void drawTabAlignment(int y0) {
                            && nOut >= COORDCONV_MIN_CONE_PER_SIDE;
         if (fitMask & COORDCONV_FIT_CONE) {
             snprintf(buf, sizeof(buf), "%+.1f\"", hcone * toArcsec);
-            y = drawKV(y, "Cone Error", buf);
+            y = drawKV(y, "CH", buf);
         } else {
-            y = drawKV(y, "Cone Error", coneOpen ? notFit : needSides, COL_DIM);
+            y = drawKV(y, "CH", coneOpen ? notFit : needSides, COL_DIM);
         }
         if (fitMask & COORDCONV_FIT_PERP) {
-            snprintf(buf, sizeof(buf), "%+.1f\"", hperp * toArcsec);
-            y = drawKV(y, "Axis2 Non-Perp", buf);
+            snprintf(buf, sizeof(buf), "%+.1f\"", -hperp * toArcsec);
+            y = drawKV(y, "NP", buf);
         } else {
-            y = drawKV(y, "Axis2 Non-Perp", notFit, COL_DIM);
+            y = drawKV(y, "NP", notFit, COL_DIM);
         }
         if (fitMask & COORDCONV_FIT_IDX2) {
             snprintf(buf, sizeof(buf), "%+.1f\"", hidx2 * toArcsec);
-            y = drawKV(y, "Axis2 Index", buf);
+            y = drawKV(y, "ID", buf);
         } else {
-            y = drawKV(y, "Axis2 Index", notFit, COL_DIM);
+            y = drawKV(y, "ID", notFit, COL_DIM);
         }
         snprintf(buf, sizeof(buf), "%.1f\"", mount.alignment.rigidRmsArcsec);
         y = drawKV(y, "Fit RMS", buf,

@@ -46,11 +46,14 @@
 
 /// Maximum alignment stars retained for the rigid model fit.
 #define COORDCONV_MAX_STARS 9
-/// Minimum stars accepted for a rigid fit. Six unknowns and two equations per
-/// star make three stars sufficient on paper, but that leaves zero redundancy:
-/// every measurement error goes straight into the parameters. Four stars give
-/// two spare equations, which is what lets the conditioning test below tell a
-/// genuinely separable term from noise.
+/// Smallest rigid session (`:A0,r3#`). Three stars give six equations; the
+/// progressive solver may start refining head terms from here.
+#define COORDCONV_MIN_PROGRESSIVE_STARS 3
+/// Minimum stars accepted for the closing one-shot rigid fit. Six unknowns and
+/// two equations per star make three stars sufficient on paper, but that leaves
+/// zero redundancy: every measurement error goes straight into the parameters.
+/// Four stars give two spare equations, which is what lets the conditioning
+/// test below tell a genuinely separable term from noise.
 #define COORDCONV_MIN_RIGID_STARS 4
 /// Axis2 non-perpendicularity may be solved once a rigid session has this many
 /// stars. It does not need a meridian flip: within one pier side it is the
@@ -66,7 +69,7 @@
 #define COORDCONV_FIT_PERP 0x02
 #define COORDCONV_FIT_IDX2 0x04
 
-/// Selectors for polar / horizontal misclosure from \p Tinv (polErrorDeg).
+/// Selectors for polar / horizontal misclosure via polErrorDeg (home boresight).
 /// Plain enum (no fixed underlying type) so Teensy / Arduino builds without -std=c++11 still compile.
 enum PolarErrSel {
   PE_EQ_AZ = 0,
@@ -122,7 +125,12 @@ public:
 
 	void setTinvFromT();
 
-	/// Pole / horizontal misclosure (degrees). \p latRad site latitude (radians); basis matches toDirCos / southern azimuth.
+	/// Pole / horizontal misclosure (degrees). \p latRad site latitude (radians).
+	/// Measured from the Coord_IN polar-home boresight (axis2 = ±90°, axis1 = 0)
+	/// through T — the tube direction at the home stop — not from Tinv's +Z
+	/// column (that column disagrees under Axis1_direct storage).
+	/// PE_EQ_ALT is the opposite of Wallace ME. PE_EQ_AZ is the azimuth tilt of
+	/// the wedge; Wallace MA is that tilt times cos(latRad).
 	double polErrorDeg(double latRad, PolarErrSel sel) const;
 	
 	// add a user-provided reference star (all values in radians)
@@ -165,11 +173,27 @@ public:
 	void clearHead() { head = HeadModel(); }
 
 	/// Record an alignment star without touching the two star Taki solution.
+	/// \p angle1 and \p angle2 are the geometric (topocentric) sky angles.
+	/// Refraction is not stored; the fit lifts the altitude when it runs.
 	/// \p axis1Direct is the raw Rz Euler angle (Coord_IN::Axis1_direct()).
 	void addStar(double angle1, double angle2, double axis1Direct, double axis2);
 
 	/// Number of retained alignment stars.
 	unsigned char getStars() const { return nstars; }
+
+	/// Read retained star \p i (0-based): geometric az_S / alt and instrument
+	/// axis1Direct / axis2, all radians. Returns false when the index is empty.
+	bool getStar(unsigned char i, double &azS, double &alt,
+	             double &axis1Direct, double &axis2) const
+	{
+		if (i >= nstars)
+			return false;
+		azS = starSky[i][0];
+		alt = starSky[i][1];
+		axis1Direct = starAxis[i][0];
+		axis2 = starAxis[i][1];
+		return true;
+	}
 
 	/// How the retained stars split across the two mechanical configurations.
 	/// \p nIn is axis2 inside +/-90 deg, \p nOut is axis2 past that (beyond the
@@ -193,6 +217,9 @@ public:
 	/// Forget the retained stars. T and the head terms are left alone.
 	void resetStars() { nstars = 0; }
 
+	/// Add the same offset to every stored instrument angle.
+	void shiftStoredStars(double dAxis1Direct, double dAxis2);
+
 	/// Fit T and the head terms to the retained stars by damped Gauss-Newton.
 	/// Requires isReady() (T already seeded, normally by the two star Taki pass)
 	/// and at least COORDCONV_MIN_RIGID_STARS stars. On success T, Tinv and head
@@ -201,13 +228,15 @@ public:
 	/// Head terms are selected from the data rather than fitted unconditionally:
 	/// a term is only solved when this star distribution separates it from the
 	/// terms already selected. See getRigidMask().
-	bool fitRigidModel(double *rmsOut = 0, int *iterOut = 0);
+	/// \p refr lifts each stored geometric altitude before the sky direction is
+	/// built. The default leaves the stored angles unchanged.
+	bool fitRigidModel(double *rmsOut = 0, int *iterOut = 0, LA3::RefrOpt refr = { false, 0.0, 0.0 });
 
 	/// Same solver as fitRigidModel(), allowed from the third star. Cone still
 	/// waits for three stars on each pier side. Perpendicularity may be solved
 	/// from three, so the next goto can use the part of the head error the
 	/// stars already show.
-	bool fitProgressive(double *rmsOut = 0, int *iterOut = 0);
+	bool fitProgressive(double *rmsOut = 0, int *iterOut = 0, LA3::RefrOpt refr = { false, 0.0, 0.0 });
 
 	/// Which head terms the last fit actually solved, as a bit mask of
 	/// COORDCONV_FIT_CONE / _PERP / _IDX2. Terms left out were not separable
@@ -215,7 +244,8 @@ public:
 	unsigned char getRigidMask() const { return rigidMask; }
 
 	/// RMS angular residual of the retained stars under the current model (radians).
-	double residualRms() const;
+	/// \p refr is applied to the stored geometric altitude, as in the fit.
+	double residualRms(LA3::RefrOpt refr = { false, 0.0, 0.0 }) const;
 
 	/// RMS residual recorded by the last successful fitRigidModel() (radians).
 	double getRigidRms() const { return rigidRms; }
@@ -228,6 +258,9 @@ protected:
 	/// Sky direction predicted for retained star \p i using \p h and the current Tinv.
 	void predictSky(double (&p)[3], unsigned char i, const HeadModel &h) const;
 
+	/// Stored geometric sky of star \p i, with \p refr added to the altitude.
+	void starSkyDir(double (&dc)[3], unsigned char i, LA3::RefrOpt refr) const;
+
 	/// Accumulate the Gauss-Newton normal equations at (\p Tinv_w, \p head_w).
 	/// Returns the sum of squared tangent plane residuals.
 	double accumulateNormals(const double (&Tinv_w)[3][3], const HeadModel &head_w,
@@ -236,7 +269,7 @@ protected:
 
 	/// Shared body. \p minStars and \p minPerp are the gates for this call.
 	/// Cone still requires three stars on each pier side.
-	bool fitRigidWork(double *rmsOut, int *iterOut, unsigned char minStars, unsigned char minPerp);
+	bool fitRigidWork(double *rmsOut, int *iterOut, unsigned char minStars, unsigned char minPerp, LA3::RefrOpt refr);
 
   double dcAARef[3][3];	// axis1/axis2 direction cosine vectors for the three reference stars, indexed by reference first
   double dcHDRef[3][3];	// angle1/angle2l direction cosine vectors for the three reference stars, indexed by reference first
@@ -246,8 +279,9 @@ protected:
   bool isready = false;
 	double anglediff = 0;
 
-	// Retained alignment stars for the rigid fit: sky angle1/angle2 and the
-	// matching instrument axis1Direct/axis2, all radians.
+	// Retained alignment stars for the rigid fit. Sky angles are geometric
+	// (topocentric) angle1/angle2; instrument angles are axis1Direct/axis2.
+	// All radians. Refraction is applied from the RefrOpt passed to the fit.
 	double starSky[COORDCONV_MAX_STARS][2];
 	double starAxis[COORDCONV_MAX_STARS][2];
 	unsigned char nstars = 0;

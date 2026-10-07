@@ -211,8 +211,13 @@ static uint8_t ext_draw_catalog_list_line(u8g2_t *u8g2, uint8_t y, CATALOG_DISPL
     x = 0;
     if (displayMode == DM_INFO) {
       y += line_height;
-      // Name or note string
+      // Name or note string; alignment suitability (*…****) on the right
       u8g2_DrawUTF8(u8g2, x, y, cat_mgr.objectNameStr());
+      if (cat_mgr.isAlignRanked()) {
+        const char* suit = cat_mgr.alignSuitabilityStr();
+        if (suit[0] != 0)
+          u8g2_DrawUTF8(u8g2, dx - u8g2_GetUTF8Width(u8g2, suit), y, suit);
+      }
 
       // line 3
       x = 0;

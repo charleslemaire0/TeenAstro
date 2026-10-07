@@ -315,17 +315,17 @@ Das genügt für einen visuellen Abend, wenn die mechanische Polausrichtung scho
 | Motoren | Mechanik, Geschwindigkeiten, Nachführung |
 | Encoders | Positionsgeber |
 | Grenzen | Horizont, Zenit, Achsen, Meridian |
-| Montierungsfehler | Konus und Nicht-Senkrechtigkeit, fest bei einer 2-Sterne-Ausrichtung |
+| Montierungsfehler | CH und NP, fest bei einer 2-Sterne-Ausrichtung |
 | Refraktion | Siehe unten |
 | Strichplatte | Helligkeit des Polsucher-Fadenkreuzes, wenn der Ausgang verdrahtet ist |
 
-**Montierungsfehler**: **AUS** oder **AN**. Bei **AN** fragt der Handkontroller **Konus**, dann **Senkr.** Jeder Wert ist in Grad, von −5 bis +5, mit drei Nachkommastellen.
+**Montierungsfehler**: **AUS** oder **AN**. Bei **AN** fragt der Handkontroller **CH**, dann **NP**. Jeder Wert ist in Grad, von −5 bis +5, mit drei Nachkommastellen, mit Wallaces Vorzeichen.
 
-**AUS** lassen für die übliche 2-Sterne-Ausrichtung. **AN** stellen, wenn der optische Konus und die Nicht-Senkrechtigkeit der zweiten Achse schon bekannt sind, aus einer früheren Ausrichtung **4 Sterne** oder **3+3 Sterne**, oder aus einer Messung der Mechanik. Eine 2-Sterne-Ausrichtung hält dann beide Zahlen und misst den Pol weiterhin. Der Startbildschirm zeigt **Misst den Pol**. Sind beide Zahlen null, wird nichts festgehalten und die 2-Sterne-Ausrichtung bleibt die übliche. **4 Sterne**, **3+3 Sterne** und **2 Sterne Mech.** verwenden diese Einstellung nicht.
+**AUS** lassen für die übliche 2-Sterne-Ausrichtung. **AN** stellen, wenn CH und NP schon bekannt sind, aus einer früheren Ausrichtung **4 Sterne** oder **3+3 Sterne**, oder aus einer Messung der Mechanik. CH ist die Kollimation, NP die Nicht-Senkrechtigkeit, mit Wallaces Vorzeichen. Eine 2-Sterne-Ausrichtung hält dann beide Zahlen und misst den Pol weiterhin. Der Startbildschirm zeigt **Misst den Pol**. Sind beide Zahlen null, wird nichts festgehalten und die 2-Sterne-Ausrichtung bleibt die übliche. **4 Sterne**, **3+3 Sterne** und **2 Sterne Mech.** verwenden diese Einstellung nicht.
 
 Derselbe Eintrag ist die letzte Zeile von **Teleskop Aktion → Ausrichten**.
 
-Auf der Webseite des Handkontrollers heißt der Block **Mount error** und steht über der Refraktion. Der Seitentext ist auf jeder Firmware englisch. **Off** oder **On** kommt zuerst; der Text nach der Auswahl ist „Hold cone and perpendicularity“. Konus und Senkrechtigkeit haben je eine eigene Zeile: der Wert, **Upload**, dann Name und Einheit, in Grad, ±5.
+Auf der Webseite des Handkontrollers heißt der Block **Mount error** und steht über der Refraktion. Der Seitentext ist auf jeder Firmware englisch. **Off** oder **On** kommt zuerst; der Text nach der Auswahl ist „Hold CH and NP“. CH und NP haben je eine eigene Zeile: der Wert, **Upload**, dann Name und Einheit, in Grad, ±5, mit Wallaces Vorzeichen.
 
 **Refraktion → Goto**: AN oder AUS. Eingeschaltet geht die atmosphärische Refraktion in den Schwenk ein (Saemundsson hin, Bennett zurück).
 
@@ -624,7 +624,7 @@ Die Synchronisierung setzt die Position neu. Sie baut kein Ausrichtungsmodell: e
 
 ## 15. Ausrichtung
 
-Die Ausrichtung berechnet die Abbildung zwischen Himmel und Achsen. Eine 2-Sterne-Ausrichtung folgt dem Verfahren von Taki (zwei gemessene Richtungen), ergänzt um die nächstliegende echte Drehung im Sinne der kleinsten Quadrate. Das Ergebnis ist eine 3×3-Matrix. Sie dient dem Zeigen, der Synchronisierung, der korrigierten Nachführung und der Höhenkontrolle. **4 Sterne** und **3+3 Sterne**, weiter unten beschrieben, können außerdem den Konus und die Nicht-Senkrechtigkeit der zweiten Achse messen.
+Die Ausrichtung berechnet die Abbildung zwischen Himmel und Achsen. Eine 2-Sterne-Ausrichtung folgt dem Verfahren von Taki (zwei gemessene Richtungen), ergänzt um die nächstliegende echte Drehung im Sinne der kleinsten Quadrate. Das Ergebnis ist eine 3×3-Matrix. Sie dient dem Zeigen, der Synchronisierung, der korrigierten Nachführung und der Höhenkontrolle. **4 Sterne** und **3+3 Sterne**, weiter unten beschrieben, können außerdem CH und NP messen. Das Ergebnis erscheint als CH, NP, ID und ME, mit Wallaces Vorzeichen.
 
 **Teleskop Aktion → Ausrichten**
 
@@ -641,11 +641,11 @@ Auf einer altazimutalen Montierung wird **2 Sterne Mech.** nicht angeboten. **Mo
 
 1. Der Tubus steht auf der Homeposition. Die Anzeige erinnert: **Die Montierung muss auf die Homeposition gesetzt werden.**
 2. **Home** wählen, wenn die Anzeige den Modus abfragt.
-3. Das Steuergerät nimmt den Start an. Den ersten Stern aus der Liste wählen (benannte Sterne, über dem Horizont).
-4. Der Tubus fährt. **Fahre zu**, dann **Neuzentrieren**.
-5. Den Stern zentrieren. Ein langer Druck auf Shift übernimmt den Stern (**Stern hinzugefügt**).
-6. Den zweiten Stern wählen, weit vom ersten in Stundenwinkel und Deklination. Dasselbe Zentrieren, derselbe lange Druck.
-7. Bei Erfolg wird das Modell gerechnet. **Speichern** schreibt es in den Speicher. Ohne Speichern geht es beim nächsten Park oder beim Abschalten verloren, je nachdem ob geparkt wird: das Wiki der Gruppe erinnert daran, am Ende der Prozedur zu parken, um das Ergebnis zu behalten. **Speichern** im Menü Ausrichten schreibt es ausdrücklich.
+3. Das Steuergerät nimmt den Start an. Einen Stern aus der Liste wählen (benannte Sterne, über dem Horizont). Die Liste bleibt in der normalen Katalogreihenfolge. Jeder Stern zeigt rechts neben dem Namen eine Eignungsmarkierung von `*` bis `****`: mehr Sterne bedeuten eine bessere Wahl für die nächste Messung. Bereits in dieser Sitzung gemessene Sterne fehlen. Der Cursor öffnet auf dem besten verbleibenden Kandidaten; Nord und Süd blättern danach wie gewohnt im Katalog. Auf einer deutschen Montierung oder einer äquatorialen Gabel liegt eine gute Wahl in bequemer Höhe, deutlich neben dem Meridian, und weit von den schon genommenen Sternen. Vier Sterne bleiben auf derselben Seite des Meridians. Beim 3+3 bevorzugt die zweite Seite der Liste die andere Seite. Auf einer Alt-Azimut-Montierung, auch einer Alt-Azimut-Gabel, streut eine gute Wahl Azimut und Höhe, weg vom Zenit. Vier Sterne bleiben im selben Himmelsbereich. Beim 3+3 bevorzugt die zweite Seite das gegenüberliegende Azimut.
+4. Der Tubus fährt. **Fahre zu**, dann **Neuzentrieren**. Wird der Goto abgelehnt (Grenzen, unter dem Horizont) oder brechen Sie den Schwenk ab (langes Shift oder eine andere Taste), öffnet sich die Sternliste wieder auf demselben Stern, damit Sie neu wählen oder denselben noch einmal nehmen können.
+5. Den Stern mit den Richtungstasten zentrieren. Ein **kurzer** Druck auf Shift übernimmt den Stern (**Stern hinzugefügt**). Zum Wechseln der Zentriergeschwindigkeit öffnet ein **langer** Druck auf Shift allein **Geschw. setzen** (Guiding, Langsam, Mittel, Schnell, Max). **Shift + Nord** oder **Shift + Süd** öffnen dasselbe Menü wie außerhalb der Ausrichtung.
+6. Den zweiten Stern wählen. Auf einer äquatorialen Montierung einen Stern weit vom ersten in Stundenwinkel und Deklination bevorzugen. Auf einer Alt-Azimut-Montierung weit in Azimut und Höhe. Die Markierungen `*`…`****` und der Startcursor helfen bei der Wahl; schon verwendete Sterne sind aus der Liste verschwunden. Dasselbe Zentrieren: kurzes Shift bestätigt, langes Shift ändert die Geschwindigkeit.
+7. Bei Erfolg wird das Modell gerechnet. Der Handkontroller zeigt **Ausrichtung** / **Erfolg**, dann den Restfehler, dann (bei **4 Sterne** und **3+3 Sterne**) die Kopfgeometrie (CH, NP, ID). Jeder dieser Bildschirme bleibt, bis eine Taste gedrückt wird. **Speichern** schreibt es in den Speicher. Ohne Speichern geht es beim nächsten Park oder beim Abschalten verloren, je nachdem ob geparkt wird: das Wiki der Gruppe erinnert daran, am Ende der Prozedur zu parken, um das Ergebnis zu behalten. **Speichern** im Menü Ausrichten schreibt es ausdrücklich.
 
 **Löschen** vergisst das Modell. Die Montierung kehrt zur Annahme zurück, sie sei mechanisch richtig und starte von Home.
 
@@ -660,17 +660,17 @@ Wenn Home nicht erreichbar ist (der Tubus steht schon am Himmel):
 
 ### Montierungsfehler bei einer 2-Sterne-Ausrichtung
 
-**Montierungsfehler** vor dem Start setzen, in diesem Menü oder unter **Teleskop-Einst. → Montierung**. Bei **AN**, und wenn **Konus** oder **Senkr.** nicht null ist, messen die zwei Sterne weiterhin den Pol und den Achsindex. Beide Zahlen bleiben erhalten, auch eine Null auf der anderen Zeile. Sie gehen nicht in den Pol ein. Die Moduszeile auf dem Startbildschirm ist **Misst den Pol** statt **Ausrichtung**.
+**Montierungsfehler** vor dem Start setzen, in diesem Menü oder unter **Teleskop-Einst. → Montierung**. Bei **AN**, und wenn **CH** oder **NP** nicht null ist, messen die zwei Sterne weiterhin den Pol und den Achsindex. Beide Zahlen bleiben erhalten, auch eine Null auf der anderen Zeile. Sie gehen nicht in den Pol ein. Die Moduszeile auf dem Startbildschirm ist **Misst den Pol** statt **Ausrichtung**.
 
 ### 4 Sterne
 
-Von Home, auf derselben Säulenseite. Die Anzeige sagt **Gleiche Seite** und **Nicht-senkrecht**. Mit **Ja** bestätigen. Vier Sterne schätzen die Nicht-Senkrechtigkeit der zweiten Achse. Der Konus wird von einer einzigen Säulenseite nicht geschätzt. Die gespeicherten Werte unter **Montierungsfehler** werden nicht verwendet.
+Von Home, auf derselben Säulenseite. Die Anzeige sagt **Gleiche Seite** und **NP**. Mit **Ja** bestätigen. Vier Sterne schätzen NP. CH wird von einer einzigen Säulenseite nicht geschätzt. Die gespeicherten Werte unter **Montierungsfehler** werden nicht verwendet.
 
 Die ersten zwei Sterne setzen den Pol. Nach dem dritten Stern wird das Modell aktualisiert, bevor zum vierten geschwenkt wird, damit eine anfangs weit daneben liegende Montierung bei diesem letzten Stern näher liegt. Der Handkontroller wartet, während die Aktualisierung läuft. Der vierte Stern schließt die Sitzung.
 
 ### 3+3 Sterne
 
-Für eine deutsche Montierung oder eine Gabel, die die Seite wechseln kann. Die Anzeige sagt **Wenden nach 3** und **Konus + Perp**. Mit **Ja** bestätigen. Drei Sterne auf einer Seite, Umschlag, dann drei auf der anderen. Nach dem dritten Stern, und nach jedem weiteren Stern außer dem letzten, wird das Modell vor dem nächsten Schwenk aktualisiert. Der Handkontroller wartet, während diese Aktualisierung läuft. Der Konus wird nur geschätzt, wenn jede Seite wirklich drei Sterne beigetragen hat. Ein einzelner Stern nach dem Umschlag reicht nicht, und der Konus bleibt unveröffentlicht, bis diese Aufteilung erreicht ist. Die gespeicherten Werte unter **Montierungsfehler** werden nicht verwendet.
+Für eine deutsche Montierung oder eine Gabel, die die Seite wechseln kann. Die Anzeige sagt **Wenden nach 3** und **CH + NP**. Mit **Ja** bestätigen. Drei Sterne auf einer Seite, Umschlag, dann drei auf der anderen. Nach dem dritten Stern, und nach jedem weiteren Stern außer dem letzten, wird das Modell vor dem nächsten Schwenk aktualisiert. Der Handkontroller wartet, während diese Aktualisierung läuft. CH wird nur geschätzt, wenn jede Seite wirklich drei Sterne beigetragen hat. Ein einzelner Stern nach dem Umschlag reicht nicht, und CH bleibt unveröffentlicht, bis diese Aufteilung erreicht ist. Die gespeicherten Werte unter **Montierungsfehler** werden nicht verwendet. Das Ergebnis erscheint als CH, NP und ID, in Bogensekunden, und der Pol als MA und ME. Der Winkel, um den die Montierung im Azimut gedreht wird, ist MA geteilt durch den Kosinus der Breite. Die Vorzeichen sind die von Wallace.
 
 ### 2 Sterne Mech.
 
@@ -690,9 +690,9 @@ Die erste Synchronisierung verankert die Achsen auf der gelösten Position. Die 
 
 Eine spätere Synchronisierung korrigiert nur die aktuelle Zeigerichtung, zum Beispiel nach einer weiteren Plattenlösung. Sie löscht das Modell nicht. **Computer Ausrichtung** erneut, oder **Löschen**, setzt es zurück.
 
-Ist **Montierungsfehler** auf **AN** und **Konus** oder **Senkr.** nicht null, hält diese Synchron-Ausrichtung beide Zahlen und misst den Pol weiter, wie **2 Sterne**. **4 Sterne** und **3+3 Sterne** sind die oben beschriebenen Prozeduren am Handkontroller. **Computer Ausrichtung** startet sie nicht.
+Ist **Montierungsfehler** auf **AN** und **CH** oder **NP** nicht null, hält diese Synchron-Ausrichtung beide Zahlen und misst den Pol weiter, wie **2 Sterne**. **4 Sterne** und **3+3 Sterne** sind die oben beschriebenen Prozeduren am Handkontroller. **Computer Ausrichtung** startet sie nicht.
 
-Führt ein Programm stattdessen eine Sitzung Stern für Stern, zeigt die Anzeige **Fern-Ausricht.** und den Namen des verlangten Sterns. Das Zentrieren und der lange Druck auf Shift erfolgen dann am Handkontroller.
+Führt ein Programm stattdessen eine Sitzung Stern für Stern, zeigt die Anzeige **Fern-Ausricht.** und den Namen des verlangten Sterns. Das Zentrieren erfolgt dann am Handkontroller: kurzes Shift übernimmt den Stern, langes Shift (allein oder mit Nord/Süd) öffnet **Geschw. setzen**.
 
 ### Welches Sternpaar
 
@@ -703,6 +703,74 @@ Zwei helle Sterne wählen, gut über dem Horizont, mindestens etwa vierzig Grad 
 ### Was die Ausrichtung nicht behebt
 
 Sie ersetzt keine falsche Getriebezahl, keine verkehrte Drehrichtung und keine falsche Uhr. Liegt das erste Goto um Grade neben dem Ziel, zuerst die Kapitel 8 bis 10 wiederholen, bevor eine neue Ausrichtung gestartet wird.
+
+### TPOINT-Namen und was TeenAstro wirklich rechnet
+
+Handkontroller und Webseite zeigen **CH**, **NP**, **ID**, **ME** und **MA** mit Wallaces TPOINT-Vorzeichen. Das sind die üblichen Bezeichnungen für Montierungsfehler. TeenAstro zeigt den Himmel **nicht** mit den klassischen linearisierten TPOINT-Zifferblatt-Formeln. Es verwendet exakte Drehungen: die Kopfgeometrie (Kollimation, Nicht-Senkrechtigkeit, Index) und eine echte Orientierung der Polarachse im Raum.
+
+**TPOINT** wurde gebaut, um kleine Reste in Stundenwinkel und Deklination an wenigen Sternen zu fitten. Seine geometrischen Terme sind praktische Korrekturen für die kleinste-Quadrate-Rechnung, vor allem für **kleine** (fast infinitesimale) Fehler. **TeenAstro** stellt eine andere Frage: wohin zeigt die Polarachse, und wie ist der Kopf gebaut.
+
+```
+  TPOINT:      welche ΔHA-, ΔDec-Korrekturen verringern den Rest auf meinen Sternen?
+  TeenAstro:   wie sind Kopf und Polarachse im Raum orientiert?
+```
+
+Klassisches TPOINT (erster Ordnung, auf den Zifferblättern), mit \(H\) = Stundenwinkel und \(\delta\) = Deklination:
+
+\[
+\begin{aligned}
+\Delta H &=
+  \mathrm{IH}
+  + \mathrm{CH}\,\sec\delta
+  + \mathrm{NP}\,\tan\delta
+  + \mathrm{MA}\,\cos H\,\tan\delta
+  - \mathrm{ME}\,\sin H\,\tan\delta \\[0.4em]
+\Delta\delta &=
+  \mathrm{ID}
+  - \mathrm{ME}\,\cos H
+  + \mathrm{MA}\,\sin H
+\end{aligned}
+\]
+
+Der TeenAstro-Pol ist eine Richtung im lokalen Horizontalrahmen (lotrechte Montierung). Sind \(d_{\mathrm{Az}}\) und \(d_{\mathrm{Alt}}\) die Azimut- und Höhenneigung der mechanischen Polarachse und \(\phi\) die Breite:
+
+\[
+\mathrm{MA} = d_{\mathrm{Az}}\cos\phi,\qquad
+\mathrm{ME} = -d_{\mathrm{Alt}}
+\]
+
+Der Winkel, um den man die Montierung im Azimut dreht, um den Pol zu korrigieren, ist also \(\mathrm{MA}/\cos\phi\), wie schon bei **3+3 Sterne**. Das EEPROM speichert diese Azimutneigung, nicht MA selbst.
+
+```
+                    wahrer Himmelspol
+                           *
+                          /|
+                         / |  ME  (Höhe der mechanischen Polarachse)
+                        /  |
+                       /___|______ Horizont
+                      / dAz
+                     *
+            mechanische Polarachse
+```
+
+| Term | Bedeutung auf der Anzeige | In TeenAstro |
+|------|---------------------------|--------------|
+| CH | Kollimation (Ost–West) | Kopfkegel, gleiches Vorzeichen |
+| NP | Nicht-Senkrechtigkeit | Kopf, internes Vorzeichen umgekehrt |
+| ID | Deklinationsindex | Kopfindex |
+| ME | Polhöhenfehler | Höhe der Polarachse (Vorzeichen wie oben) |
+| MA | Polazimutfehler | \(d_{\mathrm{Az}}\cos\phi\) auf der Polarachse |
+
+**CH**, **NP**, **ID** und **ME** passen für die Nacht gut genug zur üblichen TPOINT-Idee. **MA** ist die Ausnahme: die klassische TPOINT-Formel für MA ist eine Zifferblatt-Korrektur \(\Delta H = \mathrm{MA}\,\cos H\,\tan\delta\), \(\Delta\delta = \mathrm{MA}\,\sin H\). Das ist **nicht** dieselbe Operation wie eine Azimutneigung der Polarachse. Das angezeigte TeenAstro-MA ist immer die lotrechte Polneigung. Software, die den alten tan/sec-MA-Operator erwartet, spricht eine andere Sprache.
+
+```
+  Physikalisches MA (TeenAstro)        Klassische TPOINT-MA-Formel
+  -----------------------------        ---------------------------
+  Eine Polarachsenrichtung             Lineare ΔH, Δδ auf den Zifferblättern
+  im Raum (auch bei großem Winkel)     (Näherung für kleine Winkel)
+```
+
+Vollständige Formeln, Skizzen und der Vergleich mit OnStep stehen in der Math-Notiz [alignment.md](../math/alignment.md) (Abschnitt *Extra: TPOINT vs TeenAstro geometry*).
 
 ---
 
@@ -945,9 +1013,9 @@ Gibt es schon ein Modell und hat sich die Aufstellung nicht bewegt: **Goto → K
 
 Sonst eine Zweistern-Ausrichtung von Home (Kapitel 15), mit zwei benannten Sternen, hoch und weit auseinander:
 
-1. Erster Stern: Wega, in der Leier. Der Tubus fährt, die Anzeige sagt **Fahre zu**, dann **Neuzentrieren**. Zentrieren. Langer Druck auf Shift: **Stern hinzugefügt**.
-2. Zweiter Stern: Atair, im Adler. Er liegt weit von Wega im Stundenwinkel. Dieselbe Zentrierung, derselbe lange Druck.
-3. **Speichern**. Das Ausrichtungssymbol bestätigt, dass das Modell gespeichert ist.
+1. Erster Stern: Wega, in der Leier (auf eine hohe `****`-Markierung achten). Der Tubus fährt, die Anzeige sagt **Fahre zu**, dann **Neuzentrieren**. Zentrieren. Kurzer Druck auf Shift: **Stern hinzugefügt**. Langes Shift öffnet **Geschw. setzen**, wenn ein langsamerer Schritt nötig ist.
+2. Zweiter Stern: Atair, im Adler. Er liegt weit von Wega im Stundenwinkel; Wega ist nicht mehr in der Liste. Dieselbe Zentrierung, kurzes Shift zum Bestätigen.
+3. Die Erfolgs- und Fehlerbildschirme lesen (jeder wartet auf eine Taste). **Speichern**. Das Ausrichtungssymbol bestätigt, dass das Modell gespeichert ist.
 
 Ein zu nahes Paar, Wega und Deneb zum Beispiel, gibt ein schwaches Modell. Kapitel 15 sagt, wie man wählt.
 
@@ -1093,6 +1161,7 @@ Beispiel: Getriebezahl 360, Motor 200 Schritte, 16 Mikroschritte → 11,25" je M
 
 - Gruppe und Wiki: [https://groups.io/g/TeenAstro/wiki/home](https://groups.io/g/TeenAstro/wiki/home). Erste Inbetriebnahme, bebilderte Menüs, Platinen, das Sicherungswerkzeug und das Flashen stehen dort.
 - Technische Dokumentation im Depot: [docs/README.md](../README.md) (Aufbau, Nachführung, Protokoll). Sie richtet sich an jemanden, der die Software ändert, nicht an die Führung der Nacht.
+- Ausrichtungsmathematik, einschließlich TPOINT gegenüber TeenAstro-Geometrie: [docs/math/alignment.md](../math/alignment.md). Kapitel 15 dieses Handbuchs enthält die Kurzfassung für die Nacht.
 - FS2-Anleitung, für die ursprüngliche Denkweise: [anleit_f.pdf](https://www.astro-electronic.de/anleit_f.pdf), Astro-Electronic, Michael Koch. Die deutsche Ausgabe liegt auf derselben Website.
 
 Platinen, Versorgungsspannungen und Motorkabel sind von Version zu Version nicht dieselben. Für die Verdrahtung von der Wiki-Seite der eigenen Karte ausgehen, und für den Betrieb hierher zurückkommen.
@@ -1145,7 +1214,7 @@ Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Tre
 - Das Stoppen von MoveAxis bremst mit der eingestellten Beschleunigung. Die Nachführung läuft auf der Achse weiter, die nicht bewegt wird. Die Rate null stoppt immer. Eine Rate über dem Maximum wird abgelehnt.
 - SharpCap und die anderen Programme zeigen die MoveAxis-Geschwindigkeiten wieder, einschließlich 0,25°/s und 0,5°/s. Der Treiber verwendet siderische Vielfache, dieselbe Einheit wie Treiber 1.5.
 - ASCOM-Raten, Koordinaten und Ports verwenden einen festen Dezimalpunkt, damit ein französisches oder deutsches Windows die Befehle nicht verändert.
-- Der Handkontroller führt **2 Stars**, **4 Stars** und **3+3 Stars**. Vier Sterne auf einer Pier-Seite messen die Nicht-Rechtwinkligkeit. 3+3 misst Konus und Nicht-Rechtwinkligkeit nur, wenn jede Pier-Seite drei Sterne hat.
+- Der Handkontroller führt **2 Stars**, **4 Stars** und **3+3 Stars**. Vier Sterne auf einer Pier-Seite messen NP. 3+3 misst CH und NP nur, wenn jede Pier-Seite drei Sterne hat. Die angezeigten Zahlen sind CH, NP, ID und ME, mit Wallaces Vorzeichen.
 - **4 Sterne** und **3+3 Sterne** aktualisieren das Modell nach dem dritten Stern und nach jedem weiteren Stern vor dem letzten. Das nächste Goto benutzt die bereits zentrierten Sterne. Der Handkontroller wartet, während diese Rechnung läuft.
-- **Mount error**, über der Refraktion, hält einen bekannten Konus und eine bekannte Nicht-Rechtwinkligkeit bei einer Zwei-Stern-Ausrichtung und bei einem Plate-Solve-Sync fest.
+- **Mount error**, über der Refraktion, hält ein bekanntes CH und NP bei einer Zwei-Stern-Ausrichtung und bei einem Plate-Solve-Sync fest.
 - Die Schaltfläche **Auto** im Firmware-Uploader erkennt das angeschlossene Teleskop oder den Fokussierer und schreibt die passende Datei.

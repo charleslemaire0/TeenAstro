@@ -313,17 +313,17 @@ C'est suffisant pour une soirée visuelle si la mise en station mécanique est d
 | Moteurs | Mécanique, vitesses, suivi |
 | Encodeurs | Codeurs de position |
 | Limites | Horizon, zénith, axes, méridien |
-| Erreur monture | Cône et perpendicularité tenus pendant un alignement à deux étoiles |
+| Erreur monture | CH et NP tenus pendant un alignement à deux étoiles |
 | Réfraction | Voir ci-dessous |
 | Réticule | Luminosité du réticule polaire, si la sortie est câblée |
 
-**Erreur monture** : **OFF** ou **ON**. Sur **ON**, la raquette demande **Cone**, puis **Perp**. Chaque valeur est en degrés, de −5 à +5, avec trois décimales.
+**Erreur monture** : **OFF** ou **ON**. Sur **ON**, la raquette demande **CH**, puis **NP**. Chaque valeur est en degrés, de −5 à +5, avec trois décimales, avec le signe de Wallace.
 
-Laissez **OFF** pour l'alignement à deux étoiles habituel. Passez à **ON** quand le cône optique et le défaut de perpendicularité du deuxième axe sont déjà connus, par un alignement **4 étoiles** ou **3+3 étoiles** précédent, ou par une mesure de la mécanique. Un alignement à deux étoiles tient alors ces deux nombres et mesure encore le pôle. L'écran de départ affiche **Mesure le pôle**. Si les deux nombres sont à zéro, rien n'est tenu et l'alignement reste le modèle habituel. **4 étoiles**, **3+3 étoiles** et **2 étoiles méca.** n'utilisent pas ce réglage.
+Laissez **OFF** pour l'alignement à deux étoiles habituel. Passez à **ON** quand CH et NP sont déjà connus, par un alignement **4 étoiles** ou **3+3 étoiles** précédent, ou par une mesure de la mécanique. CH est la collimation, NP la non-perpendicularité, avec le signe de Wallace. Un alignement à deux étoiles tient alors ces deux nombres et mesure encore le pôle. L'écran de départ affiche **Mesure le pôle**. Si les deux nombres sont à zéro, rien n'est tenu et l'alignement reste le modèle habituel. **4 étoiles**, **3+3 étoiles** et **2 étoiles méca.** n'utilisent pas ce réglage.
 
 Le même article est la dernière ligne de **Action Télescope → Aligner**.
 
-Sur la page web de la raquette, le bloc s'appelle **Mount error** et se place au-dessus de la réfraction. Le texte de cette page est en anglais, quelle que soit la langue du firmware. **Off** ou **On** vient en premier ; le texte après le choix est « Hold cone and perpendicularity ». Le cône et la perpendicularité ont chacun leur ligne : la valeur, **Upload**, puis le nom et l'unité, en degrés, ±5.
+Sur la page web de la raquette, le bloc s'appelle **Mount error** et se place au-dessus de la réfraction. Le texte de cette page est en anglais, quelle que soit la langue du firmware. **Off** ou **On** vient en premier ; le texte après le choix est « Hold CH and NP ». CH et NP ont chacun leur ligne : la valeur, **Upload**, puis le nom et l'unité, en degrés, ±5, avec le signe de Wallace.
 
 **Réfraction → Goto** : ON ou OFF. Activée, la réfraction atmosphérique est prise en compte dans le pointage (formule de Saemundsson à l'aller, Bennett au retour).
 
@@ -622,7 +622,7 @@ La synchro recale la position. Elle ne construit pas le modèle d'alignement : u
 
 ## 15. Alignement
 
-L'alignement calcule la transformation entre le ciel et les axes. Un alignement à deux étoiles suit la méthode de Taki (deux directions mesurées), complétée par une rotation la plus proche au sens des moindres carrés. Le résultat est une matrice 3×3. Elle sert au pointage, à la synchro, au suivi corrigé et au contrôle de hauteur. **4 étoiles** et **3+3 étoiles**, décrits plus bas, peuvent aussi mesurer le cône et la perpendicularité du deuxième axe.
+L'alignement calcule la transformation entre le ciel et les axes. Un alignement à deux étoiles suit la méthode de Taki (deux directions mesurées), complétée par une rotation la plus proche au sens des moindres carrés. Le résultat est une matrice 3×3. Elle sert au pointage, à la synchro, au suivi corrigé et au contrôle de hauteur. **4 étoiles** et **3+3 étoiles**, décrits plus bas, peuvent aussi mesurer CH et NP. Le résultat s'affiche en CH, NP, ID et ME, les signes de Wallace.
 
 **Action Télescope → Aligner**
 
@@ -639,11 +639,11 @@ Sur une altazimutale, **2 étoiles méca.** n'est pas proposé. **Erreur monture
 
 1. Le tube est en position maison. L'écran le rappelle : **La monture doit être en position Maison.**
 2. Choisissez **Home** quand l'écran demande le mode.
-3. L'unité principale accepte le départ. Choisissez la première étoile dans la liste (étoiles nommées, au-dessus de l'horizon).
-4. Le tube part. Le message **Pointe vers** puis **Recentre** s'affiche.
-5. Centrez l'étoile. Un appui long sur Shift valide l'étoile (**Étoile ajoutée**).
-6. Choisissez la seconde étoile, éloignée de la première en angle horaire et en déclinaison. Même recentrage, même appui long.
-7. En cas de succès, le modèle est calculé. **Sauver** l'écrit en mémoire. Sans sauvegarde, il est perdu au prochain parc ou à la coupure, selon que vous parquez ou non : le wiki du groupe rappelle de parquer en fin de procédure pour conserver le résultat. La commande **Sauver** du menu Aligner fait cette écriture explicitement.
+3. L'unité principale accepte le départ. Choisissez une étoile dans la liste (étoiles nommées, au-dessus de l'horizon). La liste reste dans l'ordre normal du catalogue. Chaque étoile affiche à droite du nom une note de pertinence, de `*` à `****` : plus il y a d'étoiles, meilleur est le choix pour la prochaine mesure. Les étoiles déjà mesurées dans la séance sont absentes. Le curseur s'ouvre sur la meilleure candidate restante ; Nord et Sud parcourent ensuite le catalogue comme d'habitude. Sur une équatoriale allemande ou une fourche équatoriale, un bon choix est à une hauteur confortable, loin du méridien, et loin des étoiles déjà prises. Les quatre étoiles restent du même côté du méridien. Pour le 3+3, le second côté de la liste privilégie l'autre côté. Sur une monture alt-azimutale, y compris une fourche alt-azimutale, un bon choix écarte azimut et hauteur, loin du zénith. Les quatre étoiles restent dans la même partie du ciel. Pour le 3+3, le second côté privilégie l'azimut opposé.
+4. Le tube part. Le message **Pointe vers** puis **Recentre** s'affiche. Si le goto est refusé (limites, sous l'horizon) ou si vous interrompez le pointage (Shift long ou une autre touche), la liste des étoiles se rouvre sur la même étoile pour en choisir une autre ou recommencer.
+5. Centrez l'étoile avec les boutons de direction. Un appui **court** sur Shift valide l'étoile (**Étoile ajoutée**). Pour changer la vitesse de recentrage, un appui **long** sur Shift seul ouvre **Réglage Vitesse** (Guidage, Lente, Moyenne, Rapide, Max). **Shift + Nord** ou **Shift + Sud** ouvrent le même menu, comme hors alignement.
+6. Choisissez la seconde étoile. Sur une monture équatoriale, privilégiez une étoile éloignée de la première en angle horaire et en déclinaison. Sur une monture alt-azimutale, éloignée en azimut et en hauteur. Les notes `*`…`****` et le curseur de départ guident ce choix ; les étoiles déjà utilisées ont disparu de la liste. Même recentrage : Shift court pour valider, Shift long pour la vitesse.
+7. En cas de succès, le modèle est calculé. La raquette affiche **Alignement** / **Succès**, puis l'erreur résiduelle, puis (pour **4 étoiles** et **3+3 étoiles**) la géométrie de tête (CH, NP, ID). Chacun de ces écrans reste jusqu'à un appui sur une touche. **Sauver** l'écrit en mémoire. Sans sauvegarde, il est perdu au prochain parc ou à la coupure, selon que vous parquez ou non : le wiki du groupe rappelle de parquer en fin de procédure pour conserver le résultat. La commande **Sauver** du menu Aligner fait cette écriture explicitement.
 
 **Effacer** oublie le modèle. La monture revient à l'hypothèse « mécaniquement juste, à partir de la maison ».
 
@@ -658,17 +658,17 @@ Si la maison n'est pas accessible (tube déjà sur le ciel) :
 
 ### Erreur monture pendant un alignement à deux étoiles
 
-Réglez **Erreur monture** avant de commencer, depuis ce menu ou depuis **Param. Télescope → Monture**. Sur **ON**, et si **Cone** ou **Perp** n'est pas nul, les deux étoiles mesurent encore le pôle et l'index d'axe. Les deux nombres sont conservés, y compris un zéro sur l'autre ligne. Ils ne sont pas absorbés dans le pôle. La ligne de mode à l'écran de départ est **Mesure le pôle**, à la place d'**Alignement**.
+Réglez **Erreur monture** avant de commencer, depuis ce menu ou depuis **Param. Télescope → Monture**. Sur **ON**, et si **CH** ou **NP** n'est pas nul, les deux étoiles mesurent encore le pôle et l'index d'axe. Les deux nombres sont conservés, y compris un zéro sur l'autre ligne. Ils ne sont pas absorbés dans le pôle. La ligne de mode à l'écran de départ est **Mesure le pôle**, à la place d'**Alignement**.
 
 ### 4 étoiles
 
-Depuis la maison, du même côté du pilier. L'écran affiche **Même côté** et **Perpendicularité**. Confirmez par **OUI**. Quatre étoiles estiment le défaut de perpendicularité du deuxième axe. Le cône n'est pas estimé depuis un seul côté. Les valeurs enregistrées dans **Erreur monture** ne sont pas utilisées.
+Depuis la maison, du même côté du pilier. L'écran affiche **Même côté** et **NP**. Confirmez par **OUI**. Quatre étoiles estiment NP. CH n'est pas estimé depuis un seul côté. Les valeurs enregistrées dans **Erreur monture** ne sont pas utilisées.
 
 Les deux premières étoiles fixent le pôle. Après la troisième, le modèle est mis à jour avant le pointage vers la quatrième, pour qu'une monture très écartée au départ soit plus proche sur cette dernière étoile. La raquette attend pendant cette mise à jour. La quatrième étoile clôt la séance.
 
 ### 3+3 étoiles
 
-Pour une monture allemande ou à fourche qui peut changer de côté. L'écran affiche **Retour après 3** et **Cône + perp**. Confirmez par **OUI**. Trois étoiles d'un côté, un retournement, puis trois de l'autre. Après la troisième étoile, et après chaque étoile suivante sauf la dernière, le modèle est mis à jour avant le pointage suivant. La raquette attend pendant cette mise à jour. Le cône n'est estimé que si chaque côté a vraiment apporté trois étoiles. Une seule étoile après le retournement ne suffit pas, et le cône reste non publié tant que cette répartition n'est pas atteinte. Les valeurs enregistrées dans **Erreur monture** ne sont pas utilisées.
+Pour une monture allemande ou à fourche qui peut changer de côté. L'écran affiche **Retour après 3** et **CH + NP**. Confirmez par **OUI**. Trois étoiles d'un côté, un retournement, puis trois de l'autre. Après la troisième étoile, et après chaque étoile suivante sauf la dernière, le modèle est mis à jour avant le pointage suivant. La raquette attend pendant cette mise à jour. CH n'est estimé que si chaque côté a vraiment apporté trois étoiles. Une seule étoile après le retournement ne suffit pas, et CH reste non publié tant que cette répartition n'est pas atteinte. Les valeurs enregistrées dans **Erreur monture** ne sont pas utilisées. Le résultat s'affiche en CH, NP et ID, en secondes d'arc, et le pôle en MA et ME. L'angle dont on tourne la monture en azimut est MA divisé par le cosinus de la latitude. Les signes sont ceux de Wallace.
 
 ### 2 étoiles méca.
 
@@ -688,9 +688,9 @@ La première synchro ancre les axes sur la position résolue. La seconde constru
 
 Une synchro ensuite ne corrige que le pointage courant, par exemple après une nouvelle résolution. Elle n'efface pas le modèle. Relancer **Ordinateur Alignement**, ou **Effacer**, le réinitialise.
 
-Si **Erreur monture** est sur **ON** et si **Cone** ou **Perp** n'est pas nul, cet alignement par synchro tient les deux nombres et mesure encore le pôle, comme **2 Étoiles**. **4 étoiles** et **3+3 étoiles** sont les procédures à la raquette décrites plus haut. **Ordinateur Alignement** ne les lance pas.
+Si **Erreur monture** est sur **ON** et si **CH** ou **NP** n'est pas nul, cet alignement par synchro tient les deux nombres et mesure encore le pôle, comme **2 Étoiles**. **4 étoiles** et **3+3 étoiles** sont les procédures à la raquette décrites plus haut. **Ordinateur Alignement** ne les lance pas.
 
-Quand un logiciel conduit au contraire une session étoile par étoile, l'écran passe en **Align. distant** et affiche le nom de l'étoile demandée. Le recentrage et l'appui long sur Shift se font alors à la raquette.
+Quand un logiciel conduit au contraire une session étoile par étoile, l'écran passe en **Align. distant** et affiche le nom de l'étoile demandée. Le recentrage se fait alors à la raquette : Shift court valide l'étoile, Shift long (seul ou avec Nord/Sud) ouvre **Réglage Vitesse**.
 
 ### Quelle paire d'étoiles
 
@@ -701,6 +701,74 @@ Choisissez deux étoiles brillantes, bien au-dessus de l'horizon, séparées d'a
 ### Ce que l'alignement ne corrige pas
 
 Il ne remplace pas une réduction fausse, un sens inversé, ni une heure fausse. Si le premier goto tombe à des degrés de la cible, reprenez les chapitres 8 à 10 avant de relancer un alignement.
+
+### Les noms TPOINT et ce que TeenAstro calcule vraiment
+
+La raquette et la page web affichent **CH**, **NP**, **ID**, **ME** et **MA** avec les signes de Wallace (TPOINT). Ce sont les noms habituels des défauts de monture. TeenAstro ne pointe **pas** le ciel avec les formules linéaires classiques de TPOINT sur les cadrans. Il utilise des rotations exactes : la géométrie de la tête (collimation, non-perpendicularité, index) et une vraie orientation de l’axe polaire dans l’espace.
+
+**TPOINT** a été conçu pour ajuster de petits résidus en angle horaire et déclinaison sur quelques étoiles. Ses termes géométriques sont des correctifs pratiques pour les moindres carrés, valables surtout pour de **petites** erreurs (presque infinitésimales). **TeenAstro** pose une autre question : où pointe l’axe polaire, et comment la tête est-elle construite.
+
+```
+  TPOINT :     quels ΔAH, ΔDec réduisent le résidu sur mes étoiles ?
+  TeenAstro :  quelle est l'orientation de la tête et de l'axe polaire dans l'espace ?
+```
+
+TPOINT classique (premier ordre, sur les cadrans), avec \(H\) = angle horaire et \(\delta\) = déclinaison :
+
+\[
+\begin{aligned}
+\Delta H &=
+  \mathrm{IH}
+  + \mathrm{CH}\,\sec\delta
+  + \mathrm{NP}\,\tan\delta
+  + \mathrm{MA}\,\cos H\,\tan\delta
+  - \mathrm{ME}\,\sin H\,\tan\delta \\[0.4em]
+\Delta\delta &=
+  \mathrm{ID}
+  - \mathrm{ME}\,\cos H
+  + \mathrm{MA}\,\sin H
+\end{aligned}
+\]
+
+Le pôle TeenAstro est une direction dans le repère horizontal local (monture d’aplomb). Si \(d_{\mathrm{Az}}\) et \(d_{\mathrm{Alt}}\) sont les inclinaisons en azimut et en hauteur de l’axe polaire mécanique, et \(\phi\) la latitude :
+
+\[
+\mathrm{MA} = d_{\mathrm{Az}}\cos\phi,\qquad
+\mathrm{ME} = -d_{\mathrm{Alt}}
+\]
+
+L’angle dont on tourne la monture en azimut pour corriger le pôle est donc \(\mathrm{MA}/\cos\phi\), comme déjà indiqué pour **3+3 étoiles**. L’EEPROM stocke cette inclinaison en azimut, pas MA lui-même.
+
+```
+                    vrai pôle céleste
+                           *
+                          /|
+                         / |  ME  (hauteur de l'axe polaire mécanique)
+                        /  |
+                       /___|______ horizon
+                      / dAz
+                     *
+            axe polaire mécanique
+```
+
+| Terme | Sens à l’affichage | Dans TeenAstro |
+|-------|--------------------|----------------|
+| CH | collimation (est–ouest) | cône de tête, même signe |
+| NP | non-perpendicularité | tête, signe interne opposé |
+| ID | index de déclinaison | index de tête |
+| ME | élévation polaire | hauteur de l’axe polaire (signe ci-dessus) |
+| MA | azimut polaire | \(d_{\mathrm{Az}}\cos\phi\) sur l’axe polaire |
+
+**CH**, **NP**, **ID** et **ME** collent assez bien à l’idée TPOINT pour la nuit. **MA** est l’exception : la formule TPOINT classique de MA est un correctif de cadran \(\Delta H = \mathrm{MA}\,\cos H\,\tan\delta\), \(\Delta\delta = \mathrm{MA}\,\sin H\). Ce n’est **pas** la même chose qu’incliner l’axe polaire en azimut. Le MA affiché par TeenAstro est toujours l’inclinaison d’aplomb du pôle. Un logiciel qui attend l’opérateur tan/sec historique parle un autre langage.
+
+```
+  MA physique (TeenAstro)              Formule MA TPOINT classique
+  -----------------------              ---------------------------
+  Une direction d'axe polaire          ΔH, Δδ linéaires sur les cadrans
+  dans l'espace (valable hors petit angle)  (approximation aux petits angles)
+```
+
+Pour les formules complètes, les schémas et la comparaison avec OnStep, voir la note mathématique [alignment.md](../math/alignment.md) (section *Extra: TPOINT vs TeenAstro geometry*).
 
 ---
 
@@ -943,9 +1011,9 @@ S'il existe déjà un modèle et que la mise en station n'a pas bougé : **Goto 
 
 Sinon, alignement à deux étoiles depuis la maison (chapitre 15), avec deux étoiles nommées, hautes, et éloignées l'une de l'autre :
 
-1. Première étoile : Véga, dans la Lyre. Le tube part, l'écran dit **Pointe vers** puis **Recentre**. Centrez. Appui long sur Shift : **Étoile ajoutée**.
-2. Seconde étoile : Altaïr, dans l'Aigle. Elle est loin de Véga en angle horaire. Même recentrage, même appui long.
-3. **Sauver**. L'icône d'alignement confirme que le modèle est en mémoire.
+1. Première étoile : Véga, dans la Lyre (visez une note `****` élevée). Le tube part, l'écran dit **Pointe vers** puis **Recentre**. Centrez. Appui court sur Shift : **Étoile ajoutée**. Shift long ouvre **Réglage Vitesse** s'il faut un cran plus lent.
+2. Seconde étoile : Altaïr, dans l'Aigle. Elle est loin de Véga en angle horaire ; Véga n'est plus dans la liste. Même recentrage, Shift court pour valider.
+3. Lisez les écrans de succès et d'erreur (chacun attend une touche). **Sauver**. L'icône d'alignement confirme que le modèle est en mémoire.
 
 Une paire trop proche, Véga et Deneb par exemple, donne un modèle fragile. Le chapitre 15 dit comment les choisir.
 
@@ -1091,6 +1159,7 @@ Exemple : réduction 360, moteur 200 pas, 16 micropas → 11,25" par micropas. C
 
 - Groupe et wiki : [https://groups.io/g/TeenAstro/wiki/home](https://groups.io/g/TeenAstro/wiki/home). On y trouve la première mise en route, les menus illustrés, les cartes, l'outil de sauvegarde et la procédure de flashage.
 - Documentation technique du dépôt : [docs/README.md](../README.md) (architecture, suivi, protocole). Elle s'adresse à qui modifie le logiciel, pas à la conduite de la nuit.
+- Mathématiques de l'alignement, dont TPOINT face à la géométrie TeenAstro : [docs/math/alignment.md](../math/alignment.md). Le chapitre 15 de ce manuel en donne le résumé de terrain.
 - Manuel FS2, pour l'esprit d'origine : [anleit_f.pdf](https://www.astro-electronic.de/anleit_f.pdf), Astro-Electronic, Michael Koch.
 
 Les cartes, les tensions d'alimentation et les faisceaux moteurs ne sont pas les mêmes d'une version à l'autre. Pour le câblage, partez de la page de votre carte dans le wiki, puis revenez ici pour l'usage.
@@ -1143,7 +1212,7 @@ Le firmware 1.6.0 est la première version de cette génération. Le fichier Lis
 - L'arrêt d'un MoveAxis ralentit avec l'accélération réglée. Le suivi continue sur l'axe qui n'est pas déplacé. Une vitesse nulle arrête toujours. Une vitesse au-dessus du maximum est refusée.
 - SharpCap et les autres logiciels affichent à nouveau les vitesses MoveAxis, dont 0,25°/s et 0,5°/s. Le pilote utilise les multiples de la vitesse sidérale, la même unité que le pilote 1.5.
 - Les vitesses, les coordonnées et les ports ASCOM utilisent un point décimal fixe, pour qu'un Windows français ou allemand ne modifie pas les commandes.
-- La raquette guide **2 étoiles**, **4 étoiles** et **3+3 étoiles**. Quatre étoiles sur un côté de pilier mesurent la perpendicularité. Le 3+3 mesure le cône et la perpendicularité seulement quand chaque côté a trois étoiles.
+- La raquette guide **2 étoiles**, **4 étoiles** et **3+3 étoiles**. Quatre étoiles sur un côté de pilier mesurent NP. Le 3+3 mesure CH et NP seulement quand chaque côté a trois étoiles. Les nombres affichés sont CH, NP, ID et ME, les signes de Wallace.
 - **4 étoiles** et **3+3 étoiles** mettent le modèle à jour après la troisième étoile, puis après chaque étoile suivante sauf la dernière. Le goto suivant utilise les étoiles déjà centrées. La raquette attend pendant ce calcul.
-- **Erreur de monture**, au-dessus de la réfraction, conserve un cône et une perpendicularité déjà connus pendant un alignement à deux étoiles et pendant une synchro de plate-solve.
+- **Erreur de monture**, au-dessus de la réfraction, conserve un CH et un NP déjà connus pendant un alignement à deux étoiles et pendant une synchro de plate-solve.
 - Le bouton **Auto** de l'uploader détecte le télescope ou le focuser connecté et flashe le fichier correspondant.

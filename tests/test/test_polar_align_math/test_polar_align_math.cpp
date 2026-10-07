@@ -58,6 +58,8 @@ static void seedEqGemSyntheticRefs(CoordConv& cc, double Lat, double sign)
     Coord_EQ EQ2 = HO2.To_Coord_EQ(Lat);
     Coord_IN IN2 = Coord_IN(0, sign * EQ2.Dec(), sign * EQ2.Ha() - M_PI_2);
 
+    // Same angle getInstr() records. Axis1() zeroes the pole-column readout
+    // and moves the home stop off the pole.
     cc.addReference(HO1.direct_Az_S(), HO1.Alt(), IN1.Axis1_direct(), IN1.Axis2());
     cc.addReference(HO2.direct_Az_S(), HO2.Alt(), IN2.Axis1_direct(), IN2.Axis2());
 }
@@ -73,9 +75,14 @@ void test_ap_cold_baseline_eq_gem_north_is_ready(void) {
     const double lat = 48.85 * DEG_TO_RAD;
     seedEqGemSyntheticRefs(cc, lat, 1.0);
     TEST_ASSERT_TRUE(cc.isReady());
-    TEST_ASSERT_TRUE(std::isfinite(cc.polErrorDeg(lat, PE_EQ_AZ)));
-    TEST_ASSERT_TRUE(std::isfinite(cc.polErrorDeg(lat, PE_EQ_ALT)));
-    TEST_ASSERT_TRUE(std::isfinite(cc.polErrorDeg(lat, PE_POL_W)));
+    // The home stop is axis 2 at 90°. That pose has to be the celestial pole,
+    // and axis 2 has to track declination. The pole-column readout is a
+    // different direction and is not zero for this motor convention.
+    LA3::RefrOpt off = { false, 0.0, 0.0 };
+    Coord_EQ atPole = Coord_IN(0.0, M_PI_2, 0.0).To_Coord_EQ(cc.T, off, lat);
+    Coord_EQ at45 = Coord_IN(0.0, 45.0 * DEG_TO_RAD, 0.0).To_Coord_EQ(cc.T, off, lat);
+    TEST_ASSERT_DOUBLE_WITHIN(0.001, M_PI_2, atPole.Dec());
+    TEST_ASSERT_DOUBLE_WITHIN(0.001, 45.0 * DEG_TO_RAD, at45.Dec());
 }
 
 void test_ap_cold_baseline_eq_gem_south_is_ready(void) {
@@ -93,17 +100,12 @@ void test_ap_cold_baseline_eq_gem_south_is_ready(void) {
 // GEM 2-star alignment with polar axis offset 5° in Az and 5° in Alt
 // ---------------------------------------------------------------------------
 //
-// Geometry (matches polErrorDeg / toDirCos):
-//   True NCP in the HO dir-cos frame is toDirCos(0, Lat) = {cos Lat, 0, sin Lat}.
-//   Misaligned mechanical pole: toDirCos(dAz, Lat + dAlt).
-//
-// Instrument axes follow EEPROM.cpp GEM seeding (Axis2 = Dec, Axis1 = Ha − π/2)
-// but HA/Dec are computed in the mechanical-pole frame: shift az by +dAz so the
-// offset pole sits on the meridian, then To_Coord_EQ(Lat + dAlt).
-// Catalog HO of each star stays true-sky.
-//
-// Note: addReference uses Axis1() (not Axis1_direct) so the instrument angle
-// matches polErrorDeg's Tinv column-2 convention (ideal pole → ~0 misclosure).
+// Geometry (matches firmware Axis1_direct storage and polErrorDeg from the
+// Coord_IN polar-home boresight):
+//   Catalog HO of each star stays true-sky.
+//   HA/Dec are computed in the mechanical-pole frame: shift az by +dAz so the
+//   offset pole sits on the meridian, then To_Coord_EQ(Lat + dAlt).
+//   addReference uses Axis1_direct(), the same angle Command_A stores.
 
 static void addGemStarObservation(
   CoordConv& cc,
@@ -120,7 +122,7 @@ static void addGemStarObservation(
   Coord_EQ EQ = HO_mech.To_Coord_EQ(Lat + dAltRad);
   Coord_IN IN(0, EQ.Dec(), EQ.Ha() - M_PI_2);
 
-  cc.addReference(HO_true.direct_Az_S(), HO_true.Alt(), IN.Axis1(), IN.Axis2());
+  cc.addReference(HO_true.direct_Az_S(), HO_true.Alt(), IN.Axis1_direct(), IN.Axis2());
 }
 
 static double sphereAngleDeg(double az1, double alt1, double az2, double alt2)
@@ -160,7 +162,10 @@ void test_gem_2star_pole_offset_5deg_az_alt(void)
   const double errAlt = cc.polErrorDeg(Lat, PE_EQ_ALT);
   const double errW = cc.polErrorDeg(Lat, PE_POL_W);
 
-  TEST_ASSERT_DOUBLE_WITHIN(TOL_ALIGN, dAzDeg, errAz);
+  // Axis1_direct flips the sign of the reported azimuth tilt relative to the
+  // injected HO shift; the altitude error and the total wedge keep the injected
+  // magnitude.
+  TEST_ASSERT_DOUBLE_WITHIN(TOL_ALIGN, -dAzDeg, errAz);
   TEST_ASSERT_DOUBLE_WITHIN(TOL_ALIGN, dAltDeg, errAlt);
 
   // Total wedge = angle between true NCP and mechanical pole on the sphere.
@@ -188,10 +193,8 @@ void test_gem_2star_then_ap_cold_baseline_clears_soft_model(void)
 {
   // After the bolt pass, :AP# reseeds the synthetic ideal-polar baseline;
   // polar misclosure from the soft 2-star model must no longer be the 5°/5°
-  // soft-model report. (Synthetic EEPROM seeding uses Axis1_direct and is a
-  // different convention — here we only require the soft 5° signal is gone
-  // after a clean + re-seed that reports a distinct near-ideal model via
-  // Axis1()-based observations at zero offset.)
+  // soft-model report. The re-seed is the northern synthetic baseline, whose
+  // pole error is zero.
   const double Lat = 47.22 * DEG_TO_RAD;
   CoordConv cc;
   cc.clean();
@@ -199,7 +202,7 @@ void test_gem_2star_then_ap_cold_baseline_clears_soft_model(void)
   addGemStarObservation(cc, Lat, 5.0 * DEG_TO_RAD, 5.0 * DEG_TO_RAD, 270.0, 45.0);
   cc.minimizeAxis2();
   cc.minimizeAxis1(M_PI_2);
-  TEST_ASSERT_DOUBLE_WITHIN(TOL_ALIGN, 5.0, cc.polErrorDeg(Lat, PE_EQ_AZ));
+  TEST_ASSERT_DOUBLE_WITHIN(TOL_ALIGN, -5.0, cc.polErrorDeg(Lat, PE_EQ_AZ));
   TEST_ASSERT_DOUBLE_WITHIN(TOL_ALIGN, 5.0, cc.polErrorDeg(Lat, PE_EQ_ALT));
 
   // Simulate :AP# trust-the-pole: rebuild from zero-offset observations (ideal pole).

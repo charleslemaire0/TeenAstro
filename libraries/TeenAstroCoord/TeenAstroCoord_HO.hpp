@@ -52,7 +52,11 @@ public:
 	Coord_EQ To_Coord_EQ(double Lat);
 	Coord_IN To_Coord_IN(const double(&missaligment)[3][3]);
 	/// As above, with the rigid head geometry applied. A zero head is identical to the overload without it.
-	Coord_IN To_Coord_IN(const double(&missaligment)[3][3], const HeadModel &head);
+	/// \p beyondPole selects HeadGeom's other mount configuration (axis2 past the
+	/// pole). Goto/sync on the OVER pier must use that branch when the head is
+	/// nonzero: mechanically flipping the under-pole solution does not commute
+	/// with cone/perp and aims off the sky.
+	Coord_IN To_Coord_IN(const double(&missaligment)[3][3], const HeadModel &head, bool beyondPole = false);
 	double FrH();
 	double Alt();
 	double Az();

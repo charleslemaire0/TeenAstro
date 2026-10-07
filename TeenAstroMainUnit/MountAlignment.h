@@ -44,5 +44,5 @@ struct MountAlignment {
   double knownCone = 0;
   double knownPerp = 0;
 
-  bool isRigidSession() const { return alignRigidStars >= COORDCONV_MIN_RIGID_STARS; }
+  bool isRigidSession() const { return alignRigidStars >= COORDCONV_MIN_PROGRESSIVE_STARS; }
 };
