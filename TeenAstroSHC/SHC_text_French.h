@@ -104,7 +104,6 @@
 #define T_LOW "Faible"
 #define T_HIGH "Haut"
 #define T_MIN "Min"
-#define T_MAX "Max"
 #define T_ERGONOMICS "Ergonomie"
 #define T_RIGHT_HANDER "Droitier"
 #define T_LEFT_HANDER "Gaucher"
@@ -227,7 +226,6 @@
 #define T_TRACKINGOPTIONS "Options du suivi"
 #define T_SETTLETIME "Tps. Attente"
 #define T_REFRACTION "Refraction"
-#define T_ALIGNMENT "Alignement"
 #define T_STARTTRACKING "Démarrer le Suivi"
 #define T_STOPTRACKING "Arrêter le Suivi"
 #define T_TRACKINGSTATE "État du Suivi"
@@ -289,11 +287,6 @@
 #define T_AFTER "après"
 #define T_LOWCONTRAST "Contraste min."
 #define T_TURNDISPLAYOFF "Éteindre l'écran"
-
-
-#define T_SLOW "Lente"
-#define T_MEDIUM "Moyenne"
-#define T_FAST "Rapide"
 
 #define T_SITEELEVATION "Altitude du Site"
 #define T_HORIZON "Horizon"

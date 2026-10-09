@@ -105,7 +105,6 @@
 #define T_LOW "Low"
 #define T_HIGH "High"
 #define T_MIN "Min"
-#define T_MAX "Max"
 #define T_ERGONOMICS "Ergonomics"
 #define T_RIGHT_HANDER "right-hander"
 #define T_LEFT_HANDER "left-hander"
@@ -228,7 +227,6 @@
 #define T_TRACKINGOPTIONS "Tracking Options"
 #define T_SETTLETIME "Settle Time"
 #define T_REFRACTION "Refraction"
-#define T_ALIGNMENT "Alignment"
 #define T_STARTTRACKING "Start Tracking"
 #define T_STOPTRACKING "Stop Tracking"
 #define T_TRACKINGSTATE "Tracking State"
@@ -290,11 +288,6 @@
 #define T_AFTER "after"
 #define T_LOWCONTRAST "Low Contrast"
 #define T_TURNDISPLAYOFF "Turn display off"
-
-#define T_BUTTONSPEED "Button Speed"
-#define T_SLOW "Slow"
-#define T_MEDIUM "Medium"
-#define T_FAST "Fast"
 
 #define T_SITEELEVATION "Site Elevation"
 #define T_HORIZON "Horizon"
