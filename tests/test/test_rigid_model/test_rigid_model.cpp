@@ -1120,6 +1120,108 @@ void test_head_getter_setter_roundtrip(void)
 }
 
 // =====================================================================
+//  9. Rigid close-out regressions (post-fit sync / hasHead fallback)
+//
+//  These encode the two mistakes that made a finished 3+3 session leave
+//  side A tens of arcminutes off: syncing the last star after a successful
+//  rigid fit, and discarding the multi-star T when no head term was published.
+// =====================================================================
+
+/// Sky miss of (az,alt) when the mount axes read (a1d,a2), under the fitted model.
+static double skyMissFromAxes(const CoordConv &cc, double az, double alt,
+                              double a1d, double a2)
+{
+    double p[3], t[3], dcIn[3];
+    HeadGeom::forward(dcIn, a1d, a2, cc.head);
+    LA3::multiply(p, cc.Tinv, dcIn);
+    LA3::normalize(p, p);
+    LA3::toDirCos(t, az, alt);
+    return LA3::angle2Vectors(p, t);
+}
+
+/// Instrument axes the fitted model commands for a sky target.
+static void modelAxes(const CoordConv &cc, double az, double alt, bool flipped,
+                      double &a1d, double &a2)
+{
+    double dcSky[3], dcIn[3];
+    LA3::toDirCos(dcSky, az, alt);
+    LA3::multiply(dcIn, cc.T, dcSky);
+    LA3::normalize(dcIn, dcIn);
+    const double hint = asin(dcIn[2] > 1.0 ? 1.0 : (dcIn[2] < -1.0 ? -1.0 : dcIn[2]));
+    HeadGeom::inverse(dcIn, cc.head, flipped ? (M_PI - hint) : hint, a1d, a2);
+}
+
+void test_post_fit_sync_throws_side_a_off(void)
+{
+    // A successful 3+3 fit points side A correctly. Syncing the encoder frame
+    // afterward by the last-star residual (the old close-out) shifts every
+    // commanded axis reading by that residual and throws side A off by about
+    // the same amount. Keeping the frame (the fix) leaves side A intact.
+    double Ttruth[3][3];
+    truthT(Ttruth);
+    CoordConv cc;
+    const double lastSkyOffset = 30.0 * ARCMIN;
+    for (int k = 0; k < 6; k++) {
+        double a1d, a2;
+        synthMountAxesSide(Ttruth, HEAD_TRUTH, STARS_WIDE[k][0], STARS_WIDE[k][1],
+                           k < 3, a1d, a2);
+        double az = STARS_WIDE[k][0];
+        double alt = STARS_WIDE[k][1];
+        if (k == 5)
+            alt += lastSkyOffset;
+        feedStar(cc, az, alt, a1d, a2);
+    }
+    TEST_ASSERT_TRUE(cc.fitRigidModel());
+
+    double azL, altL, a1L, a2L;
+    TEST_ASSERT_TRUE(cc.getStar(5, azL, altL, a1L, a2L));
+    double a1m, a2m;
+    modelAxes(cc, azL, altL, /*flipped=*/true, a1m, a2m);
+    const double d1 = a1m - a1L;
+    const double d2 = a2m - a2L;
+
+    double az0, alt0, a1r0, a2r0;
+    TEST_ASSERT_TRUE(cc.getStar(0, az0, alt0, a1r0, a2r0));
+    double a1cmd, a2cmd;
+    modelAxes(cc, az0, alt0, /*flipped=*/false, a1cmd, a2cmd);
+
+    const double missKeep = skyMissFromAxes(cc, az0, alt0, a1cmd, a2cmd);
+    const double missSync = skyMissFromAxes(cc, az0, alt0, a1cmd - d1, a2cmd - d2);
+
+    TEST_ASSERT_TRUE_MESSAGE(missKeep < 5.0 * ARCMIN,
+                             "keeping the encoder frame must leave side A close");
+    TEST_ASSERT_TRUE_MESSAGE(missSync > 15.0 * ARCMIN,
+                             "post-fit sync must throw side A off by tens of arcmin");
+    TEST_ASSERT_TRUE_MESSAGE(missSync > 3.0 * missKeep,
+                             "sync path must be several times worse than keep path");
+    (void)a1r0;
+    (void)a2r0;
+}
+
+void test_hasHead_fallback_discards_six_star_t(void)
+{
+    // A finished rigid fit leaves a multi-star T that matches all retained
+    // stars. The old close-out gated on hasHead() and, when no CH/NP/ID was
+    // published, ran the classic two-star minimisers — which rebuild T from
+    // only the first pair and throw the other stars off. Keeping the fitted T
+    // (the fix) is what this residual comparison defends.
+    double Ttruth[3][3];
+    truthT(Ttruth);
+    CoordConv cc;
+    fitSplit(cc, Ttruth, 6, COORDCONV_MIN_CONE_PER_SIDE);
+    const double rmsKeep = cc.residualRms();
+    TEST_ASSERT_TRUE_MESSAGE(rmsKeep < 1.0 * ARCSEC,
+                             "six-star rigid T must fit the stars tightly");
+
+    // Old close-out when !hasHead(): classic two-star refine on the seed pair.
+    cc.minimizeAxis2();
+    cc.minimizeAxis1(M_PI_2);
+    const double rmsFallback = cc.residualRms();
+    TEST_ASSERT_TRUE_MESSAGE(rmsFallback > 10.0 * rmsKeep + 30.0 * ARCSEC,
+                             "two-star fallback must spoil the six-star residual");
+}
+
+// =====================================================================
 void setUp()    {}
 void tearDown() {}
 
@@ -1160,6 +1262,9 @@ int main(int, char **)
     RUN_TEST(test_fit_keeps_t_orthonormal);
     RUN_TEST(test_clean_clears_head_and_stars);
     RUN_TEST(test_head_getter_setter_roundtrip);
+
+    RUN_TEST(test_post_fit_sync_throws_side_a_off);
+    RUN_TEST(test_hasHead_fallback_discards_six_star_t);
 
     return UNITY_END();
 }
