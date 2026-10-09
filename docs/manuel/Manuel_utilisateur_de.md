@@ -954,13 +954,19 @@ Während ein Rechner die Montierung führt, bleibt der Handkontroller benutzbar.
 
 ### Firmware aktualisieren
 
-Das Wiki der Gruppe beschreibt TeenAstroUploader für Windows.
+**TeenAstroUploader** aus dem MSI installieren (`TeenAstroUploader.msi`). Die Wiki-Seite [TeenAstroUploader for Windows](https://groups.io/g/TeenAstro/wiki/8837) zeigt dieselben Schritte mit Bildern.
 
-1. Vor einer Aktualisierung die Parameter mit TeenAstroConfig sichern. Ein Versionswechsel kann den Speicher zurücksetzen, wenn der interne Schlüssel sich geändert hat.
-2. USB-Kabel nur am Anschluss des Steuergeräts, Montierung eingeschaltet. Beim ersten Mal installiert Windows das Teensy-Gerät.
-3. Im Werkzeug die Platine wählen. Der vierte Bildschirm nach dem Einschalten nennt das Modell. Im Zweifel die Beschriftung auf der Platine lesen.
-4. Das Senden starten und das Ende des Ladeprogramms abwarten.
-5. Für den Handkontroller über WLAN: die Adresse mit **IP-Adresse zeigen** ablesen, im Werkzeug eintragen, über WLAN senden.
+Das Fenster ist klein und klassisch: **Firmware Version**, **Stable** / **Latest**, **Download!**, **Open Folder**, dann drei Register — **Telescope**, **Focuser**, **Hand controler**.
+
+1. Firmware-Version wählen und einmal **Download!** drücken (Stable oder Latest). Warten, bis der Fortschrittsbalken fertig ist.
+2. USB-Kabel nur am Gerät, das geflasht wird (Steuergerät, Fokussierer oder Wemos des Handkontrollers), Montierung eingeschaltet. Beim ersten Mal installiert Windows den Teensy- (oder CH340-) Treiber.
+3. Auf **Telescope** oder **Focuser**:
+   - **Upload!** schreibt nur die gewählte Platine. Nutzen bei Firmware älter als 1.5, oder wenn die Einstellungen schon anderweitig gesichert sind.
+   - **Auto!** (Firmware **1.5 oder neuer**) erkennt die Platine, sichert Parameter als JSON, flasht, stellt nach dem Neustart wieder her und **prüft** die Werte. TeenAstro speichert **zwei Montierungen** (Index 0 und 1); Auto arbeitet auf der aktiven. Älter als 1.5 wird abgelehnt: diese Zweige werden für Backup/Restore nicht mehr unterstützt.
+   - **EEPROM** öffnet den Parametereditor (gleiche Gruppen wie der Webserver: Mount, Motors, Speed, Limits, Encoders, Site, Tracking). Read / Write / Save / Load. Nach Write liest das Werkzeug erneut und prüft. **Activate (reboot)** wechselt zwischen den zwei gespeicherten Montierungen.
+4. Auf **Hand controler**: Sprache und COM-Port, dann **Upload over COM!**; oder die Adresse aus **IP-Adresse zeigen** und **Upload over WIFI!**.
+
+Jürgen Goldans [TeenAstroConfig](https://groups.io/g/TeenAstro/wiki/10404) bleibt für ältere Abläufe nützlich; ab 1.5 decken **EEPROM** und **Auto!** im Uploader denselben Bedarf ab.
 
 Handkontroller und Steuergerät müssen aus derselben Veröffentlichung stammen. Sonst kehrt der Versionsfehler schon beim Start zurück.
 
@@ -1217,4 +1223,4 @@ Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Tre
 - Der Handkontroller führt **2 Stars**, **4 Stars** und **3+3 Stars**. Vier Sterne auf einer Pier-Seite messen NP. 3+3 misst CH und NP nur, wenn jede Pier-Seite drei Sterne hat. Die angezeigten Zahlen sind CH, NP, ID und ME, mit Wallaces Vorzeichen.
 - **4 Sterne** und **3+3 Sterne** aktualisieren das Modell nach dem dritten Stern und nach jedem weiteren Stern vor dem letzten. Das nächste Goto benutzt die bereits zentrierten Sterne. Der Handkontroller wartet, während diese Rechnung läuft.
 - **Mount error**, über der Refraktion, hält ein bekanntes CH und NP bei einer Zwei-Stern-Ausrichtung und bei einem Plate-Solve-Sync fest.
-- Die Schaltfläche **Auto** im Firmware-Uploader erkennt das angeschlossene Teleskop oder den Fokussierer und schreibt die passende Datei.
+- Die Schaltfläche **Auto!** im Firmware-Uploader (Telescope / Focuser) sichert Parameter, erkennt die Platine, flasht, stellt wieder her und prüft (Firmware 1.5+). **EEPROM** bearbeitet den vollen Parametersatz (zwei Montierungen am Steuergerät). **Upload!** flasht weiterhin ohne die Einstellungen anzufassen.

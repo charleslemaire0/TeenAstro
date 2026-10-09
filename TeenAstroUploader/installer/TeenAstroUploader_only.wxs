@@ -4,7 +4,7 @@
   <Product Id="*"
            Name="TeenAstro Firmware Uploader"
            Language="1033"
-           Version="1.6.0"
+           Version="1.6.1"
            Manufacturer="TeenAstro"
            UpgradeCode="A2B3C4D5-E6F7-8901-2345-67890ABCDEF0">
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />

@@ -952,13 +952,19 @@ Pendant qu'un ordinateur commande la monture, la raquette reste utilisable. Évi
 
 ### Mise à jour du logiciel
 
-Le wiki du groupe décrit TeenAstroUploader pour Windows.
+Installez **TeenAstroUploader** depuis le MSI (`TeenAstroUploader.msi`). La page wiki [TeenAstroUploader for Windows](https://groups.io/g/TeenAstro/wiki/8837) reprend les mêmes étapes avec des images.
 
-1. Sauvegardez les paramètres avec TeenAstroConfig avant une mise à jour. Un changement de version peut réinitialiser la mémoire si la clé interne a changé.
-2. Câble USB sur le port de l'unité principale seule, monture allumée. La première fois, Windows installe le périphérique Teensy.
-3. Dans l'outil, choisissez la carte. Le quatrième écran après la mise sous tension indique le modèle. En cas de doute, lisez le marquage sur la carte.
-4. Lancez l'envoi et attendez la fin du chargeur.
-5. Pour la raquette par le Wi-Fi : relevez l'adresse avec **Montre IP**, saisissez-la dans l'outil, envoi par Wi-Fi.
+La fenêtre est compacte : **Firmware Version**, **Stable** / **Latest**, **Download!**, **Open Folder**, puis trois onglets — **Telescope**, **Focuser**, **Hand controler**.
+
+1. Choisissez la version et appuyez une fois sur **Download!** (Stable ou Latest). Attendez la fin de la barre de progression.
+2. Câble USB uniquement sur l'appareil à flasher (unité principale, focuser, ou Wemos de la raquette), monture allumée. La première fois, Windows installe le pilote Teensy (ou CH340).
+3. Sur **Telescope** ou **Focuser** :
+   - **Upload!** envoie seulement le fichier de la carte choisie. À utiliser si le firmware est plus ancien que 1.5, ou si vous avez déjà sauvegardé les réglages autrement.
+   - **Auto!** (firmware **1.5 ou plus**) détecte la carte, sauvegarde les paramètres en JSON, flashe, restaure après redémarrage, puis **vérifie** les valeurs. TeenAstro mémorise **deux montures** (index 0 et 1) ; Auto agit sur la monture active. En dessous de 1.5, Auto est refusé : ces branches ne sont plus prises en charge pour la sauvegarde.
+   - **EEPROM** ouvre l'éditeur de paramètres (mêmes groupes que le serveur web : Mount, Motors, Speed, Limits, Encoders, Site, Tracking). Read / Write / Save / Load. Après Write, l'outil relit l'appareil pour contrôler. **Activate (reboot)** bascule entre les deux montures mémorisées.
+4. Sur **Hand controler** : langue et port COM, puis **Upload over COM!** ; ou l'adresse de **Montre IP** et **Upload over WIFI!**.
+
+L'outil [TeenAstroConfig](https://groups.io/g/TeenAstro/wiki/10404) de Jürgen Goldan reste utile pour les anciens usages ; à partir de 1.5, **EEPROM** et **Auto!** de l'uploader couvrent le même besoin.
 
 Raquette et unité principale doivent provenir de la même publication. Sinon l'écran de version en erreur revient dès le démarrage.
 
@@ -1215,4 +1221,4 @@ Le firmware 1.6.0 est la première version de cette génération. Le fichier Lis
 - La raquette guide **2 étoiles**, **4 étoiles** et **3+3 étoiles**. Quatre étoiles sur un côté de pilier mesurent NP. Le 3+3 mesure CH et NP seulement quand chaque côté a trois étoiles. Les nombres affichés sont CH, NP, ID et ME, les signes de Wallace.
 - **4 étoiles** et **3+3 étoiles** mettent le modèle à jour après la troisième étoile, puis après chaque étoile suivante sauf la dernière. Le goto suivant utilise les étoiles déjà centrées. La raquette attend pendant ce calcul.
 - **Erreur de monture**, au-dessus de la réfraction, conserve un CH et un NP déjà connus pendant un alignement à deux étoiles et pendant une synchro de plate-solve.
-- Le bouton **Auto** de l'uploader détecte le télescope ou le focuser connecté et flashe le fichier correspondant.
+- Le bouton **Auto!** de l'uploader (Telescope / Focuser) sauvegarde les paramètres, détecte la carte, flashe, restaure et vérifie (firmware 1.5+). **EEPROM** édite l'ensemble des paramètres (deux montures sur l'unité principale). **Upload!** flashe toujours sans toucher aux réglages.

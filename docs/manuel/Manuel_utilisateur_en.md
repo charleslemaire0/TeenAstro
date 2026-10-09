@@ -954,13 +954,19 @@ While a computer commands the mount, the hand controller remains usable. Avoid s
 
 ### Firmware update
 
-The group wiki describes TeenAstroUploader for Windows.
+Install **TeenAstroUploader** from the MSI (`TeenAstroUploader.msi`). The group wiki page [TeenAstroUploader for Windows](https://groups.io/g/TeenAstro/wiki/8837) has the same steps with pictures.
 
-1. Save the parameters with TeenAstroConfig before an update. A version change can reset memory if the internal key has changed.
-2. USB cable on the main-unit port only, mount powered. The first time, Windows installs the Teensy device.
-3. In the tool, select the board. The fourth screen after power-on shows the model. If in doubt, read the marking on the board.
-4. Start the upload and wait for the loader to finish.
-5. For the hand controller over Wi-Fi: read the address with **Show IP**, enter it in the tool, upload over Wi-Fi.
+The window is small and classic: **Firmware Version**, **Stable** / **Latest**, **Download!**, **Open Folder**, then three tabs — **Telescope**, **Focuser**, **Hand controler**.
+
+1. Choose the firmware version and press **Download!** once (Stable or Latest). Wait until the progress bar finishes.
+2. USB cable on the device you flash only (main unit, or focuser, or hand-controller Wemos), mount powered. The first time, Windows installs the Teensy (or CH340) driver.
+3. On **Telescope** or **Focuser**:
+   - **Upload!** flashes the selected PCB only. Use this on firmware older than 1.5, or when you already saved the settings yourself.
+   - **Auto!** (firmware **1.5 or newer**) detects the board, backs up parameters to a JSON file, flashes, restores after reboot, then **verifies** the values. TeenAstro stores **two mounts** (index 0 and 1); Auto works on the active mount. Older than 1.5 is refused: those release branches are no longer supported for backup/restore.
+   - **EEPROM** opens the parameter editor (same groups as the Webserver: Mount, Motors, Speed, Limits, Encoders, Site, Tracking). Read / Write / Save / Load. After Write, the tool re-reads the device to check the values. Use **Activate (reboot)** to switch between the two stored mounts.
+4. On **Hand controler**: select language and COM port, then **Upload over COM!**; or enter the IP from **Show IP** and **Upload over WIFI!**.
+
+Jürgen Goldan's [TeenAstroConfig](https://groups.io/g/TeenAstro/wiki/10404) remains useful for older workflows; for 1.5+ the uploader **EEPROM** and **Auto!** cover the same need.
 
 The hand controller and the main unit must come from the same release. Otherwise the version-error screen returns at startup.
 
@@ -1217,4 +1223,4 @@ Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme,
 - The hand controller guides **2 Stars**, **4 Stars**, and **3+3 Stars**. Four stars on one pier side measure NP. 3+3 measures CH and NP only when each pier side has three stars. The reported numbers are Wallace's CH, NP, ID and ME.
 - **4 Stars** and **3+3 Stars** update the model after the third star, and after each later star before the last. The next slew uses the stars already centered. The hand controller waits while that calculation runs.
 - **Mount error**, above Refraction, holds a known CH and NP during a two-star alignment and during a plate-solve sync.
-- The firmware uploader **Auto** button detects the connected telescope or focuser and flashes the matching file.
+- The firmware uploader **Auto!** button (Telescope / Focuser) backs up parameters, detects the board, flashes, restores, and verifies (firmware 1.5+). **EEPROM** edits the full parameter set (two mounts on the MainUnit). **Upload!** still flashes without touching settings.

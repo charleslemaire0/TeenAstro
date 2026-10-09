@@ -1,0 +1,107 @@
+<p>Hello everyone,</p>
+
+<p>
+For some time, many of us have used Jürgen Goldan’s <strong>TeenAstroConfig</strong>
+to back up mount parameters, edit them, and write them back — especially before a
+firmware update or a factory reset. That tool has been very useful to the community.
+</p>
+
+<p>
+With TeenAstro <strong>1.5 and newer</strong>, the Windows
+<strong>TeenAstro Firmware Uploader</strong> now covers the same ground inside the
+same application that already flashes the MainUnit, Focuser, and Hand Controller.
+The idea is simply to reduce the number of separate utilities needed for a typical
+upgrade, while keeping the workflows that people already know.
+</p>
+
+<p>
+TeenAstroConfig.exe remains available if you prefer it or already have setups stored
+in its files. Nothing forces a change of habit; the Uploader is an integrated option
+for current firmware.
+</p>
+
+<p><strong>What the Uploader adds for parameters (1.5+)</strong></p>
+<ul>
+<li>
+<strong>Auto!</strong> — on the Telescope or Focuser tab: detect the board, save
+parameters to a JSON file, flash the selected firmware, restore after reboot, then
+re-read and verify. Useful when you want a single-button upgrade path.
+</li>
+<li>
+<strong>EEPROM</strong> — a full parameter editor with the same grouping as the
+Webserver (Mount, Motors, Speed, Limits, Encoders, Site, Tracking). Read / Write /
+Save / Load. After a write, values are read back and checked.
+</li>
+<li>
+<strong>Two mounts</strong> — TeenAstro stores two mount profiles; the editor can
+switch the active mount (reboot) and edit the selected one.
+</li>
+<li>
+Firmware older than 1.5 is left alone for backup/restore: use <strong>Upload!</strong>
+only, and keep saving settings the way you already do (including TeenAstroConfig if
+that is your workflow).
+</li>
+</ul>
+
+<p><strong>Screenshots (current Windows Uploader)</strong></p>
+
+<p>Telescope tab — Download, Upload!, Auto!, EEPROM:</p>
+<p>
+<img src="https://groups.io/g/TeenAstro/draftattachment/35930442/0/uploader_telescope.png"
+ alt="TeenAstroUploader Telescope tab" />
+</p>
+
+<p>Focuser tab — same pattern:</p>
+<p>
+<img src="https://groups.io/g/TeenAstro/draftattachment/35930442/1/uploader_focuser.png"
+ alt="TeenAstroUploader Focuser tab" />
+</p>
+
+<p>Hand controller — COM and Wi‑Fi flash:</p>
+<p>
+<img src="https://groups.io/g/TeenAstro/draftattachment/35930442/2/uploader_handcontroller.png"
+ alt="TeenAstroUploader Hand controller tab" />
+</p>
+
+<p>EEPROM editor — Mount (two mounts, Activate / reboot):</p>
+<p>
+<img src="https://groups.io/g/TeenAstro/draftattachment/35930442/3/uploader_eeprom_mount.png"
+ alt="EEPROM Mount tab" />
+</p>
+
+<p>EEPROM editor — Motors (example of the Webserver-style groups):</p>
+<p>
+<img src="https://groups.io/g/TeenAstro/draftattachment/35930442/4/uploader_eeprom_motors.png"
+ alt="EEPROM Motors tab" />
+</p>
+
+<p><strong>Documentation on the wiki</strong></p>
+<ul>
+<li>
+<a href="https://groups.io/g/TeenAstro/wiki/8837">TeenAstroUploader for Windows</a>
+(overview / install / download)
+</li>
+<li>
+<a href="https://groups.io/g/TeenAstro/wiki/43070">Telescope</a> ·
+<a href="https://groups.io/g/TeenAstro/wiki/43071">Focuser</a> ·
+<a href="https://groups.io/g/TeenAstro/wiki/43072">Hand controller</a>
+</li>
+<li>
+<a href="https://groups.io/g/TeenAstro/wiki/10404">Auto! and EEPROM</a>
+(the former TeenAstroConfig wiki page now points here; a short stub remains at
+<a href="https://groups.io/g/TeenAstro/wiki/TeenAstroConfig">TeenAstroConfig</a>)
+</li>
+</ul>
+
+<p>
+Installer (MSI):
+<a href="https://github.com/charleslemaire0/TeenAstro/raw/refs/heads/Release_1.6/Released%20data/Firmware/TeenAstroUploader.msi">TeenAstroUploader.msi</a>
+on the Release_1.6 tree.
+</p>
+
+<p>
+Thanks again to Jürgen for TeenAstroConfig — it served (and still can serve) that
+role well. Feedback on the Uploader’s Auto! / EEPROM path is welcome.
+</p>
+
+<p>Charles</p>
