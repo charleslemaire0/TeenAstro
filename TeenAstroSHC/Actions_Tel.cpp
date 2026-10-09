@@ -427,9 +427,20 @@ static bool formatRigidHead(LX200Client& client, char(&cone)[20], char(&perp)[20
 
 void SmartHandController::showAlignmentResult()
 {
-  char text[20] = { 0 };
+  char text[24] = { 0 };
   DisplayMessage(T_ALIGNMENT, T_SUCESS "!", -1);
-  if (m_client->getAlignError(text, sizeof(text)) == LX200_VALUEGET)
+  // Prefer the rigid multi-star RMS (:GXAr#). :AE# is only the two-star seed
+  // anglediff and stays misleading after 4-star / 3+3 close-out.
+  double rmsAs = 0.0;
+  if (m_client->getAlignRigidRms(rmsAs) == LX200_VALUEGET && rmsAs > 0.0)
+  {
+    if (rmsAs >= 60.0)
+      snprintf(text, sizeof(text), "%.1f'", rmsAs / 60.0);
+    else
+      snprintf(text, sizeof(text), "%.0f\"", rmsAs);
+    DisplayMessage(T_ERROR, text, -1);
+  }
+  else if (m_client->getAlignError(text, sizeof(text)) == LX200_VALUEGET)
   {
     text[3] = '\xB0';
     text[6] = '\'';

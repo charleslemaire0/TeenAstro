@@ -78,16 +78,21 @@ uint8_t parseRigidSuffix(const char *cmd, bool &bad)
 }
 
 /// Close out an alignment session: refine T with the legacy minimisers, or run
-/// the rigid fit when enough stars were collected, then sync on the last star.
+/// the rigid fit when enough stars were collected.
 void alignmentFinalize(Coord_HO &HO_T, double Lat)
 {
   MountAlignment &al = mount.alignment;
 
-  // The rigid fit replaces the legacy minimize* fudges only if it actually
-  // solved something. It drops any head term the star distribution cannot
-  // separate, and a set clustered in altitude can leave it with none at all;
-  // in that case we must still fall back, or a long rigid session would end up
-  // worse than the two star path it was meant to improve on.
+  // Rigid close-out keeps the multi-star T even when no head term was separable:
+  // six stars still constrain the pole better than falling back to the two-star
+  // seed. hasHead() only says whether CH/NP/ID were published, not whether the
+  // fit itself succeeded.
+  //
+  // Do not sync after a successful rigid fit. Stars were recorded in the
+  // encoder frame set by the first-star sync; a post-fit sync on the last star
+  // (often the other pier side after 3+3) shifts that frame by about the
+  // last-star residual and throws the earlier stars off — which is what you
+  // see when returning to side A. Classic two-star still syncs below.
   // The "1" reply is sent only after this returns. alignSelectStarRigid() waits
   // for that, because the fit is much slower than recording one more star.
   bool fitted = false;
@@ -97,19 +102,21 @@ void alignmentFinalize(Coord_HO &HO_T, double Lat)
     // N>=4 closes with the one-shot rigid fit. A three-star session has no
     // redundancy for that gate, so it closes with the progressive solver.
     if (nstars >= COORDCONV_MIN_RIGID_STARS)
-      fitted = fitRigidAlignModel() && al.conv.hasHead();
+      fitted = fitRigidAlignModel();
     else {
       double rms = 0.0;
-      if (al.conv.fitProgressive(&rms, NULL, mount.refrOptForGoto()) && al.conv.hasHead()) {
+      if (al.conv.fitProgressive(&rms, NULL, mount.refrOptForGoto())) {
         al.rigidRmsArcsec = (float)(rms * RAD_TO_DEG * 3600.0);
-        al.hasRigid = true;
+        al.hasRigid = al.conv.hasHead();
         fitted = true;
       }
     }
   }
   if (!fitted)
+  {
     closeTwoStarAlignment(Lat);
-  mount.syncAzAlt(&HO_T, mount.getPoleSide());
+    mount.syncAzAlt(&HO_T, mount.getPoleSide());
+  }
   al.hasValid = true;
   al.alignPhase   = ALIGN_IDLE;
   al.alignStarNum = 0;
