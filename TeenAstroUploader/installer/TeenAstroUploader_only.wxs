@@ -39,5 +39,16 @@
       <ComponentGroupRef Id="UploaderFiles" />
       <ComponentRef Id="ShortcutComponent" />
     </Feature>
+
+    <!-- Start the uploader after install completes (skip silent/quiet and uninstall). -->
+    <CustomAction Id="LaunchUploader"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="&quot;[INSTALLFOLDER]TeenAstroUploader.exe&quot;"
+                  Execute="immediate"
+                  Return="asyncNoWait"
+                  Impersonate="yes" />
+    <InstallExecuteSequence>
+      <Custom Action="LaunchUploader" After="InstallFinalize">NOT Installed AND NOT REMOVE AND UILevel &gt; 2</Custom>
+    </InstallExecuteSequence>
   </Product>
 </Wix>
