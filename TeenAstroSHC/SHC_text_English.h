@@ -98,6 +98,7 @@
 #define T_DISABLE "Disable"
 #define T_RESET "Reset"
 #define T_VALUE "Value"
+#define T_DEFAULT "Default"
 #define T_SET "Set"
 #define T_GET "Get"
 #define T_DONE "Done"

@@ -104,6 +104,7 @@ static_assert(sizeof(T_REVERSEDROTATION)     <= SHC_MAXBYTES_R10, "T_REVERSEDROT
 static_assert(sizeof(T_DIRECTROTATION)       <= SHC_MAXBYTES_R10, "T_DIRECTROTATION too wide for 128px (helvR10)");
 static_assert(sizeof(T_GERMANEQUATORIAL)     <= SHC_MAXBYTES_R10, "T_GERMANEQUATORIAL too wide for 128px (helvR10)");
 static_assert(sizeof(T_RESETTOFACTORY)       <= SHC_MAXBYTES_R10, "T_RESETTOFACTORY too wide for 128px (helvR10)");
+static_assert(sizeof(T_DEFAULT)              <= SHC_MAXBYTES_R10, "T_DEFAULT too wide for 128px (helvR10)");
 static_assert(sizeof(T_SHOWSETTINGS)         <= SHC_MAXBYTES_R10, "T_SHOWSETTINGS too wide for 128px (helvR10)");
 static_assert(sizeof(T_TELESCOPESETTINGS)    <= SHC_MAXBYTES_R10, "T_TELESCOPESETTINGS too wide for 128px (helvR10)");
 static_assert(sizeof(T_THEMOUNTMUSTBEATHOME1)<= SHC_MAXBYTES_R10, "T_THEMOUNTMUSTBEATHOME1 too wide for 128px (helvR10)");

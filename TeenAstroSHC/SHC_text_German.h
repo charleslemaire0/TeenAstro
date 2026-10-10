@@ -97,6 +97,7 @@
 #define T_DISABLE "Deaktivieren"
 #define T_RESET "Grundstellung"
 #define T_VALUE "Wert"
+#define T_DEFAULT "Standard"
 #define T_SET "Gesetzt"
 #define T_GET "Erhalten"
 #define T_DONE "Erledigt"

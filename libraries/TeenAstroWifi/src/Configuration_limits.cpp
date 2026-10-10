@@ -3,11 +3,21 @@
 // -----------------------------------------------------------------------------------
 // configuration_limits
 
+// Factory defaults from writeDefaultMount() / initCelestialPole() in MainUnit.
+namespace {
+const int kDefaultMinAltDeg = -10;
+const int kDefaultMaxAltDeg = 91;
+const float kDefaultUnderPoleHours = 12.0f;
+const int kDefaultMeridianDeg = 15;       // EE invalid → 60 arcmin → 15°
+const int kDefaultMinDistPoleDeg = 181;
+}
+
 const char html_configMinAlt[] PROGMEM =
 "<div class='bt'>Limits Altitude</div>"
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%d' type='number' name='hl' min='-30' max='30'>"
 "<button type='submit'>Upload</button>"
+"<button type='submit' name='hl_d' value='1'>Default</button>"
 " (Minimum Altitude, in degrees +/- 30)"
 "</form>"
 "\r\n";
@@ -15,6 +25,7 @@ const char html_configMaxAlt[] PROGMEM =
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%d' type='number' name='ol' min='60' max='91'>"
 "<button type='submit'>Upload</button>"
+"<button type='submit' name='ol_d' value='1'>Default</button>"
 " (Maximum Altitude, in degrees 60 to 90, set 91 to deactivate)"
 "</form>"
 "\r\n";
@@ -23,6 +34,7 @@ const char html_configUnderPole[] PROGMEM =
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%.1f' type='number' name='up' min='9' max='12' step='0.1'>"
 "<button type='submit'>Upload</button>"
+"<button type='submit' name='up_d' value='1'>Default</button>"
 " (Under pole limite, in hours  from +/-9 to +/-12)"
 "</form>"
 "\r\n";
@@ -30,6 +42,7 @@ const char html_configPastMerE[] PROGMEM =
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%d' type='number' name='el' min='-45' max='45'>"
 "<button type='submit'>Upload</button>"
+"<button type='submit' name='el_d' value='1'>Default</button>"
 " (Past Meridian when East of the pier, in degrees +/-45)"
 "</form>"
 "\r\n";
@@ -37,6 +50,7 @@ const char html_configPastMerW[] PROGMEM =
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%d' type='number' name='wl' min='-45' max='45'>"
 "<button type='submit'>Upload</button>"
+"<button type='submit' name='wl_d' value='1'>Default</button>"
 " (Past Meridian when West of the pier, in degrees +/-45)"
 "</form>"
 "\r\n";
@@ -46,6 +60,7 @@ const char html_configMiDistanceFromPole[] PROGMEM =
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%d' type='number' name='miDistanceFromPole' min='0' max='181'>"
 "<button type='submit'>Upload</button>"
+"<button type='submit' name='miDistanceFromPole_d' value='1'>Default</button>"
 " (Minimum distance from Pole to keep tracking on for 6 hours after transit, 181 to disable)"
 "</form>"
 "<br />\r\n";
@@ -55,6 +70,7 @@ const char html_configMinAxis1[] PROGMEM =
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%.1f' type='number' name='mia1' min='%.1f' max='%.1f' step='0.1'>"
 "<button type='submit'>Upload</button>"
+"<button type='submit' name='mia1_d' value='1'>Default</button>"
 " (Minimum value for instrument axis 1, in degrees from %.1f to %.1f)"
 "</form>"
 "\r\n";
@@ -62,6 +78,7 @@ const char html_configMaxAxis1[] PROGMEM =
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%.1f' type='number' name='maa1' min='%.1f' max='%.1f' step='0.1'>"
 "<button type='submit'>Upload</button>"
+"<button type='submit' name='maa1_d' value='1'>Default</button>"
 " (Maximum value for instrument axis 1, in degrees from %.1f to %.1f)"
 "</form>"
 "\r\n";
@@ -70,6 +87,7 @@ const char html_configMinAxis2[] PROGMEM =
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%.1f' type='number' name='mia2' min='%.1f' max='%.1f' step='0.1'>"
 "<button type='submit'>Upload</button>"
+"<button type='submit' name='mia2_d' value='1'>Default</button>"
 " (Minimum value for instrument axis 2, in degrees from %.1f to %.1f)"
 "</form>"
 "\r\n";
@@ -77,6 +95,7 @@ const char html_configMaxAxis2[] PROGMEM =
 "<form method='get' action='/configuration_limits.htm'>"
 " <input value='%.1f' type='number' name='maa2' min='%.1f' max='%.1f' step='0.1'>"
 "<button type='submit'>Upload</button>"
+"<button type='submit' name='maa2_d' value='1'>Default</button>"
 " (Maximum value for instrument axis 2, in degrees from %.1f to %.1f)"
 "</form>"
 "\r\n";
@@ -93,7 +112,7 @@ void TeenAstroWifi::handleConfigurationLimits()
     return;
   }
   sendHtmlStart();
-  char temp[350] = "";
+  char temp[480] = "";
   String data;
 
   preparePage(data, ServerPage::Limits);
@@ -192,88 +211,135 @@ bool TeenAstroWifi::processConfigurationLimitsGet()
   int i;
   float f;
 
-  // Overhead and Horizon Limits
-  v = server.arg("ol");
-  if (v != "")
+  // Per-limit Default buttons (factory values). Checked before Upload so a
+  // Default click is not overridden by the still-present number field.
+  if (server.arg("hl_d") != "")
   {
     any = true;
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 60) && (i <= 91)))
-      s_client->setMaxAltitude(i);
+    s_client->setMinAltitude(kDefaultMinAltDeg);
   }
-  v = server.arg("hl");
-  if (v != "")
+  else
   {
-    any = true;
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -30) && (i <= 30)))
-      s_client->setMinAltitude(i);
+    v = server.arg("hl");
+    if (v != "")
+    {
+      any = true;
+      if ((atoi2((char*)v.c_str(), &i)) && ((i >= -30) && (i <= 30)))
+        s_client->setMinAltitude(i);
+    }
   }
 
-  // Meridian Limits
-  v = server.arg("el");
-  if (v != "")
+  if (server.arg("ol_d") != "")
   {
     any = true;
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
+    s_client->setMaxAltitude(kDefaultMaxAltDeg);
+  }
+  else
+  {
+    v = server.arg("ol");
+    if (v != "")
     {
-      i = (int)round((i * 60.0) / 15.0);
-      s_client->setLimitEast(i);
+      any = true;
+      if ((atoi2((char*)v.c_str(), &i)) && ((i >= 60) && (i <= 91)))
+        s_client->setMaxAltitude(i);
     }
   }
-  v = server.arg("wl");
-  if (v != "")
+
+  if (server.arg("el_d") != "")
   {
     any = true;
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
+    s_client->setLimitEast((int)round((kDefaultMeridianDeg * 60.0) / 15.0));
+  }
+  else
+  {
+    v = server.arg("el");
+    if (v != "")
     {
-      i = (int)round((i * 60.0) / 15.0);
-      s_client->setLimitWest(i);
+      any = true;
+      if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
+      {
+        i = (int)round((i * 60.0) / 15.0);
+        s_client->setLimitEast(i);
+      }
     }
   }
-  v = server.arg("up");
-  if (v != "")
+
+  if (server.arg("wl_d") != "")
   {
     any = true;
-    if ((atof2((char*)v.c_str(), &f)) && ((f >= 9) && (f <= 12)))
-      s_client->setUnderPoleLimit(f);
+    s_client->setLimitWest((int)round((kDefaultMeridianDeg * 60.0) / 15.0));
   }
+  else
+  {
+    v = server.arg("wl");
+    if (v != "")
+    {
+      any = true;
+      if ((atoi2((char*)v.c_str(), &i)) && ((i >= -45) && (i <= 45)))
+      {
+        i = (int)round((i * 60.0) / 15.0);
+        s_client->setLimitWest(i);
+      }
+    }
+  }
+
+  if (server.arg("up_d") != "")
+  {
+    any = true;
+    s_client->setUnderPoleLimit(kDefaultUnderPoleHours);
+  }
+  else
+  {
+    v = server.arg("up");
+    if (v != "")
+    {
+      any = true;
+      if ((atof2((char*)v.c_str(), &f)) && ((f >= 9) && (f <= 12)))
+        s_client->setUnderPoleLimit(f);
+    }
+  }
+
   #ifdef keepTrackingOnWhenFarFromPole
-  v = server.arg("miDistanceFromPole");
-  if (v != "")
+  if (server.arg("miDistanceFromPole_d") != "")
   {
     any = true;
-    if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 181)))
-      s_client->setMinDistFromPole(i);
+    s_client->setMinDistFromPole(kDefaultMinDistPoleDeg);
+  }
+  else
+  {
+    v = server.arg("miDistanceFromPole");
+    if (v != "")
+    {
+      any = true;
+      if ((atoi2((char*)v.c_str(), &i)) && ((i >= 0) && (i <= 181)))
+        s_client->setMinDistFromPole(i);
+    }
   }
   #endif
 
-  // Axis limits
-  v = server.arg("mia1");
-  if (v != "")
+  // Axis limits — Default restores the mount-type mechanical bound (:GXlA#–D#).
+  const char* axisDefs[4] = { "mia1_d", "maa1_d", "mia2_d", "maa2_d" };
+  const char* axisVals[4] = { "mia1", "maa1", "mia2", "maa2" };
+  const char axisModes[4] = { 'A', 'B', 'C', 'D' };
+  for (int a = 0; a < 4; a++)
   {
-    any = true;
-    if (atof2((char*)v.c_str(), &f))
-      s_client->setAxisLimit('A', f);
-  }
-  v = server.arg("maa1");
-  if (v != "")
-  {
-    any = true;
-    if (atof2((char*)v.c_str(), &f))
-      s_client->setAxisLimit('B', f);
-  }
-  v = server.arg("mia2");
-  if (v != "")
-  {
-    any = true;
-    if (atof2((char*)v.c_str(), &f))
-      s_client->setAxisLimit('C', f);
-  }
-  v = server.arg("maa2");
-  if (v != "")
-  {
-    any = true;
-    if (atof2((char*)v.c_str(), &f))
-      s_client->setAxisLimit('D', f);
+    if (server.arg(axisDefs[a]) != "")
+    {
+      any = true;
+      int bound = 0;
+      if (s_client->getMountTypeAxisLimit(axisModes[a], bound) == LX200_VALUEGET)
+        s_client->setAxisLimit(axisModes[a], (float)bound);
+    }
+    else
+    {
+      v = server.arg(axisVals[a]);
+      if (v != "")
+      {
+        any = true;
+        if (atof2((char*)v.c_str(), &f))
+          s_client->setAxisLimit(axisModes[a], f);
+      }
+    }
   }
 
   // Time zone (shared handler)
