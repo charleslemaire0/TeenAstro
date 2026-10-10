@@ -114,14 +114,18 @@ bool Mount::syncInstr(Coord_IN* instr, PoleSide Side)
 
 bool Mount::syncEqu(Coord_EQ* EQ_T, PoleSide Side, double Lat)
 {
-  Coord_IN instr = EQ_T->To_Coord_IN(Lat, refrOptForGoto(), alignment.conv.Tinv, alignment.conv.head);
-  return syncInstr(&instr, Side);
+  // Instrument angles are already in the motor frame for Side (beyond-pole when
+  // OVER). Do not ideal-flip again via angle2Step(POLE_OVER).
+  const bool beyond = Side >= POLE_OVER;
+  Coord_IN instr = EQ_T->To_Coord_IN(Lat, refrOptForGoto(), alignment.conv.Tinv, alignment.conv.head, beyond);
+  return syncInstr(&instr, POLE_UNDER);
 }
 
 bool Mount::syncAzAlt(Coord_HO* HO_T, PoleSide Side)
 {
-  Coord_IN instr = HO_T->To_Coord_IN(alignment.conv.Tinv, alignment.conv.head);
-  return syncInstr(&instr, Side);
+  const bool beyond = Side >= POLE_OVER;
+  Coord_IN instr = HO_T->To_Coord_IN(alignment.conv.Tinv, alignment.conv.head, beyond);
+  return syncInstr(&instr, POLE_UNDER);
 }
 
 // ----- Encoder ↔ stepper position sync -----
@@ -285,7 +289,7 @@ Coord_HO Mount::getHorAppTarget() const
 }
 
 // -----------------------------------------------------------------------------
-// predictTarget: try preferred pole side, then flip if FLIP_ALWAYS
+// predictTarget: motor-frame instrument angles → steps for a pier side
 // -----------------------------------------------------------------------------
 
 bool Mount::predictTarget(const double& Axis1_in, const double& Axis2_in, const PoleSide& inputSide,
@@ -310,8 +314,41 @@ bool Mount::predictTarget(const double& Axis1_in, const double& Axis2_in, const 
   return false;
 }
 
+bool Mount::predictTargetHO(Coord_HO HO_T, const PoleSide& inputSide,
+  long& Axis1_out, long& Axis2_out, PoleSide& outputSide, bool allowAlternatePierSideFallback,
+  bool relaxGotoLimitsForFlip) const
+{
+  // Resolve each pier with HeadGeom's matching branch, then convert those
+  // motor-frame angles with POLE_UNDER (no second ideal flip). Cone reverses
+  // across the pier; angle2Step mirroring of the under-pole solution does not.
+  auto trySide = [&](PoleSide side) -> bool {
+    if (side != POLE_UNDER && side != POLE_OVER)
+      return false;
+    const bool beyond = side >= POLE_OVER;
+    Coord_IN instr = HO_T.To_Coord_IN(alignment.conv.Tinv, alignment.conv.head, beyond);
+    long a1 = 0, a2 = 0;
+    angle2Step(instr.Axis1() * RAD_TO_DEG, instr.Axis2() * RAD_TO_DEG, POLE_UNDER, &a1, &a2);
+    if (!limits.withinLimit(a1, a2, relaxGotoLimitsForFlip))
+      return false;
+    Axis1_out = a1;
+    Axis2_out = a2;
+    outputSide = side;
+    return true;
+  };
+
+  if (trySide(inputSide))
+    return true;
+  if (allowAlternatePierSideFallback && config.identity.meridianFlip == FLIP_ALWAYS)
+  {
+    const PoleSide alt = (inputSide == POLE_UNDER) ? POLE_OVER : POLE_UNDER;
+    if (trySide(alt))
+      return true;
+  }
+  return false;
+}
+
 // -----------------------------------------------------------------------------
-// goToEqu / goToHor: validate alt limits, convert to IN, predictTarget, goTo
+// goToEqu / goToHor: validate alt limits, predictTargetHO, goTo
 // -----------------------------------------------------------------------------
 
 byte Mount::goToEqu(Coord_EQ EQ_T, PoleSide preferedPoleSide, double Lat)
@@ -326,8 +363,7 @@ byte Mount::goToEqu(Coord_EQ EQ_T, PoleSide preferedPoleSide, double Lat)
 
 byte Mount::goToHor(Coord_HO HO_T, PoleSide preferedPoleSide)
 {
-  double Axis1_target = 0.0, Axis2_target = 0.0;
-  long axis1_target, axis2_target = 0;
+  long axis1_target = 0, axis2_target = 0;
   PoleSide selectedSide = PoleSide::POLE_NOTVALID;
 
   // Inclusive altitude band (same as MountLimits::checkAltitudeLimits). Tiny epsilon
@@ -339,10 +375,7 @@ byte Mount::goToHor(Coord_HO HO_T, PoleSide preferedPoleSide)
   if (altDeg > (double)limits.maxAlt + kAltEpsDeg)
   { tracking.gotoState = GOTO_NONE; return ERRGOTO_ABOVEOVERHEAD; }
 
-  Coord_IN instr_T = HO_T.To_Coord_IN(alignment.conv.Tinv, alignment.conv.head);
-  Axis1_target = instr_T.Axis1() * RAD_TO_DEG;
-  Axis2_target = instr_T.Axis2() * RAD_TO_DEG;
-  if (!predictTarget(Axis1_target, Axis2_target, preferedPoleSide, axis1_target, axis2_target, selectedSide))
+  if (!predictTargetHO(HO_T, preferedPoleSide, axis1_target, axis2_target, selectedSide))
   { tracking.gotoState = GOTO_NONE; return ERRGOTO_LIMITS; }
 
   byte r = (byte)goTo(axis1_target, axis2_target);
@@ -387,31 +420,28 @@ ErrorsGoTo Mount::goTo(long thisTargetAxis1, long thisTargetAxis2)
   return ErrorsGoTo::ERRGOTO_NONE;
 }
 
-// ----- flip: current position → other pier side via predictTarget, then goTo -----
+// ----- flip: current sky → other pier side via predictTargetHO, then goTo -----
 ErrorsGoTo Mount::flip()
 {
-  long Axis1, Axis2, axis1Flip, axis2Flip;
-  double Angle1, Angle2;
+  long axis1Flip = 0, axis2Flip = 0;
   PoleSide selectedSide = POLE_NOTVALID;
-  PoleSide stepToAngleSide = POLE_NOTVALID;
 
-  limits.getAxisPositions(Axis1, Axis2);
-  stepToAngle(Axis1, Axis2, &Angle1, &Angle2, &stepToAngleSide);
-  (void)stepToAngleSide;
   // Use getPoleSide() (axis2 vs quaterRot) for flip direction — same as SAMESIDE check and pier reporting.
   PoleSide pierNow = getPoleSide();
   PoleSide preferedPoleSide = (pierNow == POLE_UNDER) ? POLE_OVER : POLE_UNDER;
+  // Sky from raw instrument angles + head. Do not unfold then ideal-flip: that
+  // path misses once CH is in the model.
+  Coord_HO hoNow = getHorTopo();
   // Do not use FLIP_ALWAYS alternate here: that path can accept the current pier side and spuriously ERRGOTO_SAMESIDE.
-  // relaxGotoLimitsForFlip on predictTarget: other-pier solution may sit where normal GOTO limits
+  // relaxGotoLimitsForFlip on predictTargetHO: other-pier solution may sit where normal GOTO limits
   // would forbid (e.g. past meridian / toward southern sky) — same sky, different motor coords.
-  if (!predictTarget(Angle1, Angle2, preferedPoleSide, axis1Flip, axis2Flip, selectedSide, false, true))
+  if (!predictTargetHO(hoNow, preferedPoleSide, axis1Flip, axis2Flip, selectedSide, false, true))
     return ErrorsGoTo::ERRGOTO_LIMITS;
 
   // Tracking meridian/pole at landing: re-predict flip motor steps (out1/out2) for the sky at
   // arrival. Advance motor targets by fstep * elapsedLst (m_lst units, same as onSiderealTick)
   // when sideralTracking is on; if off, elapsedLst=0 (no extra drift). When elapsedLst=0, reuse
-  // Angle1/Angle2 from getAxisPositions above — do not use stepToAngle(staA*.target) or pos≠target
-  // makes the second predictTarget disagree with the first and spuriously fails meridian.
+  // the first prediction — recomputing from the same sky must agree.
   // safetyCheck may clear sideralTracking during GOTO; then elapsedLst=0 but angles still match pos.
   {
     double Tsec = estimateGotoSlewSeconds(*this, axis1Flip, axis2Flip) * kFlipSlewTimeMargin;
@@ -420,8 +450,7 @@ ErrorsGoTo Mount::flip()
 #endif
     const double elapsedLst =
       tracking.sideralTracking ? (kSiderealLstUnitsPerSec * Tsec) : 0.0;
-    double A1f = Angle1;
-    double A2f = Angle2;
+    long out1 = axis1Flip, out2 = axis2Flip;
     if (elapsedLst != 0.0)
     {
       long fut1, fut2;
@@ -429,14 +458,15 @@ ErrorsGoTo Mount::flip()
       fut1 = axes.staA1.target + (long)round(axes.staA1.fstep * elapsedLst);
       fut2 = axes.staA2.target + (long)round(axes.staA2.fstep * elapsedLst);
       sei();
-      PoleSide sideFut = POLE_NOTVALID;
-      stepToAngle(fut1, fut2, &A1f, &A2f, &sideFut);
-      (void)sideFut;
+      // Future sky from raw motor angles (getInstrDeg frame), not unfolded under-pole.
+      Coord_IN futIN(0.0,
+        fut2 / axes.geoA2.stepsPerDegree * DEG_TO_RAD,
+        fut1 / axes.geoA1.stepsPerDegree * DEG_TO_RAD);
+      Coord_HO hoFut = futIN.To_Coord_HO(alignment.conv.T, refrOptForTracking(), alignment.conv.head);
+      PoleSide tmpSel = POLE_NOTVALID;
+      if (!predictTargetHO(hoFut, preferedPoleSide, out1, out2, tmpSel, false, true))
+        return ErrorsGoTo::ERRGOTO_LIMITS;
     }
-    long out1, out2;
-    PoleSide tmpSel = POLE_NOTVALID;
-    if (!predictTarget(A1f, A2f, preferedPoleSide, out1, out2, tmpSel, false, true))
-      return ErrorsGoTo::ERRGOTO_LIMITS;
     // Same landing validation on Teensy and PC emulator (test–hardware parity for :MF#).
     if (!limits.checkMeridian(out1, out2, CHECKMODE_TRACKING))
       return ErrorsGoTo::ERRGOTO_MERIDIAN;
