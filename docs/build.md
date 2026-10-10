@@ -10,7 +10,8 @@
 | UniversalMainUnit | PlatformIO | Custom Teensy/ESP32 platform |
 | Unit tests | PlatformIO | MinGW toolchain |
 | TeenAstroASCOM_V7 | MSBuild | .NET 4.7.2 |
-| TeenAstroUploader, CatalogConverter | MSBuild | VB.NET |
+| TeenAstroUploader (Python) | Python 3 + PyInstaller + WiX | see `TeenAstroUploader/python/` |
+| CatalogConverter | MSBuild | VB.NET |
 | teenastro_app | Flutter | Flutter SDK; Android: Android SDK + ANDROID_HOME |
 
 **PlatformIO:** `pip install platformio`; `pio pkg install -g --tool "platformio/toolchain-gccmingw32"` (tests).  

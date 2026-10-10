@@ -1,0 +1,174 @@
+<p>Hello everyone,</p>
+
+<p>
+A short note on <strong>how multi-star alignment works in 1.6</strong>, what changed
+relative to <strong>1.5</strong>, and why the math looks the way it does. This is meant
+as a practical overview for the group; the full detail stays in the field manuals and
+in <code>docs/math/alignment.md</code> on GitHub.
+</p>
+
+<p><strong>What 1.5 already did</strong></p>
+<p>
+Version 1.5 used a <strong>two-star</strong> alignment (hand controller or plate-solve
+syncs). From two measured directions it builds a single 3×3 rotation matrix (Taki’s
+construction, then the nearest proper rotation in the least-squares sense). That matrix
+maps the sky to the mount axes for pointing, sync and corrected tracking. It is a solid
+model when the mount geometry is close to ideal.
+</p>
+<p>
+What it does <em>not</em> separate out are the usual head errors — collimation of the
+optical axis, non-perpendicularity of the two axes, and a declination index. Those
+effects, if present, get absorbed partly into the estimated pole, which can leave
+systematic residuals across the sky or after a pier flip.
+</p>
+
+<p><strong>What 1.6 adds</strong></p>
+<p>
+The two-star path is still there and behaves as before when no head errors are held.
+On top of that, the hand controller now guides longer sessions:
+</p>
+<ul>
+<li>
+<strong>4 Stars</strong> — four stars on the <em>same</em> pier side. Used mainly to
+measure <strong>NP</strong> (non-perpendicularity).
+</li>
+<li>
+<strong>3+3 Stars</strong> — three stars, pier flip, then three on the other side.
+Used to measure <strong>CH</strong> (collimation) and <strong>NP</strong>, but only
+when each side really contributed three stars.
+</li>
+<li>
+<strong>Mount error</strong> (Mount menu, above Refraction) — you can store a known
+CH and NP and keep them during a later <strong>2 Stars</strong> or
+<strong>PC Alignment</strong> session, so those terms stay out of the pole estimate
+and the two stars re-measure the polar axis.
+</li>
+</ul>
+<p>
+The numbers shown on the hand controller and web page are Wallace’s familiar names and
+signs: <strong>CH</strong>, <strong>NP</strong>, <strong>ID</strong>, <strong>ME</strong>,
+<strong>MA</strong>. The pointing itself is <em>not</em> classic linearized TPOINT dial
+formulas; it is exact rotations (see below).
+</p>
+
+<p><strong>A bit of math (without the full paper)</strong></p>
+<p>
+A rigid two-axis mount has six geometric degrees of freedom that matter for pointing:
+</p>
+<ul>
+<li>
+<strong>Three for the polar axis in space</strong> — where the RA axis points
+(altitude / azimuth of the pole) plus an index about that axis. That is the familiar
+rotation matrix <strong>T</strong> from the two-star method.
+</li>
+<li>
+<strong>Three for the “head”</strong> —
+<strong>CH</strong> (optical axis not perpendicular to Dec),
+<strong>NP</strong> (RA and Dec axes not perpendicular),
+<strong>ID</strong> (Dec index).
+</li>
+</ul>
+<p>
+Conceptually the chain is:
+</p>
+<p>
+sky → orientation of the polar axis (<strong>T</strong>) → head geometry
+(CH, NP, ID) → instrument pointing.
+</p>
+<p>
+<strong>Two-star (1.5 and still in 1.6):</strong> two sky / instrument directions define
+<strong>T</strong>. If Mount error is on with non-zero CH/NP, those are held fixed and
+the two stars still estimate the pole.
+</p>
+<p>
+<strong>Multi-star rigid fit (1.6):</strong> more stars are kept (up to nine). The
+solver starts from the first two (same Taki seed), then refines all six parameters
+together by minimising the angular residual (a damped Gauss–Newton step on exact
+rotations). Terms are only <em>published</em> when the star geometry can separate
+them — for example CH needs both pier sides. That is why 3+3 waits until each side
+has three stars before showing a CH value.
+</p>
+<p>
+During a 4-star or 3+3 session, after the third star (and after later stars except the
+last), the model is updated <em>before</em> the next slew. The hand controller waits
+while that runs. A mount that starts a long way off therefore gets progressively closer
+gotos during the same alignment.
+</p>
+<p>
+On the hand controller, once the first star is accepted and recentered, the pier side
+is known. For <strong>4 Stars</strong> and for the first three stars of
+<strong>3+3 Stars</strong>, the catalog list shows <em>only</em> that pier side
+(the other side and the near-meridian strip are removed). After the flip in
+<strong>3+3 Stars</strong>, the list shows only the opposite pier side, so you pick
+from the correct mechanical side without hunting through the wrong half of the sky.
+</p>
+<p>
+One important close-out detail: after a successful rigid fit the firmware does
+<strong>not</strong> sync again on the last star. The instrument / encoder frame set by
+the first accept stays fixed — useful across a pier flip so the stars from the first
+side remain consistent.
+</p>
+<p>
+Reported polar misalignment uses the usual Wallace-style packaging:
+<strong>ME</strong> from altitude error of the pole,
+<strong>MA</strong> related to azimuth; the azimuth tweak on the mount is roughly
+MA / cos(latitude).
+</p>
+
+<p><strong>Benefits in practice</strong></p>
+<ul>
+<li>
+Better all-sky pointing when the mount has real collimation or axis
+non-perpendicularity — those errors are measured instead of being forced into the pole.
+</li>
+<li>
+<strong>Pier flip:</strong> 3+3 is the path that can separate CH; keeping the encoder
+frame after the fit avoids shifting the first side’s stars.
+</li>
+<li>
+<strong>Progressive updates</strong> during the session make the later gotos of a long
+alignment more usable when polar alignment or home was rough.
+</li>
+<li>
+<strong>Pier-filtered star list</strong> on the hand controller after the first accept
+(same side for 4-star / first half of 3+3; opposite side after the flip).
+</li>
+<li>
+<strong>Plate-solve nights:</strong> with Mount error holding a known CH/NP, a short
+2-star or PC Alignment session can refresh the pole without re-mixing those terms.
+</li>
+<li>
+Exact rotations instead of small-angle dial corrections remain well-behaved when errors
+are not tiny (near the pole, large polar offset).
+</li>
+</ul>
+
+<p><strong>What multi-star alignment does not replace</strong></p>
+<p>
+Wrong gear ratio, reversed motor direction, bad site / clock, or a tube that was not at
+home when you thought it was. If the first goto is degrees off, fix mechanics and home
+before chasing another model. Residual of several tens of arcminutes after a session is
+a reason to repeat the procedure, not to hide it with backlash settings.
+</p>
+
+<p><strong>Where to read more</strong></p>
+<ul>
+<li>
+Field manuals (EN / FR / DE), chapter on Alignment — workflow for 2 / 4 / 3+3,
+Mount error, Save / Clear.
+</li>
+<li>
+<a href="https://github.com/charleslemaire0/TeenAstro/blob/Release_1.6/docs/math/alignment.md">docs/math/alignment.md</a>
+— formulas, gates (when CH/NP are published), and the TPOINT-names vs exact-geometry note.
+</li>
+<li>
+<a href="https://github.com/charleslemaire0/TeenAstro/blob/Release_1.6/docs/RELEASE_NOTES_SINCE_1_5.md">Release notes since 1.5</a>
+</li>
+</ul>
+
+<p>
+Questions and field reports (how many stars, residual, pier-flip behaviour) are welcome
+in this thread.
+</p>
+
+<p>Charles</p>

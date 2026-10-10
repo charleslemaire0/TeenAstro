@@ -12,6 +12,8 @@
  *   7. A 3+3 session whose axes come from OnStep X recovers that model's head,
  *      including when the model is refit after each star from the third.
  *   8. Each star after the second pulls the next goto closer when the pole is far off.
+ *   9. Close-out / pier-side application regressions (sync, hasHead fallback,
+ *      and goto across pier with CH must use HeadGeom beyond-pole inverse).
  */
 
 // Include library implementations (single-translation-unit build)
@@ -1120,11 +1122,13 @@ void test_head_getter_setter_roundtrip(void)
 }
 
 // =====================================================================
-//  9. Rigid close-out regressions (post-fit sync / hasHead fallback)
+//  9. Rigid close-out / pier-side application regressions
 //
-//  These encode the two mistakes that made a finished 3+3 session leave
-//  side A tens of arcminutes off: syncing the last star after a successful
-//  rigid fit, and discarding the multi-star T when no head term was published.
+//  These encode the mistakes that made a finished 3+3 session leave side A
+//  far off: syncing the last star after a successful rigid fit, discarding
+//  the multi-star T when no head term was published, and commanding the
+//  other pier with the ideal angle2Step mirror instead of HeadGeom's
+//  beyond-pole inverse once CH is in the model.
 // =====================================================================
 
 /// Sky miss of (az,alt) when the mount axes read (a1d,a2), under the fitted model.
@@ -1149,6 +1153,15 @@ static void modelAxes(const CoordConv &cc, double az, double alt, bool flipped,
     LA3::normalize(dcIn, dcIn);
     const double hint = asin(dcIn[2] > 1.0 ? 1.0 : (dcIn[2] < -1.0 ? -1.0 : dcIn[2]));
     HeadGeom::inverse(dcIn, cc.head, flipped ? (M_PI - hint) : hint, a1d, a2);
+}
+
+/// Ideal GEM pier flip on instrument angles — what MountAxes::angle2Step does
+/// when PoleSide is OVER, after goToHor asked To_Coord_IN(..., beyondPole=false).
+/// With a non-zero cone this is not the same as HeadGeom::inverse(beyondPole).
+static void idealPierFlip(double a1dUnder, double a2Under, double &a1dOver, double &a2Over)
+{
+    a2Over = M_PI - a2Under;
+    a1dOver = remainder(a1dUnder + M_PI, 2.0 * M_PI);
 }
 
 void test_post_fit_sync_throws_side_a_off(void)
@@ -1221,6 +1234,164 @@ void test_hasHead_fallback_discards_six_star_t(void)
                              "two-star fallback must spoil the six-star residual");
 }
 
+void test_goto_other_pier_with_cone_needs_beyond_pole_inverse(void)
+{
+    // Field report: 3+3 progressive gotos tighten up, close-out reports a small
+    // :GXAr#, then a goto to the first star (other pier) misses by many degrees.
+    //
+    // Progressive never publishes CH (needs 3+3). Final does. The old goToHor
+    // path called To_Coord_IN(..., beyondPole=false) and mapped the other pier
+    // with the ideal angle2Step mirror. Cone reverses across the flip, so that
+    // mirror is not HeadGeom's beyond-pole solution — residual on the stored
+    // raw stars stays small while the commanded OVER pose is wrong. Firmware
+    // now uses predictTargetHO (beyondPole per pier); this test keeps the
+    // failure mode locked so it cannot return.
+    const HeadModel headTruth(1.0 * DEG, 0.25 * DEG, 0.10 * DEG);
+    double Ttruth[3][3];
+    truthT(Ttruth);
+
+    CoordConv stepped;
+    double missSideAProgressive = 0.0;
+    for (int k = 0; k < 6; k++) {
+        const bool flipped = k >= 3;
+        double a1d, a2;
+        synthMountAxesSide(Ttruth, headTruth, STARS_WIDE[k][0], STARS_WIDE[k][1],
+                           flipped, a1d, a2);
+        feedStar(stepped, STARS_WIDE[k][0], STARS_WIDE[k][1], a1d, a2);
+
+        // Stars 3..5: progressive, as Command_A does mid-session. Cone stays off.
+        if (k >= 2 && k < 5) {
+            char msg[64];
+            sprintf(msg, "progressive fit failed after star %d", k + 1);
+            TEST_ASSERT_TRUE_MESSAGE(stepped.fitProgressive(), msg);
+            TEST_ASSERT_TRUE_MESSAGE((stepped.getRigidMask() & COORDCONV_FIT_CONE) == 0,
+                                     "cone published before both piers had 3 stars");
+        }
+        if (k == 4) {
+            double az0, alt0, a1r, a2r;
+            TEST_ASSERT_TRUE(stepped.getStar(0, az0, alt0, a1r, a2r));
+            double a1cmd, a2cmd;
+            modelAxes(stepped, az0, alt0, /*flipped=*/false, a1cmd, a2cmd);
+            missSideAProgressive = skyMissFromAxes(stepped, az0, alt0, a1cmd, a2cmd);
+            TEST_ASSERT_TRUE_MESSAGE(missSideAProgressive < 5.0 * ARCMIN,
+                                     "progressive model must keep side A usable");
+            (void)a1r;
+            (void)a2r;
+        }
+    }
+
+    TEST_ASSERT_TRUE_MESSAGE(stepped.fitRigidModel(), "final 3+3 fit failed");
+    TEST_ASSERT_TRUE_MESSAGE((stepped.getRigidMask() & COORDCONV_FIT_CONE) != 0,
+                             "final 3+3 must publish CH");
+    TEST_ASSERT_TRUE_MESSAGE(stepped.getRigidRms() < 1.0 * ARCMIN,
+                             "final fit residual must stay tight on the raw stars");
+
+    double az0, alt0, a1r0, a2r0;
+    TEST_ASSERT_TRUE(stepped.getStar(0, az0, alt0, a1r0, a2r0));
+
+    // Side A (under pole): HeadGeom under-pole inverse — what a correct preferred
+    // pier UNDER goto must command. Final model must keep star 1 on-sky.
+    double a1Under, a2Under;
+    modelAxes(stepped, az0, alt0, /*flipped=*/false, a1Under, a2Under);
+    const double missUnder = skyMissFromAxes(stepped, az0, alt0, a1Under, a2Under);
+    TEST_ASSERT_TRUE_MESSAGE(missUnder < 1.0 * ARCMIN,
+                             "final model with under-pole inverse must keep side A on star");
+
+    // Same sky, other pier: correct beyond-pole HeadGeom inverse still points
+    // at the star (mount on the flipped configuration).
+    double a1OverOk, a2OverOk;
+    modelAxes(stepped, az0, alt0, /*flipped=*/true, a1OverOk, a2OverOk);
+    const double missOverOk = skyMissFromAxes(stepped, az0, alt0, a1OverOk, a2OverOk);
+    TEST_ASSERT_TRUE_MESSAGE(missOverOk < 1.0 * ARCMIN,
+                             "beyond-pole HeadGeom inverse must keep the star on sky");
+
+    // Buggy goTo path after ending on the other pier: prefer OVER, build under
+    // axes, then ideal-flip them. With CH this leaves the star by degrees while
+    // :GXAr# (getRigidRms) stays small — the progressive-vs-final field pattern.
+    double a1OverBug, a2OverBug;
+    idealPierFlip(a1Under, a2Under, a1OverBug, a2OverBug);
+    const double missOverBug = skyMissFromAxes(stepped, az0, alt0, a1OverBug, a2OverBug);
+    TEST_ASSERT_TRUE_MESSAGE(missOverBug > 30.0 * ARCMIN,
+                             "ideal pier mirror with CH must miss by tens of arcmin");
+    TEST_ASSERT_TRUE_MESSAGE(missOverBug > 10.0 * missOverOk + 10.0 * ARCMIN,
+                             "ideal pier mirror must be far worse than HeadGeom beyond-pole");
+    TEST_ASSERT_TRUE_MESSAGE(missOverBug > 5.0 * missSideAProgressive + 10.0 * ARCMIN,
+                             "final CH + ideal flip must be much worse than progressive side A");
+    (void)a1r0;
+    (void)a2r0;
+}
+
+void test_after_3plus3_goto_all_six_stars_match_raw_axes_alternating_pier(void)
+{
+    // After a finished 3+3 with CH, every alignment star must be recenterable by
+    // commanding the stored raw instrument axes (getInstr frame). Visit them
+    // alternating pier side — A1, B1, A2, B2, A3, B3 — the way a check after
+    // close-out flips between sides. Each goto uses the predictTargetHO path:
+    // To_Coord_IN(..., beyondPole) for that star's pier, no ideal angle2Step mirror.
+    const HeadModel headTruth(1.0 * DEG, 0.25 * DEG, 0.10 * DEG);
+    double Ttruth[3][3];
+    truthT(Ttruth);
+
+    CoordConv cc;
+    bool flippedStar[6];
+    for (int k = 0; k < 6; k++) {
+        flippedStar[k] = k >= 3;
+        double a1d, a2;
+        synthMountAxesSide(Ttruth, headTruth, STARS_WIDE[k][0], STARS_WIDE[k][1],
+                           flippedStar[k], a1d, a2);
+        feedStar(cc, STARS_WIDE[k][0], STARS_WIDE[k][1], a1d, a2);
+        if (k >= 2 && k < 5)
+            TEST_ASSERT_TRUE(cc.fitProgressive());
+    }
+    TEST_ASSERT_TRUE_MESSAGE(cc.fitRigidModel(), "final 3+3 fit failed");
+    TEST_ASSERT_TRUE_MESSAGE((cc.getRigidMask() & COORDCONV_FIT_CONE) != 0,
+                             "final 3+3 must publish CH");
+    const double rms = cc.getRigidRms();
+    TEST_ASSERT_TRUE_MESSAGE(rms < 30.0 * ARCSEC,
+                             "fit RMS must leave stars within the FOV");
+    // Sky centering follows the fit residual. Raw axis agreement can be a bit
+    // looser with a large CH (inverse vs stored synth) but must stay well inside
+    // a typical eyepiece field — 1 arcmin is the ceiling here.
+    const double axisTol = 1.0 * ARCMIN;
+    const double skyTol = rms + 5.0 * ARCSEC;
+
+    // Alternating pier: side A star i, then side B star i (indices 0,3,1,4,2,5).
+    const int order[6] = { 0, 3, 1, 4, 2, 5 };
+    for (int n = 0; n < 6; n++) {
+        const int k = order[n];
+        double az, alt, a1Stored, a2Stored;
+        TEST_ASSERT_TRUE(cc.getStar(k, az, alt, a1Stored, a2Stored));
+        TEST_ASSERT_EQUAL_MESSAGE(flippedStar[k], fabs(a2Stored) > M_PI_2 - 1e-3,
+                                  "stored axis2 pier must match the synth side");
+
+        // Same conversion goToHor/predictTargetHO uses for that pier.
+        Coord_HO ho(0.0, alt, LA3::modRad(-az - M_PI), false);
+        Coord_IN cmd = ho.To_Coord_IN(cc.Tinv, cc.head, flippedStar[k]);
+        const double a1Cmd = cmd.Axis1_direct();
+        const double a2Cmd = cmd.Axis2();
+
+        char msg[96];
+        sprintf(msg, "star %d (pier %c) axis1Direct vs stored raw",
+                k + 1, flippedStar[k] ? 'B' : 'A');
+        TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(axisTol, a1Stored, a1Cmd, msg);
+        sprintf(msg, "star %d (pier %c) axis2 vs stored raw",
+                k + 1, flippedStar[k] ? 'B' : 'A');
+        TEST_ASSERT_DOUBLE_WITHIN_MESSAGE(axisTol, a2Stored, a2Cmd, msg);
+
+        // Commanded pose must put the catalogue star on axis (centered).
+        const double miss = skyMissFromAxes(cc, az, alt, a1Cmd, a2Cmd);
+        sprintf(msg, "star %d (pier %c) sky miss after goto",
+                k + 1, flippedStar[k] ? 'B' : 'A');
+        TEST_ASSERT_TRUE_MESSAGE(miss < skyTol, msg);
+
+        // modelAxes helper must agree with To_Coord_IN(beyondPole) — one path.
+        double a1m, a2m;
+        modelAxes(cc, az, alt, flippedStar[k], a1m, a2m);
+        TEST_ASSERT_DOUBLE_WITHIN(1e-12, a1Cmd, a1m);
+        TEST_ASSERT_DOUBLE_WITHIN(1e-12, a2Cmd, a2m);
+    }
+}
+
 // =====================================================================
 void setUp()    {}
 void tearDown() {}
@@ -1265,6 +1436,8 @@ int main(int, char **)
 
     RUN_TEST(test_post_fit_sync_throws_side_a_off);
     RUN_TEST(test_hasHead_fallback_discards_six_star_t);
+    RUN_TEST(test_goto_other_pier_with_cone_needs_beyond_pole_inverse);
+    RUN_TEST(test_after_3plus3_goto_all_six_stars_match_raw_axes_alternating_pier);
 
     return UNITY_END();
 }

@@ -572,11 +572,15 @@ static void Command_GX_Position()
   case '3':
   case '4':
   {
-    Coord_IN IN_T = mount.getEqu(*localSite.latitude() * DEG_TO_RAD).To_Coord_IN(*localSite.latitude() * DEG_TO_RAD, mount.refrOptForGoto(), mount.alignment.conv.Tinv, mount.alignment.conv.head);
+    const bool beyond = mount.getPoleSide() >= POLE_OVER;
+    Coord_IN IN_T = mount.getEqu(*localSite.latitude() * DEG_TO_RAD).To_Coord_IN(
+      *localSite.latitude() * DEG_TO_RAD, mount.refrOptForGoto(),
+      mount.alignment.conv.Tinv, mount.alignment.conv.head, beyond);
     double f = IN_T.Axis1() * RAD_TO_DEG;
     double f1 = IN_T.Axis2() * RAD_TO_DEG;
     long Axis1_out, Axis2_out;
-    mount.angle2Step(f, f1, mount.getPoleSide(), &Axis1_out, &Axis2_out);
+    // Motor-frame angles already match the current pier — no ideal flip.
+    mount.angle2Step(f, f1, POLE_UNDER, &Axis1_out, &Axis2_out);
     f = Axis1_out / mount.axes.geoA1.stepsPerDegree;
     f1 = Axis2_out / mount.axes.geoA2.stepsPerDegree;
     commandState.command[3] == '3' ? doubleToDms(commandState.reply, &f, true, true, commandState.highPrecision) : doubleToDms(commandState.reply, &f1, true, true, commandState.highPrecision);

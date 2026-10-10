@@ -5,7 +5,20 @@ Imports System.Threading
 Imports System.Runtime.InteropServices
 Imports System.Net
 Imports System.Diagnostics
+Imports System.ComponentModel
 Public Class Uploader
+  Private Class DownloadResult
+    Public SuccessCount As Integer
+    Public TotalCount As Integer
+    Public ErrorMessage As String
+  End Class
+
+  Private Class DownloadProgress
+    Public Current As Integer
+    Public Total As Integer
+    Public FileName As String
+  End Class
+
   ' Firmware is stored in: C:\Users\<user>\AppData\Local\TeenAstro\Firmware
   ' (%LocalAppData%\TeenAstro\Firmware). Always writable by the current user, no admin required.
   ' If the folder does not exist, it is created automatically (including parent TeenAstro if needed).
@@ -494,9 +507,7 @@ Public Class Uploader
     Return s
   End Function
 
-  Private Sub downloadVersionx(ByRef n As Integer, ByRef sum As Integer, ByVal ext As String, ByVal ver As String)
-    Dim gitRootAdress As String = ""
-    Dim currentFirmware As String = ""
+  Private Shared Function GetFirmwareFileList(ver As String) As List(Of String)
     Dim Firmwares As New List(Of String)
     Firmwares.Add("TeenAstroFocuser_" + ver + "_220_TMC2130.hex")
     Firmwares.Add("TeenAstroFocuser_" + ver + "_230_TMC2130.hex")
@@ -511,6 +522,14 @@ Public Class Uploader
     Firmwares.Add("TeenAstro_" + ver + "_240_TMC5160.hex")
     Firmwares.Add("TeenAstro_" + ver + "_250_TMC2130.hex")
     Firmwares.Add("TeenAstro_" + ver + "_250_TMC5160.hex")
+    Return Firmwares
+  End Function
+
+  Private Sub downloadVersionx(ByRef n As Integer, ByRef done As Integer, ByVal ext As String, ByVal ver As String,
+                               ByVal worker As BackgroundWorker, ByVal totalFiles As Integer, ByRef errorMessage As String)
+    Dim gitRootAdress As String = ""
+    Dim currentFirmware As String = ""
+    Dim Firmwares As List(Of String) = GetFirmwareFileList(ver)
     Try
       Dim verdir As String = ver + ext
       Dim targetDir As String = System.IO.Path.Combine(GetFirmwareBasePath(), verdir)
@@ -520,6 +539,13 @@ Public Class Uploader
       End If
       For Each firmware In Firmwares
         currentFirmware = firmware
+        done = done + 1
+        Dim progress As New DownloadProgress With {
+          .Current = done,
+          .Total = totalFiles,
+          .FileName = firmware
+        }
+        worker.ReportProgress(CInt(100.0 * done / totalFiles), progress)
         Dim url As String = gitRootAdress + firmware
         Dim destPath As String = System.IO.Path.Combine(targetDir, firmware)
         If DownloadFileWithCurl(url, destPath) Then
@@ -529,18 +555,70 @@ Public Class Uploader
     Catch ex As Exception
       Dim msg As String = "Download failed: " & currentFirmware & vbLf & vbLf & GetFullExceptionMessage(ex)
       If gitRootAdress <> "" AndAlso currentFirmware <> "" Then msg = msg & vbLf & vbLf & "URL: " & gitRootAdress & currentFirmware
-      MsgBox(msg, MsgBoxStyle.Exclamation, "TeenAstro Firmware Download")
+      If errorMessage = "" Then
+        errorMessage = msg
+      Else
+        errorMessage = errorMessage & vbLf & vbLf & msg
+      End If
     End Try
-    sum += Firmwares.Count
   End Sub
 
   Private Sub ButtonDownLoad_Click(sender As Object, e As EventArgs) Handles ButtonDownLoad.Click
-    Dim n As Integer = 0
-    Dim sum As Integer = 0
+    If BackgroundWorkerDownload.IsBusy Then Return
+    If ComboBoxFirmwareVersion.SelectedItem Is Nothing Then
+      MsgBox("Select a firmware version.")
+      Return
+    End If
     Dim ver As String = ComboBoxFirmwareVersion.SelectedItem.ToString()
-    downloadVersionx(n, sum, "", ver)
-    downloadVersionx(n, sum, "_latest", ver)
-    MsgBox(n.ToString & " of " & sum.ToString & " successfully downloaded!")
+    ButtonDownLoad.Enabled = False
+    ProgressBarDownload.Value = 0
+    LabelDownloadStatus.Text = "Starting download..."
+    BackgroundWorkerDownload.RunWorkerAsync(ver)
+  End Sub
+
+  Private Sub BackgroundWorkerDownload_DoWork(sender As Object, e As DoWorkEventArgs) Handles BackgroundWorkerDownload.DoWork
+    Dim worker As BackgroundWorker = CType(sender, BackgroundWorker)
+    Dim ver As String = CStr(e.Argument)
+    Dim result As New DownloadResult()
+    Dim n As Integer = 0
+    Dim done As Integer = 0
+    Dim errorMessage As String = ""
+    Dim totalFiles As Integer = GetFirmwareFileList(ver).Count * 2
+    downloadVersionx(n, done, "", ver, worker, totalFiles, errorMessage)
+    downloadVersionx(n, done, "_latest", ver, worker, totalFiles, errorMessage)
+    result.SuccessCount = n
+    result.TotalCount = totalFiles
+    result.ErrorMessage = errorMessage
+    e.Result = result
+  End Sub
+
+  Private Sub BackgroundWorkerDownload_ProgressChanged(sender As Object, e As ProgressChangedEventArgs) Handles BackgroundWorkerDownload.ProgressChanged
+    Dim progress As DownloadProgress = TryCast(e.UserState, DownloadProgress)
+    ProgressBarDownload.Value = Math.Max(0, Math.Min(100, e.ProgressPercentage))
+    If progress IsNot Nothing Then
+      LabelDownloadStatus.Text = "Downloading " & progress.Current.ToString() & " of " & progress.Total.ToString() & ": " & progress.FileName
+    End If
+  End Sub
+
+  Private Sub BackgroundWorkerDownload_RunWorkerCompleted(sender As Object, e As RunWorkerCompletedEventArgs) Handles BackgroundWorkerDownload.RunWorkerCompleted
+    ButtonDownLoad.Enabled = True
+    If e.Error IsNot Nothing Then
+      ProgressBarDownload.Value = 0
+      LabelDownloadStatus.Text = "Download failed."
+      MsgBox(GetFullExceptionMessage(e.Error), MsgBoxStyle.Exclamation, "TeenAstro Firmware Download")
+      Return
+    End If
+    Dim result As DownloadResult = TryCast(e.Result, DownloadResult)
+    If result Is Nothing Then
+      LabelDownloadStatus.Text = ""
+      Return
+    End If
+    ProgressBarDownload.Value = 100
+    LabelDownloadStatus.Text = result.SuccessCount.ToString() & " of " & result.TotalCount.ToString() & " downloaded"
+    If result.ErrorMessage <> "" Then
+      MsgBox(result.ErrorMessage, MsgBoxStyle.Exclamation, "TeenAstro Firmware Download")
+    End If
+    MsgBox(result.SuccessCount.ToString() & " of " & result.TotalCount.ToString() & " successfully downloaded!")
   End Sub
 
   Private Sub ButtonOpenFirmwareFolder_Click(sender As Object, e As EventArgs) Handles ButtonOpenFirmwareFolder.Click

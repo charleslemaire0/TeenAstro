@@ -184,14 +184,24 @@ public:
   /// the FLIP_ALWAYS alternate is skipped so we never "succeed" on the current pier side and then ERRGOTO_SAMESIDE.
   /// If relaxGotoLimitsForFlip is true (flip only), meridian GOTO limits, under-pole GOTO
   /// check, and per-axis slew soft limits are not applied to the candidate (same sky, other pier).
+  ///
+  /// Axis angles must already be in the motor frame for \p inputSide (under-pole or
+  /// beyond-pole). Prefer predictTargetHO for sky targets when the head is nonzero:
+  /// ideal angle2Step pier mirroring does not commute with CH/NP.
   bool predictTarget(const double& Axis1_in, const double& Axis2_in, const PoleSide& inputSide,
+    long& Axis1_out, long& Axis2_out, PoleSide& outputSide,
+    bool allowAlternatePierSideFallback = true,
+    bool relaxGotoLimitsForFlip = false) const;
+  /// Sky → motor steps for a preferred pier. Uses HeadGeom's beyond-pole branch when
+  /// the side is OVER so cone/perp stay correct across a pier flip.
+  bool predictTargetHO(Coord_HO HO_T, const PoleSide& inputSide,
     long& Axis1_out, long& Axis2_out, PoleSide& outputSide,
     bool allowAlternatePierSideFallback = true,
     bool relaxGotoLimitsForFlip = false) const;
   byte goToEqu(Coord_EQ EQ_T, PoleSide preferedPoleSide, double Lat);
   byte goToHor(Coord_HO HO_T, PoleSide preferedPoleSide);
   ErrorsGoTo goTo(long thisTargetAxis1, long thisTargetAxis2);
-  /// Flip: predictTarget (relaxGotoLimitsForFlip), then meridian/pole on re-predicted flip steps; drift uses
+  /// Flip: predictTargetHO (relaxGotoLimitsForFlip), then meridian/pole on re-predicted flip steps; drift uses
   /// estimated slew time only while sideralTracking is on (if safety cleared tracking during GOTO, elapsed=0).
   ErrorsGoTo flip();
   // Refraction (options for pole, goto, tracking; uses temperature, pressure)

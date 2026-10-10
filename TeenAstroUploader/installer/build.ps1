@@ -1,6 +1,6 @@
-# Build TeenAstro Firmware Uploader MSI. Entry point for Run_FirmwareUploader_build.bat.
-# Requires: MSBuild, WiX Toolset 3. MSI output: .out\TeenAstroUploader.msi (relative to this installer dir).
-# Run from repo root or any dir; script resolves paths.
+# Build TeenAstro Firmware Uploader (Python) + MSI.
+# Entry point for Released data\Run_FirmwareUploader_build.bat.
+# Requires: Python 3.10+, WiX Toolset 3. MSI: .out\TeenAstroUploader.msi
 
 $ErrorActionPreference = "Stop"
 
@@ -11,16 +11,25 @@ function Pause-IfInteractive {
     }
 }
 
-function Find-MSBuild {
-    $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-    if (Test-Path $vswhere) {
-        $found = & $vswhere -latest -requires Microsoft.Component.MSBuild -find "MSBuild\**\Bin\MSBuild.exe" | Select-Object -First 1
-        if ($found) { return $found }
+function Find-Python {
+    $candidates = @()
+    try {
+        $py = & py -3 -c "import sys; print(sys.executable)" 2>$null
+        if ($LASTEXITCODE -eq 0 -and $py) { $candidates += $py.Trim() }
+    } catch {}
+    foreach ($name in @("python", "python3")) {
+        $cmd = Get-Command $name -ErrorAction SilentlyContinue
+        if ($cmd) { $candidates += $cmd.Source }
     }
-    $cmd = Get-Command MSBuild.exe -ErrorAction SilentlyContinue
-    if ($cmd) { return $cmd.Source }
-    $fw = Join-Path $env:SystemRoot "Microsoft.NET\Framework\v4.0.30319\MSBuild.exe"
-    if (Test-Path $fw) { return $fw }
+    foreach ($p in $candidates) {
+        if (-not (Test-Path $p)) { continue }
+        # Skip Windows Store stub
+        if ($p -match "WindowsApps") { continue }
+        try {
+            & $p -c "import tkinter" 2>$null
+            if ($LASTEXITCODE -eq 0) { return $p }
+        } catch {}
+    }
     return $null
 }
 
@@ -43,26 +52,49 @@ $RepoRoot = Split-Path $UploaderDir -Parent
 $InstallerDir = $ScriptDir
 $StageDir = Join-Path $InstallerDir ".stage"
 $OutDir = Join-Path $InstallerDir ".out"
-$UploaderProj = Join-Path $RepoRoot "TeenAstroUploader\TeenAstroUploader\TeenAstroUploader.vbproj"
-$UploaderBin = Join-Path $RepoRoot "TeenAstroUploader\TeenAstroUploader\bin\Release"
-$IconSrc = Join-Path $RepoRoot "TeenAstroEmulator\installer\icon.ico"
+$PythonDir = Join-Path $UploaderDir "python"
+$VenvDir = Join-Path $PythonDir ".venv"
+$DistDir = Join-Path $PythonDir "dist\TeenAstroUploader"
+$LegacyTools = Join-Path $UploaderDir "TeenAstroUploader\bin\Release"
+$IconSrc = Join-Path $PythonDir "packaging\icon.ico"
+if (-not (Test-Path $IconSrc)) {
+    $IconSrc = Join-Path $RepoRoot "TeenAstroEmulator\installer\icon.ico"
+}
 
 Write-Host "Repo root  : $RepoRoot" -ForegroundColor Cyan
 Write-Host "Installer  : $InstallerDir" -ForegroundColor Cyan
+Write-Host "Python app : $PythonDir" -ForegroundColor Cyan
 
-# ---------- Build Firmware Uploader ----------
-Write-Host "`n=== Building Firmware Uploader ===" -ForegroundColor Yellow
-$msbuild = Find-MSBuild
-if (-not $msbuild) {
-    Write-Host "MSBuild not found. Install Visual Studio or .NET Framework SDK." -ForegroundColor Red
+# ---------- Python venv + PyInstaller ----------
+Write-Host "`n=== Building Python Uploader (PyInstaller) ===" -ForegroundColor Yellow
+$python = Find-Python
+if (-not $python) {
+    Write-Host "Python 3 with tkinter not found. Install Python from https://www.python.org/ and retry." -ForegroundColor Red
     Pause-IfInteractive; exit 1
 }
-Write-Host "Using MSBuild: $msbuild" -ForegroundColor Cyan
-& $msbuild $UploaderProj /p:Configuration=Release /v:minimal
+Write-Host "Using Python: $python" -ForegroundColor Cyan
+
+$venvPython = Join-Path $VenvDir "Scripts\python.exe"
+if (-not (Test-Path $venvPython)) {
+    Write-Host "Creating venv..." -ForegroundColor Gray
+    & $python -m venv $VenvDir
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
+& $venvPython -m pip install --upgrade pip
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+& $venvPython -m pip install -r (Join-Path $PythonDir "requirements-dev.txt")
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-if (-not (Test-Path $UploaderBin)) {
-    Write-Host "Firmware Uploader build output not found at $UploaderBin" -ForegroundColor Red
+Push-Location $PythonDir
+try {
+    if (Test-Path "build") { Remove-Item "build" -Recurse -Force }
+    if (Test-Path "dist") { Remove-Item "dist" -Recurse -Force }
+    & $venvPython -m PyInstaller --noconfirm "packaging\TeenAstroUploader.spec"
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+} finally { Pop-Location }
+
+if (-not (Test-Path (Join-Path $DistDir "TeenAstroUploader.exe"))) {
+    Write-Host "PyInstaller output not found at $DistDir" -ForegroundColor Red
     Pause-IfInteractive; exit 1
 }
 
@@ -70,7 +102,25 @@ if (-not (Test-Path $UploaderBin)) {
 Write-Host "`n=== Staging files ===" -ForegroundColor Yellow
 $null = New-Item -ItemType Directory -Force -Path $StageDir
 Get-ChildItem $StageDir -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-Copy-Item "$UploaderBin\*" $StageDir -Recurse -Force
+Copy-Item "$DistDir\*" $StageDir -Recurse -Force
+
+# Bundle PJRC Teensy tools from legacy VB Release build when available
+$toolNames = @(
+    "teensy.exe", "teensy_post_compile.exe", "teensy_reboot.exe",
+    "teensy_restart.exe", "teensy_gateway.exe", "esptool.exe"
+)
+if (Test-Path $LegacyTools) {
+    foreach ($name in $toolNames) {
+        $src = Join-Path $LegacyTools $name
+        if (Test-Path $src) {
+            Copy-Item $src $StageDir -Force
+            Write-Host "  Bundled tool: $name" -ForegroundColor Gray
+        }
+    }
+} else {
+    Write-Host "  Legacy tools folder not found ($LegacyTools). MSI will rely on teensy_loader_cli / python esptool." -ForegroundColor Yellow
+}
+
 if (-not (Test-Path $IconSrc)) {
     Write-Host "Icon not found at $IconSrc" -ForegroundColor Red
     Pause-IfInteractive; exit 1

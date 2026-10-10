@@ -245,7 +245,7 @@ void Command_M() {
     // :M?#   Predict side of Pier for the Target Object
     // reply ? or E or W
     // reply ! if failed
-    double Ra, Ha, Dec, alt = 0.0, axis1angle, axis2angle;
+    double Ra, Ha, Dec, alt = 0.0;
     long axis1step, axis2step;
     PoleSide predictedSide = POLE_NOTVALID;
     char rastr[12];
@@ -275,10 +275,7 @@ void Command_M() {
       strcpy(commandState.reply, "!");
       break;
     }
-    Coord_IN instr_T = HO_T.To_Coord_IN(mount.alignment.conv.Tinv, mount.alignment.conv.head);
-    axis1angle = instr_T.Axis1() * RAD_TO_DEG;
-    axis2angle = instr_T.Axis2() * RAD_TO_DEG;
-    bool ok = mount.predictTarget(axis1angle, axis2angle, mount.getPoleSide(), axis1step, axis2step,predictedSide);
+    bool ok = mount.predictTargetHO(HO_T, mount.getPoleSide(), axis1step, axis2step, predictedSide);
     if (!ok)
     {
       strcpy(commandState.reply, "?");

@@ -641,7 +641,7 @@ Auf einer altazimutalen Montierung wird **2 Sterne Mech.** nicht angeboten. **Mo
 
 1. Der Tubus steht auf der Homeposition. Die Anzeige erinnert: **Die Montierung muss auf die Homeposition gesetzt werden.**
 2. **Home** wählen, wenn die Anzeige den Modus abfragt.
-3. Das Steuergerät nimmt den Start an. Einen Stern aus der Liste wählen (benannte Sterne, über dem Horizont). Die Liste bleibt in der normalen Katalogreihenfolge. Jeder Stern zeigt rechts neben dem Namen eine Eignungsmarkierung von `*` bis `****`: mehr Sterne bedeuten eine bessere Wahl für die nächste Messung. Bereits in dieser Sitzung gemessene Sterne fehlen. Der Cursor öffnet auf dem besten verbleibenden Kandidaten; Nord und Süd blättern danach wie gewohnt im Katalog. Auf einer deutschen Montierung oder einer äquatorialen Gabel liegt eine gute Wahl in bequemer Höhe, deutlich neben dem Meridian, und weit von den schon genommenen Sternen. Vier Sterne bleiben auf derselben Seite des Meridians. Beim 3+3 bevorzugt die zweite Seite der Liste die andere Seite. Auf einer Alt-Azimut-Montierung, auch einer Alt-Azimut-Gabel, streut eine gute Wahl Azimut und Höhe, weg vom Zenit. Vier Sterne bleiben im selben Himmelsbereich. Beim 3+3 bevorzugt die zweite Seite das gegenüberliegende Azimut.
+3. Das Steuergerät nimmt den Start an. Einen Stern aus der Liste wählen (benannte Sterne, über dem Horizont). Die Liste bleibt in der normalen Katalogreihenfolge. Jeder Stern zeigt rechts neben dem Namen eine Eignungsmarkierung von `*` bis `****`: mehr Sterne bedeuten eine bessere Wahl für die nächste Messung. Bereits in dieser Sitzung gemessene Sterne fehlen. Der Cursor öffnet auf dem besten verbleibenden Kandidaten; Nord und Süd blättern danach wie gewohnt im Katalog. Auf einer deutschen Montierung oder einer äquatorialen Gabel liegt eine gute Wahl in bequemer Höhe, deutlich neben dem Meridian, und weit von den schon genommenen Sternen. Nach dem ersten akzeptierten und neu zentrierten Stern ist die Pierseite bekannt: bei **4 Sterne** und bei den ersten drei Sternen von **3+3 Sterne** zeigt die Liste nur noch diese Pierseite (die andere Seite und der Streifen nahe dem Meridian entfallen). Nach dem Umschlag bei **3+3 Sterne** zeigt die Liste nur noch die gegenüberliegende Pierseite. Auf einer Alt-Azimut-Montierung, auch einer Alt-Azimut-Gabel, streut eine gute Wahl Azimut und Höhe, weg vom Zenit. Nach dem ersten Stern bleiben **4 Sterne** und die erste Hälfte von **3+3** im selben Himmelsbereich; nach dem Umschlag behält die Liste nur das gegenüberliegende Azimut.
 4. Der Tubus fährt. **Fahre zu**, dann **Neuzentrieren**. Wird der Goto abgelehnt (Grenzen, unter dem Horizont) oder brechen Sie den Schwenk ab (langes Shift oder eine andere Taste), öffnet sich die Sternliste wieder auf demselben Stern, damit Sie neu wählen oder denselben noch einmal nehmen können.
 5. Den Stern mit den Richtungstasten zentrieren. Ein **kurzer** Druck auf Shift übernimmt den Stern (**Stern hinzugefügt**). Zum Wechseln der Zentriergeschwindigkeit öffnet ein **langer** Druck auf Shift allein **Geschw. setzen** (Guiding, Langsam, Mittel, Schnell, Max). **Shift + Nord** oder **Shift + Süd** öffnen dasselbe Menü wie außerhalb der Ausrichtung.
 6. Den zweiten Stern wählen. Auf einer äquatorialen Montierung einen Stern weit vom ersten in Stundenwinkel und Deklination bevorzugen. Auf einer Alt-Azimut-Montierung weit in Azimut und Höhe. Die Markierungen `*`…`****` und der Startcursor helfen bei der Wahl; schon verwendete Sterne sind aus der Liste verschwunden. Dasselbe Zentrieren: kurzes Shift bestätigt, langes Shift ändert die Geschwindigkeit.
@@ -664,13 +664,13 @@ Wenn Home nicht erreichbar ist (der Tubus steht schon am Himmel):
 
 ### 4 Sterne
 
-Von Home, auf derselben Säulenseite. Die Anzeige sagt **Gleiche Seite** und **NP**. Mit **Ja** bestätigen. Vier Sterne schätzen NP. CH wird von einer einzigen Säulenseite nicht geschätzt. Die gespeicherten Werte unter **Montierungsfehler** werden nicht verwendet.
+Von Home, auf derselben Säulenseite. Die Anzeige sagt **Gleiche Seite** und **NP**. Mit **Ja** bestätigen. Vier Sterne schätzen NP. CH wird von einer einzigen Säulenseite nicht geschätzt. Die gespeicherten Werte unter **Montierungsfehler** werden nicht verwendet. Nach dem ersten akzeptierten Stern behält die Sternliste nur noch diese Pierseite.
 
 Die ersten zwei Sterne setzen den Pol. Nach dem dritten Stern wird das Modell aktualisiert, bevor zum vierten geschwenkt wird, damit eine anfangs weit daneben liegende Montierung bei diesem letzten Stern näher liegt. Der Handkontroller wartet, während die Aktualisierung läuft. Der vierte Stern schließt die Sitzung.
 
 ### 3+3 Sterne
 
-Für eine deutsche Montierung oder eine Gabel, die die Seite wechseln kann. Die Anzeige sagt **Wenden nach 3** und **CH + NP**. Mit **Ja** bestätigen. Drei Sterne auf einer Seite, Umschlag, dann drei auf der anderen. Nach dem dritten Stern, und nach jedem weiteren Stern außer dem letzten, wird das Modell vor dem nächsten Schwenk aktualisiert. Der Handkontroller wartet, während diese Aktualisierung läuft. CH wird nur geschätzt, wenn jede Seite wirklich drei Sterne beigetragen hat. Ein einzelner Stern nach dem Umschlag reicht nicht, und CH bleibt unveröffentlicht, bis diese Aufteilung erreicht ist. Die gespeicherten Werte unter **Montierungsfehler** werden nicht verwendet. Das Ergebnis erscheint als CH, NP und ID, in Bogensekunden, und der Pol als MA und ME. Der Winkel, um den die Montierung im Azimut gedreht wird, ist MA geteilt durch den Kosinus der Breite. Die Vorzeichen sind die von Wallace.
+Für eine deutsche Montierung oder eine Gabel, die die Seite wechseln kann. Die Anzeige sagt **Wenden nach 3** und **CH + NP**. Mit **Ja** bestätigen. Drei Sterne auf einer Seite, Umschlag, dann drei auf der anderen. Nach dem ersten akzeptierten Stern zeigt die Liste nur noch diese Pierseite; nach dem Umschlag nur noch die gegenüberliegende Seite. Nach dem dritten Stern, und nach jedem weiteren Stern außer dem letzten, wird das Modell vor dem nächsten Schwenk aktualisiert. Der Handkontroller wartet, während diese Aktualisierung läuft. CH wird nur geschätzt, wenn jede Seite wirklich drei Sterne beigetragen hat. Ein einzelner Stern nach dem Umschlag reicht nicht, und CH bleibt unveröffentlicht, bis diese Aufteilung erreicht ist. Die gespeicherten Werte unter **Montierungsfehler** werden nicht verwendet. Das Ergebnis erscheint als CH, NP und ID, in Bogensekunden, und der Pol als MA und ME. Der Winkel, um den die Montierung im Azimut gedreht wird, ist MA geteilt durch den Kosinus der Breite. Die Vorzeichen sind die von Wallace.
 
 ### 2 Sterne Mech.
 
@@ -954,13 +954,19 @@ Während ein Rechner die Montierung führt, bleibt der Handkontroller benutzbar.
 
 ### Firmware aktualisieren
 
-Das Wiki der Gruppe beschreibt TeenAstroUploader für Windows.
+**TeenAstroUploader** aus dem MSI installieren (`TeenAstroUploader.msi`). Die Wiki-Seite [TeenAstroUploader for Windows](https://groups.io/g/TeenAstro/wiki/8837) zeigt dieselben Schritte mit Bildern.
 
-1. Vor einer Aktualisierung die Parameter mit TeenAstroConfig sichern. Ein Versionswechsel kann den Speicher zurücksetzen, wenn der interne Schlüssel sich geändert hat.
-2. USB-Kabel nur am Anschluss des Steuergeräts, Montierung eingeschaltet. Beim ersten Mal installiert Windows das Teensy-Gerät.
-3. Im Werkzeug die Platine wählen. Der vierte Bildschirm nach dem Einschalten nennt das Modell. Im Zweifel die Beschriftung auf der Platine lesen.
-4. Das Senden starten und das Ende des Ladeprogramms abwarten.
-5. Für den Handkontroller über WLAN: die Adresse mit **IP-Adresse zeigen** ablesen, im Werkzeug eintragen, über WLAN senden.
+Das Fenster ist klein und klassisch: **Firmware Version**, **Stable** / **Latest**, **Download!**, **Open Folder**, dann drei Register — **Telescope**, **Focuser**, **Hand controler**.
+
+1. Firmware-Version wählen und einmal **Download!** drücken (Stable oder Latest). Warten, bis der Fortschrittsbalken fertig ist.
+2. USB-Kabel nur am Gerät, das geflasht wird (Steuergerät, Fokussierer oder Wemos des Handkontrollers), Montierung eingeschaltet. Beim ersten Mal installiert Windows den Teensy- (oder CH340-) Treiber.
+3. Auf **Telescope** oder **Focuser**:
+   - **Upload!** schreibt nur die gewählte Platine. Nutzen bei Firmware älter als 1.5, oder wenn die Einstellungen schon anderweitig gesichert sind.
+   - **Auto!** (Firmware **1.5 oder neuer**) erkennt die Platine, sichert Parameter als JSON, flasht, stellt nach dem Neustart wieder her und **prüft** die Werte. TeenAstro speichert **zwei Montierungen** (Index 0 und 1); Auto arbeitet auf der aktiven. Älter als 1.5 wird abgelehnt: diese Zweige werden für Backup/Restore nicht mehr unterstützt.
+   - **EEPROM** öffnet den Parametereditor (gleiche Gruppen wie der Webserver: Mount, Motors, Speed, Limits, Encoders, Site, Tracking). Read / Write / Save / Load. Nach Write liest das Werkzeug erneut und prüft. **Activate (reboot)** wechselt zwischen den zwei gespeicherten Montierungen.
+4. Auf **Hand controler**: Sprache und COM-Port, dann **Upload over COM!**; oder die Adresse aus **IP-Adresse zeigen** und **Upload over WIFI!**.
+
+Jürgen Goldans [TeenAstroConfig](https://groups.io/g/TeenAstro/wiki/10404) bleibt für ältere Abläufe nützlich; ab 1.5 decken **EEPROM** und **Auto!** im Uploader denselben Bedarf ab.
 
 Handkontroller und Steuergerät müssen aus derselben Veröffentlichung stammen. Sonst kehrt der Versionsfehler schon beim Start zurück.
 
@@ -1215,6 +1221,7 @@ Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Tre
 - SharpCap und die anderen Programme zeigen die MoveAxis-Geschwindigkeiten wieder, einschließlich 0,25°/s und 0,5°/s. Der Treiber verwendet siderische Vielfache, dieselbe Einheit wie Treiber 1.5.
 - ASCOM-Raten, Koordinaten und Ports verwenden einen festen Dezimalpunkt, damit ein französisches oder deutsches Windows die Befehle nicht verändert.
 - Der Handkontroller führt **2 Stars**, **4 Stars** und **3+3 Stars**. Vier Sterne auf einer Pier-Seite messen NP. 3+3 misst CH und NP nur, wenn jede Pier-Seite drei Sterne hat. Die angezeigten Zahlen sind CH, NP, ID und ME, mit Wallaces Vorzeichen.
+- Nach dem ersten akzeptierten Stern bei **4 Sterne** oder **3+3 Sterne** zeigt die Sternliste am Handkontroller nur noch die richtige Pierseite. Nach dem 3+3-Umschlag nur noch die gegenüberliegende Seite.
 - **4 Sterne** und **3+3 Sterne** aktualisieren das Modell nach dem dritten Stern und nach jedem weiteren Stern vor dem letzten. Das nächste Goto benutzt die bereits zentrierten Sterne. Der Handkontroller wartet, während diese Rechnung läuft.
 - **Mount error**, über der Refraktion, hält ein bekanntes CH und NP bei einer Zwei-Stern-Ausrichtung und bei einem Plate-Solve-Sync fest.
-- Die Schaltfläche **Auto** im Firmware-Uploader erkennt das angeschlossene Teleskop oder den Fokussierer und schreibt die passende Datei.
+- Die Schaltfläche **Auto!** im Firmware-Uploader (Telescope / Focuser) sichert Parameter, erkennt die Platine, flasht, stellt wieder her und prüft (Firmware 1.5+). **EEPROM** bearbeitet den vollen Parametersatz (zwei Montierungen am Steuergerät). **Upload!** flasht weiterhin ohne die Einstellungen anzufassen.

@@ -1,6 +1,20 @@
 #include "SmartController.h"
 #include "SHC_text.h"
 
+// Factory defaults from writeDefaultMount() / initCelestialPole() in MainUnit.
+namespace {
+const int kDefaultMinAltDeg = -10;
+const int kDefaultMaxAltDeg = 91;
+const float kDefaultUnderPoleHours = 12.0f;
+const float kDefaultMeridianDeg = 15.0f;   // EE invalid → 60 arcmin → 15°
+const int kDefaultMinDistPoleDeg = 181;
+
+/// 0 = cancel, 1 = edit value, 2 = reset to default.
+uint8_t chooseValueOrDefault(U8G2_EXT* display, Pad* pad, const char* title)
+{
+  return display->UserInterfaceSelectionList(pad, title, 1, T_VALUE "\n" T_DEFAULT);
+}
+}
 
 //----------------------------------//
 //             LIMITS               //
@@ -38,6 +52,14 @@ void SmartHandController::menuLimits()
 void SmartHandController::menuHorizon()
 {
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
+  const uint8_t choice = chooseValueOrDefault(display, &buttonPad, T_HORIZONLIMIT);
+  if (choice == 0) return;
+  if (choice == 2)
+  {
+    if (DisplayMessageLX200(m_client->setMinAltitude(kDefaultMinAltDeg), false))
+      ta_MountStatus.updateAllConfig(true);
+    return;
+  }
   float angle = (float)ta_MountStatus.getCfgMinAlt();
   if (display->UserInterfaceInputValueFloat(&buttonPad, T_HORIZONLIMIT, "", &angle, -10, 20, 2, 0, " " T_DEGREE))
   {
@@ -49,6 +71,14 @@ void SmartHandController::menuHorizon()
 void SmartHandController::menuOverhead()
 {
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
+  const uint8_t choice = chooseValueOrDefault(display, &buttonPad, T_OVERHEADLIMIT);
+  if (choice == 0) return;
+  if (choice == 2)
+  {
+    if (DisplayMessageLX200(m_client->setMaxAltitude(kDefaultMaxAltDeg), false))
+      ta_MountStatus.updateAllConfig(true);
+    return;
+  }
   float angle = (float)ta_MountStatus.getCfgMaxAlt();
   if (display->UserInterfaceInputValueFloat(&buttonPad, T_OVERHEADLIMIT, "", &angle, 60, 91, 2, 0, " " T_DEGREE))
   {
@@ -60,6 +90,14 @@ void SmartHandController::menuOverhead()
 void SmartHandController::menuUnderPole()
 {
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
+  const uint8_t choice = chooseValueOrDefault(display, &buttonPad, T_MAXHOURANGLE);
+  if (choice == 0) return;
+  if (choice == 2)
+  {
+    if (DisplayMessageLX200(m_client->setUnderPoleLimit(kDefaultUnderPoleHours), false))
+      ta_MountStatus.updateAllConfig(true);
+    return;
+  }
   // getCfgUnderPole10() returns underPoleLimitGOTO × 10 (same as :GXLU# response).
   float angle = ta_MountStatus.getCfgUnderPole10() / 10.0f;
   if (display->UserInterfaceInputValueFloat(&buttonPad, T_MAXHOURANGLE, "+-", &angle, 9, 12, 2, 1, " " T_HOURS))
@@ -73,6 +111,14 @@ void SmartHandController::menuUnderPole()
 void SmartHandController::menuFarFromPole()
 {
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
+  const uint8_t choice = chooseValueOrDefault(display, &buttonPad, T_DISTANCE);
+  if (choice == 0) return;
+  if (choice == 2)
+  {
+    if (DisplayMessageLX200(m_client->setMinDistFromPole(kDefaultMinDistPoleDeg), false))
+      ta_MountStatus.updateAllConfig(true);
+    return;
+  }
   float angle = (float)ta_MountStatus.getCfgMinDistPole();
   if (display->UserInterfaceInputValueFloat(&buttonPad, T_DISTANCE, "", &angle, 0, 181, 2, 0, " " T_DEGREE))
   {
@@ -85,10 +131,21 @@ void SmartHandController::menuFarFromPole()
 void SmartHandController::menuMeridian(bool east)
 {
   if (!ta_MountStatus.hasConfig()) { DisplayMessage(T_LX200COMMAND, T_FAILED, 500); return; }
+  const char* title = east ? T_MERIDIANLIMITE : T_MERIDIANLIMITW;
+  const uint8_t choice = chooseValueOrDefault(display, &buttonPad, title);
+  if (choice == 0) return;
+  if (choice == 2)
+  {
+    const int lim = (int)(kDefaultMeridianDeg * 4.0f);
+    LX200RETURN ret = east ? m_client->setLimitEast(lim) : m_client->setLimitWest(lim);
+    if (DisplayMessageLX200(ret, false))
+      ta_MountStatus.updateAllConfig(true);
+    return;
+  }
   // getCfgMeridianE/W() return arcminutes × 4 (same as :GXLE#/:GXLW# responses).
   int16_t rawVal = east ? ta_MountStatus.getCfgMeridianE() : ta_MountStatus.getCfgMeridianW();
   float angle = rawVal / 4.0f;
-  if (display->UserInterfaceInputValueFloat(&buttonPad, east ? T_MERIDIANLIMITE : T_MERIDIANLIMITW, "", &angle, -45, 45, 2, 0, " " T_DEGREE))
+  if (display->UserInterfaceInputValueFloat(&buttonPad, title, "", &angle, -45, 45, 2, 0, " " T_DEGREE))
   {
     const int lim = (int)(angle * 4.0f);
     LX200RETURN ret = east ? m_client->setLimitEast(lim) : m_client->setLimitWest(lim);
@@ -212,6 +269,16 @@ void SmartHandController::menuAxis(char mode)
     val    = ta_MountStatus.getCfgAxis2Max() / fact;
     break;
   default:
+    return;
+  }
+
+  const uint8_t choice = chooseValueOrDefault(display, &buttonPad, menu);
+  if (choice == 0) return;
+  if (choice == 2)
+  {
+    // Mount-type mechanical bound (:GXlA#–D#) is the factory default for that end.
+    if (DisplayMessageLX200(m_client->setAxisLimit(mode, (float)mountBound), false))
+      ta_MountStatus.updateAllConfig(true);
     return;
   }
 

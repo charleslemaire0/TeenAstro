@@ -13,7 +13,7 @@ TeenAstro is an open-source telescope mount controller for German Equatorial (GE
 | TeenAstroFocuser | Teensy | C++ | Focuser motor, temperature sensor |
 | teenastro_app | Flutter | Dart | Dashboard, planetarium, goto, alignment |
 | TeenAstroASCOM_V7 | .NET | C# | ASCOM driver for Stellarium, Cartes du Ciel, etc. |
-| TeenAstroUploader | .NET | VB.NET | Firmware flash utility |
+| TeenAstroUploader | Python (MSI) | Python / tkinter | Firmware download & flash; Auto backup/restore; EEPROM editor |
 | TeenAstroEmulator | PlatformIO | C++ | SHC emulator for desktop testing |
 
 ## Data flow (topology)

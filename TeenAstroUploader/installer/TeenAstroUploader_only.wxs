@@ -4,7 +4,7 @@
   <Product Id="*"
            Name="TeenAstro Firmware Uploader"
            Language="1033"
-           Version="1.6.0"
+           Version="1.6.1"
            Manufacturer="TeenAstro"
            UpgradeCode="A2B3C4D5-E6F7-8901-2345-67890ABCDEF0">
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
@@ -39,5 +39,16 @@
       <ComponentGroupRef Id="UploaderFiles" />
       <ComponentRef Id="ShortcutComponent" />
     </Feature>
+
+    <!-- Start the uploader after install completes (skip silent/quiet and uninstall). -->
+    <CustomAction Id="LaunchUploader"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="&quot;[INSTALLFOLDER]TeenAstroUploader.exe&quot;"
+                  Execute="immediate"
+                  Return="asyncNoWait"
+                  Impersonate="yes" />
+    <InstallExecuteSequence>
+      <Custom Action="LaunchUploader" After="InstallFinalize">NOT Installed AND NOT REMOVE AND UILevel &gt; 2</Custom>
+    </InstallExecuteSequence>
   </Product>
 </Wix>

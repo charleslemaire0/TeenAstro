@@ -10,9 +10,10 @@ Full documentation in **Markdown**. Use the repo as the navigation basis: open a
 
 | Document | Description |
 |----------|-------------|
-| [User manual (English)](manuel/Manuel_utilisateur_en.md) | Field manual: hand controller, first run, tracking, goto, alignment, motors |
-| [Manuel d'utilisation (français)](manuel/Manuel_utilisateur_fr.md) | Même manuel, menus du firmware français |
-| [Bedienungsanleitung (Deutsch)](manuel/Manuel_utilisateur_de.md) | Gleiches Handbuch, Menüs der deutschen Firmware |
+| [User manual (English)](manuel/Manuel_utilisateur_en.md) | Field manual: hand controller, first run, tracking, goto, alignment, motors · [PDF](manuel/Manuel_utilisateur_en.pdf) |
+| [Manuel d'utilisation (français)](manuel/Manuel_utilisateur_fr.md) | Même manuel, menus du firmware français · [PDF](manuel/Manuel_utilisateur_fr.pdf) |
+| [Bedienungsanleitung (Deutsch)](manuel/Manuel_utilisateur_de.md) | Gleiches Handbuch, Menüs der deutschen Firmware · [PDF](manuel/Manuel_utilisateur_de.pdf) |
+| [Wiki drafts](wiki/) | Text to paste into groups.io ([Uploader](wiki/TeenAstroUploader_for_Windows.md), [TeenAstroConfig](wiki/TeenAstroConfig.md)) |
 
 ### Overview
 

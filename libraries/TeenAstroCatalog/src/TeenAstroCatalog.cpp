@@ -361,9 +361,20 @@ void CatMgr::buildAlignRank(int mountKind, int session, const float *prevRa, con
     meanAz = atan2(azy, azx) * Rad;
     if (meanAz < 0.0) meanAz += 360.0;
   }
+  // After the first accepted star the pier side is known. Four-star and the
+  // first half of 3+3 stay on that side; the second half of 3+3 flips.
   int wantSign = 0;
-  if (!altaz && haVotes != 0 && (session == 1 || session == 2 || session == 3))
-    wantSign = (haVotes > 0 ? 1 : -1) * (session == 3 ? -1 : 1);
+  if (!altaz && (session == 1 || session == 2 || session == 3) &&
+      nPrev > 0 && prevRa != NULL) {
+    if (haVotes != 0)
+      wantSign = (haVotes > 0 ? 1 : -1) * (session == 3 ? -1 : 1);
+    else {
+      // First star near the meridian: still fix the side from its HA sign.
+      const double h0 = alignWrapSigned(lstDegs() - prevRa[0]);
+      if (h0 > 0.0) wantSign = session == 3 ? -1 : 1;
+      else if (h0 < 0.0) wantSign = session == 3 ? 1 : -1;
+    }
+  }
   // A two-star equatorial pair wants the second star across the meridian.
   int preferSign = 0;
   if (!altaz && session == 0 && nPrev > 0 && haVotes != 0)
@@ -407,8 +418,10 @@ void CatMgr::buildAlignRank(int mountKind, int session, const float *prevRa, con
       int sign = 0;
       if (haD > 12.0) sign = 1;
       else if (haD < -12.0) sign = -1;
-      if (wantSign != 0 && sign != 0 && sign != wantSign) score -= 300.0;
-      else if (preferSign != 0 && sign == preferSign) score += 40.0;
+      // Pier side known: show only that side (omit the other pier and the
+      // meridian strip so the user cannot pick the wrong mechanical side).
+      if (wantSign != 0 && sign != wantSign) continue;
+      if (preferSign != 0 && sign == preferSign) score += 40.0;
     } else {
       // Alt-azimuth: spread azimuth and altitude. The zenith makes azimuth
       // undefined, so a star overhead is a poor pick. There is no meridian.
@@ -428,13 +441,13 @@ void CatMgr::buildAlignRank(int mountKind, int session, const float *prevRa, con
           score += dAlt * 0.5;
         } else if (session == 3) {
           // Opposite azimuth: the other mechanical side, over the zenith.
+          if (dAz < 70.0) continue;
           score += 36.0 - fabs(dAz - 160.0) * 0.3;
-          if (dAz < 70.0) score -= 250.0;
           score += dAlt * 0.3;
         } else {
           // Four stars, and the first half of 3+3, stay in one part of the sky.
-          if (dAz > 100.0) score -= 250.0;
-          else score += 24.0 - fabs(dAz - 50.0);
+          if (dAz > 100.0) continue;
+          score += 24.0 - fabs(dAz - 50.0);
           score += dAlt * 0.5;
         }
       }
