@@ -95,6 +95,14 @@ while that runs. A mount that starts a long way off therefore gets progressively
 gotos during the same alignment.
 </p>
 <p>
+On the hand controller, once the first star is accepted and recentered, the pier side
+is known. For <strong>4 Stars</strong> and for the first three stars of
+<strong>3+3 Stars</strong>, the catalog list shows <em>only</em> that pier side
+(the other side and the near-meridian strip are removed). After the flip in
+<strong>3+3 Stars</strong>, the list shows only the opposite pier side, so you pick
+from the correct mechanical side without hunting through the wrong half of the sky.
+</p>
+<p>
 One important close-out detail: after a successful rigid fit the firmware does
 <strong>not</strong> sync again on the last star. The instrument / encoder frame set by
 the first accept stays fixed — useful across a pier flip so the stars from the first
@@ -120,6 +128,10 @@ frame after the fit avoids shifting the first side’s stars.
 <li>
 <strong>Progressive updates</strong> during the session make the later gotos of a long
 alignment more usable when polar alignment or home was rough.
+</li>
+<li>
+<strong>Pier-filtered star list</strong> on the hand controller after the first accept
+(same side for 4-star / first half of 3+3; opposite side after the flip).
 </li>
 <li>
 <strong>Plate-solve nights:</strong> with Mount error holding a known CH/NP, a short

@@ -9,7 +9,7 @@ Since version 1.5, TeenAstro has received a major functional upgrade for both vi
 **Firmware**
 
 - Stopping a MoveAxis command now slows down with the configured acceleration. The rate is no longer cut off at once, and tracking on the other axis continues.
-- The hand controller guides 2-star, 4-star, and 3+3-star alignment. Four stars on one pier side measure NP. 3+3 measures CH and NP only when each pier side has three stars. Reported terms are Wallace's CH, NP, ID and ME.
+- The hand controller guides 2-star, 4-star, and 3+3-star alignment. Four stars on one pier side measure NP. 3+3 measures CH and NP only when each pier side has three stars. Reported terms are Wallace's CH, NP, ID and ME. After the first accepted star, the SHC star list shows only the correct pier side; after the 3+3 flip it shows only the opposite side.
 - **Mount error**, in the Mount menu above Refraction, holds a known CH and NP during a two-star alignment and during a plate-solve sync, so those terms stay out of the pole estimate.
 - The firmware uploader **Auto!** button (Telescope / Focuser) backs up parameters, detects the board, flashes, restores, and verifies (firmware 1.5+). **EEPROM** edits the full parameter set (two mounts). **Upload!** still flashes without touching settings.
 
@@ -63,7 +63,7 @@ Depuis la version 1.5, TeenAstro a recu une evolution majeure pour l'observation
 **Firmware**
 
 - L'arret d'un MoveAxis ralentit maintenant avec l'acceleration configuree. La vitesse n'est plus coupee d'un coup, et le suivi de l'autre axe continue.
-- La raquette guide l'alignement 2 etoiles, 4 etoiles et 3+3 etoiles. Quatre etoiles sur un cote de pilier mesurent NP. Le 3+3 mesure CH et NP seulement quand chaque cote a trois etoiles. Les nombres affiches sont CH, NP, ID et ME.
+- La raquette guide l'alignement 2 etoiles, 4 etoiles et 3+3 etoiles. Quatre etoiles sur un cote de pilier mesurent NP. Le 3+3 mesure CH et NP seulement quand chaque cote a trois etoiles. Les nombres affiches sont CH, NP, ID et ME. Apres la premiere etoile validee, la liste SHC ne montre que le bon cote de pilier ; apres le retournement du 3+3, seulement le cote oppose.
 - **Erreur de monture**, dans le menu Mount au-dessus de la refraction, conserve un CH et un NP deja connus pendant un alignement a deux etoiles et pendant une synchro de plate-solve, pour que ces termes ne rentrent pas dans l'estimation du pole.
 - Le bouton **Auto!** de l'uploader (Telescope / Focuser) sauvegarde les parametres, detecte la carte, flashe, restaure et verifie (firmware 1.5+). **EEPROM** edite l'ensemble des parametres (deux montures). **Upload!** flashe toujours sans toucher aux reglages.
 
@@ -117,7 +117,7 @@ Seit Version 1.5 hat TeenAstro einen deutlichen Funktionssprung gemacht. Neben S
 **Firmware**
 
 - Das Stoppen eines MoveAxis bremst jetzt mit der eingestellten Beschleunigung. Die Geschwindigkeit wird nicht mehr sofort abgeschnitten, und das Tracking der anderen Achse laeuft weiter.
-- Der Handcontroller fuehrt die Ausrichtung mit 2 Sternen, 4 Sternen und 3+3 Sternen. Vier Sterne auf einer Pier-Seite messen NP. 3+3 misst CH und NP nur, wenn jede Pier-Seite drei Sterne hat. Die angezeigten Zahlen sind CH, NP, ID und ME.
+- Der Handcontroller fuehrt die Ausrichtung mit 2 Sternen, 4 Sternen und 3+3 Sternen. Vier Sterne auf einer Pier-Seite messen NP. 3+3 misst CH und NP nur, wenn jede Pier-Seite drei Sterne hat. Die angezeigten Zahlen sind CH, NP, ID und ME. Nach dem ersten akzeptierten Stern zeigt die SHC-Sternliste nur noch die richtige Pierseite; nach dem 3+3-Umschlag nur noch die gegenueberliegende Seite.
 - **Mount error**, im Mount-Menue ueber der Refraktion, haelt ein bekanntes CH und NP bei einer Zwei-Stern-Ausrichtung und bei einem Plate-Solve-Sync fest, damit diese Terme nicht in die Polschaetzung eingehen.
 - Die Schaltflaeche **Auto!** im Firmware-Uploader (Telescope / Focuser) sichert Parameter, erkennt die Platine, flasht, stellt wieder her und prueft (Firmware 1.5+). **EEPROM** bearbeitet den vollen Parametersatz (zwei Montierungen). **Upload!** flasht weiterhin ohne die Einstellungen anzufassen.
 
