@@ -268,7 +268,8 @@ ISR(TIMER1_COMPA_vect)
 
   if (!mount.isMovingTo())
   {
-    if (mount.guiding.GuidingState == Guiding::GuidingPulse)
+    const Guiding guidingState = mount.guiding.GuidingState;
+    if (guidingState == Guiding::GuidingPulse)
     {
       if (mount.guiding.guideA1.isMoving() && mount.guiding.guideA1.duration > 0UL)
       {
@@ -277,6 +278,26 @@ ISR(TIMER1_COMPA_vect)
         sei();
       }
       if (mount.guiding.guideA2.isMoving() && mount.guiding.guideA2.duration > 0UL)
+      {
+        cli();
+        mount.axes.staA2.target += mount.guiding.guideA2.getAmount();
+        sei();
+      }
+    }
+    else if ((guidingState == Guiding::GuidingST4 ||
+              guidingState == Guiding::GuidingRecenter ||
+              guidingState == Guiding::GuidingAtRate) &&
+             mount.motorsEncoders.enableMotor)
+    {
+      // The step timers run at exactly the guide rate, so the target must be advanced
+      // on every tick here: a late main loop would let pos catch target and stall the motor.
+      if (mount.guiding.guideA1.isMoving() && !mount.axes.staA1.backlash_correcting)
+      {
+        cli();
+        mount.axes.staA1.target += mount.guiding.guideA1.getAmount();
+        sei();
+      }
+      if (mount.guiding.guideA2.isMoving() && !mount.axes.staA2.backlash_correcting)
       {
         cli();
         mount.axes.staA2.target += mount.guiding.guideA2.getAmount();

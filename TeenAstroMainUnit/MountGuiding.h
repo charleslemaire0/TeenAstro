@@ -29,7 +29,5 @@ public:
   double DegreesForAcceleration;
 
 private:
-  void applyGuidingA1();
-  void applyGuidingA2();
   Mount& mount_;
 };

@@ -22,20 +22,6 @@ void MountGuiding::stopGuiding()
   sei();
 }
 
-void MountGuiding::applyGuidingA1()
-{
-  cli();
-  mount_.axes.staA1.target += guideA1.getAmount();
-  sei();
-}
-
-void MountGuiding::applyGuidingA2()
-{
-  cli();
-  mount_.axes.staA2.target += guideA2.getAmount();
-  sei();
-}
-
 bool MountGuiding::stopIfMountError()
 {
   bool error = mount_.errors.lastError != ERRT_NONE;
@@ -120,40 +106,19 @@ void MountGuiding::performPulseGuiding()
   }
 }
 
+// ST4, recenter and at-rate targets are advanced every sidereal tick in the Timer ISR.
 void MountGuiding::performST4Guiding()
 {
-  if (stopIfMountError())
-    return;
-  if (guideA1.isMoving() && !mount_.axes.staA1.backlash_correcting)
-    applyGuidingA1();
-  if (guideA2.isMoving() && !mount_.axes.staA2.backlash_correcting)
-    applyGuidingA2();
+  stopIfMountError();
 }
 
 void MountGuiding::performGuidingRecenter()
 {
-  if (guideA1.isMoving() && !mount_.axes.staA1.backlash_correcting)
-    applyGuidingA1();
-  if (guideA2.isMoving() && !mount_.axes.staA2.backlash_correcting)
-    applyGuidingA2();
 }
 
 void MountGuiding::performGuidingAtRate()
 {
-  if (stopIfMountError())
-    return;
-  if (guideA1.isMoving() && !mount_.axes.staA1.backlash_correcting)
-  {
-    cli();
-    mount_.axes.staA1.target += guideA1.getAmount();
-    sei();
-  }
-  if (guideA2.isMoving() && !mount_.axes.staA2.backlash_correcting)
-  {
-    cli();
-    mount_.axes.staA2.target += guideA2.getAmount();
-    sei();
-  }
+  stopIfMountError();
 }
 
 void MountGuiding::guide()
