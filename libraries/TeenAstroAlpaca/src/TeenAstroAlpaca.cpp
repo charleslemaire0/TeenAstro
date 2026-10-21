@@ -216,15 +216,15 @@ void TeenAstroAlpaca::handleApi()
   AlpacaRequest req;
   req.decode(*m_server);
 
-  if (req.deviceType == F("telescope") && req.deviceNumber == 0)
+  if (req.isTelescope())
   {
     m_telescope.dispatch(*m_server, req);
     return;
   }
 
-  // Unknown device type or number.
-  sendAlpacaError(*m_server, req, nextServerTransactionId(),
-                  AE_NOT_IMPLEMENTED, "Device not present");
+  // Wrong case, unknown type, non-numeric or out-of-range device number.
+  sendAlpacaResponse(*m_server, req, nextServerTransactionId(),
+                     AE_NOT_IMPLEMENTED, "Device not present", String(), 400);
 }
 
 

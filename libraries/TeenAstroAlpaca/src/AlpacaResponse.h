@@ -49,25 +49,43 @@ struct AlpacaRequest
   uint32_t  clientId            = 0;
   uint32_t  clientTransactionId = 0;
   bool      isPut               = false;
-  /// Raw lowercase device path after stripping `/api/v1/`, e.g.
-  /// `telescope/0/tracking`.
+  /// Path after `/api/v1/`, with the device type left in its original case.
   String    devicePath;
   /// Lowercase property / method name, e.g. `tracking`.
   String    member;
-  /// Lowercase device type, e.g. `telescope`.
+  /// Device type as written in the URL, e.g. `telescope`.
   String    deviceType;
   /// Device number (typically 0).
   uint32_t  deviceNumber        = 0;
+  /// True when the path is `/api/v1/<type>/<digits>/<member>` with a
+  /// numeric device number. Device type keeps its original case.
+  bool      urlOk               = false;
 
   /// Decode an incoming request.  `server.uri()` is the full path; common
   /// headers / form fields populate clientId + clientTransactionId.
   void decode(AlpacaWebServer& server);
 
-  /// Lookup helper that handles both query-string (GET) and form-encoded
-  /// body (PUT) — Arduino's WebServer exposes both via `server.arg()`.
-  /// Names are case-insensitive per the Alpaca spec.
+  /// This server's only device: type "telescope" (case-sensitive) number 0.
+  bool isTelescope() const
+  {
+    return urlOk && deviceType == "telescope" && deviceNumber == 0;
+  }
+
+  /// Exact-case form/query lookup. PUT parameter names are case-sensitive.
+  /// GET query names are matched case-insensitively by the readers.
   static String arg(AlpacaWebServer& server, const char* name);
 };
+
+/// Strict readers. A missing name, a wrong-case name, or a value that is
+/// not the whole of a boolean / integer / number is HTTP 400. On success
+/// the value is written and nothing is sent. `txId` is used only when
+/// rejecting, so callers may pass a freshly allocated id.
+bool alpacaArgBool(AlpacaWebServer& server, const AlpacaRequest& req,
+                   uint32_t txId, const char* name, bool& out);
+bool alpacaArgLong(AlpacaWebServer& server, const AlpacaRequest& req,
+                   uint32_t txId, const char* name, long& out);
+bool alpacaArgDouble(AlpacaWebServer& server, const AlpacaRequest& req,
+                     uint32_t txId, const char* name, double& out);
 
 /// Simple JSON value formatter used inside the envelope.
 /// All values produced are RFC8259 compliant.
@@ -88,7 +106,8 @@ void sendAlpacaResponse(AlpacaWebServer& server,
                         uint32_t serverTxId,
                         AlpacaError err,
                         const String& errMessage,
-                        const String& valueJson);
+                        const String& valueJson,
+                        int httpStatus = 200);
 
 inline void sendAlpacaOk(AlpacaWebServer& server, const AlpacaRequest& req,
                          uint32_t serverTxId, const String& valueJson)

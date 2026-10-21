@@ -67,6 +67,21 @@ public:
     return it == current_args.end() ? String("") : String(it->second.c_str());
   }
   String arg(const String& name)                { return arg(name.c_str()); }
+  String arg(int i)
+  {
+    if (i < 0 || i >= (int)current_args.size()) return String("");
+    auto it = current_args.begin();
+    for (int n = 0; n < i; ++n) ++it;
+    return String(it->second.c_str());
+  }
+  String argName(int i)
+  {
+    if (i < 0 || i >= (int)current_args.size()) return String("");
+    auto it = current_args.begin();
+    for (int n = 0; n < i; ++n) ++it;
+    return String(it->first.c_str());
+  }
+  int    args() const                           { return (int)current_args.size(); }
   bool   hasArg(const char* name)
   { return current_args.find(name ? name : "") != current_args.end(); }
 

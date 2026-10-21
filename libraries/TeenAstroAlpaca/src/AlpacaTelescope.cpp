@@ -580,8 +580,9 @@ void AlpacaTelescope::dispatch(AlpacaWebServer& server, const AlpacaRequest& req
   MATCH("moveaxis")                { putMoveAxis(server, req); return; }
   MATCH("axisrates")               { getAxisRates(server, req); return; }
 
-  sendAlpacaError(server, req, m_parent->nextServerTransactionId(),
-                  AE_NOT_IMPLEMENTED, "Telescope member not implemented");
+  sendAlpacaResponse(server, req, m_parent->nextServerTransactionId(),
+                     AE_NOT_IMPLEMENTED, "Telescope member not implemented",
+                     String(), 400);
 }
 
 #undef MATCH
@@ -599,10 +600,11 @@ void AlpacaTelescope::getConnected(AlpacaWebServer& s, const AlpacaRequest& r)
 
 void AlpacaTelescope::putConnected(AlpacaWebServer& s, const AlpacaRequest& r)
 {
-  String v = AlpacaRequest::arg(s, "Connected");
-  v.toLowerCase();
+  bool on = false;
+  if (!alpacaArgBool(s, r, m_parent->nextServerTransactionId(), "Connected", on))
+    return;
   bool wasConnected = m_connected;
-  m_connected = (v == "true" || v == "1");
+  m_connected = on;
   if (m_connected)
     noteAlpacaAttached(wasConnected);
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
@@ -884,6 +886,9 @@ void AlpacaTelescope::getSideOfPier(AlpacaWebServer& s, const AlpacaRequest& r)
 
 void AlpacaTelescope::putSideOfPier(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  long want = 0;
+  if (!alpacaArgLong(s, r, m_parent->nextServerTransactionId(), "SideOfPier", want))
+    return;
   if (!requireConnected(s, r)) return;
   m_status->updateMount(true);
   if (m_status->getMount() != MountState::MOUNT_TYPE_GEM)
@@ -893,8 +898,6 @@ void AlpacaTelescope::putSideOfPier(AlpacaWebServer& s, const AlpacaRequest& r)
                     "Change Side of Pier is only supported for german mount");
     return;
   }
-  String av = AlpacaRequest::arg(s, "SideOfPier");
-  int want = av.toInt();
   if (want != 0 && want != 1)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -927,11 +930,15 @@ void AlpacaTelescope::putSideOfPier(AlpacaWebServer& s, const AlpacaRequest& r)
 
 void AlpacaTelescope::getDestinationSideOfPier(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  double ra = 0;
+  double decDeg = 0;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "RightAscension", ra))
+    return;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "Declination", decDeg))
+    return;
   if (!requireConnected(s, r)) return;
   m_status->updateAllState(true);
 
-  double ra     = AlpacaRequest::arg(s, "RightAscension").toDouble();
-  double decDeg = AlpacaRequest::arg(s, "Declination").toDouble();
   if (ra < 0.0 || ra >= 24.0 || decDeg < -90.0 || decDeg > 90.0)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -1039,10 +1046,10 @@ void AlpacaTelescope::getDoesRefraction(AlpacaWebServer& s, const AlpacaRequest&
 
 void AlpacaTelescope::putDoesRefraction(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  bool on = false;
+  if (!alpacaArgBool(s, r, m_parent->nextServerTransactionId(), "DoesRefraction", on))
+    return;
   if (!requireConnected(s, r)) return;
-  String v = AlpacaRequest::arg(s, "DoesRefraction");
-  v.toLowerCase();
-  bool on = (v == "true" || v == "1");
   m_client->enableRefraction(on);
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
@@ -1069,9 +1076,10 @@ void AlpacaTelescope::getTargetRightAscension(AlpacaWebServer& s, const AlpacaRe
 
 void AlpacaTelescope::putTargetRightAscension(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  double ra = 0;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "TargetRightAscension", ra))
+    return;
   if (!requireConnected(s, r)) return;
-  String v = AlpacaRequest::arg(s, "TargetRightAscension");
-  double ra = v.toDouble();
   if (ra < 0.0 || ra >= 24.0)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -1109,9 +1117,10 @@ void AlpacaTelescope::getTargetDeclination(AlpacaWebServer& s, const AlpacaReque
 
 void AlpacaTelescope::putTargetDeclination(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  double dec = 0;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "TargetDeclination", dec))
+    return;
   if (!requireConnected(s, r)) return;
-  String v = AlpacaRequest::arg(s, "TargetDeclination");
-  double dec = v.toDouble();
   if (dec < -90.0 || dec > 90.0)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -1148,10 +1157,10 @@ void AlpacaTelescope::getTracking(AlpacaWebServer& s, const AlpacaRequest& r)
 
 void AlpacaTelescope::putTracking(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  bool on = false;
+  if (!alpacaArgBool(s, r, m_parent->nextServerTransactionId(), "Tracking", on))
+    return;
   if (!requireConnected(s, r)) return;
-  String v = AlpacaRequest::arg(s, "Tracking");
-  v.toLowerCase();
-  bool on = (v == "true" || v == "1");
   m_client->enableTracking(on);
   if (m_status)
     m_status->updateAllState(true);
@@ -1240,9 +1249,10 @@ void AlpacaTelescope::getTrackingRate(AlpacaWebServer& s, const AlpacaRequest& r
 
 void AlpacaTelescope::putTrackingRate(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  long rate = 0;
+  if (!alpacaArgLong(s, r, m_parent->nextServerTransactionId(), "TrackingRate", rate))
+    return;
   if (!requireConnected(s, r)) return;
-  String v = AlpacaRequest::arg(s, "TrackingRate");
-  int rate = v.toInt();
   LX200RETURN lx = LX200_VALUESET;
   // ASCOM DriveRates: 0=Sidereal, 1=Lunar, 2=Solar, 3=King.
   switch (rate)
@@ -1266,7 +1276,7 @@ void AlpacaTelescope::putTrackingRate(AlpacaWebServer& s, const AlpacaRequest& r
                     AE_DRIVER, "TrackingRate refused by mount");
     return;
   }
-  noteTrackingRateCommanded(rate);
+  noteTrackingRateCommanded((int)rate);
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
@@ -1287,6 +1297,9 @@ void AlpacaTelescope::getRightAscensionRate(AlpacaWebServer& s, const AlpacaRequ
 
 void AlpacaTelescope::putRightAscensionRate(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  double val = 0;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "RightAscensionRate", val))
+    return;
   if (!requireConnected(s, r)) return;
   m_status->updateAllState(true);
   if (!m_status->motorsEnableCached())
@@ -1304,7 +1317,6 @@ void AlpacaTelescope::putRightAscensionRate(AlpacaWebServer& s, const AlpacaRequ
                     "RightAscensionRate is only valid when TrackingRate is Sidereal");
     return;
   }
-  double val = AlpacaRequest::arg(s, "RightAscensionRate").toDouble();
   if (!isOk(m_client->setTrackingOffsetRa(val)))
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -1327,6 +1339,9 @@ void AlpacaTelescope::getDeclinationRate(AlpacaWebServer& s, const AlpacaRequest
 
 void AlpacaTelescope::putDeclinationRate(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  double val = 0;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "DeclinationRate", val))
+    return;
   if (!requireConnected(s, r)) return;
   m_status->updateAllState(true);
   if (!m_status->motorsEnableCached())
@@ -1342,7 +1357,6 @@ void AlpacaTelescope::putDeclinationRate(AlpacaWebServer& s, const AlpacaRequest
                     "DeclinationRate is only valid when TrackingRate is Sidereal");
     return;
   }
-  double val = AlpacaRequest::arg(s, "DeclinationRate").toDouble();
   if (!isOk(m_client->setTrackingOffsetDec(val)))
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -1368,6 +1382,10 @@ void AlpacaTelescope::getGuideRateRA(AlpacaWebServer& s, const AlpacaRequest& r)
 
 void AlpacaTelescope::putGuideRateRA(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  double rateDegPerSec = 0;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(),
+                       "GuideRateRightAscension", rateDegPerSec))
+    return;
   if (!requireConnected(s, r)) return;
   m_status->updateMount(true);
   if (!m_status->motorsEnableCached())
@@ -1376,7 +1394,6 @@ void AlpacaTelescope::putGuideRateRA(AlpacaWebServer& s, const AlpacaRequest& r)
                     AE_NOT_IMPLEMENTED, "GuideRateRightAscension is not supported without motors");
     return;
   }
-  double rateDegPerSec = AlpacaRequest::arg(s, "GuideRateRightAscension").toDouble();
   if (rateDegPerSec <= 0.0 || rateDegPerSec > 10.0)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -1401,6 +1418,10 @@ void AlpacaTelescope::getGuideRateDec(AlpacaWebServer& s, const AlpacaRequest& r
 
 void AlpacaTelescope::putGuideRateDec(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  double rateDegPerSec = 0;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(),
+                       "GuideRateDeclination", rateDegPerSec))
+    return;
   if (!requireConnected(s, r)) return;
   m_status->updateMount(true);
   if (!m_status->motorsEnableCached())
@@ -1409,7 +1430,6 @@ void AlpacaTelescope::putGuideRateDec(AlpacaWebServer& s, const AlpacaRequest& r
                     AE_NOT_IMPLEMENTED, "GuideRateDeclination is not supported without motors");
     return;
   }
-  double rateDegPerSec = AlpacaRequest::arg(s, "GuideRateDeclination").toDouble();
   if (rateDegPerSec <= 0.0 || rateDegPerSec > 10.0)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -1438,9 +1458,10 @@ void AlpacaTelescope::getSlewSettleTime(AlpacaWebServer& s, const AlpacaRequest&
 
 void AlpacaTelescope::putSlewSettleTime(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  long t = 0;
+  if (!alpacaArgLong(s, r, m_parent->nextServerTransactionId(), "SlewSettleTime", t))
+    return;
   if (!requireConnected(s, r)) return;
-  String v = AlpacaRequest::arg(s, "SlewSettleTime");
-  long t = v.toInt();
   if (t < 0 || t > 21)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -1485,9 +1506,10 @@ void AlpacaTelescope::getSiteLatitude(AlpacaWebServer& s, const AlpacaRequest& r
 
 void AlpacaTelescope::putSiteLatitude(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  double lat = 0;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "SiteLatitude", lat))
+    return;
   if (!requireConnected(s, r)) return;
-  String v = AlpacaRequest::arg(s, "SiteLatitude");
-  double lat = v.toDouble();
   if (lat < -90 || lat > 90)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -1527,9 +1549,10 @@ void AlpacaTelescope::getSiteLongitude(AlpacaWebServer& s, const AlpacaRequest& 
 
 void AlpacaTelescope::putSiteLongitude(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  double lon = 0;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "SiteLongitude", lon))
+    return;
   if (!requireConnected(s, r)) return;
-  String v = AlpacaRequest::arg(s, "SiteLongitude");
-  double lon = v.toDouble();
   if (lon < -180 || lon > 180)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -1559,16 +1582,17 @@ void AlpacaTelescope::getSiteElevation(AlpacaWebServer& s, const AlpacaRequest& 
 
 void AlpacaTelescope::putSiteElevation(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  long meters = 0;
+  if (!alpacaArgLong(s, r, m_parent->nextServerTransactionId(), "SiteElevation", meters))
+    return;
   if (!requireConnected(s, r)) return;
-  String v = AlpacaRequest::arg(s, "SiteElevation");
-  int meters = (int)v.toInt();
   if (meters < -300 || meters > 10000)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
                     AE_INVALID_VALUE, "SiteElevation out of range");
     return;
   }
-  m_client->setElevation(meters);
+  m_client->setElevation((int)meters);
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
@@ -1594,8 +1618,15 @@ void AlpacaTelescope::getUtcDate(AlpacaWebServer& s, const AlpacaRequest& r)
 
 void AlpacaTelescope::putUtcDate(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  if (!s.hasArg("UTCDate"))
+  {
+    sendAlpacaResponse(s, r, m_parent->nextServerTransactionId(),
+                       AE_INVALID_VALUE, "Invalid parameter", String(), 400);
+    return;
+  }
   if (!requireConnected(s, r)) return;
   String v = AlpacaRequest::arg(s, "UTCDate");
+  v.trim();
   // Accept "YYYY-MM-DDTHH:MM:SS[.fff[Z]]"
   if (v.length() < 19)
   {
@@ -1726,9 +1757,10 @@ void AlpacaTelescope::getCanSyncAltAz(AlpacaWebServer& s, const AlpacaRequest& r
 void AlpacaTelescope::getCanMoveAxisQ(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   // CanMoveAxis takes Axis=0/1/2 query parameter and returns bool.
+  long axis = 0;
+  if (!alpacaArgLong(s, r, m_parent->nextServerTransactionId(), "Axis", axis))
+    return;
   if (!requireConnected(s, r)) return;
-  String a = AlpacaRequest::arg(s, "Axis");
-  int axis = a.toInt();
   m_status->updateMount(true);
   bool can = m_status->motorsEnableCached() && (axis == 0 || axis == 1);
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
@@ -1948,6 +1980,12 @@ bool AlpacaTelescope::slewSyncToAltAz(AlpacaWebServer& s, const AlpacaRequest& r
 
 void AlpacaTelescope::putSlewToCoordinates(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  double ra = 0;
+  double dec = 0;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "RightAscension", ra))
+    return;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "Declination", dec))
+    return;
   if (!requireConnected(s, r)) return;
   m_status->updateMount(true);
   if (!m_status->motorsEnableCached())
@@ -1956,8 +1994,6 @@ void AlpacaTelescope::putSlewToCoordinates(AlpacaWebServer& s, const AlpacaReque
                     AE_NOT_IMPLEMENTED, "SlewToCoordinates is not supported without motors");
     return;
   }
-  double ra  = AlpacaRequest::arg(s, "RightAscension").toDouble();
-  double dec = AlpacaRequest::arg(s, "Declination").toDouble();
   if (ra < 0 || ra >= 24 || dec < -90 || dec > 90)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -1974,6 +2010,12 @@ void AlpacaTelescope::putSlewToCoordinatesAsync(AlpacaWebServer& s, const Alpaca
 
 void AlpacaTelescope::putSyncToCoordinates(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  double ra = 0;
+  double dec = 0;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "RightAscension", ra))
+    return;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "Declination", dec))
+    return;
   if (!requireConnected(s, r)) return;
   m_status->updateMount(true);
   if (!m_status->motorsEnableCached())
@@ -1982,8 +2024,6 @@ void AlpacaTelescope::putSyncToCoordinates(AlpacaWebServer& s, const AlpacaReque
                     AE_NOT_IMPLEMENTED, "SyncToCoordinates is not supported without motors");
     return;
   }
-  double ra  = AlpacaRequest::arg(s, "RightAscension").toDouble();
-  double dec = AlpacaRequest::arg(s, "Declination").toDouble();
   if (ra < 0 || ra >= 24 || dec < -90 || dec > 90)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -2038,6 +2078,12 @@ void AlpacaTelescope::putSyncToTarget(AlpacaWebServer& s, const AlpacaRequest& r
 
 void AlpacaTelescope::putSlewToAltAz(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  double az = 0;
+  double alt = 0;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "Azimuth", az))
+    return;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "Altitude", alt))
+    return;
   if (!requireConnected(s, r)) return;
   m_status->updateMount(true);
   if (!m_status->motorsEnableCached())
@@ -2046,8 +2092,6 @@ void AlpacaTelescope::putSlewToAltAz(AlpacaWebServer& s, const AlpacaRequest& r)
                     AE_NOT_IMPLEMENTED, "SlewToAltAz is not supported without motors");
     return;
   }
-  double az  = AlpacaRequest::arg(s, "Azimuth").toDouble();
-  double alt = AlpacaRequest::arg(s, "Altitude").toDouble();
   if (az < 0 || az >= 360 || alt < -90 || alt > 90)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -2064,6 +2108,12 @@ void AlpacaTelescope::putSlewToAltAzAsync(AlpacaWebServer& s, const AlpacaReques
 
 void AlpacaTelescope::putSyncToAltAz(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  double az = 0;
+  double alt = 0;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "Azimuth", az))
+    return;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "Altitude", alt))
+    return;
   if (!requireConnected(s, r)) return;
   m_status->updateMount(true);
   if (!m_status->motorsEnableCached())
@@ -2072,8 +2122,6 @@ void AlpacaTelescope::putSyncToAltAz(AlpacaWebServer& s, const AlpacaRequest& r)
                     AE_NOT_IMPLEMENTED, "SyncToAltAz is not supported without motors");
     return;
   }
-  double az  = AlpacaRequest::arg(s, "Azimuth").toDouble();
-  double alt = AlpacaRequest::arg(s, "Altitude").toDouble();
   if (az < 0 || az >= 360 || alt < -90 || alt > 90)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -2085,6 +2133,12 @@ void AlpacaTelescope::putSyncToAltAz(AlpacaWebServer& s, const AlpacaRequest& r)
 
 void AlpacaTelescope::putPulseGuide(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  long dir = 0;
+  long durMs = 0;
+  if (!alpacaArgLong(s, r, m_parent->nextServerTransactionId(), "Direction", dir))
+    return;
+  if (!alpacaArgLong(s, r, m_parent->nextServerTransactionId(), "Duration", durMs))
+    return;
   if (!requireConnected(s, r)) return;
   m_status->updateAllState(true);
   if (m_status->Parked())
@@ -2093,8 +2147,6 @@ void AlpacaTelescope::putPulseGuide(AlpacaWebServer& s, const AlpacaRequest& r)
                     AE_PARKED, "Cannot PulseGuide while parked");
     return;
   }
-  int dir   = (int)AlpacaRequest::arg(s, "Direction").toInt();
-  long durMs = AlpacaRequest::arg(s, "Duration").toInt();
   if (dir < 0 || dir > 3 || durMs < 1 || durMs > 30000)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -2135,6 +2187,12 @@ void AlpacaTelescope::putPulseGuide(AlpacaWebServer& s, const AlpacaRequest& r)
 
 void AlpacaTelescope::putMoveAxis(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  long axis = 0;
+  double rateDegSec = 0;
+  if (!alpacaArgLong(s, r, m_parent->nextServerTransactionId(), "Axis", axis))
+    return;
+  if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "Rate", rateDegSec))
+    return;
   if (!requireConnected(s, r)) return;
   m_status->updateMount(true);
   if (!m_status->motorsEnableCached())
@@ -2143,8 +2201,6 @@ void AlpacaTelescope::putMoveAxis(AlpacaWebServer& s, const AlpacaRequest& r)
                     AE_NOT_IMPLEMENTED, "MoveAxis is not supported without motors");
     return;
   }
-  int axis = (int)AlpacaRequest::arg(s, "Axis").toInt();
-  double rateDegSec = AlpacaRequest::arg(s, "Rate").toDouble();
   if (axis < 0 || axis > 1)
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
@@ -2240,9 +2296,10 @@ void AlpacaTelescope::putMoveAxis(AlpacaWebServer& s, const AlpacaRequest& r)
 
 void AlpacaTelescope::getAxisRates(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  long axis = 0;
+  if (!alpacaArgLong(s, r, m_parent->nextServerTransactionId(), "Axis", axis))
+    return;
   if (!requireConnected(s, r)) return;
-  String a = AlpacaRequest::arg(s, "Axis");
-  int axis = a.toInt();
   if (axis < 0 || axis > 1)
   {
     sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("[]"));

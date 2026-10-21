@@ -6,6 +6,9 @@
  */
 #include "AlpacaResponse.h"
 
+#include <cerrno>
+#include <cstdlib>
+
 namespace AlpacaJson
 {
 
@@ -66,56 +69,206 @@ String doubleStr(double v)
 
 String AlpacaRequest::arg(AlpacaWebServer& server, const char* name)
 {
-  // server.arg() is case-sensitive in the Arduino webserver; try both the
-  // canonical PascalCase and a lowercase variant since Alpaca treats names
-  // as case-insensitive.
+  return server.arg(name);
+}
+
+// ClientID / ClientTransactionID stay case-insensitive. Conform reports a
+// round-trip of a differently cased id as information, not a failure.
+static String argLoose(AlpacaWebServer& server, const char* name)
+{
   String v = server.arg(name);
   if (v.length() > 0) return v;
-
   String lower(name);
   lower.toLowerCase();
+  if (lower == name) return v;
   return server.arg(lower.c_str());
+}
+
+// A negative, blank, or non-numeric id is echoed as 0. String::toInt() of
+// "-67890" wrapped to 4294899406, which Conform rejects.
+static uint32_t parseClientUint(const String& raw)
+{
+  String t = raw;
+  t.trim();
+  if (t.length() == 0) return 0;
+  for (unsigned i = 0; i < t.length(); ++i)
+  {
+    char c = t.charAt(i);
+    if (c < '0' || c > '9') return 0;
+  }
+  errno = 0;
+  char* end = nullptr;
+  unsigned long n = strtoul(t.c_str(), &end, 10);
+  if (end == t.c_str() || (end && *end != '\0') || errno == ERANGE) return 0;
+  if (n > 0xFFFFFFFFul) return 0;
+  return (uint32_t)n;
+}
+
+static bool allDigits(const String& s)
+{
+  if (s.length() == 0) return false;
+  for (unsigned i = 0; i < s.length(); ++i)
+  {
+    char c = s.charAt(i);
+    if (c < '0' || c > '9') return false;
+  }
+  return true;
+}
+
+static void rejectParameter(AlpacaWebServer& server, const AlpacaRequest& req,
+                            uint32_t txId)
+{
+  sendAlpacaResponse(server, req, txId, AE_INVALID_VALUE,
+                     "Invalid parameter", String(), 400);
+}
+
+static bool parseBool(const String& raw, bool& out)
+{
+  String t = raw;
+  t.trim();
+  t.toLowerCase();
+  if (t == "true")  { out = true;  return true; }
+  if (t == "false") { out = false; return true; }
+  return false;
+}
+
+static bool parseLong(const String& raw, long& out)
+{
+  String t = raw;
+  t.trim();
+  if (t.length() == 0) return false;
+  errno = 0;
+  char* end = nullptr;
+  long v = strtol(t.c_str(), &end, 10);
+  if (end == t.c_str() || (end && *end != '\0') || errno == ERANGE) return false;
+  out = v;
+  return true;
+}
+
+static bool parseDouble(const String& raw, double& out)
+{
+  String t = raw;
+  t.trim();
+  if (t.length() == 0) return false;
+  errno = 0;
+  char* end = nullptr;
+  double v = strtod(t.c_str(), &end);
+  if (end == t.c_str() || (end && *end != '\0') || errno == ERANGE) return false;
+  if (v != v) return false;
+  out = v;
+  return true;
+}
+
+// PUT form names are case-sensitive (Conform "Bad casing" expects HTTP 400).
+// GET query names are not: Conform sends InvertCasing("Axis") == "aXIS" and
+// expects HTTP 200.
+static bool findArg(AlpacaWebServer& server, const AlpacaRequest& req,
+                    const char* name, String& value)
+{
+  if (server.hasArg(name))
+  {
+    value = server.arg(name);
+    return true;
+  }
+  if (req.isPut) return false;
+
+  String want(name);
+  want.toLowerCase();
+  const int n = server.args();
+  for (int i = 0; i < n; ++i)
+  {
+    String key = server.argName(i);
+    key.toLowerCase();
+    if (key == want)
+    {
+      value = server.arg(i);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool alpacaArgBool(AlpacaWebServer& server, const AlpacaRequest& req,
+                   uint32_t txId, const char* name, bool& out)
+{
+  String raw;
+  if (!findArg(server, req, name, raw) || !parseBool(raw, out))
+  {
+    rejectParameter(server, req, txId);
+    return false;
+  }
+  return true;
+}
+
+bool alpacaArgLong(AlpacaWebServer& server, const AlpacaRequest& req,
+                   uint32_t txId, const char* name, long& out)
+{
+  String raw;
+  if (!findArg(server, req, name, raw) || !parseLong(raw, out))
+  {
+    rejectParameter(server, req, txId);
+    return false;
+  }
+  return true;
+}
+
+bool alpacaArgDouble(AlpacaWebServer& server, const AlpacaRequest& req,
+                     uint32_t txId, const char* name, double& out)
+{
+  String raw;
+  if (!findArg(server, req, name, raw) || !parseDouble(raw, out))
+  {
+    rejectParameter(server, req, txId);
+    return false;
+  }
+  return true;
 }
 
 void AlpacaRequest::decode(AlpacaWebServer& server)
 {
-#if defined(ARDUINO_ARCH_ESP8266)
   isPut = (server.method() == HTTP_PUT);
-#else
-  isPut = (server.method() == HTTP_PUT);
-#endif
+  clientId = parseClientUint(argLoose(server, "ClientID"));
+  clientTransactionId = parseClientUint(argLoose(server, "ClientTransactionID"));
 
-  String c = arg(server, "ClientID");
-  clientId = (uint32_t)c.toInt();
-  String t = arg(server, "ClientTransactionID");
-  clientTransactionId = (uint32_t)t.toInt();
+  urlOk = false;
+  member = "";
+  deviceType = "";
+  deviceNumber = 0;
+  devicePath = "";
 
   // Path: /api/v1/<deviceType>/<deviceNumber>/<member>
+  // Device type is compared case-sensitively, so TELESCOPE is not telescope.
+  // The member is folded so Description still matches the dispatch table.
   String path = server.uri();
-  path.toLowerCase();
+  int q = path.indexOf('?');
+  if (q >= 0) path = path.substring(0, q);
   const char* prefix = "/api/v1/";
   int p = path.indexOf(prefix);
-  if (p >= 0)
-    devicePath = path.substring(p + strlen(prefix));
-  else
-    devicePath = path;
+  if (p < 0) return;
 
-  // Split devicePath into deviceType / deviceNumber / member
+  devicePath = path.substring(p + strlen(prefix));
   int s1 = devicePath.indexOf('/');
-  int s2 = (s1 >= 0) ? devicePath.indexOf('/', s1 + 1) : -1;
-  if (s1 > 0)
+  if (s1 <= 0) return;
+  deviceType = devicePath.substring(0, s1);
+
+  int s2 = devicePath.indexOf('/', s1 + 1);
+  String num = (s2 < 0) ? devicePath.substring(s1 + 1)
+                        : devicePath.substring(s1 + 1, s2);
+  num.trim();
+  if (!allDigits(num)) return;
+  errno = 0;
+  char* end = nullptr;
+  unsigned long n = strtoul(num.c_str(), &end, 10);
+  if (end == num.c_str() || (end && *end != '\0') || errno == ERANGE) return;
+  if (n > 0xFFFFFFFFul) return;
+  deviceNumber = (uint32_t)n;
+
+  if (s2 >= 0)
   {
-    deviceType = devicePath.substring(0, s1);
-    if (s2 > s1)
-    {
-      deviceNumber = (uint32_t)devicePath.substring(s1 + 1, s2).toInt();
-      member       = devicePath.substring(s2 + 1);
-    }
-    else
-    {
-      deviceNumber = (uint32_t)devicePath.substring(s1 + 1).toInt();
-    }
+    member = devicePath.substring(s2 + 1);
+    member.toLowerCase();
   }
+  urlOk = true;
 }
 
 
@@ -128,7 +281,8 @@ void sendAlpacaResponse(AlpacaWebServer& server,
                         uint32_t serverTxId,
                         AlpacaError err,
                         const String& errMessage,
-                        const String& valueJson)
+                        const String& valueJson,
+                        int httpStatus)
 {
   String body;
   body.reserve(160 + valueJson.length() + errMessage.length());
@@ -150,5 +304,5 @@ void sendAlpacaResponse(AlpacaWebServer& server,
   body += '}';
 
   server.sendHeader(F("Cache-Control"), F("no-store"));
-  server.send(200, F("application/json"), body);
+  server.send(httpStatus, F("application/json"), body);
 }

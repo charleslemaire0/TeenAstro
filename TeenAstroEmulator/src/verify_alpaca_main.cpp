@@ -85,16 +85,30 @@ static void run_test(ESP8266WebServer& srv,
                      const String& uri,
                      int method,
                      std::map<std::string, std::string> args,
-                     const char* must_contain)
+                     const char* must_contain,
+                     int expect_http = 200)
 {
   srv.mock_request(uri, method, args);
 
   AlpacaRequest req;
   req.decode(srv);
 
-  tel.dispatch(srv, req);
+  // The device refreshes mount caches before the handler runs.
+  tel.prepareForRequest();
 
-  bool envelope_ok = srv.sent && srv.last_code == 200
+  // Same gate as TeenAstroAlpaca::handleApi: a bad device URL is HTTP 400
+  // before the member handler runs.
+  if (!req.isTelescope())
+  {
+    sendAlpacaResponse(srv, req, 1, AE_NOT_IMPLEMENTED, "Device not present",
+                       String(), 400);
+  }
+  else
+  {
+    tel.dispatch(srv, req);
+  }
+
+  bool envelope_ok = srv.sent && srv.last_code == expect_http
                   && body_contains(srv.last_body, "\"ErrorNumber\"")
                   && body_contains(srv.last_body, "\"ServerTransactionID\"");
   bool content_ok  = (must_contain == nullptr) || body_contains(srv.last_body, must_contain);
@@ -459,10 +473,83 @@ int main(int argc, char** argv)
   // -------------------------------------------------------------------------
   std::printf("\n==> Phase 8: error path\n");
 
-  run_test(srv, telescope, "GET totallyunknown → NotImplemented",
+  run_test(srv, telescope, "GET totallyunknown → HTTP 400",
            "/api/v1/telescope/0/totallyunknown", HTTP_GET,
            {{"ClientID","1"},{"ClientTransactionID","90"}},
-           "\"ErrorNumber\":1024");
+           "\"ErrorNumber\":1024", 400);
+
+  run_test(srv, telescope, "GET TELESCOPE (wrong case) → HTTP 400",
+           "/api/v1/TELESCOPE/0/description", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","91"}},
+           "\"ErrorNumber\":1024", 400);
+  run_test(srv, telescope, "GET baddevicetype → HTTP 400",
+           "/api/v1/baddevicetype/0/description", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","92"}},
+           "\"ErrorNumber\":1024", 400);
+  run_test(srv, telescope, "GET device -1 → HTTP 400",
+           "/api/v1/telescope/-1/description", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","93"}},
+           "\"ErrorNumber\":1024", 400);
+  run_test(srv, telescope, "GET device 99999 → HTTP 400",
+           "/api/v1/telescope/99999/description", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","94"}},
+           "\"ErrorNumber\":1024", 400);
+  run_test(srv, telescope, "GET device A → HTTP 400",
+           "/api/v1/telescope/A/description", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","95"}},
+           "\"ErrorNumber\":1024", 400);
+  run_test(srv, telescope, "GET descrip → HTTP 400",
+           "/api/v1/telescope/0/descrip", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","96"}},
+           "\"ErrorNumber\":1024", 400);
+  run_test(srv, telescope, "negative ClientTransactionID echoes 0",
+           "/api/v1/telescope/0/name", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","-67890"}},
+           "\"ClientTransactionID\":0");
+  run_test(srv, telescope, "lowercase clienttransactionid still echoes",
+           "/api/v1/telescope/0/name", HTTP_GET,
+           {{"ClientID","1"},{"clienttransactionid","67890"}},
+           "\"ClientTransactionID\":67890");
+  run_test(srv, telescope, "PUT Connected empty → HTTP 400",
+           "/api/v1/telescope/0/connected", HTTP_PUT,
+           {{"Connected",""},{"ClientID","1"},{"ClientTransactionID","97"}},
+           "\"ErrorNumber\":1025", 400);
+  run_test(srv, telescope, "PUT Connected number → HTTP 400",
+           "/api/v1/telescope/0/connected", HTTP_PUT,
+           {{"Connected","1"},{"ClientID","1"},{"ClientTransactionID","98"}},
+           "\"ErrorNumber\":1025", 400);
+  run_test(srv, telescope, "PUT Connected junk → HTTP 400",
+           "/api/v1/telescope/0/connected", HTTP_PUT,
+           {{"Connected","nonsense"},{"ClientID","1"},{"ClientTransactionID","99"}},
+           "\"ErrorNumber\":1025", 400);
+  run_test(srv, telescope, "PUT Connected wrong case → HTTP 400",
+           "/api/v1/telescope/0/connected", HTTP_PUT,
+           {{"connected","True"},{"ClientID","1"},{"ClientTransactionID","100"}},
+           "\"ErrorNumber\":1025", 400);
+  run_test(srv, telescope, "PUT DeclinationRate junk → HTTP 400",
+           "/api/v1/telescope/0/declinationrate", HTTP_PUT,
+           {{"DeclinationRate","abc"},{"ClientID","1"},{"ClientTransactionID","101"}},
+           "\"ErrorNumber\":1025", 400);
+  run_test(srv, telescope, "PUT DeclinationRate wrong case → HTTP 400",
+           "/api/v1/telescope/0/declinationrate", HTTP_PUT,
+           {{"declinationrate","0"},{"ClientID","1"},{"ClientTransactionID","102"}},
+           "\"ErrorNumber\":1025", 400);
+  run_test(srv, telescope, "GET AxisRates junk axis → HTTP 400",
+           "/api/v1/telescope/0/axisrates", HTTP_GET,
+           {{"Axis","abc"},{"ClientID","1"},{"ClientTransactionID","103"}},
+           "\"ErrorNumber\":1025", 400);
+  run_test(srv, telescope, "GET AxisRates inverted Axis casing → HTTP 200",
+           "/api/v1/telescope/0/axisrates", HTTP_GET,
+           {{"aXIS","0"},{"ClientID","1"},{"ClientTransactionID","104"}},
+           "\"Value\":[");
+  run_test(srv, telescope, "GET CanMoveAxis inverted Axis casing → HTTP 200",
+           "/api/v1/telescope/0/canmoveaxis", HTTP_GET,
+           {{"aXIS","0"},{"ClientID","1"},{"ClientTransactionID","105"}},
+           "\"Value\":true");
+  run_test(srv, telescope, "PUT TrackingRate inverted casing → HTTP 400",
+           "/api/v1/telescope/0/trackingrate", HTTP_PUT,
+           {{"tRACKINGrATE","0"},{"ClientID","1"},{"ClientTransactionID","106"}},
+           "\"ErrorNumber\":1025", 400);
 
   // -------------------------------------------------------------------------
   //  Phase 9 — non-blocking motion state machine (the async refactor)
