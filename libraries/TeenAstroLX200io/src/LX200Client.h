@@ -22,6 +22,7 @@
 #include <Arduino.h>
 #endif
 #include <TeenAstroCommandDef.h>
+#include "LX200LinkLock.h"
 
 #define LX200_SBUF 20
 #define LX200_LBUF 50

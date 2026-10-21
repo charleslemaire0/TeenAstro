@@ -527,6 +527,11 @@ void SmartHandController::showStartupButtons(const int pin[7], const bool active
 
 void SmartHandController::updateMainDisplay(PAGES page)
 {
+  // The page draws straight from the shared mount cache. When the link is busy
+  // (web page or UART exchange), keep the frame already on screen.
+  LX200LinkGuard link(5);
+  if (!link.locked())
+    return;
   u8g2_t* u8g2 = display->getU8g2();
   display->setFont(u8g2_font_helvR12_te);
   u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) + MY_BORDER_SIZE;
@@ -535,7 +540,13 @@ void SmartHandController::updateMainDisplay(PAGES page)
   // Alt/Az/LST/target), UTC date/time, and focuser pos/speed.
   // Falls back to the legacy per-query path for axis-step/degree pages that
   // are not covered by the bulk packet.
+#ifdef SHC_DUAL_CORE
+  // The link task polls at 2 Hz; the display only steps in if it has stalled.
+  if (ta_MountStatus.allStateCacheStale(1500))
+    ta_MountStatus.updateAllState(true);
+#else
   ta_MountStatus.updateAllState();
+#endif
   if (ta_MountStatus.isAligning())
     page = P_ALIGN;
 
@@ -568,7 +579,9 @@ void SmartHandController::updateMainDisplay(PAGES page)
   {
     ta_MountStatus.updateAxisDeg();
   }
-  u8g2_FirstPage(u8g2);
+  // Full-buffer display: draw from the cache under the lock, then send the
+  // frame to the OLED (the slow I2C part) after releasing it.
+  u8g2_ClearBuffer(u8g2);
 
   do
   {
@@ -1063,6 +1076,8 @@ void SmartHandController::updateMainDisplay(PAGES page)
         }
       }
     }
-  } while (u8g2_NextPage(u8g2));
+  } while (0);
+  link.unlock();
+  u8g2_SendBuffer(u8g2);
   lastpageupdate = millis();
 }

@@ -7,6 +7,7 @@
 #include <TeenAstroWifi.h>
 
 bool TeenAstroWifi::wifiOn = false;
+volatile bool TeenAstroWifi::s_pumpedByTask = false;
 bool TeenAstroWifi::s_handlerBusy = false;
 unsigned long TeenAstroWifi::s_lastPageMs = 0;
 int TeenAstroWifi::WebTimeout = 4;

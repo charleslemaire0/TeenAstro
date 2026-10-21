@@ -53,6 +53,10 @@ void TeenAstroAlpaca::setup(LX200Client& client,
   m_server->onNotFound(s_handleNotFound);
 
   m_server->begin();
+#if defined(ARDUINO_ARCH_ESP32)
+  // Its idle delay(1) would run while the caller holds the link lock.
+  m_server->enableDelay(false);
+#endif
 
   // UDP discovery: Alpaca clients broadcast `alpacadiscovery1` on UDP/32227,
   // we reply with our API port in JSON.
@@ -80,16 +84,19 @@ void TeenAstroAlpaca::stop()
 
 void TeenAstroAlpaca::update()
 {
-  if (m_server)
   {
-    m_telescope.prepareForRequest();
-    m_telescope.setHandlerActive(true);
-    m_server->handleClient();
-    m_telescope.setHandlerActive(false);
+    LX200LinkGuard link;
+    if (m_server)
+    {
+      m_telescope.prepareForRequest();
+      m_telescope.setHandlerActive(true);
+      m_server->handleClient();
+      m_telescope.setHandlerActive(false);
+    }
+    // Advance any deferred slew/sync/flip without blocking the request handler.
+    m_telescope.tick();
   }
   if (m_discoveryStarted) serviceDiscovery();
-  // Advance any deferred slew/sync/flip without blocking the request handler.
-  m_telescope.tick();
 }
 
 

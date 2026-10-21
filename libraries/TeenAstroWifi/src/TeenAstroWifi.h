@@ -139,6 +139,7 @@ class TeenAstroWifi
     Index=1, Control, Speed, Tracking, Mount, Motors, Limits, Encoders, Site, Focuser, Wifi
   };
   static bool wifiOn;
+  static volatile bool s_pumpedByTask;
   static bool s_handlerBusy;
   static unsigned long s_lastPageMs;
   static bool busyGuard();
@@ -260,6 +261,10 @@ public:
 #endif
   // Uptime / reset-reason / heap, to tell a crash apart from a deliberate reboot.
   static void handleDiag();
+
+  /// When a dedicated task calls update(), button ticks must not call it too.
+  static void setPumpedByTask(bool v) { s_pumpedByTask = v; }
+  static bool pumpedByTask() { return s_pumpedByTask; }
 
   static bool isWifiOn();
   static bool isWifiRunning();

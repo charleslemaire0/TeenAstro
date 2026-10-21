@@ -36,6 +36,12 @@ void SmartHandController::setup(
 #else
   Ser.begin(SerialBaud);
 #endif
+#if defined(ARDUINO_ARCH_ESP32) && !defined(EMU_SHC) && (defined(ARDUINO_LOLIN_S3_MINI) || defined(ARDUINO_ESP32S3_DEV))
+  // UART0 is both the MainUnit link and the ESP-IDF log console: a WiFi or
+  // socket error logged under network load corrupts the next LX200 command.
+  esp_log_level_set("*", ESP_LOG_NONE);
+  Ser.setDebugOutput(false);
+#endif
 
   if (EEPROM.length() == 0)
 #ifdef ARDUINO_D1_MINI32
@@ -73,7 +79,7 @@ void SmartHandController::setup(
     else
       display = new U8G2_EXT_SH1106_128X64_NONAME_F_SW_I2C(U8G2_R0, i2cScl, i2cSda);
 #else
-    display = new U8G2_EXT_SH1106_128X64_NONAME_1_HW_I2C(U8G2_R0, U8X8_PIN_NONE, SHC_I2C_SCL, SHC_I2C_SDA);
+    display = new U8G2_EXT_SH1106_128X64_NONAME_F_HW_I2C(U8G2_R0, U8X8_PIN_NONE, SHC_I2C_SCL, SHC_I2C_SDA);
 #endif
     break;
   case OLED_SSD1306:
@@ -423,7 +429,13 @@ void SmartHandController::update()
     rebootSHC();
     return;
   }
+#ifdef SHC_DUAL_CORE
+  // Alpaca and web traffic run on the other core and can make single :GXAS#
+  // reads miss; only a sustained outage means the main unit is gone.
+  if (ta_MountStatus.stateFailingFor(SHC_LINK_LOST_MS))
+#else
   if (ta_MountStatus.notResponding())
+#endif
   {
 #if defined(ARDUINO_ARCH_ESP32)
     // ESP32 WiFi serving config pages often causes transient MainUnit UART misses

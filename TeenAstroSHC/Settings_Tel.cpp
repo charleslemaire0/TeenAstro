@@ -143,6 +143,7 @@ void SmartHandController::menuVisitor()
   if (tmp_sel == s_sel || tmp_sel == 0)
     return;
 
+  LX200LinkGuard link;
   switch (tmp_sel)
   {
   case 1:

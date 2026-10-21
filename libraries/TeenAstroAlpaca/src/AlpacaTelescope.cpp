@@ -164,6 +164,8 @@ void AlpacaTelescope::prepareForRequest()
   // serial traffic and only acts if the host loop has not polled recently.
   unsigned long now = millis();
   m_status->updateAllState();
+  // Config reads inside a handler get no reply, so refresh :GXCS# here.
+  m_status->updateAllConfig();
 
   // Site coordinates are not part of the :GXAS# packet and change rarely.
   if (m_client &&
@@ -1005,7 +1007,6 @@ void AlpacaTelescope::getFocalLength(AlpacaWebServer& s, const AlpacaRequest& r)
 void AlpacaTelescope::getDoesRefraction(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
-  m_status->updateAllConfig();
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
                AlpacaJson::boolStr(m_status->getCfgRefrTracking()));
 }
@@ -1284,7 +1285,6 @@ void AlpacaTelescope::putDeclinationRate(AlpacaWebServer& s, const AlpacaRequest
 void AlpacaTelescope::getGuideRateRA(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
-  m_status->updateAllConfig();
   float mult = 0;
   double rateDegPerSec = m_status->getCfgGuideRate() * kSiderealDegPerSec;
   if (isOk(m_client->getSpeedRate(0, mult)))

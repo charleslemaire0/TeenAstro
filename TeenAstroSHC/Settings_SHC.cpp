@@ -82,6 +82,7 @@ void SmartHandController::menuDisplaySettings()
     {
       if (display->UserInterfaceInputValueInteger(&buttonPad, T_LOWCONTRAST, T_AFTER " ", &displayT1, 3, 255, 3, "0 s"))
       {
+        LX200LinkGuard link;
         EEPROM.write(EEPROM_T1, displayT1);
         EEPROM.commit();
       }
@@ -91,6 +92,7 @@ void SmartHandController::menuDisplaySettings()
     {
       if (display->UserInterfaceInputValueInteger(&buttonPad, T_TURNDISPLAYOFF, T_AFTER " ", &displayT2, displayT1, 255, 3, "0 s"))
       {
+        LX200LinkGuard link;
         EEPROM.write(EEPROM_T2, displayT2);
         EEPROM.commit();
       }
@@ -101,6 +103,7 @@ void SmartHandController::menuDisplaySettings()
       uint8_t val = EEPROM.read(EEPROM_DISPLAYSUBMODEL);
       if (display->UserInterfaceInputValueInteger(&buttonPad, T_SUBMODEL, "OLED ", &val, 0, num_supported_display - 1, 1, ""))
       {
+        LX200LinkGuard link;
         EEPROM.write(EEPROM_DISPLAYSUBMODEL, val);
         EEPROM.commit();
         powerCycleRequired = true;
@@ -123,6 +126,7 @@ void SmartHandController::menuErgonomy()
   if (tmp_sel == s_sel|| tmp_sel == 0)
     return;
 
+  LX200LinkGuard link;
   switch (tmp_sel)
   {
   case 1:
@@ -174,8 +178,11 @@ void SmartHandController::menuContrast()
   default:
     maxContrast = 255;
   }
-  EEPROM.write(EEPROM_Contrast, maxContrast);
-  EEPROM.commit();
+  {
+    LX200LinkGuard link;
+    EEPROM.write(EEPROM_Contrast, maxContrast);
+    EEPROM.commit();
+  }
   display->setContrast(maxContrast);
 }
 
@@ -194,9 +201,12 @@ void SmartHandController::menuButtonSpeed()
   case 3:
   {
     Pad::ButtonSpeed val = static_cast<Pad::ButtonSpeed>(tmp_sel - 1);
-    buttonPad.setButtonSpeed(val);
-    EEPROM.write(EEPROM_BSPEED, tmp_sel - 1);
-    EEPROM.commit();
+    {
+      LX200LinkGuard link;
+      buttonPad.setButtonSpeed(val);
+      EEPROM.write(EEPROM_BSPEED, tmp_sel - 1);
+      EEPROM.commit();
+    }
     buttonPad.setMenuMode();
     break;
   }
@@ -209,6 +219,7 @@ void SmartHandController::resetSHC()
 {
   if (display->UserInterfaceMessage(&buttonPad, T_RESET, T_TO, T_FACTORY, T_NO "\n" T_YES) == 2)
   {
+    LX200LinkGuard link;
     int l = EEPROM.length();
     for (int k = 0; k < l; k++)
     {

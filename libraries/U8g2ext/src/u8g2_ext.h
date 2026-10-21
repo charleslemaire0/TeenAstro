@@ -81,6 +81,12 @@ public: U8G2_EXT_SSD1306_128X64_NONAME_F_SW_I2C(const u8g2_cb_t *rotation, uint8
 };
 };
 // Full-buffer (_F_) constructors: catalog/UI scroll needs one draw pass (page mode is ~8× slower).
+class U8G2_EXT_SH1106_128X64_NONAME_F_HW_I2C : public U8G2_EXT {
+public: U8G2_EXT_SH1106_128X64_NONAME_F_HW_I2C(const u8g2_cb_t *rotation, uint8_t reset = U8X8_PIN_NONE, uint8_t clock = U8X8_PIN_NONE, uint8_t data = U8X8_PIN_NONE) : U8G2_EXT() {
+  u8g2_Setup_sh1106_i2c_128x64_noname_f(&u8g2, rotation, u8x8_byte_arduino_hw_i2c, u8x8_gpio_and_delay_arduino);
+  u8x8_SetPin_HW_I2C(getU8x8(), reset, clock, data);
+}
+};
 class U8G2_EXT_SSD1306_128X64_NONAME_F_HW_I2C : public U8G2_EXT {
 public: U8G2_EXT_SSD1306_128X64_NONAME_F_HW_I2C(const u8g2_cb_t *rotation, uint8_t reset = U8X8_PIN_NONE, uint8_t clock = U8X8_PIN_NONE, uint8_t data = U8X8_PIN_NONE) : U8G2_EXT() {
   u8g2_Setup_ssd1306_i2c_128x64_noname_f(&u8g2, rotation, u8x8_byte_arduino_hw_i2c, u8x8_gpio_and_delay_arduino);

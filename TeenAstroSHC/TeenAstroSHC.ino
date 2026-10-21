@@ -51,6 +51,29 @@ static void shcStartupLedBlink()
 #endif
 }
 
+#ifdef SHC_DUAL_CORE
+// Network work (web pages, TCP bridge, Alpaca) shares core 0 with the WiFi
+// stack; the display and buttons keep core 1 to themselves in loop().
+static void linkTask(void*)
+{
+  for (;;)
+  {
+    // Polled here even with WiFi off so the display core only reads the cache.
+    ta_MountStatus.updateAllState();
+    TeenAstroWifi::update();
+    // Lets the core-0 idle task run so its watchdog stays fed.
+    vTaskDelay(1);
+  }
+}
+
+static void startDualCore()
+{
+  TeenAstroWifi::setPumpedByTask(true);
+  ta_MountStatus.setBackgroundPolling(true);
+  xTaskCreatePinnedToCore(linkTask, "shcLink", SHC_LINK_STACK, nullptr, SHC_LINK_PRIORITY, nullptr, SHC_LINK_CORE);
+}
+#endif
+
 void setup(void)
 {
   shcStartupLedBlink();
@@ -66,6 +89,9 @@ void setup(void)
   // 1.3" 128x64 modules on the SHC use SH1106 (same as Wemos A0 < 200).
   // Submodel 0 = noname, 1 = winstar (Settings > Display > Submodel).
   HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SH1106, 2);
+#ifdef SHC_DUAL_CORE
+  startDualCore();
+#endif
 #else
 #ifdef ARDUINO_ARCH_ESP32
   analogReadResolution(10);   // match Wemos 10-bit OLED-select thresholds
@@ -83,6 +109,9 @@ void setup(void)
   {
     HdCrtlr.setup(SHCVersion, pin, active, SERIAL_BAUD, SmartHandController::OLED::OLED_SSD1309, 2);
   }
+#ifdef SHC_DUAL_CORE
+  startDualCore();
+#endif
 #endif
 #endif    
 }

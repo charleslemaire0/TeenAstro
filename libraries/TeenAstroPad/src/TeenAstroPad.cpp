@@ -343,7 +343,8 @@ void Pad::tickButtons()
       eventbuttons[k + 1] = E_NONE;
     }
   }
-  m_wbt.update();
+  if (!TeenAstroWifi::pumpedByTask())
+    m_wbt.update();
 }
 
 Pad::ButtonSpeed Pad::getButtonSpeed()

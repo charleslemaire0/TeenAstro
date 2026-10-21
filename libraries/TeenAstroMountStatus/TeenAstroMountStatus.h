@@ -264,7 +264,7 @@ public:
   /// ignoring target-dependent checks (altitude, limits, meridian, etc.).
   bool isReadyForGoto()
   {
-    updateMount();
+    refreshUnlessPolled();
     if (!m_mount.valid) return false;
 
     bool motorsOn          = m_mount.motorsEnabled();
@@ -342,8 +342,7 @@ public:
   bool getLocalTimeCachedTotalSec(long& totalSeconds) const;
 
   /// True when the all-state cache is older than 500 ms (stale).
-  bool allStateCacheStale() const { return m_timerAllState.needsUpdate(500); }
-
+  bool allStateCacheStale(unsigned long ms = 500) const { return m_timerAllState.needsUpdate(ms); }
   /// Returns the cached base64 string from the last successful :GXAS# call,
   /// with the '#' terminator included, ready to forward to TCP clients.
   const char* getAllStateB64Cached() const { return m_allStateB64; }
@@ -435,6 +434,9 @@ public:
   void updateTrackingRate();
   bool updateStoredTrackingRate();
   void updateMount(bool force = false);
+  /// A task refreshes :GXAS# continuously, so getters read the cache instead
+  /// of making the calling (display) task wait on the UART.
+  void setBackgroundPolling(bool v) { m_backgroundPolling = v; }
 
   /// Single command (:GXAS#) that refreshes ALL cached state at once:
   /// mount status, positions (RA/Dec/Alt/Az/LST/targetRA/targetDec),
@@ -486,8 +488,8 @@ public:
   bool              isGNSSTimeSync()     { return m_mount.isGNSSTimeSync(); }
   bool              isGNSSLocationSync() { return m_mount.isGNSSLocationSync(); }
   bool              isHdopSmall()        { return m_mount.isHdopSmall(); }
-  bool              encodersEnable()     { updateMount(); return m_mount.encodersEnabled(); }
-  bool              motorsEnable()       { updateMount(); return m_mount.motorsEnabled(); }
+  bool              encodersEnable()     { refreshUnlessPolled(); return m_mount.encodersEnabled(); }
+  bool              motorsEnable()       { refreshUnlessPolled(); return m_mount.motorsEnabled(); }
   /// Cached only (no updateMount). Use during index build so mount state is not modified.
   bool              encodersEnableCached() const { return m_mount.encodersEnabled(); }
   bool              motorsEnableCached()  const { return m_mount.motorsEnabled(); }
@@ -513,10 +515,27 @@ public:
   bool notResponding();
   void removeLastConnectionFailure() { m_connectionFailure = max(m_connectionFailure - 1, 0); }
   void invalidatePositionTimeCaches();
+  /// True when every :GXAS# read for at least \p ms has failed.
+  /// A success clears it, so idle periods without polling never count.
+  bool stateFailingFor(unsigned long ms) const
+  {
+    unsigned long since = m_stateFailSinceMs;
+    return since != 0 && (millis() - since) >= ms;
+  }
 
-  /// While inhibited, updateAllState() is cache-only. Used to keep blocking
-  /// LX200 reads out of HTTP request handlers.
+  /// While inhibited, updateAllState() is cache-only for the calling task.
+  /// Used to keep blocking LX200 reads out of HTTP request handlers.
+#ifdef LX200_LINK_LOCK_ENABLED
+  void inhibitUpdates(bool v) { m_inhibitTask = v ? xTaskGetCurrentTaskHandle() : nullptr; }
+  bool updatesInhibited() const
+  {
+    TaskHandle_t t = m_inhibitTask;
+    return t != nullptr && t == xTaskGetCurrentTaskHandle();
+  }
+#else
   void inhibitUpdates(bool v) { m_updatesInhibited = v; }
+  bool updatesInhibited() const { return m_updatesInhibited; }
+#endif
 
   // Diagnostic: why the last updateAllState() bailed out.
   // 0 = ok, 1 = :GXAS# read failed, 2 = wrong length, 3 = base64, 4 = checksum
@@ -526,7 +545,14 @@ public:
   uint32_t getStateFailCount()    const { return m_stateFailCount; }
 
 private:
+#ifdef LX200_LINK_LOCK_ENABLED
+  volatile TaskHandle_t m_inhibitTask = nullptr;
+#else
   bool     m_updatesInhibited = false;
+#endif
+  volatile unsigned long m_stateFailSinceMs = 0;
+  volatile bool m_backgroundPolling = false;
+  void refreshUnlessPolled() { if (!m_backgroundPolling) updateMount(); }
   uint8_t  m_lastStateFailStage = 0;
   uint16_t m_lastStateRawLen = 0;
   uint16_t m_lastStateElapsedMs = 0;
@@ -643,6 +669,7 @@ private:
   CacheTimer    m_timerTime;
 
   // --- Connection ---
+  void          noteStateFailure();
   int           m_connectionFailure = 0;
   bool          m_isValid = false;
 };

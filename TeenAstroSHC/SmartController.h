@@ -15,6 +15,19 @@
 #endif
 
 
+// Dual-core S3: UI (buttons, OLED, menus) on core 0; MainUnit UART, web,
+// TCP bridge and Alpaca on core 1 (Arduino loop task).
+#if defined(ARDUINO_ARCH_ESP32) && !defined(EMU_SHC) && !defined(CONFIG_FREERTOS_UNICORE) && \
+    (defined(ARDUINO_LOLIN_S3_MINI) || defined(ARDUINO_ESP32S3_DEV))
+#define SHC_DUAL_CORE
+#define SHC_LINK_CORE      0
+#define SHC_LINK_STACK     16384
+// Idle priority: a long busy request (OTA upload) must still let the core-0
+// idle task run, or the task watchdog resets the SHC.
+#define SHC_LINK_PRIORITY  0
+#define SHC_LINK_LOST_MS   10000UL
+#endif
+
 #ifndef Product
 #define Product "Teenastro SHC"
 #endif

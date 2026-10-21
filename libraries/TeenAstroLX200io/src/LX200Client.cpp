@@ -62,6 +62,7 @@ bool LX200Client::sendReceive(const char* command, CMDREPLY replyType,
                               char* recvBuffer, int bufferSize,
                               unsigned long timeOutMs, bool keepHashtag)
 {
+  LX200LinkGuard link;
   m_transport->setTimeout(timeOutMs);
   memset(recvBuffer, 0, bufferSize);
   m_transport->flush();
@@ -82,13 +83,17 @@ bool LX200Client::sendReceive(const char* command, CMDREPLY replyType,
   {
     unsigned long start = millis();
     recvBuffer[0] = '\0';
-    while (millis() - start < timeOutMs)
+    // Test for data before the deadline: a task preempted past the timeout
+    // must still pick up a reply that arrived meanwhile.
+    for (;;)
     {
       if (m_transport->available())
       {
         recvBuffer[0] = (char)m_transport->read();
         break;
       }
+      if (millis() - start >= timeOutMs)
+        break;
       yield();
     }
     return recvBuffer[0] != '\0';
@@ -100,9 +105,11 @@ bool LX200Client::sendReceive(const char* command, CMDREPLY replyType,
     int pos = 0;
     bool hashFound = false;
     bool ok = true;
-    while (millis() - start < timeOutMs)
+    for (;;)
     {
       recvBuffer[pos] = 0;
+      if (!m_transport->available() && millis() - start >= timeOutMs)
+        break;
       if (m_transport->available())
       {
         char b = (char)m_transport->read();

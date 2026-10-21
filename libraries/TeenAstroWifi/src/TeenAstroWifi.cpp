@@ -193,6 +193,7 @@ const char html_links11N[] PROGMEM = "<a href='/wifi.htm'>WiFi</a>\n";
 
 LX200Client* TeenAstroWifi::s_client = nullptr;
 bool TeenAstroWifi::wifiOn = true;
+volatile bool TeenAstroWifi::s_pumpedByTask = false;
 bool TeenAstroWifi::s_handlerBusy = false;
 unsigned long TeenAstroWifi::s_lastPageMs = 0;
 
@@ -742,6 +743,10 @@ void TeenAstroWifi::setup()
   cmdSvr.begin();
   cmdSvr.setNoDelay(true);
   server.begin();
+#if defined(ARDUINO_ARCH_ESP32)
+  // Its idle delay(1) would run while update() holds the link lock.
+  server.enableDelay(false);
+#endif
 
 #ifdef DEBUG_ON
   Ser.println("HTTP server started");
@@ -928,7 +933,12 @@ void TeenAstroWifi::update()
       activeWifiMode == WifiMode::M_Station2 ||
       activeWifiMode == WifiMode::M_Station3)
     staEverHadLink = true;
-  server.handleClient();
+  // Handlers, the TCP bridge and Alpaca all read the mount cache and use the
+  // UART; each takes the link lock separately so the display can draw between.
+  {
+    LX200LinkGuard link;
+    server.handleClient();
+  }
 
   // disconnect client
   static unsigned long clientTime = 0;
@@ -1013,7 +1023,9 @@ void TeenAstroWifi::update()
   // the SHC display, buttons, and HTTP server all get their turns.
   // IMPORTANT: server.handleClient() must NOT be called from inside this loop
   // to avoid re-entrant serial access (HTTP handlers also use s_client).
+  if (cmdSvrClient.connected() && cmdSvrClient.available())
   {
+    LX200LinkGuard link;
     bool cmdDone = false;
 
     while (cmdSvrClient.connected() && cmdSvrClient.available() && !cmdDone)
@@ -1058,10 +1070,13 @@ void TeenAstroWifi::update()
       // send cmd and pickup the response
       if ((b == '#') || (b == (char)6))
       {
-        // :GXAS# — serve from all-state cache when fresh (< 500 ms old).
-        if (strcmp(writeBuffer, ":GXAS#") == 0 && !ta_MountStatus.allStateCacheStale())
+        // :GXAS# — always served from the all-state cache, refreshed first when
+        // older than 500 ms (the 136-char reply does not fit readBuffer below).
+        if (strcmp(writeBuffer, ":GXAS#") == 0)
         {
-          if (cmdSvrClient.connected())
+          if (ta_MountStatus.allStateCacheStale())
+            ta_MountStatus.updateAllState(true);
+          if (ta_MountStatus.hasInfoMount() && cmdSvrClient.connected())
             cmdSvrClient.print(ta_MountStatus.getAllStateB64Cached());
           writeBuffer[0] = 0;
           writeBufferPos = 0;
@@ -1072,8 +1087,6 @@ void TeenAstroWifi::update()
           break;
         }
 
-        // :GXAS# response is 88 base64 chars + '#' = 89 chars — use a larger
-        // read buffer than the default to avoid truncation.
         char readBuffer[130] = "";
         CMDREPLY cmdreply;
         if (s_client->sendReceiveAuto(writeBuffer, cmdreply, readBuffer, sizeof(readBuffer), CmdTimeout, true))
@@ -1118,6 +1131,7 @@ bool TeenAstroWifi::isWifiRunning()
 
 void TeenAstroWifi::turnWifiOn(bool turnOn)
 {
+  LX200LinkGuard link;
   wifiOn = turnOn;
   EEPROM.write(EEPROM_WifiOn, turnOn);
   EEPROM.commit();
@@ -1154,6 +1168,7 @@ bool TeenAstroWifi::setWifiMode(int k)
 {
   if (k < 0 || k>3)
     return false;
+  LX200LinkGuard link;
   activeWifiMode = static_cast<WifiMode>(k);
   EEPROM.write(EEPROM_WifiMode, k);
   EEPROM.commit();

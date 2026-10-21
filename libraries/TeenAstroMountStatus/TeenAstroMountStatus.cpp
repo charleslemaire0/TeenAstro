@@ -137,6 +137,7 @@ static uint16_t pktU16(const uint8_t* pkt, int off)
 
 void TeenAstroMountStatus::fetchRemoteStarName()
 {
+  LX200LinkGuard link;
   if (!m_remoteAlign) return;
   char name[16] = "";
   if (m_client->getAlignStarName(name, sizeof(name)) == LX200_VALUEGET)
@@ -196,6 +197,7 @@ TeenAstroMountStatus::AlignReply TeenAstroMountStatus::addStar()
 
 void TeenAstroMountStatus::updateV()
 {
+  LX200LinkGuard link;
   if (!m_version.valid)
   {
     bool ok = m_vp.fetch(*m_client, &LX200Client::getProductName);
@@ -211,6 +213,7 @@ void TeenAstroMountStatus::updateV()
 
 void TeenAstroMountStatus::updateRaDec()
 {
+  LX200LinkGuard link;
   if (m_timerRaDec.needsUpdate(UPDATERATE))
   {
     m_ra.fetch(*m_client, &LX200Client::getRaStr);
@@ -224,6 +227,7 @@ void TeenAstroMountStatus::updateRaDec()
 
 void TeenAstroMountStatus::updateHaDec()
 {
+  LX200LinkGuard link;
   if (m_timerHaDec.needsUpdate(UPDATERATE))
   {
     m_ha.fetch(*m_client, &LX200Client::getHaStr);
@@ -237,6 +241,7 @@ void TeenAstroMountStatus::updateHaDec()
 
 void TeenAstroMountStatus::updateRaDecT()
 {
+  LX200LinkGuard link;
   if (m_timerRaDecT.needsUpdate(UPDATERATE))
   {
     m_raT.fetch(*m_client, &LX200Client::getTargetRaStr);
@@ -250,6 +255,7 @@ void TeenAstroMountStatus::updateRaDecT()
 
 void TeenAstroMountStatus::updateAzAlt()
 {
+  LX200LinkGuard link;
   if (m_timerAzAlt.needsUpdate(UPDATERATE))
   {
     m_az.fetch(*m_client, &LX200Client::getAzStr);
@@ -263,6 +269,7 @@ void TeenAstroMountStatus::updateAzAlt()
 
 void TeenAstroMountStatus::updatePush()
 {
+  LX200LinkGuard link;
   if (encodersEnable() && m_timerPush.needsUpdate(UPDATERATE))
   {
     m_push.fetch(*m_client, &LX200Client::getEncoderDelta);
@@ -279,6 +286,7 @@ void TeenAstroMountStatus::updatePush()
 
 void TeenAstroMountStatus::updateAxisStep()
 {
+  LX200LinkGuard link;
   if (m_timerAxisStep.needsUpdate(UPDATERATE))
   {
     m_axis1Step.valid = (m_client->getAxisSteps(1, m_axis1Step.data, sizeof(m_axis1Step.data)) == LX200_VALUEGET);
@@ -292,6 +300,7 @@ void TeenAstroMountStatus::updateAxisStep()
 
 void TeenAstroMountStatus::updateAxisDeg()
 {
+  LX200LinkGuard link;
   if (m_timerAxisDeg.needsUpdate(UPDATERATE))
   {
     m_axis1Deg.valid = (m_client->getAxisDegrees(1, m_axis1Deg.data, sizeof(m_axis1Deg.data)) == LX200_VALUEGET);
@@ -320,6 +329,7 @@ void TeenAstroMountStatus::updateAxisDeg()
 
 void TeenAstroMountStatus::updateTime()
 {
+  LX200LinkGuard link;
   if (m_timerTime.needsUpdate(UPDATERATE))
   {
     m_utc.fetch(*m_client, &LX200Client::getUTCTimeStr);
@@ -334,6 +344,7 @@ void TeenAstroMountStatus::updateTime()
 
 void TeenAstroMountStatus::updateLHA()
 {
+  LX200LinkGuard link;
   if (m_timerTime.needsUpdate(UPDATERATE))
   {
     m_utc.fetch(*m_client, &LX200Client::getUTCTimeStr);
@@ -374,7 +385,10 @@ void TeenAstroMountStatus::invalidatePositionTimeCaches()
 
 void TeenAstroMountStatus::updateAllState(bool force)
 {
-  if (m_updatesInhibited) return;
+  if (updatesInhibited()) return;
+  if (!m_timerAllState.needsUpdate(UPDATERATE) && !force) return;
+  LX200LinkGuard link;
+  // The other core may have refreshed the cache while this one waited.
   if (!m_timerAllState.needsUpdate(UPDATERATE) && !force) return;
 
   // Fetch the 136-char base64 response (no '#' in returned string). GXAS packet = 102 bytes.
@@ -392,7 +406,7 @@ void TeenAstroMountStatus::updateAllState(bool force)
     m_stateFailCount++;
     m_mount.valid = false;
     invalidatePositionTimeCaches();
-    m_connectionFailure++;
+    noteStateFailure();
     return;
   }
 
@@ -404,7 +418,7 @@ void TeenAstroMountStatus::updateAllState(bool force)
     m_stateFailCount++;
     m_mount.valid = false;
     invalidatePositionTimeCaches();
-    m_connectionFailure++;
+    noteStateFailure();
     return;
   }
 
@@ -417,7 +431,7 @@ void TeenAstroMountStatus::updateAllState(bool force)
     m_stateFailCount++;
     m_mount.valid = false;
     invalidatePositionTimeCaches();
-    m_connectionFailure++;
+    noteStateFailure();
     return;
   }
 
@@ -578,6 +592,7 @@ void TeenAstroMountStatus::updateAllState(bool force)
   }
 
   m_connectionFailure = 0;
+  m_stateFailSinceMs = 0;
 }
 
 // ===========================================================================
@@ -587,6 +602,7 @@ void TeenAstroMountStatus::updateAllState(bool force)
 void TeenAstroMountStatus::updateAllConfig(bool force)
 {
   if (!m_timerConfig.needsUpdate(30000) && !force) return;
+  LX200LinkGuard link;
 
   // Fetch the 120-char base64 response.
   char raw[122] = "";
@@ -677,6 +693,7 @@ void TeenAstroMountStatus::updateAllConfig(bool force)
 
 bool TeenAstroMountStatus::findFocuser()
 {
+  LX200LinkGuard link;
   int k = 0;
   char raw[20];
   while (!m_hasFocuser && k < 3)
@@ -696,6 +713,7 @@ bool TeenAstroMountStatus::findFocuser()
 
 void TeenAstroMountStatus::updateFocuser()
 {
+  LX200LinkGuard link;
   if (!m_hasFocuser) return;
 
   if (m_timerFocuser.needsUpdate(UPDATERATE))
@@ -762,6 +780,16 @@ bool TeenAstroMountStatus::updateStoredTrackingRate()
 // ===========================================================================
 //  Connection
 // ===========================================================================
+
+void TeenAstroMountStatus::noteStateFailure()
+{
+  m_connectionFailure++;
+  if (m_stateFailSinceMs == 0)
+  {
+    unsigned long now = millis();
+    m_stateFailSinceMs = now ? now : 1;
+  }
+}
 
 bool TeenAstroMountStatus::connected()      { return m_connectionFailure == 0; }
 bool TeenAstroMountStatus::notResponding()   { return m_connectionFailure > 4; }
