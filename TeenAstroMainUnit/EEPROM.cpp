@@ -416,6 +416,12 @@ void saveAlignModel()
   if (headValid)
   {
     mount.alignment.conv.getHead(hcone, hperp, hidx2);
+    // Also fill Mount error (known CH / NP). Those are what the web page and a
+    // later 2-star with Mount error On read; without this copy they stay at 0
+    // after a 4-star or 3+3 Save even though the active head is correct.
+    mount.alignment.knownCone = hcone;
+    mount.alignment.knownPerp = hperp;
+    saveKnownGeom();
   }
   XEEPROM.writeFloat(getHeadAddress(EE_head_cone), hcone);
   XEEPROM.writeFloat(getHeadAddress(EE_head_perp), hperp);
