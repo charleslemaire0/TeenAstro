@@ -14,6 +14,9 @@ struct CacheTimer
     return (millis() - lastUpdate) > rateMs;
   }
   void markUpdated() { lastUpdate = millis(); }
+  /// Force the next needsUpdate() to succeed. Used after a command that
+  /// changes mount state so the following request does not reuse a stale cache.
+  void invalidate() { lastUpdate = 0; }
 };
 
 // ---------------------------------------------------------------------------
@@ -343,6 +346,8 @@ public:
 
   /// True when the all-state cache is older than 500 ms (stale).
   bool allStateCacheStale(unsigned long ms = 500) const { return m_timerAllState.needsUpdate(ms); }
+  /// Drop the :GXAS# cache so the next updateAllState() reads the mount.
+  void invalidateAllState() { m_timerAllState.invalidate(); }
   /// Returns the cached base64 string from the last successful :GXAS# call,
   /// with the '#' terminator included, ready to forward to TCP clients.
   const char* getAllStateB64Cached() const { return m_allStateB64; }

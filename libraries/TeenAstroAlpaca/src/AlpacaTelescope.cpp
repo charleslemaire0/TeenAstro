@@ -7,12 +7,16 @@
 #include "AlpacaTelescope.h"
 #include "TeenAstroAlpaca.h"
 #include <LX200Client.h>
+#include <LX200LinkLock.h>
 #include <TeenAstroMountStatus.h>
 #include <TeenAstroMath.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#if defined(ARDUINO_ARCH_ESP32) && !defined(TEENASTRO_NATIVE_BUILD)
+#include <esp_task_wdt.h>
+#endif
 
 namespace {
 
@@ -263,6 +267,7 @@ bool AlpacaTelescope::motionReportsSlewing(MotionKind k)
 
 void AlpacaTelescope::beginMotion(MotionKind kind, double a, double b)
 {
+  m_motionFailed = false;
   if (!m_client || !m_status) return;
   m_motionKind        = kind;
   m_motionA           = a;
@@ -295,6 +300,79 @@ void AlpacaTelescope::cancelMotion()
   m_motionPhase                = MotionPhase::EnsureTracking;
   m_motionRetriedBusy          = false;
   m_motionCompleteDeadlineMs   = 0;
+}
+
+void AlpacaTelescope::clearCommandedTarget()
+{
+  m_targetRaSet = false;
+  m_targetDecSet = false;
+}
+
+void AlpacaTelescope::noteMountMutated()
+{
+  if (m_status) m_status->invalidateAllState();
+}
+
+void AlpacaTelescope::waitForMotion()
+{
+  // Property handlers run with :GXAS# reads inhibited. A synchronous slew
+  // has to poll the mount, so lift that for the duration of the wait.
+  if (m_status) m_status->inhibitUpdates(false);
+
+  // update() holds the link lock across the whole HTTP handler. Drop it
+  // between polls so the other core (UI, watchdog) is not stalled for the
+  // length of a slew, then take it back before returning to that guard.
+#if defined(LX200_LINK_LOCK_ENABLED)
+  const bool released = xSemaphoreGiveRecursive(lx200LinkMutex()) == pdTRUE;
+#else
+  const bool released = false;
+  (void)released;
+#endif
+  const unsigned long start = millis();
+  while (motionBusy())
+  {
+#if defined(LX200_LINK_LOCK_ENABLED)
+    LX200LinkGuard step;
+#endif
+    tick();
+#if defined(ARDUINO_ARCH_ESP32) && !defined(TEENASTRO_NATIVE_BUILD)
+    esp_task_wdt_reset();
+#endif
+    delay(10);
+    if ((unsigned long)(millis() - start) > 300000UL)
+    {
+      m_motionFailed = true;
+      cancelMotion();
+      break;
+    }
+  }
+#if defined(LX200_LINK_LOCK_ENABLED)
+  if (released)
+    xSemaphoreTakeRecursive(lx200LinkMutex(), portMAX_DELAY);
+#endif
+  if (m_status) m_status->inhibitUpdates(true);
+}
+
+bool AlpacaTelescope::finishMotion(AlpacaWebServer& s, const AlpacaRequest& r,
+                                   bool synchronous)
+{
+  if (synchronous)
+  {
+    waitForMotion();
+    noteMountMutated();
+    if (m_motionFailed)
+    {
+      sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                      AE_INVALID_OPERATION, "Slew or sync was rejected");
+      return false;
+    }
+  }
+  else
+  {
+    noteMountMutated();
+  }
+  sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
+  return true;
 }
 
 void AlpacaTelescope::beginMotionCompletePoll()
@@ -381,6 +459,8 @@ void AlpacaTelescope::issueMotion()
 
   m_motionKind        = MotionKind::None;
   m_motionRetriedBusy = false;
+  if (!accepted)
+    m_motionFailed = true;
   if (!accepted && motionReportsSlewing(kind))
     m_slewKickEndMs = 0;
 }
@@ -417,6 +497,7 @@ void AlpacaTelescope::tick()
         {
           // Could not get tracking on within budget: abort the operation
           // (Slewing falls back to false, mirroring the old hard failure).
+          m_motionFailed = true;
           cancelMotion();
           return;
         }
@@ -460,6 +541,7 @@ void AlpacaTelescope::tick()
         }
         if ((long)(now - m_motionCompleteDeadlineMs) >= 0)
         {
+          m_motionFailed = true;
           cancelMotion();
           return;
         }
@@ -605,6 +687,10 @@ void AlpacaTelescope::putConnected(AlpacaWebServer& s, const AlpacaRequest& r)
     return;
   bool wasConnected = m_connected;
   m_connected = on;
+  // A new session must not inherit Target RA/Dec. Conform reads them once,
+  // before any write, and requires ValueNotSet.
+  if (!on || !wasConnected)
+    clearCommandedTarget();
   if (m_connected)
     noteAlpacaAttached(wasConnected);
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
@@ -710,6 +796,7 @@ void AlpacaTelescope::getConnecting(AlpacaWebServer& s, const AlpacaRequest& r)
 void AlpacaTelescope::putDisconnect(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   m_connected = false;
+  clearCommandedTarget();
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
@@ -717,6 +804,8 @@ void AlpacaTelescope::putConnect(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   bool was = m_connected;
   m_connected = true;
+  if (!was)
+    clearCommandedTarget();
   noteAlpacaAttached(was);
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
@@ -856,12 +945,15 @@ void AlpacaTelescope::getAtHome(AlpacaWebServer& s, const AlpacaRequest& r)
 void AlpacaTelescope::getIsPulseGuiding(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
-  // TelescopeHardware.IsPulseGuiding — ForceGXASCacheRefresh + packet pulse bit only.
-  if (m_status)
-    m_status->updateAllState(true);
+  unsigned long now = millis();
+  bool local = m_pulseGuideUntilMs != 0 && (long)(m_pulseGuideUntilMs - now) > 0;
+  if (!local)
+    m_pulseGuideUntilMs = 0;
+  // Mount bit is filled by prepareForRequest() from a fresh :GXAS# after
+  // noteMountMutated(). Inside the handler that read is inhibited.
   bool fromMount = m_status && m_status->isPulseGuiding();
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
-               AlpacaJson::boolStr(fromMount));
+               AlpacaJson::boolStr(local || fromMount));
 }
 
 void AlpacaTelescope::getSideOfPier(AlpacaWebServer& s, const AlpacaRequest& r)
@@ -1068,8 +1160,8 @@ void AlpacaTelescope::getTargetRightAscension(AlpacaWebServer& s, const AlpacaRe
                     AE_VALUE_NOT_SET, "TargetRightAscension not set");
     return;
   }
-  m_status->updateAllState(true);
-  m_targetRaHours = m_status->getTargetRaHoursCached();
+  // Report the coordinates this client commanded. The mount target in :GXAS#
+  // still shows the previous slew until the queued command is issued.
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
                AlpacaJson::doubleStr(m_targetRaHours));
 }
@@ -1109,8 +1201,6 @@ void AlpacaTelescope::getTargetDeclination(AlpacaWebServer& s, const AlpacaReque
                     AE_VALUE_NOT_SET, "TargetDeclination not set");
     return;
   }
-  m_status->updateAllState(true);
-  m_targetDecDeg = m_status->getTargetDecDegCached();
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
                AlpacaJson::doubleStr(m_targetDecDeg));
 }
@@ -1161,9 +1251,16 @@ void AlpacaTelescope::putTracking(AlpacaWebServer& s, const AlpacaRequest& r)
   if (!alpacaArgBool(s, r, m_parent->nextServerTransactionId(), "Tracking", on))
     return;
   if (!requireConnected(s, r)) return;
-  m_client->enableTracking(on);
   if (m_status)
-    m_status->updateAllState(true);
+    m_status->updateMount(true);
+  if (on && m_status && m_status->Parked())
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_PARKED, "Cannot enable tracking while parked");
+    return;
+  }
+  m_client->enableTracking(on);
+  noteMountMutated();
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
@@ -1792,6 +1889,7 @@ void AlpacaTelescope::putAbortSlew(AlpacaWebServer& s, const AlpacaRequest& r)
   // Drop any queued slew/sync/flip before physically stopping the mount.
   cancelMotion();
   m_client->stopSlew();
+  noteMountMutated();
   char mBuf[8];
   if (m_moveAxisActive[0])
   {
@@ -1847,6 +1945,7 @@ void AlpacaTelescope::putPark(AlpacaWebServer& s, const AlpacaRequest& r)
     return;
   }
   m_slewKickEndMs = millis() + kComSlewingHintMs;
+  noteMountMutated();
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
@@ -1880,6 +1979,9 @@ void AlpacaTelescope::putUnpark(AlpacaWebServer& s, const AlpacaRequest& r)
                     AE_DRIVER, "Unpark refused by mount");
     return;
   }
+  // :hR# clears AtPark on the mount immediately. The status cache was just
+  // refreshed for this request and would still say parked for up to 500 ms.
+  noteMountMutated();
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
@@ -1905,7 +2007,7 @@ void AlpacaTelescope::putSetPark(AlpacaWebServer& s, const AlpacaRequest& r)
 
 
 bool AlpacaTelescope::slewToRaDec(AlpacaWebServer& s, const AlpacaRequest& r,
-                                  double raHours, double decDeg)
+                                  double raHours, double decDeg, bool synchronous)
 {
   m_status->updateMount(true);
   if (!m_status->motorsEnableCached())
@@ -1921,16 +2023,19 @@ bool AlpacaTelescope::slewToRaDec(AlpacaWebServer& s, const AlpacaRequest& r,
                     AE_PARKED, "Cannot slew while parked");
     return false;
   }
-  // Queue the slew (ensure-tracking -> settle -> :MS#) and return immediately;
-  // the non-blocking state machine in tick() carries it out.  Slewing stays
-  // true until the mount actually starts moving, so clients poll to completion.
+  // Remember the commanded target before the mount's :GXAS# target catches up.
+  m_targetRaHours = raHours;
+  m_targetDecDeg  = decDeg;
+  m_targetRaSet   = true;
+  m_targetDecSet  = true;
+  // Queue the slew (ensure-tracking -> settle -> :MS#). Asynchronous callers
+  // return now and poll Slewing. Synchronous callers block until it finishes.
   beginMotion(MotionKind::SlewRaDec, raHours, decDeg);
-  sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
-  return true;
+  return finishMotion(s, r, synchronous);
 }
 
 bool AlpacaTelescope::syncToRaDec(AlpacaWebServer& s, const AlpacaRequest& r,
-                                  double raHours, double decDeg)
+                                  double raHours, double decDeg, bool synchronous)
 {
   m_status->updateMount(true);
   if (!m_status->motorsEnableCached())
@@ -1946,15 +2051,20 @@ bool AlpacaTelescope::syncToRaDec(AlpacaWebServer& s, const AlpacaRequest& r,
                     AE_PARKED, "Cannot sync while parked");
     return false;
   }
-  // Queue the sync (ensure-tracking -> settle -> :CM#) and return immediately.
-  // When the mount is idle the state machine issues it on the very next tick.
+  m_targetRaHours = raHours;
+  m_targetDecDeg  = decDeg;
+  m_targetRaSet   = true;
+  m_targetDecSet  = true;
+  // Queue the sync (ensure-tracking -> settle -> :CM#). Synchronous callers
+  // block until the mount has applied it; otherwise the next coordinate read
+  // still shows the pre-sync position.
   beginMotion(MotionKind::SyncRaDec, raHours, decDeg);
-  sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
-  return true;
+  return finishMotion(s, r, synchronous);
 }
 
 bool AlpacaTelescope::slewSyncToAltAz(AlpacaWebServer& s, const AlpacaRequest& r,
-                                      double azDeg, double altDeg, bool sync)
+                                      double azDeg, double altDeg, bool sync,
+                                      bool synchronous)
 {
   m_status->updateMount(true);
   if (!m_status->motorsEnableCached())
@@ -1970,16 +2080,16 @@ bool AlpacaTelescope::slewSyncToAltAz(AlpacaWebServer& s, const AlpacaRequest& r
                     AE_PARKED, "Cannot slew while parked");
     return false;
   }
-  // Queue the AltAz slew/sync and return immediately.  beginMotion() turns
-  // tracking off for a slew (ASCOM checkslewALTAZ) before the settle -> :A?#
-  // sequence runs in tick().
+  // Queue the AltAz slew/sync. beginMotion() turns tracking off for a slew
+  // (ASCOM checkslewALTAZ) before the settle -> :A?# sequence runs in tick().
   beginMotion(sync ? MotionKind::SyncAltAz : MotionKind::SlewAltAz, azDeg, altDeg);
-  sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
-  return true;
+  return finishMotion(s, r, synchronous);
 }
 
 void AlpacaTelescope::putSlewToCoordinates(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  bool synchronous = m_synchronousMotion;
+  m_synchronousMotion = true;
   double ra = 0;
   double dec = 0;
   if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "RightAscension", ra))
@@ -2000,16 +2110,19 @@ void AlpacaTelescope::putSlewToCoordinates(AlpacaWebServer& s, const AlpacaReque
                     AE_INVALID_VALUE, "RA/Dec out of range");
     return;
   }
-  slewToRaDec(s, r, ra, dec);
+  slewToRaDec(s, r, ra, dec, synchronous);
 }
 
 void AlpacaTelescope::putSlewToCoordinatesAsync(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  m_synchronousMotion = false;
   putSlewToCoordinates(s, r);
 }
 
 void AlpacaTelescope::putSyncToCoordinates(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  bool synchronous = m_synchronousMotion;
+  m_synchronousMotion = true;
   double ra = 0;
   double dec = 0;
   if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "RightAscension", ra))
@@ -2030,11 +2143,13 @@ void AlpacaTelescope::putSyncToCoordinates(AlpacaWebServer& s, const AlpacaReque
                     AE_INVALID_VALUE, "RA/Dec out of range");
     return;
   }
-  syncToRaDec(s, r, ra, dec);
+  syncToRaDec(s, r, ra, dec, synchronous);
 }
 
 void AlpacaTelescope::putSlewToTarget(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  bool synchronous = m_synchronousMotion;
+  m_synchronousMotion = true;
   if (!requireConnected(s, r)) return;
   m_status->updateMount(true);
   if (!m_status->motorsEnableCached())
@@ -2049,16 +2164,19 @@ void AlpacaTelescope::putSlewToTarget(AlpacaWebServer& s, const AlpacaRequest& r
                     AE_VALUE_NOT_SET, "Target not set");
     return;
   }
-  slewToRaDec(s, r, m_targetRaHours, m_targetDecDeg);
+  slewToRaDec(s, r, m_targetRaHours, m_targetDecDeg, synchronous);
 }
 
 void AlpacaTelescope::putSlewToTargetAsync(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  m_synchronousMotion = false;
   putSlewToTarget(s, r);
 }
 
 void AlpacaTelescope::putSyncToTarget(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  bool synchronous = m_synchronousMotion;
+  m_synchronousMotion = true;
   if (!requireConnected(s, r)) return;
   m_status->updateMount(true);
   if (!m_status->motorsEnableCached())
@@ -2073,11 +2191,13 @@ void AlpacaTelescope::putSyncToTarget(AlpacaWebServer& s, const AlpacaRequest& r
                     AE_VALUE_NOT_SET, "Target not set");
     return;
   }
-  syncToRaDec(s, r, m_targetRaHours, m_targetDecDeg);
+  syncToRaDec(s, r, m_targetRaHours, m_targetDecDeg, synchronous);
 }
 
 void AlpacaTelescope::putSlewToAltAz(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  bool synchronous = m_synchronousMotion;
+  m_synchronousMotion = true;
   double az = 0;
   double alt = 0;
   if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "Azimuth", az))
@@ -2098,16 +2218,19 @@ void AlpacaTelescope::putSlewToAltAz(AlpacaWebServer& s, const AlpacaRequest& r)
                     AE_INVALID_VALUE, "Az/Alt out of range");
     return;
   }
-  slewSyncToAltAz(s, r, az, alt, false);
+  slewSyncToAltAz(s, r, az, alt, false, synchronous);
 }
 
 void AlpacaTelescope::putSlewToAltAzAsync(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  m_synchronousMotion = false;
   putSlewToAltAz(s, r);
 }
 
 void AlpacaTelescope::putSyncToAltAz(AlpacaWebServer& s, const AlpacaRequest& r)
 {
+  bool synchronous = m_synchronousMotion;
+  m_synchronousMotion = true;
   double az = 0;
   double alt = 0;
   if (!alpacaArgDouble(s, r, m_parent->nextServerTransactionId(), "Azimuth", az))
@@ -2128,7 +2251,7 @@ void AlpacaTelescope::putSyncToAltAz(AlpacaWebServer& s, const AlpacaRequest& r)
                     AE_INVALID_VALUE, "Az/Alt out of range");
     return;
   }
-  slewSyncToAltAz(s, r, az, alt, true);
+  slewSyncToAltAz(s, r, az, alt, true, synchronous);
 }
 
 void AlpacaTelescope::putPulseGuide(AlpacaWebServer& s, const AlpacaRequest& r)
@@ -2181,7 +2304,13 @@ void AlpacaTelescope::putPulseGuide(AlpacaWebServer& s, const AlpacaRequest& r)
   char cmd[24];
   snprintf(cmd, sizeof(cmd), ":Mg%c%ld#", dirChar[dir], durMs);
   m_client->set(cmd);
-  m_status->updateAllState(true);
+  // :Mg returns nothing and the pulse bit in :GXAS# is easy to miss: the
+  // status cache is refreshed before this command runs, and Conform decides
+  // "async guide" from the very next IsPulseGuiding read. Hold the flag for
+  // the requested duration so that read is true and the axis is measured
+  // after the pulse, not during the previous one.
+  m_pulseGuideUntilMs = millis() + (unsigned long)durMs + 200UL;
+  noteMountMutated();
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
@@ -2208,8 +2337,8 @@ void AlpacaTelescope::putMoveAxis(AlpacaWebServer& s, const AlpacaRequest& r)
     return;
   }
   m_status->updateAllState(true);
-  // Device Hub / ASCOM: rate 0 may be issued while parked to stop; reject only non-zero.
-  if (rateDegSec != 0.0 && m_status->Parked())
+  // Conform calls MoveAxis(axis, 0) while parked and requires ParkedException.
+  if (m_status->Parked())
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
                     AE_PARKED, "Cannot MoveAxis while parked");
@@ -2290,7 +2419,7 @@ void AlpacaTelescope::putMoveAxis(AlpacaWebServer& s, const AlpacaRequest& r)
     m_slewKickEndMs = millis() + kComSlewingHintMs;
   else
     m_slewKickEndMs = 0;
-  m_status->updateAllState(true);
+  noteMountMutated();
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 

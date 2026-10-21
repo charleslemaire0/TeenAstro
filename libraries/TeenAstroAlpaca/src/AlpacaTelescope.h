@@ -208,6 +208,14 @@ private:
   void beginMotionCompletePoll();
   /// Cancel any pending motion (e.g. AbortSlew, or a phase timeout).
   void cancelMotion();
+  /// Block until the queued motion finishes. Synchronous Alpaca methods
+  /// (SlewToCoordinates, SyncToCoordinates, ...) must not return earlier.
+  void waitForMotion();
+  /// Forget commanded RA/Dec so the next connection's read-before-write fails.
+  void clearCommandedTarget();
+  /// The :GXAS# snapshot is up to 500 ms old. Drop it after a state change
+  /// so the next request's prepareForRequest() reads the mount again.
+  void noteMountMutated();
   bool motionBusy() const { return m_motionKind != MotionKind::None; }
   static bool motionNeedsTracking(MotionKind k);
   static bool motionReportsSlewing(MotionKind k);
@@ -218,13 +226,15 @@ private:
   /// in NAV_GOTO mode.  Sends the response itself and returns true if the
   /// operation was accepted.
   bool slewToRaDec(AlpacaWebServer& s, const AlpacaRequest& r,
-                   double raHours, double decDeg);
+                   double raHours, double decDeg, bool synchronous);
   /// Common helper to sync to (raHours, decDeg).
   bool syncToRaDec(AlpacaWebServer& s, const AlpacaRequest& r,
-                   double raHours, double decDeg);
+                   double raHours, double decDeg, bool synchronous);
   /// Common helper to slew/sync to (azDeg, altDeg).
   bool slewSyncToAltAz(AlpacaWebServer& s, const AlpacaRequest& r,
-                       double azDeg, double altDeg, bool sync);
+                       double azDeg, double altDeg, bool sync, bool synchronous);
+  /// Send the HTTP result for a queued motion. Synchronous calls block first.
+  bool finishMotion(AlpacaWebServer& s, const AlpacaRequest& r, bool synchronous);
 
   LX200Client*           m_client       = nullptr;
   TeenAstroMountStatus*  m_status       = nullptr;
@@ -280,6 +290,12 @@ private:
   // ---- Non-blocking motion state machine state ----
   MotionKind             m_motionKind        = MotionKind::None;
   MotionPhase            m_motionPhase       = MotionPhase::EnsureTracking;
+  /// Set by the Async entry points so the shared handler does not block.
+  bool                   m_synchronousMotion = true;
+  /// issueMotion / ensure-tracking failed. Meaningful after waitForMotion().
+  bool                   m_motionFailed      = false;
+  /// millis() deadline while a PulseGuide should still report IsPulseGuiding.
+  unsigned long          m_pulseGuideUntilMs = 0;
   double                 m_motionA           = 0;   // raHours  | azDeg
   double                 m_motionB           = 0;   // decDeg   | altDeg
   bool                   m_motionRetriedBusy = false;
