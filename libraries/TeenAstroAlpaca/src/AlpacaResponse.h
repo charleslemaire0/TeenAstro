@@ -65,10 +65,16 @@ struct AlpacaRequest
   /// headers / form fields populate clientId + clientTransactionId.
   void decode(AlpacaWebServer& server);
 
-  /// This server's only device: type "telescope" (case-sensitive) number 0.
+  /// Telescope device 0. The type is case-sensitive.
   bool isTelescope() const
   {
     return urlOk && deviceType == "telescope" && deviceNumber == 0;
+  }
+
+  /// Focuser device 0. The type is case-sensitive.
+  bool isFocuser() const
+  {
+    return urlOk && deviceType == "focuser" && deviceNumber == 0;
   }
 
   /// Exact-case form/query lookup. PUT parameter names are case-sensitive.

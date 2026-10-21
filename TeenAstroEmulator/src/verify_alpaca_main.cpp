@@ -42,6 +42,7 @@
 // Real TeenAstroAlpaca library (the thing we want to verify)
 #include "TeenAstroAlpaca.h"
 #include "AlpacaTelescope.h"
+#include "AlpacaFocuser.h"
 #include "AlpacaResponse.h"
 
 // Win32 TCP transport (already used by TeenAstroAscomNative)
@@ -59,6 +60,7 @@ WiFiClass WiFi;          // referenced by TeenAstroAlpaca::uniqueId()
 
 static int g_passed = 0;
 static int g_failed = 0;
+static AlpacaFocuser* g_focuser = nullptr;
 
 static bool body_contains(const String& body, const char* needle)
 {
@@ -95,17 +97,18 @@ static void run_test(ESP8266WebServer& srv,
 
   // The device refreshes mount caches before the handler runs.
   tel.prepareForRequest();
+  if (g_focuser && uri.indexOf("/focuser/") >= 0)
+    g_focuser->prepareForRequest();
 
-  // Same gate as TeenAstroAlpaca::handleApi: a bad device URL is HTTP 400
-  // before the member handler runs.
-  if (!req.isTelescope())
+  // Same gate as TeenAstroAlpaca::handleApi.
+  if (req.isTelescope())
+    tel.dispatch(srv, req);
+  else if (req.isFocuser() && g_focuser)
+    g_focuser->dispatch(srv, req);
+  else
   {
     sendAlpacaResponse(srv, req, 1, AE_NOT_IMPLEMENTED, "Device not present",
                        String(), 400);
-  }
-  else
-  {
-    tel.dispatch(srv, req);
   }
 
   bool envelope_ok = srv.sent && srv.last_code == expect_http
@@ -202,6 +205,9 @@ int main(int argc, char** argv)
 
   AlpacaTelescope telescope;
   telescope.begin(client, mountStatus, alpaca);
+  AlpacaFocuser focuser;
+  focuser.begin(client, alpaca);
+  g_focuser = &focuser;
 
   ESP8266WebServer srv(11111);
 
@@ -641,6 +647,68 @@ int main(int argc, char** argv)
   EXPECT(abortMs < 1000,
          (String("abortslew is non-blocking (") + (int)abortMs + " ms)").c_str(), String(""));
   EXPECT(abortStopped, "AbortSlew cancels queued slew (Slewing clears)", srv.last_body);
+
+  // -------------------------------------------------------------------------
+  //  Phase 10 — focuser (IFocuserV3) on the same Alpaca server
+  // -------------------------------------------------------------------------
+  std::printf("\n==> Phase 10: focuser\n");
+
+  run_test(srv, telescope, "GET focuser name",
+           "/api/v1/focuser/0/name", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","200"}},
+           "TeenAstro Focuser");
+  run_test(srv, telescope, "GET focuser interfaceversion 3",
+           "/api/v1/focuser/0/interfaceversion", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","201"}},
+           "\"Value\":3");
+  run_test(srv, telescope, "GET focuser absolute",
+           "/api/v1/focuser/0/absolute", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","202"}},
+           "\"Value\":true");
+  run_test(srv, telescope, "GET focuser position before connect → NotConnected",
+           "/api/v1/focuser/0/position", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","203"}},
+           "\"ErrorNumber\":1031");
+  run_test(srv, telescope, "PUT focuser connected=true",
+           "/api/v1/focuser/0/connected", HTTP_PUT,
+           {{"Connected","True"},{"ClientID","1"},{"ClientTransactionID","204"}},
+           "\"ErrorNumber\":0");
+  run_test(srv, telescope, "GET focuser position",
+           "/api/v1/focuser/0/position", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","205"}},
+           "\"ErrorNumber\":0");
+  run_test(srv, telescope, "GET focuser maxstep",
+           "/api/v1/focuser/0/maxstep", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","206"}},
+           "\"ErrorNumber\":0");
+  run_test(srv, telescope, "GET focuser tempcompavailable",
+           "/api/v1/focuser/0/tempcompavailable", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","207"}},
+           "\"Value\":false");
+  run_test(srv, telescope, "PUT focuser move junk → HTTP 400",
+           "/api/v1/focuser/0/move", HTTP_PUT,
+           {{"Position","abc"},{"ClientID","1"},{"ClientTransactionID","208"}},
+           "\"ErrorNumber\":1025", 400);
+  run_test(srv, telescope, "PUT focuser move 100",
+           "/api/v1/focuser/0/move", HTTP_PUT,
+           {{"Position","100"},{"ClientID","1"},{"ClientTransactionID","209"}},
+           "\"ErrorNumber\":0");
+  run_test(srv, telescope, "GET focuser ismoving after move",
+           "/api/v1/focuser/0/ismoving", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","210"}},
+           "\"Value\":true");
+  run_test(srv, telescope, "PUT focuser halt",
+           "/api/v1/focuser/0/halt", HTTP_PUT,
+           {{"ClientID","1"},{"ClientTransactionID","211"}},
+           "\"ErrorNumber\":0");
+  run_test(srv, telescope, "GET focuser ismoving after halt",
+           "/api/v1/focuser/0/ismoving", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","212"}},
+           "\"Value\":false");
+  run_test(srv, telescope, "GET FOCUSER wrong case → HTTP 400",
+           "/api/v1/FOCUSER/0/name", HTTP_GET,
+           {{"ClientID","1"},{"ClientTransactionID","213"}},
+           "\"ErrorNumber\":1024", 400);
 
   // -------------------------------------------------------------------------
   //  Summary

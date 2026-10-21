@@ -7,9 +7,9 @@
  * Implements the ASCOM Alpaca REST/JSON interface as defined in
  *   https://ascom-standards.org/api/
  *
- * The library exposes a Telescope device (device number 0) backed by the
- * existing LX200Client + TeenAstroMountStatus, plus the Alpaca management
- * API and UDP discovery on the standard ports.
+ * The library exposes a Telescope and, when a focuser answers `:F?#`, a
+ * Focuser on the same HTTP port. Both are backed by LX200Client, plus the
+ * Alpaca management API and UDP discovery on the standard ports.
  *
  * It runs on its own ESP8266WebServer / WebServer instance bound to the
  * Alpaca port (default 11111) so it does not interfere with the existing
@@ -49,6 +49,7 @@
 
 #include "AlpacaResponse.h"
 #include "AlpacaTelescope.h"
+#include "AlpacaFocuser.h"
 
 // Alpaca standard ports (https://ascom-standards.org/api/)
 #ifndef ALPACA_DEFAULT_API_PORT
@@ -91,8 +92,8 @@ public:
 
   /// Globally unique device id used in the management /configureddevices
   /// response.  Derived from the WiFi MAC so it is stable across reboots
-  /// for a given physical board.
-  const char* uniqueId();
+  /// for a given physical board. `role` is "Tel0" or "Foc0".
+  const char* uniqueId(const char* role = "Tel0");
 
 private:
   static void s_handleRoot();
@@ -111,8 +112,10 @@ private:
   WebServerT*           m_server = nullptr;
   WiFiUDP               m_discoveryUdp;
   AlpacaTelescope       m_telescope;
+  AlpacaFocuser         m_focuser;
   uint16_t              m_apiPort = 0;
   uint32_t              m_serverTransactionId = 0;
   bool                  m_discoveryStarted = false;
   char                  m_uniqueId[33] = {0};
+  char                  m_focuserUniqueId[33] = {0};
 };

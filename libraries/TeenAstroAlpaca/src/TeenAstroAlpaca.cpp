@@ -16,19 +16,19 @@ TeenAstroAlpaca* TeenAstroAlpaca::s_self = nullptr;
 
 TeenAstroAlpaca::TeenAstroAlpaca() = default;
 
-const char* TeenAstroAlpaca::uniqueId()
+const char* TeenAstroAlpaca::uniqueId(const char* role)
 {
-  if (m_uniqueId[0]) return m_uniqueId;
-  // Build a stable 32-hex-char id from the WiFi MAC.
+  char* dest = (role && role[0] == 'F') ? m_focuserUniqueId : m_uniqueId;
+  if (dest[0]) return dest;
   uint8_t mac[6] = {0};
   WiFi.macAddress(mac);
-  // Repeat the MAC twice to fill 12 bytes / 24 hex chars + 8-char fixed
-  // namespace nibble — keeps the string opaque but stable.
-  snprintf(m_uniqueId, sizeof(m_uniqueId),
-           "TA%02X%02X%02X%02X%02X%02X-Tel0-%02X%02X%02X",
+  const char* tag = (dest == m_focuserUniqueId) ? "Foc0" : "Tel0";
+  snprintf(dest, 33,
+           "TA%02X%02X%02X%02X%02X%02X-%s-%02X%02X%02X",
            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
+           tag,
            mac[0], mac[1], mac[2]);
-  return m_uniqueId;
+  return dest;
 }
 
 void TeenAstroAlpaca::setup(LX200Client& client,
@@ -38,6 +38,7 @@ void TeenAstroAlpaca::setup(LX200Client& client,
   s_self = this;
   m_apiPort = apiPort;
   m_telescope.begin(client, mountStatus, *this);
+  m_focuser.begin(client, *this);
 
   if (m_server)
   {
@@ -89,6 +90,7 @@ void TeenAstroAlpaca::update()
     if (m_server)
     {
       m_telescope.prepareForRequest();
+      m_focuser.prepareForRequest();
       m_telescope.setHandlerActive(true);
       m_server->handleClient();
       m_telescope.setHandlerActive(false);
@@ -165,14 +167,24 @@ void TeenAstroAlpaca::handleManagement()
 
   if (path == F("/management/v1/configureddevices"))
   {
-    String dev = "{";
-    dev += F("\"DeviceName\":");    dev += AlpacaJson::escape(AlpacaTelescope::deviceName());
-    dev += F(",\"DeviceType\":");   dev += AlpacaJson::escape("Telescope");
-    dev += F(",\"DeviceNumber\":0");
-    dev += F(",\"UniqueID\":");     dev += AlpacaJson::escape(uniqueId());
-    dev += '}';
-    String body = "[";
-    body += dev;
+    String body;
+    body.reserve(320);
+    body += '[';
+    body += '{';
+    body += F("\"DeviceName\":");    body += AlpacaJson::escape(AlpacaTelescope::deviceName());
+    body += F(",\"DeviceType\":");   body += AlpacaJson::escape("Telescope");
+    body += F(",\"DeviceNumber\":0");
+    body += F(",\"UniqueID\":");     body += AlpacaJson::escape(uniqueId("Tel0"));
+    body += '}';
+    if (m_focuser.present())
+    {
+      body += F(",{");
+      body += F("\"DeviceName\":");  body += AlpacaJson::escape(AlpacaFocuser::deviceName());
+      body += F(",\"DeviceType\":"); body += AlpacaJson::escape("Focuser");
+      body += F(",\"DeviceNumber\":0");
+      body += F(",\"UniqueID\":");   body += AlpacaJson::escape(uniqueId("Foc0"));
+      body += '}';
+    }
     body += ']';
     sendAlpacaOk(*m_server, req, txId, body);
     return;
@@ -195,7 +207,9 @@ void TeenAstroAlpaca::handleSetup()
   html.reserve(512);
   html += F("<!DOCTYPE html><html><head><title>TeenAstro Alpaca</title></head><body>");
   html += F("<h1>TeenAstro Alpaca server</h1>");
-  html += F("<p>This server exposes the TeenAstro mount as an ASCOM Alpaca telescope.</p>");
+  html += F("<p>This server exposes the TeenAstro mount as an ASCOM Alpaca telescope");
+  html += m_focuser.present() ? F(" and focuser.") : F(".");
+  html += F("</p>");
   html += F("<p>Configure the mount (Wi-Fi, site, motors, limits, focuser, ...) on the main web UI on port 80.</p>");
   html += F("<p>Discovery: UDP/");
   html += String(ALPACA_DISCOVERY_PORT);
@@ -219,6 +233,11 @@ void TeenAstroAlpaca::handleApi()
   if (req.isTelescope())
   {
     m_telescope.dispatch(*m_server, req);
+    return;
+  }
+  if (req.isFocuser())
+  {
+    m_focuser.dispatch(*m_server, req);
     return;
   }
 
