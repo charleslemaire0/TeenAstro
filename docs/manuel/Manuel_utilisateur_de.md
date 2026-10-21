@@ -928,6 +928,18 @@ Die App bietet Übersicht, Planetarium, Goto und Ausrichtung. Der ASCOM-Treiber 
 
 Eine Webseite der Schnittstelle nimmt Netze und Passwort entgegen, ohne den Handkontroller. Die Adresse ist die von **IP-Adresse zeigen**. Die Montierungsseite dort setzt **Mount error** über die Refraktion: siehe Kapitel 7.
 
+### ASCOM Alpaca
+
+Mit einem **Lolin S3 Mini** (ESP32‑S3) im Handkontroller bietet TeenAstro auch **ASCOM Alpaca** über WLAN: REST/JSON auf TCP **11111**, Discovery auf UDP **32227**. NINA, Stellarium, KStars, ASCOM Remote und andere Alpaca-Clients finden die Montierung im LAN ohne den Windows-COM-Treiber und ohne Port 9999.
+
+**Voraussetzungen:**
+
+1. Handkontroller mit Lolin S3 Mini (nicht Wemos D1 Mini / ESP8266 — dort fehlt der Platz für Alpaca). Tausch: Gruppen-Wiki [Upgrade SHC to ESP32‑S3](https://groups.io/g/TeenAstro/wiki/43152).
+2. S3-Firmware (`TeenAstroSHC_*_S3_German.bin`, oder English / French).
+3. WLAN ein, Computer oder Telefon im selben Netz, Adresse von **IP-Adresse zeigen** (oder **192.168.0.1** im Access-Point-Modus).
+
+Die Weboberfläche bleibt auf Port **80**; der klassische ASCOM-Treiber und die TCP-Brücke auf **9999** bleiben nutzbar. Details: [ASCOM Alpaca](https://groups.io/g/TeenAstro/wiki/43151) im Gruppen-Wiki.
+
 ### SkySafari
 
 Nötig ist SkySafari Plus oder Pro, die Ausgabe, die ein Teleskop steuert. Telefon und Handkontroller müssen im selben Netz sein.

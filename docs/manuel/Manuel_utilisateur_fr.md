@@ -926,6 +926,18 @@ L'application reprend le tableau de bord, le planétarium, le goto et l'aligneme
 
 Une page web de l'interface permet de saisir les réseaux et le mot de passe sans passer par la raquette. L'adresse est celle affichée par **Montre IP**. La page monture de ce site place **Mount error** au-dessus de la réfraction : voir le chapitre 7.
 
+### ASCOM Alpaca
+
+Avec une **Lolin S3 Mini** (ESP32‑S3) dans la raquette, TeenAstro sert aussi **ASCOM Alpaca** en Wi‑Fi : REST/JSON sur TCP **11111**, découverte sur UDP **32227**. NINA, Stellarium, KStars, ASCOM Remote et les autres clients Alpaca trouvent la monture sur le réseau local sans le pilote COM Windows ni le port 9999.
+
+**Il faut :**
+
+1. Une raquette équipée d'une Lolin S3 Mini (pas le Wemos D1 Mini / ESP8266 — cette image n'a pas la place pour Alpaca). Échange : wiki du groupe [Upgrade SHC to ESP32‑S3](https://groups.io/g/TeenAstro/wiki/43152).
+2. Le firmware S3 (`TeenAstroSHC_*_S3_French.bin`, ou English / German).
+3. Le Wi‑Fi allumé, ordinateur ou téléphone sur le même réseau, adresse de **Montre IP** (ou **192.168.0.1** en point d'accès).
+
+L'interface web reste sur le port **80** ; le pilote ASCOM classique et le pont TCP sur **9999** restent disponibles. Détails : [ASCOM Alpaca](https://groups.io/g/TeenAstro/wiki/43151) sur le wiki du groupe.
+
 ### SkySafari
 
 Il faut SkySafari Plus ou Pro, la version qui commande un télescope. Le téléphone et la raquette doivent être sur le même réseau.

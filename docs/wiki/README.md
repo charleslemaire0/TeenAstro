@@ -2,12 +2,20 @@
 
 Markdown sources and screenshots for the TeenAstro groups.io wiki.
 
-## Webserver / Wi‑Fi
+## Webserver / Wi‑Fi / Alpaca
 
 | Draft | Wiki |
 |-------|------|
 | [Webserver.md](Webserver.md) | https://groups.io/g/TeenAstro/wiki/8105 |
 | [WiFi_Interface.md](WiFi_Interface.md) | https://groups.io/g/TeenAstro/wiki/14592 |
+| [ASCOM_Alpaca.md](ASCOM_Alpaca.md) | https://groups.io/g/TeenAstro/wiki/43151 |
+| [Upgrade_SHC_to_ESP32S3.md](Upgrade_SHC_to_ESP32S3.md) | https://groups.io/g/TeenAstro/wiki/43152 |
+
+Republish Alpaca + S3 upgrade + Home logo with `IOGROUP` set:
+
+```text
+py -3 docs/wiki/_publish_alpaca_and_s3.py
+```
 
 Capture from a live unit (default `http://192.168.1.18`, Wi‑Fi page password `password`):
 
