@@ -46,7 +46,7 @@ bool taTryGxrxMult(LX200Client& cli, long* multOut)
 }
 
 /// ASCOM axis rates apply for sidereal-class tracking. TeenAstro reports
-/// `:SXRa#`/`:SXRd#` offsets as SID_TARGET while still under drive index 0 (Sidereal).
+/// `:SXRr#`/`:SXRd#` offsets as SID_TARGET while the drive is still sidereal.
 inline bool taAxisRatesSiderealClass(TeenAstroMountStatus& st)
 {
   switch (st.getSiderealMode())
@@ -56,6 +56,25 @@ inline bool taAxisRatesSiderealClass(TeenAstroMountStatus& st)
       return true;
     default:
       return false;
+  }
+}
+
+/// ASCOM DriveRates: 0=Sidereal, 1=Lunar, 2=Solar, 3=King.
+/// Firmware SID_Mode: 0=STAR, 1=SUN, 2=MOON, 3=TARGET.
+/// TARGET is an RA/Dec offset on the sidereal drive, so it stays index 0.
+inline int taAscomDriveRateFromMode(MountState::SiderealMode mode)
+{
+  switch (mode)
+  {
+    case MountState::SID_STAR:
+    case MountState::SID_TARGET:
+      return 0;
+    case MountState::SID_MOON:
+      return 1;
+    case MountState::SID_SUN:
+      return 2;
+    default:
+      return -1;
   }
 }
 
@@ -158,12 +177,18 @@ void AlpacaTelescope::prepareForRequest()
     m_attachSyncPending = false;
     syncUtcToHost();
     if (m_client) m_client->setTrackRateSidereal();
+    noteTrackingRateCommanded(0);
   }
 
   // Not forced: shares the host loop's UPDATERATE timer, so this adds no
   // serial traffic and only acts if the host loop has not polled recently.
+  // A drive-rate change is the exception: Conform reads it back in ~30 ms,
+  // before that timer elapses, so poll until :GXAS# agrees.
   unsigned long now = millis();
-  m_status->updateAllState();
+  if (m_trackingRateNeedsConfirm)
+    confirmTrackingRate();
+  else
+    m_status->updateAllState();
   // Config reads inside a handler get no reply, so refresh :GXCS# here.
   m_status->updateAllConfig();
 
@@ -396,6 +421,7 @@ void AlpacaTelescope::tick()
           return;
         }
         (void)m_client->setTrackRateSidereal();
+        noteTrackingRateCommanded(0);
         (void)m_client->enableTracking(true);
         m_motionStepDueMs = now + 40;   // re-poll shortly
         return;
@@ -1132,18 +1158,80 @@ void AlpacaTelescope::putTracking(AlpacaWebServer& s, const AlpacaRequest& r)
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
+void AlpacaTelescope::noteTrackingRateCommanded(int ascomRate)
+{
+  m_trackingRate = ascomRate;
+  m_trackingRateNeedsConfirm = true;
+  m_trackingRateConfirmSinceMs = millis();
+  m_trackingRateConfirmPollMs = 0;
+  // :TQ# / :TL# / :TS# replace any RA/Dec offset. Drop the round-trip cache
+  // so a stale non-zero RightAscensionRate cannot leak into the new drive.
+  m_raRate = 0;
+  m_decRate = 0;
+  m_raRateCacheActive = false;
+  m_decRateCacheActive = false;
+}
+
+void AlpacaTelescope::confirmTrackingRate()
+{
+  if (!m_status || !m_trackingRateNeedsConfirm) return;
+  unsigned long nowMs = millis();
+  bool due = (m_trackingRateConfirmPollMs == 0)
+             || (long)(nowMs - m_trackingRateConfirmPollMs) >= 40;
+  if (!due) return;
+  m_trackingRateConfirmPollMs = nowMs;
+  m_status->updateAllState(true);
+  if (!m_status->hasInfoMount()) return;
+  int mapped = taAscomDriveRateFromMode(m_status->getSiderealMode());
+  if (mapped == m_trackingRate)
+  {
+    m_trackingRateNeedsConfirm = false;
+    return;
+  }
+  // The command is on the wire; :GXAS# can still show the previous drive
+  // for a short time. Keep reporting the commanded rate until then.
+  if ((long)(nowMs - m_trackingRateConfirmSinceMs) >= 500)
+  {
+    if (mapped >= 0)
+      m_trackingRate = mapped;
+    m_trackingRateNeedsConfirm = false;
+  }
+}
+
+bool AlpacaTelescope::trackingOffsetsAllowed() const
+{
+  if (!m_status) return false;
+  // While :GXAS# is catching up, the cached mode is still the previous drive.
+  if (m_trackingRateNeedsConfirm)
+    return m_trackingRate == 0;
+  return taAxisRatesSiderealClass(*m_status);
+}
+
+double AlpacaTelescope::currentTrackingOffset(bool ra) const
+{
+  if (!trackingOffsetsAllowed())
+    return 0.0;
+  const bool cacheActive = ra ? m_raRateCacheActive : m_decRateCacheActive;
+  const unsigned long cacheStart = ra ? m_raRateCacheStartMs : m_decRateCacheStartMs;
+  const double cached = ra ? m_raRate : m_decRate;
+  if (m_trackingRateNeedsConfirm)
+    return cached;
+  if (cacheActive && m_status
+      && (millis() - cacheStart) <= kRateRoundTripCacheMs)
+    return cached;
+  if (!m_status) return cached;
+  return ra ? m_status->getTrackingRateRa() : m_status->getTrackingRateDec();
+}
+
 void AlpacaTelescope::getTrackingRate(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
-  m_status->updateAllState(true);
-  // ASCOM DriveRates order (Alpaca indices): 0=Sidereal, 1=Solar, 2=Lunar, 3=King
   int rate = m_trackingRate;
-  switch (m_status->getSiderealMode())
+  if (!m_trackingRateNeedsConfirm && m_status->hasInfoMount())
   {
-    case MountState::SID_STAR: rate = 0; break;
-    case MountState::SID_SUN:  rate = 1; break;
-    case MountState::SID_MOON: rate = 2; break;
-    default: break;
+    int mapped = taAscomDriveRateFromMode(m_status->getSiderealMode());
+    if (mapped >= 0)
+      rate = mapped;
   }
   m_trackingRate = rate;
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
@@ -1156,11 +1244,12 @@ void AlpacaTelescope::putTrackingRate(AlpacaWebServer& s, const AlpacaRequest& r
   String v = AlpacaRequest::arg(s, "TrackingRate");
   int rate = v.toInt();
   LX200RETURN lx = LX200_VALUESET;
+  // ASCOM DriveRates: 0=Sidereal, 1=Lunar, 2=Solar, 3=King.
   switch (rate)
   {
     case 0: lx = m_client->setTrackRateSidereal(); break;
-    case 1: lx = m_client->setTrackRateSolar();    break;
-    case 2: lx = m_client->setTrackRateLunar();    break;
+    case 1: lx = m_client->setTrackRateLunar();    break;
+    case 2: lx = m_client->setTrackRateSolar();    break;
     case 3:
       sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
                       AE_INVALID_VALUE,
@@ -1177,17 +1266,14 @@ void AlpacaTelescope::putTrackingRate(AlpacaWebServer& s, const AlpacaRequest& r
                     AE_DRIVER, "TrackingRate refused by mount");
     return;
   }
-  m_trackingRate = rate;
-  m_raRateCacheActive = false;
-  m_decRateCacheActive = false;
-  m_status->updateAllState(true);
+  noteTrackingRateCommanded(rate);
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
 void AlpacaTelescope::getTrackingRates(AlpacaWebServer& s, const AlpacaRequest& r)
 {
   if (!requireConnected(s, r)) return;
-  // Sidereal, Lunar, Solar — King omitted (mapped to sidereal on the mount).
+  // ASCOM DriveRates 0=Sidereal, 1=Lunar, 2=Solar. King is rejected on write.
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("[0,1,2]"));
 }
 
@@ -1195,15 +1281,8 @@ void AlpacaTelescope::getRightAscensionRate(AlpacaWebServer& s, const AlpacaRequ
 {
   if (!requireConnected(s, r)) return;
   m_status->updateAllState(true);
-  double rate = m_raRate;
-  if (!(m_raRateCacheActive
-        && (millis() - m_raRateCacheStartMs) <= kRateRoundTripCacheMs))
-  {
-    if (taAxisRatesSiderealClass(*m_status))
-      rate = m_status->getTrackingRateRa();
-  }
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
-               AlpacaJson::doubleStr(rate));
+               AlpacaJson::doubleStr(currentTrackingOffset(true)));
 }
 
 void AlpacaTelescope::putRightAscensionRate(AlpacaWebServer& s, const AlpacaRequest& r)
@@ -1216,8 +1295,9 @@ void AlpacaTelescope::putRightAscensionRate(AlpacaWebServer& s, const AlpacaRequ
                     AE_NOT_IMPLEMENTED, "RightAscensionRate is not supported without motors");
     return;
   }
-  // ASCOM: invalid when drive is Lunar/Solar; SID_TARGET is TeenAstro's offset-tracking mode.
-  if (!taAxisRatesSiderealClass(*m_status))
+  // ASCOM ITelescopeV4: offsets are legal only while TrackingRate is Sidereal.
+  // SID_TARGET is TeenAstro's offset-tracking mode and stays in that class.
+  if (!trackingOffsetsAllowed())
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
                     AE_INVALID_OPERATION,
@@ -1241,15 +1321,8 @@ void AlpacaTelescope::getDeclinationRate(AlpacaWebServer& s, const AlpacaRequest
 {
   if (!requireConnected(s, r)) return;
   m_status->updateAllState(true);
-  double rate = m_decRate;
-  if (!(m_decRateCacheActive
-        && (millis() - m_decRateCacheStartMs) <= kRateRoundTripCacheMs))
-  {
-    if (taAxisRatesSiderealClass(*m_status))
-      rate = m_status->getTrackingRateDec();
-  }
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
-               AlpacaJson::doubleStr(rate));
+               AlpacaJson::doubleStr(currentTrackingOffset(false)));
 }
 
 void AlpacaTelescope::putDeclinationRate(AlpacaWebServer& s, const AlpacaRequest& r)
@@ -1262,7 +1335,7 @@ void AlpacaTelescope::putDeclinationRate(AlpacaWebServer& s, const AlpacaRequest
                     AE_NOT_IMPLEMENTED, "DeclinationRate is not supported without motors");
     return;
   }
-  if (!taAxisRatesSiderealClass(*m_status))
+  if (!trackingOffsetsAllowed())
   {
     sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
                     AE_INVALID_OPERATION,
@@ -1618,8 +1691,7 @@ void AlpacaTelescope::getCanSetRightAscensionRate(AlpacaWebServer& s, const Alpa
 {
   if (!requireConnected(s, r)) return;
   m_status->updateMount(true);
-  bool ok = m_status->motorsEnableCached()
-            && (m_status->getSiderealMode() == MountState::SID_STAR);
+  bool ok = m_status->motorsEnableCached() && trackingOffsetsAllowed();
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), AlpacaJson::boolStr(ok));
 }
 

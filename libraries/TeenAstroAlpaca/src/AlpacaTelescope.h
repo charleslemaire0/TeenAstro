@@ -182,6 +182,13 @@ private:
   void syncUtcToHost();
   /// Shared attach behaviour for PUT connected=true and PUT connect (Alpaca Platform 7).
   void noteAlpacaAttached(bool wasAlreadySoftConnected);
+  /// Remember a drive-rate command until :GXAS# confirms it. Handlers cannot
+  /// read GXAS, and Conform reads TrackingRate back within a few tens of ms.
+  void noteTrackingRateCommanded(int ascomRate);
+  void confirmTrackingRate();
+  /// RA/Dec offsets are legal only on the sidereal drive (ITelescopeV4).
+  bool trackingOffsetsAllowed() const;
+  double currentTrackingOffset(bool ra) const;
 
   // -------- Non-blocking motion state machine --------
   // Replaces the former blocking settle/ensure-tracking poll loops.  A slew /
@@ -260,7 +267,10 @@ private:
   unsigned long          m_decRateCacheStartMs = 0;
   bool                   m_raRateCacheActive   = false;
   bool                   m_decRateCacheActive  = false;
-  int                    m_trackingRate  = 0;   // Alpaca DriveRates: 0=Sidereal, 1=Solar, 2=Lunar, 3=King
+  int                    m_trackingRate  = 0;   // ASCOM DriveRates: 0=Sidereal, 1=Lunar, 2=Solar, 3=King
+  bool                   m_trackingRateNeedsConfirm = false;
+  unsigned long          m_trackingRateConfirmSinceMs = 0;
+  unsigned long          m_trackingRateConfirmPollMs = 0;
 
   // ---- Soft state matching TelescopeHardware.cs shadows ----
   bool                   m_moveAxisActive[2] = { false, false };
