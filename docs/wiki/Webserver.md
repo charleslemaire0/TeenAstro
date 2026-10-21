@@ -22,7 +22,7 @@ Latitude, longitude, elevation and time / time zone.
 
 ## Mount
 
-Mount type, motors and encoders. **Mount error** sits above Refraction: **Off** / **On** (“Hold CH and NP”), then CH and NP in degrees (±5, Wallace’s signs). Same meaning as on the hand controller.
+Mount type, motors and encoders. **Mount error** sits above Refraction: **Off** / **On** (“Hold CH and NP”), then CH and NP in degrees (±5, Wallace’s signs). Same meaning as on the hand controller. After **Save** on a **4 Stars** or **3+3 Stars** alignment, these CH and NP fields are filled from the fit (they are not left at 0.000°).
 
 ## Motors
 
