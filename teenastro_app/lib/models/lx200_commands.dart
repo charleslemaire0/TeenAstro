@@ -136,6 +136,14 @@ class LX200 {
   static const alignStartMechanicalPole = ':A0,m#';
   /// @deprecated Use [alignStartMechanicalPole] (same wire string).
   static const alignStartThreeStars = ':A0,m#';
+  /// Rigid session of [stars] stars (`:A0,r<n>#`, n = 3…9). 4 measures NP;
+  /// 6 is the 3+3 pier-side split that can also measure CH.
+  static String alignStartRigid(int stars) {
+    if (stars < 3 || stars > 9) {
+      throw ArgumentError.value(stars, 'stars', 'rigid session is 3..9 stars');
+    }
+    return ':A0,r$stars#';
+  }
   static const alignAcceptStar = ':A*#';
   static const alignAcceptStarMechanicalPole = ':A*,m#';
   static const alignPolarFinalize = ':AP#';
@@ -145,7 +153,36 @@ class LX200 {
   static const alignAbort      = ':AB#';
   static const getAlignError   = ':AE#';
   /// Add alignment star n (n=1,2). For n=3 sends [alignPolarFinalize] (:AP#) on TeenAstro.
+  /// Rigid sessions use [alignSelectStar], which sends `:A3#`…`:A9#`.
   static String alignAddStar(int n) => n == 3 ? alignPolarFinalize : ':A$n#';
+  /// Accept star n of the current session (`:A1#`…`:A9#`).
+  static String alignSelectStar(int n) {
+    if (n < 1 || n > 9) {
+      throw ArgumentError.value(n, 'n', 'alignment star is 1..9');
+    }
+    return ':A$n#';
+  }
+  /// Rigid head, Wallace's signs, arcseconds.
+  static const getAlignHeadCone = ':GXAc#';
+  static const getAlignHeadPerp = ':GXAp#';
+  static const getAlignHeadIndex = ':GXAi#';
+  /// RMS of the last rigid fit, arcseconds.
+  static const getAlignRigidRms = ':GXAr#';
+  /// Fitted head terms as `CPI`, with `-` for a term the stars could not separate.
+  static const getAlignFittedTerms = ':GXAf#';
+  /// Stars on each pier side, `in,out`.
+  static const getAlignPierSides = ':GXAb#';
+  /// Mount error: hold stored CH and NP during a 2-star alignment.
+  static const getKnownGeomUse = ':GXKk#';
+  static String setKnownGeomUse(bool on) => on ? ':SXKk,1#' : ':SXKk,0#';
+  /// Stored CH / NP, arcseconds on the wire. [setKnownConeDeg] / [setKnownPerpDeg]
+  /// take degrees (±5), Wallace's signs.
+  static const getKnownCone = ':GXKc#';
+  static const getKnownPerp = ':GXKp#';
+  static String setKnownConeDeg(double deg) =>
+      ':SXKc,${(deg * 3600).toStringAsFixed(3)}#';
+  static String setKnownPerpDeg(double deg) =>
+      ':SXKp,${(deg * 3600).toStringAsFixed(3)}#';
   /// Store alignment star name on the mount (so the SHC can display it).
   static String setAlignStarName(String name) => ':SXAs,$name#';
   /// Read alignment star name from the mount.

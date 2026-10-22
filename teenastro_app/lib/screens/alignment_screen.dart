@@ -12,21 +12,126 @@ import '../providers/planetarium_settings_provider.dart';
 import '../theme.dart';
 import '../widgets/sky_map.dart';
 
-enum AlignStep {
-  idle,
-  selectStar1,
-  confirmStar1,
-  slewingStar1,
-  recenterStar1,
-  selectStar2,
-  confirmStar2,
-  slewingStar2,
-  recenterStar2,
-  selectStar3,
-  confirmStar3,
-  slewingStar3,
-  recenterStar3,
-  done,
+/// Alignment session offered by the hand controller.
+enum AlignKind { two, four, six, mechanical }
+
+enum AlignUi { idle, select, confirm, slewing, recenter, bolt, done }
+
+/// Remembers the session across navigation. GXAS does not carry the session kind.
+class AlignSessionMemory {
+  static AlignKind? kind;
+}
+
+int alignStarCount(AlignKind kind) => switch (kind) {
+      AlignKind.two => 2,
+      AlignKind.four => 4,
+      AlignKind.six => 6,
+      AlignKind.mechanical => 2,
+    };
+
+String alignKindLabel(AlignKind kind) => switch (kind) {
+      AlignKind.two => '2 Stars',
+      AlignKind.four => '4 Stars',
+      AlignKind.six => '3+3 Stars',
+      AlignKind.mechanical => '2 Stars Mech.',
+    };
+
+String alignKindBlurb(AlignKind kind) => switch (kind) {
+      AlignKind.two =>
+        'Measures the pole. Mount error, when on, holds CH and NP.',
+      AlignKind.four => 'Four stars on one pier side. Measures NP.',
+      AlignKind.six =>
+        'Three stars, flip, then three more. Measures CH and NP.',
+      AlignKind.mechanical => 'Two stars, then adjust the pole bolts.',
+    };
+
+String alignStartCommand(AlignKind kind) => switch (kind) {
+      AlignKind.two => LX200.alignStart,
+      AlignKind.four => LX200.alignStartRigid(4),
+      AlignKind.six => LX200.alignStartRigid(6),
+      AlignKind.mechanical => LX200.alignStartMechanicalPole,
+    };
+
+bool alignKindOnAltAz(AlignKind kind) =>
+    kind == AlignKind.two || kind == AlignKind.four;
+
+String formatSignedArcsec(double arcsec) {
+  final n = arcsec.round();
+  final sign = n > 0 ? '+' : '';
+  return '$sign$n"';
+}
+
+String formatRigidRms(double arcsec) {
+  if (arcsec >= 60) return "${(arcsec / 60).toStringAsFixed(1)}'";
+  return '${arcsec.round()}"';
+}
+
+/// Head geometry the way the hand controller prints it. Empty when the fit
+/// separated none of CH, NP, and ID.
+String formatRigidHead({
+  required String mask,
+  double? ch,
+  double? np,
+  double? id,
+  int? sideIn,
+  int? sideOut,
+}) {
+  if (!mask.contains('C') && !mask.contains('P') && !mask.contains('I')) {
+    return '';
+  }
+  String term(String letter, String label, double? arcsec) {
+    if (mask.contains(letter)) {
+      if (arcsec == null) return '$label ?';
+      return '$label ${formatSignedArcsec(arcsec)}';
+    }
+    if (letter == 'C' &&
+        sideIn != null &&
+        sideOut != null &&
+        (sideIn < 3 || sideOut < 3)) {
+      return 'CH n/a $sideIn+$sideOut';
+    }
+    return '$label n/a';
+  }
+
+  return '${term('C', 'CH', ch)}\n${term('P', 'NP', np)}\n${term('I', 'ID', id)}';
+}
+
+String formatAlignResult({
+  double? rmsArcsec,
+  String? twoStarError,
+  String mask = '',
+  double? ch,
+  double? np,
+  double? id,
+  int? sideIn,
+  int? sideOut,
+  String? ma,
+  String? me,
+}) {
+  final lines = <String>[];
+  if (rmsArcsec != null && rmsArcsec > 0) {
+    lines.add('RMS ${formatRigidRms(rmsArcsec)}');
+  } else if (twoStarError != null && twoStarError.isNotEmpty) {
+    lines.add('Error: $twoStarError');
+  }
+  final head = formatRigidHead(
+    mask: mask,
+    ch: ch,
+    np: np,
+    id: id,
+    sideIn: sideIn,
+    sideOut: sideOut,
+  );
+  if (head.isNotEmpty) lines.add(head);
+  if (rmsArcsec != null &&
+      rmsArcsec > 0 &&
+      ma != null &&
+      ma.isNotEmpty &&
+      me != null &&
+      me.isNotEmpty) {
+    lines.add('MA $ma   ME $me');
+  }
+  return lines.join('\n');
 }
 
 class AlignmentScreen extends ConsumerStatefulWidget {
@@ -36,143 +141,228 @@ class AlignmentScreen extends ConsumerStatefulWidget {
 }
 
 class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
-  AlignStep _step = AlignStep.idle;
-  int _numStars = 2; // 2 or 3 (OnStepX-style multi-star)
-  CatalogEntry? _star1;
-  CatalogEntry? _star2;
-  CatalogEntry? _star3;
+  AlignKind _kind = AlignKind.two;
+  AlignUi _ui = AlignUi.idle;
+  int _star = 1;
+  List<CatalogEntry?> _stars = [];
   String _error = '';
+  String _note = '';
   String _alignResult = '';
-  bool _wasMechanicalPole = false;
   Timer? _slewPoll;
+  bool _slewReturnsToBolt = false;
+
+  bool _mountErrorOn = false;
+  bool _mountErrorBusy = false;
+  bool _accepting = false;
+  final _chController = TextEditingController();
+  final _npController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _restoreFromMountState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadMountError());
   }
 
   @override
   void dispose() {
     _slewPoll?.cancel();
+    _chController.dispose();
+    _npController.dispose();
     super.dispose();
   }
 
-  /// On entering the screen, check the mount's alignment phase/star number
-  /// (from GXAS) and resume the correct step. Star names are lost when
-  /// navigating away, so show a generic label.
   void _restoreFromMountState() {
     final state = ref.read(mountStateProvider);
-    if (state.alignPhase == AlignPhase.idle) return;
-
-    final starNum = state.alignStarNum;
-    final phase = state.alignPhase;
-
-    AlignStep restored;
-    if (phase == AlignPhase.select) {
-      restored = starNum <= 1
-          ? AlignStep.selectStar1
-          : starNum == 2
-              ? AlignStep.selectStar2
-              : AlignStep.selectStar3;
-    } else if (phase == AlignPhase.slew) {
-      restored = starNum <= 1
-          ? AlignStep.slewingStar1
-          : starNum == 2
-              ? AlignStep.slewingStar2
-              : AlignStep.slewingStar3;
-      _startSlewMonitor(starNum.clamp(1, 3));
-    } else {
-      restored = starNum <= 1
-          ? AlignStep.recenterStar1
-          : starNum == 2
-              ? AlignStep.recenterStar2
-              : AlignStep.recenterStar3;
+    if (!state.alignmentInProgress) {
+      AlignSessionMemory.kind = null;
+      return;
     }
 
-    setState(() {
-      _step = restored;
-      _numStars = starNum <= 2 ? 2 : 3;
-    });
+    final reported = state.alignStarNum.clamp(1, 9);
+    final remembered = AlignSessionMemory.kind;
+    final boltPending = remembered == AlignKind.mechanical &&
+        state.alignPhase == AlignPhase.recenter &&
+        reported >= 3;
+    var kind = remembered;
+    if (kind == null || (!boltPending && reported > alignStarCount(kind))) {
+      kind = reported >= 5
+          ? AlignKind.six
+          : reported >= 3
+              ? AlignKind.four
+              : AlignKind.two;
+    }
+    if (!alignKindOnAltAz(kind) && state.isAltAz) {
+      kind = reported > 2 ? AlignKind.four : AlignKind.two;
+    }
+
+    final bolt = kind == AlignKind.mechanical &&
+        state.alignPhase == AlignPhase.recenter &&
+        reported >= 3;
+    final AlignUi ui;
+    if (bolt) {
+      ui = AlignUi.bolt;
+    } else if (state.alignPhase == AlignPhase.select) {
+      ui = AlignUi.select;
+    } else if (state.alignPhase == AlignPhase.slew) {
+      ui = AlignUi.slewing;
+    } else {
+      ui = AlignUi.recenter;
+    }
+
+    _kind = kind;
+    _ui = ui;
+    _star = bolt ? 2 : reported.clamp(1, alignStarCount(kind));
+    _stars = List<CatalogEntry?>.filled(alignStarCount(kind), null);
+    _note = ui == AlignUi.bolt
+        ? 'Adjust the polar bolts, then slew back onto the star.'
+        : _noteFor(_star, state.isAltAz);
+    AlignSessionMemory.kind = kind;
+    if (ui == AlignUi.slewing) {
+      _slewReturnsToBolt = false;
+      _startSlewMonitor();
+    }
   }
 
   LX200TcpClient get _client => ref.read(lx200ClientProvider);
 
-  // ── Alignment flow ──────────────────────────────────────
+  AlignKind _effectiveKind(MountState state) {
+    if (state.isAltAz && !alignKindOnAltAz(_kind)) return AlignKind.two;
+    return _kind;
+  }
 
-  Future<void> _startAlignment() async {
-    final sessionStars = ref.read(mountStateProvider).isAltAz ? 2 : _numStars;
-    final startCmd = sessionStars >= 3
-        ? LX200.alignStartMechanicalPole
-        : LX200.alignStart;
-    final ok = await _client.sendBool(startCmd);
-    if (!ok) {
-      setState(() => _error = 'Failed to start alignment ($startCmd)');
+  String _noteFor(int star, bool altAz) {
+    if (altAz) {
+      if (_kind == AlignKind.four && star > 1) {
+        return 'Stay in the same part of the sky.';
+      }
+      return '';
+    }
+    if (_kind == AlignKind.six && star == 4) {
+      return 'Flip to the other pier side, then pick a star there.';
+    }
+    if ((_kind == AlignKind.four || _kind == AlignKind.six) &&
+        star > 1 &&
+        star <= (_kind == AlignKind.six ? 3 : 4)) {
+      return 'Stay on this pier side.';
+    }
+    if (_kind == AlignKind.six && star > 4) {
+      return 'Stay on the pier side you flipped to.';
+    }
+    return '';
+  }
+
+  Future<void> _loadMountError({bool force = false}) async {
+    if (!_client.isConnected) return;
+    final use = await _client.sendCommand(LX200.getKnownGeomUse);
+    final ch = await _client.sendCommand(LX200.getKnownCone);
+    final np = await _client.sendCommand(LX200.getKnownPerp);
+    if (!mounted) return;
+    setState(() {
+      if (use == '0' || use == '1') _mountErrorOn = use == '1';
+      if (force || _chController.text.isEmpty) {
+        final v = double.tryParse(ch ?? '');
+        if (v != null) _chController.text = (v / 3600).toStringAsFixed(3);
+      }
+      if (force || _npController.text.isEmpty) {
+        final v = double.tryParse(np ?? '');
+        if (v != null) _npController.text = (v / 3600).toStringAsFixed(3);
+      }
+    });
+  }
+
+  Future<void> _setMountError(bool on) async {
+    setState(() => _mountErrorBusy = true);
+    final ok = await _client.sendBool(LX200.setKnownGeomUse(on));
+    if (!mounted) return;
+    setState(() {
+      _mountErrorBusy = false;
+      if (ok) {
+        _mountErrorOn = on;
+        _error = '';
+      } else {
+        _error = 'Could not set mount error';
+      }
+    });
+  }
+
+  Future<void> _uploadMountError() async {
+    final ch = double.tryParse(_chController.text.trim().replaceAll(',', '.'));
+    final np = double.tryParse(_npController.text.trim().replaceAll(',', '.'));
+    if (ch == null || np == null || ch.abs() > 5 || np.abs() > 5) {
+      setState(() => _error = 'CH and NP are degrees, from -5 to +5');
       return;
     }
     setState(() {
-      _step = AlignStep.selectStar1;
-      _star1 = null;
-      _star2 = null;
-      _star3 = null;
+      _mountErrorBusy = true;
       _error = '';
+    });
+    final chOk = await _client.sendBool(LX200.setKnownConeDeg(ch));
+    final npOk = await _client.sendBool(LX200.setKnownPerpDeg(np));
+    if (!mounted) return;
+    setState(() => _mountErrorBusy = false);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(chOk && npOk ? 'Mount error stored' : 'Mount error rejected'),
+    ));
+    if (!(chOk && npOk)) {
+      setState(() => _error = 'Mount rejected CH or NP');
+    }
+  }
+
+  Future<void> _startAlignment() async {
+    final kind = _effectiveKind(ref.read(mountStateProvider));
+    final ok = await _client.sendBool(alignStartCommand(kind));
+    if (!ok) {
+      setState(() => _error = 'Failed to start alignment (${alignStartCommand(kind)})');
+      return;
+    }
+    AlignSessionMemory.kind = kind;
+    setState(() {
+      _kind = kind;
+      _ui = AlignUi.select;
+      _star = 1;
+      _stars = List<CatalogEntry?>.filled(alignStarCount(kind), null);
+      _error = '';
+      _note = 'The mount must be at the home position.';
       _alignResult = '';
     });
   }
 
   void _onStarSelected(CatalogEntry star) {
-    if (_step == AlignStep.selectStar1) {
-      setState(() {
-        _star1 = star;
-        _step = AlignStep.confirmStar1;
-        _error = '';
-      });
-    } else if (_step == AlignStep.selectStar2) {
-      setState(() {
-        _star2 = star;
-        _step = AlignStep.confirmStar2;
-        _error = '';
-      });
-    } else if (_step == AlignStep.selectStar3) {
-      setState(() {
-        _star3 = star;
-        _step = AlignStep.confirmStar3;
-        _error = '';
-      });
-    }
-  }
-
-  void _cancelConfirm(int starNum) {
+    if (_ui != AlignUi.select) return;
     setState(() {
-      if (starNum == 1) {
-        _star1 = null;
-        _step = AlignStep.selectStar1;
-      } else if (starNum == 2) {
-        _star2 = null;
-        _step = AlignStep.selectStar2;
-      } else {
-        _star3 = null;
-        _step = AlignStep.selectStar3;
-      }
+      _ensureStars();
+      _stars[_star - 1] = star;
+      _ui = AlignUi.confirm;
       _error = '';
     });
   }
 
-  void _confirmAndSlew(int starNum) {
-    final star = starNum == 1 ? _star1 : starNum == 2 ? _star2 : _star3;
-    if (star != null) _gotoStar(star, starNum);
+  void _ensureStars() {
+    final n = alignStarCount(_kind);
+    if (_stars.length != n) {
+      _stars = List<CatalogEntry?>.filled(n, null);
+    }
   }
 
-  Future<void> _gotoStar(CatalogEntry star, int starNum) async {
+  void _cancelConfirm() {
     setState(() {
-      _step = starNum == 1
-          ? AlignStep.slewingStar1
-          : starNum == 2
-              ? AlignStep.slewingStar2
-              : AlignStep.slewingStar3;
+      _ensureStars();
+      _stars[_star - 1] = null;
+      _ui = AlignUi.select;
+      _error = '';
     });
+  }
 
-    // Tell the mount which star was selected (displayed on SHC)
+  CatalogEntry? get _currentStar {
+    if (_star < 1 || _star > _stars.length) return null;
+    return _stars[_star - 1];
+  }
+
+  Future<void> _gotoStar(CatalogEntry star) async {
+    setState(() => _ui = AlignUi.slewing);
+
     if (star.name.isNotEmpty) {
       await _client.sendBool(LX200.setAlignStarName(star.name));
       await Future.delayed(const Duration(milliseconds: 60));
@@ -180,195 +370,254 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
 
     final jd = julianDate(DateTime.now().toUtc());
     final (raStr, decStr) = j2000ToJNowLx200(star.ra, star.dec, jd);
-    final raOk =
-        await _client.sendBool(LX200.setTargetRa(raStr));
+    final raOk = await _client.sendBool(LX200.setTargetRa(raStr));
     await Future.delayed(const Duration(milliseconds: 60));
-    final decOk =
-        await _client.sendBool(LX200.setTargetDec(decStr.replaceFirst(':', '*')));
+    final decOk = await _client.sendBool(
+        LX200.setTargetDec(decStr.replaceFirst(':', '*')));
     await Future.delayed(const Duration(milliseconds: 60));
 
     if (!raOk || !decOk) {
-      setState(() => _error = 'Failed to set target coordinates');
-      return;
-    }
-
-    final slewResult = await _client.sendCommand(LX200.gotoTarget);
-    if (slewResult != '0' && slewResult != null && slewResult.isNotEmpty) {
-      final errIdx = int.tryParse(slewResult) ?? -1;
-      final cause = errIdx >= 0 && errIdx < GotoError.values.length
-          ? gotoErrorCause(GotoError.values[errIdx])
-          : 'Goto rejected ($slewResult)';
       if (mounted) {
-        setState(() => _error = cause);
+        setState(() {
+          _error = 'Failed to set target coordinates';
+          _ui = AlignUi.confirm;
+        });
       }
       return;
     }
 
-    _startSlewMonitor(starNum);
+    final slewResult = await _client.sendCommand(LX200.gotoTarget);
+    if (slewResult == null || slewResult.isEmpty || slewResult != '0') {
+      final errIdx = int.tryParse(slewResult ?? '') ?? -1;
+      final cause = errIdx >= 0 && errIdx < GotoError.values.length
+          ? gotoErrorCause(GotoError.values[errIdx])
+          : 'Goto rejected (${slewResult ?? 'no reply'})';
+      if (mounted) {
+        setState(() {
+          _error = cause;
+          _ui = AlignUi.confirm;
+        });
+      }
+      return;
+    }
+
+    _slewReturnsToBolt = false;
+    _startSlewMonitor();
   }
 
-  void _startSlewMonitor(int starNum) {
+  Future<void> _slewToCurrent() async {
+    setState(() => _ui = AlignUi.slewing);
+    final slewResult = await _client.sendCommand(LX200.gotoPolarAlignCurrent);
+    if (slewResult == null || slewResult.isEmpty || slewResult != '0') {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Goto current rejected: ${slewResult ?? 'no reply'}';
+        _ui = AlignUi.bolt;
+      });
+      return;
+    }
+    _slewReturnsToBolt = true;
+    _startSlewMonitor();
+  }
+
+  void _startSlewMonitor() {
     _slewPoll?.cancel();
-    _slewPoll = Timer.periodic(const Duration(seconds: 1), (_) {
+    final started = DateTime.now();
+    final backToBolt = _slewReturnsToBolt;
+    _slewPoll = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      if (DateTime.now().difference(started) < const Duration(milliseconds: 1500)) {
+        return;
+      }
       final state = ref.read(mountStateProvider);
       if (!state.isSlewing) {
         _slewPoll?.cancel();
         if (mounted) {
-          setState(() {
-            _step = starNum == 1
-                ? AlignStep.recenterStar1
-                : starNum == 2
-                    ? AlignStep.recenterStar2
-                    : AlignStep.recenterStar3;
-          });
+          setState(() => _ui = backToBolt ? AlignUi.bolt : AlignUi.recenter);
         }
       }
     });
   }
 
-  Future<void> _acceptStar(int starNum) async {
-    // :A1# / :A2# stars; mechanical pole finalize :AP# (not :A3#)
-    final isAltAz = ref.read(mountStateProvider).isAltAz;
-    final sessionStars = isAltAz ? 2 : _numStars;
-    final isMechPoleFinalize =
-        (starNum == 3 && sessionStars >= 3 && !isAltAz);
-    final cmd =
-        isMechPoleFinalize ? LX200.alignPolarFinalize : LX200.alignAddStar(starNum);
-    final ok = await _client.sendBool(cmd);
-    if (!ok) {
-      setState(() => _error = 'Failed to accept star $starNum');
-      return;
-    }
-
-    if (starNum < _numStars) {
-      setState(() {
-        _step = starNum == 1
-            ? AlignStep.selectStar2
-            : AlignStep.selectStar3;
-        _error = '';
-      });
-    } else {
-      String result;
-      if (isMechPoleFinalize) {
-        // :AP# discards the soft model (cold-baseline conv, hasValid=false,
-        // EE_Tvalid cleared). :AE# / mis-closure are zero by construction —
-        // skip the queries and show a status instead.
-        result = 'Mechanical pole done. Soft model cleared, '
-            'EEPROM alignment cleared.';
-      } else {
-        await Future.delayed(const Duration(milliseconds: 200));
-        final errStr = await _client.sendCommand(LX200.getAlignError);
-        result = errStr ?? 'unknown';
+  Future<void> _acceptStar() async {
+    if (_accepting) return;
+    final bolt = _ui == AlignUi.bolt;
+    final cmd = bolt ? LX200.alignPolarFinalize : LX200.alignSelectStar(_star);
+    final slow = !bolt &&
+        _star >= 3 &&
+        (_kind == AlignKind.four || _kind == AlignKind.six);
+    setState(() => _accepting = true);
+    try {
+      final reply = await _client.sendCommand(
+        cmd,
+        timeout: slow ? const Duration(seconds: 20) : null,
+      );
+      if (!mounted) return;
+      if (reply != '1') {
+        setState(() => _error = bolt
+            ? 'Failed to finish the pole pass'
+            : 'Failed to accept star $_star');
+        return;
       }
+
+      if (_kind == AlignKind.mechanical) {
+        if (bolt) {
+          setState(() {
+            _ui = AlignUi.done;
+            _alignResult = 'Mechanical pole done. Soft model cleared, '
+                'EEPROM alignment cleared.';
+            _error = '';
+            _note = '';
+          });
+          AlignSessionMemory.kind = null;
+          return;
+        }
+        if (_star < 2) {
+          setState(() {
+            _star = 2;
+            _ui = AlignUi.select;
+            _error = '';
+            _note = '';
+          });
+          return;
+        }
+        setState(() {
+          _ui = AlignUi.bolt;
+          _error = '';
+          _note = 'Adjust the polar bolts, then slew back onto the star.';
+        });
+        return;
+      }
+
+      if (_star < alignStarCount(_kind)) {
+        final next = _star + 1;
+        setState(() {
+          _star = next;
+          _ui = AlignUi.select;
+          _error = '';
+          _note = _noteFor(next, ref.read(mountStateProvider).isAltAz);
+        });
+        return;
+      }
+
+      final result = await _readAlignResult();
+      if (!mounted) return;
       setState(() {
-        _step = AlignStep.done;
+        _ui = AlignUi.done;
         _alignResult = result;
-        _wasMechanicalPole = isMechPoleFinalize;
+        _error = '';
+        _note = '';
       });
+      AlignSessionMemory.kind = null;
+    } finally {
+      if (mounted) setState(() => _accepting = false);
     }
+  }
+
+  Future<String> _readAlignResult() async {
+    if (_kind == AlignKind.two) {
+      final err = await _client.sendCommand(LX200.getAlignError);
+      return 'Error: ${err ?? 'unknown'}';
+    }
+    final rms = double.tryParse(
+        (await _client.sendCommand(LX200.getAlignRigidRms) ?? '').trim());
+    final mask = (await _client.sendCommand(LX200.getAlignFittedTerms) ?? '').trim();
+    double? ch;
+    double? np;
+    double? id;
+    int? sideIn;
+    int? sideOut;
+    if (mask.contains(RegExp('[CPI]'))) {
+      ch = double.tryParse(
+          (await _client.sendCommand(LX200.getAlignHeadCone) ?? '').trim());
+      np = double.tryParse(
+          (await _client.sendCommand(LX200.getAlignHeadPerp) ?? '').trim());
+      id = double.tryParse(
+          (await _client.sendCommand(LX200.getAlignHeadIndex) ?? '').trim());
+      final sides = (await _client.sendCommand(LX200.getAlignPierSides) ?? '').trim();
+      final parts = sides.split(',');
+      if (parts.length == 2) {
+        sideIn = int.tryParse(parts[0]);
+        sideOut = int.tryParse(parts[1]);
+      }
+    }
+    String? twoStar;
+    if (rms == null || rms <= 0) {
+      twoStar = await _client.sendCommand(LX200.getAlignError);
+    }
+    final ma = rms != null && rms > 0
+        ? await _client.sendCommand(LX200.getAlignErrorAz)
+        : null;
+    final me = rms != null && rms > 0
+        ? await _client.sendCommand(LX200.getAlignErrorAlt)
+        : null;
+    final text = formatAlignResult(
+      rmsArcsec: rms,
+      twoStarError: twoStar,
+      mask: mask,
+      ch: ch,
+      np: np,
+      id: id,
+      sideIn: sideIn,
+      sideOut: sideOut,
+      ma: ma,
+      me: me,
+    );
+    return text.isEmpty ? 'Alignment complete' : text;
   }
 
   Future<void> _saveAlignment() async {
     final ok = await _client.sendBool(LX200.alignSave);
+    if (!mounted) return;
     setState(() {
       _alignResult += ok ? '\nSaved to EEPROM' : '\nSave failed';
     });
+    if (ok) await _loadMountError(force: true);
   }
 
   void _reset() {
     _slewPoll?.cancel();
+    AlignSessionMemory.kind = null;
     setState(() {
-      _step = AlignStep.idle;
-      _star1 = null;
-      _star2 = null;
-      _star3 = null;
+      _ui = AlignUi.idle;
+      _star = 1;
+      _stars = [];
       _error = '';
+      _note = '';
       _alignResult = '';
-      _wasMechanicalPole = false;
     });
   }
 
   Future<void> _abortAlignment() async {
-    if (_isSlewingStep) await _client.send(LX200.stopAll);
+    if (_ui == AlignUi.slewing) await _client.send(LX200.stopAll);
     await _client.sendBool(LX200.alignAbort);
     _slewPoll?.cancel();
     if (mounted) _reset();
   }
 
-  bool get _isSelectStep =>
-      _step == AlignStep.selectStar1 ||
-      _step == AlignStep.selectStar2 ||
-      _step == AlignStep.selectStar3;
-
-  bool get _isSlewingStep =>
-      _step == AlignStep.slewingStar1 ||
-      _step == AlignStep.slewingStar2 ||
-      _step == AlignStep.slewingStar3;
-
-  // ── UI ──────────────────────────────────────────────────
-
-  String get _overlayMessage => switch (_step) {
-        AlignStep.idle => '',
-        AlignStep.selectStar1 => 'Tap a bright star for Star 1',
-        AlignStep.confirmStar1 =>
-          'Slew to ${_star1?.name ?? "star"}?',
-        AlignStep.slewingStar1 =>
-          'Slewing to ${_star1?.name ?? "star"}...',
-        AlignStep.recenterStar1 =>
-          'Recenter ${_star1?.name ?? "star"} in eyepiece',
-        AlignStep.selectStar2 =>
-          'Star 1 done! Tap a star for Star 2',
-        AlignStep.confirmStar2 =>
-          'Slew to ${_star2?.name ?? "star"}?',
-        AlignStep.slewingStar2 =>
-          'Slewing to ${_star2?.name ?? "star"}...',
-        AlignStep.recenterStar2 =>
-          'Recenter ${_star2?.name ?? "star"} in eyepiece',
-        AlignStep.selectStar3 =>
-          'Star 2 done! Tap a star for Star 3',
-        AlignStep.confirmStar3 =>
-          'Slew to ${_star3?.name ?? "star"}?',
-        AlignStep.slewingStar3 =>
-          'Slewing to ${_star3?.name ?? "star"}...',
-        AlignStep.recenterStar3 =>
-          'Recenter ${_star3?.name ?? "star"} in eyepiece',
-        AlignStep.done => 'Alignment complete!',
-      };
-
-  CatalogEntry? get _currentHighlight => switch (_step) {
-        AlignStep.confirmStar1 ||
-        AlignStep.slewingStar1 ||
-        AlignStep.recenterStar1 =>
-          _star1,
-        AlignStep.confirmStar2 ||
-        AlignStep.slewingStar2 ||
-        AlignStep.recenterStar2 =>
-          _star2,
-        AlignStep.confirmStar3 ||
-        AlignStep.slewingStar3 ||
-        AlignStep.recenterStar3 =>
-          _star3,
-        _ => null,
-      };
+  String get _overlayMessage {
+    final name = _currentStar?.name ?? 'star';
+    final extra = _note.isEmpty ? '' : '\n$_note';
+    return switch (_ui) {
+      AlignUi.idle => '',
+      AlignUi.select => 'Tap a bright star for star $_star$extra',
+      AlignUi.confirm => 'Slew to $name?',
+      AlignUi.slewing => 'Slewing to $name...',
+      AlignUi.recenter => 'Recenter $name in the eyepiece',
+      AlignUi.bolt => _note,
+      AlignUi.done => 'Alignment complete!',
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(mountStateProvider);
-    final overlayMsg = _step == AlignStep.idle && state.aligned
+    final overlayMsg = _ui == AlignUi.idle && state.aligned
         ? 'Alignment already complete'
         : (_overlayMessage.isNotEmpty ? _overlayMessage : null);
 
     return Column(
       children: [
-        // Step indicator bar
-        _StepBar(
-            step: _step,
-            numStars: _numStars,
-            star1: _star1,
-            star2: _star2,
-            star3: _star3),
-
-        // Mount alignment status from GXAS
+        _StepBar(ui: _ui, kind: _kind, star: _star, stars: _stars),
         if (state.alignmentInProgress)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -382,8 +631,6 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
               ],
             ),
           ),
-
-        // View options (align view derived from planetarium: same epoch, star size max 4)
         Consumer(
           builder: (_, ref, __) {
             final settings = ref.watch(planetariumSettingsProvider);
@@ -394,7 +641,8 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
               color: TA.surface.withValues(alpha: 0.6),
               child: Row(
                 children: [
-                  Text('Star size', style: TextStyle(color: TA.textSecondary, fontSize: 11)),
+                  Text('Star size',
+                      style: TextStyle(color: TA.textSecondary, fontSize: 11)),
                   const SizedBox(width: 6),
                   SizedBox(
                     width: 80,
@@ -408,14 +656,13 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
                     ),
                   ),
                   Text(starScale.toStringAsFixed(1),
-                      style: TextStyle(color: TA.text, fontSize: 11, fontFamily: 'monospace')),
+                      style: TextStyle(
+                          color: TA.text, fontSize: 11, fontFamily: 'monospace')),
                 ],
               ),
             );
           },
         ),
-
-        // Sky map fills remaining space (same projection & epoch as planetarium, max star size 4)
         Expanded(
           child: Stack(
             children: [
@@ -424,15 +671,14 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
                 child: LayoutBuilder(
                   builder: (context, constraints) => SkyMapWidget(
                     height: constraints.maxHeight,
-                    onStarSelected: _isSelectStep ? _onStarSelected : null,
+                    onStarSelected: _ui == AlignUi.select ? _onStarSelected : null,
                     overlayMessage: overlayMsg,
-                    highlightedStar: _currentHighlight,
+                    highlightedStar: _ui == AlignUi.select ? null : _currentStar,
                     maxStarScale: 4.0,
                   ),
                 ),
               ),
-              // Slewing overlay: show "Slewing" and Abort
-              if (_isSlewingStep)
+              if (_ui == AlignUi.slewing)
                 Positioned.fill(
                   child: Container(
                     color: TA.background.withValues(alpha: 0.85),
@@ -459,12 +705,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
                           ),
                           const SizedBox(height: 20),
                           ElevatedButton.icon(
-                            onPressed: () async {
-                              await _client.send(LX200.stopAll);
-                              await _client.sendBool(LX200.alignAbort);
-                              _slewPoll?.cancel();
-                              if (mounted) _reset();
-                            },
+                            onPressed: _abortAlignment,
                             icon: const Icon(Icons.stop, size: 18),
                             label: const Text('Abort'),
                             style: ElevatedButton.styleFrom(
@@ -480,16 +721,11 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
             ],
           ),
         ),
-
-        // Error display
         if (_error.isNotEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            child: Text(_error,
-                style: TextStyle(color: TA.error, fontSize: 11)),
+            child: Text(_error, style: TextStyle(color: TA.error, fontSize: 11)),
           ),
-
-        // Action bar
         Padding(
           padding: const EdgeInsets.all(6),
           child: _buildActionBar(state),
@@ -499,12 +735,12 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
   }
 
   Widget _buildActionBar(MountState state) {
-    switch (_step) {
-      case AlignStep.idle:
-        if (state.aligned) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+    switch (_ui) {
+      case AlignUi.idle:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (state.aligned) ...[
               Row(
                 children: [
                   Icon(Icons.check_circle, color: TA.success, size: 20),
@@ -525,6 +761,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
                 children: [
                   _SmallBtn(Icons.save, 'Save to EEPROM', () async {
                     final ok = await _client.sendBool(LX200.alignSave);
+                    if (ok) await _loadMountError(force: true);
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: Text(ok ? 'Saved' : 'Save failed')));
@@ -537,67 +774,30 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
                   }),
                 ],
               ),
+            ] else ...[
+              _modePicker(state),
+              const SizedBox(height: 6),
+              ElevatedButton.icon(
+                onPressed: _startAlignment,
+                icon: const Icon(Icons.play_arrow, size: 18),
+                label: Text('Start ${alignKindLabel(_effectiveKind(state))}'),
+              ),
             ],
-          );
-        }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Text('Stars:', style: TextStyle(fontSize: 12)),
-                const SizedBox(width: 8),
-                if (state.isAltAz)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4),
-                    child: Text('2 (EQ 3-star N/A)',
-                        style: TextStyle(color: TA.textSecondary, fontSize: 11)),
-                  )
-                else
-                  SegmentedButton<int>(
-                    segments: const [
-                      ButtonSegment(
-                          value: 2,
-                          label: Text('2'),
-                          icon: Icon(Icons.star, size: 16)),
-                      ButtonSegment(
-                          value: 3,
-                          label: Text('3'),
-                          icon: Icon(Icons.star, size: 16)),
-                    ],
-                    selected: {_numStars.clamp(2, 3)},
-                    onSelectionChanged: (s) =>
-                        setState(() => _numStars = s.first),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _startAlignment,
-                    icon: const Icon(Icons.play_arrow, size: 18),
-                    label: Text('Start $_numStars-Star Alignment'),
-                  ),
-                ),
-              ],
-            ),
+            const SizedBox(height: 8),
+            _mountErrorEditor(),
           ],
         );
 
-      case AlignStep.selectStar1:
-      case AlignStep.selectStar2:
-      case AlignStep.selectStar3:
+      case AlignUi.select:
         return Row(
           children: [
             Icon(Icons.touch_app, color: TA.accent, size: 18),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                _step == AlignStep.selectStar1
+                _note.isEmpty
                     ? 'Tap a bright named star on the map'
-                    : 'Tap a star (spread across the sky)',
+                    : _note,
                 style: TextStyle(color: TA.text, fontSize: 12),
               ),
             ),
@@ -605,39 +805,29 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
           ],
         );
 
-      case AlignStep.confirmStar1:
-      case AlignStep.confirmStar2:
-      case AlignStep.confirmStar3:
-        final starNum = _step == AlignStep.confirmStar1
-            ? 1
-            : _step == AlignStep.confirmStar2
-                ? 2
-                : 3;
-        final starName = starNum == 1
-            ? _star1?.name
-            : starNum == 2
-                ? _star2?.name
-                : _star3?.name;
+      case AlignUi.confirm:
         return Row(
           children: [
             Icon(Icons.star, color: TA.warning, size: 18),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                'Slew to $starName?',
+                'Slew to ${_currentStar?.name ?? 'star'}?',
                 style: TextStyle(color: TA.text, fontSize: 12),
               ),
             ),
-            _SmallBtn(Icons.arrow_back, 'Back', () => _cancelConfirm(starNum)),
+            _SmallBtn(Icons.arrow_back, 'Back', _cancelConfirm),
             const SizedBox(width: 6),
             ElevatedButton.icon(
-              onPressed: () => _confirmAndSlew(starNum),
+              onPressed: () {
+                final star = _currentStar;
+                if (star != null) _gotoStar(star);
+              },
               icon: const Icon(Icons.navigation, size: 16),
               label: const Text('Slew'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: TA.accent,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               ),
             ),
             const SizedBox(width: 6),
@@ -645,75 +835,81 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
           ],
         );
 
-      case AlignStep.slewingStar1:
-      case AlignStep.slewingStar2:
-      case AlignStep.slewingStar3:
+      case AlignUi.slewing:
         return Row(
           children: [
             Text('Slewing',
                 style: TextStyle(
-                    color: TA.warning,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600)),
-            const SizedBox(width: 8),
-            Expanded(child: const SizedBox.shrink()),
+                    color: TA.warning, fontSize: 12, fontWeight: FontWeight.w600)),
+            const Spacer(),
             _SmallBtn(Icons.stop, 'Abort', _abortAlignment),
           ],
         );
 
-      case AlignStep.recenterStar1:
-      case AlignStep.recenterStar2:
-      case AlignStep.recenterStar3:
-        final starNum = _step == AlignStep.recenterStar1
-            ? 1
-            : _step == AlignStep.recenterStar2
-                ? 2
-                : 3;
-        final starName = starNum == 1
-            ? _star1?.name
-            : starNum == 2
-                ? _star2?.name
-                : _star3?.name;
+      case AlignUi.recenter:
         return Row(
           children: [
-            Icon(Icons.center_focus_strong,
-                color: TA.success, size: 18),
+            Icon(Icons.center_focus_strong, color: TA.success, size: 18),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                'Recenter $starName in eyepiece, then accept',
+                'Recenter ${_currentStar?.name ?? 'the star'} in the eyepiece, then accept',
                 style: TextStyle(color: TA.text, fontSize: 12),
               ),
             ),
             _SmallBtn(Icons.close, 'Abort alignment', _abortAlignment),
-            if (starNum == 3 && _numStars >= 3 && !state.isAltAz) ...[
-              const SizedBox(width: 6),
-              _SmallBtn(Icons.my_location, ':MP#', () async {
-                final r = await _client.sendCommand(LX200.gotoPolarAlignCurrent);
-                if (!mounted) return;
-                if (r != null && r != '0') {
-                  setState(() => _error = 'Goto current rejected: $r');
-                }
-              }),
-            ],
             const SizedBox(width: 8),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: TA.success,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
-              onPressed: () => _acceptStar(starNum),
-              child: const Text('Accept',
-                  style: TextStyle(fontWeight: FontWeight.w700)),
+              onPressed: _accepting ? null : _acceptStar,
+              child: Text(
+                _accepting &&
+                        _star >= 3 &&
+                        (_kind == AlignKind.four || _kind == AlignKind.six)
+                    ? 'Fitting…'
+                    : 'Accept',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
             ),
           ],
         );
 
-      case AlignStep.done:
-        final headline = _wasMechanicalPole
+      case AlignUi.bolt:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Adjust the polar bolts, slew back onto the star, then finish.',
+              style: TextStyle(color: TA.text, fontSize: 12),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                _SmallBtn(Icons.my_location, 'Slew to star', _slewToCurrent),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: TA.success,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                  onPressed: _accepting ? null : _acceptStar,
+                  child: const Text('Finish',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
+                const Spacer(),
+                _SmallBtn(Icons.close, 'Abort alignment', _abortAlignment),
+              ],
+            ),
+          ],
+        );
+
+      case AlignUi.done:
+        final headline = _kind == AlignKind.mechanical
             ? _alignResult
-            : 'Alignment complete!  Error: $_alignResult';
+            : 'Alignment complete!\n$_alignResult';
         return Column(
           children: [
             Row(
@@ -724,25 +920,17 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
                   child: Text(
                     headline,
                     style: TextStyle(
-                        color: TA.success,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600),
+                        color: TA.success, fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 6),
-            if (_wasMechanicalPole)
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _reset,
-                      icon: const Icon(Icons.check, size: 16),
-                      label: const Text('Done'),
-                    ),
-                  ),
-                ],
+            if (_kind == AlignKind.mechanical)
+              ElevatedButton.icon(
+                onPressed: _reset,
+                icon: const Icon(Icons.check, size: 16),
+                label: const Text('Done'),
               )
             else
               Row(
@@ -765,67 +953,186 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
         );
     }
   }
+
+  Widget _modePicker(MountState state) {
+    final kinds = AlignKind.values
+        .where((k) => !state.isAltAz || alignKindOnAltAz(k))
+        .toList();
+    final selected = _effectiveKind(state);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          children: [
+            for (final kind in kinds)
+              ChoiceChip(
+                label: Text(alignKindLabel(kind),
+                    style: const TextStyle(fontSize: 12)),
+                selected: selected == kind,
+                visualDensity: VisualDensity.compact,
+                onSelected: (_) => setState(() => _kind = kind),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(alignKindBlurb(selected),
+            style: TextStyle(color: TA.textSecondary, fontSize: 11)),
+      ],
+    );
+  }
+
+  Widget _mountErrorEditor() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: TA.surface,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              Text('Mount error',
+                  style: TextStyle(
+                      color: TA.text, fontSize: 13, fontWeight: FontWeight.w600)),
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: false, label: Text('Off')),
+                  ButtonSegment(value: true, label: Text('On')),
+                ],
+                selected: {_mountErrorOn},
+                onSelectionChanged: _mountErrorBusy
+                    ? null
+                    : (s) => _setMountError(s.first),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Hold CH and NP during a 2-star alignment. Signs are Wallace\'s. '
+            '4 Stars and 3+3 measure these and do not read them.',
+            style: TextStyle(color: TA.textSecondary, fontSize: 11),
+          ),
+          if (_mountErrorOn) ...[
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                _degField('CH', _chController),
+                _degField('NP', _npController),
+                _SmallBtn(
+                  Icons.upload,
+                  'Upload',
+                  _mountErrorBusy ? () {} : _uploadMountError,
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _degField(String label, TextEditingController controller) {
+    return SizedBox(
+      width: 108,
+      child: TextField(
+        controller: controller,
+        enabled: !_mountErrorBusy,
+        keyboardType:
+            const TextInputType.numberWithOptions(decimal: true, signed: true),
+        style: TextStyle(color: TA.text, fontSize: 13, fontFamily: 'monospace'),
+        decoration: InputDecoration(
+          isDense: true,
+          labelText: '$label °',
+          labelStyle: TextStyle(color: TA.textSecondary, fontSize: 12),
+        ),
+      ),
+    );
+  }
 }
 
 class _StepBar extends StatelessWidget {
-  final AlignStep step;
-  final int numStars;
-  final CatalogEntry? star1;
-  final CatalogEntry? star2;
-  final CatalogEntry? star3;
-  const _StepBar(
-      {required this.step,
-      this.numStars = 2,
-      this.star1,
-      this.star2,
-      this.star3});
+  final AlignUi ui;
+  final AlignKind kind;
+  final int star;
+  final List<CatalogEntry?> stars;
+  const _StepBar({
+    required this.ui,
+    required this.kind,
+    required this.star,
+    required this.stars,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final pastStar2 = step.index >= AlignStep.selectStar2.index;
-    final pastStar3 = step.index >= AlignStep.selectStar3.index;
+    final total = alignStarCount(kind);
+    final done = ui == AlignUi.done;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       color: TA.surface,
       child: Row(
         children: [
-          _dot(1, step.index >= AlignStep.selectStar1.index, pastStar2),
-          _line(pastStar2),
-          _dot(2, pastStar2, numStars == 2 ? step == AlignStep.done : pastStar3),
-          if (numStars >= 3) ...[
-            _line(pastStar3),
-            _dot(3, pastStar3, step == AlignStep.done),
+          for (var n = 1; n <= total; n++) ...[
+            _dot(n, _active(n), _complete(n, total)),
+            if (n < total) _line(_complete(n, total)),
           ],
-          _line(step == AlignStep.done),
+          if (kind == AlignKind.mechanical) ...[
+            _line(ui == AlignUi.bolt || done),
+            Icon(
+              Icons.build,
+              size: 14,
+              color: ui == AlignUi.bolt || done ? TA.accent : TA.textSecondary,
+            ),
+          ],
+          _line(done),
           Icon(
-            step == AlignStep.done ? Icons.check_circle : Icons.flag,
+            done ? Icons.check_circle : Icons.flag,
             size: 14,
-            color: step == AlignStep.done
-                ? TA.success
-                : TA.textSecondary,
+            color: done ? TA.success : TA.textSecondary,
           ),
           const SizedBox(width: 8),
-          if (star1 != null)
-            Text('1: ${star1!.name}  ',
-                style: TextStyle(
-                    color: TA.textHigh,
-                    fontSize: 10,
-                    fontFamily: 'monospace')),
-          if (star2 != null)
-            Text('2: ${star2!.name}  ',
-                style: TextStyle(
-                    color: TA.textHigh,
-                    fontSize: 10,
-                    fontFamily: 'monospace')),
-          if (star3 != null)
-            Text('3: ${star3!.name}',
-                style: TextStyle(
-                    color: TA.textHigh,
-                    fontSize: 10,
-                    fontFamily: 'monospace')),
+          Expanded(
+            child: Text(
+              _caption(total),
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: TA.textHigh, fontSize: 10, fontFamily: 'monospace'),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  bool _active(int n) =>
+      ui != AlignUi.idle &&
+      ui != AlignUi.done &&
+      ui != AlignUi.bolt &&
+      n == star;
+
+  bool _complete(int n, int total) {
+    if (ui == AlignUi.done) return true;
+    if (ui == AlignUi.bolt) return n <= total;
+    if (ui == AlignUi.idle) return false;
+    return n < star;
+  }
+
+  String _caption(int total) {
+    if (ui == AlignUi.idle) return '';
+    if (ui == AlignUi.done) return 'Done';
+    if (ui == AlignUi.bolt) return 'Pole bolts';
+    final name = star >= 1 && star <= stars.length ? stars[star - 1]?.name : null;
+    final who = name == null || name.isEmpty ? '' : '  $name';
+    return 'Star $star/$total$who';
   }
 
   Widget _dot(int num, bool active, bool complete) {
@@ -854,7 +1161,7 @@ class _StepBar extends StatelessWidget {
 
   Widget _line(bool active) {
     return Container(
-      width: 24,
+      width: 12,
       height: 2,
       color: active ? TA.success : TA.surfaceVariant,
     );

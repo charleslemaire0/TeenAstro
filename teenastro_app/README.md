@@ -27,5 +27,5 @@ Flutter Android app that replaces the SHC (Smart Hand Controller) for TeenAstro 
 - Manual slew control (N/S/E/W hold-to-move)
 - Goto from catalogs (Messier, NGC, stars, etc.)
 - Tracking control (sidereal/lunar/solar/user)
-- 2-star alignment
+- 2-star, 4-star, and 3+3 alignment, plus mount error (CH, NP)
 - Park / Home / Unpark

@@ -39,6 +39,28 @@ void main() {
       expect(LX200.alignAddStar(3), equals(':AP#'));
     });
 
+    test('alignStartRigid is :A0,r4# and :A0,r6#', () {
+      expect(LX200.alignStartRigid(4), equals(':A0,r4#'));
+      expect(LX200.alignStartRigid(6), equals(':A0,r6#'));
+    });
+
+    test('alignSelectStar sends :An# through star 6', () {
+      expect(LX200.alignSelectStar(1), equals(':A1#'));
+      expect(LX200.alignSelectStar(3), equals(':A3#'));
+      expect(LX200.alignSelectStar(4), equals(':A4#'));
+      expect(LX200.alignSelectStar(6), equals(':A6#'));
+    });
+
+    test('mount error commands use Wallace degrees on the wire as arcseconds', () {
+      expect(LX200.getKnownGeomUse, equals(':GXKk#'));
+      expect(LX200.setKnownGeomUse(true), equals(':SXKk,1#'));
+      expect(LX200.setKnownGeomUse(false), equals(':SXKk,0#'));
+      expect(LX200.getKnownCone, equals(':GXKc#'));
+      expect(LX200.getKnownPerp, equals(':GXKp#'));
+      expect(LX200.setKnownConeDeg(1.5), equals(':SXKc,5400.000#'));
+      expect(LX200.setKnownPerpDeg(-0.25), equals(':SXKp,-900.000#'));
+    });
+
     test('getAlignError is :AE#', () {
       expect(LX200.getAlignError, equals(':AE#'));
     });
@@ -55,21 +77,49 @@ void main() {
     });
   });
 
-  group('AlignStep enum (app 2-star flow)', () {
-    test('step order matches 2-star alignment from home', () {
-      expect(AlignStep.idle.index, lessThan(AlignStep.selectStar1.index));
-      expect(AlignStep.selectStar1.index, lessThan(AlignStep.slewingStar1.index));
-      expect(AlignStep.slewingStar1.index, lessThan(AlignStep.recenterStar1.index));
-      expect(AlignStep.recenterStar1.index, lessThan(AlignStep.selectStar2.index));
-      expect(AlignStep.selectStar2.index, lessThan(AlignStep.slewingStar2.index));
-      expect(AlignStep.slewingStar2.index, lessThan(AlignStep.recenterStar2.index));
-      expect(AlignStep.recenterStar2.index, lessThan(AlignStep.done.index));
+  group('Alignment session kinds', () {
+    test('2, 4 and 3+3 start on the rigid or two-star command', () {
+      expect(alignStartCommand(AlignKind.two), equals(':A0#'));
+      expect(alignStartCommand(AlignKind.four), equals(':A0,r4#'));
+      expect(alignStartCommand(AlignKind.six), equals(':A0,r6#'));
+      expect(alignStartCommand(AlignKind.mechanical), equals(':A0,m#'));
+      expect(alignStarCount(AlignKind.four), 4);
+      expect(alignStarCount(AlignKind.six), 6);
     });
 
-    test('accept star 1–2 sends :An#; star 3 finalize sends :AP#', () {
+    test('alt-az keeps 2 Stars and 4 Stars', () {
+      expect(alignKindOnAltAz(AlignKind.two), isTrue);
+      expect(alignKindOnAltAz(AlignKind.four), isTrue);
+      expect(alignKindOnAltAz(AlignKind.six), isFalse);
+      expect(alignKindOnAltAz(AlignKind.mechanical), isFalse);
+    });
+
+    test('step order is select, slew, recenter, then done', () {
+      expect(AlignUi.idle.index, lessThan(AlignUi.select.index));
+      expect(AlignUi.select.index, lessThan(AlignUi.slewing.index));
+      expect(AlignUi.slewing.index, lessThan(AlignUi.recenter.index));
+      expect(AlignUi.recenter.index, lessThan(AlignUi.done.index));
+    });
+
+    test('rigid head prints Wallace arcseconds and hides an unsolved CH', () {
+      expect(
+        formatRigidHead(mask: '-PI', ch: 0, np: 120, id: -30, sideIn: 4, sideOut: 0),
+        equals('CH n/a 4+0\nNP +120"\nID -30"'),
+      );
+      expect(
+        formatRigidHead(mask: 'CPI', ch: 15.4, np: -8, id: 3, sideIn: 3, sideOut: 3),
+        equals('CH +15"\nNP -8"\nID +3"'),
+      );
+      expect(formatRigidHead(mask: '---'), isEmpty);
+      expect(formatRigidRms(90), equals("1.5'"));
+      expect(formatRigidRms(12), equals('12"'));
+    });
+
+    test('accept star 1–2 sends :An#; mechanical finalize stays :AP#', () {
       expect(LX200.alignAddStar(1), equals(':A1#'));
       expect(LX200.alignAddStar(2), equals(':A2#'));
       expect(LX200.alignAddStar(3), equals(':AP#'));
+      expect(LX200.alignSelectStar(3), equals(':A3#'));
     });
   });
 
