@@ -13,7 +13,7 @@ int? getExpectedReplyLength(String cmd) {
     case ":ED#": return 16;
     case ":F?#": return 32;
     case ":FA#": return 256;
-    case ":FV#": return 32;
+    case ":FV#": return 64;
     case ":Fa#": return 16;
     case ":F~#": return 128;
     case ":G(#": return 16;

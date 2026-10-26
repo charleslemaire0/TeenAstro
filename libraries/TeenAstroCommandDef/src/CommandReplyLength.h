@@ -26,7 +26,7 @@ inline int getExpectedReplyLength(const char* command)
   if (strcmp(command, ":ED#") == 0) return 16;
   if (strcmp(command, ":F?#") == 0) return 32;
   if (strcmp(command, ":FA#") == 0) return 256;
-  if (strcmp(command, ":FV#") == 0) return 32;
+  if (strcmp(command, ":FV#") == 0) return 64;
   if (strcmp(command, ":Fa#") == 0) return 16;
   if (strcmp(command, ":F~#") == 0) return 128;
   if (strcmp(command, ":G(#") == 0) return 16;
