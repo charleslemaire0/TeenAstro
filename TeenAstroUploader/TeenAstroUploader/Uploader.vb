@@ -11,6 +11,14 @@ Public Class Uploader
     Public SuccessCount As Integer
     Public TotalCount As Integer
     Public ErrorMessage As String
+    Public Offline As Boolean
+  End Class
+
+  Private Class OfflineException
+    Inherits Exception
+    Public Sub New()
+      MyBase.New("No internet connection." & vbLf & vbLf & "Check your network and try again.")
+    End Sub
   End Class
 
   Private Class DownloadProgress
@@ -44,21 +52,32 @@ Public Class Uploader
     End If
     Dim psi As New ProcessStartInfo()
     psi.FileName = curlPath
-    psi.Arguments = "-L -s -f -o """ & destPath & """ """ & url & """"
+    Dim existed As Boolean = System.IO.File.Exists(destPath)
+    psi.Arguments = "-L -sS -f -o """ & destPath & """ """ & url & """"
     psi.UseShellExecute = False
     psi.CreateNoWindow = True
     psi.RedirectStandardError = True
     Dim proc As Process = Process.Start(psi)
     Dim stderr As String = proc.StandardError.ReadToEnd()
     proc.WaitForExit()
+    If proc.ExitCode = 0 Then Return True
+    If System.IO.File.Exists(destPath) Then
+      Dim info As New System.IO.FileInfo(destPath)
+      If proc.ExitCode = 22 OrElse Not existed OrElse info.Length = 0 Then
+        System.IO.File.Delete(destPath)
+      End If
+    End If
     If proc.ExitCode = 22 Then
       ' curl exit 22 = HTTP error (404 not found). File doesn't exist on server -- skip it.
       Return False
     End If
-    If proc.ExitCode <> 0 Then
-      Throw New Exception("curl failed (exit " & proc.ExitCode & "): " & stderr.Trim() & vbLf & "URL: " & url)
+    ' 5 proxy DNS, 6 host DNS, 7 connect, 28 timeout.
+    If proc.ExitCode = 5 OrElse proc.ExitCode = 6 OrElse proc.ExitCode = 7 OrElse proc.ExitCode = 28 Then
+      Throw New OfflineException()
     End If
-    Return True
+    Dim detail As String = "curl failed (exit " & proc.ExitCode & ")"
+    If stderr.Trim() <> "" Then detail = detail & ": " & stderr.Trim()
+    Throw New Exception(detail & vbLf & "URL: " & url)
   End Function
 
   Private Class DetectedMainUnit
@@ -552,9 +571,13 @@ Public Class Uploader
           n = n + 1
         End If
       Next
+    Catch ex As OfflineException
+      Throw
     Catch ex As Exception
       Dim msg As String = "Download failed: " & currentFirmware & vbLf & vbLf & GetFullExceptionMessage(ex)
-      If gitRootAdress <> "" AndAlso currentFirmware <> "" Then msg = msg & vbLf & vbLf & "URL: " & gitRootAdress & currentFirmware
+      Dim url As String = ""
+      If gitRootAdress <> "" AndAlso currentFirmware <> "" Then url = gitRootAdress & currentFirmware
+      If url <> "" AndAlso msg.IndexOf(url) < 0 Then msg = msg & vbLf & vbLf & "URL: " & url
       If errorMessage = "" Then
         errorMessage = msg
       Else
@@ -584,11 +607,16 @@ Public Class Uploader
     Dim done As Integer = 0
     Dim errorMessage As String = ""
     Dim totalFiles As Integer = GetFirmwareFileList(ver).Count * 2
-    downloadVersionx(n, done, "", ver, worker, totalFiles, errorMessage)
-    downloadVersionx(n, done, "_latest", ver, worker, totalFiles, errorMessage)
+    Try
+      downloadVersionx(n, done, "", ver, worker, totalFiles, errorMessage)
+      downloadVersionx(n, done, "_latest", ver, worker, totalFiles, errorMessage)
+    Catch ex As OfflineException
+      result.Offline = True
+      result.ErrorMessage = ex.Message
+    End Try
     result.SuccessCount = n
     result.TotalCount = totalFiles
-    result.ErrorMessage = errorMessage
+    If Not result.Offline Then result.ErrorMessage = errorMessage
     e.Result = result
   End Sub
 
@@ -611,6 +639,12 @@ Public Class Uploader
     Dim result As DownloadResult = TryCast(e.Result, DownloadResult)
     If result Is Nothing Then
       LabelDownloadStatus.Text = ""
+      Return
+    End If
+    If result.Offline Then
+      ProgressBarDownload.Value = 0
+      LabelDownloadStatus.Text = "No internet connection."
+      MsgBox(result.ErrorMessage, MsgBoxStyle.Exclamation, "TeenAstro Firmware Download")
       Return
     End If
     ProgressBarDownload.Value = 100

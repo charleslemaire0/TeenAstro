@@ -17,11 +17,25 @@ from .paths import firmware_dir
 ProgressCallback = Callable[[int, int, str], None]
 
 
+# curl: 5 proxy DNS, 6 host DNS, 7 connect, 28 timeout.
+_CURL_OFFLINE_CODES = frozenset({5, 6, 7, 28})
+
+OFFLINE_MESSAGE = (
+    "No internet connection.\n\n"
+    "Check your network and try again."
+)
+
+
+class OfflineError(RuntimeError):
+    """curl could not reach the network (DNS, connect, or timeout)."""
+
+
 @dataclass
 class DownloadResult:
     success_count: int
     total_count: int
     error_message: str = ""
+    offline: bool = False
 
 
 def _curl_path() -> str:
@@ -56,19 +70,26 @@ def _subprocess_kwargs() -> dict:
 def download_file(url: str, dest: Path) -> bool:
     """Download url to dest. Returns False on HTTP 404; raises on other failures."""
     dest.parent.mkdir(parents=True, exist_ok=True)
+    existed = dest.is_file()
     curl = _curl_path()
     proc = subprocess.run(
-        [curl, "-L", "-s", "-f", "-o", str(dest), url],
+        [curl, "-L", "-sS", "-f", "-o", str(dest), url],
         **_subprocess_kwargs(),
     )
+    if proc.returncode == 0:
+        return True
+    # Drop a file this attempt created or emptied. Leave a previous good download in place.
+    if dest.is_file() and (proc.returncode == 22 or not existed or dest.stat().st_size == 0):
+        dest.unlink(missing_ok=True)
     if proc.returncode == 22:
-        if dest.exists():
-            dest.unlink(missing_ok=True)
         return False
-    if proc.returncode != 0:
-        err = (proc.stderr or "").strip()
-        raise RuntimeError(f"curl failed (exit {proc.returncode}): {err}\nURL: {url}")
-    return True
+    if proc.returncode in _CURL_OFFLINE_CODES:
+        raise OfflineError(OFFLINE_MESSAGE)
+    err = (proc.stderr or "").strip()
+    detail = f"curl failed (exit {proc.returncode})"
+    if err:
+        detail += f": {err}"
+    raise RuntimeError(f"{detail}\nURL: {url}")
 
 
 def download_version(
@@ -94,10 +115,12 @@ def download_version(
             url = github_firmware_url(version, latest, name)
             if download_file(url, target / name):
                 success += 1
+    except OfflineError:
+        raise
     except Exception as exc:  # noqa: BLE001 - surface to UI
         url = github_firmware_url(version, latest, current) if current else ""
         error = f"Download failed: {current}\n\n{exc}"
-        if url:
+        if url and url not in str(exc):
             error += f"\n\nURL: {url}"
     return success, done, error
 
@@ -111,11 +134,19 @@ def download_all(
     n = 0
     done = 0
     errors: list[str] = []
-    for latest in (False, True):
-        got, done, err = download_version(
-            version, latest, done=done, total=total, progress=progress
+    try:
+        for latest in (False, True):
+            got, done, err = download_version(
+                version, latest, done=done, total=total, progress=progress
+            )
+            n += got
+            if err:
+                errors.append(err)
+    except OfflineError as exc:
+        return DownloadResult(
+            success_count=n,
+            total_count=total,
+            error_message=str(exc),
+            offline=True,
         )
-        n += got
-        if err:
-            errors.append(err)
     return DownloadResult(success_count=n, total_count=total, error_message="\n\n".join(errors))

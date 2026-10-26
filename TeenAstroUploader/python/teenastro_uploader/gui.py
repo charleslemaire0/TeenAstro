@@ -256,6 +256,13 @@ class UploaderApp(tk.Tk):
 
     def _download_done(self, result: download.DownloadResult) -> None:
         self._downloading = False
+        if result.offline:
+            self._progress["value"] = 0
+            self._status.set("No internet connection.")
+            messagebox.showerror(
+                "TeenAstro Firmware Download", result.error_message, parent=self
+            )
+            return
         self._progress["value"] = 100
         self._status.set(f"{result.success_count} of {result.total_count} downloaded")
         if result.error_message:
