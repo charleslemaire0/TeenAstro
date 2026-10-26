@@ -56,7 +56,25 @@ TeenAstro firmware:
 - **Tracking** — `tracking`, `trackingrate`, `trackingrates`, `rightascensionrate`, `declinationrate`, `guideraterightascension`, `guideratedeclination`, `slewsettletime`
 - **Site** — `sitelatitude`, `sitelongitude`, `siteelevation`, `utcdate` (GET / PUT)
 - **Capabilities** — every `can*` property advertised correctly for the active mount type
-- **Methods** — `abortslew`, `findhome`, `park`, `unpark`, `setpark`, `slewtocoordinates(async)`, `synctocoordinates`, `slewtotarget(async)`, `synctotarget`, `slewtoaltaz(async)`, `synctoaltaz`, `pulseguide`, `moveaxis`, `axisrates`
+- **Methods** — `abortslew`, `findhome`, `park`, `unpark`, `setpark`, `slewtocoordinates(async)`, `synctocoordinates`, `slewtotarget(async)`, `synctotarget`, `slewtoaltaz(async)`, `synctoaltaz`, `pulseguide`, `moveaxis`, `axisrates`, `action`
+
+`supportedactions` lists the alignment actions. `PUT .../action` takes `Action` and `Parameters`. The ASCOM driver exposes the same names through `Action`.
+
+| Action | Parameters | What it sends |
+| ------ | ---------- | ------------- |
+| `AutoAlign` | | `:AA#`. The next two `synctocoordinates` of **solved** positions build the two-star model. |
+| `AlignStart` | `2`, `m`, or `r3`…`r9` | `:A0,2#`, `:A0,m#`, or `:A0,r<n>#`. The mount is already at home. |
+| `AlignAtTarget` | `2`, `m`, or `r3`…`r9` | `:A*#`, `:A*,m#`, or `:A*,r<n>#`. The tube is already on the first star. |
+| `AlignAccept` | `<star>` or `<star>,<raHours>,<decDeg>` | Writes the solved RA/Dec when given, then `:A1#`…`:A9#`. No slew and no sync. |
+| `AlignSave` | | `:AW#` |
+| `AlignAbort` | | `:AB#` |
+| `AlignPolarDone` | | `:AP#` after a mechanical-pole session |
+| `AlignStatus` | | `stars=<n>;rms=<arcsec>;terms=<CPI>;pier=<in>,<out>` |
+| `AlignErrors` | | `ch=<arcsec>;np=<arcsec>;id=<arcsec>;me=<deg>;ma=<deg>;rms=<arcsec>;ae=<deg>` |
+
+A plate-solve session for the multi-star model is `AlignStart` `r4` or `r6`, then for each star a slew, a solve, and `AlignAccept` with that star number and the solved coordinates. `AlignSave` stores the model. `synctocoordinates` during that session is an ordinary sync and is not how a star is added. After the session, a later sync only corrects the current pointing.
+
+`r3` closes with the progressive fit. `r4` through `r9` close with the rigid fit. On a mechanical-pole session the third step is `AlignPolarDone`, not `AlignAccept` `3`.
 
 Properties without a meaningful equivalent on the firmware (`aperturearea`,
 `aperturediameter`, `focallength`, write‑side of `*rate` / `*guideraterate`)

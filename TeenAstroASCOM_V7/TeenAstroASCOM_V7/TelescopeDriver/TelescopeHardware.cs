@@ -248,9 +248,10 @@ namespace ASCOM.TeenAstro.Telescope
     {
       get
       {
-        LogMessage("SupportedActions Get", "Returning empty ArrayList");
+        LogMessage("SupportedActions Get", "Returning alignment actions");
         ArrayList SuppActions = new ArrayList();
-        SuppActions.Add("AutoAlign");
+        foreach (string name in AlignActions.Names)
+          SuppActions.Add(name);
         return SuppActions;
       }
     }
@@ -264,25 +265,94 @@ namespace ASCOM.TeenAstro.Telescope
     /// </returns>
     public static string Action(string actionName, string actionParameters)
     {
-
-      if (actionName == "AutoAlign")
+      if (!AlignActions.TryParse(actionName, actionParameters, out AlignActions.Plan plan, out AlignActions.ParseFailure failure, out string error))
       {
-        if (!IsConnected)
-        {
-          throw new ASCOM.NotConnectedException();
-        }
-        if (!CommandBoolSingleChar("AA"))
-        {
-          throw new ASCOM.DriverException("AutoAlign command failure");
-        }
-        return "AutoAlign Started";
+        LogMessage("Action", $"Action {actionName}, parameters {actionParameters} rejected: {error}");
+        if (failure == AlignActions.ParseFailure.UnknownAction)
+          throw new ActionNotImplementedException(error);
+        throw new ASCOM.InvalidValueException(error);
       }
-      else
+      if (!IsConnected)
+        throw new ASCOM.NotConnectedException();
+
+      if (plan.Kind == AlignActions.Kind.Status)
+        return ReadAlignStatus();
+      if (plan.Kind == AlignActions.Kind.Errors)
+        return ReadAlignErrors();
+
+      // A slew still in progress would record the wrong axis angles.
+      if (Slewing)
+        throw new ASCOM.InvalidOperationException("Cannot change alignment while the mount is slewing");
+
+      if (plan.SetTarget)
       {
-        LogMessage("Action", $"Action {actionName}, parameters {actionParameters} is not implemented");
-        throw new ActionNotImplementedException("Action " + actionName + " is not implemented by this driver");
+        TargetRightAscension = plan.RaHours;
+        TargetDeclination = plan.DecDeg;
       }
 
+      if (!CommandBoolSingleChar(plan.Command))
+      {
+        string what = plan.Kind == AlignActions.Kind.AutoAlign ? "AutoAlign" : plan.Reply;
+        throw new ASCOM.DriverException(what + " command failure");
+      }
+      return plan.Reply;
+    }
+
+    /// <summary>
+    /// stars=&lt;n&gt;;rms=&lt;arcsec&gt;;terms=&lt;CPI&gt;;pier=&lt;in&gt;,&lt;out&gt;
+    /// Same text as the Alpaca AlignStatus action.
+    /// </summary>
+    private static string ReadAlignStatus()
+    {
+      if (!int.TryParse(CommandString("GXAn", false).Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int stars)
+          || stars < 0)
+        throw new ASCOM.DriverException("AlignStatus star count was rejected");
+      if (!double.TryParse(CommandString("GXAr", false).Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double rms)
+          || double.IsNaN(rms) || double.IsInfinity(rms))
+        throw new ASCOM.DriverException("AlignStatus residual was rejected");
+      string terms = CommandString("GXAf", false).Trim();
+      string pier = CommandString("GXAb", false).Trim();
+      int comma = pier.IndexOf(',');
+      if (comma <= 0
+          || !int.TryParse(pier.Substring(0, comma), NumberStyles.Integer, CultureInfo.InvariantCulture, out int pierIn)
+          || !int.TryParse(pier.Substring(comma + 1), NumberStyles.Integer, CultureInfo.InvariantCulture, out int pierOut)
+          || !AlignActions.TryFormatStatus(stars, rms, terms, pierIn, pierOut, out string text))
+        throw new ASCOM.DriverException("AlignStatus query was rejected");
+      return text;
+    }
+
+    /// <summary>
+    /// ch, np, id, rms in arcseconds; me, ma, ae in degrees.
+    /// Same text as the Alpaca AlignErrors action.
+    /// </summary>
+    private static string ReadAlignErrors()
+    {
+      double ch = ReadAlignArcsec("GXAc");
+      double np = ReadAlignArcsec("GXAp");
+      double id = ReadAlignArcsec("GXAi");
+      double rms = ReadAlignArcsec("GXAr");
+      double me = ReadAlignDms("GXAa");
+      double ma = ReadAlignDms("GXAz");
+      double ae = ReadAlignDms("AE");
+      if (!AlignActions.TryFormatErrors(ch, np, id, me, ma, rms, ae, out string text))
+        throw new ASCOM.DriverException("AlignErrors query was rejected");
+      return text;
+    }
+
+    private static double ReadAlignArcsec(string command)
+    {
+      string raw = CommandString(command, false).Trim();
+      if (!double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out double value)
+          || double.IsNaN(value) || double.IsInfinity(value))
+        throw new ASCOM.DriverException("AlignErrors query was rejected");
+      return value;
+    }
+
+    private static double ReadAlignDms(string command)
+    {
+      if (!AlignActions.TryParseDms(CommandString(command, false), out double degrees))
+        throw new ASCOM.DriverException("AlignErrors query was rejected");
+      return degrees;
     }
 
     private static bool GenericCommand(string Command, bool Raw, int Mode, ref string buf)

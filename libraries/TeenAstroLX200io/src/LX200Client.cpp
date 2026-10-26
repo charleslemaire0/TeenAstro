@@ -887,7 +887,9 @@ LX200RETURN setAlignFloat(LX200Client& c, char sel, double arcsec)
 
 LX200RETURN LX200Client::alignStartRigid(uint8_t stars)
 {
-  if (stars < 4 || stars > 9) return LX200_SETVALUEFAILED;
+  // :A0,r<n># is n = 3..9. Three stars close with fitProgressive; four and
+  // above close with fitRigidModel.
+  if (stars < 3 || stars > 9) return LX200_SETVALUEFAILED;
   char cmd[8] = ":A0,r0#";
   cmd[5] = (char)('0' + stars);
   return set(cmd);
@@ -895,7 +897,7 @@ LX200RETURN LX200Client::alignStartRigid(uint8_t stars)
 
 LX200RETURN LX200Client::alignAcceptStarRigid(uint8_t stars)
 {
-  if (stars < 4 || stars > 9) return LX200_SETVALUEFAILED;
+  if (stars < 3 || stars > 9) return LX200_SETVALUEFAILED;
   char cmd[8] = ":A*,r0#";
   cmd[5] = (char)('0' + stars);
   return set(cmd);

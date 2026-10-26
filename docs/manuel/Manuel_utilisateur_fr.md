@@ -688,9 +688,41 @@ La première synchro ancre les axes sur la position résolue. La seconde constru
 
 Une synchro ensuite ne corrige que le pointage courant, par exemple après une nouvelle résolution. Elle n'efface pas le modèle. Relancer **Ordinateur Alignement**, ou **Effacer**, le réinitialise.
 
-Si **Erreur monture** est sur **ON** et si **CH** ou **NP** n'est pas nul, cet alignement par synchro tient les deux nombres et mesure encore le pôle, comme **2 Étoiles**. **4 étoiles** et **3+3 étoiles** sont les procédures à la raquette décrites plus haut. **Ordinateur Alignement** ne les lance pas.
+Si **Erreur monture** est sur **ON** et si **CH** ou **NP** n'est pas nul, cet alignement par synchro tient les deux nombres et mesure encore le pôle, comme **2 Étoiles**.
 
-Quand un logiciel conduit au contraire une session étoile par étoile, l'écran passe en **Align. distant** et affiche le nom de l'étoile demandée. Le recentrage se fait alors à la raquette : Shift court valide l'étoile, Shift long (seul ou avec Nord/Sud) ouvre **Réglage Vitesse**.
+**Ordinateur Alignement** sur la raquette n'est que cette synchro à deux étoiles. **4 étoiles** et **3+3 étoiles** depuis l'ordinateur utilisent les actions ci-dessous.
+
+### ASCOM et Alpaca
+
+Le pilote ASCOM Windows et Alpaca (chapitre 23) utilisent les mêmes noms d'action. Le tube est à la maison avant **AlignStart**. Le programme pointe, fait la résolution, et accepte les coordonnées résolues. Il ne recentre pas. Une synchro n'ajoute pas une étoile de cette session.
+
+| Action | Paramètres | Rôle |
+|--------|------------|------|
+| `AutoAlign` | | La même synchro à deux étoiles que **Ordinateur Alignement**. Puis deux synchros sur la position résolue. |
+| `AlignStart` | `2`, `m`, `r3`…`r9` | Départ depuis la maison. `r4` est **4 étoiles**. `r6` est **3+3 étoiles**. `m` est **2 étoiles méca.** |
+| `AlignAtTarget` | `2`, `m`, `r3`…`r9` | Le tube est déjà sur la première étoile. |
+| `AlignAccept` | `étoile` ou `étoile,raHeures,decDeg` | Enregistre cette étoile sur les coordonnées résolues. L'ascension droite est en heures, la déclinaison en degrés. |
+| `AlignSave` | | Écrit le modèle, comme **Sauver**. |
+| `AlignAbort` | | Abandonne la session. |
+| `AlignPolarDone` | | Ferme **2 étoiles méca.** après le passage des vis. |
+| `AlignStatus` | | Étoiles prises, résidu en secondes d'arc, lesquels parmi CH, NP et ID ont été résolus (`CPI`, un tiret là où un terme ne l'a pas été), et combien d'étoiles sont de chaque côté de pilier. |
+| `AlignErrors` | | CH, NP, ID et le résidu en secondes d'arc, et ME, MA et l'erreur à deux étoiles en degrés. |
+
+Un goto altazimutal convient. Les coordonnées données à **AlignAccept** restent l'ascension droite et la déclinaison résolues.
+
+```
+Action("AlignStart", "r6")
+Action("AlignAccept", "1,12.345678,45.123456")
+Action("AlignSave", "")
+```
+
+Répétez **AlignAccept** pour les étoiles 1 à 6, chaque fois avec les coordonnées résolues de cette étoile. Alpaca envoie les mêmes noms à `PUT /api/v1/telescope/0/action`, champs `Action` et `Parameters`.
+
+**AlignErrors** renvoie CH, NP, ID et le résidu en secondes d'arc, et ME, MA et l'erreur à deux étoiles en degrés, par exemple `ch=1.500000;np=-2.250000;id=0.000000;me=0.209444;ma=-1.500000;rms=12.500000;ae=0.016667`.
+
+Une synchro une fois le modèle sauvé ne corrige que le pointage courant. Relancer **AutoAlign**, relancer **AlignStart**, ou **Effacer**, réinitialise le modèle. Pendant que le programme accepte les étoiles, laissez la raquette tranquille.
+
+Quand un programme vous demande au contraire de recentrer chaque étoile, l'écran passe en **Align. distant** et affiche le nom de l'étoile demandée. Un Shift court valide l'étoile. Un Shift long, seul ou avec Nord ou Sud, ouvre **Réglage Vitesse**.
 
 ### Quelle paire d'étoiles
 
@@ -936,7 +968,7 @@ Avec une **Lolin S3 Mini** (ESP32‑S3) dans la raquette, TeenAstro sert aussi *
 2. Le firmware S3 (`TeenAstroSHC_*_S3_French.bin`, ou English / German).
 3. Le Wi‑Fi allumé, ordinateur ou téléphone sur le même réseau, adresse de **Montre IP** (ou **192.168.0.1** en point d'accès).
 
-L'interface web reste sur le port **80** ; le pilote ASCOM classique et le pont TCP sur **9999** restent disponibles. Détails : [ASCOM Alpaca](https://groups.io/g/TeenAstro/wiki/43151) sur le wiki du groupe.
+L'interface web reste sur le port **80** ; le pilote ASCOM classique et le pont TCP sur **9999** restent disponibles. L'alignement par résolution, depuis l'un ou l'autre pilote, est au chapitre 15, sous **Depuis un ordinateur**. Détails : [ASCOM Alpaca](https://groups.io/g/TeenAstro/wiki/43151) sur le wiki du groupe.
 
 ### SkySafari
 
@@ -1186,7 +1218,7 @@ Les cartes, les tensions d'alimentation et les faisceaux moteurs ne sont pas les
 
 ## Annexe E. Changements depuis la version 1.6.0
 
-Le firmware 1.6.0 est la première version de cette génération. Le fichier Lisez-moi du pilote ASCOM, installé avec le pilote, décrit le passage de 1.5 à 1.6. Cette annexe liste ce qui a changé ensuite, jusqu'au firmware 1.6.9 et au pilote ASCOM correspondant.
+Le firmware 1.6.0 est la première version de cette génération. Le fichier Lisez-moi du pilote ASCOM, installé avec le pilote, décrit le passage de 1.5 à 1.6. Cette annexe liste ce qui a changé ensuite, jusqu'au firmware 1.6.9 et au pilote ASCOM correspondant, puis les actions d'alignement par ordinateur des pilotes actuels.
 
 ### 1.6.1
 
@@ -1236,3 +1268,7 @@ Le firmware 1.6.0 est la première version de cette génération. Le fichier Lis
 - **Erreur de monture**, au-dessus de la réfraction, conserve un CH et un NP déjà connus pendant un alignement à deux étoiles et pendant une synchro de plate-solve.
 - **Sauver** après **4 étoiles** ou **3+3 étoiles** copie aussi le CH et le NP publiés dans Erreur monture, pour que la page Monture du web et un 2 étoiles ultérieur avec Erreur monture ON voient ces valeurs (pas 0,000°).
 - Le bouton **Auto!** de l'uploader (Telescope / Focuser) sauvegarde les paramètres, détecte la carte, flashe, restaure et vérifie (firmware 1.5+). **EEPROM** édite l'ensemble des paramètres (deux montures sur l'unité principale). **Upload!** flashe toujours sans toucher aux réglages.
+
+### Alignement depuis ASCOM et Alpaca
+
+- Le pilote Windows et Alpaca partagent les mêmes actions d'alignement. **AutoAlign** est **Ordinateur Alignement** : deux synchros de résolution, sans recentrage. **AlignStart** avec `r4` ou `r6` lance **4 étoiles** ou **3+3 étoiles** depuis l'ordinateur. **AlignAccept** enregistre chaque étoile résolue. **AlignSave** écrit le modèle. **AlignErrors** lit CH, NP, ID, ME, MA, le résidu et l'erreur à deux étoiles. Le chapitre 15 donne la séquence. Une synchro après l'enregistrement ne corrige que le pointage courant.

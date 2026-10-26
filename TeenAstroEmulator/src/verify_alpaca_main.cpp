@@ -230,7 +230,7 @@ int main(int argc, char** argv)
            "\"Value\":4");
   run_test(srv, telescope, "GET supportedactions",
            "/api/v1/telescope/0/supportedactions", HTTP_GET, {{"ClientID","1"},{"ClientTransactionID","5"}},
-           "\"Value\":[]");
+           "\"AlignAccept\"");
 
   // GET connected before PUT — should be `false`
   run_test(srv, telescope, "GET connected (initially false)",
@@ -709,6 +709,30 @@ int main(int argc, char** argv)
            "/api/v1/FOCUSER/0/name", HTTP_GET,
            {{"ClientID","1"},{"ClientTransactionID","213"}},
            "\"ErrorNumber\":1024", 400);
+
+  // Read-only and rejected alignment actions. A successful AlignStart would
+  // sync the emulator at home, so that stays out of this pass.
+  std::printf("\n==> Phase 11: alignment actions\n");
+  run_test(srv, telescope, "PUT action without Action → invalid value",
+           "/api/v1/telescope/0/action", HTTP_PUT,
+           {{"ClientID","1"},{"ClientTransactionID","300"}},
+           "\"ErrorNumber\":1025");
+  run_test(srv, telescope, "PUT action unknown",
+           "/api/v1/telescope/0/action", HTTP_PUT,
+           {{"Action","Nope"},{"ClientID","1"},{"ClientTransactionID","301"}},
+           "\"ErrorNumber\":1036");
+  run_test(srv, telescope, "PUT AlignStart without mode",
+           "/api/v1/telescope/0/action", HTTP_PUT,
+           {{"Action","AlignStart"},{"Parameters",""},{"ClientID","1"},{"ClientTransactionID","302"}},
+           "\"ErrorNumber\":1025");
+  run_test(srv, telescope, "PUT AlignStatus",
+           "/api/v1/telescope/0/action", HTTP_PUT,
+           {{"Action","AlignStatus"},{"ClientID","1"},{"ClientTransactionID","303"}},
+           "stars=");
+  run_test(srv, telescope, "PUT AlignErrors",
+           "/api/v1/telescope/0/action", HTTP_PUT,
+           {{"Action","AlignErrors"},{"ClientID","1"},{"ClientTransactionID","304"}},
+           "ch=");
 
   // -------------------------------------------------------------------------
   //  Summary

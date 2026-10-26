@@ -13,6 +13,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #if defined(ARDUINO_ARCH_ESP32) && !defined(TEENASTRO_NATIVE_BUILD)
 #include <esp_task_wdt.h>
@@ -728,7 +729,9 @@ void AlpacaTelescope::getInterfaceVersion(AlpacaWebServer& s, const AlpacaReques
 
 void AlpacaTelescope::getSupportedActions(AlpacaWebServer& s, const AlpacaRequest& r)
 {
-  sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), F("[]"));
+  // Same names as ASCOM.TeenAstro.Telescope.AlignActions.
+  sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
+               F("[\"AutoAlign\",\"AlignStart\",\"AlignAtTarget\",\"AlignAccept\",\"AlignSave\",\"AlignAbort\",\"AlignPolarDone\",\"AlignStatus\",\"AlignErrors\"]"));
 }
 
 void AlpacaTelescope::getDeviceState(AlpacaWebServer& s, const AlpacaRequest& r)
@@ -810,10 +813,453 @@ void AlpacaTelescope::putConnect(AlpacaWebServer& s, const AlpacaRequest& r)
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }
 
+namespace {
+
+// Parameter grammar matches TelescopeDriver/AlignActions.cs.
+
+enum class AlignKind : uint8_t
+{
+  Auto, Start, AtTarget, Accept, Save, Abort, Polar, Status, Errors
+};
+
+enum class AlignMode : uint8_t { None, Two, Mech, Rigid };
+
+enum class AlignParse : uint8_t { Ok, Unknown, Bad };
+
+struct AlignPlan
+{
+  AlignKind kind;
+  AlignMode mode;
+  uint8_t rigidStars;
+  uint8_t star;
+  bool setTarget;
+  double raHours;
+  double decDeg;
+  char reply[48];
+  char error[96];
+};
+
+void alignPlanClear(AlignPlan& plan)
+{
+  memset(&plan, 0, sizeof(plan));
+}
+
+bool parseAlignNumber(const char* s, double& out)
+{
+  if (s == nullptr || *s == '\0') return false;
+  char* end = nullptr;
+  double v = strtod(s, &end);
+  if (end == s || end == nullptr || *end != '\0') return false;
+  if (!(v <= 1.0e9 && v >= -1.0e9)) return false;
+  out = v;
+  return true;
+}
+
+void trimField(char* s)
+{
+  char* start = s;
+  while (*start == ' ' || *start == '\t') ++start;
+  if (start != s)
+    memmove(s, start, strlen(start) + 1);
+  size_t n = strlen(s);
+  while (n > 0 && (s[n - 1] == ' ' || s[n - 1] == '\t'))
+    s[--n] = '\0';
+}
+
+bool parseAlignMode(const char* p, AlignPlan& plan, const char* replyName)
+{
+  if (strcmp(p, "2") == 0)
+  {
+    plan.mode = AlignMode::Two;
+    snprintf(plan.reply, sizeof(plan.reply), "%s 2", replyName);
+    return true;
+  }
+  if (strcmp(p, "m") == 0)
+  {
+    plan.mode = AlignMode::Mech;
+    snprintf(plan.reply, sizeof(plan.reply), "%s m", replyName);
+    return true;
+  }
+  if (p[0] == 'r' && p[1] >= '3' && p[1] <= '9' && p[2] == '\0')
+  {
+    plan.mode = AlignMode::Rigid;
+    plan.rigidStars = (uint8_t)(p[1] - '0');
+    snprintf(plan.reply, sizeof(plan.reply), "%s r%c", replyName, p[1]);
+    return true;
+  }
+  return false;
+}
+
+bool alignFinite(double v)
+{
+  return v <= 1.0e9 && v >= -1.0e9;
+}
+
+void formatFixed6(double v, char* out, size_t n)
+{
+  char buf[24];
+  dtostrf(v, 0, 6, buf);
+  char* p = buf;
+  while (*p == ' ') ++p;
+  if (n == 0) return;
+  strncpy(out, p, n - 1);
+  out[n - 1] = '\0';
+}
+
+/// LX200 signed DMS, for example "+00*12:34", as decimal degrees.
+bool parseDmsDegrees(const char* text, double& degrees)
+{
+  if (text == nullptr) return false;
+  while (*text == ' ' || *text == '\t') ++text;
+  int sign = 1;
+  if (*text == '+' || *text == '-')
+  {
+    if (*text == '-') sign = -1;
+    ++text;
+  }
+  char* end = nullptr;
+  long dd = strtol(text, &end, 10);
+  if (end == text || *end != '*') return false;
+  text = end + 1;
+  long mm = strtol(text, &end, 10);
+  if (end == text || *end != ':') return false;
+  text = end + 1;
+  long ss = strtol(text, &end, 10);
+  if (end == text) return false;
+  while (*end == ' ' || *end == '\t') ++end;
+  if (*end != '\0') return false;
+  if (dd < 0 || mm < 0 || mm > 59 || ss < 0 || ss > 59) return false;
+  degrees = sign * ((double)dd + (double)mm / 60.0 + (double)ss / 3600.0);
+  return true;
+}
+
+bool alignTermsOk(const char* terms)
+{
+  if (terms == nullptr) return false;
+  for (int i = 0; i < 3; ++i)
+  {
+    char c = terms[i];
+    if (c != 'C' && c != 'P' && c != 'I' && c != '-') return false;
+  }
+  return terms[3] == '\0';
+}
+
+AlignParse parseAlignAction(const char* name, const char* params, AlignPlan& plan)
+{
+  alignPlanClear(plan);
+  if (name == nullptr) name = "";
+  if (params == nullptr) params = "";
+
+  if (strcmp(name, "AutoAlign") == 0)
+  {
+    plan.kind = AlignKind::Auto;
+    snprintf(plan.reply, sizeof(plan.reply), "AutoAlign Started");
+    return AlignParse::Ok;
+  }
+
+  if (strcmp(name, "AlignSave") == 0 || strcmp(name, "AlignAbort") == 0
+      || strcmp(name, "AlignPolarDone") == 0 || strcmp(name, "AlignStatus") == 0
+      || strcmp(name, "AlignErrors") == 0)
+  {
+    if (params[0] != '\0')
+    {
+      snprintf(plan.error, sizeof(plan.error), "This action takes no parameters");
+      return AlignParse::Bad;
+    }
+    if (strcmp(name, "AlignSave") == 0)
+    {
+      plan.kind = AlignKind::Save;
+      snprintf(plan.reply, sizeof(plan.reply), "AlignSave");
+    }
+    else if (strcmp(name, "AlignAbort") == 0)
+    {
+      plan.kind = AlignKind::Abort;
+      snprintf(plan.reply, sizeof(plan.reply), "AlignAbort");
+    }
+    else if (strcmp(name, "AlignPolarDone") == 0)
+    {
+      plan.kind = AlignKind::Polar;
+      snprintf(plan.reply, sizeof(plan.reply), "AlignPolarDone");
+    }
+    else if (strcmp(name, "AlignStatus") == 0)
+      plan.kind = AlignKind::Status;
+    else
+      plan.kind = AlignKind::Errors;
+    return AlignParse::Ok;
+  }
+
+  if (strcmp(name, "AlignStart") == 0 || strcmp(name, "AlignAtTarget") == 0)
+  {
+    bool atTarget = strcmp(name, "AlignAtTarget") == 0;
+    const char* replyName = atTarget ? "AlignAtTarget" : "AlignStart";
+    plan.kind = atTarget ? AlignKind::AtTarget : AlignKind::Start;
+    if (!parseAlignMode(params, plan, replyName))
+    {
+      snprintf(plan.error, sizeof(plan.error), "%s requires 2, m, or r3..r9", replyName);
+      return AlignParse::Bad;
+    }
+    return AlignParse::Ok;
+  }
+
+  if (strcmp(name, "AlignAccept") == 0)
+  {
+    if (strlen(params) >= 80)
+    {
+      snprintf(plan.error, sizeof(plan.error), "AlignAccept requires a star 1..9, or star,raHours,decDeg");
+      return AlignParse::Bad;
+    }
+    char buf[80];
+    memcpy(buf, params, strlen(params) + 1);
+    char* fields[3] = { buf, nullptr, nullptr };
+    int nfields = 1;
+    for (char* q = buf; *q != '\0'; ++q)
+    {
+      if (*q == ',')
+      {
+        if (nfields == 3)
+        {
+          snprintf(plan.error, sizeof(plan.error), "AlignAccept requires a star 1..9, or star,raHours,decDeg");
+          return AlignParse::Bad;
+        }
+        *q = '\0';
+        fields[nfields++] = q + 1;
+      }
+    }
+    for (int i = 0; i < nfields; ++i)
+      trimField(fields[i]);
+    if (nfields != 1 && nfields != 3)
+    {
+      snprintf(plan.error, sizeof(plan.error), "AlignAccept requires a star 1..9, or star,raHours,decDeg");
+      return AlignParse::Bad;
+    }
+    if (fields[0][0] < '1' || fields[0][0] > '9' || fields[0][1] != '\0')
+    {
+      snprintf(plan.error, sizeof(plan.error), "AlignAccept star must be 1..9");
+      return AlignParse::Bad;
+    }
+    plan.kind = AlignKind::Accept;
+    plan.star = (uint8_t)(fields[0][0] - '0');
+    snprintf(plan.reply, sizeof(plan.reply), "AlignAccept %u", (unsigned)plan.star);
+    if (nfields == 3)
+    {
+      double ra = 0, dec = 0;
+      if (!parseAlignNumber(fields[1], ra) || ra < 0.0 || ra > 24.0
+          || !parseAlignNumber(fields[2], dec) || dec < -90.0 || dec > 90.0)
+      {
+        snprintf(plan.error, sizeof(plan.error),
+                 "AlignAccept coordinates must be RA hours 0..24 and Dec degrees -90..90");
+        return AlignParse::Bad;
+      }
+      plan.setTarget = true;
+      plan.raHours = ra;
+      plan.decDeg = dec;
+    }
+    return AlignParse::Ok;
+  }
+
+  snprintf(plan.error, sizeof(plan.error), "Action %s is not implemented by this driver", name);
+  return AlignParse::Unknown;
+}
+
+}  // namespace
+
 void AlpacaTelescope::putAction(AlpacaWebServer& s, const AlpacaRequest& r)
 {
-  sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
-                  AE_ACTION_NOT_IMPL, "No custom actions implemented");
+  if (!requireConnected(s, r)) return;
+  if (!s.hasArg("Action"))
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_VALUE, "Action is required");
+    return;
+  }
+
+  String name = AlpacaRequest::arg(s, "Action");
+  name.trim();
+  String params;
+  if (s.hasArg("Parameters"))
+    params = AlpacaRequest::arg(s, "Parameters");
+  params.trim();
+
+  AlignPlan plan;
+  AlignParse parsed = parseAlignAction(name.c_str(), params.c_str(), plan);
+  if (parsed == AlignParse::Unknown)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_ACTION_NOT_IMPL, plan.error);
+    return;
+  }
+  if (parsed == AlignParse::Bad)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_VALUE, plan.error);
+    return;
+  }
+  if (m_client == nullptr)
+  {
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_DRIVER, "Alignment command was rejected");
+    return;
+  }
+
+  if (plan.kind != AlignKind::Status && plan.kind != AlignKind::Errors)
+  {
+    bool moving = motionBusy();
+    unsigned long now = millis();
+    if (m_slewKickEndMs != 0 && (long)(m_slewKickEndMs - now) > 0)
+      moving = true;
+    if (!moving && m_status != nullptr)
+    {
+      m_status->updateAllState(true);
+      moving = taComDriverGxasSlewingMotion(*m_status);
+    }
+    if (moving)
+    {
+      sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                      AE_INVALID_OPERATION,
+                      "Cannot change alignment while the mount is slewing");
+      return;
+    }
+  }
+
+  if (plan.setTarget)
+  {
+    char cmd[48];
+    snprintf(cmd, sizeof(cmd), ":SrL%011.5f#", 15.0 * plan.raHours);
+    if (!isOk(m_client->set(cmd)))
+    {
+      sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                      AE_DRIVER, "TargetRightAscension refused by mount");
+      return;
+    }
+    m_targetRaHours = plan.raHours;
+    m_targetRaSet = true;
+    snprintf(cmd, sizeof(cmd), ":SdL%+011.5f#", plan.decDeg);
+    if (!isOk(m_client->set(cmd)))
+    {
+      noteMountMutated();
+      sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                      AE_DRIVER, "TargetDeclination refused by mount");
+      return;
+    }
+    m_targetDecDeg = plan.decDeg;
+    m_targetDecSet = true;
+  }
+
+  if (plan.kind == AlignKind::Status)
+  {
+    uint8_t stars = 0, nIn = 0, nOut = 0;
+    double rms = 0;
+    char terms[8];
+    memset(terms, 0, sizeof(terms));
+    if (m_client->getAlignStarCount(stars) != LX200_VALUEGET
+        || m_client->getAlignRigidRms(rms) != LX200_VALUEGET
+        || m_client->getAlignFittedTerms(terms, (int)sizeof(terms)) != LX200_VALUEGET
+        || m_client->getAlignPierSides(nIn, nOut) != LX200_VALUEGET
+        || !alignTermsOk(terms)
+        || !(rms <= 1.0e9 && rms >= -1.0e9))
+    {
+      sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                      AE_DRIVER, "AlignStatus query was rejected");
+      return;
+    }
+    char rmsBuf[24];
+    dtostrf(rms, 0, 6, rmsBuf);
+    char* rmsTxt = rmsBuf;
+    while (*rmsTxt == ' ') ++rmsTxt;
+    char body[96];
+    snprintf(body, sizeof(body), "stars=%u;rms=%s;terms=%s;pier=%u,%u",
+             (unsigned)stars, rmsTxt, terms, (unsigned)nIn, (unsigned)nOut);
+    sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), AlpacaJson::escape(body));
+    return;
+  }
+
+  if (plan.kind == AlignKind::Errors)
+  {
+    double ch = 0, np = 0, id = 0, rms = 0, me = 0, ma = 0, ae = 0;
+    char meDms[24], maDms[24], aeDms[24];
+    memset(meDms, 0, sizeof(meDms));
+    memset(maDms, 0, sizeof(maDms));
+    memset(aeDms, 0, sizeof(aeDms));
+    if (m_client->getAlignHeadCone(ch) != LX200_VALUEGET
+        || m_client->getAlignHeadPerp(np) != LX200_VALUEGET
+        || m_client->getAlignHeadIndex2(id) != LX200_VALUEGET
+        || m_client->getAlignRigidRms(rms) != LX200_VALUEGET
+        || m_client->getAlignErrorAlt(meDms, (int)sizeof(meDms)) != LX200_VALUEGET
+        || m_client->getAlignErrorAz(maDms, (int)sizeof(maDms)) != LX200_VALUEGET
+        || m_client->getAlignError(aeDms, (int)sizeof(aeDms)) != LX200_VALUEGET
+        || !parseDmsDegrees(meDms, me)
+        || !parseDmsDegrees(maDms, ma)
+        || !parseDmsDegrees(aeDms, ae)
+        || !alignFinite(ch) || !alignFinite(np) || !alignFinite(id) || !alignFinite(rms))
+    {
+      sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                      AE_DRIVER, "AlignErrors query was rejected");
+      return;
+    }
+    char chb[24], npb[24], idb[24], meb[24], mab[24], rmsb[24], aeb[24];
+    formatFixed6(ch, chb, sizeof(chb));
+    formatFixed6(np, npb, sizeof(npb));
+    formatFixed6(id, idb, sizeof(idb));
+    formatFixed6(me, meb, sizeof(meb));
+    formatFixed6(ma, mab, sizeof(mab));
+    formatFixed6(rms, rmsb, sizeof(rmsb));
+    formatFixed6(ae, aeb, sizeof(aeb));
+    char body[192];
+    snprintf(body, sizeof(body),
+             "ch=%s;np=%s;id=%s;me=%s;ma=%s;rms=%s;ae=%s",
+             chb, npb, idb, meb, mab, rmsb, aeb);
+    sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), AlpacaJson::escape(body));
+    return;
+  }
+
+  LX200RETURN ret = LX200_SETVALUEFAILED;
+  switch (plan.kind)
+  {
+    case AlignKind::Auto:
+      ret = m_client->alignAtHome();
+      break;
+    case AlignKind::Start:
+    case AlignKind::AtTarget:
+    {
+      bool atTarget = plan.kind == AlignKind::AtTarget;
+      if (plan.mode == AlignMode::Two)
+        ret = atTarget ? m_client->alignAcceptStar() : m_client->set(":A0,2#");
+      else if (plan.mode == AlignMode::Mech)
+        ret = atTarget ? m_client->alignAcceptStarMechanicalPole()
+                       : m_client->alignStartMechanicalPole();
+      else
+        ret = atTarget ? m_client->alignAcceptStarRigid(plan.rigidStars)
+                       : m_client->alignStartRigid(plan.rigidStars);
+      break;
+    }
+    case AlignKind::Accept:
+      ret = m_client->alignSelectStarRigid(plan.star);
+      break;
+    case AlignKind::Save:
+      ret = m_client->alignSave();
+      break;
+    case AlignKind::Abort:
+      ret = m_client->alignAbort();
+      break;
+    case AlignKind::Polar:
+      ret = m_client->alignPolarFinalize();
+      break;
+    case AlignKind::Status:
+    case AlignKind::Errors:
+    default:
+      break;
+  }
+
+  if (!isOk(ret))
+  {
+    if (plan.setTarget)
+      noteMountMutated();
+    sendAlpacaError(s, r, m_parent->nextServerTransactionId(),
+                    AE_INVALID_OPERATION, "Alignment command was rejected");
+    return;
+  }
+  noteMountMutated();
+  sendAlpacaOk(s, r, m_parent->nextServerTransactionId(), AlpacaJson::escape(plan.reply));
 }
 
 // CommandBlind / CommandBool / CommandString are pass-throughs to the LX200

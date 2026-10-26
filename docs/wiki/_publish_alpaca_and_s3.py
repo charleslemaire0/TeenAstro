@@ -34,6 +34,7 @@ PAGE_ASCOM_DRIVER = 8102
 PAGE_UPLOADER_SHC = 43072
 PAGE_START = 24430
 PAGE_HOME = 7361
+PAGE_SIDEBAR = 7362  # groups.io wiki _Sidebar (Tools nav on every page)
 
 
 def api(method: str, path: str, form: dict | None = None) -> dict:
@@ -109,25 +110,31 @@ def update_page(page_id: int, title: str, body: str, edit_msg: str) -> dict:
     return got
 
 
-def create_or_find(title: str, body: str, edit_msg: str) -> int:
-    pages: list[dict] = []
+def find_page(title: str) -> int | None:
+    """Return an existing wiki page id. Does not change the page."""
+    want = title.replace("\u2011", "-").replace("\u2013", "-")
     token = None
     while True:
         path = f"getwikipages?group_name={GROUP}&limit=100"
         if token:
             path += f"&page_token={urllib.parse.quote(str(token))}"
         d = api("GET", path)
-        pages.extend(d.get("data") or [])
+        for page in d.get("data") or []:
+            got = (page.get("title") or "").replace("\u2011", "-").replace("\u2013", "-")
+            if got == want:
+                return int(page["id"])
         if not d.get("has_more"):
-            break
+            return None
         token = d.get("next_page_token")
         if not token:
-            break
-    for page in pages:
-        if page.get("title") == title:
-            pid = int(page["id"])
-            update_page(pid, title, body, edit_msg)
-            return pid
+            return None
+
+
+def create_or_find(title: str, body: str, edit_msg: str) -> int:
+    found = find_page(title)
+    if found is not None:
+        print(f"found {found} [{title}]")
+        return found
     result = api(
         "POST",
         "newwikipage",
@@ -212,9 +219,87 @@ def build_alpaca(page_upgrade: int) -> str:
         ul(
             [
                 "<strong>Telescope</strong> — goto, sync, tracking, park/home, "
-                "pulse guide, move axis, site/time.",
+                "pulse guide, move axis, site/time, and plate-solve alignment.",
                 "<strong>Focuser</strong> — when a focuser is attached to the main unit.",
             ]
+        )
+    )
+    parts.append(h("Plate-solve alignment"))
+    parts.append(
+        p(
+            "The Windows ASCOM driver and Alpaca use the same action names. "
+            "The tube is at home before <code>AlignStart</code>. "
+            "The program slews, plate-solves, and accepts the solved coordinates. "
+            "It does not recenter. Sync does not add a star of a multi-star session."
+        )
+    )
+    parts.append(
+        "<table border=\"1\" cellpadding=\"4\" cellspacing=\"0\">"
+        "<tr><th>Action</th><th>Parameters</th><th>Role</th></tr>"
+        "<tr><td><code>AutoAlign</code></td><td></td>"
+        "<td>Two-star alignment by sync (<strong>PC Alignment</strong> on the hand controller). "
+        "Then two syncs of the solved position.</td></tr>"
+        "<tr><td><code>AlignStart</code></td><td><code>2</code>, <code>m</code>, <code>r3</code>…<code>r9</code></td>"
+        "<td>Start from home. <code>r4</code> is <strong>4 Stars</strong>. "
+        "<code>r6</code> is <strong>3+3 Stars</strong>. <code>m</code> is <strong>2 Stars Mech.</strong></td></tr>"
+        "<tr><td><code>AlignAtTarget</code></td><td><code>2</code>, <code>m</code>, <code>r3</code>…<code>r9</code></td>"
+        "<td>The tube is already on the first star.</td></tr>"
+        "<tr><td><code>AlignAccept</code></td><td><code>star</code> or <code>star,raHours,decDeg</code></td>"
+        "<td>Record that star against the solved coordinates. "
+        "Right ascension is hours, declination is degrees.</td></tr>"
+        "<tr><td><code>AlignSave</code></td><td></td><td>Write the model.</td></tr>"
+        "<tr><td><code>AlignAbort</code></td><td></td><td>Abandon the session.</td></tr>"
+        "<tr><td><code>AlignPolarDone</code></td><td></td>"
+        "<td>Close <strong>2 Stars Mech.</strong> after the bolt pass.</td></tr>"
+        "<tr><td><code>AlignStatus</code></td><td></td>"
+        "<td>Stars collected, residual in arcseconds, which of CH, NP and ID were solved, "
+        "and how many stars lie on each pier side.</td></tr>"
+        "<tr><td><code>AlignErrors</code></td><td></td>"
+        "<td>CH, NP, ID and the residual in arcseconds, and ME, MA and the two-star error in degrees.</td></tr>"
+        "</table>\n"
+    )
+    parts.append(
+        p(
+            "An alt-azimuth slew is fine. The coordinates given to <code>AlignAccept</code> "
+            "are still the solved right ascension and declination."
+        )
+    )
+    parts.append(
+        p(
+            "ASCOM: <code>Action(\"AlignStart\", \"r6\")</code>, then "
+            "<code>Action(\"AlignAccept\", \"1,12.345678,45.123456\")</code> "
+            "for each star, then <code>Action(\"AlignSave\", \"\")</code>."
+        )
+    )
+    parts.append(
+        p(
+            "Alpaca sends the same names to <code>PUT /api/v1/telescope/0/action</code>, "
+            "fields <code>Action</code> and <code>Parameters</code>. "
+            "Example: <code>Action=AlignStart&amp;Parameters=r6</code>, then "
+            "<code>Action=AlignAccept&amp;Parameters=1,12.345678,45.123456</code>, then "
+            "<code>Action=AlignSave</code>."
+        )
+    )
+    parts.append(
+        p(
+            "<code>AlignStatus</code> returns text such as "
+            "<code>stars=6;rms=12.500000;terms=-PI;pier=3,3</code>. "
+            "In <code>terms</code>, <code>C</code> is CH, <code>P</code> is NP, "
+            "<code>I</code> is ID, and a dash means that term was not solved. "
+            "<code>AlignErrors</code> returns text such as "
+            "<code>ch=1.500000;np=-2.250000;id=0.000000;me=0.209444;ma=-1.500000;rms=12.500000;ae=0.016667</code>. "
+            "<code>ch</code>, <code>np</code>, <code>id</code> and <code>rms</code> are arcseconds. "
+            "<code>me</code> is ME, <code>ma</code> is MA, and <code>ae</code> is the two-star error, all in degrees."
+        )
+    )
+    parts.append(
+        p(
+            "A sync once the model is saved only corrects the current pointing. "
+            "<code>AutoAlign</code> again, <code>AlignStart</code> again, or "
+            "<strong>Clear</strong> on the hand controller, resets the model. "
+            "While the program is accepting stars, leave the hand controller alone. "
+            "The same sequence is in the field manuals, chapter 15, "
+            "<strong>From a computer</strong>."
         )
     )
     parts.append(h("Related"))
@@ -340,48 +425,133 @@ def build_upgrade(page_alpaca: int) -> str:
     return "".join(parts)
 
 
+def patch_home_diagram(body: str) -> tuple[str, bool]:
+    """Swap the architecture diagram for the version that includes ASCOM Alpaca."""
+    import re
+
+    diagram = SHOTS / "home_architecture_alpaca.png"
+    if not diagram.is_file():
+        print("home diagram: home_architecture_alpaca.png missing — skip")
+        return body, False
+    new_src = data_uri("home_architecture_alpaca.png")
+    # The architecture PNG is the large embedded image (not the Alpaca logo).
+    pattern = re.compile(
+        r'(<img[^>]*class="[^"]*myimg-responsive[^"]*"[^>]*src=")(data:image/png;base64,[^"]+)("[^>]*>)',
+        re.I,
+    )
+
+    def repl(m: re.Match[str]) -> str:
+        # Keep the first large diagram; skip tiny logo replacements by size heuristic.
+        b64 = m.group(2).split(",", 1)[1]
+        # Original diagram ~90KB base64 payload; logo ~18KB.
+        if len(b64) < 40000:
+            return m.group(0)
+        return m.group(1) + new_src + m.group(3)
+
+    body2, n = pattern.subn(repl, body, count=1)
+    if n:
+        return body2, True
+    print("home diagram: large embedded PNG not found — skip")
+    return body, False
+
+
 def patch_home(page_alpaca: int) -> None:
+    """Surface Alpaca on Home: diagram, version line, labeled logo."""
+    import re
+
     got = api("GET", f"getwikipageset?group_name={GROUP}&id={PAGE_HOME}")
     body = got["data"]["body"] or ""
-    if "ASCOM_Alpaca_logo" in body or "ASCOM Alpaca" in body and "11111" in body:
-        # Prefer an idempotent logo insert even if text already mentions Alpaca.
-        pass
+    changed = False
+
+    body, diag_changed = patch_home_diagram(body)
+    changed = changed or diag_changed
+    if diag_changed:
+        print("home: architecture diagram updated with ASCOM Alpaca")
+
+    # Prominent callout under the classic ASCOM driver version line.
+    callout = (
+        f'<p><em><strong>{wiki_a(page_alpaca, "ASCOM Alpaca")}</strong></em> '
+        f"— built‑in Wi‑Fi REST (TCP 11111) with a Lolin S3 Mini hand controller. "
+        f"No Windows COM driver required.</p>\n"
+    )
+    if ">ASCOM Alpaca</a></strong></em>" in body and "TCP 11111" in body:
+        print("home already has Alpaca callout")
+    else:
+        marker_ver = (
+            "<p><em><strong>ASCOM Telescope &amp; Focuser Server 1.6.6</strong></em></p>"
+        )
+        if marker_ver not in body:
+            m = re.search(
+                r"<p><em><strong>ASCOM Telescope &amp; Focuser Server [^<]+</strong></em></p>",
+                body,
+            )
+            if not m:
+                raise SystemExit("home page: ASCOM Server version line not found")
+            marker_ver = m.group(0)
+        body = body.replace(marker_ver, marker_ver + "\n" + callout, 1)
+        changed = True
+
+    # Labeled logo next to community links (larger than the old 96px orphan icon).
     logo = (
-        f'<a href="https://groups.io/g/TeenAstro/wiki/{page_alpaca}" rel="nofollow">'
-        f'<img src="{data_uri("ASCOM_Alpaca_logo.png")}" alt="ASCOM Alpaca" '
-        f'width="96" height="69" loading="lazy" '
+        f'<a href="https://groups.io/g/TeenAstro/wiki/{page_alpaca}" rel="nofollow" '
+        f'title="ASCOM Alpaca">'
+        f'<img src="{data_uri("ASCOM_Alpaca_logo_256.png")}" alt="ASCOM Alpaca" '
+        f'width="128" height="92" loading="lazy" '
         f'class="myimg-responsive myimg-responsive"/></a>'
+        f' <a href="https://groups.io/g/TeenAstro/wiki/{page_alpaca}" rel="nofollow">'
+        f"<strong>ASCOM Alpaca</strong></a>"
     )
     marker = (
         '<a href="https://forum.astronomie.de/threads/teenastro-ein-onstep-projekt.259256/page-33" '
         'rel="nofollow noopener" target="_blank">Astronomie.de</a>'
     )
-    if "ASCOM_Alpaca_logo.png" in body or 'alt="ASCOM Alpaca"' in body:
-        print("home already has Alpaca logo — refreshing body logo only if needed")
-        # Replace existing logo block if present
-        import re
-
+    if 'alt="ASCOM Alpaca"' in body:
         body2, n = re.subn(
-            r'<a href="https://groups\.io/g/TeenAstro/wiki/\d+" rel="nofollow">'
-            r'<img[^>]*alt="ASCOM Alpaca"[^>]*/></a>\s*',
+            r'<a href="https://groups\.io/g/TeenAstro/wiki/\d+"[^>]*>'
+            r'<img[^>]*alt="ASCOM Alpaca"[^>]*/></a>'
+            r'(?:\s*<a href="https://groups\.io/g/TeenAstro/wiki/\d+"[^>]*>'
+            r"<strong>ASCOM Alpaca</strong></a>)?"
+            r"\s*",
             logo + "   ",
             body,
             count=1,
         )
         if n:
             body = body2
+            changed = True
         else:
-            print("could not locate previous logo for refresh; leaving home as-is")
-            return
+            print("could not refresh previous home logo block")
     elif marker in body:
-        body = body.replace(
-            marker,
-            logo + "   " + marker,
-            1,
-        )
+        body = body.replace(marker, logo + "   " + marker, 1)
+        changed = True
     else:
         raise SystemExit("home page: could not find Astronomie.de marker for logo insert")
-    update_page(PAGE_HOME, "Home", body, "Add ASCOM Alpaca symbol on Home")
+
+    if changed:
+        update_page(PAGE_HOME, "Home", body, "Make ASCOM Alpaca visible on Home")
+    else:
+        print("home: no Alpaca visibility changes needed")
+
+
+def patch_sidebar(page_alpaca: int) -> None:
+    """Add ASCOM Alpaca under Tools, next to the classic ASCOM Driver link."""
+    got = api("GET", f"getwikipageset?group_name={GROUP}&id={PAGE_SIDEBAR}")
+    body = got["data"]["body"] or ""
+    if f"wiki/{page_alpaca}" in body or "ASCOM Alpaca" in body:
+        print("_Sidebar already links ASCOM Alpaca")
+        return
+    needle = (
+        '<li><a href="https://groups.io/g/TeenAstro/wiki/ASCOM-Driver" '
+        'rel="nofollow">ASCOM Driver</a></li>'
+    )
+    insert = (
+        f'<li>{wiki_a(page_alpaca, "ASCOM Alpaca")}</li>\n'
+        + needle
+    )
+    if needle not in body:
+        raise SystemExit("_Sidebar: ASCOM Driver Tools entry not found")
+    body = body.replace(needle, insert, 1)
+    update_page(PAGE_SIDEBAR, "_Sidebar", body, "Add ASCOM Alpaca to Tools nav")
 
 
 def patch_ascom_driver(page_alpaca: int, page_upgrade: int) -> None:
@@ -442,7 +612,7 @@ def main() -> None:
         "Create ASCOM Alpaca page",
     )
     page_upgrade = create_or_find(
-        "Upgrade SHC to ESP32-S3",
+        "Upgrade SHC to ESP32 S3",
         p("Draft — refreshing…"),
         "Create ESP32-S3 upgrade page",
     )
@@ -450,15 +620,16 @@ def main() -> None:
         page_alpaca,
         "ASCOM Alpaca",
         build_alpaca(page_upgrade),
-        "Document ASCOM Alpaca requirements",
+        "Document plate-solve alignment actions",
     )
     update_page(
         page_upgrade,
-        "Upgrade SHC to ESP32-S3",
+        "Upgrade SHC to ESP32 S3",
         build_upgrade(page_alpaca),
         "Document Wemos/Lolin to ESP32-S3 upgrade",
     )
     patch_home(page_alpaca)
+    patch_sidebar(page_alpaca)
     patch_ascom_driver(page_alpaca, page_upgrade)
     patch_start_here(page_upgrade)
     print(f"https://groups.io/g/TeenAstro/wiki/{page_alpaca}")

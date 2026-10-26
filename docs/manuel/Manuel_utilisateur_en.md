@@ -690,9 +690,41 @@ The first sync anchors the axes on the solved position. The second builds the mo
 
 A sync after that only corrects the current pointing, for example after another plate solve. It does not clear the model. **PC Alignment** again, or **Clear**, does reset it.
 
-If **Mount error** is **On** and at least one of **CH** and **NP** is not zero, this sync alignment holds both numbers and still measures the pole, the same way as **2 Stars**. **4 Stars** and **3+3 Stars** are the hand-controller procedures above. **PC Alignment** does not start them.
+If **Mount error** is **On** and at least one of **CH** and **NP** is not zero, this sync alignment holds both numbers and still measures the pole, the same way as **2 Stars**.
 
-When software instead drives a star-by-star session, the display shows **Remote Align** and the name of the requested star. Recentering is then done on the hand controller: short Shift accepts the star, long Shift (alone or with North/South) opens **Set Speed**.
+**PC Alignment** on the hand controller is only that two-star sync. **4 Stars** and **3+3 Stars** from the computer use the actions below.
+
+### ASCOM and Alpaca
+
+The Windows ASCOM driver and Alpaca (chapter 23) use the same action names. The tube is at home before **AlignStart**. The program slews, plate-solves, and accepts the solved coordinates. It does not recenter. Sync does not add a star of this session.
+
+| Action | Parameters | Role |
+|--------|------------|------|
+| `AutoAlign` | | Same two-star sync as **PC Alignment**. Then two syncs of the solved position. |
+| `AlignStart` | `2`, `m`, `r3`…`r9` | Start from home. `r4` is **4 Stars**. `r6` is **3+3 Stars**. `m` is **2 Stars Mech.** |
+| `AlignAtTarget` | `2`, `m`, `r3`…`r9` | The tube is already on the first star. |
+| `AlignAccept` | `star` or `star,raHours,decDeg` | Record that star against the solved coordinates. Right ascension is hours, declination is degrees. |
+| `AlignSave` | | Write the model, the same as **Save**. |
+| `AlignAbort` | | Abandon the session. |
+| `AlignPolarDone` | | Close **2 Stars Mech.** after the bolt pass. |
+| `AlignStatus` | | Stars collected, residual in arcseconds, which of CH, NP and ID were solved (`CPI`, a dash where a term was not), and how many stars lie on each pier side. |
+| `AlignErrors` | | CH, NP, ID and the residual in arcseconds, and ME, MA and the two-star error in degrees. |
+
+An alt-azimuth slew is fine. The coordinates given to **AlignAccept** are still the solved right ascension and declination.
+
+```
+Action("AlignStart", "r6")
+Action("AlignAccept", "1,12.345678,45.123456")
+Action("AlignSave", "")
+```
+
+Repeat **AlignAccept** for stars 1 through 6, each time with that star's solved coordinates. Alpaca sends the same names to `PUT /api/v1/telescope/0/action`, fields `Action` and `Parameters`.
+
+**AlignErrors** returns CH, NP, ID and the residual in arcseconds, and ME, MA and the two-star error in degrees, for example `ch=1.500000;np=-2.250000;id=0.000000;me=0.209444;ma=-1.500000;rms=12.500000;ae=0.016667`.
+
+A sync once the model is saved only corrects the current pointing. **AutoAlign** again, **AlignStart** again, or **Clear**, resets the model. While the program is accepting stars, leave the hand controller alone.
+
+When a program instead asks you to recenter each star, the display shows **Remote Align** and the name of the requested star. A short press on Shift accepts the star. A long press on Shift, alone or with North or South, opens **Set Speed**.
 
 ### Which pair of stars
 
@@ -938,7 +970,7 @@ With a **Lolin S3 Mini** (ESP32‑S3) in the hand controller, TeenAstro also ser
 2. S3 firmware (`TeenAstroSHC_*_S3_English.bin`, or French / German).
 3. Wi‑Fi on, computer or phone on the same network, address from **Show IP** (or **192.168.0.1** in access-point mode).
 
-The web UI stays on port **80**; the classic ASCOM driver and the TCP bridge on **9999** remain available. Details: [ASCOM Alpaca](https://groups.io/g/TeenAstro/wiki/43151) on the group wiki.
+The web UI stays on port **80**; the classic ASCOM driver and the TCP bridge on **9999** remain available. Plate-solve alignment from either driver is in chapter 15, under **From a computer**. Details: [ASCOM Alpaca](https://groups.io/g/TeenAstro/wiki/43151) on the group wiki.
 
 ### SkySafari
 
@@ -1188,7 +1220,7 @@ Boards, supply voltages, and motor harnesses are not the same from one version t
 
 ## Appendix E. Changes since version 1.6.0
 
-Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme, installed with the driver, describes the jump from 1.5 to 1.6. This appendix lists what changed afterwards, through firmware 1.6.9 and the matching ASCOM driver.
+Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme, installed with the driver, describes the jump from 1.5 to 1.6. This appendix lists what changed afterwards, through firmware 1.6.9 and the matching ASCOM driver, then the computer alignment actions of the current drivers.
 
 ### 1.6.1
 
@@ -1238,3 +1270,7 @@ Firmware 1.6.0 is the first release of this generation. The ASCOM driver readme,
 - **Mount error**, above Refraction, holds a known CH and NP during a two-star alignment and during a plate-solve sync.
 - **Save** after **4 Stars** or **3+3 Stars** also copies published CH and NP into Mount error, so the web Mount page and a later 2-star with Mount error On see those values (not 0.000°).
 - The firmware uploader **Auto!** button (Telescope / Focuser) backs up parameters, detects the board, flashes, restores, and verifies (firmware 1.5+). **EEPROM** edits the full parameter set (two mounts on the MainUnit). **Upload!** still flashes without touching settings.
+
+### Alignment from ASCOM and Alpaca
+
+- The Windows driver and Alpaca share one set of alignment actions. **AutoAlign** is **PC Alignment**: two plate-solve syncs, no recentering. **AlignStart** with `r4` or `r6` starts **4 Stars** or **3+3 Stars** from the computer. **AlignAccept** records each solved star. **AlignSave** stores the model. **AlignErrors** reads CH, NP, ID, ME, MA, the residual and the two-star error. Chapter 15 has the sequence. A sync after the model is saved only corrects the current pointing.

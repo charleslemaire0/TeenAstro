@@ -690,9 +690,41 @@ Die erste Synchronisierung verankert die Achsen auf der gelösten Position. Die 
 
 Eine spätere Synchronisierung korrigiert nur die aktuelle Zeigerichtung, zum Beispiel nach einer weiteren Plattenlösung. Sie löscht das Modell nicht. **Computer Ausrichtung** erneut, oder **Löschen**, setzt es zurück.
 
-Ist **Montierungsfehler** auf **AN** und **CH** oder **NP** nicht null, hält diese Synchron-Ausrichtung beide Zahlen und misst den Pol weiter, wie **2 Sterne**. **4 Sterne** und **3+3 Sterne** sind die oben beschriebenen Prozeduren am Handkontroller. **Computer Ausrichtung** startet sie nicht.
+Ist **Montierungsfehler** auf **AN** und **CH** oder **NP** nicht null, hält diese Synchron-Ausrichtung beide Zahlen und misst den Pol weiter, wie **2 Sterne**.
 
-Führt ein Programm stattdessen eine Sitzung Stern für Stern, zeigt die Anzeige **Fern-Ausricht.** und den Namen des verlangten Sterns. Das Zentrieren erfolgt dann am Handkontroller: kurzes Shift übernimmt den Stern, langes Shift (allein oder mit Nord/Süd) öffnet **Geschw. setzen**.
+**Computer Ausrichtung** am Handkontroller ist nur diese Zwei-Stern-Synchronisierung. **4 Sterne** und **3+3 Sterne** vom Rechner verwenden die Aktionen unten.
+
+### ASCOM und Alpaca
+
+Der Windows-ASCOM-Treiber und Alpaca (Kapitel 23) verwenden dieselben Aktionsnamen. Der Tubus steht auf Home, bevor **AlignStart** kommt. Das Programm schwenkt, rechnet die Plattenlösung und übernimmt die gelösten Koordinaten. Es zentriert nicht nach. Eine Synchronisierung fügt keinen Stern dieser Sitzung hinzu.
+
+| Aktion | Parameter | Rolle |
+|--------|-----------|-------|
+| `AutoAlign` | | Dieselbe Zwei-Stern-Synchronisierung wie **Computer Ausrichtung**. Danach zwei Synchronisierungen auf die gelöste Position. |
+| `AlignStart` | `2`, `m`, `r3`…`r9` | Start von Home. `r4` ist **4 Sterne**. `r6` ist **3+3 Sterne**. `m` ist **2 Sterne Mech.** |
+| `AlignAtTarget` | `2`, `m`, `r3`…`r9` | Der Tubus steht schon auf dem ersten Stern. |
+| `AlignAccept` | `Stern` oder `Stern,raStunden,decGrad` | Zeichnet diesen Stern gegen die gelösten Koordinaten auf. Rektaszension in Stunden, Deklination in Grad. |
+| `AlignSave` | | Schreibt das Modell, wie **Speichern**. |
+| `AlignAbort` | | Bricht die Sitzung ab. |
+| `AlignPolarDone` | | Schließt **2 Sterne Mech.** nach dem Schraubendurchgang. |
+| `AlignStatus` | | Gesammelte Sterne, Restfehler in Bogensekunden, welche von CH, NP und ID gelöst wurden (`CPI`, ein Strich wo ein Term nicht gelöst wurde), und wie viele Sterne auf jeder Pierseite liegen. |
+| `AlignErrors` | | CH, NP, ID und der Restfehler in Bogensekunden, sowie ME, MA und der Zwei-Stern-Fehler in Grad. |
+
+Ein altazimutales Goto ist geeignet. Die an **AlignAccept** gegebenen Koordinaten bleiben die gelöste Rektaszension und Deklination.
+
+```
+Action("AlignStart", "r6")
+Action("AlignAccept", "1,12.345678,45.123456")
+Action("AlignSave", "")
+```
+
+**AlignAccept** für die Sterne 1 bis 6 wiederholen, jedes Mal mit den gelösten Koordinaten dieses Sterns. Alpaca sendet dieselben Namen an `PUT /api/v1/telescope/0/action`, Felder `Action` und `Parameters`.
+
+**AlignErrors** liefert CH, NP, ID und den Restfehler in Bogensekunden, sowie ME, MA und den Zwei-Stern-Fehler in Grad, zum Beispiel `ch=1.500000;np=-2.250000;id=0.000000;me=0.209444;ma=-1.500000;rms=12.500000;ae=0.016667`.
+
+Eine Synchronisierung nach dem Speichern korrigiert nur die aktuelle Zeigerichtung. **AutoAlign** erneut, **AlignStart** erneut, oder **Löschen**, setzt das Modell zurück. Solange das Programm Sterne übernimmt, den Handkontroller in Ruhe lassen.
+
+Fordert ein Programm dagegen, jeden Stern nachzuzentrieren, zeigt die Anzeige **Fern-Ausricht.** und den Namen des verlangten Sterns. Ein kurzer Druck auf Shift übernimmt den Stern. Ein langer Druck auf Shift, allein oder mit Nord oder Süd, öffnet **Geschw. setzen**.
 
 ### Welches Sternpaar
 
@@ -938,7 +970,7 @@ Mit einem **Lolin S3 Mini** (ESP32‑S3) im Handkontroller bietet TeenAstro auch
 2. S3-Firmware (`TeenAstroSHC_*_S3_German.bin`, oder English / French).
 3. WLAN ein, Computer oder Telefon im selben Netz, Adresse von **IP-Adresse zeigen** (oder **192.168.0.1** im Access-Point-Modus).
 
-Die Weboberfläche bleibt auf Port **80**; der klassische ASCOM-Treiber und die TCP-Brücke auf **9999** bleiben nutzbar. Details: [ASCOM Alpaca](https://groups.io/g/TeenAstro/wiki/43151) im Gruppen-Wiki.
+Die Weboberfläche bleibt auf Port **80**; der klassische ASCOM-Treiber und die TCP-Brücke auf **9999** bleiben nutzbar. Die Ausrichtung per Plattenlösung, von beiden Treibern, steht in Kapitel 15 unter **Vom Rechner**. Details: [ASCOM Alpaca](https://groups.io/g/TeenAstro/wiki/43151) im Gruppen-Wiki.
 
 ### SkySafari
 
@@ -1188,7 +1220,7 @@ Platinen, Versorgungsspannungen und Motorkabel sind von Version zu Version nicht
 
 ## Anhang E. Änderungen seit Version 1.6.0
 
-Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Treibers, die mit dem Treiber installiert wird, beschreibt den Sprung von 1.5 auf 1.6. Dieser Anhang listet, was danach geändert wurde, bis Firmware 1.6.9 und dem passenden ASCOM-Treiber.
+Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Treibers, die mit dem Treiber installiert wird, beschreibt den Sprung von 1.5 auf 1.6. Dieser Anhang listet, was danach geändert wurde, bis Firmware 1.6.9 und dem passenden ASCOM-Treiber, danach die Ausrichtungsaktionen der aktuellen Treiber vom Rechner.
 
 ### 1.6.1
 
@@ -1238,3 +1270,7 @@ Firmware 1.6.0 ist die erste Ausgabe dieser Generation. Die Readme des ASCOM-Tre
 - **Mount error**, über der Refraktion, hält ein bekanntes CH und NP bei einer Zwei-Stern-Ausrichtung und bei einem Plate-Solve-Sync fest.
 - **Speichern** nach **4 Sterne** oder **3+3 Sterne** kopiert auch das veröffentlichte CH und NP nach Montierungsfehler, damit die Web-Seite Montierung und ein späteres 2 Sterne mit Montierungsfehler AN diese Werte sehen (nicht 0,000°).
 - Die Schaltfläche **Auto!** im Firmware-Uploader (Telescope / Focuser) sichert Parameter, erkennt die Platine, flasht, stellt wieder her und prüft (Firmware 1.5+). **EEPROM** bearbeitet den vollen Parametersatz (zwei Montierungen am Steuergerät). **Upload!** flasht weiterhin ohne die Einstellungen anzufassen.
+
+### Ausrichtung von ASCOM und Alpaca
+
+- Der Windows-Treiber und Alpaca teilen dieselben Ausrichtungsaktionen. **AutoAlign** ist **Computer Ausrichtung**: zwei Plattenlösungs-Synchronisierungen, ohne Nachzentrieren. **AlignStart** mit `r4` oder `r6` startet **4 Sterne** oder **3+3 Sterne** vom Rechner. **AlignAccept** zeichnet jeden gelösten Stern auf. **AlignSave** speichert das Modell. **AlignErrors** liest CH, NP, ID, ME, MA, den Restfehler und den Zwei-Stern-Fehler. Kapitel 15 enthält die Folge. Eine Synchronisierung nach dem Speichern korrigiert nur die aktuelle Zeigerichtung.

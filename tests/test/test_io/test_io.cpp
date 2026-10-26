@@ -362,12 +362,14 @@ void test_align_accept_star_rigid_sends_Astar_comma_r(void) {
 }
 
 void test_align_start_rigid_rejects_out_of_range(void) {
-    // Three stars determine six unknowns with zero redundancy, so the firmware
-    // requires four; more than nine has no command encoding. Neither may reach
-    // the mount.
+    // Firmware accepts n = 3..9. Three stars close with the progressive fit.
+    // Two and ten have no command.
     TEST_ASSERT_EQUAL(LX200_SETVALUEFAILED, client->alignStartRigid(2));
-    TEST_ASSERT_EQUAL(LX200_SETVALUEFAILED, client->alignStartRigid(3));
     TEST_ASSERT_EQUAL(LX200_SETVALUEFAILED, client->alignStartRigid(10));
+    TEST_ASSERT_EQUAL(LX200_SETVALUEFAILED, client->alignAcceptStarRigid(2));
+    prepareSetOk();
+    TEST_ASSERT_EQUAL(LX200_VALUESET, client->alignStartRigid(3));
+    TEST_ASSERT_EQUAL_STRING(":A0,r3#", mockStream.getSent());
 }
 
 void test_get_align_pier_sides(void) {
