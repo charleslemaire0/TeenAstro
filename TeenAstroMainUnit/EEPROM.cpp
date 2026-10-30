@@ -570,14 +570,14 @@ void readEEPROMmotor()
   if (mount.motorsEncoders.motorA1.backlashRate < 16 || mount.motorsEncoders.motorA1.backlashRate > 64)
   {
     mount.motorsEncoders.motorA1.backlashRate = 16;
-    XEEPROM.write(getMountAddress(EE_motorA1backlashAmount), 16);
+    XEEPROM.write(getMountAddress(EE_motorA1backlashRate), 16);
   }
 
   mount.motorsEncoders.motorA2.backlashRate = XEEPROM.read(getMountAddress(EE_motorA2backlashRate));
   if (mount.motorsEncoders.motorA2.backlashRate < 16 || mount.motorsEncoders.motorA2.backlashRate > 64)
   {
     mount.motorsEncoders.motorA2.backlashRate = 16;
-    XEEPROM.write(getMountAddress(EE_motorA2backlashAmount), 16);
+    XEEPROM.write(getMountAddress(EE_motorA2backlashRate), 16);
   }
 
   //AXIS 1
@@ -690,7 +690,7 @@ void writeDefaultEEPROMmotor()
   XEEPROM.write(getMountAddress(EE_motorA1lowCurr), 10);
   XEEPROM.write(getMountAddress(EE_motorA1silent), 0);
 
-  XEEPROM.writeUShort(getMountAddress(EE_motorA1backlashAmount), 0);
+  XEEPROM.writeUShort(getMountAddress(EE_motorA2backlashAmount), 0);
   XEEPROM.write(getMountAddress(EE_motorA2backlashRate), 16);
   XEEPROM.writeULong(getMountAddress(EE_motorA2gear), 1800 * 1000);
   XEEPROM.writeUShort(getMountAddress(EE_motorA2stepRot), 200);

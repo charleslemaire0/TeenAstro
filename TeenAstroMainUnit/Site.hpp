@@ -110,7 +110,7 @@ public:
   }
   void ReadSiteDefinition(uint8_t siteIndex)
   {
-    if (siteIndex > maxNumSite)
+    if (siteIndex >= maxNumSite)
       return;
     m_siteIndex = siteIndex;
     int address = EE_sites + m_siteIndex * SiteSize;
@@ -133,7 +133,7 @@ public:
     }
     address += 2;
     m_site.toff = (float)EEPROM.read(address) / 10.0 - 12.0;
-    if (m_site.toff < -12 && m_site.toff >12)
+    if (m_site.toff <= -12 || m_site.toff >= 12)
     {
       setToff(0);
     }
@@ -151,7 +151,7 @@ public:
   void ReadCurrentSiteDefinition()
   {
     m_siteIndex = XEEPROM.read(getMountAddress(EE_currentSite));
-    if (m_siteIndex > maxNumSite)
+    if (m_siteIndex >= maxNumSite)
     {
       initdefault();
     }
@@ -162,10 +162,9 @@ public:
   {
     // init the site information, lat/long/tz/name
     char txt[10];
-    for (int k = 0; k < maxNumSite - 1; k++)
+    for (int k = 0; k < maxNumSite; k++)
     {
       m_siteIndex = k;
-      XEEPROM.write(getMountAddress(EE_currentSite), m_siteIndex);
 #ifdef EMU_MAINUNIT
       // PC emulator: sensible mid-north latitude + prime meridian (fresh EEPROM only)
       setLat(45.0);
@@ -179,6 +178,8 @@ public:
       sprintf(txt, "Site %d", k);
       setSiteName(txt);
     }
+    XEEPROM.write(getMountAddress(EE_currentSite), 0);
+    ReadSiteDefinition(0);
   }
 };
 extern siteDefinition localSite;
