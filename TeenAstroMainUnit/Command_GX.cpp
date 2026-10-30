@@ -835,14 +835,10 @@ static void Command_GX_Motors()
   break;
   case 'I':
   {
-    // :GXMI.#   Get actual current
-    // NOTE: original had D->motorA1, R->motorA2 (swapped) -- preserved as-is
-    if (commandState.command[4] == 'D')
-      sprintf(commandState.reply, "%u#", mount.motorsEncoders.motorA1.driver.getCurrent());
-    else if (commandState.command[4] == 'R')
-      sprintf(commandState.reply, "%u#", mount.motorsEncoders.motorA2.driver.getCurrent());
-    else
-      replyLongUnknow();
+    // :GXMI.#   Get actual current. R = axis 1, D = axis 2, same as the other :GXMx# commands.
+    AxisRef* ax = selectAxis(commandState.command[4]);
+    if (ax) sprintf(commandState.reply, "%u#", ax->motor.driver.getCurrent());
+    else    replyLongUnknow();
   }
   break;
   default:
