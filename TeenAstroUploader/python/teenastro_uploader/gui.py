@@ -10,6 +10,7 @@ from pathlib import Path
 from tkinter import messagebox, ttk
 
 from . import config_focuser, config_mount, detect, download, eeprom_dialog, flash
+from .firmware import shc_ota_filename
 from .paths import (
     APP_NAME,
     FIRMWARE_VERSIONS,
@@ -300,13 +301,27 @@ class UploaderApp(tk.Tk):
                 self._use_latest(),
                 self._language.get(),
                 self._com_shc.get(),
+                self._pcb_shc.get(),
             )
         except Exception as exc:  # noqa: BLE001
             messagebox.showerror(APP_NAME, str(exc), parent=self)
 
     def _on_wifi_shc(self) -> None:
         try:
-            flash.open_shc_wifi(self._ip.get())
+            ip = self._ip.get().strip()
+            if not ip:
+                raise ValueError("Enter an IP address.")
+            if self._pcb_shc.get() == "S3":
+                ota = shc_ota_filename(self._version.get(), self._language.get())
+                messagebox.showinfo(
+                    APP_NAME,
+                    "On the update page, choose "
+                    f"{ota}.\n\n"
+                    "The merged USB image (no _OTA in the name) is too large "
+                    "for a Wi-Fi update.",
+                    parent=self,
+                )
+            flash.open_shc_wifi(ip)
         except Exception as exc:  # noqa: BLE001
             messagebox.showerror(APP_NAME, str(exc), parent=self)
 

@@ -1,12 +1,14 @@
-"""Flash MainUnit/Focuser (Teensy) and SHC (ESP8266)."""
+"""Flash MainUnit/Focuser (Teensy) and SHC (ESP8266 or ESP32-S3)."""
 
 from __future__ import annotations
 
+import io
 import shutil
 import subprocess
 import sys
 import time
 import webbrowser
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 from . import firmware as fw
@@ -96,10 +98,75 @@ def _esptool_cmd() -> list[str]:
     return [sys.executable, "-m", "esptool"]
 
 
-def upload_shc_com(version: str, latest: bool, language: str, comport: str) -> None:
+def shc_write_flash_args(chip: str, comport: str, bin_path: Path) -> list[str]:
+    """Modern esptool args. S3 uses the merged image at 0x0 (same address as ESP8266)."""
+    return [
+        "--chip",
+        chip,
+        "--port",
+        comport,
+        "--baud",
+        "921600",
+        "write_flash",
+        "0x0",
+        str(bin_path),
+    ]
+
+
+def _invoke_esptool(args: list[str]) -> None:
+    """Run PyPI esptool in-process so a frozen uploader can flash ESP32-S3.
+
+    The bundled esptool.exe speaks the old ESP8266 CLI and cannot target esp32s3.
+    esptool.main() may raise SystemExit; that must not close the uploader.
+    """
+    try:
+        import esptool
+    except ImportError as exc:
+        raise FileNotFoundError(
+            "esptool is not installed.\nInstall it with: pip install 'esptool>=4.7'"
+        ) from exc
+    main = getattr(esptool, "main", None)
+    if main is None:
+        import esptool.__main__ as esptool_main
+
+        main = esptool_main.main
+    log = io.StringIO()
+    try:
+        with redirect_stdout(log), redirect_stderr(log):
+            try:
+                main(args)
+            except SystemExit as exc:
+                code = exc.code if isinstance(exc.code, int) else 0
+                if code not in (0, None):
+                    raise RuntimeError(_esptool_failure(code, log.getvalue())) from exc
+    except RuntimeError:
+        raise
+    except Exception as exc:  # noqa: BLE001 - FatalError and connect errors
+        text = log.getvalue().strip()
+        message = str(exc).strip() or exc.__class__.__name__
+        if text and text not in message:
+            message = f"{message}\n\n{text[-2000:]}"
+        raise RuntimeError(message) from exc
+
+
+def _esptool_failure(code: int, log: str) -> str:
+    detail = f"esptool failed (exit {code})"
+    text = log.strip()
+    if text:
+        detail += f"\n\n{text[-2000:]}"
+    return detail
+
+
+def upload_shc_com(
+    version: str, latest: bool, language: str, comport: str, pcb: str = "0.x"
+) -> None:
     if not comport:
         raise ValueError("Select a COM port.")
-    bin_path = fw.resolve_shc_bin(version, latest, language)
+    bin_path = fw.resolve_shc_bin(version, latest, language, pcb)
+    if fw.shc_is_s3(pcb):
+        # Legacy esptool.exe has no ESP32-S3 support; always use the Python package.
+        _invoke_esptool(shc_write_flash_args(fw.shc_chip(pcb), comport, bin_path))
+        return
     cmd = _esptool_cmd() + [
         "-vv",
         "-cd",
@@ -117,20 +184,7 @@ def upload_shc_com(version: str, latest: bool, language: str, comport: str) -> N
     if cmd[0].endswith("esptool.exe") or Path(cmd[0]).name.lower() == "esptool.exe":
         _run(cmd, cwd=app_dir())
         return
-    # Modern esptool (PyPI): esptool.py --port COM --baud 921600 write_flash 0x0 file.bin
-    modern = [
-        *(_esptool_cmd()),
-        "--chip",
-        "esp8266",
-        "--port",
-        comport,
-        "--baud",
-        "921600",
-        "write_flash",
-        "0x0",
-        str(bin_path),
-    ]
-    _run(modern)
+    _run([*(_esptool_cmd()), *shc_write_flash_args("esp8266", comport, bin_path)])
 
 
 def open_shc_wifi(ip: str) -> None:

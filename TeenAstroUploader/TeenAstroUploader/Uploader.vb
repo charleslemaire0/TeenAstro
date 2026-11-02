@@ -487,7 +487,11 @@ Public Class Uploader
       Dim HexPath As String = System.IO.Path.Combine(GetFirmwareBasePath(), fwvdir)
       If Not System.IO.Directory.Exists(HexPath) Then System.IO.Directory.CreateDirectory(HexPath)
       Dim lg As String = "_" + ComboBoxLanguage.SelectedItem
-      Dim Binfile As String = System.IO.Path.Combine(HexPath, "TeenAstroSHC_" + fwv + lg + ".bin")
+      Dim binName As String = "TeenAstroSHC_" + fwv + lg + ".bin"
+      If pcb = "S3" Then
+        binName = "TeenAstroSHC_" + fwv + "_S3" + lg + ".bin"
+      End If
+      Dim Binfile As String = System.IO.Path.Combine(HexPath, binName)
 
       If Not System.IO.File.Exists(Binfile) Then
         MsgBox(Binfile + " Not found!")
@@ -495,7 +499,14 @@ Public Class Uploader
       End If
       Dim comport As String = ComboBoxCOMSHC.SelectedItem
       '"-vv -cd nodemcu -cb 921600 -cp "COM8" -ca 0x00000 -cf C: \Users\Charles\AppData\Local\Temp\VMBuilds\SMARTH~1\ESP826~1\Release/SMARTH~1.BIN
-      Dim cmd As String = "-vv -cd nodemcu -cb 921600 -cp " & comport & " -ca 0x00000 -cf " & Binfile
+      Dim cmd As String
+      If pcb = "S3" Then
+        ' Merged image at 0x0. Legacy esptool.exe cannot target ESP32-S3.
+        pHelp.FileName = "py"
+        cmd = "-3 -m esptool --chip esp32s3 --port " & comport & " --baud 921600 write_flash 0x0 """ & Binfile & """"
+      Else
+        cmd = "-vv -cd nodemcu -cb 921600 -cp " & comport & " -ca 0x00000 -cf " & Binfile
+      End If
       pHelp.Arguments = cmd
       pHelp.WindowStyle = ProcessWindowStyle.Normal
       Dim proc1 As Process = Process.Start(pHelp)
@@ -505,6 +516,15 @@ Public Class Uploader
   End Sub
 
   Private Sub ButtonWIFISHC_Click(sender As Object, e As EventArgs) Handles ButtonWIFISHC.Click
+    If ComboBoxPCBSHC.SelectedItem IsNot Nothing AndAlso ComboBoxPCBSHC.SelectedItem.ToString() = "S3" Then
+      Dim fwv As String = If(ComboBoxFirmwareVersion.SelectedItem, "").ToString()
+      Dim language As String = If(ComboBoxLanguage.SelectedItem, "").ToString()
+      MsgBox(
+        "On the update page, choose TeenAstroSHC_" & fwv & "_S3_" & language & "_OTA.bin." & vbLf & vbLf &
+        "The merged USB image (no _OTA in the name) is too large for a Wi-Fi update.",
+        MsgBoxStyle.Information,
+        "TeenAstro Firmware Uploader")
+    End If
     Dim webAddress As String = "http://" & TextBoxIP.Text & "/update"
     Process.Start(webAddress)
   End Sub
@@ -535,6 +555,12 @@ Public Class Uploader
     Firmwares.Add("TeenAstroSHC_" + ver + "_English.bin")
     Firmwares.Add("TeenAstroSHC_" + ver + "_French.bin")
     Firmwares.Add("TeenAstroSHC_" + ver + "_German.bin")
+    Firmwares.Add("TeenAstroSHC_" + ver + "_S3_English.bin")
+    Firmwares.Add("TeenAstroSHC_" + ver + "_S3_French.bin")
+    Firmwares.Add("TeenAstroSHC_" + ver + "_S3_German.bin")
+    Firmwares.Add("TeenAstroSHC_" + ver + "_S3_English_OTA.bin")
+    Firmwares.Add("TeenAstroSHC_" + ver + "_S3_French_OTA.bin")
+    Firmwares.Add("TeenAstroSHC_" + ver + "_S3_German_OTA.bin")
     Firmwares.Add("TeenAstro_" + ver + "_220_TMC260.hex")
     Firmwares.Add("TeenAstro_" + ver + "_230_TMC260.hex")
     Firmwares.Add("TeenAstro_" + ver + "_240_TMC2130.hex")

@@ -165,7 +165,7 @@ Partial Class Uploader
         '
         'ComboBoxPCBSHC
         '
-        Me.ComboBoxPCBSHC.Items.AddRange(New Object() {"0.x"})
+        Me.ComboBoxPCBSHC.Items.AddRange(New Object() {"0.x", "S3"})
         Me.ComboBoxPCBSHC.Location = New System.Drawing.Point(71, 17)
         Me.ComboBoxPCBSHC.Name = "ComboBoxPCBSHC"
         Me.ComboBoxPCBSHC.Size = New System.Drawing.Size(110, 21)

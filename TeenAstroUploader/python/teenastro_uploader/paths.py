@@ -26,7 +26,7 @@ FOCUSER_PCBS = (
     "2.4 TMC5160",
 )
 
-SHC_PCBS = ("0.x",)
+SHC_PCBS = ("0.x", "S3")
 LANGUAGES = ("English", "French", "German")
 
 

@@ -16,6 +16,12 @@ def firmware_file_list(version: str) -> list[str]:
         f"TeenAstroSHC_{version}_English.bin",
         f"TeenAstroSHC_{version}_French.bin",
         f"TeenAstroSHC_{version}_German.bin",
+        f"TeenAstroSHC_{version}_S3_English.bin",
+        f"TeenAstroSHC_{version}_S3_French.bin",
+        f"TeenAstroSHC_{version}_S3_German.bin",
+        f"TeenAstroSHC_{version}_S3_English_OTA.bin",
+        f"TeenAstroSHC_{version}_S3_French_OTA.bin",
+        f"TeenAstroSHC_{version}_S3_German_OTA.bin",
         f"TeenAstro_{version}_220_TMC260.hex",
         f"TeenAstro_{version}_230_TMC260.hex",
         f"TeenAstro_{version}_240_TMC2130.hex",
@@ -72,8 +78,29 @@ def resolve_hex(version: str, latest: bool, stem: str) -> Path:
     return path
 
 
-def resolve_shc_bin(version: str, latest: bool, language: str) -> Path:
-    path = firmware_dir(version, latest) / f"TeenAstroSHC_{version}_{language}.bin"
+def shc_is_s3(pcb: str) -> bool:
+    return pcb == "S3"
+
+
+def shc_chip(pcb: str) -> str:
+    """esptool --chip value for a hand-controller board choice."""
+    return "esp32s3" if shc_is_s3(pcb) else "esp8266"
+
+
+def shc_bin_filename(version: str, language: str, pcb: str = "0.x") -> str:
+    """USB flash image. S3 is the merged image written at 0x0, not the _OTA app."""
+    if shc_is_s3(pcb):
+        return f"TeenAstroSHC_{version}_S3_{language}.bin"
+    return f"TeenAstroSHC_{version}_{language}.bin"
+
+
+def shc_ota_filename(version: str, language: str) -> str:
+    """ESP32-S3 application image for the web /update page."""
+    return f"TeenAstroSHC_{version}_S3_{language}_OTA.bin"
+
+
+def resolve_shc_bin(version: str, latest: bool, language: str, pcb: str = "0.x") -> Path:
+    path = firmware_dir(version, latest) / shc_bin_filename(version, language, pcb)
     if not path.is_file():
         raise FileNotFoundError(f"{path} not found!")
     return path
