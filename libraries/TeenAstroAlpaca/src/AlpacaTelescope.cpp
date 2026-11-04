@@ -25,6 +25,23 @@ constexpr double kSiderealDegPerSec = 15.04106858 / 3600.0;
 /// Same window as TelescopeHardware.slewingHintUntilUtc after MS/MA/Park/MoveAxis/MF (2 s).
 constexpr unsigned long kComSlewingHintMs = 2000;
 constexpr unsigned long kRateRoundTripCacheMs = 30000;
+/// Extra time IsPulseGuiding stays true after the requested pulse.
+/// Long enough for Conform's next poll, short enough that PHD2 (50 ms)
+/// does not sit out a full extra guide cycle. Was 200 ms.
+constexpr unsigned long kPulseGuideTailMs = 50;
+/// time() below this is the ESP boot epoch (2020-01-01 UTC). SNTP has not
+/// set the station clock yet, so syncing it onto the mount would be wrong.
+constexpr time_t kClockValidAfter = 1577836800;
+
+// LX200 :Ggf# / :Sg are west-positive. Alpaca SiteLongitude is east-positive
+// (ASCOM). Negate and fold into [-180, 180].
+double lx200LongitudeToAlpaca(double westPositive)
+{
+  double east = -westPositive;
+  while (east > 180.0) east -= 360.0;
+  while (east < -180.0) east += 360.0;
+  return east;
+}
 
 /// TelescopeHardware.Slewing (GXAS path): Tracking>=2 → TRK_SLEWING, or GuidingState AtRate (MoveAxis).
 inline bool taComDriverGxasSlewingMotion(TeenAstroMountStatus& st)
@@ -149,9 +166,9 @@ void AlpacaTelescope::syncUtcToHost()
 {
   if (!m_client) return;
   time_t now = time(nullptr);
-  // Skip obviously unset clocks (TeenAstro epoch starts ~1970 but SNTP-less
-  // boards often sit at boot epoch until configured).
-  if (now < (time_t)1577836800)
+  // Skip obviously unset clocks. Station mode starts SNTP; until that
+  // answers, prepareForRequest() keeps m_utcSyncPending set.
+  if (now < kClockValidAfter)
     return;
   struct tm* u = gmtime(&now);
   if (!u) return;
@@ -180,9 +197,16 @@ void AlpacaTelescope::prepareForRequest()
   if (m_attachSyncPending)
   {
     m_attachSyncPending = false;
-    syncUtcToHost();
+    // Clock may still be the boot epoch. Retry on later requests once SNTP
+    // has set it; do not repeat the tracking-rate command on each retry.
+    m_utcSyncPending = true;
     if (m_client) m_client->setTrackRateSidereal();
     noteTrackingRateCommanded(0);
+  }
+  if (m_utcSyncPending && time(nullptr) >= kClockValidAfter)
+  {
+    m_utcSyncPending = false;
+    syncUtcToHost();
   }
 
   // Not forced: shares the host loop's UPDATERATE timer, so this adds no
@@ -2087,7 +2111,7 @@ void AlpacaTelescope::getSiteLongitude(AlpacaWebServer& s, const AlpacaRequest& 
     return;
   }
   sendAlpacaOk(s, r, m_parent->nextServerTransactionId(),
-               AlpacaJson::doubleStr(m_siteLonCache));
+               AlpacaJson::doubleStr(lx200LongitudeToAlpaca(m_siteLonCache)));
 }
 
 void AlpacaTelescope::putSiteLongitude(AlpacaWebServer& s, const AlpacaRequest& r)
@@ -2102,8 +2126,10 @@ void AlpacaTelescope::putSiteLongitude(AlpacaWebServer& s, const AlpacaRequest& 
                     AE_INVALID_VALUE, "SiteLongitude out of range");
     return;
   }
-  int sign = (lon < 0) ? 1 : 0;
-  double a = (lon < 0) ? -lon : lon;
+  // Client value is east-positive. :Sg stores west-positive.
+  double west = -lon;
+  int sign = (west < 0.0) ? 1 : 0;
+  double a = (west < 0.0) ? -west : west;
   int deg = (int)a;
   double mfrac = (a - deg) * 60.0;
   int mn = (int)mfrac;
@@ -2753,9 +2779,10 @@ void AlpacaTelescope::putPulseGuide(AlpacaWebServer& s, const AlpacaRequest& r)
   // :Mg returns nothing and the pulse bit in :GXAS# is easy to miss: the
   // status cache is refreshed before this command runs, and Conform decides
   // "async guide" from the very next IsPulseGuiding read. Hold the flag for
-  // the requested duration so that read is true and the axis is measured
-  // after the pulse, not during the previous one.
-  m_pulseGuideUntilMs = millis() + (unsigned long)durMs + 200UL;
+  // the requested duration plus a short tail so that read is true and the
+  // axis is measured after the pulse. PHD2 polls every 50 ms and waits
+  // until the flag drops, so a longer tail is dead time on every guide cycle.
+  m_pulseGuideUntilMs = millis() + (unsigned long)durMs + kPulseGuideTailMs;
   noteMountMutated();
   sendAlpacaVoid(s, r, m_parent->nextServerTransactionId());
 }

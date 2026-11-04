@@ -151,9 +151,15 @@ public:
   void ReadCurrentSiteDefinition()
   {
     m_siteIndex = XEEPROM.read(getMountAddress(EE_currentSite));
+    // 0 .. maxNumSite-1 are the stored sites. A larger value is an erased
+    // byte (0xFF) or a leftover from a build that treated maxNumSite itself
+    // as in range. Select site 0 and leave the other records alone:
+    // initdefault() would zero every site, which is what an Auto! update
+    // looked like when the saved index was out of range.
     if (m_siteIndex >= maxNumSite)
     {
-      initdefault();
+      XEEPROM.write(getMountAddress(EE_currentSite), 0);
+      ReadSiteDefinition(0);
     }
     else
       ReadSiteDefinition(m_siteIndex);

@@ -1828,8 +1828,10 @@ namespace ASCOM.TeenAstro.Telescope
         {
           throw new ASCOM.InvalidValueException();
         }
-        string sg = (lg >= 0) ? "+" : "-";
-        string cmd = "Sg" + sg + DegtoDDDMMSS(Math.Abs(lg));
+        // ASCOM is east-positive. :Sg is LX200 west-positive, same as the getter's negate.
+        double west = -lg;
+        string sg = (west >= 0) ? "+" : "-";
+        string cmd = "Sg" + sg + DegtoDDDMMSS(Math.Abs(west));
         bool ok = CommandBoolSingleChar(cmd);
         if (!ok)
         {

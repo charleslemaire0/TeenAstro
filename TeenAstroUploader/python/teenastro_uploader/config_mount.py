@@ -139,25 +139,63 @@ class MountConfig:
     sites: list[Site] = field(default_factory=lambda: [Site() for _ in range(4)])
     meta: dict[str, str] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
+    # None means the backup did not record which site was selected.
+    active_site: int | None = None
+
+    def _mount_blob(self) -> dict[str, Any]:
+        blob = dict(self.mount)
+        if self.active_site is not None:
+            blob["activeSite"] = self.active_site
+        return blob
 
     def to_taconfig_json(self) -> list[Any]:
         """TAConfig-compatible object (mount + sites)."""
-        return [self.mount, [s.serialize() for s in self.sites]]
+        return [self._mount_blob(), [s.serialize() for s in self.sites]]
 
     def to_file_dict(self) -> dict[str, Any]:
         return {
             "kind": "TeenAstroMainUnit",
             "format": "taconfig-compatible",
             "meta": self.meta,
-            "mount": self.mount,
+            "mount": self._mount_blob(),
             "sites": [s.serialize() for s in self.sites],
         }
 
 
 def _dms_split(dms: str) -> list[int]:
+    """Split a :Gt / :Gg reply into [degrees, minutes, seconds].
+
+    Degrees keep their sign. Missing seconds become absent so a low-precision
+    reply still round-trips; callers pad with 0 when writing.
+    """
     dms = dms.replace("*", " ").replace("'", " ").replace(":", " ")
     parts = dms.split()
-    return [int(x) for x in parts[:2]] if parts else [0, 0]
+    nums: list[int] = []
+    for part in parts[:3]:
+        try:
+            nums.append(int(part))
+        except ValueError:
+            break
+    return nums or [0, 0]
+
+
+def _format_signed_dms(prefix: str, parts: list[int], deg_width: int) -> str:
+    """LX200 setter. deg_width 3 → :St+DD*MM:SS# , 4 → :Sg+DDD*MM:SS#."""
+    deg = int(parts[0]) if parts else 0
+    minute = abs(int(parts[1])) if len(parts) > 1 else 0
+    sec = abs(int(parts[2])) if len(parts) > 2 else 0
+    return f":{prefix}{deg:+0{deg_width}d}*{minute:02d}:{sec:02d}#"
+
+
+def _take_active_site(mount: dict[str, Any]) -> int | None:
+    if "activeSite" not in mount:
+        return None
+    try:
+        site = int(mount.pop("activeSite"))
+    except (TypeError, ValueError):
+        mount.pop("activeSite", None)
+        return None
+    return site if site in (0, 1, 2) else None
 
 
 def _parse_mtype_from_gxas(b64: str) -> str | None:
@@ -203,8 +241,9 @@ def read_mount(sess: SerialSession) -> MountConfig:
     try:
         cur = sess.query("W?")
         cur_i = int(cur) if cur.isdigit() else 0
-        if cur_i not in (0, 1, 2, 3):
+        if cur_i not in (0, 1, 2):
             cur_i = 0
+        cfg.active_site = cur_i
         for i in range(3):
             _read_site(sess, cfg.sites[i], i)
         sess.query(f"W{cur_i}")  # restore; no reply expected
@@ -264,11 +303,18 @@ def _apply_read(mount: dict[str, Any], tag: str, resp: str) -> None:
         mount[tag] = resp
 
 
+def _query_dms(sess: SerialSession, precise: str, plain: str) -> str:
+    resp = sess.query(precise)
+    if any(ch.isdigit() for ch in resp):
+        return resp
+    return sess.query(plain)
+
+
 def _read_site(sess: SerialSession, site: Site, i: int) -> None:
     sess._ser.write(f":W{i}#".encode("ascii"))  # noqa: SLF001
     time.sleep(0.1)
-    site.latitude = _dms_split(sess.query("Gt"))
-    site.longitude = _dms_split(sess.query("Gg"))
+    site.latitude = _dms_split(_query_dms(sess, "Gtf", "Gt"))
+    site.longitude = _dms_split(_query_dms(sess, "Ggf", "Gg"))
     elev = sess.query("Ge")
     site.elevation = int(elev) if elev.lstrip("+-").isdigit() else 0
     tz = sess.query("GG")
@@ -313,6 +359,13 @@ def write_mount(
             _write_site(sess, site, i)
         except Exception as exc:  # noqa: BLE001
             errors.append(f"site{i}: {exc}")
+
+    if cfg.active_site in (0, 1, 2):
+        try:
+            sess._ser.write(f":W{cfg.active_site}#".encode("ascii"))  # noqa: SLF001
+            time.sleep(0.1)
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"activeSite: {exc}")
 
     if write_motor_enable:
         try:
@@ -403,19 +456,27 @@ def _build_set_cmd(mount: dict[str, Any], tag: str) -> str | None:
     return f":{prefix},{val}#"
 
 
+def _require_set(sess: SerialSession, cmd: str) -> None:
+    ack = sess.send_ack(cmd)
+    if not ack or ack[0] != "1":
+        raise RuntimeError(
+            f"mount rejected {cmd} (ack {ack!r}); "
+            "latitude and longitude can only be set at home or park"
+        )
+
+
 def _write_site(sess: SerialSession, site: Site, i: int) -> None:
     sess._ser.write(f":W{i}#".encode("ascii"))  # noqa: SLF001
     time.sleep(0.1)
-    lat_s = site.latitude[0]
-    lat_m = site.latitude[1] if len(site.latitude) > 1 else 0
-    lon_s = site.longitude[0]
-    lon_m = site.longitude[1] if len(site.longitude) > 1 else 0
-    sess.send_ack(":St%+03d*%02d#" % (lat_s, lat_m))
-    sess.send_ack(":Sg%+04d*%02d#" % (lon_s, lon_m))
-    sess.send_ack(":Se%+04d#" % int(site.elevation))
-    sess.send_ack(":SG%+02.1f#" % (-float(site.timeZone)))
+    # High precision, sign in the degrees field. :St/+DD*MM:SS and
+    # :Sg/+DDD*MM:SS are the lengths the firmware parser accepts.
+    _require_set(sess, _format_signed_dms("St", site.latitude, 3))
+    _require_set(sess, _format_signed_dms("Sg", site.longitude, 4))
+    _require_set(sess, ":Se%+04d#" % int(site.elevation))
+    _require_set(sess, ":SG%+02.1f#" % (-float(site.timeZone)))
     name_cmd = {0: "SM", 1: "SN", 2: "SO", 3: "SP"}.get(i, "SM")
-    sess.send_ack(f":{name_cmd}{site.name}#")
+    if site.name:
+        _require_set(sess, f":{name_cmd}{site.name}#")
 
 
 def save_mount(path: Path, cfg: MountConfig, *, taconfig_compat: bool = True) -> None:
@@ -452,11 +513,13 @@ def load_mount(path: Path) -> MountConfig:
     cfg = MountConfig()
     if isinstance(data, list) and len(data) >= 2:
         cfg.mount = {**DEFAULT_MOUNT, **data[0]}
+        cfg.active_site = _take_active_site(cfg.mount)
         for i, sobj in enumerate(data[1][:4]):
             cfg.sites[i].unserialize(sobj)
     elif isinstance(data, dict) and "mount" in data:
         cfg.meta = dict(data.get("meta") or {})
         cfg.mount = {**DEFAULT_MOUNT, **data["mount"]}
+        cfg.active_site = _take_active_site(cfg.mount)
         for i, sobj in enumerate((data.get("sites") or [])[:4]):
             cfg.sites[i].unserialize(sobj)
     else:
@@ -480,7 +543,26 @@ def verify_mount(sess: SerialSession, expected: MountConfig) -> list[str]:
         except (TypeError, ValueError):
             if ev != av:
                 bad.append(f"{tag}: wrote {ev!r}, read {av!r}")
+    for i, exp in enumerate(expected.sites[:3]):
+        got_s = got.sites[i]
+        if _dms_parts(exp.latitude) != _dms_parts(got_s.latitude):
+            bad.append(f"site{i} latitude: wrote {exp.latitude!r}, read {got_s.latitude!r}")
+        if _dms_parts(exp.longitude) != _dms_parts(got_s.longitude):
+            bad.append(f"site{i} longitude: wrote {exp.longitude!r}, read {got_s.longitude!r}")
+        if int(exp.elevation) != int(got_s.elevation):
+            bad.append(f"site{i} elevation: wrote {exp.elevation!r}, read {got_s.elevation!r}")
+        if abs(float(exp.timeZone) - float(got_s.timeZone)) > 0.05:
+            bad.append(f"site{i} timeZone: wrote {exp.timeZone!r}, read {got_s.timeZone!r}")
+    if expected.active_site in (0, 1, 2) and got.active_site != expected.active_site:
+        bad.append(f"activeSite: wrote {expected.active_site!r}, read {got.active_site!r}")
     return bad
+
+
+def _dms_parts(parts: list[int]) -> list[int]:
+    vals = [int(x) for x in parts[:3]]
+    while len(vals) < 3:
+        vals.append(0)
+    return vals
 
 
 def format_mount_preview(cfg: MountConfig) -> str:
@@ -495,6 +577,8 @@ def format_mount_preview(cfg: MountConfig) -> str:
         lines.append(f"{k} = {cfg.mount[k]}")
     lines.append("")
     lines.append("--- Sites ---")
+    if cfg.active_site is not None:
+        lines.append(f"active = {cfg.active_site}")
     for i, s in enumerate(cfg.sites[:3]):
         lines.append(
             f"[{i}] {s.name!r} lat={s.latitude} lon={s.longitude} "

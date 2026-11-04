@@ -176,9 +176,10 @@ private:
 
   // ---------- helpers ----------
   bool requireConnected(AlpacaWebServer& s, const AlpacaRequest& r);
-  /// One-shot UTC sync: pushes the host UTC date+time to the firmware so
-  /// the mount's sidereal-time computation lines up with the client's
-  /// expectations.  Best-effort (silently ignores firmware refusal).
+  /// Pushes the bridge UTC date+time to the firmware so the mount's
+  /// sidereal time matches the client. Best-effort. No-op until station
+  /// SNTP has moved the ESP clock off the boot epoch; prepareForRequest()
+  /// retries while m_utcSyncPending is set. NINA does not PUT utcdate.
   void syncUtcToHost();
   /// Shared attach behaviour for PUT connected=true and PUT connect (Alpaca Platform 7).
   void noteAlpacaAttached(bool wasAlreadySoftConnected);
@@ -251,9 +252,11 @@ private:
   unsigned long          m_lastCacheRefreshMs = 0;
   unsigned long          m_lastSiteRefreshMs  = 0;
   bool                   m_attachSyncPending  = false;
+  /// Set on Alpaca connect. Cleared once syncUtcToHost() sees a real clock.
+  bool                   m_utcSyncPending     = false;
   bool                   m_siteCacheValid     = false;
   double                 m_siteLatCache       = 0;
-  double                 m_siteLonCache       = 0;
+  double                 m_siteLonCache       = 0; // :Ggf# west-positive
 
   // Cached writes that have no equivalent in the firmware: Alpaca
   // applications expect to round-trip these values even if we cannot
@@ -267,7 +270,7 @@ private:
   // about.  Cache the user's value locally so reads round-trip even
   // when the firmware silently rejects the write.
   double                 m_siteLat       = 0;
-  double                 m_siteLon       = 0;
+  double                 m_siteLon       = 0; // Alpaca east-positive after PUT
   bool                   m_siteLatSet    = false;
   bool                   m_siteLonSet    = false;
   double                 m_raRate        = 0;

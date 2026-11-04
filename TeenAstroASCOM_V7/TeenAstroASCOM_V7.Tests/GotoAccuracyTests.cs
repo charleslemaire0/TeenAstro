@@ -461,12 +461,17 @@ namespace TeenAstroASCOM_V7.Tests
     [TestMethod]
     public void SiteLongitude_DriverLogic_MatchesFormatter()
     {
+      // ASCOM SiteLongitude is east-positive. FormatSgCommand expects the
+      // LX200 value (west-positive), so the driver negates before formatting.
       double lg = 2.3522;
-      string sg = (lg >= 0) ? "+" : "-";
-      string driverCmd = "Sg" + sg + CoordinateFormatters.DegtoDDDMMSS(Math.Abs(lg));
-      string formatterCmd = CoordinateFormatters.FormatSgCommand(lg);
+      double west = -lg;
+      string sg = (west >= 0) ? "+" : "-";
+      string driverCmd = "Sg" + sg + CoordinateFormatters.DegtoDDDMMSS(Math.Abs(west));
+      string formatterCmd = CoordinateFormatters.FormatSgCommand(west);
       Assert.AreEqual(formatterCmd, driverCmd,
         "Driver site-longitude command assembly differs from CoordinateFormatters");
+      Assert.IsTrue(formatterCmd.StartsWith("Sg-"),
+        "An east longitude must be sent to the mount as LX200 west-negative");
     }
 
     #endregion
