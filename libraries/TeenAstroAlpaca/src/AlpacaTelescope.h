@@ -176,10 +176,11 @@ private:
 
   // ---------- helpers ----------
   bool requireConnected(AlpacaWebServer& s, const AlpacaRequest& r);
-  /// Pushes the bridge UTC date+time to the firmware so the mount's
-  /// sidereal time matches the client. Best-effort. No-op until station
-  /// SNTP has moved the ESP clock off the boot epoch; prepareForRequest()
-  /// retries while m_utcSyncPending is set. NINA does not PUT utcdate.
+  /// One-shot UTC sync: pushes the host UTC date+time to the firmware so
+  /// the mount's sidereal-time computation lines up with the client's
+  /// expectations.  Best-effort (silently ignores firmware refusal).
+  /// No-op while the bridge clock is still the boot epoch, so an unset ESP
+  /// does not overwrite the main-unit clock.
   void syncUtcToHost();
   /// Shared attach behaviour for PUT connected=true and PUT connect (Alpaca Platform 7).
   void noteAlpacaAttached(bool wasAlreadySoftConnected);
@@ -252,8 +253,6 @@ private:
   unsigned long          m_lastCacheRefreshMs = 0;
   unsigned long          m_lastSiteRefreshMs  = 0;
   bool                   m_attachSyncPending  = false;
-  /// Set on Alpaca connect. Cleared once syncUtcToHost() sees a real clock.
-  bool                   m_utcSyncPending     = false;
   bool                   m_siteCacheValid     = false;
   double                 m_siteLatCache       = 0;
   double                 m_siteLonCache       = 0; // :Ggf# west-positive

@@ -1,7 +1,4 @@
 #include "TeenAstroWifi.h"
-#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
-#include <time.h>
-#endif
 
 #ifdef SHC_HAS_ALPACA
 static TeenAstroAlpaca alpaca;
@@ -901,9 +898,6 @@ void TeenAstroWifi::update()
   static int writeBufferPos = 0;
   static unsigned long lastStaReconnectMs = 0;
   static bool staEverHadLink = false;
-#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
-  static bool sntpStarted = false;
-#endif
 
   if (wifiOn == false)
   {
@@ -912,9 +906,6 @@ void TeenAstroWifi::update()
     writeBuffer[0] = 0;
     writeBufferPos = 0;
     staEverHadLink = false;
-#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
-    sntpStarted = false;
-#endif
     return;
   }
   if ((activeWifiMode == WifiMode::M_Station1 ||
@@ -941,19 +932,7 @@ void TeenAstroWifi::update()
   if (activeWifiMode == WifiMode::M_Station1 ||
       activeWifiMode == WifiMode::M_Station2 ||
       activeWifiMode == WifiMode::M_Station3)
-  {
     staEverHadLink = true;
-#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
-    // Alpaca copies this clock onto the mount at connect. Without SNTP the
-    // ESP stays at the boot epoch and that sync is skipped, so NINA (which
-    // does not PUT utcdate) leaves the mount clock unset.
-    if (!sntpStarted)
-    {
-      configTime(0, 0, "pool.ntp.org", "time.nist.gov");
-      sntpStarted = true;
-    }
-#endif
-  }
   // Handlers, the TCP bridge and Alpaca all read the mount cache and use the
   // UART; each takes the link lock separately so the display can draw between.
   {

@@ -29,9 +29,6 @@ constexpr unsigned long kRateRoundTripCacheMs = 30000;
 /// Long enough for Conform's next poll, short enough that PHD2 (50 ms)
 /// does not sit out a full extra guide cycle. Was 200 ms.
 constexpr unsigned long kPulseGuideTailMs = 50;
-/// time() below this is the ESP boot epoch (2020-01-01 UTC). SNTP has not
-/// set the station clock yet, so syncing it onto the mount would be wrong.
-constexpr time_t kClockValidAfter = 1577836800;
 
 // LX200 :Ggf# / :Sg are west-positive. Alpaca SiteLongitude is east-positive
 // (ASCOM). Negate and fold into [-180, 180].
@@ -166,9 +163,10 @@ void AlpacaTelescope::syncUtcToHost()
 {
   if (!m_client) return;
   time_t now = time(nullptr);
-  // Skip obviously unset clocks. Station mode starts SNTP; until that
-  // answers, prepareForRequest() keeps m_utcSyncPending set.
-  if (now < kClockValidAfter)
+  // Skip obviously unset clocks (TeenAstro epoch starts ~1970 but SNTP-less
+  // boards often sit at boot epoch until configured). The main unit keeps
+  // its own clock; this copy runs only when the bridge clock is already real.
+  if (now < (time_t)1577836800)
     return;
   struct tm* u = gmtime(&now);
   if (!u) return;
@@ -197,16 +195,9 @@ void AlpacaTelescope::prepareForRequest()
   if (m_attachSyncPending)
   {
     m_attachSyncPending = false;
-    // Clock may still be the boot epoch. Retry on later requests once SNTP
-    // has set it; do not repeat the tracking-rate command on each retry.
-    m_utcSyncPending = true;
+    syncUtcToHost();
     if (m_client) m_client->setTrackRateSidereal();
     noteTrackingRateCommanded(0);
-  }
-  if (m_utcSyncPending && time(nullptr) >= kClockValidAfter)
-  {
-    m_utcSyncPending = false;
-    syncUtcToHost();
   }
 
   // Not forced: shares the host loop's UPDATERATE timer, so this adds no
