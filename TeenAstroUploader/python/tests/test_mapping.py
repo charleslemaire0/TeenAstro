@@ -27,10 +27,11 @@ class MappingTests(unittest.TestCase):
     def test_firmware_list_and_mcu(self):
         files = firmware_file_list("1.6")
         self.assertEqual(len(files), 19)
-        self.assertIn("TeenAstro_1.6_250_TMC2130.hex", files)
+        self.assertIn("TeenAstro_1_6_250_TMC2130.hex", files)
         self.assertIn("TeenAstroSHC_1.6_S3_English.bin", files)
         self.assertIn("TeenAstroSHC_1.6_S3_German_OTA.bin", files)
-        self.assertEqual(mainunit_hex_stem("1.6", "2.5 TMC2130"), "TeenAstro_1.6_250_TMC2130")
+        self.assertEqual(mainunit_hex_stem("1.6", "2.5 TMC2130"), "TeenAstro_1_6_250_TMC2130")
+        self.assertEqual(mainunit_hex_stem("1.6.15", "2.5 TMC5160"), "TeenAstro_1_6_250_TMC5160")
         self.assertEqual(mainunit_mcu("2.5 TMC2130"), "TEENSY40")
         self.assertEqual(mainunit_mcu("2.4 TMC2130"), "TEENSY31")
         self.assertEqual(shc_bin_filename("1.6", "French", "0.x"), "TeenAstroSHC_1.6_French.bin")

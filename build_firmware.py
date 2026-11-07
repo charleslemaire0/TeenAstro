@@ -34,11 +34,17 @@ RELEASE_VERSION = "1.6"
 REPO_ROOT = Path(__file__).resolve().parent
 
 # Uploader uses X.Y only: folder is {X.Y}_latest (rolling) or {X.Y} (stable after promote).
-# E.g. 1.6.1 builds go to 1.6_latest; filenames may still be TeenAstro_1.6.1_...
+# Hex names cannot keep the dot: teensy_post_compile cuts -file at the first '.'.
+# 1.6 and 1.6.1 both land in 1.6_latest as TeenAstro_1_6_....
 def _release_line(version: str) -> str:
     """Return X.Y from X.Y or X.Y.Z (folder name for uploader)."""
     parts = version.strip().split(".")
     return ".".join(parts[:2]) if len(parts) >= 2 else version
+
+
+def _file_token(version: str) -> str:
+    """X_Y token for Teensy hex names. 1.6 and 1.6.15 both become 1_6."""
+    return _release_line(version).replace(".", "_")
 
 # Distribution folder = rolling "latest" for this release line (X.Y_latest)
 DIST_DIR = REPO_ROOT / "TeenAstroUploader" / "TeenAstroUploader" / f"{_release_line(RELEASE_VERSION)}_latest"
@@ -54,50 +60,7 @@ class FirmwareBuild:
     extension: str       # ".hex" or ".bin"
 
 
-# ---------------------------------------------------------------------------
-# Firmware manifest  -  single source of truth
-# ---------------------------------------------------------------------------
-FIRMWARE_MANIFEST: list[FirmwareBuild] = [
-    # ── MainUnit (Teensy .hex) ─────────────────────────────────────────────
-    FirmwareBuild("main", "TeenAstroMainUnit", "220",
-                  f"TeenAstro_{RELEASE_VERSION}_220_TMC260", ".hex"),
-    FirmwareBuild("main", "TeenAstroMainUnit", "230",
-                  f"TeenAstro_{RELEASE_VERSION}_230_TMC260", ".hex"),
-    FirmwareBuild("main", "TeenAstroMainUnit", "240_2130",
-                  f"TeenAstro_{RELEASE_VERSION}_240_TMC2130", ".hex"),
-    FirmwareBuild("main", "TeenAstroMainUnit", "240_5160",
-                  f"TeenAstro_{RELEASE_VERSION}_240_TMC5160", ".hex"),
-    FirmwareBuild("main", "TeenAstroMainUnit", "250_2130",
-                  f"TeenAstro_{RELEASE_VERSION}_250_TMC2130", ".hex"),
-    FirmwareBuild("main", "TeenAstroMainUnit", "250_5160",
-                  f"TeenAstro_{RELEASE_VERSION}_250_TMC5160", ".hex"),
-
-    # ── Focuser (Teensy .hex) ──────────────────────────────────────────────
-    FirmwareBuild("focuser", "TeenAstroFocuser", "220_2130",
-                  f"TeenAstroFocuser_{RELEASE_VERSION}_220_TMC2130", ".hex"),
-    FirmwareBuild("focuser", "TeenAstroFocuser", "230_2130",
-                  f"TeenAstroFocuser_{RELEASE_VERSION}_230_TMC2130", ".hex"),
-    FirmwareBuild("focuser", "TeenAstroFocuser", "240_2130",
-                  f"TeenAstroFocuser_{RELEASE_VERSION}_240_TMC2130", ".hex"),
-    FirmwareBuild("focuser", "TeenAstroFocuser", "240_5160",
-                  f"TeenAstroFocuser_{RELEASE_VERSION}_240_TMC5160", ".hex"),
-
-    # ── SHC Wemos D1 Mini (ESP8266 .bin) ───────────────────────────────────
-    FirmwareBuild("shc", "TeenAstroSHC", "ENGLISH",
-                  f"TeenAstroSHC_{RELEASE_VERSION}_English", ".bin"),
-    FirmwareBuild("shc", "TeenAstroSHC", "FRENCH",
-                  f"TeenAstroSHC_{RELEASE_VERSION}_French", ".bin"),
-    FirmwareBuild("shc", "TeenAstroSHC", "GERMAN",
-                  f"TeenAstroSHC_{RELEASE_VERSION}_German", ".bin"),
-
-    # ── SHC LOLIN S3 Mini (ESP32-S3 merged .bin @0x0) ──────────────────────
-    FirmwareBuild("shc", "TeenAstroSHC", "esp32s3",
-                  f"TeenAstroSHC_{RELEASE_VERSION}_S3_English", ".bin"),
-    FirmwareBuild("shc", "TeenAstroSHC", "esp32s3_FRENCH",
-                  f"TeenAstroSHC_{RELEASE_VERSION}_S3_French", ".bin"),
-    FirmwareBuild("shc", "TeenAstroSHC", "esp32s3_GERMAN",
-                  f"TeenAstroSHC_{RELEASE_VERSION}_S3_German", ".bin"),
-]
+# Firmware manifest is get_manifest_for_version(). Hex names use _file_token.
 
 
 # ---------------------------------------------------------------------------
@@ -134,6 +97,81 @@ def find_output_file(project_path: Path, pio_env: str, ext: str) -> Path | None:
     return max(candidates, key=lambda p: p.stat().st_size)
 
 
+def _platformio_esptool() -> list[str] | None:
+    """PlatformIO's Python plus esptool.py. The post-action in rename_shc.py
+    uses the same pair; calling it from here does not depend on that hook."""
+    packages = Path.home() / ".platformio" / "packages"
+    esptool = packages / "tool-esptoolpy" / "esptool.py"
+    python = Path.home() / ".platformio" / "penv" / "Scripts" / "python.exe"
+    if not python.is_file():
+        python = Path(sys.executable)
+    if esptool.is_file():
+        return [str(python), str(esptool)]
+    return None
+
+
+def _boot_app0() -> Path | None:
+    path = (
+        Path.home()
+        / ".platformio"
+        / "packages"
+        / "framework-arduinoespressif32"
+        / "tools"
+        / "partitions"
+        / "boot_app0.bin"
+    )
+    return path if path.is_file() else None
+
+
+def refresh_s3_merged_image(project_path: Path, pio_env: str) -> bool:
+    """Rewrite *_merged.bin from the application just linked.
+
+    rename_shc.py registers the merge as a post-action on a ``pre:`` script,
+    so a successful ``pio run`` can leave the October merged image in place.
+    Publishing that file is how the USB .bin stays older than the _OTA image.
+    """
+    if "esp32s3" not in pio_env.lower():
+        return True
+    build_dir = project_path / ".pio" / pio_env
+    if not build_dir.is_dir():
+        print(f"  !! S3 build dir missing: {build_dir}")
+        return False
+    apps = [
+        p for p in build_dir.glob("*.bin")
+        if not p.name.endswith("_merged.bin")
+        and p.name not in ("bootloader.bin", "partitions.bin")
+    ]
+    if not apps:
+        print(f"  !! S3 application .bin not found in {build_dir}")
+        return False
+    app = max(apps, key=lambda p: p.stat().st_mtime)
+    bootloader = build_dir / "bootloader.bin"
+    partitions = build_dir / "partitions.bin"
+    boot_app0 = _boot_app0()
+    esptool = _platformio_esptool()
+    merged = build_dir / f"{app.stem}_merged.bin"
+    if esptool is None or boot_app0 is None or not bootloader.is_file() or not partitions.is_file():
+        print("  !! S3 merge tools or bootloader/partitions missing")
+        return False
+    cmd = esptool + [
+        "--chip", "esp32s3",
+        "merge_bin",
+        "-o", str(merged),
+        "--flash_mode", "dio",
+        "--flash_freq", "80m",
+        "--flash_size", "4MB",
+        "0x0", str(bootloader),
+        "0x8000", str(partitions),
+        "0xe000", str(boot_app0),
+        "0x10000", str(app),
+    ]
+    print(f"  >> merging {app.name} -> {merged.name}")
+    if not run(cmd, cwd=project_path):
+        print(f"  !! S3 merge failed for {pio_env}")
+        return False
+    return True
+
+
 def find_ota_app_file(project_path: Path, pio_env: str, ext: str) -> Path | None:
     """Locate the ESP32-S3 application .bin for HTTP OTA (/update).
 
@@ -159,22 +197,25 @@ def find_ota_app_file(project_path: Path, pio_env: str, ext: str) -> Path | None
 # Build logic
 # ---------------------------------------------------------------------------
 def get_manifest_for_version(version: str) -> tuple[Path, list[FirmwareBuild]]:
-    """Return (dist_dir, list of FirmwareBuild) for the given version.
-    Uploader uses X.Y only: folder is X.Y_latest (or X.Y after promote), filenames use X.Y.
+    """Return (dist_dir, firmware variants) for this release.
+
+    Folder is X.Y_latest. Teensy hex names use X_Y so teensy_post_compile
+    keeps the whole stem. SHC bins keep X.Y; esptool takes the full path.
     """
     rl = _release_line(version)
+    token = _file_token(version)
     dist_dir = REPO_ROOT / "TeenAstroUploader" / "TeenAstroUploader" / f"{rl}_latest"
     manifest = [
-        FirmwareBuild("main", "TeenAstroMainUnit", "220", f"TeenAstro_{rl}_220_TMC260", ".hex"),
-        FirmwareBuild("main", "TeenAstroMainUnit", "230", f"TeenAstro_{rl}_230_TMC260", ".hex"),
-        FirmwareBuild("main", "TeenAstroMainUnit", "240_2130", f"TeenAstro_{rl}_240_TMC2130", ".hex"),
-        FirmwareBuild("main", "TeenAstroMainUnit", "240_5160", f"TeenAstro_{rl}_240_TMC5160", ".hex"),
-        FirmwareBuild("main", "TeenAstroMainUnit", "250_2130", f"TeenAstro_{rl}_250_TMC2130", ".hex"),
-        FirmwareBuild("main", "TeenAstroMainUnit", "250_5160", f"TeenAstro_{rl}_250_TMC5160", ".hex"),
-        FirmwareBuild("focuser", "TeenAstroFocuser", "220_2130", f"TeenAstroFocuser_{rl}_220_TMC2130", ".hex"),
-        FirmwareBuild("focuser", "TeenAstroFocuser", "230_2130", f"TeenAstroFocuser_{rl}_230_TMC2130", ".hex"),
-        FirmwareBuild("focuser", "TeenAstroFocuser", "240_2130", f"TeenAstroFocuser_{rl}_240_TMC2130", ".hex"),
-        FirmwareBuild("focuser", "TeenAstroFocuser", "240_5160", f"TeenAstroFocuser_{rl}_240_TMC5160", ".hex"),
+        FirmwareBuild("main", "TeenAstroMainUnit", "220", f"TeenAstro_{token}_220_TMC260", ".hex"),
+        FirmwareBuild("main", "TeenAstroMainUnit", "230", f"TeenAstro_{token}_230_TMC260", ".hex"),
+        FirmwareBuild("main", "TeenAstroMainUnit", "240_2130", f"TeenAstro_{token}_240_TMC2130", ".hex"),
+        FirmwareBuild("main", "TeenAstroMainUnit", "240_5160", f"TeenAstro_{token}_240_TMC5160", ".hex"),
+        FirmwareBuild("main", "TeenAstroMainUnit", "250_2130", f"TeenAstro_{token}_250_TMC2130", ".hex"),
+        FirmwareBuild("main", "TeenAstroMainUnit", "250_5160", f"TeenAstro_{token}_250_TMC5160", ".hex"),
+        FirmwareBuild("focuser", "TeenAstroFocuser", "220_2130", f"TeenAstroFocuser_{token}_220_TMC2130", ".hex"),
+        FirmwareBuild("focuser", "TeenAstroFocuser", "230_2130", f"TeenAstroFocuser_{token}_230_TMC2130", ".hex"),
+        FirmwareBuild("focuser", "TeenAstroFocuser", "240_2130", f"TeenAstroFocuser_{token}_240_TMC2130", ".hex"),
+        FirmwareBuild("focuser", "TeenAstroFocuser", "240_5160", f"TeenAstroFocuser_{token}_240_TMC5160", ".hex"),
         FirmwareBuild("shc", "TeenAstroSHC", "ENGLISH", f"TeenAstroSHC_{rl}_English", ".bin"),
         FirmwareBuild("shc", "TeenAstroSHC", "FRENCH", f"TeenAstroSHC_{rl}_French", ".bin"),
         FirmwareBuild("shc", "TeenAstroSHC", "GERMAN", f"TeenAstroSHC_{rl}_German", ".bin"),
@@ -200,6 +241,12 @@ def build_and_distribute(fw: FirmwareBuild, clean: bool = False, dist_dir: Path 
 
     # Build
     if not run(["pio", "run", "-e", fw.pio_env], cwd=project_path):
+        print(f"  !! BUILD FAILED: {fw.dist_name}")
+        return False
+
+    # The S3 post-action often does not rebuild *_merged.bin. Make it here,
+    # from the app this run just linked, before the USB image is copied.
+    if not refresh_s3_merged_image(project_path, fw.pio_env):
         print(f"  !! BUILD FAILED: {fw.dist_name}")
         return False
 
@@ -259,12 +306,8 @@ def main():
     args = parser.parse_args()
 
     version = (args.version if args.version else RELEASE_VERSION).strip()
-    if args.version:
-        dist_dir, manifest = get_manifest_for_version(version)
-        builds = manifest if args.target == "all" else [fw for fw in manifest if fw.target == args.target]
-    else:
-        dist_dir = DIST_DIR
-        builds = FIRMWARE_MANIFEST if args.target == "all" else [fw for fw in FIRMWARE_MANIFEST if fw.target == args.target]
+    dist_dir, manifest = get_manifest_for_version(version)
+    builds = manifest if args.target == "all" else [fw for fw in manifest if fw.target == args.target]
 
     # List mode
     if args.list:

@@ -29,7 +29,7 @@ except Exception:
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MAIN_ENV = "240_5160"
-DEFAULT_MAIN_HEX_BASE = f"TeenAstro_{FW_RELEASE}_240_TMC5160"
+DEFAULT_MAIN_HEX_BASE = f"TeenAstro_{FW_RELEASE.replace('.', '_')}_240_TMC5160"
 DEFAULT_MAIN_BOARD = "TEENSY31"  # Matches TeenAstroUploader for 2.4 TMC2130/5160
 LOG_PATH = REPO_ROOT / "debug-97e435.log"
 DEBUG_SESSION_ID = "97e435"

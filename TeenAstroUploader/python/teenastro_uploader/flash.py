@@ -6,6 +6,7 @@ import io
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import webbrowser
 from contextlib import redirect_stderr, redirect_stdout
@@ -23,9 +24,13 @@ def _run(cmd: list[str], *, cwd: Path | None = None, hide_console: bool = True) 
         si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         si.wShowWindow = 0
         kwargs["startupinfo"] = si
-    proc = subprocess.run(cmd, **kwargs)
+    proc = subprocess.run(cmd, capture_output=True, text=True, **kwargs)
     if proc.returncode != 0:
-        raise RuntimeError(f"Command failed ({proc.returncode}): {' '.join(cmd)}")
+        detail = f"{proc.stdout or ''}{proc.stderr or ''}".strip()
+        message = f"Command failed ({proc.returncode}): {' '.join(cmd)}"
+        if detail:
+            message = f"{message}\n{detail}"
+        raise RuntimeError(message)
 
 
 def _flash_teensy_cli(hex_path: Path, mcu: str) -> None:
@@ -38,6 +43,20 @@ def _flash_teensy_cli(hex_path: Path, mcu: str) -> None:
     _run([str(cli), f"--mcu={mcu}", "-w", "-v", str(hex_path)])
 
 
+def _stage_post_compile_hex(hex_stem: str, hex_dir: Path) -> tuple[str, Path]:
+    """Give teensy_post_compile a file name with no extra dots.
+
+    Teensyduino 1.56 cuts -file at the first '.'. TeenAstro_1.6_250_TMC5160
+    is then sent as TeenAstro_1.hex, and the loader reports the file missing.
+    """
+    if "." not in hex_stem:
+        return hex_stem, hex_dir
+    safe = hex_stem.replace(".", "_")
+    stage = Path(tempfile.mkdtemp(prefix="teenastro_hex_"))
+    shutil.copy2(hex_dir / f"{hex_stem}.hex", stage / f"{safe}.hex")
+    return safe, stage
+
+
 def _flash_teensy_post_compile(hex_stem: str, hex_dir: Path, mcu: str) -> None:
     """Windows PJRC tools (teensy_post_compile + teensy_reboot), same as VB uploader."""
     post = which_tool("teensy_post_compile")
@@ -46,6 +65,7 @@ def _flash_teensy_post_compile(hex_stem: str, hex_dir: Path, mcu: str) -> None:
             "teensy_post_compile.exe not found.\n"
             "Place PJRC Teensy tools next to the uploader, or install teensy_loader_cli."
         )
+    hex_stem, hex_dir = _stage_post_compile_hex(hex_stem, hex_dir)
     tools = str(post.parent)
     base = [
         str(post),
@@ -55,7 +75,14 @@ def _flash_teensy_post_compile(hex_stem: str, hex_dir: Path, mcu: str) -> None:
         f"-board={mcu}",
     ]
     # Allow teensy_post_compile to show the Teensy Loader UI.
-    _run(base, cwd=post.parent, hide_console=False)
+    # A cold start often opens the window after this tool has already given up.
+    try:
+        _run(base, cwd=post.parent, hide_console=False)
+    except RuntimeError as exc:
+        if "Unable find Teensy Loader" not in str(exc):
+            raise
+        time.sleep(2)
+        _run(base, cwd=post.parent, hide_console=False)
     time.sleep(3)
     _run(base + ["-reboot"], cwd=post.parent, hide_console=False)
 

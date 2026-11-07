@@ -179,6 +179,7 @@ Public Class Uploader
     pHelp.FileName = "teensy_post_compile.exe"
     Dim Hexfile As String = ""
     Dim fwv As String = ComboBoxFirmwareVersion.SelectedItem
+    Dim hexver As String = HexFileToken(fwv)
     Dim fwvdir As String = fwv
     If RadioButtonLatest.Checked Then
       fwvdir += "_latest"
@@ -187,17 +188,17 @@ Public Class Uploader
     If Not System.IO.Directory.Exists(HexPath) Then System.IO.Directory.CreateDirectory(HexPath)
     Select Case pcb
       Case "2.2 TMC260"
-        Hexfile = "TeenAstro_" + fwv + "_220_TMC260"
+        Hexfile = "TeenAstro_" + hexver + "_220_TMC260"
       Case "2.3 TMC260"
-        Hexfile = "TeenAstro_" + fwv + "_230_TMC260"
+        Hexfile = "TeenAstro_" + hexver + "_230_TMC260"
       Case "2.4 TMC2130"
-        Hexfile = "TeenAstro_" + fwv + "_240_TMC2130"
+        Hexfile = "TeenAstro_" + hexver + "_240_TMC2130"
       Case "2.4 TMC5160"
-        Hexfile = "TeenAstro_" + fwv + "_240_TMC5160"
+        Hexfile = "TeenAstro_" + hexver + "_240_TMC5160"
       Case "2.5 TMC2130"
-        Hexfile = "TeenAstro_" + fwv + "_250_TMC2130"
+        Hexfile = "TeenAstro_" + hexver + "_250_TMC2130"
       Case "2.5 TMC5160"
-        Hexfile = "TeenAstro_" + fwv + "_250_TMC5160"
+        Hexfile = "TeenAstro_" + hexver + "_250_TMC5160"
     End Select
 
     If Hexfile = "" Then
@@ -375,6 +376,7 @@ Public Class Uploader
     pHelp.FileName = "teensy_post_compile.exe"
     Dim Hexfile As String = ""
     Dim fwv As String = ComboBoxFirmwareVersion.SelectedItem
+    Dim hexver As String = HexFileToken(fwv)
     Dim fwvdir As String = fwv
     If RadioButtonLatest.Checked Then
       fwvdir += "_latest"
@@ -383,13 +385,13 @@ Public Class Uploader
     If Not System.IO.Directory.Exists(HexPath) Then System.IO.Directory.CreateDirectory(HexPath)
     Select Case pcb
       Case "2.2 TMC2130"
-        Hexfile = "TeenAstroFocuser_" + fwv + "_220_TMC2130"
+        Hexfile = "TeenAstroFocuser_" + hexver + "_220_TMC2130"
       Case "2.3 TMC2130"
-        Hexfile = "TeenAstroFocuser_" + fwv + "_230_TMC2130"
+        Hexfile = "TeenAstroFocuser_" + hexver + "_230_TMC2130"
       Case "2.4 TMC2130"
-        Hexfile = "TeenAstroFocuser_" + fwv + "_240_TMC2130"
+        Hexfile = "TeenAstroFocuser_" + hexver + "_240_TMC2130"
       Case "2.4 TMC5160"
-        Hexfile = "TeenAstroFocuser_" + fwv + "_240_TMC5160"
+        Hexfile = "TeenAstroFocuser_" + hexver + "_240_TMC5160"
     End Select
 
     If Hexfile = "" Then
@@ -546,12 +548,23 @@ Public Class Uploader
     Return s
   End Function
 
+  Private Shared Function HexFileToken(ver As String) As String
+    ' teensy_post_compile cuts -file at the first dot. 1.6 -> 1_6.
+    Dim line As String = ver
+    Dim parts() As String = ver.Split("."c)
+    If parts.Length >= 2 Then
+      line = parts(0) & "." & parts(1)
+    End If
+    Return line.Replace("."c, "_"c)
+  End Function
+
   Private Shared Function GetFirmwareFileList(ver As String) As List(Of String)
+    Dim hexver As String = HexFileToken(ver)
     Dim Firmwares As New List(Of String)
-    Firmwares.Add("TeenAstroFocuser_" + ver + "_220_TMC2130.hex")
-    Firmwares.Add("TeenAstroFocuser_" + ver + "_230_TMC2130.hex")
-    Firmwares.Add("TeenAstroFocuser_" + ver + "_240_TMC2130.hex")
-    Firmwares.Add("TeenAstroFocuser_" + ver + "_240_TMC5160.hex")
+    Firmwares.Add("TeenAstroFocuser_" + hexver + "_220_TMC2130.hex")
+    Firmwares.Add("TeenAstroFocuser_" + hexver + "_230_TMC2130.hex")
+    Firmwares.Add("TeenAstroFocuser_" + hexver + "_240_TMC2130.hex")
+    Firmwares.Add("TeenAstroFocuser_" + hexver + "_240_TMC5160.hex")
     Firmwares.Add("TeenAstroSHC_" + ver + "_English.bin")
     Firmwares.Add("TeenAstroSHC_" + ver + "_French.bin")
     Firmwares.Add("TeenAstroSHC_" + ver + "_German.bin")
@@ -561,12 +574,12 @@ Public Class Uploader
     Firmwares.Add("TeenAstroSHC_" + ver + "_S3_English_OTA.bin")
     Firmwares.Add("TeenAstroSHC_" + ver + "_S3_French_OTA.bin")
     Firmwares.Add("TeenAstroSHC_" + ver + "_S3_German_OTA.bin")
-    Firmwares.Add("TeenAstro_" + ver + "_220_TMC260.hex")
-    Firmwares.Add("TeenAstro_" + ver + "_230_TMC260.hex")
-    Firmwares.Add("TeenAstro_" + ver + "_240_TMC2130.hex")
-    Firmwares.Add("TeenAstro_" + ver + "_240_TMC5160.hex")
-    Firmwares.Add("TeenAstro_" + ver + "_250_TMC2130.hex")
-    Firmwares.Add("TeenAstro_" + ver + "_250_TMC5160.hex")
+    Firmwares.Add("TeenAstro_" + hexver + "_220_TMC260.hex")
+    Firmwares.Add("TeenAstro_" + hexver + "_230_TMC260.hex")
+    Firmwares.Add("TeenAstro_" + hexver + "_240_TMC2130.hex")
+    Firmwares.Add("TeenAstro_" + hexver + "_240_TMC5160.hex")
+    Firmwares.Add("TeenAstro_" + hexver + "_250_TMC2130.hex")
+    Firmwares.Add("TeenAstro_" + hexver + "_250_TMC5160.hex")
     Return Firmwares
   End Function
 
