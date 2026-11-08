@@ -60,7 +60,7 @@ alone = [
     "slewing_altaz_bits", "slewing_flip_bits",
     "E_bits", "W_bits", "align1_bits", "align2_bits", "align3_bits", "Aligned_bits",
     "Spiral_bits", "GNSS_bits", "GNSSL_bits", "GNSST_bits",
-    "ErrA1_bits", "ErrA2_bits", "ErrHo_bits", "ErrMe_bits", "ErrMf_bits", "ErrUp_bits",
+    "ErrA1_bits", "ErrA2_bits", "ErrHo_bits", "ErrMe_bits", "ErrMf_bits", "ErrUp_bits", "ErrPs_bits",
     "Lock___bits", "guiding__bits", "recenter_base_bits", "atrate_base_bits",
 ]
 for name in alone:

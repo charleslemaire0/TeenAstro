@@ -658,9 +658,9 @@ class _ObjectActionSheet extends ConsumerWidget {
                           final reply = await client.sendCommand(LX200.gotoTarget);
                           if (context.mounted) {
                             if (reply != '0') {
-                              final errIdx = int.tryParse(reply ?? '') ?? -1;
-                              final msg = errIdx >= 0 && errIdx < GotoError.values.length
-                                  ? gotoErrorCause(GotoError.values[errIdx])
+                              final err = gotoErrorFromReply(reply);
+                              final msg = err != null
+                                  ? gotoErrorCause(err)
                                   : 'Goto failed: $reply';
                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                 content: Text(msg), backgroundColor: TA.error,

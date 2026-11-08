@@ -45,6 +45,7 @@
 #define T_PERP "NP"
 #define T_USE_IN_2STAR "Measures pole"
 #define T_SAME_SIDE "Same pier side"
+#define T_AROUND_SKY "Around the sky"
 #define T_MEASURES_PERP "NP"
 #define T_FLIP_AFTER_3 "Flip after 3"
 #define T_MEASURES_CONE "CH + NP"
@@ -313,6 +314,7 @@
 #define T_MAXHOURANGLE "Max Hour Angle"
 #define T_UNDERPOLE "Under Pole"
 #define T_UNDERPOLELIMIT "Under Pole Limit"
+#define T_PIERSIDELIMIT "on wrong side"
 
 #define T_FARFROMPOLE "Far From Pole"
 #define T_DISTANCE "Distance"

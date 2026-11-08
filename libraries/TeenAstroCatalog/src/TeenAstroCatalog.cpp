@@ -2,6 +2,7 @@
 #include <math.h>
 #include <pgmspace.h>
 #include "TeenAstroCatalog.h"
+#include "AlignCatalogRule.h"
 #include "CatalogTypes.h"
 #include "CatalogConfig.h"
 
@@ -324,7 +325,8 @@ void CatMgr::buildAlignRank(int mountKind, int session, const float *prevRa, con
   if (_selected < 0 || !isInitialized()) return;
   if (nPrev < 0) nPrev = 0;
   if (nPrev > 6) nPrev = 6;
-  const bool altaz = (mountKind == 1);
+  const bool altaz = (mountKind != 0);
+  const AlignCatalogRule rule = alignCatalogRule(mountKind, session);
 
   // Equatorial side is the sign of the hour angle. The other side of a 3+3
   // is judged from the first three stars only. A star within 12° of the
@@ -420,8 +422,9 @@ void CatMgr::buildAlignRank(int mountKind, int session, const float *prevRa, con
       else if (haD < -12.0) sign = -1;
       // Pier side known: show only that side (omit the other pier and the
       // meridian strip so the user cannot pick the wrong mechanical side).
-      if (wantSign != 0 && sign != wantSign) continue;
-      if (preferSign != 0 && sign == preferSign) score += 40.0;
+      if ((rule == ALIGN_EQ_THIS_SIDE || rule == ALIGN_EQ_OTHER_SIDE)
+          && wantSign != 0 && sign != wantSign) continue;
+      if (rule == ALIGN_EQ_EITHER && preferSign != 0 && sign == preferSign) score += 40.0;
     } else {
       // Alt-azimuth: spread azimuth and altitude. The zenith makes azimuth
       // undefined, so a star overhead is a poor pick. There is no meridian.
@@ -436,16 +439,29 @@ void CatMgr::buildAlignRank(int mountKind, int session, const float *prevRa, con
         const double dAz = alignAzDelta(cAz, meanAz);
         double dAlt = fabs(altD - meanAlt);
         if (dAlt > 40.0) dAlt = 40.0;
-        if (session == 0) {
+        if (rule == ALIGN_AZ_SPREAD) {
           score += 30.0 - fabs(dAz - 90.0) * 0.35;
           score += dAlt * 0.5;
-        } else if (session == 3) {
-          // Opposite azimuth: the other mechanical side, over the zenith.
+        } else if (rule == ALIGN_AZ_OPPOSITE) {
+          // Other mechanical side, over the zenith.
           if (dAz < 70.0) continue;
           score += 36.0 - fabs(dAz - 160.0) * 0.3;
           score += dAlt * 0.3;
+        } else if (rule == ALIGN_AZ_FULL) {
+          // Four stars on an alt-az: one side of the mount reaches the whole
+          // sky. A sector cap hid the other half after a western start.
+          double minAz = dAz;
+          for (int k = 0; k < nPrev; k++) {
+            double pAlt = 0.0, pAz = 0.0;
+            EquToHor(prevRa[k], prevDec[k], &pAlt, &pAz);
+            const double d = alignAzDelta(cAz, pAz);
+            if (d < minAz) minAz = d;
+          }
+          if (minAz > 140.0) minAz = 140.0;
+          score += minAz * 0.45;
+          score += dAlt * 0.5;
         } else {
-          // Four stars, and the first half of 3+3, stay in one part of the sky.
+          // First half of an alt-az 3+3: one sector.
           if (dAz > 100.0) continue;
           score += 24.0 - fabs(dAz - 50.0);
           score += dAlt * 0.5;

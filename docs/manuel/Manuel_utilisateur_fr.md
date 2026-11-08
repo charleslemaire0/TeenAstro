@@ -252,6 +252,7 @@ Les flèches de guidage se dessinent par-dessus le cadre, la cible ou le réticu
 | ![](images/icons/ErrHo.png) | Sous l'horizon |
 | ![](images/icons/ErrMe.png) | Limite de méridien |
 | ![](images/icons/ErrUp.png) | Sous le pôle |
+| ![](images/icons/ErrPs.png) | Côté de pilier que ce type de monture n'utilise pas (axe 2 au-delà de 90°). Goto, déplacement et suivi s'arrêtent ; revenez à la main ou par un goto |
 | ![](images/icons/ErrMf.png) | Défaut moteur |
 
 ---
@@ -817,7 +818,7 @@ Le tube peut être d'un côté ou de l'autre du pilier. L'écran indique le côt
 **Limites → Équ. Allemande**
 
 - **Méridien Est** et **Méridien Ouest** : de −45° à +45°. Ils autorisent le suivi un peu au-delà du méridien avant le retournement, pour ne pas couper une pose au passage.
-- **Sous le Pôle** : angle horaire maximal, de 9 h à 12 h. Il empêche le tube ou la barre de contrepoids de venir dans le pied quand on suit un objet sous le pôle.
+- **Sous le Pôle** : angle horaire maximal, de 9 h à 12 h. Il empêche le tube ou la barre de contrepoids de venir dans le pied quand on suit un objet sous le pôle. Une fourche équatoriale utilise le même angle horaire. Un goto au-delà change de côté de pilier : la déclinaison passe 90° et le tube vise sous Polaris. La fourche ne retourne pas au méridien.
 
 Réglez ces valeurs pour votre mécanique (longueur du tube, hauteur des pieds), pas pour le catalogue. Un objet refusé s'annonce par **Hors Limites**, **Sous l'horizon**, **Proche du zénith** ou **Limite Méridien**.
 

@@ -25,6 +25,7 @@ enum LX200RETURN
   LX200_FLIPSAMESIDE,
   LX200_ERR_MOTOR_FAULT, LX200_ERR_ALT, LX200_ERR_AXIS1, LX200_ERR_AXIS2,
   LX200_ERR_LIMIT_SENSE, LX200_ERR_UNDER_POLE, LX200_ERR_MERIDIAN,
+  LX200_ERR_PIER_SIDE,
   LX200_ERRGOTO_NOOBJECTSELECTED, LX200_ERRGOTO_PARKED, LX200_ERRGOTO_BUSY,
   LX200_ERRGOTO_LIMITS, LX200_ERRGOTO_UNKOWN,
   // Success (values >= LX200_OK)
@@ -68,7 +69,8 @@ enum ErrorsGoTo
   ERRGOTO_AXIS1,
   ERRGOTO_AXIS2,
   ERRGOTO_UNDER_POLE,
-  ERRGOTO_MERIDIAN
+  ERRGOTO_MERIDIAN,
+  ERRGOTO_PIER_SIDE    // the mount type never uses this pier side
 };
 
 // ---------------------------------------------------------------------------
@@ -127,6 +129,7 @@ inline LX200RETURN gotoErrorToReturn(ErrorsGoTo err, bool isGoto)
   case ERRGOTO_AXIS2:           return LX200_ERR_AXIS2;
   case ERRGOTO_UNDER_POLE:      return LX200_ERR_UNDER_POLE;
   case ERRGOTO_MERIDIAN:        return LX200_ERR_MERIDIAN;
+  case ERRGOTO_PIER_SIDE:       return LX200_ERR_PIER_SIDE;
   default:                      return LX200_ERRGOTO_UNKOWN;
   }
 }

@@ -560,18 +560,32 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         (mtAlign == TeenAstroMountStatus::MOUNT_TYPE_GEM
          || mtAlign == TeenAstroMountStatus::MOUNT_TYPE_FORK
          || mtAlign == TeenAstroMountStatus::MOUNT_UNDEFINED);
-    const char* string_list = alignInProgress ? T_CANCEL :
-      (ta_MountStatus.isAligned() ?
-        (showThreeStar ?
-          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_TWO_STARS_MECH "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error\n" T_KNOWN_ERRORS :
-          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_PC " " T_ALIGNMENT  "\n" T_SAVE "\n" T_Clear "\nShow align. error\n" T_KNOWN_ERRORS) :
-        (showThreeStar ?
-          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_TWO_STARS_MECH "\n" T_PC " " T_ALIGNMENT "\n" T_KNOWN_ERRORS :
-          "2 " T_STARS "\n" T_ALIGN_PERP "\n" T_ALIGN_CONE "\n" T_PC " " T_ALIGNMENT "\n" T_KNOWN_ERRORS)
-        );
+    // 3+3 needs the other pier side, and only a German equatorial flips.
+    const bool showSix =
+        (mtAlign == TeenAstroMountStatus::MOUNT_TYPE_GEM
+         || mtAlign == TeenAstroMountStatus::MOUNT_UNDEFINED);
+    char string_list[256];
+    if (alignInProgress)
+      strcpy(string_list, T_CANCEL);
+    else
+    {
+      strcpy(string_list, "2 " T_STARS "\n" T_ALIGN_PERP);
+      if (showSix)
+        strcat(string_list, "\n" T_ALIGN_CONE);
+      if (showThreeStar)
+        strcat(string_list, "\n" T_TWO_STARS_MECH);
+      strcat(string_list, "\n" T_PC " " T_ALIGNMENT);
+      if (ta_MountStatus.isAligned())
+        strcat(string_list, "\n" T_SAVE "\n" T_Clear "\nShow align. error");
+      strcat(string_list, "\n" T_KNOWN_ERRORS);
+    }
     int selection = display->UserInterfaceSelectionList(&buttonPad, T_ALIGNMENT, current_selection, string_list);
     if (selection == 0) return MR_CANCEL;
     current_selection = selection;
+    // The cases below are numbered as if the 3+3 line were always shown.
+    int choice = selection;
+    if (!alignInProgress && !showSix && choice >= 3)
+      choice++;
     if (!alignInProgress)
     {
       // Last item on every alignment list. Handled here so the star-count
@@ -579,13 +593,13 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
       const int knownSel = ta_MountStatus.isAligned()
         ? (showThreeStar ? 9 : 8)
         : (showThreeStar ? 6 : 5);
-      if (selection == knownSel)
+      if (choice == knownSel)
       {
         menuKnownErrors();
         continue;
       }
     }
-    switch (current_selection)
+    switch (choice)
     {
     case 1:
       if (alignInProgress)
@@ -616,16 +630,11 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         }
         else if (ret == 2)
         {
-          ta_MountStatus.updateMount();
-          uint8_t choice = ((uint8_t)ta_MountStatus.getPierState());
-          choice = display->UserInterfaceSelectionList(&buttonPad, T_SETSIDEOFPIER, choice, T_EAST "\n" T_WEST);
+          const uint8_t choice = pickPierSide();
           bool ok = false;
           if (choice)
           {
-            if (choice == 1)
-              ok = DisplayMessageLX200(m_client->setPierSideEast());
-            else
-              ok = DisplayMessageLX200(m_client->setPierSideWest());
+            ok = sendPierSide(choice);
             if (ok)
             {
               DisplayMessage("Please Sync", "with a Target", 1000);
@@ -679,10 +688,16 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
     case 2:
       if (!alignInProgress)
       {
-        // Four stars, kept on one pier side. The mount runs :A0,r4# and solves
-        // axis2 non-perpendicularity. Cone stays unpublished. No leaves the menu
-        // without starting a session.
-        if (display->UserInterfaceMessage(&buttonPad, "4 " T_STARS, T_SAME_SIDE, T_MEASURES_PERP, T_NO "\n" T_YES) != 2)
+        // Four stars. German equatorial and equatorial fork stay on one pier
+        // side. An alt-az never goes over the zenith, so the stars cover the
+        // sky. :A0,r4# solves NP. Cone stays unpublished.
+        const TeenAstroMountStatus::Mount mt4 = ta_MountStatus.getMount();
+        const char* fourWhere = T_SAME_SIDE;
+        if (mt4 == TeenAstroMountStatus::MOUNT_TYPE_FORK_ALT
+            || mt4 == TeenAstroMountStatus::MOUNT_TYPE_ALTAZM)
+          fourWhere = T_AROUND_SKY;
+        if (display->UserInterfaceMessage(&buttonPad, "4 " T_STARS,
+            fourWhere, T_MEASURES_PERP, T_NO "\n" T_YES) != 2)
           break;
         DisplayLongMessage("!" T_WARNING "!", T_THEMOUNTMUSTBEATHOME1, T_THEMOUNTMUSTBEATHOME2, T_THEMOUNTMUSTBEATHOME3, -1);
         if (m_client->alignStartRigid(4) == LX200_VALUESET)
@@ -728,16 +743,11 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         }
         else if (ret == 2)
         {
-          ta_MountStatus.updateMount();
-          uint8_t choice = ((uint8_t)ta_MountStatus.getPierState());
-          choice = display->UserInterfaceSelectionList(&buttonPad, T_SETSIDEOFPIER, choice, T_EAST "\n" T_WEST);
+          const uint8_t choice = pickPierSide();
           bool ok = false;
           if (choice)
           {
-            if (choice == 1)
-              ok = DisplayMessageLX200(m_client->setPierSideEast());
-            else
-              ok = DisplayMessageLX200(m_client->setPierSideWest());
+            ok = sendPierSide(choice);
             if (ok)
             {
               DisplayMessage("Please Sync", "with a Target", 1000);

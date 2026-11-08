@@ -13,7 +13,7 @@ enum MountType { gem, fork, altAz, forkAlt, undefined }
 enum AlignPhase { idle, select, slew, recenter }
 enum SpeedLevel { guide, slow, medium, fast, max, unknown }
 enum GuidingMode { off, pulse, st4, recenter, atRate, unknown }
-enum MountError { none, motorFault, alt, limitSense, limitA1, limitA2, underPole, meridian, sync }
+enum MountError { none, motorFault, alt, limitSense, limitA1, limitA2, underPole, meridian, pierSide, sync }
 
 /// GXAS byte 100 bits 5–7 (same as firmware CommandEnums GotoState).
 enum GotoKind { none, eq, altAz, flipPierSide, unknown }
@@ -591,6 +591,7 @@ class MountState {
         MountError.limitA2 => 'Axis 2 Limit',
         MountError.underPole => 'Under Pole',
         MountError.meridian => 'Meridian',
+        MountError.pierSide => 'Pier side',
         MountError.sync => 'Sync Error',
       };
 }

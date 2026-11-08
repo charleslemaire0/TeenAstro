@@ -37,6 +37,7 @@ void getdms(const long& v, bool& ispos, uint16_t& deg, uint8_t& min, uint8_t& se
 #include "TeenAstroMountStatus.cpp"
 
 #include <unity.h>
+#include <cstdint>
 #include <cstring>
 #include <cmath>
 #include <cfloat>
@@ -117,6 +118,9 @@ static TeenAstroMountStatus* status = nullptr;
 
 void setUp(void) {
     mockStream.reset();
+    // A missing reply waits on millis(). The simulated clock never moves,
+    // so use wall time and let that wait reach its deadline.
+    sim::g_realtime = true;
     if (client) delete client;
     if (status) delete status;
     client = new LX200Client(mockStream, 50);
@@ -339,7 +343,9 @@ void test_formatAz_very_large(void) {
 //  6. updateAllState via mock (GXAS packet)
 // =====================================================================
 
-// Helper: encode 66 bytes into 88 base64 chars (simple encoder for tests)
+// :GXAS# is 102 bytes, which encodes to 136 base64 characters.
+static const int GXAS_PKT_LEN = 102;
+static const int GXAS_B64_LEN = 136;
 static const char B64ENC[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static void b64Encode(const uint8_t* in, int inLen, char* out) {
     int i = 0, o = 0;
@@ -352,8 +358,18 @@ static void b64Encode(const uint8_t* in, int inLen, char* out) {
     out[o] = '\0';
 }
 
+static void putF64(uint8_t* pkt, int off, double value) {
+    memcpy(pkt + off, &value, 8);
+}
+
+static void setChecksum(uint8_t* pkt) {
+    uint8_t xorChk = 0;
+    for (int i = 0; i < GXAS_PKT_LEN - 1; i++) xorChk ^= pkt[i];
+    pkt[GXAS_PKT_LEN - 1] = xorChk;
+}
+
 static void buildValidPacket(uint8_t* pkt) {
-    memset(pkt, 0, 66);
+    memset(pkt, 0, GXAS_PKT_LEN);
     // byte 0: tracking=on(1), sidereal=star(0), park=unparked(0), atHome=0, pier=E(0)
     pkt[0] = 0x01;
     // byte 1: guidingRate=0(guiding), aligned=1(bit3), mount=GEM(1, bit4-6), spiral=0
@@ -369,46 +385,29 @@ static void buildValidPacket(uint8_t* pkt) {
     // bytes 6-11: UTC 12:30:45 01/15/24
     pkt[6] = 12; pkt[7] = 30; pkt[8] = 45;
     pkt[9] = 1; pkt[10] = 15; pkt[11] = 24;
-    // bytes 12-15: RA = 6.5 hours (float LE)
-    float ra = 6.5f;
-    memcpy(&pkt[12], &ra, 4);
-    // bytes 16-19: Dec = 45.25 deg
-    float dec = 45.25f;
-    memcpy(&pkt[16], &dec, 4);
-    // bytes 20-23: Alt = 60.0 deg
-    float alt = 60.0f;
-    memcpy(&pkt[20], &alt, 4);
-    // bytes 24-27: Az = 180.0 deg
-    float az = 180.0f;
-    memcpy(&pkt[24], &az, 4);
-    // bytes 28-31: LST = 18.75 hours
-    float lst = 18.75f;
-    memcpy(&pkt[28], &lst, 4);
-    // bytes 32-35: target RA = 12.0 hours
-    float tRA = 12.0f;
-    memcpy(&pkt[32], &tRA, 4);
-    // bytes 36-39: target Dec = -20.0 deg
-    float tDec = -20.0f;
-    memcpy(&pkt[36], &tDec, 4);
-    // bytes 40-55: tracking rates (all zero for now)
-    // bytes 56-61: focuser (ignored, no focuser)
-    // byte 65: XOR checksum of bytes 0-64
-    uint8_t xorChk = 0;
-    for (int i = 0; i < 65; i++) xorChk ^= pkt[i];
-    pkt[65] = xorChk;
+    // bytes 12-67: positions as float64 LE
+    putF64(pkt, 12, 6.5);     // RA hours
+    putF64(pkt, 20, 45.25);   // Dec deg
+    putF64(pkt, 28, 60.0);    // Alt deg
+    putF64(pkt, 36, 180.0);   // Az deg
+    putF64(pkt, 44, 18.75);   // LST hours
+    putF64(pkt, 52, 12.0);    // target RA hours
+    putF64(pkt, 60, -20.0);   // target Dec deg
+    // bytes 68-97: rates and focuser stay zero
+    // byte 101: XOR checksum of bytes 0-100
+    setChecksum(pkt);
 }
 
 static void loadGXASResponse(const uint8_t* pkt) {
-    char b64[92];
-    b64Encode(pkt, 66, b64);
-    // Mock response includes '#' terminator
-    char resp[96];
+    char b64[GXAS_B64_LEN + 1];
+    b64Encode(pkt, GXAS_PKT_LEN, b64);
+    char resp[GXAS_B64_LEN + 2];
     snprintf(resp, sizeof(resp), "%s#", b64);
     mockStream.loadResponse(resp);
 }
 
 void test_updateAllState_valid(void) {
-    uint8_t pkt[66];
+    uint8_t pkt[GXAS_PKT_LEN];
     buildValidPacket(pkt);
     loadGXASResponse(pkt);
 
@@ -436,9 +435,9 @@ void test_updateAllState_valid(void) {
 }
 
 void test_updateAllState_bad_checksum(void) {
-    uint8_t pkt[66];
+    uint8_t pkt[GXAS_PKT_LEN];
     buildValidPacket(pkt);
-    pkt[65] ^= 0xFF;  // corrupt checksum
+    pkt[GXAS_PKT_LEN - 1] ^= 0xFF;  // corrupt checksum
     loadGXASResponse(pkt);
 
     status->updateAllState(true);
@@ -455,7 +454,7 @@ void test_updateAllState_bad_checksum(void) {
 
 // Time/date display: Index.cpp uses temp[128] for each of date, time, sidereal
 void test_time_date_display_format(void) {
-    uint8_t pkt[66];
+    uint8_t pkt[GXAS_PKT_LEN];
     buildValidPacket(pkt);
     loadGXASResponse(pkt);
     status->updateAllState(true);
@@ -473,7 +472,7 @@ void test_time_date_display_format(void) {
 }
 
 void test_updateAllState_short_response(void) {
-    // Load a response that's too short (not 88 base64 chars)
+    // Load a response that's too short (not 136 base64 chars)
     mockStream.loadResponse("AAAA#");
 
     status->updateAllState(true);
@@ -489,15 +488,12 @@ void test_updateAllState_no_response(void) {
 }
 
 void test_updateAllState_nan_in_ra(void) {
-    uint8_t pkt[66];
+    uint8_t pkt[GXAS_PKT_LEN];
     buildValidPacket(pkt);
-    // Inject NaN into RA (bytes 12-15)
-    uint32_t nan_bits = 0x7FC00000;  // quiet NaN
-    memcpy(&pkt[12], &nan_bits, 4);
-    // Recompute checksum
-    uint8_t xorChk = 0;
-    for (int i = 0; i < 65; i++) xorChk ^= pkt[i];
-    pkt[65] = xorChk;
+    // Inject NaN into RA (bytes 12-19, float64)
+    uint64_t nan_bits = 0x7FF8000000000000ULL;
+    memcpy(&pkt[12], &nan_bits, 8);
+    setChecksum(pkt);
     loadGXASResponse(pkt);
 
     status->updateAllState(true);
@@ -509,15 +505,12 @@ void test_updateAllState_nan_in_ra(void) {
 }
 
 void test_updateAllState_inf_in_dec(void) {
-    uint8_t pkt[66];
+    uint8_t pkt[GXAS_PKT_LEN];
     buildValidPacket(pkt);
-    // Inject +Inf into Dec (bytes 16-19)
-    uint32_t inf_bits = 0x7F800000;  // +Inf
-    memcpy(&pkt[16], &inf_bits, 4);
-    // Recompute checksum
-    uint8_t xorChk = 0;
-    for (int i = 0; i < 65; i++) xorChk ^= pkt[i];
-    pkt[65] = xorChk;
+    // Inject +Inf into Dec (bytes 20-27, float64)
+    uint64_t inf_bits = 0x7FF0000000000000ULL;
+    memcpy(&pkt[20], &inf_bits, 8);
+    setChecksum(pkt);
     loadGXASResponse(pkt);
 
     status->updateAllState(true);
@@ -529,14 +522,12 @@ void test_updateAllState_inf_in_dec(void) {
 }
 
 void test_updateAllState_inf_in_az(void) {
-    uint8_t pkt[66];
+    uint8_t pkt[GXAS_PKT_LEN];
     buildValidPacket(pkt);
-    // Inject -Inf into Az (bytes 24-27)
-    uint32_t ninf_bits = 0xFF800000;  // -Inf
-    memcpy(&pkt[24], &ninf_bits, 4);
-    uint8_t xorChk = 0;
-    for (int i = 0; i < 65; i++) xorChk ^= pkt[i];
-    pkt[65] = xorChk;
+    // Inject -Inf into Az (bytes 36-43, float64)
+    uint64_t ninf_bits = 0xFFF0000000000000ULL;
+    memcpy(&pkt[36], &ninf_bits, 8);
+    setChecksum(pkt);
     loadGXASResponse(pkt);
 
     status->updateAllState(true);
@@ -547,11 +538,11 @@ void test_updateAllState_inf_in_az(void) {
 }
 
 void test_updateAllState_corrupt_b64(void) {
-    // 88 chars of '!' which are not valid base64
-    char resp[92];
-    memset(resp, '!', 88);
-    resp[88] = '#';
-    resp[89] = '\0';
+    // 136 chars of '!' which are not valid base64
+    char resp[GXAS_B64_LEN + 2];
+    memset(resp, '!', GXAS_B64_LEN);
+    resp[GXAS_B64_LEN] = '#';
+    resp[GXAS_B64_LEN + 1] = '\0';
     mockStream.loadResponse(resp);
 
     status->updateAllState(true);
@@ -573,7 +564,7 @@ void test_getLastErrorMessage_none(void) {
 // =====================================================================
 void test_invalidate_sets_question_marks(void) {
     // First load valid data
-    uint8_t pkt[66];
+    uint8_t pkt[GXAS_PKT_LEN];
     buildValidPacket(pkt);
     loadGXASResponse(pkt);
     status->updateAllState(true);
@@ -594,12 +585,9 @@ void test_invalidate_sets_question_marks(void) {
 //  10. Boundary enum values from GXAS binary
 // =====================================================================
 void test_updateAllState_all_maxed_enum_bits(void) {
-    uint8_t pkt[66];
-    memset(pkt, 0xFF, 66);
-    // Compute valid checksum
-    uint8_t xorChk = 0;
-    for (int i = 0; i < 65; i++) xorChk ^= pkt[i];
-    pkt[65] = xorChk;
+    uint8_t pkt[GXAS_PKT_LEN];
+    memset(pkt, 0xFF, GXAS_PKT_LEN);
+    setChecksum(pkt);
     loadGXASResponse(pkt);
 
     status->updateAllState(true);
@@ -614,10 +602,22 @@ void test_updateAllState_all_maxed_enum_bits(void) {
     TEST_ASSERT_EQUAL_STRING("?", status->getDec());
 }
 
+void test_updateAllState_pier_side_error(void) {
+    uint8_t pkt[GXAS_PKT_LEN];
+    buildValidPacket(pkt);
+    pkt[4] = MountState::ERR_PIER_SIDE;
+    setChecksum(pkt);
+    loadGXASResponse(pkt);
+
+    status->updateAllState(true);
+    TEST_ASSERT_TRUE(status->mountState().valid);
+    TEST_ASSERT_EQUAL(MountState::ERR_PIER_SIDE, status->getError());
+}
+
 void test_updateAllState_all_zero_bits(void) {
-    uint8_t pkt[66];
-    memset(pkt, 0, 66);
-    // Checksum of 65 zeros = 0, which is already in pkt[65]
+    uint8_t pkt[GXAS_PKT_LEN];
+    memset(pkt, 0, GXAS_PKT_LEN);
+    // Checksum of 101 zeros is 0, which is already in the last byte
     loadGXASResponse(pkt);
 
     status->updateAllState(true);
@@ -695,6 +695,7 @@ int main(int argc, char** argv) {
 
     // Boundary enum values
     RUN_TEST(test_updateAllState_all_maxed_enum_bits);
+    RUN_TEST(test_updateAllState_pier_side_error);
     RUN_TEST(test_updateAllState_all_zero_bits);
 
     return UNITY_END();

@@ -748,10 +748,7 @@ void main() {
           print('  Stopped OK');
         } else {
           // Got an error code - acceptable in constrained test environments
-          final errIdx = int.tryParse(reply ?? '') ?? -1;
-          final errName = (errIdx >= 0 && errIdx < GotoError.values.length)
-              ? GotoError.values[errIdx].name
-              : 'unknown($reply)';
+          final errName = gotoErrorFromReply(reply)?.name ?? 'unknown($reply)';
           print('  Goto refused: $errName (acceptable in test)');
         }
       });
@@ -1000,10 +997,7 @@ void main() {
             if (i == 3) await helper.safeStop();
           }
         } else {
-          final errIdx = int.tryParse(reply ?? '') ?? -1;
-          final errName = (errIdx >= 0 && errIdx < GotoError.values.length)
-              ? GotoError.values[errIdx].name
-              : 'unknown($reply)';
+          final errName = gotoErrorFromReply(reply)?.name ?? 'unknown($reply)';
           print('  Goto M45 refused: $errName (acceptable in test)');
         }
 

@@ -165,6 +165,8 @@ bool MountLimits::withinLimit(long axis1, long axis2, bool relaxGotoLimitsForFli
     ok = mount_.axes.geoA1.withinLimit(axis1) && mount_.axes.geoA2.withinLimit(axis2);
   if (!ok)
     return ok;
+  if (!mount_.supportsPoleSide(getPoleSideFromAxis2(axis2)))
+    return false;
 
   if (mount_.isAltAZ())
   {
@@ -172,10 +174,13 @@ bool MountLimits::withinLimit(long axis1, long axis2, bool relaxGotoLimitsForFli
   }
   else
   {
-    if (mount_.config.identity.mountType == MOUNT_TYPE_GEM)
+    if (mount_.config.identity.mountType == MOUNT_TYPE_GEM
+        || mount_.config.identity.mountType == MOUNT_TYPE_FORK)
     {
       // Flip candidate: skip under-pole GOTO check too — same sky on the other pier can read as
       // "past" pole limits in axis space while tracking west toward the meridian window edge.
+      // On an equatorial fork this same check is what makes a goto past the hour-angle limit
+      // fail on the current side, so predictTarget can land on the other side, under Polaris.
       if (!relaxGotoLimitsForFlip)
       {
         ok = checkPole(axis1, axis2, CHECKMODE_GOTO);

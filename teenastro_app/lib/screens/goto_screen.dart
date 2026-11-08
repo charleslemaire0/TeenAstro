@@ -50,9 +50,9 @@ class _GotoScreenState extends ConsumerState<GotoScreen> {
       if (reply == '0') {
         _result = 'Slewing to target...';
       } else {
-        final errIdx = int.tryParse(reply ?? '') ?? -1;
-        if (errIdx >= 0 && errIdx < GotoError.values.length) {
-          _result = 'Error: ${gotoErrorCause(GotoError.values[errIdx])}';
+        final err = gotoErrorFromReply(reply);
+        if (err != null) {
+          _result = 'Error: ${gotoErrorCause(err)}';
         } else {
           _result = 'Error: $reply';
         }

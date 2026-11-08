@@ -133,6 +133,10 @@ private:
   MENU_RESULT menuSyncGoto(NAV mode);
   MENU_RESULT menuCoordinates(NAV mode);
   MENU_RESULT menuPier();
+  /// 0 cancelled, 1 east, 2 west, PIER_PICK_MOUNT when the mount type has one side (alt-az).
+  static const uint8_t PIER_PICK_MOUNT = 3;
+  uint8_t pickPierSide();
+  bool sendPierSide(uint8_t choice);
   MENU_RESULT menuSpirale();
   MENU_RESULT subMenuSyncGoto(NAV mode, int subMenuNum);
   MENU_RESULT menuCatalog(NAV mode, int number);

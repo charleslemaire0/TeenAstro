@@ -4,6 +4,7 @@
  * Include this for Mount type and mount instance.
  */
 #include "MountTypes.h"
+#include "PierSideRule.h"
 #include "Config.TeenAstro.h"
 #include "EEPROM_address.h"
 #include "Axis.hpp"
@@ -72,6 +73,13 @@ public:
   bool isSlewing() const;
   PoleSide getPoleSide() const;
   PoleSide getTargetPoleSide() const;
+  /// Alt-az mounts only use POLE_UNDER. Equatorial fork and German equatorial use both sides.
+  bool supportsPoleSide(PoleSide side) const;
+  /// \p side, or POLE_UNDER when this mount type does not support \p side.
+  PoleSide supportedPoleSide(PoleSide side) const;
+  /// A goto may land on the other pier side: German equatorial, or an equatorial
+  /// fork going under the pole. Alt-az mounts stay on one side.
+  bool mayChangePierSide() const;
   bool hasTracking() const;
   bool hasGuiding() const;
   ErrorsTraking lastError() const;

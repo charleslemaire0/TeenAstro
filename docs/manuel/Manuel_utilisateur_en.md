@@ -254,6 +254,7 @@ The guide arrows are drawn on top of the frame, the bullseye, or the crosshair, 
 | ![](images/icons/ErrHo.png) | Below the horizon |
 | ![](images/icons/ErrMe.png) | Meridian limit |
 | ![](images/icons/ErrUp.png) | Under the pole |
+| ![](images/icons/ErrPs.png) | Pier side this mount type does not use (axis 2 past 90°). Gotos, slews and tracking stop; move back by hand or with a goto |
 | ![](images/icons/ErrMf.png) | Motor fault |
 
 ---
@@ -819,7 +820,7 @@ The tube can be on either side of the pier. The display shows the side. A goto t
 **Limits → German Equatorial**
 
 - **Meridian E** and **Meridian W**: from −45° to +45°. They allow tracking a little past the meridian before the flip, so a exposure is not cut at the crossing.
-- **Under Pole**: maximum hour angle, from 9 h to 12 h. It keeps the tube or the counterweight bar out of the tripod when you track an object under the pole.
+- **Under Pole**: maximum hour angle, from 9 h to 12 h. It keeps the tube or the counterweight bar out of the tripod when you track an object under the pole. An equatorial fork uses the same hour angle. A goto past it changes pier side: declination goes through 90° and the tube looks under Polaris. The fork does not flip at the meridian.
 
 Set these values for your mechanics (tube length, tripod height), not for the catalog. A refused object is announced as **Outside Limits**, **Below Horizon**, **Close to Zenith**, or a meridian limit.
 

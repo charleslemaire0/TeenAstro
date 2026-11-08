@@ -64,9 +64,9 @@ class CatMgr {
     /// Build the alignment-star list: catalog order, already-measured stars
     /// omitted, each entry scored for suitability (shown as *…****).
     /// Previous stars are equatorial degrees.
-    /// \p mountKind  0 equatorial (German or fork), 1 alt-azimuth.
-    /// \p session    0 two-star spread, 1 four-star same side,
-    ///               2 first side of 3+3, 3 the other side of 3+3.
+    /// \p mountKind  0 equatorial (German or fork), 1 alt-az (German or fork).
+    /// \p session    0 two-star, 1 four-star, 2 first half of 3+3, 3 the other half.
+    /// The list rule for each pair is alignCatalogRule() in AlignCatalogRule.h.
     void        buildAlignRank(int mountKind, int session, const float *prevRa, const float *prevDec, int nPrev);
     void        clearAlignRank();
     bool        isAlignRanked() const { return _alignRanked; }

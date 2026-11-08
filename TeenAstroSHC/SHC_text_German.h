@@ -46,6 +46,7 @@
 #define T_PERP "NP"
 #define T_USE_IN_2STAR "Misst den Pol"
 #define T_SAME_SIDE "Gleiche Seite"
+#define T_AROUND_SKY "Rundherum"
 #define T_MEASURES_PERP "NP"
 #define T_FLIP_AFTER_3 "Wenden nach 3"
 #define T_MEASURES_CONE "CH + NP"
@@ -312,6 +313,7 @@
 #define T_MAXHOURANGLE "Max. Stundenwinkel"
 #define T_UNDERPOLE "Unter dem Pol"
 #define T_UNDERPOLELIMIT "Grenze unt. Pol"
+#define T_PIERSIDELIMIT "auf falscher Seite"
 
 #define T_FARFROMPOLE "Far From Pole"
 #define T_DISTANCE "Distance"

@@ -492,7 +492,7 @@ void TeenAstroMountStatus::updateAllState(bool force)
     m_mount.guidingState = (gs >= 0 && gs <= 4)
       ? static_cast<MountState::GuidingStateE>(gs) : MountState::GS_UNKNOWN; }
   { int e = pkt[4];
-    m_mount.error = (e >= 0 && e <= 8)
+    m_mount.error = (e >= 0 && e <= MountState::ERR_SYNC)
       ? static_cast<MountState::Errors>(e) : MountState::ERR_NONE; }
   uint8_t eFlags   = pkt[5];
   m_mount.enableFlags = eFlags & 0x0F;
@@ -949,6 +949,7 @@ bool TeenAstroMountStatus::getLastErrorMessage(char message[])
   case ERR_LIMIT_A2:    strcpy(message, "Axis2 Lim. Exceeded"); break;
   case ERR_UNDER_POLE:  strcpy(message, "Under Pole Limit Exceeded"); break;
   case ERR_MERIDIAN:    strcpy(message, "Meridian Limit (W) Exceeded"); break;
+  case ERR_PIER_SIDE:   strcpy(message, "Pier side not supported"); break;
   case ERR_SYNC:        strcpy(message, "Sync. ignored >30&deg;"); break;
   default: break;
   }

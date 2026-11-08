@@ -195,15 +195,14 @@ void Command_S(Command& process_command)
         mount.targetCurrent.newTargetPoleSide = POLE_NOTVALID;
         replyValueSetShort(true);
       }
-      else if (commandState.command[2] == 'E')
+      else if (commandState.command[2] == 'E' || commandState.command[2] == 'W')
       {
-        mount.targetCurrent.newTargetPoleSide = mount.isAltAZ() || localSite.northHemisphere() ? POLE_UNDER : POLE_OVER;
-        replyValueSetShort(true);
-      }
-      else if (commandState.command[2] == 'W')
-      {
-        mount.targetCurrent.newTargetPoleSide = mount.isAltAZ() || localSite.northHemisphere() ? POLE_OVER : POLE_UNDER;
-        replyValueSetShort(true);
+        const PoleSide side = poleSideFromPierLetter(commandState.command[2],
+                                                     mount.isAltAZ() || localSite.northHemisphere());
+        const bool ok = mount.supportsPoleSide(side);
+        if (ok)
+          mount.targetCurrent.newTargetPoleSide = side;
+        replyValueSetShort(ok);
       }
       else replyNothing();
     }

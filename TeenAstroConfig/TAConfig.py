@@ -627,7 +627,7 @@ def updateStatus(comm):
   except:
     window['slewing'].update("Slewing/Tracking: ?")
 
-  errorCodes = ['ERR_NONE','ERR_MOTOR_FAULT','ERR_HORIZON','ERR_LIMIT_SENSE','ERR_LIMIT_A1','ERR_LIMIT_A2','ERR_UNDER_POLE','ERR_MERIDIAN','ERR_SYNC'];
+  errorCodes = ['ERR_NONE','ERR_MOTOR_FAULT','ERR_HORIZON','ERR_LIMIT_SENSE','ERR_LIMIT_A1','ERR_LIMIT_A2','ERR_UNDER_POLE','ERR_MERIDIAN','ERR_PIER_SIDE','ERR_SYNC'];
   try:
     window['errorCode'].update(errorCodes[int(statusCode[15])])
   except:

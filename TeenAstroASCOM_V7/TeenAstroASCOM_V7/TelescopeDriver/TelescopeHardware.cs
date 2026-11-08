@@ -2513,6 +2513,11 @@ namespace ASCOM.TeenAstro.Telescope
             // ERRGOTO_MERIDIAN
             throw new ASCOM.InvalidOperationException("Target is outside the configured meridian limit.");
           }
+        case 'B': // '0' + 18
+          {
+            // ERRGOTO_PIER_SIDE
+            throw new ASCOM.InvalidOperationException("The telescope is on a pier side this mount type does not support.");
+          }
         default:
           {
             throw new ASCOM.DriverException($"Goto failed with unrecognised error code '{code}' from mount.");

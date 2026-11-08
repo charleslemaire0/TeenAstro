@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/mount_state.dart';
 import '../theme.dart';
 
+/// Icon for a mount error. A mount on a pier side its type never uses gets its own icon.
+IconData mountErrorIcon(MountError e) =>
+    e == MountError.pierSide ? Icons.swap_horiz : Icons.warning;
+
 class MountStatusBar extends StatelessWidget {
   final MountState state;
   const MountStatusBar({super.key, required this.state});
@@ -56,7 +60,7 @@ class MountStatusBar extends StatelessWidget {
                 color: state.gnssValid ? TA.success : TA.textSecondary,
               ),
             if (state.error != MountError.none)
-              _StatusChip(icon: Icons.warning, label: state.errorLabel, color: TA.error),
+              _StatusChip(icon: mountErrorIcon(state.error), label: state.errorLabel, color: TA.error),
           ],
         ),
       ),

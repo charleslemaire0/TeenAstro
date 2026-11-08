@@ -46,6 +46,7 @@
 #define T_PERP "NP"
 #define T_USE_IN_2STAR "Mesure le pôle"
 #define T_SAME_SIDE "Même côté"
+#define T_AROUND_SKY "Tout le ciel"
 #define T_MEASURES_PERP "NP"
 #define T_FLIP_AFTER_3 "Retour après 3"
 #define T_MEASURES_CONE "CH + NP"
@@ -312,6 +313,7 @@
 #define T_MAXHOURANGLE "Angle Horaire Max"
 #define T_UNDERPOLE "Sous le Pôle"
 #define T_UNDERPOLELIMIT "Sous Limite Pôle"
+#define T_PIERSIDELIMIT "du mauvais côté"
 
 #define T_FARFROMPOLE "Far From Pole"
 #define T_DISTANCE "Distance"

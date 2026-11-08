@@ -253,7 +253,7 @@ class TeenAstro(object):
 
   def getErrorCode(self):
     self.readStatus()
-    errorCodes = ['ERR_NONE','ERR_MOTOR_FAULT','ERR_HORIZON','ERR_LIMIT_SENSE','ERR_LIMIT_A1','ERR_LIMIT_A2','ERR_UNDER_POLE','ERR_MERIDIAN','ERR_SYNC'];
+    errorCodes = ['ERR_NONE','ERR_MOTOR_FAULT','ERR_HORIZON','ERR_LIMIT_SENSE','ERR_LIMIT_A1','ERR_LIMIT_A2','ERR_UNDER_POLE','ERR_MERIDIAN','ERR_PIER_SIDE','ERR_SYNC'];
     return errorCodes[int(self.status[15])]
 
   def isTracking(self):

@@ -104,6 +104,7 @@ void Mount::gotoAxis(const long* axis1Target, const long* axis2Target)
 
 bool Mount::syncInstr(Coord_IN* instr, PoleSide Side)
 {
+  Side = supportedPoleSide(Side);
   long axis1, axis2 = 0;
   angle2Step(instr->Axis1() * RAD_TO_DEG, instr->Axis2() * RAD_TO_DEG, Side, &axis1, &axis2);
   syncAxis(&axis1, &axis2);
@@ -116,14 +117,14 @@ bool Mount::syncEqu(Coord_EQ* EQ_T, PoleSide Side, double Lat)
 {
   // Instrument angles are already in the motor frame for Side (beyond-pole when
   // OVER). Do not ideal-flip again via angle2Step(POLE_OVER).
-  const bool beyond = Side >= POLE_OVER;
+  const bool beyond = supportedPoleSide(Side) >= POLE_OVER;
   Coord_IN instr = EQ_T->To_Coord_IN(Lat, refrOptForGoto(), alignment.conv.Tinv, alignment.conv.head, beyond);
   return syncInstr(&instr, POLE_UNDER);
 }
 
 bool Mount::syncAzAlt(Coord_HO* HO_T, PoleSide Side)
 {
-  const bool beyond = Side >= POLE_OVER;
+  const bool beyond = supportedPoleSide(Side) >= POLE_OVER;
   Coord_IN instr = HO_T->To_Coord_IN(alignment.conv.Tinv, alignment.conv.head, beyond);
   return syncInstr(&instr, POLE_UNDER);
 }
@@ -298,15 +299,15 @@ bool Mount::predictTarget(const double& Axis1_in, const double& Axis2_in, const 
 {
   double Axis1 = Axis1_in;
   double Axis2 = Axis2_in;
-  outputSide = inputSide;
+  outputSide = supportedPoleSide(inputSide);
   angle2Step(Axis1, Axis2, outputSide, &Axis1_out, &Axis2_out);
   if (limits.withinLimit(Axis1_out, Axis2_out, relaxGotoLimitsForFlip))
     return true;
-  if (allowAlternatePierSideFallback && config.identity.meridianFlip == FLIP_ALWAYS)
+  if (allowAlternatePierSideFallback && mayChangePierSide())
   {
     Axis1 = Axis1_in;
     Axis2 = Axis2_in;
-    outputSide = (inputSide == POLE_UNDER) ? POLE_OVER : POLE_UNDER;
+    outputSide = (outputSide == POLE_UNDER) ? POLE_OVER : POLE_UNDER;
     angle2Step(Axis1, Axis2, outputSide, &Axis1_out, &Axis2_out);
     if (limits.withinLimit(Axis1_out, Axis2_out, relaxGotoLimitsForFlip))
       return true;
@@ -336,11 +337,12 @@ bool Mount::predictTargetHO(Coord_HO HO_T, const PoleSide& inputSide,
     return true;
   };
 
-  if (trySide(inputSide))
+  const PoleSide firstSide = supportedPoleSide(inputSide);
+  if (trySide(firstSide))
     return true;
-  if (allowAlternatePierSideFallback && config.identity.meridianFlip == FLIP_ALWAYS)
+  if (allowAlternatePierSideFallback && mayChangePierSide())
   {
-    const PoleSide alt = (inputSide == POLE_UNDER) ? POLE_OVER : POLE_UNDER;
+    const PoleSide alt = (firstSide == POLE_UNDER) ? POLE_OVER : POLE_UNDER;
     if (trySide(alt))
       return true;
   }
@@ -410,7 +412,9 @@ ErrorsGoTo Mount::goTo(long thisTargetAxis1, long thisTargetAxis2)
   // Tracking may set ERRT_MERIDIAN / ERRT_UNDER_POLE for the *current* position while
   // sidereal tracking; a new commanded slew validates the *destination* via predictTarget.
   // Do not block :MS# / goTo with stale tracking-only meridian/pole errors (same idea as flip()).
-  if (errors.lastError == ERRT_MERIDIAN || errors.lastError == ERRT_UNDER_POLE)
+  // ERRT_PIER_SIDE clears too: predictTarget only lands on a supported side, so the slew is the way back.
+  if (errors.lastError == ERRT_MERIDIAN || errors.lastError == ERRT_UNDER_POLE
+      || errors.lastError == ERRT_PIER_SIDE)
     setError(ERRT_NONE);
   if (errors.lastError != ERRT_NONE)
     return static_cast<ErrorsGoTo>(errors.lastError + 10);

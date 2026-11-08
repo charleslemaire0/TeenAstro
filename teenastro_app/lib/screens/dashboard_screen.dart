@@ -298,7 +298,7 @@ class _ErrorCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(Icons.warning, color: TA.error),
+            Icon(mountErrorIcon(state.error), color: TA.error),
             const SizedBox(width: 12),
             Text(state.errorLabel,
               style: TextStyle(color: TA.error, fontWeight: FontWeight.w600)),

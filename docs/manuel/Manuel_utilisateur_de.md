@@ -254,6 +254,7 @@ Die Guiding-Pfeile liegen über dem Rahmen, der Zielscheibe oder dem Fadenkreuz,
 | ![](images/icons/ErrHo.png) | Unter dem Horizont |
 | ![](images/icons/ErrMe.png) | Meridiangrenze |
 | ![](images/icons/ErrUp.png) | Unter dem Pol |
+| ![](images/icons/ErrPs.png) | Pfeilerseite, die dieser Montierungstyp nicht nutzt (Achse 2 über 90°). Goto, Schwenk und Nachführung stoppen; von Hand oder per Goto zurückfahren |
 | ![](images/icons/ErrMf.png) | Motorfehler |
 
 ---
@@ -819,7 +820,7 @@ Der Tubus kann auf der einen oder der anderen Seite der Säule stehen. Die Anzei
 **Grenzen → Deutsche Monti.**
 
 - **Meridian O** und **Meridian W**: von −45° bis +45°. Sie erlauben die Nachführung ein Stück über den Meridian hinaus, bevor umgeschwenkt wird, damit eine Belichtung nicht genau am Durchgang abbricht.
-- **Unter dem Pol**: maximaler Stundenwinkel, von 9 h bis 12 h. Er hält Tubus oder Gegengewichtsstange vom Stativ fern, wenn ein Objekt unter dem Pol nachgeführt wird.
+- **Unter dem Pol**: maximaler Stundenwinkel, von 9 h bis 12 h. Er hält Tubus oder Gegengewichtsstange vom Stativ fern, wenn ein Objekt unter dem Pol nachgeführt wird. Eine äquatoriale Gabel benutzt denselben Stundenwinkel. Ein Goto darüber wechselt die Pfeilerseite: die Deklination geht über 90°, der Tubus blickt unter den Polarstern. Am Meridian schlägt die Gabel nicht um.
 
 Diese Werte für die eigene Mechanik setzen (Tubuslänge, Stativhöhe), nicht für den Katalog. Ein abgelehntes Objekt meldet sich als **Ausserh. Grenzen**, **Unter Horizont**, **Nah am Zenit** oder als Meridiangrenze.
 

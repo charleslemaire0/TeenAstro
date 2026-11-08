@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:teenastro_app/models/lx200_commands.dart';
 import 'package:teenastro_app/screens/alignment_screen.dart';
 import 'package:teenastro_app/models/catalog_entry.dart';
+import 'package:teenastro_app/models/mount_state.dart';
 
 void main() {
   group('LX200 alignment commands (main unit protocol)', () {
@@ -85,6 +86,46 @@ void main() {
       expect(alignStartCommand(AlignKind.mechanical), equals(':A0,m#'));
       expect(alignStarCount(AlignKind.four), 4);
       expect(alignStarCount(AlignKind.six), 6);
+    });
+
+    test('each mount type picks stars on the side that mount can use', () {
+      const stay = 'Stay on this pier side.';
+      const flip = 'Flip to the other pier side, then pick a star there.';
+      const both = 'Spread the stars in azimuth, east and west.';
+
+      for (final mount in [MountType.gem, MountType.fork, MountType.undefined]) {
+        expect(alignPickNote(AlignKind.four, mount, 2), stay);
+        expect(alignPickNote(AlignKind.six, mount, 2), stay);
+        expect(alignPickNote(AlignKind.six, mount, 3), stay);
+        expect(alignPickNote(AlignKind.six, mount, 4), flip);
+        expect(alignPickNote(AlignKind.six, mount, 5),
+            'Stay on the pier side you flipped to.');
+        expect(alignKindBlurb(AlignKind.four, mount: mount),
+            contains('one pier side'));
+      }
+
+      for (final mount in [MountType.altAz, MountType.forkAlt]) {
+        expect(alignPickNote(AlignKind.four, mount, 2), both);
+        expect(alignPickNote(AlignKind.four, mount, 1), isEmpty);
+        expect(alignKindBlurb(AlignKind.four, mount: mount),
+            contains('spread around the sky'));
+      }
+
+      expect(alignKindOnAltAz(AlignKind.six), isFalse);
+      expect(alignKindOnAltAz(AlignKind.mechanical), isFalse);
+    });
+
+    test('3+3 is offered only where the mount can flip', () {
+      expect(alignKindForMount(AlignKind.six, MountType.gem), isTrue);
+      expect(alignKindForMount(AlignKind.six, MountType.undefined), isTrue);
+      for (final mount in [MountType.fork, MountType.altAz, MountType.forkAlt]) {
+        expect(alignKindForMount(AlignKind.six, mount), isFalse);
+        expect(alignKindForMount(AlignKind.two, mount), isTrue);
+        expect(alignKindForMount(AlignKind.four, mount), isTrue);
+      }
+      expect(alignKindForMount(AlignKind.mechanical, MountType.fork), isTrue);
+      expect(alignKindForMount(AlignKind.mechanical, MountType.altAz), isFalse);
+      expect(alignKindForMount(AlignKind.mechanical, MountType.forkAlt), isFalse);
     });
 
     test('alt-az keeps 2 Stars and 4 Stars', () {

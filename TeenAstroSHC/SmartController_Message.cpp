@@ -138,6 +138,11 @@ bool SmartHandController::DisplayMessageLX200(LX200RETURN val, bool silentOk)
       sprintf(text1, T_TELESCOPEEXCEED);
       sprintf(text2, T_MERIDIANLIMIT "!");
     }
+    else if (val == LX200_ERR_PIER_SIDE)
+    {
+      sprintf(text1, T_TELESCOPEIS);
+      sprintf(text2, T_PIERSIDELIMIT "!");
+    }
     else if (val == LX200_ERR_AXIS1)
     {
       sprintf(text1, T_TELESCOPEIS);
@@ -310,6 +315,10 @@ bool SmartHandController::DisplayMessageMeridianFlip(LX200RETURN val)
   else if (val == LX200_ERR_MERIDIAN)
   {
     sprintf(text2, T_MERIDIANLIMIT "!");
+  }
+  else if (val == LX200_ERR_PIER_SIDE)
+  {
+    sprintf(text2, T_PIERSIDELIMIT "!");
   }
   else if (val == LX200_ERR_AXIS1)
   {

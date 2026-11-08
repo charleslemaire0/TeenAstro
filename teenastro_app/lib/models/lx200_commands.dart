@@ -5,7 +5,16 @@ enum CmdReply { none, short_, shortBool, long_, invalid }
 enum GotoError {
   none, belowHorizon, noObjectSelected, sameSide, parked, slewing,
   limits, guidingBusy, aboveOverhead, motor, unknown10, motorFault,
-  alt, limitSense, axis1, axis2, underPole, meridian
+  alt, limitSense, axis1, axis2, underPole, meridian, pierSide
+}
+
+/// Goto error in a one-character reply. The mount sends `'0' + code`, so codes
+/// from 10 up arrive as `:`, `@`, `A`, `B`. Null when the reply is not a code.
+GotoError? gotoErrorFromReply(String? reply) {
+  if (reply == null || reply.length != 1) return null;
+  final idx = reply.codeUnitAt(0) - 0x30;
+  if (idx < 0 || idx >= GotoError.values.length) return null;
+  return GotoError.values[idx];
 }
 
 /// Human-readable root cause for goto/slew failures.
@@ -44,6 +53,8 @@ String gotoErrorCause(GotoError e) {
       return 'Target under the pole';
     case GotoError.meridian:
       return 'Meridian limit (flip or reposition)';
+    case GotoError.pierSide:
+      return 'Mount type does not support this pier side';
     case GotoError.unknown10:
       return 'Goto rejected by mount';
   }

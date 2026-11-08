@@ -36,10 +36,16 @@ String alignKindLabel(AlignKind kind) => switch (kind) {
       AlignKind.mechanical => '2 Stars Mech.',
     };
 
-String alignKindBlurb(AlignKind kind) => switch (kind) {
+String alignKindBlurb(AlignKind kind, {MountType mount = MountType.undefined}) =>
+    switch (kind) {
       AlignKind.two =>
         'Measures the pole. Mount error, when on, holds CH and NP.',
-      AlignKind.four => 'Four stars on one pier side. Measures NP.',
+      AlignKind.four => switch (mount) {
+          MountType.forkAlt ||
+          MountType.altAz =>
+            'Four stars spread around the sky. Measures NP.',
+          _ => 'Four stars on one pier side. Measures NP.',
+        },
       AlignKind.six =>
         'Three stars, flip, then three more. Measures CH and NP.',
       AlignKind.mechanical => 'Two stars, then adjust the pole bolts.',
@@ -54,6 +60,38 @@ String alignStartCommand(AlignKind kind) => switch (kind) {
 
 bool alignKindOnAltAz(AlignKind kind) =>
     kind == AlignKind.two || kind == AlignKind.four;
+
+/// Sessions this mount type can run. 3+3 needs the other pier side, and only
+/// a German equatorial flips.
+bool alignKindForMount(AlignKind kind, MountType mount) => switch (kind) {
+      AlignKind.two || AlignKind.four => true,
+      AlignKind.six =>
+        mount == MountType.gem || mount == MountType.undefined,
+      AlignKind.mechanical =>
+        mount != MountType.altAz && mount != MountType.forkAlt,
+    };
+
+/// Hint shown while picking the next alignment star.
+String alignPickNote(AlignKind kind, MountType mount, int star) {
+  if (mount == MountType.forkAlt || mount == MountType.altAz) {
+    if (kind == AlignKind.four && star > 1) {
+      return 'Spread the stars in azimuth, east and west.';
+    }
+    return '';
+  }
+  if (kind == AlignKind.six && star == 4) {
+    return 'Flip to the other pier side, then pick a star there.';
+  }
+  if ((kind == AlignKind.four || kind == AlignKind.six) &&
+      star > 1 &&
+      star <= (kind == AlignKind.six ? 3 : 4)) {
+    return 'Stay on this pier side.';
+  }
+  if (kind == AlignKind.six && star > 4) {
+    return 'Stay on the pier side you flipped to.';
+  }
+  return '';
+}
 
 String formatSignedArcsec(double arcsec) {
   final n = arcsec.round();
@@ -205,7 +243,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
               ? AlignKind.four
               : AlignKind.two;
     }
-    if (!alignKindOnAltAz(kind) && state.isAltAz) {
+    if (!alignKindForMount(kind, state.mountType)) {
       kind = reported > 2 ? AlignKind.four : AlignKind.two;
     }
 
@@ -229,7 +267,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
     _stars = List<CatalogEntry?>.filled(alignStarCount(kind), null);
     _note = ui == AlignUi.bolt
         ? 'Adjust the polar bolts, then slew back onto the star.'
-        : _noteFor(_star, state.isAltAz);
+        : _noteFor(_star, state.mountType);
     AlignSessionMemory.kind = kind;
     if (ui == AlignUi.slewing) {
       _slewReturnsToBolt = false;
@@ -240,30 +278,12 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
   LX200TcpClient get _client => ref.read(lx200ClientProvider);
 
   AlignKind _effectiveKind(MountState state) {
-    if (state.isAltAz && !alignKindOnAltAz(_kind)) return AlignKind.two;
+    if (!alignKindForMount(_kind, state.mountType)) return AlignKind.two;
     return _kind;
   }
 
-  String _noteFor(int star, bool altAz) {
-    if (altAz) {
-      if (_kind == AlignKind.four && star > 1) {
-        return 'Stay in the same part of the sky.';
-      }
-      return '';
-    }
-    if (_kind == AlignKind.six && star == 4) {
-      return 'Flip to the other pier side, then pick a star there.';
-    }
-    if ((_kind == AlignKind.four || _kind == AlignKind.six) &&
-        star > 1 &&
-        star <= (_kind == AlignKind.six ? 3 : 4)) {
-      return 'Stay on this pier side.';
-    }
-    if (_kind == AlignKind.six && star > 4) {
-      return 'Stay on the pier side you flipped to.';
-    }
-    return '';
-  }
+  String _noteFor(int star, MountType mount) =>
+      alignPickNote(_kind, mount, star);
 
   Future<void> _loadMountError({bool force = false}) async {
     if (!_client.isConnected) return;
@@ -401,9 +421,9 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
 
     final slewResult = await _client.sendCommand(LX200.gotoTarget);
     if (slewResult == null || slewResult.isEmpty || slewResult != '0') {
-      final errIdx = int.tryParse(slewResult ?? '') ?? -1;
-      final cause = errIdx >= 0 && errIdx < GotoError.values.length
-          ? gotoErrorCause(GotoError.values[errIdx])
+      final err = gotoErrorFromReply(slewResult);
+      final cause = err != null
+          ? gotoErrorCause(err)
           : 'Goto rejected (${slewResult ?? 'no reply'})';
       if (mounted) {
         setState(() {
@@ -507,7 +527,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
           _star = next;
           _ui = AlignUi.select;
           _error = '';
-          _note = _noteFor(next, ref.read(mountStateProvider).isAltAz);
+          _note = _noteFor(next, ref.read(mountStateProvider).mountType);
         });
         return;
       }
@@ -990,7 +1010,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
 
   Widget _modePicker(MountState state) {
     final kinds = AlignKind.values
-        .where((k) => !state.isAltAz || alignKindOnAltAz(k))
+        .where((k) => alignKindForMount(k, state.mountType))
         .toList();
     final selected = _effectiveKind(state);
     return Column(
@@ -1011,7 +1031,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
           ],
         ),
         const SizedBox(height: 4),
-        Text(alignKindBlurb(selected),
+        Text(alignKindBlurb(selected, mount: state.mountType),
             style: TextStyle(color: TA.textSecondary, fontSize: 11)),
       ],
     );

@@ -53,6 +53,21 @@ PoleSide Mount::getTargetPoleSide() const
   return limits.getPoleSideFromAxis2(axis2);
 }
 
+bool Mount::supportsPoleSide(PoleSide side) const
+{
+  return poleSideSupported(isAltAZ(), side);
+}
+
+bool Mount::mayChangePierSide() const
+{
+  return !isAltAZ();
+}
+
+PoleSide Mount::supportedPoleSide(PoleSide side) const
+{
+  return supportsPoleSide(side) ? side : POLE_UNDER;
+}
+
 bool Mount::hasTracking() const { return tracking.sideralTracking; }
 bool Mount::hasGuiding() const { return guiding.hasGuiding(); }
 ErrorsTraking Mount::lastError() const { return errors.lastError; }
@@ -324,6 +339,19 @@ void Mount::safetyCheck(bool forceTracking)
     else if (errors.lastError == ERRT_UNDER_POLE)
       setError(ERRT_NONE);
   }
+  if (!supportsPoleSide(currentSide))
+  {
+    // A slew back to the supported side is the way out; let it run.
+    setError(ERRT_PIER_SIDE);
+    if (isMovingTo())
+    {
+      if (!supportsPoleSide(getTargetPoleSide())) abortSlew();
+    }
+    else if (!forceTracking) tracking.sideralTracking = false;
+    return;
+  }
+  else if (errors.lastError == ERRT_PIER_SIDE)
+    setError(ERRT_NONE);
   if (parkHome.atHome && errors.lastError != ERRT_NONE)
   {
     unsetHome();

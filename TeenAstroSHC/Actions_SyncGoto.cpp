@@ -131,19 +131,37 @@ SmartHandController::MENU_RESULT SmartHandController::menuCoordinates(NAV mode)
   }
 }
 
+uint8_t SmartHandController::pickPierSide()
+{
+  ta_MountStatus.updateMount();
+  // German equatorial and equatorial fork use both pier sides. The fork changes
+  // side to look under Polaris. Alt-az mounts keep the side they are on.
+  const TeenAstroMountStatus::Mount mt = ta_MountStatus.getMount();
+  if (mt != TeenAstroMountStatus::MOUNT_TYPE_GEM
+      && mt != TeenAstroMountStatus::MOUNT_TYPE_FORK
+      && mt != TeenAstroMountStatus::MOUNT_UNDEFINED)
+    return PIER_PICK_MOUNT;
+  uint8_t choice = ((uint8_t)ta_MountStatus.getPierState());
+  return display->UserInterfaceSelectionList(&buttonPad, T_SETSIDEOFPIER, choice, T_EAST "\n" T_WEST);
+}
+
+bool SmartHandController::sendPierSide(uint8_t choice)
+{
+  if (choice == 1)
+    return DisplayMessageLX200(m_client->setPierSideEast());
+  if (choice == 2)
+    return DisplayMessageLX200(m_client->setPierSideWest());
+  return DisplayMessageLX200(m_client->setPierSideNone());
+}
+
 SmartHandController::MENU_RESULT SmartHandController::menuPier()
 {
   MENU_RESULT answer = MR_CANCEL;
-  ta_MountStatus.updateMount();
-  uint8_t choice = ((uint8_t)ta_MountStatus.getPierState());
-  choice = display->UserInterfaceSelectionList(&buttonPad, T_SETSIDEOFPIER, choice, T_EAST "\n" T_WEST);
+  const uint8_t choice = pickPierSide();
   bool ok = false;
   if (choice)
   {
-    if (choice == 1)
-      ok = DisplayMessageLX200(m_client->setPierSideEast());
-    else
-      ok = DisplayMessageLX200(m_client->setPierSideWest());
+    ok = sendPierSide(choice);
     if (ok)
     {
       DisplayMessage("Please Sync", "with a Target", 1000);
@@ -272,9 +290,9 @@ SmartHandController::MENU_RESULT SmartHandController::menuCatalogAlign(NAV mode,
     const int star = ta_MountStatus.getAlignStar();
     while (m_alignPicked >= star && m_alignPicked > 0) m_alignPicked--;
     const TeenAstroMountStatus::Mount mt = ta_MountStatus.getMount();
-    const int mountKind =
-        (mt == TeenAstroMountStatus::MOUNT_TYPE_ALTAZM
-         || mt == TeenAstroMountStatus::MOUNT_TYPE_FORK_ALT) ? 1 : 0;
+    // 0 equatorial, 1 alt-az. See alignCatalogRule().
+    const int mountKind = (mt == TeenAstroMountStatus::MOUNT_TYPE_ALTAZM
+                           || mt == TeenAstroMountStatus::MOUNT_TYPE_FORK_ALT) ? 1 : 0;
     int session = 0;
     const TeenAstroMountStatus::AlignMode modeAlign = ta_MountStatus.getAlignMode();
     if (modeAlign == TeenAstroMountStatus::ALIM_FOUR)

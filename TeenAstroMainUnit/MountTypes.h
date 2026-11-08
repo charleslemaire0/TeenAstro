@@ -35,7 +35,8 @@ enum ErrorsTraking {
   ERRT_AXIS1,
   ERRT_AXIS2,
   ERRT_UNDER_POLE,
-  ERRT_MERIDIAN
+  ERRT_MERIDIAN,
+  ERRT_PIER_SIDE   // alt-az mount with axis 2 past +/-90 deg
 };
 
 // When goTo() returns a tracking-style error, it uses lastError + 10 (ERRGOTO_* from ERRT_*).

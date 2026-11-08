@@ -298,9 +298,9 @@ static void drawTabOverview(int y0) {
     }
     {
         const char* errNames[] = { "None", "Motor Fault", "Altitude", "Limit Sense",
-                                   "Axis1", "Axis2", "Under Pole", "Meridian" };
+                                   "Axis1", "Axis2", "Under Pole", "Meridian", "Pier Side" };
         int ei = (int)mount.errors.lastError;
-        if (ei < 0 || ei > 7) ei = 0;
+        if (ei < 0 || ei >= (int)(sizeof(errNames) / sizeof(errNames[0]))) ei = 0;
         y = drawKV(y, "Last Error", errNames[ei],
             ei > 0 ? COL_BAD : COL_GOOD);
     }

@@ -10,7 +10,7 @@ Binary state and config in one call. Base64-encoded little-endian packets; last 
 |-------|---------|
 | 0–2 | Status: tracking, sidereal, park, atHome, pierSide, guiding rate, mount type, guiding EW/NS, rate comp, pulse guiding |
 | 3 | GNSS flags |
-| 4 | Error code |
+| 4 | Error code: 0 none, 1 motor fault, 2 altitude, 3 limit sense, 4 axis 1, 5 axis 2, 6 under pole, 7 meridian, 8 pier side the mount type does not use. A goto reply carries the same error as code + 10 (`'0' + 18` = `B` for pier side) |
 | 5 | Enable flags (encoders, motors, focuser, …) |
 | 6–11 | UTC (h, m, s, month, day, year) |
 | 12–83 | 9× float64 LE: RA, Dec, Alt, Az, LST, targetRA, targetDec, trackRateRa, trackRateDec |
