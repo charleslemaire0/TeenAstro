@@ -100,6 +100,9 @@ private:
   void updateMainDisplay(PAGES page);
   void tickButtons();
   bool buttonPressed();
+  /// duration < 0: wait for a key. \p settleMs ignores keys for that long first,
+  /// so the key that opened the screen cannot dismiss it.
+  void waitForDismiss(int settleMs);
   bool isSleeping();
   void resetSHC();
   void menuTelActionGoto();
@@ -178,6 +181,8 @@ private:
 
   bool SelectStarAlign();
   void showAlignmentResult();
+  /// RMS (when a rigid fit has one), then W / MA / ME, then head geometry.
+  void showAlignErrorReport(int settleMs);
   float m_alignRa[6] = {};
   float m_alignDec[6] = {};
   uint8_t m_alignPicked = 0;
@@ -260,8 +265,8 @@ private:
   void menuMounts();
   void DisplayAccMaxRateSettings();
   void DisplayMotorSettings(const uint8_t &axis);
-  void DisplayMessage(const char* txt1, const char* txt2 = NULL, int duration = 0);
-  void DisplayLongMessage(const char* txt1, const char* txt2 = NULL, const char* txt3 = NULL, const char* txt4 = NULL, int duration = 0);
+  void DisplayMessage(const char* txt1, const char* txt2 = NULL, int duration = 0, int settleMs = 0);
+  void DisplayLongMessage(const char* txt1, const char* txt2 = NULL, const char* txt3 = NULL, const char* txt4 = NULL, int duration = 0, int settleMs = 0);
   bool DisplayMessageLX200(LX200RETURN val, bool silentOk = true);
   /// Like DisplayMessageLX200 for :MF# — always shows T_FLIP on line 1 with a reason for every outcome.
   bool DisplayMessageMeridianFlip(LX200RETURN val);

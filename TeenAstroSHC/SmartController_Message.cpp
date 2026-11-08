@@ -1,7 +1,7 @@
 #include "SmartController.h"
 #include "SHC_text.h"
 
-void SmartHandController::DisplayMessage(const char* txt1, const char* txt2, int duration)
+void SmartHandController::DisplayMessage(const char* txt1, const char* txt2, int duration, int settleMs)
 {
   display->setFont(u8g2_font_helvR12_tf);
   uint8_t x;
@@ -23,38 +23,23 @@ void SmartHandController::DisplayMessage(const char* txt1, const char* txt2, int
   if (duration >= 0)
     delay(duration);
   else
-  {
-    // Wait for release first: the key that opened this screen may still be held.
-    for (;;)
-    {
-      tickButtons();
-      delay(50);
-      if (!buttonPressed())
-        break;
-    }
-    for (;;)
-    {
-      tickButtons();
-      delay(50);
-      if (buttonPressed())
-        break;
-    }
-  }
+    waitForDismiss(settleMs);
 }
 
-void SmartHandController::DisplayLongMessage(const char* txt1, const char* txt2, const char* txt3, const char* txt4, int duration)
+void SmartHandController::DisplayLongMessage(const char* txt1, const char* txt2, const char* txt3, const char* txt4, int duration, int settleMs)
 {
   display->setFont(u8g2_font_helvR10_te);
-  uint8_t h = 15;
+  // 128x64: four baselines must stay on-screen, including the descent of line 4.
+  const uint8_t step = 14;
   uint8_t x = 0;
-  uint8_t y = h;
+  uint8_t y = 12;
   display->firstPage();
   do
   {
-    y = h;
+    y = 12;
     x = (display->getDisplayWidth() - display->getUTF8Width(txt1)) / 2;
     display->drawUTF8(x, y, txt1);
-    y += h;
+    y += step;
     if (txt2 != NULL)
     {
       x = 0;
@@ -62,16 +47,16 @@ void SmartHandController::DisplayLongMessage(const char* txt1, const char* txt2,
     }
     else
     {
-      y -= 7;
+      y -= 6;
     }
-    y += 15;
+    y += step;
     if (txt3 != NULL)
     {
       x = 0;
       display->drawUTF8(x, y, txt3);
     }
 
-    y += 15;
+    y += step;
     if (txt4 != NULL)
     {
       x = 0;
@@ -82,23 +67,7 @@ void SmartHandController::DisplayLongMessage(const char* txt1, const char* txt2,
   if (duration >= 0)
     delay(duration);
   else
-  {
-    // Wait for release first: the key that opened this screen may still be held.
-    for (;;)
-    {
-      tickButtons();
-      delay(50);
-      if (!buttonPressed())
-        break;
-    }
-    for (;;)
-    {
-      tickButtons();
-      delay(50);
-      if (buttonPressed())
-        break;
-    }
-  }
+    waitForDismiss(settleMs);
   display->setFont(u8g2_font_helvR12_te);
 }
 

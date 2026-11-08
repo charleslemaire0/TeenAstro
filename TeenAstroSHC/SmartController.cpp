@@ -532,6 +532,27 @@ bool SmartHandController::buttonPressed()
   return buttonPad.buttonPressed();
 }
 
+void SmartHandController::waitForDismiss(int settleMs)
+{
+  const unsigned long arm = millis() + (unsigned long)(settleMs > 0 ? settleMs : 0);
+  for (;;)
+  {
+    tickButtons();
+    delay(50);
+    if (settleMs > 0 && (long)(millis() - arm) < 0)
+      continue;
+    if (!buttonPressed())
+      break;
+  }
+  for (;;)
+  {
+    tickButtons();
+    delay(50);
+    if (buttonPressed())
+      break;
+  }
+}
+
 bool SmartHandController::isSleeping()
 {
   if (forceDisplayoff)

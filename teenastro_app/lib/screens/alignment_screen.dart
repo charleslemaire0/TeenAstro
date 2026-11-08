@@ -66,6 +66,18 @@ String formatRigidRms(double arcsec) {
   return '${arcsec.round()}"';
 }
 
+/// `+DD*MM:SS` from the mount becomes `+DD°MM'SS"`. Other text is left as-is.
+String formatDmsReply(String raw) {
+  final s = raw.trim();
+  if (s.length >= 9 &&
+      (s[0] == '+' || s[0] == '-') &&
+      s[3] == '*' &&
+      s[6] == ':') {
+    return '${s.substring(0, 3)}°${s.substring(4, 6)}\'${s.substring(7, 9)}"';
+  }
+  return s;
+}
+
 /// Head geometry the way the hand controller prints it. Empty when the fit
 /// separated none of CH, NP, and ID.
 String formatRigidHead({
@@ -105,6 +117,7 @@ String formatAlignResult({
   double? id,
   int? sideIn,
   int? sideOut,
+  String? polarW,
   String? ma,
   String? me,
 }) {
@@ -112,7 +125,7 @@ String formatAlignResult({
   if (rmsArcsec != null && rmsArcsec > 0) {
     lines.add('RMS ${formatRigidRms(rmsArcsec)}');
   } else if (twoStarError != null && twoStarError.isNotEmpty) {
-    lines.add('Error: $twoStarError');
+    lines.add('Error: ${formatDmsReply(twoStarError)}');
   }
   final head = formatRigidHead(
     mask: mask,
@@ -123,14 +136,14 @@ String formatAlignResult({
     sideOut: sideOut,
   );
   if (head.isNotEmpty) lines.add(head);
-  if (rmsArcsec != null &&
-      rmsArcsec > 0 &&
-      ma != null &&
-      ma.isNotEmpty &&
-      me != null &&
-      me.isNotEmpty) {
-    lines.add('MA $ma   ME $me');
+  void addAngle(String label, String? raw) {
+    if (raw == null || raw.trim().isEmpty) return;
+    lines.add('$label ${formatDmsReply(raw)}');
   }
+
+  addAngle('W', polarW);
+  addAngle('MA', ma);
+  addAngle('ME', me);
   return lines.join('\n');
 }
 
@@ -514,10 +527,6 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
   }
 
   Future<String> _readAlignResult() async {
-    if (_kind == AlignKind.two) {
-      final err = await _client.sendCommand(LX200.getAlignError);
-      return 'Error: ${err ?? 'unknown'}';
-    }
     final rms = double.tryParse(
         (await _client.sendCommand(LX200.getAlignRigidRms) ?? '').trim());
     final mask = (await _client.sendCommand(LX200.getAlignFittedTerms) ?? '').trim();
@@ -544,12 +553,9 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
     if (rms == null || rms <= 0) {
       twoStar = await _client.sendCommand(LX200.getAlignError);
     }
-    final ma = rms != null && rms > 0
-        ? await _client.sendCommand(LX200.getAlignErrorAz)
-        : null;
-    final me = rms != null && rms > 0
-        ? await _client.sendCommand(LX200.getAlignErrorAlt)
-        : null;
+    final ma = await _client.sendCommand(LX200.getAlignErrorAz);
+    final me = await _client.sendCommand(LX200.getAlignErrorAlt);
+    final polarW = await _client.sendCommand(LX200.getAlignErrorPolarW);
     final text = formatAlignResult(
       rmsArcsec: rms,
       twoStarError: twoStar,
@@ -559,6 +565,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
       id: id,
       sideIn: sideIn,
       sideOut: sideOut,
+      polarW: polarW,
       ma: ma,
       me: me,
     );
@@ -631,6 +638,7 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
               ],
             ),
           ),
+        if (_ui != AlignUi.done)
         Consumer(
           builder: (_, ref, __) {
             final settings = ref.watch(planetariumSettingsProvider);
@@ -663,6 +671,9 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
             );
           },
         ),
+        if (_ui == AlignUi.done)
+          Expanded(child: _alignResultPanel())
+        else
         Expanded(
           child: Stack(
             children: [
@@ -731,6 +742,46 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
           child: _buildActionBar(state),
         ),
       ],
+    );
+  }
+
+  Widget _alignResultPanel() {
+    final body = _alignResult.trim();
+    final lines = <String>[
+      'Alignment complete',
+      if (body.isNotEmpty && body != 'Alignment complete') ...body.split('\n'),
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: TA.surface,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = 0; i < lines.length; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    lines[i],
+                    style: TextStyle(
+                      color: i == 0 ? TA.success : TA.text,
+                      fontSize: i == 0 ? 18 : 16,
+                      height: 1.25,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -907,25 +958,8 @@ class _AlignmentScreenState extends ConsumerState<AlignmentScreen> {
         );
 
       case AlignUi.done:
-        final headline = _kind == AlignKind.mechanical
-            ? _alignResult
-            : 'Alignment complete!\n$_alignResult';
         return Column(
           children: [
-            Row(
-              children: [
-                Icon(Icons.check_circle, color: TA.success, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    headline,
-                    style: TextStyle(
-                        color: TA.success, fontSize: 12, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
             if (_kind == AlignKind.mechanical)
               ElevatedButton.icon(
                 onPressed: _reset,

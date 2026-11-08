@@ -101,6 +101,31 @@ void main() {
       expect(AlignUi.recenter.index, lessThan(AlignUi.done.index));
     });
 
+    test('alignment result keeps polar error on its own lines', () {
+      expect(
+        formatAlignResult(
+          rmsArcsec: 90,
+          mask: 'CPI',
+          ch: 15,
+          np: -8,
+          id: 3,
+          sideIn: 3,
+          sideOut: 3,
+          polarW: '+00*12:00',
+          ma: '-00*01:30',
+          me: '+01*00:00',
+        ),
+        equals(
+          "RMS 1.5'\n"
+          'CH +15"\nNP -8"\nID +3"\n'
+          'W +00°12\'00"\n'
+          'MA -00°01\'30"\n'
+          'ME +01°00\'00"',
+        ),
+      );
+      expect(formatDmsReply('+00*00:05'), equals('+00°00\'05"'));
+    });
+
     test('rigid head prints Wallace arcseconds and hides an unsolved CH', () {
       expect(
         formatRigidHead(mask: '-PI', ch: 0, np: 120, id: -30, sideIn: 4, sideOut: 0),

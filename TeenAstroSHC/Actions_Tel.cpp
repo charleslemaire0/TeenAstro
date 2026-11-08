@@ -425,31 +425,84 @@ static bool formatRigidHead(LX200Client& client, char(&cone)[20], char(&perp)[20
   return true;
 }
 
+/// "+DD*MM:SS" from :AE# / :GXAawz# becomes "+DD°MM'SS\"".
+static void prettyDmsInPlace(char* s, size_t n)
+{
+  if (s == NULL)
+    return;
+  const size_t len = strlen(s);
+  if (len < 9 || n < len + 1)
+    return;
+  if ((s[0] != '+' && s[0] != '-') || s[3] != '*' || s[6] != ':')
+    return;
+  s[3] = '\xB0';
+  s[6] = '\'';
+  if (len == 9 && n > 10)
+  {
+    s[9] = '\"';
+    s[10] = '\0';
+  }
+}
+
 void SmartHandController::showAlignmentResult()
 {
-  char text[24] = { 0 };
   DisplayMessage(T_ALIGNMENT, T_SUCESS "!", -1);
+  // The key that dismisses "Success" must not also skip the error.
+  showAlignErrorReport(800);
+}
+
+void SmartHandController::showAlignErrorReport(int settleMs)
+{
+  char title[22];
+  strncpy(title, T_ERROR, sizeof(title) - 1);
+  title[sizeof(title) - 1] = '\0';
+
   // Prefer the rigid multi-star RMS (:GXAr#). :AE# is only the two-star seed
   // anglediff and stays misleading after 4-star / 3+3 close-out.
   double rmsAs = 0.0;
   if (m_client->getAlignRigidRms(rmsAs) == LX200_VALUEGET && rmsAs > 0.0)
   {
-    if (rmsAs >= 60.0)
-      snprintf(text, sizeof(text), "%.1f'", rmsAs / 60.0);
+    if (rmsAs >= 3600.0)
+      snprintf(title, sizeof(title), "RMS %.1f\xB0", rmsAs / 3600.0);
+    else if (rmsAs >= 60.0)
+      snprintf(title, sizeof(title), "RMS %.1f'", rmsAs / 60.0);
     else
-      snprintf(text, sizeof(text), "%.0f\"", rmsAs);
-    DisplayMessage(T_ERROR, text, -1);
+      snprintf(title, sizeof(title), "RMS %.1f\"", rmsAs);
   }
-  else if (m_client->getAlignError(text, sizeof(text)) == LX200_VALUEGET)
+
+  char errAz[20] = { "?" };
+  char errAlt[20] = { "?" };
+  char errPol[20] = { "?" };
+  const bool havePolar =
+      m_client->getAlignErrorPolar(errPol, sizeof(errPol)) == LX200_VALUEGET
+      && m_client->getAlignErrorAz(errAz, sizeof(errAz)) == LX200_VALUEGET
+      && m_client->getAlignErrorAlt(errAlt, sizeof(errAlt)) == LX200_VALUEGET;
+  if (havePolar)
   {
-    text[3] = '\xB0';
-    text[6] = '\'';
-    text[9] = '\"';
-    DisplayMessage(T_ERROR, text, -1);
+    prettyDmsInPlace(errPol, sizeof(errPol));
+    prettyDmsInPlace(errAz, sizeof(errAz));
+    prettyDmsInPlace(errAlt, sizeof(errAlt));
+    char w[24], ma[24], me[24];
+    snprintf(w, sizeof(w), "W  %s", errPol);
+    snprintf(ma, sizeof(ma), "MA %s", errAz);
+    snprintf(me, sizeof(me), "ME %s", errAlt);
+    DisplayLongMessage(title, w, ma, me, -1, settleMs);
   }
+  else
+  {
+    char text[24] = { 0 };
+    if (m_client->getAlignError(text, sizeof(text)) == LX200_VALUEGET)
+    {
+      prettyDmsInPlace(text, sizeof(text));
+      DisplayMessage(title, text, -1, settleMs);
+    }
+    else
+      DisplayMessage(title, "?", -1, settleMs);
+  }
+
   char hc[20], hp[20], hi[20];
   if (formatRigidHead(*m_client, hc, hp, hi))
-    DisplayLongMessage("Head geometry:", hc, hp, hi, -1);
+    DisplayLongMessage("Head geometry:", hc, hp, hi, -1, settleMs);
 }
 
 void SmartHandController::menuKnownErrors()
@@ -826,62 +879,10 @@ SmartHandController::MENU_RESULT SmartHandController::menuAlignment()
         }
       }
       else
-      {
-        char err_az[20] = { "?" };
-        char err_alt[20] = { "?" };
-        char err_pol[20] = { "?" };
-        if (m_client->getAlignErrorPolar(err_pol, sizeof(err_pol)) == LX200_VALUEGET
-            && m_client->getAlignErrorAz(err_az, sizeof(err_az)) == LX200_VALUEGET
-            && m_client->getAlignErrorAlt(err_alt, sizeof(err_alt)) == LX200_VALUEGET)
-        {
-          DisplayLongMessage("[W;MA;ME]:", err_pol, err_az, err_alt, -1);
-          char hc[20], hp[20], hi[20];
-          if (formatRigidHead(*m_client, hc, hp, hi))
-            DisplayLongMessage("Head geometry:", hc, hp, hi, -1);
-        }
-        else
-        {
-          char text[20];
-          if (m_client->getAlignError(text, sizeof(text)) == LX200_VALUEGET)
-          {
-            text[3] = '\xB0';
-            text[6] = '\'';
-            text[9] = '\"';
-            DisplayMessage(T_ERROR, text, -1);
-          }
-          else
-            DisplayMessage(T_ERROR, "?", -1);
-        }
-      }
+        showAlignErrorReport(0);
       break;
     case 8:
-      {
-        char err_az[20] = { "?" };
-        char err_alt[20] = { "?" };
-        char err_pol[20] = { "?" };
-        if (m_client->getAlignErrorPolar(err_pol, sizeof(err_pol)) == LX200_VALUEGET
-            && m_client->getAlignErrorAz(err_az, sizeof(err_az)) == LX200_VALUEGET
-            && m_client->getAlignErrorAlt(err_alt, sizeof(err_alt)) == LX200_VALUEGET)
-        {
-          DisplayLongMessage("[W;MA;ME]:", err_pol, err_az, err_alt, -1);
-          char hc[20], hp[20], hi[20];
-          if (formatRigidHead(*m_client, hc, hp, hi))
-            DisplayLongMessage("Head geometry:", hc, hp, hi, -1);
-        }
-        else
-        {
-          char text[20];
-          if (m_client->getAlignError(text, sizeof(text)) == LX200_VALUEGET)
-          {
-            text[3] = '\xB0';
-            text[6] = '\'';
-            text[9] = '\"';
-            DisplayMessage(T_ERROR, text, -1);
-          }
-          else
-            DisplayMessage(T_ERROR, "?", -1);
-        }
-      }
+      showAlignErrorReport(0);
       break;
     }
   }
