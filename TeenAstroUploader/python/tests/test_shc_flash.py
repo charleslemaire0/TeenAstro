@@ -11,7 +11,7 @@ from teenastro_uploader import flash
 
 class ShcFlashTests(unittest.TestCase):
     def test_s3_writes_merged_image_with_esp32s3(self):
-        bin_path = Path("TeenAstroSHC_1.6_S3_English.bin")
+        bin_path = Path("TeenAstroSHC_1_6_S3_English.bin")
         with patch.object(flash.fw, "resolve_shc_bin", return_value=bin_path), patch.object(
             flash, "_invoke_esptool"
         ) as invoke:

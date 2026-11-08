@@ -8,10 +8,10 @@ from .paths import firmware_dir
 
 
 def hex_version_token(version: str) -> str:
-    """X_Y token used in Teensy hex names.
+    """X_Y token used in every published firmware file name.
 
-    teensy_post_compile cuts -file at the first '.'. The uploader version
-    stays 1.6; the file is TeenAstro_1_6_.... A patch such as 1.6.15 uses 1_6.
+    The version dropdown stays 1.6. Files are TeenAstro_1_6_....hex and
+    TeenAstroSHC_1_6_....bin. A patch such as 1.6.15 uses the same 1_6 token.
     """
     parts = version.strip().split(".")
     line = ".".join(parts[:2]) if len(parts) >= 2 else version.strip()
@@ -25,15 +25,15 @@ def firmware_file_list(version: str) -> list[str]:
         f"TeenAstroFocuser_{token}_230_TMC2130.hex",
         f"TeenAstroFocuser_{token}_240_TMC2130.hex",
         f"TeenAstroFocuser_{token}_240_TMC5160.hex",
-        f"TeenAstroSHC_{version}_English.bin",
-        f"TeenAstroSHC_{version}_French.bin",
-        f"TeenAstroSHC_{version}_German.bin",
-        f"TeenAstroSHC_{version}_S3_English.bin",
-        f"TeenAstroSHC_{version}_S3_French.bin",
-        f"TeenAstroSHC_{version}_S3_German.bin",
-        f"TeenAstroSHC_{version}_S3_English_OTA.bin",
-        f"TeenAstroSHC_{version}_S3_French_OTA.bin",
-        f"TeenAstroSHC_{version}_S3_German_OTA.bin",
+        f"TeenAstroSHC_{token}_English.bin",
+        f"TeenAstroSHC_{token}_French.bin",
+        f"TeenAstroSHC_{token}_German.bin",
+        f"TeenAstroSHC_{token}_S3_English.bin",
+        f"TeenAstroSHC_{token}_S3_French.bin",
+        f"TeenAstroSHC_{token}_S3_German.bin",
+        f"TeenAstroSHC_{token}_S3_English_OTA.bin",
+        f"TeenAstroSHC_{token}_S3_French_OTA.bin",
+        f"TeenAstroSHC_{token}_S3_German_OTA.bin",
         f"TeenAstro_{token}_220_TMC260.hex",
         f"TeenAstro_{token}_230_TMC260.hex",
         f"TeenAstro_{token}_240_TMC2130.hex",
@@ -90,11 +90,6 @@ def resolve_hex(version: str, latest: bool, stem: str) -> Path:
     path = folder / f"{stem}.hex"
     if path.is_file():
         return path
-    # Files published before the underscore token: TeenAstro_1.6_....
-    legacy = stem.replace(hex_version_token(version), version.strip(), 1)
-    legacy_path = folder / f"{legacy}.hex"
-    if legacy != stem and legacy_path.is_file():
-        return legacy_path
     raise FileNotFoundError(f"{stem}.hex not found!\nExpected at:\n{path}")
 
 
@@ -109,14 +104,16 @@ def shc_chip(pcb: str) -> str:
 
 def shc_bin_filename(version: str, language: str, pcb: str = "0.x") -> str:
     """USB flash image. S3 is the merged image written at 0x0, not the _OTA app."""
+    token = hex_version_token(version)
     if shc_is_s3(pcb):
-        return f"TeenAstroSHC_{version}_S3_{language}.bin"
-    return f"TeenAstroSHC_{version}_{language}.bin"
+        return f"TeenAstroSHC_{token}_S3_{language}.bin"
+    return f"TeenAstroSHC_{token}_{language}.bin"
 
 
 def shc_ota_filename(version: str, language: str) -> str:
     """ESP32-S3 application image for the web /update page."""
-    return f"TeenAstroSHC_{version}_S3_{language}_OTA.bin"
+    token = hex_version_token(version)
+    return f"TeenAstroSHC_{token}_S3_{language}_OTA.bin"
 
 
 def resolve_shc_bin(version: str, latest: bool, language: str, pcb: str = "0.x") -> Path:

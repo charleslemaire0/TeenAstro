@@ -1,6 +1,6 @@
-# Build TeenAstro MSI: MainUnit + SHC emulators; optionally Firmware Uploader and TeenAstro App (full package).
-# For Uploader-only or App-only MSI, use TeenAstroUploader\installer\build.ps1 or teenastro_app\installer\build.ps1.
-# Requires: PlatformIO (pio), WiX Toolset 3. Optional: MSBuild (uploader), Flutter (app), MinGW (emulator).
+# Build TeenAstro MSI: MainUnit + SHC emulators, and optionally the TeenAstro App.
+# The Firmware Uploader is the separate Python MSI: TeenAstroUploader\installer\build.ps1.
+# Requires: PlatformIO (pio), WiX Toolset 3. Optional: Flutter (app), MinGW (emulator).
 #
 # Run from repo root: .\TeenAstroEmulator\installer\build.ps1
 # Or from this folder: .\build.ps1 (script detects repo root)
@@ -8,7 +8,7 @@
 # Switches:
 #   -EmulatorsOnly   Build and install only the emulators (MainUnit + SHC). No Uploader, no App.
 #   -SkipEmulator    Skip building the emulators (reuse staged exe)
-#   -SkipUploader    Skip building the firmware uploader
+#   -SkipUploader    Accepted for old commands. The uploader is no longer part of this MSI.
 #   -SkipApp         Skip building the Flutter Windows app
 #   -FlutterPath     Path to Flutter bin/ (default: flutter on PATH)
 
@@ -50,28 +50,12 @@ if ($EmulatorsOnly) {
 $BuildEmu     = Join-Path $EmuDir ".pio\build\emu"
 $BuildMainUnit = $BuildEmu
 $BuildSHC     = $BuildEmu
-$UploaderProj = Join-Path $RepoRoot "TeenAstroUploader\TeenAstroUploader\TeenAstroUploader.vbproj"
-$UploaderBin  = Join-Path $RepoRoot "TeenAstroUploader\TeenAstroUploader\bin\Release"
 $AppRoot      = Join-Path $RepoRoot "teenastro_app"
 $AppBuildDir  = Join-Path $AppRoot "build\windows\x64\runner\Release"
 
 Write-Host "Repo root    : $RepoRoot" -ForegroundColor Cyan
 Write-Host "Emu root     : $EmuDir" -ForegroundColor Cyan
 Write-Host "Installer dir: $InstallerDir" -ForegroundColor Cyan
-
-# ---------- Helper: find MSBuild ----------
-function Find-MSBuild {
-    $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-    if (Test-Path $vswhere) {
-        $found = & $vswhere -latest -requires Microsoft.Component.MSBuild -find "MSBuild\**\Bin\MSBuild.exe" | Select-Object -First 1
-        if ($found) { return $found }
-    }
-    $cmd = Get-Command MSBuild.exe -ErrorAction SilentlyContinue
-    if ($cmd) { return $cmd.Source }
-    $fw = Join-Path $env:SystemRoot "Microsoft.NET\Framework\v4.0.30319\MSBuild.exe"
-    if (Test-Path $fw) { return $fw }
-    return $null
-}
 
 # ---------- Helper: find WiX bin ----------
 function Find-WixBin {
@@ -115,20 +99,7 @@ if (-not $SkipEmulator) {
     } finally { Pop-Location }
 }
 
-# ---------- 2. Build Firmware Uploader ----------
-if (-not $SkipUploader) {
-    Write-Host "`n=== Building Firmware Uploader ===" -ForegroundColor Yellow
-    $msbuild = Find-MSBuild
-    if (-not $msbuild) {
-        Write-Host "MSBuild not found. Install Visual Studio or .NET Framework SDK." -ForegroundColor Red
-        Pause-IfInteractive; exit 1
-    }
-    Write-Host "Using MSBuild: $msbuild" -ForegroundColor Cyan
-    & $msbuild $UploaderProj /p:Configuration=Release /v:minimal
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-}
-
-# ---------- 3. Build Flutter Windows app ----------
+# ---------- 2. Build Flutter Windows app ----------
 if (-not $SkipApp) {
     Write-Host "`n=== Building TeenAstro App (Flutter Windows) ===" -ForegroundColor Yellow
     if ($FlutterPath) {
@@ -234,14 +205,6 @@ if (-not (Test-Path $iconSrc)) {
     Pause-IfInteractive; exit 1
 }
 Copy-Item $iconSrc (Join-Path $StageDir "icon.ico") -Force
-
-# Uploader: single exe when full build (not EmulatorsOnly)
-if (-not $EmulatorsOnly) {
-    $uploaderExe = Join-Path $UploaderBin "TeenAstroUploader.exe"
-    if (Test-Path $uploaderExe) {
-        Copy-Item $uploaderExe (Join-Path $StageDir "TeenAstroUploader.exe") -Force
-    }
-}
 
 # Flutter app -- copy all files flat into stage (exe + DLLs + data/) when full build and not -SkipApp
 if (-not $EmulatorsOnly -and -not $SkipApp -and (Test-Path $AppBuildDir)) {

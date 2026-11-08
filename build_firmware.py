@@ -34,8 +34,8 @@ RELEASE_VERSION = "1.6"
 REPO_ROOT = Path(__file__).resolve().parent
 
 # Uploader uses X.Y only: folder is {X.Y}_latest (rolling) or {X.Y} (stable after promote).
-# Hex names cannot keep the dot: teensy_post_compile cuts -file at the first '.'.
-# 1.6 and 1.6.1 both land in 1.6_latest as TeenAstro_1_6_....
+# Published file names use X_Y: TeenAstro_1_6_....hex and TeenAstroSHC_1_6_....bin.
+# 1.6 and 1.6.1 both land in 1.6_latest.
 def _release_line(version: str) -> str:
     """Return X.Y from X.Y or X.Y.Z (folder name for uploader)."""
     parts = version.strip().split(".")
@@ -43,7 +43,7 @@ def _release_line(version: str) -> str:
 
 
 def _file_token(version: str) -> str:
-    """X_Y token for Teensy hex names. 1.6 and 1.6.15 both become 1_6."""
+    """X_Y token for every published firmware name. 1.6 and 1.6.15 both become 1_6."""
     return _release_line(version).replace(".", "_")
 
 # Distribution folder = rolling "latest" for this release line (X.Y_latest)
@@ -60,7 +60,7 @@ class FirmwareBuild:
     extension: str       # ".hex" or ".bin"
 
 
-# Firmware manifest is get_manifest_for_version(). Hex names use _file_token.
+# Firmware manifest is get_manifest_for_version(). Every dist name uses _file_token.
 
 
 # ---------------------------------------------------------------------------
@@ -199,8 +199,8 @@ def find_ota_app_file(project_path: Path, pio_env: str, ext: str) -> Path | None
 def get_manifest_for_version(version: str) -> tuple[Path, list[FirmwareBuild]]:
     """Return (dist_dir, firmware variants) for this release.
 
-    Folder is X.Y_latest. Teensy hex names use X_Y so teensy_post_compile
-    keeps the whole stem. SHC bins keep X.Y; esptool takes the full path.
+    Folder is X.Y_latest. Every published file name uses X_Y
+    (TeenAstro_1_6_....hex, TeenAstroSHC_1_6_....bin).
     """
     rl = _release_line(version)
     token = _file_token(version)
@@ -216,12 +216,12 @@ def get_manifest_for_version(version: str) -> tuple[Path, list[FirmwareBuild]]:
         FirmwareBuild("focuser", "TeenAstroFocuser", "230_2130", f"TeenAstroFocuser_{token}_230_TMC2130", ".hex"),
         FirmwareBuild("focuser", "TeenAstroFocuser", "240_2130", f"TeenAstroFocuser_{token}_240_TMC2130", ".hex"),
         FirmwareBuild("focuser", "TeenAstroFocuser", "240_5160", f"TeenAstroFocuser_{token}_240_TMC5160", ".hex"),
-        FirmwareBuild("shc", "TeenAstroSHC", "ENGLISH", f"TeenAstroSHC_{rl}_English", ".bin"),
-        FirmwareBuild("shc", "TeenAstroSHC", "FRENCH", f"TeenAstroSHC_{rl}_French", ".bin"),
-        FirmwareBuild("shc", "TeenAstroSHC", "GERMAN", f"TeenAstroSHC_{rl}_German", ".bin"),
-        FirmwareBuild("shc", "TeenAstroSHC", "esp32s3", f"TeenAstroSHC_{rl}_S3_English", ".bin"),
-        FirmwareBuild("shc", "TeenAstroSHC", "esp32s3_FRENCH", f"TeenAstroSHC_{rl}_S3_French", ".bin"),
-        FirmwareBuild("shc", "TeenAstroSHC", "esp32s3_GERMAN", f"TeenAstroSHC_{rl}_S3_German", ".bin"),
+        FirmwareBuild("shc", "TeenAstroSHC", "ENGLISH", f"TeenAstroSHC_{token}_English", ".bin"),
+        FirmwareBuild("shc", "TeenAstroSHC", "FRENCH", f"TeenAstroSHC_{token}_French", ".bin"),
+        FirmwareBuild("shc", "TeenAstroSHC", "GERMAN", f"TeenAstroSHC_{token}_German", ".bin"),
+        FirmwareBuild("shc", "TeenAstroSHC", "esp32s3", f"TeenAstroSHC_{token}_S3_English", ".bin"),
+        FirmwareBuild("shc", "TeenAstroSHC", "esp32s3_FRENCH", f"TeenAstroSHC_{token}_S3_French", ".bin"),
+        FirmwareBuild("shc", "TeenAstroSHC", "esp32s3_GERMAN", f"TeenAstroSHC_{token}_S3_German", ".bin"),
     ]
     return dist_dir, manifest
 

@@ -5,9 +5,15 @@
 pointing_crosscheck/*.exe
 pointing_crosscheck/out/
 
-# Logs
+# Logs and generated observation dumps
 debug-*.log
 build_*.txt
+io_pier.log
+conform_reproduce/*.log
+conform_reproduce/conform.report.txt
+conform_reproduce/conformu_run.txt
+conform_reproduce/ConformU_*.txt
+pointing_crosscheck/*_obs.txt
 
 # IDE / OS
 .vs/

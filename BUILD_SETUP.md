@@ -13,7 +13,7 @@ This document describes how to configure your Windows PC to **compile all elemen
 | **UniversalMainUnit** | PlatformIO | PlatformIO CLI, Teensy/ESP32 (custom platform) |
 | **Unit tests** (`tests/`) | PlatformIO | PlatformIO CLI, MinGW toolchain |
 | **TeenAstroASCOM_V7** | MSBuild | .NET Framework 4.7.2, Visual Studio or Build Tools |
-| **TeenAstroUploader** | MSBuild | VB.NET, Visual Studio or Build Tools |
+| **TeenAstroUploader** | Python | Python 3 with tkinter, WiX Toolset 3 for the MSI |
 | **CatalogConverter** | MSBuild | VB.NET, Visual Studio or Build Tools |
 | **SimpleFocuser** | MSBuild | VB.NET, Visual Studio or Build Tools |
 | **teenastro_app** | Flutter | Flutter SDK; for Android APK: Android SDK |
@@ -88,7 +88,7 @@ pio test -d tests
 
 ## 2. .NET (C# and VB.NET)
 
-Required for: **TeenAstroASCOM_V7**, **TeenAstroUploader**, **CatalogConverter**, **SimpleFocuser**.
+Required for: **TeenAstroASCOM_V7**, **CatalogConverter**, **SimpleFocuser**. The Firmware Uploader is the Python app under `TeenAstroUploader\python`; build it with `TeenAstroUploader\installer\build.ps1`.
 
 You need **.NET Framework 4.7.2** and **MSBuild** (Visual Studio or Build Tools).
 
@@ -112,9 +112,6 @@ cd c:\Users\clemair\Documents\learn\TeenAstro
 
 # TeenAstroASCOM_V7 (C#)
 msbuild TeenAstroASCOM_V7\TeenAstroASCOM_V7.sln -p:Configuration=Release
-
-# TeenAstroUploader (VB.NET)
-msbuild TeenAstroUploader\TeenAstroUploader.sln -p:Configuration=Release
 
 # CatalogConverter (VB.NET)
 msbuild CatalogConverter\CatConv\CatConv.sln -p:Configuration=Release

@@ -5,7 +5,7 @@
   <xsl:output method="xml" indent="yes" omit-xml-declaration="no" />
   <xsl:strip-space elements="*" />
 
-  <!-- Components already listed in TeenAstroEmulator.wxs (MainUnit, SHC, SDL2, Uploader, icon). -->
+  <!-- Components already listed in TeenAstroEmulator.wxs (MainUnit, SHC, SDL2, icon). -->
   <xsl:key name="excluded" match="wix:Component[
     contains(wix:File/@Source, 'TeenAstroMainUnit.exe') or
     contains(wix:File/@Source, 'TeenAstroSHC.exe') or

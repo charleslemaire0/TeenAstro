@@ -17,7 +17,7 @@ A full clone contains everything needed to build without extra generation steps:
 | **Python tools** | `tools/extract_catalogs.py`, `tools/generate_star_catalog.py`, `tools/convert_stellarium_constellations.py` | Present in repo. Used by `build_app.ps1` only when app assets are missing (e.g. partial clone or deleted assets). |
 | **Catalog sources** | `libraries/TeenAstroCatalog/src/catalogs/` | C PROGMEM sources for `extract_catalogs.py`. In repo. |
 
-So: **building on another machine only needs a full clone + the documented prerequisites** (Flutter, Android SDK for APK, .NET/MSBuild for uploader/ASCOM, PlatformIO for firmware, etc.). No hidden "only on one PC" files.
+So: **building on another machine only needs a full clone + the documented prerequisites** (Flutter, Android SDK for APK, .NET/MSBuild for ASCOM, Python for the uploader, PlatformIO for firmware, etc.). No hidden "only on one PC" files.
 
 ### 1.2 Prerequisites (other machine)
 
@@ -25,7 +25,8 @@ Documented in **`BUILD_SETUP.md`** and **`scripts/BUILD_SCRIPTS.md`**:
 
 - **App (Flutter):** Flutter SDK on PATH (or `-FlutterPath`); for Android: Android SDK + `ANDROID_HOME`; for Windows: Visual Studio with "Desktop development with C++".
 - **Firmware:** PlatformIO (`pio` on PATH), optionally MinGW for unit tests (`scripts/setup_build_env.ps1`).
-- **Uploader / ASCOM / MSI:** MSBuild (.NET 4.7.2), WiX Toolset 3 for MSI.
+- **Uploader:** Python 3 with tkinter, WiX Toolset 3 (`TeenAstroUploader\installer\build.ps1`).
+- **ASCOM / MSI:** MSBuild (.NET 4.7.2), WiX Toolset 3 for the emulator MSI.
 
 ### 1.3 Build script portability fix (done)
 

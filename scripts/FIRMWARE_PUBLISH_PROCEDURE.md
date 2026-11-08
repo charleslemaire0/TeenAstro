@@ -36,7 +36,7 @@ python build_firmware.py --version 1.6
 ```
 
 - Builds all 13 variants (MainUnit, Focuser, SHC) and writes them into **`TeenAstroUploader\TeenAstroUploader\1.6_latest\`**.
-- File names use **X.Y** (e.g. `TeenAstro_1.6_220_TMC260.hex`) so the Uploader finds them when the user selects version **1.6** and **Latest**.
+- File names use **X_Y** (e.g. `TeenAstro_1_6_220_TMC260.hex`, `TeenAstroSHC_1_6_English.bin`) so the Uploader finds them when the user selects version **1.6** and **Latest**.
 - **No change** to the Uploader UI (the version dropdown already has **1.6**). Do not add 1.6.1 or other patch versions to the dropdown.
 
 After the build, commit the updated **1.6_latest** folder (see git commands printed by the script). Do not add or copy firmware by any other path or name.
@@ -71,7 +71,7 @@ It copies **1.6_latest** → **1.6** and prints the `git add` / `git commit` com
 1. **Build**  
    From repo root:  
    `python build_firmware.py --version 1.6`  
-   Output must be in `TeenAstroUploader\TeenAstroUploader\1.6_latest\` with all 13 files (names like `TeenAstro_1.6_220_TMC260.hex`).
+   Output must be in `TeenAstroUploader\TeenAstroUploader\1.6_latest\` with all 13 files (names like `TeenAstro_1_6_220_TMC260.hex`).
 
 2. **Commit latest**  
    `git add "TeenAstroUploader/TeenAstroUploader/1.6_latest/"`  
@@ -99,4 +99,4 @@ Do **not** add a patch version (e.g. 1.6.1) to the Uploader version dropdown. Do
 - Build script: `build_firmware.py` at repo root. See `scripts\BUILD_SCRIPTS.md` for build-only usage.
 - Publish script: `scripts\publish_firmware_for_uploader.py` (builds into X.Y_latest).
 - Promote script: `scripts\promote_firmware_to_stable.py` (copies X.Y_latest → X.Y).
-- Uploader project: `TeenAstroUploader\TeenAstroUploader.sln`.
+- Uploader: `TeenAstroUploader\python`, built by `TeenAstroUploader\installer\build.ps1`.

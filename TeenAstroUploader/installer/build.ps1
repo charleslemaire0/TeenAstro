@@ -55,7 +55,7 @@ $OutDir = Join-Path $InstallerDir ".out"
 $PythonDir = Join-Path $UploaderDir "python"
 $VenvDir = Join-Path $PythonDir ".venv"
 $DistDir = Join-Path $PythonDir "dist\TeenAstroUploader"
-$LegacyTools = Join-Path $UploaderDir "TeenAstroUploader\bin\Release"
+$LegacyTools = Join-Path $UploaderDir "TeenAstroUploader"
 $IconSrc = Join-Path $PythonDir "packaging\icon.ico"
 if (-not (Test-Path $IconSrc)) {
     $IconSrc = Join-Path $RepoRoot "TeenAstroEmulator\installer\icon.ico"
@@ -104,7 +104,7 @@ $null = New-Item -ItemType Directory -Force -Path $StageDir
 Get-ChildItem $StageDir -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 Copy-Item "$DistDir\*" $StageDir -Recurse -Force
 
-# Bundle PJRC Teensy tools from legacy VB Release build when available
+# Bundle the PJRC Teensy tools stored next to the published firmware.
 $toolNames = @(
     "teensy.exe", "teensy_post_compile.exe", "teensy_reboot.exe",
     "teensy_restart.exe", "teensy_gateway.exe", "esptool.exe"

@@ -2,7 +2,7 @@
 
 Cross-platform desktop uploader for TeenAstro MainUnit, Focuser, and SHC firmware.
 
-Replaces the legacy VB.NET WinForms app with the same workflow:
+Desktop workflow:
 
 - Download Stable + Latest firmware from GitHub (via system `curl`)
 - Progress bar while downloading

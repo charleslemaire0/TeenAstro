@@ -1,22 +1,21 @@
 # TeenAstro Emulator -- Windows MSI Installer
 
-Builds a Windows MSI package that installs the **MainUnit emulator** (extended state view / tabbed cockpit), **SHC emulator**, **Firmware Uploader**, and **TeenAstro App** under **Program Files** and adds **Start Menu** shortcuts. There is a single MainUnit emulator (the one with the extended state view); the SHC emulator connects to it.
+Builds a Windows MSI package that installs the **MainUnit emulator** (extended state view / tabbed cockpit), **SHC emulator**, and **TeenAstro App** under **Program Files** and adds **Start Menu** shortcuts. There is a single MainUnit emulator (the one with the extended state view); the SHC emulator connects to it. The Firmware Uploader is the separate Python MSI from `TeenAstroUploader\installer\build.ps1`.
 
-- **Emulators only** — To build and install only the two emulators (no Firmware Uploader, no TeenAstro App), run:
+- **Emulators only** — To build and install only the two emulators (no TeenAstro App), run:
   ```powershell
   .\TeenAstroEmulator\installer\build.ps1 -EmulatorsOnly
   ```
   This builds MainUnit and SHC, stages **all** build output (exes plus every DLL: SDL2, MinGW runtime, etc.) and icon, then harvests with heat so the MSI contains everything needed to run. SDL2 is taken from the build output or, if missing, from `C:\SDL2\bin\SDL2.dll`.
 
-- **Firmware Uploader only** — Run `TeenAstroUploader\installer\build.ps1` (or use `Released data\Run_FirmwareUploader_build.bat`). That script builds the Uploader with MSBuild, stages all required files, and produces `TeenAstroUploader.msi` in `TeenAstroUploader\installer\.out\`.
+- **Firmware Uploader only** — Run `TeenAstroUploader\installer\build.ps1` (or use `Released data\Run_FirmwareUploader_build.bat`). That script builds the Python uploader, stages all required files, and produces `TeenAstroUploader.msi` in `TeenAstroUploader\installer\.out\`.
 - **TeenAstro App only** — Run `teenastro_app\installer\build.ps1` (or use `Released data\Run_App_build.bat`). That script builds the Flutter app and produces `TeenAstroApp.msi` in `teenastro_app\installer\.out\`.
 
 ## Prerequisites
 
 1. **PlatformIO** -- to build the MainUnit and SHC emulators (`pio run -d TeenAstroEmulator -e emu_mainunit` and `-e emu_shc`).
-2. **MSBuild** -- to build the Firmware Uploader (Visual Studio or .NET Framework SDK).
-3. **Flutter** -- to build the TeenAstro Windows app (`flutter build windows`).
-4. **WiX Toolset 3** -- to build the MSI.
+2. **Flutter** -- to build the TeenAstro Windows app (`flutter build windows`).
+3. **WiX Toolset 3** -- to build the MSI.
    - Download: https://wixtoolset.org/
    - Install and add the WiX `bin` folder to your PATH (e.g. `C:\Program Files (x86)\WiX Toolset v3.11\bin`),
    **or** set the `WIX` environment variable to the WiX install directory.
@@ -33,7 +32,7 @@ Builds a Windows MSI package that installs the **MainUnit emulator** (extended s
   ```powershell
   .\TeenAstroEmulator\installer\build.ps1 -SkipApp
   ```
-  That builds the MSI with only the MainUnit emulator, SHC emulator, and Firmware Uploader. To include the app later, install Flutter, add its `bin` folder to PATH (or use `-FlutterPath "C:\path\to\flutter\bin"`), and run without `-SkipApp`.
+  That builds the MSI with only the MainUnit emulator and SHC emulator. To include the app later, install Flutter, add its `bin` folder to PATH (or use `-FlutterPath "C:\path\to\flutter\bin"`), and run without `-SkipApp`.
 
 - **Script won’t run at all** — If PowerShell says scripts are disabled, allow scripts for your user (one time):
   ```powershell
@@ -53,8 +52,8 @@ The `installer\.stage\` folder is **filled automatically** by the build script; 
 
 | How to update | When to use |
 |---------------|-------------|
-| **Run the full installer build** | Refresh everything (MainUnit, SHC, Uploader, App) and rebuild the MSI. |
-| **Rebuild one component, then run with skip flags** | After changing only one emulator or Uploader/App: rebuild that part, copy the new file(s) into `.stage\`, then run the script with the right `-Skip*` so the rest is left as-is. |
+| **Run the full installer build** | Refresh everything (MainUnit, SHC, App) and rebuild the MSI. |
+| **Rebuild one component, then run with skip flags** | After changing only one emulator or the App: rebuild that part, copy the new file(s) into `.stage\`, then run the script with the right `-Skip*` so the rest is left as-is. |
 
 **Full refresh (recommended):**
 
@@ -62,7 +61,7 @@ The `installer\.stage\` folder is **filled automatically** by the build script; 
 .\TeenAstroEmulator\installer\build.ps1
 ```
 
-This builds the MainUnit emulator, SHC emulator, Firmware Uploader, and Flutter app, copies them into `installer\.stage\`, then builds the MSI. Anything already in `.stage\` (e.g. `TeenAstroMainUnit.exe`, `TeenAstroSHC.exe`, `SDL2.dll`, `TeenAstroUploader.exe`, Flutter output, `icon.ico`) is overwritten.
+This builds the MainUnit emulator, SHC emulator, and Flutter app, copies them into `installer\.stage\`, then builds the MSI. Anything already in `.stage\` (e.g. `TeenAstroMainUnit.exe`, `TeenAstroSHC.exe`, `SDL2.dll`, Flutter output, `icon.ico`) is overwritten.
 
 **Update only the MainUnit emulator in stage:**
 
@@ -71,8 +70,8 @@ This builds the MainUnit emulator, SHC emulator, Firmware Uploader, and Flutter 
 pio run -d TeenAstroEmulator -e emu_mainunit
 Copy-Item TeenAstroEmulator\.pio\build\emu\mainunit_emu.exe TeenAstroEmulator\installer\.stage\TeenAstroMainUnit.exe -Force
 
-# Rebuild MSI without rebuilding SHC, Uploader or App
-.\TeenAstroEmulator\installer\build.ps1 -SkipUploader -SkipApp
+# Rebuild MSI without rebuilding SHC or App
+.\TeenAstroEmulator\installer\build.ps1 -SkipApp
 # (Note: -SkipEmulator skips building BOTH emulators; to refresh only MainUnit, build above then use -SkipEmulator)
 ```
 
@@ -85,17 +84,8 @@ Copy-Item TeenAstroEmulator\.pio\build\emu\shc_emu.exe TeenAstroEmulator\install
 # Optional: refresh SDL2 if your build outputs it
 # Copy-Item TeenAstroEmulator\.pio\build\emu\SDL2.dll TeenAstroEmulator\installer\.stage\SDL2.dll -Force
 
-# Rebuild MSI without rebuilding MainUnit, Uploader or App
-.\TeenAstroEmulator\installer\build.ps1 -SkipUploader -SkipApp
-```
-
-**Update only the Firmware Uploader in stage:**
-
-Build the Uploader in Visual Studio (Release), then:
-
-```powershell
-Copy-Item TeenAstroUploader\TeenAstroUploader\bin\Release\TeenAstroUploader.exe TeenAstroEmulator\installer\.stage\TeenAstroUploader.exe -Force
-.\TeenAstroEmulator\installer\build.ps1 -SkipEmulator -SkipApp
+# Rebuild MSI without rebuilding MainUnit or App
+.\TeenAstroEmulator\installer\build.ps1 -SkipApp
 ```
 
 **Update only the TeenAstro App in stage:**
@@ -105,10 +95,10 @@ cd teenastro_app
 flutter build windows
 Copy-Item build\windows\x64\runner\Release\* ..\TeenAstroEmulator\installer\.stage\ -Recurse -Force
 cd ..
-.\TeenAstroEmulator\installer\build.ps1 -SkipEmulator -SkipUploader
+.\TeenAstroEmulator\installer\build.ps1 -SkipEmulator
 ```
 
-`.stage\` and `.out\` are in `.gitignore`; its contents are not committed. The WiX installer expects at least: `TeenAstroMainUnit.exe`, `TeenAstroSHC.exe`, `SDL2.dll`, `TeenAstroUploader.exe`, `icon.ico`, and (if not using `-SkipApp`) the Flutter app files (e.g. `teenastro_app.exe` and its DLLs).
+`.stage\` and `.out\` are in `.gitignore`; its contents are not committed. The WiX installer expects at least: `TeenAstroMainUnit.exe`, `TeenAstroSHC.exe`, `SDL2.dll`, `icon.ico`, and (if not using `-SkipApp`) the Flutter app files (e.g. `teenastro_app.exe` and its DLLs).
 
 ## Build the MSI
 
@@ -129,17 +119,16 @@ Switches:
 | Switch | Effect |
 |--------|--------|
 | `-SkipEmulator` | Skip building the SHC emulator (reuse staged exe) |
-| `-SkipUploader` | Skip building the firmware uploader |
+| `-SkipUploader` | Accepted for old commands. The uploader is the separate Python MSI. |
 | `-SkipApp` | Skip building the Flutter Windows app |
 | `-FlutterPath "..."` | Path to Flutter `bin/` directory |
 
 The script will:
 
 1. Build the SHC emulator with PlatformIO (icon is embedded automatically).
-2. Build the Firmware Uploader with MSBuild.
-3. Build the TeenAstro App with Flutter.
-4. Stage all files into `installer\.stage\`.
-5. Use WiX `heat.exe` to harvest the app files, then `candle` and `light` to produce the MSI.
+2. Build the TeenAstro App with Flutter.
+3. Stage all files into `installer\.stage\`.
+4. Use WiX `heat.exe` to harvest the app files, then `candle` and `light` to produce the MSI.
 
 Output: **`TeenAstroEmulator\installer\.out\TeenAstroEmulator.msi`**
 
@@ -149,7 +138,6 @@ Run the MSI. It installs to **Program Files\TeenAstro Emulator\** and creates St
 
 - **TeenAstro MainUnit Emulator** -- MainUnit emulator with extended state view (tabbed cockpit). Start this first.
 - **TeenAstro SHC Emulator** -- the Smart Hand Controller emulator; connects to the MainUnit.
-- **TeenAstro Firmware Uploader** -- download and upload firmware to TeenAstro hardware.
 - **TeenAstro App** -- the TeenAstro telescope controller app (if built).
 
 ## Build as part of a full release

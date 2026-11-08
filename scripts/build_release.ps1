@@ -3,7 +3,7 @@
 # Usage (from repo root or scripts\):
 #   .\build_release.ps1                 # Build everything
 #   .\build_release.ps1 -SkipASCOM      # Skip ASCOM driver
-#   .\build_release.ps1 -SkipMSI        # Skip MSI (emulator + uploader + app)
+#   .\build_release.ps1 -SkipMSI        # Skip MSI (emulator + app)
 #   .\build_release.ps1 -SkipApp        # Skip standalone Flutter app copy
 #   .\build_release.ps1 -FlutterPath "C:\flutter\bin"
 #
@@ -80,7 +80,7 @@ if (-not $SkipASCOM) {
 }
 
 # ================================================================
-#  2. MSI (SHC Emulator + Uploader + App)
+#  2. MSI (SHC Emulator + App)
 # ================================================================
 if (-not $SkipMSI) {
     Write-Host "`n========================================" -ForegroundColor Yellow

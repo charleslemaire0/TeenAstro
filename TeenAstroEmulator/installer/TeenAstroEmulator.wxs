@@ -29,11 +29,6 @@
             <File Id="SDL2Dll" Source=".stage\SDL2.dll" />
           </Component>
 
-          <!-- Firmware Uploader -->
-          <Component Id="UploaderComponent" Guid="C3D4E5F6-A7B8-9012-CDEF-123456789ABC">
-            <File Id="UploaderExe" Source=".stage\TeenAstroUploader.exe" KeyPath="yes" />
-          </Component>
-
           <!-- TeenAstro App (Flutter Windows) - harvested by heat.exe into AppFiles.wxs -->
 
         </Directory>
@@ -54,12 +49,6 @@
                       Target="[INSTALLFOLDER]TeenAstroSHC.exe"
                       WorkingDirectory="INSTALLFOLDER"
                       Icon="TeenAstroIcon" />
-            <Shortcut Id="UploaderShortcut"
-                      Name="TeenAstro Firmware Uploader"
-                      Description="Download and upload TeenAstro firmware"
-                      Target="[INSTALLFOLDER]TeenAstroUploader.exe"
-                      WorkingDirectory="INSTALLFOLDER"
-                      Icon="TeenAstroIcon" />
             <Shortcut Id="AppShortcut"
                       Name="TeenAstro App"
                       Description="TeenAstro telescope controller app"
@@ -76,7 +65,6 @@
     <Feature Id="ProductFeature" Title="TeenAstro Emulator" Level="1">
       <ComponentRef Id="MainUnitComponent" />
       <ComponentRef Id="EmulatorComponent" />
-      <ComponentRef Id="UploaderComponent" />
       <ComponentRef Id="ShortcutComponent" />
       <ComponentGroupRef Id="AppFiles" />
     </Feature>

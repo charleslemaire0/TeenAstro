@@ -10,6 +10,7 @@ IMPLEMENTATION_PLAN.md
 *.sublime-workspace
 debug-*.log
 build_*.txt
+__pycache__/
 .cursor/
 .vs/
 __vm/

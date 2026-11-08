@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -57,8 +58,101 @@ def _stage_post_compile_hex(hex_stem: str, hex_dir: Path) -> tuple[str, Path]:
     return safe, stage
 
 
+_LOADER_PORT = 3149
+
+
+def _read_loader_line(sock: socket.socket) -> str:
+    sock.settimeout(5)
+    buf = b""
+    while b"\n" not in buf:
+        chunk = sock.recv(256)
+        if not chunk:
+            break
+        buf += chunk
+    return buf.decode("ascii", errors="replace").strip()
+
+
+def _open_loader(tools: Path, wait_s: float = 20.0) -> socket.socket:
+    """Connect to Teensy Loader, starting teensy.exe if it is not up yet.
+
+    teensy_post_compile reports the loader missing even while it is already
+    answering on port 3149. The uploader speaks that port itself.
+    """
+    teensy = tools / "teensy.exe"
+    started = False
+    deadline = time.time() + wait_s
+    while time.time() < deadline:
+        try:
+            sock = socket.create_connection(("127.0.0.1", _LOADER_PORT), timeout=1)
+        except OSError:
+            if not started:
+                if not teensy.is_file():
+                    raise FileNotFoundError(f"teensy.exe not found in {tools}")
+                subprocess.Popen([str(teensy)], cwd=str(tools), close_fds=True)
+                started = True
+            time.sleep(0.25)
+            continue
+        try:
+            banner = _read_loader_line(sock)
+        except OSError:
+            sock.close()
+            time.sleep(0.25)
+            continue
+        if banner.startswith("Teensy Loader"):
+            return sock
+        sock.close()
+        time.sleep(0.25)
+    raise RuntimeError(
+        "Teensy Loader did not answer on localhost port 3149.\n"
+        "Close Teensy Loader and try the upload again."
+    )
+
+
+def _loader_ok(sock: socket.socket, command: str) -> None:
+    sock.sendall((command + "\n").encode("ascii"))
+    reply = _read_loader_line(sock)
+    if not reply.startswith("Ok"):
+        raise RuntimeError(f"Teensy Loader rejected {command!r}\n{reply}")
+
+
+def _teensy_serial_ports() -> list[str]:
+    """COM ports of a running Teensy (not the HalfKay bootloader)."""
+    from serial.tools import list_ports
+
+    ports: list[str] = []
+    for port in list_ports.comports():
+        if port.vid == 0x16C0 and port.pid != 0x0478:
+            ports.append(port.device)
+    return ports
+
+
+def _request_bootloader() -> None:
+    """Ask the Teensy USB stack to enter program mode.
+
+    Opening the serial port at 134 baud is the Teensyduino reboot request.
+    teensy_reboot.exe cannot see the loader after we have used its port.
+    """
+    import serial
+
+    ports = _teensy_serial_ports()
+    if len(ports) != 1:
+        raise RuntimeError(
+            "Teensy Loader has the firmware and Auto is on.\n"
+            "Press the program button on the Teensy to finish."
+        )
+    try:
+        with serial.Serial(ports[0], 134, timeout=0.2):
+            time.sleep(0.3)
+    except serial.SerialException as exc:
+        raise RuntimeError(
+            "Teensy Loader has the firmware and Auto is on.\n"
+            f"Could not reboot {ports[0]}. Press the program button on the Teensy."
+        ) from exc
+
+
 def _flash_teensy_post_compile(hex_stem: str, hex_dir: Path, mcu: str) -> None:
-    """Windows PJRC tools (teensy_post_compile + teensy_reboot), same as VB uploader."""
+    """Program a Teensy through the Loader GUI, then ask the board to reboot."""
+    del mcu  # board choice is already in the hex; reboot uses the USB serial port
     post = which_tool("teensy_post_compile")
     if post is None:
         raise FileNotFoundError(
@@ -66,25 +160,19 @@ def _flash_teensy_post_compile(hex_stem: str, hex_dir: Path, mcu: str) -> None:
             "Place PJRC Teensy tools next to the uploader, or install teensy_loader_cli."
         )
     hex_stem, hex_dir = _stage_post_compile_hex(hex_stem, hex_dir)
-    tools = str(post.parent)
-    base = [
-        str(post),
-        f"-file={hex_stem}",
-        f"-path={hex_dir}",
-        f"-tools={tools}",
-        f"-board={mcu}",
-    ]
-    # Allow teensy_post_compile to show the Teensy Loader UI.
-    # A cold start often opens the window after this tool has already given up.
+    tools = post.parent
+    directory = str(hex_dir)
+    if not directory.endswith(("\\", "/")):
+        directory += "\\"
+    sock = _open_loader(tools)
     try:
-        _run(base, cwd=post.parent, hide_console=False)
-    except RuntimeError as exc:
-        if "Unable find Teensy Loader" not in str(exc):
-            raise
-        time.sleep(2)
-        _run(base, cwd=post.parent, hide_console=False)
-    time.sleep(3)
-    _run(base + ["-reboot"], cwd=post.parent, hide_console=False)
+        _loader_ok(sock, "comment: TeenAstro Uploader")
+        _loader_ok(sock, f"dir:{directory}")
+        _loader_ok(sock, f"file:{hex_stem}.hex")
+        _loader_ok(sock, "auto:on")
+        _request_bootloader()
+    finally:
+        sock.close()
 
 
 def flash_teensy(hex_stem: str, hex_path: Path, mcu: str) -> str:

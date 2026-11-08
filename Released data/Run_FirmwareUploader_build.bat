@@ -1,7 +1,7 @@
 @echo off
 REM Build TeenAstro Firmware Uploader (Python + PyInstaller), create MSI, copy to Released data\Firmware
 REM Requires: Python 3.10+ with tkinter, WiX Toolset 3
-REM Optional: TeenAstroUploader\TeenAstroUploader\bin\Release Teensy tools (bundled into MSI when present)
+REM Optional: TeenAstroUploader\TeenAstroUploader Teensy tools (bundled into MSI when present)
 setlocal
 set "REPO_ROOT=%~dp0.."
 set "OUT_DIR=%~dp0Firmware"
