@@ -28,14 +28,7 @@
 #define SHC_LINK_LOST_MS   10000UL
 #endif
 
-#ifndef Product
-#define Product "Teenastro SHC"
-#endif
-#define SHCFirmwareDate          __DATE__
-#define SHCFirmwareTime          __TIME__
-#define SHCFirmwareVersionMajor  "1"
-#define SHCFirmwareVersionMinor  "6"
-#define SHCFirmwareVersionPatch  "16"
+#include "ShcVersion.h"
 
 #define NUMPAGES 9
 class SmartHandController

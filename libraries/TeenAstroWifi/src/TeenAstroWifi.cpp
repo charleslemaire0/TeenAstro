@@ -1,4 +1,16 @@
+// SHC_WITH_DISPLAY is set only by the hand-controller build. The header lives next
+// to the display firmware; a quoted relative include finds it without an -I path
+// (the ESP8266 builder rewrites absolute -I paths).
+#if defined(SHC_WITH_DISPLAY) && __has_include("../../../TeenAstroSHC/ShcVersion.h")
+#include "../../../TeenAstroSHC/ShcVersion.h"
+#endif
 #include "TeenAstroWifi.h"
+
+#ifdef SHCFirmwareVersionMajor
+#define ShownFirmwareVersion SHCFirmwareVersionMajor "." SHCFirmwareVersionMinor "." SHCFirmwareVersionPatch
+#else
+#define ShownFirmwareVersion ServerFirmwareVersionMajor "." ServerFirmwareVersionMinor "." ServerFirmwareVersionPatch
+#endif
 
 #ifdef SHC_HAS_ALPACA
 static TeenAstroAlpaca alpaca;
@@ -164,7 +176,7 @@ const char html_main_css_control4[] PROGMEM =
 "</style>\n";
 
 const char html_header1[] PROGMEM = "<div class='hdr'><span class='hdr-title'>\n";
-const char html_header2[] PROGMEM = "</span><span class='hdr-info'>" Product " " ServerFirmwareVersionMajor "." ServerFirmwareVersionMinor "." ServerFirmwareVersionPatch "<br>Main Unit \n";
+const char html_header2[] PROGMEM = "</span><span class='hdr-info'>" Product " " ShownFirmwareVersion "<br>Main Unit \n";
 const char html_header3[] PROGMEM = "</span></div>\n";
 const char html_header4[] PROGMEM = "</nav><div class='content'>\r\n";
 
